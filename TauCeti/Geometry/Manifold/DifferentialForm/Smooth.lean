@@ -252,6 +252,54 @@ theorem sub_toContMDiffSection (φ ψ : SmoothBundleForm I F V k) :
 
 end SmoothBundleForm
 
+section Equiv
+
+/-- The `ℝ`-linear equivalence between smooth bundle-valued differential forms and smooth sections
+of the alternating tangent bundle. -/
+def SmoothBundleForm.toContMDiffSectionEquiv {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [TopologicalSpace M]
+    [ChartedSpace H M] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F] (V : M → Type*)
+    [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+    [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
+    [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] [IsManifold I 1 M]
+    (k : ℕ) :
+    SmoothBundleForm I F V k ≃ₗ[ℝ]
+      ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+        (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x) where
+  toFun := SmoothBundleForm.toContMDiffSection
+  invFun := SmoothBundleForm.ofContMDiffSection
+  map_add' := SmoothBundleForm.add_toContMDiffSection
+  map_smul' := SmoothBundleForm.smul_toContMDiffSection
+  left_inv := SmoothBundleForm.ofContMDiffSection_toContMDiffSection
+  right_inv := SmoothBundleForm.toContMDiffSection_ofContMDiffSection
+
+/-- Evaluating `SmoothBundleForm.toContMDiffSectionEquiv` gives `toContMDiffSection`. -/
+@[simp]
+theorem SmoothBundleForm.toContMDiffSectionEquiv_apply {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+    [ChartedSpace H M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
+    [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+    [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
+    [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] [IsManifold I 1 M]
+    {k : ℕ} (φ : SmoothBundleForm I F V k) :
+    SmoothBundleForm.toContMDiffSectionEquiv I F V k φ = φ.toContMDiffSection := (rfl)
+
+/-- Evaluating the inverse of `SmoothBundleForm.toContMDiffSectionEquiv` gives
+`ofContMDiffSection`. -/
+@[simp]
+theorem SmoothBundleForm.toContMDiffSectionEquiv_symm_apply {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+    [ChartedSpace H M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
+    [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+    [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
+    [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] [IsManifold I 1 M]
+    {k : ℕ} (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x)) :
+    (SmoothBundleForm.toContMDiffSectionEquiv I F V k).symm s =
+      SmoothBundleForm.ofContMDiffSection s := (rfl)
+
+end Equiv
+
 namespace SmoothBundleForm
 
 variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
@@ -616,13 +664,13 @@ theorem mdifferentiableAt_apply_vectorField (φ : SmoothForm I M F k)
   simpa using ((mdifferentiableAt_totalSpace _ _).1 h).2
 
 /-- The smooth section underlying a fixed-coefficient smooth form. -/
-def toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :
+@[expose] def toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :
     ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
       (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) :=
   SmoothBundleForm.toContMDiffSection φ
 
 /-- Reconstruct a fixed-coefficient smooth form from its smooth section. -/
-def ofContMDiffSection {k : ℕ}
+@[expose] def ofContMDiffSection {k : ℕ}
     (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
       (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)) :
     SmoothForm I M F k :=
@@ -682,41 +730,6 @@ theorem sub_toContMDiffSection {k : ℕ} (φ ψ : SmoothForm I M F k) :
   SmoothBundleForm.sub_toContMDiffSection φ ψ
 
 end SmoothForm
-
-section
-
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-
-/-- The `ℝ`-linear equivalence between fixed-coefficient smooth forms and smooth sections of the
-alternating tangent bundle. -/
-def SmoothForm.toContMDiffSectionEquiv (I : ModelWithCorners ℝ E H) (M : Type*)
-    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
-    [NormedAddCommGroup F] [NormedSpace ℝ F] (k : ℕ) :
-    SmoothForm I M F k ≃ₗ[ℝ]
-      ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
-        (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) where
-  toFun := SmoothForm.toContMDiffSection
-  invFun := SmoothForm.ofContMDiffSection
-  map_add' := SmoothForm.add_toContMDiffSection
-  map_smul' := SmoothForm.smul_toContMDiffSection
-  left_inv := SmoothForm.ofContMDiffSection_toContMDiffSection
-  right_inv := SmoothForm.toContMDiffSection_ofContMDiffSection
-
-@[simp]
-theorem SmoothForm.toContMDiffSectionEquiv_apply {I : ModelWithCorners ℝ E H} {M : Type*}
-    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} (φ : SmoothForm I M F k) :
-    SmoothForm.toContMDiffSectionEquiv I M F k φ = φ.toContMDiffSection := (rfl)
-
-@[simp]
-theorem SmoothForm.toContMDiffSectionEquiv_symm_apply {I : ModelWithCorners ℝ E H} {M : Type*}
-    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
-    (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
-      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)) :
-    (SmoothForm.toContMDiffSectionEquiv I M F k).symm s = SmoothForm.ofContMDiffSection s := (rfl)
-
-end
 
 namespace SmoothForm
 

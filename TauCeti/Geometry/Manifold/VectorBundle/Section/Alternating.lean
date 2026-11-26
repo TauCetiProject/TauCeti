@@ -11,7 +11,7 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Basic
 import Mathlib.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
-import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Bundle
+import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
@@ -36,20 +36,22 @@ bundle `Bundle.Trivial M 𝕜`). This file provides the algebraic and calculus o
   functions `C^n⟮I, M; 𝕜⟯` and sections of `fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜` for `[IsEmpty ι]`;
 * the interior product `ContMDiffSection.interior` contracting the first slot of a
   bundle-valued alternating section with a section of `V`, intertwining evaluation with
-  `AlternatingMap.curryLeft`, together with `ContMDiffSection.apply_eq_interior_tail`;
-* the smooth fibrewise wedge product `ContMDiffSection.wedge` of real scalar alternating sections,
-  together with its graded commutativity, associativity, and interior-product antiderivation laws
-  on sections via `LinearEquiv.cast`;
+  `AlternatingMap.curryLeft`, together with `ContMDiffSection.apply_eq_interior_tail` and
+  `ContMDiffSection.interior_interior_anticomm`;
+* the canonical `C^n` paired wedge product `ContMDiffSection.wedgeWith` for arbitrary target bundles
+  and smooth fibrewise bilinear pairings, and its scalar specialization `ContMDiffSection.wedge`
+  together with graded commutativity, associativity, and interior-product antiderivation laws on
+  sections via `LinearEquiv.cast`;
 * the tensoriality equivalence `ContMDiffSection.evalAlternatingEquiv` identifying `C^n` sections
   of `fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` on a finite-rank `C^n` real vector bundle over a
-  finite-dimensional Hausdorff `C^n` manifold (`1 ≤ n ≤ ∞`) with `C^n(M)`-multilinear alternating
-  maps `Cₛ^n⟮I; F, V⟯ [⋀^ι]→ₗ[C^n⟮I, M; ℝ⟯] C^n⟮I, M; ℝ⟯`.
+  finite-dimensional Hausdorff `C^n` manifold (`n ≤ ∞`) with `C^n(M)`-multilinear alternating maps
+  `Cₛ^n⟮I; F, V⟯ [⋀^ι]→ₗ[C^n⟮I, M; ℝ⟯] C^n⟮I, M; ℝ⟯`.
 
-The coordinate-smoothness proof for `ContMDiffSection.wedge` delegates directly to
+The coordinate-smoothness proof for `ContMDiffSection.wedgeWith` delegates directly to
 `ContMDiffAt.pairedWedge_bundle` from
-`TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Bundle` and
-`TauCeti.contMDiff_const_bundlePairing`, and `ContMDiffSection.ofAlternating` combines
-`TauCeti.Manifold.eq_of_contMDiff_tensorial` with `ContMDiffSection.liftModel` from
+`TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap`, `ContMDiffSection.wedge`
+specializes it via `TauCeti.contMDiff_const_bundlePairing`, and `ContMDiffSection.ofAlternating`
+combines `TauCeti.Manifold.eq_of_contMDiff_tensorial` with `ContMDiffSection.liftModel` from
 `TauCeti.Geometry.Manifold.VectorBundle.Section.Extension`.
 
 ## References
@@ -358,7 +360,7 @@ theorem interior_interior_self {k : ℕ} (φ : Ω₂[k + 2]) (a : Cₛ^n⟮I; F,
   ext x v; exact congr($((φ x).curryLeftTopological_curryLeftTopological (a x)) v)
 
 /-- Interior products anticommute: `ι_b (ι_a φ) = -ι_a (ι_b φ)`. -/
-theorem interior_interior_comm {k : ℕ} (φ : Ω₂[k + 2]) (a b : Cₛ^n⟮I; F, V⟯) :
+theorem interior_interior_anticomm {k : ℕ} (φ : Ω₂[k + 2]) (a b : Cₛ^n⟮I; F, V⟯) :
     (φ.interior a).interior b = -(φ.interior b).interior a := by
   have h := interior_interior_self φ (a + b)
   simp only [interior_add_left, interior_add_right, interior_interior_self,
@@ -401,6 +403,109 @@ end
 
 /-! ### Fibrewise wedge product -/
 
+noncomputable section WedgeWith
+
+variable {E H M F₀ F₁ F₂ F₃ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F₀] [NormedSpace ℝ F₀]
+  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+  {n : ℕ∞ω} {V₀ V₁ V₂ V₃ : M → Type*}
+  [∀ x, AddCommGroup (V₀ x)] [∀ x, Module ℝ (V₀ x)] [∀ x, TopologicalSpace (V₀ x)]
+  [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
+  [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
+  [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℝ (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
+  [TopologicalSpace (TotalSpace F₀ V₀)] [FiberBundle F₀ V₀] [VectorBundle ℝ F₀ V₀]
+  [TopologicalSpace (TotalSpace F₁ V₁)] [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁]
+  [TopologicalSpace (TotalSpace F₂ V₂)] [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂]
+  [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle ℝ F₃ V₃]
+  [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul ℝ (V₁ x)]
+  [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)]
+  [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul ℝ (V₃ x)]
+
+/-- The canonical `C^n` fibrewise paired wedge product of two `C^n` alternating-bundle sections
+with values in `V₁` and `V₂`, paired along a `C^n` bundle bilinear map `μ` into `V₃`, bundled as
+an `ℝ`-bilinear map. -/
+def wedgeWith {k l : ℕ}
+    (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (hpair : ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y))) :
+    Cₛ^n⟮I; F₀ [⋀^Fin k]→L[ℝ] F₁, fun x ↦ V₀ x [⋀^Fin k]→L[ℝ] V₁ x⟯ →ₗ[ℝ]
+      Cₛ^n⟮I; F₀ [⋀^Fin l]→L[ℝ] F₂, fun x ↦ V₀ x [⋀^Fin l]→L[ℝ] V₂ x⟯ →ₗ[ℝ]
+        Cₛ^n⟮I; F₀ [⋀^Fin (k + l)]→L[ℝ] F₃, fun x ↦ V₀ x [⋀^Fin (k + l)]→L[ℝ] V₃ x⟯ :=
+  LinearMap.mk₂ ℝ
+    (fun φ ψ ↦
+      { toFun x := ContinuousAlternatingMap.pairedWedge (μ x) (hμ x) (φ x) (ψ x)
+        contMDiff_toFun x₀ :=
+          ContMDiffAt.pairedWedge_bundle hμ (hpair x₀) (φ.contMDiff x₀) (ψ.contMDiff x₀) })
+    (fun φ₁ φ₂ ψ ↦ ext fun x ↦
+      ContinuousAlternatingMap.pairedWedge_add_left (μ x) (hμ x) (φ₁ x) (φ₂ x) (ψ x))
+    (fun c φ ψ ↦ ext fun x ↦
+      ContinuousAlternatingMap.pairedWedge_smul_left (μ x) (hμ x) c (φ x) (ψ x))
+    (fun φ ψ₁ ψ₂ ↦ ext fun x ↦
+      ContinuousAlternatingMap.pairedWedge_add_right (μ x) (hμ x) (φ x) (ψ₁ x) (ψ₂ x))
+    (fun c φ ψ ↦ ext fun x ↦
+      ContinuousAlternatingMap.pairedWedge_smul_right (μ x) (hμ x) c (φ x) (ψ x))
+
+/-- Pointwise fibre value of `ContMDiffSection.wedgeWith`. -/
+theorem wedgeWith_apply {k l : ℕ}
+    (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (hpair : ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)))
+    (φ : Cₛ^n⟮I; F₀ [⋀^Fin k]→L[ℝ] F₁, fun x ↦ V₀ x [⋀^Fin k]→L[ℝ] V₁ x⟯)
+    (ψ : Cₛ^n⟮I; F₀ [⋀^Fin l]→L[ℝ] F₂, fun x ↦ V₀ x [⋀^Fin l]→L[ℝ] V₂ x⟯) (x : M) :
+    wedgeWith μ hμ hpair φ ψ x =
+      ContinuousAlternatingMap.pairedWedge (μ x) (hμ x) (φ x) (ψ x) := by
+  rw [wedgeWith, LinearMap.mk₂_apply]; rfl
+
+/-- Pointwise signed-permutation expansion of `ContMDiffSection.wedgeWith`. -/
+theorem wedgeWith_apply_sum {k l : ℕ}
+    (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (hpair : ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)))
+    (φ : Cₛ^n⟮I; F₀ [⋀^Fin k]→L[ℝ] F₁, fun x ↦ V₀ x [⋀^Fin k]→L[ℝ] V₁ x⟯)
+    (ψ : Cₛ^n⟮I; F₀ [⋀^Fin l]→L[ℝ] F₂, fun x ↦ V₀ x [⋀^Fin l]→L[ℝ] V₂ x⟯)
+    (x : M) (v : Fin (k + l) → V₀ x) :
+    wedgeWith μ hμ hpair φ ψ x v =
+      (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
+        ∑ σ : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign σ •
+          μ x (φ x (fun i ↦ v (σ (Fin.castAdd l i))))
+            (ψ x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
+  rw [wedgeWith_apply]
+  exact ContinuousAlternatingMap.pairedWedge_apply (μ x) (hμ x) (φ x) (ψ x) v
+
+/-- `ContMDiffSection.wedgeWith` is `C^n(M)`-linear in the left factor. -/
+@[simp]
+theorem wedgeWith_smul_left {k l : ℕ}
+    (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (hpair : ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)))
+    (f : C^n⟮I, M; ℝ⟯)
+    (φ : Cₛ^n⟮I; F₀ [⋀^Fin k]→L[ℝ] F₁, fun x ↦ V₀ x [⋀^Fin k]→L[ℝ] V₁ x⟯)
+    (ψ : Cₛ^n⟮I; F₀ [⋀^Fin l]→L[ℝ] F₂, fun x ↦ V₀ x [⋀^Fin l]→L[ℝ] V₂ x⟯) :
+    wedgeWith μ hμ hpair (f • φ) ψ = f • wedgeWith μ hμ hpair φ ψ := by
+  ext x v; simp [wedgeWith_apply]
+
+/-- `ContMDiffSection.wedgeWith` is `C^n(M)`-linear in the right factor. -/
+@[simp]
+theorem wedgeWith_smul_right {k l : ℕ}
+    (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (hpair : ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)))
+    (f : C^n⟮I, M; ℝ⟯)
+    (φ : Cₛ^n⟮I; F₀ [⋀^Fin k]→L[ℝ] F₁, fun x ↦ V₀ x [⋀^Fin k]→L[ℝ] V₁ x⟯)
+    (ψ : Cₛ^n⟮I; F₀ [⋀^Fin l]→L[ℝ] F₂, fun x ↦ V₀ x [⋀^Fin l]→L[ℝ] V₂ x⟯) :
+    wedgeWith μ hμ hpair φ (f • ψ) = f • wedgeWith μ hμ hpair φ ψ := by
+  ext x v; simp [wedgeWith_apply]
+
+end WedgeWith
+
 noncomputable section Wedge
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -413,20 +518,20 @@ local notation "Ω[" k "]" => Cₛ^n⟮I; F [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ 
 
 /-- The `C^n` fibrewise wedge product of two `C^n` scalar alternating sections on a real vector
 bundle `V`, normalized by `1 / (k! l!)` so that the wedge of two `1`-cochains is their two-term
-determinant. No finite-dimensionality, Hausdorff, or manifold-smoothness assumptions are needed. -/
-def wedge {k l : ℕ} (φ : Ω[k]) (ψ : Ω[l]) : Ω[k + l] where
-  toFun x :=
-    ContinuousAlternatingMap.pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-      (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (φ x) (ψ x)
-  contMDiff_toFun x₀ :=
-    ContMDiffAt.pairedWedge_bundle (fun _ ↦ (ContinuousLinearMap.mul ℝ ℝ).continuous₂)
-      (TauCeti.contMDiff_const_bundlePairing (ContinuousLinearMap.mul ℝ ℝ) x₀)
-      (φ.contMDiff x₀) (ψ.contMDiff x₀)
+determinant. It specializes `ContMDiffSection.wedgeWith` to real multiplication on
+`Bundle.Trivial M ℝ`. -/
+def wedge {k l : ℕ} (φ : Ω[k]) (ψ : Ω[l]) : Ω[k + l] :=
+  wedgeWith (F₀ := F) (V₀ := V) (F₁ := ℝ) (F₂ := ℝ) (F₃ := ℝ)
+    (V₁ := Bundle.Trivial M ℝ) (V₂ := Bundle.Trivial M ℝ) (V₃ := Bundle.Trivial M ℝ)
+    (fun _ ↦ ContinuousLinearMap.mul ℝ ℝ) (fun _ ↦ (ContinuousLinearMap.mul ℝ ℝ).continuous₂)
+    (TauCeti.contMDiff_const_bundlePairing (ContinuousLinearMap.mul ℝ ℝ)) φ ψ
 
+/-- Pointwise fibre value of `ContMDiffSection.wedge`. -/
 theorem wedge_apply {k l : ℕ} (φ : Ω[k]) (ψ : Ω[l]) (x : M) :
     φ.wedge ψ x =
       ContinuousAlternatingMap.pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (φ x) (ψ x) := (rfl)
+        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (φ x) (ψ x) :=
+  wedgeWith_apply ..
 
 /-- Pointwise signed-permutation expansion of the fibrewise wedge product. -/
 theorem wedge_apply_sum {k l : ℕ} (φ : Ω[k]) (ψ : Ω[l]) (x : M) (v : Fin (k + l) → V x) :
@@ -435,9 +540,11 @@ theorem wedge_apply_sum {k l : ℕ} (φ : Ω[k]) (ψ : Ω[l]) (x : M) (v : Fin (
         ∑ σ : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign σ •
           (φ x (fun i ↦ v (σ (Fin.castAdd l i))) *
             ψ x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
-  simpa only [wedge_apply, ContinuousLinearMap.mul_apply'] using
-    ContinuousAlternatingMap.pairedWedge_apply (ContinuousLinearMap.mul ℝ ℝ)
-      (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (φ x) (ψ x) v
+  simpa only [wedge, ContinuousLinearMap.mul_apply'] using
+    wedgeWith_apply_sum (F₀ := F) (V₀ := V) (F₁ := ℝ) (F₂ := ℝ) (F₃ := ℝ)
+      (V₁ := Bundle.Trivial M ℝ) (V₂ := Bundle.Trivial M ℝ) (V₃ := Bundle.Trivial M ℝ)
+      (fun _ ↦ ContinuousLinearMap.mul ℝ ℝ) (fun _ ↦ (ContinuousLinearMap.mul ℝ ℝ).continuous₂)
+      (TauCeti.contMDiff_const_bundlePairing (ContinuousLinearMap.mul ℝ ℝ)) φ ψ x v
 
 /-- Evaluation of `φ.wedge ψ` on a tuple of `C^n` sections as a signed sum of products in
 `C^n⟮I, M; ℝ⟯`. -/
@@ -656,8 +763,8 @@ theorem eq_of_evalAlternating_eq {ι : Type*} [Fintype ι]
     {φ ψ : Cₛ^n⟮I; F [⋀^ι]→L[ℝ] ℝ, fun x ↦ V x [⋀^ι]→L[ℝ] ℝ⟯}
     (h : φ.evalAlternating = ψ.evalAlternating) : φ = ψ := by
   ext x v
-  choose s hs using fun i ↦ exists_apply_eq (I := I) (F := F) (V := V) n x (v i)
-  have hs' : (fun i ↦ s i x) = v := funext hs
+  choose s hs using fun i ↦ evalLinearMap_surjective (I := I) (F := F) (V := V) n x (v i)
+  have hs' : (fun i ↦ s i x) = v := funext fun i ↦ by simpa using hs i
   simpa only [evalAlternating_apply, hs'] using congr($h s x)
 
 end EvalExt
@@ -678,10 +785,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 local notation "Ω[" ι "]" => Cₛ^n⟮I; F [⋀^ι]→L[ℝ] ℝ, fun x ↦ V x [⋀^ι]→L[ℝ] ℝ⟯
 local notation "Alt[" ι "]" => Cₛ^n⟮I; F, V⟯ [⋀^ι]→ₗ[C^n⟮I, M; ℝ⟯] C^n⟮I, M; ℝ⟯
 
-/-- A `C^n(M)`-multilinear alternating map on `C^n` sections of `V` (`1 ≤ n ≤ ∞`) is pointwise
+/-- A `C^n(M)`-multilinear alternating map on `C^n` sections of `V` (`n ≤ ∞`) is pointwise
 tensorial: its value at `x` depends only on the values of the input sections at `x`. -/
-theorem apply_eq_of_eval_eq {ι : Type*} [Finite ι] (Φ : Alt[ι]) {s s' : ι → Cₛ^n⟮I; F, V⟯} {x : M}
-    (h : ∀ i, s i x = s' i x) (hn : 1 ≤ n := by simp) : Φ s x = Φ s' x := by
+theorem alternatingMap_apply_eq_of_forall_apply_eq {ι : Type*} [Finite ι] (Φ : Alt[ι])
+    {s s' : ι → Cₛ^n⟮I; F, V⟯} {x : M} (h : ∀ i, s i x = s' i x) : Φ s x = Φ s' x := by
   classical
   cases nonempty_fintype ι
   -- Update the entries of `s` to those of `s'` over a growing subset `q : Finset ι`.
@@ -705,7 +812,7 @@ theorem apply_eq_of_eval_eq {ι : Type*} [Finite ι] (Φ : Alt[ι]) {s s' : ι �
       rw [← hΨ_eq, ← hΨ_eq]
       refine TauCeti.Manifold.eq_of_contMDiff_tensorial (G := F) (W := V) Ψ x
         (fun {u₁ u₂} hu₁ hu₂ ↦ ?_) (fun {f u} hf hu ↦ ?_)
-        (s' j).contMDiff (s j).contMDiff (h j).symm hn
+        (s' j).contMDiff (s j).contMDiff (h j).symm
       · have hsum : CMDiff n (T% (u₁ + u₂)) := (⟨u₁, hu₁⟩ + ⟨u₂, hu₂⟩ : Cₛ^n⟮I; F, V⟯).contMDiff
         simp only [Ψ, hu₁, hu₂, hsum, ↓reduceDIte]
         exact congr($(Φ.map_update_add w j ⟨u₁, hu₁⟩ ⟨u₂, hu₂⟩) x)
@@ -730,20 +837,20 @@ private def fibreAlternatingAt {ι : Type*} [Fintype ι] (Φ : Alt[ι]) (x : M) 
     ((FiberBundle.trivializationAt F V x).continuousLinearMapAt ℝ x)
 
 private theorem fibreAlternatingAt_apply_sections {ι : Type*} [Fintype ι] (Φ : Alt[ι])
-    (hn : 1 ≤ n) (s : ι → Cₛ^n⟮I; F, V⟯) (x : M) :
+    (s : ι → Cₛ^n⟮I; F, V⟯) (x : M) :
     fibreAlternatingAt Φ x (fun i ↦ s i x) = Φ s x := by
   have hx : x ∈ (FiberBundle.trivializationAt F V x).baseSet :=
     FiberBundle.mem_baseSet_trivializationAt F V x
   have hsec : Φ (fun i ↦ liftModel I F V n x
       ((FiberBundle.trivializationAt F V x).continuousLinearMapAt ℝ x (s i x))) x = Φ s x :=
-    apply_eq_of_eval_eq Φ (fun i ↦ by
+    alternatingMap_apply_eq_of_forall_apply_eq Φ fun i ↦ by
       simp only [liftModel_apply_self]
-      exact (FiberBundle.trivializationAt F V x).symmL_continuousLinearMapAt hx (s i x)) hn
+      exact (FiberBundle.trivializationAt F V x).symmL_continuousLinearMapAt hx (s i x)
   simpa [fibreAlternatingAt, Function.comp_def] using hsec
 
 /-- Reconstruct a `C^n` section of `fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` from a `C^n(M)`-multilinear
-alternating map on `C^n` sections of `V` (`1 ≤ n ≤ ∞`). -/
-def ofAlternating {ι : Type*} [Fintype ι] (Φ : Alt[ι]) (hn : 1 ≤ n := by simp) : Ω[ι] where
+alternating map on `C^n` sections of `V` (`n ≤ ∞`). -/
+def ofAlternating {ι : Type*} [Fintype ι] (Φ : Alt[ι]) : Ω[ι] where
   toFun := fibreAlternatingAt Φ
   contMDiff_toFun x₀ := by
     rw [contMDiffAt_continuousAlternatingMap_bundle]
@@ -755,48 +862,53 @@ def ofAlternating {ι : Type*} [Fintype ι] (Φ : Alt[ι]) (hn : 1 ≤ n := by s
     have hsw' : (fun i ↦ (FiberBundle.trivializationAt F V x₀).symmL ℝ y (w i)) =
         fun i ↦ sw i y := funext fun i ↦ (hsw i).symm
     simp [ContinuousAlternatingMap.inCoordinates, Function.comp_def, hsw',
-      fibreAlternatingAt_apply_sections Φ hn]
+      fibreAlternatingAt_apply_sections Φ]
 
+/-- Evaluating `ofAlternating Φ` on a tuple of sections recovers `Φ`. -/
 @[simp]
 theorem ofAlternating_apply_sections {ι : Type*} [Fintype ι] (Φ : Alt[ι])
-    (hn : 1 ≤ n) (s : ι → Cₛ^n⟮I; F, V⟯) (x : M) :
-    ofAlternating Φ hn x (fun i ↦ s i x) = Φ s x :=
-  fibreAlternatingAt_apply_sections Φ hn s x
+    (s : ι → Cₛ^n⟮I; F, V⟯) (x : M) :
+    ofAlternating Φ x (fun i ↦ s i x) = Φ s x :=
+  fibreAlternatingAt_apply_sections Φ s x
 
+/-- Evaluating `ofAlternating Φ` via `evalAlternating` recovers `Φ`. -/
 @[simp]
-theorem evalAlternating_ofAlternating {ι : Type*} [Fintype ι] (Φ : Alt[ι]) (hn : 1 ≤ n) :
-    (ofAlternating Φ hn).evalAlternating = Φ := by
-  ext s x; exact ofAlternating_apply_sections Φ hn s x
+theorem evalAlternating_ofAlternating {ι : Type*} [Fintype ι] (Φ : Alt[ι]) :
+    (ofAlternating Φ).evalAlternating = Φ := by
+  ext s x; exact ofAlternating_apply_sections Φ s x
 
+/-- Reconstructing a section from `φ.evalAlternating` recovers `φ`. -/
 @[simp]
-theorem ofAlternating_evalAlternating {ι : Type*} [Fintype ι] (φ : Ω[ι]) (hn : 1 ≤ n) :
-    ofAlternating φ.evalAlternating hn = φ :=
-  eq_of_evalAlternating_eq (evalAlternating_ofAlternating φ.evalAlternating hn)
+theorem ofAlternating_evalAlternating {ι : Type*} [Fintype ι] (φ : Ω[ι]) :
+    ofAlternating φ.evalAlternating = φ :=
+  eq_of_evalAlternating_eq (evalAlternating_ofAlternating φ.evalAlternating)
 
 variable (I F n V) in
 /-- **Tensoriality of alternating bundle cochains**: `C^n` sections of
 `fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` on a finite-rank `C^n` real vector bundle over a
-finite-dimensional Hausdorff `C^n` manifold (`1 ≤ n ≤ ∞`) are `C^n(M)`-linearly equivalent to
+finite-dimensional Hausdorff `C^n` manifold (`n ≤ ∞`) are `C^n(M)`-linearly equivalent to
 `C^n(M)`-multilinear alternating maps `Cₛ^n⟮I; F, V⟯ [⋀^ι]→ₗ[C^n⟮I, M; ℝ⟯] C^n⟮I, M; ℝ⟯`. -/
-def evalAlternatingEquiv (ι : Type*) [Fintype ι] (hn : 1 ≤ n := by simp) :
+def evalAlternatingEquiv (ι : Type*) [Fintype ι] :
     Ω[ι] ≃ₗ[C^n⟮I, M; ℝ⟯] Alt[ι] where
   __ := evalAlternatingLinear I F n V ι
-  invFun Φ := ofAlternating Φ hn
-  left_inv φ := ofAlternating_evalAlternating φ hn
-  right_inv Φ := evalAlternating_ofAlternating Φ hn
+  invFun := ofAlternating
+  left_inv := ofAlternating_evalAlternating
+  right_inv := evalAlternating_ofAlternating
 
+/-- Applying `evalAlternatingEquiv` gives `evalAlternating`. -/
 @[simp]
-theorem evalAlternatingEquiv_apply {ι : Type*} [Fintype ι] (hn : 1 ≤ n) (φ : Ω[ι]) :
-    evalAlternatingEquiv I F n V ι hn φ = φ.evalAlternating := (rfl)
+theorem evalAlternatingEquiv_apply {ι : Type*} [Fintype ι] (φ : Ω[ι]) :
+    evalAlternatingEquiv I F n V ι φ = φ.evalAlternating := (rfl)
 
+/-- Applying the inverse of `evalAlternatingEquiv` gives `ofAlternating`. -/
 @[simp]
-theorem evalAlternatingEquiv_symm_apply {ι : Type*} [Fintype ι] (hn : 1 ≤ n) (Φ : Alt[ι]) :
-    (evalAlternatingEquiv I F n V ι hn).symm Φ = ofAlternating Φ hn := (rfl)
+theorem evalAlternatingEquiv_symm_apply {ι : Type*} [Fintype ι] (Φ : Alt[ι]) :
+    (evalAlternatingEquiv I F n V ι).symm Φ = ofAlternating Φ := (rfl)
 
+/-- Interior product commutes with `ofAlternating` and `AlternatingMap.curryLeft`. -/
 @[simp]
-theorem interior_ofAlternating {k : ℕ} (Φ : Alt[Fin (k + 1)]) (hn : 1 ≤ n)
-    (a : Cₛ^n⟮I; F, V⟯) :
-    (ofAlternating Φ hn).interior a = ofAlternating (Φ.curryLeft a) hn :=
+theorem interior_ofAlternating {k : ℕ} (Φ : Alt[Fin (k + 1)]) (a : Cₛ^n⟮I; F, V⟯) :
+    (ofAlternating Φ).interior a = ofAlternating (Φ.curryLeft a) :=
   eq_of_evalAlternating_eq (by simp)
 
 end Tensoriality

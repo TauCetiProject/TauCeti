@@ -370,6 +370,13 @@ theorem sectionsEquiv_lie (s t : A.Sections) :
     A.sectionsEquiv ⁅s, t⁆ = A.bracket (A.sectionsEquiv s) (A.sectionsEquiv t) :=
   A.sectionsEquiv.apply_symm_apply _
 
+/-- `sectionsEquiv.symm` intertwines the Lie algebroid bracket with the Lie bracket on
+`A.Sections`. -/
+@[simp]
+theorem sectionsEquiv_symm_bracket (a b : Cₛ^∞⟮I; F, V⟯) :
+    A.sectionsEquiv.symm (A.bracket a b) = ⁅A.sectionsEquiv.symm a, A.sectionsEquiv.symm b⁆ :=
+  A.sectionsEquiv.injective (by simp)
+
 namespace Sections
 
 instance instLieAlgebra : LieAlgebra ℝ A.Sections where

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
+import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
@@ -15,7 +16,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 This file complements Mathlib's pointwise tensoriality API with a criterion for operations whose
 additivity and `C^n`-function linearity laws are available for globally `C^n` sections.
-The criterion applies to finite-rank `C^n` real vector bundles (`1 ≤ n ≤ ∞`) over
+The criterion applies to finite-rank `C^n` real vector bundles (`n ≤ ∞`) over
 finite-dimensional Hausdorff `C^n` manifolds; on a trivial bundle the constant sections form a
 global frame, and no hypothesis on the base is needed. The target only needs addition and scalar
 multiplication; no algebraic laws on these operations are required beyond the stated laws for the
@@ -25,7 +26,7 @@ section operation.
 
 * `TauCeti.Manifold.eq_of_contMDiff_smul_of_eventuallyEq`: `C^n`-function linearity (`n ≤ ∞`)
   implies locality.
-* `TauCeti.Manifold.eq_of_contMDiff_tensorial`: an operation satisfying these laws for `1 ≤ n ≤ ∞`
+* `TauCeti.Manifold.eq_of_contMDiff_tensorial`: an operation satisfying these laws for `n ≤ ∞`
   has equal values on globally `C^n` sections which agree at the point of evaluation.
 * `TauCeti.Manifold.eq_zero_of_contMDiff_tensorial_of_const`: on the trivial bundle with
   finite-dimensional fibre, an operation satisfying these laws and vanishing on constant sections
@@ -147,7 +148,7 @@ theorem eq_of_contMDiff_smul_of_eventuallyEq
   rw [← hρΦ hsmul, ← hρΦ hsmul', hcut]
 
 /-- On a finite-rank `C^n` real vector bundle over a finite-dimensional Hausdorff `C^n` manifold
-(`1 ≤ n ≤ ∞`), an operation which is additive and linear over globally `C^n` functions on globally
+(`n ≤ ∞`), an operation which is additive and linear over globally `C^n` functions on globally
 `C^n` sections depends only on the value of such a section at the point of evaluation.
 The target need only carry addition and scalar multiplication, without any algebraic laws. -/
 theorem eq_of_contMDiff_tensorial
@@ -162,23 +163,29 @@ theorem eq_of_contMDiff_tensorial
     (hsmul : ∀ {f : M → ℝ} {s : Π x : M, W x}, ContMDiff I 𝓘(ℝ) n f →
       CMDiff n (T% s) → Φ (f • s) = f x • Φ s)
     {s s' : Π x : M, W x} (hs : CMDiff n (T% s)) (hs' : CMDiff n (T% s'))
-    (hss' : s x = s' x) (hn : 1 ≤ n := by simp) : Φ s = Φ s' := by
-  have : ContMDiffVectorBundle 1 G W I := ContMDiffVectorBundle.of_le hn
-  -- Cut off a local frame by a bump function which is one near `x`.  This gives globally `C^n`
-  -- frame sections and coefficients while preserving the local frame expansion near `x`.
+    (hss' : s x = s' x) : Φ s = Φ s' := by
+  -- Cut off local frame sections by a bump function which is one near `x`.  This gives globally
+  -- `C^n` frame sections and coefficients while preserving the trivialization expansion near `x`.
   let t := trivializationAt G W x
   have hxt : x ∈ t.baseSet := FiberBundle.mem_baseSet_trivializationAt G W x
   have ht : t.baseSet ∈ 𝓝 x := t.open_baseSet.mem_nhds hxt
   obtain ⟨ρ, hρt, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) ht).mem_iff.mp ht
-  let b := Basis.ofVectorSpace ℝ G
-  let frame' (i) := (ρ : M → ℝ) • t.localFrame b i
-  let coeff' (u : Π x : M, W x) (i) (y : M) := ρ y * t.localFrameCoeff I b i y (u y)
+  let b := Module.finBasis ℝ G
+  let frame' (i) : Π y : M, W y := (ρ : M → ℝ) • fun y ↦ t.symm y (b i)
+  let coeff' (u : Π x : M, W x) (i) (y : M) := ρ y * b.coord i (t ⟨y, u y⟩).2
   have hframe (i) : CMDiff n (T% (frame' i)) :=
     ρ.contMDiff_of_isManifold.contMDiffOn.smul_section_of_tsupport t.open_baseSet hρt
-      (t.contMDiffOn_localFrame_baseSet n b i)
+      (contMDiffOn_symm_baseSet (I := I) (e := t) (b i))
   have hcoeff' (u : Π x : M, W x) (hu : CMDiff n (T% u)) (i) :
-      ContMDiff I 𝓘(ℝ) n (coeff' u i) :=
-    t.contMDiff_mul_localFrameCoeff b ρ.contMDiff_of_isManifold.contMDiffOn hρt hu.contMDiffOn i
+      ContMDiff I 𝓘(ℝ) n (coeff' u i) := by
+    refine contMDiff_of_tsupport fun y hy ↦ ?_
+    have hy : y ∈ t.baseSet := hρt (tsupport_mul_subset_left hy)
+    have hnhds : t.baseSet ∈ 𝓝 y := t.open_baseSet.mem_nhds hy
+    have hcoord : ContMDiffOn I 𝓘(ℝ, G) n (fun z ↦ (t ⟨z, u z⟩).2) t.baseSet :=
+      t.contMDiffOn_section_baseSet_iff.mp hu.contMDiffOn
+    exact ρ.contMDiff_of_isManifold.contMDiffAt.mul
+      ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff.comp_contMDiffAt
+        (hcoord.contMDiffAt hnhds))
   have hterm (u : Π x : M, W x) (hu : CMDiff n (T% u)) (i) :
       CMDiff n (T% (coeff' u i • frame' i)) :=
     (hcoeff' u hu i).smul_section (hframe i)
@@ -187,13 +194,23 @@ theorem eq_of_contMDiff_tensorial
       Φ u = Φ (∑ i, coeff' u i • frame' i) := by
     refine eq_of_contMDiff_smul_of_eventuallyEq Φ x (hsmul · hu) (hsmul · ?_) ?_
     · simpa only [Finset.sum_apply] using ContMDiff.sum_section fun i _ ↦ hterm u hu i
-    · filter_upwards [ρ.eventuallyEq_one,
-        t.eventually_eq_localFrame_sum_coeff_smul (I := I) b hxt] with y hρ hu
-      simpa [coeff', frame', hρ] using hu
+    · filter_upwards [ρ.eventuallyEq_one, ht] with y hyρ hy
+      have hyρ' : ρ y = 1 := hyρ
+      calc u y
+        _ = t.symm y (t ⟨y, u y⟩).2 := (t.symm_apply_apply_mk hy (u y)).symm
+        _ = t.symmL ℝ y (t ⟨y, u y⟩).2 := (t.symmL_apply hy _).symm
+        _ = t.symmL ℝ y (∑ i, b.coord i (t ⟨y, u y⟩).2 • b i) := by
+          simp only [Basis.coord_apply, b.sum_repr]
+        _ = ∑ i, b.coord i (t ⟨y, u y⟩).2 • t.symmL ℝ y (b i) := by
+          rw [map_sum]; exact Finset.sum_congr rfl fun i _ ↦ map_smul _ _ _
+        _ = ∑ i, coeff' u i y • frame' i y := by
+          refine Finset.sum_congr rfl fun i _ ↦ ?_
+          simp [coeff', frame', hyρ', t.symmL_apply hy]
+        _ = (∑ i, coeff' u i • frame' i) y := by simp only [Finset.sum_apply, Pi.smul_apply']
   rw [hexpansion s hs, hexpansion s' hs']
   refine map_sum_eq_of_contMDiff_additive Φ hadd Finset.univ _ _ (fun i _ ↦ hterm s hs i)
     (fun i _ ↦ hterm s' hs' i) fun i _ ↦ ?_
   rw [hsmul (hcoeff' s hs i) (hframe i), hsmul (hcoeff' s' hs' i) (hframe i)]
-  simp only [coeff', ρ.eq_one, one_mul, t.localFrameCoeff_congr (I := I) b (i := i) hss']
+  simp only [coeff', ρ.eq_one, one_mul, hss']
 
 end TauCeti.Manifold
