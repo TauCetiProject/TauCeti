@@ -40,6 +40,11 @@ condition on the units is not needed: it is automatic once the induced map is on
 (`LinearMap.sub_mem_coboundaries_of_surjective_cohomologyMap`), since a multiplicative map onto
 the cohomology of a unital product sends the unit to the unit.
 
+Two products `μ` and `ν` which differ by a coboundary on every pair of cocycles induce the same
+product on cohomology (`LinearMap.cohomologyMul_eq_of_sub_mem_coboundaries`). Their units are then
+cohomologous (`LinearMap.sub_mem_coboundaries_of_mul_sub_mem_coboundaries`), so the two cohomology
+rings are the same graded ring structure (`LinearMap.cohomologyGRing_eq_of_sub_mem_coboundaries`).
+
 The degree-wise cohomology is that of `TauCeti.Algebra.Homology.SquareZero.Graded`, where `M` need
 not be the direct sum of the pieces `G i`; the ring is the direct sum of the cohomology groups of
 the homogeneous pieces. This covers completed modules such as the completed Floer and Novikov
@@ -59,6 +64,11 @@ coboundaries.
 * `LinearMap.cohomologyGAlgebra`: its graded `R`-algebra structure.
 * `LinearMap.cohomologyAlgHom`, `LinearMap.cohomologyAlgEquiv`: the algebra homomorphism, and
   isomorphism, of cohomology rings induced by a map intertwining the products.
+
+## Main results
+
+* `LinearMap.cohomologyGRing_eq_of_sub_mem_coboundaries`: products which differ by coboundaries on
+  cocycles have the same cohomology ring.
 
 ## References
 
@@ -441,5 +451,73 @@ theorem cohomologyAlgEquiv_of
       f hfdeg hfD hfmul (hbij 0).2) x
 
 end AlgHom
+
+section Homotopy
+
+variable (μ : M →ₗ[R] M →ₗ[R] M)
+  (hμdeg : ∀ {i j : ℤ} {a b : M}, a ∈ G i → b ∈ G j → μ a b ∈ G (i + j))
+  (hμL : ∀ {i : ℤ} {a : M}, a ∈ G i → ∀ b, D (μ a b) = μ (D a) b + negOnePowCast R i • μ a (D b))
+  (e : M) (he : e ∈ D.cocycles G 0)
+  (hμone_mul : ∀ {i : ℤ} {a : M}, a ∈ D.cocycles G i → μ e a - a ∈ D.coboundaries G i)
+  (hμmul_one : ∀ {i : ℤ} {a : M}, a ∈ D.cocycles G i → μ a e - a ∈ D.coboundaries G i)
+  (hμassoc : ∀ {i j k : ℤ} {a b c : M}, a ∈ D.cocycles G i → b ∈ D.cocycles G j →
+    c ∈ D.cocycles G k → μ (μ a b) c - μ a (μ b c) ∈ D.coboundaries G (i + j + k))
+  (ν : M →ₗ[R] M →ₗ[R] M)
+  (hνdeg : ∀ {i j : ℤ} {a b : M}, a ∈ G i → b ∈ G j → ν a b ∈ G (i + j))
+  (hνL : ∀ {i : ℤ} {a : M}, a ∈ G i → ∀ b, D (ν a b) = ν (D a) b + negOnePowCast R i • ν a (D b))
+  (e' : M) (he' : e' ∈ D.cocycles G 0)
+  (hνone_mul : ∀ {i : ℤ} {a : M}, a ∈ D.cocycles G i → ν e' a - a ∈ D.coboundaries G i)
+  (hνmul_one : ∀ {i : ℤ} {a : M}, a ∈ D.cocycles G i → ν a e' - a ∈ D.coboundaries G i)
+  (hνassoc : ∀ {i j k : ℤ} {a b c : M}, a ∈ D.cocycles G i → b ∈ D.cocycles G j →
+    c ∈ D.cocycles G k → ν (ν a b) c - ν a (ν b c) ∈ D.coboundaries G (i + j + k))
+  (hμν : ∀ {i j : ℤ} {a b : M}, a ∈ D.cocycles G i → b ∈ D.cocycles G j →
+    μ a b - ν a b ∈ D.coboundaries G (i + j))
+
+include hμν in
+/-- **Homotopic products induce the same product on cohomology.** If two products `μ` and `ν` of
+degree zero obeying the Leibniz rule differ by a coboundary on every pair of cocycles, then they
+induce the same product `H^i × H^j → H^(i + j)`. -/
+theorem cohomologyMul_eq_of_sub_mem_coboundaries {i j : ℤ} (x : D.cohomology G i)
+    (y : D.cohomology G j) :
+    cohomologyMul μ hμdeg hμL x y = cohomologyMul ν hνdeg hνL x y := by
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  induction y using Submodule.Quotient.induction_on with | H b => ?_
+  rw [cohomologyMul_mk, cohomologyMul_mk, cohomology_mk_eq_mk_iff]
+  exact hμν a.property b.property
+
+include he he' hμone_mul hνdeg hνL hνmul_one hμν in
+/-- **Homotopic products have cohomologous units.** If `μ` and `ν` differ by a coboundary on every
+pair of cocycles, `e` is a left unit of `μ` and `e'` a right unit of `ν` up to coboundaries, then
+`e - e'` is a coboundary. -/
+theorem sub_mem_coboundaries_of_mul_sub_mem_coboundaries : e - e' ∈ D.coboundaries G 0 :=
+  sub_mem_coboundaries_of_surjective_cohomologyMap μ e he hμone_mul ν hνdeg hνL e' he' hνmul_one
+    LinearMap.id (fun ha ↦ ha) (fun _ ↦ rfl) hμν
+    (by rw [cohomologyMap_id]; exact Function.surjective_id)
+
+include hμν in
+/-- **Homotopic products give the same cohomology ring.** If two products `μ` and `ν` of degree
+zero, each associative and unital up to coboundaries on cocycles, differ by a coboundary on every
+pair of cocycles, then their cohomology rings are the same graded ring structure on the degree-wise
+cohomology: the products agree (`LinearMap.cohomologyMul_eq_of_sub_mem_coboundaries`), and so do
+the units, the classes of `e` and `e'`
+(`LinearMap.sub_mem_coboundaries_of_mul_sub_mem_coboundaries`). -/
+theorem cohomologyGRing_eq_of_sub_mem_coboundaries :
+    cohomologyGRing μ hμdeg hμL e he hμone_mul hμmul_one hμassoc =
+      cohomologyGRing ν hνdeg hνL e' he' hνone_mul hνmul_one hνassoc := by
+  have hone : (Submodule.Quotient.mk ⟨e, he⟩ : D.cohomology G 0) =
+      Submodule.Quotient.mk ⟨e', he'⟩ :=
+    cohomology_mk_eq_mk_iff.2 (sub_mem_coboundaries_of_mul_sub_mem_coboundaries μ e he hμone_mul ν
+      hνdeg hνL e' he' hνmul_one hμν)
+  -- With `hone` in context, `congr` stops at the unit fields and closes them by `hone`; without
+  -- it, `congr` would descend to the unprovable `e = e'`. It leaves the product fields, closed by
+  -- `LinearMap.cohomologyMul_eq_of_sub_mem_coboundaries`, and the casts `n • [e]` into degree zero.
+  unfold cohomologyGRing
+  congr
+  all_goals first
+    | funext i j x y
+      exact cohomologyMul_eq_of_sub_mem_coboundaries μ hμdeg hμL ν hνdeg hνL hμν x y
+    | rw [hone]
+
+end Homotopy
 
 end LinearMap
