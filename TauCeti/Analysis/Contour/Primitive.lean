@@ -6,13 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.HasPrimitives
-public import Mathlib.Analysis.Calculus.LogDeriv
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Topology.FilledHull
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.MeasureTheory.Integral.CurveIntegral.Segment
 import TauCeti.Analysis.Calculus.ContDiff.Approximation
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
@@ -20,10 +17,10 @@ import TauCeti.Analysis.Contour.Curve.Concat
 import TauCeti.Analysis.Contour.Curve.FTC
 import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.Analysis.Contour.HomologyCauchy
-import TauCeti.Analysis.Contour.Winding.StarConvex
-import TauCeti.Analysis.Contour.Winding.UnboundedComponent
 import TauCeti.Order.Interval.Set.Piecewise
 import TauCeti.Order.Interval.Set.UnorderedInterval
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.UnboundedComponent
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
 
 /-!
 # Primitives from vanishing contour integrals, and logarithms on sets without holes
@@ -254,14 +251,15 @@ on `U` has a primitive on `U`. -/
 theorem isExactOn_of_filledHull_subset {f : ℂ → ℂ} (hU : IsOpen U) (hUf : filledHull U ⊆ U)
     (hf : DifferentiableOn ℂ f U) : Complex.IsExactOn f U :=
   isExactOn_of_forall_isNullHomologous hU hf fun _ _ _ hγ hγU hclosed =>
-    hγ.isNullHomologous_of_filledHull_subset hclosed hγU hUf
+    hγ.absolutelyContinuousOnInterval.isNullHomologous_of_filledHull_subset hclosed hγU hUf
 
 /-- **Holomorphic functions have primitives on a star-shaped set.** If `U` is open and
 star-shaped about some point, then every function holomorphic on `U` has a primitive on `U`. -/
 theorem isExactOn_of_starConvex {f : ℂ → ℂ} {x : ℂ} (hU : IsOpen U) (hstar : StarConvex ℝ x U)
     (hf : DifferentiableOn ℂ f U) : Complex.IsExactOn f U :=
   isExactOn_of_forall_isNullHomologous hU hf fun _ _ _ hγ hγU hclosed =>
-    isNullHomologous_of_starConvex hstar hγ hclosed fun _ ht => hγU ht
+    hγ.absolutelyContinuousOnInterval.isNullHomologous_of_starConvex hstar hclosed
+      fun _ ht => hγU ht
 
 /-- **A holomorphic logarithm from a primitive of the logarithmic derivative.** If `g` is
 holomorphic and nowhere zero on an open set `U` and `g' / g` has a primitive `h` on `U`, then `g`

@@ -240,6 +240,11 @@ theorem norm_dual_sumSpaceEmbed_le (hC : C.IsRegular) (u : (C.dual hC).SumSpace)
       ((mul_le_of_le_one_right (norm_nonneg _) C.inter.norm_subtypeL_le).trans
         (f₀.opNorm_coprod_le f₁))
 
+/-- The pairing of `v ∈ X₀* + X₁*` with `y ∈ X₀ ∩ X₁` is bounded by `‖v‖ ‖y‖`. -/
+theorem norm_dual_sumSpaceEmbed_apply_le (hC : C.IsRegular) (v : (C.dual hC).SumSpace)
+    (y : C.inter) : ‖(C.dual hC).sumSpaceEmbed v y‖ ≤ ‖v‖ * ‖y‖ :=
+  ((C.dual hC).sumSpaceEmbed v).le_of_opNorm_le (C.norm_dual_sumSpaceEmbed_le hC v) y
+
 section SumDual
 /-- `(f₀, f₁) ∈ (C.dual hC).inter` if and only if `f₀` and `f₁` agree on `C.inter`. -/
 theorem mem_dual_inter_iff (hC : C.IsRegular) {f : StrongDual 𝕜 X₀ × StrongDual 𝕜 X₁} :

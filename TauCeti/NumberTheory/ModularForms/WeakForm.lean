@@ -35,6 +35,15 @@ the weights) and powers, and slashing by `g ∈ SL₂(ℤ)` takes a weak form on
 weight `-12` on `SL₂(ℤ)` that is unbounded at `i∞`, hence not a modular form. In odd weight a weak
 form on a subgroup containing `-1` vanishes.
 
+Conversely, the poles of a weak form at the cusps can be cleared with a power of `Δ`: on a
+finite-index `Γ`, `f` is a weak form of weight `k` exactly when `f Δᵐ` is a modular form of weight
+`k + 12 m` for some `m` (`TauCeti.isWeakForm_iff_exists_modularForm_coe_eq_mul_discriminant_pow`),
+and then every sufficiently large `m` works. Since `Δ` vanishes nowhere on `ℍ`, `f` is recovered as
+`f Δᵐ · Δ⁻ᵐ`. The exponent is uniform over the cusps because the growth rates of a weak form at the
+cusps are bounded by a single constant (`TauCeti.IsWeakForm.exists_forall_isBigO_exp`): the
+translate `f ∣[k] g` depends only on the coset `Γ g`, of which there are finitely many. No
+hypothesis on `-1 ∈ Γ` or on the regularity of the cusps is needed.
+
 ## Main declarations
 
 * `TauCeti.IsWeakForm`: the predicate.
@@ -50,11 +59,17 @@ form on a subgroup containing `-1` vanishes.
   `-1` vanishes.
 * `TauCeti.isWeakForm_inv_discriminant`, `TauCeti.not_exists_modularForm_coe_eq_inv_discriminant`:
   `Δ⁻¹` is a weak form and not a modular form.
+* `TauCeti.IsWeakForm.exists_forall_isBigO_exp`: on a finite-index subgroup, one exponential
+  growth rate bounds a weak form at every cusp.
+* `TauCeti.IsWeakForm.eventually_exists_modularForm_coe_eq_mul_discriminant_pow`,
+  `TauCeti.isWeakForm_iff_exists_modularForm_coe_eq_mul_discriminant_pow`: multiplying by a
+  power of `Δ` clears the poles of a weak form at the cusps, and the weak forms are exactly the
+  quotients of modular forms by powers of `Δ`.
 
 ## References
 
 * F. Calegari, V. Dimitrov and Y. Tang, *The unbounded denominators conjecture*, J. Amer. Math.
-  Soc. 38 (2025), 627–702, Theorem 1.0.1 and Definition 7.4.3.
+  Soc. 38 (2025), 627–702, Theorem 1.0.1, Lemma 4.2.2, Definition 7.4.3 and Lemma 7.4.4.
 * Fred Diamond and Jerry Shurman, *A First Course in Modular Forms*, Graduate Texts in
   Mathematics 228, Springer, 2005, §1.2 and §2.4.
 -/
@@ -300,5 +315,69 @@ theorem not_exists_modularForm_coe_eq_inv_discriminant :
   have := (exists_modularForm_coe_eq_iff.mp h).2 1
   rw [SlashAction.slash_one] at this
   exact not_isBoundedAtImInfty_inv_discriminant this
+
+/-! ### Clearing the poles at the cusps with `Δ` -/
+
+/-- The discriminant `Δ` is a weak form of weight `12` on `SL₂(ℤ)`. -/
+theorem isWeakForm_discriminant : IsWeakForm ⊤ 12 discriminant where
+  mdifferentiable := CuspForm.discriminant.holo'
+  slash_eq γ _ := discriminant_slash γ
+  exists_isBigO_exp g := ⟨0, by
+    rw [discriminant_slash]
+    exact discriminant_isZeroAtImInfty.isBoundedAtImInfty.trans
+      (isBigO_of_le _ fun _ ↦ by simp)⟩
+
+/-- **Uniform growth at the cusps.** On a finite-index subgroup `Γ`, a single real `C` bounds the
+growth of a weak form at every cusp: `f ∣[k] g = O(exp (C · Im τ))` as `Im τ → ∞` for every
+`g ∈ SL₂(ℤ)`. Indeed `f ∣[k] g` depends only on the coset `Γ g`, and there are finitely many. -/
+theorem IsWeakForm.exists_forall_isBigO_exp [Γ.FiniteIndex] (hf : IsWeakForm Γ k f) :
+    ∃ C : ℝ, ∀ g : SL(2, ℤ), (f ∣[k] g) =O[atImInfty] fun τ ↦ Real.exp (C * τ.im) := by
+  choose C hC using hf.exists_isBigO_exp
+  obtain ⟨M, hM⟩ := (Set.finite_range fun q : SL(2, ℤ) ⧸ Γ ↦ C q.out⁻¹).bddAbove
+  refine ⟨M, fun g ↦ ?_⟩
+  -- the representative `r` of the coset `g⁻¹ Γ` has `r⁻¹ = γ g` with `γ ∈ Γ`
+  obtain ⟨γ, hγ⟩ := QuotientGroup.mk_out_eq_mul Γ g⁻¹
+  have hg : f ∣[k] g = f ∣[k] (QuotientGroup.mk g⁻¹ : SL(2, ℤ) ⧸ Γ).out⁻¹ := by
+    rw [hγ, mul_inv_rev, inv_inv, SlashAction.slash_mul, hf.slash_eq _ (inv_mem γ.property)]
+  rw [hg]
+  exact UpperHalfPlane.isBigO_exp_mul_im_of_le (hM ⟨_, rfl⟩) (hC _)
+
+/-- **Clearing the poles at the cusps with `Δ`.** If `f` is a weak form of weight `k` on a
+finite-index subgroup `Γ`, then for every sufficiently large `m` the product `f Δᵐ` is the function
+of a modular form of weight `k + 12 m` on `Γ`. This needs neither `-1 ∈ Γ` nor regularity of the
+cusps. -/
+theorem IsWeakForm.eventually_exists_modularForm_coe_eq_mul_discriminant_pow [Γ.FiniteIndex]
+    (hf : IsWeakForm Γ k f) :
+    ∀ᶠ m : ℕ in atTop, ∃ F : ModularForm Γ (k + 12 * m), ⇑F = f * discriminant ^ m := by
+  obtain ⟨C, hC⟩ := hf.exists_forall_isBigO_exp
+  have hΔ : discriminant =O[atImInfty] fun τ ↦ Real.exp (-(2 * Real.pi) * τ.im) := by
+    simpa [neg_mul] using CuspFormClass.exp_decay_atImInfty (h := 1) CuspForm.discriminant
+      one_pos one_mem_strictPeriods_SL
+  filter_upwards [eventually_ge_atTop ⌈C / (2 * Real.pi)⌉₊] with m hm
+  have hCm : C ≤ 2 * Real.pi * m :=
+    (div_le_iff₀' Real.two_pi_pos).mp ((Nat.le_ceil _).trans (by exact_mod_cast hm))
+  have hweight : k + 12 * (m : ℤ) = k + m * 12 := by ring
+  have hΔm := isWeakForm_discriminant.pow m
+  refine exists_modularForm_coe_eq_iff.mpr
+    ⟨hweight ▸ hf.mul (hΔm.mono (le_top : Γ ≤ ⊤)), fun g ↦ ?_⟩
+  rw [hweight, mul_slash_SL2, hΔm.slash_eq g (Subgroup.mem_top g)]
+  refine ((hC g).mul (hΔ.pow m)).trans (isBigO_of_le _ fun τ ↦ ?_)
+  simp [← Real.exp_natCast_mul, ← Real.exp_add, Real.exp_le_one_iff]
+  nlinarith [τ.im_pos]
+
+/-- **Weak forms are quotients of modular forms by powers of `Δ`.** On a finite-index subgroup
+`Γ`, a function `f` is a weak form of weight `k` exactly when `f Δᵐ` is the function of a modular
+form of weight `k + 12 m` on `Γ` for some `m`. -/
+theorem isWeakForm_iff_exists_modularForm_coe_eq_mul_discriminant_pow [Γ.FiniteIndex] :
+    IsWeakForm Γ k f ↔ ∃ m : ℕ, ∃ F : ModularForm Γ (k + 12 * m), ⇑F = f * discriminant ^ m := by
+  refine ⟨fun hf ↦ hf.eventually_exists_modularForm_coe_eq_mul_discriminant_pow.exists, ?_⟩
+  rintro ⟨m, F, hF⟩
+  have hfF : f = ⇑F * discriminant⁻¹ ^ m := by
+    funext τ
+    simp [hF, discriminant_ne_zero τ]
+  rw [hfF]
+  convert (ModularFormClass.isWeakForm F).mul
+    ((isWeakForm_inv_discriminant.mono (le_top : Γ ≤ ⊤)).pow m) using 1
+  ring
 
 end TauCeti

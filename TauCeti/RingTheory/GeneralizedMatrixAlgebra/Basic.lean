@@ -306,6 +306,15 @@ theorem mul_primitiveIdempotent_of_mem_entry {i j : ι} {x : R} (hx : x ∈ E.en
     x * E.primitiveIdempotent j = x :=
   TauCeti.mul_eq_self_of_mem_cornerSubmodule_right (E.isIdempotentElem_primitiveIdempotent j) hx
 
+/-- The entry module `A_{ij}` lies in the block `eᵢ R eⱼ`. -/
+theorem entry_le_cornerSubmodule (i j : ι) :
+    E.entry i j ≤ TauCeti.cornerSubmodule A (E.idempotent i) (E.idempotent j) := by
+  intro x hx
+  rw [TauCeti.mem_cornerSubmodule_iff A (E.isIdempotentElem_idempotent i)
+    (E.isIdempotentElem_idempotent j), ← E.mem_entry_iff.1 hx]
+  simp only [primitiveIdempotent_def, ← mul_assoc, idempotent_mul_matrixUnit]
+  simp only [mul_assoc, matrixUnit_mul_idempotent]
+
 /-- The entry modules are closed under multiplication: `A_{ij} A_{jk} ⊆ A_{ik}`. -/
 theorem mul_mem_entry {i j k : ι} {x y : R} (hx : x ∈ E.entry i j) (hy : y ∈ E.entry j k) :
     x * y ∈ E.entry i k :=

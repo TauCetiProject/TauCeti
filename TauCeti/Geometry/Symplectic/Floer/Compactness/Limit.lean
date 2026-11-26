@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -37,7 +38,12 @@ The first point is the `C¹` convergence theorem for the coordinate equation
 `∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` on `ℝ × ℝ`, with `C¹` data `J` and `X`, where
 `J² = -1` along the solutions, and a finite-dimensional normed target, it is
 `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub`; this form also applies
-to the coordinate expressions of Floer solutions in a chart of a manifold. In the form of the Floer
+to the coordinate expressions of Floer solutions in a chart of a manifold. When the data also depend
+on a parameter `pₙ → p₀` in a finite-dimensional normed space, as do the data
+`J(cₙ + εₙ z, x)` and `εₙ X(cₙ + εₙ z, x)` of rescaled solutions, the derivatives converge to a
+solution of the equation at `p₀`
+(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub_parametric`, by adjoining
+the parameter to the target); this is the form used for rescaled solutions. In the form of the Floer
 equation used here it is `TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_fderiv_of_floer`. The
 Floer equation is the coordinate equation for the Hamiltonian one-form `X = X_K`
 (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff_fderiv_stdComplexLineImag_sub`).
@@ -68,6 +74,9 @@ The same holds for solutions in a symplectic chart of a manifold, in the namespa
 * `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub`: smooth solutions of
   the coordinate Floer equation on `ℝ × ℝ` with locally bounded derivatives converging pointwise
   converge in `C¹` to a solution.
+* `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub_parametric`: the same
+  `C¹` convergence over converging parameters `pₙ → p₀`, for a finite-dimensional normed target,
+  by adjoining the parameter.
 * `TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_fderiv_of_floer`: smooth Floer solutions
   with locally bounded derivatives converging pointwise converge in `C¹` to a Floer solution.
 * `TauCeti.SymplecticForm.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`:
@@ -153,6 +162,70 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub
   · have h := (fderiv_comp_equivRealProdCLM_I_sub_iff_fderiv_stdComplexLineImag_sub
       (u := v) (y := e.symm z)).1 (heq' (e.symm z) (hmaps hz))
     rwa [show equivRealProdCLM (e.symm z) = z from e.apply_symm_apply z] at h
+
+/-- **The derivatives of solutions of the coordinate Floer equation converge over converging
+parameters.** Let `J` and `X` depend on a parameter `p` of a finite-dimensional normed space `P` as
+well as on the domain point `z ∈ ℝ × ℝ` and the target point `x ∈ V`, jointly `C¹` on an open set
+`W ⊆ (P × (ℝ × ℝ)) × V`, and let `Ω ⊆ ℝ × ℝ` be open. Let `uₙ` be smooth solutions of
+`∂ₜu - X((pₙ, z), u)(0, 1) = J((pₙ, z), u)(∂ₛu - X((pₙ, z), u)(1, 0))` on `Ω`, along which
+`J² = -1`, whose derivatives are bounded on each compact subset of `Ω` uniformly in `n`. If
+`pₙ → p₀` and `uₙ → v` pointwise on `Ω`, with `((p₀, z), v z) ∈ W` for `z ∈ Ω`, then `v` is `C¹`
+on `Ω`, `duₙ → dv` locally uniformly on `Ω`, and `v` solves the equation for `p₀` on `Ω`. This
+applies for instance to rescaled solutions, whose data `J(cₙ + εₙ z, x)` and `εₙ X(cₙ + εₙ z, x)`
+depend on the parameter `(cₙ, εₙ)`. -/
+theorem tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub_parametric {P : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+    {J : (P × (ℝ × ℝ)) × V → V →L[ℝ] V} {X : (P × (ℝ × ℝ)) × V → ℝ × ℝ →L[ℝ] V}
+    {W : Set ((P × (ℝ × ℝ)) × V)} {Ω : Set (ℝ × ℝ)} (hW : IsOpen W) (hJ : ContDiffOn ℝ 1 J W)
+    (hX : ContDiffOn ℝ 1 X W) (hΩ : IsOpen Ω) {p : ℕ → P} {p₀ : P} {u : ℕ → ℝ × ℝ → V}
+    {v : ℝ × ℝ → V} (hp : Tendsto p atTop (𝓝 p₀)) (hvW : ∀ z ∈ Ω, ((p₀, z), v z) ∈ W)
+    (hu : ∀ n, ContDiffOn ℝ (⊤ : ℕ∞) (u n) Ω)
+    (hJsq : ∀ n, ∀ z ∈ Ω, ∀ w, J ((p n, z), u n z) (J ((p n, z), u n z) w) = -w)
+    (hfl : ∀ n, ∀ z ∈ Ω, fderiv ℝ (u n) z stdComplexLineImag -
+        X ((p n, z), u n z) stdComplexLineImag =
+      J ((p n, z), u n z) (fderiv ℝ (u n) z stdComplexLineReal -
+        X ((p n, z), u n z) stdComplexLineReal))
+    (hbd : ∀ C, IsCompact C → C ⊆ Ω → ∃ M, ∀ n, ∀ z ∈ C, ‖fderiv ℝ (u n) z‖ ≤ M)
+    (hlim : ∀ z ∈ Ω, Tendsto (fun n ↦ u n z) atTop (𝓝 (v z))) :
+    ContDiffOn ℝ 1 v Ω ∧
+      TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u n)) (fderiv ℝ v) atTop Ω ∧
+      ∀ z ∈ Ω, fderiv ℝ v z stdComplexLineImag - X ((p₀, z), v z) stdComplexLineImag =
+        J ((p₀, z), v z)
+          (fderiv ℝ v z stdComplexLineReal - X ((p₀, z), v z) stdComplexLineReal) := by
+  -- Apply the theorem for a single datum to the solutions `z ↦ ((pₙ, 0), uₙ z)` of the data
+  -- adjoining the parameter, whose derivatives are those of `uₙ` in the second factor.
+  set L := ContinuousLinearMap.inr ℝ (P × P) V
+  set S := ContinuousLinearMap.snd ℝ (P × P) V
+  have hSL : S ∘L L = ContinuousLinearMap.id ℝ V := by
+    ext x
+    simp [S, L]
+  have hdL (a : P × P) (f : ℝ × ℝ → V) (z : ℝ × ℝ) :
+      fderiv ℝ (fun w ↦ (a, f w)) z = L ∘L fderiv ℝ f z :=
+    fderiv_const_prodMk a f z
+  obtain ⟨hGc, hconv, hsol⟩ := tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub
+    (J := augmentedJ J) (X := augmentedX X) (hW.preimage augmentedPoint.continuous)
+    (contDiffOn_augmentedJ hJ) (contDiffOn_augmentedX hX) hΩ
+    (u := fun n w ↦ ((p n, 0), u n w)) (v := fun w ↦ ((p₀, 0), v w))
+    (fun z hz ↦ by simpa using hvW z hz) (fun n ↦ contDiffOn_const.prodMk (hu n))
+    (fun n z hz w ↦ by ext <;> simp [hJsq n z hz])
+    (fun n z hz ↦ by ext <;> simp [hdL, L, hfl n z hz])
+    (fun C hC hCΩ ↦ by
+      obtain ⟨M, hM⟩ := hbd C hC hCΩ
+      exact ⟨‖L‖ * M, fun n z hz ↦ by
+        rw [hdL]
+        exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+          (mul_le_mul_of_nonneg_left (hM n z hz) (norm_nonneg _))⟩)
+    (fun z hz ↦ ((hp.prodMk_nhds tendsto_const_nhds).prodMk_nhds (hlim z hz)))
+  refine ⟨?_, ?_, fun z hz ↦ ?_⟩
+  · exact (S.contDiff.comp_contDiffOn hGc).congr fun z _ ↦ rfl
+  · -- `duₙ = S ∘ d((pₙ, 0), uₙ)` and `dv = S ∘ d((p₀, 0), v)`.
+    have h := (ContinuousLinearMap.compL ℝ (ℝ × ℝ) _ V
+      S).uniformContinuous.comp_tendstoLocallyUniformlyOn hconv
+    simp only [Function.comp_def, hdL, ContinuousLinearMap.compL_apply,
+      ← ContinuousLinearMap.comp_assoc, hSL, ContinuousLinearMap.id_comp] at h
+    exact h
+  · have h := congrArg Prod.snd (hsol z hz)
+    simpa [hdL, L] using h
 
 end TauCeti.Floer
 

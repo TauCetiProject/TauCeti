@@ -23,7 +23,8 @@ singular-value sequence, is recovered from these two numbers.
 For an orthonormal basis `(e₀, e₁)` of a two-dimensional space and the operators whose matrices in
 that basis are `diag(d₀, d₁)` and `[[0, b], [c, 0]]`, the singular values are listed explicitly.
 The symmetric off-diagonal matrix `[[0, r], [r, 0]]` has singular values `(‖r‖, ‖r‖)`, while the
-one-sided triangular matrix `[[0, 0], [r, 0]]` has singular values `(‖r‖, 0, 0, …)`.
+one-sided triangular matrix `[[0, 0], [r, 0]]` has singular values `(‖r‖, 0, 0, …)`. Over `ℝ`, the
+shear `[[1, t], [0, 1]]` has squared singular values `(2 + t² ± |t| √(t² + 4)) / 2`.
 
 ## Main declarations
 
@@ -43,6 +44,8 @@ one-sided triangular matrix `[[0, 0], [r, 0]]` has singular values `(‖r‖, 0,
   `(‖c‖, ‖b‖, 0, …)` when `‖b‖ ≤ ‖c‖`, with the special cases
   `Matrix.singularValues_toLin_offDiag_self_fin_two` (`[[0, r], [r, 0]]`) and
   `Matrix.singularValues_toLin_offDiag_zero_fin_two` (`[[0, 0], [r, 0]]`).
+* `Matrix.sq_singularValues_toLin_shear_fin_two`: the real shear `[[1, t], [0, 1]]` has squared
+  singular values `(2 + t² ± |t| √(t² + 4)) / 2`.
 
 ## References
 
@@ -201,5 +204,43 @@ theorem singularValues_toLin_offDiag_self_fin_two (e : OrthonormalBasis (Fin 2) 
 theorem singularValues_toLin_offDiag_zero_fin_two (e : OrthonormalBasis (Fin 2) 𝕜 E) (r : 𝕜) :
     (toLin e.toBasis e.toBasis !![0, 0; r, 0]).singularValues = Finsupp.single 0 ‖r‖ := by
   simpa using singularValues_toLin_offDiag_fin_two e (b := 0) (c := r) (by simp)
+
+section Shear
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **Shear planar model.** The operator whose matrix in an orthonormal basis `(e₀, e₁)` of a real
+plane is the shear `[[1, t], [0, 1]]` has squared singular values
+`σ₀² = (2 + t² + |t| √(t² + 4)) / 2` and `σ₁² = (2 + t² - |t| √(t² + 4)) / 2`: its Gram operator
+has trace `2 + t²` and determinant `1`. -/
+theorem sq_singularValues_toLin_shear_fin_two (e : OrthonormalBasis (Fin 2) ℝ E) (t : ℝ) :
+    (toLin e.toBasis e.toBasis !![1, t; 0, 1]).singularValues 0 ^ 2 =
+        (2 + t ^ 2 + |t| * √(t ^ 2 + 4)) / 2 ∧
+      (toLin e.toBasis e.toBasis !![1, t; 0, 1]).singularValues 1 ^ 2 =
+        (2 + t ^ 2 - |t| * √(t ^ 2 + 4)) / 2 := by
+  set A := toLin e.toBasis e.toBasis !![1, t; 0, 1]
+  have hE : finrank ℝ E = 2 := by rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
+  have hA0 : A (e 0) = e 0 := by
+    rw [← e.coe_toBasis, toLin_self]
+    simp [Fin.sum_univ_two]
+  have hA1 : A (e 1) = t • e 0 + e 1 := by
+    rw [← e.coe_toBasis, toLin_self]
+    simp [Fin.sum_univ_two]
+  have htr : RCLike.re (LinearMap.trace ℝ E (adjoint A ∘ₗ A)) = 2 + t ^ 2 := by
+    rw [A.trace_adjoint_comp_self_eq_sum_norm_apply_sq e, Fin.sum_univ_two, hA0, hA1]
+    simp [norm_add_sq_real, norm_smul, real_inner_smul_left, e.orthonormal.1,
+      e.orthonormal.inner_eq_zero]
+    ring
+  have hdet : RCLike.re (adjoint A ∘ₗ A).det = 1 := by
+    rw [det_comp, det_adjoint, det_toLin, det_fin_two_of]
+    norm_num
+  have hdisc : √((2 + t ^ 2) ^ 2 - 4 * 1) = |t| * √(t ^ 2 + 4) := by
+    rw [show (2 + t ^ 2) ^ 2 - 4 * 1 = t ^ 2 * (t ^ 2 + 4) by ring,
+      Real.sqrt_mul (sq_nonneg t), Real.sqrt_sq_eq_abs]
+  refine ⟨?_, ?_⟩
+  · rw [A.sq_singularValues_zero_of_finrank_eq_two hE, htr, hdet, hdisc]
+  · rw [A.sq_singularValues_one_of_finrank_eq_two hE, htr, hdet, hdisc]
+
+end Shear
 
 end Matrix

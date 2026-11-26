@@ -94,6 +94,16 @@ theorem act_comp_boundary : M.act.comp M.boundary = MulAut.conj := by
   ext x y
   simp
 
+/-- The action of `∂ x * h` is the action of `h` followed by conjugation by `x`. -/
+theorem act_boundary_mul (x : T) (h : H) (y : T) :
+    M.act (M.boundary x * h) y = x * M.act h y * x⁻¹ := by
+  rw [map_mul, MulAut.mul_apply, act_boundary]
+
+/-- The action of `h * ∂ x` is conjugation by `x` followed by the action of `h`. -/
+theorem act_mul_boundary (h : H) (x : T) (y : T) :
+    M.act (h * M.boundary x) y = M.act h (x * y * x⁻¹) := by
+  rw [map_mul, MulAut.mul_apply, act_boundary]
+
 /-- The kernel of the boundary of a crossed module is central. -/
 theorem ker_le_center : M.boundary.ker ≤ Subgroup.center T := by
   intro x hx

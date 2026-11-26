@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.WeilDeligne.BaseChange
 public import TauCeti.RepresentationTheory.WeilDeligne.Operations
+public import TauCeti.RepresentationTheory.WeilDeligne.Restriction
 public import TauCeti.RepresentationTheory.WeilDeligne.Special
 public import TauCeti.RepresentationTheory.WeilDeligne.Unramified
 
@@ -21,8 +23,11 @@ conjugation relation `r(w) N r(w)⁻¹ = q ^ deg w • N` has factor `1` on `I`.
 
 The inertial type is functorial in morphisms and isomorphisms of parameters, commutes with
 transport, and is computed termwise on direct sums, duals, twists (by the restricted character)
-and tensor products. Unramified parameters and the special parameters `Sp(n)` have trivial
-inertial type.
+and tensor products. It commutes with scalar extension, and restriction along `ι : W' →* W` with
+`deg ∘ ι = f · deg'` restricts the inertial type along the induced map
+`ker deg' → ker deg` (`MonoidHom.subgroupComap` after `Subgroup.inclusion`, using
+`TauCeti.WeilDeligneParameter.ker_le_comap_ker_of_deg`). Unramified parameters and the
+special parameters `Sp(n)` have trivial inertial type.
 
 ## Main definitions
 
@@ -36,6 +41,9 @@ inertial type.
 * `TauCeti.WeilDeligneParameter.inertialType_mul_N`: the monodromy commutes with the inertial type.
 * `TauCeti.WeilDeligneParameter.inertialType_prod`, `inertialType_dual`, `inertialType_twist`,
   `inertialType_tensor`, `inertialType_transport`: compatibility with the operations.
+* `TauCeti.WeilDeligneParameter.inertialType_baseChange`,
+  `TauCeti.WeilDeligneParameter.inertialType_restrict`: compatibility with scalar extension and
+  with restriction.
 * `TauCeti.WeilDeligneParameter.inertialType_unramified`,
   `TauCeti.WeilDeligneParameter.inertialType_special`: unramified parameters and `Sp(n)` have
   trivial inertial type.
@@ -89,6 +97,12 @@ theorem Hom.inertialType_apply {D : WeilDeligneParameter E W V deg q}
     {D' : WeilDeligneParameter E W V' deg q} (f : Hom D D') (v : V) :
     f.inertialType v = f v :=
   congrFun (f.toIntertwiningMap.coe_res _) v
+
+@[simp]
+theorem Hom.inertialType_toLinearMap {D : WeilDeligneParameter E W V deg q}
+    {D' : WeilDeligneParameter E W V' deg q} (f : Hom D D') :
+    f.inertialType.toLinearMap = f.toLinearMap :=
+  f.toIntertwiningMap.toLinearMap_res _
 
 @[simp]
 theorem Hom.inertialType_id (D : WeilDeligneParameter E W V deg q) :
@@ -175,6 +189,36 @@ theorem inertialType_tensor [SeparatelyContinuousMul W] :
     (D.tensor D').inertialType = D.inertialType.tprod D'.inertialType := by
   ext w : 1
   simp [inertialType]
+
+/-! ### Scalar extension and restriction -/
+
+/-- The inertial type of a scalar extension is the scalar extension of the inertial type. -/
+@[simp]
+theorem inertialType_baseChange (E' : Type*) [Field E'] [Algebra E E'] :
+    (D.baseChange E').inertialType = Representation.baseChange E' D.inertialType := by
+  ext w : 1
+  simp [inertialType_apply]
+
+section Restrict
+
+variable {W' : Type*} [Group W'] [TopologicalSpace W'] {deg' : W' →* Multiplicative ℤ}
+  {ι : W' →* W} {f : ℕ}
+
+/-- The inertial type of a restriction along `ι` is the inertial type restricted along the induced
+map `ker deg' → ker deg`. -/
+@[simp]
+theorem inertialType_restrict (hι : Continuous ι)
+    (hf : ∀ w, (deg (ι w)).toAdd = f * (deg' w).toAdd) :
+    (D.restrict ι hι f hf).inertialType =
+      D.inertialType.comp
+        ((ι.subgroupComap deg.ker).comp (Subgroup.inclusion (ker_le_comap_ker_of_deg hf))) := by
+  ext w : 1
+  simp only [inertialType_apply, MonoidHom.comp_apply, restrict_r_apply]
+  rw [← Subgroup.coe_inclusion (ker_le_comap_ker_of_deg hf) w]
+  -- `subgroupComap_apply_coe` is stated on `Submonoid.comap`, so `simp` and `rw` cannot use it.
+  exact congrArg D.r (ι.subgroupComap_apply_coe deg.ker _).symm
+
+end Restrict
 
 /-! ### Examples -/
 

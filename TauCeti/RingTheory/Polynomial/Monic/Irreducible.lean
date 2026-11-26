@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.SpecificDegree
-public import Mathlib.RingTheory.Polynomial.DegreeLT
 public import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.Algebra.Polynomial.SpecificDegree
+import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Monic irreducible polynomials of a fixed degree
@@ -77,12 +77,8 @@ theorem mem_monicIrreduciblesOfDegree_iff {d : ℕ} {g : R[X]} :
 /-- **Over a finite coefficient ring there are finitely many monic irreducibles of each
 degree.** -/
 theorem finite_monicIrreduciblesOfDegree [Finite R] (d : ℕ) :
-    (monicIrreduciblesOfDegree R d).Finite := by
-  nontriviality R
-  have : Finite (degreeLT R d) := .of_equiv _ (degreeLTEquiv R d).toEquiv.symm
-  have hmon : {g : R[X] | g.Monic ∧ g.natDegree = d}.Finite :=
-    Set.finite_coe_iff.mp (.of_equiv _ (monicEquivDegreeLT d).symm)
-  exact hmon.subset fun g hg => ⟨hg.1, hg.2.2⟩
+    (monicIrreduciblesOfDegree R d).Finite :=
+  (finite_setOf_monic_natDegree_eq R d).subset fun _ hg => ⟨hg.1, hg.2.2⟩
 
 variable {R} in
 /-- The monic irreducible polynomials of degree `n` other than `X` are those with nonzero constant
