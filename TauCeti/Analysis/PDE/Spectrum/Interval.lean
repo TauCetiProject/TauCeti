@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import TauCeti.Analysis.Fourier.SineSeries
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.PDE.ClassicalSolution
+public import TauCeti.Analysis.PDE.IntervalDomain
 public import TauCeti.Analysis.PDE.Spectrum.Basic
 public import TauCeti.Analysis.PDE.Spectrum.Operator.Mixed
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
@@ -57,15 +58,12 @@ Rellich compactness on `(a, b)` comes from Rellich compactness on a ball, which 
 
 ## Main declarations
 
-* `TauCeti.PDE.intervalDomain`: the interval `(a, b)` as an open subset of the Euclidean line.
 * `TauCeti.PDE.exists_value_ae_eq_sin_and_energyFormH1_eq`: the sine modes are weak Dirichlet
   eigenfunctions.
 * `TauCeti.PDE.energyFormH1_eq_of_value_ae_eq_sin`, `TauCeti.PDE.norm_value_sq_of_value_ae_eq_sin`
   and `TauCeti.PDE.energyFormH1_self_eq_of_value_ae_eq_sin`: every element of `H¹₀(a, b)` with a
   sine mode as value is an eigenfunction, with `L²` norm `√((b - a) / 2)` and the corresponding
   Dirichlet energy.
-* `TauCeti.PDE.setIntegral_intervalDomain`: integrals over the interval domain are integrals over
-  the real interval.
 * `TauCeti.PDE.exists_lt_sq_natCast_mul_pi_div` and
   `TauCeti.PDE.exists_lt_and_energyFormH1_eq_intervalDomain`: the Dirichlet eigenvalues of `-Δ`
   on `(a, b)` are unbounded.
@@ -105,61 +103,9 @@ namespace PDE
 open Bornology InnerProductSpace Laplacian MeasureTheory Set TopologicalSpace
 open scoped Real InnerProductSpace Distributions Gradient ContDiff ENNReal
 
-/-- The open interval `(a, b)`, as an open subset of the Euclidean line `EuclideanSpace ℝ (Fin 1)`.
--/
-def intervalDomain (a b : ℝ) : Opens (EuclideanSpace ℝ (Fin 1)) :=
-  ⟨{x | x 0 ∈ Ioo a b}, isOpen_Ioo.preimage (by fun_prop)⟩
-
-@[simp]
-theorem mem_intervalDomain {a b : ℝ} {x : EuclideanSpace ℝ (Fin 1)} :
-    x ∈ intervalDomain a b ↔ x 0 ∈ Ioo a b :=
-  Iff.rfl
-
-/-- As a set, the interval domain consists of the points of the line whose coordinate lies in
-`(a, b)`. -/
-theorem coe_intervalDomain (a b : ℝ) :
-    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = {x | x 0 ∈ Ioo a b} := by
-  ext x
-  exact mem_intervalDomain
-
-/-- The interval domain `(a, b)` is preconnected. -/
-theorem isPreconnected_intervalDomain (a b : ℝ) :
-    IsPreconnected (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) :=
-  ((convex_Ioo a b).linear_preimage (EuclideanSpace.projₗ (0 : Fin 1))).isPreconnected
-
 variable {a b : ℝ}
 
 attribute [local instance] W1p0.instNormedAddCommGroup
-
-/-- The Euclidean line is isometric to `ℝ`, with inverse `x ↦ x 0`. -/
-private def lineEquiv : ℝ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 1) :=
-  (OrthonormalBasis.singleton (Fin 1) ℝ).repr
-
-private theorem lineEquiv_symm_apply (x : EuclideanSpace ℝ (Fin 1)) : lineEquiv.symm x = x 0 := by
-  rw [LinearIsometryEquiv.symm_apply_eq]
-  ext i
-  fin_cases i
-  exact (OrthonormalBasis.singleton_repr (ι := Fin 1) (𝕜 := ℝ) (x 0) 0).symm
-
-private theorem measurePreserving_lineEquiv : MeasurePreserving lineEquiv volume volume :=
-  (OrthonormalBasis.singleton (Fin 1) ℝ).measurePreserving_repr
-
-private theorem measurePreserving_lineEquiv_symm :
-    MeasurePreserving lineEquiv.symm volume volume :=
-  (OrthonormalBasis.singleton (Fin 1) ℝ).measurePreserving_repr_symm
-
-private theorem lineEquiv_apply_zero (t : ℝ) : lineEquiv t 0 = t := by
-  rw [← lineEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
-
-private theorem coe_intervalDomain_eq_preimage :
-    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = lineEquiv.symm ⁻¹' Ioo a b := by
-  ext x
-  simp [lineEquiv_symm_apply]
-
-private theorem preimage_lineEquiv_intervalDomain :
-    lineEquiv ⁻¹' (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = Ioo a b := by
-  rw [coe_intervalDomain_eq_preimage, ← preimage_comp]
-  simp
 
 /-- The `k`-th Dirichlet mode `t ↦ sin (k π (t - a) / (b - a))` of the interval `(a, b)`. -/
 private abbrev sineMode (a b : ℝ) (k : ℕ) (t : ℝ) : ℝ :=
@@ -220,12 +166,6 @@ private theorem integral_sineMode_sq {k : ℕ} (hk : 0 < k) :
     Real.sin_zero, smul_eq_mul, hc_def]
   field_simp
   ring
-
-/-- The interval domain `(a, b)` is bounded. -/
-theorem isBounded_intervalDomain :
-    IsBounded (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) := by
-  rw [coe_intervalDomain_eq_preimage]
-  exact lineEquiv.symm.antilipschitzWith.isBounded_preimage (Metric.isBounded_Ioo a b)
 
 /-- The interval domain `(a, b)` is the ball of radius `(b - a) / 2` about the midpoint. -/
 private theorem coe_intervalDomain_eq_ball :
@@ -306,19 +246,6 @@ theorem energyFormH1_eq_of_value_ae_eq_sin (hab : a < b) (k : ℕ)
   have : u = w := Subtype.ext (W1p.ext_value (Lp.ext (hu.trans hw.1.symm)))
   rw [this, W1p0.valueL_apply, W1p0.valueL_apply]
   exact hw.2 v
-
-/-- Integrals over the interval domain are integrals over the real interval: for `f : ℝ → E`,
-the integral of `x ↦ f (x 0)` over `TauCeti.PDE.intervalDomain a b` is `∫ t in Ioo a b, f t`. -/
-theorem setIntegral_intervalDomain {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (f : ℝ → E) :
-    ∫ x in (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))), f (x 0) =
-      ∫ t in Ioo a b, f t := by
-  have h := measurePreserving_lineEquiv.setIntegral_preimage_emb
-    lineEquiv.toHomeomorph.measurableEmbedding (fun x => f (x 0))
-    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))
-  rw [preimage_lineEquiv_intervalDomain] at h
-  simp only [lineEquiv_apply_zero] at h
-  exact h.symm
 
 /-- **The `L²` norm of a sine mode.** For `k ≥ 1`, an element of `H¹(a, b)` whose value is
 `x ↦ sin (k π (x - a) / (b - a))` has `‖u‖²_{L²(a, b)} = (b - a) / 2`. -/
@@ -420,15 +347,6 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
     Real.sin_pi_div_two] at h1
   exact one_ne_zero h1
 
-/-- Integrals over the interval domain are integrals over the real interval of the function read
-through the isometry `t ↦ lineEquiv t` of `ℝ` onto the line. -/
-private theorem setIntegral_intervalDomain_eq_setIntegral_comp {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] (F : EuclideanSpace ℝ (Fin 1) → E) :
-    ∫ x in (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))), F x =
-      ∫ t in Ioo a b, F (lineEquiv t) := by
-  rw [← setIntegral_intervalDomain]
-  simp only [← lineEquiv_symm_apply, LinearIsometryEquiv.apply_symm_apply]
-
 /-- An element of `L²(a, b)` orthogonal to a family of modes `t ↦ s k t`, `k` ranging over the
 indices with `P k`, vanishes, provided the family is complete among the integrable functions on the
 real interval `(a, b]`. Reading `f` on the real line through the isometry `x ↦ x 0` reduces the
@@ -457,7 +375,7 @@ private theorem eq_zero_of_forall_setIntegral_mul_eq_zero (hab : a < b) {P : ℕ
     exact (Lp.memLp f).comp_measurePreserving hmpΩ
   have hg0 := hs _ (hg.integrable one_le_two) fun k hk => by
     rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, ← h k hk,
-      setIntegral_intervalDomain_eq_setIntegral_comp]
+      setIntegral_intervalDomain_eq_setIntegral_Ioo]
     simp only [lineEquiv_apply_zero]
   rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc] at hg0
   refine Lp.ext ?_
@@ -643,7 +561,7 @@ private theorem inner_gradient_restrictL_ofTestFunctionₗ_eq (hab : a < b) (k :
         W1p.gradient_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := 2)
           (le_top : intervalDomain a b ≤ ⊤) ψ] with x h1 h2
       rw [h1, h2]
-    rw [setIntegral_intervalDomain_eq_setIntegral_comp]
+    rw [setIntegral_intervalDomain_eq_setIntegral_Ioo]
     refine setIntegral_congr_fun measurableSet_Ioo fun t ht => ?_
     simp only [hφ]
     exact inner_gradient_comp_lineEquiv_eq hχ k ψ ht
@@ -659,7 +577,7 @@ private theorem inner_gradient_restrictL_ofTestFunctionₗ_eq (hab : a < b) (k :
         W1p.value_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := 2)
           (le_top : intervalDomain a b ≤ ⊤) ψ] with x h1 h2
       rw [h1, h2]
-    rw [setIntegral_intervalDomain_eq_setIntegral_comp]
+    rw [setIntegral_intervalDomain_eq_setIntegral_Ioo]
     refine setIntegral_congr_fun measurableSet_Ioo fun t ht => ?_
     simp only [hφt t ht, Function.comp_apply]
   rw [hgrad, hval, ← integral_Ioc_eq_integral_Ioo, ← integral_Ioc_eq_integral_Ioo,
