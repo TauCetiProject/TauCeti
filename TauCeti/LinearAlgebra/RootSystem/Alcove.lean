@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Basic
-public import TauCeti.LinearAlgebra.RootSystem.AffineCartanMatrix
+public import TauCeti.LinearAlgebra.RootSystem.Affine.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.CoweightLattice.Basis
 
@@ -52,7 +52,8 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.closedFundamentalAlcove`: the closed fundamental alcove, cut out by the
   non-strict inequalities.
 * `RootPairing.separatingAffineRoots`: the affine roots `αⱼ - k` positive at one point and negative
-  at another; for a reduced pairing, one for each affine root hyperplane separating the two points.
+  at another; for a reduced pairing over a linearly ordered field, one for each affine root
+  hyperplane separating the two points.
 * `RootPairing.Base.affineSimpleRoot`: the affine simple roots `a₀ = 1 - θ` and `aᵢ = αᵢ`,
   indexed by the nodes of the affine Dynkin diagram, whose zero sets are the walls of the
   fundamental alcove.
@@ -195,6 +196,12 @@ theorem neg_one_lt_root'_of_mem_fundamentalAlcove (hx : x ∈ fundamentalAlcove 
   simp only [root', root_neg_index, map_neg, LinearMap.neg_apply] at h
   linarith
 
+/-- Every root is bounded below by an integer at a point of the fundamental alcove: it is greater
+than `-1` there. -/
+theorem exists_intCast_lt_root'_of_mem_fundamentalAlcove (hx : x ∈ fundamentalAlcove P b)
+    (j : ι) : ∃ n : ℤ, (n : R) < P.root' j x :=
+  ⟨-1, by simpa using neg_one_lt_root'_of_mem_fundamentalAlcove hx j⟩
+
 /-- **The fundamental alcove is the set of points where every positive root takes a value in the
 open interval `(0, 1)`.** -/
 theorem mem_fundamentalAlcove_iff_forall_isPos :
@@ -264,12 +271,13 @@ section SeparatingAffineRoots
 variable [Preorder R]
 
 /-- The **affine roots separating `x` from `y`**: the affine roots `αⱼ - k`, encoded as pairs
-`(j, k)` of a root index and an integer, that are positive at `x` and negative at `y`. Each affine
-root hyperplane `αⱼ = k` strictly separating `x` from `y` gives one of them, `(j, k)` or `(-j, -k)`
+`(j, k)` of a root index and an integer, that are positive at `x` and negative at `y`. The
+definition only needs a preorder on `R`. Over a linearly ordered field, each affine root
+hyperplane `αⱼ = k` strictly separating `x` from `y` gives one of them, `(j, k)` or `(-j, -k)`
 according to the side on which `x` lies. The set counts indexed affine roots rather than
 hyperplanes: in a nonreduced pairing, where `2αⱼ` may also be a root, the affine roots `αⱼ - k`
-and `2αⱼ - 2k` have the same hyperplane. When `P` is reduced, the set has exactly one element for
-each separating hyperplane. -/
+and `2αⱼ - 2k` have the same hyperplane. When `R` is a linearly ordered field and `P` is reduced,
+the set has exactly one element for each separating hyperplane. -/
 def separatingAffineRoots (x y : N) : Set (ι × ℤ) :=
   {p | (p.2 : R) < P.root' p.1 x ∧ P.root' p.1 y < p.2}
 
@@ -290,14 +298,15 @@ section SeparatingAffineRootsAlcove
 variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [Nonempty ι] [P.IsCrystallographic]
   [P.IsReduced] [P.IsIrreducible] {P b}
 
-/-- **No affine root separates two points of the closed fundamental alcove.** An affine root
-`αⱼ - k` positive at a point of the closed alcove has `k ≤ 0`, since every root is at most `1`
-there, and `k = 0` only for a positive root `αⱼ`, since every negative root is nonpositive there;
-every root is at least `-1` on the closed alcove, and every positive root is nonnegative there. -/
+/-- **No affine root separates two points of the closed fundamental alcove**, even when the two
+points lie on its walls. -/
 theorem separatingAffineRoots_eq_empty_of_mem_closedFundamentalAlcove {x y : N}
     (hx : x ∈ closedFundamentalAlcove P b) (hy : y ∈ closedFundamentalAlcove P b) :
     P.separatingAffineRoots x y = ∅ := by
   refine Set.eq_empty_of_forall_notMem fun ⟨j, k⟩ ⟨hxk, hyk⟩ ↦ ?_
+  -- An affine root `αⱼ - k` positive at `x` has `k ≤ 0`, since every root is at most `1` on the
+  -- closed alcove, and `k = 0` only for a positive root `αⱼ`, since every negative root is
+  -- nonpositive there.
   have hk : k < 1 := by
     exact_mod_cast hxk.trans_le ((root'_le_root'_highestRoot hx.1 j).trans hx.2)
   have hk' : k ≤ -1 ∨ k = 0 := by omega

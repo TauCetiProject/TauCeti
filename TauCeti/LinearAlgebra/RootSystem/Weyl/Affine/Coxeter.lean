@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl.Coxeter
-public import TauCeti.LinearAlgebra.RootSystem.AffineRealization
+public import TauCeti.LinearAlgebra.RootSystem.Affine.Realization
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Affine.Alcove
 import TauCeti.GroupTheory.Coxeter.Matsumoto
 import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl.TitsCone
@@ -19,8 +19,9 @@ linearly ordered field `R`, with simple roots `αᵢ` and highest root `θ`. Thi
 proves that the affine Weyl group `W_aff` (`RootPairing.affineWeylGroup`) is a Coxeter system for
 the Coxeter matrix `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix` of the affine Cartan matrix
 `A = RootPairing.Base.affineCartanMatrix`, whose simple reflections are the reflections in the
-walls of the fundamental alcove `RootPairing.fundamentalAlcove`: `s_{θ,1}` at the affine node
-`none` and `s_{αᵢ,0}` at the node of `αᵢ`, the nodes `Option b.support` that index the affine
+walls of the fundamental alcove `RootPairing.fundamentalAlcove`
+(`RootPairing.Base.affineSimpleReflection`): `s_{θ,1}` at the affine node `none` and `s_{αᵢ,0}` at
+the node of `αᵢ`, the nodes `Option b.support` that index the affine
 simple roots `RootPairing.Base.affineSimpleRoot`.
 
 The exchange property is not proved again. Instead `W_aff` is identified with the Weyl group of a
@@ -45,8 +46,8 @@ group fixes. Consequently:
   which every root is bounded below by an integer
   (`RootPairing.exists_mem_apply_mem_closedFundamentalAlcove_of_affineCoreflection_mem`), as is the
   image `f x` of a point `x` of the fundamental alcove under any `f ∈ W_aff`
-  (`RootPairing.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup`); and the
-  affine Weyl group acts freely on the alcoves
+  (`RootPairing.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup`); and the affine Weyl group
+  acts freely on the translates of the fundamental alcove
   (`RootPairing.eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove`), so every element
   of `W_aff` is a product of wall reflections.
 
@@ -58,7 +59,7 @@ For `x` in the fundamental alcove, the length of `f ∈ W_aff` is the number of 
 `αⱼ - k` positive at `x` and negative at `f x` (`RootPairing.separatingAffineRoots`), that is the
 number of affine root hyperplanes separating the fundamental alcove from its image under `f`.
 A wall reflection changes this number by exactly one
-(`RootPairing.ncard_separatingAffineRoots_affineCoreflection_add_one_of_affineSimpleRoot_neg`),
+(`RootPairing.ncard_separatingAffineRoots_affineSimpleReflection_add_one_of_affineSimpleRoot_neg`),
 so it is at most the length; descending through the walls separating `f x` from the alcove shows
 that it is at least the length.
 
@@ -75,7 +76,8 @@ that it is at least the length.
   `RootPairing.Base.affineWeylGroupEquiv_toAffineEquiv_coreflection`: the isomorphism carries
   `s_{θ,1}` and `s_{αᵢ,0} = s_{αᵢ}` to the simple reflections at the affine node and at the node
   of `αᵢ`.
-* `RootPairing.Base.coe_affineWeylCoxeterSystem_simple_none` and
+* `RootPairing.Base.coe_affineWeylCoxeterSystem_simple`,
+  `RootPairing.Base.coe_affineWeylCoxeterSystem_simple_none` and
   `RootPairing.Base.coe_affineWeylCoxeterSystem_simple_some`: the simple reflections of the
   Coxeter system are the wall reflections.
 * `RootPairing.Base.affineWeylCoxeterSystem_length`: **the length of an element is the number of
@@ -109,48 +111,6 @@ section Comparison
 
 variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Module R M] [Module R N]
   {P : RootPairing ι R M N} [Finite ι] [Nonempty ι] (b : P.Base)
-
-/-- The reflection in the wall of the fundamental alcove at a node of the affine Dynkin diagram:
-`s_{θ,1}` at the affine node and `s_{αᵢ,0}` at the node of a simple root `αᵢ`. -/
-private noncomputable def wallReflection : Option b.support → N ≃ᵃ[R] N
-  | none => P.affineCoreflection b.highestRoot 1
-  | some i => P.affineCoreflection i 0
-
-/-- The wall reflection at `k`, written as in the wall words of the alcove descent. -/
-private lemma wallReflection_eq_elim (k : Option b.support) :
-    b.wallReflection k =
-      k.elim (P.affineCoreflection b.highestRoot 1) (fun i ↦ P.affineCoreflection i 0) := by
-  rcases k with _ | i <;> rfl
-
-private lemma wallReflection_mem (k : Option b.support) :
-    b.wallReflection k ∈ P.affineWeylGroup := by
-  rcases k with _ | i
-  · have := P.affineCoreflection_mem_affineWeylGroup b.highestRoot 1
-    rwa [Int.cast_one] at this
-  · have := P.affineCoreflection_mem_affineWeylGroup i 0
-    rwa [Int.cast_zero] at this
-
-/-- The wall reflection at `k` is `x ↦ x - aₖ(x) αₖ^∨`, with `α₀^∨ = -θ^∨`. -/
-private lemma wallReflection_apply (k : Option b.support) (x : N) :
-    b.wallReflection k x = x - b.affineSimpleRoot k x • P.coroot (b.affineSimpleRootIndex k) := by
-  rcases k with _ | i
-  · simp only [wallReflection, affineCoreflection_apply_eq_sub, affineSimpleRoot_none,
-      affineSimpleRootIndex_none, coroot_reflectionPerm, coreflection_apply_self]
-    module
-  · simp only [wallReflection, affineCoreflection_apply_eq_sub, affineSimpleRoot_some,
-      affineSimpleRootIndex_some, sub_zero]
-
-private lemma affineSimpleRoot_wallReflection (k : Option b.support) (x : N) :
-    b.affineSimpleRoot k (b.wallReflection k x) = -b.affineSimpleRoot k x := by
-  rcases k with _ | i
-  · simp only [wallReflection, affineSimpleRoot_none, root'_affineCoreflection_self]
-    ring
-  · simp only [wallReflection, affineSimpleRoot_some, root'_affineCoreflection_self]
-    ring
-
-private lemma wallReflection_wallReflection (k : Option b.support) (x : N) :
-    b.wallReflection k (b.wallReflection k x) = x := by
-  rcases k with _ | i <;> exact P.affineCoreflection_affineCoreflection _ _ x
 
 variable [P.IsCrystallographic]
 
@@ -190,11 +150,11 @@ reflection moves the point, up to a multiple of `levelShift`. -/
 private lemma weylSimple_smul_levelPoint (k : Option b.support) (x : N) :
     b.affineRealization.weylSimple (diag_map_intCast b.affineCartanMatrix_apply_same) k •
       levelPoint P x =
-      levelPoint P (b.wallReflection k x) +
+      levelPoint P (b.affineSimpleReflection k x) +
         (-(b.affineSimpleRoot k x * b.affineSimpleRoot k 0)) • levelShift R M := by
   refine LinearMap.ext fun ⟨m, s, t⟩ ↦ ?_
   simp only [Subgroup.smul_def, LinearEquiv.smul_def, CartanRealization.coe_weylSimple,
-    CartanRealization.simpleReflection_apply, levelPoint_coroot, wallReflection_apply]
+    CartanRealization.simpleReflection_apply, levelPoint_coroot, affineSimpleReflection_apply]
   simp only [levelPoint, levelShift, LinearMap.sub_apply, LinearMap.add_apply,
     LinearMap.smul_apply, LinearMap.coprod_apply, affineRealization_root_apply, map_sub,
     map_smul, LinearMap.flip_apply, LinearMap.fst_apply, LinearMap.snd_apply,
@@ -210,7 +170,7 @@ private def Intertwines (w : W) (f : N ≃ᵃ[R] N) : Prop :=
 private lemma intertwines_weylSimple (k : Option b.support) :
     Intertwines b
       (b.affineRealization.weylSimple (diag_map_intCast b.affineCartanMatrix_apply_same) k)
-      (b.wallReflection k) :=
+      (b.affineSimpleReflection k) :=
   fun x ↦ ⟨_, b.weylSimple_smul_levelPoint k x⟩
 
 private lemma Intertwines.mul {w w' : W} {f f' : N ≃ᵃ[R] N} (h : Intertwines b w f)
@@ -249,9 +209,10 @@ private noncomputable abbrev realizationCoxeterSystem :
 
 /-- The wall reflections satisfy the Coxeter relations of the affine Cartan matrix, since the simple
 reflections of the affine realization do. -/
-private lemma isLiftable_wallReflection :
+private lemma isLiftable_affineSimpleReflection :
     (coxeterMatrixOfGeneralizedCartanMatrix b.affineCartanMatrix).IsLiftable
-      fun k ↦ (⟨b.wallReflection k, b.wallReflection_mem k⟩ : P.affineWeylGroup) := by
+      fun k ↦ (⟨b.affineSimpleReflection k, b.affineSimpleReflection_mem_affineWeylGroup k⟩ :
+        P.affineWeylGroup) := by
   intro k l
   have hrel := b.realizationCoxeterSystem.simple_mul_simple_pow k l
   simp only [CartanRealization.weylCoxeterSystem_simple] at hrel
@@ -263,16 +224,16 @@ private lemma isLiftable_wallReflection :
 /-- The homomorphism from the Weyl group of the affine realization to the affine Weyl group sending
 each simple reflection to the reflection in the corresponding wall of the fundamental alcove. -/
 private noncomputable def toAffineWeylGroup : W →* P.affineWeylGroup :=
-  b.realizationCoxeterSystem.lift ⟨_, b.isLiftable_wallReflection⟩
+  b.realizationCoxeterSystem.lift ⟨_, b.isLiftable_affineSimpleReflection⟩
 
 private lemma toAffineWeylGroup_weylSimple (k : Option b.support) :
     b.toAffineWeylGroup
         (b.affineRealization.weylSimple (diag_map_intCast b.affineCartanMatrix_apply_same) k) =
-      ⟨b.wallReflection k, b.wallReflection_mem k⟩ := by
+      ⟨b.affineSimpleReflection k, b.affineSimpleReflection_mem_affineWeylGroup k⟩ := by
   rw [← CartanRealization.weylCoxeterSystem_simple b.affineRealization
     b.affineCartanMatrix_apply_same (fun _ _ ↦ b.affineCartanMatrix_le_zero_of_ne)
     (fun _ _ ↦ b.affineCartanMatrix_apply_eq_zero_iff_symm)]
-  exact b.realizationCoxeterSystem.lift_apply_simple b.isLiftable_wallReflection k
+  exact b.realizationCoxeterSystem.lift_apply_simple b.isLiftable_affineSimpleReflection k
 
 private lemma intertwines_toAffineWeylGroup (w : W) :
     Intertwines b w (b.toAffineWeylGroup w) := by
@@ -318,31 +279,17 @@ private lemma toAffineWeylGroup_injective : Function.Injective b.toAffineWeylGro
 
 variable [P.IsReduced] [P.IsIrreducible]
 
-omit [DecidableEq ι] in
-/-- The image of a point of the fundamental alcove under an element of the affine Weyl group is a
-point at which every root is bounded below by an integer. -/
-private lemma exists_intCast_lt_root'_apply {x : N} (hx : x ∈ fundamentalAlcove P b)
-    {f : N ≃ᵃ[R] N} (hf : f ∈ P.affineWeylGroup) (j : ι) : ∃ n : ℤ, (n : R) < P.root' j (f x) :=
-  P.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup hf
-    (fun j ↦ ⟨-1, by simpa using neg_one_lt_root'_of_mem_fundamentalAlcove hx j⟩) j
-
 /-- The comparison is surjective: the wall reflections generate the affine Weyl group, since they
-carry every alcove to the fundamental alcove and the affine Weyl group acts freely on the
-alcoves. -/
+carry the image of the fundamental alcove under any element of the affine Weyl group back to the
+fundamental alcove, and the affine Weyl group acts freely on these translates of the alcove. -/
 private lemma toAffineWeylGroup_surjective : Function.Surjective b.toAffineWeylGroup := by
   rintro ⟨f, hf⟩
   set G : Subgroup (N ≃ᵃ[R] N) := b.toAffineWeylGroup.range.map P.affineWeylGroup.subtype
-  have hwall (k : Option b.support) : b.wallReflection k ∈ G :=
+  have hwall (k : Option b.support) : b.affineSimpleReflection k ∈ G :=
     ⟨_, ⟨_, b.toAffineWeylGroup_weylSimple k⟩, rfl⟩
   obtain ⟨x, hx⟩ := fundamentalAlcove_nonempty b
   obtain ⟨ω, hω, -⟩ := exists_wallWord_eq_inv_of_mem_affineWeylGroup b hf hx
-  have hg : (ω.map fun k ↦ k.elim (P.affineCoreflection b.highestRoot 1)
-      (fun i ↦ P.affineCoreflection i 0)).prod ∈ G := G.list_prod_mem <| by
-    intro g hg
-    obtain ⟨k, -, rfl⟩ := List.mem_map.mp hg
-    cases k with
-    | none => exact hwall none
-    | some i => exact hwall (some i)
+  have hg := b.list_prod_map_affineSimpleReflection_mem hwall ω
   have hfG : f ∈ G := by
     rw [hω] at hg
     exact inv_mem_iff.mp hg
@@ -372,11 +319,12 @@ noncomputable def affineWeylGroupEquiv {K H : Type*} [Field K] [CharZero K] [Add
       (fun _ _ ↦ b.affineCartanMatrix_le_zero_of_ne)
       (fun _ _ ↦ b.affineCartanMatrix_apply_eq_zero_iff_symm))
 
-private lemma affineWeylGroupEquiv_wallReflection {K H : Type*} [Field K] [CharZero K]
+private lemma affineWeylGroupEquiv_affineSimpleReflection {K H : Type*} [Field K] [CharZero K]
     [AddCommGroup H] [Module K H]
     (R' : CartanRealization (b.affineCartanMatrix.map (Int.cast : ℤ → K)) H)
     (k : Option b.support) :
-    b.affineWeylGroupEquiv R' ⟨b.wallReflection k, b.wallReflection_mem k⟩ =
+    b.affineWeylGroupEquiv R'
+        ⟨b.affineSimpleReflection k, b.affineSimpleReflection_mem_affineWeylGroup k⟩ =
       R'.weylSimple (diag_map_intCast b.affineCartanMatrix_apply_same) k := by
   classical
   rw [affineWeylGroupEquiv, MulEquiv.trans_apply, ← b.toAffineWeylGroup_weylSimple,
@@ -391,8 +339,9 @@ lemma affineWeylGroupEquiv_affineCoreflection_highestRoot {K H : Type*} [Field K
     (R' : CartanRealization (b.affineCartanMatrix.map (Int.cast : ℤ → K)) H)
     (h : P.affineCoreflection b.highestRoot 1 ∈ P.affineWeylGroup) :
     b.affineWeylGroupEquiv R' ⟨_, h⟩ =
-      R'.weylSimple (diag_map_intCast b.affineCartanMatrix_apply_same) none :=
-  b.affineWeylGroupEquiv_wallReflection R' none
+      R'.weylSimple (diag_map_intCast b.affineCartanMatrix_apply_same) none := by
+  simpa only [affineSimpleReflection_none] using
+    b.affineWeylGroupEquiv_affineSimpleReflection R' none
 
 /-- The isomorphism `RootPairing.Base.affineWeylGroupEquiv` carries the reflection in the wall
 `αᵢ = 0`, the coreflection `s_{αᵢ}` (`RootPairing.affineCoreflection_zero`), to the simple
@@ -404,8 +353,8 @@ lemma affineWeylGroupEquiv_toAffineEquiv_coreflection {K H : Type*} [Field K] [C
     (h : (P.coreflection i).toAffineEquiv ∈ P.affineWeylGroup) :
     b.affineWeylGroupEquiv R' ⟨_, h⟩ =
       R'.weylSimple (diag_map_intCast b.affineCartanMatrix_apply_same) (some i) := by
-  simp_rw [← affineCoreflection_zero]
-  exact b.affineWeylGroupEquiv_wallReflection R' (some i)
+  simpa only [affineSimpleReflection_some] using
+    b.affineWeylGroupEquiv_affineSimpleReflection R' (some i)
 
 variable [DecidableEq ι]
 
@@ -420,10 +369,12 @@ noncomputable def affineWeylCoxeterSystem :
     CoxeterSystem (coxeterMatrixOfGeneralizedCartanMatrix b.affineCartanMatrix) P.affineWeylGroup :=
   b.realizationCoxeterSystem.map (b.affineWeylGroupEquiv b.affineRealization).symm
 
-private lemma coe_affineWeylCoxeterSystem_simple (k : Option b.support) :
-    (b.affineWeylCoxeterSystem.simple k : N ≃ᵃ[R] N) = b.wallReflection k := by
+/-- The simple reflection of `RootPairing.Base.affineWeylCoxeterSystem` at a node `k` of the affine
+Dynkin diagram is the reflection in the wall of the fundamental alcove at `k`. -/
+lemma coe_affineWeylCoxeterSystem_simple (k : Option b.support) :
+    (b.affineWeylCoxeterSystem.simple k : N ≃ᵃ[R] N) = b.affineSimpleReflection k := by
   rw [affineWeylCoxeterSystem, CoxeterSystem.map_simple,
-    CartanRealization.weylCoxeterSystem_simple, ← b.affineWeylGroupEquiv_wallReflection _ k,
+    CartanRealization.weylCoxeterSystem_simple, ← b.affineWeylGroupEquiv_affineSimpleReflection _ k,
     MulEquiv.symm_apply_apply]
 
 /-- The simple reflection of `RootPairing.Base.affineWeylCoxeterSystem` at the affine node is the
@@ -431,7 +382,7 @@ reflection in the wall `θ = 1`. -/
 @[simp]
 lemma coe_affineWeylCoxeterSystem_simple_none :
     (b.affineWeylCoxeterSystem.simple none : N ≃ᵃ[R] N) = P.affineCoreflection b.highestRoot 1 :=
-  b.coe_affineWeylCoxeterSystem_simple none
+  (b.coe_affineWeylCoxeterSystem_simple none).trans b.affineSimpleReflection_none
 
 /-- The simple reflection of `RootPairing.Base.affineWeylCoxeterSystem` at the node of a simple
 root `αᵢ` is the reflection in the wall `αᵢ = 0`, the coreflection `s_{αᵢ}`
@@ -439,8 +390,7 @@ root `αᵢ` is the reflection in the wall `αᵢ = 0`, the coreflection `s_{α�
 @[simp]
 lemma coe_affineWeylCoxeterSystem_simple_some (i : b.support) :
     (b.affineWeylCoxeterSystem.simple (some i) : N ≃ᵃ[R] N) = (P.coreflection i).toAffineEquiv := by
-  rw [← affineCoreflection_zero]
-  exact b.coe_affineWeylCoxeterSystem_simple (some i)
+  rw [coe_affineWeylCoxeterSystem_simple, affineSimpleReflection_some]
 
 /-! ### The length -/
 
@@ -460,16 +410,17 @@ private lemma ncard_separatingAffineRoots_simple_mul_le {x : N} (hx : x ∈ fund
     · rw [affineSimpleRoot_none, sub_ne_zero]
       exact fun h ↦ hy b.highestRoot 1 (by simpa using h.symm)
     · simpa using hy i 0
-  have hbdd := b.exists_intCast_lt_root'_apply hx f.property
+  have hbdd := P.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup f.property
+    (exists_intCast_lt_root'_of_mem_fundamentalAlcove hx)
   rcases hk.lt_or_gt with hk | hk
-  · have := ncard_separatingAffineRoots_affineCoreflection_add_one_of_affineSimpleRoot_neg b hx
+  · have := ncard_separatingAffineRoots_affineSimpleReflection_add_one_of_affineSimpleRoot_neg b hx
       hbdd hk
-    rw [← b.wallReflection_eq_elim] at this
     omega
-  · have := ncard_separatingAffineRoots_affineCoreflection_add_one_of_affineSimpleRoot_neg b hx
-      (P.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup (b.wallReflection_mem k) hbdd)
-      (by rw [affineSimpleRoot_wallReflection]; linarith)
-    rw [← b.wallReflection_eq_elim, wallReflection_wallReflection] at this
+  · have := ncard_separatingAffineRoots_affineSimpleReflection_add_one_of_affineSimpleRoot_neg b hx
+      (P.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup
+        (b.affineSimpleReflection_mem_affineWeylGroup k) hbdd)
+      (by rw [affineSimpleRoot_affineSimpleReflection]; linarith)
+    rw [affineSimpleReflection_affineSimpleReflection] at this
     omega
 
 /-- **The length in the affine Weyl group counts the separating hyperplanes.** For a point `x` of
@@ -483,16 +434,14 @@ theorem affineWeylCoxeterSystem_length {x : N} (hx : x ∈ fundamentalAlcove P b
   set cs := b.affineWeylCoxeterSystem
   refine le_antisymm ?_ ?_
   · -- Use the same wall word as the subgroup-generation descent.
-    have hprod (ω : List (Option b.support)) : (cs.wordProd ω : N ≃ᵃ[R] N) =
-        (ω.map fun k ↦ k.elim (P.affineCoreflection b.highestRoot 1)
-          (fun i ↦ P.affineCoreflection i 0)).prod := by
+    have hprod (ω : List (Option b.support)) :
+        (cs.wordProd ω : N ≃ᵃ[R] N) = (ω.map b.affineSimpleReflection).prod := by
       induction ω with
       | nil => simp
       | cons k ω ih =>
         dsimp only [cs] at ih ⊢
         simp only [CoxeterSystem.wordProd_cons, Subgroup.coe_mul,
-          coe_affineWeylCoxeterSystem_simple, wallReflection, List.map_cons, List.prod_cons, ih]
-        cases k <;> rfl
+          coe_affineWeylCoxeterSystem_simple, List.map_cons, List.prod_cons, ih]
     obtain ⟨ω, hω, hcount⟩ := exists_wallWord_eq_inv_of_mem_affineWeylGroup b f.property hx
     have hinv : cs.wordProd ω = f⁻¹ := Subtype.ext ((hprod ω).trans hω)
     have hlen : cs.length f ≤ ω.length := by

@@ -71,7 +71,7 @@ noncomputable def affineRealization :
     refine LinearIndependent.of_comp
       ((LinearMap.id : M →ₗ[R] M).prodMap (LinearMap.fst R R R)) ?_
     exact LinearIndependent.option_prod (J := b.support) (e := fun i ↦ P.root i)
-      b.linearIndepOn_root (fun i ↦ by simp) (by intro a b h; simpa using h)
+      b.linearIndepOn_root (fun i ↦ by simp) (by intro c d h; simpa using h)
   root_linearIndependent := by
     -- Restricting to `M` and evaluating at `(0, 0, 1)`, the simple coroots `(αᵢ^∨, 0)` are
     -- independent, the pairing being perfect, and the affine node adds `(-θ^∨, 1)`.
@@ -81,7 +81,7 @@ noncomputable def affineRealization :
     refine LinearIndependent.option_prod (J := b.support) (e := fun i ↦ P.coroot' i)
       ((b.linearIndepOn_coroot).map' _
         (LinearMap.ker_eq_bot.mpr (LinearMap.IsPerfPair.bijective_right P.toLinearMap).injective))
-      (fun i ↦ ?_) (by intro a b h; simpa using h)
+      (fun i ↦ ?_) (by intro c d h; simpa using h)
     ext m <;> simp
   root_coroot k l := by
     simp [b.affineCartanMatrix_apply, ← P.algebraMap_pairingIn ℤ, algebraMap_int_eq]
