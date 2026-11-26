@@ -89,6 +89,10 @@ variable {A B : Type*} [CommSemiring A] [CommSemiring B] {I : Ideal A}
 private theorem mem_of_eq_span {x : A} (hx : I = Ideal.span {x}) : x ∈ I :=
   hx ▸ Ideal.mem_span_singleton_self x
 
+private theorem mem_map_iff_of_eq_span {x : A} (hx : I = Ideal.span {x}) (f : A →+* B) {y : B} :
+    y ∈ I.map f ↔ ∃ b : B, b * f x = y := by
+  rw [hx, Ideal.mem_map_span_singleton]
+
 /-- Any two divided power structures on `I.map f` making `f` a divided power morphism from `hI`
 are equal (Stacks Project Lemma 23.4.2, Tag 07H1). -/
 theorem eq_of_isDPMorphism_map (hI : DividedPowers I) {f : A →+* B}
@@ -130,17 +134,17 @@ private noncomputable def principalDpow (hI : DividedPowers I) {x : A} (hx : I =
     (f : A →+* B) (n : ℕ) (y : B) : B :=
   open scoped Classical in
   if hy : y ∈ I.map f then
-    ((hx ▸ Ideal.mem_map_span_singleton f).mp hy).choose ^ n * f (hI.dpow n x)
+    ((mem_map_iff_of_eq_span hx f).mp hy).choose ^ n * f (hI.dpow n x)
   else 0
 
 private theorem principalDpow_mul (hI : DividedPowers I) {x : A} (hx : I = Ideal.span {x})
     (f : A →+* B) (n : ℕ) (b : B) :
     principalDpow hI hx f n (b * f x) = b ^ n * f (hI.dpow n x) := by
   classical
-  have hy : b * f x ∈ I.map f := (hx ▸ Ideal.mem_map_span_singleton f).mpr ⟨b, rfl⟩
+  have hy : b * f x ∈ I.map f := (mem_map_iff_of_eq_span hx f).mpr ⟨b, rfl⟩
   simp only [principalDpow, dite_eq_left hy]
   exact hI.pow_mul_map_dpow_eq_of_mul_eq hx f
-    ((hx ▸ Ideal.mem_map_span_singleton f).mp hy).choose_spec n
+    ((mem_map_iff_of_eq_span hx f).mp hy).choose_spec n
 
 private theorem principalDpow_map (hI : DividedPowers I) {x : A} (hx : I = Ideal.span {x})
     (f : A →+* B) (n : ℕ) {y : A} (hy : y ∈ I) :
@@ -172,23 +176,23 @@ private noncomputable def principalCandidate (hI : DividedPowers I) {x : A}
   dpow := principalDpow hI hx f
   dpow_null {n y} hy := by classical simp [principalDpow, hy]
   dpow_zero {y} hy := by
-    obtain ⟨b, rfl⟩ := (hx ▸ Ideal.mem_map_span_singleton f).mp hy
+    obtain ⟨b, rfl⟩ := (mem_map_iff_of_eq_span hx f).mp hy
     rw [principalDpow_mul, pow_zero, one_mul, hI.dpow_zero (mem_of_eq_span hx), map_one]
   dpow_one {y} hy := by
-    obtain ⟨b, rfl⟩ := (hx ▸ Ideal.mem_map_span_singleton f).mp hy
+    obtain ⟨b, rfl⟩ := (mem_map_iff_of_eq_span hx f).mp hy
     rw [principalDpow_mul, pow_one, hI.dpow_one (mem_of_eq_span hx)]
   dpow_mem {n y} hn hy := by
-    obtain ⟨b, rfl⟩ := (hx ▸ Ideal.mem_map_span_singleton f).mp hy
+    obtain ⟨b, rfl⟩ := (mem_map_iff_of_eq_span hx f).mp hy
     rw [principalDpow_mul]
     exact Ideal.mul_mem_left _ _
       (Ideal.mem_map_of_mem f (hI.dpow_mem hn (mem_of_eq_span hx)))
   dpow_add {n y z} hy hz := by
-    obtain ⟨b, rfl⟩ := (hx ▸ Ideal.mem_map_span_singleton f).mp hy
-    obtain ⟨c, rfl⟩ := (hx ▸ Ideal.mem_map_span_singleton f).mp hz
+    obtain ⟨b, rfl⟩ := (mem_map_iff_of_eq_span hx f).mp hy
+    obtain ⟨c, rfl⟩ := (mem_map_iff_of_eq_span hx f).mp hz
     rw [← add_mul, principalDpow_mul, add_pow_mul_map_dpow hI (mem_of_eq_span hx)]
     exact sum_congr rfl fun k _ ↦ by rw [principalDpow_mul, principalDpow_mul]
   dpow_mul {n r y} hy := by
-    obtain ⟨b, rfl⟩ := (hx ▸ Ideal.mem_map_span_singleton f).mp hy
+    obtain ⟨b, rfl⟩ := (mem_map_iff_of_eq_span hx f).mp hy
     rw [← mul_assoc, principalDpow_mul, principalDpow_mul, mul_pow, mul_assoc]
 
 private theorem principalCandidate_dpow_map (hI : DividedPowers I) {x : A} (hx : I = Ideal.span {x})
@@ -312,8 +316,10 @@ private theorem coeff_scaledExp (hI : DividedPowers I) (f : A →+* B) (b : B) (
 
 private theorem scaledExp_zero_left (hI : DividedPowers I) (f : A →+* B) {x : A} (hx : x ∈ I) :
     scaledExp hI f 0 x = 1 := by
-  rw [scaledExp, PowerSeries.rescale_zero_apply, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
-    PowerSeries.coeff_map, exp, PowerSeries.coeff_mk, hI.dpow_zero hx, map_one, map_one]
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [coeff_scaledExp, hI.dpow_zero hx]
+  · simp [coeff_scaledExp, PowerSeries.coeff_one, hn]
 
 private theorem scaledExp_zero_right (hI : DividedPowers I) (f : A →+* B) (b : B) :
     scaledExp hI f b 0 = 1 := by
@@ -362,12 +368,22 @@ private theorem scaledExp_sum_right (hI : DividedPowers I) (f : A →+* B)
     simp [scaledExp_add_right hI f c (hy a (mem_cons_self a s)) (Submodule.sum_mem I hy'),
       ih hy']
 
+private theorem sum_finsuppAntidiag_eq_sum_piAntidiag {ι M : Type*} [DecidableEq ι]
+    [AddCommMonoid M] (s : Finset ι) (n : ℕ) (g : (ι → ℕ) → M) :
+    ∑ e ∈ finsuppAntidiag s n, g e = ∑ e ∈ piAntidiag s n, g e := by
+  refine sum_bij' (fun e _ ↦ (e : ι → ℕ))
+    (fun e he ↦ ⟨s.filter (e · ≠ 0), e, by simpa using (mem_piAntidiag.mp he).2⟩)
+    (fun _ he ↦ mem_piAntidiag.mpr
+      ⟨(mem_finsuppAntidiag.mp he).1, fun _ h ↦ (mem_finsuppAntidiag.mp he).2 (by simpa)⟩)
+    (fun _ he ↦ mem_finsuppAntidiag.mpr ⟨(mem_piAntidiag.mp he).1, filter_subset _ _⟩)
+    (fun _ _ ↦ Finsupp.ext fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
 private theorem extCoeff_eq_coeff_prod_scaledExp (hI : DividedPowers I) (f : A →+* B)
     {ι : Type*} [DecidableEq ι] (s : Finset ι) (b : ι → B) (x : ι → A) (n : ℕ) :
     hI.extCoeff f n s b x = PowerSeries.coeff n (∏ i ∈ s, scaledExp hI f (b i) (x i)) := by
-  rw [PowerSeries.coeff_prod]
-  simp only [finsuppAntidiag, sum_map, coeff_scaledExp, extCoeff_def]
-  exact (sum_attach (piAntidiag s n)
+  rw [PowerSeries.coeff_prod, extCoeff_def]
+  simp only [coeff_scaledExp]
+  exact (sum_finsuppAntidiag_eq_sum_piAntidiag s n
     (fun e ↦ ∏ i ∈ s, b i ^ e i * f (hI.dpow (e i) (x i)))).symm
 
 private theorem extCoeff_eq_sum_antidiag_of_prod_eq (hI : DividedPowers I) (f : A →+* B) (n : ℕ)
@@ -861,14 +877,13 @@ noncomputable def ofLocalization (hI : DividedPowers I) (S : Submonoid A) (B : T
   dpow_mul hz := locDpow_mul hI S B hz
   mul_dpow {m n z} hz := by
     obtain ⟨x, hx, s, rfl⟩ := (IsLocalization.mem_map_algebraMap_iff_exists_mk' S B).mp hz
-    rw [locDpow_mk' hI S B m hx s, locDpow_mk' hI S B n hx s, locDpow_mk' hI S B (m + n) hx s,
-      ← IsLocalization.mk'_mul, hI.mul_dpow hx, ← IsLocalization.mul_mk'_eq_mk'_of_mul]
+    simp only [locDpow_mk' hI S B _ hx s]
+    rw [← IsLocalization.mk'_mul, hI.mul_dpow hx, ← IsLocalization.mul_mk'_eq_mk'_of_mul]
     simp [pow_add]
   dpow_comp {m n z} hn hz := by
     obtain ⟨x, hx, s, rfl⟩ := (IsLocalization.mem_map_algebraMap_iff_exists_mk' S B).mp hz
-    rw [locDpow_mk' hI S B n hx s, locDpow_mk' hI S B m (hI.dpow_mem hn hx) (s ^ n),
-      locDpow_mk' hI S B (m * n) hx s, hI.dpow_comp hn hx, ← IsLocalization.mul_mk'_eq_mk'_of_mul,
-      ← pow_mul, mul_comm n m]
+    simp only [locDpow_mk' hI S B _ hx s, locDpow_mk' hI S B _ (hI.dpow_mem hn hx) (s ^ n)]
+    rw [hI.dpow_comp hn hx, ← IsLocalization.mul_mk'_eq_mk'_of_mul, ← pow_mul, mul_comm n m]
     simp
 
 /-- Divided powers of a fraction `x / s` in a localization are given by `hI.dpow n x / s ^ n`. -/
