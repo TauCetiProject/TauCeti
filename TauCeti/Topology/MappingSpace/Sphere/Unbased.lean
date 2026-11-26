@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Topology.Homotopy.HomotopyGroup.FundamentalGroupAction
+public import TauCeti.Topology.Homotopy.Quotient
 public import TauCeti.Topology.MappingSpace.Sphere.PathComponent
 
 /-!
@@ -31,8 +32,8 @@ The comparison rests on one fact
 exactly when some homotopy of their generalized loops traces a path from `x` to `y` on the cube
 boundary (`TauCeti.GenLoop.HomotopyAlong`). A path in `Map(S^k, X)` is a homotopy `I × S^k → X`,
 read on the cube through the collapse `I^k → S^k`; conversely a homotopy along a path descends
-through the collapse, which is a quotient map also after taking the product with `I`
-(`TauCeti.isQuotientMap_prodMap_id_sphereCollapse`). The orbits of the action of `π₁(X, x)` are
+through the collapse, which is a quotient map
+(`Topology.IsQuotientMap.liftHomotopy`). The orbits of the action of `π₁(X, x)` are
 exactly the classes joined by such homotopies along loops at `x`
 (`TauCeti.homotopyGroup_mem_orbit_iff_exists_homotopyAlong`), and every map whose basepoint is
 joined to `x` by a path `χ` is joined in `Map(S^k, X)` to the transport of its generalized loop
@@ -105,28 +106,20 @@ theorem joined_val_iff_exists_homotopyAlong_basedMapSphereHomeomorph {x y : X}
         map_boundary t z hz :=
           congrArg (P t) ((sphereCollapse_eq_basepoint_iff k s₀ z).2 hz) }
   · rintro ⟨γ, ⟨h⟩⟩
-    have hq := isQuotientMap_prodMap_id_sphereCollapse k s₀ I
+    have hq : Topology.IsQuotientMap (sphereCollapse k s₀) :=
+      (sphereCollapse k s₀).continuous.isProperMap.isClosedMap.isQuotientMap
+        (sphereCollapse k s₀).continuous (sphereCollapse_surjective k s₀)
     -- the homotopy along `γ` is constant on the fibres of the collapse, which meet the cube
-    -- boundary only where the homotopy traces `γ`
-    have hfac : Function.FactorsThrough h.toHomotopy.toContinuousMap
-        ((ContinuousMap.id I).prodMap (sphereCollapse k s₀)) := by
-      rintro ⟨t, z⟩ ⟨t', z'⟩ he
-      obtain ⟨rfl, he⟩ := Prod.ext_iff.1 he
-      rcases eq_or_mem_boundary_of_sphereCollapse_eq k s₀ he with rfl | ⟨hz, hz'⟩
-      · rfl
-      · exact (h.map_boundary t z hz).trans (h.map_boundary t z' hz').symm
-    let H := hq.lift _ hfac
-    have hH (t : I) (z : Fin k → I) : H (t, sphereCollapse k s₀ z) = h (t, z) :=
-      DFunLike.congr_fun (hq.lift_comp _ hfac) (t, z)
-    -- two maps out of the sphere agreeing after the collapse are equal
-    have hext {φ ψ : C(sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1, X)}
-        (hφψ : ∀ z, φ (sphereCollapse k s₀ z) = ψ (sphereCollapse k s₀ z)) : φ = ψ :=
-      (ContinuousMap.cancel_right (sphereCollapse_surjective k s₀)).1 (ContinuousMap.ext hφψ)
+    -- boundary only where the homotopy traces `γ`, so it descends to a homotopy `f ≃ g`
+    let H := hq.liftHomotopy h.toHomotopy
+      (fun t z z' he ↦ by
+        rcases eq_or_mem_boundary_of_sphereCollapse_eq k s₀ he with rfl | ⟨hz, hz'⟩
+        · rfl
+        · exact (h.map_boundary t z hz).trans (h.map_boundary t z' hz').symm)
+      (fun z ↦ (basedMapSphereHomeomorph_apply k x s₀ f z).symm)
+      (fun z ↦ (basedMapSphereHomeomorph_apply k y s₀ g z).symm)
     -- the curried homotopy is a path from `f` to `g`
-    exact ⟨⟨H.curry, hext fun z ↦ (hH 0 z).trans <| (h.apply_zero z).trans <|
-        basedMapSphereHomeomorph_apply k x s₀ f z,
-      hext fun z ↦ (hH 1 z).trans <| (h.apply_one z).trans <|
-        basedMapSphereHomeomorph_apply k y s₀ g z⟩⟩
+    exact ⟨⟨H.curry, by ext; simp, by ext; simp⟩⟩
 
 variable {k s₀} in
 /-- A map out of the sphere whose basepoint is joined to `x` is joined in `Map(S^k, X)` to a map
