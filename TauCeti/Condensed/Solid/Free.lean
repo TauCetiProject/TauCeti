@@ -50,7 +50,8 @@ theorem supplies the basis, so the product decomposition holds for every profini
 * `TauCeti.locallyConstantIntDual`: the condensed module `T ↦ Hom_ℤ(C(S, ℤ), C(T, R))`.
 * `TauCeti.profiniteSolidToFin`: the projection `R[S]^solid ⟶ R[F]` along a map `S → F` to a
   finite set; `TauCeti.profiniteSolidification_app_comp_profiniteSolidToFin` computes it on the
-  solidification map `R[S] ⟶ R[S]^solid`.
+  solidification map `R[S] ⟶ R[S]^solid`, and `TauCeti.profiniteSolidToFin_mk_comp` relates the
+  projections along `S ⟶ S' ⟶ F` and `S' ⟶ F`.
 * `TauCeti.profiniteSolidIsoLocallyConstantIntDual`: the isomorphism
   `R[S]^solid ≅ locallyConstantIntDual R S`, characterized by
   `TauCeti.profiniteSolidIsoLocallyConstantIntDual_hom_app_apply`.
@@ -139,6 +140,15 @@ noncomputable def profiniteSolidToFin (j : StructuredArrow S FintypeCat.toProfin
     (profiniteSolid R).obj S ⟶ (finLocallyConstant R).obj j.right :=
   (profiniteSolid R).map j.hom ≫ (profiniteSolidCounit R).app j.right ≫
     (finFreeIso R).hom.app j.right
+
+/-- The projection along a composite `S ⟶ S' ⟶ F` is `profiniteSolid R` applied to `S ⟶ S'`,
+followed by the projection along `S' ⟶ F`. -/
+@[reassoc]
+theorem profiniteSolidToFin_mk_comp {S' : Profinite.{u}} (f : S ⟶ S')
+    (j : StructuredArrow S' FintypeCat.toProfinite) :
+    profiniteSolidToFin R S (StructuredArrow.mk (f ≫ j.hom)) =
+      (profiniteSolid R).map f ≫ profiniteSolidToFin R S' j := by
+  simp [profiniteSolidToFin]
 
 /-- `profiniteSolidification` followed by the projection to `R[F]` along `S ⟶ F` is the free
 condensed module functor applied to `S ⟶ F`, followed by `finFreeIso`. -/
@@ -529,7 +539,7 @@ theorem profiniteSolidIsoLocallyConstantIntDual_hom_naturality {S' : Profinite.{
     (StructuredArrow.mk (f ≫ j.hom)) ψ
   have h₃ : (profiniteSolidToFin R S (StructuredArrow.mk (f ≫ j.hom))).hom.app T x =
       (profiniteSolidToFin R S' j).hom.app T (((profiniteSolid R).map f).hom.app T x) := by
-    simp [profiniteSolidToFin]
+    simp [profiniteSolidToFin_mk_comp]
   -- The components at `T` of composites of sheaf morphisms are by definition the composites of
   -- the components, so the two sides are the left-hand sides of `h₁` and `h₂`.
   exact h₁.trans ((congrArg (fun y ↦ locallyConstantFinsuppEquiv R _ _ y ψ) h₃).symm.trans h₂.symm)

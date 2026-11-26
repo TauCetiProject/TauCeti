@@ -15,9 +15,9 @@ public import Mathlib.Condensed.Module
 For a profinite set `S`, the free condensed `R`-module `R[S]` on the condensed set represented by
 `S` corepresents sections over `S`: by the free-forgetful adjunction and the Yoneda lemma for
 sheaves, morphisms `R[S] ⟶ M` correspond to elements of `M(S)`
-(`Profinite.freeModuleHomEquiv`), naturally in `S` (`Profinite.freeModuleHomEquiv_comp`) and in
-`M` (`Profinite.freeModuleHomEquiv_postcomp`). This is
-the analogue for condensed modules of `LightProfinite.freeModuleHomEquiv`.
+(`Profinite.freeModuleHomEquiv`, computed by `Profinite.freeModuleHomEquiv_apply`), naturally in
+`S` (`Profinite.freeModuleHomEquiv_comp`) and in `M` (`Profinite.freeModuleHomEquiv_postcomp`).
+This is the analogue for condensed modules of `LightProfinite.freeModuleHomEquiv`.
 -/
 
 public section
@@ -54,6 +54,13 @@ noncomputable def freeModuleHomEquiv (S : Profinite.{u}) :
       rw [← freeModuleHomEquivAux_postcomp, Category.id_comp]
     simp only [Equiv.toFun_as_coe, h (g + g'), h g, h g', Sheaf.Hom.add_app, ModuleCat.hom_add,
       LinearMap.add_apply]
+
+/-- The section corresponding to a map from the free condensed module is obtained from the
+free-forgetful adjunction followed by the Yoneda lemma for sheaves. -/
+theorem freeModuleHomEquiv_apply (S : Profinite.{u}) (g : (free R).obj S.toCondensed ⟶ M) :
+    S.freeModuleHomEquiv g = (coherentTopology CompHaus).uliftYonedaEquiv.{u + 1}
+      ((freeForgetAdjunction R).homEquiv _ _ g) :=
+  (rfl)
 
 /-- Precomposing with the free map induced by `f : S ⟶ T` restricts a section on `T` to `S` along
 `f`. -/

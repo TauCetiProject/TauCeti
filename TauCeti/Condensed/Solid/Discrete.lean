@@ -151,6 +151,9 @@ private theorem exists_finset_pointMap_eq
     congr 1
     funext i
     rw [← coord_apply b, LinearEquiv.apply_symm_apply]
+    simp only [LocallyConstant.coe_comap, Function.comp_apply, LocallyConstant.coe_mk]
+    -- `ContinuousMap.eval i` is evaluation at `i` by definition; `ContinuousMap.eval_apply` does
+    -- not fire here because `t` is viewed as a point of the compact Hausdorff space `T`.
     rfl
   exact ⟨s, fun t t' htt' ↦ (key t).trans ((hs htt').trans (key t').symm)⟩
 
