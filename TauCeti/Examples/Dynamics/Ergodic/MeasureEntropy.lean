@@ -22,8 +22,9 @@ These examples check the conventions of `TauCeti.countablePartitionEntropy`,
   itself gives `0`. The zero measure gives entropy `0`.
 * Iterating a binary label under the identity gives `(i, i, i)`; iterating the two-point flip
   from `false` gives `(false, true, false)`. The length-zero itinerary is the empty function.
-* The identity has entropy `0`, and every map has entropy `0` under a Dirac probability or the
-  zero measure.
+* The identity and the two-point flip have entropy `0`, and every map has entropy `0` under a
+  Dirac probability or the zero measure.
+* Joining two fair bits obeys subadditivity `H(a ∨ b) ≤ H(a) + H(b)`.
 -/
 
 public section
@@ -122,5 +123,22 @@ example : measureEntropy fairBit id = 0 :=
 example (T : Bool → Bool) :
     measureEntropy (Measure.dirac true) T = 0 ∧ measureEntropy (0 : Measure Bool) T = 0 :=
   ⟨measureEntropy_dirac true T, measureEntropy_zero_measure T⟩
+
+/-- The two-point flip preserves the fair bit. -/
+theorem measurePreserving_not_fairBit : MeasurePreserving not fairBit fairBit := by
+  refine ⟨measurable_of_finite _, Measure.ext_iff_singleton.mpr fun b ↦ ?_⟩
+  rw [Measure.map_apply (measurable_of_finite _) (measurableSet_singleton b)]
+  cases b <;> simp [Set.preimage]
+
+/-- The two-point flip has entropy `0`: it squares to the identity. -/
+example : measureEntropy fairBit not = 0 :=
+  measureEntropy_eq_zero_of_iterate_eq_id measurePreserving_not_fairBit two_pos
+    (funext fun b ↦ by cases b <;> rfl)
+
+/-- Joining two independent fair bits does not exceed the sum of their entropies:
+`H(fst ∨ snd) ≤ H(fst) + H(snd)`. -/
+example : countablePartitionEntropy twoBits (fun x ↦ (x.1, x.2)) ≤
+    countablePartitionEntropy twoBits Prod.fst + countablePartitionEntropy twoBits Prod.snd :=
+  countablePartitionEntropy_pair_le_add measurable_fst measurable_snd
 
 end TauCeti.MeasureEntropyExamples
