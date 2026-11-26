@@ -21,11 +21,12 @@ and `c = 1/2` for `b = true`.
 
 This file records the bookkeeping that does not depend on a chart of the end: membership in an end
 window is characterized by `TauCeti.Floer.mem_endWindow_iff`, the end windows are open, their
-closures translated by `(m, 0)`, `m ≥ 0`, lie beyond `T` in a band of angular width one
-(`TauCeti.Floer.add_mem_Ioi_prod_Ioo`), and every point `(s, t)` with `s > T + 1` is the translate
-of a point of an end window by `(m, k)` for some `m ∈ ℕ` and `k ∈ ℤ`
-(`TauCeti.Floer.exists_sub_mem_endWindow`). A chart of the end that is periodic of period one in
-`t` then maps the translated end windows onto a neighbourhood of the end.
+closures (`TauCeti.Floer.Icc_prod_Icc_subset_Ioi_prod_Ioo`) and their translates by `(m, 0)`,
+`m ≥ 0` (`TauCeti.Floer.add_mem_Ioi_prod_Ioo`), lie beyond any `T' ≤ T` in a band of angular
+width one, and every point `(s, t)` with `s > T + 1` is the translate of a point of an end window
+by `(m, k)` for some `m ∈ ℕ` and `k ∈ ℤ` (`TauCeti.Floer.exists_sub_mem_endWindow`). A chart of
+the end that is periodic of period one in `t` then maps the translated end windows onto a
+neighbourhood of the end.
 -/
 
 public section
@@ -58,14 +59,22 @@ theorem endWindow_subset_Icc_prod_Icc (T : ℝ) (b : Bool) :
       Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5) ((bif b then 1 / 2 else 0) + 2 / 5) :=
   prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
 
-/-- The translates by `(m, 0)`, `m ≥ 0`, of the closed end windows lie beyond `T` in a band of
-angular width one. -/
-theorem add_mem_Ioi_prod_Ioo {T m : ℝ} (hm : 0 ≤ m) {b : Bool} {y : ℝ × ℝ}
-    (hy : y ∈ Icc (T + 1) (T + 3) ×ˢ
-      Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5) ((bif b then 1 / 2 else 0) + 2 / 5)) :
-    y + (m, 0) ∈ Ioi T ×ˢ
+/-- The closed end windows lie beyond any `T' ≤ T` in a band of angular width one. -/
+theorem Icc_prod_Icc_subset_Ioi_prod_Ioo {T' T : ℝ} (hT : T' ≤ T) (b : Bool) :
+    Icc (T + 1) (T + 3) ×ˢ
+        Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5) ((bif b then 1 / 2 else 0) + 2 / 5) ⊆
+      Ioi T' ×ˢ
+        Ioo ((bif b then 1 / 2 else 0) - 1 / 2) ((bif b then 1 / 2 else 0) - 1 / 2 + 1) := by
+  rintro y ⟨⟨hs, -⟩, ht₁, ht₂⟩
+  exact ⟨mem_Ioi.2 (by linarith), by linarith, by linarith⟩
+
+/-- The translates by `(m, 0)`, `m ≥ 0`, of an end window beyond `T` lie beyond any `T' ≤ T` in
+a band of angular width one. -/
+theorem add_mem_Ioi_prod_Ioo {T' T m : ℝ} (hT : T' ≤ T) (hm : 0 ≤ m) {b : Bool} {y : ℝ × ℝ}
+    (hy : y ∈ endWindow T b) :
+    y + (m, 0) ∈ Ioi T' ×ˢ
       Ioo ((bif b then 1 / 2 else 0) - 1 / 2) ((bif b then 1 / 2 else 0) - 1 / 2 + 1) := by
-  obtain ⟨⟨hs, -⟩, ht₁, ht₂⟩ := hy
+  obtain ⟨hs, -, ht₁, ht₂⟩ := mem_endWindow_iff.1 hy
   refine ⟨?_, ?_, ?_⟩
   · rw [Prod.fst_add, mem_Ioi]; linarith
   · rw [Prod.snd_add, add_zero]; linarith
