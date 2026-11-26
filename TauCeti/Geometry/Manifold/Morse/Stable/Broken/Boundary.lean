@@ -33,8 +33,9 @@ moduli spaces (`TauCeti.TwistingChainSystem.exists_isRepresenting_of_subsingleto
   `∂L(x, y) = ⋃_z L(x, z) × L(z, y)`
   (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary_eq_iUnion_range`).
 * **The faces meet only along their boundaries.** A concatenation at `z` is its first factor above
-  the level of `z` and its second factor below it, so the composition maps are injective
-  (`TauCeti.IsAdaptedPseudoGradient.injective_morseBrokenTrajectorySpaceComp`) and carry the
+  the level of `z` and its second factor below it, so concatenation and the composition maps are
+  injective (`TauCeti.IsAdaptedPseudoGradient.injective_morseBrokenTrajectorySpaceConcat`,
+  `TauCeti.IsAdaptedPseudoGradient.injective_morseBrokenTrajectorySpaceComp`) and carry the
   boundary of `L(x, z) × L(z, y)` off the image of its interior. For `z' ≠ z` the face of `z'`
   misses the image of the interior of `L(x, z) × L(z, y)`
   (`TauCeti.IsAdaptedPseudoGradient.disjoint_range_morseBrokenTrajectorySpaceComp_image`): on a
@@ -63,7 +64,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `morseBrokenTrajectorySpaceBoundary_eq_iUnion_range`: the boundary is the union of the images
   of the composition maps.
-* `injective_morseBrokenTrajectorySpaceComp`: the composition maps are injective.
+* `injective_morseBrokenTrajectorySpaceConcat`, `injective_morseBrokenTrajectorySpaceComp`:
+  concatenation and the composition maps are injective.
 * `disjoint_range_morseBrokenTrajectorySpaceComp_image`: distinct faces meet only along their
   boundaries.
 * `IsMorseSmale.morseBrokenTrajectorySpace_eq_closure`: a space of broken trajectories is the
@@ -123,26 +125,12 @@ private theorem exists_concatLevelRecords_eq_of_chain {k : ℕ} {x : Fin (k + 2 
   have hanti := hX.strictAnti_apply_of_chain hne hz
   have h₁ : f (x 1) < f p := hx0 ▸ hanti Fin.zero_lt_one
   have h₂ : f r < f (x 1) := hxk ▸ hanti Fin.one_lt_last
-  refine ⟨fun i ↦ w ⟨i, h₂.trans i.property.1, i.property.2⟩, ?_,
-    fun i ↦ w ⟨i, i.property.1, i.property.2.trans h₁⟩, ?_, funext fun i ↦ ?_⟩
-  -- Above `f (x 1)`, the record is that of the first component.
-  · exact hX.mem_morseTrajectoryRecords.2 ⟨z 0, by simpa [← hx0] using hz 0, fun i ↦ ⟨(hw _).1,
-      hX.exists_flow_eq_of_mem_Ioo hz hw (j := 0)
-        (by rw [Fin.succ_zero_eq_one, Fin.castSucc_zero, hx0]; exact i.property)⟩⟩
-  -- Below `f (x 1)`, it is a broken trajectory along the rest of the chain: a point on such a level
-  -- does not lie on the first component, whose values are at least `f (x 1)`.
-  · refine hX.mem_morseBrokenTrajectoryRecords.2 ⟨k + 1, Fin.tail x, Fin.tail z, rfl,
-      by simpa [Fin.tail] using hxk, fun j ↦ hxc _, fun j ↦ ?_, fun j ↦ ?_, fun i ↦ ?_⟩
-    · simpa [Fin.tail, ← Fin.succ_castSucc] using hne j.succ
-    · simpa [Fin.tail, ← Fin.succ_castSucc] using hz j.succ
-    obtain ⟨hwc, j, t, ht⟩ := hw ⟨i, i.property.1, i.property.2.trans h₁⟩
-    induction j using Fin.cases with
-    | zero =>
-      have h := hX.mem_Icc_of_mem_unstableSet_inter_stableSet
-        (hX.flow.isInvariant_unstableSet_inter_stableSet _ _ t (hz 0))
-      rw [ht, hwc] at h
-      exact absurd i.property.2 (not_lt.2 (by simpa using h.1))
-    | succ j => exact ⟨hwc, j, t, ht⟩
+  refine ⟨fun i ↦ w ⟨i, h₂.trans i.property.1, i.property.2⟩,
+    hX.mem_morseTrajectoryRecords_of_chain hx0 rfl hz (fun _ ↦ hw _) fun i ↦ i.property,
+    fun i ↦ w ⟨i, i.property.1, i.property.2.trans h₁⟩,
+    hX.mem_morseBrokenTrajectoryRecords_of_chain rfl hxk hxc hne hz (fun _ ↦ hw _)
+      fun i ↦ i.property.2,
+    funext fun i ↦ ?_⟩
   -- The two parts concatenate to the record, since no level is `f (x 1)`.
   · rcases (hc i ⟨x 1, mem_criticalPoints_iff_mfderiv_eq_zero.2 (hxc 1)⟩).lt_or_gt with h | h
     · exact concatLevelRecords_of_gt _ _ _ h
@@ -162,10 +150,7 @@ theorem morseBrokenTrajectorySpaceBoundary_subset_iUnion_range (x y : criticalPo
   -- is unbroken.
   obtain _ | _ | k := k
   · exact absurd (hx0.symm.trans hxk) hxy
-  · refine absurd (hX.mem_morseTrajectoryRecords.2 ⟨zs 0, by simpa [← hx0, ← hxk] using hz 0,
-      fun i ↦ ?_⟩) hw
-    obtain ⟨hwc, j, t, ht⟩ := hrec i
-    exact ⟨hwc, t, by rwa [Fin.fin_one_eq_zero j] at ht⟩
+  · exact absurd (hX.mem_morseTrajectoryRecords_of_chain hx0 hxk hz hrec fun i ↦ i.property) hw
   obtain ⟨w₁, h₁, w₂, h₂, hw'⟩ :=
     hX.exists_concatLevelRecords_eq_of_chain hc hx0 hxk hxc hne hz hrec
   have hanti := hX.strictAnti_apply_of_chain hne hz
@@ -193,18 +178,16 @@ theorem morseBrokenTrajectorySpaceBoundary_eq_iUnion_range
     iUnion_subset fun z ↦ range_subset_iff.2 fun w ↦
       hX.morseBrokenTrajectorySpaceComp_mem_morseBrokenTrajectorySpaceBoundary hc hdense x z y w
 
-/-- **The composition maps are injective.** A concatenation at `z` is its first factor on the
-levels above `f z` and its second factor on the levels below. So the composition map carries the
-boundary `∂L(x, z) × L(z, y) ∪ L(x, z) × ∂L(z, y)` of the product off the image of its interior. -/
-theorem injective_morseBrokenTrajectorySpaceComp (x z y : criticalPoints 𝓘(ℝ, E) f) :
-    Function.Injective (hX.morseBrokenTrajectorySpaceComp hc x z y) := by
+/-- **Concatenation is injective.** A concatenation at `z` is its first factor on the levels above
+`f z` and its second factor on the levels below. -/
+theorem injective_morseBrokenTrajectorySpaceConcat {x z y : M} (hz : ∀ i, c i ≠ f z) :
+    Function.Injective (hX.morseBrokenTrajectorySpaceConcat (x := x) (y := y) hz) := by
   rintro ⟨a, b⟩ ⟨a', b'⟩ hab
   have hzy := value_lt_of_mem_morseBrokenTrajectorySpace b.property
   have hxz := value_lt_of_mem_morseBrokenTrajectorySpace a.property
   have happ (i : c ⁻¹' Ioo (f y) (f x)) :
-      concatLevelRecords c (fun i ↦ hc i z) a.val b.val i =
-        concatLevelRecords c (fun i ↦ hc i z) a'.val b'.val i := by
-    simpa only [coe_morseBrokenTrajectorySpaceComp_apply] using
+      concatLevelRecords c hz a.val b.val i = concatLevelRecords c hz a'.val b'.val i := by
+    simpa only [coe_morseBrokenTrajectorySpaceConcat_apply] using
       congrFun (congrArg Subtype.val hab) i
   refine Prod.ext (Subtype.ext (funext fun ⟨i, hi₁, hi₂⟩ ↦ ?_))
     (Subtype.ext (funext fun ⟨i, hi₁, hi₂⟩ ↦ ?_))
@@ -216,6 +199,18 @@ theorem injective_morseBrokenTrajectorySpaceComp (x z y : criticalPoints 𝓘(�
     rw [concatLevelRecords_of_gt (i := ⟨i, hi₁, hi₂.trans hxz⟩) _ _ _ hi₂,
       concatLevelRecords_of_gt (i := ⟨i, hi₁, hi₂.trans hxz⟩) _ _ _ hi₂] at h
     exact h
+
+/-- **The composition maps are injective.** A concatenation at `z` is its first factor on the
+levels above `f z` and its second factor on the levels below. So the composition map carries the
+boundary `∂L(x, z) × L(z, y) ∪ L(x, z) × ∂L(z, y)` of the product off the image of its interior. -/
+theorem injective_morseBrokenTrajectorySpaceComp (x z y : criticalPoints 𝓘(ℝ, E) f) :
+    Function.Injective (hX.morseBrokenTrajectorySpaceComp hc x z y) := by
+  -- The composition map at `z` has the records of concatenation at `z`.
+  have h : ⇑(hX.morseBrokenTrajectorySpaceComp hc x z y) =
+      hX.morseBrokenTrajectorySpaceConcat fun i ↦ hc i z := funext fun w ↦ Subtype.ext <| by
+    rw [coe_morseBrokenTrajectorySpaceComp_apply, coe_morseBrokenTrajectorySpaceConcat_apply]
+  rw [h]
+  exact hX.injective_morseBrokenTrajectorySpaceConcat _
 
 /-- **Distinct open faces are disjoint.** For critical points `z' ≠ z`, and levels dense between
 the critical values, no concatenation at `z'` is a concatenation at `z` of two unbroken

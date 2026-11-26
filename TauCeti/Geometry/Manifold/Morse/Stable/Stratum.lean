@@ -69,6 +69,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   (`apply_ne_of_mem_morseBrokenTrajectoryRecords_of_mem_morseTrajectoryRecords_of_le`).
 * `exists_flow_eq_of_mem_Ioo`: the point of a record on a level of step `j` lies on the orbit of
   the component of step `j`.
+* `mem_morseTrajectoryRecords_of_chain`, `mem_morseBrokenTrajectoryRecords_of_chain`: on the levels
+  of its first step, a record along a chain is the record of its first component, and below them
+  it is the record of the broken trajectory formed by the other components.
 * `mem_unstableSet_inter_stableSet_of_mem_morseBrokenTrajectoryStratum`: the point of a record on a
   level of step `j` lies on a trajectory from `x j` to `x (j + 1)`.
 * `exists_homeomorph_morseBrokenTrajectoryStratum`: a stratum is the product of the spaces of
@@ -222,6 +225,46 @@ theorem exists_flow_eq_of_mem_Ioo {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k �
   rw [ht, hwc] at hj'
   obtain rfl : j = j' := (hX.antitone_apply_of_chain hz).eq_of_mem_Ioo_of_mem_Icc_fin hij hj'
   exact ⟨t, ht⟩
+
+/-- **The first component of a broken trajectory.** A record of a broken trajectory through the
+chain `p = x 0, q = x 1, …`, on levels strictly between `f q` and `f p`, is the record of the
+trajectory from `p` to `q` formed by its first component. -/
+theorem mem_morseTrajectoryRecords_of_chain {k : ℕ} {x : Fin (k + 1 + 1) → M}
+    {z : Fin (k + 1) → M} {p q : M} {c : ι → ℝ} {w : ι → M} (hx0 : x 0 = p) (hx1 : x 1 = q)
+    (hz : ∀ j : Fin (k + 1),
+      z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ))
+    (hw : ∀ i, f (w i) = c i ∧ ∃ j t, hX.flow t (z j) = w i)
+    (hc : ∀ i, c i ∈ Ioo (f q) (f p)) :
+    w ∈ hX.morseTrajectoryRecords p q c := by
+  subst hx0 hx1
+  exact hX.mem_morseTrajectoryRecords.2 ⟨z 0, by simpa using hz 0, fun i ↦ ⟨(hw i).1,
+    hX.exists_flow_eq_of_mem_Ioo hz hw (j := 0) (by simpa using hc i)⟩⟩
+
+/-- **The other components of a broken trajectory.** A record of a broken trajectory through the
+chain `x 0, q = x 1, …, x (k + 1) = r`, on levels below `f q`, is the record of the broken
+trajectory from `q` to `r` formed by its other components: no point on such a level lies on the
+first component, whose values are at least `f q`. -/
+theorem mem_morseBrokenTrajectoryRecords_of_chain {k : ℕ} {x : Fin (k + 1 + 1) → M}
+    {z : Fin (k + 1) → M} {q r : M} {c : ι → ℝ} {w : ι → M} (hx1 : x 1 = q)
+    (hxk : x (Fin.last (k + 1)) = r) (hxc : ∀ j, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (x j) = 0)
+    (hne : ∀ j : Fin (k + 1), x j.castSucc ≠ x j.succ)
+    (hz : ∀ j : Fin (k + 1),
+      z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ))
+    (hw : ∀ i, f (w i) = c i ∧ ∃ j t, hX.flow t (z j) = w i) (hc : ∀ i, c i < f q) :
+    w ∈ hX.morseBrokenTrajectoryRecords q r c := by
+  subst hx1 hxk
+  refine hX.mem_morseBrokenTrajectoryRecords.2 ⟨k, Fin.tail x, Fin.tail z, rfl,
+    by simp [Fin.tail], fun j ↦ hxc _, fun j ↦ ?_, fun j ↦ ?_, fun i ↦ ?_⟩
+  · simpa [Fin.tail, ← Fin.succ_castSucc] using hne j.succ
+  · simpa [Fin.tail, ← Fin.succ_castSucc] using hz j.succ
+  obtain ⟨hwc, j, t, ht⟩ := hw i
+  induction j using Fin.cases with
+  | zero =>
+    have h := hX.mem_Icc_of_mem_unstableSet_inter_stableSet
+      (hX.flow.isInvariant_unstableSet_inter_stableSet _ _ t (hz 0))
+    rw [ht, hwc] at h
+    exact absurd (hc i) (not_lt.2 (by simpa using h.1))
+  | succ j => exact ⟨hwc, j, t, ht⟩
 
 /-- **The points of a record on the levels of a step lie on a trajectory of that step.** The point
 of a record in the stratum of `x` on a level strictly between `f (x (j + 1))` and `f (x j)` lies on
