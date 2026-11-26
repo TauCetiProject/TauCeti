@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder.Fredholm
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
-public import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Add
