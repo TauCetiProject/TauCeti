@@ -48,6 +48,8 @@ projections `R × R → R`, viewed as morphisms of finite étale schemes over `S
   if and only if its pullback to the punctured spectrum of `A'` does.
 * `TauCeti.IsLocalRing.purityHolds_of_purityHolds_of_fullyFaithful`: under the same hypotheses,
   purity for `A'` implies purity for `A`.
+* `TauCeti.IsLocalRing.purityHolds_of_ringEquiv`: purity is invariant under isomorphisms of local
+  rings, for instance between the stalks of a scheme and of an open subscheme.
 
 ## References
 
@@ -246,6 +248,25 @@ theorem purityHolds_of_purityHolds_of_fullyFaithful (hA' : PurityHolds A') : Pur
     extends_of_extends_pullbackPunctured h ((purityHolds_iff A').mp hA' _)
 
 end Pullback
+
+/-- Purity is invariant under isomorphisms of local rings: if `A ≃+* A'` and purity holds for
+`A`, it holds for `A'`. -/
+theorem purityHolds_of_ringEquiv {A A' : Type u} [CommRing A] [IsLocalRing A] [CommRing A']
+    [IsLocalRing A'] (e : A ≃+* A') (h : PurityHolds A) : PurityHolds A' := by
+  let : Algebra A' A := e.symm.toRingHom.toAlgebra
+  have hm : ((_root_.IsLocalRing.maximalIdeal A').map (algebraMap A' A)).radical =
+      _root_.IsLocalRing.maximalIdeal A := by
+    rw [_root_.IsLocalRing.map_maximalIdeal_of_surjective _ e.symm.surjective]
+    exact (_root_.IsLocalRing.maximalIdeal.isMaximal A).isPrime.radical
+  -- `Spec A ⟶ Spec A'` is an isomorphism, and so is its restriction to punctured spectra, so
+  -- pullback along either is an equivalence.
+  have : IsIso (CommRingCat.ofHom (algebraMap A' A)) :=
+    (RingEquiv.toCommRingCatIso e.symm).isIso_hom
+  have : IsIso ((Spec.map (CommRingCat.ofHom (algebraMap A' A))).resLE
+      (puncturedSpectrum A') (puncturedSpectrum A) (preimage_puncturedSpectrum hm).ge) :=
+    (Scheme.Hom.resLE_congr _ le_rfl rfl (preimage_puncturedSpectrum hm)
+      (.isomorphisms _)).mp (by rw [Scheme.Hom.resLE_eq_morphismRestrict]; infer_instance)
+  exact purityHolds_of_purityHolds_of_fullyFaithful hm h
 
 /-- Restriction of finite étale covers from the punctured spectrum of `A` to the punctured
 spectrum of `A ⧸ I`, which is its intersection with `Spec (A ⧸ I)`. For `I = (f)`, this is
