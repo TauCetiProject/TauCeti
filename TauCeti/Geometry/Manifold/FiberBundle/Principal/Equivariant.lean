@@ -79,8 +79,7 @@ theorem contMDiff_symm_of_equivariant [LieGroup IG n G]
   refine (hs.totalSpaceMk_smul hd).congr_of_eventuallyEq (Filter.Eventually.of_forall ?_)
   intro y
   apply (ManifoldTotalSpace.homeomorph G P).symm.injective
-  simp only [Homeomorph.symm_apply_apply, homeomorph_symm_fiberwiseMap]
-  change (⟨y.proj, (e y.proj).symm y.snd⟩ : TotalSpace G P) = _
+  rw [homeomorph_symm_fiberwiseMap, Homeomorph.symm_apply_apply, homeomorph_symm_apply]
   apply congrArg (TotalSpace.mk y.proj)
   apply (e y.proj).injective
   simp only [Equiv.apply_symm_apply, he, smul_division]

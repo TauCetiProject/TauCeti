@@ -59,7 +59,7 @@ This file connects the general right-action theory of
   equivariance, Lie bracket homomorphism, and exponential flow on `ManifoldTotalSpace G P`.
 * `TauCeti.PrincipalBundle.mfderiv_proj_rightFundamentalVectorField`,
   `TauCeti.PrincipalBundle.rightFundamentalVectorField_injective`,
-  `TauCeti.PrincipalBundle.range_rightFundamentalLinearMap_eq_ker_mfderiv_proj`: verticality,
+  `TauCeti.PrincipalBundle.range_rightFundamentalLinearMap_eq_verticalSubmodule`: verticality,
   pointwise freeness, and exactness at the vertical tangent space.
 * `TauCeti.PrincipalBundle.mfderiv_diffeomorphOfEquivariant_rightFundamentalVectorField`,
   `TauCeti.PrincipalBundle.mfderiv_pullbackLift_rightFundamentalVectorField`,
@@ -185,8 +185,8 @@ theorem mfderiv_proj_rightFundamentalVectorField (x : ManifoldTotalSpace G P)
     funext g
     simp
   rw [rightFundamentalVectorField_apply, ← mfderiv_comp_apply_of_eq (1 : G) hproj
-    (mdifferentiableAt_orbit (n := 1) one_ne_zero x 1) (by simp) ξ, hconst, mfderiv_const]
-  rfl
+    (mdifferentiableAt_orbit (n := 1) one_ne_zero x 1) (by simp) ξ, hconst, mfderiv_const,
+    zero_apply]
 
 variable [ContMDiffFiberBundle 1 G P IB IG]
 
@@ -222,7 +222,7 @@ theorem rightFundamentalVectorField_eq_iff (x : ManifoldTotalSpace G P)
 
 /-- **Exactness at the vertical tangent space.** At every point `x` of a `C¹` principal bundle,
 the range of `ξ ↦ ξ♯ x` equals `verticalSubmodule IB IG G P x`. -/
-theorem range_rightFundamentalLinearMap_eq_ker_mfderiv_proj (x : ManifoldTotalSpace G P) :
+theorem range_rightFundamentalLinearMap_eq_verticalSubmodule (x : ManifoldTotalSpace G P) :
     LinearMap.range (rightFundamentalLinearMap IB IG x) =
       verticalSubmodule IB IG G P x := by
   refine le_antisymm ?_ ?_
@@ -244,16 +244,21 @@ principal `G`-bundle, evaluation of fundamental vector fields identifies `GroupL
 linearly with the vertical tangent space `VerticalSpace IB IG G P x`. -/
 def verticalLinearEquiv (x : ManifoldTotalSpace G P) :
     GroupLieAlgebra IG G ≃ₗ[𝕜] VerticalSpace IB IG G P x :=
-  (LinearEquiv.ofInjective (rightFundamentalLinearMap IB IG x)
-    (rightFundamentalVectorField_injective x)).trans
-    (LinearEquiv.ofEq _ _ (range_rightFundamentalLinearMap_eq_ker_mfderiv_proj x))
+  ((LinearEquiv.ofInjective (rightFundamentalLinearMap IB IG x)
+    ((funext (rightFundamentalLinearMap_apply (IB := IB) (IG := IG) x)).symm ▸
+      rightFundamentalVectorField_injective x)).trans
+    (LinearEquiv.ofEq _ _ (range_rightFundamentalLinearMap_eq_verticalSubmodule x))).trans
+    (VerticalSpace.equivSubmodule x).symm.toLinearEquiv
 
 @[simp]
 theorem coe_verticalLinearEquiv_apply (x : ManifoldTotalSpace G P)
     (ξ : GroupLieAlgebra IG G) :
     (verticalLinearEquiv IB IG x ξ : TangentSpace (IB.prod IG) x) =
-      rightFundamentalVectorField (IB.prod IG) ξ x :=
-  (rfl)
+      rightFundamentalVectorField (IB.prod IG) ξ x := by
+  rw [verticalLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    ContinuousLinearEquiv.coe_toLinearEquiv, VerticalSpace.equivSubmodule_symm_apply,
+    VerticalSpace.val_mk, LinearEquiv.coe_ofEq_apply, LinearEquiv.ofInjective_apply,
+    rightFundamentalLinearMap_apply]
 
 @[simp]
 theorem verticalLinearEquiv_symm_mk (x : ManifoldTotalSpace G P)
@@ -262,15 +267,16 @@ theorem verticalLinearEquiv_symm_mk (x : ManifoldTotalSpace G P)
       verticalSubmodule IB IG G P x) :
     (verticalLinearEquiv IB IG x).symm
         (VerticalSpace.mk (rightFundamentalVectorField (IB.prod IG) ξ x) hξ) = ξ :=
-  (verticalLinearEquiv IB IG x).symm_apply_eq.2 rfl
+  (verticalLinearEquiv IB IG x).symm_apply_eq.2 <| VerticalSpace.ext <| by
+    rw [VerticalSpace.val_mk, coe_verticalLinearEquiv_apply]
 
 @[simp]
 theorem rightFundamentalVectorField_verticalLinearEquiv_symm
     (x : ManifoldTotalSpace G P)
     (v : VerticalSpace IB IG G P x) :
     rightFundamentalVectorField (IB.prod IG)
-        ((verticalLinearEquiv IB IG x).symm v) x = (v : TangentSpace (IB.prod IG) x) :=
-  congrArg VerticalSpace.val ((verticalLinearEquiv IB IG x).apply_symm_apply v)
+        ((verticalLinearEquiv IB IG x).symm v) x = (v : TangentSpace (IB.prod IG) x) := by
+  rw [← coe_verticalLinearEquiv_apply, LinearEquiv.apply_symm_apply]
 
 end Vertical
 

@@ -43,11 +43,6 @@ holonomic sections of `J¹E` via the pointwise Cartan contact map.
   smoothness and `[IB.Boundaryless]` because `TauCeti.FirstJetAt` is defined as the quotient of
   `C^∞` germs using `fderiv` (rather than `fderivWithin` on `range IB`).
 
-Downstream jet and variational modules use `prolong`, `jet`, and
-`contactFormAt_comp_mfderiv_eq_zero_iff` to pull back Lagrangians and contact conditions along
-field configurations and to compare `jet` with the linear first-jet bundle
-`TauCeti.FirstJetBundle`.
-
 ## References
 
 * I. M. Anderson, *The Variational Bicomplex*, Utah State University, 1992, Chapter 1, §A.
@@ -266,7 +261,8 @@ theorem hasFDerivWithinAt_localRep [IsManifold IB 1 B] [IsManifold IF 1 F]
   have hev := localRep_eventuallyEq_writtenInExtChartAt (IB := IB) (IF := IF) hs.continuousAt hbi
   rw [coordAt_eq_coordChange_modelEquivAt hi]
   exact (htop.congr_of_eventuallyEq hev (hev.self_of_nhdsWithin hrange)).congr_fderiv
-    (by ext u; rw [coordChange_apply]; rfl)
+    (by ext u; simp only [coordChange_apply, comp_apply, ContinuousLinearMap.prod_apply,
+      id_apply, coe_snd'])
 
 /-- In any preferred bundle chart `i` containing `s x`, the jet coordinate `coordAt i` of
 `prolongAt hs hproj` is the derivative `fderivWithin` of `localRep IB IF s i` within `range IB`. -/
@@ -617,7 +613,7 @@ theorem exists_contMDiffAt_prolong_eq {n : ℕ∞ω} [IF.Boundaryless]
   refine ⟨hs_pt, ?_⟩
   rw [FiberFirstJet.modelEquivAt_prolongAt, fderivWithin_writtenInExtChartAt_localAffineSection]
   ext v
-  rfl
+  simp only [A, comp_apply, ContinuousLinearMap.prod_apply, coe_snd']
 
 /-- **Cartan contact characterization of holonomic sections**: for a differentiable local section
 `σ : B → FiberFirstJetBundle IB IF F E` over `B` (`(baseProj ∘ σ) =ᶠ[𝓝 x] id`), the pullback of the
@@ -655,8 +651,6 @@ theorem contactFormAt_comp_mfderiv_eq_zero_iff [IsManifold IB 1 B] [IsManifold I
     rw [← hprolong v]
     exact (FiberFirstJet.prolongAt hs hproj).mfderiv_proj_apply _
   -- Stage 2: expand `contactFormAt` in ambient tangent coordinates for both implications.
-  have hzero : ((0 : VerticalSpace IB IF F E (σ x).proj) :
-      TangentSpace (IB.prod IF) (σ x).proj) = 0 := rfl
   rw [prolong_of_mdifferentiableAt hs hproj]
   refine ⟨fun h0 ↦ ?_, fun h_eq ↦ ?_⟩
   · refine TotalSpace.ext rfl (heq_of_eq ?_)
@@ -665,7 +659,7 @@ theorem contactFormAt_comp_mfderiv_eq_zero_iff [IsManifold IB 1 B] [IsManifold I
         ((((contactFormAt (σ x)).comp (mfderiv IB ((IB.prod IF).prod 𝓘(𝕜, EB →L[𝕜] EF)) σ x))
           (tangentSpaceCast IB (σ x).proj.proj x u) :
           VerticalSpace IB IF F E (σ x).proj) : TangentSpace (IB.prod IF) (σ x).proj) = 0 := by
-      rw [h0, zero_apply, hzero]
+      rw [h0, zero_apply, VerticalSpace.coe_zero]
     rw [comp_apply, coe_contactFormAt, hmfd_s, hmfd_base,
       ← Manifold.tangentSpaceCast_symm IB x (σ x).proj.proj, ContinuousLinearEquiv.apply_symm_apply,
       Manifold.tangentSpaceCast_symm, sub_eq_zero] at htan
@@ -674,7 +668,8 @@ theorem contactFormAt_comp_mfderiv_eq_zero_iff [IsManifold IB 1 B] [IsManifold I
     exact htan.symm
   · have hj : (σ x).snd = FiberFirstJet.prolongAt hs hproj := eq_of_heq (TotalSpace.mk.inj h_eq).2
     refine ContinuousLinearMap.ext fun v ↦ VerticalSpace.ext ?_
-    rw [zero_apply, hzero, comp_apply, coe_contactFormAt, hmfd_s, hmfd_base, hj, hprolong, sub_self]
+    rw [zero_apply, VerticalSpace.coe_zero, comp_apply, coe_contactFormAt, hmfd_s, hmfd_base, hj,
+      hprolong, sub_self]
 
 -- Sanity check: prolonging `x ↦ (x, x * x)` on `ℝ × ℝ` at `x = 3` gives derivative `6` and
 -- annihilates the holonomic tangent vector `(1, 6)` under `contactProj`.
