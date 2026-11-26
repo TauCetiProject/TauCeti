@@ -29,16 +29,9 @@ namespace TauCeti.Examples.Idempotented.TwoZ
 /-- The non-unital ring `2ℤ`. -/
 abbrev H : Type := (Ideal.span {(2 : ℤ)} : Ideal ℤ)
 
-/-- The inclusion `2ℤ → ℤ`, as a non-unital algebra homomorphism over `ℤ`. -/
-def ι : H →ₙₐ[ℤ] ℤ where
-  toFun := Subtype.val
-  map_smul' r x := by simp
-  map_zero' := rfl
-  map_add' _ _ := rfl
-  map_mul' _ _ := rfl
-
-/-- The action of the unitization `ℤ ⊕ 2ℤ` on `ℤ` through the inclusion. -/
-noncomputable abbrev φ : Unitization ℤ H →ₐ[ℤ] ℤ := Unitization.lift ι
+/-- The action of the unitization `ℤ ⊕ 2ℤ` on `ℤ` through the inclusion `2ℤ → ℤ`. -/
+noncomputable abbrev φ : Unitization ℤ H →ₐ[ℤ] ℤ :=
+  Unitization.lift (NonUnitalSubalgebraClass.subtype (R := ℤ) (Ideal.span {(2 : ℤ)}))
 
 /-- `ℤ[1/2]`. -/
 abbrev M : Type := Localization.Away (2 : ℤ)
@@ -55,7 +48,7 @@ attribute [local instance] moduleM moduleInt
 
 /-- `φ` is the inclusion on `2ℤ`. -/
 theorem φ_inr (h : H) : φ (h : Unitization ℤ H) = (h : ℤ) := by
-  simp [φ, ι]
+  simp [φ]
 
 /-- `2 ∈ 2ℤ`. -/
 theorem two_mem : (2 : ℤ) ∈ (Ideal.span {(2 : ℤ)} : Ideal ℤ) :=
