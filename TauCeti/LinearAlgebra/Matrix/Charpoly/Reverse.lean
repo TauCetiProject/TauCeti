@@ -55,6 +55,7 @@ the dimension.
 * `Module.Basis.reverse_charpoly_of_apply`: for an endomorphism diagonal in a finite basis with
   eigenvalues `aᵢ`, the reverse of its characteristic polynomial is `∏ᵢ (1 - aᵢ X)`.
 * `LinearMap.reverse_charpoly_smul_id`: `det (1 - X (c • id)) = (1 - c X) ^ rank`.
+* `LinearMap.reverse_charpoly_smul`: `det (1 - X (c • f))` is `det (1 - X f)` evaluated at `c X`.
 * `Matrix.charpolyRev_mul_comm`: `det (1 - X A B) = det (1 - X B A)` for rectangular matrices `A`
   and `B` of transposed shapes. Unlike `Matrix.charpoly_mul_comm'`, no power of `X` corrects for
   the different sizes of `A B` and `B A`.
@@ -361,5 +362,13 @@ theorem reverse_charpoly_smul_id (c : R) :
   nontriviality R
   rw [(Module.Free.chooseBasis R M).reverse_charpoly_of_apply _ (fun _ ↦ c) (by simp),
     Finset.prod_const, Finset.card_univ, Module.finrank_eq_card_chooseBasisIndex]
+
+/-- Scaling an endomorphism `f` by `c` rescales the variable of `det (1 - X f)`:
+`det (1 - X (c • f))` is `det (1 - X f)` evaluated at `c X`. -/
+theorem reverse_charpoly_smul (c : R) (f : Module.End R M) :
+    (c • f).charpoly.reverse = f.charpoly.reverse.comp (C c * X) := by
+  let b := Module.Free.chooseBasis R M
+  rw [← charpoly_toMatrix f b, ← charpoly_toMatrix (c • f) b, map_smul, Matrix.reverse_charpoly,
+    Matrix.reverse_charpoly, Matrix.charpolyRev_smul]
 
 end LinearMap

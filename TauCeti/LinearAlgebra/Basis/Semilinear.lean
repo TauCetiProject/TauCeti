@@ -48,7 +48,8 @@ form of `Module.Basis.semilinearMap (starRingEnd R) b b`, which conjugates deter
   its determinant.
 * `Module.Basis.linearIndependent_semilinearMap_comp_iff`: along an injective homomorphism into a
   domain, a family is linearly independent exactly when its image is.
-* `Module.Basis.mapₛₗ`: the image of a basis under a semilinear equivalence.
+* `Module.Basis.mapₛₗ`: the image of a basis under a semilinear equivalence, in which the
+  coordinates of `f x` are the images of the coordinates of `x` (`Module.Basis.repr_mapₛₗ_apply`).
 * `Module.Basis.conjEquivFun`: the conjugate-linear coordinate equivalence `M ≃ₛₗ[starRingEnd R]
   (ι → R)` of a finite basis.
 * `Module.Basis.coordConj`: the conjugation of the coordinates in a basis.
@@ -176,6 +177,14 @@ def mapₛₗ (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') : Basis ι S M' :=
 @[simp]
 theorem mapₛₗ_apply (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') (i : ι) : b.mapₛₗ f i = f (b i) :=
   mk_apply _ _ _
+
+/-- The coordinates of `f x` in the basis `b.mapₛₗ f` are the images under `σ` of the
+coordinates of `x` in `b`. -/
+@[simp]
+theorem repr_mapₛₗ_apply (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') (x : M) (i : ι) :
+    (b.mapₛₗ f).repr (f x) i = σ (b.repr x i) := by
+  have hf : b.semilinearMap σ (b.mapₛₗ f) = f.toLinearMap := b.ext fun j ↦ by simp
+  rw [← repr_semilinearMap_apply σ b (b.mapₛₗ f), hf, LinearEquiv.coe_coe]
 
 end Map
 
