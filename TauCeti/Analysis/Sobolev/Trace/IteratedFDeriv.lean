@@ -23,7 +23,7 @@ roots, the bound
 `‖u(a, ·)‖₂ ≤ ‖u‖₂ + ‖Du‖₂`
 
 on the `L²` norm of the restriction of `u` to the hyperplane `{a} × E`
-(`TauCeti.lpNorm_comp_toLp_le`).
+(`TauCeti.lpNorm_hyperplane_le`).
 
 The derivatives of the restriction are the derivatives of `u` along the hyperplane: the restriction
 is `u` composed with the isometric embedding `y ↦ (a, y)`, so the `i`-th derivative of the
@@ -33,7 +33,7 @@ supported `C¹` function `Dⁱ u` therefore gives, for `u` of class `Cⁱ⁺¹`,
 
 `‖Dⁱ(u(a, ·))‖₂ ≤ ‖Dⁱ u‖₂ + ‖Dⁱ⁺¹ u‖₂`
 
-(`TauCeti.lpNorm_iteratedFDeriv_comp_toLp_le`). Restriction to a hyperplane thus loses one
+(`TauCeti.lpNorm_iteratedFDeriv_hyperplane_le`). Restriction to a hyperplane thus loses one
 derivative, with constants independent of `a`. These are the estimates behind the trace bounds for
 the semiclassical Sobolev norms in `TauCeti.Analysis.Sobolev.Semiclassical.Trace`.
 
@@ -85,7 +85,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 /-- **The flat `L²` trace inequality in norm form.** For a compactly supported `C¹` function `u` on
 `ℝ × E`, the restriction of `u` to the hyperplane `{a} × E` satisfies
 `‖u(a, ·)‖₂ ≤ ‖u‖₂ + ‖Du‖₂`. -/
-theorem lpNorm_comp_toLp_le {u : WithLp 2 (ℝ × E) → G} (hu : ContDiff ℝ 1 u)
+theorem lpNorm_hyperplane_le {u : WithLp 2 (ℝ × E) → G} (hu : ContDiff ℝ 1 u)
     (hsupp : HasCompactSupport u) (a : ℝ) :
     lpNorm (fun y : E ↦ u (WithLp.toLp 2 (a, y))) 2 volume ≤
       lpNorm u 2 volume + lpNorm (fderiv ℝ u) 2 volume := by
@@ -100,7 +100,7 @@ theorem lpNorm_comp_toLp_le {u : WithLp 2 (ℝ × E) → G} (hu : ContDiff ℝ 1
 /-- **Flat `L²` traces of the derivatives.** For a compactly supported function `u` of class
 `Cⁱ⁺¹` on `ℝ × E`, the `i`-th derivative of its restriction to the hyperplane `{a} × E`
 satisfies `‖Dⁱ(u(a, ·))‖₂ ≤ ‖Dⁱ u‖₂ + ‖Dⁱ⁺¹ u‖₂`. -/
-theorem lpNorm_iteratedFDeriv_comp_toLp_le {i : ℕ} {u : WithLp 2 (ℝ × E) → G}
+theorem lpNorm_iteratedFDeriv_hyperplane_le {i : ℕ} {u : WithLp 2 (ℝ × E) → G}
     (hu : ContDiff ℝ (i + 1) u) (hsupp : HasCompactSupport u) (a : ℝ) :
     lpNorm (iteratedFDeriv ℝ i fun y : E ↦ u (WithLp.toLp 2 (a, y))) 2 volume ≤
       lpNorm (iteratedFDeriv ℝ i u) 2 volume + lpNorm (iteratedFDeriv ℝ (i + 1) u) 2 volume := by
@@ -133,6 +133,6 @@ theorem lpNorm_iteratedFDeriv_comp_toLp_le {i : ℕ} {u : WithLp 2 (ℝ × E) �
     exact hwcont.norm.memLp_of_hasCompactSupport (hwc.comp_isClosedEmbedding he).norm
   refine (lpNorm_mono_real hmem hpt).trans ?_
   rw [lpNorm_norm hwcont.aestronglyMeasurable]
-  exact (lpNorm_comp_toLp_le hw hwc a).trans_eq (by rw [lpNorm_fderiv_iteratedFDeriv])
+  exact (lpNorm_hyperplane_le hw hwc a).trans_eq (by rw [lpNorm_fderiv_iteratedFDeriv])
 
 end TauCeti
