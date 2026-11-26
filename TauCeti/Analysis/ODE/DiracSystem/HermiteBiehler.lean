@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.DiracSystem.Basic
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The Hermite–Biehler functions of a Dirac system
@@ -114,28 +113,13 @@ private theorem hermiteBiehler_column_eq_add_integral (hq : IntegrableOn q (uIcc
             I * diracFundamentalMatrix q s z 1 j) +
           q s * (diracFundamentalMatrix q s z 0 j + I * diracFundamentalMatrix q s z 1 j)) := by
   set v : Fin 2 → ℂ := Pi.single j 1
-  -- The integrand of the integral equation is integrable, through the propagator.
-  set P := fun r ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff q z r)
-  have hP : IntegrableOn P (Icc (0 ⊓ t) (0 ⊔ t)) := integrableOn_toEuclideanCLM_diracCoeff hq z
-  have hint : IntervalIntegrable
-      (fun s ↦ diracCoeff q z s *ᵥ (diracFundamentalMatrix q s z *ᵥ v)) volume 0 t := by
-    have h := MeasureTheory.IntegrableOn.intervalIntegrable_clm_comp hP
-      (continuousOn_propagator_left hP left_mem_uIcc) left_mem_uIcc right_mem_uIcc
-    let L : (EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2)) →L[ℂ] Fin 2 → ℂ :=
-      (PiLp.continuousLinearEquiv 2 ℂ fun _ : Fin 2 ↦ ℂ).toContinuousLinearMap ∘L
-        ContinuousLinearMap.apply ℂ (EuclideanSpace ℂ (Fin 2)) (WithLp.toLp 2 v)
-    have hL (s : ℝ) : L (P s ∘L propagator P s 0) =
-        diracCoeff q z s *ᵥ (diracFundamentalMatrix q s z *ᵥ v) := by
-      simp [L, P, ← toEuclideanCLM_diracFundamentalMatrix, PiLp.coe_continuousLinearEquiv]
-    have hint' : IntervalIntegrable (fun s ↦ L (P s ∘L propagator P s 0)) volume 0 t :=
-      ⟨L.integrable_comp h.1, L.integrable_comp h.2⟩
-    simpa only [hL] using hint'
   -- The functional `x ↦ x₀ - i x₁`.
   let ℓ : (Fin 2 → ℂ) →L[ℂ] ℂ := ContinuousLinearMap.proj 0 - I • ContinuousLinearMap.proj 1
   have hℓ (x : Fin 2 → ℂ) : ℓ x = x 0 - I * x 1 := by simp [ℓ]
   have key := congrArg ℓ
     (diracFundamentalMatrix_mulVec_eq_add_integral hq left_mem_uIcc right_mem_uIcc z v)
-  rw [map_add, ← ℓ.intervalIntegral_comp_comm hint] at key
+  rw [map_add, ← ℓ.intervalIntegral_comp_comm
+    (intervalIntegrable_diracCoeff_mulVec_diracFundamentalMatrix_mulVec hq z v)] at key
   simpa only [hℓ, hermiteBiehler_diracCoeff, v, Matrix.mulVec_single_one, Matrix.col_apply]
     using key
 
