@@ -42,7 +42,9 @@ laws:
   continuous total-space map, carries transport along `γ` to transport along the image of `γ`
   under `g` (`TauCeti.VectorBundleOrientationCover.orientationTransport_map`);
 * it follows lifts of `γ` to the orientation double cover
-  (`TauCeti.VectorBundleOrientationCover.orientationTransport_eq_of_lift`).
+  (`TauCeti.VectorBundleOrientationCover.orientationTransport_eq_of_lift`), so along a path inside
+  the base set of a trivialization of the atlas it keeps the reading of an orientation in that
+  trivialization (`TauCeti.VectorBundleOrientationCover.orientationTransport_mapOrientation_symm`).
 
 The last property characterizes it: a family of orientations of the fibres along `γ` that is
 continuous in the orientation double cover is the transport of its initial value.
@@ -164,6 +166,36 @@ theorem orientationTransport_neg (γ : Path b₀ b₁) (o : Orientation ℝ (E b
   let cov := isCoveringMap_proj (F := F) (E := E) hι
   rw [orientationTransport_apply, orientationTransport_apply, ← fiberMap_deck_mk,
     ← cov.fiberMap_monodromy cov _ proj_comp_deck, fiberEquiv_fiberMap_deck]
+
+omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [Fintype ι] in
+/-- An orientation read as `o` in a trivialization at a point `b'` equal to `b` is the orientation
+of `E b` read as `o` there. -/
+private theorem fiberEquiv_mk_mapOrientation_symm (e : Trivialization F (π F E)) [e.IsLinear ℝ]
+    {b b' : B} (h : b' = b) (hb : b ∈ e.baseSet) (hb' : b' ∈ e.baseSet) (o : Orientation ℝ F ι) :
+    fiberEquiv F E ι b ⟨⟨b', (e.mapOrientation ι hb').symm o⟩, h⟩ =
+      (e.mapOrientation ι hb).symm o := by
+  subst h
+  exact fiberEquiv_mk _
+
+/-- **Transport inside one chart is constant.** Along a path `γ` that stays in the base set of a
+trivialization `e` of the atlas, transport carries the orientation of `E b₀` read as `o` in `e` to
+the orientation of `E b₁` read as `o` in `e`. -/
+theorem orientationTransport_mapOrientation_symm (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] (γ : Path b₀ b₁) (hγ : ∀ t, γ t ∈ e.baseSet)
+    (hb₀ : b₀ ∈ e.baseSet) (hb₁ : b₁ ∈ e.baseSet) (o : Orientation ℝ F ι) :
+    orientationTransport E hι γ ((e.mapOrientation ι hb₀).symm o) =
+      (e.mapOrientation ι hb₁).symm o := by
+  -- The orientations read as `o` in `e` along `γ` form a lift of `γ` to the orientation cover.
+  let Γ : C(I, VectorBundleOrientationCover F E ι) :=
+    ⟨fun t ↦ ⟨γ t, (e.mapOrientation ι (hγ t)).symm o⟩,
+      (continuous_mk_mapOrientation_symm hι e o).comp (γ.continuous.subtype_mk hγ)⟩
+  have h₀ : fiberEquiv F E ι b₀ ⟨Γ 0, γ.source⟩ = (e.mapOrientation ι hb₀).symm o :=
+    fiberEquiv_mk_mapOrientation_symm e γ.source hb₀ (hγ 0) o
+  have h₁ : fiberEquiv F E ι b₁ ⟨Γ 1, γ.target⟩ = (e.mapOrientation ι hb₁).symm o :=
+    fiberEquiv_mk_mapOrientation_symm e γ.target hb₁ (hγ 1) o
+  rw [← h₀, ← h₁]
+  exact orientationTransport_eq_of_lift hι γ Γ rfl γ.source γ.target
 
 section Map
 

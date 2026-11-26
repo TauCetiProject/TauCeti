@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Topology.VectorBundle.Moebius
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Trivialization
+import TauCeti.Data.SignType.Basic
+import TauCeti.Topology.Algebra.Module.Determinant
 import TauCeti.Topology.VectorBundle.Coordinates
 import TauCeti.Topology.VectorBundle.Orientation.Atlas
 
@@ -93,19 +95,10 @@ def circleClutchingCore (A : F ≃L[ℝ] F) : VectorBundleCore ℝ Circle F Bool
   continuousOn_coordChange i j := by
     by_cases hij : i = j
     · simpa [hij] using continuousOn_const
-    · intro z hz
-      have hc : Continuous fun w : Circle ↦ (w : ℂ).im :=
-        Complex.continuous_im.comp continuous_subtypeVal
-      refine ContinuousAt.continuousWithinAt ?_
+    · simp only [hij, false_or]
       -- Off the real axis the transition is locally constant.
-      rcases (im_ne_zero_of_mem_moebiusBaseSet hij hz.1 hz.2).lt_or_gt with h | h
-      · refine continuousAt_const.congr
-          (f := fun _ ↦ if i then (A.symm : F →L[ℝ] F) else (A : F →L[ℝ] F)) ?_
-        filter_upwards [hc.continuousAt.eventually (gt_mem_nhds h)] with w hw
-        simp [hij, hw.not_gt]
-      · refine continuousAt_const.congr (f := fun _ ↦ ContinuousLinearMap.id ℝ F) ?_
-        filter_upwards [hc.continuousAt.eventually (lt_mem_nhds h)] with w hw
-        simp [hw]
+      exact fun z hz ↦ (continuousAt_ite_im_pos _ _
+        (im_ne_zero_of_mem_moebiusBaseSet hij hz.1 hz.2)).continuousWithinAt
   coordChange_comp i j k z _ v := by
     by_cases h : 0 < (z : ℂ).im
     · simp [h]
@@ -118,22 +111,38 @@ theorem circleClutchingCore_baseSet (i : Bool) :
     (circleClutchingCore A).baseSet i = moebiusBaseSet i :=
   (rfl)
 
+/-- The base set of the local trivialization `i` of the clutched bundle is
+`TauCeti.moebiusBaseSet i`. -/
+@[simp]
+theorem circleClutchingCore_localTriv_baseSet (i : Bool) :
+    ((circleClutchingCore A).localTriv i).baseSet = moebiusBaseSet i :=
+  (rfl)
+
+/-- The transitions of the clutched bundle: the identity from a chart to itself and on the upper
+half-circle, and otherwise `A` from the chart `false` to the chart `true` and `A⁻¹` back. -/
+@[simp]
+theorem circleClutchingCore_coordChange (i j : Bool) (z : Circle) :
+    (circleClutchingCore A).coordChange i j z =
+      if i = j ∨ 0 < (z : ℂ).im then ContinuousLinearMap.id ℝ F
+      else if i then (A.symm : F →L[ℝ] F) else (A : F →L[ℝ] F) :=
+  (rfl)
+
 /-- On the upper half-circle the transitions of the clutched bundle are the identity. -/
 theorem circleClutchingCore_coordChange_of_pos (i j : Bool) {z : Circle} (hz : 0 < (z : ℂ).im) :
     (circleClutchingCore A).coordChange i j z = ContinuousLinearMap.id ℝ F := by
-  simp [circleClutchingCore, hz]
+  simp [hz]
 
 /-- On the lower half-circle the transition of the clutched bundle from the chart `false` to the
 chart `true` is `A`. -/
 theorem circleClutchingCore_coordChange_false_true_of_neg {z : Circle} (hz : (z : ℂ).im < 0) :
     (circleClutchingCore A).coordChange false true z = A := by
-  simp [circleClutchingCore, hz.not_gt]
+  simp [hz.not_gt]
 
 /-- On the lower half-circle the transition of the clutched bundle from the chart `true` to the
 chart `false` is `A⁻¹`. -/
 theorem circleClutchingCore_coordChange_true_false_of_neg {z : Circle} (hz : (z : ℂ).im < 0) :
     (circleClutchingCore A).coordChange true false z = A.symm := by
-  simp [circleClutchingCore, hz.not_gt]
+  simp [hz.not_gt]
 
 variable [FiniteDimensional ℝ F] {ι : Type*} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
 
@@ -143,13 +152,10 @@ theorem nonempty_vectorBundleOrientation_circleClutchingCore_iff :
     Nonempty (VectorBundleOrientation F (circleClutchingCore A).Fiber ι) ↔
       0 < (A : F →L[ℝ] F).det := by
   let Z := circleClutchingCore A
-  have hA : (A : F →L[ℝ] F).det ≠ 0 := by
-    have := (LinearEquiv.det A.toLinearEquiv).ne_zero
-    rwa [LinearEquiv.coe_det] at this
   refine ⟨fun ⟨o⟩ ↦ ?_, fun h ↦ ?_⟩
   · -- If `det A < 0`, the transition from the chart `false` to the chart `true` has positive
     -- determinant at `i` and negative determinant at `-i`.
-    refine (lt_or_gt_of_ne hA).resolve_left fun hneg ↦ ?_
+    refine (lt_or_gt_of_ne A.det_coe_ne_zero).resolve_left fun hneg ↦ ?_
     let p : Circle := Circle.exp (π / 2)
     let q : Circle := Circle.exp (-(π / 2))
     have hp : 0 < (p : ℂ).im := by simp [p, Circle.coe_exp]
@@ -158,10 +164,9 @@ theorem nonempty_vectorBundleOrientation_circleClutchingCore_iff :
     have : MemTrivializationAtlas (Z.localTriv true) := ⟨⟨true, rfl⟩⟩
     have hdet {z : Circle} (hz : (z : ℂ).im ≠ 0) :
         LinearMap.det (((Z.localTriv false).coordChangeL ℝ (Z.localTriv true) z).toLinearEquiv :
-          F →ₗ[ℝ] F) = (Z.coordChange false true z).det := by
-      rw [← Z.localTriv_coordChangeL ⟨mem_moebiusBaseSet_of_im_ne_zero hz false,
-        mem_moebiusBaseSet_of_im_ne_zero hz true⟩]
-      rfl
+          F →ₗ[ℝ] F) = (Z.coordChange false true z).det :=
+      Z.det_coordChangeL_localTriv_eq_det_coordChange (mem_moebiusBaseSet_of_im_ne_zero hz false)
+        (mem_moebiusBaseSet_of_im_ne_zero hz true)
     refine (VectorBundleOrientation.isEmpty_of_det_coordChangeL_pos_of_neg hι
       (Z.localTriv false) (Z.localTriv true) (isPreconnected_moebiusBaseSet false)
       (isPreconnected_moebiusBaseSet true) le_rfl le_rfl
@@ -178,12 +183,9 @@ theorem nonempty_vectorBundleOrientation_circleClutchingCore_iff :
       (S := univ) (fun z ↦ ⟨Z.indexAt z, mem_univ _, Z.mem_baseSet_at z⟩) ?_⟩
     rintro i - j - z -
     by_cases hz : i = j ∨ 0 < (z : ℂ).im
-    · simp [Z, circleClutchingCore, hz, ContinuousLinearMap.det]
-    · simp only [Z, circleClutchingCore, hz, ↓reduceIte]
-      split_ifs
-      · rw [ContinuousLinearEquiv.det_coe_symm]
-        exact inv_pos.2 h
-      · exact h
+    · simp [Z, hz]
+    · obtain ⟨hij, him⟩ := not_or.1 hz
+      cases i <;> cases j <;> simp [Z, him, ContinuousLinearEquiv.det_coe_symm, h] at hij ⊢
 
 /-- **The orientation character of the clutched bundle around the circle is the sign of
 `det A`.** Transport once around the circle preserves orientations of the fibres exactly when
@@ -199,17 +201,7 @@ theorem coe_freeLoopOrientationCharacter_circleClutchingCore_id :
       ← nonempty_vectorBundleOrientation_circleClutchingCore_iff A hι,
       VectorBundleOrientation.nonempty_iff_exists_section hι]
     exact ⟨fun ⟨s, hs⟩ ↦ ⟨s, s.continuous, hs⟩, fun ⟨s, hs, hs'⟩ ↦ ⟨⟨s, hs⟩, hs'⟩⟩
-  have hA : (A : F →L[ℝ] F).det ≠ 0 := by
-    have := (LinearEquiv.det A.toLinearEquiv).ne_zero
-    rwa [LinearEquiv.coe_det] at this
-  rcases Int.units_eq_one_or (VectorBundleOrientationCover.freeLoopOrientationCharacter F
-    (circleClutchingCore A).Fiber hι (ContinuousMap.id Circle)) with h | h <;> rw [h]
-  · rw [sign_pos (key.1 h)]
-    rfl
-  · have hneg : (A : F →L[ℝ] F).det < 0 :=
-      (lt_or_gt_of_ne hA).resolve_right fun hpos ↦ absurd ((key.2 hpos).symm.trans h) (by decide)
-    rw [sign_neg hneg]
-    rfl
+  exact coe_units_eq_sign_of_eq_one_iff A.det_coe_ne_zero key
 
 /-- **Transport around the circle through the two charts is `A`.** For a loop at a point `p` of
 the upper half-circle that runs along a path `γ` in the circle minus `1` to a point `q` of the
@@ -227,21 +219,13 @@ theorem coe_orientationCharacter_circleClutchingCore_fromPath_trans {p q : Circl
   rw [VectorBundleOrientationCover.coe_orientationCharacter_fromPath_trans hι (Z.localTriv false)
     (Z.localTriv true) γ γ' hγ hγ']
   -- The composite transition is `A` at `q` followed by the identity at `p`.
-  have hq' : ((Z.localTriv false).coordChangeL ℝ (Z.localTriv true) q : F →L[ℝ] F) = A := by
-    rw [Z.localTriv_coordChangeL ⟨mem_moebiusBaseSet_of_im_ne_zero hq.ne false,
-      mem_moebiusBaseSet_of_im_ne_zero hq.ne true⟩,
-      circleClutchingCore_coordChange_false_true_of_neg A hq]
-  have hp' : ((Z.localTriv true).coordChangeL ℝ (Z.localTriv false) p : F →L[ℝ] F) =
-      ContinuousLinearMap.id ℝ F := by
-    rw [Z.localTriv_coordChangeL ⟨mem_moebiusBaseSet_of_im_ne_zero hp.ne' true,
-      mem_moebiusBaseSet_of_im_ne_zero hp.ne' false⟩,
-      circleClutchingCore_coordChange_of_pos A _ _ hp]
-  have hM : ((((Z.localTriv false).coordChangeL ℝ (Z.localTriv true) q).trans
-      ((Z.localTriv true).coordChangeL ℝ (Z.localTriv false) p)).toLinearEquiv : F →ₗ[ℝ] F) =
-        (A : F →L[ℝ] F) := by
-    ext v
-    exact (DFunLike.congr_fun hp' _).trans (DFunLike.congr_fun hq' v)
-  rw [hM]
+  rw [ContinuousLinearEquiv.trans_toLinearEquiv, LinearEquiv.coe_trans, LinearMap.det_comp,
+    Z.det_coordChangeL_localTriv_eq_det_coordChange (mem_moebiusBaseSet_of_im_ne_zero hp.ne' true)
+      (mem_moebiusBaseSet_of_im_ne_zero hp.ne' false),
+    Z.det_coordChangeL_localTriv_eq_det_coordChange (mem_moebiusBaseSet_of_im_ne_zero hq.ne false)
+      (mem_moebiusBaseSet_of_im_ne_zero hq.ne true),
+    circleClutchingCore_coordChange_of_pos A _ _ hp,
+    circleClutchingCore_coordChange_false_true_of_neg A hq, ContinuousLinearMap.det_id, one_mul]
 
 /-- The **rank-two clutching by `diag(1, -1)`** is not orientable: its orientation character is
 `-1`. -/

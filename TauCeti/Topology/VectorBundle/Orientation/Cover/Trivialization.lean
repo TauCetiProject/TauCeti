@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
+import TauCeti.Data.SignType.Basic
 
 /-!
 # Orientation transport read in trivializations
@@ -19,7 +20,8 @@ orientation local system of a bundle described by transition functions is determ
 * **Inside one chart transport is constant.** Along a path that stays in the base set of a
   trivialization `e`, transport carries the orientation read as `o` in `e` at the start to the
   orientation read as `o` in `e` at the end
-  (`TauCeti.VectorBundleOrientationCover.orientationTransport_mapOrientation_symm`).
+  (`TauCeti.VectorBundleOrientationCover.orientationTransport_mapOrientation_symm`, in
+  `TauCeti.Topology.VectorBundle.Orientation.Cover.Transport`).
 * **Across two charts transport is the transition.** Let a loop at `b₀` run along a path `γ` from
   `b₀` to `b₁` inside the base set of `e`, then back along a path `γ'` inside the base set of
   `e'`. Read in `e` at `b₀`, transport around it applies the composite `M` of the coordinate
@@ -40,8 +42,6 @@ The orientation character is also characterized through transport along a repres
 
 ## Main results
 
-* `TauCeti.VectorBundleOrientationCover.orientationTransport_mapOrientation_symm`: transport
-  along a path inside one chart is constant in that chart.
 * `TauCeti.VectorBundleOrientationCover.mapOrientation_orientationTransport_trans`: transport
   around a loop through two charts applies the composite of the two transitions.
 * `TauCeti.VectorBundleOrientationCover.coe_orientationCharacter_fromPath_trans`: the orientation
@@ -69,36 +69,6 @@ variable {B : Type*} [TopologicalSpace B]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
   {ι : Type*} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) {b₀ b₁ : B}
-
-omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  [Fintype ι] in
-/-- An orientation read as `o` in a trivialization at a point `b'` equal to `b` is the orientation
-of `E b` read as `o` there. -/
-private theorem fiberEquiv_mk_mapOrientation_symm (e : Trivialization F (π F E)) [e.IsLinear ℝ]
-    {b b' : B} (h : b' = b) (hb : b ∈ e.baseSet) (hb' : b' ∈ e.baseSet) (o : Orientation ℝ F ι) :
-    fiberEquiv F E ι b ⟨⟨b', (e.mapOrientation ι hb').symm o⟩, h⟩ =
-      (e.mapOrientation ι hb).symm o := by
-  subst h
-  exact fiberEquiv_mk _
-
-/-- **Transport inside one chart is constant.** Along a path `γ` that stays in the base set of a
-trivialization `e` of the atlas, transport carries the orientation of `E b₀` read as `o` in `e` to
-the orientation of `E b₁` read as `o` in `e`. -/
-theorem orientationTransport_mapOrientation_symm (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] (γ : Path b₀ b₁) (hγ : ∀ t, γ t ∈ e.baseSet)
-    (hb₀ : b₀ ∈ e.baseSet) (hb₁ : b₁ ∈ e.baseSet) (o : Orientation ℝ F ι) :
-    orientationTransport E hι γ ((e.mapOrientation ι hb₀).symm o) =
-      (e.mapOrientation ι hb₁).symm o := by
-  -- The orientations read as `o` in `e` along `γ` form a lift of `γ` to the orientation cover.
-  let Γ : C(I, VectorBundleOrientationCover F E ι) :=
-    ⟨fun t ↦ ⟨γ t, (e.mapOrientation ι (hγ t)).symm o⟩,
-      (continuous_mk_mapOrientation_symm hι e o).comp (γ.continuous.subtype_mk hγ)⟩
-  have h₀ : fiberEquiv F E ι b₀ ⟨Γ 0, γ.source⟩ = (e.mapOrientation ι hb₀).symm o :=
-    fiberEquiv_mk_mapOrientation_symm e γ.source hb₀ (hγ 0) o
-  have h₁ : fiberEquiv F E ι b₁ ⟨Γ 1, γ.target⟩ = (e.mapOrientation ι hb₁).symm o :=
-    fiberEquiv_mk_mapOrientation_symm e γ.target hb₁ (hγ 1) o
-  rw [← h₀, ← h₁]
-  exact orientationTransport_eq_of_lift hι γ Γ rfl γ.source γ.target
 
 variable (e e' : Trivialization F (π F E)) [MemTrivializationAtlas e] [MemTrivializationAtlas e']
 
@@ -174,15 +144,7 @@ theorem coe_orientationCharacter_fromPath_trans (γ : Path b₀ b₁) (γ' : Pat
         Orientation.map ι M (e.mapOrientation ι hb₀ o) = e.mapOrientation ι hb₀ o' := by
     rw [← mapOrientation_orientationTransport_trans hι e e' γ γ' hγ hγ' hb₀,
       (e.mapOrientation ι hb₀).injective.eq_iff]
-  rcases Int.units_eq_one_or (orientationCharacter F E hι b₀ (FundamentalGroup.fromPath
-    (.mk (γ.trans γ')))) with h | h <;> rw [h]
-  · rw [orientationCharacter_fromPath_eq_one_iff hι _ o, key,
-      Orientation.map_eq_iff_det_pos _ _ hι] at h
-    rw [sign_pos h]
-    rfl
-  · rw [orientationCharacter_fromPath_eq_neg_one_iff hι _ o, key,
-      Trivialization.mapOrientation_neg, Orientation.map_eq_neg_iff_det_neg _ _ hι] at h
-    rw [sign_neg h]
-    rfl
+  refine coe_units_eq_sign_of_eq_one_iff (LinearEquiv.coe_det M ▸ (LinearEquiv.det M).ne_zero) ?_
+  rw [orientationCharacter_fromPath_eq_one_iff hι _ o, key, Orientation.map_eq_iff_det_pos _ _ hι]
 
 end TauCeti.VectorBundleOrientationCover

@@ -69,18 +69,24 @@ theorem moebiusSign_mul_self (z : Circle) : moebiusSign z * moebiusSign z = 1 :=
   unfold moebiusSign
   split_ifs <;> norm_num
 
-/-- The transition function is locally constant off the real axis. -/
-theorem continuousAt_moebiusSign {z : Circle} (hz : (z : ℂ).im ≠ 0) :
-    ContinuousAt moebiusSign z := by
+/-- A function on the circle taking one value on the open upper half-circle and another
+elsewhere is locally constant off the real axis. -/
+theorem continuousAt_ite_im_pos {α : Type*} [TopologicalSpace α] (a b : α) {z : Circle}
+    (hz : (z : ℂ).im ≠ 0) : ContinuousAt (fun w : Circle ↦ if 0 < (w : ℂ).im then a else b) z := by
   have hc : Continuous fun w : Circle ↦ (w : ℂ).im :=
     Complex.continuous_im.comp continuous_subtypeVal
   rcases hz.lt_or_gt with h | h
-  · refine continuousAt_const.congr (f := fun _ ↦ (-1 : ℝ)) ?_
+  · refine continuousAt_const.congr (f := fun _ ↦ b) ?_
     filter_upwards [hc.continuousAt.eventually (gt_mem_nhds h)] with w hw
-    exact (moebiusSign_of_neg hw).symm
-  · refine continuousAt_const.congr (f := fun _ ↦ (1 : ℝ)) ?_
+    exact (ite_eq_right hw.not_gt).symm
+  · refine continuousAt_const.congr (f := fun _ ↦ a) ?_
     filter_upwards [hc.continuousAt.eventually (lt_mem_nhds h)] with w hw
-    exact (moebiusSign_of_pos hw).symm
+    exact (ite_eq_left hw).symm
+
+/-- The transition function is locally constant off the real axis. -/
+theorem continuousAt_moebiusSign {z : Circle} (hz : (z : ℂ).im ≠ 0) :
+    ContinuousAt moebiusSign z :=
+  continuousAt_ite_im_pos 1 (-1) hz
 
 /-- The chart domains of the Möbius line bundle: the circle minus `1` for `false`, minus `-1` for
 `true`. -/

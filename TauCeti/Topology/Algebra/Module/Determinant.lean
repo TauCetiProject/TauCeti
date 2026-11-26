@@ -46,6 +46,8 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 * `ContinuousLinearMap.det_one_sub_comp_comm`: Sylvester's identity
   `det (1 - X ∘L Y) = det (1 - Y ∘L X)` for continuous linear maps between free modules of finite
   rank, read from `LinearMap.det_one_sub_comp_comm`.
+* `ContinuousLinearEquiv.det_coe_ne_zero`: a continuous linear automorphism has nonzero
+  determinant.
 * `ContinuousLinearEquiv.det_piCongrRight`, `ContinuousLinearEquiv.det_negCoord`: the determinants
   of a coordinatewise continuous linear equivalence and of a single-coordinate negation.
 * `ContinuousLinearMap.exists_le_norm_det_id_sub_smul`: over `ℝ` or `ℂ`, the second-order lower
@@ -162,6 +164,13 @@ end RCLike
 end ContinuousLinearMap
 
 namespace ContinuousLinearEquiv
+
+/-- A continuous linear automorphism has nonzero determinant. -/
+theorem det_coe_ne_zero {R M : Type*} [CommRing R] [Nontrivial R] [TopologicalSpace M]
+    [AddCommGroup M] [Module R M] (A : M ≃L[R] M) : (A : M →L[R] M).det ≠ 0 := by
+  rw [ContinuousLinearMap.det, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    ← LinearEquiv.coe_det]
+  exact Units.ne_zero _
 
 section Relative
 
