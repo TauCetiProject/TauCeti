@@ -36,7 +36,7 @@ base-linear functional to the resulting value is again polynomial in those coord
 
 Evaluation at a family `x` is surjective exactly when `x` generates the algebra, and its
 bijectivity, which says that the `x i` are polynomial generators, is preserved by algebra
-isomorphisms.
+isomorphisms and by reindexing.
 
 ## Main results
 
@@ -51,6 +51,8 @@ isomorphisms.
   the `x i` generate the algebra.
 * `MvPolynomial.bijective_aeval_algEquiv_comp_iff`: an algebra isomorphism carries polynomial
   generators to polynomial generators.
+* `MvPolynomial.bijective_aeval_comp_equiv_iff`: reindexing a family of polynomial generators
+  along an equivalence gives polynomial generators.
 * `MvPolynomial.exists_pos_eval_eq_mul_eval_div`: clears nonzero polynomial denominators in the
   value of a polynomial at a coordinatewise rational map by a strictly positive polynomial factor.
 -/
@@ -140,6 +142,16 @@ theorem bijective_aeval_algEquiv_comp_iff {R A B : Type*} [CommSemiring R] [Comm
   have h : (aeval (R := R) (e ∘ x) : MvPolynomial σ R → B) = e ∘ aeval x :=
     funext fun p ↦ (comp_aeval_apply x (e : A →ₐ[R] B) p).symm
   rw [h, e.bijective.of_comp_iff']
+
+/-- Reindexing a family along an equivalence `e` of index types does not change whether evaluation
+at it is bijective, since `aeval (x ∘ e) = aeval x ∘ rename e`. In particular a reindexed family
+of polynomial generators is again one. -/
+theorem bijective_aeval_comp_equiv_iff {R A τ : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] (e : τ ≃ σ) {x : σ → A} :
+    Function.Bijective (aeval (R := R) (x ∘ e)) ↔ Function.Bijective (aeval (R := R) x) := by
+  have h : (aeval (R := R) (x ∘ e) : MvPolynomial τ R → A) = aeval x ∘ renameEquiv R e :=
+    funext fun p ↦ (aeval_rename _ _ p).symm
+  rw [h, Function.Bijective.of_comp_iff _ (renameEquiv R e).bijective]
 
 private theorem exists_pos_eval_eq_mul_eval_div_of_forall {α β K : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] {u : Set (β → K)} {N D : α → MvPolynomial β K}

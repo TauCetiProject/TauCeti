@@ -210,13 +210,8 @@ theorem exists_bijective_aeval_weylGroupCorootRep [NeZero (2 : K)]
     P.exists_bijective_aeval_weylGroupCorootRep_of_weylGroupRootRep_dual hfd hbij
   -- Reindex the generators by `Fin (dim N)`, using `dim N = dim M`.
   let e := finCongr hNM
-  refine ⟨g ∘ e, fun i ↦ ⟨d (e i), hd (e i), hg (e i)⟩, ?_⟩
-  have : MvPolynomial.aeval (R := K) (g ∘ e) =
-      (MvPolynomial.aeval g).comp (MvPolynomial.rename e) := by
-    ext
-    simp
-  rw [this]
-  exact hgbij.comp (MvPolynomial.renameEquiv K e).bijective
+  exact ⟨g ∘ e, fun i ↦ ⟨d (e i), hd (e i), hg (e i)⟩,
+    (MvPolynomial.bijective_aeval_comp_equiv_iff e).mpr hgbij⟩
 
 /-- **Chevalley's theorem for the coroot representation in characteristic zero**, for a finite
 reduced crystallographic root pairing with a base. -/
