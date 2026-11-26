@@ -11,9 +11,9 @@ public import TauCeti.Geometry.Symplectic.Floer.Plane.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Geometry.Symplectic.Floer.EndLinearization.Chart
 import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Geometry.Symplectic.Floer.Plane.ExponentialDecay
-import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Topology.Instances.Real.TSupport
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
@@ -68,7 +68,7 @@ half-cylinder `ε s > a` and the datum is `H(t) dt` from `ε s = 2` on.
   support in the end, `η'` has integrable `W^{1,2}` energy density over the cylinder
   (`TauCeti.Floer.PSSPlane.integrableOn_sobolevDensity_covectorPullback`). On the part `ε s ≥ 2`
   of the end, the formal adjoint of the cylindrical end data on `η'` is `det (dφ)` times `D_u^* η`
-  (`TauCeti.SymplecticForm.floerLinearizationAdjoint_comp_realChart_cylindricalEndLift`). On the
+  (`TauCeti.SymplecticForm.floerLinearizationAdjoint_covectorPullback_of_chart`). On the
   positive plane, whose end lies at `s → ∞` in end coordinates, the estimate of the adjoint of a
   half-cylinder at a nondegenerate orbit then bounds the `W^{1,2}` energy of `η'` by
   `∫ ‖w‖² ‖D_u^* η‖²` over the plane, by
@@ -79,8 +79,9 @@ half-cylinder `ε s > a` and the datum is `H(t) dt` from `ε s = 2` on.
   plane for the Hamiltonian `ε H(ε t)` (`TauCeti.Floer.PSSPlane.perturbation_eq_positive`), so the
   estimate covers the negative plane as well. This is the plane counterpart of the end estimate
   of the adjoint on the pair of pants
-  (`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`),
-  and its proof follows that one.
+  (`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`);
+  both are instances of the adjoint end estimate in a holomorphic end chart
+  (`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_of_chart`).
 
 The end estimate is the end ingredient of the semi-Fredholm estimate of `D_u` on the plane, on
 which the counts of PSS planes rest. The target is a symplectic vector space throughout.
@@ -568,212 +569,48 @@ private theorem tendstoUniformlyOn_sliceDefect_of_le_exp (ω : SymplecticForm V)
 
 /-! ### The formal adjoint on the end -/
 
-/-- **The formal adjoint of a PSS plane on its end.** Let `u` solve the Floer equation for the
-perturbation of the PSS plane `p` at the point `φ(ζ)` of the end, with `ζ = (s, t)` and
-`ε s ≥ 2`, where `φ` is the end lift and `ε = p.endSign`, and let each `H(t)` be `C²` on `V`. Read
-the covector field `η` in end coordinates as the `(0, 1)`-form `η (φ ·) ∘ (a + b J)`
-(`TauCeti.Floer.covectorPullback`), where `(a, b) = dφ (1, 0)`. The formal adjoint of the operator
-along `u ∘ φ` of the cylindrical datum `H(t) dt`, with the structures `J(φ(·), ·)`, applied to this
-form at `ζ`, is `det dφ = a² + b²` times the formal adjoint `D_u^* η` in the coordinate of `ℂ` at
-`φ(ζ)`. -/
-theorem floerLinearizationAdjoint_comp_realChart_cylindricalEndLift (ω : SymplecticForm V)
-    {p : PSSPlane} {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ∀ t, ContDiff ℝ 2 (H t))
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    {ζ : ℝ × ℝ} (hζ : 2 ≤ p.endSign * ζ.1)
-    (hu : DifferentiableAt ℝ u (realChart p.cylindricalEndLift ζ))
-    (hη : DifferentiableAt ℝ η (realChart p.cylindricalEndLift ζ))
-    (hJu : DifferentiableAt ℝ (fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap)
-      (realChart p.cylindricalEndLift ζ))
-    (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J (realChart p.cylindricalEndLift ζ) (u (realChart p.cylindricalEndLift ζ)))
-      (ω.perturbedFDeriv
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        (realChart p.cylindricalEndLift ζ) : ℝ × ℝ →ₗ[ℝ] V)) :
-    ω.floerLinearizationAdjoint
-        (fun ζ' y ↦ (J (realChart p.cylindricalEndLift ζ') y).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun ζ' ↦ H ζ'.2) (u ∘ realChart p.cylindricalEndLift)
-        (covectorPullback (realChart p.cylindricalEndLift)
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ =
-      (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det • ω.floerLinearizationAdjoint
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u η (realChart p.cylindricalEndLift ζ) := by
-  set w := Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift ζ)
-  have hK (v : ℂ) := eventually_differentiableAt_perturbation (p := p) hHs w v
-    (u (realChart p.cylindricalEndLift ζ))
-  have hX (v : ℂ) := ω.differentiableAt_hamiltonianVectorField_pssPlanePerturbation (p := p) hHs
-    w v (u (realChart p.cylindricalEndLift ζ))
-  refine Eq.trans ?_ (ω.floerLinearizationAdjoint_perturbationPullback
-    (contDiff_realChart p.contDiff_cylindricalEndLift).contDiffAt
-    (.of_forall fun _ ↦ isComplexLinearMap_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _))
-    hu (hK 1) (hK Complex.I) (hX 1) (hX Complex.I)
-    ((floerOperator_eq_zero_iff ω J _ _ u _).2 hfl) hη hJu)
-  -- The adjoint at `ζ` sees the pulled-back datum only at `ζ`, where it is `H(t) dt`.
-  rw [perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal,
-    perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag p hH]
-  refine ω.floerLinearizationAdjoint_congr_data _ _ .rfl rfl (funext fun x ↦ ?_)
-  rw [Real.smoothTransition.one_of_one_le (by linarith), one_mul]
+/-- A function with compact support in the part `‖w‖ > exp (2π R)` of the positive PSS plane
+vanishes in end coordinates outside a band `(R, b) × ℝ`. -/
+private theorem exists_forall_notMem_Ioo_realChart_cylindricalEndLift_eq_zero {F : Type*} [Zero F]
+    {f : ℝ × ℝ → F} (hf : HasCompactSupport f) {R : ℝ}
+    (hfR : tsupport f ⊆ {z | Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm z‖}) :
+    ∃ b, ∀ s t, s ∉ Ioo R b → f (realChart positive.cylindricalEndLift (s, t)) = 0 := by
+  obtain ⟨_, b, -, -, -, hb, hout⟩ := positive.exists_band_of_tsupport_subset hf hfR
+  refine ⟨b, fun s t hs ↦ ?_⟩
+  rcases le_or_gt s R with h | h
+  · refine image_eq_zero_of_notMem_tsupport fun h' ↦ (not_lt.2 h) ?_
+    have h'' := hfR h'
+    rwa [mem_ofPred_eq, positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff,
+      endSign_positive, one_mul] at h''
+  · rcases (not_lt.1 fun h' ↦ hs ⟨h, h'⟩).eq_or_lt with rfl | hbs
+    · exact hb t
+    · exact (hout (s, t) fun h' ↦ hbs.not_ge h'.2).eq_of_nhds
 
-/-- Where `J` is the end structure `J_e(t)` and `ε s ≥ 2`, the formal adjoint of the end data
-`(J_e(t), 0, H(t))` along `u ∘ φ` on the pulled-back form `η (φ ·) ∘ (a + b J)` is the Jacobian of
-the end lift `φ` times `D_u^* η` at `φ(ζ)`. -/
-private theorem floerLinearizationAdjoint_covectorPullback_realChart_cylindricalEndLift
-    (ω : SymplecticForm V) {p : PSSPlane} {H : ℝ → V → ℝ} (hH : Periodic H 1)
-    (hHs : ∀ t, ContDiff ℝ 2 (H t)) {J : ℝ × ℝ → V → AlmostComplexStructure V}
-    {Je : ℝ → V → AlmostComplexStructure V} {r : ℝ}
-    (hJeq : ∀ ζ : ℝ × ℝ, r < p.endSign * ζ.1 → J (realChart p.cylindricalEndLift ζ) = Je ζ.2)
-    {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {ζ : ℝ × ℝ} (hζ₁ : r < p.endSign * ζ.1)
-    (hζ₂ : 2 ≤ p.endSign * ζ.1) (hu : DifferentiableAt ℝ u (realChart p.cylindricalEndLift ζ))
-    (hη : DifferentiableAt ℝ η (realChart p.cylindricalEndLift ζ))
-    (hJu : DifferentiableAt ℝ (fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap)
-      (realChart p.cylindricalEndLift ζ))
-    (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J (realChart p.cylindricalEndLift ζ) (u (realChart p.cylindricalEndLift ζ)))
-      (ω.perturbedFDeriv
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        (realChart p.cylindricalEndLift ζ) : ℝ × ℝ →ₗ[ℝ] V)) :
-    ω.floerLinearizationAdjoint (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun w ↦ H w.2) (u ∘ realChart p.cylindricalEndLift)
-        (covectorPullback (realChart p.cylindricalEndLift)
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ =
-      (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det • ω.floerLinearizationAdjoint
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u η (realChart p.cylindricalEndLift ζ) := by
-  -- Near `ζ` the structures of the end data are those of the pulled-back data.
-  refine Eq.trans (ω.floerLinearizationAdjoint_congr_data _ _ ?_ rfl rfl)
-    (ω.floerLinearizationAdjoint_comp_realChart_cylindricalEndLift hH hHs hζ₂ hu hη hJu hfl)
-  filter_upwards [(isOpen_lt continuous_const (continuous_const.mul continuous_fst)).mem_nhds
-    hζ₁] with w hw
-  rw [hJeq w hw]
-
-/-- **The adjoint of the end, read in its chart.** On a band `[a, b]` of the end where `ε s > r`
-and `ε s ≥ 2`, and beyond `r` the structure `J` is the end structure `J_e(t)`, the `L²` norm of the
-adjoint of the end data along `u ∘ φ` on the pulled-back form `η (φ ·) ∘ (a + b J)` is at most
-`4π²` times the integral over the plane of `‖w‖² ‖D_u^* η‖²`: the squared norm of the
-pulled-back adjoint is `det (dφ)²` times `‖D_u^* η‖²`, with `det (dφ) = (2π ‖φ‖)²`, and the
-change of variables absorbs one `det (dφ)`. -/
-private theorem setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_le
-    (ω : SymplecticForm V) {p : PSSPlane} {H : ℝ → V → ℝ} (hH : Periodic H 1)
-    (hHs : ContDiff ℝ 2 (uncurry H)) {J : ℝ × ℝ → V → AlmostComplexStructure V}
-    {Je : ℝ → V → AlmostComplexStructure V}
+/-- On the positive PSS plane, where `J` is a `C¹` end structure `J_e(t)` beyond `s > r` in end
+coordinates and `u` is `C¹` on the part `‖w‖ > exp (2π r)`, the formal adjoint of the perturbation
+of the plane on a `C¹` covector field with compact support in that part has integrable square norm
+against the weight `4π² ‖w‖²`. -/
+private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_positive (ω : SymplecticForm V)
+    {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 2 (uncurry H))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V}
     (hJe : ContDiff ℝ 1 fun q : ℝ × V ↦ (Je q.1 q.2).toLinearMap.toContinuousLinearMap) {r : ℝ}
-    (hJeq : ∀ ζ : ℝ × ℝ, r < p.endSign * ζ.1 → J (realChart p.cylindricalEndLift ζ) = Je ζ.2)
+    (hJeq : ∀ ζ : ℝ × ℝ, r < positive.endSign * ζ.1 →
+      J (realChart positive.cylindricalEndLift ζ) = Je ζ.2)
     {u : ℝ × ℝ → V}
     (hu : ∀ z, Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖ → ContDiffAt ℝ 1 u z)
-    (hF : ∀ z, Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖ →
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-        (ω.perturbedFDeriv
-          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-          z : ℝ × ℝ →ₗ[ℝ] V))
     {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
-    (hηr : tsupport η ⊆ {z | Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖})
-    {a b : ℝ} (hab : ∀ s ∈ Icc a b, r < p.endSign * s ∧ 2 ≤ p.endSign * s) :
-    ∫ ζ in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearizationAdjoint
-        (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun w ↦ H w.2) (u ∘ realChart p.cylindricalEndLift)
-        (covectorPullback (realChart p.cylindricalEndLift)
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ‖ ^ 2 ≤
-      4 * π ^ 2 * ∫ z, ‖Complex.equivRealProdCLM.symm z‖ ^ 2 *
-        ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u η z‖ ^ 2 := by
-  set φ := realChart p.cylindricalEndLift
-  set D := ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-    (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u η
-  have hJ {z : ℝ × ℝ} (hz : Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖) :=
-    contDiffAt_of_comp_realChart_cylindricalEndLift_eq p hJe hJeq hz (u z)
-  -- `D_u^* η` is continuous and vanishes off the support of `η`, so the weighted integrand is
-  -- integrable.
-  have hDc : Continuous D := continuous_floerLinearizationAdjoint_of_tsupport_subset
-    (fun z hz ↦ by simpa only [Function.uncurry_def] using hJ hz)
-    (fun _ _ ↦ (contDiff_uncurry_perturbation (p := p) hH hHs 1).contDiffAt)
-    (fun _ _ ↦ (contDiff_uncurry_perturbation (p := p) hH hHs Complex.I).contDiffAt) hu hη hηr
-  set g : ℝ × ℝ → ℝ := fun z ↦ ‖Complex.equivRealProdCLM.symm z‖ ^ 2 * ‖D z‖ ^ 2
-  have hg : Integrable fun z ↦ 4 * π ^ 2 * g z := by
-    refine (continuous_const.mul ((Complex.equivRealProdCLM.symm.continuous.norm.pow 2).mul
-      (hDc.norm.pow 2))).integrable_of_hasCompactSupport (hηc.mono' fun z hz ↦ ?_)
-    by_contra hz'
-    simp [D, floerLinearizationAdjoint_of_notMem_tsupport hz'] at hz
-  -- On the band the adjoint on the pulled-back form is the Jacobian `(2π ‖φ‖)²` times `D_u^* η`.
-  calc _ = ∫ ζ in Icc a b ×ˢ Icc (0 : ℝ) 1, (fderiv ℝ φ ζ).det * (4 * π ^ 2 * g (φ ζ)) := by
-        refine setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-        have hmem : Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm (φ ζ)‖ :=
-          p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 (hab _ hζ.1).1
-        rw [floerLinearizationAdjoint_covectorPullback_realChart_cylindricalEndLift ω hH
-          (fun t ↦ hHs.comp (contDiff_const.prodMk contDiff_id)) hJeq (hab _ hζ.1).1
-          (hab _ hζ.1).2 ((hu _ hmem).differentiableAt one_ne_zero)
-          (hη.differentiable one_ne_zero _) (((hJ hmem).differentiableAt one_ne_zero).comp
-            (f := fun z ↦ (z, u z)) _ (differentiableAt_id.prodMk
-              ((hu _ hmem).differentiableAt one_ne_zero))) (hF _ hmem),
-          norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
-        simp only [g, D, φ, det_fderiv_realChart_cylindricalEndLift]
-        ring
-    _ ≤ ∫ z, 4 * π ^ 2 * g z :=
-        p.setIntegral_det_mul_comp_realChart_cylindricalEndLift_le_integral
-          (fun z ↦ by positivity) hg a b
-    _ = _ := integral_const_mul _ _
-
-/-- **The pulled-back form on the positive plane.** Suppose that beyond `s > r` in end coordinates
-`J` is a `C²` end structure `J_e(t)`, and that `u` is `C²` on the part `‖w‖ > exp (2π r)` of the
-end. Then for every `C²` covector field `η` with compact support in the part `‖w‖ > exp (2π R)`,
-with `R > r`, the form `η' = η (φ ·) ∘ (a + b J)` read in end coordinates is `C²`, has period one in
-`t` and vanishes off a band `(a, b) × ℝ` with `R ≤ a`. -/
-private theorem exists_band_covectorPullback_realChart_cylindricalEndLift
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V}
-    (hJe : ContDiff ℝ 2 fun q : ℝ × V ↦ (Je q.1 q.2).toLinearMap.toContinuousLinearMap) {r : ℝ}
-    (hJeq : ∀ ζ : ℝ × ℝ, r < ζ.1 → J (realChart positive.cylindricalEndLift ζ) = Je ζ.2)
-    {u : ℝ × ℝ → V}
-    (hu : ∀ z, Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖ → ContDiffAt ℝ 2 u z)
-    {R : ℝ} (hrR : r < R) {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η)
-    (hηc : HasCompactSupport η)
-    (hηR : tsupport η ⊆ {z | Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm z‖}) :
-    ∃ a b : ℝ, a ≤ b ∧ (∀ s ∈ Icc a b, R ≤ s) ∧
-      ContDiff ℝ 2 (covectorPullback (realChart positive.cylindricalEndLift)
-        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ∧
-      (∀ s t, covectorPullback (realChart positive.cylindricalEndLift)
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η (s, t + 1) =
-        covectorPullback (realChart positive.cylindricalEndLift)
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η (s, t)) ∧
-      ∀ s t, s ∉ Ioo a b → covectorPullback (realChart positive.cylindricalEndLift)
-        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η (s, t) = 0 := by
-  set φ := realChart positive.cylindricalEndLift
-  have hφ : ContDiff ℝ 3 φ := contDiff_realChart positive.contDiff_cylindricalEndLift
-  -- In end coordinates `η` is supported in a band `[a, b]` with `s ≥ R` there.
-  obtain ⟨a, b, hab, hband, ha, hb, hout⟩ := positive.exists_band_of_tsupport_subset hηc hηR
-  refine ⟨a, b, hab, fun s hs ↦ by simpa only [endSign_positive, one_mul] using hband s hs,
-    ?_, fun s t ↦ ?_, fun s t hs ↦ ?_⟩
-  · -- The form is `C²`, since `J` is `J_e` and `u` is `C²` beyond `r`.
-    refine contDiff_covectorPullback_of_eqOn
-      (Je := fun ζ y ↦ (Je ζ.2 y).toLinearMap.toContinuousLinearMap)
-      (isOpen_lt continuous_const continuous_fst) (fun _ _ ↦ hφ.contDiffAt)
-      (hJe.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd))
-      (fun ζ hζ ↦ by simp only [Function.comp_apply, hJeq ζ hζ])
-      (fun ζ hζ ↦ hu _ (positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2
-        (by rwa [endSign_positive, one_mul])))
-      (hη.comp (hφ.of_le (by norm_num))) fun ζ hζ ↦ ?_
-    obtain h := hηR (tsupport_comp_subset_preimage _ hφ.continuous hζ)
-    rw [mem_ofPred_eq, positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff,
-      endSign_positive, one_mul] at h
-    exact hrR.trans h
-  · -- The form has period one, as the end lift has.
-    exact covectorPullback_add_snd_of_periodic_snd (realChart_cylindricalEndLift_add_one positive)
-      _ u η s t
-  · -- Off the open band, `η ∘ φ` vanishes.
-    refine covectorPullback_eq_zero_of_apply_eq_zero _ _ u ?_
-    by_cases hs' : s ∈ Icc a b
-    · rcases eq_or_lt_of_le hs'.1 with rfl | has
-      · exact ha t
-      · rw [le_antisymm hs'.2 (not_lt.1 fun hsb ↦ hs ⟨has, hsb⟩)]
-        exact hb t
-    · exact (hout (s, t) hs').eq_of_nhds
+    (hηr : tsupport η ⊆ {z | Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖}) :
+    Integrable fun z ↦ 4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm z‖ ^ 2 *
+      ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u η z‖ ^ 2 :=
+  ω.integrable_mul_norm_floerLinearizationAdjoint_sq (isOpen_lt continuous_const (by fun_prop))
+    (fun z hz ↦ by simpa only [uncurry_def] using
+      contDiffAt_of_comp_realChart_cylindricalEndLift_eq positive hJe hJeq hz (u z))
+    (fun _ _ ↦ (contDiff_uncurry_perturbation (p := positive) hH hHs 1).contDiffAt)
+    (fun _ _ ↦ (contDiff_uncurry_perturbation (p := positive) hH hHs Complex.I).contDiffAt) hu
+    (by fun_prop) hη subset_rfl hηc hηr
 
 /-- **The end estimate of the formal adjoint on the positive PSS plane.** Let `u` be `C²` on a part
 `‖w‖ > exp (2π r)` of the end of the positive PSS plane, solving there the Floer equation for the
@@ -798,8 +635,8 @@ as for the dual of `W^{1,2}`. Every PSS plane is the positive plane for the Hami
 as well.
 
 This is the plane counterpart of the end estimate of the adjoint on the pair of pants,
-`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`, and the
-proof follows the same steps as the estimate of the adjoint in a holomorphic end chart,
+`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`; both are
+instances of the adjoint end estimate in a holomorphic end chart,
 `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_of_chart`. -/
 theorem
     exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_positive
@@ -836,57 +673,55 @@ theorem
             (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             u η z‖ ^ 2 := by
   set φ := realChart positive.cylindricalEndLift
-  have hφ : ContDiff ℝ 3 φ := contDiff_realChart positive.contDiff_cylindricalEndLift
-  have hmem {R : ℝ} {ζ : ℝ × ℝ} (h : R < ζ.1) :
-      Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm (φ ζ)‖ :=
-    positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 (by simpa using h)
-  -- `J_e` has period one, as the end lift has.
-  have hJe1 : Je 1 = Je 0 :=
-    (periodic_of_forall_comp_eq (realChart_cylindricalEndLift_add_one positive (r + 1))
-      fun t ↦ hJeq (r + 1, t) (by simp)).eq
-  -- The end estimate of the adjoint on the half-cylinder of the end data.
-  obtain ⟨C₁, -, R₂, hest⟩ :=
-    ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint hX hHs hx hnd
-      (hJe.of_le one_le_two) hJe1 hJex (u := u ∘ φ)
-      ((eventually_gt_atTop r).mono fun s hs t ↦ ((hu _ (hmem hs)).of_le one_le_two).comp _
-        (hφ.contDiffAt.of_le (by norm_num)))
-      ((eventually_gt_atTop r).mono fun s hs t ↦ by
-        rw [Function.comp_apply, ← hJeq (s, t) hs]
-        exact hc _ (hmem hs))
-      hux hδ
-  set R := max (max R₂ (r + 1)) 2
-  have hR : R₂ ≤ R ∧ r + 1 ≤ R ∧ 2 ≤ R := ⟨(le_max_left _ _).trans (le_max_left _ _),
-    (le_max_right _ _).trans (le_max_left _ _), le_max_right _ _⟩
-  refine ⟨max C₁ 0 * (4 * π ^ 2), R, fun η hη hηc hηR ↦ ?_⟩
-  -- In end coordinates the form `η'` is `C²`, has period one, and vanishes off a band `(a, b)`.
-  obtain ⟨a, b, hab, hband, hη', hper, hvan⟩ :=
-    exists_band_covectorPullback_realChart_cylindricalEndLift hJe hJeq hu
-      (show r < R by linarith [hR.2.1]) hη hηc hηR
-  set η' := covectorPullback φ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η
-  calc _ = ∫ ζ in Icc a b ×ˢ Icc (0 : ℝ) 1, sobolevDensity η' ζ := by
+  have hmem {R : ℝ} {ζ : ℝ × ℝ} :
+      Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm (φ ζ)‖ ↔ R < ζ.1 := by
+    rw [positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff, endSign_positive, one_mul]
+  have hJeq' (ζ : ℝ × ℝ) (hζ : r < positive.endSign * ζ.1) : J (φ ζ) = Je ζ.2 :=
+    hJeq ζ (by rwa [endSign_positive, one_mul] at hζ)
+  -- Beyond the height `max r 2` in end coordinates, `J` is `J_e(t)` and the datum is `H(t) dt`.
+  have hR₀ {ζ : ℝ × ℝ} (hζ : max r 2 < ζ.1) : r < ζ.1 ∧ 2 ≤ ζ.1 :=
+    ⟨(le_max_left _ _).trans_lt hζ, (le_max_right _ _).trans hζ.le⟩
+  -- The adjoint end estimate in the chart `φ`, whose Jacobian is `4π² ‖w‖²`.
+  obtain ⟨C, R, hR, hest⟩ :=
+    ω.exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_of_chart
+      (R₁ := max r 2) hX hHs hx hnd hJe hJex
+      (fun ζ _ ↦ (contDiff_realChart positive.contDiff_cylindricalEndLift).contDiffAt)
+      (fun ζ _ ↦ isComplexLinearMap_fderiv_realChart (positive.hasDerivAt_cylindricalEndLift _))
+      (fun ζ _ ↦ TauCeti.Complex.fderiv_realChart_ne_zero (positive.hasDerivAt_cylindricalEndLift _)
+        (mul_ne_zero (by simp [Real.pi_ne_zero]) (positive.cylindricalEndLift_ne_zero _)))
+      (realChart_cylindricalEndLift_add_one positive)
+      ((injOn_realChart_cylindricalEndLift positive 0).mono
+        (prod_mono (subset_univ _) (by rw [zero_add]; exact Ioo_subset_Ico_self)))
+      (fun ζ hζ ↦ hJeq ζ (hR₀ hζ).1)
+      (fun ζ _ ↦ congrFun (perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal
+        positive H) ζ)
+      (fun ζ hζ ↦ funext fun x ↦ by
+        simp [perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag positive hH,
+          Real.smoothTransition.one_of_one_le (show 1 ≤ ζ.1 - 1 by linarith [(hR₀ hζ).2])])
+      (fun ζ hζ ↦ contDiffAt_of_comp_realChart_cylindricalEndLift_eq positive
+        (hJe.of_le one_le_two) hJeq' (hmem.2 (hR₀ hζ).1) _)
+      (fun ζ hζ ↦ hu _ (hmem.2 (hR₀ hζ).1)) (fun ζ hζ ↦ hc _ (hmem.2 (hR₀ hζ).1))
+      (fun ζ hζ ↦ hF _ (hmem.2 (hR₀ hζ).1)) hux hδ
+      (w := fun z ↦ 4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm z‖ ^ 2) (fun z ↦ by positivity)
+      (fun ζ _ ↦ (det_fderiv_realChart_cylindricalEndLift positive ζ).trans_le (le_of_eq (by ring)))
+  refine ⟨C * (4 * π ^ 2), R, fun η hη hηc hηR ↦ ?_⟩
+  -- In end coordinates `η` vanishes off a band `(R, b) × ℝ`, and so does `η'`.
+  obtain ⟨b, hvan⟩ := exists_forall_notMem_Ioo_realChart_cylindricalEndLift_eq_zero hηc hηR
+  have hvan' (s t : ℝ) (hs : s ∉ Ioo R b) : covectorPullback φ
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η (s, t) = 0 :=
+    covectorPullback_eq_zero_of_apply_eq_zero _ _ u (hvan s t hs)
+  calc _ = ∫ ζ in Ioi (max r 2) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback φ
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ := by
         refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
           (MeasurableSet.univ.prod measurableSet_Icc) (prod_mono (subset_univ _) subset_rfl)
           fun ζ hζ ↦ ?_
-        have h := eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hvan
-          fun h ↦ hζ.2 ⟨h, hζ.1.2⟩
+        have h := eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hvan'
+          fun h ↦ hζ.2 ⟨hR.trans_le h.1, hζ.1.2⟩
         rw [sobolevDensity_congr_of_eventuallyEq h, sobolevDensity_zero]
-    _ ≤ max C₁ 0 * ∫ ζ in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearizationAdjoint
-          (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-          (fun w ↦ H w.2) (u ∘ φ) η' ζ‖ ^ 2 := by
-        simp only [funext (sobolevDensity_apply η')]
-        exact (hest hη' hper hab (hR.1.trans (hband a ⟨le_rfl, hab⟩)) hvan).trans
-          (mul_le_mul_of_nonneg_right (le_max_left _ _) (setIntegral_nonneg
-            (measurableSet_Icc.prod measurableSet_Icc) fun _ _ ↦ sq_nonneg _))
-    _ ≤ _ := by
-        rw [mul_assoc]
-        refine mul_le_mul_of_nonneg_left
-          (setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_le ω hH hHs
-            (hJe.of_le one_le_two) (fun ζ hζ ↦ hJeq ζ (by rwa [endSign_positive, one_mul] at hζ))
-            (fun z hz ↦ (hu z hz).of_le one_le_two) hF
-            (hη.of_le one_le_two) hηc (fun z hz ↦ ?_) fun s hs ↦ ?_) (le_max_right _ _)
-        · exact lt_trans (Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos, hR.2.1])) (hηR hz)
-        · rw [endSign_positive, one_mul]
-          exact ⟨by linarith [hband s hs, hR.2.1], hR.2.2.trans (hband s hs)⟩
+    _ ≤ _ := (hest hη hvan (integrable_mul_norm_floerLinearizationAdjoint_sq_positive ω hH hHs
+          (hJe.of_le one_le_two) hJeq' (fun z hz ↦ (hu z hz).of_le one_le_two) (hη.of_le one_le_two)
+          hηc fun z hz ↦ lt_trans (Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos, le_max_left r 2]))
+            (hηR hz))).trans_eq (by simp_rw [mul_assoc, integral_const_mul])
 
 section InnerProductSpace
 

@@ -50,8 +50,8 @@ again for data that agree with the pair-of-pants data only far out on the end: o
 supported there the two adjoints agree (`floerLinearizationAdjoint_congr_data_of_tsupport`). A
 covector field `η` is read in the chart as the `(0, 1)`-form `η' = η (φ'_q ·) ∘ (a + b J)`
 (`TauCeti.Floer.covectorPullback`), on which the adjoint of the half-cylinder is `a² + b²` times
-`D_u^* η` (`floerLinearizationAdjoint_comp_positiveEndChart`). The end estimate of the adjoint on
-the half-cylinder
+`D_u^* η` (`floerLinearizationAdjoint_covectorPullback_of_chart`). The end estimate of the
+adjoint on the half-cylinder
 (`TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint`)
 then bounds the energy of `η'` by `∫_S |z - c_q|² ‖D_u^* η‖²`, for the center `c_q` of the end:
 of the two factors `a² + b² = 4π² |z - c_q|²`, one is absorbed by the change of variables. The
