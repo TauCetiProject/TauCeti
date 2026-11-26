@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Count
 public import TauCeti.Geometry.Manifold.Morse.Bott.Inequalities
 public import TauCeti.Topology.VectorBundle.Orientation.BettiNumber
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.TwistedHomology
-import TauCeti.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.Algebra.Category.ModuleCat.Finrank
 import TauCeti.Geometry.Manifold.Topology
 
@@ -42,19 +41,12 @@ its untwisted homology would contribute `t + t²`. Over a field of characteristi
 (`TauCeti.IsMorseBottFamily.twistedBettiNumber_eq_bettiNumber_of_two_eq_zero`), and the
 inequalities are those of `TauCeti.Geometry.Manifold.Morse.Bott.Inequalities`.
 
-The proof is that of the mod `2` inequalities. The homology of a band with one critical value `c`
-is the direct sum of the homologies of the Thom pairs of the negative normal bundles of the pieces
-on the level `c`
-(`TauCeti.IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair`), so its
-dimension is the sum of their contributions
-(`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_of_finrank_thomPair`, here
-`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`).
-Over a field, the Thom pair of a bundle of rank `r` has the twisted homology of its base shifted by
-`r`. A field either has characteristic two or has `2` invertible. In the first case the twist
-disappears and the mod `2` Thom isomorphism applies
-(`TauCeti.finrank_singularHomology_thomPair_of_two_eq_zero`); in the second the twisted Thom
-isomorphism does
-(`VectorBundleOrientationCover.finrank_singularHomology_thomPair_eq_finrank_twistedHomology`).
+Over any field, the homology of a band with one critical value `c` is the direct sum, over the
+pieces on the level `c`, of their homologies twisted by the orientation local systems of their
+negative normal bundles and shifted by their indices
+(`TauCeti.IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twistedHomology`), so
+its dimension is the sum of their twisted Betti numbers
+(`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`).
 The inequalities of the filtration of `M` by sublevels at a cut of the values of `f`
 (`TauCeti.IsMorseBottFamily.exists_cut_sum_finrank_sublevelPair_eq_sum`) then give the result.
 
@@ -80,7 +72,8 @@ vector bundle of rank `r j`; such frames exist exactly when `r j` is the Morse i
 The manifolds, the pieces, the model space `E` of `M` and the coefficient field lie in one
 universe. The band computation reads `ν⁻ j` through frames relabelled by `ULift (Fin (r j))`, whose
 model fibre lies in that universe, and the relabelling changes neither the orientation local system
-nor its homology.
+nor its homology
+(`TauCeti.VectorBundleOrientationCover.finrank_twistedHomology_signLocalSystem_uLift`).
 
 ## Main results
 
@@ -128,41 +121,6 @@ open Polynomial (monomial)
 open scoped ContDiff Manifold Polynomial
 
 universe u
-
-namespace TauCeti
-
-/-- Relabelling the frames of a vector bundle `V` of rank `r` by `ULift (Fin r)`, to move its model
-fibre to the universe of the base, does not change its twisted Betti numbers. If the identity of
-the fibres is continuous from the total space with model fibre `ULift (Fin r) → ℝ` to that with
-model fibre `Fin r → ℝ`, the homologies with coefficients in the two orientation local systems,
-with orientations indexed by `Fin |ULift (Fin r)|` and by `Fin r`, have the same dimension. -/
-private theorem finrank_twistedHomology_signLocalSystem_uLift {B : Type u} [TopologicalSpace B]
-    {V : B → Type u} [∀ b, AddCommMonoid (V b)] [∀ b, Module ℝ (V b)]
-    [∀ b, TopologicalSpace (V b)] {r : ℕ} [TopologicalSpace (TotalSpace (Fin r → ℝ) V)]
-    [FiberBundle (Fin r → ℝ) V] [VectorBundle ℝ (Fin r → ℝ) V]
-    [TopologicalSpace (TotalSpace (ULift (Fin r) → ℝ) V)] [FiberBundle (ULift (Fin r) → ℝ) V]
-    [VectorBundle ℝ (ULift (Fin r) → ℝ) V]
-    (hφ : Continuous fun v : TotalSpace (ULift (Fin r) → ℝ) V ↦
-      TotalSpace.mk' (Fin r → ℝ) v.proj v.snd)
-    {K : Type u} [Ring K] (m : ℕ) :
-    finrank K (twistedHomology (signLocalSystem (ULift (Fin r) → ℝ) V K
-      ((Fintype.card_fin _).trans (finrank_fintype_fun_eq_card ℝ).symm)) m) =
-      finrank K (twistedHomology (signLocalSystem (Fin r → ℝ) V K
-        ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) m) := by
-  have hι : Fintype.card (Fin r) = finrank ℝ (ULift (Fin r) → ℝ) := by simp
-  -- The orientations are indexed by `Fin |ULift (Fin r)|`, that is by `Fin r`.
-  have hfin : ∀ a : ℕ, a = r → ∀ (ha : Fintype.card (Fin a) = finrank ℝ (ULift (Fin r) → ℝ)),
-      finrank K (twistedHomology (signLocalSystem (ULift (Fin r) → ℝ) V K ha) m) =
-        finrank K (twistedHomology (signLocalSystem (ULift (Fin r) → ℝ) V K hι) m) := by
-    rintro a rfl ha
-    rfl
-  rw [hfin _ (by simp)]
-  -- The identity of the fibres identifies the two orientation local systems.
-  exact (asIso (twistedHomologyCoefficientMap (signLocalSystemIsoOfFiberwise K
-    ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm) hι
-    (φ := fun _ ↦ ContinuousLinearEquiv.refl ℝ _) hφ).inv m)).toLinearEquiv.finrank_eq
-
-end TauCeti
 
 namespace TauCeti.IsMorseBottFamily
 
@@ -312,12 +270,9 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber {a b c :
     twistedHomology (signLocalSystem (ULift (Fin (r j)) → ℝ) (V j) K
       ((Fintype.card_fin _).trans (finrank_fintype_fun_eq_card ℝ).symm))
       (n - Fintype.card (ULift (Fin (r j))))
-  let e' := e ≪≫ (biproduct.isoCoproduct W).symm
   have := finite_singularHomology_sublevelPair_of_criticalValue (ModuleCat.of K K) h.contMDiff
     h.contMDiff.continuous.isProperMap hac hcb hcrit n
-  have := Module.Finite.equiv e'.toLinearEquiv
-  have := ModuleCat.finite_of_finite_biproduct W
-  rw [e'.toLinearEquiv.finrank_eq, ModuleCat.finrank_biproduct]
+  rw [ModuleCat.finrank_eq_sum_of_iso_sigma (W := W) e]
   rw [Finset.sum_subtype _
     (p := fun j ↦ (∀ s, f (i j s) = c) ∧ Fintype.card (ULift (Fin (r j))) ≤ n) fun j ↦ by simp]
   refine Finset.sum_congr rfl fun j _ ↦ ?_

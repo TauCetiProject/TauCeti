@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Class
 public import TauCeti.Geometry.Manifold.Morse.Generic.Inequalities
 import Mathlib.Order.Interval.Set.Union
-import TauCeti.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.Algebra.Category.ModuleCat.Finrank
 import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
@@ -421,12 +420,9 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_finrank_thomPair
   let V (j : {j // ∀ s, f (i j s) = c}) : ModuleCat K := (thomPair (Fin (r j) → ℝ) fun s ↦
     (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s
     ).singularHomology (ModuleCat.of K K) n
-  let e' := e ≪≫ (biproduct.isoCoproduct V).symm
   have := finite_singularHomology_sublevelPair_of_criticalValue (ModuleCat.of K K) h.contMDiff
     h.contMDiff.continuous.isProperMap hac hcb hcrit n
-  have := Module.Finite.equiv e'.toLinearEquiv
-  have := ModuleCat.finite_of_finite_biproduct V
-  rw [e'.toLinearEquiv.finrank_eq, ModuleCat.finrank_biproduct]
+  exact ModuleCat.finrank_eq_sum_of_iso_sigma (W := V) e
 
 variable (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
