@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.RingTheory.PicardGroup.Prod
 public import TauCeti.Topology.LocallyConstant.ClopenRingHom
 import TauCeti.RingTheory.Ideal.Quotient.Operations
+import TauCeti.Topology.LocallyConstant.CharFn
 
 /-!
 # Locally constant powers of Picard classes
@@ -54,8 +55,8 @@ functions the action is the usual power.
 * `CommRing.Pic.mapRingHom_mulIndicator`: `mulIndicator` commutes with arbitrary base change.
 * `CommRing.Pic.mulIndicator_one`, `CommRing.Pic.mulIndicator_mul` and
   `CommRing.Pic.mulIndicator_mul_mulIndicator_one_sub`: the Boolean algebra identities.
-* `CommRing.Pic.charFn_smul`: the characteristic function of a clopen set `U` acts by
-  `mulIndicator` of the idempotent of `U`.
+* `CommRing.Pic.charFn_smul`, `CommRing.Pic.charFn_isIdempotentElemEquivClopens_smul`: the
+  characteristic function of a clopen set `U` acts by `mulIndicator` of the idempotent of `U`.
 * `CommRing.Pic.smul_ofMul_eq_prod`: `L ^ f` is the product of the classes `L ^ n` placed on the
   fibres `f⁻¹{n}`.
 * `CommRing.Pic.mapRingHom_smul`: base change along `ψ : R →+* S` sends `L ^ f` to
@@ -142,22 +143,12 @@ end Semiring
 
 variable {S : Type v} [CommRing S]
 
-/-- A Picard class over `S` is determined by its base changes to the clopen set `D(g)` and to its
-complement, for any idempotent `g` of `S`. -/
-private theorem eq_of_mapRingHom_eq {g : S} (hg : IsIdempotentElem g) {L M : Pic S}
-    (h₁ : mapRingHom (Ideal.Quotient.mk (Ideal.span {1 - g})) L =
-      mapRingHom (Ideal.Quotient.mk (Ideal.span {1 - g})) M)
-    (h₂ : mapRingHom (Ideal.Quotient.mk (Ideal.span {g})) L =
-      mapRingHom (Ideal.Quotient.mk (Ideal.span {g})) M) : L = M := by
-  refine (prodEquivOfIsIdempotentElem hg).injective (Prod.ext ?_ ?_) <;>
-    simpa [← mapRingHom_algebraMap, Ideal.Quotient.algebraMap_eq]
-
 /-- `mulIndicator` commutes with base change: along any ring map `ψ : R →+* S`, the base change
 of `mulIndicator he L` is `mulIndicator` of `ψ e` applied to the base change of `L`. -/
 @[simp]
 theorem mapRingHom_mulIndicator (he : IsIdempotentElem e) (ψ : R →+* S) (L : Pic R) :
     mapRingHom ψ (mulIndicator he L) = mulIndicator (he.map ψ) (mapRingHom ψ L) := by
-  refine eq_of_mapRingHom_eq (he.map ψ) ?_ ?_ <;> rw [mapRingHom_mapRingHom]
+  refine ext_of_isIdempotentElem (he.map ψ) ?_ ?_ <;> rw [mapRingHom_mapRingHom]
   · rw [mapRingHom_mulIndicator_of_map_eq_one (ψ := (Ideal.Quotient.mk _).comp ψ) he
         (mk_span_singleton_one_sub_self (ψ e)),
       mapRingHom_mulIndicator_of_map_eq_one _ (mk_span_singleton_one_sub_self (ψ e)),
@@ -183,7 +174,7 @@ theorem mulIndicator_zero (L : Pic R) :
 `D(e)` and `D(f)`, is the composite of the two indicators. -/
 theorem mulIndicator_mul {f : R} (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (L : Pic R) : mulIndicator (he.mul hf) L = mulIndicator he (mulIndicator hf L) := by
-  refine eq_of_mapRingHom_eq he ?_ ?_
+  refine ext_of_isIdempotentElem he ?_ ?_
   · rw [mapRingHom_mulIndicator_of_map_eq_one _ (mk_span_singleton_one_sub_self e),
       mapRingHom_mulIndicator, mapRingHom_mulIndicator]
     congr 1
@@ -195,7 +186,7 @@ theorem mulIndicator_mul {f : R} (he : IsIdempotentElem e) (hf : IsIdempotentEle
 class itself. -/
 theorem mulIndicator_mul_mulIndicator_one_sub (he : IsIdempotentElem e) (L : Pic R) :
     mulIndicator he L * mulIndicator he.one_sub L = L := by
-  refine eq_of_mapRingHom_eq he ?_ ?_ <;> rw [map_mul]
+  refine ext_of_isIdempotentElem he ?_ ?_ <;> rw [map_mul]
   · rw [mapRingHom_mulIndicator_of_map_eq_one _ (mk_span_singleton_one_sub_self e),
       mapRingHom_mulIndicator_of_map_eq_zero _ (by simp), mul_one]
   · rw [mapRingHom_mulIndicator_of_map_eq_zero _ (mk_singleton_self e),
@@ -266,6 +257,13 @@ theorem charFn_smul (U : Clopens (PrimeSpectrum R)) (x : Additive (Pic R)) :
   rw [← locallyConstantToEnd_apply, locallyConstantToEnd, LocallyConstant.ringHomOfClopens_charFn,
     clopenEnd_apply]
 
+/-- The characteristic function of the clopen set `D(e)` of an idempotent `e` acts by
+`mulIndicator he`. -/
+theorem charFn_isIdempotentElemEquivClopens_smul (he : IsIdempotentElem e) (x : Additive (Pic R)) :
+    LocallyConstant.charFn ℤ (isIdempotentElemEquivClopens ⟨e, he⟩).isClopen • x =
+      .ofMul (mulIndicator he x.toMul) := by
+  rw [charFn_smul, mulIndicator_congr _ he (by rw [OrderIso.symm_apply_apply])]
+
 /-- **Locally constant powers on fibres.** `L ^ f` is the product, over any finite set of integers
 containing the values of `f`, of the classes which are `L ^ n` on the fibre `f⁻¹{n}` and trivial
 elsewhere. -/
@@ -283,9 +281,10 @@ theorem smul_ofMul_eq_prod (f : LocallyConstant (PrimeSpectrum R) ℤ) {s : Fins
 @[simp]
 theorem const_smul_ofMul (n : ℤ) (L : Pic R) :
     LocallyConstant.const (PrimeSpectrum R) n • Additive.ofMul L = .ofMul (L ^ n) := by
-  -- The integer cast of `LocallyConstant` is defined as the constant function.
-  rw [ofMul_zpow, ← Int.cast_smul_eq_zsmul (LocallyConstant (PrimeSpectrum R) ℤ)]
-  rfl
+  have hn : LocallyConstant.const (PrimeSpectrum R) n = n := LocallyConstant.ext fun p ↦ by
+    rw [← LocallyConstant.evalRingHom_apply (Y := ℤ) p (n : LocallyConstant _ ℤ), map_intCast,
+      Int.cast_id, LocallyConstant.coe_const, Function.const_apply]
+  rw [ofMul_zpow, ← Int.cast_smul_eq_zsmul (LocallyConstant (PrimeSpectrum R) ℤ), hn]
 
 /-- **Base change of locally constant powers.** Along a ring map `ψ : R →+* S`, the base change of
 `L ^ f` is `ψ(L) ^ (f ∘ Spec ψ)`. For the quotient `R → R ⧸ (1 - e)` by an idempotent this says
@@ -301,28 +300,18 @@ theorem mapRingHom_smul (ψ : R →+* S) (f : LocallyConstant (PrimeSpectrum R) 
       (LocallyConstant.comapAddMonoidHom ⟨comap ψ, continuous_comap ψ⟩)
   refine DFunLike.congr_fun (LocallyConstant.addMonoidHom_ext_charFn (φ := φ) (ψ := φ') ?_) f
   intro U
-  -- The preimage of `U = D(e_U)` under `Spec ψ` is the clopen set `D(ψ e_U)`.
-  set e := isIdempotentElemEquivClopens.symm U
-  set V := isIdempotentElemEquivClopens (⟨ψ e, e.prop.map ψ⟩ : {e : S // IsIdempotentElem e})
-  have hV : (LocallyConstant.charFn ℤ U.isClopen).comap ⟨comap ψ, continuous_comap ψ⟩ =
-      LocallyConstant.charFn ℤ V.isClopen := by
-    have hU : U = isIdempotentElemEquivClopens e := (OrderIso.apply_symm_apply _ U).symm
-    have hmem (p : PrimeSpectrum S) :
-        comap ψ p ∈ (U : Set (PrimeSpectrum R)) ↔ p ∈ (V : Set (PrimeSpectrum S)) := by
-      rw [hU]
-      simp only [coe_isIdempotentElemEquivClopens_apply, V, SetLike.mem_coe, mem_basicOpen,
-        comap_asIdeal, Ideal.mem_comap]
-    ext p
-    simp only [LocallyConstant.coe_comap_apply, ContinuousMap.coe_mk, LocallyConstant.coe_charFn]
-    by_cases hp : p ∈ (V : Set (PrimeSpectrum S))
-    · rw [Set.indicator_of_mem hp, Set.indicator_of_mem ((hmem p).mpr hp), Pi.one_apply,
-        Pi.one_apply]
-    · rw [Set.indicator_of_notMem hp, Set.indicator_of_notMem (mt (hmem p).mp hp)]
+  -- Write `U = D(e)`; then `Spec ψ` pulls `D(e)` back to `D(ψ e)` (`comap_basicOpen`).
+  obtain ⟨⟨e, he⟩, rfl⟩ := isIdempotentElemEquivClopens.surjective U
+  have hV : (LocallyConstant.charFn ℤ (isIdempotentElemEquivClopens ⟨e, he⟩).isClopen).comap
+      ⟨comap ψ, continuous_comap ψ⟩ =
+      LocallyConstant.charFn ℤ (isIdempotentElemEquivClopens ⟨ψ e, he.map ψ⟩).isClopen := by
+    have h : comap ψ ⁻¹' (isIdempotentElemEquivClopens ⟨e, he⟩ : Set (PrimeSpectrum R)) =
+        isIdempotentElemEquivClopens ⟨ψ e, he.map ψ⟩ :=
+      congr_arg SetLike.coe (comap_basicOpen ψ e)
+    simp only [LocallyConstant.comap_charFn, ContinuousMap.coe_mk, h]
   simp only [φ, φ', AddMonoidHom.comp_apply, AddMonoidHom.flip_apply, smulAddHom_apply,
-    LocallyConstant.comapAddMonoidHom_apply, hV, charFn_smul, MonoidHom.toAdditive_apply_apply,
-    toMul_ofMul, mapRingHom_mulIndicator]
-  congr 2
-  exact mulIndicator_congr _ _ (by simp [V, e])
+    LocallyConstant.comapAddMonoidHom_apply, hV, charFn_isIdempotentElemEquivClopens_smul,
+    MonoidHom.toAdditive_apply_apply, toMul_ofMul, mapRingHom_mulIndicator]
 
 /-- **Restriction to a fibre.** If `f` is constantly `n` on the image of `Spec S → Spec R`, for
 instance on the clopen set `D(e)` when `S = R ⧸ (1 - e)`, then the base change of `L ^ f` to `S`
