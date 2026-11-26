@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.ZeroCharge
+import TauCeti.Topology.UnitInterval.Contractible
 import TauCeti.Topology.VectorBundle.Contractible
 
 /-!
@@ -16,7 +17,7 @@ Let `E` be a complex line bundle over a space `Y`, and let `α : Y → E` be a c
 total space, for instance a section, such as the framing section of a Hermitian line on a
 four-manifold. A continuous disc `σ : 𝔻 → Y` meets the zero set
 `Z = {y | α y = 0 in its fibre}` in `σ⁻¹(Z)`. Since `𝔻` is contractible, `E` has a continuous frame
-`φ z : ℂ ≃ E_(α (σ z))` along `σ`, and in such a frame `α ∘ σ` is a continuous function
+`φ z : ℂ ≃ E_(π (α (σ z)))` along `σ`, and in such a frame `α ∘ σ` is a continuous function
 `c : 𝔻 → ℂ`, `α (σ z) = φ z (c z)`. The **zero charge** `ContinuousMap.sectionZeroCharge α σ` is the
 zero charge of the disc `c` in `ℂ` (`ContinuousMap.zeroCharge`): the number of zeros of `α ∘ σ`,
 counted with their topological multiplicities.
@@ -157,8 +158,9 @@ private theorem preimage_coordinate_zero {B : Type*} {G : B → Y}
   simp [snd_eq_frame_apply α hC b]
 
 /-- The zero charge vanishes when the zero set of `α ∘ σ` is not compact. -/
+@[simp]
 theorem sectionZeroCharge_of_not_isCompact {σ : C(𝔻, Y)}
-    (h : ¬IsCompact (σ ⁻¹' {y | (α y).snd = 0})) : α.sectionZeroCharge σ = 0 := by
+    (h : ¬IsCompact {z | (α (σ z)).snd = 0}) : α.sectionZeroCharge σ = 0 := by
   obtain ⟨Φ, C, hΦ, hC⟩ := exists_continuous_frame_coordinate (𝕜 := ℂ) (α.comp σ)
   rw [α.sectionZeroCharge_eq_comp hΦ hC (ContinuousMap.id 𝔻) fun _ ↦ rfl, C.comp_id]
   exact zeroCharge_of_not_isCompact ((preimage_coordinate_zero α hC).symm ▸ h)
@@ -190,15 +192,16 @@ theorem sectionZeroCharge_eq_zeroCharge_of_mem_baseSet (e : Trivialization ℂ (
     simp [e.symm_continuousLinearEquivAt_eq (R := ℂ) (he z), e.symmL_apply (R := ℂ) (he z),
       e.symm_proj_apply _ (he z), g]
 
-/-- **Gauge invariance.** Multiplying `α` by a continuous function `u` that vanishes nowhere along
-`σ` does not change the zero charge of `σ`. -/
-theorem sectionZeroCharge_eq_of_eq_smul {β : C(Y, TotalSpace ℂ E)} {u : C(Y, ℂ)} {σ : C(𝔻, Y)}
-    (hβ : ∀ y, β y = TotalSpace.mk' ℂ (α y).proj (u y • (α y).snd)) (hu : ∀ z, u (σ z) ≠ 0) :
+/-- **Gauge invariance.** If, along `σ`, `β` is `α` multiplied by a continuous function `u` on the
+disc that vanishes nowhere, then `β` and `α` give `σ` the same zero charge. -/
+theorem sectionZeroCharge_eq_of_eq_smul {β : C(Y, TotalSpace ℂ E)} {σ : C(𝔻, Y)} {u : C(𝔻, ℂ)}
+    (hβ : ∀ z, β (σ z) = TotalSpace.mk' ℂ (α (σ z)).proj (u z • (α (σ z)).snd))
+    (hu : ∀ z, u z ≠ 0) :
     β.sectionZeroCharge σ = α.sectionZeroCharge σ := by
   obtain ⟨Φ, C, hΦ, hC⟩ := exists_continuous_frame_coordinate (𝕜 := ℂ) (α.comp σ)
-  -- In the frame `Φ`, the coordinate of `β ∘ σ` is `(u ∘ σ) * C`.
+  -- In the frame `Φ`, the coordinate of `β ∘ σ` is `u * C`.
   have hβC (z : 𝔻) :
-      TotalSpace.mk' ℂ (α (σ z)).proj (Φ z ((u.comp σ * C) z)) = β (σ z) := by
+      TotalSpace.mk' ℂ (α (σ z)).proj (Φ z ((u * C) z)) = β (σ z) := by
     rw [hβ, snd_eq_frame_apply α hC z]
     simp [← smul_eq_mul, map_smul]
   rw [α.sectionZeroCharge_eq_comp hΦ hC (ContinuousMap.id 𝔻) fun _ ↦ rfl, C.comp_id,
@@ -211,7 +214,6 @@ theorem sectionZeroCharge_eq_of_homotopy {σ₀ σ₁ : C(𝔻, Y)} (F : σ₀.H
     (hF : IsCompact ((F : unitInterval × 𝔻 → Y) ⁻¹' {y | (α y).snd = 0})) :
     α.sectionZeroCharge σ₀ = α.sectionZeroCharge σ₁ := by
   -- A frame along the whole homotopy, over the contractible paracompact `[0, 1] × 𝔻`.
-  have : ContractibleSpace unitInterval := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
   have : ParacompactSpace (unitInterval × 𝔻) := by
     let := TopologicalSpace.metrizableSpaceMetric (unitInterval × 𝔻)
     infer_instance

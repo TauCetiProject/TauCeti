@@ -234,6 +234,31 @@ theorem continuousOn_continuousLinearMapAt_comp [CompleteSpace 𝕜] [FiniteDime
   refine hc.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
   simp [e.coe_linearMapAt_of_mem hy]
 
+/-- On the base set of a linear trivialization `e`, a frame `φ` at `x` read in `e` is the
+automorphism `e ∘ φ` of `F`. -/
+private theorem continuousLinearMapAt_comp_frame {x : X} (e : Trivialization F (π F E))
+    [e.IsLinear 𝕜] (hx : x ∈ e.baseSet) (φ : F ≃L[𝕜] E x) :
+    (e.continuousLinearMapAt 𝕜 x).comp (φ : F →L[𝕜] E x) =
+      (φ.trans (e.continuousLinearEquivAt 𝕜 x hx) : F →L[𝕜] F) := by
+  rw [← ContinuousLinearEquiv.comp_coe, e.coe_continuousLinearEquivAt_eq' (R := 𝕜) hx]
+
+/-- Read in a linear trivialization `e`, a continuous frame `φ` along `f` with finite-dimensional
+model fibre has an inverse that is continuous at every point of `f ⁻¹' e.baseSet`. -/
+private theorem continuousAt_ringInverse_continuousLinearMapAt_comp [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 F] {φ : ∀ y, F ≃L[𝕜] E (f y)}
+    (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
+    (e : Trivialization F (π F E)) [e.IsLinear 𝕜] {y₀ : B} (hy₀ : f y₀ ∈ e.baseSet) :
+    ContinuousAt (fun y ↦ Ring.inverse
+      ((e.continuousLinearMapAt 𝕜 (f y)).comp (φ y : F →L[𝕜] E (f y)))) y₀ := by
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
+  -- The unit `toUnit` of an automorphism has that automorphism as its value.
+  refine (NormedRing.inverse_continuousAt ((φ y₀).trans
+    (e.continuousLinearEquivAt 𝕜 (f y₀) hy₀)).toUnit).comp_of_eq ?_
+      (continuousLinearMapAt_comp_frame e hy₀ (φ y₀))
+  exact (continuousOn_continuousLinearMapAt_comp hφ e).continuousAt
+    ((continuous_of_continuous_frame hφ).continuousAt.preimage_mem_nhds
+      (e.open_baseSet.mem_nhds hy₀))
+
 /-- Two continuous frames with the model fibre `F` as their source differ by a continuous family
 of automorphisms of `F`; `TauCeti.continuous_trans_symm_of_continuous_frame` allows any source. -/
 private theorem continuous_trans_symm_of_continuous_frame_aux [CompleteSpace 𝕜]
@@ -246,26 +271,16 @@ private theorem continuous_trans_symm_of_continuous_frame_aux [CompleteSpace �
   refine continuous_iff_continuousAt.2 fun y₀ ↦ ?_
   -- Read both frames in the trivialization `e` at `f y₀`, where they become automorphisms of `F`.
   let e := trivializationAt F E (f y₀)
+  have hy₀ : f y₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' (f y₀)
   have hU : f ⁻¹' e.baseSet ∈ nhds y₀ :=
     (continuous_of_continuous_frame hφ).continuousAt.preimage_mem_nhds
-      (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' (f y₀)))
-  -- On the base set the coordinate of a frame `χ` is the automorphism `e ∘ χ y`.
-  have hcoord {χ : ∀ y, F ≃L[𝕜] E (f y)} {y : B} (hy : f y ∈ e.baseSet) :
-      (e.continuousLinearMapAt 𝕜 (f y)).comp (χ y : F →L[𝕜] E (f y)) =
-        ((χ y).trans (e.continuousLinearEquivAt 𝕜 (f y) hy) : F →L[𝕜] F) := by
-    rw [← ContinuousLinearEquiv.comp_coe, e.coe_continuousLinearEquivAt_eq' (R := 𝕜) hy]
-  -- The coordinate of `ψ` is invertible at `y₀`, so its inverse is continuous there. The unit
-  -- `toUnit` of an automorphism has that automorphism as its value.
-  have hy₀ : f y₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' (f y₀)
-  have hinv : ContinuousAt (fun y ↦ Ring.inverse
-      ((e.continuousLinearMapAt 𝕜 (f y)).comp (ψ y : F →L[𝕜] E (f y)))) y₀ := by
-    refine (NormedRing.inverse_continuousAt ((ψ y₀).trans
-      (e.continuousLinearEquivAt 𝕜 (f y₀) hy₀)).toUnit).comp_of_eq ?_ (hcoord hy₀)
-    exact (continuousOn_continuousLinearMapAt_comp hψ e).continuousAt hU
-  refine (hinv.mul ((continuousOn_continuousLinearMapAt_comp hφ e).continuousAt
-    hU)).congr_of_eventuallyEq ?_
+      (e.open_baseSet.mem_nhds hy₀)
+  -- The coordinate of `ψ` is invertible at `y₀`, so its inverse is continuous there.
+  refine ((continuousAt_ringInverse_continuousLinearMapAt_comp hψ e hy₀).mul
+    ((continuousOn_continuousLinearMapAt_comp hφ e).continuousAt hU)).congr_of_eventuallyEq ?_
   filter_upwards [hU] with y (hy : f y ∈ e.baseSet)
-  rw [Pi.mul_apply, hcoord hy, hcoord hy, ContinuousLinearMap.ringInverse_equiv,
+  rw [Pi.mul_apply, continuousLinearMapAt_comp_frame e hy (φ y),
+    continuousLinearMapAt_comp_frame e hy (ψ y), ContinuousLinearMap.ringInverse_equiv,
     ContinuousLinearMap.inverse_equiv]
   ext v
   simp [e.symm_apply_apply_mk hy]
@@ -312,22 +327,15 @@ theorem continuous_frame_symm_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜
   have hU : f ⁻¹' e.baseSet ∈ nhds y₀ :=
     (continuous_of_continuous_frame hφ).continuousAt.preimage_mem_nhds
       (e.open_baseSet.mem_nhds hy₀)
-  have hcoord {y : B} (hy : f y ∈ e.baseSet) :
-      (e.continuousLinearMapAt 𝕜 (f y)).comp (φ y : F →L[𝕜] E (f y)) =
-        ((φ y).trans (e.continuousLinearEquivAt 𝕜 (f y) hy) : F →L[𝕜] F) := by
-    rw [← ContinuousLinearEquiv.comp_coe, e.coe_continuousLinearEquivAt_eq' (R := 𝕜) hy]
-  -- The coordinate of the frame is invertible at `y₀`, so its inverse is continuous there.
-  have hinv : ContinuousAt (fun y ↦ Ring.inverse
-      ((e.continuousLinearMapAt 𝕜 (f y)).comp (φ y : F →L[𝕜] E (f y)))) y₀ := by
-    refine (NormedRing.inverse_continuousAt ((φ y₀).trans
-      (e.continuousLinearEquivAt 𝕜 (f y₀) hy₀)).toUnit).comp_of_eq ?_ (hcoord hy₀)
-    exact (continuousOn_continuousLinearMapAt_comp hφ e).continuousAt hU
   have hsec : ContinuousAt (fun y ↦ (e (TotalSpace.mk' F (f y) (s y))).2) y₀ :=
     continuous_snd.continuousAt.comp ((e.continuousOn.continuousAt
       (e.open_source.mem_nhds (e.mem_source.2 hy₀))).comp hs.continuousAt)
-  refine (hinv.clm_apply hsec).congr_of_eventuallyEq ?_
+  -- The coordinate of the frame is invertible at `y₀`, so its inverse is continuous there.
+  refine ((continuousAt_ringInverse_continuousLinearMapAt_comp hφ e hy₀).clm_apply
+    hsec).congr_of_eventuallyEq ?_
   filter_upwards [hU] with y (hy : f y ∈ e.baseSet)
-  rw [hcoord hy, ContinuousLinearMap.ringInverse_equiv, ContinuousLinearMap.inverse_equiv]
+  rw [continuousLinearMapAt_comp_frame e hy (φ y), ContinuousLinearMap.ringInverse_equiv,
+    ContinuousLinearMap.inverse_equiv]
   simp [e.symm_apply_apply_mk hy]
 
 /-- **Transitions between frames along equal maps.** Let `φ` and `ψ` be continuous frames of a

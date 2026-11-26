@@ -218,12 +218,12 @@ theorem id_zeroCharge_comp (f : C(Y, ℂ)) (σ : C(𝔻, Y)) :
   rw [zeroCharge, zeroCharge, ContinuousMap.id_comp]
 
 /-- **Gauge invariance.** Multiplying `f` by a function `u` that vanishes nowhere along `σ` does
-not change the zero charge of `σ`. On the contractible disc, `u ∘ σ` is homotopic to the constant
-`1` through nonvanishing functions, and multiplying `f ∘ σ` by such a homotopy does not move its
-zeros. In particular the framed charge of a disc does not depend on the trivialization of the line
-in which the framing section is read. -/
+not change the zero charge of `σ`. In particular the framed charge of a disc does not depend on the
+trivialization of the line in which the framing section is read. -/
 theorem zeroCharge_mul_left {u : C(Y, ℂ)} (f : C(Y, ℂ)) {σ : C(𝔻, Y)} (hu : ∀ z, u (σ z) ≠ 0) :
     zeroCharge (u * f) σ = zeroCharge f σ := by
+  -- On the contractible disc, `u ∘ σ` is homotopic to the constant `1` through nonvanishing
+  -- functions, and multiplying `f ∘ σ` by such a homotopy does not move its zeros.
   have hfib : σ ⁻¹' ((u * f) ⁻¹' {0}) = σ ⁻¹' (f ⁻¹' {0}) := by
     ext z
     simp [hu z]
