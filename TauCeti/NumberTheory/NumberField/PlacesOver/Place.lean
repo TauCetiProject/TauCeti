@@ -71,6 +71,9 @@ def toPlace (v : InfinitePlace L) : Place L :=
 @[simp]
 theorem val_toPlace (v : InfinitePlace L) : v.toPlace.val = v.val := (rfl)
 
+@[simp]
+theorem toPlace_apply (v : InfinitePlace L) (x : L) : v.toPlace x = v x := (rfl)
+
 theorem toPlace_injective : Function.Injective (toPlace : InfinitePlace L → Place L) :=
   fun _ _ h ↦ Subtype.ext <| by rw [← Place.val_inj, val_toPlace, val_toPlace] at h; exact h
 
@@ -80,7 +83,11 @@ theorem not_isNonarchimedean_toPlace (v : InfinitePlace L) : ¬ IsNonarchimedean
 
 end InfinitePlace
 
-namespace _root_.AbsoluteValue.Place
+end NumberField
+
+namespace AbsoluteValue.Place
+
+open NumberField
 
 variable {L : Type*} [Field L] [CharZero L]
 
@@ -89,12 +96,8 @@ theorem isInfinitePlace_iff (w : Place L) : IsInfinitePlace w.val ↔ ¬ IsNonar
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨v, hv⟩ := (NumberField.isInfinitePlace_iff w.val).mp h
     exact hv ▸ v.not_isNonarchimedean
-  · have hreal : Rat.infinitePlace.val = Rat.AbsoluteValue.real := by
-      ext q
-      rw [← InfinitePlace.coe_apply, Rat.infinitePlace_apply, Rat.AbsoluteValue.real_eq_abs,
-        Rat.cast_abs]
-    rw [isInfinitePlace_iff_of_liesOver (w.val.under ℚ) w.val, w.not_isNonarchimedean_iff.mp h,
-      ← hreal]
+  · rw [isInfinitePlace_iff_of_liesOver (w.val.under ℚ) w.val, w.not_isNonarchimedean_iff.mp h,
+      ← Rat.infinitePlace_val_eq_real]
     exact Rat.infinitePlace.isInfinitePlace
 
 variable (L) in
@@ -115,15 +118,16 @@ theorem val_infinitePlaceEquiv_apply (w : {w : Place L // ¬ IsNonarchimedean w.
 theorem infinitePlaceEquiv_symm_apply (v : InfinitePlace L) :
     ((infinitePlaceEquiv L).symm v).val = v.toPlace := (rfl)
 
-end _root_.AbsoluteValue.Place
+end AbsoluteValue.Place
+
+namespace NumberField
 
 /-- Mathlib's action of the Galois group on the infinite places agrees with the action on
 places. -/
 @[simp]
 theorem InfinitePlace.toPlace_smul {k L : Type*} [Field k] [Field L] [CharZero L] [Algebra k L]
     (σ : L ≃ₐ[k] L) (v : InfinitePlace L) : (σ • v).toPlace = σ • v.toPlace :=
-  Place.val_injective <| AbsoluteValue.ext fun x ↦ by
-    simp [← coe_apply, AlgEquiv.smul_def, AlgEquiv.aut_inv]
+  Place.ext fun x ↦ by simp [AlgEquiv.smul_def, AlgEquiv.aut_inv]
 
 /-! ### Finite places -/
 
@@ -147,6 +151,11 @@ noncomputable def toPlace (v : FinitePlace K) : Place K :=
 
 @[simp]
 theorem val_toPlace (v : FinitePlace K) : v.toPlace.val = v.relativeAbsValue ℚ := (rfl)
+
+@[simp]
+theorem toPlace_apply (v : FinitePlace K) (x : K) :
+    v.toPlace x = v x ^ ((v.localDegree ℚ : ℝ)⁻¹) :=
+  relativeAbsValue_apply ..
 
 /-- The place attached to a finite place is equivalent to it. -/
 theorem isEquiv_toPlace (v : FinitePlace K) : v.val.IsEquiv v.toPlace.val :=
@@ -174,7 +183,11 @@ theorem exists_toPlace_eq {w : Place K} (hw : IsNonarchimedean w.val) :
 
 end FinitePlace
 
-namespace _root_.AbsoluteValue.Place
+end NumberField
+
+namespace AbsoluteValue.Place
+
+open NumberField
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -196,6 +209,4 @@ theorem toPlace_finitePlaceEquiv (w : {w : Place K // IsNonarchimedean w.val}) :
 theorem finitePlaceEquiv_symm_apply (v : FinitePlace K) :
     ((finitePlaceEquiv K).symm v).val = v.toPlace := (rfl)
 
-end _root_.AbsoluteValue.Place
-
-end NumberField
+end AbsoluteValue.Place

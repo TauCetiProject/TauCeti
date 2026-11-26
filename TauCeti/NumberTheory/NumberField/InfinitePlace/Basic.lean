@@ -85,6 +85,7 @@ absolute value on `ℚ`.
 * `NumberField.InfinitePlace.not_isNonarchimedean`: an infinite place is archimedean.
 * `NumberField.InfinitePlace.under_rat`: an infinite place restricts to the real absolute value
   on `ℚ`.
+* `Rat.infinitePlace_val_eq_real`: the infinite place of `ℚ` is the real absolute value.
 * `NumberField.InfinitePlace.not_isEquiv_of_isNonarchimedean`: an infinite place is never
   equivalent to a nonarchimedean absolute value.
 * `NumberField.IsTotallyReal.instIsEmptyIsComplex`: a totally real field has no complex infinite
@@ -354,8 +355,14 @@ theorem InfinitePlace.under_rat [CharZero K] (v : InfinitePlace K) :
     v.val.under ℚ = Rat.AbsoluteValue.real := by
   ext q
   rw [AbsoluteValue.under_apply, ← coe_apply, ← v.norm_embedding_eq, eq_ratCast (algebraMap ℚ K),
-    map_ratCast, Complex.norm_ratCast]
-  rfl
+    map_ratCast, Complex.norm_ratCast, Rat.AbsoluteValue.real_eq_abs, Rat.cast_abs]
+
+/-- The infinite place of `ℚ` is the real absolute value. -/
+@[simp]
+theorem _root_.Rat.infinitePlace_val_eq_real : Rat.infinitePlace.val = Rat.AbsoluteValue.real := by
+  ext q
+  rw [← InfinitePlace.coe_apply, Rat.infinitePlace_apply, Rat.AbsoluteValue.real_eq_abs,
+    Rat.cast_abs]
 
 /-- An infinite place is never equivalent to a nonarchimedean absolute value. -/
 theorem InfinitePlace.not_isEquiv_of_isNonarchimedean (v : InfinitePlace K)

@@ -14,8 +14,10 @@ import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 
 A finite place of an extension lies over a finite place of the base when their prime ideals
 lie over one another; every finite place lies over the place below it
-(`NumberField.FinitePlace.under`). Its local degree is the product of the ramification index and
-the residue degree. The local degrees above any fixed place sum to the degree of the extension.
+(`NumberField.FinitePlace.under`), and only over that place
+(`NumberField.FinitePlace.liesOver_iff_under_eq`). Its local degree is the product of the
+ramification index and the residue degree. The local degrees above any fixed place sum to the
+degree of the extension.
 Over a finite set `S` of places of the base, `NumberField.FinitePlace.placesAbove F S` collects
 the places above it, and a product over them of local-degree powers of values of the base places
 is the `[F : K]`-th power of the product over `S` (`NumberField.FinitePlace.prod_placesAbove`).
@@ -72,6 +74,22 @@ theorem maximalIdeal_under (w : FinitePlace F) :
 instance (w : FinitePlace F) : w.LiesOver (w.under K) := by
   rw [FinitePlace.LiesOver, maximalIdeal_under]
   exact ⟨rfl⟩
+
+/-- A finite place lies over `v` exactly when `v` is the finite place below it. -/
+theorem liesOver_iff_under_eq {w : FinitePlace F} {v : FinitePlace K} :
+    w.LiesOver v ↔ w.under K = v := by
+  refine ⟨fun h ↦ maximalIdeal_injective ?_, fun h ↦ h ▸ inferInstance⟩
+  change (w.under K).maximalIdeal = v.maximalIdeal
+  rw [maximalIdeal_under]
+  exact HeightOneSpectrum.ext (Ideal.LiesOver.over (P := w.maximalIdeal.asIdeal)).symm
+
+/-- Restricting a finite place along a tower in two steps is restricting it in one step. -/
+@[simp]
+theorem under_under (M : Type*) [Field M] [NumberField M] [Algebra K M] [Algebra M F]
+    [IsScalarTower K M F] (w : FinitePlace F) : (w.under M).under K = w.under K := by
+  apply maximalIdeal_injective
+  ext1
+  simp only [maximalIdeal_under, HeightOneSpectrum.under_asIdeal, Ideal.under_under]
 
 variable (K) in
 /-- The local degree of a finite place over `K`: ramification index times residue degree. -/
