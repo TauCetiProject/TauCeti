@@ -780,37 +780,24 @@ theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x :=
   laplaceBeltrami_add_of_contMDiffAt I (hf x) (hg x)
 
-omit [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-private theorem mgradient_mul_at
-    {f g : M → ℝ} {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
-    (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
-    mgradient I (f * g) x = f x • mgradient I g x + g x • mgradient I f x := by
-  apply ext_inner_right ℝ
-  intro v
-  rw [inner_mgradient, mvfderiv_mul hf hg]
-  simp only [inner_add_left, real_inner_smul_left, inner_mgradient, add_apply, smul_apply,
-    smul_eq_mul]
-
 /-- The Laplacian product rule uses only local `C²` regularity of both factors. -/
 theorem laplaceBeltrami_mul_of_contMDiffAt {f g : M → ℝ} {x : M}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
     laplaceBeltrami I (f * g) x = f x * laplaceBeltrami I g x +
       2 * inner ℝ (mgradient I f x) (mgradient I g x) + g x * laplaceBeltrami I f x := by
-  have : IsManifold I (1 + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  have hGf := (contMDiffAt_mgradient (n := 1) hf).mdifferentiableAt (by simp)
-  have hGg := (contMDiffAt_mgradient (n := 1) hg).mdifferentiableAt (by simp)
+  have hGf := mdifferentiableAt_mgradient hf
+  have hGg := mdifferentiableAt_mgradient hg
   have hF := hf.mdifferentiableAt (by norm_num)
   have hG := hg.mdifferentiableAt (by norm_num)
   have hscaledg := hF.smul_section hGg
   have hscaledf := hG.smul_section hGf
-  have hprod := (contMDiffAt_mgradient (n := 1) (hf.mul hg)).mdifferentiableAt (by simp)
+  have hprod := mdifferentiableAt_mgradient (hf.mul hg)
   have heq : mgradient I (f * g) =ᶠ[nhds x]
       f • mgradient I g + g • mgradient I f := by
     filter_upwards [hf.eventually_mdifferentiableAt (by norm_num),
       hg.eventually_mdifferentiableAt (by norm_num)] with y hyf hyg
-    exact mgradient_mul_at I hyf hyg
+    exact mgradient_mul_apply hyf hyg
   rw [laplaceBeltrami_def, divergence_congr_of_eventuallyEq I hprod heq,
     divergence_add I _ _ x hscaledg hscaledf]
   rw [divergence_smul_function I f (mgradient I g) x hF hGg,
