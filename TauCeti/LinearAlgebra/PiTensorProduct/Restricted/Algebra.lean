@@ -12,18 +12,20 @@ public import TauCeti.RingTheory.PiTensorProduct.Basic
 /-!
 # Restricted tensor products of algebras stabilized by idempotents
 
-Let `A i` be nonunital algebras over a commutative semiring `R`, indexed by a possibly infinite
-type `ι`, and `e i ∈ A i` idempotents. Adjoining the idempotents at the places of `T \ S` is
-multiplicative, `(x ⊗ e) (y ⊗ e) = x y ⊗ e e = x y ⊗ e`, because the `e i` are idempotent (they
-need not be units), so the transition maps `TauCeti.RestrictedTensor.stageMap R e` of the
-restricted tensor product are morphisms of nonunital algebras between the finite tensor products
-`⨂_{i ∈ S} A i`. Their direct limit `TauCeti.RestrictedTensorAlgebra R A e he` is a nonunital
-`R`-algebra, the **restricted tensor product of the `A i` stabilized by the `e i`**: the product of
-two elements is computed at a common finite stage
-(`TauCeti.RestrictedTensorAlgebra.ofFinite_mul_ofFinite`). As a module it is the restricted tensor
-product `TauCeti.RestrictedTensor R A e` (`TauCeti.RestrictedTensorAlgebra.linearEquiv`).
-Morphisms of nonunital algebras out of it correspond to compatible morphisms out of the finite
-stages (`TauCeti.RestrictedTensorAlgebra.lift`).
+Let `A i` be nonunital, not necessarily associative, algebras over a commutative semiring `R`,
+indexed by a possibly infinite type `ι`, and `e i ∈ A i` idempotents. Adjoining the idempotents at
+the places of `T \ S` is multiplicative, `(x ⊗ e) (y ⊗ e) = x y ⊗ e e = x y ⊗ e`, because the
+`e i` are idempotent (they need not be units), so the transition maps
+`TauCeti.RestrictedTensor.stageMap R e` of the restricted tensor product are morphisms of nonunital
+algebras between the finite tensor products `⨂_{i ∈ S} A i`. Their direct limit
+`TauCeti.RestrictedTensorAlgebra R A e he` is a nonunital `R`-algebra, the **restricted tensor
+product of the `A i` stabilized by the `e i`**: the product of two elements is computed at a common
+finite stage (`TauCeti.RestrictedTensorAlgebra.ofFinite_mul_ofFinite`), where pure tensors multiply
+factorwise (`TauCeti.RestrictedTensorAlgebra.ofFinite_tprod_mul_ofFinite_tprod`). As a module it is
+the restricted tensor product `TauCeti.RestrictedTensor R A e`
+(`TauCeti.RestrictedTensorAlgebra.linearEquiv`). Morphisms of nonunital algebras out of it
+correspond to compatible morphisms out of the finite stages
+(`TauCeti.RestrictedTensorAlgebra.lift`). When the `A i` are associative, so is the product.
 
 ## Main definitions
 
@@ -40,7 +42,11 @@ stages (`TauCeti.RestrictedTensorAlgebra.lift`).
 * `TauCeti.RestrictedTensor.stageMap_mul`: adjoining idempotents is multiplicative.
 * `TauCeti.RestrictedTensorAlgebra.ofFinite_mul_ofFinite`: products are computed at a common finite
   stage.
+* `TauCeti.RestrictedTensorAlgebra.ofFinite_eq_ofFinite_iff`: equality is detected at a common
+  finite stage.
 * `TauCeti.RestrictedTensorAlgebra.linearEquiv_ofFinite`: the identification on finite stages.
+* `TauCeti.RestrictedTensorAlgebra.linearEquiv_symm_tprod_mul_linearEquiv_symm_tprod`: restricted
+  pure tensors multiply factorwise.
 
 ## References
 
@@ -55,7 +61,7 @@ open scoped TensorProduct
 namespace TauCeti
 
 variable {ι : Type*} [DecidableEq ι] (R : Type*) [CommSemiring R] (A : ι → Type*)
-  [∀ i, NonUnitalSemiring (A i)] [∀ i, Module R (A i)] [∀ i, SMulCommClass R (A i) (A i)]
+  [∀ i, NonUnitalNonAssocSemiring (A i)] [∀ i, Module R (A i)] [∀ i, SMulCommClass R (A i) (A i)]
   [∀ i, IsScalarTower R (A i) (A i)] (e : ∀ i, A i)
 
 namespace RestrictedTensor
@@ -156,6 +162,13 @@ theorem ofFinite_mul_ofFinite {S T : Finset ι} (x : ⨂[R] i : S, A i) (y : ⨂
         (stageMap R e Finset.subset_union_left x * stageMap R e Finset.subset_union_right y) := by
   rw [map_mul, ofFinite_stageMap, ofFinite_stageMap]
 
+/-- Pure tensors at a finite stage multiply factorwise. -/
+@[simp]
+theorem ofFinite_tprod_mul_ofFinite_tprod (S : Finset ι) (f g : ∀ i : S, A i) :
+    ofFinite he S (⨂ₜ[R] i, f i) * ofFinite he S (⨂ₜ[R] i, g i) =
+      ofFinite he S (⨂ₜ[R] i, (f * g) i) := by
+  rw [← map_mul, PiTensorProduct.tprod_mul_tprod]
+
 variable (he) in
 /-- As a module, the restricted tensor product algebra is the restricted tensor product of the
 `A i` with reference vectors `e i`. -/
@@ -185,6 +198,32 @@ theorem linearEquiv_symm_ofFinite (S : Finset ι) (x : ⨂[R] i : S, A i) :
     (linearEquiv he).symm (RestrictedTensor.ofFinite R A e S x) = ofFinite he S x := by
   rw [linearEquiv, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
     RestrictedTensor.lift_ofFinite, LinearMap.coe_ofClass]
+
+/-- Two elements of finite stages are equal in the restricted tensor product algebra exactly when
+they agree after adjoining idempotents up to a common larger stage. -/
+theorem ofFinite_eq_ofFinite_iff {S T : Finset ι} (x : ⨂[R] i : S, A i) (y : ⨂[R] i : T, A i) :
+    ofFinite he S x = ofFinite he T y ↔
+      ∃ (U : Finset ι) (hSU : S ⊆ U) (hTU : T ⊆ U), stageMap R e hSU x = stageMap R e hTU y := by
+  rw [← (linearEquiv he).injective.eq_iff, linearEquiv_ofFinite, linearEquiv_ofFinite,
+    RestrictedTensor.ofFinite_eq_ofFinite_iff]
+
+/-- **Restricted pure tensors multiply factorwise**: `(⨂ f i) (⨂ g i) = ⨂ f i g i`. -/
+theorem linearEquiv_symm_tprod_mul_linearEquiv_symm_tprod (f g : ∀ i, A i)
+    (hf : {i | f i ≠ e i}.Finite) (hg : {i | g i ≠ e i}.Finite)
+    (hfg : {i | (f * g) i ≠ e i}.Finite) :
+    (linearEquiv he).symm (RestrictedTensor.tprod R e f hf) *
+        (linearEquiv he).symm (RestrictedTensor.tprod R e g hg) =
+      (linearEquiv he).symm (RestrictedTensor.tprod R e (f * g) hfg) := by
+  have hfS : ∀ i ∉ hf.toFinset ∪ hg.toFinset, f i = e i := fun i hi ↦ by
+    simpa using (Finset.notMem_union.mp hi).1
+  have hgS : ∀ i ∉ hf.toFinset ∪ hg.toFinset, g i = e i := fun i hi ↦ by
+    simpa using (Finset.notMem_union.mp hi).2
+  rw [RestrictedTensor.tprod_eq_ofFinite f hf _ hfS, RestrictedTensor.tprod_eq_ofFinite g hg _ hgS,
+    RestrictedTensor.tprod_eq_ofFinite (f * g) hfg _ fun i hi ↦ by
+      rw [Pi.mul_apply, hfS i hi, hgS i hi, (he i).eq],
+    linearEquiv_symm_ofFinite, linearEquiv_symm_ofFinite, linearEquiv_symm_ofFinite,
+    ofFinite_tprod_mul_ofFinite_tprod]
+  simp only [Pi.mul_apply]
 
 section lift
 
