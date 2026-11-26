@@ -93,6 +93,13 @@ def moment (N : ℕ) (v : FockSpace ε) : ℝ≥0∞ := ∫⁻ y, (1 + ‖y‖�
 /-- A Fock vector *has finite moments* if `M_N(v) < ∞` for every `N`. -/
 def HasFiniteMoments (v : FockSpace ε) : Prop := ∀ N, moment N v ≠ ⊤
 
+theorem hasFiniteMoments_iff {v : FockSpace ε} : HasFiniteMoments v ↔ ∀ N, moment N v ≠ ⊤ :=
+  Iff.rfl
+
+theorem HasFiniteMoments.moment_ne_top {v : FockSpace ε} (hv : HasFiniteMoments v) (N : ℕ) :
+    moment N v ≠ ⊤ :=
+  hv N
+
 /-- The moment of order `0` is the norm: `M_0(v) = ‖v‖`. -/
 theorem moment_zero (v : FockSpace ε) : moment 0 v = ‖v‖ₑ := by
   rw [moment, ← ofReal_norm, ReproducingModel.norm_eq_integral_norm,
