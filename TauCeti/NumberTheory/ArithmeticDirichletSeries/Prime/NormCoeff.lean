@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ArithmeticFunction.VonMangoldt
+public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.VonMangoldt
@@ -164,5 +164,15 @@ theorem norm_normCoeff_vonMangoldtTransform_le (f : IdealArithmeticFunction K)
             NumberField.RingOfIntegers.rank K]
   · rw [f.normCoeff_vonMangoldtTransform_eq_zero_of_not_isPrimePow hn, norm_zero]
     exact mul_nonneg (by positivity) vonMangoldt_nonneg
+
+/-- The partial sums of the regrouped von Mangoldt transform of an ideal weight bounded by one
+on prime powers are bounded in norm by the field degree times the rational Chebyshev function. -/
+theorem norm_sum_normCoeff_vonMangoldtTransform_le (f : IdealArithmeticFunction K)
+    (hf : ∀ A : (Ideal (𝓞 K))⁰, IsPrimePow (A : Ideal (𝓞 K)) → ‖f A‖ ≤ 1) (x : ℝ) :
+    ‖∑ n ∈ Finset.Icc 1 ⌊x⌋₊, normCoeff K f.vonMangoldtTransform n‖ ≤
+      (Module.finrank ℚ K : ℝ) * Chebyshev.psi x := by
+  rw [Chebyshev.psi, Finset.mul_sum, ← Finset.Icc_add_one_left_eq_Ioc]
+  exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun n _ ↦
+    f.norm_normCoeff_vonMangoldtTransform_le hf n)
 
 end TauCeti.IdealArithmeticFunction
