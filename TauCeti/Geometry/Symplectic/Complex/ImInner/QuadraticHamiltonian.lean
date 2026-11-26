@@ -304,12 +304,46 @@ private theorem conleyZehnderIndex_diagonalExpPath (ι : Type*) [Fintype ι] [De
     nsmul_eq_mul]
   ring
 
+omit [FiniteDimensional ℂ G] in
+/-- Multiplication by a complex scalar `c`, as a real-linear map, is the complex-linear map `c • id`
+with scalars restricted to `ℝ`. -/
+private theorem coe_lsmul_eq_restrictScalars_smul_id (c : ℂ) :
+    ((ContinuousLinearMap.lsmul ℝ ℂ c : G →L[ℝ] G) : G →ₗ[ℝ] G) =
+      (c • LinearMap.id : G →ₗ[ℂ] G).restrictScalars ℝ := by
+  ext
+  simp
+
+omit [FiniteDimensional ℂ G] in
+/-- In the basis `(i e, e)`, multiplication by a complex scalar `c` has the matrix of the realified
+`diag (conj c)`. -/
+private theorem toMatrix_imInnerSymplecticBasis_lsmul {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (e : OrthonormalBasis ι ℂ G) (c : ℂ) :
+    LinearMap.toMatrix e.imInnerSymplecticBasis e.imInnerSymplecticBasis
+        (ContinuousLinearMap.lsmul ℝ ℂ c : G →L[ℝ] G) =
+      (diagonal fun _ ↦ starRingEnd ℂ c).realify := by
+  rw [coe_lsmul_eq_restrictScalars_smul_id, e.toMatrix_imInnerSymplecticBasis_restrictScalars,
+    map_smul, LinearMap.toMatrix_id, smul_one_eq_diagonal, diagonal_map (map_zero _)]
+
+omit [FiniteDimensional ℂ G] in
+/-- In the basis `(e, i e)`, multiplication by a complex scalar `c` has the matrix of the realified
+`diag c`. -/
+private theorem toMatrix_reindex_sumComm_imInnerSymplecticBasis_lsmul {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (e : OrthonormalBasis ι ℂ G) (c : ℂ) :
+    LinearMap.toMatrix (e.imInnerSymplecticBasis.reindex (Equiv.sumComm ι ι))
+        (e.imInnerSymplecticBasis.reindex (Equiv.sumComm ι ι))
+        (ContinuousLinearMap.lsmul ℝ ℂ c : G →L[ℝ] G) =
+      (diagonal fun _ ↦ c).realify := by
+  rw [coe_lsmul_eq_restrictScalars_smul_id,
+    e.toMatrix_reindex_sumComm_imInnerSymplecticBasis_restrictScalars, map_smul,
+    LinearMap.toMatrix_id, smul_one_eq_diagonal]
+
 /-- **The Conley–Zehnder index of the origin for `a ‖z‖²`.** On a complex inner product space of
 complex dimension `n` with the symplectic form `Im ⟪·, ·⟫_ℂ`, the constant orbit at the origin of
 the quadratic Hamiltonian `a ‖z‖²` has Conley–Zehnder index `-n (⌊a / π⌋ + ⌈a / π⌉)`, read in
 symplectic bases, in which `ω` has the matrix `J`. Its linearized flow is `t ↦ e^{-2 i a t}`: for
-`a > 0` each multiple of `π` in `(0, a)` contributes `-2 n` and a multiple equal to `a`
-contributes `-n`; for `a < 0` the signs are reversed. -/
+`a > 0` the start `t = 0` contributes `-n`, each multiple of `π` in `(0, a)` contributes `-2 n`,
+and a multiple equal to `a` contributes `-n`; for `a < 0` the signs are reversed, and the index
+is `0` at `a = 0`. -/
 theorem orbitConleyZehnderIndex_mul_norm_sq (a : ℝ)
     (hH : ContDiff ℝ 2 (uncurry fun (_ : ℝ) (y : G) ↦ a * ‖y‖ ^ 2)) :
     (imInnerSymplecticForm G).orbitConleyZehnderIndex hH
@@ -320,34 +354,26 @@ theorem orbitConleyZehnderIndex_mul_norm_sq (a : ℝ)
   have hb := e.toMatrix_imInnerSymplecticForm
   have hx : Continuous fun _ : ℝ ↦ (0 : G) := continuous_const
   -- The linearized flow along the origin is multiplication by `e^{-2 i a t}`.
-  have hΨ (t : unitInterval) : ((ω.linearizedFlowPath hH hx t : G →L[ℝ] G) : G →ₗ[ℝ] G) =
-      ((exp ((-2 * a * t : ℝ) * I) • LinearMap.id : G →ₗ[ℂ] G).restrictScalars ℝ) := by
+  have hΨ (t : unitInterval) : ω.linearizedFlowPath hH hx t =
+      ContinuousLinearMap.lsmul ℝ ℂ (exp ((-2 * a * t : ℝ) * I)) := by
     rw [SymplecticForm.linearizedFlowPath_apply]
     simp only [ω, hamiltonianVectorField_imInnerSymplecticForm_mul_norm_sq_eq_smul,
       ContinuousLinearMap.fderiv, dysonSeriesLeft_const, smul_smul,
       AlmostComplexStructure.exp_smul_ofComplexModule]
-    ext v
-    simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.lsmul_apply,
-      LinearMap.restrictScalars_apply, LinearMap.smul_apply, LinearMap.id_apply]
-    congr 3
-    push_cast
-    ring
+    rw [show (t : ℝ) * -(2 * a) = -2 * a * t by ring]
   -- In the symplectic basis `(i e, e)` its matrices are the realified `diag (e^{2 i a t})`, the
   -- conjugates of the complex matrices.
   have hmat (t : unitInterval) : ω.matrixPath hb (ω.linearizedFlowPath hH hx)
       (ω.apply_linearizedFlowPath_apply hH hx) t =
         (diagonalExpPath (Fin (finrank ℂ G)) (2 * a)).map GLSymplectic.continuous_ofUnitary t := by
+    have hconj : starRingEnd ℂ (exp ((-2 * a * t : ℝ) * I)) = exp ((2 * a * t : ℝ) * I) := by
+      rw [← Complex.exp_conj, map_mul, Complex.conj_ofReal, Complex.conj_I]
+      push_cast
+      ring_nf
     refine Subtype.ext (Units.ext ?_)
     rw [SymplecticForm.matrixPath_apply, SymplecticForm.coe_toGLSymplectic, hΨ t,
-      e.toMatrix_imInnerSymplecticBasis_restrictScalars, Path.map_coe, Function.comp_apply,
-      GLSymplectic.coe_ofUnitary, coe_diagonalExpPath_apply, map_smul, LinearMap.toMatrix_id,
-      smul_one_eq_diagonal, diagonal_map (map_zero _), ← Complex.exp_conj, map_mul,
-      Complex.conj_ofReal, Complex.conj_I]
-    congr 2
-    funext
-    congr 1
-    push_cast
-    ring
+      toMatrix_imInnerSymplecticBasis_lsmul, hconj, Path.map_coe, Function.comp_apply,
+      GLSymplectic.coe_ofUnitary, coe_diagonalExpPath_apply]
   have h2 : 2 * a / (2 * Real.pi) = a / Real.pi := mul_div_mul_left _ _ two_ne_zero
   rw [SymplecticForm.orbitConleyZehnderIndex_def, ω.conleyZehnderIndex_eq hb,
     GLSymplectic.conleyZehnderIndex_congr _ _ hmat, conleyZehnderIndex_diagonalExpPath, h2,
@@ -394,15 +420,9 @@ theorem conleyZehnderIndex_eq_of_toMatrix_fderiv_timeDependentHamiltonianFlow_mu
   have hmat (t : unitInterval) :
       γ t = (diagonalExpPath ι (-2 * a)).map GLSymplectic.continuous_ofUnitary t := by
     refine Subtype.ext (Units.ext ?_)
-    have hlin : ((fderiv ℝ ((imInnerSymplecticForm G).timeDependentHamiltonianFlow
-        (fun _ y ↦ a * ‖y‖ ^ 2) hX 0 t) 0 : G →L[ℝ] G) : G →ₗ[ℝ] G) =
-          ((exp ((-2 * a * t : ℝ) * I) • LinearMap.id : G →ₗ[ℂ] G).restrictScalars ℝ) := by
-      rw [fderiv_timeDependentHamiltonianFlow_mul_norm_sq, sub_zero]
-      ext v
-      simp
-    rw [hγ t, hlin, e.toMatrix_reindex_sumComm_imInnerSymplecticBasis_restrictScalars,
-      Path.map_coe, Function.comp_apply, GLSymplectic.coe_ofUnitary, coe_diagonalExpPath_apply,
-      map_smul, LinearMap.toMatrix_id, smul_one_eq_diagonal]
+    rw [hγ t, fderiv_timeDependentHamiltonianFlow_mul_norm_sq, sub_zero,
+      toMatrix_reindex_sumComm_imInnerSymplecticBasis_lsmul, Path.map_coe, Function.comp_apply,
+      GLSymplectic.coe_ofUnitary, coe_diagonalExpPath_apply]
   have h2 : -2 * a / (2 * Real.pi) = -(a / Real.pi) := by
     rw [neg_mul, neg_div, mul_div_mul_left _ _ two_ne_zero]
   rw [GLSymplectic.conleyZehnderIndex_congr _ _ hmat, conleyZehnderIndex_diagonalExpPath, h2,
