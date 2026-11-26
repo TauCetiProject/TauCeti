@@ -22,7 +22,7 @@ is unique, so the normalizer is in bijection with `Eˣ × Gal(E/F)`.
 
 An automorphism `φ` normalizing `Eˣ` satisfies `φ ∘ (x ·) = (τ x ·) ∘ φ` for a map `τ`, and
 evaluating at `1` gives `φ x = τ(x) φ(1)`, so `τ = φ(1)⁻¹ φ` is multiplicative
-(`TauCeti.algEquivOfMulLmul`).
+(`LinearMap.GeneralLinearGroup.algEquivOfMulLmul`).
 
 ## Main declarations
 
@@ -115,6 +115,12 @@ theorem apply_eq_of_mul_lmul {φ : E →ₗ[F] E} {τ : E → E}
   simpa [Algebra.coe_lmul_eq_mul, LinearMap.mul_apply'] using
     congrArg (fun ψ : E →ₗ[F] E ↦ ψ 1) (h v)
 
+end TauCeti
+
+namespace LinearMap.GeneralLinearGroup
+
+variable {F : Type*} [Field F] {E : Type*} [Field E] [Algebra F E]
+
 private theorem apply_one_ne_zero (φ : LinearMap.GeneralLinearGroup F E) :
     (φ : E →ₗ[F] E) 1 ≠ 0 :=
   (LinearMap.GeneralLinearGroup.toLinearEquiv φ).map_ne_zero_iff.2 one_ne_zero
@@ -130,18 +136,24 @@ noncomputable def algEquivOfMulLmul (φ : LinearMap.GeneralLinearGroup F E) {τ 
         have hxy := congrArg (fun ψ : E →ₗ[F] E ↦ ψ y) (h x)
         simp only [mul_apply_eq_comp, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply'] at hxy
         simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.mulRight_apply, hxy,
-          apply_eq_of_mul_lmul h x, mul_inv_cancel_right₀ (apply_one_ne_zero φ)]
+          TauCeti.apply_eq_of_mul_lmul h x, mul_inv_cancel_right₀ (apply_one_ne_zero φ)]
         ring)
     ((Units.mk0 _ (inv_ne_zero (apply_one_ne_zero φ))).mulRight_bijective.comp
       (LinearMap.GeneralLinearGroup.toLinearEquiv φ).bijective)
 
-/-- `TauCeti.algEquivOfMulLmul` is `τ`. -/
+/-- `LinearMap.GeneralLinearGroup.algEquivOfMulLmul` is `τ`. -/
 @[simp]
 theorem algEquivOfMulLmul_apply (φ : LinearMap.GeneralLinearGroup F E) {τ : E → E}
     (h : ∀ x, (φ : E →ₗ[F] E) * Algebra.lmul F E x = Algebra.lmul F E (τ x) * φ) (v : E) :
     algEquivOfMulLmul φ h v = τ v :=
-  (congrArg (· * ((φ : E →ₗ[F] E) 1)⁻¹) (apply_eq_of_mul_lmul h v)).trans
+  (congrArg (· * ((φ : E →ₗ[F] E) 1)⁻¹) (TauCeti.apply_eq_of_mul_lmul h v)).trans
     (mul_inv_cancel_right₀ (apply_one_ne_zero φ) _)
+
+end LinearMap.GeneralLinearGroup
+
+namespace TauCeti
+
+variable {F : Type*} [Field F] {E : Type*} [Field E] [Algebra F E]
 
 /-- **The normalizer of `Eˣ` in `GL_F(E)`** consists of the maps `v ↦ c τ(v)` with `c ∈ Eˣ` and
 `τ ∈ Gal(E/F)`. -/
@@ -164,10 +176,11 @@ theorem mem_normalizer_lmulUnitsRange_iff {φ : LinearMap.GeneralLinearGroup F E
       simp only [Units.val_mul, Units.coe_map, mul_assoc, Units.inv_mul, mul_one] at this
       exact this.symm
     choose τ hτ using hconj
-    refine ⟨Units.mk0 _ (apply_one_ne_zero φ), algEquivOfMulLmul φ hτ, ?_⟩
+    refine ⟨Units.mk0 _ (LinearMap.GeneralLinearGroup.apply_one_ne_zero φ),
+      φ.algEquivOfMulLmul hτ, ?_⟩
     ext v
-    rw [mulGalois_apply, Units.val_mk0, algEquivOfMulLmul_apply, apply_eq_of_mul_lmul hτ v,
-      mul_comm]
+    rw [mulGalois_apply, Units.val_mk0, LinearMap.GeneralLinearGroup.algEquivOfMulLmul_apply,
+      apply_eq_of_mul_lmul hτ v, mul_comm]
   · rintro ⟨c, τ, rfl⟩
     refine Subgroup.mem_normalizer_iff.2 fun u ↦ ?_
     refine ⟨mulGalois_conj_mem_lmulUnitsRange c τ, fun hu ↦ ?_⟩
