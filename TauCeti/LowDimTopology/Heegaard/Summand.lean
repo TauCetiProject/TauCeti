@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Module
-public import TauCeti.LowDimTopology.Heegaard.AddBasepoint
-public import TauCeti.LowDimTopology.Heegaard.LensSpace.Diagram
-public import TauCeti.LowDimTopology.Heegaard.Stabilization
+public import TauCeti.LowDimTopology.Heegaard.CurveHomology
+public import TauCeti.LowDimTopology.Heegaard.MinusDifferential
 
 /-!
 # The summands of the Heegaard Floer complexes indexed by `ε`-classes
@@ -52,29 +51,19 @@ maps every summand to itself and commutes with the projection of a chain onto a 
 `TauCeti.HeegaardRegionSystem.infinityDifferential_filter`): the complexes `CF̂`, `CF⁻` and
 `CF^∞` are the direct sums of their summands over the `ε`-classes.
 
-The `ε`-classes are compatible with the moves on diagrams. Stabilization does not change which
-generators are joined by domains, so it identifies the `ε`-classes of the two diagrams
-(`TauCeti.HeegaardRegionSystem.stabilizeEpsilonClassEquiv`), and its identification of the hat
-chain groups carries each summand onto the corresponding summand
-(`TauCeti.HeegaardRegionSystem.map_stabilizeChainEquiv_epsilonSummand`). Adding a basepoint
-doubles the generators, `(x, 0)` and `(x, 1)` for each generator `x`, and these two lie in the
-same `ε`-class (`TauCeti.HeegaardRegionSystem.epsilonClass_addBasepointGenerator_eq_iff`), so it
-too identifies the `ε`-classes (`TauCeti.HeegaardRegionSystem.addBasepointEpsilonClassEquiv`).
-
-For the genus-one diagram of the lens space `L(p, q)` the `p` generators lie in pairwise
-different `ε`-classes, so there are exactly `p` of them
-(`TauCeti.HeegaardRegionSystem.card_epsilonClass_lensSpace`), one for each spin^c structure of
-`L(p, q)`, and each class contains exactly one generator.
+The compatibility of the `ε`-classes with stabilization and with adding a basepoint is in
+`TauCeti.LowDimTopology.Heegaard.Stabilization.Summand` and
+`TauCeti.LowDimTopology.Heegaard.AddBasepoint.Summand`, and the `ε`-classes of the genus-one
+diagram of a lens space are counted in `TauCeti.LowDimTopology.Heegaard.LensSpace.Summand`.
 
 ## Main definitions
 
 * `TauCeti.HeegaardRegionSystem.EpsilonClass`: the classes of generators under `ε(x, y) = 0`.
 * `TauCeti.HeegaardRegionSystem.epsilonClass`: the class of a generator.
+* `TauCeti.HeegaardRegionSystem.EpsilonClass.lift`: a function on generators that is constant on
+  `ε`-classes, as a function on classes.
 * `TauCeti.HeegaardRegionSystem.EpsilonClass.epsilon`: the difference `ε` of two classes.
 * `TauCeti.HeegaardRegionSystem.epsilonSummand`: the chains supported on one class.
-* `TauCeti.HeegaardRegionSystem.stabilizeEpsilonClassEquiv`,
-  `TauCeti.HeegaardRegionSystem.addBasepointEpsilonClassEquiv`: the identifications of classes
-  under stabilization and under adding a basepoint.
 
 ## Main results
 
@@ -93,8 +82,6 @@ different `ε`-classes, so there are exactly `p` of them
   `TauCeti.HeegaardRegionSystem.minusDifferential_filter`,
   `TauCeti.HeegaardRegionSystem.infinityDifferential_filter`: the differentials commute with the
   projections onto the summands.
-* `TauCeti.HeegaardRegionSystem.card_epsilonClass_lensSpace`: the diagram of `L(p, q)` has `p`
-  classes.
 
 ## References
 
@@ -174,6 +161,18 @@ theorem EpsilonClass.ind {motive : H.EpsilonClass → Prop} (h : ∀ x, motive (
     (c : H.EpsilonClass) : motive c :=
   Quotient.ind h c
 
+/-- A function on generators that is constant on `ε`-classes descends to the `ε`-classes. -/
+def EpsilonClass.lift {β : Sort*} (f : H.Generator → β)
+    (hf : ∀ x y, H.epsilonClass x = H.epsilonClass y → f x = f y) : H.EpsilonClass → β :=
+  Quotient.lift f fun x y h => hf x y (Quotient.sound h)
+
+/-- The descended function takes the value `f x` on the class of `x`. -/
+@[simp]
+theorem EpsilonClass.lift_epsilonClass {β : Sort*} (f : H.Generator → β)
+    (hf : ∀ x y, H.epsilonClass x = H.epsilonClass y → f x = f y) (x : H.Generator) :
+    EpsilonClass.lift f hf (H.epsilonClass x) = f x :=
+  (rfl)
+
 variable (H) in
 /-- The difference `ε(c, d) ∈ CurveHomology` of two `ε`-classes: the class `ε(x, y)` of any
 generators `x` of `c` and `y` of `d`. -/
@@ -252,6 +251,11 @@ def epsilonSummand (c : H.EpsilonClass) : Submodule R (H.Generator →₀ R) :=
 
 variable {H R}
 
+/-- The summand of `c` is the submodule of chains supported on the generators of `c`. -/
+theorem epsilonSummand_eq_supported (c : H.EpsilonClass) :
+    H.epsilonSummand R c = Finsupp.supported R R {x | H.epsilonClass x = c} :=
+  (rfl)
+
 /-- A chain lies in the summand of `c` exactly when it vanishes on the generators outside `c`. -/
 theorem mem_epsilonSummand_iff {c : H.EpsilonClass} {v : H.Generator →₀ R} :
     v ∈ H.epsilonSummand R c ↔ ∀ x, H.epsilonClass x ≠ c → v x = 0 :=
@@ -284,46 +288,6 @@ theorem isInternal_epsilonSummand (R : Type*) [Ring R] [DecidableEq H.EpsilonCla
   DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top (H.iSupIndep_epsilonSummand R)
     (H.iSup_epsilonSummand R)
 
-variable {H R}
-
-/-- A map of free modules on generators whose matrix coefficients `k x y` vanish between
-generators of different `ε`-classes commutes with restriction to the generators of a class. -/
-private theorem filter_of_apply_eq_sum [DecidableEq H.EpsilonClass]
-    {f : (H.Generator →₀ R) → H.Generator →₀ R} {k : H.Generator → H.Generator → R}
-    (hf : ∀ v y, f v y = v.sum fun x a => a * k x y)
-    (hk : ∀ x y, k x y ≠ 0 → H.epsilonClass x = H.epsilonClass y) (c : H.EpsilonClass)
-    (v : H.Generator →₀ R) :
-    f (v.filter fun x => H.epsilonClass x = c) = (f v).filter fun y => H.epsilonClass y = c := by
-  have hk' (x y : H.Generator) (hxy : H.epsilonClass x ≠ H.epsilonClass y) : k x y = 0 :=
-    not_imp_comm.mp (hk x y) hxy
-  ext y
-  rw [Finsupp.filter_apply, hf, hf, Finsupp.sum_fintype _ _ fun _ => zero_mul _,
-    Finsupp.sum_fintype _ _ fun _ => zero_mul _]
-  split_ifs with hy
-  · refine Finset.sum_congr rfl fun x _ => ?_
-    rw [Finsupp.filter_apply]
-    split_ifs with hx
-    · rfl
-    · rw [zero_mul, hk' x y (fun h => hx (h.trans hy)), mul_zero]
-  · refine Finset.sum_eq_zero fun x _ => ?_
-    rw [Finsupp.filter_apply]
-    split_ifs with hx
-    · rw [hk' x y (fun h => hy (h.symm.trans hx)), mul_zero]
-    · rw [zero_mul]
-
-/-- A map as in `filter_of_apply_eq_sum` maps the summand of each class to itself. -/
-private theorem mem_epsilonSummand_of_apply_eq_sum
-    {f : (H.Generator →₀ R) → H.Generator →₀ R} {k : H.Generator → H.Generator → R}
-    (hf : ∀ v y, f v y = v.sum fun x a => a * k x y)
-    (hk : ∀ x y, k x y ≠ 0 → H.epsilonClass x = H.epsilonClass y) {c : H.EpsilonClass}
-    {v : H.Generator →₀ R} (hv : v ∈ H.epsilonSummand R c) : f v ∈ H.epsilonSummand R c := by
-  classical
-  have hfv : v.filter (fun x => H.epsilonClass x = c) = v :=
-    (Finsupp.filter_eq_self_iff _ _).mpr fun x hx =>
-      not_imp_comm.mp (mem_epsilonSummand_iff.mp hv x) hx
-  rw [← hfv, filter_of_apply_eq_sum hf hk]
-  exact mem_epsilonSummand_iff.mpr fun _ hx => Finsupp.filter_apply_neg _ _ hx
-
 end Summand
 
 section Differentials
@@ -352,7 +316,7 @@ theorem hatDifferential_filter [DecidableEq H.EpsilonClass] (c : H.EpsilonClass)
     H.hatDifferential χ (v.filter fun x => H.epsilonClass x = c) =
       (H.hatDifferential χ v).filter fun y => H.epsilonClass y = c :=
   filter_of_apply_eq_sum hatDifferential_apply
-    (fun _ _ => epsilonClass_eq_of_hatCoefficient_ne_zero) c v
+    (fun _ _ h => by rw [epsilonClass_eq_of_hatCoefficient_ne_zero h]) v
 
 variable [Fintype Basepoint]
 
@@ -368,8 +332,8 @@ theorem epsilonClass_eq_of_minusCoefficient_ne_zero (h : H.minusCoefficient χ x
 theorem minusDifferential_mem_epsilonSummand {c : H.EpsilonClass}
     {v : H.Generator →₀ (ZMod 2)[X]} (hv : v ∈ H.epsilonSummand (ZMod 2)[X] c) :
     H.minusDifferential χ v ∈ H.epsilonSummand (ZMod 2)[X] c :=
-  mem_epsilonSummand_of_apply_eq_sum minusDifferential_apply
-    (fun _ _ => epsilonClass_eq_of_minusCoefficient_ne_zero) hv
+  mem_supported_of_apply_eq_sum minusDifferential_apply
+    (fun _ hx _ h => (epsilonClass_eq_of_minusCoefficient_ne_zero h).symm.trans hx) hv
 
 /-- **The splitting of `CF⁻` along `ε`-classes.** The minus differential commutes with the
 projection of a chain onto the summand of each `ε`-class. -/
@@ -378,7 +342,7 @@ theorem minusDifferential_filter [DecidableEq H.EpsilonClass] (c : H.EpsilonClas
     H.minusDifferential χ (v.filter fun x => H.epsilonClass x = c) =
       (H.minusDifferential χ v).filter fun y => H.epsilonClass y = c :=
   filter_of_apply_eq_sum minusDifferential_apply
-    (fun _ _ => epsilonClass_eq_of_minusCoefficient_ne_zero) c v
+    (fun _ _ h => by rw [epsilonClass_eq_of_minusCoefficient_ne_zero h]) v
 
 /-- The coefficients of the infinity differential, the minus coefficients read as Laurent
 polynomials, vanish between generators of different `ε`-classes. -/
@@ -390,8 +354,8 @@ private theorem epsilonClass_eq_of_toLaurent_minusCoefficient_ne_zero
 theorem infinityDifferential_mem_epsilonSummand {c : H.EpsilonClass}
     {v : H.Generator →₀ (ZMod 2)[T;T⁻¹]} (hv : v ∈ H.epsilonSummand (ZMod 2)[T;T⁻¹] c) :
     H.infinityDifferential χ v ∈ H.epsilonSummand (ZMod 2)[T;T⁻¹] c :=
-  mem_epsilonSummand_of_apply_eq_sum infinityDifferential_apply
-    (fun _ _ => epsilonClass_eq_of_toLaurent_minusCoefficient_ne_zero) hv
+  mem_supported_of_apply_eq_sum infinityDifferential_apply
+    (fun _ hx _ h => (epsilonClass_eq_of_toLaurent_minusCoefficient_ne_zero h).symm.trans hx) hv
 
 /-- **The splitting of `CF^∞` along `ε`-classes.** The infinity differential commutes with the
 projection of a chain onto the summand of each `ε`-class. -/
@@ -400,122 +364,9 @@ theorem infinityDifferential_filter [DecidableEq H.EpsilonClass] (c : H.EpsilonC
     H.infinityDifferential χ (v.filter fun x => H.epsilonClass x = c) =
       (H.infinityDifferential χ v).filter fun y => H.epsilonClass y = c :=
   filter_of_apply_eq_sum infinityDifferential_apply
-    (fun _ _ => epsilonClass_eq_of_toLaurent_minusCoefficient_ne_zero) c v
+    (fun _ _ h => by rw [epsilonClass_eq_of_toLaurent_minusCoefficient_ne_zero h]) v
 
 end Differentials
-
-section Stabilization
-
-variable (r₀ : Region)
-
-/-- Stabilization does not change the `ε`-classes: `x ∪ {x₀}` and `y ∪ {x₀}` lie in the same
-class of the stabilized diagram exactly when `x` and `y` lie in the same class. -/
-@[simp]
-theorem epsilonClass_stabilizeGenerator_eq_iff {x y : H.Generator} :
-    (H.stabilize r₀).epsilonClass (H.stabilizeGenerator r₀ x) =
-        (H.stabilize r₀).epsilonClass (H.stabilizeGenerator r₀ y) ↔
-      H.epsilonClass x = H.epsilonClass y := by
-  simp only [epsilonClass_eq_epsilonClass_iff_exists_isDomainBetween, isDomainBetween_stabilize_iff]
-
-/-- The identification of the `ε`-classes of a diagram with those of its stabilization, sending
-the class of `x` to the class of `x ∪ {x₀}`. -/
-noncomputable def stabilizeEpsilonClassEquiv : H.EpsilonClass ≃ (H.stabilize r₀).EpsilonClass :=
-  Quotient.congr (H.stabilizeGeneratorEquiv r₀) fun x y => by
-    rw [stabilizeGeneratorEquiv_apply, stabilizeGeneratorEquiv_apply, epsilonSetoid_apply,
-      epsilonSetoid_apply, ← epsilonClass_eq_epsilonClass_iff, ← epsilonClass_eq_epsilonClass_iff,
-      epsilonClass_stabilizeGenerator_eq_iff]
-
-/-- The identification sends the class of `x` to the class of `x ∪ {x₀}`. -/
-@[simp]
-theorem stabilizeEpsilonClassEquiv_epsilonClass (x : H.Generator) :
-    H.stabilizeEpsilonClassEquiv r₀ (H.epsilonClass x) =
-      (H.stabilize r₀).epsilonClass (H.stabilizeGenerator r₀ x) :=
-  (Quotient.congr_mk _ _ x).trans (congrArg _ (H.stabilizeGeneratorEquiv_apply r₀ x))
-
-/-- The identification of the hat chain groups by stabilization carries the summand of each
-`ε`-class onto the summand of the corresponding class of the stabilized diagram. -/
-theorem map_stabilizeChainEquiv_epsilonSummand (c : H.EpsilonClass) :
-    (H.epsilonSummand (ZMod 2) c).map (H.stabilizeChainEquiv r₀).toLinearMap =
-      (H.stabilize r₀).epsilonSummand (ZMod 2) (H.stabilizeEpsilonClassEquiv r₀ c) := by
-  induction c using EpsilonClass.ind with
-  | h z =>
-    simp only [epsilonSummand, Finsupp.supported_eq_span_single, Submodule.map_span,
-      ← Set.image_comp]
-    congr 1
-    ext w
-    simp only [Set.mem_image, Set.mem_ofPred_eq, Function.comp_apply, LinearEquiv.coe_coe,
-      stabilizeChainEquiv_single, stabilizeEpsilonClassEquiv_epsilonClass]
-    constructor
-    · rintro ⟨x, hx, rfl⟩
-      exact ⟨_, (H.epsilonClass_stabilizeGenerator_eq_iff r₀).mpr hx, rfl⟩
-    · rintro ⟨g, hg, rfl⟩
-      obtain ⟨x, rfl⟩ := (H.stabilizeGeneratorEquiv r₀).surjective g
-      rw [stabilizeGeneratorEquiv_apply] at hg ⊢
-      exact ⟨x, (H.epsilonClass_stabilizeGenerator_eq_iff r₀).mp hg, rfl⟩
-
-end Stabilization
-
-section AddBasepoint
-
-variable (r₀ : Region)
-
-/-- Adding a basepoint does not change the `ε`-classes: the generators `(x, i)` and `(y, j)` of
-the diagram with an added basepoint lie in the same class exactly when `x` and `y` lie in the same
-class, whatever the new points `i` and `j`. -/
-@[simp]
-theorem epsilonClass_addBasepointGenerator_eq_iff {x y : H.Generator} {i j : Fin 2} :
-    (H.addBasepoint r₀).epsilonClass (H.addBasepointGenerator r₀ x i) =
-        (H.addBasepoint r₀).epsilonClass (H.addBasepointGenerator r₀ y j) ↔
-      H.epsilonClass x = H.epsilonClass y := by
-  simp only [epsilonClass_eq_epsilonClass_iff_exists_isDomainBetween,
-    isDomainBetween_addBasepoint_iff]
-  refine ⟨fun ⟨D, hD, _⟩ => ⟨_, hD⟩, fun ⟨D, hD⟩ => ⟨Sum.elim D ![D r₀ + (j - i), 0, 0], ?_⟩⟩
-  simpa using hD
-
-/-- The identification of the `ε`-classes of a diagram with those of the diagram with an added
-basepoint, sending the class of `x` to the common class of `(x, 0)` and `(x, 1)`. -/
-noncomputable def addBasepointEpsilonClassEquiv :
-    H.EpsilonClass ≃ (H.addBasepoint r₀).EpsilonClass :=
-  Equiv.ofBijective
-    (Quotient.lift (fun x => (H.addBasepoint r₀).epsilonClass (H.addBasepointGenerator r₀ x 0))
-      fun _ _ h => (H.epsilonClass_addBasepointGenerator_eq_iff r₀).mpr (Quotient.sound h))
-    ⟨fun c d => by
-      induction c using EpsilonClass.ind with
-      | h x =>
-        induction d using EpsilonClass.ind with
-        | h y => exact (H.epsilonClass_addBasepointGenerator_eq_iff r₀).mp,
-    fun c => by
-      induction c using EpsilonClass.ind with
-      | h g =>
-        obtain ⟨⟨x, k⟩, rfl⟩ := (H.addBasepointGeneratorEquiv r₀).surjective g
-        rw [addBasepointGeneratorEquiv_apply]
-        exact ⟨H.epsilonClass x, (H.epsilonClass_addBasepointGenerator_eq_iff r₀).mpr rfl⟩⟩
-
-/-- The identification sends the class of `x` to the class of `(x, k)`, for either new point
-`k`. -/
-theorem addBasepointEpsilonClassEquiv_epsilonClass (x : H.Generator) (k : Fin 2) :
-    H.addBasepointEpsilonClassEquiv r₀ (H.epsilonClass x) =
-      (H.addBasepoint r₀).epsilonClass (H.addBasepointGenerator r₀ x k) :=
-  (H.epsilonClass_addBasepointGenerator_eq_iff r₀).mpr rfl
-
-end AddBasepoint
-
-section LensSpace
-
-variable {p : ℕ} [NeZero p] {q : (ZMod p)ˣ} {r : ZMod p}
-
-/-- In the genus-one diagram of `L(p, q)` distinct generators lie in distinct `ε`-classes. -/
-theorem epsilonClass_lensSpace_injective : Function.Injective (lensSpace p q r).epsilonClass :=
-  fun _ _ h => epsilon_lensSpace_eq_zero_iff.mp (epsilonClass_eq_epsilonClass_iff.mp h)
-
-/-- The genus-one diagram of `L(p, q)` has exactly `p` `ε`-classes, one for each of its
-generators. -/
-theorem card_epsilonClass_lensSpace : Nat.card (lensSpace p q r).EpsilonClass = p := by
-  rw [← Nat.card_congr (Equiv.ofBijective _
-      ⟨epsilonClass_lensSpace_injective, epsilonClass_surjective _⟩),
-    ← Nat.card_congr (Equiv.ofBijective _ lensSpaceGenerator_bijective), Nat.card_zmod]
-
-end LensSpace
 
 end HeegaardRegionSystem
 
