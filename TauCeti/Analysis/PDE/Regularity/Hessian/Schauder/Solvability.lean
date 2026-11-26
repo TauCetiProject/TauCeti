@@ -52,7 +52,8 @@ equation.
   for zero boundary values). The solution is then unique, by the maximum principle
   (`TauCeti.CkHolderSpaceOn.injOn_nonDivergenceOperatorL`). Solvability of Poisson's equation in
   `C^{2,α}(Ω)` on a domain with `C^{2,α}` boundary is Kellogg's theorem, which with this reduction
-  gives Gilbarg–Trudinger, Theorem 6.14.
+  gives Gilbarg–Trudinger, Theorem 6.14, for zero boundary values. Nonzero boundary values
+  `φ ∈ C^{2,α}` follow by subtracting an extension of `φ`, which this file does not treat.
 
 ## The a priori estimate
 
