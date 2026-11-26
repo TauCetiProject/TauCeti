@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
-import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
@@ -23,9 +22,8 @@ order `i + 1` of `f` control each other in `L²`:
 * `‖D^(i+1) f‖₂ ≤ ∑ⱼ ‖Dⁱ (∂ⱼ f)‖₂`
   (`TauCeti.lpNorm_iteratedFDeriv_succ_le_sum_coordinateDeriv`).
 
-They are the `L²` forms of the pointwise bounds `ContDiff.norm_iteratedFDeriv_fderiv_apply_le`
-(in the direction of a standard basis vector) and
-`TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`.
+They are the `L²` forms of the pointwise bounds `TauCeti.norm_iteratedFDeriv_coordinateDeriv_le`
+and `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`.
 -/
 
 public section
@@ -36,23 +34,14 @@ namespace TauCeti
 
 variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The pointwise bound `‖Dⁱ (∂ⱼ f) x‖ ≤ ‖D^(i+1) f x‖`, in the form taken by the `L²`
-comparison lemmas. -/
-private theorem norm_iteratedFDeriv_coordinateDeriv_le_one_mul {i : ℕ}
-    {f : CoordinateSpace n → F} (hf : ContDiff ℝ (i + 1) f) (j : Fin n) (x : CoordinateSpace n) :
-    ‖iteratedFDeriv ℝ i (coordinateDeriv [j] f) x‖ ≤ 1 * ‖iteratedFDeriv ℝ (i + 1) f x‖ := by
-  rw [funext (coordinateDeriv_singleton j f)]
-  simpa using hf.norm_iteratedFDeriv_fderiv_apply_le (i := i)
-    (by simp [minSmoothness_of_isRCLikeNormedField]) (EuclideanSpace.single j 1) x
-
 /-- A derivative of order `i` of a partial derivative of a `C^(i+1)` function `f` is square
 integrable if the derivative of order `i + 1` of `f` is. -/
 theorem memLp_iteratedFDeriv_coordinateDeriv {i : ℕ} {f : CoordinateSpace n → F}
     (hf : ContDiff ℝ (i + 1) f) (hfm : MemLp (iteratedFDeriv ℝ (i + 1) f) 2) (j : Fin n) :
     MemLp (iteratedFDeriv ℝ i (coordinateDeriv [j] f)) 2 :=
-  hfm.of_le_mul ((hf.coordinateDeriv_of_le [j] (by simp)).continuous_iteratedFDeriv
+  hfm.of_le ((hf.coordinateDeriv_of_le [j] (by simp)).continuous_iteratedFDeriv
       le_rfl).aestronglyMeasurable
-    (.of_forall (norm_iteratedFDeriv_coordinateDeriv_le_one_mul hf j))
+    (.of_forall (norm_iteratedFDeriv_coordinateDeriv_le hf j))
 
 /-- The `L²` norm of a derivative of order `i` of a partial derivative of a `C^(i+1)` function `f`
 is at most that of the derivative of order `i + 1` of `f`, `‖Dⁱ (∂ⱼ f)‖₂ ≤ ‖D^(i+1) f‖₂`, when the
@@ -63,7 +52,8 @@ theorem lpNorm_iteratedFDeriv_coordinateDeriv_le {i : ℕ} {f : CoordinateSpace 
       lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume :=
   (lpNorm_le_mul_lpNorm_of_ae_le_mul
     (memLp_iteratedFDeriv_coordinateDeriv hf hfm j).aestronglyMeasurable hfm
-    (.of_forall (norm_iteratedFDeriv_coordinateDeriv_le_one_mul hf j))).trans_eq (one_mul _)
+    (.of_forall fun x ↦ (norm_iteratedFDeriv_coordinateDeriv_le hf j x).trans_eq
+      (one_mul _).symm)).trans_eq (one_mul _)
 
 /-- The `L²` norm of the derivative of order `i + 1` of a `C^(i+1)` function is at most the sum of
 the `L²` norms of the derivatives of order `i` of its partial derivatives,
