@@ -24,8 +24,9 @@ restricts along a continuous homomorphism `φ : K →ₜ* H` from a profinite gr
 a closed subgroup is the case of its inclusion. Call `φ` *admissible* for `D`
 (`LocalMonodromyDatum.IsAdmissible`) when its *residue image* `φ(K) I / I ⊆ H ⧸ I`
 (`LocalMonodromyDatum.residueRange`) is open and `t ∘ φ` is not identically zero on
-`φ⁻¹(I)`. The residue image is then the closure of the powers of `Fr ^ f` for a unique `f ≥ 1`,
-the *residue index* (`LocalMonodromyDatum.IsAdmissible.residueIndex`). The restricted datum
+`φ⁻¹(I)`. There is then a unique `f ≥ 1`, the *residue index*
+(`LocalMonodromyDatum.IsAdmissible.residueIndex`), such that `Fr ^ n` lies in the residue image
+exactly when `f ∣ n`. The restricted datum
 `D.comap φ h` on `K` has
 
 * inertia `φ⁻¹(I)` and tame character `t ∘ φ`;
@@ -188,8 +189,8 @@ theorem exists_frobClass_pow_mem : ∃ n, 0 < n ∧ D.frobClass ^ n ∈ D.residu
 
 open Classical in
 /-- The **residue index** `f` of an admissible homomorphism: the least positive integer with
-`Fr ^ f` in the residue image. The residue image is the closure of the powers of `Fr ^ f`, and
-`Fr ^ n` lies in it exactly when `f ∣ n` (`frobClass_pow_mem_residueRange_iff`). -/
+`Fr ^ f` in the residue image. `Fr ^ n` lies in the residue image exactly when `f ∣ n`
+(`frobClass_pow_mem_residueRange_iff`). -/
 def residueIndex : ℕ :=
   Nat.find h.exists_frobClass_pow_mem
 
@@ -242,6 +243,12 @@ theorem residueIndex_eq_iff {f : ℕ} :
 theorem residueIndex_eq_one_iff : h.residueIndex = 1 ↔ D.frobClass ∈ D.residueRange φ := by
   rw [← pow_one D.frobClass, h.frobClass_pow_mem_residueRange_iff, Nat.dvd_one]
 
+/-- Rescaling the tame character does not change the residue index. -/
+@[simp]
+theorem residueIndex_smul {c : ℚ_[ℓ]ˣ} (h : (c • D).IsAdmissible φ) :
+    h.residueIndex = ((isAdmissible_smul_iff c).1 h).residueIndex :=
+  h.residueIndex_eq_iff.2 ((isAdmissible_smul_iff c).1 h).frobClass_pow_mem_residueRange_iff
+
 variable [IsTopologicalGroup K] [TotallyDisconnectedSpace K]
 
 /-- **The residue quotient of `K` is `ℤ̂`.** If `φ(k₀)` lies in the class `Fr ^ f`, then
@@ -290,6 +297,12 @@ theorem exists_continuousMulEquiv_zHat {k₀ : K}
 
 end IsAdmissible
 
+variable (D) in
+/-- The residue index of the identity is `1`. -/
+@[simp]
+theorem residueIndex_isAdmissible_id : (isAdmissible_id D).residueIndex = 1 :=
+  (isAdmissible_id D).residueIndex_eq_one_iff.2 (QuotientGroup.mk_surjective D.frobClass)
+
 end ResidueRange
 
 section Comap
@@ -327,8 +340,9 @@ def comap : LocalMonodromyDatum ℓ K where
         MulAut.conjNormal (φ Φ) ((φ : K →* H).subgroupComap D.inertia σ) :=
       Subtype.ext <| (congrArg φ (MulAut.conjNormal_apply Φ σ)).trans <| by
         rw [map_mul, map_mul, map_inv, MulAut.conjNormal_apply]
-        -- `subgroupComap` is `φ` on underlying elements; Mathlib's `subgroupComap_apply_coe` is
-        -- stated for the submonoid preimage, so it does not match this subgroup preimage.
+        -- `subgroupComap` is `φ` on underlying elements. The `simps` lemma
+        -- `MonoidHom.subgroupComap_apply_coe` is stated for elements of the submonoid preimage
+        -- `Submonoid.comap f H'.toSubmonoid`, so `rw` does not find it on this subgroup preimage.
         rfl
     rw [Nat.cast_pow]
     exact (congrArg (fun x ↦ (D.tame x).toAdd) hconj).trans
@@ -416,23 +430,20 @@ theorem comap_comap [IsTopologicalGroup L] [T2Space L] [TotallyDisconnectedSpace
 variable (D) in
 /-- **Restriction along the identity** gives back the datum. -/
 theorem comap_id : D.comap (ContinuousMonoidHom.id H) (isAdmissible_id D) = D := by
-  have h1 : (isAdmissible_id D).residueIndex = 1 :=
-    (isAdmissible_id D).residueIndex_eq_one_iff.2 (QuotientGroup.mk_surjective D.frobClass)
   refine LocalMonodromyDatum.ext (Subgroup.comap_id _) (fun _ _ _ ↦ rfl) (Set.ext fun Φ ↦ ?_) ?_
-  · rw [mem_comap_frobenius, h1, pow_one, ContinuousMonoidHom.coe_id, id, mem_frobenius]
-  · rw [comap_q, h1, pow_one]
+  · rw [mem_comap_frobenius, residueIndex_isAdmissible_id, pow_one, ContinuousMonoidHom.coe_id, id,
+      mem_frobenius]
+  · rw [comap_q, residueIndex_isAdmissible_id, pow_one]
 
 /-- **Restriction commutes with rescaling** the tame character. -/
 theorem comap_smul (c : ℚ_[ℓ]ˣ) (h : (c • D).IsAdmissible φ) :
     (c • D).comap φ h = c • D.comap φ ((isAdmissible_smul_iff c).1 h) := by
-  have hf : h.residueIndex = ((isAdmissible_smul_iff c).1 h).residueIndex :=
-    h.residueIndex_eq_iff.2 ((isAdmissible_smul_iff c).1 h).frobClass_pow_mem_residueRange_iff
   refine LocalMonodromyDatum.ext rfl (fun _ _ _ ↦ rfl) (Set.ext fun Φ ↦ ?_) ?_
-  · rw [smul_frobenius, mem_comap_frobenius, mem_comap_frobenius, hf]
+  · rw [smul_frobenius, mem_comap_frobenius, mem_comap_frobenius, h.residueIndex_smul]
     -- `c • D` has the same inertia and Frobenius class as `D` (`smul_inertia`, `smul_frobClass`),
     -- so the two sides are the same statement in the same quotient `H ⧸ D.inertia`.
     exact Iff.rfl
-  · rw [smul_q, comap_q, comap_q, hf, smul_q]
+  · rw [smul_q, comap_q, comap_q, h.residueIndex_smul, smul_q]
 
 end Comap
 
