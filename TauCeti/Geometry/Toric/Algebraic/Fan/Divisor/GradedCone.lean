@@ -115,9 +115,10 @@ theorem mem_gradedDivisorCone_add_characterDivisor {a : Phi.Ray → ℤ} {m : N 
       LinearMap.transvection (LinearMap.snd R (N →+ R) R) ((Int.castAddHom R).comp m, 0) x ∈
         Phi.gradedDivisorCone R a := by
   simp only [mem_gradedDivisorCone]
-  refine forall_congr' fun _ ↦ iff_of_eq ?_
+  refine forall_congr' fun _ ↦ ?_
+  congr! 1
   simp [LinearMap.transvection.apply, characterDivisor_apply]
-  ring_nf
+  ring
 
 /-- Adding the divisor of the character `χ ^ m` pulls the graded cone back along the
 degree-preserving transvection `(u, j) ↦ (u + j m, j)`. -/
@@ -135,13 +136,12 @@ theorem map_transvection_gradedDivisorCone (a : Phi.Ray → ℤ) (m : N →+ ℤ
     (Phi.gradedDivisorCone R a).map
         (LinearMap.transvection (LinearMap.snd R (N →+ R) R) (-(Int.castAddHom R).comp m, 0)) =
       Phi.gradedDivisorCone R (a + Phi.characterDivisor m) := by
-  have h : LinearMap.snd R (N →+ R) R (-(Int.castAddHom R).comp m, 0) = 0 := rfl
-  rw [gradedDivisorCone_add_characterDivisor]
-  refine SetLike.coe_injective ?_
-  rw [PointedCone.coe_map, PointedCone.coe_comap, ← LinearEquiv.transvection.coe_toLinearMap h,
-    LinearEquiv.coe_coe, LinearEquiv.image_eq_preimage_symm,
-    LinearEquiv.transvection.symm_eq h (by simp), ← LinearEquiv.coe_coe,
-    LinearEquiv.transvection.coe_toLinearMap, Prod.neg_mk, neg_neg, neg_zero]
+  have h : LinearMap.snd R (N →+ R) R (-(Int.castAddHom R).comp m, 0) = 0 := by simp
+  rw [gradedDivisorCone_add_characterDivisor, ← LinearEquiv.transvection.coe_toLinearMap h]
+  refine (Submodule.map_equiv_eq_comap_symm
+    ((LinearEquiv.transvection h).restrictScalars (Nonneg R)) _).trans
+    (congrArg (Submodule.comap · _) (LinearMap.ext fun x ↦ ?_))
+  simp [LinearEquiv.transvection.symm_eq h (by simp)]
 
 end OrderedRing
 

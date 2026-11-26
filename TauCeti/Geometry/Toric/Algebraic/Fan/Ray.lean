@@ -181,9 +181,7 @@ theorem mem_dualSemigroup_iff_forall_ray_le (sigma : Phi.cones) (u : N →+ ℤ)
 
 variable {Phi} in
 /-- On a complete fan, an additive map from the lattice into a linearly ordered monoid which is
-nonnegative on the primitive generator of every ray vanishes. Every lattice point lies in a cone of
-the fan, and some positive multiple of it is a sum of primitive generators of that cone, so the map
-is nonnegative on the whole lattice, hence on every vector and its negative. -/
+nonnegative on the primitive generator of every ray vanishes. -/
 theorem IsComplete.eq_zero_of_forall_ray_nonneg (hPhi : Phi.IsComplete) {R : Type*}
     [AddCommMonoid R] [LinearOrder R] [IsOrderedAddMonoid R] {u : N →+ R}
     (hu : ∀ rho : Phi.Ray, 0 ≤ u rho.primitiveGenerator) : u = 0 := by
