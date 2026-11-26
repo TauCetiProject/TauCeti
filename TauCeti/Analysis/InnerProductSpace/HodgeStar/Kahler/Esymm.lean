@@ -79,23 +79,15 @@ theorem wedge_wedgePow_wedgePow_apply_complexRealFrame {n k l : ℕ} (hn : finra
       k.factorial * l.factorial * MvPolynomial.eval
         ((isSymm_hermitianSesqForm hα).relEigenvalues hn) (MvPolynomial.esymm (Fin n) ℝ k) := by
   set u := (isSymm_hermitianSesqForm hα).relEigenvectorBasis hn
-  have huR : Orthonormal ℝ (u : Fin n → E) := u.orthonormal.real
-  have hJu (i j : Fin n) : inner ℝ ((ofComplexModule E) (u i)) (u j) = 0 := by
-    rw [ofComplexModule_apply]
-    exact (huR.complex_iff_forall_real_inner_I_smul_eq_zero).1 u.orthonormal i j
-  have hH (i j : Fin n) : α.hermitianForm (u i) (u j) =
-      if i = j then ((isSymm_hermitianSesqForm hα).relEigenvalues hn i : ℂ) else 0 := by
-    rw [← hermitianSesqForm_apply hα]
-    exact (isSymm_hermitianSesqForm hα).apply_relEigenvectorBasis hn i j
   rw [wedge_def, complexRealFrame_def]
-  refine pairedWedge_wedgePow_wedgePow_apply_finProdFinEquiv α _ hkl
+  exact pairedWedge_wedgePow_wedgePow_apply_finProdFinEquiv α _ hkl
     (fun p : Fin n × Fin 2 ↦ ![u p.1, ofComplexModule E (u p.1)] p.2)
-    ((isSymm_hermitianSesqForm hα).relEigenvalues hn) (fun i j ↦ ?_) (fun i j ↦ ?_)
+    ((isSymm_hermitianSesqForm hα).relEigenvalues hn) (apply_relEigenvectorBasis_eq_zero hα hn)
+    (fun i j ↦ by simpa using apply_relEigenvectorBasis_I_smul hα hn i j)
     (alternatingFormEquiv_kahlerForm_vecCons_eq_zero real_inner_ofComplexModule_ofComplexModule
-      hJu)
-    (alternatingFormEquiv_kahlerForm_vecCons_apply real_inner_ofComplexModule_ofComplexModule huR)
-  · simpa [← im_hermitianForm, apply_ite] using congrArg Complex.im (hH i j)
-  · simpa [ofComplexModule_apply, ← re_hermitianForm, apply_ite] using congrArg Complex.re (hH i j)
+      fun i j ↦ by simpa using u.orthonormal.real_inner_I_smul_eq_zero i j)
+    (alternatingFormEquiv_kahlerForm_vecCons_apply real_inner_ofComplexModule_ofComplexModule
+      u.orthonormal.real)
 
 /-- **The form identity** `α ^ k ∧ ω ^ l = (k! l! / n!) σ_k(λ[α]) ω ^ n`: on a complex inner
 product space of dimension `n = k + l`, with `ω` the Kähler form of multiplication by `i`, a real
@@ -112,8 +104,7 @@ theorem wedge_wedgePow_wedgePow_ofComplexModule {n k l : ℕ} (hn : finrank ℂ 
   set u := (isSymm_hermitianSesqForm hα).relEigenvectorBasis hn
   have huR : Orthonormal ℝ (u : Fin n → E) := u.orthonormal.real
   have hJu (i j : Fin n) : inner ℝ ((ofComplexModule E) (u i)) (u j) = 0 := by
-    rw [ofComplexModule_apply]
-    exact (huR.complex_iff_forall_real_inner_I_smul_eq_zero).1 u.orthonormal i j
+    simpa using u.orthonormal.real_inner_I_smul_eq_zero i j
   have hJ := real_inner_ofComplexModule_ofComplexModule (E := E)
   -- The real frame of the eigenbasis is a basis of `E`, indexed by `Fin (2 n)`.
   let B : Basis (Fin (2 * n)) ℝ E := basisOfLinearIndependentOfCardEqFinrank' _
@@ -129,9 +120,11 @@ theorem wedge_wedgePow_wedgePow_ofComplexModule {n k l : ℕ} (hn : finrank ℂ 
   have hf : (n.factorial : ℝ) ≠ 0 := by positivity
   have hv : v ∘ Fin.cast (by omega) ∘ finCongr hcast.symm = v := by
     funext r
-    rfl
+    simp only [Function.comp_apply, finCongr_apply, Fin.cast_cast, Fin.cast_eq_self]
   have hfr : (ofComplexModule E).complexRealFrame u ∘ (finCongr hcast.symm).symm =
-      (ofComplexModule E).complexRealFrame u ∘ Fin.cast (by omega) := rfl
+      (ofComplexModule E).complexRealFrame u ∘ Fin.cast (by omega) := by
+    funext r
+    simp only [Function.comp_apply, finCongr_symm, finCongr_apply]
   rw [Function.comp_assoc, hv, hfr, hval]
   field_simp
 
