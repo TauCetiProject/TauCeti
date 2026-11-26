@@ -222,22 +222,10 @@ private theorem mul_norm_mul_norm_le_energyFormD1p0 (hell : UniformlyEllipticOn 
   have hnorm : ‖u‖ * ‖u‖ = ∫ x in Omega, ‖U x‖ ^ 2 := by
     rw [← sq, ← real_inner_self_eq_norm_sq, D1p0.inner_def]
     simp only [real_inner_self_eq_norm_sq, U]
-  have hmeas : AEStronglyMeasurable (fun x => matrixBilinearForm (a x))
-      (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))) :=
-    continuous_matrixBilinearForm.comp_aestronglyMeasurable ha
   have hint : Integrable (fun x => matrixBilinearForm (a x) (U x) (U x))
-      (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))) := by
-    refine (hsq.const_mul Lam).mono'
-      (aestronglyMeasurable_matrixBilinearForm_apply hmeas hU.aestronglyMeasurable
-        hU.aestronglyMeasurable) ?_
-    filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
-    calc ‖matrixBilinearForm (a x) (U x) (U x)‖
-        ≤ ‖matrixBilinearForm (a x)‖ * ‖U x‖ * ‖U x‖ :=
-          (matrixBilinearForm (a x)).le_opNorm₂ (U x) (U x)
-      _ ≤ Lam * ‖U x‖ * ‖U x‖ := by
-          gcongr
-          exact hell.opNorm_matrixBilinearForm_le hx
-      _ = Lam * ‖U x‖ ^ 2 := by ring
+      (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))) :=
+    (memLp_top_matrixBilinearForm ha (ae_restrict_of_forall_mem Omega.isOpen.measurableSet
+      fun _ hx => hell.opNorm_matrixBilinearForm_le hx)).integrable_bilinear_apply hU hU
   rw [mul_assoc, hnorm, ← integral_const_mul, energyFormD1p0_apply]
   refine integral_mono_ae (hsq.const_mul lam) hint ?_
   filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx

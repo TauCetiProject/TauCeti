@@ -443,26 +443,22 @@ theorem W1p.isClosed_range_gradientL_of_convex (hconv : Convex ℝ (Omega : Set 
       exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top eNorm_ne_top) hP
     rw [W1p.gradientL_apply]
     linarith [W1p.norm_le_norm_value_add_norm_gradient v]
-  -- Along a convergent sequence of gradients, the potentials of mean zero form a Cauchy sequence,
-  -- by the Poincaré–Wirtinger inequality `hbound`.
-  refine IsSeqClosed.isClosed fun {g g₀} hg hlim => ?_
-  choose v hv using hg
-  set w : ℕ → W1p mu Omega p := fun k => v k - W1p.const (⨍ x in Omega, W1p.value (v k) x ∂mu)
-  have hgw : ∀ k, W1p.gradientL (w k) = g k := fun k => by
-    simp only [w, map_sub, W1p.gradientL_apply, W1p.gradient_const, sub_zero, ← hv k]
-  have hcauchy : CauchySeq w := by
-    refine Metric.cauchySeq_iff.2 fun ε hε => ?_
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hlim.cauchySeq (ε / (C + 1)) (by positivity)
-    refine ⟨N, fun k hk m hm => ?_⟩
-    have hkm := hbound (w k - w m) (by rw [map_sub, hmean, hmean, sub_self])
-    rw [map_sub, hgw, hgw, ← dist_eq_norm (g k)] at hkm
-    calc dist (w k) (w m) = ‖w k - w m‖ := dist_eq_norm _ _
-      _ ≤ (C + 1) * dist (g k) (g m) := hkm
-      _ < (C + 1) * (ε / (C + 1)) := by gcongr; exact hN k hk m hm
-      _ = ε := by field_simp
-  obtain ⟨w₀, hw₀⟩ := cauchySeq_tendsto_of_complete hcauchy
-  exact ⟨w₀, tendsto_nhds_unique ((W1p.gradientL.continuous.tendsto w₀).comp hw₀)
-    (by simpa only [Function.comp_def, hgw] using hlim)⟩
+  -- On the closed set of mean-zero functions the gradient map is antilipschitz by `hbound`,
+  -- so its range is closed, and subtracting the mean shows that this range is the whole range.
+  set S : Set (W1p mu Omega p) := {v | W1p.integralL v = 0}
+  have hS : ∀ v : S, W1p.integralL (v : W1p mu Omega p) = 0 := fun v => v.prop
+  have : CompleteSpace S :=
+    (isClosed_eq W1p.integralL.continuous continuous_const).completeSpace_coe
+  have hanti : AntilipschitzWith ⟨C + 1, by positivity⟩
+      fun v : S => W1p.gradientL (v : W1p mu Omega p) := by
+    refine AntilipschitzWith.of_le_mul_dist fun v w => ?_
+    rw [Subtype.dist_eq, dist_eq_norm, dist_eq_norm, ← map_sub]
+    exact hbound _ (by rw [map_sub, hS, hS, sub_self])
+  convert hanti.isClosed_range (W1p.gradientL.uniformContinuous.comp uniformContinuous_subtypeVal)
+    using 1
+  ext g
+  refine ⟨fun ⟨v, hv⟩ => ⟨⟨_, hmean v⟩, ?_⟩, fun ⟨v, hv⟩ => ⟨v, hv⟩⟩
+  simp only [← hv, map_sub, W1p.gradientL_apply, W1p.gradient_const, sub_zero]
 
 /-- **The Poincaré–Wirtinger inequality on a ball.**  On a ball of radius `R` the constant of
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` is `2 ^ (n + 1) * R`: the deviation of
