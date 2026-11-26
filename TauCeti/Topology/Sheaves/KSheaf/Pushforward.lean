@@ -234,18 +234,13 @@ private lemma comapOpenNhds_mono (K : Compacts Y) : Monotone (comapOpenNhds f hf
 
 /-- The preimages of the open neighbourhoods of `K` are cofinal among the open neighbourhoods of
 `f⁻¹(K)`: since `f` is closed, an open neighbourhood `V` of `f⁻¹(K)` contains the preimage of the
-open neighbourhood `Y ∖ f(X ∖ V)` of `K`. -/
+open neighbourhood `Set.kernImage f V` of `K`. -/
 private instance initial_comapOpenNhds (K : Compacts Y) :
     (comapOpenNhds_mono f hf K).functor.Initial := by
   rw [Monotone.initial_functor_iff]
-  intro V
-  have hK : (K : Set Y) ⊆ (f '' (V.val : Set X)ᶜ)ᶜ := by
-    rintro _ hy ⟨x, hx, rfl⟩
-    exact hx (V.property (Compacts.mem_comap.2 hy))
-  refine ⟨⟨⟨_, (hf.isClosedMap _ V.val.isOpen.isClosed_compl).isOpen_compl⟩, hK⟩,
-    fun x hx ↦ ?_⟩
-  by_contra hxV
-  exact hx ⟨x, hxV, rfl⟩
+  exact fun V ↦ ⟨⟨⟨Set.kernImage f V.val, isClosedMap_iff_kernImage.mp hf.isClosedMap V.val.isOpen⟩,
+    Set.subset_kernImage_iff.mpr (Compacts.coe_comap f hf K ▸ V.property)⟩,
+    Set.subset_kernImage_iff.mp subset_rfl⟩
 
 /-- The comparison of the germs of `f_* P` along `K` with the germs of `P` along `f⁻¹(K)`: the
 diagram of `f_* P` on the open neighbourhoods of `K` is, by definition of `pushforward`, that of
