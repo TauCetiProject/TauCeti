@@ -222,7 +222,7 @@ theorem smoothLogLiouvilleGraphFunction_flowOf (hab : a < b) {t : ℝ}
     rw [h.smoothLogLiouvilleGraphFunction_of_mem hZ ha hab.le hxW] at hx
     exact hab.not_gt hx
   rw [smoothLogLiouvilleGraphFunction_eq_of_lt hab hx] at hxt ⊢
-  obtain ⟨t₀, ht₀, s, rfl⟩ := h.exists_flowOf_eq_of_notMem hZ hinj hιW hxW
+  obtain ⟨t₀, ht₀, s, rfl⟩ := h.exists_flowOf_eq_of_notMem hZ hιW.ge hxW
   -- On the end, `log F (ψ_τ (ι s)) = τ - log f(s)` for `τ > 0`.
   have hlog {τ : ℝ} (hτ : 0 < τ) :
       Real.log (liouvilleGraphFunction Z W ι f (flowOf Z τ (ι s))) = τ - Real.log (f s) := by
@@ -262,7 +262,7 @@ theorem setOf_smoothLogLiouvilleGraphFunction_lt_zero (hf1 : ∀ s, 1 < f s) (ha
     Real.log_neg_iff (liouvilleGraphFunction_pos hf₀ _), mem_liouvilleGraphRegion]
   by_cases hxW : x ∈ W
   · simp [hxW, h.liouvilleGraphFunction_lt_one_of_mem hZ hf1 hxW]
-  obtain ⟨t₀, ht₀, s, rfl⟩ := h.exists_flowOf_eq_of_notMem hZ hinj hιW hxW
+  obtain ⟨t₀, ht₀, s, rfl⟩ := h.exists_flowOf_eq_of_notMem hZ hιW.ge hxW
   simp only [hxW, false_or]
   rw [h.liouvilleGraphFunction_flowOf hZ hιW' hinj ht₀, div_lt_one (hf₀ s)]
   refine ⟨fun hlt ↦ ⟨t₀, s, (Real.lt_log_iff_exp_lt (hf₀ s)).2 hlt, rfl⟩, ?_⟩
