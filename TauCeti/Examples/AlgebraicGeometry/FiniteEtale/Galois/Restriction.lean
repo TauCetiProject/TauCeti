@@ -12,11 +12,10 @@ public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 /-!
 # The map of fundamental groups along `Spec 𝔽_(p²) → Spec 𝔽_p`
 
-The `𝔽_(p²)` Check of the canonical fundamental group in
-`TauCetiRoadmap/EtaleCohomologyFoundations/README.md` §F.0.2: for `f : Spec 𝔽_(p²) → Spec 𝔽_p`
-and the geometric point given by an algebraic closure `Ω` of `𝔽_(p²)`, the induced map
-`π₁(Spec 𝔽_(p²), x) → π₁(Spec 𝔽_p, x ≫ f)` is injective, its image has index two, and so it is
-not surjective. Here `𝔽_(p²)` is `GaloisField p 2` and `Ω` is `AlgebraicClosure (GaloisField p 2)`.
+For `f : Spec 𝔽_(p²) → Spec 𝔽_p` and the geometric point given by an algebraic closure `Ω` of
+`𝔽_(p²)`, the induced map `π₁(Spec 𝔽_(p²), x) → π₁(Spec 𝔽_p, x ≫ f)` is injective, its image
+has index two, and so it is not surjective. Here `𝔽_(p²)` is `GaloisField p 2` and `Ω` is
+`AlgebraicClosure (GaloisField p 2)`.
 -/
 
 public section
@@ -36,7 +35,7 @@ theorem injective :
     Function.Injective (mapAutFiber
       (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (GaloisField p 2))))
       (spec_algebraMap_comp_spec_algebraMap (ZMod p) Ω (GaloisField p 2))) :=
-  injective_mapAutFiber_spec _ _ _
+  mapAutFiber_spec_injective _ _ _
 
 /-- The image of `π₁(Spec 𝔽_(p²)) → π₁(Spec 𝔽_p)` has index two. -/
 theorem index_range :
@@ -50,7 +49,7 @@ theorem not_surjective :
     ¬ Function.Surjective (mapAutFiber
       (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (GaloisField p 2))))
       (spec_algebraMap_comp_spec_algebraMap (ZMod p) Ω (GaloisField p 2))) := by
-  rw [surjective_mapAutFiber_spec_iff, GaloisField.finrank p two_ne_zero]
+  rw [mapAutFiber_spec_surjective_iff_finrank_eq_one, GaloisField.finrank p two_ne_zero]
   decide
 
 end TauCeti.Examples.FiniteEtaleGaloisRestriction

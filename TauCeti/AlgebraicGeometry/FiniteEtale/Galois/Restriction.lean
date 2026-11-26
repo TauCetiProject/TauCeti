@@ -15,21 +15,22 @@ Let `K → L → Ω` be fields with `Ω` separably closed and Galois over `K` (h
 homomorphism of étale fundamental groups `π₁(Spec L, x) → π₁(Spec K, x)` induced by
 `Spec L ⟶ Spec K` is restriction of scalars `Gal(Ω/L) → Gal(Ω/K)`
 (`TauCeti.FiniteEtaleScheme.mapAutFiber_toAutContinuousMulEquiv`). So it is injective
-(`TauCeti.FiniteEtaleScheme.injective_mapAutFiber_spec`), its image consists of the loops given by
+(`TauCeti.FiniteEtaleScheme.mapAutFiber_spec_injective`), its image consists of the loops given by
 the automorphisms of `Ω` over `K` that fix `L`
-(`TauCeti.FiniteEtaleScheme.mem_range_mapAutFiber_spec_iff`), and by the Galois correspondence this
+(`TauCeti.FiniteEtaleScheme.mem_range_mapAutFiber_spec_iff`), that is, it is the fixing subgroup of
+`L` (`TauCeti.FiniteEtaleScheme.range_mapAutFiber_spec`), and by the Galois correspondence this
 image has index `[L : K]` (`TauCeti.FiniteEtaleScheme.index_range_mapAutFiber_spec`). In particular
 the map is surjective exactly when `[L : K] = 1`
-(`TauCeti.FiniteEtaleScheme.surjective_mapAutFiber_spec_iff`).
+(`TauCeti.FiniteEtaleScheme.mapAutFiber_spec_surjective_iff_finrank_eq_one`).
 
 ## Main results
 
-* `TauCeti.FiniteEtaleScheme.injective_mapAutFiber_spec`: the map is injective.
-* `TauCeti.FiniteEtaleScheme.mem_range_mapAutFiber_spec_iff`: its image is the fixing subgroup
-  of `L`.
+* `TauCeti.FiniteEtaleScheme.mapAutFiber_spec_injective`: the map is injective.
+* `TauCeti.FiniteEtaleScheme.mem_range_mapAutFiber_spec_iff`: membership in its image.
+* `TauCeti.FiniteEtaleScheme.range_mapAutFiber_spec`: its image is the fixing subgroup of `L`.
 * `TauCeti.FiniteEtaleScheme.index_range_mapAutFiber_spec`: the image has index `[L : K]`.
-* `TauCeti.FiniteEtaleScheme.surjective_mapAutFiber_spec_iff`: the map is surjective exactly when
-  `[L : K] = 1`.
+* `TauCeti.FiniteEtaleScheme.mapAutFiber_spec_surjective_iff_finrank_eq_one`: the map is
+  surjective exactly when `[L : K] = 1`.
 
 ## References
 
@@ -44,22 +45,23 @@ universe u
 
 namespace TauCeti.FiniteEtaleScheme
 
-variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω]
-  (L : Type u) [Field L] [Algebra K L] [Algebra L Ω] [IsScalarTower K L Ω]
-
-/-- The geometric point `Spec Ω ⟶ Spec L`, followed by `Spec L ⟶ Spec K`, is the geometric point
-`Spec Ω ⟶ Spec K`. -/
-theorem spec_algebraMap_comp_spec_algebraMap :
-    Spec.map (CommRingCat.ofHom (algebraMap L Ω)) ≫
-        Spec.map (CommRingCat.ofHom (algebraMap K L)) =
-      Spec.map (CommRingCat.ofHom (algebraMap K Ω)) := by
+/-- For a scalar tower `R → S → T`, the morphism `Spec T ⟶ Spec S`, followed by
+`Spec S ⟶ Spec R`, is `Spec T ⟶ Spec R`. Applied to fields `K → L → Ω`, this says the geometric
+point `Spec Ω ⟶ Spec L` lies over the geometric point `Spec Ω ⟶ Spec K`. -/
+theorem spec_algebraMap_comp_spec_algebraMap (R T : Type u) [CommRing R] [CommRing T]
+    [Algebra R T] (S : Type u) [CommRing S] [Algebra R S] [Algebra S T] [IsScalarTower R S T] :
+    Spec.map (CommRingCat.ofHom (algebraMap S T)) ≫
+        Spec.map (CommRingCat.ofHom (algebraMap R S)) =
+      Spec.map (CommRingCat.ofHom (algebraMap R T)) := by
   rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
 
-variable [IsSepClosed Ω] [IsGalois K Ω]
+variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω]
+  (L : Type u) [Field L] [Algebra K L] [Algebra L Ω] [IsScalarTower K L Ω]
+  [IsSepClosed Ω] [IsGalois K Ω]
 
 /-- **The map of fundamental groups of a field extension is injective**, since restriction of
 scalars `Gal(Ω/L) → Gal(Ω/K)` is. -/
-theorem injective_mapAutFiber_spec :
+theorem mapAutFiber_spec_injective :
     Function.Injective (mapAutFiber (Spec.map (CommRingCat.ofHom (algebraMap K L)))
       (spec_algebraMap_comp_spec_algebraMap K Ω L)) := by
   have := IsGalois.tower_top_of_isGalois K L Ω
@@ -92,7 +94,24 @@ theorem mem_range_mapAutFiber_spec_iff
     let τ : Gal(Ω/L) := AlgEquiv.ofRingEquiv (f := σ.toRingEquiv) hσ
     refine ⟨toAutContinuousMulEquiv _ Gal(Ω/L) τ, (mapAutFiber_toAutContinuousMulEquiv K Ω L
       (spec_algebraMap_comp_spec_algebraMap K Ω L) τ).trans ?_⟩
-    congr 1
+    -- `τ` is `σ` with its scalars extended, so restricting them back to `K` recovers `σ`.
+    exact congrArg _ (AlgEquiv.ext fun _ ↦ rfl)
+
+/-- **The image of the map of fundamental groups of a field extension is the fixing subgroup of
+`L`**: it is the image in `π₁(Spec K, x)` of the subgroup of `Gal(Ω/K)` fixing `L`, viewed as an
+intermediate field of `Ω/K`. -/
+theorem range_mapAutFiber_spec :
+    (mapAutFiber (Spec.map (CommRingCat.ofHom (algebraMap K L)))
+      (spec_algebraMap_comp_spec_algebraMap K Ω L)).toMonoidHom.range =
+      (IsScalarTower.toAlgHom K L Ω).fieldRange.fixingSubgroup.map
+        (toAutContinuousMulEquiv _ Gal(Ω/K)).toMulEquiv.toMonoidHom := by
+  ext g
+  rw [mem_range_mapAutFiber_spec_iff, Subgroup.mem_map_equiv,
+    IntermediateField.mem_fixingSubgroup_iff]
+  constructor
+  · rintro h _ ⟨l, rfl⟩
+    exact h l
+  · exact fun h l ↦ h _ ⟨l, rfl⟩
 
 /-- **The image of the map of fundamental groups of a field extension has index `[L : K]`**, by
 the Galois correspondence for `Ω/K` (infinite `L/K` gives `0` on both sides). -/
@@ -100,30 +119,18 @@ theorem index_range_mapAutFiber_spec :
     (mapAutFiber (Spec.map (CommRingCat.ofHom (algebraMap K L)))
       (spec_algebraMap_comp_spec_algebraMap K Ω L)).toMonoidHom.range.index =
         Module.finrank K L := by
-  let E : IntermediateField K Ω := (IsScalarTower.toAlgHom K L Ω).fieldRange
-  let e : Gal(Ω/K) ≃* Aut (fiber (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))) :=
-    (toAutContinuousMulEquiv _ Gal(Ω/K)).toMulEquiv
-  have hrange : (mapAutFiber (Spec.map (CommRingCat.ofHom (algebraMap K L)))
-      (spec_algebraMap_comp_spec_algebraMap K Ω L)).toMonoidHom.range =
-      E.fixingSubgroup.map e.toMonoidHom := by
-    ext g
-    rw [mem_range_mapAutFiber_spec_iff, Subgroup.mem_map_equiv,
-      IntermediateField.mem_fixingSubgroup_iff]
-    constructor
-    · rintro h _ ⟨l, rfl⟩
-      exact h l
-    · exact fun h l ↦ h _ ⟨l, rfl⟩
-  rw [hrange, Subgroup.index_map_of_bijective e.bijective,
+  rw [range_mapAutFiber_spec,
+    Subgroup.index_map_of_bijective (toAutContinuousMulEquiv _ Gal(Ω/K)).toMulEquiv.bijective,
     ← IntermediateField.finrank_eq_fixingSubgroup_index,
     (AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom K L Ω)).toLinearEquiv.finrank_eq]
   rfl
 
 /-- **The map of fundamental groups of a field extension is surjective exactly when the extension
 is trivial**, `[L : K] = 1` (an infinite extension has `Module.finrank K L = 0`). -/
-theorem surjective_mapAutFiber_spec_iff :
+theorem mapAutFiber_spec_surjective_iff_finrank_eq_one :
     Function.Surjective (mapAutFiber (Spec.map (CommRingCat.ofHom (algebraMap K L)))
       (spec_algebraMap_comp_spec_algebraMap K Ω L)) ↔ Module.finrank K L = 1 := by
-  rw [← index_range_mapAutFiber_spec K Ω L, Subgroup.index_eq_one, MonoidHom.range_eq_top]
-  rfl
+  rw [← index_range_mapAutFiber_spec K Ω L, Subgroup.index_eq_one, MonoidHom.range_eq_top,
+    ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass]
 
 end TauCeti.FiniteEtaleScheme
