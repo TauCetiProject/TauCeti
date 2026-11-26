@@ -106,8 +106,11 @@ theorem coadjointRepresentation_tracePairing (g : SpecialLinearGroup n ℝ) (Y :
         ((g : Matrix n n ℝ) * Y * ((g⁻¹ : SpecialLinearGroup n ℝ) : Matrix n n ℝ)) := by
   ext ξ
   rw [coadjointRepresentation_apply, tracePairing_apply, tracePairing_apply,
-    mvfderiv_subtypeVal_adjointContinuousLinearMap, inv_inv, ← Matrix.mul_assoc,
-    ← Matrix.mul_assoc, trace_mul_comm, ← Matrix.mul_assoc, ← Matrix.mul_assoc]
+    mvfderiv_subtypeVal_adjointContinuousLinearMap, inv_inv]
+  -- Cyclicity of the trace: `tr(g (Y g⁻¹ X)) = tr((Y g⁻¹ X) g)`.
+  simp only [Matrix.mul_assoc]
+  rw [trace_mul_comm (g : Matrix n n ℝ)]
+  simp only [Matrix.mul_assoc]
 
 /-- The trace form is nondegenerate on trace-zero matrices: such a matrix `Y` gives the zero
 covector only when `Y = 0`. -/

@@ -20,13 +20,14 @@ off-diagonal entries satisfy `Y₀₁ Y₁₀ = -Y₀₀²`, so they have opposi
 nilpotent cone `{Y | tr Y = 0, det Y = 0, Y ≠ 0}` of real `2 × 2` matrices is the disjoint union of
 the half with `Y₀₁ ≥ 0 ≥ Y₁₀` and the half with `Y₀₁ ≤ 0 ≤ Y₁₀`.
 
-Conjugating `E = [[0, 1], [0, 0]]` (`Matrix.single 0 1 1`) by `g = [[a, b], [c, d]]` in `SL(2, ℝ)`
-gives `g E g⁻¹ = [[-a c, a²], [-c², a c]]`. So the conjugation orbit of `E` is the first half and
-the orbit of `-E` is the second half.
+Conjugating `E = [[0, 1], [0, 0]]` (`Matrix.single 0 1 1`) by `g = [[a, b], [c, d]]` in
+`SL(2, R)`, over any commutative ring `R`, gives `g E g⁻¹ = [[-a c, a²], [-c², a c]]`. So over `ℝ`
+the conjugation orbit of `E` is the first half and the orbit of `-E` is the second half.
 
 ## Main results
 
-* `Matrix.SpecialLinearGroup.coe_mul_single_mul_coe_inv`: `g E g⁻¹ = [[-a c, a²], [-c², a c]]`.
+* `Matrix.SpecialLinearGroup.coe_mul_single_mul_coe_inv`: `g E g⁻¹ = [[-a c, a²], [-c², a c]]` in
+  `SL(2, R)` over any commutative ring `R`.
 * `Matrix.SpecialLinearGroup.range_coe_mul_single_mul_coe_inv`: the conjugation orbit of `E` in
   `SL(2, ℝ)` is the half of the punctured nilpotent cone with `Y₀₁ ≥ 0 ≥ Y₁₀`.
 * `Matrix.SpecialLinearGroup.range_coe_mul_neg_single_mul_coe_inv`: the conjugation orbit of `-E`
@@ -101,10 +102,10 @@ theorem disjoint_setOf_nilpotent_halves :
 
 namespace SpecialLinearGroup
 
-/-- Conjugating `E = [[0, 1], [0, 0]]` by `g = [[a, b], [c, d]]` in `SL(2, ℝ)` gives
-`[[-a c, a²], [-c², a c]]`. -/
-theorem coe_mul_single_mul_coe_inv (g : SL(2, ℝ)) :
-    (g : Matrix (Fin 2) (Fin 2) ℝ) * single 0 1 1 * ((g⁻¹ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ) =
+/-- Conjugating `E = [[0, 1], [0, 0]]` by `g = [[a, b], [c, d]]` in `SL(2, R)`, over any
+commutative ring `R`, gives `[[-a c, a²], [-c², a c]]`. -/
+theorem coe_mul_single_mul_coe_inv {R : Type*} [CommRing R] (g : SL(2, R)) :
+    (g : Matrix (Fin 2) (Fin 2) R) * single 0 1 1 * ((g⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) =
       !![-(g 0 0 * g 1 0), g 0 0 ^ 2; -(g 1 0 ^ 2), g 0 0 * g 1 0] := by
   rw [SL2_inv_expl]
   ext i j
