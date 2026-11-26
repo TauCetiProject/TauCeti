@@ -230,6 +230,13 @@ theorem maximalSpectrumEquiv_symm_apply_asIdeal (x : U) :
   obtain ⟨y, rfl⟩ := (h.maximalSpectrumEquiv hA).surjective x
   rw [Equiv.symm_apply_apply, coe_maximalSpectrumEquiv, h.map_maximalSpectrumComap_asIdeal hA]
 
+include h hA in
+/-- **An affinoid subdomain is nonempty exactly when its representing algebra is nonzero**, since
+`Sp B ≃ U` and a ring has a maximal ideal exactly when it is nontrivial. -/
+theorem nonempty_iff_nontrivial : U.Nonempty ↔ Nontrivial B := by
+  rw [← Set.nonempty_coe_sort, ← (h.maximalSpectrumEquiv hA).nonempty_congr]
+  exact ⟨fun ⟨y⟩ ↦ y.toPrimeSpectrum.nontrivial, fun _ ↦ inferInstance⟩
+
 end Points
 
 section Uniqueness

@@ -27,20 +27,22 @@ is `⊤` and the vertex strong connectivity is `0`.
 The threshold `1` for arc strength is strong connectivity in the sense of Mathlib's
 `Quiver.IsStronglyConnected`; for vertex strength it additionally requires at least two vertices.
 The predicates are the directed counterparts of the undirected edge and vertex connectivity
-predicates. The arrow-disjoint path form of `IsArcReachable` is obtained by applying
-`TauCeti.forall_reachableWithout_iff_exists_paths` from `Menger/Edge` through
-`TauCeti.isArcReachable_def`.
+predicates. When the vertex type and every arrow type are finite,
+`TauCeti.forall_reachableWithout_iff_exists_paths` gives path-family characterizations of both
+local arc reachability and global arc strength. These use `Fin k`-indexed families, and when the
+endpoints coincide the empty path may fill every index.
 
 ## Main results
 
+* `TauCeti.isArcReachable_iff_exists_paths` and `TauCeti.isArcStrong_iff_exists_paths`:
+  arc reachability and arc strength are equivalent to the existence of arrow-disjoint directed
+  path families of the prescribed cardinality.
 * `TauCeti.isVertexStrong_iff_exists_paths`: an arrow family on a finite vertex type is
   `k`-vertex-strong exactly when it has more than `k` vertices and any two distinct vertices are
   joined by `k` distinct, pairwise internally vertex-disjoint directed paths. Arrows `s → t` are
   allowed, and then contribute one-arrow paths.
 * `TauCeti.IsVertexStrong.isArcStrong` and `TauCeti.vertexStrongConnectivity_le_arcConnectivity`:
   the directed Whitney inequality.
-* `TauCeti.arcConnectivity_le_card_out` and `TauCeti.arcConnectivity_le_card_in`: on at least two
-  vertices, arc connectivity is at most every out-degree and every in-degree.
 * `TauCeti.isArcStrong_iff_le_arcConnectivity` and
   `TauCeti.isVertexStrong_iff_le_vertexStrongConnectivity`: the invariants record exactly the
   thresholds at which the predicates hold, the latter on a nonempty vertex type. On the empty type
@@ -87,6 +89,16 @@ theorem isArcReachable_def : IsArcReachable Q k s t ↔
     ∀ F : Finset (Σ x y, Q x y), #F < k → ReachableWithout (F : Set (Σ x y, Q x y)) s t :=
   Iff.rfl
 
+/-- **Menger's theorem for local arc connectivity.** When the vertex type and every arrow type are
+finite, a vertex `t` is `k`-arc-reachable from `s` exactly when there is a `Fin k`-indexed family
+of directed `s`-to-`t` paths, no two of which traverse a common arrow. When `s = t`, the empty path
+may fill every index. -/
+theorem isArcReachable_iff_exists_paths [Finite V] [∀ x y, Finite (Q x y)] :
+    IsArcReachable Q k s t ↔
+      ∃ P : Fin k → ArrowWalk Q s t, (∀ i, (P i).IsPath) ∧
+        Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows :=
+  isArcReachable_def.trans (forall_reachableWithout_iff_exists_paths k)
+
 @[simp]
 protected theorem IsArcReachable.zero : IsArcReachable Q 0 s t :=
   fun _ hF ↦ absurd hF (Nat.not_lt_zero _)
@@ -132,6 +144,17 @@ def IsArcStrong (k : ℕ) : Prop :=
 
 theorem isArcStrong_def : IsArcStrong Q k ↔ ∀ s t, IsArcReachable Q k s t :=
   Iff.rfl
+
+/-- **Menger's theorem for arc-strong arrow families.** When the vertex type and every arrow type
+are finite, an arrow family is `k`-arc-strong exactly when every ordered pair of vertices is joined
+by a `Fin k`-indexed family of directed paths, no two of which traverse a common arrow. For a pair
+of coinciding vertices, the empty path may fill every index. -/
+theorem isArcStrong_iff_exists_paths [Finite V] [∀ x y, Finite (Q x y)] :
+    IsArcStrong Q k ↔ ∀ s t,
+      ∃ P : Fin k → ArrowWalk Q s t, (∀ i, (P i).IsPath) ∧
+        Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows := by
+  rw [isArcStrong_def]
+  exact forall₂_congr fun _ _ ↦ isArcReachable_iff_exists_paths
 
 theorem IsArcStrong.isArcReachable (h : IsArcStrong Q k) (s t : V) : IsArcReachable Q k s t :=
   h s t
@@ -372,33 +395,5 @@ the arc connectivity. -/
 theorem vertexStrongConnectivity_le_arcConnectivity :
     vertexStrongConnectivity Q ≤ arcConnectivity Q :=
   iSup₂_le fun k hk ↦ (isArcStrong_iff_le_arcConnectivity k).1 hk.isArcStrong
-
-/-- On at least two vertices, the arc connectivity is at most the number of arrows leaving any
-vertex, loops included. -/
-theorem arcConnectivity_le_card_out [Nontrivial V] (v : V) [Fintype (Σ w, Q v w)] :
-    arcConnectivity Q ≤ Fintype.card (Σ w, Q v w) := by
-  obtain ⟨w, hwv⟩ := exists_ne v
-  refine iSup₂_le fun k hk ↦ Nat.cast_le.2 ?_
-  have := (hk.isArcReachable v w).le_card (C := {v}) rfl hwv
-    (F := univ.map ⟨Sigma.mk v, sigma_mk_injective⟩) fun x y e hx _ ↦ by
-      subst hx
-      exact mem_map.2 ⟨⟨y, e⟩, mem_univ _, rfl⟩
-  simpa using this
-
-/-- On at least two vertices, the arc connectivity is at most the number of arrows entering any
-vertex, loops included. -/
-theorem arcConnectivity_le_card_in [Nontrivial V] (v : V) [Fintype (Σ w, Q w v)] :
-    arcConnectivity Q ≤ Fintype.card (Σ w, Q w v) := by
-  obtain ⟨w, hwv⟩ := exists_ne v
-  refine iSup₂_le fun k hk ↦ Nat.cast_le.2 ?_
-  have hinj : Function.Injective fun a : Σ w, Q w v ↦ (⟨a.1, v, a.2⟩ : Σ x y, Q x y) := by
-    rintro ⟨a, e⟩ ⟨b, f⟩ ⟨⟩
-    rfl
-  have := (hk.isArcReachable w v).le_card (C := {v}ᶜ) hwv (by simp)
-    (F := univ.map ⟨_, hinj⟩) fun x y e _ hy ↦ by
-      rw [Set.mem_compl_iff, not_not, Set.mem_singleton_iff] at hy
-      subst hy
-      exact mem_map.2 ⟨⟨x, e⟩, mem_univ _, rfl⟩
-  simpa using this
 
 end TauCeti

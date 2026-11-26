@@ -108,8 +108,8 @@ theorem exists_wordProd_eraseIdx_eraseIdx_eq (l : List b.support)
     omega
   obtain ⟨hmempos, hmemneg⟩ := (mem_inversions P b _ _).mp hmem
   -- The strong exchange condition deletes a letter from the shorter prefix.
-  obtain ⟨j, hj, hjeq⟩ :=
-    exists_wordProd_eraseIdx_eq_mul_ofIdx P b hmempos (l.take k) hmemneg
+  obtain ⟨j, hj, -, hjeq⟩ :=
+    P.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx b hmempos (l.take k) hmemneg
   rw [List.length_take] at hj
   have hjk : j < k := by omega
   have hjlt : j < (l.take k).length := by rw [List.length_take]; omega

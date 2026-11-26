@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Gauge
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Order.Lattice
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.Ordered
@@ -39,11 +40,13 @@ satisfies `‖e‖ = 1` and the interval formula above. The constructed norm sat
 (`TauCeti.IsArchimedeanOrderUnit.isOrderUnitNorm`), and conversely the interval formula forces
 `e` to be an Archimedean order unit (`TauCeti.IsOrderUnitNorm.isArchimedeanOrderUnit`). For
 such a norm the positive cone is closed, `e` is an interior point of it, and the order is
-recovered from the norm and `e`: `0 ≤ a ↔ ‖‖a‖ • e - a‖ ≤ ‖a‖`. A unital linear order embedding
-between two such spaces is isometric. The predicate is stable under restriction to a subspace
-containing `e` and under finite nonempty products with the coordinatewise order and the supremum
-norm, and `ℝ` and `C(K, ℝ)` for nonempty compact `K`, with `e = 1`, satisfy it. The self-adjoint
-part of a unital C⋆-algebra is treated in `TauCeti.Analysis.CStarAlgebra.OrderUnit`.
+recovered from the norm and `e`: `0 ≤ a ↔ ‖‖a‖ • e - a‖ ≤ ‖a‖`; for a homogeneous norm the
+order is then compatible with nonnegative scalars. A unital linear order embedding
+between two such spaces is isometric, and every positive linear map `T` between them is
+automatically bounded, with operator norm `‖T e‖`. The predicate is stable under restriction to a
+subspace containing `e` and under finite nonempty products with the coordinatewise order and the
+supremum norm, and `ℝ` and `C(K, ℝ)` for nonempty compact `K`, with `e = 1`, satisfy it. The
+self-adjoint part of a unital C⋆-algebra is treated in `TauCeti.Analysis.CStarAlgebra.OrderUnit`.
 
 ## Main definitions
 
@@ -70,6 +73,12 @@ part of a unital C⋆-algebra is treated in `TauCeti.Analysis.CStarAlgebra.Order
 * `TauCeti.IsOrderUnitNorm.isClosed_nonneg`, `TauCeti.IsOrderUnitNorm.orderClosedTopology`,
   `TauCeti.IsOrderUnitNorm.mem_interior_Ici_zero`: the positive cone is closed and has `e` as an
   interior point.
+* `TauCeti.IsOrderUnitNorm.posSMulMono`: for a homogeneous norm, the cone is stable under
+  nonnegative scaling.
+* `TauCeti.IsOrderUnitNorm.norm_map_le`, `TauCeti.IsOrderUnitNorm.continuous_of_monotone`,
+  `TauCeti.IsOrderUnitNorm.opNorm_eq_norm_apply`, `TauCeti.IsOrderUnitNorm.opNorm_eq_one`: a
+  positive linear map `T` between order-unit spaces satisfies `‖T a‖ ≤ ‖T e‖ ‖a‖`, so it is
+  continuous with operator norm `‖T e‖`, and it has norm one when unital.
 * `TauCeti.IsOrderUnitNorm.submodule`, `TauCeti.IsOrderUnitNorm.prod`,
   `TauCeti.IsOrderUnitNorm.pi`, `TauCeti.isOrderUnitNorm_real_one`,
   `TauCeti.isOrderUnitNorm_continuousMap_one`: subspaces, finite nonempty products and
@@ -367,6 +376,15 @@ theorem isClosed_nonneg (h : IsOrderUnitNorm e) : IsClosed {a : E | 0 ≤ a} := 
 theorem orderClosedTopology (h : IsOrderUnitNorm e) : OrderClosedTopology E :=
   ⟨isClosed_le_of_isClosed_nonneg h.isClosed_nonneg⟩
 
+/-- For a homogeneous order-unit norm, the order is compatible with multiplication by nonnegative
+scalars: the cone, read off from the norm by `nonneg_iff_norm_smul_sub_le`, is stable under
+nonnegative scaling. -/
+theorem posSMulMono [NormSMulClass ℝ E] (h : IsOrderUnitNorm e) : PosSMulMono ℝ E :=
+  PosSMulMono.of_smul_nonneg fun r hr b hb => by
+    rw [h.nonneg_iff_norm_smul_sub_le] at hb ⊢
+    simpa [norm_smul, abs_of_nonneg hr, mul_smul, ← smul_sub] using
+      mul_le_mul_of_nonneg_left hb hr
+
 end IsOrderUnitNorm
 
 /-- The absolute value on `ℝ` is the order-unit norm of `1`. -/
@@ -425,6 +443,73 @@ theorem pi {ι : Type*} [Fintype ι] [Nonempty ι] {E : ι → Type*}
   norm_le_iff hr := by
     simp only [pi_norm_le_iff_of_nonneg hr, (h _).norm_le_iff hr, Pi.le_def, Pi.neg_apply,
       Pi.smul_apply, forall_and]
+
+end IsOrderUnitNorm
+
+namespace IsOrderUnitNorm
+
+section PositiveMap
+
+variable {E F G : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+  [PartialOrder F] [IsOrderedAddMonoid F] {e : E} {f : F}
+
+section Module
+
+variable [Module ℝ E] [FunLike G E F] [LinearMapClass G ℝ E F]
+
+/-- **Positive maps are bounded.** An order-preserving linear map `T` into a space with the
+order-unit norm of `f`, from a space whose norm dominates in the sense `a ≤ ‖a‖ • e` (for instance
+the order-unit norm of `e`), satisfies `‖T a‖ ≤ ‖T e‖ * ‖a‖`. No continuity is assumed. Order
+preservation is an explicit hypothesis, so that the domain only needs a relation `≤`; a proof of
+`Monotone T` can be passed for it. The real-valued case `f = 1` is
+`PositiveLinearMap.abs_apply_le_mul_norm`. -/
+theorem norm_map_le [LE E] (hf : IsOrderUnitNorm f) (hu : ∀ a : E, a ≤ ‖a‖ • e) (T : G)
+    (hT : ∀ ⦃a b : E⦄, a ≤ b → T a ≤ T b) (a : E) : ‖T a‖ ≤ ‖T e‖ * ‖a‖ := by
+  have key (b : E) : T b ≤ (‖T e‖ * ‖b‖) • f :=
+    calc T b ≤ T (‖b‖ • e) := hT (hu b)
+      _ ≤ ‖T (‖b‖ • e)‖ • f := hf.le_norm_smul _
+      _ = (‖T e‖ * ‖b‖) • f := by
+        rw [map_smul, norm_smul, Real.norm_of_nonneg (norm_nonneg b), mul_comm]
+  refine (hf.norm_le_iff (by positivity)).2 ⟨neg_le.1 ?_, key a⟩
+  simpa using key (-a)
+
+/-- A monotone linear map into a space with the order-unit norm of `f`, from a space whose norm
+dominates in the sense `a ≤ ‖a‖ • e`, is Lipschitz with constant `‖T e‖`. -/
+theorem lipschitzWith_of_monotone [Preorder E] (hf : IsOrderUnitNorm f)
+    (hu : ∀ a : E, a ≤ ‖a‖ • e) (T : G) (hT : Monotone T) : LipschitzWith ‖T e‖₊ T :=
+  AddMonoidHomClass.lipschitz_of_bound_nnNorm T _ fun a => by
+    exact_mod_cast hf.norm_map_le hu T hT a
+
+/-- **Automatic continuity.** A monotone linear map into a space with the order-unit norm of `f`,
+from a space whose norm dominates in the sense `a ≤ ‖a‖ • e`, is continuous. -/
+theorem continuous_of_monotone [Preorder E] (hf : IsOrderUnitNorm f)
+    (hu : ∀ a : E, a ≤ ‖a‖ • e) (T : G) (hT : Monotone T) : Continuous T :=
+  (hf.lipschitzWith_of_monotone hu T hT).continuous
+
+end Module
+
+section NormedSpace
+
+variable [NormedSpace ℝ E]
+
+/-- A monotone continuous linear map `T` into a space with the order-unit norm of `f`, from a
+normed space whose norm dominates in the sense `a ≤ ‖a‖ • e` with `‖e‖ ≤ 1`, has operator norm
+`‖T e‖`. -/
+theorem opNorm_eq_norm_apply [Preorder E] (hf : IsOrderUnitNorm f)
+    (hu : ∀ a : E, a ≤ ‖a‖ • e) (he₁ : ‖e‖ ≤ 1) (T : E →L[ℝ] F) (hT : Monotone T) :
+    ‖T‖ = ‖T e‖ :=
+  le_antisymm (T.opNorm_le_bound (norm_nonneg _) (hf.norm_map_le hu T hT))
+    (T.unit_le_opNorm e he₁)
+
+/-- A unital monotone continuous linear map between spaces with order-unit norms has operator
+norm one; in particular it is contractive. -/
+theorem opNorm_eq_one [PartialOrder E] (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f)
+    (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) : ‖T‖ = 1 := by
+  rw [hf.opNorm_eq_norm_apply he.le_norm_smul he.norm_eq_one.le T hT, hTe, hf.norm_eq_one]
+
+end NormedSpace
+
+end PositiveMap
 
 end IsOrderUnitNorm
 

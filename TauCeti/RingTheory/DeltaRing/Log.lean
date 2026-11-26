@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DeltaRing.Basic
+public import Mathlib.RingTheory.WittVector.Teichmuller
+public import TauCeti.RingTheory.DeltaRing.WittSection
 
 /-!
 # `δ_log`-rings
@@ -30,6 +31,12 @@ carry a unique `δ_log`-structure, `δ_log u = δ u * u⁻¹ ^ p`. If `δ` vanis
 then `δ_log = 0` is a `δ_log`-structure, and the structures with `δ_log = 0` are those of
 rank one.
 
+Equivalently (Koshikawa, Remark 2.5), a `δ_log`-structure is a monoid homomorphism
+`w_log : M →* W₂(A)` to the length-two Witt vectors, of the form `m ↦ (1, δ_log m)`, such that
+`w (α m) = [α m] * w_log m`, where `w x = (x, δ x)` is the Witt section of the `δ`-structure and
+`[a] = (a, 0)` is the Teichmüller representative. The ghost component of index one of `w_log` is
+the correction factor `m ↦ 1 + p * δ_log m`.
+
 ## Main definitions
 
 * `TauCeti.DeltaLogStructure p α`: a `δ_log`-structure on the prelog `δ`-ring `α : M →* A`.
@@ -41,6 +48,10 @@ rank one.
 * `TauCeti.DeltaLogStructure.units`: the `δ_log`-structure on the units of a `δ`-ring.
 * `TauCeti.DeltaLogStructure.map`: base change of a `δ_log`-structure along a map of `δ`-rings.
 * `TauCeti.DeltaLogStructure.Hom`: morphisms of `δ_log`-rings, with identities and composition.
+* `TauCeti.DeltaLogStructure.wittLog`: the monoid homomorphism `m ↦ (1, δ_log m)` to length-two
+  Witt vectors.
+* `TauCeti.DeltaLogStructure.equivWittLog`: `δ_log`-structures are equivalent to monoid
+  homomorphisms `w_log : M →* W₂(A)` with zeroth coordinate `1` and `w (α m) = [α m] * w_log m`.
 
 ## Main statements
 
@@ -50,11 +61,13 @@ rank one.
 * `TauCeti.DeltaLogStructure.subsingleton_of_mem_nonZeroDivisors` and
   `TauCeti.DeltaLogStructure.nonempty_iff_forall_pow_dvd`: uniqueness and the existence
   criterion for prelog structures by nonzerodivisors.
+* `TauCeti.DeltaLogStructure.wittSection_eq_teichmuller_mul_wittLog`: the Witt section
+  `w x = (x, δ x)` of the `δ`-structure satisfies `w (α m) = [α m] * w_log m`.
 
 ## References
 
-* T. Koshikawa, *Logarithmic prismatic cohomology I*, §2, Definition 2.2, Remark 2.3 and
-  Example 2.4.
+* T. Koshikawa, *Logarithmic prismatic cohomology I*, §2, Definition 2.2, Remark 2.3,
+  Example 2.4 and Remark 2.5.
 -/
 
 public section
@@ -406,6 +419,112 @@ theorem toMap_monoidHom (D : DeltaLogStructure p α) (f : A →+* B)
   (rfl)
 
 end Hom
+
+section WittLog
+
+/-! ### `δ_log`-structures as monoid maps to length-two Witt vectors -/
+
+open TruncatedWittVector
+
+variable [Fact p.Prime]
+
+/-- The monoid homomorphism `w_log : M →* W₂(A)`, `m ↦ (1, δ_log m)`, of a `δ_log`-structure
+(Koshikawa, Remark 2.5). It satisfies `w (α m) = [α m] * w_log m` for the Witt section
+`w x = (x, δ x)` of the `δ`-structure (`wittSection_eq_teichmuller_mul_wittLog`), and it
+determines the `δ_log`-structure (`equivWittLog`). -/
+noncomputable def wittLog (D : DeltaLogStructure p α) : M →* TruncatedWittVector p 2 A where
+  toFun m := TruncatedWittVector.mk p ![1, D.deltaLog m]
+  map_one' := by
+    ext i
+    fin_cases i <;> simp
+  map_mul' m m' := by
+    ext i
+    fin_cases i
+    · simp
+    · simp [mul_coeff_one, D.deltaLog_mul]
+      ring
+
+@[simp]
+theorem wittLog_coeff_zero (D : DeltaLogStructure p α) (m : M) : (D.wittLog m).coeff 0 = 1 :=
+  (rfl)
+
+@[simp]
+theorem wittLog_coeff_one (D : DeltaLogStructure p α) (m : M) :
+    (D.wittLog m).coeff 1 = D.deltaLog m :=
+  (rfl)
+
+/-- The Witt section of the `δ`-structure on the image of `α` is the Teichmüller representative
+times `w_log`: `w (α m) = [α m] * w_log m` in `W₂(A)` (Koshikawa, Remark 2.5). -/
+theorem wittSection_eq_teichmuller_mul_wittLog (D : DeltaLogStructure p α) (m : M) :
+    DeltaRing.wittSection p A (α m) =
+      WittVector.truncate 2 (WittVector.teichmuller p (α m)) * D.wittLog m := by
+  ext i
+  fin_cases i
+  · simp
+  · simp [mul_coeff_one, WittVector.teichmuller_coeff_pos p _ 1 one_pos, D.pow_mul_deltaLog]
+
+/-- The ghost component of index one of `w_log` is the correction factor `1 + p * δ_log`. -/
+@[simp]
+theorem ghostComponentOne_wittLog (D : DeltaLogStructure p α) (m : M) :
+    ghostComponentOne (D.wittLog m) = D.correction m := by
+  simp [ghostComponentOne_apply]
+
+/-- `δ_log`-structures on `α` are equivalent to monoid homomorphisms `w_log : M →* W₂(A)` with
+zeroth coordinate `1` and `w (α m) = [α m] * w_log m` for the Witt section `w` of the
+`δ`-structure (Koshikawa, Remark 2.5). The equivalence sends `D` to `D.wittLog`. -/
+noncomputable def equivWittLog :
+    DeltaLogStructure p α ≃
+      {w : M →* TruncatedWittVector p 2 A // (∀ m, (w m).coeff 0 = 1) ∧
+        ∀ m, DeltaRing.wittSection p A (α m) =
+          WittVector.truncate 2 (WittVector.teichmuller p (α m)) * w m} where
+  toFun D := ⟨D.wittLog, D.wittLog_coeff_zero, D.wittSection_eq_teichmuller_mul_wittLog⟩
+  invFun w :=
+    { deltaLog m := (w.val m).coeff 1
+      deltaLog_one := by simp
+      pow_mul_deltaLog m := by
+        simpa [mul_coeff_one, w.property.1, WittVector.teichmuller_coeff_pos p _ 1 one_pos] using
+          (congrArg (·.coeff 1) (w.property.2 m)).symm
+      deltaLog_mul m m' := by
+        simp only [map_mul, mul_coeff_one, w.property.1]
+        ring }
+  left_inv D := by
+    ext m
+    simp
+  right_inv w := by
+    refine Subtype.ext (MonoidHom.ext fun m => ?_)
+    ext i
+    fin_cases i <;> simp [w.property.1]
+
+@[simp]
+theorem coe_equivWittLog_apply (D : DeltaLogStructure p α) :
+    (equivWittLog D : M →* TruncatedWittVector p 2 A) = D.wittLog :=
+  (rfl)
+
+@[simp]
+theorem deltaLog_equivWittLog_symm_apply
+    (w : {w : M →* TruncatedWittVector p 2 A // (∀ m, (w m).coeff 0 = 1) ∧
+      ∀ m, DeltaRing.wittSection p A (α m) =
+        WittVector.truncate 2 (WittVector.teichmuller p (α m)) * w m}) (m : M) :
+    (equivWittLog.symm w).deltaLog m = (w.val m).coeff 1 :=
+  (rfl)
+
+/-- `w_log` of a base change is the coefficient change of `w_log`. -/
+@[simp]
+theorem wittLog_map {B : Type*} [CommRing B] [DeltaRing p B] (D : DeltaLogStructure p α)
+    (f : A →+* B) (hf : ∀ x, f (delta p x) = delta p (f x)) (m : M) :
+    (D.map f hf).wittLog m = TruncatedWittVector.map 2 f (D.wittLog m) := by
+  ext i
+  fin_cases i <;> simp
+
+/-- A morphism of `δ_log`-rings intertwines the maps `w_log`. -/
+@[simp]
+theorem Hom.wittLog_monoidHom {B N : Type*} [CommRing B] [DeltaRing p B] [Monoid N]
+    {β : N →* B} {D : DeltaLogStructure p α} {E : DeltaLogStructure p β} (f : Hom D E) (m : M) :
+    E.wittLog (f.monoidHom m) = TruncatedWittVector.map 2 f.ringHom (D.wittLog m) := by
+  ext i
+  fin_cases i <;> simp
+
+end WittLog
 
 end DeltaLogStructure
 

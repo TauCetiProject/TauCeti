@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DifferentialForm.HomotopyOperator
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Stabilizer
 
 /-!
 # The flux of a diffeotopy
@@ -300,10 +301,6 @@ theorem exists_fluxForm_mextDerivₗ_eq (θ : SmoothForm J M ℝ 1) :
         SmoothForm.mpullback Φ.final Φ.final.contMDiff θ - θ - mextDerivₗ J 0 g := by
   have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
   set φ := SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap θ with hφ_def
-  have hφ : IsSmoothForm (J.prod (𝓡∂ 1)) 1 φ.val := φ.isSmoothForm.of_le (by simp)
-  have hd : mextDeriv φ.val =
-      (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap (mextDerivₗ J 1 θ)).val := by
-    rw [← SmoothForm.mextDerivₗ_mpullback, mextDerivₗ_apply]
   refine ⟨⟨homotopyOperator φ.val,
     (IsSmoothForm.homotopyOperator φ.isSmoothForm).mem_smoothBundleForms⟩, fun x hx ↦ ?_,
     Subtype.ext (funext fun x ↦ ?_)⟩
@@ -311,9 +308,16 @@ theorem exists_fluxForm_mextDerivₗ_eq (θ : SmoothForm J M ℝ 1) :
     have h0 := homotopyOperator_mpullback_apply_eq_zero (I := J) (f := Φ.cylinderMap)
       (fun t ↦ (Φ.cylinderMap_apply (x, t)).trans (hx t)) θ.val
     rwa [← SmoothForm.coe_mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap, ← hφ_def] at h0
-  -- The cochain-homotopy identity for `φ = Φ^* θ` on the cylinder, with `d φ = Φ^* (d θ)`.
-  have key := mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv hφ x
-  rw [hd, mpullback_slice_one_sub_mpullback_slice_zero] at key
+  -- The homotopy formula for the motion, whose ends are `φ₁` and the identity.
+  have key := congrFun
+    (mextDeriv_homotopyOperator_mpullback_add_homotopyOperator_mpullback_mextDeriv
+      (Φ.contMDiff_cylinderMap.of_le (by simp)) (θ.isSmoothForm.of_le (by simp))) x
+  have h₁ : (fun y ↦ Φ.cylinderMap (y, 1)) = Φ.final := Φ.cylinderMap_comp_one
+  have h₀ : (fun y ↦ Φ.cylinderMap (y, 0)) = id := Φ.cylinderMap_comp_zero
+  rw [Pi.add_apply, Pi.sub_apply, h₁, h₀, mpullback_id, ← mextDerivₗ_apply,
+    ← SmoothForm.coe_mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap,
+    ← SmoothForm.coe_mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap, ← hφ_def,
+    ← SmoothForm.coe_mpullback Φ.final Φ.final.contMDiff] at key
   rw [Submodule.coe_sub, Pi.sub_apply, Submodule.coe_sub, Pi.sub_apply, mextDerivₗ_apply, ← key,
     coe_fluxForm]
   abel
@@ -424,14 +428,8 @@ theorem final_transDiffeomorph_mem_diffeomorphStabilizer_iff (f : M ≃ₘ⟮J, 
     (σ : SmoothForm J P ℝ 2) :
     (Φ.transDiffeomorph f).final ∈ SmoothForm.diffeomorphStabilizer σ ↔
       Φ.final ∈ SmoothForm.diffeomorphStabilizer (SmoothForm.mpullback f f.contMDiff σ) := by
-  rw [SmoothForm.mem_diffeomorphStabilizer, SmoothForm.mem_diffeomorphStabilizer,
-    final_transDiffeomorph, SmoothForm.mpullback_trans, SmoothForm.mpullback_trans]
-  constructor
-  · intro h
-    have h' := congrArg (SmoothForm.mpullback f f.contMDiff) h
-    rwa [SmoothForm.mpullback_mpullback_symm] at h'
-  · intro h
-    rw [h, SmoothForm.mpullback_symm_mpullback]
+  rw [final_transDiffeomorph, ← Diffeomorph.diffCongr_apply]
+  exact Diffeomorph.diffCongr_mem_diffeomorphStabilizer_iff f rfl
 
 /-- **Naturality of the flux form.** Conjugating a diffeotopy by a diffeomorphism `f` transports
 its flux form: the flux form of `f ∘ φ_t ∘ f⁻¹` for `σ` is the pullback along `f⁻¹` of the flux

@@ -84,6 +84,18 @@ normed-model tangent identification. -/
         (mfderiv (𝓡∂ n) 𝓘(ℝ, V) Subtype.val x) :=
   (exists_subtypeValClosedBallTangentEquiv (n := n) x).choose_spec
 
+/-- The inclusion derivative sends the tangent vector corresponding to `v` back to `v`. -/
+@[simp] theorem mfderiv_subtypeVal_closedBall_symm_apply (x : closedBall (0 : V) 1) (v : V) :
+    mfderiv (𝓡∂ n) 𝓘(ℝ, V) Subtype.val x ((subtypeValClosedBallTangentEquiv (n := n) x).symm v) =
+      v := by
+  have he := ContinuousLinearMap.ext_iff.1
+    (subtypeValClosedBallTangentEquiv_toContinuousLinearMap (n := n) x)
+    ((subtypeValClosedBallTangentEquiv (n := n) x).symm v)
+  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at he
+  -- `NormedSpace.fromTangentSpace (x : V)` is the identity of `V` by definition, so `he` is the
+  -- claim read backwards.
+  exact he.symm
+
 /-- The inclusion of the closed unit ball has an injective derivative at every point, including at
 the points of its boundary sphere. -/
 theorem injective_mfderiv_subtypeVal_closedBall (y : closedBall (0 : V) 1) :

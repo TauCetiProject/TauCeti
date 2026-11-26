@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Group.Measure
 public import TauCeti.NumberTheory.GeometryOfNumbers.BoundaryCount
 public import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 import Mathlib.Algebra.Group.Pointwise.Set.Card
+import TauCeti.Topology.Algebra.ConstMulAction
 import TauCeti.Topology.Frontier
 
 /-!
@@ -248,9 +249,7 @@ private theorem abs_ncard_smul_inter_vadd_sub_le_aux {D F : Set E} {ξ : E} {c :
   have hkey := abs_ncard_inter_mul_sub_measureReal_le (μ := μ) (L := L) hF₀ hFpc hFb hFm hFu hFe
     ((hDb.smul₀ c).vadd v)
   rw [hvol] at hkey
-  have hfr : frontier (c • D) = c • frontier D := by
-    have h := (isHomeomorph_smul₀ (α := E) hc0.ne').image_frontier D
-    simpa [Set.image_smul] using h.symm
+  have hfr : frontier (c • D) = c • frontier D := frontier_smul₀ hc0.ne' D
   have hfrv : frontier (v +ᵥ c • D) = v +ᵥ c • frontier D := by
     rw [← hfr]
     exact (IsHomeomorph.image_frontier (Homeomorph.addLeft v).isHomeomorph (c • D)).symm
