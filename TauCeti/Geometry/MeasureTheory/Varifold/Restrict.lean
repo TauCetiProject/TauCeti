@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.MeasureTheory.Varifold.Bundle
+public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Topology.VectorBundle.GrassmannBundle.Restrict
 
 /-!
@@ -44,25 +45,6 @@ noncomputable section
 open MeasureTheory Set TopologicalSpace Bundle Topology
 open scoped ENNReal
 
-/-- The support of a measure pulled back along an open embedding is the preimage of the support. -/
-theorem MeasureTheory.Measure.support_comap_of_isOpenEmbedding {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [MeasurableSpace X] [MeasurableSpace Y]
-    {f : X → Y} (hf : IsOpenEmbedding f) (hf' : MeasurableEmbedding f) (μ : Measure Y) :
-    (μ.comap f).support = f ⁻¹' μ.support := by
-  ext x
-  rw [mem_preimage, Measure.mem_support_iff_forall, Measure.mem_support_iff_forall]
-  constructor
-  · intro h U hU
-    obtain ⟨V, hVU, hV, hxV⟩ := mem_nhds_iff.1 (hf.continuous.continuousAt.preimage_mem_nhds hU)
-    have := h V (hV.mem_nhds hxV)
-    rw [hf'.comap_apply] at this
-    exact this.trans_le (measure_mono ((image_mono hVU).trans (image_preimage_subset f U)))
-  · intro h U hU
-    obtain ⟨V, hVU, hV, hxV⟩ := mem_nhds_iff.1 hU
-    have := h (f '' V) ((hf.isOpenMap V hV).mem_nhds (mem_image_of_mem f hxV))
-    rw [← hf'.comap_apply] at this
-    exact this.trans_le (measure_mono hVU)
-
 namespace TauCeti.grassmannBundle
 
 variable {B F : Type*} {E : B → Type*} [TopologicalSpace B]
@@ -77,6 +59,20 @@ variable {B F : Type*} {E : B → Type*} [TopologicalSpace B]
 (`TauCeti.grassmannBundle.restrictOpens_apply`). -/
 def restrictOpens : Measure (grassmannBundle F (ContinuousMap.subtypeVal W *ᵖ E) k) :=
   V.comap (inclusion F E k W)
+
+/-- The restriction to `W` is the pullback of `V` along the inclusion `G_k(E|_W) → G_k(E)`. -/
+theorem restrictOpens_def : restrictOpens W V = V.comap (inclusion F E k W) :=
+  (rfl)
+
+/-- The restriction of the zero varifold is zero. -/
+@[simp]
+theorem restrictOpens_zero : restrictOpens W (0 : Measure (grassmannBundle F E k)) = 0 :=
+  Measure.comap_zero _
+
+/-- Restriction to `W` commutes with multiplication by nonnegative scalars. -/
+@[simp]
+theorem restrictOpens_smul (c : ℝ≥0∞) : restrictOpens W (c • V) = c • restrictOpens W V :=
+  Measure.comap_smul c
 
 variable [T2Space B] [FiniteDimensional ℝ F] [ContinuousFiberNorm F E] {W}
 
@@ -94,41 +90,26 @@ theorem restrictOpens_apply (hW : IsOpen W)
 /-- Pushed back to `G_k(E)`, the restriction of `V` to `W` is `V⌞W`, the part of `V` over `W`. -/
 theorem map_inclusion_restrictOpens (hW : IsOpen W) :
     (restrictOpens W V).map (inclusion F E k W) = V.restrict (proj ⁻¹' W) := by
-  rw [restrictOpens, (measurableEmbedding_inclusion hW).map_comap, range_inclusion]
-
-/-- The restriction of the zero varifold is zero. -/
-@[simp]
-theorem restrictOpens_zero (hW : IsOpen W) :
-    restrictOpens W (0 : Measure (grassmannBundle F E k)) = 0 := by
-  ext S
-  rw [restrictOpens_apply _ hW, FunLike.coe_zero, Pi.zero_apply, FunLike.coe_zero, Pi.zero_apply]
+  rw [restrictOpens_def, (measurableEmbedding_inclusion hW).map_comap, range_inclusion]
 
 /-- Restriction to `W` is additive. -/
+@[simp]
 theorem restrictOpens_add (hW : IsOpen W) :
-    restrictOpens W (V₁ + V₂) = restrictOpens W V₁ + restrictOpens W V₂ := by
-  ext S
-  simp only [FunLike.coe_add, Pi.add_apply, restrictOpens_apply _ hW]
-
-/-- Restriction to `W` commutes with multiplication by nonnegative scalars. -/
-theorem restrictOpens_smul (hW : IsOpen W) (c : ℝ≥0∞) :
-    restrictOpens W (c • V) = c • restrictOpens W V := by
-  ext S
-  simp only [FunLike.coe_smul, Pi.smul_apply, restrictOpens_apply _ hW]
+    restrictOpens W (V₁ + V₂) = restrictOpens W V₁ + restrictOpens W V₂ :=
+  (measurableEmbedding_inclusion hW).comap_add V₁ V₂
 
 /-- Restriction to `W` commutes with `⌞A`: `(V⌞A)|_W = (V|_W)⌞(A ∩ W)`. -/
+@[simp]
 theorem restrictOpens_restrict (hW : IsOpen W) (A : Set B) :
     restrictOpens W (V.restrict (proj ⁻¹' A)) =
       (restrictOpens W V).restrict (proj ⁻¹' (Subtype.val ⁻¹' A)) := by
-  rw [restrictOpens, (measurableEmbedding_inclusion hW).comap_restrict,
-    inclusion_preimage_preimage_proj]
-  rfl
+  rw [restrictOpens_def, restrictOpens_def, (measurableEmbedding_inclusion hW).comap_restrict,
+    preimage_inclusion_preimage_proj]
 
 /-- **The restriction of a varifold is a varifold**: it is finite on compact sets. -/
 theorem isFiniteMeasureOnCompacts_restrictOpens (hW : IsOpen W) [IsFiniteMeasureOnCompacts V] :
-    IsFiniteMeasureOnCompacts (restrictOpens W V) where
-  lt_top_of_isCompact K hK := by
-    rw [restrictOpens_apply _ hW]
-    exact (hK.image (continuous_inclusion W)).measure_lt_top
+    IsFiniteMeasureOnCompacts (restrictOpens W V) :=
+  IsFiniteMeasureOnCompacts.comap' V (continuous_inclusion W) (measurableEmbedding_inclusion hW)
 
 /-- Over a Lindelöf base, **a varifold is determined by its restrictions** to the sets of an open
 cover. -/
@@ -142,6 +123,7 @@ variable [MeasurableSpace B] [BorelSpace B]
 
 /-- The weight of the restriction of `V` to `W` is the weight `‖V‖` restricted to `W`, as a
 measure on `W`. -/
+@[simp]
 theorem weight_restrictOpens (hW : IsOpen W) :
     weight (restrictOpens W V) = (weight V).comap Subtype.val := by
   ext A hA

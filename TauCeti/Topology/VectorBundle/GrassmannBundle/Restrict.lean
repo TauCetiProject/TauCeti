@@ -41,12 +41,6 @@ noncomputable section
 
 open Bundle Filter Set Topology
 
-/-- A pullback fibre is complete when the original fibre is. -/
-instance Bundle.Pullback.instCompleteSpace {B B' : Type*} {E : B → Type*} (f : B' → B)
-    [∀ b, NormedAddCommGroup (E b)] [∀ b, CompleteSpace (E b)] (x : B') :
-    CompleteSpace ((f *ᵖ E) x) :=
-  inferInstanceAs (CompleteSpace (E (f x)))
-
 namespace TauCeti
 
 namespace grassmannBundle
@@ -91,12 +85,13 @@ theorem range_inclusion : range (inclusion F E k W) = proj ⁻¹' W := by
     exact (proj p).property
   obtain ⟨⟨x, P⟩, hP⟩ := q
   rw [mem_preimage, proj_apply] at hq
+  -- The fibre of the pullback over `⟨x, hq⟩` is `E x` by definition.
   refine ⟨⟨⟨⟨x, hq⟩, P⟩, mem_grassmannBundle.2
     (show P ∈ Euclidean.grassmannian ℝ (E x) k from mem_grassmannBundle.1 hP)⟩, Subtype.ext ?_⟩
   rw [coe_inclusion_apply]
 
 /-- The preimage under the inclusion of the planes over `A ⊆ B` are the planes over `A ∩ W`. -/
-theorem inclusion_preimage_preimage_proj (A : Set B) :
+theorem preimage_inclusion_preimage_proj (A : Set B) :
     inclusion F E k W ⁻¹' (proj ⁻¹' A) = proj ⁻¹' (Subtype.val ⁻¹' A) := by
   ext p
   simp only [mem_preimage, proj_inclusion]
@@ -106,8 +101,7 @@ theorem inclusion_preimage_preimage_proj (A : Set B) :
 theorem image_inclusion_preimage_proj (A : Set W) :
     inclusion F E k W '' (proj ⁻¹' A) = proj ⁻¹' (Subtype.val '' A) := by
   refine Subset.antisymm (image_subset_iff.2 fun p hp ↦ ?_) fun q hq ↦ ?_
-  · change proj (inclusion F E k W p) ∈ Subtype.val '' A
-    rw [proj_inclusion]
+  · simp only [mem_preimage, proj_inclusion]
     exact mem_image_of_mem _ hp
   obtain ⟨x, hxA, hx⟩ := hq
   obtain ⟨p, rfl⟩ := (range_inclusion W).ge (show proj q ∈ W from hx ▸ x.property)
@@ -134,8 +128,13 @@ theorem continuous_inclusion : Continuous (inclusion F E k W) := by
         (mem_baseSet_trivializationAt F E (x₀ : B)))
   filter_upwards [hmem] with x hx
   ext v
+  -- The trivialization of the pullback at `x₀` is the pullback of the trivialization of `E` at
+  -- `x₀`, whose base set is the preimage of the original one, so `hx` gives membership in it.
   have hx' : x ∈ (trivializationAt F (ContinuousMap.subtypeVal W *ᵖ E) x₀).baseSet := hx
-  erw [ContinuousLinearMap.inCoordinates_eq hx' hx]
+  -- `hx` with the base points written as values of `ContinuousMap.subtypeVal W`, as in the goal.
+  have hx'' : ContinuousMap.subtypeVal W x ∈
+      (trivializationAt F E (ContinuousMap.subtypeVal W x₀)).baseSet := hx
+  rw [ContinuousLinearMap.inCoordinates_eq hx' hx'']
   simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
     Trivialization.continuousLinearEquivAt_pullback]
   exact (((trivializationAt F E (x₀ : B)).continuousLinearEquivAt ℝ _ hx).apply_symm_apply v).symm
