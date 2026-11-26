@@ -580,7 +580,8 @@ theorem nonvanishingLocus_tmulRight
     mem_nonvanishingLocus_iff_of_mem (M := M ⊗ N) hx,
     mem_nonvanishingLocus_iff_of_mem (M := M) hx, mem_nonvanishingLocus_iff_of_mem (M := N) hx,
     ← eM.symm.span_singleton_tmul_eq_top_iff eN.symm, ← tensorStalkEquiv_germ_tmulRight M s t hx]
-  exact (M.tensorStalkEquiv N x).span_singleton_apply_eq_top_iff.symm
+  let e := TauCeti.SheafOfModules.tensorStalkEquivMonoidal X.sheaf M N x
+  exact e.span_singleton_apply_eq_top_iff.symm
 
 end TensorProduct
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Cap
-public import TauCeti.Topology.VectorBundle.Thom.TwistedRankDegreeHomology
+public import TauCeti.Topology.VectorBundle.Thom.Sign.LocalSystem
 
 /-!
 # The homology Thom map with coefficients in the orientation system

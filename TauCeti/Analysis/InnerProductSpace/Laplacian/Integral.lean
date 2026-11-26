@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
@@ -20,8 +22,10 @@ integrable function has an integrable Laplacian. Dilated cutoffs turn the one-si
 bound into a global mass bound. These statements allow integrated Bochner estimates without
 assuming derivative decay at infinity.
 
-Green's first identity `∫ ⟪∇u, ∇v⟫ = -∫ v Δu` holds for a `C²` function `u` and a compactly
-supported `C¹` function `v`, with no condition on `u` at infinity.
+Green's first identity `∫ ⟪∇u, ∇v⟫ = -∫ v Δu` holds for a compactly supported `C¹` function `v`
+and a function `u` that is `C²` near the support of `v`, with no condition on `u` at infinity. So
+does its form for a continuous bilinear pairing `B` of vector-valued maps,
+`∫ B (Δ u) v = -∫ ∑ᵢ B (∂ᵢ u) (∂ᵢ v)`.
 -/
 
 public section
@@ -53,41 +57,60 @@ theorem integral_laplacian_eq_zero_of_hasCompactSupport (hf : ContDiff ℝ 2 f)
   exact integral_fderiv_apply_eq_zero_of_hasCompactSupport
     (hd.clm_apply contDiff_const) (hc.fderiv_apply (𝕜 := ℝ) (b i)) (b i)
 
-/-- **Green's first identity against a compactly supported function.** For a `C²` function `u`
-and a compactly supported `C¹` function `v`, `∫ ⟪∇u, ∇v⟫ = -∫ v Δu`. No integrability or decay
-of `u` is needed. -/
+/-- **Green's first identity for a bilinear pairing.** For a continuous bilinear map `B`, an
+orthonormal basis `b`, a compactly supported `C¹` map `v` and a map `u` that is `C²` at every
+point of the support of `v`, `∫ B (Δ u) v = -∫ ∑ᵢ B (∂_{bᵢ} u) (∂_{bᵢ} v)`. Nothing is assumed
+about `u` away from the support of `v`. -/
+theorem integral_bilinear_laplacian_eq_neg_integral_sum_fderiv {V W ι : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    [Fintype ι] (b : OrthonormalBasis ι ℝ E) (B : F →L[ℝ] V →L[ℝ] W) {u : E → F} {v : E → V}
+    (hu : ∀ x ∈ tsupport v, ContDiffAt ℝ 2 u x) (hv : ContDiff ℝ 1 v)
+    (hvc : HasCompactSupport v) :
+    ∫ x, B (Δ u x) (v x) ∂μ = -∫ x, ∑ i, B (fderiv ℝ u x (b i)) (fderiv ℝ v x (b i)) ∂μ := by
+  -- Replace `u` by a globally `C²` map `u₁` agreeing with it near the support of `v`.
+  obtain ⟨u₁, hu₁, -, hu₁u⟩ := hvc.isCompact.exists_contDiff_eventuallyEq 2 hu
+  have hΔ (x : E) :
+      B (Δ u x) (v x) = ∑ i, B (fderiv ℝ (fderiv ℝ u₁) x (b i) (b i)) (v x) := by
+    by_cases hx : x ∈ tsupport v
+    · rw [← (InnerProductSpace.laplacian_congr_nhds (hu₁u x hx)).self_of_nhds,
+        congrFun (InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis u₁ b) x,
+        map_sum]
+      simp [iteratedFDeriv_two_apply]
+    · simp [image_eq_zero_of_notMem_tsupport hx]
+  have hd (x : E) : ∑ i, B (fderiv ℝ u x (b i)) (fderiv ℝ v x (b i)) =
+      ∑ i, B (fderiv ℝ u₁ x (b i)) (fderiv ℝ v x (b i)) := by
+    by_cases hx : x ∈ tsupport v
+    · rw [(hu₁u x hx).fderiv_eq]
+    · simp [fderiv_of_notMem_tsupport ℝ hx]
+  have hv0 (x : E) (hx : x ∉ tsupport v) : v x = 0 := image_eq_zero_of_notMem_tsupport hx
+  simp_rw [hΔ, hd]
+  rw [integral_finsetSum _ fun i _ ↦ integrable_bilinear_of_forall_notMem_tsupport_eq_zero B hvc
+      (hu₁.continuous_fderiv_fderiv_apply le_rfl (b i) (b i)) hv.continuous hv0,
+    integral_finsetSum _ fun i _ ↦ integrable_bilinear_of_forall_notMem_tsupport_eq_zero B hvc
+      ((hu₁.continuous_fderiv two_ne_zero).clm_apply continuous_const)
+      ((hv.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+      fun x hx ↦ by simp [fderiv_of_notMem_tsupport ℝ hx],
+    ← Finset.sum_neg_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply B
+    (fun x _ ↦ hu₁.contDiffAt) hv hvc (b i) (b i), neg_neg]
+
+/-- **Green's first identity against a compactly supported function.** For a compactly supported
+`C¹` function `v` and a function `u` that is `C²` at every point of the support of `v`,
+`∫ ⟪∇u, ∇v⟫ = -∫ v Δu`. No integrability or decay of `u` is needed, and nothing is assumed about
+`u` away from the support of `v`. -/
 theorem integral_inner_gradient_eq_neg_integral_mul_laplacian {u v : E → ℝ}
-    (hu : ContDiff ℝ 2 u) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
+    (hu : ∀ x ∈ tsupport v, ContDiffAt ℝ 2 u x) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
     ∫ x, ⟪∇ u x, ∇ v x⟫_ℝ ∂μ = -∫ x, v x * Δ u x ∂μ := by
   let b := stdOrthonormalBasis ℝ E
-  have hu1 : ContDiff ℝ 1 (fderiv ℝ u) := hu.fderiv_right (by norm_num)
-  have hdu (i) : ContDiff ℝ 1 fun y ↦ fderiv ℝ u y (b i) := hu1.clm_apply contDiff_const
   have hinner (x) : ⟪∇ u x, ∇ v x⟫_ℝ = ∑ i, fderiv ℝ u x (b i) * fderiv ℝ v x (b i) := by
     rw [← b.sum_inner_mul_inner (∇ u x) (∇ v x)]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [inner_gradient_left, real_inner_comm (∇ v x), inner_gradient_left]
-  have hΔ (x) : Δ u x = ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i) :=
-    laplacian_eq_sum_fderiv_fderiv_apply b ((hu1.differentiable one_ne_zero) x)
-  have hint (i) : Integrable (fun x ↦ v x * fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i)) μ :=
-    (hv.continuous.mul (((hdu i).continuous_fderiv one_ne_zero).clm_apply
-      continuous_const)).integrable_of_hasCompactSupport hvc.mul_right
-  have hint' (i) : Integrable (fun x ↦ fderiv ℝ u x (b i) * fderiv ℝ v x (b i)) μ :=
-    (((hdu i).continuous.mul ((hv.continuous_fderiv one_ne_zero).clm_apply
-      continuous_const)).integrable_of_hasCompactSupport
-        (hvc.fderiv_apply (𝕜 := ℝ) (b i)).mul_left)
-  -- Integrate by parts in each direction of the orthonormal basis.
-  have hdir (i) : ∫ x, fderiv ℝ u x (b i) * fderiv ℝ v x (b i) ∂μ =
-      -∫ x, v x * fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i) ∂μ := by
-    simp_rw [mul_comm (v _)]
-    exact integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable
-      (by simpa only [mul_comm (v _)] using hint i) (hint' i)
-      (((hdu i).continuous.mul hv.continuous).integrable_of_hasCompactSupport hvc.mul_left)
-      (fun x _ ↦ (hdu i).differentiable one_ne_zero x)
-      (fun x _ ↦ hv.differentiable one_ne_zero x)
-  simp_rw [hinner, hΔ, Finset.mul_sum]
-  rw [integral_finsetSum _ fun i _ ↦ hint' i, integral_finsetSum _ fun i _ ↦ hint i,
-    ← Finset.sum_neg_distrib]
-  exact Finset.sum_congr rfl fun i _ ↦ hdir i
+  have h := integral_bilinear_laplacian_eq_neg_integral_sum_fderiv (μ := μ) b
+    (ContinuousLinearMap.mul ℝ ℝ) hu hv hvc
+  simp only [ContinuousLinearMap.mul_apply'] at h
+  simp_rw [hinner, mul_comm (v _), h, neg_neg]
 
 /-- On a ball, the Laplacian of a `C²` function plus an integrable function is integrable. -/
 private theorem integrableOn_laplacian_add_ball {f g : E → ℝ} (hf : ContDiff ℝ 2 f)

@@ -456,7 +456,7 @@ theorem mem_stableSet_of_unique_index_zero {q m : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f q = 1)
     (huniq : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → manifoldMorseIndex 𝓘(ℝ, E) f y = 0 → y = m)
     {y : M} (hyu : y ∈ hX.flow.unstableSet q) (hyq : y ≠ q) : y ∈ hX.flow.stableSet m := by
-  obtain ⟨m', hm', hym'⟩ := hX.exists_mem_stableSet hf y
+  obtain ⟨m', hm', hym'⟩ := hX.exists_mem_stableSet y
   have hqm' : q ≠ m' := by
     rintro rfl
     exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hyu, hym'⟩)

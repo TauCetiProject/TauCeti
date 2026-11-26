@@ -15,9 +15,9 @@ import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction
 /-!
 # Krylov's sharp function method
 
-Let `g : ℝ^{n+1} → E` and `G : ℝ^{n+1} → F`, with `g` integrable and `g, G ∈ Lᵖ` for some
-`2 < p < ∞`. Suppose that the square mean oscillation of `g` on every ball `B_ρ = ball c ρ` is
-controlled by averages over the dilated ball `B_{κρ}`, for every `κ ≥ 1`:
+Let `g : ℝ^{n+1} → E` and `G : ℝ^{n+1} → F`, with `g, G ∈ Lᵖ` for some `2 < p < ∞`. Suppose
+that the square mean oscillation of `g` on every ball `B_ρ = ball c ρ` is controlled by averages
+over the dilated ball `B_{κρ}`, for every `κ ≥ 1`:
 
 `⨍_{B_ρ} ‖g - g_{B_ρ}‖² ≤ c₁ κ⁻² ⨍_{B_{κρ}} ‖g‖² + c₂ κ^(n + 1) ⨍_{B_{κρ}} ‖G‖²`
 `  + c₃ κ^(n + 1) (L^(2q' - 1) δ)^(1/q') (⨍_{B_{κρ}} ‖g‖^(2q))^(1/q)`
@@ -296,9 +296,9 @@ private theorem eLpNorm_le_of_le_quarter {g : EuclideanSpace ℝ (Fin (n + 1)) �
 
 /-- **Krylov's sharp function method.** Let `2 < p < ∞` and let `c₁, c₂, c₃, L` be real constants.
 There are constants `C` and `δ > 0`, depending only on `n`, `p`, `c₁`, `c₂`, `c₃` and `L`, with the
-following property. Let `g : ℝ^{n+1} → E` be integrable with `g ∈ Lᵖ`, let `G ∈ Lᵖ`, and suppose
-that for every pair of Hölder conjugate exponents `q, q'` with `2q ≤ p`, every ball
-`B_ρ = ball c ρ` and every `κ ≥ 1`
+following property. Let `g : ℝ^{n+1} → E` and `G : ℝ^{n+1} → F` lie in `Lᵖ`, and suppose that for
+every pair of Hölder conjugate exponents `q, q'` with `2q ≤ p`, every ball `B_ρ = ball c ρ` and
+every `κ ≥ 1`
 
 `⨍_{B_ρ} ‖g - g_{B_ρ}‖² ≤ c₁ κ⁻² ⨍_{B_{κρ}} ‖g‖² + c₂ κ^(n + 1) ⨍_{B_{κρ}} ‖G‖²`
 `  + c₃ κ^(n + 1) (L^(2q' - 1) δ)^(1/q') (⨍_{B_{κρ}} ‖g‖^(2q))^(1/q)`.
@@ -308,7 +308,7 @@ theorem exists_eLpNorm_le_of_forall_setAverage_norm_sub_sq_le [CompleteSpace E]
     {p : ℝ≥0∞} (hp : 2 < p) (hp_top : p ≠ ∞) (c₁ c₂ c₃ L : ℝ) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧
       ∀ {g : EuclideanSpace ℝ (Fin (n + 1)) → E} {G : EuclideanSpace ℝ (Fin (n + 1)) → F},
-        Integrable g → MemLp g p volume → MemLp G p volume →
+        MemLp g p volume → MemLp G p volume →
         (∀ q q' : ℝ, q.HolderConjugate q' → ENNReal.ofReal (2 * q) ≤ p →
           ∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (ρ κ : ℝ), 0 < ρ → 1 ≤ κ →
             ⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ ^ 2 ≤
@@ -349,9 +349,11 @@ theorem exists_eLpNorm_le_of_forall_setAverage_norm_sub_sq_le [CompleteSpace E]
         (ENNReal.mul_ne_top ENNReal.coe_ne_top h2) h2)
         (ENNReal.rpow_ne_top_of_nonneg (by linarith) ENNReal.ofReal_ne_top)) (hcM _))
       ENNReal.ofNat_ne_top)
-  refine ⟨C.toNNReal, δ, hδ, fun {g G} hint hgp hGp hosc => ?_⟩
+  refine ⟨C.toNNReal, δ, hδ, fun {g G} hgp hGp hosc => ?_⟩
   rw [ENNReal.coe_toNNReal hK₂]
-  exact eLpNorm_le_of_le_quarter hp hp_top hgp hGp hs_def hq hqs (hFS _ hint)
+  -- The Fefferman–Stein inequality applies to `g ∈ Lᵖ` itself, with `p₀ = p`.
+  exact eLpNorm_le_of_le_quarter hp hp_top hgp hGp hs_def hq hqs
+    (hFS hgp (one_le_two.trans hp.le) (by rw [hs_def, ENNReal.ofReal_toReal hp_top]))
     (sq_sharpMaximalFunction_le hp.le hgp hqq hκ fun c ρ hρ => hosc q q' hqq hqp c ρ κ hρ hκ)
     hκ1 hδ1
 

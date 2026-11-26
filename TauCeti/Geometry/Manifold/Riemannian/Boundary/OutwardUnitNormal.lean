@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Unit
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.NormalBundle
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 
 /-!
 # The outward unit normal along the boundary
@@ -250,9 +251,6 @@ theorem eq_outwardUnitNormal_iff_of_dim_one {q : (𝓡∂ (0 + 1)).boundary M}
     v = outwardUnitNormal q ↔ ‖v‖ = 1 ∧ IsOutwardPointing (q : M) v := by
   refine eq_outwardUnitNormal_iff.trans
     ⟨fun h ↦ ⟨h.norm_eq_one, h.isOutwardPointing⟩, fun ⟨hv, ho⟩ ↦ ⟨hv, ho, fun w ↦ ?_⟩⟩
-  -- The boundary is modelled on `EuclideanSpace ℝ (Fin 0)`, so its tangent spaces are trivial.
-  have : Subsingleton (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) q) :=
-    inferInstanceAs (Subsingleton (EuclideanSpace ℝ (Fin 0)))
   rw [Subsingleton.elim w 0, map_zero, inner_zero_right]
 
 end DimOne

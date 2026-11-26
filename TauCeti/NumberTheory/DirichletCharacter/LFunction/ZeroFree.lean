@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
-public import TauCeti.NumberTheory.DirichletCharacter.Primitive.CyclicFamily
+public import TauCeti.NumberTheory.DirichletCharacter.Primitive.CyclicFamily.Basic
 
 /-!
 # Zero-free half-planes and cyclic families of Dirichlet characters

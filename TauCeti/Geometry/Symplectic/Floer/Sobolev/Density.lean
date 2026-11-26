@@ -40,6 +40,8 @@ records the derivatives of a section cut off by a function of `s`.
   densities of `ξ₁` and `ξ₂`.
 * `TauCeti.Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity`: the density bounds `‖ξ‖²`, so
   its integral over a rectangle bounds the `L²` norm.
+* `TauCeti.Floer.setIntegral_sobolevDensity_le_of_eventuallyEq_one`: if `β = 1` near every point
+  of `s` and `s ⊆ t` with `t` compact, the energy of `ξ` on `s` is at most that of `β ξ` on `t`.
 -/
 
 public section
@@ -148,5 +150,19 @@ theorem setIntegral_norm_sq_le_setIntegral_sobolevDensity {ξ : ℝ × ℝ → V
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
       linarith
+
+/-- **Comparing with a cut-off map.** If `β = 1` near every point of a measurable set `s`, and `s`
+lies in a compact set `t`, then the `W^{1,2}` energy of `ξ` on `s` is at most the energy of the
+`C¹` map `β ξ` on `t`. -/
+theorem setIntegral_sobolevDensity_le_of_eventuallyEq_one {ξ : ℝ × ℝ → V} {β : ℝ × ℝ → ℝ}
+    {s t : Set (ℝ × ℝ)} (hs : MeasurableSet s) (ht : IsCompact t) (hst : s ⊆ t)
+    (hβ1 : ∀ z ∈ s, β =ᶠ[𝓝 z] 1) (hβξ : ContDiff ℝ 1 fun z ↦ β z • ξ z) :
+    ∫ z in s, sobolevDensity ξ z ≤ ∫ z in t, sobolevDensity (fun z ↦ β z • ξ z) z := by
+  refine le_of_eq_of_le (setIntegral_congr_fun hs fun z hz ↦ ?_)
+    (setIntegral_mono_set ((continuous_sobolevDensity hβξ).continuousOn.integrableOn_compact ht)
+      (ae_of_all _ fun z ↦ sobolevDensity_nonneg _ z) (ae_of_all _ hst))
+  -- Near `s` the cut-off map agrees with `ξ`.
+  refine (sobolevDensity_congr_of_eventuallyEq ((hβ1 z hz).mono fun z' h ↦ ?_)).symm
+  simp [h]
 
 end TauCeti.Floer

@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.LinearAlgebra.Determinant.Prod
+import TauCeti.Topology.Instances.Real.Periodic
 
 /-!
 # Global generating functions of twist maps of the strip
@@ -36,6 +37,12 @@ that generating function satisfies the generating equations everywhere on the ba
   boundary graphs, `{(x, X) | X ∈ [X(x, c), X(x, d)]}`
   (`TauCeti.image_stripTwistCoord_preimage_snd_uIcc`). For `[c, d] = [0, 1]` this is the
   boundary-graph band of the twist map.
+* With no twist hypothesis, the band `G(ℝ × J)` of a map `F` continuous on a strip over a
+  compact set `J` is closed (`TauCeti.isClosed_image_stripTwistCoord_preimage_snd`). If `F` also
+  commutes with a translation `(x, y) ↦ (x + a, y)`, `a ≠ 0`, there, such as `a = 1`, the
+  displacement `X - x` is bounded on the band
+  (`TauCeti.exists_forall_mem_image_stripTwistCoord_abs_sub_le`). These make the block of the bands
+  of a chain of lifts compact on the diagonal quotient of the configuration space.
 * By the inverse function theorem, `G` is a `C^n` local diffeomorphism on the open strip when `F`
   is `C^n`, `1 ≤ n` (`TauCeti.isLocalDiffeomorphOn_stripTwistCoord`), so the band `G(ℝ × J)` is
   open (`TauCeti.isOpen_image_stripTwistCoord`). Being injective, `G` is a `C^n` diffeomorphism
@@ -254,6 +261,54 @@ theorem add_mem_image_stripTwistCoord_iff {a : ℝ}
     refine ⟨q - (a, 0), hq', add_right_cancel (b := (a, a)) ?_⟩
     rw [← stripTwistCoord_add_fst (hFa _ hq'), sub_add_cancel, hqz]
   · rw [stripTwistCoord_add_fst (hFa q hq), hqz]
+
+/-- **The band over a compact strip is closed.** If `F` is continuous on the strip `ℝ × J` over a
+compact set `J`, such as a closed interval `[c, d]`, the image of that strip under the twist
+coordinates `(x, y) ↦ (x, X(x, y))` is closed. The twist coordinates keep the first coordinate, so
+near a point `(x, X)` the band is the image of the compact set `[x - 1, x + 1] × J`. -/
+theorem isClosed_image_stripTwistCoord_preimage_snd (hJ : IsCompact J)
+    (hF : ContinuousOn F (Prod.snd ⁻¹' J)) :
+    IsClosed (stripTwistCoord F '' (Prod.snd ⁻¹' J)) := by
+  have hG : ContinuousOn (stripTwistCoord F) (Prod.snd ⁻¹' J) := by
+    rw [funext stripTwistCoord_apply]
+    exact continuousOn_fst.prodMk (continuous_fst.comp_continuousOn hF)
+  refine isClosed_of_closure_subset fun z hz ↦ ?_
+  set K : Set (ℝ × ℝ) := Icc (z.1 - 1) (z.1 + 1) ×ˢ J
+  have hK : IsCompact (stripTwistCoord F '' K) :=
+    (isCompact_Icc.prod hJ).image_of_continuousOn (hG.mono fun q hq ↦ mem_preimage.2 hq.2)
+  -- near `z` the band is the image of `K`, which is compact, hence closed
+  set O : Set (ℝ × ℝ) := Prod.fst ⁻¹' Ioo (z.1 - 1) (z.1 + 1)
+  have hO : IsOpen O := isOpen_Ioo.preimage continuous_fst
+  have hzO : z ∈ O := mem_preimage.2 ⟨by linarith, by linarith⟩
+  have hsub : O ∩ stripTwistCoord F '' (Prod.snd ⁻¹' J) ⊆ stripTwistCoord F '' K := by
+    rintro _ ⟨hw, q, hq, rfl⟩
+    rw [mem_preimage, stripTwistCoord_apply] at hw
+    exact ⟨q, ⟨Ioo_subset_Icc_self hw, hq⟩, rfl⟩
+  obtain ⟨q, hq, rfl⟩ := hK.isClosed.closure_subset_iff.2 hsub (hO.inter_closure ⟨hzO, hz⟩)
+  exact ⟨q, mem_preimage.2 hq.2, rfl⟩
+
+/-- **The band has bounded displacement.** If `F = (X, Y)` is continuous on the strip `ℝ × J` over
+a compact set `J` and commutes there with a translation `(x, y) ↦ (x + a, y)`, `a ≠ 0`, as a lift
+of an annulus map does for `a = 1`, then the displacement `X(x, y) - x` is bounded on the strip,
+so `|X - x| ≤ C` on the band of twist coordinates for some `C`. -/
+theorem exists_forall_mem_image_stripTwistCoord_abs_sub_le (hJ : IsCompact J)
+    (hF : ContinuousOn F (Prod.snd ⁻¹' J)) {a : ℝ} (ha : a ≠ 0)
+    (hFa : ∀ q ∈ Prod.snd ⁻¹' J, F (q + (a, 0)) = F q + (a, 0)) :
+    ∃ C, ∀ z ∈ stripTwistCoord F '' (Prod.snd ⁻¹' J), |z.2 - z.1| ≤ C := by
+  have := isCompact_iff_compactSpace.1 hJ
+  -- the displacement is periodic in `x` and jointly continuous with the height in compact `J`
+  obtain ⟨C, hC⟩ := Function.Periodic.exists_bound_of_continuous_uncurry
+    (f := fun (x : ℝ) (y : J) ↦ (F (x, y)).1 - x)
+    (fun x ↦ funext fun y ↦ by
+      have h := hFa (x, y) y.property
+      simp only [Prod.mk_add_mk, add_zero] at h
+      simp only [h, Prod.fst_add]
+      ring) ha
+    (((hF.comp_continuous (f := fun p : ℝ × J ↦ ((p.1, (p.2 : ℝ)) : ℝ × ℝ)) (by fun_prop)
+      fun p ↦ p.2.property).fst).sub continuous_fst)
+  refine ⟨C, ?_⟩
+  rintro _ ⟨q, hq, rfl⟩
+  simpa [stripTwistCoord_apply, Real.norm_eq_abs] using hC q.1 ⟨q.2, hq⟩
 
 /-- **Periodicity of the band generating function.** If `F` commutes on the strip `ℝ × J` with the
 translation `(x, y) ↦ (x + a, y)`, as a lift of an annulus map does for `a = 1`, the twist

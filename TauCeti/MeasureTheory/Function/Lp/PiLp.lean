@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.SpecificCodomains.WithLp
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!

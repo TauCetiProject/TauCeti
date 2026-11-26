@@ -101,17 +101,14 @@ of unity for every `n > 0`, an isomorphism `e : puiseuxField K ≃ₐ[K⸨X⸩] 
 (`TauCeti.puiseuxField.galEquivTateModuleOfAlgEquiv_eq`). -/
 noncomputable def galEquivTateModuleOfAlgEquiv (e : puiseuxField K ≃ₐ[K⸨X⸩] L) :
     Gal(L/K⸨X⸩) ≃ₜ* PrimeToPTateModule 1 K :=
-  ({ e.symm.autCongr with
-      continuous_toFun := e.symm.continuous_autCongr
-      continuous_invFun := e.continuous_autCongr } :
-      Gal(L/K⸨X⸩) ≃ₜ* Gal(puiseuxField K/K⸨X⸩)).trans (galEquivTateModule K)
+  e.symm.autCongrContinuousMulEquiv.trans (galEquivTateModule K)
 
 /-- The image of `σ` is the image under `galEquivTateModule` of its conjugate `e⁻¹ ∘ σ ∘ e`. -/
 @[simp]
 theorem galEquivTateModuleOfAlgEquiv_apply (e : puiseuxField K ≃ₐ[K⸨X⸩] L)
     (σ : Gal(L/K⸨X⸩)) :
-    galEquivTateModuleOfAlgEquiv e σ = galEquivTateModule K (e.symm.autCongr σ) :=
-  (rfl)
+    galEquivTateModuleOfAlgEquiv e σ = galEquivTateModule K (e.symm.autCongr σ) := by
+  simp [galEquivTateModuleOfAlgEquiv]
 
 /-- The inverse of `galEquivTateModuleOfAlgEquiv e` is the Kummer action conjugated by `e`. -/
 @[simp]
@@ -125,8 +122,9 @@ theorem galEquivTateModuleOfAlgEquiv_symm_apply (e : puiseuxField K ≃ₐ[K⸨X
 @[simp]
 theorem galEquivTateModuleOfAlgEquiv_refl :
     galEquivTateModuleOfAlgEquiv (AlgEquiv.refl : puiseuxField K ≃ₐ[K⸨X⸩] puiseuxField K) =
-      galEquivTateModule K :=
-  (rfl)
+      galEquivTateModule K := by
+  ext σ
+  simp
 
 /-- **Independence of the model.** The identification `Gal(L/K⸨X⸩) ≃ₜ* lim_n μₙ(K)` does not
 depend on the isomorphism `e : puiseuxField K ≃ₐ[K⸨X⸩] L` it is transported along. -/
@@ -198,7 +196,8 @@ theorem absoluteGaloisGroupEquivTateModule_apply
     absoluteGaloisGroupEquivTateModule K σ = galEquivTateModule K (e.symm.autCongr σ) :=
   -- `Field.absoluteGaloisGroup K⸨X⸩` is by definition `Gal(AlgebraicClosure K⸨X⸩/K⸨X⸩)`, the
   -- domain of `galEquivTateModuleOfAlgEquiv e`, so the two maps are compared pointwise.
-  DFunLike.congr_fun (galEquivTateModuleOfAlgEquiv_eq _ e) σ
+  (DFunLike.congr_fun (galEquivTateModuleOfAlgEquiv_eq _ e) σ).trans
+    (galEquivTateModuleOfAlgEquiv_apply e σ)
 
 /-- **The characters `θₙ` on the algebraic closure.** Let `π` be a uniformizer of `K⸨X⸩` and `α`
 an `n`-th root of `π` in `AlgebraicClosure K⸨X⸩`. An automorphism `σ` of the algebraic closure

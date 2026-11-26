@@ -56,6 +56,8 @@ Clifford algebra of the primitive invariants and lies in the commutant of `A`.
 * `CliffordAlgebra.mem_centralizer_adjointEnvelopingImage_iff` and
   `CliffordAlgebra.mem_centralizer_adjointEnvelopingImage_iff_mem_maxTrivSubmodule`: the commutant
   of `A` consists of the invariants of the commutator action.
+* `CliffordAlgebra.finrank_centralizer_adjointEnvelopingImage_le_of_finrank_eq_three`: for a
+  three-dimensional Lie algebra the commutant of `A` has dimension at most two.
 * `CliffordAlgebra.ker_lift_adjointCliffordHom_eq_ker_representation_irreducibleQuotient`: the
   kernel of `U(L) → A` is the annihilator of `L(ρ)`.
 * `CliffordAlgebra.adjointEnvelopingImageEquivEnd_apply`: the isomorphism `A ≃ End(L(ρ))` sends the
@@ -165,6 +167,42 @@ theorem mem_centralizer_adjointEnvelopingImage_iff_mem_maxTrivSubmodule
         (adjointEnvelopingImage K L : Set (CliffordAlgebra (killingQuadraticForm K L))) ↔
       c ∈ maxTrivSubmodule K L (CliffordAlgebra (killingQuadraticForm K L)) := by
   simp only [mem_centralizer_adjointEnvelopingImage_iff, mem_maxTrivSubmodule, commutator_lie_def]
+
+variable {K L} in
+/-- **In dimension three the commutant of the image of the enveloping algebra has dimension at
+most two.** Its elements are the invariants of the commutator module, and these lie in the span of
+`1` and of the odd central element `ω` of
+`CliffordAlgebra.exists_lieModuleEquiv_commutator_of_finrank_eq_three`: the two adjoint summands
+of the decomposition `1 ⊕ L ⊕ L ⊕ 1` contribute nothing, because the centre of `L` is trivial. -/
+theorem finrank_centralizer_adjointEnvelopingImage_le_of_finrank_eq_three
+    (h : finrank K L = 3) :
+    finrank K (Subalgebra.toSubmodule (Subalgebra.centralizer K
+      (adjointEnvelopingImage K L : Set (CliffordAlgebra (killingQuadraticForm K L))))) ≤ 2 := by
+  open scoped CliffordAlgebra.Commutator in
+  obtain ⟨ω, -, -, e, he⟩ := exists_lieModuleEquiv_commutator_of_finrank_eq_three h
+  have hle : Subalgebra.toSubmodule (Subalgebra.centralizer K
+      (adjointEnvelopingImage K L : Set (CliffordAlgebra (killingQuadraticForm K L)))) ≤
+      Submodule.span K (Set.range ![1, ω]) := by
+    intro c hc
+    rw [Subalgebra.mem_toSubmodule, mem_centralizer_adjointEnvelopingImage_iff_mem_maxTrivSubmodule,
+      mem_maxTrivSubmodule] at hc
+    -- The preimage `p` of `c` is invariant, so its two adjoint components are central.
+    set p := e.symm c with hp
+    have hinv (x : L) : ⁅x, p⁆ = 0 := by
+      have hmap : e.symm ⁅x, c⁆ = ⁅x, e.symm c⁆ := e.symm.map_lie'
+      rw [hp, ← hmap, hc x, map_zero]
+    have hcen (y : L) (hy : ∀ x : L, ⁅x, y⁆ = 0) : y = 0 := by
+      have hy' : y ∈ _root_.LieAlgebra.center K L := by
+        rw [_root_.LieAlgebra.center, mem_maxTrivSubmodule]
+        exact hy
+      rwa [_root_.LieAlgebra.center_eq_bot, LieSubmodule.mem_bot] at hy'
+    have h₁ : p.2.1 = 0 := hcen _ fun x ↦ congrArg (·.2.1) (hinv x)
+    have h₂ : p.2.2.1 = 0 := hcen _ fun x ↦ congrArg (·.2.2.1) (hinv x)
+    rw [Submodule.mem_span_range_iff_exists_fun]
+    refine ⟨![TrivialLieModule.equiv K L K p.1, TrivialLieModule.equiv K L K p.2.2.2], ?_⟩
+    rw [← e.apply_symm_apply c, ← hp, he, h₁, h₂]
+    simp [Fin.sum_univ_two, Algebra.algebraMap_eq_smul_one]
+  exact (Submodule.finrank_mono hle).trans ((finrank_range_le_card _).trans (by simp))
 
 end Image
 
