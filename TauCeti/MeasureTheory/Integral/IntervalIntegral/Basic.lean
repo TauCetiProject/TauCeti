@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Int.Interval
 public import Mathlib.MeasureTheory.Integral.IntervalAverage
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Function.Holder
@@ -19,6 +20,9 @@ not belong to any particular application.
 
 ## Main results
 
+* `TauCeti.intervalIntegral.sum_integral_adjacent_intervals_fin` and
+  `TauCeti.intervalIntegral.sum_integral_adjacent_intervals_Ico_int`: additivity of interval
+  integrals over `Fin`-indexed and `ℤ`-indexed (`Finset.Ico a n`) partitions.
 * `TauCeti.intervalIntegral.monotoneOn_primitive_of_nonneg`: the primitive `t ↦ ∫ x in a..t, f x`
   of a function that is nonnegative and interval integrable on `[a, b]` is nondecreasing on
   `[a, b]`; `TauCeti.intervalIntegral.strictMonoOn_primitive_of_pos`: it is strictly increasing
@@ -117,6 +121,19 @@ theorem sum_integral_adjacent_intervals_fin {E : Type*} [NormedAddCommGroup E]
   apply Finset.sum_congr rfl
   intro i _
   simp only [← ha i.castSucc, ← ha i.succ, Fin.val_castSucc, Fin.val_succ]
+
+/-- Interval integrals add over an integer-indexed interval `Finset.Ico a n` (`a ≤ n`) for any
+sequence of endpoints `τ : ℤ → ℝ` (which need not be monotone). -/
+theorem sum_integral_adjacent_intervals_Ico_int {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} {f : ℝ → E} {a n : ℤ} (han : a ≤ n) (τ : ℤ → ℝ)
+    (hint : ∀ j ∈ Finset.Ico a n, IntervalIntegrable f μ (τ j) (τ (j + 1))) :
+    ∑ j ∈ Finset.Ico a n, ∫ t in τ j..τ (j + 1), f t ∂μ = ∫ t in τ a..τ n, f t ∂μ := by
+  rw [Int.Ico_eq_finset_map, Finset.sum_map]
+  have hm : max (n - a) 0 = n - a := by omega
+  have hsum := _root_.intervalIntegral.sum_integral_adjacent_intervals (n := (n - a).toNat)
+    (a := fun k : ℕ => τ (a + k)) fun k hk => by
+      simpa [Nat.cast_add, add_assoc] using hint (a + k) (Finset.mem_Ico.mpr (by omega))
+  simpa [Nat.cast_add, add_assoc, hm] using hsum
 
 /-- The primitive `t ↦ ∫ x in a..t, f x ∂μ` of a function that is almost everywhere nonnegative and
 interval integrable on `[a, b]` is nondecreasing on `[a, b]`. -/
