@@ -148,8 +148,9 @@ theorem re_classicalPrincipalSymbol_averageMap_pos
         ((ρ g).symm x)))).re :=
     Finset.sum_pos (fun g _ ↦ hpos _ _ fun h ↦
       hξ (((ρ g).comp_mfderiv_eq_zero_iff (by simp) _).1 h)) Finset.univ_nonempty
-  rw [classicalPrincipalSymbol_averageMap ρ hP]
-  simpa [Complex.re_sum, mul_pos_iff_of_pos_left, Fintype.card_pos] using hsum
+  rw [classicalPrincipalSymbol_averageMap ρ hP, invOf_eq_inv, mul_comm, ← div_eq_mul_inv,
+    Complex.div_natCast_re, Complex.re_sum]
+  exact div_pos hsum (by positivity)
 
 /-- **Averaging preserves positive ellipticity.** If the principal symbol of a classical
 pseudodifferential operator `P` of order `m` has positive real part at every nonzero covector,
