@@ -19,7 +19,7 @@ public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 public import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.LinearAlgebra.Basis.Semilinear
--- Private: `Subspace.dual_finrank_eq` is used only inside proofs.
+-- Private: `Module.dual_rank_eq` and `Subspace.dual_finrank_eq` are used only inside proofs.
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Multilinear.Basis
 
@@ -126,6 +126,11 @@ complete nontrivially normed field `𝕜` is by continuous maps:
 from the action. It is one for the action of the linear automorphisms themselves, where the type
 `E ≃ₗ[𝕜] E` names the field (`LinearEquiv.continuousConstSMul`), and so, through
 `TauCeti.Subgroup.continuousConstSMul`, for any of their subgroups.
+
+Without Hausdorffness of `E` or completeness of `𝕜`, forgetting continuity still embeds the
+continuous dual of a finite-dimensional topological vector space over any topological field with
+continuous addition and scalar multiplication into its algebraic dual, bounding its dimension by
+that of the space: `TauCeti.rank_strongDual_le` and `TauCeti.finrank_strongDual_le`.
 -/
 
 public section
@@ -640,3 +645,26 @@ theorem Ideal.quotientMapₐ_bijective_of_denseRange {K A B : Type*} [Nontrivial
       ((Ideal.Quotient.mk_surjective (I := J)).denseRange.comp hf continuous_quotient_mk'))⟩
   rintro _ ⟨a, rfl⟩
   exact ⟨Ideal.Quotient.mk _ a, rfl⟩
+
+namespace TauCeti
+
+universe u v
+
+variable {𝕜 : Type u} {E : Type v} [Field 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜] [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
+  [FiniteDimensional 𝕜 E]
+
+/-- On a finite-dimensional topological vector space, the continuous dual has rank at most that of
+the space, since forgetting continuity embeds it into the algebraic dual. -/
+theorem rank_strongDual_le :
+    Module.rank 𝕜 (StrongDual 𝕜 E) ≤ Cardinal.lift.{u} (Module.rank 𝕜 E) :=
+  (LinearMap.rank_le_of_injective (ContinuousLinearMap.coeLM 𝕜)
+    ContinuousLinearMap.coe_injective).trans_eq Module.dual_rank_eq
+
+/-- On a finite-dimensional topological vector space, the continuous dual has `finrank` at most
+that of the space. -/
+theorem finrank_strongDual_le : Module.finrank 𝕜 (StrongDual 𝕜 E) ≤ Module.finrank 𝕜 E :=
+  (LinearMap.finrank_le_finrank_of_injective (f := ContinuousLinearMap.coeLM 𝕜)
+    ContinuousLinearMap.coe_injective).trans_eq Subspace.dual_finrank_eq
+
+end TauCeti

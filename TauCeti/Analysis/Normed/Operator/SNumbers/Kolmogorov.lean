@@ -20,8 +20,9 @@ field; its closed-unit-ball interpretation requires a densely normed field.
 
 We prove the norm, monotonicity, perturbation, ideal and rank laws, invariance under
 precomposition with normed quotient maps (`NormedAddGroupHom.IsQuotient`), so that the
-Kolmogorov numbers are surjective, the bound by approximation numbers, and the index laws: the
-Kolmogorov numbers are additive, `d_{m+n}(S + T) ≤ dₘ(S) + dₙ(T)`, and multiplicative,
+Kolmogorov numbers are surjective, invariance under postcomposition with surjective linear
+isometries (such as `SeparationQuotient.mkCLM`), the bound by approximation numbers, and the index
+laws: the Kolmogorov numbers are additive, `d_{m+n}(S + T) ≤ dₘ(S) + dₙ(T)`, and multiplicative,
 `d_{m+n}(S T) ≤ dₘ(S) dₙ(T)`; with one index zero these recover the perturbation and
 postcomposition laws. Over a complete scalar field, finite-dimensional subspaces are closed, and
 the Kolmogorov numbers form a strict s-number sequence. No completeness of the domain or codomain
@@ -196,6 +197,39 @@ theorem kolmogorovNumber_comp_of_isQuotient (T : F →L[𝕜] G) {Q : E →L[�
     (hQ : Q.toNormedAddGroupHom.IsQuotient) (n : ℕ) :
     (T ∘L Q).kolmogorovNumber n = T.kolmogorovNumber n := by
   simp only [kolmogorovNumber_def, ← comp_assoc, opNNNorm_comp_of_isQuotient _ hQ]
+
+/-- Postcomposing with a surjective linear isometry preserves Kolmogorov numbers. On seminormed
+spaces a surjective linear isometry need not be injective, for instance passing to
+`SeparationQuotient`. -/
+theorem kolmogorovNumber_linearIsometry_comp_of_surjective (T : E →L[𝕜] F)
+    {J : F →ₗᵢ[𝕜] G} (hJ : Function.Surjective J) (n : ℕ) :
+    (J.toContinuousLinearMap ∘L T).kolmogorovNumber n = T.kolmogorovNumber n := by
+  refine ((J.toContinuousLinearMap.kolmogorovNumber_comp_le_left T n).trans
+    (mul_le_of_le_one_left' (by exact_mod_cast J.norm_toContinuousLinearMap_le))).antisymm ?_
+  refine le_kolmogorovNumber_iff.mpr fun W hW ↦ ?_
+  obtain ⟨s, hs⟩ := Module.projective_lifting_property J.toLinearMap W.subtype hJ
+  let V : Submodule 𝕜 F := LinearMap.range s
+  have hV : Module.rank 𝕜 V ≤ n := by
+    have hr := (lift_rank_range_le s).trans (Cardinal.lift_le.mpr hW)
+    simpa only [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] using hr
+  refine (T.kolmogorovNumber_le hV).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)
+  refine le_trans ?_ ((W.mkQL ∘L (J.toContinuousLinearMap ∘L T)).le_opNorm x)
+  refine (QuotientAddGroup.le_norm_iff (S := W.toAddSubgroup)).mpr fun g hg ↦ ?_
+  have hmem : g - J (T x) ∈ W := (Submodule.Quotient.eq W).mp hg
+  let u : F := T x + s ⟨g - J (T x), hmem⟩
+  have huJ : J u = g := by
+    have hsw : J (s ⟨g - J (T x), hmem⟩) = g - J (T x) :=
+      congrArg (fun f : W →ₗ[𝕜] G ↦ f ⟨g - J (T x), hmem⟩) hs
+    rw [map_add, hsw, add_sub_cancel]
+  have huV_mem : u - T x ∈ V := by
+    rw [add_sub_cancel_left]
+    exact LinearMap.mem_range_self s _
+  have huV : (Submodule.Quotient.mk u : F ⧸ V) = V.mkQL (T x) := by
+    simpa only [Submodule.coe_mkQL, Submodule.mkQ_apply, Submodule.Quotient.eq] using huV_mem
+  calc
+    ‖V.mkQL (T x)‖ = ‖(Submodule.Quotient.mk u : F ⧸ V)‖ := by rw [huV]
+    _ ≤ ‖u‖ := Submodule.Quotient.norm_mk_le V u
+    _ = ‖g‖ := by rw [← J.norm_map u, huJ]
 
 /-- Every Kolmogorov number is bounded above by the corresponding approximation number. -/
 theorem kolmogorovNumber_le_singularValue (T : E →L[𝕜] F) (n : ℕ) :

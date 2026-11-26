@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.Analysis.Normed.Group.Quotient
+public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Dual.Lemmas
@@ -26,9 +27,13 @@ not change an annihilator. Over the real or complex field, the preannihilator of
 annihilator is precisely the norm closure of the original subspace. Consequently continuous
 annihilators distinguish norm closures, and a subspace is dense exactly when its annihilator
 is zero. No completeness or closedness hypothesis is needed. Dually, a finite-dimensional
-subspace of the strong dual is the continuous annihilator of its preannihilator. As an
-application, `ContinuousLinearMap.surjective_smul_add_apply_iff` decides when the map
-`(τ, ξ) ↦ τ • w + H ξ` onto the dual of a finite-dimensional space is onto, for a symmetric `H`.
+subspace of the strong dual is the continuous annihilator of its preannihilator, and on any
+topological vector space over a topological field its preannihilator has codimension equal to
+its dimension (`Submodule.lift_rank_quotient_orthogonalBilin_topDualPairing`,
+`Submodule.rank_quotient_orthogonalBilin_topDualPairing`,
+`Submodule.finrank_quotient_orthogonalBilin_topDualPairing`). As an application,
+`ContinuousLinearMap.surjective_smul_add_apply_iff` decides when the map `(τ, ξ) ↦ τ • w + H ξ`
+onto the dual of a finite-dimensional space is onto, for a symmetric `H`.
 
 The analytic input is `exists_dual_vector''`, the norming-functional form of Hahn–Banach,
 applied to the seminormed quotient. In particular, the results also apply to seminormed
@@ -187,6 +192,76 @@ theorem dense_iff_orthogonalBilin_topDualPairing_flip_eq_bot (S : Submodule 𝕜
       Submodule.orthogonalBilin_bot]
 
 end RCLike
+
+section PreannihilatorCodimension
+
+universe u v
+
+variable {𝕜 : Type u} {E : Type v} [Field 𝕜] [TopologicalSpace 𝕜] [IsTopologicalAddGroup 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜] [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
+
+/-- The preannihilator of a finite-dimensional subspace `G` of the strong dual has quotient rank
+equal to `finrank 𝕜 G`. -/
+theorem rank_quotient_orthogonalBilin_topDualPairing_eq_finrank
+    (G : Submodule 𝕜 (StrongDual 𝕜 E)) [FiniteDimensional 𝕜 G] :
+    Module.rank 𝕜 (E ⧸ G.orthogonalBilin (topDualPairing 𝕜 E)) = Module.finrank 𝕜 G := by
+  let _ : AddCommGroup G := inferInstance
+  let W : Subspace 𝕜 (Module.Dual 𝕜 E) := G.map (topDualPairing 𝕜 E)
+  let _ : AddCommGroup W := inferInstance
+  have hG : G ≃ₗ[𝕜] W := G.equivMapOfInjective (topDualPairing 𝕜 E)
+    ContinuousLinearMap.coe_injective
+  have : FiniteDimensional 𝕜 W := Module.Finite.equiv hG
+  let e : (E ⧸ G.orthogonalBilin (topDualPairing 𝕜 E)) ≃ₗ[𝕜] Module.Dual 𝕜 W :=
+    (quotEquivOfEq _ _ (G.dualCoannihilator_map_eq_orthogonalBilin
+      (B := topDualPairing 𝕜 E)).symm).trans
+      (LinearEquiv.ofBijective W.quotDualCoannihilatorToDual
+        W.quotDualCoannihilatorToDual_bijective)
+  have : FiniteDimensional 𝕜 (E ⧸ G.orthogonalBilin (topDualPairing 𝕜 E)) :=
+    Module.Finite.equiv e.symm
+  rw [← Module.finrank_eq_rank]
+  exact congrArg Nat.cast (e.finrank_eq.trans (Subspace.dual_finrank_eq.trans hG.symm.finrank_eq))
+
+/-- The preannihilator of a finite-dimensional subspace of the strong dual has codimension equal to
+the subspace's rank. -/
+@[simp]
+theorem lift_rank_quotient_orthogonalBilin_topDualPairing
+    (G : Submodule 𝕜 (StrongDual 𝕜 E)) [FiniteDimensional 𝕜 G] :
+    Cardinal.lift.{u} (Module.rank 𝕜 (E ⧸ G.orthogonalBilin (topDualPairing 𝕜 E))) =
+      Module.rank 𝕜 G := by
+  let _ : AddCommGroup G := inferInstance
+  rw [rank_quotient_orthogonalBilin_topDualPairing_eq_finrank, Cardinal.lift_natCast,
+    Module.finrank_eq_rank]
+
+/-- In the same universe, the preannihilator of a finite-dimensional subspace of the strong dual
+has codimension equal to the subspace's rank. -/
+@[simp]
+theorem rank_quotient_orthogonalBilin_topDualPairing {E : Type u}
+    [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
+    (G : Submodule 𝕜 (StrongDual 𝕜 E)) [FiniteDimensional 𝕜 G] :
+    Module.rank 𝕜 (E ⧸ G.orthogonalBilin (topDualPairing 𝕜 E)) = Module.rank 𝕜 G := by
+  simpa only [Cardinal.lift_id] using lift_rank_quotient_orthogonalBilin_topDualPairing G
+
+/-- The preannihilator of a subspace of the strong dual has `finrank` codimension equal to the
+subspace's `finrank`. -/
+@[simp]
+theorem finrank_quotient_orthogonalBilin_topDualPairing
+    (G : Submodule 𝕜 (StrongDual 𝕜 E)) :
+    Module.finrank 𝕜 (E ⧸ G.orthogonalBilin (topDualPairing 𝕜 E)) = Module.finrank 𝕜 G := by
+  let _ : AddCommGroup G := inferInstance
+  let W : Subspace 𝕜 (Module.Dual 𝕜 E) := G.map (topDualPairing 𝕜 E)
+  let _ : AddCommGroup W := inferInstance
+  have hG : G ≃ₗ[𝕜] W := G.equivMapOfInjective (topDualPairing 𝕜 E)
+    ContinuousLinearMap.coe_injective
+  by_cases hfin : FiniteDimensional 𝕜 G
+  · simp [Module.finrank, rank_quotient_orthogonalBilin_topDualPairing_eq_finrank]
+  · have hW : ¬ FiniteDimensional 𝕜 W := fun h ↦ hfin (Module.Finite.equiv hG.symm)
+    have hQ : ¬ FiniteDimensional 𝕜 (E ⧸ G.orthogonalBilin (topDualPairing 𝕜 E)) := by
+      rw [← G.dualCoannihilator_map_eq_orthogonalBilin (B := topDualPairing 𝕜 E),
+        Subspace.finiteDimensional_quot_dualCoannihilator_iff]
+      exact hW
+    rw [Module.finrank_of_not_finite hQ, Module.finrank_of_not_finite hfin]
+
+end PreannihilatorCodimension
 
 end Submodule
 
