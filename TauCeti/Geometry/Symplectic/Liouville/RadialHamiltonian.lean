@@ -247,7 +247,7 @@ variable {R c : ℝ}
 
 /-- On the region `{r > R}`, `R ≥ 1`, where a Hamiltonian agrees with `φ ∘ r`, its Hamiltonian
 vector field is `φ'(r) X_r`. -/
-private theorem hamiltonianVectorField_eq_smul_of_lt (h : IsLiouvilleCompletion ω α W)
+theorem hamiltonianVectorField_eq_smul_of_lt (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.val = α.val) (hR : 1 ≤ R)
     (hF : ∀ y, R < liouvilleRadialCoordinate Z W y → F y = φ (liouvilleRadialCoordinate Z W y))
     (hx : R < liouvilleRadialCoordinate Z W x)

@@ -27,7 +27,7 @@ loop with a cap it is the action `TauCeti.contractibleLoopAction` of contractibl
 This file computes it on the orbits of a Hamiltonian `F` that agrees with `φ ∘ r` on a region
 `{r > R}`, `R ≥ 1`. Such an orbit stays on a level `r = c`
 (`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_eq_of_isMIntegralCurve`) and has velocity
-`φ'(c) X_r` (`TauCeti.IsLiouvilleCompletion.hamiltonianVectorField_eq_smul_of_eventuallyEq`), and
+`φ'(c) X_r` (`TauCeti.IsLiouvilleCompletion.hamiltonianVectorField_eq_smul_of_lt`), and
 `α(X_r) = -r` there, so `α(X_F) = -c φ'(c)`
 (`TauCeti.IsLiouvilleCompletion.apply_hamiltonianVectorField_of_eventuallyEq`): `α` takes this
 constant value on the velocity of the orbit
@@ -107,18 +107,14 @@ theorem apply_curveVelocity_of_isMIntegralCurve (h : IsLiouvilleCompletion ω α
     (ht₀ : R < liouvilleRadialCoordinate Z W (γ t₀)) (t : ℝ) :
     α.val (γ t) (fun _ ↦ Manifold.curveVelocity I γ t) =
       -(liouvilleRadialCoordinate Z W (γ t₀) * deriv φ (liouvilleRadialCoordinate Z W (γ t₀))) := by
-  set r := liouvilleRadialCoordinate Z W
-  have hc : r (γ t) = r (γ t₀) :=
-    h.liouvilleRadialCoordinate_eq_of_isMIntegralCurve hZ hR hF hφ hγ ht₀ t
-  have hRt : R < r (γ t) := hc ▸ ht₀
-  have hFr : F =ᶠ[𝓝 (γ t)] φ ∘ r := by
-    filter_upwards [(isOpen_lt continuous_const
-      (h.continuous_liouvilleRadialCoordinate hZ)).mem_nhds hRt] with y hy using hF y hy
+  have hc := h.liouvilleRadialCoordinate_eq_of_isMIntegralCurve hZ hR hF hφ hγ ht₀ t
+  have hRt : R < liouvilleRadialCoordinate Z W (γ t) := hc ▸ ht₀
   rw [(Manifold.isMIntegralCurve_iff_curveVelocity_eq.1 hγ t).2, ← Matrix.vec_single_eq_const,
-    h.apply_hamiltonianVectorField_of_eventuallyEq hZ
-    ((h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hR.trans_lt hRt)) hFr
-    (hφ.differentiableAt (Ioi_mem_nhds hRt))]
-  exact congrArg (fun c ↦ -(c * deriv φ c)) hc
+    h.hamiltonianVectorField_eq_smul_of_lt hZ hR hF hRt (hφ.differentiableAt (Ioi_mem_nhds hRt)),
+    ← SmoothForm.degreeOneEquiv_coe_apply, map_smul, SmoothForm.degreeOneEquiv_coe_apply,
+    h.apply_hamiltonianVectorField_liouvilleRadialCoordinate hZ
+      ((h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hR.trans_lt hRt)), hc, smul_eq_mul]
+  ring
 
 /-- **The line integral of the primitive along an orbit of a radial Hamiltonian.** Under the
 hypotheses of `TauCeti.IsLiouvilleCompletion.apply_curveVelocity_of_isMIntegralCurve`, the
