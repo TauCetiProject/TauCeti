@@ -42,6 +42,8 @@ of `X ^ n` in `f`.
   nonzero constant coefficient.
 * `PowerSeries.coeff_pow_mul_of_le_order`: the coefficient of `X ^ (n * k)` in `f ^ k` is
   `(coeff n f) ^ k` when `f` has order at least `n`.
+* `PowerSeries.order_eq_zero_iff_constantCoeff_ne_zero`: `f` has order `0` exactly when its
+  constant coefficient is nonzero.
 * `PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero`: when `constantCoeff f = 0`, `f` has
   order `1` exactly when `coeff 1 f ≠ 0`.
 
@@ -145,6 +147,11 @@ theorem order_X_pow_mul_of_constantCoeff_ne_zero {f : R⟦X⟧} (hf : constantCo
   refine order_eq_nat.2 ⟨?_, fun i hi ↦ ?_⟩
   · rwa [coeff_X_pow_mul', ite_eq_left le_rfl, Nat.sub_self, coeff_zero_eq_constantCoeff_apply]
   · rw [coeff_X_pow_mul', ite_eq_right (not_le.2 hi)]
+
+/-- A power series has order `0` if and only if its constant coefficient is nonzero. -/
+theorem order_eq_zero_iff_constantCoeff_ne_zero {f : R⟦X⟧} :
+    f.order = 0 ↔ constantCoeff f ≠ 0 := by
+  simpa only [ne_eq, not_not] using order_ne_zero_iff_constCoeff_eq_zero.not
 
 /-- For a power series with zero constant coefficient, the order is one if and only if the linear
 coefficient is nonzero. -/
