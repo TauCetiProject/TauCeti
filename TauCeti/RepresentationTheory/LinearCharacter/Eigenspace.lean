@@ -62,6 +62,8 @@ those components.
   invariants.
 * `Representation.charEigenspace_eq_bot`: if some `g` acts trivially and `χ(g) - 1` acts
   injectively on `V`, then `V^χ = 0`.
+* `Representation.exists_mem_charEigenspace_of_apply_mem_span`: over a field, a nonzero vector
+  spanning a `G`-stable line lies in `V^χ` for some linear character `χ`.
 * `Representation.charSum_apply_mem`, `Representation.charSum_apply_of_mem`,
   `Representation.charSum_comp_charSum`: `S_χ` lands in `V^χ`, is `#G` on `V^χ`, and squares to
   `#G • S_χ`.
@@ -338,5 +340,29 @@ theorem exact_charEigenspaceMap (hG : IsUnit (Nat.card G : k)) {f : Intertwining
 end IntertwiningMap
 
 end Exact
+
+section StableLine
+
+variable {K : Type*} [Field K] [Module K V] [Group G] (ρ : Representation K G V)
+
+/-- **The character of a stable line.** Over a field, a nonzero vector `v` spanning a line stable
+under every `ρ g` lies in the `χ`-eigensubmodule of some linear character `χ`: the group acts on
+the line `K v` through `χ`. -/
+theorem exists_mem_charEigenspace_of_apply_mem_span {v : V} (hv : v ≠ 0)
+    (h : ∀ g, ρ g v ∈ Submodule.span K {v}) : ∃ χ : G →* Kˣ, v ∈ ρ.charEigenspace χ := by
+  choose c hc using fun g ↦ Submodule.mem_span_singleton.1 (h g)
+  have hinj := smul_left_injective K hv
+  have hmul (g g' : G) : c (g * g') = c g * c g' := hinj <| by
+    dsimp only
+    rw [hc, map_mul, Module.End.mul_eq_comp, LinearMap.comp_apply, ← hc g', map_smul, ← hc g,
+      smul_smul, mul_comm]
+  have hne (g : G) : c g ≠ 0 := fun h0 ↦ hv <| by
+    rw [← inv_self_apply ρ g v, ← hc g, h0, zero_smul, map_zero]
+  refine ⟨{ toFun g := Units.mk0 (c g) (hne g)
+            map_one' := Units.ext (hinj (by simp [hc]))
+            map_mul' g g' := Units.ext (hmul g g') }, ?_⟩
+  exact (mem_charEigenspace_iff _ _).2 fun g ↦ (hc g).symm
+
+end StableLine
 
 end Representation

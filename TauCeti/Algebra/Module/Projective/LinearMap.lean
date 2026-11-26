@@ -10,7 +10,9 @@ public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.Isomorphisms
+import Mathlib.RingTheory.Finiteness.Projective
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -37,6 +39,8 @@ the maps `P → V`. Over `R = ℤ_p` and `x = p`, this makes the number of maps 
   a projective `P` and any scalar `x`.
 * `TauCeti.quotientSMulTopLinearMapEquiv`: `Hom_A(P, V) ⧸ x • Hom_A(P, V) ≃ Hom_A(P, V ⧸ x • V)`
   for a projective `P` and any scalar `x`.
+* `Module.Finite.linearMap_of_projective`: `Hom_A(P, V)` is finitely generated over `S` when `P`
+  is finitely generated and projective over `A` and `V` is finitely generated over `S`.
 -/
 
 public section
@@ -187,3 +191,21 @@ theorem quotientSMulTopLinearMapEquiv_mk (f : P →ₗ[A] V) :
 end Reduction
 
 end TauCeti
+
+section Finite
+
+variable {A S P V : Type*} [Ring A] [Ring S] [AddCommGroup P] [Module A P] [AddCommGroup V]
+  [Module A V] [Module S V] [SMulCommClass A S V]
+
+/-- **Maps out of a finitely generated projective module form a finitely generated module.** If
+`P` is finitely generated and projective over `A` and `V` is finitely generated over `S`, then
+`Hom_A(P, V)` is finitely generated over `S`: `P` is a retract of some `Aⁿ`, so `Hom_A(P, V)` is a
+quotient of `Hom_A(Aⁿ, V) ≅ Vⁿ`. This extends `Module.Finite.linearMap` from free to projective
+`P`. -/
+instance Module.Finite.linearMap_of_projective [Module.Finite A P] [Module.Projective A P]
+    [Module.Finite S V] : Module.Finite S (P →ₗ[A] V) := by
+  obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective A P
+  exact .of_surjective (LinearMap.lcomp S V g) fun φ ↦
+    ⟨φ ∘ₗ f, by rw [LinearMap.lcomp_apply', LinearMap.comp_assoc, hfg, LinearMap.comp_id]⟩
+
+end Finite

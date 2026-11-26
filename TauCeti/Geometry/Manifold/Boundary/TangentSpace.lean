@@ -295,6 +295,24 @@ theorem mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPoin
   exact ((isOutwardPointing_or_mem_boundaryTangentSpace_or_isOutwardPointing_neg q v).resolve_left
     h₁).resolve_right h₂
 
+/-- Adding a boundary tangent vector preserves `IsOutwardPointing`, since boundary tangent vectors
+have zero constrained coordinate. -/
+theorem isOutwardPointing_add_mfderiv_subtypeVal_boundary [IsManifold (𝓡∂ (n + 1)) 1 M]
+    (x : (𝓡∂ (n + 1)).boundary M)
+    (v : TangentSpace (𝓡∂ (n + 1)) (x : M)) (w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x) :
+    IsOutwardPointing (x : M) (v + mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x w) ↔ IsOutwardPointing (x : M) v := by
+  rw [isOutwardPointing_iff, isOutwardPointing_iff, and_iff_right x.property,
+    and_iff_right x.property, map_add, map_add, PiLp.add_apply]
+  have hz : (NormedSpace.fromTangentSpace (𝕜 := ℝ) (extChartAt (𝓡∂ (n + 1)) (x : M) (x : M))
+      (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
+        (extChartAt (𝓡∂ (n + 1)) (x : M)) (x : M)
+        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x w))) 0 = 0 := by
+    rw [mfderiv_subtypeVal_boundary, mfderiv_extChartAt_self]
+    exact euclideanHalfSpaceBoundaryParam_apply_zero w
+  rw [hz, add_zero]
+
 /-- The frontier of the open half-space of outward vectors at a boundary point is the tangent
 space of the boundary. -/
 theorem frontier_setOf_isOutwardPointing (q : (𝓡∂ (n + 1)).boundary M) :
