@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
+import TauCeti.Analysis.Normed.Group.CompactSupport
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
@@ -73,20 +74,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-! ### The distributional derivative of the flux -/
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- For a function `ψ` supported in `(r, R)`, the radial function `x ↦ ψ ‖x‖` is supported in
-the open shell `ball 0 R \ closedBall 0 r`. -/
-private lemma tsupport_comp_norm_subset {r R : ℝ} {ψ : ℝ → ℝ} (hψs : tsupport ψ ⊆ Ioo r R) :
-    tsupport (fun x : E ↦ ψ ‖x‖) ⊆ ball (0 : E) R \ closedBall 0 r := fun x hx ↦ by
-  simpa [and_comm] using hψs (tsupport_comp_subset_preimage ψ continuous_norm hx)
-
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- For a function `ψ` supported in `(r, R)`, the radial function `x ↦ ψ ‖x‖` has compact
-support. -/
+support. This specializes `HasCompactSupport.comp_norm`. -/
 private lemma hasCompactSupport_comp_norm {r R : ℝ} {ψ : ℝ → ℝ} (hψs : tsupport ψ ⊆ Ioo r R) :
     HasCompactSupport (fun x : E ↦ ψ ‖x‖) :=
-  isCompact_of_isClosed_isBounded (isClosed_tsupport _)
-    (isBounded_ball.subset ((tsupport_comp_norm_subset hψs).trans sdiff_subset))
+  HasCompactSupport.comp_norm <|
+    isCompact_Icc.of_isClosed_subset (isClosed_tsupport ψ) (hψs.trans Ioo_subset_Icc_self)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- For `0 ≤ r` and a smooth function `ψ` supported in `(r, R)`, the radial function
@@ -277,7 +271,6 @@ theorem setIntegral_ball_trace_fderiv (c : E) {R : ℝ} (hR : 0 ≤ R) {V : E �
     fun x hx ↦ hV x hx.1
   rw [closedBall_zero, setIntegral_congr_set (sdiff_null_ae_eq_self (measure_singleton c))] at h
   -- The flux through the sphere of radius zero vanishes: the surface measure has barycentre zero.
-  rw [h]
-  simp only [zero_smul, add_zero, Measure.integral_inner_coe_toSphere, mul_zero, sub_zero]
+  simp [h, Measure.integral_inner_coe_toSphere]
 
 end TauCeti

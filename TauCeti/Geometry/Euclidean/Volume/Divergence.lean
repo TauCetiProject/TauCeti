@@ -67,8 +67,7 @@ private lemma setIntegral_sphere_inner_div_norm {V : E → E} {s : ℝ} (hs : 0 
   rcases hs.eq_or_lt with rfl | hs
   · -- Both fluxes vanish: the integrand is zero at `c`, and the surface measure has barycentre
     -- zero.
-    rw [sphere_zero, integral_singleton, sub_self, inner_zero_right, zero_div, smul_zero]
-    simp only [zero_smul, add_zero, Measure.integral_inner_coe_toSphere, mul_zero]
+    simp [Measure.integral_inner_coe_toSphere]
   rw [setIntegral_sphere_eq_smul_integral_toSphere c hs, smul_eq_mul]
   congr 1
   refine integral_congr_ae (ae_of_all _ fun θ ↦ ?_)
