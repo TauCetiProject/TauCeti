@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Splits
+public import Mathlib.Algebra.Polynomial.Eval.Coeff
 public import Mathlib.RingTheory.Valuation.Basic
-import TauCeti.RingTheory.Valuation.Sum
+import Mathlib.Algebra.Polynomial.Eval.Degree
+import TauCeti.RingTheory.Valuation.Polynomial.Weighted
 
 /-!
 # Gauss valuation of polynomials
@@ -31,14 +32,11 @@ arbitrary value monoids and groups `Γ₀`, and bundles into a valuation `Valuat
   `Polynomial.valuation_eval_le_gaussValuation`: coefficient characterization, radius monotonicity,
   support characterization, ultrametric addition bound, coefficient-map pullback, and evaluation
   bounds.
-* `Polynomial.gaussValuation_mul`: multiplicativity `(p * q).gaussValuation v r =
-  p.gaussValuation v r * q.gaussValuation v r`.
-* `Valuation.gauss_comap_C`, `Valuation.gauss_zero`, `Valuation.le_gauss_of_comap_C_eq`:
-  restriction to constants, radius-zero pullback, and pointwise maximality among extensions of `v`
-  with `w X ≤ r`.
-* `Polynomial.gaussValuation_eq_mul_prod_roots`,
-  `Polynomial.valuation_eval_eq_gaussValuation_of_forall_roots_ne`: root-product formula for split
-  polynomials and sphere-evaluation equality away from root valuations.
+* `Polynomial.gaussValuation_mul`, `Polynomial.gaussValuation_pow`: multiplicativity and power
+  formula.
+* `Valuation.gauss_comap_C`, `Valuation.gauss_comap_mapRingHom`, `Valuation.gauss_zero`,
+  `Valuation.le_gauss_of_comap_C_le`: restriction to constants, coefficient pullback, radius-zero
+  pullback, and pointwise maximality among valuations dominated by `v` on constants with `w X ≤ r`.
 
 ## References
 
@@ -49,32 +47,6 @@ arbitrary value monoids and groups `Γ₀`, and bundles into a valuation `Valuat
 -/
 
 public section
-
-namespace Valuation
-
-open Polynomial
-
-/-- Weighted convolution bound for the coefficients of a product of polynomials: if
-`v (p.coeff i) * r ^ i * s₁ ≤ A₁ * S ^ i` and `v (q.coeff j) * r ^ j * s₂ ≤ A₂ * S ^ j`, then
-`v ((p * q).coeff k) * r ^ k * (s₁ * s₂) ≤ (A₁ * A₂) * S ^ k`. -/
-theorem map_coeff_mul_mul_pow_le_of_le {R Γ₀ : Type*} [Ring R]
-    [LinearOrderedCommMonoidWithZero Γ₀] (v : Valuation R Γ₀) {p q : R[X]} {r s₁ s₂ A₁ A₂ S : Γ₀}
-    (hp : ∀ i, v (p.coeff i) * r ^ i * s₁ ≤ A₁ * S ^ i)
-    (hq : ∀ j, v (q.coeff j) * r ^ j * s₂ ≤ A₂ * S ^ j) (k : ℕ) :
-    v ((p * q).coeff k) * r ^ k * (s₁ * s₂) ≤ (A₁ * A₂) * S ^ k := by
-  rw [coeff_mul, mul_assoc]
-  refine v.map_sum_mul_le fun ij hij ↦ ?_
-  rw [Finset.mem_antidiagonal] at hij
-  calc v (p.coeff ij.1 * q.coeff ij.2) * (r ^ k * (s₁ * s₂))
-      = v (p.coeff ij.1) * r ^ ij.1 * s₁ * (v (q.coeff ij.2) * r ^ ij.2 * s₂) := by
-        simp only [← hij, pow_add, map_mul]
-        ac_rfl
-    _ ≤ A₁ * S ^ ij.1 * (A₂ * S ^ ij.2) := mul_le_mul' (hp _) (hq _)
-    _ = (A₁ * A₂) * S ^ k := by
-        rw [← hij, pow_add]
-        ac_rfl
-
-end Valuation
 
 namespace Polynomial
 
@@ -97,7 +69,8 @@ variable (v : Valuation R Γ₀) (r : Γ₀)
 /-- The Gauss valuation of `0` is `0`. -/
 @[simp]
 theorem gaussValuation_zero : (0 : R[X]).gaussValuation v r = 0 := by
-  rw [gaussValuation_def, support_zero, Finset.sup_empty, bot_eq_zero]
+  rw [gaussValuation_def]
+  simp [bot_eq_zero]
 
 /-- The Gauss valuation of `p` is at most `c` iff every weighted coefficient
 `v (p.coeff i) * r ^ i` is at most `c`. -/
@@ -140,22 +113,26 @@ theorem gaussValuation_monomial (n : ℕ) (a : R) :
     (monomial n a).gaussValuation v r = v a * r ^ n := by
   rcases eq_or_ne a 0 with rfl | ha
   · simp
-  · rw [gaussValuation_def, support_monomial n ha, Finset.sup_singleton, coeff_monomial_same]
+  · rw [gaussValuation_def, support_monomial n ha]
+    simp
 
 /-- The Gauss valuation of a constant polynomial `C a` is `v a`. -/
 @[simp]
 theorem gaussValuation_C (a : R) : (C a).gaussValuation v r = v a := by
-  rw [← monomial_zero_left, gaussValuation_monomial, pow_zero, mul_one]
+  rw [← monomial_zero_left, gaussValuation_monomial]
+  simp
 
 /-- The Gauss valuation of `1` is `1`. -/
 @[simp]
 theorem gaussValuation_one : (1 : R[X]).gaussValuation v r = 1 := by
-  rw [← C_1, gaussValuation_C, map_one]
+  rw [← C_1, gaussValuation_C]
+  simp
 
 /-- The Gauss valuation of `X` at radius `r` is `r`. -/
 @[simp]
 theorem gaussValuation_X : (X : R[X]).gaussValuation v r = r := by
-  rw [← monomial_one_one_eq_X, gaussValuation_monomial, map_one, one_mul, pow_one]
+  rw [← monomial_one_one_eq_X]
+  simp
 
 /-- The Gauss valuation of `X - C a` at radius `r` is `max r (v a)`. -/
 @[simp]
@@ -193,10 +170,11 @@ valuation at most `p.gaussValuation (v.comap f) r`. -/
 theorem valuation_eval₂_le_gaussValuation {S : Type*} [Ring S] (f : R →+* S) (v : Valuation S Γ₀)
     (r : Γ₀) (p : R[X]) {x : S} (hx : v x ≤ r) :
     v (p.eval₂ f x) ≤ p.gaussValuation (v.comap f) r := by
-  rw [eval₂_eq_sum]
+  rw [eval₂_eq_sum, sum_def]
   refine v.map_sum_le fun i _ ↦ ?_
   rw [map_mul, map_pow]
-  exact (mul_le_mul_right (pow_le_pow_left' hx i) _).trans (le_gaussValuation (v.comap f) r p i)
+  simpa only [Valuation.comap_apply] using
+    (mul_le_mul_right (pow_le_pow_left' hx i) _).trans (le_gaussValuation (v.comap f) r p i)
 
 /-- Evaluating `p` at `x` with `v x ≤ r` gives valuation at most `p.gaussValuation v r`. -/
 theorem valuation_eval_le_gaussValuation (p : R[X]) {x : R} (hx : v x ≤ r) :
@@ -204,6 +182,7 @@ theorem valuation_eval_le_gaussValuation (p : R[X]) {x : R} (hx : v x ≤ r) :
   simpa [eval₂_id] using valuation_eval₂_le_gaussValuation (RingHom.id R) v r p hx
 
 /-- Rescaling the variable by `C a * X` multiplies the radius of the Gauss valuation by `v a`. -/
+@[simp]
 theorem gaussValuation_comp_C_mul_X (p : R[X]) (a : R) :
     (p.comp (C a * X)).gaussValuation v r = p.gaussValuation v (v a * r) :=
   eq_of_forall_ge_iff fun c ↦ by
@@ -291,6 +270,13 @@ theorem gauss_comap_C (v : Valuation R Γ₀) (r : Γ₀) :
   ext a
   simp
 
+/-- Pulling back `v.gauss r` along `Polynomial.mapRingHom f` yields `(v.comap f).gauss r`. -/
+@[simp]
+theorem gauss_comap_mapRingHom {S : Type*} [Ring S] (f : R →+* S) (v : Valuation S Γ₀) (r : Γ₀) :
+    (v.gauss r).comap (Polynomial.mapRingHom f) = (v.comap f).gauss r := by
+  ext p
+  simp
+
 /-- At radius `0`, `v.gauss 0` is the pullback of `v` along `Polynomial.constantCoeff`. -/
 @[simp]
 theorem gauss_zero (v : Valuation R Γ₀) :
@@ -298,22 +284,22 @@ theorem gauss_zero (v : Valuation R Γ₀) :
   ext p
   simp
 
-/-- Maximality of the Gauss valuation: any valuation `w` on `R[X]` extending `v` with `w X ≤ r`
-is bounded pointwise by `v.gauss r`. -/
-theorem le_gauss_of_comap_C_eq {v : Valuation R Γ₀} {r : Γ₀} {w : Valuation R[X] Γ₀}
-    (hwC : w.comap Polynomial.C = v) (hwX : w Polynomial.X ≤ r) (p : R[X]) :
+/-- Maximality of the Gauss valuation: any valuation `w` on `R[X]` dominated by `v` on constants
+with `w X ≤ r` is bounded pointwise by `v.gauss r`. -/
+theorem le_gauss_of_comap_C_le {v : Valuation R Γ₀} {r : Γ₀} {w : Valuation R[X] Γ₀}
+    (hwC : ∀ a, w (Polynomial.C a) ≤ v a) (hwX : w Polynomial.X ≤ r) (p : R[X]) :
     w p ≤ v.gauss r p := by
-  conv_lhs => rw [p.as_sum_support_C_mul_X_pow]
-  rw [gauss_apply]
-  refine w.map_sum_le fun i _ ↦ ?_
-  rw [map_mul, map_pow, ← Valuation.comap_apply Polynomial.C w, hwC]
-  exact (mul_le_mul_right (pow_le_pow_left' hwX i) _).trans (le_gaussValuation v r p i)
+  calc w p = w (p.eval₂ Polynomial.C Polynomial.X) := by rw [Polynomial.eval₂_C_X]
+    _ ≤ p.gaussValuation (w.comap Polynomial.C) r :=
+      Polynomial.valuation_eval₂_le_gaussValuation Polynomial.C w r p hwX
+    _ ≤ v.gauss r p := (Polynomial.gaussValuation_le_iff (w.comap Polynomial.C) r).mpr fun i ↦
+      (mul_le_mul_left (hwC (p.coeff i)) _).trans (Polynomial.le_gaussValuation v r p i)
 
 end Valuation
 
 namespace Polynomial
 
-section RingNeg
+section RingDerived
 
 variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀] (v : Valuation R Γ₀) (r : Γ₀)
 
@@ -322,35 +308,12 @@ variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀] (v :
 theorem gaussValuation_neg (p : R[X]) : (-p).gaussValuation v r = p.gaussValuation v r :=
   (v.gauss r).map_neg p
 
-end RingNeg
+/-- Raising a polynomial to a power raises its Gauss valuation to that power. -/
+@[simp]
+theorem gaussValuation_pow (p : R[X]) (n : ℕ) :
+    (p ^ n).gaussValuation v r = p.gaussValuation v r ^ n :=
+  map_pow (v.gauss r) p n
 
-section CommRing
-
-variable {R Γ₀ : Type*} [CommRing R] [LinearOrderedCommMonoidWithZero Γ₀]
-
-/-- For a split polynomial `p`, the Gauss valuation at radius `r` is the valuation of the leading
-coefficient times the product of `max r (v α)` over all roots `α` of `p`. -/
-theorem gaussValuation_eq_mul_prod_roots [IsDomain R] (v : Valuation R Γ₀) (p : R[X])
-    (hp : p.Splits) (r : Γ₀) :
-    p.gaussValuation v r = v p.leadingCoeff * (p.roots.map fun α ↦ max r (v α)).prod := by
-  conv_lhs => rw [hp.eq_prod_roots]
-  rw [gaussValuation_mul, gaussValuation_C, ← Valuation.gauss_apply, map_multiset_prod,
-    Multiset.map_map]
-  simp
-
-/-- If a split polynomial `p` has no root of valuation `v x`, then `v (p.eval x)` equals the Gauss
-valuation `p.gaussValuation v (v x)`. -/
-theorem valuation_eval_eq_gaussValuation_of_forall_roots_ne [IsDomain R] (v : Valuation R Γ₀)
-    (p : R[X]) (hp : p.Splits) {x : R} (hroots : ∀ α ∈ p.roots, v α ≠ v x) :
-    v (p.eval x) = p.gaussValuation v (v x) := by
-  have hmap : (p.roots.map fun α ↦ v (x - α)) = p.roots.map fun α ↦ max (v x) (v α) :=
-    Multiset.map_congr rfl fun α hα ↦ by
-      rcases lt_or_gt_of_ne (hroots α hα) with hlt | hgt
-      · rw [v.map_sub_eq_of_lt_left hlt, max_eq_left hlt.le]
-      · rw [v.map_sub_eq_of_lt_right hgt, max_eq_right hgt.le]
-  rw [hp.eval_eq_prod_roots x, map_mul, map_multiset_prod, Multiset.map_map,
-    gaussValuation_eq_mul_prod_roots v p hp (v x), Function.comp_def, hmap]
-
-end CommRing
+end RingDerived
 
 end Polynomial

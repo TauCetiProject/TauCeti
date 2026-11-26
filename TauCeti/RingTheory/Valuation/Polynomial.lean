@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.RingTheory.Valuation.LocalSubring
 public import TauCeti.RingTheory.Valuation.Sum
-import TauCeti.RingTheory.Polynomial.Gauss.Valuation.Basic
+import TauCeti.RingTheory.Valuation.Polynomial.Weighted
 
 /-!
 # Valuations of polynomial expressions
