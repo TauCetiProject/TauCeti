@@ -72,8 +72,9 @@ In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗�
 both partial traces of a continuously varying matrix on a product index.
 
 A matrix-valued function converges exactly when each of its entries does
-(`Matrix.tendsto_iff_tendsto_apply`); in particular, pointwise convergence of sesquilinear forms
-gives convergence of their Gram matrices in any pair of finite bases
+(`Matrix.tendsto_iff_tendsto_apply`), and exactly when its products with all column vectors do
+(`Matrix.tendsto_iff_forall_tendsto_mulVec`). In particular, pointwise convergence of
+sesquilinear forms gives convergence of their Gram matrices in any pair of finite bases
 (`LinearMap.tendsto_toMatrix₂`). The matrices with nonnegative diagonal form a closed set
 (`Matrix.isClosed_setOfPred_nonneg_diag`).
 
@@ -408,6 +409,17 @@ theorem tendsto_iff_tendsto_apply {α m n R : Type*} [TopologicalSpace R] {l : F
     {M : α → Matrix m n R} {D : Matrix m n R} :
     Tendsto M l (𝓝 D) ↔ ∀ i j, Tendsto (fun x ↦ M x i j) l (𝓝 (D i j)) :=
   tendsto_pi_nhds.trans <| forall_congr' fun _ ↦ tendsto_pi_nhds
+
+open Filter Topology in
+/-- A matrix-valued function converges exactly when its products with every column vector do. -/
+theorem tendsto_iff_forall_tendsto_mulVec {α m n R : Type*} [Fintype n] [NonAssocSemiring R]
+    [TopologicalSpace R] [IsTopologicalSemiring R] {l : Filter α} {M : α → Matrix m n R}
+    {D : Matrix m n R} :
+    Tendsto M l (𝓝 D) ↔ ∀ v, Tendsto (fun x ↦ M x *ᵥ v) l (𝓝 (D *ᵥ v)) := by
+  classical
+  refine ⟨fun h v ↦ ((continuous_id.matrix_mulVec continuous_const).tendsto D).comp h,
+    fun h ↦ tendsto_iff_tendsto_apply.2 fun i j ↦ ?_⟩
+  simpa [mulVec_single_one] using tendsto_pi_nhds.1 (h (Pi.single j 1)) i
 
 /-- The matrices with nonnegative diagonal form a closed set. -/
 theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]
