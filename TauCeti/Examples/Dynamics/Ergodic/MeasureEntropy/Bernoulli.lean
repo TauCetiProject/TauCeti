@@ -23,9 +23,9 @@ each have mass `2⁻¹ ^ n`, so it has entropy `n log 2`, and the coordinate lab
 two-sided shift `x ↦ (m ↦ x (1 + m))` on `ℤ → Bool`, whose itineraries read the coordinates
 `0, …, n - 1`; both reduce to the entropy of an injective block of i.i.d. fair bits.
 
-The equality `measureEntropy = log 2` needs the Kolmogorov-Sinai generator theorem. The rate `0` of
-the identity on two equiprobable points is `measureEntropy_id` in
-`TauCeti.Examples.Dynamics.Ergodic.MeasureEntropy.Basic`.
+The equality `measureEntropy = log 2` needs the Kolmogorov-Sinai generator theorem. The identity
+has measure entropy `0` (`TauCeti.measureEntropy_id`, illustrated on the fair bit in
+`TauCeti.Examples.Dynamics.Ergodic.MeasureEntropy.Basic`).
 -/
 
 public section
