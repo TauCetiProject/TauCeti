@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.Kahler
 public import TauCeti.Geometry.Symplectic.Manifold.Quotient
 public import TauCeti.Geometry.Symplectic.Prod.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
+import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Descent
 
 /-!
 # The coupling form of a flat normal line over a torus
@@ -47,8 +48,7 @@ two-form on `N` pulling back to `ω_ℂ ⊕ ω_ℂ` along the orbit projection
 * compatible with the complex structure of `N`
   (`TauCeti.FlatLine.compatible_couplingForm`), because the orbit projection is holomorphic and
   `ω_ℂ ⊕ ω_ℂ` is compatible with multiplication by `i`; compatibility descends along surjective
-  local diffeomorphisms intertwining the almost complex structures
-  (`IsLocalDiffeomorph.compatible_mpullback_iff`);
+  local diffeomorphisms (`TauCeti.SmoothAlmostComplexStructure.compatible_descend_iff`);
 * hence Kähler for that complex structure (`TauCeti.FlatLine.isKahler_couplingForm`).
 
 So `(N, ω_N)` with its complex structure is a Kähler surface: the integrable compatible structure
@@ -198,21 +198,26 @@ theorem isSymplectic_couplingForm : (couplingForm ψ).IsSymplectic :=
 invariant under multiplication by `i` on the tangent spaces and positive on every complex line. -/
 theorem compatible_couplingForm :
     (couplingForm ψ).Compatible (ofComplexManifold (ℂ × ℂ) (FlatLine ψ)) := by
-  rw [← isLocalDiffeomorph_addQuotientMk.compatible_mpullback_iff Quotient.mk_surjective
-    (J₂ := ofComplexManifold (ℂ × ℂ) (ℂ × ℂ)), mpullback_mk_couplingForm,
-    ofComplexManifold_self_eq_constSmooth, SymplecticForm.compatible_constSmooth_iff]
-  · -- On `ℂ × ℂ`, multiplication by `i` is the product of the structures of the factors.
-    have h : AlmostComplexStructure.ofComplexModule (ℂ × ℂ) =
-        (AlmostComplexStructure.ofComplexModule ℂ).prod
-          (AlmostComplexStructure.ofComplexModule ℂ) :=
-      AlmostComplexStructure.ext fun p ↦ by simp [Prod.smul_def]
-    rw [h]
-    exact SymplecticForm.prod_compatible stdComplexSymplecticForm_compatible
-      stdComplexSymplecticForm_compatible
-  · -- The orbit projection is holomorphic, so its real differential commutes with `i`.
-    intro p v
-    exact ((isLocalDiffeomorph_addQuotientMk (I := 𝓘(ℂ, ℂ × ℂ)) (n := ⊤)).contMDiff.mdifferentiable
-      (by simp) p).mfderiv_ofComplexManifold_apply v
+  have hq := isLocalDiffeomorph_addQuotientMk (G := FlatLineLattice ψ) (I := 𝓘(ℝ, ℂ × ℂ))
+    (M := ℂ × ℂ) (n := ∞)
+  -- The structure of `ℂ × ℂ` is the pullback of that of the flat line, since the orbit
+  -- projection is holomorphic and so its real differential commutes with `i`.
+  have hJ : ofComplexManifold (ℂ × ℂ) (ℂ × ℂ) =
+      localPullback hq (ofComplexManifold (ℂ × ℂ) (FlatLine ψ)) :=
+    (eq_localPullback_iff hq _ _).2 fun p v ↦
+      ((isLocalDiffeomorph_addQuotientMk (I := 𝓘(ℂ, ℂ × ℂ)) (n := ⊤)).contMDiff.mdifferentiable
+        (by simp) p).mfderiv_ofComplexManifold_apply v
+  -- Compatibility with the descent of that pullback is checked upstairs, against `ω_ℂ ⊕ ω_ℂ`.
+  rw [← descend_localPullback hq (ofComplexManifold (ℂ × ℂ) (FlatLine ψ)) Quotient.mk_surjective,
+    compatible_descend_iff, ← hJ, mpullback_mk_couplingForm, ofComplexManifold_self_eq_constSmooth,
+    SymplecticForm.compatible_constSmooth_iff]
+  -- On `ℂ × ℂ`, multiplication by `i` is the product of the structures of the factors.
+  have h : AlmostComplexStructure.ofComplexModule (ℂ × ℂ) =
+      (AlmostComplexStructure.ofComplexModule ℂ).prod (AlmostComplexStructure.ofComplexModule ℂ) :=
+    AlmostComplexStructure.ext fun p ↦ by simp [Prod.smul_def]
+  rw [h]
+  exact SymplecticForm.prod_compatible stdComplexSymplecticForm_compatible
+    stdComplexSymplecticForm_compatible
 
 /-- **The flat line is a Kähler surface**: its coupling form is closed and compatible with its
 complex structure, which is integrable. -/
