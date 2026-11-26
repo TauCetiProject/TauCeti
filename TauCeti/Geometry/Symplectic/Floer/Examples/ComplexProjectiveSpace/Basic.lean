@@ -263,7 +263,9 @@ theorem coefficientComparison_ofSingularHomology_projectiveSpace_bijective {R : 
 /-- **The comparison `q^A ↦ e^(-A)` in Laurent coordinates on `CPⁿ`.** With positive area and
 Chern number of the generator, the comparison out of the Novikov ring indexed by `H₂(CPⁿ; ℤ)` sends
 the monomial `q^(k [ℓ])` to the Laurent monomial `X^k`. For `k = 1` this is `q^ℓ ↦ X`, the
-class `q^[line]` of the quantum relation of `CPⁿ` once `ℓ` is identified with an oriented line. -/
+class `q^[line]` of the quantum relation of `CPⁿ`: on `CPⁿ⁺¹`, based at `[e₁]`, `ℓ` is the class
+of the coordinate line with its complex orientation
+(`SphericalPeriodGroup.projectiveSpaceGenerator_eq_ofHomotopyGroup_lineSquare`). -/
 theorem NovikovRing.toLaurentSeries_coefficientComparison_projectiveSpace_single {R : Type*}
     [Semiring R] {τ : ℝ} (hτ' : ∀ s, ω.comp (sphericalClasses _ 1).subtype s =
       τ * c.comp (sphericalClasses _ 1).subtype s)
