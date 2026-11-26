@@ -249,12 +249,11 @@ theorem IsBoundaryDefiningFunctionOn.boundarySecondFundamentalForm_apply {ρ : M
   have hρW : ∀ᶠ p : (𝓡∂ (n + 1)).boundary M in 𝓝 q, mvfderiv (𝓡∂ (n + 1)) ρ p (W p) = 0 := by
     filter_upwards [hWt, (hρ.isOpen.preimage continuous_subtypeVal).mem_nhds hqU] with p hp hpU
     exact (hρ.mvfderiv_eq_zero_iff hpU (W p)).mpr hp
-  have hne : ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ ≠ 0 :=
-    by simpa using hρ.mvfderiv_ne_zero (q : M) hqU q.property
   rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
     hessian_eq_neg_mvfderiv_of_eventually_mvfderiv_eq_zero hρq u w hW hWq hρW,
     ← Manifold.inner_mgradient, hρ.mgradient_eq_norm_smul_inwardUnitNormal hqU,
-    inwardUnitNormal_def, real_inner_smul_left, inner_neg_left, real_inner_comm, eq_div_iff hne]
+    inwardUnitNormal_def, real_inner_smul_left, inner_neg_left, real_inner_comm,
+    eq_div_iff (hρ.norm_mvfderiv_pos hqU q.property).ne']
   -- `-⟨ν, ∇W⟩ * |dρ_q| = -(-(|dρ_q| * -⟨ν, ∇W⟩))`
   ring
 
