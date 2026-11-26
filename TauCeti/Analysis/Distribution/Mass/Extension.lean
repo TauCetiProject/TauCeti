@@ -33,7 +33,8 @@ finite mass (`Distribution.massRestrict`). For `T` of locally finite mass, its m
 exactly `‖T‖` restricted to `A`, and its total mass is `‖T‖ A`, even when this value is infinite.
 Thus a Borel restriction of a finite-mass current has finite mass. It vanishes exactly when
 `‖T‖ A = 0`, is additive on disjoint sets, and is `T` itself for `A = Ω`. Its boundary need not
-have locally finite mass.
+have locally finite mass. Conversely, a splitting `T = R + R'` into maps of locally finite mass
+whose mass measures are `‖T‖ ⌞ A` and `‖T‖ ⌞ Aᶜ` has `R = T ⌞ A`.
 
 ## Main declarations
 
@@ -53,6 +54,8 @@ have locally finite mass.
   bounds `M(T ⌞ A) ≤ ‖T‖ A` and `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`.
 * `Distribution.massMeasure_massRestrict`, `Distribution.mass_massRestrict`: exact mass-measure
   localization and total mass for `T` of locally finite mass.
+* `Distribution.massRestrict_eq_of_massMeasure_eq`: `T = R + R'` with `R`, `R'` of locally finite
+  mass, `‖R‖ = ‖T‖ ⌞ A` and `‖R'‖ = ‖T‖ ⌞ Aᶜ` forces `T ⌞ A = R`.
 * `Distribution.massRestrict_eq_zero_iff`: a restriction of `T` of locally finite mass vanishes
   exactly on sets of zero mass measure.
 * `Distribution.massRestrict_apply_eq_zero_of_ae`, `Distribution.massRestrict_apply_eq_apply_of_ae`:
@@ -389,6 +392,42 @@ theorem massMeasure_massRestrict (hT : HasLocallyFiniteMass T) (hA : MeasurableS
         Measure.restrict_mono_measure hsplit A
     _ = μ.restrict A := by rw [Measure.restrict_add, hzero, add_zero]
     _ ≤ μ := Measure.restrict_le_self
+
+/-- **Recognizing a Borel restriction.** If `T = R + R'` for maps `R`, `R'` of locally finite mass
+whose mass measures are `‖T‖ ⌞ A` and `‖T‖ ⌞ Aᶜ`, then `T ⌞ A = R`. -/
+theorem massRestrict_eq_of_massMeasure_eq {T R R' : 𝓓^{n}(Ω, F) →L[ℝ] ℝ}
+    (hR : HasLocallyFiniteMass R) (hR' : HasLocallyFiniteMass R')
+    (hsum : T = R + R') (hA : MeasurableSet A)
+    (hRm : massMeasure R = (massMeasure T).restrict A)
+    (hR'm : massMeasure R' = (massMeasure T).restrict Aᶜ) :
+    massRestrict T hA = R := by
+  -- The difference `T ⌞ A - R = R' - T ⌞ Aᶜ` has mass measure dominated both by `2 ‖T‖ ⌞ A` and
+  -- by `2 ‖T‖ ⌞ Aᶜ`, hence zero.
+  have hT : HasLocallyFiniteMass T := by rw [hsum, FunLike.coe_add]; exact hR.add hR'
+  have hD : massRestrict T hA - R = R' - massRestrict T hA.compl := by
+    ext φ
+    have h := massRestrict_add_massRestrict_compl_apply hT hA φ
+    have h' : T φ = R φ + R' φ := by rw [hsum, add_apply]
+    simp only [sub_apply]
+    linarith
+  have h₁ := massMeasure_sub_le (hasLocallyFiniteMass_massRestrict (T := T) hA) hR
+  rw [massMeasure_massRestrict hT hA, hRm] at h₁
+  have h₂ := massMeasure_sub_le hR' (hasLocallyFiniteMass_massRestrict (T := T) hA.compl)
+  rw [massMeasure_massRestrict hT hA.compl, hR'm, ← hD] at h₂
+  have h0 : massMeasure (massRestrict T hA - R) = 0 := by
+    refine Measure.measure_univ_eq_zero.1 (le_antisymm ?_ bot_le)
+    calc massMeasure (massRestrict T hA - R) univ
+        ≤ massMeasure (massRestrict T hA - R) A + massMeasure (massRestrict T hA - R) Aᶜ := by
+          rw [← measure_union disjoint_compl_right hA.compl, union_compl_self]
+      _ ≤ 0 + 0 := add_le_add ((h₂ _).trans (by simp [Measure.restrict_apply hA]))
+          ((h₁ _).trans (by simp [Measure.restrict_apply hA.compl]))
+      _ = 0 := add_zero 0
+  ext φ
+  have h := enorm_apply_le_lintegral_massMeasure (T := massRestrict T hA - R)
+    (by rw [FunLike.coe_sub]; exact (hasLocallyFiniteMass_massRestrict hA).sub hR) φ
+  rw [h0, lintegral_zero_measure, nonpos_iff_eq_zero, eNorm_eq_zero,
+    sub_apply, sub_eq_zero] at h
+  exact h
 
 /-- **Mass of a Borel restriction.** `M(T ⌞ A) ≤ ‖T‖ A`; in particular a Borel restriction to a
 set of finite `‖T‖`-measure has finite mass. -/

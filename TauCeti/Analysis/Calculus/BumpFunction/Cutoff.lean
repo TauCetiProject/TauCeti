@@ -32,7 +32,9 @@ finite-dimensional real normed space. The cutoff is equal to one on a neighborho
 set and has topological support in a prescribed open set, which is the localization step used for
 compact exhaustions in domain arguments; between the sublevel sets `{ν ≤ a}` and `{ν ≥ b}` of a
 continuous function with compact sublevel set `{ν ≤ a}` it gives a cutoff whose derivative vanishes
-where `ν > b` (`IsCompact.exists_contDiff_cutoff_sublevel`). A compact set covered by open sets
+where `ν > b` (`IsCompact.exists_contDiff_cutoff_sublevel`), and its complement `1 - ψ` is a
+cutoff onto `{ν ≥ b}` vanishing near `{ν ≤ a}` (`IsCompact.exists_contDiff_cutoff_superlevel`).
+A compact set covered by open sets
 carries a finite smooth partition of unity by nonnegative compactly supported functions, each with
 topological support in a member of the cover, whose sum is at most one everywhere and one on the
 compact set (`IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one`). Taking differences of
@@ -189,6 +191,24 @@ theorem _root_.IsCompact.exists_contDiff_cutoff_sublevel [NormedSpace ℝ E] [Fi
   refine ⟨ψ, hψ, fun x ↦ hψ01 (mem_range_self x), hψ1, hψ0, fun x hx ↦ ?_⟩
   rw [(hψ0 x hx.le).fderiv_eq]
   simp
+
+/-- **A cutoff between superlevel sets.** Let `ν : E → ℝ` be continuous with compact sublevel set
+`{ν ≤ a}`, and let `a < b`. There is a smooth function `β` with values in `[0, 1]`, equal to `0`
+near every point where `ν ≤ a` and to `1` near every point where `ν ≥ b`, whose derivative
+vanishes wherever `ν > b`. It is `1 - ψ` for the cutoff `ψ` of
+`IsCompact.exists_contDiff_cutoff_sublevel`. -/
+theorem _root_.IsCompact.exists_contDiff_cutoff_superlevel [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {ν : E → ℝ} {a b : ℝ} (hK : IsCompact {x | ν x ≤ a})
+    (hν : Continuous ν) (hab : a < b) :
+    ∃ β : E → ℝ, ContDiff ℝ ∞ β ∧ (∀ x, β x ∈ Icc 0 1) ∧
+      (∀ x, ν x ≤ a → β =ᶠ[𝓝 x] 0) ∧ (∀ x, b ≤ ν x → β =ᶠ[𝓝 x] 1) ∧
+        ∀ x, b < ν x → fderiv ℝ β x = 0 := by
+  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK⟩ := hK.exists_contDiff_cutoff_sublevel hν hab
+  refine ⟨fun x ↦ 1 - ψ x, contDiff_const.sub hψ,
+    fun x ↦ ⟨by simp [(hψ01 x).2], by simp [(hψ01 x).1]⟩,
+    fun x hx ↦ (hψ1 x hx).mono fun y h ↦ by simp [h],
+    fun x hx ↦ (hψ0 x hx).mono fun y h ↦ by simp [h], fun x hx ↦ ?_⟩
+  rw [fderiv_const_sub, hψK x hx, neg_zero]
 
 /-- **A finite smooth partition of unity on a compact set.** A compact subset `K` of a
 finite-dimensional real normed space covered by open sets `U i` carries smooth, compactly
