@@ -66,15 +66,9 @@ theorem mem_map_C_smul_top_of_X_pow_smul_mem {P : Type*} [AddCommGroup P] [Modul
     (h : (X ^ k : R⟦X⟧) • p ∈ I.map C • (⊤ : Submodule R⟦X⟧ P)) :
     p ∈ I.map C • (⊤ : Submodule R⟦X⟧ P) := by
   set J := I.map (C : R →+* R⟦X⟧)
-  have hreg : IsSMulRegular (R⟦X⟧ ⧸ J) (X ^ k : R⟦X⟧) := by
-    intro a b hab
-    simp only at hab
-    induction a using Submodule.Quotient.induction_on
-    induction b using Submodule.Quotient.induction_on
-    rw [← Submodule.Quotient.mk_smul, ← Submodule.Quotient.mk_smul, Submodule.Quotient.eq,
-      smul_eq_mul, smul_eq_mul, ← mul_sub] at hab
-    rw [Submodule.Quotient.eq]
-    exact (X_pow_mul_mem_map_C_iff k).mp hab
+  have hreg : IsSMulRegular (R⟦X⟧ ⧸ J) (X ^ k : R⟦X⟧) :=
+    (isSMulRegular_quotient_iff_mem_of_smul_mem J _).mpr fun _ ha ↦
+      (X_pow_mul_mem_map_C_iff k).mp ha
   let e := quotTensorEquivQuotSMul P J
   have he : (X ^ k : R⟦X⟧) • e.symm (Submodule.Quotient.mk p) = (X ^ k : R⟦X⟧) • 0 := by
     rw [← map_smul, ← Submodule.Quotient.mk_smul, (Submodule.Quotient.mk_eq_zero _).mpr h,

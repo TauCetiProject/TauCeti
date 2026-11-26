@@ -175,6 +175,30 @@ theorem pow_smul_mem_diagonalLattice_iff (hξ : IsUnit (algebraMap B K ξ))
     rw [← zpow_natCast, ← zpow_add, add_sub_cancel]
   rw [h₁, h₂, Units.val_mul, mul_assoc, Units.mul_right_inj]
 
+/-- The lattice of a cocharacter is finitely generated. -/
+theorem fg_diagonalLattice [Finite n] (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
+    (diagonalLattice k hξ).FG :=
+  Submodule.fg_pi fun _ ↦ Submodule.fg_span_singleton _
+
+/-- The lattice of a cocharacter spans `Kⁿ`: it contains `ξ ^ k_i e_i`, a unit multiple of the
+coordinate vector `e_i`. -/
+theorem span_diagonalLattice [Finite n] (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
+    Submodule.span K (diagonalLattice k hξ : Set (n → K)) = ⊤ := by
+  classical
+  refine eq_top_iff.mpr ((Pi.basisFun K n).span_eq.ge.trans (Submodule.span_le.mpr ?_))
+  rintro _ ⟨i, rfl⟩
+  have hmem : Pi.single i ((hξ.unit ^ k i : Kˣ) : K) ∈ diagonalLattice k hξ := by
+    rw [mem_diagonalLattice]
+    intro j
+    rcases eq_or_ne j i with rfl | hj
+    · exact ⟨1, by simp⟩
+    · exact ⟨0, by simp [hj]⟩
+  have he : Pi.basisFun K n i =
+      (((hξ.unit ^ k i)⁻¹ : Kˣ) : K) • Pi.single i ((hξ.unit ^ k i : Kˣ) : K) := by
+    rw [Pi.basisFun_apply, ← Pi.single_smul, smul_eq_mul, Units.inv_mul]
+  rw [he]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span hmem)
+
 section Diagonal
 
 variable [FaithfulSMul B K] [Finite n]
@@ -197,18 +221,6 @@ theorem diagonalLattice_eq_toSubmodule_map (k : n → ℤ) (hξ : IsUnit (algebr
 instance (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
     Module.Projective B (diagonalLattice k hξ) :=
   .of_equiv (LinearEquiv.ofEq _ _ (diagonalLattice_eq_toSubmodule_map k hξ).symm)
-
-/-- The lattice of a cocharacter is finitely generated. -/
-theorem fg_diagonalLattice (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
-    (diagonalLattice k hξ).FG := by
-  rw [diagonalLattice_eq_toSubmodule_map]
-  exact ProjectiveLattice.fg _
-
-/-- The lattice of a cocharacter spans `Kⁿ`. -/
-theorem span_diagonalLattice (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
-    Submodule.span K (diagonalLattice k hξ : Set (n → K)) = ⊤ := by
-  rw [diagonalLattice_eq_toSubmodule_map, ProjectiveLattice.coe_toSubmodule]
-  exact ProjectiveLattice.span_coe_eq_top _
 
 variable (n) in
 /-- The standard lattice is the lattice of the zero cocharacter. -/
