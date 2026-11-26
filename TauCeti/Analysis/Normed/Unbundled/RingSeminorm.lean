@@ -15,7 +15,7 @@ This file extends `Mathlib.Analysis.Normed.Unbundled.RingSeminorm` with general 
 
 ## Main results
 
-* `RingSeminorm.pow_add_le_of_forall_pow_le`: geometric upper bounds on `μ (x ^ k)` and
+* `RingSeminorm.map_add_pow_le_of_forall_map_pow_le`: geometric upper bounds on `μ (x ^ k)` and
   `μ (y ^ k)` yield a geometric upper bound on `μ ((x + y) ^ n)`.
 -/
 
@@ -27,7 +27,7 @@ variable {R : Type*} [CommRing R]
 
 /-- Binomial power bound: geometric upper bounds on `μ (x ^ k)` and `μ (y ^ k)` yield a
 geometric upper bound on `μ ((x + y) ^ n)`. -/
-theorem pow_add_le_of_forall_pow_le (μ : RingSeminorm R) {x y : R} {Cx Cy a b : ℝ}
+theorem map_add_pow_le_of_forall_map_pow_le (μ : RingSeminorm R) {x y : R} {Cx Cy a b : ℝ}
     (hCx : ∀ k, μ (x ^ k) ≤ Cx * a ^ k) (hCy : ∀ k, μ (y ^ k) ≤ Cy * b ^ k) (n : ℕ) :
     μ ((x + y) ^ n) ≤ Cx * Cy * (a + b) ^ n := by
   calc μ ((x + y) ^ n)

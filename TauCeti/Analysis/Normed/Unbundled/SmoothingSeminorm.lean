@@ -144,7 +144,7 @@ private theorem smoothingFun_add_le_of_map_one_le_one (μ : RingSeminorm R) (hμ
       ≤ (Cx * Cy * (a + b) ^ n) ^ (1 / n : ℝ) := by
         dsimp [smoothingSeminormSeq]
         gcongr
-        exact pow_add_le_of_forall_pow_le μ hCx hCy n
+        exact map_add_pow_le_of_forall_map_pow_le μ hCx hCy n
     _ = (Cx * Cy) ^ (1 / n : ℝ) * ((a + b) ^ n) ^ (1 / n : ℝ) :=
         Real.mul_rpow hC.le (pow_nonneg (add_pos ha0 hb0).le n)
     _ = (Cx * Cy) ^ (1 / n : ℝ) * (a + b) := by

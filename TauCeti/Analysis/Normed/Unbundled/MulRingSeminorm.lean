@@ -124,6 +124,11 @@ section NonAssocRing
 
 variable {R : Type*} [NonAssocRing R]
 
+/-- View a multiplicative ring seminorm as a `RingSeminorm`. -/
+def toRingSeminorm (α : MulRingSeminorm R) : RingSeminorm R where
+  __ := α.toAddGroupSeminorm
+  mul_le' a b := (map_mul α a b).le
+
 /-- Adding an element of seminorm zero leaves a multiplicative ring seminorm unchanged. -/
 theorem map_add_eq_left_of_map_eq_zero (α : MulRingSeminorm R) (x : R) {y : R} (hy : α y = 0) :
     α (x + y) = α x :=
@@ -135,6 +140,10 @@ end NonAssocRing
 section Ring
 
 variable {R : Type*} [Ring R]
+
+@[simp]
+theorem coe_toRingSeminorm (α : MulRingSeminorm R) : ⇑α.toRingSeminorm = ⇑α :=
+  (rfl)
 
 /-- Every multiplicative ring seminorm vanishes on nilpotent elements. -/
 theorem eq_zero_of_isNilpotent (α : MulRingSeminorm R) {x : R} (hx : IsNilpotent x) : α x = 0 := by
@@ -150,12 +159,9 @@ variable {R : Type*} [CommRing R]
 /-- Over a commutative ring, if `α : MulRingSeminorm R` satisfies `α x ≤ C * μ x` for every `x`,
 then `α x ≤ smoothingFun μ x` for every `x`. -/
 theorem le_smoothingFun_of_le_mul (α : MulRingSeminorm R) {μ : RingSeminorm R} {C : ℝ}
-    (h : ∀ x, α x ≤ C * μ x) (x : R) : α x ≤ smoothingFun μ x := by
-  let α' : RingSeminorm R :=
-    { __ := α.toAddGroupSeminorm
-      mul_le' a b := (map_mul α a b).le }
-  exact (smoothingFun_of_powMul α' (map_one α).le fun n _ ↦ map_pow α x n).symm.trans_le
-    ((RingHom.id R).smoothingFun_map_le_of_le_mul (ν := α') h x)
+    (h : ∀ x, α x ≤ C * μ x) (x : R) : α x ≤ smoothingFun μ x :=
+  (smoothingFun_of_powMul α.toRingSeminorm (map_one α).le fun n _ ↦ map_pow α x n).symm.trans_le
+    ((RingHom.id R).smoothingFun_map_le_of_le_mul (ν := α.toRingSeminorm) h x)
 
 end CommRing
 

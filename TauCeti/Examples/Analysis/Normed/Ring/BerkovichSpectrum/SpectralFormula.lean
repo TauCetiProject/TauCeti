@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Algebra.TrivSqZeroExt
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.Analysis.Normed.Ring.DualNumber
-public import TauCeti.Analysis.Normed.Ring.GelfandSpectrum
+public import TauCeti.Analysis.Normed.Ring.BerkovichSpectrum.SpectralFormula
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
 import TauCeti.Algebra.TrivSqZeroExt.Basic
