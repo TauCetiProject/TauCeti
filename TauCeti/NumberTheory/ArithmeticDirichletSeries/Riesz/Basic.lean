@@ -110,10 +110,12 @@ theorem tsum_ite_mul_div_sub_one_eq_rieszSum (a : ℕ → ℂ) (y : ℝ) :
       exact False.elim (hyn.not_ge h.2)
     · rfl
 
-private theorem rieszSum_eq_sum_of_le (a : ℕ → ℂ) {y : ℝ} {N : ℕ} (hyN : y ≤ N) :
+/-- A first Riesz sum can be extended to any upper index at least `⌊y⌋₊` by taking the
+positive part of the ramp. -/
+theorem rieszSum_eq_sum_max_of_floor_le (a : ℕ → ℂ) {y : ℝ} {N : ℕ} (hyN : ⌊y⌋₊ ≤ N) :
     rieszSum a y = ∑ n ∈ Finset.Icc 1 N, a n * ((max (y / n - 1) 0 : ℝ) : ℂ) := by
   have hsub : Finset.Icc 1 ⌊y⌋₊ ⊆ Finset.Icc 1 N :=
-    Finset.Icc_subset_Icc_right (Nat.floor_le_of_le hyN)
+    Finset.Icc_subset_Icc_right hyN
   rw [rieszSum_def, ← Finset.sum_subset hsub]
   · refine Finset.sum_congr rfl fun n hn ↦ ?_
     obtain ⟨hn1, hny⟩ := one_le_and_le_of_mem_Icc_floor hn
@@ -172,7 +174,7 @@ theorem continuous_rieszSum (a : ℕ → ℂ) : Continuous (rieszSum a) := by
     fun_prop
   refine hcont.continuousAt.congr ?_
   filter_upwards [isOpen_Iio.mem_nhds hy₀] with y hy
-  exact (rieszSum_eq_sum_of_le a hy.le).symm
+  exact (rieszSum_eq_sum_max_of_floor_le a (Nat.floor_le_of_le hy.le)).symm
 
 /-- **First Riesz mean normalization**: for every `y : ℝ`,
 `∑_{1 ≤ n ≤ y} a(n) (1 - n / y) = y⁻¹ * rieszSum (fun n ↦ n * a n) y`. -/
