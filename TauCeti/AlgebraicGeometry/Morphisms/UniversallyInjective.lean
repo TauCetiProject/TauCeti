@@ -23,7 +23,7 @@ criterion for universal injectivity (Stacks, Lemma 29.10.2 (01S4)) with arrows r
 ## Main results
 
 * `AlgebraicGeometry.UniversallyInjective.of_comp_surjective`: universal injectivity descends
-  along a surjection.
+  along a surjection; the instance of `MorphismProperty.HasOfPrecompProperty` records this.
 * `AlgebraicGeometry.UniversallyInjective.of_injective_of_isIso_residueFieldMap`: an injective
   morphism with trivial residue field extensions is universally injective.
 * `AlgebraicGeometry.UniversallyInjective.SpecMap_iff`: the field-valued criterion for
@@ -54,6 +54,10 @@ theorem UniversallyInjective.of_comp_surjective {X Y Z : Scheme.{u}} (f : X ⟶ 
   have hs : Surjective (pullback.fst i₁ f) :=
     MorphismProperty.of_isPullback (IsPullback.of_hasPullback i₁ f).flip ‹_›
   exact Function.Injective.of_comp_right (f := g'.base) this hs.surj
+
+/-- Universal injectivity descends along surjections (`UniversallyInjective.of_comp_surjective`). -/
+instance : MorphismProperty.HasOfPrecompProperty @UniversallyInjective @Surjective.{u} where
+  of_precomp f g _ (_ : UniversallyInjective (f ≫ g)) := .of_comp_surjective f g
 
 /-- An injective morphism inducing isomorphisms of residue fields is universally injective. -/
 theorem UniversallyInjective.of_injective_of_isIso_residueFieldMap {X Y : Scheme.{u}} (f : X ⟶ Y)
