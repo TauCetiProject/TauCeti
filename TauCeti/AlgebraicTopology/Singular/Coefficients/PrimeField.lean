@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSeq
 
 import TauCeti.Algebra.Category.ModuleCat.AB
 import TauCeti.Algebra.Module.Torsion.Int
+import TauCeti.RingTheory.Finiteness.Nakayama
 
 /-!
 # Integral singular homology from homology with prime field coefficients
@@ -149,10 +150,20 @@ theorem isZero_singularHomology_of_forall_isZero_zmod (X : TopCat.{u}) (n : ℕ)
       (ModuleCat.of ℤ (ULift.{u} (ZMod p)))).obj X)) :
     IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) := by
+  -- Nakayama's lemma over `ℤ`: a finitely generated abelian group on which every prime acts
+  -- surjectively is zero
+  have key {M : Type u} [AddCommGroup M] [Module.Finite ℤ M]
+      (hs : ∀ p : ℕ, p.Prime → Function.Surjective fun x : M ↦ p • x) : Subsingleton M := by
+    refine subsingleton_of_forall_eq 0 fun a ↦ (Submodule.eq_bot_iff _).1
+      (Submodule.eq_bot_of_forall_prime_le_smul Module.Finite.fg_top fun p hp x _ ↦ ?_) a
+      Submodule.mem_top
+    obtain ⟨y, rfl⟩ := hs p hp x
+    beta_reduce
+    rw [← natCast_zsmul]
+    exact Submodule.smul_mem_smul (Ideal.mem_span_singleton_self _) Submodule.mem_top
   -- the finiteness hypothesis is stated for the integer module structure of the underlying
   -- abelian group, which is the module structure of homology
-  have := @TauCeti.subsingleton_of_forall_prime_surjective _ _
-    (by convert ‹Module.Finite ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
+  have := @key _ _ (by convert ‹Module.Finite ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X)›; exact Subsingleton.elim _ _) fun p hp ↦ by
     have : NeZero p := ⟨hp.ne_zero⟩
     exact fun x ↦ (X.surjective_lsmul_singularHomology_of_isZero_zmod p n (h p hp) x).imp

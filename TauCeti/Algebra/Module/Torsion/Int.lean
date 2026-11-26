@@ -13,7 +13,6 @@ public import TauCeti.RingTheory.QuotSMulTop
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.ZMod.QuotientRing
 import Mathlib.FieldTheory.Finiteness
-import Mathlib.RingTheory.Finiteness.Nakayama
 
 /-!
 # Torsion and reduction of abelian groups
@@ -23,9 +22,8 @@ and the reduction `M ⧸ nM = QuotSMulTop n M` of a finitely generated abelian g
 are recorded as instances, so that such groups meet the finiteness hypotheses of constructions that
 take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module. The reduction `M ⧸ 2M` is
 moreover a vector space over `ZMod 2`, whose dimension is the rank of `M` when `M` is finite free;
-quadratic forms reduced modulo two live on it. Torsion and divisibility are tested one prime at a
-time: an abelian group without `p`-torsion for every prime `p` is torsion-free, and a finitely
-generated abelian group with `M = pM` for every prime `p` is zero.
+quadratic forms reduced modulo two live on it. Torsion-freeness is tested one prime at a time: an
+abelian group without `p`-torsion for every prime `p` is torsion-free.
 
 ## Main results
 
@@ -42,8 +40,6 @@ generated abelian group with `M = pM` for every prime `p` is zero.
   exactly when its classes span the torsion-free quotient of the associated `ℤ`-module.
 * `TauCeti.hasUniqueDiv_of_forall_prime`: an abelian group on which every prime acts injectively
   is torsion-free.
-* `TauCeti.subsingleton_of_forall_prime_surjective`: a finitely generated abelian group on which
-  every prime acts surjectively is zero.
 -/
 
 public section
@@ -151,30 +147,6 @@ theorem hasUniqueDiv_of_forall_prime {M : Type*} [AddCommGroup M]
     (h : ∀ p : ℕ, p.Prime → Function.Injective fun x : M ↦ p • x) : HasUniqueDiv M where
   nsmul_right_injective _ hn :=
     nsmul_of_forall_prime Function.injective_id (fun _ _ ↦ .comp) h hn
-
-/-- **A finitely generated abelian group divisible by every prime is zero.** By Nakayama's lemma
-for the ideal `(2)`, some odd integer `r` kills the group; multiplication by `|r|`, a product of
-primes, is onto, so every element is zero. -/
-theorem subsingleton_of_forall_prime_surjective {M : Type*} [AddCommGroup M] [Module.Finite ℤ M]
-    (h : ∀ p : ℕ, p.Prime → Function.Surjective fun x : M ↦ p • x) : Subsingleton M := by
-  -- Nakayama: since `M = 2M`, some `r ≡ 1 mod 2` kills `M`; such an `r` is nonzero.
-  obtain ⟨r, hr, hrM⟩ := Submodule.exists_sub_one_mem_and_smul_eq_zero_of_fg_of_le_smul
-    (Ideal.span {(2 : ℤ)}) (⊤ : Submodule ℤ M) Module.Finite.fg_top fun x _ ↦ by
-      obtain ⟨y, rfl⟩ := h 2 Nat.prime_two x
-      simpa [← natCast_zsmul] using Submodule.smul_mem_smul
-        (Ideal.mem_span_singleton_self (2 : ℤ)) (Submodule.mem_top (x := y))
-  obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg r
-  all_goals
-    have hn : n ≠ 0 := by
-      rintro rfl
-      simp only [Nat.cast_zero, neg_zero, zero_sub, Ideal.neg_mem_iff,
-        Ideal.mem_span_singleton] at hr
-      exact absurd (Int.eq_one_of_dvd_one (by norm_num) hr) (by norm_num)
-    -- Multiplication by `n` is onto, as a composite of multiplications by primes, and kills `M`.
-    refine ⟨fun x y ↦ ?_⟩
-    obtain ⟨x, rfl⟩ := nsmul_of_forall_prime Function.surjective_id (fun _ _ ↦ .comp) h hn x
-    obtain ⟨y, rfl⟩ := nsmul_of_forall_prime Function.surjective_id (fun _ _ ↦ .comp) h hn y
-    simpa [neg_smul] using (hrM x trivial).trans (hrM y trivial).symm
 
 /-- For a submonoid `S` of `ℤ`, being `S`-torsion, every element killed by an element of `S`, is
 invariant under additive equivalences of abelian groups, for the canonical action of `ℤ`. This is
