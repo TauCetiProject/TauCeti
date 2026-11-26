@@ -61,6 +61,9 @@ supremum-independent family with supremum `S` into an internal direct sum of `S`
 take their `i`-th terms from the `i`-th summand of an internal direct sum and are equal, then their
 terms are equal at every index of that `Finset` (`DirectSum.IsInternal.eq_of_finsetSum_eq`).
 
+`DirectSum.support_decompose_nonempty_iff` and `DirectSum.mem_support_decompose_iff` characterize
+nonemptiness and membership in `(DirectSum.decompose ℳ x).support` in terms of nonvanishing of `x`
+and its homogeneous components `(DirectSum.decompose ℳ x i : M)`.
 `DirectSum.coe_decompose_smul_add_of_right_mem`, `DirectSum.decompose_smul_eq_zero_of_lt`, and
 `DirectSum.decompose_smul_of_le` compute the components of a scalar action on a homogeneous
 element when the scalar and module decompositions are compatible.
@@ -650,9 +653,24 @@ theorem decompose_smul_of_le {A B M : Type*} [Semiring A] [Semiring B]
     · rw [decompose_of_mem_ne ℳ hmem (by omega), decompose_of_mem_ne ℬ b.property hi, zero_smul]
   | add b₁ b₂ hb₁ hb₂ => simp [add_smul, hb₁, hb₂]
 
-end DirectSum
+section Support
 
-namespace DirectSum
+variable {ι M σ : Type*} [DecidableEq ι] [AddCommMonoid M] [SetLike σ M] [AddSubmonoidClass σ M]
+  (ℳ : ι → σ) [Decomposition ℳ] [∀ (i : ι) (x : ℳ i), Decidable (x ≠ 0)]
+
+/-- The homogeneous support of `x` in an internal direct sum is nonempty if and only if `x ≠ 0`. -/
+theorem support_decompose_nonempty_iff {x : M} :
+    (decompose ℳ x).support.Nonempty ↔ x ≠ 0 := by
+  rw [← Finset.ne_empty_iff_nonempty, not_iff_not, DFinsupp.support_eq_empty]
+  exact (decomposeAddEquiv ℳ).map_eq_zero_iff
+
+/-- A degree `i` lies in the homogeneous support of `x` if and only if the `i`-th homogeneous
+component `(decompose ℳ x i : M)` is nonzero. -/
+theorem mem_support_decompose_iff {x : M} {i : ι} :
+    i ∈ (decompose ℳ x).support ↔ (decompose ℳ x i : M) ≠ 0 := by
+  rw [DFinsupp.mem_support_iff, Ne, ← Subtype.coe_inj, ZeroMemClass.coe_zero]
+
+end Support
 
 section AddCommGroup
 

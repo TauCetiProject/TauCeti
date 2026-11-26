@@ -361,6 +361,19 @@ theorem memLp_energyIntegrand_of_continuousOn_of_norm_le
         ((hLam x hx).trans (le_max_left _ _)) le_rfl le_rfl)
     hbeta hgamma
 
+/-- A matrix field with continuous entries bounded by `M` on `Ω`, as a principal coefficient
+alone, has an essentially bounded field of pointwise energy forms on `Ω`. -/
+theorem memLp_energyIntegrand_of_abs_apply_le
+    (ha : ∀ i j, ContinuousOn (fun x ↦ a x i j) Omega) {M : ℝ}
+    (haM : ∀ i j, ∀ x ∈ Omega, |a x i j| ≤ M) :
+    MemLp (fun x ↦ energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
+  memLp_energyIntegrand_of_continuousOn_of_norm_le (b := 0) (c := 0)
+    (continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦ ha i j)
+    continuousOn_const continuousOn_const (Lam := ∑ _i : ι, ∑ _j : ι, M)
+    (fun x hx ↦ (norm_matrixBilinearForm_le_sum_abs (a x)).trans
+      (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ haM i j x hx))
+    (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
+
 variable [mu.IsAddHaarMeasure]
 
 /-- The continuous linear inclusion that forgets the `W^{1,2}` weak-derivative constraint and
