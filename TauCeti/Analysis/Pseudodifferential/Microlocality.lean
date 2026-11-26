@@ -16,6 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Sobolev
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
+import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication.Schwartz
 import TauCeti.MeasureTheory.Integral.ConicDecay
 
 /-!
@@ -183,10 +184,7 @@ private theorem toDistr_quantizeSobolev_smulLeftCLM_toBesselPotentialSpaceCLM (t
   set w := SchwartzMap.smulLeftCLM ℂ (⇑(toSchwartzMapCLM ℂ χ)) u
   have hw : BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ χ)
       (SchwartzMap.toBesselPotentialSpaceCLM t 2 u) = SchwartzMap.toBesselPotentialSpaceCLM t 2 w :=
-    BesselPotentialSpace.ext (by
-      rw [BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
-        SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
-      exact smulLeftCLM_toTemperedDistributionCLM_eq u)
+    BesselPotentialSpace.smulLeftCLM_toBesselPotentialSpaceCLM t _ u
   -- `Op(b) w` vanishes outside `K`, where `θ = 1`, so testing on `θ e_η` is the Fourier transform.
   have hθw (x : CoordinateSpace n) :
       θ.fourierAtomMulSchwartzMap η x • quantizeSchwartzValue b.coefficient w x =

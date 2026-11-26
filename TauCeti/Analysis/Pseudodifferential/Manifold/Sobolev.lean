@@ -9,8 +9,8 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.Pseudodifferential.Manifold.ChartQuantization
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
-import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication.Schwartz
 import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
 import TauCeti.Analysis.Sobolev.BesselPotential.Subsingleton
 import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
@@ -292,10 +292,8 @@ theorem smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_eqOn_
     BesselPotentialSpace.smulLeftCLM s φ
         (SchwartzMap.toBesselPotentialSpaceCLM s 2 (e.cutoffPushforwardSchwartz he ψ u)) =
       SchwartzMap.toBesselPotentialSpaceCLM s 2 (e.cutoffPushforwardSchwartz he ψ u) := by
-  conv_rhs =>
-    rw [← e.smulLeftCLM_cutoffPushforwardSchwartz_of_eqOn_one he ψ φ.hasTemperateGrowth hφ u]
-  exact BesselPotentialSpace.ext (by
-    simp [TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq])
+  rw [BesselPotentialSpace.smulLeftCLM_toBesselPotentialSpaceCLM,
+    e.smulLeftCLM_cutoffPushforwardSchwartz_of_eqOn_one he ψ φ.hasTemperateGrowth hφ u]
 
 /-- **A Rellich theorem on a compact manifold.** Let `ψᵢ` be finitely many cutoffs in charts
 `eᵢ` whose readings `ψᵢ ∘ eᵢ` on `M`, extended by `0`, add up to `1`, and let `s < s'`. A space `V`
