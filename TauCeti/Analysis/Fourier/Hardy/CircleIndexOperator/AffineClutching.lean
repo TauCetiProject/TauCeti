@@ -123,8 +123,7 @@ def circleIndexAffineLocalScalar : C(U, U) :=
       isOpenEmbedding_circleIndexAffineParametrization.continuous⟩
   have h : Set.MapsTo f s s := fun _ hw h₀ ↦ hw <|
     isOpenEmbedding_circleIndexAffineParametrization.injective <|
-      ((circleIndexAffineScalar_eq_zero_iff _).mp h₀).trans
-        circleIndexAffineParametrization_zero.symm
+      ((circleIndexAffineScalar_eq_zero_iff _).mp h₀).trans (by simp)
   (f.restrict s).codRestrict s fun w ↦ h w.property
 
 /-- In the ambient complex plane the restricted scalar has its original value. -/

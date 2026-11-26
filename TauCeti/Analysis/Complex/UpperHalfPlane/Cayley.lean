@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
-public import TauCeti.Analysis.Complex.Cayley
+public import TauCeti.Analysis.Complex.Cayley.Basic
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Topology.Bornology.BoundedOperation

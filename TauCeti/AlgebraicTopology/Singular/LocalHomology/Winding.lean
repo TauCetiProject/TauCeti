@@ -13,6 +13,7 @@ import Mathlib.Topology.Homotopy.Affine
 import TauCeti.Analysis.Complex.Determinant
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.Topology.Algebra.Polynomial.Basic
+import TauCeti.Topology.Circle.Normalize
 
 /-!
 # The local degree of a plane map is the winding number of its boundary loop
@@ -79,50 +80,34 @@ variable (o : HomologicalOrientation ℂ ℂ 2)
 
 /-! ### Directions and cones -/
 
-/-- The direction `z / ‖z‖` of a nonzero complex number, as a point of the circle, and `1` at
-`0`. -/
-private def dir (z : ℂ) : Circle :=
-  ⟨if z = 0 then 1 else z / ‖z‖,
-    mem_sphere_zero_iff_norm.2 (by split_ifs with h <;> simp [h])⟩
-
-private theorem coe_dir_of_ne_zero {z : ℂ} (hz : z ≠ 0) : (dir z : ℂ) = z / ‖z‖ := by
-  simp [dir, hz]
-
-private theorem norm_mul_dir (z : ℂ) : (‖z‖ : ℂ) * dir z = z := by
-  rcases eq_or_ne z 0 with rfl | hz
-  · simp
-  · rw [coe_dir_of_ne_zero hz, mul_div_cancel₀ _ (by exact_mod_cast norm_ne_zero_iff.2 hz)]
-
-private theorem continuousAt_dir {z : ℂ} (hz : z ≠ 0) : ContinuousAt dir z := by
-  have h : ContinuousAt (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z :=
-    continuousAt_id.div (continuous_ofReal.comp continuous_norm).continuousAt
-      (by exact_mod_cast norm_ne_zero_iff.2 hz)
-  refine Topology.IsInducing.subtypeVal.continuousAt_iff.2 (h.congr ?_)
-  filter_upwards [eventually_ne_nhds hz] with w hw
-  exact (coe_dir_of_ne_zero hw).symm
+private theorem norm_mul_phase (z : ℂ) : (‖z‖ : ℂ) * (1 : Circle).phase z = z := by
+  rw [circlePhase_one_eq_exp_arg, Circle.coe_exp, norm_mul_exp_arg_mul_I]
 
 /-- The cone `(x, z) ↦ ‖z‖ Φ(x, z / ‖z‖)` over a continuous family `Φ` of maps to the circle is
 continuous, also at `z = 0`, where it vanishes. -/
-private theorem continuous_norm_mul_dir {X : Type*} [TopologicalSpace X]
+private theorem continuous_norm_mul_phase {X : Type*} [TopologicalSpace X]
     {Φ : X × Circle → Circle} (hΦ : Continuous Φ) :
-    Continuous fun p : X × ℂ ↦ (‖p.2‖ : ℂ) * Φ (p.1, dir p.2) := by
+    Continuous fun p : X × ℂ ↦ (‖p.2‖ : ℂ) * Φ (p.1, (1 : Circle).phase p.2) := by
   refine continuous_iff_continuousAt.2 fun ⟨x, z⟩ ↦ ?_
   rcases eq_or_ne z 0 with rfl | hz
   · -- Near `z = 0` the cone has norm `‖z‖`.
     simp only [ContinuousAt, norm_zero, ofReal_zero, zero_mul]
     refine squeeze_zero_norm (a := fun p : X × ℂ ↦ ‖p.2‖) (fun p ↦ by simp) ?_
     exact continuous_snd.norm.tendsto' _ _ (by simp)
-  · have hd : ContinuousAt (fun p : X × ℂ ↦ dir p.2) (x, z) :=
-      (continuousAt_dir hz).comp (f := Prod.snd) (x := (x, z)) continuousAt_snd
+  · have hphase : ContinuousOn (1 : Circle).phase ({0}ᶜ : Set ℂ) :=
+      continuousOn_id.circlePhase 1 fun _ h ↦ h
+    have hd := (hphase.continuousAt (isOpen_compl_singleton.mem_nhds hz)).comp
+      (f := Prod.snd) (x := (x, z)) continuousAt_snd
     exact (continuous_ofReal.comp continuous_snd.norm).continuousAt.mul
       (continuous_subtypeVal.continuousAt.comp (hΦ.continuousAt.comp
         (continuousAt_fst.prodMk hd)))
 
 /-- The cone `z ↦ ‖z‖ u(z / ‖z‖)` over a map `u : S¹ → S¹`. -/
 private def cone (u : C(Circle, Circle)) : C(ℂ, ℂ) where
-  toFun z := ‖z‖ * u (dir z)
-  continuous_toFun := (continuous_norm_mul_dir (X := Unit) (u.continuous.comp continuous_snd)).comp
-    (f := fun z : ℂ ↦ ((), z)) (by fun_prop)
+  toFun z := ‖z‖ * u ((1 : Circle).phase z)
+  continuous_toFun :=
+    (continuous_norm_mul_phase (X := Unit) (u.continuous.comp continuous_snd)).comp
+      (f := fun z : ℂ ↦ ((), z)) (by fun_prop)
 
 /-- The map `ζ ↦ ζⁿ` of the circle. -/
 private def zpowMap (n : ℤ) : C(Circle, Circle) :=
@@ -241,11 +226,11 @@ private theorem localDegree_eq_localDegree_cone {f : C(ℂ, ℂ)} {r : ℝ} (hr 
       continuous_toFun := f.continuous.comp (hμ.smul continuous_snd)
       map_zero_left z := by simp [μ]
       map_one_left z := rfl }
-  have hμ₁ (z : ℂ) (hz : r < ‖z‖) : f₁ z = f (r * dir z) := by
+  have hμ₁ (z : ℂ) (hz : r < ‖z‖) : f₁ z = f (r * (1 : Circle).phase z) := by
     have h1 : 1 ≤ ‖z‖ / r := (one_le_div hr).2 hz.le
     have hz0 : z ≠ 0 := norm_pos_iff.1 (hr.trans hz)
     simp only [f₁, ContinuousMap.coe_mk, μ, Set.Icc.coe_one, sub_self, zero_add, one_mul,
-      max_eq_right h1, inv_div, coe_dir_of_ne_zero hz0, Complex.real_smul]
+      max_eq_right h1, inv_div, Circle.coe_phase_of_ne_zero _ hz0, Complex.real_smul]
     congr 1
     push_cast
     ring
@@ -267,8 +252,9 @@ private theorem localDegree_eq_localDegree_cone {f : C(ℂ, ℂ)} {r : ℝ} (hr 
     rw [le_div_iff₀ htpos, hrt]
     nlinarith [s.property.2, hz.le]
   · -- Outside the disc, `f₁` is a positive multiple of the cone over `u`.
-    have hne : f (r * dir z) ≠ 0 := hf _ (by simp [abs_of_pos hr])
-    refine ⟨hμ₁ z hz ▸ hne, ‖z‖ / ‖f (r * dir z)‖, div_pos (hr.trans hz) (norm_pos_iff.2 hne), ?_⟩
+    have hne : f (r * (1 : Circle).phase z) ≠ 0 := hf _ (by simp [abs_of_pos hr])
+    refine ⟨hμ₁ z hz ▸ hne, ‖z‖ / ‖f (r * (1 : Circle).phase z)‖,
+      div_pos (hr.trans hz) (norm_pos_iff.2 hne), ?_⟩
     rw [hμ₁ z hz, Complex.real_smul]
     simp only [cone, ContinuousMap.coe_mk, hu]
     push_cast
@@ -281,14 +267,14 @@ private theorem localDegree_cone_eq_of_joined {u v : C(Circle, Circle)} (h : Joi
       o.localDegree o finrank_real_complex (cone v) 0 := by
   let Γ := h.somePath
   let H : (cone u).Homotopy (cone v) :=
-    { toFun p := ‖p.2‖ * Γ p.1 (dir p.2)
-      continuous_toFun := continuous_norm_mul_dir (Φ := fun q : I × Circle ↦ Γ q.1 q.2)
+    { toFun p := ‖p.2‖ * Γ p.1 ((1 : Circle).phase p.2)
+      continuous_toFun := continuous_norm_mul_phase (Φ := fun q : I × Circle ↦ Γ q.1 q.2)
         (continuous_eval.comp (Γ.continuous.prodMap continuous_id))
       map_zero_left z := by simp [cone]
       map_one_left z := by simp [cone] }
   refine o.localDegree_eq_of_homotopy_of_norm_le H 0 fun ⟨s, z⟩ hsz ↦ ?_
   -- `H (s, z) = ‖z‖ Γ(s)(z / ‖z‖)` by definition.
-  have hsz' : (‖z‖ : ℂ) * Γ s (dir z) = 0 := hsz
+  have hsz' : (‖z‖ : ℂ) * Γ s ((1 : Circle).phase z) = 0 := hsz
   simpa using hsz'
 
 /-- The cone over `ζ ↦ ζⁿ` has local degree `n` at `0`: away from `0` it is a positive multiple of
@@ -301,7 +287,7 @@ private theorem localDegree_cone_zpowMap (n : ℤ) :
     refine ⟨by simp [cone, zpowMap_apply, hz0], ‖z‖ ^ k / ‖z‖, by positivity, ?_⟩
     simp only [cone, zpowMap_apply, ContinuousMap.coe_mk, zpow_natCast, Circle.coe_pow,
       Complex.real_smul]
-    conv_lhs => rw [← norm_mul_dir z]
+    conv_lhs => rw [← norm_mul_phase z]
     have hn : (‖z‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 hz.ne'
     rw [mul_pow]
     push_cast
@@ -311,7 +297,7 @@ private theorem localDegree_cone_zpowMap (n : ℤ) :
     refine ⟨by simp [cone, zpowMap_apply, hz0], ‖z‖ ^ k / ‖z‖, by positivity, ?_⟩
     simp only [cone, zpowMap_apply, ContinuousMap.coe_mk, zpow_neg, zpow_natCast,
       Circle.coe_inv_eq_conj, Circle.coe_pow, Complex.real_smul]
-    conv_lhs => rw [← norm_mul_dir z]
+    conv_lhs => rw [← norm_mul_phase z]
     rw [mul_pow, map_mul, ← ofReal_pow, conj_ofReal]
     have hn : (‖z‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 hz.ne'
     push_cast

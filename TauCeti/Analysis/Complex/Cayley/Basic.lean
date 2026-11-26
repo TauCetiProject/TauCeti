@@ -298,7 +298,7 @@ theorem cayley_inverseCayleyCoord {w : ℂ} (hw : ‖w‖ = 1) (h1 : w ≠ 1) :
   exact TauCeti.sub_I_div_add_I_I_mul_one_add_div_one_sub h1
 
 /-- The real inverse Cayley coordinate in terms of the imaginary part and distance to its pole. -/
-theorem inverseCayleyCoord_eq_neg_two_mul_im_div_norm_sub_sq (w : ℂ) :
+theorem inverseCayleyCoord_eq_neg_two_mul_im_div_norm_one_sub_sq (w : ℂ) :
     inverseCayleyCoord w = -2 * w.im / ‖1 - w‖ ^ 2 := by
   by_cases hw : w = 1
   · subst w
@@ -313,9 +313,9 @@ theorem inverseCayleyCoord_eq_neg_im_div {w : ℂ} (hw : ‖w‖ = 1) :
     inverseCayleyCoord w = -w.im / (1 - w.re) := by
   have hnorm : ‖1 - w‖ ^ 2 = 2 * (1 - w.re) := by
     rw [← normSq_eq_norm_sq, normSq_sub, normSq_eq_norm_sq w, hw]
-    simp
+    simp only [normSq_one, one_pow, one_mul, conj_re]
     ring
-  rw [inverseCayleyCoord_eq_neg_two_mul_im_div_norm_sub_sq, hnorm]
+  rw [inverseCayleyCoord_eq_neg_two_mul_im_div_norm_one_sub_sq, hnorm]
   simpa only [mul_neg, neg_mul] using
     mul_div_mul_left (-w.im) (1 - w.re) (two_ne_zero : (2 : ℝ) ≠ 0)
 

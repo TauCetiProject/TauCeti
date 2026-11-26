@@ -120,26 +120,26 @@ private theorem norm_squareScalar_of_mem_boundary {y : Fin 2 → unitInterval}
 
 /-- The circle-valued phase of the full symbol on the square, with value `1` at its zeros. -/
 def circleIndexSquarePhase (y : Fin 2 → unitInterval) : Circle :=
-  (1 : Circle).circleValuedSphereDirection (circleIndexSquareScalar ρ y)
+  (1 : Circle).phase (circleIndexSquareScalar ρ y)
 
 /-- The phase is the circle direction of the scalar on the square. -/
-theorem circleIndexSquarePhase_eq_circleValuedSphereDirection (y : Fin 2 → unitInterval) :
+theorem circleIndexSquarePhase_eq_phase (y : Fin 2 → unitInterval) :
     circleIndexSquarePhase ρ y =
-      (1 : Circle).circleValuedSphereDirection (circleIndexSquareScalar ρ y) :=
+      (1 : Circle).phase (circleIndexSquareScalar ρ y) :=
   (rfl)
 
 /-- At a zero of the square scalar the phase is `1`. -/
 @[simp] theorem circleIndexSquarePhase_of_scalar_eq_zero {y : Fin 2 → unitInterval}
     (hy : circleIndexSquareScalar ρ y = 0) : circleIndexSquarePhase ρ y = 1 := by
-  rw [circleIndexSquarePhase_eq_circleValuedSphereDirection, hy,
-    Circle.circleValuedSphereDirection_zero]
+  rw [circleIndexSquarePhase_eq_phase, hy,
+    Circle.phase_zero]
 
 /-- The phase of the actual coefficient at frequency twice the normalized covector. -/
 theorem circleIndexSquarePhase_apply (y : Fin 2 → unitInterval) :
-    circleIndexSquarePhase ρ y = (1 : Circle).circleValuedSphereDirection
+    circleIndexSquarePhase ρ y = (1 : Circle).phase
       ((circleFourierIndexSymbol ρ).toSymbol.coefficient
         (ι (y 0), ι (2 * (2 * (y 1 : ℝ) - 1))) 1) := by
-  rw [circleIndexSquarePhase_eq_circleValuedSphereDirection,
+  rw [circleIndexSquarePhase_eq_phase,
     coefficient_toSymbol_circleFourierIndexSymbol_apply_one,
     circleIndexSquareScalar_apply, unitToCircle_apply]
 
@@ -149,14 +149,14 @@ theorem circleIndexSquarePhase_apply (y : Fin 2 → unitInterval) :
     (circleIndexSquarePhase ρ y : ℂ) = circleIndexSquareScalar ρ y := by
   have hn := norm_squareScalar_of_mem_boundary ρ hy
   have hz : circleIndexSquareScalar ρ y ≠ 0 := norm_ne_zero_iff.mp (hn.trans_ne one_ne_zero)
-  rw [circleIndexSquarePhase_eq_circleValuedSphereDirection,
-    Circle.coe_circleValuedSphereDirection_of_ne_zero _ hz, hn,
+  rw [circleIndexSquarePhase_eq_phase,
+    Circle.coe_phase_of_ne_zero _ hz, hn,
     Complex.ofReal_one, div_one]
 
 /-- The phase is continuous wherever the scalar on the square is nonzero. -/
 theorem continuousOn_circleIndexSquarePhase_of_scalar_ne_zero :
     ContinuousOn (circleIndexSquarePhase ρ) {y | circleIndexSquareScalar ρ y ≠ 0} :=
-  (circleIndexSquareScalar ρ).continuous.continuousOn.circleValuedSphereDirection 1 fun _ hy ↦ hy
+  (circleIndexSquareScalar ρ).continuous.continuousOn.circlePhase 1 fun _ hy ↦ hy
 
 /-- The phase is continuous on the entire boundary, including points with phase `-1`. -/
 theorem continuousOn_circleIndexSquarePhase :

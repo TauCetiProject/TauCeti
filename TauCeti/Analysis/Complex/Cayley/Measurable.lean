@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
-public import TauCeti.Analysis.Complex.Cayley
+public import TauCeti.Analysis.Complex.Cayley.Basic
 
 /-!
 # Measurability of the real inverse Cayley coordinate

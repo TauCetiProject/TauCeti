@@ -11,6 +11,7 @@ public import Mathlib.Topology.TietzeExtension
 public import TauCeti.RepresentationTheory.Compact.Averaging
 public import TauCeti.Topology.Algebra.GroupAction.OrbitTrivialization
 import Mathlib.Analysis.Complex.Tietze
+import TauCeti.Topology.Circle.Normalize
 
 /-!
 # Character averages and local triviality of free torus actions
@@ -151,18 +152,11 @@ theorem exists_continuousOn_smul_eq_mul_of_stabilizer_eq_bot [NormalSpace X] [T2
   have hF (j : ι) : Continuous (F j) := continuous_characterAverage (hχ j) (f j).continuous
   have hF₀ (j : ι) : F j x₀ = 1 := characterAverage_eq_one (χ j) (hf j)
   -- The phases `F j / ‖F j‖` of the averages assemble to the equivariant map.
-  have hmem (z : ℂ) (hz : z ≠ 0) : z / ‖z‖ ∈ Submonoid.unitSphere ℂ := by
-    simp [Submonoid.unitSphere, hz]
-  let v (j : ι) (x : X) : Circle := if hx : F j x = 0 then 1 else ⟨F j x / ‖F j x‖, hmem _ hx⟩
-  have hv_eq (j : ι) (x : X) (hx : F j x ≠ 0) : (v j x : ℂ) = F j x / ‖F j x‖ := by
-    simp [v, hx]
-  have hv (j : ι) : ContinuousOn (v j) {x | F j x ≠ 0} := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    have hc : Continuous fun x : {x | F j x ≠ 0} ↦ (⟨F j x / ‖F j x‖, hmem _ x.property⟩ : Circle)
-        :=
-      Continuous.subtype_mk (((hF j).comp continuous_subtypeVal).div (by fun_prop)
-        fun x ↦ Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 x.property)) _
-    exact hc.congr fun x ↦ by simp [v, domRestrict, x.property.out]
+  let v (j : ι) (x : X) : Circle := (1 : Circle).phase (F j x)
+  have hv_eq (j : ι) (x : X) (hx : F j x ≠ 0) : (v j x : ℂ) = F j x / ‖F j x‖ :=
+    Circle.coe_phase_of_ne_zero 1 hx
+  have hv (j : ι) : ContinuousOn (v j) {x | F j x ≠ 0} :=
+    (hF j).continuousOn.circlePhase 1 fun _ hx ↦ hx
   let V : Set X := {x | ∀ j, F j x ≠ 0}
   have hV : V = ⋂ j, {x | F j x ≠ 0} := by ext; simp [V]
   have hVsmul (g : T) (x : X) (hx : x ∈ V) : g • x ∈ V := fun j ↦ by

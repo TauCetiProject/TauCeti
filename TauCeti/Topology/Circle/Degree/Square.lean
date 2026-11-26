@@ -501,23 +501,23 @@ theorem squareCenterOffset_ne_zero_of_mem {y : Fin 2 → I} (hy : y ∈ Cube.bou
 /-- The direction of a point of the square from its centre, the point `c / ‖c‖` of the circle for
 `c = squareCenterOffset y` (`TauCeti.coe_squareCenterDirection`). It is `1` at the centre. -/
 def squareCenterDirection (y : Fin 2 → I) : Circle :=
-  (1 : Circle).circleValuedSphereDirection (squareCenterOffset y)
+  (1 : Circle).phase (squareCenterOffset y)
 
 /-- The square centre direction is the circle direction of the offset. -/
-theorem squareCenterDirection_eq_circleValuedSphereDirection (y : Fin 2 → I) :
-    squareCenterDirection y = (1 : Circle).circleValuedSphereDirection (squareCenterOffset y) :=
+theorem squareCenterDirection_eq_phase (y : Fin 2 → I) :
+    squareCenterDirection y = (1 : Circle).phase (squareCenterOffset y) :=
   (rfl)
 
 /-- Away from the centre, the direction from the centre is `c / ‖c‖` for the offset `c`. -/
 theorem coe_squareCenterDirection {y : Fin 2 → I} (hy : squareCenterOffset y ≠ 0) :
     (squareCenterDirection y : ℂ) = squareCenterOffset y / ‖squareCenterOffset y‖ := by
-  simp only [squareCenterDirection_eq_circleValuedSphereDirection,
-    Circle.coe_circleValuedSphereDirection_of_ne_zero _ hy]
+  simp only [squareCenterDirection_eq_phase,
+    Circle.coe_phase_of_ne_zero _ hy]
 
 /-- The direction from the centre is continuous wherever the offset from the centre is nonzero. -/
 theorem continuousOn_squareCenterDirection_of_offset_ne_zero :
     ContinuousOn squareCenterDirection {y | squareCenterOffset y ≠ 0} :=
-  continuous_squareCenterOffset.continuousOn.circleValuedSphereDirection 1 fun _ hy ↦ hy
+  continuous_squareCenterOffset.continuousOn.circlePhase 1 fun _ hy ↦ hy
 
 /-- The direction from the centre is continuous on the boundary of the square. -/
 theorem continuousOn_squareCenterDirection :
@@ -535,8 +535,8 @@ private theorem pathAngle_squareCenterDirection_eq_arg_sub {a b : Fin 2 → I} (
   rw [pathAngle_eq_sub γ (continuousOn_squareCenterDirection.mono hrange)
     (continuous_iff_continuousAt.2 fun t ↦ (Complex.continuousAt_arg (hslit t)).comp
       (f := fun s ↦ squareCenterOffset (γ s)) (by fun_prop)) fun t ↦ by
-      simpa only [squareCenterDirection_eq_circleValuedSphereDirection, Function.comp_apply] using
-        (Complex.circleValuedSphereDirection_one_eq_exp_arg (squareCenterOffset (γ t))).symm]
+      simpa only [squareCenterDirection_eq_phase, Function.comp_apply] using
+        (Complex.circlePhase_one_eq_exp_arg (squareCenterOffset (γ t))).symm]
   simp only [comp_apply, Path.source, Path.target]
 
 /-- Along an edge of the square that avoids the closed positive real axis, as seen from the

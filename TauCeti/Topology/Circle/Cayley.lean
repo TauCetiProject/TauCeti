@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
-public import TauCeti.Analysis.Complex.Cayley
+public import TauCeti.Analysis.Complex.Cayley.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Arctan
 
 /-!
@@ -99,5 +99,9 @@ theorem boundaryCayley_eq_neg_exp (x : ℝ) :
   have h₂ : 1 - (x : ℂ) * I ≠ 0 := ne_zero_of_re_pos (by simp)
   field_simp
   linear_combination 2 * (x : ℂ) * Complex.I_sq
+
+/-- The real coordinate zero corresponds to the circle point `-1`. -/
+@[simp] theorem boundaryCayley_zero : boundaryCayley 0 = -1 := by
+  simp [boundaryCayley_eq_neg_exp]
 
 end Real

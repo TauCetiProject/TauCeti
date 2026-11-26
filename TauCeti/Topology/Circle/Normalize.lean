@@ -20,7 +20,7 @@ continuous complex function `f : C(X, ℂ)` to a continuous map
 Because `Circle` is a topological group under complex multiplication, radial normalization is
 multiplicative and sends `1` to `1`.
 
-`Circle.circleValuedSphereDirection` is the sphere direction transported to the circle,
+`Circle.phase` is the sphere direction transported to the circle,
 with an assigned value at zero.
 
 ## Main definitions
@@ -30,7 +30,7 @@ with an assigned value at zero.
 
 ## Main results
 
-* `Circle.coe_circleValuedSphereDirection_of_ne_zero`: the phase is division by the norm
+* `Circle.coe_phase_of_ne_zero`: the phase is division by the norm
   away from zero.
 * `ContinuousMap.normalizeToCircle_apply`: evaluation of bundled normalization as a circle phase.
 * `ContinuousMap.coe_normalizeToCircle_apply`: `(f.normalizeToCircle hf x : ℂ) = f x / ‖f x‖`.
@@ -38,9 +38,9 @@ with an assigned value at zero.
   `(‖f x‖ : ℂ) * (f.normalizeToCircle hf x : ℂ) = f x`.
 * `ContinuousMap.normalizeToCircle_mul`, `ContinuousMap.normalizeToCircle_one`: radial
   normalization preserves products and `1` in `C(X, Circle)`.
-* `Complex.circleValuedSphereDirection_one_eq_exp_arg`: the phase with fallback `1` equals
+* `Complex.circlePhase_one_eq_exp_arg`: the phase with fallback `1` equals
   `Circle.exp (Complex.arg z)` pointwise, including at zero.
-* `Circle.circleValuedSphereDirection_mul_of_ne_zero`: the phases of nonzero factors multiply.
+* `Circle.phase_mul_of_ne_zero`: the phases of nonzero factors multiply.
 * `Circle.ne_zero_of_coe_eq_div_norm`: a point of the circle equal to `w / ‖w‖` forces `w ≠ 0`.
 -/
 
@@ -53,48 +53,48 @@ open TauCeti
 namespace Circle
 
 /-- The circle phase of a complex number, with specified value `e` at zero. -/
-def circleValuedSphereDirection (e : Circle) (z : ℂ) : Circle :=
+def phase (e : Circle) (z : ℂ) : Circle :=
   homeomorphSphere.symm (sphereDirection (homeomorphSphere e) z)
 
 /-- The circle phase at zero is the specified value. -/
-@[simp] theorem circleValuedSphereDirection_zero (e : Circle) :
-    e.circleValuedSphereDirection 0 = e := by
-  simp [circleValuedSphereDirection]
+@[simp] theorem phase_zero (e : Circle) :
+    e.phase 0 = e := by
+  simp [phase]
 
 /-- The underlying complex value of the circle phase away from zero is `z / ‖z‖`. -/
-@[simp] theorem coe_circleValuedSphereDirection_of_ne_zero (e : Circle) {z : ℂ} (hz : z ≠ 0) :
-    (e.circleValuedSphereDirection z : ℂ) = z / ‖z‖ := by
-  rw [circleValuedSphereDirection, coe_homeomorphSphere_symm_apply,
+@[simp] theorem coe_phase_of_ne_zero (e : Circle) {z : ℂ} (hz : z ≠ 0) :
+    (e.phase z : ℂ) = z / ‖z‖ := by
+  rw [phase, coe_homeomorphSphere_symm_apply,
     coe_sphereDirection_eq_div_norm _ hz]
 
 /-- The direction of the product of two nonzero complex numbers is the product of their
 directions in the circle. -/
-@[simp] theorem circleValuedSphereDirection_mul_of_ne_zero (e : Circle) {z w : ℂ}
+@[simp] theorem phase_mul_of_ne_zero (e : Circle) {z w : ℂ}
     (hz : z ≠ 0) (hw : w ≠ 0) :
-    e.circleValuedSphereDirection (z * w) =
-      e.circleValuedSphereDirection z * e.circleValuedSphereDirection w := by
+    e.phase (z * w) =
+      e.phase z * e.phase w := by
   apply Circle.ext
-  simp only [coe_mul, coe_circleValuedSphereDirection_of_ne_zero _ (mul_ne_zero hz hw),
-    coe_circleValuedSphereDirection_of_ne_zero _ hz,
-    coe_circleValuedSphereDirection_of_ne_zero _ hw, ← Complex.normalize_eq_div_norm,
+  simp only [coe_mul, coe_phase_of_ne_zero _ (mul_ne_zero hz hw),
+    coe_phase_of_ne_zero _ hz,
+    coe_phase_of_ne_zero _ hw, ← Complex.normalize_eq_div_norm,
     Complex.normalize_mul]
 
 end Circle
 
 /-- With fallback `1`, the circle phase is the exponential of the principal argument at each
 complex number, including at zero. -/
-theorem Complex.circleValuedSphereDirection_one_eq_exp_arg (z : ℂ) :
-    (1 : Circle).circleValuedSphereDirection z = Circle.exp z.arg := by
+theorem Complex.circlePhase_one_eq_exp_arg (z : ℂ) :
+    (1 : Circle).phase z = Circle.exp z.arg := by
   rcases eq_or_ne z 0 with rfl | hz
   · simp
   · apply Circle.ext
-    rw [Circle.coe_circleValuedSphereDirection_of_ne_zero _ hz, Circle.coe_exp,
+    rw [Circle.coe_phase_of_ne_zero _ hz, Circle.coe_exp,
       Complex.exp_arg_mul_I hz]
 
 /-- The circle phase is continuous on a set where the input is continuous and nonzero. -/
-theorem ContinuousOn.circleValuedSphereDirection {X : Type*} [TopologicalSpace X]
+theorem ContinuousOn.circlePhase {X : Type*} [TopologicalSpace X]
     {f : X → ℂ} {s : Set X} (hf : ContinuousOn f s) (e : Circle)
-    (hne : ∀ x ∈ s, f x ≠ 0) : ContinuousOn (fun x ↦ e.circleValuedSphereDirection (f x)) s :=
+    (hne : ∀ x ∈ s, f x ≠ 0) : ContinuousOn (fun x ↦ e.phase (f x)) s :=
   Circle.homeomorphSphere.symm.continuous.comp_continuousOn
     (hf.sphereDirection (Circle.homeomorphSphere e) hne)
 
@@ -105,20 +105,20 @@ variable {X : Type*} [TopologicalSpace X]
 /-- Radial normalization of a nowhere-zero continuous complex function `f : C(X, ℂ)` as a
 continuous map into `Circle`, sending `x` to `f x / ‖f x‖`. -/
 def normalizeToCircle (f : C(X, ℂ)) (hf : ∀ x, f x ≠ 0) : C(X, Circle) where
-  toFun := (1 : Circle).circleValuedSphereDirection ∘ f
+  toFun := (1 : Circle).phase ∘ f
   continuous_toFun := continuousOn_univ.mp <|
-    f.continuous.continuousOn.circleValuedSphereDirection 1 fun x _ ↦ hf x
+    f.continuous.continuousOn.circlePhase 1 fun x _ ↦ hf x
 
 /-- Pointwise evaluation of the bundled normalization is the circle phase. -/
 theorem normalizeToCircle_apply (f : C(X, ℂ)) (hf : ∀ x, f x ≠ 0) (x : X) :
-    f.normalizeToCircle hf x = (1 : Circle).circleValuedSphereDirection (f x) :=
+    f.normalizeToCircle hf x = (1 : Circle).phase (f x) :=
   (rfl)
 
 /-- The complex value of `f.normalizeToCircle hf x` is `f x / ‖f x‖`. -/
 @[simp]
 theorem coe_normalizeToCircle_apply (f : C(X, ℂ)) (hf : ∀ x, f x ≠ 0) (x : X) :
     (f.normalizeToCircle hf x : ℂ) = f x / ‖f x‖ := by
-  rw [normalizeToCircle_apply, Circle.coe_circleValuedSphereDirection_of_ne_zero _ (hf x)]
+  rw [normalizeToCircle_apply, Circle.coe_phase_of_ne_zero _ (hf x)]
 
 /-- Multiplying the normalized phase `f.normalizeToCircle hf x` by `‖f x‖` recovers `f x`. -/
 theorem norm_mul_normalizeToCircle_apply (f : C(X, ℂ)) (hf : ∀ x, f x ≠ 0) (x : X) :
@@ -133,7 +133,7 @@ theorem normalizeToCircle_mul (f g : C(X, ℂ)) (hf : ∀ x, f x ≠ 0) (hg : �
     (f * g).normalizeToCircle hfg = f.normalizeToCircle hf * g.normalizeToCircle hg := by
   ext1 x
   simp only [normalizeToCircle_apply, ContinuousMap.mul_apply,
-    Circle.circleValuedSphereDirection_mul_of_ne_zero 1 (hf x) (hg x)]
+    Circle.phase_mul_of_ne_zero 1 (hf x) (hg x)]
 
 /-- Radial normalization sends `1 : C(X, ℂ)` to `1 : C(X, Circle)`. -/
 @[simp]
