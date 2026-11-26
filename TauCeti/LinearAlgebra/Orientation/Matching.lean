@@ -47,8 +47,6 @@ The stable-first orientation `[S][U]` of `V` differs from `[U][S]` by the same s
 
 * `LinearMap.bijective_matchingMap_iff`: the matching map is an isomorphism exactly when
   `a.coprod b` is.
-* `Orientation.map_prodAssoc_symm_trans_prodComm_prod`: moving the first factor of `E × (F × G)`
-  past the second multiplies the product orientation by `(-1) ^ (dim E · dim F)`.
 * `Orientation.map_matchingMap`: if `e : U × S ≃ V` carries `[U][S]` to `[V]`, the matching map
   of the restrictions of `e` to `U` and `S` carries `[U][V][S]` to `(-1) ^ (k l) [V][V]`.
 * `Orientation.linearMapSign_matchingMap`: the sign of the matching map is `(-1) ^ (k l)` times
@@ -128,27 +126,6 @@ end LinearMap
 
 namespace Orientation
 
-/-- Moving the first factor of `E × (F × G)` past the second, through `(E × F) × G`, multiplies the
-product orientation `o × (o' × o'')` by `(-1) ^ (m * n)`, where `m` and `n` are the dimensions of
-`E` and `F`. The index types are identified through `n + (m + p) = m + (n + p)`. -/
-theorem map_prodAssoc_symm_trans_prodComm_prod {R E F G : Type*} [CommRing R] [LinearOrder R]
-    [IsStrictOrderedRing R] [AddCommGroup E] [Module R E] [AddCommGroup F] [Module R F]
-    [AddCommGroup G] [Module R G] [Module.Free R E] [Module.Finite R E] [Module.Free R F]
-    [Module.Finite R F] [Module.Free R G] [Module.Finite R G] {m n p : ℕ}
-    (o : Orientation R E (Fin m)) (o' : Orientation R F (Fin n)) (o'' : Orientation R G (Fin p))
-    (hm : finrank R E = m) (hn : finrank R F = n) (hp : finrank R G = p) :
-    Orientation.map (Fin (m + (n + p)))
-        (((LinearEquiv.prodAssoc R E F G).symm.trans
-          ((LinearEquiv.prodComm R E F).prodCongr (LinearEquiv.refl R G))).trans
-          (LinearEquiv.prodAssoc R F E G))
-        (prod o (prod o' o'' hn hp) hm (by rw [finrank_prod, hn, hp])) =
-      (-1 : Rˣ) ^ (m * n) • Orientation.reindex R (F × E × G) (finCongr (by omega))
-        (prod o' (prod o o'' hm hp) hn (by rw [finrank_prod, hm, hp])) := by
-  rw [map_trans, map_trans, map_prodAssoc_symm_prod, map_reindex, map_prod, map_prodComm_prod,
-    map_refl, Equiv.refl_apply, prod_units_smul_left, prod_reindex_finCongr_left, map_reindex,
-    map_units_smul, map_reindex, map_prodAssoc_prod]
-  simp only [reindex_units_smul, reindex_finCongr_reindex_finCongr]
-
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [Module K U] [Module K S]
   [Module K V] [FiniteDimensional K U] [FiniteDimensional K S] [FiniteDimensional K V] {k l : ℕ}
 
@@ -187,10 +164,7 @@ theorem map_matchingMap (oU : Orientation K U (Fin k)) (oS : Orientation K S (Fi
     rw [hM]
     have h₁ : e (u, -s) = e (u, 0) - e (0, s) := by
       rw [← map_sub, Prod.mk_sub_mk, sub_zero, zero_sub]
-    have hA : ∀ (x : U) (y : V) (z : S),
-        (LinearEquiv.prodAssoc K U V S).symm (x, y, z) = ((x, y), z) :=
-      fun _ _ _ ↦ (LinearEquiv.symm_apply_eq _).2 rfl
-    refine Prod.ext ?_ ?_ <;> simp [T₁, R, P, T₂, a, h₁, hA] <;> module
+    refine Prod.ext ?_ ?_ <;> simp [T₁, R, P, T₂, a, h₁] <;> module
   have hT₁ := map_skewProd_refl (-(LinearMap.inl K V S ∘ₗ a))
     (prod oU (prod oV oS hV hS) hU (by rw [finrank_prod, hV, hS]))
     (by rw [Fintype.card_fin, finrank_prod, finrank_prod, hU, hV, hS])
