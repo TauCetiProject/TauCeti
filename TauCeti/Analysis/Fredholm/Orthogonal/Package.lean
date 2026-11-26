@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Analysis.Fredholm.Adjoint
-import TauCeti.Topology.Algebra.Module.Complement
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Orthogonal Fredholm packages on Hilbert spaces
@@ -106,38 +106,47 @@ theorem orthogonalFredholmPackage_decCodom_X₀ :
     hT.orthogonalFredholmPackage.decCodom.X₀ = (T†).ker :=
   rfl
 
+-- In the four `proj`/`proj₀` lemmas below, `FredholmDecomposition.proj` and `proj₀` are `abbrev`s
+-- for `projectionOntoL`, whose codomains `decDom.X₁`, `decDom.X₀`, `decCodom.X₀`, `decCodom.X₁`
+-- reduce definitionally via `@[expose] IsFredholm.orthogonalFredholmPackage` and Mathlib's
+-- `IsFredholm.fredholmPackage`.
 /-- The domain projection of `hT.orthogonalFredholmPackage` is the orthogonal projection onto
 `(ker T)ᗮ`. -/
 @[simp]
 theorem orthogonalFredholmPackage_decDom_proj :
-    hT.orthogonalFredholmPackage.decDom.proj = T.kerᗮ.orthogonalProjectionOnto := by
-  rw [Submodule.orthogonalProjectionOnto]
-  exact Submodule.projectionOntoL_congr (Submodule.orthogonal_orthogonal T.ker).symm
+    hT.orthogonalFredholmPackage.decDom.proj = T.kerᗮ.orthogonalProjectionOnto :=
+  (T.kerᗮ.orthogonalProjectionOnto_eq_projectionOntoL
+    hT.orthogonalFredholmPackage.decDom.isTopCompl
+    (hT.orthogonalFredholmPackage_decDom_X₀.trans
+      (Submodule.orthogonal_orthogonal T.ker).symm)).symm
 
 /-- The inessential domain projection of `hT.orthogonalFredholmPackage` is the orthogonal
 projection onto `ker T`. -/
 @[simp]
 theorem orthogonalFredholmPackage_decDom_proj₀ :
-    hT.orthogonalFredholmPackage.decDom.proj₀ = T.ker.orthogonalProjectionOnto := by
-  rw [Submodule.orthogonalProjectionOnto]
-  exact Submodule.projectionOntoL_congr rfl
+    hT.orthogonalFredholmPackage.decDom.proj₀ = T.ker.orthogonalProjectionOnto :=
+  (T.ker.orthogonalProjectionOnto_eq_projectionOntoL
+    hT.orthogonalFredholmPackage.decDom.isTopCompl.symm
+    hT.orthogonalFredholmPackage_decDom_X₁).symm
 
 /-- The inessential codomain projection of `hT.orthogonalFredholmPackage` is the orthogonal
 projection onto `ker T†`. -/
 @[simp]
 theorem orthogonalFredholmPackage_decCodom_proj₀ :
-    hT.orthogonalFredholmPackage.decCodom.proj₀ = (T†).ker.orthogonalProjectionOnto := by
-  rw [Submodule.orthogonalProjectionOnto]
-  exact Submodule.projectionOntoL_congr
-    (T.range_eq_orthogonal_ker_adjoint_of_isClosed_range hT.isClosed_range)
+    hT.orthogonalFredholmPackage.decCodom.proj₀ = (T†).ker.orthogonalProjectionOnto :=
+  ((T†).ker.orthogonalProjectionOnto_eq_projectionOntoL
+    hT.orthogonalFredholmPackage.decCodom.isTopCompl.symm
+    (hT.orthogonalFredholmPackage_decCodom_X₁.trans
+      (T.range_eq_orthogonal_ker_adjoint_of_isClosed_range hT.isClosed_range))).symm
 
 /-- When `T.range` carries its `HasOrthogonalProjection` instance, the codomain projection of
 `hT.orthogonalFredholmPackage` is `T.range.orthogonalProjectionOnto`. -/
 @[simp]
 theorem orthogonalFredholmPackage_decCodom_proj [T.range.HasOrthogonalProjection] :
-    hT.orthogonalFredholmPackage.decCodom.proj = T.range.orthogonalProjectionOnto := by
-  rw [Submodule.orthogonalProjectionOnto]
-  exact Submodule.projectionOntoL_congr T.orthogonal_range.symm
+    hT.orthogonalFredholmPackage.decCodom.proj = T.range.orthogonalProjectionOnto :=
+  (T.range.orthogonalProjectionOnto_eq_projectionOntoL
+    hT.orthogonalFredholmPackage.decCodom.isTopCompl
+    (hT.orthogonalFredholmPackage_decCodom_X₀.trans T.orthogonal_range.symm)).symm
 
 /-- Viewed in `F`, the ambient codomain projection of `hT.orthogonalFredholmPackage` is
 `T.range.starProjection`. -/
@@ -146,9 +155,11 @@ theorem projectionL_orthogonalFredholmPackage_decCodom_eq_starProjection
     hT.orthogonalFredholmPackage.decCodom.X₁.projectionL
         hT.orthogonalFredholmPackage.decCodom.X₀
         hT.orthogonalFredholmPackage.decCodom.isTopCompl =
-      T.range.starProjection := by
-  rw [Submodule.starProjection, Submodule.orthogonalProjectionOnto, ← Submodule.projectionL]
-  exact Submodule.projectionL_congr rfl T.orthogonal_range.symm
+      T.range.starProjection :=
+  (T.range.starProjection_eq_projectionL
+    hT.orthogonalFredholmPackage.decCodom.isTopCompl
+    hT.orthogonalFredholmPackage_decCodom_X₁
+    (hT.orthogonalFredholmPackage_decCodom_X₀.trans T.orthogonal_range.symm)).symm
 
 /-- Viewed in the ambient target `F`, the codomain projection of `hT.orthogonalFredholmPackage` is
 `id - (ker T†).starProjection`. Unlike
@@ -181,10 +192,12 @@ theorem orthogonalFredholmPackage_equiv :
 `(ker T)ᗮ`. -/
 @[simp]
 theorem orthogonalFredholmPackage_quasiInverse_comp_self :
-    hT.orthogonalFredholmPackage.quasiInverse ∘L T = T.kerᗮ.starProjection := by
-  rw [hT.orthogonalFredholmPackage.quasiInverse_comp_self, Submodule.starProjection,
-    Submodule.orthogonalProjectionOnto, ← Submodule.projectionL]
-  exact Submodule.projectionL_congr rfl T.ker.orthogonal_orthogonal.symm
+    hT.orthogonalFredholmPackage.quasiInverse ∘L T = T.kerᗮ.starProjection :=
+  hT.orthogonalFredholmPackage.quasiInverse_comp_self.trans
+    (T.kerᗮ.starProjection_eq_projectionL
+      hT.orthogonalFredholmPackage.decDom.isTopCompl
+      hT.orthogonalFredholmPackage_decDom_X₁
+      (hT.orthogonalFredholmPackage_decDom_X₀.trans T.ker.orthogonal_orthogonal.symm)).symm
 
 /-- Right composition of `T` with the orthogonal quasi-inverse is `id - (ker T†).starProjection`. -/
 theorem self_comp_orthogonalFredholmPackage_quasiInverse :

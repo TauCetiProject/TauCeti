@@ -319,8 +319,11 @@ theorem symm_equiv : pkg.symm.equiv = pkg.equiv.symm :=
 
 /-- Taking the quasi-inverse of the dual package recovers the original operator. -/
 @[simp]
-theorem symm_quasiInverse : pkg.symm.quasiInverse = T :=
-  pkg.eq_equiv.symm
+theorem symm_quasiInverse : pkg.symm.quasiInverse = T := by
+  -- Unfold `quasiInverse` and `symm` together so the implicit summand types of `equiv.symm`
+  -- reduce alongside `pkg.symm.equiv = pkg.equiv.symm` before `ContinuousLinearEquiv.symm_symm`.
+  rw [FredholmPackage.quasiInverse, symm, ContinuousLinearEquiv.symm_symm]
+  exact pkg.eq_equiv.symm
 
 /-- The kernel of `pkg.quasiInverse` is the finite-dimensional codomain complement `decCodom.X₀`. -/
 @[simp]

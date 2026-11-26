@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.Complement
 
 /-!
 # Products and norms of orthogonal projections
@@ -71,7 +72,9 @@ For `s ⊆ U`, the preimage of `s` under the orthogonal projection onto `U` is t
 `{y + z | y ∈ s, z ∈ Uᗮ}`.
 
 Conjugating the orthogonal projection onto `V` by a linear isometry equivalence `e` of Hilbert
-spaces gives the orthogonal projection onto `e(V)`.
+spaces gives the orthogonal projection onto `e(V)`. When a topological complement of `K` equals
+`Kᗮ`, the topological projections `projectionOntoL` and `projectionL` agree with
+`orthogonalProjectionOnto` and `starProjection`.
 
 ## Provenance
 
@@ -84,6 +87,9 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
+* `Submodule.orthogonalProjectionOnto_eq_projectionOntoL`,
+  `Submodule.starProjection_eq_projectionL`: `K.orthogonalProjectionOnto` and `K.starProjection`
+  agree with `projectionOntoL` and `projectionL` when the complement is `Kᗮ`.
 * `Submodule.preimage_orthogonalProjectionOnto_eq`: the preimage of `s ⊆ U` under the
   orthogonal projection onto `U` is the cylinder `{y + z | y ∈ s, z ∈ Uᗮ}`.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
@@ -619,6 +625,27 @@ theorem apply_mem_of_commute_starProjection {U : Submodule 𝕜 E} [U.HasOrthogo
     _root_.mul_apply_eq_comp, U.starProjection_eq_self_iff.2 hx]
 
 end Commute
+
+section TopCompl
+
+/-- When a topological decomposition `p ⊕ q` has `p = K` and `q = Kᗮ`, the ambient orthogonal
+projection `K.starProjection` agrees with `p.projectionL q h`. -/
+theorem starProjection_eq_projectionL {K p q : Submodule 𝕜 E} [K.HasOrthogonalProjection]
+    (h : p.IsTopCompl q) (hp : p = K) (hq : q = Kᗮ) :
+    K.starProjection = p.projectionL q h :=
+  K.isIdempotentElem_starProjection.eq_projectionL.trans
+    (projectionL_congr (K.range_starProjection.trans hp.symm)
+      (K.ker_starProjection.trans hq.symm))
+
+/-- When a topological complement `q` of `K` equals `Kᗮ`, `K.orthogonalProjectionOnto` agrees with
+the topological projection `K.projectionOntoL q h`. -/
+theorem orthogonalProjectionOnto_eq_projectionOntoL {K q : Submodule 𝕜 E}
+    [K.HasOrthogonalProjection] (h : K.IsTopCompl q) (hq : q = Kᗮ) :
+    K.orthogonalProjectionOnto = K.projectionOntoL q h := by
+  ext x
+  simp [K.starProjection_eq_projectionL h rfl hq]
+
+end TopCompl
 
 end Submodule
 
