@@ -123,9 +123,12 @@ theorem continuous_linearMap_apply_of_continuous_character_of_nondegenerate
   have hev (ψ : S →ₗ[k] k) (g : G) :
       ev ψ g = ψ ⟨ρ g, Submodule.subset_span ⟨g, rfl⟩⟩ := by
     simp [ev]
+  -- The carrier of `continuousSubmodule` is definitionally the set of continuous functions,
+  -- so `hL` gives membership in its comap along `ev` for each generator.
   have hcont := Submodule.mem_span.1 hφ ((continuousSubmodule G k k).comap ev)
     (Set.range_subset_iff.2 hL)
   rw [Submodule.mem_comap] at hcont
+  -- The same carrier definition turns this membership back into continuity.
   have hcont' : Continuous (ev (φ.domRestrict S)) := hcont
   exact hcont'.congr fun g ↦ by rw [hev, LinearMap.domRestrict_apply]
 
