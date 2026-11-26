@@ -57,7 +57,7 @@ noncomputable section
 
 namespace TauCeti
 
-open CategoryTheory Matrix _root_.LinearMap _root_.Algebra
+open CategoryTheory _root_.Matrix _root_.LinearMap _root_.Algebra
 
 universe u
 

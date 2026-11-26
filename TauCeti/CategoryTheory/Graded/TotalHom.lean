@@ -306,6 +306,13 @@ structure IsPathCompatible {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] 
       (hij : (j : ℕ) = i + 1) (hne : t j ≠ s i) :
     f (fun k ↦ homInclusion (s k) (t k) (x k)) = 0
 
+/-- The zero operation is path-compatible along any map of objects. -/
+theorem IsPathCompatible.zero {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'}
+    {n : ℕ} :
+    IsPathCompatible φ (0 : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C)
+      (TotalHom R C')) :=
+  ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
+
 /-- Restrict a multilinear map to a composable string and project its value to the Hom module
 between the images of the endpoints. No path-compatibility hypothesis is needed for projection. -/
 noncomputable def _root_.MultilinearMap.restrictToPath {C' : Type u'}

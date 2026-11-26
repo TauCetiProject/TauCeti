@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.ChangeOfVariables
+public import TauCeti.Analysis.Distribution.MicrolocalRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Algebra.Module.ZLattice.Dual
 import TauCeti.Algebra.Module.ZLattice.Summable
@@ -60,6 +61,8 @@ rapidly, and `|a_m(ξ)|` is bounded. For the others, the phase of `𝓕 G_ξ (m)
   Fourier coefficients of `e_* (φ e_ξ)` as coefficients.
 * `Distribution.IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph`: if `T` is microlocally
   smooth at `(e x, (De⁻¹(e x))ᵀ ξ)`, then `e^* T` is microlocally smooth at `(x, ξ)`.
+* `Distribution.isInvariantMicrolocalRegularity_isMicrolocallySmoothAt`: microlocal smoothness is
+  an invariant notion of microlocal regularity (`Distribution.IsInvariantMicrolocalRegularity`).
 * `Distribution.isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff`: the converse, for
   `x ∈ U`, by pulling back along `e⁻¹` from `e '' U`.
 * `Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`: the wave front set of `e^* T`.
@@ -301,38 +304,31 @@ theorem IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph {T : 𝓓'(Ω, ℂ
           ‖T.localFourier (ofSupportedIn hKΩ (G ζ)) ((B†) ζ)‖) := by rw [mul_pow]; ring
     _ ≤ a ^ N * C := mul_le_mul_of_nonneg_left (hC ζ hζ) (by positivity)
 
+/-- Microlocal smoothness is an invariant notion of microlocal regularity: it is open, linear,
+conic, preserved by smooth multiples and pullback along smooth changes of variables, and unchanged
+by restriction to smaller open sets. -/
+theorem isInvariantMicrolocalRegularity_isMicrolocallySmoothAt :
+    IsInvariantMicrolocalRegularity
+      fun (Ω : Opens E) (T : 𝓓'(Ω, ℂ)) x ξ ↦ T.IsMicrolocallySmoothAt x ξ where
+  isOpen_setOf _ T := isOpen_setOf_isMicrolocallySmoothAt T
+  zero hx ξ := isMicrolocallySmoothAt_zero hx ξ
+  add hS hT := hS.add hT
+  smul c hT := hT.smul c
+  smul_covector hr hT := (isMicrolocallySmoothAt_smul_iff hr).2 hT
+  smulLeftCLM hg hT := hT.smulLeftCLM hg
+  smulLeftCLM_iff hg hx := isMicrolocallySmoothAt_smulLeftCLM_iff hg hx
+  restrictCLM_iff h _ _ hx _ := isMicrolocallySmoothAt_restrictCLM_iff h hx
+  compCLMOfOpenPartialHomeomorph he he' hU hUΩ _ _ _ hx hT :=
+    hT.compCLMOfOpenPartialHomeomorph _ he he' hU hUΩ hx
+
 /-- **The wave front set under a change of variables, pointwise.** For `x ∈ U`, the pullback
 `e^* T` is microlocally smooth at `(x, ξ)` exactly when `T` is microlocally smooth at
 `(e x, (De⁻¹(e x))ᵀ ξ)`. -/
 theorem isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E}
     (hx : x ∈ U) :
     (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsMicrolocallySmoothAt x ξ ↔
-      T.IsMicrolocallySmoothAt (e x) (((fderiv ℝ e.symm (e x))†) ξ) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.compCLMOfOpenPartialHomeomorph e he he' hU hUΩ hx⟩
-  -- Pull `e^* T` back along `e⁻¹` from the image `V = e '' U`, which gives back `T` on `V`.
-  have hxs : x ∈ e.source := hU hx
-  let V : Opens E := ⟨e '' U, e.isOpen_image_of_subset_source U.isOpen hU⟩
-  have hVΩ : V ≤ Ω := image_subset_iff.2 hUΩ
-  have hVt : (V : Set E) ⊆ e.symm.source := by
-    rintro _ ⟨z, hz, rfl⟩
-    exact e.map_source (hU hz)
-  have hVU : MapsTo e.symm V U := by
-    rintro _ ⟨z, hz, rfl⟩
-    rwa [e.left_inv (hU hz)]
-  have hUV : MapsTo e U V := fun z hz ↦ ⟨z, hz, rfl⟩
-  have hres : compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T =
-      compCLMOfOpenPartialHomeomorph e he he' hU hUV (restrictCLM T) := by
-    rw [← restrictCLM_compCLMOfOpenPartialHomeomorph le_rfl hVΩ, restrictCLM_self]
-  rw [hres] at h
-  have h' : (compCLMOfOpenPartialHomeomorph e he he' hU hUV (restrictCLM T)).IsMicrolocallySmoothAt
-      (e.symm (e x)) (((fderiv ℝ e.symm.symm (e.symm (e x)))†)
-        (((fderiv ℝ e.symm (e x))†) ξ)) := by
-    simpa only [OpenPartialHomeomorph.symm_symm, e.left_inv hxs,
-      e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp) hxs] using h
-  have h₂ := h'.compCLMOfOpenPartialHomeomorph e.symm he' he hVt hVU ⟨x, hx, rfl⟩
-  refine (isMicrolocallySmoothAt_restrictCLM_iff hVΩ ⟨x, hx, rfl⟩).1 ?_
-  convert h₂ using 1
-  exact (compCLMOfOpenPartialHomeomorph_symm_apply_apply _).symm
+      T.IsMicrolocallySmoothAt (e x) (((fderiv ℝ e.symm (e x))†) ξ) :=
+  isInvariantMicrolocalRegularity_isMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph_iff hx
 
 /-- **The wave front set under a change of variables** (Hörmander I, Theorem 8.2.4). The wave
 front set of the pullback `e^* T` consists of the `(x, ξ)` with `x ∈ U` and
@@ -341,15 +337,8 @@ theorem waveFrontSet_compCLMOfOpenPartialHomeomorph (T : 𝓓'(Ω, ℂ)) :
     (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).waveFrontSet =
       {p : E × E | p.1 ∈ U ∧ (e p.1, ((fderiv ℝ e.symm (e p.1))†) p.2) ∈ T.waveFrontSet} := by
   ext ⟨x, ξ⟩
-  simp only [mem_ofPred_eq, mem_waveFrontSet_iff]
-  constructor
-  · rintro ⟨hx, hξ, h⟩
-    refine ⟨hx, hUΩ hx, fun h0 ↦ hξ ?_, fun h' ↦ h ?_⟩
-    · rw [← e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp) (hU hx)
-        ξ, h0, map_zero]
-    · exact (isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx).2 h'
-  · rintro ⟨hx, -, hξ, h⟩
-    exact ⟨hx, fun h0 ↦ hξ (by rw [h0, map_zero]), fun h' ↦
-      h ((isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx).1 h')⟩
+  simpa only [mem_waveFrontSet_iff, mem_ofPred_eq] using Set.ext_iff.1
+    (isInvariantMicrolocalRegularity_isMicrolocallySmoothAt.setOf_compCLMOfOpenPartialHomeomorph
+      (hUΩ := hUΩ) T) (x, ξ)
 
 end Distribution

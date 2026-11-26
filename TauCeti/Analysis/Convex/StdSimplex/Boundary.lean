@@ -11,13 +11,15 @@ public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import Mathlib.Topology.Algebra.Monoid
 
 /-!
-# The relative boundary of the standard simplex
+# The relative boundary and open part of the standard simplex
 
 The relative boundary `TauCeti.stdSimplexBoundary R ι` of the standard simplex consists of the
 weight vectors of `Convexity.StdSimplex R ι` with some vanishing coordinate. Every other point of
-the simplex has all coordinates positive. For finitely many vertices, over an ordered additive
-monoid with one, continuous addition, closed points and compact closed intervals, such as `ℝ`,
-the relative boundary is compact.
+the simplex has all coordinates positive (`TauCeti.openStdSimplex R ι`), while the points with a
+single coordinate `i` vanishing and all remaining coordinates positive form the `i`-th open facet
+`TauCeti.openStdSimplexFacet R i`. For finitely many vertices, over an ordered additive monoid with
+one, continuous addition, closed points and compact closed intervals, such as `ℝ`, the relative
+boundary is compact.
 
 ## Main results
 
@@ -25,6 +27,8 @@ the relative boundary is compact.
 * `TauCeti.mem_stdSimplexBoundary_or_forall_pos`: a point of the standard simplex lies on its
   relative boundary or has all coordinates positive.
 * `TauCeti.isCompact_stdSimplexBoundary`: the relative boundary is compact.
+* `TauCeti.openStdSimplex`, `TauCeti.openStdSimplexFacet`: the open standard simplex (positive
+  weights) and its open facets (one vanishing coordinate, all others positive).
 -/
 
 public section
@@ -90,5 +94,59 @@ theorem isCompact_stdSimplexBoundary [Finite ι] [PartialOrder R] [AddCommMonoid
     exact ⟨⟨h0, fun i => h1 ▸ single_le_sum (fun j _ => h0 j) (mem_univ i)⟩, h1, hz⟩
   · rintro ⟨⟨h0, -⟩, h1, hz⟩
     exact ⟨⟨h0, h1⟩, hz⟩
+
+variable (R ι) in
+/-- The open standard simplex over `R` on index type `ι`: the weight vectors of
+`Convexity.StdSimplex R ι` with all coordinates strictly positive. -/
+def openStdSimplex [Preorder R] [AddCommMonoid R] [One R] : Set (ι → R) :=
+  {x ∈ range fun s : StdSimplex R ι => ⇑s.weights | ∀ i, 0 < x i}
+
+/-- Membership in the open standard simplex. -/
+@[simp]
+theorem mem_openStdSimplex_iff [Preorder R] [AddCommMonoid R] [One R] {x : ι → R} :
+    x ∈ openStdSimplex R ι ↔ x ∈ (range fun s : StdSimplex R ι => ⇑s.weights) ∧ ∀ i, 0 < x i :=
+  Iff.rfl
+
+/-- The open standard simplex lies in the closed standard simplex. -/
+theorem openStdSimplex_subset [Preorder R] [AddCommMonoid R] [One R] :
+    openStdSimplex R ι ⊆ range fun s : StdSimplex R ι => ⇑s.weights :=
+  fun _ hx => (mem_openStdSimplex_iff.mp hx).1
+
+/-- When `1 ≠ 0`, the open standard simplex on an empty index type is empty. -/
+@[simp]
+theorem openStdSimplex_of_isEmpty [Preorder R] [AddCommMonoid R] [One R] [NeZero (1 : R)]
+    [IsEmpty ι] : openStdSimplex R ι = ∅ :=
+  subset_empty_iff.1
+    (openStdSimplex_subset.trans StdSimplex.range_toFun_comp_weights_of_isEmpty.subset)
+
+/-- On a one-element index type, when `0 < 1`, the open standard simplex consists of the single
+constant-one weight vector. -/
+@[simp]
+theorem openStdSimplex_of_unique [PartialOrder R] [AddCommMonoid R] [One R] [ZeroLEOneClass R]
+    [NeZero (1 : R)] [Unique ι] : openStdSimplex R ι = {fun _ => 1} := by
+  ext x
+  simp only [mem_openStdSimplex_iff, StdSimplex.range_toFun_comp_weights_of_unique,
+    mem_singleton_iff, and_iff_left_iff_imp]
+  rintro rfl _
+  exact zero_lt_one
+
+variable (R) in
+/-- The `i`-th open facet of the standard simplex over `R`: the weight vectors of
+`Convexity.StdSimplex R ι` whose `i`-th coordinate vanishes and whose remaining coordinates are
+strictly positive. -/
+def openStdSimplexFacet [Preorder R] [AddCommMonoid R] [One R] (i : ι) : Set (ι → R) :=
+  {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j}
+
+/-- Membership in the `i`-th open facet of the standard simplex. -/
+@[simp]
+theorem mem_openStdSimplexFacet_iff [Preorder R] [AddCommMonoid R] [One R] {i : ι} {y : ι → R} :
+    y ∈ openStdSimplexFacet R i ↔
+      y ∈ (range fun s : StdSimplex R ι => ⇑s.weights) ∧ y i = 0 ∧ ∀ j ≠ i, 0 < y j :=
+  Iff.rfl
+
+/-- Each open facet lies in the closed standard simplex. -/
+theorem openStdSimplexFacet_subset [Preorder R] [AddCommMonoid R] [One R] (i : ι) :
+    openStdSimplexFacet R i ⊆ range fun s : StdSimplex R ι => ⇑s.weights :=
+  fun _ hy => (mem_openStdSimplexFacet_iff.mp hy).1
 
 end TauCeti

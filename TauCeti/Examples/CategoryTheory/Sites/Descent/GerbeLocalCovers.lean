@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
-public import TauCeti.CategoryTheory.Sites.Descent.GerbeLocalCovers
+public import TauCeti.CategoryTheory.Sites.Descent.Gerbe.LocalCovers
 
 /-!
 # Checks for the local covers of a pseudofunctor

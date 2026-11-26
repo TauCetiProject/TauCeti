@@ -379,7 +379,8 @@ private theorem integral_firstVariation_eq [μ.IsAddHaarMeasure] (hh : Continuou
     Continuous.integrable_of_hasCompactSupport (by fun_prop) hvc.mul_left
   have hI3 : Integrable (fun x ↦ v x * Δ w x) μ :=
     Continuous.integrable_of_hasCompactSupport (by fun_prop) hvc.mul_right
-  rw [integral_add hI1 hI2, integral_inner_gradient_eq_neg_integral_mul_laplacian hw hv hvc,
+  rw [integral_add hI1 hI2, integral_inner_gradient_eq_neg_integral_mul_laplacian
+    (fun x _ ↦ hw.contDiffAt) hv hvc,
     ← integral_neg, ← integral_add (f := fun x ↦ -(v x * Δ w x)) hI3.neg hI2]
   exact integral_congr_ae (ae_of_all _ fun x ↦ by ring)
 

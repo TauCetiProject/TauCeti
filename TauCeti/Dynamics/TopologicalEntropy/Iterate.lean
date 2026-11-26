@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.Dynamics.TopologicalEntropy.CoverEntropy
+public import Mathlib.Dynamics.TopologicalEntropy.NetEntropy
 import TauCeti.Data.EReal.Operations
 
 /-!
@@ -22,6 +22,8 @@ of `T`.
 ## Main results
 
 * `TauCeti.dynEntourage_iterate` — the identity above.
+* `TauCeti.isDynNetIn_iterate` — dynamical nets of `T^[k]` at `dynEntourage T U k` for `n` steps
+  are dynamical nets of `T` at `U` for `k * n` steps.
 * `TauCeti.coverEntropyEntourage_iterate`, `TauCeti.coverEntropyInfEntourage_iterate` — the
   entourage-level identities.
 * `TauCeti.coverEntropy_iterate_le`, `TauCeti.coverEntropyInf_iterate_le` — the entropy of `T^[k]`
@@ -60,6 +62,13 @@ theorem dynEntourage_iterate (T : X → X) (U : SetRel X X) (k n : ℕ) :
   · calc i + k * j < k + k * j := by omega
       _ = k * (j + 1) := by ring
       _ ≤ k * n := Nat.mul_le_mul_left k hj
+
+/-- A set is a dynamical net in `F` for `n` steps of `T^[k]` at the entourage `dynEntourage T U k`
+if and only if it is one for `k * n` steps of `T` at `U`. -/
+@[simp]
+theorem isDynNetIn_iterate (T : X → X) (F : Set X) (U : SetRel X X) (k n : ℕ) (s : Set X) :
+    IsDynNetIn (T^[k]) F (dynEntourage T U k) n s ↔ IsDynNetIn T F U (k * n) s := by
+  simp only [IsDynNetIn, dynEntourage_iterate]
 
 /-- The minimal cardinality of a dynamical cover of `F` for `T^[k]` at the entourage
 `dynEntourage T U k` and time `n` equals that for `T` at `U` and time `k * n`. -/

@@ -36,6 +36,8 @@ the abstract construction recovers `expUnit`; see
 * `TauCeti.expUnit_units_conj`, `TauCeti.expUnit_star`: compatibility with conjugation by a unit
   and with a continuous star.
 * `TauCeti.expUnit_natCast_smul`: the exponential of `n • x` is the `n`-th power.
+* `TauCeti.val_list_prod_map_expUnit`: a product of exponential units has value the product of
+  the exponentials.
 * `TauCeti.expUnit_add_smul`: the one-parameter subgroup law as an equality of units.
 * `TauCeti.coe_expUnitHom_real`, `TauCeti.coe_expUnitHom_complex`: on `ℝ` and `ℂ`, the
   one-parameter subgroup is `t ↦ exp (t * x)` for the scalar exponential.
@@ -96,6 +98,13 @@ theorem expUnit_units_conj (y : Rˣ) (x : R) :
 theorem expUnit_star [StarRing R] [ContinuousStar R] (x : R) :
     expUnit (star x) = star (expUnit x) :=
   Units.ext <| by rw [expUnit_coe, Units.coe_star, expUnit_coe, star_exp]
+
+/-- The value of a product of exponential units is the product of the exponentials. -/
+@[simp]
+theorem val_list_prod_map_expUnit (l : List R) :
+    ((l.map expUnit).prod : R) = (l.map exp).prod := by
+  rw [← Units.coeHom_apply, map_list_prod, List.map_map]
+  simp [Function.comp_def]
 
 end Rat
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Even
-public import Mathlib.Algebra.Group.Units.Hom
+public import Mathlib.Algebra.Group.Units.Equiv
 
 /-!
 # Units in monoids
@@ -24,6 +24,8 @@ ambient monoid. The nonnegative half is `TauCeti.mul_pow_mul_eq_pow_succ_mul_pow
   homomorphism exactly when it is the image of a unit under `Units.map`.
 * `Units.mul_mul_inv_eq_iff_eq_of_commute`: for `z` commuting with a unit `u`, the conjugate of
   `a` by `u` equals `z` exactly when `a` does.
+* `Units.map_coeHom_bijective`: `Units.map (Units.coeHom M) : Mˣˣ →* Mˣ` is bijective: it is
+  the inverse of Mathlib's `toUnits : Mˣ ≃* Mˣˣ`.
 * `Units.val_inv_mul_mul_mul_eq_one`: if `(a : M) = z`, then `(l * a)⁻¹ * l * z = 1`.
 * `Units.val_inv_mul_mul_inv_mul_eq_one`: if `(a : M) = z` and `l ^ 2 * z = b`, then
   `(l * a)⁻¹ * l⁻¹ * b = 1`.
@@ -44,6 +46,13 @@ theorem mem_range_iff_exists_units_map_eq {M N F : Type*} [Monoid M] [Monoid N]
 end TauCeti
 
 namespace Units
+
+/-- `Units.map (Units.coeHom M) : Mˣˣ →* Mˣ` is bijective, being the inverse of Mathlib's
+`toUnits : Mˣ ≃* Mˣˣ`: the units of the group `Mˣ` are the units of `M`. -/
+theorem map_coeHom_bijective (M : Type*) [Monoid M] : Function.Bijective (map (coeHom M)) := by
+  have h : ⇑(map (coeHom M)) = (toUnits (G := Mˣ)).symm := funext fun x => by
+    ext; simp [toUnits_symm_apply]
+  exact h ▸ (toUnits (G := Mˣ)).symm.bijective
 
 /-- For an element `z` commuting with a unit `u`, the conjugate of `a` by `u` equals `z` exactly
 when `a` does. -/

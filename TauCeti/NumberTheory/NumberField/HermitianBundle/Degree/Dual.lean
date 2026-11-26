@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Line
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Tensor
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Dual
 public import Mathlib.RingTheory.PicardGroup
@@ -36,6 +37,7 @@ line `Ō_K` computed with `f s`, which is `0` by the product formula.
   with `f ⊗ s` is `0`.
 * `TauCeti.HermitianMetric.sectionDegree_dual_add_sectionDegree`: `deg(Ē^∨) + deg(Ē) = 0`.
 * `TauCeti.HermitianMetric.sectionDegree_dual_eq_neg`: `deg(Ē^∨) = -deg(Ē)`.
+* `TauCeti.HermitianMetric.lineDegree_dual`: `deg^(Ē^∨) = -deg^(Ē)` for the section-free degree.
 
 ## References
 
@@ -90,5 +92,17 @@ theorem sectionDegree_dual_eq_neg [Module.Invertible (𝓞 K) E] {s : E}
     {f : Module.Dual (𝓞 K) E} (hfs : f s ≠ 0) :
     h.dual.sectionDegree f = -h.sectionDegree s :=
   eq_neg_of_add_eq_zero_left (h.sectionDegree_dual_add_sectionDegree hfs)
+
+/-- **The Arakelov degree of the dual line**: `deg^(Ē^∨) = -deg^(Ē)` for a hermitian line `Ē`. -/
+@[simp]
+theorem lineDegree_dual [Module.Invertible (𝓞 K) E] : h.dual.lineDegree = -h.lineDegree := by
+  have := Module.Invertible.nontrivial (𝓞 K) E
+  obtain ⟨s, hs⟩ := exists_ne (0 : E)
+  obtain ⟨f, hfs⟩ := Module.Projective.exists_dual_ne_zero (𝓞 K) hs
+  have hf : f ≠ 0 := by
+    rintro rfl
+    exact hfs (LinearMap.zero_apply s)
+  rw [h.dual.lineDegree_eq_sectionDegree_of_invertible hf, h.sectionDegree_dual_eq_neg hfs,
+    h.lineDegree_eq_sectionDegree_of_invertible hs]
 
 end TauCeti.HermitianMetric

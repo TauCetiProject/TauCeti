@@ -38,7 +38,8 @@ when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K
 is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural number in `K` is its
 `p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), so `p` itself has norm `p⁻¹`
 (`TauCeti.norm_natCast_p`), and a nonzero integer `n` has norm at least
-`1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`).
+`1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`; for natural numbers in a normed division
+ring, `TauCeti.norm_inv_natCast_le` states `‖1 / n‖ ≤ n`).
 
 Two continuous ring homomorphisms from `ℚ_[p]` to a Hausdorff semiring are equal
 (`RingHom.ext_padic_of_continuous`), since they agree on the dense subfield `ℚ`; for instance a
@@ -189,6 +190,15 @@ theorem inv_abs_le_norm_intCast (p : ℕ) [Fact (Nat.Prime p)] {K : Type*} [Semi
     [NormedAlgebra ℚ_[p] K] [NormOneClass K] (n : ℤ) : (|n| : ℝ)⁻¹ ≤ ‖(n : K)‖ := by
   rw [← norm_natAbs n, norm_natCast_eq_norm_padic (p := p), ← Int.cast_abs, ← Nat.cast_natAbs]
   exact Padic.inv_natCast_le_norm_natCast n.natAbs
+
+/-- In a normed division ring that is a normed `ℚ_p`-algebra, `‖1 / n‖ ≤ n`: the inverse form of
+`Padic.inv_natCast_le_norm_natCast`. For `n = 0` the left side is `0`. -/
+theorem norm_inv_natCast_le (p : ℕ) [Fact (Nat.Prime p)] {K : Type*} [NormedDivisionRing K]
+    [NormedAlgebra ℚ_[p] K] (n : ℕ) : ‖(n : K)⁻¹‖ ≤ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  rw [norm_inv, norm_natCast_eq_norm_padic (p := p)]
+  exact inv_le_of_inv_le₀ (by positivity) (Padic.inv_natCast_le_norm_natCast n)
 
 end NormedAlgebra
 
