@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic
 public import TauCeti.RingTheory.MvPolynomial.Harmonic
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
@@ -30,13 +32,17 @@ treated here.
 
 The identities for a single matrix hold over any commutative semiring, and the representation
 over any commutative ring, so complex harmonic polynomials under the complex orthogonal group
-`Mᵀ M = 1` are included. As in `Mathlib.LinearAlgebra.UnitaryGroup`, `Matrix.orthogonalGroup` is
-read through the trivial star structure `starRingOfComm`.
+`Mᵀ M = 1` are included. Restricting along `Matrix.SpecialOrthogonalGroup.map (algebraMap R 𝕜)`
+gives the representation `MvPolynomial.harmonicSpecialOrthogonalRep` of `SO(σ, R)` on harmonic
+polynomials over any `R`-algebra `𝕜`. As in `Mathlib.LinearAlgebra.UnitaryGroup`,
+`Matrix.orthogonalGroup` is read through the trivial star structure `starRingOfComm`.
 
 ## Main definitions
 
 * `MvPolynomial.harmonicRep σ R d`: the representation of `Matrix.orthogonalGroup σ R` on the
   harmonic homogeneous polynomials of degree `d`.
+* `MvPolynomial.harmonicSpecialOrthogonalRep σ R 𝕜 d`: the representation of
+  `Matrix.specialOrthogonalGroup σ R` on `harmonicSubmodule σ 𝕜 d` for any `R`-algebra `𝕜`.
 
 ## Main results
 
@@ -47,7 +53,8 @@ read through the trivial star structure `starRingOfComm`.
 * `MvPolynomial.linearSubst_normSq_of_transpose_mul_eq_one`: if `Mᵀ M = 1`, then `r² ∘ M = r²`.
 * `MvPolynomial.linearSubst_mem_harmonicSubmodule`: if `M Mᵀ = 1`, the substitution along `M`
   maps `H_d` to itself.
-* `MvPolynomial.eval_harmonicRep_apply`: `(g • p)(x) = p (g⁻¹ x)`.
+* `MvPolynomial.eval_harmonicRep_apply` and
+  `MvPolynomial.eval_harmonicSpecialOrthogonalRep_apply`: `(g • p)(x) = p (g⁻¹ x)`.
 
 ## References
 
@@ -149,5 +156,44 @@ theorem eval_harmonicRep_apply {d : ℕ} (g : Matrix.orthogonalGroup σ R)
   rfl
 
 end OrthogonalGroup
+
+section SpecialOrthogonalGroup
+
+variable (σ R 𝕜 : Type*) [Fintype σ] [DecidableEq σ] [CommRing R] [CommRing 𝕜] [Algebra R 𝕜]
+
+/-- The special orthogonal group `SO(σ, R)` acts on the harmonic homogeneous polynomials of degree
+`d` over any `R`-algebra `𝕜` by `(g • p)(x) = p (g⁻¹ x)`
+(`MvPolynomial.eval_harmonicSpecialOrthogonalRep_apply`). Since `g⁻¹ = gᵀ`, the element `g` acts by
+the substitution `linearSubst ((g : Matrix σ σ R)ᵀ.map (algebraMap R 𝕜))`. -/
+noncomputable def harmonicSpecialOrthogonalRep (d : ℕ) :
+    Representation 𝕜 (Matrix.specialOrthogonalGroup σ R) (harmonicSubmodule σ 𝕜 d) :=
+  (harmonicRep σ 𝕜 d).comp <|
+    specialOrthogonalGroup.toOrthogonalGroup.comp (SpecialOrthogonalGroup.map (algebraMap R 𝕜))
+
+theorem harmonicSpecialOrthogonalRep_def (d : ℕ) :
+    harmonicSpecialOrthogonalRep σ R 𝕜 d =
+      (harmonicRep σ 𝕜 d).comp
+        (specialOrthogonalGroup.toOrthogonalGroup.comp
+          (SpecialOrthogonalGroup.map (algebraMap R 𝕜))) :=
+  (rfl)
+
+variable {σ R 𝕜}
+
+@[simp]
+theorem coe_harmonicSpecialOrthogonalRep_apply {d : ℕ} (g : Matrix.specialOrthogonalGroup σ R)
+    (p : harmonicSubmodule σ 𝕜 d) :
+    (harmonicSpecialOrthogonalRep σ R 𝕜 d g p : MvPolynomial σ 𝕜) =
+      linearSubst ((g : Matrix σ σ R)ᵀ.map (algebraMap R 𝕜)) p := by
+  simp [harmonicSpecialOrthogonalRep, coe_harmonicRep_apply, transpose_map]
+
+/-- The special orthogonal group acts on harmonic polynomials by `(g • p)(x) = p (g⁻¹ x)`. -/
+theorem eval_harmonicSpecialOrthogonalRep_apply {d : ℕ} (g : Matrix.specialOrthogonalGroup σ R)
+    (p : harmonicSubmodule σ 𝕜 d) (x : σ → 𝕜) :
+    eval x (harmonicSpecialOrthogonalRep σ R 𝕜 d g p : MvPolynomial σ 𝕜) =
+      eval (((g⁻¹ : Matrix.specialOrthogonalGroup σ R) : Matrix σ σ R).map (algebraMap R 𝕜) *ᵥ x)
+        (p : MvPolynomial σ 𝕜) := by
+  rw [coe_harmonicSpecialOrthogonalRep_apply, eval_linearSubst, coe_specialOrthogonalGroup_inv]
+
+end SpecialOrthogonalGroup
 
 end MvPolynomial

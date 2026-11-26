@@ -57,6 +57,11 @@ notation class `Laplacian`, so that this file stays purely algebraic.
 ## Main results
 
 * `MvPolynomial.laplacian_mul`: the product rule `Δ (p q) = Δ p q + 2 ∑ᵢ ∂ᵢp ∂ᵢq + p Δ q`.
+* `MvPolynomial.laplacian_rename`, `MvPolynomial.rename_mem_harmonicSubmodule_iff`, and
+  `MvPolynomial.map_rename_harmonicSubmodule`: relabeling variables along an equivalence commutes
+  with `Δ` and maps `H_d` onto `H_d`.
+* `MvPolynomial.coeff_finSuccEquiv'_laplacian`: singling out a variable `X p` decomposes the
+  `r`-th univariate coefficient of `Δ f` as `Δ' qᵣ + (r + 1)(r + 2) qᵣ₊₂`.
 * `MvPolynomial.laplacian_addMonoidAlgebra_map`,
   `MvPolynomial.addMonoidAlgebra_map_mem_harmonicSubmodule`, `MvPolynomial.map_laplacian`,
   `MvPolynomial.map_normSq`, and `MvPolynomial.map_mem_harmonicSubmodule`: additive monoid
@@ -81,9 +86,11 @@ notation class `Laplacian`, so that this file stays purely algebraic.
 * `MvPolynomial.finrank_harmonicSubmodule_add_finrank`,
   `MvPolynomial.finrank_harmonicSubmodule_add_two`,
   `MvPolynomial.finrank_harmonicSubmodule_of_le_one`,
-  `MvPolynomial.finrank_harmonicSubmodule`, and
-  `MvPolynomial.finrank_harmonicSubmodule_eq_choose_sub`: the dimension of `H_d`, in terms of
-  multichoose numbers and binomial coefficients `C(m + d, d) - C(m + d - 2, d - 2)`.
+  `MvPolynomial.finrank_harmonicSubmodule`,
+  `MvPolynomial.finrank_harmonicSubmodule_eq_choose_sub`, and
+  `MvPolynomial.finrank_harmonicSubmodule_pos`: the dimension of `H_d`, in terms of
+  multichoose numbers and binomial coefficients `C(m + d, d) - C(m + d - 2, d - 2)`, and its
+  positivity in at least two variables.
 
 ## References
 
@@ -142,6 +149,31 @@ theorem IsHomogeneous.laplacian_eq_zero_of_le_one {p : MvPolynomial σ R} {n : �
 @[simp]
 theorem laplacian_X (j : σ) : laplacian (X j : MvPolynomial σ R) = 0 :=
   (isHomogeneous_X R j).laplacian_eq_zero_of_le_one le_rfl
+
+/-- Relabeling the variables along an equivalence commutes with the Laplacian. -/
+theorem laplacian_rename {τ : Type*} [Fintype τ] (e : σ ≃ τ) (p : MvPolynomial σ R) :
+    laplacian (rename e p) = rename e (laplacian p) := by
+  rw [laplacian_apply, laplacian_apply, map_sum, ← Equiv.sum_comp e]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [pderiv_rename e.injective, pderiv_rename e.injective]
+
+omit [Fintype σ] in
+/-- Singling out a variable `X p` decomposes the `r`-th univariate coefficient of `Δ f` into the
+Laplacian in the remaining variables plus `(r + 1)(r + 2)` times the `(r + 2)`-th coefficient. -/
+theorem coeff_finSuccEquiv'_laplacian {n : ℕ} (p : Fin (n + 1))
+    (f : MvPolynomial (Fin (n + 1)) R) (r : ℕ) :
+    (finSuccEquiv' R p (laplacian f)).coeff r =
+      laplacian ((finSuccEquiv' R p f).coeff r) +
+        ((r + 1) * (r + 2)) • (finSuccEquiv' R p f).coeff (r + 2) := by
+  rw [laplacian_apply, Fin.sum_univ_succAbove _ p, map_add, Polynomial.coeff_add, add_comm,
+    map_sum, Polynomial.finsetSum_coeff, laplacian_apply]
+  congr 1
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [coeff_finSuccEquiv'_pderiv_succAbove, coeff_finSuccEquiv'_pderiv_succAbove]
+  · rw [finSuccEquiv'_pderiv, finSuccEquiv'_pderiv, Polynomial.coeff_derivative,
+      Polynomial.coeff_derivative, nsmul_eq_mul]
+    push_cast
+    ring
 
 /-- Mapping coefficients along an additive monoid homomorphism commutes with the polynomial
 Laplacian. -/
@@ -293,6 +325,25 @@ theorem mem_harmonicSubmodule_iff {d : ℕ} {p : MvPolynomial σ R} :
 theorem harmonicSubmodule_le_homogeneousSubmodule (d : ℕ) :
     harmonicSubmodule σ R d ≤ homogeneousSubmodule σ R d :=
   inf_le_left
+
+/-- Relabeling variables along an equivalence preserves harmonic homogeneous polynomials. -/
+theorem rename_mem_harmonicSubmodule_iff {τ : Type*} [Fintype τ] (e : σ ≃ τ) {d : ℕ}
+    {p : MvPolynomial σ R} :
+    rename e p ∈ harmonicSubmodule τ R d ↔ p ∈ harmonicSubmodule σ R d := by
+  rw [mem_harmonicSubmodule_iff, mem_harmonicSubmodule_iff,
+    IsHomogeneous.rename_isHomogeneous_iff e.injective, laplacian_rename]
+  refine and_congr_right fun _ ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
+  simpa [rename_rename] using congrArg (rename e.symm) h
+
+/-- Relabeling variables along an equivalence maps `harmonicSubmodule σ R d` onto
+`harmonicSubmodule τ R d`. -/
+theorem map_rename_harmonicSubmodule {τ : Type*} [Fintype τ] (e : σ ≃ τ) (d : ℕ) :
+    (harmonicSubmodule σ R d).map (renameEquiv R e).toLinearMap = harmonicSubmodule τ R d := by
+  ext q
+  refine ⟨?_, fun hq ↦ ⟨rename e.symm q, (rename_mem_harmonicSubmodule_iff e.symm).mpr hq,
+    by simp⟩⟩
+  rintro ⟨p, hp, rfl⟩
+  exact (rename_mem_harmonicSubmodule_iff e).mpr hp
 
 /-- Mapping coefficients along an additive monoid homomorphism preserves harmonic homogeneous
 polynomials. -/
@@ -666,6 +717,27 @@ theorem finrank_harmonicSubmodule_eq_choose_sub {m : ℕ} (hσ : Fintype.card σ
     have hsub : m + (e + 2) - 2 = m + e := by omega
     simp [Nat.multichoose_eq, hmul, hsub]
   · simp [Nat.multichoose_eq]
+
+omit [Nonempty σ] in
+/-- In at least two variables over a field of characteristic zero, the harmonic homogeneous
+polynomials of every degree form a nonzero space. -/
+theorem finrank_harmonicSubmodule_pos (hσ : 2 ≤ Fintype.card σ) (d : ℕ) :
+    0 < Module.finrank K (harmonicSubmodule σ K d) := by
+  match d with
+  | 0 =>
+    rw [finrank_harmonicSubmodule_of_le_one (by omega)]
+    simp
+  | 1 =>
+    rw [finrank_harmonicSubmodule_of_le_one le_rfl]
+    simp; omega
+  | e + 2 =>
+    rw [finrank_harmonicSubmodule_add_two]
+    obtain ⟨m, hm⟩ : ∃ m, Fintype.card σ = m + 1 + 1 := ⟨Fintype.card σ - 2, by omega⟩
+    rw [hm, Nat.multichoose_succ_succ (m + 1) (e + 1), Nat.multichoose_succ_succ (m + 1) e]
+    have hpos : 0 < (m + 1).multichoose (e + 1) := by
+      rw [Nat.multichoose_eq]
+      exact Nat.choose_pos (by omega)
+    omega
 
 end Fischer
 
