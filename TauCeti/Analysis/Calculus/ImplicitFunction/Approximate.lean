@@ -11,8 +11,10 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Prod
-import Mathlib.Analysis.Calculus.Taylor
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import TauCeti.Analysis.Calculus.Taylor.Basic
+import TauCeti.LinearAlgebra.LinearMap.Coprod
 
 /-!
 # Approximate solutions of every finite order of a family of equations
@@ -51,15 +53,10 @@ that is `C^(N+1)` at the base point.
 
 ## Main results
 
-* `TauCeti.eq_zero_of_isBigO_sum_pow_smul`: a polynomial `∑_{k < m} hᵏ bₖ` that is `O(hᵐ)` as
-  `h → 0` has zero coefficients.
-* `TauCeti.isBigO_sub_pow_smul_iteratedDeriv`: a `C^(m+1)` function that is `O(hᵐ)` is
-  `hᵐ Φ^(m)(0) / m! + O(h^(m+1))`.
 * `TauCeti.isBigO_sub_sub_pow_smul_fderiv`: correcting a curve through `x₀` by `h^(j+1) y` changes
   the residual by `h^(j+1) Λ y + O(h^(j+2))`.
 * `TauCeti.exists_isBigO_pow_of_surjective`: polynomial profiles with residual `O(h^(N+1))` when
   the derivative in the unknown is onto.
-* `LinearMap.surjective_coprod_of_forall_exists_eq`: the slow-first solution of a block equation.
 * `TauCeti.exists_isBigO_pow_of_forall_exists_eq`: profiles of every finite order for a slow and a
   fast variable, under the slow-first hypotheses.
 
@@ -78,101 +75,10 @@ open scoped Nat
 
 namespace TauCeti
 
-section Uniqueness
-
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-/-- **Uniqueness of finite power expansions.** If the polynomial `∑_{k < m} hᵏ bₖ` is `O(hᵐ)` as
-`h → 0`, `h ≠ 0`, then all its coefficients vanish. -/
-theorem eq_zero_of_isBigO_sum_pow_smul {m : ℕ} {b : ℕ → E}
-    (hb : (fun h : 𝕜 ↦ ∑ k ∈ range m, h ^ k • b k) =O[𝓝[≠] 0] fun h ↦ h ^ m) :
-    ∀ k < m, b k = 0 := by
-  induction m generalizing b with
-  | zero => exact fun k hk ↦ absurd hk (Nat.not_lt_zero k)
-  | succ m ih =>
-    -- The constant coefficient is the value at `0` of a continuous function tending to `0`.
-    have hb0 : b 0 = 0 := by
-      have hcont : Continuous fun h : 𝕜 ↦ ∑ k ∈ range (m + 1), h ^ k • b k := by fun_prop
-      have hpow : Tendsto (fun h : 𝕜 ↦ h ^ (m + 1)) (𝓝[≠] 0) (𝓝 0) := by
-        simpa using ((continuous_pow (m + 1)).tendsto (0 : 𝕜)).mono_left nhdsWithin_le_nhds
-      have := tendsto_nhds_unique ((hcont.tendsto 0).mono_left nhdsWithin_le_nhds)
-        (hb.trans_tendsto hpow)
-      simpa [sum_range_succ'] using this
-    -- Dividing by `h` lowers the order of the remaining coefficients by one.
-    have hshift (h : 𝕜) :
-        ∑ k ∈ range (m + 1), h ^ k • b k = h • ∑ k ∈ range m, h ^ k • b (k + 1) := by
-      simp [sum_range_succ', hb0, smul_sum, pow_succ', mul_smul]
-    have htail : (fun h : 𝕜 ↦ ∑ k ∈ range m, h ^ k • b (k + 1)) =O[𝓝[≠] 0] fun h ↦ h ^ m := by
-      refine ((isBigO_refl (fun h : 𝕜 ↦ h⁻¹) (𝓝[≠] 0)).smul hb).congr' ?_ ?_ <;>
-        filter_upwards [self_mem_nhdsWithin] with h (hh : h ≠ 0)
-      · rw [hshift, smul_smul, inv_mul_cancel₀ hh, one_smul]
-      · rw [smul_eq_mul, pow_succ', ← mul_assoc, inv_mul_cancel₀ hh, one_mul]
-    rintro (_ | k) hk
-    · exact hb0
-    · exact ih htail k (Nat.succ_lt_succ_iff.1 hk)
-
-end Uniqueness
-
-section Taylor
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A constant times a power of `h` is `O` of that power. -/
-private theorem isBigO_pow_smul_const (j : ℕ) (c : E) :
-    (fun h : ℝ ↦ h ^ j • c) =O[𝓝 0] fun h ↦ h ^ j :=
-  IsBigO.of_bound ‖c‖ (Eventually.of_forall fun h ↦ by rw [norm_smul, mul_comm])
-
-/-- **The leading coefficient of a function vanishing to order `m`.** If `Φ` is `C^(m+1)` at `0`
-and `Φ h = O(hᵐ)`, then `Φ h = hᵐ c + O(h^(m+1))`, where `c = Φ^(m)(0) / m!`. -/
-theorem isBigO_sub_pow_smul_iteratedDeriv {Φ : ℝ → E} {m : ℕ}
-    (hΦ : ContDiffAt ℝ (m + 1) Φ 0) (hm : Φ =O[𝓝 0] fun h ↦ h ^ m) :
-    (fun h ↦ Φ h - h ^ m • ((m ! : ℝ)⁻¹ • iteratedDeriv m Φ 0)) =O[𝓝 0]
-      fun h ↦ h ^ (m + 1) := by
-  obtain ⟨u, hu, hΦu⟩ := hΦ.contDiffOn le_rfl (by simp)
-  obtain ⟨ε, hε, hεu⟩ := Metric.mem_nhds_iff.1 hu
-  have hs : Metric.ball (0 : ℝ) ε ∈ 𝓝 (0 : ℝ) := Metric.ball_mem_nhds 0 hε
-  -- Taylor's theorem to order `m + 1` on the ball.
-  have hT := taylor_isLittleO (convex_ball (0 : ℝ) ε) (Metric.mem_ball_self hε)
-    (n := m + 1) (by exact_mod_cast hΦu.mono hεu)
-  rw [nhdsWithin_eq_nhds.2 hs] at hT
-  simp only [sub_zero] at hT
-  set a : ℕ → E := fun k ↦ (k ! : ℝ)⁻¹ • iteratedDerivWithin k Φ (Metric.ball 0 ε) 0
-  have hTa (h : ℝ) : taylorWithinEval Φ (m + 1) (Metric.ball 0 ε) 0 h =
-      ∑ k ∈ range m, h ^ k • a k + h ^ m • a m + h ^ (m + 1) • a (m + 1) := by
-    rw [taylor_within_apply, sum_range_succ, sum_range_succ]
-    simp [a, smul_smul, mul_comm]
-  -- The Taylor terms below order `m` form a polynomial that is `O(hᵐ)`, hence zero.
-  have hlow : (fun h : ℝ ↦ ∑ k ∈ range m, h ^ k • a k) =O[𝓝 0] fun h ↦ h ^ m := by
-    have hhigh := (isBigO_pow_smul_const (m + 1) (a (m + 1))).trans
-      (isLittleO_pow_pow (𝕜 := ℝ) (Nat.lt_succ_self m)).isBigO
-    refine (((hm.sub (isBigO_pow_smul_const m (a m))).sub hhigh).sub
-      (hT.isBigO.trans (isLittleO_pow_pow (𝕜 := ℝ) (Nat.lt_succ_self m)).isBigO)).congr_left
-      fun h ↦ ?_
-    rw [hTa]
-    abel
-  have ha := eq_zero_of_isBigO_sum_pow_smul (hlow.mono nhdsWithin_le_nhds)
-  have hzero (h : ℝ) : ∑ k ∈ range m, h ^ k • a k = 0 :=
-    sum_eq_zero fun k hk ↦ by rw [ha k (mem_range.1 hk), smul_zero]
-  have ham : a m = (m ! : ℝ)⁻¹ • iteratedDeriv m Φ 0 := by
-    simp only [a, iteratedDerivWithin_of_isOpen Metric.isOpen_ball (Metric.mem_ball_self hε)]
-  rw [← ham]
-  refine (hT.isBigO.add (isBigO_pow_smul_const (m + 1) (a (m + 1)))).congr_left fun h ↦ ?_
-  rw [hTa, hzero]
-  abel
-
-end Taylor
-
 section Profile
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
   [NormedSpace ℝ G]
-
-/-- The derivative of the slice `x ↦ F (0, x)` is the derivative of `F` along `0 × E`. -/
-private theorem fderiv_slice_apply {F : ℝ × E → G} {x₀ : E} (hF : DifferentiableAt ℝ F (0, x₀))
-    (v : E) : fderiv ℝ (fun x ↦ F (0, x)) x₀ v = fderiv ℝ F (0, x₀) (0, v) := by
-  have h := (hF.hasFDerivAt.comp x₀ (hasFDerivAt_prodMk_right (0 : ℝ) x₀)).fderiv
-  rw [Function.comp_def] at h
-  rw [h, ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply]
 
 /-- The base solution has residual `F (h, x₀) = O(h)`. -/
 private theorem isBigO_apply_zero_pow_one {F : ℝ × E → G} {x₀ : E}
@@ -226,8 +132,9 @@ theorem isBigO_sub_sub_pow_smul_fderiv {F : ℝ × E → G} {x₀ : E}
   have hnab : ‖((0 : ℝ), h ^ (j + 1) • y)‖ = ‖h ^ (j + 1)‖ * ‖y‖ := by
     rw [Prod.norm_def, norm_zero, norm_smul]
     exact max_eq_right (by positivity)
-  rw [hpa, hpb, hab', ← fderiv_slice_apply (hF.differentiableAt (by norm_num)), map_smul,
-    hnab] at hrem
+  rw [hpa, hpb, hab', hnab] at hrem
+  rw [fderiv_slice_right (hF.differentiableAt (by norm_num)), ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.inr_apply, ← map_smul, Prod.smul_mk, smul_zero]
   rw [norm_mul, norm_norm, Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ ‖a h‖ + ‖b h‖)]
   calc _ ≤ L * max ‖a h‖ ‖b h‖ * (‖h ^ (j + 1)‖ * ‖y‖) := hrem
     _ ≤ |L| * (‖a h‖ + ‖b h‖) * (‖h ^ (j + 1)‖ * ‖y‖) := by
@@ -289,32 +196,6 @@ theorem exists_isBigO_pow_of_surjective {F : ℝ × E → G} {x₀ : E} {n : Wit
 
 end Profile
 
-end TauCeti
-
-section SlowFirst
-
-variable {R M N Y : Type*} [Semiring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  [AddCommGroup Y] [Module R Y]
-
-/-- **Slow-first solution of a block equation.** Let `A : M → Y` and `B : N → Y` be the slow and
-fast columns of a block operator, and `P : Y → Y` a linear map splitting `y = P y + (y - P y)` into
-a fast and a slow part. If `B` reaches every fast part `P y`, and `A` read in the slow part reaches
-every slow part `y - P y`, then `(τ, g) ↦ A τ + B g` is onto: first `τ` solves the slow equation,
-then `g` solves the fast equation for the remaining fast part. -/
-theorem LinearMap.surjective_coprod_of_forall_exists_eq {A : M →ₗ[R] Y} {B : N →ₗ[R] Y}
-    (P : Y →ₗ[R] Y) (hB : ∀ y, ∃ g, B g = P y) (hA : ∀ y, ∃ τ, A τ - P (A τ) = y - P y) :
-    Function.Surjective (A.coprod B) := by
-  intro y
-  obtain ⟨τ, hτ⟩ := hA y
-  obtain ⟨g, hg⟩ := hB (y - A τ)
-  refine ⟨(τ, g), ?_⟩
-  rw [coprod_apply, hg, map_sub]
-  linear_combination (norm := abel_nf) hτ
-
-end SlowFirst
-
-namespace TauCeti
-
 section SlowFirstProfile
 
 variable {C D Y : Type*} [NormedAddCommGroup C] [NormedSpace ℝ C] [NormedAddCommGroup D]
@@ -340,19 +221,13 @@ theorem exists_isBigO_pow_of_forall_exists_eq {F : ℝ × (C × D) → Y} {σ₀
   have hd : DifferentiableAt ℝ (fun x : C × D ↦ F (0, x)) (σ₀, u₀) :=
     ((hF.differentiableAt fun hn ↦ by simp [hn] at hN).comp (σ₀, u₀)
       (differentiableAt_const _ |>.prodMk differentiableAt_id))
-  have hslice (τ : C) (g : D) : Λ (τ, g) = fderiv ℝ (fun σ ↦ F (0, (σ, u₀))) σ₀ τ +
-      fderiv ℝ (fun u ↦ F (0, (σ₀, u))) u₀ g := by
-    have h1 := (hd.hasFDerivAt.comp σ₀ (hasFDerivAt_prodMk_left (𝕜 := ℝ) σ₀ u₀)).fderiv
-    have h2 := (hd.hasFDerivAt.comp u₀ (hasFDerivAt_prodMk_right (𝕜 := ℝ) σ₀ u₀)).fderiv
-    simp only [Function.comp_def] at h1 h2
-    rw [h1, h2, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, ← map_add]
-    simp [Λ]
   have hsurj : Function.Surjective Λ := by
     intro y
     obtain ⟨⟨τ, g⟩, hτg⟩ := LinearMap.surjective_coprod_of_forall_exists_eq
-      (A := (fderiv ℝ (fun σ ↦ F (0, (σ, u₀))) σ₀ : C →ₗ[ℝ] Y))
-      (B := (fderiv ℝ (fun u ↦ F (0, (σ₀, u))) u₀ : D →ₗ[ℝ] Y)) P hfast hslow y
-    exact ⟨(τ, g), by rw [hslice]; simpa using hτg⟩
+      (f := (fderiv ℝ (fun σ ↦ F (0, (σ, u₀))) σ₀ : C →ₗ[ℝ] Y))
+      (g := (fderiv ℝ (fun u ↦ F (0, (σ₀, u))) u₀ : D →ₗ[ℝ] Y)) P hfast hslow y
+    exact ⟨(τ, g), by
+      rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hd]; simpa using hτg⟩
   obtain ⟨x, hx⟩ := exists_isBigO_pow_of_surjective hF hN h₀ hsurj
   refine ⟨fun i ↦ (x i).1, fun i ↦ (x i).2, hx.congr_left fun h ↦ ?_⟩
   congr 2

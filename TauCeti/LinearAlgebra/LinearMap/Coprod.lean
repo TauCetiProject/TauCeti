@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 public import Mathlib.LinearAlgebra.Prod
 
 /-!
-# Bijectivity of a coproduct of linear maps
+# Bijectivity and surjectivity of a coproduct of linear maps
 
 The linear map `f.coprod g : M₁ × M₂ → M`, `(a, b) ↦ f a + g b`, is bijective exactly when `f`
 and `g` are injective and their ranges are complementary submodules of `M`. This is the linear
@@ -18,13 +18,18 @@ behind inverse-function-theorem arguments whose differential has the form `(a, b
 For two vectors `a` and `b`, the map `(s, t) ↦ s • a - t • b` out of `R × R` is injective exactly
 when `a` and `b` are linearly independent
 (`LinearMap.injective_fst_smulRight_sub_snd_smulRight_iff`).
+
+The coproduct is onto when it can be solved slow first through a splitting `y = P y + (y - P y)`
+of `M`: if `g` reaches every part `P y`, and `f` read modulo `P` reaches every part `y - P y`,
+then first `f` solves the second part and then `g` the remaining first part
+(`LinearMap.surjective_coprod_of_forall_exists_eq`).
 -/
 
 public section
 
 namespace LinearMap
 
-section Bijective
+section Coprod
 
 variable {R M₁ M₂ M : Type*} [Semiring R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
   [Module R M₂] [AddCommGroup M] [Module R M]
@@ -52,7 +57,21 @@ theorem bijective_coprod_iff {f : M₁ →ₗ[R] M} {g : M₂ →ₗ[R] M} :
       ((injective_iff_map_eq_zero g).1 hg b hk.2)
   · rw [← range_eq_top, range_coprod, hc.sup_eq_top]
 
-end Bijective
+/-- **Slow-first solution of a block equation.** Let `f : M₁ → M` and `g : M₂ → M` be the slow and
+fast columns of a block operator, and `P : M → M` a linear map splitting `y = P y + (y - P y)` into
+a fast and a slow part. If `g` reaches every fast part `P y`, and `f` read in the slow part reaches
+every slow part `y - P y`, then `(a, b) ↦ f a + g b` is onto: first `a` solves the slow equation,
+then `b` solves the fast equation for the remaining fast part. -/
+theorem surjective_coprod_of_forall_exists_eq {f : M₁ →ₗ[R] M} {g : M₂ →ₗ[R] M}
+    (P : M →ₗ[R] M) (hg : ∀ y, ∃ b, g b = P y) (hf : ∀ y, ∃ a, f a - P (f a) = y - P y) :
+    Function.Surjective (f.coprod g) := by
+  intro y
+  obtain ⟨a, ha⟩ := hf y
+  obtain ⟨b, hb⟩ := hg (y - f a)
+  refine ⟨(a, b), ?_⟩
+  rw [coprod_apply, hb, map_sub, ← add_sub_assoc, add_sub_right_comm, ha, sub_add_cancel]
+
+end Coprod
 
 /-- The map `(s, t) ↦ s • a - t • b` out of `R × R` is injective exactly when `a` and `b` are
 linearly independent. -/
