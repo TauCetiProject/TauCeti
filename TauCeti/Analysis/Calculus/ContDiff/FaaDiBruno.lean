@@ -13,6 +13,7 @@ import Mathlib.Data.Fin.Tuple.Sort
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 
 /-!
@@ -70,6 +71,9 @@ Both bounds hold with derivatives measured in units of a length scale `h ≥ 0`:
 `ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le_sum`), because the parts of an ordered partition
 of `m` have sizes adding up to `m`. This is the form needed for changes of charts in semiclassical
 Sobolev norms, where a chart at scale `h` has `h ^ (k - 1) * ‖Dᵏ f‖` bounded rather than `‖Dᵏ f‖`.
+For instance, a cutoff placed at scale `h` about a centre and read through such a chart has
+derivatives bounded in units of `h`
+(`ContDiff.pow_mul_norm_iteratedFDeriv_comp_inv_smul_sub_comp_le`).
 -/
 
 public section
@@ -866,6 +870,41 @@ theorem ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le_sum {g : F → G} {f : E 
         ∑ c : OrderedFinpartition m, h ^ c.length * ‖iteratedFDeriv 𝕜 c.length g (f x)‖ := by
   rw [iteratedFDeriv_comp hg hf le_rfl]
   exact FormalMultilinearSeries.pow_mul_norm_taylorComp_le _ _ hh hB
+
+/-- **A cutoff read through a map at scale `h`.** Let `η` be of class `Cᵏ` with `‖Dⁱ η‖ ≤ A` for
+`i ≤ k`, and let `Ψ` be of class `Cᵏ` with `h ^ (i - 1) * ‖Dⁱ Ψ‖ ≤ L` for `1 ≤ i ≤ k`. For `h > 0`
+and every centre `x`, the cutoff `z ↦ η (h⁻¹ • (Ψ z - x))` has the semiclassical bounds
+`hⁱ ‖Dⁱ η (h⁻¹ • (Ψ · - x))‖ ≤ max 1 L ^ i #{ordered partitions of i} A` for `i ≤ k`, independent
+of `h` and of `x`. -/
+theorem ContDiff.pow_mul_norm_iteratedFDeriv_comp_inv_smul_sub_comp_le {V W X : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    [NormedAddCommGroup X] [NormedSpace ℝ X] {η : W → X} {Ψ : V → W} {k : ℕ} {h A L : ℝ}
+    (hη : ContDiff ℝ k η) (hA : ∀ i ≤ k, ∀ y, ‖iteratedFDeriv ℝ i η y‖ ≤ A)
+    (hΨ : ContDiff ℝ k Ψ) (hh : 0 < h)
+    (hL : ∀ i, 1 ≤ i → i ≤ k → ∀ z, h ^ (i - 1) * ‖iteratedFDeriv ℝ i Ψ z‖ ≤ L) (x : W)
+    {i : ℕ} (hi : i ≤ k) (z : V) :
+    h ^ i * ‖iteratedFDeriv ℝ i (fun z ↦ η (h⁻¹ • (Ψ z - x))) z‖ ≤
+      max 1 L ^ i * Fintype.card (OrderedFinpartition i) * A := by
+  -- At scale `h` about `x`, the scaled derivatives of the cutoff are those of `η`.
+  have hscale (j : ℕ) (y : W) :
+      h ^ j * ‖iteratedFDeriv ℝ j (fun y ↦ η (h⁻¹ • (y - x))) y‖ =
+        ‖iteratedFDeriv ℝ j η (h⁻¹ • (y - x))‖ := by
+    rw [iteratedFDeriv_comp_sub (f := fun w ↦ η (h⁻¹ • w)),
+      TauCeti.norm_iteratedFDeriv_comp_const_smul, norm_inv, Real.norm_of_nonneg hh.le,
+      ← mul_assoc, ← mul_pow, mul_inv_cancel₀ hh.ne', one_pow, one_mul]
+  have hηx : ContDiff ℝ k fun y ↦ η (h⁻¹ • (y - x)) :=
+    hη.comp ((contDiff_id.sub contDiff_const).const_smul h⁻¹)
+  refine (ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le_sum (g := fun y ↦ η (h⁻¹ • (y - x)))
+    (hηx.contDiffAt.of_le (by exact_mod_cast hi)) (hΨ.contDiffAt.of_le (by exact_mod_cast hi))
+    hh.le fun j hj1 hji ↦ hL j hj1 (hji.trans hi) z).trans ?_
+  rw [mul_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _)
+  calc ∑ c : OrderedFinpartition i,
+        h ^ c.length * ‖iteratedFDeriv ℝ c.length (fun y ↦ η (h⁻¹ • (y - x))) (Ψ z)‖
+      ≤ ∑ _c : OrderedFinpartition i, A :=
+        Finset.sum_le_sum fun c _ ↦ (hscale _ _).le.trans (hA _ (c.length_le.trans hi) _)
+    _ = Fintype.card (OrderedFinpartition i) * A := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
 
 /-- **A norm bound for the derivatives of a composite.** If `g` is `Cᵐ` at `f x`, `f` is `Cᵐ` at
 `x`, and the derivatives of `f` at `x` of orders `1` through `m` have norm at most `B`, then the
