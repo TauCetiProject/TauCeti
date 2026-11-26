@@ -19,6 +19,8 @@ a groupoid).
 ## Main declarations
 
 * `CategoryTheory.SingleObj.eqToHom_as_one`: every equality morphism in `SingleObj M` is `1`.
+* `CategoryTheory.SingleObj.isIso_iff_isUnit`: a morphism in `SingleObj M` is an isomorphism
+  if and only if it is a unit in `M`.
 * `CategoryTheory.SingleObj.functor_ext`: extensionality on morphisms for `C ⥤ SingleObj M`.
 * `CategoryTheory.SingleObj.functorOne`, `functorCommMonoid`, `functorCommGroup`: pointwise
   `One`, `CommMonoid`, and `CommGroup` instances on `C ⥤ SingleObj M`.
@@ -39,6 +41,11 @@ variable {C : Type u₁} [Category.{v₁} C] {M : Type w₁} [Monoid M]
 /-- Every equality morphism in `SingleObj M` is `1`. -/
 theorem eqToHom_as_one {x y : SingleObj M} (p : x = y) :
     (eqToHom p : x ⟶ y) = (1 : M) := by cases p; rfl
+
+/-- A morphism in `SingleObj M` is an isomorphism if and only if it is a unit in `M`. -/
+theorem isIso_iff_isUnit {x y : SingleObj M} (f : x ⟶ y) :
+    IsIso f ↔ IsUnit (f : M) :=
+  (CategoryTheory.isUnit_iff_isIso (toEnd M (f : M))).symm.trans (MulEquiv.isUnit_map (toEnd M))
 
 /-- Two functors into `SingleObj M` are equal if they agree on every morphism. -/
 @[ext 1100] theorem functor_ext {F G : C ⥤ SingleObj M}

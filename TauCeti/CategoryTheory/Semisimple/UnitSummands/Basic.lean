@@ -259,13 +259,13 @@ end
 
 /-- Every simple unit summand is tensor-idempotent: `I.repr ⊗ I.repr ≅ I.repr`. -/
 def tensorSelfIso (I : UnitSimpleClasses C) : I.repr ⊗ I.repr ≅ I.repr :=
-  tensorSelfIsoOfRetract ⟨ι I, π I, ι_comp_π_self I⟩
+  Retract.tensorSelfIso ⟨ι I, π I, ι_comp_π_self I⟩
 @[reassoc] theorem tensorSelfIso_hom (I : UnitSimpleClasses C) :
     (tensorSelfIso I).hom = ι I ▷ I.repr ≫ (λ_ I.repr).hom :=
-  tensorSelfIsoOfRetract_hom ⟨ι I, π I, ι_comp_π_self I⟩
+  Retract.tensorSelfIso_hom ⟨ι I, π I, ι_comp_π_self I⟩
 @[reassoc] theorem tensorSelfIso_inv (I : UnitSimpleClasses C) :
     (tensorSelfIso I).inv = (λ_ I.repr).inv ≫ π I ▷ I.repr :=
-  tensorSelfIsoOfRetract_inv ⟨ι I, π I, ι_comp_π_self I⟩
+  Retract.tensorSelfIso_inv ⟨ι I, π I, ι_comp_π_self I⟩
 
 end UnitSimpleClasses
 
@@ -274,7 +274,7 @@ end Biproduct
 /-- Distinct simple summands of `𝟙_ C` have zero tensor product. -/
 theorem UnitSimpleClasses.isZero_tensorObj_of_ne {I J : UnitSimpleClasses C} (h : I ≠ J) :
     IsZero (I.repr ⊗ J.repr) :=
-  isZero_tensorObj_of_retract ⟨ι I, π I, ι_comp_π_self I⟩ ⟨ι J, π J, ι_comp_π_self J⟩
+  Retract.isZero_tensorObj ⟨ι I, π I, ι_comp_π_self I⟩ ⟨ι J, π J, ι_comp_π_self J⟩
     (ι_comp_π_ne h)
 
 /-- A morphism out of `𝟙_ C` is nonzero if and only if its precomposition with some canonical

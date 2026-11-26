@@ -79,16 +79,7 @@ accounts for `SingleObj`'s reversed composition `f ≫ g = g * f`, and every arr
 def singleObjFunctorEquiv (G : Type w) [Monoid G] :
     (universalGradingGroupoid C ⥤ SingleObj G) ≃ (universalGradingGroup C →* Gᵐᵒᵖ) where
   toFun F := universalGradingGroup.liftOfIsUnit (fun S ↦ MulOpposite.op (F.map (degree S)))
-    (fun S ↦ ⟨⟨MulOpposite.op (F.map (degree S)),
-      MulOpposite.op ((liftCoreEquiv.symm F).deg S).iso.inv,
-      MulOpposite.unop_injective <| by
-        rw [MulOpposite.unop_mul, MulOpposite.unop_op, MulOpposite.unop_op, MulOpposite.unop_one,
-          ← SingleObj.comp_as_mul, ← SingleObj.id_as_one, ← liftCoreEquiv_symm_deg_iso_hom]
-        exact ((liftCoreEquiv.symm F).deg S).iso.hom_inv_id,
-      MulOpposite.unop_injective <| by
-        rw [MulOpposite.unop_mul, MulOpposite.unop_op, MulOpposite.unop_op, MulOpposite.unop_one,
-          ← SingleObj.comp_as_mul, ← SingleObj.id_as_one, ← liftCoreEquiv_symm_deg_iso_hom]
-        exact ((liftCoreEquiv.symm F).deg S).iso.inv_hom_id⟩, rfl⟩)
+    (fun S ↦ ((SingleObj.isIso_iff_isUnit (F.map (degree S))).mp inferInstance).op)
     fun S T U f hf ↦ MulOpposite.unop_injective <| by
       simpa [SingleObj.comp_as_mul, SingleObj.id_as_one, eqToHom_core_singleObj_iso_hom,
         liftCoreEquiv_symm_deg_iso_hom] using
