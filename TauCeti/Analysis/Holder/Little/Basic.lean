@@ -321,7 +321,7 @@ theorem exists_contDiff_lipschitzWith_norm_sub_lt (f : HolderSpace α E Y)
     have hcoe : (g₁ : E → Y) = g₀ := by ext x; simp [g₁]
     rw [hcoe]
     refine ⟨‖f‖₊, holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun x _ y _ ↦
-      ρ.dist_normed_convolution_le_of_dist_sub_le f.continuous fun t ↦ ?_⟩
+      ρ.dist_normed_convolution_le_of_dist_sub_le f.continuous fun t _ ↦ ?_⟩
     simpa only [dist_sub_right] using f.holderWith_nnnorm.dist_le (x - t) (y - t)
   let g : HolderSpace α E Y := ofBoundedContinuousFunction g₁ hg₁
   have hg : (g : E → Y) = g₀ := funext fun x ↦ by simp [g, g₁]
@@ -486,7 +486,7 @@ private theorem exists_contDiff_iteratedFDeriv_sub_eq [MeasurableSpace E] [Borel
     rw [hD k le_rfl]
     refine ⟨C, holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun x _ y _ ↦
       ρ.dist_normed_convolution_le_of_dist_sub_le
-        (f.contDiff.continuous_iteratedFDeriv le_rfl) fun t ↦ ?_⟩
+        (f.contDiff.continuous_iteratedFDeriv le_rfl) fun t _ ↦ ?_⟩
     simpa only [dist_sub_right] using hC.dist_le (x - t) (y - t)
   let g : CkHolderSpace k α E F :=
     ofContDiff g₀ (hg₀.of_le (by exact_mod_cast le_top)) (fun i _ ↦ hg₀b i) hg₀h
