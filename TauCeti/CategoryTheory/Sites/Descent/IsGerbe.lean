@@ -21,6 +21,8 @@ pullback along every arrow of some `J`-covering sieve.
 ## Main declarations
 
 * `CategoryTheory.Pseudofunctor.IsGerbe`: the property that `F` is a gerbe for `J`.
+* `CategoryTheory.Pseudofunctor.IsGerbe.exists_covering_hom`: in a gerbe, any two objects over
+  `U` have morphisms between their pullbacks along every arrow of some covering sieve.
 * `CategoryTheory.Pseudofunctor.isGerbe_target_of_isEquivalence`,
   `CategoryTheory.Pseudofunctor.isGerbe_source_of_isEquivalence`: for a strong transformation
   `F ⟶ G` whose components are equivalences, if one of `F` and `G` is a gerbe and the other is a
@@ -66,6 +68,14 @@ class IsGerbe (F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}) (J : Grothendiec
 attribute [instance] IsGerbe.isGroupoid
 
 variable {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} {J : GrothendieckTopology C}
+
+/-- **Local sections of `Hom(x, y)`.** For a gerbe, any two objects over `U` have a morphism
+between their pullbacks along every arrow of some covering sieve of `U`. -/
+theorem IsGerbe.exists_covering_hom [F.IsGerbe J] {U : C} (x y : F.obj (.mk (op U))) :
+    ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y) := by
+  obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_iso (J := J) x y
+  exact ⟨R, hR, fun _ f hf ↦ (h f hf).map Iso.hom⟩
 
 /-- Local isomorphy of objects transfers along a strong transformation whose components are
 essentially surjective. -/
