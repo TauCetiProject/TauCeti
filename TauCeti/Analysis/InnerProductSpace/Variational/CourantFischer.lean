@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
+import TauCeti.Analysis.InnerProductSpace.Variational.MinMax
 
 /-!
 # Courant–Fischer on the form domain of a compact form pair
@@ -29,7 +30,12 @@ The main theorem is the **Courant–Fischer min–max principle on the form doma
 `H` formed by variational eigenvectors, `a(uₖ, v) = λₖ ⟪j uₖ, j v⟫` for every `v`, with
 `λ₀ ≤ λ₁ ≤ ⋯`, then `λₙ = rayleighMinMax ⊤ n`. In particular the eigenvalue sequence does not
 depend on the choice of the eigenbasis
-(`TauCeti.CompactFormPair.eigenvalue_eq_of_hilbertBasis`). The argument:
+(`TauCeti.CompactFormPair.eigenvalue_eq_of_hilbertBasis`). The argument applies the estimates of
+`TauCeti.re_apply_self_le_mul_norm_sq_of_mem_span`,
+`TauCeti.mul_norm_sq_le_re_apply_self_of_forall_inner_eq_zero` and
+`TauCeti.exists_mem_apply_ne_zero_mul_norm_sq_le_re_apply_self`, stated for a Hermitian form `B`
+with `re B v v ≥ 0` and a linear map `J`, to `J = j` and to `B = a + ω ⟪j ·, j ·⟫` for a shift
+`ω` that makes this form nonnegative; the eigenvalues of the shifted form are `λₖ + ω`:
 
 * on the span of `u₀, …, uₙ` the form is diagonal, so `q(v) ≤ λₙ ‖j v‖²` there, with equality at
   `uₙ` (`TauCeti.CompactFormPair.energy_le_mul_norm_sq_of_mem_span`,
@@ -38,8 +44,7 @@ depend on the choice of the eigenbasis
   `∑ₖ (λₖ + α) |⟪j uₖ, j v⟫|² ≤ q(v) + α ‖j v‖²` whenever `q + α ‖j ·‖² ≥ 0`
   (`TauCeti.CompactFormPair.sum_mul_norm_inner_sq_le_energy_add`); with Parseval's identity this
   gives `λₙ ‖j v‖² ≤ q(v)` whenever `j v` is orthogonal to `j u₀, …, j uₙ₋₁`
-  (`TauCeti.CompactFormPair.mul_norm_sq_le_energy_of_forall_inner_eq_zero`). Since `λₙ + α` may
-  be negative for an arbitrary shift, the estimate is made termwise and only the lower bound
+  (`TauCeti.CompactFormPair.mul_norm_sq_le_energy_of_forall_inner_eq_zero`). Only the lower bound
   `λₖ ≥ λₙ` for `k ≥ n` is used;
 * every subspace of dimension at least `n + 1` contains a nonzero `v` with `j v` orthogonal to the
   `n` vectors `j u₀, …, j uₙ₋₁`
@@ -60,8 +65,8 @@ here the scalars are `ℝ` or `ℂ` and the form is only bounded below after a s
 
 public section
 
-open Filter RCLike
-open scoped ComplexConjugate InnerProductSpace Topology
+open RCLike
+open scoped InnerProductSpace
 
 namespace TauCeti
 
@@ -122,7 +127,7 @@ variable {P}
 
 /-- The supremum of the Rayleigh quotient over the nonzero vectors of a submodule of positive
 finite dimension is at least its value at any such vector. -/
-private theorem rayleigh_le_iSup {M : Submodule 𝕜 V} [FiniteDimensional 𝕜 M] {u : V}
+theorem rayleigh_le_iSup {M : Submodule 𝕜 V} [FiniteDimensional 𝕜 M] {u : V}
     (huM : u ∈ M) (hu0 : u ≠ 0) :
     P.energy u / ‖P.inclusion u‖ ^ 2 ≤
       ⨆ w : {w : V // w ∈ M ∧ w ≠ 0}, P.energy w / ‖P.inclusion w‖ ^ 2 :=
@@ -185,106 +190,76 @@ theorem rayleighMinMax_le_rayleighMinMax_of_le {L L' : Submodule 𝕜 V} {n : �
 
 section Eigenvectors
 
+/-- Variational eigenvectors of `P` are eigenvectors of the shifted form
+`a + α ⟪j ·, j ·⟫`, with eigenvalues shifted by `α`. -/
+private theorem shiftedForm_apply_of_mem_formEigenspace {ι : Type*} {u : ι → V} {lam : ι → ℝ}
+    (α : ℝ) (heq : ∀ k, u k ∈ P.formEigenspace (lam k)) (k : ι) (v : V) :
+    (ContinuousLinearMap.shiftedForm P.inclusion P.form α).toLinearMap₁₂ (u k) v =
+      ((lam k + α : ℝ) : 𝕜) *
+        ⟪(P.inclusion : V →ₗ[𝕜] H) (u k), (P.inclusion : V →ₗ[𝕜] H) v⟫_𝕜 := by
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.shiftedForm_apply, mem_formEigenspace.1 (heq k), ofReal_add, add_mul]
+
+/-- Some shift `a + ω ⟪j ·, j ·⟫` of the form of `P` has nonnegative real part on the diagonal. -/
+private theorem exists_re_shiftedForm_nonneg : ∃ ω : ℝ, ∀ w : V,
+    0 ≤ re ((ContinuousLinearMap.shiftedForm P.inclusion P.form ω).toLinearMap₁₂ w w) := by
+  obtain ⟨c, hc, ω, h⟩ := P.exists_mul_norm_sq_le_energy_add
+  exact ⟨ω, fun w ↦ (by positivity : 0 ≤ c * ‖w‖ ^ 2).trans
+    (ContinuousLinearMap.mul_norm_sq_le_re_shiftedForm_self P.inclusion le_rfl
+      (fun u ↦ energy_def P u ▸ h u) w)⟩
+
 /-- **Bessel's inequality for the shifted energy.** Let `u` be variational eigenvectors,
 `a(uₖ, v) = λₖ ⟪j uₖ, j v⟫`, with orthonormal images `j uₖ`, and let `α` be a shift for which
 `q + α ‖j ·‖²` is nonnegative. Then for every finite set `s` of indices,
-`∑_{k ∈ s} (λₖ + α) |⟪j uₖ, j v⟫|² ≤ q(v) + α ‖j v‖²`. -/
+`∑_{k ∈ s} (λₖ + α) |⟪j uₖ, j v⟫|² ≤ q(v) + α ‖j v‖²`. This is
+`TauCeti.sum_mul_norm_inner_sq_le_re_apply_self` for the shifted form. -/
 theorem sum_mul_norm_inner_sq_le_energy_add {ι : Type*} {u : ι → V} {lam : ι → ℝ} {α : ℝ}
     (hα : ∀ w, 0 ≤ P.energy w + α * ‖P.inclusion w‖ ^ 2)
     (hu : Orthonormal 𝕜 fun k ↦ P.inclusion (u k)) (heq : ∀ k, u k ∈ P.formEigenspace (lam k))
     (v : V) (s : Finset ι) :
     ∑ k ∈ s, (lam k + α) * ‖⟪P.inclusion (u k), P.inclusion v⟫_𝕜‖ ^ 2 ≤
       P.energy v + α * ‖P.inclusion v‖ ^ 2 := by
-  set B := ContinuousLinearMap.shiftedForm P.inclusion P.form α
-  set d : ι → 𝕜 := fun k ↦ ⟪P.inclusion (u k), P.inclusion v⟫_𝕜
-  set w := ∑ k ∈ s, d k • u k
-  -- The shifted form is diagonal along the eigenvectors, with entries `λₖ + α`.
-  have hBw (x : V) :
-      B w x = ∑ k ∈ s,
-        conj (d k) * (((lam k + α : ℝ) : 𝕜) * ⟪P.inclusion (u k), P.inclusion x⟫_𝕜) := by
-    simp only [w, B, map_sum, map_smulₛₗ, FunLike.coe_sum, Finset.sum_apply,
-      smul_apply, smul_eq_mul, ContinuousLinearMap.shiftedForm_apply,
-      mem_formEigenspace.1 (heq _), ofReal_add, add_mul]
-  have hsum : B w v = ((∑ k ∈ s, (lam k + α) * ‖d k‖ ^ 2 : ℝ) : 𝕜) := by
-    rw [hBw]
-    push_cast
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [← RCLike.conj_mul]
-    ring
-  have hww : B w w = B w v := by
-    rw [hBw, hBw]
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
-    simp only [w, map_sum, map_smul, hu.inner_right_sum d hk, d]
-  have hvw : B v w = star (B w v) :=
-    ContinuousLinearMap.shiftedForm_eq_star P.inclusion P.hermitian α v w
-  have hnn : 0 ≤ re (B (v - w) (v - w)) := by
-    rw [ContinuousLinearMap.re_shiftedForm_self, ← energy_def]
-    exact hα _
-  have hre : re (B (v - w) (v - w)) = re (B v v) - re (B w v) := by
-    simp only [map_sub, sub_apply, hww, hvw, star_def, conj_re]
-    ring
-  rw [hre, ContinuousLinearMap.re_shiftedForm_self, hsum, ofReal_re] at hnn
-  rw [energy_def]
-  linarith
+  have := sum_mul_norm_inner_sq_le_re_apply_self
+    (B := (ContinuousLinearMap.shiftedForm P.inclusion P.form α).toLinearMap₁₂)
+    (J := (P.inclusion : V →ₗ[𝕜] H))
+    (ContinuousLinearMap.shiftedForm_eq_star P.inclusion P.hermitian α)
+    (fun w ↦ by simpa [ContinuousLinearMap.re_shiftedForm_self, energy_def] using hα w) hu
+    (shiftedForm_apply_of_mem_formEigenspace α heq) v s
+  simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.re_shiftedForm_self, energy_def] using this
 
 /-- **The upper half of Courant–Fischer.** Let `u₀, u₁, …` be variational eigenvectors,
 `a(uₖ, v) = λₖ ⟪j uₖ, j v⟫`, with orthonormal images `j uₖ` and `λᵢ ≤ λₙ` for `i ≤ n`. Every `v`
-in the span of `u₀, …, uₙ` has `q(v) ≤ λₙ ‖j v‖²`. -/
+in the span of `u₀, …, uₙ` has `q(v) ≤ λₙ ‖j v‖²`. This is
+`TauCeti.re_apply_self_le_mul_norm_sq_of_mem_span` for the form of `P`. -/
 theorem energy_le_mul_norm_sq_of_mem_span {u : ℕ → V} {lam : ℕ → ℝ} {n : ℕ}
     (hlam : ∀ i ≤ n, lam i ≤ lam n) (hu : Orthonormal 𝕜 fun k ↦ P.inclusion (u k))
     (heq : ∀ k, u k ∈ P.formEigenspace (lam k)) {v : V}
     (hv : v ∈ Submodule.span 𝕜 (Set.range fun i : Fin (n + 1) ↦ u i)) :
     P.energy v ≤ lam n * ‖P.inclusion v‖ ^ 2 := by
-  obtain ⟨d, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).1 hv
-  have he : Orthonormal 𝕜 fun i : Fin (n + 1) ↦ P.inclusion (u i) := hu.comp _ Fin.val_injective
-  set v := ∑ i, d i • u i with hv_def
-  have hj : P.inclusion v = ∑ i, d i • P.inclusion (u i) := by
-    simp only [v, map_sum, map_smul]
-  -- The form is diagonal along the eigenvectors, and the coordinates of `j v` are the `d i`.
-  have hform : P.form v v = ∑ i : Fin (n + 1), conj (d i) * ((lam i : 𝕜) * d i) := by
-    nth_rewrite 1 [hv_def]
-    simp only [map_sum, map_smulₛₗ, FunLike.coe_sum, Finset.sum_apply, smul_apply, smul_eq_mul,
-      mem_formEigenspace.1 (heq _), hj, he.inner_right_fintype]
-  have hq : P.energy v = ∑ i : Fin (n + 1), lam i * ‖d i‖ ^ 2 := by
-    rw [energy_def, hform, map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [mul_left_comm, RCLike.conj_mul, ← ofReal_pow, ← ofReal_mul, ofReal_re]
-  have hnorm : ‖P.inclusion v‖ ^ 2 = ∑ i, ‖d i‖ ^ 2 := by
-    rw [hj, ← ofReal_inj (K := 𝕜)]
-    push_cast
-    rw [← inner_self_eq_norm_sq_to_K, he.inner_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ RCLike.conj_mul _
-  rw [hq, hnorm, Finset.mul_sum]
-  exact Finset.sum_le_sum fun i _ ↦
-    mul_le_mul_of_nonneg_right (hlam i (Nat.lt_succ_iff.1 i.isLt)) (sq_nonneg _)
+  simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ContinuousLinearMap.coe_coe,
+    energy_def] using re_apply_self_le_mul_norm_sq_of_mem_span (B := P.form.toLinearMap₁₂)
+      (J := (P.inclusion : V →ₗ[𝕜] H)) hlam hu (fun k ↦ mem_formEigenspace.1 (heq k)) hv
 
 /-- **The lower half of Courant–Fischer.** Let `j u₀, j u₁, …` be a Hilbert basis of `H` formed by
 variational eigenvectors, with eigenvalues `λₖ ≥ λₙ` for `k ≥ n`. If `j v` is orthogonal to
-`j u₀, …, j uₙ₋₁`, then `λₙ ‖j v‖² ≤ q(v)`. -/
+`j u₀, …, j uₙ₋₁`, then `λₙ ‖j v‖² ≤ q(v)`. This is
+`TauCeti.mul_norm_sq_le_re_apply_self_of_forall_inner_eq_zero` for a shifted form. -/
 theorem mul_norm_sq_le_energy_of_forall_inner_eq_zero (b : HilbertBasis ℕ 𝕜 H) {u : ℕ → V}
     {lam : ℕ → ℝ} {n : ℕ} (hb : ∀ k, P.inclusion (u k) = b k) (hlam : ∀ k, n ≤ k → lam n ≤ lam k)
     (heq : ∀ k, u k ∈ P.formEigenspace (lam k)) {v : V}
     (hv : ∀ k < n, ⟪b k, P.inclusion v⟫_𝕜 = 0) :
     lam n * ‖P.inclusion v‖ ^ 2 ≤ P.energy v := by
-  obtain ⟨c, hc, ω, h⟩ := P.exists_mul_norm_sq_le_energy_add
-  have hω (w : V) : 0 ≤ P.energy w + ω * ‖P.inclusion w‖ ^ 2 :=
-    (by positivity : 0 ≤ c * ‖w‖ ^ 2).trans (h w)
-  have hu : Orthonormal 𝕜 fun k ↦ P.inclusion (u k) := by simpa only [hb] using b.orthonormal
-  -- Bessel's inequality for the shifted energy, with `λₖ ≥ λₙ` on the nonzero coefficients.
-  have hpartial (N : ℕ) :
-      (lam n + ω) * ∑ k ∈ Finset.range N, ‖⟪b k, P.inclusion v⟫_𝕜‖ ^ 2 ≤
-        P.energy v + ω * ‖P.inclusion v‖ ^ 2 := by
-    refine le_trans ?_ (sum_mul_norm_inner_sq_le_energy_add hω hu heq v (Finset.range N))
-    rw [Finset.mul_sum]
-    refine Finset.sum_le_sum fun k _ ↦ ?_
-    rw [hb]
-    rcases lt_or_ge k n with hk | hk
-    · simp [hv k hk]
-    · gcongr
-      exact hlam k hk
-  -- Parseval's identity `∑ₖ |⟪b k, j v⟫|² = ‖j v‖²`.
-  have hlim := ((b.hasSum_norm_inner_sq (P.inclusion v)).tendsto_sum_nat).const_mul (lam n + ω)
-  have := le_of_tendsto' hlim hpartial
+  -- The shifted form `a + ω ⟪j ·, j ·⟫` is nonnegative, with eigenvalues `λₖ + ω`.
+  obtain ⟨ω, hω⟩ := P.exists_re_shiftedForm_nonneg
+  have := mul_norm_sq_le_re_apply_self_of_forall_inner_eq_zero
+    (B := (ContinuousLinearMap.shiftedForm P.inclusion P.form ω).toLinearMap₁₂)
+    (J := (P.inclusion : V →ₗ[𝕜] H))
+    (ContinuousLinearMap.shiftedForm_eq_star P.inclusion P.hermitian ω) hω b
+    (fun k hk ↦ by linarith [hlam k hk]) hb (shiftedForm_apply_of_mem_formEigenspace ω heq)
+    hv
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.re_shiftedForm_self, energy_def] at this ⊢
   linarith
 
 /-- **The obstacle estimate.** In the setting of
@@ -296,14 +271,21 @@ theorem exists_mem_ne_zero_mul_norm_sq_le_energy (b : HilbertBasis ℕ 𝕜 H) {
     (heq : ∀ k, u k ∈ P.formEigenspace (lam k)) {M : Submodule 𝕜 V}
     (hM : n + 1 ≤ Module.finrank 𝕜 M) :
     ∃ v ∈ M, v ≠ 0 ∧ lam n * ‖P.inclusion v‖ ^ 2 ≤ P.energy v := by
-  have : FiniteDimensional 𝕜 M := Module.finite_of_finrank_pos (by omega)
-  let f : M →ₗ[𝕜] Fin n → 𝕜 := LinearMap.pi fun k ↦
-    (innerₛₗ 𝕜 (b k)) ∘ₗ (P.inclusion : V →ₗ[𝕜] H) ∘ₗ M.subtype
-  obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (LinearMap.ker_ne_bot_of_finrank_lt (f := f) (by rw [Module.finrank_fin_fun]; omega))
-  refine ⟨x, x.property, fun h ↦ hx0 (Subtype.ext h),
-    mul_norm_sq_le_energy_of_forall_inner_eq_zero b hb hlam heq fun k hk ↦ ?_⟩
-  simpa [f] using congrFun (LinearMap.mem_ker.1 hx) ⟨k, hk⟩
+  -- The shifted form `a + ω ⟪j ·, j ·⟫` is nonnegative, with eigenvalues `λₖ + ω`.
+  obtain ⟨ω, hω⟩ := P.exists_re_shiftedForm_nonneg
+  -- `j` is injective, so `j M` has the dimension of `M`.
+  have hjM : Module.finrank 𝕜 (M.map (P.inclusion : V →ₗ[𝕜] H)) = Module.finrank 𝕜 M :=
+    (Submodule.equivMapOfInjective _ P.injective M).finrank_eq.symm
+  obtain ⟨v, hvM, hv0, hv⟩ := exists_mem_apply_ne_zero_mul_norm_sq_le_re_apply_self
+    (B := (ContinuousLinearMap.shiftedForm P.inclusion P.form ω).toLinearMap₁₂)
+    (J := (P.inclusion : V →ₗ[𝕜] H))
+    (ContinuousLinearMap.shiftedForm_eq_star P.inclusion P.hermitian ω) hω b
+    (fun k hk ↦ by linarith [hlam k hk]) hb (shiftedForm_apply_of_mem_formEigenspace ω heq)
+    (hjM ▸ hM)
+  refine ⟨v, hvM, fun h ↦ hv0 (by simp [h]), ?_⟩
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.re_shiftedForm_self, energy_def] at hv ⊢
+  linarith
 
 /-- **Attainment of the min–max value.** For variational eigenvectors `u₀, u₁, …` with orthonormal
 images and eigenvalues `λᵢ ≤ λₙ` for `i ≤ n`, the supremum of the Rayleigh quotient over the
