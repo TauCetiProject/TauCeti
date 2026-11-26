@@ -353,6 +353,20 @@ theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) 
   ⟨map_injective (LinearEquiv.ofBijective f hf).symm.toLinearMap (by ext; simp),
     map_surjective hf.2⟩
 
+/-- The map induced by a linear equivalence `e` inverts the map induced by `e.symm`. -/
+@[simp]
+theorem map_map_symm {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n N) :
+    map n e.toLinearMap (map n e.symm.toLinearMap x) = x := by
+  rw [← LinearMap.comp_apply, ← map_comp]
+  simp
+
+/-- The map induced by `e.symm` inverts the map induced by a linear equivalence `e`. -/
+@[simp]
+theorem map_symm_map {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n M) :
+    map n e.symm.toLinearMap (map n e.toLinearMap x) = x := by
+  rw [← LinearMap.comp_apply, ← map_comp]
+  simp
+
 /-- Scaling a linear map by `c` scales the induced map on the `n`th exterior power by `c ^ n`. -/
 @[simp] theorem map_smul_eq_pow_smul (n : ℕ) (c : R) (f : M →ₗ[R] N) :
     map n (c • f) = c ^ n • map n f := by

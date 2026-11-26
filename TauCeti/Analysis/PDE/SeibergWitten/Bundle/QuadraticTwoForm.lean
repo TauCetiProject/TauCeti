@@ -62,6 +62,8 @@ and `q_x` along smooth sections, are not constructed here.
 
 * `TauCeti.SpinCStructure.cliffordRestriction_mk`, `TauCeti.SpinCStructure.quadraticTwoForm_mk`:
   `C_x` and `q_x` in every frame.
+* `TauCeti.SpinCStructure.cliffordRestriction_eq_conj`: `C_x(α)` is the model `C(i ⋀² κ_p α)`
+  conjugated by the unitary frame `[p, -]`.
 * `TauCeti.SpinCStructure.cliffordRestriction_quadraticTwoForm`: `C_x(q_x(ψ)) = Q₀(ψ)`.
 * `TauCeti.SpinCStructure.quadraticTwoForm_smul_of_norm_eq_one`: `q_x(u ψ) = q_x(ψ)` for `|u| = 1`.
 * `TauCeti.SpinCStructure.norm_quadraticTwoForm_sq`: `‖q_x(ψ)‖² = ‖ψ‖⁴ / 8`.
@@ -128,11 +130,13 @@ theorem coe_toPositiveHalfSpinors (ψ : o.HalfSpinModel hQ b ρ hρ 1) :
 multiplication with its rotation `f`, an orientation-preserving isometry of `V`, and restricts to
 its action on `S⁺`. For `g = [s, z]`, `U = z ρ(s)`. -/
 private theorem exists_intertwiner (g : SpinC) :
-    ∃ (f : V ≃ₗᵢ[ℝ] V) (U : W ≃ₗᵢ[ℂ] W), o.map (Fin 4) f.toLinearEquiv = o ∧
+    ∃ (f : V ≃ₗᵢ[ℝ] V) (U : W ≃ₗᵢ[ℂ] W) (ho : o.map (Fin 4) f.toLinearEquiv = o)
+      (hU : ∀ v, U.toLinearEquiv.toLinearMap ∘ₗ ρ (ι Q v) =
+        ρ (ι Q (f v)) ∘ₗ U.toLinearEquiv.toLinearMap),
       f.toLinearEquiv = (rot g) ∧
-      (∀ v, U.toLinearEquiv.toLinearMap ∘ₗ ρ (ι Q v) =
-        ρ (ι Q (f v)) ∘ₗ U.toLinearEquiv.toLinearMap) ∧
-      ∀ ψ : o.HalfSpinModel hQ b ρ hρ 1, (toEigenspace (g • ψ) : W) = U (toEigenspace ψ) := by
+      ∀ ψ : o.HalfSpinModel hQ b ρ hρ 1, toPositiveHalfSpinors o hQ b ρ hρ (g • ψ) =
+        positiveHalfSpinorsEquiv o ρ o ρ U.toLinearEquiv (comp_chirality_eq_chirality_comp ho hU)
+          (toPositiveHalfSpinors o hQ b ρ hρ ψ) := by
   obtain ⟨⟨s, z⟩, hx⟩ := spinCGroup.mk_surjective Q (b.ne_zero_of_neg_norm_sq hQ)
     (b.realSpinCGroupHom hQ hpos (b.ne_zero_of_neg_norm_sq hQ) g)
   -- The rotation of `g` is the vector action of `s`; it preserves `Q`, hence the norm.
@@ -145,30 +149,30 @@ private theorem exists_intertwiner (g : SpinC) :
   let f : V ≃ₗᵢ[ℝ] V := { (rot g) with norm_map' := hAnorm }
   -- `ρ(s)` is unitary, since `s* s = 1`.
   have hs (w : W) : ‖ρ s w‖ = ‖w‖ := by
-    have h : ⟪ρ s w, ρ s w⟫_ℂ = ⟪w, w⟫_ℂ := by
-      rw [← LinearMap.adjoint_inner_right, adjoint_map_eq_map_star hρ, ← mul_apply_eq_comp,
-        ← map_mul, spinGroup.star_mul_self_of_mem s.property, map_one, one_apply_eq_self]
-    rw [@norm_eq_sqrt_re_inner ℂ, @norm_eq_sqrt_re_inner ℂ, h]
+    rw [@norm_eq_sqrt_re_inner ℂ, @norm_eq_sqrt_re_inner ℂ,
+      inner_map_apply_map_apply_of_mem_spinGroup hρ s.property]
   let li : W →ₗᵢ[ℂ] W :=
     { toLinearMap := (z : ℂ) • ρ s
       norm_map' w := by rw [LinearMap.smul_apply, norm_smul, Circle.norm_coe, one_mul, hs] }
   let U : W ≃ₗᵢ[ℂ] W := li.toLinearIsometryEquiv rfl
-  refine ⟨f, U, ?_, rfl, fun v ↦ ?_, fun ψ ↦ ?_⟩
-  · -- `f` is special orthogonal, so it has determinant one.
+  have ho : o.map (Fin 4) f.toLinearEquiv = o := by
+    -- `f` is special orthogonal, so it has determinant one.
     rw [Orientation.map_eq_iff_det_pos _ _
       (by rw [Fintype.card_fin]; exact (Fact.out : finrank ℝ V = 4).symm), ← LinearEquiv.coe_det]
     have h := QuadraticMap.det_coe_specialOrthogonalGroup (spinCGroup.toSpecialOrthogonal Q
       (b.ne_zero_of_neg_norm_sq hQ) (b.realSpinCGroupHom hQ hpos (b.ne_zero_of_neg_norm_sq hQ) g))
     simp [f, h]
-  · -- `s c(v) = c(s v s⁻¹) s` in the Clifford algebra.
+  have hU (v : V) : U.toLinearEquiv.toLinearMap ∘ₗ ρ (ι Q v) =
+      ρ (ι Q (f v)) ∘ₗ U.toLinearEquiv.toLinearMap := by
+    -- `ι (s v) s = s ι v` in the Clifford algebra.
     ext w
-    have hss : ρ (star (s : CliffordAlgebra Q)) (ρ s w) = w := by
-      rw [← mul_apply_eq_comp, ← map_mul, spinGroup.star_mul_self_of_mem s.property, map_one,
-        one_apply_eq_self]
-    simp [U, li, f, hA, hss]
-  · rw [toEigenspace_smul, realSpinCHalfSpinSmoothHom_apply o hQ b ρ 1
-      (b.ne_zero_of_neg_norm_sq hQ), ← hx]
-    simp [U, li]
+    have h := LinearMap.congr_fun (congrArg ρ (ι_spinVectorAction_apply_mul Q s v)) w
+    rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp] at h
+    simp [U, li, f, hA, h, -ι_spinVectorAction_apply]
+  refine ⟨f, U, ho, hU, rfl, fun ψ ↦ Subtype.ext ?_⟩
+  rw [coe_toPositiveHalfSpinors, toEigenspace_smul, realSpinCHalfSpinSmoothHom_apply o hQ b ρ 1
+    (b.ne_zero_of_neg_norm_sq hQ), ← hx]
+  simp [U, li]
 
 /-- **Clifford equivariance of the Clifford map on the model half-spinors**: `g ∈ Spinᶜ(4)`
 intertwines `C(iα)` with `C(i ⋀²π(g) α)`, where `π(g)` is its rotation of `V`:
@@ -179,12 +183,7 @@ theorem cliffordRestriction_map_toPositiveHalfSpinors_smul (g : SpinC) (α : ⋀
         (toPositiveHalfSpinors o hQ b ρ hρ (g • ψ)) =
       toPositiveHalfSpinors o hQ b ρ hρ (g • (toPositiveHalfSpinors o hQ b ρ hρ).symm
         (SeibergWitten.cliffordRestriction o ρ α (toPositiveHalfSpinors o hQ b ρ hρ ψ))) := by
-  obtain ⟨f, U, ho, hf, hU, hψ⟩ := exists_intertwiner (o := o) (hρ := hρ) g
-  have he (χ : o.HalfSpinModel hQ b ρ hρ 1) :
-      toPositiveHalfSpinors o hQ b ρ hρ (g • χ) =
-        positiveHalfSpinorsEquiv o ρ o ρ U.toLinearEquiv (comp_chirality_eq_chirality_comp ho hU)
-          (toPositiveHalfSpinors o hQ b ρ hρ χ) :=
-    Subtype.ext (by simpa using hψ χ)
+  obtain ⟨f, U, ho, hU, hf, he⟩ := exists_intertwiner (o := o) (hρ := hρ) g
   have h := SeibergWitten.cliffordRestriction_map ho hU α
   rw [hf] at h
   rw [h, he, he]
@@ -198,11 +197,7 @@ theorem quadraticTwoForm_toPositiveHalfSpinors_smul (g : SpinC)
         ⋀[ℝ]^2 V) =
       exteriorPower.map 2 (rot g).toLinearMap
         (SeibergWitten.quadraticTwoForm o ρ hkl (toPositiveHalfSpinors o hQ b ρ hρ ψ)) := by
-  obtain ⟨f, U, ho, hf, hU, hψ⟩ := exists_intertwiner (o := o) (hρ := hρ) g
-  have he : toPositiveHalfSpinors o hQ b ρ hρ (g • ψ) =
-      positiveHalfSpinorsEquiv o ρ o ρ U.toLinearEquiv (comp_chirality_eq_chirality_comp ho hU)
-        (toPositiveHalfSpinors o hQ b ρ hρ ψ) :=
-    Subtype.ext (by simpa using hψ ψ)
+  obtain ⟨f, U, ho, hU, hf, he⟩ := exists_intertwiner (o := o) (hρ := hρ) g
   have h := SeibergWitten.quadraticTwoForm_positiveHalfSpinorsEquiv ho hU hkl hkl
     (toPositiveHalfSpinors o hQ b ρ hρ ψ)
   rw [hf] at h
@@ -238,14 +233,6 @@ local notation "rot" g => ((spinCGroup.toSpecialOrthogonal Q (b.ne_zero_of_neg_n
   (b.realSpinCGroupHom hQ hpos (b.ne_zero_of_neg_norm_sq hQ) g) : V ≃ₗ[ℝ] V))
 
 omit [Fact (finrank ℝ V = 4)] in
-/-- Changing the frame `p` to `p • g` rotates the vector frame: `κ_p = π(g) ∘ κ_{p • g}`. -/
-private theorem vectorFrame_eq_rot_vectorFrame_smul (s : SpinCStructure F E 4) {x : X}
-    (p : s.P x) (g : SpinC) (v : E x) :
-    s.vectorFrame b p v = (rot g) (s.vectorFrame b (op g • p) v) := by
-  rw [vectorFrame_apply (hQ := hQ) s b (op g • p),
-    OrthonormalBasis.toSpecialOrthogonal_realSpinCGroupHom_apply, vectorFrame_smul]
-
-omit [Fact (finrank ℝ V = 4)] in
 /-- The two-form frame `⋀² κ_p` of `p • g` is that of `p` followed by `⋀² π(g)⁻¹`. -/
 private theorem map_vectorFrame_eq (s : SpinCStructure F E 4) {x : X} (p : s.P x) (g : SpinC) :
     exteriorPower.map 2 (s.vectorFrame b p).toLinearMap =
@@ -254,18 +241,7 @@ private theorem map_vectorFrame_eq (s : SpinCStructure F E 4) {x : X} (p : s.P x
   rw [← exteriorPower.map_comp]
   congr 1
   ext v
-  exact vectorFrame_eq_rot_vectorFrame_smul (hQ := hQ) s p g v
-
-omit [Fact (finrank ℝ V = 4)] in
-/-- `⋀² κ_p` inverts `⋀² κ_p⁻¹`. -/
-private theorem map_vectorFrame_map_vectorFrame_symm (s : SpinCStructure F E 4) {x : X}
-    (p : s.P x) (β : ⋀[ℝ]^2 V) :
-    exteriorPower.map 2 (s.vectorFrame b p).toLinearMap
-      (exteriorPower.map 2 (s.vectorFrame b p).symm.toLinearMap β) = β := by
-  rw [← LinearMap.comp_apply, ← exteriorPower.map_comp]
-  convert LinearMap.congr_fun (exteriorPower.map_id (R := ℝ) (M := V) (n := 2)) β
-  ext v
-  simp
+  exact vectorFrame_eq_toSpecialOrthogonal_vectorFrame_smul s p g v
 
 variable (o hQ b ρ hρ) in
 /-- **The Clifford map** `C_x : ⋀² (E x) → End_ℂ (W⁺_x)` on the positive half-spinors of a
@@ -308,6 +284,21 @@ theorem cliffordRestriction_mk (s : SpinCStructure F E 4) {x : X} (p : s.P x) (�
     cliffordRestriction_map_toPositiveHalfSpinors_smul, LinearIsometryEquiv.symm_apply_apply,
     AssociatedBundle.mk_smul]
 
+/-- **The Clifford map as a conjugate**: for every point `p` of the principal bundle over `x`,
+`C_x(α)` is the model `C(i ⋀² κ_p α)` conjugated by the unitary frame `[p, -] : S⁺ ≃ W⁺_x`. -/
+theorem cliffordRestriction_eq_conj (s : SpinCStructure F E 4) {x : X} (p : s.P x)
+    (α : ⋀[ℝ]^2 (E x)) :
+    s.cliffordRestriction o hQ b ρ hρ x α =
+      ContinuousLinearEquiv.conjContinuousAlgEquiv
+        ((toPositiveHalfSpinors o hQ b ρ hρ).symm.trans
+          (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC p)).toContinuousLinearEquiv
+        (SeibergWitten.cliffordRestriction o ρ
+          (exteriorPower.map 2 (s.vectorFrame b p).toLinearMap α)) := by
+  ext ψ
+  obtain ⟨ψ, rfl⟩ := (AssociatedBundle.mk_bijective (G := SpinC)
+    (F := o.HalfSpinModel hQ b ρ hρ 1) p).2 ψ
+  simp [cliffordRestriction_mk]
+
 variable (o hQ b ρ hρ) in
 /-- **The quadratic two-form** `q_x : W⁺_x → ⋀² (E x)` on the positive half-spinors of a `Spinᶜ`
 structure of rank four: in a frame `p` it is `⋀² κ_p⁻¹` applied to the quadratic two-form
@@ -342,7 +333,7 @@ theorem quadraticTwoForm_mk (s : SpinCStructure F E 4) {x : X} (p : s.P x)
   ext v
   -- `κ_{p₀}⁻¹ ∘ π(g) = κ_{p₀ • g}⁻¹`, since `κ_{p₀} = π(g) ∘ κ_{p₀ • g}`.
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
-  rw [LinearIsometryEquiv.symm_apply_eq, vectorFrame_eq_rot_vectorFrame_smul (hQ := hQ) s p₀ g,
+  rw [LinearIsometryEquiv.symm_apply_eq, vectorFrame_eq_toSpecialOrthogonal_vectorFrame_smul s p₀ g,
     LinearIsometryEquiv.apply_symm_apply]
 
 /-! ### The pointwise algebra on the fibres -/
@@ -386,19 +377,11 @@ theorem cliffordRestriction_quadraticTwoForm (h₂ : finrank ℂ (positiveHalfSp
       SeibergWitten.quadraticEnd ψ := by
   obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
   -- In the frame `p`, both sides are the model identity `C(q(ψ)) = Q₀(ψ)`, transported by the
-  -- unitary frame `e = [p, -]`.
-  set e := (toPositiveHalfSpinors o hQ b ρ hρ).symm.trans
-    (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC p)
-  have he (χ : o.HalfSpinModel hQ b ρ hρ 1) :
-      AssociatedBundle.mk SpinC p χ = e (toPositiveHalfSpinors o hQ b ρ hρ χ) := by
-    simp [e]
-  ext χ
-  obtain ⟨χ, rfl⟩ := (AssociatedBundle.mk_bijective (G := SpinC)
-    (F := o.HalfSpinModel hQ b ρ hρ 1) p).2 χ
-  rw [quadraticTwoForm_mk, cliffordRestriction_mk, map_vectorFrame_map_vectorFrame_symm,
-    SeibergWitten.cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂]
-  simp only [he, LinearIsometryEquiv.apply_symm_apply,
-    SeibergWitten.quadraticEnd_linearIsometryEquiv_apply]
+  -- unitary frame `[p, -]`.
+  rw [quadraticTwoForm_mk, cliffordRestriction_eq_conj s p,
+    LinearIsometryEquiv.toLinearEquiv_symm, exteriorPower.map_map_symm,
+    SeibergWitten.cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂,
+    ← SeibergWitten.quadraticEnd_linearIsometryEquiv_apply]
   simp
 
 /-- **`C_x(q_x(ψ)) ψ = (‖ψ‖² / 2) ψ`** in complex rank two: `ψ` is an eigenvector of the
@@ -429,32 +412,18 @@ theorem norm_quadraticTwoForm_sq (h₂ : finrank ℂ (positiveHalfSpinors o ρ) 
     (ψ : s.halfSpinorBundle o hQ b ρ hρ 1 x) :
     ‖s.quadraticTwoForm o hQ b ρ hρ x ψ‖ ^ 2 = ‖ψ‖ ^ 4 / 8 := by
   obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
-  -- `⋀² κ_p⁻¹` preserves the inner product of two-forms.
-  have hnorm (β : ⋀[ℝ]^2 V) :
-      ‖exteriorPower.map 2 (s.vectorFrame b p).symm.toLinearMap β‖ = ‖β‖ := by
-    have hκ : (s.vectorFrame b p).symm.toLinearIsometry.toLinearMap =
-        (s.vectorFrame b p).symm.toLinearMap :=
-      LinearMap.ext fun v ↦ by simp
-    have h := exteriorPower.inner_map_map (s.vectorFrame b p).symm.toLinearIsometry β β
-    rw [hκ] at h
-    rw [@norm_eq_sqrt_real_inner, @norm_eq_sqrt_real_inner, h]
-  rw [quadraticTwoForm_mk, hnorm, AssociatedBundle.norm_mk,
-    ← (toPositiveHalfSpinors o hQ b ρ hρ).norm_map, Submodule.norm_coe,
+  rw [quadraticTwoForm_mk, exteriorPower.norm_map_linearIsometryEquiv,
+    AssociatedBundle.norm_mk, ← (toPositiveHalfSpinors o hQ b ρ hρ).norm_map, Submodule.norm_coe,
     SeibergWitten.norm_quadraticTwoForm_sq o hQ hkl hρ h₂]
 
 /-- **`C_x(α)` is self-adjoint**, for the Hermitian metric of the half-spinor bundle. -/
 theorem isSelfAdjoint_cliffordRestriction (s : SpinCStructure F E 4) {x : X}
     (α : ⋀[ℝ]^2 (E x)) : IsSelfAdjoint (s.cliffordRestriction o hQ b ρ hρ x α) := by
-  rw [ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric]
-  intro ψ φ
-  obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
-  obtain ⟨φ, rfl⟩ := (AssociatedBundle.mk_bijective (G := SpinC)
-    (F := o.HalfSpinModel hQ b ρ hρ 1) p).2 φ
-  simp only [ContinuousLinearMap.coe_coe, cliffordRestriction_mk, AssociatedBundle.inner_mk,
-    LinearIsometryEquiv.inner_map_eq_flip, LinearIsometryEquiv.symm_symm]
-  rw [← LinearIsometryEquiv.inner_map_map (toPositiveHalfSpinors o hQ b ρ hρ) ψ,
-    LinearIsometryEquiv.apply_symm_apply]
-  exact (SeibergWitten.isSelfAdjoint_cliffordRestriction o hρ _).isSymmetric _ _
+  let p : s.P x := Classical.arbitrary _
+  rw [cliffordRestriction_eq_conj s p]
+  exact (SeibergWitten.isSelfAdjoint_cliffordRestriction o hρ _).map
+    ((toPositiveHalfSpinors o hQ b ρ hρ).symm.trans
+      (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC p)).conjStarAlgEquiv
 
 /-- **`C_x(α)` is trace free.** -/
 @[simp]
@@ -462,17 +431,10 @@ theorem trace_cliffordRestriction (s : SpinCStructure F E 4) {x : X} (α : ⋀[�
     LinearMap.trace ℂ (s.halfSpinorBundle o hQ b ρ hρ 1 x)
       (s.cliffordRestriction o hQ b ρ hρ x α) = 0 := by
   let p : s.P x := Classical.arbitrary _
-  -- `C_x(α)` is conjugate to the model `C(i ⋀² κ_p α)` by the unitary frame `[p, -]`.
-  let e := ((toPositiveHalfSpinors o hQ b ρ hρ).symm.trans
-    (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC p)).toLinearEquiv
-  have h : (s.cliffordRestriction o hQ b ρ hρ x α : Module.End ℂ _) =
-      e.conj (SeibergWitten.cliffordRestriction o ρ
-        (exteriorPower.map 2 (s.vectorFrame b p).toLinearMap α)) := by
-    ext ψ
-    obtain ⟨ψ, rfl⟩ := (AssociatedBundle.mk_bijective (G := SpinC)
-      (F := o.HalfSpinModel hQ b ρ hρ 1) p).2 ψ
-    simp [e, cliffordRestriction_mk, LinearEquiv.conj_apply]
-  rw [h, LinearMap.trace_conj', SeibergWitten.trace_cliffordRestriction o ρ hQ]
+  rw [cliffordRestriction_eq_conj s p]
+  exact (LinearMap.trace_conj' _ ((toPositiveHalfSpinors o hQ b ρ hρ).symm.trans
+    (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC p)).toLinearEquiv).trans
+    (SeibergWitten.trace_cliffordRestriction o ρ hQ _)
 
 /-- **On the wedge of orthogonal vectors the Clifford map is a product of Clifford
 multiplications**: `C_x(u ∧ w) ψ = i c(u) c(w) ψ` when `⟪u, w⟫ = 0`, where `c(w) : W⁺_x → W⁻_x`

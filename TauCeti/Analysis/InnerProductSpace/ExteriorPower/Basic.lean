@@ -52,6 +52,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 ## Main results
 
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
+* `exteriorPower.norm_map`, `exteriorPower.norm_map_linearIsometryEquiv`: `‖⋀ⁿ f x‖ = ‖x‖` for a
+  linear isometry `f`.
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`, and
   `exteriorPower.orthonormal_ιMulti_two_of_orthonormal`: for an orthonormal triple `e, x, y`, the
   wedges `e ∧ x` and `e ∧ y` are orthonormal.
@@ -127,6 +129,15 @@ theorem inner_map_map (f : E →ₗᵢ[ℝ] F) (x y : ⋀[ℝ]^n E) :
   | zero => simp
   | add x z _ _ hx hz => simp only [map_add, inner_add_left, hx, hz]
   | smul r x _ hx => simp only [map_smul, real_inner_smul_left, hx]
+
+/-- The map of exterior powers induced by a linear isometry preserves the norm. -/
+theorem norm_map (f : E →ₗᵢ[ℝ] F) (x : ⋀[ℝ]^n E) : ‖map n f.toLinearMap x‖ = ‖x‖ := by
+  rw [@norm_eq_sqrt_real_inner, @norm_eq_sqrt_real_inner, inner_map_map]
+
+/-- The map of exterior powers induced by a linear isometry equivalence preserves the norm. -/
+theorem norm_map_linearIsometryEquiv (f : E ≃ₗᵢ[ℝ] F) (x : ⋀[ℝ]^n E) :
+    ‖map n f.toLinearMap x‖ = ‖x‖ :=
+  norm_map f.toLinearIsometry x
 
 /-- The inner product of two wedges of two vectors is their `2 × 2` Gram determinant. -/
 theorem inner_ιMulti_two (a b u w : E) :
