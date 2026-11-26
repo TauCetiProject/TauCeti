@@ -9,10 +9,11 @@ public import TauCeti.Analysis.Complex.Wirtinger.Regularity
 public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.ContDiff
+import TauCeti.Analysis.Sobolev.Local.SmoothCoefficients
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
-# Interior estimates for `∂bar` plus a zeroth-order term
+# Interior estimates and regularity for `∂bar` plus a zeroth-order term
 
 Let `U` be an open planar set whose closure is compact and contained in an open set `O`, and let
 `F` be a finite-dimensional complex normed space. For `1 < p < ∞` and every `k`, a map `u` that is
@@ -25,12 +26,22 @@ The case `Z = 0` (`TauCeti.exists_eLpNormWkp_succ_le_of_contDiffOn`) is the inte
 from a Euclidean space to `F` along a complex linear isomorphism. The zeroth-order term is then
 handled by the Leibniz bound `TauCeti.eLpNormWkp_clm_apply_le`.
 
+The matching regularity statement needs no smoothness of `u`: a locally `Lᵖ` map `u` with a weak
+derivative, whose `∂bar u + Z u` agrees almost everywhere with a map in `W^{k,p}_loc`, lies in
+`W^{k+1,p}_loc` (`TauCeti.memWkpLoc_succ_of_complexAntilinearPartL_add_ae_eq`), for `Z` of class
+`Cᵏ`. It follows from the regularity of `∂bar`,
+`TauCeti.HasWeakConjWirtingerDerivOn.memWkpLoc_succ`, by raising the order one step at a time.
+
 ## Main results
 
 * `TauCeti.exists_eLpNormWkp_succ_le_of_contDiffOn`: the interior estimate for `∂bar` of `C^{k+1}`
   maps with values in `F`.
 * `TauCeti.exists_eLpNormWkp_le_of_eqOn_complexAntilinearPartL_add`: the interior estimate for
   `∂bar` plus a zeroth-order term.
+* `TauCeti.memWkpLoc_succ_of_hasWeakFDerivOn_of_memWkpLoc_complexAntilinearPartL`: interior
+  regularity for `∂bar` of a weakly differentiable map with values in `F`.
+* `TauCeti.memWkpLoc_succ_of_complexAntilinearPartL_add_ae_eq`: interior regularity for `∂bar` plus
+  a zeroth-order term.
 
 ## References
 
@@ -153,5 +164,63 @@ theorem exists_eLpNormWkp_le_of_eqOn_complexAntilinearPartL_add (hp : 1 < p) (hp
         simp only [eNorm_eq_nnNorm]
         push_cast
         ring
+
+/-- **Interior regularity for `∂bar` of a weakly differentiable map.** Let `1 < p < ∞` and let `u`
+be locally `Lᵖ` on an open set `Ω`, with weak derivative `Du`. If `∂bar u`, the value on `1` of the
+complex antilinear part of `Du`, lies in `W^{k,p}_loc(Ω)`, then `u` lies in `W^{k+1,p}_loc(Ω)`.
+The real structure of the values is any one compatible with the complex structure. -/
+theorem memWkpLoc_succ_of_hasWeakFDerivOn_of_memWkpLoc_complexAntilinearPartL (hp : 1 < p)
+    (hp_top : p ≠ ⊤) {Ω : Opens ℂ} {k : ℕ} {u : ℂ → F} {Du : ℂ → ℂ →L[ℝ] F}
+    (hu : MemLpLoc p Ω u) (hDu : HasWeakFDerivOn volume Ω u Du)
+    (hf : MemWkpLoc p Ω k fun z ↦ complexAntilinearPartL (Du z) 1) :
+    MemWkpLoc p Ω (k + 1) u := by
+  have : FiniteDimensional ℂ F := Module.Finite.of_restrictScalars_finite ℝ ℂ F
+  let Eu := EuclideanSpace ℂ (Fin (finrank ℂ F))
+  let e : F ≃L[ℂ] Eu := .ofFinrankEq (by simp [Eu])
+  set eℝ : F →L[ℝ] Eu := (e : F →L[ℂ] Eu).restrictScalars ℝ
+  set sℝ : Eu →L[ℝ] F := (e.symm : Eu →L[ℂ] F).restrictScalars ℝ
+  have h := (hDu.clm_comp eℝ).hasWeakConjWirtingerDerivOn
+  have hfe : (fun z ↦ (2 : ℂ)⁻¹ • ((eℝ.comp (Du z)) 1 + Complex.I • (eℝ.comp (Du z)) Complex.I)) =
+      fun z ↦ eℝ (complexAntilinearPartL (Du z) 1) := by
+    funext z
+    rw [← ContinuousLinearMap.comp_apply,
+      ← ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp (e : F →L[ℂ] Eu) (Du z),
+      ContinuousLinearMap.complexAntilinearPartL_apply_one]
+    simp [eℝ, ← Complex.coe_smul]
+  rw [hfe] at h
+  have hue := h.memWkpLoc_succ hp hp_top (hu.clm_comp eℝ) (hf.clm_comp eℝ)
+  simpa [eℝ, sℝ] using hue.clm_comp sℝ
+
+/-- One step of the regularity for `∂bar` plus a zeroth-order term: if `u` is already in
+`W^{k,p}_loc(Ω)`, then so is `∂bar u = g - Z u`, and `u` is in `W^{k+1,p}_loc(Ω)`. -/
+private theorem memWkpLoc_succ_of_memWkpLoc_of_complexAntilinearPartL_add_ae_eq (hp : 1 < p)
+    (hp_top : p ≠ ⊤) {Ω : Opens ℂ} {k : ℕ} {Z : ℂ → F →L[ℝ] ℂ →L[ℝ] F}
+    (hZ : ContDiffOn ℝ k Z Ω) {u : ℂ → F} {Du g : ℂ → ℂ →L[ℝ] F} (hu : MemWkpLoc p Ω k u)
+    (hDu : HasWeakFDerivOn volume Ω u Du) (hg : MemWkpLoc p Ω k g)
+    (heq : ∀ᵐ z ∂volume.restrict Ω, complexAntilinearPartL (Du z) + Z z (u z) = g z) :
+    MemWkpLoc p Ω (k + 1) u := by
+  refine memWkpLoc_succ_of_hasWeakFDerivOn_of_memWkpLoc_complexAntilinearPartL hp hp_top
+    hu.memLpLoc hDu (((hg.sub (hu.contDiffOn_clm_apply hZ le_rfl subset_rfl)).clm_comp
+      (ContinuousLinearMap.apply ℝ F (1 : ℂ))).congr_ae ?_)
+  filter_upwards [heq] with z hz
+  simp [← hz]
+
+/-- **Interior regularity for `∂bar` plus a zeroth-order term.** Let `1 < p < ∞`, let `Z` be a
+field of real-linear maps that is `Cᵏ` on an open set `Ω`, and let `u` be locally `Lᵖ` on `Ω` with
+weak derivative `Du`. If `∂bar u + Z u`, with `∂bar u` the complex antilinear part of `Du`, agrees
+almost everywhere with a map `g` in `W^{k,p}_loc(Ω)`, then `u` lies in `W^{k+1,p}_loc(Ω)`. -/
+theorem memWkpLoc_succ_of_complexAntilinearPartL_add_ae_eq (hp : 1 < p) (hp_top : p ≠ ⊤)
+    {Ω : Opens ℂ} {k : ℕ} {Z : ℂ → F →L[ℝ] ℂ →L[ℝ] F} (hZ : ContDiffOn ℝ k Z Ω) {u : ℂ → F}
+    {Du g : ℂ → ℂ →L[ℝ] F} (hu : MemLpLoc p Ω u) (hDu : HasWeakFDerivOn volume Ω u Du)
+    (hg : MemWkpLoc p Ω k g)
+    (heq : ∀ᵐ z ∂volume.restrict Ω, complexAntilinearPartL (Du z) + Z z (u z) = g z) :
+    MemWkpLoc p Ω (k + 1) u := by
+  induction k with
+  | zero =>
+    exact memWkpLoc_succ_of_memWkpLoc_of_complexAntilinearPartL_add_ae_eq hp hp_top hZ
+      (memWkpLoc_zero_iff.2 hu) hDu hg heq
+  | succ k ih =>
+    exact memWkpLoc_succ_of_memWkpLoc_of_complexAntilinearPartL_add_ae_eq hp hp_top hZ
+      (ih (hZ.of_le (by exact_mod_cast Nat.le_succ k)) hg.of_succ) hDu hg heq
 
 end TauCeti
