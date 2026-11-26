@@ -79,8 +79,7 @@ rotation of `a` (`TauCeti.OrthonormalFrameLift.toFrame_twist_mk`). It is reducib
 general API of `TauCeti.OrthonormalFrameLift.twist` applies to it. -/
 noncomputable abbrev twist (s : SpinCStructure F V n) : SpinCStructure F V n :=
   OrthonormalFrameLift.twist s L (spinCGroup.mulCircle _ hQ) (spinCGroup.continuous_mulCircle _ _)
-    (by rw [MonoidHom.comp_assoc, spinCGroup.toSpecialOrthogonal_comp_mulCircle,
-      MonoidHom.comp_assoc])
+    (spinCGroup.subtype_comp_toSpecialOrthogonal_comp_mulCircle _ _)
     spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
 
 variable {L} (s : SpinCStructure F V n)
@@ -91,8 +90,7 @@ the trivial principal `U(1)`-bundle is equivalent to `s`, by `[(p, w), a] ↦ p 
 noncomputable abbrev twistTrivialEquiv : (s.twist (Bundle.Trivial X Circle)).Equiv s :=
   OrthonormalFrameLift.twistTrivialEquiv s (spinCGroup.mulCircle _ hQ)
     (spinCGroup.continuous_mulCircle _ _)
-    (by rw [MonoidHom.comp_assoc, spinCGroup.toSpecialOrthogonal_comp_mulCircle,
-      MonoidHom.comp_assoc])
+    (spinCGroup.subtype_comp_toSpecialOrthogonal_comp_mulCircle _ _)
     spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
     (MonoidHom.ext fun a ↦ by
       rw [MonoidHom.comp_apply, MonoidHom.inl_apply, spinCGroup.mulCircle_apply, map_one, mul_one,

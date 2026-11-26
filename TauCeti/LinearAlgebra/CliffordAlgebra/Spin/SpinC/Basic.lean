@@ -358,6 +358,14 @@ theorem toSpecialOrthogonal_comp_mulCircle :
       (toSpecialOrthogonal Q hQ).comp (MonoidHom.fst _ _) :=
   MonoidHom.ext (toSpecialOrthogonal_mulCircle Q hQ)
 
+/-- Multiplication by the central circle lifts the first projection along the vector action
+`Spinᶜ(Q) → SO(Q) ⊆ GL(M)`, along which `Spinᶜ` structures lift the orthonormal frame bundle. -/
+theorem subtype_comp_toSpecialOrthogonal_comp_mulCircle :
+    ((specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ)).comp (mulCircle Q hQ) =
+      ((specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ)).comp
+        (MonoidHom.fst _ _) := by
+  rw [MonoidHom.comp_assoc, toSpecialOrthogonal_comp_mulCircle, MonoidHom.comp_assoc]
+
 /-- **The kernel of the rotation homomorphism `Spinᶜ(Q) → SO(Q)` is the central circle**
 `{[1, z]}`, for a finite-dimensional nondegenerate quadratic form. -/
 theorem mem_ker_toSpecialOrthogonal_iff [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)

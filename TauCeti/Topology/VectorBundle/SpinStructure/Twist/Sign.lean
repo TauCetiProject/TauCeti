@@ -161,6 +161,15 @@ private noncomputable def untwist (x : X)
     (z : ((s.fiberProd C₂ L).fiberProd C₂ L).P x) : s.P x :=
   op ((realCliffordSpinDoubleCoverZero n).inl (division C₂ z.fst.snd z.snd)) • z.fst.fst
 
+/-- Multiplication by the central signs on the first factor lifts the double first projection
+along the vector action. -/
+private theorem comp_fst_comp_prodMap_eq :
+    (MonoidHom.comp ρS (MonoidHom.fst _ C₂)).comp
+        ((realCliffordSpinMulSign n).prodMap (MonoidHom.id C₂)) =
+      (MonoidHom.comp ρS (MonoidHom.fst _ C₂)).comp (MonoidHom.fst _ C₂) :=
+  MonoidHom.ext fun g ↦ DFunLike.congr_fun
+    (subtype_comp_spinToSpecialOrthogonal_comp_realCliffordSpinMulSign n) g.1
+
 /-- Multiplication by the central signs, applied twice, lifts the double first projection along
 the vector action. -/
 private theorem comp_comp_prodMap_eq :
@@ -222,13 +231,7 @@ noncomputable def twistTwistEquiv : ((s.twist L).twist L).Equiv s :=
     (ρ' := MonoidHom.comp ρS (MonoidHom.fst _ C₂))
     ((realCliffordSpinMulSign n).prodMap (MonoidHom.id C₂))
     ((continuous_realCliffordSpinMulSign n).prodMap continuous_id)
-    (MonoidHom.ext fun g ↦ DFunLike.congr_fun
-      (subtype_comp_spinToSpecialOrthogonal_comp_realCliffordSpinMulSign n) g.1)
-    (fun k v ↦ CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply n
-      (spinToSpecialOrthogonal (realCliffordForm n 0) k.1) v)
-    (fun v ↦ Continuous.comp (Continuous.comp
-      (CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply n v)
-      (continuous_spinToSpecialOrthogonal_pi (realCliffordForm n 0))) continuous_fst)
+    comp_fst_comp_prodMap_eq (fun k v ↦ hn k.1 v) (fun v ↦ (hc v).comp continuous_fst)
     (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
     (subtype_comp_spinToSpecialOrthogonal_comp_realCliffordSpinMulSign n) hn hc).symm.trans <|
   ((s.fiberProd C₂ L).fiberProd C₂ L).extendEquivOfEquivariant
