@@ -43,7 +43,7 @@ its highest root `θ`, the root at index `62`
   parabolic subgroup (`CoxeterSystem.parabolicHom_injective`, `CoxeterSystem.range_parabolicHom`).
   That Weyl group is the Weyl group of the rational model of type `D₆`
   (`TauCeti.weylGroupBaseChangeEquiv`), so the stabilizer has order `2⁵ · 6! = 23040`
-  (`RootPairing.card_weylGroup_of_hasCartanType_D`).
+  (`CoxeterSystem.card_parabolic_range`, `RootPairing.card_weylGroup_of_hasCartanType_D`).
 
 Hence the Weyl group has order `126 · 23040 = 2903040`.
 
@@ -132,11 +132,8 @@ private lemma card_stabilizer_root_e7Theta :
     Nat.card (stabilizer (P₇).weylGroup ((P₇).root e7Theta)) = 23040 := by
   have hD : (D 6).Valid := valid_D.mpr (by norm_num)
   rw [← parabolic_wallIndices_eq_stabilizer P₇ b₇ root_e7Theta_mem_dominantChamber,
-    wallIndices_root_e7Theta, ← CoxeterSystem.range_parabolicHom
+    wallIndices_root_e7Theta, CoxeterSystem.card_parabolic_range
       (simplyConnectedWeylCoxeterSystem (D 6) hD) coxeterMatrix_D_eq_coxeterMatrixOfBase_e7Wall,
-    ← Nat.card_congr (MonoidHom.ofInjective (CoxeterSystem.parabolicHom_injective
-      (simplyConnectedWeylCoxeterSystem (D 6) hD)
-      coxeterMatrix_D_eq_coxeterMatrixOfBase_e7Wall)).toEquiv,
     Nat.card_congr (weylGroupBaseChangeEquiv ℚ _
       (toLinearMap_simplyConnectedRootDatum_apply_apply (D 6) hD)).toEquiv,
     ← rationalRootSystem_def,

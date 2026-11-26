@@ -38,7 +38,8 @@ its highest root `θ`, the root at index `35`
   `CoxeterMatrix.A 5`, the Coxeter matrix of the symmetric group `S₆` on its adjacent
   transpositions (`TauCeti.permCoxeterSystem`), so `CoxeterSystem.parabolicHom` embeds `S₆` into
   the Weyl group with image that parabolic subgroup (`CoxeterSystem.parabolicHom_injective`,
-  `CoxeterSystem.range_parabolicHom`). The stabilizer therefore has order `6! = 720`.
+  `CoxeterSystem.range_parabolicHom`). The stabilizer therefore has order `6! = 720`
+  (`CoxeterSystem.card_parabolic_range`).
 
 Hence the Weyl group has order `72 · 720 = 51840`.
 
@@ -125,10 +126,8 @@ private lemma coxeterMatrix_A_eq_coxeterMatrixOfBase_e6Wall (i j : Fin 5) :
 private lemma card_stabilizer_root_e6Theta :
     Nat.card (stabilizer (P₆).weylGroup ((P₆).root e6Theta)) = 720 := by
   rw [← parabolic_wallIndices_eq_stabilizer P₆ b₆ root_e6Theta_mem_dominantChamber,
-    wallIndices_root_e6Theta, ← CoxeterSystem.range_parabolicHom (permCoxeterSystem 6)
+    wallIndices_root_e6Theta, CoxeterSystem.card_parabolic_range (permCoxeterSystem 6)
       coxeterMatrix_A_eq_coxeterMatrixOfBase_e6Wall,
-    ← Nat.card_congr (MonoidHom.ofInjective (CoxeterSystem.parabolicHom_injective
-      (permCoxeterSystem 6) coxeterMatrix_A_eq_coxeterMatrixOfBase_e6Wall)).toEquiv,
     Nat.card_perm, Nat.card_fin]
   rfl
 
