@@ -125,6 +125,12 @@ theorem star_mul_self_mem_finitePart_iff {x : B} :
     star x * x ∈ finitePart τ ↔ x ∈ sqIntegrable τ := by
   simp [star_mul_self_nonneg x]
 
+/-- Every `x ∈ 𝔪_τ⁺` is `b⋆b` for some `b ∈ 𝔫_τ`. -/
+theorem exists_eq_star_mul_self_of_mem_finitePart {x : B} (hx : x ∈ finitePart τ) :
+    ∃ b ∈ sqIntegrable τ, x = star b * b := by
+  obtain ⟨b, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.1 (mem_finitePart.1 hx).1
+  exact ⟨b, star_mul_self_mem_finitePart_iff.1 hx, rfl⟩
+
 namespace IsTrace
 
 omit [StarOrderedRing B] in
