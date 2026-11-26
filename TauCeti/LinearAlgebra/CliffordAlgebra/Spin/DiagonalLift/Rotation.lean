@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DiagonalLift
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DiagonalLift.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Rotation
 
 /-!

@@ -68,9 +68,6 @@ coherences of both block-sum homomorphisms, as well as the kernel and quotient d
 * `TauCeti.spinToSpecialOrthogonal_realCliffordSpinFirstInclusion` and
   `TauCeti.spinToSpecialOrthogonal_realCliffordSpinBlockSum`: compatibility of Spin
   stabilization and Spin block sum with the projections to `SO`.
-* `TauCeti.realCliffordSpinBlockInlIsometry_single` and
-  `TauCeti.realCliffordSpinBlockInrIsometry_single`: action of the block-inclusion isometries
-  on standard basis vectors.
 * `TauCeti.realCliffordSpinBlockSum_zero_left` and
   `TauCeti.realCliffordSpinBlockSum_zero_right`: left- and right-unit coherences.
 * `TauCeti.realCliffordSpinBlockSum_one_mk_eq_realCliffordSpinFirstInclusion`,
@@ -284,14 +281,6 @@ theorem realCliffordSpinBlockInlIsometry_apply (p q : ℕ) (u : Fin p → ℝ) :
   rw [realCliffordSpinBlockInlIsometry, Isometry.comp_apply, IsometryEquiv.toIsometry_apply,
     Isometry.inl_apply, realCliffordSplitIsometry_zero_symm_apply]
 
--- Not @[simp]: `realCliffordSpinBlockInlIsometry_apply` already simplifies the LHS head.
-/-- `realCliffordSpinBlockInlIsometry` sends the `i`-th standard basis vector of `ℝ^p` to the
-`Fin.castAdd q i`-th standard basis vector of `ℝ^(p + q)`. -/
-theorem realCliffordSpinBlockInlIsometry_single (p q : ℕ) (i : Fin p) :
-    realCliffordSpinBlockInlIsometry p q (Pi.single i (1 : ℝ)) =
-      Pi.single (Fin.castAdd q i) (1 : ℝ) := by
-  simp
-
 /-- The quadratic isometry `v ↦ Fin.append 0 v` embedding `realCliffordForm q 0` as the last `q`
 coordinates of `realCliffordForm (p + q) 0`. -/
 def realCliffordSpinBlockInrIsometry (p q : ℕ) :
@@ -305,14 +294,6 @@ theorem realCliffordSpinBlockInrIsometry_apply (p q : ℕ) (v : Fin q → ℝ) :
     realCliffordSpinBlockInrIsometry p q v = (Fin.append 0 v : Fin (p + q) → ℝ) := by
   rw [realCliffordSpinBlockInrIsometry, Isometry.comp_apply, IsometryEquiv.toIsometry_apply,
     Isometry.inr_apply, realCliffordSplitIsometry_zero_symm_apply]
-
--- Not @[simp]: `realCliffordSpinBlockInrIsometry_apply` already simplifies the LHS head.
-/-- `realCliffordSpinBlockInrIsometry` sends the `i`-th standard basis vector of `ℝ^q` to the
-`Fin.natAdd p i`-th standard basis vector of `ℝ^(p + q)`. -/
-theorem realCliffordSpinBlockInrIsometry_single (p q : ℕ) (i : Fin q) :
-    realCliffordSpinBlockInrIsometry p q (Pi.single i (1 : ℝ)) =
-      Pi.single (Fin.natAdd p i) (1 : ℝ) := by
-  simp
 
 /-- Spin elements coming from the first `p` and last `q` coordinate blocks commute in
 `Spin(p + q)`. -/

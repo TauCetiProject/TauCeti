@@ -158,17 +158,6 @@ theorem realCliffordSpecialOrthogonalRangeDiagonalLift_apply (k : ℕ)
           ((realCliffordSpecialOrthogonalContinuousMulEquivRange k).symm u)) :=
   (rfl)
 
--- Not `@[simp]`: `realCliffordSpecialOrthogonalContinuousMulEquivRange_apply` simplifies the inner
--- argument, and `realCliffordSpecialOrthogonalRangeDiagonalLift_apply` handles general inputs.
-/-- Evaluating `realCliffordSpecialOrthogonalRangeDiagonalLift` on a canonical representative in
-the closed image of `SO(k)` in `GL(k, ℝ)` applies `realCliffordSpinDiagonalLift`. -/
-theorem realCliffordSpecialOrthogonalRangeDiagonalLift_apply_equiv (k : ℕ)
-    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm k 0)) :
-    realCliffordSpecialOrthogonalRangeDiagonalLift k
-        (realCliffordSpecialOrthogonalContinuousMulEquivRange k g) =
-      realCliffordSpinContinuousMulEquivUnitsRange (k + k) (realCliffordSpinDiagonalLift k g) := by
-  simp
-
 /-- **The closed unit-range diagonal lift commutes with
 `realCliffordSpinToSpecialOrthogonalRange`.** -/
 @[simp]

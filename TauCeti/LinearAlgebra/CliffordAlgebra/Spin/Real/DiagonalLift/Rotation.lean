@@ -66,7 +66,8 @@ theorem realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation {k : �
     (realCliffordSpinBlockInrIsometry k k).spinGroupMap_spinRotation
       (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
       (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) t]
-  simp only [realCliffordSpinBlockInlIsometry_single, realCliffordSpinBlockInrIsometry_single]
+  simp only [realCliffordSpinBlockInlIsometry_apply, realCliffordSpinBlockInrIsometry_apply,
+    Fin.append_single_zero, Fin.append_zero_single]
 
 /-- **Explicit Clifford-algebra expansion of the doubled coordinate-plane rotation**:
 `(cos t + sin t · ι e_i ι e_j) * (cos t + sin t · ι e_{k + i} ι e_{k + j})`. -/

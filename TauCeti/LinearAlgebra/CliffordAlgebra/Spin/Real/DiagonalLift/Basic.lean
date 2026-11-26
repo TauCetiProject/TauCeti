@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DiagonalLift
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DiagonalLift.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilization
 
 /-!
@@ -46,11 +46,10 @@ This module establishes the algebraic properties of `realCliffordSpinDiagonalLif
 * `TauCeti.realCliffordSpinDiagonalLift_zero` and `TauCeti.realCliffordSpinDiagonalLift_one`:
   low-rank triviality in ranks `0` and `1`.
 * `TauCeti.realCliffordSpinDiagonalLift_congr`,
-  `TauCeti.realCliffordSpinDiagonalLift_zero_add`,
   `TauCeti.spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinDiagonalLift`, and
   `TauCeti.spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinDiagonalLift`: rank
-  congruence (including left-unit transport from `0 + k` to `k`), block-swap invariance, and
-  ordered direct-sum coherence of `realCliffordSpinDiagonalLift`.
+  congruence, block-swap invariance, and ordered direct-sum coherence of
+  `realCliffordSpinDiagonalLift`.
 
 ## References
 
@@ -190,18 +189,6 @@ theorem realCliffordSpinDiagonalLift_congr {k₁ k₂ : ℕ} (hk : k₁ = k₂)
       rfl
   rw [hcongr k₁, hcongr (k₁ + k₁), IsometryEquiv.spinGroupEquiv_refl,
     IsometryEquiv.specialOrthogonalGroupCongr_refl, MulEquiv.refl_apply, MulEquiv.refl_apply]
-
--- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
-/-- **Left-unit rank transport for `realCliffordSpinDiagonalLift`**: transporting from rank `0 + k`
-to rank `k` via `realCliffordFormCongr (Nat.zero_add k) rfl` commutes with the diagonal lift (the
-right-unit rank equality `k + 0 = k` is definitional). -/
-theorem realCliffordSpinDiagonalLift_zero_add (k : ℕ)
-    (g : specialOrthogonalGroup (realCliffordForm (0 + k) 0)) :
-    (realCliffordFormCongr (congrArg₂ (· + ·) (Nat.zero_add k) (Nat.zero_add k)) rfl).spinGroupEquiv
-        (realCliffordSpinDiagonalLift (0 + k) g) =
-      realCliffordSpinDiagonalLift k
-        ((realCliffordFormCongr (Nat.zero_add k) rfl).specialOrthogonalGroupCongr g) :=
-  realCliffordSpinDiagonalLift_congr (Nat.zero_add k) g
 
 -- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
 /-- **Block-swap invariance of `realCliffordSpinDiagonalLift`**: swapping the two `k`-blocks of

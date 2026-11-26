@@ -251,22 +251,6 @@ theorem spinGroupEquiv_prodProdProdComm_spinGroupProd {M₃ M₄ : Type*}
           (spinGroupProd Q₁ Q₂ (x₁, x₂), spinGroupProd Q₃ Q₄ (x₃, x₄))) =
       spinGroupProd (Q₁.prod Q₃) (Q₂.prod Q₄)
         (spinGroupProd Q₁ Q₃ (x₁, x₃), spinGroupProd Q₂ Q₄ (x₂, x₄)) := by
-  have h₁ : (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
-      ((Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inl Q₁ Q₂)) =
-      (Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inl Q₁ Q₃) :=
-    Isometry.ext fun _ ↦ rfl
-  have h₂ : (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
-      ((Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inr Q₁ Q₂)) =
-      (Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inl Q₂ Q₄) :=
-    Isometry.ext fun _ ↦ rfl
-  have h₃ : (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
-      ((Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inl Q₃ Q₄)) =
-      (Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inr Q₁ Q₃) :=
-    Isometry.ext fun _ ↦ rfl
-  have h₄ : (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
-      ((Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inr Q₃ Q₄)) =
-      (Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inr Q₂ Q₄) :=
-    Isometry.ext fun _ ↦ rfl
   have hcomm : Commute
       (((Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inl Q₂ Q₄)).spinGroupMap x₂)
       (((Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inr Q₁ Q₃)).spinGroupMap x₃) := by
@@ -275,7 +259,10 @@ theorem spinGroupEquiv_prodProdProdComm_spinGroupProd {M₃ M₄ : Type*}
         ((Isometry.inr Q₁ Q₃).spinGroupMap x₃)
         ((Isometry.inl Q₂ Q₄).spinGroupMap x₂)).symm
   simp only [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, map_mul,
-    Isometry.spinGroupMap_spinGroupMap, h₁, h₂, h₃, h₄, mul_assoc]
+    Isometry.spinGroupMap_spinGroupMap, IsometryEquiv.prodProdProdComm_comp_inl_comp_inl,
+    IsometryEquiv.prodProdProdComm_comp_inl_comp_inr,
+    IsometryEquiv.prodProdProdComm_comp_inr_comp_inl,
+    IsometryEquiv.prodProdProdComm_comp_inr_comp_inr, mul_assoc]
   congr 1
   rw [← mul_assoc, hcomm.eq, mul_assoc]
 
