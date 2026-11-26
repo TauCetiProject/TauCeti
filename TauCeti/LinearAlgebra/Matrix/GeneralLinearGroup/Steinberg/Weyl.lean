@@ -351,16 +351,14 @@ theorem toGL_w {i j : ι} (hij : i ≠ j) (u : Rˣ) :
 @[simp]
 theorem toGL_h {i j : ι} (hij : i ≠ j) (u : Rˣ) :
     toGL (h hij u) = diagGL (Pi.mulSingle i u * Pi.mulSingle j u⁻¹) := by
-  rw [h_def, map_mul, toGL_w, toGL_w, ← mul_assoc]
-  ext a b
-  rw [Units.val_mul _ (diagGL _), diagGL_coe, Matrix.mul_diagonal, coe_mul_permutationGL_apply,
-    Units.val_mul, permutationGL_coe, diagGL_coe, Matrix.mul_diagonal, diagGL_coe,
-    Matrix.diagonal_apply]
-  by_cases hab : a = b
-  · subst hab
-    rw [ite_eq_left rfl, ← mulSingle_swap_mul_mulSingle hij u a, Units.val_mul]
-    simp [PEquiv.toMatrix_apply]
-  · simp [PEquiv.toMatrix_apply, hab]
+  -- Move the first permutation matrix past `diag(v)`; the two copies of `P_σ` then cancel.
+  rw [h_def, map_mul, toGL_w, toGL_w,
+    mul_diagGL_of_coe_eq_permMatrix _ _ (permutationGL_coe _), mul_assoc,
+    ← mul_assoc (permutationGL _), ← map_mul, Equiv.swap_mul_self, map_one, one_mul, ← map_mul]
+  congr 1
+  funext m
+  rw [Pi.mul_apply, Function.comp_apply, Equiv.swap_inv]
+  exact mulSingle_swap_mul_mulSingle hij u m
 
 end toGL
 
