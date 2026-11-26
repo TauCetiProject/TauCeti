@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.Haar.Basic
 public import TauCeti.NumberTheory.LocalField.Lattice
 public import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.MeasureTheory.Group.BoundedLineSections
-import TauCeti.MeasureTheory.Measure.Haar.DistribChar
+import TauCeti.MeasureTheory.Measure.AEMeasurable
 
 /-!
 # Linear Haar change of variables and lattice normalizations over local fields
@@ -30,12 +30,13 @@ from the Smith-normal-form integral-matrix scaling of
   `s : Set V`, `μ (f '' s) = |det f|_E * μ s`
   (`MeasureTheory.Measure.addHaar_image_linearMap_of_isNonarchimedeanLocalField`);
 * for `T : V ≃ₗ[E] V`, `Measure.map T μ = |det T|_E⁻¹ • μ`
-  (`MeasureTheory.Measure.map_linearEquiv_addHaar`), and `distribHaarChar V T = |det T|_E`
-  (`LinearEquiv.distribHaarChar_eq_normalizedAbsoluteValue_det`);
+  (`MeasureTheory.Measure.map_linearEquiv_addHaar_of_isNonarchimedeanLocalField`), and for any
+  group `G` acting continuously and `E`-linearly on `V`, `distribHaarChar V g = |det (g • ·)|_E`
+  (`MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det`);
 * scalar multiplication by `c : E` scales `μ` by `|c|_E ^ finrank E V`
   (`MeasureTheory.Measure.addHaar_smul_module_of_isNonarchimedeanLocalField`,
   `MeasureTheory.Measure.addHaar_preimage_smul_module_of_isNonarchimedeanLocalField`,
-  `MeasureTheory.Measure.map_smul_module_addHaar`).
+  `MeasureTheory.Measure.map_smul_module_addHaar_of_isNonarchimedeanLocalField`).
 
 Notice that this Jacobian is completely independent of any choice of basis or lattice and of the
 overall normalization of `μ`. When `V` is additionally equipped with a lattice
@@ -43,10 +44,10 @@ overall normalization of `μ`. When `V` is additionally equipped with a lattice
 compact-openness of `L` yields a canonical regular additive Haar measure
 `Submodule.IsFullLattice.localAddHaar L` (respectively `b.localAddHaar`) giving `L`
 (respectively the `𝒪[E]`-span of `b`) mass one. Changing basis from `b` to `b'` rescales the
-`|b.det b'|_E⁻¹` (`Module.Basis.localAddHaar_eq_smul`), so `b'.localAddHaar = b.localAddHaar`
-whenever `b.det b'` has valuation one (`valuation E (b.det b') = 1`, equivalently
-`b.det b' ∈ 𝒪[E]ˣ`; in particular, for any integral change of basis in `GL_n(𝒪[E])`, and likewise
-for any `T ∈ GL(L)`).
+measure by `|b.det b'|_E⁻¹` (`Module.Basis.localAddHaar_eq_smul`), so
+`b'.localAddHaar = b.localAddHaar` whenever `b.det b'` has valuation one
+(`valuation E (b.det b') = 1`, equivalently `b.det b' ∈ 𝒪[E]ˣ`; in particular, for any integral
+change of basis in `GL_n(𝒪[E])`, and likewise for any `T ∈ GL(L)`).
 
 ## Main definitions
 
@@ -65,15 +66,17 @@ for any `T ∈ GL(L)`).
   `MeasureTheory.Measure.addHaar_image_continuousLinearMap_of_isNonarchimedeanLocalField`,
   `MeasureTheory.Measure.addHaar_image_mulVec_of_isNonarchimedeanLocalField`,
   `MeasureTheory.Measure.addHaar_preimage_mulVec_of_isNonarchimedeanLocalField`,
-  `MeasureTheory.Measure.map_mulVec_addHaar`,
-  `MeasureTheory.Measure.map_linearEquiv_addHaar`,
-  `MeasureTheory.Measure.map_linearMap_addHaar`,
-  `MeasureTheory.Measure.map_continuousLinearMap_addHaar`,
-  `MeasureTheory.Measure.map_smul_module_addHaar`: linear, matrix, and scalar-dilation change of
-  variables on `V` and `ι → E`.
-* `LinearEquiv.distribHaarChar_eq_normalizedAbsoluteValue_det`,
-  `LinearMap.GeneralLinearGroup.distribHaarChar_eq_normalizedAbsoluteValue_det`,
-  `Units.distribHaarChar_eq_normalizedAbsoluteValue_det`: `distribHaarChar V T = |det T|_E`.
+  `MeasureTheory.Measure.map_mulVec_addHaar_of_isNonarchimedeanLocalField`,
+  `MeasureTheory.Measure.map_linearEquiv_addHaar_of_isNonarchimedeanLocalField`,
+  `MeasureTheory.Measure.map_continuousLinearEquiv_addHaar_of_isNonarchimedeanLocalField`,
+  `MeasureTheory.Measure.map_linearMap_addHaar_of_isNonarchimedeanLocalField`,
+  `MeasureTheory.Measure.map_continuousLinearMap_addHaar_of_isNonarchimedeanLocalField`,
+  `MeasureTheory.Measure.map_smul_module_addHaar_of_isNonarchimedeanLocalField`,
+  `MeasureTheory.Measure.lintegral_comp_linearEquiv_addHaar_of_isNonarchimedeanLocalField`,
+  `MeasureTheory.Measure.integral_comp_linearEquiv_addHaar_of_isNonarchimedeanLocalField`: linear,
+  matrix, and scalar-dilation change of variables on `V` and `ι → E`.
+* `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det`:
+  `distribHaarChar V g = |det (g • ·)|_E`.
 * `Submodule.IsFullLattice.map_localAddHaar`, `Submodule.IsFullLattice.localAddHaar_congr`,
   `Submodule.IsFullLattice.map_linearEquiv_addHaar_of_mem_stabilizer`,
   `Module.Basis.map_localAddHaar`, `Module.Basis.localAddHaar_eq_smul`,
@@ -102,14 +105,6 @@ variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
   [IsNonarchimedeanLocalField E] [AddCommGroup V] [Module E V] [Module.Finite E V]
   [TopologicalSpace V] [IsModuleTopology E V] [MeasurableSpace V] [BorelSpace V]
 
-private theorem map_apply_image {E V W : Type*} [Semiring E]
-    [AddCommMonoid V] [Module E V] [TopologicalSpace V] [MeasurableSpace V] [BorelSpace V]
-    [AddCommMonoid W] [Module E W] [TopologicalSpace W] [MeasurableSpace W] [BorelSpace W]
-    (μ : Measure V) (e : V ≃L[E] W) (T : Set V) :
-    μ.map e (e '' T) = μ T := by
-  rw [← ContinuousLinearEquiv.coe_toHomeomorph, e.toHomeomorph.measurableEmbedding.map_apply,
-    preimage_image_eq _ e.toHomeomorph.injective]
-
 /-- **Proper subspaces are Haar-null.** Any proper `E`-linear subspace `W ≠ ⊤` of a
 finite-dimensional `E`-vector space `V` carrying the module topology has additive Haar measure
 zero. -/
@@ -131,8 +126,9 @@ theorem addHaar_submodule_of_isNonarchimedeanLocalField (μ : Measure V) [μ.IsA
     have hfw : f w = 0 := hWker hw
     rw [hf_eq, LinearMap.smul_apply, smul_eq_mul, mul_eq_zero] at hfw
     simpa [e, Basis.equivFun_apply] using hfw.resolve_left hfv
-  rw [← map_apply_image μ e (W : Set V)]
-  exact measure_mono_null hsub (measure_coord_eq_zero ν i)
+  rw [← e.toHomeomorph.measurableEmbedding.map_apply_image μ (W : Set V),
+    ContinuousLinearEquiv.coe_toHomeomorph]
+  exact measure_mono_null hsub (measure_setOf_apply_eq_zero ν i)
 
 /-- Algebraic identity relating `|det A|_E` to the valuation exponent `k` of a cleared matrix
 `B = ϖ ^ m • A` over `𝒪[E]`. -/
@@ -231,8 +227,11 @@ theorem addHaar_image_linearMap_of_isNonarchimedeanLocalField (μ : Measure V) [
       simp only [Function.comp_apply, e,
         LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology, Basis.equivFun_apply]
       exact congrFun (LinearMap.toMatrix_mulVec_repr b b f x).symm _
-    rw [← map_apply_image μ e (f '' s), hcomm, addHaar_image_mulVec_of_isUnit_det ν hA, hAdet,
-      map_apply_image μ e s]
+    rw [← e.toHomeomorph.measurableEmbedding.map_apply_image μ (f '' s),
+      ContinuousLinearEquiv.coe_toHomeomorph, hcomm, addHaar_image_mulVec_of_isUnit_det ν hA,
+      hAdet]
+    simp only [ν, ← ContinuousLinearEquiv.coe_toHomeomorph (e := e),
+      e.toHomeomorph.measurableEmbedding.map_apply_image]
 
 /-- Image of a set under a continuous linear map `f : V →L[E] V` (invertible or singular) scales
 any additive Haar measure on `V` by `|det f|_E`. -/
@@ -304,7 +303,8 @@ theorem addHaar_preimage_continuousLinearMap_of_isNonarchimedeanLocalField (μ :
 /-- **Pushforward of additive Haar measure under a linear equivalence.** For any `T : V ≃ₗ[E] V`
 and any additive Haar measure `μ` on `V`, `Measure.map T μ = |det T|_E⁻¹ • μ`, independently of
 basis and Haar normalization. -/
-theorem map_linearEquiv_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] (T : V ≃ₗ[E] V) :
+theorem map_linearEquiv_addHaar_of_isNonarchimedeanLocalField (μ : Measure V) [μ.IsAddHaarMeasure]
+    (T : V ≃ₗ[E] V) :
     map T μ =
       ((normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
   have : ContinuousAdd V := IsModuleTopology.toContinuousAdd E V
@@ -315,28 +315,29 @@ theorem map_linearEquiv_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] (T : V �
     ENNReal.coe_inv (coe_normalizedAbsoluteValue_ne_zero T.isUnit_det'.ne_zero)]
 
 /-- Pushforward of additive Haar measure under a continuous linear equivalence `T : V ≃L[E] V`. -/
-theorem map_continuousLinearEquiv_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] (T : V ≃L[E] V) :
+theorem map_continuousLinearEquiv_addHaar_of_isNonarchimedeanLocalField (μ : Measure V)
+    [μ.IsAddHaarMeasure] (T : V ≃L[E] V) :
     map T μ =
       ((normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) : ℝ≥0)⁻¹ : ℝ≥0) • μ :=
-  map_linearEquiv_addHaar μ T.toLinearEquiv
+  map_linearEquiv_addHaar_of_isNonarchimedeanLocalField μ T.toLinearEquiv
 
 /-- Pushforward of additive Haar measure under a linear endomorphism `f : V →ₗ[E] V` of nonzero
 determinant. -/
-theorem map_linearMap_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] {f : V →ₗ[E] V}
-    (hf : f.det ≠ 0) :
+theorem map_linearMap_addHaar_of_isNonarchimedeanLocalField (μ : Measure V) [μ.IsAddHaarMeasure]
+    {f : V →ₗ[E] V} (hf : f.det ≠ 0) :
     map f μ = ((normalizedAbsoluteValue E f.det : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
   let T : V ≃ₗ[E] V := LinearMap.equivOfIsUnitDet (isUnit_iff_ne_zero.2 hf)
   have hcoe : (T : V →ₗ[E] V) = f := LinearMap.coe_equivOfIsUnitDet _
   have hfun : (T : V → V) = f := DFunLike.coe_fn_eq.2 hcoe
-  simpa only [← hfun, hcoe] using map_linearEquiv_addHaar μ T
+  simpa only [← hfun, hcoe] using map_linearEquiv_addHaar_of_isNonarchimedeanLocalField μ T
 
 /-- Pushforward of additive Haar measure under a continuous linear endomorphism `f : V →L[E] V` of
 nonzero determinant. -/
-theorem map_continuousLinearMap_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] {f : V →L[E] V}
-    (hf : LinearMap.det (f : V →ₗ[E] V) ≠ 0) :
+theorem map_continuousLinearMap_addHaar_of_isNonarchimedeanLocalField (μ : Measure V)
+    [μ.IsAddHaarMeasure] {f : V →L[E] V} (hf : LinearMap.det (f : V →ₗ[E] V) ≠ 0) :
     map f μ =
       ((normalizedAbsoluteValue E (LinearMap.det (f : V →ₗ[E] V)) : ℝ≥0)⁻¹ : ℝ≥0) • μ :=
-  map_linearMap_addHaar μ hf
+  map_linearMap_addHaar_of_isNonarchimedeanLocalField μ hf
 
 /-- Scalar multiplication by `c : E` on `V` multiplies additive Haar measure by
 `|c|_E ^ finrank E V`. -/
@@ -368,7 +369,8 @@ theorem addHaar_preimage_smul_module_of_isNonarchimedeanLocalField (μ : Measure
 
 /-- Pushforward of additive Haar measure on `V` under scalar multiplication by `c ≠ 0`. -/
 @[simp, grind =]
-theorem map_smul_module_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] {c : E} (hc : c ≠ 0) :
+theorem map_smul_module_addHaar_of_isNonarchimedeanLocalField (μ : Measure V) [μ.IsAddHaarMeasure]
+    {c : E} (hc : c ≠ 0) :
     map (c • ·) μ =
       (((normalizedAbsoluteValue E c : ℝ≥0) ^ Module.finrank E V)⁻¹ : ℝ≥0) • μ := by
   have hfun : (c • · : V → V) = ⇑(c • (LinearMap.id : V →ₗ[E] V)) :=
@@ -376,32 +378,34 @@ theorem map_smul_module_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] {c : E} (
   have hdet : (c • (LinearMap.id : V →ₗ[E] V)).det ≠ 0 := by
     rw [LinearMap.det_smul, LinearMap.det_id, mul_one]
     exact pow_ne_zero _ hc
-  rw [hfun, map_linearMap_addHaar μ hdet, LinearMap.det_smul, LinearMap.det_id, mul_one,
-    map_pow, NNRat.cast_pow]
+  rw [hfun, map_linearMap_addHaar_of_isNonarchimedeanLocalField μ hdet, LinearMap.det_smul,
+    LinearMap.det_id, mul_one, map_pow, NNRat.cast_pow]
 
 /-- Lower Lebesgue integral change of variables on `V` under `T : V ≃ₗ[E] V`. -/
-theorem lintegral_linearEquiv_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] (T : V ≃ₗ[E] V)
-    (f : V → ℝ≥0∞) :
+theorem lintegral_comp_linearEquiv_addHaar_of_isNonarchimedeanLocalField (μ : Measure V)
+    [μ.IsAddHaarMeasure] (T : V ≃ₗ[E] V) (f : V → ℝ≥0∞) :
     ∫⁻ x, f (T x) ∂μ =
       ((normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) : ℝ≥0) : ℝ≥0∞)⁻¹ *
         ∫⁻ x, f x ∂μ := by
   let e : V ≃ᵐ V := T.toContinuousLinearEquivOfIsModuleTopology.toHomeomorph.toMeasurableEquiv
   have h := lintegral_map_equiv f e (μ := μ)
   have he : ⇑e = ⇑T := by simp [e]
-  rw [he, map_linearEquiv_addHaar μ T, lintegral_smul_measure, ENNReal.smul_def, smul_eq_mul,
+  rw [he, map_linearEquiv_addHaar_of_isNonarchimedeanLocalField μ T, lintegral_smul_measure,
+    ENNReal.smul_def, smul_eq_mul,
     ENNReal.coe_inv (coe_normalizedAbsoluteValue_ne_zero T.isUnit_det'.ne_zero)] at h
   exact h.symm
 
 /-- Bochner integral change of variables on `V` under `T : V ≃ₗ[E] V`. -/
-theorem integral_linearEquiv_addHaar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (μ : Measure V) [μ.IsAddHaarMeasure] (T : V ≃ₗ[E] V) (f : V → F) :
+theorem integral_comp_linearEquiv_addHaar_of_isNonarchimedeanLocalField {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (μ : Measure V) [μ.IsAddHaarMeasure]
+    (T : V ≃ₗ[E] V) (f : V → F) :
     ∫ x, f (T x) ∂μ =
       ((normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) : ℝ)⁻¹) • ∫ x, f x ∂μ := by
   let e : V ≃ᵐ V := T.toContinuousLinearEquivOfIsModuleTopology.toHomeomorph.toMeasurableEquiv
   have h := integral_map_equiv e f (μ := μ)
   have he : ⇑e = ⇑T := by simp [e]
-  rw [he, map_linearEquiv_addHaar μ T, integral_smul_nnreal_measure, NNReal.smul_def,
-    NNReal.coe_inv] at h
+  rw [he, map_linearEquiv_addHaar_of_isNonarchimedeanLocalField μ T, integral_smul_nnreal_measure,
+    NNReal.smul_def, NNReal.coe_inv] at h
   exact h.symm
 
 omit [Module.Finite E V] in
@@ -410,7 +414,8 @@ omit [Module.Finite E V] in
 example [Subsingleton V] (μ : Measure V) [μ.IsAddHaarMeasure] (T : V ≃ₗ[E] V) :
     map T μ = μ := by
   have : Module.Finite E V := Module.Finite.of_finite
-  rw [map_linearEquiv_addHaar μ T, LinearMap.det_eq_one_of_subsingleton, map_one]
+  rw [map_linearEquiv_addHaar_of_isNonarchimedeanLocalField μ T,
+    LinearMap.det_eq_one_of_subsingleton, map_one]
   simp
 
 end ModuleSpace
@@ -441,11 +446,12 @@ theorem addHaar_preimage_mulVec_of_isNonarchimedeanLocalField (μ : Measure (ι 
     LinearMap.det_toLin']
 
 /-- Pushforward of additive Haar measure on `ι → E` under `A.mulVec` (`A.det ≠ 0`). -/
-theorem map_mulVec_addHaar (μ : Measure (ι → E)) [μ.IsAddHaarMeasure] {A : Matrix ι ι E}
-    (hA : A.det ≠ 0) :
+theorem map_mulVec_addHaar_of_isNonarchimedeanLocalField (μ : Measure (ι → E)) [μ.IsAddHaarMeasure]
+    {A : Matrix ι ι E} (hA : A.det ≠ 0) :
     map A.mulVec μ = ((normalizedAbsoluteValue E A.det : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
   rw [← Matrix.coe_mulVecLin A, ← Matrix.toLin'_apply' A,
-    map_linearMap_addHaar μ (by rwa [LinearMap.det_toLin']), LinearMap.det_toLin']
+    map_linearMap_addHaar_of_isNonarchimedeanLocalField μ (by rwa [LinearMap.det_toLin']),
+    LinearMap.det_toLin']
 
 end MatrixSpace
 
@@ -484,7 +490,8 @@ example (μ : Measure (E × E)) [μ.IsAddHaarMeasure] (a : E) (s : Set (E × E))
 example (μ : Measure (E × E)) [μ.IsAddHaarMeasure] {a : E} (ha : a ≠ 0) :
     map (fun p : E × E ↦ (a * p.1, p.2)) μ =
       ((normalizedAbsoluteValue E a : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
-  rw [← coe_firstCoordScale a, map_linearMap_addHaar μ (by rwa [det_firstCoordScale]),
+  rw [← coe_firstCoordScale a,
+    map_linearMap_addHaar_of_isNonarchimedeanLocalField μ (by rwa [det_firstCoordScale]),
     det_firstCoordScale]
 
 /-- Sanity check on `E × E`: diagonal scaling `(x, y) ↦ (ϖ * x, y)` by a uniformizer `ϖ ∈ Eˣ`
@@ -492,7 +499,8 @@ pushes any additive Haar measure forward to `q • μ`. -/
 example (μ : Measure (E × E)) [μ.IsAddHaarMeasure] {ϖ : Eˣ} (hϖ : IsUniformizer E ϖ) :
     map (fun p : E × E ↦ ((ϖ : E) * p.1, p.2)) μ = (Nat.card 𝓀[E] : ℝ≥0) • μ := by
   rw [← coe_firstCoordScale (ϖ : E),
-    map_linearMap_addHaar μ (by rw [det_firstCoordScale]; exact ϖ.ne_zero),
+    map_linearMap_addHaar_of_isNonarchimedeanLocalField μ
+      (by rw [det_firstCoordScale]; exact ϖ.ne_zero),
     det_firstCoordScale, normalizedAbsoluteValue_coe, (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd,
     zpow_neg_one]
   congr 1
@@ -503,70 +511,35 @@ end ProdChecks
 
 end MeasureTheory.Measure
 
+namespace MeasureTheory
+
 section DistribHaarCharModule
 
 open TauCeti
 
-variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
+variable (E : Type*) {V G : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
   [IsNonarchimedeanLocalField E] [AddCommGroup V] [Module E V] [Module.Finite E V]
   [TopologicalSpace V] [IsTopologicalAddGroup V] [LocallyCompactSpace V] [IsModuleTopology E V]
+  [Group G] [DistribMulAction G V] [SMulCommClass G E V] [ContinuousConstSMul G V]
 
-namespace LinearEquiv
-
-/-- **Distributive Haar character of a linear equivalence.** On a finite-dimensional `E`-vector
-space `V` with its module topology, `distribHaarChar V T = |det T|_E` for every `T : V ≃ₗ[E] V`. -/
-@[simp, grind =]
-theorem distribHaarChar_eq_normalizedAbsoluteValue_det (T : V ≃ₗ[E] V) :
-    distribHaarChar V T =
-      (normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) : ℝ≥0) := by
+/-- **Distributive Haar character of a linear group action.** On a finite-dimensional `E`-vector
+space `V` carrying its module topology, any group `G` acting continuously and `E`-linearly on `V`
+satisfies `distribHaarChar V g = |det (g • ·)|_E`. Specializes directly to `V ≃ₗ[E] V`,
+`LinearMap.GeneralLinearGroup E V`, and `(V →L[E] V)ˣ`. -/
+theorem distribHaarChar_eq_normalizedAbsoluteValue_det (g : G) :
+    distribHaarChar V g =
+      (normalizedAbsoluteValue E (LinearMap.det (DistribSMul.toLinearMap E V g)) : ℝ≥0) := by
   borelize V
   let K : PositiveCompacts V := Classical.arbitrary (PositiveCompacts V)
   refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := addHaarMeasure K) (s := (K : Set V))
     (by simp [addHaarMeasure_self]) (by simp [addHaarMeasure_self]) ?_
-  have hsmul : T • (K : Set V) = T '' (K : Set V) := by
-    ext x
-    simp [mem_smul_set, LinearEquiv.smul_def]
-  rw [hsmul, addHaar_image_linearEquiv_of_isNonarchimedeanLocalField]
-
-end LinearEquiv
-
-namespace LinearMap.GeneralLinearGroup
-
-/-- **Distributive Haar character on `GL(V)`.** Every `g : LinearMap.GeneralLinearGroup E V` has
-`distribHaarChar V g = |det g|_E`. -/
-@[simp, grind =]
-theorem distribHaarChar_eq_normalizedAbsoluteValue_det (g : LinearMap.GeneralLinearGroup E V) :
-    distribHaarChar V g =
-      (normalizedAbsoluteValue E (LinearMap.det (g : V →ₗ[E] V)) : ℝ≥0) := by
-  let T : V ≃ₗ[E] V := LinearMap.GeneralLinearGroup.toLinearEquiv g
-  have hcoe : (T : V →ₗ[E] V) = (g : V →ₗ[E] V) := by
-    ext v
-    simp [T]
-  rw [distribHaarChar_eq_of_smul_eq (h := T) fun v ↦ by
-      simp [T, Units.smul_def, LinearEquiv.smul_def],
-    T.distribHaarChar_eq_normalizedAbsoluteValue_det, hcoe]
-
-end LinearMap.GeneralLinearGroup
-
-namespace Units
-
-/-- **Distributive Haar character of continuous linear units.** Every `u : (V →L[E] V)ˣ` has
-`distribHaarChar V u = |det u|_E`. -/
-@[simp, grind =]
-theorem distribHaarChar_eq_normalizedAbsoluteValue_det (u : (V →L[E] V)ˣ) :
-    distribHaarChar V u =
-      (normalizedAbsoluteValue E (LinearMap.det ((u : V →L[E] V) : V →ₗ[E] V)) : ℝ≥0) := by
-  let T : V ≃ₗ[E] V := (ContinuousLinearEquiv.unitsEquiv E V u).toLinearEquiv
-  have hcoe : (T : V →ₗ[E] V) = ((u : V →L[E] V) : V →ₗ[E] V) := by
-    ext v
-    simp [T]
-  rw [distribHaarChar_eq_of_smul_eq (h := T) fun v ↦ by
-      simp [T, Units.smul_def, LinearEquiv.smul_def],
-    T.distribHaarChar_eq_normalizedAbsoluteValue_det, hcoe]
-
-end Units
+  rw [← Set.image_smul]
+  exact Measure.addHaar_image_linearMap_of_isNonarchimedeanLocalField (addHaarMeasure K)
+    (DistribSMul.toLinearMap E V g) _
 
 end DistribHaarCharModule
+
+end MeasureTheory
 
 /-! ### Lattice-normalized and basis-normalized Haar measures -/
 
@@ -694,7 +667,8 @@ theorem map_linearEquiv_addHaar_of_mem_stabilizer [MeasurableSpace V] [BorelSpac
     (hT : T ∈ MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)) :
     Measure.map T μ = μ := by
   have : Module.Finite E V := Module.Finite.of_isFullLattice (A := E) L
-  rw [Measure.map_linearEquiv_addHaar μ T, normalizedAbsoluteValue_det_of_mem_stabilizer L hT]
+  rw [Measure.map_linearEquiv_addHaar_of_isNonarchimedeanLocalField μ T,
+    normalizedAbsoluteValue_det_eq_one_of_mem_stabilizer L hT]
   simp
 
 end Lattice
@@ -801,7 +775,7 @@ theorem localAddHaar_eq_smul {ι : Type*} [Fintype ι] [DecidableEq ι]
     simp [T]
   have hdet : LinearMap.det (T : V →ₗ[E] V) = b.det b' := b'.det_basis b
   conv_lhs => rw [← hb']
-  rw [← b.map_localAddHaar T, Measure.map_linearEquiv_addHaar, hdet]
+  rw [← b.map_localAddHaar T, Measure.map_linearEquiv_addHaar_of_isNonarchimedeanLocalField, hdet]
 
 /-- **Change-of-basis invariance for valuation-one determinant.** Whenever the transition
 determinant `b.det b'` has valuation one (equivalently `b.det b' ∈ 𝒪[E]ˣ` — in particular whenever

@@ -35,8 +35,8 @@ at most `D` times. This is
 
 * `MeasureTheory.Measure.measure_eq_zero_of_encard_setOf_add_smul_mem_le`: a measurable set
   meeting every line of direction `v` in at most `D` points is null.
-* `MeasureTheory.Measure.measure_coord_eq_zero`: every coordinate hyperplane `{a | a j = 0}` in
-  `ι → K` is null.
+* `MeasureTheory.Measure.measure_setOf_apply_eq_zero`: every coordinate hyperplane
+  `{a | a j = 0}` in `ι → K` is null.
 -/
 
 public section
@@ -82,7 +82,7 @@ theorem measure_eq_zero_of_encard_setOf_add_smul_mem_le (μ : Measure (ι → K)
 every coordinate hyperplane `{a | a j = 0}`. -/
 -- Not `@[grind =]`: `j` only appears inside the `setOf` predicate, so `grind` rejects the pattern.
 @[simp]
-theorem measure_coord_eq_zero (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
+theorem measure_setOf_apply_eq_zero (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
     [IsFiniteMeasureOnCompacts μ] (j : ι) :
     μ {a : ι → K | a j = 0} = 0 := by
   classical

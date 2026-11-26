@@ -64,9 +64,9 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
   `MeasureTheory.Measure.map_units_mul_left_addHaar`,
   `MeasureTheory.Measure.map_mul_left_addHaar_of_isUniformizer`,
   `MeasureTheory.Measure.map_integerUnits_mul_left_addHaar`,
-  `MeasureTheory.Measure.lintegral_mul_left_addHaar`,
-  `MeasureTheory.Measure.integral_mul_left_addHaar`: preimage, pushforward, and integral change of
-  variables under multiplication on `K`.
+  `MeasureTheory.Measure.lintegral_comp_mul_left_addHaar`,
+  `MeasureTheory.Measure.integral_comp_mul_left_addHaar`: preimage, pushforward, and integral
+  change of variables under multiplication on `K`.
 * `MeasureTheory.Measure.addHaar_setOf_normalizedAbsoluteValue_le`,
   `MeasureTheory.Measure.addHaar_setOf_normalizedAbsoluteValue_lt` and
   `MeasureTheory.Measure.addHaar_setOf_normalizedAbsoluteValue_eq`: the ball `|x|_K ≤ |a|_K`, the
@@ -421,7 +421,7 @@ theorem map_integerUnits_mul_left_addHaar (u : 𝒪[K]ˣ) :
   simp
 
 /-- Lower Lebesgue change of variables on `K` under `x ↦ a * x` (`a ≠ 0`). -/
-theorem lintegral_mul_left_addHaar {a : K} (ha : a ≠ 0) (f : K → ℝ≥0∞) :
+theorem lintegral_comp_mul_left_addHaar {a : K} (ha : a ≠ 0) (f : K → ℝ≥0∞) :
     ∫⁻ x, f (a * x) ∂μ = ((normalizedAbsoluteValue K a : ℝ≥0) : ℝ≥0∞)⁻¹ * ∫⁻ x, f x ∂μ := by
   let e : K ≃ᵐ K := MeasurableEquiv.mulLeft₀ a ha
   have h := lintegral_map_equiv f e (μ := μ)
@@ -433,7 +433,7 @@ theorem lintegral_mul_left_addHaar {a : K} (ha : a ≠ 0) (f : K → ℝ≥0∞)
   · exact coe_normalizedAbsoluteValue_ne_zero ha
 
 /-- Bochner integral change of variables on `K` under `x ↦ a * x` (`a ≠ 0`). -/
-theorem integral_mul_left_addHaar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+theorem integral_comp_mul_left_addHaar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {a : K} (ha : a ≠ 0) (f : K → F) :
     ∫ x, f (a * x) ∂μ = ((normalizedAbsoluteValue K a : ℝ)⁻¹) • ∫ x, f x ∂μ := by
   let e : K ≃ᵐ K := MeasurableEquiv.mulLeft₀ a ha

@@ -15,13 +15,12 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
-# Change of variables and congruence for the distributive Haar character
+# Change of variables along the distributive Haar character
 
 Let a group `G` act distributively and continuously on a locally compact additive group `A`.
 Mathlib's distributive Haar character `MeasureTheory.distribHaarChar A g` is the factor by which
-`g` scales additive Haar measure: `μ (g • s) = distribHaarChar A g * μ s`. This file proves
-congruence across group actions (`distribHaarChar_eq_of_smul_eq`), and states the scaling fact for
-pushforwards and integrals,
+`g` scales additive Haar measure: `μ (g • s) = distribHaarChar A g * μ s`. This file states the
+same fact for pushforwards and integrals,
 
 `μ.map (g • ·) = (distribHaarChar A g)⁻¹ • μ`,
 
@@ -40,8 +39,6 @@ particular the module of `ℝ` is the usual absolute value and the module of `�
 
 ## Main results
 
-* `MeasureTheory.distribHaarChar_eq_of_smul_eq`: if `∀ a : A, g • a = h • a`, then
-  `distribHaarChar A g = distribHaarChar A h`.
 * `MeasureTheory.Measure.map_smul_eq_inv_distribHaarChar_smul`: pushing a Haar measure forward
   along `g • ·` divides it by `distribHaarChar A g`.
 * `MeasureTheory.Measure.map_smul_withDensity`: a measure with density `f` with respect to a Haar
@@ -66,29 +63,6 @@ open Module Set
 open scoped NNReal ENNReal Pointwise
 
 namespace MeasureTheory
-
-section Congruence
-
-open MeasureTheory.Measure TopologicalSpace
-
-/-- If two elements of possibly different groups act continuously and distributively on the same
-locally compact topological additive group `A` by the same map, then they have the same
-distributive Haar character. -/
-theorem distribHaarChar_eq_of_smul_eq {G H A : Type*} [Group G] [Group H] [AddCommGroup A]
-    [DistribMulAction G A] [DistribMulAction H A] [TopologicalSpace A] [IsTopologicalAddGroup A]
-    [LocallyCompactSpace A] [ContinuousConstSMul G A] [ContinuousConstSMul H A] {g : G} {h : H}
-    (hgh : ∀ a : A, g • a = h • a) :
-    distribHaarChar A g = distribHaarChar A h := by
-  borelize A
-  let K : PositiveCompacts A := Classical.arbitrary (PositiveCompacts A)
-  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := addHaarMeasure K) (s := (K : Set A))
-    (by simp [addHaarMeasure_self]) (by simp [addHaarMeasure_self]) ?_
-  have hsmul : g • (K : Set A) = h • (K : Set A) := by
-    ext x
-    simp [Set.mem_smul_set, hgh]
-  rw [hsmul, ← distribHaarChar_mul (addHaarMeasure K) h (K : Set A)]
-
-end Congruence
 
 variable {G A : Type*} [Group G] [AddCommGroup A] [DistribMulAction G A] [TopologicalSpace A]
   [IsTopologicalAddGroup A] [LocallyCompactSpace A] [ContinuousConstSMul G A]

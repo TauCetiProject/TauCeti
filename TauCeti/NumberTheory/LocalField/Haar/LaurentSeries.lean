@@ -11,11 +11,11 @@ public import TauCeti.RingTheory.LaurentSeries.LocalField
 /-!
 # Normalized additive Haar measure and character on `F⸨X⸩`
 
-This module specializes `TauCeti.NumberTheory.LocalField.Haar.Basic` to the formal Laurent series
-field `F⸨X⸩` over a finite field `F`, covering the positive-characteristic case of nonarchimedean
-local fields: `TauCeti.localAddHaar F⸨X⸩` assigns mass one to the power-series subring `F⟦X⟧`,
-and the uniformizer `X` (`TauCeti.LaurentSeries.unitX`) has distributive Haar character
-`(Nat.card F)⁻¹` and pushes every additive Haar measure forward to `(Nat.card F) • μ`.
+This module specializes `TauCeti.NumberTheory.LocalField.Haar.Basic` to the equal-characteristic
+nonarchimedean local field `F⸨X⸩` over a finite field `F`: `TauCeti.localAddHaar F⸨X⸩` assigns
+mass one to the power-series subring `F⟦X⟧`, and the uniformizer `X`
+(`TauCeti.LaurentSeries.unitX`) has distributive Haar character `(Nat.card F)⁻¹` and pushes every
+additive Haar measure forward to `(Nat.card F) • μ`.
 
 ## Main results
 
@@ -46,9 +46,9 @@ theorem localAddHaar_range_ofPowerSeries [MeasurableSpace F⸨X⸩] [BorelSpace 
     simp [_root_.LaurentSeries.powerSeries_as_subring]
   rw [h, localAddHaar_integer]
 
-/-- **Equal-characteristic uniformizer character.** Over a finite field `F` (covering the
-positive-characteristic case of nonarchimedean local fields), the uniformizer `X` of `F⸨X⸩` has
-distributive Haar character `(Nat.card F)⁻¹`. -/
+/-- **Equal-characteristic uniformizer character.** For the equal-characteristic local field
+`F⸨X⸩` over a finite field `F`, the uniformizer `X` has distributive Haar character
+`(Nat.card F)⁻¹`. -/
 @[simp, grind =]
 theorem distribHaarChar_unitX :
     distribHaarChar F⸨X⸩ (unitX : F⸨X⸩ˣ) = (Nat.card F : ℝ≥0)⁻¹ := by

@@ -50,8 +50,8 @@ topological commutative ring.
   the endomorphisms mapping a lattice into itself form a compact open subset of `Module.End E V`.
 * `Submodule.IsFullLattice.isOpen_stabilizer`, `Submodule.IsFullLattice.isCompact_stabilizer`: the
   stabilizer of a lattice in `V ≃ₗ[E] V` is open and compact.
-* `Submodule.IsFullLattice.normalizedAbsoluteValue_det_of_mem_stabilizer`: every element of the
-  stabilizer `GL(L)` has determinant of normalized absolute value `1`.
+* `Submodule.IsFullLattice.normalizedAbsoluteValue_det_eq_one_of_mem_stabilizer`: every element of
+  the stabilizer `GL(L)` has determinant of normalized absolute value `1`.
 * `Module.Basis.stabilizerContinuousMulEquivGL`: in an `R`-basis of a full lattice over a subring
   `R` of a topological ring, such as `𝒪[E]`, the stabilizer of the lattice is `GL_n(R)` as a
   topological group.
@@ -312,7 +312,7 @@ theorem IsFullLattice.isCompact_stabilizer :
 
 omit [TopologicalSpace V] [IsModuleTopology E V] in
 /-- **Lattice-stabilizer elements have unit determinant.** Any `T ∈ GL(L)` has `|det T|_E = 1`. -/
-theorem IsFullLattice.normalizedAbsoluteValue_det_of_mem_stabilizer {T : V ≃ₗ[E] V}
+theorem IsFullLattice.normalizedAbsoluteValue_det_eq_one_of_mem_stabilizer {T : V ≃ₗ[E] V}
     (hT : T ∈ MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)) :
     TauCeti.normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) = 1 := by
   have hmap : L.map ((T.restrictScalars 𝒪[E] : V ≃ₗ[𝒪[E]] V) : V →ₗ[𝒪[E]] V) = L := by
