@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
+public import TauCeti.Analysis.Distribution.TestFunction.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -32,6 +33,10 @@ reflections.
 * `ContinuousLinearEquiv.transportTestFunction`: transport of test functions along a continuous
   linear equivalence, changing their domain, as a continuous linear map.
 * `ContinuousLinearEquiv.transportTestFunction_apply`: evaluation of a transported test function.
+* `ContinuousLinearEquiv.transportTestFunctionComplex`: the same transport of test functions with
+  values in a complex normed space, as a complex-linear map.
+* `ContinuousLinearEquiv.transportTestFunctionComplex_prodCongr_tensor`: transport along a product
+  of continuous linear equivalences takes tensor products to tensor products.
 * `ContinuousLinearEquiv.transportTestFunction_trans`,
   `ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm`: functoriality.
 * `ContinuousLinearEquiv.transportTestFunction_postcompCLM`: transport commutes with
@@ -151,6 +156,40 @@ theorem transportTestFunction_postcompCLM {G : Type*} [NormedAddCommGroup G] [No
       postcompCLM L (e.transportTestFunction hVO φ) := by
   ext y
   simp
+
+section Complex
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+
+/-- Transport test functions with values in a complex normed space along a continuous linear
+equivalence `e`, `φ ↦ φ ∘ e.symm`, as a complex-linear map: `transportTestFunction` regarded as
+complex-linear. -/
+def transportTestFunctionComplex (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) :
+    𝓓^{n}(V, G) →L[ℂ] 𝓓^{n}(Ω, G) where
+  toFun := e.transportTestFunction hVO
+  map_add' := (e.transportTestFunction hVO).map_add
+  map_smul' _ _ := TestFunction.ext fun _ ↦ by simp
+  cont := (e.transportTestFunction hVO).continuous
+
+/-- A transported complex test function is evaluated at the inversely transported point. -/
+@[simp]
+theorem transportTestFunctionComplex_apply (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω)
+    (φ : 𝓓^{n}(V, G)) (y : E') : transportTestFunctionComplex e hVO φ y = φ (e.symm y) :=
+  e.transportTestFunction_apply hVO φ y
+
+/-- Transport along a product `e₁ × e₂` of continuous linear equivalences takes the tensor product
+`φ ⊗ ψ` to the tensor product of the transports of `φ` and `ψ`. -/
+theorem transportTestFunctionComplex_prodCongr_tensor {D D' : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] [NormedAddCommGroup D'] [NormedSpace ℝ D'] {O : Opens D} {O' : Opens D'}
+    {W : Opens (E × D)} {W' : Opens (E' × D')} (e₁ : E ≃L[ℝ] E') (e₂ : D ≃L[ℝ] D')
+    (h₁ : MapsTo e₁ V Ω) (h₂ : MapsTo e₂ O O') (h : MapsTo (e₁.prodCongr e₂) W W')
+    (hW : (V : Set E) ×ˢ (O : Set D) ⊆ W) (hW' : (Ω : Set E') ×ˢ (O' : Set D') ⊆ W')
+    (φ : 𝓓^{n}(V, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) :
+    transportTestFunctionComplex (e₁.prodCongr e₂) h (φ.tensor ψ hW) =
+      (transportTestFunctionComplex e₁ h₁ φ).tensor (transportTestFunctionComplex e₂ h₂ ψ) hW' :=
+  TestFunction.ext fun _ ↦ by simp
+
+end Complex
 
 /-- The Fréchet derivative of a transported test function is the transported derivative,
 precomposed with `e.symm`. -/

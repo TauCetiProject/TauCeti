@@ -34,11 +34,14 @@ continuity of the map `ψ ↦ B (·) ψ` from `𝓓(O)` to `𝓓'(Ω)`. For `F =
 distribution `K ∈ 𝓓'(Ω × O, ℂ)`, acting on complex test functions through its complex-linear
 extension `Distribution.complexPairing` (`LinearMap.existsUnique_schwartzKernel_distribution`).
 
-These two theorems take the estimate as a hypothesis. It holds as soon as `B` is continuous in
-each variable for the topologies of test functions: the restriction of `B` to functions supported
-in `K₁` and `K₂` is then a separately continuous bilinear map on two Fréchet spaces, which has
-finite order (`LinearMap.exists_bound_supportedIn_of_continuous`, through the Banach–Steinhaus
-theorem). This gives `LinearMap.existsUnique_schwartzKernel_testFunction_of_continuous` and
+These two theorems take the estimate as a hypothesis, which is equivalent to `B` being continuous
+in each variable for the topologies of test functions. If `B` is separately continuous, its
+restriction to functions supported in `K₁` and `K₂` is a separately continuous bilinear map on two
+Fréchet spaces, which has finite order (`LinearMap.exists_bound_supportedIn_of_continuous`,
+through the Banach–Steinhaus theorem). Conversely, the estimate makes `B` continuous in each
+variable, since a test function `ψ` is supported in the compact set `tsupport ψ`
+(`LinearMap.continuous_apply_left_of_bound`). The forms of the theorem for separately continuous
+`B` are `LinearMap.existsUnique_schwartzKernel_testFunction_of_continuous` and
 `LinearMap.existsUnique_schwartzKernel_distribution_of_continuous`.
 
 A real bilinear map `B` on the real test functions `𝓓(Ω, ℝ) × 𝓓(O, ℝ)` with values in a real
@@ -452,65 +455,6 @@ private theorem exists_bound_ofSupportedIn_of_continuous {𝕜 G : Type*} [RCLik
     (fun _ ↦ (h₁ _).comp (continuous_ofSupportedIn hK₁))
     (fun _ ↦ (h₂ _).comp (continuous_ofSupportedIn hK₂))
 
-/-- Conversely, a complex bilinear map on complex test functions satisfying the estimate of the
-Schwartz kernel theorem is continuous in its first variable: a test function `ψ` is supported in
-the compact set `tsupport ψ`, so on the tests supported in a compact `K₁` the map `φ ↦ B φ ψ` is
-bounded by a multiple of one seminorm. -/
-private theorem continuous_apply_left_of_bound {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℂ G] (B : 𝓓(Ω, ℂ) →ₗ[ℂ] 𝓓(O, ℂ) →ₗ[ℂ] G)
-    (hB : ∀ (K₁ : Compacts E) (K₂ : Compacts D) (hK₁ : (K₁ : Set E) ⊆ Ω)
-      (hK₂ : (K₂ : Set D) ⊆ O), ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
-        ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
-          C * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₁ k φ *
-            ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₂ k ψ)
-    (ψ : 𝓓(O, ℂ)) : Continuous fun φ ↦ B φ ψ := by
-  let K₂ : Compacts D := ⟨tsupport ψ, ψ.hasCompactSupport⟩
-  let ψ₀ : 𝓓_{K₂}(D, ℂ) := .of_support_subset ψ.contDiff (subset_tsupport _)
-  have hψ : ofSupportedIn ψ.tsupport_subset ψ₀ = ψ := TestFunction.ext fun _ ↦ rfl
-  refine (TestFunction.continuous_iff_continuous_comp (B.flip ψ)).2 fun K₁ hK₁ ↦ ?_
-  obtain ⟨C, k, hC⟩ := hB K₁ K₂ hK₁ ψ.tsupport_subset
-  have h (φ : 𝓓_{K₁}(E, ℂ)) : ‖B (ofSupportedIn hK₁ φ) ψ‖ ≤
-      ((C * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₂ k ψ₀).toNNReal : ℝ) *
-        ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₁ k φ := by
-    calc ‖B (ofSupportedIn hK₁ φ) ψ‖
-        = ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn ψ.tsupport_subset ψ₀)‖ := by rw [hψ]
-      _ ≤ C * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₁ k φ *
-            ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₂ k ψ₀ := hC φ ψ₀
-      _ ≤ _ := by
-        rw [mul_right_comm, Real.coe_toNNReal']
-        exact mul_le_mul_of_nonneg_right (le_max_left _ _) (apply_nonneg _ _)
-  exact WithSeminorms.continuous_normedSpace_rng G
-    (ContDiffMapSupportedIn.withSeminorms' ℂ E ℂ ⊤ K₁)
-    ((B.flip ψ).comp (ofSupportedInCLM ℂ hK₁).toLinearMap)
-    ⟨{k}, (C * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₂ k ψ₀).toNNReal, fun φ ↦ by
-      simpa [NNReal.smul_def] using h φ⟩
-
-/-- The transport `φ ↦ φ ∘ e⁻¹` of complex test functions along a continuous linear equivalence
-`e`, as a complex-linear map. -/
-private def transportComplex {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-    {Ω' : Opens E'} (e : E ≃L[ℝ] E') (h : MapsTo e Ω Ω') : 𝓓(Ω, ℂ) →L[ℂ] 𝓓(Ω', ℂ) where
-  toFun := e.transportTestFunction h
-  map_add' := map_add _
-  map_smul' _ _ := TestFunction.ext fun _ ↦ by simp
-  cont := (e.transportTestFunction h).continuous
-
-private theorem transportComplex_apply {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-    {Ω' : Opens E'} (e : E ≃L[ℝ] E') (h : MapsTo e Ω Ω') (φ : 𝓓(Ω, ℂ)) (y : E') :
-    transportComplex e h φ y = φ (e.symm y) :=
-  e.transportTestFunction_apply h φ y
-
-/-- Transport along a product of continuous linear equivalences takes tensor products to tensor
-products. -/
-private theorem transportComplex_prodCongr_tensor {E' D' : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [NormedAddCommGroup D'] [NormedSpace ℝ D'] {V : Opens (E × D)}
-    {Ω' : Opens E'} {O' : Opens D'} {V' : Opens (E' × D')} (e₁ : E ≃L[ℝ] E') (e₂ : D ≃L[ℝ] D')
-    (h₁ : MapsTo e₁ Ω Ω') (h₂ : MapsTo e₂ O O') (h : MapsTo (e₁.prodCongr e₂) V V')
-    (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) (hV' : (Ω' : Set E') ×ˢ (O' : Set D') ⊆ V')
-    (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)) :
-    transportComplex (e₁.prodCongr e₂) h (φ.tensor ψ hV) =
-      (transportComplex e₁ h₁ φ).tensor (transportComplex e₂ h₂ ψ) hV' :=
-  TestFunction.ext fun _ ↦ by simp [transportComplex_apply]
-
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ D]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
   {B : 𝓓(Ω, ℂ) →ₗ[ℂ] 𝓓(O, ℂ) →ₗ[ℂ] F}
@@ -547,25 +491,28 @@ theorem existsUnique_schwartzKernel_testFunction_of_continuous
   have hV₁ : MapsTo (e₁.prodCongr e₂) V V' := fun p hp ↦ by simpa [V'] using hp
   have hV₂ : MapsTo (e₁.symm.prodCongr e₂.symm) V' V := fun _ hp ↦ hp
   let B' : 𝓓(Ω', ℂ) →ₗ[ℂ] 𝓓(O', ℂ) →ₗ[ℂ] F :=
-    B.compl₁₂ (transportComplex e₁.symm hΩ).toLinearMap (transportComplex e₂.symm hO).toLinearMap
+    B.compl₁₂ (e₁.symm.transportTestFunctionComplex hΩ).toLinearMap
+      (e₂.symm.transportTestFunctionComplex hO).toLinearMap
   obtain ⟨T', hT', hT'u⟩ := existsUnique_schwartzKernel_testFunction_pi B'
     (exists_bound_ofSupportedIn_of_continuous B'
-      (fun _ ↦ (h₁ _).comp (transportComplex e₁.symm hΩ).continuous)
-      (fun _ ↦ (h₂ _).comp (transportComplex e₂.symm hO).continuous)) hV'
-  refine ⟨T'.comp (transportComplex (e₁.prodCongr e₂) hV₁), fun φ ψ ↦ ?_, fun T hT ↦ ?_⟩
+      (fun _ ↦ (h₁ _).comp (e₁.symm.transportTestFunctionComplex hΩ).continuous)
+      (fun _ ↦ (h₂ _).comp (e₂.symm.transportTestFunctionComplex hO).continuous)) hV'
+  refine ⟨T'.comp ((e₁.prodCongr e₂).transportTestFunctionComplex hV₁), fun φ ψ ↦ ?_,
+    fun T hT ↦ ?_⟩
   · rw [ContinuousLinearMap.comp_apply,
-      transportComplex_prodCongr_tensor e₁ e₂ hΩ' hO' hV₁ _ hV'.symm.subset, hT']
-    exact congr_arg₂ (B · ·) (TestFunction.ext fun _ ↦ by simp [transportComplex_apply])
-      (TestFunction.ext fun _ ↦ by simp [transportComplex_apply])
+      ContinuousLinearEquiv.transportTestFunctionComplex_prodCongr_tensor e₁ e₂ hΩ' hO' hV₁ _
+        hV'.symm.subset, hT']
+    exact congr_arg₂ (B · ·) (TestFunction.ext fun _ ↦ by simp) (TestFunction.ext fun _ ↦ by simp)
   · -- `T` read in the coordinates is a kernel of `B'`, hence is `T'`.
-    have hTT' : T.comp (transportComplex (e₁.symm.prodCongr e₂.symm) hV₂) = T' :=
+    have hTT' : T.comp ((e₁.symm.prodCongr e₂.symm).transportTestFunctionComplex hV₂) = T' :=
       hT'u _ fun φ ψ ↦ by
         rw [ContinuousLinearMap.comp_apply,
-          transportComplex_prodCongr_tensor e₁.symm e₂.symm hΩ hO hV₂ _ hV.symm.subset, hT]
+          ContinuousLinearEquiv.transportTestFunctionComplex_prodCongr_tensor e₁.symm e₂.symm hΩ hO
+            hV₂ _ hV.symm.subset, hT]
         simp only [B', compl₁₂_apply, ContinuousLinearMap.coe_coe]
     ext Φ
     rw [← hTT', ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
-    exact congr_arg T (TestFunction.ext fun _ ↦ by simp [transportComplex_apply])
+    exact congr_arg T (TestFunction.ext fun _ ↦ by simp)
 
 variable (B) in
 /-- **The Schwartz kernel theorem on open sets.** Let `B` be a complex bilinear map on the complex
