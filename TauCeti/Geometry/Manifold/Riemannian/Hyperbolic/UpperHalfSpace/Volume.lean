@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Bas
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # The volume of the upper half-space model
@@ -135,15 +136,10 @@ theorem riemannianVolume_eq_withDensity :
       (volume.comap coe).withDensity
         fun x ↦ ENNReal.ofReal (height x ^ (Module.finrank ℝ E + 1))⁻¹ := by
   have hemb : MeasurableEmbedding (coe : UpperHalfSpace E → P) := measurableEmbedding_coe
-  rw [← hemb.comap_map (riemannianVolume J _), map_coe_riemannianVolume]
-  ext s hs
-  have hs' : MeasurableSet (coe '' s : Set P) := hemb.measurableSet_image.2 hs
-  rw [hemb.comap_apply, withDensity_apply _ hs', withDensity_apply _ hs,
-    Measure.restrict_restrict hs']
-  simp only [← snd_coe]
-  rw [← hemb.lintegral_map (fun p : P ↦ ENNReal.ofReal (p.snd ^ (Module.finrank ℝ E + 1))⁻¹),
-    ← hemb.injective.preimage_image s, ← hemb.restrict_map, hemb.map_comap,
-    Measure.restrict_restrict hs', range_coe, hemb.injective.preimage_image]
+  rw [← hemb.comap_map (riemannianVolume J _), map_coe_riemannianVolume, ← range_coe,
+    ← hemb.map_comap, ← hemb.map_withDensity_comp, hemb.comap_map]
+  -- The density `t⁻ⁿ` composed with `coe` is `height⁻ⁿ`.
+  simp [Function.comp_def]
 
 /-- **The volume of a product region of the upper half-space**: the points `(x, t)` with `x ∈ A`
 and `t ∈ T` have volume `vol A · ∫_{T ∩ (0, ∞)} t⁻ⁿ dt`, `n = dim E + 1`. -/
