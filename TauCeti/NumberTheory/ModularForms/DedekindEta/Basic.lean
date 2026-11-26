@@ -36,6 +36,10 @@ and at `c τ` for real `c > 0`, where the branches of `√(c τ)` and `√τ` di
 * `TauCeti.ModularForm.discriminant_eq_qParam_mul_tprod_pow`: `Δ(τ) = q (∏_{n ≥ 1} (1 - qⁿ))²⁴`,
   the product form of the discriminant with the power taken outside the product.
 * `TauCeti.ModularForm.tendsto_eta_div_exp`: `η(z) / e^{2π i z / 24} → 1` as `Im z → ∞`.
+* `TauCeti.ModularForm.mdifferentiable_eta_zpow`: the integer powers of `η` are holomorphic on
+  the upper half-plane.
+* `TauCeti.ModularForm.isBigO_eta_zpow_atImInfty`: `η(τ) ^ m = O(exp (-π m Im τ / 12))` at `i∞`
+  for every integer `m`.
 * `TauCeti.ModularForm.eta_two_mul`, `TauCeti.ModularForm.eta_div_two`,
   `TauCeti.ModularForm.eta_add_one_div_two`: the three product identities above.
 * `TauCeti.ModularForm.eta_neg_one_div_sq`: `η(-1/τ)² = -i τ η(τ)²` on the upper half-plane.
@@ -50,7 +54,7 @@ and at `c τ` for real `c > 0`, where the branches of `√(c τ)` and `√τ` di
 public section
 
 open Complex Filter Topology
-open scoped Real ModularForm
+open scoped Real ModularForm Manifold
 
 namespace TauCeti.ModularForm
 
@@ -90,6 +94,36 @@ theorem tendsto_eta_div_exp :
     fun z ↦ ?_
   simp only [mul_one]
   rw [eta_eq_exp_mul_tprod, mul_div_cancel_left₀ _ (exp_ne_zero _)]
+
+/-- The integer powers of `η` are holomorphic on the upper half-plane, where `η` has no zeros. -/
+theorem mdifferentiable_eta_zpow (m : ℤ) :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) fun τ : UpperHalfPlane ↦ η τ ^ m := fun τ ↦
+  ((_root_.ModularForm.differentiableAt_eta_of_mem_upperHalfPlaneSet τ.im_pos).zpow
+    (Or.inl (_root_.ModularForm.eta_ne_zero τ.im_pos))).mdifferentiableAt.comp τ
+    τ.mdifferentiable_coe
+
+/-- **Growth of the powers of `η` at `i∞`.** For every integer `m`,
+`η(τ) ^ m = O(exp (-π m Im τ / 12))` as `Im τ → ∞`: `η(τ)` is asymptotic to `e^{2π i τ / 24}`,
+whose modulus is `exp (-π Im τ / 12)`. For negative `m` this bounds the growth of `η ^ (-m)⁻¹`,
+since `η` has no zeros on the upper half-plane. -/
+theorem isBigO_eta_zpow_atImInfty (m : ℤ) :
+    (fun τ : UpperHalfPlane ↦ η τ ^ m) =O[UpperHalfPlane.atImInfty]
+      fun τ ↦ Real.exp (-(π * m / 12) * τ.im) := by
+  have h₁ : Tendsto (fun τ : UpperHalfPlane ↦ (η τ / cexp (2 * π * I * τ / 24)) ^ m)
+      UpperHalfPlane.atImInfty (𝓝 1) := by
+    simpa using (tendsto_eta_div_exp.comp UpperHalfPlane.tendsto_coe_atImInfty).zpow₀ m
+      (Or.inl one_ne_zero)
+  have h₂ : (fun τ : UpperHalfPlane ↦ cexp (2 * π * I * τ / 24) ^ m) =O[UpperHalfPlane.atImInfty]
+      fun τ ↦ Real.exp (-(π * m / 12) * τ.im) := by
+    refine Asymptotics.isBigO_of_le _ fun τ ↦ le_of_eq ?_
+    rw [← Complex.exp_intCast_mul, Complex.norm_exp, Real.norm_of_nonneg (Real.exp_pos _).le]
+    congr 1
+    simp only [mul_re, mul_im, div_re, div_im, ofReal_re, ofReal_im, I_re, I_im, intCast_re,
+      intCast_im, re_ofNat, im_ofNat, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im,
+      Complex.normSq_ofNat]
+    ring
+  refine ((h₁.isBigO_one ℝ).mul h₂).congr (fun τ ↦ ?_) fun τ ↦ one_mul _
+  rw [div_zpow, div_mul_cancel₀ _ (zpow_ne_zero _ (Complex.exp_ne_zero _))]
 
 /-- `η(2τ) = e^{π i τ / 12} η(τ) ∏_{n ≥ 1} (1 + qⁿ)` on the upper half-plane, where
 `q = e^{2π i τ}`. -/

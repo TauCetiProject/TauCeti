@@ -60,6 +60,8 @@ expansion here of the function read in the scaling coordinate of the cusp.
 * `TauCeti.UpperHalfPlane.orderTop_laurentQExpansion`: the order at `i∞`.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_eq_zero_iff`: uniqueness of the expansion.
 * `TauCeti.UpperHalfPlane.hasSum_laurentQExpansion`: convergence near `i∞`.
+* `TauCeti.UpperHalfPlane.tendsto_laurentQExpansion_coeff_zero`: without negative powers, the
+  function tends to the constant coefficient at `i∞`.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_eq_laurentQExpansion_iff`: the `q`-expansion
   principle.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul`: the expansion at period `d * h` is the
@@ -451,6 +453,15 @@ theorem laurentQExpansion_inv (hf : MeromorphicAt (cuspFunction h f) 0) :
     rw [cuspFunction_of_ne_zero hq, cuspFunction_of_ne_zero hq, Pi.mul_apply, Pi.inv_apply,
       mul_inv_cancel₀ hq', Pi.one_apply]
 
+/-- The Laurent `q`-expansion commutes with integer powers. -/
+theorem laurentQExpansion_zpow (hf : MeromorphicAt (cuspFunction h f) 0) (n : ℤ) :
+    laurentQExpansion h (f ^ n) = laurentQExpansion h f ^ n := by
+  cases n with
+  | ofNat n => simpa using laurentQExpansion_pow hf n
+  | negSucc n =>
+    rw [zpow_negSucc, zpow_negSucc, laurentQExpansion_inv (meromorphicAt_cuspFunction_pow hf _),
+      laurentQExpansion_pow hf]
+
 /-- The Laurent `q`-expansion commutes with quotients. -/
 theorem laurentQExpansion_div (hf : MeromorphicAt (cuspFunction h f) 0)
     (hg : MeromorphicAt (cuspFunction h g) 0) :
@@ -489,6 +500,21 @@ theorem hasSum_laurentQExpansion (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex
     by_contra! H
     exact hm ⟨(m + k).toNat, by simp only; omega⟩
   rw [laurentQExpansion_coeff_eq_zero_of_lt_neg hk hm', zero_mul]
+
+/-- **The constant term as a limit.** A periodic function whose cusp function is meromorphic at
+`0` and whose Laurent `q`-expansion has no negative powers tends at `i∞` to the constant
+coefficient of that expansion. -/
+theorem tendsto_laurentQExpansion_coeff_zero (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
+    (hf : MeromorphicAt (cuspFunction h f) 0) (h0 : 0 ≤ (laurentQExpansion h f).orderTop) :
+    Tendsto f atImInfty (𝓝 ((laurentQExpansion h f).coeff 0)) := by
+  rw [orderTop_laurentQExpansion hf] at h0
+  have han : AnalyticAt ℂ (cuspFunction h f) 0 := by
+    simpa using analyticAt_cuspFunction_qParam_pow_mul hf (k := 0) (by simpa using h0)
+  rw [laurentQExpansion_of_analyticAt han, show (0 : ℤ) = ((0 : ℕ) : ℤ) from rfl,
+    HahnSeries.ofPowerSeries_apply_coeff, qExpansion_coeff, Nat.factorial_zero, Nat.cast_one,
+    inv_one, one_mul, iteratedDeriv_zero]
+  refine (han.continuousAt.tendsto.comp (qParam_tendsto_atImInfty hh)).congr fun τ ↦ ?_
+  simpa using eq_cuspFunction τ hh.ne' hfper
 
 /-- Functions which agree sufficiently high in the upper half-plane have the same Laurent
 `q`-expansion. -/

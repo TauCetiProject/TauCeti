@@ -49,7 +49,8 @@ fields `F_N`.
 * `Subgroup.CompactifiedQuotient.laurentQExpansion_aeval`: the expansion of a polynomial in `F`.
 * `Subgroup.CompactifiedQuotient.orderTop_laurentQExpansion`: the order at the cusp.
 * `Subgroup.CompactifiedQuotient.laurentQExpansion_coeff_zero_eq_finitePart`: the value at the cusp.
-* `Subgroup.CompactifiedQuotient.hasSum_laurentQExpansion`: convergence near the cusp.
+* `Subgroup.CompactifiedQuotient.hasSum_laurentQExpansion`: convergence near the cusp, for the
+  pullback, which has the width as a period (`Subgroup.CompactifiedQuotient.periodic_finitePart`).
 * `Subgroup.CompactifiedQuotient.laurentQExpansion_ofMeromorphic`: the expansion of the
   meromorphic function defined by a function meromorphic at every point.
 * `Subgroup.CompactifiedQuotient.coeffSubfield`, `Subgroup.CompactifiedQuotient.mem_coeffSubfield`
@@ -109,7 +110,7 @@ theorem meromorphicAt_cuspFunction_finitePart (F : MeromorphicFunction Γ.Compac
 
 /-- The pullback of a meromorphic function on the compactified quotient, read in the scaling of
 `D`, is periodic with the width of `D` as a period. -/
-private theorem periodic_finitePart (F : MeromorphicFunction Γ.CompactifiedQuotient) :
+theorem periodic_finitePart (F : MeromorphicFunction Γ.CompactifiedQuotient) :
     Periodic ((fun z ↦ F.finitePart (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z)))) ∘ ofComplex)
       D.width :=
   TauCeti.Subgroup.CuspDatum.periodic_comp_ofComplex_inv_smul D

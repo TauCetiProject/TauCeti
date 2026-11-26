@@ -49,7 +49,8 @@ hypothesis on `-1 ∈ Γ` or on the regularity of the cusps is needed.
 * `TauCeti.IsWeakForm`: the predicate.
 * `TauCeti.IsWeakForm.mono`, `TauCeti.IsWeakForm.add`, `TauCeti.IsWeakForm.smul`,
   `TauCeti.IsWeakForm.mul`, `TauCeti.IsWeakForm.pow`: closure properties.
-* `TauCeti.IsWeakForm.slash`: slashing by `g` gives a weak form on the conjugate `g⁻¹ Γ g`.
+* `TauCeti.IsWeakForm.slash`: slashing by `g` gives a weak form on the conjugate `g⁻¹ Γ g`;
+  `TauCeti.IsWeakForm.slash_of_normal`: on a normal subgroup, a weak form on `Γ` itself.
 * `ModularFormClass.isWeakForm`, `TauCeti.exists_modularForm_coe_eq_iff`: modular forms are the
   weak forms bounded at every cusp.
 * `TauCeti.IsWeakForm.meromorphicAt_cuspFunction_slash`,
@@ -210,6 +211,11 @@ theorem slash (hf : IsWeakForm Γ k f) (g : SL(2, ℤ)) :
   exists_isBigO_exp g' := by
     rw [← SlashAction.slash_mul]
     exact hf.exists_isBigO_exp (g * g')
+
+/-- Slashing a weak form on a normal subgroup `Γ` by `g ∈ SL₂(ℤ)` gives a weak form on `Γ`. -/
+theorem slash_of_normal [Γ.Normal] (hf : IsWeakForm Γ k f) (g : SL(2, ℤ)) :
+    IsWeakForm Γ k (f ∣[k] g) := by
+  simpa only [Subgroup.Normal.conjAct ‹Γ.Normal›] using hf.slash g
 
 /-- On a finite-index subgroup, the cusp germ of a weak form at every cusp is meromorphic: the
 cusp function of `f ∣[k] g` in `exp (2 π i τ / N)`, for `N` the strict level of `Γ`, is

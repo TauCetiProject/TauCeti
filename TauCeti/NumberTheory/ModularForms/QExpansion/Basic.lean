@@ -312,6 +312,11 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_pow (hf : MeromorphicAt (cuspF
     (n : ℕ) : MeromorphicAt (cuspFunction h (f ^ n)) 0 :=
   (hf.pow n).congr (cuspFunction_map_eventuallyEq (· ^ n) f).symm
 
+/-- The cusp function of an integer power is meromorphic at `0` when the cusp function is. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_zpow (hf : MeromorphicAt (cuspFunction h f) 0)
+    (n : ℤ) : MeromorphicAt (cuspFunction h (f ^ n)) 0 :=
+  (hf.zpow n).congr (cuspFunction_map_eventuallyEq (· ^ n) f).symm
+
 /-- The cusp function of a constant function is meromorphic at `0`. -/
 theorem UpperHalfPlane.meromorphicAt_cuspFunction_const (c : ℂ) :
     MeromorphicAt (cuspFunction h fun _ : ℍ ↦ c) 0 :=

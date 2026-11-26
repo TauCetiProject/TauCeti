@@ -44,6 +44,8 @@ has class `1`, a product of `n` conjugates of `T` equal to `1` forces `12 ∣ n`
   `Multiplicative (ZMod 12)`, with the class of `T` sent to `1`.
 * `TauCeti.ModularGroup.sl2zAbelianizationMulEquiv_of_S`, `_of_T`, `_of_neg_one`: the images
   `9`, `1` and `6` of `S`, `T` and `-1`.
+* `TauCeti.ModularGroup.sl2z_hom_ext_T`: a homomorphism from `SL(2, ℤ)` to a commutative group
+  is determined by its value at `T`.
 * `TauCeti.ModularGroup.sl2zAbelianizationMulEquiv_of_of_isConj`,
   `sl2zAbelianizationMulEquiv_of_prod`: every conjugate of `T` goes to `1`, so a product of `n`
   conjugates of `T` goes to `n`.
@@ -239,6 +241,16 @@ theorem sl2zAbelianizationMulEquiv_of_neg_one :
   rw [← S_sq, map_pow, map_pow, sl2zAbelianizationMulEquiv_of_S,
     ← ofAdd_nsmul]
   decide
+
+/-- **A character of `SL(2, ℤ)` is determined by its value at `T`.** Two homomorphisms from
+`SL(2, ℤ)` to a commutative group that agree on `T` are equal, since the class of `T` generates
+the abelianization. -/
+theorem sl2z_hom_ext_T {G : Type*} [CommGroup G] {f g : SL(2, ℤ) →* G} (h : f T = g T) :
+    f = g := by
+  ext γ
+  obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_T (Group.Abelianization.of γ))
+  rw [← Group.Abelianization.lift_apply_of f, ← Group.Abelianization.lift_apply_of g, ← hn,
+    map_zpow, map_zpow, Group.Abelianization.lift_apply_of, Group.Abelianization.lift_apply_of, h]
 
 /-- Under the abelianization of `SL(2, ℤ)`, every conjugate of `T` goes to `1`. -/
 theorem sl2zAbelianizationMulEquiv_of_of_isConj {g : SL(2, ℤ)} (hg : IsConj T g) :
