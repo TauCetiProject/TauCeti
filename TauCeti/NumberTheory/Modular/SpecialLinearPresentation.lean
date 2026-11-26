@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
+public import Mathlib.GroupTheory.PushoutI
 public import TauCeti.NumberTheory.Modular.Generators
 import Mathlib.Data.ZMod.Basic
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
@@ -22,6 +23,9 @@ subject to `S⁴ = 1` and `S² = R³`: both sides of the second relation are the
 presentation of `SL(2, ℤ)`:
 
 `SL(2, ℤ) ≅ ⟨s, r | s⁴, s² r⁻³⟩`.
+
+Comparing universal properties, `SL(2, ℤ)` is then the pushout of `ℤ/4 ← ℤ/2 → ℤ/6` along
+`1 ↦ 2` and `1 ↦ 3`, the amalgamated free product `Monoid.PushoutI` of Mathlib.
 
 The proof lifts the presentation `PSL(2, ℤ) ≅ Δ(3, 2, ∞)` of
 `TauCeti.ModularGroup.modularEquiv` through the central extension
@@ -48,6 +52,9 @@ therefore has length divisible by `12`; conversely `(T B)⁶ = 1` gives one of e
   `PresentedGroup slRelators ≃* SL(2, ℤ)`, sending `s` and `r` to `S` and `R`.
 * `TauCeti.ModularGroup.slLift`: its universal property, the homomorphism `SL(2, ℤ) →* G`
   sending `S` and `R` to `a` and `b` with `a⁴ = 1` and `a² = b³`.
+* `TauCeti.ModularGroup.slAmalgamEquiv`: the amalgamated free product
+  `Monoid.PushoutI slAmalgamEmbedding = ℤ/4 ∗_{ℤ/2} ℤ/6` is isomorphic to `SL(2, ℤ)`, with the
+  generators of `ℤ/4`, `ℤ/6` and `ℤ/2` sent to `S`, `R` and `-1`.
 * `TauCeti.ModularGroup.slAbelianizationMulEquiv`: the abelianization of `SL(2, ℤ)` is
   `Multiplicative (ZMod 12)`, with the class of `T` sent to `1`.
 * `TauCeti.ModularGroup.slAbelianizationMulEquiv_of_isConj_T`: every conjugate of `T` has
@@ -201,8 +208,10 @@ private theorem slPresentationHom_surjective : Function.Surjective slPresentatio
   · refine ⟨(PresentedGroup.of 0)⁻¹ * PresentedGroup.of 1, ?_⟩
     rw [map_mul, map_inv, slPresentationHom_of_zero, slPresentationHom_of_one, S_inv_mul_R]
 
-/-- **The amalgam presentation of the modular group.** `SL(2, ℤ)` is the group
-`⟨s, r | s⁴, s² r⁻³⟩ = ℤ/4 ∗_{ℤ/2} ℤ/6`, with `s` and `r` sent to `S` and `R = S T`. -/
+/-- **A presentation of the modular group.** `SL(2, ℤ)` is the group `⟨s, r | s⁴, s² r⁻³⟩`, with
+`s` and `r` sent to `S` and `R = S T`. These are the relations of the amalgam
+`ℤ/4 ∗_{ℤ/2} ℤ/6`; the amalgamated free product itself is identified with `SL(2, ℤ)` by
+`TauCeti.ModularGroup.slAmalgamEquiv`. -/
 noncomputable def slPresentation : PresentedGroup slRelators ≃* SL(2, ℤ) :=
   MulEquiv.ofBijective slPresentationHom
     ⟨slPresentationHom_injective, slPresentationHom_surjective⟩
@@ -251,6 +260,114 @@ theorem slLift_R : slLift a b h4 h R = b := by
   simp [slLift]
 
 end Lift
+
+/-! ### The amalgamated free product `ℤ/4 ∗_{ℤ/2} ℤ/6` -/
+
+/-- The homomorphism from `ℤ/n`, written multiplicatively, sending `1` to an element `g` with
+`gⁿ = 1`. -/
+private def zmodLift {G : Type*} [Group G] (n : ℕ) (g : G) (hg : g ^ n = 1) :
+    Multiplicative (ZMod n) →* G :=
+  AddMonoidHom.toMultiplicativeLeft <| ZMod.lift n
+    ⟨zmultiplesHom (Additive G) (Additive.ofMul g), by simp [← ofMul_pow, hg]⟩
+
+private theorem zmodLift_ofAdd_one {G : Type*} [Group G] (n : ℕ) (g : G) (hg : g ^ n = 1) :
+    zmodLift n g hg (Multiplicative.ofAdd 1) = g := by
+  simp [zmodLift, ← Int.cast_one (R := ZMod n), -Int.cast_one]
+
+/-- Homomorphisms out of `ℤ/n` agreeing on `1` are equal. -/
+private theorem zmodLift_ext {G : Type*} [Group G] {n : ℕ}
+    {f g : Multiplicative (ZMod n) →* G}
+    (h : f (Multiplicative.ofAdd 1) = g (Multiplicative.ofAdd 1)) : f = g := by
+  refine MonoidHom.ext fun x ↦ ?_
+  obtain ⟨k, hk⟩ := ZMod.intCast_surjective (Multiplicative.toAdd x)
+  have hx : x = Multiplicative.ofAdd 1 ^ k := by
+    rw [← ofAdd_zsmul, zsmul_one, hk, ofAdd_toAdd]
+  rw [hx, map_zpow, map_zpow, h]
+
+/-- The orders `4` and `6` of the two cyclic factors of the amalgam `ℤ/4 ∗_{ℤ/2} ℤ/6`. -/
+def slAmalgamOrder : Fin 2 → ℕ := ![4, 6]
+
+/-- The factors `ℤ/4` (for `i = 0`) and `ℤ/6` (for `i = 1`) of the amalgam
+`ℤ/4 ∗_{ℤ/2} ℤ/6`, written multiplicatively. -/
+abbrev slAmalgamFactor (i : Fin 2) : Type := Multiplicative (ZMod (slAmalgamOrder i))
+
+/-- The embeddings of `ℤ/2` into `ℤ/4` and `ℤ/6` along which `SL(2, ℤ)` is amalgamated: the
+generator `1` goes to `2 ∈ ℤ/4` and to `3 ∈ ℤ/6`. -/
+noncomputable def slAmalgamEmbedding (i : Fin 2) :
+    Multiplicative (ZMod 2) →* slAmalgamFactor i :=
+  zmodLift 2 (Multiplicative.ofAdd 1 ^ ![2, 3] i) (by fin_cases i <;> decide)
+
+/-- The generator `1` of the factor `ℤ/4` or `ℤ/6` in the amalgam. -/
+private noncomputable def amalgamGen (i : Fin 2) : Monoid.PushoutI slAmalgamEmbedding :=
+  Monoid.PushoutI.of (φ := slAmalgamEmbedding) i (Multiplicative.ofAdd 1)
+
+/-- The squared generator of `ℤ/4` and the cubed generator of `ℤ/6` are both the image of the
+generator of `ℤ/2`. -/
+private theorem amalgamGen_pow (i : Fin 2) :
+    amalgamGen i ^ ![2, 3] i = Monoid.PushoutI.base _ (Multiplicative.ofAdd 1) := by
+  rw [amalgamGen, ← map_pow, ← Monoid.PushoutI.of_apply_eq_base _ i, slAmalgamEmbedding,
+    zmodLift_ofAdd_one]
+
+/-- The homomorphism from the amalgam to `SL(2, ℤ)` sending the generators to `S` and `R`. -/
+private noncomputable def amalgamToSL : Monoid.PushoutI slAmalgamEmbedding →* SL(2, ℤ) :=
+  Monoid.PushoutI.lift
+    (fun i ↦ zmodLift _ (![S, R] i) (by fin_cases i; exacts [S_pow_four, R_pow_six]))
+    (zmodLift 2 (-1) (by decide)) fun i ↦ zmodLift_ext <| by
+      rw [MonoidHom.comp_apply, slAmalgamEmbedding, zmodLift_ofAdd_one, map_pow,
+        zmodLift_ofAdd_one, zmodLift_ofAdd_one]
+      fin_cases i
+      exacts [S_sq, R_pow_three]
+
+private theorem amalgamToSL_amalgamGen (i : Fin 2) : amalgamToSL (amalgamGen i) = ![S, R] i := by
+  simp [amalgamToSL, amalgamGen, zmodLift_ofAdd_one]
+
+/-- The homomorphism from `SL(2, ℤ)` to the amalgam sending `S` and `R` to the generators. -/
+private noncomputable def slToAmalgam : SL(2, ℤ) →* Monoid.PushoutI slAmalgamEmbedding :=
+  slLift (amalgamGen 0) (amalgamGen 1)
+    (by rw [amalgamGen, ← map_pow,
+      show Multiplicative.ofAdd (1 : ZMod (slAmalgamOrder 0)) ^ 4 = 1 by decide, map_one])
+    ((amalgamGen_pow 0).trans (amalgamGen_pow 1).symm)
+
+/-- **`SL(2, ℤ)` is the amalgamated free product `ℤ/4 ∗_{ℤ/2} ℤ/6`.** The pushout of
+`ℤ/4 ← ℤ/2 → ℤ/6`, along `1 ↦ 2` and `1 ↦ 3`, is isomorphic to `SL(2, ℤ)`, with the generators
+of `ℤ/4` and `ℤ/6` sent to `S` and `R = S T`, and the generator of `ℤ/2` to `-1`. -/
+noncomputable def slAmalgamEquiv : Monoid.PushoutI slAmalgamEmbedding ≃* SL(2, ℤ) :=
+  MonoidHom.toMulEquiv amalgamToSL slToAmalgam
+    (Monoid.PushoutI.hom_ext_nonempty fun i ↦ zmodLift_ext <| by
+      change slToAmalgam (amalgamToSL (amalgamGen i)) = amalgamGen i
+      rw [amalgamToSL_amalgamGen]
+      fin_cases i
+      exacts [slLift_S .., slLift_R ..])
+    ((MonoidHom.cancel_right slPresentation.surjective).1 <|
+      PresentedGroup.ext <| Fin.forall_fin_two.2 ⟨by
+        change amalgamToSL (slToAmalgam (slPresentation (PresentedGroup.of 0))) = slPresentation _
+        rw [slPresentation_of_zero]
+        exact (congrArg amalgamToSL (slLift_S ..)).trans (amalgamToSL_amalgamGen 0), by
+        change amalgamToSL (slToAmalgam (slPresentation (PresentedGroup.of 1))) = slPresentation _
+        rw [slPresentation_of_one]
+        exact (congrArg amalgamToSL (slLift_R ..)).trans (amalgamToSL_amalgamGen 1)⟩)
+
+/-- The isomorphism `ℤ/4 ∗_{ℤ/2} ℤ/6 ≃* SL(2, ℤ)` sends the generator of `ℤ/4` to `S`. -/
+@[simp]
+theorem slAmalgamEquiv_of_zero :
+    slAmalgamEquiv (Monoid.PushoutI.of (φ := slAmalgamEmbedding) 0 (Multiplicative.ofAdd 1)) =
+      S :=
+  amalgamToSL_amalgamGen 0
+
+/-- The isomorphism `ℤ/4 ∗_{ℤ/2} ℤ/6 ≃* SL(2, ℤ)` sends the generator of `ℤ/6` to `R = S T`. -/
+@[simp]
+theorem slAmalgamEquiv_of_one :
+    slAmalgamEquiv (Monoid.PushoutI.of (φ := slAmalgamEmbedding) 1 (Multiplicative.ofAdd 1)) =
+      R :=
+  amalgamToSL_amalgamGen 1
+
+/-- The isomorphism `ℤ/4 ∗_{ℤ/2} ℤ/6 ≃* SL(2, ℤ)` sends the generator of `ℤ/2` to `-1`. -/
+@[simp]
+theorem slAmalgamEquiv_base :
+    slAmalgamEquiv (Monoid.PushoutI.base slAmalgamEmbedding (Multiplicative.ofAdd 1)) =
+      -1 := by
+  rw [← amalgamGen_pow 0, map_pow]
+  exact (congrArg (· ^ 2) (amalgamToSL_amalgamGen 0)).trans S_sq
 
 /-! ### The abelianization -/
 
