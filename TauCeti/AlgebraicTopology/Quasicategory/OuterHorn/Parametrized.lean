@@ -101,21 +101,6 @@ theorem exists_ext_unionProd_horn_zero [Quasicategory C] {m n : ℕ}
 
 end prodStdSimplex
 
-namespace boundary
-
-/-- The degenerate edge at vertex `0` of the boundary of a positive-dimensional simplex. -/
-noncomputable def edgeZero (n : ℕ) : (∂Δ[n + 1] : SSet.{u}) _⦋1⦌ :=
-  (∂Δ[n + 1] : SSet.{u}).σ 0
-    ⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩
-
-/-- The underlying simplex of `edgeZero` is constant at vertex `0`. -/
-@[simp]
-lemma edgeZero_val (n : ℕ) :
-    (edgeZero.{u} n).val = stdSimplex.const (n + 1) 0 _ := by
-  exact stdSimplex.ext _ _ fun _ ↦ rfl
-
-end boundary
-
 namespace Quasicategory
 
 open Edge
