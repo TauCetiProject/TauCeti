@@ -51,10 +51,6 @@ variable (K L : Type u) [Field K] [Field L] [Algebra K L]
 noncomputable abbrev q : Spec (.of L) ⟶ Spec (.of K) :=
   Spec.map (CommRingCat.ofHom (algebraMap K L))
 
-instance flat_q : Flat (q K L) := by
-  rw [Flat.SpecMap_iff]
-  exact RingHom.flat_algebraMap_iff.mpr inferInstance
-
 instance surjective_q : Surjective (q K L) :=
   ((flat_and_surjective_SpecMap_iff _).mpr
     (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)).2
