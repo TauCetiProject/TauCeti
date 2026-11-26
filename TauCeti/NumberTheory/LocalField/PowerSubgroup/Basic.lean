@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Basic
 import TauCeti.GroupTheory.Index.NSmul
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.PowMonoidHom
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
 import TauCeti.RingTheory.RootsOfUnity.Basic
@@ -43,7 +44,9 @@ contains an open subgroup and is open, and hence closed, in `Kˣ`. Openness does
 any finiteness of the quotient `Kˣ ⧸ (Kˣ)ⁿ`: a subgroup of finite index in a topological group need
 not be open. Since the principal units are exactly the units of `𝒪[K]` that reduce to `1`, a unit
 of `𝒪[K]` is then an `n`-th power in `K` precisely when its residue is an `n`-th power in `𝓀[K]`.
-At `n = 2` that is the criterion for a unit of `𝒪[K]` to be a square. As a consequence, a subgroup
+At `n = 2` that is the criterion for a unit of `𝒪[K]` to be a square. When moreover `n ∣ q - 1`,
+Euler's criterion in the cyclic group `𝓀[K]ˣ` turns it into the condition that `c ^ ((q - 1) / n)`
+be a principal unit. As a consequence, a subgroup
 of `Kˣ` is open as soon as the exponent (for instance, the index) of the quotient by it is
 invertible in `𝒪[K]`, since it then contains the power subgroup attached to that exponent.
 The openness results are stated in `PowerSubgroup.Open`, including the general case
@@ -62,6 +65,9 @@ The openness results are stated in `PowerSubgroup.Open`, including the general c
 * `TauCeti.unitsMap_subtype_mem_range_powMonoidHom_iff` and
   `TauCeti.isSquare_unitsMap_subtype_iff`: a unit of `𝒪[K]` is an `n`-th power, respectively a
   square, in `K` exactly when its residue is one in `𝓀[K]`.
+* `TauCeti.pow_natCard_sub_one_div_mem_unitFiltration_one_iff`: Euler's criterion, for
+  `n ∣ q - 1` a unit `c` of `𝒪[K]` is an `n`-th power in `K` exactly when `c ^ ((q - 1) / n)` is
+  a principal unit.
 * `TauCeti.card_powerClasses_eq_of_index_unitFiltration_one`: the power-class count reduces to
   the index/kernel ratio of the power map on the principal units.
 * `TauCeti.card_powerClasses_of_isUnit`: `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K)`.
@@ -161,6 +167,28 @@ theorem unitsMap_subtype_mem_range_powMonoidHom_iff {n : ℕ} (hn : IsUnit (n : 
     rw [powMonoidHom_apply, mul_pow, hz, ← map_pow,
       ← unitsMap_subtype_unitFiltrationToIntegerUnits, ← map_mul,
       hpow, hu']
+
+/-- **Euler's criterion for units of a local field.** If `n ∣ q - 1`, where `q` is the cardinality
+of the residue field, then a unit `c` of `𝒪[K]` is an `n`-th power in `K` exactly when
+`c ^ ((q - 1) / n)` is a principal unit. -/
+theorem pow_natCard_sub_one_div_mem_unitFiltration_one_iff {n : ℕ}
+    (hn : n ∣ Nat.card 𝓀[K] - 1) {c : Kˣ} (hc : c ∈ unitFiltration K 0) :
+    c ^ ((Nat.card 𝓀[K] - 1) / n) ∈ unitFiltration K 1 ↔
+      c ∈ (powMonoidHom n : Kˣ →* Kˣ).range := by
+  have hunit : IsUnit (n : 𝒪[K]) := by
+    have hq := isUnit_natCast_natCard_pow_sub_one K one_ne_zero
+    rw [pow_one] at hq
+    exact isUnit_of_dvd_unit (Nat.cast_dvd_cast hn) hq
+  -- Read `c` as a unit `u` of `𝒪[K]`; both conditions say that the residue `r` of `u` satisfies
+  -- `r ^ ((q - 1) / n) = 1`, the second by Hensel's lemma and Euler's criterion in the cyclic
+  -- group `𝓀[K]ˣ` of order `q - 1`.
+  have hu : Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K)
+      (unitFiltrationToIntegerUnits 0 ⟨c, hc⟩) = c :=
+    unitsMap_subtype_unitFiltrationToIntegerUnits 0 ⟨c, hc⟩
+  rw [← hu, ← map_pow, mem_unitFiltration_one_iff_residue_eq_one,
+    unitsMap_subtype_mem_range_powMonoidHom_iff hunit, IsCyclic.mem_range_powMonoidHom_iff,
+    Nat.card_units, Nat.gcd_eq_right hn, ← Units.val_eq_one]
+  simp
 
 /-- Away from residue characteristic two, a unit of `𝒪[K]` is a square in `K` exactly when its
 residue is a square in `𝓀[K]`. -/
