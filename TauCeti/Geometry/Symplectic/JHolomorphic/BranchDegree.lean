@@ -80,30 +80,32 @@ variable {S : Type*} [TopologicalSpace S] [ChartedSpace ℂ S] [IsManifold 𝓘(
   [TopologicalSpace N] [ChartedSpace H N] [IsManifold I ∞ N]
   {J : SmoothAlmostComplexStructure I N} {u : S → N}
 
-/-- **Unrelated points stay unrelated, uniformly on compact sets.** Let `u` be a `C²`
-pseudoholomorphic map from a Riemann surface into a Hausdorff almost complex manifold, `z₀` a point
-and `K` a compact set such that the branch of `u` at `z₀` factors holomorphically through the
-branch of `u` at no point of `K`. If `u` is immersed at the points of `K` where it takes the value
-`u z₀`, then for every `z` near `z₀` the branch of `u` at `z` factors through the branch of `u` at
-no point of `K`. -/
+/-- **Unrelated points stay unrelated, uniformly on compact sets.** Let `u₀ : S → N` of class `C²`
+and `u₁ : S' → N` of class `C¹` be pseudoholomorphic maps from Riemann surfaces into a Hausdorff
+almost complex manifold, `z₀` a point of `S'` and `K ⊆ S` a compact set such that the branch of
+`u₁` at `z₀` factors holomorphically through the branch of `u₀` at no point of `K`. If `u₀` is
+immersed at the points of `K` where it takes the value `u₁ z₀`, then for every `z` near `z₀` the
+branch of `u₁` at `z` factors through the branch of `u₀` at no point of `K`. -/
 theorem eventually_forall_not_germFactorsThrough_of_isCompact [T2Space N]
-    (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
-    {z₀ : S} {K : Set S} (hK : IsCompact K) (hK₀ : ∀ y ∈ K, ¬GermFactorsThrough u z₀ u y)
-    (himm : ∀ y ∈ K, u y = u z₀ → mfderiv 𝓘(ℝ, ℂ) I u y ≠ 0) :
-    ∀ᶠ z in 𝓝 z₀, ∀ y ∈ K, ¬GermFactorsThrough u z u y := by
+    {S' : Type*} [TopologicalSpace S'] [ChartedSpace ℂ S'] [IsManifold 𝓘(ℂ) ∞ S']
+    {u₀ : S → N} {u₁ : S' → N} (hu₀ : ContMDiff 𝓘(ℝ, ℂ) I 2 u₀)
+    (hJu₀ : IsPseudoholomorphic (ofComplexManifold ℂ S) J u₀) (hu₁ : ContMDiff 𝓘(ℝ, ℂ) I 1 u₁)
+    (hJu₁ : IsPseudoholomorphic (ofComplexManifold ℂ S') J u₁)
+    {z₀ : S'} {K : Set S} (hK : IsCompact K) (hK₀ : ∀ y ∈ K, ¬GermFactorsThrough u₁ z₀ u₀ y)
+    (himm : ∀ y ∈ K, u₀ y = u₁ z₀ → mfderiv 𝓘(ℝ, ℂ) I u₀ y ≠ 0) :
+    ∀ᶠ z in 𝓝 z₀, ∀ y ∈ K, ¬GermFactorsThrough u₁ z u₀ y := by
   refine hK.eventually_forall_of_forall_eventually fun y hy ↦ ?_
-  by_cases hyu : u y = u z₀
+  by_cases hyu : u₀ y = u₁ z₀
   · -- The point `y` is immersed, so `(y, z₀)` is not a limit of related pairs, by closedness of
     -- the relation at immersed points.
-    have hcl : (y, z₀) ∉ closure {p : S × S | GermFactorsThrough u p.2 u p.1} := fun h ↦
-      hK₀ y hy (germFactorsThrough_of_mem_closure hu hJu (hu.of_le one_le_two) hJu h
-        (himm y hy hyu))
+    have hcl : (y, z₀) ∉ closure {p : S × S' | GermFactorsThrough u₁ p.2 u₀ p.1} := fun h ↦
+      hK₀ y hy (germFactorsThrough_of_mem_closure hu₀ hJu₀ hu₁ hJu₁ h (himm y hy hyu))
     rw [mem_closure_iff_frequently, not_frequently] at hcl
     exact (continuous_swap.tendsto (z₀, y)).eventually hcl
   · -- Related points have the same value, and nearby pairs keep different values.
-    filter_upwards [(isOpen_ne_fun (hu.continuous.comp continuous_fst)
-      (hu.continuous.comp continuous_snd)).mem_nhds (Ne.symm hyu)] with p hp hrel
-    exact hp (GermFactorsThrough.apply_eq (u₀ := u) (u₁ := u) hrel)
+    filter_upwards [(isOpen_ne_fun (hu₁.continuous.comp continuous_fst)
+      (hu₀.continuous.comp continuous_snd)).mem_nhds (Ne.symm hyu)] with p hp hrel
+    exact hp hrel.apply_eq
 
 /-- **The coincident-branch relation is locally trivial.** Let `u : S → N` be a `C²`
 pseudoholomorphic map from a compact Hausdorff Riemann surface into a Hausdorff almost complex
@@ -144,8 +146,8 @@ theorem exists_eventually_setOf_germFactorsThrough_eq_image [CompactSpace S] [T2
     (eventually_all_finite hfin).2 fun ζ hζ ↦ Eventually.and ((hψc ζ hζ).preimage_mem_nhds
       ((hVo ζ).mem_nhds (by rw [hψz₀ ζ hζ]; exact hVmem ζ hζ))) (hψr ζ hζ)
   -- Near `z₀`, no point outside the `V ζ` is related to `z`.
-  have hup := eventually_forall_not_germFactorsThrough_of_isCompact hu hJu
-    (isOpen_biUnion fun ζ _ ↦ hVo ζ).isClosed_compl.isCompact
+  have hup := eventually_forall_not_germFactorsThrough_of_isCompact hu hJu (hu.of_le one_le_two)
+    hJu (isOpen_biUnion fun ζ _ ↦ hVo ζ).isClosed_compl.isCompact
     (fun y hy hyC ↦ hy (mem_biUnion (s := C) hyC (hVmem y hyC))) fun y _ ↦ himm y
   refine ⟨ψ, fun ζ hζ ↦ ⟨hψz₀ ζ hζ, hψc ζ hζ⟩, ?_⟩
   filter_upwards [hlow, hup] with z hlowz hupz

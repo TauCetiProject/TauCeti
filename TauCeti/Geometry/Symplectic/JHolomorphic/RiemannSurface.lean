@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.RiemannSurface.GermFactorization
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import Mathlib.Topology.DiscreteSubset
-import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Symplectic.JHolomorphic.Coincidence
@@ -275,10 +274,14 @@ theorem IsPseudoholomorphicAt.injective_mfderiv_iff_ne_zero {x : S}
   have hCR := hu.mfderiv_apply_commute (1 : ℂ)
   rw [ofComplexManifold_apply, smul_eq_mul, mul_one] at hCR
   -- The tangent spaces of `S` and `N` are the model spaces `ℂ` and `E`.
-  have h := ContinuousLinearMap.injective_iff_apply_one_ne_zero_of_apply_I_eq (K := ℂ) (V := E)
-    (f := mfderiv 𝓘(ℝ, ℂ) I u x) (J.square_neg (u x)) hCR
-  exact h.trans (ContinuousLinearMap.eq_zero_iff_apply_one_eq_zero_of_apply_I_eq (K := ℂ) (V := E)
-    (f := mfderiv 𝓘(ℝ, ℂ) I u x) hCR).not.symm
+  let f : ℂ →L[ℝ] E := mfderiv 𝓘(ℝ, ℂ) I u x
+  change f Complex.I = J (u x) (f 1) at hCR
+  change Injective f ↔ f ≠ 0
+  refine ⟨fun h h0 ↦ one_ne_zero (h (by simp [h0])), fun hne ↦ ?_⟩
+  refine (injective_iff_map_eq_zero f).2 fun z hz ↦ by_contra fun hz0 ↦ hne ?_
+  exact ContinuousLinearMap.coe_injective (LinearMap.eq_zero_of_apply_I_eq_of_apply_eq_zero
+    f.toLinearMap (A := (J.toEndomorphism (u x) : E →L[ℝ] E).toLinearMap) hCR
+    (fun v ↦ congr($(J.square_neg (u x)) v)) hz0 hz)
 
 /-! ### Discreteness of fibres and critical points -/
 
