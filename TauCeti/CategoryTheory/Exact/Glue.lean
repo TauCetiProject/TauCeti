@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Bicartesian
+import TauCeti.CategoryTheory.Preadditive.IsIso
 
 /-!
 # Gluing a pullback of a deflation with a pushout of an inflation
@@ -63,7 +64,6 @@ theorem conflation_shortComplex'_of_isPullback_of_isPushout {A B C' A' B' C'' : 
   have hrc := E.conflation_shortComplex_of_isPushout_of_isInflation hg hr
   have hneg : E.IsDeflation (-f') := by
     have h : (-𝟙 A') ≫ f' = -f' := by simp
-    have : IsIso (-𝟙 A') := ⟨⟨-𝟙 A', by simp, by simp⟩⟩
     rw [← h]
     exact E.isDeflation_comp _ _ (E.deflations.of_isIso _) hf'
   have hfac : biprod.map (𝟙 C') (-f') ≫ biprod.desc c g' = biprod.desc c (-(f' ≫ g')) := by

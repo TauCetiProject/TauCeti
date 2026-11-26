@@ -18,8 +18,8 @@ representatives transform: under a change of chart, under composition with a con
 between charted spaces, and how punctured neighbourhoods are carried by the inverse chart. These
 are the facts needed to read a local notion of one variable (meromorphy, orders, ...) on a
 charted space in its preferred charts and to check that it is well behaved. Some global properties
-of the model space also pass to the charted space: having no isolated points, and, for a Lindelöf
-charted space, second countability.
+of the model space also pass to the charted space: having no isolated points, being Hausdorff
+locally, and, for a Lindelöf charted space, second countability.
 
 ## Main results
 
@@ -35,6 +35,8 @@ charted space, second countability.
   isolated points.
 * `ChartedSpace.isEmpty_of_discreteTopology`: so a nonempty discrete space has no atlas modelled on
   such a space.
+* `ChartedSpace.exists_opens_mem_t2Space`: a charted space over a Hausdorff model space is locally
+  Hausdorff.
 * `ChartedSpace.secondCountable_of_lindelof`: a Lindelöf charted space over a second-countable
   model space is second countable.
 -/
@@ -116,6 +118,14 @@ theorem ChartedSpace.isEmpty_of_discreteTopology (H X : Type*) [TopologicalSpace
   obtain ⟨x⟩ := ‹Nonempty X›
   exact (PerfectSpace.not_isolated x).ne
     ((isOpen_singleton_iff_punctured_nhds x).1 (isOpen_discrete _))
+
+/-- A charted space over a Hausdorff model space is locally Hausdorff: each point lies in an open
+set, the source of its preferred chart, which is Hausdorff in the subspace topology. -/
+theorem ChartedSpace.exists_opens_mem_t2Space (H : Type*) {X : Type*} [TopologicalSpace H]
+    [T2Space H] [TopologicalSpace X] [ChartedSpace H X] (x : X) :
+    ∃ U : TopologicalSpace.Opens X, x ∈ U ∧ T2Space U :=
+  ⟨⟨_, (chartAt H x).open_source⟩, mem_chart_source H x,
+    (chartAt H x).toHomeomorphSourceTarget.isEmbedding.t2Space⟩
 
 /-- A Lindelöf charted space over a second-countable model space is second countable. -/
 theorem ChartedSpace.secondCountable_of_lindelof (H X : Type*) [TopologicalSpace H]

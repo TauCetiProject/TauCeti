@@ -21,8 +21,10 @@ namespace `TauCeti.LocalCoefficientSystem`.
 With local coefficients a homotopy acts on coefficients by transport along the paths it traces
 (`TopCat.Homotopy.twistedHomologyMap_eq_comp`). Consider maps `ρ : A ⟶ B` and `g : A ⟶ Y` over `X`
 and a map `e : B ⟶ Y`, with a homotopy `G` from `e ≫ y` to `b` and a homotopy `H` from `ρ ≫ e` to
-`g`, which agree over `X`: at every point of `A` the image under `y` of the path traced by `H` is
-homotopic to the path traced by `G`. Transport along `H` and along `G` then identify the
+`g`, which agree over `X` as far as `L` sees: at every point of `A`, transport in `L` along the
+image under `y` of the path traced by `H` equals transport along the path traced by `G`. This holds
+when the two paths are homotopic, and also, for a local system pulled back along a map `X ⟶ Z`,
+when their images in `Z` are homotopic. Transport along `H` and along `G` then identify the
 coefficients in the same way, so the triangle commutes on twisted homology
 (`homologyMap_overTwistedChainComplexMap_eq_comp`).
 
@@ -174,12 +176,14 @@ lemma subsetTwistedChainComplexMap_eq_overTwistedChainComplexMap {S T : Set X} (
 
 /-- The coefficient comparisons of `homologyMap_overTwistedChainComplexMap_eq_comp`: transporting
 along `H` and then along `G` identifies the two pullbacks of `L` to `A` as the canonical
-comparison, when the two homotopies agree over `X`. -/
+comparison, when transport in `L` along the two homotopies agrees. -/
 private lemma pullbackHomotopyIso_coherent {Y : TopCat.{v}} {y : Y ⟶ X} (ρ : A ⟶ B) (g : A ⟶ Y)
     (hg : g ≫ y = ρ ≫ b) (e : B ⟶ Y) (G : TopCat.Homotopy (e ≫ y) b)
     (H : TopCat.Homotopy (ρ ≫ e) g)
-    (hGH : ∀ x : A, ((H.evalAt x).map y.hom.continuous).Homotopic
-      ((G.evalAt (ρ x)).cast rfl (ConcreteCategory.congr_hom hg x))) :
+    (hGH : ∀ x : A, L.map (Path.Homotopic.Quotient.mk ((H.evalAt x).map y.hom.continuous) :
+        FundamentalGroupoid.mk _ ⟶ FundamentalGroupoid.mk _) =
+      L.map (Path.Homotopic.Quotient.mk
+        ((G.evalAt (ρ x)).cast rfl (ConcreteCategory.congr_hom hg x)))) :
     (eqToIso (congrArg (fun k : A ⟶ X ↦ (pullback k.hom).obj L) hg.symm) ≪≫
       (pullbackCompIso g.hom y.hom).app L).hom ≫
     (pullbackHomotopyIso H).inv.app ((pullback y.hom).obj L) ≫
@@ -190,19 +194,22 @@ private lemma pullbackHomotopyIso_coherent {Y : TopCat.{v}} {y : Y ⟶ X} (ρ : 
       (pullbackCompIso ρ.hom b.hom).app L).hom := by
   -- At a point, both sides are transports in `L`; the coherence identifies the two paths.
   have aux : ∀ {p q r : X} (hpq : p = q) (P : Path.Homotopic.Quotient r p)
-      (Q : Path.Homotopic.Quotient r q), P = Q.cast rfl hpq →
+      (Q : Path.Homotopic.Quotient r q),
+      L.map (P : FundamentalGroupoid.mk r ⟶ FundamentalGroupoid.mk p) = L.map (Q.cast rfl hpq) →
       eqToHom (congrArg L.obj (congrArg FundamentalGroupoid.mk hpq.symm)) ≫
         L.map (P.symm : FundamentalGroupoid.mk p ⟶ FundamentalGroupoid.mk r) ≫
         L.map (Q : FundamentalGroupoid.mk r ⟶ FundamentalGroupoid.mk q) = 𝟙 _ := by
     intro p q r hpq P Q hPQ
-    subst hpq hPQ
-    rw [Path.Homotopic.Quotient.cast_rfl_rfl, eqToHom_refl, Category.id_comp, ← L.map_comp]
-    exact (congrArg L.map (Groupoid.inv_comp Q)).trans (L.map_id _)
+    subst hpq
+    rw [Path.Homotopic.Quotient.cast_rfl_rfl] at hPQ
+    rw [eqToHom_refl, Category.id_comp, ← hPQ, ← L.map_comp]
+    exact (congrArg L.map (Groupoid.inv_comp P)).trans (L.map_id _)
   ext x : 2
-  have hq : (Path.Homotopic.Quotient.mk (H.evalAt x.as)).map y.hom =
-      (Path.Homotopic.Quotient.mk (G.evalAt (ρ x.as))).cast rfl
-        (ConcreteCategory.congr_hom hg x.as) :=
-    Quotient.sound (hGH x.as)
+  have hq : L.map ((Path.Homotopic.Quotient.mk (H.evalAt x.as)).map y.hom :
+        FundamentalGroupoid.mk _ ⟶ FundamentalGroupoid.mk _) =
+      L.map ((Path.Homotopic.Quotient.mk (G.evalAt (ρ x.as))).cast rfl
+        (ConcreteCategory.congr_hom hg x.as)) :=
+    hGH x.as
   simp only [TopCat.hom_comp, pullback_obj_obj, Functor.comp_obj, Iso.trans_hom, eqToIso.hom,
     Iso.app_hom, Iso.symm_hom, Iso.app_inv, Functor.map_comp, Category.assoc, NatTrans.comp_app,
     eqToHom_app, pullbackCompIso_hom_app_app, pullbackHomotopyIso_inv_app_app,
@@ -214,14 +221,17 @@ private lemma pullbackHomotopyIso_coherent {Y : TopCat.{v}} {y : Y ⟶ X} (ρ : 
 /-- **Homotopy-coherent triangles over `X` commute on twisted homology.** Let `ρ : A ⟶ B` and
 `g : A ⟶ Y` be maps of spaces over `X`, and let `e : B ⟶ Y` be a map over `X` up to a homotopy `G`
 from `e ≫ y` to `b`, with a homotopy `H` from `ρ ≫ e` to `g`. Suppose the two homotopies agree over
-`X`: at every point `x` of `A`, the image under `y` of the path traced by `H` is homotopic to the
-path traced by `G` at `ρ x`. Then on twisted homology the map induced by `g` is the map induced by
-`ρ` followed by the map induced by `e`, with coefficients identified along `G`. -/
+`X` as far as `L` sees: at every point `x` of `A`, transport in `L` along the image under `y` of the
+path traced by `H` equals transport along the path traced by `G` at `ρ x`, as it does when the two
+paths are homotopic. Then on twisted homology the map induced by `g` is the map induced by `ρ`
+followed by the map induced by `e`, with coefficients identified along `G`. -/
 theorem homologyMap_overTwistedChainComplexMap_eq_comp {Y : TopCat.{v}} {y : Y ⟶ X}
     (ρ : A ⟶ B) (hρ : ρ ≫ b = a) (g : A ⟶ Y) (hg : g ≫ y = a) (e : B ⟶ Y)
     (G : TopCat.Homotopy (e ≫ y) b) (H : TopCat.Homotopy (ρ ≫ e) g)
-    (hGH : ∀ x : A, ((H.evalAt x).map y.hom.continuous).Homotopic
-      ((G.evalAt (ρ x)).cast rfl (ConcreteCategory.congr_hom (hg.trans hρ.symm) x)))
+    (hGH : ∀ x : A, L.map (Path.Homotopic.Quotient.mk ((H.evalAt x).map y.hom.continuous) :
+        FundamentalGroupoid.mk _ ⟶ FundamentalGroupoid.mk _) =
+      L.map (Path.Homotopic.Quotient.mk
+        ((G.evalAt (ρ x)).cast rfl (ConcreteCategory.congr_hom (hg.trans hρ.symm) x))))
     (k : ℕ) :
     HomologicalComplex.homologyMap (overTwistedChainComplexMap L g hg) k =
       HomologicalComplex.homologyMap (overTwistedChainComplexMap L ρ hρ) k ≫
