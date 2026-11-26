@@ -81,13 +81,9 @@ theorem mem_holomorphicSubalgebra_of_isIntegral {A : Subalgebra ℂ (Meromorphic
   intro x hx
   -- the functions without a pole at `x` are the integers of the valuation `ord_x`
   let v := AddValuation.toValuation (order x)
-  have hmem {g : MeromorphicFunction X} : g ∈ v.integer ↔ g x ≠ ∞ := by
-    rw [Valuation.mem_integer_iff, AddValuation.toValuation_apply, ← order_nonneg_iff,
-      ← ofAdd_zero, Multiplicative.ofAdd_le]
-    exact OrderDual.toDual_le_toDual
   have hint : IsIntegral v.integer f :=
     hf.map_of_comp_eq ((A.val : A →+* MeromorphicFunction X).codRestrict v.integer
-      fun g ↦ hmem.mpr (hA g.property x hx)) (RingHom.id _) rfl
-  exact hmem.mp ((Valuation.integer.integers v).mem_of_integral hint)
+      fun g ↦ mem_integer_toValuation_order_iff.mpr (hA g.property x hx)) (RingHom.id _) rfl
+  exact mem_integer_toValuation_order_iff.mp ((Valuation.integer.integers v).mem_of_integral hint)
 
 end TauCeti.RiemannSurface.MeromorphicFunction

@@ -21,7 +21,7 @@ poles on `Y(N)` form a `ℂ`-subalgebra of `ℂ(X(N))`, written `𝒪(Y(N))` her
 quotient `f ^ 12 / Δ ^ k` lies in `𝒪(Y(N))`, since the discriminant `Δ` has no zero on `ℍ`.
 
 This file identifies `𝒪(Y(N))` algebraically, as the integral closure of `ℂ[j]` in `ℂ(X(N))`
-(`TauCeti.isIntegral_adjoin_iff_mem_holomorphicSubalgebra`):
+(`TauCeti.isIntegral_jPolynomialSubalgebra_iff_mem_holomorphicSubalgebra`):
 
 * a function integral over `ℂ[j]` has no pole on `Y(N)`, because `j` has none and the functions
   without a pole at a point form a valuation ring, which is integrally closed;
@@ -42,10 +42,11 @@ construction of Galois conjugates of modular forms that controls their poles on 
 
 ## Main declarations
 
+* `TauCeti.jPolynomialSubalgebra`: the ring `ℂ[j]` of polynomials in `j`, inside `ℂ(X(N))`.
 * `TauCeti.unop_modularFunctionActionZMod_mem_holomorphicSubalgebra_iff`: the action of
   `SL(2, ℤ/Nℤ)` preserves `𝒪(Y(N))`.
-* `TauCeti.isIntegral_adjoin_iff_mem_holomorphicSubalgebra`: `𝒪(Y(N))` is the integral closure of
-  `ℂ[j]` in `ℂ(X(N))`.
+* `TauCeti.isIntegral_jPolynomialSubalgebra_iff_mem_holomorphicSubalgebra`: `𝒪(Y(N))` is the
+  integral closure of `ℂ[j]` in `ℂ(X(N))`.
 * `TauCeti.modularFunctionCoeffAction_mem_holomorphicSubalgebra_iff`: the automorphisms of `ℂ`,
   acting through the Fourier coefficients, preserve `𝒪(Y(N))`.
 
@@ -64,6 +65,14 @@ open scoped MatrixGroups
 namespace TauCeti
 
 variable {N : ℕ} [NeZero N]
+
+variable (N) in
+/-- The ring `ℂ[j]` of polynomials in the modular invariant `j`, as a `ℂ`-subalgebra of the
+meromorphic functions on `X(N)`. -/
+abbrev jPolynomialSubalgebra :
+    Subalgebra ℂ (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :=
+  Algebra.adjoin ℂ {(Subgroup.compactifiedQuotientComap
+    (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)}
 
 omit [NeZero N] in
 /-- **Fractional linear maps preserve holomorphy on `Y(N)`.** For `g ∈ SL(2, ℤ/Nℤ)`, the function
@@ -98,27 +107,25 @@ theorem compactifiedQuotientComap_jMeromorphicFunction_mem_holomorphicSubalgebra
 
 /-- A function on `X(N)` with no pole on `Y(N)` which is fixed by `SL(2, ℤ/Nℤ)` is a polynomial
 in `j`. -/
-private theorem mem_adjoin_of_mem_fixedField
+private theorem mem_jPolynomialSubalgebra_of_mem_fixedField
     {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient}
     (hF : F ∈ holomorphicSubalgebra (Set.range ofQuotient))
     (hfix : F ∈ IntermediateField.fixedField (modularFunctionActionZMod N).range.unop) :
-    F ∈ Algebra.adjoin ℂ {(Subgroup.compactifiedQuotientComap
-      (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)} := by
+    F ∈ jPolynomialSubalgebra N := by
   rw [fixedField_unop_range_modularFunctionActionZMod, AlgHom.mem_fieldRange] at hfix
   obtain ⟨G, rfl⟩ := hfix
   rw [Subgroup.compactifiedQuotientComap_mem_holomorphicSubalgebra_iff,
     ModularGroup.holomorphicSubalgebra_range_ofQuotient_eq_adjoin] at hF
-  rw [← AlgHom.map_adjoin_singleton]
+  rw [jPolynomialSubalgebra, ← AlgHom.map_adjoin_singleton]
   exact Subalgebra.mem_map.mpr ⟨G, hF, rfl⟩
 
 /-- **A function holomorphic on `Y(N)` is integral over `ℂ[j]`**: it is a root of the monic
 polynomial `∏ (X - F ∘ g)`, over the image of `SL(2, ℤ/Nℤ)` in the automorphisms of `ℂ(X(N))`,
 whose coefficients are polynomials in `j`. -/
-private theorem isIntegral_adjoin_of_mem_holomorphicSubalgebra
+private theorem isIntegral_jPolynomialSubalgebra_of_mem_holomorphicSubalgebra
     {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient}
     (hF : F ∈ holomorphicSubalgebra (Set.range ofQuotient)) :
-    IsIntegral (Algebra.adjoin ℂ {(Subgroup.compactifiedQuotientComap
-      (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)}) F := by
+    IsIntegral (jPolynomialSubalgebra N) F := by
   let H := (modularFunctionActionZMod N).range.unop
   let : Fintype H := Fintype.ofFinite _
   -- the conjugates of `F` have no pole on `Y(N)`
@@ -138,11 +145,10 @@ private theorem isIntegral_adjoin_of_mem_holomorphicSubalgebra
     rw [← hmap, coeff_map]
     exact Subtype.property _
   -- the coefficients are fixed by `SL(2, ℤ/Nℤ)`, hence polynomials in `j`
-  have hcoeff (n : ℕ) : (MulSemiringAction.charpoly H F).coeff n ∈ Set.range (algebraMap
-      (Algebra.adjoin ℂ {(Subgroup.compactifiedQuotientComap
-        (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)})
-        _) := by
-    refine ⟨⟨_, mem_adjoin_of_mem_fixedField (hhol n) ?_⟩, rfl⟩
+  have hcoeff (n : ℕ) :
+      (MulSemiringAction.charpoly H F).coeff n ∈
+        Set.range (algebraMap (jPolynomialSubalgebra N) _) := by
+    refine ⟨⟨_, mem_jPolynomialSubalgebra_of_mem_fixedField (hhol n) ?_⟩, rfl⟩
     refine (IntermediateField.mem_fixedField_iff _ _).mpr fun σ hσ ↦ ?_
     simpa only [Subgroup.smul_def, AlgEquiv.smul_def] using
       MulSemiringAction.smul_coeff_charpoly (G := H) F n ⟨σ, hσ⟩
@@ -153,23 +159,20 @@ private theorem isIntegral_adjoin_of_mem_holomorphicSubalgebra
 /-- **The modular functions holomorphic on `Y(N)` are the integral closure of `ℂ[j]`.** A
 meromorphic function on `X(N)` is integral over the ring of polynomials in `j` exactly when it
 has no pole on `Y(N)`. -/
-theorem isIntegral_adjoin_iff_mem_holomorphicSubalgebra
+theorem isIntegral_jPolynomialSubalgebra_iff_mem_holomorphicSubalgebra
     {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient} :
-    IsIntegral (Algebra.adjoin ℂ {(Subgroup.compactifiedQuotientComap
-        (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)}) F ↔
+    IsIntegral (jPolynomialSubalgebra N) F ↔
       F ∈ holomorphicSubalgebra (Set.range ofQuotient) :=
   ⟨mem_holomorphicSubalgebra_of_isIntegral (Algebra.adjoin_le (Set.singleton_subset_iff.mpr
     compactifiedQuotientComap_jMeromorphicFunction_mem_holomorphicSubalgebra)),
-    isIntegral_adjoin_of_mem_holomorphicSubalgebra⟩
+    isIntegral_jPolynomialSubalgebra_of_mem_holomorphicSubalgebra⟩
 
 /-- An automorphism of `ℂ`, acting through the Fourier coefficients, sends a polynomial in `j` to
 the polynomial in `j` with conjugate coefficients; in particular it preserves `ℂ[j]`. -/
-private theorem modularFunctionCoeffAction_mem_adjoin (σ : ℂ ≃+* ℂ)
+private theorem modularFunctionCoeffAction_mem_jPolynomialSubalgebra (σ : ℂ ≃+* ℂ)
     {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient}
-    (hF : F ∈ Algebra.adjoin ℂ {(Subgroup.compactifiedQuotientComap
-      (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)}) :
-    modularFunctionCoeffAction N σ F ∈ Algebra.adjoin ℂ {(Subgroup.compactifiedQuotientComap
-      (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)} := by
+    (hF : F ∈ jPolynomialSubalgebra N) :
+    modularFunctionCoeffAction N σ F ∈ jPolynomialSubalgebra N := by
   induction hF using Algebra.adjoin_induction with
   | mem x hx =>
     rw [Set.mem_singleton_iff.mp hx,
@@ -198,11 +201,10 @@ theorem modularFunctionCoeffAction_mem_holomorphicSubalgebra_iff (σ : ℂ ≃+*
       {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient}
       (hF : F ∈ holomorphicSubalgebra (Set.range ofQuotient)) :
       modularFunctionCoeffAction N σ F ∈ holomorphicSubalgebra (Set.range ofQuotient) := by
-    rw [← isIntegral_adjoin_iff_mem_holomorphicSubalgebra] at hF ⊢
-    let A := Algebra.adjoin ℂ {(Subgroup.compactifiedQuotientComap
-      (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)}
+    rw [← isIntegral_jPolynomialSubalgebra_iff_mem_holomorphicSubalgebra] at hF ⊢
+    let A := jPolynomialSubalgebra N
     let φ : A →+* A := ((modularFunctionCoeffAction N σ).toRingHom.comp A.val.toRingHom).codRestrict
-      A fun F ↦ modularFunctionCoeffAction_mem_adjoin σ F.property
+      A fun F ↦ modularFunctionCoeffAction_mem_jPolynomialSubalgebra σ F.property
     exact hF.map_of_comp_eq φ (modularFunctionCoeffAction N σ).toRingHom rfl
   refine ⟨fun hF ↦ ?_, key σ⟩
   simpa only [map_inv, RingAut.inv_apply, RingEquiv.symm_apply_apply] using key σ⁻¹ hF
