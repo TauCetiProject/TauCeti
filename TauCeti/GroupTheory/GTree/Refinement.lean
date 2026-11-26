@@ -88,17 +88,8 @@ theorem IsCollapseMap.isConvex_preimage {f : T.V →[G] T'.V} (hf : IsCollapseMa
 /-- A collapse map preserves betweenness: a vertex between `a` and `b` is sent to a vertex
 between the images of `a` and `b`. -/
 theorem IsCollapseMap.isBetween {f : T.V →[G] T'.V} (hf : IsCollapseMap f) {a x b : T.V}
-    (h : T.IsBetween a x b) : T'.IsBetween (f a) (f x) (f b) := by
-  -- The vertices between `f a` and `f b` form a convex set. Its preimage is convex and contains
-  -- `a` and `b`, so it contains the reduced path from `a` to `b`, whose vertices are those
-  -- between `a` and `b`.
-  obtain ⟨q⟩ := h.nonempty_path
-  have hq := Path.isReduced_reduce T.toSerreGraph q
-  refine (hf.isConvex_preimage (T'.isAcyclic.isConvex_setOf_isBetween _ _)).convexHull_subset
-    (Set.pair_subset (isBetween_left (T'.nonempty_path _ _))
-      (isBetween_right (T'.nonempty_path _ _))) ?_
-  rw [T.isAcyclic.convexHull_pair hq]
-  exact (T.isAcyclic.isBetween_iff_mem_vertices hq).mp h
+    (h : T.IsBetween a x b) : T'.IsBetween (f a) (f x) (f b) :=
+  T'.isAcyclic.isBetween_of_isConvex_preimage hf.2 (T'.nonempty_path _ _) h
 
 variable (T) in
 /-- The identity of a `G`-tree is a collapse map. -/
