@@ -120,7 +120,7 @@ theorem frameAt_canonicalSpinCStructureInl {x : X} (p : (unitaryFrameLift hJ hJ�
       (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p) = p.val.frame := by
   have h := toFrame_canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ x p
   rw [OrthonormalFrameLift.toFrame_mk] at h
-  exact eq_of_heq (OrthonormalFrameBundle.mk.inj h).2
+  exact OrthonormalFrameBundle.mk_eq_mk_iff.1 h
 
 /-- The map `p ↦ [p, 1]` from the total space of the unitary frame bundle to that of the principal
 bundle of the canonical `Spinᶜ` structure is continuous. -/
