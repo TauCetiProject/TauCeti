@@ -324,41 +324,15 @@ private lemma mulActionPoint_smul {T : (Over S')ᵒᵖ}
   exact (congrArg _ (uliftYonedaMulActionSheafSectionEquiv_smul _ _ g b)).trans
     (Over.mapPullbackAdj_homEquiv_symm_smul p _ _)
 
-/-- The sections of the torsor of points of a torsor `Q` are those of the sheaf of points of `Q`
-with its action; on morphisms into `Q` this is the identity. -/
-private def torsorSectionEquiv {S : Scheme.{u}} {G : Grp (Over S)} {Q : Over S} [ModObj G.X Q]
-    (hQ : (Scheme.fppfTopology.over S).IsTorsor G Q) (T : (Over S)ᵒᵖ) :
-    (hQ.toTorsor.{w}).sheaf.obj.obj T ≃
-      ((Scheme.fppfTopology.over S).uliftYonedaMulActionSheaf.{w} G Q).sheaf.obj.obj T :=
-  (hQ.toTorsorSectionEquiv T).trans (uliftYonedaMulActionSheafSectionEquiv G Q T).symm
-
-private lemma torsorSectionEquiv_map {S : Scheme.{u}} {G : Grp (Over S)} {Q : Over S}
-    [ModObj G.X Q] (hQ : (Scheme.fppfTopology.over S).IsTorsor G Q) {T T' : (Over S)ᵒᵖ}
-    (f : T ⟶ T') (a : (hQ.toTorsor.{w}).sheaf.obj.obj T) :
-    torsorSectionEquiv hQ T' ((hQ.toTorsor.{w}).sheaf.obj.map f a) =
-      ((Scheme.fppfTopology.over S).uliftYonedaMulActionSheaf.{w} G Q).sheaf.obj.map f
-        (torsorSectionEquiv hQ T a) := by
-  apply (uliftYonedaMulActionSheafSectionEquiv G Q T').injective
-  simp only [torsorSectionEquiv, Equiv.trans_apply, Equiv.apply_symm_apply,
-    uliftYonedaMulActionSheafSectionEquiv_map, IsTorsor.toTorsorSectionEquiv_map]
-
-private lemma torsorSectionEquiv_smul {S : Scheme.{u}} {G : Grp (Over S)} {Q : Over S}
-    [ModObj G.X Q] (hQ : (Scheme.fppfTopology.over S).IsTorsor G Q) {T : (Over S)ᵒᵖ}
-    (g : ((Scheme.fppfTopology.over S).uliftYonedaGrp.{w}.obj G).obj.obj T)
-    (a : (hQ.toTorsor.{w}).sheaf.obj.obj T) :
-    torsorSectionEquiv hQ T (g • a) = g • torsorSectionEquiv hQ T a := by
-  apply (uliftYonedaMulActionSheafSectionEquiv G Q T).injective
-  simp only [torsorSectionEquiv, Equiv.trans_apply, Equiv.apply_symm_apply,
-    uliftYonedaMulActionSheafSectionEquiv_smul, IsTorsor.toTorsorSectionEquiv_smul]
-
 /-- The transpose of a point of the base change of `P`, transported from `mulActionPoint` through
-`torsorSectionEquiv`. This avoids unfolding either functor of points across module boundaries. -/
+`IsTorsor.toTorsorMulActionSheafSectionEquiv`. This avoids unfolding either functor of points
+across module boundaries. -/
 private def torsorPoint {T : (Over S')ᵒᵖ} (a : (baseChangeTorsor.{w} p h).sheaf.obj.obj T) :
     (h.toTorsor.{w}).sheaf.obj.obj ((Over.map p).op.obj T) :=
   letI : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
     (Over.pullback p).modObjObj G.X P
-  (torsorSectionEquiv h _).symm
-    (mulActionPoint p (torsorSectionEquiv (isTorsor_pullback_obj p h) T a))
+  (h.toTorsorMulActionSheafSectionEquiv _).symm
+    (mulActionPoint p ((isTorsor_pullback_obj p h).toTorsorMulActionSheafSectionEquiv T a))
 
 private lemma torsorPoint_map {T T' : (Over S')ᵒᵖ} (f : T ⟶ T')
     (a : (baseChangeTorsor.{w} p h).sheaf.obj.obj T) :
@@ -366,10 +340,11 @@ private lemma torsorPoint_map {T T' : (Over S')ᵒᵖ} (f : T ⟶ T')
       (h.toTorsor.{w}).sheaf.obj.map ((Over.map p).op.map f) (torsorPoint p h a) := by
   let : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
     (Over.pullback p).modObjObj G.X P
-  apply (torsorSectionEquiv h _).injective
-  rw [torsorPoint, torsorPoint, Equiv.apply_symm_apply, torsorSectionEquiv_map,
+  apply (h.toTorsorMulActionSheafSectionEquiv _).injective
+  rw [torsorPoint, torsorPoint, Equiv.apply_symm_apply,
+    IsTorsor.toTorsorMulActionSheafSectionEquiv_map,
     Equiv.apply_symm_apply, ← mulActionPoint_map]
-  exact congrArg (mulActionPoint p) (torsorSectionEquiv_map _ f a)
+  exact congrArg (mulActionPoint p) (IsTorsor.toTorsorMulActionSheafSectionEquiv_map _ f a)
 
 private lemma torsorPoint_smul {T : (Over S')ᵒᵖ}
     (g : ((Scheme.fppfTopology.over S').uliftYonedaGrp.{w}.obj
@@ -378,10 +353,11 @@ private lemma torsorPoint_smul {T : (Over S')ᵒᵖ}
     torsorPoint p h (g • a) = groupPoint p G T g • torsorPoint p h a := by
   let : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
     (Over.pullback p).modObjObj G.X P
-  apply (torsorSectionEquiv h _).injective
-  rw [torsorPoint, torsorPoint, Equiv.apply_symm_apply, torsorSectionEquiv_smul,
+  apply (h.toTorsorMulActionSheafSectionEquiv _).injective
+  rw [torsorPoint, torsorPoint, Equiv.apply_symm_apply,
+    IsTorsor.toTorsorMulActionSheafSectionEquiv_smul,
     Equiv.apply_symm_apply, ← mulActionPoint_smul]
-  exact congrArg (mulActionPoint p) (torsorSectionEquiv_smul _ g a)
+  exact congrArg (mulActionPoint p) (IsTorsor.toTorsorMulActionSheafSectionEquiv_smul _ g a)
 
 /-- The transpose of the section of the base change of `X` given by `b` is given by the adjoint
 transpose of `b`. -/
@@ -400,10 +376,13 @@ private lemma torsorPoint_symm {T : Over S'} (a : T ⟶ (Over.pullback p).obj P)
       (Over.pullback p).modObjObj G.X P
     torsorPoint p h (((isTorsor_pullback_obj p h).toTorsorSectionEquiv (op T)).symm a) =
       (h.toTorsorSectionEquiv _).symm (((Over.mapPullbackAdj p).homEquiv _ _).symm a) := by
+  let : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
+    (Over.pullback p).modObjObj G.X P
   rw [torsorPoint, Equiv.symm_apply_eq]
-  simp only [torsorSectionEquiv, Equiv.trans_apply, Functor.op_obj, unop_op,
-    Equiv.apply_symm_apply]
-  exact mulActionPoint_symm p (G := G) (X := P) a
+  exact (congrArg (mulActionPoint p)
+    (IsTorsor.toTorsorMulActionSheafSectionEquiv_toTorsorSectionEquiv_symm _ a)).trans
+      ((mulActionPoint_symm p (G := G) (X := P) a).trans
+        (IsTorsor.toTorsorMulActionSheafSectionEquiv_toTorsorSectionEquiv_symm h _).symm)
 
 variable (X) [HasWeakSheafify (Scheme.fppfTopology.over S) (Type (max u w))]
   [(Scheme.fppfTopology.over S).WEqualsLocallyBijective (Type (max u w))]
