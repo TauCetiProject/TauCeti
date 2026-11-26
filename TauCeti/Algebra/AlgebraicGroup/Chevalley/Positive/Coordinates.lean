@@ -295,24 +295,23 @@ theorem positiveRootEquiv_symm_one (l : List PositiveRoot) (hl : l.Nodup)
   (D.positiveRootEquiv l hl hcover A).symm_apply_eq.mpr
     (D.positiveRootEquiv_zero l hl hcover A).symm
 
-/-- Over a finite commutative ring, the positive point subgroup of a Chevalley datum is finite. -/
-instance finite_positivePoints (A : Type v) [CommRing A] [Finite A] :
-    Finite (D.positivePoints A) := by
+private noncomputable def univPositiveRootEquiv (A : Type v) [CommRing A] :
+    (PositiveRoot → A) ≃ D.positivePoints A := by
   classical
   let l : List PositiveRoot := (Finset.univ : Finset PositiveRoot).toList
-  have hl : l.Nodup := Finset.nodup_toList _
-  have hcover : ∀ γ, γ ∈ l := fun γ => Finset.mem_toList.mpr (Finset.mem_univ γ)
-  exact Finite.of_equiv _ (D.positiveRootEquiv l hl hcover A)
+  exact D.positiveRootEquiv l (Finset.nodup_toList _)
+    (fun γ => Finset.mem_toList.mpr (Finset.mem_univ γ)) A
+
+/-- Over a finite commutative ring, the positive point subgroup of a Chevalley datum is finite. -/
+instance finite_positivePoints (A : Type v) [CommRing A] [Finite A] :
+    Finite (D.positivePoints A) :=
+  Finite.of_equiv _ (D.univPositiveRootEquiv A)
 
 /-- The cardinality of the positive point subgroup of a Chevalley datum is `|A| ^ |Φ⁺|` over every
 commutative ring `A`. -/
 theorem card_positivePoints (A : Type v) [CommRing A] :
     Nat.card (D.positivePoints A) =
       Nat.card A ^ (posRoots (t.rationalRootSystem ht) (t.rationalBase ht)).ncard := by
-  classical
-  let l : List PositiveRoot := (Finset.univ : Finset PositiveRoot).toList
-  have hl : l.Nodup := Finset.nodup_toList _
-  have hcover : ∀ γ, γ ∈ l := fun γ => Finset.mem_toList.mpr (Finset.mem_univ γ)
-  rw [Nat.card_congr (D.positiveRootEquiv l hl hcover A).symm, Nat.card_fun, Nat.card_coe_set_eq]
+  rw [Nat.card_congr (D.univPositiveRootEquiv A).symm, Nat.card_fun, Nat.card_coe_set_eq]
 
 end TauCeti.DynkinType.ChevalleyDatum

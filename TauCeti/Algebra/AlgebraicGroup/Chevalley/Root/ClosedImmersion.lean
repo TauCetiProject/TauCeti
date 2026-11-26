@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Immersion
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Injective
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
@@ -197,32 +198,14 @@ instance isClosedImmersion_rootSubgroup (γ : Fin t.numRoots) :
 nonreduced rings and rings of small characteristic. -/
 theorem rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v) [CommRing A] :
     Function.Injective (D.rootSubgroupPoints γ A) := by
-  intro u v huv
-  let q₁ := (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u
-  let q₂ := (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm v
-  have hmat :
-      (D.rootSubgroupPoints γ A u : Matrix.GeneralLinearGroup (Fin D.dim) A) =
-        (D.rootSubgroupPoints γ A v : Matrix.GeneralLinearGroup (Fin D.dim) A) :=
-    congrArg Subtype.val huv
-  rw [D.coe_rootSubgroupPoints, D.coe_rootSubgroupPoints] at hmat
-  have hu : u = AdditiveGroup.gaPointsMulEquiv q₁ :=
-    (AdditiveGroup.gaPointsMulEquiv.apply_symm_apply u).symm
-  have hv : v = AdditiveGroup.gaPointsMulEquiv q₂ :=
-    (AdditiveGroup.gaPointsMulEquiv.apply_symm_apply v).symm
-  rw [hu, hv, ← kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup,
-    ← kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup,
-    ← pointsMulEquiv_kostantRootSubgroupCoordinateMap,
-    ← pointsMulEquiv_kostantRootSubgroupCoordinateMap] at hmat
-  have hpt := (GeneralLinear.pointsMulEquiv D.dim).injective (by
-    simpa only [GeneralLinear.pointsMulEquiv_apply] using hmat)
-  have hcomp := congrArg WithConv.ofConv hpt
-  have hq : q₁ = q₂ := by
-    apply WithConv.ofConv_injective
-    apply AlgHom.ext
-    intro x
-    obtain ⟨y, rfl⟩ := D.rootCoordinateMap_surjective γ x
-    exact congrArg (fun f : GeneralLinear.coordinateHopfAlgebra ℤ D.dim →ₐ[ℤ] A => f y) hcomp
-  exact AdditiveGroup.gaPointsMulEquiv.symm.injective hq
+  rw [D.rootSubgroupPoints_injective_iff γ A, ← kostantRootSubgroupParam_chevalleySystem]
+  exact kostantRootSubgroupParam_injective_of_surjective (t.chevalleySystem ht)
+    (LieAlgebra.Basis.h (t.lieBasis ht)) D.representation D.lattice
+    (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator) γ
+    (isNilpotent_apply_ι_chevalleySystem D.representation
+      D.isNilpotent_representation_rootGenerator γ)
+    D.basis (D.rootCoordinateMap_surjective γ) A
 
 /-- Two elements of the same root subgroup of a Chevalley datum are equal if and only if their
 parameters coincide. -/

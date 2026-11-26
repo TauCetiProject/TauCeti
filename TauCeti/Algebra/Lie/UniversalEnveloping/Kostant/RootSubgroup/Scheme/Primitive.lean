@@ -233,8 +233,7 @@ theorem kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive_of_isCartanWe
     calc
       _ = ∑ s, b.repr m s • ℓ (op (b s)) := by
         refine Finset.sum_congr rfl fun s _ => ?_
-        rw [hinner s]
-        rfl
+        rw [hinner s, smul_eq_mul]
       _ = ℓ (op (∑ s, b.repr m s • b s)) := by simp only [map_sum, map_zsmul]
       _ = 1 := by rw [b.sum_repr m, hℓ]
   apply f.surjective_of_ι_one_mem_range
