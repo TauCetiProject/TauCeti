@@ -38,15 +38,15 @@ def quadraticTwistBadPrimes {q : ℕ} [NeZero q] (a : ZMod q) (β H : ℝ) : Set
       β ≤ s.re ∧ |s.im| ≤ H ∧ (χ.mul (jacobiChar ℂ d)).LFunction s = 0}
 
 /-- Membership is equivalent to being a prime in the class with a zero of one of the
-quadratic twists in the box. -/
+quadratic twists in the box. The nonzero levels for the twist follow from primality. -/
 @[simp]
-theorem mem_quadraticTwistBadPrimes_iff {q d : ℕ} [NeZero q] [NeZero d] [NeZero (q.lcm d)]
-    {a : ZMod q} {β H : ℝ} :
-    d ∈ quadraticTwistBadPrimes a β H ↔ (d : ZMod q) = a ∧ d.Prime ∧
+theorem mem_quadraticTwistBadPrimes_iff {q d : ℕ} [NeZero q] {a : ZMod q} {β H : ℝ} :
+    d ∈ quadraticTwistBadPrimes a β H ↔ (d : ZMod q) = a ∧ ∃ hd : d.Prime,
+      letI : NeZero d := ⟨hd.ne_zero⟩
+      letI : NeZero (q.lcm d) := ⟨Nat.lcm_ne_zero (NeZero.ne q) hd.ne_zero⟩
       ∃ (χ : DirichletCharacter ℂ q) (s : ℂ),
-        β ≤ s.re ∧ |s.im| ≤ H ∧ (χ.mul (jacobiChar ℂ d)).LFunction s = 0 := by
-  rw [quadraticTwistBadPrimes, Set.mem_ofPred_eq]
-  exact ⟨fun ⟨ha, hp, hz⟩ ↦ ⟨ha, hp, hz⟩, fun ⟨ha, hp, hz⟩ ↦ ⟨ha, hp, hz⟩⟩
+        β ≤ s.re ∧ |s.im| ≤ H ∧ (χ.mul (jacobiChar ℂ d)).LFunction s = 0 :=
+  Iff.rfl
 
 /-- A power saving in the number of primes with a twist zero yields a prime above any cutoff
 for which every twist is zero-free in the box. -/
@@ -61,8 +61,6 @@ theorem exists_prime_quad_twist_zero_free_of_density {q : ℕ} [NeZero q] {a : Z
         β ≤ s.re → |s.im| ≤ H → (χ.mul (jacobiChar ℂ d)).LFunction s ≠ 0 := by
   have hinf := Nat.infinite_setOf_prime_and_eq_mod_and_notMem_of_ncard_isBigO ha hB hcount
   obtain ⟨d, ⟨hd, hda, hgood⟩, hdN⟩ := Set.infinite_iff_exists_gt.mp hinf N
-  let _ : NeZero d := ⟨hd.ne_zero⟩
-  let _ : NeZero (q.lcm d) := ⟨Nat.lcm_ne_zero (NeZero.ne q) hd.ne_zero⟩
   refine ⟨d, hdN, hd, hda, fun χ s hs ht hzero ↦ hgood ?_⟩
   exact mem_quadraticTwistBadPrimes_iff.mpr ⟨hda, hd, χ, s, hs, ht, hzero⟩
 
