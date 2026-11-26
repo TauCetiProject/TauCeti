@@ -17,7 +17,7 @@ between the fibres of the pullbacks `f *ᵖ E₁` and `f *ᵖ E₂` are exactly 
 of the Hom bundle `fun b ↦ E₁ b →L[𝕜] E₂ b` (`Bundle.Pullback.homEquiv`). When `f` is `C^n`, this
 fibrewise identification is a `C^n` diffeomorphism of total spaces
 (`Bundle.Pullback.homDiffeomorph`): in the preferred trivializations both sides have the same
-coordinates, by `ContinuousLinearMap.inCoordinates_pullback_of_mem`.
+coordinates, by `ContinuousLinearMap.inCoordinates_pullback`.
 -/
 
 public noncomputable section
@@ -64,23 +64,6 @@ theorem homEquiv_symm_apply (f : K) (x : B')
     (homEquiv (E₁ := E₁) (E₂ := E₂) f x).symm ℓ = ℓ :=
   (rfl)
 
-omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)] in
-/-- Near each point, Hom-bundle coordinates between pullbacks are the original Hom-bundle
-coordinates at the image points. -/
-private theorem eventually_inCoordinates_pullback_eq (f : K)
-    (hf : Continuous f) (x₀ : B') :
-    ∀ᶠ y in 𝓝 x₀, ∀ ℓ : E₁ (f y) →L[𝕜] E₂ (f y),
-      ContinuousLinearMap.inCoordinates F₁ ((f : B' → B) *ᵖ E₁) F₂ ((f : B' → B) *ᵖ E₂)
-          x₀ y x₀ y ℓ =
-        ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ (f x₀) (f y) (f x₀) (f y) ℓ := by
-  filter_upwards [hf.continuousAt.preimage_mem_nhds
-      ((trivializationAt F₁ E₁ (f x₀)).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt F₁ E₁ (f x₀))),
-    hf.continuousAt.preimage_mem_nhds
-      ((trivializationAt F₂ E₂ (f x₀)).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt F₂ E₂ (f x₀)))] with y h₁ h₂ ℓ
-  exact ContinuousLinearMap.inCoordinates_pullback_of_mem f f x₀ y ℓ h₁ h₂
-
 /-- The pullback Hom identification is `C^n` on total spaces when `f` is. -/
 theorem contMDiff_homEquiv (f : K) (hf : ContMDiff IB' IB n f) :
     ContMDiff (IB'.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) (IB'.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
@@ -90,13 +73,9 @@ theorem contMDiff_homEquiv (f : K) (hf : ContMDiff IB' IB n f) :
           p.proj (homEquiv f p.proj p.snd)) := by
   refine (contMDiff_iff f hf).2 ⟨contMDiff_proj _, ?_⟩
   refine Bundle.contMDiff_totalSpace_of_eventuallyEq (h := id)
-    (hf.comp (contMDiff_proj _)) contMDiff_id fun p ↦ ?_
-  filter_upwards [(FiberBundle.continuous_proj (F₁ →L[𝕜] F₂)
-    (fun x ↦ ((f : B' → B) *ᵖ E₁) x →L[𝕜] ((f : B' → B) *ᵖ E₂) x)).continuousAt.eventually
-    (eventually_inCoordinates_pullback_eq (𝕜 := 𝕜) (F₁ := F₁) (F₂ := F₂) (E₁ := E₁) (E₂ := E₂) f
-      hf.continuous p.proj)] with q hq
+    (hf.comp (contMDiff_proj _)) contMDiff_id fun p ↦ .of_forall fun q ↦ ?_
   simp only [hom_trivializationAt_apply, homEquiv_apply, id]
-  exact (hq q.snd).symm
+  exact (ContinuousLinearMap.inCoordinates_pullback f f p.proj q.proj p.proj q.proj q.snd).symm
 
 /-- The inverse pullback Hom identification is `C^n` on total spaces when `f` is. -/
 theorem contMDiff_homEquiv_symm (f : K) (hf : ContMDiff IB' IB n f) :
@@ -106,13 +85,9 @@ theorem contMDiff_homEquiv_symm (f : K) (hf : ContMDiff IB' IB n f) :
           (E := fun x ↦ ((f : B' → B) *ᵖ E₁) x →L[𝕜] ((f : B' → B) *ᵖ E₂) x)
           p.proj ((homEquiv f p.proj).symm p.snd)) := by
   refine Bundle.contMDiff_totalSpace_of_eventuallyEq (h := Pullback.lift f)
-    (contMDiff_proj _) (contMDiff_lift f hf) fun p ↦ ?_
-  filter_upwards [(FiberBundle.continuous_proj (F₁ →L[𝕜] F₂)
-    ((f : B' → B) *ᵖ (fun b ↦ E₁ b →L[𝕜] E₂ b))).continuousAt.eventually
-    (eventually_inCoordinates_pullback_eq (𝕜 := 𝕜) (F₁ := F₁) (F₂ := F₂) (E₁ := E₁) (E₂ := E₂) f
-      hf.continuous p.proj)] with q hq
+    (contMDiff_proj _) (contMDiff_lift f hf) fun p ↦ .of_forall fun q ↦ ?_
   simp only [hom_trivializationAt_apply, Pullback.lift_proj, Pullback.lift_snd, homEquiv_symm_apply]
-  exact hq q.snd
+  exact ContinuousLinearMap.inCoordinates_pullback f f p.proj q.proj p.proj q.proj q.snd
 
 /-- For `C^n` `f`, the Hom bundle of two pullbacks and the pullback of the Hom bundle have
 `C^n` diffeomorphic total spaces, by the identity on every fibre. -/

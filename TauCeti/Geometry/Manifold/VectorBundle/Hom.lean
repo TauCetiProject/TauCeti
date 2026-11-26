@@ -748,7 +748,8 @@ def bundleDiffeomorphOfHom :
 
 /-- The underlying homeomorphism of `bundleDiffeomorphOfHom` is `bundleHomeomorphOfHom`. -/
 @[simp] theorem toHomeomorph_bundleDiffeomorphOfHom :
-    (bundleDiffeomorphOfHom e he).toHomeomorph = bundleHomeomorphOfHom e he.continuous :=
+    (bundleDiffeomorphOfHom e he).toHomeomorph =
+      bundleHomeomorphOfHom (hF₁ := FiniteDimensional.completeSpace 𝕜 F₁) e he.continuous :=
   Homeomorph.ext fun p ↦ by simp
 
 end

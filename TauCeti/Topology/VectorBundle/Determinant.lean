@@ -12,7 +12,7 @@ public import TauCeti.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.VectorBundle.FiniteRank.ExteriorPower
 public import TauCeti.Topology.VectorBundle.Hom
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 
 /-!
 # Pulling back local frames

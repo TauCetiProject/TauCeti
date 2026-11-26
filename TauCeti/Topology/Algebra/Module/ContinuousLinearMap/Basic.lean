@@ -41,6 +41,10 @@ then Mathlib's algebraic flip `LinearMap.flip` applies to it.
   exactly when it is nonzero.
 * `ContinuousLinearMap.pi_ext_single_one`: a continuous linear map out of `κ → R`, `κ` finite, is
   determined by its values on the coordinate vectors.
+* `ContinuousLinearMap.eqRec_section`: transporting a dependent section of continuous semilinear
+  maps along an equality of image base points recovers the target value when the base points agree.
+* `ContinuousLinearMap.eqRec_eqRec`: transporting both the domain and codomain fibres of a
+  continuous semilinear map along equalities `a = b` agrees with diagonal transport.
 * `ContinuousLinearMap.apply_eq_sum_smul_single`: the expansion
   `f x = ∑ k, x k • f (Pi.single k 1)` of such a map in the coordinate vectors.
 * `ContinuousLinearMap.units_inv_apply_apply`, `ContinuousLinearMap.units_apply_inv_apply`: a
@@ -101,6 +105,30 @@ theorem pi_ext_single_one {R M κ : Type*} [Semiring R] [TopologicalSpace R] [To
     [AddCommMonoid M] [Module R M] [Finite κ] [DecidableEq κ] {f g : (κ → R) →L[R] M}
     (h : ∀ k, f (Pi.single k 1) = g (Pi.single k 1)) : f = g :=
   coe_injective <| LinearMap.pi_ext' fun k ↦ LinearMap.ext_ring <| h k
+
+/-- Transporting the value at `a'` of a dependent section `s : ∀ x, V (p x) →SL[σ] W (p x)` along
+`hp : p a' = p a` recovers `s a` whenever `a' = a`. -/
+theorem eqRec_section {R₁ R₂ α β : Type*} [Semiring R₁] [Semiring R₂] {σ : R₁ →+* R₂}
+    {V W : β → Type*} [∀ b, TopologicalSpace (V b)] [∀ b, AddCommMonoid (V b)]
+    [∀ b, Module R₁ (V b)] [∀ b, TopologicalSpace (W b)] [∀ b, AddCommMonoid (W b)]
+    [∀ b, Module R₂ (W b)] {p : α → β} {a' a : α} (ha : a' = a) (hp : p a' = p a)
+    (s : ∀ x, V (p x) →SL[σ] W (p x)) :
+    (show V (p a) →SL[σ] W (p a) from hp ▸ s a') = s a := by
+  cases ha
+  rfl
+
+/-- Transporting both the domain and codomain fibres of a continuous semilinear map along equalities
+`hx hy : a = b` agrees with transporting the map type along `hx`. -/
+theorem eqRec_eqRec {R₁ R₂ β : Type*} [Semiring R₁] [Semiring R₂] {σ : R₁ →+* R₂}
+    {V W : β → Type*} [∀ b, TopologicalSpace (V b)] [∀ b, AddCommMonoid (V b)]
+    [∀ b, Module R₁ (V b)] [∀ b, TopologicalSpace (W b)] [∀ b, AddCommMonoid (W b)]
+    [∀ b, Module R₂ (W b)] {a b : β} (hx hy : a = b) (T : V a →SL[σ] W a) :
+    (show V b →SL[σ] W b from
+      @Eq.rec β a (fun x _ ↦ V x →SL[σ] W b)
+        (@Eq.rec β a (fun y _ ↦ V a →SL[σ] W y) T b hy) b hx) =
+      (show V b →SL[σ] W b from hx ▸ T) := by
+  cases hx
+  rfl
 
 /-- A continuous linear map out of `κ → R`, with `κ` finite, expanded in the coordinate vectors:
 `f x = ∑ k, x k • f (Pi.single k 1)`. -/

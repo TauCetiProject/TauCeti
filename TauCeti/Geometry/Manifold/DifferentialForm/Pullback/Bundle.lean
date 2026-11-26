@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 
 /-!
 # Regularity of pullback for bundle-valued forms

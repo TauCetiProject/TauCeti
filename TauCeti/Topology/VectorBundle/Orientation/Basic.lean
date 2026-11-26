@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 public import TauCeti.LinearAlgebra.Orientation.Basic
 
 import Mathlib.Topology.LocallyConstant.Basic

@@ -24,6 +24,9 @@ Applied on each locally constant rank stratum with model `Fin n → 𝕜`, this 
 the reconstruction step in a small coordinate presentation of finite-rank bundles.
 No compactness, separation, or finite-dimensionality assumption is needed.
 
+`VectorBundleCore.ext` provides extensionality for `VectorBundleCore` from its chart domains,
+chart selection, and coordinate-change maps.
+
 The construction uses Mathlib's `Bundle.Trivialization.coordChangeL` and
 `VectorBundleCore` gluing construction. For any core, `VectorBundleCore.mk_eq_mk_iff` compares
 points of its total space by base point and vector in the model fibre.
@@ -32,6 +35,30 @@ points of its total space by base point and vector in the model fibre.
 public section
 
 open Bundle Set Topology
+
+namespace VectorBundleCore
+
+/-- Two `VectorBundleCore`s with the same chart domains, chart selection, and coordinate-change
+maps are equal. -/
+@[ext]
+theorem ext {𝕜 B F ι : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {c₁ c₂ : VectorBundleCore 𝕜 B F ι}
+    (hb : ∀ i, c₁.baseSet i = c₂.baseSet i)
+    (hi : ∀ x, c₁.indexAt x = c₂.indexAt x)
+    (hc : ∀ i j x, c₁.coordChange i j x = c₂.coordChange i j x) : c₁ = c₂ := by
+  have hb' : c₁.baseSet = c₂.baseSet := funext hb
+  have hi' : c₁.indexAt = c₂.indexAt := funext hi
+  have hc' : c₁.coordChange = c₂.coordChange := funext fun i ↦ funext fun j ↦ funext (hc i j)
+  cases c₁
+  cases c₂
+  dsimp only at hb' hi' hc'
+  cases hb'
+  cases hi'
+  cases hc'
+  rfl
+
+end VectorBundleCore
 
 namespace TauCeti
 

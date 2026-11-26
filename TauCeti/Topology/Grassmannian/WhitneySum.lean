@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.Fin.Interleave
 public import TauCeti.Topology.Grassmannian.Tautological
 public import TauCeti.Topology.VectorBundle.Hom
 public import TauCeti.Topology.Grassmannian.DirectSum
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 
 /-!
 # Interleaved Whitney sums of finite Grassmannians

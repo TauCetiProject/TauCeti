@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 public import TauCeti.Topology.VectorBundle.SpinStructure.Reflection.Basic
 
 /-!

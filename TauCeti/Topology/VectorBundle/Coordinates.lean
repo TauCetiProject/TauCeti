@@ -31,8 +31,11 @@ off its coordinate expression, and `ContinuousLinearMap.hasLeftInverse_inCoordin
 split injectivity (a continuous linear left inverse) the same way.
 `ContinuousLinearMap.inCoordinates_comp` reads a composite
 of fibre maps as the composite of their coordinate expressions, and
-`ContinuousLinearMap.inCoordinates_id` and `ContinuousLinearMap.inCoordinates_smul` read the
-identity map and scalar multiples in a compatible target vector-bundle structure, and
+`ContinuousLinearMap.inCoordinates_id`, `ContinuousLinearMap.inCoordinates_transport_eq`,
+`ContinuousLinearMap.inCoordinates_transport_refl`, and `ContinuousLinearMap.inCoordinates_smul`
+read the identity map, coordinate transport along base-point equalities, the identity transported
+along base-point equalities, and scalar multiples in a compatible target vector-bundle structure,
+and
 `ContinuousLinearMap.inCoordinates_finset_sum` reads finite sums of fibre maps.
 `ContinuousLinearMap.mem_ker_inCoordinates_iff`, `ContinuousLinearMap.mem_range_inCoordinates_iff`
 and `ContinuousLinearMap.finrank_range_inCoordinates` read the kernel, the range and the rank of
@@ -256,6 +259,30 @@ theorem inCoordinates_id {x₀ x : B} (hx : x ∈ (trivializationAt F V x₀).ba
     inCoordinates F V F V x₀ x x₀ x (.id 𝕜 (V x)) = .id 𝕜 F := by
   ext v
   simp [inCoordinates_eq hx hx]
+
+/-- Transporting the source and target base points of a fibre map along equalities leaves its
+coordinate expression unchanged. -/
+theorem inCoordinates_transport_eq {x₀' x₀ x' x : B} {y₀' y₀ y' y : B'}
+    (hx₀ : x₀' = x₀) (hx : x' = x) (hy₀ : y₀' = y₀) (hy : y' = y)
+    (A : V x' →SL[σ] W y') :
+    inCoordinates F V F' W x₀' x' y₀' y' A =
+      inCoordinates F V F' W x₀ x y₀ y (show V x →SL[σ] W y from hx ▸ hy ▸ A) := by
+  cases hx₀
+  cases hx
+  cases hy₀
+  cases hy
+  rfl
+
+/-- Transporting the identity equivalence along equal base points `x₀ = x₀'` and `x = x'` reads as
+the identity on the model fibre `F` in the preferred trivialization when `x` lies in its base
+set. -/
+theorem inCoordinates_transport_refl {x₀ x₀' x x' : B} (hx₀ : x₀ = x₀') (hx : x = x')
+    (hmem : x ∈ (trivializationAt F V x₀).baseSet) :
+    inCoordinates F V F V x₀ x x₀' x'
+      ((hx ▸ ContinuousLinearEquiv.refl 𝕜 (V x) : V x ≃L[𝕜] V x')) = .id 𝕜 F := by
+  cases hx₀
+  cases hx
+  exact inCoordinates_id hmem
 
 /-- `inCoordinates` commutes with scalar multiplication by any `c : 𝕜''` from a compatible
 `VectorBundle 𝕜'' F' W` structure. Both sides vanish when `y` is outside the base set of the

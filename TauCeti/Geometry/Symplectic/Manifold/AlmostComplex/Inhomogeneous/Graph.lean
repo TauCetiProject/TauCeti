@@ -236,7 +236,7 @@ theorem graphStructureAt_apply (ν : InhomogeneousTerm j J) (q : P × M)
 
 section Regularity
 
-open ContinuousLinearMap (fst snd inl inr inCoordinates inCoordinates_pullback_of_mem)
+open ContinuousLinearMap (fst snd inl inr inCoordinates inCoordinates_pullback)
 
 /-- The graph structure at `q` as a continuous endomorphism of the tangent space of `P × M`. In
 the product decomposition of the tangent space it is `(ζ, v) ↦ (j ζ, J v - 2 J ν ζ)`. -/
@@ -343,13 +343,6 @@ private theorem contMDiff_graphEndomorphismAt (ν : InhomogeneousTerm j J) :
   intro q₀
   rw [contMDiffAt_hom_bundle]
   refine ⟨contMDiffAt_id, ?_⟩
-  -- Near `q₀` both factors of `q` lie in the base sets of the trivializations at `q₀`.
-  have hP : ∀ᶠ q : P × M in 𝓝 q₀, q.1 ∈ (trivializationAt EP (TangentSpace IP) q₀.1).baseSet :=
-    continuousAt_fst.preimage_mem_nhds ((trivializationAt EP (TangentSpace IP) q₀.1).open_baseSet
-      |>.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' q₀.1))
-  have hM : ∀ᶠ q : P × M in 𝓝 q₀, q.2 ∈ (trivializationAt E (TangentSpace I) q₀.2).baseSet :=
-    continuousAt_snd.preimage_mem_nhds ((trivializationAt E (TangentSpace I) q₀.2).open_baseSet
-      |>.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' q₀.2))
   -- The three blocks, read in the trivializations of the factors.
   set a : P × M → EP →L[ℝ] EP := fun q ↦ inCoordinates EP (TangentSpace IP) EP
     (TangentSpace IP) q₀.1 q.1 q₀.1 q.1 (j.toEndomorphism q.1)
@@ -360,17 +353,15 @@ private theorem contMDiff_graphEndomorphismAt (ν : InhomogeneousTerm j J) :
   have ha : ContMDiffAt (IP.prod I) 𝓘(ℝ, EP →L[ℝ] EP) n a q₀ :=
     ((contMDiffAt_hom_bundle _).1 (j.toEndomorphism.contMDiff q₀.1)).2.comp q₀ contMDiffAt_fst
   have hb : ContMDiffAt (IP.prod I) 𝓘(ℝ, E →L[ℝ] E) n b q₀ := by
-    refine ((contMDiffAt_hom_bundle _).1 (J.toEndomorphism.contMDiff q₀)).2.congr_of_eventuallyEq ?_
-    filter_upwards [hM] with q hq
-    exact (inCoordinates_pullback_of_mem
-      (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯)
-      (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯) q₀ q (J.toEndomorphism q) hq hq).symm
+    refine ((contMDiffAt_hom_bundle _).1 (J.toEndomorphism.contMDiff q₀)).2.congr_of_eventuallyEq
+      (.of_forall fun q ↦ (inCoordinates_pullback
+        (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯)
+        (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯) q₀ q q₀ q (J.toEndomorphism q)).symm)
   have hc : ContMDiffAt (IP.prod I) 𝓘(ℝ, EP →L[ℝ] E) n c q₀ := by
-    refine ((contMDiffAt_hom_bundle _).1 (ν.val.contMDiff q₀)).2.congr_of_eventuallyEq ?_
-    filter_upwards [hP, hM] with q hqP hqM
-    exact (inCoordinates_pullback_of_mem
-      (ContMDiffMap.fst : C^∞⟮IP.prod I, P × M; IP, P⟯)
-      (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯) q₀ q (ν.val q) hqP hqM).symm
+    refine ((contMDiffAt_hom_bundle _).1 (ν.val.contMDiff q₀)).2.congr_of_eventuallyEq
+      (.of_forall fun q ↦ (inCoordinates_pullback
+        (ContMDiffMap.fst : C^∞⟮IP.prod I, P × M; IP, P⟯)
+        (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯) q₀ q q₀ q (ν.val q)).symm)
   -- The block matrix `(ζ, v) ↦ (a ζ, b v - 2 b (c ζ))` is `Cⁿ` in the blocks.
   have hL : ContMDiffAt (IP.prod I) 𝓘(ℝ, EP × E →L[ℝ] EP × E) n (fun q ↦
       (inl ℝ EP E).comp ((a q).comp (fst ℝ EP E)) + (inr ℝ EP E).comp ((b q).comp (snd ℝ EP E)) -

@@ -13,7 +13,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
@@ -41,7 +41,7 @@ own carrier. The canonical map `Pullback.lift f` to the total space of `E` is `C
 (`Bundle.Pullback.contMDiff_lift`), and a family of fibrewise maps inducing a `C^n` map of total
 spaces pulls back along a `C^n` map to one that does too (`Bundle.Pullback.contMDiff_fiberwise`).
 When the model fibre is finite-dimensional over a complete field `𝕜`, `TauCeti.bundleDiffeomorph`
-and the fibre instances of `TauCeti.Topology.VectorBundle.Pullback` therefore make the pullback
+and the fibre instances of `TauCeti.Topology.VectorBundle.Pullback.Basic` make the pullback
 `x ↦ e (f x)` of a `C^n` family `e` of fibrewise linear equivalences again a `C^n` bundle
 equivalence. The pullback along the identity is `C^n` diffeomorphic to `E`
 (`Bundle.Pullback.idDiffeomorph`), and the pullback along a composite `g ∘ f` to the iterated
@@ -287,22 +287,16 @@ theorem Bundle.Pullback.contMDiffAt_hom_section_iff (f : K) {x : X}
       ContMDiffAt IX (IB.prod 𝓘(𝕜, F →L[𝕜] G)) n
         (fun x ↦ TotalSpace.mk' (F →L[𝕜] G)
           (E := fun b ↦ V b →L[𝕜] W b) (f x) (A x)) x := by
-  -- Near `x`, the hom coordinates of `A` between the pullbacks are its coordinates between the
-  -- original bundles at the image points.
+  -- The hom coordinates of `A` between the pullbacks agree everywhere with its coordinates
+  -- between the original bundles at the image points.
   have heq :
       (fun y ↦ ContinuousLinearMap.inCoordinates F ((f : X → B) *ᵖ V)
-        G ((f : X → B) *ᵖ W) x y x y (A y)) =ᶠ[nhds x]
+        G ((f : X → B) *ᵖ W) x y x y (A y)) =
       (fun y ↦ ContinuousLinearMap.inCoordinates F V G W (f x) (f y) (f x) (f y) (A y)) := by
-    filter_upwards [hf.continuousAt.preimage_mem_nhds
-      ((trivializationAt F V (f x)).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt F V (f x))),
-      hf.continuousAt.preimage_mem_nhds
-      ((trivializationAt G W (f x)).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt G W (f x)))] with y hyV hyW
-    exact ContinuousLinearMap.inCoordinates_pullback_of_mem f f x y (A y) hyV hyW
-  rw [contMDiffAt_hom_bundle, contMDiffAt_hom_bundle]
-  exact ⟨fun h ↦ ⟨hf, h.2.congr_of_eventuallyEq heq.symm⟩,
-    fun h ↦ ⟨contMDiffAt_id, h.2.congr_of_eventuallyEq heq⟩⟩
+    funext y
+    exact ContinuousLinearMap.inCoordinates_pullback f f x y x y (A y)
+  rw [contMDiffAt_hom_bundle, contMDiffAt_hom_bundle, heq]
+  exact ⟨fun h ↦ ⟨hf, h.2⟩, fun h ↦ ⟨contMDiffAt_id, h.2⟩⟩
 
 /-- A section of Hom between two pullbacks is `Cⁿ` exactly when its field of maps along the
 base map is `Cⁿ` in the original hom bundle. No rank or smooth-bundle assumption is needed. -/
@@ -355,14 +349,7 @@ theorem Bundle.Pullback.contMDiffAt_inCoordinates_of_contMDiffAt (f : K) (g : L)
   have hsec := (TauCeti.contMDiffAt_hom_bundle_iff ϕ x₀).2 fun v ↦
     (Bundle.Pullback.contMDiffAt_iff g hg).2 ⟨contMDiffAt_proj _, hA v⟩
   rw [contMDiffAt_hom_bundle] at hsec
-  refine hsec.2.congr_of_eventuallyEq ?_
-  filter_upwards [(map_continuous f).continuousAt.preimage_mem_nhds
-      ((trivializationAt F V (f x₀)).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt F V (f x₀))),
-    (map_continuous g).continuousAt.preimage_mem_nhds
-      ((trivializationAt G W (g x₀)).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt G W (g x₀)))] with y hyV hyW
-  exact (ContinuousLinearMap.inCoordinates_pullback_of_mem f g x₀ y (A y) hyV hyW).symm
+  simpa only [ϕ, ContinuousLinearMap.inCoordinates_pullback] using hsec.2
 
 end HomAlongMaps
 

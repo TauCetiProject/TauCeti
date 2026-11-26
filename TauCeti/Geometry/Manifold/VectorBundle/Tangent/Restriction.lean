@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
 
@@ -198,27 +198,15 @@ theorem contMDiff_restrictOpenTangentSpaceHom {n : ℕ∞ω}
   have ha := (contMDiffAt_hom_bundle _).mp ((hA.comp hinc) q)
   rw [contMDiffAt_hom_bundle]
   refine ⟨contMDiffAt_id, ha.2.congr_of_eventuallyEq ?_⟩
-  filter_upwards [eventually_inCoordinates_openTangentSpaceHom_eq (I := I) (I' := I') q.1 q.2,
-    (continuousAt_subtypeVal.comp continuousAt_fst).eventually
-      ((trivializationAt E (TangentSpace I : M → Type _) (q.1 : M)).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (q.1 : M))),
-    (continuousAt_subtypeVal.comp continuousAt_snd).eventually
-      ((trivializationAt F (TangentSpace I' : N → Type _) (q.2 : N)).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt F (TangentSpace I' : N → Type _) (q.2 : N))),
-    continuousAt_fst.eventually
-      ((trivializationAt E (TangentSpace I : U → Type _) q.1).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) q.1)),
-    continuousAt_snd.eventually
-      ((trivializationAt F (TangentSpace I' : V → Type _) q.2).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt F (TangentSpace I' : V → Type _) q.2))]
-      with y he hyM hyN hyU hyV
+  filter_upwards [eventually_inCoordinates_openTangentSpaceHom_eq (I := I) (I' := I') q.1 q.2]
+      with y he
   -- `erw` identifies each pulled-back tangent fibre with the original model instance.
-  erw [ContinuousLinearMap.inCoordinates_pullback_of_mem
+  erw [ContinuousLinearMap.inCoordinates_pullback
     (ContMDiffMap.fst : C^∞⟮I.prod I', M × N; I, M⟯)
-    (ContMDiffMap.snd : C^∞⟮I.prod I', M × N; I', N⟯) _ _ _ hyM hyN,
-    ContinuousLinearMap.inCoordinates_pullback_of_mem
+    (ContMDiffMap.snd : C^∞⟮I.prod I', M × N; I', N⟯),
+    ContinuousLinearMap.inCoordinates_pullback
       (ContMDiffMap.fst : C^∞⟮I.prod I', U × V; I, U⟯)
-      (ContMDiffMap.snd : C^∞⟮I.prod I', U × V; I', V⟯) _ _ _ hyU hyV]
+      (ContMDiffMap.snd : C^∞⟮I.prod I', U × V; I', V⟯)]
   exact he (A (y.1, y.2))
 
 section Endomorphism

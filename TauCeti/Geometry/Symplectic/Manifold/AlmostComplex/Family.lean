@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 
 /-!

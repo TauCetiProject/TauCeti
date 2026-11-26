@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero.Topolo
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalSobolev
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
-import TauCeti.Topology.VectorBundle.Pullback
+import TauCeti.Topology.VectorBundle.Pullback.Basic
 
 /-!
 # Regularity and wave front set of the restriction to an open subset

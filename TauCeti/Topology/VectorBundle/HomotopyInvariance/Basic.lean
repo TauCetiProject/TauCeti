@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Homotopy.Basic
-public import Mathlib.Topology.VectorBundle.Constructions
+public import TauCeti.Topology.Homotopy.Cylinder.Basic
+public import TauCeti.Topology.VectorBundle.Pullback.Hom
 import TauCeti.Topology.FiberBundle.Pullback
-import TauCeti.Topology.Homotopy.CylinderSubdivision
+import TauCeti.Topology.Homotopy.Cylinder.Subdivision
 import TauCeti.Topology.VectorBundle.Hom
-import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
 # Homotopy invariance of vector bundles over paracompact bases
@@ -20,16 +20,20 @@ Let `X` be a paracompact R₁ space, for instance a paracompact Hausdorff space,
 vector bundle over the cylinder `X × I` whose model fibre is a Banach space over a normed field
 `𝕜` which is a normed `ℝ`-algebra, such as `ℝ` or `ℂ`.
 `TauCeti.exists_continuousLinearEquiv_cylinder` identifies `E` with the pullback of its restriction
-to `X × {0}` along `(x, t) ↦ (x, 0)`. The identification consists of continuous linear
-equivalences `E (x, 0) ≃L[𝕜] E (x, t)` which are the identity at time `0`, and it is continuous on
-total spaces together with its inverse. Consequently the pullbacks of a vector bundle along
-homotopic maps out of `X` are isomorphic
-(`ContinuousMap.Homotopic.exists_continuousLinearEquiv_pullback`), so that isomorphism classes of
-pulled-back bundles depend only on the homotopy class of the map, as homotopy invariance of
-topological K-theory requires.
+to `X × {0}` along `TauCeti.cylinderZero X : X × I → X × I`, `(x, t) ↦ (x, 0)`. The
+identification consists of continuous linear equivalences `E (x, 0) ≃L[𝕜] E (x, t)` which are the
+identity at time `0`; they form a continuous section of the Hom bundle
+(`TauCeti.exists_continuous_hom_bundle_cylinder`) and are continuous on total spaces together with
+their inverses. Consequently the pullbacks of a vector bundle along homotopic maps out of `X` are
+isomorphic (`ContinuousMap.Homotopic.exists_continuousLinearEquiv_pullback`), so that isomorphism
+classes of pulled-back bundles depend only on the homotopy class of the map, as homotopy invariance
+of topological K-theory requires.
+
+Relative cylinder extensions from closed subsets live in
+`TauCeti.Topology.VectorBundle.HomotopyInvariance.Relative`.
 
 No finite cover, bounded rank or compactness of `X` is assumed. The proof transports fibres along
-the time direction in three steps.
+the time direction in three steps:
 
 * On `X × I × I`, a partition of unity subordinate to the chart domains of `E`, with sum one on the
   closed diagonal `s = t`, averages the chart transports `E (x, s) → E (x, t)` into a family
@@ -45,13 +49,14 @@ the time direction in three steps.
 
 ## References
 
-* A. Hatcher, *Vector Bundles and K-Theory*, §1.2, Theorem 1.6, for homotopy invariance of
-  pullbacks over paracompact bases, proved there by a different argument.
+* A. Hatcher, *Vector Bundles and K-Theory*, §1.2, Theorem 1.6 and Proposition 1.7, for cylinder
+  transport and homotopy invariance of pullbacks over paracompact bases.
+* M. F. Atiyah, *K-Theory*, §1.4, Lemma 1.4.3, for homotopy invariance of vector bundles.
 -/
 
 public section
 
-open Bundle Set Function ContinuousLinearMap
+open Bundle FiberBundle Set Function ContinuousLinearMap
 open scoped Topology unitInterval
 
 namespace TauCeti
@@ -294,50 +299,51 @@ private theorem exists_cylinderTransport [CompleteSpace F] :
   · refine transport_time_zero hTd x (fun k ↦ Subtype.ext ?_) _
     rw [hτ, Icc.coe_zero, min_eq_left (by have := (hδ x).1; positivity)]
 
-/-- **Homotopy invariance of vector bundles over a cylinder.** Let `X` be paracompact and R₁, for
-instance paracompact Hausdorff. A vector bundle `E` over `X × I` is isomorphic to the pullback of
-its restriction to `X × {0}` along `(x, t) ↦ (x, 0)`: there are fibrewise continuous linear
-equivalences `Φ (x, t) : E (x, 0) ≃L[𝕜] E (x, t)`, equal to the identity at time `0`, such that `Φ`
-and its inverse are continuous on total spaces. The model fibre `F` may be any Banach space. -/
-theorem exists_continuousLinearEquiv_cylinder [CompleteSpace F] :
+/-- **Hom-bundle continuity of cylinder transport.** Over a paracompact R₁ space `X`, a Banach
+vector bundle `E` over `X × I` admits fibrewise continuous linear equivalences
+`Φ (x, t) : E (x, 0) ≃L[𝕜] E (x, t)`, equal to the identity at time `0`, whose underlying
+continuous linear maps form a continuous section of the Hom bundle from the zero-slice pullback
+`(cylinderZero X : X × I → X × I) *ᵖ E` to `E`. -/
+theorem exists_continuous_hom_bundle_cylinder [CompleteSpace F] :
     ∃ Φ : ∀ q : X × I, E (q.1, 0) ≃L[𝕜] E q,
-      Continuous (fun v : TotalSpace F ((fun q : X × I ↦ (q.1, (0 : I))) *ᵖ E) ↦
-        TotalSpace.mk' F v.proj (Φ v.proj v.snd)) ∧
-      Continuous (fun v : TotalSpace F E ↦ TotalSpace.mk' F
-        (E := (fun q : X × I ↦ (q.1, (0 : I))) *ᵖ E) v.proj ((Φ v.proj).symm v.snd)) ∧
+      Continuous (fun q : X × I ↦ TotalSpace.mk' (F →L[𝕜] F)
+        (E := fun r : X × I ↦ ((cylinderZero X : X × I → X × I) *ᵖ E) r →L[𝕜] E r)
+        q (Φ q : E (q.1, 0) →L[𝕜] E q)) ∧
       ∀ x, Φ (x, 0) = ContinuousLinearEquiv.refl 𝕜 (E (x, 0)) := by
   obtain ⟨Φ', hinv, hc, h0⟩ := exists_cylinderTransport (𝕜 := 𝕜) (F := F) (E := E)
   choose Φ hΦ using hinv
-  have hΦc (q₀ : X × I) : ContinuousAt (fun q ↦ inCoordinates F E F E (q₀.1, 0) (q.1, 0) q₀ q
-      (Φ q : E (q.1, 0) →L[𝕜] E q)) q₀ := by
-    simpa only [hΦ] using hc q₀
-  have hΦi (q₀ : X × I) : ContinuousAt (fun q ↦ inCoordinates F E F E q₀ q (q₀.1, 0) (q.1, 0)
-      ((Φ q).symm : E q →L[𝕜] E (q.1, 0))) q₀ := by
-    simpa only [← inverse_equiv] using ContinuousAt.inCoordinates_clm_inverse
-      (b₁ := fun q : X × I ↦ (q.1, (0 : I))) (b₂ := fun q : X × I ↦ q)
-      (hΦc q₀) isInvertible_equiv
-  refine ⟨Φ, continuous_iff_continuousAt.2 fun v₀ ↦ ?_,
-    Pullback.continuous_iff.2 ⟨FiberBundle.continuous_proj F E,
-      continuous_iff_continuousAt.2 fun v₀ ↦ ?_⟩, fun x ↦ ?_⟩
-  · exact ContinuousAt.clm_apply_of_inCoordinates
-      (b₁ := fun v : TotalSpace F ((fun q : X × I ↦ (q.1, (0 : I))) *ᵖ E) ↦ (v.proj.1, (0 : I)))
-      (b₂ := TotalSpace.proj) (ϕ := fun v ↦ (Φ v.proj : E (v.proj.1, 0) →L[𝕜] E v.proj))
-      (v := fun v ↦ v.snd)
-      ((hΦc v₀.proj).comp (Pullback.continuous_proj F E _).continuousAt)
-      (Pullback.continuous_lift F E _).continuousAt (Pullback.continuous_proj F E _).continuousAt
-  · simp only [Pullback.lift_mk]
-    exact ContinuousAt.clm_apply_of_inCoordinates
-      (b₁ := TotalSpace.proj) (b₂ := fun v : TotalSpace F E ↦ (v.proj.1, (0 : I)))
-      (ϕ := fun v ↦ ((Φ v.proj).symm : E v.proj →L[𝕜] E (v.proj.1, 0))) (v := fun v ↦ v.snd)
-      ((hΦi v₀.proj).comp (FiberBundle.continuous_proj F E).continuousAt) continuousAt_id
-      ((continuous_fst.comp (FiberBundle.continuous_proj F E)).prodMk continuous_const).continuousAt
+  refine ⟨Φ, continuous_iff_continuousAt.2 fun q₀ ↦ ?_, fun x ↦ ?_⟩
+  · refine (continuousAt_hom_bundle_over_pullback_left_iff (cylinderZero X)
+        (ContinuousMap.id (X × I))
+        fun q ↦ ((Φ q : E (q.1, 0) →L[𝕜] E q) :
+          ((cylinderZero X : X × I → X × I) *ᵖ E) q →L[𝕜] E q)).2
+      ((hc q₀).congr (Filter.Eventually.of_forall fun q ↦ ?_))
+    exact congrArg (inCoordinates F E F E (q₀.1, 0) (q.1, 0) q₀ q) (hΦ q).symm
   · ext v
     rw [ContinuousLinearEquiv.refl_apply, ← ContinuousLinearEquiv.coe_coe, hΦ, h0,
       ContinuousLinearMap.id_apply]
 
+/-- **Homotopy invariance of vector bundles over a cylinder.** Let `X` be paracompact and R₁, for
+instance paracompact Hausdorff. A vector bundle `E` over `X × I` is isomorphic to the pullback of
+its restriction to `X × {0}` along `cylinderZero X`: there are fibrewise continuous linear
+equivalences `Φ (x, t) : E (x, 0) ≃L[𝕜] E (x, t)`, equal to the identity at time `0`, such that `Φ`
+and its inverse are continuous on total spaces. The model fibre `F` may be any Banach space. -/
+theorem exists_continuousLinearEquiv_cylinder [CompleteSpace F] :
+    ∃ Φ : ∀ q : X × I, E (q.1, 0) ≃L[𝕜] E q,
+      Continuous (fun v : TotalSpace F ((cylinderZero X : X × I → X × I) *ᵖ E) ↦
+        TotalSpace.mk' F v.proj (Φ v.proj v.snd)) ∧
+      Continuous (fun v : TotalSpace F E ↦ TotalSpace.mk' F
+        (E := (cylinderZero X : X × I → X × I) *ᵖ E) v.proj ((Φ v.proj).symm v.snd)) ∧
+      ∀ x, Φ (x, 0) = ContinuousLinearEquiv.refl 𝕜 (E (x, 0)) := by
+  obtain ⟨Φ, hΦ, h0⟩ := exists_continuous_hom_bundle_cylinder (𝕜 := 𝕜) (F := F) (E := E)
+  obtain ⟨h₁, h₂⟩ := continuous_bundle_of_hom (E₁ := (cylinderZero X : X × I → X × I) *ᵖ E) Φ hΦ
+  exact ⟨Φ, h₁, h₂, h0⟩
+
 end Cylinder
 
 section Homotopy
+
+section Free
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
   {X : Type*} [TopologicalSpace X] [R1Space X] [ParacompactSpace X]
@@ -362,30 +368,16 @@ private theorem exists_continuousLinearEquiv_pullback_of_eq (G : C(X × I, Y)) {
   obtain rfl : g₁ = fun x ↦ G (x, 1) := (funext h₁).symm
   obtain ⟨Φ, hΦ₁, hΦ₂, -⟩ :=
     exists_continuousLinearEquiv_cylinder (𝕜 := 𝕜) (F := F) (E := (G : X × I → Y) *ᵖ E)
-  refine ⟨fun x ↦ Φ (x, 1), Pullback.continuous_iff.2 ⟨Pullback.continuous_proj F E _, ?_⟩,
-    Pullback.continuous_iff.2 ⟨Pullback.continuous_proj F E _, ?_⟩⟩
-  · -- Insert the fibre over `x` as the fibre over `(x, 1)` of the pulled-back cylinder.
-    have hι : Continuous fun v : TotalSpace F ((fun x ↦ G (x, 0)) *ᵖ E) ↦
-        (TotalSpace.mk' F (E := (fun q : X × I ↦ (q.1, (0 : I))) *ᵖ ((G : X × I → Y) *ᵖ E))
-          (v.proj, 1) v.snd) :=
-      Pullback.continuous_iff.2 ⟨(Pullback.continuous_proj F E _).prodMk continuous_const,
-        Pullback.continuous_iff.2 ⟨(Pullback.continuous_proj F E _).prodMk continuous_const,
-          Pullback.continuous_lift F E _⟩⟩
-    have h := (Pullback.continuous_lift F E (G : X × I → Y)).comp (hΦ₁.comp hι)
-    -- The fibre of `(fun q ↦ (q.1, 0)) *ᵖ (G *ᵖ E)` over `(x, 1)` is `E (G (x, 0))` by definition
-    -- of pullback fibres, so both sides lift the same vectors.
-    simp only [comp_def, Pullback.lift_mk] at h ⊢
-    exact h
-  · have hι : Continuous fun v : TotalSpace F ((fun x ↦ G (x, 1)) *ᵖ E) ↦
-        (TotalSpace.mk' F (E := (G : X × I → Y) *ᵖ E) (v.proj, 1) v.snd) :=
-      Pullback.continuous_iff.2 ⟨(Pullback.continuous_proj F E _).prodMk continuous_const,
-        Pullback.continuous_lift F E _⟩
-    have h := (Pullback.continuous_lift F E (G : X × I → Y)).comp
-      ((Pullback.continuous_lift F ((G : X × I → Y) *ᵖ E) _).comp (hΦ₂.comp hι))
-    -- The fibre of `(fun q ↦ (q.1, 0)) *ᵖ (G *ᵖ E)` over `(x, 1)` is `E (G (x, 0))` by definition
-    -- of pullback fibres, so both sides lift the same vectors.
-    simp only [comp_def, Pullback.lift_mk] at h ⊢
-    exact h
+  have hs : Continuous fun x : X ↦ (x, (1 : I)) := continuous_id.prodMk continuous_const
+  have hps : Continuous ((cylinderZero X : X × I → X × I) ∘ fun x : X ↦ (x, (1 : I))) :=
+    (cylinderZero X).continuous.comp hs
+  exact ⟨fun x ↦ Φ (x, 1),
+    Bundle.Pullback.continuous_totalSpaceMap_comp_left
+      (E₁ := E) (E₂ := E) (f := (G : X × I → Y)) (f' := (G : X × I → Y))
+      hs hps (ϕ := fun q v ↦ Φ q v) hΦ₁,
+    Bundle.Pullback.continuous_totalSpaceMap_comp_right
+      (E₁ := E) (E₂ := E) (f' := (G : X × I → Y)) (f := (G : X × I → Y))
+      hs hps (ϕ := fun q v ↦ (Φ q).symm v) hΦ₂⟩
 
 /-- **Homotopy invariance of vector bundles.** Over a paracompact R₁ space `X`, for instance a
 paracompact Hausdorff space, the pullbacks of a vector bundle `E` along homotopic maps
@@ -402,6 +394,8 @@ theorem _root_.ContinuousMap.Homotopic.exists_continuousLinearEquiv_pullback {f�
   obtain ⟨H⟩ := h
   exact exists_continuousLinearEquiv_pullback_of_eq (H.toContinuousMap.comp .prodSwap)
     H.apply_zero H.apply_one
+
+end Free
 
 end Homotopy
 
