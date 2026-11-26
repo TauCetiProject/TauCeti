@@ -23,8 +23,9 @@ shared Euler-product dimension hypothesis usable across combinatorial and Selber
   quantifier formula and interval application on `2 ≤ w ≤ z`.
 * `BoundingSieve.hasProductDimension_iff_hasProductSieveDimension`: equivalence with
   `TauCeti.HasProductSieveDimension (s.prodPrimes.primeFactors : Set ℕ) s.nu`.
-* `BoundingSieve.HasProductDimension.mono_const`, `BoundingSieve.HasProductDimension.mono_dim`:
-  monotonicity in the constant `K` and in the dimension `κ`.
+* `BoundingSieve.HasProductDimension.one_le_const`,
+  `BoundingSieve.HasProductDimension.mono_const`, `BoundingSieve.HasProductDimension.mono_dim`:
+  automatic bound `1 ≤ K` and monotonicity in the constant `K` and in the dimension `κ`.
 
 ## References
 
@@ -59,23 +60,24 @@ theorem HasProductDimension.prod_le {s : BoundingSieve} {κ K w z : ℝ}
       (1 - s.nu p)⁻¹) ≤ K * (Real.log z / Real.log w) ^ κ :=
   h w z hw hwz
 
+open Classical in
 /-- `BoundingSieve.HasProductDimension` agrees with `TauCeti.HasProductSieveDimension` on the prime
 set `(s.prodPrimes.primeFactors : Set ℕ)` and density `s.nu`. -/
 theorem hasProductDimension_iff_hasProductSieveDimension (s : BoundingSieve) (κ K : ℝ) :
     s.HasProductDimension κ K ↔
       TauCeti.HasProductSieveDimension (s.prodPrimes.primeFactors : Set ℕ) s.nu κ K := by
-  classical
   rw [hasProductDimension_def, TauCeti.hasProductSieveDimension_def]
-  refine forall₄_congr fun w z _ _ ↦ ?_
-  have hfin : s.prodPrimes.primeFactors.filter (fun p : ℕ ↦ w ≤ (p : ℝ) ∧ (p : ℝ) < z) =
-      (Finset.range ⌈z⌉₊).filter
-        (fun p : ℕ ↦ p ∈ (s.prodPrimes.primeFactors : Set ℕ) ∧ p.Prime ∧ w ≤ (p : ℝ)) := by
-    ext p
-    simp only [mem_filter, mem_range, Nat.lt_ceil, mem_coe]
-    exact ⟨fun ⟨hp, hw, hz⟩ ↦ ⟨hz, hp, Nat.prime_of_mem_primeFactors hp, hw⟩,
-      fun ⟨hz, hp, _, hw⟩ ↦ ⟨hp, hw, hz⟩⟩
-  rw [hfin]
-  convert Iff.rfl
+  refine forall₄_congr fun w z _ _ ↦ Iff.of_eq (congrArg
+    (fun S ↦ (∏ p ∈ S, (1 - s.nu p)⁻¹) ≤ K * (Real.log z / Real.log w) ^ κ) ?_)
+  ext p
+  simp only [mem_filter, mem_range, Nat.lt_ceil, mem_coe]
+  exact ⟨fun ⟨hp, hw, hz⟩ ↦ ⟨hz, hp, Nat.prime_of_mem_primeFactors hp, hw⟩,
+    fun ⟨hz, hp, _, hw⟩ ↦ ⟨hp, hw, hz⟩⟩
+
+/-- Evaluating `BoundingSieve.HasProductDimension` on `[2, 2)` yields `1 ≤ K`. -/
+theorem HasProductDimension.one_le_const {s : BoundingSieve} {κ K : ℝ}
+    (h : s.HasProductDimension κ K) : 1 ≤ K :=
+  ((s.hasProductDimension_iff_hasProductSieveDimension κ K).mp h).one_le_const
 
 /-- Monotonicity of `BoundingSieve.HasProductDimension` in the constant `K`. -/
 theorem HasProductDimension.mono_const {s : BoundingSieve} {κ K₁ K₂ : ℝ}

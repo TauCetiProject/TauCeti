@@ -69,6 +69,8 @@ absolute value (`ArithmeticFunction.abs_moebius_mul_le`).
   compatible with addition.
 * `ArithmeticFunction.IsMultiplicative.moebius_sq_mul_nonneg`: `μ(n)² f(n) ≥ 0` for a
   multiplicative `f` with nonnegative prime values.
+* `ArithmeticFunction.moebius_apply_prod_of_prime`: `μ (∏ p ∈ A, p) = (-1) ^ A.card` when every
+  `p ∈ A` is prime.
 
 ## References
 
@@ -322,5 +324,11 @@ theorem IsMultiplicative.moebius_sq_mul_nonneg [CommRing R] [PartialOrder R]
       ← hf.prod_primeFactors hn]
     exact prod_nonneg fun p hp ↦ hf0 p (prime_of_mem_primeFactors hp)
   · simp [moebius_eq_zero_of_not_squarefree hn]
+
+/-- The Möbius function at the product of a finite set `A` of primes equals `(-1) ^ A.card`. -/
+theorem moebius_apply_prod_of_prime {A : Finset ℕ} (hpA : ∀ p ∈ A, p.Prime) :
+    μ (∏ p ∈ A, p) = (-1 : ℤ) ^ A.card := by
+  rw [isMultiplicative_moebius.map_prod_of_prime A hpA, ← prod_const]
+  exact prod_congr rfl fun p hp ↦ moebius_apply_prime (hpA p hp)
 
 end ArithmeticFunction

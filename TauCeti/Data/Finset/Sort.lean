@@ -14,12 +14,15 @@ public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Data.Fintype.Fin
 import Mathlib.Data.List.Chain
 import Mathlib.Order.Interval.Finset.Fin
+import TauCeti.Data.Multiset.Sort
 
 /-!
 # Sorting finsets
 
-Sorting the finset `{a, b}` of two distinct elements with `r a b` gives the list `[a, b]`, and
-sorting `s.erase a` gives the sorted list of `s` with `a` erased.
+Sorting the finset `{a, b}` of two distinct elements with `r a b` gives the list `[a, b]`, sorting
+`s.erase a` gives the sorted list of `s` with `a` erased, and sorting the union of two disjoint
+finsets where every element of the first precedes every element of the second appends their sorted
+lists (`Finset.sort_union`).
 
 For a map `f` that is monotone on a finset `s` of a linear order, the points of `s` sorted in
 increasing order are the concatenation, over the values `y` of `f` on `s` in increasing order, of
@@ -84,6 +87,13 @@ theorem sort_pair {a b : α} (hab : r a b) (hne : a ≠ b) : sort {a, b} r = [a,
 theorem sort_erase (s : Finset α) (a : α) : sort (s.erase a) r = (sort s r).erase a :=
   List.Perm.eq_of_pairwise' (pairwise_sort _ r) ((pairwise_sort s r).erase a) <|
     Multiset.coe_eq_coe.1 <| by rw [sort_eq, erase_val, ← Multiset.coe_erase, sort_eq]
+
+/-- Sorting the union of two disjoint finsets, every element of the first related to every element
+of the second, appends the two sorted lists. -/
+theorem sort_union {s t : Finset α} (hd : Disjoint s t) (h : ∀ a ∈ s, ∀ b ∈ t, r a b) :
+    sort (s ∪ t) r = sort s r ++ sort t r := by
+  rw [Finset.sort, union_val, ← Multiset.add_eq_union_iff_disjoint.mpr (disjoint_val.mpr hd),
+    Multiset.sort_add r h, sort_val, sort_val]
 
 section LinearOrder
 
