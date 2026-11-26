@@ -66,7 +66,8 @@ difference bound `aₙ(T) ≤ e (n + 1) hₙ(T)`
 * B. Carl, A. Hinrichs, *On s-numbers and Weyl inequalities of operators in Banach spaces*,
   Bull. Lond. Math. Soc. 41 (2009), 332–340.
 * M. Ullrich, *Inequalities between s-numbers*, Adv. Oper. Theory 9 (2024), art. 82.
-* M. Ullrich, *Maximal differences of s-numbers*, arXiv:2608.05024 (2026).
+* M. Ullrich, *On bounds between all s-numbers and widths of convex sets*, arXiv:2608.05024
+  (2026), Theorem 1 and Lemmas 3–4.
 * M. Ullrich, *Formalizing s-numbers of operators in Lean*, arXiv:2603.22592 (2026).
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
   `SNumbers/MaxDifference.lean` and `BasicResults/Determinant.lean`: an earlier Lean formalization
@@ -92,7 +93,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 noncomputable def detNumber (T : E →L[𝕜] F) (n : ℕ) : ℝ≥0 :=
   ⨆ p : {p : (EuclideanSpace 𝕜 (Fin n) →L[𝕜] E) × (F →L[𝕜] EuclideanSpace 𝕜 (Fin n)) //
       ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1},
-    ‖(p.1.2 ∘L T ∘L p.1.1).det‖₊
+    ‖(p.val.2 ∘L T ∘L p.val.1).det‖₊
 
 /-- `Δₙ(T)` is the supremum of `‖(B ∘L T ∘L A).det‖₊` over contractions `A : ℓ₂ⁿ → E` and
 `B : F → ℓ₂ⁿ`. -/
@@ -100,7 +101,7 @@ theorem detNumber_def (T : E →L[𝕜] F) (n : ℕ) :
     T.detNumber n =
       ⨆ p : {p : (EuclideanSpace 𝕜 (Fin n) →L[𝕜] E) × (F →L[𝕜] EuclideanSpace 𝕜 (Fin n)) //
           ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1},
-        ‖(p.1.2 ∘L T ∘L p.1.1).det‖₊ := by
+        ‖(p.val.2 ∘L T ∘L p.val.1).det‖₊ := by
   rw [detNumber]
 
 private instance (n : ℕ) :
@@ -108,10 +109,12 @@ private instance (n : ℕ) :
       ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} :=
   ⟨⟨0, by simp, by simp⟩⟩
 
-private theorem nnnorm_det_comp_comp_le_pow_nnnorm (T : E →L[𝕜] F) {n : ℕ}
-    {A : EuclideanSpace 𝕜 (Fin n) →L[𝕜] E} {B : F →L[𝕜] EuclideanSpace 𝕜 (Fin n)}
-    (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) :
-    ‖(B ∘L T ∘L A).det‖₊ ≤ ‖T‖₊ ^ n := by
+private theorem mem_upperBounds_range_nnnorm_det_comp_comp (T : E →L[𝕜] F) (n : ℕ) :
+    ‖T‖₊ ^ n ∈ upperBounds (Set.range fun p :
+        {p : (EuclideanSpace 𝕜 (Fin n) →L[𝕜] E) × (F →L[𝕜] EuclideanSpace 𝕜 (Fin n)) //
+          ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} ↦
+      ‖(p.val.2 ∘L T ∘L p.val.1).det‖₊) := by
+  rintro _ ⟨⟨⟨A, B⟩, hA, hB⟩, rfl⟩
   have hnorm : ‖B ∘L T ∘L A‖₊ ≤ ‖T‖₊ := by
     calc ‖B ∘L T ∘L A‖₊
         ≤ ‖B‖₊ * (‖T‖₊ * ‖A‖₊) :=
@@ -123,23 +126,15 @@ private theorem nnnorm_det_comp_comp_le_pow_nnnorm (T : E →L[𝕜] F) {n : ℕ
       (B ∘L T ∘L A).norm_det_le_opNorm_pow
   exact hdet.trans (pow_le_pow_left' hnorm n)
 
-private theorem bddAbove_range_nnnorm_det_comp_comp (T : E →L[𝕜] F) (n : ℕ) :
-    BddAbove (Set.range fun p :
-        {p : (EuclideanSpace 𝕜 (Fin n) →L[𝕜] E) × (F →L[𝕜] EuclideanSpace 𝕜 (Fin n)) //
-          ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} ↦
-      ‖(p.1.2 ∘L T ∘L p.1.1).det‖₊) :=
-  ⟨‖T‖₊ ^ n, Set.forall_mem_range.mpr fun p ↦ nnnorm_det_comp_comp_le_pow_nnnorm T p.2.1 p.2.2⟩
-
-/-- Every contraction compression of `T` through `EuclideanSpace 𝕜 (Fin n)` bounds `Δₙ(T)` from
-below. -/
+/-- For contractions `A : ℓ₂ⁿ → E` and `B : F → ℓ₂ⁿ`, `‖(B ∘L T ∘L A).det‖₊ ≤ Δₙ(T)`. -/
 theorem nnnorm_det_comp_comp_le_detNumber_of_norm_le_one (T : E →L[𝕜] F) {n : ℕ}
     {A : EuclideanSpace 𝕜 (Fin n) →L[𝕜] E} {B : F →L[𝕜] EuclideanSpace 𝕜 (Fin n)}
     (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) :
     ‖(B ∘L T ∘L A).det‖₊ ≤ T.detNumber n :=
   le_ciSup (f := fun p :
       {p : (EuclideanSpace 𝕜 (Fin n) →L[𝕜] E) × (F →L[𝕜] EuclideanSpace 𝕜 (Fin n)) //
-        ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} ↦ ‖(p.1.2 ∘L T ∘L p.1.1).det‖₊)
-    (bddAbove_range_nnnorm_det_comp_comp T n) ⟨(A, B), hA, hB⟩
+        ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} ↦ ‖(p.val.2 ∘L T ∘L p.val.1).det‖₊)
+    ⟨_, mem_upperBounds_range_nnnorm_det_comp_comp T n⟩ ⟨(A, B), hA, hB⟩
 
 /-- **Upper-bound characterization.** `Δₙ(T) ≤ c` if and only if `‖(B ∘L T ∘L A).det‖₊ ≤ c` for
 all contractions `A : ℓ₂ⁿ → E` and `B : F → ℓ₂ⁿ`. -/
@@ -147,7 +142,7 @@ theorem detNumber_le_iff {T : E →L[𝕜] F} {n : ℕ} {c : ℝ≥0} :
     T.detNumber n ≤ c ↔
       ∀ (A : EuclideanSpace 𝕜 (Fin n) →L[𝕜] E) (B : F →L[𝕜] EuclideanSpace 𝕜 (Fin n)),
         ‖A‖ ≤ 1 → ‖B‖ ≤ 1 → ‖(B ∘L T ∘L A).det‖₊ ≤ c := by
-  rw [detNumber, ciSup_le_iff (bddAbove_range_nnnorm_det_comp_comp T n), Subtype.forall,
+  rw [detNumber, ciSup_le_iff ⟨_, mem_upperBounds_range_nnnorm_det_comp_comp T n⟩, Subtype.forall,
     Prod.forall]
   exact forall₂_congr fun A B ↦ ⟨fun h hA hB ↦ h ⟨hA, hB⟩, fun h hAB ↦ h hAB.1 hAB.2⟩
 
@@ -172,7 +167,7 @@ theorem exists_lt_nnnorm_det_of_lt_detNumber {T : E →L[𝕜] F} {n : ℕ} {c :
 
 /-- The `n`-th determinant quantity is bounded by `‖T‖₊ ^ n`. -/
 theorem detNumber_le_pow_nnnorm (T : E →L[𝕜] F) (n : ℕ) : T.detNumber n ≤ ‖T‖₊ ^ n :=
-  detNumber_le_iff.mpr fun _ _ hA hB ↦ nnnorm_det_comp_comp_le_pow_nnnorm T hA hB
+  ciSup_le fun p ↦ mem_upperBounds_range_nnnorm_det_comp_comp T n ⟨p, rfl⟩
 
 /-- **Zeroth determinant quantity.** `Δ₀(T) = 1`. -/
 @[simp]
@@ -587,9 +582,9 @@ theorem pow_div_mul_singularValue_mul_detNumber_le (T : E →L[𝕜] F) (k : ℕ
   · simp
   rw [detNumber, NNReal.mul_iSup]
   refine ciSup_le fun p ↦ ?_
-  by_cases hdet : (p.1.2 ∘L T ∘L p.1.1).det = 0
+  by_cases hdet : (p.val.2 ∘L T ∘L p.val.1).det = 0
   · simp [hdet]
-  · exact le_detNumber_succ_of_det_ne_zero hk T p.2.1 p.2.2 hdet
+  · exact le_detNumber_succ_of_det_ne_zero hk T p.property.1 p.property.2 hdet
 
 omit [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
     [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] in

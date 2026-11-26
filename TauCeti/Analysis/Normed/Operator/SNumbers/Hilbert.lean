@@ -258,8 +258,7 @@ theorem hilbertNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A 
       _ ≤ (1 * ‖B‖₊) * T.hilbertNumber n * (‖A‖₊ * 1) := by gcongr <;> assumption_mod_cast
       _ = ‖B‖₊ * T.hilbertNumber n * ‖A‖₊ := by ring
 
-/-- Every compression of `T` through `EuclideanSpace 𝕜 (Fin m)` by contractions bounds `hₙ(T)`
-from below. -/
+/-- For contractions `A : ℓ₂ᵐ → E` and `B : F → ℓ₂ᵐ`, `aₙ(B ∘L T ∘L A) ≤ hₙ(T)`. -/
 theorem singularValue_comp_comp_euclideanSpace_le_hilbertNumber_of_norm_le_one {m : ℕ}
     (T : E →L[𝕜] F) {A : EuclideanSpace 𝕜 (Fin m) →L[𝕜] E}
     {B : F →L[𝕜] EuclideanSpace 𝕜 (Fin m)} (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) (n : ℕ) :
