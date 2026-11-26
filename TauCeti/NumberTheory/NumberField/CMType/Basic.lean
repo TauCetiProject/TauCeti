@@ -46,7 +46,8 @@ complex. In particular `ℚ` has no CM type.
 * `TauCeti.CMType.coe_ne_univ`, `TauCeti.CMType.coe_ne_empty`: when `E` has an embedding, a CM
   type is neither the full set of embeddings nor empty.
 * `TauCeti.CMType.coe_star_eq_image`: `ιΦ` is the image of `Φ` under conjugation.
-* `TauCeti.CMType.card_ringHom_eq_two_mul`: `#Hom(E, ℂ) = 2 * #Φ`, and
+* `TauCeti.CMType.card_ringHom_eq_two_mul`: `#Hom(E, ℂ) = 2 * #Φ`, so all CM types on `E` have
+  the same size (`TauCeti.CMType.card_eq_card`), and
   `TauCeti.CMType.two_mul_card_eq_finrank`: `2 * #Φ = [E : ℚ]` for a number field `E`.
 * `TauCeti.CMType.equivSet`, `TauCeti.CMType.card_eq_two_pow`: relative to a reference type
   `Φ₀`, CM types correspond to subsets of `Φ₀`, so there are `2 ^ #Φ₀` of them.
@@ -66,7 +67,8 @@ complex. In particular `ℚ` has no CM type.
 * `TauCeti.CMType.instStarCompCommutePi`: a finite product of rings with `StarCompCommute`, such
   as a finite product of CM fields, has it.
 * `TauCeti.CMType.coe_smul`: `σΦ` is the image of `Φ` under `φ ↦ σ ∘ φ`, and
-  `TauCeti.CMType.star_smul`: `ι(σΦ) = σ(ιΦ)`.
+  `TauCeti.CMType.star_smul`: `ι(σΦ) = σ(ιΦ)`; complex conjugation acts as `Φ ↦ ιΦ`
+  (`TauCeti.CMType.starRingAut_smul`).
 
 ## References
 
@@ -245,6 +247,11 @@ theorem card_ringHom_eq_two_mul (Φ : CMType E) : Nat.card (E →+* ℂ) = 2 * N
   rw [Nat.card_congr ((Equiv.sumCompl (· ∈ Φ)).symm.trans (Equiv.sumCongr (.refl _) e)),
     ← Nat.card_congr (Equiv.boolProdEquivSum Φ), Nat.card_prod,
     Nat.card_eq_fintype_card (α := Bool), Fintype.card_bool]
+
+/-- All CM types on `E` have the same number `#Hom(E, ℂ) / 2` of embeddings. -/
+theorem card_eq_card (Φ Ψ : CMType E) : Nat.card Φ = Nat.card Ψ := by
+  have := Φ.card_ringHom_eq_two_mul.symm.trans Ψ.card_ringHom_eq_two_mul
+  omega
 
 /-- A CM type on a number field `K` has `[K : ℚ] / 2` embeddings. -/
 theorem two_mul_card_eq_finrank {K : Type*} [Field K] [NumberField K] (Φ : CMType K) :
@@ -438,6 +445,14 @@ theorem coe_smul (σ : RingAut ℂ) (Φ : CMType E) :
 theorem star_smul (σ : RingAut ℂ) (Φ : CMType E) : star (σ • Φ) = σ • star Φ := by
   ext ψ
   simp only [mem_star, mem_smul]
+
+/-- Complex conjugation sends a CM type to its complementary type. -/
+@[simp]
+theorem starRingAut_smul (Φ : CMType E) : (starRingAut : RingAut ℂ) • Φ = star Φ := by
+  ext ψ
+  -- `starRingAut⁻¹ ∘ ψ` is `conj ∘ ψ = star ψ` by definition.
+  rw [mem_smul, mem_star, ← star_mem_iff]
+  exact Iff.rfl
 
 end StarCompCommute
 

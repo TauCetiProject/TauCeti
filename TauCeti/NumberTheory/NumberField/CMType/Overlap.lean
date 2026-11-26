@@ -26,7 +26,8 @@ The action of `Aut(ℂ)` on the CM types of `E` has finite orbits when `E` has f
 complex embeddings, and we define `a⁰_Φ(σ)` as the mean of `a_Ψ(σ)` over the `Aut(ℂ)`-orbit of
 `Φ`. Since `a_Φ(τστ⁻¹) = a_{τ⁻¹Φ}(σ)` (`TauCeti.CMType.overlap_conj`), this is the normalised
 sum `|G|⁻¹ ∑_{τ ∈ G} a_Φ(τστ⁻¹)` over any finite Galois quotient `G` through which the action on
-the embeddings factors, by the orbit-stabiliser theorem, without choosing such a quotient.
+the embeddings factors (`TauCeti.CMType.averageOverlap_eq_inv_card_mul_sum`), without choosing
+such a quotient in the definition.
 
 ## Main definitions
 
@@ -43,6 +44,9 @@ the embeddings factors, by the orbit-stabiliser theorem, without choosing such a
 * `TauCeti.CMType.overlap_inv`, `TauCeti.CMType.averageOverlap_inv`: invariance under
   `σ ↦ σ⁻¹`; `TauCeti.CMType.overlap_starRingAut`, `TauCeti.CMType.averageOverlap_starRingAut`:
   vanishing at `c`; `TauCeti.CMType.averageOverlap_one`: the value `d` at `1`.
+* `TauCeti.CMType.averageOverlap_eq_inv_card_mul_sum`: `a⁰_Φ(σ)` is the normalised conjugacy
+  sum `|G|⁻¹ ∑_{τ ∈ G} a_Φ(τστ⁻¹)` over any finite quotient `G` of `Aut(ℂ)` through which the
+  action on the embeddings factors.
 * `TauCeti.CMType.averageOverlap_conj`: `a⁰_Φ` is a class function, and
   `TauCeti.CMType.averageOverlap_smul`: it depends only on the orbit of `Φ`.
 * `TauCeti.CMType.finsum_averageOverlap`: **the average CM character.** If `E` has `2d`
@@ -70,18 +74,7 @@ namespace CMType
 
 open MulAction
 
-variable {E : Type*} [CommRing E]
-
-/-- Complex conjugation sends a CM type to its complementary type. -/
-@[simp]
-theorem starRingAut_smul [StarCompCommute E] (Φ : CMType E) :
-    (starRingAut : RingAut ℂ) • Φ = star Φ := by
-  ext ψ
-  -- `starRingAut⁻¹ ∘ ψ` is `conj ∘ ψ = star ψ` by definition.
-  rw [mem_smul, mem_star, ← star_mem_iff]
-  exact Iff.rfl
-
-variable [StarCompCommute E]
+variable {E : Type*} [CommRing E] [StarCompCommute E]
 
 /-- Translating two CM types by the same automorphism of `ℂ` preserves the size of their
 intersection. -/
@@ -159,9 +152,9 @@ theorem overlap_mul_starRingAut (Φ : CMType E) (σ : RingAut ℂ) :
 /-! ### The conjugacy average -/
 
 /-- The **conjugacy-averaged overlap** `a⁰_Φ(σ)`: the mean of `a_Ψ(σ)` over the CM types `Ψ` in
-the `Aut(ℂ)`-orbit of `Φ`. By the orbit-stabiliser theorem this is the normalised conjugacy sum
-`|G|⁻¹ ∑_{τ ∈ G} a_Φ(τστ⁻¹)` over any finite Galois quotient `G` of `Aut(ℂ)` through which the
-action on the embeddings of `E` factors. -/
+the `Aut(ℂ)`-orbit of `Φ`. This is the normalised conjugacy sum `|G|⁻¹ ∑_{τ ∈ G} a_Φ(τστ⁻¹)`
+over any finite Galois quotient `G` of `Aut(ℂ)` through which the action on the embeddings of `E`
+factors (`TauCeti.CMType.averageOverlap_eq_inv_card_mul_sum`). -/
 noncomputable def averageOverlap (Φ : CMType E) (σ : RingAut ℂ) : ℚ :=
   (∑ᶠ Ψ ∈ orbit (RingAut ℂ) Φ, (overlap Ψ σ : ℚ)) / (orbit (RingAut ℂ) Φ).ncard
 
@@ -192,6 +185,54 @@ theorem averageOverlap_conj (τ σ : RingAut ℂ) (Φ : CMType E) :
   rw [Set.image_smul, smul_orbit] at h
   exact finsum_mem_eq_of_bijOn _ h fun Ψ _ ↦ by rw [overlap_conj]
 
+/-- **The conjugacy average over a finite Galois quotient.** Let `π` map `Aut(ℂ)` to a finite
+group `G` such that every automorphism in the kernel of `π` fixes each embedding of `E`, and let
+`s g` be a lift of each `g ∈ G`. Then `a⁰_Φ(σ) = |G|⁻¹ ∑_{g ∈ G} a_Φ(s(g) σ s(g)⁻¹)`. In
+particular the right side does not depend on the choice of the quotient `G` or of the lifts. -/
+theorem averageOverlap_eq_inv_card_mul_sum {G : Type*} [Group G] [Fintype G]
+    (π : RingAut ℂ →* G) (hπ : ∀ τ, π τ = 1 → ∀ φ : E →+* ℂ, (τ : ℂ →+* ℂ).comp φ = φ)
+    {s : G → RingAut ℂ} (hs : ∀ g, π (s g) = g) (Φ : CMType E) (σ : RingAut ℂ) :
+    averageOverlap Φ σ =
+      (Nat.card G : ℚ)⁻¹ * ∑ g, (overlap Φ (s g * σ * (s g)⁻¹) : ℚ) := by
+  classical
+  -- The action of `τ` on CM types depends only on `π τ`.
+  have hact {τ τ' : RingAut ℂ} (h : π τ = π τ') (Ψ : CMType E) : τ • Ψ = τ' • Ψ := by
+    have hκ : π (τ⁻¹ * τ')⁻¹ = 1 := by simp [h]
+    rw [smul_eq_iff_eq_inv_smul, smul_smul]
+    ext ψ
+    rw [mem_smul, show ((τ⁻¹ * τ').symm : ℂ →+* ℂ).comp ψ = ψ from hπ _ hκ ψ]
+  -- Hence the orbit of `Φ` is the finite set of the `s(g)⁻¹ Φ`.
+  have hfin : (orbit (RingAut ℂ) Φ).Finite := (Set.finite_range fun g ↦ (s g)⁻¹ • Φ).subset <| by
+    rintro _ ⟨τ, rfl⟩
+    exact ⟨π τ⁻¹, hact (by simp [hs]) Φ⟩
+  -- The sum over `G` is the same for every type `Ψ` in the orbit.
+  have hinv : ∀ Ψ ∈ hfin.toFinset, ∑ g, (overlap ((s g)⁻¹ • Ψ) σ : ℚ) =
+      ∑ g, (overlap ((s g)⁻¹ • Φ) σ : ℚ) := by
+    rintro _ hΨ
+    obtain ⟨τ, rfl⟩ := hfin.mem_toFinset.mp hΨ
+    exact Fintype.sum_equiv (Equiv.mulLeft (π τ)⁻¹) _ _ fun g ↦ by
+      rw [Equiv.coe_mulLeft, smul_smul, hact (τ' := (s ((π τ)⁻¹ * g))⁻¹) (by simp [hs])]
+  -- Each `s(g)⁻¹` permutes the orbit.
+  have hperm (g : G) : ∑ Ψ ∈ hfin.toFinset, (overlap ((s g)⁻¹ • Ψ) σ : ℚ) =
+      ∑ Ψ ∈ hfin.toFinset, (overlap Ψ σ : ℚ) := by
+    rw [← finsum_mem_eq_finite_toFinset_sum _ hfin, ← finsum_mem_eq_finite_toFinset_sum _ hfin]
+    have h := (MulAction.injective (s g)⁻¹).injOn.bijOn_image (s := orbit (RingAut ℂ) Φ)
+    rw [Set.image_smul, smul_orbit] at h
+    exact finsum_mem_eq_of_bijOn _ h fun _ _ ↦ rfl
+  -- Summing `∑_g a_{s(g)⁻¹Ψ}(σ)` over the orbit in both orders.
+  have key : (hfin.toFinset.card : ℚ) * ∑ g, (overlap ((s g)⁻¹ • Φ) σ : ℚ) =
+      Nat.card G * ∑ Ψ ∈ hfin.toFinset, (overlap Ψ σ : ℚ) := by
+    rw [← nsmul_eq_mul, ← Finset.sum_const, ← Finset.sum_congr rfl hinv, Finset.sum_comm,
+      Finset.sum_congr rfl fun g _ ↦ hperm g, Finset.sum_const, Finset.card_univ,
+      ← Nat.card_eq_fintype_card, nsmul_eq_mul]
+  have hO : (hfin.toFinset.card : ℚ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (Finset.card_ne_zero_of_mem (hfin.mem_toFinset.mpr (mem_orbit_self Φ)))
+  have hG : (Nat.card G : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  simp_rw [overlap_conj]
+  rw [averageOverlap_def, finsum_mem_eq_finite_toFinset_sum _ hfin,
+    Set.ncard_eq_toFinset_card _ hfin, eq_inv_mul_iff_mul_eq₀ hG, mul_div_assoc', div_eq_iff hO,
+    ← key, mul_comm]
+
 /-- The averaged overlap is invariant under inversion: `a⁰_Φ(σ⁻¹) = a⁰_Φ(σ)`. -/
 @[simp]
 theorem averageOverlap_inv (Φ : CMType E) (σ : RingAut ℂ) :
@@ -207,15 +248,11 @@ theorem averageOverlap_starRingAut (Φ : CMType E) : averageOverlap Φ starRingA
 theorem averageOverlap_add_averageOverlap_starRingAut_mul [Finite (E →+* ℂ)] (Φ : CMType E)
     (σ : RingAut ℂ) :
     averageOverlap Φ σ + averageOverlap Φ (starRingAut * σ) = Nat.card Φ := by
-  -- All CM types on `E` have `#Hom(E, ℂ) / 2` embeddings.
-  have hcard (Ψ : CMType E) : (Nat.card Ψ : ℚ) = Nat.card Φ := by
-    have := Ψ.card_ringHom_eq_two_mul.symm.trans Φ.card_ringHom_eq_two_mul
-    exact_mod_cast (by omega : Nat.card Ψ = Nat.card Φ)
   rw [averageOverlap_def, averageOverlap_def, ← add_div, ← finsum_mem_add_distrib (Set.toFinite _),
     div_eq_iff (ncard_orbit_ne_zero Φ)]
   calc ∑ᶠ Ψ ∈ orbit (RingAut ℂ) Φ, ((overlap Ψ σ : ℚ) + overlap Ψ (starRingAut * σ))
       = ∑ᶠ Ψ ∈ orbit (RingAut ℂ) Φ, (Nat.card Φ : ℚ) := finsum_mem_congr rfl fun Ψ _ ↦ by
-        rw [← hcard Ψ, ← overlap_add_overlap_starRingAut_mul Ψ σ, Nat.cast_add]
+        rw [← card_eq_card Ψ Φ, ← overlap_add_overlap_starRingAut_mul Ψ σ, Nat.cast_add]
     _ = Nat.card Φ * (orbit (RingAut ℂ) Φ).ncard := by
         rw [finsum_mem_eq_finite_toFinset_sum _ (Set.toFinite _), Finset.sum_const,
           ← Set.ncard_eq_toFinset_card _, nsmul_eq_mul, mul_comm]
@@ -267,8 +304,7 @@ private theorem four_mul_ncard_mem_and_mem_eq [Finite (E →+* ℂ)] (Φ : CMTyp
       2 ^ Nat.card Φ * (1 + (if ψ = φ then 1 else 0) - (if ψ = star φ then 1 else 0)) := by
   have hN : (2 : ℚ) ^ Nat.card Φ = Nat.card (CMType E) := by
     rw [Φ.card_eq_two_pow]
-    push_cast
-    rfl
+    norm_cast
   rw [hN]
   by_cases h₁ : ψ = φ
   · subst h₁
@@ -316,11 +352,10 @@ theorem finsum_overlap [Finite (E →+* ℂ)] [Nonempty (CMType E)] {d : ℕ}
   simp_rw [hcount]
   rw [Finset.sum_comm]
   simp_rw [hcount']
-  rw [← Finset.mul_sum, Finset.sum_sub_distrib, Finset.sum_add_distrib, Finset.sum_boole,
-    Finset.sum_boole, Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, hd,
-    Nat.card_eq_fintype_card (α := {φ // _ = φ}), Nat.card_eq_fintype_card (α := {φ // _ = star φ}),
-    Fintype.card_subtype, Fintype.card_subtype]
-  ring
+  rw [← Finset.mul_sum]
+  rw [Nat.card_eq_fintype_card] at hd
+  simp [Finset.sum_sub_distrib, Finset.sum_add_distrib, Finset.sum_boole, Nat.card_eq_fintype_card,
+    Fintype.card_subtype, hd]
 
 /-- **The average CM character.** For a ring `E` with `2d` complex embeddings and a CM type,
 such as a CM field of degree `2d`, the averaged overlaps of all `2^d` CM types sum to
