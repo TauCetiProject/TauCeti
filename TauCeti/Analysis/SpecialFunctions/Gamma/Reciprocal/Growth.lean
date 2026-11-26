@@ -174,7 +174,9 @@ private theorem norm_GammaSeq_primary_product_le (s : ℂ) (n : ℕ) :
     · rw [← hnorm]
       exact norm_weierstrassFactor_one_le_exp _
     · rw [← hnorm]
-      exact norm_weierstrassFactor_one_le_exp_sq _
+      refine (norm_weierstrassFactor_le_exp 1 _).trans (Real.exp_le_exp.mpr ?_)
+      push_cast
+      nlinarith [sq_nonneg (r / (j + 1))]
   rw [norm_prod]
   calc
     _ ≤ ∏ j ∈ range n, Real.exp (c j) :=
