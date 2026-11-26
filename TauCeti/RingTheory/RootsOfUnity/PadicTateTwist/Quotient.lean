@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.RootsOfUnity.PadicTateTwist
 
 Let `K` be a commutative monoid. The projection `TauCeti.PadicTateTwist.proj n` of the `p`-adic
 Tate twist `ℤ_p(1) = PadicTateTwist p K` to the group `μ_{p^n}(K)` of `p^n`-th roots of unity has
-kernel `p^n ℤ_p(1)` (`TauCeti.PadicTateTwist.proj_eq_zero_iff`). When `K` has enough `p`-power
+kernel `p^n ℤ_p(1)` (`TauCeti.PadicTateTwist.ker_proj`). When `K` has enough `p`-power
 roots of unity it is surjective (`TauCeti.PadicTateTwist.proj_surjective`), so it induces
 `ℤ_p(1) / p^n ≅ μ_{p^n}(K)` (`TauCeti.PadicTateTwist.quotientEquivRootsOfUnity`). For a field
 extension `K / F`, the projection intertwines the Galois action on `ℤ_p(1)` with the action of
@@ -26,7 +26,8 @@ isomorphism is Galois-equivariant
 
 ## Main results
 
-* `TauCeti.PadicTateTwist.proj_eq_zero_iff`: the kernel of `proj n` is `p^n ℤ_p(1)`.
+* `TauCeti.PadicTateTwist.proj_eq_zero_iff`, `TauCeti.PadicTateTwist.ker_proj`: the kernel of
+  `proj n` is `p^n ℤ_p(1)`.
 * `TauCeti.PadicTateTwist.proj_surjective`: `proj n` is surjective.
 * `TauCeti.PadicTateTwist.natCard_quotient_ker_proj`: `ℤ_p(1) / p^n` has `p^n` elements.
 * `TauCeti.PadicTateTwist.proj_galoisRepresentation`: `proj n` is Galois-equivariant.
@@ -54,6 +55,14 @@ theorem proj_eq_zero_iff {x : PadicTateTwist p K} {n : ℕ} :
   rw [proj_def, AddEquiv.map_eq_zero_iff]
   exact TateModule.proj_eq_zero_iff
 
+/-- **The kernel of the projection to `μ_{p^n}` is the subgroup `p^n ℤ_p(1)`.** -/
+theorem ker_proj (n : ℕ) :
+    (proj (p := p) (K := K) n).ker =
+      (nsmulAddMonoidHom (p ^ n) : PadicTateTwist p K →+ PadicTateTwist p K).range := by
+  ext x
+  rw [AddMonoidHom.mem_ker, proj_eq_zero_iff, AddMonoidHom.mem_range]
+  simp [eq_comm]
+
 /-- **Every `p^n`-th root of unity is a component of `ℤ_p(1)`**, when `K` has enough `p`-power
 roots of unity. -/
 theorem proj_surjective [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n : ℕ) :
@@ -65,7 +74,7 @@ theorem proj_surjective [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n :
       fun k ↦ by simpa using natCard_tateModuleLevel (K := K) k) n
 
 /-- **`ℤ_p(1) / p^n ≅ μ_{p^n}`**: the projection to `μ_{p^n}` induces an isomorphism from the
-quotient by its kernel, which is `p^n ℤ_p(1)` (`proj_eq_zero_iff`). -/
+quotient by its kernel, which is `p^n ℤ_p(1)` (`ker_proj`). -/
 def quotientEquivRootsOfUnity [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n : ℕ) :
     PadicTateTwist p K ⧸ (proj (p := p) (K := K) n).ker ≃+ Additive (rootsOfUnity (p ^ n) K) :=
   QuotientAddGroup.quotientKerEquivOfSurjective _ (proj_surjective n)
@@ -77,11 +86,12 @@ theorem quotientEquivRootsOfUnity_mk [NeZero p] [∀ n, HasEnoughRootsOfUnity K 
       proj n x :=
   (rfl)
 
-/-- **`ℤ_p(1) / p^n` has `p^n` elements** when `K` has enough `p`-power roots of unity. -/
+/-- **`ℤ_p(1) / p^n` has `p^n` elements** when `K` has enough `p`-power roots of unity; the
+kernel of `proj n` is `p^n ℤ_p(1)` by `ker_proj`. -/
 theorem natCard_quotient_ker_proj [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n : ℕ) :
-    Nat.card (PadicTateTwist p K ⧸ (proj (p := p) (K := K) n).ker) = p ^ n := by
-  rw [Nat.card_congr (quotientEquivRootsOfUnity n).toEquiv, Nat.card_congr Additive.toMul,
-    HasEnoughRootsOfUnity.natCard_rootsOfUnity K (p ^ n)]
+    Nat.card (PadicTateTwist p K ⧸ (proj (p := p) (K := K) n).ker) = p ^ n :=
+  (Nat.card_congr ((quotientEquivRootsOfUnity n).trans
+    (levelAddEquivRootsOfUnity n).symm).toEquiv).trans (natCard_tateModuleLevel n)
 
 section Galois
 
@@ -105,8 +115,9 @@ theorem quotientEquivRootsOfUnity_galoisRepresentation
         ((galoisRepresentation (F := F) σ x : PadicTateTwist p L) :
           PadicTateTwist p L ⧸ (proj (p := p) (K := L) n).ker) =
       Additive.ofMul (restrictRootsOfUnity σ (p ^ n)
-        (quotientEquivRootsOfUnity n (x : PadicTateTwist p L ⧸ (proj n).ker)).toMul) :=
-  proj_galoisRepresentation σ x n
+        (quotientEquivRootsOfUnity n (x : PadicTateTwist p L ⧸ (proj n).ker)).toMul) := by
+  rw [quotientEquivRootsOfUnity_mk, quotientEquivRootsOfUnity_mk]
+  exact proj_galoisRepresentation σ x n
 
 end Galois
 
