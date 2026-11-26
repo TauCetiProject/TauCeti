@@ -21,9 +21,10 @@ function by principal powers: of `(1 + z) / (1 - z)` and of `1 - z²` on `D`, an
 `(z + 1) / (z - 1)`, `z - 1`, `z + 1` and `z` on `U`; the argument of the hypergeometric function is
 `(1 - z) / 2` or `z²` on `D`, and `(1 - z) / 2` or `z⁻²` on `U`. The slit-plane memberships of these
 bases and arguments, and the topology of `D` and `U`, are in `TauCeti.Analysis.Complex.SlitPlane`.
-This file proves that each power prefactor is holomorphic on its domain, that the argument
-`(1 - z) / 2` lies in the cut plane `{w | 1 - w ∈ slitPlane}` of the hypergeometric function, and
-the branch identities between these powers: on all of `D` for `(1 - z²)^s` and
+This file proves that the prefactors `((1 + z) / (1 - z))^s` and `(1 - z²)^s` are holomorphic on
+`D` and that `((z + 1) / (z - 1))^s` and `(z - 1)^s (z + 1)^s` are holomorphic on `U`, that the
+argument `(1 - z) / 2` lies in the cut plane `{w | 1 - w ∈ slitPlane}` of the hypergeometric
+function, and the branch identities between these powers: on all of `D` for `(1 - z²)^s` and
 `((1 + z) / (1 - z))^s`, on all of `U` for `((z + 1) / (z - 1))^s`, and on the right half-plane
 `0 < re z` for `(z² - 1)^s`.
 
@@ -78,7 +79,7 @@ theorem one_sub_sq_cpow {z : ℂ} (hz₁ : 1 - z ∈ slitPlane) (hz₂ : 1 + z �
 `((1 + z) / (1 - z))^s = (1 + z)^s (1 - z)^(-s)`. -/
 theorem one_add_div_one_sub_cpow {z : ℂ} (hz₁ : 1 - z ∈ slitPlane) (hz₂ : 1 + z ∈ slitPlane)
     (s : ℂ) : ((1 + z) / (1 - z)) ^ s = (1 + z) ^ s * (1 - z) ^ (-s) := by
-  refine TauCeti.div_cpow_of_arg_div_add_arg_mem (slitPlane_ne_zero hz₁) (Ioo_subset_Ioc_self
+  refine TauCeti.div_cpow_of_arg_div_add_arg_mem (Ioo_subset_Ioc_self
     (arg_add_arg_mem_Ioo_of_im_mul_nonpos (one_add_div_one_sub_mem_slitPlane_iff.2 ⟨hz₁, hz₂⟩)
       hz₁ ?_)) s
   -- the imaginary part of the quotient is `2 * im z / ‖1 - z‖²`
@@ -108,7 +109,7 @@ theorem differentiableOn_one_sub_sq_cpow (s : ℂ) :
 `((z + 1) / (z - 1))^s = (z + 1)^s (z - 1)^(-s)`. -/
 theorem add_one_div_sub_one_cpow {z : ℂ} (hz : z - 1 ∈ slitPlane) (s : ℂ) :
     ((z + 1) / (z - 1)) ^ s = (z + 1) ^ s * (z - 1) ^ (-s) := by
-  refine TauCeti.div_cpow_of_arg_div_add_arg_mem (slitPlane_ne_zero hz) (Ioo_subset_Ioc_self
+  refine TauCeti.div_cpow_of_arg_div_add_arg_mem (Ioo_subset_Ioc_self
     (arg_add_arg_mem_Ioo_of_im_mul_nonpos (add_one_div_sub_one_mem_slitPlane hz) hz ?_)) s
   -- the imaginary part of the quotient is `-2 * im z / ‖z - 1‖²`
   rw [div_im]

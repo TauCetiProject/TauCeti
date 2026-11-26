@@ -185,11 +185,15 @@ theorem mul_cpow_of_arg_add_mem {x y : ℂ}
   rw [cpow_def_of_ne_zero (mul_ne_zero hx hy), cpow_def_of_ne_zero hx,
     cpow_def_of_ne_zero hy, log_mul hx hy h, add_mul, exp_add]
 
-/-- A principal power splits across a quotient `x / y` with `y ≠ 0` when the arguments of `x / y`
-and of `y` add up to a value in the principal range `(-π, π]`. -/
-theorem div_cpow_of_arg_div_add_arg_mem {x y : ℂ} (hy : y ≠ 0)
+/-- A principal power splits across a quotient `x / y` when the arguments of `x / y` and of `y`
+add up to a value in the principal range `(-π, π]`, including when `y` is zero. -/
+theorem div_cpow_of_arg_div_add_arg_mem {x y : ℂ}
     (h : arg (x / y) + arg y ∈ Set.Ioc (-Real.pi) Real.pi) (w : ℂ) :
     (x / y) ^ w = x ^ w * y ^ (-w) := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · simp [zero_cpow hw, zero_cpow (neg_ne_zero.2 hw)]
   have h' := mul_cpow_of_arg_add_mem h w
   rw [div_mul_cancel₀ x hy] at h'
   rw [cpow_neg, h', mul_inv_cancel_right₀ (cpow_ne_zero_iff.2 (Or.inl hy))]
