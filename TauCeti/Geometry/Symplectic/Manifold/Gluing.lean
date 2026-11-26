@@ -64,6 +64,7 @@ variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] [ChartedSpace 
   {hαβ : ∀ y ∈ Φ.source, mpullback I I Φ α.val y = β.val y}
 
 /-- **The glued two-form is nondegenerate exactly when both forms are.** -/
+@[simp]
 theorem isNondegenerate_glueForm_iff :
     SmoothTwoForm.IsNondegenerate (Φ.glueForm hl hr α β hαβ) ↔
       α.IsNondegenerate ∧ β.IsNondegenerate := by
@@ -79,6 +80,7 @@ theorem isNondegenerate_glueForm_iff :
   · exact hr.eq_zero_of_isNondegenerate_mpullback (by rwa [mpullback_glueInr_glueForm]) y v hv
 
 /-- **The glued two-form is symplectic exactly when both forms are.** -/
+@[simp]
 theorem isSymplectic_glueForm_iff :
     SmoothTwoForm.IsSymplectic (Φ.glueForm hl hr α β hαβ) ↔
       α.IsSymplectic ∧ β.IsSymplectic := by
