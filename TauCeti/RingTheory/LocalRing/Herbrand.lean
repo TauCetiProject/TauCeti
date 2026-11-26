@@ -37,8 +37,10 @@ whose inverse is `ψ`. Only values on `[-1, ∞)` carry arithmetic meaning, and 
 that half-line. Although `φ(m)` need not be an integer, `ψ(n)` is a natural number for every
 natural number `n`, since `#G_{m+1}` divides `#G_i` for `i ≤ m + 1`.
 
-The upper numbering is related to the lower one by `G^{φ(u)} = G_u`; its point, the compatibility
-`(G / H)^v = G^v H / H` with quotients, is not proved here.
+The upper numbering is related to the lower one by `G^{φ(u)} = G_u`, and its trace on a subgroup
+`H` is `H ∩ G^v = H^{φ_H(ψ_G(v))}`. Its point, the compatibility `(G / H)^v = G^v H / H` with
+quotients, needs a discrete valuation ring and a separable residue extension; it is
+`TauCeti.IsLocalRing.map_mk'_upperRamificationGroup`.
 
 ## Main definitions
 
@@ -65,6 +67,7 @@ The upper numbering is related to the lower one by `G^{φ(u)} = G_u`; its point,
   `TauCeti.IsLocalRing.exists_inverseHerbrandFun_natCast_eq_natCast`: `ψ(n) = m` exactly when
   `#G_1 + ⋯ + #G_m = n · #G_0`, and `ψ(n)` is a natural number.
 * `TauCeti.IsLocalRing.upperRamificationGroup_herbrandFun`: `G^{φ(u)} = G_u`.
+* `TauCeti.IsLocalRing.subgroupOf_upperRamificationGroup`: `H ∩ G^v = H^{φ_H(ψ_G(v))}`.
 * `TauCeti.IsLocalRing.upperRamificationGroup_eq_of_herbrandFun_lt_of_le`: `G^v = G_i` for
   `φ(i - 1) < v ≤ φ(i)`.
 * `TauCeti.IsLocalRing.exists_forall_upperRamificationGroup_eq_bot`: for a faithful action on a
@@ -465,6 +468,15 @@ theorem exists_inverseHerbrandFun_natCast_eq_natCast (n : ℕ) :
 theorem upperRamificationGroup_herbrandFun (u : ℝ) :
     upperRamificationGroup G S (herbrandFun G S u) = ramificationGroupReal G S u := by
   rw [upperRamificationGroup_def, inverseHerbrandFun_herbrandFun]
+
+/-- The trace of the upper filtration on a subgroup `H`: `H ∩ G^v = H^{φ_H(ψ_G(v))}`. For
+`G = Gal(M/K)` acting on the integer ring of `M` and `H = Gal(M/L)`, the composite `φ_H ∘ ψ_G` is
+the transition function `ψ_{L/K}`; `H` need not be normal. -/
+theorem subgroupOf_upperRamificationGroup (H : Subgroup G) (v : ℝ) :
+    (upperRamificationGroup G S v).subgroupOf H =
+      upperRamificationGroup H S (herbrandFun H S (inverseHerbrandFun G S v)) := by
+  rw [upperRamificationGroup_def, subgroupOf_ramificationGroupReal,
+    upperRamificationGroup_herbrandFun]
 
 /-- The upper ramification filtration is decreasing. -/
 theorem upperRamificationGroup_antitone : Antitone (upperRamificationGroup G S) :=
