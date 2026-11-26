@@ -25,7 +25,7 @@ regular as `A` and `B`. In a chart it is read off with the inverse Gram matrix o
   at a point is `C^n` at that point.
 * `ContMDiff.hilbertSchmidtInner_bundle`: the pairing of two `C^n` `V`-valued one-forms is `C^n`.
 * `Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL`: for a continuous
-  `V`-valued one-form `η`, the covectors `⟪η x, ·⟫` read in a trivialization of `Hom(TM, V)`
+  `V`-valued one-form `A`, the covectors `⟪A x, ·⟫` read in a trivialization of `Hom(TM, V)`
   depend continuously on `x`.
 -/
 
@@ -85,10 +85,10 @@ theorem ContMDiff.hilbertSchmidtInner_bundle
     ContMDiff I 𝓘(ℝ) n fun x ↦ (A x).hilbertSchmidtInner (B x) :=
   fun x ↦ (hA x).hilbertSchmidtInner_bundle (hB x)
 
-/-- **Pairing with a continuous one-form in a trivialization.** For a `V`-valued one-form `η`
+/-- **Pairing with a continuous one-form in a trivialization.** For a `V`-valued one-form `A`
 continuous on an open subset `s` of the base set of a trivialization `e` of the bundle
-`Hom(TM, V)`, the Hilbert–Schmidt covectors `⟪η x, ·⟫` read in `e`,
-`x ↦ ⟪η x, ·⟫ ∘L e.symmL ℝ x`, depend continuously on `x ∈ s`. Here the metrics on `TM` and `V`
+`Hom(TM, V)`, the Hilbert–Schmidt covectors `⟪A x, ·⟫` read in `e`,
+`x ↦ ⟪A x, ·⟫ ∘L e.symmL ℝ x`, depend continuously on `x ∈ s`. Here the metrics on `TM` and `V`
 need only be continuous. -/
 theorem Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL
     [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
