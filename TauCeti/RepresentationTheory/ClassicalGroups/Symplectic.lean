@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
+public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
@@ -39,6 +40,9 @@ field the standard form spans its invariant bilinear forms.
 * `TauCeti.isInvariantForm_stdSymplecticBilinForm`: the standard form is invariant.
 * `TauCeti.toMatrix'_mem_symplecticGroup_iff`: a linear endomorphism of `k^(2n)` has a symplectic
   matrix exactly when it preserves the standard alternating form.
+* `TauCeti.toLin'_mem_skewAdjointLieSubalgebra_stdSymplecticBilinForm_iff`: a matrix is
+  skew-adjoint for the standard alternating form exactly when it lies in the symplectic Lie algebra
+  `LieAlgebra.Symplectic.sp`.
 * `TauCeti.exists_eq_smul_stdSymplecticBilinForm` and
   `TauCeti.invariantForms_stdSymplecticRep_eq_span_stdSymplecticBilinForm`:
   over a field, every `Sp₂ₙ(k)`-invariant bilinear form is a multiple of the standard one. Its
@@ -206,6 +210,21 @@ theorem toMatrix'_mem_symplecticGroup_iff
       BilinForm.IsIsometry (stdSymplecticBilinForm k n) f := by
   rw [SymplecticGroup.mem_iff', ← Matrix.toBilin'.injective.eq_iff, ← Matrix.toBilin'_comp,
     Matrix.toLin'_toMatrix', ← stdSymplecticBilinForm, BilinForm.isIsometry_iff_comp]
+
+attribute [local instance 100] LieRing.ofAssociativeRing in
+/-- A matrix acts by an endomorphism in the symplectic Lie algebra of the standard alternating
+form, the endomorphisms `X` with `B (X v) w = -B v (X w)`, exactly when it lies in Mathlib's
+symplectic Lie algebra `LieAlgebra.Symplectic.sp`. -/
+theorem toLin'_mem_skewAdjointLieSubalgebra_stdSymplecticBilinForm_iff
+    (A : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k) :
+    Matrix.toLin' A ∈ skewAdjointLieSubalgebra (stdSymplecticBilinForm k n) ↔
+      A ∈ LieAlgebra.Symplectic.sp (Fin n) k := by
+  rw [LieAlgebra.Symplectic.sp, mem_skewAdjointMatricesLieSubalgebra,
+    mem_skewAdjointMatricesSubmodule, Matrix.IsSkewAdjoint, ← isAdjointPair_toLinearMap₂',
+    map_neg]
+  -- `skewAdjointLieSubalgebra B` has underlying submodule `B.skewAdjointSubmodule`, and
+  -- `stdSymplecticBilinForm k n` is `Matrix.toLinearMap₂' k (Matrix.J (Fin n) k)`.
+  exact (stdSymplecticBilinForm k n).mem_skewAdjointSubmodule (Matrix.toLin' A)
 
 /-- The standard symplectic form identifies the standard module with its dual. -/
 noncomputable def stdSymplecticRepToDual :

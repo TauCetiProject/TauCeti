@@ -15,7 +15,7 @@ public import TauCeti.Geometry.Symplectic.Matrix
 The real symplectic group `Sp(2n, ℝ) = Matrix.symplecticGroup (Fin n) ℝ` is a Lie group
 (`TauCeti.Lie.symplecticGroup_lieGroup`), and it acts linearly on `V = Fin n ⊕ Fin n → ℝ` by
 `g • v = g *ᵥ v`, preserving the standard symplectic form `ω(u, w) = u ⬝ᵥ J w`
-(`TauCeti.matrixSymplecticForm`). This file computes the moment map of this action and proves that
+(`TauCeti.stdSumSymplecticForm`). This file computes the moment map of this action and proves that
 it is coadjoint-equivariant at group level.
 
 * **Smooth action.** The action is smooth, as a bilinear map composed with the smooth inclusion
@@ -73,13 +73,6 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-- The symplectic group acts by linear symplectomorphisms of `u ⬝ᵥ J w`. -/
-@[simp]
-theorem matrixSymplecticForm_smul_smul (g : symplecticGroup (Fin n) ℝ)
-    (u w : Fin n ⊕ Fin n → ℝ) :
-    matrixSymplecticForm n (g • u) (g • w) = matrixSymplecticForm n u w :=
-  matrixSymplecticForm_mulVec_mulVec g.property u w
-
 /-- **The fundamental vector fields of the symplectic group are linear.** The fundamental vector
 field of `ξ` in the Lie algebra of `Sp(2n, ℝ)`, acting on `Fin n ⊕ Fin n → ℝ`, is `v ↦ A v` for
 the matrix `A = dι(ξ)`, the differential at `1` of the inclusion `ι` into the matrices. -/
@@ -112,19 +105,19 @@ theorem mvfderiv_val_symplecticGroup_mem_sp
     mvfderiv 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ)
         (fun g : symplecticGroup (Fin n) ℝ ↦ (g : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) ℝ))
         1 ξ ∈ LieAlgebra.Symplectic.sp (Fin n) ℝ := by
-  rw [← toLin'_mem_skewAdjointLieSubalgebra_matrixSymplecticForm_iff,
-    ← fundamentalLinearMap_symplecticGroup]
-  exact (matrixSymplecticForm n).fundamentalLinearMap_mem_skewAdjointLieSubalgebra
-    matrixSymplecticForm_smul_smul ξ
+  rw [← toLin'_mem_skewAdjointLieSubalgebra_stdSymplecticBilinForm_iff,
+    ← fundamentalLinearMap_symplecticGroup, ← stdSumSymplecticForm_toBilinForm]
+  exact (stdSumSymplecticForm n).fundamentalLinearMap_mem_skewAdjointLieSubalgebra
+    stdSumSymplecticForm_smul_smul ξ
 
 /-- **The moment map of the linear symplectic group.** For the linear action of `Sp(2n, ℝ)` on
 `(Fin n ⊕ Fin n → ℝ, ω)`, the quadratic moment map is `μ(v)(ξ) = ½ ω(A v, v)` for the matrix
 `A = dι(ξ) ∈ sp (Fin n) ℝ`. -/
 theorem linearActionMomentMap_symplecticGroup_apply (v : Fin n ⊕ Fin n → ℝ)
     (ξ : GroupLieAlgebra 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ) (symplecticGroup (Fin n) ℝ)) :
-    (matrixSymplecticForm n).linearActionMomentMap 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ)
+    (stdSumSymplecticForm n).linearActionMomentMap 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ)
         (symplecticGroup (Fin n) ℝ) v ξ =
-      matrixSymplecticForm n (mvfderiv 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ)
+      stdSumSymplecticForm n (mvfderiv 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ)
         (fun g : symplecticGroup (Fin n) ℝ ↦ (g : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) ℝ))
         1 ξ *ᵥ v) v / 2 := by
   rw [SymplecticForm.linearActionMomentMap_apply, fundamentalLinearMap_symplecticGroup,
@@ -135,11 +128,11 @@ variable (n) in
 `μ(v)(ξ) = ½ ω(dι(ξ) v, v)` of the linear action of `Sp(2n, ℝ)` on `(Fin n ⊕ Fin n → ℝ, ω)` is a
 coadjoint-equivariant group-level moment map: `μ(g v) = Ad*_g μ(v)`. -/
 theorem isEquivariantMomentMap_linearActionMomentMap_symplecticGroup :
-    (matrixSymplecticForm n).constSmooth.IsEquivariantMomentMap
-      ((matrixSymplecticForm n).linearActionMomentMap 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ)
+    (stdSumSymplecticForm n).constSmooth.IsEquivariantMomentMap
+      ((stdSumSymplecticForm n).linearActionMomentMap 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ)
         (symplecticGroup (Fin n) ℝ)) :=
-  (matrixSymplecticForm n).isEquivariantMomentMap_linearActionMomentMap
-    matrixSymplecticForm_smul_smul
+  (stdSumSymplecticForm n).isEquivariantMomentMap_linearActionMomentMap
+    stdSumSymplecticForm_smul_smul
 
 /-- **Coadjoint equivariance in matrices.** For the linear action of `Sp(2n, ℝ)` on
 `(Fin n ⊕ Fin n → ℝ, ω)`, the moment map satisfies `μ(g v)(A) = μ(v)(g⁻¹ A g)` for `A = dι(ξ)`:
@@ -147,17 +140,17 @@ theorem isEquivariantMomentMap_linearActionMomentMap_symplecticGroup :
 theorem linearActionMomentMap_symplecticGroup_smul_apply (g : symplecticGroup (Fin n) ℝ)
     (v : Fin n ⊕ Fin n → ℝ)
     (ξ : GroupLieAlgebra 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ) (symplecticGroup (Fin n) ℝ)) :
-    (matrixSymplecticForm n).linearActionMomentMap 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ)
+    (stdSumSymplecticForm n).linearActionMomentMap 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ)
         (symplecticGroup (Fin n) ℝ) (g • v) ξ =
-      matrixSymplecticForm n
+      stdSumSymplecticForm n
         ((((g⁻¹ : symplecticGroup (Fin n) ℝ) : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) ℝ) *
           mvfderiv 𝓘(ℝ, Lie.SymplecticGroupModel (Fin n) ℝ)
             (fun g : symplecticGroup (Fin n) ℝ ↦ (g : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) ℝ))
             1 ξ *
           (g : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) ℝ)) *ᵥ v) v / 2 := by
   -- Apply `g⁻¹`, which preserves `ω`, to both arguments of `ω(A (g v), g v)`.
-  rw [linearActionMomentMap_symplecticGroup_apply, ← matrixSymplecticForm_smul_smul g⁻¹,
-    inv_smul_smul, Submonoid.smul_def, Submonoid.smul_def, smul_eq_mulVec, smul_eq_mulVec,
-    mulVec_mulVec, mulVec_mulVec]
+  rw [linearActionMomentMap_symplecticGroup_apply, ← stdSumSymplecticForm_smul_smul g⁻¹,
+    inv_smul_smul]
+  simp only [Submonoid.smul_def, smul_eq_mulVec, mulVec_mulVec, Matrix.mul_assoc]
 
 end TauCeti
