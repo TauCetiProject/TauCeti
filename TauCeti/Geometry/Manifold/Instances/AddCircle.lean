@@ -771,6 +771,13 @@ theorem diffeomorphAddCircle_trans (n : ℕ∞ω) :
   congr 1
   field_simp [(Fact.out : 0 < q).ne']
 
+/-- Rescaling a point of `AddCircle p` to `AddCircle q` and then to `AddCircle r` is rescaling it
+from `AddCircle p` to `AddCircle r`, whatever the smoothness exponents of the two rescalings. -/
+@[simp]
+theorem diffeomorphAddCircle_apply_diffeomorphAddCircle (n m : ℕ∞ω) (x : AddCircle p) :
+    diffeomorphAddCircle q r m (diffeomorphAddCircle p q n x) = diffeomorphAddCircle p r n x :=
+  DFunLike.congr_fun (diffeomorphAddCircle_trans p q r n) x
+
 /-- The rescaling from `AddCircle p` to `AddCircle q` has derivative multiplication by `p⁻¹ * q`
 at every point. -/
 @[simp]
