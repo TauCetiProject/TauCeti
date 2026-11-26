@@ -99,6 +99,23 @@ variable {R : Type v} [CommRing R]
 
 section RightEvaluation
 
+/-- **The value of the evaluation.** On `φ ⊗ a`, for `a` in `Aᵖ` and a form `φ` on `Aᵖ`, of
+degree `-p`, the evaluation `A∨ ⊗ A ⟶ R[0]` is `φ(a)`, with no sign. -/
+@[simp]
+theorem singleObjXSelf_hom_linearHomComplexEvaluation_f_apply
+    (A : CochainComplex (ModuleCat.{v} R) ℤ) {p : ℤ} (φ : (linearDual R A).X (-p)) (a : A.X p) :
+    (dsimp% only [linearHomComplex_X]
+      (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).hom.hom
+        (((linearHomComplexEvaluation R A).f 0).hom
+          ((HomologicalComplex.ιTensorObj (linearDual R A) A (-p) p 0 (neg_add_cancel p)).hom
+            (φ ⊗ₜ a)))) = linearDualXEquiv A (add_neg_cancel p) φ a :=
+  -- The dual complex `linearDual R A` is `Hom(A, R[0])` with the tensor unit presented as
+  -- `ModuleCat.of R R`, so the evaluation lemma applies only up to this presentation.
+  (congrArg (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).hom.hom
+    (linearHomComplexEvaluation_ιTensorObj_tmul A (neg_add_cancel p) φ a)).trans (by
+      rw [cochainToTensorUnitLinearEquiv_apply, linearDualXEquiv_apply]
+      exact Iso.inv_hom_id_apply _ _)
+
 variable (R) in
 /-- The **right evaluation** `A ⊗ A∨ ⟶ R[0]` of a cochain complex of `R`-modules and its dual
 complex: the Koszul interchange of the two factors followed by the evaluation `A∨ ⊗ A ⟶ R[0]`.
@@ -134,18 +151,7 @@ theorem singleObjXSelf_hom_linearHomComplexRightEvaluation_f_apply
     LinearMap.smul_apply, ModuleCat.MonoidalCategory.braiding_hom_apply] at hβ
   rw [linearHomComplexRightEvaluation_def, HomologicalComplex.comp_f, ModuleCat.hom_comp,
     LinearMap.comp_apply, braiding_eq_tensorBraiding, hβ, Units.smul_def, map_zsmul,
-    map_zsmul]
-  -- The dual complex `linearDual R A` is `Hom(A, R[0])` with the tensor unit presented as
-  -- `ModuleCat.of R R`, so the evaluation lemma applies only up to this presentation.
-  have he : (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).hom.hom
-      (((linearHomComplexEvaluation R A).f 0).hom
-        ((HomologicalComplex.ιTensorObj (linearDual R A) A (-p) p 0 (neg_add_cancel p)).hom
-          (φ ⊗ₜ a))) = linearDualXEquiv A (add_neg_cancel p) φ a :=
-    (congrArg (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).hom.hom
-      (linearHomComplexEvaluation_ιTensorObj_tmul A (neg_add_cancel p) φ a)).trans (by
-        rw [cochainToTensorUnitLinearEquiv_apply, linearDualXEquiv_apply]
-        exact Iso.inv_hom_id_apply _ _)
-  rw [he]
+    map_zsmul, singleObjXSelf_hom_linearHomComplexEvaluation_f_apply]
 
 end RightEvaluation
 
