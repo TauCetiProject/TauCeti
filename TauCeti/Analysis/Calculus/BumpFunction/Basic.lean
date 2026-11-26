@@ -32,6 +32,8 @@ gives the bump function `ξ ↦ φ (c⁻¹ • ξ)`.
   support lies in the ball of radius `r` around `c`.
 * `TauCeti.exists_contDiff_eventuallyEq_id_forall_mem_ball`: a smooth map into the ball of radius
   `r` about `0` which is the identity near `0`.
+* `TauCeti.exists_contDiff_eqOn_Icc_forall_mem`: a smooth self-map of `ℝ` which is the identity on
+  `[a, b]` and takes values in a given open neighbourhood of `[a, b]`.
 * `ContDiff.exists_contDiff_bdd_deriv_eventuallyEq`: a `C¹` function on `ℝ` agrees near `[-M, M]`
   with a `C¹` function of bounded derivative.
 * `ContDiffBump.apply_inv_smul_eq_zero_of_le_norm`, `ContDiffBump.ofReal_apply_inv_smul_eq_zero`:
@@ -74,6 +76,51 @@ theorem exists_contDiff_eventuallyEq_id_forall_mem_ball {E : Type*} [NormedAddCo
       exact (mul_le_of_le_one_left (norm_nonneg x) b.le_one).trans_lt hx
     · rw [b.zero_of_le_dist (by simpa using hx), zero_smul]
       exact mem_ball_self hr
+
+/-- A smooth self-map of `ℝ` which is the identity on a nonempty interval `[a, b]` and takes values
+in a given open neighbourhood `U` of `[a, b]`. It is `t ↦ c + χ(t) (t - c)` for the midpoint `c`
+of `[a, b]` and a bump `χ` centred at `c`, equal to `1` on `[a, b]` and supported in a slightly
+larger interval contained in `U`. -/
+theorem exists_contDiff_eqOn_Icc_forall_mem {a b : ℝ} (hab : a ≤ b) {U : Set ℝ} (hU : IsOpen U)
+    (hIcc : Set.Icc a b ⊆ U) :
+    ∃ ρ : ℝ → ℝ, ContDiff ℝ ∞ ρ ∧ Set.EqOn ρ id (Set.Icc a b) ∧ ∀ t, ρ t ∈ U := by
+  obtain ⟨εa, hεa, ha⟩ := Metric.isOpen_iff.1 hU a (hIcc ⟨le_rfl, hab⟩)
+  obtain ⟨εb, hεb, hb⟩ := Metric.isOpen_iff.1 hU b (hIcc ⟨hab, le_rfl⟩)
+  set δ := min εa εb
+  have hδ : 0 < δ := lt_min hεa hεb
+  set c := (a + b) / 2
+  set r := (b - a) / 2
+  have hr : 0 ≤ r := by simp only [r]; linarith
+  let χ : ContDiffBump c := ⟨r + δ / 2, r + δ, add_pos_of_nonneg_of_pos hr (half_pos hδ),
+    by linarith⟩
+  refine ⟨fun t ↦ c + χ t * (t - c),
+    contDiff_const.add (χ.contDiff.mul (contDiff_id.sub contDiff_const)), fun t ht ↦ ?_,
+    fun t ↦ ?_⟩
+  · have hχ : χ t = 1 := χ.one_of_mem_closedBall <| by
+      rw [Real.closedBall_eq_Icc]
+      constructor <;> simp only [c, r, χ] <;> linarith [ht.1, ht.2]
+    simp [hχ]
+  · -- The value lies within `r + δ` of the midpoint, so in `[a, b]` or within `δ` of an end.
+    dsimp only
+    have hca : c - r = a := by simp only [c, r]; ring
+    have hcb : c + r = b := by simp only [c, r]; ring
+    have hdist : |c + χ t * (t - c) - c| < r + δ := by
+      rw [add_sub_cancel_left, abs_mul, abs_of_nonneg χ.nonneg]
+      rcases lt_or_ge |t - c| (r + δ) with h | h
+      · exact (mul_le_of_le_one_left (abs_nonneg _) χ.le_one).trans_lt h
+      · rw [χ.zero_of_le_dist (by rwa [Real.dist_eq]), zero_mul]
+        exact add_pos_of_nonneg_of_pos hr hδ
+    obtain ⟨hlo, hhi⟩ := abs_lt.1 hdist
+    set s := c + χ t * (t - c)
+    rcases lt_or_ge s a with hsa | has
+    · refine ha ?_
+      rw [Metric.mem_ball, Real.dist_eq, abs_of_neg (by linarith)]
+      linarith [min_le_left εa εb]
+    rcases le_or_gt s b with hsb | hbs
+    · exact hIcc ⟨has, hsb⟩
+    · refine hb ?_
+      rw [Metric.mem_ball, Real.dist_eq, abs_of_pos (by linarith)]
+      linarith [min_le_right εa εb]
 
 /-- A `C¹` function `Φ : ℝ → G` agrees near every point of `[-M, M]` with a `C¹` function whose
 derivative is bounded, namely its product with a bump function equal to one on a neighbourhood of
