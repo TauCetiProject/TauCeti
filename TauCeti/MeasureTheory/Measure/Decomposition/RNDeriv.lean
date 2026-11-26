@@ -14,7 +14,11 @@ import Mathlib.MeasureTheory.Measure.Decomposition.IntegralRNDeriv
 import TauCeti.Analysis.Real.Sqrt
 
 /-!
-# Square roots of Radon–Nikodym derivatives
+# Radon–Nikodym derivatives: real conversion and square roots
+
+For a σ-finite measure `μ`, embedding the real-valued Radon–Nikodym derivative
+`(μ.rnDeriv ν ·).toReal` back into `ℝ≥0∞` recovers `μ.rnDeriv ν` `ν`-almost everywhere
+(`MeasureTheory.Measure.ofReal_toReal_rnDeriv`).
 
 The square root `√(dμ/dν)` of the density of a finite measure `μ` is square-integrable with
 respect to any reference measure `ν`
@@ -28,6 +32,8 @@ difference `(√(dμ/dκ) - √(dν/dκ))²` of their square roots.
 
 ## Main results
 
+* `MeasureTheory.Measure.ofReal_toReal_rnDeriv`: `ENNReal.ofReal ∘ (μ.rnDeriv ν ·).toReal`
+  agrees `ν`-almost everywhere with `μ.rnDeriv ν` for σ-finite `μ`.
 * `MeasureTheory.Measure.memLp_two_sqrt_toReal_rnDeriv`: `√(dμ/dν) ∈ L²(ν)` for finite `μ`.
 * `MeasureTheory.Measure.integrable_sqrt_toReal_rnDeriv_mul`: `√(dμ/dκ · dν/dκ)` is
   `κ`-integrable for finite `μ` and `ν`.
@@ -42,6 +48,12 @@ open MeasureTheory
 namespace MeasureTheory.Measure
 
 variable {α : Type*} [MeasurableSpace α]
+
+/-- For a σ-finite measure `μ`, embedding the real-valued Radon–Nikodym derivative
+`(μ.rnDeriv ν ·).toReal` back into `ℝ≥0∞` recovers `μ.rnDeriv ν` `ν`-almost everywhere. -/
+theorem ofReal_toReal_rnDeriv (μ ν : Measure α) [SigmaFinite μ] :
+    (fun x ↦ ENNReal.ofReal (μ.rnDeriv ν x).toReal) =ᵐ[ν] μ.rnDeriv ν :=
+  (μ.rnDeriv_lt_top ν).mono fun _ hx ↦ ENNReal.ofReal_toReal hx.ne
 
 /-- The square root `√(dμ/dν)` of the density of a finite measure `μ` is square-integrable,
 whatever the reference measure `ν`: its square integrates to at most the mass of `μ`. -/

@@ -14,6 +14,7 @@ public import TauCeti.Topology.VectorBundle.Orientation.Cover.SignRepresentation
 public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.ChainMap
 public import TauCeti.Topology.VectorBundle.Thom.EquivariantCap
 public import TauCeti.Topology.VectorBundle.Thom.Orientation.TwistedLift
+import TauCeti.Topology.VectorBundle.ModelFiber
 
 /-!
 # The Thom isomorphism with orientation-twisted coefficients over every ring
@@ -63,20 +64,23 @@ Hence, whenever the lift of a class `U ∈ Hʳ(E, E₀; π^*o(E), k)` to `(E', E
 `E'`, `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` in every degree
 (`TauCeti.VectorBundleOrientationCover.nonempty_singularHomology_thomPair_iso_twistedHomology`).
 The natural class `U` is the Thom class with coefficients in the orientation system
-(`TauCeti.twistedThomClass`, over a compact base), which takes the value `1` on the fibre class
-over every point. Its lift is a Thom class of `E'`
-(`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so over a compact base
-`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` holds for every bundle and every commutative ring `k`
-(`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`, in the namespace
-`TauCeti.VectorBundleOrientationCover`). By the universal coefficient theorem it transposes to
-cohomology with values in any injective module
-(`nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`, in the same
+(`TauCeti.twistedThomClass`), which takes the value `1` on the fibre class over every point. Its
+lift is a Thom class of `E'` (`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so
+`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` holds for every bundle, over any base, and every commutative
+ring `k` (`nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`, in the
+namespace `TauCeti.VectorBundleOrientationCover`). By the universal coefficient theorem it
+transposes to cohomology with values in any injective module
+(`nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem`, in the same
 namespace).
 
 The base, the fibres and the ring lie in any common universe `w`, and the orientations are indexed
 by a type `ι : Type`, such as `Fin r`. Representations, their associated local systems and the
 equivariant cap product need the acting group in the universe `w`, so `ℤˣ` acts through its copy
-`ULift ℤˣ` there (`IsQuotientCoveringMap.ulift`).
+`ULift ℤˣ` there (`IsQuotientCoveringMap.ulift`). The descent also needs the model fibre in the
+universe `w`. For the final theorems the model fibre may lie in any universe, such as
+`Fin r → ℝ : Type`: the bundle is read with the model fibre `ULift (ι → ℝ)` instead
+(`VectorBundle.exists_modelFiber_of_continuousLinearEquiv`), which changes neither its Thom pair
+(`TauCeti.thomPairModelFiberIso`) nor its orientation local system.
 
 ## Main definitions and results
 
@@ -88,9 +92,9 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   `(E, E₀)` with coefficients in `π^*o(E)` whose lifted class is a Thom class of `E'`, and
   `nonempty_singularHomology_thomPair_iso_twistedHomology`: the same from a class of
   `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`.
-* `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`: over a compact base,
+* `nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`:
   `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` for every bundle and every commutative ring `k`.
-* `nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`: its transpose
+* `nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem`: its transpose
   `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in cohomology, for injective values `N`.
 
 ## References
@@ -113,6 +117,8 @@ open Bundle CategoryTheory Module MonoidalCategory TauCeti.LocalCoefficientSyste
 namespace TauCeti.VectorBundleOrientationCover
 
 universe w
+
+section Descent
 
 variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
@@ -241,42 +247,69 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology
     (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U
   exact ⟨thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k ψ hU p⟩
 
-/-- **The Thom isomorphism with coefficients in the orientation system over a compact base, over
-every ring.** Let `E → B` be a real vector bundle of rank `r` over a compact base, orientable or
-not, with orientation local system `o(E)`, and let `k` be a commutative ring, `ℤ` included. Then
+end Descent
+
+section ModelFiber
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  [VectorBundle ℝ F E] {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
+  (k : Type w) [CommRing k]
+
+/-- **The Thom isomorphism with coefficients in the orientation system, over every ring.** Let
+`E → B` be a real vector bundle of rank `r` over any base, orientable or not, with orientation
+local system `o(E)`, and let `k` be a commutative ring, `ℤ` included. Then
 `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` in every degree `p`. For the Möbius line over the circle and
 `k = ℤ` this gives `H₁(E, E₀; ℤ) ≅ H₀(S¹; o(E)) ≅ ℤ/2`, where constant coefficients would give
-`ℤ`. -/
-theorem nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace [CompactSpace B]
-    (p : ℕ) :
+`ℤ`. The model fibre may lie in any universe, for instance `Fin r → ℝ : Type` for a base in a
+higher universe. -/
+theorem nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem (p : ℕ) :
     Nonempty ((thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
       twistedHomology (signLocalSystem F E k hι) p) := by
   classical
-  -- The lift to the orientation cover of the Thom class with coefficients in the orientation
-  -- system, normalized by any orientation of the model fibre, is a Thom class.
-  let ω : Orientation ℝ F ι :=
-    ((Module.finBasis ℝ F).reindex (Fintype.equivFinOfCardEq hι).symm).orientation
-  exact nonempty_singularHomology_thomPair_iso_twistedHomology hι k _
-    (isThomClass_thomPairSignCohomologyMap_twistedThomClass hι ω) p
+  -- Read `E` with the model fibre `F' = ULift (ι → ℝ)`, which lies in the universe of `B` and of
+  -- the fibres, with the topology on its total space induced along the identity of points.
+  let L : F ≃L[ℝ] ULift.{w} (ι → ℝ) :=
+    (ContinuousLinearEquiv.ofFinrankEq (by simp [hι])).trans ContinuousLinearEquiv.ulift.symm
+  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_of_continuousLinearEquiv F (E := E) L
+  have hι' : Fintype.card ι = finrank ℝ (ULift.{w} (ι → ℝ)) := hι.trans L.toLinearEquiv.finrank_eq
+  -- For the model fibre `F'`, the lift to the orientation cover of the Thom class with
+  -- coefficients in the orientation system, normalized by any orientation of `F'`, is a Thom
+  -- class.
+  let ω : Orientation ℝ (ULift.{w} (ι → ℝ)) ι :=
+    ((Module.finBasis ℝ _).reindex (Fintype.equivFinOfCardEq hι').symm).orientation
+  obtain ⟨e⟩ := nonempty_singularHomology_thomPair_iso_twistedHomology hι' k _
+    (isThomClass_thomPairSignCohomologyMap_twistedThomClass (E := E) hι' ω) p
+  -- The identity of points identifies the Thom pairs and the orientation systems of the two
+  -- readings of `E`.
+  exact ⟨(thomPair F E).singularHomologyMapIso (ModuleCat.of k k)
+      (thomPairModelFiberIso h_ind).symm _ ≪≫
+    eqToIso (by rw [L.toLinearEquiv.finrank_eq]) ≪≫ e ≪≫
+    asIso (twistedHomologyCoefficientMap (signLocalSystemIsoOfFiberwise k hι hι'
+      (φ := fun b ↦ .refl ℝ (E b)) (by simpa using h_ind.continuous)).inv p)⟩
 
 variable (F E) in
-/-- **The Thom isomorphism in cohomology with orientation-twisted coefficients over a compact
-base.** Let `E → B` be a real vector bundle of rank `r` over a compact base, orientable or not, with
-orientation local system `o(E)`, let `k` be any commutative ring and `N` an injective `k`-module,
-for instance `k = ℤ` and `N = ℚ`. Then `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in every degree `p`.
+/-- **The Thom isomorphism in cohomology with orientation-twisted coefficients.** Let `E → B` be a
+real vector bundle of rank `r` over any base, orientable or not, with orientation local system
+`o(E)`, let `k` be any commutative ring and `N` an injective `k`-module, for instance `k = ℤ` and
+`N = ℚ`. Then `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in every degree `p`. The model fibre may lie
+in any universe.
 
-It is the transpose of `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`:
+It is the transpose of `nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`:
 with injective values both cohomologies are the duals `Hom(-, N)` of the corresponding homologies,
 by the universal coefficient theorem (`TopPair.singularKronecker_bijective` and
 `TauCeti.LocalCoefficientSystem.twistedKronecker_bijective`). -/
-theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace
-    [CompactSpace B] (N : ModuleCat.{w} k) [Injective N] (p : ℕ) :
+theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem
+    (N : ModuleCat.{w} k) [Injective N] (p : ℕ) :
     Nonempty ((thomPair F E).singularCohomology (ModuleCat.of k k) k N (p + finrank ℝ F) ≅
       (signLocalSystem F E k hι).twistedCohomology k N p) := by
-  obtain ⟨e⟩ := nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace
+  obtain ⟨e⟩ := nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem
     (F := F) (E := E) hι k p
   exact ⟨((LinearEquiv.ofBijective _ ((thomPair F E).singularKronecker_bijective k _)).trans
     ((Linear.homCongr k e (Iso.refl N)).trans
       ((signLocalSystem F E k hι).twistedKroneckerEquiv k p).symm)).toModuleIso⟩
+
+end ModelFiber
 
 end TauCeti.VectorBundleOrientationCover
