@@ -208,6 +208,16 @@ def singularHomologyCubeBoundaryPairIso : (cubeBoundaryPair.{w} n).singularHomol
       (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n)).symm ≪≫
     singularHomologyDiskBoundaryPairIso R n
 
+/-- The identification `Hₙ(Iⁿ, ∂Iⁿ; R) ≅ R` reads a class of the cube pair on the disk pair, through
+the inverse of `TauCeti.diskBoundaryPairIsoCube`, and applies the identification
+`Hₙ(Dⁿ, Sⁿ⁻¹; R) ≅ R`. -/
+lemma singularHomologyCubeBoundaryPairIso_hom :
+    (singularHomologyCubeBoundaryPairIso R n).hom =
+      TopPair.singularHomologyMap (diskBoundaryPairIsoCube.{w} n).inv R n ≫
+        (singularHomologyDiskBoundaryPairIso R n).hom :=
+  -- This is the forward map of the composite defining `singularHomologyCubeBoundaryPairIso`.
+  (rfl)
+
 /-- The generator of `Hₙ(Iⁿ, ∂Iⁿ; R)` is the image of the generator of `Hₙ(Dⁿ, Sⁿ⁻¹; R)` under
 `TauCeti.diskBoundaryPairToCube`. -/
 lemma singularHomologyCubeBoundaryPairIso_inv :
