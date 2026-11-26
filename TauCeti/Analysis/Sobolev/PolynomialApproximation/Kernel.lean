@@ -126,6 +126,15 @@ theorem measurable_taylorRemainderWeight [MeasurableSpace E] [BorelSpace E]
   exact (hψ.stronglyMeasurable.integral_prod_right'
     (ν := (volume : Measure ℝ).restrict (Ioo (0 : ℝ) 1))).measurable
 
+/-- If `s > 0` and `s * D < ‖z - x‖`, the ray point `x + s⁻¹ • (z - x)` lies strictly outside
+`closedBall x D`. -/
+private theorem ray_notMem_closedBall {x z : E} {D s : ℝ} (hs : 0 < s) (hlt : s * D < ‖z - x‖) :
+    x + s⁻¹ • (z - x) ∉ closedBall x D := fun hmem ↦ by
+  have hle : dist (x + s⁻¹ • (z - x)) x ≤ D := mem_closedBall.1 hmem
+  rw [dist_self_add_left, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.le),
+    inv_mul_le_iff₀ hs] at hle
+  exact hlt.not_ge hle
+
 /-- Truncation of `taylorRemainderWeight` to `[‖z - x‖ / D, 1]` when `0 < ‖z - x‖ < D` and
 `support φ ⊆ closedBall x D`. -/
 private theorem taylorRemainderWeight_eq_intervalIntegral {φ : E → ℝ} {x z : E} {D : ℝ}
@@ -144,11 +153,8 @@ private theorem taylorRemainderWeight_eq_intervalIntegral {φ : E → ℝ} {x z 
     · exact (indicator_of_mem (s := Ico r 1) ⟨hsr, hs.2⟩ f).symm
     · rw [indicator_of_notMem (s := Ico r 1) fun h ↦ hsr h.1]
       have hlt : s * D < ‖z - x‖ := (lt_div_iff₀ hDpos).1 (lt_of_not_ge hsr)
-      have hmiss : x + s⁻¹ • (z - x) ∉ Function.support φ := fun hmem ↦ by
-        have hle : dist (x + s⁻¹ • (z - x)) x ≤ D := mem_closedBall.1 (hsupp hmem)
-        rw [dist_self_add_left, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.1.le),
-          inv_mul_le_iff₀ hs.1] at hle
-        exact hlt.not_ge hle
+      have hmiss : x + s⁻¹ • (z - x) ∉ Function.support φ :=
+        fun hmem ↦ ray_notMem_closedBall hs.1 hlt (hsupp hmem)
       dsimp only [f]
       rw [Function.notMem_support.1 hmiss, zero_mul]
   have hinter : Ioo (0 : ℝ) 1 ∩ Ico r 1 = Ico r 1 :=
@@ -170,13 +176,11 @@ theorem norm_taylorRemainderWeight_le [FiniteDimensional ℝ E] {φ : E → ℝ}
   have hM0 : 0 ≤ M := (norm_nonneg (φ 0)).trans (hM 0)
   have hdist : 0 < ‖z - x‖ := norm_sub_pos_iff.2 hzx
   by_cases hleD : D ≤ ‖z - x‖
-  · rw [taylorRemainderWeight_eq_zero_of_forall_notMem_support fun s hs hmem ↦ by
-      have hle : dist (x + s⁻¹ • (z - x)) x ≤ D := mem_closedBall.1 (hsupp hmem)
-      rw [dist_self_add_left, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.1.le),
-        inv_mul_le_iff₀ hs.1] at hle
-      exact (calc s * D ≤ s * ‖z - x‖ := mul_le_mul_of_nonneg_left hleD hs.1.le
+  · rw [taylorRemainderWeight_eq_zero_of_forall_notMem_support fun s hs hmem ↦
+      ray_notMem_closedBall hs.1 (calc
+        s * D ≤ s * ‖z - x‖ := mul_le_mul_of_nonneg_left hleD hs.1.le
         _ < 1 * ‖z - x‖ := mul_lt_mul_of_pos_right hs.2 hdist
-        _ = ‖z - x‖ := one_mul _).not_ge hle, norm_zero]
+        _ = ‖z - x‖ := one_mul _) (hsupp hmem), norm_zero]
     positivity
   · push Not at hleD
     have hDpos : 0 < D := hdist.trans hleD
@@ -281,9 +285,8 @@ theorem support_taylorRemainderKernel_subset_convexHull {φ : E → ℝ} {B : Se
     Function.support (taylorRemainderKernel φ m x) ⊆ convexHull ℝ (insert x B) := by
   refine (support_taylorRemainderKernel_subset_image φ m x).trans ?_
   rintro _ ⟨⟨s, y⟩, ⟨hs, hy⟩, rfl⟩
-  have hseg : x + s • (y - x) ∈ segment ℝ x y :=
-    ⟨1 - s, s, sub_nonneg.2 hs.2.le, hs.1.le, sub_add_cancel 1 s, by module⟩
-  exact segment_subset_convexHull (mem_insert x B) (mem_insert_of_mem x (hB hy)) hseg
+  exact segment_subset_convexHull (mem_insert x B) (mem_insert_of_mem x (hB hy))
+    (segment_eq_image' ℝ x y ▸ mem_image_of_mem _ (Ioo_subset_Icc_self hs))
 
 /-- If `Ω` is star-convex with respect to every point of `support φ`, then for each `x ∈ Ω` the
 support of `z ↦ taylorRemainderKernel φ m x z` is contained in `Ω`. -/
@@ -292,8 +295,8 @@ theorem support_taylorRemainderKernel_subset_of_starConvex {φ : E → ℝ} {Ω 
     Function.support (taylorRemainderKernel φ m x) ⊆ Ω := by
   refine (support_taylorRemainderKernel_subset_image φ m x).trans ?_
   rintro _ ⟨⟨s, y⟩, ⟨hs, hy⟩, rfl⟩
-  have hcomb : s • y + (1 - s) • x = x + s • (y - x) := by module
-  simpa only [hcomb] using hstar y hy hx hs.1.le (sub_nonneg.2 hs.2.le) (add_sub_cancel s 1)
+  exact (hstar y hy).segment_subset hx
+    (segment_symm ℝ y x ▸ segment_eq_image' ℝ x y ▸ mem_image_of_mem _ (Ioo_subset_Icc_self hs))
 
 /-- When `φ` has compact support, the topological support of `z ↦ taylorRemainderKernel φ m x z`
 lies in the compact star-cone over `tsupport φ` with vertex `x`. -/

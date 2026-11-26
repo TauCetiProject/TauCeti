@@ -9,12 +9,14 @@ public import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
 public import TauCeti.Analysis.Sobolev.Wkp.Exponent
 import TauCeti.Analysis.Calculus.Taylor.Integral
 import TauCeti.Analysis.Sobolev.Wkp.Classical
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Derivative-form averaged Taylor evaluation on Sobolev spaces
 
-Integrating by parts the cutoff-weighted Taylor polynomial of a Sobolev function `u ∈ W^{m,p}(Ω)`
-against a weight `φ : E → ℝ` replaces classical derivatives by weak iterated gradients:
+Replacing the classical derivatives in the cutoff-weighted Taylor polynomial of a Sobolev function
+`u ∈ W^{m,p}(Ω)` against a weight `φ : E → ℝ` by weak iterated gradients gives the derivative-form
+expression
 
 `∑_{j ≤ m} (j!)⁻¹ ∫_{y ∈ Ω} φ y * ⟨D^j u(y), (x - y)^{⊗ j}⟩ dμ`,
 
@@ -22,7 +24,8 @@ where the directional pairing of the weak derivative field is given basis-freely
 `TauCeti.IteratedGradient.fullContractL`. This file defines the resulting recursive integral
 expression `TauCeti.Wkp.averagedTaylorEval φ m u x` for general `1 ≤ p ≤ ∞` (which defines a
 polynomial in `x` of degree at most `m`, order `m + 1` in Brenner–Scott, when `φ` is measurable,
-bounded, and compactly supported) and establishes its analytical properties under cutoff hypotheses
+bounded, and compactly supported), bundles it as a continuous linear functional
+`TauCeti.Wkp.averagedTaylorEvalL`, and establishes its analytical properties under cutoff hypotheses
 on `φ`:
 
 * when `support φ ⊆ closedBall x R` (`0 ≤ R`) and `‖φ y‖ ≤ M`, the cutoff-weighted contraction
@@ -35,23 +38,30 @@ on `φ`:
 * for a measurable, bounded cutoff `φ` with compact support in `Ω` (`tsupport φ ⊆ Ω`),
   `TauCeti.Wkp.averagedTaylorEval` agrees with the classical averaged Taylor integral
   `∫_{y ∈ Ω} φ y * T^m_y f(x) dμ` on any `C^m` representative `f` of `u`;
-* for a measurable, bounded, compactly supported cutoff `φ`, `u ↦ averagedTaylorEval φ m u x` is
-  continuous on `W^{m,1}(Ω)` (`TauCeti.Wkp.continuous_averagedTaylorEval_one`).
+* when `support φ ⊆ closedBall x R` and `‖φ y‖ ≤ M`, `TauCeti.Wkp.averagedTaylorEval φ m u x`
+  satisfies an explicit operator-norm bound on `W^{m,p}(Ω)` for every `1 ≤ p ≤ ∞`
+  (`TauCeti.Wkp.norm_averagedTaylorEval_le_of_support_subset_closedBall`), yielding the bundled
+  continuous linear functional `TauCeti.Wkp.averagedTaylorEvalL` and continuity
+  `TauCeti.Wkp.continuous_averagedTaylorEval`.
 
 ## Main declarations
 
 * `TauCeti.norm_mul_fullContractL_le_of_support_subset_closedBall`: uniform bound on a
   cutoff-weighted full contraction `φ y * IteratedGradient.fullContractL m (x - y) v` when
   `support φ ⊆ closedBall x R`.
-* `TauCeti.Wkp.averagedTaylorEval`: recursive derivative-form integral expression for a Sobolev
-  function `u ∈ W^{m,p}(Ω)` at `x` (defining the averaged Taylor polynomial of degree at most `m`
-  when `φ` is measurable, bounded, and compactly supported).
+* `TauCeti.integrable_mul_sum_iteratedFDeriv`: integrability of a cutoff-weighted classical Taylor
+  sum for `f ∈ C^m(Ω)` when `tsupport φ ⊆ Ω` is compact.
+* `TauCeti.Wkp.averagedTaylorEval`, `TauCeti.Wkp.averagedTaylorEvalL`: recursive derivative-form
+  integral expression for `u ∈ W^{m,p}(Ω)` at `x` and its bundled continuous linear functional
+  `Wkp mu Omega p m →L[ℝ] ℝ`.
 * `TauCeti.Wkp.averagedTaylorEval_smul`, `TauCeti.Wkp.averagedTaylorEval_add`: linearity in `u`.
 * `TauCeti.Wkp.averagedTaylorEval_ofExponentLEL`: invariance under `TauCeti.Wkp.ofExponentLEL`.
 * `TauCeti.Wkp.averagedTaylorEval_eq_setIntegral_sum_iteratedFDeriv`: agreement with the classical
   Taylor sum integral on `C^m` representatives.
-* `TauCeti.Wkp.continuous_averagedTaylorEval_one`: continuity of `u ↦ averagedTaylorEval φ m u x`
-  on `W^{m,1}(Ω)`.
+* `TauCeti.Wkp.norm_averagedTaylorEval_le_of_support_subset_closedBall`,
+  `TauCeti.Wkp.norm_averagedTaylorEvalL_le_of_support_subset_closedBall`,
+  `TauCeti.Wkp.exists_norm_averagedTaylorEval_le`, `TauCeti.Wkp.continuous_averagedTaylorEval`:
+  explicit and existential operator-norm bounds and continuity on `W^{m,p}(Ω)` (`1 ≤ p ≤ ∞`).
 
 ## References
 
@@ -68,7 +78,7 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-! ### Cutoff-weighted contraction bound -/
+/-! ### Cutoff-weighted contraction and Taylor-sum integrability -/
 
 section CutoffBound
 
@@ -94,6 +104,28 @@ theorem norm_mul_fullContractL_le_of_support_subset_closedBall {φ : E → ℝ} 
     ring
   · rw [Function.notMem_support.1 hy, zero_mul, norm_zero]
     positivity
+
+private theorem integrable_mul_of_continuousOn {X : Type*} [MeasurableSpace X] [TopologicalSpace X]
+    [T2Space X] [OpensMeasurableSpace X] {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {Ω : Set X}
+    {φ ψ : X → ℝ} (hφ_meas : Measurable φ) (hcpt : HasCompactSupport φ) (hφ_supp : tsupport φ ⊆ Ω)
+    {M : ℝ} (hφ_bound : ∀ y, ‖φ y‖ ≤ M) (hψ : ContinuousOn ψ Ω) :
+    Integrable (fun y ↦ φ y * ψ y) μ :=
+  (integrableOn_iff_integrable_of_support_subset
+    ((Function.support_mul_subset_left φ ψ).trans (subset_tsupport φ))).1
+    (((hψ.mono hφ_supp).integrableOn_compact hcpt).bdd_mul
+      hφ_meas.aestronglyMeasurable (Eventually.of_forall hφ_bound))
+
+/-- For a `C^m` function `f` on an open set `Ω` and a bounded measurable cutoff `φ` with compact
+support contained in `Ω`, the cutoff-weighted classical Taylor sum at `x` is integrable. -/
+theorem integrable_mul_sum_iteratedFDeriv {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [MeasurableSpace F] [OpensMeasurableSpace F] {μ : Measure F} [IsFiniteMeasureOnCompacts μ]
+    {Ω : Set F} (hΩ : IsOpen Ω) {φ : F → ℝ} (hφ_meas : Measurable φ) (hcpt : HasCompactSupport φ)
+    (hφ_supp : tsupport φ ⊆ Ω) {M : ℝ} (hφ_bound : ∀ y, ‖φ y‖ ≤ M) {f : F → ℝ} {m : ℕ}
+    (hf : ContDiffOn ℝ m f Ω) (x : F) :
+    Integrable (fun y ↦ φ y * ∑ j ∈ Finset.range (m + 1),
+      (j.factorial : ℝ)⁻¹ * iteratedFDeriv ℝ j f y (fun _ ↦ x - y)) μ :=
+  integrable_mul_of_continuousOn hφ_meas hcpt hφ_supp hφ_bound
+    (by simpa only [smul_eq_mul] using continuousOn_sum_iteratedFDeriv hΩ hf x)
 
 end CutoffBound
 
@@ -169,6 +201,46 @@ theorem averagedTaylorEval_zero_right (φ : E → ℝ) (m : ℕ) (x : E) :
     averagedTaylorEval φ m (0 : Wkp mu Omega p m) x = 0 := by
   simpa using averagedTaylorEval_smul φ m 0 (0 : Wkp mu Omega p m) x
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem integrableOn_of_support_subset_tsupport_Lp {F : Type*} [NormedAddCommGroup F]
+    {φ : E → ℝ} (hcpt : HasCompactSupport φ) (g : Lp F p (mu.restrict Omega)) {h : E → ℝ}
+    (hh_meas : AEStronglyMeasurable h (mu.restrict Omega))
+    (hh_supp : Function.support h ⊆ tsupport φ) {K : ℝ} (hh_le : ∀ y, ‖h y‖ ≤ K * ‖g y‖) :
+    IntegrableOn h Omega mu := by
+  let ν : Measure E := mu.restrict Omega
+  have : IsFiniteMeasure (ν.restrict (tsupport φ)) := isFiniteMeasure_restrict.2
+    ((Measure.restrict_apply_le _ _).trans_lt hcpt.measure_lt_top).ne
+  refine (integrableOn_iff_integrable_of_support_subset hh_supp).1 ?_
+  exact ((((Lp.memLp g).restrict (tsupport φ)).integrable Fact.out).norm.const_mul K).mono'
+    hh_meas.restrict (Eventually.of_forall hh_le)
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem norm_setIntegral_le_of_support_subset_tsupport_Lp {F : Type*}
+    [NormedAddCommGroup F] {φ : E → ℝ} (hcpt : HasCompactSupport φ)
+    (g : Lp F p (mu.restrict Omega)) {h : E → ℝ} (hh_supp : Function.support h ⊆ tsupport φ)
+    {K : ℝ} (hK : 0 ≤ K) (hh_le : ∀ y, ‖h y‖ ≤ K * ‖g y‖) :
+    ‖∫ y in Omega, h y ∂mu‖ ≤
+      K * ((mu.restrict Omega) (tsupport φ) ^ (1 - 1 / p.toReal)).toReal * ‖g‖ := by
+  let ν : Measure E := mu.restrict Omega
+  let S : Set E := tsupport φ
+  have : IsFiniteMeasure (ν.restrict S) := isFiniteMeasure_restrict.2
+    ((Measure.restrict_apply_le _ _).trans_lt hcpt.measure_lt_top).ne
+  have hgS : MemLp g p (ν.restrict S) := (Lp.memLp g).restrict S
+  have hnorm_le : ‖hgS.toLp g‖ ≤ ‖g‖ := by
+    rw [Lp.norm_toLp, Lp.norm_def]
+    exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top g)
+      (eLpNorm_mono_measure g Measure.restrict_le_self)
+  have hsub : ∫ y, h y ∂ν = ∫ y in S, h y ∂ν :=
+    (setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦
+      Function.notMem_support.1 fun hmem ↦ hy (hh_supp hmem)).symm
+  rw [hsub]
+  refine (Lp.norm_integral_le_of_ae_norm_le_mul (K := K) (hgS.toLp g) ?_).trans ?_
+  · filter_upwards [hgS.coeFn_toLp] with y hy
+    rw [hy]
+    exact hh_le y
+  · rw [Measure.restrict_apply_univ]
+    exact mul_le_mul_of_nonneg_left hnorm_le (mul_nonneg hK ENNReal.toReal_nonneg)
+
 /-- Compact support and boundedness of `φ` ensure integrability of `φ y * ⟨g y, (x - y)^{⊗ m+1}⟩`
 on `Ω` for any `g ∈ Lᵖ(Ω; IteratedGradient E m)` (`1 ≤ p ≤ ∞`). -/
 private theorem integrableOn_mul_fullContractL_Lp {φ : E → ℝ} (hφ_meas : Measurable φ)
@@ -176,24 +248,16 @@ private theorem integrableOn_mul_fullContractL_Lp {φ : E → ℝ} (hφ_meas : M
     (g : Lp (IteratedGradient E m) p (mu.restrict Omega)) (x : E) :
     IntegrableOn
       (fun y ↦ φ y * IteratedGradient.fullContractL m (x - y) (g y)) Omega mu := by
-  let ν : Measure E := mu.restrict Omega
-  have : IsFiniteMeasure (ν.restrict (tsupport φ)) := isFiniteMeasure_restrict.2
-    ((Measure.restrict_apply_le _ _).trans_lt hcpt.measure_lt_top).ne
   obtain ⟨R, hR, hR_sub⟩ := hcpt.isBounded.subset_closedBall_lt 0 x
   have hsupp : Function.support φ ⊆ closedBall x R := (subset_tsupport φ).trans hR_sub
-  have hg_int : Integrable g (ν.restrict (tsupport φ)) :=
-    ((Lp.memLp g).restrict (tsupport φ)).integrable Fact.out
-  have hmeas : AEStronglyMeasurable
-      (fun y ↦ φ y * IteratedGradient.fullContractL m (x - y) (g y)) (ν.restrict (tsupport φ)) :=
-    (hφ_meas.aestronglyMeasurable.mul
-      (isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable
-        ((((IteratedGradient.continuous_fullContractL m).comp
-          (continuous_const.sub continuous_id)).aestronglyMeasurable).prodMk
-          (Lp.aestronglyMeasurable g)))).restrict
-  refine (integrableOn_iff_integrable_of_support_subset
-    ((Function.support_mul_subset_left φ _).trans (subset_tsupport φ))).1 ?_
-  exact (hg_int.norm.const_mul (M * R ^ (m + 1))).mono' hmeas (Eventually.of_forall fun y ↦
-    norm_mul_fullContractL_le_of_support_subset_closedBall hR.le hsupp (hφ_bound y) m (g y))
+  refine integrableOn_of_support_subset_tsupport_Lp hcpt g ?_
+    ((Function.support_mul_subset_left φ _).trans (subset_tsupport φ)) fun y ↦
+      norm_mul_fullContractL_le_of_support_subset_closedBall hR.le hsupp (hφ_bound y) m (g y)
+  exact hφ_meas.aestronglyMeasurable.mul
+    (isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable
+      ((((IteratedGradient.continuous_fullContractL m).comp
+        (continuous_const.sub continuous_id)).aestronglyMeasurable).prodMk
+        (Lp.aestronglyMeasurable g)))
 
 /-- Addition commutes with `averagedTaylorEval` for every `1 ≤ p ≤ ∞` whenever `φ` is measurable,
 bounded, and compactly supported. -/
@@ -201,16 +265,13 @@ theorem averagedTaylorEval_add {φ : E → ℝ} (hφ_meas : Measurable φ) (hcpt
     {M : ℝ} (hφ_bound : ∀ y, ‖φ y‖ ≤ M) (m : ℕ) (u v : Wkp mu Omega p m) (x : E) :
     averagedTaylorEval φ m (u + v) x =
       averagedTaylorEval φ m u x + averagedTaylorEval φ m v x := by
-  let ν : Measure E := mu.restrict Omega
-  have : IsFiniteMeasure (ν.restrict (tsupport φ)) := isFiniteMeasure_restrict.2
-    ((Measure.restrict_apply_le _ _).trans_lt hcpt.measure_lt_top).ne
   induction m with
   | zero =>
-    have hint : ∀ w : Wkp mu Omega p 0, Integrable (fun y ↦ φ y * w y) ν := fun w ↦
-      (integrableOn_iff_integrable_of_support_subset
-        ((Function.support_mul_subset_left φ w).trans (subset_tsupport φ))).1
-        ((((Lp.memLp w).restrict (tsupport φ)).integrable Fact.out).bdd_mul
-          hφ_meas.aestronglyMeasurable (Eventually.of_forall hφ_bound))
+    have hint : ∀ w : Wkp mu Omega p 0, IntegrableOn (fun y ↦ φ y * w y) Omega mu := fun w ↦
+      integrableOn_of_support_subset_tsupport_Lp hcpt w
+        (hφ_meas.aestronglyMeasurable.mul (Lp.aestronglyMeasurable w))
+        ((Function.support_mul_subset_left φ w).trans (subset_tsupport φ)) fun y ↦ by
+          rw [norm_mul]; exact mul_le_mul_of_nonneg_right (hφ_bound y) (norm_nonneg _)
     rw [averagedTaylorEval_zero, averagedTaylorEval_zero, averagedTaylorEval_zero,
       ← integral_add (hint u) (hint v)]
     refine integral_congr_ae ?_
@@ -262,11 +323,6 @@ theorem averagedTaylorEval_eq_setIntegral_sum_iteratedFDeriv {φ : E → ℝ} (h
     averagedTaylorEval φ m u x =
       ∫ y in Omega, φ y * (∑ j ∈ Finset.range (m + 1),
         (j.factorial : ℝ)⁻¹ * iteratedFDeriv ℝ j f y (fun _ ↦ x - y)) ∂mu := by
-  have hint_on : ∀ ψ : E → ℝ, ContinuousOn ψ Omega → IntegrableOn (fun y ↦ φ y * ψ y) Omega mu :=
-    fun ψ hψ ↦ ((integrableOn_iff_integrable_of_support_subset
-      ((Function.support_mul_subset_left φ ψ).trans (subset_tsupport φ))).1
-        (((hψ.mono hφ_supp).integrableOn_compact hcpt).bdd_mul
-          hφ_meas.aestronglyMeasurable (Eventually.of_forall hφ_bound))).integrableOn
   induction m with
   | zero =>
     refine integral_congr_ae ?_
@@ -289,76 +345,111 @@ theorem averagedTaylorEval_eq_setIntegral_sum_iteratedFDeriv {φ : E → ℝ} (h
       filter_upwards [hgrad_ae] with y hy
       rw [hy, fullContractL_iteratedGradientChain]
       ring
-    have hsum_cont : ContinuousOn (fun y ↦ ∑ j ∈ Finset.range (m + 1),
-        (j.factorial : ℝ)⁻¹ * iteratedFDeriv ℝ j f y (fun _ ↦ x - y)) Omega := by
-      simpa only [smul_eq_mul] using continuousOn_sum_iteratedFDeriv Omega.isOpen hf_m x
-    have htop_cont : ContinuousOn (fun y ↦ ((m + 1).factorial : ℝ)⁻¹ *
-        iteratedFDeriv ℝ (m + 1) f y (fun _ ↦ x - y)) Omega :=
-      continuousOn_const.mul (continuous_eval.comp_continuousOn
-        ((ContinuousOn.continuousOn_iteratedFDeriv (k := m + 1) hf Omega.isOpen (by simp)).prodMk
-          (continuous_pi fun _ ↦ continuous_const.sub continuous_id).continuousOn))
-    rw [htop_eq, ← integral_add (hint_on _ hsum_cont) (hint_on _ htop_cont)]
+    have hsum_m : IntegrableOn (fun y ↦ φ y * ∑ j ∈ Finset.range (m + 1),
+        (j.factorial : ℝ)⁻¹ * iteratedFDeriv ℝ j f y (fun _ ↦ x - y)) Omega mu :=
+      (integrable_mul_sum_iteratedFDeriv Omega.isOpen hφ_meas hcpt hφ_supp hφ_bound hf_m
+        x).integrableOn
+    have hsum_m1 : IntegrableOn (fun y ↦ φ y * ∑ j ∈ Finset.range (m + 1 + 1),
+        (j.factorial : ℝ)⁻¹ * iteratedFDeriv ℝ j f y (fun _ ↦ x - y)) Omega mu :=
+      (integrable_mul_sum_iteratedFDeriv Omega.isOpen hφ_meas hcpt hφ_supp hφ_bound hf
+        x).integrableOn
+    have htop_int : IntegrableOn (fun y ↦ φ y * (((m + 1).factorial : ℝ)⁻¹ *
+        iteratedFDeriv ℝ (m + 1) f y (fun _ ↦ x - y))) Omega mu :=
+      (hsum_m1.sub hsum_m).congr_fun
+        (fun y _ ↦ by rw [Pi.sub_apply, Finset.sum_range_succ _ (m + 1), mul_add,
+          add_sub_cancel_left])
+        Omega.isOpen.measurableSet
+    rw [htop_eq, ← integral_add hsum_m htop_int]
     refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
     dsimp only
     rw [Finset.sum_range_succ _ (m + 1), mul_add]
 
-/-- Operator-norm bound on `W^{m,1}(Ω)` for `u ↦ averagedTaylorEval φ m u x` when `φ` is measurable,
-bounded, and compactly supported. -/
-private theorem exists_norm_averagedTaylorEval_one_le {φ : E → ℝ} (hφ_meas : Measurable φ)
-    (hcpt : HasCompactSupport φ) {M : ℝ} (hφ_bound : ∀ y, ‖φ y‖ ≤ M) (m : ℕ) (x : E) :
-    ∃ C : ℝ, ∀ u : Wkp mu Omega 1 m, ‖averagedTaylorEval φ m u x‖ ≤ C * ‖u‖ := by
-  let ν : Measure E := mu.restrict Omega
+/-- Quantitative bound on `W^{m,p}(Ω)` (`1 ≤ p ≤ ∞`) for `averagedTaylorEval φ m u x` when
+`support φ ⊆ closedBall x R` (`0 ≤ R`) and `‖φ y‖ ≤ M`, without measurability assumptions on `φ`
+or boundedness of `Ω`. -/
+theorem norm_averagedTaylorEval_le_of_support_subset_closedBall {φ : E → ℝ} {x : E} {R M : ℝ}
+    (hR : 0 ≤ R) (hsupp : Function.support φ ⊆ closedBall x R) (hφ_bound : ∀ y, ‖φ y‖ ≤ M)
+    (m : ℕ) (u : Wkp mu Omega p m) :
+    ‖averagedTaylorEval φ m u x‖ ≤
+      M * ((mu.restrict Omega) (tsupport φ) ^ (1 - 1 / p.toReal)).toReal *
+        (∑ j ∈ Finset.range (m + 1), (j.factorial : ℝ)⁻¹ * R ^ j) * ‖u‖ := by
+  have hcpt : HasCompactSupport φ :=
+    HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall x R) hsupp
   have hM0 : 0 ≤ M := (norm_nonneg (φ 0)).trans (hφ_bound 0)
+  set c := ((mu.restrict Omega) (tsupport φ) ^ (1 - 1 / p.toReal)).toReal
+  have hc0 : 0 ≤ c := ENNReal.toReal_nonneg
   induction m with
   | zero =>
-    refine ⟨M, fun u ↦ (norm_integral_le_integral_norm _).trans ?_⟩
-    have hint : Integrable (fun y ↦ φ y * u y) ν := (L1.integrable_coeFn u).bdd_mul
-      hφ_meas.aestronglyMeasurable (Eventually.of_forall hφ_bound)
-    refine (integral_mono hint.norm ((L1.integrable_coeFn u).norm.const_mul M)
-      fun y ↦ ?_).trans_eq (by rw [integral_const_mul, L1.norm_eq_integral_norm])
-    rw [norm_mul]
-    exact mul_le_mul_of_nonneg_right (hφ_bound y) (norm_nonneg _)
+    rw [averagedTaylorEval_zero, Finset.sum_range_one, Nat.factorial_zero, Nat.cast_one, inv_one,
+      pow_zero, mul_one, mul_one]
+    exact norm_setIntegral_le_of_support_subset_tsupport_Lp hcpt u
+      ((Function.support_mul_subset_left φ u).trans (subset_tsupport φ)) hM0 fun y ↦ by
+        rw [norm_mul]; exact mul_le_mul_of_nonneg_right (hφ_bound y) (norm_nonneg _)
   | succ m ih =>
-    obtain ⟨C₀, hC₀⟩ := ih
-    obtain ⟨R, hR, hR_sub⟩ := hcpt.isBounded.subset_closedBall_lt 0 x
-    have hsupp : Function.support φ ⊆ closedBall x R := (subset_tsupport φ).trans hR_sub
-    set A := max C₀ 0
-    set B := M * R ^ (m + 1)
-    let L_low := lowerOrderL (mu := mu) (Omega := Omega) (p := 1) m
-    let L_grad := iteratedGradientL (mu := mu) (Omega := Omega) (p := 1) m
-    refine ⟨A * ‖L_low‖ + ((m + 1).factorial : ℝ)⁻¹ * (B * ‖L_grad‖), fun u ↦ ?_⟩
-    have hlow_le : ‖averagedTaylorEval φ m (lowerOrder m u) x‖ ≤ A * (‖L_low‖ * ‖u‖) :=
-      (hC₀ _).trans <| (mul_le_mul_of_nonneg_right (le_max_left C₀ 0) (norm_nonneg _)).trans <| by
-        rw [← lowerOrderL_apply]
-        exact mul_le_mul_of_nonneg_left (L_low.le_opNorm u) (le_max_right C₀ 0)
-    have htop_le : ‖∫ y in Omega,
+    have hlow : ‖averagedTaylorEval φ m (lowerOrder m u) x‖ ≤
+        M * c * (∑ j ∈ Finset.range (m + 1), (j.factorial : ℝ)⁻¹ * R ^ j) * ‖u‖ :=
+      (ih (lowerOrder m u)).trans (mul_le_mul_of_nonneg_left (norm_lowerOrder_le m u)
+        (mul_nonneg (mul_nonneg hM0 hc0) (Finset.sum_nonneg fun _ _ ↦ by positivity)))
+    have htop : ‖∫ y in Omega,
         φ y * IteratedGradient.fullContractL m (x - y) (iteratedGradient m u y) ∂mu‖ ≤
-        B * (‖L_grad‖ * ‖u‖) :=
-      (norm_integral_le_integral_norm _).trans <| (integral_mono
-        (integrableOn_mul_fullContractL_Lp hφ_meas hcpt hφ_bound (iteratedGradient m u) x).norm
-        ((L1.integrable_coeFn (iteratedGradient m u)).norm.const_mul B) fun y ↦
-          norm_mul_fullContractL_le_of_support_subset_closedBall hR.le hsupp (hφ_bound y) m
-            (iteratedGradient m u y)).trans
-        (by rw [integral_const_mul, ← L1.norm_eq_integral_norm, ← iteratedGradientL_apply]
-            exact mul_le_mul_of_nonneg_left (L_grad.le_opNorm u) (by positivity))
-    rw [averagedTaylorEval_succ]
+        M * R ^ (m + 1) * c * ‖u‖ :=
+      (norm_setIntegral_le_of_support_subset_tsupport_Lp hcpt (iteratedGradient m u)
+        ((Function.support_mul_subset_left φ _).trans (subset_tsupport φ)) (by positivity)
+        fun y ↦ norm_mul_fullContractL_le_of_support_subset_closedBall hR hsupp (hφ_bound y) m
+          (iteratedGradient m u y)).trans
+        (mul_le_mul_of_nonneg_left (norm_iteratedGradient_le m u) (by positivity))
+    rw [averagedTaylorEval_succ, Finset.sum_range_succ]
     refine (norm_add_le _ _).trans ?_
     rw [norm_mul, Real.norm_of_nonneg (inv_nonneg.2 (Nat.cast_nonneg _))]
-    exact (add_le_add hlow_le
-      (mul_le_mul_of_nonneg_left htop_le (by positivity))).trans_eq (by ring)
+    exact (add_le_add hlow
+      (mul_le_mul_of_nonneg_left htop (by positivity))).trans_eq (by ring)
+
+/-- Operator-norm bound on `W^{m,p}(Ω)` (`1 ≤ p ≤ ∞`) for `u ↦ averagedTaylorEval φ m u x` when `φ`
+is bounded and compactly supported. -/
+theorem exists_norm_averagedTaylorEval_le {φ : E → ℝ} (hcpt : HasCompactSupport φ) {M : ℝ}
+    (hφ_bound : ∀ y, ‖φ y‖ ≤ M) (m : ℕ) (x : E) :
+    ∃ C : ℝ, ∀ u : Wkp mu Omega p m, ‖averagedTaylorEval φ m u x‖ ≤ C * ‖u‖ := by
+  obtain ⟨R, hR, hR_sub⟩ := hcpt.isBounded.subset_closedBall_lt 0 x
+  exact ⟨_, norm_averagedTaylorEval_le_of_support_subset_closedBall hR.le
+    ((subset_tsupport φ).trans hR_sub) hφ_bound m⟩
+
+/-- Bundled continuous linear functional `u ↦ averagedTaylorEval φ m u x` on `W^{m,p}(Ω)`
+(`1 ≤ p ≤ ∞`) for a measurable, bounded, compactly supported cutoff `φ`. -/
+def averagedTaylorEvalL {φ : E → ℝ} (hφ_meas : Measurable φ) (hcpt : HasCompactSupport φ)
+    {M : ℝ} (hφ_bound : ∀ y, ‖φ y‖ ≤ M) (m : ℕ) (x : E) :
+    Wkp mu Omega p m →L[ℝ] ℝ :=
+  LinearMap.mkContinuousOfExistsBound
+    { toFun := fun u ↦ averagedTaylorEval φ m u x
+      map_add' := fun u v ↦ averagedTaylorEval_add hφ_meas hcpt hφ_bound m u v x
+      map_smul' := fun c u ↦ averagedTaylorEval_smul φ m c u x }
+    (exists_norm_averagedTaylorEval_le hcpt hφ_bound m x)
+
+@[simp]
+theorem averagedTaylorEvalL_apply {φ : E → ℝ} (hφ_meas : Measurable φ)
+    (hcpt : HasCompactSupport φ) {M : ℝ} (hφ_bound : ∀ y, ‖φ y‖ ≤ M) (m : ℕ) (x : E)
+    (u : Wkp mu Omega p m) :
+    averagedTaylorEvalL hφ_meas hcpt hφ_bound m x u = averagedTaylorEval φ m u x :=
+  (rfl)
+
+/-- Explicit operator-norm bound for `averagedTaylorEvalL` when `support φ ⊆ closedBall x R`. -/
+theorem norm_averagedTaylorEvalL_le_of_support_subset_closedBall {φ : E → ℝ}
+    (hφ_meas : Measurable φ) (hcpt : HasCompactSupport φ) {x : E} {R M : ℝ} (hR : 0 ≤ R)
+    (hsupp : Function.support φ ⊆ closedBall x R) (hφ_bound : ∀ y, ‖φ y‖ ≤ M) (m : ℕ) :
+    ‖averagedTaylorEvalL (mu := mu) (Omega := Omega) (p := p) hφ_meas hcpt hφ_bound m x‖ ≤
+      M * ((mu.restrict Omega) (tsupport φ) ^ (1 - 1 / p.toReal)).toReal *
+        (∑ j ∈ Finset.range (m + 1), (j.factorial : ℝ)⁻¹ * R ^ j) := by
+  have hM0 : 0 ≤ M := (norm_nonneg (φ 0)).trans (hφ_bound 0)
+  refine ContinuousLinearMap.opNorm_le_bound _
+    (mul_nonneg (mul_nonneg hM0 ENNReal.toReal_nonneg)
+      (Finset.sum_nonneg fun _ _ ↦ by positivity)) fun u ↦ ?_
+  exact norm_averagedTaylorEval_le_of_support_subset_closedBall hR hsupp hφ_bound m u
 
 /-- For a bounded measurable cutoff `φ` with compact support, `u ↦ averagedTaylorEval φ m u x` is
-continuous on `W^{m,1}(Ω)`. -/
-theorem continuous_averagedTaylorEval_one {φ : E → ℝ} (hφ_meas : Measurable φ)
+continuous on `W^{m,p}(Ω)` (`1 ≤ p ≤ ∞`). -/
+theorem continuous_averagedTaylorEval {φ : E → ℝ} (hφ_meas : Measurable φ)
     (hcpt : HasCompactSupport φ) {M : ℝ} (hφ_bound : ∀ y, ‖φ y‖ ≤ M) (m : ℕ) (x : E) :
-    Continuous fun u : Wkp mu Omega 1 m ↦ averagedTaylorEval φ m u x := by
-  obtain ⟨C, hC⟩ := exists_norm_averagedTaylorEval_one_le (mu := mu) (Omega := Omega)
-    hφ_meas hcpt hφ_bound m x
-  exact (LinearMap.mkContinuous
-    ({ toFun := fun u ↦ averagedTaylorEval φ m u x
-       map_add' := fun u v ↦ averagedTaylorEval_add hφ_meas hcpt hφ_bound m u v x
-       map_smul' := fun c u ↦ averagedTaylorEval_smul φ m c u x } :
-      Wkp mu Omega 1 m →ₗ[ℝ] ℝ) C hC).continuous
+    Continuous fun u : Wkp mu Omega p m ↦ averagedTaylorEval φ m u x :=
+  (averagedTaylorEvalL hφ_meas hcpt hφ_bound m x).continuous
 
 end Wkp
 

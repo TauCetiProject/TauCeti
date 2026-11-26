@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import Mathlib.Analysis.Normed.Operator.Bilinear
-import Mathlib.Analysis.Calculus.ContDiff.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
 # Contractions of iterated gradients
@@ -20,10 +22,13 @@ polynomials, without choosing coordinates.
 
 Both operations are continuous linear in the field and continuous in the direction. Partial
 contraction of `i` slots is homogeneous of degree `i` in the direction and has norm at most
-`‖h‖ ^ i`; full contraction of `IteratedGradient E j` has degree `j + 1` and norm at most
-`‖h‖ ^ (j + 1)`. On a complete real inner product space, full contraction of
+`‖h‖ ^ i`; full contraction of `IteratedGradient E j` has degree `j + 1`, has norm at most
+`‖h‖ ^ (j + 1)`, and depends smoothly on the direction
+(`TauCeti.IteratedGradient.contDiff_fullContractL`). On a Hilbert space, full contraction of
 `TauCeti.iteratedGradientChain f k x` along `h` recovers `iteratedFDeriv ℝ (k + 1) f x (fun _ ↦ h)`
-without any differentiability hypothesis (`TauCeti.fullContractL_iteratedGradientChain`).
+without any differentiability hypothesis (`TauCeti.fullContractL_iteratedGradientChain`), and agrees
+with `iteratedFDerivAlong ℝ (List.replicate (k + 1) h) f x` when `f` is `C^{k+1}` at `x`
+(`TauCeti.IteratedGradient.fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong`).
 -/
 
 public section
@@ -31,6 +36,9 @@ public section
 noncomputable section
 
 namespace TauCeti.IteratedGradient
+
+open Filter Topology
+open scoped ContDiff InnerProductSpace
 
 section NormedSpace
 
@@ -170,15 +178,38 @@ theorem norm_fullContractL_le (j : ℕ) (h : E) :
   intro G
   exact (norm_fullContractL_apply_le j h G).trans_eq (mul_comm _ _)
 
+/-- `fullContractL j` depends smoothly (`C^n` for every `n : ℕ∞ω`) on the direction vector. -/
+theorem contDiff_fullContractL {n : ℕ∞ω} : ∀ j : ℕ, ContDiff ℝ n (fullContractL (E := E) j)
+  | 0 => by rw [funext fullContractL_zero]; exact (innerSL ℝ (E := E)).contDiff
+  | j + 1 => by
+      rw [funext (fullContractL_succ j)]
+      exact (contDiff_fullContractL j).clm_comp <| @ContinuousLinearMap.contDiff ℝ E
+        ((E →L[ℝ] IteratedGradient E j) →L[ℝ] IteratedGradient E j) _ _ _ _ _ n
+        (ContinuousLinearMap.apply ℝ (E' := E) (IteratedGradient E j))
+
 /-- Full contraction of `IteratedGradient E j` is continuous in the direction vector. -/
 @[fun_prop]
-theorem continuous_fullContractL (j : ℕ) : Continuous (fullContractL (E := E) j) := by
-  induction j with
-  | zero => exact (innerSL ℝ (E := E)).continuous.congr fun h ↦ (fullContractL_zero h).symm
-  | succ j ih =>
-      exact (ih.clm_comp
-        (ContinuousLinearMap.id ℝ (E →L[ℝ] IteratedGradient E j)).flip.continuous).congr
-        fun h ↦ (fullContractL_succ j h).symm
+theorem continuous_fullContractL (j : ℕ) : Continuous (fullContractL (E := E) j) :=
+  (contDiff_fullContractL (n := 0) j).continuous
+
+/-- On any Hilbert space, full contraction of `iteratedGradientChain f j x` along `h` agrees with
+`iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f x` whenever `f` is `C^{j+1}` at `x`. -/
+theorem fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong [CompleteSpace E] :
+    ∀ (j : ℕ) {f : E → ℝ} {x : E}, ContDiffAt ℝ (j + 1) f x → ∀ h : E,
+      fullContractL j h (iteratedGradientChain f j x) =
+        iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f x
+  | 0, f, x, _, h => by simpa [gradient] using real_inner_comm (gradient f x) h
+  | j + 1, f, x, hf, h => by
+      have hd := (contDiffAt_iteratedGradientChain (m := 1) hf j
+        (by push_cast; ring_nf; exact le_rfl)).differentiableAt one_ne_zero
+      have hcomp := (fullContractL j h).hasFDerivAt.comp x hd.hasFDerivAt
+      have heq : fullContractL j h ∘ iteratedGradientChain f j =ᶠ[𝓝 x]
+          iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f :=
+        (hf.eventually (by simp)).mono fun _ hy =>
+          fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong j
+            (hy.of_le (by norm_cast; omega)) h
+      rw [fullContractL_succ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
+        List.replicate_succ, iteratedFDerivAlong_cons_apply, ← heq.fderiv_eq, hcomp.fderiv]; simp
 
 end InnerProductSpace
 
@@ -224,7 +255,8 @@ theorem fullContractL_iteratedFDeriv_iteratedGradientChain_const (f : E → ℝ)
   | zero =>
       rw [iteratedGradientChain_zero, IteratedGradient.fullContractL_zero]
       have hgrad : gradient f =
-          ⇑(InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f := rfl
+          ⇑(InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f :=
+        funext fun _ ↦ by simp [gradient]
       rw [hgrad, ContinuousLinearEquiv.iteratedFDeriv_comp_left,
         ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
         ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,

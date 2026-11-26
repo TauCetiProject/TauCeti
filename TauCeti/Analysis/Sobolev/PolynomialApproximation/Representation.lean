@@ -30,11 +30,11 @@ theorem and the Haar homothety change of variables `y ↦ x + s • (y - x)`
   `u x - ∫ φ(y) T^m_y u(x) dμ = ∫_{z ∈ Ω} taylorRemainderKernel φ m x z (D^{m+1} u(z)) dμ` holds
   pointwise at every `x ∈ Ω`, without boundedness of `Ω` or global integrability of `D^{m+1} u`;
 * on a bounded open set `Ω` star-convex with respect to `tsupport φ`, combining continuity of
-  `TauCeti.Wkp.averagedTaylorEval` on `W^{m,1}(Ω)`, its agreement with the classical integral on
-  `C^m` representatives, and its invariance under lowering the Sobolev exponent with Meyers–Serrin
-  density (`Wkp.exists_contDiffOn_approximation`) and the `L¹(Ω) → L¹(Ω)` potential bound
-  `eLpNorm_one_setIntegral_taylorRemainderKernel_le` extends the representation formula almost
-  everywhere to every `u ∈ W^{m+1,p}(Ω)` (`1 ≤ p ≤ ∞`).
+  `TauCeti.Wkp.averagedTaylorEval` (`TauCeti.Wkp.continuous_averagedTaylorEval`), its agreement with
+  the classical integral on `C^m` representatives, and its invariance under lowering the Sobolev
+  exponent with Meyers–Serrin density (`Wkp.exists_contDiffOn_approximation`) and the
+  `L¹(Ω) → L¹(Ω)` potential bound `eLpNorm_one_setIntegral_taylorRemainderKernel_le` extends the
+  representation formula almost everywhere to every `u ∈ W^{m+1,p}(Ω)` (`1 ≤ p ≤ ∞`).
 
 ## Main declarations
 
@@ -69,6 +69,14 @@ section SmoothRepresentation
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
+private theorem homothety_eq_add_smul_sub (x : E) (s : ℝ) (y : E) :
+    AffineMap.homothety x s y = x + s • (y - x) := by
+  simp [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add, add_comm]
+
+private theorem add_smul_sub_mem_of_starConvex {Ω : Set E} {x y : E} (hy : StarConvex ℝ y Ω)
+    (hx : x ∈ Ω) {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) : x + s • (y - x) ∈ Ω :=
+  hy.segment_subset hx (segment_symm ℝ y x ▸ segment_eq_image' ℝ x y ▸ mem_image_of_mem _ hs)
+
 /-- Pointwise rescaling identity relating the `(y, s)` segment integrand and the `(z, s)` spatial
 ray integrand along the homothety `y ↦ x + s • (y - x)` for `s > 0`. -/
 private theorem ray_integrand_comp_homothety (φ : E → ℝ) {m : ℕ} (G : E → IteratedGradient E m)
@@ -79,8 +87,6 @@ private theorem ray_integrand_comp_homothety (φ : E → ℝ) {m : ℕ} (G : E �
       (s ^ finrank ℝ E)⁻¹ * (φ y * s ^ m *
         IteratedGradient.fullContractL m (x - y) (G (x + s • (y - x)))) := by
   set n := finrank ℝ E
-  have hhom : AffineMap.homothety x s y = x + s • (y - x) := by
-    simp [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add, add_comm]
   have hinv : x + s⁻¹ • (x + s • (y - x) - x) = y := by
     rw [add_sub_cancel_left, inv_smul_smul₀ hs.ne', add_sub_cancel]
   have hdir : x - (x + s • (y - x)) = s • (x - y) := by
@@ -89,7 +95,7 @@ private theorem ray_integrand_comp_homothety (φ : E → ℝ) {m : ℕ} (G : E �
     rw [← Real.rpow_natCast s (m + 1), ← Real.rpow_add hs, ← Real.rpow_natCast s n,
       ← Real.rpow_neg hs.le, ← Real.rpow_natCast s m, ← Real.rpow_add hs]
     congr 1; push_cast; ring
-  rw [hhom, hinv, hdir, IteratedGradient.fullContractL_smul_direction,
+  rw [homothety_eq_add_smul_sub, hinv, hdir, IteratedGradient.fullContractL_smul_direction,
     FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
   calc
     φ y * s ^ (-(n : ℝ) - 1) * (s ^ (m + 1) *
@@ -190,9 +196,7 @@ private theorem ray_slice_homothety_eq (φ : E → ℝ) {m : ℕ} (G : E → Ite
         integral_add_left_eq_self ht x, smul_eq_mul, abs_of_pos hpos]
     rw [← integral_const_mul, ← hboch]
     refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-    have hhom : x + s • (y - x) = AffineMap.homothety x s y := by
-      simp [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add, add_comm]
-    exact ((congrArg ht hhom).trans (hcomp y)).symm
+    exact ((congrArg ht (homothety_eq_add_smul_sub x s y).symm).trans (hcomp y)).symm
 
 /-- Core Fubini-homothety identity for a strongly measurable, bounded derivative field `G`. -/
 private theorem integral_segment_eq_integral_taylorRemainderKernel {φ : E → ℝ}
@@ -256,9 +260,8 @@ private theorem integral_segment_iteratedGradientChain_eq_setIntegral {Ω : Set 
         ∫ z in Ω, taylorRemainderKernel φ m x z (iteratedGradientChain u m z) ∂μ := by
   let L : Set E := (fun p : ℝ × E ↦ x + p.1 • (p.2 - x)) '' (Icc (0 : ℝ) 1 ×ˢ tsupport φ)
   have hL_cpt : IsCompact L := (isCompact_Icc.prod hcpt).image (by fun_prop)
-  have hL_sub : L ⊆ Ω := fun _ ⟨⟨s, y⟩, ⟨hs, hy⟩, h⟩ ↦ h ▸ by
-    have hcomb : s • y + (1 - s) • x = x + s • (y - x) := by module
-    simpa only [hcomb] using hstar y hy hx hs.1 (sub_nonneg.2 hs.2) (add_sub_cancel s 1)
+  have hL_sub : L ⊆ Ω := fun _ ⟨⟨s, y⟩, ⟨hs, hy⟩, h⟩ ↦
+    h ▸ add_smul_sub_mem_of_starConvex (hstar y hy) hx hs
   let G : E → IteratedGradient E m := L.indicator (iteratedGradientChain u m)
   have hG_cont : ContinuousOn (iteratedGradientChain u m) L := fun z hz ↦
     (contDiffAt_iteratedGradientChain (m := (0 : ℕ∞ω))
@@ -318,25 +321,18 @@ theorem sub_integral_sum_iteratedFDeriv_eq_setIntegral_taylorRemainderKernel {Ω
   obtain ⟨hint_K, hseg_eq⟩ := integral_segment_iteratedGradientChain_eq_setIntegral (μ := μ)
     hΩ hφ_meas hcpt hφ_bound hu hx hstar
   refine ⟨hint_K, ?_⟩
-  have hint_mul : ∀ ψ : E → ℝ, ContinuousOn ψ Ω → Integrable (fun y ↦ φ y * ψ y) μ := fun ψ hψ ↦
-    (integrableOn_iff_integrable_of_support_subset
-      ((Function.support_mul_subset_left φ ψ).trans (subset_tsupport φ))).1
-      (((hψ.mono hφ_supp).integrableOn_compact hcpt).bdd_mul
-        hφ_meas.aestronglyMeasurable (Eventually.of_forall hφ_bound))
+  have hint_const : Integrable (fun y ↦ φ y * u x) μ := by
+    simpa using integrable_mul_sum_iteratedFDeriv hΩ hφ_meas hcpt hφ_supp hφ_bound
+      (m := 0) (contDiffOn_const (c := u x)) x
+  have hint_sum := integrable_mul_sum_iteratedFDeriv (μ := μ) hΩ hφ_meas hcpt hφ_supp hφ_bound
+    (m := m) (hu.of_le (by simp)) x
   have hux : u x = ∫ y, φ y * u x ∂μ := by rw [integral_mul_const, hφ_int, one_mul]
-  have hsum_cont : ContinuousOn (fun y ↦ ∑ j ∈ Finset.range (m + 1),
-      (j.factorial : ℝ)⁻¹ * iteratedFDeriv ℝ j u y (fun _ ↦ x - y)) Ω := by
-    simpa only [smul_eq_mul] using continuousOn_sum_iteratedFDeriv hΩ (hu.of_le (by simp)) x
-  rw [← hseg_eq, hux, ← integral_sub (hint_mul _ continuousOn_const) (hint_mul _ hsum_cont),
-    ← integral_const_mul]
+  rw [← hseg_eq, hux, ← integral_sub hint_const hint_sum, ← integral_const_mul]
   refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
   dsimp only
   by_cases hy : y ∈ tsupport φ
-  · have hseg_Ω : ∀ s ∈ Icc (0 : ℝ) 1, x + s • (y - x) ∈ Ω := fun s hs ↦ by
-      have hcomb : s • y + (1 - s) • x = x + s • (y - x) := by module
-      simpa only [hcomb] using hstar y hy hx hs.1 (sub_nonneg.2 hs.2) (add_sub_cancel s 1)
-    rw [← mul_sub, sub_sum_iteratedFDeriv_eq_setIntegral_fullContractL u m x y
-      fun s hs ↦ hu.contDiffAt (hΩ.mem_nhds (hseg_Ω s hs))]
+  · rw [← mul_sub, sub_sum_iteratedFDeriv_eq_setIntegral_fullContractL u m x y fun s hs ↦
+      hu.contDiffAt (hΩ.mem_nhds (add_smul_sub_mem_of_starConvex (hstar y hy) hx hs))]
     ring
   · simp [image_eq_zero_of_notMem_tsupport hy]
 
@@ -453,7 +449,7 @@ private theorem ae_sub_averagedTaylorEval_eq_setIntegral_taylorRemainderKernel_o
   filter_upwards [hae_val, hae_T, ae_all_iff.2 hrep_j] with x hx_val hx_T hx_rep
   have hlow_x : Continuous fun w : Wkp mu Omega 1 (m + 1) ↦
       averagedTaylorEval φ m (lowerOrder m w) x :=
-    ((continuous_averagedTaylorEval_one hφ_meas hcpt hφ_bound m x).comp
+    ((continuous_averagedTaylorEval hφ_meas hcpt hφ_bound m x).comp
       (lowerOrderL (mu := mu) (Omega := Omega) (p := 1) m).continuous).congr
       fun w ↦ by dsimp only [Function.comp_apply]; rw [lowerOrderL_apply]
   have hsub_tendsto := (hx_val.comp hns₂_mono.tendsto_atTop).sub
