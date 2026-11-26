@@ -10,13 +10,13 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
 public import Mathlib.Topology.Algebra.OpenSubgroup
-public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 import Mathlib.RingTheory.Localization.Submodule
 import TauCeti.RingTheory.Ideal.Span
+import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # Subrings of a topological ring
@@ -281,12 +281,15 @@ theorem isLocallyConstant_of_ker_eq_span {F R : Type*} [CommRing F] [CommRing R]
     [TopologicalSpace F] [IsTopologicalRing F] {O : Subring F} {ϖ : Fˣ} {π : O →+* R}
     (hO : IsOpen (O : Set F)) (hϖ : (ϖ : F) ∈ O)
     (hker : RingHom.ker π = Ideal.span {⟨ϖ, hϖ⟩}) : IsLocallyConstant π := by
-  rw [IsLocallyConstant.iff_eventually_eq]
-  intro x
-  have hopen : IsOpen {y : O | ((ϖ⁻¹ : Fˣ) : F) * ((y : F) - x) ∈ O} :=
-    hO.preimage (by fun_prop)
-  filter_upwards [hopen.mem_nhds (by simp)] with y hy
-  rw [← sub_eq_zero, ← map_sub, ← RingHom.mem_ker, hker, mem_span_singleton_iff_inv_mul_mem]
-  exact hy
+  -- the kernel `ϖ O` is the preimage of `O` under `x ↦ ϖ⁻¹ x`, hence open
+  have hopen : IsOpen (π.toAddMonoidHom.ker : Set O) := by
+    have : (π.toAddMonoidHom.ker : Set O) = {y : O | ((ϖ⁻¹ : Fˣ) : F) * y ∈ O} := by
+      ext y
+      change π y = 0 ↔ _
+      rw [← RingHom.mem_ker, hker, mem_span_singleton_iff_inv_mul_mem]
+      rfl
+    rw [this]
+    exact hO.preimage (by fun_prop)
+  exact π.toAddMonoidHom.isLocallyConstant_of_isOpen_ker hopen
 
 end TauCeti

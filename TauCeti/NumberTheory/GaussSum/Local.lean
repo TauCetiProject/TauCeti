@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.NumberTheory.GaussSum
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.Topology.Algebra.Ring.Basic
-import Mathlib.GroupTheory.QuotientGroup.Basic
+import TauCeti.Algebra.Group.AddChar.Reduction
 import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
 import TauCeti.MeasureTheory.Group.OpenSubgroup.FiniteQuotient
 import TauCeti.NumberTheory.GaussSum.Basic
@@ -53,8 +53,9 @@ The finite part is the Gauss sum of a primitive character of a finite ring,
 The statement and the route follow `New.Exchange.exists_local_gauss_sum` (file
 `src/Lib/Weil/TameGaussSum.lean`) of the Lean formalization `grh-lean` of the Riemann hypothesis
 for Dirichlet L-functions, https://github.com/lsernau/grh-lean (commit `72fead1`, Apache 2.0).
-Here the integrand is any function equal to `η ∘ π` on `O`, `O` need not be compact and `ψ` need
-not be continuous.
+Here the integrand is any function equal to `η ∘ π` on `O`, and `O` need not be compact. No
+separate continuity hypothesis on `ψ` is needed: the conductor condition makes `ψ` trivial on the
+open subgroup `O`, hence locally constant.
 -/
 
 public section
@@ -64,41 +65,7 @@ open MeasureTheory
 namespace TauCeti
 
 variable {F R : Type*} [CommRing F] [CommRing R] {O : Subring F} {ϖ : Fˣ} {π : O →+* R}
-
-/-- **The reduced additive character.** Let `ψ` be an additive character of `F` with conductor
-`O`, that is, trivial on `t O` exactly when `t ∈ O`. Then `π x ↦ ψ (ϖ⁻¹ x)` is a well-defined
-primitive additive character of `R = O / ϖ O`. -/
-theorem exists_isPrimitive_addChar_apply_eq {M : Type*} [CommMonoid M] (hϖ : (ϖ : F) ∈ O)
-    (hπ : Function.Surjective π) (hker : RingHom.ker π = Ideal.span {⟨ϖ, hϖ⟩})
-    {ψ : AddChar F M} (hψ : ∀ t : F, (∀ x ∈ O, ψ (t * x) = 1) ↔ t ∈ O) :
-    ∃ φ : AddChar R M, φ.IsPrimitive ∧ ∀ x : O, φ (π x) = ψ (((ϖ⁻¹ : Fˣ) : F) * x) := by
-  have hzero (x : O) : π x = 0 ↔ ((ϖ⁻¹ : Fˣ) : F) * x ∈ O := by
-    rw [← RingHom.mem_ker, hker, mem_span_singleton_iff_inv_mul_mem]
-  -- `x ↦ ψ (ϖ⁻¹ x)` on `O` is trivial on the kernel of `π`, so it descends to `R = O ⧸ ker π`
-  let ψO := (ψ.mulShift ((ϖ⁻¹ : Fˣ) : F)).compAddMonoidHom O.subtype.toAddMonoidHom
-  have hle : π.toAddMonoidHom.ker ≤ (AddChar.toAddMonoidHomEquiv ψO).ker := fun x hx ↦ by
-    simpa [ψO] using (hψ 1).mpr O.one_mem _ ((hzero x).mp hx)
-  let φ : AddChar R M := AddChar.toAddMonoidHomEquiv.symm <|
-    (QuotientAddGroup.lift _ _ hle).comp
-      (QuotientAddGroup.quotientKerEquivOfSurjective _ hπ).symm.toAddMonoidHom
-  have hs (x : O) : φ (π x) = ψ (((ϖ⁻¹ : Fˣ) : F) * x) := by
-    have : (QuotientAddGroup.quotientKerEquivOfSurjective (π : O →+ R) hπ).symm (π x) = x :=
-      (AddEquiv.symm_apply_eq _).mpr rfl
-    simp [φ, this, ψO]
-  refine ⟨φ, fun a ha h ↦ ?_, hs⟩
-  obtain ⟨x, rfl⟩ := hπ a
-  -- `ϖ⁻¹ x ∉ O`, so `ψ (ϖ⁻¹ x y) ≠ 1` for some `y ∈ O`
-  obtain ⟨y, hy, hne⟩ : ∃ y ∈ O, ψ (((ϖ⁻¹ : Fˣ) : F) * x * y) ≠ 1 := by
-    by_contra! h'
-    exact ha ((hzero x).mpr ((hψ _).mp h'))
-  apply hne
-  have h2 := DFunLike.congr_fun h (π ⟨y, hy⟩)
-  rw [AddChar.mulShift_apply, one_apply, ← map_mul] at h2
-  rw [← h2]
-  refine Eq.trans ?_ (hs (x * ⟨y, hy⟩)).symm
-  simp [mul_assoc]
-
-variable [TopologicalSpace F] [IsTopologicalRing F] [MeasurableSpace F] [BorelSpace F]
+  [TopologicalSpace F] [IsTopologicalRing F] [MeasurableSpace F] [BorelSpace F]
   {μ : Measure F} [μ.IsAddLeftInvariant] [Fintype R]
 
 open scoped Classical in

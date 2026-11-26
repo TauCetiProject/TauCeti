@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Topology.LocallyConstant.Basic
 import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
-import TauCeti.MeasureTheory.Integral.Bochner.LocallyConstant
+import TauCeti.MeasureTheory.Integral.IntegrableOn
 
 /-!
 # Integrals over an open subgroup of functions factoring through a finite quotient
@@ -22,7 +22,8 @@ integrating over `H` a function that factors through `π` is averaging over `R`,
 `μ H < ∞`:
 
 * `MeasureTheory.card_smul_setIntegral_eq_measureReal_smul_sum`: if `μ H < ∞` and
-  `f x = Φ (π x)` on `H`, then `#R • ∫ x in H, f x ∂μ = μ H • ∑ r, Φ r`.
+  `f x = Φ (π x)` on `H`, for `f` valued in a real Banach space, then
+  `#R • ∫ x in H, f x ∂μ = μ.real H • ∑ r, Φ r`.
 
 This is how integrals over the integers of a local field of functions of level `ϖ`, such as
 the local Gauss sums of tamely ramified characters, reduce to finite sums over the residue ring.
@@ -43,8 +44,9 @@ variable {G R E S : Type*} [MeasurableSpace G] {μ : Measure G} [NormedAddCommGr
 
 /-- **Integrating a function that factors through a finite quotient of an open subgroup.** Let
 `π : H →+ R` be a surjective, locally constant homomorphism from an open subgroup `H` of `G`
-onto a finite group `R`, and `μ` a left-invariant measure with `μ H < ∞`. If `f x = Φ (π x)` for
-every `x ∈ H`, then `#R • ∫ x in H, f x ∂μ = μ H • ∑ r, Φ r`: the measure `μ` restricted to `H`
+onto a finite group `R`, and `μ` a left-invariant measure with `μ H < ∞`. If `f`, valued in a
+real Banach space, satisfies `f x = Φ (π x)` for every `x ∈ H`, then
+`#R • ∫ x in H, f x ∂μ = μ.real H • ∑ r, Φ r`: the measure `μ` restricted to `H`
 distributes its mass evenly over the fibres of `π`. -/
 theorem card_smul_setIntegral_eq_measureReal_smul_sum [TopologicalSpace G]
     [ContinuousAdd G] [BorelSpace G] [μ.IsAddLeftInvariant] [AddGroup R] [Fintype R]
