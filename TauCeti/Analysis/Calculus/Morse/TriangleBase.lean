@@ -67,6 +67,8 @@ states its own hypothesis on `C`.
 * `TauCeti.triangleBasePotential`, `TauCeti.gradient_triangleBasePotential`: the potential and
   its gradient.
 * `TauCeti.gradient_triangleBasePotential_eq_zero_iff`: the zeros of the field in the triangle.
+* `TauCeti.add_pos_of_mem_triangleBase_of_gradient_ne_zero`: away from the vertices the base speed
+  `u (1 - u²) + v (1 - v²)` is positive on the triangle.
 * `TauCeti.morseIndex_triangleBasePotential_toLp_zero_zero`,
   `TauCeti.morseIndex_triangleBasePotential_toLp_one_zero`,
   `TauCeti.morseIndex_triangleBasePotential_toLp_one_one`: the vertex indices `2`, `1`, `0`.
@@ -214,6 +216,22 @@ theorem gradient_triangleBasePotential_eq_zero_iff (hC : C ≠ 0) {z : WithLp 2 
     · exact Or.inr (Or.inl ⟨hu, hv⟩)
     · exact Or.inr (Or.inr ⟨hu, hv⟩)
   · rintro (⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩) <;> simp [hu, hv]
+
+/-- **The base speed is positive on the triangle away from its vertices.** On the triangle, the sum
+`u (1 - u²) + v (1 - v²)` of the coordinates of the field, divided by `C`, is positive away from the
+zeros of the field. -/
+theorem add_pos_of_mem_triangleBase_of_gradient_ne_zero {z : WithLp 2 (ℝ × ℝ)}
+    (hz : z ∈ triangleBase) (hgrad : ∇ (triangleBasePotential C) z ≠ 0) :
+    0 < z.fst * (1 - z.fst ^ 2) + z.snd * (1 - z.snd ^ 2) := by
+  obtain ⟨hv, hvu, hu⟩ := mem_triangleBase.1 hz
+  have h₁ : 0 ≤ z.fst * (1 - z.fst ^ 2) := mul_nonneg (hv.trans hvu) (by nlinarith)
+  have h₂ : 0 ≤ z.snd * (1 - z.snd ^ 2) := mul_nonneg hv (by nlinarith)
+  -- If the base speed vanished, so would both coordinates of the gradient.
+  refine lt_of_le_of_ne (add_nonneg h₁ h₂) fun h ↦ hgrad ?_
+  have e₁ : z.fst * (1 - z.fst ^ 2) = 0 := by linarith
+  have e₂ : z.snd * (1 - z.snd ^ 2) = 0 := by linarith
+  rw [gradient_triangleBasePotential, WithLp.toLp_eq_zero, Prod.mk_eq_zero]
+  exact ⟨by linear_combination (-C) * e₁, by linear_combination (-C) * e₂⟩
 
 /-- For `C ≠ 0` the vertex `(0, 0)`, the source when `C > 0`, is a nondegenerate critical point. -/
 theorem isNondegenerateCriticalPoint_triangleBasePotential_toLp_zero_zero (hC : C ≠ 0) :

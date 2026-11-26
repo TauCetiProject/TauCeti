@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Calculus.Morse.TriangleBase
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Flow
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -38,10 +37,11 @@ run between the vertices, and admit a strict Lyapunov function.
   (`TauCeti.IsTriangleField.gradient_snd_ne_zero`).
 * **Limits at the vertices.** For `C > 0`, a trajectory through the triangle tends at `-∞` to
   `(p, (0, 0))` for a critical point `p` of `f₀` when `u < 1`, and to `(q, (1, 0))` for a critical
-  point `q` of `f₁` on the edge `u = 1`; at `+∞` it tends to `(r, (1, 1))` for a critical point `r`
-  of `f₂` when `0 < v`, and to `(q, (1, 0))` on the edge `v = 0`. Near each end the space
-  component follows the flow of the pseudo-gradient attached to that vertex
-  (`TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atBot_of_tendsto_snd`).
+  point `q` of `f₁` on the edge `u = 1` away from the sink; at `+∞` it tends to `(r, (1, 1))` for a
+  critical point `r` of `f₂` when `0 < v`, and to `(q, (1, 0))` on the edge `v = 0` away from the
+  source. These follow from the limits of a trajectory of a field on a product whose base component
+  converges (`TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atBot_of_tendsto_snd` and
+  `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop_of_tendsto_snd`).
 * **The Lyapunov function.** Let `F` be a `C¹` function on `M × ℝ²` equal to `f₀ (x)`, `f₁ (x)`
   and `f₂ (x)` near the three vertices, uniformly in `x`, and suppose that `fᵢ` does not increase
   along `Xᵢ`. For a large constant `K` the function
@@ -71,9 +71,6 @@ triangle trajectory spaces requires.
 * `TauCeti.IsTriangleField.isIntegralCurve_snd`, `TauCeti.IsTriangleField.snd_eq_triangleBaseFlow`,
   `TauCeti.IsTriangleField.snd_mem_triangleBase`, `TauCeti.IsTriangleField.gradient_snd_ne_zero`:
   confinement of the base component.
-* `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atBot_of_tendsto_snd` and
-  `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop_of_tendsto_snd`: limits of a trajectory
-  whose base component converges to a point near which the space component is a pseudo-gradient.
 * `TauCeti.IsTriangleField.exists_tendsto_atBot_source`,
   `TauCeti.IsTriangleField.exists_tendsto_atBot_corner`,
   `TauCeti.IsTriangleField.exists_tendsto_atTop_sink`,
@@ -141,21 +138,6 @@ theorem isTriangleField_prodVectorField (X : (x : M) → TangentSpace 𝓘(ℝ, 
 
 end Definition
 
-/-- On the triangle, the base speed `u (1 - u²) + v (1 - v²)` is positive away from the zeros of
-the base field, its three vertices. -/
-private theorem add_pos_of_gradient_ne_zero {C : ℝ} {b : WithLp 2 (ℝ × ℝ)} (hb : b ∈ triangleBase)
-    (hgrad : ∇ (triangleBasePotential C) b ≠ 0) :
-    0 < b.fst * (1 - b.fst ^ 2) + b.snd * (1 - b.snd ^ 2) := by
-  obtain ⟨hv, hvu, hu⟩ := mem_triangleBase.1 hb
-  have h₁ : 0 ≤ b.fst * (1 - b.fst ^ 2) := mul_nonneg (hv.trans hvu) (by nlinarith)
-  have h₂ : 0 ≤ b.snd * (1 - b.snd ^ 2) := mul_nonneg hv (by nlinarith)
-  -- If the base speed vanished, so would both coordinates of the gradient.
-  refine lt_of_le_of_ne (add_nonneg h₁ h₂) fun h ↦ hgrad ?_
-  have e₁ : b.fst * (1 - b.fst ^ 2) = 0 := by linarith
-  have e₂ : b.snd * (1 - b.snd ^ 2) = 0 := by linarith
-  rw [gradient_triangleBasePotential, WithLp.toLp_eq_zero, Prod.mk_eq_zero]
-  exact ⟨by linear_combination (-C) * e₁, by linear_combination (-C) * e₂⟩
-
 namespace IsTriangleField
 
 variable {X₀ X₁ X₂ : (x : M) → TangentSpace 𝓘(ℝ, E) x} {C : ℝ}
@@ -222,59 +204,6 @@ end IsTriangleField
 section Limits
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
-  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
-  {W : (z : M × F') → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ, F')) z} {γ : ℝ → M × F'}
-  {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {S : Set F'} {v : F'}
-
-namespace IsAdaptedPseudoGradient
-
-/-- **The backward limit of a trajectory converging in the base.** Let `γ` be an integral curve of
-a vector field `W` on `M × F'` whose base component stays in a set `S` and tends to `v` at `-∞`.
-If near `v` in `S` the space component of `W` is a pseudo-gradient `X` adapted to `f`, then near
-`-∞` the space component of `γ` is an orbit of `X`, and `γ` tends to `(p, v)` for a critical point
-`p` of `f`. -/
-theorem exists_tendsto_atBot_of_tendsto_snd (hX : IsAdaptedPseudoGradient f X)
-    (hWv : ∀ᶠ b in 𝓝[S] v, ∀ x, (W (x, b) : E × F').1 = X x) (hγ : IsMIntegralCurve γ W)
-    (hS : ∀ s, (γ s).2 ∈ S) (hv : Tendsto (fun s ↦ (γ s).2) atBot (𝓝 v)) :
-    ∃ p ∈ criticalPoints 𝓘(ℝ, E) f, Tendsto γ atBot (𝓝 (p, v)) := by
-  obtain ⟨b, hb⟩ := eventually_atBot.1
-    ((tendsto_nhdsWithin_iff.2 ⟨hv, .of_forall hS⟩).eventually hWv)
-  -- Before time `b` the space component is an integral curve of `X`, hence an orbit of its flow.
-  have hc : IsMIntegralCurveOn (fun s ↦ (γ s).1) X (Iio b) :=
-    (hγ.isMIntegralCurveOn _).map_of_mfderiv_eq (f := Prod.fst) (fun _ _ ↦ mdifferentiableAt_fst)
-      fun s hs ↦ by rw [mfderiv_fst]; exact hb s (le_of_lt hs) (γ s).1
-  have hflow := hX.eqOn_flow_of_isMIntegralCurveOn_Iio hc (sub_one_lt b)
-  obtain ⟨p, hp, hlim⟩ := hX.exists_tendsto_atBot (γ (b - 1)).1
-  refine ⟨p, mem_criticalPoints_iff_mfderiv_eq_zero.2 hp, ?_⟩
-  have hspace : Tendsto (fun s ↦ (γ s).1) atBot (𝓝 p) :=
-    (hlim.comp (tendsto_atBot_add_const_right _ (-(b - 1)) tendsto_id)).congr'
-      (eventually_le_atBot (b - 1) |>.mono fun s hs ↦ (hflow hs).symm)
-  exact hspace.prodMk_nhds hv
-
-/-- **The forward limit of a trajectory converging in the base.** Let `γ` be an integral curve of
-a vector field `W` on `M × F'` whose base component stays in a set `S` and tends to `v` at `+∞`.
-If near `v` in `S` the space component of `W` is a pseudo-gradient `X` adapted to `f`, then near
-`+∞` the space component of `γ` is an orbit of `X`, and `γ` tends to `(q, v)` for a critical point
-`q` of `f`. -/
-theorem exists_tendsto_atTop_of_tendsto_snd (hX : IsAdaptedPseudoGradient f X)
-    (hWv : ∀ᶠ b in 𝓝[S] v, ∀ x, (W (x, b) : E × F').1 = X x) (hγ : IsMIntegralCurve γ W)
-    (hS : ∀ s, (γ s).2 ∈ S) (hv : Tendsto (fun s ↦ (γ s).2) atTop (𝓝 v)) :
-    ∃ q ∈ criticalPoints 𝓘(ℝ, E) f, Tendsto γ atTop (𝓝 (q, v)) := by
-  obtain ⟨a, ha⟩ := eventually_atTop.1
-    ((tendsto_nhdsWithin_iff.2 ⟨hv, .of_forall hS⟩).eventually hWv)
-  -- After time `a` the space component is an integral curve of `X`, hence an orbit of its flow.
-  have hc : IsMIntegralCurveOn (fun s ↦ (γ s).1) X (Ioi a) :=
-    (hγ.isMIntegralCurveOn _).map_of_mfderiv_eq (f := Prod.fst) (fun _ _ ↦ mdifferentiableAt_fst)
-      fun s hs ↦ by rw [mfderiv_fst]; exact ha s (le_of_lt hs) (γ s).1
-  have hflow := hX.eqOn_flow_of_isMIntegralCurveOn_Ioi hc (lt_add_one a)
-  obtain ⟨q, hq, hlim⟩ := hX.exists_tendsto_atTop (γ (a + 1)).1
-  refine ⟨q, mem_criticalPoints_iff_mfderiv_eq_zero.2 hq, ?_⟩
-  have hspace : Tendsto (fun s ↦ (γ s).1) atTop (𝓝 q) :=
-    (hlim.comp (tendsto_atTop_add_const_right _ (-(a + 1)) tendsto_id)).congr'
-      (eventually_ge_atTop (a + 1) |>.mono fun s hs ↦ (hflow hs).symm)
-  exact hspace.prodMk_nhds hv
-
-end IsAdaptedPseudoGradient
 
 namespace IsTriangleField
 
@@ -292,7 +221,7 @@ theorem exists_tendsto_atBot_source (hX₀ : IsAdaptedPseudoGradient f₀ X₀)
     (hu : (γ s₀).2.fst < 1) :
     ∃ p ∈ criticalPoints 𝓘(ℝ, E) f₀, Tendsto γ atBot (𝓝 (p, WithLp.toLp 2 (0, 0))) := by
   refine hX₀.exists_tendsto_atBot_of_tendsto_snd hW.eventually_fst_eq_source hγ
-    (hW.snd_mem_triangleBase hγ h₀) ?_
+    (tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall (hW.snd_mem_triangleBase hγ h₀)⟩)
   rw [funext (hW.snd_eq_triangleBaseFlow hγ h₀)]
   have hb := mem_triangleBase.1 h₀
   exact (tendsto_triangleBaseFlow_atBot_toLp_zero_zero hC ⟨by linarith [hb.1, hb.2.1], hu⟩
@@ -305,7 +234,7 @@ theorem exists_tendsto_atBot_corner (hX₁ : IsAdaptedPseudoGradient f₁ X₁)
     (hu : (γ s₀).2.fst = 1) (hv : (γ s₀).2.snd < 1) :
     ∃ q ∈ criticalPoints 𝓘(ℝ, E) f₁, Tendsto γ atBot (𝓝 (q, WithLp.toLp 2 (1, 0))) := by
   refine hX₁.exists_tendsto_atBot_of_tendsto_snd hW.eventually_fst_eq_corner hγ
-    (hW.snd_mem_triangleBase hγ h₀) ?_
+    (tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall (hW.snd_mem_triangleBase hγ h₀)⟩)
   rw [funext (hW.snd_eq_triangleBaseFlow hγ h₀)]
   have hb := mem_triangleBase.1 h₀
   exact (tendsto_triangleBaseFlow_atBot_toLp_one_zero hC hu ⟨by linarith [hb.1], hv⟩).comp
@@ -318,7 +247,7 @@ theorem exists_tendsto_atTop_sink (hX₂ : IsAdaptedPseudoGradient f₂ X₂)
     (hv : 0 < (γ s₀).2.snd) :
     ∃ r ∈ criticalPoints 𝓘(ℝ, E) f₂, Tendsto γ atTop (𝓝 (r, WithLp.toLp 2 (1, 1))) := by
   refine hX₂.exists_tendsto_atTop_of_tendsto_snd hW.eventually_fst_eq_sink hγ
-    (hW.snd_mem_triangleBase hγ h₀) ?_
+    (tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall (hW.snd_mem_triangleBase hγ h₀)⟩)
   rw [funext (hW.snd_eq_triangleBaseFlow hγ h₀)]
   have hb := mem_triangleBase.1 h₀
   exact (tendsto_triangleBaseFlow_atTop_toLp_one_one hC ⟨hv.trans_le hb.2.1, hb.2.2⟩
@@ -332,7 +261,7 @@ theorem exists_tendsto_atTop_corner (hX₁ : IsAdaptedPseudoGradient f₁ X₁)
     (hu : 0 < (γ s₀).2.fst) (hv : (γ s₀).2.snd = 0) :
     ∃ q ∈ criticalPoints 𝓘(ℝ, E) f₁, Tendsto γ atTop (𝓝 (q, WithLp.toLp 2 (1, 0))) := by
   refine hX₁.exists_tendsto_atTop_of_tendsto_snd hW.eventually_fst_eq_corner hγ
-    (hW.snd_mem_triangleBase hγ h₀) ?_
+    (tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall (hW.snd_mem_triangleBase hγ h₀)⟩)
   rw [funext (hW.snd_eq_triangleBaseFlow hγ h₀)]
   have hb := mem_triangleBase.1 h₀
   exact (tendsto_triangleBaseFlow_atTop_toLp_one_zero hC ⟨hu, hb.2.2⟩ hv).comp
@@ -366,10 +295,8 @@ private theorem exists_isOpen_forall_mvfderiv_apply_nonpos {v : WithLp 2 (ℝ ×
   obtain ⟨V, hV, hVo, hvV⟩ := eventually_nhds_iff.1 hFv
   refine ⟨U ∩ V, hUo.inter hVo, ⟨hvU, hvV⟩, fun b ⟨⟨hbU, hbV⟩, hb⟩ x ↦ ?_⟩
   -- Near `(x, b)`, `F` is `f ∘ Prod.fst`, so its derivative along `W` is that of `f` along `X`.
-  have hev : F =ᶠ[𝓝 (x, b)] f ∘ Prod.fst := by
-    filter_upwards [(hVo.preimage continuous_snd).mem_nhds hbV] with z hz
-    exact hV z.2 hz z.1
-  rw [hev.mvfderiv_eq, mvfderiv_comp_fst_apply, hU ⟨hbU, hb⟩ x]
+  rw [mvfderiv_apply_eq_of_eventually_forall_eq (eventually_of_mem (hVo.mem_nhds hbV) hV),
+    hU ⟨hbU, hb⟩ x]
   exact hX x
 
 variable (hW : IsTriangleField X₀ X₁ X₂ C W) (hC : 0 < C)
@@ -406,9 +333,10 @@ theorem eventually_forall_mvfderiv_apply_lt_mul_add :
   have hS : IsCompact S := isCompact_triangleBase.diff ((hO₀.union hO₁).union hO₂)
   set g : WithLp 2 (ℝ × ℝ) → ℝ := fun b ↦ b.fst * (1 - b.fst ^ 2) + b.snd * (1 - b.snd ^ 2)
   have hg : Continuous g := by fun_prop
-  have hgS : ∀ b ∈ S, 0 < g b := fun b hb ↦ add_pos_of_gradient_ne_zero hb.1 fun h ↦ hb.2 <| by
-    rcases (gradient_triangleBasePotential_eq_zero_iff hC.ne' hb.1).1 h with rfl | rfl | rfl
-    exacts [Or.inl (Or.inl hv₀), Or.inl (Or.inr hv₁), Or.inr hv₂]
+  have hgS : ∀ b ∈ S, 0 < g b := fun b hb ↦
+    add_pos_of_mem_triangleBase_of_gradient_ne_zero hb.1 fun h ↦ hb.2 <| by
+      rcases (gradient_triangleBasePotential_eq_zero_iff hC.ne' hb.1).1 h with rfl | rfl | rfl
+      exacts [Or.inl (Or.inl hv₀), Or.inl (Or.inr hv₁), Or.inr hv₂]
   obtain ⟨m, hm, hmS⟩ := hS.exists_forall_le' hg.continuousOn hgS
   -- On the compact set `M × S` the derivative along `W` is bounded above by some `B`.
   have hcont : Continuous fun z : M × WithLp 2 (ℝ × ℝ) ↦
@@ -421,7 +349,7 @@ theorem eventually_forall_mvfderiv_apply_lt_mul_add :
   have hK₀ : 0 < K := (le_max_left _ _).trans_lt hK
   rw [hW.snd_fst_add_snd_snd z]
   have hpos : 0 < z.2.fst * (1 - z.2.fst ^ 2) + z.2.snd * (1 - z.2.snd ^ 2) :=
-    add_pos_of_gradient_ne_zero hz hgrad
+    add_pos_of_mem_triangleBase_of_gradient_ne_zero hz hgrad
   by_cases hO : z.2 ∈ O₀ ∪ O₁ ∪ O₂
   · -- Near a vertex the derivative is nonpositive, while the base speed is positive.
     have hle : mvfderiv (𝓘(ℝ, E).prod 𝓘(ℝ, WithLp 2 (ℝ × ℝ))) F z (W z) ≤ 0 := by
@@ -486,13 +414,11 @@ theorem eventually_mul_add_sub_mem_Ioo :
   -- The limits of the Lyapunov function along `γ` are its values at the two ends.
   have hbot : Tendsto (fun s ↦ K * ((γ s).2.fst + (γ s).2.snd) - F (γ s)) atBot (𝓝 (-f₀ p)) := by
     have := (hL.tendsto (p, WithLp.toLp 2 (0, 0))).comp hp
-    rwa [Function.comp_def, hF₀.self_of_nhds p, WithLp.toLp_fst, WithLp.toLp_snd, add_zero,
-      mul_zero, zero_sub] at this
+    simpa [Function.comp_def, hF₀.self_of_nhds p] using this
   have htop : Tendsto (fun s ↦ K * ((γ s).2.fst + (γ s).2.snd) - F (γ s)) atTop
       (𝓝 (2 * K - f₂ r)) := by
     have := (hL.tendsto (r, WithLp.toLp 2 (1, 1))).comp hr
-    rwa [Function.comp_def, hF₂.self_of_nhds r, WithLp.toLp_fst, WithLp.toLp_snd,
-      show K * ((1 : ℝ) + 1) = 2 * K by ring] at this
+    simpa [Function.comp_def, hF₂.self_of_nhds r, one_add_one_eq_two, mul_comm K] using this
   exact ⟨(hmono.monotone.le_of_tendsto hbot (s - 1)).trans_lt (hmono (by linarith)),
     (hmono (by linarith : s < s + 1)).trans_le (hmono.monotone.ge_of_tendsto htop (s + 1))⟩
 
