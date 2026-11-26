@@ -47,7 +47,7 @@ groups whose images in `SL₂(ℝ)` are the arithmetic Fuchsian groups of an ind
   `TauCeti.IntegralOrder.IsOrder.mem_normOne_iff_mem_unitary`: `Λ¹` consists of the elements of
   `Λ` of reduced norm `1`, that is, it is `Λ ∩ B¹`.
 * `TauCeti.IntegralOrder.IsOrder.ker_unitsReducedNorm`: the kernel of `Λˣ →* Rˣ` is `Λ¹`.
-* `TauCeti.IntegralOrder.IsOrder.injective_unitsQuotientNormOneHom`: `Λˣ / Λ¹` embeds in `Rˣ`.
+* `TauCeti.IntegralOrder.IsOrder.unitsQuotientNormOneHom_injective`: `Λˣ / Λ¹` embeds in `Rˣ`.
 * `TauCeti.IntegralOrder.IsOrder.relIndex_normOne_units_eq_two_iff` and
   `TauCeti.IntegralOrder.IsOrder.relIndex_normOne_units_eq_one_iff`: over `ℤ`, `[Λˣ : Λ¹]` is `2`
   when `Λ` has a unit of reduced norm `-1`, and `1` otherwise.
@@ -75,19 +75,17 @@ variable {R F : Type*} [CommRing R] [CommRing F] [Algebra R F] {c₁ c₂ c₃ :
 (`TauCeti.IntegralOrder.IsOrder.mem_normOne_iff`). -/
 def normOne (Λ : Subalgebra R ℍ[F,c₁,c₂,c₃]) : Subgroup ℍ[F,c₁,c₂,c₃]ˣ where
   carrier := {γ | γ ∈ Λ.toSubmonoid.units ∧ normForm c₁ c₂ c₃ (γ : ℍ[F,c₁,c₂,c₃]) = 1}
-  one_mem' := ⟨one_mem _, by rw [Units.val_one, ← coe_one, normForm_coe, one_pow]⟩
+  one_mem' := ⟨one_mem _, by rw [Units.val_one, normForm_one]⟩
   mul_mem' := fun ⟨hγ, hγ₁⟩ ⟨hδ, hδ₁⟩ => ⟨mul_mem hγ hδ, by rw [Units.val_mul, normForm_mul, hγ₁,
     hδ₁, one_mul]⟩
   inv_mem' {γ} := fun ⟨hγ, hγ₁⟩ => ⟨inv_mem hγ, by
-    have h := normForm_mul c₁ c₂ c₃ ((γ⁻¹ : ℍ[F,c₁,c₂,c₃]ˣ) : ℍ[F,c₁,c₂,c₃]) γ
-    rwa [← Units.val_mul, inv_mul_cancel, Units.val_one, ← coe_one, normForm_coe, one_pow, hγ₁,
-      mul_one, eq_comm] at h⟩
+    simpa [hγ₁] using normForm_units_inv_mul c₁ c₂ c₃ γ⟩
 
 variable {Λ : Subalgebra R ℍ[F,c₁,c₂,c₃]} {γ : ℍ[F,c₁,c₂,c₃]ˣ}
 
 /-- A unit `γ` of `ℍ[F,c₁,c₂,c₃]` lies in `Λ¹` exactly when it lies in `Λˣ` and has reduced norm
 `1`. -/
-theorem mem_normOne_iff_mem_units :
+theorem mem_normOne_iff_mem_units_and_normForm_eq_one :
     γ ∈ normOne Λ ↔ γ ∈ Λ.toSubmonoid.units ∧ normForm c₁ c₂ c₃ (γ : ℍ[F,c₁,c₂,c₃]) = 1 :=
   Iff.rfl
 
@@ -101,9 +99,7 @@ instance normal_normOne_subgroupOf_units :
   conj_mem δ hδ γ := by
     rw [Subgroup.mem_subgroupOf] at hδ ⊢
     refine ⟨mul_mem (mul_mem γ.property hδ.1) (inv_mem γ.property), ?_⟩
-    rw [Subgroup.coe_mul, Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, Units.val_mul,
-      normForm_mul, normForm_mul, hδ.2, mul_one, ← normForm_mul, ← Units.val_mul, mul_inv_cancel,
-      Units.val_one, ← coe_one, normForm_coe, one_pow]
+    simpa [hδ.2, mul_comm] using normForm_units_inv_mul c₁ c₂ c₃ (γ : ℍ[F,c₁,c₂,c₃]ˣ)
 
 end TauCeti.QuaternionAlgebra
 
@@ -120,8 +116,8 @@ the element of `R` whose image in `F` is `normForm c₁ c₂ c₃ x`
 noncomputable def reducedNorm (h : IsOrder F Λ) : Λ →* R where
   toFun x := (h.normForm_mem_range x.property).choose
   map_one' := IsFractionRing.injective R F <| by
-    rw [(h.normForm_mem_range (1 : Λ).property).choose_spec, map_one, Subalgebra.coe_one, ← coe_one,
-      normForm_coe, one_pow]
+    rw [(h.normForm_mem_range (1 : Λ).property).choose_spec, map_one, Subalgebra.coe_one,
+      normForm_one]
   map_mul' x y := IsFractionRing.injective R F <| by
     rw [(h.normForm_mem_range (x * y).property).choose_spec, map_mul,
       (h.normForm_mem_range x.property).choose_spec, (h.normForm_mem_range y.property).choose_spec,
@@ -203,12 +199,13 @@ theorem algebraMap_unitsReducedNorm (h : IsOrder F Λ) (γ : Λ.toSubmonoid.unit
 theorem ker_unitsReducedNorm (h : IsOrder F Λ) :
     h.unitsReducedNorm.ker = (normOne Λ).subgroupOf Λ.toSubmonoid.units := by
   ext γ
-  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, mem_normOne_iff_mem_units, ← Units.val_inj,
-    ← (IsFractionRing.injective R F).eq_iff, algebraMap_unitsReducedNorm, Units.val_one, map_one]
+  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, mem_normOne_iff_mem_units_and_normForm_eq_one,
+    ← Units.val_inj, ← (IsFractionRing.injective R F).eq_iff, algebraMap_unitsReducedNorm,
+    Units.val_one, map_one]
   exact (and_iff_right γ.property).symm
 
 /-- The map `Λˣ / Λ¹ →* Rˣ` induced by the reduced norm of an order `Λ`; it is injective
-(`TauCeti.IntegralOrder.IsOrder.injective_unitsQuotientNormOneHom`). -/
+(`TauCeti.IntegralOrder.IsOrder.unitsQuotientNormOneHom_injective`). -/
 noncomputable def unitsQuotientNormOneHom (h : IsOrder F Λ) :
     Λ.toSubmonoid.units ⧸ (normOne Λ).subgroupOf Λ.toSubmonoid.units →* Rˣ :=
   (QuotientGroup.kerLift h.unitsReducedNorm).comp
@@ -221,7 +218,7 @@ theorem unitsQuotientNormOneHom_mk (h : IsOrder F Λ) (γ : Λ.toSubmonoid.units
   simp [unitsQuotientNormOneHom]
 
 /-- **`Λˣ / Λ¹` embeds in `Rˣ`** by the reduced norm. -/
-theorem injective_unitsQuotientNormOneHom (h : IsOrder F Λ) :
+theorem unitsQuotientNormOneHom_injective (h : IsOrder F Λ) :
     Function.Injective h.unitsQuotientNormOneHom := by
   rw [unitsQuotientNormOneHom, MonoidHom.coe_comp]
   exact (QuotientGroup.kerLift_injective _).comp (MulEquiv.injective _)
@@ -243,8 +240,8 @@ theorem range_unitsReducedNorm_eq_top_iff (h : IsOrder F Λ) :
   have hneg {γ : Λ.toSubmonoid.units} :
       h.unitsReducedNorm γ = -1 ↔
         normForm c₁ c₂ c₃ ((γ : ℍ[F,c₁,c₂,c₃]ˣ) : ℍ[F,c₁,c₂,c₃]) = -1 := by
-    rw [← Units.val_inj, ← (IsFractionRing.injective ℤ F).eq_iff, algebraMap_unitsReducedNorm,
-      Units.val_neg, Units.val_one, map_neg, map_one]
+    rw [← Units.val_inj, ← (IsFractionRing.injective ℤ F).eq_iff, algebraMap_unitsReducedNorm]
+    simp
   refine ⟨fun htop => ?_, fun ⟨γ, hγ, hγ₁⟩ => eq_top_iff.2 fun u _ => ?_⟩
   · obtain ⟨γ, hγ⟩ := htop ▸ Subgroup.mem_top (-1 : ℤˣ)
     exact ⟨γ, γ.property, hneg.1 hγ⟩
@@ -287,9 +284,7 @@ theorem normOne_eq_units_of_nonneg [LinearOrder F] [IsStrictOrderedRing F] (h : 
   refine ⟨hγ, ?_⟩
   rcases Int.units_eq_one_or u with rfl | rfl
   · rw [← hu, Units.val_one, map_one]
-  · have := hnn _ hr.1
-    rw [← hu, Units.val_neg, Units.val_one, map_neg, map_one] at this
-    exact absurd this (by norm_num)
+  · exact absurd (hnn _ hr.1) (by norm_num [← hu])
 
 end Int
 
@@ -329,7 +324,7 @@ example : (normOne (standardOrder ℤ (3 : ℚ) 0 (-1))).relIndex
   refine h.relIndex_normOne_units_eq_two_iff.2 ⟨γ, h.mem_units_iff.2 ⟨?_, -1, ?_⟩, hnrd⟩
   · exact (mem_standardOrder_iff ⟨3, by simp⟩ ⟨0, by simp⟩ ⟨-1, by simp⟩).2
       ⟨⟨1, by simp [γ]⟩, ⟨1, by simp [γ]⟩, ⟨1, by simp [γ]⟩, ⟨0, by simp [γ]⟩⟩
-  · rw [IsUnit.unit_spec, hnrd, Units.val_neg, Units.val_one, map_neg, map_one]
+  · simp [γ, hnrd]
 
 end Examples
 
