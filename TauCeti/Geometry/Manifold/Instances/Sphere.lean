@@ -84,7 +84,9 @@ allowing the entire path or loop to be read in one stereographic chart.
 * `TauCeti.exists_mvfderiv_coe_sphere_eq`: a vector orthogonal to a point of the sphere is the
   image in the ambient space of a tangent vector at that point.
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
+* `TauCeti.extChartAt_sphere`: the same identification for the preferred extended chart.
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
+* `TauCeti.extChartAt_sphere_apply_neg`: its total extension also sends the pole `-v` to `0`.
 * `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
   smooth embedding of the model space into the sphere.
 * `TauCeti.coe_comp_stereographic'_symm`, `TauCeti.contDiff_coe_comp_stereographic'_symm`,
@@ -260,6 +262,12 @@ theorem chartAt_sphere (v : sphere (0 : E) 1) :
     chartAt (EuclideanSpace ℝ (Fin n)) v = stereographic' n (-v) :=
   rfl
 
+/-- The preferred extended chart of the sphere is stereographic projection from the antipode,
+with no additional coordinate rescaling. -/
+theorem extChartAt_sphere (v : sphere (0 : E) 1) :
+    extChartAt (𝓡 n) v = (stereographic' n (-v)).toPartialEquiv := by
+  simp [extChartAt, OpenPartialHomeomorph.extend, chartAt_sphere]
+
 -- Not `@[simp]`: simp unfolds `extChartAt (𝓡 n) v v` to `chartAt _ v v` before this lemma can
 -- fire, so it fails `simpNF`.
 /-- The preferred extended chart of the sphere at `v` sends `v` to the origin. -/
@@ -267,6 +275,15 @@ theorem extChartAt_sphere_apply_self (v : sphere (0 : E) 1) : extChartAt (𝓡 n
   rw [extChartAt_coe, modelWithCornersSelf_coe, id_comp, chartAt_sphere, stereographic',
     OpenPartialHomeomorph.trans_apply, stereographic_neg_apply,
     Homeomorph.toOpenPartialHomeomorph_apply, LinearIsometryEquiv.coe_toHomeomorph, map_zero]
+
+/-- The total extension of the preferred sphere chart sends its projection pole `-v`, outside
+the chart source, to the origin. -/
+theorem extChartAt_sphere_apply_neg (v : sphere (0 : E) 1) : extChartAt (𝓡 n) v (-v) = 0 := by
+  rw [extChartAt_sphere, OpenPartialHomeomorph.coe_toPartialEquiv, stereographic',
+    OpenPartialHomeomorph.trans_apply, Homeomorph.toOpenPartialHomeomorph_apply,
+    LinearIsometryEquiv.coe_toHomeomorph]
+  rw [stereographic_apply,
+    Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero, smul_zero, map_zero]
 
 /-- The inverse of a stereographic chart is a smooth embedding of the model Euclidean space into
 the sphere, onto the complement of the centre of projection: read in that same chart it is the

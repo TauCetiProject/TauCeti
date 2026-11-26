@@ -30,17 +30,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 local notation "S" => sphere (0 : E) 1
 local notation "V" => EuclideanSpace ℝ (Fin n)
 
-/-- The preferred extended chart of the round sphere is stereographic projection from
-the antipode, with no additional coordinate rescaling. -/
-private theorem extChartAt_eq (p : S) :
-    extChartAt (𝓡 n) p = (stereographic' n (-p)).toPartialEquiv := by
-  simp [extChartAt, OpenPartialHomeomorph.extend, chartAt_sphere]
-
 /-- The actual native round metric in the preferred chart is the scale-two coordinate
-metric on the whole stereographic target. The inverse tangent trivialization is the
-derivative of the inverse chart. The explicit `fromTangentSpace` inverses identify
-coordinate vectors with native model-space tangents; the final identification of the
-installed round inner product is definitional. -/
+metric on the whole stereographic target. This identifies the chart metric used by the native
+Levi-Civita connection with the metric of the coordinate Christoffel formula. -/
 theorem chartMetric_eq (p : S) :
     (ContMDiffNondegenerateMetric.ofRiemannianBundle (𝓡 n) S).chartMetric p =
       metric (E := V) 2 := by
@@ -49,7 +41,7 @@ theorem chartMetric_eq (p : S) :
   intro u
   apply ContinuousLinearMap.ext
   intro v
-  have ht : y ∈ (extChartAt (𝓡 n) p).target := by rw [extChartAt_eq]; simp
+  have ht : y ∈ (extChartAt (𝓡 n) p).target := by rw [extChartAt_sphere]; simp
   have hs := (extChartAt (𝓡 n) p).map_target ht
   have hc : (extChartAt (𝓡 n) p).symm y ∈ (chartAt V p).source := by
     simpa only [extChartAt_source] using hs
@@ -58,6 +50,9 @@ theorem chartMetric_eq (p : S) :
     ← (trivializationAt V (TangentSpace (𝓡 n)) p).symmL_apply (R := ℝ) hc u,
     ← (trivializationAt V (TangentSpace (𝓡 n)) p).symmL_apply (R := ℝ) hc v,
     TangentBundle.symmL_trivializationAt hc, (extChartAt (𝓡 n) p).right_inv ht]
+  -- The inverse tangent trivialization is the derivative of the inverse chart. Its model-space
+  -- tangent vectors are identified by `fromTangentSpace`; the installed round inner product
+  -- reduces to the model-space inner product, so no metric rewrite lemma is needed here.
   change inner ℝ
     (mfderivWithin (𝓡 n) (𝓡 n) (extChartAt (𝓡 n) p).symm (range (𝓡 n)) y
       ((NormedSpace.fromTangentSpace y).symm u))
@@ -66,7 +61,7 @@ theorem chartMetric_eq (p : S) :
   have hr : range (𝓡 n) = (univ : Set V) := by simp
   rw [hr]
   rw [mfderivWithin_univ]
-  rw [extChartAt_eq]
+  rw [extChartAt_sphere]
   exact (metric_two_apply_eq_inner_mfderiv (-p) y u v).symm
 
 /-- The native Levi-Civita Christoffel map in the preferred stereographic chart.
@@ -83,18 +78,10 @@ theorem christoffelMap_eq (p q : S) (u v : V) :
   · subst q
     have hs : -p ∉ (trivializationAt V (TangentSpace (𝓡 n)) p).baseSet := by
       simp [TangentBundle.trivializationAt_baseSet, chartAt_sphere]
-    have hp : extChartAt (𝓡 n) p (-p) = 0 := by
-      rw [extChartAt_eq]
-      change (OrthonormalBasis.fromOrthogonalSpanSingleton n
-        (ne_zero_of_mem_unit_sphere (-p))).repr
-          (stereographic (norm_eq_of_mem_sphere (-p)) (-p)) = 0
-      rw [stereographic_apply,
-        Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero,
-        smul_zero, map_zero]
-    rw [christoffelMap_of_notMem _ _ hs, hp]
+    rw [christoffelMap_of_notMem _ _ hs, extChartAt_sphere_apply_neg]
     simp
   have hs : q ∈ (extChartAt (𝓡 n) p).source := by
-    rw [extChartAt_eq]
+    rw [extChartAt_sphere]
     simpa only [stereographic'_source, mem_compl_iff, mem_singleton_iff] using hq
   have hLC :=
     ContMDiffNondegenerateMetric.isLeviCivitaConnection_ofRiemannianBundle_leviCivitaConnection
