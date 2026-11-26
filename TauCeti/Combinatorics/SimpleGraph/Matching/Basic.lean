@@ -618,8 +618,8 @@ theorem isMaximumMatching_of_subsingleton_iff [Subsingleton V] :
 /-- A finite maximum matching has edge-set `ncard` at least that of every matching. -/
 theorem IsMaximumMatching.le_ncard_edgeSet (hM : M.IsMaximumMatching) (hM' : M'.IsMatching)
     (hfin : M.edgeSet.Finite) : M'.edgeSet.ncard ≤ M.edgeSet.ncard := by
-  rw [Set.ncard_def, Set.ncard_def]
-  exact ENat.toNat_le_toNat (hM.le_encard_edgeSet hM') (Set.encard_ne_top_iff.mpr hfin)
+  have hle := hM.le_encard_edgeSet hM'
+  exact (Set.encard_le_encard_iff_ncard_le_ncard (hfin.finite_of_encard_le hle) hfin).1 hle
 
 /-- Every maximum matching has edge-set `ncard` equal to `G.matchingNum.toNat`. -/
 theorem IsMaximumMatching.ncard_edgeSet_eq_toNat (hM : M.IsMaximumMatching) :
@@ -637,13 +637,12 @@ theorem isMaximumMatching_iff_ncard_edgeSet_le (h : G.matchingNum ≠ ⊤) :
     M.IsMaximumMatching ↔
       M.IsMatching ∧ ∀ ⦃M' : G.Subgraph⦄, M'.IsMatching → M'.edgeSet.ncard ≤ M.edgeSet.ncard := by
   rw [isMaximumMatching_def]
-  refine and_congr_right fun hM ↦ ⟨fun hmax M' hM' ↦ ?_, fun hmax M' hM' ↦ ?_⟩
-  · rw [Set.ncard_def, Set.ncard_def]
-    exact ENat.toNat_le_toNat (hmax hM')
-      (Set.encard_ne_top_iff.mpr (hM.finite_edgeSet_of_matchingNum_ne_top h))
-  · rw [← (hM'.finite_edgeSet_of_matchingNum_ne_top h).cast_ncard_eq,
-      ← (hM.finite_edgeSet_of_matchingNum_ne_top h).cast_ncard_eq]
-    exact Nat.cast_le.mpr (hmax hM')
+  refine and_congr_right fun hM ↦ ⟨fun hmax M' hM' ↦
+    (isMaximumMatching_def.2 ⟨hM, hmax⟩).le_ncard_edgeSet hM'
+      (hM.finite_edgeSet_of_matchingNum_ne_top h),
+    fun hmax M' hM' ↦ (Set.encard_le_encard_iff_ncard_le_ncard
+      (hM'.finite_edgeSet_of_matchingNum_ne_top h)
+      (hM.finite_edgeSet_of_matchingNum_ne_top h)).2 (hmax hM')⟩
 
 /-- The edge-set `ncard` of a finite maximum matching is the greatest `ncard` among all
 matchings. -/

@@ -74,8 +74,9 @@ The fibre of the first pullback projection has the same `Set.ncard` as the origi
 transfers `Set.ncard` of fibres over that subset (`Equiv.ncard_fiber_eq_of_preimage`). These
 identities transfer sheet counts from local models; `Set.ncard` is zero on infinite fibres.
 
-For finite sets, equality of `Set.encard` is equivalent to equality of `Set.ncard`
-(`Set.encard_eq_encard_iff_ncard_eq_ncard`).
+For finite sets, equality and inequality of `Set.encard` are equivalent to equality and
+inequality of `Set.ncard` (`Set.encard_eq_encard_iff_ncard_eq_ncard`,
+`Set.encard_le_encard_iff_ncard_le_ncard`).
 -/
 
 public section
@@ -331,6 +332,12 @@ theorem encard_eq_encard_iff_ncard_eq_ncard {α β : Type*} {s : Set α} {t : Se
     (hs : s.Finite) (ht : t.Finite) :
     s.encard = t.encard ↔ s.ncard = t.ncard := by
   rw [← hs.cast_ncard_eq, ← ht.cast_ncard_eq, Nat.cast_inj]
+
+/-- For finite sets, inequality of `Set.encard` is equivalent to inequality of `Set.ncard`. -/
+theorem encard_le_encard_iff_ncard_le_ncard {α β : Type*} {s : Set α} {t : Set β}
+    (hs : s.Finite) (ht : t.Finite) :
+    s.encard ≤ t.encard ↔ s.ncard ≤ t.ncard := by
+  rw [← hs.cast_ncard_eq, ← ht.cast_ncard_eq, Nat.cast_le]
 
 end Set
 

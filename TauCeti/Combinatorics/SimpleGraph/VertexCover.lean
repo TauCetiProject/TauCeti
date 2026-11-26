@@ -8,7 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.VertexCover
 public import Mathlib.Order.Filter.Extr
 
-import Mathlib.Data.Set.Card
+import TauCeti.Data.Set.Card
 
 /-!
 # Minimum vertex covers of simple graphs
@@ -146,8 +146,8 @@ theorem IsMinimumVertexCover.finite_of_vertexCoverNum_ne_top (hc : G.IsMinimumVe
 /-- A minimum vertex cover has `ncard` at most that of any finite vertex cover. -/
 theorem IsMinimumVertexCover.ncard_le (hc : G.IsMinimumVertexCover c) (hc' : G.IsVertexCover c')
     (hfin : c'.Finite) : c.ncard ≤ c'.ncard := by
-  rw [Set.ncard_def, Set.ncard_def]
-  exact ENat.toNat_le_toNat (hc.encard_le hc') (Set.encard_ne_top_iff.mpr hfin)
+  have hle := hc.encard_le hc'
+  exact (Set.encard_le_encard_iff_ncard_le_ncard (hfin.finite_of_encard_le hle) hfin).1 hle
 
 /-- Every minimum vertex cover has `ncard` equal to `G.vertexCoverNum.toNat`. -/
 theorem IsMinimumVertexCover.ncard_eq_toNat (hc : G.IsMinimumVertexCover c) :
@@ -167,8 +167,7 @@ theorem isMinimumVertexCover_iff_ncard_le (hfin : c.Finite) :
   refine ⟨fun hc ↦ ⟨hc.isVertexCover, fun _ hc' hfin' ↦ hc.ncard_le hc' hfin'⟩,
     fun ⟨hc, h⟩ ↦ isMinimumVertexCover_def.2 ⟨hc, fun c' hc' ↦ ?_⟩⟩
   obtain hfin' | hinf' := c'.finite_or_infinite
-  · rw [← hfin.cast_ncard_eq, ← hfin'.cast_ncard_eq]
-    exact Nat.cast_le.mpr (h hc' hfin')
+  · exact (Set.encard_le_encard_iff_ncard_le_ncard hfin hfin').2 (h hc' hfin')
   · simp [hinf'.encard_eq]
 
 /-- On a finite vertex type, a vertex cover is minimum if and only if it minimizes `ncard` among
