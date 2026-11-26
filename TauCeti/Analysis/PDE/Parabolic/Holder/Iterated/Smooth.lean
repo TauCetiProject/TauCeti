@@ -122,35 +122,6 @@ private theorem exists_holderSpace_coe_eq_of_contDiff {V : Type*} [NormedAddComm
   exact ⟨HolderSpace.ofBoundedContinuousFunction _ hH.memHolder,
     funext (HolderSpace.ofBoundedContinuousFunction_apply _ _)⟩
 
-/-- The time slices `t ↦ f (x, t)` on `[a, b]` of a `C¹` map on `E × ℝ` with bounded value and
-derivative are `(1 + α) / 2`-Hölder uniformly in `x`, for `α ≤ 1`. -/
-private theorem exists_holderWith_timeSlice_of_contDiff {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] (hα : α ≤ 1) {f : E × ℝ → V} (hf : ContDiff ℝ 1 f)
-    (hbdd : ∀ i ≤ 1, ∃ C, ∀ z, ‖iteratedFDeriv ℝ i f z‖ ≤ C) :
-    ∃ C : ℝ≥0, ∀ x : E, HolderWith C ((1 + α) / 2) fun t : Icc a b ↦ f (x, t) := by
-  obtain ⟨M, hM⟩ := hbdd 0 zero_le_one
-  obtain ⟨K, hK⟩ := hbdd 1 le_rfl
-  simp only [norm_iteratedFDeriv_zero] at hM
-  simp only [norm_iteratedFDeriv_one] at hK
-  have hγ : (1 + α) / 2 ≤ 1 := by
-    rw [div_le_one (by norm_num)]
-    calc 1 + α ≤ 1 + 1 := by gcongr
-      _ = 2 := one_add_one_eq_two
-  refine ⟨K.toNNReal + 2 * M.toNNReal, fun x s t ↦ ?_⟩
-  have hd (τ : ℝ) : HasFDerivAt (fun σ : ℝ ↦ f (x, σ))
-      ((fderiv ℝ f (x, τ)).comp (ContinuousLinearMap.inr ℝ E ℝ)) τ :=
-    (hf.differentiable one_ne_zero (x, τ)).hasFDerivAt_slice_snd
-  refine holderWith_of_norm_le_of_norm_fderiv_le hγ (fun τ ↦ (hd τ).differentiableAt)
-    (fun τ ↦ (hM _).trans (Real.le_coe_toNNReal M)) (fun τ ↦ ?_) s t
-  rw [(hd τ).fderiv]
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun σ ↦ ?_
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply]
-  calc ‖fderiv ℝ f (x, τ) ((0 : E), σ)‖
-      ≤ ‖fderiv ℝ f (x, τ)‖ * ‖((0 : E), σ)‖ := (fderiv ℝ f (x, τ)).le_opNorm _
-    _ ≤ K.toNNReal * ‖σ‖ := by
-        rw [Prod.norm_def, norm_zero, max_eq_right (norm_nonneg σ)]
-        exact mul_le_mul_of_nonneg_right ((hK _).trans (Real.le_coe_toNNReal K)) (norm_nonneg σ)
-
 variable (α hab E F) in
 /-- The statement proved by induction on the order `k`, for maps with values in the spaces of
 continuous multilinear maps `E [×m]→L[ℝ] F` for all `m` at once. -/
@@ -176,16 +147,30 @@ private theorem contDiffMotive_one (hα : α ≤ 1) : ContDiffMotive E F α hab 
     exists_holderSpace_coe_eq_of_contDiff (a := a) (b := b) hα (by exact_mod_cast hfx) hbfx
   obtain ⟨M, hM⟩ := hbdd 0 (by omega)
   simp only [norm_iteratedFDeriv_zero] at hM
+  obtain ⟨K, hK⟩ := hbdd 1 (by omega)
+  simp only [norm_iteratedFDeriv_one] at hK
   have hf1 : ContDiff ℝ 1 f := hf.of_le (by norm_num)
-  obtain ⟨C, hC⟩ := exists_holderWith_timeSlice_of_contDiff (a := a) (b := b) hα hf1 fun i hi ↦
-    hbdd i (by omega)
+  -- `f` is `(1 + α) / 2`-Hölder, hence so is each time slice `t ↦ f (x, t)`.
+  have hγ : (1 + α) / 2 ≤ 1 := by
+    rw [div_le_one (by norm_num)]
+    calc 1 + α ≤ 1 + 1 := by gcongr
+      _ = 2 := one_add_one_eq_two
+  have hfH := holderWith_of_norm_le_of_norm_fderiv_le hγ (hf1.differentiable one_ne_zero)
+    (fun z ↦ (hM z).trans (Real.le_coe_toNNReal M))
+    (fun z ↦ (hK z).trans (Real.le_coe_toNNReal K))
+  have hC (x : E) := hfH.comp_lipschitzWith_one (f := fun t : Icc a b ↦ (x, (t : ℝ)))
+    (by
+      have h := (LipschitzWith.prodMk_left x).comp (LipschitzWith.subtypeVal (Icc a b))
+      rw [mul_one] at h
+      exact h)
   let u := restrictSlab (a := a) (b := b) f hf.continuous hM
   have hx (t : Icc a b) (x : E) : HasFDerivAt (fun y ↦ u (slabMk y t)) (ux (slabMk x t)) x := by
     simp only [u, restrictSlab_apply, hux, space_slabMk, time_slabMk]
     exact (hf1.differentiable one_ne_zero (x, (t : ℝ))).hasFDerivAt_slice_fst
   have ht : timeEHolderNorm ((1 + α) / 2) (u : slab (E := E) a b → E [×m]→L[ℝ] F) < ⊤ :=
     (timeEHolderNorm_le_iff.2 fun x t s ↦ by
-      simpa only [u, restrictSlab_apply, space_slabMk, time_slabMk] using hC x t s).trans_lt
+      simpa only [u, restrictSlab_apply, space_slabMk, time_slabMk, Function.comp_apply] using
+        hC x t s).trans_lt
       ENNReal.coe_lt_top
   exact ⟨equivParabolicC1HolderSpace.symm (ParabolicC1HolderSpace.mk u ux hx ht), by
     rw [coe_equivParabolicC1HolderSpace_symm]
