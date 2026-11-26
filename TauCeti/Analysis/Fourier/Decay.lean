@@ -11,9 +11,11 @@ public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 
 import Mathlib.Analysis.PSeries
+import TauCeti.Analysis.Calculus.IteratedDeriv.Integrable
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Fourier.FourierTransformDeriv
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
@@ -25,8 +27,10 @@ Schwartz function and therefore decays faster than every negative power of `‖v
 that decay in the elementary form `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C`, which is the shape a Fourier transform
 is used in when it weights a comparison test. Without smoothness or compact support, integrating by
 parts `N` times gives the explicit bound `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖` when the
-derivatives below order `N` are differentiable and those up to order `N` are integrable. The file
-also records the angular-frequency form
+derivatives below order `N` are differentiable and those up to order `N` are integrable. On `ℝ`,
+for a `C²` function whose zeroth and second derivatives are integrable, the `L¹` Landau–Kolmogorov
+inequality supplies integrability of `deriv f` automatically, giving `(1 + ξ ^ 2) * ‖𝓕 f ξ‖` decay
+without assuming `Integrable (deriv f)`. The file also records the angular-frequency form
 `∫ exp(-i ⟪v, ξ⟫) f v dv = 𝓕 f ((2π)⁻¹ ξ)` of the Fourier transform, whose integrand is
 integrable whenever `f` is.
 
@@ -47,6 +51,10 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
 * `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if derivatives below order `N`
   are differentiable and those up to order `N` are integrable, then
   `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
+* `ContDiff.one_add_sq_mul_norm_fourier_le` and
+  `ContDiff.one_add_sq_mul_norm_fourier_le_of_norm_le_div_one_add_sq`: quadratic Fourier decay on
+  `ℝ` for `C²` functions from integrability (or `A / (1 + t ^ 2)` domination) of `f` and
+  `iteratedDeriv 2 f` alone, without assuming `Integrable (deriv f)`.
 * `TauCeti.one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset`: if `f` is `C^N`, its closed
   support `tsupport f` is contained in any set `S` of finite outer volume and its derivatives of
   order at most `N` are bounded by `C`, then `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N C vol(S)`.
@@ -255,6 +263,55 @@ theorem integrable_exp_neg_inner_smul (hf : Integrable f) (ξ : V) :
     Complex.exp (-(⟪v, ξ⟫ * Complex.I))).aestronglyMeasurable.smul hf.aestronglyMeasurable)
     (ae_of_all _ fun v ↦ by simp [norm_smul, Complex.norm_exp])
 
+end TauCeti
+
+namespace ContDiff
+
+open MeasureTheory
+open scoped Real
+
+/-- Quadratic Fourier decay for a `C²` function requiring only integrability of `f` and
+`iteratedDeriv 2 f`. Compared to Mathlib's `Real.one_add_sq_mul_norm_fourier_le`, integrability
+of the first derivative is deduced automatically via the `L¹` Landau–Kolmogorov inequality
+`ContDiff.integrable_iteratedDeriv_of_le_two`. -/
+theorem one_add_sq_mul_norm_fourier_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {f : ℝ → E} (hf : ContDiff ℝ 2 f) (h0 : Integrable f)
+    (h2 : Integrable (iteratedDeriv 2 f)) (ξ : ℝ) :
+    (1 + ξ ^ 2) * ‖𝓕 f ξ‖ ≤
+      (∫ x, ‖f x‖) + (4 * π ^ 2)⁻¹ * ∫ x, ‖iteratedDeriv 2 f x‖ :=
+  Real.one_add_sq_mul_norm_fourier_le hf (hf.integrable_iteratedDeriv_of_le_two h0 h2) ξ
+
+/-- **`C²` decay bound under quadratic decay of `f` and `f''`** (Kontorovich–Tao, Lemma 3.1.7).
+If `f : ℝ → E` is `C²` and `‖f t‖, ‖iteratedDeriv 2 f t‖ ≤ A / (1 + t ^ 2)` for all `t : ℝ`,
+then `(1 + ξ ^ 2) * ‖𝓕 f ξ‖ ≤ (π + 1 / (4 * π)) * A` for every `ξ : ℝ`. Nonnegativity of `A`
+follows automatically from `0 ≤ ‖f 0‖ ≤ A`. -/
+theorem one_add_sq_mul_norm_fourier_le_of_norm_le_div_one_add_sq {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℝ → E} (hf : ContDiff ℝ 2 f) {A : ℝ}
+    (h0 : ∀ t : ℝ, ‖f t‖ ≤ A / (1 + t ^ 2))
+    (h2 : ∀ t : ℝ, ‖iteratedDeriv 2 f t‖ ≤ A / (1 + t ^ 2)) (ξ : ℝ) :
+    (1 + ξ ^ 2) * ‖𝓕 f ξ‖ ≤ (π + 1 / (4 * π)) * A := by
+  have hm0 : AEStronglyMeasurable f := hf.continuous.aestronglyMeasurable
+  have hm2 : AEStronglyMeasurable (iteratedDeriv 2 f) :=
+    (hf.continuous_iteratedDeriv 2 le_rfl).aestronglyMeasurable
+  have hle0 : ∫ t : ℝ, ‖f t‖ ≤ A * π :=
+    hm0.integral_norm_le_of_norm_le_div_one_add_sq (Filter.Eventually.of_forall h0)
+  have hle2 : ∫ t : ℝ, ‖iteratedDeriv 2 f t‖ ≤ A * π :=
+    hm2.integral_norm_le_of_norm_le_div_one_add_sq (Filter.Eventually.of_forall h2)
+  calc
+    (1 + ξ ^ 2) * ‖𝓕 f ξ‖
+      ≤ (∫ t, ‖f t‖) + (4 * π ^ 2)⁻¹ * ∫ t, ‖iteratedDeriv 2 f t‖ :=
+        hf.one_add_sq_mul_norm_fourier_le
+          (hm0.integrable_of_norm_le_div_one_add_sq (Filter.Eventually.of_forall h0))
+          (hm2.integrable_of_norm_le_div_one_add_sq (Filter.Eventually.of_forall h2)) ξ
+    _ ≤ A * π + (4 * π ^ 2)⁻¹ * (A * π) := by gcongr
+    _ = (π + 1 / (4 * π)) * A := by
+        have hpi : π ≠ 0 := Real.pi_ne_zero
+        field_simp
+
+end ContDiff
+
+namespace TauCeti
+
 section Circle
 
 open Complex
@@ -430,3 +487,77 @@ theorem summable_fourierCoeffOn_circleMap_of_contDiff {φ : ℂ → ℂ}
 end UnitCircle
 
 end TauCeti
+
+section Checks
+
+open Complex MeasureTheory
+open scoped Real
+
+private theorem iteratedDeriv_two_lorentzian (t : ℝ) :
+    iteratedDeriv 2 (fun x : ℝ ↦ (((1 + x ^ 2)⁻¹ : ℝ) : ℂ)) t =
+      (((6 * t ^ 2 - 2) / (1 + t ^ 2) ^ 3 : ℝ) : ℂ) := by
+  let r : ℝ → ℝ := fun x ↦ (1 + x ^ 2)⁻¹
+  have hne (x : ℝ) : 1 + x ^ 2 ≠ 0 := by positivity
+  have hr_d1 (x : ℝ) : HasDerivAt r (-2 * x / (1 + x ^ 2) ^ 2) x := by
+    have hd : HasDerivAt (fun y : ℝ ↦ 1 + y ^ 2) (2 * x) x := by
+      simpa using ((hasDerivAt_pow 2 x).const_add 1)
+    convert hd.inv (hne x) using 1
+    ring
+  have hr_d2 : HasDerivAt (deriv r) ((6 * t ^ 2 - 2) / (1 + t ^ 2) ^ 3) t := by
+    have hfun : deriv r = fun x : ℝ ↦ -2 * x / (1 + x ^ 2) ^ 2 :=
+      funext fun x ↦ (hr_d1 x).deriv
+    rw [hfun]
+    have hnum : HasDerivAt (fun x : ℝ ↦ -2 * x) (-2) t := by
+      simpa using (hasDerivAt_id t).const_mul (-2 : ℝ)
+    have hden : HasDerivAt (fun x : ℝ ↦ (1 + x ^ 2) ^ 2) (4 * t * (1 + t ^ 2)) t := by
+      have hd : HasDerivAt (fun x : ℝ ↦ 1 + x ^ 2) (2 * t) t := by
+        simpa using ((hasDerivAt_pow 2 t).const_add 1)
+      convert (hd.pow 2) using 1
+      ring
+    have hq := hnum.div hden (pow_ne_zero 2 (hne t))
+    convert hq using 1
+    field_simp [hne t]
+    ring
+  have hf1 : deriv (fun x : ℝ ↦ ((r x : ℝ) : ℂ)) = fun x ↦ ((deriv r x : ℝ) : ℂ) := by
+    ext x
+    have h1 : HasDerivAt (fun y : ℝ ↦ ((r y : ℝ) : ℂ)) ((deriv r x : ℝ) : ℂ) x :=
+      (hr_d1 x).ofReal_comp.congr_deriv (by rw [(hr_d1 x).deriv])
+    exact h1.deriv
+  rw [iteratedDeriv_succ, iteratedDeriv_one, hf1]
+  exact hr_d2.ofReal_comp.deriv
+
+/-- Check for `ContDiff.one_add_sq_mul_norm_fourier_le_of_norm_le_div_one_add_sq`:
+the Lorentzian `f t = (1 + t ^ 2)⁻¹` is `C²` and satisfies `‖f t‖ ≤ 2 / (1 + t ^ 2)` and
+`‖iteratedDeriv 2 f t‖ ≤ 2 / (1 + t ^ 2)` for all `t : ℝ`, with `𝓕 f 0 = π`. -/
+example :
+    let f : ℝ → ℂ := fun t ↦ (((1 + t ^ 2)⁻¹ : ℝ) : ℂ)
+    ContDiff ℝ 2 f ∧
+      (∀ t : ℝ, ‖f t‖ ≤ 2 / (1 + t ^ 2)) ∧
+      (∀ t : ℝ, ‖iteratedDeriv 2 f t‖ ≤ 2 / (1 + t ^ 2)) ∧
+      𝓕 f 0 = (π : ℂ) := by
+  intro f
+  have hpos (t : ℝ) : 0 < 1 + t ^ 2 := by positivity
+  have hf_cd : ContDiff ℝ 2 f :=
+    ofRealCLM.contDiff.comp ((contDiff_const.add (contDiff_id.pow 2)).inv fun t ↦ (hpos t).ne')
+  have h0 (t : ℝ) : ‖f t‖ ≤ 2 / (1 + t ^ 2) := by
+    have hnorm : ‖f t‖ = (1 + t ^ 2)⁻¹ := by
+      dsimp only [f]
+      rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr (hpos t))]
+    rw [hnorm, div_eq_mul_inv]
+    nlinarith [inv_pos.mpr (hpos t)]
+  have h2 (t : ℝ) : ‖iteratedDeriv 2 f t‖ ≤ 2 / (1 + t ^ 2) := by
+    rw [iteratedDeriv_two_lorentzian t, Complex.norm_real, Real.norm_eq_abs, abs_div,
+      abs_of_pos (pow_pos (hpos t) 3), div_le_div_iff₀ (pow_pos (hpos t) 3) (hpos t)]
+    have habs : |6 * t ^ 2 - 2| ≤ 2 * (1 + t ^ 2) ^ 2 := by
+      rw [abs_le]
+      constructor <;> nlinarith [sq_nonneg t, sq_nonneg (t ^ 2 - 1 / 2)]
+    calc
+      |6 * t ^ 2 - 2| * (1 + t ^ 2) ≤ 2 * (1 + t ^ 2) ^ 2 * (1 + t ^ 2) := by gcongr
+      _ = 2 * (1 + t ^ 2) ^ 3 := by ring
+  have hf0 : 𝓕 f 0 = (π : ℂ) := by
+    rw [Real.fourier_real_eq]
+    simp only [mul_zero, neg_zero, AddChar.map_zero_eq_one, one_smul, f,
+      integral_complex_ofReal, integral_univ_inv_one_add_sq]
+  exact ⟨hf_cd, h0, h2, hf0⟩
+
+end Checks

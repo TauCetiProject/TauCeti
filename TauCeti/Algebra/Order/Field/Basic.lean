@@ -122,6 +122,8 @@ zero only at `0`.
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
   scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
+* `TauCeti.sq_le_two_mul_of_forall_pos`: optimizing over `r > 0` in `C ≤ r⁻¹ * A + r / 2 * B`
+  with `0 ≤ C` gives `C ^ 2 ≤ 2 * A * B`.
 -/
 
 public section
@@ -528,6 +530,48 @@ theorem mul_div_one_add_mul_le {α : Type*} [Semifield α] [LinearOrder α]
 theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
     {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
   div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
+
+/-- Optimizing a positive scale parameter `r`: if `0 ≤ C` and `C ≤ r⁻¹ * A + r / 2 * B` for every
+`r > 0`, then `C ^ 2 ≤ 2 * A * B`. Nonnegativity of `A` and `B` follows automatically from the
+small-`r` and large-`r` regimes; `0 ≤ C` is needed (e.g. `C = -3`, `A = 1`, `B = 2`). -/
+theorem sq_le_two_mul_of_forall_pos {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {A B C : α} (hC : 0 ≤ C)
+    (h : ∀ r : α, 0 < r → C ≤ r⁻¹ * A + r / 2 * B) : C ^ 2 ≤ 2 * A * B := by
+  have hquad (r : α) (hr : 0 < r) : 0 ≤ 2 * A + r ^ 2 * B := by
+    have hmul := mul_le_mul_of_nonneg_left (hC.trans (h r hr)) (by positivity : (0 : α) ≤ 2 * r)
+    have heq : 2 * r * (r⁻¹ * A + r / 2 * B) = 2 * A + r ^ 2 * B := by field_simp
+    linarith
+  have hB : 0 ≤ B := by
+    have hneg := nonpos_of_forall_pos_mul_sq_mul_le (a := (1 : α)) (t := -B) (C := 2 * A)
+      zero_lt_one fun r hr ↦ by linarith [hquad r hr]
+    linarith
+  have hA : 0 ≤ A := by
+    by_contra! hAneg
+    set r : α := min 1 (-A / (B + 1))
+    have hr_pos : 0 < r := lt_min zero_lt_one (div_pos (neg_pos.mpr hAneg) (by linarith))
+    have hr_le_one : r ≤ 1 := min_le_left _ _
+    have hr_le_div : r ≤ -A / (B + 1) := min_le_right _ _
+    have hr_sq : r ^ 2 ≤ r := by nlinarith [mul_nonneg hr_pos.le (sub_nonneg.mpr hr_le_one)]
+    have hrB : r * (B + 1) ≤ -A := (le_div_iff₀ (by linarith)).mp hr_le_div
+    nlinarith [hquad r hr_pos, mul_le_mul_of_nonneg_right hr_sq hB]
+  rcases hC.eq_or_lt with rfl | hCpos
+  · rw [zero_pow two_ne_zero]
+    positivity
+  · rcases hB.eq_or_lt with rfl | hBpos
+    · exfalso
+      have hr : 0 < (A + 1) / C := by positivity
+      have hbound := h ((A + 1) / C) hr
+      rw [mul_zero, add_zero] at hbound
+      have hmul := mul_le_mul_of_nonneg_left hbound hr.le
+      rw [← mul_assoc, mul_inv_cancel₀ hr.ne', one_mul, mul_comm,
+        mul_div_cancel₀ _ hCpos.ne'] at hmul
+      linarith
+    · have hbound := h (C / B) (div_pos hCpos hBpos)
+      have heq : ((C / B)⁻¹ * A + C / B / 2 * B) * (2 * C) = 2 * A * B + C ^ 2 := by
+        field_simp
+      have hmul := mul_le_mul_of_nonneg_right hbound (by positivity : (0 : α) ≤ 2 * C)
+      rw [heq] at hmul
+      linarith
 
 end TauCeti
 

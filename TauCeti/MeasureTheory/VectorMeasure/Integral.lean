@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Integral.SetToL1.ChangeMeasure
 public import Mathlib.MeasureTheory.VectorMeasure.SetIntegral
 public import TauCeti.MeasureTheory.VectorMeasure.Variation.Basic
@@ -17,7 +18,9 @@ The integral `∫ᵛ x, f x ∂[B; μ]` of Mathlib is natural in the measure: a 
 applied to the values of `μ` corresponds to a continuous linear map applied to the integral,
 whenever the pairings are compatible (`map_integral_comp_eq_integral_mapRangeL`). As consequences,
 the integral is homogeneous for scalars acting on the integrand or on the measure, whenever the
-pairing is linear over those scalars.
+pairing is linear over those scalars. For `RCLike` scalar integrands paired via
+`ContinuousLinearMap.lsmul ℝ 𝕜`, the integral decomposes into its real and imaginary parts
+(`integral_lsmul_eq_re_add_I_smul_im`).
 
 Convergence in L¹ of the variation measure gives convergence of set integrals uniformly
 over all sets (`tendstoUniformly_setIntegral_of_L1`). In particular this controls an entire
@@ -30,6 +33,9 @@ indefinite integral, including all its observation times, with one error estimat
 * `MeasureTheory.VectorMeasure.integral_fun_smul_of_smul_left` and
   `MeasureTheory.VectorMeasure.integral_smul_vectorMeasure_of_smul_right`: homogeneity in the
   integrand and in the measure.
+* `MeasureTheory.VectorMeasure.integral_ofReal_lsmul` and
+  `MeasureTheory.VectorMeasure.integral_lsmul_eq_re_add_I_smul_im`: real embedding and
+  real/imaginary decomposition for `RCLike` scalar integrands under `lsmul ℝ 𝕜`.
 * `MeasureTheory.VectorMeasure.tendstoUniformly_setIntegral_of_L1`: uniform convergence of
   set integrals under L¹ convergence for the variation measure.
 -/
@@ -106,6 +112,44 @@ theorem integral_smul_vectorMeasure_of_smul_right [NormedField 𝕜] [NormedAlge
       rwa [VectorMeasure.Integrable, variation_smul, ENNReal.smul_def,
         integrable_smul_measure (by simpa using hc) ENNReal.coe_ne_top]
     rw [integral_undef hf, integral_undef hf', smul_zero]
+
+/-- Embedding a real integrand into an `RCLike` field `𝕜` under `lsmul ℝ 𝕜` gives the same
+vector-measure integral as integrating over `ℝ`. Holds unconditionally without an integrability
+or completeness assumption. -/
+@[simp]
+theorem integral_ofReal_lsmul [RCLike 𝕜] [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E]
+    (μ : VectorMeasure X E) (ψ : X → ℝ) :
+    ∫ᵛ x, (ψ x : 𝕜) ∂[lsmul ℝ 𝕜; μ] = ∫ᵛ x, ψ x ∂•μ := by
+  by_cases hψ : μ.Integrable ψ
+  · have hB : (lsmul ℝ 𝕜 (E := E)).comp (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜) = lsmul ℝ ℝ := by
+      refine ContinuousLinearMap.ext fun r ↦ ContinuousLinearMap.ext fun v ↦ ?_
+      simp [RCLike.ofRealCLM_apply]
+    have h := integral_continuousLinearMap_comp
+      (μ := μ) (B := (lsmul ℝ 𝕜 : 𝕜 →L[ℝ] E →L[ℝ] E))
+      (C := (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜)) hψ
+    rwa [hB] at h
+  · have hψ' : ¬ μ.Integrable (fun x ↦ (ψ x : 𝕜)) := fun h ↦
+      hψ (by simpa [Function.comp_def] using (RCLike.reCLM (K := 𝕜)).integrable_comp h)
+    rw [integral_undef hψ, integral_undef hψ']
+
+/-- Real-and-imaginary decomposition of the vector-measure integral of an integrable `RCLike`
+integrand against `lsmul ℝ 𝕜`. -/
+theorem integral_lsmul_eq_re_add_I_smul_im [RCLike 𝕜] [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E]
+    {μ : VectorMeasure X E} {φ : X → 𝕜} (hφ : μ.Integrable φ) :
+    ∫ᵛ x, φ x ∂[lsmul ℝ 𝕜; μ] =
+      (∫ᵛ x, RCLike.re (φ x) ∂•μ) + (RCLike.I : 𝕜) • (∫ᵛ x, RCLike.im (φ x) ∂•μ) := by
+  have hre : μ.Integrable (fun x ↦ RCLike.re (φ x)) := (RCLike.reCLM (K := 𝕜)).integrable_comp hφ
+  have him : μ.Integrable (fun x ↦ RCLike.im (φ x)) := (RCLike.imCLM (K := 𝕜)).integrable_comp hφ
+  have hre_k : μ.Integrable (fun x ↦ (RCLike.re (φ x) : 𝕜)) :=
+    (RCLike.ofRealCLM (K := 𝕜)).integrable_comp hre
+  have him_k : μ.Integrable (fun x ↦ (RCLike.I : 𝕜) • (RCLike.im (φ x) : 𝕜)) :=
+    ((RCLike.ofRealCLM (K := 𝕜)).integrable_comp him).smul (RCLike.I : 𝕜)
+  have hfun : φ = fun x ↦ (RCLike.re (φ x) : 𝕜) + (RCLike.I : 𝕜) • (RCLike.im (φ x) : 𝕜) := by
+    ext x; rw [smul_eq_mul, mul_comm]; exact (RCLike.re_add_im (φ x)).symm
+  conv_lhs => rw [hfun]
+  rw [integral_fun_add hre_k him_k,
+    integral_fun_smul_of_smul_left (fun c y v ↦ by simp [mul_smul]),
+    integral_ofReal_lsmul, integral_ofReal_lsmul]
 
 end MeasureTheory.VectorMeasure
 
