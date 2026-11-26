@@ -86,15 +86,9 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra K
 local notation "SZ" => _root_.SymmetricAlgebra K (center K L)
 
 /- The centre of `U(L)` and the centre of `U(z(L) × [L, L])`, through the splitting
-`L ≃ z(L) × [L, L]`. -/
+`L ≃ z(L) × [L, L]`, through which `reductiveCenterEquiv` factors
+(`TauCeti.UniversalEnvelopingAlgebra.reductiveCenterEquiv_eq_centerCongr_trans`). -/
 local notation "ZE" => Subalgebra.centerCongr (mapEquiv K (centerDerivedEquiv K L))
-
-/-- The centre comparison of `L` is that of `z(L) × [L, L]` through the splitting. -/
-private theorem reductiveCenterEquiv_eq_trans :
-    reductiveCenterEquiv K L =
-      (ZE).trans (productCenterEquiv K (center K L) (derivedSeries K L 1)) :=
-  (reductiveCenterEquiv_def K L).trans <| by
-    rw [centerDerivedEquiv_def]; exact centerEquivOfIsCompl_def _ _ _ _
 
 /-! ### Central characters -/
 
@@ -116,7 +110,7 @@ theorem reductiveCentralCharacter_reductiveCenterEquiv_symm_tmul (ζ : Module.Du
     reductiveCentralCharacter b ζ lam ((reductiveCenterEquiv K L).symm (a ⊗ₜ[K] c)) =
       _root_.SymmetricAlgebra.lift ζ a * vermaCentralCharacter b lam c := by
   rw [reductiveCentralCharacter, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    reductiveCenterEquiv_eq_trans, AlgEquiv.symm_trans_apply, AlgEquiv.apply_symm_apply]
+    centerCongr_reductiveCenterEquiv_symm_apply]
   exact productCentralCharacter_productCenterEquiv_symm_tmul ζ lam a c
 
 variable [IsAlgClosed K]
@@ -145,7 +139,7 @@ theorem reductiveHarishChandraIso_apply (z : Subalgebra.center K (U L)) :
       Algebra.TensorProduct.congr (AlgEquiv.refl : SZ ≃ₐ[K] SZ) (harishChandraIso b)
         (reductiveCenterEquiv K L z) := by
   rw [reductiveHarishChandraIso, AlgEquiv.trans_apply, productHarishChandraIso_apply,
-    reductiveCenterEquiv_eq_trans, AlgEquiv.trans_apply]
+    reductiveCenterEquiv_apply]
 
 /-- The linear Harish-Chandra isomorphism of `L` is the linear Harish-Chandra isomorphism of
 `[L, L]` on the second factor of the centre comparison. -/
@@ -154,7 +148,7 @@ theorem reductiveHarishChandraLinearIso_apply (z : Subalgebra.center K (U L)) :
       Algebra.TensorProduct.congr (AlgEquiv.refl : SZ ≃ₐ[K] SZ) (harishChandraLinearIso b)
         (reductiveCenterEquiv K L z) := by
   rw [reductiveHarishChandraLinearIso, AlgEquiv.trans_apply, productHarishChandraLinearIso_apply,
-    reductiveCenterEquiv_eq_trans, AlgEquiv.trans_apply]
+    reductiveCenterEquiv_apply]
 
 /-- The Harish-Chandra isomorphism of `L` on the product of an element of `Sym(z(L))` and a
 central element of `U([L, L])`. -/
@@ -163,8 +157,7 @@ theorem reductiveHarishChandraIso_reductiveCenterEquiv_symm_tmul (a : SZ)
     (c : Subalgebra.center K (U (derivedSeries K L 1))) :
     reductiveHarishChandraIso b ((reductiveCenterEquiv K L).symm (a ⊗ₜ[K] c)) =
       a ⊗ₜ[K] harishChandraIso b c := by
-  rw [reductiveHarishChandraIso, AlgEquiv.trans_apply, reductiveCenterEquiv_eq_trans,
-    AlgEquiv.symm_trans_apply, AlgEquiv.apply_symm_apply]
+  rw [reductiveHarishChandraIso, AlgEquiv.trans_apply, centerCongr_reductiveCenterEquiv_symm_apply]
   exact productHarishChandraIso_productCenterEquiv_symm_tmul _ b a c
 
 /-- The linear Harish-Chandra isomorphism of `L` on the product of an element of `Sym(z(L))` and
@@ -174,8 +167,8 @@ theorem reductiveHarishChandraLinearIso_reductiveCenterEquiv_symm_tmul (a : SZ)
     (c : Subalgebra.center K (U (derivedSeries K L 1))) :
     reductiveHarishChandraLinearIso b ((reductiveCenterEquiv K L).symm (a ⊗ₜ[K] c)) =
       a ⊗ₜ[K] harishChandraLinearIso b c := by
-  rw [reductiveHarishChandraLinearIso, AlgEquiv.trans_apply, reductiveCenterEquiv_eq_trans,
-    AlgEquiv.symm_trans_apply, AlgEquiv.apply_symm_apply]
+  rw [reductiveHarishChandraLinearIso, AlgEquiv.trans_apply,
+    centerCongr_reductiveCenterEquiv_symm_apply]
   exact productHarishChandraLinearIso_productCenterEquiv_symm_tmul _ b a c
 
 /-- The inverse Harish-Chandra isomorphism of `L` on a pure tensor `a ⊗ p` is the product of the
@@ -212,7 +205,7 @@ theorem map_val_reductiveHarishChandraIso_apply (z : Subalgebra.center K (U L)) 
         (reductiveHarishChandraIso b z) =
       Algebra.TensorProduct.map (AlgHom.id K SZ) (hcProjection b) (reductiveCenterEquiv K L z) := by
   rw [reductiveHarishChandraIso, AlgEquiv.trans_apply, map_val_productHarishChandraIso_apply,
-    reductiveCenterEquiv_eq_trans, AlgEquiv.trans_apply]
+    reductiveCenterEquiv_apply]
 
 /-- **The inclusion square of the linear Harish-Chandra isomorphism.** -/
 theorem map_val_reductiveHarishChandraLinearIso_apply (z : Subalgebra.center K (U L)) :
@@ -221,8 +214,7 @@ theorem map_val_reductiveHarishChandraLinearIso_apply (z : Subalgebra.center K (
       Algebra.TensorProduct.map (AlgHom.id K SZ) (hcProjectionLinear b)
         (reductiveCenterEquiv K L z) := by
   rw [reductiveHarishChandraLinearIso, AlgEquiv.trans_apply,
-    map_val_productHarishChandraLinearIso_apply, reductiveCenterEquiv_eq_trans,
-    AlgEquiv.trans_apply]
+    map_val_productHarishChandraLinearIso_apply, reductiveCenterEquiv_apply]
 
 /-- The two Harish-Chandra isomorphisms of `L` differ by the translation by `-ρ` on the second
 factor only: `ρ` is extended by zero on `z(L)`. -/
@@ -244,8 +236,10 @@ theorem reductiveCentralCharacter_eq_lift_reductiveHarishChandraIso
     reductiveCentralCharacter b ζ lam z =
       Algebra.TensorProduct.lift (_root_.SymmetricAlgebra.lift ζ)
         ((_root_.SymmetricAlgebra.lift lam).comp (dotInvariants b).val) (fun _ _ ↦ .all _ _)
-        (reductiveHarishChandraIso b z) :=
-  productCentralCharacter_eq_lift_productHarishChandraIso ζ lam _
+        (reductiveHarishChandraIso b z) := by
+  rw [reductiveCentralCharacter, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    reductiveHarishChandraIso, AlgEquiv.trans_apply]
+  exact productCentralCharacter_eq_lift_productHarishChandraIso ζ lam _
 
 /-- **Central characters through the linear Harish-Chandra isomorphism.** The central character of
 weight `(ζ, λ - ρ)` is evaluation of the linear Harish-Chandra image at `(ζ, λ)`. -/
@@ -254,8 +248,10 @@ theorem reductiveCentralCharacter_sub_eq_lift_reductiveHarishChandraLinearIso
     reductiveCentralCharacter b ζ (lam - weylVector (IsKilling.rootSystem H) b) z =
       Algebra.TensorProduct.lift (_root_.SymmetricAlgebra.lift ζ)
         ((_root_.SymmetricAlgebra.lift lam).comp (linearInvariants H).val) (fun _ _ ↦ .all _ _)
-        (reductiveHarishChandraLinearIso b z) :=
-  productCentralCharacter_sub_eq_lift_productHarishChandraLinearIso ζ lam _
+        (reductiveHarishChandraLinearIso b z) := by
+  rw [reductiveCentralCharacter, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    reductiveHarishChandraLinearIso, AlgEquiv.trans_apply]
+  exact productCentralCharacter_sub_eq_lift_productHarishChandraLinearIso ζ lam _
 
 /-- **Harish-Chandra's theorem on central characters for a reductive Lie algebra.** The central
 characters of weights `(ζ, λ)` and `(ζ', μ)` agree exactly when `ζ = ζ'` and `μ` lies in the dot
@@ -263,7 +259,8 @@ orbit of `λ`. -/
 theorem reductiveCentralCharacter_eq_iff {ζ ζ' : Module.Dual K (center K L)}
     {lam mu : Module.Dual K H} :
     reductiveCentralCharacter b ζ lam = reductiveCentralCharacter b ζ' mu ↔
-      ζ = ζ' ∧ ∃ w, dotAction (IsKilling.rootSystem H) b w lam = mu :=
-  (AlgHom.cancel_right (ZE).surjective).trans productCentralCharacter_eq_iff
+      ζ = ζ' ∧ ∃ w, dotAction (IsKilling.rootSystem H) b w lam = mu := by
+  rw [reductiveCentralCharacter, reductiveCentralCharacter]
+  exact (AlgHom.cancel_right (ZE).surjective).trans productCentralCharacter_eq_iff
 
 end TauCeti
