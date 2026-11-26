@@ -57,6 +57,8 @@ vector spaces has exactly this underlying presheaf of types, which gives its she
 
 * `TauCeti.holomorphicSectionSheaf.existsUnique_gluing`: holomorphic sections that agree on
   overlaps glue uniquely; restriction is `TauCeti.holomorphicSectionSheaf.map_apply`.
+* `TauCeti.holomorphicSectionSheaf.sum_hom_app_apply`: a finite sum of morphisms of sheaves of
+  holomorphic sections acts pointwise on values.
 * `TauCeti.holomorphicSectionSheaf.prodBiconeIsBilimit`: the sheaf of sections of a direct sum
   `V₁ ×ᵇ V₂` is the biproduct of the two sheaves of sections.
 * `TauCeti.holomorphicSectionSheaf.prodIso`: the resulting isomorphism with `⊞`. Finite direct
@@ -387,6 +389,17 @@ theorem hom_ext {f g : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectio
   apply LinearMap.ext
   intro s
   exact ext (h U s)
+
+/-- A finite sum of morphisms between sheaves of holomorphic sections sends a section to the
+section whose value at each point is the sum of the values of the images. -/
+theorem sum_hom_app_apply {ι : Type*} (S : Finset ι)
+    (f : ι → (holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂))
+    {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U)
+    (x : ↥(unop U)) :
+    (∑ i ∈ S, f i).hom.app U s x = ∑ i ∈ S, (f i).hom.app U s x :=
+  map_sum (AddMonoidHom.mk'
+    (fun g : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂ ↦ g.hom.app U s x)
+    fun _ _ ↦ add_apply _ _ x) f S
 
 /-- A fibrewise linear map `φ : V₁ x → V₂ x` whose total-space map is complex analytic induces a
 morphism of sheaves of holomorphic sections, by `s ↦ (x ↦ φ x (s x))`. -/
