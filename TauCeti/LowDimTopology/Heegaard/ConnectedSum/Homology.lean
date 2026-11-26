@@ -246,8 +246,8 @@ noncomputable def hatHomologySumCircleTimesSphereEquiv (hr₀ : r₀ ∈ Set.ran
       (hatDifferential_sumCircleTimesSphere_comp_self_eq_zero hr₀ hd)
       (H.hatDifferential_addBasepoint_comp_self_eq_zero hr₀ hd)
       (by
-        rw [H.hatDifferential_sumCircleTimesSphere_eq_hatDifferential_addBasepoint r₀ hr₀]
-        rfl)).trans
+        rw [H.hatDifferential_sumCircleTimesSphere_eq_hatDifferential_addBasepoint r₀ hr₀,
+          LinearEquiv.refl_toLinearMap, LinearMap.id_comp, LinearMap.comp_id])).trans
     (H.hatHomologyAddBasepointEquiv hr₀ hd)
 
 /-- The hat homology doubles in dimension under the connected sum with `S¹ × S²` in a region
@@ -269,8 +269,9 @@ theorem hatStableClass_sumCircleTimesSphere [Fintype Basepoint]
     (H.sumCircleTimesSphere r₀).hatStableClass (sumCircleTimesSphereEuler χ r₀)
         (hatDifferential_sumCircleTimesSphere_comp_self_eq_zero hr₀ hd) =
       2 * H.hatStableClass χ hd := by
-  rw [hatStableClass_def, hatStableClass_def, stableClass_def, stableClass_def,
-    finrank_hatHomology_sumCircleTimesSphere hr₀ hd, Nat.cast_mul, Nat.cast_ofNat, mul_div_assoc]
+  rw [hatStableClass_def, hatStableClass_def,
+    stableClass_eq_mul_of_finrank_eq_mul (finrank_hatHomology_sumCircleTimesSphere hr₀ hd),
+    Nat.cast_ofNat]
 
 end HatHomology
 
@@ -467,9 +468,9 @@ theorem hatStableClass_iterateSumCircleTimesSphere [Fintype Basepoint] {χ : Reg
     (H.iterateSumCircleTimesSphere r₀ k).hatStableClass (iterateSumCircleTimesSphereEuler χ r₀ k)
         (hatDifferential_iterateSumCircleTimesSphere_comp_self_eq_zero hr₀ hd k) =
       2 ^ k * H.hatStableClass χ hd := by
-  rw [hatStableClass_def, hatStableClass_def, stableClass_def, stableClass_def,
-    finrank_hatHomology_iterateSumCircleTimesSphere hr₀ hd, Nat.cast_mul, Nat.cast_pow,
-    Nat.cast_ofNat, mul_div_assoc]
+  rw [hatStableClass_def, hatStableClass_def,
+    stableClass_eq_mul_of_finrank_eq_mul (finrank_hatHomology_iterateSumCircleTimesSphere hr₀ hd k),
+    Nat.cast_pow, Nat.cast_ofNat]
 
 variable (r₀) (χ : Region → ℤ)
 
@@ -597,10 +598,7 @@ theorem finrank_hatHomology_iterateSumCircleTimesSphere_lensSpace (k : ℕ) :
           (hatDifferential_lensSpace_comp_self_eq_zero 1 1 0) k)) = 2 ^ k := by
   rw [finrank_hatHomology_iterateSumCircleTimesSphere (r₀ := 0) ⟨(), lensSpace_basepoint ()⟩
       (hatDifferential_lensSpace_comp_self_eq_zero 1 1 0),
-    ((lensSpace 1 1 0).hatDifferential 1).homologyEquivOfEqZero _ hatDifferential_lensSpace
-      |>.finrank_eq, finrank_finsupp_self,
-    ← Fintype.card_of_bijective (lensSpaceGenerator_bijective (p := 1) (q := 1) (r := 0)),
-    ZMod.card, mul_one]
+    finrank_hatHomology_lensSpace, mul_one]
 
 /-- **The relative grading of `#ᵏ (S¹ × S²)`.** In the `k`-fold connected sum of the genus-one
 diagram of `S³` with `S¹ × S²`, the generators `ε` and `δ`, choices of a new point on each new
