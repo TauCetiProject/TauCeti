@@ -17,7 +17,9 @@ The jet of a section `ξ : ℝ × ℝ → V` of a trivial bundle over a domain o
 A first-order operator with coefficient field `M : ℝ × ℝ → L(V × V × V, W)` acts on jets
 pointwise, `f ↦ (z ↦ M z (f z))`. For a measure `μ` on the plane and `M` essentially bounded for
 `μ`, this is a bounded operator `L²(μ, V × V × V) → L²(μ, W)` (`TauCeti.jetOperator`), the
-operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication 2`. It is additive
+operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication 2`; otherwise it
+is `0`, so a coefficient field with a nonzero operator is essentially bounded
+(`TauCeti.memLp_of_jetOperator_ne_zero`). It is additive
 in `M` (`TauCeti.jetOperator_add`), and multiplying `M` by an essentially bounded scalar function
 multiplies its values pointwise (`TauCeti.coeFn_jetOperator_smul`). It depends
 Lipschitz-continuously on `M` in `L^∞` (`TauCeti.norm_jetOperator_sub_le`), hence continuously
@@ -69,6 +71,11 @@ def jetOperator (μ : Measure (ℝ × ℝ)) (M : ℝ × ℝ → V × V × V →L
 theorem jetOperator_of_not_memLp {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : ¬ MemLp M ∞ μ) : jetOperator μ M = 0 := by
   simp [jetOperator, hM]
+
+/-- A coefficient field whose first-order operator is nonzero is essentially bounded. -/
+theorem memLp_of_jetOperator_ne_zero {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (h : jetOperator μ M ≠ 0) : MemLp M ∞ μ :=
+  not_not.1 (mt jetOperator_of_not_memLp h)
 
 /-- The first-order operator of an essentially bounded coefficient field is the operator-valued
 multiplication operator `MeasureTheory.Lp.operatorMultiplication 2` by that field. -/

@@ -606,8 +606,8 @@ private theorem memLp_floerJetCoeff_of_comp_eq_id (ω : SymplecticForm V)
     (hQ : (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) w).comp Q =
       ContinuousLinearMap.id ℝ _) :
     MemLp (ω.floerJetCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) w) ∞ stripMeasure := by
-  by_contra h
-  rw [floerSobolevOperator_def, jetOperator_of_not_memLp h, ContinuousLinearMap.zero_comp,
+  refine memLp_of_jetOperator_ne_zero fun h ↦ ?_
+  rw [floerSobolevOperator_def, h, ContinuousLinearMap.zero_comp,
     ContinuousLinearMap.zero_comp] at hQ
   obtain ⟨f, hf⟩ := exists_ne (0 : Lp V 2 stripMeasure)
   exact hf (by simpa using (DFunLike.congr_fun hQ f).symm)
