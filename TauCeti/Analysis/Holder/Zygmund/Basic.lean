@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Little
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 public import TauCeti.Analysis.Holder.Iterated
-public import TauCeti.Analysis.Holder.Little.Basic
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
@@ -77,18 +76,6 @@ derivatives `∂_{bᵢ} f` along an orthonormal basis are bounded `C^{k-1,α}` f
 `𝒞^{k-1+α}` by induction, and an `L^∞` function whose first derivatives lie in `𝒞^{k-1+α}` lies in
 `𝒞^{k+α}` (`TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_lineDerivOp_eq`).
 
-For `0 < α < 1` the isomorphism takes the little Hölder functions exactly to the elements whose
-weighted blocks vanish at high frequency. A bounded continuous function
-representing `u ∈ 𝒞^α` is little `α`-Hölder, with `α`-Hölder difference quotients tending to zero
-at small scales, exactly when the weighted blocks vanish at high frequency, `2^{jα} ‖Δⱼ u‖_∞ → 0`.
-If they do, `u` is the limit in `𝒞^α` of its dyadic partial sums, which are represented by
-Lipschitz functions; conversely a little Hölder function is the limit in `C^{0,α}` of smooth
-Lipschitz functions, whose weighted blocks of order `α < 1` vanish at high frequency. The little
-Hölder–Zygmund space `c^α`, the closure of the Schwartz functions in `𝒞^α`, lies inside this
-block-decay subspace (strictly so, as nonzero constants show), so every element of `c^α` is little
-Hölder. The cusp `x ↦ ‖x‖ ^ α`, truncated at height `1`, is not: its weighted blocks are
-bounded but do not tend to zero, so it is an explicit element of `𝒞^α` outside `c^α`.
-
 ## Main declarations
 
 * `TauCeti.BesovSpace.exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith`:
@@ -96,13 +83,16 @@ bounded but do not tend to zero, so it is an explicit element of `𝒞^α` outsi
   whose derivatives through order `k` are bounded by `C ‖u‖` and whose `k`-th derivative is
   `α`-Hölder with constant `C ‖u‖`.
 * `TauCeti.BesovSpace.toCkHolderSpace`: the inclusion `𝒞^{k+α} → C_b^{k,α}` as a continuous
-  linear map, characterised by `TauCeti.BesovSpace.toCkHolderSpace_eq_iff` and
-  `TauCeti.BesovSpace.toLpTop_toCkHolderSpace`.
+  linear map, characterised by `TauCeti.BesovSpace.toCkHolderSpace_eq_iff`,
+  `TauCeti.BesovSpace.toLpTop_toCkHolderSpace` and
+  `TauCeti.BesovSpace.coe_toCkHolderSpace_eq_of_toDistr_eq`.
 * `TauCeti.BesovSpace.exists_toLpTop_eq_and_norm_le_and_holderWith`: the case `k = 0`, every
   `u ∈ 𝒞^α` is a bounded continuous `α`-Hölder function.
 * `TauCeti.BesovSpace.toHolderSpace`: the inclusion `𝒞^α → C^{0,α}` as a continuous linear map
   into the Hölder space with norm `‖f‖_∞ + [f]_α`, characterised by
-  `TauCeti.BesovSpace.toHolderSpace_eq_iff` and `TauCeti.BesovSpace.toLpTop_toHolderSpace`.
+  `TauCeti.BesovSpace.toHolderSpace_eq_iff` and `TauCeti.BesovSpace.toLpTop_toHolderSpace`,
+  matching the order-zero `CkHolderSpace` representative via
+  `TauCeti.BesovSpace.coe_toCkHolderSpace_zero_inclusion`.
 * `TauCeti.exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_add_add_sub_two_nsmul_le`:
   the blocks of a bounded function whose second differences are at most `H ‖h‖^s` satisfy
   `2^{(j+1)s} ‖Δ_{j+1} f‖_∞ ≤ C H`.
@@ -120,14 +110,9 @@ bounded but do not tend to zero, so it is an explicit element of `𝒞^α` outsi
   `𝒞^{k+α} ≃ C_b^{k,α}` given by `toCkHolderSpace` and `ofCkHolderSpace`, which are mutually
   inverse (`TauCeti.BesovSpace.toCkHolderSpace_ofCkHolderSpace` and
   `TauCeti.BesovSpace.ofCkHolderSpace_toCkHolderSpace`).
-* `TauCeti.BesovSpace.memLittleHolder_iff_tendsto_rpow_mul_norm_block`: for `0 < α < 1`, a
-  representative of `u ∈ 𝒞^α` is little `α`-Hölder exactly when `2^{jα} ‖Δⱼ u‖_∞ → 0`; in
-  particular representatives of elements of `c^α` are little Hölder
-  (`TauCeti.BesovSpace.memLittleHolder_of_mem_littleBesov`).
-* `TauCeti.BesovSpace.not_tendsto_rpow_mul_norm_block_of_eqOn_norm_rpow` and
-  `TauCeti.BesovSpace.notMem_littleBesov_of_eqOn_norm_rpow`: for `0 < α < 1`, an element of `𝒞^α`
-  represented by a function of norm `‖x‖ ^ α` near `0` has weighted blocks `2^{jα} ‖Δⱼ u‖_∞`
-  that do not tend to zero, and lies outside `c^α`.
+* `TemperedDistribution.memBesov_iff_exists_holderSpace` and
+  `TemperedDistribution.memBesov_iff_exists_ckHolderSpace`: unbundled identifications
+  `𝒞^α = C^{0,α}` and `𝒞^{k+α} = C_b^{k,α}` for `0 < α < 1`.
 
 ## References
 
@@ -716,6 +701,27 @@ theorem toCkHolderSpace_eq_iff (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1)
   rw [toCkHolderSpace_apply, coe_ckHolderRepr, repr_eq φ (fun u ↦ (ckRepr_spec φ k hα0 hα1 u).1) h,
     CkHolderSpace.coe_toBoundedContinuousFunction]
 
+/-- Any bounded continuous function whose tempered distribution equals `u` has the same underlying
+function as `toCkHolderSpace F φ k hα0 hα1 u`. -/
+theorem coe_toCkHolderSpace_eq_of_toDistr_eq {k : ℕ} (hα0 : 0 < α) (hα1 : α < 1)
+    {u : BesovSpace F φ (k + α) ∞ ∞} {f : E →ᵇ F}
+    (hf : (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr) :
+    ⇑(toCkHolderSpace F φ k hα0 hα1 u) = ⇑f := by
+  rw [← CkHolderSpace.coe_toBoundedContinuousFunction,
+    toBoundedContinuousFunction_toCkHolderSpace,
+    repr_eq φ (fun v ↦ (ckRepr_spec φ k hα0 hα1 v).1) hf]
+
+/-- The order-zero `CkHolderSpace` representative of `u ∈ 𝒞^α` (viewed in `𝒞^{0+α}`) has the same
+underlying function as `toHolderSpace F φ hα0 hα1 u`. -/
+theorem coe_toCkHolderSpace_zero_inclusion (hα0 : 0 < α) (hα1 : α < 1)
+    (u : BesovSpace F φ α ∞ ∞) :
+    ⇑(toCkHolderSpace F φ 0 hα0 hα1 (inclusion F φ ∞ (by simp) le_rfl u)) =
+      ⇑(toHolderSpace F φ hα0 hα1 u) :=
+  (coe_toCkHolderSpace_eq_of_toDistr_eq φ hα0 hα1
+    ((toLpTop_toHolderSpace φ hα0 hα1 u).trans
+      (toDistr_inclusion (by simp) le_rfl u).symm)).trans
+    (funext (HolderSpace.toBoundedContinuousFunction_apply _))
+
 /-! ### The converse inclusion `C_b^{k,α} ⊆ 𝒞^{k+α}` -/
 
 /-- **Functions with bounded second differences are Hölder–Zygmund distributions.** Let
@@ -1020,109 +1026,37 @@ theorem holderSpaceEquiv_symm_apply {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 
     (holderSpaceEquiv F φ hα0 hα1).symm f = ofHolderSpace F φ α f :=
   (rfl)
 
-/-! ### The little Hölder–Zygmund space and the little Hölder space -/
-
-/-- An element of `𝒞^α` with the same tempered distribution as an element of `𝒞^{1+α}` is
-represented by a Lipschitz function, which is little `α`-Hölder for `α < 1`: the representative is
-`C¹` with bounded derivative. -/
-private theorem toHolderSpace_mem_littleHolder_of_toDistr_eq (hα0 : 0 < α) (hα1 : α < 1)
-    {v : BesovSpace F φ α ∞ ∞} {w : BesovSpace F φ (((1 : ℕ) : ℝ) + α) ∞ ∞}
-    (hvw : v.toDistr = w.toDistr) :
-    toHolderSpace F φ hα0 hα1 v ∈ HolderSpace.littleHolder α E F := by
-  set g := toCkHolderSpace F φ 1 hα0 hα1 w
-  have hvg : (toHolderSpace F φ hα0 hα1 v).toBoundedContinuousFunction =
-      g.toBoundedContinuousFunction :=
-    repr_eq φ (toLpTop_toHolderSpace φ hα0 hα1) (by rw [toLpTop_toCkHolderSpace, hvw])
-  rw [HolderSpace.mem_littleHolder_iff, ← HolderSpace.coe_toBoundedContinuousFunction, hvg,
-    CkHolderSpace.coe_toBoundedContinuousFunction]
-  exact g.lipschitzWith.memLittleHolder hα1
-
-/-- If the weighted blocks of `u ∈ 𝒞^α` vanish at high frequency, then its Hölder representative
-is little Hölder: it is a limit in `C^{0,α}` of the representatives of the dyadic partial sums
-`S_N u`, which come from `𝒞^{1+α}`, and the little Hölder space is closed. -/
-private theorem toHolderSpace_mem_littleHolder_of_tendsto (hα0 : 0 < α) (hα1 : α < 1)
-    {u : BesovSpace F φ α ∞ ∞}
-    (hu : Tendsto (fun j : ℕ ↦ 2 ^ ((α : ℝ) * j) * ‖u.block j‖) atTop (𝓝 0)) :
-    toHolderSpace F φ hα0 hα1 u ∈ HolderSpace.littleHolder α E F := by
-  have hlt : (α : ℝ) < ((1 : ℕ) : ℝ) + α := by
-    rw [Nat.cast_one]
-    exact lt_one_add _
-  refine HolderSpace.isClosed_littleHolder.mem_of_tendsto
-    (((toHolderSpace F φ hα0 hα1).continuous.tendsto u).comp
-      (tendsto_partialSumCLM_top_of_tendsto hu)) (Eventually.of_forall fun N ↦ ?_)
-  obtain ⟨w, hw⟩ := partialSumCLM_mem_range_inclusionOfLT hlt ∞ N u
-  rw [Function.comp_apply, ← hw]
-  exact toHolderSpace_mem_littleHolder_of_toDistr_eq φ hα0 hα1 (toDistr_inclusionOfLT hlt w)
-
-/-- If the Hölder representative of `u ∈ 𝒞^α` is little Hölder, then the weighted blocks of `u`
-vanish at high frequency: the representative is a limit in `C^{0,α}` of smooth Lipschitz functions
-`g`, which lie in `𝒞¹`, so their weighted blocks of order `α < 1` vanish at high frequency, and
-block decay is a closed condition in `𝒞^α`. -/
-private theorem tendsto_of_toHolderSpace_mem_littleHolder (hα0 : 0 < α) (hα1 : α < 1)
-    {u : BesovSpace F φ α ∞ ∞} (hu : toHolderSpace F φ hα0 hα1 u ∈ HolderSpace.littleHolder α E F) :
-    Tendsto (fun j : ℕ ↦ 2 ^ ((α : ℝ) * j) * ‖u.block j‖) atTop (𝓝 0) := by
-  rw [← SetLike.mem_coe, HolderSpace.littleHolder_eq_closure hα1] at hu
-  rw [← ofHolderSpace_toHolderSpace φ hα0 hα1 u]
-  refine isClosed_setOf_tendsto_rpow_mul_norm_block.closure_subset
-    (map_mem_closure (ofHolderSpace F φ α).continuous hu fun g ⟨_, K, hK⟩ ↦ ?_)
-  -- The Lipschitz function `g` is an element `w` of `𝒞¹`, so its weighted blocks of order
-  -- `α < 1` vanish at high frequency.
-  obtain ⟨_, -, hC⟩ := exists_toDistr_eq_and_norm_le_of_holderWith (F := F) φ 1
-  obtain ⟨w, hw, -⟩ := hC g.toBoundedContinuousFunction (H := K) <| by
-    rw [HolderSpace.coe_toBoundedContinuousFunction]
-    exact hK.holderWith
-  have hlt : (α : ℝ) < ((1 : ℝ≥0) : ℝ) := by exact_mod_cast hα1
-  have hblock (j : ℕ) : (ofHolderSpace F φ α g).block j = w.block j :=
-    block_eq_of_toDistr_eq ((toDistr_ofHolderSpace φ g).trans hw.symm) j
-  simpa only [Set.mem_ofPred_eq, block_inclusionOfLT, hblock] using
-    tendsto_rpow_mul_norm_block ENNReal.one_ne_top (inclusionOfLT F φ ∞ ∞ 1 hlt w)
-
-/-- **Little Hölder continuity is block decay.** Let `0 < α < 1` and let `f` be
-a bounded continuous function representing `u ∈ 𝒞^α = B^α_{∞,∞}`. Then `f` is little
-`α`-Hölder, its `α`-Hölder difference quotients tending to zero at small scales, exactly when the
-weighted blocks of `u` vanish at high frequency, `2^{jα} ‖Δⱼ u‖_∞ → 0`. -/
-theorem memLittleHolder_iff_tendsto_rpow_mul_norm_block (hα0 : 0 < α) (hα1 : α < 1)
-    {u : BesovSpace F φ α ∞ ∞} {f : E →ᵇ F}
-    (hf : (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr) :
-    MemLittleHolder α f ↔ Tendsto (fun j : ℕ ↦ 2 ^ ((α : ℝ) * j) * ‖u.block j‖) atTop (𝓝 0) := by
-  have huf : (toHolderSpace F φ hα0 hα1 u).toBoundedContinuousFunction = f :=
-    repr_eq φ (toLpTop_toHolderSpace φ hα0 hα1) hf
-  rw [← huf, HolderSpace.coe_toBoundedContinuousFunction, ← HolderSpace.mem_littleHolder_iff]
-  exact ⟨tendsto_of_toHolderSpace_mem_littleHolder φ hα0 hα1,
-    toHolderSpace_mem_littleHolder_of_tendsto φ hα0 hα1⟩
-
-/-- **Elements of the little Hölder–Zygmund space `c^α` are little Hölder.** For `0 < α < 1`, a
-bounded continuous function representing an element of `c^α`, the closure of the Schwartz
-functions in `𝒞^α`, is little `α`-Hölder. -/
-theorem memLittleHolder_of_mem_littleBesov (hα0 : 0 < α) (hα1 : α < 1)
-    {u : BesovSpace F φ α ∞ ∞} (hu : u ∈ littleBesov F φ α ∞) {f : E →ᵇ F}
-    (hf : (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr) : MemLittleHolder α f :=
-  (memLittleHolder_iff_tendsto_rpow_mul_norm_block φ hα0 hα1 hf).2
-    (tendsto_rpow_mul_norm_block_of_mem_littleBesov hu)
-
-/-- **The cusp has weighted blocks that do not vanish at high frequency.** Let `0 < α < 1` and let
-`u ∈ 𝒞^α` be represented by a bounded continuous function `f` with `‖f x‖ = ‖x‖ ^ α` near `0`,
-such as the cusp truncated at height `1`. The weighted blocks `2^{jα} ‖Δⱼ u‖_∞` are bounded by
-`‖u‖`, but they do not tend to zero. -/
-theorem not_tendsto_rpow_mul_norm_block_of_eqOn_norm_rpow [Nontrivial E] (hα0 : 0 < α)
-    (hα1 : α < 1) {u : BesovSpace F φ α ∞ ∞} {f : E →ᵇ F}
-    (hf : (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr) {r : ℝ} (hr : 0 < r)
-    (hfr : Set.EqOn (fun x ↦ ‖f x‖) (fun x ↦ ‖x‖ ^ (α : ℝ)) (Metric.ball 0 r)) :
-    ¬ Tendsto (fun j : ℕ ↦ 2 ^ ((α : ℝ) * j) * ‖u.block j‖) atTop (𝓝 0) := fun h ↦
-  not_memLittleHolder_of_eqOn_norm_rpow hα0 hr hfr (lipschitzWith_one_norm.comp_memLittleHolder
-    ((memLittleHolder_iff_tendsto_rpow_mul_norm_block φ hα0 hα1 hf).2 h))
-
-/-- **The cusp is not in the little Hölder–Zygmund space.** For `0 < α < 1`, an element of `𝒞^α`
-represented by a bounded continuous function `f` with `‖f x‖ = ‖x‖ ^ α` near `0` does not lie in
-`c^α`, the closure of the Schwartz functions in `𝒞^α`. -/
-theorem notMem_littleBesov_of_eqOn_norm_rpow [Nontrivial E] (hα0 : 0 < α) (hα1 : α < 1)
-    {u : BesovSpace F φ α ∞ ∞} {f : E →ᵇ F} (hf : (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr)
-    {r : ℝ} (hr : 0 < r)
-    (hfr : Set.EqOn (fun x ↦ ‖f x‖) (fun x ↦ ‖x‖ ^ (α : ℝ)) (Metric.ball 0 r)) :
-    u ∉ littleBesov F φ α ∞ := fun hu ↦
-  not_tendsto_rpow_mul_norm_block_of_eqOn_norm_rpow φ hα0 hα1 hf hr hfr
-    (tendsto_rpow_mul_norm_block_of_mem_littleBesov hu)
-
 end BesovSpace
 
 end TauCeti
+
+namespace TemperedDistribution
+
+variable (φ : ContDiffBump (0 : E)) {α : ℝ≥0}
+
+/-- **Unbundled identification `𝒞^α = C^{0,α}`** for `0 < α < 1`: a tempered distribution lies in
+`B^α_{∞,∞}` exactly when it is the tempered distribution of a bounded `α`-Hölder function. -/
+theorem memBesov_iff_exists_holderSpace (hα0 : 0 < α) (hα1 : α < 1) {u : 𝓢'(E, F)} :
+    u.MemBesov φ α ∞ ∞ ↔
+      ∃ f : TauCeti.HolderSpace α E F,
+        (BoundedContinuousFunction.toLpTop volume ℂ f.toBoundedContinuousFunction : 𝓢'(E, F)) =
+          u :=
+  ⟨fun hu ↦ ⟨TauCeti.BesovSpace.toHolderSpace F φ hα0 hα1 hu.toBesovSpace, by simp⟩,
+    fun ⟨f, hf⟩ ↦ hf ▸ by
+      simpa only [TauCeti.BesovSpace.toDistr_ofHolderSpace] using
+        (TauCeti.BesovSpace.ofHolderSpace F φ α f).memBesov_toDistr⟩
+
+/-- **Unbundled identification `𝒞^{k+α} = C_b^{k,α}`** for `k : ℕ` and `0 < α < 1`: a tempered
+distribution lies in `B^{k+α}_{∞,∞}` exactly when it is the tempered distribution of a bounded
+`C^{k,α}` map. -/
+theorem memBesov_iff_exists_ckHolderSpace (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) {u : 𝓢'(E, F)} :
+    u.MemBesov φ (k + α) ∞ ∞ ↔
+      ∃ f : TauCeti.CkHolderSpace k α E F,
+        (BoundedContinuousFunction.toLpTop volume ℂ f.toBoundedContinuousFunction : 𝓢'(E, F)) =
+          u :=
+  ⟨fun hu ↦ ⟨TauCeti.BesovSpace.toCkHolderSpace F φ k hα0 hα1 hu.toBesovSpace, by simp⟩,
+    fun ⟨f, hf⟩ ↦ hf ▸ by
+      simpa only [TauCeti.BesovSpace.toDistr_ofCkHolderSpace] using
+        (TauCeti.BesovSpace.ofCkHolderSpace F φ k α f).memBesov_toDistr⟩
+
+end TemperedDistribution
