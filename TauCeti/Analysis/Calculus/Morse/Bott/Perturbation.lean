@@ -117,6 +117,20 @@ private theorem eventually_fderiv_comp_inr_eq_zero_imp [FiniteDimensional ℝ F]
   rw [hv, norm_zero] at hzc
   exact norm_le_zero_iff.1 (nonpos_of_mul_nonpos_right hzc hc)
 
+/-- The derivative of `f + h ∘ Prod.fst` is that of `f` plus that of `h`, read on the base
+component. -/
+private theorem fderiv_add_comp_fst {h : P → ℝ} {z : P × F} (hzf : DifferentiableAt ℝ f z)
+    (hh : DifferentiableAt ℝ h z.1) :
+    fderiv ℝ (fun y ↦ f y + h y.1) z =
+      fderiv ℝ f z + fderiv ℝ h z.1 ∘L ContinuousLinearMap.fst ℝ P F :=
+  (hzf.hasFDerivAt.add (hh.hasFDerivAt.comp z hasFDerivAt_fst)).fderiv
+
+/-- A linear form on the base vanishes once its pullback along `Prod.fst` does. -/
+private theorem eq_zero_of_comp_fst_eq_zero {L : P →L[ℝ] ℝ}
+    (hL : L ∘L ContinuousLinearMap.fst ℝ P F = 0) : L = 0 := by
+  rw [← L.comp_id, ← ContinuousLinearMap.fst_comp_inl (R := ℝ) (M₂ := F),
+    ← ContinuousLinearMap.comp_assoc, hL, ContinuousLinearMap.zero_comp]
+
 /-- The critical points of `f + h ∘ Prod.fst` at a point `z` where `f` is critical on the zero
 section through `z`, and where the fibre derivative of `f` vanishes only on the zero section. -/
 private theorem fderiv_add_comp_fst_eq_zero_iff {h : P → ℝ} {z : P × F}
@@ -124,22 +138,17 @@ private theorem fderiv_add_comp_fst_eq_zero_iff {h : P → ℝ} {z : P × F}
     (hz0 : fderiv ℝ f (z.1, 0) = 0)
     (hzv : fderiv ℝ f z ∘L ContinuousLinearMap.inr ℝ P F = 0 → z.2 = 0) :
     fderiv ℝ (fun y ↦ f y + h y.1) z = 0 ↔ z.2 = 0 ∧ fderiv ℝ h z.1 = 0 := by
-  have hd : HasFDerivAt (fun y ↦ f y + h y.1)
-      (fderiv ℝ f z + fderiv ℝ h z.1 ∘L ContinuousLinearMap.fst ℝ P F) z :=
-    hzf.hasFDerivAt.add (hh.hasFDerivAt.comp z hasFDerivAt_fst)
-  rw [hd.fderiv]
+  have hz : z.2 = 0 → fderiv ℝ f z = 0 := fun h2 ↦ by rwa [← Prod.mk.eta (p := z), h2]
+  rw [fderiv_add_comp_fst hzf hh]
   constructor
   · intro h0
     have h2 : z.2 = 0 := hzv <| by
       ext w
       simpa using congr($h0 (0, w))
-    have hz : fderiv ℝ f z = 0 := by rwa [← Prod.mk.eta (p := z), h2]
-    refine ⟨h2, ?_⟩
-    ext u
-    simpa [hz] using congr($h0 (u, 0))
+    rw [hz h2, zero_add] at h0
+    exact ⟨h2, eq_zero_of_comp_fst_eq_zero h0⟩
   · rintro ⟨h2, hh0⟩
-    have hz : fderiv ℝ f z = 0 := by rwa [← Prod.mk.eta (p := z), h2]
-    simp [hz, hh0]
+    simp [hz h2, hh0]
 
 /-- **Critical points of a perturbation by a function on the critical submanifold.** If `f` is
 `C²` at `(a, 0)`, every point `(b, 0)` with `b` near `a` is critical, and the kernel of the Hessian
@@ -206,17 +215,12 @@ theorem isNondegenerateCriticalPoint_add_comp_fst_iff [FiniteDimensional ℝ P]
       hessianQuadraticForm_comp_fst_add_comp_snd hh hψ.contDiffAt]
   have hD : fderiv ℝ (fun z ↦ f z + h z.1) (a, 0) =
       fderiv ℝ h a ∘L ContinuousLinearMap.fst ℝ P F := by
-    have hd : HasFDerivAt (fun z ↦ f z + h z.1)
-        (fderiv ℝ f (a, 0) + fderiv ℝ h a ∘L ContinuousLinearMap.fst ℝ P F) (a, 0) :=
-      (hf.differentiableAt two_ne_zero).hasFDerivAt.add
-        ((hh.differentiableAt two_ne_zero).hasFDerivAt.comp (a, 0) hasFDerivAt_fst)
-    rw [hd.fderiv, hcrit.self_of_nhds, zero_add]
+    rw [fderiv_add_comp_fst (hf.differentiableAt two_ne_zero) (hh.differentiableAt two_ne_zero),
+      hcrit.self_of_nhds, zero_add]
   rw [isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate, hQ, hD]
   constructor
   · rintro ⟨-, hD0, hnd⟩
-    have hh0 : fderiv ℝ h a = 0 := by
-      ext u
-      simpa using congr($hD0 (u, 0))
+    have hh0 : fderiv ℝ h a = 0 := eq_zero_of_comp_fst_eq_zero hD0
     refine (isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff.1 <|
       isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate.2
         ⟨(hh.comp (a, 0) contDiffAt_fst).add (hψ.contDiffAt.comp (a, 0) contDiffAt_snd),
@@ -278,12 +282,9 @@ private theorem fderiv_add_mul_mul_ne_zero {ρ : F → ℝ} {h : P → ℝ} {z :
   -- The fibre derivative of `f` would cancel that of the perturbation.
   have hcancel : fderiv ℝ f z ∘L ContinuousLinearMap.inr ℝ P F =
       -(ε • (h z.1 • fderiv ℝ ρ z.2)) := by
-    ext w
-    have := congr($(hd.fderiv.symm.trans h0) (0, w))
-    simp only [smul_add, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', ContinuousLinearMap.inr_apply,
-      neg_apply, map_zero, smul_eq_mul, mul_zero, zero_add, zero_apply] at this ⊢
-    linarith
+    refine eq_neg_of_add_eq_zero_left ?_
+    simpa [ContinuousLinearMap.add_comp, ContinuousLinearMap.comp_assoc] using
+      congr($(hd.fderiv.symm.trans h0) ∘L ContinuousLinearMap.inr ℝ P F)
   rw [hcancel, norm_neg, norm_smul, Real.norm_eq_abs] at hm
   linarith
 
