@@ -10,11 +10,11 @@ public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
+public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.Topology.Algebra.UnitaryGroup
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import TauCeti.Analysis.Matrix.Exponential.Block
-import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.SpecialFunctions.Exponential
@@ -72,6 +72,8 @@ the block-diagonal matrices `diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
 * `ClosedSubgroup.matrixAdjointRepresentation_lie`: each `Ad(g)` preserves the bracket.
 * `ClosedSubgroup.lieInvariant_of_isInvariantForm`: an `Ad(G)`-invariant bilinear form is
   `ad`-invariant, `B ⁅X, Y⁆ Z = -B Y ⁅X, Z⁆`.
+* `ClosedSubgroup.matrixTraceForm_eq_frobenius_real_inner`: the trace form is the restriction of
+  the real Frobenius inner product.
 * `ClosedSubgroup.posDef_matrixTraceForm`, `ClosedSubgroup.isInvariantForm_matrixTraceForm`: the
   trace form is positive definite and `Ad(G)`-invariant.
 * `ClosedSubgroup.mem_matrixLieAlgebra_fromBlocksProd_iff`: the Lie algebra of a block-diagonal
@@ -389,38 +391,43 @@ theorem matrixTraceForm_apply (X Y : G.matrixLieAlgebra) :
     G.matrixTraceForm X Y = -RCLike.re ((X : Matrix n n 𝕜) * Y).trace :=
   (rfl)
 
+section
+
+open scoped InnerProductSpace Matrix.Norms.Frobenius
+
+/-- The trace form on the Lie algebra is the restriction of the real Frobenius inner product. -/
+theorem matrixTraceForm_eq_frobenius_real_inner (X Y : G.matrixLieAlgebra) :
+    G.matrixTraceForm X Y = ⟪(X : Matrix n n 𝕜), (Y : Matrix n n 𝕜)⟫_ℝ := by
+  rw [matrixTraceForm_apply, Matrix.frobenius_real_inner_eq_neg_re_trace_mul_of_conjTranspose_eq_neg
+    (conjTranspose_eq_neg_of_mem_matrixLieAlgebra X.property)]
+
 /-- The trace form is symmetric. -/
 theorem isSymm_matrixTraceForm : G.matrixTraceForm.IsSymm :=
-  ⟨fun X Y ↦ by simp only [matrixTraceForm_apply, Matrix.trace_mul_comm (X : Matrix n n 𝕜)]⟩
+  ⟨fun X Y ↦ by simpa only [matrixTraceForm_eq_frobenius_real_inner] using real_inner_comm _ _⟩
 
 /-- The trace form of an element with itself is the sum of the squared norms of its entries. -/
 theorem matrixTraceForm_self (X : G.matrixLieAlgebra) :
     G.matrixTraceForm X X = ∑ i, ∑ j, ‖(X : Matrix n n 𝕜) i j‖ ^ 2 := by
-  rw [matrixTraceForm_apply, ← Matrix.re_trace_mul_conjTranspose_self,
-    conjTranspose_eq_neg_of_mem_matrixLieAlgebra X.property, mul_neg, Matrix.trace_neg, map_neg]
+  rw [matrixTraceForm_eq_frobenius_real_inner, real_inner_self_eq_norm_sq,
+    Matrix.frobenius_norm_sq_eq_sum_norm_sq]
 
 /-- The trace form is positive definite. -/
 theorem posDef_matrixTraceForm : G.matrixTraceForm.toQuadraticMap.PosDef := by
   intro X hX
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, matrixTraceForm_self]
-  refine lt_of_le_of_ne (by positivity) fun h ↦ hX (Subtype.ext (Matrix.ext fun i j ↦ ?_))
-  have hi := (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ by positivity).mp h.symm i
-    (Finset.mem_univ i)
-  have hij := (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ by positivity).mp hi j
-    (Finset.mem_univ j)
-  simpa using hij
+  rw [LinearMap.BilinMap.toQuadraticMap_apply, matrixTraceForm_eq_frobenius_real_inner,
+    real_inner_self_eq_norm_sq]
+  exact sq_pos_of_pos (norm_pos_iff.mpr (fun h ↦ hX (Subtype.ext h)))
 
 /-- The trace form is invariant under the adjoint action of `G`. -/
 theorem isInvariantForm_matrixTraceForm :
     TauCeti.Representation.IsInvariantForm G.matrixAdjointRepresentation G.matrixTraceForm := by
   refine TauCeti.Representation.isInvariantForm_iff.mpr fun g X Y ↦ ?_
-  simp only [matrixTraceForm_apply, coe_matrixAdjointRepresentation_apply]
-  -- Merge `(g X g⋆) (g Y g⋆)` into `g (X Y) g⋆`: both factors are images of the conjugation
-  -- automorphism `Unitary.conjStarAlgAut`, so `map_mul` combines them, and unfolding it again
-  -- leaves a single conjugate whose trace is cyclic.
-  rw [← Unitary.conjStarAlgAut_apply (S := ℝ), ← Unitary.conjStarAlgAut_apply (S := ℝ), ← map_mul,
-    Unitary.conjStarAlgAut_apply]
-  rw [Matrix.trace_mul_comm, ← mul_assoc, Matrix.UnitaryGroup.star_mul_self, one_mul]
+  simpa only [matrixTraceForm_eq_frobenius_real_inner, coe_matrixAdjointRepresentation_apply,
+    Matrix.star_eq_conjTranspose] using
+    Matrix.UnitaryGroup.frobenius_real_inner_conj (g : Matrix.unitaryGroup n 𝕜)
+      (X : Matrix n n 𝕜) (Y : Matrix n n 𝕜)
+
+end
 
 section FromBlocks
 

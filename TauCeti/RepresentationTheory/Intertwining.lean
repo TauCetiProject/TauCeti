@@ -73,6 +73,8 @@ taking invariants under it.
 * `Representation.Equiv.ker_eq`: equivalent representations have the same kernel.
 * `Representation.IntertwiningMap.ker_le_ker_of_surjective`: an element acting trivially in a
   representation acts trivially in each of its quotients.
+* `Representation.mul_mul_inv_eq_smul_of_mul_eq_smul_mul`: a relation `ρ g * f = c • (f * ρ g)`
+  says that conjugation by `ρ g` scales `f` by `c`.
 * `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
   generating set of the group.
 * `Representation.exists_unit_smul_of_intertwines`: if the equivariant endomorphisms of a
@@ -316,6 +318,18 @@ theorem intertwiningDefectAt_eq_zero_iff {ρ : Representation K G V} {σ : Repre
   rw [intertwiningDefectAt_apply, sub_eq_zero, eq_comm]
 
 end IntertwiningDefect
+
+section Conjugation
+
+variable {K G V : Type*} [CommSemiring K] [Group G] [AddCommMonoid V] [Module K V]
+
+/-- If `ρ g * f = c • (f * ρ g)` for an endomorphism `f`, then conjugation by `ρ g` scales `f`
+by `c`: `ρ g * f * ρ g⁻¹ = c • f`. -/
+theorem mul_mul_inv_eq_smul_of_mul_eq_smul_mul {ρ : Representation K G V} {f : Module.End K V}
+    {g : G} {c : K} (h : ρ g * f = c • (f * ρ g)) : ρ g * f * ρ g⁻¹ = c • f := by
+  simp [h, mul_assoc, ← map_mul]
+
+end Conjugation
 
 end Representation
 

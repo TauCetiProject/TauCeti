@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
 public import TauCeti.Analysis.BoundedVariation.Translation
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable

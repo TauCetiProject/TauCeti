@@ -17,9 +17,9 @@ public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 The object property `CategoryTheory.isProjective C` of being projective is closed under
 isomorphisms, so it can serve as the resolving property of finite resolutions, which are
 transported along isomorphisms. It is also stable under retracts, contains a zero object, and,
-in a category with binary or finite biproducts, is closed under binary and finite products.
-These are the closure properties under which the ideal of morphisms factoring through a projective
-object has an elementwise description (`CategoryTheory.ObjectProperty.mem_factorIdeal_iff`).
+in a category with binary biproducts, is closed under binary products. These are the closure
+properties under which the ideal of morphisms factoring through a projective object has an
+elementwise description (`CategoryTheory.ObjectProperty.mem_factorIdeal_iff`).
 
 The point of any colimit cofan of a family of projective objects is projective. Mathlib's
 instance for the chosen coproduct `∐ X` requires the index type to live in the universe of the
@@ -58,19 +58,6 @@ instance isClosedUnderBinaryProducts_isProjective [HasZeroMorphisms C] [HasBinar
     (isProjective C).IsClosedUnderBinaryProducts :=
   ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _
     fun _ _ (_ : Projective _) (_ : Projective _) => inferInstance
-
-section FiniteBiproducts
-
-attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
-  hasFiniteProducts_of_hasFiniteBiproducts
-
-/-- In a category with zero morphisms and finite biproducts, projective objects are closed under
-finite products. -/
-instance isClosedUnderFiniteProducts_isProjective [HasZeroMorphisms C] [HasFiniteBiproducts C] :
-    (isProjective C).IsClosedUnderFiniteProducts :=
-  .mk'
-
-end FiniteBiproducts
 
 namespace Projective
 

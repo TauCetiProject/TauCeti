@@ -23,7 +23,8 @@ interior and its norms on `U` itself, matching `TauCeti.MemWkpLoc`. On an open s
 derivatives are unique almost everywhere, so the minimum is attained by every weak derivative.
 
 This is the quantity in which interior estimates of elliptic equations are stated. The file
-supplies its unfolding, its value through a given weak derivative on an open set, the `Lᵖ` and
+supplies its unfolding, its value through a given weak derivative on an open set or on a set
+that agrees almost everywhere with its interior, such as a half-disc, the `Lᵖ` and
 `W^{k,p}_loc` membership of a function of finite norm and, conversely, the finiteness of the
 norm of a `W^{k,p}_loc` function on relatively compact subsets, the extraction of a weak
 derivative from a finite successor-order norm, the almost-everywhere vanishing of a function of
@@ -133,14 +134,26 @@ theorem eLpNormWkp_congr_ae (hfg : f =ᵐ[volume.restrict U] g) :
     · exact hD.congr_ae (Filter.EventuallyEq.symm hint)
     · exact hD.congr_ae hint
 
+/-- On a set that agrees almost everywhere with its interior, every weak derivative on the
+interior realizes the successor-order norm. This applies to open sets and to the half-discs
+`Ω ∩ {0 ≤ im}` (`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`). -/
+theorem eLpNormWkp_succ_eq_of_hasWeakFDerivOn_interior
+    (hU : U =ᵐ[volume] (Opens.interior U : Set ℂ)) {D : ℂ → ℂ →L[ℝ] F}
+    (hD : HasWeakFDerivOn volume (Opens.interior U) f D) :
+    eLpNormWkp p U (k + 1) f = eLpNorm f p (volume.restrict U) + eLpNormWkp p U k D := by
+  refine le_antisymm (eLpNormWkp_succ_le hD) ?_
+  rw [eLpNormWkp_succ]
+  gcongr
+  refine le_iInf₂ fun D' hD' => (eLpNormWkp_congr_ae ?_).le
+  rw [Measure.restrict_congr_set hU]
+  exact hD.ae_eq hD'
+
 /-- On an open set, every weak derivative realizes the successor-order norm. -/
 theorem eLpNormWkp_succ_eq_of_hasWeakFDerivOn {Ω : Opens ℂ} {D : ℂ → ℂ →L[ℝ] F}
     (hD : HasWeakFDerivOn volume Ω f D) :
-    eLpNormWkp p Ω (k + 1) f = eLpNorm f p (volume.restrict Ω) + eLpNormWkp p Ω k D := by
-  refine le_antisymm (eLpNormWkp_succ_le (by rwa [Opens.interior_coe])) ?_
-  rw [eLpNormWkp_succ, Opens.interior_coe]
-  gcongr
-  exact le_iInf₂ fun D' hD' => (eLpNormWkp_congr_ae (hD.ae_eq hD')).le
+    eLpNormWkp p Ω (k + 1) f = eLpNorm f p (volume.restrict Ω) + eLpNormWkp p Ω k D :=
+  eLpNormWkp_succ_eq_of_hasWeakFDerivOn_interior (by rw [Opens.interior_coe])
+    (by rwa [Opens.interior_coe])
 
 /-- On an open set, the order-`k` norm of a weak derivative is at most the order-`k + 1` norm of
 the function. At `k = 0` this bounds `‖D‖_{Lᵖ(Ω)}` by `‖f‖_{W^{1,p}(Ω)}`. -/
@@ -201,6 +214,17 @@ theorem exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top {Ω : Opens ℂ}
   obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
   rw [Opens.interior_coe] at hD
   exact ⟨D, hD, hDk, eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD⟩
+
+/-- On a set that agrees almost everywhere with its interior, for instance a half-disc
+`Ω ∩ {0 ≤ im}`, a finite successor-order norm is realized by a weak derivative on the interior of
+finite norm of the previous order. -/
+theorem exists_hasWeakFDerivOn_interior_eLpNormWkp_succ_eq_of_ne_top
+    (hU : U =ᵐ[volume] (Opens.interior U : Set ℂ)) (hf : eLpNormWkp p U (k + 1) f ≠ ∞) :
+    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D ∧
+      eLpNormWkp p U k D ≠ ∞ ∧
+      eLpNormWkp p U (k + 1) f = eLpNorm f p (volume.restrict U) + eLpNormWkp p U k D := by
+  obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
+  exact ⟨D, hD, hDk, eLpNormWkp_succ_eq_of_hasWeakFDerivOn_interior hU hD⟩
 
 /-- A local Sobolev function has finite `W^{k,p}` norm on every compact subset of its domain. -/
 theorem MemWkpLoc.eLpNormWkp_ne_top_of_isCompact (hf : MemWkpLoc p U k f) {K : Set ℂ}

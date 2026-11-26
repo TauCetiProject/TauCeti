@@ -32,6 +32,8 @@ since units lift modulo the radical (`TauCeti.Ring.isLocalHom_mk_jacobson`).
 * `IsIdempotentElem.isLocalRing_corner_of_isPrimitiveIdempotent_mk`: an idempotent that is
   primitive modulo the Jacobson radical has a local corner, when the radical quotient is
   semisimple.
+* `TauCeti.IsPrimitiveIdempotent.exists_mul_mul_eq_or`: for a primitive idempotent `e` of a
+  commutative Artinian ring and every `w`, one of `w e` and `(1 - w) e` is invertible in `eA`.
 * `IsIdempotentElem.exists_mem_of_mem_iSup` (Rosenberg's lemma): an idempotent with local corner
   that lies in a sum of two-sided ideals lies in one of them; for a primitive idempotent of an
   Artinian ring, such as a finite-dimensional algebra, this is
@@ -76,6 +78,20 @@ theorem IsPrimitiveIdempotent.isLocalRing_corner [IsArtinianRing A] (he : IsPrim
     isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩
   have := (isPrimitiveIdempotent_iff_isLocalRing_end he.isIdempotentElem hfin).1 he
   exact he.isIdempotentElem.isLocalRing_corner_of_isLocalRing_end
+
+/-- **The corner of a primitive idempotent of a commutative Artinian ring is local**, read in
+`A`: for every `w`, one of `w e` and `(1 - w) e` is invertible in `eA`, that is, there is a `z`
+with `w z e = e`, or one with `(1 - w) z e = e`. -/
+theorem IsPrimitiveIdempotent.exists_mul_mul_eq_or {A : Type*} [CommRing A] [IsArtinianRing A]
+    {e : A} (he : IsPrimitiveIdempotent e) (w : A) :
+    (∃ z, w * z * e = e) ∨ ∃ z, (1 - w) * z * e = e := by
+  have := he.isLocalRing_corner
+  have hi := he.isIdempotentElem
+  have hsum : hi.compress w + hi.compress (1 - w) = 1 := by
+    rw [← IsIdempotentElem.compress_add, add_sub_cancel, IsIdempotentElem.compress_one]
+  exact (IsLocalRing.isUnit_or_isUnit_of_add_one hsum).imp
+    (hi.exists_mul_mul_eq_of_isUnit_compress (Commute.all _ _))
+    (hi.exists_mul_mul_eq_of_isUnit_compress (Commute.all _ _))
 
 end TauCeti
 

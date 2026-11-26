@@ -19,6 +19,8 @@ is the image of an element of `F.obj (kernel f)` under `F.map (kernel.ι f)`.
 
 * `CategoryTheory.Functor.exists_map_kernel_ι_eq`: an element killed by `F.map f` comes from the
   fibre of `kernel f`.
+* `CategoryTheory.Functor.map_map_apply_eq_zero`: on values, `F.map g` kills the image of
+  `F.map f` when `f ≫ g = 0`.
 -/
 
 public section
@@ -37,5 +39,13 @@ theorem exists_map_kernel_ι_eq (F : C ⥤ ModuleCat R) [F.PreservesZeroMorphism
   ⟨(PreservesKernel.iso F f).inv.hom ((ModuleCat.kernelIsoKer (F.map f)).inv.hom ⟨x, hx⟩), by
     rw [← ModuleCat.comp_apply, PreservesKernel.iso_inv_ι,
       ModuleCat.kernelIsoKer_inv_kernel_ι_apply]⟩
+
+/-- For a functor to modules preserving zero morphisms, `F.map g` kills the image of `F.map f`
+when `f ≫ g = 0`. -/
+theorem map_map_apply_eq_zero (F : C ⥤ ModuleCat R) [F.PreservesZeroMorphisms] {A B Y : C}
+    {f : A ⟶ B} {g : B ⟶ Y} (h : f ≫ g = 0) (u : F.obj A) :
+    (F.map g).hom ((F.map f).hom u) = 0 := by
+  rw [← ModuleCat.comp_apply, ← F.map_comp, h]
+  simp
 
 end CategoryTheory.Functor

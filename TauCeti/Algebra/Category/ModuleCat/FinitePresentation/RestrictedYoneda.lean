@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.FiniteBiproducts
 public import TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Basic
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.RestrictedYoneda
 

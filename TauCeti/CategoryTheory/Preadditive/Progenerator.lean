@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Generator.Preadditive
 public import TauCeti.CategoryTheory.Preadditive.AdditiveGenerator
-public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
+public import TauCeti.CategoryTheory.Preadditive.Projective.FiniteProducts
 
 /-!
 # Progenerators of preadditive categories

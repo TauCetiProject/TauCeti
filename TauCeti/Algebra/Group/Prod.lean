@@ -22,7 +22,8 @@ For a homomorphism `f : M × N →* P` into a group, the triangular map
 `(m, n) ↦ (m, f (m, n))` is surjective exactly when its second component on `{1} × N` is
 surjective. The additive version gives the same criterion for additive homomorphisms, without
 any scalar or topological assumptions. For a homomorphism `f : M →* P` into a commutative group,
-the kernel of `(m, p) ↦ f m * p` is the graph of `m ↦ (f m)⁻¹`, so it is isomorphic to `M`.
+the kernel of `(m, p) ↦ f m * p` is the graph of `m ↦ (f m)⁻¹`, so it is isomorphic to `M`, and
+more generally its fibre over `p` is the graph of `m ↦ p / f m`.
 
 The file also records the value and the inverse of a product `MulEquiv.prodCongr` of two
 multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`, the
@@ -44,6 +45,8 @@ identities as the product of the two factors.
 
 * `MonoidHom.surjective_fst_prod_iff`: the triangular map `(m, n) ↦ (m, f (m, n))` is surjective
   if and only if `f.comp (MonoidHom.inr M N)` is.
+* `MonoidHom.preimage_coprod_id_singleton`: the fibre of `(m, p) ↦ f m * p` over `p` is the graph
+  of `m ↦ p / f m`.
 * `MulEquiv.prodCongr_apply`, `MulEquiv.prodCongr_symm`: the product of two isomorphisms acts
   componentwise, and its inverse is the product of the inverses.
 * `MulEquiv.iterate_prodCongr_eq_id`: the product of two automorphisms of order dividing `m` has
@@ -124,6 +127,21 @@ theorem coe_mkerCoprodIdEquiv_apply (f : M →* P) (m : M) :
 @[to_additive (attr := simp)]
 theorem mkerCoprodIdEquiv_symm_apply (f : M →* P) (x : mker (f.coprod (MonoidHom.id P))) :
     (mkerCoprodIdEquiv f).symm x = (x : M × P).1 := (rfl)
+
+/-- For a homomorphism `f : M →* P` into a commutative group, the fibre of `(m, q) ↦ f m * q` over
+`p` is the graph of `m ↦ p / f m`. -/
+@[to_additive /-- For an additive homomorphism `f : M →+ P` into an additive commutative group, the
+fibre of `(m, q) ↦ f m + q` over `p` is the graph of `m ↦ p - f m`. -/]
+theorem preimage_coprod_id_singleton (f : M →* P) (p : P) :
+    f.coprod (MonoidHom.id P) ⁻¹' {p} = Set.range fun m => (m, p / f m) := by
+  ext ⟨m, q⟩
+  simp only [Set.mem_preimage, coprod_apply, id_apply, Set.mem_singleton_iff, Set.mem_range,
+    Prod.mk.injEq]
+  constructor
+  · rintro rfl
+    exact ⟨m, rfl, mul_div_cancel_left _ _⟩
+  · rintro ⟨m', rfl, rfl⟩
+    exact mul_div_cancel _ _
 
 end MkerCoprodId
 

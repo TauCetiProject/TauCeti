@@ -7,10 +7,12 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticFunction.TwistedDivisorSum
 public import Mathlib.Analysis.PSeries
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
+import TauCeti.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.NumberTheory.Divisors
 
 /-!
@@ -34,6 +36,11 @@ The estimate follows from the prime-factor product for `d(n)`: sufficiently larg
 need no constant, while the finitely many small primes contribute a bounded factor.
 Comparing every fixed Dirichlet-convolution power of zeta with a power of the divisor count
 gives the same subpolynomial bound for every fixed order, including order zero.
+
+For a real `x ≥ 1` and a natural number `n ≠ 0`, the power `x ^ Ω n` of the number of prime
+factors counted with multiplicity is at most `n ^ log₂ x`
+(`ArithmeticFunction.pow_cardFactors_le_rpow_logb`), from `2 ^ Ω n ≤ n` for `n ≠ 0`
+(`ArithmeticFunction.two_pow_cardFactors_le`).
 
 The ordered divisor functions also satisfy coefficient-one harmonic and summatory mean
 bounds, with natural cutoffs including zero and real cutoffs at least one. The pointwise
@@ -211,6 +218,21 @@ theorem exists_pos_zeta_pow_le_rpow (k : ℕ) {ε : ℝ} (hε : 0 < ε) :
       _ = C ^ (k + 1) * (n : ℝ) ^ ε := by
         rw [mul_pow, ← Real.rpow_mul_natCast (Nat.cast_nonneg n),
           Nat.cast_add, Nat.cast_one, div_mul_cancel₀ _ (by positivity)]
+
+open scoped ArithmeticFunction.Omega in
+/-- For a real number `x ≥ 1` and a nonzero natural number `n`, `x ^ Ω n ≤ n ^ log₂ x`, with the
+natural-number exponent `Ω n` on the left and the real exponent `Real.logb 2 x` on the right.
+It follows from `2 ^ Ω n ≤ n` (`ArithmeticFunction.two_pow_cardFactors_le`). -/
+theorem pow_cardFactors_le_rpow_logb {x : ℝ} (hx : 1 ≤ x) {n : ℕ} (hn : n ≠ 0) :
+    x ^ Ω n ≤ (n : ℝ) ^ Real.logb 2 x := by
+  calc x ^ Ω n = ((2 : ℝ) ^ (Ω n : ℝ)) ^ Real.logb 2 x := by
+        rw [← Real.rpow_mul (by norm_num), mul_comm, Real.rpow_mul (by norm_num),
+          Real.rpow_logb (by norm_num) (by norm_num) (by linarith), Real.rpow_natCast]
+    _ ≤ (n : ℝ) ^ Real.logb 2 x := by
+        gcongr
+        · exact Real.logb_nonneg (by norm_num) hx
+        · rw [Real.rpow_natCast]
+          exact_mod_cast two_pow_cardFactors_le hn
 
 
 open scoped omega

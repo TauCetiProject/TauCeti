@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linear
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Analysis.Complex.UnitDisc.Manifold
 public import TauCeti.Analysis.Complex.UnitDisc.Subdisc
 public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sigma
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Deriv
 
@@ -62,6 +65,9 @@ surfaces carries fundamental class to fundamental class
   preferred charts.
 * `TauCeti.complexHomologicalOrientation_apply_of_mem_maximalAtlas`: the canonical local
   orientations, read in any holomorphic chart.
+* `TauCeti.localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas`: a holomorphic chart,
+  centred at a point of its source, carries the canonical local orientation there to the local
+  orientation of `ℂ` at `0` selected by `Complex.orientation`.
 * `TauCeti.comap_complexHomologicalOrientation`: local biholomorphisms that are open embeddings
   pull canonical homological orientations back to canonical homological orientations.
 * `TauCeti.comap_subtypeVal_complexHomologicalOrientation`: the canonical homological orientation
@@ -76,6 +82,10 @@ surfaces carries fundamental class to fundamental class
   fundamental classes to fundamental classes.
 * `Diffeomorph.mapFundamentalClass_complexHomologicalOrientation_comp`: pushing the fundamental
   class forward along `f ∘ Φ`, for a biholomorphism `Φ`, is pushing it forward along `f`.
+* `TauCeti.comap_sigmaMk_complexHomologicalOrientation`: the canonical homological orientation of
+  a disjoint union of Riemann surfaces restricts to that of each component.
+* `TauCeti.complexFundamentalClass_sigma`: the fundamental class of a finite disjoint union of
+  compact Riemann surfaces is the sum of the images of the fundamental classes of its components.
 
 ## Implementation notes
 
@@ -159,6 +169,39 @@ theorem complexHomologicalOrientation_apply_of_mem_maximalAtlas {k : ℕ∞ω} [
   apply Subtype.ext
   rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign_det_smul _ _ (chartAt ℂ x) e
     (mem_chart_source ℂ x) hx hd.hasFDerivAt hdet.ne', sign_pos hdet, SignType.coe_one, one_smul]
+
+/-- **The canonical orientation read in a holomorphic chart.** A `C^k` holomorphic chart `e` of a
+Riemann surface, for `k ≠ 0`, centred at a point `z` of its source, carries the canonical local
+orientation at `z` to the local orientation of `ℂ` at `0` selected by its standard orientation
+`Complex.orientation`. -/
+theorem localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas {k : ℕ∞ω} [NeZero k]
+    {e : OpenPartialHomeomorph M ℂ} (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, ℂ) k M) {z : M}
+    (hz : z ∈ e.source) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : e.source ↦ e x - e z, e.continuousOn.domRestrict.sub continuous_const⟩ :
+          C(e.source, ℂ)) (S := {⟨z, hz⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext (e.injOn x.property hz (sub_eq_zero.1 hx))) (1 + 1)
+        ((e.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hz⟩
+          (1 + 1)).symm (complexHomologicalOrientation M z)).val =
+      (Complex.orientation.localOrientation Complex.finrank_real_complex).val := by
+  set φ := e
+  rw [complexHomologicalOrientation_apply_of_mem_maximalAtlas he hz]
+  have hσ : (((ContinuousLinearEquiv.refl ℝ ℂ : ℂ →L[ℝ] ℂ) : C(ℂ, ℂ)).comp
+      ((⟨fun y ↦ y - φ z, by fun_prop⟩ : C(ℂ, ℂ)).comp φ.sourceRestrict)) =
+      (⟨fun y : φ.source ↦ φ y - φ z,
+        φ.continuousOn.domRestrict.sub continuous_const⟩ : C(φ.source, ℂ)) :=
+    ContinuousMap.ext fun y ↦ congrArg (fun w ↦ w - φ z) (φ.sourceRestrict_apply y)
+  have hφ := φ.localHomologyMap_chart_localOrientationOfOrientedChart hz
+    (ContinuousLinearEquiv.refl ℝ ℂ) Complex.orientation
+    Complex.finrank_real_complex Complex.finrank_real_complex (by
+      rw [hσ]
+      exact fun y hy ↦ Subtype.ext (φ.injOn y.property hz (sub_eq_zero.1 hy)))
+  simp only [hσ] at hφ
+  -- `Orientation.map` uses the underlying linear identity, rather than the continuous structure.
+  have hid : (ContinuousLinearEquiv.refl ℝ ℂ).toLinearEquiv = LinearEquiv.refl ℝ ℂ := (rfl)
+  simpa only [hid, Orientation.map_refl, Equiv.refl_apply] using hφ
 
 variable {N : Type} [TopologicalSpace N] [T2Space N] [ChartedSpace ℂ N] [IsManifold 𝓘(ℂ, ℂ) 1 N]
 
@@ -279,5 +322,36 @@ theorem _root_.Diffeomorph.mapFundamentalClass_complexHomologicalOrientation_com
   exact HomologicalOrientation.mapFundamentalClass_comap_comp _ _ Φ.toHomeomorph f
 
 end CompactSpace
+
+section Sigma
+
+variable {ι : Type} {C : ι → Type} [∀ i, TopologicalSpace (C i)] [∀ i, T2Space (C i)]
+  [∀ i, ChartedSpace ℂ (C i)] [∀ i, IsManifold 𝓘(ℂ, ℂ) 1 (C i)]
+
+/-- The canonical homological orientation of a disjoint union of Riemann surfaces restricts to the
+canonical homological orientation of each component. -/
+@[simp]
+theorem comap_sigmaMk_complexHomologicalOrientation (i : ι) :
+    (complexHomologicalOrientation (Σ i, C i)).comap (IsOpenEmbedding.sigmaMk (σ := C) (i := i)) =
+      complexHomologicalOrientation (C i) :=
+  comap_complexHomologicalOrientation (k := 1) _ (isLocalDiffeomorph_sigmaMk i)
+
+/-- **The fundamental class of a finite disjoint union of compact Riemann surfaces** is the sum of
+the images of the fundamental classes of its components under their inclusions. -/
+theorem complexFundamentalClass_sigma [Fintype ι] [∀ i, CompactSpace (C i)] :
+    complexFundamentalClass (Σ i, C i) =
+      ∑ i, (complexHomologicalOrientation (C i)).mapFundamentalClass Complex.finrank_real_complex
+        ⟨Sigma.mk i, continuous_sigmaMk⟩ := by
+  rw [complexFundamentalClass_def,
+    HomologicalOrientation.fundamentalClass_eq_sum_mapFundamentalClass_comap _ _
+      (j := fun i ↦ ⟨Sigma.mk i, continuous_sigmaMk⟩) (fun _ ↦ IsOpenEmbedding.sigmaMk)
+      (fun i k hik ↦ disjoint_left.2 ?_) fun p ↦ ⟨p.1, p.2, rfl⟩]
+  · simp only [comap_sigmaMk_complexHomologicalOrientation]
+    -- The two sums agree up to reading `SSet.homology` as the singular homology functor.
+    rfl
+  · rintro _ ⟨x, rfl⟩ ⟨y, hy⟩
+    exact hik (congrArg Sigma.fst hy).symm
+
+end Sigma
 
 end TauCeti

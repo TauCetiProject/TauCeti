@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Module.Semidef
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt.Basic
 
 /-!
 # Basic norm estimates for Hilbert C⋆-modules

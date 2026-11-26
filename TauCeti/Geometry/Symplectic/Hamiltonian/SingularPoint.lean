@@ -81,6 +81,9 @@ rank-zero version follows
   `X_{ℓ ∘ F}(x)`.
 * `TauCeti.SymplecticForm.isCoisotropic_ker_fderiv_iff`: `ker dF_x` is coisotropic exactly when
   the functions `ℓ ∘ F` Poisson-commute at `x`.
+* `TauCeti.SymplecticForm.poissonBracket_comp_eq_zero`,
+  `TauCeti.SymplecticForm.poissonBracket_comp_eventuallyEq_zero`: if the components of
+  `F : E → (ι → ℝ)` Poisson-commute, so do all functions `ℓ ∘ F`.
 * `TauCeti.SymplecticForm.finrank_reducedSpace_ker_fderiv`: the transversal space has dimension
   `dim E - 2 rank dF_x`.
 * `TauCeti.SymplecticForm.polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal`: the Hessians of
@@ -160,6 +163,40 @@ theorem isCoisotropic_ker_fderiv_iff (hF : DifferentiableAt ℝ F x) :
     rw [poissonBracket_def, ← apply_hamiltonianVectorField_comp ω ℓ hF, ω.neg_eq]
   simp only [hbr, neg_eq_zero]
   exact ⟨fun h ℓ ↦ by rw [h, map_zero], SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ)⟩
+
+/-- **Functions of Poisson-commuting components Poisson-commute.** If the components `F_i` of
+`F : E → (ι → ℝ)` pairwise Poisson-commute at a point where `F` is differentiable, then so do all
+functions `ℓ ∘ F`, for `ℓ` a continuous linear functional on `ι → ℝ`. -/
+theorem poissonBracket_comp_eq_zero {ι : Type*} [Finite ι] {F : E → ι → ℝ}
+    (hF : DifferentiableAt ℝ F x) (hcomm : ∀ i j, ω.poissonBracket (F · i) (F · j) x = 0)
+    (ℓ ℓ' : (ι → ℝ) →L[ℝ] ℝ) : ω.poissonBracket (ℓ ∘ F) (ℓ' ∘ F) x = 0 := by
+  have := Fintype.ofFinite ι
+  have hproj (i : ι) : ContinuousLinearMap.proj (R := ℝ) i ∘ F = (F · i) :=
+    funext fun y ↦ ContinuousLinearMap.proj_apply i (F y)
+  -- `dF_x X_{ℓ' ∘ F}(x)` has components `{F_i, ℓ' ∘ F}(x)`.
+  have hcomp (ℓ' : (ι → ℝ) →L[ℝ] ℝ) (i : ι) :
+      fderiv ℝ F x (ω.hamiltonianVectorField (ℓ' ∘ F) x) i =
+        ω.poissonBracket (F · i) (ℓ' ∘ F) x := by
+    rw [poissonBracket_def, ← hproj, apply_hamiltonianVectorField_comp ω _ hF,
+      ContinuousLinearMap.proj_apply]
+  -- Each `X_{F_j}(x)` lies in `ker dF_x`, hence so does each `X_{ℓ' ∘ F}(x)`.
+  have hX (ℓ' : (ι → ℝ) →L[ℝ] ℝ) : fderiv ℝ F x (ω.hamiltonianVectorField (ℓ' ∘ F) x) = 0 := by
+    have hXj (j : ι) : fderiv ℝ F x (ω.hamiltonianVectorField (F · j) x) = 0 :=
+      funext fun i ↦ by rw [← hproj j, hcomp, hproj, hcomm, Pi.zero_apply]
+    funext i
+    rw [hcomp, ← neg_poissonBracket, poissonBracket_def,
+      apply_hamiltonianVectorField_comp ω _ hF, hXj, map_zero, neg_zero, Pi.zero_apply]
+  rw [poissonBracket_def, apply_hamiltonianVectorField_comp ω _ hF, hX, map_zero]
+
+/-- **Functions of Poisson-commuting components Poisson-commute near a point.** If `F : E → (ι → ℝ)`
+is differentiable near `x` and its components `F_i` pairwise Poisson-commute near `x`, then so do
+all functions `ℓ ∘ F`, for `ℓ` a continuous linear functional on `ι → ℝ`. -/
+theorem poissonBracket_comp_eventuallyEq_zero {ι : Type*} [Finite ι] {F : E → ι → ℝ}
+    (hF : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ F y)
+    (hcomm : ∀ i j, ω.poissonBracket (F · i) (F · j) =ᶠ[𝓝 x] 0) (ℓ ℓ' : (ι → ℝ) →L[ℝ] ℝ) :
+    ω.poissonBracket (ℓ ∘ F) (ℓ' ∘ F) =ᶠ[𝓝 x] 0 := by
+  filter_upwards [hF, eventually_all.2 fun i ↦ eventually_all.2 (hcomm i)] with y hy hc
+  exact ω.poissonBracket_comp_eq_zero hy hc ℓ ℓ'
 
 /-- **The dimension of the transversal space.** If the functions `ℓ ∘ F` Poisson-commute at `x`,
 the reduced space of `ker dF_x` has dimension `dim E - 2 rank dF_x`; for `dim E = 2 n` and rank

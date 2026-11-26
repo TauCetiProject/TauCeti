@@ -266,8 +266,8 @@ theorem exists_mem_unstableSet_inter_stableSet_of_mem_closure (h : IsMorseSmaleP
       (b = q ∨ manifoldMorseIndex 𝓘(ℝ, E) f₁ q < manifoldMorseIndex 𝓘(ℝ, E) f₁ b) ∧
       manifoldMorseIndex 𝓘(ℝ, E) f₁ b ≤ manifoldMorseIndex 𝓘(ℝ, E) f₀ a := by
   -- The backward orbit of `y` for `X₀` and its forward orbit for `X₁` converge to critical points.
-  obtain ⟨a, -, hya⟩ := hX₀.exists_tendsto_atBot hf₀ y
-  obtain ⟨b, -, hyb⟩ := hX₁.exists_tendsto_atTop hf₁ y
+  obtain ⟨a, -, hya⟩ := hX₀.exists_tendsto_atBot y
+  obtain ⟨b, -, hyb⟩ := hX₁.exists_tendsto_atTop y
   have hya : y ∈ hX₀.flow.unstableSet a := Flow.mem_unstableSet.2 hya
   have hyb : y ∈ hX₁.flow.stableSet b := Flow.mem_stableSet.2 hyb
   refine ⟨a, b, ⟨hya, hyb⟩, or_iff_not_imp_left.2 fun hap ↦ ?_, or_iff_not_imp_left.2 fun hbq ↦ ?_,

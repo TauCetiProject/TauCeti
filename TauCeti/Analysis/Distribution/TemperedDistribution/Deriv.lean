@@ -26,6 +26,10 @@ iterated directional derivatives are those of the Schwartz function.
 
 ## Main results
 
+* `TemperedDistribution.iteratedLineDerivOp_apply_apply`: `(∂^m f) u = (-1)^n f (∂^(m ∘ rev) u)`,
+  so iterated derivatives transfer to the Schwartz function in reverse order.
+* `TemperedDistribution.iteratedLineDerivOp_delta_apply`:
+  `(∂^m δ_x) f = (-1) ^ n D^n f(x) (m ∘ rev)`.
 * `TemperedDistribution.lineDerivOp_comm`: `∂_v ∂_w f = ∂_w ∂_v f`.
 * `TemperedDistribution.laplacian_eq_lineDerivOp_one_I`: `Δ f = ∂₁² f + ∂₂² f` on `ℂ`.
 * `TemperedDistribution.lineDerivOp_toTemperedDistributionCLM_postcompCLM`:
@@ -59,6 +63,28 @@ namespace TemperedDistribution
 
 open MeasureTheory SchwartzMap
 open scoped SchwartzMap LineDeriv Laplacian
+
+/-- Repeated directional differentiation of a tempered distribution transfers to the Schwartz
+function in reverse order with sign `(-1)^n`. -/
+@[simp]
+theorem iteratedLineDerivOp_apply_apply {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [AddCommGroup F] [Module ℂ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    [ContinuousConstSMul ℂ F] (f : 𝓢'(E, F)) {n : ℕ} (m : Fin n → E) (u : 𝓢(E, ℂ)) :
+    (∂^{m} f) u = (-1 : ℂ) ^ n • f (∂^{m ∘ Fin.rev} u) := by
+  induction n generalizing u with
+  | zero => simp
+  | succ n ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, lineDerivOp_apply_apply, map_neg, ih,
+      LineDeriv.iteratedLineDerivOp_succ_right, pow_succ, mul_smul]
+    simp [Fin.init_def, Fin.tail_def, Function.comp_def, Fin.rev_castSucc]
+
+/-- The iterated derivative `∂^m δ_x` of the Dirac distribution at `x` evaluates the iterated
+derivative of a Schwartz function at `x` on the reversed tuple, with sign `(-1) ^ n`. -/
+theorem iteratedLineDerivOp_delta_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (x : E) {n : ℕ} (m : Fin n → E) (f : 𝓢(E, ℂ)) :
+    (∂^{m} (delta x)) f = (-1) ^ n * iteratedFDeriv ℝ n f x (m ∘ Fin.rev) := by
+  rw [iteratedLineDerivOp_apply_apply, delta_apply,
+    SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv, smul_eq_mul]
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℂ F]
