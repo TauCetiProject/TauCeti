@@ -58,7 +58,10 @@ This file defines `D_(I,J,B)` (`TauCeti.ImplicitAtlas.deformationSpace`) as a su
 
 Pardon's conditions `I ⊆ I' ⊆ J'` are relaxed to `I ⊆ I'` and `I ⊆ J'`, which is all the
 construction uses. The physical boundary piece of `D_(I,J,B)`, for atlases with boundary, is not
-treated here, nor is the structure of `D_(I,J,B)` as a topological manifold with corners.
+treated here. The corner charts exhibiting `D_(I,J,B)` as a topological manifold with corners
+(`TauCeti.ImplicitAtlas.exists_homeomorph_deformationSpace`) and its local compactness
+(`TauCeti.ImplicitAtlas.locallyCompactSpace_deformationSpace`) are in
+`TauCeti.Topology.ImplicitAtlas.DeformationSpace.Chart`.
 
 ## Checks
 
