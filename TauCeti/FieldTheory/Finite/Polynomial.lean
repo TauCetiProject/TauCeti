@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Finite.Basic
 public import TauCeti.Algebra.Polynomial.Expand
+import Mathlib.FieldTheory.Finite.GaloisField
 
 /-!
 # Hasse derivatives of `q`-th powers over a finite field
@@ -18,11 +19,22 @@ also holds over an infinite field, where `Nat.card K = 0`. In particular they va
 at every order `k` with `0 < k < q`, since `Nat.not_dvd_of_pos_of_lt` shows that `q` does not
 divide such a `k`. Mathlib's `FiniteField.card'` writes `q` as a power of the characteristic, which
 reduces the claim to `Polynomial.hasseDeriv_pow_expChar_pow_eq_zero`.
+
+The polynomial `X ^ q ^ n - X` is separable for `n ≠ 0` over any commutative ring with `q`
+elements (`Polynomial.separable_X_pow_card_pow_sub_X`).
 -/
 
 public section
 
 namespace Polynomial
+
+/-- `X ^ q ^ n - X` is separable over a commutative ring with `q` elements, for `n ≠ 0`: its
+derivative is `q ^ n X ^ (q ^ n - 1) - 1 = -1` (Mathlib's `galois_poly_separable`). Over an
+infinite ring, where `Nat.card R = 0`, the polynomial is `1 - X`, also separable. -/
+theorem separable_X_pow_card_pow_sub_X {R : Type*} [CommRing R] {n : ℕ} (hn : n ≠ 0) :
+    (X ^ Nat.card R ^ n - X : R[X]).Separable := by
+  refine galois_poly_separable (ringChar R) _ (dvd_pow ?_ hn)
+  rw [← CharP.cast_eq_zero_iff R, ← nsmul_one, card_nsmul_eq_zero']
 
 variable {K : Type*} [Field K]
 
