@@ -32,6 +32,9 @@ in this distance with the local notion of Kuratowski convergence, `TauCeti.IsKur
 This is how convergence of a sequence of zero sets is used: on a compact set away from the limit,
 the sets of the sequence eventually keep a fixed distance, so estimates that hold at a definite
 distance from the zeros apply uniformly there.
+
+The extended distance on `TopologicalSpace.NonemptyCompacts X` is likewise the Hausdorff extended
+distance (`TopologicalSpace.NonemptyCompacts.edist_eq`).
 -/
 
 public section
@@ -104,3 +107,13 @@ theorem IsCompact.exists_pos_eventually_le_dist_of_isKuratowskiLimit {Y : Type*}
   refine ⟨δ, hδ, hFU.mono fun i hi x hx y hy ↦ ?_⟩
   by_contra! hxy
   exact Set.disjoint_left.1 hi hy (hVU (hδK (mem_thickening_iff.2 ⟨x, hx, by rwa [dist_comm]⟩)))
+
+namespace TopologicalSpace.NonemptyCompacts
+
+/-- The extended distance on `NonemptyCompacts α` is the Hausdorff extended distance, by
+construction of its emetric space instance. -/
+theorem edist_eq {α : Type*} [EMetricSpace α] {s t : NonemptyCompacts α} :
+    edist s t = hausdorffEDist (s : Set α) t :=
+  rfl
+
+end TopologicalSpace.NonemptyCompacts
