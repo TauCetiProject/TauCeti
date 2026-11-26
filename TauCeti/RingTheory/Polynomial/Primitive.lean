@@ -17,10 +17,11 @@ the constant is a unit when the multiple is primitive
 coefficients and hence preserves primitivity. Together these facts compare primitive defining
 polynomials after inversion of a root.
 
-A primitive polynomial whose leading coefficient survives a specialization `φ` is relatively
-prime to any `q` for which the specializations are coprime
-(`Polynomial.IsPrimitive.isRelPrime_of_isCoprime_map`): this certifies that two multivariate
-polynomials have no common factor by checking a single one-variable specialization.
+A polynomial with two relatively prime coefficients is primitive
+(`Polynomial.isPrimitive_of_isRelPrime_coeff`). A primitive polynomial whose leading coefficient
+survives a specialization `φ` is relatively prime to any `q` for which the specializations are
+coprime (`Polynomial.IsPrimitive.isRelPrime_of_isCoprime_map`): this certifies that two
+multivariate polynomials have no common factor by checking a single one-variable specialization.
 -/
 
 public section
@@ -68,6 +69,11 @@ theorem IsPrimitive.exists_eq_mul_C_unit_of_dvd_of_natDegree_le
   obtain ⟨c, hc, -⟩ := exists_eq_mul_C_of_dvd_of_natDegree_le hdvd hdeg
   obtain ⟨u, hu⟩ := isPrimitive_iff_isUnit_of_C_dvd.mp (hc ▸ hp) c (dvd_mul_left (C c) q)
   exact ⟨u, by rw [hc, hu]⟩
+
+/-- A polynomial with two relatively prime coefficients is primitive. -/
+theorem isPrimitive_of_isRelPrime_coeff {R : Type*} [CommSemiring R] {p : R[X]} {i j : ℕ}
+    (h : IsRelPrime (p.coeff i) (p.coeff j)) : p.IsPrimitive := fun r hr ↦
+  h ((C_dvd_iff_dvd_coeff r p).1 hr i) ((C_dvd_iff_dvd_coeff r p).1 hr j)
 
 /-- **Relative primality by specialization.** Let `p` be primitive and let `φ : R →+* S` keep its
 leading coefficient nonzero. If the images of `p` and `q` under `φ` are coprime, then `p` and `q`

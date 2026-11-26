@@ -9,8 +9,8 @@ public import Mathlib.Algebra.CubicDiscriminant
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import TauCeti.Algebra.MvPolynomial.Equiv
 import Mathlib.Algebra.MvPolynomial.Division
+import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Algebra.Prime.Basic
 import TauCeti.RingTheory.Polynomial.Primitive
 
 /-!
@@ -135,35 +135,44 @@ nonzero, the cubic discriminant and its partial derivative in `d` have no common
 units. -/
 theorem isRelPrime_discrPoly_pderiv {K : Type*} [Field K] (h2 : (2 : K) ≠ 0) (h3 : (3 : K) ≠ 0) :
     IsRelPrime (discrPoly K) (pderiv (Fin.last 3) (discrPoly K)) := by
-  refine IsRelPrime.of_map (finSuccEquiv' K (Fin.last 3)) ?_
-  rw [finSuccEquiv'_pderiv, finSuccEquiv'_last_discrPoly]
   have h27 : (27 : K) ≠ 0 := by
     rw [show (27 : K) = 3 ^ 3 by norm_num]
     exact pow_ne_zero 3 h3
-  refine Polynomial.IsPrimitive.isRelPrime_of_isCoprime_map ?_ (eval ![1, 0, 1]) ?_ ?_
-  · -- A constant common divisor of the coefficients divides `a²` and `b²c² − 4ac³`.
-    intro r hr
-    rw [Polynomial.C_dvd_iff_dvd_coeff] at hr
-    have hlead := hr 2
-    have hconst := hr 0
-    simp only [Polynomial.coeff_add, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow,
-      Polynomial.coeff_X, Polynomial.coeff_C] at hlead hconst
-    norm_num at hlead hconst
-    have hu : IsUnit (27 : MvPolynomial (Fin 3) K) := by
-      rw [← map_ofNat C 27]
-      exact (Ne.isUnit h27).map C
+  have hlead : (finSuccEquiv' K (Fin.last 3) (discrPoly K)).coeff 2 = -27 * X 0 ^ 2 := by
+    have := leadingCoeff_finSuccEquiv'_last_discrPoly h27
+    rwa [Polynomial.leadingCoeff, natDegree_finSuccEquiv'_last_discrPoly h27] at this
+  have hconst : (finSuccEquiv' K (Fin.last 3) (discrPoly K)).coeff 0 =
+      X 1 ^ 2 * X 2 ^ 2 - 4 * X 0 * X 2 ^ 3 := by
+    rw [finSuccEquiv'_last_discrPoly, Polynomial.coeff_zero_eq_eval_zero]
+    simp
+  -- The specialization at `(a, b, c) = (1, 0, 1)`.
+  have hspec : (finSuccEquiv' K (Fin.last 3) (discrPoly K)).map (eval ![1, 0, 1]) =
+      -27 * Polynomial.X ^ 2 - 4 := by
+    rw [finSuccEquiv'_last_discrPoly]
+    simp only [Polynomial.map_add, Polynomial.map_mul, Polynomial.map_pow, Polynomial.map_C,
+      Polynomial.map_X]
+    simp [map_ofNat]
+    ring
+  refine IsRelPrime.of_map (finSuccEquiv' K (Fin.last 3)) ?_
+  rw [finSuccEquiv'_pderiv]
+  refine (Polynomial.isPrimitive_of_isRelPrime_coeff (i := 2) (j := 0) ?_)
+    |>.isRelPrime_of_isCoprime_map (eval ![1, 0, 1]) ?_ ?_
+  · -- The coefficients `−27a²` and `b²c² − 4ac³` have no common factor, as `a ∤ b²c² − 4ac³`.
+    have hu : IsUnit (-27 : MvPolynomial (Fin 3) K) := by
+      rw [← map_ofNat C 27, ← map_neg]
+      exact (Ne.isUnit (neg_ne_zero.2 h27)).map C
     have hX : ¬ X 0 ∣ (X 1 ^ 2 * X 2 ^ 2 - 4 * X 0 * X 2 ^ 3 : MvPolynomial (Fin 3) K) := by
       rintro ⟨s, hs⟩
       simpa using congrArg (eval ![0, 1, 1]) hs
-    exact prime_X.isRelPrime_pow_of_not_dvd hX 2 (hu.dvd_mul_left.1 hlead) hconst
-  · rw [Polynomial.leadingCoeff_quadratic (neg_27_mul_X_sq_ne_zero h27)]
+    rw [hlead, hconst, isRelPrime_mul_unit_left_left hu]
+    exact ((prime_X.irreducible.isRelPrime_iff_not_dvd).2 hX).pow_left
+  · rw [leadingCoeff_finSuccEquiv'_last_discrPoly h27]
     simpa using h27
-  · rw [← Polynomial.derivative_map]
-    simp only [Polynomial.map_add, Polynomial.map_mul, Polynomial.map_pow, Polynomial.map_C,
-      Polynomial.map_X, Polynomial.derivative_add, Polynomial.derivative_C_mul_X_pow,
-      Polynomial.derivative_C_mul_X, Polynomial.derivative_C]
-    norm_num
-    simp only [map_ofNat]
+  · have hderiv : Polynomial.derivative (-27 * Polynomial.X ^ 2 - 4 : Polynomial K) =
+        -54 * Polynomial.X := by
+      simp
+      ring
+    rw [← Polynomial.derivative_map, hspec, hderiv]
     -- Bézout for `(−27d² − 4, −54d)`, with `c = 1/2`.
     set c : Polynomial K := Polynomial.C 2⁻¹
     have hc : 2 * c = 1 := by

@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Polynomial.Cubic.DiscriminantLocus
 public import TauCeti.NumberTheory.BinaryQuartic.Basic
 import Mathlib.Algebra.MvPolynomial.Division
+import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Algebra.Prime.Basic
 import TauCeti.RingTheory.Polynomial.Primitive
 
 /-!
@@ -72,10 +72,13 @@ form. -/
 noncomputable def discPoly : MvPolynomial (Fin 5) R :=
   disc X
 
+/-- The generic quartic discriminant is `BinaryQuartic.disc` of the generic form `X`. -/
+theorem discPoly_def : discPoly R = disc X := (rfl)
+
 /-- Evaluating the generic discriminant at a binary quartic form gives its discriminant. -/
 @[simp]
 theorem eval_discPoly (f : BinaryQuartic R) : eval f (discPoly R) = disc f := by
-  rw [discPoly, ← disc_comp]
+  rw [discPoly_def, ← disc_comp]
   congr
   funext i
   simp
@@ -84,7 +87,7 @@ theorem eval_discPoly (f : BinaryQuartic R) : eval f (discPoly R) = disc f := by
 @[simp]
 theorem map_discPoly {S : Type*} [CommRing S] (φ : R →+* S) :
     map φ (discPoly R) = discPoly S := by
-  rw [discPoly, ← disc_comp]
+  rw [discPoly_def, ← disc_comp]
   congr
   funext i
   simp
@@ -125,7 +128,7 @@ theorem finSuccEquiv'_last_discPoly :
     finSuccEquiv'_X_succAbove (Fin.last 4) 3
   have h4 : finSuccEquiv' R (Fin.last 4) (X 4) = Polynomial.X :=
     finSuccEquiv'_X_self (Fin.last 4)
-  simp only [discPoly, disc_def, Cubic.discrPoly_def, map_add, map_sub, map_mul, map_pow,
+  simp only [discPoly_def, disc_def, Cubic.discrPoly_def, map_add, map_sub, map_mul, map_pow,
     map_ofNat, map_neg, h0, h1, h2, h3, h4]
   ring
 
@@ -153,37 +156,49 @@ are nonzero, the binary quartic discriminant and its partial derivative in `e` h
 factor other than units. -/
 theorem isRelPrime_discPoly_pderiv {K : Type*} [Field K] (h2 : (2 : K) ≠ 0) (h3 : (3 : K) ≠ 0) :
     IsRelPrime (discPoly K) (pderiv (Fin.last 4) (discPoly K)) := by
-  refine IsRelPrime.of_map (finSuccEquiv' K (Fin.last 4)) ?_
-  rw [finSuccEquiv'_pderiv, finSuccEquiv'_last_discPoly]
   have h256 : (256 : K) ≠ 0 := by
     rw [show (256 : K) = 2 ^ 8 by norm_num]
     exact pow_ne_zero 8 h2
-  refine Polynomial.IsPrimitive.isRelPrime_of_isCoprime_map ?_ (eval ![1, 0, 0, 1]) ?_ ?_
-  · -- A constant common divisor of the coefficients divides `a³` and `d² Disc(a, b, c, d)`.
-    intro r hr
-    rw [Polynomial.C_dvd_iff_dvd_coeff] at hr
-    have hlead := hr 3
-    have hconst := hr 0
-    simp only [Polynomial.coeff_add, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow,
-      Polynomial.coeff_X, Polynomial.coeff_C] at hlead hconst
-    norm_num at hlead hconst
+  have hlead : (finSuccEquiv' K (Fin.last 4) (discPoly K)).coeff 3 = 256 * X 0 ^ 3 := by
+    have := leadingCoeff_finSuccEquiv'_last_discPoly h256
+    rwa [Polynomial.leadingCoeff, natDegree_finSuccEquiv'_last_discPoly h256] at this
+  have hconst : (finSuccEquiv' K (Fin.last 4) (discPoly K)).coeff 0 =
+      X 3 ^ 2 * Cubic.discrPoly K := by
+    rw [finSuccEquiv'_last_discPoly, Polynomial.coeff_zero_eq_eval_zero]
+    simp
+  -- The specialization at `(a, b, c, d) = (1, 0, 0, 1)`.
+  have hspec : (finSuccEquiv' K (Fin.last 4) (discPoly K)).map (eval ![1, 0, 0, 1]) =
+      256 * Polynomial.X ^ 3 - 27 := by
+    rw [finSuccEquiv'_last_discPoly]
+    simp only [Polynomial.map_add, Polynomial.map_mul, Polynomial.map_pow, Polynomial.map_C,
+      Polynomial.map_X]
+    simp [map_ofNat, Cubic.discr]
+    ring
+  refine IsRelPrime.of_map (finSuccEquiv' K (Fin.last 4)) ?_
+  rw [finSuccEquiv'_pderiv]
+  refine (Polynomial.isPrimitive_of_isRelPrime_coeff (i := 3) (j := 0) ?_)
+    |>.isRelPrime_of_isCoprime_map (eval ![1, 0, 0, 1]) ?_ ?_
+  · -- The coefficients `256 a³` and `d² Disc(a, b, c, d)` have no common factor, as
+    -- `a ∤ d² Disc(a, b, c, d)`: the latter is `−3` at `(a, b, c, d) = (0, 1, 1, 1)`.
     have hu : IsUnit (256 : MvPolynomial (Fin 4) K) := by
       rw [← map_ofNat C 256]
       exact (Ne.isUnit h256).map C
     have hX : ¬ X 0 ∣ (X 3 ^ 2 * Cubic.discrPoly K : MvPolynomial (Fin 4) K) := by
       rintro ⟨s, hs⟩
-      have := congrArg (eval ![0, 1, 1, 1]) hs
-      norm_num [Cubic.discr] at this
-      exact h3 this
-    exact prime_X.isRelPrime_pow_of_not_dvd hX 3 (hu.dvd_mul_left.1 hlead) hconst
-  · rw [Polynomial.leadingCoeff_cubic (C_256_mul_X_pow_ne_zero h256)]
+      have hv : eval ![0, 1, 1, 1] (X 3 ^ 2 * Cubic.discrPoly K) = (-3 : K) := by
+        simp [Cubic.discr]
+        norm_num
+      rw [hs, eval_mul, eval_X, Matrix.cons_val_zero, zero_mul] at hv
+      exact h3 (by linear_combination hv)
+    rw [hlead, hconst, isRelPrime_mul_unit_left_left hu]
+    exact ((prime_X.irreducible.isRelPrime_iff_not_dvd).2 hX).pow_left
+  · rw [leadingCoeff_finSuccEquiv'_last_discPoly h256]
     simpa using h256
-  · rw [← Polynomial.derivative_map]
-    simp only [Polynomial.map_add, Polynomial.map_mul, Polynomial.map_pow, Polynomial.map_C,
-      Polynomial.map_X, Polynomial.derivative_add, Polynomial.derivative_C_mul_X_pow,
-      Polynomial.derivative_C_mul_X, Polynomial.derivative_C]
-    norm_num [Cubic.discr]
-    simp only [map_ofNat]
+  · have hderiv : Polynomial.derivative (256 * Polynomial.X ^ 3 - 27 : Polynomial K) =
+        768 * Polynomial.X ^ 2 := by
+      simp [map_ofNat]
+      ring
+    rw [← Polynomial.derivative_map, hspec, hderiv]
     -- Bézout for `(256 e³ − 27, 768 e²)`, with `c = 1/3`.
     set c : Polynomial K := Polynomial.C 3⁻¹
     have hc : 3 * c = 1 := by
