@@ -101,7 +101,7 @@ evaluated into Moore paths, concatenating along the composition maps, and then c
 `x₀` by `θ`. When `S` is a representing chain system on the trajectory spaces of a Morse function,
 `e` is the evaluation of trajectories into Moore paths, and `θ` is the collapse of a tree through
 the critical points, this is the Barraud–Cornea cocycle with values in `C^□_*(Ω_{x₀} X; R)`. -/
-def mooreTwistingCocycle (S : TwistingChainSystem ind ι R) :
+@[expose] def mooreTwistingCocycle (S : TwistingChainSystem ind ι R) :
     TwistingCocycle (R := R) (A := loopChainAlgebra X x₀ R)
       (cubicalChainGrading (MooreLoopSpace X x₀) R)
       (cubicalChainDifferential (MooreLoopSpace X x₀) R) P ind :=
