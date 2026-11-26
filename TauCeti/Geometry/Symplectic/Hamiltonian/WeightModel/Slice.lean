@@ -39,7 +39,9 @@ Condevaux–Dazord–Molino and Hilgert–Neeb–Plank (`TauCeti.IsConvexChart`)
   `π : 𝔱* → A` vanishing on the span of the weights recovers `a = π(g(a, z))`, so near `g(a, z)`
   the `A`-component of a value moves little, and the remaining weight component is reached from
   near `z` because the weight model is open onto its cone
-  (`TauCeti.image_mem_nhdsWithin_range_weightMomentMap`).
+  (`TauCeti.image_mem_nhdsWithin_range_weightMomentMap`). With an orbit coordinate `θ` and a
+  translation by `ν`, the model `(θ, a, z) ↦ ν + a + μ_α(z)` is likewise open onto the local cone
+  `ν + A + cone{-αₖ}` (`TauCeti.image_mem_nhdsWithin_vadd_add_range_weightMomentMap`).
 * **Convexity charts.** For a preconnected open set `B` of a parameter space, an open convex set
   `U ⊆ 𝔱*` and an invariant ball `R = {‖q‖² + ‖p‖² < r}` of `ℂ^ι`, the product
   `B × (A ∩ U) × R` is a convexity chart of `(θ, a, z) ↦ ν + a + μ_α(z)`
@@ -50,8 +52,8 @@ Condevaux–Dazord–Molino and Hilgert–Neeb–Plank (`TauCeti.IsConvexChart`)
   under `z ↦ (v - ν - μ_α(z), z)`
   (`TauCeti.isPreconnected_prod_inter_preimage_add_weightMomentMap`).
 * **Transport through a chart.** A map `f` reading as this model in a chart
-  `e : X → P × (A × ℂ^ι)` has a convexity chart around every point of the source of `e` on the
-  zero section `z = 0`, that is, on the orbit
+  `e : X → P × (A × ℂ^ι)` has, when `P` is locally connected, a convexity chart around every point
+  of the source of `e` on the zero section `z = 0`, that is, on the orbit
   (`TauCeti.exists_isConvexChart_of_eqOn_add_weightMomentMap`), and the germ of the image of `f`
   at every point of the source is that of the local cone `ν + A + cone{-αₖ}`
   (`TauCeti.map_nhds_eq_nhdsWithin_vadd_add_range_weightMomentMap`). At a point `x` of the zero
@@ -69,6 +71,8 @@ the weight normal form at a fixed point.
 
 * `TauCeti.image_mem_nhdsWithin_add_range_weightMomentMap`: `(a, z) ↦ a + μ_α(z)` is open onto its
   image.
+* `TauCeti.image_mem_nhdsWithin_vadd_add_range_weightMomentMap`: so is
+  `(θ, a, z) ↦ ν + a + μ_α(z)`, onto the local cone.
 * `TauCeti.convex_image_add_weightMomentMap_prod`,
   `TauCeti.isPreconnected_prod_inter_preimage_add_weightMomentMap`: its images of the products of
   convex sets with invariant balls are convex, and its fibres in them are preconnected.
@@ -116,9 +120,13 @@ theorem convex_image_add_weightMomentMap_prod {U : Set (StrongDual ℝ 𝔱)} (h
         (y.1 : StrongDual ℝ 𝔱) + weightMomentMap α y.2) ''
       ((((↑) : A → StrongDual ℝ 𝔱) ⁻¹' U) ×ˢ {x | ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 < r}) =
       (U ∩ A) + weightMomentMap α '' {x | ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 < r} := by
-    rw [← Subtype.range_coe (s := (A : Set (StrongDual ℝ 𝔱))), ← image_preimage_eq_inter_range,
-      ← image2_add, image2_image_left, image2_image_right, ← image_prod]
-    rfl
+    ext v
+    simp only [mem_image, mem_prod, mem_preimage, Set.mem_add, mem_inter_iff, SetLike.mem_coe]
+    constructor
+    · rintro ⟨⟨a, x⟩, ⟨haU, hx⟩, rfl⟩
+      exact ⟨a, ⟨haU, a.property⟩, _, ⟨x, hx, rfl⟩, rfl⟩
+    · rintro ⟨a, ⟨haU, ha⟩, _, ⟨x, hx, rfl⟩, rfl⟩
+      exact ⟨(⟨a, ha⟩, x), ⟨haU, hx⟩, rfl⟩
   rw [h]
   exact (hU.inter A.convex).add (convex_image_weightMomentMap_setOf_lt α r)
 
@@ -131,13 +139,9 @@ theorem isPreconnected_prod_inter_preimage_add_weightMomentMap {U : Set (StrongD
     IsPreconnected (((((↑) : A → StrongDual ℝ 𝔱) ⁻¹' U) ×ˢ {x | ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 < r}) ∩
       (fun y : A × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦
         (y.1 : StrongDual ℝ 𝔱) + weightMomentMap α y.2) ⁻¹' {v}) := by
-  set T := {s : StrongDual ℝ 𝔱 | v - s ∈ U ∧ v - s ∈ A}
-  have hT : Convex ℝ T := fun s hs t ht a b ha hb hab ↦ by
-    have he : v - (a • s + b • t) = a • (v - s) + b • (v - t) :=
-      calc v - (a • s + b • t) = (a + b) • v - (a • s + b • t) := by rw [hab, one_smul]
-        _ = a • (v - s) + b • (v - t) := by module
-    simp only [T, mem_ofPred_eq, he]
-    exact ⟨hU hs.1 ht.1 ha hb hab, A.add_mem (A.smul_mem a hs.2) (A.smul_mem b ht.2)⟩
+  set T := (v - ·) ⁻¹' (U ∩ (A : Set (StrongDual ℝ 𝔱)))
+  have hT : Convex ℝ T :=
+    (hU.inter A.convex).affine_preimage (AffineMap.const ℝ _ v - AffineMap.id ℝ _)
   -- Read the fibre in `𝔱* × ℂ^ι`, where its `𝔱*`-component is `v - μ_α(z)`.
   have hι : IsInducing (Prod.map ((↑) : A → StrongDual ℝ 𝔱)
       (id : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)) :=
@@ -146,7 +150,8 @@ theorem isPreconnected_prod_inter_preimage_add_weightMomentMap {U : Set (StrongD
   convert (isPreconnected_preimage_weightMomentMap_inter α hT r).image
     (fun x ↦ (v - weightMomentMap α x, x)) (by fun_prop) using 1
   ext ⟨s, x⟩
-  simp only [mem_image, mem_inter_iff, mem_prod, mem_preimage, mem_singleton_iff, Prod.mk.injEq, T]
+  simp only [mem_image, mem_inter_iff, mem_prod, mem_preimage, mem_singleton_iff, Prod.mk.injEq, T,
+    SetLike.mem_coe]
   constructor
   · rintro ⟨⟨a, x⟩, ⟨⟨ha, hx⟩, hv⟩, rfl, rfl⟩
     have hax : v - weightMomentMap α x = a := by rw [← hv, add_sub_cancel_right]
@@ -213,6 +218,30 @@ theorem image_mem_nhdsWithin_add_range_weightMomentMap
   dsimp only at hxv ⊢
   rw [hxv, add_sub_cancel]
 
+/-- **The slice model with a parameter is open onto the local cone.** If `A` meets the span of the
+weights trivially, the map `(θ, a, z) ↦ ν + a + μ_α(z)` on `P × A × ℂ^ι` sends every neighbourhood
+of a point `y` onto a neighbourhood of its value at `y` within the local cone
+`ν + A + cone{-αₖ}`. -/
+theorem image_mem_nhdsWithin_vadd_add_range_weightMomentMap {P : Type*} [TopologicalSpace P]
+    (hA : Disjoint A (Submodule.span ℝ (range α))) (ν : StrongDual ℝ 𝔱)
+    (y : P × (A × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)))
+    {N : Set (P × (A × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)))} (hN : N ∈ 𝓝 y) :
+    (fun y : P × (A × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)) ↦
+        ν + ((y.2.1 : StrongDual ℝ 𝔱) + weightMomentMap α y.2.2)) '' N ∈
+      𝓝[ν +ᵥ ((A : Set (StrongDual ℝ 𝔱)) + range (weightMomentMap α))]
+        (ν + ((y.2.1 : StrongDual ℝ 𝔱) + weightMomentMap α y.2.2)) := by
+  -- The slice of `N` through `y` is a neighbourhood of `y.2`, and translation by `ν` is an
+  -- embedding.
+  have hN' : (fun x ↦ (y.1, x)) ⁻¹' N ∈ 𝓝 y.2 :=
+    (Continuous.prodMk_right y.1).continuousAt.preimage_mem_nhds hN
+  have h := image_mem_map (m := Homeomorph.addLeft ν)
+    (image_mem_nhdsWithin_add_range_weightMomentMap hA y.2 hN')
+  rw [(Homeomorph.addLeft ν).isEmbedding.map_nhdsWithin_eq, Homeomorph.coe_addLeft] at h
+  rw [← image_vadd]
+  refine mem_of_superset h ?_
+  rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
+  exact ⟨(y.1, x), hx, rfl⟩
+
 /-- **Convexity charts of the slice model.** Let `A` be a subspace of `𝔱*` meeting the span of the
 weights `αₖ` trivially. For a preconnected open set `B` of a topological space `P`, an open convex
 set `U ⊆ 𝔱*` and every `r`, the product of `B`, `A ∩ U` and the ball `‖q‖² + ‖p‖² < r` is a
@@ -236,17 +265,10 @@ theorem isConvexChart_prod_prod_add_weightMomentMap {P : Type*} [TopologicalSpac
       exact convex_empty
     · rw [snd_image_prod hBne]
       exact (convex_image_add_weightMomentMap_prod hU r).translate ν
-  · -- The slice of `W` through `y` is a neighbourhood of `y.2`, mapped into the image of `W`.
-    have hN : (fun x ↦ (y.1, x)) ⁻¹' W ∈ 𝓝 y.2 :=
-      (Continuous.prodMk_right y.1).continuousAt.preimage_mem_nhds (hWo.mem_nhds hy)
-    have h := image_mem_map (m := Homeomorph.addLeft ν)
-      (image_mem_nhdsWithin_add_range_weightMomentMap hA y.2 hN)
-    rw [(Homeomorph.addLeft ν).isEmbedding.map_nhdsWithin_eq] at h
-    refine mem_of_superset (nhdsWithin_mono _ ?_ h) ?_
-    · rintro _ ⟨w, -, rfl⟩
-      exact ⟨g w.2, ⟨w.2.1, w.2.1.property, weightMomentMap α w.2.2, mem_range_self _, rfl⟩, rfl⟩
-    · rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
-      exact ⟨(y.1, x), hx, rfl⟩
+  · refine nhdsWithin_mono _ ?_
+      (image_mem_nhdsWithin_vadd_add_range_weightMomentMap hA ν y (hWo.mem_nhds hy))
+    rintro _ ⟨w, -, rfl⟩
+    exact vadd_mem_vadd_set ⟨_, w.2.1.property, _, mem_range_self _, rfl⟩
   · -- The fibre of `v` is the product of `B` with the fibre of `v - ν` in the slice chart.
     convert hB.prod (isPreconnected_prod_inter_preimage_add_weightMomentMap (A := A) (α := α) hU r
       (v - ν))
@@ -263,23 +285,25 @@ variable {X P : Type*} [TopologicalSpace X]
 
 /-- **Convexity charts of a map reading as the slice model.** Let `A` be a subspace of `𝔱*`
 meeting the span of the weights `αₖ` trivially. If, in a chart `e : X → P × (A × ℂ^ι)`, a map `f`
-reads `(θ, a, z) ↦ ν + a - ½ Σₖ |zₖ|² αₖ`, then every point of the source of `e` sent to the zero
-section `z = 0` lies in a convexity chart of `f`. -/
-theorem exists_isConvexChart_of_eqOn_add_weightMomentMap [NormedAddCommGroup P]
-    [NormedSpace ℝ P]
+reads `(θ, a, z) ↦ ν + a - ½ Σₖ |zₖ|² αₖ` with `P` locally connected, then every point of the
+source of `e` sent to the zero section `z = 0` lies in a convexity chart of `f`. -/
+theorem exists_isConvexChart_of_eqOn_add_weightMomentMap [TopologicalSpace P]
+    [LocallyConnectedSpace P]
     {e : OpenPartialHomeomorph X (P × (A × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)))}
     {f : X → StrongDual ℝ 𝔱} {ν : StrongDual ℝ 𝔱} (hA : Disjoint A (Submodule.span ℝ (range α)))
     (hf : EqOn f ((fun y ↦ ν + ((y.2.1 : StrongDual ℝ 𝔱) + weightMomentMap α y.2.2)) ∘ e)
       e.source) {x : X} (hx : x ∈ e.source) (hx0 : (e x).2.2 = 0) :
     ∃ U, x ∈ U ∧ IsConvexChart f U := by
-  -- A product of balls in `P` and `A` with a ball `‖q‖² + ‖p‖² < ε²` inside the target of `e`.
+  -- A product of a connected open set of `P`, a ball of `A` and a ball `‖q‖² + ‖p‖² < ε²` inside
+  -- the target of `e`.
   have hex : e x = ((e x).1, ((e x).2.1, 0)) := Prod.ext rfl (Prod.ext rfl hx0)
   have ht : e.target ∈ 𝓝 ((e x).1, ((e x).2.1, (0 : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι))) := by
     rw [← hex]
     exact e.open_target.mem_nhds (e.map_source hx)
   obtain ⟨u, hu, w, hw, huw⟩ := mem_nhds_prod_iff.1 ht
   obtain ⟨a, ha, w', hw', haw⟩ := mem_nhds_prod_iff.1 hw
-  obtain ⟨δ, hδ, hδu⟩ := Metric.mem_nhds_iff.1 hu
+  obtain ⟨B, ⟨hBo, hxB, hB⟩, hBu⟩ :=
+    (LocallyConnectedSpace.open_connected_basis _).mem_iff.1 hu
   obtain ⟨η, hη, hηa⟩ := Metric.mem_nhds_iff.1 ha
   obtain ⟨ε, hε, hεw⟩ := Metric.mem_nhds_iff.1 hw'
   have hRw : {y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι | ‖y.1‖ ^ 2 + ‖y.2‖ ^ 2 < ε ^ 2} ⊆ w' :=
@@ -288,21 +312,21 @@ theorem exists_isConvexChart_of_eqOn_add_weightMomentMap [NormedAddCommGroup P]
       rw [mem_ball_zero_iff, Prod.norm_def, max_lt_iff]
       constructor <;> refine lt_of_pow_lt_pow_left₀ 2 hε.le ?_ <;>
         nlinarith [hy.out, sq_nonneg ‖y.1‖, sq_nonneg ‖y.2‖]
-  set D : Set (P × (A × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι))) := ball (e x).1 δ ×ˢ
+  set D : Set (P × (A × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι))) := B ×ˢ
     ((((↑) : A → StrongDual ℝ 𝔱) ⁻¹' ball ((e x).2.1 : StrongDual ℝ 𝔱) η) ×ˢ
       {y | ‖y.1‖ ^ 2 + ‖y.2‖ ^ 2 < ε ^ 2})
   have hD : IsConvexChart
       (fun y : P × (A × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)) ↦
         ν + ((y.2.1 : StrongDual ℝ 𝔱) + weightMomentMap α y.2.2)) D :=
-    isConvexChart_prod_prod_add_weightMomentMap hA ν isOpen_ball
-      (convex_ball (e x).1 δ).isPreconnected isOpen_ball (convex_ball _ _) (ε ^ 2)
+    isConvexChart_prod_prod_add_weightMomentMap hA ν hBo hB.isPreconnected isOpen_ball
+      (convex_ball _ _) (ε ^ 2)
   -- Points of `A` within `η` of `(e x).2.1` in `𝔱*` lie in the ball of `A`.
   have hηa' : ((↑) : A → StrongDual ℝ 𝔱) ⁻¹' ball ((e x).2.1 : StrongDual ℝ 𝔱) η ⊆ a :=
     fun b hb ↦ hηa (by rwa [mem_preimage, mem_ball, ← Subtype.dist_eq] at hb)
-  have hDt : D ⊆ e.target := (prod_mono hδu ((prod_mono hηa' hRw).trans haw)).trans huw
+  have hDt : D ⊆ e.target := (prod_mono hBu ((prod_mono hηa' hRw).trans haw)).trans huw
   refine ⟨e.source ∩ e ⁻¹' D, ⟨hx, ?_⟩, hD.source_inter_preimage hDt hf⟩
   rw [mem_preimage, hex]
-  exact ⟨mem_ball_self hδ, mem_ball_self hη, by simpa using pow_pos hε 2⟩
+  exact ⟨hxB, mem_ball_self hη, by simpa using pow_pos hε 2⟩
 
 /-- **The germ of the image is the local cone.** Let `A` be a subspace of `𝔱*` meeting the span
 of the weights `αₖ` trivially. If, in a chart `e : X → P × (A × ℂ^ι)`, a map `f` reads
@@ -321,9 +345,8 @@ theorem map_nhds_eq_nhdsWithin_vadd_add_range_weightMomentMap [TopologicalSpace 
     exact vadd_mem_vadd_set ⟨_, (e y).2.1.property, _, mem_range_self _, rfl⟩
   have hcont : ContinuousAt f x := by
     have hg : Continuous fun y : P × (A × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)) ↦
-        ν + ((y.2.1 : StrongDual ℝ 𝔱) + weightMomentMap α y.2.2) :=
-      continuous_const.add ((continuous_subtypeVal.comp (continuous_fst.comp continuous_snd)).add
-        ((continuous_weightMomentMap α).comp (continuous_snd.comp continuous_snd)))
+        ν + ((y.2.1 : StrongDual ℝ 𝔱) + weightMomentMap α y.2.2) := by
+      fun_prop
     have hd := hg.continuousAt.comp (e.continuousAt hx)
     exact hd.congr (eventually_of_mem (e.open_source.mem_nhds hx) fun y hy ↦ (hf hy).symm)
   refine le_antisymm (fun T hT ↦ ?_) fun T hT ↦ ?_
@@ -331,27 +354,14 @@ theorem map_nhds_eq_nhdsWithin_vadd_add_range_weightMomentMap [TopologicalSpace 
     exact mem_map.2 (mem_of_superset
       (inter_mem (hcont.preimage_mem_nhds hV) (e.open_source.mem_nhds hx))
       fun y ⟨hyV, hy⟩ ↦ hVT ⟨hyV, hmaps hy⟩)
-  · -- The model is open onto `C`, `e` is open on its source, and translation by `ν` is an
-    -- embedding.
+  · -- `e` is open on its source and the model is open onto `ν +ᵥ C`.
     have hN : e '' (f ⁻¹' T ∩ e.source) ∈ 𝓝 (e x) :=
       e.image_mem_nhds hx (inter_mem (mem_map.1 hT) (e.open_source.mem_nhds hx))
-    obtain ⟨u, hu, n, hn, hun⟩ := mem_nhds_prod_iff.1 hN
-    have hslice : (fun y ↦ ((e x).1, y)) ⁻¹' (u ×ˢ n) ∈ 𝓝 (e x).2 :=
-      (Continuous.prodMk_right (e x).1).continuousAt.preimage_mem_nhds
-        (prod_mem_nhds hu hn)
-    have h := image_mem_map (m := Homeomorph.addLeft ν)
-      (image_mem_nhdsWithin_add_range_weightMomentMap hA (e x).2 hslice)
-    rw [(Homeomorph.addLeft ν).isEmbedding.map_nhdsWithin_eq, Homeomorph.coe_addLeft] at h
-    have hC : ν +ᵥ C = (ν + ·) '' C := image_vadd.symm
-    rw [hC]
     have hfx : f x = ν + (((e x).2.1 : StrongDual ℝ 𝔱) + weightMomentMap α (e x).2.2) := hf hx
     rw [hfx]
-    refine mem_of_superset h ?_
-    rintro _ ⟨_, ⟨y, hy, rfl⟩, rfl⟩
-    obtain ⟨x', ⟨hx'T, hx'⟩, hx'e⟩ := hun hy
-    have hfx' : f x' = ν + ((y.1 : StrongDual ℝ 𝔱) + weightMomentMap α y.2) := by
-      rw [hf hx', comp_apply, hx'e]
-    rw [mem_preimage, hfx'] at hx'T
+    refine mem_of_superset (image_mem_nhdsWithin_vadd_add_range_weightMomentMap hA ν (e x) hN) ?_
+    rintro _ ⟨_, ⟨x', ⟨hx'T, hx'⟩, rfl⟩, rfl⟩
+    rw [mem_preimage, hf hx'] at hx'T
     exact hx'T
 
 /-- **The local cone at a point of the orbit.** Let `A` be a subspace of `𝔱*` meeting the span of
@@ -370,16 +380,7 @@ theorem map_nhds_eq_nhdsWithin_apply_vadd_add_range_weightMomentMap [Topological
   have hfx : f x = ν + a₀ := by
     rw [hf hx, comp_apply, hx0, weightMomentMap_zero, add_zero]
   -- Translating by `a₀ ∈ A` does not move `A + cone{-αₖ}`.
-  have hC : a₀ +ᵥ ((A : Set (StrongDual ℝ 𝔱)) + range (weightMomentMap α)) =
-      (A : Set (StrongDual ℝ 𝔱)) + range (weightMomentMap α) := by
-    ext y
-    simp only [mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, Set.mem_add, SetLike.mem_coe]
-    constructor
-    · rintro ⟨a, ha, s, hs, h⟩
-      exact ⟨a₀ + a, A.add_mem (e x).2.1.property ha, s, hs, by
-        rw [add_assoc, h, add_neg_cancel_left]⟩
-    · rintro ⟨a, ha, s, hs, h⟩
-      exact ⟨-a₀ + a, A.add_mem (A.neg_mem (e x).2.1.property) ha, s, hs, by rw [add_assoc, h]⟩
-  rw [map_nhds_eq_nhdsWithin_vadd_add_range_weightMomentMap hA hf hx, hfx, add_vadd, hC]
+  rw [map_nhds_eq_nhdsWithin_vadd_add_range_weightMomentMap hA hf hx, hfx, add_vadd,
+    ← vadd_add_assoc a₀, vadd_coe_set (show a₀ ∈ A from (e x).2.1.property)]
 
 end TauCeti
