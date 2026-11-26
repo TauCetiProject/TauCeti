@@ -26,6 +26,8 @@ while preserving pointwise upper bounds.
 
 * `MeasureTheory.Measure.map_restrict_le_map` — `(μ.restrict s).map f ≤ μ.map f` for an
   almost everywhere measurable `f`, with no hypothesis on `s`.
+* `MeasureTheory.Measure.map_map_of_semiconj` — pushing a measure forward along `h` and then `f`
+  equals pushing it forward along `f` and then `g` when `f ∘ h = g ∘ f`.
 * `MeasurableEmbedding.map_map_measure` — `(μ.map f).map g = μ.map (g ∘ f)` for a measurable
   embedding `f`, with no measurability assumption on `g`.
 * `AEMeasurable.exists_measurable_ge_ae_eq`: a measurable majorant in the same
@@ -112,6 +114,14 @@ No hypothesis on `s` is needed. -/
 theorem map_restrict_le_map (hf : AEMeasurable f μ) (s : Set α) :
     (μ.restrict s).map f ≤ μ.map f :=
   map_mono_of_aemeasurable restrict_le_self hf
+
+/-- If `f` semiconjugates `h` to `g` (`∀ x, f (h x) = g (f x)`), then pushing a measure forward
+along `h` and then `f` equals pushing it forward along `f` and then `g`. -/
+theorem map_map_of_semiconj (hf : Measurable f) {h : α → α} (hh : Measurable h)
+    {g : β → β} (hg : Measurable g) (hcomm : ∀ x, f (h x) = g (f x)) :
+    (μ.map h).map f = (μ.map f).map g := by
+  rw [Measure.map_map hf hh, Measure.map_map hg hf]
+  exact congrArg (μ.map ·) (funext hcomm)
 
 end MeasureTheory.Measure
 
