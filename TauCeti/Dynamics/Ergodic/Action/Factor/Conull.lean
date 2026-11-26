@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Ergodic.Action.Factor
-public import Mathlib.MeasureTheory.Measure.QuasiMeasurePreserving
+public import TauCeti.MeasureTheory.Measure.QuasiMeasurePreserving
 
 /-!
 # Invariant conull realizations of almost-everywhere intertwiners
@@ -16,26 +16,21 @@ depends on the parameter. For a countable monoid acting by measurable quasi-meas
 maps, these null sets can be removed at once: there is a measurable conull set `X₀`, forward
 invariant under every parameter, on which the factor map intertwines every parameter exactly.
 Conversely, a measure-preserving map that intertwines every parameter exactly on a conull set is a
-factor map.
-The same holds for a single measurable quasi-measure-preserving map.
-
-The invariant set is `⋂ m, (m • ·) ⁻¹' E`, for a measurable conull set `E` on which the
-intertwining identities hold: if `x` lies in it then so does `m • x`, since
-`m' • (m • x) = (m' * m) • x`.
+factor map. The invariant set comes from `MeasureTheory.exists_measurableSet_mapsTo_smul_of_ae`;
+the single-map version is `TauCeti.isFactorMap_iff_exists_measurableSet`.
 
 ## Main results
 
-* `TauCeti.exists_measurableSet_mapsTo_smul_of_ae`: for a countable monoid acting by
-  quasi-measure-preserving maps, an almost-everywhere property holds on a measurable conull set
-  that is forward invariant under the action.
 * `TauCeti.IsFactorMapSMul.exists_measurableSet_mapsTo_smul`: the common invariant conull
   realization of a factor map of actions of a countable monoid;
   `TauCeti.isFactorMapSMul_iff_exists_measurableSet` is the equivalence with the conull-set
   definition.
-* `TauCeti.exists_measurableSet_mapsTo_of_ae`, `TauCeti.IsFactorMap.exists_measurableSet_mapsTo`,
-  `TauCeti.isFactorMap_iff_exists_measurableSet`: the same for a single map.
+* `TauCeti.IsFactorMapSMul.of_measure_compl_eq_zero`: the converse, for actions of any parameter
+  type.
 
-The additive versions are generated for actions of additive monoids such as `ℕ`, `ℤ` and flows.
+The additive versions are generated for actions of additive monoids. The realization needs a
+countable monoid, such as `ℕ` or `ℤ`; for uncountable ones, such as the `ℝ`-parameter of a flow,
+only the converse `TauCeti.IsFactorMapVAdd.of_measure_compl_eq_zero` applies.
 -/
 
 public section
@@ -50,32 +45,6 @@ variable {M X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X
 section Action
 
 variable [Monoid M] [MulAction M X] [MeasurableConstSMul M X]
-
-/-- For a countable monoid acting by quasi-measure-preserving maps, an almost-everywhere property
-holds on a measurable conull set that is forward invariant under every parameter. -/
-@[to_additive /-- For a countable additive monoid acting by quasi-measure-preserving maps, an
-almost-everywhere property holds on a measurable conull set that is forward invariant under every
-parameter. -/]
-theorem exists_measurableSet_mapsTo_smul_of_ae [Countable M]
-    (hM : ∀ m : M, QuasiMeasurePreserving (m • ·) μ μ) {p : X → Prop}
-    (hp : ∀ᵐ x ∂μ, p x) :
-    ∃ X₀ : Set X, MeasurableSet X₀ ∧ μ X₀ᶜ = 0 ∧ (∀ m : M, MapsTo (m • ·) X₀ X₀) ∧
-      ∀ x ∈ X₀, p x := by
-  obtain ⟨N, hpN, hNm, hN0⟩ := exists_measurable_superset_of_null (ae_iff.mp hp)
-  refine ⟨⋂ m : M, (m • ·) ⁻¹' Nᶜ, .iInter fun m ↦ measurable_const_smul m hNm.compl, ?_,
-    fun m x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [compl_iInter]
-    exact measure_iUnion_null fun m ↦ by
-      rw [← preimage_compl, compl_compl]
-      exact (hM m).preimage_null hN0
-  · simp only [mem_iInter, mem_preimage] at hx ⊢
-    intro m'
-    rw [smul_smul]
-    exact hx (m' * m)
-  · have hx1 := mem_iInter.mp hx 1
-    simp only [mem_preimage, one_smul, mem_compl_iff] at hx1
-    by_contra h
-    exact hx1 (hpN h)
 
 /-- **Invariant conull realization.** A factor map of actions of a countable monoid acting by
 quasi-measure-preserving maps intertwines every parameter exactly on a measurable conull set that
@@ -116,50 +85,5 @@ theorem isFactorMapSMul_iff_exists_measurableSet [Monoid M] [MulAction M X]
       (∀ m : M, MapsTo (m • ·) X₀ X₀) ∧ ∀ m : M, ∀ x ∈ X₀, π (m • x) = m • π x :=
   ⟨fun h ↦ h.exists_measurableSet_mapsTo_smul hM, fun ⟨_, _, h0, _, h⟩ ↦
     .of_measure_compl_eq_zero hπ h0 h⟩
-
-section Map
-
-variable {T : X → X} {S : Y → Y}
-
-/-- For a quasi-measure-preserving map `T`, an almost-everywhere property holds on a measurable
-conull set that is forward invariant under `T`. -/
-theorem exists_measurableSet_mapsTo_of_ae (hTm : Measurable T) (hT : QuasiMeasurePreserving T μ μ)
-    {p : X → Prop} (hp : ∀ᵐ x ∂μ, p x) :
-    ∃ X₀ : Set X, MeasurableSet X₀ ∧ μ X₀ᶜ = 0 ∧ MapsTo T X₀ X₀ ∧ ∀ x ∈ X₀, p x := by
-  obtain ⟨N, hpN, hNm, hN0⟩ := exists_measurable_superset_of_null (ae_iff.mp hp)
-  refine ⟨⋂ n : ℕ, T^[n] ⁻¹' Nᶜ, .iInter fun n ↦ hTm.iterate n hNm.compl, ?_,
-    fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [compl_iInter]
-    exact measure_iUnion_null fun n ↦ by
-      rw [← preimage_compl, compl_compl]
-      exact (hT.iterate n).preimage_null hN0
-  · simp only [mem_iInter, mem_preimage] at hx ⊢
-    intro n
-    rw [← Function.iterate_succ_apply]
-    exact hx (n + 1)
-  · have hx0 := mem_iInter.mp hx 0
-    simp only [Function.iterate_zero, preimage_id, mem_compl_iff] at hx0
-    by_contra h
-    exact hx0 (hpN h)
-
-/-- **Invariant conull realization for a single map.** A factor map from a quasi-measure-preserving
-system `T` satisfies `π ∘ T = S ∘ π` on a measurable conull set that is forward invariant under
-`T`. -/
-theorem IsFactorMap.exists_measurableSet_mapsTo (h : IsFactorMap π T S μ ν) (hTm : Measurable T)
-    (hT : QuasiMeasurePreserving T μ μ) :
-    ∃ X₀ : Set X, MeasurableSet X₀ ∧ μ X₀ᶜ = 0 ∧ MapsTo T X₀ X₀ ∧
-      ∀ x ∈ X₀, π (T x) = S (π x) :=
-  exists_measurableSet_mapsTo_of_ae hTm hT h.comp_ae_eq
-
-/-- For a quasi-measure-preserving map `T`, a measure-preserving map `π` is a factor map exactly
-when `π ∘ T = S ∘ π` on a measurable conull set that is forward invariant under `T`. -/
-theorem isFactorMap_iff_exists_measurableSet (hTm : Measurable T)
-    (hT : QuasiMeasurePreserving T μ μ) (hπ : MeasurePreserving π μ ν) :
-    IsFactorMap π T S μ ν ↔ ∃ X₀ : Set X, MeasurableSet X₀ ∧ μ X₀ᶜ = 0 ∧ MapsTo T X₀ X₀ ∧
-      ∀ x ∈ X₀, π (T x) = S (π x) :=
-  ⟨fun h ↦ h.exists_measurableSet_mapsTo hTm hT, fun ⟨_, _, h0, _, h⟩ ↦
-    ⟨hπ, by filter_upwards [mem_ae_iff.mpr h0] with x hx using h x hx⟩⟩
-
-end Map
 
 end TauCeti
