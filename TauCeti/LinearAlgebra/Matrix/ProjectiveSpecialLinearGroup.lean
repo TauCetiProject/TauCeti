@@ -33,8 +33,8 @@ The algebraic maps connecting the matrix groups of the modular theory to `PSL(2,
 * `glPosToSL2R : GL(2, ℝ)⁺ →* SL(2, ℝ)` — the det-normalized representative
   `(√det g)⁻¹ • g`, a monoid homomorphism since positive scalars are central and `√` is
   multiplicative on them; `glPosToPSL2R` is its projectivization.
-* `TauCeti.pslS : PSL(2, ℝ)` — the image of `ModularGroup.S`, squaring to the identity
-  (`pslS_mul_self`, `pslS_inv`).
+* `TauCeti.pslS : PSL(2, ℝ)` — the image of `ModularGroup.S` (`pslS_eq_mk`), squaring to the
+  identity (`pslS_mul_self`, `pslS_inv`).
 
 The actions of these groups on the upper half-plane, and the compatibility of these maps
 with them, are in `TauCeti/Analysis/Complex/UpperHalfPlane/PSL/Action.lean`.
@@ -232,6 +232,12 @@ noncomputable def pslS : PSL(2, ℝ) := psl2zToPSL2R (_root_.ModularGroup.S : PS
 -- equation (e.g. `PSL/Action.lean`'s `pslS_smul`) rather than unfolding the definition.
 /-- `pslS` is the image of `ModularGroup.S` under `psl2zToPSL2R`. -/
 theorem pslS_def : pslS = psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ)) := by rfl
+
+/-- `pslS` is the class in `PSL(2, ℝ)` of the real matrix of `ModularGroup.S`. -/
+theorem pslS_eq_mk :
+    pslS = ((Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) _root_.ModularGroup.S :
+      SL(2, ℝ)) : PSL(2, ℝ)) := by
+  rw [pslS_def, psl2zToPSL2R_mk, sl2zToPSL2R_apply]
 
 /-- `pslS` squares to the identity of `PSL(2, ℝ)`. -/
 @[simp]

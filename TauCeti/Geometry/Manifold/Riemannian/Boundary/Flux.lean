@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Volume
-public import TauCeti.Geometry.Manifold.Riemannian.OutwardUnitNormal
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 
 /-!
 # Regularity and integrability of the outward boundary flux

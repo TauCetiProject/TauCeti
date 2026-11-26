@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -14,7 +15,9 @@ import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 Let `M` be a manifold with boundary modeled on `EuclideanHalfSpace (n + 1)` (`𝓡∂ (n + 1)`), `n ≥ 0`.
 Pulling an ambient Riemannian metric back along `Subtype.val : (𝓡∂ (n + 1)).boundary M → M` equips
-the intrinsic boundary manifold with its induced Riemannian metric and regularity instances.
+the intrinsic boundary manifold with its induced Riemannian metric and regularity instances: a `C^k`
+Riemannian metric on a `C^(k + 1)` manifold with boundary pulls back to a `C^k` Riemannian metric on
+the intrinsic boundary manifold, for every `k : ℕ∞ω`.
 
 ## Main definitions
 
@@ -27,6 +30,9 @@ the intrinsic boundary manifold with its induced Riemannian metric and regularit
 
 ## Main results
 
+* `Bundle.ContMDiffRiemannianMetric.restrictBoundaryTangentSpace_inner`: the induced metric
+  evaluates tangent vectors by applying the ambient metric to their derivatives under the boundary
+  inclusion.
 * `TauCeti.inner_tangentSpace_boundary`, `TauCeti.norm_tangentSpace_boundary`: boundary inner
   product and norm evaluated via `mfderiv Subtype.val`.
 

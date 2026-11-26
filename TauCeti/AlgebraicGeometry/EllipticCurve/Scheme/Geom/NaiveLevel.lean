@@ -273,7 +273,7 @@ theorem isClosedImmersion_naiveLocusι_left [Finite A] {N : ℕ}
     (hN : ∀ s : S, (N : S.residueField s) ≠ 0) (hu : ∀ a, u a ^ N = 1) :
     IsClosedImmersion (naiveLocusι u).left := by
   rw [naiveLocusι_left]
-  exact Scheme.Opens.isClosedImmersion_ι_of_isClosed _
+  exact (Scheme.Opens.isClosedImmersion_ι_iff _).mpr
     (by rw [coe_naiveLocusOpens]; exact (isClopen_naiveLocus u hN hu).isClosed)
 
 /-- **The naive locus is finite where `N` is invertible.** If `H` is finite over `S`, the natural

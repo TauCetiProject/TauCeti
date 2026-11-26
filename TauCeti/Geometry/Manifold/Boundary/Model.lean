@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.LinearAlgebra.Dual.Lemmas
 
@@ -25,7 +26,8 @@ equivalence, and `TauCeti.euclideanFinConsEquiv` is the same equivalence with th
 coordinates given as a function on `Fin k`, reindexed along `k = n`.  Finally,
 `ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_pos` recognises a linear functional
 that is positive off the hyperplane near a boundary point within the half-space as a positive
-multiple of the boundary coordinate.
+multiple of the boundary coordinate. Multiplication by a positive scalar is a diffeomorphism of the
+half-space model, `TauCeti.EuclideanHalfSpace.smulDiffeomorph`.
 -/
 
 public section
@@ -340,6 +342,80 @@ theorem boundaryParam_mem_range (x : EuclideanSpace ℝ (Fin n)) :
     euclideanHalfSpaceBoundaryParam n x ∈ range (𝓡∂ (n + 1)) := by
   rw [range_modelWithCornersEuclideanHalfSpace]
   simp
+
+section Scaling
+
+variable {m : ℕ} [NeZero m] {k : WithTop ℕ∞} {ε : ℝ}
+
+/-- The half-space is closed under multiplication by a positive scalar. -/
+private theorem smul_val_zero_nonneg (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    0 ≤ (ε • x.val) 0 := by
+  simpa using mul_nonneg hε.le x.property
+
+private theorem smul_mem_range (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    ε • (𝓡∂ m) x ∈ range (𝓡∂ m) := by
+  rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq,
+    modelWithCornersEuclideanHalfSpace_apply]
+  exact smul_val_zero_nonneg hε x
+
+/-- Multiplication by `ε` on the half-space model, the map underlying `smulDiffeomorph`. -/
+private noncomputable def smulMap (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    EuclideanHalfSpace m :=
+  ⟨ε • x.val, smul_val_zero_nonneg hε x⟩
+
+private theorem smulMap_val (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    (smulMap hε x).val = ε • x.val := rfl
+
+private theorem contMDiff_smulMap (hε : 0 < ε) :
+    ContMDiff (𝓡∂ m) (𝓡∂ m) k (smulMap (m := m) hε) := by
+  have hcoord : ContMDiff (𝓡∂ m) 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) k (fun x ↦ ε • (𝓡∂ m) x) :=
+    (contDiff_const_smul ε).contMDiff.comp (𝓡∂ m).contMDiff
+  refine ((𝓡∂ m).contMDiffOn_symm.comp_contMDiff hcoord (smul_mem_range hε)).congr fun x ↦ ?_
+  apply Subtype.ext
+  rw [smulMap_val, comp_apply, modelWithCornersEuclideanHalfSpace_apply,
+    modelWithCornersEuclideanHalfSpace_symm_apply_of_le (smul_val_zero_nonneg hε x)]
+
+variable (m k) in
+/-- **Scaling the half-space model.** Multiplication by a positive scalar `ε` is a `C^k`
+diffeomorphism of the Euclidean half-space, with inverse multiplication by `ε⁻¹`. -/
+noncomputable def smulDiffeomorph (hε : 0 < ε) :
+    EuclideanHalfSpace m ≃ₘ^k⟮𝓡∂ m, 𝓡∂ m⟯ EuclideanHalfSpace m where
+  toFun := smulMap hε
+  invFun := smulMap (inv_pos.2 hε)
+  left_inv x := Subtype.ext (inv_smul_smul₀ hε.ne' x.val)
+  right_inv x := Subtype.ext (smul_inv_smul₀ hε.ne' x.val)
+  contMDiff_toFun := contMDiff_smulMap hε
+  contMDiff_invFun := contMDiff_smulMap (inv_pos.2 hε)
+
+/-- The scaling diffeomorphism multiplies the underlying vector by `ε`. -/
+@[simp]
+theorem coe_smulDiffeomorph_apply (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    (smulDiffeomorph m k hε x).val = ε • x.val := (rfl)
+
+/-- The inverse of the scaling diffeomorphism multiplies the underlying vector by `ε⁻¹`. -/
+theorem coe_smulDiffeomorph_symm_apply (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    ((smulDiffeomorph m k hε).symm x).val = ε⁻¹ • x.val := (rfl)
+
+/-- The inverse of scaling by `ε` is scaling by `ε⁻¹`. -/
+@[simp]
+theorem smulDiffeomorph_symm (hε : 0 < ε) :
+    (smulDiffeomorph m k hε).symm = smulDiffeomorph m k (inv_pos.2 hε) :=
+  Diffeomorph.ext fun _ ↦ rfl
+
+variable (m k) in
+/-- Scaling by `1` is the identity. -/
+@[simp]
+theorem smulDiffeomorph_one : smulDiffeomorph m k one_pos = Diffeomorph.refl (𝓡∂ m) _ k :=
+  Diffeomorph.ext fun x ↦ Subtype.ext (one_smul ℝ x.val)
+
+/-- Scaling by `δ` and then by `ε` is scaling by `ε * δ`. -/
+@[simp]
+theorem smulDiffeomorph_trans {δ : ℝ} (hε : 0 < ε) (hδ : 0 < δ) :
+    (smulDiffeomorph m k hδ).trans (smulDiffeomorph m k hε) =
+      smulDiffeomorph m k (mul_pos hε hδ) :=
+  Diffeomorph.ext fun x ↦ Subtype.ext (smul_smul ε δ x.val)
+
+end Scaling
 
 end EuclideanHalfSpace
 

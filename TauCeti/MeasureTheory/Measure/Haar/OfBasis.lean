@@ -9,6 +9,9 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # The additive Haar measure of the standard basis
@@ -32,6 +35,9 @@ carries the normalized Haar measure of the first to that of the second.
   additive Haar measure of one to that of the other.
 * `Module.Basis.setIntegral_addHaar_congr_measurableSpace` — set integrals against `b.addHaar` do
   not depend on the choice of Borel measurable-space instance.
+* `ContinuousLinearEquiv.exists_map_restrict_preimage_eq_smul_addHaar` — a continuous linear
+  equivalence onto a finite-dimensional space maps an additive Haar measure, restricted to
+  preimages, to a fixed positive multiple of the restricted Haar measure of `Module.finBasis`.
 
 ## Attribution
 
@@ -145,6 +151,20 @@ theorem setIntegral_addHaar_congr_measurableSpace
   rfl
 
 end Module.Basis
+
+/-- A continuous linear equivalence `L` onto a finite-dimensional space `E` maps an additive Haar
+measure `μ`, restricted to the preimage of a set `s`, to a fixed positive multiple of the Haar
+measure of `Module.finBasis ℝ E` restricted to `s`. -/
+theorem ContinuousLinearEquiv.exists_map_restrict_preimage_eq_smul_addHaar
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [MeasurableSpace F] [BorelSpace F] (L : F ≃L[ℝ] E) (μ : Measure F) [μ.IsAddHaarMeasure] :
+    ∃ c : NNReal, c ≠ 0 ∧ ∀ s : Set E,
+      (μ.restrict (L ⁻¹' s)).map L = c • (Module.finBasis ℝ E).addHaar.restrict s := by
+  refine ⟨Measure.addHaarScalarFactor (μ.map L) (Module.finBasis ℝ E).addHaar,
+    (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _).ne', fun s ↦ ?_⟩
+  rw [← Measure.restrict_smul, ← Measure.isAddLeftInvariant_eq_smul]
+  exact (L.toHomeomorph.toMeasurableEquiv.restrict_map μ s).symm
 
 /-- The additive Haar measure attached to the basis `(1, i)` of `ℂ` is Lebesgue measure. -/
 theorem Complex.addHaar_basisOneI : Complex.basisOneI.addHaar = (volume : Measure ℂ) := by

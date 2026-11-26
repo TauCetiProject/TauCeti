@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Boundary.InducedOrientation
 public import TauCeti.Geometry.Manifold.Boundary.Integration
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.OutwardUnitNormal
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 import TauCeti.LinearAlgebra.Alternating.Uncurry.Fin
 

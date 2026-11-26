@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Volume
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-public import TauCeti.Geometry.Manifold.Riemannian.OutwardUnitNormal
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Divergence
 import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Boundary

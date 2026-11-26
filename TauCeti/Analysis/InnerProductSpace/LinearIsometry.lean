@@ -70,6 +70,8 @@ diffeomorphisms.
   `LinearIsometryEquiv.forall_orthonormal_sum_re_inner_conj_iff`: a condition on the diagonal sums
   `∑ᵢ ⟪T wᵢ, wᵢ⟫` (resp. on their real parts `∑ᵢ re ⟪T wᵢ, wᵢ⟫`) of an operator along all
   orthonormal families is invariant under conjugation by a linear isometry equivalence.
+* `LinearIsometryEquiv.inner_map_left_eq_of_involutive`: an involutive linear isometry equivalence
+  is self-adjoint.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -270,7 +272,40 @@ theorem forall_orthonormal_sum_re_inner_conj_iff (U : E ≃ₗᵢ[𝕜] F) {T : 
       ∀ w : ι → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫_𝕜) := by
   simpa only [map_sum] using U.forall_orthonormal_sum_inner_conj_iff fun z ↦ P (RCLike.re z)
 
+section Involutive
+
+variable {R : E ≃ₗᵢ[𝕜] E}
+
+/-- An involutive linear isometry equivalence is self-adjoint. -/
+theorem inner_map_left_eq_of_involutive (hR : Function.Involutive R) (v w : E) :
+    ⟪R v, w⟫_𝕜 = ⟪v, R w⟫_𝕜 := by
+  rw [R.inner_map_eq_flip, R.symm_apply_eq.2 (hR w).symm]
+
+end Involutive
+
 end LinearIsometryEquiv
+
+namespace Submodule
+
+open Module
+open scoped InnerProductSpace
+
+variable {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {e : F}
+
+/-- The orthogonal projection onto `e^⊥` removes the `e` component. -/
+theorem coe_orthogonalProjectionOnto_orthogonal_singleton (he : ‖e‖ = 1) (y : F) :
+    ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto y : F) = y - ⟪e, y⟫_𝕜 • e := by
+  rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
+    Submodule.starProjection_unit_singleton 𝕜 he]
+
+/-- The projection of `k + c e` onto `e^⊥` is `k`, without a unit-norm assumption. -/
+@[simp]
+theorem orthogonalProjectionOnto_add_smul (k : (𝕜 ∙ e)ᗮ) (c : 𝕜) :
+    (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto ((k : F) + c • e) = k := by
+  simp [map_add, map_smul, orthogonalProjectionOnto_mem_subspace_eq_self,
+    orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero]
+
+end Submodule
 
 namespace TauCeti
 

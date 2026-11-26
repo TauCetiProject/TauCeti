@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Measure
+public import TauCeti.Geometry.Manifold.Measure.PositiveDensity
 public import TauCeti.MeasureTheory.Measure.Glue
-import Mathlib.MeasureTheory.Measure.Dirac.Basic
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
@@ -46,7 +47,9 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
   in coordinates, and `TauCeti.setLIntegral_riemannianVolume_inter_preimage`, its form over the
   chart preimage of an open coordinate set.
 * `TauCeti.setLIntegral_comp_extChartAt_symm_le_mul_lintegral`: where the chart density is at
-  least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals.
+  least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals, and
+  `TauCeti.setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm`: where it is at
+  most `m`, Riemannian integrals over a chart preimage are at most `m` times coordinate integrals.
 * `TauCeti.lintegral_riemannianVolume_eq_of_support_subset`: integration in coordinates of a
   function supported in the chart preimage of an open coordinate set, and
   `TauCeti.integral_riemannianVolume_le_mul_integral_of_support_subset`, the resulting upper bound
@@ -54,6 +57,9 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
 * `TauCeti.mul_integral_le_integral_riemannianVolume_of_support_subset`: the lower bound for any
   nonnegative integrable function from a coordinate lower bound supported in a subset of the chart
   target.
+* `TauCeti.isPositiveDensityMeasure_riemannianVolume`: the Riemannian volume is a positive
+  continuous density measure: in each chart it is Haar measure weighted by the chart volume
+  density, which is continuous and positive.
 * `TauCeti.isLocallyFiniteMeasure_riemannianVolume`: the Riemannian volume is locally finite.
 * `TauCeti.riemannianVolume_eq_count_of_subsingleton`: on a zero-dimensional Riemannian manifold,
   the Riemannian volume measure is counting measure.
@@ -185,6 +191,23 @@ theorem setLIntegral_comp_extChartAt_symm_le_mul_lintegral (α : M) {Ω : Set E}
     _ ≤ ENNReal.ofReal m⁻¹ * ∫⁻ x, φ x ∂riemannianVolume I M :=
         mul_le_mul_of_nonneg_left (setLIntegral_le_lintegral _ _) bot_le
 
+/-- **Riemannian integrals are controlled by coordinate integrals** where the chart density is
+bounded above: if the density is at most `m` on an open set `Ω` of the chart target, then the
+integral of `φ` over the chart preimage of `Ω` is at most `m` times the integral over `Ω` of `φ`
+read in the chart. -/
+theorem setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm (α : M) {Ω : Set E}
+    (hΩ : IsOpen Ω) (hΩt : Ω ⊆ (extChartAt I α).target) {m : ℝ}
+    (hρ : ∀ y ∈ Ω, chartVolumeDensity (I := I) α ((extChartAt I α).symm y) ≤ m)
+    (φ : M → ℝ≥0∞) :
+    ∫⁻ x in (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω, φ x ∂riemannianVolume I M ≤
+      ENNReal.ofReal m *
+        ∫⁻ y in Ω, φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar := by
+  rw [setLIntegral_riemannianVolume_inter_preimage α hΩ hΩt,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine setLIntegral_mono' hΩ.measurableSet fun y hy ↦ ?_
+  gcongr
+  exact hρ y hy
+
 /-- **Integration in coordinates of a function supported in a chart**: if `φ` vanishes outside
 the chart preimage of an open set `Ω` of the chart target, its integral over `M` is the integral
 over `Ω` of `φ` read in the chart times the chart density. -/
@@ -292,16 +315,39 @@ theorem setIntegral_riemannianVolume_std_of_subset {m : ℕ} {H : Type*} [Topolo
     ← integral_smul]
   simp_rw [smul_smul, stdChartVolumeDensity_def]
 
+section PositiveDensity
+
+variable [MeasurableSpace E] [BorelSpace E] in
+/-- The Riemannian volume of a continuous metric is a positive continuous density measure. -/
+theorem isPositiveDensityMeasure_riemannianVolume :
+    IsPositiveDensityMeasure I (riemannianVolume I M) := by
+  obtain rfl : ‹MeasurableSpace E› = extChartAtMeasurableSpaceE := BorelSpace.measurable_eq
+  let : MeasurableSpace E := extChartAtMeasurableSpaceE
+  rw [isPositiveDensityMeasure_iff_of_isAddHaarMeasure (Module.finBasis ℝ E).addHaar]
+  intro x
+  let e := extChartAt I x
+  refine ⟨fun y ↦ chartVolumeDensity (I := I) x (e.symm y),
+    continuousOn_chartVolumeDensity_extChartAt_symm x, fun y hy ↦ chartVolumeDensity_pos x ?_, ?_⟩
+  · simpa only [TangentBundle.trivializationAt_baseSet, e, extChartAt_source] using e.map_target hy
+  ext A hA
+  have hsrc : MeasurableSet e.source := (isOpen_extChartAt_source x).measurableSet
+  have hpre : MeasurableSet (e ⁻¹' A ∩ e.source) :=
+    (continuousOn_extChartAt x).measurableSet_preimage_inter hsrc hA
+  have hsub : e ⁻¹' A ∩ e.source ⊆ (chartAt H x).source := by
+    simpa only [e, extChartAt_source] using inter_subset_right
+  rw [map_restrict_extChartAt_source_apply x hA, riemannianVolume_apply_of_subset hsub,
+    chartRiemannianVolume_apply x hpre, withDensity_apply _ hA, Measure.restrict_restrict hA,
+    inter_assoc, inter_self, image_preimage_inter, e.image_source_eq_target]
+
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
+
 /-- The Riemannian volume is locally finite: every point has a neighbourhood of finite volume. In
 particular, the Riemannian volume of a compact manifold is a finite measure. -/
 instance isLocallyFiniteMeasure_riemannianVolume :
-    IsLocallyFiniteMeasure (riemannianVolume I M) := by
-  refine ⟨fun x ↦ ?_⟩
-  obtain ⟨s, hs, hfin⟩ :=
-    chartRiemannianVolume_finiteAtFilter_nhds (I := I) x (mem_chart_source H x)
-  refine ⟨s ∩ (chartAt H x).source, Filter.inter_mem hs (chart_source_mem_nhds H x), ?_⟩
-  rw [riemannianVolume_apply_of_subset inter_subset_right]
-  exact (measure_mono inter_subset_left).trans_lt hfin
+    IsLocallyFiniteMeasure (riemannianVolume I M) :=
+  isPositiveDensityMeasure_riemannianVolume.isLocallyFiniteMeasure
+
+end PositiveDensity
 
 /-- On a zero-dimensional Riemannian manifold, the Riemannian volume measure is counting measure,
 giving mass `1` to every point. -/
