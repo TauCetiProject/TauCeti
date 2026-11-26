@@ -22,6 +22,7 @@ import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Geometry.Symplectic.Rescale
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator on the Riemann sphere
@@ -342,10 +343,9 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
   -- The `L²` norms of `ξ` on the discs are at most the one on the square `‖w‖ ≤ 2 R + 2`.
   have hsq (r : ℝ) (hr : r ≤ 2 * R + 2) : ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ r},
       ‖ξ z‖ ^ 2 ≤ ∫ z in closedBall 0 (2 * R + 2), ‖ξ z‖ ^ 2 :=
-    setIntegral_mono_set (hξ.continuous.integrable_norm_sq_of_hasCompactSupport hξc).integrableOn
-      (Eventually.of_forall fun _ ↦ sq_nonneg _)
-      (Eventually.of_forall fun z hz ↦ closedBall_subset_closedBall hr
-        (setOf_norm_equivRealProdCLM_symm_le_subset_closedBall r hz))
+    setIntegral_setOf_norm_equivRealProdCLM_symm_le_le
+      (hξ.continuous.integrable_norm_sq_of_hasCompactSupport hξc).integrableOn
+      (ae_of_all _ fun _ ↦ sq_nonneg _) hr
   exact le_mul_add_of_bounds
     (integral_le_setIntegral_add_integral (hξ.of_le one_le_two) hξc
       ((hψ2.smul hξ).of_le one_le_two) hχc fun z hz ↦ by simp [(hψ0 z hz.le).eq_of_nhds])
@@ -467,39 +467,6 @@ private theorem floerLinearizationAdjoint_const_covectorPullback_realChart_inv
   rw [← TauCeti.Complex.det_fderiv_realChart_inv hζ, ← h]
   congr 1 <;> funext w x <;> simp [Floer.perturbationPullback_apply]
 
-omit [FiniteDimensional ℝ V] in
-/-- A covector field vanishing on the disc `|w| < r` vanishes, read through the inversion, on
-`|ζ| > r⁻¹`. -/
-private theorem apply_realChart_inv_eq_zero {η : ℝ × ℝ → V →L[ℝ] ℝ} {r : ℝ} (hr : 0 < r)
-    (hη0 : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ < r → η z = 0) {ζ : ℝ × ℝ}
-    (hζ : r⁻¹ < ‖Complex.equivRealProdCLM.symm ζ‖) :
-    η (TauCeti.Complex.realChart (·⁻¹) ζ) = 0 :=
-  hη0 _ (by
-    rw [TauCeti.Complex.norm_equivRealProdCLM_symm_realChart_inv]
-    exact inv_lt_of_inv_lt₀ hr hζ)
-
-omit [FiniteDimensional ℝ V] in
-/-- A compactly supported covector field vanishing on the disc `|w| < r` vanishes, read through the
-inversion, on a neighbourhood `|ζ| < δ` of `ζ = 0`, the point at infinity. -/
-private theorem exists_pos_forall_apply_realChart_inv_eq_zero {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hc : HasCompactSupport η) {r : ℝ} (hr : 0 < r)
-    (hη0 : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ < r → η z = 0) :
-    ∃ δ > 0, ∀ ζ, ‖Complex.equivRealProdCLM.symm ζ‖ < δ →
-      η (TauCeti.Complex.realChart (·⁻¹) ζ) = 0 := by
-  obtain ⟨M, hM⟩ := hc.isCompact.exists_bound_of_continuousOn
-    Complex.equivRealProdCLM.symm.continuous.continuousOn
-  refine ⟨(max M 1)⁻¹, by positivity, fun ζ hζ ↦ ?_⟩
-  by_cases hx : Complex.equivRealProdCLM.symm ζ = 0
-  · have h0 : TauCeti.Complex.realChart (·⁻¹) ζ = 0 := by
-      simp [TauCeti.Complex.realChart_apply, hx]
-    exact h0 ▸ hη0 0 (by simpa using hr)
-  · refine image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_
-    have h1 := hM _ hmem
-    rw [TauCeti.Complex.norm_equivRealProdCLM_symm_realChart_inv] at h1
-    have h2 : max M 1 < ‖Complex.equivRealProdCLM.symm ζ‖⁻¹ :=
-      lt_inv_of_lt_inv₀ (norm_pos_iff.2 hx) hζ
-    linarith [le_max_left M 1]
-
 /-- **A covector field read through the inversion.** A compactly supported `C²` covector field
 vanishing on the disc `|w| < r`, read in the chart `ζ = w⁻¹` as the form `η (ζ⁻¹) ∘ (a + b J₀)`, is
 `C²` and vanishes on `|ζ| > r⁻¹`: near `ζ = 0`, the one point where the inversion is singular, it
@@ -515,7 +482,8 @@ private theorem contDiff_covectorPullback_realChart_inv {η : ℝ × ℝ → V �
   set ι : ℝ × ℝ → ℝ × ℝ := TauCeti.Complex.realChart (·⁻¹)
   set U : Set (ℝ × ℝ) := {ζ | Complex.equivRealProdCLM.symm ζ ≠ 0}
   have hU : IsOpen U := isOpen_setOf_equivRealProdCLM_symm_ne_zero
-  obtain ⟨δ, hδ, hδ0⟩ := exists_pos_forall_apply_realChart_inv_eq_zero hc hr hη0
+  obtain ⟨δ, hδ, hδ0⟩ :=
+    TauCeti.Complex.exists_pos_forall_apply_realChart_inv_eq_zero hc hr hη0
   have hnear0 (ζ : ℝ × ℝ) (hζ : ζ ∉ U) : (η ∘ ι) =ᶠ[𝓝 ζ] 0 := by
     have hx : Complex.equivRealProdCLM.symm ζ = 0 := not_not.1 hζ
     filter_upwards [(isOpen_lt Complex.equivRealProdCLM.symm.continuous.norm
@@ -540,7 +508,8 @@ private theorem contDiff_covectorPullback_realChart_inv {η : ℝ × ℝ → V �
     exact ((contDiff_fst.comp_contDiffOn hd).smul contDiffOn_const).add
       ((contDiff_snd.comp_contDiffOn hd).smul contDiffOn_const)
   exact ⟨Floer.contDiff_covectorPullback_of_contDiffOn hU hM hηι hsupp, fun ζ hζ ↦
-    Floer.covectorPullback_eq_zero_of_apply_eq_zero _ _ _ (apply_realChart_inv_eq_zero hr hη0 hζ)⟩
+    Floer.covectorPullback_eq_zero_of_apply_eq_zero _ _ _
+      (TauCeti.Complex.apply_realChart_inv_eq_zero hr hη0 hζ)⟩
 
 /-- **Changing variables along the inversion.** For constant data, the `L²` norm of the adjoint of a
 compactly supported `C²` covector field read through the inversion is at most
@@ -658,14 +627,6 @@ private theorem exists_forall_integral_sobolevDensity_covectorPullback_realChart
         rw [← mul_assoc]
         exact mul_le_mul_of_nonneg_left hcv (by positivity)
 
-/-- The integral of a nonnegative integrable function over the disc `|w| ≤ r` is at most its
-integral over the square `‖w‖ ≤ r`. -/
-private theorem setIntegral_setOf_norm_equivRealProdCLM_symm_le_le {f : ℝ × ℝ → ℝ}
-    (hf : Integrable f) (hf0 : 0 ≤ f) (r : ℝ) :
-    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ r}, f z ≤ ∫ z in closedBall 0 r, f z :=
-  setIntegral_mono_set hf.integrableOn (Eventually.of_forall hf0)
-    (Eventually.of_forall (setOf_norm_equivRealProdCLM_symm_le_subset_closedBall r))
-
 /-- The arithmetic closing the estimates of the formal adjoint on a disc and near infinity:
 `C (p X' + q Y') ≤ C (p + q) (X + Y)` when `X' ≤ X` and `Y' ≤ Y`, all terms nonnegative. -/
 private theorem mul_add_mul_le_mul_add {C p q X X' Y Y' : ℝ} (hC : 0 ≤ C) (hp : 0 ≤ p)
@@ -756,7 +717,8 @@ private theorem
         rw [integral_add iD₁.integrableOn iη₁.integrableOn]
         exact mul_le_mul_of_nonneg_left (by linarith) hC₁
     _ ≤ _ := mul_add_mul_le_mul_add hC₁ zero_le_two (by linarith) le_rfl
-        (setIntegral_setOf_norm_equivRealProdCLM_symm_le_le iη (fun _ ↦ sq_nonneg _) _)
+        (setIntegral_setOf_norm_equivRealProdCLM_symm_le_le iη.integrableOn
+          (ae_of_all _ fun _ ↦ sq_nonneg _) le_rfl)
         (integral_nonneg fun _ ↦ sq_nonneg _)
         (setIntegral_nonneg measurableSet_closedBall fun _ _ ↦ sq_nonneg _)
 
@@ -926,7 +888,8 @@ private theorem
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           c * ∫ z in K₁, ‖η z‖ ^ 2) := mul_le_mul_of_nonneg_left (hW.trans hD) hC₂
     _ ≤ _ := mul_add_mul_le_mul_add hC₂ zero_le_two hc0 le_rfl
-        (setIntegral_setOf_norm_equivRealProdCLM_symm_le_le iη (fun _ ↦ sq_nonneg _) _)
+        (setIntegral_setOf_norm_equivRealProdCLM_symm_le_le iη.integrableOn
+          (ae_of_all _ fun _ ↦ sq_nonneg _) le_rfl)
         (integral_nonneg fun _ ↦ by positivity)
         (setIntegral_nonneg measurableSet_closedBall fun _ _ ↦ sq_nonneg _)
 

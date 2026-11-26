@@ -38,7 +38,10 @@ point (`TauCeti.Complex.contDiffAt_realChart`). The inversion `w ↦ w⁻¹` in 
 involution (`TauCeti.Complex.realChart_inv_involutive`) that inverts the Euclidean norm
 (`TauCeti.Complex.norm_equivRealProdCLM_symm_realChart_inv`); away from `0` it is smooth
 (`TauCeti.Complex.contDiffAt_realChart_inv`) with Jacobian determinant `|w⁻¹|⁴`
-(`TauCeti.Complex.det_fderiv_realChart_inv`).
+(`TauCeti.Complex.det_fderiv_realChart_inv`). Read through the inversion, a function vanishing on
+the disc `|w| < r` vanishes on `|ζ| > r⁻¹` (`TauCeti.Complex.apply_realChart_inv_eq_zero`), and
+also near `ζ = 0` when it has compact support
+(`TauCeti.Complex.exists_pos_forall_apply_realChart_inv_eq_zero`).
 The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and so is
 the real chart of a map injective on a set, on the corresponding set
 (`TauCeti.Complex.injOn_realChart`). The real chart maps the real coordinates of a set onto those
@@ -210,6 +213,34 @@ theorem det_fderiv_realChart_inv {w : ℝ × ℝ} (hw : Complex.equivRealProdCLM
 theorem contDiffAt_realChart_inv {w : ℝ × ℝ} (hw : Complex.equivRealProdCLM.symm w ≠ 0)
     {n : WithTop ℕ∞} : ContDiffAt ℝ n (realChart (·⁻¹)) w :=
   contDiffAt_realChart (contDiffAt_inv ℂ hw)
+
+/-- A function vanishing on the disc `|w| < r` vanishes, read through the inversion, on
+`|ζ| > r⁻¹`. -/
+theorem apply_realChart_inv_eq_zero {E : Type*} [Zero E] {f : ℝ × ℝ → E} {r : ℝ} (hr : 0 < r)
+    (hf : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ < r → f z = 0) {ζ : ℝ × ℝ}
+    (hζ : r⁻¹ < ‖Complex.equivRealProdCLM.symm ζ‖) : f (realChart (·⁻¹) ζ) = 0 :=
+  hf _ (by
+    rw [norm_equivRealProdCLM_symm_realChart_inv]
+    exact inv_lt_of_inv_lt₀ hr hζ)
+
+/-- A compactly supported function vanishing on the disc `|w| < r` vanishes, read through the
+inversion, on a neighbourhood `|ζ| < δ` of `ζ = 0`. -/
+theorem exists_pos_forall_apply_realChart_inv_eq_zero {E : Type*} [Zero E] {f : ℝ × ℝ → E}
+    (hc : HasCompactSupport f) {r : ℝ} (hr : 0 < r)
+    (hf : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ < r → f z = 0) :
+    ∃ δ > 0, ∀ ζ, ‖Complex.equivRealProdCLM.symm ζ‖ < δ → f (realChart (·⁻¹) ζ) = 0 := by
+  obtain ⟨M, hM⟩ := hc.isCompact.exists_bound_of_continuousOn
+    Complex.equivRealProdCLM.symm.continuous.continuousOn
+  refine ⟨(max M 1)⁻¹, by positivity, fun ζ hζ ↦ ?_⟩
+  by_cases hx : Complex.equivRealProdCLM.symm ζ = 0
+  · have h0 : realChart (·⁻¹) ζ = 0 := by simp [realChart_apply, hx]
+    exact h0 ▸ hf 0 (by simpa using hr)
+  · refine image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_
+    have h1 := hM _ hmem
+    rw [norm_equivRealProdCLM_symm_realChart_inv] at h1
+    have h2 : max M 1 < ‖Complex.equivRealProdCLM.symm ζ‖⁻¹ :=
+      lt_inv_of_lt_inv₀ (norm_pos_iff.2 hx) hζ
+    linarith [le_max_left M 1]
 
 /-- The real chart of an injective map is injective. -/
 theorem realChart_injective {f : ℂ → ℂ} (hf : Function.Injective f) :
