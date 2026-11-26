@@ -107,22 +107,17 @@ namespace CalkinAlgebra
 
 /-- The quotient map from the bounded operators on `E` to the Calkin algebra of `E`. -/
 def mk : (E →L[𝕜] E) →ₐ[𝕜] CalkinAlgebra 𝕜 E :=
-  { toFun := TwoSidedIdeal.Quotient.mk (compactOperatorIdeal 𝕜 E)
-    map_zero' := map_zero _
-    map_add' := map_add _
-    map_one' := TwoSidedIdeal.Quotient.mk_one _
-    map_mul' := map_mul _
-    commutes' := TwoSidedIdeal.Quotient.mk_algebraMap _ }
+  Ideal.Quotient.mkₐ 𝕜 (compactOperatorIdeal 𝕜 E).asIdeal
 
 variable {𝕜 E}
 
 theorem mk_apply (T : E →L[𝕜] E) :
     mk 𝕜 E T = TwoSidedIdeal.Quotient.mk (compactOperatorIdeal 𝕜 E) T :=
-  (rfl)
+  (congrFun (Ideal.Quotient.mkₐ_eq_mk 𝕜 _) T).trans
+    (TwoSidedIdeal.Quotient.idealQuotientMk_asIdeal_eq_mk _ T)
 
-theorem mk_surjective : Function.Surjective (mk 𝕜 E) := fun x ↦
-  (TwoSidedIdeal.Quotient.mk_surjective (compactOperatorIdeal 𝕜 E) x).imp fun T hT ↦
-    (mk_apply T).trans hT
+theorem mk_surjective : Function.Surjective (mk 𝕜 E) :=
+  Ideal.Quotient.mkₐ_surjective 𝕜 _
 
 /-- An operator vanishes in the Calkin algebra exactly when it is compact. -/
 @[simp]
@@ -143,7 +138,7 @@ theorem mk_comp (S T : E →L[𝕜] E) : mk 𝕜 E (S.comp T) = mk 𝕜 E S * mk
 @[simp]
 theorem ker_mk : TwoSidedIdeal.ker (mk 𝕜 E) = compactOperatorIdeal 𝕜 E := by
   ext T
-  rw [TwoSidedIdeal.mem_ker, mk_eq_zero_iff, mem_compactOperatorIdeal]
+  rw [TwoSidedIdeal.mem_ker, mk_apply, ← TwoSidedIdeal.mem_ker, TwoSidedIdeal.Quotient.ker_mk]
 
 /-! ### The universal property -/
 
@@ -156,36 +151,26 @@ quotient map agree. -/
 @[ext 1100]
 theorem algHom_ext ⦃f g : CalkinAlgebra 𝕜 E →ₐ[𝕜] A⦄ (h : f.comp (mk 𝕜 E) = g.comp (mk 𝕜 E)) :
     f = g :=
-  AlgHom.ext <| mk_surjective.forall.mpr (DFunLike.congr_fun h)
+  Ideal.Quotient.algHom_ext (I := (compactOperatorIdeal 𝕜 E).asIdeal) 𝕜 h
 
 /-- An algebra homomorphism out of the bounded operators that vanishes on the compact operators
 descends to the Calkin algebra. -/
 def lift (f : (E →L[𝕜] E) →ₐ[𝕜] A) (hf : ∀ T : E →L[𝕜] E, IsCompactOperator T → f T = 0) :
     CalkinAlgebra 𝕜 E →ₐ[𝕜] A :=
-  let hf' : ∀ T ∈ compactOperatorIdeal 𝕜 E, (f : (E →L[𝕜] E) →ₙ+* A) T = 0 :=
-    fun T hT ↦ hf T (mem_compactOperatorIdeal.mp hT)
-  { toFun := TwoSidedIdeal.Quotient.lift _ (f : (E →L[𝕜] E) →ₙ+* A) hf'
-    map_zero' := map_zero _
-    map_add' := map_add _
-    map_mul' := map_mul _
-    map_one' := by
-      rw [← TwoSidedIdeal.Quotient.mk_one, TwoSidedIdeal.Quotient.lift_mk]
-      exact map_one f
-    commutes' c := by
-      rw [← TwoSidedIdeal.Quotient.mk_algebraMap, TwoSidedIdeal.Quotient.lift_mk]
-      exact f.commutes c }
-
-@[simp]
-theorem lift_mk (f : (E →L[𝕜] E) →ₐ[𝕜] A)
-    (hf : ∀ T : E →L[𝕜] E, IsCompactOperator T → f T = 0) (T : E →L[𝕜] E) :
-    lift f hf (mk 𝕜 E T) = f T :=
-  TwoSidedIdeal.Quotient.lift_mk (compactOperatorIdeal 𝕜 E) (f : (E →L[𝕜] E) →ₙ+* A) _ T
+  Ideal.Quotient.liftₐ (compactOperatorIdeal 𝕜 E).asIdeal f fun T hT ↦
+    hf T (mem_compactOperatorIdeal.mp hT)
 
 @[simp]
 theorem lift_comp_mk (f : (E →L[𝕜] E) →ₐ[𝕜] A)
     (hf : ∀ T : E →L[𝕜] E, IsCompactOperator T → f T = 0) :
     (lift f hf).comp (mk 𝕜 E) = f :=
-  AlgHom.ext <| lift_mk f hf
+  Ideal.Quotient.liftₐ_comp _ f _
+
+@[simp]
+theorem lift_mk (f : (E →L[𝕜] E) →ₐ[𝕜] A)
+    (hf : ∀ T : E →L[𝕜] E, IsCompactOperator T → f T = 0) (T : E →L[𝕜] E) :
+    lift f hf (mk 𝕜 E T) = f T := by
+  rw [← AlgHom.comp_apply, lift_comp_mk]
 
 end Lift
 
