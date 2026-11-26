@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
 
-import Mathlib.Topology.Algebra.SeparationQuotient.Section
 import TauCeti.Analysis.Normed.Module.KadecSnobar
 import TauCeti.Analysis.Normed.Operator.SNumbers.Approximation
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Projection
+import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.SeparationQuotient
 
 /-!
 # Projection bounds between approximation, Gelfand, and Kolmogorov numbers
@@ -164,44 +164,16 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 
 `aₙ(T) ≤ (1 + √n) cₙ(T)`. -/
 theorem singularValue_le_one_add_sqrt_mul_gelfandNumber (T : E →L[𝕜] F) (n : ℕ) :
     (T.singularValue n : ℝ) ≤ (1 + √n) * T.gelfandNumber n := by
-  let q := SeparationQuotient.mkCLM 𝕜 E
   let s := SeparationQuotient.outCLM 𝕜 E
-  let T' : SeparationQuotient E →L[𝕜] F := T ∘L s
-  have hq : ‖q‖ ≤ 1 := opNorm_le_bound _ zero_le_one fun x ↦ by simp [q]
-  have hs : ‖s‖ ≤ 1 := opNorm_le_bound _ zero_le_one fun x ↦ by
-    rw [← SeparationQuotient.norm_mk, SeparationQuotient.mk_outCLM, one_mul]
-  have hdiff : ‖T - T' ∘L q‖₊ = 0 := by
-    rw [← NNReal.coe_eq_zero, coe_nnNorm]
-    refine le_antisymm (opNorm_le_bound _ le_rfl fun x ↦ ?_) (norm_nonneg _)
-    have hx : ‖x - s (q x)‖ = 0 := by
-      rw [← SeparationQuotient.norm_mk]
-      simp [q, s]
-    have hsub : (T - T' ∘L q) x = T (x - s (q x)) := by simp [T']
-    rw [hsub, zero_mul]
-    exact (T.le_opNorm _).trans (by simp [hx])
-  have ha : T.singularValue n ≤ T'.singularValue n := by
-    have h1 : T = T' ∘L q + (T - T' ∘L q) := (add_sub_cancel _ _).symm
-    calc
-      T.singularValue n ≤ (T' ∘L q).singularValue n + ‖T - T' ∘L q‖₊ := by
-        simpa only [← h1] using (T' ∘L q).singularValue_add_le (T - T' ∘L q) n
-      _ = (T' ∘L q).singularValue n := by simp [hdiff]
-      _ ≤ T'.singularValue n := by
-        simpa using
-          singularValue_comp_comp_le_of_norm_le_one (norm_id_le (𝕜 := 𝕜) (E := F)) hq T' n
-  have hc : T'.gelfandNumber n ≤ T.gelfandNumber n := by
-    calc
-      T'.gelfandNumber n = (ContinuousLinearMap.id 𝕜 F ∘L T ∘L s).gelfandNumber n := by simp [T']
-      _ ≤ ‖ContinuousLinearMap.id 𝕜 F‖₊ * T.gelfandNumber n * ‖s‖₊ :=
-        gelfandNumber_comp_comp_le _ _ _ _
-      _ ≤ 1 * T.gelfandNumber n * 1 := by
-        gcongr
-        · exact_mod_cast norm_id_le
-        · exact_mod_cast hs
-      _ = T.gelfandNumber n := by simp
+  have hcs : (T ∘L s).gelfandNumber n ≤ T.gelfandNumber n * ‖s‖₊ := by
+    simpa using T.gelfandNumber_comp_add_le_mul s n 0
+  have hc : (T ∘L s).gelfandNumber n ≤ T.gelfandNumber n :=
+    hcs.trans (mul_le_of_le_one_right' SeparationQuotient.nnNorm_outCLM_le)
   calc
-    (T.singularValue n : ℝ) ≤ T'.singularValue n := mod_cast ha
-    _ ≤ (1 + √n) * T'.gelfandNumber n :=
-      singularValue_le_one_add_sqrt_mul_gelfandNumber_of_normed T' n
+    (T.singularValue n : ℝ) = ((T ∘L s).singularValue n : ℝ) := by
+      rw [T.singularValue_comp_outCLM]
+    _ ≤ (1 + √n) * (T ∘L s).gelfandNumber n :=
+      singularValue_le_one_add_sqrt_mul_gelfandNumber_of_normed (T ∘L s) n
     _ ≤ (1 + √n) * T.gelfandNumber n := by gcongr
 
 /-- Over an `IsRCLikeNormedField`, the `n`-th Kolmogorov number is at most `(1 + √n)` times the
@@ -217,31 +189,14 @@ theorem kolmogorovNumber_le_one_add_sqrt_mul_gelfandNumber (T : E →L[𝕜] F) 
 theorem singularValue_le_one_add_sqrt_mul_kolmogorovNumber (T : E →L[𝕜] F) (n : ℕ) :
     (T.singularValue n : ℝ) ≤ (1 + √n) * T.kolmogorovNumber n := by
   let q := SeparationQuotient.mkCLM 𝕜 F
-  let s := SeparationQuotient.outCLM 𝕜 F
-  let T' : E →L[𝕜] SeparationQuotient F := q ∘L T
-  have hq : ‖q‖ ≤ 1 := opNorm_le_bound _ zero_le_one fun y ↦ by simp [q]
-  have hs : ‖s‖ ≤ 1 := opNorm_le_bound _ zero_le_one fun y ↦ by
-    rw [← SeparationQuotient.norm_mk, SeparationQuotient.mk_outCLM, one_mul]
-  have hdiff : ‖T - s ∘L T'‖₊ = 0 := by
-    rw [← NNReal.coe_eq_zero, coe_nnNorm]
-    refine le_antisymm (opNorm_le_bound _ le_rfl fun x ↦ ?_) (norm_nonneg _)
-    rw [← SeparationQuotient.norm_mk]
-    simp [T', q, s]
-  have ha : T.singularValue n ≤ T'.singularValue n := by
-    have h1 : T = s ∘L T' + (T - s ∘L T') := (add_sub_cancel _ _).symm
-    calc
-      T.singularValue n ≤ (s ∘L T').singularValue n + ‖T - s ∘L T'‖₊ := by
-        simpa only [← h1] using (s ∘L T').singularValue_add_le (T - s ∘L T') n
-      _ = (s ∘L T').singularValue n := by simp [hdiff]
-      _ ≤ T'.singularValue n := by
-        simpa using
-          singularValue_comp_comp_le_of_norm_le_one hs (norm_id_le (𝕜 := 𝕜) (E := E)) T' n
-  have hd : T'.kolmogorovNumber n ≤ T.kolmogorovNumber n :=
-    (q.kolmogorovNumber_comp_le_left T n).trans (mul_le_of_le_one_left' (mod_cast hq))
+  have hd : (q ∘L T).kolmogorovNumber n ≤ T.kolmogorovNumber n :=
+    (q.kolmogorovNumber_comp_le_left T n).trans
+      (mul_le_of_le_one_left' SeparationQuotient.nnNorm_mkCLM_le)
   calc
-    (T.singularValue n : ℝ) ≤ T'.singularValue n := mod_cast ha
-    _ ≤ (1 + √n) * T'.kolmogorovNumber n :=
-      singularValue_le_one_add_sqrt_mul_kolmogorovNumber_of_normed T' n
+    (T.singularValue n : ℝ) = ((q ∘L T).singularValue n : ℝ) := by
+      rw [T.singularValue_mkCLM_comp]
+    _ ≤ (1 + √n) * (q ∘L T).kolmogorovNumber n :=
+      singularValue_le_one_add_sqrt_mul_kolmogorovNumber_of_normed (q ∘L T) n
     _ ≤ (1 + √n) * T.kolmogorovNumber n := by gcongr
 
 /-- Over an `IsRCLikeNormedField`, the `n`-th Gelfand number is at most `(1 + √n)` times the
