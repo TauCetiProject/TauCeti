@@ -106,10 +106,12 @@ private theorem setIntegral_Icc_mul_fderiv_add_eq {g₀ g₀' g₁ g₁' : ℝ �
   -- The two components `ψ ∂ₓ(g₀ ⊗ g₁)` and `ψ ∂_y(g₀ ⊗ g₁)` of the vector field.
   set f : ℝ × ℝ → ℝ := fun p => ψ p * (g₀' p.1 * g₁ p.2) with hf_def
   set g : ℝ × ℝ → ℝ := fun p => ψ p * (g₀ p.1 * g₁' p.2) with hg_def
-  have hf (p : ℝ × ℝ) := (hψd p).mul (((h₀' p.1).hasFDerivAt.comp p hasFDerivAt_fst).mul
-    ((h₁ p.2).hasFDerivAt.comp p hasFDerivAt_snd))
-  have hg (p : ℝ × ℝ) := (hψd p).mul (((h₀ p.1).hasFDerivAt.comp p hasFDerivAt_fst).mul
-    ((h₁' p.2).hasFDerivAt.comp p hasFDerivAt_snd))
+  have hf (p : ℝ × ℝ) : HasFDerivAt f _ p :=
+    (hψd p).mul (((h₀' p.1).hasFDerivAt.comp p hasFDerivAt_fst).mul
+      ((h₁ p.2).hasFDerivAt.comp p hasFDerivAt_snd))
+  have hg (p : ℝ × ℝ) : HasFDerivAt g _ p :=
+    (hψd p).mul (((h₀ p.1).hasFDerivAt.comp p hasFDerivAt_fst).mul
+      ((h₁' p.2).hasFDerivAt.comp p hasFDerivAt_snd))
   have hψc := hψ.continuous
   -- The divergence of `(f, g)` is the integrand minus `(κ₀ + κ₁) g₀ g₁ ψ`.
   set E : ℝ × ℝ → ℝ := fun p => g₀' p.1 * g₁ p.2 * fderiv ℝ ψ p (1, 0) +
@@ -117,13 +119,18 @@ private theorem setIntegral_Icc_mul_fderiv_add_eq {g₀ g₀' g₁ g₁' : ℝ �
   have hint {F : ℝ × ℝ → ℝ} (hF : Continuous F) : IntegrableOn F (Icc a b) :=
     hF.continuousOn.integrableOn_compact isCompact_Icc
   have hEi : IntegrableOn E (Icc a b) := hint (by fun_prop)
-  have hdiv := integral_divergence_prod_Icc_of_hasFDerivAt_of_le f g _ _ a b hab
-    (by fun_prop) (by fun_prop) (fun p _ => hf p) (fun p _ => hg p)
-    (hEi.congr_fun (fun p _ => by
-      simp only [hE, Function.comp_apply, Pi.mul_apply, add_apply,
-        smul_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
-        ContinuousLinearMap.coe_snd', ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul]
-      ring) measurableSet_Icc)
+  -- The pointwise divergence identity, proved once from `hf` and `hg`.
+  have hdivE (p : ℝ × ℝ) : fderiv ℝ f p (1, 0) + fderiv ℝ g p (0, 1) = E p := by
+    rw [(hf p).fderiv, (hg p).fderiv]
+    simp only [hE, Function.comp_apply, add_apply,
+      smul_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
+      ContinuousLinearMap.coe_snd', ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul]
+    ring
+  have hdiv := integral_divergence_prod_Icc_of_hasFDerivAt_of_le f g (fderiv ℝ f) (fderiv ℝ g)
+    a b hab (by fun_prop) (by fun_prop) (fun p _ => (hf p).differentiableAt.hasFDerivAt)
+    (fun p _ => (hg p).differentiableAt.hasFDerivAt)
+    (hEi.congr_fun (fun p _ => (hdivE p).symm) measurableSet_Icc)
+  rw [setIntegral_congr_fun measurableSet_Icc fun p _ => hdivE p] at hdiv
   -- Every side contributes nothing.
   have hside : ∫ y in a.2..b.2, f (a.1, y) = 0 := by
     refine (intervalIntegral.integral_congr fun y hy => ?_).trans intervalIntegral.integral_zero
@@ -132,13 +139,7 @@ private theorem setIntegral_Icc_mul_fderiv_add_eq {g₀ g₀' g₁ g₁' : ℝ �
   simp only [hf_def, hg_def, hb₀, ha₁, hb₁, mul_zero, zero_mul, intervalIntegral.integral_zero,
     sub_zero, zero_add] at hdiv hside
   -- So the divergence `E` integrates to zero.
-  have hE0 : ∫ p in Icc a b, E p = 0 := by
-    rwa [hside, sub_zero, setIntegral_congr_fun measurableSet_Icc (g := E)
-      fun p _ => by
-        simp only [hE, Function.comp_apply, Pi.mul_apply, add_apply,
-          smul_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
-          ContinuousLinearMap.coe_snd', ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul]
-        ring] at hdiv
+  have hE0 : ∫ p in Icc a b, E p = 0 := by rwa [hside, sub_zero] at hdiv
   rw [integral_sub (hint (by fun_prop)) (hint (by fun_prop)), integral_const_mul] at hE0
   linarith
 
