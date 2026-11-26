@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.Algebra.Polynomial.Basis
 public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.Algebra.Module.GradedModule.Finsupp
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 public import TauCeti.LowDimTopology.Heegaard.FlavorExactSequence
 import Mathlib.Tactic.Linarith
@@ -78,9 +79,8 @@ into `CF^∞` (`isHomogeneous_mapRange_toLaurent`), the quotient map onto `CF⁺
 
 * `TauCeti.HeegaardRegionSystem.IsMaslovGrading`: a rational grading of the generators lifting the
   relative Maslov grading.
-* `TauCeti.HeegaardRegionSystem.hatGradedPiece`, `TauCeti.HeegaardRegionSystem.minusGradedPiece`,
-  `TauCeti.HeegaardRegionSystem.infinityGradedPiece`: the homogeneous pieces of `CF̂`, `CF⁻` and
-  `CF^∞`.
+* `TauCeti.HeegaardRegionSystem.minusGradedPiece`,
+  `TauCeti.HeegaardRegionSystem.infinityGradedPiece`: the homogeneous pieces of `CF⁻` and `CF^∞`.
 * `TauCeti.HeegaardRegionSystem.hatGrading`, `TauCeti.HeegaardRegionSystem.minusGrading`,
   `TauCeti.HeegaardRegionSystem.infinityGrading`, `TauCeti.HeegaardRegionSystem.plusGrading`: the
   internal gradings of `CF̂`, `CF⁻`, `CF^∞` and `CF⁺`.
@@ -276,10 +276,11 @@ section ChainGrading
 
 variable (H) (gr : H.Generator → ℚ)
 
-/-- The degree-`q` piece of `CF̂` for a grading `gr` of the generators: the chains supported on the
-generators of degree `q`. -/
-noncomputable def hatGradedPiece (q : ℚ) : Submodule (ZMod 2) (H.Generator →₀ ZMod 2) :=
-  Finsupp.supported (ZMod 2) (ZMod 2) {x | gr x = q}
+/-- The grading of `CF̂` by a grading `gr` of the generators: the free grading
+`TauCeti.InternalGrading.finsupp` placing each generator `x` in degree `gr(x)`, whose degree-`q`
+piece consists of the chains supported on the generators of degree `q`. -/
+noncomputable abbrev hatGrading : InternalGrading (ZMod 2) (H.Generator →₀ ZMod 2) ℚ :=
+  InternalGrading.finsupp (ZMod 2) gr
 
 /-- The degree-`q` piece of `CF⁻` for a grading `gr` of the generators: the span of the chains
 `U ^ k x` with `gr(x) - 2 k = q`. -/
@@ -298,12 +299,6 @@ noncomputable def infinityGradedPiece (q : ℚ) :
 
 variable {H gr}
 
-/-- A chain of `CF̂` has degree `q` exactly when its generators have degree `q`. -/
-theorem mem_hatGradedPiece_iff {q : ℚ} {c : H.Generator →₀ ZMod 2} :
-    c ∈ H.hatGradedPiece gr q ↔ ∀ x, c x ≠ 0 → gr x = q := by
-  rw [hatGradedPiece, Finsupp.mem_supported']
-  simp only [Set.mem_ofPred_eq, not_imp_comm]
-
 /-- A chain of `CF⁻` has degree `q` exactly when each of its terms `U ^ k x` has
 `gr(x) - 2 k = q`. -/
 theorem mem_minusGradedPiece_iff {q : ℚ} {c : H.Generator →₀ (ZMod 2)[X]} :
@@ -317,16 +312,6 @@ theorem mem_infinityGradedPiece_iff {q : ℚ} {c : H.Generator →₀ (ZMod 2)[T
     c ∈ H.infinityGradedPiece gr q ↔ ∀ x (k : ℤ), (c x).coeff k ≠ 0 → gr x - 2 * k = q := by
   rw [infinityGradedPiece, Module.Basis.mem_span_image]
   simp [Set.subset_def, AddMonoidAlgebra.basis, Sigma.forall]
-
-variable (H gr) in
-/-- The grading of `CF̂` by a grading `gr` of the generators. -/
-noncomputable def hatGrading : InternalGrading (ZMod 2) (H.Generator →₀ ZMod 2) ℚ where
-  piece := H.hatGradedPiece gr
-  isInternal := by
-    convert (Finsupp.basisSingleOne (R := ZMod 2) (ι := H.Generator)).isInternal_span_image_fiber
-      gr using 1
-    funext q
-    rw [hatGradedPiece, Finsupp.supported_eq_span_single, Finsupp.coe_basisSingleOne]
 
 variable (H gr) in
 /-- The grading of `CF⁻` by a grading `gr` of the generators, in which `U ^ k x` has degree
@@ -346,24 +331,12 @@ noncomputable def infinityGrading :
     |>.isInternal_span_image_fiber fun i => gr i.1 - 2 * i.2
 
 @[simp]
-theorem hatGrading_piece : (H.hatGrading gr).piece = H.hatGradedPiece gr :=
-  (rfl)
-
-@[simp]
 theorem minusGrading_piece : (H.minusGrading gr).piece = H.minusGradedPiece gr :=
   (rfl)
 
 @[simp]
 theorem infinityGrading_piece : (H.infinityGrading gr).piece = H.infinityGradedPiece gr :=
   (rfl)
-
-/-- A generator `x` of `CF̂` has degree `gr(x)`. -/
-theorem single_mem_hatGradedPiece (x : H.Generator) (a : ZMod 2) :
-    Finsupp.single x a ∈ H.hatGradedPiece gr (gr x) := by
-  rw [mem_hatGradedPiece_iff]
-  intro y hy
-  rw [Finsupp.single_apply_ne_zero] at hy
-  rw [hy.1]
 
 /-- The chain `U ^ k x` of `CF⁻` has degree `gr(x) - 2 k`. -/
 theorem single_X_pow_mem_minusGradedPiece (x : H.Generator) (k : ℕ) :
@@ -450,19 +423,19 @@ theorem mapRange_toLaurent_mem_infinityGradedPiece {q : ℚ} {c : H.Generator �
 `CF⁻` to the degree-`q` piece of `CF̂`. -/
 theorem isHomogeneous_mapRange_constantCoeff :
     LinearMap.IsHomogeneous (Finsupp.mapRange.linearMap (lcoeff (ZMod 2) 0))
-      (H.minusGradedPiece gr) (H.hatGradedPiece gr) 0 := by
+      (H.minusGradedPiece gr) (H.hatGrading gr).piece 0 := by
   refine LinearMap.isHomogeneous_def.2 fun q c hc => ?_
   rw [mem_minusGradedPiece_iff] at hc
-  rw [add_zero, mem_hatGradedPiece_iff]
+  rw [add_zero, InternalGrading.mem_finsupp_piece_iff]
   intro x hx
   rw [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply, lcoeff_apply] at hx
   simpa using hc x 0 hx
 
 /-- **Setting `U = 0` preserves the degree**: it maps the degree-`q` piece of `CF⁻` to the
 degree-`q` piece of `CF̂`. -/
-theorem mapRange_constantCoeff_mem_hatGradedPiece {q : ℚ} {c : H.Generator →₀ (ZMod 2)[X]}
+theorem mapRange_constantCoeff_mem_hatGrading_piece {q : ℚ} {c : H.Generator →₀ (ZMod 2)[X]}
     (hc : c ∈ H.minusGradedPiece gr q) :
-    Finsupp.mapRange constantCoeff (map_zero _) c ∈ H.hatGradedPiece gr q := by
+    Finsupp.mapRange constantCoeff (map_zero _) c ∈ (H.hatGrading gr).piece q := by
   have heq : Finsupp.mapRange constantCoeff (map_zero _) c =
       Finsupp.mapRange.linearMap (lcoeff (ZMod 2) 0) c := by
     ext x
@@ -537,10 +510,11 @@ theorem X_smul_mem_plusGrading_piece {q : ℚ}
 /-- **The inclusion of `CF̂` into `CF⁺` raises the degree by two.** It sends a generator `x` to the
 class of `U⁻¹ x`, of degree `gr(x) + 2`. -/
 theorem isHomogeneous_hatToPlus :
-    LinearMap.IsHomogeneous H.hatToPlus (H.hatGradedPiece gr) (H.plusGrading gr).piece 2 := by
-  have hspan : H.hatGradedPiece gr = fun q => Submodule.span (ZMod 2)
+    LinearMap.IsHomogeneous H.hatToPlus (H.hatGrading gr).piece (H.plusGrading gr).piece 2 := by
+  have hspan : (H.hatGrading gr).piece = fun q => Submodule.span (ZMod 2)
       ((fun x => Finsupp.single x (1 : ZMod 2)) '' {x | gr x = q}) :=
-    funext fun q => Finsupp.supported_eq_span_single _ _
+    funext fun q =>
+      (InternalGrading.finsupp_piece _ _ q).trans (Finsupp.supported_eq_span_single _ _)
   rw [hspan]
   refine LinearMap.isHomogeneous_span_iff.2 ?_
   rintro p _ ⟨x, hx, rfl⟩
@@ -561,10 +535,10 @@ namespace IsMaslovGrading
 
 /-- **The hat differential has degree `-1`** for a Maslov grading. -/
 theorem isHomogeneous_hatDifferential (h : H.IsMaslovGrading χ gr) :
-    LinearMap.IsHomogeneous (H.hatDifferential χ) (H.hatGradedPiece gr) (H.hatGradedPiece gr)
+    LinearMap.IsHomogeneous (H.hatDifferential χ) (H.hatGrading gr).piece (H.hatGrading gr).piece
       (-1) := by
   refine LinearMap.isHomogeneous_def.2 fun p c hc => ?_
-  rw [mem_hatGradedPiece_iff] at hc ⊢
+  rw [InternalGrading.mem_finsupp_piece_iff] at hc ⊢
   intro y hy
   rw [hatDifferential_apply, Finsupp.sum] at hy
   obtain ⟨x, -, hx⟩ := Finset.exists_ne_zero_of_sum_ne_zero hy
