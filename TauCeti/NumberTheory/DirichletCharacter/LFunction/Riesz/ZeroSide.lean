@@ -120,9 +120,8 @@ theorem integrableOn_rieszZeroSide_mul_cpow_and_setIntegral_eq_rieszRemainderMel
   have hG := integrableOn_rieszGammaCorrection_mul_cpow (d := 2) ha (by norm_num)
     (by linarith : -a < s.re)
   obtain ⟨hE, hEval⟩ := χ.integrableOn_origin_mul_cpow_and_setIntegral_eq (one_pos.trans hs)
-  have hm : ((meromorphicOrderAt χ.LFunction 0).untop₀ : ℂ) = (a : ℂ) - 1 := by
-    simp only [a, χ.meromorphicOrderAt_LFunction_zero hχ hne]
-    split_ifs <;> norm_num
+  have hm : ((meromorphicOrderAt χ.LFunction 0).untop₀ : ℂ) = (a : ℂ) - 1 :=
+    χ.untop₀_meromorphicOrderAt_LFunction_zero hχ hne
   have hc : logDerivFinitePart χ.LFunction 0 = logDeriv F 0 - (Real.log N : ℂ) / 2 -
       logDeriv Gammaℝ a := χ.logDerivFinitePart_LFunction_zero hχ hne
   have hneL {z : ℂ} (hz : 1 ≤ z.re) := χ.LFunction_ne_zero_of_one_le_re (.inl hne) hz

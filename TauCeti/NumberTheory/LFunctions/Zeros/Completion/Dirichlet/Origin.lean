@@ -96,6 +96,15 @@ theorem meromorphicOrderAt_LFunction_zero (hne : χ ≠ 1) :
   split_ifs with he <;> simp only [he, ↓reduceIte] at h <;> norm_num at h <;>
     exact_mod_cast h.symm
 
+include hχ in
+open scoped Classical in
+/-- The complex order coefficient at the origin is `a - 1`, where `a` is the first strictly
+positive gamma-pole offset (`2` for even characters and `1` for odd characters). -/
+theorem untop₀_meromorphicOrderAt_LFunction_zero (hne : χ ≠ 1) :
+    ((meromorphicOrderAt χ.LFunction 0).untop₀ : ℂ) = ((if χ.Even then 2 else 1 : ℝ) : ℂ) - 1 := by
+  rw [χ.meromorphicOrderAt_LFunction_zero hχ hne]
+  split_ifs <;> norm_num
+
 open scoped Classical in
 /-- The finite part of `L'/L` at the origin for a primitive nonprincipal Dirichlet character. -/
 theorem logDerivFinitePart_LFunction_zero (hne : χ ≠ 1) :
@@ -105,8 +114,7 @@ theorem logDerivFinitePart_LFunction_zero (hne : χ ≠ 1) :
   obtain ⟨hg, heq⟩ := χ.logDeriv_LFunction_eventuallyEq_nhdsNE_zero hχ hne
   have hpart := hg.logDerivFinitePart_eq (f := χ.LFunction) (by
     filter_upwards [heq] with z hz
-    rw [hz, sub_zero, χ.meromorphicOrderAt_LFunction_zero hχ hne]
-    split_ifs <;> norm_num)
+    rw [hz, sub_zero, χ.untop₀_meromorphicOrderAt_LFunction_zero hχ hne, add_sub_cancel_right])
   simpa only [zero_add] using hpart
 
 end DirichletCharacter
