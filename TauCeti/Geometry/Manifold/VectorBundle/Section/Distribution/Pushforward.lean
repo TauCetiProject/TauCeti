@@ -56,7 +56,9 @@ largest open such set. This file proves:
 
 When `f` is proper, `φ ∘ f` is itself a test (`TauCeti.BundleTest.compCLM`), and every functional
 has a pushforward `f_* T : φ ↦ T (φ ∘ f)` (`TauCeti.BundleTest.pushforwardCLM`), with
-`(g ∘ f)_* = g_* ∘ f_*` (`TauCeti.BundleTest.pushforwardCLM_pushforwardCLM`). The pushforward with
+`(g ∘ f)_* = g_* ∘ f_*` (`TauCeti.BundleTest.pushforwardCLM_pushforwardCLM`), support in
+`f (supp T)` (`TauCeti.BundleTest.pushforwardCLM_apply_eq_zero_of_disjoint`) and
+`f_* δ_x ℓ = δ_{f x} ℓ` (`TauCeti.BundleTest.pushforwardCLM_delta`). The pushforward with
 a cutoff is the pushforward of `χ T`, so it is `f_* T` when `χ` is equal to `1` near the support
 of `T` (`TauCeti.BundleTest.cutoffPushforwardCLM_eq_pushforwardCLM`).
 
@@ -240,6 +242,16 @@ theorem compCLM_compCLM (g : C^∞⟮J, N; K, P⟯) (hg : IsProperMap g) (f : C^
   ext x
   simp
 
+/-- The composition of `φ` with a proper map is supported in the preimage of the support
+of `φ`. -/
+theorem closure_compCLM_ne_zero_subset (f : C^∞⟮I, M; J, N⟯) (hf : IsProperMap f)
+    (φ : BundleTest J F (Bundle.Trivial N F)) :
+    closure {x | compCLM f hf φ x ≠ 0} ⊆ f ⁻¹' closure {y | φ y ≠ 0} :=
+  closure_minimal (fun x hx ↦ by
+      simp only [mem_ofPred_eq, compCLM_apply] at hx
+      exact subset_closure hx)
+    (isClosed_closure.preimage f.contMDiff.continuous)
+
 /-- Multiplying the composition with a proper map by a cutoff is the composition with that
 cutoff. -/
 theorem smulLeftCLM_compCLM (χ : C^∞⟮I, M; ℝ⟯) (hχ : HasCompactSupport χ) (f : C^∞⟮I, M; J, N⟯)
@@ -323,8 +335,8 @@ theorem cutoffPushforwardCLM_id {χ : C^∞⟮I, M; ℝ⟯} (hχ : HasCompactSup
     ← map_sub]
   refine hT _ ((closure_mono fun x hx ↦ ?_).trans hχ1)
   simp only [mem_ofPred_eq, sub_apply, smulLeftCLM_apply] at hx
-  rw [← one_smul ℝ (φ x), smul_smul, mul_one, ← sub_smul, smul_ne_zero_iff] at hx
-  exact sub_ne_zero.1 hx.1
+  have h : (χ x - 1) • φ x ≠ 0 := by rwa [sub_smul, one_smul]
+  exact sub_ne_zero.1 (smul_ne_zero_iff.1 h).1
 
 /-- **Functoriality of the pushforward**: pushing `T` forward with the cutoff `χ` along `f` and
 then with the cutoff `χ'` along `g` is pushing `T` forward with the cutoff `χ · (χ' ∘ f)` along
@@ -431,6 +443,18 @@ theorem pushforwardCLM_pushforwardCLM (g : C^∞⟮J, N; K, P⟯) (hg : IsProper
   simp only [pushforwardCLM_apply]
   rw [compCLM_compCLM g hg f hf]
 
+/-- **The support of a pushforward along a proper map.** If `T` vanishes on the tests supported
+in `O`, then `f_* T` vanishes on the tests whose support avoids the image under `f` of the
+complement of `O`. With `O` the complement of the support of `T`, this says that the support of
+`f_* T` lies in `f (supp T)`. -/
+theorem pushforwardCLM_apply_eq_zero_of_disjoint (f : C^∞⟮I, M; J, N⟯) (hf : IsProperMap f)
+    {T : BundleTest I F (Bundle.Trivial M F) →L_c[ℝ] W} {O : Set M}
+    (hT : ∀ s : BundleTest I F (Bundle.Trivial M F), closure {x | s x ≠ 0} ⊆ O → T s = 0)
+    {φ : BundleTest J F (Bundle.Trivial N F)} (hφ : Disjoint (closure {y | φ y ≠ 0}) (f '' Oᶜ)) :
+    pushforwardCLM f hf T φ = 0 :=
+  hT _ fun _ hx ↦ by_contra fun hxO ↦
+    hφ.ne_of_mem (closure_compCLM_ne_zero_subset f hf φ hx) (mem_image_of_mem f hxO) rfl
+
 /-- Along a proper map, the pushforward with a cutoff `χ` is the pushforward of `χ T`. -/
 theorem cutoffPushforwardCLM_eq_pushforwardCLM_smulLeftDualCLM (χ : C^∞⟮I, M; ℝ⟯)
     (hχ : HasCompactSupport χ) (f : C^∞⟮I, M; J, N⟯) (hf : IsProperMap f)
@@ -460,6 +484,16 @@ theorem cutoffPushforwardCLM_delta (χ : C^∞⟮I, M; ℝ⟯) (hχ : HasCompact
     (f : C^∞⟮I, M; J, N⟯) (x : M) (ℓ : F →L[ℝ] W) :
     cutoffPushforwardCLM χ hχ f (delta (I := I) (V := Bundle.Trivial M F) x ℓ) =
       χ x • delta (I := J) (V := Bundle.Trivial N F) (f x) ℓ := by
+  ext φ
+  simp
+
+/-- The pushforward of a point mass along a proper map is the point mass at the image point:
+`f_* δ_x ℓ = δ_{f x} ℓ`. -/
+@[simp]
+theorem pushforwardCLM_delta (f : C^∞⟮I, M; J, N⟯) (hf : IsProperMap f) (x : M)
+    (ℓ : F →L[ℝ] W) :
+    pushforwardCLM f hf (delta (I := I) (V := Bundle.Trivial M F) x ℓ) =
+      delta (I := J) (V := Bundle.Trivial N F) (f x) ℓ := by
   ext φ
   simp
 
