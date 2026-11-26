@@ -55,11 +55,13 @@ other block.
   orthogonal to that kernel. Conversely, a class orthogonal to the range solves `L_x y = 0`
   weakly, so by elliptic regularity it is the value of an element of that kernel
   (`TauCeti.Vortex.exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`).
-* **Fredholm and index.** When that kernel is finite dimensional, the realization of `L_x*` is
-  Fredholm (`TauCeti.Vortex.isFredholm_sobolevGaugeFixedAdjoint`) with index minus its dimension
-  (`TauCeti.Vortex.index_sobolevGaugeFixedAdjoint`), since it is injective and, by the description
-  of its range, its cokernel has the dimension of that kernel. At a
-  continuous plane vortex lying in `A_m^k` for every `k` the index is `-2m`
+* **Fredholm and index.** When that kernel is finite dimensional, the description of the range
+  identifies the cokernel of the realization of `L_x*` with that kernel
+  (`TauCeti.Vortex.sobolevGaugeFixedAdjointCokernelEquiv`). So the realization of `L_x*` is
+  Fredholm (`TauCeti.Vortex.isFredholm_sobolevGaugeFixedAdjoint`) with index minus the dimension
+  of that kernel, being injective
+  (`TauCeti.Vortex.index_sobolevGaugeFixedAdjoint_eq_neg_finrank_ker_sobolevGaugeFixedOperator`).
+  At a continuous plane vortex lying in `A_m^k` for every `k` the index is `-2m`
   (`TauCeti.Vortex.index_sobolevGaugeFixedAdjoint_eq_neg_two_mul`), the negative of the index `2m`
   of `L_x` (`TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul`).
 
@@ -259,13 +261,10 @@ private theorem norm_sq_gaugeFixedAdjoint_zero_le {M : ℝ} (hM : ∀ z, ‖x z�
       ‖gaugeFixedAdjointZerothOrder‖ * M * ‖η z‖ :=
     (gaugeFixedAdjointZerothOrder.le_opNorm₂ _ _).trans (by gcongr; exact hM z)
   rw [hsplit]
-  have h₁ := norm_sub_le (gaugeFixedAdjoint x η z) (gaugeFixedAdjointZerothOrder (x z) (η z))
-  have h₂ := sq_nonneg (‖gaugeFixedAdjoint x η z‖ - ‖gaugeFixedAdjointZerothOrder‖ * M * ‖η z‖)
   have h₃ : ‖gaugeFixedAdjoint x η z - gaugeFixedAdjointZerothOrder (x z) (η z)‖ ≤
-      ‖gaugeFixedAdjoint x η z‖ + ‖gaugeFixedAdjointZerothOrder‖ * M * ‖η z‖ := by linarith
-  calc _ ≤ (‖gaugeFixedAdjoint x η z‖ + ‖gaugeFixedAdjointZerothOrder‖ * M * ‖η z‖) ^ 2 :=
-        pow_le_pow_left₀ (norm_nonneg _) h₃ 2
-    _ ≤ _ := by nlinarith [h₂]
+      ‖gaugeFixedAdjoint x η z‖ + ‖gaugeFixedAdjointZerothOrder‖ * M * ‖η z‖ :=
+    (norm_sub_le _ _).trans (by gcongr)
+  exact (pow_le_pow_left₀ (norm_nonneg _) h₃ 2).trans (add_sq_le.trans_eq (by ring))
 
 /-- The coercive estimate on fields of test functions, from the spectral gap `c` of `L_x L_x*`
 and the bound `M` on the field. -/
@@ -423,9 +422,12 @@ theorem range_sobolevGaugeFixedAdjoint (hx : ContDiff ℝ 1 x) (hsol : ∀ z, eq
     ext j
     simp [h₂ j]
 
-/-- The cokernel of the realization of `L_x*` is isomorphic to the kernel of the realization of
-`L_x`, through the orthogonal complement of the range. -/
-private def quotientRangeEquiv (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
+/-- **The cokernel of `L_x*` on `H¹` is the kernel of `L_x`.** At a `C¹` vortex `x` with
+`|α| → 1` at infinity and with `L∞` class `a`, when the kernel of the realization of `L_x` is
+finite dimensional, the cokernel `L² ⧸ range L_x*` is isomorphic to that kernel, through the
+orthogonal complement of the range (`range_sobolevGaugeFixedAdjoint`). Its inverse sends `y` to the
+class of its values (`sobolevGaugeFixedAdjointCokernelEquiv_symm_apply`). -/
+def sobolevGaugeFixedAdjointCokernelEquiv (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hax : a =ᵐ[μ⊤] x) [FiniteDimensional ℝ (sobolevGaugeFixedOperator a).ker] :
     (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ ⧸ (sobolevGaugeFixedAdjoint a).range) ≃ₗ[ℝ]
@@ -438,6 +440,20 @@ private def quotientRangeEquiv (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x
     ((Submodule.quotientEquivOfIsCompl _ _
       (Submodule.isCompl_orthogonal (K := K)).symm).trans e.symm)
 
+/-- The inverse of `sobolevGaugeFixedAdjointCokernelEquiv` sends an element `y` of the kernel of
+the realization of `L_x` to the class of its values modulo the range of `L_x*`. -/
+theorem sobolevGaugeFixedAdjointCokernelEquiv_symm_apply (hx : ContDiff ℝ 1 x)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hax : a =ᵐ[μ⊤] x) [FiniteDimensional ℝ (sobolevGaugeFixedOperator a).ker]
+    (y : (sobolevGaugeFixedOperator a).ker) :
+    (sobolevGaugeFixedAdjointCokernelEquiv hx hsol hlim hax).symm y =
+      Submodule.Quotient.mk (sobolevFieldValues (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)) := by
+  simp only [sobolevGaugeFixedAdjointCokernelEquiv, LinearEquiv.symm_trans_apply,
+    LinearEquiv.symm_symm, Submodule.quotientEquivOfIsCompl_symm_apply]
+  rw [LinearEquiv.symm_apply_eq, Submodule.quotEquivOfEq_mk]
+  rfl
+
 /-- **The realization of `L_x*` on `H¹` is Fredholm** at a `C¹` vortex `x` with `|α| → 1` at
 infinity and with `L∞` class `a`, when the kernel of the realization of `L_x` is finite
 dimensional. Its kernel is trivial (`isClosedEmbedding_sobolevGaugeFixedAdjoint`), and its
@@ -448,23 +464,25 @@ theorem isFredholm_sobolevGaugeFixedAdjoint (hx : ContDiff ℝ 1 x) (hsol : ∀ 
     (hax : a =ᵐ[μ⊤] x) [FiniteDimensional ℝ (sobolevGaugeFixedOperator a).ker] :
     (sobolevGaugeFixedAdjoint a).IsFredholm :=
   (isClosedEmbedding_sobolevGaugeFixedAdjoint hx hsol hlim hax).isFredholm
-    (Module.Finite.equiv (quotientRangeEquiv hx hsol hlim hax).symm)
+    (Module.Finite.equiv (sobolevGaugeFixedAdjointCokernelEquiv hx hsol hlim hax).symm)
 
 /-- **The index of `L_x*` on `H¹` is minus the dimension of the kernel of `L_x`** at a `C¹`
 vortex `x` with `|α| → 1` at infinity and with `L∞` class `a`, when that kernel is finite
 dimensional. -/
-theorem index_sobolevGaugeFixedAdjoint (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
+theorem index_sobolevGaugeFixedAdjoint_eq_neg_finrank_ker_sobolevGaugeFixedOperator
+    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hax : a =ᵐ[μ⊤] x) [FiniteDimensional ℝ (sobolevGaugeFixedOperator a).ker] :
     (sobolevGaugeFixedAdjoint a).index = -(finrank ℝ (sobolevGaugeFixedOperator a).ker : ℤ) := by
   rw [ContinuousLinearMap.index_of_injective _
       (isClosedEmbedding_sobolevGaugeFixedAdjoint hx hsol hlim hax).injective,
-    (quotientRangeEquiv hx hsol hlim hax).finrank_eq]
+    (sobolevGaugeFixedAdjointCokernelEquiv hx hsol hlim hax).finrank_eq]
 
 /-- **The realization of `L_x*` at a plane vortex has index `-2m`.** Let `x` be a continuous plane
 vortex lying in the affine field space `A_m^k` for every `k`, with `L∞` class `a`. Then the
 realization `L_x* : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` has index `-2m`: minus the real dimension `2m` of the
-kernel of `L_x` (`index_sobolevGaugeFixedAdjoint`). -/
+kernel of `L_x`
+(`index_sobolevGaugeFixedAdjoint_eq_neg_finrank_ker_sobolevGaugeFixedOperator`). -/
 theorem index_sobolevGaugeFixedAdjoint_eq_neg_two_mul {f : ContDiffBump (0 : ℝ)} {m : ℕ}
     (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k)
     (hsol : ∀ z, equation x z = 0) (hax : a =ᵐ[μ⊤] x) :
@@ -472,8 +490,9 @@ theorem index_sobolevGaugeFixedAdjoint_eq_neg_two_mul {f : ContDiffBump (0 : ℝ
   have hhol (w : ℂ) : equation x w 1 = 0 ∧ equation x w 2 = 0 := by simp [hsol w]
   have := finiteDimensional_ker_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace hx hmem
     hhol hax
-  rw [index_sobolevGaugeFixedAdjoint ((contDiff_of_forall_mem_framedFieldSpace hx hmem).of_le
-      (by simp)) hsol (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hax,
+  rw [index_sobolevGaugeFixedAdjoint_eq_neg_finrank_ker_sobolevGaugeFixedOperator
+      ((contDiff_of_forall_mem_framedFieldSpace hx hmem).of_le (by simp)) hsol
+      (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hax,
     finrank_ker_sobolevGaugeFixedOperator_eq_two_mul hx hmem hhol hax]
   omega
 

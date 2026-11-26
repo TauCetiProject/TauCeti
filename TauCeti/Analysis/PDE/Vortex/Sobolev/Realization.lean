@@ -17,7 +17,6 @@ import TauCeti.Analysis.Normed.Operator.Compact.Pi
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Topology.Algebra.Support
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import TauCeti.Analysis.Normed.Group.Pi
 public import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Fredholm.Criteria
 public import TauCeti.Analysis.Fredholm.OrthogonalSplitting
@@ -376,7 +375,11 @@ section TestField
 variable (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ))
 
 /-- The field `z ↦ (φ₀ z, φ₁ z, φ₂ z, φ₃ z)` of a quadruple of test functions. -/
-abbrev testField : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun j ↦ φ j z
+@[expose] def testField : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun j ↦ φ j z
+
+/-- The value of a field of test functions at `z` is the quadruple of their values at `z`. -/
+@[simp]
+theorem testField_apply (z : ℂ) : testField φ z = WithLp.toLp 2 fun j ↦ φ j z := (rfl)
 
 /-- A field of test functions is smooth. -/
 theorem contDiff_testField : ContDiff ℝ (⊤ : ℕ∞) (testField φ) :=
@@ -412,25 +415,21 @@ private theorem norm_sobolevGaugeFixedOperator_ofTestFunctionₗ_sq
 the sum of the integrals of the squared values of its coordinates over a larger open disc. -/
 private theorem integral_closedBall_norm_sq_testField_le (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ))
     (R : ℝ) :
-    ∫ z in closedBall 0 R, ‖(WithLp.toLp 2 fun j ↦ φ j z : EuclideanSpace ℝ (Fin 4))‖ ^ 2 ≤
+    ∫ z in closedBall 0 R, ‖testField φ z‖ ^ 2 ≤
       ∑ j, ∫ z in ball (0 : ℂ) (R + 1),
         W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) z ^ 2 := by
-  have hc : Continuous fun z ↦ ‖(WithLp.toLp 2 fun j ↦ φ j z : EuclideanSpace ℝ (Fin 4))‖ ^ 2 :=
-    (((PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ (φ j).continuous)).norm.pow 2)
+  have hc : Continuous fun z ↦ ‖testField φ z‖ ^ 2 := (contDiff_testField φ).continuous.norm.pow 2
   have hφ (j : Fin 4) : IntegrableOn (fun z ↦ φ j z ^ 2) (ball (0 : ℂ) (R + 1)) :=
     (((φ j).continuous.pow 2).continuousOn.integrableOn_compact
       (isCompact_closedBall (0 : ℂ) (R + 1))).mono_set ball_subset_closedBall
-  calc _ ≤ ∫ z in ball (0 : ℂ) (R + 1),
-          ‖(WithLp.toLp 2 fun j ↦ φ j z : EuclideanSpace ℝ (Fin 4))‖ ^ 2 :=
+  calc _ ≤ ∫ z in ball (0 : ℂ) (R + 1), ‖testField φ z‖ ^ 2 :=
         setIntegral_mono_set ((hc.continuousOn.integrableOn_compact
             (isCompact_closedBall (0 : ℂ) (R + 1))).mono_set ball_subset_closedBall)
           (ae_of_all _ fun z ↦ sq_nonneg _)
           (closedBall_subset_ball (by linarith)).eventuallySubset
     _ = ∑ j, ∫ z in ball (0 : ℂ) (R + 1), φ j z ^ 2 := by
         rw [← integral_finsetSum _ fun j _ ↦ hφ j]
-        congr 1
-        ext z
-        simp [EuclideanSpace.real_norm_sq_eq]
+        simp only [norm_testField_sq]
     _ = _ := by
         refine Finset.sum_congr rfl fun j _ ↦ integral_congr_ae ?_
         filter_upwards [ae_restrict_of_ae (W1p.value_ofTestFunctionₗ_top_ae (mu := volume)
@@ -474,7 +473,7 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
       rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four] at this
       nlinarith [sq_nonneg (x z 2), sq_nonneg (x z 3)]
     -- The coordinates of `Y` are the test functions themselves.
-    have h₃ (j : Fin 4) : (fun w ↦ Y w j) = φ j := funext fun w ↦ by simp only [Y]
+    have h₃ (j : Fin 4) : (fun w ↦ Y w j) = φ j := funext fun w ↦ by simp [Y]
     simp only [h₃] at h₁
     nlinarith [mul_le_mul_of_nonneg_right h₂ (sq_nonneg ‖Y z‖)]
   have hGarding := hG Y (hY.of_le le_rfl) hYc

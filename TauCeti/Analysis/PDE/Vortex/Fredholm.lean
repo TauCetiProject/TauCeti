@@ -127,11 +127,9 @@ theorem integral_inner_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =�
   · exact isClosed_eq ((sobolevGaugeFixedOperator a).continuous.inner continuous_const)
       (continuous_finsetSum _ fun j _ ↦
         ((W1p.valueL.continuous.comp (continuous_apply j)).inner continuous_const))
-  · set Y : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun j ↦ φ j z
-    have hY : ContDiff ℝ 1 Y := ((contDiff_piLp 2).2 fun j ↦ (φ j).contDiff).of_le (by simp)
-    have hYc : HasCompactSupport Y :=
-      (hasCompactSupport_pi_iff.2 fun j ↦ (φ j).hasCompactSupport).comp_left
-        (g := WithLp.toLp 2) (WithLp.toLp_zero 2)
+  · set Y := testField φ
+    have hY : ContDiff ℝ 1 Y := (contDiff_testField φ).of_le (by simp)
+    have hYc : HasCompactSupport Y := hasCompactSupport_testField φ
     have hvalue (j : Fin 4) : W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) =ᵐ[μ⊤]
         fun z ↦ Y z j :=
       W1p.value_ofTestFunctionₗ_ae (φ j)
@@ -144,7 +142,7 @@ theorem integral_inner_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =�
     refine integral_congr_ae ?_
     filter_upwards [ae_all_iff.2 fun j ↦ ae_mono (Measure.restrict_coe_opens_top _).ge (hvalue j)]
       with z hz
-    simp only [Pi.map_apply, hz, Y]
+    simp only [Pi.map_apply, hz, Y, testField_apply]
 
 /-- **Weak solutions in `H¹` are strong.** Let `x` be a continuous field with `L∞` class `a`, and
 let `y ∈ H¹(ℂ)⁴` be such that its values solve `L_x y = f` weakly, for `f ∈ L²(ℂ; ℝ⁴)`:

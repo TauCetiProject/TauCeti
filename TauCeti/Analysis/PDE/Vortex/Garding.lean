@@ -48,7 +48,8 @@ the vortex equation holds the potential simplifies
 `TauCeti.Vortex.integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero`.
 
 At the zero field the potential vanishes, and changing the sign of the last coordinate turns the
-formal adjoint into the operator, so `∫ ∑ⱼ |∇ηⱼ|² = ∫ |L₀* η|²` for the adjoint `L₀*` at the zero
+formal adjoint into the operator up to the signs of the coordinates, so their pointwise norms
+agree, and `∫ ∑ⱼ |∇ηⱼ|² = ∫ |L₀* η|²` for the adjoint `L₀*` at the zero
 field (`TauCeti.Vortex.integral_sum_norm_gradient_sq_eq_integral_norm_sq_gaugeFixedAdjoint_zero`):
 the first-order part of `L_x*` controls the gradient.
 
@@ -413,10 +414,6 @@ theorem integral_sum_norm_gradient_sq_eq_integral_norm_sq_gaugeFixedAdjoint_zero
     fin_cases j
     exacts [hη' 0, hη' 1, hη' 2, (hη' 3).neg]
   have hyc : HasCompactSupport y := hηc.comp_left (g := T) (by ext j; fin_cases j <;> simp [T])
-  have hy3 : (fun w ↦ y w 3) = fun w ↦ -η w 3 := funext fun w ↦ by simp [y, T]
-  have hy0 : (fun w ↦ y w 0) = fun w ↦ η w 0 := funext fun w ↦ by simp [y, T]
-  have hy1 : (fun w ↦ y w 1) = fun w ↦ η w 1 := funext fun w ↦ by simp [y, T]
-  have hy2 : (fun w ↦ y w 2) = fun w ↦ η w 2 := funext fun w ↦ by simp [y, T]
   have h := integral_norm_sq_gaugeFixedOperator (μ := μ) (x := 0) contDiff_const hy hyc
   have hs : sectionValue (0 : ℂ → EuclideanSpace ℝ (Fin 4)) = 0 :=
     funext fun z ↦ by simp [sectionValue_apply]
@@ -425,17 +422,11 @@ theorem integral_sum_norm_gradient_sq_eq_integral_norm_sq_gaugeFixedAdjoint_zero
     have hc (v : ℂ) : covariantDerivative 0 z v = 0 := by simp [covariantDerivative_apply, hs]
     simp [gaugeFixedPotential_def, hk, hc]
   have hG (z : ℂ) : gaugeFixedGradientDensity 0 y z = ∑ j : Fin 4, ‖∇ (fun w ↦ η w j) z‖ ^ 2 := by
-    simp only [gaugeFixedGradientDensity_def, Fin.sum_univ_four,
-      norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq, Pi.zero_apply, PiLp.zero_apply,
-      zero_mul, sub_zero, add_zero, hy0, hy1, hy2, hy3, fderiv_fun_neg, neg_apply, neg_sq]
+    simp [gaugeFixedGradientDensity_def, Fin.sum_univ_four,
+      norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq, y, T, fderiv_fun_neg]
     ring
   have hL (z : ℂ) : ‖gaugeFixedOperator 0 y z‖ ^ 2 = ‖gaugeFixedAdjoint 0 η z‖ ^ 2 := by
-    simp only [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, gaugeFixedOperator_apply_zero,
-      gaugeFixedOperator_apply_one, gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three,
-      gaugeAdjoint_def, linearizedEquation_apply_zero, linearizedEquation_apply_one,
-      linearizedEquation_apply_two, gaugeFixedAdjoint_apply_zero, gaugeFixedAdjoint_apply_one,
-      gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three, Pi.zero_apply, PiLp.zero_apply,
-      zero_mul, mul_zero, add_zero, sub_zero, hy0, hy1, hy2, hy3, fderiv_fun_neg, neg_apply]
+    simp [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, y, T, fderiv_fun_neg]
     ring
   simp only [hP, integral_zero, add_zero, hG, hL] at h
   exact h.symm
