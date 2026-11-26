@@ -598,20 +598,6 @@ theorem eventually_norm_floerSobolevOperator_preglue_sub_le (ω : SymplecticForm
           (Submodule.norm_subtypeL_le _) (by positivity) hε.le
     _ = ε := mul_one ε
 
-/-- A realization of the linearized operator of the datum `K = H_t dt` that has a right inverse has
-essentially bounded coefficients, as soon as `L²(ℝ × S¹, V)` is nontrivial: otherwise the
-realization is `0` by convention. -/
-private theorem memLp_floerJetCoeff_of_comp_eq_id (ω : SymplecticForm V)
-    [Nontrivial (Lp V 2 stripMeasure)] {w : ℝ × ℝ → V} {Q : Lp V 2 stripMeasure →L[ℝ] H1 V}
-    (hQ : (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) w).comp Q =
-      ContinuousLinearMap.id ℝ _) :
-    MemLp (ω.floerJetCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) w) ∞ stripMeasure := by
-  refine memLp_of_jetOperator_ne_zero fun h ↦ ?_
-  rw [floerSobolevOperator_def, h, ContinuousLinearMap.zero_comp,
-    ContinuousLinearMap.zero_comp] at hQ
-  obtain ⟨f, hf⟩ := exists_ne (0 : Lp V 2 stripMeasure)
-  exact hf (by simpa using (DFunLike.congr_fun hQ f).symm)
-
 /-- **Uniformly bounded right inverses along the pre-glued map.** Let `J` be a `C¹` family of
 endomorphisms and `H` a `C²` Hamiltonian, both of period one in `t`, and let `x` be an orbit of
 `X_{H_t}` of period one. Let `u` and `v` be `C¹` maps converging to `x` in `C¹`, uniformly in `t`,
