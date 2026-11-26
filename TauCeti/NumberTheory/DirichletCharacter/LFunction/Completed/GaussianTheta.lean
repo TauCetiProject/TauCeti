@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.NumberTheory.LSeries.HurwitzZeta.Basic
 
 /-!
 # The Mellin transform of a Dirichlet theta series
@@ -27,18 +28,6 @@ public section
 open Complex Finset Filter HurwitzZeta MeasureTheory Set
 
 namespace DirichletCharacter
-
-private theorem hurwitzEven_f_modif_of_mem_Ioo (a : UnitAddCircle) {x : ℝ}
-    (hx : x ∈ Set.Ioo 0 1) :
-    (hurwitzEvenFEPair a).f_modif x = (evenKernel a x : ℂ) - (x ^ (-(1 / 2) : ℝ) : ℝ) := by
-  simp only [WeakFEPair.f_modif, Pi.add_apply, indicator_of_notMem (notMem_Ioi.mpr hx.2.le),
-    indicator_of_mem hx, zero_add, hurwitzEvenFEPair, Function.comp_apply, one_mul, smul_eq_mul,
-    mul_one]
-
-private theorem hurwitzEven_f_modif_of_one_lt (a : UnitAddCircle) {x : ℝ} (hx : 1 < x) :
-    (hurwitzEvenFEPair a).f_modif x = (evenKernel a x : ℂ) - (if a = 0 then 1 else 0) := by
-  simp only [WeakFEPair.f_modif, Pi.add_apply, indicator_of_mem (Set.mem_Ioi.mpr hx),
-    indicator_of_notMem (notMem_Ioo_of_ge hx.le), add_zero, hurwitzEvenFEPair, Function.comp_apply]
 
 private theorem hasMellin_even_hurwitz_sum {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
     (hχ : χ ≠ 1) (s : ℂ) :
