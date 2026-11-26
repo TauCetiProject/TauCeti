@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Reflection
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilizer
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
@@ -76,6 +77,11 @@ coherences of both block-sum homomorphisms, as well as the kernel and quotient d
 * `TauCeti.realCliffordSpinBlockSum_assoc`: associativity coherence of the Spin block sum.
 * `TauCeti.spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinBlockSum`: permutation
   coherence of the Spin block sum under swapping the two coordinate blocks.
+* `TauCeti.realCliffordCoordReflection_zero_comp_firstInclusionIsometry`,
+  `TauCeti.spinGroupMap_realCliffordCoordReflection_zero_firstInclusion`, and
+  `TauCeti.specialOrthogonalGroupCongr_realCliffordCoordReflection_zero_firstInclusion`:
+  first-coordinate reflection (`TauCeti.realCliffordCoordReflection 0`) fixes the image of
+  first-coordinate stabilization on quadratic spaces, `Spin(n + 1)`, and `SO(n + 1)`.
 
 ## References
 
@@ -736,6 +742,52 @@ theorem
     spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinBlockSum,
     spinToSpecialOrthogonal_realCliffordSpinBlockSum]
   simp only [Prod.swap_prod_mk]
+
+/-! ### First-coordinate reflection -/
+
+/-- First-coordinate reflection fixes the image of `realCliffordSpinFirstInclusionIsometry`. -/
+@[simp]
+theorem realCliffordCoordReflection_zero_comp_firstInclusionIsometry (n : ℕ) :
+    (realCliffordCoordReflection (0 : Fin (n + 1))).toIsometry.comp
+        (realCliffordSpinFirstInclusionIsometry n) =
+      realCliffordSpinFirstInclusionIsometry n := by
+  ext v i
+  exact Fin.cases (by simp) (fun j ↦ by simp) i
+
+/-- First-coordinate reflection fixes every element in the image of
+`realCliffordSpinFirstInclusion n` via `spinGroupMap`. -/
+@[simp]
+theorem spinGroupMap_realCliffordCoordReflection_zero_firstInclusion (n : ℕ)
+    (x : realCliffordSpinGroupZero n) :
+    (realCliffordCoordReflection (0 : Fin (n + 1))).toIsometry.spinGroupMap
+        (realCliffordSpinFirstInclusion n x) =
+      realCliffordSpinFirstInclusion n x := by
+  rw [realCliffordSpinFirstInclusion_eq_spinGroupMap, Isometry.spinGroupMap_spinGroupMap,
+    realCliffordCoordReflection_zero_comp_firstInclusionIsometry]
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` rewrites the LHS to `spinGroupMap`.
+/-- The Spin automorphism induced by first-coordinate reflection fixes every element in the image
+of `realCliffordSpinFirstInclusion n`. -/
+theorem spinGroupEquiv_realCliffordCoordReflection_zero_firstInclusion (n : ℕ)
+    (x : realCliffordSpinGroupZero n) :
+    (realCliffordCoordReflection (0 : Fin (n + 1))).spinGroupEquiv
+        (realCliffordSpinFirstInclusion n x) =
+      realCliffordSpinFirstInclusion n x := by simp
+
+/-- Conjugating by first-coordinate reflection in `O(n + 1)` fixes every element in the image of
+`realCliffordSpecialOrthogonalFirstInclusion n`. -/
+@[simp]
+theorem specialOrthogonalGroupCongr_realCliffordCoordReflection_zero_firstInclusion (n : ℕ)
+    (g : specialOrthogonalGroup (realCliffordForm n 0)) :
+    (realCliffordCoordReflection (0 : Fin (n + 1))).specialOrthogonalGroupCongr
+        (realCliffordSpecialOrthogonalFirstInclusion n g) =
+      realCliffordSpecialOrthogonalFirstInclusion n g := by
+  obtain ⟨x, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm n 0) (posDef_realCliffordForm_zero n) g
+  rw [← spinToSpecialOrthogonal_realCliffordSpinFirstInclusion,
+    IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal,
+    spinGroupEquiv_realCliffordCoordReflection_zero_firstInclusion,
+    spinToSpecialOrthogonal_realCliffordSpinFirstInclusion]
 
 end
 

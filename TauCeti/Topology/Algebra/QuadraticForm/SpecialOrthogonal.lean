@@ -27,6 +27,10 @@ Clifford algebra or a Spin group.
   topological embedding.
 * `TauCeti.QuadraticMap.continuous_coe_specialOrthogonalGroup_pi`: the inclusion into the linear
   automorphism group is continuous for the coordinate topology.
+* `QuadraticMap.IsometryEquiv.continuous_specialOrthogonalGroupCongr_pi` and
+  `QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongrContinuousMulEquivPi`: transport of
+  special orthogonal groups in coordinates along a quadratic isometry equivalence is a topological
+  group isomorphism.
 -/
 
 public section
@@ -92,3 +96,64 @@ end
 end QuadraticMap
 
 end TauCeti
+
+namespace QuadraticMap.IsometryEquiv
+
+open TauCeti.QuadraticMap
+
+noncomputable section
+
+attribute [local instance] Classical.decEq
+
+variable {n₁ n₂ R N : Type*} [Fintype n₁] [Fintype n₂] [CommRing R] [TopologicalSpace R]
+  [IsTopologicalRing R] [AddCommMonoid N] [Module R N]
+  {Q₁ : QuadraticMap R (n₁ → R) N} {Q₂ : QuadraticMap R (n₂ → R) N}
+
+/-- Transport of special orthogonal groups in coordinates along a quadratic isometry equivalence is
+continuous for the coordinate topologies. -/
+@[fun_prop]
+theorem continuous_specialOrthogonalGroupCongr_pi (e : Q₁.IsometryEquiv Q₂) :
+    Continuous e.specialOrthogonalGroupCongr := by
+  let E : Matrix n₂ n₁ R := e.toLinearEquiv.toLinearMap.toMatrix'
+  let Einv : Matrix n₁ n₂ R := e.symm.toLinearEquiv.toLinearMap.toMatrix'
+  have hA : Continuous fun g : specialOrthogonalGroup Q₁ ↦
+      ((Q₁.specialOrthogonalToGeneralLinear g : Matrix.GeneralLinearGroup n₁ R) : Matrix n₁ n₁ R) :=
+    Units.continuous_val.comp (isEmbedding_specialOrthogonalToGeneralLinear Q₁).continuous
+  have hfwd : Continuous fun g : specialOrthogonalGroup Q₁ ↦
+      ((Q₂.specialOrthogonalToGeneralLinear (e.specialOrthogonalGroupCongr g) :
+        Matrix.GeneralLinearGroup n₂ R) : Matrix n₂ n₂ R) := by
+    refine (((continuous_const (y := E)).matrix_mul hA).matrix_mul
+      (continuous_const (y := Einv))).congr fun g ↦ ?_
+    symm
+    rw [Q₂.coe_specialOrthogonalToGeneralLinear, Q₁.coe_specialOrthogonalToGeneralLinear,
+      ← LinearMap.toMatrix'_comp, ← LinearMap.toMatrix'_comp]
+    exact congrArg LinearMap.toMatrix' (LinearMap.ext fun v ↦ funext fun i ↦ by simp)
+  exact continuous_induced_rng.mpr <| Units.continuous_iff.mpr
+    ⟨hfwd, (hfwd.comp continuous_inv).congr fun g ↦ by simp only [Function.comp_apply, map_inv]⟩
+
+/-- Transport of special orthogonal groups in coordinates along a quadratic isometry equivalence,
+packaged as an isomorphism of topological groups. -/
+def specialOrthogonalGroupCongrContinuousMulEquivPi (e : Q₁.IsometryEquiv Q₂) :
+    specialOrthogonalGroup Q₁ ≃ₜ* specialOrthogonalGroup Q₂ where
+  toMulEquiv := e.specialOrthogonalGroupCongr
+  continuous_toFun := e.continuous_specialOrthogonalGroupCongr_pi
+  continuous_invFun := e.symm.continuous_specialOrthogonalGroupCongr_pi.congr fun g ↦
+    congrArg (· g) e.specialOrthogonalGroupCongr_symm.symm
+
+/-- Evaluating `specialOrthogonalGroupCongrContinuousMulEquivPi` applies
+`specialOrthogonalGroupCongr`. -/
+@[simp]
+theorem specialOrthogonalGroupCongrContinuousMulEquivPi_apply (e : Q₁.IsometryEquiv Q₂)
+    (g : specialOrthogonalGroup Q₁) :
+    e.specialOrthogonalGroupCongrContinuousMulEquivPi g = e.specialOrthogonalGroupCongr g := (rfl)
+
+/-- The inverse of `specialOrthogonalGroupCongrContinuousMulEquivPi` is induced by `e.symm`. -/
+@[simp]
+theorem specialOrthogonalGroupCongrContinuousMulEquivPi_symm (e : Q₁.IsometryEquiv Q₂) :
+    e.specialOrthogonalGroupCongrContinuousMulEquivPi.symm =
+      e.symm.specialOrthogonalGroupCongrContinuousMulEquivPi :=
+  ContinuousMulEquiv.ext fun g ↦ congrArg (· g) e.specialOrthogonalGroupCongr_symm
+
+end
+
+end QuadraticMap.IsometryEquiv

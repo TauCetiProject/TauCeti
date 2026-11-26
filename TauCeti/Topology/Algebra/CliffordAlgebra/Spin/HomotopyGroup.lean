@@ -12,6 +12,8 @@ public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Covering
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 
+import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalMonoid
+
 /-!
 # Higher homotopy groups of `SO(n)` through the Spin double cover
 
@@ -36,6 +38,8 @@ exact sequence `π_n(SO(n + 1)) → π_n(Sⁿ) → π_(n - 1)(SO(n))` of the fib
 
 ## Main definitions
 
+* `CliffordAlgebra.realSpinThreeHomotopyGroupMulEquivSphere`:
+  `π_N(Spin(3), 1) ≃* π_N(S³, 1)` for nonempty `N`.
 * `CliffordAlgebra.realCliffordSpinProjectionZeroHomotopyGroupMulEquiv`:
   `π_N(Spin(n), 1) ≃* π_N(SO(n), 1)` for `Nat.card N ≥ 2`, induced by the Spin projection.
 * `CliffordAlgebra.realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere`:
@@ -45,6 +49,11 @@ exact sequence `π_n(SO(n + 1)) → π_n(Sⁿ) → π_(n - 1)(SO(n))` of the fib
 
 ## Main results
 
+* `CliffordAlgebra.realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere_spinProjection`:
+  compatibility of `realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere` and
+  `realSpinThreeHomotopyGroupMulEquivSphere` across the Spin double cover.
+* `CliffordAlgebra.subsingleton_homotopyGroup_realSpin_three`: `πₖ(Spin(3), g)` is trivial for
+  `Nat.card N < 3` and every `g`.
 * `CliffordAlgebra.subsingleton_homotopyGroup_realSpecialOrthogonal_three`: `π₂(SO(3), g)` is
   trivial for every `g`.
 * `TauCeti.subsingleton_homotopyGroup_specialOrthogonalGroup_three`: the same for the matrix group.
@@ -66,6 +75,50 @@ open scoped Quaternion Topology.Homotopy
 namespace CliffordAlgebra
 
 open TauCeti
+
+section SpinThree
+
+variable {N : Type*} [DecidableEq N] [Nonempty N]
+
+/-- **`πₖ(Spin(3)) ≅ πₖ(S³)` for `k ≥ 1`.** -/
+def realSpinThreeHomotopyGroupMulEquivSphere :
+    HomotopyGroup N (realCliffordSpinGroupZero 3) 1 ≃* HomotopyGroup N (sphere (0 : ℍ[ℝ]) 1) 1 :=
+  HomotopyGroup.homeomorphMulEquivOfEq realSpinThreeHomeomorphQuaternionSphere
+    realSpinThreeHomeomorphQuaternionSphere_one
+
+/-- Forward evaluation of `realSpinThreeHomotopyGroupMulEquivSphere`. -/
+theorem realSpinThreeHomotopyGroupMulEquivSphere_apply
+    (a : HomotopyGroup N (realCliffordSpinGroupZero 3) 1) :
+    realSpinThreeHomotopyGroupMulEquivSphere a =
+      HomotopyGroup.map ⟨realSpinThreeHomeomorphQuaternionSphere,
+        realSpinThreeHomeomorphQuaternionSphere.continuous⟩
+        realSpinThreeHomeomorphQuaternionSphere_one a := by
+  rw [realSpinThreeHomotopyGroupMulEquivSphere, HomotopyGroup.homeomorphMulEquivOfEq_apply]
+
+/-- Inverse of `realSpinThreeHomotopyGroupMulEquivSphere`. -/
+theorem realSpinThreeHomotopyGroupMulEquivSphere_symm_apply
+    (a : HomotopyGroup N (sphere (0 : ℍ[ℝ]) 1) 1) :
+    realSpinThreeHomotopyGroupMulEquivSphere.symm a =
+      HomotopyGroup.map ⟨realSpinThreeHomeomorphQuaternionSphere.symm,
+        realSpinThreeHomeomorphQuaternionSphere.symm.continuous⟩
+        realSpinThreeHomeomorphQuaternionSphere_symm_one a := by
+  rw [realSpinThreeHomotopyGroupMulEquivSphere, HomotopyGroup.homeomorphMulEquivOfEq_symm_apply]
+
+end SpinThree
+
+/-- **Compact `Spin(3)` is `2`-connected at every basepoint**: `πₖ(Spin(3), g) = 0` for
+`k = Nat.card N < 3`. -/
+theorem subsingleton_homotopyGroup_realSpin_three {N : Type*} (hN : Nat.card N < 3)
+    (g : realCliffordSpinGroupZero 3) :
+    Subsingleton (HomotopyGroup N (realCliffordSpinGroupZero 3) g) := by
+  have : Subsingleton (HomotopyGroup N (sphere (0 : ℍ[ℝ]) 1) 1) :=
+    subsingleton_homotopyGroup_sphere_quaternion hN 1
+  have : Subsingleton (HomotopyGroup N (realCliffordSpinGroupZero 3) 1) :=
+    (HomotopyGroup.homeomorphEquivOfEq realSpinThreeHomeomorphQuaternionSphere
+      realSpinThreeHomeomorphQuaternionSphere_one).subsingleton
+  exact HomotopyGroup.subsingleton_of_subsingleton_one g
+
+section HigherHomotopy
 
 variable {N : Type*} [DecidableEq N] [Nontrivial N]
 
@@ -96,8 +149,19 @@ def realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere :
     HomotopyGroup N (QuadraticMap.specialOrthogonalGroup (realCliffordForm 3 0)) 1 ≃*
       HomotopyGroup N (sphere (0 : ℍ[ℝ]) 1) 1 :=
   (realCliffordSpinProjectionZeroHomotopyGroupMulEquiv 3).symm.trans
-    (HomotopyGroup.homeomorphMulEquivOfEq realSpinThreeHomeomorphQuaternionSphere
-      realSpinThreeHomeomorphQuaternionSphere_one)
+    realSpinThreeHomotopyGroupMulEquivSphere
+
+/-- On higher homotopy groups (`k ≥ 2`), `realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere`
+agrees with `realSpinThreeHomotopyGroupMulEquivSphere` across the Spin double cover. -/
+@[simp]
+theorem realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere_spinProjection
+    (a : HomotopyGroup N (realCliffordSpinGroupZero 3) 1) :
+    realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere
+        (HomotopyGroup.map (realCliffordSpinProjectionZero 3 : C(_, _))
+          (map_one (realCliffordSpinProjectionZero 3)) a) =
+      realSpinThreeHomotopyGroupMulEquivSphere a := by
+  simp [realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere,
+    ← realCliffordSpinProjectionZeroHomotopyGroupMulEquiv_apply]
 
 /-- The inverse of `realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere` is the map induced by
 the Spin projection after the quaternion model of compact `Spin(3)`. -/
@@ -111,8 +175,10 @@ theorem realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere_symm_apply
           -realSpinThreeHomeomorphQuaternionSphere_symm_apply]) a := by
   rw [realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere, MulEquiv.symm_trans_apply,
     MulEquiv.symm_symm, realCliffordSpinProjectionZeroHomotopyGroupMulEquiv_apply,
-    HomotopyGroup.homeomorphMulEquivOfEq_symm_apply]
+    realSpinThreeHomotopyGroupMulEquivSphere_symm_apply]
   exact HomotopyGroup.map_comp_apply _ _ _ _ a
+
+end HigherHomotopy
 
 /-- **`π₂(SO(3)) = 0`.** The second homotopy group of the compact rotation group `SO(3)` is
 trivial at every basepoint, since `SO(3)` is double covered by the three-sphere. -/
@@ -128,7 +194,7 @@ theorem subsingleton_homotopyGroup_realSpecialOrthogonal_three {N : Type*} (hN :
   have : Subsingleton
       (HomotopyGroup N (QuadraticMap.specialOrthogonalGroup (realCliffordForm 3 0)) 1) :=
     realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere.toEquiv.subsingleton
-  exact (HomotopyGroup.homeomorphEquivOfEq (Homeomorph.mulLeft g) (mul_one g)).symm.subsingleton
+  exact HomotopyGroup.subsingleton_of_subsingleton_one g
 
 end CliffordAlgebra
 

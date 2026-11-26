@@ -188,6 +188,15 @@ theorem map_map_of_comp_eq_id (g : C(Y, X)) (f : C(X, Y)) (hf : f x = y) (hg : g
   rw [map_comp_apply]
   exact (map_congr hgf _ rfl a).trans (map_id_apply a)
 
+/-- Naturality of induced homotopy-group maps across a commuting square `g' ∘ f = f' ∘ g`. -/
+theorem map_map_of_comm {W : Type*} [TopologicalSpace W] {w : W}
+    {g' : C(Y, W)} {hg' : g' y = w} {f : C(X, Y)} {hf : f x = y}
+    (f' : C(Z, W)) (hf' : f' z = w) (g : C(X, Z)) (hg : g x = z)
+    (hcomm : ∀ s, g' (f s) = f' (g s)) (a : HomotopyGroup N X x) :
+    map g' hg' (map f hf a) = map f' hf' (map g hg a) := by
+  rw [map_comp_apply, map_comp_apply]
+  exact map_congr (ContinuousMap.ext hcomm) _ _ a
+
 /-- In positive dimensions, the map induced by a based continuous map is a monoid
 homomorphism for the standard group structure on homotopy groups. -/
 @[expose] def mapHom [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y) :

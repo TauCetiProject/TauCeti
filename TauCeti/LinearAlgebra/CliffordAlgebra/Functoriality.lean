@@ -33,7 +33,8 @@ Clifford algebra is faithful.
 * `CliffordAlgebra.map_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.map_mem_evenOdd` proves preservation of the `ℤ/2`-grading, and
   `CliffordAlgebra.mapEvenOdd` packages the induced map as a homomorphism of graded algebras.
-* `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra.
+* `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra, and
+  `CliffordAlgebra.evenMap` restricts `CliffordAlgebra.map` to `even Q₁ →ₐ[R] even Q₂`.
 * `CliffordAlgebra.comp_eq_map_comp_of_forall_ιₛₗ`: a semilinear map of Clifford modules, whose
   twist fixes the base scalars, intertwining the generators along a quadratic isometry `f`
   intertwines every `a` with `map f a`; `CliffordAlgebra.comp_eq_map_comp_of_forall_ι` is the
@@ -140,6 +141,36 @@ theorem mapEvenOdd_comp {M₃ : Type*} [AddCommGroup M₃] [Module R M₃] {Q₃
     (g : Q₂ →qᵢ Q₃) (f : Q₁ →qᵢ Q₂) :
     mapEvenOdd (g.comp f) = (mapEvenOdd g).comp (mapEvenOdd f) :=
   GradedAlgHom.ext fun x ↦ by simp [← map_comp_map]
+
+/-- The algebra homomorphism induced by a quadratic isometry, restricted to the even Clifford
+subalgebras. -/
+noncomputable def evenMap (f : Q₁ →qᵢ Q₂) : even Q₁ →ₐ[R] even Q₂ :=
+  ((map f).comp (even Q₁).val).codRestrict (even Q₂) fun x ↦ by
+    simpa only [AlgHom.comp_apply, Subalgebra.coe_val] using map_mem_even f x.property
+
+/-- After coercion, `evenMap` agrees with the full Clifford-algebra map `map`. -/
+@[simp]
+theorem coe_evenMap_apply (f : Q₁ →qᵢ Q₂) (x : even Q₁) :
+    (evenMap f x : CliffordAlgebra Q₂) = map f (x : CliffordAlgebra Q₁) := by simp [evenMap]
+
+/-- On a bilinear generator, `evenMap` applies the isometry to both vectors. -/
+@[simp]
+theorem evenMap_ι (f : Q₁ →qᵢ Q₂) (m n : M₁) :
+    evenMap f ((even.ι Q₁).bilin m n) = (even.ι Q₂).bilin (f m) (f n) :=
+  Subtype.ext <| by simp [even.ι]
+
+/-- The identity quadratic isometry induces the identity homomorphism on `even Q₁`. -/
+@[simp]
+theorem evenMap_id : evenMap (QuadraticMap.Isometry.id Q₁) = AlgHom.id R (even Q₁) :=
+  AlgHom.ext fun _ ↦ Subtype.ext <| by simp
+
+/-- Restriction to the even Clifford algebra respects composition of quadratic isometries. -/
+@[simp]
+theorem evenMap_comp {M₃ : Type*} [AddCommGroup M₃] [Module R M₃] {Q₃ : QuadraticForm R M₃}
+    (f : Q₂ →qᵢ Q₃) (g : Q₁ →qᵢ Q₂) : (evenMap f).comp (evenMap g) = evenMap (f.comp g) :=
+  AlgHom.ext fun x ↦ Subtype.ext <| by
+    simpa only [AlgHom.comp_apply, coe_evenMap_apply] using
+      DFunLike.congr_fun (map_comp_map f g) (x : CliffordAlgebra Q₁)
 
 /-- A semilinear map `U` of Clifford modules that intertwines the generators along a quadratic
 isometry `f`, `U c(m) = c(f m) U`, intertwines every Clifford element `a` with `map f a`, provided
@@ -295,6 +326,12 @@ theorem coe_evenEquivOfIsometry_apply (e : Q₁.IsometryEquiv Q₂) (x : even Q�
     (evenEquivOfIsometry e x : CliffordAlgebra Q₂) =
       equivOfIsometry e (x : CliffordAlgebra Q₁) := by
   simp [evenEquivOfIsometry]
+
+/-- The algebra homomorphism underlying `evenEquivOfIsometry` is `evenMap e.toIsometry`. -/
+@[simp]
+theorem evenEquivOfIsometry_toAlgHom (e : Q₁.IsometryEquiv Q₂) :
+    (evenEquivOfIsometry e : even Q₁ →ₐ[R] even Q₂) = evenMap e.toIsometry :=
+  AlgHom.ext fun _ ↦ Subtype.ext <| by simp [coe_evenEquivOfIsometry_apply, equivOfIsometry_apply]
 
 /-- On a bilinear generator, the restricted equivalence applies the isometry to both vectors. -/
 @[simp]

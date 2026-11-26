@@ -7,10 +7,12 @@ module
 
 public import TauCeti.Algebra.Quaternion.ComplexMatrix
 public import TauCeti.Algebra.Star.Unitary
-public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.QuaternionProduct
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilization
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Three
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # The compact four-dimensional Spin group
@@ -24,6 +26,12 @@ unitary carrier then gives
 This is the compact real form of the exceptional type-`D₂ = A₁ × A₁` isomorphism.  Both quaternion
 factors have norm one; in particular the split discriminant algebra does not make either factor a
 split real group.
+
+In addition to the native coordinate model, this file provides the calibrated `(1, i, j, k)` model
+`TauCeti.realSpinFourCalibratedEquivQuaternionUnitaryProd`, under which `(q_L, q_R)` acts on
+`v ∈ ℝ⁴ ≃ ℍ` by `v ↦ q_L * v * star q_R`, first-coordinate stabilization `Spin(3) →* Spin(4)` maps
+onto the diagonal subgroup `q_L = q_R` up to conjugation by `(1 + k) / √2`, and first-coordinate
+reflection (`TauCeti.realCliffordCoordReflection 0`) swaps the two unit-quaternion factors.
 
 ## Main definitions and results
 
@@ -39,6 +47,12 @@ split real group.
   multiplication by the first quaternion and inverse right multiplication by the second.
 * `TauCeti.realSpinFourEquivSpecialUnitaryProd` identifies compact real `Spin(4)` with
   `SU(2) × SU(2)`.
+* `TauCeti.realSpinFourCalibratedEquivQuaternionUnitaryProd`,
+  `TauCeti.realSpinFourCalibratedEquivQuaternionUnitaryProd_action`,
+  `TauCeti.realSpinFourCalibratedEquivSpecialUnitaryProd`,
+  `TauCeti.realSpinFourCalibratedEquivQuaternionUnitaryProd_firstInclusion`, and
+  `TauCeti.realSpinFourCalibratedEquivQuaternionUnitaryProd_firstReflection`: calibrated
+  `(1, i, j, k)` models, vector action, stabilization, and reflection swap.
 
 ## References
 
@@ -435,6 +449,317 @@ theorem toComplexMatrix_coe_realSpinFourEquivQuaternionUnitaryProd_symm_apply
       ((p.1 : Matrix (Fin 2) (Fin 2) ℂ),
         (p.2 : Matrix (Fin 2) (Fin 2) ℂ)))
     (realSpinFourEquivSpecialUnitaryProd.apply_symm_apply M)
+
+/-- `realSpinFourEquivSpecialUnitaryProd` factors through `realSpinFourEquivQuaternionUnitaryProd`
+and `Quaternion.unitaryEquivSpecialUnitaryGroup`. -/
+theorem realSpinFourEquivSpecialUnitaryProd_def :
+    realSpinFourEquivSpecialUnitaryProd =
+      realSpinFourEquivQuaternionUnitaryProd.trans
+        (Quaternion.unitaryEquivSpecialUnitaryGroup.prodCongr
+          Quaternion.unitaryEquivSpecialUnitaryGroup) := (rfl)
+
+/-- `realSpinFourEquivQuaternionUnitaryProd` is an instance of
+`CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd`. -/
+theorem realSpinFourEquivQuaternionUnitaryProd_eq :
+    realSpinFourEquivQuaternionUnitaryProd =
+      CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd
+        (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0) (by simp)
+        realCliffordFourZeroEvenEquivQuaternionProd
+        realCliffordFourZeroEvenEquivQuaternionProd_reverseEven := by
+  ext s : 1
+  have h := (coe_realSpinFourEquivQuaternionUnitaryProd_apply s).trans
+    (CliffordAlgebra.coe_spinGroupEquivQuaternionUnitaryProd_apply
+      (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0) (by simp)
+      realCliffordFourZeroEvenEquivQuaternionProd
+      realCliffordFourZeroEvenEquivQuaternionProd_reverseEven s).symm
+  exact Prod.ext (Subtype.ext (congrArg Prod.fst h)) (Subtype.ext (congrArg Prod.snd h))
+
+/-! ### Calibrated `(1, i, j, k)` `Spin(4)` model -/
+
+section Calibrated
+
+variable (s : spinGroup (realCliffordForm 4 0))
+
+/-- **Calibrated compact `Spin(4) ≃* unitary ℍ[ℝ] × unitary ℍ[ℝ]` equivalence**, aligned with the
+standard ordered `(1, i, j, k)` quaternion model of `ℝ⁴`. -/
+noncomputable def realSpinFourCalibratedEquivQuaternionUnitaryProd :
+    spinGroup (realCliffordForm 4 0) ≃* unitary ℍ[ℝ] × unitary ℍ[ℝ] :=
+  CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd (realCliffordForm 4 0)
+    (nondegenerate_realCliffordForm 4 0) (by simp)
+    realCliffordFourZeroCalibratedEvenEquivQuaternionProd
+    realCliffordFourZeroCalibratedEvenEquivQuaternionProd_reverseEven
+
+/-- `realSpinFourCalibratedEquivQuaternionUnitaryProd` is an instance of
+`CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd`. -/
+theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_def :
+    realSpinFourCalibratedEquivQuaternionUnitaryProd =
+      CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd (realCliffordForm 4 0)
+        (nondegenerate_realCliffordForm 4 0) (by simp)
+        realCliffordFourZeroCalibratedEvenEquivQuaternionProd
+        realCliffordFourZeroCalibratedEvenEquivQuaternionProd_reverseEven := (rfl)
+
+/-- `realSpinFourCalibratedEquivQuaternionUnitaryProd` evaluates
+`realCliffordFourZeroCalibratedEvenEquivQuaternionProd` on the underlying even Clifford element. -/
+theorem coe_realSpinFourCalibratedEquivQuaternionUnitaryProd_apply :
+    (((realSpinFourCalibratedEquivQuaternionUnitaryProd s).1 : ℍ[ℝ]),
+        ((realSpinFourCalibratedEquivQuaternionUnitaryProd s).2 : ℍ[ℝ])) =
+      realCliffordFourZeroCalibratedEvenEquivQuaternionProd
+        (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 4 0)
+          (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 4 0) s)) :=
+  CliffordAlgebra.coe_spinGroupEquivQuaternionUnitaryProd_apply (realCliffordForm 4 0)
+    (nondegenerate_realCliffordForm 4 0) (by simp)
+    realCliffordFourZeroCalibratedEvenEquivQuaternionProd
+    realCliffordFourZeroCalibratedEvenEquivQuaternionProd_reverseEven s
+
+/-- First quaternion coordinate of `realSpinFourCalibratedEquivQuaternionUnitaryProd`. -/
+@[simp] theorem coe_fst_realSpinFourCalibratedEquivQuaternionUnitaryProd_apply :
+    ((realSpinFourCalibratedEquivQuaternionUnitaryProd s).1 : ℍ[ℝ]) =
+      (realCliffordFourZeroCalibratedEvenEquivQuaternionProd
+        (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 4 0)
+          (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 4 0) s))).1 :=
+  congrArg Prod.fst (coe_realSpinFourCalibratedEquivQuaternionUnitaryProd_apply s)
+
+/-- Second quaternion coordinate of `realSpinFourCalibratedEquivQuaternionUnitaryProd`. -/
+@[simp] theorem coe_snd_realSpinFourCalibratedEquivQuaternionUnitaryProd_apply :
+    ((realSpinFourCalibratedEquivQuaternionUnitaryProd s).2 : ℍ[ℝ]) =
+      (realCliffordFourZeroCalibratedEvenEquivQuaternionProd
+        (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 4 0)
+          (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 4 0) s))).2 :=
+  congrArg Prod.snd (coe_realSpinFourCalibratedEquivQuaternionUnitaryProd_apply s)
+
+/-- `realSpinFourCalibratedEquivQuaternionUnitaryProd.symm` recovers the Clifford value from
+`realCliffordFourZeroCalibratedEvenEquivQuaternionProd.symm`. -/
+@[simp] theorem coe_realSpinFourCalibratedEquivQuaternionUnitaryProd_symm_apply
+    (q : unitary ℍ[ℝ] × unitary ℍ[ℝ]) :
+    (realSpinFourCalibratedEquivQuaternionUnitaryProd.symm q :
+        CliffordAlgebra (realCliffordForm 4 0)) =
+      (realCliffordFourZeroCalibratedEvenEquivQuaternionProd.symm ((q.1 : ℍ[ℝ]), (q.2 : ℍ[ℝ])) :
+        CliffordAlgebra (realCliffordForm 4 0)) :=
+  CliffordAlgebra.coe_spinGroupEquivQuaternionUnitaryProd_symm_apply (realCliffordForm 4 0)
+    (nondegenerate_realCliffordForm 4 0) (by simp)
+    realCliffordFourZeroCalibratedEvenEquivQuaternionProd
+    realCliffordFourZeroCalibratedEvenEquivQuaternionProd_reverseEven q
+
+/-- Relation between the calibrated and native `Spin(4)` unit-quaternion factors. -/
+theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_apply :
+    realSpinFourCalibratedEquivQuaternionUnitaryProd s =
+      (MulAut.conj realCliffordFourZeroCalibrationUnitary
+          (realSpinFourEquivQuaternionUnitaryProd s).2,
+        (MulAut.conj realCliffordFourZeroCalibrationUnitary).symm
+          (realSpinFourEquivQuaternionUnitaryProd s).1) := by
+  apply Prod.ext <;> apply Subtype.ext
+  · rw [coe_fst_realSpinFourCalibratedEquivQuaternionUnitaryProd_apply,
+      realCliffordFourZeroCalibratedEvenEquivQuaternionProd_eq_calibrationEquiv,
+      ← coe_realSpinFourEquivQuaternionUnitaryProd_apply,
+      realCliffordFourZeroQuaternionProdCalibrationEquiv_apply, Unitary.coe_conj_apply]
+  · rw [coe_snd_realSpinFourCalibratedEquivQuaternionUnitaryProd_apply,
+      realCliffordFourZeroCalibratedEvenEquivQuaternionProd_eq_calibrationEquiv,
+      ← coe_realSpinFourEquivQuaternionUnitaryProd_apply,
+      realCliffordFourZeroQuaternionProdCalibrationEquiv_apply, Unitary.coe_conj_symm_apply]
+
+/-- In the calibrated `Spin(4)` quaternion-pair model, `-1` has coordinates `(-1, -1)`. -/
+@[simp] theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_negOne
+    (hQ : realCliffordForm 4 0 ≠ 0) :
+    realSpinFourCalibratedEquivQuaternionUnitaryProd
+        (CliffordAlgebra.spinGroup.negOne (realCliffordForm 4 0) hQ) = (-1, -1) :=
+  CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd_negOne (realCliffordForm 4 0)
+    (nondegenerate_realCliffordForm 4 0) (by simp)
+    realCliffordFourZeroCalibratedEvenEquivQuaternionProd
+    realCliffordFourZeroCalibratedEvenEquivQuaternionProd_reverseEven
+
+/-- **Calibrated `Spin(4)` vector action**: in `(1, i, j, k)` coordinates, `(q_L, q_R)` acts on
+`v ∈ ℝ⁴` by `v ↦ q_L * v * star q_R`. -/
+theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_action (v : Fin 4 → ℝ) :
+    realCliffordFourZeroCalibratedQuaternionEquiv (s • v) =
+      (realSpinFourCalibratedEquivQuaternionUnitaryProd s).1 *
+        realCliffordFourZeroCalibratedQuaternionEquiv v *
+          star (realSpinFourCalibratedEquivQuaternionUnitaryProd s).2 := by
+  rw [realCliffordFourZeroCalibratedQuaternionEquiv_eq_neg_mul_star_mul,
+    realSpinFourEquivQuaternionUnitaryProd_action,
+    realCliffordFourZeroCalibratedQuaternionEquiv_eq_neg_mul_star_mul,
+    realSpinFourCalibratedEquivQuaternionUnitaryProd_apply]
+  simp only [Unitary.coe_star, Unitary.coe_conj_apply, Unitary.coe_conj_symm_apply, star_mul,
+    star_star]
+  set u : ℍ[ℝ] := (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ])
+  set n₁ : ℍ[ℝ] := ((realSpinFourEquivQuaternionUnitaryProd s).1 : ℍ[ℝ])
+  set n₂ : ℍ[ℝ] := ((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ])
+  set w : ℍ[ℝ] := realCliffordFourZeroQuaternionEquiv v
+  have hu₁ := Unitary.star_mul_self_of_mem realCliffordFourZeroCalibrationUnitary.property
+  have hu₂ := Unitary.mul_star_self_of_mem realCliffordFourZeroCalibrationUnitary.property
+  calc
+    -(u * (n₂ * (star w * star n₁)) * u)
+      = -((u * n₂ * (star u * u)) * star w * ((u * star u) * star n₁ * u)) := by
+          rw [hu₁, hu₂]; simp [mul_assoc]
+    _ = u * n₂ * star u * -(u * star w * u) * (star u * (star n₁ * u)) := by simp [mul_assoc]
+
+/-- Under the calibrated `(1, i, j, k)` model, `spinToSpecialOrthogonal` acts on `v ∈ ℝ⁴` by
+`v ↦ q_L * v * star q_R`. -/
+theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_spinToSpecialOrthogonal (v : Fin 4 → ℝ) :
+    realCliffordFourZeroCalibratedQuaternionEquiv
+        ((CliffordAlgebra.spinToSpecialOrthogonal (realCliffordForm 4 0) s :
+          (Fin 4 → ℝ) ≃ₗ[ℝ] (Fin 4 → ℝ)) v) =
+      (realSpinFourCalibratedEquivQuaternionUnitaryProd s).1 *
+        realCliffordFourZeroCalibratedQuaternionEquiv v *
+          star (realSpinFourCalibratedEquivQuaternionUnitaryProd s).2 := by
+  rw [CliffordAlgebra.coe_spinToSpecialOrthogonal_apply, ← CliffordAlgebra.spinGroup_smul_apply,
+    realSpinFourCalibratedEquivQuaternionUnitaryProd_action]
+
+/-- **Calibrated compact `Spin(4) ≃* SU(2) × SU(2)` equivalence** in `(1, i, j, k)` coordinates. -/
+noncomputable def realSpinFourCalibratedEquivSpecialUnitaryProd :
+    spinGroup (realCliffordForm 4 0) ≃*
+      Matrix.specialUnitaryGroup (Fin 2) ℂ × Matrix.specialUnitaryGroup (Fin 2) ℂ :=
+  realSpinFourCalibratedEquivQuaternionUnitaryProd.trans
+    (Quaternion.unitaryEquivSpecialUnitaryGroup.prodCongr
+      Quaternion.unitaryEquivSpecialUnitaryGroup)
+
+/-- Factorization of `realSpinFourCalibratedEquivSpecialUnitaryProd`. -/
+theorem realSpinFourCalibratedEquivSpecialUnitaryProd_def :
+    realSpinFourCalibratedEquivSpecialUnitaryProd =
+      realSpinFourCalibratedEquivQuaternionUnitaryProd.trans
+        (Quaternion.unitaryEquivSpecialUnitaryGroup.prodCongr
+          Quaternion.unitaryEquivSpecialUnitaryGroup) := (rfl)
+
+/-- Forward evaluation of `realSpinFourCalibratedEquivSpecialUnitaryProd`. -/
+@[simp] theorem realSpinFourCalibratedEquivSpecialUnitaryProd_apply :
+    realSpinFourCalibratedEquivSpecialUnitaryProd s =
+      (Quaternion.unitaryEquivSpecialUnitaryGroup
+          (realSpinFourCalibratedEquivQuaternionUnitaryProd s).1,
+        Quaternion.unitaryEquivSpecialUnitaryGroup
+          (realSpinFourCalibratedEquivQuaternionUnitaryProd s).2) := (rfl)
+
+/-- Inverse of `realSpinFourCalibratedEquivSpecialUnitaryProd`. -/
+@[simp] theorem realSpinFourCalibratedEquivSpecialUnitaryProd_symm_apply
+    (M : Matrix.specialUnitaryGroup (Fin 2) ℂ × Matrix.specialUnitaryGroup (Fin 2) ℂ) :
+    realSpinFourCalibratedEquivSpecialUnitaryProd.symm M =
+      realSpinFourCalibratedEquivQuaternionUnitaryProd.symm
+        (Quaternion.unitaryEquivSpecialUnitaryGroup.symm M.1,
+          Quaternion.unitaryEquivSpecialUnitaryGroup.symm M.2) := (rfl)
+
+/-- Complex matrices underlying `realSpinFourCalibratedEquivSpecialUnitaryProd`. -/
+theorem coe_realSpinFourCalibratedEquivSpecialUnitaryProd_apply :
+    (((realSpinFourCalibratedEquivSpecialUnitaryProd s).1 : Matrix (Fin 2) (Fin 2) ℂ),
+        ((realSpinFourCalibratedEquivSpecialUnitaryProd s).2 : Matrix (Fin 2) (Fin 2) ℂ)) =
+      (Quaternion.toComplexMatrix (realSpinFourCalibratedEquivQuaternionUnitaryProd s).1,
+        Quaternion.toComplexMatrix (realSpinFourCalibratedEquivQuaternionUnitaryProd s).2) := by
+  simp
+
+/-! ### Compatibility with first-coordinate stabilization and reflection -/
+
+/-- The unit quaternion `(1 + k) / √2` aligning `realSpinThreeEquivQuaternionUnitary` with the
+diagonal subgroup of `realSpinFourCalibratedEquivQuaternionUnitaryProd`. -/
+noncomputable def realSpinThreeToFourCalibrationUnitary : unitary ℍ[ℝ] :=
+  ⟨⟨(Real.sqrt 2)⁻¹, 0, 0, (Real.sqrt 2)⁻¹⟩, by
+    rw [Quaternion.mem_unitary_iff_normSq_eq_one, Quaternion.normSq_def']
+    linear_combination Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq⟩
+
+/-- The underlying quaternion of `realSpinThreeToFourCalibrationUnitary` is `(1 + k) / √2`. -/
+@[simp] theorem coe_realSpinThreeToFourCalibrationUnitary :
+    (realSpinThreeToFourCalibrationUnitary : ℍ[ℝ]) = ⟨(Real.sqrt 2)⁻¹, 0, 0, (Real.sqrt 2)⁻¹⟩ :=
+  (rfl)
+
+-- Not `@[simp]`: `Unitary.conjStarAlgAut_apply` and `coe_realSpinThreeToFourCalibrationUnitary`
+-- unfold the LHS before rewriting.
+/-- Conjugating `⟨a, b, c, d⟩` by `(1 + k) / √2` sends `(1, i, j, k)` to `(1, j, -i, k)`. -/
+theorem conjStarAlgAut_realSpinThreeToFourCalibrationUnitary_mk (a b c d : ℝ) :
+    Unitary.conjStarAlgAut ℝ ℍ[ℝ] realSpinThreeToFourCalibrationUnitary ⟨a, b, c, d⟩ =
+      ⟨a, -c, b, d⟩ := by
+  ext <;> simp only [Unitary.conjStarAlgAut_apply, coe_realSpinThreeToFourCalibrationUnitary,
+    QuaternionAlgebra.star_mk, QuaternionAlgebra.mk_mul_mk]
+  · linear_combination a * Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
+  · linear_combination -c * Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
+  · linear_combination b * Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
+  · linear_combination d * Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
+
+/-- First-coordinate inclusion embeds `Cl⁺(3,0) ≃ ℍ` diagonally into calibrated `Cl⁺(4,0) ≃ ℍ × ℍ`
+after conjugating by `realSpinThreeToFourCalibrationUnitary`. -/
+@[simp] theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_firstInclusion
+    (x : CliffordAlgebra.even (realCliffordForm 3 0)) :
+    realCliffordFourZeroCalibratedEvenEquivQuaternionProd
+        (CliffordAlgebra.evenMap (realCliffordSpinFirstInclusionIsometry 3) x) =
+      (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realSpinThreeToFourCalibrationUnitary
+          (realCliffordThreeZeroEvenEquivQuaternion x),
+        Unitary.conjStarAlgAut ℝ ℍ[ℝ] realSpinThreeToFourCalibrationUnitary
+          (realCliffordThreeZeroEvenEquivQuaternion x)) := by
+  let c :=
+    (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realSpinThreeToFourCalibrationUnitary).toAlgEquiv.toAlgHom
+  have h : realCliffordFourZeroCalibratedEvenEquivQuaternionProd.toAlgHom.comp
+      (CliffordAlgebra.evenMap (realCliffordSpinFirstInclusionIsometry 3)) =
+      (c.prod c).comp realCliffordThreeZeroEvenEquivQuaternion.toAlgHom :=
+    CliffordAlgebra.even.algHom_ext _ <| CliffordAlgebra.EvenHom.ext <| LinearMap.ext₂ fun m n ↦ by
+      have hcons (u : Fin 3 → ℝ) :
+          realCliffordFourZeroCalibratedQuaternionEquiv (Fin.cons 0 u) = ⟨0, u 0, u 1, u 2⟩ :=
+        QuaternionAlgebra.ext (by simp) (by simp)
+          (by simpa using Fin.cons_succ (α := fun _ ↦ ℝ) 0 u 1)
+          (by simpa using Fin.cons_succ (α := fun _ ↦ ℝ) 0 u 2)
+      simp only [CliffordAlgebra.EvenHom.compr₂_bilin, LinearMap.compr₂_apply,
+        AlgHom.toLinearMap_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.prod_apply,
+        c, StarAlgEquiv.coe_toAlgEquiv, CliffordAlgebra.evenMap_ι,
+        realCliffordSpinFirstInclusionIsometry_apply,
+        realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι, hcons,
+        realCliffordThreeZeroEvenEquivQuaternion_ι,
+        conjStarAlgAut_realSpinThreeToFourCalibrationUnitary_mk]
+      ext <;> simp [QuaternionAlgebra.mk_mul_mk] <;> ring
+  simpa [c] using DFunLike.congr_fun h x
+
+/-- **First-coordinate Spin stabilization `Spin(3) →* Spin(4)` is diagonal in the calibrated
+quaternion-pair model**, up to inner conjugation by `realSpinThreeToFourCalibrationUnitary`. -/
+@[simp] theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_firstInclusion
+    (t : spinGroup (realCliffordForm 3 0)) :
+    realSpinFourCalibratedEquivQuaternionUnitaryProd (realCliffordSpinFirstInclusion 3 t) =
+      (MulAut.conj realSpinThreeToFourCalibrationUnitary (realSpinThreeEquivQuaternionUnitary t),
+        MulAut.conj realSpinThreeToFourCalibrationUnitary
+          (realSpinThreeEquivQuaternionUnitary t)) := by
+  apply Prod.ext <;> apply Subtype.ext <;>
+    simp only [coe_fst_realSpinFourCalibratedEquivQuaternionUnitaryProd_apply,
+      coe_snd_realSpinFourCalibratedEquivQuaternionUnitaryProd_apply,
+      realCliffordSpinFirstInclusion_eq_spinGroupMap,
+      QuadraticMap.Isometry.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_spinGroupMap,
+      realCliffordFourZeroCalibratedEvenEquivQuaternionProd_firstInclusion,
+      coe_realSpinThreeEquivQuaternionUnitary_apply, Unitary.conjStarAlgAut_apply,
+      Unitary.coe_conj_apply]
+
+/-- An element of `Spin(4)` lies in the image of `Spin(3) →* Spin(4)` iff its two calibrated
+unit-quaternion coordinates coincide. -/
+theorem mem_range_realCliffordSpinFirstInclusion_three_iff :
+    s ∈ Set.range (realCliffordSpinFirstInclusion 3) ↔
+      (realSpinFourCalibratedEquivQuaternionUnitaryProd s).1 =
+        (realSpinFourCalibratedEquivQuaternionUnitaryProd s).2 := by
+  refine ⟨fun ⟨t, ht⟩ ↦ ht ▸ by simp, fun hs ↦ ?_⟩
+  let q := (MulAut.conj realSpinThreeToFourCalibrationUnitary).symm
+    (realSpinFourCalibratedEquivQuaternionUnitaryProd s).1
+  refine ⟨realSpinThreeEquivQuaternionUnitary.symm q,
+    realSpinFourCalibratedEquivQuaternionUnitaryProd.injective ?_⟩
+  rw [realSpinFourCalibratedEquivQuaternionUnitaryProd_firstInclusion,
+    realSpinThreeEquivQuaternionUnitary.apply_symm_apply,
+    (MulAut.conj realSpinThreeToFourCalibrationUnitary).apply_symm_apply]
+  nth_rw 2 [hs]
+
+-- Not `@[simp]`: `QuadraticMap.IsometryEquiv.spinGroupEquiv_apply` rewrites `.spinGroupEquiv` to
+-- `.toIsometry.spinGroupMap`; see
+-- `realSpinFourCalibratedEquivQuaternionUnitaryProd_spinGroupMap_firstReflection`.
+/-- **First-coordinate reflection swaps the two `Spin(4)` factors** in the calibrated
+unit-quaternion product model. -/
+theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_firstReflection :
+    realSpinFourCalibratedEquivQuaternionUnitaryProd
+        ((realCliffordCoordReflection 0).spinGroupEquiv s) =
+      Prod.swap (realSpinFourCalibratedEquivQuaternionUnitaryProd s) := by
+  apply Prod.ext <;> apply Subtype.ext <;>
+    simp only [coe_fst_realSpinFourCalibratedEquivQuaternionUnitaryProd_apply,
+      coe_snd_realSpinFourCalibratedEquivQuaternionUnitaryProd_apply,
+      QuadraticMap.IsometryEquiv.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_spinGroupEquiv,
+      realCliffordFourZeroCalibratedEvenEquivQuaternionProd_firstReflection, Prod.fst_swap,
+      Prod.snd_swap]
+
+/-- Simp-normal form of `realSpinFourCalibratedEquivQuaternionUnitaryProd_firstReflection` on
+`spinGroupMap`. -/
+@[simp] theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_spinGroupMap_firstReflection :
+    realSpinFourCalibratedEquivQuaternionUnitaryProd
+        ((realCliffordCoordReflection 0).toIsometry.spinGroupMap s) =
+      Prod.swap (realSpinFourCalibratedEquivQuaternionUnitaryProd s) := by
+  rw [← QuadraticMap.IsometryEquiv.spinGroupEquiv_apply,
+    realSpinFourCalibratedEquivQuaternionUnitaryProd_firstReflection]
+
+end Calibrated
 
 end TauCeti
 

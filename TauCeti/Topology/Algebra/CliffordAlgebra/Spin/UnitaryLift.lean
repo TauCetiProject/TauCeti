@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.UnitaryLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.Normed.Module.QuadraticMap
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Four
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Four.Basic
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Neg
 import TauCeti.Topology.Algebra.Quaternion.Unitary
 

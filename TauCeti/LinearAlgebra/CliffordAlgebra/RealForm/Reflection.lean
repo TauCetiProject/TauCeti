@@ -23,7 +23,8 @@ determinant `-1`.
 ## Main results
 
 * `TauCeti.realCliffordCoordReflection_apply`: the reflection negates the `i`-th coordinate.
-* `TauCeti.realCliffordCoordReflection_involutive`: the reflection is an involution.
+* `TauCeti.realCliffordCoordReflection_involutive` and
+  `TauCeti.realCliffordCoordReflection_symm`: the reflection is an involution.
 * `TauCeti.det_realCliffordCoordReflection`: the reflection has determinant `-1`.
 -/
 
@@ -82,5 +83,12 @@ theorem det_realCliffordCoordReflection (i : Fin n) :
     ← LinearEquiv.coe_det, ← QuadraticMap.orthogonalDet_apply,
     QuadraticMap.orthogonalDet_reflectionOrthogonal]
   simp
+
+/-- The inverse of a coordinate-hyperplane reflection is the reflection itself. -/
+@[simp]
+theorem realCliffordCoordReflection_symm (i : Fin n) :
+    (realCliffordCoordReflection i).symm = realCliffordCoordReflection i :=
+  DFunLike.ext _ _ fun v ↦ (realCliffordCoordReflection i).symm_apply_eq.mpr
+    (realCliffordCoordReflection_involutive i v).symm
 
 end TauCeti

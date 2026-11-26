@@ -55,10 +55,11 @@ the vectors with `q(v) = ±1`, while the `spinGroup` compared with here is Mathl
   and `QuadraticMap.IsometryEquiv.evenUnitaryGroupEquiv` the equivalence induced by an isometry
   equivalence; `QuadraticMap.IsometryEquiv.coe_evenUnitaryGroupEquiv_apply` computes it by
   `CliffordAlgebra.equivOfIsometry`.
-* `QuadraticMap.Isometry.evenUnitaryGroupMap_spinGroupToEvenUnitary` and
-  `QuadraticMap.IsometryEquiv.map_range_spinGroupToEvenUnitary`: these maps restrict to the
-  induced maps of Spin groups, so an isometry equivalence carries the image of Spin onto the image
-  of Spin.
+* `QuadraticMap.Isometry.evenUnitaryGroupEvenPart_evenUnitaryGroupMap`,
+  `QuadraticMap.Isometry.evenUnitaryGroupMap_spinGroupToEvenUnitary`,
+  `QuadraticMap.Isometry.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_spinGroupMap`, and
+  `QuadraticMap.IsometryEquiv.map_range_spinGroupToEvenUnitary`: naturality with `evenMap` and
+  restriction to the induced maps of Spin groups, carrying the image of Spin onto the image of Spin.
 * `CliffordAlgebra.range_spinGroup_toUnits`, the range theorem: the units of `spinGroup` are
   exactly the Lipschitz units that are even unitary.
 * `CliffordAlgebra.evenUnitaryGroupEquivOfAlgEquiv` transports the carrier along an algebra
@@ -592,6 +593,15 @@ namespace QuadraticMap.Isometry
 variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [AddCommGroup M₂]
   [Module R M₁] [Module R M₂] {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
 
+/-- The even part of an even unitary element commutes with the map induced by a quadratic
+isometry. -/
+@[simp]
+theorem evenUnitaryGroupEvenPart_evenUnitaryGroupMap (f : Q₁ →qᵢ Q₂)
+    (x : CliffordAlgebra.evenUnitaryGroup Q₁) :
+    CliffordAlgebra.evenUnitaryGroupEvenPart Q₂ (f.evenUnitaryGroupMap x) =
+      CliffordAlgebra.evenMap f (CliffordAlgebra.evenUnitaryGroupEvenPart Q₁ x) :=
+  Subtype.ext <| by simp
+
 /-- The inclusion of Spin into the even unitary carrier commutes with the maps induced by a
 quadratic isometry. -/
 @[simp]
@@ -600,12 +610,39 @@ theorem evenUnitaryGroupMap_spinGroupToEvenUnitary (f : Q₁ →qᵢ Q₂) (x : 
       CliffordAlgebra.spinGroupToEvenUnitary Q₂ (f.spinGroupMap x) :=
   Subtype.ext <| Units.ext <| by simp
 
+-- Not `@[simp]`: `evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply` simplifies both sides.
+/-- The even part of `spinGroupToEvenUnitary` commutes with `spinGroupMap` and `evenMap`. -/
+theorem evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_spinGroupMap (f : Q₁ →qᵢ Q₂)
+    (x : spinGroup Q₁) :
+    CliffordAlgebra.evenUnitaryGroupEvenPart Q₂
+        (CliffordAlgebra.spinGroupToEvenUnitary Q₂ (f.spinGroupMap x)) =
+      CliffordAlgebra.evenMap f
+        (CliffordAlgebra.evenUnitaryGroupEvenPart Q₁
+          (CliffordAlgebra.spinGroupToEvenUnitary Q₁ x)) := by
+  rw [← f.evenUnitaryGroupMap_spinGroupToEvenUnitary,
+    f.evenUnitaryGroupEvenPart_evenUnitaryGroupMap]
+
 end QuadraticMap.Isometry
 
 namespace QuadraticMap.IsometryEquiv
 
 variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [AddCommGroup M₂]
   [Module R M₁] [Module R M₂] {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
+-- Not `@[simp]`: `spinGroupEquiv_apply` and `evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply`
+-- simplify the LHS.
+/-- The even part of `spinGroupToEvenUnitary` commutes with `spinGroupEquiv` and
+`evenEquivOfIsometry`. -/
+theorem evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_spinGroupEquiv (e : Q₁.IsometryEquiv Q₂)
+    (x : spinGroup Q₁) :
+    CliffordAlgebra.evenUnitaryGroupEvenPart Q₂
+        (CliffordAlgebra.spinGroupToEvenUnitary Q₂ (e.spinGroupEquiv x)) =
+      CliffordAlgebra.evenEquivOfIsometry e
+        (CliffordAlgebra.evenUnitaryGroupEvenPart Q₁
+          (CliffordAlgebra.spinGroupToEvenUnitary Q₁ x)) := by
+  rw [e.spinGroupEquiv_apply,
+    e.toIsometry.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_spinGroupMap,
+    ← CliffordAlgebra.evenEquivOfIsometry_toAlgHom, AlgEquiv.coe_toAlgHom]
 
 /-- An isometry equivalence carries the image of Spin in the even unitary carrier onto the image
 of Spin. -/

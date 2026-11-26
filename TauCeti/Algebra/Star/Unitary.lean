@@ -72,6 +72,16 @@ theorem ringInverse_coe {R : Type*} [MonoidWithZero R] [StarMul R] (u : unitary 
     Ring.inverse (u : R) = star (u : R) :=
   Ring.inverse_unit (Unitary.toUnits u)
 
+/-- Inner conjugation in `unitary R` coerces to `u * v * star u` in `R`. -/
+theorem coe_conj_apply {R : Type*} [Monoid R] [StarMul R] (u v : unitary R) :
+    ((MulAut.conj u v : unitary R) : R) = (u : R) * (v : R) * star (u : R) := by
+  simp only [MulAut.conj_apply, Submonoid.coe_mul, ← star_eq_inv, coe_star]
+
+/-- Inverse inner conjugation in `unitary R` coerces to `star u * v * u` in `R`. -/
+theorem coe_conj_symm_apply {R : Type*} [Monoid R] [StarMul R] (u v : unitary R) :
+    (((MulAut.conj u).symm v : unitary R) : R) = star (u : R) * (v : R) * (u : R) := by
+  simp only [MulAut.conj_symm_apply, Submonoid.coe_mul, ← star_eq_inv, coe_star]
+
 end Unitary
 
 namespace Units
