@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
 public import Mathlib.Analysis.Real.Sqrt
-import TauCeti.Algebra.Order.GroupWithZero.Pow
+import TauCeti.Combinatorics.TraceWord.Bipartite.Coding
 import TauCeti.Combinatorics.TraceWord.Coding
 import TauCeti.Data.Fin.Basic
 
@@ -90,10 +90,6 @@ private theorem bipartiteWord_ne_finRotate_finRotate_of_within_block {r k : ℕ}
 
 variable [Fintype α] [Fintype β]
 
-/-- The admissible labels at each time, starting on the row side. -/
-private def alternatingVertexSet {L : ℕ} (t : Fin L) : Finset (α ⊕ β) :=
-  if t.val % 2 = 0 then (univ : Finset α).map .inl else (univ : Finset β).map .inr
-
 /-- A scale whose successive ratios are the alternating row and column discovery weights. -/
 private noncomputable def alternatingDiscoveryScale (d : ℝ) (t : ℕ) : ℝ :=
   if t % 2 = 0 then max 1 (Fintype.card α / d) else max 1 (Fintype.card β / d)
@@ -107,11 +103,11 @@ private theorem alternatingDiscoveryScale_bounds (d : ℝ) (t : ℕ) :
   · exact ⟨le_max_left _ _, max_le_max_left _ (le_max_right _ _)⟩
 
 /-- The total weight of a discovery is the ratio of the scale at the new and old positions. -/
-private theorem card_alternatingVertexSet_div_le {r l : ℕ} (hl : Even l) {d : ℝ} (hd : 0 < d)
+private theorem card_bipartiteVertexFinset_div_le {r l : ℕ} (hl : Even l) {d : ℝ}
     (hmul : (Fintype.card α / d : ℝ) * (Fintype.card β / d) = 1) (b : Fin r) (i : Fin l) :
     let q := alternatingDiscoveryScale (α := α) (β := β) d
-    #((alternatingVertexSet (α := α) (β := β)) (finRotate (r * l) (finProdFinEquiv (b, i)))) / d ≤
-      q (i.val + 1) / q i.val := by
+    #(bipartiteVertexFinset (α := α) (β := β) (finRotate (r * l) (finProdFinEquiv (b, i))).val)
+      / d ≤ q (i.val + 1) / q i.val := by
   have hpar : (finRotate (r * l) (finProdFinEquiv (b, i))).val % 2 = (i.val + 1) % 2 := by
     have ht : (finProdFinEquiv (b, i)).val = i.val + l * b.val := finProdFinEquiv_apply_val _
     rw [Fin.coe_finRotate_eq_ite, ht]
@@ -120,30 +116,20 @@ private theorem card_alternatingVertexSet_div_le {r l : ℕ} (hl : Even l) {d : 
     have htotal : (r * l) % 2 = 0 :=
       Nat.mod_eq_zero_of_dvd (even_iff_two_dvd.mp (hl.mul_left _))
     split_ifs <;> omega
-  have le_ratio {x y : ℝ} (hy : 0 ≤ y) (hxy : x * y = 1) : y ≤ max 1 y / max 1 x := by
-    rw [le_div_iff₀ (zero_lt_one.trans_le (le_max_left _ _)), mul_max_of_nonneg _ _ hy,
+  have le_ratio {x y : ℝ} (hxy : x * y = 1) : y ≤ max 1 y / max 1 x := by
+    rcases le_or_gt y 0 with hy | hy
+    · exact hy.trans (by positivity)
+    rw [le_div_iff₀ (zero_lt_one.trans_le (le_max_left _ _)), mul_max_of_nonneg _ _ hy.le,
       mul_one, mul_comm y, hxy, max_comm y 1]
   by_cases hi : i.val % 2 = 0
   · have hn : (i.val + 1) % 2 ≠ 0 := by omega
-    simp only [alternatingVertexSet, alternatingDiscoveryScale, hpar, hi, hn,
+    simp only [bipartiteVertexFinset_def, alternatingDiscoveryScale, hpar, hi, hn,
       ite_false, ite_true, card_map, card_univ]
-    exact le_ratio (div_nonneg (Nat.cast_nonneg _) hd.le) hmul
+    exact le_ratio hmul
   · have hn : (i.val + 1) % 2 = 0 := by omega
-    simp only [alternatingVertexSet, alternatingDiscoveryScale, hpar, hi, hn,
+    simp only [bipartiteVertexFinset_def, alternatingDiscoveryScale, hpar, hi, hn,
       ite_false, ite_true, card_map, card_univ]
-    exact le_ratio (div_nonneg (Nat.cast_nonneg _) hd.le) (by rwa [mul_comm])
-
-private theorem bipartiteWord_mem_alternatingVertexSet {L m : ℕ}
-    (u : Fin m → α) (v : Fin m → β) {t : Fin L} {s : Fin (2 * m)} (ht : s.val = t.val) :
-    bipartiteWord u v s ∈ alternatingVertexSet t := by
-  obtain ⟨j, rfl⟩ := (finSumFinInterleaveEquiv m).surjective s
-  cases j with
-  | inl i =>
-    have h : t.val % 2 = 0 := by rw [← ht]; simp
-    simp [alternatingVertexSet, h]
-  | inr i =>
-    have h : t.val % 2 ≠ 0 := by rw [← ht]; simp
-    simp [alternatingVertexSet, h]
+    exact le_ratio (by rwa [mul_comm])
 
 open Classical in
 /-- The pairs of row and column words joined from non-backtracking blocks, with every edge
@@ -176,7 +162,7 @@ private theorem image_bipartiteNonbacktrackingWords_subset {r k : ℕ} :
     let e : Fin (r * l) ≃ Fin (2 * m) := finCongr (by dsimp [l, m]; ac_rfl)
     let w (uv : (Fin m → α) × (Fin m → β)) := bipartiteWord uv.1 uv.2 ∘ e
     (bipartiteNonbacktrackingWords (α := α) (β := β) r k).image w ⊆
-      (Fintype.piFinset alternatingVertexSet).filter fun f ↦
+      (Fintype.piFinset fun t : Fin (r * l) ↦ bipartiteVertexFinset t.val).filter fun f ↦
         (∀ t, ∃ s ≠ t, s(f s, f (finRotate _ s)) = s(f t, f (finRotate _ t))) ∧
         (∀ (b : Fin r) (i j : Fin l), i.val + 1 = j.val →
           f (finProdFinEquiv (b, i)) ≠ f (finRotate _ (finProdFinEquiv (b, j)))) := by
@@ -188,18 +174,15 @@ private theorem image_bipartiteNonbacktrackingWords_subset {r k : ℕ} :
   intro f hf
   obtain ⟨uv, huv, rfl⟩ := mem_image.mp hf
   obtain ⟨hn, hrep⟩ := mem_bipartiteNonbacktrackingWords.mp huv
-  refine mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun t ↦
-    bipartiteWord_mem_alternatingVertexSet uv.1 uv.2 (s := e t) rfl, ?_, ?_⟩
+  refine mem_filter.mpr ⟨Fintype.mem_piFinset.mpr ?_, ?_, ?_⟩
   · intro t
-    obtain ⟨a, ha⟩ := (finSumFinInterleaveEquiv m).surjective (e t)
-    obtain ⟨b, hb, hab⟩ := hrep a
-    refine ⟨e.symm (finSumFinInterleaveEquiv m b), ?_, ?_⟩
-    · intro h
-      apply hb
-      apply (finSumFinInterleaveEquiv m).injective
-      exact (e.apply_symm_apply _).symm.trans ((congrArg e h).trans ha.symm)
-    · simp only [w, Function.comp_apply, he, Equiv.apply_symm_apply, ← ha,
-        sym2_bipartiteWord, hab]
+    simpa only [w, Function.comp_apply, e, finCongr_apply, Fin.val_cast] using
+      bipartiteWord_mem_bipartiteVertexFinset uv.1 uv.2 (e t)
+  · intro t
+    obtain ⟨s, hs, hedge⟩ := bipartiteWord_no_singleton_edge hrep (e t)
+    refine ⟨e.symm s, ?_, ?_⟩
+    · simpa only [Equiv.symm_apply_apply] using e.symm.injective.ne hs
+    · simpa only [w, Function.comp_apply, he, Equiv.apply_symm_apply] using hedge
   · intro b i j hij
     have hrj : finRotate (r * l) (finProdFinEquiv (b, i)) = finProdFinEquiv (b, j) := by
       apply Fin.ext
@@ -247,7 +230,7 @@ private theorem sum_pow_div_sqrt_mul_pow_le_of_nonbacktracking [Nonempty α] [No
       rw [sum_image hw.injOn]
       refine sum_congr rfl fun uv _ ↦ ?_
       simp only [weight, hcard, hlength, m, d]
-    _ ≤ ∑ f ∈ Fintype.piFinset alternatingVertexSet with
+    _ ≤ ∑ f ∈ Fintype.piFinset (fun t : Fin (r * l) ↦ bipartiteVertexFinset t.val) with
           (∀ t, ∃ s ≠ t, s(f s, f (finRotate _ s)) = s(f t, f (finRotate _ t))) ∧
           (∀ (b : Fin r) (i j : Fin l), i.val + 1 = j.val →
             f (finProdFinEquiv (b, i)) ≠ f (finRotate _ (finProdFinEquiv (b, j)))),
@@ -255,12 +238,12 @@ private theorem sum_pow_div_sqrt_mul_pow_le_of_nonbacktracking [Nonempty α] [No
           (fun f _ _ ↦ div_nonneg (pow_nonneg hγ₀ _) (pow_nonneg hd.le _))
     _ ≤ _ := by
       have hbound := sum_piFinset_pow_div_pow_card_image_le_of_nonbacktracking (B := r) (M := l)
-        hγ₀ hγ₁ hd.le alternatingVertexSet (fun _ ↦ q)
+        hγ₀ hγ₁ hd.le (fun t ↦ bipartiteVertexFinset t.val) (fun _ ↦ q)
         (fun _ i ↦ alternatingDiscoveryScale_bounds d i.val)
-        (card_alternatingVertexSet_div_le ⟨k + 1, two_mul _⟩ hd hmul)
-      have hA₀ : #((alternatingVertexSet (α := α) (β := β)) (0 : Fin (r * l))) =
-          Fintype.card α := by simp [alternatingVertexSet]
-      simpa only [weight, hA₀, hlength] using hbound
+        (card_bipartiteVertexFinset_div_le ⟨k + 1, two_mul _⟩ hmul)
+      have hA₀ : #(bipartiteVertexFinset (α := α) (β := β) 0) = Fintype.card α := by
+        simp [bipartiteVertexFinset_def]
+      simpa only [weight, Fin.val_zero, hA₀, hlength] using hbound
 
 /-- **Weighted enumeration of bipartite non-backtracking words.** For `p` row labels and
 `n` column labels put `d = √(p * n)` and `a = max 1 (max (p / d) (n / d))`. Consider
@@ -297,30 +280,12 @@ theorem sum_pow_card_bipartiteEdge_mul_pow_le_of_nonbacktracking {r : ℕ} (hr :
     positivity
   have hd : 0 < d := Real.sqrt_pos.mpr
     (mul_pos (Nat.cast_pos.mpr Fintype.card_pos) (Nat.cast_pos.mpr Fintype.card_pos))
-  have hsq : √(c * d) ^ 2 = c * d := Real.sq_sqrt (mul_nonneg hc hd.le)
-  have hbc' : |b| ≤ √(c * d) * γ ^ 2 := by
-    refine le_of_pow_le_pow_left₀ two_ne_zero (mul_nonneg (Real.sqrt_nonneg _) (sq_nonneg _)) ?_
-    rwa [sq_abs, mul_pow, hsq, ← pow_mul]
-  have hscale : √(c * d) ^ (2 * m) = (c * d) ^ m := by rw [pow_mul, hsq]
-  have hcs : min c (b ^ 2) ≤ √(c * d) ^ 2 / d := by
-    rw [hsq, mul_div_cancel_right₀ _ hd.ne']
-    exact min_le_left _ _
-  have hword (uv : (Fin m → α) × (Fin m → β))
-      (huv : ∀ t, ∃ s ≠ t, bipartiteEdge uv.1 uv.2 s = bipartiteEdge uv.1 uv.2 t) :
-      let e := #(univ.image (bipartiteEdge uv.1 uv.2))
-      let v := #(univ.image uv.1) + #(univ.image uv.2)
-      min c (b ^ 2) ^ e * b ^ (2 * m - 2 * e) ≤
-        d * √(c * d) ^ (2 * m) * (γ ^ (2 * (2 * m + 2 - 2 * v)) / d ^ v) := by
-    have hcb : min c (b ^ 2) ≤ |b| ^ 2 := by rw [sq_abs]; exact min_le_right _ _
-    have h := pow_mul_pow_sub_le_mul_pow_div_pow (abs_nonneg b) (le_min hc (sq_nonneg _))
-      hcb hcs hbc' hd ((card_pos.mpr (univ_nonempty.image uv.1)).trans_le le_self_add)
-      (card_image_add_card_image_le_card_image_bipartiteEdge_add_one uv.1 uv.2)
-      (Nat.mul_le_mul_left 2 (card_image_bipartiteEdge_le_of_no_singleton_edge huv))
-    simpa only [← Nat.mul_sub_left_distrib, pow_abs_two_mul] using h
   have henum := sum_pow_div_sqrt_mul_pow_le_of_nonbacktracking (α := α) (β := β) hr k hγ₀ hγ₁
   dsimp only at henum
-  refine (sum_le_sum fun uv huv ↦ hword uv (mem_bipartiteNonbacktrackingWords.mp huv).2).trans ?_
-  rw [← mul_sum, hscale]
+  refine (sum_le_sum fun uv huv ↦
+    pow_card_bipartiteEdge_mul_pow_le_of_no_singleton_edge (Nat.mul_ne_zero hr (Nat.succ_ne_zero k))
+      (mem_bipartiteNonbacktrackingWords.mp huv).2 hc hbc).trans ?_
+  rw [← mul_sum, mul_comm ((c * d) ^ m) d]
   refine (mul_le_mul_of_nonneg_left henum
     (mul_nonneg hd.le (pow_nonneg (mul_nonneg hc hd.le) _))).trans_eq ?_
   have hcancel : d * (c * d) ^ m * (Fintype.card α / d) =
