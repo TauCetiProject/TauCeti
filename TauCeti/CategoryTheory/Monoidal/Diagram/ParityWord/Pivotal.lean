@@ -25,7 +25,9 @@ rather than `𝟙 X`.
   all `n : ℤ`, with step coherence (`TauCeti.iteratedDualRightDualIso_hom_comp_pivotalAtomIso_hom`
   and `TauCeti.iteratedDualLeftDualIso_hom_comp_pivotalAtomIso_hom`);
 * `TauCeti.WindingWord.pivotalComparisonIso` and `TauCeti.RigidObject.normalizeParityIso`:
-  boundary comparisons coherent with the empty word, concatenation, right duality, and left duality;
+  boundary comparisons coherent with the empty word, concatenation, right and left duality, integer
+  dual powers (`TauCeti.WindingWord.pivotalComparisonIso_dualPow_hom`), and multi-port substitution
+  (`TauCeti.WindingWord.pivotalComparisonIso_subst_hom`);
 * `TauCeti.WindingWord.transportCoupon`: coupon transport to parity boundaries, preserving
   identities, composition, concatenation tensoring, and right and left mates.
 
@@ -45,7 +47,7 @@ open scoped CharTwo
 
 namespace TauCeti
 
-universe v u w
+universe v u w w'
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
 
@@ -62,11 +64,9 @@ variable {α : Type w}
 /-- The formal parity atom `atParity a ε` evaluates strictly to `parityDual ε (f a)`. -/
 @[simp] theorem eval_atParity (f : α → C) (a : α) (ε : ZMod 2) :
     eval f (atParity a ε) = parityDual ε (f a) := by
-  rw [atParity_def, eval_atLevel]
   rcases ZMod.eq_zero_or_eq_one ε with rfl | rfl
   · simp
-  · rw [show (ZMod.cast (1 : ZMod 2) : ℤ) = ((1 : ℕ) : ℤ) by decide]
-    rfl
+  · simp; rfl
 
 /-- The canonical expression `ofParityWord L` realizing a parity word evaluates strictly to
 `ParityWord.eval f L`. -/
@@ -84,64 +84,25 @@ end RigidParityRealization
 
 variable [RigidCategory C] [PivotalCategory C]
 
-private theorem zmod2_of_succ {k : ℕ} {ε : ZMod 2} (h : ((k + 1 : ℕ) : ZMod 2) = ε) :
-    (k : ZMod 2) = ε + 1 := by
-  rw [← h, Nat.cast_add, Nat.cast_one, add_assoc, CharTwo.add_self_eq_zero, add_zero]
-
-private theorem zmod2_of_negSucc {k : ℕ} {ε : ZMod 2}
-    (h : (Int.negSucc (k + 1) : ZMod 2) = ε) :
-    (Int.negSucc k : ZMod 2) = ε + 1 := by
-  have heq : (Int.negSucc (k + 1) : ZMod 2) = (Int.negSucc k : ZMod 2) + 1 := by
-    rw [show Int.negSucc (k + 1) = Int.negSucc k - 1 from rfl, Int.cast_sub, Int.cast_one,
-      CharTwo.sub_eq_add]
-  rw [← h, heq, add_assoc, CharTwo.add_self_eq_zero, add_zero]
-
-/-- Functorial action of the chosen right dual on isomorphisms. -/
-private def chosenRightDualIso {A B : C} (e : A ≅ B) :
-    (RightRigidCategory.rightDual A).rightDual ≅
-      (RightRigidCategory.rightDual B).rightDual where
-  hom := @rightAdjointMate C _ _ B A (RightRigidCategory.rightDual B)
-    (RightRigidCategory.rightDual A) e.inv
-  inv := @rightAdjointMate C _ _ A B (RightRigidCategory.rightDual A)
-    (RightRigidCategory.rightDual B) e.hom
-  hom_inv_id := by
-    rw [← @comp_rightAdjointMate C _ _ A B A (RightRigidCategory.rightDual A)
-      (RightRigidCategory.rightDual B) (RightRigidCategory.rightDual A), e.hom_inv_id]
-    exact @rightAdjointMate_id C _ _ A (RightRigidCategory.rightDual A)
-  inv_hom_id := by
-    rw [← @comp_rightAdjointMate C _ _ B A B (RightRigidCategory.rightDual B)
-      (RightRigidCategory.rightDual A) (RightRigidCategory.rightDual B), e.inv_hom_id]
-    exact @rightAdjointMate_id C _ _ B (RightRigidCategory.rightDual B)
-
-/-- Functorial action of the chosen left dual on isomorphisms (avoiding `hasLeftDualRightDual`). -/
-private def chosenLeftDualIso {A B : C} (e : A ≅ B) :
-    (LeftRigidCategory.leftDual A).leftDual ≅
-      (LeftRigidCategory.leftDual B).leftDual where
-  hom := @leftAdjointMate C _ _ B A (LeftRigidCategory.leftDual B)
-    (LeftRigidCategory.leftDual A) e.inv
-  inv := @leftAdjointMate C _ _ A B (LeftRigidCategory.leftDual A)
-    (LeftRigidCategory.leftDual B) e.hom
-  hom_inv_id := by
-    rw [← @comp_leftAdjointMate C _ _ A B A (LeftRigidCategory.leftDual A)
-      (LeftRigidCategory.leftDual B) (LeftRigidCategory.leftDual A), e.hom_inv_id]
-    exact @leftAdjointMate_id C _ _ A (LeftRigidCategory.leftDual A)
-  inv_hom_id := by
-    rw [← @comp_leftAdjointMate C _ _ B A B (LeftRigidCategory.leftDual B)
-      (LeftRigidCategory.leftDual A) (LeftRigidCategory.leftDual B), e.inv_hom_id]
-    exact @leftAdjointMate_id C _ _ B (LeftRigidCategory.leftDual B)
-
 private noncomputable def pivotalRightPowAuxIso (X : C) :
     (k : ℕ) → (ε : ZMod 2) → ((k : ZMod 2) = ε) →
       (iteratedRightDual k X ≅ parityDual ε X)
   | 0, ⟨0, _⟩, _ => Iso.refl X
   | 0, ⟨1, _⟩, h => False.elim ((by decide : ((0 : ℕ) : ZMod 2).val ≠ 1) (congrArg Fin.val h))
   | k + 1, ⟨0, _⟩, h =>
-      chosenRightDualIso
-        (pivotalRightPowAuxIso X k 1 (zmod2_of_succ (Fin.ext (congrArg Fin.val h)))) ≪≫
+      @Iso.rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual _)
+        (RightRigidCategory.rightDual _)
+        (pivotalRightPowAuxIso X k 1 (by
+          have hk : ((k + 1 : ℕ) : ZMod 2) = 0 := Fin.ext (congrArg Fin.val h)
+          rwa [Nat.cast_add, Nat.cast_one, CharTwo.add_eq_iff_eq_add, zero_add] at hk)).symm ≪≫
         (pivotalIsoApp X).symm
   | k + 1, ⟨1, _⟩, h =>
-      chosenRightDualIso
-        (pivotalRightPowAuxIso X k 0 (zmod2_of_succ (Fin.ext (congrArg Fin.val h))))
+      @Iso.rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual _)
+        (RightRigidCategory.rightDual _)
+        (pivotalRightPowAuxIso X k 0 (by
+          have hk : ((k + 1 : ℕ) : ZMod 2) = 1 := Fin.ext (congrArg Fin.val h)
+          rwa [Nat.cast_add, Nat.cast_one, CharTwo.add_eq_iff_eq_add,
+            CharTwo.add_self_eq_zero] at hk)).symm
 
 private noncomputable def pivotalLeftPowAuxIso (X : C) :
     (k : ℕ) → (ε : ZMod 2) → ((Int.negSucc k : ZMod 2) = ε) →
@@ -150,12 +111,20 @@ private noncomputable def pivotalLeftPowAuxIso (X : C) :
       False.elim ((by decide : (Int.negSucc 0 : ZMod 2).val ≠ 0) (congrArg Fin.val h))
   | 0, ⟨1, _⟩, _ => leftDualIsoRightDual X
   | k + 1, ⟨0, _⟩, h =>
-      chosenLeftDualIso
-        (pivotalLeftPowAuxIso X k 1 (zmod2_of_negSucc (Fin.ext (congrArg Fin.val h)))) ≪≫
+      @Iso.leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual _)
+        (LeftRigidCategory.leftDual _)
+        (pivotalLeftPowAuxIso X k 1 (by
+          have hk : ((Int.negSucc k - 1 : ℤ) : ZMod 2) = 0 := Fin.ext (congrArg Fin.val h)
+          rwa [Int.cast_sub, Int.cast_one, CharTwo.sub_eq_add, CharTwo.add_eq_iff_eq_add,
+            zero_add] at hk)).symm ≪≫
         (leftDualRightDualIso C).app X
   | k + 1, ⟨1, _⟩, h =>
-      chosenLeftDualIso
-        (pivotalLeftPowAuxIso X k 0 (zmod2_of_negSucc (Fin.ext (congrArg Fin.val h)))) ≪≫
+      @Iso.leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual _)
+        (LeftRigidCategory.leftDual _)
+        (pivotalLeftPowAuxIso X k 0 (by
+          have hk : ((Int.negSucc k - 1 : ℤ) : ZMod 2) = 1 := Fin.ext (congrArg Fin.val h)
+          rwa [Int.cast_sub, Int.cast_one, CharTwo.sub_eq_add, CharTwo.add_eq_iff_eq_add,
+            CharTwo.add_self_eq_zero] at hk)).symm ≪≫
         leftDualIsoRightDual X
 
 private noncomputable def pivotalAtomIsoAux :
@@ -172,30 +141,33 @@ noncomputable def pivotalAtomIso (n : ℤ) (X : C) :
 
 @[simp] theorem pivotalAtomIso_zero (X : C) : pivotalAtomIso 0 X = Iso.refl X := (rfl)
 
-@[simp] theorem pivotalAtomIso_one (X : C) : pivotalAtomIso 1 X = Iso.refl Xᘁ := by
-  ext
-  exact rightAdjointMate_id (X := X)
-
 @[simp] theorem pivotalAtomIso_neg_one (X : C) :
     pivotalAtomIso (-1) X = leftDualIsoRightDual X := (rfl)
 
-/-- At winding level `2`, `pivotalAtomIso 2 X : Xᘁᘁ ≅ X` is `(pivotalIsoApp X).symm` — not the
-identity — so identifying level `0` with level `2` evaluates to `(pivotalIsoApp X).hom`. -/
-@[simp] theorem pivotalAtomIso_two (X : C) : pivotalAtomIso 2 X = (pivotalIsoApp X).symm := by
-  ext
-  exact ((congrArg rightAdjointMate (congrArg Iso.inv (pivotalAtomIso_one X))) =≫ _).trans
-    ((rightAdjointMate_id (X := Xᘁ) =≫ _).trans (Category.id_comp _))
-
-/-- By the Freyd–Yetter identity (`pivotalIsoApp_rightDual_inv`), the level-`3` comparison
-`Xᘁᘁᘁ ⟶ Xᘁ` equals the inverse pivotal component at `Xᘁ`. -/
-theorem pivotalAtomIso_three_hom (X : C) : (pivotalAtomIso 3 X).hom = (pivotalIsoApp Xᘁ).inv := by
-  have h3 : (pivotalAtomIso 3 X).hom = ((pivotalAtomIso 2 X).inv)ᘁ := rfl
-  rw [h3, pivotalAtomIso_two, Iso.symm_inv]
-  exact (pivotalIsoApp_rightDual_inv X).symm
-
 /-! ### Step coherence of `pivotalAtomIso` with right and left duality -/
 
-private theorem pivotalAtomIsoAux_rightDual (n : ℤ) (X : C) (ε : ZMod 2) (h : (n : ZMod 2) = ε)
+omit [PivotalCategory C] in
+private theorem rightAdjointMate_leftAdjointMate_eq_map {A B : C} (f : A ⟶ B) :
+    @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual (ᘁB))
+        (RightRigidCategory.rightDual (ᘁA))
+        (@leftAdjointMate C _ _ A B (LeftRigidCategory.leftDual A)
+          (LeftRigidCategory.leftDual B) f) =
+      (rightDualLeftDualFunctor C).map f := by
+  rw [@rightAdjointMate_eq_rightMate C _ _ _ _ (RightRigidCategory.rightDual (ᘁB))
+      (RightRigidCategory.rightDual (ᘁA)),
+    rightDualLeftDualFunctor_map]
+
+omit [PivotalCategory C] in
+private theorem leftAdjointMate_rightAdjointMate_eq_map {A B : C} (f : A ⟶ B) :
+    @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual Bᘁ)
+        (LeftRigidCategory.leftDual Aᘁ) (fᘁ) =
+      (leftDualRightDualFunctor C).map f := by
+  rw [@leftAdjointMate_eq_leftMate C _ _ _ _ (LeftRigidCategory.leftDual Bᘁ)
+      (LeftRigidCategory.leftDual Aᘁ),
+    leftDualRightDualFunctor_map]
+
+private theorem iteratedDualRightDualIso_hom_comp_pivotalAtomIsoAux_hom
+    (n : ℤ) (X : C) (ε : ZMod 2) (h : (n : ZMod 2) = ε)
     (h' : ((n + 1 : ℤ) : ZMod 2) = ε + 1) :
     (iteratedDualRightDualIso n X).hom ≫ (pivotalAtomIsoAux (n + 1) X (ε + 1) h').hom =
       @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual _)
@@ -206,9 +178,13 @@ private theorem pivotalAtomIsoAux_rightDual (n : ℤ) (X : C) (ε : ZMod 2) (h :
     refine ((congrArg Iso.hom (iteratedDualRightDualIso_natCast k X) =≫ _).trans
       (Category.id_comp _)).trans ?_
     rcases ZMod.eq_zero_or_eq_one ε with rfl | rfl
-    · exact ((_ ≫= congrArg Iso.hom (parityDualRightDualIso_zero X)).trans
+    · refine (@Iso.rightAdjointMate_hom C _ _ _ _ (RightRigidCategory.rightDual _)
+        (RightRigidCategory.rightDual _) _).trans ?_
+      exact ((_ ≫= congrArg Iso.hom (parityDualRightDualIso_zero X)).trans
         (Category.comp_id _)).symm
-    · exact (_ ≫= congrArg Iso.hom (parityDualRightDualIso_one X)).symm
+    · refine (@Iso.rightAdjointMate_hom C _ _ _ _ (RightRigidCategory.rightDual _)
+        (RightRigidCategory.rightDual _) _ =≫ _).trans ?_
+      exact (_ ≫= congrArg Iso.hom (parityDualRightDualIso_one X)).symm
   | negSucc k =>
     cases k with
     | zero =>
@@ -221,35 +197,54 @@ private theorem pivotalAtomIsoAux_rightDual (n : ℤ) (X : C) (ε : ZMod 2) (h :
     | succ k =>
       rw [iteratedDualRightDualIso_negSucc_succ, ← rightDualLeftDualIso_hom_app]
       rcases ZMod.eq_zero_or_eq_one ε with rfl | rfl
-      · rw [parityDualRightDualIso_zero, Iso.refl_hom]
-        let q := (pivotalLeftPowAuxIso X k 1 (zmod2_of_negSucc (Fin.ext (congrArg Fin.val h)))).hom
-        have hcomp : @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual _)
+      · let e : iteratedLeftDual (k + 1) X ≅ Xᘁ := pivotalLeftPowAuxIso X k 1 (by
+          have hk : ((Int.negSucc k - 1 : ℤ) : ZMod 2) = 0 := Fin.ext (congrArg Fin.val h)
+          rwa [Int.cast_sub, Int.cast_one, CharTwo.sub_eq_add, CharTwo.add_eq_iff_eq_add,
+            zero_add] at hk)
+        have hinv : (pivotalAtomIsoAux (.negSucc (k + 1)) X 0 h).inv =
+            (leftDualRightDualIso C).inv.app X ≫
+              @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual _)
+                (LeftRigidCategory.leftDual _) e.hom :=
+          _ ≫= @Iso.leftAdjointMate_inv C _ _ _ _ (LeftRigidCategory.leftDual _)
+            (LeftRigidCategory.leftDual _) e.symm
+        have hcomp : @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual X)
             (RightRigidCategory.rightDual _) (pivotalAtomIsoAux (.negSucc (k + 1)) X 0 h).inv =
-            (rightDualLeftDualFunctor C).map q ≫
-              ((leftDualRightDualIso C).inv.app X)ᘁ :=
-          @comp_rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual _)
+            (rightDualLeftDualFunctor C).map e.hom ≫ ((leftDualRightDualIso C).inv.app X)ᘁ := by
+          rw [hinv]
+          refine (@comp_rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual X)
             (RightRigidCategory.rightDual _) (RightRigidCategory.rightDual _)
-            ((leftDualRightDualIso C).inv.app X)
-            (@leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual _)
-              (LeftRigidCategory.leftDual _) q)
-        exact ((Category.comp_id _).trans (hcomp.trans
-          ((_ ≫= rightAdjointMate_leftDualRightDualIso_inv_app X).trans
-            ((rightDualLeftDualIso C).hom.naturality q)))).symm
+            ((leftDualRightDualIso C).inv.app X) _).trans ?_
+          exact rightAdjointMate_leftAdjointMate_eq_map e.hom =≫ _
+        have hstep := (_ ≫= rightAdjointMate_leftDualRightDualIso_inv_app X).trans
+          ((rightDualLeftDualIso C).hom.naturality e.hom)
+        exact (hcomp.trans hstep).symm.trans
+          ((_ ≫= congrArg Iso.hom (parityDualRightDualIso_zero X)).trans
+            (Category.comp_id _)).symm
       · rw [parityDualRightDualIso_one, Iso.symm_hom]
-        let q := (pivotalLeftPowAuxIso X k 0 (zmod2_of_negSucc (Fin.ext (congrArg Fin.val h)))).hom
-        have hcomp : @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual _)
+        let e : iteratedLeftDual (k + 1) X ≅ X := pivotalLeftPowAuxIso X k 0 (by
+          have hk : ((Int.negSucc k - 1 : ℤ) : ZMod 2) = 1 := Fin.ext (congrArg Fin.val h)
+          rwa [Int.cast_sub, Int.cast_one, CharTwo.sub_eq_add, CharTwo.add_eq_iff_eq_add,
+            CharTwo.add_self_eq_zero] at hk)
+        have hinv : (pivotalAtomIsoAux (.negSucc (k + 1)) X 1 h).inv =
+            (leftDualIsoRightDual X).inv ≫
+              @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual _)
+                (LeftRigidCategory.leftDual _) e.hom :=
+          _ ≫= @Iso.leftAdjointMate_inv C _ _ _ _ (LeftRigidCategory.leftDual _)
+            (LeftRigidCategory.leftDual _) e.symm
+        have hcomp : @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual Xᘁ)
             (RightRigidCategory.rightDual _) (pivotalAtomIsoAux (.negSucc (k + 1)) X 1 h).inv =
-            (rightDualLeftDualFunctor C).map q ≫
-              @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual _)
-                (RightRigidCategory.rightDual _) (leftDualIsoRightDual X).inv :=
-          @comp_rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual _)
+            (rightDualLeftDualFunctor C).map e.hom ≫
+              @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual Xᘁ)
+                (RightRigidCategory.rightDual _) (leftDualIsoRightDual X).inv := by
+          rw [hinv]
+          refine (@comp_rightAdjointMate C _ _ _ _ _ (RightRigidCategory.rightDual Xᘁ)
             (RightRigidCategory.rightDual _) (RightRigidCategory.rightDual _)
-            (leftDualIsoRightDual X).inv
-            (@leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual _)
-              (LeftRigidCategory.leftDual _) q)
-        exact (((hcomp =≫ _).trans ((Category.assoc _ _ _).trans
-          ((_ ≫= rightAdjointMate_leftDualIsoRightDual_inv_comp_pivotalIsoApp_inv X).trans
-            ((rightDualLeftDualIso C).hom.naturality q))))).symm
+            (leftDualIsoRightDual X).inv _).trans ?_
+          exact rightAdjointMate_leftAdjointMate_eq_map e.hom =≫ _
+        have hstep := (_ ≫=
+            rightAdjointMate_leftDualIsoRightDual_inv_comp_pivotalIsoApp_inv X).trans
+          ((rightDualLeftDualIso C).hom.naturality e.hom)
+        exact ((hcomp =≫ _).trans ((Category.assoc _ _ _).trans hstep)).symm
 
 private theorem eqToHom_comp_pivotalAtomIsoAux_ofNat (X : C) (m : ℤ) (k : ℕ) (δ : ZMod 2)
     (hm : m = Int.ofNat k) (h' : (m : ZMod 2) = δ) :
@@ -258,79 +253,114 @@ private theorem eqToHom_comp_pivotalAtomIsoAux_ofNat (X : C) (m : ℤ) (k : ℕ)
   subst hm
   exact Category.id_comp _
 
-private theorem pivotalAtomIsoAux_leftDual (n : ℤ) (X : C) (ε : ZMod 2) (h : (n : ZMod 2) = ε)
+private theorem iteratedDualLeftDualIso_hom_comp_pivotalAtomIsoAux_pos
+    (k : ℕ) (X : C) (ε : ZMod 2) (h : ((Int.ofNat (k + 1) : ℤ) : ZMod 2) = ε)
+    (h' : (((Int.ofNat (k + 1) : ℤ) - 1 : ℤ) : ZMod 2) = ε + 1) :
+    (iteratedDualLeftDualIso (.ofNat (k + 1)) X).hom ≫
+        (pivotalAtomIsoAux (Int.ofNat (k + 1) - 1) X (ε + 1) h').hom =
+      (leftDualIsoRightDual (iteratedDual (.ofNat (k + 1)) X)).hom ≫
+        @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual _)
+          (RightRigidCategory.rightDual _) (pivotalAtomIsoAux (.ofNat (k + 1)) X ε h).inv ≫
+        (parityDualRightDualIso ε X).hom := by
+  have hlhs : (iteratedDualLeftDualIso (.ofNat (k + 1)) X).hom =
+      (leftDualRightDualIso C).hom.app (iteratedRightDual k X) ≫
+        eqToHom (congrArg (iteratedDual · X) (add_sub_cancel_right (k : ℤ) 1).symm) :=
+    (congrArg Iso.hom (iteratedDualLeftDualIso_natCast_add_one k X)).trans
+      ((leftDualRightDualIso_hom_app (iteratedRightDual k X)).symm =≫ _)
+  refine (hlhs =≫ _).trans ((Category.assoc _ _ _).trans ?_)
+  refine (_ ≫= eqToHom_comp_pivotalAtomIsoAux_ofNat X _ k (ε + 1)
+    (add_sub_cancel_right (k : ℤ) 1) h').trans ?_
+  rcases ZMod.eq_zero_or_eq_one ε with rfl | rfl
+  · let e : iteratedRightDual k X ≅ Xᘁ := pivotalRightPowAuxIso X k 1 (by
+      have hk : ((k + 1 : ℕ) : ZMod 2) = 0 := Fin.ext (congrArg Fin.val h)
+      rwa [Nat.cast_add, Nat.cast_one, CharTwo.add_eq_iff_eq_add, zero_add] at hk)
+    let g : X ⟶ iteratedDual (.ofNat (k + 1)) X := (pivotalAtomIsoAux (.ofNat (k + 1)) X 0 h).inv
+    have hg : g = (pivotalIsoApp X).hom ≫ e.homᘁ :=
+      _ ≫= @Iso.rightAdjointMate_inv C _ _ _ _ (RightRigidCategory.rightDual _)
+        (RightRigidCategory.rightDual _) e.symm
+    have hcomp : @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual X)
+        (LeftRigidCategory.leftDual _) g =
+        (leftDualRightDualFunctor C).map e.hom ≫
+          @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual X)
+            (LeftRigidCategory.leftDual _) (pivotalIsoApp X).hom := by
+      rw [hg]
+      refine (@comp_leftAdjointMate C _ _ _ _ _ (LeftRigidCategory.leftDual X)
+        (LeftRigidCategory.leftDual _) (LeftRigidCategory.leftDual _)
+        (pivotalIsoApp X).hom (e.homᘁ)).trans ?_
+      exact leftAdjointMate_rightAdjointMate_eq_map e.hom =≫ _
+    have hφ : @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual X)
+        (LeftRigidCategory.leftDual _) (pivotalIsoApp X).hom ≫
+        (leftDualIsoRightDual X).hom = (leftDualRightDualIso C).hom.app Xᘁ := by
+      rw [leftAdjointMate_comp_leftDualIsoRightDual_hom, ← pivotalIsoApp_rightDual_inv,
+        leftDualIsoRightDual_rightDual_hom_comp_pivotalIsoApp_inv]
+    have hstep : (leftDualIsoRightDual (iteratedDual (.ofNat (k + 1)) X)).hom ≫ gᘁ =
+        (leftDualRightDualIso C).hom.app (iteratedRightDual k X) ≫ e.hom := by
+      rw [← leftAdjointMate_comp_leftDualIsoRightDual_hom g, hcomp]
+      exact (Category.assoc _ _ _).trans ((_ ≫= hφ).trans
+        ((leftDualRightDualIso C).hom.naturality e.hom))
+    exact (hstep.symm.trans
+      (_ ≫= ((_ ≫= congrArg Iso.hom (parityDualRightDualIso_zero X)).trans
+        (Category.comp_id _)).symm))
+  · let e : iteratedRightDual k X ≅ X := pivotalRightPowAuxIso X k 0 (by
+      have hk : ((k + 1 : ℕ) : ZMod 2) = 1 := Fin.ext (congrArg Fin.val h)
+      rwa [Nat.cast_add, Nat.cast_one, CharTwo.add_eq_iff_eq_add,
+        CharTwo.add_self_eq_zero] at hk)
+    let g : Xᘁ ⟶ iteratedDual (.ofNat (k + 1)) X := (pivotalAtomIsoAux (.ofNat (k + 1)) X 1 h).inv
+    have hg : g = e.homᘁ :=
+      @Iso.rightAdjointMate_inv C _ _ _ _ (RightRigidCategory.rightDual _)
+        (RightRigidCategory.rightDual _) e.symm
+    have hcomp : @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual Xᘁ)
+        (LeftRigidCategory.leftDual _) g = (leftDualRightDualFunctor C).map e.hom := by
+      rw [hg]
+      exact leftAdjointMate_rightAdjointMate_eq_map e.hom
+    have hstep : (leftDualIsoRightDual (iteratedDual (.ofNat (k + 1)) X)).hom ≫ gᘁ ≫
+        (pivotalIsoApp X).inv =
+        (leftDualRightDualIso C).hom.app (iteratedRightDual k X) ≫ e.hom := by
+      rw [← leftAdjointMate_comp_leftDualIsoRightDual_hom_assoc g, hcomp,
+        leftDualIsoRightDual_rightDual_hom_comp_pivotalIsoApp_inv]
+      exact (leftDualRightDualIso C).hom.naturality e.hom
+    exact hstep.symm.trans (_ ≫= (_ ≫= (congrArg Iso.hom (parityDualRightDualIso_one X)).symm))
+
+private theorem iteratedDualLeftDualIso_hom_comp_pivotalAtomIsoAux_hom
+    (n : ℤ) (X : C) (ε : ZMod 2) (h : (n : ZMod 2) = ε)
     (h' : ((n - 1 : ℤ) : ZMod 2) = ε + 1) :
     (iteratedDualLeftDualIso n X).hom ≫ (pivotalAtomIsoAux (n - 1) X (ε + 1) h').hom =
       (leftDualIsoRightDual (iteratedDual n X)).hom ≫
         @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual _)
           (RightRigidCategory.rightDual _) (pivotalAtomIsoAux n X ε h).inv ≫
         (parityDualRightDualIso ε X).hom := by
-  have hmate : ∀ {A B : C} (g : B ⟶ A),
-      (leftDualIsoRightDual A).hom ≫ gᘁ =
-        @leftAdjointMate C _ _ B A (LeftRigidCategory.leftDual B)
-          (LeftRigidCategory.leftDual A) g ≫ (leftDualIsoRightDual B).hom :=
-    fun g ↦ (leftAdjointMate_comp_leftDualIsoRightDual_hom g).symm
   cases n with
   | negSucc k =>
     refine ((congrArg Iso.hom (iteratedDualLeftDualIso_negSucc k X) =≫ _).trans
       (Category.id_comp _)).trans ?_
     rcases ZMod.eq_zero_or_eq_one ε with rfl | rfl
-    · exact ((_ ≫= ((_ ≫= congrArg Iso.hom (parityDualRightDualIso_zero X)).trans
-        (Category.comp_id _))).trans (hmate (pivotalAtomIsoAux _ X 0 h).inv)).symm
-    · have hr1 : (parityDualRightDualIso 1 X).hom = (pivotalIsoApp X).inv :=
-        congrArg Iso.hom (parityDualRightDualIso_one X)
-      exact ((_ ≫= (leftDualIsoRightDual_rightDual_hom_comp_pivotalIsoApp_inv X).symm).trans
-        ((Category.assoc _ _ _).symm.trans
-          (((hmate (pivotalAtomIsoAux _ X 1 h).inv).symm =≫ _).trans
-            ((Category.assoc _ _ _).trans (_ ≫= (_ ≫= hr1.symm))))) )
+    · let g : X ⟶ iteratedDual (.negSucc k) X := (pivotalAtomIsoAux (.negSucc k) X 0 h).inv
+      refine (@Iso.leftAdjointMate_hom C _ _ _ _ (LeftRigidCategory.leftDual X)
+        (LeftRigidCategory.leftDual _) _ =≫ _).trans ?_
+      refine (leftAdjointMate_comp_leftDualIsoRightDual_hom g).trans ?_
+      exact (_ ≫= ((_ ≫= congrArg Iso.hom (parityDualRightDualIso_zero X)).trans
+        (Category.comp_id _)).symm)
+    · let g : Xᘁ ⟶ iteratedDual (.negSucc k) X := (pivotalAtomIsoAux (.negSucc k) X 1 h).inv
+      have hstep : @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual Xᘁ)
+            (LeftRigidCategory.leftDual _) g ≫ ((leftDualRightDualIso C).app X).hom =
+          (leftDualIsoRightDual (iteratedDual (.negSucc k) X)).hom ≫ gᘁ ≫
+            (pivotalIsoApp X).inv := by
+        rw [Iso.app_hom, ← leftDualIsoRightDual_rightDual_hom_comp_pivotalIsoApp_inv,
+          leftAdjointMate_comp_leftDualIsoRightDual_hom_assoc]
+      refine (@Iso.leftAdjointMate_hom C _ _ _ _ (LeftRigidCategory.leftDual Xᘁ)
+        (LeftRigidCategory.leftDual _) _ =≫ _).trans ?_
+      exact hstep.trans (_ ≫= (_ ≫= (congrArg Iso.hom (parityDualRightDualIso_one X)).symm))
   | ofNat k =>
     cases k with
     | zero =>
       refine ((congrArg Iso.hom (iteratedDualLeftDualIso_zero X) =≫ _).trans
         (Category.id_comp _)).trans ?_
       rcases ZMod.eq_zero_or_eq_one ε with rfl | rfl
-      · exact ((_ ≫= ((rightAdjointMate_id (X := X) =≫ _).trans
-          ((Category.id_comp _).trans (congrArg Iso.hom (parityDualRightDualIso_zero X))))).trans
-            (Category.comp_id _)).symm
+      · have hGoal : (leftDualIsoRightDual X).hom =
+            (leftDualIsoRightDual X).hom ≫ (𝟙 X)ᘁ ≫ 𝟙 Xᘁ := by simp
+        exact hGoal.trans (_ ≫= (_ ≫= (congrArg Iso.hom (parityDualRightDualIso_zero X)).symm))
       · exact absurd (congrArg Fin.val h) (by decide)
-    | succ k =>
-      have hlhs : (iteratedDualLeftDualIso (.ofNat (k + 1)) X).hom =
-          (leftDualRightDualIso C).hom.app (iteratedRightDual k X) ≫
-            eqToHom (congrArg (iteratedDual · X) (add_sub_cancel_right (k : ℤ) 1).symm) :=
-        (congrArg Iso.hom (iteratedDualLeftDualIso_natCast_add_one k X)).trans
-          ((leftDualRightDualIso_hom_app (iteratedRightDual k X)).symm =≫ _)
-      refine ((hlhs =≫ _).trans ((Category.assoc _ _ _).trans
-        (_ ≫= eqToHom_comp_pivotalAtomIsoAux_ofNat X _ k (ε + 1)
-          (add_sub_cancel_right (k : ℤ) 1) h'))).trans ?_
-      rcases ZMod.eq_zero_or_eq_one ε with rfl | rfl
-      · let p := (pivotalRightPowAuxIso X k 1 (zmod2_of_succ (Fin.ext (congrArg Fin.val h)))).hom
-        let g := (pivotalAtomIsoAux (.ofNat (k + 1)) X 0 h).inv
-        have h2 : @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual _)
-            (LeftRigidCategory.leftDual _) g =
-            (leftDualRightDualFunctor C).map p ≫
-              @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual _)
-                (LeftRigidCategory.leftDual _) (pivotalIsoApp X).hom :=
-          @comp_leftAdjointMate C _ _ _ _ _ (LeftRigidCategory.leftDual _)
-            (LeftRigidCategory.leftDual _) (LeftRigidCategory.leftDual _)
-            (pivotalIsoApp X).hom (pᘁ)
-        have h3 : @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual _)
-            (LeftRigidCategory.leftDual _) (pivotalIsoApp X).hom ≫
-            (leftDualIsoRightDual X).hom = (leftDualRightDualIso C).hom.app Xᘁ :=
-          (hmate (pivotalIsoApp X).hom).symm.trans
-            ((_ ≫= (pivotalIsoApp_rightDual_inv X).symm).trans
-              (leftDualIsoRightDual_rightDual_hom_comp_pivotalIsoApp_inv Xᘁ))
-        exact (((_ ≫= ((_ ≫= congrArg Iso.hom (parityDualRightDualIso_zero X)).trans
-          (Category.comp_id _))).trans (hmate g)).trans ((h2 =≫ _).trans
-          ((Category.assoc _ _ _).trans
-            ((_ ≫= h3).trans ((leftDualRightDualIso C).hom.naturality p))))).symm
-      · let p := (pivotalRightPowAuxIso X k 0 (zmod2_of_succ (Fin.ext (congrArg Fin.val h)))).hom
-        let g := (pivotalAtomIsoAux (.ofNat (k + 1)) X 1 h).inv
-        have hr1 : (parityDualRightDualIso 1 X).hom = (pivotalIsoApp X).inv :=
-          congrArg Iso.hom (parityDualRightDualIso_one X)
-        exact ((_ ≫= (_ ≫= hr1)).trans ((Category.assoc _ _ _).symm.trans ((hmate g =≫ _).trans
-          ((Category.assoc _ _ _).trans
-            ((_ ≫= leftDualIsoRightDual_rightDual_hom_comp_pivotalIsoApp_inv X).trans
-              ((leftDualRightDualIso C).hom.naturality p)))))).symm
+    | succ k => exact iteratedDualLeftDualIso_hom_comp_pivotalAtomIsoAux_pos k X ε h h'
 
 private theorem pivotalAtomIso_hom_eq_aux {X : C} {m : ℤ} {w : ZMod 2} (hw : (m : ZMod 2) = w) :
     (pivotalAtomIso m X).hom =
@@ -347,7 +377,7 @@ theorem iteratedDualRightDualIso_hom_comp_pivotalAtomIso_hom (n : ℤ) (X : C) :
       ((pivotalAtomIso n X).inv)ᘁ ≫ (parityDualRightDualIso (n : ZMod 2) X).hom ≫
         eqToHom (congrArg (parityDual · X) (by simp)) := by
   rw [pivotalAtomIso_hom_eq_aux (by simp : ((n + 1 : ℤ) : ZMod 2) = (n : ZMod 2) + 1),
-    reassoc_of% (pivotalAtomIsoAux_rightDual n X (n : ZMod 2) rfl _)]
+    reassoc_of% (iteratedDualRightDualIso_hom_comp_pivotalAtomIsoAux_hom n X (n : ZMod 2) rfl _)]
   rfl
 
 /-- **Left-dual step coherence of `pivotalAtomIso`**: lowering the integer dual level from `n` to
@@ -360,8 +390,60 @@ theorem iteratedDualLeftDualIso_hom_comp_pivotalAtomIso_hom (n : ℤ) (X : C) :
         (parityDualRightDualIso (n : ZMod 2) X).hom ≫
         eqToHom (congrArg (parityDual · X) (by simp)) := by
   rw [pivotalAtomIso_hom_eq_aux (by simp : ((n - 1 : ℤ) : ZMod 2) = (n : ZMod 2) + 1),
-    reassoc_of% (pivotalAtomIsoAux_leftDual n X (n : ZMod 2) rfl _)]
+    reassoc_of% (iteratedDualLeftDualIso_hom_comp_pivotalAtomIsoAux_hom n X (n : ZMod 2) rfl _)]
   rfl
+
+private theorem pivotalAtomIso_natCast_succ_hom (k : ℕ) (ε : ZMod 2) (hε : ((k : ℤ) : ZMod 2) = ε)
+    (X : C) :
+    (pivotalAtomIso ((k : ℤ) + 1) X).hom =
+      ((pivotalAtomIso (k : ℤ) X).inv)ᘁ ≫
+        eqToHom (congrArg (fun δ ↦ (parityDual δ X)ᘁ) hε) ≫
+        (parityDualRightDualIso ε X).hom ≫
+        eqToHom (congrArg (parityDual · X) (by simp [← hε])) := by
+  subst hε
+  rw [eqToHom_refl, Category.id_comp]
+  refine (Category.id_comp _).symm.trans ?_
+  refine ((congrArg Iso.hom (iteratedDualRightDualIso_natCast k X) =≫ _).symm).trans ?_
+  exact iteratedDualRightDualIso_hom_comp_pivotalAtomIso_hom (k : ℤ) X
+
+@[simp] theorem pivotalAtomIso_one (X : C) : pivotalAtomIso 1 X = Iso.refl Xᘁ := by
+  ext
+  have h : (pivotalAtomIso 1 X).hom = ((pivotalAtomIso 0 X).inv)ᘁ ≫ 𝟙 Xᘁ :=
+    (pivotalAtomIso_natCast_succ_hom 0 0 rfl X).trans
+      (_ ≫= ((eqToHom_refl _ _ =≫ _).trans ((Category.id_comp _).trans
+        ((_ ≫= eqToHom_refl _ _).trans
+          ((congrArg Iso.hom (parityDualRightDualIso_zero X) =≫ _).trans
+            (Category.comp_id _))))))
+  exact h.trans ((Category.comp_id _).trans (rightAdjointMate_id (X := X)))
+
+/-- At winding level `2`, `pivotalAtomIso 2 X : Xᘁᘁ ≅ X` is `(pivotalIsoApp X).symm` — not the
+identity — so identifying level `0` with level `2` evaluates to `(pivotalIsoApp X).hom`. -/
+@[simp] theorem pivotalAtomIso_two (X : C) : pivotalAtomIso 2 X = (pivotalIsoApp X).symm := by
+  ext
+  have h : (pivotalAtomIso 2 X).hom = ((pivotalAtomIso 1 X).inv)ᘁ ≫ (pivotalIsoApp X).inv :=
+    (pivotalAtomIso_natCast_succ_hom 1 1 rfl X).trans
+      (_ ≫= ((eqToHom_refl _ _ =≫ _).trans ((Category.id_comp _).trans
+        ((_ ≫= eqToHom_refl _ _).trans
+          ((congrArg Iso.hom (parityDualRightDualIso_one X) =≫ _).trans
+            (Category.comp_id _))))))
+  have hid : ((pivotalAtomIso 1 X).inv)ᘁ = 𝟙 Xᘁᘁ := by
+    rw [pivotalAtomIso_one, Iso.refl_inv]
+    exact rightAdjointMate_id (X := Xᘁ)
+  exact h.trans ((hid =≫ _).trans (Category.id_comp _))
+
+/-- By the Freyd–Yetter identity (`pivotalIsoApp_rightDual_inv`), the level-`3` comparison
+`Xᘁᘁᘁ ⟶ Xᘁ` equals the inverse pivotal component at `Xᘁ`. -/
+theorem pivotalAtomIso_three_hom (X : C) : (pivotalAtomIso 3 X).hom = (pivotalIsoApp Xᘁ).inv := by
+  have h : (pivotalAtomIso 3 X).hom = ((pivotalAtomIso 2 X).inv)ᘁ ≫ 𝟙 Xᘁ :=
+    (pivotalAtomIso_natCast_succ_hom 2 0 rfl X).trans
+      (_ ≫= ((eqToHom_refl _ _ =≫ _).trans ((Category.id_comp _).trans
+        ((_ ≫= eqToHom_refl _ _).trans
+          ((congrArg Iso.hom (parityDualRightDualIso_zero X) =≫ _).trans
+            (Category.comp_id _))))))
+  have hφ : ((pivotalAtomIso 2 X).inv)ᘁ = (pivotalIsoApp Xᘁ).inv := by
+    rw [pivotalAtomIso_two, Iso.symm_inv, pivotalIsoApp_rightDual_inv]
+    rfl
+  exact h.trans ((Category.comp_id _).trans hφ)
 
 /-! ### Word-level pivotal comparison and coherence -/
 
@@ -386,55 +468,59 @@ noncomputable def pivotalComparisonIso (f : α → C) :
 /-- **Concatenation coherence of `pivotalComparisonIso`**: evaluating a concatenated winding word
 and reducing modulo two commutes with `evalAppendIso` and `ParityWord.evalAppendIso`. -/
 @[reassoc]
-theorem pivotalComparisonIso_append_hom (f : α → C) :
-    (L M : WindingWord α) →
-      (pivotalComparisonIso f (L ++ M)).hom ≫
-          eqToHom (congrArg (ParityWord.eval f) (toParity_append L M)) ≫
-          (ParityWord.evalAppendIso f (toParity L) (toParity M)).hom =
-        (evalAppendIso f L M).hom ≫
-          ((pivotalComparisonIso f L).hom ⊗ₘ (pivotalComparisonIso f M).hom)
-  | [], M => by
-    have hEq : eqToHom (congrArg (ParityWord.eval f) (toParity_append ([] : WindingWord α) M)) =
-        𝟙 (ParityWord.eval f (toParity M)) := eqToHom_refl _ _
-    have hP : (ParityWord.evalAppendIso f (toParity []) (toParity M)).hom =
+theorem pivotalComparisonIso_append_hom (f : α → C) (L M : WindingWord α) :
+    (pivotalComparisonIso f (L ++ M)).hom ≫
+        eqToHom (congrArg (ParityWord.eval f) (toParity_append L M)) ≫
+        (ParityWord.evalAppendIso f (toParity L) (toParity M)).hom =
+      (evalAppendIso f L M).hom ≫
+        ((pivotalComparisonIso f L).hom ⊗ₘ (pivotalComparisonIso f M).hom) := by
+  induction L with
+  | nil =>
+    have hL : (ParityWord.evalAppendIso f (toParity []) (toParity M)).hom =
         (λ_ (ParityWord.eval f (toParity M))).inv :=
       congrArg Iso.hom (ParityWord.evalAppendIso_nil f (toParity M))
-    have hW : (evalAppendIso f [] M).hom = (λ_ (eval f M)).inv :=
-      congrArg Iso.hom (evalAppendIso_nil f M)
-    have hN : (pivotalComparisonIso f []).hom = 𝟙 (𝟙_ C) := rfl
-    exact (_ ≫= ((hEq =≫ _).trans ((Category.id_comp _).trans hP))).trans
-      ((leftUnitor_inv_naturality (pivotalComparisonIso f M).hom).trans
-        ((hW.symm =≫ _).trans
-          (_ ≫= (id_tensorHom (𝟙_ C) (pivotalComparisonIso f M).hom).symm.trans
-            (congrArg (· ⊗ₘ _) hN.symm))))
-  | p :: L, M => by
-    have ih := pivotalComparisonIso_append_hom f L M
+    have hGoal : (pivotalComparisonIso f M).hom ≫ 𝟙 _ ≫
+          (λ_ (ParityWord.eval f (toParity M))).inv =
+        (λ_ (eval f M)).inv ≫ (𝟙 (𝟙_ C) ⊗ₘ (pivotalComparisonIso f M).hom) := by
+      rw [Category.id_comp, id_tensorHom, leftUnitor_inv_naturality]
+    exact (_ ≫= ((eqToHom_refl _ _ =≫ _).trans (_ ≫= hL))).trans
+      (hGoal.trans ((congrArg Iso.hom (evalAppendIso_nil f M)).symm =≫ _))
+  | cons p L ih =>
     have hEq : eqToHom (congrArg (ParityWord.eval f) (toParity_append (p :: L) M)) =
         parityDual (p.2 : ZMod 2) (f p.1) ◁
           eqToHom (congrArg (ParityWord.eval f) (toParity_append L M)) :=
       (MonoidalCategory.whiskerLeft_eqToHom (parityDual (p.2 : ZMod 2) (f p.1))
         (congrArg (ParityWord.eval f) (toParity_append L M))).symm
-    have hP : (ParityWord.evalAppendIso f (toParity (p :: L)) (toParity M)).hom =
+    have hPA : (ParityWord.evalAppendIso f (toParity (p :: L)) (toParity M)).hom =
         (parityDual (p.2 : ZMod 2) (f p.1) ◁
-          (ParityWord.evalAppendIso f (toParity L) (toParity M)).hom) ≫ (α_ _ _ _).inv :=
+          (ParityWord.evalAppendIso f (toParity L) (toParity M)).hom) ≫
+          (α_ (parityDual (p.2 : ZMod 2) (f p.1))
+            (ParityWord.eval f (toParity L)) (ParityWord.eval f (toParity M))).inv :=
       congrArg Iso.hom (ParityWord.evalAppendIso_cons f (p.1, (p.2 : ZMod 2))
         (toParity L) (toParity M))
-    have hW : (evalAppendIso f (p :: L) M).hom =
-        (iteratedDual p.2 (f p.1) ◁ (evalAppendIso f L M).hom) ≫ (α_ _ _ _).inv :=
+    have hWA : (evalAppendIso f (p :: L) M).hom =
+        (iteratedDual p.2 (f p.1) ◁ (evalAppendIso f L M).hom) ≫
+          (α_ (iteratedDual p.2 (f p.1)) (eval f L) (eval f M)).inv :=
       congrArg Iso.hom (evalAppendIso_cons f p L M)
-    have hStep : ∀ {A₁ A₂ B₁ B₂ B₃ C₁ C₂ C₁' C₂' : C} (a : A₁ ⟶ A₂) (b : B₁ ⟶ B₂)
-        (e : B₂ ⟶ B₃) (p₁ : B₃ ⟶ C₁' ⊗ C₂') (q₁ : B₁ ⟶ C₁ ⊗ C₂) (c₁ : C₁ ⟶ C₁') (c₂ : C₂ ⟶ C₂')
-        (_ : b ≫ e ≫ p₁ = q₁ ≫ (c₁ ⊗ₘ c₂)),
-        (a ⊗ₘ b) ≫ (A₂ ◁ e) ≫ (A₂ ◁ p₁) ≫ (α_ A₂ C₁' C₂').inv =
-          ((A₁ ◁ q₁) ≫ (α_ A₁ C₁ C₂).inv) ≫ ((a ⊗ₘ c₁) ⊗ₘ c₂) := by
-      intro A₁ A₂ B₁ B₂ B₃ C₁ C₂ C₁' C₂' a b e p₁ q₁ c₁ c₂ hih
-      rw [tensorHom_def'_assoc, ← whisker_exchange_assoc, ← MonoidalCategory.whiskerLeft_comp_assoc,
-        ← whisker_exchange_assoc, ← MonoidalCategory.whiskerLeft_comp_assoc, Category.assoc b e p₁,
-        hih, MonoidalCategory.whiskerLeft_comp_assoc, ← tensorHom_def'_assoc,
-        associator_inv_naturality, Category.assoc]
-    exact (_ ≫= ((hEq =≫ _).trans (_ ≫= hP))).trans
-      ((hStep (pivotalAtomIso p.2 (f p.1)).hom (pivotalComparisonIso f (L ++ M)).hom _ _ _ _ _
-        ih).trans (hW.symm =≫ _))
+    have hGoal : ((pivotalAtomIso p.2 (f p.1)).hom ⊗ₘ (pivotalComparisonIso f (L ++ M)).hom) ≫
+          (parityDual (p.2 : ZMod 2) (f p.1) ◁
+            eqToHom (congrArg (ParityWord.eval f) (toParity_append L M))) ≫
+          ((parityDual (p.2 : ZMod 2) (f p.1) ◁
+              (ParityWord.evalAppendIso f (toParity L) (toParity M)).hom) ≫
+            (α_ (parityDual (p.2 : ZMod 2) (f p.1))
+              (ParityWord.eval f (toParity L)) (ParityWord.eval f (toParity M))).inv) =
+        ((iteratedDual p.2 (f p.1) ◁ (evalAppendIso f L M).hom) ≫
+          (α_ (iteratedDual p.2 (f p.1)) (eval f L) (eval f M)).inv) ≫
+          (((pivotalAtomIso p.2 (f p.1)).hom ⊗ₘ (pivotalComparisonIso f L).hom) ⊗ₘ
+            (pivotalComparisonIso f M).hom) := by
+      simp only [Category.assoc]
+      rw [tensorHom_def'_assoc, ← whisker_exchange_assoc,
+        ← MonoidalCategory.whiskerLeft_comp_assoc, ← whisker_exchange_assoc,
+        ← MonoidalCategory.whiskerLeft_comp_assoc,
+        Category.assoc (pivotalComparisonIso f (L ++ M)).hom, ih,
+        MonoidalCategory.whiskerLeft_comp_assoc, ← tensorHom_def'_assoc,
+        associator_inv_naturality]
+    exact (_ ≫= ((hEq =≫ _).trans (_ ≫= hPA))).trans (hGoal.trans (hWA.symm =≫ _))
 
 /-- Inverse-append form of `pivotalComparisonIso_append_hom`. -/
 @[reassoc]
@@ -476,19 +562,14 @@ private theorem eqToHom_whiskerRight_unit (f : α → C) (a : α) {m : ℤ} {δ 
       (ρ_ (parityDual δ (f a))).inv ≫
         eqToHom (congrArg (ParityWord.eval f) (singleton_toParity_eq a hm)) := by
   subst hm
-  have h0 : eqToHom (congrArg (parityDual · (f a)) (rfl : (m : ZMod 2) = (m : ZMod 2)).symm) =
-      𝟙 _ := eqToHom_refl _ _
-  have h1 : eqToHom (congrArg (ParityWord.eval f)
-      (singleton_toParity_eq a (rfl : (m : ZMod 2) = (m : ZMod 2)))) =
-      𝟙 _ := eqToHom_refl _ _
-  exact ((h0 =≫ _).trans (Category.id_comp _)).trans
-    ((_ ≫= h1).trans (Category.comp_id _)).symm
+  rw [eqToHom_refl, Category.id_comp]
+  exact ((_ ≫= eqToHom_refl _ _).trans (Category.comp_id _)).symm
 
 /-- Shared inductive step for right- and left-dual word coherence on `p :: L`. -/
 private theorem pivotalComparisonIso_dualCons_tail (f : α → C) (p : α × ℤ) (L : WindingWord α)
     (W : WindingWord α) (m : ℤ) (hW : toParity W = ParityWord.dual (toParity L))
     (hm : (m : ZMod 2) = (p.2 : ZMod 2) + 1) (hwCons : toParity (W ++ [(p.1, m)]) =
-      ParityWord.dual (toParity (p :: L)))
+      ParityWord.dual ((p.1, (p.2 : ZMod 2)) :: toParity L))
     (u : (eval f L)ᘁ ⟶ eval f W) (v : (iteratedDual p.2 (f p.1))ᘁ ⟶ iteratedDual m (f p.1))
     (hu : u ≫ (pivotalComparisonIso f W).hom =
       ((pivotalComparisonIso f L).inv)ᘁ ≫ (ParityWord.evalDualIso f (toParity L)).hom ≫
@@ -496,61 +577,61 @@ private theorem pivotalComparisonIso_dualCons_tail (f : α → C) (p : α × ℤ
     (hv : v ≫ (pivotalAtomIso m (f p.1)).hom =
       ((pivotalAtomIso p.2 (f p.1)).inv)ᘁ ≫ (parityDualRightDualIso (p.2 : ZMod 2) (f p.1)).hom ≫
         eqToHom (congrArg (parityDual · (f p.1)) hm.symm)) :
-    (u ⊗ₘ (v ≫ (ρ_ _).inv)) ≫
+    (u ⊗ₘ (v ≫ (ρ_ _).inv : (iteratedDual p.2 (f p.1))ᘁ ⟶ eval f [(p.1, m)])) ≫
         (evalAppendIso f W [(p.1, m)]).inv ≫
         (pivotalComparisonIso f (W ++ [(p.1, m)])).hom =
       (((pivotalComparisonIso f L).inv)ᘁ ⊗ₘ ((pivotalAtomIso p.2 (f p.1)).inv)ᘁ) ≫
         ((ParityWord.evalDualIso f (toParity L)).hom ⊗ₘ
-          ((parityDualRightDualIso (p.2 : ZMod 2) (f p.1)).hom ≫ (ρ_ _).inv)) ≫
+          ((parityDualRightDualIso (p.2 : ZMod 2) (f p.1)).hom ≫ (ρ_ _).inv :
+            (parityDual (p.2 : ZMod 2) (f p.1))ᘁ ⟶
+              ParityWord.eval f [(p.1, (p.2 : ZMod 2) + 1)])) ≫
         (ParityWord.evalAppendIso f (ParityWord.dual (toParity L))
           [(p.1, (p.2 : ZMod 2) + 1)]).inv ≫
         eqToHom (congrArg (ParityWord.eval f)
           ((ParityWord.dual_cons (p.1, (p.2 : ZMod 2)) (toParity L)).symm.trans hwCons.symm)) := by
-  have hvUnit : (v ≫ (ρ_ _).inv) ≫ (pivotalComparisonIso f [(p.1, m)]).hom =
+  have hvUnit : (v ≫ (ρ_ _).inv : (iteratedDual p.2 (f p.1))ᘁ ⟶ eval f [(p.1, m)]) ≫
+        (pivotalComparisonIso f [(p.1, m)]).hom =
       ((pivotalAtomIso p.2 (f p.1)).inv)ᘁ ≫
-        ((parityDualRightDualIso (p.2 : ZMod 2) (f p.1)).hom ≫ (ρ_ _).inv) ≫
-        eqToHom (congrArg (ParityWord.eval f) (singleton_toParity_eq p.1 hm)) :=
-    (Category.assoc v (ρ_ _).inv _).trans
-      ((_ ≫= ((_ ≫= tensorHom_id (pivotalAtomIso m (f p.1)).hom (𝟙_ C)).trans
-        (rightUnitor_inv_naturality (pivotalAtomIso m (f p.1)).hom).symm)).trans
-        ((Category.assoc _ _ _).symm.trans ((hv =≫ _).trans
-          ((Category.assoc _ _ _).trans (_ ≫= ((Category.assoc _ _ _).trans
-            ((_ ≫= eqToHom_whiskerRight_unit f p.1 hm).trans
-              (Category.assoc _ _ _).symm)))))))
+        ((parityDualRightDualIso (p.2 : ZMod 2) (f p.1)).hom ≫ (ρ_ _).inv :
+          (parityDual (p.2 : ZMod 2) (f p.1))ᘁ ⟶
+            ParityWord.eval f [(p.1, (p.2 : ZMod 2) + 1)]) ≫
+        eqToHom (congrArg (ParityWord.eval f) (singleton_toParity_eq p.1 hm)) := by
+    have hStep : (v ≫ (ρ_ (iteratedDual m (f p.1))).inv) ≫
+          (pivotalAtomIso m (f p.1) ⊗ᵢ Iso.refl (𝟙_ C)).hom =
+        ((pivotalAtomIso p.2 (f p.1)).inv)ᘁ ≫
+          ((parityDualRightDualIso (p.2 : ZMod 2) (f p.1)).hom ≫
+            (ρ_ (parityDual ((p.2 : ZMod 2) + 1) (f p.1))).inv) ≫
+          eqToHom (congrArg (ParityWord.eval f) (singleton_toParity_eq p.1 hm)) := by
+      rw [tensorIso_hom, Iso.refl_hom, tensorHom_id, Category.assoc,
+        ← rightUnitor_inv_naturality, reassoc_of% hv, eqToHom_whiskerRight_unit f p.1 hm]
+      simp only [Category.assoc]
+      rfl
+    exact hStep
   have hSplit : ∀ {A₁ A₂ A₃ A₄ B₁ B₂ B₃ B₄ : C} (a₁ : A₁ ⟶ A₂) (a₂ : A₂ ⟶ A₃) (a₃ : A₃ ⟶ A₄)
       (b₁ : B₁ ⟶ B₂) (b₂ : B₂ ⟶ B₃) (b₃ : B₃ ⟶ B₄),
       (a₁ ≫ a₂ ≫ a₃) ⊗ₘ (b₁ ≫ b₂ ≫ b₃) = (a₁ ⊗ₘ b₁) ≫ (a₂ ⊗ₘ b₂) ≫ (a₃ ⊗ₘ b₃) := by
     intros; simp [tensorHom_comp_tensorHom]
-  refine (_ ≫= evalAppendIso_inv_comp_pivotalComparisonIso_hom f W [(p.1, m)]).trans ?_
-  refine (Category.assoc _ _ _).symm.trans ?_
-  refine ((tensorHom_comp_tensorHom _ _ _ _).trans (congrArg₂ tensorHom hu hvUnit) =≫ _).trans ?_
-  refine (hSplit _ _ _ _ _ _ =≫ _).trans ?_
-  refine ((Category.assoc _ _ _).trans (_ ≫= (Category.assoc _ _ _))).trans ?_
-  refine (_ ≫= (_ ≫= ((Category.assoc _ _ _).symm.trans ?_)))
-  exact ((tensor_eqToHom_comp_evalAppendIso_inv f hW.symm
-    (singleton_toParity_eq p.1 hm)) =≫ _).trans
-      ((Category.assoc _ _ _).trans (_ ≫= eqToHom_trans _ _))
-
-omit [MonoidalCategory C] [RigidCategory C] [PivotalCategory C] in
-private theorem reassoc_dualCons {X₁ X₂ X₃ X₄ X₅ X₆ X₇ X₈ X₉ X₁₀ : C}
-    {a : X₁ ⟶ X₂} {b : X₂ ⟶ X₃} {c : X₃ ⟶ X₄} {d : X₄ ⟶ X₅} {k : X₅ ⟶ X₁₀}
-    {k' : X₄ ⟶ X₆} {e₁ : X₆ ⟶ X₁₀} {m₁ : X₂ ⟶ X₇} {m₂ : X₇ ⟶ X₈} {m₃ : X₈ ⟶ X₉}
-    {e₂ : X₉ ⟶ X₆} (hdk : d ≫ k = k' ≫ e₁)
-    (htail : b ≫ c ≫ k' = m₁ ≫ m₂ ≫ m₃ ≫ e₂) :
-    (a ≫ b ≫ c ≫ d) ≫ k = (a ≫ m₁) ≫ m₂ ≫ m₃ ≫ (e₂ ≫ e₁) := by
-  simp only [Category.assoc] at hdk htail ⊢
-  rw [hdk, reassoc_of% htail]
-
-omit [MonoidalCategory C] [RigidCategory C] [PivotalCategory C] in
-private theorem finish_dualCons {X₁ X₇ X₈ X₉ X₁₀ Y₁ Y₂ : C}
-    {am₁ : X₁ ⟶ X₇} {front : X₁ ⟶ Y₁} {a' : Y₁ ⟶ X₇}
-    {m₂ : X₇ ⟶ X₈} {m₃ : X₈ ⟶ X₉} {e₂₁ : X₉ ⟶ X₁₀}
-    {e₃ : X₉ ⟶ Y₂} {e₄ : Y₂ ⟶ X₁₀} {rhsHom : Y₁ ⟶ Y₂}
-    (hfront : am₁ = front ≫ a') (hrhs : rhsHom = a' ≫ m₂ ≫ m₃ ≫ e₃)
-    (heq : e₂₁ = e₃ ≫ e₄) :
-    am₁ ≫ m₂ ≫ m₃ ≫ e₂₁ = front ≫ rhsHom ≫ e₄ := by
-  subst hfront hrhs heq
-  simp only [Category.assoc]
+  have hMain : ∀ (u' : (iteratedDual p.2 (f p.1))ᘁ ⟶ eval f [(p.1, m)])
+      (w' : (parityDual (p.2 : ZMod 2) (f p.1))ᘁ ⟶
+        ParityWord.eval f [(p.1, (p.2 : ZMod 2) + 1)]),
+      u' ≫ (pivotalComparisonIso f [(p.1, m)]).hom =
+        ((pivotalAtomIso p.2 (f p.1)).inv)ᘁ ≫ w' ≫
+          eqToHom (congrArg (ParityWord.eval f) (singleton_toParity_eq p.1 hm)) →
+      (u ⊗ₘ u') ≫ (evalAppendIso f W [(p.1, m)]).inv ≫
+          (pivotalComparisonIso f (W ++ [(p.1, m)])).hom =
+        (((pivotalComparisonIso f L).inv)ᘁ ⊗ₘ ((pivotalAtomIso p.2 (f p.1)).inv)ᘁ) ≫
+          ((ParityWord.evalDualIso f (toParity L)).hom ⊗ₘ w') ≫
+          (ParityWord.evalAppendIso f (ParityWord.dual (toParity L))
+            [(p.1, (p.2 : ZMod 2) + 1)]).inv ≫
+          eqToHom (congrArg (ParityWord.eval f)
+            ((ParityWord.dual_cons (p.1, (p.2 : ZMod 2))
+              (toParity L)).symm.trans hwCons.symm)) := by
+    intro u' w' hvU
+    rw [evalAppendIso_inv_comp_pivotalComparisonIso_hom, tensorHom_comp_tensorHom_assoc,
+      hu, hvU, hSplit, Category.assoc, Category.assoc,
+      reassoc_of% (tensor_eqToHom_comp_evalAppendIso_inv f hW.symm (singleton_toParity_eq p.1 hm)),
+      eqToHom_trans]
+  exact hMain _ _ hvUnit
 
 /-- **Right-dual coherence of `pivotalComparisonIso`**: taking the chosen right dual of an
 evaluated winding word commutes with `pivotalComparisonIso` and `ParityWord.evalDualIso`. -/
@@ -576,7 +657,8 @@ theorem pivotalComparisonIso_rightDual_hom (f : α → C) :
       (hlhs =≫ _).trans ((Category.assoc _ _ _).trans
         (_ ≫= ((eqToHom_comp_pivotalComparisonIso_hom f rightDual_nil.symm).trans
           (Category.id_comp _))))
-    have hR : ((pivotalComparisonIso f []).inv)ᘁ ≫ (ParityWord.evalDualIso f (toParity [])).hom ≫
+    have hR : ((pivotalComparisonIso f ([] : WindingWord α)).inv)ᘁ ≫
+        (ParityWord.evalDualIso f (toParity [])).hom ≫
         eqToHom (congrArg (ParityWord.eval f) (toParity_rightDual ([] : WindingWord α)).symm) =
         (rightDualUnitIso C).hom ≫
           eqToHom (congrArg (ParityWord.eval f) (congrArg toParity rightDual_nil.symm)) :=
@@ -585,35 +667,115 @@ theorem pivotalComparisonIso_rightDual_hom (f : α → C) :
     exact hL.trans hR.symm
   | p :: L => by
     have ih := pivotalComparisonIso_rightDual_hom f L
+    let r : (iteratedDual p.2 (f p.1))ᘁ ⟶ eval f [(p.1, p.2 + 1)] :=
+      (iteratedDualRightDualIso p.2 (f p.1)).hom ≫ (ρ_ _).inv
+    let pr : (parityDual (p.2 : ZMod 2) (f p.1))ᘁ ⟶
+        ParityWord.eval f [(p.1, (p.2 : ZMod 2) + 1)] :=
+      (parityDualRightDualIso (p.2 : ZMod 2) (f p.1)).hom ≫ (ρ_ _).inv
     have hlhs : (evalRightDualIso f (p :: L)).hom =
         (rightDualTensorIso (iteratedDual p.2 (f p.1)) (eval f L)).hom ≫
-          ((evalRightDualIso f L).hom ⊗ₘ
-            ((iteratedDualRightDualIso p.2 (f p.1)).hom ≫ (ρ_ _).inv)) ≫
+          ((evalRightDualIso f L).hom ⊗ₘ r) ≫
           (evalAppendIso f (rightDual L) [(p.1, p.2 + 1)]).inv ≫
           eqToHom (congrArg (eval f) (rightDual_cons p L).symm) :=
       congrArg Iso.hom (evalRightDualIso_cons f p L)
     have hrhs : (ParityWord.evalDualIso f (toParity (p :: L))).hom =
         (rightDualTensorIso (parityDual (p.2 : ZMod 2) (f p.1))
-          (ParityWord.eval f (toParity L))).hom ≫
-          ((ParityWord.evalDualIso f (toParity L)).hom ⊗ₘ
-            ((parityDualRightDualIso (p.2 : ZMod 2) (f p.1)).hom ≫ (ρ_ _).inv)) ≫
+            (ParityWord.eval f (toParity L))).hom ≫
+          ((ParityWord.evalDualIso f (toParity L)).hom ⊗ₘ pr) ≫
           (ParityWord.evalAppendIso f (ParityWord.dual (toParity L))
             [(p.1, (p.2 : ZMod 2) + 1)]).inv ≫
           eqToHom (congrArg (ParityWord.eval f)
             (ParityWord.dual_cons (p.1, (p.2 : ZMod 2)) (toParity L)).symm) :=
       congrArg Iso.hom (ParityWord.evalDualIso_cons f (p.1, (p.2 : ZMod 2)) (toParity L))
-    exact (hlhs =≫ _).trans ((reassoc_dualCons
-      (eqToHom_comp_pivotalComparisonIso_hom f (rightDual_cons p L).symm)
-      (pivotalComparisonIso_dualCons_tail f p L (rightDual L) (p.2 + 1) (toParity_rightDual L)
-        (by simp) (by simp) _ _ ih
-        (iteratedDualRightDualIso_hom_comp_pivotalAtomIso_hom p.2 (f p.1)))).trans
-      (finish_dualCons
-        (rightDualTensorIso_hom_naturality (pivotalAtomIso p.2 (f p.1)).inv
-          (pivotalComparisonIso f L).inv).symm hrhs
-        ((eqToHom_trans _ _).trans (eqToHom_trans
-          (congrArg (ParityWord.eval f)
-            (ParityWord.dual_cons (p.1, (p.2 : ZMod 2)) (toParity L)).symm)
-          (congrArg (ParityWord.eval f) (toParity_rightDual (p :: L)).symm)).symm)))
+    have htail := pivotalComparisonIso_dualCons_tail f p L (rightDual L) (p.2 + 1)
+      (toParity_rightDual L) (by simp) (by simp) _ _ ih
+      (iteratedDualRightDualIso_hom_comp_pivotalAtomIso_hom p.2 (f p.1))
+    have hMid : ((rightDualTensorIso (iteratedDual p.2 (f p.1)) (eval f L)).hom ≫
+          ((evalRightDualIso f L).hom ⊗ₘ r) ≫
+          (evalAppendIso f (rightDual L) [(p.1, p.2 + 1)]).inv ≫
+          eqToHom (congrArg (eval f) (rightDual_cons p L).symm)) ≫
+          (pivotalComparisonIso f (rightDual (p :: L))).hom =
+        (((pivotalAtomIso p.2 (f p.1)).inv ⊗ₘ (pivotalComparisonIso f L).inv)ᘁ) ≫
+          ((rightDualTensorIso (parityDual (p.2 : ZMod 2) (f p.1))
+              (ParityWord.eval f (toParity L))).hom ≫
+            ((ParityWord.evalDualIso f (toParity L)).hom ⊗ₘ pr) ≫
+            (ParityWord.evalAppendIso f (ParityWord.dual (toParity L))
+              [(p.1, (p.2 : ZMod 2) + 1)]).inv ≫
+            eqToHom (congrArg (ParityWord.eval f)
+              (ParityWord.dual_cons (p.1, (p.2 : ZMod 2)) (toParity L)).symm)) ≫
+          eqToHom (congrArg (ParityWord.eval f) (toParity_rightDual (p :: L)).symm) := by
+      simp only [Category.assoc]
+      rw [eqToHom_comp_pivotalComparisonIso_hom f (rightDual_cons p L).symm,
+        reassoc_of% htail,
+        ← rightDualTensorIso_hom_naturality_assoc (pivotalAtomIso p.2 (f p.1)).inv
+          (pivotalComparisonIso f L).inv]
+      simp only [eqToHom_trans]
+      rfl
+    exact ((hlhs =≫ _).trans hMid).trans (_ ≫= (hrhs.symm =≫ _))
+
+private theorem pivotalComparisonIso_leftDual_nil (f : α → C) :
+    (evalLeftDualIso f ([] : WindingWord α)).hom ≫ (pivotalComparisonIso f (leftDual [])).hom =
+      (leftDualIsoRightDual (eval f [])).hom ≫ ((pivotalComparisonIso f []).inv)ᘁ ≫
+        (ParityWord.evalDualIso f (toParity [])).hom ≫
+        eqToHom (congrArg (ParityWord.eval f) (toParity_leftDual []).symm) := by
+  have hlhs : (evalLeftDualIso f []).hom =
+      (leftDualUnitIso C).hom ≫ eqToHom (congrArg (eval f) leftDual_nil.symm) :=
+    congrArg Iso.hom (evalLeftDualIso_nil f)
+  have hrhs : (ParityWord.evalDualIso f (toParity [])).hom =
+      (rightDualUnitIso C).hom ≫
+        eqToHom (congrArg (ParityWord.eval f) ParityWord.dual_nil.symm) :=
+    congrArg Iso.hom (ParityWord.evalDualIso_nil f)
+  have hmate : ((pivotalComparisonIso f ([] : WindingWord α)).inv)ᘁ = 𝟙 _ :=
+    @rightAdjointMate_id C _ _ (𝟙_ C) (RightRigidCategory.rightDual (𝟙_ C))
+  have hunit : (leftDualUnitIso C).hom =
+      (leftDualIsoRightDual (𝟙_ C)).hom ≫ (rightDualUnitIso C).hom := by
+    rw [← Iso.inv_comp_eq, leftDualUnitIso_hom, rightDualUnitIso_hom]
+    exact leftDualIsoRightDual_unit_inv
+  have hL : (evalLeftDualIso f []).hom ≫ (pivotalComparisonIso f (leftDual [])).hom =
+      (leftDualUnitIso C).hom ≫
+        eqToHom (congrArg (ParityWord.eval f) (congrArg toParity leftDual_nil.symm)) :=
+    (hlhs =≫ _).trans ((Category.assoc _ _ _).trans
+      (_ ≫= ((eqToHom_comp_pivotalComparisonIso_hom f leftDual_nil.symm).trans
+        (Category.id_comp _))))
+  have hR : (leftDualIsoRightDual (eval f ([] : WindingWord α))).hom ≫
+      ((pivotalComparisonIso f []).inv)ᘁ ≫
+      (ParityWord.evalDualIso f (toParity [])).hom ≫
+      eqToHom (congrArg (ParityWord.eval f) (toParity_leftDual ([] : WindingWord α)).symm) =
+      (leftDualUnitIso C).hom ≫
+        eqToHom (congrArg (ParityWord.eval f) (congrArg toParity leftDual_nil.symm)) :=
+    (_ ≫= ((hmate =≫ _).trans ((Category.id_comp _).trans
+      ((hrhs =≫ _).trans ((Category.assoc _ _ _).trans (_ ≫= eqToHom_trans _ _)))))).trans
+      ((Category.assoc _ _ _).symm.trans (hunit.symm =≫ _))
+  exact hL.trans hR.symm
+
+private theorem leftDualTensorIso_hom_comp_leftDualIsoRightDual (X Y : C) :
+    (leftDualTensorIso X Y).hom ≫
+        ((leftDualIsoRightDual Y).hom ⊗ₘ (leftDualIsoRightDual X).hom) =
+      (leftDualIsoRightDual (X ⊗ Y)).hom ≫ (rightDualTensorIso X Y).hom := by
+  rw [← cancel_epi (leftDualIsoRightDual (X ⊗ Y)).inv, Iso.inv_hom_id_assoc,
+    reassoc_of% (leftDualIsoRightDual_tensor_inv X Y), tensorHom_comp_tensorHom]
+  simp
+
+private theorem evalLeftDualIso_cons_split (f : α → C) (p : α × ℤ) (L : WindingWord α) :
+    ((evalLeftDualIso f L).hom ⊗ₘ
+        ((iteratedDualLeftDualIso p.2 (f p.1)).hom ≫ (ρ_ _).inv :
+          (ᘁ(iteratedDual p.2 (f p.1)) : C) ⟶ eval f [(p.1, p.2 - 1)])) =
+      ((leftDualIsoRightDual (eval f L)).hom ⊗ₘ
+        (leftDualIsoRightDual (iteratedDual p.2 (f p.1))).hom) ≫
+      (((leftDualIsoRightDual (eval f L)).inv ≫ (evalLeftDualIso f L).hom) ⊗ₘ
+        (((leftDualIsoRightDual (iteratedDual p.2 (f p.1))).inv ≫
+          (iteratedDualLeftDualIso p.2 (f p.1)).hom) ≫ (ρ_ _).inv :
+          (iteratedDual p.2 (f p.1))ᘁ ⟶ eval f [(p.1, p.2 - 1)])) := by
+  have hStep : ((evalLeftDualIso f L).hom ⊗ₘ
+        ((iteratedDualLeftDualIso p.2 (f p.1)).hom ≫ (ρ_ _).inv)) =
+      ((leftDualIsoRightDual (eval f L)).hom ⊗ₘ
+        (leftDualIsoRightDual (iteratedDual p.2 (f p.1))).hom) ≫
+      (((leftDualIsoRightDual (eval f L)).inv ≫ (evalLeftDualIso f L).hom) ⊗ₘ
+        (((leftDualIsoRightDual (iteratedDual p.2 (f p.1))).inv ≫
+          (iteratedDualLeftDualIso p.2 (f p.1)).hom) ≫ (ρ_ _).inv)) := by
+    rw [tensorHom_comp_tensorHom]
+    simp
+  exact hStep
 
 /-- **Left-dual coherence of `pivotalComparisonIso`**: taking the chosen left dual of an evaluated
 winding word agrees with identifying left and right duals via `leftDualIsoRightDual` and applying
@@ -625,100 +787,382 @@ theorem pivotalComparisonIso_leftDual_hom (f : α → C) :
         (leftDualIsoRightDual (eval f L)).hom ≫ ((pivotalComparisonIso f L).inv)ᘁ ≫
           (ParityWord.evalDualIso f (toParity L)).hom ≫
           eqToHom (congrArg (ParityWord.eval f) (toParity_leftDual L).symm)
-  | [] => by
-    have hlhs : (evalLeftDualIso f []).hom =
-        (leftDualUnitIso C).hom ≫ eqToHom (congrArg (eval f) leftDual_nil.symm) :=
-      congrArg Iso.hom (evalLeftDualIso_nil f)
-    have hrhs : (ParityWord.evalDualIso f (toParity [])).hom =
-        (rightDualUnitIso C).hom ≫
-          eqToHom (congrArg (ParityWord.eval f) ParityWord.dual_nil.symm) :=
-      congrArg Iso.hom (ParityWord.evalDualIso_nil f)
-    have hmate : ((pivotalComparisonIso f ([] : WindingWord α)).inv)ᘁ = 𝟙 _ :=
-      @rightAdjointMate_id C _ _ (𝟙_ C) (RightRigidCategory.rightDual (𝟙_ C))
-    have hunit : (leftDualUnitIso C).hom =
-        (leftDualIsoRightDual (𝟙_ C)).hom ≫ (rightDualUnitIso C).hom := by
-      rw [← Iso.inv_comp_eq, leftDualUnitIso_hom, rightDualUnitIso_hom]
-      exact leftDualIsoRightDual_unit_inv
-    have hL : (evalLeftDualIso f []).hom ≫ (pivotalComparisonIso f (leftDual [])).hom =
-        (leftDualUnitIso C).hom ≫
-          eqToHom (congrArg (ParityWord.eval f) (congrArg toParity leftDual_nil.symm)) :=
-      (hlhs =≫ _).trans ((Category.assoc _ _ _).trans
-        (_ ≫= ((eqToHom_comp_pivotalComparisonIso_hom f leftDual_nil.symm).trans
-          (Category.id_comp _))))
-    have hR : (leftDualIsoRightDual (eval f ([] : WindingWord α))).hom ≫
-        ((pivotalComparisonIso f []).inv)ᘁ ≫
-        (ParityWord.evalDualIso f (toParity [])).hom ≫
-        eqToHom (congrArg (ParityWord.eval f) (toParity_leftDual ([] : WindingWord α)).symm) =
-        (leftDualUnitIso C).hom ≫
-          eqToHom (congrArg (ParityWord.eval f) (congrArg toParity leftDual_nil.symm)) :=
-      (_ ≫= ((hmate =≫ _).trans ((Category.id_comp _).trans
-        ((hrhs =≫ _).trans ((Category.assoc _ _ _).trans (_ ≫= eqToHom_trans _ _)))))).trans
-        ((Category.assoc _ _ _).symm.trans (hunit.symm =≫ _))
-    exact hL.trans hR.symm
+  | [] => pivotalComparisonIso_leftDual_nil f
   | p :: L => by
     have ih := pivotalComparisonIso_leftDual_hom f L
-    have htensor : (leftDualTensorIso (iteratedDual p.2 (f p.1)) (eval f L)).hom ≫
-        ((leftDualIsoRightDual (eval f L)).hom ⊗ₘ
-          (leftDualIsoRightDual (iteratedDual p.2 (f p.1))).hom) =
-        (leftDualIsoRightDual (iteratedDual p.2 (f p.1) ⊗ eval f L)).hom ≫
-          (rightDualTensorIso (iteratedDual p.2 (f p.1)) (eval f L)).hom := by
-      rw [← cancel_epi (leftDualIsoRightDual (iteratedDual p.2 (f p.1) ⊗ eval f L)).inv,
-        Iso.inv_hom_id_assoc, reassoc_of% (leftDualIsoRightDual_tensor_inv _ _),
-        tensorHom_comp_tensorHom]
-      simp
+    let r : (ᘁ(iteratedDual p.2 (f p.1)) : C) ⟶ eval f [(p.1, p.2 - 1)] :=
+      (iteratedDualLeftDualIso p.2 (f p.1)).hom ≫ (ρ_ _).inv
+    let pr : (parityDual (p.2 : ZMod 2) (f p.1))ᘁ ⟶
+        ParityWord.eval f [(p.1, (p.2 : ZMod 2) + 1)] :=
+      (parityDualRightDualIso (p.2 : ZMod 2) (f p.1)).hom ≫ (ρ_ _).inv
     have hlhs : (evalLeftDualIso f (p :: L)).hom =
         (leftDualTensorIso (iteratedDual p.2 (f p.1)) (eval f L)).hom ≫
-          ((evalLeftDualIso f L).hom ⊗ₘ
-            ((iteratedDualLeftDualIso p.2 (f p.1)).hom ≫ (ρ_ _).inv)) ≫
+          ((evalLeftDualIso f L).hom ⊗ₘ r) ≫
           (evalAppendIso f (leftDual L) [(p.1, p.2 - 1)]).inv ≫
           eqToHom (congrArg (eval f) (leftDual_cons p L).symm) :=
       congrArg Iso.hom (evalLeftDualIso_cons f p L)
     have hrhs : (ParityWord.evalDualIso f (toParity (p :: L))).hom =
         (rightDualTensorIso (parityDual (p.2 : ZMod 2) (f p.1))
-          (ParityWord.eval f (toParity L))).hom ≫
-          ((ParityWord.evalDualIso f (toParity L)).hom ⊗ₘ
-            ((parityDualRightDualIso (p.2 : ZMod 2) (f p.1)).hom ≫ (ρ_ _).inv)) ≫
+            (ParityWord.eval f (toParity L))).hom ≫
+          ((ParityWord.evalDualIso f (toParity L)).hom ⊗ₘ pr) ≫
           (ParityWord.evalAppendIso f (ParityWord.dual (toParity L))
             [(p.1, (p.2 : ZMod 2) + 1)]).inv ≫
           eqToHom (congrArg (ParityWord.eval f)
             (ParityWord.dual_cons (p.1, (p.2 : ZMod 2)) (toParity L)).symm) :=
       congrArg Iso.hom (ParityWord.evalDualIso_cons f (p.1, (p.2 : ZMod 2)) (toParity L))
-    have hSplitL : ((evalLeftDualIso f L).hom ⊗ₘ
-          ((iteratedDualLeftDualIso p.2 (f p.1)).hom ≫ (ρ_ _).inv)) =
-        ((leftDualIsoRightDual (eval f L)).hom ⊗ₘ
-          (leftDualIsoRightDual (iteratedDual p.2 (f p.1))).hom) ≫
-        (((leftDualIsoRightDual (eval f L)).inv ≫ (evalLeftDualIso f L).hom) ⊗ₘ
-          (((leftDualIsoRightDual (iteratedDual p.2 (f p.1))).inv ≫
-            (iteratedDualLeftDualIso p.2 (f p.1)).hom) ≫ (ρ_ _).inv)) := by
-      rw [tensorHom_comp_tensorHom]
+    have htail := pivotalComparisonIso_dualCons_tail f p L (leftDual L) (p.2 - 1)
+      (toParity_leftDual L) (by simp) (by simp) _ _
+      (by rw [Category.assoc, ih, Iso.inv_hom_id_assoc])
+      (by rw [Category.assoc, iteratedDualLeftDualIso_hom_comp_pivotalAtomIso_hom,
+        Iso.inv_hom_id_assoc])
+    have hMid : ((leftDualTensorIso (iteratedDual p.2 (f p.1)) (eval f L)).hom ≫
+          ((evalLeftDualIso f L).hom ⊗ₘ r) ≫
+          (evalAppendIso f (leftDual L) [(p.1, p.2 - 1)]).inv ≫
+          eqToHom (congrArg (eval f) (leftDual_cons p L).symm)) ≫
+          (pivotalComparisonIso f (leftDual (p :: L))).hom =
+        (leftDualIsoRightDual (iteratedDual p.2 (f p.1) ⊗ eval f L)).hom ≫
+          (((pivotalAtomIso p.2 (f p.1)).inv ⊗ₘ (pivotalComparisonIso f L).inv)ᘁ) ≫
+          ((rightDualTensorIso (parityDual (p.2 : ZMod 2) (f p.1))
+              (ParityWord.eval f (toParity L))).hom ≫
+            ((ParityWord.evalDualIso f (toParity L)).hom ⊗ₘ pr) ≫
+            (ParityWord.evalAppendIso f (ParityWord.dual (toParity L))
+              [(p.1, (p.2 : ZMod 2) + 1)]).inv ≫
+            eqToHom (congrArg (ParityWord.eval f)
+              (ParityWord.dual_cons (p.1, (p.2 : ZMod 2)) (toParity L)).symm)) ≫
+          eqToHom (congrArg (ParityWord.eval f) (toParity_leftDual (p :: L)).symm) := by
+      rw [evalLeftDualIso_cons_split f p L]
+      simp only [Category.assoc]
+      rw [eqToHom_comp_pivotalComparisonIso_hom f (leftDual_cons p L).symm,
+        reassoc_of% htail,
+        reassoc_of% (leftDualTensorIso_hom_comp_leftDualIsoRightDual
+          (iteratedDual p.2 (f p.1)) (eval f L)),
+        ← rightDualTensorIso_hom_naturality_assoc (pivotalAtomIso p.2 (f p.1)).inv
+          (pivotalComparisonIso f L).inv]
+      simp only [eqToHom_trans]
+      rfl
+    exact ((hlhs =≫ _).trans hMid).trans (_ ≫= (_ ≫= (hrhs.symm =≫ _)))
+
+omit [PivotalCategory C] in
+private theorem mate_inv_of_hom_eq {A B₁ B₂ D₁ D₂ E : C}
+    (e₁ : A ≅ B₁) (e₂ : B₁ ≅ B₂) (e₃ : B₂ ≅ E)
+    (d₁ : A ≅ D₁) (d₂ : D₁ ≅ D₂) (d₃ : D₂ ≅ E)
+    (h : e₁.hom ≫ e₂.hom ≫ e₃.hom = d₁.hom ≫ d₂.hom ≫ d₃.hom) :
+    (d₁.inv)ᘁ ≫ (d₂.inv)ᘁ ≫ (d₃.inv)ᘁ = (e₁.inv)ᘁ ≫ (e₂.inv)ᘁ ≫ (e₃.inv)ᘁ := by
+  have hIso : e₁ ≪≫ e₂ ≪≫ e₃ = d₁ ≪≫ d₂ ≪≫ d₃ :=
+    Iso.ext (by simpa only [Iso.trans_hom, Category.assoc] using h)
+  simpa only [Iso.trans_inv, comp_rightAdjointMate, Category.assoc] using
+    congrArg (fun iso : A ≅ E ↦ (iso.inv)ᘁ) hIso.symm
+
+private theorem parityDualRightDualIso_hom_naturality_cast {ε δ : ZMod 2} (h : δ = ε + 1)
+    {X Y : C} (e : X ≅ Y) :
+    (parityDualRightDualIso ε X).hom ≫
+        eqToHom (congrArg (parityDual · X) h.symm) ≫
+        (parityDualMapIso δ e).hom =
+      ((parityDualMapIso ε e).inv)ᘁ ≫
+        (parityDualRightDualIso ε Y).hom ≫
+        eqToHom (congrArg (parityDual · Y) h.symm) := by
+  subst h
+  simp [parityDualRightDualIso_hom_naturality]
+
+private theorem evalDualIso_inv_comp_eqToHom_mate (f : α → C) {P₁ P₂ : ParityWord α}
+    (hP : P₁ = P₂) :
+    (ParityWord.evalDualIso f P₁).inv ≫
+        (eqToHom (congrArg (ParityWord.eval f) hP.symm))ᘁ =
+      eqToHom (congrArg (ParityWord.eval f) (congrArg ParityWord.dual hP)) ≫
+        (ParityWord.evalDualIso f P₂).inv := by
+  subst hP
+  simp
+
+private theorem evalDualIso_inv_comp_parityDualRightDualIso_hom_cast (f : α → C)
+    {ε δ : ZMod 2} (h : δ = ε + 1) (P : ParityWord α) :
+    (ParityWord.evalDualIso f (ParityWord.dualPow ε P)).inv ≫
+        ((ParityWord.evalDualPowIso f ε P).inv)ᘁ ≫
+        (parityDualRightDualIso ε (ParityWord.eval f P)).hom ≫
+        eqToHom (congrArg (parityDual · (ParityWord.eval f P)) h.symm) =
+      eqToHom (congrArg (ParityWord.eval f)
+          (by rw [h, add_comm, ParityWord.dualPow_add, ParityWord.dualPow_one])) ≫
+        (ParityWord.evalDualPowIso f δ P).hom := by
+  subst h
+  simpa using ParityWord.evalDualIso_inv_comp_parityDualRightDualIso_hom f ε P
+
+omit [PivotalCategory C] in
+private theorem evalDualPowIso_natCast_add_one_hom (f : α → C) (k : ℕ) (L : WindingWord α) :
+    (evalDualPowIso f ((k : ℤ) + 1) L).hom =
+      eqToHom (congrArg (eval f) (dualPow_add_one (k : ℤ) L)) ≫
+        (evalRightDualIso f (dualPow (k : ℤ) L)).inv ≫
+        ((evalDualPowIso f (k : ℤ) L).inv)ᘁ ≫
+        (iteratedDualRightDualIso (k : ℤ) (eval f L)).hom := by
+  have h1 : (evalDualPowIso f ((k : ℤ) + 1) L).hom =
+      eqToHom (congrArg (eval f) (dualPow_add_one (k : ℤ) L)) ≫
+        (evalRightDualIso f (dualPow (k : ℤ) L)).inv ≫
+        ((evalRightDualPowIso f k L).symm.rightAdjointMate).hom :=
+    (congrArg Iso.hom (evalDualPowIso_natCast f (k + 1) L)).trans
+      (congrArg Iso.hom (evalRightDualPowIso_succ f k L))
+  have h2 : ((evalRightDualPowIso f k L).symm.rightAdjointMate).hom =
+      ((evalDualPowIso f (k : ℤ) L).inv)ᘁ :=
+    (Iso.rightAdjointMate_hom (evalRightDualPowIso f k L).symm).trans
+      (congrArg (fun e : eval f (dualPow (k : ℤ) L) ≅ iteratedRightDual k (eval f L) ↦
+        rightAdjointMate e.inv) (evalDualPowIso_natCast f k L).symm)
+  have h3 : (iteratedDualRightDualIso (k : ℤ) (eval f L)).hom = 𝟙 _ :=
+    congrArg Iso.hom (iteratedDualRightDualIso_natCast k (eval f L))
+  exact h1.trans (_ ≫= (_ ≫= (h2.trans ((Category.comp_id _).symm.trans (_ ≫= h3.symm)))))
+
+omit [PivotalCategory C] in
+private theorem evalDualPowIso_neg_natCast_sub_one_hom (f : α → C) :
+    (k : ℕ) → (L : WindingWord α) →
+      (evalDualPowIso f (-(k : ℤ) - 1) L).hom =
+        eqToHom (congrArg (eval f) (dualPow_sub_one (-(k : ℤ)) L)) ≫
+          (evalLeftDualIso f (dualPow (-(k : ℤ)) L)).inv ≫
+          (ᘁ(evalDualPowIso f (-(k : ℤ)) L).inv) ≫
+          (iteratedDualLeftDualIso (-(k : ℤ)) (eval f L)).hom
+  | 0, L => by
+    have h1 : (evalDualPowIso f (.negSucc 0) L).hom =
+        eqToHom (congrArg (fun k ↦ eval f (dualPow k L))
+          (by omega : Int.negSucc 0 = -((0 + 1 : ℕ) : ℤ))) ≫
+          eqToHom (by simp) ≫
+          (evalLeftDualIso f (dualPow 0 L)).inv ≫
+          ((evalLeftDualPowIso f 0 L).symm.leftAdjointMate).hom :=
+      (congrArg Iso.hom (evalDualPowIso_negSucc f 0 L)).trans
+        (_ ≫= congrArg Iso.hom (evalLeftDualPowIso_succ f 0 L))
+    have h0Eq : evalLeftDualPowIso f 0 L = evalDualPowIso f 0 L :=
+      (evalLeftDualPowIso_zero f L).trans
+        ((evalDualPowIso_natCast f 0 L).trans (evalRightDualPowIso_zero f L)).symm
+    have h2 : ((evalLeftDualPowIso f 0 L).symm.leftAdjointMate).hom =
+        ᘁ(evalDualPowIso f 0 L).inv :=
+      (Iso.leftAdjointMate_hom (evalLeftDualPowIso f 0 L).symm).trans
+        (congrArg (fun e : eval f (dualPow 0 L) ≅ eval f L ↦ leftAdjointMate e.inv) h0Eq)
+    have h3 : (iteratedDualLeftDualIso 0 (eval f L)).hom = 𝟙 _ :=
+      congrArg Iso.hom (iteratedDualLeftDualIso_zero (eval f L))
+    exact h1.trans ((eqToHom_trans_assoc _ _ _).trans
+      (_ ≫= (_ ≫= (h2.trans ((Category.comp_id _).symm.trans (_ ≫= h3.symm))))))
+  | m + 1, L => by
+    have h1 : (evalDualPowIso f (.negSucc (m + 1)) L).hom =
+        eqToHom (congrArg (fun k ↦ eval f (dualPow k L))
+          (by omega : Int.negSucc (m + 1) = -((m + 1 + 1 : ℕ) : ℤ))) ≫
+          eqToHom (congrArg (eval f)
+            (by rw [show -((m + 1 + 1 : ℕ) : ℤ) = Int.negSucc m - 1 by omega,
+              dualPow_sub_one])) ≫
+          (evalLeftDualIso f (dualPow (.negSucc m) L)).inv ≫
+          ((evalLeftDualPowIso f (m + 1) L).symm.leftAdjointMate).hom :=
+      (congrArg Iso.hom (evalDualPowIso_negSucc f (m + 1) L)).trans
+        (_ ≫= congrArg Iso.hom (evalLeftDualPowIso_succ f (m + 1) L))
+    have hInv : (evalDualPowIso f (.negSucc m) L).inv = (evalLeftDualPowIso f (m + 1) L).inv := by
+      rw [evalDualPowIso_negSucc]
       simp
-    have hfront : (leftDualTensorIso (iteratedDual p.2 (f p.1)) (eval f L)).hom ≫
-        (((leftDualIsoRightDual (eval f L)).hom ⊗ₘ
-          (leftDualIsoRightDual (iteratedDual p.2 (f p.1))).hom) ≫
-          (((pivotalComparisonIso f L).inv)ᘁ ⊗ₘ ((pivotalAtomIso p.2 (f p.1)).inv)ᘁ)) =
-        ((leftDualIsoRightDual (eval f (p :: L))).hom ≫
-          ((pivotalComparisonIso f (p :: L)).inv)ᘁ) ≫
-          (rightDualTensorIso (parityDual (p.2 : ZMod 2) (f p.1))
-            (ParityWord.eval f (toParity L))).hom :=
-      (Category.assoc _ _ _).symm.trans
-        ((htensor =≫ _).trans ((Category.assoc _ _ _).trans
-          ((_ ≫= (rightDualTensorIso_hom_naturality (pivotalAtomIso p.2 (f p.1)).inv
-            (pivotalComparisonIso f L).inv).symm).trans (Category.assoc _ _ _).symm)))
-    have htail := (hSplitL =≫ _).trans ((Category.assoc _ _ _).trans
-      (_ ≫= pivotalComparisonIso_dualCons_tail f p L (leftDual L) (p.2 - 1)
-        (toParity_leftDual L) (by simp) (by simp) _ _
-        (by rw [Category.assoc, ih, Iso.inv_hom_id_assoc])
-        (by rw [Category.assoc, iteratedDualLeftDualIso_hom_comp_pivotalAtomIso_hom,
-          Iso.inv_hom_id_assoc])))
-    exact (hlhs =≫ _).trans ((reassoc_dualCons
-      (eqToHom_comp_pivotalComparisonIso_hom f (leftDual_cons p L).symm)
-      (htail.trans (Category.assoc _ _ _).symm)).trans
-      ((finish_dualCons hfront hrhs
-        ((eqToHom_trans _ _).trans (eqToHom_trans
-          (congrArg (ParityWord.eval f)
-            (ParityWord.dual_cons (p.1, (p.2 : ZMod 2)) (toParity L)).symm)
-          (congrArg (ParityWord.eval f)
-            (toParity_leftDual (p :: L)).symm)).symm)).trans (Category.assoc _ _ _)))
+    have h2 : ((evalLeftDualPowIso f (m + 1) L).symm.leftAdjointMate).hom =
+        ᘁ(evalDualPowIso f (.negSucc m) L).inv :=
+      (Iso.leftAdjointMate_hom (evalLeftDualPowIso f (m + 1) L).symm).trans
+        (congrArg (fun g : iteratedLeftDual (m + 1) (eval f L) ⟶ eval f (dualPow (.negSucc m) L) ↦
+          leftAdjointMate g) hInv.symm)
+    have h3 : (iteratedDualLeftDualIso (.negSucc m) (eval f L)).hom = 𝟙 _ :=
+      congrArg Iso.hom (iteratedDualLeftDualIso_negSucc m (eval f L))
+    exact h1.trans ((eqToHom_trans_assoc _ _ _).trans
+      (_ ≫= (_ ≫= (h2.trans ((Category.comp_id _).symm.trans (_ ≫= h3.symm))))))
+
+private theorem pivotalComparisonIso_dualPow_step (f : α → C) (L : WindingWord α)
+    (m m' : ℤ) (W' : WindingWord α) (hm' : dualPow m' L = W')
+    (hPar : toParity W' = ParityWord.dual (toParity (dualPow m L)))
+    (hCast : (m' : ZMod 2) = (m : ZMod 2) + 1)
+    (u : eval f W' ⟶ (eval f (dualPow m L))ᘁ)
+    (ih : (pivotalComparisonIso f (dualPow m L)).hom ≫
+        eqToHom (congrArg (ParityWord.eval f) (toParity_dualPow m L)) ≫
+        (ParityWord.evalDualPowIso f (m : ZMod 2) (toParity L)).hom =
+      (evalDualPowIso f m L).hom ≫
+        (pivotalAtomIso m (eval f L)).hom ≫
+        (parityDualMapIso (m : ZMod 2) (pivotalComparisonIso f L)).hom)
+    (hStep : (evalDualPowIso f m' L).hom ≫ (pivotalAtomIso m' (eval f L)).hom =
+      eqToHom (congrArg (eval f) hm') ≫ u ≫
+        ((evalDualPowIso f m L).inv)ᘁ ≫
+        ((pivotalAtomIso m (eval f L)).inv)ᘁ ≫
+        (parityDualRightDualIso (m : ZMod 2) (eval f L)).hom ≫
+        eqToHom (congrArg (parityDual · (eval f L)) hCast.symm))
+    (hu : u ≫ ((pivotalComparisonIso f (dualPow m L)).inv)ᘁ =
+      (pivotalComparisonIso f W').hom ≫
+        eqToHom (congrArg (ParityWord.eval f) hPar) ≫
+        (ParityWord.evalDualIso f (toParity (dualPow m L))).inv) :
+    (pivotalComparisonIso f (dualPow m' L)).hom ≫
+        eqToHom (congrArg (ParityWord.eval f) (toParity_dualPow m' L)) ≫
+        (ParityWord.evalDualPowIso f (m' : ZMod 2) (toParity L)).hom =
+      (evalDualPowIso f m' L).hom ≫
+        (pivotalAtomIso m' (eval f L)).hom ≫
+        (parityDualMapIso (m' : ZMod 2) (pivotalComparisonIso f L)).hom := by
+  symm
+  rw [reassoc_of% hStep,
+    parityDualRightDualIso_hom_naturality_cast hCast (pivotalComparisonIso f L),
+    reassoc_of% (mate_inv_of_hom_eq (pivotalComparisonIso f (dualPow m L))
+      (eqToIso (congrArg (ParityWord.eval f) (toParity_dualPow m L)))
+      (ParityWord.evalDualPowIso f (m : ZMod 2) (toParity L))
+      (evalDualPowIso f m L) (pivotalAtomIso m (eval f L))
+      (parityDualMapIso (m : ZMod 2) (pivotalComparisonIso f L)) ih),
+    reassoc_of% hu]
+  dsimp only [eqToIso.inv]
+  rw [reassoc_of% (evalDualIso_inv_comp_eqToHom_mate f (toParity_dualPow m L)),
+    evalDualIso_inv_comp_parityDualRightDualIso_hom_cast f hCast (toParity L),
+    reassoc_of% (eqToHom_comp_pivotalComparisonIso_hom f hm')]
+  simp only [eqToHom_trans_assoc]
+
+/-- **Integer dual-power coherence of `pivotalComparisonIso`**: iterating duality `n : ℤ` times on a
+winding word commutes with `pivotalComparisonIso`, `pivotalAtomIso n`, `parityDualMapIso`, and
+`ParityWord.evalDualPowIso`. -/
+@[reassoc]
+theorem pivotalComparisonIso_dualPow_hom (f : α → C) (n : ℤ) (L : WindingWord α) :
+    (pivotalComparisonIso f (dualPow n L)).hom ≫
+        eqToHom (congrArg (ParityWord.eval f) (toParity_dualPow n L)) ≫
+        (ParityWord.evalDualPowIso f (n : ZMod 2) (toParity L)).hom =
+      (evalDualPowIso f n L).hom ≫
+        (pivotalAtomIso n (eval f L)).hom ≫
+        (parityDualMapIso (n : ZMod 2) (pivotalComparisonIso f L)).hom := by
+  induction n using Int.induction_on with
+  | zero =>
+    have hL : (ParityWord.evalDualPowIso f ((0 : ℤ) : ZMod 2) (toParity L)).hom =
+        eqToHom (congrArg (ParityWord.eval f) (ParityWord.dualPow_zero (toParity L))) :=
+      congrArg Iso.hom (ParityWord.evalDualPowIso_zero f (toParity L))
+    have hR1 : (evalDualPowIso f 0 L).hom = eqToHom (congrArg (eval f) (dualPow_zero L)) :=
+      (congrArg Iso.hom (evalDualPowIso_natCast f 0 L)).trans
+        (congrArg Iso.hom (evalRightDualPowIso_zero f L))
+    have hR3 : (parityDualMapIso ((0 : ℤ) : ZMod 2) (pivotalComparisonIso f L)).hom =
+        (pivotalComparisonIso f L).hom :=
+      congrArg Iso.hom (parityDualMapIso_zero (pivotalComparisonIso f L))
+    have hMid : (pivotalComparisonIso f (dualPow 0 L)).hom ≫
+          eqToHom (congrArg (ParityWord.eval f) (toParity_dualPow 0 L)) ≫
+          eqToHom (congrArg (ParityWord.eval f) (ParityWord.dualPow_zero (toParity L))) =
+        eqToHom (congrArg (eval f) (dualPow_zero L)) ≫
+          𝟙 (eval f L) ≫ (pivotalComparisonIso f L).hom := by
+      rw [Category.id_comp, eqToHom_comp_pivotalComparisonIso_hom f (dualPow_zero L)]
+      simp
+    exact (_ ≫= (_ ≫= hL)).trans (hMid.trans ((hR1.symm =≫ _).trans (_ ≫= (_ ≫= hR3.symm))))
+  | succ k ih =>
+    refine pivotalComparisonIso_dualPow_step f L (k : ℤ) ((k : ℤ) + 1)
+      (rightDual (dualPow (k : ℤ) L)) (dualPow_add_one (k : ℤ) L)
+      (toParity_rightDual (dualPow (k : ℤ) L)) (by simp)
+      (evalRightDualIso f (dualPow (k : ℤ) L)).inv ih ?_ ?_
+    · rw [evalDualPowIso_natCast_add_one_hom]
+      simp only [Category.assoc]
+      rw [iteratedDualRightDualIso_hom_comp_pivotalAtomIso_hom]
+    · rw [Iso.inv_comp_eq, pivotalComparisonIso_rightDual_hom_assoc]
+      simp
+  | pred k ih =>
+    refine pivotalComparisonIso_dualPow_step f L (-(k : ℤ)) (-(k : ℤ) - 1)
+      (leftDual (dualPow (-(k : ℤ)) L)) (dualPow_sub_one (-(k : ℤ)) L)
+      (toParity_leftDual (dualPow (-(k : ℤ)) L)) (by simp)
+      ((evalLeftDualIso f (dualPow (-(k : ℤ)) L)).inv ≫
+        (leftDualIsoRightDual (eval f (dualPow (-(k : ℤ)) L))).hom) ih ?_ ?_
+    · rw [evalDualPowIso_neg_natCast_sub_one_hom]
+      simp only [Category.assoc]
+      rw [iteratedDualLeftDualIso_hom_comp_pivotalAtomIso_hom,
+        leftAdjointMate_comp_leftDualIsoRightDual_hom_assoc]
+    · rw [Category.assoc, Iso.inv_comp_eq, pivotalComparisonIso_leftDual_hom_assoc]
+      simp
+
+omit [PivotalCategory C] in
+private theorem eqToHom_toParity_append_comp_evalAppendIso_hom {β : Type w'} (g : β → C)
+    {U V : WindingWord β} {P Q : ParityWord β} (hP : toParity U = P) (hQ : toParity V = Q)
+    (hAll : toParity (U ++ V) = P ++ Q) :
+    eqToHom (congrArg (ParityWord.eval g) hAll) ≫
+        (ParityWord.evalAppendIso g P Q).hom =
+      eqToHom (congrArg (ParityWord.eval g) (toParity_append U V)) ≫
+        (ParityWord.evalAppendIso g (toParity U) (toParity V)).hom ≫
+        (eqToHom (congrArg (ParityWord.eval g) hP) ⊗ₘ
+          eqToHom (congrArg (ParityWord.eval g) hQ)) := by
+  subst hP hQ
+  simp
+
+private theorem pivotalComparisonIso_subst_cons_mid {β : Type w'} (g : β → C)
+    (F : α → WindingWord β) (p : α × ℤ) (L : WindingWord α)
+    (ih : (pivotalComparisonIso g (subst F L)).hom ≫
+        eqToHom (congrArg (ParityWord.eval g) (toParity_subst F L)) ≫
+        (ParityWord.evalSubstIso g (fun a ↦ toParity (F a)) (toParity L)).hom =
+      (evalSubstIso g F L).hom ≫
+        (pivotalComparisonIso (fun a ↦ eval g (F a)) L).hom ≫
+        (ParityWord.evalCongrIso (fun a ↦ pivotalComparisonIso g (F a)) (toParity L)).hom) :
+    (pivotalComparisonIso g (subst F (p :: L))).hom ≫
+        eqToHom (congrArg (ParityWord.eval g) (toParity_subst F (p :: L))) ≫
+        (eqToHom (congrArg (ParityWord.eval g)
+            (ParityWord.subst_cons (fun a ↦ toParity (F a)) (p.1, (p.2 : ZMod 2))
+              (toParity L))) ≫
+          (ParityWord.evalAppendIso g (ParityWord.dualPow (p.2 : ZMod 2) (toParity (F p.1)))
+            (ParityWord.subst (fun a ↦ toParity (F a)) (toParity L))).hom ≫
+          ((ParityWord.evalDualPowIso g (p.2 : ZMod 2) (toParity (F p.1))).hom ⊗ₘ
+            (ParityWord.evalSubstIso g (fun a ↦ toParity (F a)) (toParity L)).hom)) =
+      (eqToHom (congrArg (eval g) (subst_cons F p L)) ≫
+        (evalAppendIso g (dualPow p.2 (F p.1)) (subst F L)).hom ≫
+        ((evalDualPowIso g p.2 (F p.1)).hom ⊗ₘ (evalSubstIso g F L).hom)) ≫
+        ((pivotalAtomIso p.2 (eval g (F p.1))).hom ⊗ₘ
+          (pivotalComparisonIso (fun a ↦ eval g (F a)) L).hom) ≫
+        ((parityDualMapIso (p.2 : ZMod 2) (pivotalComparisonIso g (F p.1))).hom ⊗ₘ
+          (ParityWord.evalCongrIso (fun a ↦ pivotalComparisonIso g (F a))
+            (toParity L)).hom) := by
+  rw [← cancel_epi (eqToHom (congrArg (eval g) (subst_cons F p L).symm))]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  rw [reassoc_of% (eqToHom_comp_pivotalComparisonIso_hom g (subst_cons F p L).symm)]
+  simp only [eqToHom_trans_assoc]
+  rw [reassoc_of% (eqToHom_toParity_append_comp_evalAppendIso_hom g
+      (toParity_dualPow p.2 (F p.1)) (toParity_subst F L) (by simp)),
+    reassoc_of% (pivotalComparisonIso_append_hom g (dualPow p.2 (F p.1)) (subst F L)),
+    tensorHom_comp_tensorHom_assoc, tensorHom_comp_tensorHom,
+    tensorHom_comp_tensorHom_assoc, tensorHom_comp_tensorHom]
+  simp only [Category.assoc]
+  rw [pivotalComparisonIso_dualPow_hom g p.2 (F p.1), ih]
+
+/-- **Multi-port substitution coherence of `pivotalComparisonIso`**: substituting winding words for
+generators commutes with `pivotalComparisonIso`, `ParityWord.evalSubstIso`, and
+`ParityWord.evalCongrIso`. -/
+@[reassoc]
+theorem pivotalComparisonIso_subst_hom {β : Type w'} (g : β → C) (F : α → WindingWord β) :
+    (L : WindingWord α) →
+      (pivotalComparisonIso g (subst F L)).hom ≫
+          eqToHom (congrArg (ParityWord.eval g) (toParity_subst F L)) ≫
+          (ParityWord.evalSubstIso g (fun a ↦ toParity (F a)) (toParity L)).hom =
+        (evalSubstIso g F L).hom ≫
+          (pivotalComparisonIso (fun a ↦ eval g (F a)) L).hom ≫
+          (ParityWord.evalCongrIso (fun a ↦ pivotalComparisonIso g (F a)) (toParity L)).hom
+  | [] => by
+    have hNil : ∀ (W : WindingWord β) (hw : W = []) (P : ParityWord β) (hp : P = [])
+        (hwp : toParity W = P),
+        (pivotalComparisonIso g W).hom ≫
+          eqToHom (congrArg (ParityWord.eval g) hwp) ≫
+          eqToHom (congrArg (ParityWord.eval g) hp) =
+        eqToHom (congrArg (eval g) hw) := by
+      rintro _ rfl _ rfl hwp
+      have hStep : 𝟙 (𝟙_ C) ≫ eqToHom (congrArg (ParityWord.eval g) hwp) ≫ 𝟙 (𝟙_ C) =
+          𝟙 (𝟙_ C) := by simp
+      exact hStep
+    have hL : (ParityWord.evalSubstIso g (fun a ↦ toParity (F a)) (toParity [])).hom =
+        eqToHom (congrArg (ParityWord.eval g)
+          (ParityWord.subst_nil (fun a ↦ toParity (F a)))) :=
+      congrArg Iso.hom (ParityWord.evalSubstIso_nil g (fun a ↦ toParity (F a)))
+    have hR1 : (evalSubstIso g F []).hom = eqToHom (congrArg (eval g) (subst_nil F)) :=
+      congrArg Iso.hom (evalSubstIso_nil g F)
+    have hR3 : (ParityWord.evalCongrIso (fun a ↦ pivotalComparisonIso g (F a))
+        (toParity [])).hom = 𝟙 (𝟙_ C) :=
+      congrArg Iso.hom (ParityWord.evalCongrIso_nil (fun a ↦ pivotalComparisonIso g (F a)))
+    exact (_ ≫= (_ ≫= hL)).trans ((hNil _ (subst_nil F) _ (ParityWord.subst_nil _)
+      (toParity_subst F [])).trans ((Category.comp_id _).symm.trans
+        ((hR1.symm =≫ _).trans (_ ≫= ((Category.id_comp _).symm.trans (_ ≫= hR3.symm))))))
+  | p :: L => by
+    let F' : α → ParityWord β := fun a ↦ toParity (F a)
+    have ih := pivotalComparisonIso_subst_hom g F L
+    have hL : (ParityWord.evalSubstIso g F' (toParity (p :: L))).hom =
+        eqToHom (congrArg (ParityWord.eval g)
+          (ParityWord.subst_cons F' (p.1, (p.2 : ZMod 2)) (toParity L))) ≫
+          (ParityWord.evalAppendIso g (ParityWord.dualPow (p.2 : ZMod 2) (F' p.1))
+            (ParityWord.subst F' (toParity L))).hom ≫
+          ((ParityWord.evalDualPowIso g (p.2 : ZMod 2) (F' p.1)).hom ⊗ₘ
+            (ParityWord.evalSubstIso g F' (toParity L)).hom) :=
+      congrArg Iso.hom (ParityWord.evalSubstIso_cons g F' (p.1, (p.2 : ZMod 2)) (toParity L))
+    have hR1 : (evalSubstIso g F (p :: L)).hom =
+        eqToHom (congrArg (eval g) (subst_cons F p L)) ≫
+          (evalAppendIso g (dualPow p.2 (F p.1)) (subst F L)).hom ≫
+          ((evalDualPowIso g p.2 (F p.1)).hom ⊗ₘ (evalSubstIso g F L).hom) :=
+      congrArg Iso.hom (evalSubstIso_cons g F p L)
+    have hR3 : (ParityWord.evalCongrIso (fun a ↦ pivotalComparisonIso g (F a))
+        (toParity (p :: L))).hom =
+        (parityDualMapIso (p.2 : ZMod 2) (pivotalComparisonIso g (F p.1))).hom ⊗ₘ
+          (ParityWord.evalCongrIso (fun a ↦ pivotalComparisonIso g (F a)) (toParity L)).hom :=
+      congrArg Iso.hom (ParityWord.evalCongrIso_cons (fun a ↦ pivotalComparisonIso g (F a))
+        (p.1, (p.2 : ZMod 2)) (toParity L))
+    exact (_ ≫= (_ ≫= hL)).trans ((pivotalComparisonIso_subst_cons_mid g F p L ih).trans
+      ((hR1.symm =≫ _).trans (_ ≫= (_ ≫= hR3.symm))))
 
 /-! ### Coupon transport and half-turn single mates -/
 

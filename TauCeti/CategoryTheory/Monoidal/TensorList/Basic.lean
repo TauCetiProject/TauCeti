@@ -20,7 +20,7 @@ list `L : List α` and generator valuation `f : α → C` the right-associated t
 `List.flatMap`, while order-reversing duals act as contravariant strong monoidal functors
 `C ⥤ (Dᵒᵖ)ᴹᵒᵖ` reversing the list factors. On a replicated list `List.replicate n a`,
 `tensorList f (List.replicate n a)` agrees propositionally with `TauCeti.tensorPow (f a) n` via
-`TauCeti.tensorList_replicate` (reducing definitionally on closed numerals).
+`TauCeti.tensorList_replicate` (reducing definitionally only on closed numerals).
 
 ## Main declarations
 
@@ -475,6 +475,7 @@ theorem opMopTensorListIso_singleton_hom (G : C ⥤ (Dᵒᵖ)ᴹᵒᵖ) [G.Monoi
         ((ε G).unmop.unop ⊗ₘ (ρ_ (G.obj (f a)).unmop.unop).inv) ≫
         (λ_ ((G.obj (f a)).unmop.unop ⊗ 𝟙_ D)).hom := by
   rw [opMopTensorListIso_cons_hom, opMopTensorListIso_nil_hom]
+  -- Unfold `tensorList f []` and `[].reverse ++ [a]` so `eqToHom` simplifies to `eqToHom rfl`.
   change (μ G (f a) (𝟙_ C)).unmop.unop ≫
       ((ε G).unmop.unop ⊗ₘ (ρ_ (G.obj (f a)).unmop.unop).inv) ≫
       (tensorListAppendIso (fun b ↦ (G.obj (f b)).unmop.unop) [] [a]).hom ≫
@@ -677,10 +678,9 @@ theorem opMopTensorListIso_map_hom (G : C ⥤ (Dᵒᵖ)ᴹᵒᵖ) [G.Monoidal] (
       rw [← cancel_mono (eqToHom (congrArg (tensorList g') (List.map_append (f := h)).symm))]
       simpa [Category.assoc] using (tensorListMapIso_append_hom g' h L.reverse [a]).symm
     rw [reassoc_of% (hAppEq List.map_reverse), reassoc_of% hMid]
-    change _ ≫ _ ≫ ((tensorListMapIso g' h L.reverse).hom ⊗ₘ (tensorListMapIso g' h [a]).hom) ≫
-        (tensorListAppendIso g' (L.reverse.map h) ([a].map h)).hom ≫ _ = _
-    rw [← Category.assoc ((tensorListMapIso g' h L.reverse).hom ⊗ₘ _), hMapApp]
-    simp only [Category.assoc, eqToHom_trans]
+    dsimp only [List.map] at hMapApp ⊢
+    rw [reassoc_of% hMapApp]
+    simp only [eqToHom_trans]
     have hNatEq : ∀ {W₁ W₂ : List α} (hw : W₁ = W₂),
         eqToHom (congrArg (tensorList fun x ↦ g' (h x)) hw) ≫ (tensorListMapIso g' h W₂).hom =
           (tensorListMapIso g' h W₁).hom ≫

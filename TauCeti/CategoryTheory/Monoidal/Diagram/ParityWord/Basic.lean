@@ -246,8 +246,7 @@ theorem atParity_def (a : α) (ε : ZMod 2) :
   rfl
 
 @[simp] theorem atParity_one (a : α) : atParity a 1 = (RigidObject.of a).rightDual := by
-  have h1 : (ZMod.cast (1 : ZMod 2) : ℤ) = ((1 : ℕ) : ℤ) := by decide
-  rw [atParity, h1, atLevel_natCast]
+  rw [atParity, ZMod.cast_eq_val, ZMod.val_one, atLevel_natCast]
   rfl
 
 @[simp] theorem normalizeParity_atParity (a : α) (ε : ZMod 2) :
