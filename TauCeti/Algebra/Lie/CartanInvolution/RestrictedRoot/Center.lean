@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Basic
+public import TauCeti.Algebra.Lie.Solvable.Basic
 
 /-!
 # Restricted roots and the centre
@@ -57,10 +58,8 @@ theorem restrictedRootSpace_le_derived {K L : Type*} [Field K] [LieRing L] [LieA
   obtain ⟨H, hH⟩ := not_forall.mp (mt LinearMap.ext hμ)
   have hx' : x = (μ H)⁻¹ • ⁅(H : L), x⁆ := by
     rw [mem_restrictedRootSpace.mp hx H, smul_smul, inv_mul_cancel₀ hH, one_smul]
-  rw [hx', LieSubmodule.mem_toSubmodule, derivedSeries_def, derivedSeriesOfIdeal_succ,
-    derivedSeriesOfIdeal_zero]
-  exact Submodule.smul_mem _ _
-    (LieSubmodule.lie_mem_lie (LieSubmodule.mem_top _) (LieSubmodule.mem_top _))
+  rw [hx']
+  exact Submodule.smul_mem _ _ (lie_mem_derivedSeries_one (R := K) (H : L) x)
 
 end Submodule
 
