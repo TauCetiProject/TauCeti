@@ -33,7 +33,8 @@ operator
 `∇_v ψ = dψ(v) + i b(v) ψ`  (`TauCeti.SeibergWitten.covariantDeriv`),
 `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`  (`flatDirac`),
 
-for any orthonormal basis `(eₖ)` (`flatDirac_eq_sum`). The covariant derivative, and the sum
+for any orthonormal basis `(eₖ)` (`flatDirac_eq_sum`). The covariant derivative at `x` depends only
+on the germ of the field at `x` (`covariantDeriv_congr_of_eventuallyEq`). It, and the sum
 `∑ₖ ∇_{eₖ} ∇_{eₖ}` of second covariant derivatives, commute with constant complex-linear maps
 (`covariantDeriv_continuousLinearMap_comp`,
 `sum_covariantDeriv_covariantDeriv_continuousLinearMap_comp`). Without a basis, `D ψ` is the metric
@@ -193,11 +194,17 @@ theorem covariantDeriv_sum_apply [FiniteDimensional ℂ W] {κ : Type*} [Fintype
   rw [covariantDeriv_apply, H.fderiv]
   simp [Finset.smul_sum, ← Finset.sum_add_distrib, map_smul, LinearMap.map_smul_of_tower]
 
+/-- The covariant derivative at `x` only sees the germ of the field at `x`. -/
+theorem covariantDeriv_congr_of_eventuallyEq {f g : V → W} (h : f =ᶠ[𝓝 x] g) :
+    covariantDeriv b f x = covariantDeriv b g x := by
+  ext v
+  rw [covariantDeriv_apply, covariantDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
+
 /-- The covariant derivative of a field vanishing near `x` vanishes at `x`. -/
 theorem covariantDeriv_eq_zero_of_eventuallyEq {φ : V → W} (h : φ =ᶠ[𝓝 x] 0) :
     covariantDeriv b φ x = 0 := by
   ext v
-  simp [covariantDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
+  simp [covariantDeriv_congr_of_eventuallyEq h, covariantDeriv_apply]
 
 /-- The covariant derivative commutes with a constant complex-linear map: `∇_v (L ψ) = L (∇_v ψ)`.
 -/
@@ -222,11 +229,7 @@ theorem covariantDeriv_covariantDeriv_continuousLinearMap_comp {W' : Type*}
   have heq : (fun y ↦ covariantDeriv b (fun z ↦ L (ψ z)) y w) =ᶠ[𝓝 x]
       fun y ↦ L (covariantDeriv b ψ y w) :=
     hψ.mono fun y hy ↦ covariantDeriv_continuousLinearMap_comp L hy w
-  -- The covariant derivative at `x` only sees the germ of the field.
-  have hgerm {f g : V → W'} (h : f =ᶠ[𝓝 x] g) : covariantDeriv b f x = covariantDeriv b g x := by
-    ext u
-    rw [covariantDeriv_apply, covariantDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
-  rw [hgerm heq, covariantDeriv_continuousLinearMap_comp L
+  rw [covariantDeriv_congr_of_eventuallyEq heq, covariantDeriv_continuousLinearMap_comp L
     (differentiableAt_covariantDeriv_apply hψ.self_of_nhds hψ' hb w)]
 
 /-- The sum `∑ₖ ∇_{eₖ} ∇_{eₖ} ψ` of second covariant derivatives, which is minus the rough
