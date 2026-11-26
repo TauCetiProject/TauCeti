@@ -13,10 +13,11 @@ public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Mellin
 
 For a signed family formed by all characters of one modulus and a corresponding family of
 nonprincipal characters, the average of the individual Riesz transforms can also be computed
-from a single mean of logarithmic derivatives. The principal character contributes the
-pole-cleared derivative at `1` and the extra constant `-1 / φ(q)` in that mean. This identifies
-the quotient obtained by transforming a smoothed prime sum with the sum of the individual
-meromorphic Riesz expressions, to which pole calculations apply.
+from a single mean of logarithmic derivatives. At `1`, the principal character is evaluated
+using the logarithmic derivative of the pole-cleared L-function. The mean also includes
+the correction `-1 / φ(q)`. The right-hand side of the signed identity has the form of the
+prime-side transform quotient via `LFunctionResidueClassAux`; the identity itself is between
+that quotient and the sum of the individual meromorphic Riesz expressions.
 
 The normalization is that of `New.integral_primeRemainder` in
 `grh/src/New/Reduction/Zeros/PrimeError.lean` of the shorter GRH formalization
