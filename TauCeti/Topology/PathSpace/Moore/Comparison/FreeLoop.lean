@@ -9,6 +9,7 @@ public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import TauCeti.Topology.MappingSpace.FreeLoop
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 public import TauCeti.Topology.PathSpace.Moore.FreeLoop
+public import TauCeti.Topology.PathSpace.Moore.Rotation
 
 /-!
 # Comparing Moore and circle-mapping free loop spaces
@@ -30,6 +31,10 @@ comparison `MooreLoopSpace X x ≃ₕ Path x x ≃ₜ BasedMap Circle X 1 x` (`t
 `ofCircleMap_coe_basedMap`). Forward comparison sends constant Moore loops of duration zero to
 constant circle loops (`toCircleMap_const`), and `constCircleHomotopy` shrinks the duration-one
 image of constant circle loops back to duration zero over `X`.
+
+Rotating a free Moore loop by the fraction `s` of its length
+(`TauCeti.MooreFreeLoopSpace.rotate`) precomposes its circle map with the rotation of the circle by
+`exp (2πis)` (`toCircleMap_rotate`).
 
 Both comparison maps and `unitHomotopy` preserve the subspaces of contractible free loops, yielding
 `MooreFreeLoopSpace.fiberHomotopyEquivContractibleLoops` over `X` between
@@ -136,6 +141,43 @@ theorem toCircleMap_const (x : X) : toCircleMap (const x) = ContinuousMap.const 
 theorem toCircleMap_comp_constMap :
     (toCircleMap (X := X)).comp (constMap X) = ContinuousMap.const' :=
   ContinuousMap.ext fun x ↦ by simp
+
+/-- **Rotating a free Moore loop rotates its circle map**: the circle map of the rotation of `γ` by
+the fraction `s` of its length is the circle map of `γ` precomposed with the rotation
+`z ↦ z * exp (2πis)` of the circle. -/
+@[simp]
+theorem toCircleMap_rotate (γ : MooreFreeLoopSpace X) (s : I) (z : Circle) :
+    toCircleMap (γ.rotate (γ.length * toNNReal s)) z = toCircleMap γ (z * unitToCircle s) := by
+  obtain ⟨u, rfl⟩ := unitToCircle_surjective z
+  have hL (x : I) : γ.length * toNNReal x ≤ γ.length :=
+    mul_le_of_le_one_right zero_le <| by
+      rw [← NNReal.coe_le_coe]
+      exact unitInterval.le_one x
+  rw [toCircleMap_unitToCircle, MoorePath.toUnitPath_apply, length_toMoorePath, length_rotate]
+  by_cases h : (u : ℝ) + s ≤ 1
+  · -- Before the end of `γ`, the rotation runs along `γ` from time `L s`.
+    let v : I := ⟨(u : ℝ) + s, add_nonneg (unitInterval.nonneg u) (unitInterval.nonneg s), h⟩
+    have he : γ.length * toNNReal u + γ.length * toNNReal s = γ.length * toNNReal v :=
+      NNReal.eq (by simp [v, mul_add])
+    rw [unitToCircle_mul_unitToCircle (v := v) 0 (by simp [v]), toCircleMap_unitToCircle,
+      MoorePath.toUnitPath_apply, length_toMoorePath, rotate_apply_of_le _
+        (le_tsub_of_add_le_right (he.trans_le (hL v))), add_comm, he]
+  · -- After the end of `γ`, the rotation runs along `γ` from its start.
+    have : 1 < (u : ℝ) + s := not_le.1 h
+    let v : I :=
+      ⟨(u : ℝ) + s - 1, by linarith, by linarith [unitInterval.le_one u, unitInterval.le_one s]⟩
+    have he : γ.length * toNNReal u =
+        γ.length - γ.length * toNNReal s + γ.length * toNNReal v := by
+      refine NNReal.eq ?_
+      rw [NNReal.coe_add, NNReal.coe_sub (hL s)]
+      simp only [NNReal.coe_mul, coe_toNNReal, v]
+      ring
+    rw [unitToCircle_mul_unitToCircle (v := v) 1 (by simp [v]), toCircleMap_unitToCircle,
+      MoorePath.toUnitPath_apply, length_toMoorePath, he, rotate_apply_length_sub_add, min_eq_left]
+    refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+    rw [← NNReal.coe_le_coe]
+    simp only [coe_toNNReal, v]
+    linarith [unitInterval.le_one u]
 
 /-- Regard a circle map as a free Moore loop of duration one by precomposing with `unitToCircle`. -/
 def ofCircleMap : C(C(Circle, X), MooreFreeLoopSpace X) :=
