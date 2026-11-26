@@ -53,18 +53,10 @@ theorem bijective_nsmul_of_bijective_smul_prime (hp : p.Prime)
     (hQ : Bijective fun x : Q ↦ (p : R) • x) {n : ℕ} (hn : n ≠ 0) :
     Bijective fun x : Q ↦ n • x := by
   obtain ⟨a, m, hm, rfl⟩ := Nat.exists_eq_pow_mul_and_not_dvd hn p hp.ne_one
-  have hu : IsUnit ((m : R)) := hR m ((Nat.Prime.coprime_iff_not_dvd hp).mpr hm).symm
-  have hpa (k : ℕ) : Bijective fun x : Q ↦ (p : R) ^ k • x := by
-    induction k with
-    | zero =>
-      simp only [pow_zero, one_smul]
-      exact bijective_id
-    | succ k ih =>
-      simp only [pow_succ', mul_smul]
-      exact hQ.comp ih
-  have hmu : Bijective fun x : Q ↦ (m : R) • x :=
-    (Module.End.isUnit_iff _).mp ((hu.map (algebraMap R (Module.End R Q))))
-  convert (hpa a).comp hmu using 1
+  have hu : IsUnit (m : R) := hR m ((Nat.Prime.coprime_iff_not_dvd hp).mpr hm).symm
+  have hpa : Bijective fun x : Q ↦ (p : R) ^ a • x := by
+    simpa only [smul_iterate] using hQ.iterate a
+  convert hpa.comp hu.smul_bijective using 1
   ext x
   simp [← Nat.cast_smul_eq_nsmul R, mul_smul]
 

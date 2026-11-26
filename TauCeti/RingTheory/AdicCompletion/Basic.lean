@@ -34,6 +34,9 @@ every `m ≤ n`.
   `⋂ₙ Iⁿ M`.
 * `AdicCompletion.range_of_sup_smul_top_eq_top`: for finitely generated `I`, the image of `M` and
   `I M̂` span `M̂`.
+* `AdicCompletion.smul_top_eq_ker_eval_one`, `AdicCompletion.comap_of_smul_top_le`: for finitely
+  generated `I`, `I M̂` is the kernel of the evaluation at level one, and an element of `M` whose
+  image lies in `I M̂` lies in `I M`.
 -/
 
 public section
@@ -86,6 +89,12 @@ theorem ker_of (M : Type*) [AddCommGroup M] [Module R M] :
     simpa [of_apply, Submodule.Quotient.mk_eq_zero] using this
   · simpa [of_apply, Submodule.Quotient.mk_eq_zero] using hx n
 
+/-- For a finitely generated ideal `I`, the submodule `I M̂` of the `I`-adic completion is the
+kernel of the evaluation at level one. -/
+theorem smul_top_eq_ker_eval_one {I : Ideal R} (hI : I.FG) {M : Type*} [AddCommGroup M]
+    [Module R M] : (I • ⊤ : Submodule R (AdicCompletion I M)) = LinearMap.ker (eval I M 1) := by
+  simpa using pow_smul_top_eq_ker_eval (M := M) (n := 1) hI
+
 /-- For a finitely generated ideal `I`, the image of `M` and `I M̂` span the `I`-adic
 completion `M̂`. -/
 theorem range_of_sup_smul_top_eq_top {I : Ideal R} (hI : I.FG) (M : Type*) [AddCommGroup M]
@@ -93,10 +102,18 @@ theorem range_of_sup_smul_top_eq_top {I : Ideal R} (hI : I.FG) (M : Type*) [AddC
   refine eq_top_iff.mpr fun y _ ↦ ?_
   obtain ⟨m, hm⟩ := Submodule.Quotient.mk_surjective _ (eval I M 1 y)
   have hy : y - of I M m ∈ I • (⊤ : Submodule R (AdicCompletion I M)) := by
-    have h : (I • ⊤ : Submodule R (AdicCompletion I M)) = LinearMap.ker (eval I M 1) := by
-      simpa using pow_smul_top_eq_ker_eval (M := M) (n := 1) hI
-    rw [h, LinearMap.mem_ker, map_sub, eval_of, ← hm, mkQ_apply, sub_self]
+    rw [smul_top_eq_ker_eval_one hI, LinearMap.mem_ker, map_sub, eval_of, ← hm, mkQ_apply,
+      sub_self]
   simpa using add_mem_sup (LinearMap.mem_range_self (of I M) m) hy
+
+/-- For a finitely generated ideal `I`, an element of `M` whose image in the `I`-adic completion
+lies in `I M̂` already lies in `I M`. -/
+theorem comap_of_smul_top_le {I : Ideal R} (hI : I.FG) (M : Type*) [AddCommGroup M]
+    [Module R M] : (I • ⊤ : Submodule R (AdicCompletion I M)).comap (of I M) ≤ I • ⊤ := by
+  intro m hm
+  rw [mem_comap, smul_top_eq_ker_eval_one hI, LinearMap.mem_ker, eval_of, mkQ_apply,
+    Submodule.Quotient.mk_eq_zero, pow_one] at hm
+  exact hm
 
 /-- The kernel of the map from a module to its `(r)`-adic completion is `⋂ₙ rⁿ M`. -/
 theorem ker_of_span_singleton (r : R) (M : Type*) [AddCommGroup M] [Module R M] :
