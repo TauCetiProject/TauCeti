@@ -230,8 +230,8 @@ theorem localFixedPointIndex_comp_inclusion {V : Opens E} (hVU : V ≤ U) (f : C
       f.localFixedPointIndex_eq_localIndex fixedPointOrientation rfl hx]
     -- The displacement of `f` restricted to `V` is that of `f` read through the inclusion `V → U`.
     have hι : IsOpenEmbedding ι := Opens.isOpenEmbedding_of_le hVU
-    have h := HomologicalOrientation.localIndex_comap rfl
-      (fixedPointOrientation.comap U.isOpenEmbedding') fixedPointOrientation hι IsOpenEmbedding.id
+    have h := (fixedPointOrientation.comap U.isOpenEmbedding').localIndex_comap
+      fixedPointOrientation rfl hι IsOpenEmbedding.id
       (f := (f.comp ι).displacement) (g := f.displacement) (x := x)
       (.of_forall fun z ↦ by rw [displacement_comp_inclusion, comp_apply, id_eq])
     rwa [HomologicalOrientation.comap_id,
@@ -344,8 +344,8 @@ theorem localFixedPointIndex_eq_of_hasStrictFDerivAt {V : Opens E} {f : C(U, E)}
       rw [comp_apply, displacement_apply]
       -- `Ac` is `A` as a continuous map, by definition.
       rfl
-    refine HomologicalOrientation.localIndex_eq_of_norm_sub_le _ _ rfl rfl one_half_lt_one
-      (by rw [hG, hAD, hfW, sub_self, sub_self, map_zero]) (.of_forall fun z ↦ ?_)
+    refine HomologicalOrientation.localIndex_eq_of_norm_sub_le _ _ rfl one_half_lt_one
+      (.of_forall fun z ↦ ?_)
     rw [hG, hAD, hAD xW, hfW, sub_self, map_zero, sub_zero, one_div_mul_eq_div]
     exact (hkW z).2.2
   -- By the chain rule, both sides are `sign det A` times a local fixed-point index.

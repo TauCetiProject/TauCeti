@@ -5,8 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.AffineSpace.Slope
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
+public import Mathlib.MeasureTheory.Measure.Sub
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.Analysis.Analytic.IsolatedZeros
+import Mathlib.Analysis.Analytic.Within
+import Mathlib.Analysis.Calculus.Deriv.Star
+import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.Complex.HalfPlane
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 import TauCeti.Basic.Complex.OfRealSub
 import Mathlib.Tactic.Positivity
@@ -26,12 +33,19 @@ affine covariance under pushforward. No moment assumptions are needed. Conversel
 axis the transform of a measure `μ` without finite weighted mass `∫ (1 + x ^ 2)⁻¹ dμ` is `0`, since
 the kernel `‖(x - z)⁻¹‖` dominates `(1 + x ^ 2)⁻¹` up to a constant and so is not integrable.
 
+Off the real axis the transform is analytic with derivative `∫ (x - z)⁻² dμ(x)`, bounded by
+`|Im z|⁻² μ(ℝ)`, and its first-order Taylor expansion at `z` has remainder at most
+`‖w - z‖² / (|Im z|² |Im w|) · μ(ℝ)`; these bounds are uniform over all measures of a given mass.
+For real `t` the map `z ↦ z - t m_μ(z)` maps `{Im z > |t| μ(ℝ) + 1}` injectively into the upper
+half-plane, so two functions analytic in the upper half-plane that agree at the points
+`z - t m_μ(z)` agree there.
+
 For a function `h` integrable for a measure on the real line, the integrands `h(x) / (x - z)`
 (off the real axis) and `x h(x) / (1 + x ^ 2)` are integrable too
 (`TauCeti.integrable_div_ofReal_sub`, `TauCeti.integrable_div_one_add_sq_mul`).
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
-`(z - x)⁻¹`.
+`(z - x)⁻¹`; the Stieltjes transform `∫ (z - x)⁻¹ dμ(x)` is its negative.
 
 ## References
 
@@ -115,6 +129,17 @@ theorem Measure.resolventTransform_conj (μ : Measure ℝ) (z : ℂ) :
     _ = _ := by
       simpa only [RCLike.star_def] using (integral_conj (f := resolvent (R := ℝ) z))
 
+/-- Conjugating the spectral parameter conjugates the derivative of the resolvent transform of a
+real measure. -/
+@[simp]
+theorem Measure.deriv_resolventTransform_conj (μ : Measure ℝ) (z : ℂ) :
+    deriv (resolventTransform μ) (conj z) = conj (deriv (resolventTransform μ) z) := by
+  have h : (resolventTransform μ : ℂ → ℂ) = conj ∘ resolventTransform μ ∘ conj := by
+    funext w
+    simp
+  conv_lhs => rw [h, deriv_conj_conj]
+  simp
+
 /-- The resolvent transform is `-∫ (z - x)⁻¹ dμ(x)`, the negative of the Cauchy–Stieltjes transform
 in the convention `(z - x)⁻¹`. -/
 theorem resolventTransform_eq_neg_integral_inv_sub (μ : Measure ℝ) (z : ℂ) :
@@ -122,6 +147,16 @@ theorem resolventTransform_eq_neg_integral_inv_sub (μ : Measure ℝ) (z : ℂ) 
   rw [resolventTransform_apply, ← integral_neg]
   congr 1 with x
   rw [Complex.resolvent_real_eq_inv, ← inv_neg, neg_sub]
+
+/-- The resolvent transform subtracts a dominated finite measure at points where the
+resolvent is integrable for the larger measure. -/
+theorem Measure.resolventTransform_sub (μ : Measure ℝ) {ν : Measure ℝ} [IsFiniteMeasure ν]
+    (hν : ν ≤ μ) {z : ℂ} (hz : Integrable (resolvent (R := ℝ) z) μ) :
+    resolventTransform (μ - ν) z = resolventTransform μ z - resolventTransform ν z := by
+  apply eq_sub_of_add_eq
+  simp only [resolventTransform_apply]
+  rw [← integral_add_measure (hz.mono_measure Measure.sub_le) (hz.mono_measure hν),
+    Measure.sub_add_cancel_of_le hν]
 
 /-- At a nonreal point, the resolvent transform of a measure `μ` without finite weighted mass
 `∫ (1 + x ^ 2)⁻¹ dμ` is `0`, since the resolvent kernel is not integrable. -/
@@ -201,6 +236,107 @@ theorem norm_resolventTransform_sub_le {z w : ℂ} (hz : z.im ≠ 0) (hw : w.im 
   · exact Complex.norm_resolvent_real_le z x hz
   · exact Complex.norm_resolvent_real_le w x hw
 
+/-- The resolvent identity for the transform of a finite measure off the real axis:
+`m_μ(z) - m_μ(w) = (z - w) ∫ (x - z)⁻¹ (x - w)⁻¹ dμ(x)`. -/
+theorem resolventTransform_sub_resolventTransform {z w : ℂ} (hz : z.im ≠ 0) (hw : w.im ≠ 0) :
+    resolventTransform μ z - resolventTransform μ w =
+      (z - w) * ∫ x, resolvent z x * resolvent w x ∂μ := by
+  rw [resolventTransform_apply, resolventTransform_apply, ← integral_sub
+    (integrable_resolvent_of_im_ne_zero hz) (integrable_resolvent_of_im_ne_zero hw),
+    ← integral_const_mul]
+  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+  dsimp only
+  rw [spectrum.resolvent_sub_resolvent (Complex.mem_resolventSet_real hz x)
+    (Complex.mem_resolventSet_real hw x)]
+  ring
+
+/-- Off the real axis the transform of a finite measure is complex differentiable, with
+derivative `∫ (x - z)⁻² dμ(x)`. -/
+theorem hasDerivAt_resolventTransform_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
+    HasDerivAt (resolventTransform μ) (∫ x, resolvent z x ^ 2 ∂μ) z :=
+  hasDerivAt_resolventTransform z (Complex.notMem_image_ofReal_of_im_ne_zero hz)
+
+/-- Off the real axis the transform of a finite measure is analytic. -/
+theorem analyticOnNhd_resolventTransform :
+    AnalyticOnNhd ℂ (resolventTransform μ) {z : ℂ | z.im ≠ 0} :=
+  (IsOpen.analyticOn_iff_analyticOnNhd
+    (isOpen_ne_fun Complex.continuous_im continuous_const)).1 <|
+    analyticOn_resolventTransform.mono fun _ hz ↦ Complex.notMem_image_ofReal_of_im_ne_zero hz
+
+/-- In the upper half-plane the transform of a finite measure is analytic. -/
+theorem analyticOnNhd_resolventTransform_setOf_im_pos :
+    AnalyticOnNhd ℂ (resolventTransform μ) {z : ℂ | 0 < z.im} :=
+  analyticOnNhd_resolventTransform.mono fun _ hz ↦ ne_of_gt hz
+
+/-- A uniform bound for the derivative of the transform of a finite measure away from the real
+axis. -/
+theorem norm_deriv_resolventTransform_le {z : ℂ} (hz : z.im ≠ 0) :
+    ‖deriv (resolventTransform μ) z‖ ≤ (|z.im|⁻¹) ^ 2 * μ.real Set.univ := by
+  rw [(hasDerivAt_resolventTransform_of_im_ne_zero hz).deriv]
+  refine norm_integral_le_of_norm_le_const (ae_of_all _ fun x ↦ ?_)
+  rw [norm_pow]
+  gcongr
+  exact Complex.norm_resolvent_real_le z x hz
+
+/-- A uniform bound for the transform of a finite measure times its derivative away from the real
+axis: `‖m_μ(z) m_μ'(z)‖ ≤ |Im z|⁻³ μ(ℝ)²`. -/
+theorem norm_resolventTransform_mul_deriv_le {z : ℂ} (hz : z.im ≠ 0) :
+    ‖resolventTransform μ z * deriv (resolventTransform μ) z‖ ≤
+      (|z.im|⁻¹) ^ 3 * μ.real Set.univ ^ 2 := by
+  rw [norm_mul]
+  calc _ ≤ (|z.im|⁻¹ * μ.real Set.univ) * ((|z.im|⁻¹) ^ 2 * μ.real Set.univ) :=
+        mul_le_mul (norm_resolventTransform_le hz) (norm_deriv_resolventTransform_le hz)
+          (norm_nonneg _) (mul_nonneg (by positivity) measureReal_nonneg)
+    _ = _ := by ring
+
+/-- The second-order Taylor remainder of the transform of a finite measure off the real axis:
+`‖m_μ(w) - m_μ(z) - (w - z) m_μ'(z)‖ ≤ ‖w - z‖² / (|Im z|² |Im w|) · μ(ℝ)`. -/
+theorem norm_resolventTransform_sub_sub_mul_deriv_le {z w : ℂ} (hz : z.im ≠ 0) (hw : w.im ≠ 0) :
+    ‖resolventTransform μ w - resolventTransform μ z - (w - z) * deriv (resolventTransform μ) z‖
+      ≤ ‖w - z‖ ^ 2 / (|z.im| ^ 2 * |w.im|) * μ.real Set.univ := by
+  have hrem : resolventTransform μ w - resolventTransform μ z -
+      (w - z) * deriv (resolventTransform μ) z =
+        ∫ x, (w - z) ^ 2 * (resolvent z x ^ 2 * resolvent w x) ∂μ := by
+    rw [(hasDerivAt_resolventTransform_of_im_ne_zero hz).deriv,
+      resolventTransform_sub_resolventTransform hw hz, ← integral_const_mul,
+      ← integral_const_mul, ← integral_sub]
+    · refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+      have h := spectrum.resolvent_sub_resolvent (Complex.mem_resolventSet_real hw x)
+        (Complex.mem_resolventSet_real hz x)
+      linear_combination (w - z) * (resolvent z x) * h
+    · exact ((integrable_resolvent_of_im_ne_zero hz).bdd_mul
+        (continuous_resolvent_real hw).aestronglyMeasurable
+        (ae_of_all _ fun x ↦ Complex.norm_resolvent_real_le w x hw)).const_mul _
+    · simpa only [sq] using ((integrable_resolvent_of_im_ne_zero hz).bdd_mul
+        (continuous_resolvent_real hz).aestronglyMeasurable
+        (ae_of_all _ fun x ↦ Complex.norm_resolvent_real_le z x hz)).const_mul (w - z)
+  rw [hrem]
+  refine norm_integral_le_of_norm_le_const (ae_of_all _ fun x ↦ ?_)
+  simp only [norm_mul, norm_pow]
+  calc _ ≤ ‖w - z‖ ^ 2 * ((|z.im|⁻¹) ^ 2 * |w.im|⁻¹) := by
+        gcongr
+        · exact Complex.norm_resolvent_real_le z x hz
+        · exact Complex.norm_resolvent_real_le w x hw
+    _ = _ := by ring
+
+/-- The difference quotient of the transform of a finite measure off the real axis is close to its
+derivative: `‖(w - z)⁻¹ (m_μ(w) - m_μ(z)) - m_μ'(z)‖ ≤ ‖w - z‖ / (|Im z|² |Im w|) · μ(ℝ)`. -/
+theorem norm_slope_resolventTransform_sub_deriv_le {z w : ℂ} (hz : z.im ≠ 0) (hw : w.im ≠ 0)
+    (hwz : w ≠ z) :
+    ‖slope (resolventTransform μ) z w - deriv (resolventTransform μ) z‖ ≤
+      ‖w - z‖ / (|z.im| ^ 2 * |w.im|) * μ.real Set.univ := by
+  have hwz' : w - z ≠ 0 := sub_ne_zero.2 hwz
+  have hrw : slope (resolventTransform μ) z w - deriv (resolventTransform μ) z =
+      (w - z)⁻¹ * (resolventTransform μ w - resolventTransform μ z -
+        (w - z) * deriv (resolventTransform μ) z) := by
+    rw [slope_def_field]
+    field_simp
+  rw [hrw, norm_mul, norm_inv]
+  calc _ ≤ ‖w - z‖⁻¹ * (‖w - z‖ ^ 2 / (|z.im| ^ 2 * |w.im|) * μ.real Set.univ) := by
+        gcongr
+        exact norm_resolventTransform_sub_sub_mul_deriv_le hz hw
+    _ = _ := by field_simp [norm_ne_zero_iff.2 hwz']
+
 /-- A nonzero finite measure has strictly positive imaginary transform in the upper half-plane. -/
 theorem im_resolventTransform_pos (hμ : μ ≠ 0) {z : ℂ} (hz : 0 < z.im) :
     0 < (resolventTransform μ z).im := by
@@ -211,6 +347,81 @@ theorem im_resolventTransform_pos (hμ : μ ≠ 0) {z : ℂ} (hz : 0 < z.im) :
   apply (integral_pos_iff_support_of_nonneg (fun x => (hp x).le) ?_).2
   · simpa [Function.support, ne_of_gt (hp _)] using (Measure.measure_univ_pos.mpr hμ)
   · simpa only [RCLike.im_eq_complex_im, Complex.im_resolvent_real] using hi.im
+
+/-- For the transform of a finite measure and real `t`, the point `z - t m_μ(z)` lies in the upper
+half-plane whenever `Im z > 0` and `|t| μ(ℝ) < (Im z)²`. -/
+theorem im_sub_mul_resolventTransform_pos {t : ℝ} {z : ℂ} (hz : 0 < z.im)
+    (h : |t| * μ.real Set.univ < z.im ^ 2) : 0 < (z - t * resolventTransform μ z).im := by
+  have hm := norm_resolventTransform_le (μ := μ) hz.ne'
+  rw [abs_of_pos hz] at hm
+  have h₁ : t * (resolventTransform μ z).im ≤ |t| * (z.im⁻¹ * μ.real Set.univ) := by
+    calc _ ≤ |t * (resolventTransform μ z).im| := le_abs_self _
+      _ = |t| * |(resolventTransform μ z).im| := abs_mul _ _
+      _ ≤ _ := by gcongr; exact (abs_im_le_norm _).trans hm
+  have h₂ : |t| * (z.im⁻¹ * μ.real Set.univ) < z.im := by
+    rw [mul_left_comm, ← div_eq_inv_mul, div_lt_iff₀ hz]
+    simpa [sq] using h
+  simp only [sub_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
+  linarith
+
+/-- For the transform of a finite measure and real `t`, the map `z ↦ z - t m_μ(z)` is injective on
+pairs of points `a`, `b` of the upper half-plane with `|t| μ(ℝ) < Im a Im b`. -/
+theorem eq_of_sub_mul_resolventTransform_eq {t : ℝ} {a b : ℂ} (ha : 0 < a.im) (hb : 0 < b.im)
+    (h : |t| * μ.real Set.univ < a.im * b.im)
+    (hab : a - t * resolventTransform μ a = b - t * resolventTransform μ b) : a = b := by
+  by_contra hne
+  have hpos : 0 < ‖a - b‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
+  have hlip := norm_resolventTransform_sub_le (μ := μ) ha.ne' hb.ne'
+  rw [abs_of_pos ha, abs_of_pos hb] at hlip
+  have hab' : a - b = t * (resolventTransform μ a - resolventTransform μ b) := by
+    linear_combination hab
+  have : ‖a - b‖ ≤ |t| * μ.real Set.univ * (‖a - b‖ / (a.im * b.im)) := by
+    calc ‖a - b‖ = |t| * ‖resolventTransform μ a - resolventTransform μ b‖ := by
+          rw [hab', norm_mul, Complex.norm_real, Real.norm_eq_abs]
+      _ ≤ |t| * (‖a - b‖ / (a.im * b.im) * μ.real Set.univ) := by gcongr
+      _ = _ := by ring
+  rw [mul_div_assoc', le_div_iff₀ (by positivity)] at this
+  nlinarith [mul_lt_mul_of_pos_left h hpos]
+
+variable (μ) in
+open Filter Topology in
+/-- Let `m_μ` be the transform of a finite measure and `t` real. If two functions analytic in the
+upper half-plane agree at every point `z - t m_μ(z)` of the upper half-plane with `z` in the upper
+half-plane, then they agree on the whole upper half-plane, since near `i ∞` the map
+`z ↦ z - t m_μ(z)` is continuous and injective. -/
+theorem eqOn_of_eq_sub_mul_resolventTransform (t : ℝ) {f g : ℂ → ℂ}
+    (hf : AnalyticOnNhd ℂ f {w : ℂ | 0 < w.im}) (hg : AnalyticOnNhd ℂ g {w : ℂ | 0 < w.im})
+    (hfg : ∀ z : ℂ, 0 < z.im → 0 < (z - t * resolventTransform μ z).im →
+      f (z - t * resolventTransform μ z) = g (z - t * resolventTransform μ z)) :
+    Set.EqOn f g {w : ℂ | 0 < w.im} := by
+  set r := |t| * μ.real Set.univ + 1
+  have hr : 0 < r := by positivity
+  have hlt {x y : ℝ} (hx : r < x) (hy : r < y) : |t| * μ.real Set.univ < x * y := by
+    have hM : 0 ≤ |t| * μ.real Set.univ := mul_nonneg (abs_nonneg t) measureReal_nonneg
+    nlinarith [mul_lt_mul'' hx hy hr.le hr.le]
+  have hpos {x : ℂ} (hx : r < x.im) : 0 < (x - t * resolventTransform μ x).im :=
+    im_sub_mul_resolventTransform_pos (hr.trans hx) (sq x.im ▸ hlt hx hx)
+  set z₀ : ℂ := ⟨0, 2 * r⟩
+  have hz₀ : r < z₀.im := show r < 2 * r by linarith
+  have hU : {z : ℂ | r < z.im} ∈ 𝓝 z₀ := (isOpen_im_gt _).mem_nhds hz₀
+  have hcont : ContinuousAt (fun z : ℂ ↦ z - t * resolventTransform μ z) z₀ :=
+    continuousAt_id.sub (continuousAt_const.mul
+      (hasDerivAt_resolventTransform_of_im_ne_zero (hr.trans hz₀).ne').continuousAt)
+  -- The images of a punctured neighbourhood of `z₀` accumulate at the image of `z₀`.
+  have htend : Tendsto (fun z : ℂ ↦ z - t * resolventTransform μ z) (𝓝[≠] z₀)
+      (𝓝[≠] (z₀ - t * resolventTransform μ z₀)) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (hcont.tendsto.mono_left nhdsWithin_le_nhds) ?_
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds hU, self_mem_nhdsWithin] with z hz hne
+    exact fun h ↦ hne (eq_of_sub_mul_resolventTransform_eq (hr.trans hz) (hr.trans hz₀)
+      (hlt hz hz₀) h)
+  have hfreq : ∃ᶠ z in 𝓝[≠] z₀, f (z - t * resolventTransform μ z) =
+      g (z - t * resolventTransform μ z) := by
+    refine Eventually.frequently ?_
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds hU] with z hz
+    exact hfg z (hr.trans hz) (hpos hz)
+  exact hf.eqOn_of_preconnected_of_frequently_eq hg (convex_halfSpace_im_gt 0).isPreconnected
+    (hpos hz₀) (htend.frequently hfreq)
 
 omit [IsFiniteMeasure μ] in
 /-- The resolvent transform of the pushforward by a real affine map is obtained by the

@@ -7,10 +7,15 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+public import Mathlib.Basic.Real.Sign
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
@@ -38,6 +43,9 @@ Interval integrals of elementary functions in closed form or as series, continui
   `c ≥ 0` and `δ ≥ 0`.
 * `TauCeti.integral_add_rpow_le_of_lt_neg_one`: `∫ s in 0..β, (r + s) ^ S ≤ r ^ (S + 1) / -(S + 1)`
   for `0 < r`, `0 ≤ β` and `S < -1`.
+* `TauCeti.integral_lt_abs_inv_sq`: `∫ t in {t | T < |t|}, (t²)⁻¹ = 2 / T` for `T ≥ 0`.
+* `TauCeti.integral_inv_add_abs`: `∫ t in -T..T, (σ + |t|)⁻¹ = 2 log (1 + T / σ)` for `σ > 0` and
+  `T ≥ 0`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
   function bounded by `A h (t' - s)^((α - 4)/2)` is at most `2 / (2 - α) A h^(α/2)` for `α < 2`.
 * `TauCeti.integrable_one_div_sqrt_one_sub_sq` and `TauCeti.integral_one_div_sqrt_one_sub_sq`:
@@ -52,6 +60,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_inv_mul_one_add_mul`:
   `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
   `C ≥ 0`.
+* `TauCeti.integral_log_div_self`: `∫ x in a..b, log x / x = ((log b)² - (log a)²) / 2` on an
+  interval avoiding `0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.norm_integral_cexp_le`, `TauCeti.norm_integral_cexp_le_of_ne_zero`: the integral
@@ -65,6 +75,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
 * `Real.integral_div_sub_sq_add_sq`: the integral of the Poisson kernel `η / ((t - x)² + η²)`
   over an interval is a difference of arctangents.
+* `Real.tendsto_intervalIntegral_upperHalfPlanePoissonKernel`: the limiting mass of the
+  normalized Poisson kernel on an oriented interval, with half weight at each endpoint.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
   `b ≥ 0`.
 * `Complex.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` as the
@@ -354,6 +366,17 @@ theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC
     have := hpos σ hσ
     positivity
 
+/-- The integral of `x ↦ log x / x` over an interval avoiding `0`: an antiderivative is
+`x ↦ (log x)² / 2`. -/
+theorem integral_log_div_self {a b : ℝ} (h : (0 : ℝ) ∉ Set.uIcc a b) :
+    ∫ x in a..b, Real.log x / x = (Real.log b ^ 2 - Real.log a ^ 2) / 2 := by
+  have hne {x : ℝ} (hx : x ∈ Set.uIcc a b) : x ≠ 0 := fun h0 => h (h0 ▸ hx)
+  rw [sub_div]
+  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun x => Real.log x ^ 2 / 2)
+    (fun x hx => ?_) (ContinuousOn.intervalIntegrable ?_)
+  · exact (((Real.hasDerivAt_log (hne hx)).pow 2).div_const 2).congr_deriv (by ring)
+  · exact (Real.continuousOn_log.mono fun x hx => hne hx).div continuousOn_id fun x hx => hne hx
+
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/
 theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
@@ -550,6 +573,55 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
 
+open MeasureTheory Set in
+/-- The integral of `t⁻²` over the tails `|t| > T` of the real line is `2/T`. At `T = 0` the
+integrand is not integrable and both sides are `0`. -/
+theorem integral_lt_abs_inv_sq {T : ℝ} (hT : 0 ≤ T) :
+    ∫ t in {t : ℝ | T < |t|}, (t ^ 2)⁻¹ = 2 / T := by
+  rcases hT.eq_or_lt with rfl | hT
+  · rw [div_zero]
+    refine integral_undef fun h ↦ ?_
+    have hsub : Ioo (0 : ℝ) 1 ⊆ {t : ℝ | 0 < |t|} := fun t ht ↦ abs_pos.mpr ht.1.ne'
+    have h' : IntegrableOn (fun t : ℝ ↦ t ^ (-2 : ℝ)) (Ioo 0 1) :=
+      (IntegrableOn.mono_set h hsub).congr_fun
+        (fun t ht ↦ by rw [Real.rpow_neg ht.1.le, Real.rpow_two]) measurableSet_Ioo
+    have := (intervalIntegral.integrableOn_Ioo_rpow_iff one_pos).1 h'
+    norm_num at this
+  have hS : MeasurableSet {t : ℝ | T < |t|} :=
+    measurableSet_lt measurable_const continuous_abs.measurable
+  have hind : ({t : ℝ | T < |t|}.indicator fun t ↦ (t ^ 2)⁻¹) =
+      fun t ↦ (Ioi T).indicator (fun u ↦ (u ^ 2)⁻¹) |t| := by
+    ext t
+    by_cases h : T < |t| <;> simp [indicator, h, sq_abs]
+  have hpow : ∫ u in Ioi T, (u ^ 2)⁻¹ = ∫ u in Ioi T, u ^ (-2 : ℝ) :=
+    setIntegral_congr_fun measurableSet_Ioi fun u (hu : T < u) ↦ by
+      rw [Real.rpow_neg (hT.trans hu).le, Real.rpow_two]
+  rw [← integral_indicator hS, hind, integral_comp_abs, setIntegral_indicator measurableSet_Ioi,
+    Ioi_inter_Ioi, max_eq_right hT.le, hpow, integral_Ioi_rpow_of_lt (by norm_num) hT]
+  norm_num [Real.rpow_neg_one]
+  ring
+
+open Set in
+/-- The integral of `(σ + |t|)⁻¹` over `[-T, T]` is `2 log(1 + T/σ)`. -/
+theorem integral_inv_add_abs {σ T : ℝ} (hσ : 0 < σ) (hT : 0 ≤ T) :
+    ∫ t in (-T)..T, (σ + |t|)⁻¹ = 2 * Real.log (1 + T / σ) := by
+  have hc : Continuous fun t : ℝ ↦ (σ + |t|)⁻¹ :=
+    (continuous_const.add continuous_abs).inv₀ fun t ↦
+      (add_pos_of_pos_of_nonneg hσ (abs_nonneg t)).ne'
+  have hpos : ∫ t in (0 : ℝ)..T, (σ + |t|)⁻¹ = Real.log (1 + T / σ) := by
+    rw [intervalIntegral.integral_congr (g := fun t ↦ (σ + t)⁻¹) fun t ht ↦ by
+        rw [uIcc_of_le hT] at ht; simp [abs_of_nonneg ht.1],
+      intervalIntegral.integral_comp_add_left (fun t ↦ t⁻¹) σ, add_zero,
+      integral_inv_of_pos hσ (by linarith)]
+    congr 1
+    field_simp
+  have hneg : ∫ t in (-T)..0, (σ + |t|)⁻¹ = ∫ t in (0 : ℝ)..T, (σ + |t|)⁻¹ := by
+    simpa [abs_neg] using
+      (intervalIntegral.integral_comp_neg (a := 0) (b := T) fun t ↦ (σ + |t|)⁻¹).symm
+  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hc.intervalIntegrable _ _)
+    (hc.intervalIntegrable _ _), hneg, hpos]
+  ring
+
 end TauCeti
 
 namespace Real
@@ -561,6 +633,17 @@ theorem integral_div_sub_sq_add_sq (a b t η : ℝ) :
   simp_rw [← neg_sub _ t, neg_sq, add_comm _ (η ^ 2)]
   rw [intervalIntegral.integral_comp_sub_right (fun x => η / (η ^ 2 + x ^ 2)),
     integral_div_sq_add_sq]
+
+open Filter Topology in
+/-- As its height tends to zero from above, the normalized upper-half-plane Poisson kernel
+has limiting mass `(sign (b - x) - sign (a - x)) / 2` on the oriented interval from `a` to `b`. -/
+theorem tendsto_intervalIntegral_upperHalfPlanePoissonKernel (a b x : ℝ) :
+    Tendsto (fun η : ℝ ↦ π⁻¹ * ∫ t in a..b, η / ((x - t) ^ 2 + η ^ 2))
+      (𝓝[>] 0) (𝓝 ((sign (b - x) - sign (a - x)) / 2)) := by
+  simp_rw [integral_div_sub_sq_add_sq]
+  convert ((tendsto_arctan_div_nhdsGT_zero (b - x)).sub
+    (tendsto_arctan_div_nhdsGT_zero (a - x))).const_mul π⁻¹ using 2
+  field_simp
 
 open Set intervalIntegral in
 /-- The reciprocal-square kernel has an elementary integral on each nonnegative interval:

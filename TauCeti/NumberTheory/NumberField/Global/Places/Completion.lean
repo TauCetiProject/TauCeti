@@ -37,11 +37,15 @@ abbrev Completion : Place K → Type _
   | .inl v => v.adicCompletion K
   | .inr w => w.Completion
 
-noncomputable instance (v : Place K) : Field v.Completion := by
-  cases v <;> exact inferInstance
+-- Defined by pattern matching, so that at `.inl v` and `.inr w` the instances reduce directly to
+-- those of the underlying completions, without transport along an equation.
+noncomputable instance instFieldCompletion : (v : Place K) → Field v.Completion
+  | .inl v => inferInstanceAs (Field (v.adicCompletion K))
+  | .inr w => inferInstanceAs (Field w.Completion)
 
-noncomputable instance (v : Place K) : Algebra K v.Completion := by
-  cases v <;> exact inferInstance
+noncomputable instance instAlgebraCompletion : (v : Place K) → Algebra K v.Completion
+  | .inl v => inferInstanceAs (Algebra K (v.adicCompletion K))
+  | .inr w => inferInstanceAs (Algebra K w.Completion)
 
 end TauCeti.GlobalNumberFields.Place
 

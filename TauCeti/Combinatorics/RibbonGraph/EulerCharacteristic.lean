@@ -11,7 +11,7 @@ public import TauCeti.Combinatorics.RibbonGraph.Classification
 # Euler characteristic of a bipartite ribbon graph
 
 The Euler characteristic agrees with that of any edge-numbered permutation triple. This
-comparison gives its parity and the connected upper bound.
+comparison gives its parity and the upper bound by twice the number of connected components.
 -/
 
 public section
@@ -42,6 +42,15 @@ theorem IsConnected.eulerChar_le_two (hΓ : Γ.IsConnected) : Γ.eulerChar ≤ 2
   let ν := Fintype.equivFin Γ.E
   rw [← Γ.eulerChar_toPermutationTriple ν]
   exact (Γ.isConnected_toPermutationTriple ν).mpr hΓ |>.eulerChar_le_two
+
+/-- The Euler characteristic of a finite bipartite ribbon graph is at most twice the number of
+its connected components. -/
+theorem eulerChar_le_two_mul_card_connectedComponent :
+    Γ.eulerChar ≤ 2 * Fintype.card Γ.ConnectedComponent := by
+  let ν := Fintype.equivFin Γ.E
+  rw [← Γ.eulerChar_toPermutationTriple ν, ← Nat.card_eq_fintype_card (α := Γ.ConnectedComponent),
+    ← Γ.card_monodromyOrbits_toPermutationTriple ν]
+  exact (Γ.toPermutationTriple ν).eulerChar_le_two_mul_card_monodromyOrbits
 
 end BipartiteRibbonGraph
 

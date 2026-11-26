@@ -73,7 +73,7 @@ theorem hessian_self_nonpos_of_isLocalMax (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     hessian I f x v v ≤ 0 := by
   have h : 0 ≤ hessian I (-f) x v v :=
     hessian_self_nonneg_of_isLocalMin hf.neg hx hmax.neg v
-  rw [hessian_neg_of_contMDiffAt I hf] at h
+  rw [I.hessian_neg_of_mdifferentiableAt_mgradient (mdifferentiableAt_mgradient hf)] at h
   exact neg_nonneg.mp h
 
 end TauCeti.Manifold

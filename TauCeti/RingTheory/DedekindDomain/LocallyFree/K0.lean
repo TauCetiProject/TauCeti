@@ -133,9 +133,7 @@ theorem rankSteinitz_idealClassHom (c : Additive (ClassGroup A)) :
     rankSteinitz A (idealClassHom A c) = (0, c) := by
   obtain ⟨I, hI⟩ := ClassGroup.mk0_surjective c.toMul
   have hrank : Module.finrank A (I : Ideal A) = 1 :=
-    Module.finrank_eq_card_of_linearEquiv_pi (J := fun _ : Unit ↦ (I : Ideal A))
-      (fun _ ↦ mem_nonZeroDivisors_iff_ne_zero.mp I.property)
-      (LinearEquiv.piUnique A fun _ : Unit ↦ (I : Ideal A)).symm
+    Ideal.finrank_eq_one_of_ne_bot (mem_nonZeroDivisors_iff_ne_zero.mp I.property)
   rw [← ofMul_toMul c, ← hI]
   simp [classOf_def, hrank]
 
@@ -217,7 +215,7 @@ theorem rankSteinitz_map_extendScalars [IsDedekindDomain B] [Module.IsTorsionFre
         Additive.ofMul (ClassGroup.extendedHom A B (rankSteinitz A x).2.toMul)) := by
   conv_lhs => rw [← (rankSteinitzEquiv A).symm_apply_apply x]
   simp only [rankSteinitzEquiv_symm_apply, rankSteinitzEquiv_apply, map_add, map_zsmul,
-    SplitK0.map_extendScalars_of_finiteProjectiveModulesRegular,
+    SplitK0.map_of, SplitK0.of_extendScalars_obj_finiteProjectiveModulesRegular,
     map_extendScalars_idealClassHom, rankSteinitz_of_finiteProjectiveModulesRegular,
     rankSteinitz_idealClassHom]
   ext <;> simp

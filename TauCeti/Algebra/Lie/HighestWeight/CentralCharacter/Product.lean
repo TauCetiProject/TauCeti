@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Isomorphism
-public import TauCeti.Algebra.Lie.UniversalEnveloping.ProductCenter
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Product.Center
 
 /-!
 # The Harish-Chandra isomorphism for a product with an abelian factor

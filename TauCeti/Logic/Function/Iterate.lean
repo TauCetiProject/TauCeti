@@ -11,7 +11,9 @@ public import Mathlib.Logic.Function.Iterate
 # Iterates of self-maps
 
 This file records `Function.iterate_two`, which writes the second iterate `f^[2]` as `f ∘ f`, and a
-criterion for simulating the iterates of one function by another.
+criterion for simulating the iterates of one function by another, and
+`Function.LeftInverse.iterate_iterate_of_le`, which cancels `j` steps of a left inverse against
+`n ≥ j` steps of the map it inverts.
 
 Read `f : α → α` and `g : β → β` as the one-step transitions of two discrete-time systems and
 `Φ : α → β` as a translation of the states of the first into states of the second. Say that `g`
@@ -29,6 +31,8 @@ single steps have to be inspected, and the lengths of the stretches never have t
 * `TauCeti.exists_iterate_of_forall_exists_iterate`: a simulation of single steps is a simulation
   of iterates.
 * `Function.iterate_two`: the second iterate of a self-map is its composite with itself.
+* `Function.LeftInverse.iterate_iterate_of_le`: `f^[j] (g^[n] x) = g^[n - j] x` for `j ≤ n` when
+  `f` is a left inverse of `g`.
 -/
 
 public section
@@ -54,5 +58,11 @@ namespace Function
 /-- The second iterate of a self-map is its composite with itself. -/
 theorem iterate_two {α : Type*} (f : α → α) : f^[2] = f ∘ f := by
   rw [iterate_succ, iterate_one]
+
+/-- If `f` is a left inverse of `g`, then `j` steps of `f` undo `j` of the `n ≥ j` steps of `g`. -/
+theorem LeftInverse.iterate_iterate_of_le {α : Type*} {f g : α → α} (h : LeftInverse f g)
+    {j n : ℕ} (hj : j ≤ n) (x : α) : f^[j] (g^[n] x) = g^[n - j] x := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hj
+  rw [Nat.add_sub_cancel_left, iterate_add_apply, h.iterate j]
 
 end Function

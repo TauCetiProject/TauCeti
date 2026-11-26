@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
-public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
