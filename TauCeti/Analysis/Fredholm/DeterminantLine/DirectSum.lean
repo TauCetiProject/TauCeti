@@ -222,14 +222,8 @@ theorem detLineStabilizationEquiv_prodMap
       finrank 𝕜 (F ⧸ D₁.range) + finrank 𝕜 (F' ⧸ D₁'.range) := by
     rw [← Module.finrank_prod]
     exact eD.finrank_eq.symm
-  have hΛ : finrank 𝕜 Λ = finrank 𝕜 (parameterProj D₁ D₂).range + finrank 𝕜 (F ⧸ D₁.range) := by
-    rw [← finrank_quotient_range_parameterProj D₁ D₂ h, add_comm]
-    exact (Submodule.finrank_quotient_add_finrank _).symm
-  have hΛ' : finrank 𝕜 Λ' =
-      finrank 𝕜 (parameterProj D₁' D₂').range + finrank 𝕜 (F' ⧸ D₁'.range) := by
-    rw [← finrank_quotient_range_parameterProj D₁' D₂' h', add_comm]
-    exact (Submodule.finrank_quotient_add_finrank _).symm
-  rw [hc, Module.finrank_prod, hΛ, hΛ']
+  rw [hc, Module.finrank_prod, ← finrank_range_parameterProj_add_finrank_quotient_range D₁ D₂ h,
+    ← finrank_range_parameterProj_add_finrank_quotient_range D₁' D₂' h']
   simp only [← pow_add]
   rw [← TauCeti.neg_one_pow_add_two_mul _ (finrank 𝕜 (F ⧸ D₁.range) * finrank 𝕜 D₁'.ker)]
   conv_rhs => rw [← TauCeti.neg_one_pow_add_two_mul _

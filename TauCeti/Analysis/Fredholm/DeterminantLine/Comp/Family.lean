@@ -57,28 +57,6 @@ variable {E F P X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteS
   [NormedSpace ℝ P] [CompleteSpace P] [TopologicalSpace X] {f : X → E →L[ℝ] F}
   {g : X → F →L[ℝ] P} {s : Set X} {x₀ : X}
 
-omit [CompleteSpace E] [CompleteSpace F] in
-/-- The composite kernel coordinate depends continuously on the first operator: it is a constant
-plus `(x, l) ↦ (0, q₂ (f x, 0))`. -/
-private theorem continuousWithinAt_compKerCoord {Λ₁ Λ₂ G₁ G₂ : Type*} [NormedAddCommGroup Λ₁]
-    [NormedSpace ℝ Λ₁] [NormedAddCommGroup Λ₂] [NormedSpace ℝ Λ₂] [NormedAddCommGroup G₁]
-    [NormedSpace ℝ G₁] [NormedAddCommGroup G₂] [NormedSpace ℝ G₂] {D₁ : Λ₁ →L[ℝ] F}
-    {q₁ : E × Λ₁ →L[ℝ] G₁} {q₂ : F × Λ₂ →L[ℝ] G₂} (hf : ContinuousWithinAt f s x₀) :
-    ContinuousWithinAt (fun x ↦ compKerCoord (f x) D₁ q₁ q₂) s x₀ := by
-  have heq : (fun x ↦ compKerCoord (f x) D₁ q₁ q₂) = fun x ↦ compKerCoord 0 D₁ q₁ q₂ +
-      (inr ℝ G₁ G₂ ∘L q₂ ∘L inl ℝ F Λ₂ ∘L f x) ∘L fst ℝ E (Λ₁ × Λ₂) := by
-    funext x
-    refine ContinuousLinearMap.ext fun ⟨y, l⟩ ↦ Prod.ext ?_ ?_
-    · simp
-    · simp only [compKerCoord_apply, add_apply, comp_apply, inl_apply, inr_apply, Prod.snd_add,
-        zero_apply, zero_add]
-      rw [← map_add, Prod.mk_add_mk, add_comm, add_zero]
-      rfl
-  rw [heq]
-  exact continuousWithinAt_const.add ((continuousWithinAt_const.clm_comp
-    (continuousWithinAt_const.clm_comp (continuousWithinAt_const.clm_comp hf))).clm_comp
-      continuousWithinAt_const)
-
 variable {v : ∀ x, (f x : E →ₗ[ℝ] F).detLine} {w : ∀ x, (g x : F →ₗ[ℝ] P).detLine}
   {u : ∀ x, ((g x).comp (f x) : E →ₗ[ℝ] P).detLine}
 

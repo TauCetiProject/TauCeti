@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.Determinant.Comp.Basic
 import TauCeti.Algebra.Ring.Parity
 import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.LinearAlgebra.LinearIndependent.Fin
-import TauCeti.LinearAlgebra.TensorProduct.Cyclic
 import TauCeti.RingTheory.PicardGroup.Contraction
 
 /-!
@@ -53,6 +52,8 @@ family of operators.
 
 * `ContinuousLinearMap.IsInvertible.prod_coprod_compKerCoord`: the composite of kernel charts is a
   kernel chart.
+* `ContinuousLinearMap.continuousWithinAt_compKerCoord`: the composite coordinate depends
+  continuously on the first operator.
 * `ContinuousLinearMap.detLineChartEquiv_detLineCompEquiv_symm`: the composite chart reads the
   composition law as the product of the readings, up to sign.
 * `ContinuousLinearMap.detLineChartEquiv_neg_one_pow_smul_comp`: after normalization the sign
@@ -129,6 +130,34 @@ theorem IsInvertible.prod_coprod_compKerCoord (h₁ : ((f.coprod D₁).prod q₁
   simp only [ContinuousLinearEquiv.coe_coe] at h₂
   simp [h₁, h₂, map_add, add_assoc]
 
+/-! ### The kernel and cokernel of `g ∘L f` as those of `↑g ∘ₗ ↑f`
+
+The kernel–cokernel sequence of `LinearMap.detLineCompEquiv` is stated for the composite
+`↑g ∘ₗ ↑f` of linear maps, the stabilizations for `g ∘L f`. -/
+
+omit [ContinuousAdd F] [ContinuousAdd P] in
+variable (f g) in
+/-- The kernel of `g ∘L f` is that of the composite `↑g ∘ₗ ↑f` of linear maps. -/
+private theorem ker_comp_eq :
+    (g ∘L f).ker = LinearMap.ker ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F)) := by
+  rw [toLinearMap_comp]
+
+omit [ContinuousAdd F] [ContinuousAdd P] in
+variable (f g) in
+/-- The range of `g ∘L f` is that of the composite `↑g ∘ₗ ↑f` of linear maps. -/
+private theorem range_comp_eq :
+    (g ∘L f).range = LinearMap.range ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F)) := by
+  rw [toLinearMap_comp]
+
+omit [ContinuousAdd F] in
+/-- `ContinuousLinearMap.kerCoprodHom_apply` for the stabilization of `g ∘L f`, on a family `v` of
+the kernel of `↑g ∘ₗ ↑f`. -/
+private theorem coe_kerCoprodHom_comp_comp_apply {ι Λ : Type*} [AddCommGroup Λ] [Module 𝕜 Λ]
+    [TopologicalSpace Λ] (D : Λ →L[𝕜] P)
+    (v : ι → LinearMap.ker ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) (i : ι) :
+    ((kerCoprodHom (g ∘L f) D ∘ v) i : E × Λ) = ((v i : E), 0) :=
+  kerCoprodHom_apply (g ∘L f) D (v i)
+
 section Core
 
 /-! ### Adapted families -/
@@ -200,23 +229,6 @@ private theorem nonempty_compData (hf : Function.Surjective (f.coprod D₁))
       have h := hew i
       rw [ContinuousLinearMap.coe_coe] at h
       rw [h, sub_add_cancel], fun j ↦ by rw [← he₂ j, coprod_apply]⟩⟩
-
-/-- The dimension counts of a surjective stabilization `T.coprod D`: the parameters split into the
-range of the parameter projection and a copy of the cokernel of `T`, and the stabilized kernel
-into a copy of the kernel of `T` and the range of the parameter projection. -/
-private theorem finrank_stabilization {E' Λ F' : Type*} [AddCommGroup E'] [Module 𝕜 E']
-    [TopologicalSpace E'] [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [AddCommGroup F']
-    [Module 𝕜 F'] [TopologicalSpace F'] [ContinuousAdd F'] {T : E' →L[𝕜] F'} {D : Λ →L[𝕜] F'}
-    [FiniteDimensional 𝕜 T.ker] [FiniteDimensional 𝕜 Λ] (h : Function.Surjective (T.coprod D)) :
-    finrank 𝕜 Λ = finrank 𝕜 (parameterProj T D).range + finrank 𝕜 (F' ⧸ T.range) ∧
-      finrank 𝕜 (T.coprod D).ker = finrank 𝕜 T.ker + finrank 𝕜 (parameterProj T D).range := by
-  refine ⟨?_, ?_⟩
-  · rw [← finrank_quotient_range_parameterProj T D h, add_comm]
-    exact (Submodule.finrank_quotient_add_finrank _).symm
-  · have h₁ := (parameterProj T D : (T.coprod D).ker →ₗ[𝕜] Λ).finrank_range_add_finrank_ker
-    have h₂ := finrank_ker_parameterProj T D
-    change finrank 𝕜 (parameterProj T D).range + finrank 𝕜 (parameterProj T D).ker = _ at h₁
-    omega
 
 omit [FiniteDimensional 𝕜 Λ₂] [FiniteDimensional 𝕜 g.ker] [FiniteDimensional 𝕜 (P ⧸ g.range)] in
 /-- The normalized stabilization isomorphism of `f` on the exterior product of a basis `u` of
@@ -348,9 +360,9 @@ variable (f g) in
 private theorem finrank_ker_comp_eq [FiniteDimensional 𝕜 (g ∘L f).ker] :
     finrank 𝕜 (g ∘L f).ker = finrank 𝕜 f.ker +
       finrank 𝕜 (LinearMap.range ((f : E →ₗ[𝕜] F).kerCompToKer (g : F →ₗ[𝕜] P))) :=
-  have : FiniteDimensional 𝕜 (LinearMap.ker ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) :=
-    ‹FiniteDimensional 𝕜 (g ∘L f).ker›
-  (f : E →ₗ[𝕜] F).finrank_ker_comp_eq_finrank_ker_add (g : F →ₗ[𝕜] P)
+  have := (LinearEquiv.ofEq _ _ (ker_comp_eq f g)).finiteDimensional
+  (LinearEquiv.ofEq _ _ (ker_comp_eq f g)).finrank_eq.trans
+    ((f : E →ₗ[𝕜] F).finrank_ker_comp_eq_finrank_ker_add (g : F →ₗ[𝕜] P))
 
 omit [FiniteDimensional 𝕜 Λ₁] [FiniteDimensional 𝕜 Λ₂] [FiniteDimensional 𝕜 f.ker]
   [FiniteDimensional 𝕜 g.ker] [FiniteDimensional 𝕜 (F ⧸ f.range)]
@@ -362,18 +374,19 @@ private theorem finrank_quotient_range_comp_eq [FiniteDimensional 𝕜 (P ⧸ (g
     finrank 𝕜 (P ⧸ (g ∘L f).range) =
       finrank 𝕜 (LinearMap.range ((f : E →ₗ[𝕜] F).cokerToCokerComp (g : F →ₗ[𝕜] P))) +
         finrank 𝕜 (P ⧸ g.range) :=
-  have : FiniteDimensional 𝕜 (P ⧸ LinearMap.range ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) :=
-    ‹FiniteDimensional 𝕜 (P ⧸ (g ∘L f).range)›
-  (f : E →ₗ[𝕜] F).finrank_quotient_range_comp_eq_finrank_range_cokerToCokerComp_add
-    (g : F →ₗ[𝕜] P)
+  have := (Submodule.quotEquivOfEq _ _ (range_comp_eq f g)).finiteDimensional
+  (Submodule.quotEquivOfEq _ _ (range_comp_eq f g)).finrank_eq.trans
+    ((f : E →ₗ[𝕜] F).finrank_quotient_range_comp_eq_finrank_range_cokerToCokerComp_add
+      (g : F →ₗ[𝕜] P))
 
-omit [FiniteDimensional 𝕜 (P ⧸ g.range)] in
+omit [FiniteDimensional 𝕜 f.ker] [FiniteDimensional 𝕜 g.ker]
+  [FiniteDimensional 𝕜 (P ⧸ g.range)] in
 /-- The parameters of the composite stabilization spanning the range of its parameter projection
 are those of `f`, the lifts `zw` of the classes of `w`, and those of `g`. -/
 private theorem finrank_range_parameterProj_comp (hf : Function.Surjective (f.coprod D₁))
     (hg : Function.Surjective (g.coprod D₂))
     (hh : Function.Surjective ((g ∘L f).coprod ((g ∘L D₁).coprod D₂)))
-    [FiniteDimensional 𝕜 (g ∘L f).ker] [FiniteDimensional 𝕜 (P ⧸ (g ∘L f).range)] :
+    [FiniteDimensional 𝕜 (P ⧸ (g ∘L f).range)] :
     finrank 𝕜 (parameterProj (g ∘L f) ((g ∘L D₁).coprod D₂)).range =
       finrank 𝕜 (parameterProj f D₁).range +
         (finrank 𝕜 (LinearMap.range ((f : E →ₗ[𝕜] F).kerToCoker (g : F →ₗ[𝕜] P))) +
@@ -381,9 +394,9 @@ private theorem finrank_range_parameterProj_comp (hf : Function.Surjective (f.co
   have hb := (f : E →ₗ[𝕜] F).finrank_quotient_range_eq_finrank_range_kerToCoker_add
     (g : F →ₗ[𝕜] P)
   have hd := finrank_quotient_range_comp_eq f g
-  obtain ⟨hl₁, -⟩ := finrank_stabilization hf
-  obtain ⟨hl₂, -⟩ := finrank_stabilization hg
-  obtain ⟨hl, -⟩ := finrank_stabilization hh
+  have hl₁ := finrank_range_parameterProj_add_finrank_quotient_range f D₁ hf
+  have hl₂ := finrank_range_parameterProj_add_finrank_quotient_range g D₂ hg
+  have hl := finrank_range_parameterProj_add_finrank_quotient_range _ _ hh
   rw [Module.finrank_prod] at hl
   omega
 
@@ -486,17 +499,21 @@ private theorem apply_ιMulti_parameterToCoker_comp (d : CompData f D₁ g D₂)
     ξ (exteriorPower.ιMulti 𝕜 _ (parameterToCoker (g ∘L f) ((g ∘L D₁).coprod D₂) ∘
       (Fin.append (LinearMap.inl 𝕜 Λ₁ Λ₂ ∘ d.zx) (LinearMap.inr 𝕜 Λ₁ Λ₂ ∘ d.z₂) ∘
         Fin.cast hd))) = 1 := by
+  -- The classes are taken in `P ⧸ (g ∘L f).range` on the left and in `P ⧸ range (↑g ∘ₗ ↑f)` on
+  -- the right. These spellings of the cokernel of `g ∘ f` agree (`range_comp_eq`), but they occur
+  -- in the types of the terms, where they cannot be rewritten; each step closes with `rfl` once
+  -- the two sides differ only in this spelling.
   have hx : parameterToCoker (g ∘L f) ((g ∘L D₁).coprod D₂) ∘ LinearMap.inl 𝕜 Λ₁ Λ₂ ∘ d.zx =
       (f : E →ₗ[𝕜] F).cokerToCokerComp (g : F →ₗ[𝕜] P) ∘ d.x := funext fun i ↦ by
     simp only [Function.comp_apply]
     rw [← d.hzx i, parameterToCoker_apply]
     simp only [LinearMap.inl_apply, coprod_apply, comp_apply, map_zero, add_zero,
-      parameterToCoker_apply, Submodule.mkQ_apply, LinearMap.cokerToCokerComp_mk]
+      parameterToCoker_apply, Submodule.mkQ_apply, LinearMap.cokerToCokerComp_mk, coe_coe]
     rfl
   have hy : parameterToCoker (g ∘L f) ((g ∘L D₁).coprod D₂) ∘ LinearMap.inr 𝕜 Λ₁ Λ₂ ∘ d.z₂ =
       d.y := funext fun j ↦ by
     simp only [Function.comp_apply, parameterToCoker_apply, LinearMap.inr_apply, coprod_apply,
-      map_zero, zero_add, CompData.y]
+      map_zero, zero_add, CompData.y, Submodule.mkQ_apply]
     rfl
   convert hξ using 2
   refine Subtype.ext ?_
@@ -504,7 +521,7 @@ private theorem apply_ιMulti_parameterToCoker_comp (d : CompData f D₁ g D₂)
     TauCeti.ExteriorAlgebra.ιMulti_comp_cast, hx, hy]
   rfl
 
-omit [FiniteDimensional 𝕜 (P ⧸ g.range)] in
+omit [FiniteDimensional 𝕜 g.ker] [FiniteDimensional 𝕜 (P ⧸ g.range)] in
 /-- The normalized stabilization isomorphism of `g ∘ f` on the exterior product `β` of the vectors
 `(u, 0)`, `ι₁`, `(v, 0)`, `σw` and `σv₂` of its stabilized kernel, tensored with `φ`. Listing the
 kernel of `g ∘ f` first exchanges `ι₁` with `v`, and listing the classes in `coker (g ∘ f)` last
@@ -642,7 +659,8 @@ private theorem CompData.linearIndependent_κ₂ (d : CompData f D₁ g D₂) :
       simp only [Fin.append_left, Fin.append_right, Function.comp_apply] <;>
       exact (exact_kerCoprodHom_parameterProj g D₂).apply_apply_eq_zero _
 
-omit [FiniteDimensional 𝕜 (P ⧸ g.range)] in
+omit [FiniteDimensional 𝕜 f.ker] [FiniteDimensional 𝕜 g.ker]
+  [FiniteDimensional 𝕜 (P ⧸ g.range)] in
 /-- The parameters of the composite stabilization: the exterior product `c₁` of the parameters
 `p₁ ∘ v₁`, `zw`, `zx` of `f`, the exterior product `c₂` of the parameters `p₂ ∘ v₂`, `z₂` of `g`,
 and their product, which lists the parameters of `g ∘ f`, lifting those of `g`. -/
@@ -659,8 +677,8 @@ private theorem CompData.exists_parameters (d : CompData f D₁ g D₂)
           (Fin.append d.lift₂ (LinearMap.inr 𝕜 Λ₁ Λ₂ ∘ d.z₂))) := by
   have hb := (f : E →ₗ[𝕜] F).finrank_quotient_range_eq_finrank_range_kerToCoker_add
     (g : F →ₗ[𝕜] P)
-  obtain ⟨hl₁, -⟩ := finrank_stabilization hf
-  obtain ⟨hl₂, -⟩ := finrank_stabilization hg
+  have hl₁ := (finrank_range_parameterProj_add_finrank_quotient_range f D₁ hf).symm
+  have hl₂ := (finrank_range_parameterProj_add_finrank_quotient_range g D₂ hg).symm
   have hl₁' : finrank 𝕜 Λ₁ = finrank 𝕜 (parameterProj f D₁).range +
       (finrank 𝕜 (LinearMap.range ((f : E →ₗ[𝕜] F).kerToCoker (g : F →ₗ[𝕜] P))) +
         finrank 𝕜 (LinearMap.range ((f : E →ₗ[𝕜] F).cokerToCokerComp (g : F →ₗ[𝕜] P)))) := by
@@ -723,10 +741,8 @@ private theorem exists_comp_stab (d : CompData f D₁ g D₂) (hf : Function.Sur
             finrank 𝕜 (F ⧸ f.range) * finrank 𝕜 Λ₁ + finrank 𝕜 (P ⧸ g.range) * finrank 𝕜 Λ₂) •
             (detLineStabilizationEquiv f D₁ hf (κ₁ ⊗ₜ φ₁) ⊗ₜ
               detLineStabilizationEquiv g D₂ hg (κ₂ ⊗ₜ φ₂)) := by
-  have : FiniteDimensional 𝕜 (LinearMap.ker ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) :=
-    ‹FiniteDimensional 𝕜 (g ∘L f).ker›
-  have : FiniteDimensional 𝕜 (P ⧸ LinearMap.range ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) :=
-    ‹FiniteDimensional 𝕜 (P ⧸ (g ∘L f).range)›
+  have := (LinearEquiv.ofEq _ _ (ker_comp_eq f g)).finiteDimensional
+  have := (Submodule.quotEquivOfEq _ _ (range_comp_eq f g)).finiteDimensional
   -- Dimension counts.
   have hk := finrank_ker_comp_eq f g
   have hd := finrank_quotient_range_comp_eq f g
@@ -734,9 +750,9 @@ private theorem exists_comp_stab (d : CompData f D₁ g D₂) (hf : Function.Sur
   have hc := (f : E →ₗ[𝕜] F).finrank_ker_eq_finrank_range_kerCompToKer_add (g : F →ₗ[𝕜] P)
   have hb := (f : E →ₗ[𝕜] F).finrank_quotient_range_eq_finrank_range_kerToCoker_add
     (g : F →ₗ[𝕜] P)
-  obtain ⟨-, hK₁⟩ := finrank_stabilization hf
-  obtain ⟨-, hK₂⟩ := finrank_stabilization hg
-  obtain ⟨-, hK⟩ := finrank_stabilization hh
+  have hK₁ := finrank_ker_add_finrank_range_parameterProj f D₁
+  have hK₂ := finrank_ker_add_finrank_range_parameterProj g D₂
+  have hK := finrank_ker_add_finrank_range_parameterProj (g ∘L f) ((g ∘L D₁).coprod D₂)
   -- The exterior products spanning the three stabilized kernels.
   obtain ⟨κ₁, η₁, hκ₁, hη₁⟩ :=
     TauCeti.exists_detLine_coe_eq_ιMulti_and_apply_eq_one (by omega) d.linearIndependent_κ₁
@@ -753,8 +769,11 @@ private theorem exists_comp_stab (d : CompData f D₁ g D₂) (hf : Function.Sur
   obtain ⟨α, hα⟩ := TauCeti.exists_detLine_coe_eq_ιMulti (R := 𝕜) (V := (g ∘L f).ker) hk
     (Fin.append (Submodule.inclusion (LinearMap.ker_le_ker_comp (f : E →ₗ[𝕜] F)
       (g : F →ₗ[𝕜] P)) ∘ Module.finBasis 𝕜 f.ker) d.v)
+  -- `ε` and `ξ` are taken in the cokernel of `↑g ∘ₗ ↑f`, as in `LinearMap.detLineCompEquiv_tmul`.
   obtain ⟨ε, ξ, hε, hξ⟩ := TauCeti.exists_detLine_coe_eq_ιMulti_and_apply_eq_one
-    (W := P ⧸ (g ∘L f).range) hd d.linearIndependent_cokerToCokerComp_append
+    (W := P ⧸ LinearMap.range ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F)))
+    ((Submodule.quotEquivOfEq _ _ (range_comp_eq f g)).finrank_eq.symm.trans hd)
+    d.linearIndependent_cokerToCokerComp_append
   obtain ⟨δ, ψ, hδ, hψ⟩ := TauCeti.exists_detLine_coe_eq_ιMulti_and_apply_eq_one
     (W := F ⧸ f.range) hb d.linearIndependent_kerToCoker_append
   obtain ⟨γg, hγg⟩ := TauCeti.exists_detLine_coe_eq_ιMulti (R := 𝕜) (V := g.ker) hc
@@ -769,10 +788,7 @@ private theorem exists_comp_stab (d : CompData f D₁ g D₂) (hf : Function.Sur
     ((LinearEquiv.map_smul _ _ _).trans ((congrArg (_ • ·) (LinearMap.detLineCompEquiv_tmul
       (f : E →ₗ[𝕜] F) (g : F →ₗ[𝕜] P) _ d.v d.w d.x d.y hα hγg hδ hε ξ hψ
       (by rw [d.factor_comp_y]; exact hχ))).trans ?_))
-  -- `ξ ε` appears with the cokernel of `g ∘ f` spelled through the composite of linear maps, equal
-  -- to that of `g ∘L f` only up to unfolding the coercion, hence `erw`.
-  erw [hξ]
-  rw [one_smul, stab_left d hf hκ₁ hc₁ hδ hψ φ₁, stab_right d hg hκ₂ hc₂ hγg hχ φ₂,
+  rw [hξ, one_smul, stab_left d hf hκ₁ hc₁ hδ hψ φ₁, stab_right d hg hκ₂ hc₂ hγg hχ φ₂,
     TauCeti.detLineDualProdEquiv_tmul_apply, ← TensorProduct.smul_tmul', TensorProduct.tmul_smul,
     smul_smul, smul_smul]
   congr 1
@@ -800,18 +816,12 @@ private theorem snd_detLineCongr_compKerCoord (d : CompData f D₁ g D₂)
       (kerEquivOfProd _ q₂ h₂).toLinearEquiv.symm.detLineCongr κ₂ := by
   set e := (kerEquivOfProd _ _ (h₁.prod_coprod_compKerCoord h₂)).toLinearEquiv.symm with he
   set e₂ := (kerEquivOfProd _ q₂ h₂).toLinearEquiv.symm with he₂
-  -- `kerCoprodHom_apply` for the kernel of `g ∘ f` spelled through the composite of linear maps;
-  -- the two spellings are only equal up to unfolding the coercion of `g ∘L f`, so it is used with
-  -- `erw`.
-  have hk (x : LinearMap.ker ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) :
-      (kerCoprodHom (g ∘L f) ((g ∘L D₁).coprod D₂) x : E × (Λ₁ × Λ₂)) = ((x : E), 0) :=
-    kerCoprodHom_apply (g ∘L f) ((g ∘L D₁).coprod D₂) x
   have hb₃ : LinearMap.snd 𝕜 G₁ G₂ ∘ e ∘ (kerCoprodHom (g ∘L f) ((g ∘L D₁).coprod D₂) ∘ d.v) =
       e₂ ∘ (kerCoprodHom g D₂ ∘ (f : E →ₗ[𝕜] F).kerCompToKer (g : F →ₗ[𝕜] P) ∘ d.v) := by
     funext i
     simp only [Function.comp_apply, he, he₂, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
       kerEquivOfProd_symm_apply]
-    erw [hk]
+    rw [coe_kerCoprodHom_comp_comp_apply]
     simp
   have hb₄ : LinearMap.snd 𝕜 G₁ G₂ ∘ e ∘ d.σw = e₂ ∘ (kerCoprodHom g D₂ ∘ d.w) := by
     funext i
@@ -855,22 +865,15 @@ private theorem detLineCongr_compKerCoord (d : CompData f D₁ g D₂) [FiniteDi
   set e₁ := (kerEquivOfProd _ q₁ h₁).toLinearEquiv.symm with he₁
   set e₂ := (kerEquivOfProd _ q₂ h₂).toLinearEquiv.symm with he₂
   have hc := (f : E →ₗ[𝕜] F).finrank_ker_eq_finrank_range_kerCompToKer_add (g : F →ₗ[𝕜] P)
-  obtain ⟨-, hK₁⟩ := finrank_stabilization (surjective_of_isInvertible_prod h₁)
-  obtain ⟨-, hK₂⟩ := finrank_stabilization (surjective_of_isInvertible_prod h₂)
+  have hK₂ := finrank_ker_add_finrank_range_parameterProj g D₂
   have hG₁ : finrank 𝕜 G₁ = finrank 𝕜 f.ker + finrank 𝕜 (parameterProj f D₁).range :=
-    e₁.finrank_eq.symm.trans hK₁
+    e₁.finrank_eq.symm.trans (finrank_ker_add_finrank_range_parameterProj f D₁).symm
   have hG₂ : finrank 𝕜 G₂ =
       finrank 𝕜 (LinearMap.range ((f : E →ₗ[𝕜] F).kerCompToKer (g : F →ₗ[𝕜] P))) +
         (finrank 𝕜 (LinearMap.range ((f : E →ₗ[𝕜] F).kerToCoker (g : F →ₗ[𝕜] P))) +
           finrank 𝕜 (parameterProj g D₂).range) := by
     have := e₂.finrank_eq
     omega
-  -- `kerCoprodHom_apply` for the kernel of `g ∘ f` spelled through the composite of linear maps;
-  -- the two spellings are only equal up to unfolding the coercion of `g ∘L f`, so it is used with
-  -- `erw`.
-  have hk (x : LinearMap.ker ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) :
-      (kerCoprodHom (g ∘L f) ((g ∘L D₁).coprod D₂) x : E × (Λ₁ × Λ₂)) = ((x : E), 0) :=
-    kerCoprodHom_apply (g ∘L f) ((g ∘L D₁).coprod D₂) x
   -- The coordinates of the five blocks of `β`.
   have hb₁ : e ∘ (kerCoprodHom (g ∘L f) ((g ∘L D₁).coprod D₂) ∘
       Submodule.inclusion (LinearMap.ker_le_ker_comp (f : E →ₗ[𝕜] F) (g : F →ₗ[𝕜] P)) ∘
@@ -880,7 +883,7 @@ private theorem detLineCongr_compKerCoord (d : CompData f D₁ g D₂) [FiniteDi
     have hu : f (Module.finBasis 𝕜 f.ker i : E) = 0 := (Module.finBasis 𝕜 f.ker i).property
     simp only [Function.comp_apply, he, he₁, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
       kerEquivOfProd_symm_apply]
-    erw [hk]
+    rw [kerCoprodHom_apply]
     refine Prod.ext ?_ ?_ <;> simp [hu, Prod.mk_zero_zero]
   have hb₂ : e ∘ d.ι₁ = LinearMap.inl 𝕜 G₁ G₂ ∘ e₁ ∘ d.v₁ := by
     funext i
@@ -900,20 +903,6 @@ private theorem detLineCongr_compKerCoord (d : CompData f D₁ g D₂) [FiniteDi
     LinearEquiv.coe_detLineCongr_of_coe_eq_ιMulti e hβ]
   simp only [Fin.comp_append, Fin.comp_append_comp_cast, TauCeti.ExteriorAlgebra.ιMulti_comp_cast,
     ← ExteriorAlgebra.ιMulti_mul_ιMulti, hb₁, hb₂, mul_assoc]
-
-/-- Every element of `det L ⊗ M` is `κ ⊗ φ` for some `φ`, when `κ` spans the line `det L`, as
-witnessed by a functional `η` with `η κ = 1`. -/
-private theorem exists_eq_tmul_of_apply_eq_one {L M : Type*} [AddCommGroup L] [Module 𝕜 L]
-    [FiniteDimensional 𝕜 L] [AddCommGroup M] [Module 𝕜 M] {κ : TauCeti.detLine 𝕜 L}
-    {η : Dual 𝕜 (TauCeti.detLine 𝕜 L)} (hη : η κ = 1) (y : TauCeti.detLine 𝕜 L ⊗[𝕜] M) :
-    ∃ m, y = κ ⊗ₜ m := by
-  have hspan : Submodule.span 𝕜 {κ} = ⊤ := Submodule.eq_top_iff'.2 fun z ↦
-    Module.Invertible.apply_smul_eq_self hη z ▸
-      Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self κ)
-  obtain ⟨m, hm⟩ := TensorProduct.exists_eq_tmul_of_span_singleton_eq_top hspan
-    (TensorProduct.comm 𝕜 _ _ y)
-  exact ⟨m, by
-    rw [← (TensorProduct.comm 𝕜 _ _).symm_apply_apply y, hm, TensorProduct.comm_symm_tmul]⟩
 
 /-- The parity count behind `ContinuousLinearMap.detLineChartEquiv_neg_one_pow_smul_comp`: with
 `b = s + t`, `bh = t + d`, `l₁ = m₁ + b`, `l₂ = m₂ + d` and `G₂ = r + s + m₂`, the sign of the
@@ -965,12 +954,12 @@ theorem detLineChartEquiv_detLineCompEquiv_symm (h₁ : ((f.coprod D₁).prod q�
   have hh := surjective_of_isInvertible_prod (h₁.prod_coprod_compKerCoord h₂)
   -- The kernel and cokernel of `g ∘ f` are finite-dimensional, as those of the composite of
   -- linear maps.
-  have hk₀ : FiniteDimensional 𝕜 (LinearMap.ker ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) :=
+  have : FiniteDimensional 𝕜 (LinearMap.ker ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) :=
     Module.Finite.ker_comp (f : E →ₗ[𝕜] F) (g : F →ₗ[𝕜] P)
-  have : FiniteDimensional 𝕜 (g ∘L f).ker := hk₀
-  have hc₀ : FiniteDimensional 𝕜 (P ⧸ LinearMap.range ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) :=
+  have := (LinearEquiv.ofEq _ _ (ker_comp_eq f g)).symm.finiteDimensional
+  have : FiniteDimensional 𝕜 (P ⧸ LinearMap.range ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) :=
     Module.Finite.quotient_range_comp (f : E →ₗ[𝕜] F) (g : F →ₗ[𝕜] P)
-  have : FiniteDimensional 𝕜 (P ⧸ (g ∘L f).range) := hc₀
+  have := (Submodule.quotEquivOfEq _ _ (range_comp_eq f g)).symm.finiteDimensional
   obtain ⟨d⟩ := nonempty_compData hf hg
   obtain ⟨κ₁, η₁, κ₂, η₂, β, hκ₁, hη₁, hκ₂, hη₂, hβ, hcomp⟩ := exists_comp_stab d hf hg hh
   set N := finrank 𝕜 (P ⧸ (g ∘L f).range) * finrank 𝕜 (Λ₁ × Λ₂) +
@@ -1005,8 +994,8 @@ theorem detLineChartEquiv_detLineCompEquiv_symm (h₁ : ((f.coprod D₁).prod q�
       TauCeti.detLineTensorDualProdEquiv_tmul, detLineCongr_compKerCoord d h₁ h₂ hκ₁ hκ₂ hβ]
   obtain ⟨y₁, rfl⟩ := (detLineStabilizationEquiv f D₁ hf).surjective v
   obtain ⟨y₂, rfl⟩ := (detLineStabilizationEquiv g D₂ hg).surjective w
-  obtain ⟨φ₁, rfl⟩ := exists_eq_tmul_of_apply_eq_one hη₁ y₁
-  obtain ⟨φ₂, rfl⟩ := exists_eq_tmul_of_apply_eq_one hη₂ y₂
+  obtain ⟨φ₁, rfl⟩ := Module.Invertible.exists_eq_tmul_of_apply_eq_one hη₁ y₁
+  obtain ⟨φ₂, rfl⟩ := Module.Invertible.exists_eq_tmul_of_apply_eq_one hη₂ y₂
   exact key φ₁ φ₂
 
 /-- **The normalized composition law in a composite kernel chart.** With the sign
@@ -1035,24 +1024,54 @@ theorem detLineChartEquiv_neg_one_pow_smul_comp (h₁ : ((f.coprod D₁).prod q�
   congr 1
   -- The dimension counts of the stabilizations, of the kernel–cokernel sequence of `g ∘ f` and of
   -- the index of `g` read in its chart.
-  obtain ⟨hl₁, -⟩ := finrank_stabilization (surjective_of_isInvertible_prod h₁)
-  obtain ⟨hl₂, -⟩ := finrank_stabilization (surjective_of_isInvertible_prod h₂)
+  have hl₁ := (finrank_range_parameterProj_add_finrank_quotient_range f D₁
+    (surjective_of_isInvertible_prod h₁)).symm
+  have hl₂ := (finrank_range_parameterProj_add_finrank_quotient_range g D₂
+    (surjective_of_isInvertible_prod h₂)).symm
   have hidx := finrank_ker_add_finrank_eq_of_isInvertible_prod_coprod h₂
   have hc := (f : E →ₗ[𝕜] F).finrank_ker_eq_finrank_range_kerCompToKer_add (g : F →ₗ[𝕜] P)
   have hb := (f : E →ₗ[𝕜] F).finrank_quotient_range_eq_finrank_range_kerToCoker_add
     (g : F →ₗ[𝕜] P)
   have : FiniteDimensional 𝕜 (P ⧸ LinearMap.range ((g : F →ₗ[𝕜] P) ∘ₗ (f : E →ₗ[𝕜] F))) :=
     Module.Finite.quotient_range_comp (f : E →ₗ[𝕜] F) (g : F →ₗ[𝕜] P)
-  have hbh : finrank 𝕜 (P ⧸ (g ∘L f).range) =
-      finrank 𝕜 (LinearMap.range ((f : E →ₗ[𝕜] F).cokerToCokerComp (g : F →ₗ[𝕜] P))) +
-        finrank 𝕜 (P ⧸ g.range) :=
-    (f : E →ₗ[𝕜] F).finrank_quotient_range_comp_eq_finrank_range_cokerToCokerComp_add
-      (g : F →ₗ[𝕜] P)
+  have := (Submodule.quotEquivOfEq _ _ (range_comp_eq f g)).symm.finiteDimensional
+  have hbh := finrank_quotient_range_comp_eq f g
   rw [Module.finrank_prod]
   exact neg_one_pow_comp_sign hb hbh hl₁ hl₂ (by omega)
 
 end Main
 
 end Chart
+
+section Continuity
+
+/-! ### Continuity of the composite coordinate -/
+
+variable {𝕜 X E F Λ₁ Λ₂ G₁ G₂ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace X]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup Λ₁] [NormedSpace 𝕜 Λ₁] [NormedAddCommGroup Λ₂] [NormedSpace 𝕜 Λ₂]
+  [NormedAddCommGroup G₁] [NormedSpace 𝕜 G₁] [NormedAddCommGroup G₂] [NormedSpace 𝕜 G₂]
+
+/-- **The composite kernel coordinate depends continuously on the first operator.** For a family
+`f x` of operators, `ContinuousLinearMap.compKerCoord (f x) D₁ q₁ q₂` is a constant plus
+`(y, l) ↦ (0, q₂ (f x y, 0))`. -/
+theorem continuousWithinAt_compKerCoord {f : X → E →L[𝕜] F} {s : Set X} {x₀ : X}
+    {D₁ : Λ₁ →L[𝕜] F} {q₁ : E × Λ₁ →L[𝕜] G₁} {q₂ : F × Λ₂ →L[𝕜] G₂}
+    (hf : ContinuousWithinAt f s x₀) :
+    ContinuousWithinAt (fun x ↦ compKerCoord (f x) D₁ q₁ q₂) s x₀ := by
+  have heq : (fun x ↦ compKerCoord (f x) D₁ q₁ q₂) = fun x ↦ compKerCoord 0 D₁ q₁ q₂ +
+      (inr 𝕜 G₁ G₂ ∘L q₂ ∘L inl 𝕜 F Λ₂ ∘L f x) ∘L fst 𝕜 E (Λ₁ × Λ₂) := by
+    funext x
+    refine ContinuousLinearMap.ext fun ⟨y, l⟩ ↦ Prod.ext ?_ ?_
+    · simp
+    · simp only [compKerCoord_apply, add_apply, comp_apply, inl_apply, inr_apply, coe_fst',
+        Prod.snd_add, zero_apply, zero_add]
+      rw [← map_add, Prod.mk_add_mk, add_comm, add_zero]
+  rw [heq]
+  exact continuousWithinAt_const.add ((continuousWithinAt_const.clm_comp
+    (continuousWithinAt_const.clm_comp (continuousWithinAt_const.clm_comp hf))).clm_comp
+      continuousWithinAt_const)
+
+end Continuity
 
 end ContinuousLinearMap
