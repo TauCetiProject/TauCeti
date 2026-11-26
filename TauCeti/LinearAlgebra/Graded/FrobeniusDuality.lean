@@ -76,11 +76,16 @@ degrees `0` to `2d`. -/
 def gradedEulerChar (d : ℕ) (b : ℤ → ℕ) : ℤ :=
   ∑ i ∈ Finset.Icc 0 (2 * (d : ℤ)), (i.negOnePow : ℤ) * b i
 
+/-- Unfolds the Euler characteristic. -/
+theorem gradedEulerChar_def (d : ℕ) (b : ℤ → ℕ) :
+    gradedEulerChar d b = ∑ i ∈ Finset.Icc 0 (2 * (d : ℤ)), (i.negOnePow : ℤ) * b i :=
+  (rfl)
+
 /-- The Euler characteristic is additive in the Betti numbers, for instance under direct sums. -/
 @[simp]
 theorem gradedEulerChar_add (d : ℕ) (b b' : ℤ → ℕ) :
     gradedEulerChar d (b + b') = gradedEulerChar d b + gradedEulerChar d b' := by
-  simp [gradedEulerChar, mul_add, Finset.sum_add_distrib]
+  simp [gradedEulerChar_def, mul_add, Finset.sum_add_distrib]
 
 variable {R : Type*} [CommRing R] (H : ℤ → Type*) [∀ i, AddCommGroup (H i)] [∀ i, Module R (H i)]
 
@@ -89,10 +94,16 @@ automorphisms `F i` in the degrees `0` to `2d`, a unit of the coefficient ring. 
 noncomputable def gradedDelta (d : ℕ) (F : ∀ i, H i ≃ₗ[R] H i) : Rˣ :=
   ∏ i ∈ Finset.Icc 0 (2 * (d : ℤ)), LinearEquiv.det (F i) ^ (i.negOnePow : ℤ)
 
+/-- Unfolds the alternating determinant. -/
+theorem gradedDelta_def (d : ℕ) (F : ∀ i, H i ≃ₗ[R] H i) :
+    gradedDelta H d F =
+      ∏ i ∈ Finset.Icc 0 (2 * (d : ℤ)), LinearEquiv.det (F i) ^ (i.negOnePow : ℤ) :=
+  (rfl)
+
 /-- The alternating determinant of the identity automorphisms is `1`. -/
 @[simp]
 theorem gradedDelta_refl (d : ℕ) : gradedDelta H d (fun i ↦ LinearEquiv.refl R (H i)) = 1 := by
-  simp [gradedDelta]
+  simp [gradedDelta_def]
 
 variable {H}
 
@@ -101,7 +112,7 @@ variable {H}
 theorem gradedDelta_conj {H' : ℤ → Type*} [∀ i, AddCommGroup (H' i)] [∀ i, Module R (H' i)]
     (d : ℕ) (F : ∀ i, H i ≃ₗ[R] H i) (e : ∀ i, H i ≃ₗ[R] H' i) :
     gradedDelta H' d (fun i ↦ ((e i).symm.trans (F i)).trans (e i)) = gradedDelta H d F := by
-  simp [gradedDelta]
+  simp [gradedDelta_def]
 
 /-- The alternating determinant is multiplicative under degreewise direct sums of finite free
 modules. -/
@@ -112,7 +123,7 @@ theorem gradedDelta_prodCongr {H' : ℤ → Type*} [∀ i, AddCommGroup (H' i)]
     (F' : ∀ i, H' i ≃ₗ[R] H' i) :
     gradedDelta (fun i ↦ H i × H' i) d (fun i ↦ (F i).prodCongr (F' i)) =
       gradedDelta H d F * gradedDelta H' d F' := by
-  simp [gradedDelta, mul_zpow, Finset.prod_mul_distrib]
+  simp [gradedDelta_def, mul_zpow, Finset.prod_mul_distrib]
 
 end Invariants
 
@@ -183,9 +194,10 @@ unit, this is the identity `P_j(t) * det F_i = (-q ^ d t) ^ b_i * P_i (1 / (q ^ 
 functions for `P_i(t) = det (1 - t F_i)`. -/
 theorem C_det_mul_reverse_charpoly {i j : ℤ} [FiniteDimensional E (H i)]
     [FiniteDimensional E (H j)] (hij : i + j = 2 * (d : ℤ)) :
-    C (LinearMap.det (D.frob i).toLinearMap) * (D.frob j).toLinearMap.charpoly.reverse =
-      (-1) ^ finrank E (H i) * (D.frob i).toLinearMap.charpoly.comp (C ((q : E) ^ d) * X) :=
-  LinearMap.C_det_mul_reverse_charpoly_of_compl₁₂_eq_smul _
+    C (LinearEquiv.det (D.frob i) : E) * (D.frob j).toLinearMap.charpoly.reverse =
+      (-1) ^ finrank E (H i) * (D.frob i).toLinearMap.charpoly.comp (C ((q : E) ^ d) * X) := by
+  rw [LinearEquiv.coe_det]
+  exact LinearMap.C_det_mul_reverse_charpoly_of_compl₁₂_eq_smul _
     (D.isPerfPair i j hij).bijective_right (D.compl₁₂_pairing_frob_frob hij)
 
 /-- The middle form on `H d` is `(-1) ^ d`-symmetric. -/
@@ -228,7 +240,7 @@ theorem gradedDelta_sq :
       (fun i _ ↦ by rw [sub_sub_cancel, Int.negOnePow_sub, Int.negOnePow_two_mul, one_mul])
   rw [sq]
   nth_rw 2 [hrefl]
-  rw [gradedDelta, ← Finset.prod_mul_distrib, gradedEulerChar, Finset.mul_sum,
+  rw [gradedDelta_def, ← Finset.prod_mul_distrib, gradedEulerChar_def, Finset.mul_sum,
     ← Finset.prod_zpow_eq_zpow_sum]
   refine Finset.prod_congr rfl fun i _ ↦ ?_
   rw [← mul_zpow, D.det_mul_det (by ring), ← zpow_natCast, ← zpow_mul]
@@ -245,7 +257,7 @@ theorem even_mul_gradedEulerChar (h2 : (2 : E) ≠ 0) :
   refine Even.mul_left ?_ _
   rw [even_iff_two_dvd]
   refine (ZMod.intCast_zmod_eq_zero_iff_dvd _ 2).1 ?_
-  rw [gradedEulerChar]
+  rw [gradedEulerChar_def]
   push_cast
   refine Finset.sum_involution (fun i _ ↦ 2 * d - i) (fun i hi ↦ ?_) (fun i _ hi h ↦ ?_)
     (fun i hi ↦ by simp only [Finset.mem_Icc] at hi ⊢; omega) (fun i _ ↦ by ring)
