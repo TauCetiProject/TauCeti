@@ -9,14 +9,19 @@ public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.CStarAlgebra.Cuntz.Subequivalence
 
 /-!
-# Check: `1 ⋠ diag(1, 0)` in `M₂(ℂ)`
+# Cuntz subequivalence in `M₂(ℂ)`: `1 ⋠ diag(1, 0)`
 
-A Check of CStarClassification CL4.1: in `M₂(ℂ)` the identity is not Cuntz subequivalent to the
-rank-one projection `diag(1, 0)` (`TauCeti.CuntzMatrixCheck.not_cuntzLE_one_diag`). Every
-`x⋆ diag(1, 0) x` has determinant `0`, and the determinant is continuous, so no norm limit of such
-elements is invertible. The scalar Checks are `TauCeti.cuntzLE_complex_iff`.
+In `M₂(ℂ)` the identity is not Cuntz subequivalent to the rank-one projection `diag(1, 0)`
+(`TauCeti.CuntzMatrixCheck.not_cuntzLE_one_diag`). Every `x⋆ diag(1, 0) x` has determinant `0`,
+and the determinant is continuous, so no norm limit of such elements is invertible. Contrast with
+`ℂ`, where every nonzero positive scalar is subequivalent to every other
+(`TauCeti.cuntzLE_complex_iff`).
+
+## References
+
+* Rørdam, Part I of Rørdam–Størmer, *Classification of Nuclear C*-Algebras. Entropy in Operator
+  Algebras*, Encyclopaedia of Mathematical Sciences 126, Springer, 2002, §4.1.
 -/
-
 public section
 
 open Filter Topology
@@ -33,24 +38,23 @@ noncomputable def diagOneZero : {a : CStarMatrix (Fin 2) (Fin 2) ℂ // 0 ≤ a}
 noncomputable def oneMatrix : {a : CStarMatrix (Fin 2) (Fin 2) ℂ // 0 ≤ a} :=
   ⟨1, zero_le_one⟩
 
-/-- **`1 ⋠ diag(1, 0)` in `M₂(ℂ)`.** Every `x⋆ diag(1, 0) x` has determinant `0`, and the
-determinant is continuous, while `det 1 = 1`. -/
+/-- **`1 ⋠ diag(1, 0)` in `M₂(ℂ)`.** The identity is not Cuntz subequivalent to the rank-one
+projection `diag(1, 0)`: no sequence `xₙ⋆ diag(1, 0) xₙ` converges to `1`. -/
 theorem not_cuntzLE_one_diag : ¬ CuntzLE oneMatrix diagOneZero := by
   rw [cuntzLE_iff_exists_tendsto]
   rintro ⟨x, hx⟩
-  let det : CStarMatrix (Fin 2) (Fin 2) ℂ → ℂ := fun M ↦ (CStarMatrix.ofMatrix.symm M).det
+  -- Every `xₙ⋆ diag(1, 0) xₙ` has determinant `0`, the determinant is continuous, and `det 1 = 1`.
+  let det : CStarMatrix (Fin 2) (Fin 2) ℂ → ℂ := fun M ↦
+    (CStarMatrix.ofMatrixStarAlgEquiv.symm M).det
   have hdet : Continuous det :=
     (continuous_id.matrix_det).comp CStarMatrix.ofMatrixL.symm.continuous
   have h0 (n : ℕ) : det (star (x n) * (diagOneZero : CStarMatrix (Fin 2) (Fin 2) ℂ) * x n) = 0 := by
-    change (CStarMatrix.ofMatrix.symm (star (x n)) * (CStarMatrix.ofMatrix.symm
-      (star (CStarMatrix.ofMatrix (Matrix.single (0 : Fin 2) (0 : Fin 2) (1 : ℂ)))) *
-      Matrix.single 0 0 1) * CStarMatrix.ofMatrix.symm (x n)).det = 0
-    rw [Matrix.det_mul, Matrix.det_mul, Matrix.det_mul]
+    simp only [det, diagOneZero, CStarMatrix.ofMatrix_eq_ofMatrixStarAlgEquiv, map_mul,
+      map_star, StarAlgEquiv.symm_apply_apply, Matrix.det_mul]
     simp [Matrix.det_fin_two]
   have hlim := (hdet.tendsto _).comp hx
   simp only [Function.comp_def, h0, oneMatrix] at hlim
   have : det 1 = 0 := tendsto_nhds_unique hlim tendsto_const_nhds
-  change Matrix.det (1 : Matrix (Fin 2) (Fin 2) ℂ) = 0 at this
-  simp at this
+  simp [det] at this
 
 end TauCeti.CuntzMatrixCheck
