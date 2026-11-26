@@ -43,7 +43,8 @@ orthogonal block sum `f ⊕ g`. It is compatible with the algebraic operations o
 exactly when `f` and `g` are, so the spectrum of a block sum of endomorphisms is the union of
 their spectra, and its operator norm is the larger of the two operator norms. The
 projections onto the factors and the inclusions of the factors are contractions, and fixing one
-coordinate embeds the other factor isometrically into `WithLp p (α × β)`. A kernel on
+coordinate embeds the other factor isometrically into `WithLp p (α × β)`, and as a closed subset
+when the fixed coordinate's factor is `T1`. A kernel on
 `WithLp p (X × Y)` consisting of the pairs whose components lie in the ranges of two injective
 linear maps is identified with the product of their sources.
 
@@ -85,6 +86,8 @@ linear maps is identified with the product of their sources.
   inclusions of the factors are contractions.
 * `WithLp.isometry_toLp_prodMk_left`, `WithLp.isometry_toLp_prodMk_right` — fixing one coordinate
   embeds the other factor isometrically into `WithLp p (α × β)`.
+* `WithLp.isClosedEmbedding_toLp_prodMk_left`, `WithLp.isClosedEmbedding_toLp_prodMk_right` — the
+  slice inclusions `y ↦ (a, y)` and `t ↦ (t, y)` into `WithLp p (X × Y)` are closed embeddings.
 -/
 
 public section
@@ -625,5 +628,27 @@ theorem isometry_toLp_prodMk_right (p : ℝ≥0∞) [Fact (1 ≤ p)] {α β : Ty
     Isometry fun x : α ↦ toLp p (x, y) := by
   simpa [Function.comp_def] using
     (IsometryEquiv.withLpProdComm p β α).isometry.comp (isometry_toLp_prodMk_left p y)
+
+section Embedding
+
+open Topology
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- The inclusion `y ↦ (a, y)` of the slice `{a} × Y` into `WithLp p (X × Y)` is a closed
+embedding. -/
+theorem isClosedEmbedding_toLp_prodMk_left [T1Space X] (p : ℝ≥0∞) (a : X) :
+    IsClosedEmbedding fun y : Y ↦ toLp p (a, y) :=
+  (homeomorphProd p X Y).symm.isClosedEmbedding.comp
+    (.of_isEmbedding_isClosedMap (isEmbedding_prodMkRight a) (isClosedMap_prodMk_left a))
+
+/-- The inclusion `t ↦ (t, y)` of the slice `X × {y}` into `WithLp p (X × Y)` is a closed
+embedding. -/
+theorem isClosedEmbedding_toLp_prodMk_right [T1Space Y] (p : ℝ≥0∞) (y : Y) :
+    IsClosedEmbedding fun t : X ↦ toLp p (t, y) :=
+  (homeomorphProd p X Y).symm.isClosedEmbedding.comp
+    (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y) (isClosedMap_prodMk_right y))
+
+end Embedding
 
 end WithLp
