@@ -181,34 +181,23 @@ private theorem exists_forall_comp_positiveEndChart_eventuallyEq_zero_of_ne_zero
     (hfU : tsupport f ⊆ {z | Complex.equivRealProdCLM.symm z ≠ 1}) {q : Puncture}
     (hq : q ≠ zero) :
     ∃ N, ∀ ζ : ℝ × ℝ, N < ζ.1 → f ∘ positiveEndChart q =ᶠ[𝓝 ζ] 0 := by
-  -- The height of the end is bounded above on the support of `f`.
-  have hN : ∃ N, ∀ z ∈ tsupport f, (positiveEndCoord q z).1 ≤ N := by
-    match q with
-    | zero => exact absurd rfl hq
-    | one =>
-      obtain ⟨N, hN⟩ := hfc.isCompact.exists_bound_of_continuousOn
-        (f := fun w ↦ (positiveEndCoord one w).1) fun z hz ↦
-          (continuousAt_fst_positiveEndCoord one (by rw [endCenter_one]; exact hfU hz))
-            |>.continuousWithinAt
-      exact ⟨N, fun z hz ↦ (Real.le_norm_self _).trans (hN z hz)⟩
-    | inf =>
-      obtain ⟨R, hR⟩ := hfc.isCompact.exists_bound_of_continuousOn
-        (f := fun w ↦ Complex.equivRealProdCLM.symm w)
-          Complex.equivRealProdCLM.symm.continuous.continuousOn
-      refine ⟨max 0 R, fun z hz ↦ ?_⟩
-      rw [fst_positiveEndCoord, endSign_inf, neg_one_mul]
-      refine neg_re_endCoord_inf_le (le_max_left _ _) ((hR z hz).trans ?_)
-      have h := Real.add_one_le_exp (2 * π * max 0 R)
-      have := mul_nonneg Real.two_pi_pos.le (le_max_left 0 R)
-      nlinarith [le_max_right 0 R, Real.two_le_pi, le_max_left 0 R]
-  obtain ⟨N, hN⟩ := hN
-  refine ⟨N, fun ζ hζ ↦ ?_⟩
-  filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
-  rw [Pi.zero_apply, Function.comp_apply]
-  refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
-  have := hN _ h
-  rw [fst_positiveEndCoord_positiveEndChart] at this
-  exact absurd hζ' (not_lt.2 this)
+  match q with
+  | zero => exact absurd rfl hq
+  | one =>
+    exact exists_forall_comp_positiveEndChart_eventuallyEq_zero hfc fun z hz ↦ by
+      rw [endCenter_one]
+      exact hfU hz
+  | inf =>
+    -- The height of the output end is bounded above on the support of `f`, which is bounded.
+    obtain ⟨R, hR⟩ := hfc.isCompact.exists_bound_of_continuousOn
+      (f := fun w ↦ Complex.equivRealProdCLM.symm w)
+        Complex.equivRealProdCLM.symm.continuous.continuousOn
+    refine ⟨max 0 R, fun ζ ↦ comp_positiveEndChart_eventuallyEq_zero_of_le fun z hz ↦ ?_⟩
+    rw [fst_positiveEndCoord, endSign_inf, neg_one_mul]
+    refine neg_re_endCoord_inf_le (le_max_left _ _) ((hR z hz).trans ?_)
+    have h := Real.add_one_le_exp (2 * π * max 0 R)
+    have := mul_nonneg Real.two_pi_pos.le (le_max_left 0 R)
+    nlinarith [le_max_right 0 R, Real.two_le_pi, le_max_left 0 R]
 
 /-- For `r < 1`, the truncation `S_T` of the pair of pants and the disc `|w| ≤ r` lie in the capped
 surface `ℂ ∖ {1}`. -/
@@ -237,17 +226,14 @@ private theorem setLIntegral_image_positiveEndChart_le_of_ne_zero {T : ℝ} (hT 
       ENNReal.ofReal (20 * π ^ 2 *
         ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ) := by
   obtain ⟨N, hN⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero_of_ne_zero hξc hξU hq
-  have hρm : Measurable cylindricalWeight := by
-    rw [show cylindricalWeight = fun z ↦ _ from funext cylindricalWeight_apply]
-    fun_prop
   have h1 := (hξ.continuous_fderiv one_ne_zero).clm_apply
     (continuous_const (y := ((1, 0) : ℝ × ℝ)))
   have h2 := (hξ.continuous_fderiv one_ne_zero).clm_apply
     (continuous_const (y := ((0, 1) : ℝ × ℝ)))
   have hg : Measurable fun w ↦ ENNReal.ofReal (cylindricalWeight w * ‖ξ w‖ ^ 2 +
       ‖fderiv ℝ ξ w (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ w (0, 1)‖ ^ 2) :=
-    (((hρm.mul (hξ.continuous.norm.pow 2).measurable).add (h1.norm.pow 2).measurable).add
-      (h2.norm.pow 2).measurable).ennreal_ofReal
+    (((measurable_cylindricalWeight.mul (hξ.continuous.norm.pow 2).measurable).add
+      (h1.norm.pow 2).measurable).add (h2.norm.pow 2).measurable).ennreal_ofReal
   -- On the band the weight is that of the pair of pants.
   refine (setLIntegral_mono hg fun w hw ↦ le_of_eq ?_).trans
     (setLIntegral_image_positiveEndChart_le hT hξ q

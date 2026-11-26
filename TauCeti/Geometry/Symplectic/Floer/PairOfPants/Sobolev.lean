@@ -96,6 +96,13 @@ theorem cylindricalWeight_apply (z : ℝ × ℝ) :
 theorem cylindricalWeight_nonneg (z : ℝ × ℝ) : 0 ≤ cylindricalWeight z :=
   add_nonneg (inv_nonneg.2 (Complex.normSq_nonneg _)) (inv_nonneg.2 (Complex.normSq_nonneg _))
 
+/-- The cylindrical weight is measurable on all of `ℝ × ℝ`, including the punctures, where it takes
+the junk value of the inverse at `0`. -/
+@[fun_prop]
+theorem measurable_cylindricalWeight : Measurable cylindricalWeight := by
+  rw [funext cylindricalWeight_apply]
+  fun_prop
+
 /-- The cylindrical weight is a conformal weight on the pair of pants: it is continuous and
 positive on `S`. -/
 theorem isWeight_cylindricalWeight :
