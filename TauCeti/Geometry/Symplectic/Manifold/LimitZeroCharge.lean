@@ -15,11 +15,11 @@ import TauCeti.Topology.UnitInterval.Contractible
 /-!
 # Limits of zero charges along a family of functions or sections
 
-Let `α k : Y → ℂ` be a family of continuous functions along a filter `l`, for instance the framing
-sections `α` of a sequence of Seiberg–Witten solutions, and let `Z ⊆ Y`. The zero charges
-`ContinuousMap.zeroCharge (α k) σ` of discs `σ : 𝔻 → Y` count the zeros of `α k ∘ σ`. In the limit
-the zeros of `α k` concentrate on `Z`, and the integers to keep are the eventual values of these
-charges. This file constructs those eventual values and proves that they obey the laws of a
+Let `α k : Y → ℂ` be a family of continuous functions along a filter `l`, for instance the
+framings of a sequence of Seiberg–Witten solutions on a trivialized line, and let `Z ⊆ Y`. The zero
+charges `ContinuousMap.zeroCharge (α k) σ` of discs `σ : 𝔻 → Y` count the zeros of `α k ∘ σ`. In
+the limit the zeros of `α k` concentrate on `Z`, and the integers to keep are the eventual values of
+these charges. This file constructs those eventual values and proves that they obey the laws of a
 positive cohomology assignment to `Z` (`TauCeti.PositiveCohomologyAssignment`) other than
 positivity.
 
@@ -155,12 +155,19 @@ open scoped Classical in
 between `1` and a radius `ρ₀` with `σ⁻¹(Z)` in the open disc of radius `ρ₀`. For a zero-charge
 limit this value exists and does not depend on the choice of `ρ`
 (`TauCeti.IsZeroChargeLimit.eventually_zeroCharge_eq_limitZeroCharge`). It is `0` when no such
-`ρ₀` exists. -/
+`ρ₀` exists (`TauCeti.limitZeroCharge_of_not_exists`). -/
 def limitZeroCharge (l : Filter ι) (α : ι → C(Y, ℂ)) (Z : Set Y) (σ : C(𝔻, Y)) : ℤ :=
   if h : ∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀ then
     limUnder l fun k ↦ (α k).zeroCharge (σ.comp (discRetraction ((h.choose + 1) / 2)
       (by linarith [h.choose_spec.1]) (by linarith [h.choose_spec.2.1])))
   else 0
+
+/-- The limit zero charge vanishes on a disc that sends points of norm arbitrarily close to `1`
+into `Z`. -/
+theorem limitZeroCharge_of_not_exists {σ : C(𝔻, Y)}
+    (h : ¬∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀) :
+    limitZeroCharge l α Z σ = 0 := by
+  simp [limitZeroCharge, h]
 
 /-- A family of continuous functions `α k : Y → ℂ` along a filter `l` is a **zero-charge limit
 with support `Z`** if it is eventually nonvanishing on every compact set missing `Z`, and if the
@@ -458,12 +465,20 @@ is that of the identity disc for the family `c k`, with support `σ⁻¹(Z)`. Fo
 limit it is the eventual value of the zero charges of `σ` cut off at any radius `ρ < 1` beyond
 `σ⁻¹(Z)`
 (`TauCeti.IsSectionZeroChargeLimit.eventually_sectionZeroCharge_eq_limitSectionZeroCharge`), so it
-does not depend on the frames. -/
+does not depend on the frames. It is `0` when no radius `ρ₀ < 1` bounds `σ⁻¹(Z)`
+(`TauCeti.limitSectionZeroCharge_of_not_exists`). -/
 def limitSectionZeroCharge (l : Filter ι) (s : ι → C(Y, TotalSpace ℂ E)) (Z : Set Y)
     (σ : C(𝔻, Y)) : ℤ :=
   limitZeroCharge l
     (fun k ↦ ((s k).exists_forall_sectionZeroCharge_comp_eq_zeroCharge σ).choose) (σ ⁻¹' Z)
     (ContinuousMap.id 𝔻)
+
+/-- The limit zero charge along a family of maps to a line bundle vanishes on a disc that sends
+points of norm arbitrarily close to `1` into `Z`. -/
+theorem limitSectionZeroCharge_of_not_exists {σ : C(𝔻, Y)}
+    (h : ¬∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀) :
+    limitSectionZeroCharge l s Z σ = 0 :=
+  limitZeroCharge_of_not_exists (by simpa only [ContinuousMap.id_apply, Set.mem_preimage] using h)
 
 /-- A family of continuous maps `s k : Y → E` to the total space of a complex line bundle, along a
 filter `l`, is a **section zero-charge limit with support `Z`** if it eventually has no zero on
@@ -480,13 +495,6 @@ structure IsSectionZeroChargeLimit (l : Filter ι) (s : ι → C(Y, TotalSpace �
   exists_eventually_sectionZeroCharge_eq (σ : C(𝔻, Y)) {ρ₀ ρ : ℝ} (hρ : 0 ≤ ρ) (hρ₁ : ρ < 1)
     (hρ₀ : ρ₀ < ρ) (hσ : ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀) :
     ∃ n : ℤ, ∀ᶠ k in l, (s k).sectionZeroCharge (σ.comp (discRetraction ρ hρ hρ₁)) = n
-
-/-- The limit zero charge vanishes on a disc that sends points of norm arbitrarily close to `1`
-into `Z`. -/
-private theorem limitZeroCharge_of_not_exists {α : ι → C(Y, ℂ)} {σ : C(𝔻, Y)}
-    (h : ¬∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀) :
-    limitZeroCharge l α Z σ = 0 := by
-  simp [limitZeroCharge, h]
 
 namespace IsSectionZeroChargeLimit
 
@@ -544,10 +552,25 @@ theorem limitZeroCharge_eq_limitSectionZeroCharge [l.NeBot]
       (hC'l.eventually_zeroCharge_eq_limitZeroCharge (σ := .id 𝔻) hρ hρ₁ hρ₀ρ hτ) |>.exists
     rw [← hk, limitSectionZeroCharge, ← hk', ← hC, ← hC', ContinuousMap.id_comp,
       ContinuousMap.comp_assoc]
-  · have hex' : ¬∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧
-        ∀ z : 𝔻, (ContinuousMap.id 𝔻) z ∈ (G.comp τ) ⁻¹' Z → ‖(z : ℂ)‖ < ρ₀ := hex
-    rw [limitZeroCharge_of_not_exists hex, limitSectionZeroCharge,
-      limitZeroCharge_of_not_exists hex']
+  · rw [limitZeroCharge_of_not_exists hex, limitSectionZeroCharge_of_not_exists
+      (by simpa only [ContinuousMap.comp_apply, Set.mem_preimage] using hex)]
+
+variable [R1Space B] [ParacompactSpace B] [ContractibleSpace B]
+
+variable (G) in
+/-- **A section zero-charge limit in frames.** Along a map `G : B → Y` from a contractible
+paracompact R₁ space, such as a disc or a homotopy of discs, the maps `s k` are read in frames of
+`E` as functions `C k : B → ℂ` forming a zero-charge limit with support `G⁻¹(Z)`. The zero charge
+of every disc `G ∘ τ` for `s k` is that of `τ` for `C k`, and the limit zero charge of `τ` for the
+functions `C k` is that of `G ∘ τ` for the maps `s k`. -/
+theorem exists_isZeroChargeLimit [l.NeBot] :
+    ∃ C : ι → C(B, ℂ), IsZeroChargeLimit l C (G ⁻¹' Z) ∧
+      (∀ k (τ : C(𝔻, B)), (s k).sectionZeroCharge (G.comp τ) = (C k).zeroCharge τ) ∧
+      ∀ (τ : C(𝔻, B)) {σ : C(𝔻, Y)}, G.comp τ = σ →
+        limitZeroCharge l C (G ⁻¹' Z) τ = limitSectionZeroCharge l s Z σ := by
+  choose C hC₀ hC using fun k ↦ (s k).exists_forall_sectionZeroCharge_comp_eq_zeroCharge G
+  exact ⟨C, h.isZeroChargeLimit (fun k b ↦ (hC₀ k b).1) hC, hC,
+    fun τ _ hσ ↦ h.limitZeroCharge_eq_limitSectionZeroCharge (fun k b ↦ (hC₀ k b).1) hC τ hσ⟩
 
 /-- **The zero charges of a disc converge to its limit zero charge.** If `σ` sends no point of norm
 at least `ρ₀ < ρ` into `Z`, then the zero charges of `σ` cut off at radius `ρ < 1` are eventually
@@ -557,9 +580,8 @@ theorem eventually_sectionZeroCharge_eq_limitSectionZeroCharge [l.NeBot] {σ : C
     (hσ : ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀) :
     ∀ᶠ k in l, (s k).sectionZeroCharge (σ.comp (discRetraction ρ hρ hρ₁)) =
       limitSectionZeroCharge l s Z σ := by
-  choose C hC₀ hC using fun k ↦ (s k).exists_forall_sectionZeroCharge_comp_eq_zeroCharge σ
-  rw [← h.limitZeroCharge_eq_limitSectionZeroCharge (fun k z ↦ (hC₀ k z).1) hC _ σ.comp_id]
-  have hCl := h.isZeroChargeLimit (fun k z ↦ (hC₀ k z).1) hC
+  obtain ⟨C, hCl, hC, hlim⟩ := h.exists_isZeroChargeLimit σ
+  rw [← hlim _ σ.comp_id]
   filter_upwards [hCl.eventually_zeroCharge_eq_limitZeroCharge (σ := .id 𝔻) hρ hρ₁ hρ₀ hσ]
     with k hk
   rw [← hk, ← hC, ContinuousMap.id_comp]
@@ -580,9 +602,9 @@ theorem limitSectionZeroCharge_eq_of_eventually [l.NeBot] {σ : C(𝔻, Y)} {ρ�
 /-- **Vacuum.** The limit zero charge of a disc missing `Z` vanishes. -/
 theorem limitSectionZeroCharge_eq_zero [l.NeBot] {σ : C(𝔻, Y)} (hσ : ∀ z, σ z ∉ Z) :
     limitSectionZeroCharge l s Z σ = 0 := by
-  choose C hC₀ hC using fun k ↦ (s k).exists_forall_sectionZeroCharge_comp_eq_zeroCharge σ
-  rw [← h.limitZeroCharge_eq_limitSectionZeroCharge (fun k z ↦ (hC₀ k z).1) hC _ σ.comp_id]
-  exact (h.isZeroChargeLimit (fun k z ↦ (hC₀ k z).1) hC).limitZeroCharge_eq_zero hσ
+  obtain ⟨C, hCl, -, hlim⟩ := h.exists_isZeroChargeLimit σ
+  rw [← hlim _ σ.comp_id]
+  exact hCl.limitZeroCharge_eq_zero hσ
 
 /-- **Homotopy invariance.** The limit zero charge is constant along a homotopy of discs whose total
 preimage of `Z` in `[0, 1] × 𝔻` is compact. -/
@@ -590,19 +612,14 @@ theorem limitSectionZeroCharge_eq_of_homotopy [l.NeBot] {σ₀ σ₁ : C(𝔻, Y
     (hF : IsCompact ((F : unitInterval × 𝔻 → Y) ⁻¹' Z)) :
     limitSectionZeroCharge l s Z σ₀ = limitSectionZeroCharge l s Z σ₁ := by
   -- Read the family in frames along the whole homotopy, over `[0, 1] × 𝔻`.
-  choose C hC₀ hC using fun k ↦
-    (s k).exists_forall_sectionZeroCharge_comp_eq_zeroCharge F.toContinuousMap
-  have hCl := h.isZeroChargeLimit (fun k b ↦ (hC₀ k b).1) hC
+  obtain ⟨C, hCl, -, hlim⟩ := h.exists_isZeroChargeLimit F.toContinuousMap
   -- The two ends are the discs `j 0` and `j 1` of `[0, 1] × 𝔻`, homotopic through the identity.
   let j (t : unitInterval) : C(𝔻, unitInterval × 𝔻) := ⟨fun z ↦ (t, z), by fun_prop⟩
   let H : (j 0).Homotopy (j 1) :=
     { toContinuousMap := .id _
       map_zero_left := fun _ ↦ rfl
       map_one_left := fun _ ↦ rfl }
-  rw [← h.limitZeroCharge_eq_limitSectionZeroCharge (fun k b ↦ (hC₀ k b).1) hC (j 0)
-      (ContinuousMap.ext F.apply_zero),
-    ← h.limitZeroCharge_eq_limitSectionZeroCharge (fun k b ↦ (hC₀ k b).1) hC (j 1)
-      (ContinuousMap.ext F.apply_one)]
+  rw [← hlim (j 0) (ContinuousMap.ext F.apply_zero), ← hlim (j 1) (ContinuousMap.ext F.apply_one)]
   exact hCl.limitZeroCharge_eq_of_homotopy H hF
 
 /-- **The degree law.** For a proper reparametrization `θ : 𝔻 → 𝔻` of a disc `σ` with compact
@@ -612,11 +629,9 @@ theorem limitSectionZeroCharge_comp [l.NeBot] (o : HomologicalOrientation 𝔻 �
     {σ : C(𝔻, Y)} (hσ : IsCompact (σ ⁻¹' Z)) {θ : C(𝔻, 𝔻)} (hθ : IsProperMap θ) :
     limitSectionZeroCharge l s Z (σ.comp θ) =
       o.degree o Complex.finrank_real_complex θ * limitSectionZeroCharge l s Z σ := by
-  choose C hC₀ hC using fun k ↦ (s k).exists_forall_sectionZeroCharge_comp_eq_zeroCharge σ
-  rw [← h.limitZeroCharge_eq_limitSectionZeroCharge (fun k z ↦ (hC₀ k z).1) hC θ rfl,
-    ← h.limitZeroCharge_eq_limitSectionZeroCharge (fun k z ↦ (hC₀ k z).1) hC _ σ.comp_id,
-    ← (h.isZeroChargeLimit (fun k z ↦ (hC₀ k z).1) hC).limitZeroCharge_comp o
-      (σ := .id 𝔻) hσ hθ, ContinuousMap.id_comp]
+  obtain ⟨C, hCl, -, hlim⟩ := h.exists_isZeroChargeLimit σ
+  rw [← hlim θ rfl, ← hlim _ σ.comp_id, ← hCl.limitZeroCharge_comp o (σ := .id 𝔻) hσ hθ,
+    ContinuousMap.id_comp]
 
 /-- **Additivity.** If finitely many disjoint round discs `B(cᵢ, rᵢ) ⊆ 𝔻` contain the compact
 preimage `σ⁻¹(Z)`, the limit zero charge of `σ` is the sum of the limit zero charges of its
@@ -628,13 +643,11 @@ theorem limitSectionZeroCharge_eq_sum [l.NeBot] {κ : Type} [Fintype κ] {σ : C
     (hcov : ∀ z, σ z ∈ Z → ∃ i, (z : ℂ) ∈ ball (c i) (r i)) :
     limitSectionZeroCharge l s Z σ =
       ∑ i, limitSectionZeroCharge l s Z (σ.comp (subdisc (c i) (r i) (hc i) (hr i))) := by
-  choose C hC₀ hC using fun k ↦ (s k).exists_forall_sectionZeroCharge_comp_eq_zeroCharge σ
-  rw [← h.limitZeroCharge_eq_limitSectionZeroCharge (fun k z ↦ (hC₀ k z).1) hC _ σ.comp_id,
-    (h.isZeroChargeLimit (fun k z ↦ (hC₀ k z).1) hC).limitZeroCharge_eq_sum (σ := .id 𝔻) hσ c r hc
-      hr hdisj hcov]
+  obtain ⟨C, hCl, -, hlim⟩ := h.exists_isZeroChargeLimit σ
+  rw [← hlim _ σ.comp_id,
+    hCl.limitZeroCharge_eq_sum (σ := .id 𝔻) hσ c r hc hr hdisj hcov]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [ContinuousMap.id_comp,
-    h.limitZeroCharge_eq_limitSectionZeroCharge (fun k z ↦ (hC₀ k z).1) hC _ rfl]
+  rw [ContinuousMap.id_comp, hlim _ rfl]
 
 /-- **Gauge invariance.** Multiplying each `s k` by a continuous function `u k : Y → ℂ` that
 vanishes nowhere, for instance a unitary gauge transformation, gives a section zero-charge limit
@@ -671,10 +684,7 @@ theorem limitSectionZeroCharge_eq_of_eq_smul [l.NeBot] {t : ι → C(Y, TotalSpa
     rw [← hk]
     exact (s k).sectionZeroCharge_eq_of_eq_smul (u := (u k).comp _) (fun _ ↦ ht k _)
       fun _ ↦ hu k _
-  · have hex' : ¬∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧
-        ∀ z : 𝔻, (ContinuousMap.id 𝔻) z ∈ σ ⁻¹' Z → ‖(z : ℂ)‖ < ρ₀ := hex
-    rw [limitSectionZeroCharge, limitSectionZeroCharge, limitZeroCharge_of_not_exists hex',
-      limitZeroCharge_of_not_exists hex']
+  · rw [limitSectionZeroCharge_of_not_exists hex, limitSectionZeroCharge_of_not_exists hex]
 
 end IsSectionZeroChargeLimit
 
