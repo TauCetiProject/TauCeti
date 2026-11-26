@@ -35,8 +35,9 @@ factors (with extension by zero for factors supported in `U`, and global `Lᵖ` 
 compactly supported ones), composition of local `Lᵖ` operator families with continuous ones,
 Hölder's inequality on compact sets (`TauCeti.MemLpLoc.clm_apply`), decreasing the integrability
 exponent, and comparison with local integrability. A locally `Lᵖ` function vanishing off a compact
-subset of `U` is globally `Lᵖ`. Continuous functions, and more generally a.e.-strongly measurable
-functions bounded near every point of `U`, are locally `Lᵖ` for every exponent. On a regular space
+subset of `U` is globally `Lᵖ`. Continuous functions, open half-space indicators
+(`StrongDual.memLpLoc_indicator_pos`), and more generally a.e.-strongly measurable functions
+bounded near every point of `U`, are locally `Lᵖ` for every exponent. On a regular space
 the class is local and satisfies the sheaf condition on open covers (`TauCeti.memLpLoc_iff_locally`,
 `TauCeti.memLpLoc_iff_forall_inter`, `TauCeti.memLpLoc_iSup_iff`). On an open set,
 membership is detected on the open subsets with compact closure inside it, and on a ball of a proper
@@ -586,3 +587,22 @@ theorem Module.Basis.memLpLoc_iff {X F ι : Type*} [TopologicalSpace X] [Measura
     simpa only [b.sum_repr] using hs
 
 end Coordinates
+
+section HalfSpace
+
+open TauCeti
+
+/-- The indicator of an open half-space `{x : E | 0 < ℓ x}` belongs to `MemLpLoc p U` on every
+subset `U` and for every exponent `p : ℝ≥0∞`. -/
+theorem StrongDual.memLpLoc_indicator_pos {E : Type*} [TopologicalSpace E] [AddCommMonoid E]
+    [Module ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+    (ℓ : StrongDual ℝ E) (p : ℝ≥0∞) (U : Set E) :
+    MemLpLoc p U ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) μ := by
+  refine memLpLoc_iff.2 fun K _ hK => ?_
+  have : IsFiniteMeasure (μ.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
+  exact memLp_indicator_const p
+    (isOpen_lt continuous_const ℓ.continuous).measurableSet.nullMeasurableSet 1
+    (Or.inr (measure_ne_top _ _))
+
+end HalfSpace

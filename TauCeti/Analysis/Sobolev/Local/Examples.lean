@@ -48,7 +48,7 @@ This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
 * By `TauCeti.not_hasWeakFDerivOn_indicator_pos`, the indicator of the half-plane `{z | 0 < z.re}`
   is in no local `W^{k,p}` class of positive order on any set whose interior meets the imaginary
   axis (`TauCeti.not_memWkpLoc_indicator_re_pos`), although it lies in every local `Lᵖ` class
-  (`TauCeti.memLpLoc_indicator_pos`).
+  (`StrongDual.memLpLoc_indicator_pos`).
 * The rotation `z ↦ i z` is not admissible on half-discs: it does not preserve the real axis
   (`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`), and the indicator of the open upper half-plane is
   in every local Sobolev class on the closed upper half-disc, while its composition with
@@ -216,7 +216,7 @@ theorem memWkpLoc_two_norm_iff (h0 : (0 : ℂ) ∈ interior U) :
 
 /-- The indicator of the right half-plane is in no local Sobolev class of positive order on a
 set whose interior meets the imaginary axis, although it is locally `Lᵖ` there
-(`TauCeti.memLpLoc_indicator_pos`). -/
+(`StrongDual.memLpLoc_indicator_pos`). -/
 theorem not_memWkpLoc_indicator_re_pos {k : ℕ} {z₀ : ℂ} (hz₀ : z₀ ∈ interior U)
     (hre : z₀.re = 0) :
     ¬ MemWkpLoc p U (k + 1) ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := fun h => by

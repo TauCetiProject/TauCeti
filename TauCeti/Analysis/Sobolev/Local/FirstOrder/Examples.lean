@@ -29,16 +29,18 @@ local Sobolev class `TauCeti.MemW1pLoc`:
   omitted in infinite dimensions.
 * **Identity and norm.** The identity belongs to `MemW1pLoc p Ω` (`TauCeti.memW1pLoc_id`) without
   belonging to global `Lᵖ` for `p ≠ 0` on a nontrivial space (`TauCeti.not_memLp_id` in
-  `TauCeti.MeasureTheory.Integral.NormRpow`); `x ↦ ‖x‖` belongs to `MemW1pLoc p Ω` for all `p` with
-  `‖fderiv ℝ (‖·‖) x‖ ≤ 1` (`TauCeti.memW1pLoc_norm`, while on `ι → ℝ` with the supremum norm its
-  classical derivative at points where a single nonzero coordinate strictly dominates is given by
-  `TauCeti.hasFDerivAt_pi_norm_of_abs_lt` in `TauCeti.Analysis.Calculus.FDeriv.Norm`).
+  `TauCeti.MeasureTheory.Integral.NormRpow`); `x ↦ ‖x‖` belongs to `MemW1pLoc p Ω` for all `p` via
+  `lipschitzWith_one_norm.memW1pLoc`, with `‖fderiv ℝ (‖·‖) x‖ ≤ 1` from
+  `norm_fderiv_le_of_lipschitz ℝ lipschitzWith_one_norm` (`TauCeti.norm_fderiv_norm_le` in
+  `TauCeti.Analysis.Calculus.FDeriv.Norm`, while on `ι → ℝ` with the supremum norm its classical
+  derivative at points where a single nonzero coordinate strictly dominates is given by
+  `TauCeti.hasFDerivAt_pi_norm_of_abs_lt` there).
 * **Unit radial field.** On an inner product space of dimension `d ≥ 2` and an open set `Ω`
   containing `0`, the unit radial map `x ↦ ‖x‖⁻¹ • x` belongs to `MemW1pLoc p Ω` if and only if
   `p < d` (`TauCeti.memW1pLoc_norm_inv_smul_iff`).
 * **Hyperplane half-space indicators.** For `ℓ ≠ 0`, the indicator of `{x | 0 < ℓ x}` belongs to
-  `MemLpLoc p Ω` for all `p` (`TauCeti.memLpLoc_indicator_pos`) but never to `MemW1pLoc p Ω` when
-  `Ω` meets `{x | ℓ x = 0}` (`TauCeti.not_memW1pLoc_indicator_pos`).
+  `MemLpLoc p Ω` for all `p` (`StrongDual.memLpLoc_indicator_pos`) but never to `MemW1pLoc p Ω`
+  when `Ω` meets `{x | ℓ x = 0}` (`TauCeti.not_memW1pLoc_indicator_pos`).
 
 ## References
 
@@ -51,7 +53,7 @@ local Sobolev class `TauCeti.MemW1pLoc`:
 public noncomputable section
 
 open Filter MeasureTheory Metric Set TopologicalSpace
-open scoped ENNReal NNReal Topology RealInnerProductSpace
+open scoped ENNReal Topology RealInnerProductSpace
 
 namespace TauCeti
 
@@ -106,16 +108,6 @@ theorem memW1pLoc_id {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fin
     MemW1pLoc p Ω (id : E → E) μ :=
   (ContinuousLinearMap.id ℝ E).memW1pLoc
 
-/-- The norm `x ↦ ‖x‖` on any finite-dimensional real normed space belongs to `MemW1pLoc p Ω` for
-every open set `Ω` and every exponent `p`, and its classical derivative `fderiv ℝ (‖·‖)` has
-operator norm at most `1` everywhere. -/
-theorem memW1pLoc_norm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
-    (p : ℝ≥0∞) (Ω : Opens E) :
-    MemW1pLoc p Ω (‖·‖ : E → ℝ) μ ∧ ∀ x : E, ‖fderiv ℝ (‖·‖ : E → ℝ) x‖ ≤ 1 :=
-  ⟨lipschitzWith_one_norm.memW1pLoc, fun _ =>
-    NNReal.coe_one ▸ norm_fderiv_le_of_lipschitz ℝ lipschitzWith_one_norm⟩
-
 /-- **Sharpness on the unit radial map.** On a finite-dimensional real inner product space `E` of
 dimension `d ≥ 2` and an open set `Ω` containing `0`, the unit radial map `x ↦ ‖x‖⁻¹ • x` belongs
 to `MemW1pLoc p Ω` if and only if `p < Module.finrank ℝ E`. -/
@@ -167,21 +159,9 @@ theorem memW1pLoc_norm_inv_smul_iff {E : Type*} [NormedAddCommGroup E] [InnerPro
       rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_neg_one]
       exact norm_rpow_smul_id_add_smulRight_le (-1) x
 
-/-- The indicator of an open half-space `{x : E | 0 < ℓ x}` belongs to `MemLpLoc p U` on every
-subset `U` and for every exponent `p : ℝ≥0∞`. -/
-theorem memLpLoc_indicator_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
-    (ℓ : StrongDual ℝ E) (p : ℝ≥0∞) (U : Set E) :
-    MemLpLoc p U ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) μ := by
-  refine memLpLoc_iff.2 fun K _ hK => ?_
-  have : IsFiniteMeasure (μ.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
-  exact memLp_indicator_const p
-    (isOpen_lt continuous_const ℓ.continuous).measurableSet.nullMeasurableSet 1
-    (Or.inr (measure_ne_top _ _))
-
 /-- **Jump discontinuities across hyperplanes are not in `MemW1pLoc`.** While the indicator of
-`{x : E | 0 < ℓ x}` belongs to `MemLpLoc p Ω` for every `p` (`TauCeti.memLpLoc_indicator_pos`), it
-belongs to `MemW1pLoc p Ω` for *no* exponent `p : ℝ≥0∞` whenever `ℓ ≠ 0` and `Ω` meets
+`{x : E | 0 < ℓ x}` belongs to `MemLpLoc p Ω` for every `p` (`StrongDual.memLpLoc_indicator_pos`),
+it belongs to `MemW1pLoc p Ω` for *no* exponent `p : ℝ≥0∞` whenever `ℓ ≠ 0` and `Ω` meets
 `{x | ℓ x = 0}`. -/
 theorem not_memW1pLoc_indicator_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
