@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Finsupp.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Basic.Complex.Basic
 import Mathlib.Basic.Complex.BigOperators
+import Mathlib.Data.Matrix.Mul
 
 /-!
 # Weighted sums of squared absolute values
@@ -17,7 +18,9 @@ A finitely supported family of complex numbers `f` and real weights `w` give the
 `∑ₛ |f s|² w s`, which is the weighted Hermitian sum `∑ₛ conj (f s) * w s * f s`
 (`Finsupp.ofReal_sum_normSq_mul`). For nonnegative weights this sum is nonnegative
 (`Finsupp.sum_normSq_mul_nonneg`) and vanishes exactly when `f` vanishes at every index of nonzero
-weight (`Finsupp.sum_normSq_mul_eq_zero_iff`).
+weight (`Finsupp.sum_normSq_mul_eq_zero_iff`). The coordinate contraction
+`Complex.sum_intCast_mul_single` selects one coordinate of an integer-valued family using a
+real coordinate vector.
 -/
 
 public section
@@ -56,3 +59,15 @@ theorem sum_normSq_mul_eq_zero_iff {α : Type*} (f : α →₀ ℂ) {w : α → 
     · simp [h s hs]
 
 end Finsupp
+
+namespace Complex
+
+/-- Contracting an integer frequency with a real coordinate vector selects that coordinate. -/
+theorem sum_intCast_mul_single {d : Type*} [Fintype d] [DecidableEq d] (i : d) (n : d → ℤ) :
+    ∑ j, (n j : ℂ) * ((Pi.single i 1 : d → ℝ) j : ℂ) = (n i : ℂ) := by
+  have hcast : (fun j ↦ ((Pi.single i 1 : d → ℝ) j : ℂ)) = Pi.single i 1 := by
+    ext j
+    simp [Pi.single_apply, apply_ite Complex.ofReal]
+  rw [← dotProduct, hcast, dotProduct_single_one]
+
+end Complex

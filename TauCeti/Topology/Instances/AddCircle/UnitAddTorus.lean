@@ -50,6 +50,11 @@ theorem isOpenQuotientMap_coe :
     IsOpenQuotientMap fun x : d → ℝ ↦ fun i ↦ (x i : UnitAddCircle) :=
   IsOpenQuotientMap.piMap fun _ ↦ QuotientAddGroup.isOpenQuotientMap_mk
 
+/-- A function on the torus is continuous exactly when its lift to `d → ℝ` is continuous. -/
+theorem continuous_comp_coe_iff {X : Type*} [TopologicalSpace X] {f : UnitAddTorus d → X} :
+    Continuous (fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) ↔ Continuous f :=
+  isOpenQuotientMap_coe.isQuotientMap.continuous_iff.symm
+
 /-- Two points of `d → ℝ` have the same image on the torus exactly when they differ by an integer
 vector. -/
 theorem coe_eq_coe_iff {x y : d → ℝ} :
