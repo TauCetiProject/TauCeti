@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 import TauCeti.Analysis.Complex.Taylor.CauchyEstimate
 import TauCeti.Analysis.Complex.Taylor.Laurent
 import TauCeti.Analysis.Contour.MeromorphicLaurent
+import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.SpecificLimits.Window
 
@@ -50,7 +51,7 @@ theorem le_norm_sub_of_window_taylor_bound_of_pole {F : ℂ → ℂ} {z w ρ : �
         ‖iteratedDeriv k F z / (k ! : ℂ)‖ + ((-1) ^ k * (iteratedDeriv k F w / (k ! : ℂ))).re ≤
           C * Real.exp (η * U) / R ^ k) :
     R ≤ ‖z - ρ‖ := by
-  obtain ⟨m, hp⟩ := Contour.exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero hp
+  obtain ⟨m, hp⟩ := exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero hp
   obtain ⟨hdz, hdw⟩ := lt_min_iff.1 hd
   let d := ‖z - ρ‖
   have hd₀ : 0 < d := norm_pos_iff.2 (sub_ne_zero.2 hzρ)
@@ -90,7 +91,7 @@ theorem meromorphicTrailingCoeffAt_re_nonpos_of_window_taylor_bound {F : ℂ →
       U ≤ (k : ℝ) ∧
         ((-1) ^ k * (iteratedDeriv k F x / (k ! : ℂ))).re ≤ C * Real.exp (η * U) / R ^ k) :
     (meromorphicTrailingCoeffAt F β).re ≤ 0 := by
-  obtain ⟨m, hp⟩ := Contour.exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero hp
+  obtain ⟨m, hp⟩ := exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero hp
   by_contra! hc
   obtain ⟨hdr, hdR⟩ := lt_min_iff.1 hd
   have hd₀ := sub_pos.mpr hβ
