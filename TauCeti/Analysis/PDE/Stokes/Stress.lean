@@ -201,14 +201,6 @@ theorem trace_transpose_newtonianStress_mul_self_nonneg [Fintype n] {μ : ℝ} (
   rw [trace_transpose_newtonianStress_mul_self_of_trace_eq_zero μ p hA]
   exact mul_nonneg (mul_nonneg zero_le_two hμ) (trace_transpose_mul_self_nonneg _)
 
-omit [DecidableEq n] in
-/-- The squared strain rate `e(A) : e(A)` vanishes exactly on skew-symmetric gradients, the
-infinitesimal rigid rotations. -/
-theorem trace_transpose_coefficientSymmetricPart_mul_self_eq_zero_iff [Fintype n]
-    {A : Matrix n n ℝ} :
-    ((coefficientSymmetricPart A)ᵀ * coefficientSymmetricPart A).trace = 0 ↔ Aᵀ = -A := by
-  rw [trace_transpose_mul_self_eq_zero_iff, coefficientSymmetricPart_eq_zero_iff]
-
 /-! ### Orthogonal covariance -/
 
 /-- The Newtonian stress is covariant under an orthogonal change of frame `A ↦ O A Oᵀ`. -/

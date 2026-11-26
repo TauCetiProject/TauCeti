@@ -23,6 +23,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Topology.MetricSpace.Lipschitz
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.Normed.Field.Lipschitz
+import TauCeti.LinearAlgebra.Matrix.Trace.TransposeMul
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -131,12 +132,10 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.UniformlyEllipticOn.add_bounded`: adding a bounded coefficient
   perturbation preserves uniform ellipticity with lower constant `λ - μ` when the
   perturbation size `μ` is smaller than `λ`.
-* `TauCeti.PDE.coefficientSymmetricPart`: the symmetric part `(A + Aᵀ) / 2` of a
-  coefficient matrix. It vanishes exactly on skew-symmetric matrices
-  (`TauCeti.PDE.coefficientSymmetricPart_eq_zero_iff`) and commutes with congruences
-  `A ↦ O A Oᵀ` (`TauCeti.PDE.coefficientSymmetricPart_mul_mul_transpose`). It is linear
-  (`TauCeti.PDE.coefficientSymmetricPart_add`, `_smul`, `_neg`, `_sum`) and invariant under
-  transposition (`TauCeti.PDE.coefficientSymmetricPart_transpose`).
+* `TauCeti.PDE.coefficientSymmetricPart`: the symmetric part `S = (A + Aᵀ) / 2` of a matrix `A`,
+  linear (`_add`, `_smul`, `_neg`, `_sum`), transpose-invariant (`_transpose`) and commuting with
+  congruences `A ↦ O A Oᵀ` (`_mul_mul_transpose`). `S` and `tr (Sᵀ S)` vanish iff `Aᵀ = -A`
+  (`_eq_zero_iff`, `TauCeti.PDE.trace_transpose_coefficientSymmetricPart_mul_self_eq_zero_iff`).
 * `TauCeti.PDE.UniformlyEllipticOn.transpose` and
   `TauCeti.PDE.UniformlyEllipticOn.coefficientSymmetricPart`: transposing or replacing a
   coefficient field by its symmetric part preserves uniform ellipticity with the same
@@ -223,6 +222,11 @@ lemma coefficientSymmetricPart_eq_zero_iff {A : Matrix n n ℝ} :
     coefficientSymmetricPart A = 0 ↔ Aᵀ = -A := by
   rw [coefficientSymmetricPart_def, smul_eq_zero, or_iff_right (by norm_num),
     add_eq_zero_iff_eq_neg']
+
+/-- The squared symmetric part `e(A) : e(A)` vanishes exactly on skew-symmetric matrices. -/
+lemma trace_transpose_coefficientSymmetricPart_mul_self_eq_zero_iff [Fintype n] {A : Matrix n n ℝ} :
+    ((coefficientSymmetricPart A)ᵀ * coefficientSymmetricPart A).trace = 0 ↔ Aᵀ = -A := by
+  rw [trace_transpose_mul_self_eq_zero_iff, coefficientSymmetricPart_eq_zero_iff]
 
 /-- Taking the symmetric part commutes with every congruence `A ↦ O A Oᵀ`. -/
 lemma coefficientSymmetricPart_mul_mul_transpose {m : Type*} [Fintype n] (O : Matrix m n ℝ)
