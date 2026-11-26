@@ -172,12 +172,7 @@ private theorem ae_tendsto_mollifiedCoeff (ha : AEStronglyMeasurable a volume)
     ∀ᵐ x, Tendsto (fun k => mollifiedCoeff (φ k) a x) atTop (𝓝 (a x)) := by
   filter_upwards [ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable hφ
     (Eventually.of_forall hφ2) (hell.locallyIntegrable_toEuclideanCLM ha)] with x hx
-  have hc : Continuous ((toEuclideanCLM (𝕜 := ℝ)).symm :
-      (EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) →
-        Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :=
-    LinearMap.continuous_of_finiteDimensional
-      (toEuclideanCLM (𝕜 := ℝ) (n := Fin (n + 1))).symm.toAlgEquiv.toLinearEquiv.toLinearMap
-  have h := (hc.tendsto _).comp hx
+  have h := (Matrix.continuous_toEuclideanCLM_symm.tendsto _).comp hx
   rw [StarAlgEquiv.symm_apply_apply] at h
   exact h
 
@@ -303,10 +298,11 @@ private theorem norm_sub_le_of_forall_energyFormH1_eq_inner
       (-divergenceForcing F) v = ⟪F, W1p.gradient (v : W1p volume U 2)⟫_ℝ := by
     simp
   have hnorm : ‖-divergenceForcing F - -divergenceForcing F'‖ ≤ ‖F - F'‖ := by
-    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v => ?_
-    rw [sub_apply, hℓ, hℓ, ← inner_sub_left, Real.norm_eq_abs]
-    exact (abs_real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_left
-      ((W1p.norm_gradient_le _).trans (Submodule.norm_coe v).le) (norm_nonneg _))
+    have : -divergenceForcing F - -divergenceForcing F' = divergenceForcing (F' - F) := by
+      ext v
+      simp [inner_sub_left]
+    rw [this]
+    exact (norm_divergenceForcing_le _).trans_eq (norm_sub_rev _ _)
   have h := norm_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq
     (memLp_energyIntegrand_of_uniformlyEllipticOn hb hell _) hC hlower (h := 0) le_rfl
     (fun v => by simp) le_rfl
