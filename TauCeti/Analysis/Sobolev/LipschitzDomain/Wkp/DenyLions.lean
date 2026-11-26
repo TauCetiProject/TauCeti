@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
-public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Polynomial
 public import Mathlib.Analysis.Normed.Group.Quotient
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.LinearIsometry
 import TauCeti.Analysis.Sobolev.Wkp.DenyLions
@@ -25,9 +25,12 @@ equivalent to the top seminorm,
 with a constant `C` depending on `Ω`, `m` and `p` but not on `u`. Equivalently, there is a
 continuous projection `P` onto `N` with `‖u - P u‖_{m+1,p} ≤ C * ‖D^{m+1} u‖_{Lᵖ}`.
 
-Classically, on a connected `Ω` the kernel `N` consists of the polynomials of degree at most `m`;
-the statements here do not use that identification. The model case `F = WithLp 2 (ℝ × E)` is
-`e = LinearIsometryEquiv.refl`.
+The statements about `N` need no connectedness. On a preconnected `Ω ⊆ EuclideanSpace ℝ ι`, `N`
+consists of the classes of polynomials of total degree at most `m`, which gives the classical form
+of the lemma: the quotient norm modulo these polynomial classes and the descended top seminorm
+`TauCeti.Wkp.quotientSeminorm m` are equivalent norms, and a continuous linear projection onto the
+polynomials of degree at most `m` approximates `u` to within a multiple of `|u|_{m+1,p}`. The model
+case `F = WithLp 2 (ℝ × E)` is `e = LinearIsometryEquiv.refl`.
 
 The proof combines the higher-order Rellich–Kondrachov theorem
 `TauCeti.Wkp.isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image` with the
@@ -39,6 +42,8 @@ explicit.
 * `TauCeti.Wkp.finiteDimensional_ker_iteratedGradientL_of_isLipschitzDomainWith_image`
 * `TauCeti.Wkp.exists_projection_norm_sub_le_of_isLipschitzDomainWith_image`
 * `TauCeti.Wkp.exists_norm_quotientMk_ker_le_of_isLipschitzDomainWith_image`
+* `TauCeti.Wkp.exists_norm_le_quotientSeminorm_of_isLipschitzDomainWith_image`
+* `TauCeti.Wkp.exists_polynomialProjection_norm_sub_le_of_isLipschitzDomainWith_image`
 
 ## References
 
@@ -101,6 +106,48 @@ theorem exists_norm_quotientMk_ker_le_of_isLipschitzDomainWith_image
         C * ‖iteratedGradient m u‖ :=
   exists_norm_quotientMk_ker_le_of_isCompactOperator m
     (isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image e hΩ hb m)
+
+/-! ### The Deny–Lions lemma modulo polynomials -/
+
+section Polynomial
+
+variable {ι : Type*} [Fintype ι] {Ω : Opens (EuclideanSpace ℝ ι)}
+
+/-- **The Deny–Lions lemma modulo polynomials on Lipschitz domains.** Let
+`Ω ⊆ EuclideanSpace ℝ ι` be a bounded, preconnected open set whose isometric image in the model
+space is a Lipschitz domain, and `1 ≤ p ≤ ∞`. On the quotient of `W^{m+1,p}(Ω)` by the polynomial
+classes of degree at most `m`, the quotient norm `inf_q ‖u - q‖` is bounded by a constant multiple
+of the descended top seminorm `|u|_{m+1,p}`. With `TauCeti.Wkp.quotientSeminorm_le_norm`, the two
+are equivalent norms on the quotient. -/
+theorem exists_norm_le_quotientSeminorm_of_isLipschitzDomainWith_image
+    (e : EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E))
+    (hΩ : (e '' (Ω : Set (EuclideanSpace ℝ ι))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
+    (hc : IsPreconnected (Ω : Set (EuclideanSpace ℝ ι))) (m : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x : Wkp volume Ω p (m + 1) ⧸ polynomialClasses (m + 1) m,
+      ‖x‖ ≤ C * quotientSeminorm m x :=
+  exists_norm_le_quotientSeminorm_of_isCompactOperator hc m
+    (isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image e hΩ hb m)
+
+/-- **The Deny–Lions lemma on Lipschitz domains, polynomial projection form.** Let
+`Ω ⊆ EuclideanSpace ℝ ι` be a nonempty, bounded, preconnected open set whose isometric image in the
+model space is a Lipschitz domain, and `1 ≤ p ≤ ∞`. There are a continuous linear map `π` from
+`W^{m+1,p}(Ω)` to the polynomial functions of total degree at most `m`, which recovers every such
+polynomial from its Sobolev class, and a constant `C` such that the Sobolev class of `π u`
+approximates `u` with `‖u - π u‖_{m+1,p} ≤ C * |u|_{m+1,p}`. -/
+theorem exists_polynomialProjection_norm_sub_le_of_isLipschitzDomainWith_image
+    (e : EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E))
+    (hΩ : (e '' (Ω : Set (EuclideanSpace ℝ ι))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
+    (hc : IsPreconnected (Ω : Set (EuclideanSpace ℝ ι)))
+    (hne : (Ω : Set (EuclideanSpace ℝ ι)).Nonempty) (m : ℕ) :
+    ∃ (π : Wkp volume Ω p (m + 1) →L[ℝ] polynomialsDegLE ι m) (C : ℝ), 0 ≤ C ∧
+      (∀ q, π (polynomialL hb (m + 1) m q) = q) ∧
+      ∀ u, ‖u - polynomialL hb (m + 1) m (π u)‖ ≤ C * seminorm (m + 1) (m + 1) le_rfl u :=
+  exists_polynomialProjection_norm_sub_le_of_isCompactOperator hb hc hne m
+    (isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image e hΩ hb m)
+
+end Polynomial
 
 end Wkp
 
