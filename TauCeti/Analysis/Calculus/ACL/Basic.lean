@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.InnerProductSpace.PiL2
 
@@ -26,7 +27,16 @@ normed space. Openness of `Ω` is assumed only for the `C¹` result.
   linear map `ℝⁿ → F` sending `eᵢ` to the partial derivative `∂ᵢu(x) = lineDeriv ℝ u x eᵢ`, which
   is `0` where that derivative does not exist (`TauCeti.formalDeriv_apply_single`). It is the
   Fréchet derivative wherever `u` is differentiable (`TauCeti.formalDeriv_eq_fderiv`), and at `x`
-  it depends only on the germ of `u` at `x` (`Filter.EventuallyEq.formalDeriv_eq`).
+  it depends only on the germ of `u` at `x` (`Filter.EventuallyEq.formalDeriv_eq`). Constant maps
+  have formal derivative `0` (`TauCeti.formalDeriv_const`). Multiplication by a real constant,
+  negation and composition with a continuous linear equivalence `L` commute with the formal
+  derivative at every point, whether or not the partial derivatives exist:
+  `(c • u)' = c • u'`, `(-u)' = -u'` and `(L ∘ u)' = L ∘ u'` (`TauCeti.formalDeriv_const_smul`,
+  `TauCeti.formalDeriv_neg`, `ContinuousLinearEquiv.comp_formalDeriv`), because the partial
+  derivatives transform in the same way (`TauCeti.lineDeriv_const_smul`,
+  `TauCeti.lineDeriv_neg_left`, `ContinuousLinearEquiv.comp_lineDeriv`). Sums and compositions with
+  continuous linear maps that are not equivalences do not commute with the formal derivative
+  pointwise: a sum may have a partial derivative where neither summand has one.
 * `TauCeti.coordinateBox a b` is the closed coordinate box `Π_j [a_j, b_j]`, and
   `TauCeti.lineFunction u x i` is the line function `t ↦ u(x + (t - xᵢ) eᵢ)` of `u` through `x` in
   the `i`-th direction. A box has volume `∏ⱼ ENNReal.ofReal (bⱼ - aⱼ)`
@@ -102,6 +112,35 @@ theorem _root_.Filter.EventuallyEq.formalDeriv_eq {u v : EuclideanSpace ℝ (Fin
   ext w
   rw [formalDeriv_apply, formalDeriv_apply]
   simp_rw [h.lineDeriv_eq]
+
+/-- The formal derivative of a constant map is `0`. -/
+@[simp]
+theorem formalDeriv_const (c : F) (x : EuclideanSpace ℝ (Fin n)) :
+    formalDeriv (fun _ : EuclideanSpace ℝ (Fin n) ↦ c) x = 0 :=
+  EuclideanSpace.ext_continuousLinearMap_single fun i ↦ by simp [lineDeriv]
+
+/-- The formal derivative of `c • u` is `c • u'`, for every real `c`. -/
+@[to_fun (attr := simp) formalDeriv_fun_const_smul]
+theorem formalDeriv_const_smul (c : ℝ) (u : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) : formalDeriv (c • u) x = c • formalDeriv u x :=
+  EuclideanSpace.ext_continuousLinearMap_single fun i ↦ by
+    simp
+
+/-- The formal derivative of `-u` is `-u'`. -/
+@[to_fun (attr := simp) formalDeriv_fun_neg]
+theorem formalDeriv_neg (u : EuclideanSpace ℝ (Fin n) → F) (x : EuclideanSpace ℝ (Fin n)) :
+    formalDeriv (-u) x = -formalDeriv u x :=
+  EuclideanSpace.ext_continuousLinearMap_single fun i ↦ by
+    simp
+
+/-- The formal derivative of `L ∘ u`, for a continuous linear equivalence `L`, is `L ∘ u'`. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.comp_formalDeriv {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] (L : F ≃L[ℝ] F') (u : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) :
+    formalDeriv (L ∘ u) x = (L : F →L[ℝ] F').comp (formalDeriv u x) :=
+  EuclideanSpace.ext_continuousLinearMap_single fun i ↦ by
+    simp
 
 /-- The norm of the formal derivative is at most the sum of the norms of the partial
 derivatives. -/
