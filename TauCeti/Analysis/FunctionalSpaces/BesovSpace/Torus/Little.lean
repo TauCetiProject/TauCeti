@@ -281,8 +281,9 @@ theorem exists_norm_sub_le_of_forall_lt_rpow_mul_norm_le :
   refine ⟨K, hK0, fun p _ N ε u hε hu ↦ ?_⟩
   set v : BesovSpace φ s p ∞ :=
     ⟨truncation φ N u.coeff, memBesov_of_finite_support (finite_support_truncation N u.coeff)⟩
+  have hv : v.coeff = truncation φ N u.coeff := rfl
   refine ⟨v, finite_support_truncation N u.coeff, ?_⟩
-  rw [norm_eq_ciSup]
+  rw [norm_eq_ciSup, coeff_sub, hv]
   exact ciSup_le fun k ↦ hK p N u.coeff hε hu k
 
 /-- **The periodic little Besov space is cut out by the decay of the weighted blocks.** For every
