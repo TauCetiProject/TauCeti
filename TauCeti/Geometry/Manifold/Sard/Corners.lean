@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.Geometry.Manifold.Sard.Basic
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Manifold.Corners.LocalQuadrant
 import TauCeti.Geometry.Manifold.Corners.Stratum
 
 /-!
@@ -18,8 +19,8 @@ of dimensions `m` and `m'`, with `M` Lindelöf and `n > m - m'`, `n ≥ 1`. On a
 corners, critical points can lie on boundary faces or higher-codimension corners, where the
 chart-level Sard theorem for interior points
 (`TauCeti.isNullSet_image_of_not_isRegularPoint_of_isInteriorPoint`) does not directly apply.
-(For manifolds with boundary modelled on the Euclidean half-space `𝓡∂ m`, see
-`TauCeti.Geometry.Manifold.Sard.HalfSpace`.)
+(The specialisation to manifolds with boundary modelled on the Euclidean half-space `𝓡∂ d` is
+recorded in `TauCeti.Geometry.Manifold.Sard.HalfSpace`.)
 
 On a `C^n` manifold `M` modelled on the Euclidean quadrant `𝓡c m`, `M` is partitioned into finitely
 many depth strata `(𝓡c m).depthStratum M k` (`0 ≤ k ≤ m`). Each depth stratum is a boundaryless
