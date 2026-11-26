@@ -60,9 +60,9 @@ factorial.
 * `TauCeti.qPochhammer_base_one`: at base `q = 1`, `(x; 1)_n = (1 - x) ^ n`.
 * `TauCeti.qPochhammer_eq_zero_iff`: without zero divisors, `(x; q)_n = 0` exactly when
   `x q ^ i = 1` for some `i < n`.
-* `TauCeti.qFactorial_zero_left`, `TauCeti.qFactorial_dvd_of_le`, `TauCeti.isUnit_qFactorial_iff`:
+* `TauCeti.qFactorial_base_zero`, `TauCeti.qFactorial_dvd_of_le`, `TauCeti.isUnit_qFactorial_iff`:
   `q = 0` specialization, divisibility by index, and unit characterization for `[n]_q!`.
-* `TauCeti.qPochhammer_zero_right`, `TauCeti.qPochhammer_dvd_of_le`,
+* `TauCeti.qPochhammer_base_zero`, `TauCeti.qPochhammer_dvd_of_le`,
   `TauCeti.isUnit_qPochhammer_iff`, `TauCeti.isUnit_qPochhammer_self_iff`: `q = 0` specialization,
   divisibility by index, and unit characterizations for `(x; q)_n` and `(q; q)_n`.
 * `TauCeti.qPochhammer_inv`, `TauCeti.qPochhammer_inv_self`: for units `x` and `q`,
@@ -134,7 +134,7 @@ theorem map_qFactorial {F : Type*} [FunLike F R S] [RingHomClass F R S] (f : F) 
   simp [qFactorial_def, map_prod, map_sum]
 
 /-- Specializing the `q`-factorial at `q = 0` gives `1`. -/
-@[simp] theorem qFactorial_zero_left (n : ℕ) : qFactorial (0 : R) n = 1 := by
+@[simp] theorem qFactorial_base_zero (n : ℕ) : qFactorial (0 : R) n = 1 := by
   simp [qFactorial_def, zero_geom_sum]
 
 /-- If `m ≤ n`, then `[m]_q!` divides `[n]_q!`. -/
@@ -263,13 +263,13 @@ theorem qPochhammer_inv_self (q : Rˣ) (n : ℕ) :
 
 /-- At `q = 0`, `(x; 0)_{n + 1} = 1 - x`. -/
 @[simp]
-theorem qPochhammer_zero_right_succ (x : R) (n : ℕ) : qPochhammer x (0 : R) (n + 1) = 1 - x := by
+theorem qPochhammer_base_zero_succ (x : R) (n : ℕ) : qPochhammer x (0 : R) (n + 1) = 1 - x := by
   simp [qPochhammer_succ']
 
 /-- At `q = 0` and `n ≠ 0`, `(x; 0)_n = 1 - x`. -/
-theorem qPochhammer_zero_right (x : R) {n : ℕ} (hn : n ≠ 0) : qPochhammer x (0 : R) n = 1 - x := by
+theorem qPochhammer_base_zero (x : R) {n : ℕ} (hn : n ≠ 0) : qPochhammer x (0 : R) n = 1 - x := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  exact qPochhammer_zero_right_succ x k
+  exact qPochhammer_base_zero_succ x k
 
 /-- If `m ≤ n`, then `(x; q)_m` divides `(x; q)_n`. -/
 theorem qPochhammer_dvd_of_le (x q : R) {m n : ℕ} (h : m ≤ n) :

@@ -52,6 +52,13 @@ noncomputable def eulerOddProd : R⟦X⟧ :=
   letI : TopologicalSpace R := ⊥
   ∏' i : ℕ, (1 + (X : R⟦X⟧) ^ (2 * i + 1))
 
+/-- Under the discrete topology on `R`, `eulerOddProd R` equals the infinite product
+`∏' i, (1 + X ^ (2 * i + 1))`. -/
+theorem eulerOddProd_eq_tprod [TopologicalSpace R] [DiscreteTopology R] :
+    eulerOddProd R = ∏' i : ℕ, (1 + (X : R⟦X⟧) ^ (2 * i + 1)) := by
+  obtain rfl := DiscreteTopology.eq_bot (α := R)
+  rfl
+
 /-- **Stabilization of `eulerOddProd`**: the `k`-th coefficient equals that of the finite product
 over `i < N` whenever `k < 2 * N + 1`. -/
 theorem coeff_eulerOddProd_eq_prod_of_lt (k : ℕ) {N : ℕ} (hN : k < 2 * N + 1) :
@@ -73,8 +80,7 @@ theorem coeff_eulerOddProd_eq_prod_of_lt (k : ℕ) {N : ℕ} (hN : k < 2 * N + 1
   rw [nhds_discrete, Filter.tendsto_pure] at ht
   obtain ⟨s₀, hs₀⟩ := Filter.eventually_atTop.mp ht
   have hs := hs₀ (s₀ ∪ range N) Finset.subset_union_left
-  change coeff k (∏ i ∈ s₀ ∪ range N, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) =
-    coeff k (eulerOddProd R) at hs
+  rw [← eulerOddProd_eq_tprod] at hs
   rw [← hs, ← Finset.prod_sdiff (Finset.subset_union_right (s₁ := s₀) (s₂ := range N)), mul_comm]
   classical
   have htail : ∀ t : Finset ℕ, (∀ i ∈ t, N ≤ i) → ∀ f : R⟦X⟧,
@@ -156,9 +162,7 @@ theorem coeff_eulerSqSeries_eq_sum_of_lt (k : ℕ) {N : ℕ} (hN : k < N ^ 2) :
 /-- Each summand `r ^ (n ^ 2) / (r ^ 2; r ^ 2)_n` equals `(-r) ^ n` times the `n`-th coefficient
 of `qPochhammerSeries (r ^ 2)`. -/
 private theorem neg_X_pow_mul_coeff_qPochhammerSeries_sq (n : ℕ) :
-    (-X : R⟦X⟧) ^ n *
-        coeff n (qPochhammerSeries (X ^ 2 : R⟦X⟧)
-          (isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero (by simp))) =
+    (-X : R⟦X⟧) ^ n * coeff n (qPochhammerSeries (X ^ 2 : R⟦X⟧)) =
       (X : R⟦X⟧) ^ (n ^ 2) * Ring.inverse (qPochhammer (X ^ 2 : R⟦X⟧) (X ^ 2 : R⟦X⟧) n) := by
   rw [coeff_qPochhammerSeries, neg_eq_neg_one_mul, mul_pow, ← pow_mul]
   have hexp : n + 2 * (n * (n - 1) / 2) = n ^ 2 := by
@@ -173,13 +177,10 @@ private theorem neg_X_pow_mul_coeff_qPochhammerSeries_sq (n : ℕ) :
 /-- Below `r`-degree `k + 1`, the coefficients of `qPochhammerSeries (r ^ 2)` agree with those of
 the finite polynomial product `qPochhammer t (r ^ 2) (k + 1)`. -/
 private theorem coeff_coeff_qPochhammerSeries_sq_eq (k n j : ℕ) (hj : j ≤ k) :
-    coeff j (coeff n (qPochhammerSeries (X ^ 2 : R⟦X⟧)
-        (isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero (by simp)))) =
+    coeff j (coeff n (qPochhammerSeries (X ^ 2 : R⟦X⟧))) =
       coeff j ((qPochhammer Polynomial.X (Polynomial.C (X ^ 2 : R⟦X⟧)) (k + 1)).coeff n) := by
   let φ : R⟦X⟧ →+* R⟦X⟧ := (expand 2 two_ne_zero).toRingHom
-  have hF : map φ (integralQPochhammer R) =
-      qPochhammerSeries (X ^ 2 : R⟦X⟧)
-        (isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero (by simp)) := by
+  have hF : map φ (integralQPochhammer R) = qPochhammerSeries (X ^ 2 : R⟦X⟧) := by
     rw [integralQPochhammer_eq_qPochhammerSeries,
       map_qPochhammerSeries _ (isUnit_one_sub_X_pow_succ (R := R))]
     ext m

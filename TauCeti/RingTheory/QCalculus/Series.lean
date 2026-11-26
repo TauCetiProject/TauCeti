@@ -27,15 +27,18 @@ functional equations, formal logarithms, and integral `q`-adic realization:
 * `TauCeti.integralQPochhammer R`: integral infinite product `∏_{i ≥ 0} (1 - q ^ i t)` in
   `(R⟦X⟧)⟦X⟧`, defined by `q`-adic coefficient stabilization of `qPochhammer X (C X) N`.
 
-Definitions of the `q`-exponential and `q`-Pochhammer series carry explicit unit hypotheses at
-construction (`∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)` for `jacksonExp` over any `CommSemiring`,
-and `∀ n, IsUnit (1 - q ^ (n + 1))` for `qPochhammerSeries`, `qPochhammerInvSeries`, and
-`qBinomialSeries` over any `CommRing`), so every coefficient denominator is a unit and
-`Ring.inverse` gives the exact multiplicative inverse. In `jacksonExp_one`, the `[Algebra ℚ R]`
-structure supplies the units `[n + 1]_1 = n + 1` automatically; by contrast, the formal logarithm
-identities `logOf_qPochhammerSeries` and `logOf_qPochhammerInvSeries` require `[Algebra ℚ A]`
-together with the explicit unit hypothesis `∀ n, IsUnit (1 - q ^ (n + 1))`. Meanwhile,
-`integralQPochhammer` requires no unit hypotheses.
+The `q`-exponential and `q`-Pochhammer series are defined over any commutative semiring or ring
+using `Ring.inverse` on the denominators (`qFactorial` and `qPochhammer`), with no unit hypotheses
+on the definitions themselves. Theorems characterizing their differential and shift equations,
+uniqueness, coefficient-map compatibility (`map_*`), reciprocal and `q`-binomial identities, and
+formal logarithms carry explicit unit hypotheses (`∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)` for
+`jacksonExp` over any `CommSemiring`, and `∀ n, IsUnit (1 - q ^ (n + 1))` for `qPochhammerSeries`,
+`qPochhammerInvSeries`, and `qBinomialSeries` over any `CommRing`), so every coefficient
+denominator is a unit and `Ring.inverse` gives the exact multiplicative inverse. In
+`jacksonExp_one`, the `[Algebra ℚ R]` structure supplies the units `[n + 1]_1 = n + 1`
+automatically; by contrast, the formal logarithm identities `logOf_qPochhammerSeries` and
+`logOf_qPochhammerInvSeries` require `[Algebra ℚ A]` together with the explicit unit hypothesis
+`∀ n, IsUnit (1 - q ^ (n + 1))`. Meanwhile, `integralQPochhammer` requires no unit hypotheses.
 
 ## References
 
@@ -59,45 +62,43 @@ section JacksonExp
 variable {A B : Type*} [CommSemiring A] [CommSemiring B]
 
 /-- The **normalized Jackson `q`-exponential** `∑_{n ≥ 0} t ^ n / [n]_q!`, defined over any
-commutative semiring assuming every positive `[n]_q` is a unit. Under this hypothesis every
-`[n]_q!` is a unit, `Ring.inverse` is its exact multiplicative inverse, and `jacksonExp q hq` is the
-unique solution to `D_q f = f`, `constantCoeff f = 1` (`TauCeti.eq_jacksonExp_iff`). -/
-noncomputable def jacksonExp (q : A) (_hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) : A⟦X⟧ :=
+commutative semiring via `Ring.inverse (qFactorial q n)`. Whenever every positive `[n]_q` is a
+unit, every `[n]_q!` is a unit, `Ring.inverse` is its exact multiplicative inverse, and
+`jacksonExp q` is the unique solution to `D_q f = f`, `constantCoeff f = 1`
+(`TauCeti.eq_jacksonExp_iff`). -/
+noncomputable def jacksonExp (q : A) : A⟦X⟧ :=
   PowerSeries.mk fun n ↦ Ring.inverse (qFactorial q n)
 
-/-- Coefficient formula for `TauCeti.jacksonExp`: `coeff n (jacksonExp q hq) = ([n]_q!)⁻¹ʳ`. -/
-@[simp] theorem coeff_jacksonExp (q : A) (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i))
-    (n : ℕ) : coeff n (jacksonExp q hq) = Ring.inverse (qFactorial q n) :=
+/-- Coefficient formula for `TauCeti.jacksonExp`: `coeff n (jacksonExp q) = ([n]_q!)⁻¹ʳ`. -/
+@[simp] theorem coeff_jacksonExp (q : A) (n : ℕ) :
+    coeff n (jacksonExp q) = Ring.inverse (qFactorial q n) :=
   coeff_mk n _
 
 /-- The constant coefficient of `TauCeti.jacksonExp` is `1`. -/
-@[simp] theorem constantCoeff_jacksonExp (q : A)
-    (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) :
-    constantCoeff (jacksonExp q hq) = 1 := by
+@[simp] theorem constantCoeff_jacksonExp (q : A) :
+    constantCoeff (jacksonExp q) = 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_jacksonExp, qFactorial_zero, Ring.inverse_one]
 
 /-- The degree-`1` coefficient of the Jackson `q`-exponential is `1`. -/
-theorem coeff_one_jacksonExp (q : A) (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) :
-    coeff 1 (jacksonExp q hq) = 1 := by
+theorem coeff_one_jacksonExp (q : A) : coeff 1 (jacksonExp q) = 1 := by
   rw [coeff_jacksonExp, qFactorial_one, Ring.inverse_one]
 
 /-- The degree-`2` coefficient of the Jackson `q`-exponential is `(1 + q)⁻¹ʳ`. -/
-theorem coeff_two_jacksonExp (q : A) (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) :
-    coeff 2 (jacksonExp q hq) = Ring.inverse (1 + q) := by
+theorem coeff_two_jacksonExp (q : A) : coeff 2 (jacksonExp q) = Ring.inverse (1 + q) := by
   rw [coeff_jacksonExp, qFactorial_succ, qFactorial_one, one_mul]; simp [sum_range_succ]
 
 /-- Under unit hypotheses on all positive `[n]_q`, the Jackson exponential satisfies `D_q f = f`. -/
 theorem qDerivative_jacksonExp {q : A} (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) :
-    qDerivative q (jacksonExp q hq) = jacksonExp q hq := by
+    qDerivative q (jacksonExp q) = jacksonExp q := by
   ext n
   rw [coeff_qDerivative, coeff_jacksonExp, coeff_jacksonExp, qFactorial_succ,
     Ring.inverse_mul (Or.inr (hq n)), ← mul_assoc, Ring.mul_inverse_cancel _ (hq n), one_mul]
 
 /-- **Uniqueness of the Jackson initial-value problem**: when every positive `[n]_q` is a unit,
-`jacksonExp q hq` is the unique power series satisfying `D_q f = f` and `constantCoeff f = 1`. -/
+`jacksonExp q` is the unique power series satisfying `D_q f = f` and `constantCoeff f = 1`. -/
 theorem eq_jacksonExp_iff {q : A} (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) {f : A⟦X⟧} :
-    f = jacksonExp q hq ↔ qDerivative q f = f ∧ constantCoeff f = 1 := by
-  refine ⟨fun h ↦ h ▸ ⟨qDerivative_jacksonExp hq, constantCoeff_jacksonExp q hq⟩, ?_⟩
+    f = jacksonExp q ↔ qDerivative q f = f ∧ constantCoeff f = 1 := by
+  refine ⟨fun h ↦ h ▸ ⟨qDerivative_jacksonExp hq, constantCoeff_jacksonExp q⟩, ?_⟩
   rintro ⟨hderiv, hzero⟩
   ext n
   induction n with
@@ -113,20 +114,15 @@ theorem eq_jacksonExp_iff {q : A} (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), 
 /-- The Jackson `q`-exponential commutes with coefficient ring homomorphisms whenever every
 positive `[n]_q` is a unit. -/
 theorem map_jacksonExp (φ : A →+* B) {q : A} (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) :
-    map φ (jacksonExp q hq) =
-      jacksonExp (φ q) (fun n ↦ by simpa [map_sum, map_pow] using (hq n).map φ) := by
+    map φ (jacksonExp q) = jacksonExp (φ q) := by
   ext n
   rw [coeff_map, coeff_jacksonExp, coeff_jacksonExp, ← map_qFactorial]
   exact ((isUnit_qFactorial_iff q n).mpr fun k _ ↦ hq k).map_ringInverse φ
 
 /-- At `q = 1` over a `ℚ`-algebra, where `[n + 1]_1 = n + 1` is automatically a unit, the
 Jackson exponential is the ordinary exponential series. -/
-@[simp] theorem jacksonExp_one {R : Type*} [CommRing R] [Algebra ℚ R]
-    (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), (1 : R) ^ i) := fun n ↦ by
-      simp only [one_pow, sum_const, card_range, nsmul_eq_mul, mul_one]
-      rw [← map_natCast (algebraMap ℚ R)]
-      exact (Ne.isUnit (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n))).map _) :
-    jacksonExp (1 : R) hq = PowerSeries.exp R := by
+@[simp] theorem jacksonExp_one {R : Type*} [CommRing R] [Algebra ℚ R] :
+    jacksonExp (1 : R) = PowerSeries.exp R := by
   ext n
   rw [coeff_jacksonExp, coeff_exp, qFactorial_base_one]
   have hne : (n.factorial : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
@@ -146,63 +142,62 @@ variable {A B : Type*} [CommRing A] [CommRing B]
 
 /-- The **formal infinite `q`-Pochhammer series**
 `E_q(t) = ∑_{n ≥ 0} (-1) ^ n q ^ (n (n - 1) / 2) t ^ n / (q; q)_n`, defined over any commutative
-ring assuming every `1 - q ^ (n + 1)` is a unit, so every `(q; q)_n` is a unit and
-`Ring.inverse` is its exact multiplicative inverse. -/
-noncomputable def qPochhammerSeries (q : A) (_hq : ∀ n, IsUnit (1 - q ^ (n + 1))) : A⟦X⟧ :=
+ring via `Ring.inverse (qPochhammer q q n)`. Whenever every `1 - q ^ (n + 1)` is a unit, every
+`(q; q)_n` is a unit and `Ring.inverse` is its exact multiplicative inverse. -/
+noncomputable def qPochhammerSeries (q : A) : A⟦X⟧ :=
   PowerSeries.mk fun n ↦ (-1) ^ n * q ^ (n * (n - 1) / 2) * Ring.inverse (qPochhammer q q n)
 
 /-- The **formal reciprocal `q`-Pochhammer series** `U_q(t) = ∑_{n ≥ 0} t ^ n / (q; q)_n`, defined
-over any commutative ring assuming every `1 - q ^ (n + 1)` is a unit, so every `(q; q)_n`
-is a unit and `Ring.inverse` is its exact multiplicative inverse. It is the multiplicative inverse
-of `qPochhammerSeries q hq` (`TauCeti.qPochhammerSeries_mul_qPochhammerInvSeries`). -/
-noncomputable def qPochhammerInvSeries (q : A) (_hq : ∀ n, IsUnit (1 - q ^ (n + 1))) : A⟦X⟧ :=
+over any commutative ring via `Ring.inverse (qPochhammer q q n)`. Whenever every `1 - q ^ (n + 1)`
+is a unit, every `(q; q)_n` is a unit, `Ring.inverse` is its exact multiplicative inverse, and
+`U_q` is the multiplicative inverse of `qPochhammerSeries q`
+(`TauCeti.qPochhammerSeries_mul_qPochhammerInvSeries`). -/
+noncomputable def qPochhammerInvSeries (q : A) : A⟦X⟧ :=
   PowerSeries.mk fun n ↦ Ring.inverse (qPochhammer q q n)
 
 /-- The **formal `q`-binomial series** `∑_{n ≥ 0} (a; q)_n t ^ n / (q; q)_n`, defined over any
-commutative ring assuming every `1 - q ^ (n + 1)` is a unit, so every `(q; q)_n` is a
-unit and `Ring.inverse` is its exact multiplicative inverse. -/
-noncomputable def qBinomialSeries (a q : A) (_hq : ∀ n, IsUnit (1 - q ^ (n + 1))) : A⟦X⟧ :=
+commutative ring via `Ring.inverse (qPochhammer q q n)`. Whenever every `1 - q ^ (n + 1)` is a
+unit, every `(q; q)_n` is a unit and `Ring.inverse` is its exact multiplicative inverse. -/
+noncomputable def qBinomialSeries (a q : A) : A⟦X⟧ :=
   PowerSeries.mk fun n ↦ qPochhammer a q n * Ring.inverse (qPochhammer q q n)
 
 /-- Coefficient formula for `TauCeti.qPochhammerSeries`:
 `coeff n (E_q(t)) = (-1) ^ n * q ^ (n (n - 1) / 2) * ((q; q)_n)⁻¹ʳ`. -/
-@[simp] theorem coeff_qPochhammerSeries (q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) (n : ℕ) :
-    coeff n (qPochhammerSeries q hq) =
+@[simp] theorem coeff_qPochhammerSeries (q : A) (n : ℕ) :
+    coeff n (qPochhammerSeries q) =
       (-1) ^ n * q ^ (n * (n - 1) / 2) * Ring.inverse (qPochhammer q q n) :=
   coeff_mk n _
 
 /-- Coefficient formula for `TauCeti.qPochhammerInvSeries`:
 `coeff n (U_q(t)) = ((q; q)_n)⁻¹ʳ`. -/
-@[simp] theorem coeff_qPochhammerInvSeries (q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) (n : ℕ) :
-    coeff n (qPochhammerInvSeries q hq) = Ring.inverse (qPochhammer q q n) :=
+@[simp] theorem coeff_qPochhammerInvSeries (q : A) (n : ℕ) :
+    coeff n (qPochhammerInvSeries q) = Ring.inverse (qPochhammer q q n) :=
   coeff_mk n _
 
 /-- Coefficient formula for `TauCeti.qBinomialSeries`:
-`coeff n (qBinomialSeries a q hq) = (a; q)_n * ((q; q)_n)⁻¹ʳ`. -/
-@[simp] theorem coeff_qBinomialSeries (a q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) (n : ℕ) :
-    coeff n (qBinomialSeries a q hq) = qPochhammer a q n * Ring.inverse (qPochhammer q q n) :=
+`coeff n (qBinomialSeries a q) = (a; q)_n * ((q; q)_n)⁻¹ʳ`. -/
+@[simp] theorem coeff_qBinomialSeries (a q : A) (n : ℕ) :
+    coeff n (qBinomialSeries a q) = qPochhammer a q n * Ring.inverse (qPochhammer q q n) :=
   coeff_mk n _
 
 /-- The constant coefficient of `TauCeti.qPochhammerSeries` is `1`. -/
-@[simp] theorem constantCoeff_qPochhammerSeries (q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    constantCoeff (qPochhammerSeries q hq) = 1 := by
+@[simp] theorem constantCoeff_qPochhammerSeries (q : A) :
+    constantCoeff (qPochhammerSeries q) = 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_qPochhammerSeries]; simp
 
 /-- The constant coefficient of `TauCeti.qPochhammerInvSeries` is `1`. -/
-@[simp] theorem constantCoeff_qPochhammerInvSeries (q : A)
-    (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    constantCoeff (qPochhammerInvSeries q hq) = 1 := by
+@[simp] theorem constantCoeff_qPochhammerInvSeries (q : A) :
+    constantCoeff (qPochhammerInvSeries q) = 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_qPochhammerInvSeries]; simp
 
 /-- The constant coefficient of `TauCeti.qBinomialSeries` is `1`. -/
-@[simp] theorem constantCoeff_qBinomialSeries (a q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    constantCoeff (qBinomialSeries a q hq) = 1 := by
+@[simp] theorem constantCoeff_qBinomialSeries (a q : A) :
+    constantCoeff (qBinomialSeries a q) = 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_qBinomialSeries]; simp
 
 /-- At `q = 0`, `E_0(t) = 1 - t`. -/
-@[simp] theorem qPochhammerSeries_zero
-    (hq : ∀ n, IsUnit (1 - (0 : A) ^ (n + 1)) := fun n ↦ by simp) :
-    qPochhammerSeries (0 : A) hq = 1 - X := by
+@[simp] theorem qPochhammerSeries_zero :
+    qPochhammerSeries (0 : A) = 1 - X := by
   ext (_ | _ | n)
   · simp
   · simp
@@ -210,40 +205,37 @@ noncomputable def qBinomialSeries (a q : A) (_hq : ∀ n, IsUnit (1 - q ^ (n + 1
     simp [coeff_X, zero_pow (Nat.ne_of_gt hpos)]
 
 /-- At `q = 0`, every coefficient of `U_0(t)` is `1`. -/
-theorem coeff_qPochhammerInvSeries_zero (n : ℕ)
-    (hq : ∀ n, IsUnit (1 - (0 : A) ^ (n + 1)) := fun n ↦ by simp) :
-    coeff n (qPochhammerInvSeries (0 : A) hq) = 1 := by simp
+theorem coeff_qPochhammerInvSeries_zero (n : ℕ) :
+    coeff n (qPochhammerInvSeries (0 : A)) = 1 := by simp
 
 /-- The degree-`1` coefficient of `U_q(t)` is `(1 - q)⁻¹ʳ`. -/
-theorem coeff_one_qPochhammerInvSeries (q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    coeff 1 (qPochhammerInvSeries q hq) = Ring.inverse (1 - q) := by simp
+theorem coeff_one_qPochhammerInvSeries (q : A) :
+    coeff 1 (qPochhammerInvSeries q) = Ring.inverse (1 - q) := by simp
 
 /-- The degree-`2` coefficient of `E_q(t)` is `q * ((1 - q) * (1 - q ^ 2))⁻¹ʳ`. -/
-theorem coeff_two_qPochhammerSeries (q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    coeff 2 (qPochhammerSeries q hq) = q * Ring.inverse ((1 - q) * (1 - q ^ 2)) := by
+theorem coeff_two_qPochhammerSeries (q : A) :
+    coeff 2 (qPochhammerSeries q) = q * Ring.inverse ((1 - q) * (1 - q ^ 2)) := by
   rw [coeff_qPochhammerSeries, qPochhammer_succ, qPochhammer_one]; norm_num [pow_two]
 
 /-- At `a = 1`, the `q`-binomial series is `1`. -/
-@[simp] theorem qBinomialSeries_one_left (q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    qBinomialSeries (1 : A) q hq = 1 := by
+@[simp] theorem qBinomialSeries_one_left (q : A) :
+    qBinomialSeries (1 : A) q = 1 := by
   ext (_ | n)
   · simp
   · simp [qPochhammer_eq_zero_of_mul_pow_eq_one (x := (1 : A)) (q := q) (i := 0)
       (Nat.succ_pos n) (by simp)]
 
 /-- At `a = 0`, the `q`-binomial series is `U_q(t)`. -/
-@[simp] theorem qBinomialSeries_zero_left (q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    qBinomialSeries (0 : A) q hq = qPochhammerInvSeries q hq := by ext n; simp
+@[simp] theorem qBinomialSeries_zero_left (q : A) :
+    qBinomialSeries (0 : A) q = qPochhammerInvSeries q := by ext n; simp
 
 /-- The degree-`1` coefficient of `qBinomialSeries a q` is `(1 - a) * (1 - q)⁻¹ʳ`. -/
-theorem coeff_one_qBinomialSeries (a q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    coeff 1 (qBinomialSeries a q hq) = (1 - a) * Ring.inverse (1 - q) := by simp
+theorem coeff_one_qBinomialSeries (a q : A) :
+    coeff 1 (qBinomialSeries a q) = (1 - a) * Ring.inverse (1 - q) := by simp
 
 /-- `E_q` commutes with coefficient ring homomorphisms when all `1 - q ^ (n + 1)` are units. -/
 theorem map_qPochhammerSeries (φ : A →+* B) {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    map φ (qPochhammerSeries q hq) =
-      qPochhammerSeries (φ q)
-        (fun n ↦ by simpa [map_sub, map_one, map_pow] using (hq n).map φ) := by
+    map φ (qPochhammerSeries q) = qPochhammerSeries (φ q) := by
   ext n
   rw [coeff_map, coeff_qPochhammerSeries, coeff_qPochhammerSeries, map_mul, map_mul, map_pow,
     map_neg, map_one, map_pow, ← map_qPochhammer]
@@ -251,9 +243,7 @@ theorem map_qPochhammerSeries (φ : A →+* B) {q : A} (hq : ∀ n, IsUnit (1 - 
 
 /-- `U_q` commutes with coefficient ring homomorphisms when all `1 - q ^ (n + 1)` are units. -/
 theorem map_qPochhammerInvSeries (φ : A →+* B) {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    map φ (qPochhammerInvSeries q hq) =
-      qPochhammerInvSeries (φ q)
-        (fun n ↦ by simpa [map_sub, map_one, map_pow] using (hq n).map φ) := by
+    map φ (qPochhammerInvSeries q) = qPochhammerInvSeries (φ q) := by
   ext n
   rw [coeff_map, coeff_qPochhammerInvSeries, coeff_qPochhammerInvSeries, ← map_qPochhammer]
   exact ((isUnit_qPochhammer_self_iff q n).mpr fun k _ ↦ hq k).map_ringInverse φ
@@ -261,9 +251,7 @@ theorem map_qPochhammerInvSeries (φ : A →+* B) {q : A} (hq : ∀ n, IsUnit (1
 /-- `qBinomialSeries` commutes with coefficient ring homomorphisms when all `1 - q ^ (n + 1)` are
 units. -/
 theorem map_qBinomialSeries (φ : A →+* B) {a q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    map φ (qBinomialSeries a q hq) =
-      qBinomialSeries (φ a) (φ q)
-        (fun n ↦ by simpa [map_sub, map_one, map_pow] using (hq n).map φ) := by
+    map φ (qBinomialSeries a q) = qBinomialSeries (φ a) (φ q) := by
   ext n
   rw [coeff_map, coeff_qBinomialSeries, coeff_qBinomialSeries, map_mul, map_qPochhammer,
     ← map_qPochhammer φ q q n]
@@ -271,19 +259,19 @@ theorem map_qBinomialSeries (φ : A →+* B) {a q : A} (hq : ∀ n, IsUnit (1 - 
 
 /-- Under unit hypotheses on `1 - q ^ (n + 1)`, `U_q` satisfies the adapted Jackson differential
 equation `D'_q U_q = U_q`. -/
-theorem adaptedJacksonDeriv_qPochhammerInvSeries {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    adaptedJacksonDeriv q (qPochhammerInvSeries q hq) = qPochhammerInvSeries q hq := by
+theorem adaptedQDerivative_qPochhammerInvSeries {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
+    adaptedQDerivative q (qPochhammerInvSeries q) = qPochhammerInvSeries q := by
   ext n
-  rw [coeff_adaptedJacksonDeriv, coeff_qPochhammerInvSeries, coeff_qPochhammerInvSeries,
+  rw [coeff_adaptedQDerivative, coeff_qPochhammerInvSeries, coeff_qPochhammerInvSeries,
     qPochhammer_succ, ← pow_succ', Ring.inverse_mul (Or.inr (hq n)), ← mul_assoc,
     Ring.mul_inverse_cancel _ (hq n), one_mul]
 
 /-- **Uniqueness of the adapted Jackson initial-value problem**: when every `1 - q ^ (n + 1)` is a
 unit, `U_q` is the unique power series satisfying `D'_q f = f` and `constantCoeff f = 1`. -/
 theorem eq_qPochhammerInvSeries_iff {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) {f : A⟦X⟧} :
-    f = qPochhammerInvSeries q hq ↔ adaptedJacksonDeriv q f = f ∧ constantCoeff f = 1 := by
-  refine ⟨fun h ↦ h ▸ ⟨adaptedJacksonDeriv_qPochhammerInvSeries hq,
-    constantCoeff_qPochhammerInvSeries q hq⟩, ?_⟩
+    f = qPochhammerInvSeries q ↔ adaptedQDerivative q f = f ∧ constantCoeff f = 1 := by
+  refine ⟨fun h ↦ h ▸ ⟨adaptedQDerivative_qPochhammerInvSeries hq,
+    constantCoeff_qPochhammerInvSeries q⟩, ?_⟩
   rintro ⟨hderiv, hzero⟩
   ext n
   induction n with
@@ -292,7 +280,7 @@ theorem eq_qPochhammerInvSeries_iff {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1)
       Ring.inverse_one]
   | succ n ih =>
     have hstep := congrArg (coeff n) hderiv
-    rw [coeff_adaptedJacksonDeriv, ih, coeff_qPochhammerInvSeries] at hstep
+    rw [coeff_adaptedQDerivative, ih, coeff_qPochhammerInvSeries] at hstep
     rw [coeff_qPochhammerInvSeries, qPochhammer_succ, ← pow_succ',
       Ring.inverse_mul (Or.inr (hq n))]
     exact (Ring.inverse_mul_eq_iff_eq_mul _ _ _ (hq n)).mpr hstep.symm |>.symm
@@ -300,22 +288,22 @@ theorem eq_qPochhammerInvSeries_iff {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1)
 /-- **Shift identity for `U_q`**: when every `1 - q ^ n` (`n > 0`) is a unit,
 `(1 - t) U_q(t) = U_q(q t)`. -/
 theorem one_sub_X_mul_qPochhammerInvSeries {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    (1 - X) * qPochhammerInvSeries q hq = rescale q (qPochhammerInvSeries q hq) := by
-  have h := X_mul_adaptedJacksonDeriv q (qPochhammerInvSeries q hq)
-  rw [adaptedJacksonDeriv_qPochhammerInvSeries hq] at h
+    (1 - X) * qPochhammerInvSeries q = rescale q (qPochhammerInvSeries q) := by
+  have h := X_mul_adaptedQDerivative q (qPochhammerInvSeries q)
+  rw [adaptedQDerivative_qPochhammerInvSeries hq] at h
   linear_combination -h
 
 /-- **Shift identity for `E_q`**: when every `1 - q ^ n` (`n > 0`) is a unit,
 `E_q(t) = (1 - t) E_q(q t)`. -/
 theorem qPochhammerSeries_eq_one_sub_X_mul_rescale {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    qPochhammerSeries q hq = (1 - X) * rescale q (qPochhammerSeries q hq) := by
+    qPochhammerSeries q = (1 - X) * rescale q (qPochhammerSeries q) := by
   ext (_ | n)
   · simp
   · rw [sub_mul, one_mul, map_sub, coeff_succ_X_mul, coeff_rescale, coeff_rescale]
     have htri : (n + 1) * n / 2 = n * (n - 1) / 2 + n := by
       simpa only [Nat.add_sub_cancel] using Nat.triangle_succ n
-    have hstep : (1 - q ^ (n + 1)) * coeff (n + 1) (qPochhammerSeries q hq) =
-        -q ^ n * coeff n (qPochhammerSeries q hq) := by
+    have hstep : (1 - q ^ (n + 1)) * coeff (n + 1) (qPochhammerSeries q) =
+        -q ^ n * coeff n (qPochhammerSeries q) := by
       rw [coeff_qPochhammerSeries, coeff_qPochhammerSeries, qPochhammer_succ, ← pow_succ',
         Ring.inverse_mul (Or.inr (hq n)), Nat.add_sub_cancel, htri, pow_add q (n * (n - 1) / 2) n,
         pow_succ (-1 : A) n]
@@ -327,9 +315,9 @@ theorem qPochhammerSeries_eq_one_sub_X_mul_rescale {q : A} (hq : ∀ n, IsUnit (
 /-- **Uniqueness for the shift equation of `E_q`**: when every `1 - q ^ (n + 1)` is a unit,
 `E_q` is the unique power series with constant coefficient `1` satisfying `f = (1 - t) f(q t)`. -/
 theorem eq_qPochhammerSeries_iff {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) {f : A⟦X⟧} :
-    f = qPochhammerSeries q hq ↔ f = (1 - X) * rescale q f ∧ constantCoeff f = 1 := by
+    f = qPochhammerSeries q ↔ f = (1 - X) * rescale q f ∧ constantCoeff f = 1 := by
   refine ⟨fun h ↦ h ▸ ⟨qPochhammerSeries_eq_one_sub_X_mul_rescale hq,
-    constantCoeff_qPochhammerSeries q hq⟩, ?_⟩
+    constantCoeff_qPochhammerSeries q⟩, ?_⟩
   rintro ⟨hshift, hzero⟩
   ext n
   induction n with
@@ -344,12 +332,12 @@ theorem eq_qPochhammerSeries_iff {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) 
 /-- **Shift identity for `qBinomialSeries`**: when every `1 - q ^ n` (`n > 0`) is a unit,
 `(1 - t) f(t) = (1 - a t) f(q t)`. -/
 theorem one_sub_X_mul_qBinomialSeries (a : A) {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    (1 - X) * qBinomialSeries a q hq = (1 - C a * X) * rescale q (qBinomialSeries a q hq) := by
+    (1 - X) * qBinomialSeries a q = (1 - C a * X) * rescale q (qBinomialSeries a q) := by
   ext (_ | n)
   · simp
   · simp only [sub_mul, one_mul, map_sub, mul_assoc, coeff_C_mul, coeff_succ_X_mul, coeff_rescale]
-    have hstep : (1 - q ^ (n + 1)) * coeff (n + 1) (qBinomialSeries a q hq) =
-        (1 - a * q ^ n) * coeff n (qBinomialSeries a q hq) := by
+    have hstep : (1 - q ^ (n + 1)) * coeff (n + 1) (qBinomialSeries a q) =
+        (1 - a * q ^ n) * coeff n (qBinomialSeries a q) := by
       rw [coeff_qBinomialSeries, coeff_qBinomialSeries, qPochhammer_succ a q n,
         qPochhammer_succ q q n, ← pow_succ', Ring.inverse_mul (Or.inr (hq n))]
       linear_combination
@@ -361,10 +349,10 @@ theorem one_sub_X_mul_qBinomialSeries (a : A) {q : A} (hq : ∀ n, IsUnit (1 - q
 unit, `qBinomialSeries a q` is the unique power series with constant coefficient `1` satisfying
 `(1 - t) f(t) = (1 - a t) f(q t)`. -/
 theorem eq_qBinomialSeries_iff {a q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) {f : A⟦X⟧} :
-    f = qBinomialSeries a q hq ↔
+    f = qBinomialSeries a q ↔
       (1 - X) * f = (1 - C a * X) * rescale q f ∧ constantCoeff f = 1 := by
   have hB := one_sub_X_mul_qBinomialSeries a hq
-  refine ⟨fun h ↦ h ▸ ⟨hB, constantCoeff_qBinomialSeries a q hq⟩, ?_⟩
+  refine ⟨fun h ↦ h ▸ ⟨hB, constantCoeff_qBinomialSeries a q⟩, ?_⟩
   rintro ⟨heq, hzero⟩
   ext n
   induction n with
@@ -381,10 +369,10 @@ theorem eq_qBinomialSeries_iff {a q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) 
 `E_q(a t) U_q(t) = ∑_{n ≥ 0} (a; q)_n t ^ n / (q; q)_n`. -/
 theorem rescale_qPochhammerSeries_mul_qPochhammerInvSeries (a : A) {q : A}
     (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    rescale a (qPochhammerSeries q hq) * qPochhammerInvSeries q hq = qBinomialSeries a q hq := by
+    rescale a (qPochhammerSeries q) * qPochhammerInvSeries q = qBinomialSeries a q := by
   refine (eq_qBinomialSeries_iff hq).mpr ⟨?_, by simp⟩
-  have hEa : rescale a (qPochhammerSeries q hq) =
-      (1 - C a * X) * rescale q (rescale a (qPochhammerSeries q hq)) := by
+  have hEa : rescale a (qPochhammerSeries q) =
+      (1 - C a * X) * rescale q (rescale a (qPochhammerSeries q)) := by
     simpa [map_mul, map_sub, rescale_X, rescale_rescale, mul_comm a q] using
       congrArg (rescale a) (qPochhammerSeries_eq_one_sub_X_mul_rescale hq)
   rw [mul_left_comm, one_sub_X_mul_qPochhammerInvSeries hq, map_mul, ← mul_assoc, ← hEa]
@@ -392,7 +380,7 @@ theorem rescale_qPochhammerSeries_mul_qPochhammerInvSeries (a : A) {q : A}
 /-- **Euler's reciprocal identity**: when every `1 - q ^ n` (`n > 0`) is a unit,
 `E_q(t) U_q(t) = 1`. -/
 theorem qPochhammerSeries_mul_qPochhammerInvSeries {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    qPochhammerSeries q hq * qPochhammerInvSeries q hq = 1 := by
+    qPochhammerSeries q * qPochhammerInvSeries q = 1 := by
   simpa using rescale_qPochhammerSeries_mul_qPochhammerInvSeries (1 : A) hq
 
 end FormalPochhammer
@@ -406,19 +394,19 @@ variable {A : Type*} [CommRing A] [Algebra ℚ A]
 /-- **Formal logarithm of `E_q`**: when every `1 - q ^ n` (`n > 0`) is a unit over a `ℚ`-algebra,
 `log E_q(t) = -∑_{n ≥ 1} t ^ n / (n (1 - q ^ n))`. -/
 theorem logOf_qPochhammerSeries {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    logOf (qPochhammerSeries q hq) =
+    logOf (qPochhammerSeries q) =
       PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • -Ring.inverse (1 - q ^ n) := by
-  have hlog : logOf (qPochhammerSeries q hq) =
-      logOf (1 - X : A⟦X⟧) + rescale q (logOf (qPochhammerSeries q hq)) := by
+  have hlog : logOf (qPochhammerSeries q) =
+      logOf (1 - X : A⟦X⟧) + rescale q (logOf (qPochhammerSeries q)) := by
     conv_lhs => rw [qPochhammerSeries_eq_one_sub_X_mul_rescale hq]
-    rw [logOf_mul (by simp) (by simp), logOf_rescale q (constantCoeff_qPochhammerSeries q hq)]
+    rw [logOf_mul (by simp) (by simp), logOf_rescale q (constantCoeff_qPochhammerSeries q)]
   have h1X : logOf (1 - X : A⟦X⟧) = PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • (-1 : A) := by
     simpa using logOf_one_sub_C_mul_X (1 : A)
   ext (_ | n)
-  · simp [constantCoeff_logOf (constantCoeff_qPochhammerSeries q hq)]
+  · simp [constantCoeff_logOf (constantCoeff_qPochhammerSeries q)]
   · have hstep := congrArg (coeff (n + 1)) hlog
     rw [map_add, coeff_rescale, h1X, coeff_mk] at hstep
-    have hmul : (1 - q ^ (n + 1)) * coeff (n + 1) (logOf (qPochhammerSeries q hq)) =
+    have hmul : (1 - q ^ (n + 1)) * coeff (n + 1) (logOf (qPochhammerSeries q)) =
         ((n + 1 : ℕ) : ℚ)⁻¹ • (-1 : A) := by linear_combination hstep
     rw [coeff_mk]
     apply (hq n).mul_left_cancel
@@ -427,10 +415,10 @@ theorem logOf_qPochhammerSeries {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
 /-- **Formal logarithm of `U_q`**: when every `1 - q ^ n` (`n > 0`) is a unit over a `ℚ`-algebra,
 `log U_q(t) = ∑_{n ≥ 1} t ^ n / (n (1 - q ^ n))`. -/
 theorem logOf_qPochhammerInvSeries {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
-    logOf (qPochhammerInvSeries q hq) =
+    logOf (qPochhammerInvSeries q) =
       PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • Ring.inverse (1 - q ^ n) := by
   have h := congrArg logOf (qPochhammerSeries_mul_qPochhammerInvSeries hq)
-  rw [logOf_mul (constantCoeff_qPochhammerSeries q hq) (constantCoeff_qPochhammerInvSeries q hq),
+  rw [logOf_mul (constantCoeff_qPochhammerSeries q) (constantCoeff_qPochhammerInvSeries q),
     logOf_one, logOf_qPochhammerSeries hq] at h
   ext n
   have hn := congrArg (coeff n) h
@@ -525,17 +513,14 @@ theorem integralQPochhammer_eq_one_sub_X_mul_rescale :
 /-- The `q`-adically stabilized integral product `integralQPochhammer R` equals the formal series
 `qPochhammerSeries X` in `(R⟦X⟧)⟦X⟧`. -/
 theorem integralQPochhammer_eq_qPochhammerSeries :
-    integralQPochhammer R =
-      qPochhammerSeries (X : R⟦X⟧) isUnit_one_sub_X_pow_succ :=
+    integralQPochhammer R = qPochhammerSeries (X : R⟦X⟧) :=
   (eq_qPochhammerSeries_iff (isUnit_one_sub_X_pow_succ (R := R))).mpr
     ⟨integralQPochhammer_eq_one_sub_X_mul_rescale, constantCoeff_integralQPochhammer⟩
 
 /-- **Euler's reciprocal identity** for the integral infinite `q`-Pochhammer product in
 `(R⟦X⟧)⟦X⟧`. -/
 theorem integralQPochhammer_mul_qPochhammerInvSeries :
-    integralQPochhammer R *
-        qPochhammerInvSeries (X : R⟦X⟧) isUnit_one_sub_X_pow_succ =
-      1 := by
+    integralQPochhammer R * qPochhammerInvSeries (X : R⟦X⟧) = 1 := by
   rw [integralQPochhammer_eq_qPochhammerSeries]
   exact qPochhammerSeries_mul_qPochhammerInvSeries (isUnit_one_sub_X_pow_succ (R := R))
 
@@ -551,14 +536,9 @@ theorem map_integralQPochhammer (φ : R →+* S) :
 `qPochhammerSeries (single 1 1)`. -/
 theorem map_ofPowerSeries_integralQPochhammer :
     map (HahnSeries.ofPowerSeries ℤ R) (integralQPochhammer R) =
-      qPochhammerSeries (HahnSeries.single (1 : ℤ) (1 : R))
-        (fun n ↦ by
-          simpa [map_sub, map_one, map_pow, HahnSeries.ofPowerSeries_X] using
-            (isUnit_one_sub_X_pow_succ (R := R) n).map (HahnSeries.ofPowerSeries ℤ R)) := by
+      qPochhammerSeries (HahnSeries.single (1 : ℤ) (1 : R)) := by
   rw [integralQPochhammer_eq_qPochhammerSeries,
-    map_qPochhammerSeries _ (isUnit_one_sub_X_pow_succ (R := R))]
-  ext n
-  simp [HahnSeries.ofPowerSeries_X]
+    map_qPochhammerSeries _ (isUnit_one_sub_X_pow_succ (R := R)), HahnSeries.ofPowerSeries_X]
 
 /-- For every `m`, the `[q ^ m t]` coefficient of `integralQPochhammer R` is `-1`. -/
 theorem coeff_coeff_one_integralQPochhammer (m : ℕ) :

@@ -559,9 +559,9 @@ private theorem exists_plethysticExp_zsmul_single (i : ℤ) {j : ℕ} (hj : j �
     have hunit : IsUnit (1 - C (single i (1 : ℚ)) * X ^ j) :=
       isUnit_iff_constantCoeff.mpr (by simp [hj])
     apply hunit.mul_right_cancel
-    have hmap := congrArg (PowerSeries.map ι) hUV
-    rw [map_mul, map_sub, map_one, map_mul, map_C, map_pow, map_X, hsingle] at hmap
-    change PowerSeries.map ι U * (1 - C (single i (1 : ℚ)) * X ^ j) = 1 at hmap
+    have hmap : PowerSeries.map ι U * (1 - C (single i (1 : ℚ)) * X ^ j) = 1 := by
+      simpa only [V, map_mul, map_sub, map_one, map_C, map_pow, map_X, hsingle] using
+        congrArg (PowerSeries.map ι) hUV
     rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
       IsUnit.unit_spec, plethysticExp_single_mul_X_pow_mul i hj]
     exact hmap

@@ -65,7 +65,7 @@ theorem adamsExpand_apply (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) :
 /-- The `t ^ (n * k)` coefficient of `ψ ^ n (F)` is `LaurentSeries.expand R n (coeff k F)`. -/
 @[simp] theorem coeff_adamsExpand_mul (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) (k : ℕ) :
     coeff ((n : ℕ) * k) (adamsExpand R n F) = LaurentSeries.expand R n (coeff k F) := by
-  rw [adamsExpand_apply, coeff_expand_mul, coeff_map]; rfl
+  rw [adamsExpand_apply, coeff_expand_mul, coeff_map, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
 
 /-- Coefficients of `ψ ^ n (F)` at `t`-exponents not divisible by `n` vanish. -/
 theorem coeff_adamsExpand_of_not_dvd (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) {k : ℕ} (hk : ¬ (n : ℕ) ∣ k) :
@@ -95,7 +95,7 @@ theorem coeff_coeff_adamsExpand (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) (k : ℕ) (i 
 /-- `ψ ^ n` acts on `t`-constants by `LaurentSeries.expand R n`. -/
 @[simp] theorem adamsExpand_C (n : ℕ+) (c : R⸨X⸩) :
     adamsExpand R n (C c) = C (LaurentSeries.expand R n c) := by
-  rw [adamsExpand_apply, map_C, expand_C]; rfl
+  rw [adamsExpand_apply, map_C, expand_C, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
 
 /-- `ψ ^ n` fixes scalar constants `C (HahnSeries.C r)`. -/
 theorem adamsExpand_C_const (n : ℕ+) (r : R) :
@@ -134,12 +134,11 @@ variable (R) in
       (LaurentSeries.expand R m).toRingHom.comp (LaurentSeries.expand R n).toRingHom =
         (LaurentSeries.expand R (m * n)).toRingHom :=
     RingHom.ext (LaurentSeries.expand_expand m n)
-  change adamsExpand R m (adamsExpand R n F) = adamsExpand R (m * n) F
-  rw [adamsExpand_apply, adamsExpand_apply, adamsExpand_apply,
+  rw [AlgHom.comp_apply, adamsExpand_apply, adamsExpand_apply, adamsExpand_apply,
     map_expand (n : ℕ) n.ne_zero (LaurentSeries.expand R m).toRingHom,
     ← expand_mul (m : ℕ) m.ne_zero (n : ℕ) n.ne_zero, ← RingHom.comp_apply,
     ← PowerSeries.map_comp, hcomp]
-  rfl
+  simp only [PNat.mul_coe]
 
 /-- Functoriality of combined Adams dilation: `ψ ^ m (ψ ^ n (F)) = ψ ^ (m * n) (F)`. -/
 @[simp] theorem adamsExpand_adamsExpand (m n : ℕ+) (F : (R⸨X⸩)⟦X⟧) :

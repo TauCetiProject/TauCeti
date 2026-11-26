@@ -19,8 +19,8 @@ series, without any division or invertibility assumptions:
 * `PowerSeries.qDerivative q`: `D_q (X ^ n) = [n]_q X ^ (n - 1)` on `A⟦X⟧` over any commutative
   semiring `A`, agreeing with `Polynomial.qDerivative q` on polynomials and specializing at `q = 1`
   to `d⁄dX`.
-* `PowerSeries.adaptedJacksonDeriv q`: `D'_q = (1 - q) D_q` on `A⟦X⟧` over any commutative ring
-  `A`, agreeing with `Polynomial.adaptedJacksonDeriv q` on polynomials.
+* `PowerSeries.adaptedQDerivative q`: `D'_q = (1 - q) D_q` on `A⟦X⟧` over any commutative ring
+  `A`, agreeing with `Polynomial.adaptedQDerivative q` on polynomials.
 
 The ordinary Jackson derivative works over arbitrary commutative semirings and the adapted
 derivative over arbitrary commutative rings, including in positive characteristic and at roots of
@@ -154,63 +154,63 @@ variable {A B : Type*} [CommRing A] [CommRing B]
 
 /-- The **adapted Jackson `q`-derivative** `D'_q = (1 - q) D_q` on power series, sending `X ^ n` to
 `(1 - q ^ n) X ^ (n - 1)`. -/
-noncomputable def adaptedJacksonDeriv (q : A) : A⟦X⟧ →ₗ[A] A⟦X⟧ :=
+noncomputable def adaptedQDerivative (q : A) : A⟦X⟧ →ₗ[A] A⟦X⟧ :=
   (1 - q) • qDerivative q
 
-/-- Unfolding definition of `PowerSeries.adaptedJacksonDeriv`. -/
-theorem adaptedJacksonDeriv_apply (q : A) (f : A⟦X⟧) :
-    adaptedJacksonDeriv q f = (1 - q) • qDerivative q f :=
+/-- Unfolding definition of `PowerSeries.adaptedQDerivative`. -/
+theorem adaptedQDerivative_apply (q : A) (f : A⟦X⟧) :
+    adaptedQDerivative q f = (1 - q) • qDerivative q f :=
   (rfl)
 
-/-- Coefficient formula for `PowerSeries.adaptedJacksonDeriv`:
+/-- Coefficient formula for `PowerSeries.adaptedQDerivative`:
 `coeff n (D'_q f) = (1 - q ^ (n + 1)) * coeff (n + 1) f`. -/
-@[simp] theorem coeff_adaptedJacksonDeriv (q : A) (f : A⟦X⟧) (n : ℕ) :
-    coeff n (adaptedJacksonDeriv q f) = (1 - q ^ (n + 1)) * coeff (n + 1) f := by
-  rw [adaptedJacksonDeriv_apply, coeff_smul, smul_eq_mul, coeff_qDerivative, ← mul_assoc,
+@[simp] theorem coeff_adaptedQDerivative (q : A) (f : A⟦X⟧) (n : ℕ) :
+    coeff n (adaptedQDerivative q f) = (1 - q ^ (n + 1)) * coeff (n + 1) f := by
+  rw [adaptedQDerivative_apply, coeff_smul, smul_eq_mul, coeff_qDerivative, ← mul_assoc,
     mul_neg_geom_sum]
 
 /-- The adapted Jackson derivative of a constant power series is `0`. -/
-@[simp] theorem adaptedJacksonDeriv_C (q a : A) : adaptedJacksonDeriv q (C a) = 0 := by
-  simp [adaptedJacksonDeriv_apply]
+@[simp] theorem adaptedQDerivative_C (q a : A) : adaptedQDerivative q (C a) = 0 := by
+  simp [adaptedQDerivative_apply]
 
 /-- The adapted Jackson derivative of `X` is `C (1 - q)`. -/
-@[simp] theorem adaptedJacksonDeriv_X (q : A) : adaptedJacksonDeriv q (X : A⟦X⟧) = C (1 - q) := by
-  simp [adaptedJacksonDeriv_apply, Algebra.smul_def]
+@[simp] theorem adaptedQDerivative_X (q : A) : adaptedQDerivative q (X : A⟦X⟧) = C (1 - q) := by
+  simp [adaptedQDerivative_apply, Algebra.smul_def]
 
 /-- `D'_q (X ^ n) = C (1 - q ^ n) * X ^ (n - 1)`. -/
-theorem adaptedJacksonDeriv_X_pow (q : A) (n : ℕ) :
-    adaptedJacksonDeriv q (X ^ n : A⟦X⟧) = C (1 - q ^ n) * X ^ (n - 1) := by
-  rw [adaptedJacksonDeriv_apply, Algebra.smul_def, algebraMap_eq, qDerivative_X_pow,
+theorem adaptedQDerivative_X_pow (q : A) (n : ℕ) :
+    adaptedQDerivative q (X ^ n : A⟦X⟧) = C (1 - q ^ n) * X ^ (n - 1) := by
+  rw [adaptedQDerivative_apply, Algebra.smul_def, algebraMap_eq, qDerivative_X_pow,
     ← mul_assoc, ← map_mul, mul_neg_geom_sum]
 
 /-- `D'_q (X ^ (n + 1)) = C (1 - q ^ (n + 1)) * X ^ n`. -/
-@[simp] theorem adaptedJacksonDeriv_X_pow_succ (q : A) (n : ℕ) :
-    adaptedJacksonDeriv q (X ^ (n + 1) : A⟦X⟧) = C (1 - q ^ (n + 1)) * X ^ n := by
-  simpa using adaptedJacksonDeriv_X_pow q (n + 1)
+@[simp] theorem adaptedQDerivative_X_pow_succ (q : A) (n : ℕ) :
+    adaptedQDerivative q (X ^ (n + 1) : A⟦X⟧) = C (1 - q ^ (n + 1)) * X ^ n := by
+  simpa using adaptedQDerivative_X_pow q (n + 1)
 
-/-- `PowerSeries.adaptedJacksonDeriv` agrees with `Polynomial.adaptedJacksonDeriv` on
+/-- `PowerSeries.adaptedQDerivative` agrees with `Polynomial.adaptedQDerivative` on
 polynomials. -/
-@[simp] theorem adaptedJacksonDeriv_coe (q : A) (p : A[X]) :
-    adaptedJacksonDeriv q (p : A⟦X⟧) = (Polynomial.adaptedJacksonDeriv q p : A⟦X⟧) := by
+@[simp] theorem adaptedQDerivative_coe (q : A) (p : A[X]) :
+    adaptedQDerivative q (p : A⟦X⟧) = (Polynomial.adaptedQDerivative q p : A⟦X⟧) := by
   ext n; simp
 
 /-- At `q = 1`, the adapted Jackson derivative vanishes identically. -/
-@[simp] theorem adaptedJacksonDeriv_one : adaptedJacksonDeriv (1 : A) = 0 := by ext f n; simp
+@[simp] theorem adaptedQDerivative_one : adaptedQDerivative (1 : A) = 0 := by ext f n; simp
 
 /-- The adapted Jackson derivative commutes with coefficient ring homomorphisms. -/
-theorem map_adaptedJacksonDeriv (φ : A →+* B) (q : A) (f : A⟦X⟧) :
-    map φ (adaptedJacksonDeriv q f) = adaptedJacksonDeriv (φ q) (map φ f) := by ext n; simp
+theorem map_adaptedQDerivative (φ : A →+* B) (q : A) (f : A⟦X⟧) :
+    map φ (adaptedQDerivative q f) = adaptedQDerivative (φ q) (map φ f) := by ext n; simp
 
 /-- **Twisted Leibniz rule** for the adapted Jackson derivative:
 `D'_q (f * g) = D'_q f * g + f(q X) * D'_q g`. -/
-theorem adaptedJacksonDeriv_mul (q : A) (f g : A⟦X⟧) :
-    adaptedJacksonDeriv q (f * g) =
-      adaptedJacksonDeriv q f * g + rescale q f * adaptedJacksonDeriv q g := by
-  simp only [adaptedJacksonDeriv_apply, qDerivative_mul, smul_add, smul_mul_assoc, mul_smul_comm]
+theorem adaptedQDerivative_mul (q : A) (f g : A⟦X⟧) :
+    adaptedQDerivative q (f * g) =
+      adaptedQDerivative q f * g + rescale q f * adaptedQDerivative q g := by
+  simp only [adaptedQDerivative_apply, qDerivative_mul, smul_add, smul_mul_assoc, mul_smul_comm]
 
 /-- Difference identity: `X * D'_q f = f - f(q X)`. -/
-theorem X_mul_adaptedJacksonDeriv (q : A) (f : A⟦X⟧) :
-    X * adaptedJacksonDeriv q f = f - rescale q f := by
+theorem X_mul_adaptedQDerivative (q : A) (f : A⟦X⟧) :
+    X * adaptedQDerivative q f = f - rescale q f := by
   ext (_ | n)
   · rw [coeff_zero_X_mul, map_sub, coeff_rescale, pow_zero, one_mul, sub_self]
   · simp [coeff_succ_X_mul, coeff_rescale, sub_mul]
