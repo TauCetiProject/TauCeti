@@ -46,7 +46,8 @@ continuous linear maps of the values act functorially.
   function along `dsupport T`.
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
 * `Distribution.mapCLM_conj_mapCLM_conj`: conjugating a complex distribution twice gives it
-  back.
+  back, and `Distribution.complexPairing_mapCLM_conjCLE`: the extension of the conjugate of `T` is
+  the conjugate of the extension of `T` at the conjugate test function.
 * `Distribution.mapCLM_id`, `Distribution.mapCLM_mapCLM`: continuous linear maps of the values
   act functorially.
 * `Distribution.mapCLM_restrictScalars_eq_smul`, `Distribution.mapCLM_restrictScalars_smul`,
@@ -64,7 +65,7 @@ public section
 noncomputable section
 
 open Complex Filter Set TopologicalSpace TestFunction LineDeriv
-open scoped Distributions Topology
+open scoped Distributions Topology ComplexConjugate
 
 namespace Distribution
 
@@ -115,6 +116,23 @@ theorem complexPairing_smul (c : ℂ) (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω
     (c • T).complexPairing φ = c * T.complexPairing φ := by
   simp only [complexPairing_apply]
   simp
+  ring
+
+/-- The complex-linear extension of the complex conjugate of `T`, at a complex test function `φ`,
+is the complex conjugate of the extension of `T` at the conjugate test function `conj ∘ φ`. -/
+theorem complexPairing_mapCLM_conjCLE (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℂ)) :
+    (mapCLM conjCLE.toContinuousLinearMap T).complexPairing φ =
+      conj (T.complexPairing (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ)) := by
+  have hre : postcompCLM (𝕜 := ℝ) reCLM (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) =
+      postcompCLM (𝕜 := ℝ) reCLM φ := by
+    ext x
+    simp
+  have him : postcompCLM (𝕜 := ℝ) imCLM (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) =
+      -postcompCLM (𝕜 := ℝ) imCLM φ := by
+    ext x
+    simp
+  simp only [complexPairing_apply, hre, him, map_neg, mapCLM_apply, map_add, map_mul, conj_I,
+    ContinuousLinearEquiv.coe_coe, conjCLE_apply]
   ring
 
 /-- For a fixed complex test function `φ`, the pairing `T ↦ T φ` is continuous in the
