@@ -212,17 +212,20 @@ theorem invariantDifferential_ext_of_atlas (A : PointedWeierstrassAtlas E.struct
     ω₁ = ω₂ := by
   obtain ⟨u, rfl, -⟩ := existsUnique_unitSmulIso_eq ω₂ ω₁
   suffices hu : u = 1 by rw [hu, unitSmulIso_one]
-  ext; rw [Units.val_one]; refine A.openCover.ext_elem (U := ⊤) _ _ (fun (i : A.index) ↦ ?_)
-  change (A.chart i).baseMap.appTop (u : Γ(S, ⊤)) = (A.chart i).baseMap.appTop 1
-  let c := A.chart i; have hi := (h i).symm
-  rw [modelDifferential, conormalBasisPullback_unitSmulIso, ← modelDifferential] at hi
-  conv_rhs at hi => rw [← unitSmulIso_one (c.modelDifferential ω₁)]
-  have hval : (c.baseIso.inv ≫ c.baseMap).appTop (u : Γ(S, ⊤)) =
-      (c.baseIso.inv ≫ c.baseMap).appTop 1 := by
-    simpa [Units.coe_map, map_one] using congrArg Units.val ((unitSmulIso_inj _ _ _).mp hi)
-  have hcomp : c.baseMap = c.baseIso.hom ≫ (c.baseIso.inv ≫ c.baseMap) := by simp
-  dsimp only [c] at hcomp hval ⊢
-  rw [hcomp, Scheme.Hom.comp_appTop, CommRingCat.comp_apply, CommRingCat.comp_apply, hval]
+  have hc (c : PointedWeierstrassChart E.structureMap E.zero)
+      (hc : c.modelDifferential ω₁ = c.modelDifferential (unitSmulIso u ω₁)) :
+      c.baseMap.appTop (u : Γ(S, ⊤)) = c.baseMap.appTop 1 := by
+    have hi := hc.symm
+    rw [modelDifferential, conormalBasisPullback_unitSmulIso, ← modelDifferential] at hi
+    conv_rhs at hi => rw [← unitSmulIso_one (c.modelDifferential ω₁)]
+    have hval : (c.baseIso.inv ≫ c.baseMap).appTop (u : Γ(S, ⊤)) =
+        (c.baseIso.inv ≫ c.baseMap).appTop 1 := by
+      simpa [Units.coe_map, map_one] using congrArg Units.val ((unitSmulIso_inj _ _ _).mp hi)
+    have hcomp : c.baseMap = c.baseIso.hom ≫ (c.baseIso.inv ≫ c.baseMap) := by simp
+    rw [hcomp, Scheme.Hom.comp_appTop, CommRingCat.comp_apply, CommRingCat.comp_apply, hval]
+  ext; rw [Units.val_one]; refine A.openCover.ext_elem (U := ⊤) _ _ fun i ↦ ?_
+  dsimp only [PointedWeierstrassAtlas.openCover_X, PointedWeierstrassAtlas.openCover_f]
+  exact hc (A.chart i) (h i)
 
 section AdaptedXCoord
 
@@ -358,14 +361,14 @@ theorem adaptedXCoord_toEllipticCurveGeom {P Q : Spec (.of R) ⟶ W.toEllipticCu
     dsimp only [ω']
     rw [PointedWeierstrassChart.modelDifferential_def, conormalBasisPullbackOfIso_def]
     exact conormalBasisPullback_congr W.toEllipticCurveGeom.zero_comp W.projModelZero_projModelOver
-      (by simp [c, toEllipticCurveGeomChart]) (by simp [c, toEllipticCurveGeomChart]) _ _ _ _ ω
+      (by simp [c]) (by simp [c]) _ _ _ _ ω
   have hcongr : ∀ {P₁ P₂ Q₁ Q₂ : Spec (.of R) ⟶ W.projModel} (_ : P₁ = P₂) (_ : Q₁ = Q₂)
       {ω₁ ω₂} (_ : ω₁ = ω₂) (hP₁ hQ₁ hP₁₀ hQ₁₀ hP₂ hQ₂ hP₂₀ hQ₂₀),
       W.projModelAdaptedXCoord (P := P₁) (Q := Q₁) hP₁ hQ₁ hP₁₀ hQ₁₀ ω₁ =
         W.projModelAdaptedXCoord (P := P₂) (Q := Q₂) hP₂ hQ₂ hP₂₀ hQ₂₀ ω₂ := by
     rintro _ _ _ _ rfl rfl _ _ rfl _ _ _ _ _ _ _ _; rfl
-  dsimp only [c, toEllipticCurveGeomChart] at h
-  simp only [Scheme.Hom.id_appTop, Iso.refl_hom, CommRingCat.id_apply] at h; rw [h]; congr 1
+  simp only [c, Scheme.Hom.id_appTop, Iso.refl_hom, CommRingCat.id_apply] at h
+  rw [h]; congr 1
   exact hcongr (W.toEllipticCurveGeomChart_modelPoint hP)
     (W.toEllipticCurveGeomChart_modelPoint hQ) hω_c _ _ _ _ _ _ _ _
 

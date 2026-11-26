@@ -213,9 +213,8 @@ theorem exists_iso_levelThreeNormalForm_iff {P Q : Spec (.of R) ⟶ W.projModel}
   subst heP heQ
   have hb := (exists_variableChange_levelThreeNormalForm_iff (W := W)).mp
     ⟨C, hr, ht, μ, ζ, hζ, hC, hx₂, hy₂⟩
-  refine ⟨fun s ↦ ?_, fun s ↦ ?_, (isThreeTorsionBasis_iff h₁ h₂).mp hb⟩ <;>
-    exact (ne_projModelZero_iff_mem_basicOpen (by simp) s).mpr
-      (projModelAffinePoint_mem_basicOpen _ s)
+  exact ⟨W.projModelAffinePoint_apply_ne_projModelZero h₁,
+    W.projModelAffinePoint_apply_ne_projModelZero h₂, (isThreeTorsionBasis_iff h₁ h₂).mp hb⟩
 
 /-- **Uniqueness of the isomorphism with a level-three normal form.** Two isomorphisms
 `projModel (levelThreeNormalForm μ) ≅ projModel W` over `Spec R` which carry the zero section to the

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Legendre
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Legendre.Equation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.MulBy.TwoTorsion
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
@@ -31,7 +32,7 @@ with `2l(l - 1)` a unit and a unique pointed isomorphism `(freyCurve 1 (-l)).pro
 public section
 
 open CategoryTheory Limits MonoidalCategory AlgebraicGeometry TauCeti
-open AlgebraicGeometry.Scheme.Hom (conormalBasisPullbackOfIso conormalBasisPullbackOfIso_congr)
+open AlgebraicGeometry.Scheme.Hom (conormalBasisPullbackOfIso)
 
 universe u
 
@@ -40,32 +41,6 @@ namespace WeierstrassCurve
 noncomputable section
 
 variable {R : Type u} [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic]
-
-private theorem conormalBasisPullbackOfIso_eq_weierstrassDifferential_iff
-    {W' : WeierstrassCurve R} [W'.IsElliptic] (C : VariableChange R) (hC : C • W = W')
-    {e : W'.projModel ≅ W.projModel} (he : e.hom ≫ W.projModelOver = W'.projModelOver)
-    (he₀ : W'.projModelZero ≫ e.hom = W.projModelZero)
-    (heC : e.hom = eqToHom (congrArg projModel hC.symm) ≫ (W.projModelVariableChangeIso C).hom)
-    (ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf) :
-    conormalBasisPullbackOfIso W.projModelZero_projModelOver W'.projModelZero_projModelOver
-        e he he₀ ω = W'.weierstrassDifferential ↔ C.u = W.weierstrassDifferentialScalar ω := by
-  subst hC
-  have he' : e.hom = (W.projModelVariableChangeIso C).hom := by simpa using heC
-  rw [conormalBasisPullbackOfIso_congr W.projModelZero_projModelOver
-    (C • W).projModelZero_projModelOver he' he he₀
-    (W.projModelVariableChangeIso_hom_projModelOver C)
-    (W.projModelZero_projModelVariableChangeIso_hom C) ω]
-  set ω' := conormalBasisPullbackOfIso W.projModelZero_projModelOver
-    (C • W).projModelZero_projModelOver (W.projModelVariableChangeIso C)
-    (W.projModelVariableChangeIso_hom_projModelOver C)
-    (W.projModelZero_projModelVariableChangeIso_hom C) ω
-  have hiff : ω' = (C • W).weierstrassDifferential ↔ (C • W).weierstrassDifferentialScalar ω' = 1 :=
-    ⟨fun h ↦ by rw [h, weierstrassDifferentialScalar_weierstrassDifferential],
-      fun h ↦ by rw [← (C • W).unitSmulIso_weierstrassDifferentialScalar ω', h, map_one,
-        Scheme.Modules.unitSmulIso_one]⟩
-  rw [hiff,
-    W.weierstrassDifferentialScalar_conormalBasisPullbackOfIso_projModelVariableChangeIso C ω,
-    mul_inv_eq_one, eq_comm]
 
 section PrivateHelpers
 
@@ -78,7 +53,8 @@ private theorem exists_variableChange_of_iso (e : (freyCurve 1 (-l)).projModel �
     (he₀ : (freyCurve 1 (-l)).projModelZero ≫ e.hom = W.projModelZero)
     (heP : (freyCurve 1 (-l)).projModelAffinePoint (equation_freyCurve_zero 1 (-l)) ≫ e.hom =
       W.projModelAffinePoint h₁)
-    (heQ : (freyCurve 1 (-l)).projModelAffinePoint (equation_freyCurve_one_zero (-l)) ≫ e.hom =
+    (heQ : (freyCurve 1 (-l)).projModelAffinePoint
+      (legendre_eq_freyCurve l ▸ (equation_legendre_iff l 1 0).mpr (by ring)) ≫ e.hom =
       W.projModelAffinePoint h₂)
     (heω : conormalBasisPullbackOfIso W.projModelZero_projModelOver
       (freyCurve 1 (-l)).projModelZero_projModelOver e he he₀ ω =
@@ -102,7 +78,8 @@ private theorem exists_iso_of_variableChange (C : VariableChange R) (hC : C • 
       (he₀ : (freyCurve 1 (-l)).projModelZero ≫ e.hom = W.projModelZero),
       (freyCurve 1 (-l)).projModelAffinePoint (equation_freyCurve_zero 1 (-l)) ≫ e.hom =
           W.projModelAffinePoint h₁ ∧
-        (freyCurve 1 (-l)).projModelAffinePoint (equation_freyCurve_one_zero (-l)) ≫ e.hom =
+        (freyCurve 1 (-l)).projModelAffinePoint
+          (legendre_eq_freyCurve l ▸ (equation_legendre_iff l 1 0).mpr (by ring)) ≫ e.hom =
           W.projModelAffinePoint h₂ ∧
         conormalBasisPullbackOfIso W.projModelZero_projModelOver
           (freyCurve 1 (-l)).projModelZero_projModelOver e he he₀ ω =
@@ -133,7 +110,8 @@ theorem existsUnique_legendreNormalForm {P Q : Spec (.of R) ⟶ W.projModel}
       (he : e.hom ≫ W.projModelOver = (freyCurve 1 (-l)).projModelOver)
       (he₀ : (freyCurve 1 (-l)).projModelZero ≫ e.hom = W.projModelZero),
       (freyCurve 1 (-l)).projModelAffinePoint (equation_freyCurve_zero 1 (-l)) ≫ e.hom = P ∧
-        (freyCurve 1 (-l)).projModelAffinePoint (equation_freyCurve_one_zero (-l)) ≫ e.hom = Q ∧
+        (freyCurve 1 (-l)).projModelAffinePoint
+          (legendre_eq_freyCurve l ▸ (equation_legendre_iff l 1 0).mpr (by ring)) ≫ e.hom = Q ∧
         conormalBasisPullbackOfIso W.projModelZero_projModelOver
           (freyCurve 1 (-l)).projModelZero_projModelOver e he he₀ ω =
         (freyCurve 1 (-l)).weierstrassDifferential := by
@@ -156,8 +134,9 @@ theorem existsUnique_legendreNormalForm {P Q : Spec (.of R) ⟶ W.projModel}
   obtain ⟨D, hD, -, hDu, hDr, hDt, hDx, hDy⟩ :=
     exists_variableChange_of_iso h₁ h₂ ω e' he' he₀' heP' heQ' heω'
   obtain rfl : D = C := hCuniq D ⟨hDu, hDr, hDt, hDx, hDy, -l, hD⟩
-  have ha₄ : (freyCurve 1 (-l)).a₄ = (freyCurve 1 B).a₄ := congrArg a₄ (hD.symm.trans hCB)
-  rw [freyCurve_a₄, freyCurve_a₄] at ha₄; linear_combination ha₄
+  have hl : legendre l = legendre (-B) := by
+    rw [legendre_eq_freyCurve, legendre_eq_freyCurve, neg_neg, ← hD, hCB]
+  exact legendre_inj.mp hl
 
 /-- **Uniqueness of the Legendre normal-form isomorphism.** -/
 theorem legendreNormalForm_iso_ext {l : R} [hE : (freyCurve 1 (-l)).IsElliptic]
@@ -200,7 +179,8 @@ theorem exists_iso_legendreNormalForm_iff {P Q : Spec (.of R) ⟶ W.projModel}
       (he : e.hom ≫ W.projModelOver = (freyCurve 1 (-l)).projModelOver)
       (he₀ : (freyCurve 1 (-l)).projModelZero ≫ e.hom = W.projModelZero),
       (freyCurve 1 (-l)).projModelAffinePoint (equation_freyCurve_zero 1 (-l)) ≫ e.hom = P ∧
-        (freyCurve 1 (-l)).projModelAffinePoint (equation_freyCurve_one_zero (-l)) ≫ e.hom = Q ∧
+        (freyCurve 1 (-l)).projModelAffinePoint
+          (legendre_eq_freyCurve l ▸ (equation_legendre_iff l 1 0).mpr (by ring)) ≫ e.hom = Q ∧
         conormalBasisPullbackOfIso W.projModelZero_projModelOver
           (freyCurve 1 (-l)).projModelZero_projModelOver e he he₀ ω =
         (freyCurve 1 (-l)).weierstrassDifferential) ↔
@@ -214,7 +194,8 @@ theorem exists_iso_legendreNormalForm_iff {P Q : Spec (.of R) ⟶ W.projModel}
   obtain ⟨-, -, hpt⟩ := eqToHom_projModelVariableChangeIso_hom_spec C hC
   have hP_aff := heP.symm.trans (by rw [heC, hpt]); have hQ_aff := heQ.symm.trans (by rw [heC, hpt])
   set h₁ := (Affine.variableChange_equation W C 0 0).mpr (hC ▸ equation_freyCurve_zero (R := R) 1 _)
-  set h₂ := (Affine.variableChange_equation W C 1 0).mpr (hC ▸ equation_freyCurve_one_zero (-l))
+  set h₂ := (Affine.variableChange_equation W C 1 0).mpr
+    (hC ▸ legendre_eq_freyCurve l ▸ (equation_legendre_iff l 1 0).mpr (by ring))
   have hP₀ := hP_aff ▸ W.projModelAffinePoint_apply_ne_projModelZero h₁
   have hQ₀ := hQ_aff ▸ W.projModelAffinePoint_apply_ne_projModelZero h₂
   obtain ⟨D, hD, -, hDu, hDr, hDt, hDx, hDy⟩ :=

@@ -145,8 +145,8 @@ theorem exists_iso_tateNormalForm_iff {P : Spec (.of R) ⟶ W.projModel}
   rw [heC]
   obtain ⟨-, hψ₂, hΨ₃⟩ := (exists_variableChange_tateNormalForm_iff (W := W)).mp
     ⟨C, rfl, rfl, a, b, hC⟩
-  exact ⟨fun s ↦ (ne_projModelZero_iff_mem_basicOpen (by simp) s).mpr
-    (projModelAffinePoint_mem_basicOpen hrt s), (isUnit_ψ₂_and_isUnit_Ψ₃_iff hrt).mp ⟨hψ₂, hΨ₃⟩⟩
+  exact ⟨W.projModelAffinePoint_apply_ne_projModelZero hrt,
+    (isUnit_ψ₂_and_isUnit_Ψ₃_iff hrt).mp ⟨hψ₂, hΨ₃⟩⟩
 
 /-- **Uniqueness of the isomorphism with a Tate normal form.** Two isomorphisms
 `projModel (tateNormalForm a b) ≅ projModel W` over `Spec R` which carry the zero section to the

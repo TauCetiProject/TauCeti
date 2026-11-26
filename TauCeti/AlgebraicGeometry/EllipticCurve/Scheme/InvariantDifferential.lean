@@ -41,7 +41,8 @@ cartesian squares (`map_projModelAdaptedXCoord_of_isPullback`).
 public section
 
 open CategoryTheory Limits MonoidalCategory AlgebraicGeometry PowerSeries
-open AlgebraicGeometry.Scheme (ΓSpecIso ΓSpecUnitsMulEquiv SpecMap_appTop_ΓSpecIso_inv)
+open AlgebraicGeometry.Scheme (ΓSpecIso ΓSpecUnitsMulEquiv coe_ΓSpecUnitsMulEquiv
+  SpecMap_appTop_ΓSpecIso_inv)
 open AlgebraicGeometry.Scheme.Modules (unitSmulIso unitSmulIso_hom unitSmulIso_mul unitSmulIso_inj
   existsUnique_unitSmulIso_eq globalSectionsSmul pullbackObjUnitIso)
 open AlgebraicGeometry.Scheme.Hom (conormalBasisPullback conormalBasisPullback_congr
@@ -218,9 +219,8 @@ private lemma basisPullback_formalConormalIso {ψ : R⟦X⟧ →+* R'⟦X⟧} {g
         ((ΓSpecIso (.of R'⟦X⟧)).inv X * (vTop : Γ(Spec (.of R'⟦X⟧), ⊤))) := by
     rw [unitSmulIso_hom, Category.assoc, W'.formalConormalIso_hom_comp_map_sheafι,
       ← Scheme.Modules.globalSectionsSmul_mul]
-  have hvTop : (vTop : Γ(Spec (.of R'⟦X⟧), ⊤)) = (ΓSpecIso (.of R'⟦X⟧)).inv v := by
-    dsimp only [vTop]; rw [Scheme.ΓSpecUnitsMulEquiv_apply]; simp [Units.coe_map]
-  rw [hlhs, hrhs]; congr 1; dsimp only [F]; rw [hvTop, SpecMap_appTop_ΓSpecIso_inv]; simp [hψX]
+  rw [hlhs, hrhs]; congr 1
+  dsimp only [F, vTop]; rw [coe_ΓSpecUnitsMulEquiv, SpecMap_appTop_ΓSpecIso_inv]; simp [hψX]
 
 private theorem conormalBasisPullback_weierstrassDifferential_of_formal
     {φ : R →+* R'} {ψ : R⟦X⟧ →+* R'⟦X⟧} {g : W'.projModel ⟶ W.projModel}
@@ -257,8 +257,8 @@ private theorem conormalBasisPullback_weierstrassDifferential_of_formal
       W'.projModelZero.ker.comap_id.symm _ _ hIC hI'C hI'C,
     basisPullback_formalConormalIso hF hI v hψX,
     Scheme.IdealSheafData.basisPullback_unitSmulIso, ← weierstrassDifferential_def]
-  congr 1; ext1; rw [Scheme.ΓSpecUnitsMulEquiv_apply, Scheme.ΓSpecUnitsMulEquiv_apply]
-  simp only [ε', Units.coe_map, MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe]
+  congr 1; ext1
+  rw [Units.coe_map, coe_ΓSpecUnitsMulEquiv, coe_ΓSpecUnitsMulEquiv, Units.coe_map]
   exact SpecMap_appTop_ΓSpecIso_inv (CommRingCat.ofHom (constantCoeff (R := R'))) (v : R'⟦X⟧)
 
 end Comparison
@@ -364,8 +364,8 @@ theorem weierstrassDifferentialScalar_conormalBasisPullback_projModelBaseChange
   conv_rhs => rw [← W.unitSmulIso_weierstrassDifferentialScalar ω]
   rw [conormalBasisPullback_unitSmulIso,
     W.conormalBasisPullback_weierstrassDifferential_projModelBaseChange φ]
-  congr 1; ext1; rw [Scheme.ΓSpecUnitsMulEquiv_apply, Scheme.ΓSpecUnitsMulEquiv_apply]
-  simp only [Units.coe_map, MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe]
+  congr 1; ext1
+  rw [coe_ΓSpecUnitsMulEquiv, Units.coe_map, Units.coe_map, coe_ΓSpecUnitsMulEquiv]
   exact (SpecMap_appTop_ΓSpecIso_inv (CommRingCat.ofHom φ)
     (W.weierstrassDifferentialScalar ω : R)).symm
 
@@ -383,6 +383,36 @@ theorem weierstrassDifferentialScalar_conormalBasisPullbackOfIso_projModelVariab
   rw [conormalBasisPullbackOfIso_unitSmulIso,
     W.conormalBasisPullbackOfIso_weierstrassDifferential_projModelVariableChangeIso C,
     ← unitSmulIso_mul, ← map_mul]
+
+/-- Pulling `ω` back along `e : W'.projModel ≅ W.projModel` induced by `C : VariableChange R`
+(`C • W = W'`) yields `W'.weierstrassDifferential` if and only if
+`C.u = W.weierstrassDifferentialScalar ω`. -/
+theorem conormalBasisPullbackOfIso_eq_weierstrassDifferential_iff
+    {W' : WeierstrassCurve R} [W'.IsElliptic] (C : VariableChange R) (hC : C • W = W')
+    {e : W'.projModel ≅ W.projModel} (he : e.hom ≫ W.projModelOver = W'.projModelOver)
+    (he₀ : W'.projModelZero ≫ e.hom = W.projModelZero)
+    (heC : e.hom = eqToHom (congrArg projModel hC.symm) ≫ (W.projModelVariableChangeIso C).hom)
+    (ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf) :
+    conormalBasisPullbackOfIso W.projModelZero_projModelOver W'.projModelZero_projModelOver
+        e he he₀ ω = W'.weierstrassDifferential ↔ C.u = W.weierstrassDifferentialScalar ω := by
+  subst hC
+  have he' : e.hom = (W.projModelVariableChangeIso C).hom := by simpa using heC
+  rw [conormalBasisPullbackOfIso_congr W.projModelZero_projModelOver
+    (C • W).projModelZero_projModelOver he' he he₀
+    (W.projModelVariableChangeIso_hom_projModelOver C)
+    (W.projModelZero_projModelVariableChangeIso_hom C) ω]
+  set ω' := conormalBasisPullbackOfIso W.projModelZero_projModelOver
+    (C • W).projModelZero_projModelOver (W.projModelVariableChangeIso C)
+    (W.projModelVariableChangeIso_hom_projModelOver C)
+    (W.projModelZero_projModelVariableChangeIso_hom C) ω
+  have hiff : ω' = (C • W).weierstrassDifferential ↔
+      (C • W).weierstrassDifferentialScalar ω' = 1 :=
+    ⟨fun h ↦ by rw [h, weierstrassDifferentialScalar_weierstrassDifferential],
+      fun h ↦ by rw [← (C • W).unitSmulIso_weierstrassDifferentialScalar ω', h, map_one,
+        Scheme.Modules.unitSmulIso_one]⟩
+  rw [hiff,
+    W.weierstrassDifferentialScalar_conormalBasisPullbackOfIso_projModelVariableChangeIso C ω,
+    mul_inv_eq_one, eq_comm]
 
 end Scalar
 

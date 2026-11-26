@@ -118,10 +118,22 @@ theorem Scheme.SpecMap_appTop_ΓSpecIso_inv {R S : CommRingCat.{u}} (f : R ⟶ S
 noncomputable def Scheme.ΓSpecUnitsMulEquiv (R : CommRingCat.{u}) : Rˣ ≃* Γ(Spec R, ⊤)ˣ :=
   Units.mapEquiv (Scheme.ΓSpecIso R).symm.commRingCatIsoToRingEquiv.toMulEquiv
 
+/-- Coercing `Scheme.ΓSpecUnitsMulEquiv R u` to `Γ(Spec R, ⊤)` applies `(ΓSpecIso R).inv`. -/
+@[simp]
+theorem Scheme.coe_ΓSpecUnitsMulEquiv (R : CommRingCat.{u}) (u : Rˣ) :
+    (Scheme.ΓSpecUnitsMulEquiv R u : Γ(Spec R, ⊤)) = (Scheme.ΓSpecIso R).inv u := by
+  simp [Scheme.ΓSpecUnitsMulEquiv, Iso.commRingCatIsoToRingEquiv]
+
+/-- Coercing `(Scheme.ΓSpecUnitsMulEquiv R).symm u` to `R` applies `(ΓSpecIso R).hom`. -/
+@[simp]
+theorem Scheme.coe_ΓSpecUnitsMulEquiv_symm (R : CommRingCat.{u}) (u : Γ(Spec R, ⊤)ˣ) :
+    ((Scheme.ΓSpecUnitsMulEquiv R).symm u : R) = (Scheme.ΓSpecIso R).hom u := by
+  simp [Scheme.ΓSpecUnitsMulEquiv, Iso.commRingCatIsoToRingEquiv]
+
 /-- `Scheme.ΓSpecUnitsMulEquiv R` acts on units via `(ΓSpecIso R).inv`. -/
 theorem Scheme.ΓSpecUnitsMulEquiv_apply (R : CommRingCat.{u}) (u : Rˣ) :
     Scheme.ΓSpecUnitsMulEquiv R u = Units.map (Scheme.ΓSpecIso R).inv.hom.toMonoidHom u :=
-  Units.ext (by simp [Scheme.ΓSpecUnitsMulEquiv, Units.coe_map, Iso.commRingCatIsoToRingEquiv])
+  Units.ext (by simp)
 
 /-- On an affine scheme `Z`, the stalk at `(isAffineOpen_top Z).fromSpec y` is a `Γ(Z, ⊤)`-algebra
 via the germ map on `⊤`. -/

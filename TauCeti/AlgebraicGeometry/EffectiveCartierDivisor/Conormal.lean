@@ -12,13 +12,15 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Endomorphisms
 /-!
 # The conormal sheaf of a section of a smooth relative curve
 
-For `s : S ⟶ X`, `s.conormalSheaf` is `s^* s.ker.sheaf` on `S`, invertible when `s` is a section of
-a separated morphism `π : X ⟶ S` smooth of relative dimension `1` (`isInvertible_conormalSheaf`;
-for an elliptic curve, this is `ω_{E/S}`, Katz–Mazur 2.1.6). Along `s' ≫ g = f ≫ s` with
-`s'.ker = s.ker.comap g`, `conormalPullbackHom : f^* s.conormalSheaf ⟶ s'.conormalSheaf` is an
-isomorphism for effective Cartier divisors (`isIso_conormalPullbackHom`), inducing contravariant
-pullbacks of bases along pointed cartesian squares (`conormalBasisPullback`) and pointed
-isomorphisms over `S` (`conormalBasisPullbackOfIso`).
+For `s : S ⟶ X`, `s.conormalSheaf` is `s^* s.ker.sheaf` on `S`, invertible whenever `s.ker` is an
+effective Cartier divisor (`isInvertible_conormalSheaf_of_isEffectiveCartier`), and in particular
+when `s` is a section of a separated morphism `π : X ⟶ S` smooth of relative dimension `1`
+(`isInvertible_conormalSheaf`; for an elliptic curve, this is `ω_{E/S}`, Katz–Mazur 2.1.6). Along
+`s' ≫ g = f ≫ s` with `s'.ker = s.ker.comap g`,
+`conormalPullbackHom : f^* s.conormalSheaf ⟶ s'.conormalSheaf` is an isomorphism for effective
+Cartier divisors (`isIso_conormalPullbackHom`), inducing contravariant pullbacks of bases along
+pointed cartesian squares (`conormalBasisPullback`) and pointed isomorphisms over `S`
+(`conormalBasisPullbackOfIso`).
 
 ## References
 
@@ -121,17 +123,10 @@ lemma pullbackComparison_comp_map_sheafι (h₀ : p' ≫ g = f ≫ p) (hI : I' =
         ((Modules.pullback p).map I.sheafι ≫ (Modules.pullbackObjUnitIso p).hom) ≫
         (Modules.pullbackObjUnitIso f).hom := by
   subst hI
-  let ι : I.sheaf ⟶ 𝟙_ X.Modules := I.sheafι
-  let ι' : (I.comap g).sheaf ⟶ 𝟙_ X'.Modules := (I.comap g).sheafι
-  have hι : I.pullbackSheafHom g ≫ ι' =
-      (Modules.pullback g).map ι ≫ (Modules.pullbackObjUnitIso g).hom := I.pullbackSheafHom_sheafι g
-  change I.pullbackComparison (I.comap g) h₀ rfl ≫
-      ((Modules.pullback p').map ι' ≫ (Modules.pullbackObjUnitIso p').hom) =
-    (Modules.pullback f).map ((Modules.pullback p).map ι ≫ (Modules.pullbackObjUnitIso p).hom) ≫
-      (Modules.pullbackObjUnitIso f).hom
-  unfold pullbackComparison
-  rw [eqToHom_refl, Category.comp_id, Category.assoc, Category.assoc, Category.assoc,
-    ← Functor.map_comp_assoc, hι, I.pullbackComp_inv_map_sheafι p' g,
+  rw [(I.comap g).pullback_map_sheafι_comp_pullbackObjUnitIso_hom p', pullbackComparison,
+    eqToHom_refl, Category.comp_id, Category.assoc, Category.assoc, Category.assoc,
+    ← Functor.map_comp_assoc, I.pullbackSheafHom_sheafιUnit g,
+    ← I.pullback_map_sheafι_comp_pullbackObjUnitIso_hom g, I.pullbackComp_inv_map_sheafι p' g,
     I.pullbackCongr_hom_app_comp_map_sheafι h₀.symm, ← I.pullbackComp_inv_map_sheafι f p,
     Iso.hom_inv_id_app_assoc]
 
@@ -212,13 +207,20 @@ variable {X S X' S' X'' S'' : Scheme.{u}}
 /-- The **conormal sheaf** `s^* s.ker.sheaf` on `S` of a morphism `s : S ⟶ X`. -/
 abbrev conormalSheaf (s : S ⟶ X) : S.Modules := (Modules.pullback s).obj s.ker.sheaf
 
+/-- The conormal sheaf of a morphism `s : S ⟶ X` whose kernel ideal sheaf is an effective Cartier
+divisor is invertible. -/
+theorem isInvertible_conormalSheaf_of_isEffectiveCartier {s : S ⟶ X}
+    (h : s.ker.IsEffectiveCartier) :
+    TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible S s.conormalSheaf := by
+  have := h.isInvertible_sheaf
+  exact TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_pullback s s.ker.sheaf
+
 /-- The conormal sheaf of a section of a separated smooth relative curve is invertible. -/
 theorem isInvertible_conormalSheaf {π : X ⟶ S} (s : S ⟶ X) (hs : s ≫ π = 𝟙 S)
     [IsSeparated π] [SmoothOfRelativeDimension 1 π] :
-    TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible S s.conormalSheaf := by
-  have := (isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension s hs).isEffectiveCartier
-  have := this.isInvertible_sheaf
-  exact TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_pullback s s.ker.sheaf
+    TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible S s.conormalSheaf :=
+  isInvertible_conormalSheaf_of_isEffectiveCartier
+    (isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension s hs).isEffectiveCartier
 
 /-- For a cartesian square `IsPullback g π' π f` carrying a section `s'` to `s`,
 `s'.ker = s.ker.comap g`. -/

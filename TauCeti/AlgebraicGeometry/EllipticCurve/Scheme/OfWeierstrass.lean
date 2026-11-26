@@ -179,6 +179,11 @@ theorem toEllipticCurveGeomOverIso_inv_left :
   (rfl)
 
 /-- The tautological pointed Weierstrass chart of `toEllipticCurveGeom W` over `Spec R`. -/
+-- `abbrev` (rather than `def` with `@[simps]`) because `PointedWeierstrassChart`'s morphism and
+-- section operations depend on `base`, `ring`, `equation`, and `pullbackCarrier`: under `module`
+-- and `backward.isDefEq.respectTransparency`, those indices inside `Category.comp`,
+-- `pullback.map`, and `CommRingCat` instances must reduce at `reducible` transparency for
+-- categorical `simp`/`rw` lemmas to match without unfolding at call sites.
 noncomputable abbrev toEllipticCurveGeomChart :
     PointedWeierstrassChart (toEllipticCurveGeom W).structureMap (toEllipticCurveGeom W).zero where
   base := Spec (.of R)
@@ -204,8 +209,7 @@ theorem toEllipticCurveGeomChart_modelPoint {P : Spec (.of R) ⟶ (toEllipticCur
     (hP : P ≫ (toEllipticCurveGeom W).structureMap = 𝟙 _) :
     (toEllipticCurveGeomChart W).modelPoint hP = P ≫ (toEllipticCurveGeomIso W).hom :=
   (toEllipticCurveGeomChart W).isPullback_modelIso_inv_toTotal.hom_ext
-    (by rw [PointedWeierstrassChart.modelPoint_modelIso_inv_toTotal]
-        simp [toEllipticCurveGeomChart])
+    (by rw [PointedWeierstrassChart.modelPoint_modelIso_inv_toTotal]; simp)
     (by rw [PointedWeierstrassChart.modelPoint_projModelOver, Category.assoc,
           toEllipticCurveGeomIso_hom_projModelOver, hP])
 
@@ -216,11 +220,10 @@ theorem addition_toEllipticCurveGeomIso_hom :
     (toEllipticCurveGeom W).addition ≫ (toEllipticCurveGeomIso W).hom =
       pullback.map _ _ _ _ (toEllipticCurveGeomIso W).hom (toEllipticCurveGeomIso W).hom (𝟙 _)
         (by simp) (by simp) ≫ W.additionMorphism := by
-  -- on the chart `chart W` over the whole base, whose inclusion into the curve is the identity,
-  -- the addition morphism is the addition of `W` transported along `toEllipticCurveGeomIso W`
+  -- on `toEllipticCurveGeomChart W` over the whole base, whose inclusion into the curve is `𝟙 _`,
+  -- the addition morphism is that of `W` transported along `toEllipticCurveGeomIso W`
   have h := (toEllipticCurveGeom W).pullbackMap_addition (toEllipticCurveGeomChart W)
   have h2 := (toEllipticCurveGeomChart W).addition_modelIso_hom
-  dsimp only [toEllipticCurveGeomChart] at h h2
   simp only [pullback.map_id, Category.id_comp, Category.comp_id, Iso.refl_hom] at h h2
   rw [h]
   exact h2
@@ -231,11 +234,10 @@ negation morphism of the projective model of `W`. -/
 theorem neg_toEllipticCurveGeomIso_hom :
     (toEllipticCurveGeom W).neg ≫ (toEllipticCurveGeomIso W).hom =
       (toEllipticCurveGeomIso W).hom ≫ W.projModelNeg := by
-  -- on the chart `chart W` over the whole base, whose inclusion into the curve is the identity,
-  -- the negation morphism is the negation of `W` transported along `toEllipticCurveGeomIso W`
+  -- on `toEllipticCurveGeomChart W` over the whole base, whose inclusion into the curve is `𝟙 _`,
+  -- the negation morphism is that of `W` transported along `toEllipticCurveGeomIso W`
   have h := (toEllipticCurveGeom W).toTotal_neg (toEllipticCurveGeomChart W)
   have h2 := (toEllipticCurveGeomChart W).neg_modelIso_hom
-  dsimp only [toEllipticCurveGeomChart] at h h2
   simp only [Category.id_comp, Category.comp_id] at h h2
   rw [h]
   exact h2
@@ -260,10 +262,7 @@ function on `Spec R`. -/
 @[simp]
 theorem j_toEllipticCurveGeom :
     (toEllipticCurveGeom W).j = (Scheme.ΓSpecIso (.of R)).inv W.j := by
-  have h : Scheme.Hom.appTop (𝟙 (Spec (.of R))) (toEllipticCurveGeom W).j =
-      Scheme.Hom.appTop (Iso.refl (Spec (.of R))).hom ((Scheme.ΓSpecIso (.of R)).inv W.j) :=
-    (toEllipticCurveGeom W).baseMap_appTop_j (toEllipticCurveGeomChart W)
-  simpa using h
+  simpa using (toEllipticCurveGeom W).baseMap_appTop_j (toEllipticCurveGeomChart W)
 
 /-! ### Base change along a ring homomorphism -/
 
