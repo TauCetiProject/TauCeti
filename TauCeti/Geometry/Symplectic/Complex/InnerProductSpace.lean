@@ -23,11 +23,12 @@ real inner product, `TauCeti.AlmostComplexStructure.inner_apply_left_eq_neg_swap
 `TauCeti.AlmostComplexStructure.inner_self_apply` the orthogonality `⟪J v, v⟫ = ⟪v, J v⟫ = 0`.
 Hence `p` and `J p` are orthogonal of equal norm, and Cauchy–Schwarz for the complex inner product
 bounds the components of any vector along them
-(`TauCeti.AlmostComplexStructure.inner_sq_add_inner_sq_le`). In finite dimension, a linear map `S`
-preserving the form `⟪J u, v⟫` satisfies `S J S† = J`
-(`TauCeti.AlmostComplexStructure.apply_apply_adjoint_apply`). Consequently, by
+(`TauCeti.AlmostComplexStructure.inner_sq_add_inner_sq_le`). Consequently, by
 `TauCeti.AlmostComplexStructure.norm_re_smul_add_im_smul`, the parametrization
 `z ↦ Re z • n + Im z • J n` of the complex line of a unit vector `n` is isometric.
+
+In finite dimension, a linear map `S` preserving the form `⟪J u, v⟫` satisfies `S J S† = J`
+(`TauCeti.AlmostComplexStructure.apply_apply_adjoint_apply`).
 
 Conversely, on a complex normed space whose norm comes from a real inner product, such as
 `Re ⟪·, ·⟫_ℂ` on a complex inner product space, multiplication by `i` preserves that inner product
