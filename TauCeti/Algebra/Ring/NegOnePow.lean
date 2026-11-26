@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Algebra.Ring.NegOnePow
 import Mathlib.Algebra.Module.Basic
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
 # Powers of negative one in a ground ring
@@ -24,6 +26,8 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 
 * `TauCeti.negOnePowCast_eq_of_even_sub`: exponents of the same parity give the same sign.
 * `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
+* `TauCeti.negOnePowCast_mul_finsum`: a sign can be moved into a `finsum`, with no finiteness
+  assumption on the support.
 * `TauCeti.sum_range_negOnePowCast_telescope`: an alternating sum of products, in which one
   factor is replaced by a two-term correction, telescopes.
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
@@ -84,6 +88,12 @@ theorem negOnePowCast_two_mul (a : ℤ) : negOnePowCast R (2 * a) = 1 := by
 @[simp]
 theorem negOnePowCast_mul_self (e : ℤ) : negOnePowCast R e * negOnePowCast R e = 1 := by
   rw [← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul]
+
+/-- A sign `(-1) ^ e` can be moved into a `finsum`, without any finiteness assumption on the
+support, since multiplication by it is injective. -/
+theorem negOnePowCast_mul_finsum {ι : Type uI} (e : ℤ) (f : ι → R) :
+    negOnePowCast R e * ∑ᶠ i, f i = ∑ᶠ i, negOnePowCast R e * f i :=
+  (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self e)).mul_finsum f
 
 theorem negOnePowCast_even {e : ℤ} (he : Even e) : negOnePowCast R e = 1 := by
   simp [negOnePowCast, Int.negOnePow_even _ he]
