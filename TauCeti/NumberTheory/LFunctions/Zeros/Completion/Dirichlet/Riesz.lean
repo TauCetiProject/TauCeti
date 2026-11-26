@@ -9,9 +9,9 @@ public import TauCeti.Analysis.Complex.Hadamard.Riesz
 public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 import TauCeti.NumberTheory.LFunctions.Continued.Dirichlet
+import TauCeti.NumberTheory.LFunctions.Zeros.Completion.ContinuedL
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Growth
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
-import TauCeti.NumberTheory.LFunctions.Zeros.Completion.ZeroFree
 
 /-!
 # Bounds for the first Riesz zero series of primitive Dirichlet characters
