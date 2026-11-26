@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.FieldTheory.Perfect
 import TauCeti.FieldTheory.IsAlgClosed.PolynomialFixedPoint
+import TauCeti.LinearAlgebra.FiniteDimensional.Semilinear
 import TauCeti.LinearAlgebra.LinearIndependent.Iterate
 import TauCeti.LinearAlgebra.LinearMap.FixedPoints
 
@@ -38,6 +39,10 @@ nonlinear. The proof has two steps.
   `F w = w + ∑ cᵢ vᵢ` with `vᵢ` fixed, and solving the Artin–Schreier equations
   `sᵢ ^ q - sᵢ = -cᵢ` makes `w + ∑ sᵢ vᵢ` fixed, a contradiction.
 
+For a possibly non-injective `F`, restricting `F` to its stabilized image `F^(dim V)(V)` yields an
+injective `σ`-semilinear endomorphism, so `F` has a nonzero fixed vector whenever
+`F^(dim V) ≠ 0`, and `x ↦ F x - x` is always surjective on `V`.
+
 This is the residue-field step of the Dieudonné–Manin classification: over `k⟦π⟧` with the
 coefficientwise Frobenius, an invertible matrix `A` is likewise `B σ(B)⁻¹`, by lifting the
 solution modulo `π` through successive approximation, so that unit-root Frobenius modules are
@@ -51,6 +56,11 @@ trivial.
   space.
 * `LinearMap.exists_basis_isFixedPt_of_injective_iterateFrobenius`: the space has a basis of fixed
   vectors.
+* `LinearMap.exists_ne_zero_isFixedPt_of_iterate_ne_zero_iterateFrobenius`: a (possibly
+  non-injective) Frobenius-semilinear map with nonzero `(dim V)`-th iterate has a nonzero fixed
+  vector.
+* `LinearMap.surjective_sub_id_of_iterateFrobenius`: for any Frobenius-semilinear endomorphism
+  `F`, the map `x ↦ F x - x` is surjective.
 * `Matrix.exists_isUnit_mul_map_iterateFrobenius_eq`: Lang's theorem for `GLₙ(k)`, every
   invertible `A` has an invertible `B` with `A σ(B) = B`.
 
@@ -211,6 +221,101 @@ theorem exists_basis_isFixedPt_of_injective_iterateFrobenius [FiniteDimensional 
   refine ⟨b.reindex (b.indexEquiv (finBasis k V)), fun i ↦ ?_⟩
   rw [Basis.reindex_apply, Basis.mk_apply]
   exact hs (Subtype.mem _)
+
+/-- Restrict a Frobenius-semilinear endomorphism `F` to its stabilized image
+`(Submodule.map F)^[Module.finrank k V] ⊤`. -/
+private noncomputable def restrictIterateMapTop [FiniteDimensional k V]
+    (F : V →ₛₗ[_root_.iterateFrobenius k p f] V) :
+    let : RingHomSurjective (_root_.iterateFrobenius k p f) :=
+      ⟨(iterateFrobeniusEquiv k p f).surjective⟩
+    ((Submodule.map F)^[finrank k V] (⊤ : Submodule k V)) →ₛₗ[_root_.iterateFrobenius k p f]
+      ((Submodule.map F)^[finrank k V] (⊤ : Submodule k V)) :=
+  let : RingHomSurjective (_root_.iterateFrobenius k p f) :=
+    ⟨(iterateFrobeniusEquiv k p f).surjective⟩
+  have hstab : Submodule.map F ((Submodule.map F)^[finrank k V] (⊤ : Submodule k V)) =
+      (Submodule.map F)^[finrank k V] ⊤ := by
+    rw [← Function.iterate_succ_apply' (Submodule.map F) (finrank k V) ⊤]
+    exact iterate_map_top_succ_eq_finrank F
+  { toFun x := ⟨F x.val, hstab.le (Submodule.mem_map_of_mem x.property)⟩
+    map_add' x y := Subtype.ext (map_add F x.val y.val)
+    map_smul' c x := Subtype.ext (map_smulₛₗ F c x.val) }
+
+private theorem injective_restrictIterateMapTop [FiniteDimensional k V]
+    (F : V →ₛₗ[_root_.iterateFrobenius k p f] V) :
+    Injective (restrictIterateMapTop F) := by
+  let : RingHomSurjective (_root_.iterateFrobenius k p f) :=
+    ⟨(iterateFrobeniusEquiv k p f).surjective⟩
+  have hstab : Submodule.map F ((Submodule.map F)^[finrank k V] (⊤ : Submodule k V)) =
+      (Submodule.map F)^[finrank k V] ⊤ := by
+    rw [← Function.iterate_succ_apply' (Submodule.map F) (finrank k V) ⊤]
+    exact iterate_map_top_succ_eq_finrank F
+  refine injective_of_surjectiveₛₗ fun ⟨y, hy⟩ ↦ ?_
+  rw [← hstab, Submodule.mem_map] at hy
+  obtain ⟨x, hx, hFx⟩ := hy
+  exact ⟨⟨x, hx⟩, Subtype.ext hFx⟩
+
+/-- For an injective Frobenius-semilinear map `F`, the map `x ↦ F x - x` is surjective. -/
+private theorem surjective_sub_id_of_injective_iterateFrobenius {W : Type*} [AddCommGroup W]
+    [Module k W] [FiniteDimensional k W] (hf : f ≠ 0)
+    {F : W →ₛₗ[_root_.iterateFrobenius k p f] W} (hF : Injective F) :
+    Surjective fun x ↦ F x - x := by
+  have hq : 1 < p ^ f := Nat.one_lt_pow hf (Fact.out : p.Prime).one_lt
+  have hσ (c : k) : _root_.iterateFrobenius k p f c = c ^ p ^ f := _root_.iterateFrobenius_def p f c
+  obtain ⟨b, hb⟩ := exists_basis_isFixedPt_of_injective_iterateFrobenius hf hF
+  intro y
+  choose s hs using fun i ↦ IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C' p (p ^ f) 1 (-1)
+    (-(b.repr y i)) (dvd_pow_self p hf) hq (by simp)
+  refine ⟨∑ i, s i • b i, ?_⟩
+  have hs' (i) : s i ^ p ^ f - s i = b.repr y i := by linear_combination hs i
+  calc F (∑ i, s i • b i) - ∑ i, s i • b i
+      = ∑ i, (s i ^ p ^ f - s i) • b i := by
+        simp only [map_sum, map_smulₛₗ, hσ, fun i ↦ (hb i).eq,
+          ← Finset.sum_sub_distrib, sub_smul]
+    _ = y := by simp only [hs', Basis.sum_repr]
+
+/-- **A nonzero fixed vector without assuming injectivity.** Over an algebraically closed field
+`k` of characteristic `p`, a Frobenius-semilinear endomorphism `F` on a finite-dimensional space
+whose `(dim V)`-th iterate is nonzero has a nonzero fixed vector. -/
+theorem exists_ne_zero_isFixedPt_of_iterate_ne_zero_iterateFrobenius [FiniteDimensional k V]
+    (hf : f ≠ 0) {F : V →ₛₗ[_root_.iterateFrobenius k p f] V} {v : V}
+    (hv : F^[finrank k V] v ≠ 0) :
+    ∃ x, x ≠ 0 ∧ IsFixedPt F x := by
+  let : RingHomSurjective (_root_.iterateFrobenius k p f) :=
+    ⟨(iterateFrobeniusEquiv k p f).surjective⟩
+  have : Nontrivial ((Submodule.map F)^[finrank k V] (⊤ : Submodule k V)) :=
+    Submodule.nontrivial_iff_ne_bot.2 (iterate_map_top_ne_bot_of_iterate_ne_zero F hv)
+  obtain ⟨x, hx0, hx⟩ := exists_ne_zero_isFixedPt_of_injective_iterateFrobenius hf
+    (injective_restrictIterateMapTop F)
+  exact ⟨x.val, fun h ↦ hx0 (Subtype.ext h), congrArg Subtype.val hx⟩
+
+/-- **Artin–Schreier surjectivity for Frobenius-semilinear maps.** Over an algebraically closed
+field `k` of characteristic `p`, for any Frobenius-semilinear endomorphism `F` on a
+finite-dimensional space (without assuming injectivity), the map `x ↦ F x - x` is surjective. -/
+theorem surjective_sub_id_of_iterateFrobenius [FiniteDimensional k V]
+    (hf : f ≠ 0) (F : V →ₛₗ[_root_.iterateFrobenius k p f] V) :
+    Surjective fun x ↦ F x - x := by
+  let : RingHomSurjective (_root_.iterateFrobenius k p f) :=
+    ⟨(iterateFrobeniusEquiv k p f).surjective⟩
+  intro y
+  set n := finrank k V
+  have hmem : F^[n] y ∈ (Submodule.map F)^[n] (⊤ : Submodule k V) :=
+    (mem_iterate_map_top_iff F n _).2 ⟨y, rfl⟩
+  obtain ⟨w, hw⟩ := surjective_sub_id_of_injective_iterateFrobenius hf
+    (injective_restrictIterateMapTop F) ⟨F^[n] y, hmem⟩
+  refine ⟨(-∑ t ∈ Finset.range n, F^[t] y) + w.val, ?_⟩
+  have htele : F (-∑ t ∈ Finset.range n, F^[t] y) - (-∑ t ∈ Finset.range n, F^[t] y) =
+      y - F^[n] y := by
+    rw [map_neg, map_sum, neg_sub_neg]
+    have hsum : ∑ t ∈ Finset.range n, (F^[t] y - F (F^[t] y)) = y - F^[n] y := by
+      simp_rw [← iterate_succ_apply' F]
+      simpa only [iterate_zero, id_eq] using Finset.sum_range_sub' (fun t ↦ F^[t] y) n
+    simpa [Finset.sum_sub_distrib] using hsum
+  have hw' : F w.val - w.val = F^[n] y := congrArg Subtype.val hw
+  calc F ((-∑ t ∈ Finset.range n, F^[t] y) + w.val) -
+        ((-∑ t ∈ Finset.range n, F^[t] y) + w.val)
+      = (F (-∑ t ∈ Finset.range n, F^[t] y) - (-∑ t ∈ Finset.range n, F^[t] y)) +
+          (F w.val - w.val) := by rw [map_add]; abel
+    _ = y := by rw [htele, hw', sub_add_cancel]
 
 end LinearMap
 
