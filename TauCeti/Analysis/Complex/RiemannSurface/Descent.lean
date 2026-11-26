@@ -7,10 +7,12 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Degree
 public import TauCeti.Analysis.Complex.RiemannSurface.GermFactorization
+import TauCeti.Analysis.Complex.RiemannSurface.Branch.Values
 import TauCeti.Analysis.Complex.RiemannSurface.OpenMapping
 import TauCeti.Analysis.Complex.RiemannSurface.Ramification
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
 # Holomorphic descent along finite holomorphic maps
@@ -86,9 +88,8 @@ theorem germFactorsThrough_comp_iff (hπa : ∀ᶠ x in 𝓝 a, MDifferentiableA
     have hs := hsb ▸ hL.continuousAt_localInverse.tendsto
     have hφ : Tendsto φ (𝓝 b) (𝓝 a) := by
       simpa only [hφb] using hφd.self_of_nhds.continuousAt.tendsto
-    have hsd : ∀ᶠ w in 𝓝 (π b), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) hL.localInverse w := by
-      filter_upwards [hL.localInverse.open_source.mem_nhds hL.localInverse_mem_source] with w hw
-      exact hL.localInverse.mdifferentiableAt one_ne_zero hw
+    have hsd : ∀ᶠ w in 𝓝 (π b), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) hL.localInverse w :=
+      hL.localInverse_isLocalDiffeomorphAt.eventually.mono fun _ h ↦ h.mdifferentiableAt one_ne_zero
     refine germFactorsThrough_iff.2
       ⟨π ∘ φ ∘ hL.localInverse, by simp only [comp_apply, hsb, hφb], ?_, ?_⟩
     · filter_upwards [hsd, hs.eventually hφd, hs.eventually (hφ.eventually hπa)]
@@ -104,9 +105,8 @@ theorem germFactorsThrough_comp_iff (hπa : ∀ᶠ x in 𝓝 a, MDifferentiableA
     have hπ : Tendsto π (𝓝 b) (𝓝 (π b)) := hπb.self_of_nhds.continuousAt.tendsto
     have hψ : Tendsto ψ (𝓝 (π b)) (𝓝 (π a)) := by
       simpa only [hψb] using hψd.self_of_nhds.continuousAt.tendsto
-    have hsd : ∀ᶠ w in 𝓝 (π a), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) hL.localInverse w := by
-      filter_upwards [hL.localInverse.open_source.mem_nhds hL.localInverse_mem_source] with w hw
-      exact hL.localInverse.mdifferentiableAt one_ne_zero hw
+    have hsd : ∀ᶠ w in 𝓝 (π a), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) hL.localInverse w :=
+      hL.localInverse_isLocalDiffeomorphAt.eventually.mono fun _ h ↦ h.mdifferentiableAt one_ne_zero
     refine germFactorsThrough_iff.2 ⟨hL.localInverse ∘ ψ ∘ π, ?_, ?_, ?_⟩
     · simp only [comp_apply, hψb]
       exact hL.localInverse_left_inv hL.localInverse_mem_target
@@ -144,18 +144,11 @@ theorem exists_mdifferentiable_comp_eq [CompactSpace X] [T2Space Y] [Preconnecte
   have hc : Continuous h := hq.continuous_iff.2 (hhf ▸ hg.continuous)
   -- Off the images of the finitely many ramification points, `h` is `g` composed with a local
   -- inverse of `f`; the remaining points are removable singularities.
-  refine (f.finite_setOf_one_lt_localMultiplicity.image f).mdifferentiable_of_continuous_of_compl
-    hc fun y hy ↦ ?_
+  refine f.finite_branchValues.mdifferentiable_of_continuous_of_compl hc fun y hy ↦ ?_
   obtain ⟨x, rfl⟩ := f.surjective y
-  have hx : localMultiplicity f x = 1 :=
-    le_antisymm (not_lt.1 fun h ↦ hy ⟨x, h, rfl⟩) (localMultiplicity_pos f x)
   have hL := (localMultiplicity_eq_one_iff_isLocalDiffeomorphAt
-    (.of_forall fun z ↦ f.holomorphic z)).1 hx
-  refine (((hg _).comp (f x) (hL.mdifferentiableAt_localInverse one_ne_zero)).congr_of_eventuallyEq
-    ?_).mdifferentiableWithinAt
-  filter_upwards [hL.localInverse_eventuallyEq_right] with w hw
-  simp only [comp_apply, id_eq] at hw ⊢
-  rw [← hhf, comp_apply, hw]
+    (.of_forall fun z ↦ f.holomorphic z)).1 ((f.notMem_branchValues_iff _).1 hy x rfl)
+  exact ((hL.mdifferentiableAt_comp_iff one_ne_zero).1 (hhf ▸ hg x)).mdifferentiableWithinAt
 
 /-- **Fibres agreeing off a finite set.** Let `f : X → Y` be a finite holomorphic map. If a
 continuous map `g` to a Hausdorff space takes the same value at any two points outside a finite set

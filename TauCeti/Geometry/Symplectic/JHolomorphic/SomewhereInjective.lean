@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.Descent
 public import TauCeti.Analysis.Complex.RiemannSurface.SomewhereInjective
 public import TauCeti.Geometry.Symplectic.JHolomorphic.BranchDegree
+import TauCeti.Analysis.Complex.RiemannSurface.Branch.Values
 import TauCeti.Analysis.Complex.RiemannSurface.Ramification
 
 /-!
@@ -146,19 +147,18 @@ theorem existsUnique_biholomorph_of_isSomewhereInjective {S₁ S₂ : Type*} [To
   -- values of the two curves.
   set B₁ := v₁ ⁻¹' (v₁ '' {x | mfderiv 𝓘(ℝ, ℂ) I v₁ x = 0})
   set B₂ := v₂ ⁻¹' (v₂ '' {x | mfderiv 𝓘(ℝ, ℂ) I v₂ x = 0})
-  set F := {z | 1 < localMultiplicity π₁ z} ∪ π₁ ⁻¹' B₁ ∪
-    ({z | 1 < localMultiplicity π₂ z} ∪ π₂ ⁻¹' B₂)
+  set F := π₁ ⁻¹' (π₁.branchValues ∪ B₁) ∪ π₂ ⁻¹' (π₂.branchValues ∪ B₂)
   have hF : F.Finite :=
-    (π₁.finite_setOf_one_lt_localMultiplicity.union
-      ((finite_preimage_image_setOf_mfderiv_eq_zero_of_isPseudoholomorphic (hv₁.of_le one_le_two)
-        hJv₁ hi₁.exists_apply_ne).preimage' fun y _ ↦ π₁.finite_fiber y)).union
-    (π₂.finite_setOf_one_lt_localMultiplicity.union
-      ((finite_preimage_image_setOf_mfderiv_eq_zero_of_isPseudoholomorphic (hv₂.of_le one_le_two)
-        hJv₂ hi₂.exists_apply_ne).preimage' fun y _ ↦ π₂.finite_fiber y))
+    ((π₁.finite_branchValues.union
+      (finite_preimage_image_setOf_mfderiv_eq_zero_of_isPseudoholomorphic (hv₁.of_le one_le_two)
+        hJv₁ hi₁.exists_apply_ne)).preimage' fun y _ ↦ π₁.finite_fiber y).union
+    ((π₂.finite_branchValues.union
+      (finite_preimage_image_setOf_mfderiv_eq_zero_of_isPseudoholomorphic (hv₂.of_le one_le_two)
+        hJv₂ hi₂.exists_apply_ne)).preimage' fun y _ ↦ π₂.finite_fiber y)
   have hlm₁ : ∀ z ∉ F, localMultiplicity π₁ z = 1 := fun z hz ↦
-    le_antisymm (not_lt.1 fun h ↦ hz (.inl (.inl h))) (localMultiplicity_pos π₁ z)
+    (π₁.notMem_branchValues_iff _).1 (fun h ↦ hz (.inl (.inl h))) z rfl
   have hlm₂ : ∀ z ∉ F, localMultiplicity π₂ z = 1 := fun z hz ↦
-    le_antisymm (not_lt.1 fun h ↦ hz (.inr (.inl h))) (localMultiplicity_pos π₂ z)
+    (π₂.notMem_branchValues_iff _).1 (fun h ↦ hz (.inr (.inl h))) z rfl
   -- There, the fibres of both covers are the classes of coincident branches of `v₁ ∘ π₁`.
   have hfib : ∀ z ∉ F, ∀ z' ∉ F, π₁ z = π₁ z' ↔ π₂ z = π₂ z' := fun z hz z' hz' ↦ by
     rw [eq_comm (a := π₁ z), eq_comm (a := π₂ z),
