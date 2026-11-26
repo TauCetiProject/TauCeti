@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
+public import TauCeti.Data.ZMod.PrincipalUnits
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 public import TauCeti.RingTheory.Henselian.Basic
@@ -39,8 +40,11 @@ is `TauCeti.isProP_iff_le_unitsPrincipal_one` in `TauCeti.NumberTheory.Padics.Pr
   with `TauCeti.padicIntUnitsEquivProd_symm_apply`,
   `TauCeti.coe_padicIntUnitsEquivProd_apply_fst`, `TauCeti.toZMod_padicIntUnitsEquivProd_apply_fst`
   and `TauCeti.coe_padicIntUnitsEquivProd_apply_snd` describing its two components.
-* `TauCeti.card_rootsOfUnity_padicInt` and `TauCeti.hasEnoughRootsOfUnity_padicInt`: `μ_{p-1}` has
-  `p - 1` elements and `ℤ_p` has enough `(p - 1)`-st roots of unity.
+* `TauCeti.card_rootsOfUnity_padicInt`, `TauCeti.hasEnoughRootsOfUnity_padicInt`,
+  `TauCeti.isUnit_natCard_rootsOfUnity_prime_pow`, and
+  `TauCeti.hasEnoughRootsOfUnity_padicInt_exponent_rootsOfUnity_prime_pow`: `μ_{p-1}` has `p - 1`
+  elements (a unit in `ℤ_p`), and `ℤ_p` has enough `(p - 1)`-st roots of unity (in particular for
+  the exponent of `rootsOfUnity (p - 1) (ZMod (p ^ r))`).
 * `TauCeti.padicTeichmuller`: the Teichmüller character `(ZMod p)ˣ →* ℤ_pˣ`, uniquely characterized
   as the multiplicative section of `PadicInt.toZMod` (`TauCeti.eq_padicTeichmuller`).
 
@@ -171,6 +175,23 @@ variable (p) in
 theorem hasEnoughRootsOfUnity_padicInt : HasEnoughRootsOfUnity ℤ_[p] (p - 1) := by
   have : NeZero (p - 1) := ⟨Nat.sub_ne_zero_of_lt hp.out.one_lt⟩
   exact HasEnoughRootsOfUnity.of_card_le (card_rootsOfUnity_padicInt p).ge
+
+variable (p) in
+/-- For a prime `p` and `r ≠ 0`, the cardinality `p - 1` of `rootsOfUnity (p - 1) (ZMod (p ^ r))`
+is a unit in `ℤ_[p]`. -/
+theorem isUnit_natCard_rootsOfUnity_prime_pow (r : ℕ) (hr : r ≠ 0) :
+    IsUnit (Nat.card (rootsOfUnity (p - 1) (ZMod (p ^ r))) : ℤ_[p]) := by
+  rw [ZMod.natCard_rootsOfUnity_prime_pow p r hr, PadicInt.isUnit_natCast_iff]
+  exact Nat.not_dvd_of_pos_of_lt (Nat.sub_pos_of_lt hp.out.one_lt)
+    (Nat.sub_lt hp.out.pos Nat.one_pos)
+
+variable (p) in
+/-- For a prime `p` and `r ≠ 0`, `ℤ_[p]` contains enough roots of unity for the exponent `p - 1`
+of `rootsOfUnity (p - 1) (ZMod (p ^ r))`. -/
+theorem hasEnoughRootsOfUnity_padicInt_exponent_rootsOfUnity_prime_pow (r : ℕ) (hr : r ≠ 0) :
+    HasEnoughRootsOfUnity ℤ_[p] (Monoid.exponent (rootsOfUnity (p - 1) (ZMod (p ^ r)))) := by
+  rw [ZMod.exponent_rootsOfUnity_prime_pow p r hr]
+  exact hasEnoughRootsOfUnity_padicInt p
 
 variable (p) in
 /-- **The `p`-adic Teichmüller character** `ω : (ZMod p)ˣ →* ℤ_[p]ˣ`, transporting the Henselian

@@ -28,8 +28,11 @@ its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at 
 * `TauCeti.isUnit_one_add_mul_comm`: `IsUnit (1 + a * b) ↔ IsUnit (1 + b * a)`.
 * `Units.val_sub_val_inv_ne_zero`: in a ring without zero divisors, a unit `u ≠ ±1` satisfies
   `u - u⁻¹ ≠ 0`.
+* `Units.mul_self_eq_one_iff`: in a ring without zero divisors, `u * u = 1 ↔ u = 1 ∨ u = -1`.
 * `Units.ne_neg_self_of_isUnit_two`: in a nontrivial ring in which `2` is a unit, no unit equals
   its additive inverse.
+* `Units.ne_one_iff_eq_neg_one_of_mul_self_eq_one`: in a nontrivial ring without zero divisors in
+  which `2` is a unit, an involution `u * u = 1` satisfies `u ≠ 1 ↔ u = -1`.
 -/
 
 public section
@@ -59,10 +62,24 @@ theorem val_sub_val_inv_ne_zero {R : Type*} [Ring R] [NoZeroDivisors R] {u : Rˣ
     (u : R) - ↑u⁻¹ ≠ 0 := fun h ↦
   ((inv_eq_self_iff u).1 (Units.ext (sub_eq_zero.1 h).symm)).elim hu₁ hu₂
 
+/-- In a ring without zero divisors, a unit squares to `1` exactly when it is `1` or `-1`. -/
+theorem mul_self_eq_one_iff {R : Type*} [Ring R] [NoZeroDivisors R] {u : Rˣ} :
+    u * u = 1 ↔ u = 1 ∨ u = -1 := by
+  rw [← inv_eq_iff_mul_eq_one, inv_eq_self_iff]
+
 /-- In a nontrivial ring in which `2` is a unit, no unit equals its additive inverse. -/
 theorem ne_neg_self_of_isUnit_two {R : Type*} [Ring R] [Nontrivial R] (u : Rˣ)
     (h2 : IsUnit (2 : R)) : u ≠ -u := fun h ↦
   u.ne_zero (h2.eq_zero_of_add_self_eq_zero u
     (add_eq_zero_iff_eq_neg.mpr ((congrArg Units.val h).trans (Units.val_neg u))))
+
+/-- In a nontrivial ring without zero divisors in which `2` is a unit, a unit `u` with `u * u = 1`
+is different from `1` if and only if it equals `-1`. -/
+theorem ne_one_iff_eq_neg_one_of_mul_self_eq_one {R : Type*} [Ring R] [NoZeroDivisors R]
+    [Nontrivial R] {u : Rˣ} (hu : u * u = 1) (h2 : IsUnit (2 : R)) :
+    u ≠ 1 ↔ u = -1 := by
+  rcases mul_self_eq_one_iff.mp hu with rfl | rfl
+  · simp [(1 : Rˣ).ne_neg_self_of_isUnit_two h2]
+  · simp [((1 : Rˣ).ne_neg_self_of_isUnit_two h2).symm]
 
 end Units

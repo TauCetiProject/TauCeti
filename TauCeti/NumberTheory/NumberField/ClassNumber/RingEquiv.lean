@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.ClassGroup.ExtendedHom
 public import Mathlib.RingTheory.DedekindDomain.PID
+public import TauCeti.RingTheory.ClassGroup.RelNorm
 
 import TauCeti.NumberTheory.ClassGroup.Equiv
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
+import TauCeti.RingTheory.ClassGroup.Galois
 
 /-!
 # Transport of class groups and class numbers along isomorphisms
@@ -40,6 +43,9 @@ domain* hold for every such model `R`, not only for `𝓞 K` itself.
 * `TauCeti.classGroupAction G K`: for a group `G` acting on `K` by ring automorphisms, such as a
   Galois group `K ≃ₐ[F] K`, the induced action `G →* MulAut (ClassGroup (𝓞 K))`, with
   `TauCeti.classGroupAction_mk0`: `g` sends the class of `I` to the class of its image under `g`.
+* `ClassGroup.extendedHom_relNorm_ringOfIntegers`, `ClassGroup.relNorm_mulEquiv_ringOfIntegers`,
+  and `ClassGroup.extendedHom_mulEquiv_ringOfIntegers`: Galois orbit-product and tower
+  equivariance of `ClassGroup.relNorm` and `ClassGroup.extendedHom` on rings of integers.
 * `RingEquiv.classNumber_eq`: isomorphic number fields have equal class numbers.
 * `RingEquiv.natCard_classGroup_eq_classNumber`: a ring isomorphic to `𝓞 K` has `classNumber K`
   ideal classes.
@@ -204,3 +210,59 @@ theorem classNumber_eq_one_iff_uniqueFactorizationMonoid {R : Type*} [CommRing R
     (f.toMulEquiv.uniqueFactorizationMonoid_iff).symm
 
 end RingEquiv
+
+namespace ClassGroup
+
+open scoped NumberField
+
+/-- **Class-group Galois orbit product for number fields**, expressed in terms of
+`NumberField.RingOfIntegers.mapRingEquiv`. -/
+theorem extendedHom_relNorm_ringOfIntegers (K L : Type*) [Field K] [Field L]
+    [NumberField K] [NumberField L] [Algebra K L] [IsGalois K L] (c : ClassGroup (𝓞 L)) :
+    ClassGroup.extendedHom (𝓞 K) (𝓞 L) (ClassGroup.relNorm (𝓞 K) c) =
+      ∏ σ : L ≃ₐ[K] L,
+        ClassGroup.mulEquiv (RingOfIntegers.mapRingEquiv σ.toRingEquiv) c := by
+  rw [extendedHom_relNorm (𝓞 K) K L (𝓞 L) c]
+  refine Finset.prod_congr rfl fun σ _ ↦ ?_
+  have hEq : (galRestrict (𝓞 K) K L (𝓞 L) σ).toRingEquiv =
+      RingOfIntegers.mapRingEquiv σ.toRingEquiv :=
+    RingEquiv.ext fun z ↦ RingOfIntegers.ext (algebraMap_galRestrict_apply (𝓞 K) σ z)
+  rw [hEq]
+
+/-- Restriction of a field automorphism `τ : L ≃ₐ[F] L` to a normal subextension `K / F` commutes
+with the inclusion `algebraMap (𝓞 K) (𝓞 L)` on rings of integers. -/
+theorem _root_.NumberField.RingOfIntegers.mapRingEquiv_algebraMap_restrictNormal
+    {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K] [Algebra F L] [Algebra K L]
+    [IsScalarTower F K L] [Normal F K] (τ : L ≃ₐ[F] L) (x : 𝓞 K) :
+    RingOfIntegers.mapRingEquiv τ.toRingEquiv (algebraMap (𝓞 K) (𝓞 L) x) =
+      algebraMap (𝓞 K) (𝓞 L)
+        (RingOfIntegers.mapRingEquiv (τ.restrictNormal K).toRingEquiv x) :=
+  RingOfIntegers.ext <| by
+    simp only [RingOfIntegers.mapRingEquiv_apply, AlgEquiv.coe_toRingEquiv,
+      RingOfIntegers.coe_eq_algebraMap, ← IsScalarTower.algebraMap_apply (𝓞 K) (𝓞 L) L,
+      IsScalarTower.algebraMap_apply (𝓞 K) K L]
+    exact (τ.restrictNormal_commutes K _).symm
+
+/-- **Galois equivariance of `ClassGroup.relNorm` on rings of integers** for a normal subextension
+`K / F` inside `L / F`. -/
+theorem relNorm_mulEquiv_ringOfIntegers {F K L : Type*} [Field F] [Field K] [Field L]
+    [NumberField K] [NumberField L] [Algebra F K] [Algebra F L] [Algebra K L]
+    [IsScalarTower F K L] [Normal F K] (τ : L ≃ₐ[F] L) (c : ClassGroup (𝓞 L)) :
+    ClassGroup.mulEquiv (RingOfIntegers.mapRingEquiv (τ.restrictNormal K).toRingEquiv)
+        (ClassGroup.relNorm (𝓞 K) c) =
+      ClassGroup.relNorm (𝓞 K)
+        (ClassGroup.mulEquiv (RingOfIntegers.mapRingEquiv τ.toRingEquiv) c) :=
+  relNorm_mulEquiv _ _ (RingOfIntegers.mapRingEquiv_algebraMap_restrictNormal τ) c
+
+/-- **Galois equivariance of `ClassGroup.extendedHom` on rings of integers** for a normal
+subextension `K / F` inside `L / F`. -/
+theorem extendedHom_mulEquiv_ringOfIntegers {F K L : Type*} [Field F] [Field K] [Field L]
+    [NumberField K] [NumberField L] [Algebra F K] [Algebra F L] [Algebra K L]
+    [IsScalarTower F K L] [Normal F K] (τ : L ≃ₐ[F] L) (c : ClassGroup (𝓞 K)) :
+    ClassGroup.mulEquiv (RingOfIntegers.mapRingEquiv τ.toRingEquiv)
+        (ClassGroup.extendedHom (𝓞 K) (𝓞 L) c) =
+      ClassGroup.extendedHom (𝓞 K) (𝓞 L)
+        (ClassGroup.mulEquiv (RingOfIntegers.mapRingEquiv (τ.restrictNormal K).toRingEquiv) c) :=
+  extendedHom_mulEquiv _ _ (RingOfIntegers.mapRingEquiv_algebraMap_restrictNormal τ) c
+
+end ClassGroup

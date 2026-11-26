@@ -270,10 +270,14 @@ theorem halfOneAdd_of_eq_sum_charIdempotent [Invertible (2 : O)] (hH : IsUnit (N
     _ = ∑ χ : H →* Oˣ, if χ c = 1 then charIdempotent χ else 0 := by
         refine Finset.sum_congr rfl fun χ _ ↦ ?_
         rw [halfOneAdd_def, smul_mul_assoc, add_mul, one_mul, of_apply, single_mul_charIdempotent]
-        have hc2 : (χ c) ^ 2 = 1 ^ 2 := by rw [sq, ← map_mul, hc, map_one, one_pow]
-        rcases (χ c).eq_or_eq_neg_of_sq_eq_sq 1 hc2 with h1 | hm1
+        have hc' : χ c * χ c = 1 := by rw [← map_mul, hc, map_one]
+        rcases Units.mul_self_eq_one_iff.mp hc' with h1 | hm1
         · simp [h1, ← two_smul O]
-        · simp [hm1, ((1 : Oˣ).ne_neg_self_of_isUnit_two (isUnit_of_invertible (2 : O))).symm]
+        · have hne1 : χ c ≠ 1 :=
+            (Units.ne_one_iff_eq_neg_one_of_mul_self_eq_one hc'
+              (isUnit_of_invertible (2 : O))).mpr hm1
+          rw [ite_eq_right_iff.mpr fun h ↦ absurd h hne1]
+          simp [hm1]
     _ = ∑ χ : H →* Oˣ with χ c = 1, charIdempotent χ := by rw [Finset.sum_filter]
 
 /-- **Minus idempotent as the sum of odd character idempotents.** When `2` is invertible in `O`
@@ -290,10 +294,8 @@ theorem halfOneAdd_neg_of_eq_sum_charIdempotent [Invertible (2 : O)] (hH : IsUni
       ← Finset.sum_filter_add_sum_filter_not Finset.univ (fun χ : H →* Oˣ ↦ χ c = 1)]
     congr 1
     refine Finset.sum_congr (Finset.filter_congr fun χ _ ↦ ?_) fun _ _ ↦ rfl
-    have hc2 : (χ c) ^ 2 = 1 ^ 2 := by rw [sq, ← map_mul, hc, map_one, one_pow]
-    rcases (χ c).eq_or_eq_neg_of_sq_eq_sq 1 hc2 with h1 | hm1
-    · simp [h1, (1 : Oˣ).ne_neg_self_of_isUnit_two (isUnit_of_invertible (2 : O))]
-    · simp [hm1, ((1 : Oˣ).ne_neg_self_of_isUnit_two (isUnit_of_invertible (2 : O))).symm]
+    exact (Units.ne_one_iff_eq_neg_one_of_mul_self_eq_one (u := χ c)
+      (by rw [← map_mul, hc, map_one]) (isUnit_of_invertible (2 : O))).symm
   have hsum : halfOneAdd O (of O H c) + halfOneAdd O (-of O H c) = 1 :=
     halfOneAdd_add_halfOneAdd_neg O (of O H c)
   rw [halfOneAdd_of_eq_sum_charIdempotent hH hc] at hsum

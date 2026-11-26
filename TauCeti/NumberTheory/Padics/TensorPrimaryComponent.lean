@@ -237,7 +237,7 @@ noncomputable def primaryComponentLinearEquivPadicIntTensor (hA : AddMonoid.Expo
     AddCommGroup.primaryComponent A p ≃ₗ[ℤ_[p]] ℤ_[p] ⊗[ℤ] A :=
   { primaryComponentEquivPadicIntTensor p A hA with
     map_smul' := fun a x ↦
-      (AddCommGroup.primaryComponent.isAddPGroup A p).map_padicInt_smul
+      IsAddPGroup.map_padicInt_smul AddCommGroup.primaryComponent.isAddPGroup
         (primaryComponentEquivPadicIntTensor p A hA).toAddMonoidHom a x }
 
 /-- The `ℤ_p`-linear equivalence `A[p^∞] ≃ₗ[ℤ_p] ℤ_p ⊗[ℤ] A` sends `x` to `1 ⊗ x`. -/

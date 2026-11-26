@@ -19,6 +19,7 @@ public import Mathlib.LinearAlgebra.Basis.Submodule
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+public import TauCeti.GroupTheory.Torsion
 import Mathlib.Algebra.Group.Equiv.TypeTags
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Algebra.Group.Action.Pow
@@ -408,15 +409,10 @@ namespace AddCommGroup.primaryComponent
 
 variable {p : ℕ} {A : Type*} [AddCommGroup A]
 
-/-- The `p`-primary component of an abelian group is an additive `p`-group. -/
-theorem isAddPGroup (A : Type*) [AddCommGroup A] (p : ℕ) :
-    IsAddPGroup p (AddCommGroup.primaryComponent A p) := fun x ↦
-  (AddCommGroup.mem_primaryComponent.mp x.property).imp fun _ hk ↦ Subtype.ext <| by simpa using hk
-
 /-- The `p`-primary component of an abelian group is canonically a `ℤ_[p]`-module. -/
 noncomputable instance instModulePadicInt [Fact p.Prime] :
     Module ℤ_[p] (AddCommGroup.primaryComponent A p) :=
-  (AddCommGroup.primaryComponent.isAddPGroup A p).padicIntModule
+  IsAddPGroup.padicIntModule AddCommGroup.primaryComponent.isAddPGroup
 
 end AddCommGroup.primaryComponent
 
@@ -437,7 +433,7 @@ noncomputable def primaryComponentMap (f : A →+ B) :
         rw [AddMonoidHom.comp_apply, AddSubgroup.coe_subtype, ← map_nsmul, hk, map_zero]
   { toAddHom := g.toAddHom
     map_smul' := fun a x ↦
-      (AddCommGroup.primaryComponent.isAddPGroup A p).map_padicInt_smul g a x }
+      IsAddPGroup.map_padicInt_smul AddCommGroup.primaryComponent.isAddPGroup g a x }
 
 @[simp]
 theorem coe_primaryComponentMap_apply (f : A →+ B) (x : AddCommGroup.primaryComponent A p) :

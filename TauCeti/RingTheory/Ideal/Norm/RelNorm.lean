@@ -7,9 +7,10 @@ module
 
 public import Mathlib.RingTheory.Ideal.Norm.RelNorm
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
+import TauCeti.RingTheory.IntegralClosure.IntegralRestrict
 
 /-!
-# Coefficients of a relative norm
+# Coefficients and equivariance of a relative norm
 
 For a finite torsion-free extension `A → B` of Dedekind domains whose extension of fraction
 fields is separable, and a prime ideal `p` of `A`, the coefficient of `Ideal.relNorm A I` at `p` is
@@ -23,10 +24,15 @@ The weights are Mathlib's: `Ideal.relNorm P = p ^ f(P / p)` for a maximal `P` ab
 The coefficient `mult_p(I)` is Mathlib's `multiplicity`, the normalization in which
 `Ideal.finprod_heightOneSpectrum_pow_multiplicity` recovers an ideal from its coefficients.
 
+The file also records that `Ideal.relNorm` commutes with commuting ring equivalences
+(`Ideal.map_relNorm_of_ringEquiv`), without any separability hypothesis.
+
 ## Main results
 
 * `TauCeti.multiplicity_relNorm`: the coefficient of a relative norm at `p` is the weighted sum
   of the coefficients of the ideal at the primes above `p`.
+* `Ideal.map_relNorm_of_ringEquiv`: equivariance of `Ideal.relNorm` under commuting ring
+  equivalences.
 
 ## References
 
@@ -164,5 +170,29 @@ theorem multiplicity_relNorm (p : Ideal A) [p.IsPrime] [Fintype (p.primesOver B)
     exact multiplicity_relNorm_of_ne_bot p hp hI
 
 end TauCeti
+
+/-- **Equivariance of `Ideal.relNorm` under commuting ring equivalences.** -/
+theorem Ideal.map_relNorm_of_ringEquiv {R S R' S' : Type*}
+    [CommRing R] [IsDedekindDomain R] [CommRing S] [IsDedekindDomain S]
+    [Algebra R S] [Module.Finite R S] [Module.IsTorsionFree R S]
+    [CommRing R'] [IsDedekindDomain R'] [CommRing S'] [IsDedekindDomain S']
+    [Algebra R' S'] [Module.Finite R' S'] [Module.IsTorsionFree R' S']
+    (f : R ≃+* R') (g : S ≃+* S')
+    (hfg : ∀ r : R, g (algebraMap R S r) = algebraMap R' S' (f r)) (I : Ideal S) :
+    Ideal.map (f : R →+* R') (Ideal.relNorm R I) =
+      Ideal.relNorm R' (Ideal.map (g : S →+* S') I) := by
+  rw [Ideal.map_relNorm, Ideal.relNorm_apply]
+  congr 1
+  ext y
+  simp only [Set.mem_image, Function.comp_apply, SetLike.mem_coe, RingEquiv.coe_toRingHom]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨g x, Ideal.mem_map_of_mem _ hx,
+      (Algebra.map_intNorm_of_ringEquiv f g hfg x).symm⟩
+  · rintro ⟨z, hz, rfl⟩
+    have hz' : g.symm z ∈ I := by
+      rwa [Ideal.symm_apply_mem_of_equiv_iff]
+    refine ⟨g.symm z, hz', ?_⟩
+    simpa using Algebra.map_intNorm_of_ringEquiv f g hfg (g.symm z)
 
 end

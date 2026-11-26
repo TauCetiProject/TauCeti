@@ -53,7 +53,8 @@ composites on `R ⊗[ℤ] Additive (ClassGroup _)` evaluate to `[L : K] • id` 
 
 * `TauCeti.cyclotomicClassGroupAction_mk0`: `σ_a` sends the class of a nonzero ideal `𝔞` to the
   class of its image `σ_a 𝔞`.
-* `TauCeti.cyclotomicClassAction_tmul`: on a pure tensor, `r ⊗ c ↦ r ⊗ σ_a c`.
+* `TauCeti.cyclotomicClassAction_tmul` and `TauCeti.cyclotomicClassAction_eq_mulEquivBaseChange`:
+  on a pure tensor `r ⊗ c ↦ r ⊗ σ_a c`, matching `ClassGroup.mulEquivBaseChange`.
 * `TauCeti.numberFieldClassPrimaryEquiv_cyclotomicAction`,
   `TauCeti.numberFieldClassPrimaryEquiv_relNorm`, and
   `TauCeti.numberFieldClassPrimaryEquiv_extended`: compatibility of the `p`-primary equivalence with
@@ -139,6 +140,17 @@ theorem cyclotomicClassAction_tmul (a : (ZMod m)ˣ) (r : R) (c : ClassGroup (�
     cyclotomicClassAction R m K a (r ⊗ₜ Additive.ofMul c) =
       r ⊗ₜ Additive.ofMul (cyclotomicClassGroupAction m K a c) := by
   simp [cyclotomicClassAction_apply]
+
+variable {R m K} in
+/-- The cyclotomic class action of `a` agrees with `ClassGroup.mulEquivBaseChange` for the
+automorphism `σ_a = (galEquivZMod m K).symm a` of `𝓞 K`. -/
+theorem cyclotomicClassAction_eq_mulEquivBaseChange (a : (ZMod m)ˣ) :
+    cyclotomicClassAction R m K a =
+      (ClassGroup.mulEquivBaseChange R
+        (RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm a).toRingEquiv)).toLinearMap := by
+  ext c
+  obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
+  simp [cyclotomicClassGroupAction_apply, RingEquiv.classGroupEquiv_def]
 
 end Action
 
@@ -246,8 +258,9 @@ noncomputable def galCyclotomicEquivKerUnitsMap :
     refine ⟨σ, Subtype.ext ?_⟩
     simp only [MonoidHom.codRestrict_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
       AlgEquiv.restrictScalarsHom_apply]
-    have hσ : σ.restrictScalars ℚ = (galEquivZMod n L).symm u.val :=
-      AlgEquiv.ext fun _ ↦ rfl
+    have hσ : σ.restrictScalars ℚ = (galEquivZMod n L).symm u.val := by
+      ext x
+      simp [σ]
     rw [hσ, MulEquiv.apply_symm_apply]
 
 @[simp]
@@ -289,8 +302,9 @@ theorem extendedHom_relNorm_cyclotomic (c : ClassGroup (𝓞 L)) :
   rw [cyclotomicClassGroupAction_apply, MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe,
     coe_galCyclotomicEquivKerUnitsMap_apply, MulEquiv.symm_apply_apply,
     RingEquiv.classGroupEquiv_def]
-  have hσ : (σ.restrictScalars ℚ).toRingEquiv = σ.toRingEquiv :=
-    RingEquiv.ext fun _ ↦ rfl
+  have hσ : (σ.restrictScalars ℚ).toRingEquiv = σ.toRingEquiv := by
+    ext x
+    simp
   rw [hσ]
 
 /-- **Base-changed equivariance of relative norm in a cyclotomic tower.** -/
@@ -299,15 +313,12 @@ theorem relNormBaseChange_cyclotomicClassAction (R : Type*) [CommRing R] (a : (Z
     ClassGroup.relNormBaseChange R (𝓞 K) (𝓞 L) (cyclotomicClassAction R n L a x) =
       cyclotomicClassAction R m K (ZMod.unitsMap hmn a)
         (ClassGroup.relNormBaseChange R (𝓞 K) (𝓞 L) x) := by
-  have hcomp :
-      (ClassGroup.relNormBaseChange R (𝓞 K) (𝓞 L)).comp
-          (cyclotomicClassAction R n L a) =
-        (cyclotomicClassAction R m K (ZMod.unitsMap hmn a)).comp
-          (ClassGroup.relNormBaseChange R (𝓞 K) (𝓞 L)) := by
-    ext c
-    obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
-    simp [relNorm_cyclotomicClassGroupAction hmn K L]
-  exact LinearMap.congr_fun hcomp x
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
+  rw [cyclotomicClassAction_eq_mulEquivBaseChange, cyclotomicClassAction_eq_mulEquivBaseChange,
+    ← galEquivZMod_symm_restrictNormal hmn K L a]
+  exact LinearMap.congr_fun
+    (ClassGroup.mulEquivBaseChange_comp_relNormBaseChange R _ _
+      (RingOfIntegers.mapRingEquiv_algebraMap_restrictNormal ((galEquivZMod n L).symm a))).symm x
 
 /-- **Base-changed equivariance of class extension in a cyclotomic tower.** -/
 theorem extendedBaseChange_cyclotomicClassAction (R : Type*) [CommRing R] (a : (ZMod n)ˣ)
@@ -315,15 +326,12 @@ theorem extendedBaseChange_cyclotomicClassAction (R : Type*) [CommRing R] (a : (
     cyclotomicClassAction R n L a (ClassGroup.extendedBaseChange R (𝓞 K) (𝓞 L) x) =
       ClassGroup.extendedBaseChange R (𝓞 K) (𝓞 L)
         (cyclotomicClassAction R m K (ZMod.unitsMap hmn a) x) := by
-  have hcomp :
-      (cyclotomicClassAction R n L a).comp
-          (ClassGroup.extendedBaseChange R (𝓞 K) (𝓞 L)) =
-        (ClassGroup.extendedBaseChange R (𝓞 K) (𝓞 L)).comp
-          (cyclotomicClassAction R m K (ZMod.unitsMap hmn a)) := by
-    ext c
-    obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
-    simp [extendedHom_cyclotomicClassGroupAction hmn K L]
-  exact LinearMap.congr_fun hcomp x
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
+  rw [cyclotomicClassAction_eq_mulEquivBaseChange, cyclotomicClassAction_eq_mulEquivBaseChange,
+    ← galEquivZMod_symm_restrictNormal hmn K L a]
+  exact LinearMap.congr_fun
+    (ClassGroup.mulEquivBaseChange_comp_extendedBaseChange R _ _
+      (RingOfIntegers.mapRingEquiv_algebraMap_restrictNormal ((galEquivZMod n L).symm a))) x
 
 /-- **Extend then norm on base-changed cyclotomic class modules is multiplication by `[L : K]`.** -/
 theorem relNormBaseChange_comp_extendedBaseChange_cyclotomic (R : Type*) [CommRing R] :
@@ -339,9 +347,16 @@ theorem extendedBaseChange_comp_relNormBaseChange_cyclotomic (R : Type*) [CommRi
     (ClassGroup.extendedBaseChange R (𝓞 K) (𝓞 L)).comp
         (ClassGroup.relNormBaseChange R (𝓞 K) (𝓞 L)) =
       ∑ g : (ZMod.unitsMap hmn).ker, cyclotomicClassAction R n L g.val := by
-  ext c
-  obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
-  simp [extendedHom_relNorm_cyclotomic hmn K L, TensorProduct.tmul_sum]
+  have : IsGalois ℚ L := IsCyclotomicExtension.isGalois {n} ℚ L
+  have : IsGalois K L := IsGalois.tower_top_of_isGalois ℚ K L
+  rw [ClassGroup.extendedBaseChange_comp_relNormBaseChange R (𝓞 K) K L (𝓞 L)]
+  refine Fintype.sum_equiv (galCyclotomicEquivKerUnitsMap hmn K L).toEquiv _ _ fun σ ↦ ?_
+  rw [MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, coe_galCyclotomicEquivKerUnitsMap_apply,
+    cyclotomicClassAction_eq_mulEquivBaseChange, MulEquiv.symm_apply_apply]
+  have hEq : (galRestrict (𝓞 K) K L (𝓞 L) σ).toRingEquiv =
+      RingOfIntegers.mapRingEquiv (σ.restrictScalars ℚ).toRingEquiv :=
+    RingEquiv.ext fun z ↦ RingOfIntegers.ext (algebraMap_galRestrict_apply (𝓞 K) σ z)
+  rw [hEq]
 
 end Tower
 
