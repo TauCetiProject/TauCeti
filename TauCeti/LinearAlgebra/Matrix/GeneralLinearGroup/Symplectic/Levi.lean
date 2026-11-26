@@ -40,9 +40,6 @@ alongside the upper- and lower-unipotent factors.
 
 ## Main results
 
-* `SymplecticGroup.fromBlocks_zero₁₂_mem_iff`: a block lower triangular matrix `[[A, 0], [C, D]]`
-  is symplectic exactly when `Aᵀ C = Cᵀ A` and `Aᵀ D = 1`; so scaling `C` keeps it symplectic
-  (`SymplecticGroup.fromBlocks_zero₁₂_smul_mem`).
 * `TauCeti.GLSymplectic.exists_leviHom_eq_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero`: a
   symplectic matrix with vanishing off-diagonal blocks lies in the image of the Levi embedding.
 * `TauCeti.GLSymplectic.leviHom_injective` and
@@ -63,26 +60,6 @@ alongside the upper- and lower-unipotent factors.
 public section
 
 open Matrix
-
-namespace SymplecticGroup
-
-variable {l : Type*} [DecidableEq l] [Fintype l] {R : Type*} [CommRing R]
-
-/-- **Block lower triangular symplectic matrices.** A matrix `[[A, 0], [C, D]]` is symplectic
-exactly when `Aᵀ C = Cᵀ A` and `Aᵀ D = 1`. -/
-theorem fromBlocks_zero₁₂_mem_iff {A C D : Matrix l l R} :
-    fromBlocks A 0 C D ∈ symplecticGroup l R ↔ Aᵀ * C = Cᵀ * A ∧ Aᵀ * D = 1 := by
-  simp [fromBlocks_mem_iff]
-
-/-- Scaling the lower left block of a symplectic matrix `[[A, 0], [C, D]]` keeps it symplectic. -/
-theorem fromBlocks_zero₁₂_smul_mem {A C D : Matrix l l R}
-    (h : fromBlocks A 0 C D ∈ symplecticGroup l R) (c : R) :
-    fromBlocks A 0 (c • C) D ∈ symplecticGroup l R := by
-  rw [fromBlocks_zero₁₂_mem_iff] at h ⊢
-  rw [transpose_smul, Matrix.mul_smul, Matrix.smul_mul, h.1]
-  exact ⟨rfl, h.2⟩
-
-end SymplecticGroup
 
 namespace TauCeti
 

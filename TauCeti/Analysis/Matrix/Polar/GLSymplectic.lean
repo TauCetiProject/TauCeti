@@ -156,38 +156,34 @@ theorem coe_polarUnitary_sum {m : Type*} [Fintype m] [DecidableEq m] (A : GLSymp
   rw [coe_polarUnitary, coe_polarUnitary, coe_polarUnitary, h]
 
 /-- **The polar decomposition on the Levi subgroup.** If `A = P U` is the polar decomposition of
-`A`, then `diag(A, A⁻ᵀ) = diag(P, P⁻¹) diag(U, U)` is that of `diag(A, A⁻ᵀ)`: its orthogonal polar
+`A`, then `diag(A, A⁻ᵀ) = diag(P, P⁻ᵀ) diag(U, U)` is that of `diag(A, A⁻ᵀ)`: its orthogonal polar
 factor is `diag(U, U)`. -/
 theorem coe_polarUnitary_leviHom (A : GL n ℝ) :
     ((polarUnitary (leviHom A) : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
       fromBlocks (Units.polarUnitary A : Matrix n n ℝ) 0 0 (Units.polarUnitary A) := by
   set P := CFC.sqrt ((A : Matrix n n ℝ) * star (A : Matrix n n ℝ))
   set U := Units.polarUnitary A
-  have hP : P.PosDef := posDef_sqrt_mul_star A
   have hPU : P * (U : Matrix n n ℝ) = A := Units.sqrt_mul_star_mul_polarUnitary A
   have hU : (U : Matrix n n ℝ) * star (U : Matrix n n ℝ) = 1 :=
     Unitary.mul_star_self_of_mem U.property
-  have hPinv : P * P⁻¹ = 1 := mul_nonsing_inv P ((isUnit_iff_isUnit_det P).1 hP.isUnit)
-  have hPsymm : (P⁻¹)ᵀ = P⁻¹ := by
-    rw [transpose_nonsing_inv, ← conjTranspose_eq_transpose_of_trivial, hP.isHermitian.eq]
-  -- The inverse transpose of `A = P U` is `P⁻¹ U`.
-  have hAinv : (((A⁻¹ : GL n ℝ) : Matrix n n ℝ))ᵀ = P⁻¹ * (U : Matrix n n ℝ) := by
-    have h : (A : Matrix n n ℝ) * (P⁻¹ * (U : Matrix n n ℝ))ᵀ = 1 := by
-      rw [transpose_mul, hPsymm, ← hPU, ← conjTranspose_eq_transpose_of_trivial,
-        ← star_eq_conjTranspose, mul_assoc, ← mul_assoc (U : Matrix n n ℝ), hU, one_mul,
-        hPinv]
-    rw [coe_units_inv, inv_eq_right_inv h, transpose_transpose]
+  -- The polar decomposition of `A⁻ᵀ` is `P⁻ᵀ U`, as the entrywise conjugate of `U` is `U` over `ℝ`.
+  have hAinv : (inverseTranspose A : Matrix n n ℝ) = P⁻¹ᵀ * (U : Matrix n n ℝ) := by
+    rw [← Units.sqrt_mul_star_mul_polarUnitary (inverseTranspose A), sqrt_inverseTranspose,
+      polarUnitary_inverseTranspose, UnitaryGroup.map_star_coe,
+      show (star : ℝ → ℝ) = id from funext star_trivial, Matrix.map_id]
   have hW : fromBlocks (U : Matrix n n ℝ) 0 0 (U : Matrix n n ℝ) ∈
       unitaryGroup (n ⊕ n) ℝ := by
     rw [mem_unitaryGroup_iff, star_eq_conjTranspose, fromBlocks_conjTranspose, fromBlocks_multiply,
       ← star_eq_conjTranspose, hU]
     simp
-  have hQ : 0 ≤ fromBlocks P 0 0 P⁻¹ := by
+  have hQ : 0 ≤ fromBlocks P 0 0 P⁻¹ᵀ := by
+    have hP : P.PosDef := posDef_sqrt_mul_star A
     rw [nonneg_iff_posSemidef]
     let _ : Invertible P := hP.isUnit.invertible
-    simpa using (PosDef.fromBlocks₁₁ (0 : Matrix n n ℝ) P⁻¹ hP).2 (by simpa using hP.inv.posSemidef)
+    simpa using (PosDef.fromBlocks₁₁ (0 : Matrix n n ℝ) P⁻¹ᵀ hP).2
+      (by simpa using hP.inv.transpose.posSemidef)
   rw [coe_polarUnitary, Units.polarUnitary_eq_of_mul_eq _ hQ (v := ⟨_, hW⟩) (by
-    rw [coe_leviHom, fromBlocks_multiply, hPU, hAinv]
+    rw [coe_leviHom, fromBlocks_multiply, hPU, ← coe_inverseTranspose, hAinv]
     simp)]
 
 end TauCeti.GLSymplectic

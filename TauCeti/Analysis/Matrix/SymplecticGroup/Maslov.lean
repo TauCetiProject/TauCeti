@@ -177,12 +177,10 @@ theorem maslovIndex_eq_zero_of_forall_maslovPhase_sq_eq_one {A : GLSymplectic n 
     (γ : Path A A) (h : ∀ t, maslovPhase (γ t) ^ 2 = 1) : maslovIndex γ = 0 := by
   rw [maslovIndex_def]
   refine Circle.degree_eq_zero_of_forall_ne _ (c := Circle.exp (Real.pi / 2)) fun t ht ↦ ?_
+  have hI : (Circle.exp (Real.pi / 2) : ℂ) = Complex.I := by simp
   have h' := congrArg ((↑) : Circle → ℂ) (h t)
   rw [Path.map_coe, Function.comp_apply] at ht
-  rw [ht, Circle.coe_pow, Circle.coe_exp, ← Complex.exp_natCast_mul] at h'
-  push_cast at h'
-  rw [show (2 : ℂ) * (Real.pi / 2 * Complex.I) = Real.pi * Complex.I by ring,
-    Complex.exp_pi_mul_I] at h'
+  rw [ht, Circle.coe_pow, hI] at h'
   norm_num at h'
 
 /-- The Maslov index is additive under concatenation of loops. -/
