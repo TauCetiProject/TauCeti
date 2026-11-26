@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
+import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 
 /-!
 # Twisted chains of spaces over a space
@@ -156,9 +157,10 @@ lemma subsetTwistedChainComplexMap_eq_overTwistedChainComplexMap {S T : Set X} (
       overTwistedChainComplexMap (a := TopCat.ofHom (ContinuousMap.subtypeVal S))
         (b := TopCat.ofHom (ContinuousMap.subtypeVal T)) L
         (TopCat.ofHom (ContinuousMap.inclusion h)) rfl := by
-  simp only [subsetTwistedChainComplexMap_def, overTwistedChainComplexMap, Iso.trans_hom,
-    twistedChainComplexCoefficientMap_comp, Category.assoc]
-  rw [← Category.assoc, ← twistedChainComplexCoefficientMap_comp]
+  simp only [subsetTwistedChainComplexMap_def, overTwistedChainComplexMap]
+  -- The remaining `eqToIso` is along an equation between definitionally equal pullbacks, so it is
+  -- the identity by `rfl`; `eqToIso_refl` does not fire because the two sides are not syntactically
+  -- equal.
   congr 2
 
 /-- The coefficient comparisons of `homologyMap_overTwistedChainComplexMap_eq_comp`: transporting
@@ -229,16 +231,14 @@ theorem homologyMap_overTwistedChainComplexMap_eq_comp {Y : TopCat.{v}} {y : Y �
           ((pullbackCompIso ρ.hom e.hom).hom.app ((pullback y.hom).obj L)) k ≫
         twistedHomologyMap ρ ((pullback e.hom).obj ((pullback y.hom).obj L)) k ≫
         twistedHomologyMap e ((pullback y.hom).obj L) k := by
-    rw [hH, ← Category.assoc, ← twistedHomologyCoefficientMap_comp, Iso.inv_hom_id_app,
-      twistedHomologyCoefficientMap_id, Category.id_comp]
+    rw [hH, ← Iso.app_inv, ← Iso.app_hom, twistedHomologyCoefficientMap_inv_hom_id_assoc]
   have hρ' : twistedHomologyMap ρ ((pullback e.hom).obj ((pullback y.hom).obj L)) k =
       twistedHomologyCoefficientMap ((pullback ρ.hom).map
           (((pullbackCompIso e.hom y.hom).app L).symm ≪≫ (pullbackHomotopyIso G).app L).hom) k ≫
         twistedHomologyMap ρ ((pullback b.hom).obj L) k ≫
         twistedHomologyCoefficientMap
           (((pullbackCompIso e.hom y.hom).app L).symm ≪≫ (pullbackHomotopyIso G).app L).inv k := by
-    rw [← reassoc_of% hρβ, ← twistedHomologyCoefficientMap_comp, Iso.hom_inv_id,
-      twistedHomologyCoefficientMap_id, Category.comp_id]
+    rw [← reassoc_of% hρβ, twistedHomologyCoefficientMap_hom_inv_id, Category.comp_id]
   rw [overTwistedChainComplexMap, overTwistedChainComplexMap, HomologicalComplex.homologyMap_comp,
     HomologicalComplex.homologyMap_comp]
   -- Fold the homology maps back into the abbreviations `twistedHomologyCoefficientMap` and

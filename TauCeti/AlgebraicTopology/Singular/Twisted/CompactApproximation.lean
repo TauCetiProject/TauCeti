@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Over
 public import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
+import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 
 /-!
 # Twisted homology of a space approximated on compact sets
@@ -108,8 +109,7 @@ theorem exists_twistedHomologyMap_eq_of_homotopic
     (f := TopCat.ofHom e ≫ c.ι.app j) (g := TopCat.ofHom (ContinuousMap.subtypeVal K)) H M k
   rw [twistedHomologyMap_comp] at hH
   rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-    hH, ← Category.assoc, ← twistedHomologyCoefficientMap_comp, Iso.inv_hom_id_app,
-    twistedHomologyCoefficientMap_id, Category.id_comp]
+    hH, ← Iso.app_inv, ← Iso.app_hom, twistedHomologyCoefficientMap_inv_hom_id_assoc]
 
 /-- **Twisted classes vanishing in an approximated space vanish in the approximations.** Let `c`
 be a cocone over a diagram of spaces. Suppose that for every compact subset `K` of a space `F j`
