@@ -177,34 +177,6 @@ theorem
 
 /-! ### Localization -/
 
-/-- The lower bound of IMS localization for the partition of unity `J₀, (J p)_{p ∈ P}`: lower
-bounds `B₀` and `B p` for the quadratic forms at the pieces `J₀ φ` and `J p φ` give the lower
-bound `B₀ + ∑ₚ B p - K ‖φ‖²` at `φ`. -/
-private theorem add_sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul
-    {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ} {P : Finset (ι → ℝ)} {J₀ : (ι → ℝ) → ℝ}
-    {J : (ι → ℝ) → (ι → ℝ) → ℝ} {t K B₀ : ℝ} {B : (ι → ℝ) → ℝ}
-    (hf : ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 f x) (hφ : ContDiff ℝ 2 φ)
-    (hφc : HasCompactSupport φ) (hJ₀ : ContDiff ℝ 2 J₀) (hJ : ∀ p ∈ P, ContDiff ℝ 2 (J p))
-    (hJ1 : ∀ x, φ x ≠ 0 → J₀ x ^ 2 + ∑ p ∈ P, J p x ^ 2 = 1)
-    (hK : ∀ x, φ x ≠ 0 → ∑ i, fderiv ℝ J₀ x (Pi.single i 1) ^ 2 +
-      ∑ p ∈ P, ∑ i, fderiv ℝ (J p) x (Pi.single i 1) ^ 2 ≤ K)
-    (h₀ : B₀ ≤ ∫ x, ∑ s, euclideanWittenLaplacian f t (J₀ • φ) x s * (J₀ • φ) x s)
-    (hB : ∀ p ∈ P, B p ≤ ∫ x, ∑ s, euclideanWittenLaplacian f t (J p • φ) x s * (J p • φ) x s) :
-    B₀ + ∑ p ∈ P, B p - K * ∫ x, ∑ s, φ x s ^ 2 ≤
-      ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
-  -- Index the partition of unity by `Option (ι → ℝ)`, with `none` for `J₀`.
-  simpa [Finset.sum_insertNone] using
-    sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul (A := P.insertNone)
-      (J := fun o ↦ o.elim J₀ J) (B := fun o ↦ o.elim B₀ B) hf (by
-        rintro (_ | p) hp x -
-        · exact hJ₀.contDiffAt
-        · exact (hJ p (Finset.some_mem_insertNone.1 hp)).contDiffAt) hφ hφc
-      (fun x hx ↦ by simpa [Finset.sum_insertNone] using hJ1 x hx)
-      (fun x hx ↦ by simpa [Finset.sum_insertNone] using hK x hx) (by
-        rintro (_ | p) hp
-        · exact h₀
-        · exact hB p (Finset.some_mem_insertNone.1 hp))
-
 /-- Away from the critical points, where `|df|² ≥ c₀` and `∑_{i,j} |∂ᵢ∂ⱼf| ≤ h`, the potential
 `t² |df|² - t |Hess f|` bounds the quadratic form at the piece `J₀ φ` below by `t κ ‖J₀ φ‖²` for
 `t ≥ 0` and `κ + h ≤ t c₀`. -/
@@ -259,8 +231,8 @@ theorem le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one {f 
   -- Away from the critical points, the coefficient `t (t c₀ - h) = t² c₀ - t h`.
   have h₀ := mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_smul_mul (κ := t * c₀ - h)
     hf hφ hφc hJ₀ hc₀ hh ht (sub_add_cancel _ _).le
-  have key := add_sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul hf hφ hφc hJ₀
-    hJ hJ1 hK h₀ fun p hp ↦
+  have key := add_sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul hf
+    (fun x _ ↦ hJ₀.contDiffAt) (fun p hp x _ ↦ (hJ p hp).contDiffAt) hφ hφc hJ1 hK h₀ fun p hp ↦
       two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_eventuallyEq ht
         (hc p hp) ((hJ p hp).smul hφ) hφc.smul_left fun x hx ↦
         hmodel p hp x (Function.support_smul_subset_left (J p) φ hx)
