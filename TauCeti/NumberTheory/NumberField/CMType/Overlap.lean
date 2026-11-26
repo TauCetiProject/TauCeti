@@ -207,14 +207,8 @@ theorem averageOverlap_eq_inv_card_mul_sum {G : Type*} [Group G] [Fintype G]
   classical
   -- The action of `τ` on CM types depends only on `π τ`.
   have hact {τ τ' : RingAut ℂ} (h : π τ = π τ') (Ψ : CMType E) : τ • Ψ = τ' • Ψ := by
-    have hκ : π (τ⁻¹ * τ')⁻¹ = 1 := by simp [h]
-    rw [smul_eq_iff_eq_inv_smul, smul_smul]
-    ext ψ
-    -- The inverse of a ring automorphism acts as its `symm` (`RingAut.inv_apply`).
-    have hψ : ((τ⁻¹ * τ').symm : ℂ →+* ℂ).comp ψ = ψ := RingHom.ext fun x ↦ by
-      rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, ← RingAut.inv_apply]
-      exact RingHom.congr_fun (hπ _ hκ ψ) x
-    rw [mem_smul, hψ]
+    rw [← mul_inv_cancel_left τ τ', mul_smul,
+      smul_eq_self_of_forall_comp_eq (hπ (τ⁻¹ * τ') (by simp [h]))]
   -- Hence the orbit of `Φ` is the finite set of the `s(g)⁻¹ Φ`.
   have hfin : (orbit (RingAut ℂ) Φ).Finite := (Set.finite_range fun g ↦ (s g)⁻¹ • Φ).subset <| by
     rintro _ ⟨τ, rfl⟩
@@ -234,16 +228,20 @@ theorem averageOverlap_eq_inv_card_mul_sum {G : Type*} [Group G] [Fintype G]
   -- Summing `∑_g a_{s(g)⁻¹Ψ}(σ)` over the orbit in both orders.
   have key : (hfin.toFinset.card : ℚ) * ∑ g, (overlap ((s g)⁻¹ • Φ) σ : ℚ) =
       Nat.card G * ∑ Ψ ∈ hfin.toFinset, (overlap Ψ σ : ℚ) := by
-    rw [← nsmul_eq_mul, ← Finset.sum_const, ← Finset.sum_congr rfl hinv, Finset.sum_comm,
-      Finset.sum_congr rfl fun g _ ↦ hperm g, Finset.sum_const, Finset.card_univ,
-      ← Nat.card_eq_fintype_card, nsmul_eq_mul]
+    calc (hfin.toFinset.card : ℚ) * ∑ g, (overlap ((s g)⁻¹ • Φ) σ : ℚ)
+        = ∑ Ψ ∈ hfin.toFinset, ∑ g, (overlap ((s g)⁻¹ • Ψ) σ : ℚ) := by
+          rw [Finset.sum_congr rfl hinv]
+          simp
+      _ = ∑ g, ∑ Ψ ∈ hfin.toFinset, (overlap ((s g)⁻¹ • Ψ) σ : ℚ) := Finset.sum_comm
+      _ = Nat.card G * ∑ Ψ ∈ hfin.toFinset, (overlap Ψ σ : ℚ) := by simp [hperm]
   have hO : (hfin.toFinset.card : ℚ) ≠ 0 :=
     Nat.cast_ne_zero.mpr (Finset.card_ne_zero_of_mem (hfin.mem_toFinset.mpr (mem_orbit_self Φ)))
   have hG : (Nat.card G : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   simp_rw [overlap_conj]
   rw [averageOverlap_def, finsum_mem_eq_finite_toFinset_sum _ hfin,
-    Set.ncard_eq_toFinset_card _ hfin, eq_inv_mul_iff_mul_eq₀ hG, mul_div_assoc', div_eq_iff hO,
-    ← key, mul_comm]
+    Set.ncard_eq_toFinset_card _ hfin]
+  field_simp
+  linarith [key]
 
 /-- The averaged overlap is invariant under inversion: `a⁰_Φ(σ⁻¹) = a⁰_Φ(σ)`. -/
 @[simp]

@@ -66,7 +66,8 @@ complex. In particular `ℚ` has no CM type.
   to `F`.
 * `TauCeti.CMType.instStarCompCommutePi`: a finite product of rings with `StarCompCommute`, such
   as a finite product of CM fields, has it.
-* `TauCeti.CMType.coe_smul`: `σΦ` is the image of `Φ` under `φ ↦ σ ∘ φ`, and
+* `TauCeti.CMType.coe_smul`: `σΦ` is the image of `Φ` under `φ ↦ σ ∘ φ`, so an automorphism
+  fixing every embedding acts trivially (`TauCeti.CMType.smul_eq_self_of_forall_comp_eq`), and
   `TauCeti.CMType.star_smul`: `ι(σΦ) = σ(ιΦ)`; complex conjugation acts as `Φ ↦ ιΦ`
   (`TauCeti.CMType.starRingAut_smul`).
 
@@ -440,6 +441,12 @@ theorem coe_smul (σ : RingAut ℂ) (Φ : CMType E) :
   refine ⟨fun h ↦ ⟨(σ.symm : ℂ →+* ℂ).comp ψ, mem_smul.mp h, RingHom.ext fun x ↦ by simp⟩, ?_⟩
   rintro ⟨φ, hφ, rfl⟩
   exact comp_mem_smul_iff.mpr hφ
+
+/-- An automorphism of `ℂ` fixing every complex embedding of `E` acts trivially on CM types. -/
+theorem smul_eq_self_of_forall_comp_eq {σ : RingAut ℂ}
+    (h : ∀ φ : E →+* ℂ, (σ : ℂ →+* ℂ).comp φ = φ) (Φ : CMType E) : σ • Φ = Φ :=
+  SetLike.coe_injective <| by
+    rw [coe_smul, show RingHom.comp (σ : ℂ →+* ℂ) = id from funext h, Set.image_id]
 
 /-- Taking the complementary type commutes with the action of `Aut(ℂ)`: `ι(σΦ) = σ(ιΦ)`. -/
 theorem star_smul (σ : RingAut ℂ) (Φ : CMType E) : star (σ • Φ) = σ • star Φ := by
