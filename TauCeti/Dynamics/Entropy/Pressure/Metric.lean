@@ -25,9 +25,13 @@ analogues of `TauCeti.tendsto_netEntropyEntourage_dist_lt` and
 
 ## Main results
 
-* `TauCeti.topologicalPressure_eq_iSup_basis`: the supremum over a basis of the uniformity.
 * `TauCeti.tendsto_netPressureEntourage_dist_lt`, `TauCeti.tendsto_netPressureEntourage_dist_le`:
   the metric forms, for open and closed Bowen balls.
+
+## References
+
+* Peter Walters, *An Introduction to Ergodic Theory*, Graduate Texts in Mathematics 79, Springer,
+  1982, Chapter 9: §9.1 defines the pressure through `(n, ε)`-separated sets and lets `ε → 0`.
 -/
 
 public section
@@ -37,20 +41,7 @@ namespace TauCeti
 open Dynamics Filter Set Topology
 open scoped Uniformity
 
-variable {X : Type*}
-
-/-- The topological pressure is the supremum of the pressure at the entourages of any basis of
-the uniformity. -/
-theorem topologicalPressure_eq_iSup_basis [UniformSpace X] {ι : Sort*} {p : ι → Prop}
-    {s : ι → SetRel X X} (h : (𝓤 X).HasBasis p s) (T : X → X) (φ : X → ℝ) :
-    topologicalPressure T φ = ⨆ (i : ι) (_ : p i), netPressureEntourage T φ (s i) := by
-  refine (topologicalPressure_le_iff.2 fun U hU ↦ ?_).antisymm
-    (iSup₂_le fun i hi ↦ netPressureEntourage_le_topologicalPressure (h.mem_of_mem hi))
-  obtain ⟨i, hi, hsU⟩ := h.mem_iff.1 hU
-  exact (netPressureEntourage_antitone T φ hsU).trans
-    (le_iSup₂ (f := fun (i : ι) (_ : p i) ↦ netPressureEntourage T φ (s i)) i hi)
-
-variable [PseudoMetricSpace X] (T : X → X) (φ : X → ℝ)
+variable {X : Type*} [PseudoMetricSpace X] (T : X → X) (φ : X → ℝ)
 
 /-- **Metric form of pressure, open Bowen balls.** The pressure at the entourage
 `{p | dist p.1 p.2 < ε}` tends to the topological pressure as `ε → 0⁺`. -/
