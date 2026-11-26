@@ -17,7 +17,7 @@ For a finite projective `A`-algebra `B` and an arbitrary `B`-algebra `C`, the We
 restriction adjunction is a homeomorphism on `T`-points when `T` is a topological commutative
 `A`-algebra and `B ⊗[A] T` carries its `T`-module topology (`homHomeomorph`).
 
-For a topological ring `A` and `B` with its `A`-module topology, `pointsHomeomorph` specializes
+For a topological ring `A` and `B` with its `A`-module topology, `basePointsHomeomorph` specializes
 this to a homeomorphism between `A`-points of the Weil restriction and `B`-points of `C`.
 This identifies rational point topologies under restriction of scalars, for example for finite
 extensions of local fields and for the real points of the Deligne torus.
@@ -117,7 +117,7 @@ variable [TopologicalSpace A] [IsTopologicalRing A]
 
 /-- Restriction of scalars identifies `A`-points of the Weil restriction with `B`-points,
 homeomorphically when `B` carries its finite projective `A`-module topology. -/
-def pointsHomeomorph : (WeilRestriction A B C →ₐ[A] A) ≃ₜ (C →ₐ[B] B) := by
+def basePointsHomeomorph : (WeilRestriction A B C →ₐ[A] A) ≃ₜ (C →ₐ[B] B) := by
   letI : TopologicalSpace (B ⊗[A] A) := moduleTopology A (B ⊗[A] A)
   letI : IsModuleTopology A (B ⊗[A] A) := ⟨rfl⟩
   letI : ContinuousAdd B := IsModuleTopology.toContinuousAdd A B
@@ -151,30 +151,30 @@ def pointsHomeomorph : (WeilRestriction A B C →ₐ[A] A) ≃ₜ (C →ₐ[B] B
 
 /-- The point comparison is the algebraic adjunction followed by the right tensor unitor. -/
 @[simp]
-theorem pointsHomeomorph_apply (g : WeilRestriction A B C →ₐ[A] A) (c : C) :
-    pointsHomeomorph A B C g c =
+theorem basePointsHomeomorph_apply (g : WeilRestriction A B C →ₐ[A] A) (c : C) :
+    basePointsHomeomorph A B C g c =
       Algebra.TensorProduct.rid A B B (homEquiv A B C A g c) := (rfl)
 
 /-- Under the algebraic adjunction, the inverse comparison is the original point followed by
 the inverse right tensor unitor. -/
 -- Not a simp lemma: `homEquiv_apply` already expands its left-hand side.
-theorem homEquiv_pointsHomeomorph_symm (x : C →ₐ[B] B) :
-    homEquiv A B C A ((pointsHomeomorph A B C).symm x) =
+theorem homEquiv_basePointsHomeomorph_symm (x : C →ₐ[B] B) :
+    homEquiv A B C A ((basePointsHomeomorph A B C).symm x) =
       (Algebra.TensorProduct.rid A B B).symm.toAlgHom.comp x := by
   ext c
   apply (Algebra.TensorProduct.rid A B B).injective
   have hx := congrArg (fun y : C →ₐ[B] B ↦ y c)
-    ((pointsHomeomorph A B C).apply_symm_apply x)
-  rw [pointsHomeomorph_apply] at hx
+    ((basePointsHomeomorph A B C).apply_symm_apply x)
+  rw [basePointsHomeomorph_apply] at hx
   simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.apply_symm_apply] using hx
 
 /-- The inverse comparison evaluates a universal coefficient by applying its linear functional
 to the corresponding value of the original point. -/
 @[simp]
-theorem pointsHomeomorph_symm_apply_universalCoefficient (x : C →ₐ[B] B)
+theorem basePointsHomeomorph_symm_apply_universalCoefficient (x : C →ₐ[B] B)
     (φ : Module.Dual A B) (c : C) :
-    (pointsHomeomorph A B C).symm x (universalCoefficient φ c) = φ (x c) := by
-  rw [map_universalCoefficient, homEquiv_pointsHomeomorph_symm]
+    (basePointsHomeomorph A B C).symm x (universalCoefficient φ c) = φ (x c) := by
+  rw [map_universalCoefficient, homEquiv_basePointsHomeomorph_symm]
   simp
 
 end Ring
@@ -245,17 +245,19 @@ def basePointsContinuousMulEquiv :
   toMulEquiv := basePointsMulEquiv A B H
   continuous_toFun :=
     (PointTopology.isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
-      (pointsHomeomorph A B H).continuous.comp PointTopology.isHomeomorph_ofConv.continuous).congr
+      (basePointsHomeomorph A B H).continuous.comp
+        PointTopology.isHomeomorph_ofConv.continuous).congr
       fun f ↦ WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by simp
   continuous_invFun := by
     have hc : Continuous fun g : WithConv (H →ₐ[B] B) ↦
-        WithConv.toConv ((pointsHomeomorph A B H).symm g.ofConv) :=
+        WithConv.toConv ((basePointsHomeomorph A B H).symm g.ofConv) :=
       PointTopology.isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
-        (pointsHomeomorph A B H).symm.continuous.comp PointTopology.isHomeomorph_ofConv.continuous
+        (basePointsHomeomorph A B H).symm.continuous.comp
+          PointTopology.isHomeomorph_ofConv.continuous
     refine hc.congr fun g ↦ (pointsMulEquiv A B H A).injective ?_
     rw [MulEquiv.invFun_eq_symm, pointsMulEquiv_basePointsMulEquiv_symm]
     refine WithConv.ofConv_injective ?_
-    rw [pointsMulEquiv_apply, WithConv.ofConv_toConv, homEquiv_pointsHomeomorph_symm,
+    rw [pointsMulEquiv_apply, WithConv.ofConv_toConv, homEquiv_basePointsHomeomorph_symm,
       AlgHom.mapValue_apply, WithConv.ofConv_toConv]
 
 variable {A B H}

@@ -260,6 +260,15 @@ theorem pointsMulEquiv_naturality {T' : Type*} [CommRing T'] [Algebra A T'] (h :
   WithConv.ofConv_injective <| by
     rw [pointsMulEquiv_apply, ofConv_toConv, ofConv_toConv, homEquiv_comp, pointsMulEquiv_apply]
 
+/-- Evaluating `WeilRestriction.pointsMulEquiv` on `AlgHom.mapValue p x` applies `B ⊗[A] p`
+pointwise to the values of `pointsMulEquiv A B H T x`. -/
+theorem pointsMulEquiv_mapValue_apply {T' : Type*} [CommRing T'] [Algebra A T'] (p : T →ₐ[A] T')
+    (x : WithConv (WeilRestriction A B H →ₐ[A] T)) (h : H) :
+    (pointsMulEquiv A B H T' (AlgHom.mapValue p x)).ofConv h =
+      Algebra.TensorProduct.lTensor (S := B) B p ((pointsMulEquiv A B H T x).ofConv h) := by
+  simpa only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply] using
+    DFunLike.congr_fun (congrArg WithConv.ofConv (pointsMulEquiv_naturality p x)) h
+
 end Points
 
 variable (A B H) in
@@ -718,14 +727,8 @@ theorem pointsMulEquivOfBaseChange_mapValue_ofId (e : T ⊗[A] B ≃ₐ[T] S)
     pointsMulEquivOfBaseChange A B H e he (AlgHom.mapValue (Algebra.ofId A T) x) =
       AlgHom.mapValue (Algebra.ofId B S) (basePointsMulEquiv A B H x) := by
   refine WithConv.ofConv_injective (AlgHom.ext fun h ↦ ?_)
-  have h1 : (pointsMulEquiv A B H T (AlgHom.mapValue (Algebra.ofId A T) x)).ofConv h =
-      Algebra.TensorProduct.lTensor (S := B) B (Algebra.ofId A T)
-        ((pointsMulEquiv A B H A x).ofConv h) := by
-    simpa only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply] using
-      DFunLike.congr_fun
-        (congrArg WithConv.ofConv (pointsMulEquiv_naturality (Algebra.ofId A T) x)) h
-  rw [pointsMulEquivOfBaseChange_apply, h1, AlgHom.mapValue_apply, ofConv_toConv,
-    AlgHom.comp_apply, Algebra.ofId_apply, basePointsMulEquiv_apply]
+  rw [pointsMulEquivOfBaseChange_apply, pointsMulEquiv_mapValue_apply, AlgHom.mapValue_apply,
+    ofConv_toConv, AlgHom.comp_apply, Algebra.ofId_apply, basePointsMulEquiv_apply]
   induction (pointsMulEquiv A B H A x).ofConv h using TensorProduct.inductionOn with
   | tmul b a =>
     rw [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, Algebra.ofId_apply,
@@ -746,12 +749,8 @@ theorem pointsMulEquivOfBaseChange_mapValue {T' S' : Type*} [CommRing T'] [CommR
     pointsMulEquivOfBaseChange A B H e' he' (AlgHom.mapValue pT x) =
       AlgHom.mapValue pS (pointsMulEquivOfBaseChange A B H e he x) := by
   refine WithConv.ofConv_injective (AlgHom.ext fun h ↦ ?_)
-  have h1 : (pointsMulEquiv A B H T' (AlgHom.mapValue pT x)).ofConv h =
-      Algebra.TensorProduct.lTensor (S := B) B pT ((pointsMulEquiv A B H T x).ofConv h) := by
-    simpa only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply] using
-      DFunLike.congr_fun (congrArg WithConv.ofConv (pointsMulEquiv_naturality pT x)) h
-  rw [pointsMulEquivOfBaseChange_apply, h1, AlgHom.mapValue_apply, ofConv_toConv,
-    AlgHom.comp_apply, pointsMulEquivOfBaseChange_apply]
+  rw [pointsMulEquivOfBaseChange_apply, pointsMulEquiv_mapValue_apply, AlgHom.mapValue_apply,
+    ofConv_toConv, AlgHom.comp_apply, pointsMulEquivOfBaseChange_apply]
   induction (pointsMulEquiv A B H T x).ofConv h using TensorProduct.inductionOn with
   | tmul b t =>
     rw [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, Algebra.TensorProduct.comm_tmul,

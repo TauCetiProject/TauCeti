@@ -362,12 +362,16 @@ theorem finiteAdeleBaseChangeEquiv_proj (v : HeightOneSpectrum (𝓞 K))
       TauCeti.semilocalContinuousEquiv L v
         (Algebra.TensorProduct.rTensor L
           (FiniteAdeleRing.proj K v : FiniteAdeleRing (𝓞 K) K →ₐ[K] v.adicCompletion K) s) w := by
-  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, finiteAdeleBaseChangeEquiv_toAlgEquiv,
-    ← AlgEquiv.coe_toAlgHom, finiteAdeleBaseChangeAlgEquiv_toAlgHom,
-    ← ContinuousAlgEquiv.coe_toAlgEquiv, TauCeti.semilocalContinuousEquiv_toAlgEquiv,
-    v.coe_adicCompletionSemilocalEquiv, FiniteAdeleRing.proj_apply,
-    finiteAdeleBaseChangeHom_apply K L s v w, Algebra.TensorProduct.rTensor]
-  rfl
+  induction s using TensorProduct.inductionOn with
+  | tmul a x =>
+    obtain ⟨w, hw⟩ := w
+    obtain rfl : v = w.under (𝓞 K) := HeightOneSpectrum.asIdeal_injective hw.over
+    simp [FiniteAdeleRing.proj_apply, finiteAdeleExtension_apply, FiniteAdeleRing.algebraMap_apply,
+      HeightOneSpectrum.algebraMap_adicCompletionExtensionAlgebra,
+      HeightOneSpectrum.algebraMap_adicCompletion]
+  | add s₁ s₂ hs₁ hs₂ =>
+    simp only [map_add, Pi.add_apply] at *
+    exact congrArg₂ (· + ·) hs₁ hs₂
 
 /-- Pure-tensor form of `finiteAdeleBaseChangeEquiv_proj`. -/
 theorem finiteAdeleBaseChangeEquiv_proj_tmul (v : HeightOneSpectrum (𝓞 K))

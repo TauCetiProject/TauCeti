@@ -129,6 +129,13 @@ theorem piContinuousMulEquiv_symm_apply_apply (x : ∀ i, WithConv (H →ₐ[k] 
     ((piContinuousMulEquiv k H R).symm x).ofConv h i = (x i).ofConv h :=
   AlgHom.piValueMulEquiv_symm_apply x h i
 
+/-- Taking the `i`-th coordinate of `piContinuousMulEquiv` applies `AlgHom.mapValue` along the
+evaluation homomorphism `Pi.evalAlgHom k R i`. -/
+theorem piContinuousMulEquiv_apply_eq_mapValue_evalAlgHom
+    (x : WithConv (H →ₐ[k] ∀ i, R i)) (i : ι) :
+    piContinuousMulEquiv k H R x i = AlgHom.mapValue (Pi.evalAlgHom k R i) x :=
+  WithConv.ofConv_injective <| AlgHom.ext fun _ ↦ by simp
+
 variable (B : Type*) [CommSemiring B] [Algebra k B] [TopologicalSpace B]
 
 variable (k H) in

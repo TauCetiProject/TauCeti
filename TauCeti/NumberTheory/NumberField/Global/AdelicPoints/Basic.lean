@@ -137,6 +137,14 @@ noncomputable def infiniteDiagonal : WithConv (H →ₐ[K] K) →* InfinitePoint
 /-- The rational diagonal is change of coefficients along the diagonal embedding `K → 𝔸_K`. -/
 theorem diagonal_def : diagonal R K H = AlgHom.mapValue (Algebra.ofId K (AdeleRing R K)) := (rfl)
 
+/-- The finite rational diagonal is change of coefficients along `K → 𝔸_{K,f}`. -/
+theorem finiteDiagonal_def :
+    finiteDiagonal R K H = AlgHom.mapValue (Algebra.ofId K (FiniteAdeleRing R K)) := (rfl)
+
+/-- The infinite rational diagonal is change of coefficients along `K → K_∞`. -/
+theorem infiniteDiagonal_def :
+    infiniteDiagonal K H = AlgHom.mapValue (Algebra.ofId K (InfiniteAdeleRing K)) := (rfl)
+
 variable {R K H}
 
 @[simp]
@@ -170,6 +178,16 @@ noncomputable def finiteProjection : AdelicPoints R K H →* FiniteAdelicPoints 
 /-- The infinite component `G(𝔸_K) → G(K_∞)`, along the projection `𝔸_K → K_∞`. -/
 noncomputable def infiniteProjection : AdelicPoints R K H →* InfinitePoints K H :=
   AlgHom.mapValue (AlgHom.fst K _ _)
+
+/-- The finite component projection is change of coefficients along `𝔸_K → 𝔸_{K,f}`. -/
+theorem finiteProjection_def :
+    finiteProjection R K H =
+      AlgHom.mapValue (AlgHom.snd K (InfiniteAdeleRing K) (FiniteAdeleRing R K)) := (rfl)
+
+/-- The infinite component projection is change of coefficients along `𝔸_K → K_∞`. -/
+theorem infiniteProjection_def :
+    infiniteProjection R K H =
+      AlgHom.mapValue (AlgHom.fst K (InfiniteAdeleRing K) (FiniteAdeleRing R K)) := (rfl)
 
 variable {R K H}
 
@@ -235,6 +253,15 @@ infinite component followed by `TauCeti.AdelicPoints.infiniteLocalProjection`. -
 noncomputable def infinitePlaceProjection (w : InfinitePlace K) :
     AdelicPoints R K H →* WithConv (H →ₐ[K] w.Completion) :=
   (infiniteLocalProjection K H w).comp (infiniteProjection R K H)
+
+/-- The finite local projection is change of coefficients along `𝔸_{K,f} → K_v`. -/
+theorem finiteLocalProjection_def (v : HeightOneSpectrum R) :
+    finiteLocalProjection R K H v = AlgHom.mapValue (FiniteAdeleRing.proj K v).toAlgHom := (rfl)
+
+/-- The infinite local projection is change of coefficients along `K_∞ → K_w`. -/
+theorem infiniteLocalProjection_def (w : InfinitePlace K) :
+    infiniteLocalProjection K H w =
+      AlgHom.mapValue (Pi.evalAlgHom K (fun u : InfinitePlace K ↦ u.Completion) w) := (rfl)
 
 variable {R K H}
 
