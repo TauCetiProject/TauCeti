@@ -73,7 +73,8 @@ theorem one_le_norm_homotopyAffine_circleIndexSymbolScalar (t : unitInterval) (z
 
 /-- Outside the strip `Circle × [-1, 1]`, the homotopy from the full symbol to the affine
 representative has invertible values at every time. -/
-theorem isUnit_homotopyAffine_outside_strip (t : unitInterval) (p : Circle × ℝ)
+theorem isUnit_homotopyAffine_circleIndexSymbolScalar_of_notMem
+    (t : unitInterval) (p : Circle × ℝ)
     (hp : p ∉ (Set.univ : Set Circle) ×ˢ Set.Icc (-1 : ℝ) 1) :
     IsUnit (ContinuousMap.Homotopy.affine (circleIndexSymbolScalar ρ) circleIndexAffineScalar
       (t, p)) := by
