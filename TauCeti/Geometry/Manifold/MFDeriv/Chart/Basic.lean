@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import TauCeti.Analysis.Calculus.FDeriv.Comp
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Manifold derivatives and regularity read in charts
@@ -101,6 +102,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
     `HasMFDerivAt.hasFDerivAt_extChartAt_comp`, `ContinuousAt.fderiv_extChartAt_comp_apply`, and
     `ContinuousAt.symmL_fderiv_extChartAt_comp_apply`: chart-coordinate derivatives and compact-set
     bounds for maps out of or into a manifold.
+  - `TauCeti.tendsto_tangentBundle_mfderiv_of_tendsto_fderiv_extChartAt_comp`: convergence of
+    `mfderiv` in the tangent bundle follows from convergence of the coordinate derivatives in one
+    chart.
   - `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`,
     `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`,
     `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm_eq_zero_iff`, and
@@ -921,6 +925,40 @@ theorem ContinuousAt.symmL_fderiv_extChartAt_comp_apply {Q : F → M} {z : F} {�
   rw [hQc.fderiv_extChartAt_comp_apply hz,
     ← TangentBundle.continuousLinearMapAt_trivializationAt (by rwa [← extChartAt_source I])]
   exact Bundle.Trivialization.symmL_continuousLinearMapAt _ hb _
+
+namespace TauCeti
+
+open Filter in
+/-- **Convergence of derivatives in the tangent bundle from their coordinate expressions.** Let
+maps `Q i` from a normed space converge at `z` to `Q₀ z`, where `Q₀` is continuous at `z` with
+`Q₀ z` in the source of the chart at `α`, and the `Q i` are eventually continuous at `z`. If the
+derivatives at `z` of the coordinate expressions `extChartAt I α ∘ Q i`, applied to `v`, converge
+to that of `extChartAt I α ∘ Q₀`, then the tangent vectors `mfderiv (Q i) z v` converge to
+`mfderiv Q₀ z v` in the tangent bundle. -/
+theorem tendsto_tangentBundle_mfderiv_of_tendsto_fderiv_extChartAt_comp {ι : Type*}
+    {l : Filter ι} {Q : ι → F → M} {Q₀ : F → M} {z : F} {α : M} (hQ₀ : ContinuousAt Q₀ z)
+    (hz : Q₀ z ∈ (extChartAt I α).source) (hQ : ∀ᶠ i in l, ContinuousAt (Q i) z)
+    (hpt : Tendsto (fun i ↦ Q i z) l (𝓝 (Q₀ z))) (v : F)
+    (hd : Tendsto (fun i ↦ fderiv 𝕜 (extChartAt I α ∘ Q i) z v) l
+      (𝓝 (fderiv 𝕜 (extChartAt I α ∘ Q₀) z v))) :
+    Tendsto (fun i ↦ (⟨Q i z, mfderiv 𝓘(𝕜, F) I (Q i) z v⟩ : TangentBundle I M)) l
+      (𝓝 ⟨Q₀ z, mfderiv 𝓘(𝕜, F) I Q₀ z v⟩) := by
+  set T := trivializationAt E (TangentSpace I) α
+  have hT {x : M} (hx : x ∈ (extChartAt I α).source) : x ∈ T.baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  -- In the tangent coordinates of the chart at `α`, `mfderiv` is the coordinate derivative.
+  have hcoord {P : F → M} (hP : ContinuousAt P z) (hPz : P z ∈ (extChartAt I α).source) :
+      T.continuousLinearMapAt 𝕜 (P z) (mfderiv 𝓘(𝕜, F) I P z v) =
+        fderiv 𝕜 (extChartAt I α ∘ P) z v := by
+    rw [← hP.symmL_fderiv_extChartAt_comp_apply hPz,
+      Bundle.Trivialization.continuousLinearMapAt_symmL _ (hT hPz)]
+  have hsrc : ∀ᶠ i in l, Q i z ∈ (extChartAt I α).source :=
+    hpt (extChartAt_source_mem_nhds' hz)
+  refine (T.tendsto_mk_nhds_mk_iff 𝕜 (hT hz)).2 ⟨hpt, ?_⟩
+  rw [hcoord hQ₀ hz]
+  exact hd.congr' ((hQ.and hsrc).mono fun i hi ↦ (hcoord hi.1 hi.2).symm)
+
+end TauCeti
 
 end NormedSpace
 

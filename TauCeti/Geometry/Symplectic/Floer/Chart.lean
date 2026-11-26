@@ -59,7 +59,9 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   (`TauCeti.SmoothTwoForm.continuousOn_hamiltonianVectorFieldInChartAt_of_uncurry`), and a single
   datum, as a constant family, is as regular as the datum
   (`TauCeti.Floer.contDiffOn_almostComplexInChartAt_uncurry_const`,
-  `TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const`).
+  `TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const`). The
+  Hamiltonian vector field in the chart of the rescaled family `ε K(c + ε w)` is `ε` times that of
+  `K` at `c + ε w` (`TauCeti.SmoothTwoForm.hamiltonianVectorFieldInChartAt_rescale`).
 * `TauCeti.SmoothTwoForm.associatedBilinFormInChartAt ω α J` is the bilinear form
   `ω(·, J(z, x) ·)` read in the chart, at `x = (extChartAt I α).symm y` and on tangent coordinates
   (`TauCeti.SmoothTwoForm.associatedBilinFormInChartAt_extChartAt`), that is, the coordinate
@@ -418,6 +420,16 @@ theorem hamiltonianVectorFieldInChartAt_zero (ω : SmoothTwoForm I M) (α : M) {
   rw [hamiltonianVectorFieldInChartAt_apply, hamiltonianVectorField_const]
   exact map_zero _
 
+omit [FiniteDimensional ℝ E] in
+/-- The Hamiltonian vector field of the rescaled Hamiltonian `ε K(c + ε w)`, read in a chart, is
+`ε` times that of `K` at `c + ε w`. -/
+theorem hamiltonianVectorFieldInChartAt_rescale (ω : SmoothTwoForm I M) (α : M)
+    (K : ℝ × ℝ → M → ℝ) (c : ℝ × ℝ) (ε : ℝ) (w : ℝ × ℝ) (y : E) :
+    ω.hamiltonianVectorFieldInChartAt α (fun w x ↦ ε * K (c + ε • w) x) (w, y) =
+      ε • ω.hamiltonianVectorFieldInChartAt α K (c + ε • w, y) := by
+  rw [hamiltonianVectorFieldInChartAt_apply, hamiltonianVectorFieldInChartAt_apply, ← map_smul]
+  exact congrArg _ (ω.hamiltonianVectorField_const_smul (f := K (c + ε • w)) ε _)
+
 /-- The bilinear forms `ω(·, J(z, x) ·)` of the structures `J(z, x)`, read in the chart at `α`: at
 `(z, y)`, the form at the point `x = (extChartAt I α).symm y` with both arguments in the tangent
 coordinates of the chart at `α` (`associatedBilinFormInChartAt_apply`). The structures are tamed
@@ -596,19 +608,18 @@ theorem isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComple
     Trivialization.symmL_continuousLinearMapAt _ hb] at h'
 
 omit [FiniteDimensional ℝ E] in
-/-- **Continuity of a Hamiltonian vector field from its chart readings.** On a boundaryless
-manifold, let the Hamiltonian vector field of a family of Hamiltonians `K(z)`, read in the chart at
-every point `α`, be continuous on `U × (extChartAt I α).target` for an open set `U` of the domain.
-Then `(z, x) ↦ X_{K(z)}(x)` is continuous on `U × M` as a map into the tangent bundle. -/
-theorem continuousOn_hamiltonianVectorField_of_continuousOn_inChartAt [I.Boundaryless]
-    (ω : SmoothTwoForm I M) {K : ℝ × ℝ → M → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U)
-    (hK : ∀ α, ContinuousOn (ω.hamiltonianVectorFieldInChartAt α K)
-      (U ×ˢ (extChartAt I α).target)) :
-    ContinuousOn (fun p : (ℝ × ℝ) × M ↦
-      (⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ) := by
-  rintro ⟨z₀, x₀⟩ ⟨hz₀, -⟩
-  refine ContinuousAt.continuousWithinAt <|
-    (FiberBundle.continuousAt_totalSpace E _).2 ⟨continuousAt_snd, ?_⟩
+/-- **Continuity of a Hamiltonian vector field at a point from its reading in one chart.** On a
+boundaryless manifold, let the Hamiltonian vector field of a family of Hamiltonians `K(z)`, read in
+the chart at `x₀`, be continuous on `U × (extChartAt I x₀).target` for an open set `U` of the
+domain. Then `(z, x) ↦ X_{K(z)}(x)` is continuous at `(z₀, x₀)` for `z₀ ∈ U`, as a map into the
+tangent bundle. -/
+theorem continuousAt_hamiltonianVectorField_of_continuousOn_inChartAt [I.Boundaryless]
+    (ω : SmoothTwoForm I M) {K : ℝ × ℝ → M → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U) {z₀ : ℝ × ℝ}
+    (hz₀ : z₀ ∈ U) {x₀ : M}
+    (hK : ContinuousOn (ω.hamiltonianVectorFieldInChartAt x₀ K) (U ×ˢ (extChartAt I x₀).target)) :
+    ContinuousAt (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩ : TangentBundle I M)) (z₀, x₀) := by
+  refine (FiberBundle.continuousAt_totalSpace E _).2 ⟨continuousAt_snd, ?_⟩
   -- Near `(z₀, x₀)`, the fibre coordinate in the trivialization at `x₀` is the vector field read
   -- in the chart at `x₀`.
   have hev : (fun p : (ℝ × ℝ) × M ↦ ω.hamiltonianVectorFieldInChartAt x₀ K
@@ -620,9 +631,24 @@ theorem continuousOn_hamiltonianVectorField_of_continuousOn_inChartAt [I.Boundar
       Trivialization.continuousLinearMapAt_apply_of_mem]
     rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
   refine ContinuousAt.congr ?_ hev
-  exact ((hK x₀).continuousAt ((hU.prod (isOpen_extChartAt_target x₀)).mem_nhds
+  exact (hK.continuousAt ((hU.prod (isOpen_extChartAt_target x₀)).mem_nhds
     ⟨hz₀, mem_extChartAt_target x₀⟩)).comp
     (continuousAt_fst.prodMk ((continuousAt_extChartAt (I := I) x₀).comp continuousAt_snd))
+
+omit [FiniteDimensional ℝ E] in
+/-- **Continuity of a Hamiltonian vector field from its chart readings.** On a boundaryless
+manifold, let the Hamiltonian vector field of a family of Hamiltonians `K(z)`, read in the chart at
+every point `α`, be continuous on `U × (extChartAt I α).target` for an open set `U` of the domain.
+Then `(z, x) ↦ X_{K(z)}(x)` is continuous on `U × M` as a map into the tangent bundle. -/
+theorem continuousOn_hamiltonianVectorField_of_continuousOn_inChartAt [I.Boundaryless]
+    (ω : SmoothTwoForm I M) {K : ℝ × ℝ → M → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hK : ∀ α, ContinuousOn (ω.hamiltonianVectorFieldInChartAt α K)
+      (U ×ˢ (extChartAt I α).target)) :
+    ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ) := by
+  rintro ⟨z₀, x₀⟩ ⟨hz₀, -⟩
+  exact (ω.continuousAt_hamiltonianVectorField_of_continuousOn_inChartAt hU hz₀
+    (hK x₀)).continuousWithinAt
 
 omit [FiniteDimensional ℝ E] in
 /-- **Continuity of the Floer energy density from chart readings.** On a boundaryless manifold, if
