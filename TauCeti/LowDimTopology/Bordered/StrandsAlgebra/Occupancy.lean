@@ -582,12 +582,17 @@ coefficient of an element on the strand diagram `i ↦ j`. -/
 def oneStrandChordCoord {i j : α} (h : i < j) : Module.Dual R (matchedSummand R M 1) :=
   ((basis R α).coord (single i j h.le)).comp (matchedSummand R M 1).toSubmodule.subtype
 
+/-- The coordinate of the chord from `i` to `j` is the coefficient on the strand diagram
+`i ↦ j`. -/
+theorem oneStrandChordCoord_apply {i j : α} (h : i < j) (x : matchedSummand R M 1) :
+    oneStrandChordCoord R M h x = (basis R α).repr x (single i j h.le) :=
+  (rfl)
+
 /-- The coordinate of a chord on a chord is `1` if they agree and `0` otherwise. -/
 @[simp]
 theorem oneStrandChordCoord_oneStrandChord {i j i' j' : α} (h : i < j) (h' : i' < j') :
     oneStrandChordCoord R M h (oneStrandChord R M h') = if i' = i ∧ j' = j then 1 else 0 := by
-  change (basis R α).repr (of (single i' j' h'.le)) (single i j h.le) = _
-  simp [basis_repr_of, Finsupp.single_apply, single_inj]
+  simp [oneStrandChordCoord_apply, basis_repr_of, Finsupp.single_apply, single_inj]
 
 variable [DecidableEq β]
 
@@ -611,6 +616,13 @@ theorem oneStrandIdem_mul_oneStrandIdem (p q : Set.range M) :
   rw [MulMemClass.coe_mul, coe_oneStrandIdem, coe_oneStrandIdem, matchedIdem_mul_matchedIdem,
     apply_ite Subtype.val, coe_oneStrandIdem, ZeroMemClass.coe_zero]
   exact if_congr (by rw [singleton_inj, Subtype.ext_iff]) rfl rfl
+
+/-- The coordinate of a chord on an idempotent is `0`: an idempotent has only horizontal
+strands. -/
+@[simp]
+theorem oneStrandChordCoord_oneStrandIdem {i j : α} (h : i < j) (p : Set.range M) :
+    oneStrandChordCoord R M h (oneStrandIdem R M p) = 0 := by
+  simp [oneStrandChordCoord_apply, repr_matchedIdem_apply, single_ne_idOn h]
 
 theorem isIdempotentElem_oneStrandIdem (p : Set.range M) :
     IsIdempotentElem (oneStrandIdem R M p) :=
