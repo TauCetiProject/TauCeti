@@ -343,9 +343,10 @@ theorem splitK0_of_tangentSections.{u} (n : ℕ) (R : Type u) [CommRing R]
 is `n` times the class of the free module of rank one. -/
 theorem kZero_of_tangentSections.{u} (n : ℕ) (R : Type u) [CommRing R]
     [TopologicalSpace R] [IsTopologicalRing R] [Algebra ℝ R] [ContinuousSMul ℝ R] :
-    (KZero.splitK0Equiv C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)).symm
-        (SplitK0.of.{u} (FiniteProjectiveModules.of
-          C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R) (tangentSections (Fin (n + 1)) R))) =
+    SplitK0.of.{u} ((KZero.finiteProjectiveRightEquivalence
+        C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)).functor.obj
+          (FiniteProjectiveModules.of C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
+            (tangentSections (Fin (n + 1)) R))) =
       n • SplitK0.of.{u} (finiteProjectiveModulesRegular
         C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)ᵐᵒᵖ) := by
   rw [← sub_eq_zero, ← KZero.splitK0Equiv_symm_classOf, classOf_tangentSections, map_zero]

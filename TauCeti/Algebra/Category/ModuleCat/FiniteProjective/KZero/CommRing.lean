@@ -134,9 +134,10 @@ class of the free right module of rank one. -/
 theorem splitK0Equiv_symm_classOf (M : Type u) [AddCommGroup M] [Module R M] [Module.Finite R M]
     [Module.Projective R M] (n : ℕ) :
     (splitK0Equiv R).symm (FiniteProjectiveModules.classOf R M n) =
-      (splitK0Equiv R).symm (SplitK0.of.{u} (FiniteProjectiveModules.of R M)) -
+      SplitK0.of.{u} ((finiteProjectiveRightEquivalence R).functor.obj
+          (FiniteProjectiveModules.of R M)) -
         n • SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) := by
-  rw [FiniteProjectiveModules.classOf_def, map_sub, map_nsmul,
+  rw [FiniteProjectiveModules.classOf_def, map_sub, map_nsmul, ← splitK0Equiv_symm_of,
     ← splitK0Equiv_symm_of_finiteProjectiveModulesRegular]
   -- `FiniteProjectiveModules.of R R` and `finiteProjectiveModulesRegular R` are both
   -- `ModuleCat.of R R`, as objects of the full subcategory.

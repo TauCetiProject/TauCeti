@@ -423,8 +423,8 @@ theorem addOrderOf_classOf_mobiusSections :
 /-- In `K₀(R)` for `R = C(ℝ / ℤ, ℝ)`, the class `η = [M] − [R]` of the Möbius module `M`, regarded
 as a right module, has order exactly two. -/
 theorem addOrderOf_kZero_mobiusSections :
-    addOrderOf ((KZero.splitK0Equiv 𝓒).symm
-        (SplitK0.of.{0} (FiniteProjectiveModules.of 𝓒 mobiusSections)) -
+    addOrderOf (SplitK0.of.{0} ((KZero.finiteProjectiveRightEquivalence 𝓒).functor.obj
+        (FiniteProjectiveModules.of 𝓒 mobiusSections)) -
       SplitK0.of.{0} (finiteProjectiveModulesRegular 𝓒ᵐᵒᵖ)) = 2 := by
   rw [← one_nsmul (SplitK0.of.{0} (finiteProjectiveModulesRegular 𝓒ᵐᵒᵖ)),
     ← KZero.splitK0Equiv_symm_classOf, AddEquiv.addOrderOf_eq]
