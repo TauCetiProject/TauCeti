@@ -279,7 +279,7 @@ theorem integrable_gaussian : Integrable (gaussian ι) (measure ι) := by
   have h := integrable_cexp_neg_sum_mul_norm_sq_add (ι := ι) (a := fun _ ↦ 1 / 2)
     (fun _ ↦ by norm_num) 0 0
   simp only [Pi.zero_apply] at h
-  rw [show gaussian ι = _ from funext gaussian_eq_exp_sum]
+  rw [funext gaussian_eq_exp_sum]
   exact h.smul_measure ENNReal.ofReal_ne_top
 
 omit [DecidableEq ι] in

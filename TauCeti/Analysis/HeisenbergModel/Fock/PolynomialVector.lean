@@ -48,14 +48,15 @@ the derivative with `v_{D_x P}`, which therefore lies in `𝓕(ε)`. Taking `x =
 * `TauCeti.Fock.hasDerivAt_heisenbergRep_polyVector`: the Heisenberg operators differentiate
   `v_P` into `v_{D_x P}`.
 * `TauCeti.Fock.integrable_exp_mul_norm_gaussian`: the exponential bound behind the domination,
-  with `MvPolynomial.norm_eval_le_l1Norm_mul_exp`.
+  which together with the polynomial growth bound
+  `MvPolynomial.norm_eval_le_l1Norm_mul_max_one_pow` controls the integrand.
 
 ## Provenance
 
 Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic,
 PBC), file `src/Lib/Weil/Fock/Basic.lean` (`New.Fock.raiseOp`, `New.Fock.lowerOp`,
-`New.Fock.heisenbergDeriv`, `New.Fock.exists_norm_eval_le_exp` (here
-`MvPolynomial.norm_eval_le_l1Norm_mul_exp`),
+`New.Fock.heisenbergDeriv`, `New.Fock.exists_norm_eval_le_exp` (here the polynomial growth bound
+`MvPolynomial.norm_eval_le_l1Norm_mul_max_one_pow`),
 `New.Fock.integrable_exp_mul_realVac`, `New.Fock.exists_hasDerivAt_realHeisenbergOp`,
 `New.Fock.polyVector`, `New.Fock.polyVector_injective`, `New.Fock.hasDerivAt_realHeisenbergOp`).
 The source differentiates in a complex parameter with Cauchy estimates; here the derivative is
@@ -91,6 +92,30 @@ if `ε i = -1`. -/
 def lowerOp (i : ι) : MvPolynomial ι ℂ →ₗ[ℂ] MvPolynomial ι ℂ :=
   if ε i = 1 then (pderiv i).toLinearMap else LinearMap.mulLeft ℂ (X i)
 
+omit [Fintype ι] [DecidableEq ι] in
+@[simp]
+theorem raiseOp_apply_of_eq_one {i : ι} (h : ε i = 1) (P : MvPolynomial ι ℂ) :
+    raiseOp ε i P = X i * P := by
+  simp [raiseOp, h]
+
+omit [Fintype ι] [DecidableEq ι] in
+@[simp]
+theorem raiseOp_apply_of_eq_neg_one {i : ι} (h : ε i = -1) (P : MvPolynomial ι ℂ) :
+    raiseOp ε i P = -pderiv i P := by
+  simp [raiseOp, h]
+
+omit [Fintype ι] [DecidableEq ι] in
+@[simp]
+theorem lowerOp_apply_of_eq_one {i : ι} (h : ε i = 1) (P : MvPolynomial ι ℂ) :
+    lowerOp ε i P = pderiv i P := by
+  simp [lowerOp, h]
+
+omit [Fintype ι] [DecidableEq ι] in
+@[simp]
+theorem lowerOp_apply_of_eq_neg_one {i : ι} (h : ε i = -1) (P : MvPolynomial ι ℂ) :
+    lowerOp ε i P = X i * P := by
+  simp [lowerOp, h]
+
 variable (ε) in
 /-- The derivative `D_x = ∑ i, (x i • A_i - conj (x i * ε i) • B_i)` of the Heisenberg operators
 along `x` on polynomial vectors (`TauCeti.Fock.hasDerivAt_heisenbergRep_polyVector`). -/
@@ -112,7 +137,7 @@ theorem eval_heisenbergDeriv (v l : ι → ℂ) (P : MvPolynomial ι ℂ) :
   simp only [heisenbergDeriv, LinearMap.sum_apply, map_sum, sum_mul, ← sum_sub_distrib]
   refine sum_congr rfl fun i _ ↦ ?_
   rcases Int.units_eq_one_or (ε i) with h | h <;>
-    simp [h, raiseOp, lowerOp] <;> ring
+    simp [h] <;> ring
 
 /-! ### Growth estimates -/
 
@@ -312,7 +337,7 @@ private theorem heisenbergRep_real_smul_apply {u : FockSpace ε} {P : MvPolynomi
       Pi.smul_apply, smul_eq_mul, map_mul, conj_ofReal, norm_smul, Real.norm_eq_abs, ofReal_mul,
       mul_pow, ← mul_sum, mul_assoc]
     congr 1
-    rw [show ((|t| : ℝ) : ℂ) ^ 2 = (t : ℂ) ^ 2 by rw [← ofReal_pow, sq_abs, ofReal_pow]]
+    rw [← ofReal_pow, sq_abs, ofReal_pow]
     ring
   rw [ReproducingModel.heisenbergRep_apply, hu, holomorphicCoord_sub, holomorphicCoord_real_smul,
     ← h_exp]

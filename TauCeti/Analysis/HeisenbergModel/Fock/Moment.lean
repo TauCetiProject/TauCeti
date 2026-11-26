@@ -212,25 +212,15 @@ section Integral
 
 variable {Y : Type*} [MeasurableSpace Y] {ν : Measure Y} [SFinite ν] {F : Y → FockSpace ε}
 
-/-- The value of a Fock vector at `y` is jointly continuous in the vector and `y`. -/
-private theorem continuous_apply_uncurry :
-    Continuous fun p : (ι → ℂ) × FockSpace ε ↦ p.2 p.1 := by
-  have h : Continuous fun p : (ι → ℂ) × FockSpace ε ↦
-      ReproducingModel.evalCLM 0 (ReproducingModel.heisenbergRep (-p.1) p.2) :=
-    (ReproducingModel.evalCLM 0).continuous.comp
-      (HeisenbergDatum.Representation.continuous_apply_apply _ continuous_fst.neg continuous_snd)
-  refine h.congr fun p ↦ ?_
-  simp [HeisenbergDatum.apply_zero]
-
 /-- *Minkowski's inequality* for moments: `M_N(∫ F) ≤ ∫ M_N(F)`. -/
 theorem moment_integral_le (N : ℕ) :
     moment N (∫ t, F t ∂ν) ≤ ∫⁻ t, moment N (F t) ∂ν := by
   by_cases hF : Integrable F ν
   · have h_meas : AEStronglyMeasurable (fun p : Y × (ι → ℂ) ↦ F p.1 p.2)
         (ν.prod (measure ι)) :=
-      continuous_apply_uncurry.comp_aestronglyMeasurable
-        (measurable_snd.aestronglyMeasurable.prodMk
-          (AEStronglyMeasurable.comp_fst hF.aestronglyMeasurable))
+      continuous_eval.comp_aestronglyMeasurable
+        ((AEStronglyMeasurable.comp_fst hF.aestronglyMeasurable).prodMk
+          measurable_snd.aestronglyMeasurable)
     have h_apply (y : ι → ℂ) : (∫ t, F t ∂ν) y = ∫ t, F t y ∂ν := by
       simpa using (ContinuousLinearMap.integral_comp_comm (ReproducingModel.evalCLM y) hF).symm
     calc moment N (∫ t, F t ∂ν)
@@ -383,11 +373,6 @@ private def partialKernelOp (ε : ι → ℤˣ) (n : ℕ) : FockSpace ε →L[�
   ∑ k ∈ range n, ∑ p : Fin k → ι, ((k.factorial : ℂ)⁻¹) •
     (ReproducingModel.innerSL (polyVector ε (prodX p))).smulRight (polyVector ε (prodX p))
 
-private theorem innerSL_heisenbergRep_vacuum_right (w : FockSpace ε) (y : ι → ℂ) :
-    ReproducingModel.innerSL w (ReproducingModel.heisenbergRep y ReproducingModel.vacuum) =
-      conj (w y) := by
-  rw [← ReproducingModel.conj_innerSL, ReproducingModel.innerSL_heisenbergRep_vacuum]
-
 /-- The kernel of `1 - partialKernelOp ε n`: at `w`, the translate of the vacuum by `y` gives
 `e(w) e(y)` times the tail of the exponential series at `S(y, w)`. -/
 private theorem one_sub_partialKernelOp_apply (n : ℕ) (y w : ι → ℂ) :
@@ -410,8 +395,9 @@ private theorem one_sub_partialKernelOp_apply (n : ℕ) (y w : ι → ℂ) :
     (Fintype.sum_pow (fun i ↦ conj (holomorphicCoord ε y i) * holomorphicCoord ε w i) k).symm
   rw [← ReproducingModel.evalCLM_apply]
   simp only [partialKernelOp, sub_apply, one_apply_eq_self, sum_apply, smul_apply,
-    ContinuousLinearMap.smulRight_apply, innerSL_heisenbergRep_vacuum_right, map_sub, map_sum,
-    map_smul, ReproducingModel.evalCLM_apply, smul_eq_mul, h_translate, h_word, mul_sub, mul_sum]
+    ContinuousLinearMap.smulRight_apply, ReproducingModel.innerSL_heisenbergRep_vacuum_right,
+    map_sub, map_sum, map_smul, ReproducingModel.evalCLM_apply, smul_eq_mul, h_translate, h_word,
+    mul_sub, mul_sum]
   congr 1
   refine sum_congr rfl fun k _ ↦ ?_
   rw [← h_pow, sum_div, mul_sum]
@@ -454,8 +440,7 @@ private theorem norm_smul_partialSum_le (N m n : ℕ) (v : FockSpace ε) (y w : 
         rw [pow_add]
         field_simp
     _ ≤ _ := by
-        rw [show Real.exp ((m + N : ℕ) ^ 2) * ((1 + ‖y‖) ^ (m + N) * ‖v y‖) * ((1 + ‖w‖) ^ m)⁻¹ =
-          Real.exp ((m + N : ℕ) ^ 2) * (1 + ‖y‖) ^ (m + N) * ‖v y‖ * ((1 + ‖w‖) ^ m)⁻¹ by ring]
+        rw [← mul_assoc (Real.exp _)]
         exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right h_kernel (norm_nonneg _))
           (by positivity)
 
