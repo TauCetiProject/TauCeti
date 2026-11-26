@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.MvPolynomial.Zariski.Basic
+public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.Dual.Defs
@@ -83,7 +84,7 @@ embedding and every nonempty affine subspace is homeomorphic to its direction.
 * `Submodule.induced_modulePolynomialTopology`,
   `AffineSubspace.isHomeomorph_modulePolynomialTopology_direction_of_isInducing`, and
   `AffineSubspace.isHomeomorph_modulePolynomialTopology_direction`: subspace topologies on
-  submodules and affine subspaces over a field (and under `IsInducing` / dual-map surjectivity).
+  submodules and affine subspaces over a field (and under `IsInducing`).
 
 ## References
 
@@ -317,17 +318,6 @@ theorem induced_polynomialTopology_eq_induced {ι₁ ι₂ : Type*} [Finite ι�
 
 end Module.Basis
 
-namespace TauCeti
-
-/-- Every subsingleton module (such as a zero-dimensional vector space) is irreducible in the
-polynomial Zariski topology over any commutative semiring. -/
-theorem irreducibleSpace_modulePolynomialTopology_of_subsingleton [Subsingleton M] :
-    @IrreducibleSpace M (modulePolynomialTopology R M) := by
-  let := modulePolynomialTopology R M
-  exact ⟨⟨0⟩⟩
-
-end TauCeti
-
 end CommSemiring
 
 section Basis
@@ -554,21 +544,6 @@ theorem isHomeomorph_modulePolynomialTopology_direction_of_isInducing
     simp [e, add_comm]
   exact (e.toHomeomorphOfIsInducing hind).isHomeomorph
 
-/-- If every linear functional on `A.direction` extends to `M`, translating the direction
-submodule by a base point `p₀ ∈ A` is a homeomorphism from
-`TauCeti.modulePolynomialTopology R A.direction` to the subspace topology on `A`. -/
-theorem isHomeomorph_modulePolynomialTopology_direction_of_dualMap_surjective
-    {M : Type*} [AddCommGroup M] [Module R M] (A : AffineSubspace R M)
-    (h : Function.Surjective A.direction.subtype.dualMap) {p₀ : M} (hp₀ : p₀ ∈ A) :
-    @IsHomeomorph A.direction A (modulePolynomialTopology R A.direction)
-      (TopologicalSpace.induced Subtype.val (modulePolynomialTopology R M))
-      (fun v ↦ ⟨(v : M) + p₀, AffineSubspace.vadd_mem_of_mem_direction v.2 hp₀⟩) := by
-  let := modulePolynomialTopology R A.direction
-  let := modulePolynomialTopology R M
-  exact A.isHomeomorph_modulePolynomialTopology_direction_of_isInducing
-    (isEmbedding_modulePolynomialTopology_of_dualMap_surjective
-      A.direction.injective_subtype h).isInducing hp₀
-
 end AffineSubspace
 
 end CommRing
@@ -680,17 +655,6 @@ theorem dense_preimage_val_modulePolynomialTopology {M : Type*} [AddCommGroup M]
   have hpre : ((Subtype.val : A → M) ⁻¹' U).Nonempty :=
     ⟨⟨hne.choose, hne.choose_spec.1⟩, hne.choose_spec.2⟩
   exact hopen.dense hpre
-
-/-- If a polynomial-Zariski open set meets an affine subspace `A`, then `A` lies in the ambient
-polynomial-Zariski closure of `A ∩ U`. -/
-theorem subset_closure_inter_modulePolynomialTopology {M : Type*} [AddCommGroup M]
-    [Module R M] (A : AffineSubspace R M) {U : Set M}
-    (hU : IsOpen[modulePolynomialTopology R M] U) (hne : ((A : Set M) ∩ U).Nonempty) :
-    (A : Set M) ⊆ @closure M (modulePolynomialTopology R M) ((A : Set M) ∩ U) := by
-  let := modulePolynomialTopology R M
-  have hAne : (A : Set M).Nonempty := ⟨hne.choose, hne.choose_spec.1⟩
-  exact subset_closure_inter_of_isPreirreducible_of_isOpen
-    (A.isIrreducible_modulePolynomialTopology hAne).isPreirreducible hU hne
 
 end AffineSubspace
 

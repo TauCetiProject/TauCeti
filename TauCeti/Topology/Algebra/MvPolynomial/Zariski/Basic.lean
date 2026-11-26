@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Eval
-public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Bases
 public import Mathlib.Topology.Homeomorph.Defs
@@ -31,10 +30,10 @@ product or analytic topologies on spaces such as `Fin n → ℂ`.
 When `R` is nontrivial with no zero divisors, these basic nonvanishing loci form a topological
 basis, the closed sets are exactly the common zero loci of sets of polynomials, and the topology
 is induced from the Zariski topology on `PrimeSpectrum (MvPolynomial σ R)` along evaluation
-kernels. Polynomial maps between coordinate spaces — and in particular coordinate reindexings,
-linear maps, and affine maps from finite-dimensional coordinate spaces — are continuous, so
-invertible linear and affine coordinate changes are homeomorphisms. Over a Noetherian commutative
-ring `R`, Hilbert's basis theorem therefore makes it Noetherian whenever `σ` is finite.
+kernels. Polynomial maps between coordinate spaces — and in particular coordinate reindexings and
+linear maps from finite-dimensional coordinate spaces — are continuous, so invertible coordinate
+reindexings are homeomorphisms. Over a Noetherian commutative ring `R`, Hilbert's basis theorem
+therefore makes it Noetherian whenever `σ` is finite.
 
 Over an infinite integral domain `R`, `MvPolynomial.funext` shows that two nonempty basic opens
 always meet, making `σ → R` an irreducible space for every `σ` (including empty `σ`, where the
@@ -54,11 +53,9 @@ infinite complement is open.
   `TauCeti.isClosed_polynomialTopology_iff`: basic opens form a basis and closed sets are common
   zero loci over a nontrivial semiring without zero divisors.
 * `TauCeti.continuous_polynomialTopology_of_polynomial`,
-  `LinearMap.continuous_polynomialTopology`,
-  `AffineMap.continuous_polynomialTopology`,
-  `LinearEquiv.isHomeomorph_polynomialTopology`, and
-  `AffineEquiv.isHomeomorph_polynomialTopology`: continuity of polynomial, linear, and
-  affine maps and invariance under invertible linear and affine coordinate changes.
+  `Equiv.isHomeomorph_polynomialTopology_comp`, and
+  `LinearMap.continuous_polynomialTopology`: continuity of polynomial and linear maps and
+  invariance under coordinate reindexings.
 * `TauCeti.polynomialTopology_eq_induced_evalPrimeSpectrum` and
   `TauCeti.noetherianSpace_polynomialTopology`: comparison with `PrimeSpectrum` and Noetherianity
   for finite `σ` over a Noetherian commutative ring.
@@ -221,44 +218,6 @@ theorem continuous_polynomialTopology [Finite σ] (f : (σ → R) →ₗ[R] (τ 
 
 end LinearMap
 
-namespace LinearEquiv
-
-open TauCeti
-
-/-- An invertible linear coordinate change between finite coordinate spaces is a homeomorphism for
-the polynomial Zariski topologies. -/
-theorem isHomeomorph_polynomialTopology [Finite σ] [Finite τ]
-    (e : (σ → R) ≃ₗ[R] (τ → R)) :
-    @IsHomeomorph _ _ (polynomialTopology σ R) (polynomialTopology τ R) e := by
-  let := polynomialTopology σ R
-  let := polynomialTopology τ R
-  exact Homeomorph.isHomeomorph
-    ⟨e.toEquiv, e.toLinearMap.continuous_polynomialTopology,
-      e.symm.toLinearMap.continuous_polynomialTopology⟩
-
-/-- An invertible linear coordinate change transports the polynomial Zariski topology to
-itself. -/
-@[simp]
-theorem induced_polynomialTopology [Finite σ] [Finite τ]
-    (e : (σ → R) ≃ₗ[R] (τ → R)) :
-    TopologicalSpace.induced e (polynomialTopology τ R) = polynomialTopology σ R := by
-  let := polynomialTopology σ R
-  let := polynomialTopology τ R
-  exact ((e.isHomeomorph_polynomialTopology).homeomorph.isInducing.eq_induced).symm
-
-end LinearEquiv
-
-namespace TauCeti
-
-/-- Over an empty index type, the one-point coordinate space is irreducible in the polynomial
-Zariski topology over any commutative semiring. -/
-theorem irreducibleSpace_polynomialTopology_of_isEmpty [IsEmpty σ] :
-    @IrreducibleSpace (σ → R) (polynomialTopology σ R) := by
-  let := polynomialTopology σ R
-  exact ⟨⟨0⟩⟩
-
-end TauCeti
-
 end CommSemiring
 
 section PrimeSpectrum
@@ -369,46 +328,7 @@ end Basis
 
 section CommRing
 
-variable {σ τ R : Type*} [CommRing R]
-
-namespace AffineMap
-
-open TauCeti
-
-/-- Every affine map out of a finite coordinate space is continuous for the polynomial Zariski
-topologies. -/
-theorem continuous_polynomialTopology [Finite σ] (f : (σ → R) →ᵃ[R] (τ → R)) :
-    @Continuous _ _ (polynomialTopology σ R) (polynomialTopology τ R) f := by
-  rw [f.decomp]
-  exact f.linear.continuous_polynomialTopology_add_const (f 0)
-
-end AffineMap
-
-namespace AffineEquiv
-
-open TauCeti
-
-/-- An invertible affine coordinate change between finite coordinate spaces is a homeomorphism for
-the polynomial Zariski topologies. -/
-theorem isHomeomorph_polynomialTopology [Finite σ] [Finite τ]
-    (e : (σ → R) ≃ᵃ[R] (τ → R)) :
-    @IsHomeomorph _ _ (polynomialTopology σ R) (polynomialTopology τ R) e := by
-  let := polynomialTopology σ R
-  let := polynomialTopology τ R
-  exact Homeomorph.isHomeomorph
-    ⟨e.toEquiv, e.toAffineMap.continuous_polynomialTopology,
-      e.symm.toAffineMap.continuous_polynomialTopology⟩
-
-/-- An invertible affine coordinate change transports the polynomial Zariski topology to itself. -/
-@[simp]
-theorem induced_polynomialTopology [Finite σ] [Finite τ]
-    (e : (σ → R) ≃ᵃ[R] (τ → R)) :
-    TopologicalSpace.induced e (polynomialTopology τ R) = polynomialTopology σ R := by
-  let := polynomialTopology σ R
-  let := polynomialTopology τ R
-  exact ((e.isHomeomorph_polynomialTopology).homeomorph.isInducing.eq_induced).symm
-
-end AffineEquiv
+variable {σ R : Type*} [CommRing R]
 
 namespace TauCeti
 
