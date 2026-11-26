@@ -9,8 +9,10 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
+import TauCeti.GroupTheory.Index.Exact
 
 /-!
 # Pointwise scalar actions on submodules
@@ -19,9 +21,9 @@ This file also records how scalar products that fix or annihilate a scalar contr
 pointwise image of the whole module, and that `b M ≤ a M` when `a` divides `b`. The
 image-membership result needs only a distributive monoid action. Over a ring of scalars, negating
 the scalar does not change the pointwise image of a submodule, since a submodule is closed under
-negation. A unit of a ring stabilizes an
-additive subgroup, viewed as a `ℤ`-submodule, exactly when multiplication by the unit and by its
-inverse both preserve it.
+negation, and when `I` has finite quotient `M ⧸ I`, finiteness of `a • (I ⊓ D)` implies finiteness
+of `a • D`. A unit of a ring stabilizes an additive subgroup, viewed as a `ℤ`-submodule, exactly
+when multiplication by the unit and by its inverse both preserve it.
 
 Membership in a pointwise translate under a group action is tested by the inverse action.
 For a subalgebra `C`, two translates `s C` and `t C` by ambient units agree exactly when
@@ -40,6 +42,8 @@ this file to restate both.
 
 * `Submodule.mem_pointwise_smul_iff_inv_smul_mem`: membership in `g • N` is equivalent to
   membership of `g⁻¹ • x` in `N`.
+* `Submodule.finite_pointwise_smul_of_finite_quotient`: if `M ⧸ I` and `a • (I ⊓ D)` are finite,
+  then `a • D` is finite.
 * `Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff`: translates `s C` and `t C` by ambient
   units agree exactly when `s⁻¹ t` is a unit of `C`.
 * `Submodule.pow_smul_mem_pow_smul`: the ambient-scalar bridge — an element of `M₀` scaled by
@@ -65,6 +69,36 @@ theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCom
     [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
     {N : Submodule R M} {g : G} {x : M} : x ∈ g • N ↔ g⁻¹ • x ∈ N := by
   rw [← SetLike.mem_coe, coe_pointwise_smul, Set.mem_smul_set_iff_inv_smul_mem, SetLike.mem_coe]
+
+/-- If `I` has finite quotient `M ⧸ I` and `a • (I ⊓ D)` is finite, then `a • D` is finite:
+`D ⧸ (I ⊓ D)` embeds into `M ⧸ I` and surjects onto `(a • D) ⧸ (a • (I ⊓ D))`. -/
+theorem finite_pointwise_smul_of_finite_quotient {α R M : Type*} [Monoid α] [Ring R]
+    [AddCommGroup M] [Module R M] [DistribMulAction α M] [SMulCommClass α R M]
+    {I D : Submodule R M} (hI : Finite (M ⧸ I)) {a : α} (hID : Finite ↥(a • (I ⊓ D))) :
+    Finite ↥(a • D) := by
+  let S : Submodule R M := a • D
+  let T : Submodule R M := a • (I ⊓ D)
+  let U : Submodule R ↥S := T.comap S.subtype
+  have hTS : T ≤ S := smul_mono_right a inf_le_right
+  have : Finite ↥U := Finite.of_equiv ↥T (Submodule.comapSubtypeEquivOfLe hTS).symm.toEquiv
+  let K : Submodule R ↥D := I.comap D.subtype
+  have : Finite (↥D ⧸ K) :=
+    Finite.of_injective _ (LinearMap.ker_eq_bot.mp
+      (Submodule.ker_liftQ_eq_bot' K (I.mkQ ∘ₗ D.subtype)
+        (by rw [LinearMap.ker_comp, Submodule.ker_mkQ])))
+  let π₀ : ↥D →ₗ[R] ↥S ⧸ U :=
+    U.mkQ ∘ₗ (DistribSMul.toLinearMap R M a).submoduleMap D
+  have hK_le : K ≤ LinearMap.ker π₀ := fun y hy ↦ by
+    rw [LinearMap.mem_ker]
+    simp only [π₀, LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+    exact Submodule.smul_mem_pointwise_smul y.val a (I ⊓ D) ⟨hy, y.property⟩
+  have hπ₀_surj : Function.Surjective π₀ :=
+    U.mkQ_surjective.comp (LinearMap.submoduleMap_surjective _ D)
+  have : Finite (↥S ⧸ U) :=
+    Finite.of_surjective (Submodule.liftQ K π₀ hK_le)
+      (LinearMap.range_eq_top.mp ((Submodule.range_liftQ K π₀ hK_le).trans
+        (LinearMap.range_eq_top.mpr hπ₀_surj)))
+  exact (LinearMap.exact_subtype_mkQ U).finite
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommMonoid M] [Module A M]
 
