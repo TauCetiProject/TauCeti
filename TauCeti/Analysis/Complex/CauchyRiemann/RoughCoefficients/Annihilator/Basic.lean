@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Adjoint
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic
 public import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
+public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Data.ENNReal.Holder
@@ -37,6 +38,9 @@ regular as the coefficients allow:
   inner product on `V`. For `J ∈ C^{ℓ+1}` and `S ∈ C^ℓ`, `ℓ ≤ ∞`, such a covector field agrees
   almost everywhere with a `C^ℓ` field
   (`TauCeti.exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero`).
+* the adjoint equation `∫ η ((∂bar φ + Z φ)(1)) = 0` of an operator written with the complex
+  antilinear part of the derivative is the covector form for `J = i` and `S = 2 Z(·)(1)`
+  (`TauCeti.integral_apply_cauchyRiemann_eq_zero_of_integral_eq_zero`).
 
 After the reflection `ρ(z) = -conj z`, an annihilator of `D` is a weak solution of a homogeneous
 real Cauchy–Riemann equation whose leading coefficient again squares to `-1`
@@ -237,5 +241,34 @@ theorem exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero {
   induction ℓ using ENat.recTopCoe with
   | top => exact contDiffOn_infty.2 fun k ↦ hC k le_top
   | coe n => exact_mod_cast hC n le_rfl
+
+/-! ### The adjoint equation of an operator `∂bar + Z` -/
+
+section ComplexAntilinear
+
+open ContinuousLinearMap (complexAntilinearPartL complexAntilinearPartL_apply_one lsmul)
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
+  [IsScalarTower ℝ ℂ F]
+
+/-- **The adjoint equation in planar form.** For a covector field `η`, a field `Z` of zeroth-order
+terms and a function `φ`, if `η` annihilates the value on `1` of `∂bar φ + Z φ` in integral, it
+annihilates `∂ₛφ + i ∂ₜφ + 2 Z(φ)(1)`, which is twice that value. This is the form of the adjoint
+equation for `J = i` and `S = 2 Z(·)(1)` taken by the planar regularity theorems. -/
+theorem integral_apply_cauchyRiemann_eq_zero_of_integral_eq_zero {η : ℂ → F →L[ℝ] ℝ}
+    {Z : ℂ → F →L[ℝ] ℂ →L[ℝ] F} {φ : ℂ → F}
+    (h : ∫ z, η z ((complexAntilinearPartL (fderiv ℝ φ z) + Z z (φ z)) 1) = 0) :
+    ∫ z, η z (fderiv ℝ φ z 1 + lsmul ℝ ℂ Complex.I (fderiv ℝ φ z Complex.I) +
+      ((2 : ℝ) • (ContinuousLinearMap.apply ℝ F (1 : ℂ)).comp (Z z)) (φ z)) = 0 := by
+  have h2 := congrArg ((2 : ℝ) * ·) h
+  rw [mul_zero, ← integral_const_mul] at h2
+  rw [← h2]
+  refine integral_congr_ae (.of_forall fun z ↦ ?_)
+  simp only [add_apply, complexAntilinearPartL_apply_one,
+    smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.apply_apply, map_add, map_smul, smul_eq_mul]
+  ring
+
+end ComplexAntilinear
 
 end TauCeti

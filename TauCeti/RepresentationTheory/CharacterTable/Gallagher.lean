@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.SemidirectProduct
 public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
+import TauCeti.RepresentationTheory.CharacterTable.Automorphism
 import TauCeti.RepresentationTheory.LinHom.SubgroupSum
 
 /-!
@@ -44,6 +46,10 @@ injectivity; the column orthogonality of `G ⧸ N` gives surjectivity.
   `β ↦ χ · (β ∘ π)`.
 * `TauCeti.gallagher_bijOn_bot`: the case `N = 1` for a linear character `χ`, a permutation of
   the irreducible characters of `G` read through `G ⧸ ⊥`.
+* `TauCeti.gallagher_bijOn_of_surjective`: the same with `G ⧸ N` replaced by the target `Q` of a
+  surjection `f : G →* Q` with kernel `N`, `β ↦ χ · (β ∘ f)`.
+* `TauCeti.gallagher_bijOn_semidirectProduct`: the case `N = Γ` of `G = Γ ⋊[φ] S`,
+  `Irr(S) ≃ Irr(Γ ⋊ S | χ)`, `β ↦ (g ↦ ψ g · β g.right)` for an irreducible extension `ψ` of `χ`.
 * `TauCeti.irreducibleCharactersOver_eq_setOf_restrict_eq_of_isMulCommutative` and
   `TauCeti.card_irreducibleCharacter_extensions_of_isMulCommutative`: for an abelian quotient, the
   characters over `θ` are exactly the irreducible extensions of `θ`, and there are `|G : N|` of
@@ -287,6 +293,39 @@ theorem gallagher_bijOn_bot (hχ : χ ∈ irreducibleCharacters k G) (h1 : χ 1 
   have h := gallagher_bijOn hχ hθ fun n => by
     rw [Subgroup.mem_bot.mp n.property, h1]
   rwa [irreducibleCharactersOver_bot one_ne_zero] at h
+
+/-- **Gallagher's correspondence along a surjection.** Let `f : G →* Q` be a surjection from the
+finite group `G`, `θ` an irreducible character of its kernel and `χ` an irreducible character of
+`G` extending `θ`. Then `β ↦ χ · (β ∘ f)` is a bijection from the irreducible characters of `Q`
+onto the irreducible characters of `G` lying over `θ`. -/
+theorem gallagher_bijOn_of_surjective {Q : Type*} [Group Q] (f : G →* Q)
+    (hf : Function.Surjective f) {θ : f.ker → k} (hχ : χ ∈ irreducibleCharacters k G)
+    (hθ : θ ∈ irreducibleCharacters k f.ker) (hres : ∀ n : f.ker, χ n = θ n) :
+    Set.BijOn (fun (β : Q → k) (g : G) => χ g * β (f g)) (irreducibleCharacters k Q)
+      (irreducibleCharactersOver k f.ker θ) := by
+  let q := QuotientGroup.quotientKerEquivOfSurjective f hf
+  -- `q` is `QuotientGroup.kerLift f` on the quotient, which sends `g` to `f g` by definition.
+  have hq (g : G) : q g = f g := QuotientGroup.kerLift_mk f g
+  convert (gallagher_bijOn hχ hθ hres).comp q.bijOn_comp_irreducibleCharacters using 1
+  funext β g
+  simp only [Function.comp_apply, hq]
+
+open SemidirectProduct in
+/-- **Gallagher's correspondence over a semidirect product.** If an irreducible character `ψ` of
+`Γ ⋊[φ] S` restricts to an irreducible character `χ` of `Γ`, then `β ↦ (g ↦ ψ g · β g.right)` is
+a bijection from the irreducible characters of `S` onto the irreducible characters of `Γ ⋊[φ] S`
+lying over `χ`, read on the kernel of `rightHom` through `mulEquivKerRightHom`. -/
+theorem gallagher_bijOn_semidirectProduct {Γ S : Type*} [Group Γ] [Group S] [Finite Γ] [Finite S]
+    {φ : S →* MulAut Γ} {χ : Γ → k} {ψ : Γ ⋊[φ] S → k}
+    (hψ : ψ ∈ irreducibleCharacters k (Γ ⋊[φ] S)) (hχ : χ ∈ irreducibleCharacters k Γ)
+    (hres : ψ ∘ inl = χ) :
+    Set.BijOn (fun (β : S → k) (g : Γ ⋊[φ] S) => ψ g * β g.right) (irreducibleCharacters k S)
+      (irreducibleCharactersOver k (rightHom : Γ ⋊[φ] S →* S).ker
+        (χ ∘ mulEquivKerRightHom.symm)) := by
+  refine gallagher_bijOn_of_surjective rightHom rightHom_surjective hψ
+    (mulEquivKerRightHom.symm.comp_mem_irreducibleCharacters_iff.2 hχ) fun n => ?_
+  rw [← hres, Function.comp_apply, Function.comp_apply, ← coe_mulEquivKerRightHom_apply,
+    MulEquiv.apply_symm_apply]
 
 /-- If an irreducible character extends across an abelian quotient, an irreducible character lies
 above it if and only if it restricts to it: the inflated characters of the quotient are linear. -/

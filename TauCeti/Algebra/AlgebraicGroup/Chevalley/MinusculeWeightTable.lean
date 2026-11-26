@@ -171,6 +171,13 @@ Chevalley datum with its integral coordinate lattice and basis. -/
   rw [chevalleyDatum, Module.Basis.map_apply, LinearEquiv.coe_ofTop_symm_apply,
     Pi.basisFun_apply]
 
+/-- Reading the table datum's character basis returns fundamental-weight coordinates. -/
+@[simp↓] theorem chevalleyDatum_weightLatticeBasis_repr
+    (μ : (T.chevalleyDatum ht hCM hspan).weightLattice) (i : Fin t.rank) :
+    (T.chevalleyDatum ht hCM hspan).weightLatticeBasis.repr μ i = (μ : Fin t.rank → ℤ) i :=
+  (T.chevalleyDatum ht hCM hspan).weightLatticeBasis_repr_of_coe_weightLatticeBasis
+    (T.coe_chevalleyDatum_weightLatticeBasis ht hCM hspan) μ i
+
 /-- The coordinate weights are the table's fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :
     (T.chevalleyDatum ht hCM hspan).coordinateWeight = T.weight :=

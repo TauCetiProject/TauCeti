@@ -55,6 +55,14 @@ theorem mvPolynomialMinor_comp_perm_right (r : t → m) (c : t → n) (σ : Perm
   rw [mvPolynomialMinor_eq_det_submatrix, mvPolynomialMinor_eq_det_submatrix]
   exact (det_permute' σ ((mvPolynomialX m n R).submatrix r c)).trans (by simp [Units.smul_def])
 
+/-- A generic minor does not change when its rows and columns are both reindexed by the same
+equivalence. -/
+theorem mvPolynomialMinor_comp_equiv {t' : Type*} [Fintype t'] [DecidableEq t'] (e : t' ≃ t)
+    (r : t → m) (c : t → n) :
+    mvPolynomialMinor R (r ∘ e) (c ∘ e) = mvPolynomialMinor R r c := by
+  rw [mvPolynomialMinor_eq_det_submatrix, mvPolynomialMinor_eq_det_submatrix,
+    ← det_submatrix_equiv_self e, Matrix.submatrix_submatrix]
+
 variable {R}
 
 /-- A generic minor with a repeated row index vanishes. -/

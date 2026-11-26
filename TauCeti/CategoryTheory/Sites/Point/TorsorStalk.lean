@@ -34,6 +34,8 @@ locally.
 ## Main results
 
 * `CategoryTheory.GrothendieckTopology.Point.grpGerm_smul_toPresheafFiber`: the action on germs.
+* `CategoryTheory.GrothendieckTopology.Point.presheafFiber_map_smul`: the map of stalks induced
+  by a morphism of torsors commutes with the action.
 * `CategoryTheory.GrothendieckTopology.Point.instTorsorTorsorStalk`: the stalk of a `G`-torsor
   is a torsor under the stalk of `G`.
 
@@ -102,6 +104,34 @@ theorem grpGerm_smul_toPresheafFiber (X : C) (x : Φ.fiber.obj X) (g : G.obj.obj
   rw [smul_torsorStalk_def, grpGerm_apply, this, toPresheafFiber_naturality_apply,
     Sheaf.Torsor.pairsAct_app]
   exact congrArg _ (TypeCat.ofHom_apply _ a)
+
+/-- An element of the stalk of `G` and an element of the stalk of a `G`-torsor are germs at a
+common point. -/
+theorem exists_grpGerm_eq_toPresheafFiber_eq (g : Φ.GrpStalk G.obj) (p : Φ.TorsorStalk P) :
+    ∃ (X : C) (x : Φ.fiber.obj X) (a : G.obj.obj (op X)) (b : P.sheaf.obj.obj (op X)),
+      Φ.grpGerm G.obj X x a = g ∧ Φ.toPresheafFiber X x P.sheaf.obj b = p := by
+  obtain ⟨X, x, a, rfl⟩ := Φ.exists_grpGerm_eq G.obj g
+  obtain ⟨Y, y, b, rfl⟩ := Φ.toPresheafFiber_jointly_surjective (P := P.sheaf.obj) p
+  obtain ⟨Z, z, f₁, f₂, rfl, rfl⟩ := Φ.exists_fiber_map_eq_fiber_map_eq x y
+  exact ⟨Z, z, G.obj.map f₁.op a, P.sheaf.obj.map f₂.op b, Φ.grpGerm_map G.obj f₁ z a,
+    Φ.toPresheafFiber_w_apply f₂ z P.sheaf.obj b⟩
+
+/-- Germs of sections of the trivial `G`-torsor are germs of sections of `G`. -/
+theorem toPresheafFiber_trivial (X : C) (x : Φ.fiber.obj X) (a : G.obj.obj (op X)) :
+    Φ.toPresheafFiber X x (Sheaf.Torsor.trivial G).sheaf.obj a = Φ.grpGerm G.obj X x a :=
+  -- The sheaf of sets underlying the trivial torsor is `G.obj ⋙ forget GrpCat`
+  -- (`Sheaf.Torsor.trivial_sheaf`), whose stalk is `Φ.GrpStalk G.obj`.
+  (Φ.grpGerm_apply G.obj X x a).symm
+
+variable {P} in
+/-- The map of stalks induced by a morphism of torsors commutes with the action of the stalk
+of `G`. -/
+theorem presheafFiber_map_smul {Q : Sheaf.Torsor G} (f : P ⟶ Q) (g : Φ.GrpStalk G.obj)
+    (p : Φ.TorsorStalk P) :
+    Φ.presheafFiber.map f.hom.hom (g • p) = g • Φ.presheafFiber.map f.hom.hom p := by
+  obtain ⟨X, x, a, b, rfl, rfl⟩ := Φ.exists_grpGerm_eq_toPresheafFiber_eq P g p
+  rw [grpGerm_smul_toPresheafFiber, toPresheafFiber_naturality_apply,
+    toPresheafFiber_naturality_apply, f.map_smul, grpGerm_smul_toPresheafFiber]
 
 /-- The stalk of `G` acts on the stalk of a `G`-torsor. -/
 noncomputable instance instMulActionTorsorStalk : MulAction (Φ.GrpStalk G.obj) (Φ.TorsorStalk P)

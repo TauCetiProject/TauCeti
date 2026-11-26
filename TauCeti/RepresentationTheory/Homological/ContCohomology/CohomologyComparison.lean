@@ -58,11 +58,13 @@ is why the discrete synonyms exist.
 * `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology_apply` and
   `explicitH2AddEquivContinuousCohomology_apply`: the comparisons send the class of an explicit
   cocycle to the homology class of the cocycle it corresponds to.
-* `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology_map` and
-  `explicitH1AddEquivContinuousCohomology_coeffMap`: the degree-one comparison carries the
-  explicit pullback along a compatible pair, and in particular the explicit coefficient map, to the
-  canonical one; `TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_map` is the same
-  naturality for discrete representations over any scalars.
+* `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology_map`,
+  `explicitH1AddEquivContinuousCohomology_coeffMap` and
+  `explicitH1AddEquivContinuousCohomology_res`: the degree-one comparison carries the explicit
+  pullback along a compatible pair, and in particular the explicit coefficient map and
+  restriction, to the canonical one;
+  `TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_map` is the same naturality for
+  discrete representations over any scalars.
 * `TauCeti.ContCohomology.explicitIso_map`: the same naturality in compatible pairs for the
   degree-one comparison in `TopModuleCat ℤ`, with `explicitIso_res` and `explicitIso_coeffMap` as
   its restriction and coefficient-map specializations.
@@ -206,6 +208,21 @@ theorem explicitH1AddEquivContinuousCohomology_coeffMap
   rw [TauCeti.ContinuousCohomology.coeffMap_def, explicitCoeff1_eq_explicitMap1, ← hpair]
   exact explicitH1AddEquivContinuousCohomology_map G M G N (ContinuousMonoidHom.id G)
     f.toAddMonoidHom (fun g m ↦ map_smul f g m) x
+
+/-- The degree-one comparison carries explicit restriction to a subgroup to the canonical
+restriction `TauCeti.ContinuousCohomology.res`. Unlike `TauCeti.ContCohomology.explicitIso_res`,
+this needs no compactness. -/
+theorem explicitH1AddEquivContinuousCohomology_res (S : Subgroup G) (x : H1 G M) :
+    TauCeti.ContinuousCohomology.res S (ofDiscreteModule ℤ G M) 1
+        (explicitH1AddEquivContinuousCohomology G M x) =
+      explicitH1AddEquivContinuousCohomology S M (explicitRes1 G M S x) := by
+  have hpair : ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype S : S →* G)
+      (AddMonoidHom.id M).toIntLinearMap (fun _ _ ↦ rfl) =
+      𝟙 (TopRep.res (S.subtype : S →* G) (ofDiscreteModule ℤ G M)) :=
+    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+  rw [TauCeti.ContinuousCohomology.res_def, explicitRes1_eq_explicitMap1, ← hpair]
+  exact explicitH1AddEquivContinuousCohomology_map G M S M
+    (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M) (fun _ _ ↦ rfl) x
 
 /-! ### Degree two -/
 
@@ -411,13 +428,9 @@ theorem explicitIso_res (S : Subgroup G) [CompactSpace S] (x : DiscreteH1 G M) :
       (explicitH1IsoContinuousCohomology S M).hom
         ((discreteH1Equiv S M).symm
           (explicitRes1 G M S (discreteH1Equiv G M x))) := by
-  have hpair : ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype S : S →* G)
-      (AddMonoidHom.id M).toIntLinearMap (fun _ _ ↦ rfl) =
-      𝟙 (TopRep.res (S.subtype : S →* G) (ofDiscreteModule ℤ G M)) :=
-    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
-  rw [TauCeti.ContinuousCohomology.res_def, explicitRes1_eq_explicitMap1, ← hpair]
-  exact explicitIso_map G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
-    (fun _ _ ↦ rfl) x
+  rw [explicitH1IsoContinuousCohomology_hom_apply,
+    explicitH1IsoContinuousCohomology_hom_apply, AddEquiv.apply_symm_apply]
+  exact explicitH1AddEquivContinuousCohomology_res G M S (discreteH1Equiv G M x)
 
 /-- **Transport of coefficient maps in degree one.** The comparison carries the
 explicit coefficient map to the canonical map induced by the same equivariant homomorphism. -/

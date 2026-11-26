@@ -32,7 +32,8 @@ concentrated on that closed ball, and integrating against it is integrating agai
 * `ContDiffBump.integral_closedBall_normed_smul_const`: over that closed ball, the normalized bump
   averages a constant to itself.
 * `ContDiffBump.normedMeasure`: the probability measure with density `f.normed μ`, with
-  `ContDiffBump.integral_normedMeasure` and `ContDiffBump.ae_mem_closedBall_normedMeasure`.
+  `ContDiffBump.integral_normedMeasure`, `ContDiffBump.integrable_normedMeasure_iff` and
+  `ContDiffBump.ae_mem_closedBall_normedMeasure`.
 -/
 
 public section
@@ -97,6 +98,15 @@ theorem integral_normedMeasure (g : E → G) :
   rw [normedMeasure, integral_withDensity_eq_integral_toReal_smul
     f.continuous_normed.measurable.ennreal_ofReal
     (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  simp [f.nonneg_normed]
+
+omit [FiniteDimensional ℝ E] [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] in
+/-- A function is integrable against `f.normedMeasure μ` exactly when its product with the density
+`f.normed μ` is integrable against `μ`. -/
+theorem integrable_normedMeasure_iff {g : E → G} :
+    Integrable g (f.normedMeasure μ) ↔ Integrable (fun x ↦ f.normed μ x • g x) μ := by
+  rw [normedMeasure, integrable_withDensity_iff_integrable_smul'
+    f.continuous_normed.measurable.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
   simp [f.nonneg_normed]
 
 /-- The measure `f.normedMeasure μ` is concentrated on the closed ball of radius `f.rOut`. -/

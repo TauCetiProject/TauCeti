@@ -139,7 +139,6 @@ theorem equivalent_binaryQuadraticForm_iff {a b c d : ZMod 2} :
 
 /-- The orthogonal sum of `m` hyperbolic planes `binaryQuadraticForm (ZMod 2) 0 0` has Arf
 invariant `0`. -/
-@[simp]
 theorem arf_pi_binaryQuadraticForm_zero (m : ℕ) :
     (QuadraticMap.pi fun _ : Fin m ↦ binaryQuadraticForm (ZMod 2) 0 0).arf = 0 := by
   rw [QuadraticMap.arf_pi fun _ ↦ nondegenerate_polarBilin_binaryQuadraticForm 0 0]

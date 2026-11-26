@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 public import TauCeti.Geometry.Manifold.Riemannian.InwardUnitNormal
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.Geometry.Manifold.MFDeriv.Slice
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 
 /-!
 # The second fundamental form of the boundary
@@ -34,7 +35,8 @@ With this sign the closed unit ball has `II = h`, the induced metric. The bounda
 ## Main declarations
 
 * `TauCeti.boundaryInducedForm`: the induced metric `h_q(u, w) = ⟨dι u, dι w⟩` on the tangent
-  space `T_q∂M` of the boundary manifold, as a bilinear form; it is symmetric and nondegenerate.
+  space `T_q∂M` of the boundary manifold, as a bilinear form; it is symmetric and nondegenerate,
+  and positive on nonzero vectors (`TauCeti.boundaryInducedForm_self_pos`).
 * `TauCeti.boundarySecondFundamentalForm`: the second fundamental form `II_q` as a bilinear form on
   the tangent space of the boundary manifold at `q`.
 * `TauCeti.boundarySecondFundamentalForm_isSymm`: it is symmetric.
@@ -49,6 +51,11 @@ With this sign the closed unit ball has `II = h`, the induced metric. The bounda
 * `TauCeti.boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal`: for every vector
   field `N` differentiable at `q` and equal to `ν_out` along `∂M` near `q`,
   `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩`.
+* `TauCeti.inner_leviCivitaConnection_of_eq_inwardUnitNormal`: for every vector field `N`
+  differentiable at `q` and equal to `ν_in` along `∂M` near `q`,
+  `⟨∇_{dι u} N, dι w⟩ = -II_q(u, w)`; the inward normal reverses the sign of `II`.
+* `TauCeti.boundarySecondFundamentalForm_eq_zero_of_dim_one`: in dimension one the tangent space
+  of the boundary is zero, so `II_q = 0`.
 
 ## References
 
@@ -243,12 +250,11 @@ theorem IsBoundaryDefiningFunctionOn.boundarySecondFundamentalForm_apply {ρ : M
   have hρW : ∀ᶠ p : (𝓡∂ (n + 1)).boundary M in 𝓝 q, mvfderiv (𝓡∂ (n + 1)) ρ p (W p) = 0 := by
     filter_upwards [hWt, (hρ.isOpen.preimage continuous_subtypeVal).mem_nhds hqU] with p hp hpU
     exact (hρ.mvfderiv_eq_zero_iff hpU (W p)).mpr hp
-  have hne : ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ ≠ 0 :=
-    by simpa using hρ.mvfderiv_ne_zero (q : M) hqU q.property
   rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
     hessian_eq_neg_mvfderiv_of_eventually_mvfderiv_eq_zero hρq u w hW hWq hρW,
     ← Manifold.inner_mgradient, hρ.mgradient_eq_norm_smul_inwardUnitNormal hqU,
-    inwardUnitNormal_def, real_inner_smul_left, inner_neg_left, real_inner_comm, eq_div_iff hne]
+    inwardUnitNormal_def, real_inner_smul_left, inner_neg_left, real_inner_comm,
+    eq_div_iff (hρ.norm_mvfderiv_pos hqU q.property).ne']
   -- `-⟨ν, ∇W⟩ * |dρ_q| = -(-(|dρ_q| * -⟨ν, ∇W⟩))`
   ring
 
@@ -283,6 +289,30 @@ theorem boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal
   rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
     ← hWq, ← hNν.self_of_nhds, real_inner_comm (N q)]
   linarith
+
+/-- **The inward normal reverses the sign of the second fundamental form.** For every vector
+field `N` on `M`, differentiable at `q ∈ ∂M` and equal to the inward unit normal at the boundary
+points near `q`, `⟨∇_{dι u} N, dι w⟩ = -II_q(u, w)`. -/
+theorem inner_leviCivitaConnection_of_eq_inwardUnitNormal
+    (q : (𝓡∂ (n + 1)).boundary M) (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)
+    {N : (y : M) → TangentSpace (𝓡∂ (n + 1)) y} (hN : MDiffAt (T% N) (q : M))
+    (hNν : ∀ᶠ p : (𝓡∂ (n + 1)).boundary M in 𝓝 q, N p = inwardUnitNormal p) :
+    ⟪CovariantDerivative.leviCivitaConnection (𝓡∂ (n + 1)) M N q
+        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u),
+      mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w⟫_ℝ =
+      -boundarySecondFundamentalForm q u w := by
+  -- `-N` extends the outward unit normal.
+  have hN' : MDiffAt (T% ((-1 : ℝ) • N)) (q : M) :=
+    mdifferentiableAt_const.smul_section hN
+  have hNν' : ∀ᶠ p : (𝓡∂ (n + 1)).boundary M in 𝓝 q,
+      ((-1 : ℝ) • N) (p : M) = outwardUnitNormal p := by
+    filter_upwards [hNν] with p hp
+    rw [Pi.smul_apply, hp, neg_one_smul, neg_inwardUnitNormal]
+  rw [boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal q u w hN' hNν',
+    (CovariantDerivative.leviCivitaConnection (𝓡∂ (n + 1)) M).isCovariantDerivativeOn.smul_const
+      (s := Set.univ) (-1 : ℝ) hN, neg_one_smul, neg_apply, inner_neg_left, neg_neg]
 
 /-! ### The induced metric -/
 
@@ -322,6 +352,22 @@ theorem boundaryInducedForm_nondegenerate (q : (𝓡∂ (n + 1)).boundary M) :
     (boundaryInducedForm q).Nondegenerate :=
   nondegenerate_inner_comp (injective_mfderiv_subtypeVal_boundary q)
 
+/-- The induced metric is nonnegative on the diagonal: `h_q(u, u) ≥ 0`. -/
+theorem boundaryInducedForm_self_nonneg (q : (𝓡∂ (n + 1)).boundary M)
+    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    0 ≤ boundaryInducedForm q u u := by
+  rw [boundaryInducedForm_apply]
+  exact real_inner_self_nonneg
+
+/-- The induced metric is positive on nonzero vectors: `h_q(u, u) > 0` for `u ≠ 0`, since the
+differential of the inclusion is injective. -/
+theorem boundaryInducedForm_self_pos (q : (𝓡∂ (n + 1)).boundary M)
+    {u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q} (hu : u ≠ 0) :
+    0 < boundaryInducedForm q u u := by
+  rw [boundaryInducedForm_apply]
+  exact real_inner_self_pos.2 fun h ↦
+    hu ((map_eq_zero_iff _ (injective_mfderiv_subtypeVal_boundary q)).1 h)
+
 /-- The induced metric is the inner product of `T_q∂M ⊆ T_qM`, transported along
 `TauCeti.boundaryTangentEquiv`. -/
 theorem boundaryInducedForm_eq_inner_boundaryTangentEquiv (q : (𝓡∂ (n + 1)).boundary M)
@@ -331,5 +377,26 @@ theorem boundaryInducedForm_eq_inner_boundaryTangentEquiv (q : (𝓡∂ (n + 1))
     boundaryInducedForm_apply]
 
 end InducedForm
+
+/-! ### Dimension one -/
+
+section DimOne
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 + 1)) M]
+  [IsManifold (𝓡∂ (0 + 1)) 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (0 + 1)) x)]
+  [IsContMDiffRiemannianBundle (𝓡∂ (0 + 1)) 1 (EuclideanSpace ℝ (Fin (0 + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (0 + 1)) x)]
+
+/-- On a one-dimensional Riemannian manifold with boundary, the second fundamental form of the
+boundary is the zero form: the tangent space of the boundary is zero. -/
+@[simp]
+theorem boundarySecondFundamentalForm_eq_zero_of_dim_one (q : (𝓡∂ (0 + 1)).boundary M) :
+    boundarySecondFundamentalForm q = 0 := by
+  ext u w
+  rw [Subsingleton.elim w 0]
+  exact map_zero (boundarySecondFundamentalForm q u)
+
+end DimOne
 
 end TauCeti

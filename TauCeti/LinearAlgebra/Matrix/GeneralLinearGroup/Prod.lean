@@ -24,6 +24,8 @@ are arbitrary, possibly noncommutative, semirings.
 * `TauCeti.prodEquivGL_apply_fst`, `TauCeti.prodEquivGL_apply_snd`: the two components of an
   invertible matrix over `A × B` are its images under the two projections.
 * `TauCeti.coe_prodEquivGL_symm_apply`: the matrix over `A × B` with given components.
+* `TauCeti.unitsMap_fst_prodEquivGL_symm`, `TauCeti.unitsMap_snd_prodEquivGL_symm`: the two
+  projections recover the components of the matrix over `A × B` with given components.
 -/
 
 public section
@@ -60,5 +62,19 @@ theorem coe_prodEquivGL_symm_apply (p : GL n A × GL n B) :
     ((prodEquivGL n A B).symm p : Matrix n n (A × B)) =
       Matrix.of fun i j ↦ ((p.1 : Matrix n n A) i j, (p.2 : Matrix n n B) i j) :=
   (rfl)
+
+/-- Applying the first projection entrywise to the invertible matrix over `A × B` with
+components `p.1` and `p.2` recovers `p.1`. -/
+@[simp]
+theorem unitsMap_fst_prodEquivGL_symm (p : GL n A × GL n B) :
+    Units.map ((RingHom.fst A B).mapMatrix (m := n)) ((prodEquivGL n A B).symm p) = p.1 := by
+  rw [← RingHom.toMonoidHom_eq_coe, ← prodEquivGL_apply_fst, MulEquiv.apply_symm_apply]
+
+/-- Applying the second projection entrywise to the invertible matrix over `A × B` with
+components `p.1` and `p.2` recovers `p.2`. -/
+@[simp]
+theorem unitsMap_snd_prodEquivGL_symm (p : GL n A × GL n B) :
+    Units.map ((RingHom.snd A B).mapMatrix (m := n)) ((prodEquivGL n A B).symm p) = p.2 := by
+  rw [← RingHom.toMonoidHom_eq_coe, ← prodEquivGL_apply_snd, MulEquiv.apply_symm_apply]
 
 end TauCeti

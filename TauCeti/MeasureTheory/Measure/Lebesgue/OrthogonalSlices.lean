@@ -42,9 +42,12 @@ integral of `ψ (y) f (y + t • e)` over product coordinates
 (`TauCeti.integral_mul_integral_line_eq`), so this pairing is continuous for `L¹` convergence on the
 whole space (`TauCeti.tendsto_integral_mul_integral_line`).
 
-More generally, for any subspace `K`, Tonelli's theorem splits Lebesgue integrals over `E` along
-the orthogonal decomposition `E = Kᗮ ⊕ K` (`Submodule.lintegral_eq_lintegral_lintegral_add`),
-via Mathlib's `Submodule.measurePreserving_measurableEquivProd`. In these coordinates based at a
+More generally, for any subspace `K`, Tonelli's and Fubini's theorems split Lebesgue and Bochner
+integrals over `E` along the orthogonal decomposition `E = Kᗮ ⊕ K`
+(`Submodule.lintegral_eq_lintegral_lintegral_add`, `Submodule.integrable_comp_orthogonal_prod`,
+`Submodule.integral_eq_integral_integral_add`), via
+`Submodule.measurePreserving_measurableEquivProd_volume` (the `volume` specialization of Mathlib's
+`Submodule.measurePreserving_measurableEquivProd`). In these coordinates based at a
 point `p`, a product of sets has the product volume, every point `x` is recovered as the sum of
 its two coordinates and `p`, and each coordinate moves no farther than `x` does.
 
@@ -396,26 +399,50 @@ namespace Submodule
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
+/-- In a finite-dimensional real inner product space, orthogonal coordinates along a subspace `K`
+based at `p` preserve Lebesgue measure. -/
+theorem measurePreserving_measurableEquivProd_volume (K : Submodule ℝ E) (p : E) :
+    MeasurePreserving (K.measurableEquivProd p) volume volume := by
+  simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
+    K.measurePreserving_measurableEquivProd p
+
 /-- Tonelli's theorem along an orthogonal decomposition `E = Kᗮ ⊕ K`. -/
 theorem lintegral_eq_lintegral_lintegral_add (K : Submodule ℝ E)
     {g : E → ℝ≥0∞} (hg : AEMeasurable g) :
     ∫⁻ x, g x = ∫⁻ w : Kᗮ, ∫⁻ a : K, g (w + a) := by
   set e := K.measurableEquivProd (0 : E)
-  have he : MeasurePreserving e := by
-    simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
-      K.measurePreserving_measurableEquivProd (0 : E)
+  have he := K.measurePreserving_measurableEquivProd_volume (0 : E)
   rw [MeasurePreserving.lintegral_map_equiv g e.symm he.symm, Measure.volume_eq_prod,
     lintegral_prod_symm (fun q ↦ g (e.symm q))
       (hg.comp_quasiMeasurePreserving he.symm.quasiMeasurePreserving)]
   simp [e, add_comm]
 
+/-- A Bochner-integrable function on `E` pulls back to an integrable function on `K × Kᗮ` under
+`(a, w) ↦ w + a`. -/
+theorem integrable_comp_orthogonal_prod (K : Submodule ℝ E) {V : Type*}
+    [NormedAddCommGroup V] {g : E → V} (hg : Integrable g) :
+    Integrable (fun q : K × Kᗮ ↦ g ((q.2 : E) + q.1)) (volume.prod volume) := by
+  have hp := (K.measurePreserving_measurableEquivProd_volume (0 : E)).symm
+  rw [Measure.volume_eq_prod] at hp
+  convert hp.integrable_comp_of_integrable hg with q
+  simp [add_comm]
+
+/-- Fubini's theorem along an orthogonal decomposition `E = Kᗮ ⊕ K`. -/
+theorem integral_eq_integral_integral_add (K : Submodule ℝ E) {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {g : E → V} (hg : Integrable g) :
+    ∫ x, g x = ∫ w : Kᗮ, ∫ a : K, g ((w : E) + a) := by
+  let p := K.measurableEquivProd (0 : E)
+  have hp := (K.measurePreserving_measurableEquivProd_volume (0 : E)).symm
+  rw [Measure.volume_eq_prod] at hp
+  rw [← hp.integral_comp p.symm.measurableEmbedding g,
+    integral_prod_symm (fun q ↦ g (p.symm q)) (hp.integrable_comp_of_integrable hg)]
+  simp [p, add_comm]
+
 /-- In orthogonal coordinates along a subspace, a product of sets has the product volume. -/
 theorem volume_preimage_measurableEquivProd_prod (V : Submodule ℝ E) (p : E) (S : Set V)
     (T : Set Vᗮ) : volume (V.measurableEquivProd p ⁻¹' S ×ˢ T) = volume S * volume T := by
-  have hΦ : MeasurePreserving (V.measurableEquivProd p) volume volume := by
-    simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
-      V.measurePreserving_measurableEquivProd p
-  rw [hΦ.measure_preimage_equiv, Measure.volume_eq_prod, Measure.prod_prod]
+  rw [(V.measurePreserving_measurableEquivProd_volume p).measure_preimage_equiv,
+    Measure.volume_eq_prod, Measure.prod_prod]
 
 /-- A point is recovered from its orthogonal coordinates along a subspace based at `p`. -/
 theorem measurableEquivProd_fst_add_add_snd (V : Submodule ℝ E) (p x : E) :

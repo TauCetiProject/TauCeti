@@ -43,6 +43,10 @@ the element is a scalar matrix. This scalar criterion,
   isotropic points.
 * `Matrix.mem_center_specialIsometryGroup_of_forall_smul_eq`: if some point is isotropic, an
   isometry fixing every isotropic point is central.
+* `Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_nonempty_isotropicPoints` and
+  `Matrix.nontrivial_specialIsometryGroup`: a nonempty isotropic-point set yields a hyperbolic pair
+  under trace surjectivity and makes `Q.specialIsometryGroup σ` nontrivial whenever a nonzero
+  admissible transvection parameter exists.
 
 ## References
 
@@ -93,8 +97,39 @@ theorem mem_center_specialIsometryGroup_of_forall_smul_eq (hσ : Function.Involu
       obtain ⟨a, ha⟩ := hgv
       rw [Units.smul_def, SpecialLinearGroup.smul_def, smul_eq_mulVec] at ha
       exact ⟨a, ha.symm⟩
-  refine Subgroup.mem_center_iff.mpr fun k ↦ Subtype.ext (Subtype.ext ?_)
-  simp only [Subgroup.coe_mul, SpecialLinearGroup.coe_mul, hc]
+  refine Subgroup.mem_center_iff.mpr fun k ↦ specialIsometryGroup_ext ?_
+  simp only [coe_mul_specialIsometryGroup, hc]
   exact ((scalar_commute c (fun r ↦ Commute.all c r) _).eq).symm
+
+/-- **Constructing a hyperbolic pair from a nonempty isotropic-point set.** For involutive `σ` and
+invertible `ε`-Hermitian `Q` with trace onto `{s | σ(s) = ε s}`, nonemptiness of
+`Q.isotropicPoints σ` yields nonzero `e, f` with `h(e, e) = h(f, f) = 0`, `h(e, f) = 1`, and
+`h(f, e) = ε`. -/
+theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_nonempty_isotropicPoints
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
+    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) [Nonempty (Q.isotropicPoints σ)] :
+    ∃ e f : n → K, e ≠ 0 ∧ f ≠ 0 ∧ (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0 ∧
+      (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε := by
+  obtain ⟨p₀⟩ := ‹Nonempty (Q.isotropicPoints σ)›
+  obtain ⟨f, hf₀, hf, hef, hfe⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ
+    hdet htr (p₀ : ℙ K (n → K)).rep_ne_zero (comp_rep_dotProduct_mulVec_rep p₀)
+  exact ⟨_, f, (p₀ : ℙ K (n → K)).rep_ne_zero, hf₀, comp_rep_dotProduct_mulVec_rep p₀, hf, hef,
+    hfe⟩
+
+/-- **Nontriviality of `Q.specialIsometryGroup σ` when an isotropic point exists** and some nonzero
+`d` satisfies `d + ε * σ d = 0`. -/
+theorem nontrivial_specialIsometryGroup (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q)
+    (hdet : Q.det ≠ 0) (hadm : ∃ d ≠ 0, d + ε * σ d = 0) [Nonempty (Q.isotropicPoints σ)] :
+    Nontrivial (Q.specialIsometryGroup σ) := by
+  obtain ⟨p₀⟩ := ‹Nonempty (Q.isotropicPoints σ)›
+  have he₀ := (p₀ : ℙ K (n → K)).rep_ne_zero
+  obtain ⟨u, hue, -⟩ := exists_comp_dotProduct_mulVec_ne_zero_pair (σ := σ) hdet he₀ he₀
+  obtain ⟨d, hd, hdε⟩ := hadm
+  obtain ⟨t, ht, hct⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ
+    (comp_rep_dotProduct_mulVec_rep p₀) hdε
+  refine ⟨⟨t, ht⟩, 1, fun h ↦ smul_ne_zero
+    (mul_ne_zero hd ((comp_dotProduct_mulVec_ne_zero_comm hσ hQ).mp hue)) he₀ ?_⟩
+  simpa [hct, unitaryTransvection_mulVec] using
+    congrArg (fun g : Q.specialIsometryGroup σ ↦ (g : Matrix n n K) *ᵥ u) h
 
 end Matrix

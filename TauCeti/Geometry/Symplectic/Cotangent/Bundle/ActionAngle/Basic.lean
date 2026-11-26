@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Torus
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 
+import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
@@ -29,7 +31,8 @@ the coordinate vectors, and then `ξ = ∑ j, I_j dθ_j`. This file studies the 
 `θ ∈ ℝ^ι`, defined modulo `p ℤ^ι`, and action coordinates `I ∈ ℝ^ι`.
 
 * The actions `I_j = ξ(e_j)` of a covector (`TauCeti.CotangentBundle.torusActions`) of `κ(θ, I)`
-  are `I` (`TauCeti.CotangentBundle.torusActions_actionAngleCover`).
+  are `I` (`TauCeti.CotangentBundle.torusActions_actionAngleCover`), and a covector is determined
+  by its base point and its actions (`TauCeti.CotangentBundle.ext_torusActions`).
 * `κ` is surjective, and `κ(θ, I) = κ(θ', I')` exactly when `I' = I` and `θ' - θ ∈ p ℤ^ι`
   (`TauCeti.CotangentBundle.surjective_actionAngleCover`,
   `TauCeti.CotangentBundle.actionAngleCover_eq_actionAngleCover_iff`).
@@ -47,6 +50,9 @@ the coordinate vectors, and then `ξ = ∑ j, I_j dθ_j`. This file studies the 
 * Hence, without lifting the angles, `ω(ξ, η) = dθ(ξ) ⬝ᵥ dI(η) - dθ(η) ⬝ᵥ dI(ξ)` for the
   differentials `dθ` of the projection to the torus and `dI` of the actions
   (`TauCeti.CotangentBundle.eval₂_symplecticForm_eq_dotProduct_sub`).
+* Every covector is `κ(θ, I)` with angles in the fundamental domain `[0, p)^ι`
+  (`TauCeti.CotangentBundle.exists_mem_pi_Ico_actionAngleCover_eq`), so the action map is proper
+  (`TauCeti.CotangentBundle.isProperMap_torusActions`).
 
 So `(θ mod p, I)` are global coordinates on `T*Tⁿ` in which `ω = ∑ j, dθ_j ∧ dI_j`. These are the
 coordinates in which the Liouville–Arnold theorem states its normal form near a compact regular
@@ -160,6 +166,14 @@ theorem actionAngleCover_add_intCast_mul (θ I : ι → ℝ) (m : ι → ℤ) :
     simp only [Pi.add_apply, Pi.neg_apply, Int.cast_neg]
     ring⟩)
 
+/-- The action–angle covering map only depends on the angles modulo `p`: angles with the same
+classes in the torus give the same covector. -/
+theorem actionAngleCover_congr_coe {θ θ' : ι → ℝ}
+    (h : (fun i ↦ (θ i : AddCircle p)) = fun i ↦ (θ' i : AddCircle p)) (I : ι → ℝ) :
+    actionAngleCover p (θ, I) = actionAngleCover p (θ', I) :=
+  CotangentBundle.ext h fun v ↦
+    (actionAngleCover_snd_apply p (θ, I) v).trans (actionAngleCover_snd_apply p (θ', I) v).symm
+
 /-- **The action–angle covering map is surjective.** Every covector of the torus is `∑ j, I_j dθ_j`
 at some `[θ]`, its actions being `I`. -/
 theorem surjective_actionAngleCover :
@@ -177,6 +191,16 @@ theorem surjective_actionAngleCover :
   simp only [← Pi.single_apply, Pi.single_comm, smul_eq_mul, mul_comm]
   -- `z.2` is a covector on the tangent space, a type synonym of `ι → ℝ`.
   rfl
+
+/-- **A covector of the torus is determined by its base point and its actions.** -/
+theorem ext_torusActions [DecidableEq ι]
+    {z w : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)}
+    (hproj : z.proj = w.proj) (h : torusActions p z = torusActions p w) : z = w := by
+  obtain ⟨x, rfl⟩ := surjective_actionAngleCover p z
+  obtain ⟨y, rfl⟩ := surjective_actionAngleCover p w
+  rw [torusActions_actionAngleCover, torusActions_actionAngleCover] at h
+  exact CotangentBundle.ext hproj fun v ↦ (actionAngleCover_snd_apply p x v).trans
+    ((congrArg (fun I : ι → ℝ ↦ ∑ j, I j * v j) h).trans (actionAngleCover_snd_apply p y v).symm)
 
 /-- **The action–angle covering map is smooth.** -/
 theorem contMDiff_actionAngleCover :
@@ -426,6 +450,42 @@ theorem mdifferentiableAt_comp_torusActions [DecidableEq ι] {h : (ι → ℝ) �
     MDifferentiableAt ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) 𝓘(ℝ)
       (h ∘ torusActions p) z :=
   hh.mdifferentiableAt.comp z ((contMDiff_torusActions p z).mdifferentiableAt (by simp))
+
+/-! ### Properness of the action map -/
+
+section Proper
+
+variable [DecidableEq ι]
+
+/-- **Angles in a fundamental domain.** Every covector `z` of the torus is `κ(θ, I)` for its
+actions `I` and angles `θ` in the fundamental domain `[0, p)^ι` of the lattice `p ℤ^ι`. -/
+theorem exists_mem_pi_Ico_actionAngleCover_eq
+    (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) :
+    ∃ θ ∈ Set.pi Set.univ fun _ : ι ↦ Set.Ico 0 p,
+      actionAngleCover p (θ, torusActions p z) = z := by
+  obtain ⟨⟨θ, I⟩, rfl⟩ := surjective_actionAngleCover (ι := ι) p z
+  have hp : 0 < p := Fact.out
+  refine ⟨fun i ↦ toIcoMod hp 0 (θ i), fun i _ ↦ toIcoMod_mem_Ico' hp (θ i), ?_⟩
+  have hθ : θ = (fun i ↦ toIcoMod hp 0 (θ i)) + fun i ↦ (toIcoDiv hp 0 (θ i) : ℝ) * p := by
+    funext i
+    rw [Pi.add_apply, ← zsmul_eq_mul, toIcoMod_add_toIcoDiv_zsmul]
+  rw [torusActions_actionAngleCover]
+  conv_rhs => rw [hθ]
+  exact (actionAngleCover_add_intCast_mul p _ I _).symm
+
+/-- **The action map is proper.** The covectors of the torus whose actions lie in a compact set
+`K` form a compact set: they are the image of `[0, p]^ι × K` under the action–angle covering
+map. -/
+theorem isProperMap_torusActions : IsProperMap (torusActions (ι := ι) p) := by
+  refine isProperMap_iff_isCompact_preimage.2
+    ⟨(contMDiff_torusActions (ι := ι) p).continuous, fun K hK ↦ ?_⟩
+  refine (((isCompact_univ_pi fun _ ↦ isCompact_Icc (a := (0 : ℝ)) (b := p)).prod hK).image
+    (contMDiff_actionAngleCover (ι := ι) p).continuous).of_isClosed_subset
+    (hK.isClosed.preimage (contMDiff_torusActions (ι := ι) p).continuous) fun z hz ↦ ?_
+  obtain ⟨θ, hθ, hz'⟩ := exists_mem_pi_Ico_actionAngleCover_eq p z
+  exact ⟨(θ, torusActions p z), ⟨fun i _ ↦ Set.Ico_subset_Icc_self (hθ i trivial), hz⟩, hz'⟩
+
+end Proper
 
 end CotangentBundle
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FrameBundle
+public import TauCeti.Topology.VectorBundle.Frame.Bundle
 public import TauCeti.Geometry.Manifold.FiberBundle.MapFiber
 public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom

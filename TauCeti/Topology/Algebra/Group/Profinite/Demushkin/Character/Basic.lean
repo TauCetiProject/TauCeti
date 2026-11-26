@@ -14,6 +14,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Present
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.NumberTheory.Padics.Matrix
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.CrossedHom
 
 /-!

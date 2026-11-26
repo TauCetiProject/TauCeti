@@ -232,12 +232,14 @@ lemma bigSectionsRestrictLE_congr {X X' : Scheme.{u}} {h : X ⟶ S} {h' : X' ⟶
   rfl
 
 /-- Local restriction along the inclusion of an open `V` of `X` is a bijection from the sections
-of `h^* F` over `V` to the global sections of the pullback of `F` to the `S`-scheme `V`. -/
-lemma bijective_bigSectionsRestrictLE_ι {X : Scheme.{u}} (h : X ⟶ S) (V : X.Opens) :
-    Function.Bijective (bigSectionsRestrictLE F V.ι rfl V ⊤ (by simp) :
-      Γ((pullback h).obj F, V) → Γ((pullback (V.ι ≫ h)).obj F, ⊤)) :=
+of `h^* F` over `V` to the global sections of the pullback of `F` to the `S`-scheme `V`, whose
+structure morphism `h'` is any morphism equal to `V.ι ≫ h`. -/
+lemma bijective_bigSectionsRestrictLE_ι {X : Scheme.{u}} (h : X ⟶ S) (V : X.Opens)
+    {h' : V.toScheme ⟶ S} (w : V.ι ≫ h = h') :
+    Function.Bijective (bigSectionsRestrictLE F V.ι w V ⊤ (by simp) :
+      Γ((pullback h).obj F, V) → Γ((pullback h').obj F, ⊤)) :=
   (ConcreteCategory.bijective_of_isIso
-    (((pullbackComp V.ι h).hom.app F ≫ (pullbackCongr rfl).hom.app F).app ⊤)).comp
+    (((pullbackComp V.ι h).hom.app F ≫ (pullbackCongr w).hom.app F).app ⊤)).comp
       (bijective_pullbackSectionsLE_ι _ V ⊤ rfl)
 
 /-- Restricting a global section to the `S`-scheme given by an open `V` is restricting it to `V`
@@ -254,12 +256,14 @@ lemma bigSectionsRestrict_homMk_ι (T : Over S) (V : T.left.Opens)
 the identifications of `bijective_bigSectionsRestrictLE_ι`, restriction of sections from `V` to
 `W`. -/
 lemma bigSectionsRestrict_homMk_homOfLE (T : Over S) {V W : T.left.Opens} (hWV : W ≤ V)
-    (s : Γ((pullback T.hom).obj F, V)) :
-    bigSectionsRestrict F (Over.homMk (T.left.homOfLE hWV) (by simp) :
-        Over.mk (W.ι ≫ T.hom) ⟶ Over.mk (V.ι ≫ T.hom))
-      (bigSectionsRestrictLE F V.ι rfl V ⊤ (by simp) s) =
-      bigSectionsRestrictLE F W.ι rfl W ⊤ (by simp)
+    {hV : V.toScheme ⟶ S} {hW : W.toScheme ⟶ S} (wV : V.ι ≫ T.hom = hV)
+    (wW : W.ι ≫ T.hom = hW) (s : Γ((pullback T.hom).obj F, V)) :
+    bigSectionsRestrict F (Over.homMk (T.left.homOfLE hWV) (by simp [← wV, ← wW]) :
+        Over.mk hW ⟶ Over.mk hV)
+      (bigSectionsRestrictLE F V.ι wV V ⊤ (by simp) s) =
+      bigSectionsRestrictLE F W.ι wW W ⊤ (by simp)
         (((pullback T.hom).obj F).presheaf.map (homOfLE hWV).op s) := by
+  subst wV wW
   rw [bigSectionsRestrict_eq_bigSectionsRestrictLE, bigSectionsRestrictLE_comp]
   refine (bigSectionsRestrictLE_congr F (b' := W.ι) (by simp) _ _ _ _ _).trans ?_
   rw [bigSectionsRestrictLE_map]

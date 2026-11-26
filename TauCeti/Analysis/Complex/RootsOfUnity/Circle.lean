@@ -18,6 +18,8 @@ spaces.
 
 ## Main results
 
+* `ZMod.toCircle_intCast_eq_circleExp`: the value at the class of an integer `j` is the point
+  `Circle.exp (2πj / n)`.
 * `ZMod.toCircle_pow_eq_one`: every value of `ZMod.toCircle` is an `n`-th root of unity.
 * `ZMod.exists_toCircle_eq_of_pow_eq_one`: every `n`-th root of unity in the circle is a value
   of `ZMod.toCircle`.
@@ -32,6 +34,16 @@ public section
 namespace ZMod
 
 variable {n : ℕ} [NeZero n]
+
+open Real in
+/-- The value of `ZMod.toCircle` at the class of an integer `j` is the point `exp (2πj / n)` of
+the circle, the form of `ZMod.toCircle_intCast` in terms of `Circle.exp`. -/
+theorem toCircle_intCast_eq_circleExp (j : ℤ) :
+    toCircle (j : ZMod n) = Circle.exp (2 * π * j / n) := by
+  ext
+  rw [toCircle_intCast, Circle.coe_exp]
+  push_cast
+  ring_nf
 
 /-- The values of `ZMod.toCircle` are `n`-th roots of unity. -/
 theorem toCircle_pow_eq_one (j : ZMod n) : toCircle j ^ n = 1 := by

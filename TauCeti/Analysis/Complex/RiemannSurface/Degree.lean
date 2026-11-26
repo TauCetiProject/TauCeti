@@ -496,6 +496,13 @@ theorem degree_eq_fiber_sum (y : Y) :
   (fiberMultiplicitySum_eq_degree f.holomorphic f.not_eventuallyConst y).symm.trans
     (fiberMultiplicitySum_eq_sum _)
 
+/-- If a fibre of a finite holomorphic map from a compact Riemann surface to a connected
+Riemann surface is a singleton, its local multiplicity equals the degree. -/
+theorem degree_eq_localMultiplicity_of_preimage_eq_singleton {x : X} {y : Y}
+    (hfib : f ⁻¹' {y} = {x}) : degree f = localMultiplicity f x := by
+  rw [← fiberMultiplicitySum_eq_degree f.holomorphic f.not_eventuallyConst y,
+    fiberMultiplicitySum_def, hfib, finsum_mem_singleton]
+
 omit [PreconnectedSpace Y] in
 /-- Every local multiplicity of a finite holomorphic map from a compact Riemann surface
 is at most its degree. -/
@@ -513,11 +520,10 @@ from a compact Riemann surface to a connected one is injective on a neighbourhoo
 other point has the image of `x`, then its degree is the local multiplicity at `x`, which is `1`. -/
 theorem degree_eq_one_of_injOn {x : X} {t : Set X} (ht : t ∈ 𝓝 x) (hinj : InjOn f t)
     (hfib : ∀ x', f x' = f x → x' = x) : degree f = 1 := by
-  classical
-  have hs : (f.finite_fiber (f x)).toFinset = {x} := by
+  have hs : f ⁻¹' {f x} = {x} := by
     ext x'
-    simpa using ⟨hfib x', fun h ↦ h ▸ rfl⟩
-  rw [degree_eq_fiber_sum f (f x), hs, Finset.sum_singleton]
+    exact ⟨hfib x', fun h ↦ h ▸ rfl⟩
+  rw [degree_eq_localMultiplicity_of_preimage_eq_singleton f hs]
   exact (localMultiplicity_eq_one_iff (.of_forall fun y ↦ f.holomorphic y)).2 ⟨t, ht, hinj⟩
 
 omit [T2Space X] in
