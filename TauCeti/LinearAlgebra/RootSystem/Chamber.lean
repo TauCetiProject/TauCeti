@@ -175,6 +175,13 @@ def openDominantChamber : Set M := {x | ∀ i ∈ b.support, 0 < P.coroot' i x}
 lemma mem_dominantChamber (x : M) :
     x ∈ dominantChamber P b ↔ ∀ i ∈ b.support, 0 ≤ P.coroot' i x := Iff.rfl
 
+/-- Membership in the closed dominant chamber, with the simple roots indexed through an
+equivalence `e : κ ≃ b.support`, such as a fixed numbering of the nodes of the Dynkin diagram. -/
+lemma mem_dominantChamber_iff_forall_equiv {κ : Type*} (e : κ ≃ b.support) (x : M) :
+    x ∈ dominantChamber P b ↔ ∀ k, 0 ≤ P.coroot' (e k) x :=
+  (Subtype.forall (q := fun i : b.support ↦ 0 ≤ P.coroot' i x)).symm.trans
+    e.forall_congr_right.symm
+
 /-- Membership in the open dominant chamber. -/
 @[simp]
 lemma mem_openDominantChamber (x : M) :

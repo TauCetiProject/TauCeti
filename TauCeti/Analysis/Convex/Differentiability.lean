@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Convex.Deriv
+import TauCeti.Analysis.Convex.ContinuousFDeriv
 
 /-!
 # Differentiability of extended-real convex functions
@@ -214,48 +215,23 @@ theorem eventually_forall_mem_subdifferential_norm_sub_le
     {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y‖ ≤ ε := by
   -- On a ball of radius `r` about `x`, `f` is finite and its real representative is within
-  -- `ε / 6 * r` of its first-order expansion. A subgradient `y'` at a point `x'` of the ball of
-  -- radius `r / 3` is tested along the step of length `r / 3` from `x'` in the direction `y' - y`.
-  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.1
-    (hdom.and ((hasGradientAt_iff_isLittleO.1 hd).def (show 0 < ε / 6 by positivity)))
-  have hexp : ∀ z, dist z x < r →
-      |(f z).toReal - (f x).toReal - ⟪y, z - x⟫_ℝ| ≤ ε / 6 * r := fun z hz => by
-    have h := (hball hz).2
-    rw [Real.norm_eq_abs] at h
-    refine h.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
-    rw [← dist_eq_norm]
-    exact hz.le
-  rw [Metric.eventually_nhds_iff]
-  refine ⟨r / 3, by positivity, fun x' hx' y' hy' => ?_⟩
-  rcases eq_or_ne y' y with rfl | hne
-  · simpa using hε.le
-  have hpos : 0 < ‖y' - y‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
-  set t := r / 3 / ‖y' - y‖
-  set x'' := x' + t • (y' - y)
-  have hxx : x'' - x = (x' - x) + t • (y' - y) := by
-    simp only [x'']
-    abel
-  have hx'' : dist x'' x < r := by
-    have : ‖t • (y' - y)‖ = r / 3 := by
-      rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity), div_mul_cancel₀ _ hpos.ne']
-    rw [dist_eq_norm, hxx]
-    calc ‖x' - x + t • (y' - y)‖ ≤ ‖x' - x‖ + ‖t • (y' - y)‖ := norm_add_le _ _
-      _ < r := by rw [this, ← dist_eq_norm]; linarith
-  have hsub := toReal_add_le_toReal_of_mem_subdifferential (innerₗ E) hy' (hball hx'').1
-  simp only [innerₗ_apply_apply, x'', add_sub_cancel_left, inner_smul_left,
-    RCLike.conj_to_real] at hsub
-  have h₁ := (abs_le.1 (hexp x'' hx'')).2
-  have h₂ := (abs_le.1 (hexp x' (hx'.trans (by linarith)))).1
-  rw [hxx, inner_add_right, inner_smul_right] at h₁
-  have hw : ⟪y' - y, y'⟫_ℝ - ⟪y, y' - y⟫_ℝ = ‖y' - y‖ ^ 2 := by
-    rw [real_inner_comm (y' - y) y, ← inner_sub_right, real_inner_self_eq_norm_sq]
-  have ht : t * ‖y' - y‖ ^ 2 = r / 3 * ‖y' - y‖ := by
-    simp only [t]
-    field_simp
-  have : r / 3 * ‖y' - y‖ ≤ r / 3 * ε := by
-    rw [← ht, ← hw, mul_sub]
-    linarith
-  exact le_of_mul_le_mul_left this (by positivity)
+  -- `ε / 3 ‖z - x‖` of its first-order expansion. A subgradient `y'` at a point of the ball of
+  -- radius `r / 3` is then within `ε` of `y`, by
+  -- `TauCeti.apply_sub_apply_le_of_forall_add_le` in the direction `y' - y`.
+  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.1
+    (hdom.and ((hasGradientAt_iff_isLittleO.1 hd).def (show 0 < ε / 3 by positivity)))
+  have hexp : ∀ z ∈ Metric.ball x r,
+      |(f z).toReal - (f x).toReal - innerSL ℝ y (z - x)| ≤ ε / 3 * ‖z - x‖ := fun z hz => by
+    simpa only [innerSL_apply_apply, Real.norm_eq_abs] using (hball z hz).2
+  filter_upwards [Metric.ball_mem_nhds x (show 0 < r / 3 by positivity)] with x' hx' y' hy'
+  have hsub : ∀ z ∈ Metric.ball x r, (f x').toReal + innerSL ℝ y' (z - x') ≤ (f z).toReal :=
+    fun z hz => by
+      simpa only [innerSL_apply_apply, innerₗ_apply_apply, real_inner_comm] using
+        toReal_add_le_toReal_of_mem_subdifferential (innerₗ E) hy' (hball z hz).1
+  have h := apply_sub_apply_le_of_forall_add_le hr hexp hx' hsub (y' - y)
+  rw [innerSL_apply_apply, innerSL_apply_apply, ← inner_sub_left,
+    real_inner_self_eq_norm_sq] at h
+  nlinarith [norm_nonneg (y' - y)]
 
 /-- A subgradient selection continuous at `x` is the gradient at `x`. Only local existence
 of the selection is needed; the function need not be convex. -/

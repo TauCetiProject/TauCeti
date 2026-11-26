@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Bigraded.Stabilization
-public import TauCeti.KnotTheory.Grid.Homology.FullyBlockedBigraded
+public import TauCeti.KnotTheory.Grid.Homology.FullyBlocked.Bigraded
 public import TauCeti.KnotTheory.Grid.Stabilization.FullyBlocked.Grading
 
 /-!

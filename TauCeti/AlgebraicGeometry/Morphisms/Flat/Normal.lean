@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.RingTheory.RegularLocalRing.MiracleFlatness
 import TauCeti.RingTheory.CohenMacaulay.Normal
+import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
 
 /-!
@@ -29,8 +30,8 @@ supply flatness before applying ramification criteria for étaleness.
 * The Stacks Project, Lemma 10.128.1 (00R4), miracle flatness.
 * The Stacks Project, Lemma 58.21.3 (0BMA), the flatness step in dimension two.
 
-The closed-fibre identification follows the one in Mathlib's private
-`Algebra.QuasiFinite.finite_of_isArtinianRing_of_isLocalRing`.
+The closed-fibre identification `Ideal.Fiber.algEquivQuotientMap` follows the one in Mathlib's
+private `Algebra.QuasiFinite.finite_of_isArtinianRing_of_isLocalRing`.
 -/
 
 public section
@@ -60,14 +61,8 @@ theorem flat_stalkMap_of_isCohenMacaulay_of_quasiFiniteAt {x : X}
   -- quasi-finiteness and nonzero because the stalk map is local.
   let R := Y.presheaf.stalk (f x)
   let S := X.presheaf.stalk x
-  let e : (maximalIdeal R).Fiber S ≃ₐ[R] S ⧸ (maximalIdeal R).map (algebraMap R S) :=
-    (Algebra.TensorProduct.congr (.symm <| .ofBijective _
-      (Ideal.bijective_algebraMap_quotient_residueField (maximalIdeal R))) .refl).trans <|
-    (Algebra.TensorProduct.comm _ _ _).trans
-      ((Algebra.TensorProduct.quotIdealMapEquivTensorQuot S
-        (maximalIdeal R)).symm.restrictScalars _)
   have : IsArtinianRing (S ⧸ (maximalIdeal R).map (algebraMap R S)) :=
-    e.toRingEquiv.isArtinianRing
+    (Ideal.Fiber.algEquivQuotientMap (B := S) (maximalIdeal R)).toRingEquiv.isArtinianRing
   have : Nontrivial (S ⧸ (maximalIdeal R).map (algebraMap R S)) :=
     Ideal.Quotient.nontrivial_iff.mpr (map_maximalIdeal_lt_top (algebraMap R S)).ne
   have hfibre : ringKrullDim (S ⧸ (maximalIdeal R).map (algebraMap R S)) = 0 :=

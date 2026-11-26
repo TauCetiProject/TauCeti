@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Dagger.Omega.Basic
 public import TauCeti.RingTheory.Dagger.Noetherian
 public import TauCeti.RingTheory.Kaehler.DeRham.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!

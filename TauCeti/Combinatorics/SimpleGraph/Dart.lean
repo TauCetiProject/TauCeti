@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Combinatorics.SimpleGraph.Dart
 
 /-!
@@ -20,6 +21,8 @@ its head, and a neighbour `w` to the dart `u → w` (`SimpleGraph.dartOfNeighbor
 
 ## Main results
 
+* `SimpleGraph.sum_dart_snd_eq_sum_neighborSet`: a sum over the darts with head `v` is a sum over
+  the neighbours of `v`.
 * `SimpleGraph.DartAdj.edge_ne_iff`: two consecutive darts have different edges exactly when the
   second is not the reverse of the first.
 -/
@@ -53,6 +56,17 @@ theorem coe_dartFstEquivNeighborSet_apply (u : V)
 theorem coe_dartFstEquivNeighborSet_symm_apply (u : V) (w : G.neighborSet u) :
     ((G.dartFstEquivNeighborSet u).symm w : G.Dart) = G.dartOfNeighborSet u w :=
   rfl
+
+/-- A sum over the darts with head `v` is a sum over the neighbours `w` of `v`, through the
+reverse `w → v` of the dart `v → w`. -/
+theorem sum_dart_snd_eq_sum_neighborSet {M : Type*} [AddCommMonoid M] [Fintype G.Dart]
+    [DecidableEq V] (v : V) [Fintype (G.neighborSet v)] (f : G.Dart → M) :
+    ∑ d : G.Dart with d.snd = v, f d = ∑ w : G.neighborSet v, f (G.dartOfNeighborSet v w).symm :=
+  Finset.sum_bij'
+    (fun d hd ↦ ⟨d.fst, (G.mem_neighborSet _ _).2 ((Finset.mem_filter.1 hd).2 ▸ d.adj.symm)⟩)
+    (fun w _ ↦ (G.dartOfNeighborSet v w).symm) (fun _ _ ↦ Finset.mem_univ _) (fun _ _ ↦ by simp)
+    (fun d hd ↦ Dart.ext _ _ (Prod.ext rfl (Finset.mem_filter.1 hd).2.symm)) (fun _ _ ↦ rfl)
+    (fun d hd ↦ congrArg f (Dart.ext _ _ (Prod.ext rfl (Finset.mem_filter.1 hd).2)))
 
 /-- Two consecutive darts have different edges exactly when the second is not the reverse of the
 first. -/

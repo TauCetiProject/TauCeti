@@ -17,11 +17,13 @@ The monomials `mFourier n` are orthonormal, so the Fourier coefficients of the m
 are the Kronecker delta at `n`, those of an absolutely convergent trigonometric series
 `∑' n, mFourier n • c n` with values in a complex Banach space are its coefficients `c`, and those
 of a trigonometric polynomial `∑ n ∈ s, mFourier n • c n` are `c` on `s` and zero elsewhere.
+On `Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`, for the product of the Haar probability measures on the circle factors,
+each Fourier coefficient is a continuous linear functional of norm at most one.
 
 ## Main declarations
 
-* `UnitAddTorus.mFourierCoeff_add` and `UnitAddTorus.mFourierCoeff_smul`: the coefficients are
-  linear in the function.
+* `UnitAddTorus.mFourierCoeff_add`, `UnitAddTorus.mFourierCoeff_smul` and
+  `UnitAddTorus.mFourierCoeff_zero`: the coefficients are linear in the function.
 * `TauCeti.UnitAddTorus.mFourierCoeff_mFourier`: the Fourier coefficients of a monomial.
 * `TauCeti.UnitAddTorus.mFourierCoeff_tsum_mFourier_smul`: the Fourier coefficients of an
   absolutely convergent trigonometric series, with the scalar form
@@ -30,6 +32,11 @@ of a trigonometric polynomial `∑ n ∈ s, mFourier n • c n` are `c` on `s` a
   trigonometric polynomial, with the scalar forms
   `TauCeti.UnitAddTorus.mFourierCoeff_sum_mFourier_mul` and
   `TauCeti.UnitAddTorus.mFourierCoeff_sum_mul_mFourier`.
+* `TauCeti.UnitAddTorus.mFourierCoeff_congr_ae`: the Fourier coefficients only depend on the
+  almost-everywhere class of the function.
+* `TauCeti.UnitAddTorus.norm_mFourierCoeff_le_norm`: `‖f̂(n)‖ ≤ ‖f‖` in `Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`.
+* `TauCeti.UnitAddTorus.mFourierCoeffCLM`: the `n`-th Fourier coefficient as a continuous linear
+  functional on `Lᵖ(𝕋ᵈ)`.
 -/
 
 public section
@@ -57,6 +64,11 @@ theorem mFourierCoeff_smul (c : ℂ) (f : UnitAddTorus d → E) (n : d → ℤ) 
     mFourierCoeff (c • f) n = c • mFourierCoeff f n := by
   simp only [TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume, Pi.smul_apply, smul_comm _ c,
     integral_smul]
+
+/-- The Fourier coefficients of the zero function vanish. -/
+@[simp]
+theorem mFourierCoeff_zero (n : d → ℤ) : mFourierCoeff (0 : UnitAddTorus d → E) n = 0 := by
+  simpa using mFourierCoeff_smul (0 : ℂ) (0 : UnitAddTorus d → E) n
 
 end UnitAddTorus
 
@@ -137,5 +149,67 @@ theorem mFourierCoeff_sum_mul_mFourier (s : Finset (d → ℤ)) (c : (d → ℤ)
     mFourierCoeff (fun x ↦ ∑ n ∈ s, c n * mFourier n x) m = if m ∈ s then c m else 0 := by
   simp_rw [mul_comm (c _)]
   exact mFourierCoeff_sum_mFourier_mul s c m
+
+/-! ### Fourier coefficients of `Lᵖ` functions -/
+
+section Lp
+
+open scoped ENNReal
+
+-- Mathlib's monomials `mFourierLp` and Fourier basis `mFourierBasis` live on `Lᵖ` for the
+-- product of the Haar probability measures on the circle factors, given by this instance; state
+-- the results on that same space.
+attribute [local instance 2000] instMeasureSpaceUnitAddCircle
+
+-- The volume for this instance is a probability measure, but Mathlib only records this with a
+-- file-local instance, and TauCeti's global instance concerns the volume of the global
+-- `AddCircle.measureSpace`, a different instance; without this instance the Fourier coefficients
+-- are not bounded by the `Lᵖ` norms, `1 ≤ p`, below.
+local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
+  inferInstanceAs (IsProbabilityMeasure AddCircle.haarAddCircle)
+
+/-- Every Fourier coefficient of `f ∈ Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`, is bounded by the `Lᵖ` norm of `f`: it
+is bounded by the `L¹` norm, and `𝕋ᵈ` has measure one. -/
+theorem norm_mFourierCoeff_le_norm {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (f : Lp ℂ p (volume : Measure (UnitAddTorus d))) (n : d → ℤ) :
+    ‖mFourierCoeff f n‖ ≤ ‖f‖ := by
+  have h1 : ‖mFourierCoeff f n‖ ≤ (eLpNorm f 1 volume).toReal := by
+    refine (norm_integral_le_lintegral_norm _).trans_eq ?_
+    rw [eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f)]
+    simp only [smul_eq_mul, norm_mul, norm_mFourier_apply, one_mul, ofReal_norm]
+  refine h1.trans ?_
+  rw [Lp.norm_def]
+  exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top f)
+    (eLpNorm_le_eLpNorm_of_exponent_le Fact.out)
+
+omit [CompleteSpace E] in
+/-- The Fourier coefficients of a function on the torus only depend on its almost-everywhere
+class for the product of the Haar probability measures on the circle factors. -/
+theorem mFourierCoeff_congr_ae {f g : UnitAddTorus d → E} (h : f =ᵐ[volume] g) :
+    mFourierCoeff f = mFourierCoeff g :=
+  funext fun _ ↦ integral_congr_ae <| .smul (.refl _ _) h
+
+/-- The `n`-th Fourier coefficient on `Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`, as a continuous linear functional. -/
+noncomputable def mFourierCoeffCLM (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : d → ℤ) :
+    Lp ℂ p (volume : Measure (UnitAddTorus d)) →L[ℂ] ℂ :=
+  LinearMap.mkContinuous
+    { toFun f := mFourierCoeff f n
+      map_add' f g := by
+        -- `mFourierCoeff_add` asks for integrability for the volume of the torus, which is the
+        -- product of the Haar measures used here.
+        rw [mFourierCoeff_congr_ae (Lp.coeFn_add f g), mFourierCoeff_add
+          (by rw [volume_eq_pi_haarAddCircle]; exact (Lp.memLp f).integrable Fact.out)
+          (by rw [volume_eq_pi_haarAddCircle]; exact (Lp.memLp g).integrable Fact.out)]
+      map_smul' c f := by
+        rw [mFourierCoeff_congr_ae (Lp.coeFn_smul c f), mFourierCoeff_smul, RingHom.id_apply,
+          smul_eq_mul] }
+    1 fun f ↦ by simpa using norm_mFourierCoeff_le_norm f n
+
+@[simp]
+theorem mFourierCoeffCLM_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (f : Lp ℂ p (volume : Measure (UnitAddTorus d))) (n : d → ℤ) :
+    mFourierCoeffCLM p n f = mFourierCoeff f n := (rfl)
+
+end Lp
 
 end TauCeti.UnitAddTorus

@@ -40,6 +40,7 @@ multiplicative, and it agrees with Mathlib's `ArithmeticFunction.sigma k` at nat
   `σ_ν(p ^ a) = ∑_{j ≤ a} (p ^ ν) ^ j`.
 * `TauCeti.ArithmeticFunction.sigmaC_eq_cpow_pmul_sigmaC_neg`: the reflection
   `σ_ν(n) = n ^ ν σ_{-ν}(n)`.
+* `TauCeti.ArithmeticFunction.norm_sigmaC_le`: `‖σ_ν(n)‖ ≤ τ(n) n ^ max(Re ν, 0)`.
 
 ## References
 
@@ -47,9 +48,12 @@ multiplicative, and it agrees with Mathlib's `ArithmeticFunction.sigma k` at nat
   [Prime Number Theorem and More][PNTComplexDivisors], `IwaniecKowalskiCh1.lean`,
   `ArithmeticFunction.sigmaR` and `ArithmeticFunction.sigmaR_apply`, for the complex divisor sum,
   and `ArithmeticFunction.powR`, `ArithmeticFunction.sigmaR_eq_zeta_mul_powR` and
-  `ArithmeticFunction.isMultiplicative_sigmaR`, for its convolution structure.
+  `ArithmeticFunction.isMultiplicative_sigmaR`, for its convolution structure; and, at
+  [revision 301f8be][PNTComplexDivisorsBound], `ArithmeticFunction.ramanujan_norm_sigmaR_le`, for
+  the norm bound.
 
 [PNTComplexDivisors]: https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/a90b1493fe9af9011c800856033c1ba7ac5fcc84/PrimeNumberTheoremAnd/IwaniecKowalskiCh1.lean
+[PNTComplexDivisorsBound]: https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/301f8be/PrimeNumberTheoremAnd/IwaniecKowalskiCh1.lean
 -/
 
 public section
@@ -185,5 +189,19 @@ theorem sigmaC_eq_cpow_pmul_sigmaC_neg (ν : ℂ) : sigmaC ν = (cpow ν).pmul (
   · simp
   rw [pmul_apply, cpow_apply ν hn]
   simpa [sigmaC_apply] using Nat.sum_divisors_cpow_neg n (-ν)
+
+/-- `‖σ_ν(n)‖ ≤ τ(n) n ^ max(Re ν, 0)`: each of the `τ(n)` divisors `d ≤ n` contributes
+`d ^ Re ν ≤ n ^ max(Re ν, 0)`. -/
+theorem norm_sigmaC_le (ν : ℂ) (n : ℕ) :
+    ‖sigmaC ν n‖ ≤ n.divisors.card * (n : ℝ) ^ max ν.re 0 := by
+  rw [sigmaC_apply, ← nsmul_eq_mul, ← Finset.sum_const]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun d hd ↦ ?_)
+  have hd0 := Nat.pos_of_mem_divisors hd
+  have hdn : (d : ℝ) ≤ n := by
+    exact_mod_cast Nat.divisor_le hd
+  rw [Complex.norm_natCast_cpow_of_pos hd0]
+  calc (d : ℝ) ^ ν.re ≤ (d : ℝ) ^ max ν.re 0 :=
+        Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hd0) (le_max_left _ _)
+    _ ≤ (n : ℝ) ^ max ν.re 0 := by gcongr
 
 end TauCeti.ArithmeticFunction

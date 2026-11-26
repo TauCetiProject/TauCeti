@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
+public import TauCeti.KnotTheory.Grid.Homology.Alexander
 public import TauCeti.KnotTheory.Grid.Homology.Unblocked
+public import TauCeti.Algebra.Module.GradedModule.Coarsen
 public import TauCeti.Algebra.Module.GradedModule.Homology
 
 /-!
@@ -27,6 +29,10 @@ These pieces are modules over the ground ring, not over the polynomial coefficie
 As for the chain bigrading, an odd number of link components ensures integral Alexander degrees.
 The decomposition allows degree-preserving homology comparisons to be restricted to each
 bidegree without choosing cycle representatives.
+
+Forgetting the `O`-Maslov degree recovers the Alexander grading of `GH⁻`: it is the coarsening of
+the bigrading along the Alexander degree (`coarsen_bigradedUnblockedHomologyGrading_snd`), so a
+comparison preserving the bigrading also preserves the Alexander grading.
 
 ## References
 
@@ -205,5 +211,37 @@ theorem unblockedHomologyEquiv_mem_bigradedPiece_iff
     obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
     rw [hf]
     exact G'.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R ((hg g _).mpr hz)
+
+/-! ### The Alexander grading as a coarsening -/
+
+/-- A class of bidegree `(m, a)` has Alexander degree `a`. -/
+theorem bigradedUnblockedHomologyPiece_le_alexanderUnblockedHomologyGrading_piece (m a : ℤ) :
+    G.bigradedUnblockedHomologyPiece R (m, a) ≤
+      (G.alexanderUnblockedHomologyGrading R).piece a := by
+  intro y hy
+  obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
+  rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
+    GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass,
+    mem_alexanderHomologyGrading_piece_iff]
+  exact ⟨z, G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R m a hz, rfl⟩
+
+/-- The Alexander grading of `GH⁻` is the coarsening of its `(O-Maslov, Alexander)` bigrading
+along the Alexander degree: the classes of Alexander degree `a` are the sums of classes of
+bidegrees `(m, a)`. -/
+theorem coarsen_bigradedUnblockedHomologyGrading_snd :
+    (G.bigradedUnblockedHomologyGrading R).coarsen Prod.snd =
+      G.alexanderUnblockedHomologyGrading R := by
+  have hle : ((G.bigradedUnblockedHomologyGrading R).coarsen Prod.snd).piece ≤
+      (G.alexanderUnblockedHomologyGrading R).piece := fun a ↦ by
+    rw [InternalGrading.coarsen_piece, coarsenGrading_le_iff]
+    rintro ⟨m, a⟩ rfl
+    rw [bigradedUnblockedHomologyGrading_piece]
+    exact G.bigradedUnblockedHomologyPiece_le_alexanderUnblockedHomologyGrading_piece R m a
+  -- Both gradings are internal, so a piecewise inclusion of the coarsening is an equality.
+  have heq := ((G.alexanderUnblockedHomologyGrading R).isInternal.submodule_iSupIndep
+    |>.le_iff_eq_of_iSup_eq_top
+      ((G.bigradedUnblockedHomologyGrading R).coarsen Prod.snd).isInternal.submodule_iSup_eq_top).mp
+    hle
+  exact InternalGrading.ext (congrFun heq)
 
 end TauCeti.OddComponentGridDiagram

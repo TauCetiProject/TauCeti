@@ -35,6 +35,8 @@ case of the measure `n ω_n r ^ (n - 1)` of spheres.
   `μHE[1] (sphere c |R|)`.
 * `TauCeti.eVariationOn_circleMap_Icc_zero_four_pi`: the double traversal has length
   `2 * μHE[1] (sphere c |R|)`.
+* `TauCeti.smul_map_volume_restrict_circleMap`: `|R|` times the image of Lebesgue measure on
+  `[0, 2π]` under `circleMap c R` is `μHE[1]` restricted to `sphere c |R|`.
 -/
 
 public section
@@ -151,5 +153,25 @@ theorem eVariationOn_circleMap_Icc_zero_four_pi (c : ℂ) (R : ℝ) :
         eq_empty_of_forall_notMem fun t ht ↦ hys (ht.2 ▸ circleMap_mem_sphere' c R t)
       simp [hempty]
   rw [lintegral_congr_ae hmult, lintegral_indicator_const isClosed_sphere.measurableSet]
+
+/-- **Arc length on a circle.** The parametrization `circleMap c R` has speed `|R|`, so `|R|`
+times the image of Lebesgue measure on `[0, 2π]` under it is the one-dimensional Hausdorff
+measure on the circle `sphere c |R|`. For `R = 0` both sides vanish. -/
+theorem smul_map_volume_restrict_circleMap (c : ℂ) (R : ℝ) :
+    ENNReal.ofReal |R| • (volume.restrict (Icc 0 (2 * π))).map (circleMap c R) =
+      μHE[1].restrict (sphere c |R|) := by
+  rcases eq_or_ne R 0 with rfl | hR
+  · rw [abs_zero, ENNReal.ofReal_zero, zero_smul, eq_comm, Measure.restrict_eq_zero]
+    simpa using hausdorffMeasure_sphere_zero c
+  have himage : circleMap c R '' Icc 0 (2 * π) = sphere c |R| :=
+    Subset.antisymm ((image_subset_range _ _).trans_eq (range_circleMap c R))
+      ((image_circleMap_Ioc c R).symm.subset.trans (image_mono Ioc_subset_Icc_self))
+  have h := LipschitzOnWith.map_withDensity_enorm_deriv_eq_euclideanHausdorffMeasure_restrict
+    ((lipschitzWith_circleMap c R).lipschitzOnWith (s := Icc 0 (2 * π)))
+    ((injOn_circleMap_of_abs_sub_le' hR (by simp)).mono Ioo_subset_Ico_self)
+  have hd : (fun t ↦ ‖deriv (circleMap c R) t‖ₑ) = fun _ ↦ ENNReal.ofReal |R| :=
+    funext fun t ↦ by simp [deriv_circleMap, ← ofReal_norm]
+  rwa [hd, withDensity_const, Measure.map_smul, himage] at h
+  exact (continuous_circleMap c R).aemeasurable
 
 end TauCeti
