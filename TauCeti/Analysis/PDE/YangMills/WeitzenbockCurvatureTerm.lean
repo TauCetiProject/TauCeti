@@ -48,6 +48,7 @@ In the orthonormal basis `(e⁰ ∧ e¹ + e² ∧ e³) / √2`, `(e⁰ ∧ e² -
 ## Main results
 
 * `TauCeti.weitzenbockCurvatureTerm_apply_ιMulti`: `𝔉_F(ω)` in an orthonormal basis.
+* `TauCeti.weitzenbockCurvatureTerm_comm`: the curvature term is symmetric, `𝔉_F(ω) = 𝔉_ω(F)`.
 * `TauCeti.weitzenbockCurvatureTerm_eq_zero_of_vectorFormHodgeStar_eq_neg`: `𝔉_F(ω) = 0` for
   anti-self-dual `F` and self-dual `ω`, and
   `TauCeti.weitzenbockCurvatureTerm_vectorFormSelfDualPart`: `𝔉_{F⁺}(ω) = 𝔉_F(ω)` for self-dual
@@ -141,9 +142,21 @@ theorem weitzenbockCurvatureTerm_apply_ιMulti {ι : Type*} [Fintype ι]
         ⁅F (ιMulti ℝ 2 ![v, e l]), ω (ιMulti ℝ 2 ![e l, u])⁆) := by
   simp [weitzenbockCurvatureTerm, alternatingMapLinearEquiv_apply_ιMulti, bracketTrace_apply e]
 
+/-- **The curvature term is symmetric**: `𝔉_F(ω) = 𝔉_ω(F)`. -/
+theorem weitzenbockCurvatureTerm_comm (F ω : ⋀[ℝ]^2 E →ₗ[ℝ] V) :
+    weitzenbockCurvatureTerm F ω = weitzenbockCurvatureTerm ω F :=
+  linearMap_ext_ιMulti_two fun u v ↦ by
+    simp only [weitzenbockCurvatureTerm_apply_ιMulti (stdOrthonormalBasis ℝ E)]
+    refine Finset.sum_congr rfl fun l _ ↦ ?_
+    rw [ιMulti_two_swap v, ιMulti_two_swap u]
+    simp only [map_neg, lie_neg]
+    rw [← lie_skew (ω _), ← lie_skew (ω _)]
+    abel
+
 /-- For an abelian Lie algebra of values the curvature term vanishes. -/
 @[simp]
-theorem weitzenbockCurvatureTerm_of_isLieAbelian [IsLieAbelian V] (F ω : ⋀[ℝ]^2 E →ₗ[ℝ] V) :
+theorem weitzenbockCurvatureTerm_eq_zero_of_isLieAbelian [IsLieAbelian V]
+    (F ω : ⋀[ℝ]^2 E →ₗ[ℝ] V) :
     weitzenbockCurvatureTerm F ω = 0 :=
   linearMap_ext_ιMulti_two fun u v ↦ by
     simp [weitzenbockCurvatureTerm_apply_ιMulti (stdOrthonormalBasis ℝ E), trivial_lie_zero]
