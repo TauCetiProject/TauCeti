@@ -27,13 +27,14 @@ The chart is a smooth partial diffeomorphism `φ` from `M` onto an open subset o
 finite-dimensional inner product space `V` with a constant symplectic form `ω₀`, pulling `ω₀` back
 to `ω` at the points of a compact set `B ⊆ φ.source` which contains the end of `u`; a Darboux
 chart (`TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart`) has this property on its whole
-source. The Hamiltonian of the end is read in the chart through a Hamiltonian `H'_q` on `V`, with
-`H_q(t) = H'_q(t) ∘ φ` near every point of `B`, and the cylindrical structure
+source. The Hamiltonian of the end is read in the chart through a Hamiltonian `F_q` on `V` (the
+argument `H' q` of the theorems below), with `H_q(t) = F_q(t) ∘ φ` near every point of `B`, and
+the cylindrical structure
 `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))` through structures `J'_q(t)` on `V` with
-`dφ ∘ J_q(t) = J'_q(t) ∘ dφ`. If every `1`-periodic orbit of `H'_q` in `φ(B)` is nondegenerate,
+`dφ ∘ J_q(t) = J'_q(t) ∘ dφ`. If every `1`-periodic orbit of `F_q` in `φ(B)` is nondegenerate,
 then the end converges to the stationary cylinder of such an orbit `y`:
 
-`‖φ(u(φ_q(±s, t))) - y(t)‖ + ‖d(φ ∘ u ∘ φ_q)(±s, t) - dt ⊗ X_{H'_q(t)}(y(t))‖ ≤ C exp (-κ s)`
+`‖φ(u(φ_q(±s, t))) - y(t)‖ + ‖d(φ ∘ u ∘ φ_q)(±s, t) - dt ⊗ X_{F_q(t)}(y(t))‖ ≤ C exp (-κ s)`
 
 for all large `s` and all `t`, as soon as the end lies in an open set on which `u` solves the Floer
 equation
@@ -50,8 +51,8 @@ to a Floer cylinder.
 half-cylinder for the end Hamiltonian `H'_q(t, x) = ±H_q(±t, x)`
 (`TauCeti.Floer.positiveEndHamiltonian`) with the cylindrical structure `J_q(±t)`
 (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_of_cylindrical`),
-read in the chart by `J'_q(±t)` and the end Hamiltonian of `H'_q`. A `1`-periodic orbit `x` of
-the latter gives the orbit `t ↦ x(±t)` of `H'_q`, so it is isolated
+read in the chart by `J'_q(±t)` and the end Hamiltonian of `F_q`. A `1`-periodic orbit `x` of
+the latter gives the orbit `t ↦ x(±t)` of `F_q`, so it is isolated
 (`SymplecticForm.exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian`) and its
 return map fixes no nonzero vector
 (`SymplecticForm.eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self`). The `C¹`
@@ -86,9 +87,9 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω₀ : SymplecticForm V} {H' : Puncture → ℝ → V → ℝ}
 
-/-- If every `1`-periodic orbit of `H'_q` in `S` starts at a nondegenerate fixed point of the
+/-- If every `1`-periodic orbit of `F_q` in `S` starts at a nondegenerate fixed point of the
 time-one map, then so does every `1`-periodic orbit `x` of the positive end Hamiltonian
-`±H'_q(±t)` in `S`: `t ↦ x(±t)` is an orbit of `H'_q` in `S` starting at `x(0)`. -/
+`±F_q(±t)` in `S`: `t ↦ x(±t)` is an orbit of `F_q` in `S` starting at `x(0)`. -/
 private theorem isNondegenerateFixedPt_of_positiveEndHamiltonian {q : Puncture} {S : Set V}
     {L : ℝ≥0} {hL : LipschitzWith L (ω₀.timeDependentHamiltonianSuspension (H' q))}
     (hnd : ∀ x : ℝ → V, Periodic x 1 →
@@ -108,14 +109,14 @@ energy, where `U` contains the part `±s > a` of the end `q` for some `a ≥ T�
 `a` the end lies in a compact set `B` and the structure is cylindrical,
 `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))` with `J_q(t, y)` tamed by `ω` on `B`. Let `φ` be a smooth
 partial diffeomorphism from `M` to `V` with `B ⊆ φ.source`, pulling `ω₀` back to `ω` on `B`, which
-reads `H_q` as a `1`-periodic `C³` Hamiltonian `H'_q` on `V` (`H_q(t) = H'_q(t) ∘ φ` near `B`) and
+reads `H_q` as a `1`-periodic `C³` Hamiltonian `F_q` on `V` (`H_q(t) = F_q(t) ∘ φ` near `B`) and
 `J_q` as a `1`-periodic family `J'_q` on `V`, `C²` on an open set `W ⊇ ℝ × φ(B)`. If the suspended
-Hamiltonian vector field of `H'_q` is globally Lipschitz and every `1`-periodic orbit of `H'_q` in
+Hamiltonian vector field of `F_q` is globally Lipschitz and every `1`-periodic orbit of `F_q` in
 `φ(B)` starts at a nondegenerate fixed point of the time-one map, then, read in the chart, the end
 converges exponentially fast in `C¹` to the stationary cylinder of a `1`-periodic orbit `y` of
-`H'_q`: for some `κ > 0` and `C`, eventually
+`F_q`: for some `κ > 0` and `C`, eventually
 
-`‖φ(u(φ_q(±s, t))) - y(t)‖ + ‖d(φ ∘ u ∘ φ_q)(±s, t) - dt ⊗ X_{H'_q(t)}(y(t))‖ ≤ C exp (-κ s)`
+`‖φ(u(φ_q(±s, t))) - y(t)‖ + ‖d(φ ∘ u ∘ φ_q)(±s, t) - dt ⊗ X_{F_q(t)}(y(t))‖ ≤ C exp (-κ s)`
 
 for every `t`.
 
@@ -218,13 +219,13 @@ and let `u` be `C³` on `S`, solving the Floer equation `(du - X_K)^{0,1} = 0` o
 energy. Suppose that on each end `q`, beyond some `a ≥ T₀`, the end lies in a compact set `B_q`
 and the structure is cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))` with `J_q(t, y)` tamed by
 `ω` on `B_q`, and that `B_q` lies in the source of a symplectic chart `ψ_q` reading `H_q` as a
-`1`-periodic `C³` Hamiltonian `H'_q` and `J_q` as a `1`-periodic family `J'_q`, `C²` on an open set
-`W_q ⊇ ℝ × ψ_q(B_q)`. If the suspended Hamiltonian vector field of each `H'_q` is globally Lipschitz
-and every `1`-periodic orbit of `H'_q` in `ψ_q(B_q)` starts at a nondegenerate fixed point of the
-time-one map, then there are `1`-periodic orbits `y_q` of the `H'_q`, a rate `κ > 0` and a
+`1`-periodic `C³` Hamiltonian `F_q` and `J_q` as a `1`-periodic family `J'_q`, `C²` on an open set
+`W_q ⊇ ℝ × ψ_q(B_q)`. If the suspended Hamiltonian vector field of each `F_q` is globally Lipschitz
+and every `1`-periodic orbit of `F_q` in `ψ_q(B_q)` starts at a nondegenerate fixed point of the
+time-one map, then there are `1`-periodic orbits `y_q` of the `F_q`, a rate `κ > 0` and a
 constant `C` such that for all large `s`, every end `q` and every `t`,
 
-`‖ψ_q(u(φ_q(±s, t))) - y_q(t)‖ + ‖d(ψ_q ∘ u ∘ φ_q)(±s, t) - dt ⊗ X_{H'_q(t)}(y_q(t))‖`
+`‖ψ_q(u(φ_q(±s, t))) - y_q(t)‖ + ‖d(ψ_q ∘ u ∘ φ_q)(±s, t) - dt ⊗ X_{F_q(t)}(y_q(t))‖`
 
 is at most `C exp (-κ s)`, where `ψ_q` is the symplectic chart and `φ_q` the end chart. -/
 theorem exists_pos_forall_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_cylindrical
