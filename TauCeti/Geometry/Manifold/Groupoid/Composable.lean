@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.FiberProduct.Associativity
 public import TauCeti.Geometry.Manifold.Groupoid.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
-import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 /-!
 # Unit degeneracies, composable-pair inversion, and composable triples of a Lie groupoid
