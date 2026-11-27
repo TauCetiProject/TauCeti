@@ -45,6 +45,16 @@ theorem radius_def (p : PolarPoint) : radius p = p.val.1 := (rfl)
 
 theorem angle_def (p : PolarPoint) : angle p = p.val.2 := (rfl)
 
+/-- The radius is continuous on the polar cover. -/
+@[fun_prop, continuity] theorem continuous_radius : Continuous radius := by
+  rw [funext radius_def]
+  exact continuous_fst.comp continuous_subtypeVal
+
+/-- The unrestricted angle is continuous on the polar cover. -/
+@[fun_prop, continuity] theorem continuous_angle : Continuous angle := by
+  rw [funext angle_def]
+  exact continuous_snd.comp continuous_subtypeVal
+
 @[simp, grind =] theorem radius_mk (r θ : ℝ) (hr : 0 < r) :
     radius ⟨(r, θ), hr⟩ = r := (rfl)
 
@@ -152,6 +162,19 @@ theorem projection_def (p : PolarPoint) :
 @[simp] theorem projection_ne_zero (p : PolarPoint) : projection p ≠ 0 := by
   have h : 0 < ‖projection p‖ := by rw [norm_projection]; exact radius_pos p
   exact norm_pos_iff.mp h
+
+/-- The image of a radial domain consists of points with the prescribed radii, excluding zero. -/
+theorem image_projection_radius_preimage (s : Set ℝ) :
+    projection '' (radius ⁻¹' s) = {z : ℂ | ‖z‖ ∈ s ∧ z ≠ 0} := by
+  ext z
+  constructor
+  · rintro ⟨p, hp, rfl⟩
+    exact ⟨by simpa using hp, projection_ne_zero p⟩
+  · rintro ⟨hs, hz⟩
+    refine ⟨⟨(‖z‖, z.arg), norm_pos_iff.mpr hz⟩, ?_, ?_⟩
+    · simpa only [Set.mem_preimage, radius_mk] using hs
+    · simpa only [projection_def, radius_mk, angle_mk, Circle.coe_exp] using
+        Complex.norm_mul_exp_arg_mul_I z
 
 /-- Two polar points have the same planar projection exactly when one is an integral deck
 translate of the other. -/

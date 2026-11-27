@@ -16,6 +16,8 @@ constant-height non-injectivity theorem on the full polar cover in the basic API
 
 For the open angular sector `0 < θ < 3π`, the one-turn deck overlap is precisely `0 < θ < π`.
 This illustrates how a domain limits the sheet comparisons available for a multi-valued graph.
+The radial domain `ρ > 1` projects to the exterior of the closed unit disk, the planar domain
+of the upper half-catenoid.
 
 ## References
 
@@ -62,5 +64,12 @@ theorem graph_linearHeight_injective_iff {c : ℝ} :
   rw [overlap_sector_of_nonneg (by norm_num : (0 : ℤ) ≤ 1)]
   have h : 3 * Real.pi - (1 : ℤ) * (2 * Real.pi) = Real.pi := by norm_num; ring
   rw [h, mem_sector_iff]
+
+/-- The polar domain of the upper half-catenoid projects to the exterior of the closed unit disk. -/
+theorem image_projection_radius_preimage_Ioi_one :
+    projection '' (radius ⁻¹' Set.Ioi 1) = {z : ℂ | 1 < ‖z‖} := by
+  rw [image_projection_radius_preimage]
+  ext z
+  exact ⟨And.left, fun h ↦ ⟨h, norm_pos_iff.mp (lt_trans zero_lt_one h)⟩⟩
 
 end TauCeti.PolarGraph
