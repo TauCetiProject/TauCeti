@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Basic.Sign.Defs
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Topology.Algebra.Module.Equiv.Pi
@@ -13,6 +15,7 @@ public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.LinearAlgebra.Matrix.Charpoly.DetSign
 import TauCeti.LinearAlgebra.Pi
 
 /-!
@@ -46,6 +49,12 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 * `ContinuousLinearMap.det_one_sub_comp_comm`: Sylvester's identity
   `det (1 - X ∘L Y) = det (1 - Y ∘L X)` for continuous linear maps between free modules of finite
   rank, read from `LinearMap.det_one_sub_comp_comm`.
+* `ContinuousLinearEquiv.det_coe_ne_zero`: a continuous linear automorphism has nonzero
+  determinant.
+* `ContinuousLinearMap.sign_det_one_sub_prodMap_of_not_hasEigenvalue`,
+  `ContinuousLinearMap.det_one_sub_prodMap_ne_zero_of_not_hasEigenvalue`: for `S` with no real
+  eigenvalue in `[0, 1]` and `N` with no real eigenvalue `μ ≥ 1`,
+  `sgn det (1 - S × N) = (-1) ^ (dim V) * sgn det S`, and this determinant is nonzero.
 * `ContinuousLinearEquiv.det_piCongrRight`, `ContinuousLinearEquiv.det_negCoord`: the determinants
   of a coordinatewise continuous linear equivalence and of a single-coordinate negation.
 * `ContinuousLinearMap.exists_le_norm_det_id_sub_smul`: over `ℝ` or `ℂ`, the second-order lower
@@ -113,6 +122,38 @@ theorem det_one_sub_comp_comm [IsTopologicalAddGroup M] [Module.Free R M] [Modul
     toLinearMap_one, toLinearMap_one]
   exact LinearMap.det_one_sub_comp_comm (X : N →ₗ[R] M) Y
 
+section RealEigenvalue
+
+open Set
+
+variable {V W : Type*} [TopologicalSpace V] [AddCommGroup V] [IsTopologicalAddGroup V]
+  [Module ℝ V] [FiniteDimensional ℝ V] [TopologicalSpace W] [AddCommGroup W]
+  [IsTopologicalAddGroup W] [Module ℝ W] [FiniteDimensional ℝ W]
+  {S : V →L[ℝ] V} {N : W →L[ℝ] W}
+
+/-- **The sign of `det (1 - A)` at an expanding-contracting splitting**, for continuous linear
+maps: if `S` has no real eigenvalue in `[0, 1]` and `N` no real eigenvalue `μ ≥ 1`, then
+`sign det (1 - S × N) = (-1)^(dim V) sign det S`. This is
+`LinearMap.sign_det_one_sub_prodMap_of_not_hasEigenvalue` for the underlying linear maps. -/
+theorem sign_det_one_sub_prodMap_of_not_hasEigenvalue
+    (hS : ∀ μ ∈ Icc (0 : ℝ) 1, ¬ Module.End.HasEigenvalue (S : Module.End ℝ V) μ)
+    (hN : ∀ μ : ℝ, 1 ≤ μ → ¬ Module.End.HasEigenvalue (N : Module.End ℝ W) μ) :
+    SignType.sign (1 - S.prodMap N).det = (-1) ^ Module.finrank ℝ V * SignType.sign S.det := by
+  rw [det, det, toLinearMap_sub, toLinearMap_one, coe_prodMap]
+  exact LinearMap.sign_det_one_sub_prodMap_of_not_hasEigenvalue hS hN
+
+/-- Under the hypotheses of `ContinuousLinearMap.sign_det_one_sub_prodMap_of_not_hasEigenvalue`,
+`1 - S × N` is invertible. This is `LinearMap.det_one_sub_prodMap_ne_zero_of_not_hasEigenvalue`
+for the underlying linear maps. -/
+theorem det_one_sub_prodMap_ne_zero_of_not_hasEigenvalue
+    (hS : ∀ μ ∈ Icc (0 : ℝ) 1, ¬ Module.End.HasEigenvalue (S : Module.End ℝ V) μ)
+    (hN : ∀ μ : ℝ, 1 ≤ μ → ¬ Module.End.HasEigenvalue (N : Module.End ℝ W) μ) :
+    (1 - S.prodMap N).det ≠ 0 := by
+  rw [det, toLinearMap_sub, toLinearMap_one, coe_prodMap]
+  exact LinearMap.det_one_sub_prodMap_ne_zero_of_not_hasEigenvalue hS hN
+
+end RealEigenvalue
+
 section RCLike
 
 open RCLike Set
@@ -162,6 +203,12 @@ end RCLike
 end ContinuousLinearMap
 
 namespace ContinuousLinearEquiv
+
+/-- A continuous linear automorphism has nonzero determinant. -/
+theorem det_coe_ne_zero {R M : Type*} [CommRing R] [Nontrivial R] [TopologicalSpace M]
+    [AddCommGroup M] [Module R M] (A : M ≃L[R] M) : (A : M →L[R] M).det ≠ 0 := by
+  rw [ContinuousLinearMap.det, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+  exact A.toLinearEquiv.isUnit_det'.ne_zero
 
 section Relative
 

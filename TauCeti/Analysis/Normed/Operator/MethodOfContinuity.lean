@@ -35,6 +35,8 @@ solvability at the end point.
 
 ## Main declarations
 
+* `IsCompact.exists_forall_norm_le_mul_norm_apply`: on a compact parameter set, a priori estimates
+  for each member of the family give one that is uniform in the parameter.
 * `IsPreconnected.surjective_iff_of_forall_norm_le`: the method of continuity for a family on a
   preconnected parameter set.
 * `IsPreconnected.isInvertible_of_forall_norm_le` and
@@ -56,6 +58,45 @@ open Function Set Filter Topology
 variable {𝕜 E F X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace X]
   {S : Set X} {L : X → E →L[𝕜] F} {C : ℝ} {s t : X}
+
+namespace IsCompact
+
+omit [CompleteSpace E] in
+/-- **A priori estimates are uniform on a compact parameter set.** Let `L` be a family of continuous
+linear maps `E →L[𝕜] F`, continuous in operator norm on a compact set `S`, each of which satisfies
+an a priori estimate `‖x‖ ≤ C t * ‖L t x‖`. Then one constant `C` serves for every `t ∈ S`. Near
+each `t` the perturbation `L s - L t` is small compared with `1 / C t`, so `L s` satisfies the
+estimate with constant `2 C t`, and finitely many such neighbourhoods cover `S`. -/
+theorem exists_forall_norm_le_mul_norm_apply (hS : IsCompact S) (hL : ContinuousOn L S)
+    (hC : ∀ t ∈ S, ∃ C : ℝ, ∀ x, ‖x‖ ≤ C * ‖L t x‖) :
+    ∃ C : ℝ, ∀ t ∈ S, ∀ x, ‖x‖ ≤ C * ‖L t x‖ := by
+  refine hS.induction_on (p := fun s ↦ ∃ C : ℝ, ∀ t ∈ s, ∀ x, ‖x‖ ≤ C * ‖L t x‖)
+    ⟨0, fun _ h ↦ h.elim⟩ (fun s t hst ⟨C, hC⟩ ↦ ⟨C, fun r hr ↦ hC r (hst hr)⟩)
+    (fun s t ⟨C₁, h₁⟩ ⟨C₂, h₂⟩ ↦ ⟨max C₁ C₂, fun r hr x ↦ hr.elim
+      (fun hr ↦ (h₁ r hr x).trans (by gcongr; exact le_max_left _ _))
+      (fun hr ↦ (h₂ r hr x).trans (by gcongr; exact le_max_right _ _))⟩) fun t ht ↦ ?_
+  obtain ⟨C, hCt⟩ := hC t ht
+  set D := max C 0
+  have hD0 : 0 ≤ D := le_max_right _ _
+  have hlim : Tendsto (fun s ↦ ‖L s - L t‖) (𝓝[S] t) (𝓝 0) := by
+    simpa using tendsto_iff_norm_sub_tendsto_zero.1 (hL t ht).tendsto
+  refine ⟨_, hlim.eventually (gt_mem_nhds (inv_pos.2 (by positivity : (0 : ℝ) < 2 * (D + 1)))),
+    2 * D, fun s hs x ↦ ?_⟩
+  -- `‖x‖ ≤ D ‖L t x‖ ≤ D ‖L s x‖ + D ‖L s - L t‖ ‖x‖ ≤ D ‖L s x‖ + ‖x‖ / 2`.
+  have h₁ : ‖x‖ ≤ D * ‖L t x‖ :=
+    (hCt x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
+  have h₂ : ‖L t x‖ ≤ ‖L s x‖ + ‖L s - L t‖ * ‖x‖ :=
+    calc ‖L t x‖ = ‖L s x - (L s - L t) x‖ := by simp
+      _ ≤ ‖L s x‖ + ‖(L s - L t) x‖ := norm_sub_le _ _
+      _ ≤ ‖L s x‖ + ‖L s - L t‖ * ‖x‖ := by gcongr; exact (L s - L t).le_opNorm x
+  have h₃ : D * (‖L s - L t‖ * ‖x‖) ≤ ‖x‖ / 2 := by
+    have hs' : ‖L s - L t‖ * (2 * (D + 1)) ≤ 1 := by
+      have h := mul_le_mul_of_nonneg_right hs.le (by positivity : (0 : ℝ) ≤ 2 * (D + 1))
+      rwa [inv_mul_cancel₀ (by positivity)] at h
+    nlinarith [norm_nonneg x, norm_nonneg (L s - L t)]
+  nlinarith [mul_le_mul_of_nonneg_left h₂ hD0]
+
+end IsCompact
 
 namespace IsPreconnected
 

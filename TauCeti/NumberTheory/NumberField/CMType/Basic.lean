@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
+public import TauCeti.Algebra.Star.Basic
+public import TauCeti.NumberTheory.NumberField.ComplexConjugation.CMField
 import Mathlib.Data.Sym.Sym2
+import TauCeti.Algebra.Algebra.Pi
 
 /-!
 # CM types
@@ -22,31 +25,56 @@ Imposing the partition condition on an arbitrary commutative ring keeps the defi
 the structure of `E`. It already forces every embedding to differ from its conjugate
 (`TauCeti.CMType.ringHom_star_ne_self`), and CM types exist exactly when no embedding is real
 (`TauCeti.CMType.nonempty_iff`), so a number field carries a CM type exactly when it is totally
-complex.
+complex. In particular `ℚ` has no CM type.
 
 ## Main definitions
 
 * `TauCeti.CMType E`: the CM types on `E`, a `SetLike` family of sets of embeddings `E →+* ℂ`.
 * `star Φ`: the complementary CM type `ιΦ = {conj ∘ φ : φ ∈ Φ}`, whose embeddings are those not in
   `Φ`; this makes `CMType E` an `InvolutiveStar`.
+* `TauCeti.CMType.ofPair φ`: the CM type `{φ}` when the embeddings are exactly `φ` and its
+  distinct conjugate, as for an imaginary quadratic field.
 * `TauCeti.CMType.induced Φ₀ f`: the CM type induced along `f : E₀ →+* E` by a CM type `Φ₀` on
   `E₀`, consisting of the embeddings `φ` with `φ ∘ f ∈ Φ₀`.
+* `TauCeti.CMType.StarCompCommute E`: every ring endomorphism of `ℂ` commutes with complex
+  conjugation on the embeddings of `E`, as on a CM field.
+* The action `σΦ = {σ ∘ φ : φ ∈ Φ}` of `Aut(ℂ)` on the CM types of such an `E`.
 
 ## Main results
 
 * `TauCeti.CMType.star_mem_iff`: `star φ ∈ Φ ↔ φ ∉ Φ`.
+* `TauCeti.CMType.coe_ne_univ`, `TauCeti.CMType.coe_ne_empty`: when `E` has an embedding, a CM
+  type is neither the full set of embeddings nor empty.
 * `TauCeti.CMType.coe_star_eq_image`: `ιΦ` is the image of `Φ` under conjugation.
-* `TauCeti.CMType.card_ringHom_eq_two_mul`: `#Hom(E, ℂ) = 2 * #Φ`, and
+* `TauCeti.CMType.card_ringHom_eq_two_mul`: `#Hom(E, ℂ) = 2 * #Φ`, so all CM types on `E` have
+  the same size (`TauCeti.CMType.card_eq_card`), and
   `TauCeti.CMType.two_mul_card_eq_finrank`: `2 * #Φ = [E : ℚ]` for a number field `E`.
+* `TauCeti.CMType.equivSet`, `TauCeti.CMType.card_eq_two_pow`: relative to a reference type
+  `Φ₀`, CM types correspond to subsets of `Φ₀`, so there are `2 ^ #Φ₀` of them.
+* `TauCeti.CMType.two_mul_ncard_mem`, `TauCeti.CMType.four_mul_ncard_mem_and_mem`: half of the CM
+  types contain a given embedding, and a quarter contain two embeddings from different conjugate
+  pairs.
 * `TauCeti.CMType.nonempty_iff`: `E` has a CM type iff no embedding `E →+* ℂ` is real, and
   `TauCeti.CMType.nonempty_iff_isTotallyComplex`: a field has a CM type iff it is totally
   complex. In particular every CM field has a CM type.
 * `TauCeti.CMType.induced_induced`, `TauCeti.CMType.star_induced`: inducing is transitive and
   commutes with conjugation.
+* `TauCeti.CMType.induced_algebraMap_injective`: inducing along an algebraic extension of fields
+  is injective, since every complex embedding extends (`NumberField.ComplexEmbedding.lift`).
+* `TauCeti.CMType.exists_induced_algebraMap_eq_iff`: the fibre criterion, a CM type on `E` is
+  induced from the subextension `F` exactly when membership depends only on the restriction
+  to `F`.
+* `TauCeti.CMType.instStarCompCommutePi`: a finite product of rings with `StarCompCommute`, such
+  as a finite product of CM fields, has it.
+* `TauCeti.CMType.coe_smul`: `σΦ` is the image of `Φ` under `φ ↦ σ ∘ φ`, so an automorphism
+  fixing every embedding acts trivially (`TauCeti.CMType.smul_eq_self_of_forall_comp_eq`), and
+  `TauCeti.CMType.star_smul`: `ι(σΦ) = σ(ιΦ)`; complex conjugation acts as `Φ ↦ ιΦ`
+  (`TauCeti.CMType.starRingAut_smul`).
 
 ## References
 
-* J. S. Milne, *Complex Multiplication*, §1, Definition 1.8 and the paragraph after it, p.11.
+* J. S. Milne, *Complex Multiplication*, §1, Definition 1.8 and the paragraph after it, p.11, and
+  p.13, footnote 3.
 -/
 
 public section
@@ -96,6 +124,41 @@ theorem star_mem_iff (Φ : CMType E) (φ : E →+* ℂ) : star φ ∈ Φ ↔ φ 
 theorem ringHom_star_ne_self (Φ : CMType E) (φ : E →+* ℂ) : star φ ≠ φ := fun h ↦
   iff_not_self (h ▸ Φ.star_mem_iff φ)
 
+/-- A CM type is not the full set of embeddings when `E` has an embedding: it would contain a
+whole conjugate pair. -/
+theorem coe_ne_univ [Nonempty (E →+* ℂ)] (Φ : CMType E) : (Φ : Set (E →+* ℂ)) ≠ Set.univ :=
+  fun hΦ ↦ by
+    obtain ⟨φ⟩ := ‹Nonempty (E →+* ℂ)›
+    have h := Φ.star_mem_iff φ
+    simp [← SetLike.mem_coe, hΦ] at h
+
+/-- A CM type is not empty when `E` has an embedding: it would miss a whole conjugate pair. -/
+theorem coe_ne_empty [Nonempty (E →+* ℂ)] (Φ : CMType E) : (Φ : Set (E →+* ℂ)) ≠ ∅ :=
+  fun hΦ ↦ by
+    obtain ⟨φ⟩ := ‹Nonempty (E →+* ℂ)›
+    have h := Φ.star_mem_iff φ
+    simp [← SetLike.mem_coe, hΦ] at h
+
+/-- If the embeddings of `E` are exactly an embedding `φ` and its distinct conjugate, then the
+singleton `{φ}` is a CM type. -/
+def ofPair (φ : E →+* ℂ) (hφ : star φ ≠ φ) (h : ∀ ψ : E →+* ℂ, ψ = φ ∨ ψ = star φ) :
+    CMType E where
+  carrier := {φ}
+  star_mem_iff' ψ := by
+    rcases h ψ with rfl | rfl
+    · simpa using hφ
+    · simpa [eq_comm] using hφ
+
+@[simp]
+theorem coe_ofPair (φ : E →+* ℂ) (hφ : star φ ≠ φ) (h : ∀ ψ : E →+* ℂ, ψ = φ ∨ ψ = star φ) :
+    (ofPair φ hφ h : Set (E →+* ℂ)) = {φ} :=
+  (rfl)
+
+@[simp]
+theorem mem_ofPair {φ : E →+* ℂ} {hφ : star φ ≠ φ} {h : ∀ ψ : E →+* ℂ, ψ = φ ∨ ψ = star φ}
+    {ψ : E →+* ℂ} : ψ ∈ ofPair φ hφ h ↔ ψ = φ :=
+  Iff.rfl
+
 /-- **Existence of CM types.** A commutative ring carries a CM type exactly when no complex
 embedding is its own conjugate: choose one embedding from each conjugate pair. -/
 theorem nonempty_iff : Nonempty (CMType E) ↔ ∀ φ : E →+* ℂ, star φ ≠ φ := by
@@ -128,6 +191,10 @@ theorem nonempty_iff_isTotallyComplex {K : Type*} [Field K] :
 instance {K : Type*} [Field K] [IsTotallyComplex K] : Nonempty (CMType K) :=
   nonempty_iff_isTotallyComplex.mpr inferInstance
 
+/-- `ℚ` has no CM type: its only complex embedding is real. -/
+instance : IsEmpty (CMType ℚ) :=
+  ⟨fun Φ ↦ Φ.ringHom_star_ne_self (Rat.castHom ℂ) (Subsingleton.elim _ _)⟩
+
 /-! ### The complementary type -/
 
 /-- The **complementary CM type** `ιΦ = {conj ∘ φ : φ ∈ Φ}`: its embeddings are exactly those not
@@ -152,6 +219,14 @@ theorem coe_star_eq_image (Φ : CMType E) :
   rintro ⟨ψ, hψ, rfl⟩
   simpa using hψ
 
+/-- The complement of the CM type `{φ}` is the CM type `{star φ}`. -/
+@[simp]
+theorem star_ofPair (φ : E →+* ℂ) (hφ : star φ ≠ φ) (h : ∀ ψ : E →+* ℂ, ψ = φ ∨ ψ = star φ) :
+    star (ofPair φ hφ h) =
+      ofPair (star φ) (by simpa using hφ.symm) (fun ψ ↦ by simpa [or_comm] using h ψ) := by
+  ext ψ
+  rcases h ψ with rfl | rfl <;> simp [hφ.symm]
+
 /-- A CM type and its complement are different whenever `E` has a complex embedding. -/
 theorem star_ne_self [Nonempty (E →+* ℂ)] (Φ : CMType E) : star Φ ≠ Φ := fun h ↦ by
   obtain ⟨φ⟩ := ‹Nonempty (E →+* ℂ)›
@@ -174,10 +249,95 @@ theorem card_ringHom_eq_two_mul (Φ : CMType E) : Nat.card (E →+* ℂ) = 2 * N
     ← Nat.card_congr (Equiv.boolProdEquivSum Φ), Nat.card_prod,
     Nat.card_eq_fintype_card (α := Bool), Fintype.card_bool]
 
+/-- All CM types on `E` have the same number `#Hom(E, ℂ) / 2` of embeddings. -/
+theorem card_eq_card (Φ Ψ : CMType E) : Nat.card Φ = Nat.card Ψ := by
+  have := Φ.card_ringHom_eq_two_mul.symm.trans Ψ.card_ringHom_eq_two_mul
+  omega
+
 /-- A CM type on a number field `K` has `[K : ℚ] / 2` embeddings. -/
 theorem two_mul_card_eq_finrank {K : Type*} [Field K] [NumberField K] (Φ : CMType K) :
     2 * Nat.card Φ = Module.finrank ℚ K := by
   rw [← Φ.card_ringHom_eq_two_mul, Nat.card_eq_fintype_card, Embeddings.card]
+
+/-- Relative to a reference CM type `Φ₀`, a CM type `Φ` is determined by the embeddings of `Φ₀`
+it contains: an embedding `ψ ∉ Φ₀` lies in `Φ` exactly when `star ψ ∈ Φ₀` does not. -/
+def equivSet (Φ₀ : CMType E) : CMType E ≃ Set Φ₀ where
+  toFun Φ := {x | x.val ∈ Φ}
+  invFun s :=
+    { carrier := {ψ | (ψ ∈ Φ₀ → ψ ∈ Subtype.val '' s) ∧ (ψ ∉ Φ₀ → star ψ ∉ Subtype.val '' s)}
+      star_mem_iff' ψ := by by_cases hψ : ψ ∈ Φ₀ <;> simp [hψ] }
+  left_inv Φ := by
+    ext ψ
+    rw [← mem_carrier]
+    by_cases hψ : ψ ∈ Φ₀ <;> simp [hψ]
+  right_inv s := by
+    ext x
+    rw [Set.mem_ofPred_eq, ← mem_carrier]
+    simp [x.property]
+
+@[simp]
+theorem mem_equivSet {Φ₀ Φ : CMType E} {x : Φ₀} : x ∈ Φ₀.equivSet Φ ↔ x.val ∈ Φ :=
+  Iff.rfl
+
+@[simp]
+theorem mem_equivSet_symm {Φ₀ : CMType E} {s : Set Φ₀} {x : Φ₀} :
+    x.val ∈ Φ₀.equivSet.symm s ↔ x ∈ s :=
+  Set.ext_iff.mp (Φ₀.equivSet.apply_symm_apply s) x
+
+/-- **There are `2 ^ d` CM types** on a ring with `2 * d` complex embeddings, one for each choice
+of an embedding in every conjugate pair. -/
+theorem card_eq_two_pow [Finite (E →+* ℂ)] (Φ : CMType E) :
+    Nat.card (CMType E) = 2 ^ Nat.card Φ := by
+  classical
+  have := Fintype.ofFinite Φ
+  rw [Nat.card_congr Φ.equivSet, Nat.card_eq_fintype_card, Fintype.card_set,
+    Nat.card_eq_fintype_card]
+
+/-- Exactly half of the CM types contain a given embedding: taking the complementary type
+exchanges those containing `φ` with those omitting it. -/
+theorem two_mul_ncard_mem [Finite (E →+* ℂ)] (φ : E →+* ℂ) :
+    2 * {Ψ : CMType E | φ ∈ Ψ}.ncard = Nat.card (CMType E) := by
+  rw [← Set.ncard_add_ncard_compl {Ψ : CMType E | φ ∈ Ψ}, two_mul]
+  congr 1
+  exact Set.ncard_congr (fun Ψ _ ↦ star Ψ) (fun Ψ hΨ ↦ by simpa using hΨ)
+    (fun _ _ _ _ h ↦ star_injective h) fun Ψ hΨ ↦ ⟨star Ψ, by simpa using hΨ, star_star Ψ⟩
+
+/-- The CM type obtained from `Φ` by exchanging its choice in the conjugate pair `{φ, star φ}`. -/
+private def flipPair (Φ : CMType E) (φ : E →+* ℂ) : CMType E where
+  carrier := {ψ | ψ ∈ Φ ↔ ¬(ψ = φ ∨ ψ = star φ)}
+  star_mem_iff' ψ := by
+    have h : star ψ = φ ↔ ψ = star φ := by rw [star_eq_iff_star_eq, eq_comm]
+    simp only [Set.mem_ofPred_eq, star_mem_iff, h, star_inj]
+    tauto
+
+private theorem mem_flipPair {Φ : CMType E} {φ ψ : E →+* ℂ} :
+    ψ ∈ flipPair Φ φ ↔ (ψ ∈ Φ ↔ ¬(ψ = φ ∨ ψ = star φ)) :=
+  Iff.rfl
+
+private theorem flipPair_flipPair (Φ : CMType E) (φ : E →+* ℂ) :
+    flipPair (flipPair Φ φ) φ = Φ := by
+  ext ψ
+  simp only [mem_flipPair]
+  tauto
+
+/-- A quarter of the CM types contain two given embeddings from different conjugate pairs:
+exchanging the choice in the pair of `ψ` matches the types containing `φ` and `ψ` with those
+containing `φ` but not `ψ`. -/
+theorem four_mul_ncard_mem_and_mem [Finite (E →+* ℂ)] {φ ψ : E →+* ℂ} (h₁ : ψ ≠ φ)
+    (h₂ : ψ ≠ star φ) :
+    4 * {Ψ : CMType E | φ ∈ Ψ ∧ ψ ∈ Ψ}.ncard = Nat.card (CMType E) := by
+  have h₃ : φ ≠ star ψ := fun h ↦ h₂ (by rw [h, star_star])
+  have hφ (Ψ : CMType E) : φ ∈ flipPair Ψ ψ ↔ φ ∈ Ψ := by simp [mem_flipPair, h₁.symm, h₃]
+  have hψ (Ψ : CMType E) : ψ ∈ flipPair Ψ ψ ↔ ψ ∉ Ψ := by simp [mem_flipPair]
+  have h : ({Ψ : CMType E | φ ∈ Ψ} \ {Ψ | ψ ∈ Ψ}).ncard =
+      {Ψ : CMType E | φ ∈ Ψ ∧ ψ ∈ Ψ}.ncard :=
+    Set.ncard_congr (fun Ψ _ ↦ flipPair Ψ ψ) (fun Ψ hΨ ↦ by simpa [hφ, hψ] using hΨ)
+      (fun Ψ Ψ' _ _ h ↦ by rw [← flipPair_flipPair Ψ ψ, h, flipPair_flipPair])
+      fun Ψ hΨ ↦ ⟨flipPair Ψ ψ, by simpa [hφ, hψ] using hΨ, flipPair_flipPair Ψ ψ⟩
+  rw [← two_mul_ncard_mem φ,
+    ← Set.ncard_inter_add_ncard_sdiff_eq_ncard {Ψ : CMType E | φ ∈ Ψ} {Ψ | ψ ∈ Ψ}, h]
+  simp only [Set.inter_ofPred_eq_sep, Set.sep_ofPred]
+  ring
 
 /-! ### Induced types -/
 
@@ -189,8 +349,7 @@ restricting into `Φ₀`. -/
 def induced (Φ₀ : CMType E₀) (f : E₀ →+* E) : CMType E where
   carrier := {φ | φ.comp f ∈ Φ₀}
   star_mem_iff' φ := by
-    have : (star φ).comp f = star (φ.comp f) := RingHom.ext fun _ ↦ by simp [RingHom.star_apply]
-    simp [this]
+    simp [← RingHom.star_comp_right]
 
 @[simp]
 theorem mem_induced {Φ₀ : CMType E₀} {f : E₀ →+* E} {φ : E →+* ℂ} :
@@ -212,6 +371,144 @@ theorem induced_induced (Φ₀ : CMType E₀) (f : E₀ →+* E₁) (g : E₁ �
 theorem star_induced (Φ₀ : CMType E₀) (f : E₀ →+* E) :
     star (Φ₀.induced f) = (star Φ₀).induced f := by
   ext; simp
+
+/-! ### The action of `Aut(ℂ)` -/
+
+/-- Every ring endomorphism `σ` of `ℂ` commutes with complex conjugation on the complex embeddings
+of `E`: `conj ∘ σ ∘ φ = σ ∘ conj ∘ φ`. This holds on a CM field
+(`TauCeti.CMType.instStarCompCommuteOfIsCMField`) and makes `Aut(ℂ)` act on CM types. -/
+class StarCompCommute (E : Type*) [CommRing E] : Prop where
+  /-- Complex conjugation commutes with `σ` on embeddings. -/
+  star_comp (σ : ℂ →+* ℂ) (φ : E →+* ℂ) : star (σ.comp φ) = σ.comp (star φ)
+
+/-- On a CM field, complex conjugation commutes with every ring endomorphism of `ℂ` on
+embeddings (`RingHom.star_comp`). -/
+instance instStarCompCommuteOfIsCMField {K : Type*} [Field K] [CharZero K]
+    [Algebra.IsIntegral ℚ K] [IsCMField K] : StarCompCommute K :=
+  ⟨RingHom.star_comp⟩
+
+/-- A finite product of rings on whose complex embeddings every endomorphism of `ℂ` commutes with
+complex conjugation has the same property, since every complex embedding of the product factors
+through a projection (`AlgHom.exists_eq_comp_piEvalAlgHom`). In particular this holds for a
+finite product of CM fields. -/
+instance instStarCompCommutePi {ι : Type*} [Finite ι] (F : ι → Type*) [∀ i, CommRing (F i)]
+    [∀ i, StarCompCommute (F i)] : StarCompCommute (∀ i, F i) where
+  star_comp σ φ := by
+    obtain ⟨i, ψ, h⟩ := AlgHom.exists_eq_comp_piEvalAlgHom φ.toNatAlgHom
+    obtain rfl : φ = (ψ : F i →+* ℂ).comp (Pi.evalRingHom F i) := RingHom.ext fun x ↦ by
+      simpa using (AlgHom.congr_fun h x).trans (AlgHom.comp_apply ψ (Pi.evalAlgHom ℕ F i) x)
+    ext x
+    simpa [RingHom.star_apply, RingHom.comp_apply] using
+      RingHom.congr_fun (StarCompCommute.star_comp σ (ψ : F i →+* ℂ)) (x i)
+
+section StarCompCommute
+
+variable [StarCompCommute E]
+
+/-- `σ ∈ Aut(ℂ)` sends a CM type `Φ` to `σΦ = {σ ∘ φ : φ ∈ Φ}`, written as
+`{ψ | σ⁻¹ ∘ ψ ∈ Φ}`. -/
+instance : SMul (RingAut ℂ) (CMType E) where
+  smul σ Φ :=
+    { carrier := {ψ | (σ.symm : ℂ →+* ℂ).comp ψ ∈ Φ}
+      star_mem_iff' ψ := by
+        rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, ← StarCompCommute.star_comp, star_mem_iff] }
+
+/-- `ψ ∈ σΦ` exactly when `σ⁻¹ ∘ ψ ∈ Φ`. -/
+theorem mem_smul {σ : RingAut ℂ} {Φ : CMType E} {ψ : E →+* ℂ} :
+    ψ ∈ σ • Φ ↔ (σ.symm : ℂ →+* ℂ).comp ψ ∈ Φ :=
+  Iff.rfl
+
+/-- The action `σΦ = {σ ∘ φ : φ ∈ Φ}` of `Aut(ℂ)` on CM types. -/
+instance : MulAction (RingAut ℂ) (CMType E) where
+  one_smul Φ := ext fun ψ ↦ by simp [mem_smul, RingAut.one_eq_refl]
+  mul_smul σ τ Φ := ext fun ψ ↦ by
+    have h : ((σ * τ).symm : ℂ →+* ℂ).comp ψ =
+        (τ.symm : ℂ →+* ℂ).comp ((σ.symm : ℂ →+* ℂ).comp ψ) := by
+      ext; simp [← RingAut.inv_apply]
+    rw [mem_smul, mem_smul, mem_smul, h]
+
+/-- `σ ∘ φ ∈ σΦ` exactly when `φ ∈ Φ`. -/
+@[simp]
+theorem comp_mem_smul_iff {σ : RingAut ℂ} {Φ : CMType E} {φ : E →+* ℂ} :
+    (σ : ℂ →+* ℂ).comp φ ∈ σ • Φ ↔ φ ∈ Φ := by
+  rw [mem_smul, ← RingHom.comp_assoc]
+  simp
+
+/-- As a set, `σΦ` is the image of `Φ` under `φ ↦ σ ∘ φ`. -/
+theorem coe_smul (σ : RingAut ℂ) (Φ : CMType E) :
+    ((σ • Φ : CMType E) : Set (E →+* ℂ)) = RingHom.comp (σ : ℂ →+* ℂ) '' (Φ : Set (E →+* ℂ)) := by
+  ext ψ
+  refine ⟨fun h ↦ ⟨(σ.symm : ℂ →+* ℂ).comp ψ, mem_smul.mp h, RingHom.ext fun x ↦ by simp⟩, ?_⟩
+  rintro ⟨φ, hφ, rfl⟩
+  exact comp_mem_smul_iff.mpr hφ
+
+/-- An automorphism of `ℂ` fixing every complex embedding of `E` acts trivially on CM types. -/
+theorem smul_eq_self_of_forall_comp_eq {σ : RingAut ℂ}
+    (h : ∀ φ : E →+* ℂ, (σ : ℂ →+* ℂ).comp φ = φ) (Φ : CMType E) : σ • Φ = Φ :=
+  SetLike.coe_injective <| by
+    rw [coe_smul, show RingHom.comp (σ : ℂ →+* ℂ) = id from funext h, Set.image_id]
+
+/-- Taking the complementary type commutes with the action of `Aut(ℂ)`: `ι(σΦ) = σ(ιΦ)`. -/
+theorem star_smul (σ : RingAut ℂ) (Φ : CMType E) : star (σ • Φ) = σ • star Φ := by
+  ext ψ
+  simp only [mem_star, mem_smul]
+
+/-- Complex conjugation sends a CM type to its complementary type. -/
+@[simp]
+theorem starRingAut_smul (Φ : CMType E) : (starRingAut : RingAut ℂ) • Φ = star Φ := by
+  ext ψ
+  have h : ((starRingAut : RingAut ℂ).symm : ℂ →+* ℂ).comp ψ = star ψ :=
+    RingHom.ext fun _ ↦ by simp [RingEquiv.symm_apply_eq, RingHom.star_apply]
+  rw [mem_smul, h, mem_star, ← star_mem_iff]
+
+end StarCompCommute
+
+end CMType
+
+/-! ### Inducing along algebraic extensions -/
+
+namespace CMType
+
+variable {F E : Type*} [Field F] [Field E] [Algebra F E] [Algebra.IsAlgebraic F E]
+
+/-- Inducing along an algebraic extension of fields is injective: a CM type on `F` is recovered
+from the type it induces on `E`, since every embedding of `F` extends to `E`. -/
+theorem induced_algebraMap_injective :
+    Function.Injective fun Φ₀ : CMType F ↦ Φ₀.induced (algebraMap F E) := by
+  intro Φ₀ Φ₁ h
+  ext φ₀
+  simpa using SetLike.ext_iff.1 h (ComplexEmbedding.lift E φ₀)
+
+/-- Two CM types on `F` inducing the same type along an algebraic extension `E / F` are equal. -/
+@[simp]
+theorem induced_algebraMap_inj {Φ₀ Φ₁ : CMType F} :
+    Φ₀.induced (algebraMap F E) = Φ₁.induced (algebraMap F E) ↔ Φ₀ = Φ₁ :=
+  induced_algebraMap_injective.eq_iff
+
+/-- **The fibre criterion.** A CM type `Φ` on `E` is induced from a CM type on the subextension
+`F` exactly when membership in `Φ` depends only on the restriction to `F`: two embeddings of `E`
+agreeing on `F` are both in `Φ` or both outside it. -/
+theorem exists_induced_algebraMap_eq_iff (Φ : CMType E) :
+    (∃ Φ₀ : CMType F, Φ₀.induced (algebraMap F E) = Φ) ↔
+      ∀ φ ψ : E →+* ℂ, (∀ x : F, φ (algebraMap F E x) = ψ (algebraMap F E x)) →
+        (φ ∈ Φ ↔ ψ ∈ Φ) := by
+  constructor
+  · rintro ⟨Φ₀, rfl⟩ φ ψ h
+    simp [show φ.comp (algebraMap F E) = ψ.comp (algebraMap F E) from RingHom.ext h]
+  · intro h
+    have key {φ ψ : E →+* ℂ} (hφψ : φ.comp (algebraMap F E) = ψ.comp (algebraMap F E)) :
+        φ ∈ Φ ↔ ψ ∈ Φ :=
+      h φ ψ (RingHom.congr_fun hφψ)
+    -- The type on `F` consists of the embeddings whose chosen lift to `E` lies in `Φ`.
+    refine ⟨⟨{φ₀ | ComplexEmbedding.lift E φ₀ ∈ Φ}, fun φ₀ ↦ ?_⟩, ?_⟩
+    · -- `lift (star φ₀)` and `star (lift φ₀)` both restrict to `star φ₀`.
+      have : (ComplexEmbedding.lift E (star φ₀)).comp (algebraMap F E) =
+          (star (ComplexEmbedding.lift E φ₀)).comp (algebraMap F E) := by
+        rw [← ComplexEmbedding.conjugate, ComplexEmbedding.conjugate_comp]
+        simp
+      simp only [Set.mem_ofPred_eq, key this, Φ.star_mem_iff]
+    · ext φ
+      exact key (ComplexEmbedding.lift_comp_algebraMap E _)
 
 end CMType
 

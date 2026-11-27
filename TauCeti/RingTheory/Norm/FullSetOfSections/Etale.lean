@@ -8,8 +8,8 @@ module
 public import TauCeti.RingTheory.Norm.FullSetOfSections.Basic
 public import Mathlib.RingTheory.Discriminant
 public import Mathlib.RingTheory.Etale.Basic
+import TauCeti.Algebra.Algebra.Pi
 import TauCeti.RingTheory.Etale.Discriminant
-import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.RingTheory.LocalProperties.Exactness
 import Mathlib.RingTheory.Smooth.Flat
 
@@ -67,19 +67,10 @@ private theorem IsFullSetOfSections.bijective_pi_of_basis [Algebra.Etale A B]
     (h : IsFullSetOfSections s) (b : Module.Basis ι A B) :
     Function.Bijective (AlgHom.pi s) := by
   classical
-  let M := Matrix.of fun i j ↦ s i (b j)
-  have hd : IsUnit M.det := by
-    have := (Algebra.etale_iff_isUnit_discr b).mp inferInstance
-    rw [h.discr_eq_det_pi_sq b] at this
-    exact (isUnit_pow_iff two_ne_zero).mp this
-  let e := b.equivFun.trans (Matrix.toLinearEquiv (Pi.basisFun A ι) M hd)
-  have he (x : B) : e x = AlgHom.pi s x := by
-    ext i
-    simp only [e, LinearEquiv.trans_apply, Matrix.toLinearEquiv_apply,
-      Matrix.toLin_eq_toLin', Matrix.toLin'_apply, Module.Basis.equivFun_apply,
-      Matrix.mulVec, dotProduct, M, Matrix.of_apply, AlgHom.pi_apply]
-    simpa [map_smul, Algebra.smul_def, mul_comm] using congrArg (s i) (b.sum_repr x)
-  exact (funext he : (e : B → ι → A) = AlgHom.pi s) ▸ e.bijective
+  refine AlgHom.pi_bijective_of_isUnit_det b ?_
+  have := (Algebra.etale_iff_isUnit_discr b).mp inferInstance
+  rw [h.discr_eq_det_pi_sq b] at this
+  exact (isUnit_pow_iff two_ne_zero).mp this
 
 variable [Module.Free A B] [Module.Finite A B]
 

@@ -28,6 +28,8 @@ from `TauCeti.hasCompactSupport_integral_of_inv_mul_mem`, and the Fubini swap fr
 
 ## Main statements
 
+* `TauCeti.integral_integral_mul_inv_mul`: for continuous compactly supported scalar functions,
+  `∫ s, ∫ r, u r * v (r⁻¹ * s) ∂μ ∂μ = (∫ u) * ∫ v`.
 * `TauCeti.integral_norm_le_mul_of_norm_le_integral`: pointwise domination of `‖F s‖` by the scalar
   convolution `∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ` implies `∫ ‖F‖ ≤ (∫ ‖f‖) * ∫ ‖g‖`.
 -/
@@ -38,6 +40,29 @@ open MeasureTheory Function
 open scoped CompactlySupported
 
 namespace TauCeti
+
+/-- For continuous compactly supported `u v : G → 𝕜` and a left-invariant measure `μ` finite on
+compacts, `∫ s, ∫ r, u r * v (r⁻¹ * s) ∂μ ∂μ = (∫ s, u s ∂μ) * ∫ s, v s ∂μ`. -/
+theorem integral_integral_mul_inv_mul {G 𝕜 : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableMul G]
+    [RCLike 𝕜] (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
+    {u v : G → 𝕜} (hu : Continuous u) (hv : Continuous v) (hu' : HasCompactSupport u)
+    (hv' : HasCompactSupport v) :
+    ∫ s, ∫ r, u r * v (r⁻¹ * s) ∂μ ∂μ = (∫ s, u s ∂μ) * ∫ s, v s ∂μ := by
+  have hsupp : ∀ s r, u r * v (r⁻¹ * s) ≠ 0 → r ∈ tsupport u ∧ r⁻¹ * s ∈ tsupport v :=
+    fun _ _ h => mem_tsupport_and_inv_mul_mem_tsupport h (by intro hf; simp [hf])
+      (by intro hg; simp [hg])
+  have hcont : Continuous (uncurry fun s r => u r * v (r⁻¹ * s)) := by
+    rw [uncurry_def]
+    fun_prop
+  calc ∫ s, ∫ r, u r * v (r⁻¹ * s) ∂μ ∂μ
+      = ∫ r, ∫ s, u r * v (r⁻¹ * s) ∂μ ∂μ :=
+        integral_integral_swap_of_hasCompactSupport hcont
+          (hasCompactSupport_uncurry_of_inv_mul_mem hu' hv' hsupp)
+    _ = ∫ r, u r * ∫ s, v s ∂μ ∂μ := by
+        congr 1 with r
+        rw [integral_const_mul, integral_mul_left_eq_self v r⁻¹]
+    _ = (∫ s, u s ∂μ) * ∫ s, v s ∂μ := integral_mul_const _ _
 
 /-- If `F : C_c(G, E₃)` is bounded in norm pointwise by the scalar convolution
 `s ↦ ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ` of `f : C_c(G, E₁)` and `g : C_c(G, E₂)` against a
@@ -67,14 +92,8 @@ theorem integral_norm_le_mul_of_norm_le_integral {G E₁ E₂ E₃ : Type*}
           (F.continuous.norm.integrable_of_hasCompactSupport
             (F.hasCompactSupport.comp_left norm_zero))
           (hNcont.integrable_of_hasCompactSupport hNsupp) hF
-    _ = ∫ r, ∫ s, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ :=
-        integral_integral_swap_of_hasCompactSupport hcont
-          (hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport hsupp)
-    _ = ∫ r, ‖f r‖ * ∫ s, ‖g s‖ ∂μ ∂μ := by
-        congr 1 with r
-        rw [integral_const_mul]
-        congr 1
-        exact integral_mul_left_eq_self (fun s => ‖g s‖) r⁻¹
-    _ = (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := integral_mul_const _ _
+    _ = (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ :=
+        integral_integral_mul_inv_mul μ f.continuous.norm g.continuous.norm
+          (f.hasCompactSupport.comp_left norm_zero) (g.hasCompactSupport.comp_left norm_zero)
 
 end TauCeti

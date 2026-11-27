@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Symplectic.CompatibleMetric
@@ -47,7 +48,13 @@ For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gr
 the bilinear form `g = ω(·, J ·)`
 (`TauCeti.SymplecticForm.Invariant.associatedBilinForm_hamiltonianVectorField`). When `g` is the
 inner product of `V`, this says `J X_H = ∇H`
-(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`).
+(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`). For the opposite bilinear
+form `ω(·, -J ·)`, the gradient of `H` is `-J X_H`, with no invariance needed
+(`TauCeti.SymplecticForm.associatedBilinForm_neg_apply_neg_hamiltonianVectorField`). The
+Hamiltonian vector field of `(c / 2) ‖y‖²` is the linear field `-c J`
+(`TauCeti.SymplecticForm.hamiltonianVectorField_div_two_mul_norm_sq`), whose derivative has norm
+at most `c ≥ 0`
+(`TauCeti.SymplecticForm.norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le`).
 
 Along a family of Hamiltonians whose derivatives vary continuously, for instance a jointly `C¹`
 family evaluated along a continuous map, the Hamiltonian vector fields vary continuously.
@@ -115,6 +122,14 @@ theorem hamiltonianVectorField_eq_zero_iff (ω : SymplecticForm V) (H : V → �
 theorem hamiltonianVectorField_eq_zero_of_notMem_tsupport (ω : SymplecticForm V) {H : V → ℝ}
     {x : V} (hx : x ∉ tsupport H) : ω.hamiltonianVectorField H x = 0 :=
   (ω.hamiltonianVectorField_eq_zero_iff H x).2 (fderiv_of_notMem_tsupport ℝ hx)
+
+/-- The Hamiltonian vector field `X_{K z}` of a family `K` of Hamiltonians vanishes at every point
+`(z, x)` off the topological support of the family. -/
+theorem hamiltonianVectorField_eq_zero_of_notMem_tsupport_uncurry (ω : SymplecticForm V)
+    {X : Type*} [TopologicalSpace X] {K : X → V → ℝ} {z : X} {x : V}
+    (h : (z, x) ∉ tsupport (Function.uncurry K)) : ω.hamiltonianVectorField (K z) x = 0 :=
+  ω.hamiltonianVectorField_eq_zero_of_notMem_tsupport fun hx ↦ h
+    (tsupport_comp_subset_preimage (Function.uncurry K) (continuous_const.prodMk continuous_id) hx)
 
 /-- The Hamiltonian vector field is homogeneous: `X_{c H} = c X_H`. -/
 @[simp]
@@ -257,6 +272,14 @@ theorem hamiltonianVectorField_add_const (ω : SymplecticForm V) (H : V → ℝ)
   funext x
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, fderiv_add_const]
 
+/-- Translating a Hamiltonian translates its Hamiltonian vector field:
+`X_{H(· + c)}(x) = X_H(x + c)`. No differentiability is needed. -/
+@[simp]
+theorem hamiltonianVectorField_comp_add_right (ω : SymplecticForm V) (H : V → ℝ) (c : V) :
+    ω.hamiltonianVectorField (fun x ↦ H (x + c)) = fun x ↦ ω.hamiltonianVectorField H (x + c) := by
+  funext x
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, fderiv_comp_add_right]
+
 /-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
 `X_{aF + bG} = a X_F + b X_G`. -/
 theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {F G : V → ℝ}
@@ -267,6 +290,33 @@ theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {
   intro v
   rw [fderiv_fun_add (hF.const_mul a) (hG.const_mul b), fderiv_const_mul hF, fderiv_const_mul hG]
   simp [map_add, map_smul]
+
+/-- For `C²` Hamiltonians the derivative of the Hamiltonian vector field is linear in the
+Hamiltonian: `d X_{aF + bG} = a dX_F + b dX_G`. -/
+theorem fderiv_hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V)
+    {F G : V → ℝ} (hF : ContDiff ℝ 2 F) (hG : ContDiff ℝ 2 G) (a b : ℝ) (x : V) :
+    fderiv ℝ (ω.hamiltonianVectorField fun y ↦ a * F y + b * G y) x =
+      a • fderiv ℝ (ω.hamiltonianVectorField F) x +
+        b • fderiv ℝ (ω.hamiltonianVectorField G) x := by
+  have hXF := (ω.contDiff_hamiltonianVectorField (n := 1) hF).differentiable one_ne_zero
+  have hXG := (ω.contDiff_hamiltonianVectorField (n := 1) hG).differentiable one_ne_zero
+  have hX : ω.hamiltonianVectorField (fun y ↦ a * F y + b * G y) =
+      a • ω.hamiltonianVectorField F + b • ω.hamiltonianVectorField G :=
+    funext fun y ↦ ω.hamiltonianVectorField_const_mul_add_const_mul
+      ((hF.differentiable two_ne_zero) y) ((hG.differentiable two_ne_zero) y) _ _
+  rw [hX, fderiv_add ((hXF x).const_smul _) ((hXG x).const_smul _), fderiv_const_smul (hXF x),
+    fderiv_const_smul (hXG x)]
+
+/-- For `C²` Hamiltonians the derivative of the Hamiltonian vector field of `aF + bG` is bounded
+by `|a| ‖dX_F‖ + |b| ‖dX_G‖`. -/
+theorem norm_fderiv_hamiltonianVectorField_const_mul_add_const_mul_le (ω : SymplecticForm V)
+    {F G : V → ℝ} (hF : ContDiff ℝ 2 F) (hG : ContDiff ℝ 2 G) (a b : ℝ) (x : V) :
+    ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ a * F y + b * G y) x‖ ≤
+      |a| * ‖fderiv ℝ (ω.hamiltonianVectorField F) x‖ +
+        |b| * ‖fderiv ℝ (ω.hamiltonianVectorField G) x‖ := by
+  rw [ω.fderiv_hamiltonianVectorField_const_mul_add_const_mul hF hG, ← Real.norm_eq_abs,
+    ← Real.norm_eq_abs, ← norm_smul, ← norm_smul]
+  exact norm_add_le _ _
 
 /-- The Hamiltonian vector field is additive on finite sums of Hamiltonians differentiable at
 the point: `X_{∑ Fᵢ} = ∑ X_{Fᵢ}`. -/
@@ -581,6 +631,43 @@ theorem apply_hamiltonianVectorField_eq_gradient {ω : SymplecticForm E}
   ext_inner_right ℝ fun w ↦ by
     rw [inner_gradient_left, ← hg, ← associatedBilinForm_apply]
     exact (ω.invariant_of_apply_apply_eq_inner hg).associatedBilinForm_hamiltonianVectorField H x w
+
+/-- **The gradient of a Hamiltonian.** For the bilinear form `g(v, w) = ω(v, -J w)`, the
+Hamiltonian vector field `X_H` of `ι_{X_H} ω = dH` gives the gradient `-J X_H` of `H`:
+`g(v, -J X_H(x)) = dH_x(v)`. -/
+theorem associatedBilinForm_neg_apply_neg_hamiltonianVectorField (ω : SymplecticForm V)
+    (J : AlmostComplexStructure V) (H : V → ℝ) (x v : V) :
+    ω.associatedBilinForm (-J) v (-J (ω.hamiltonianVectorField H x)) = fderiv ℝ H x v := by
+  simp only [associatedBilinForm_apply, AlmostComplexStructure.neg_apply, map_neg, neg_neg,
+    AlmostComplexStructure.apply_apply]
+  rw [ω.neg_eq, apply_hamiltonianVectorField]
+
+/-- If the inner product of `E` is the metric `ω(·, J ·)`, the Hamiltonian `Q(y) = (c / 2) ‖y‖²`
+has the linear Hamiltonian vector field `X_Q(y) = -c J y`. -/
+theorem hamiltonianVectorField_div_two_mul_norm_sq {ω : SymplecticForm E}
+    {J : AlmostComplexStructure E} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (c : ℝ) :
+    ω.hamiltonianVectorField (fun y ↦ c / 2 * ‖y‖ ^ 2) =
+      ⇑(-c • J.toLinearMap.toContinuousLinearMap) := by
+  funext y
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  have hd : HasFDerivAt (fun y : E ↦ c / 2 * ‖y‖ ^ 2) ((c / 2) • (2 • innerSL ℝ y)) y :=
+    (hasStrictFDerivAt_norm_sq y).hasFDerivAt.const_mul (c / 2)
+  have hJ : ω (J y) v = -⟪y, v⟫ := by rw [real_inner_comm, ← hg v y, ω.neg_eq]
+  rw [hd.fderiv]
+  simp [hJ]
+  ring
+
+/-- If the inner product of `E` is the metric `ω(·, J ·)`, the derivative `-c J` of the Hamiltonian
+vector field of `Q(y) = (c / 2) ‖y‖²` has norm at most `c ≥ 0`, since `J` is an isometry. -/
+theorem norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le {ω : SymplecticForm E}
+    {J : AlmostComplexStructure E} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {c : ℝ} (hc : 0 ≤ c) (y : E) :
+    ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ c / 2 * ‖y‖ ^ 2) y‖ ≤ c := by
+  rw [hamiltonianVectorField_div_two_mul_norm_sq hg c, ContinuousLinearMap.fderiv, norm_smul,
+    norm_neg, Real.norm_eq_abs, abs_of_nonneg hc]
+  refine mul_le_of_le_one_right hc (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_)
+  rw [one_mul, LinearMap.coe_toContinuousLinearMap']
+  exact (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v ↦ hg v v) v).le
 
 end Gradient
 

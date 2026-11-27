@@ -59,7 +59,7 @@ theorem _root_.ContDiffBump.holderWith_sub_normed_convolution (hf : Continuous f
   set g := ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f
   -- Below the scale `ρ.rOut`, the convolution satisfies the same bound as `f`.
   have hg : ∀ x y, dist x y < ρ.rOut → dist (g x) (g y) ≤ η * dist x y ^ (α : ℝ) :=
-    fun x y hxy ↦ ρ.dist_normed_convolution_le_of_dist_sub_le hf fun t ↦ by
+    fun x y hxy ↦ ρ.dist_normed_convolution_le_of_dist_sub_le hf fun t _ ↦ by
       simpa only [dist_sub_right] using hloc (x - t) (y - t) (by rwa [dist_sub_right])
   -- Above it, the uniform bound on `f - g` is at most `η * dist x y ^ α`.
   have hsup (w : G) : ‖f w - g w‖ ≤ η * ρ.rOut ^ (α : ℝ) := by
@@ -100,8 +100,7 @@ theorem exists_contDiff_support_subset_holderWith_tendstoUniformly
   let g (n : ℕ) := (ρ n).normed μ ⋆[lsmul ℝ ℝ, μ] f
   have hfc := hf.continuous hα
   have hgc (n : ℕ) : ContDiff ℝ ∞ (g n) :=
-    (ρ n).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ)
-      (ρ n).contDiff_normed hfc.locallyIntegrable
+    (ρ n).contDiff_normed_convolution hfc.locallyIntegrable
   have hInt (n : ℕ) : ∫ z, ‖(ρ n).normed μ z‖ ∂μ = 1 := by
     have heq : (fun z ↦ ‖(ρ n).normed μ z‖) = (ρ n).normed μ := by
       funext z

@@ -11,9 +11,8 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.MeanInequalities
@@ -593,54 +592,32 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matri
                   ⨍ x in ball x₀ r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) ^ q'⁻¹ *
                 (⨍ x in ball x₀ r, ‖Wkp.iteratedGradient 1 u x‖ ^ (2 * q)) ^ q⁻¹))) := by
   have hr : 0 < r := hρ.trans_le hρr
-  set μr := volume.restrict (ball x₀ r)
-  set H : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
-    ⇑(Wkp.iteratedGradient 1 u)
   set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ :=
     fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖
-  have : IsFiniteMeasure μr := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
-  have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K :=
+  have hθm : AEStronglyMeasurable θ (volume.restrict (ball x₀ r)) :=
+    aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
+  have hθ : ∀ᵐ x ∂volume.restrict (ball x₀ r), 0 ≤ θ x ∧ θ x ≤ K :=
     (ae_restrict_mem measurableSet_ball).mono fun x hx =>
       ⟨norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A), haK x hx⟩
-  -- Hölder's inequality with exponents `q'` and `q` bounds the coefficient term `∫ θ² ‖D²u‖²`.
-  have hΘ := integral_sq_mul_norm_sq_le_of_ae_le hq hθm hθ hHq
-  set Iθ := ∫ x in ball x₀ r, θ x
-  set Ig := ∫ x in ball x₀ r, ‖H x‖ ^ (2 * q)
   have key :=
     setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matrixBilinearForm_sub_le
       hA ha haK u hball heq hρ hρr
-  -- Pass to averages, using `|B_ρ| = (ρ / r)^(n + 1) |B_r|`.
-  set V : ℝ := volume.real (ball x₀ r)
-  have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos volume x₀ hr).ne' measure_ball_lt_top.ne
-  have hVρ : volume.real (ball x₀ ρ) = (ρ / r) ^ (n + 1) * V := by
-    simp only [V, Measure.addHaar_real_ball_of_pos _ _ hρ, Measure.addHaar_real_ball_of_pos _ _ hr,
+  -- Pass to averages, using `|B_ρ| = (ρ / r)^(n + 1) |B_r|` and Hölder's inequality with
+  -- exponents `q'` and `q` for the coefficient term `∫ θ² ‖D²u‖²`.
+  have hV : 0 < volume.real (ball x₀ r) :=
+    ENNReal.toReal_pos (measure_ball_pos volume x₀ hr).ne' measure_ball_lt_top.ne
+  have hVρ : volume.real (ball x₀ ρ) = (ρ / r) ^ (n + 1) * volume.real (ball x₀ r) := by
+    simp only [Measure.addHaar_real_ball_of_pos _ _ hρ, Measure.addHaar_real_ball_of_pos _ _ hr,
       finrank_euclideanSpace_fin, div_pow]
     field_simp
-  have havg : ∀ (t : ℝ) (g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ),
-      ⨍ x in ball x₀ t, g x = (volume.real (ball x₀ t))⁻¹ * ∫ x in ball x₀ t, g x :=
-    fun t g => by rw [setAverage_eq, smul_eq_mul]
-  rw [havg ρ (fun x => ‖H x - ⨍ y in ball x₀ ρ, H y‖ ^ 2),
-    havg r (fun x => ‖H x - ⨍ y in ball x₀ r, H y‖ ^ 2), havg r (fun x => f x ^ 2),
-    havg r θ, havg r (fun x => ‖H x‖ ^ (2 * q)), hVρ]
-  have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * Ig) ^ q⁻¹ =
-      V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * Ig ^ q⁻¹) := by
-    rw [mul_left_comm (K ^ (2 * q' - 1)) V⁻¹ Iθ]
-    exact Real.mul_rpow_mul_mul_rpow_of_add_eq_one (inv_nonneg.2 hV.le)
-      hq.symm.inv_add_inv_eq_one
-  rw [hsplit]
-  have hs : 0 < ρ / r := div_pos hρ hr
-  refine (mul_le_mul_of_nonneg_left (key.trans (mul_le_mul_of_nonneg_left (add_le_add le_rfl
-    (mul_le_mul_of_nonneg_left (add_le_add le_rfl (mul_le_mul_of_nonneg_left hΘ (by positivity)))
-      (by positivity))) (by positivity))) (by positivity)).trans_eq ?_
-  have hlam : lam ≠ 0 := hA.pos.ne'
-  have hV0 : V ≠ 0 := hV.ne'
-  rw [← inv_div ρ r]
-  simp only [H, V] at hV0 ⊢
-  generalize ρ / r = s at hs ⊢
-  rw [inv_pow]
-  field_simp
+  refine (setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq
+    (C₁ := (n + 1) ^ 2 * (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3))))
+    (C₂ := (n + 1) ^ 2 *
+      (2 * (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2))
+    (M := (n + 1) ^ 2) (G := fun x => f x ^ 2) hV (div_pos hρ hr) hVρ
+    (by have := hA.pos; positivity) (by positivity) hq hθm hθ hHq
+    (key.trans_eq (by ring))).trans_eq ?_
+  rw [inv_div]
   ring
 
 end PDE

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Interval.Basic
 public import Mathlib.Basic.Complex.Basic
+public import TauCeti.Algebra.Order.Interval.Basic
 import Mathlib.Analysis.Real.Sqrt
+import TauCeti.Algebra.Order.Archimedean.Basic
 
 /-!
 # Rational enclosures of real and complex numbers
@@ -33,11 +34,14 @@ An enclosure of width zero, on the other hand, determines the enclosed number
 
 * `TauCeti.RealEnclosure t`: a rational interval containing the real number `t`.
 * `TauCeti.RealEnclosure.HasPrecision E n`: the interval of `E` has width at most `2⁻ⁿ`.
+* `TauCeti.RealEnclosure.bisect`, `TauCeti.RealEnclosure.refine`: the half of the interval that
+  contains the enclosed number, and the enclosure obtained by bisecting `n` times.
 * `TauCeti.ComplexEnclosure z`: real enclosures of the real and imaginary parts of `z`.
 * `TauCeti.ComplexEnclosure.box`, `TauCeti.ComplexEnclosure.width`,
   `TauCeti.ComplexEnclosure.HasPrecision`, `TauCeti.ComplexEnclosure.normSqBound`: the rational
   box of a complex enclosure, its coordinatewise error bound (bounding the errors of the real and
   imaginary parts separately), its absolute precision and a rational upper bound for `|z|²`.
+* `TauCeti.ComplexEnclosure.refine`: both intervals refined `n` times.
 
 ## Main results
 
@@ -56,6 +60,16 @@ An enclosure of width zero, on the other hand, determines the enclosed number
   `|z|² ≤ max (l_R², u_R²) + max (l_I², u_I²)`.
 * `TauCeti.ComplexEnclosure.hasPrecision_ofReal_iff`: a real enclosure viewed as a complex one
   keeps its absolute precision.
+* `NonemptyInterval.reProdIm_Icc_ratCast_subset`: nested rational rectangles span nested complex
+  rectangles.
+* `TauCeti.RealEnclosure.bisect_interval_of_le`, `TauCeti.RealEnclosure.bisect_interval_of_lt`:
+  the half kept by a bisection.
+* `TauCeti.RealEnclosure.length_refine`, `TauCeti.RealEnclosure.refine_interval_antitone`: the
+  refinements of an enclosure are nested and the one at level `n` has `2⁻ⁿ` times its width;
+  `TauCeti.RealEnclosure.HasPrecision.refine`: each bisection gains one bit of absolute precision,
+  and `TauCeti.RealEnclosure.exists_hasPrecision_refine`: every precision is reached. The same
+  holds for complex enclosures (`TauCeti.ComplexEnclosure.width_refine`,
+  `TauCeti.ComplexEnclosure.refine_box_antitone`).
 
 ## References
 
@@ -66,6 +80,15 @@ An enclosure of width zero, on the other hand, determines the enclosed number
 -/
 
 public section
+
+open Complex in
+/-- Nested rational rectangles span nested rectangles of `ℂ`. -/
+theorem NonemptyInterval.reProdIm_Icc_ratCast_subset {R R' J J' : NonemptyInterval ℚ}
+    (hR : R' ≤ R) (hJ : J' ≤ J) :
+    Set.Icc (R'.fst : ℝ) R'.snd ×ℂ Set.Icc (J'.fst : ℝ) J'.snd ⊆
+      Set.Icc (R.fst : ℝ) R.snd ×ℂ Set.Icc (J.fst : ℝ) J.snd :=
+  reProdIm_subset_iff.mpr <| Set.prod_mono (Icc_ratCast_subset_Icc_ratCast hR)
+    (Icc_ratCast_subset_Icc_ratCast hJ)
 
 namespace TauCeti
 
@@ -184,6 +207,101 @@ theorem hasPrecision_ofRat (q : ℚ) (n : ℕ) : (ofRat q).HasPrecision n := by
   rw [hasPrecision_iff, ofRat_interval, NonemptyInterval.length_pure]
   positivity
 
+/-- The half of the interval `[l, u]` of `E` that contains `t`: the lower half
+`[l, (l + u) / 2]` when `t ≤ (l + u) / 2`, and the upper half `[(l + u) / 2, u]` otherwise. -/
+noncomputable def bisect (E : RealEnclosure t) : RealEnclosure t :=
+  if h : t ≤ ((E.interval.fst + E.interval.snd) / 2 : ℚ) then
+    { interval := E.interval.lowerHalf
+      fst_le := by rw [NonemptyInterval.lowerHalf_fst]; exact E.fst_le
+      le_snd := by rwa [NonemptyInterval.lowerHalf_snd] }
+  else
+    { interval := E.interval.upperHalf
+      fst_le := by rw [NonemptyInterval.upperHalf_fst]; exact (not_le.mp h).le
+      le_snd := by rw [NonemptyInterval.upperHalf_snd]; exact E.le_snd }
+
+/-- When `t` lies in the lower half of the interval `[l, u]`, bisection keeps `[l, (l + u) / 2]`. -/
+theorem bisect_interval_of_le (E : RealEnclosure t)
+    (h : t ≤ ((E.interval.fst + E.interval.snd) / 2 : ℚ)) :
+    E.bisect.interval = E.interval.lowerHalf := by
+  rw [bisect, dite_eq_left h]
+
+/-- When `t` lies strictly above the midpoint of the interval `[l, u]`, bisection keeps
+`[(l + u) / 2, u]`. -/
+theorem bisect_interval_of_lt (E : RealEnclosure t)
+    (h : ((E.interval.fst + E.interval.snd) / 2 : ℚ) < t) :
+    E.bisect.interval = E.interval.upperHalf := by
+  rw [bisect, dite_eq_right (not_le.mpr h)]
+
+/-- Bisection shrinks the interval. -/
+theorem bisect_interval_le (E : RealEnclosure t) : E.bisect.interval ≤ E.interval := by
+  rcases le_or_gt t ((E.interval.fst + E.interval.snd) / 2 : ℚ) with h | h
+  · exact (E.bisect_interval_of_le h).trans_le E.interval.lowerHalf_le
+  · exact (E.bisect_interval_of_lt h).trans_le E.interval.upperHalf_le
+
+/-- Bisection halves the width. -/
+@[simp]
+theorem length_bisect (E : RealEnclosure t) :
+    E.bisect.interval.length = E.interval.length / 2 := by
+  rcases le_or_gt t ((E.interval.fst + E.interval.snd) / 2 : ℚ) with h | h
+  · rw [bisect_interval_of_le E h, NonemptyInterval.length_lowerHalf]
+  · rw [bisect_interval_of_lt E h, NonemptyInterval.length_upperHalf]
+
+/-- The refinement of `E` at level `n`: the enclosure of `t` obtained by bisecting `n` times,
+keeping each time the half that contains `t`. Its intervals are nested
+(`TauCeti.RealEnclosure.refine_interval_antitone`) and the `n`-th has width `2⁻ⁿ` times the width
+of `E` (`TauCeti.RealEnclosure.length_refine`). -/
+noncomputable def refine (E : RealEnclosure t) : ℕ → RealEnclosure t
+  | 0 => E
+  | n + 1 => (E.refine n).bisect
+
+@[simp]
+theorem refine_zero (E : RealEnclosure t) : E.refine 0 = E :=
+  (rfl)
+
+@[simp]
+theorem refine_succ (E : RealEnclosure t) (n : ℕ) : E.refine (n + 1) = (E.refine n).bisect :=
+  (rfl)
+
+/-- The intervals of the refinements of an enclosure are nested. -/
+theorem refine_interval_antitone (E : RealEnclosure t) :
+    Antitone fun n => (E.refine n).interval :=
+  antitone_nat_of_succ_le fun n => (E.refine n).bisect_interval_le
+
+/-- Every refinement of an enclosure lies in its interval. -/
+theorem refine_interval_le (E : RealEnclosure t) (n : ℕ) : (E.refine n).interval ≤ E.interval :=
+  E.refine_interval_antitone n.zero_le
+
+/-- The refinement at level `n` has width `2⁻ⁿ` times the width of the enclosure. -/
+@[simp]
+theorem length_refine (E : RealEnclosure t) (n : ℕ) :
+    (E.refine n).interval.length = E.interval.length / 2 ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [refine_succ, length_bisect, ih, pow_succ, div_div]
+
+/-- An enclosure of width zero is its own refinement at every level; in particular the singleton
+`[q, q]` stays a singleton. -/
+theorem refine_interval_of_length_eq_zero (E : RealEnclosure t) (h : E.interval.length = 0)
+    (n : ℕ) : (E.refine n).interval = E.interval := by
+  have hle := NonemptyInterval.le_def.mp (E.refine_interval_le n)
+  rw [NonemptyInterval.length, sub_eq_zero] at h
+  have := (E.refine n).interval.fst_le_snd
+  exact NonemptyInterval.ext (Prod.ext (by linarith) (by linarith))
+
+/-- Each bisection gains one bit of absolute precision. -/
+theorem HasPrecision.refine {E : RealEnclosure t} {k : ℕ} (h : E.HasPrecision k) (n : ℕ) :
+    (E.refine n).HasPrecision (k + n) := by
+  rw [hasPrecision_iff, length_refine]
+  calc E.interval.length / 2 ^ n ≤ ((2 : ℚ) ^ k)⁻¹ / 2 ^ n := by gcongr; exact h
+    _ = ((2 : ℚ) ^ (k + n))⁻¹ := by ring
+
+/-- Every enclosure has refinements of every absolute precision. -/
+theorem exists_hasPrecision_refine (E : RealEnclosure t) (n : ℕ) :
+    ∃ m, (E.refine m).HasPrecision n := by
+  simpa only [hasPrecision_iff, length_refine] using
+    (exists_div_pow_lt E.interval.length one_lt_two (by positivity : (0 : ℚ) < (2 ^ n)⁻¹)).imp
+      fun _ => le_of_lt
+
 end RealEnclosure
 
 /-- A *complex enclosure* of `z : ℂ`: a rational box, that is, real enclosures of the real part
@@ -291,6 +409,48 @@ theorem HasPrecision.max_abs_sub_le {E : ComplexEnclosure z} {n : ℕ} (h : E.Ha
     {w : ℂ} (hw : w ∈ E.box) : max |z.re - w.re| |z.im - w.im| ≤ ((2 : ℝ) ^ n)⁻¹ := by
   rw [box_def, mem_reProdIm] at hw
   exact max_le (h.1.abs_sub_le hw.1) (h.2.abs_sub_le hw.2)
+
+/-- The refinement of a complex enclosure at level `n`: both of its intervals refined at level
+`n`. -/
+noncomputable def refine (E : ComplexEnclosure z) (n : ℕ) : ComplexEnclosure z :=
+  ⟨E.re.refine n, E.im.refine n⟩
+
+@[simp]
+theorem refine_re (E : ComplexEnclosure z) (n : ℕ) : (E.refine n).re = E.re.refine n :=
+  (rfl)
+
+@[simp]
+theorem refine_im (E : ComplexEnclosure z) (n : ℕ) : (E.refine n).im = E.im.refine n :=
+  (rfl)
+
+@[simp]
+theorem refine_zero (E : ComplexEnclosure z) : E.refine 0 = E :=
+  ComplexEnclosure.ext (by simp) (by simp)
+
+/-- The boxes of the refinements of a complex enclosure are nested. -/
+theorem refine_box_antitone (E : ComplexEnclosure z) : Antitone fun n => (E.refine n).box :=
+  fun m n hmn => by
+    simp only [box_def]
+    exact NonemptyInterval.reProdIm_Icc_ratCast_subset (E.re.refine_interval_antitone hmn)
+      (E.im.refine_interval_antitone hmn)
+
+/-- The refinement at level `n` has width `2⁻ⁿ` times the width of the enclosure. -/
+@[simp]
+theorem width_refine (E : ComplexEnclosure z) (n : ℕ) :
+    (E.refine n).width = E.width / 2 ^ n := by
+  simp [width_def, max_div_div_right]
+
+/-- Each bisection gains one bit of absolute precision. -/
+theorem HasPrecision.refine {E : ComplexEnclosure z} {k : ℕ} (h : E.HasPrecision k) (n : ℕ) :
+    (E.refine n).HasPrecision (k + n) :=
+  ⟨h.1.refine n, h.2.refine n⟩
+
+/-- Every complex enclosure has refinements of every absolute precision. -/
+theorem exists_hasPrecision_refine (E : ComplexEnclosure z) (n : ℕ) :
+    ∃ m, (E.refine m).HasPrecision n := by
+  simpa only [hasPrecision_iff_width_le, width_refine] using
+    (exists_div_pow_lt E.width one_lt_two (by positivity : (0 : ℚ) < (2 ^ n)⁻¹)).imp
+      fun _ => le_of_lt
 
 /-- The rational upper bound `max (l_R², u_R²) + max (l_I², u_I²)` for `|z|²` read off from a
 complex enclosure `([l_R, u_R], [l_I, u_I])`. -/

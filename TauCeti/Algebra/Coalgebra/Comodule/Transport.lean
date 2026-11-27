@@ -260,6 +260,12 @@ theorem transportInvHom_apply (e : M ≃ₗ[R] N) (n : N) :
     transportInvHom (R := R) (C := C) (M := M) (N := N) e n = e.symm n :=
   (rfl)
 
+/-- The inverse transport morphism is injective. -/
+theorem transportInvHom_injective (e : M ≃ₗ[R] N) :
+    letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+    Function.Injective (transportInvHom (R := R) (C := C) (M := M) (N := N) e) :=
+  e.symm.injective
+
 end Comodule
 
 namespace ComoduleCat

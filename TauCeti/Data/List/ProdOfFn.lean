@@ -34,6 +34,9 @@ homomorphisms.
 The product of a word whose letters all equal `c` except for a single letter `a` in position `p`
 is `c ^ p * a * c ^ (n - p)` (`List.prod_ofFn_ite`).
 
+If two words agree away from two adjacent positions, the product of the first is the product of
+the second with its two adjacent letters replaced (`List.prod_ofFn_eq_take_mul_mul_drop_of_eq`).
+
 A monoid endomorphism fixing every letter of a word, or fixing the product of two adjacent
 letters and every other letter, fixes the product of the word (`List.map_prod_ofFn_of_forall`,
 `List.map_prod_ofFn_of_adjacent`). In a division monoid the inverse of a product is the product
@@ -153,6 +156,25 @@ theorem prod_ofFn_eq_take_mul_mul_drop {M : Type*} [Monoid M] {k : ℕ} (g : Fin
   conv_lhs => rw [← take_append_drop i (ofFn g), drop_eq_getElem_cons hi₁,
     drop_eq_getElem_cons hi₂]
   simp [hi, mul_assoc]
+
+/-- If two words `f` and `g` agree away from two adjacent positions `i` and `i + 1`, the product of
+`f` is the product of the letters of `g` before `i`, times `f i * f (i + 1)`, times the product of
+the letters of `g` after `i + 1`. -/
+theorem prod_ofFn_eq_take_mul_mul_drop_of_eq {M : Type*} [Monoid M] {k : ℕ} (f g : Fin k → M)
+    {i i' : Fin k} (hi : (i : ℕ) + 1 = i') (hfg : ∀ j, j ≠ i → j ≠ i' → f j = g j) :
+    (ofFn f).prod = ((ofFn g).take i).prod * (f i * f i') * ((ofFn g).drop (i' + 1)).prod := by
+  rw [prod_ofFn_eq_take_mul_mul_drop f hi]
+  have ht : (ofFn f).take i = (ofFn g).take i := by
+    refine ext_getElem (by simp) fun j hj _ ↦ ?_
+    simp only [length_take, length_ofFn, lt_min_iff] at hj
+    simpa only [getElem_take, List.getElem_ofFn] using
+      hfg ⟨j, hj.2⟩ (by simp [Fin.ext_iff]; omega) (by simp [Fin.ext_iff]; omega)
+  have hd : (ofFn f).drop (i' + 1) = (ofFn g).drop (i' + 1) := by
+    refine ext_getElem (by simp) fun j hj _ ↦ ?_
+    simp only [length_drop, length_ofFn] at hj
+    simpa only [getElem_drop, List.getElem_ofFn] using
+      hfg ⟨i'.val + 1 + j, by omega⟩ (by simp [Fin.ext_iff]; omega) (by simp [Fin.ext_iff]; omega)
+  rw [ht, hd]
 
 /-- A monoid endomorphism fixing the product of two adjacent letters of a word, and every other
 letter, fixes the product of the word. -/

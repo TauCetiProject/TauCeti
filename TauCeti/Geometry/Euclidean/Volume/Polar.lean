@@ -51,6 +51,9 @@ from Mathlib's Lebesgue differentiation theorem on the line,
 
 ## Main results
 
+* `TauCeti.setIntegral_sphere_eq_smul_integral_toSphere`: integration against Hausdorff measure on
+  `sphere c r` is integration against `volume.toSphere` on the unit sphere, scaled by
+  `r ^ (n - 1)`.
 * `TauCeti.lintegral_eq_lintegral_Ioi_setLIntegral_sphere`,
   `TauCeti.setLIntegral_ball_eq_lintegral_Ioo_setLIntegral_sphere`: nonnegative polar integration
   over the whole space and over balls.
@@ -92,7 +95,7 @@ private lemma setLIntegral_sphere_eq_mul_lintegral_toSphere (c : E) {r : ℝ} (h
 
 /-- Integration against Mathlib's surface measure on the unit sphere, transported to the sphere
 `sphere c r` by `u ↦ c + r • u`, is integration against Hausdorff measure on `sphere c r`. -/
-private lemma setIntegral_sphere_eq_smul_integral_toSphere (c : E) {r : ℝ} (hr : 0 < r)
+theorem setIntegral_sphere_eq_smul_integral_toSphere (c : E) {r : ℝ} (hr : 0 < r)
     (f : E → F) :
     ∫ y in sphere c r, f y ∂μHE[finrank ℝ E - 1] = r ^ (finrank ℝ E - 1) •
       ∫ u : sphere (0 : E) 1, f (c + r • (u : E)) ∂(volume : Measure E).toSphere := by
