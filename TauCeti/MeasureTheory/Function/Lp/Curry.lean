@@ -45,6 +45,8 @@ isometry is closed when `E` is complete, and it contains the classes `𝟙_A c` 
 ## Main definitions and results
 
 * `MeasureTheory.curryLp p ν f s`: the class in `Lᵖ(ν; E)` of the section `f (s, ·)`.
+* `MeasureTheory.curryLp_indicator`, `MeasureTheory.curryLp_indicator_prod_univ`: the section
+  classes of the indicator `𝟙_A c` of a set with finite sections, and of `(s, t) ↦ 𝟙_A(s) g(t)`.
 * `MeasureTheory.MemLp.aestronglyMeasurable_curryLp`, `MeasureTheory.MemLp.memLp_curryLp`,
   `MeasureTheory.MemLp.eLpNorm_curryLp`: for `f ∈ Lᵖ(μ ⊗ ν; E)` the section classes form an
   element of `Lᵖ(μ; Lᵖ(ν; E))` with the same norm.
@@ -119,7 +121,22 @@ theorem curryLp_add {f g : α × β → E} {x : α} (hf : MemLp (fun y ↦ f (x,
     (hg : MemLp (fun y ↦ g (x, y)) p ν) :
     curryLp p ν (f + g) x = curryLp p ν f x + curryLp p ν g x := by
   rw [curryLp_of_memLp (hf.add hg), curryLp_of_memLp hf, curryLp_of_memLp hg, ← MemLp.toLp_add]
-  rfl
+  exact MemLp.toLp_congr _ _ (.of_forall fun _ ↦ Pi.add_apply _ _ _)
+
+/-- The class of the section of a difference is the difference of the classes when both sections
+are in `Lᵖ(ν; E)`. -/
+theorem curryLp_sub {f g : α × β → E} {x : α} (hf : MemLp (fun y ↦ f (x, y)) p ν)
+    (hg : MemLp (fun y ↦ g (x, y)) p ν) :
+    curryLp p ν (f - g) x = curryLp p ν f x - curryLp p ν g x := by
+  rw [curryLp_of_memLp (hf.sub hg), curryLp_of_memLp hf, curryLp_of_memLp hg, ← MemLp.toLp_sub]
+  exact MemLp.toLp_congr _ _ (.of_forall fun _ ↦ Pi.sub_apply _ _ _)
+
+/-- The class of the section of a negation is the negation of the class when the section is in
+`Lᵖ(ν; E)`. -/
+theorem curryLp_neg {f : α × β → E} {x : α} (hf : MemLp (fun y ↦ f (x, y)) p ν) :
+    curryLp p ν (-f) x = -curryLp p ν f x := by
+  rw [curryLp_of_memLp hf.neg, curryLp_of_memLp hf, ← MemLp.toLp_neg]
+  exact MemLp.toLp_congr _ _ (.of_forall fun _ ↦ Pi.neg_apply _ _)
 
 /-- The class of the section of a scalar multiple is the scalar multiple of the class when the
 section is in `Lᵖ(ν; E)`. -/
@@ -127,12 +144,30 @@ theorem curryLp_const_smul {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 E] [IsB
     {f : α × β → E} {x : α} (hf : MemLp (fun y ↦ f (x, y)) p ν) :
     curryLp p ν (c • f) x = c • curryLp p ν f x := by
   rw [curryLp_of_memLp (hf.const_smul c), curryLp_of_memLp hf, ← MemLp.toLp_const_smul]
-  rfl
+  exact MemLp.toLp_congr _ _ (.of_forall fun _ ↦ Pi.smul_apply _ _ _)
 
 /-- The norm of the class of a section in `Lᵖ(ν; E)` is the `Lᵖ(ν)` seminorm of the section. -/
 theorem eNorm_curryLp {f : α × β → E} {x : α} (h : MemLp (fun y ↦ f (x, y)) p ν) :
     ‖curryLp p ν f x‖ₑ = eLpNorm (fun y ↦ f (x, y)) p ν := by
   rw [curryLp_of_memLp h, Lp.eNorm_toLp]
+
+omit [MeasurableSpace β] in
+/-- The section at `x` of the indicator of `A ⊆ α × β` is the indicator of the section of `A`. -/
+private theorem indicator_section (A : Set (α × β)) (c : E) (x : α) :
+    (fun y ↦ A.indicator (fun _ ↦ c) (x, y)) = (Prod.mk x ⁻¹' A).indicator fun _ ↦ c :=
+  funext fun _ ↦ (indicator_comp_right (Prod.mk x)).symm
+
+/-- The section classes of `(x, y) ↦ 𝟙_s(x) g(y)` are `𝟙_s g`. -/
+theorem curryLp_indicator_prod_univ {s : Set α} (g : Lp E p ν) :
+    curryLp p ν ((s ×ˢ univ).indicator fun z ↦ g z.2) = s.indicator fun _ ↦ g := by
+  ext1 x
+  by_cases hx : x ∈ s
+  · have hsec : (fun y ↦ (s ×ˢ univ).indicator (fun z : α × β ↦ g z.2) (x, y)) = g :=
+      funext fun y ↦ by simp [hx]
+    rw [indicator_of_mem hx, curryLp_of_memLp (hsec.symm ▸ Lp.memLp g)]
+    simp only [hsec, Lp.toLp_coeFn]
+  · rw [indicator_of_notMem hx, curryLp_congr (g := 0) (.of_forall fun y ↦ by simp [hx]),
+      curryLp_zero, Pi.zero_apply]
 
 variable [MeasurableSpace α] {μ : Measure α}
 
@@ -201,22 +236,22 @@ private theorem stronglyMeasurable_indicatorConstLp_inter [Fact (1 ≤ p)] (hp :
       exact ne_top_of_le_ne_top hνS (measure_mono inter_subset_right)
     have hsum := (TauCeti.hasSum_indicatorConstLp hp
       (fun i ↦ (measurable_prodMk_left (hA i)).inter hS) hd' hνU c).tendsto_sum_nat
-    simp only [Finset.sum_apply]
     -- The limits differ only in how the union of the sections is written, which is `hU`.
-    convert hsum using 2
-    congr 1
+    simp only [Finset.sum_apply, hU]
+    exact hsum
 
 /-- The section classes of the indicator of a measurable set with finite sections are the
 indicator classes of the sections. -/
-private theorem curryLp_indicator {A : Set (α × β)} (hA : MeasurableSet A) (c : E) {x : α}
+theorem curryLp_indicator {A : Set (α × β)} (hA : MeasurableSet A) (c : E) {x : α}
     (hx : ν (Prod.mk x ⁻¹' A) ≠ ∞) :
     curryLp p ν (A.indicator fun _ ↦ c) x =
       indicatorConstLp p (measurable_prodMk_left hA) hx c := by
-  have h : (fun y ↦ A.indicator (fun _ ↦ c) (x, y)) = (Prod.mk x ⁻¹' A).indicator fun _ ↦ c :=
-    funext fun _ ↦ (indicator_comp_right (Prod.mk x)).symm
-  rw [curryLp_of_memLp (h.symm ▸ memLp_indicator_const p
-    (measurable_prodMk_left hA).nullMeasurableSet c (.inr hx))]
-  simp only [indicatorConstLp, h]
+  have hmem : MemLp (fun y ↦ A.indicator (fun _ ↦ c) (x, y)) p ν := by
+    rw [indicator_section]
+    exact memLp_indicator_const p (measurable_prodMk_left hA).nullMeasurableSet c (.inr hx)
+  refine Lp.ext ((coeFn_curryLp hmem).trans ?_)
+  rw [indicator_section]
+  exact indicatorConstLp_coeFn.symm
 
 /-- For a σ-finite `ν` and a measurable set `A ⊆ α × β`, the section classes of the indicator
 `𝟙_A c` form a strongly measurable function. Truncating the sections to the sets of an exhaustion
@@ -258,9 +293,7 @@ private theorem stronglyMeasurable_curryLp_indicator [Fact (1 ≤ p)] (hp : p �
     · exact tendsto_const_nhds
     intro hmem
     have hx' : ν (Prod.mk x ⁻¹' A) = ∞ := not_lt_top_iff.1 hx
-    have hsec : (fun y ↦ A.indicator (fun _ ↦ c) (x, y)) = (Prod.mk x ⁻¹' A).indicator fun _ ↦ c :=
-      funext fun _ ↦ (indicator_comp_right (Prod.mk x)).symm
-    rw [memLp_iff, hsec,
+    rw [memLp_iff, indicator_section,
       eLpNorm_indicator_const (measurable_prodMk_left hA).nullMeasurableSet hp0 hp, hx',
       ENNReal.top_rpow_of_pos (by simp [ENNReal.toReal_pos hp0 hp]),
       ENNReal.mul_top (by simpa using hc)] at hmem
@@ -275,8 +308,7 @@ private theorem ae_dist_curryLp [Fact (1 ≤ p)] [SFinite ν] {f g : α × β �
     ∀ᵐ x ∂μ, dist (curryLp p ν f x) (curryLp p ν g x) =
       (eLpNorm (fun y ↦ (f - g) (x, y)) p ν).toReal := by
   filter_upwards [hf.ae_memLp_prod_right, hg.ae_memLp_prod_right] with x hfx hgx
-  rw [dist_eq_norm, curryLp_of_memLp hfx, curryLp_of_memLp hgx, ← MemLp.toLp_sub, Lp.norm_toLp]
-  rfl
+  rw [dist_eq_norm, ← curryLp_sub hfx hgx, ← toReal_eNorm, eNorm_curryLp (hfx.sub hgx)]
 
 /-- The functions in `Lᵖ(μ ⊗ ν; E)` whose section classes are almost everywhere strongly
 measurable form a closed set: convergence in `Lᵖ(μ ⊗ ν; E)` is convergence in `μ`-measure of
@@ -345,7 +377,8 @@ end CurryLp
 namespace Lp
 
 variable (𝕜 : Type*) {α β : Type*} (E : Type*) [MeasurableSpace α] [MeasurableSpace β]
-  [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] (μ : Measure α) (ν : Measure β)
+  [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (μ : Measure α)
+  (ν : Measure β)
   {p : ℝ≥0∞} [Fact (1 ≤ p)] [SigmaFinite ν]
 
 /-- **Fubini's theorem for Bochner spaces**, isometric part: for a finite exponent `p` and a
@@ -401,24 +434,11 @@ theorem curryₗᵢ_indicatorConstLp_prod (hp : p ≠ ∞) {s : Set α} {t : Set
   by_cases hx : x ∈ s
   · have hsec : Prod.mk x ⁻¹' s ×ˢ t = t := mk_preimage_prod_right hx
     rw [indicator_of_mem hx, curryLp_indicator (hs.prod ht) c (by rwa [hsec])]
-    congr 1
+    simp only [hsec]
   · have hsec : Prod.mk x ⁻¹' s ×ˢ t = ∅ := mk_preimage_prod_right_eq_empty hx
     rw [indicator_of_notMem hx, curryLp_indicator (hs.prod ht) c (by simp [hsec]),
       ← indicatorConstLp_empty (μ := ν) (p := p) (c := c)]
-    congr 1
-
-omit [MeasurableSpace α] [Fact (1 ≤ p)] [SigmaFinite ν] in
-/-- The section classes of `(x, y) ↦ 𝟙_s(x) g(y)` are `𝟙_s g`. -/
-private theorem curryLp_indicator_prod_univ {s : Set α} (g : Lp E p ν) :
-    curryLp p ν ((s ×ˢ univ).indicator fun z ↦ g z.2) = s.indicator fun _ ↦ g := by
-  ext1 x
-  by_cases hx : x ∈ s
-  · have hsec : (fun y ↦ (s ×ˢ univ).indicator (fun z : α × β ↦ g z.2) (x, y)) = g :=
-      funext fun y ↦ by simp [hx]
-    rw [indicator_of_mem hx, curryLp_of_memLp (hsec.symm ▸ Lp.memLp g)]
-    simp only [hsec, Lp.toLp_coeFn]
-  · rw [indicator_of_notMem hx, curryLp_congr (g := 0) (.of_forall fun y ↦ by simp [hx]),
-      curryLp_zero, Pi.zero_apply]
+    simp only [hsec]
 
 /-- Every indicator class `𝟙_s g` with `g ∈ Lᵖ(ν; E)` is in the image of `Lp.curryₗᵢ`: it is the
 image of the class of `(x, y) ↦ 𝟙_s(x) g(y)`. -/

@@ -226,10 +226,10 @@ variable {ι : Type*} {s : ι → Set α}
 /-- The indicator class of a finite union of pairwise disjoint sets of finite measure is the sum
 of the indicator classes of the sets. -/
 theorem sum_indicatorConstLp (t : Finset ι) (hs : ∀ i, MeasurableSet (s i))
-    (hμs : ∀ i, μ (s i) ≠ ∞) (hd : Pairwise (Function.onFun Disjoint s)) (c : E)
-    (hμt : μ (⋃ i ∈ t, s i) ≠ ∞) :
+    (hμs : ∀ i, μ (s i) ≠ ∞) (hd : (t : Set ι).PairwiseDisjoint s) (c : E) :
     ∑ i ∈ t, indicatorConstLp p (hs i) (hμs i) c =
-      indicatorConstLp p (t.measurableSet_biUnion fun i _ ↦ hs i) hμt c := by
+      indicatorConstLp p (t.measurableSet_biUnion fun i _ ↦ hs i)
+        (measure_biUnion_lt_top t.finite_toSet fun i _ ↦ (hμs i).lt_top).ne c := by
   classical
   induction t using Finset.induction_on with
   | empty =>
@@ -237,11 +237,12 @@ theorem sum_indicatorConstLp (t : Finset ι) (hs : ∀ i, MeasurableSet (s i))
     congr
     simp
   | insert i t hi ih =>
-    have hμt' : μ (⋃ j ∈ t, s j) ≠ ∞ := ne_top_of_le_ne_top hμt
-      (measure_mono (Set.biUnion_subset_biUnion_left (Finset.subset_insert i t)))
-    rw [Finset.sum_insert hi, ih hμt', ← indicatorConstLp_disjoint_union (hs i)
-      (t.measurableSet_biUnion fun j _ ↦ hs j) (hμs i) hμt'
-      (Set.disjoint_iUnion₂_right.2 fun j hj ↦ hd fun h ↦ hi (h ▸ hj))]
+    have hd' : (t : Set ι).PairwiseDisjoint s :=
+      hd.subset (Finset.coe_subset.2 (Finset.subset_insert i t))
+    rw [Finset.sum_insert hi, ih hd', ← indicatorConstLp_disjoint_union (hs i)
+      (t.measurableSet_biUnion fun j _ ↦ hs j) (hμs i) _
+      (Set.disjoint_iUnion₂_right.2 fun j hj ↦ hd (by simp) (by simp [hj])
+        fun h ↦ hi (h ▸ hj))]
     congr 1
     rw [Finset.set_biUnion_insert]
 
@@ -257,7 +258,8 @@ theorem hasSum_indicatorConstLp [Countable ι] [Fact (1 ≤ p)] (hp : p ≠ ∞)
   have hμt (t : Finset ι) : μ (⋃ i ∈ t, s i) ≠ ∞ :=
     ne_top_of_le_ne_top hμ (measure_mono (Set.iUnion₂_subset fun i _ ↦ Set.subset_iUnion s i))
   have hsum := fun t : Finset ι ↦ sum_indicatorConstLp t hs
-    (fun i ↦ ne_top_of_le_ne_top hμ (measure_mono (Set.subset_iUnion s i))) hd c (hμt t) (p := p)
+    (fun i ↦ ne_top_of_le_ne_top hμ (measure_mono (Set.subset_iUnion s i)))
+    (hd.set_pairwise (t : Set ι)) c (p := p)
   simp_rw [HasSum, hsum, SummationFilter.unconditional_filter]
   refine tendsto_indicatorConstLp_set hp ?_
   -- The finite unions increase to the union, whose measure is finite.
