@@ -15,7 +15,7 @@ import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.FirstInequality
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Index
 import TauCeti.NumberTheory.QuadraticForm.Global.Nonsquare
 import TauCeti.NumberTheory.QuadraticForm.Global.ProductFormula
-import TauCeti.NumberTheory.QuadraticForm.Global.Transport
+import TauCeti.NumberTheory.QuadraticForm.Global.Transport.Basic
 
 /-!
 # Hilbert sign prescription

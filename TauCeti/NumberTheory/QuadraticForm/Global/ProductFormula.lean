@@ -12,7 +12,7 @@ import Mathlib.Algebra.Ring.Shrink
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Hilbert.Reciprocity
 import TauCeti.NumberTheory.QuadraticForm.Global.CohomologicalSymbol
-import TauCeti.NumberTheory.QuadraticForm.Global.Transport
+import TauCeti.NumberTheory.QuadraticForm.Global.Transport.Basic
 
 /-!
 # The product formula for the norm-equation Hilbert symbol and for the Hasse invariant

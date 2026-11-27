@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
 # Transporting quadratic forms along semilinear equivalences
@@ -42,6 +44,8 @@ copy in another universe.
 * `QuadraticMap.equivalent_transport_iff`, `QuadraticMap.isRepresentedBy_transport_iff`: the
   transported forms are isometric, or one is injectively represented by the other, exactly when
   the original forms are.
+* `QuadraticForm.baseChange_transport`: base change of a transported form is the transport of the
+  base change along the semilinear scalar extension `LinearEquiv.baseChangeₛₗ`.
 -/
 
 public section
@@ -363,3 +367,25 @@ theorem isRepresentedBy_transport_iff (f₁ : M₁ ≃ₛₗ[σ] M₁') (f₂ : 
 end Isometry
 
 end QuadraticMap
+
+namespace QuadraticForm
+
+open TensorProduct
+
+variable {R S A B : Type*} [CommRing R] [CommRing S] [CommRing A] [CommRing B]
+  [Algebra R A] [Algebra S B] [Invertible (2 : R)] [Invertible (2 : S)]
+  {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  {τ : A →+* B} {τ' : B →+* A} [RingHomInvPair τ τ'] [RingHomInvPair τ' τ]
+  {M M' : Type*} [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module S M']
+
+/-- Base change commutes with transport: for a ring isomorphism `τ : A → B` restricting to `σ` on
+scalars, base changing `Q.transport f` to `B` is the transport of the base change of `Q` to `A`
+along the scalar extension `A ⊗[R] M ≃ B ⊗[S] M'` of `f`. -/
+theorem baseChange_transport (Q : QuadraticForm R M) (f : M ≃ₛₗ[σ] M')
+    (h : ∀ r, τ (algebraMap R A r) = algebraMap S B (σ r)) :
+    (Q.transport f).baseChange B = (Q.baseChange A).transport (f.baseChangeₛₗ h) := by
+  refine baseChange_ext fun x ↦ ?_
+  rw [QuadraticMap.transport_apply, LinearEquiv.baseChangeₛₗ_symm_tmul]
+  simp [Algebra.smul_def, h]
+
+end QuadraticForm

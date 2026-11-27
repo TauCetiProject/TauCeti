@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
+public import TauCeti.NumberTheory.NumberField.FinitePlace.Transport
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Transport
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
@@ -93,9 +94,7 @@ theorem isSquare_unitAtFinitePlace_iff_of_ringEquiv (e : K ≃+* L)
     (hvw : w.asIdeal = Ideal.map (RingOfIntegers.mapRingEquiv e) v.asIdeal) (a : Kˣ) :
     IsSquare (w.unitAtFinitePlace (Units.map (e : K →* L) a)) ↔
       IsSquare (v.unitAtFinitePlace a) := by
-  have he (x : K) : w.valuation L (e x) = v.valuation K x := by
-    simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L)
-      (RingOfIntegers.mapRingEquiv e) hvw x
+  have he := e.valuation_apply_of_asIdeal_eq hvw
   let f := Units.mapEquiv (adicCompletionCongr v w e he).toMulEquiv
   have hf : f (v.unitAtFinitePlace a) = w.unitAtFinitePlace (Units.map (e : K →* L) a) :=
     units_map_adicCompletionCongr_unitAtFinitePlace he a
@@ -122,9 +121,7 @@ theorem hilbertSymbol_unitAtFinitePlace_of_ringEquiv (e : K ≃+* L)
     hilbertSymbol (w.unitAtFinitePlace (Units.map (e : K →* L) a))
         (w.unitAtFinitePlace (Units.map (e : K →* L) b)) =
       hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) := by
-  have he (x : K) : w.valuation L (e x) = v.valuation K x := by
-    simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L)
-      (RingOfIntegers.mapRingEquiv e) hvw x
+  have he := e.valuation_apply_of_asIdeal_eq hvw
   rw [← units_map_adicCompletionCongr_unitAtFinitePlace he a,
     ← units_map_adicCompletionCongr_unitAtFinitePlace he b,
     hilbertSymbol_units_map_ringEquiv (adicCompletionCongr v w e he)]
@@ -169,9 +166,7 @@ theorem exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv (e : K ≃+* L)
       ∃ x y : v.adicCompletion K,
         algebraMap K (v.adicCompletion K) a =
           x ^ 2 - algebraMap K (v.adicCompletion K) d * y ^ 2 := by
-  have he (x : K) : w.valuation L (e x) = v.valuation K x := by
-    simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L)
-      (RingOfIntegers.mapRingEquiv e) hvw x
+  have he := e.valuation_apply_of_asIdeal_eq hvw
   rw [← adicCompletionCongr_algebraMap he a, ← adicCompletionCongr_algebraMap he d,
     (adicCompletionCongr v w e he).exists_eq_sq_sub_mul_sq_map_iff]
 
