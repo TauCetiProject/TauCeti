@@ -126,19 +126,20 @@ private theorem exists_weylAdjointRepresentation_eq_reflection_of_decomposition
   exact ⟨c, hc, hcB, n, hn⟩
 
 /-- **The Weyl group acts freely on the regular elements of `𝔱`.** Let `T` be a maximal torus of
-a compact connected Lie group, let `B` be an invariant inner product on `𝔤`, and let
-`𝔤 = 𝔱 + Σ E_i` be a root-plane decomposition with nonzero planes and nonzero roots `α_i`. Only the
-identity of the Weyl group `N(T) / T` fixes an element `X ∈ 𝔱` at which no root vanishes. -/
+a compact connected Lie group, let `B` be an invariant bilinear form on `𝔤` with trivial left
+radical, and let `𝔤 = 𝔱 + Σ E_i` be a root-plane decomposition with nonzero planes and nonzero roots
+`α_i`. Only the identity of the Weyl group `N(T) / T` fixes an element `X ∈ 𝔱` at which no root
+vanishes. -/
 theorem IsMaximalTorus.eq_one_of_weylAdjointRepresentation_apply_eq_self (hT : IsMaximalTorus T)
-    (hBp : B.toQuadraticMap.PosDef) (hB : B.lieInvariant (LeftInvariantDerivation I G))
+    (hsep : B.SeparatingLeft) (hB : B.lieInvariant (LeftInvariantDerivation I G))
     (hD : IsRootPlaneDecomposition B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J)
     (hα : ∀ i, α i ≠ 0) (hV : ∀ i, V i ≠ ⊥) (w : T.normalizerQuotient)
     (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) (hX : ∀ i, α i X ≠ 0)
     (hwX : T.weylAdjointRepresentation (I := I) w X = X) : w = 1 := by
   obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
   -- A representative `n` fixes `X`, so it lies in the adjoint stabilizer of `X`, which is `T`.
-  have hstab := hD.stabilizer_continuousAdjointRepresentation_eq_iff hT.isTorus rfl hB
-    (LinearMap.BilinForm.separatingLeft_of_anisotropic hBp.anisotropic) hα hV X |>.2 hX
+  have hstab :=
+    hD.stabilizer_continuousAdjointRepresentation_eq_iff hT.isTorus rfl hB hsep hα hV X |>.2 hX
   have hn : (n : G) ∈
       (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
         (X : LeftInvariantDerivation I G) := by
@@ -165,7 +166,8 @@ theorem IsMaximalTorus.existsUnique_mem_closedChamber_orbitRel_weylAdjointRepres
     (restrict_apply_self_pos hBp)
     (exists_weylAdjointRepresentation_eq_reflection_of_decomposition hT hBs hBp hB hD hα
       hV)
-    (hT.eq_one_of_weylAdjointRepresentation_apply_eq_self hBp hB hD hα hV) hX₀ X
+    (hT.eq_one_of_weylAdjointRepresentation_apply_eq_self
+      (LinearMap.BilinForm.separatingLeft_of_anisotropic hBp.anisotropic) hB hD hα hV) hX₀ X
 
 /-- **The closed Weyl chamber parametrizes the Weyl orbits in `𝔱`.** Under the hypotheses of
 `TauCeti.Lie.IsMaximalTorus.existsUnique_mem_closedChamber_orbitRel_weylAdjointRepresentation`,
@@ -180,7 +182,8 @@ noncomputable def IsMaximalTorus.weylClosedChamberHomeomorph (hT : IsMaximalToru
   have := hT.finite_normalizerQuotient I
   (T.weylAdjointRepresentation (I := I)).closedChamberHomeomorph (restrict_apply_self_pos hBp)
     (exists_weylAdjointRepresentation_eq_reflection_of_decomposition hT hBs hBp hB hD hα hV)
-    (hT.eq_one_of_weylAdjointRepresentation_apply_eq_self hBp hB hD hα hV) hX₀
+    (hT.eq_one_of_weylAdjointRepresentation_apply_eq_self
+      (LinearMap.BilinForm.separatingLeft_of_anisotropic hBp.anisotropic) hB hD hα hV) hX₀
     (fun _ ↦ LinearMap.continuous_of_finiteDimensional _)
     (fun _ ↦ LinearMap.continuous_of_finiteDimensional _)
 
