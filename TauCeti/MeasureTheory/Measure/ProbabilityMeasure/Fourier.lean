@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
+import TauCeti.MeasureTheory.Measure.AddCircle
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.DenseSpan
 
 /-!
@@ -43,12 +44,8 @@ tends to zero. -/
 theorem tendsto_haarAddCircle_iff :
     Tendsto μs L (𝓝 AddCircle.haarAddCircle.toProbabilityMeasure) ↔ ∀ n : ℤ, n ≠ 0 →
       Tendsto (fun i ↦ ∫ x, fourier n x ∂(μs i : Measure (AddCircle T))) L (𝓝 0) := by
-  have hhaar (n : ℤ) : ∫ x, fourier n x ∂(AddCircle.haarAddCircle (T := T)) =
-      if n = 0 then 1 else 0 := by
-    simpa [fourierCoeff, fourier_zero, Pi.single_apply, eq_comm] using
-      congrFun (fourierCoeff_fourier (T := T) n) 0
   rw [tendsto_iff_forall_integral_fourier_tendsto]
-  simp only [Measure.coe_toProbabilityMeasure, hhaar]
+  simp only [Measure.coe_toProbabilityMeasure, AddCircle.integral_fourier_haarAddCircle]
   refine ⟨fun h n hn ↦ by simpa [hn] using h n, fun h n ↦ ?_⟩
   by_cases hn : n = 0
   · subst n; simpa using (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (1 : ℂ)) L (𝓝 1))

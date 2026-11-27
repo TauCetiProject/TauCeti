@@ -178,12 +178,10 @@ theorem isLegendrianImmersion_iff_finrank_le [IsManifold J 2 N] [Nonempty N] {n 
     (hf : Manifold.IsImmersion J I ∞ f) (hfD : IsHorizontalMap J D f) :
     IsLegendrianImmersion J D f ↔ finrank ℝ E ≤ 2 * finrank ℝ E' + 1 := by
   refine ⟨fun h ↦ h.two_mul_finrank_add_one.ge, fun h ↦
-    ⟨⟨hD.isContMDiffDistribution.of_le hn, hD.ne_top, hD.bijective_distributionLeviForm⟩, hf, hfD,
-      le_antisymm ?_ h⟩⟩
+    ⟨hD.of_le hn, hf, hfD, le_antisymm ?_ h⟩⟩
   obtain ⟨y⟩ := ‹Nonempty N›
   have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
-  exact hfD.two_mul_finrank_add_one_le
-    ⟨hD.isContMDiffDistribution.of_le hn, hD.ne_top, hD.bijective_distributionLeviForm⟩ le_rfl
+  exact hfD.two_mul_finrank_add_one_le (hD.of_le hn) le_rfl
     ((hf.contMDiff y).of_le (by simp)) (hf.mfderiv_injective (by simp) y)
 
 

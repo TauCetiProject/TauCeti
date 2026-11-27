@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Normed.Operator.Banach
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Strongly nondegenerate two-forms and their contraction inverse

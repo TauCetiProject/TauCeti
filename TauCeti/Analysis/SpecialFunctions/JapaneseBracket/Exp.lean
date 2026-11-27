@@ -10,7 +10,9 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Real.Sqrt
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.MeasureTheory.Function.Lp.Adjoint
 
 /-!
@@ -58,14 +60,13 @@ theorem continuous_exp_mul_sqrt_add_norm_sq (c : ℝ) :
 theorem fderiv_exp_mul_sqrt_add_norm_sq (c : ℝ) (hb : 0 < b) (z : E) :
     fderiv ℝ (fun t : E ↦ Real.exp (c * √(b + ‖t‖ ^ 2))) z =
       (Real.exp (c * √(b + ‖z‖ ^ 2)) * c / √(b + ‖z‖ ^ 2)) • innerSL ℝ z := by
-  have hp : 0 < b + ‖z‖ ^ 2 := by positivity
-  have hd :=
-    ((((hasStrictFDerivAt_norm_sq z).hasFDerivAt.const_add b).sqrt hp.ne').const_mul c).exp
-  rw [hd.fderiv]
+  have hd : HasFDerivAt (fun t : E ↦ √(b + ‖t‖ ^ 2)) ((√(b + ‖z‖ ^ 2))⁻¹ • innerSL ℝ z) z := by
+    simpa only [sub_zero] using hasFDerivAt_sqrt_add_norm_sub_sq (x₀ := 0) (x := z)
+      (by positivity)
+  rw [(hd.const_mul c).exp.fderiv]
   ext v
   simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
   field_simp
-  ring
 
 /-- The exact norm of the derivative of the regularized radial exponential weight: the
 logarithmic gradient has norm `|c| ‖z‖ / √(b + ‖z‖²)`. -/
@@ -166,12 +167,9 @@ factor `exp(|c| √|s - t|)`, uniformly in `z`, since the square root is `1/2`-H
 theorem exp_mul_sqrt_add_norm_sq_le (c s t : ℝ) (z : E) :
     Real.exp (c * √(s + ‖z‖ ^ 2)) ≤
       Real.exp (|c| * √|s - t|) * Real.exp (c * √(t + ‖z‖ ^ 2)) := by
-  rw [← Real.exp_add, Real.exp_le_exp]
+  refine exp_mul_le_exp_abs_mul_mul_exp_of_abs_sub_le ?_
   have hd := Real.abs_sqrt_sub_sqrt_le (s + ‖z‖ ^ 2) (t + ‖z‖ ^ 2)
-  rw [add_sub_add_right_eq_sub] at hd
-  have h := (abs_le.mp ((abs_mul c _).symm ▸
-    mul_le_mul_of_nonneg_left hd (abs_nonneg c))).2
-  linarith [mul_sub c (√(s + ‖z‖ ^ 2)) (√(t + ‖z‖ ^ 2))]
+  rwa [add_sub_add_right_eq_sub] at hd
 
 omit [InnerProductSpace ℝ E] in
 /-- The squared form of `exp_mul_sqrt_add_norm_sq_le`, comparing the squared weights that enter
@@ -179,8 +177,9 @@ weighted `L²` norms. -/
 theorem sq_exp_mul_sqrt_add_norm_sq_le (c s t : ℝ) (z : E) :
     Real.exp (c * √(s + ‖z‖ ^ 2)) ^ 2 ≤
       Real.exp (|c| * √|s - t|) ^ 2 * Real.exp (c * √(t + ‖z‖ ^ 2)) ^ 2 := by
-  rw [← mul_pow]
-  exact pow_le_pow_left₀ (Real.exp_pos _).le (exp_mul_sqrt_add_norm_sq_le c s t z) 2
+  refine sq_exp_mul_le_of_abs_sub_le ?_
+  have hd := Real.abs_sqrt_sub_sqrt_le (s + ‖z‖ ^ 2) (t + ‖z‖ ^ 2)
+  rwa [add_sub_add_right_eq_sub] at hd
 
 section L2
 

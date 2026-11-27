@@ -416,8 +416,8 @@ theorem exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacte
   have hα : (SmoothForm.mpullback j hj α).IsContactForm :=
     (h.isRestrictedContactType_liouvilleGraph hZ hc hιd hιs hιW hfd fun s ↦ (hf₀ s).ne')
       |>.isContactType.isContactForm_mpullback h.isNondegenerate hj hjs hdim
-  have hαneg : (SmoothForm.mpullback j hj (-α)).IsContactForm := by
-    rwa [map_neg, SmoothForm.isContactForm_neg_iff]
+  have hαneg : (SmoothForm.mpullback j hj (-α)).IsContactForm :=
+    (SmoothForm.isContactForm_mpullback_neg_iff hj α).2 hα
   have hdθ (s : S) : mextDeriv (-α).val (j s) = -ω.val (j s) := by
     rw [NegMemClass.coe_neg, mextDeriv_neg, h.mextDeriv_eq, Pi.neg_apply]
   have hKj (s : S) : (mfderiv J I j s).range = (mvfderiv I K (j s)).ker := by
