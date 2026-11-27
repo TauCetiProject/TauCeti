@@ -74,6 +74,9 @@ passes to the new diagram, and its relative grading is
 * `TauCeti.HeegaardRegionSystem.addBasepointGenerator`: the generator `(x, i)`.
 * `TauCeti.HeegaardRegionSystem.addBasepointGeneratorEquiv`: the generators of the new diagram
   are the pairs of an old generator and a new point.
+* `TauCeti.HeegaardRegionSystem.addBasepointChainProdEquiv`: the splitting of the chains of the
+  new diagram, with any coefficients, into their components at the generators `(x, 0)` and
+  `(x, 1)`.
 * `TauCeti.HeegaardRegionSystem.addBasepointChainEquiv`: the resulting identification of hat
   chain groups `CF̂_{b+1} ≅ CF̂_b ⊗ W`.
 * `TauCeti.HeegaardRegionSystem.addBasepointPeriodicDomainsEquiv`: the periodic domains of the new
@@ -366,6 +369,73 @@ theorem addBasepointGeneratorEquiv_apply (c : H.Generator × Fin 2) :
 theorem addBasepointGeneratorEquiv_symm_apply (x : H.Generator) (k : Fin 2) :
     (H.addBasepointGeneratorEquiv r₀).symm (H.addBasepointGenerator r₀ x k) = (x, k) :=
   (H.addBasepointGeneratorEquiv r₀).symm_apply_eq.mpr rfl
+
+variable {R : Type*} [Semiring R]
+
+/-- The splitting of the chains of the diagram with an added basepoint, with coefficients in a
+semiring `R`, into their components at the generators `(x, 0)` and at the generators `(x, 1)`. -/
+noncomputable def addBasepointChainProdEquiv :
+    ((H.addBasepoint r₀).Generator →₀ R) ≃ₗ[R] (H.Generator →₀ R) × (H.Generator →₀ R) where
+  toFun c := (Finsupp.equivFunOnFinite.symm fun y => c (H.addBasepointGenerator r₀ y 0),
+    Finsupp.equivFunOnFinite.symm fun y => c (H.addBasepointGenerator r₀ y 1))
+  invFun c := Finsupp.equivFunOnFinite.symm fun g =>
+    ![c.1 ((H.addBasepointGeneratorEquiv r₀).symm g).1,
+      c.2 ((H.addBasepointGeneratorEquiv r₀).symm g).1] ((H.addBasepointGeneratorEquiv r₀).symm g).2
+  map_add' c c' := by ext <;> simp
+  map_smul' a c := by ext <;> simp
+  left_inv c := by
+    ext g
+    obtain ⟨⟨y, k⟩, rfl⟩ := (H.addBasepointGeneratorEquiv r₀).surjective g
+    fin_cases k <;> simp
+  right_inv c := by ext <;> simp
+
+/-- The first component of the splitting reads the coefficients at the generators `(y, 0)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_apply_fst (c : (H.addBasepoint r₀).Generator →₀ R)
+    (y : H.Generator) :
+    (H.addBasepointChainProdEquiv r₀ c).1 y = c (H.addBasepointGenerator r₀ y 0) := by
+  simp [addBasepointChainProdEquiv]
+
+/-- The second component of the splitting reads the coefficients at the generators `(y, 1)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_apply_snd (c : (H.addBasepoint r₀).Generator →₀ R)
+    (y : H.Generator) :
+    (H.addBasepointChainProdEquiv r₀ c).2 y = c (H.addBasepointGenerator r₀ y 1) := by
+  simp [addBasepointChainProdEquiv]
+
+/-- The chain with components `m` and `n` has coefficient `m x` at the generator `(x, 0)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_symm_apply_zero (m n : H.Generator →₀ R) (x : H.Generator) :
+    (H.addBasepointChainProdEquiv r₀).symm (m, n) (H.addBasepointGenerator r₀ x 0) = m x := by
+  simp [addBasepointChainProdEquiv]
+
+/-- The chain with components `m` and `n` has coefficient `n x` at the generator `(x, 1)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_symm_apply_one (m n : H.Generator →₀ R) (x : H.Generator) :
+    (H.addBasepointChainProdEquiv r₀).symm (m, n) (H.addBasepointGenerator r₀ x 1) = n x := by
+  simp [addBasepointChainProdEquiv]
+
+/-- The splitting of the basis chain `single (x, 0) a` is `(single x a, 0)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_single_zero (x : H.Generator) (a : R) :
+    H.addBasepointChainProdEquiv r₀ (Finsupp.single (H.addBasepointGenerator r₀ x 0) a) =
+      (Finsupp.single x a, 0) := by
+  classical
+  refine Prod.ext (Finsupp.ext fun y => ?_) (Finsupp.ext fun y => ?_)
+  · rw [addBasepointChainProdEquiv_apply_fst, Finsupp.single_apply, Finsupp.single_apply]
+    simp [addBasepointGenerator_inj]
+  · simp
+
+/-- The splitting of the basis chain `single (x, 1) a` is `(0, single x a)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_single_one (x : H.Generator) (a : R) :
+    H.addBasepointChainProdEquiv r₀ (Finsupp.single (H.addBasepointGenerator r₀ x 1) a) =
+      (0, Finsupp.single x a) := by
+  classical
+  refine Prod.ext (Finsupp.ext fun y => ?_) (Finsupp.ext fun y => ?_)
+  · simp
+  · rw [addBasepointChainProdEquiv_apply_snd, Finsupp.single_apply, Finsupp.single_apply]
+    simp [addBasepointGenerator_inj]
 
 end Generator
 
