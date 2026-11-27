@@ -26,7 +26,8 @@ nonzero coefficients to nonzero coefficients. Mathlib records only the inequalit
 `PowerSeries.le_order_map`. Along a surjection `φ : R → S`, a ring endomorphism of `R⟦X⟧` that
 preserves the kernel of reduction and sends `X` to a series whose reduction has no constant term
 cannot lower the order of reductions. Applied to an automorphism and its inverse, it shows that
-such automorphisms preserve the order of the reduction, the Weierstrass degree over a local ring.
+such automorphisms preserve the order of the reduction, the Weierstrass degree over a complete
+local ring.
 
 Power series constructed degree by degree are limits of approximations whose consecutive terms
 agree in more and more low degrees; `PowerSeries.exists_forall_le_order_sub` supplies the limit.

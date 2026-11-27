@@ -29,10 +29,11 @@ prime `(ϖ)`, for instance any automorphism fixing the constants
 
 * `μ(N) = μ(M)`: `σ` matches the vertical primes, and the characteristic divisor is transported
   along `σ` (`LinearEquiv.charDivisor_apply_comap`);
-* the characteristic polynomials generate ideals matched by `σ`, `(F_N) = σ⁻¹((F_M))`, although
-  `F_N` and `F_M` differ in general;
-* `λ(N) = λ(M)`: the degree of a distinguished polynomial is the order of its reduction modulo the
-  maximal ideal of `O`, and `σ` preserves this order (`PowerSeries.order_map_le_order_map_apply`).
+* for complete `O`, the characteristic polynomials generate ideals matched by `σ`,
+  `(F_N) = σ⁻¹((F_M))`, although `F_N` and `F_M` differ in general;
+* for complete `O`, `λ(N) = λ(M)`: the degree of a distinguished polynomial is the order of its
+  reduction modulo the maximal ideal of `O`, and `σ` preserves this order
+  (`PowerSeries.order_map_le_order_map_apply`).
 
 The rank over `Λ` is preserved by Mathlib's `rank_eq_of_equiv_equiv`, recorded as an example at the
 end of the file.
@@ -101,10 +102,10 @@ private theorem order_map_mk_le_order_map_mk_apply
     rw [RingHomInvPair.comp_apply_eq, isUnit_iff_constantCoeff, constantCoeff_X] at hX
     exact not_isUnit_zero hX
 
-/-- **Automorphisms fixing `(ϖ)` preserve the Weierstrass degree.** A ring automorphism of `O⟦X⟧`
-fixing the vertical prime preserves the order of the reduction of a power series modulo the maximal
-ideal of `O`; for a series with nonzero reduction this order is the degree of its distinguished
-factor. -/
+/-- **Automorphisms fixing `(ϖ)` preserve the order of the reduction.** A ring automorphism of
+`O⟦X⟧` fixing the vertical prime preserves the order of the reduction of a power series modulo the
+maximal ideal of `O`; when `O` is complete and the reduction is nonzero, this order is the degree of
+the distinguished factor of the series. -/
 theorem order_map_mk_apply_of_comap_verticalPrime
     {σ σ' : O⟦X⟧ →+* O⟦X⟧} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
     (hσ : PrimeSpectrum.comap σ (verticalPrime O) = verticalPrime O) (f : O⟦X⟧) :
