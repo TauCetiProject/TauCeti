@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Sobolev.Cylinder.Morrey
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Algebra.Order.Floor.Ring
 
 /-!
@@ -21,7 +20,10 @@ Let `V` be a real normed space. Sections of the trivial bundle with fibre `V` ov
 `(ξ, ∂s ξ, ∂t ξ)` (`TauCeti.CylinderSobolev.W1p`, the construction
 `TauCeti.StripSobolev.jetClosure`); for `p = 2` it is `TauCeti.CylinderSobolev.H1`. This file
 packages the jets of test sections as elements of `W^{1,p}`
-(`TauCeti.CylinderSobolev.toW1p`), which are dense. The norm is computed on the strip
+(`TauCeti.CylinderSobolev.toW1p`), which are dense. The jet of a sum, difference or multiple is
+almost everywhere the sum, difference or multiple of the jets
+(`TauCeti.CylinderSobolev.coeFn_W1p_add`, `TauCeti.CylinderSobolev.coeFn_W1p_sub`,
+`TauCeti.CylinderSobolev.coeFn_W1p_smul`). The norm is computed on the strip
 `ℝ × [0, 1]`, a fundamental domain of the cylinder, and does not single out a compact piece of
 it: translation along the cylinder, `TauCeti.StripSobolev.translate p (testSection V) a`, is a
 linear isometric equivalence of `W^{1,p}`, and it sends the jet of a test section to the jet of
@@ -39,7 +41,10 @@ the **Sobolev embedding** `W^{1,p} ⊂ C⁰_b`. It sends the jet of a test secti
 (`TauCeti.CylinderSobolev.coe_continuousValue_toW1p`), and it is the continuous representative of
 the value of every element: the value `ξ` of an `Lᵖ` jet `(ξ, ξ_s, ξ_t) ∈ W^{1,p}`
 (`TauCeti.CylinderSobolev.valueL`) agrees almost everywhere on the strip with
-`continuousValue p` of it (`TauCeti.CylinderSobolev.valueL_ae_eq_continuousValue`). The
+`continuousValue p` of it (`TauCeti.CylinderSobolev.valueL_ae_eq_continuousValue`;
+`TauCeti.CylinderSobolev.fst_ae_eq_continuousValue` for the first component of the jet). Two
+continuous representatives are uniformly within the norm of the embedding times the `W^{1,p}`
+distance (`TauCeti.CylinderSobolev.norm_continuousValue_sub_le`). The
 continuous representative is a section of the cylinder, of period one in `t`
 (`TauCeti.CylinderSobolev.continuousValue_add_one`), it commutes with translation
 (`TauCeti.CylinderSobolev.continuousValue_translate`), and it tends to zero along both ends,
@@ -83,7 +88,8 @@ namespace TauCeti.CylinderSobolev
 
 open StripSobolev (jet jet_apply stripMeasure toJetClosure coe_toJetClosure
   norm_toJetClosure denseRange_toJetClosure jetClosure_induction translate_toJetClosure coeFn_jetLp
-  exists_forall_mem_strip_norm_le)
+  exists_forall_mem_strip_norm_le fst_ae_eq_of_forall_toJetClosure
+  tendsto_of_forall_tendsto_toJetClosure)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
@@ -109,6 +115,29 @@ theorem valueL_toW1p_ae_eq (ξ : testSection V) :
     valueL p (toW1p p ξ) =ᵐ[stripMeasure] (ξ : ℝ × ℝ → V) := by
   filter_upwards [coeFn_valueL (toW1p p ξ), coeFn_jetLp p ξ] with z h₁ h₂
   rw [h₁, coe_toJetClosure, h₂, jet_apply]
+
+/-- The jet of a sum of elements of `W1p V p` is the sum of their jets, almost everywhere. -/
+theorem coeFn_W1p_add (x y : W1p V p) :
+    ∀ᵐ z ∂stripMeasure, ((x + y : W1p V p) : Lp (V × V × V) p stripMeasure) z =
+      (x : Lp (V × V × V) p stripMeasure) z + (y : Lp (V × V × V) p stripMeasure) z := by
+  filter_upwards [Lp.coeFn_add (x : Lp (V × V × V) p stripMeasure) y] with z hz
+  rw [Submodule.coe_add, hz, Pi.add_apply]
+
+/-- The jet of a difference of elements of `W1p V p` is the difference of their jets, almost
+everywhere. -/
+theorem coeFn_W1p_sub (x y : W1p V p) :
+    ∀ᵐ z ∂stripMeasure, ((x - y : W1p V p) : Lp (V × V × V) p stripMeasure) z =
+      (x : Lp (V × V × V) p stripMeasure) z - (y : Lp (V × V × V) p stripMeasure) z := by
+  filter_upwards [Lp.coeFn_sub (x : Lp (V × V × V) p stripMeasure) y] with z hz
+  rw [Submodule.coe_sub, hz, Pi.sub_apply]
+
+/-- The jet of a multiple of an element of `W1p V p` is the multiple of its jet, almost
+everywhere. -/
+theorem coeFn_W1p_smul (c : ℝ) (x : W1p V p) :
+    ∀ᵐ z ∂stripMeasure, ((c • x : W1p V p) : Lp (V × V × V) p stripMeasure) z =
+      c • (x : Lp (V × V × V) p stripMeasure) z := by
+  filter_upwards [Lp.coeFn_smul c (x : Lp (V × V × V) p stripMeasure)] with z hz
+  rw [Submodule.coe_smul, hz, Pi.smul_apply]
 
 end W1p
 
@@ -198,33 +227,36 @@ private theorem continuous_eval_const_continuousValue (z : ℝ × ℝ) :
     Continuous fun x : W1p V p ↦ continuousValue p x z :=
   (BoundedContinuousFunction.evalCLM ℝ z).continuous.comp (continuousValue p).continuous
 
-omit [CompleteSpace V] in
-/-- Every element of `W1p V p` is the limit of the jets of a sequence of test sections. -/
-private theorem exists_seq_tendsto_toW1p (x : W1p V p) :
-    ∃ ξ : ℕ → testSection V, Tendsto (fun n ↦ toW1p p (ξ n)) atTop (𝓝 x) := by
-  obtain ⟨y, hy, hlim⟩ := mem_closure_iff_seq_limit.1 (denseRange_toJetClosure p (testSection V) x)
-  choose ξ hξ using hy
-  exact ⟨ξ, by simpa only [hξ] using hlim⟩
-
 /-- **The continuous representative.** For `2 < p < ∞`, the value of an element of
 `W^{1,p}(ℝ × S¹, V)` agrees almost everywhere on the strip with its image under the Sobolev
 embedding, a bounded continuous function. -/
 theorem valueL_ae_eq_continuousValue (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) :
     valueL p x =ᵐ[stripMeasure] continuousValue p x := by
-  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toW1p x
-  -- The values converge in `Lᵖ`, so a subsequence converges almost everywhere.
-  obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp
-    (((valueL p).continuous.tendsto x).comp hξ)).exists_seq_tendsto_ae
-  -- The continuous representatives converge uniformly, so pointwise.
-  have hcont := ((continuousValue p).continuous.tendsto x).comp hξ
-  filter_upwards [hns, ae_all_iff.2 fun n ↦ valueL_toW1p_ae_eq (p := p) (ξ (ns n))]
-    with z hz hzn
-  refine tendsto_nhds_unique hz ?_
-  have hev := (((BoundedContinuousFunction.evalCLM ℝ z).continuous.tendsto _).comp
-    (hcont.comp hmono.tendsto_atTop))
-  refine hev.congr fun n ↦ ?_
-  simp only [Function.comp_apply, BoundedContinuousFunction.evalCLM_apply,
-    coe_continuousValue_toW1p hp hpt, hzn n]
+  refine (coeFn_valueL x).trans (fst_ae_eq_of_forall_toJetClosure (continuousValue p).continuous
+    (φ := id) (fun ξ ↦ ?_) x)
+  filter_upwards [coeFn_jetLp p ξ] with z hz
+  simp only [coe_toJetClosure, hz, jet_apply, id, coe_continuousValue_toW1p hp hpt]
+
+/-- The first component of the jet of an element of `W1p V p` is its continuous representative,
+almost everywhere on the strip. -/
+theorem fst_ae_eq_continuousValue (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) :
+    ∀ᵐ z ∂stripMeasure, ((x : Lp (V × V × V) p stripMeasure) z).1 = continuousValue p x z := by
+  filter_upwards [coeFn_valueL x, valueL_ae_eq_continuousValue hp hpt x] with z h₁ h₂
+  rw [← h₁, h₂]
+
+/-- The continuous representative of a difference is the difference of the continuous
+representatives. -/
+theorem continuousValue_sub_apply (x y : W1p V p) (z : ℝ × ℝ) :
+    continuousValue p (x - y) z = continuousValue p x z - continuousValue p y z := by
+  rw [map_sub, sub_apply]
+
+/-- The continuous representatives of two elements of `W1p V p` are uniformly within the norm of
+the Sobolev embedding times their distance. -/
+theorem norm_continuousValue_sub_le (x y : W1p V p) (z : ℝ × ℝ) :
+    ‖continuousValue p x z - continuousValue p y z‖ ≤ ‖continuousValue (V := V) p‖ * ‖x - y‖ := by
+  rw [← continuousValue_sub_apply]
+  exact (BoundedContinuousFunction.norm_coe_le_norm _ _).trans
+    ((continuousValue (V := V) p).le_opNorm (x - y))
 
 /-- **The continuous representative is a section of the cylinder**: it has period one in `t`. -/
 theorem continuousValue_add_one (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) (s t : ℝ) :
@@ -239,15 +271,11 @@ element of `W^{1,p}(ℝ × S¹, V)` under the Sobolev embedding tends to zero as
 uniformly in `t`. -/
 theorem tendsto_continuousValue_comap_fst_cocompact (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) :
     Tendsto (continuousValue p x) (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
-  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toW1p x
-  have hunif := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.1
-    (((continuousValue p).continuous.tendsto x).comp hξ)
-  refine hunif.tendsto_of_eventually_tendsto (L := fun _ ↦ 0)
-    (Eventually.of_forall fun n ↦ ?_) tendsto_const_nhds
-  simp only [Function.comp_apply, coe_continuousValue_toW1p hp hpt]
+  refine tendsto_of_forall_tendsto_toJetClosure (continuousValue p).continuous (fun ξ ↦ ?_) x
+  rw [coe_continuousValue_toW1p hp hpt]
   -- The value of a test section is the first component of its jet, which decays.
   simpa [Function.comp_def, jet_apply] using
-    (continuous_fst.tendsto 0).comp (tendsto_jet_comap_fst_cocompact (ξ n).property)
+    (continuous_fst.tendsto 0).comp (tendsto_jet_comap_fst_cocompact ξ.property)
 
 /-- **The Sobolev embedding commutes with translation**: the continuous representative of the
 translate of an element of `W1p V p` is the translate of its continuous representative. -/

@@ -29,7 +29,10 @@ For modules rather than representations, `TauCeti.BialgebraModule.Dual` is a typ
 native dual carrying this contragredient action. Ordinary contraction `dualEval` and, over a
 field, the finite-dimensional coevaluation `dualCoeval` are `H`-linear for the coproduct tensor
 product `BialgebraModule.Tensor` and the counit module `BialgebraModule.Trivial`, by the two
-antipode identities.
+antipode identities. The bundled transpose `dualTranspose` reverses composition, and
+`dualCongr` transports a module equivalence to contragredients. Coevaluation is preserved by
+an equivalence on vectors and its inverse transpose on functionals
+(`tensorMap_comp_dualCoeval`).
 On a reflexive module, `TauCeti.BialgebraModule.unitEvalEquiv` is the comparison
 `m ↦ (φ ↦ φ(g m))` with the double contragredient, as an `H`-linear equivalence, when the unit
 `g` implements `S²`.
@@ -179,6 +182,72 @@ instance [Module.Projective R M] [Module.Finite R M] : Module.Finite R (Dual R H
   Module.Finite.equiv (dualEquiv R H M).symm
 
 end Action
+
+section Transpose
+
+variable [Semiring H] [HopfAlgebra R H] [Module H M] [IsScalarTower R H M]
+variable {N P : Type*} [AddCommMonoid N] [Module R N] [Module H N] [IsScalarTower R H N]
+  [AddCommMonoid P] [Module R P] [Module H P] [IsScalarTower R H P]
+
+variable {M}
+
+/-- Transposition of an intertwiner, as an intertwiner between contragredient modules
+in the reverse direction. -/
+noncomputable def dualTranspose (f : M →ₗ[H] N) : Dual R H N →ₗ[H] Dual R H M :=
+  { (dualEquiv R H M).symm.toLinearMap ∘ₗ (f.restrictScalars R).dualMap ∘ₗ
+      (dualEquiv R H N).toLinearMap with
+    map_smul' a φ := by
+      apply (dualEquiv R H M).injective
+      exact LinearMap.hopfDual_intertwines (f.restrictScalars R)
+        (fun a m => f.map_smul a m) a (dualEquiv R H N φ) }
+
+/-- Transposition is precomposition on the underlying functionals. -/
+@[simp]
+theorem dualEquiv_dualTranspose_apply (f : M →ₗ[H] N) (φ : Dual R H N) (m : M) :
+    dualEquiv R H M (dualTranspose R H f φ) m = dualEquiv R H N φ (f m) := by
+  simp [dualTranspose]
+
+/-- Transposition reverses composition of intertwiners. -/
+@[simp]
+theorem dualTranspose_comp (f : M →ₗ[H] N) (g : N →ₗ[H] P) :
+    dualTranspose R H (g ∘ₗ f) = dualTranspose R H f ∘ₗ dualTranspose R H g := by
+  ext φ
+  apply (dualEquiv R H M).injective
+  ext m
+  simp
+
+/-- Transposition preserves the identity intertwiner. -/
+@[simp]
+theorem dualTranspose_id : dualTranspose R H (LinearMap.id : M →ₗ[H] M) = LinearMap.id := by
+  ext φ
+  apply (dualEquiv R H M).injective
+  ext m
+  simp
+
+/-- A module equivalence induces an equivalence of contragredients in the reverse direction. -/
+noncomputable def dualCongr (e : M ≃ₗ[H] N) : Dual R H N ≃ₗ[H] Dual R H M :=
+  LinearEquiv.ofLinearMap (dualTranspose R H e.toLinearMap)
+    (dualTranspose R H e.symm.toLinearMap)
+    (by rw [← dualTranspose_comp]; simp)
+    (by rw [← dualTranspose_comp]; simp)
+
+/-- The underlying map of a contragredient equivalence is transposition. -/
+@[simp]
+theorem toLinearMap_dualCongr (e : M ≃ₗ[H] N) :
+    (dualCongr R H e).toLinearMap = dualTranspose R H e.toLinearMap := (rfl)
+
+/-- Inverting a contragredient equivalence transposes the inverse equivalence. -/
+@[simp]
+theorem dualCongr_symm (e : M ≃ₗ[H] N) :
+    (dualCongr R H e).symm = dualCongr R H e.symm := (rfl)
+
+/-- A contragredient equivalence is precomposition on the underlying functionals. -/
+@[simp]
+theorem dualEquiv_dualCongr_apply (e : M ≃ₗ[H] N) (φ : Dual R H N) (m : M) :
+    dualEquiv R H M (dualCongr R H e φ) m = dualEquiv R H N φ (e m) :=
+  dualEquiv_dualTranspose_apply R H e.toLinearMap φ m
+
+end Transpose
 
 section Evaluation
 
@@ -343,6 +412,41 @@ theorem dualCoeval_apply (r : Trivial k H) :
           (coevaluation k V (trivialEquiv k H r))) := by
   rw [← mul_one (trivialEquiv k H r), ← smul_eq_mul, map_smul, map_smul, map_smul]
   rfl
+
+/-- Coevaluation is preserved by a module equivalence on vectors and inverse
+transposition on contragredients. -/
+theorem tensorMap_comp_dualCoeval
+    {W : Type*} [AddCommGroup W] [Module k W] [Module H W] [IsScalarTower k H W]
+    [FiniteDimensional k W] (e : V ≃ₗ[H] W) :
+    tensorMap k H e.toLinearMap (dualTranspose k H e.symm.toLinearMap) ∘ₗ
+      dualCoeval k H V = dualCoeval k H W := by
+  have hd : (dualTranspose k H e.symm.toLinearMap).restrictScalars k ∘ₗ
+        (dualEquiv k H V).symm.toLinearMap =
+      (dualEquiv k H W).symm.toLinearMap ∘ₗ
+        (e.symm.toLinearMap.restrictScalars k).dualMap := by
+    ext φ
+    apply (dualEquiv k H W).injective
+    ext w
+    simp
+  ext r
+  apply (tensorEquiv k H W (Dual k H W)).injective
+  rw [LinearMap.comp_apply, tensorEquiv_tensorMap, dualCoeval_apply, dualCoeval_apply]
+  simp only [LinearEquiv.apply_symm_apply]
+  rw [TensorProduct.map_map, hd, LinearMap.comp_id]
+  have hn := LinearMap.congr_fun
+    (LinearMap.rTensor_comp_coevaluation (e.toLinearMap.restrictScalars k))
+    (trivialEquiv k H r)
+  have hn' := congrArg (TensorProduct.map (LinearMap.id : W →ₗ[k] W)
+    (e.symm.toLinearMap.restrictScalars k).dualMap) hn
+  have hco : TensorProduct.map (e.toLinearMap.restrictScalars k)
+      (e.symm.toLinearMap.restrictScalars k).dualMap
+      (coevaluation k V (trivialEquiv k H r)) =
+        coevaluation k W (trivialEquiv k H r) := by
+    simpa [LinearMap.rTensor, LinearMap.lTensor, TensorProduct.map_map,
+      LinearMap.dualMap_comp_dualMap, ← LinearMap.restrictScalars_comp] using hn'
+  have h := congrArg (TensorProduct.map (LinearMap.id : W →ₗ[k] W)
+    (dualEquiv k H W).symm.toLinearMap) hco
+  simpa only [TensorProduct.map_map, LinearMap.id_comp] using h
 
 /-- Coevaluation sends `r` to the sum `∑ i, r b i ⊗ b^i` over a basis and its dual basis. -/
 theorem dualCoeval_apply_eq_sum (r : Trivial k H) :
