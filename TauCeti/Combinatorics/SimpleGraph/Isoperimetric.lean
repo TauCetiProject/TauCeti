@@ -35,9 +35,9 @@ whose isoperimetric constants are bounded away from `0` is a family of expanders
 * `SimpleGraph.card_edgeBoundary_compl`: `|∂Sᶜ| = |∂S|`.
 * `SimpleGraph.sum_degree_eq_card_interedges_add_card_edgeBoundary`: the degrees in `S` add up
   to the ordered adjacent pairs inside `S` plus `|∂S|`; the former number is even
-  (`SimpleGraph.even_card_interedges_self`). Hence in a connected graph every nonempty proper set
-  whose vertices have even degrees has at least two boundary edges
-  (`SimpleGraph.Connected.two_le_card_edgeBoundary_of_even_degree`).
+  (`SimpleGraph.even_card_interedges_self`). Hence in a preconnected graph every nonempty proper
+  set whose vertices have even degrees has at least two boundary edges
+  (`SimpleGraph.Preconnected.two_le_card_edgeBoundary_of_even_degree`).
 * `SimpleGraph.exists_isoperimetricConstant_eq` and `SimpleGraph.isoperimetricConstant_le`: for
   `n ≥ 2` the infimum is attained and bounds every admissible set.
 * `SimpleGraph.isoperimetricConstant_pos_iff_connected`: for `n ≥ 2`, `h(G) > 0` exactly when `G`
@@ -133,12 +133,12 @@ theorem Reachable.edgeBoundary_nonempty {S : Finset V} {u v : V} (h : G.Reachabl
   exact ⟨(d.fst, d.snd), mk_mem_edgeBoundary.2 ⟨mod_cast hd₁, mod_cast hd₂, d.adj⟩⟩
 
 variable {G} in
-/-- In a connected graph every nonempty proper vertex set has a nonempty edge boundary. -/
-theorem Connected.edgeBoundary_nonempty (hG : G.Connected) {S : Finset V} (hS : S.Nonempty)
-    (hS' : S ≠ univ) : (G.edgeBoundary S).Nonempty := by
+/-- In a preconnected graph every nonempty proper vertex set has a nonempty edge boundary. -/
+theorem Preconnected.edgeBoundary_nonempty (hG : G.Preconnected) {S : Finset V}
+    (hS : S.Nonempty) (hS' : S ≠ univ) : (G.edgeBoundary S).Nonempty := by
   obtain ⟨u, hu⟩ := hS
   obtain ⟨v, -, hv⟩ := exists_of_ssubset (ssubset_univ_iff.2 hS')
-  exact (hG.preconnected u v).edgeBoundary_nonempty hu hv
+  exact (hG u v).edgeBoundary_nonempty hu hv
 
 /-- The degrees of the vertices of `S` add up to the number of ordered adjacent pairs inside `S`
 plus the size of the edge boundary of `S`. -/
@@ -146,7 +146,8 @@ theorem sum_degree_eq_card_interedges_add_card_edgeBoundary (S : Finset V) :
     ∑ x ∈ S, G.degree x = #(G.interedges S S) + #(G.edgeBoundary S) := by
   rw [edgeBoundary_def, card_interedges_eq_sum, card_interedges_eq_sum, ← sum_add_distrib]
   refine sum_congr rfl fun x _ ↦ ?_
-  rw [← card_neighborFinset_eq_degree, ← sdiff_eq_inter_compl, card_inter_add_card_sdiff]
+  rw [← card_union_of_disjoint (disjoint_filter_filter disjoint_compl_right), ← filter_union,
+    union_compl, ← neighborFinset_eq_filter, card_neighborFinset_eq_degree]
 
 variable {G} in
 /-- In a `k`-regular graph, `k |S|` is the number of ordered adjacent pairs inside `S` plus the
@@ -158,10 +159,10 @@ theorem IsRegularOfDegree.mul_card_eq_card_interedges_add_card_edgeBoundary {k :
     sum_const, smul_eq_mul, mul_comm]
 
 variable {G} in
-/-- In a connected graph, every nonempty proper vertex set `S` whose vertices all have even degree
-has at least two boundary edges: the boundary is nonempty by connectedness, and of even size
-because the degrees in `S` add up to an even number. -/
-theorem Connected.two_le_card_edgeBoundary_of_even_degree (hG : G.Connected) {S : Finset V}
+/-- In a preconnected graph, every nonempty proper vertex set `S` whose vertices all have even
+degree has at least two boundary edges: the boundary is nonempty by preconnectedness, and of even
+size because the degrees in `S` add up to an even number. -/
+theorem Preconnected.two_le_card_edgeBoundary_of_even_degree (hG : G.Preconnected) {S : Finset V}
     (hdeg : ∀ v ∈ S, Even (G.degree v)) (hS : S.Nonempty) (hS' : S ≠ univ) :
     2 ≤ #(G.edgeBoundary S) := by
   have hsum := G.sum_degree_eq_card_interedges_add_card_edgeBoundary S
@@ -263,7 +264,7 @@ theorem isoperimetricConstant_pos_iff_connected (hV : 2 ≤ Fintype.card V) :
   obtain ⟨S, hS, hS', heq⟩ := G.exists_isoperimetricConstant_eq hV
   rw [heq]
   have := hS.card_pos
-  have := (hG.edgeBoundary_nonempty hS
+  have := (hG.preconnected.edgeBoundary_nonempty hS
     ((card_lt_iff_ne_univ S).1 (by omega))).card_pos
   positivity
 
@@ -365,7 +366,7 @@ theorem isoperimetricConstant_cycleGraph {n : ℕ} (hn : 3 ≤ n) :
     have hconn : (cycleGraph n).Connected := by
       obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
       exact connected_cycleGraph_add_one
-    have h2 := hconn.two_le_card_edgeBoundary_of_even_degree (fun v _ ↦ by
+    have h2 := hconn.preconnected.two_le_card_edgeBoundary_of_even_degree (fun v _ ↦ by
       obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
       rw [cycleGraph_degree_three_le]
       exact even_two) hS hne

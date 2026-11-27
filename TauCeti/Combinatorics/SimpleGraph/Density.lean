@@ -22,8 +22,8 @@ finset), edge counts are additive over disjoint unions on either side, and the e
 two finsets splits along the traces of the parts of finite partitions on them. The corresponding
 `SimpleGraph` results are specializations to the adjacency relation. Edge densities are invariant
 under relabelling the vertices along an equivalence (`SimpleGraph.edgeDensity_comap_symm`). The
-edge count from `s` to `t` is the sum over `x ∈ s` of the number of neighbours of `x` in `t`
-(`SimpleGraph.card_interedges_eq_sum`), and the edge count of a finset with itself is even
+edge count from `s` to `t` is the sum over `x ∈ s` of the number of points of `t` related to `x`
+(`Rel.card_interedges_eq_sum`), and the edge count of a finset with itself is even
 (`SimpleGraph.even_card_interedges_self`).
 
 For graphs, `SimpleGraph.edgeDensityIcc G s t` bundles the real-valued edge density as an element
@@ -110,6 +110,12 @@ theorem sum_sum_card_interedges_fiber_real {s : Finset α} {t : Finset β}
         (#(Rel.interedges r B.val D.val) : ℝ) = #(Rel.interedges r A.val C.val) := by
   exact_mod_cast sum_sum_card_interedges_fiber r h h' A C
 
+/-- The number of related pairs from `s` to `t` is the sum over `a ∈ s` of the number of `b ∈ t`
+related to `a`. -/
+theorem card_interedges_eq_sum (s : Finset α) (t : Finset β) :
+    #(Rel.interedges r s t) = ∑ a ∈ s, #{b ∈ t | r a b} := by
+  simp only [interedges, card_filter, sum_product]
+
 /-- Between two singletons, `Rel.interedges` has cardinality `1` if the points are related and `0`
 otherwise. -/
 @[simp]
@@ -141,6 +147,12 @@ theorem card_mul_card_mul_edgeDensity (s t : Finset V) :
 theorem card_mul_card_mul_edgeDensity_real (s t : Finset V) :
     (#s * #t : ℝ) * (G.edgeDensity s t : ℝ) = #(G.interedges s t) :=
   Rel.card_mul_card_mul_edgeDensity_real G.Adj s t
+
+/-- The number of ordered adjacent pairs from `s` to `t` is the sum over `x ∈ s` of the number of
+neighbours of `x` in `t`. -/
+theorem card_interedges_eq_sum (s t : Finset V) :
+    #(G.interedges s t) = ∑ x ∈ s, #{y ∈ t | G.Adj x y} :=
+  Rel.card_interedges_eq_sum G.Adj s t
 
 /-- Between two singletons, `G.interedges` has cardinality `1` if the vertices are adjacent and `0`
 otherwise. -/
@@ -327,16 +339,5 @@ theorem sum_sum_card_interedges_fiber_real {s : Finset V} {P Q : Finpartition s}
       ∑ D with Finpartition.refinementParent h D = C,
         (#(G.interedges B.val D.val) : ℝ) = #(G.interedges A.val C.val) :=
   Rel.sum_sum_card_interedges_fiber_real G.Adj h h A C
-
-/-- The number of ordered adjacent pairs from `S` to `T` is the sum over `x ∈ S` of the number of
-neighbours of `x` in `T`. -/
-theorem card_interedges_eq_sum [Fintype V] (S T : Finset V) :
-    #(G.interedges S T) = ∑ x ∈ S, #(G.neighborFinset x ∩ T) := by
-  rw [interedges_def, card_filter, sum_product]
-  refine sum_congr rfl fun x _ ↦ ?_
-  rw [← card_filter, ← filter_mem_eq_inter, neighborFinset_eq_filter, filter_filter]
-  congr 1
-  ext y
-  simp [and_comm]
 
 end SimpleGraph
