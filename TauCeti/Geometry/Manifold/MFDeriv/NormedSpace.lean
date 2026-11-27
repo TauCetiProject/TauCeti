@@ -25,6 +25,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   equation.
 * `TauCeti.mvfderiv_eq_fderiv_apply`: on normed spaces, `mvfderiv` applied to a tangent vector is
   `fderiv` applied to it.
+* `HasFDerivAt.mfderiv_apply`: on normed spaces, the manifold derivative of a map with Fréchet
+  derivative `f'` applies `f'` through the tangent-space identifications.
 * `TauCeti.mvfderiv_apply_eval`: the derivative of evaluation `a ↦ a u` of continuous linear maps
   is evaluation at `u`.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
@@ -122,6 +124,15 @@ theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(�
     mvfderiv 𝓘(𝕜, F) f x v = fderiv 𝕜 f x v := by
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
   exact congrArg _ (NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) x v)
+
+/-- For a map between normed spaces with Fréchet derivative `f'` at `x`, the manifold derivative
+at `x` applies `f'` to a tangent vector, read through the model-space tangent identifications. -/
+theorem _root_.HasFDerivAt.mfderiv_apply {f : F → F'} {f' : F →L[𝕜] F'} {x : F}
+    (h : HasFDerivAt f f' x) (v : TangentSpace 𝓘(𝕜, F) x) :
+    mfderiv 𝓘(𝕜, F) 𝓘(𝕜, F') f x v =
+      (NormedSpace.fromTangentSpace (f x)).symm (f' (NormedSpace.fromTangentSpace x v)) := by
+  rw [mfderiv_eq_fderiv, h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe]
 
 /-- The derivative of the evaluation map `a ↦ a u` on continuous linear maps is evaluation
 at `u`. -/
