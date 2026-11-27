@@ -101,7 +101,9 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 At height `1 ≤ |Im s|`, a point `s` is at distance at least `1` from `1`
 (`Complex.one_le_norm_sub_one`), so `s ≠ 1` (`Complex.ne_one_of_one_le_abs_im`) and
 `‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`). For real `1 ≤ r`,
-`‖(r : ℂ) - 1‖ = r - 1` (`Complex.norm_ofReal_sub_one`).
+`‖(r : ℂ) - 1‖ = r - 1` (`Complex.norm_ofReal_sub_one`). For real `0 ≤ c ≤ 2`, the point `c` lies
+in the closed unit disc about `1` (`Complex.norm_one_sub_ofReal_le_one`), so every point is at most
+`1` farther from `c` than from `1` (`Complex.norm_sub_ofReal_le_norm_sub_one_add_one`).
 
 Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies `ε ≤ ‖w‖ ≤ 2 * ε`
 (`Complex.norm_bounds_of_abs_re_le_of_abs_im_le`).
@@ -590,6 +592,18 @@ theorem norm_inv_sub_one_le_one {s : ℂ} (ht : 1 ≤ |s.im|) : ‖(s - 1)⁻¹�
 /-- For real `1 ≤ r`, the norm of `(r : ℂ) - 1` is `r - 1`. -/
 theorem norm_ofReal_sub_one {r : ℝ} (h : 1 ≤ r) : ‖(r : ℂ) - 1‖ = r - 1 := by
   rw [← ofReal_one, ← ofReal_sub, norm_real, Real.norm_of_nonneg (sub_nonneg.mpr h)]
+
+/-- For `0 ≤ c ≤ 2`, the real point `c` lies in the closed unit disc about `1`. -/
+theorem norm_one_sub_ofReal_le_one {c : ℝ} (hc₀ : 0 ≤ c) (hc₂ : c ≤ 2) : ‖(1 : ℂ) - c‖ ≤ 1 := by
+  rw [← ofReal_one, ← ofReal_sub, norm_real, Real.norm_eq_abs, abs_le]
+  constructor <;> linarith
+
+/-- For `0 ≤ c ≤ 2`, every point is at most `1` farther from the real point `c` than from `1`. -/
+theorem norm_sub_ofReal_le_norm_sub_one_add_one {c : ℝ} (hc₀ : 0 ≤ c) (hc₂ : c ≤ 2) (v : ℂ) :
+    ‖v - c‖ ≤ ‖v - 1‖ + 1 := by
+  have h := norm_add_le (v - 1) (1 - c)
+  rw [sub_add_sub_cancel] at h
+  linarith [norm_one_sub_ofReal_le_one hc₀ hc₂]
 
 /-- A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`. -/
 theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + μ).im ≠ 0 :=

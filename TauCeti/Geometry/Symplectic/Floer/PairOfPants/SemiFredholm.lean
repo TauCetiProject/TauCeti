@@ -15,6 +15,7 @@ import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Topology.ContinuousOn.CompactDomination
 
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator on the pair of pants
@@ -790,7 +791,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
       (hu z (hKS hz)).continuousAt).continuousWithinAt
   obtain ⟨M, hMq, hMc⟩ := hK.exists_forall_norm_fderiv_le
     (fun q z hz ↦ contDiffAt_endCutoff R₀ q (hKS hz)) fun z hz ↦ fderiv_coreCutoff R₀ (hKS hz)
-  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_inv_le hK (hwc.mono hKS) fun z hz ↦ hwS z (hKS hz)
+  obtain ⟨Λ, hΛ₀, hΛ⟩ := hK.exists_forall_le_and_inv_le (hwc.mono hKS) fun z hz ↦ hwS z (hKS hz)
   -- The estimate on the compact core `K`.
   obtain ⟨C₀, hC₀, hint⟩ :=
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK
@@ -954,27 +955,14 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
     continuousOn_inv_cylindricalWeight (fun z hz ↦ inv_pos.2 (isWeight_cylindricalWeight.pos z hz))
     (C := fun q ↦ max (C q) 0 * 5) (R := fun q ↦ max (R q) 0) fun q η hη hηc hηR ↦ ?_
   have hηS : tsupport η ⊆ thricePuncturedSphereReal := fun z hz ↦ (hηR hz).1
-  refine (hend q hη hηc fun z hz ↦ ⟨(hηR hz).1, (le_max_left _ _).trans_lt (hηR hz).2⟩).trans ?_
-  rw [mul_assoc]
-  refine (mul_le_mul_of_nonneg_right (le_max_left _ _)
-    (integral_nonneg fun z ↦ by positivity)).trans (mul_le_mul_of_nonneg_left ?_ (le_max_right _ _))
-  rw [← integral_const_mul]
-  refine integral_mono_of_nonneg (.of_forall fun z ↦ by positivity)
-    ((ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal
-      (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
-      continuousOn_inv_cylindricalWeight (hη.of_le one_le_two) subset_rfl hηc hηS).const_mul 5)
-    (.of_forall fun z ↦ ?_)
-  beta_reduce
-  by_cases hz : z ∈ tsupport η
-  · obtain ⟨hzS, hzR⟩ := hηR hz
-    have hρ := isWeight_cylindricalWeight.pos z hzS
-    have h : ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 ≤
-        5 * (cylindricalWeight z)⁻¹ := by
-      rw [← div_eq_mul_inv, le_div_iff₀ hρ]
-      exact norm_sub_endCenter_sq_mul_cylindricalWeight_le q hzS
-        ((le_max_right _ _).trans hzR.le)
-    rw [← mul_assoc]
-    gcongr
-  · simp [floerLinearizationAdjoint_of_notMem_tsupport hz]
+  refine (hend q hη hηc fun z hz ↦ ⟨(hηR hz).1, (le_max_left _ _).trans_lt (hηR hz).2⟩).trans
+    (ω.mul_integral_mul_norm_floerLinearizationAdjoint_sq_le (fun z ↦ sq_nonneg _)
+      (fun z hz ↦ ?_) (ω.integrable_mul_norm_floerLinearizationAdjoint_sq
+        isOpen_thricePuncturedSphereReal (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+        hJ hKs hKt hu continuousOn_inv_cylindricalWeight (hη.of_le one_le_two) subset_rfl hηc hηS)
+      (C q))
+  obtain ⟨hzS, hzR⟩ := hηR hz
+  rw [← div_eq_mul_inv, le_div_iff₀ (isWeight_cylindricalWeight.pos z hzS)]
+  exact norm_sub_endCenter_sq_mul_cylindricalWeight_le q hzS ((le_max_right _ _).trans hzR.le)
 
 end TauCeti.SymplecticForm

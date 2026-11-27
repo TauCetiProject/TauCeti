@@ -10,9 +10,11 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.RealChart
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
+import TauCeti.Topology.ContinuousOn.CompactDomination
 
 /-!
 # Patching the semi-Fredholm estimate of the formal adjoint on the pair of pants capped at `0`
@@ -135,18 +137,15 @@ private theorem cappedEndCoord_true_le_iff {r : ℝ} {z : ℝ × ℝ} (hz : z �
 /-- A point lies beyond the height `0` on at most one end of the capped surface. -/
 private theorem cappedEndCoord_nonpos_of_ne (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {e e' : Bool}
     (hee' : e ≠ e') {z : ℝ × ℝ} (h : 0 < cappedEndCoord c e z) : cappedEndCoord c e' z ≤ 0 := by
-  have hc := norm_one_sub_ofReal_le_one hc₀ hc₁
+  have h₂ := Complex.norm_sub_ofReal_le_norm_sub_one_add_one hc₀ (by linarith)
+    (Complex.equivRealProdCLM.symm z)
   cases e <;> cases e' <;> simp only [ne_eq, not_true_eq_false] at hee'
   · -- Beyond `0` on the output end, `‖w - c‖ > 2`, so `‖w - 1‖ > 1`.
     have h₁ := two_lt_norm_sub_of_pos_fst_positiveEndCoord_inf_sub h
-    have h₂ := norm_add_le (Complex.equivRealProdCLM.symm z - 1) ((1 : ℂ) - c)
-    rw [sub_add_sub_cancel] at h₂
     rw [cappedEndCoord, fst_positiveEndCoord, endSign_one, one_mul]
     exact re_endCoord_nonpos_of_le_norm_sub_endCenter (by decide) (by rw [endCenter_one]; linarith)
   · -- Beyond `0` on the input end, `‖w - 1‖ < 1/2`, so `‖w - c‖ < 3/2`.
     have h₁ := norm_sub_one_lt_of_pos_fst_positiveEndCoord_one h
-    have h₂ := norm_add_le (Complex.equivRealProdCLM.symm z - 1) ((1 : ℂ) - c)
-    rw [sub_add_sub_cancel] at h₂
     refine cappedEndCoord_false_le le_rfl ?_
     simp only [mul_zero, Real.exp_zero, mul_one]
     linarith
@@ -646,7 +645,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_capped_aux
   obtain ⟨M, hMe, hMc⟩ := hK.exists_forall_norm_fderiv_le
     (fun e z hz ↦ contDiffAt_cappedEndCutoff (by linarith) e (hKU hz))
     fun z hz ↦ fderiv_cappedCoreCutoff (by linarith) (hKU hz)
-  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_inv_le hK (hwc.mono hKU) fun z hz ↦ hwS z (hKU hz)
+  obtain ⟨Λ, hΛ₀, hΛ⟩ := hK.exists_forall_le_and_inv_le (hwc.mono hKU) fun z hz ↦ hwS z (hKU hz)
   -- The estimate on the compact core.
   obtain ⟨C₀, hC₀, hint⟩ :=
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK

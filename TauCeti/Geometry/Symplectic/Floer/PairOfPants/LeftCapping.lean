@@ -285,12 +285,6 @@ theorem half_le_norm_positiveEndChart {q : Puncture} (hq : q ≠ zero) {ζ : ℝ
     (by rw [endCenter_zero]; exact hS.1)).1 h0
   simpa [endCenter_zero] using h
 
-/-- For `0 ≤ c ≤ 1`, the point `c` lies in the closed unit disc about `1`. -/
-theorem norm_one_sub_ofReal_le_one (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) : ‖(1 : ℂ) - c‖ ≤ 1 := by
-  rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
-    Real.norm_of_nonneg (by linarith)]
-  linarith
-
 /-- Beyond the height `0` of the input end at `1`, points lie in the disc `|w - 1| < 1/2`. -/
 theorem norm_sub_one_lt_of_pos_fst_positiveEndCoord_one {z : ℝ × ℝ}
     (hz : 0 < (positiveEndCoord one z).1) : ‖Complex.equivRealProdCLM.symm z - 1‖ < 1 / 2 := by

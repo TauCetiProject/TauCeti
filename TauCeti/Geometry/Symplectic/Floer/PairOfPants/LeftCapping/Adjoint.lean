@@ -9,7 +9,9 @@ public import TauCeti.Geometry.Symplectic.Floer.EndLinearization.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.LeftCapping.Patching
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.LeftCapping.Sobolev
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.RealChart
+import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
 import TauCeti.Topology.Instances.Real.TSupport
 
 /-!
@@ -79,7 +81,7 @@ private theorem equivRealProdCLM_symm_positiveEndChart_inf_add_ne_one (hc₀ : 0
   rw [TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero] at h1
   have hn := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
   rw [Prod.mk.eta, eq_sub_of_add_eq h1] at hn
-  linarith [norm_one_sub_ofReal_le_one hc₀ hc₁,
+  linarith [Complex.norm_one_sub_ofReal_le_one hc₀ (by linarith),
     Real.one_lt_exp_iff.2 (by positivity : 0 < 2 * π * ζ.1)]
 
 /-- Beyond the height `0` of the input end, a point of the capped surface lies in the pair of
@@ -146,13 +148,10 @@ private theorem norm_sub_sq_le_inv_cappedCylindricalWeight (hc₀ : 0 ≤ c) (hc
   set v := Complex.equivRealProdCLM.symm z
   have hd : 2 < ‖v - c‖ := two_lt_norm_sub_of_pos_fst_positiveEndCoord_inf_sub h
   have hc : ‖(c : ℂ)‖ ≤ 1 := by rw [Complex.norm_real, Real.norm_of_nonneg hc₀]; exact hc₁
-  have h1c := norm_one_sub_ofReal_le_one hc₀ hc₁
   -- Both `|w|` and `|w - 1|` are at least `|w - c| / 2`.
   have hv : ‖v - c‖ / 2 ≤ ‖v‖ := by linarith [norm_sub_le v (c : ℂ)]
   have hv1 : ‖v - c‖ / 2 ≤ ‖v - 1‖ := by
-    have := norm_add_le (v - 1) ((1 : ℂ) - c)
-    rw [sub_add_sub_cancel] at this
-    linarith
+    linarith [Complex.norm_sub_ofReal_le_norm_sub_one_add_one hc₀ (by linarith) v]
   have hA : ‖v - c‖ ^ 2 / 4 ≤ max (‖v‖ ^ 2) (1 / 4) := le_max_of_le_left (by nlinarith)
   have hA₀ : 0 < max (‖v‖ ^ 2) (1 / 4) := lt_max_of_lt_right (by norm_num)
   have hB : ‖v - c‖ ^ 2 / 4 ≤ ‖v - 1‖ ^ 2 := by nlinarith
@@ -170,28 +169,6 @@ private theorem norm_sub_sq_le_inv_cappedCylindricalWeight (hc₀ : 0 ≤ c) (hc
     rw [← div_eq_mul_inv, div_le_iff₀ hB₀]
     linarith
   linarith
-
-/-- **Changing the weight of an end estimate.** If `w₁ ≤ k w₂` on the support of `η`, with
-`w₁ ≥ 0` and `w₂ ‖D^* η‖²` integrable, then `C ∫ w₁ ‖D^* η‖² ≤ max C 0 k ∫ w₂ ‖D^* η‖²`. -/
-private theorem mul_integral_mul_norm_floerLinearizationAdjoint_sq_le (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} {w₁ w₂ : ℝ × ℝ → ℝ} {k : ℝ} (hw₁ : ∀ z, 0 ≤ w₁ z)
-    (hw : ∀ z ∈ tsupport η, w₁ z ≤ k * w₂ z)
-    (hint : Integrable fun z ↦ w₂ z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) (C : ℝ) :
-    C * ∫ z, w₁ z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 ≤
-      max C 0 * k * ∫ z, w₂ z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 := by
-  rw [mul_assoc]
-  refine (mul_le_mul_of_nonneg_right (le_max_left _ _)
-    (integral_nonneg fun z ↦ by have := hw₁ z; positivity)).trans
-    (mul_le_mul_of_nonneg_left ?_ (le_max_right _ _))
-  rw [← integral_const_mul]
-  refine integral_mono_of_nonneg (.of_forall fun z ↦ by have := hw₁ z; positivity)
-    (hint.const_mul k) (.of_forall fun z ↦ ?_)
-  beta_reduce
-  by_cases hz : z ∈ tsupport η
-  · rw [← mul_assoc]
-    exact mul_le_mul_of_nonneg_right (hw z hz) (sq_nonneg _)
-  · simp [floerLinearizationAdjoint_of_notMem_tsupport hz]
 
 /-- **The input end of the capped family.** Far out on the input end at `1`, read in the positive
 end chart `φ'_1`, the formal adjoint of the linearized operator of the capped datum controls the

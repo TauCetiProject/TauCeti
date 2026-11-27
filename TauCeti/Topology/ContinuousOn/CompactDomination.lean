@@ -16,10 +16,13 @@ On a compact set, a continuous real function which is strictly negative wherever
 continuous weight vanishes is strictly bounded above by one positive constant times that weight.
 The directed open-cover proof allows the weight to vanish, so no quotient continuity at its
 zeros is assumed. This supplies uniform coefficient bounds for local comparison barriers.
+A weight that is continuous and positive on a compact set is bounded above and below there.
 
 ## Main results
 
 * `IsCompact.exists_pos_forall_lt_mul`: uniform domination by a continuous nonnegative weight.
+* `IsCompact.exists_forall_le_and_inv_le`: a function continuous and positive on a compact set
+  `K` satisfies `w ≤ Λ` and `w⁻¹ ≤ Λ` on `K` for some `Λ ≥ 0`.
 
 ## References
 
@@ -62,3 +65,14 @@ theorem IsCompact.exists_pos_forall_lt_mul
         exact hx.trans_le (mul_le_mul_of_nonneg_right hAB (hwnonneg x x.property))
       exact ⟨c, hmono (le_max_left _ _), hmono (le_max_right _ _)⟩)
   exact ⟨A, A.property, fun x hx ↦ hAK (mem_univ (⟨x, hx⟩ : K))⟩
+
+/-- A function `w` that is continuous and positive on a compact set `K` is bounded above and
+below there: both `w` and `w⁻¹` are at most some `Λ ≥ 0` on `K`. -/
+theorem IsCompact.exists_forall_le_and_inv_le {X : Type*} [TopologicalSpace X] {K : Set X}
+    (hK : IsCompact K) {w : X → ℝ} (hwc : ContinuousOn w K) (hwK : ∀ x ∈ K, 0 < w x) :
+    ∃ Λ, 0 ≤ Λ ∧ ∀ x ∈ K, w x ≤ Λ ∧ (w x)⁻¹ ≤ Λ := by
+  obtain ⟨Λ, hΛ⟩ := hK.bddAbove_image (hwc.add (hwc.inv₀ fun x hx ↦ (hwK x hx).ne'))
+  refine ⟨max Λ 0, le_max_right _ _, fun x hx ↦ ?_⟩
+  have h : w x + (w x)⁻¹ ≤ max Λ 0 := (hΛ ⟨x, hx, rfl⟩).trans (le_max_left Λ 0)
+  have h₀ := (hwK x hx).le
+  exact ⟨by linarith [inv_nonneg.2 h₀], by linarith⟩

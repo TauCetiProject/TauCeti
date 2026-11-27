@@ -28,6 +28,9 @@ records the steps of the patching that do not depend on the domain.
   the same cost of a cutoff for the formal adjoint `D_u^*` on covector fields, in the `L²` norm
   with a weight `w ≥ 0` continuous on `S` and at most `Λ` on `K`:
   `∫ w ‖D_u^* (f η)‖² ≤ 2 ∫ w ‖D_u^* η‖² + 2 (M (1 + B))² Λ ∫_K ‖η‖²`.
+* `TauCeti.SymplecticForm.mul_integral_mul_norm_floerLinearizationAdjoint_sq_le`: changing the
+  weight of an estimate of `D_u^*`. If `w₁ ≤ k w₂` on the support of `η`, then
+  `C ∫ w₁ ‖D_u^* η‖² ≤ max C 0 k ∫ w₂ ‖D_u^* η‖²`.
 * `TauCeti.Floer.exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le`: for a monotone
   family of compact truncations `K T`, an estimate at every height `R₀` of the energy on the ends
   beyond `R₀ + 1` plus the energy on `K R₀`, by `C' (X ξ + ∫_{K (R₀ + 1)} ‖ξ‖²)`, gives the estimate
@@ -36,8 +39,6 @@ records the steps of the patching that do not depend on the domain.
   the core estimate. If `D_u` satisfies an `L²` estimate on sections supported in a compact set
   `K`, and the cutoff `f` is `1` to first order on `K₀ ⊆ K` with `f ξ` supported in `K`, the
   energy of `ξ` on `K₀` is at most `C₀ (∫ ‖D_u (f ξ)‖² + ∫_K ‖ξ‖²) + ∫_K ‖ξ‖²`.
-* `TauCeti.Floer.exists_forall_le_and_inv_le`: a weight continuous and positive on a compact set
-  `K` is bounded above and below there, `w ≤ Λ` and `w⁻¹ ≤ Λ` on `K`.
 * `TauCeti.Floer.sum_add_le_mul_add`: the arithmetic that sums the end and core estimates into
   one constant times `∫ ‖D_u ξ‖² + ∫_K ‖ξ‖²`.
 
@@ -163,6 +164,30 @@ theorem integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
       (differentiableAt_id.prodMk ((hu z hzS).differentiableAt one_ne_zero)))
     (hf₁ z hzS) hM' hB'
 
+/-- **Changing the weight of an estimate of the formal adjoint.** If `w₁ ≤ k w₂` on the support of
+`η`, with `w₁ ≥ 0` and `w₂ ‖D^* η‖²` integrable, then
+`C ∫ w₁ ‖D^* η‖² ≤ max C 0 k ∫ w₂ ‖D^* η‖²`. This turns an end estimate of `D_u^*` against the
+weight `w₁` of the end into one against the weight `w₂` of the domain. -/
+theorem mul_integral_mul_norm_floerLinearizationAdjoint_sq_le (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} {w₁ w₂ : ℝ × ℝ → ℝ} {k : ℝ} (hw₁ : ∀ z, 0 ≤ w₁ z)
+    (hw : ∀ z ∈ tsupport η, w₁ z ≤ k * w₂ z)
+    (hint : Integrable fun z ↦ w₂ z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) (C : ℝ) :
+    C * ∫ z, w₁ z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 ≤
+      max C 0 * k * ∫ z, w₂ z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 := by
+  rw [mul_assoc]
+  refine (mul_le_mul_of_nonneg_right (le_max_left _ _)
+    (integral_nonneg fun z ↦ by have := hw₁ z; positivity)).trans
+    (mul_le_mul_of_nonneg_left ?_ (le_max_right _ _))
+  rw [← integral_const_mul]
+  refine integral_mono_of_nonneg (.of_forall fun z ↦ by have := hw₁ z; positivity)
+    (hint.const_mul k) (.of_forall fun z ↦ ?_)
+  beta_reduce
+  by_cases hz : z ∈ tsupport η
+  · rw [← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (hw z hz) (sq_nonneg _)
+  · simp [floerLinearizationAdjoint_of_notMem_tsupport hz]
+
 /-- **The core estimate.** Let `f` be `C²` on an open set `S`, `1` to first order on a measurable
 set `K₀`, and `|f| ≤ 1` on a compact set `K ⊆ S` containing `K₀`. If `D_u` satisfies the `L²`
 estimate `hint` on sections supported in `K`, then a `C²` section `ξ` with compact support in `S`,
@@ -268,20 +293,6 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
     Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
       fun ζ _ ↦ sobolevDensity_nonneg _ ζ
   nlinarith [mul_le_mul_of_nonneg_left hY hC₁]
-
-/-- A function `w` that is continuous and positive on a compact set `K` is bounded above and
-below there: both `w` and `w⁻¹` are at most some `Λ ≥ 0` on `K`. This bounds a weight continuous
-and positive on the domain on the compact core of the patching. -/
-theorem exists_forall_le_and_inv_le {X : Type*} [TopologicalSpace X] {K : Set X}
-    (hK : IsCompact K) {w : X → ℝ} (hwc : ContinuousOn w K) (hwK : ∀ z ∈ K, 0 < w z) :
-    ∃ Λ, 0 ≤ Λ ∧ ∀ z ∈ K, w z ≤ Λ ∧ (w z)⁻¹ ≤ Λ := by
-  obtain ⟨Λ, hΛ⟩ := hK.exists_bound_of_continuousOn
-    (hwc.add (hwc.inv₀ fun z hz ↦ (hwK z hz).ne'))
-  refine ⟨max Λ 0, le_max_right _ _, fun z hz ↦ ?_⟩
-  have h : w z + (w z)⁻¹ ≤ max Λ 0 :=
-    (Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left Λ 0))
-  have h₀ := (hwK z hz).le
-  exact ⟨by linarith [inv_nonneg.2 h₀], by linarith⟩
 
 /-- **Summing the pieces of the patching.** If the energy `E e` on each end `e` is at most
 `C e (2 X + 2 c² Y)` with `C e ≥ 0`, and the energy `E₀` on the core is at most
