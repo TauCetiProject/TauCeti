@@ -38,7 +38,12 @@ A complex differential operator between sections of complex bundles, of finite o
 Grothendieck's sense for commutators with multiplication by elements of `A_ℂ`, is local: `P s`
 vanishes near every point near which `s` vanishes
 (`TauCeti.complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq`). In particular an
-`A_ℂ`-linear operator is local (`TauCeti.apply_eq_zero_of_map_smul`).
+`A_ℂ`-linear operator is local (`TauCeti.apply_eq_zero_of_map_smul`). When the real structures of
+the fibres are the restrictions of the complex ones, such an operator is also a real differential
+operator of the same order, for commutators with real-valued functions
+(`TauCeti.restrictScalars_mem_differentialOperators_real`), and its iterated commutators with a
+real function are those of the complex operator with the function's complex inclusion
+(`TauCeti.smulCommutator_pow_restrictScalars_ofReal`).
 
 ## References
 
@@ -234,5 +239,35 @@ theorem apply_eq_zero_of_map_smul {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^�
     P s x = 0 :=
   complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq (m := 0)
     (mem_differentialOperators_zero_iff.2 hP) hs
+
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
+/-- **Complex differential operators are real differential operators.** Let the real structures of
+the fibres of `V` and `W` be the restrictions of their complex structures. A complex-linear operator
+`P : Γ(V) → Γ(W)` which is a differential operator of order at most `m` for commutators with
+multiplication by complex-valued smooth functions is, as a real-linear operator, a differential
+operator of order at most `m` for commutators with multiplication by real-valued smooth functions,
+which act on sections as their complex inclusions. -/
+theorem restrictScalars_mem_differentialOperators_real [∀ x, IsScalarTower ℝ ℂ (V x)]
+    [∀ x, IsScalarTower ℝ ℂ (W x)] {m : ℕ} {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^∞⟮I; F', W⟯}
+    (hP : P ∈ differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m) :
+    P.restrictScalars ℝ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m :=
+  comp_comp_mem_differentialOperators (ρ := LinearMap.id) (σ := LinearMap.id)
+    (fun b ↦ ⟨ContMDiffMap.ofReal b, fun s ↦ (ContMDiffSection.ofReal_smul b s).symm,
+      fun s ↦ ContMDiffSection.ofReal_smul b s⟩)
+    (restrictScalars_mem_differentialOperators hP)
+
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
+/-- The `k`-fold commutator with a real function `f` of the real operator underlying `P` is the
+real operator underlying the `k`-fold commutator of `P` with `f` viewed as a complex function,
+since real functions act on sections through their complex inclusions. -/
+theorem smulCommutator_pow_restrictScalars_ofReal [∀ x, IsScalarTower ℝ ℂ (V x)]
+    [∀ x, IsScalarTower ℝ ℂ (W x)] {k : ℕ} (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^∞⟮I; F', W⟯)
+    (f : C^∞⟮I, M; ℝ⟯) :
+    (smulCommutator ℝ f ^ k) (P.restrictScalars ℝ) =
+      ((smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) P).restrictScalars ℝ := by
+  have h : (smulCommutator ℝ (ContMDiffMap.ofReal f) :
+      Module.End ℝ (Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯)) = smulCommutator ℝ f :=
+    LinearMap.ext fun D ↦ LinearMap.ext fun s ↦ by simp
+  rw [← h, smulCommutator_pow_restrictScalars]
 
 end TauCeti
