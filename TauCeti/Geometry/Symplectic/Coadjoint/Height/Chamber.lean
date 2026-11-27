@@ -256,6 +256,7 @@ theorem chamberCoadjointOrbitHomeomorph_apply
 
 /-- The inverse of `chamberCoadjointOrbitHomeomorph` sends the coadjoint orbit of `B p`, for a
 point `p` of the closed chamber, back to `p`. -/
+@[simp]
 theorem chamberCoadjointOrbitHomeomorph_symm_mk
     (hD : IsRootPlaneDecomposition B t α F J) (hT : IsMaximalTorus T)
     (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
