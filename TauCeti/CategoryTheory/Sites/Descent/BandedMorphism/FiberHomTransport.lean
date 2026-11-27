@@ -51,30 +51,25 @@ namespace CategoryTheory.Pseudofunctor.BandedMorphism
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   {A : Sheaf J AddCommGrpCat.{w}} {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
   {bF : F.AbelianBanding J A} {bG : G.AbelianBanding J A}
-  [G.IsPrestack J] [hG : ∀ U : C, IsGroupoid (G.obj (.mk (op U)))]
+  [G.IsPrestack J] [∀ U : C, IsGroupoid (G.obj (.mk (op U)))]
   {U : C} (x : F.obj (.mk (op U))) (y : G.obj (.mk (op U)))
 
 /-- **Sections of the fibre morphism sheaf as transported isomorphisms**: over `t : T ⟶ U`, a
-section `p` of `H_X = G.sheafHom J y (X_U x)` is sent to the isomorphism `asIso p` followed by the
-restriction comparison `G(t) (X_U x) ≅ X_T (F(t) x)` of `X` along `t`. -/
+section `p` of `H_X = G.sheafHom J y (X_U x)` is sent to the isomorphism with forward morphism `p`
+(`Groupoid.isoEquivHom`) followed by the restriction comparison `G(t) (X_U x) ≅ X_T (F(t) x)` of
+`X` along `t` (`Iso.isoCongrRight`). -/
 noncomputable def fiberHomTransportIsoEquiv (X : HomCategory bF bG) (T : Over U) :
     ((fiberHomSheafFunctor bF bG J U x y).obj X).obj.obj (op T) ≃
       ((G.map T.hom.op.toLoc).toFunctor.obj y ≅
-        (X.obj.app (.mk (op T.left))).toFunctor.obj ((F.map T.hom.op.toLoc).toFunctor.obj x)) where
-  toFun p := @asIso _ _ _ _ p ((hG T.left).all_isIso _) ≪≫ restrictionIso T.hom X.obj x
-  invFun q := q.hom ≫ (restrictionIso T.hom X.obj x).inv
-  left_inv p :=
-    (Category.assoc _ _ _).trans
-      ((p ≫= (restrictionIso T.hom X.obj x).hom_inv_id).trans (Category.comp_id _))
-  right_inv q := Iso.ext <|
-    (Category.assoc _ _ _).trans
-      ((q.hom ≫= (restrictionIso T.hom X.obj x).inv_hom_id).trans (Category.comp_id _))
+        (X.obj.app (.mk (op T.left))).toFunctor.obj ((F.map T.hom.op.toLoc).toFunctor.obj x)) :=
+  letI := Groupoid.ofIsGroupoid (C := G.obj (.mk (op T.left)))
+  (Groupoid.isoEquivHom _ _).symm.trans (Iso.isoCongrRight (restrictionIso T.hom X.obj x))
 
 theorem fiberHomTransportIsoEquiv_apply_hom (X : HomCategory bF bG) (T : Over U)
     (p : ((fiberHomSheafFunctor bF bG J U x y).obj X).obj.obj (op T)) :
     (fiberHomTransportIsoEquiv x y X T p).hom =
       p ≫ (restrictionIso T.hom X.obj x).hom :=
-  (rfl)
+  Category.id_comp _
 
 /-- The inverse of `fiberHomTransportIsoEquiv` composes with the inverse restriction comparison
 and takes the forward morphism. -/
@@ -82,7 +77,7 @@ theorem fiberHomTransportIsoEquiv_symm_apply (X : HomCategory bF bG) (T : Over U
     (q : (G.map T.hom.op.toLoc).toFunctor.obj y ≅
       (X.obj.app (.mk (op T.left))).toFunctor.obj ((F.map T.hom.op.toLoc).toFunctor.obj x)) :
     (fiberHomTransportIsoEquiv x y X T).symm q = q.hom ≫ (restrictionIso T.hom X.obj x).inv :=
-  (rfl)
+  Category.id_comp _
 
 /-- **Modifications act on transported isomorphisms by their components**: transporting the image
 of a section `p` of `H_X` under the action of `m : X ⟶ Y` gives the transport of `p` followed by
@@ -95,10 +90,10 @@ theorem fiberHomTransportIsoEquiv_modification {X Y : HomCategory bF bG} (m : X 
   ext
   have h := congrArg Iso.hom (restrictionIso_modification T.hom m x)
   simp only [Iso.trans_hom, Functor.mapIso_hom, componentIso_hom] at h
-  have h' := fiberHomSheafFunctor_map_hom_app x y m (op T) p
-  simp only [fiberHomTransportIsoEquiv_apply_hom, Iso.trans_hom, componentIso_hom]
-  -- `erw`: the section types of `H_X` are hom types only up to unfolding `presheafHom`.
-  erw [h']
+  rw [Iso.trans_hom, fiberHomTransportIsoEquiv_apply_hom, fiberHomTransportIsoEquiv_apply_hom,
+    fiberHomSheafFunctor_map_hom_app, componentIso_hom]
+  -- Term mode: a section `p` is a morphism only after unfolding `presheafHom`, beyond the reducible
+  -- transparency at which `simp` and `rw` would apply `Category.assoc`.
   exact (Category.assoc _ _ _).trans ((p ≫= h).trans (Category.assoc _ _ _).symm)
 
 end CategoryTheory.Pseudofunctor.BandedMorphism
