@@ -63,6 +63,10 @@ noncomputable abbrev tmul (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op
     tensorObj G F :=
   tmulLinear X x y
 
+private lemma tmul_eq_coend_ι (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
+    tmul (G := G) (F := F) X x y = coend.ι (tensorDiagram G F) (op X) (x ⊗ₜ[ℤ] y) :=
+  rfl
+
 @[simp]
 lemma tmul_add (X : C) (x : G.obj.obj (op (op X))) (y z : F.obj.obj (op X)) :
     tmul (G := G) (F := F) X x (y + z) = tmul X x y + tmul X x z :=
@@ -81,15 +85,37 @@ lemma tmul_zero (X : C) (x : G.obj.obj (op (op X))) : tmul (G := G) (F := F) X x
 lemma zero_tmul (X : C) (y : F.obj.obj (op X)) : tmul (G := G) (F := F) X 0 y = 0 :=
   ((tmulLinear X).flip y).map_zero
 
+@[simp]
+lemma tmul_neg (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
+    tmul (G := G) (F := F) X x (-y) = -tmul X x y :=
+  map_neg (tmulLinear X x) y
+
+@[simp]
+lemma neg_tmul (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
+    tmul (G := G) (F := F) X (-x) y = -tmul X x y :=
+  map_neg ((tmulLinear X).flip y) x
+
+@[simp]
+lemma tmul_sub (X : C) (x : G.obj.obj (op (op X))) (y z : F.obj.obj (op X)) :
+    tmul (G := G) (F := F) X x (y - z) = tmul X x y - tmul X x z :=
+  map_sub (tmulLinear X x) y z
+
+@[simp]
+lemma sub_tmul (X : C) (x y : G.obj.obj (op (op X))) (z : F.obj.obj (op X)) :
+    tmul (G := G) (F := F) X (x - y) z = tmul X x z - tmul X y z :=
+  map_sub ((tmulLinear X).flip z) x y
+
 /-- A morphism of `C` can be moved between the two factors of a pure tensor. -/
 lemma tmul_balance {X Y : C} (f : X ⟶ Y) (x : G.obj.obj (op (op X)))
     (y : F.obj.obj (op Y)) :
     tmul (G := G) (F := F) Y (G.obj.map f.op.op x) y = tmul X x (F.obj.map f.op y) := by
-  have h := ConcreteCategory.congr_hom (coend.condition (tensorDiagram G F) f.op) (x ⊗ₜ[ℤ] y)
-  erw [AddCommGrpCat.comp_apply, tensorBifunctor_map_app_tmul (G := G.obj) (F := F.obj)
-    f.op.op (op Y) x y] at h
-  erw [AddCommGrpCat.comp_apply, tensorBifunctor_obj_map_tmul (G := G.obj) (F := F.obj)
-    (op (op X)) f.op x y] at h
+  have h : coend.ι (tensorDiagram G F) (op Y)
+      (((tensorDiagram G F).map f.op.op).app (op Y) (x ⊗ₜ[ℤ] y)) =
+    coend.ι (tensorDiagram G F) (op X)
+      (((tensorDiagram G F).obj (op (op X))).map f.op (x ⊗ₜ[ℤ] y)) :=
+    ConcreteCategory.congr_hom (coend.condition (tensorDiagram G F) f.op) (x ⊗ₜ[ℤ] y)
+  simp only [tensorBifunctor_map_app_tmul, tensorBifunctor_obj_map_tmul] at h
+  rw [tmul_eq_coend_ι, tmul_eq_coend_ι]
   exact h
 
 /-- Homomorphisms from the tensor product over `C` are determined by pure tensors. -/
@@ -100,6 +126,7 @@ lemma tensorObj_hom_ext {A : AddCommGrpCat.{w}} {p q : tensorObj G F ⟶ A}
   coend.hom_ext fun X ↦ AddCommGrpCat.tensor_hom_ext (h X.unop)
 
 /-- Every element of the tensor product is generated additively by the classes of pure tensors. -/
+@[elab_as_elim]
 theorem tensorObj_induction_on {p : tensorObj G F → Prop} (z : tensorObj G F)
     (zero : p 0) (add : ∀ a b, p a → p b → p (a + b)) (neg : ∀ a, p a → p (-a))
     (pure : ∀ X x y, p (tmul X x y)) : p z := by
@@ -132,10 +159,10 @@ private lemma tensorDesc_condition {A : AddCommGrpCat.{w}}
         AddCommGrpCat.ofHom (TensorProduct.lift (b Y.unop)).toAddMonoidHom := by
   apply AddCommGrpCat.tensor_hom_ext
   intro x y
-  erw [AddCommGrpCat.comp_apply, tensorBifunctor_map_app_tmul (G := G.obj) (F := F.obj)
-    f.op X x y]
-  erw [AddCommGrpCat.comp_apply, tensorBifunctor_obj_map_tmul (G := G.obj) (F := F.obj)
-    (op Y) f x y]
+  -- Evaluate the composites in the ordinary tensor products of the module values.
+  change TensorProduct.lift (b X.unop) (((tensorDiagram G F).map f.op).app X (x ⊗ₜ[ℤ] y)) =
+    TensorProduct.lift (b Y.unop) (((tensorDiagram G F).obj (op Y)).map f (x ⊗ₜ[ℤ] y))
+  simp only [tensorBifunctor_map_app_tmul, tensorBifunctor_obj_map_tmul]
   exact hb f.unop x y
 
 /-- Extend a family of balanced bilinear maps to a homomorphism on the tensor product over `C`. -/
@@ -155,12 +182,11 @@ lemma tensorDesc_tmul {A : AddCommGrpCat.{w}}
       b Y (G.obj.map f.op.op x) y = b X x (F.obj.map f.op y))
     (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
     tensorDesc b hb (tmul X x y) = b X x y := by
-  have h := ConcreteCategory.congr_hom
+  rw [tmul_eq_coend_ι]
+  exact ConcreteCategory.congr_hom
     (coend.ι_desc (F := tensorDiagram G F) (fun X ↦
       AddCommGrpCat.ofHom (TensorProduct.lift (b X.unop)).toAddMonoidHom)
         (fun _ _ f ↦ tensorDesc_condition b hb f) (op X)) (x ⊗ₜ[ℤ] y)
-  erw [AddCommGrpCat.comp_apply] at h
-  exact h
 
 private lemma coend_map_tmul (α : G ⟶ G') (β : F ⟶ F') (X : C)
     (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
@@ -169,15 +195,11 @@ private lemma coend_map_tmul (α : G ⟶ G') (β : F ⟶ F') (X : C)
       tmul (G := G') (F := F') X (α.hom.app (op (op X)) x) (β.hom.app (op X) y) := by
   let a := (tensorBifunctor Cᵒᵖ).map
     (X := (G.obj, F.obj)) (Y := (G'.obj, F'.obj)) (α.hom, β.hom)
-  calc
-    _ = (coend.ι (tensorDiagram G F) (op X) ≫ coend.map a) (x ⊗ₜ[ℤ] y) := rfl
-    _ = (((a.app (op (op X))).app (op X)) ≫ coend.ι (tensorDiagram G' F') (op X))
-        (x ⊗ₜ[ℤ] y) := ConcreteCategory.congr_hom (coend.ι_map a (op X)) _
-    _ = _ := by
-      erw [AddCommGrpCat.comp_apply, tensorBifunctor_map_app_app_tmul
-        (G := G.obj) (F := F.obj) (G' := G'.obj) (F' := F'.obj) α.hom β.hom
-        (op (op X)) (op X) x y]
-      rfl
+  have h : coend.map a (coend.ι (tensorDiagram G F) (op X) (x ⊗ₜ[ℤ] y)) =
+      coend.ι (tensorDiagram G' F') (op X) (((a.app (op (op X))).app (op X)) (x ⊗ₜ[ℤ] y)) :=
+    ConcreteCategory.congr_hom (coend.ι_map a (op X)) (x ⊗ₜ[ℤ] y)
+  simp only [a, tensorBifunctor_map_app_app_tmul] at h
+  simpa only [tmul_eq_coend_ι] using h
 
 /-- A map in the right-module argument acts on the first entry of a pure tensor. -/
 @[simp]
@@ -206,8 +228,10 @@ instance (F : ModCat.{w} C) : (tensor.flip.obj F).Additive where
     intro G G' f g
     apply tensorObj_hom_ext
     intro X x y
-    simp only [Functor.flip_obj_map, AddCommGrpCat.hom_add_apply]
-    erw [tensor_map_app_tmul, tensor_map_app_tmul, tensor_map_app_tmul]
+    -- Use the unflipped components so that the coercions of the maps match the simp lemma.
+    change (tensor.map (f + g)).app F (tmul X x y) =
+      (tensor.map f).app F (tmul X x y) + (tensor.map g).app F (tmul X x y)
+    simp only [tensor_map_app_tmul]
     exact add_tmul X _ _ y
 
 instance : (tensor (C := C)).Additive where
@@ -249,22 +273,25 @@ noncomputable def tensorObjYonedaIso (G : ModCat.{v} Cᵒᵖ) (X : C) :
   hom_inv_id := by
     apply tensorObj_hom_ext
     intro Y x f
-    erw [AddCommGrpCat.comp_apply, tensorDesc_tmul]
+    -- The generator of the representable module at `Y` is a morphism `Y ⟶ X`.
+    change Y ⟶ X at f
+    have hEval := tensorDesc_tmul (G := G) (F := (yoneda C).obj X) (yonedaRightPairing G X)
+      (fun _ _ f x g ↦ yonedaRightPairing_balance G X f x g) Y x f
     have h := tmul_balance (F := (yoneda C).obj X) f x (𝟙 X)
     -- The representable's action in the second factor is precomposition.
     change tmul (F := (yoneda C).obj X) X (G.obj.map f.op.op x) (𝟙 X) =
       tmul (F := (yoneda C).obj X) Y x (f ≫ 𝟙 X) at h
-    erw [Category.comp_id] at h
-    exact h
+    exact (congrArg (fun z ↦ tmul (F := (yoneda C).obj X) X z (𝟙 X)) hEval).trans
+      (h.trans (congrArg (fun g : Y ⟶ X ↦ tmul (F := (yoneda C).obj X) Y x g)
+        (Category.comp_id f)))
   inv_hom_id := by
     apply AddCommGrpCat.ext
     intro x
-    erw [AddCommGrpCat.comp_apply]
     -- The inverse inserts the identity of the representing object.
     change tensorDesc (F := (yoneda C).obj X) _ _
       (tmul (F := (yoneda C).obj X) X x (𝟙 X)) = x
-    erw [tensorDesc_tmul]
-    exact ConcreteCategory.congr_hom (G.obj.map_id (op (op X))) x
+    exact (tensorDesc_tmul (F := (yoneda C).obj X) _ _ X x (𝟙 X)).trans
+      (ConcreteCategory.congr_hom (G.obj.map_id (op (op X))) x)
 
 /-- Yoneda evaluation moves the morphism in the second factor to the right module. -/
 @[simp]
@@ -296,22 +323,25 @@ noncomputable def yonedaTensorObjIso (X : C) (F : ModCat.{v} C) :
   hom_inv_id := by
     apply tensorObj_hom_ext
     intro Y f y
-    erw [AddCommGrpCat.comp_apply, tensorDesc_tmul]
+    -- The generator of the right representable is a morphism in the opposite category.
+    change op Y ⟶ op X at f
+    have hEval := tensorDesc_tmul (G := (yoneda Cᵒᵖ).obj (op X)) (F := F)
+      (fun Y ↦ yonedaLeftPairing X Y F) (fun _ _ f g y ↦ yonedaLeftPairing_balance X F f g y) Y f y
     have h := tmul_balance (G := (yoneda Cᵒᵖ).obj (op X)) f.unop (𝟙 (op X)) y
     -- The right representable acts by precomposition in the opposite category.
     change tmul (G := (yoneda Cᵒᵖ).obj (op X)) Y (f ≫ 𝟙 (op X)) y =
       tmul (G := (yoneda Cᵒᵖ).obj (op X)) X (𝟙 (op X)) (F.obj.map f y) at h
-    erw [Category.comp_id] at h
-    exact h.symm
+    exact (congrArg (fun z ↦ tmul (G := (yoneda Cᵒᵖ).obj (op X)) X (𝟙 (op X)) z) hEval).trans
+      (h.symm.trans (congrArg (fun g : op Y ⟶ op X ↦ tmul (G := (yoneda Cᵒᵖ).obj (op X)) Y g y)
+        (Category.comp_id f)))
   inv_hom_id := by
     apply AddCommGrpCat.ext
     intro y
-    erw [AddCommGrpCat.comp_apply]
     -- The inverse inserts the identity into the right representable.
     change tensorDesc (G := (yoneda Cᵒᵖ).obj (op X)) _ _
       (tmul (G := (yoneda Cᵒᵖ).obj (op X)) X (𝟙 (op X)) y) = y
-    erw [tensorDesc_tmul]
-    exact ConcreteCategory.congr_hom (F.obj.map_id (op X)) y
+    exact (tensorDesc_tmul (G := (yoneda Cᵒᵖ).obj (op X)) _ _ X (𝟙 (op X)) y).trans
+      (ConcreteCategory.congr_hom (F.obj.map_id (op X)) y)
 
 /-- Yoneda evaluation moves the morphism in the first factor to the left module. -/
 @[simp]
@@ -332,30 +362,22 @@ private lemma tensorObjYonedaIso_naturality {G G' : ModCat.{v} Cᵒᵖ} (α : G 
       (tensorObjYonedaIso G X).hom ≫ α.hom.app (op (op X)) := by
   apply tensorObj_hom_ext (G := G) (F := (yoneda C).obj X)
   intro Y x f
-  calc
-    _ = G'.obj.map f.op.op (α.hom.app (op (op Y)) x) := by
-      erw [AddCommGrpCat.comp_apply, tensor_map_app_tmul α ((yoneda C).obj X) Y x f,
-        tensorObjYonedaIso_hom_tmul G']
-    _ = α.hom.app (op (op X)) (G.obj.map f.op.op x) :=
-      (ConcreteCategory.congr_hom (α.hom.naturality f.op.op) x).symm
-    _ = _ := by
-      symm
-      erw [AddCommGrpCat.comp_apply, tensorObjYonedaIso_hom_tmul G x f]
+  -- Express elements of the representable module as morphisms for the evaluation formula.
+  change Y ⟶ X at f
+  simpa only [comp_apply, tensor_map_app_tmul α ((yoneda C).obj X) Y x f,
+    tensorObjYonedaIso_hom_tmul] using
+    (ConcreteCategory.congr_hom (α.hom.naturality f.op.op) x).symm
 
 private lemma yonedaTensorObjIso_naturality {F F' : ModCat.{v} C} (β : F ⟶ F') (X : C) :
     (tensor.obj ((yoneda Cᵒᵖ).obj (op X))).map β ≫ (yonedaTensorObjIso X F').hom =
       (yonedaTensorObjIso X F).hom ≫ β.hom.app (op X) := by
   apply tensorObj_hom_ext (G := (yoneda Cᵒᵖ).obj (op X)) (F := F)
   intro Y f y
-  calc
-    _ = F'.obj.map f (β.hom.app (op Y) y) := by
-      erw [AddCommGrpCat.comp_apply, tensor_obj_map_tmul ((yoneda Cᵒᵖ).obj (op X)) β Y f y,
-        yonedaTensorObjIso_hom_tmul F']
-    _ = β.hom.app (op X) (F.obj.map f y) :=
-      (ConcreteCategory.congr_hom (β.hom.naturality f) y).symm
-    _ = _ := by
-      symm
-      erw [AddCommGrpCat.comp_apply, yonedaTensorObjIso_hom_tmul F f y]
+  -- Express elements of the right representable as morphisms in the opposite category.
+  change op Y ⟶ op X at f
+  simpa only [comp_apply, tensor_obj_map_tmul ((yoneda Cᵒᵖ).obj (op X)) β Y f y,
+    yonedaTensorObjIso_hom_tmul] using
+    (ConcreteCategory.congr_hom (β.hom.naturality f) y).symm
 
 /-- Tensoring with a fixed left representable is naturally isomorphic to evaluation. -/
 noncomputable def tensorYonedaIso (X : C) :
