@@ -64,11 +64,10 @@ theorem adjoin_toInteger_eq_top_of_coprime_discr (hζ : IsPrimitiveRoot ζ n)
   suffices hle : (⊤ : Subalgebra ℤ (𝓞 E)) ≤ A.restrictScalars ℤ from
     Algebra.eq_top_iff.mpr fun _ ↦ hle Algebra.mem_top
   have hmap : algebraMap (𝓞 C) (𝓞 E) hzC.toInteger = hζ.toInteger := by
-    apply RingOfIntegers.coe_injective
-    rw [← IsScalarTower.algebraMap_apply (𝓞 C) (𝓞 E) E,
-      IsScalarTower.algebraMap_apply (𝓞 C) C E]
-    simp only [← RingOfIntegers.coe_eq_algebraMap, coe_toInteger,
-      IntermediateField.algebraMap_apply, IntermediateField.AdjoinSimple.coe_gen]
+    -- The integer algebra map is `RingOfIntegers.mapRingHom` viewed as an algebra.
+    apply RingOfIntegers.ext
+    simp only [RingHom.algebraMap_toAlgebra, RingOfIntegers.mapRingHom_apply,
+      IntermediateField.algebraMap_apply, coe_toInteger, IntermediateField.AdjoinSimple.coe_gen]
   rw [← hgen, Set.image_singleton, hmap]
   apply Algebra.adjoin_le
   rintro _ (hx | ⟨x, _, rfl⟩)
@@ -76,14 +75,11 @@ theorem adjoin_toInteger_eq_top_of_coprime_discr (hζ : IsPrimitiveRoot ζ n)
   obtain ⟨y, rfl⟩ := (RingOfIntegers.mapRingEquiv e).surjective x
   have hy : algebraMap (𝓞 F) (𝓞 E) (RingOfIntegers.mapRingEquiv e y) =
       algebraMap (𝓞 K) (𝓞 E) y := by
-    apply RingOfIntegers.coe_injective
-    rw [← IsScalarTower.algebraMap_apply (𝓞 F) (𝓞 E) E,
-      ← IsScalarTower.algebraMap_apply (𝓞 K) (𝓞 E) E,
-      IsScalarTower.algebraMap_apply (𝓞 F) F E, IsScalarTower.algebraMap_apply (𝓞 K) K E]
-    simp only [IntermediateField.algebraMap_apply, ← RingOfIntegers.coe_eq_algebraMap]
-    rw [RingOfIntegers.mapRingEquiv_apply]
-    dsimp only [e]
-    exact RingHom.rangeRestrictFieldEquiv_apply_coe _ _
+    apply RingOfIntegers.ext
+    simp only [RingHom.algebraMap_toAlgebra, RingOfIntegers.mapRingHom_apply,
+      RingOfIntegers.mapRingEquiv_apply, IntermediateField.algebraMap_apply]
+    -- The equivalence `e` is the base embedding with codomain restricted to its range.
+    exact RingHom.rangeRestrictFieldEquiv_apply_coe (IsScalarTower.toAlgHom ℚ K E : K →+* E) _
   exact hy.symm ▸ A.algebraMap_mem y
 
 /-- The relative different of a cyclotomic extension of level coprime to the base discriminant
