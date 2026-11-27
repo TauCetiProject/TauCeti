@@ -69,7 +69,9 @@ solves the divergence-form equation `-div(A ∇(∂ₖu)) = -div(f eₖ)` weakly
 (`TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn` and
 `TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn`; for any
 `u ∈ W^{2,2}(Ω)`, with `f = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu`, this is
-`TauCeti.PDE.exists_gradient_ae_eq_iteratedGradient_apply_and_energyFormH1_eq`). The
+`TauCeti.PDE.exists_gradient_ae_eq_iteratedGradient_apply_and_energyFormH1_eq`, and along any
+direction
+`TauCeti.PDE.gradient_ae_eq_iteratedGradient_apply_and_energyFormH1_eq_of_hasWeakLineDerivOn`). The
 comparison with the frozen problem for divergence-form equations with `L²` data
 (`TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq`)
 then bounds the square mean oscillation of `∇(∂ₖu)`, which is the column `D²u eₖ` of the Hessian
@@ -100,8 +102,8 @@ variable {n : ℕ} {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
   {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ r : ℝ}
 
 /-- A strong solution `u ∈ W^{2,2}(Ω)` of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = f` with constant `A` has first
-derivatives `∂ₖu ∈ H¹(Ω)` solving `-div(A ∇(∂ₖu)) = -div(f eₖ)` weakly. -/
-private theorem energyFormH1_eq_setIntegral_inner_smul_single
+derivatives `∂ᵥu ∈ H¹(Ω)` solving `-div(A ∇(∂ᵥu)) = -div(f v)` weakly. -/
+private theorem energyFormH1_eq_setIntegral_inner_smul
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
     {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
     (heq : ∀ᵐ x ∂(volume.restrict Omega), ∑ i, ∑ j, A i j *
@@ -114,18 +116,19 @@ private theorem energyFormH1_eq_setIntegral_inner_smul_single
       =ᵐ[volume.restrict Omega]
         fun x => ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
           EuclideanSpace.single j 1⟫_ℝ)
-    (k : Fin (n + 1)) (φ : 𝓓(Omega, ℝ)) :
-    energyFormH1 (fun _ => A) 0 0 (D k) (W1p.ofTestFunctionₗ volume Omega 2 φ) =
-      ∫ x in Omega, ⟪f x • EuclideanSpace.single k 1,
-        ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
+    {v : EuclideanSpace ℝ (Fin (n + 1))} {d : W1p volume Omega 2}
+    (hd : HasWeakLineDerivOn volume Omega (W1p.value (Wkp.lowerOrder 1 u)) (W1p.value d) v)
+    (φ : 𝓓(Omega, ℝ)) :
+    energyFormH1 (fun _ => A) 0 0 d (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+      ∫ x in Omega, ⟪f x • v, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
   have hA : ∀ i j, ContDiffOn ℝ 1 (fun _ : EuclideanSpace ℝ (Fin (n + 1)) => A i j) Omega :=
     fun _ _ => contDiffOn_const
   have hD' : ∀ j, HasWeakLineDerivOn volume Omega (W1p.value (Wkp.lowerOrder 1 u))
       (W1p.value (D j)) (EuclideanSpace.basisFun (Fin (n + 1)) ℝ j) := by
     simpa only [EuclideanSpace.basisFun_apply] using hD
-  -- Move `∂ₖ` from `∂ₖu` onto the test function; the coefficients are constant.
+  -- Move `∂ᵥ` from `∂ᵥu` onto the test function; the coefficients are constant.
   rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
-      (fun i j => (hA i j).of_le (by simp)) (hD k) φ,
+      (fun i j => (hA i j).of_le (by simp)) hd φ,
     energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn hA hD']
   simp only [fderiv_fun_const, Pi.zero_apply, zero_apply, zero_mul, zero_add,
     EuclideanSpace.basisFun_apply]
@@ -169,21 +172,38 @@ private theorem setAverage_ball_iteratedGradient_apply
     ((memLp_iteratedGradient_one u).integrableOn_of_subset one_le_two ht
       measure_ball_lt_top.ne) v
 
-/-- The gradient of `∂ⱼu`, with `∂ⱼu` the weak line derivative of `u`, is the corresponding
-column of the Hessian, almost everywhere. -/
-private theorem ae_gradient_eq_iteratedGradient_apply
+/-- **The differentiated equation for constant coefficients, in one direction.** Let
+`u ∈ W^{2,2}(Ω)`, `Ω ⊆ ℝ^{n+1}` open, and let `d ∈ H¹(Ω)` be its weak derivative `∂ᵥu` along `v`.
+Then the gradient of `d` is the column `D²u v` of the weak Hessian almost everywhere, and for every
+constant matrix `A`, `d` solves the equation `-div(A ∇d) = -div(g v)` weakly in `Ω`, with
+`g = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu`: for every test function `φ`, `∫_Ω ⟨A ∇d, ∇φ⟩ = ∫_Ω g ∂ᵥφ`. No equation for
+`u` is assumed. -/
+theorem gradient_ae_eq_iteratedGradient_apply_and_energyFormH1_eq_of_hasWeakLineDerivOn
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
-    {D : Fin (n + 1) → W1p volume Omega 2}
-    (hDg : ∀ i j, (fun x => ⟪W1p.gradient (D j) x, EuclideanSpace.single i 1⟫_ℝ)
-      =ᵐ[volume.restrict Omega]
-        fun x => ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
-          EuclideanSpace.single j 1⟫_ℝ) (k : Fin (n + 1)) :
-    (W1p.gradient (D k) : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1))) =ᵐ[volume.restrict Omega]
-        fun x => Wkp.iteratedGradient 1 u x (EuclideanSpace.single k 1) := by
-  filter_upwards [ae_all_iff.2 fun i => hDg i k,
+    {v : EuclideanSpace ℝ (Fin (n + 1))} {d : W1p volume Omega 2}
+    (hd : HasWeakLineDerivOn volume Omega (Wkp.value 2 u) (W1p.value d) v) :
+    (W1p.gradient d : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
+        =ᵐ[volume.restrict Omega] (fun x => Wkp.iteratedGradient 1 u x v) ∧
+      ∀ (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (φ : 𝓓(Omega, ℝ)),
+        energyFormH1 (fun _ => A) 0 0 d (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+          ∫ x in Omega, ⟪(∑ i, ∑ j, A i j * ⟪Wkp.iteratedGradient 1 u x
+            (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ) • v,
+              ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
+  choose D hD₀ hDg using fun j : Fin (n + 1) =>
+    Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq u (EuclideanSpace.single j 1)
+  have hD : ∀ j, HasWeakLineDerivOn volume Omega (W1p.value (Wkp.lowerOrder 1 u))
+      (W1p.value (D j)) (EuclideanSpace.single j 1) := fun j => by
+    simpa only [Wkp.value_succ 1 u, Wkp.value_one] using hD₀ j
+  have hd₁ : HasWeakLineDerivOn volume Omega (W1p.value (Wkp.lowerOrder 1 u)) (W1p.value d) v := by
+    simpa only [Wkp.value_succ 1 u, Wkp.value_one] using hd
+  refine ⟨?_, fun A φ => energyFormH1_eq_setIntegral_inner_smul u (A := A)
+    (ae_of_all _ fun _ => rfl) hD (fun i j => hDg j _) hd₁ φ⟩
+  -- `d` is the derivative along `v` whose gradient is given by the weak Hessian.
+  obtain ⟨d', hd'₀, hd'g⟩ := Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq u v
+  obtain rfl : d' = d := W1p.ext_value (Lp.ext (hd'₀.ae_eq hd))
+  filter_upwards [ae_all_iff.2 fun i => hd'g (EuclideanSpace.single i 1),
     ae_all_iff.2 fun i => Wkp.inner_iteratedGradient_one_apply_ae_eq u
-      (EuclideanSpace.single i 1) (EuclideanSpace.single k 1)] with x h1 h2
+      (EuclideanSpace.single i 1) v] with x h1 h2
   refine ext_inner_right_basis (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis fun i => ?_
   simp only [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply]
   rw [h1 i, h2 i]
@@ -204,14 +224,11 @@ theorem exists_gradient_ae_eq_iteratedGradient_apply_and_energyFormH1_eq
           ∫ x in Omega, ⟪(∑ i, ∑ j, A i j * ⟪Wkp.iteratedGradient 1 u x
             (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ) • EuclideanSpace.single k 1,
               ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
-  choose D hD₀ hDg using fun j : Fin (n + 1) =>
-    Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq u (EuclideanSpace.single j 1)
-  have hD : ∀ j, HasWeakLineDerivOn volume Omega (W1p.value (Wkp.lowerOrder 1 u))
-      (W1p.value (D j)) (EuclideanSpace.single j 1) := fun j => by
-    simpa only [Wkp.value_succ 1 u, Wkp.value_one] using hD₀ j
-  exact ⟨D, ae_gradient_eq_iteratedGradient_apply u fun i j => hDg j _, fun A k =>
-    energyFormH1_eq_setIntegral_inner_smul_single u (A := A) (ae_of_all _ fun _ => rfl) hD
-      (fun i j => hDg j _) k⟩
+  choose D hD using fun k : Fin (n + 1) =>
+    Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq u (EuclideanSpace.single k 1)
+  have h := fun k =>
+    gradient_ae_eq_iteratedGradient_apply_and_energyFormH1_eq_of_hasWeakLineDerivOn u (hD k).1
+  exact ⟨D, fun k => (h k).1, fun A k => (h k).2 A⟩
 
 /-- The square mean oscillation over a ball in `Ω` of the gradient of `D ∈ H¹(Ω)`, when that
 gradient is the `k`-th column of the Hessian of `u`, is that of the column. -/
@@ -393,35 +410,38 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_m
   rwa [average_congr hHρ, integral_congr_ae (hHρ.mono fun x hx => by rw [hx]),
     average_congr hHB, integral_congr_ae (hHB.mono fun x hx => by rw [hx])] at key
 
-/-- Freezing the coefficients of `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` at `A` changes the right-hand side by at most
-`(n + 1) ‖a - A‖ ‖D²u‖`; when `‖a - A‖` is bounded on `B_r`, this bound and `f` are square
-integrable there. -/
-private theorem abs_contraction_sub_le_and_memLp {K : ℝ}
+/-- **Freezing the coefficients.** Let `u ∈ W^{2,2}(Ω)` solve `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost
+everywhere on a measurable set `S ⊆ Ω`. Freezing the coefficients at a constant matrix `A` changes
+the right-hand side by at most `(n + 1) ‖a - A‖ ‖D²u‖`, the norm of `a - A` being that of the
+attached bilinear forms; when `a` is measurable and `‖a - A‖` is bounded on `S`, this bound and `f`
+are square integrable on `S`. -/
+private theorem abs_contraction_sub_le_and_memLp {S : Set (EuclideanSpace ℝ (Fin (n + 1)))}
+    (hS : MeasurableSet S) {K : ℝ}
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a (volume.restrict (ball x₀ r)))
-    (haK : ∀ x ∈ ball x₀ r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ K)
+    (ha : AEStronglyMeasurable a (volume.restrict S))
+    (haK : ∀ x ∈ S, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ K)
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
-    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hball : ball x₀ r ⊆ Omega)
-    (heq : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), ∑ i, ∑ j, a x i j *
+    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hS' : S ⊆ Omega)
+    (heq : ∀ᵐ x ∂(volume.restrict S), ∑ i, ∑ j, a x i j *
       ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
         f x) :
-    (∀ᵐ x ∂(volume.restrict (ball x₀ r)),
+    (∀ᵐ x ∂(volume.restrict S),
       |Matrix.contraction A (Wkp.iteratedGradient 1 u x) - f x| ≤
         (n + 1) * ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ *
           ‖Wkp.iteratedGradient 1 u x‖) ∧
       MemLp (fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ *
-        ‖Wkp.iteratedGradient 1 u x‖) 2 (volume.restrict (ball x₀ r)) ∧
-      MemLp f 2 (volume.restrict (ball x₀ r)) := by
+        ‖Wkp.iteratedGradient 1 u x‖) 2 (volume.restrict S) ∧
+      MemLp f 2 (volume.restrict S) := by
   set H : EuclideanSpace ℝ (Fin (n + 1)) →
       EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
     ⇑(Wkp.iteratedGradient 1 u)
   set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ :=
     fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖
-  have hH2 : MemLp H 2 (volume.restrict (ball x₀ r)) :=
-    (Lp.memLp (Wkp.iteratedGradient 1 u)).mono_measure (Measure.restrict_mono hball le_rfl)
+  have hH2 : MemLp H 2 (volume.restrict S) :=
+    (Lp.memLp (Wkp.iteratedGradient 1 u)).mono_measure (Measure.restrict_mono hS' le_rfl)
   have hθm := aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
   -- The frozen right-hand side differs from `f` by at most `(n + 1) θ ‖D²u‖`.
-  have hdiff : ∀ᵐ x ∂(volume.restrict (ball x₀ r)),
+  have hdiff : ∀ᵐ x ∂(volume.restrict S),
       |Matrix.contraction A (H x) - f x| ≤ (n + 1) * θ x * ‖H x‖ := by
     filter_upwards [heq] with x hx
     have h : Matrix.contraction A (H x) - f x = Matrix.contraction (A - a x) (H x) := by
@@ -432,16 +452,16 @@ private theorem abs_contraction_sub_le_and_memLp {K : ℝ}
     rw [h, ← hθx]
     simpa using Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm (A - a x) (H x)
   -- `f` differs from the square integrable `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` by at most `(n + 1) K ‖D²u‖`.
-  have hθH : MemLp (fun x => θ x * ‖H x‖) 2 (volume.restrict (ball x₀ r)) := by
+  have hθH : MemLp (fun x => θ x * ‖H x‖) 2 (volume.restrict S) := by
     refine hH2.of_le_mul (c := K) (hθm.mul hH2.aestronglyMeasurable.norm) ?_
-    filter_upwards [ae_restrict_mem measurableSet_ball] with x hx
+    filter_upwards [ae_restrict_mem hS] with x hx
     rw [norm_mul, norm_norm,
       Real.norm_of_nonneg (norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A))]
     exact mul_le_mul_of_nonneg_right (haK x hx) (norm_nonneg _)
   refine ⟨hdiff, hθH, ?_⟩
-  have hf₀ : MemLp (fun x => Matrix.contraction A (H x)) 2 (volume.restrict (ball x₀ r)) :=
+  have hf₀ : MemLp (fun x => Matrix.contraction A (H x)) 2 (volume.restrict S) :=
     (Matrix.contraction A).comp_memLp' hH2
-  have hm : AEStronglyMeasurable f (volume.restrict (ball x₀ r)) := by
+  have hm : AEStronglyMeasurable f (volume.restrict S) := by
     have hc : Continuous (Function.uncurry fun (M : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
         (T : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) =>
           Matrix.contraction M T) := by
@@ -451,7 +471,7 @@ private theorem abs_contraction_sub_le_and_memLp {K : ℝ}
     filter_upwards [heq] with x hx
     rw [Matrix.contraction_apply, hx]
   have hsub : MemLp (fun x => Matrix.contraction A (H x) - f x) 2
-      (volume.restrict (ball x₀ r)) := by
+      (volume.restrict S) := by
     refine hθH.of_le_mul (c := n + 1) (hf₀.aestronglyMeasurable.sub hm) ?_
     filter_upwards [hdiff] with x hx
     rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (mul_nonneg
@@ -459,37 +479,39 @@ private theorem abs_contraction_sub_le_and_memLp {K : ℝ}
     linarith
   exact (hf₀.sub hsub).ae_eq (ae_of_all _ fun x => by simp)
 
-/-- Freezing the coefficients of `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` at `A`, the frozen right-hand side
-`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` satisfies `∫_{B_r} (∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu)² ≤ 2 (∫_{B_r} f² + (n + 1)² ∫_{B_r} θ² ‖D²u‖²)`
-with `θ = ‖a - A‖`. -/
-private theorem setIntegral_contraction_sq_le {K : ℝ}
+/-- **The frozen right-hand side.** Let `u ∈ W^{2,2}(Ω)` solve
+`∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere on a measurable set `S ⊆ Ω`, with `a` measurable on `S` and
+`θ = ‖a - A‖` bounded there for a constant matrix `A`. Then the frozen right-hand side
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` satisfies `∫_S (∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu)² ≤ 2 (∫_S f² + (n + 1)² ∫_S θ² ‖D²u‖²)`. -/
+theorem setIntegral_contraction_sq_le {S : Set (EuclideanSpace ℝ (Fin (n + 1)))}
+    (hS : MeasurableSet S) {K : ℝ}
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a (volume.restrict (ball x₀ r)))
-    (haK : ∀ x ∈ ball x₀ r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ K)
+    (ha : AEStronglyMeasurable a (volume.restrict S))
+    (haK : ∀ x ∈ S, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ K)
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
-    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hball : ball x₀ r ⊆ Omega)
-    (heq : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), ∑ i, ∑ j, a x i j *
+    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hS' : S ⊆ Omega)
+    (heq : ∀ᵐ x ∂(volume.restrict S), ∑ i, ∑ j, a x i j *
       ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
         f x) :
-    ∫ x in ball x₀ r, Matrix.contraction A (Wkp.iteratedGradient 1 u x) ^ 2 ≤
-      2 * ((∫ x in ball x₀ r, f x ^ 2) + (n + 1) ^ 2 *
-        ∫ x in ball x₀ r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ^ 2 *
+    ∫ x in S, Matrix.contraction A (Wkp.iteratedGradient 1 u x) ^ 2 ≤
+      2 * ((∫ x in S, f x ^ 2) + (n + 1) ^ 2 *
+        ∫ x in S, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ^ 2 *
           ‖Wkp.iteratedGradient 1 u x‖ ^ 2) := by
-  obtain ⟨hdiff, hθH, hf⟩ := abs_contraction_sub_le_and_memLp ha haK u hball heq
+  obtain ⟨hdiff, hθH, hf⟩ := abs_contraction_sub_le_and_memLp hS ha haK u hS' heq
   set H : EuclideanSpace ℝ (Fin (n + 1)) →
       EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
     ⇑(Wkp.iteratedGradient 1 u)
   set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ :=
     fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖
-  have hH2 : MemLp H 2 (volume.restrict (ball x₀ r)) :=
-    (Lp.memLp (Wkp.iteratedGradient 1 u)).mono_measure (Measure.restrict_mono hball le_rfl)
-  have hf₀ : MemLp (fun x => Matrix.contraction A (H x)) 2 (volume.restrict (ball x₀ r)) :=
+  have hH2 : MemLp H 2 (volume.restrict S) :=
+    (Lp.memLp (Wkp.iteratedGradient 1 u)).mono_measure (Measure.restrict_mono hS' le_rfl)
+  have hf₀ : MemLp (fun x => Matrix.contraction A (H x)) 2 (volume.restrict S) :=
     (Matrix.contraction A).comp_memLp' hH2
   have hf2 := hf.integrable_sq
-  have hθH2 : Integrable (fun x => θ x ^ 2 * ‖H x‖ ^ 2) (volume.restrict (ball x₀ r)) :=
+  have hθH2 : Integrable (fun x => θ x ^ 2 * ‖H x‖ ^ 2) (volume.restrict S) :=
     hθH.integrable_sq.congr (ae_of_all _ fun x => mul_pow (θ x) ‖H x‖ 2)
-  calc ∫ x in ball x₀ r, Matrix.contraction A (H x) ^ 2
-      ≤ ∫ x in ball x₀ r, 2 * (f x ^ 2 + (n + 1) ^ 2 * (θ x ^ 2 * ‖H x‖ ^ 2)) := by
+  calc ∫ x in S, Matrix.contraction A (H x) ^ 2
+      ≤ ∫ x in S, 2 * (f x ^ 2 + (n + 1) ^ 2 * (θ x ^ 2 * ‖H x‖ ^ 2)) := by
         refine integral_mono_ae hf₀.integrable_sq
           ((hf2.add (hθH2.const_mul _)).const_mul 2) ?_
         filter_upwards [hdiff] with x hx
@@ -548,7 +570,7 @@ theorem
             ∫ x in ball x₀ r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ^ 2 *
               ‖Wkp.iteratedGradient 1 u x‖ ^ 2)) := by
         gcongr
-        exact setIntegral_contraction_sq_le ha haK u hball heq
+        exact setIntegral_contraction_sq_le measurableSet_ball ha haK u hball heq
     _ = _ := by ring
 
 /-- **Mean oscillation of the Hessian for variable coefficients, averaged form.** Let
