@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.Algebra.Algebra.Hom.Rat
 public import TauCeti.NumberTheory.NumberField.CMType.Basic
-import Mathlib.LinearAlgebra.TensorProduct.Lift
 import TauCeti.RingTheory.Etale.Galois
 import TauCeti.RingTheory.Etale.Reduced
 import TauCeti.RingTheory.Etale.Splitting
@@ -33,6 +32,17 @@ open scoped TensorProduct ComplexConjugate
 
 namespace TauCeti.CMType
 
+/-- Evaluating a real tensor at the conjugate embedding conjugates its value. -/
+private theorem liftEquiv_star_apply {E : Type*} [Ring E] [Algebra ℚ E]
+    (φ : E →+* ℂ) (x : ℝ ⊗[ℚ] E) :
+    AlgHom.liftEquiv ℚ ℝ E ℂ (star φ).toRatAlgHom x =
+      conj (AlgHom.liftEquiv ℚ ℝ E ℂ φ.toRatAlgHom x) := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul r a =>
+    simp only [AlgHom.liftEquiv_tmul, RingHom.toRatAlgHom_apply, RingHom.star_apply,
+      ← starRingEnd_apply, Complex.real_smul, map_mul, Complex.conj_ofReal]
+
 variable {E : Type*} [CommRing E] [Algebra ℚ E] [Module.Finite ℚ E] [IsReduced E]
 
 /-- The decomposition of the real scalar extension into the complex coordinates selected by a
@@ -51,12 +61,10 @@ noncomputable def realTensorEquiv (Φ : CMType E) : ℝ ⊗[ℚ] E ≃ₐ[ℝ] (
     obtain ⟨φ, rfl⟩ := ((RingHom.equivRatAlgHom E ℂ).trans eval).surjective ψ
     by_cases hφ : φ ∈ Φ
     · exact congrFun h ⟨φ, hφ⟩
-    · have he := congrFun h ⟨star φ, (Φ.star_mem_iff φ).mpr hφ⟩
-      -- Conjugating a real-linear extension extends the conjugate embedding.
-      have hc := LinearMap.comp_liftBaseChange ℝ φ.toRatAlgHom.toLinearMap
-        Complex.conjAe.toLinearMap
-      exact Complex.conjAe.injective
-        ((LinearMap.congr_fun hc x).trans (he.trans (LinearMap.congr_fun hc y).symm))
+    · have he : eval (star φ).toRatAlgHom x = eval (star φ).toRatAlgHom y :=
+        congrFun h ⟨star φ, (Φ.star_mem_iff φ).mpr hφ⟩
+      rw [liftEquiv_star_apply, liftEquiv_star_apply] at he
+      exact Function.Involutive.injective Complex.conj_conj he
   letI := Fintype.ofFinite Φ
   have hdim : Module.finrank ℝ (ℝ ⊗[ℚ] E) = Module.finrank ℝ (Φ → ℂ) := by
     rw [Module.finrank_baseChange, ← Algebra.Etale.card_algHom_eq_finrank ℚ E ℂ,
@@ -97,9 +105,7 @@ theorem liftEquiv_complexScalarHom (Φ : CMType E) (φ : E →+* ℂ) (z : ℂ)
   · exact congrFun (Φ.realTensorEquiv_complexScalarHom z) ⟨φ, hφ⟩
   · have h := congrFun (Φ.realTensorEquiv_complexScalarHom z)
         ⟨star φ, (Φ.star_mem_iff φ).mpr hφ⟩
-    have hc := LinearMap.comp_liftBaseChange ℝ φ.toRatAlgHom.toLinearMap Complex.conjAe.toLinearMap
-    apply Complex.conjAe.injective
-    exact (LinearMap.congr_fun hc (Φ.complexScalarHom z)).trans
-      (h.trans (star_star z).symm)
+    rw [realTensorEquiv_apply, liftEquiv_star_apply] at h
+    simpa only [Complex.conj_conj] using congrArg (conj : ℂ → ℂ) h
 
 end TauCeti.CMType

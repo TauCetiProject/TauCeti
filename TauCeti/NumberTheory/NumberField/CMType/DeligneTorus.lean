@@ -35,14 +35,13 @@ variable (Φ : CMType E) (R : Type*) [CommRing R] [Algebra ℝ R] [Algebra ℚ R
 /-- Extension of the complex scalar map of `Φ` to a real algebra `R`, on the algebras whose
 units give the two tori. -/
 noncomputable def deligneScalarHom : ℂ ⊗[ℝ] R →ₐ[ℝ] R ⊗[ℚ] E :=
-  lift ((rTensor E (Algebra.ofId ℝ R)).comp Φ.complexScalarHom) includeLeft
-    (fun _ _ ↦ Commute.all _ _)
+  productMap ((rTensor E (Algebra.ofId ℝ R)).comp Φ.complexScalarHom) includeLeft
 
 @[simp]
 theorem deligneScalarHom_tmul (z : ℂ) (r : R) :
     Φ.deligneScalarHom R (z ⊗ₜ[ℝ] r) =
       rTensor E (Algebra.ofId ℝ R) (Φ.complexScalarHom z) * (r ⊗ₜ[ℚ] 1) := by
-  simp [deligneScalarHom]
+  rw [deligneScalarHom, productMap_apply_tmul, AlgHom.comp_apply, includeLeft_apply]
 
 /-- The CM homomorphism `h_Φ` on points with values in a real algebra. -/
 noncomputable def delignePoints :
@@ -109,7 +108,6 @@ theorem liftEquiv_delignePoints_mu (φ : E →+* ℂ) [Decidable (φ ∈ Φ)] (z
     AlgHom.liftEquiv ℚ R E R ((IsScalarTower.toAlgHom ℚ ℂ R).comp φ.toRatAlgHom)
         (Φ.delignePoints R (DeligneTorus.mu R z) : R ⊗[ℚ] E) =
       if φ ∈ Φ then (z : R) else 1 := by
-  rw [Φ.liftEquiv_delignePoints, DeligneTorus.complexSplitting_mu]
-  rfl
+  simp only [Φ.liftEquiv_delignePoints, DeligneTorus.complexSplitting_mu, Units.val_one]
 
 end TauCeti.CMType
