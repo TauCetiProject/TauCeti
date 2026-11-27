@@ -50,6 +50,9 @@ through it have real-independent velocities
 
 ## Main declarations
 
+* `TauCeti.exists_injective_hasFDerivAt_symChartAt_ofFn`: near a tuple of distinct points, every
+  chart of the symmetric power is an analytic function of the product coordinates, with injective
+  derivative.
 * `TauCeti.differentiableAt_symChartAt_ofFn`: the product of the curves, read in a chart of the
   symmetric power, is real-differentiable.
 * `TauCeti.contDiffAt_symChartAt_ofFn`: it is as smooth as the curves.
@@ -98,7 +101,7 @@ private theorem coe_diagonalSmulRight (v : Fin n → ℂ) :
 /-- Near a tuple `p` of pairwise distinct points, every chart of the symmetric power is a function
 of the product coordinates `(φᵢ(wᵢ))ᵢ`, where `φᵢ` is the chart of `α` at `p i`, and this function
 is complex analytic at `p`, with injective derivative. -/
-private theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
+theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
     (hinj : Function.Injective p) (s : Sym α n)
     (hs : Sym.ofFn p ∈ (symChartAt (K := ℂ) s).source) :
     ∃ (T : (Fin n → ℂ) → Fin n → ℂ) (T' : (Fin n → ℂ) →L[ℂ] Fin n → ℂ),
