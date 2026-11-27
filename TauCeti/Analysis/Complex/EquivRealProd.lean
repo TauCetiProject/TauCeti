@@ -20,7 +20,8 @@ compact (`TauCeti.isCompact_setOf_norm_equivRealProdCLM_symm_le`). The Euclidean
 `‖w‖` of the point `w` with real coordinates `z` has `‖w‖² = z.1² + z.2²`
 (`TauCeti.sq_norm_equivRealProdCLM_symm`) and lies between the sup norm `‖z‖`
 (`TauCeti.norm_le_norm_equivRealProdCLM_symm`) and twice it
-(`TauCeti.norm_equivRealProdCLM_symm_le_two_mul`), so the disc `‖w‖ ≤ r` lies in the square
+(`TauCeti.norm_equivRealProdCLM_symm_le_two_mul`), so it is `2`-Lipschitz in `z`
+(`TauCeti.lipschitzWith_two_norm_equivRealProdCLM_symm`) and the disc `‖w‖ ≤ r` lies in the square
 `‖z‖ ≤ r` (`TauCeti.setOf_norm_equivRealProdCLM_symm_le_subset_closedBall`).
 -/
 
@@ -75,6 +76,16 @@ theorem norm_equivRealProdCLM_symm_le_two_mul (z : ℝ × ℝ) :
   have h₂ := norm_snd_le z
   rw [Real.norm_eq_abs] at h₁ h₂
   linarith
+
+/-- The Euclidean norm `‖w‖` of the point of `ℂ` with real coordinates `z` is `2`-Lipschitz in the
+sup norm of `z`. -/
+theorem lipschitzWith_two_norm_equivRealProdCLM_symm :
+    LipschitzWith 2 fun z : ℝ × ℝ ↦ ‖Complex.equivRealProdCLM.symm z‖ :=
+  LipschitzWith.of_dist_le_mul fun a b ↦ by
+    rw [Real.dist_eq, dist_eq_norm]
+    refine (abs_norm_sub_norm_le _ _).trans ?_
+    rw [← map_sub]
+    simpa using norm_equivRealProdCLM_symm_le_two_mul (a - b)
 
 /-- The disc `‖w‖ ≤ r` of the plane, read in the real coordinates, lies in the square
 `‖z‖ ≤ r` of the sup norm. -/

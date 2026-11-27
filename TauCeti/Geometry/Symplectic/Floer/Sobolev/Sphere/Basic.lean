@@ -45,7 +45,8 @@ sections are dense in `W^{1,2}` of the sphere.
   (`isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base`), both in the namespace
   `TauCeti.SymplecticForm`.
 
-The target is a symplectic vector space. The finiteness of the cokernel and the index are not
+The target is a symplectic vector space. The finiteness of the cokernel, which makes `D_u`
+Fredholm, is in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Sphere.Fredholm`; the index is not
 treated here.
 
 ## References

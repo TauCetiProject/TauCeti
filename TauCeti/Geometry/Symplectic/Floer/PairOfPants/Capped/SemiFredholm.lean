@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped
-public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Sphere
+public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Sphere.Basic
 
 /-!
 # The semi-Fredholm property along the capped comparison family
@@ -35,13 +35,14 @@ the poles `0` and `1` are interior points of the plane chart.
 
 The same reduction applies to the realization of `D_u` on the Sobolev space of the sphere,
 `TauCeti.SymplecticForm.floerConformalSobolevOperator` for the weight
-`TauCeti.Floer.sphereWeight` (`TauCeti.Geometry.Symplectic.Floer.Sobolev.Sphere`). Along every
-member of the family its coefficient field is essentially bounded
+`TauCeti.Floer.sphereWeight` (`TauCeti.Geometry.Symplectic.Floer.Sobolev.Sphere.Basic`). Along
+every member of the family its coefficient field is essentially bounded
 (`memLp_floerConformalJetCoeff_cappedComparison`), so it realizes `D_u` from `W^{1,2}` of the
 sphere to `L²`, and it has finite-dimensional kernel
 (`finiteDimensional_ker_floerConformalSobolevOperator_cappedComparison`) and closed range
 (`isClosed_range_floerConformalSobolevOperator_cappedComparison`), all in the namespace
-`TauCeti.SymplecticForm`. The finiteness of the cokernel and the index are not treated here.
+`TauCeti.SymplecticForm`. Its cokernel is finite too, so that it is Fredholm
+(`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped.Fredholm`); the index is not treated here.
 
 ## References
 
@@ -65,7 +66,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-- Near the pole `∞`, on `‖w‖ ≥ T` in the plane chart, the data of the capped comparison family
 are the base structure `J₀` and the zero perturbation. -/
-private theorem exists_cappedComparison_eq_base {ω : SymplecticForm V} (h₀ : ω.Compatible J₀)
+theorem exists_cappedComparison_eq_base {ω : SymplecticForm V} (h₀ : ω.Compatible J₀)
     (hJ : ∀ q t x, ω.Tames (J q t x)) (R : ℝ) :
     ∃ T, (∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y,
         cappedComparisonAlmostComplex h₀ J hJ R (equivRealProdCLM.symm z) y = J₀) ∧
