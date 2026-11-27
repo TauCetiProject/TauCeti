@@ -35,7 +35,7 @@ The statement is the abelianization of the presentation of `π₁(M, x)` as the 
 surjective, so the degree-one Hurewicz theorem turns each statement about fundamental groups into
 the corresponding one about first homology
 (`ContinuousMap.singularHomologyMap_one_surjective`,
-`ContinuousMap.toAddSubgroup_ker_singularHomologyMap_one`). Integer coefficients are read through
+`ContinuousMap.ker_singularHomologyMap_one_toAddSubgroup`). Integer coefficients are read through
 a ring `R ≃+* ℤ` in the universe of `M`, as for the Hurewicz isomorphism.
 
 ## Main results
@@ -99,11 +99,11 @@ theorem ker_singularHomologyMap_subtypeVal_inter (hE : finrank ℝ E = 3) (e : R
   have := isPathConnected_iff_pathConnectedSpace.1 (s.isPathConnected_left_inter_right hE)
   have := s.pathConnectedSpace hE
   apply Submodule.toAddSubgroup_injective
-  rw [Submodule.sup_toAddSubgroup, toAddSubgroup_ker_singularHomologyMap_one e _
+  rw [Submodule.sup_toAddSubgroup, ker_singularHomologyMap_one_toAddSubgroup e _
       (s.fundamentalGroup_map_inter_surjective hE hxL hxR),
-    toAddSubgroup_ker_singularHomologyMap_one e _
+    ker_singularHomologyMap_one_toAddSubgroup e _
       (s.fundamentalGroup_map_inclusion_inter_left_surjective hE ⟨x, hxL, hxR⟩),
-    toAddSubgroup_ker_singularHomologyMap_one e _
+    ker_singularHomologyMap_one_toAddSubgroup e _
       (s.fundamentalGroup_map_inclusion_inter_right_surjective hE ⟨x, hxL, hxR⟩),
     s.ker_fundamentalGroup_map_inter hE hxL hxR, Subgroup.map_sup, map_sup, AddSubgroup.map_sup]
 

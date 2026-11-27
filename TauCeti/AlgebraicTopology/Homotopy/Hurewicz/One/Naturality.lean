@@ -32,7 +32,7 @@ in an arbitrary universe `u` and the coefficients in any ring `R : Type u`.
 * `TauCeti.HurewiczOne.hurewicz₁_fundamentalGroupMulEquivOfPath`: the Hurewicz map is invariant
   under the change of base point along a path.
 * `ContinuousMap.singularHomologyMap_one_surjective` and
-  `ContinuousMap.toAddSubgroup_ker_singularHomologyMap_one`: a continuous map of path-connected
+  `ContinuousMap.ker_singularHomologyMap_one_toAddSubgroup`: a continuous map of path-connected
   spaces that is surjective on fundamental groups is surjective on first integral homology, and
   its kernel there is spanned by the Hurewicz classes of the loops it kills.
 
@@ -204,7 +204,7 @@ spaces that is surjective on fundamental groups at `y`, the kernel of the induce
 singular homology with integer coefficients, read through a ring `R ≃+* ℤ`, is the image under the
 Hurewicz isomorphism of the kernel of `g` on `π₁(Y, y)`: a class dies in `H₁` exactly when it is
 the Hurewicz class of a loop that `g` makes null-homotopic. -/
-theorem toAddSubgroup_ker_singularHomologyMap_one
+theorem ker_singularHomologyMap_one_toAddSubgroup
     (hg : Function.Surjective (FundamentalGroup.map g y)) :
     (LinearMap.ker (singularHomologyMap R 1 g)).toAddSubgroup =
       (Subgroup.toAddSubgroup ((FundamentalGroup.map g y).ker.map Group.Abelianization.of)).map
