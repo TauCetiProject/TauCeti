@@ -130,13 +130,13 @@ theorem genericIso_hom_left_genericι :
 
 /-- The marked fibre sits over the given base morphism. -/
 @[reassoc (attr := simp)]
-theorem genericι_toBase : M.genericι ≫ M.model.hom = A.hom ≫ j := by
+theorem genericι_comp_hom : M.genericι ≫ M.model.hom = A.hom ≫ j := by
   rw [genericι, Category.assoc, pullback.condition, ← Category.assoc]
   exact congrArg (· ≫ j) (Over.w M.genericIso.inv)
 
 /-- The square determined by the marking is cartesian. -/
 theorem isPullback_genericι : IsPullback M.genericι A.hom M.model.hom j :=
-  .of_iso_pullback ⟨M.genericι_toBase⟩ ((Over.forget η).mapIso M.genericIso.symm) rfl
+  .of_iso_pullback ⟨M.genericι_comp_hom⟩ ((Over.forget η).mapIso M.genericIso.symm) rfl
     (Over.w M.genericIso.inv)
 
 /-- Two `S`-morphisms from a test object into a model are equal as soon as their marked
