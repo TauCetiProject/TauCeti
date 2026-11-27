@@ -61,11 +61,9 @@ noncomputable def matlisDualRegularExtAction :
   map_one' := by
     apply AddMonoidHom.ext
     intro x
-    have h : matlisDualOpMap R E (𝟙 (ModuleCat.of.{max u v} Aᵐᵒᵖ A)) = 𝟙 _ :=
-      (matlisDualOp R E).map_id (Opposite.op (ModuleCat.of.{max u v} Aᵐᵒᵖ A))
     -- The identity additive endomorphism evaluates to its argument.
     change _ = x
-    simp [h]
+    simp
   map_mul' a b := by
     apply AddMonoidHom.ext
     intro x
@@ -77,12 +75,9 @@ noncomputable def matlisDualRegularExtAction :
   map_zero' := by
     apply AddMonoidHom.ext
     intro x
-    have h : matlisDualOpMap R E
-        (0 : ModuleCat.of.{max u v} Aᵐᵒᵖ A ⟶ ModuleCat.of.{max u v} Aᵐᵒᵖ A) = 0 :=
-      (matlisDualOp R E).map_zero _ _
     -- The zero additive endomorphism evaluates to zero.
     change _ = 0
-    simp [h]
+    simp
   map_add' a b := by
     apply AddMonoidHom.ext
     intro x

@@ -202,6 +202,14 @@ theorem matlisDualOpMap_add {N N' : ModuleCat.{w} Aᵐᵒᵖ} (g h : N ⟶ N') :
   refine (matlisDualOpObjEquiv_map_apply R E (g + h) φ x).trans ?_
   simp [ModuleCat.hom_add, map_add]
 
+/-- Dualizing the identity of a right module gives the identity of its Matlis dual. -/
+@[simp]
+theorem matlisDualOpMap_id (N : ModuleCat.{w} Aᵐᵒᵖ) :
+    matlisDualOpMap R E (𝟙 N) = 𝟙 (matlisDualOpObj R E N) := by
+  -- The functor sends the identity on `op N` to `matlisDualOpMap R E (𝟙 N)`.
+  change (matlisDualOp R E).map (𝟙 (op N)) = 𝟙 _
+  exact (matlisDualOp R E).map_id (op N)
+
 /-- Dualizing a composite of right-module maps reverses the order of composition. -/
 @[simp]
 theorem matlisDualOpMap_comp {N₁ N₂ N₃ : ModuleCat.{w} Aᵐᵒᵖ}
@@ -214,6 +222,14 @@ theorem matlisDualOpMap_comp {N₁ N₂ N₃ : ModuleCat.{w} Aᵐᵒᵖ}
 
 instance : (matlisDualOp R E (A := A)).Additive where
   map_add := matlisDualOpMap_add R E _ _
+
+/-- Dualizing a zero map of right modules gives the zero map between their Matlis duals. -/
+@[simp]
+theorem matlisDualOpMap_zero (N N' : ModuleCat.{w} Aᵐᵒᵖ) :
+    matlisDualOpMap R E (0 : N ⟶ N') = 0 := by
+  -- A map `N ⟶ N'` is dualized by applying the functor to a map `op N' ⟶ op N`.
+  change (matlisDualOp R E).map (0 : op N' ⟶ op N) = 0
+  exact (matlisDualOp R E).map_zero (op N') (op N)
 
 end Right
 
