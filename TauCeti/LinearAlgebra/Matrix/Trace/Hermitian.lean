@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # Trace of a Hermitian square
@@ -44,11 +45,8 @@ theorem IsHermitian.re_trace_mul_eq_zero_of_conjTranspose_eq_neg {𝕜 ι : Type
 /-- The trace `tr(X Y)` of the product of two skew-Hermitian matrices `X` and `Y` is real. -/
 theorem im_trace_mul_eq_zero_of_conjTranspose_eq_neg {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι]
     {X Y : Matrix ι ι 𝕜} (hX : Xᴴ = -X) (hY : Yᴴ = -Y) :
-    RCLike.im (X * Y).trace = 0 := by
-  have h : star (X * Y).trace = (X * Y).trace := by
-    simp [← trace_conjTranspose, hX, hY, trace_mul_comm Y]
-  have := congrArg RCLike.im h
-  simp only [RCLike.star_def, RCLike.conj_im] at this
-  linarith
+    RCLike.im (X * Y).trace = 0 :=
+  RCLike.conj_eq_iff_im.mp
+    (by simpa only [← RCLike.star_def] using star_trace_mul_of_conjTranspose_eq_neg hX hY)
 
 end Matrix

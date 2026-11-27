@@ -44,9 +44,16 @@ unitary group under the continuous coercion `Units.val`.  That is the form in wh
 closed-subgroup theorem consumes it.  As a topological group it is the matrix special unitary
 group (`TauCeti.GLSpecialUnitary.continuousMulEquiv`), so over `ℝ` or `ℂ` it is compact.  Over
 `ℝ` or `ℂ`, compactness of the matrix unitary group
-likewise passes to the unitary subgroup `unitarySubgroup (GL n 𝕜)`. For the same reason the
-block-diagonal product `{diag(g₁, g₂)}` of two closed subgroups of `U(n)` and `U(m)` is a closed
-subgroup of `U(n ⊕ m)`.
+likewise passes to the unitary subgroup `unitarySubgroup (GL n 𝕜)`.
+
+The file also packages closed subgroups directly inside `Matrix.unitaryGroup n 𝕜` as
+`ClosedSubgroup`: the full unitary group `ClosedSubgroup.unitary`, the special unitary group
+`ClosedSubgroup.specialUnitary` (closed over any `T1Space` topological commutative star ring),
+index transport `ClosedSubgroup.reindex` along a bijection `e : n ≃ m` via the reindexing
+homeomorphism `Matrix.unitaryReindexContinuousMulEquiv` (with membership characterized by inverse
+reindexing via `ClosedSubgroup.mem_reindex_iff`), and, over `ℝ` or `ℂ`, the block-diagonal product
+`ClosedSubgroup.fromBlocksProd` `{diag(g₁, g₂)}` of two closed subgroups of `U(n)` and `U(m)`,
+closed by compactness.
 
 This is the setup the compact-group representation theory of `SU(2)` runs on; see
 `TauCeti/RepresentationTheory/SU2/Basic.lean`.
@@ -55,6 +62,9 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
 
 * `TauCeti.GLSpecialUnitary.continuousMulEquiv`: the special unitary subgroup of the general linear
   group is the matrix special unitary group, as a topological group.
+* `ClosedSubgroup.unitary`: the full unitary group `U(n)` as a `ClosedSubgroup`.
+* `ClosedSubgroup.specialUnitary`: the special unitary group `SU(n)` as a `ClosedSubgroup`.
+* `ClosedSubgroup.reindex`: transports a closed subgroup `G ≤ U(n)` along `e : n ≃ m`.
 * `ClosedSubgroup.fromBlocksProd`: the block-diagonal product `{diag(g₁, g₂)} ≤ U(n ⊕ m)` of
   closed subgroups `G₁ ≤ U(n)` and `G₂ ≤ U(m)`, closed by compactness.
 
@@ -72,6 +82,8 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
 * `Matrix.UnitaryGroup.continuous_fromBlocksOne`,
   `Matrix.specialUnitaryGroup.continuous_fromBlocksOne`: the block embeddings `B ↦ diag(1_r, B)`
   of `U(m)` in `U(r + m)` and of `SU(m)` in `SU(r + m)` are continuous.
+* `ClosedSubgroup.mem_reindex_iff`: membership in `G.reindex e` reduces to membership of the
+  inverse reindexing in `G`.
 -/
 
 public section
@@ -314,8 +326,10 @@ theorem mem_specialUnitary_iff {U : Matrix.unitaryGroup n 𝕜} :
 
 end SpecialUnitary
 
+section Reindex
+
 variable {n m p 𝕜 : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m]
-  [Fintype p] [DecidableEq p] [RCLike 𝕜]
+  [Fintype p] [DecidableEq p] [CommRing 𝕜] [StarRing 𝕜] [TopologicalSpace 𝕜]
 
 /-- Reindex a closed subgroup `G ≤ U(n)` along a bijection `e : n ≃ m` to obtain a closed
 subgroup of `U(m)`. -/
@@ -324,13 +338,12 @@ def reindex (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (e : n ≃ m) :
   toSubgroup :=
     (G : Subgroup _).map (Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).toMulEquiv.toMonoidHom
   isClosed' := by
-    -- Identify the `ClosedSubgroup` carrier with the underlying `Subgroup.map` carrier set.
+    -- Identify the `ClosedSubgroup` carrier with the image under the reindexing homeomorphism.
     change IsClosed (((G : Subgroup _).map
       (Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).toMulEquiv.toMonoidHom :
         Subgroup (Matrix.unitaryGroup m 𝕜)) : Set (Matrix.unitaryGroup m 𝕜))
     rw [Subgroup.coe_map]
-    exact (G.isClosed'.isCompact.image
-      (Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).continuous_toFun).isClosed
+    exact (Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).toHomeomorph.isClosed_image.mpr G.isClosed'
 
 /-- The underlying subgroup of `G.reindex e` is the `Subgroup.map` of `G` under
 `Matrix.unitaryReindexContinuousMulEquiv 𝕜 e`. -/
@@ -388,6 +401,12 @@ theorem reindex_trans (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (e : n �
     simp [Matrix.coe_unitaryReindexContinuousMulEquiv_apply]
   rw [heq]
 
+end Reindex
+
+section FromBlocksProd
+
+variable {n m 𝕜 : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] [RCLike 𝕜]
+
 /-- The block-diagonal product `G₁ × G₂ ≤ U(n ⊕ m)` of closed subgroups `G₁ ≤ U(n)` and
 `G₂ ≤ U(m)`: the matrices `diag(g₁, g₂)` with `g₁ ∈ G₁` and `g₂ ∈ G₂`. It is closed, being the
 compact image of `G₁ × G₂` under the block-diagonal sum. -/
@@ -424,5 +443,7 @@ theorem sum_mem_fromBlocksProd {g₁ : Matrix.unitaryGroup n 𝕜}
     {g₂ : Matrix.unitaryGroup m 𝕜} (h₁ : g₁ ∈ G₁) (h₂ : g₂ ∈ G₂) :
     Matrix.UnitaryGroup.sum (g₁, g₂) ∈ G₁.fromBlocksProd G₂ :=
   mem_fromBlocksProd_iff.mpr ⟨g₁, h₁, g₂, h₂, Matrix.UnitaryGroup.coe_sum _⟩
+
+end FromBlocksProd
 
 end ClosedSubgroup

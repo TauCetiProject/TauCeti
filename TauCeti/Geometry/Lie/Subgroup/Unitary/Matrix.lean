@@ -23,6 +23,9 @@ import TauCeti.Geometry.Lie.Subgroup.Countable.Basic
 import TauCeti.Geometry.Lie.Subgroup.LimitCriterion
 import TauCeti.Geometry.Lie.Subgroup.SpecialUnitary
 import TauCeti.LinearAlgebra.Matrix.Block
+import TauCeti.LinearAlgebra.Matrix.Hermitian.Basic
+import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
+import TauCeti.LinearAlgebra.Matrix.Unique
 
 /-!
 # The matrix Lie algebra of a closed subgroup of the unitary group
@@ -76,6 +79,8 @@ also invariant under `ad X = ⁅X, ·⁆`. The trace form `⟨X, Y⟩ = -Re tr (
 * `ClosedSubgroup.matrixAdjointRepresentation_lie`: each `Ad(g)` preserves the bracket.
 * `ClosedSubgroup.lieInvariant_of_isInvariantForm`: an `Ad(G)`-invariant bilinear form is
   `ad`-invariant, `B ⁅X, Y⁆ Z = -B Y ⁅X, Z⁆`.
+* `ClosedSubgroup.neg_trace_mul_eq_matrixTraceForm`: `-tr (X Y)` is real and equals
+  `G.matrixTraceForm X Y`.
 * `ClosedSubgroup.matrixTraceForm_eq_frobenius_real_inner`: the trace form is the restriction of
   the real Frobenius inner product.
 * `ClosedSubgroup.posDef_matrixTraceForm`, `ClosedSubgroup.isInvariantForm_matrixTraceForm`: the
@@ -84,6 +89,10 @@ also invariant under `ad X = ⁅X, ·⁆`. The trace form `⟨X, Y⟩ = -Re tr (
   product.
 * `ClosedSubgroup.mem_matrixLieAlgebra_unitary_iff`,
   `ClosedSubgroup.mem_matrixLieAlgebra_specialUnitary_iff`: Lie algebras of `U(n)` and `SU(n)`.
+* `ClosedSubgroup.mem_matrixLieAlgebra_unitary_fin_one_iff`,
+  `ClosedSubgroup.lie_eq_zero_of_unique`,
+  `ClosedSubgroup.matrixAdjointRepresentation_eq_id_of_unique`:
+  `𝔲(1) = iℝ` is abelian with trivial adjoint representation.
 * `ClosedSubgroup.matrixLieAlgebra_eq_bot_of_countable`: every countable subgroup of `U(n)` has
   trivial Lie algebra `⊥`.
 * `ClosedSubgroup.mem_matrixLieAlgebra_reindex_iff`: the Lie algebra of a reindexed subgroup.
@@ -419,6 +428,17 @@ theorem matrixTraceForm_apply (X Y : G.matrixLieAlgebra) :
     G.matrixTraceForm X Y = -RCLike.re ((X : Matrix n n 𝕜) * Y).trace :=
   (rfl)
 
+/-- For the trace form, `-tr (X * Y)` is real and coincides with the trace form embedded in `𝕜`. -/
+theorem neg_trace_mul_eq_matrixTraceForm (X Y : G.matrixLieAlgebra) :
+    -((X : Matrix n n 𝕜) * (Y : Matrix n n 𝕜)).trace = algebraMap ℝ 𝕜 (G.matrixTraceForm X Y) := by
+  apply RCLike.ext
+  · simp only [map_neg, RCLike.algebraMap_eq_ofReal, RCLike.ofReal_re]
+    exact (matrixTraceForm_apply (G := G) X Y).symm
+  · have him := Matrix.im_trace_mul_eq_zero_of_conjTranspose_eq_neg
+      (conjTranspose_eq_neg_of_mem_matrixLieAlgebra X.property)
+      (conjTranspose_eq_neg_of_mem_matrixLieAlgebra Y.property)
+    simpa using him
+
 section
 
 open scoped InnerProductSpace Matrix.Norms.Frobenius
@@ -621,6 +641,47 @@ theorem mem_matrixLieAlgebra_specialUnitary_iff {X : Matrix n n 𝕜} :
   exact h.trans (unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff X)
 
 end Standard
+
+section Unique
+
+/-- A `1 × 1` matrix over `𝕜` lies in the Lie algebra of `U(1)` iff its entry has real part
+`0`. -/
+theorem mem_matrixLieAlgebra_unitary_fin_one_iff {𝕜 : Type*} [RCLike 𝕜]
+    (X : Matrix (Fin 1) (Fin 1) 𝕜) :
+    X ∈ (unitary (Fin 1) 𝕜).matrixLieAlgebra ↔ RCLike.re (X 0 0) = 0 := by
+  rw [mem_matrixLieAlgebra_unitary_iff]
+  constructor
+  · intro h
+    exact Matrix.re_apply_self_eq_zero_of_conjTranspose_eq_neg h 0
+  · intro hre
+    ext i j
+    fin_cases i
+    fin_cases j
+    apply RCLike.ext
+    · simp [hre]
+    · simp
+
+/-- On a singleton index type (in particular `U(1)`), the Lie algebra is abelian: every Lie
+bracket vanishes. -/
+@[simp]
+theorem lie_eq_zero_of_unique [Unique n] (X Y : G.matrixLieAlgebra) :
+    ⁅X, Y⁆ = 0 := by
+  have hmul : (X : Matrix n n 𝕜) * Y = (Y : Matrix n n 𝕜) * X :=
+    Matrix.uniqueStarRingEquiv.injective (by simp [mul_comm])
+  exact Subtype.ext (by simp [LieRing.of_associative_ring_bracket, hmul])
+
+/-- On a singleton index type (in particular `U(1)`), the adjoint representation is trivial. -/
+@[simp]
+theorem matrixAdjointRepresentation_eq_id_of_unique [Unique n] (g : G) :
+    G.matrixAdjointRepresentation g = LinearMap.id := by
+  ext1 X
+  ext1
+  rw [coe_matrixAdjointRepresentation_apply]
+  have hmul : (g.val : Matrix n n 𝕜) * X.val = (X.val : Matrix n n 𝕜) * g.val :=
+    Matrix.uniqueStarRingEquiv.injective (by simp [mul_comm])
+  rw [hmul, mul_assoc, Unitary.mul_star_self_of_mem g.val.property, mul_one, LinearMap.id_apply]
+
+end Unique
 
 section Countable
 

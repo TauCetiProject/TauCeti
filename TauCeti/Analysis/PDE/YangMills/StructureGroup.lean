@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
-import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
 # Compact matrix structure groups
@@ -51,6 +50,7 @@ constant of a block-diagonal product is the larger of those of the factors.
 
 ## Main results
 
+* `TauCeti.CompactMatrixStructureGroup.ext`: extensionality for compact matrix structure groups.
 * `TauCeti.CompactMatrixStructureGroup.innerForm_matrixAdjointRepresentation`: each `Ad(g)` is an
   isometry of the inner product.
 * `TauCeti.CompactMatrixStructureGroup.innerForm_lie_left`: each `ad X` is skew-adjoint,
@@ -103,6 +103,24 @@ structure CompactMatrixStructureGroup (n : Type*) [Fintype n] [DecidableEq n] wh
     Representation.IsInvariantForm group.matrixAdjointRepresentation innerForm
 
 namespace CompactMatrixStructureGroup
+
+/-- Two compact matrix structure groups are equal if they have the same underlying closed subgroup
+and their inner products agree on every pair of elements of the Lie algebra. -/
+@[ext]
+theorem ext {k : Type*} [Fintype k] [DecidableEq k]
+    {S₁ S₂ : CompactMatrixStructureGroup k} (hg : S₁.group = S₂.group)
+    (hform : ∀ (X Y : Matrix k k ℂ)
+      (hX₁ : X ∈ S₁.group.matrixLieAlgebra) (hY₁ : Y ∈ S₁.group.matrixLieAlgebra)
+      (hX₂ : X ∈ S₂.group.matrixLieAlgebra) (hY₂ : Y ∈ S₂.group.matrixLieAlgebra),
+      S₁.innerForm ⟨X, hX₁⟩ ⟨Y, hY₁⟩ = S₂.innerForm ⟨X, hX₂⟩ ⟨Y, hY₂⟩) :
+    S₁ = S₂ := by
+  cases S₁ with | mk g₁ f₁ s₁ p₁ i₁ =>
+  cases S₂ with | mk g₂ f₂ s₂ p₂ i₂ =>
+  dsimp at hg
+  subst hg
+  congr
+  ext X Y
+  exact hform (X : Matrix k k ℂ) (Y : Matrix k k ℂ) X.property Y.property X.property Y.property
 
 variable {n : Type*} [Fintype n] [DecidableEq n] (S : CompactMatrixStructureGroup n)
 
@@ -169,14 +187,8 @@ theorem ofTraceForm_innerForm (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ)) :
 `(ofTraceForm G).innerForm X Y`. -/
 theorem ofTraceForm_neg_trace_mul (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ))
     (X Y : G.matrixLieAlgebra) :
-    -((X : Matrix n n ℂ) * (Y : Matrix n n ℂ)).trace = ((ofTraceForm G).innerForm X Y : ℂ) := by
-  apply Complex.ext
-  · simp only [Complex.neg_re, Complex.ofReal_re]
-    exact (ClosedSubgroup.matrixTraceForm_apply (G := G) X Y).symm
-  · have him := Matrix.im_trace_mul_eq_zero_of_conjTranspose_eq_neg
-      (ClosedSubgroup.conjTranspose_eq_neg_of_mem_matrixLieAlgebra X.property)
-      (ClosedSubgroup.conjTranspose_eq_neg_of_mem_matrixLieAlgebra Y.property)
-    simpa [RCLike.im_to_complex] using him
+    -((X : Matrix n n ℂ) * (Y : Matrix n n ℂ)).trace = ((ofTraceForm G).innerForm X Y : ℂ) :=
+  ClosedSubgroup.neg_trace_mul_eq_matrixTraceForm X Y
 
 variable (n) in
 /-- The full unitary group `U(n)` as a compact matrix structure group with the trace form
@@ -300,21 +312,6 @@ theorem reindex_innerForm_map (e : n ≃ m) (X Y : S.group.matrixLieAlgebra) :
     (S.reindex e).innerForm (S.group.matrixLieAlgebraReindexEquiv e X)
       (S.group.matrixLieAlgebraReindexEquiv e Y) = S.innerForm X Y := by
   simp
-
-private theorem ext {k : Type*} [Fintype k] [DecidableEq k]
-    {S₁ S₂ : CompactMatrixStructureGroup k} (hg : S₁.group = S₂.group)
-    (hform : ∀ (X Y : Matrix k k ℂ)
-      (hX₁ : X ∈ S₁.group.matrixLieAlgebra) (hY₁ : Y ∈ S₁.group.matrixLieAlgebra)
-      (hX₂ : X ∈ S₂.group.matrixLieAlgebra) (hY₂ : Y ∈ S₂.group.matrixLieAlgebra),
-      S₁.innerForm ⟨X, hX₁⟩ ⟨Y, hY₁⟩ = S₂.innerForm ⟨X, hX₂⟩ ⟨Y, hY₂⟩) :
-    S₁ = S₂ := by
-  cases S₁ with | mk g₁ f₁ s₁ p₁ i₁ =>
-  cases S₂ with | mk g₂ f₂ s₂ p₂ i₂ =>
-  dsimp at hg
-  subst hg
-  congr
-  ext X Y
-  exact hform (X : Matrix k k ℂ) (Y : Matrix k k ℂ) X.property Y.property X.property Y.property
 
 /-- Reindexing along the identity equivalence leaves a structure group unchanged. -/
 @[simp]
