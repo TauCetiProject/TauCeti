@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecificLimits.Normed
+public import Mathlib.Data.PNat.Basic
 import Mathlib.Tactic.Ring
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 
@@ -27,6 +28,9 @@ Cauchy partial sums.
 Quantitatively, Abel's inequality bounds a block `∑ n ∈ Ioc K M, w n • a n` by `2 B w (K + 1)`
 when the partial sums of `a` are at most `B` and the weights `w` are nonnegative and antitone, so
 a convergent series of this shape has tail at most `2 B w (K + 1)` after `K` terms.
+
+In a normed division ring, a geometric series indexed by positive integers sums to `r / (1 - r)`
+for `‖r‖ < 1`.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -50,6 +54,13 @@ lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 public section
 
 namespace TauCeti
+
+/-- In a normed division ring, the geometric series over the positive integers sums to
+`r / (1 - r)` whenever `‖r‖ < 1`. -/
+theorem hasSum_geometric_pnat {K : Type*} [NormedDivisionRing K] {r : K} (hr : ‖r‖ < 1) :
+    HasSum (fun n : ℕ+ ↦ r ^ (n : ℕ)) (r / (1 - r)) := by
+  refine (hasSum_pnat_iff_hasSum_succ (f := fun n : ℕ ↦ r ^ n)).2 ?_
+  simpa only [pow_succ', div_eq_mul_inv] using (hasSum_geometric_of_norm_lt_one hr).mul_left r
 
 /-- The norms of the powers of an element in the open unit ball are summable in a seminormed
 ring, without requiring a normalized seminorm. -/

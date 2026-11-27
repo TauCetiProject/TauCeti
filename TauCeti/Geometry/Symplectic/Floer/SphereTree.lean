@@ -71,10 +71,45 @@ and bubbling the same simple sphere several times both lower the dimension.
   (`TauCeti.Floer.sphereTreeDimension_neg_of_le_one`): the rigid counts of the product and of the
   continuation maps, and the one-dimensional moduli spaces of pairs of pants and of continuation
   maps whose boundaries give their chain-level identities. Here `ind A` is the dimension before
-  any quotient by translations. For problems of cylinders taken modulo the `ℝ`-translation, such
-  as the rigid differential (`ind A = 1`) and the one-dimensional spaces behind `d² = 0`
-  (`ind A = 2`), the bound `ind A - 2` must still be combined with that quotient, which this file
-  does not do.
+  any quotient by translations.
+
+**Translations and broken configurations.** A Floer cylinder of a time-independent cylindrical
+datum is taken modulo the `ℝ`-translation of its domain, which lowers the expected dimension by
+one. This includes a *stationary* cylinder `(s, t) ↦ x(t)` carrying sphere bubbles, as appears in
+the limit when spheres bubble off at an orbit: its core has expected dimension `0`, and the
+translation acts on the positions of the nodes on it. The quotient stratum of a cylinder problem
+in class `A` with at least one bubble therefore has expected dimension at most `ind A - 3`, so it
+is negative for `ind A ≤ 2` (`TauCeti.Floer.sphereTreeDimension_sub_one_neg_of_le_two`): the
+rigid differential (`ind A = 1`) and the one-dimensional spaces behind `d² = 0` (`ind A = 2`).
+For a single simple sphere of class `B` attached at a point of a stationary cylinder over `x` the
+quotient stratum has expected dimension `2 c₁(B) - 3`, that of the simple spheres of class `B`
+through the loop `x`.
+
+A Gromov–Floer limit is in general a broken configuration: finitely many levels `ℓ`, such as a
+pair of pants and chains of Floer cylinders at its ends, each carrying its own tree of spheres,
+with the cylinder levels `ℓ ∈ T` taken modulo translation. The expected dimension of such a
+stratum is the sum of those of the levels, minus `#T`
+(`TauCeti.Floer.brokenSphereTreeDimension`). The expected indices `ind_ℓ` of the levels add up to
+the index of the unbroken problem obtained by gluing them, so with the hypotheses above on every
+level the stratum has expected dimension at most `∑_ℓ ind_ℓ (A ℓ) - #T - 2 #κ`, with `#κ` the total
+number of simple spheres (`TauCeti.Floer.brokenSphereTreeDimension_le_sub_two_mul_card`; with the
+covering multiplicities in the monotone case,
+`TauCeti.Floer.brokenSphereTreeDimension_le_sub_two_mul_sum_of_area_eq_mul_chern`). Without
+bubbles it is exactly `∑_ℓ ind_ℓ (A ℓ) - #T` (`TauCeti.Floer.brokenSphereTreeDimension_of_isEmpty`).
+Two consequences say which strata survive in the problems that define the product:
+
+* a stratum with at least one nonconstant bubble has negative expected dimension as soon as
+  `∑_ℓ ind_ℓ (A ℓ) ≤ #T + 1` (`TauCeti.Floer.brokenSphereTreeDimension_neg_of_le_card_add_one`);
+* a stratum with more cylinder levels than its total index has negative expected dimension
+  (`TauCeti.Floer.brokenSphereTreeDimension_neg_of_lt_card`).
+
+So in the rigid problems (`∑_ℓ ind_ℓ (A ℓ) = 0`) only strata without cylinder levels and without
+bubbles remain (`TauCeti.Floer.brokenSphereTreeDimension_neg_of_nonpos`), and in the
+one-dimensional problems (`∑_ℓ ind_ℓ (A ℓ) = 1`) only strata without bubbles and with at most one
+cylinder level (`TauCeti.Floer.brokenSphereTreeDimension_neg_of_le_one`); those with one cylinder
+level have expected dimension `0`, and they are the ends of the one-dimensional moduli spaces.
+Levels that are not taken modulo translation, such as continuation cylinders, pairs of pants and
+planes, are the levels outside `T`.
 
 These are statements about expected dimensions. That a stratum of negative expected dimension is
 empty for generic data is the transversality of the evaluation maps of simple spheres, which is not
@@ -328,6 +363,202 @@ theorem sphereTreeDimension_neg_of_le_one [Nonempty κ] {n : ℤ} (c : G →+ �
   have := sphereTreeDimension_le_sub_two c hind A₀ hB hm hρ hc parent node root (n := n)
   linarith
 
+/-- **Exclusion of sphere bubbles for cylinders modulo translation.** On a target where every
+simple sphere has nonnegative first Chern number, if a cylinder problem in class
+`A₀ + ∑ v, B v` has expected dimension at most two before the quotient by the `ℝ`-translation,
+every reduced stratum with at least one nonconstant sphere bubble has negative expected dimension
+after that quotient. The core may be a stationary cylinder, of class `A₀ = 0` and expected
+dimension `ind 0 = 0`, on which the translation moves the nodes. -/
+theorem sphereTreeDimension_sub_one_neg_of_le_two [Nonempty κ] {n : ℤ} (c : G →+ ℤ)
+    {ind : G → ℤ} (hind : ∀ A B, ind (A + B) = ind A + 2 * c B) (A₀ : G) {B : ι → G}
+    {B' : κ → G} {m : ι → ℕ} {ρ : ι → κ} (hB : ∀ v, B v = m v • B' (ρ v)) (hm : ∀ v, 0 < m v)
+    (hρ : Function.Surjective ρ) (hc : ∀ w, 0 ≤ c (B' w)) (hA : ind (A₀ + ∑ v, B v) ≤ 2)
+    (parent : κ → Option κ) (node root : κ → P) :
+    sphereTreeDimension n (ind A₀) (fun w => c (B' w)) parent node root - 1 < 0 := by
+  have := sphereTreeDimension_le_sub_two c hind A₀ hB hm hρ hc parent node root (n := n)
+  linarith
+
 end Reduction
+
+section Broken
+
+/-! ### Broken configurations -/
+
+variable {L : Type*} [Fintype L] {κ : L → Type*} [∀ ℓ, Fintype (κ ℓ)] [∀ ℓ, DecidableEq (κ ℓ)]
+  {P : L → Type*} [∀ ℓ, DecidableEq (P ℓ)]
+
+/-- The expected dimension of a stratum of broken configurations with sphere trees, in a target of
+real dimension `2n`. The configuration has the levels `ℓ`, such as a pair of pants and the Floer
+cylinders broken off at its ends; the level `ℓ` has a core of expected dimension `I ℓ` carrying
+the tree of simple spheres `κ ℓ`, with Chern numbers `c ℓ`, attached along `parent ℓ` at the
+points `node ℓ` and `root ℓ`. The levels in `T` are taken modulo the `ℝ`-translation of their
+domains, as the Floer cylinders of time-independent cylindrical data are. The expected dimension
+is the sum of the dimensions `TauCeti.Floer.sphereTreeDimension` of the levels, minus one for each
+level in `T`. -/
+def brokenSphereTreeDimension (n : ℤ) (I : L → ℤ) (c : ∀ ℓ, κ ℓ → ℤ)
+    (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ) (T : Finset L) : ℤ :=
+  ∑ ℓ, sphereTreeDimension n (I ℓ) (c ℓ) (parent ℓ) (node ℓ) (root ℓ) - #T
+
+theorem brokenSphereTreeDimension_def (n : ℤ) (I : L → ℤ) (c : ∀ ℓ, κ ℓ → ℤ)
+    (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ) (T : Finset L) :
+    brokenSphereTreeDimension n I c parent node root T =
+      ∑ ℓ, sphereTreeDimension n (I ℓ) (c ℓ) (parent ℓ) (node ℓ) (root ℓ) - #T := by
+  rw [brokenSphereTreeDimension]
+
+/-- Without bubbles, the stratum of broken configurations is the product of the moduli spaces of
+its levels, with one translation divided out of each level in `T`. -/
+@[simp]
+theorem brokenSphereTreeDimension_of_isEmpty [∀ ℓ, IsEmpty (κ ℓ)] (n : ℤ) (I : L → ℤ)
+    (c : ∀ ℓ, κ ℓ → ℤ) (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ)
+    (T : Finset L) :
+    brokenSphereTreeDimension n I c parent node root T = ∑ ℓ, I ℓ - #T := by
+  simp [brokenSphereTreeDimension]
+
+variable {G : Type*} [AddCommMonoid G] {ι : L → Type*} [∀ ℓ, Fintype (ι ℓ)]
+
+/-- **The dimension count for broken configurations.** Let the level `ℓ` of a broken configuration
+be a Floer problem whose expected dimension `ind ℓ A` changes by `2 c₁(B)` when its class `A`
+changes by `B`. Let its limit consist of a core of class `A₀ ℓ` and nonconstant bubbles `v` of
+classes `B ℓ v = m ℓ v • B' ℓ (ρ ℓ v)`, covering the simple spheres `κ ℓ`, every simple sphere
+being the image of some bubble. If every simple sphere has Chern number at least `N`, the stratum
+has expected dimension at most `∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) - #T - 2 #κ - 2 N (∑ m - #κ)`, where
+`#κ` is the total number of simple spheres and `∑ m` the total covering multiplicity of the
+bubbles. -/
+theorem brokenSphereTreeDimension_le_sub_of_le_chern {n N : ℤ} (c : G →+ ℤ) {ind : L → G → ℤ}
+    (hind : ∀ ℓ A B, ind ℓ (A + B) = ind ℓ A + 2 * c B) (A₀ : L → G) {B : ∀ ℓ, ι ℓ → G}
+    {B' : ∀ ℓ, κ ℓ → G} {m : ∀ ℓ, ι ℓ → ℕ} {ρ : ∀ ℓ, ι ℓ → κ ℓ}
+    (hB : ∀ ℓ v, B ℓ v = m ℓ v • B' ℓ (ρ ℓ v)) (hm : ∀ ℓ v, 0 < m ℓ v)
+    (hρ : ∀ ℓ, Function.Surjective (ρ ℓ)) (hc : ∀ ℓ w, N ≤ c (B' ℓ w))
+    (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ) (T : Finset L) :
+    brokenSphereTreeDimension n (fun ℓ => ind ℓ (A₀ ℓ)) (fun ℓ w => c (B' ℓ w)) parent node root
+        T ≤
+      ∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) - #T - 2 * ∑ ℓ, (Fintype.card (κ ℓ) : ℤ) -
+        2 * N * (∑ ℓ, ∑ v, (m ℓ v : ℤ) - ∑ ℓ, (Fintype.card (κ ℓ) : ℤ)) := by
+  have h := sum_le_sum fun ℓ (_ : ℓ ∈ univ) =>
+    sphereTreeDimension_le_sub_of_le_chern (n := n) c (hind ℓ) (A₀ ℓ) (hB ℓ) (hm ℓ) (hρ ℓ)
+      (hc ℓ) (parent ℓ) (node ℓ) (root ℓ)
+  simp only [sum_sub_distrib, ← mul_sum] at h
+  rw [brokenSphereTreeDimension]
+  linarith
+
+/-- On a target where every simple sphere has nonnegative first Chern number, the stratum of
+broken configurations has expected dimension at most `∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) - #T - 2 #κ`,
+two less for each simple sphere of any level. -/
+theorem brokenSphereTreeDimension_le_sub_two_mul_card {n : ℤ} (c : G →+ ℤ) {ind : L → G → ℤ}
+    (hind : ∀ ℓ A B, ind ℓ (A + B) = ind ℓ A + 2 * c B) (A₀ : L → G) {B : ∀ ℓ, ι ℓ → G}
+    {B' : ∀ ℓ, κ ℓ → G} {m : ∀ ℓ, ι ℓ → ℕ} {ρ : ∀ ℓ, ι ℓ → κ ℓ}
+    (hB : ∀ ℓ v, B ℓ v = m ℓ v • B' ℓ (ρ ℓ v)) (hm : ∀ ℓ v, 0 < m ℓ v)
+    (hρ : ∀ ℓ, Function.Surjective (ρ ℓ)) (hc : ∀ ℓ w, 0 ≤ c (B' ℓ w))
+    (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ) (T : Finset L) :
+    brokenSphereTreeDimension n (fun ℓ => ind ℓ (A₀ ℓ)) (fun ℓ w => c (B' ℓ w)) parent node root
+        T ≤
+      ∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) - #T - 2 * ∑ ℓ, (Fintype.card (κ ℓ) : ℤ) := by
+  simpa using brokenSphereTreeDimension_le_sub_of_le_chern c hind A₀ hB hm hρ hc parent node root
+    T (n := n)
+
+/-- On a target with `ω = τ c₁` and `τ ≥ 0`, for instance a positively monotone one, the stratum
+of broken configurations has expected dimension at most
+`∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) - #T - 2 ∑ m`: two less for each bubble of any level, counted with
+its covering multiplicity. -/
+theorem brokenSphereTreeDimension_le_sub_two_mul_sum_of_area_eq_mul_chern {n : ℤ} {τ : ℝ}
+    (ω : G → ℝ) (c : G →+ ℤ) (hω : ∀ A, ω A = τ * c A) (hτ : 0 ≤ τ) {ind : L → G → ℤ}
+    (hind : ∀ ℓ A B, ind ℓ (A + B) = ind ℓ A + 2 * c B) (A₀ : L → G) {B : ∀ ℓ, ι ℓ → G}
+    {B' : ∀ ℓ, κ ℓ → G} {m : ∀ ℓ, ι ℓ → ℕ} {ρ : ∀ ℓ, ι ℓ → κ ℓ}
+    (hB : ∀ ℓ v, B ℓ v = m ℓ v • B' ℓ (ρ ℓ v)) (hm : ∀ ℓ v, 0 < m ℓ v)
+    (hρ : ∀ ℓ, Function.Surjective (ρ ℓ)) (harea : ∀ ℓ w, 0 < ω (B' ℓ w))
+    (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ) (T : Finset L) :
+    brokenSphereTreeDimension n (fun ℓ => ind ℓ (A₀ ℓ)) (fun ℓ w => c (B' ℓ w)) parent node root
+        T ≤
+      ∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) - #T - 2 * ∑ ℓ, ∑ v, (m ℓ v : ℤ) := by
+  have h := sum_le_sum fun ℓ (_ : ℓ ∈ univ) =>
+    sphereTreeDimension_le_sub_two_mul_sum_of_area_eq_mul_chern (n := n) ω c hω hτ (hind ℓ) (A₀ ℓ)
+      (hB ℓ) (hm ℓ) (hρ ℓ) (harea ℓ) (parent ℓ) (node ℓ) (root ℓ)
+  simp only [sum_sub_distrib, ← mul_sum] at h
+  rw [brokenSphereTreeDimension]
+  linarith
+
+/-- **Exclusion of sphere bubbles in broken configurations.** On a target where every simple
+sphere has nonnegative first Chern number, if the levels have total expected index at most
+`#T + 1`, every stratum of broken configurations with at least one nonconstant sphere bubble has
+negative expected dimension. -/
+theorem brokenSphereTreeDimension_neg_of_le_card_add_one {n : ℤ} (c : G →+ ℤ)
+    {ind : L → G → ℤ} (hind : ∀ ℓ A B, ind ℓ (A + B) = ind ℓ A + 2 * c B) (A₀ : L → G)
+    {B : ∀ ℓ, ι ℓ → G} {B' : ∀ ℓ, κ ℓ → G} {m : ∀ ℓ, ι ℓ → ℕ} {ρ : ∀ ℓ, ι ℓ → κ ℓ}
+    (hB : ∀ ℓ v, B ℓ v = m ℓ v • B' ℓ (ρ ℓ v)) (hm : ∀ ℓ v, 0 < m ℓ v)
+    (hρ : ∀ ℓ, Function.Surjective (ρ ℓ)) (hc : ∀ ℓ w, 0 ≤ c (B' ℓ w))
+    (hκ : ∃ ℓ, Nonempty (κ ℓ)) (T : Finset L)
+    (hA : ∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) ≤ #T + 1)
+    (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ) :
+    brokenSphereTreeDimension n (fun ℓ => ind ℓ (A₀ ℓ)) (fun ℓ w => c (B' ℓ w)) parent node root
+      T < 0 := by
+  obtain ⟨ℓ₀, _⟩ := hκ
+  have h := brokenSphereTreeDimension_le_sub_two_mul_card c hind A₀ hB hm hρ hc parent node root
+    T (n := n)
+  have hcard : (1 : ℤ) ≤ ∑ ℓ, (Fintype.card (κ ℓ) : ℤ) :=
+    calc (1 : ℤ) ≤ Fintype.card (κ ℓ₀) := by exact_mod_cast Fintype.card_pos
+      _ ≤ ∑ ℓ, (Fintype.card (κ ℓ) : ℤ) :=
+        single_le_sum (fun _ _ => Int.natCast_nonneg _) (mem_univ ℓ₀)
+  linarith
+
+/-- **Exclusion of multiply broken configurations.** On a target where every simple sphere has
+nonnegative first Chern number, a stratum of broken configurations with more levels taken modulo
+translation than the total expected index of its levels has negative expected dimension, with or
+without bubbles. -/
+theorem brokenSphereTreeDimension_neg_of_lt_card {n : ℤ} (c : G →+ ℤ) {ind : L → G → ℤ}
+    (hind : ∀ ℓ A B, ind ℓ (A + B) = ind ℓ A + 2 * c B) (A₀ : L → G) {B : ∀ ℓ, ι ℓ → G}
+    {B' : ∀ ℓ, κ ℓ → G} {m : ∀ ℓ, ι ℓ → ℕ} {ρ : ∀ ℓ, ι ℓ → κ ℓ}
+    (hB : ∀ ℓ v, B ℓ v = m ℓ v • B' ℓ (ρ ℓ v)) (hm : ∀ ℓ v, 0 < m ℓ v)
+    (hρ : ∀ ℓ, Function.Surjective (ρ ℓ)) (hc : ∀ ℓ w, 0 ≤ c (B' ℓ w)) (T : Finset L)
+    (hA : ∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) < #T)
+    (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ) :
+    brokenSphereTreeDimension n (fun ℓ => ind ℓ (A₀ ℓ)) (fun ℓ w => c (B' ℓ w)) parent node root
+      T < 0 := by
+  have h := brokenSphereTreeDimension_le_sub_two_mul_card c hind A₀ hB hm hρ hc parent node root
+    T (n := n)
+  have hcard : (0 : ℤ) ≤ ∑ ℓ, (Fintype.card (κ ℓ) : ℤ) := sum_nonneg fun _ _ => by positivity
+  linarith
+
+/-- **The strata of a rigid problem.** On a target where every simple sphere has nonnegative first
+Chern number, if the levels have total expected index at most zero, as in the rigid counts of the
+product and of the continuation maps, every stratum with a level taken modulo translation or with
+a nonconstant sphere bubble has negative expected dimension. -/
+theorem brokenSphereTreeDimension_neg_of_nonpos {n : ℤ} (c : G →+ ℤ) {ind : L → G → ℤ}
+    (hind : ∀ ℓ A B, ind ℓ (A + B) = ind ℓ A + 2 * c B) (A₀ : L → G) {B : ∀ ℓ, ι ℓ → G}
+    {B' : ∀ ℓ, κ ℓ → G} {m : ∀ ℓ, ι ℓ → ℕ} {ρ : ∀ ℓ, ι ℓ → κ ℓ}
+    (hB : ∀ ℓ v, B ℓ v = m ℓ v • B' ℓ (ρ ℓ v)) (hm : ∀ ℓ v, 0 < m ℓ v)
+    (hρ : ∀ ℓ, Function.Surjective (ρ ℓ)) (hc : ∀ ℓ w, 0 ≤ c (B' ℓ w)) (T : Finset L)
+    (hT : T.Nonempty ∨ ∃ ℓ, Nonempty (κ ℓ)) (hA : ∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) ≤ 0)
+    (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ) :
+    brokenSphereTreeDimension n (fun ℓ => ind ℓ (A₀ ℓ)) (fun ℓ w => c (B' ℓ w)) parent node root
+      T < 0 := by
+  rcases hT with hT | hκ
+  · refine brokenSphereTreeDimension_neg_of_lt_card c hind A₀ hB hm hρ hc T ?_ parent node root
+    have : (0 : ℤ) < #T := by exact_mod_cast hT.card_pos
+    linarith
+  · exact brokenSphereTreeDimension_neg_of_le_card_add_one c hind A₀ hB hm hρ hc hκ T
+      (by linarith [Int.natCast_nonneg #T]) parent node root
+
+/-- **The strata of a one-dimensional problem.** On a target where every simple sphere has
+nonnegative first Chern number, if the levels have total expected index at most one, as in the
+one-dimensional moduli spaces whose ends give the chain-level identities of the product and of the
+continuation maps, every stratum with at least two levels taken modulo translation or with a
+nonconstant sphere bubble has negative expected dimension. -/
+theorem brokenSphereTreeDimension_neg_of_le_one {n : ℤ} (c : G →+ ℤ) {ind : L → G → ℤ}
+    (hind : ∀ ℓ A B, ind ℓ (A + B) = ind ℓ A + 2 * c B) (A₀ : L → G) {B : ∀ ℓ, ι ℓ → G}
+    {B' : ∀ ℓ, κ ℓ → G} {m : ∀ ℓ, ι ℓ → ℕ} {ρ : ∀ ℓ, ι ℓ → κ ℓ}
+    (hB : ∀ ℓ v, B ℓ v = m ℓ v • B' ℓ (ρ ℓ v)) (hm : ∀ ℓ v, 0 < m ℓ v)
+    (hρ : ∀ ℓ, Function.Surjective (ρ ℓ)) (hc : ∀ ℓ w, 0 ≤ c (B' ℓ w)) (T : Finset L)
+    (hT : 2 ≤ #T ∨ ∃ ℓ, Nonempty (κ ℓ)) (hA : ∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) ≤ 1)
+    (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ) :
+    brokenSphereTreeDimension n (fun ℓ => ind ℓ (A₀ ℓ)) (fun ℓ w => c (B' ℓ w)) parent node root
+      T < 0 := by
+  rcases hT with hT | hκ
+  · refine brokenSphereTreeDimension_neg_of_lt_card c hind A₀ hB hm hρ hc T ?_ parent node root
+    have : (2 : ℤ) ≤ #T := by exact_mod_cast hT
+    linarith
+  · exact brokenSphereTreeDimension_neg_of_le_card_add_one c hind A₀ hB hm hρ hc hκ T
+      (by linarith [Int.natCast_nonneg #T]) parent node root
+
+end Broken
 
 end TauCeti.Floer

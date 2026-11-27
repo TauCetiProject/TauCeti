@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.NumberTheory.LFunctions.Data.Basic
 
 import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Entire completions of meromorphic L-function records
@@ -222,6 +223,16 @@ theorem HasMeromorphicContinuation.entireCompletion_ne_zero_of_pole {s : ℂ}
     (hs : d.polarOrder s ≠ 0) : d.entireCompletion s ≠ 0 :=
   (h.analyticAt_entireCompletion s).meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mp
     (h.meromorphicOrderAt_entireCompletion_of_pole hs)
+
+/-- Zeros of the entire completion are exactly the points of positive order of the completed
+function. In particular this characterization does not read the value at a pole. -/
+theorem HasMeromorphicContinuation.entireCompletion_eq_zero_iff_meromorphicOrderAt_completed_pos
+    {s : ℂ} : d.entireCompletion s = 0 ↔ 0 < meromorphicOrderAt d.completed s := by
+  rw [← (h.analyticAt_entireCompletion s).meromorphicOrderAt_pos_iff_eq_zero]
+  by_cases hs : d.polarOrder s = 0
+  · simp [h.meromorphicOrderAt_entireCompletion, hs]
+  · rw [h.meromorphicOrderAt_entireCompletion_of_pole hs, h.meromorphicOrderAt_eq s hs]
+    simp
 
 /-- Pointwise divisor formula, including at the cleared poles. -/
 theorem HasMeromorphicContinuation.divisor_entireCompletion (s : ℂ) :

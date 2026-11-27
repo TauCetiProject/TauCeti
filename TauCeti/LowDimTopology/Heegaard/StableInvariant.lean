@@ -121,6 +121,11 @@ theorem _root_.LinearEquiv.stableClass_eq (e : V ≃ₗ[K] V') (b : ℕ) :
     stableClass K V b = stableClass K V' b := by
   rw [stableClass_def, stableClass_def, e.finrank_eq]
 
+/-- If `dim V = m * dim V'`, then `[V, b] = m * [V', b]`. -/
+theorem stableClass_eq_mul_of_finrank_eq_mul {m : ℕ} (h : finrank K V = m * finrank K V')
+    (b : ℕ) : stableClass K V b = m * stableClass K V' b := by
+  rw [stableClass_def, stableClass_def, h, Nat.cast_mul, mul_div_assoc]
+
 /-- Two pairs have the same stable class exactly when `dim V * 2 ^ b' = dim V' * 2 ^ b`. -/
 theorem stableClass_eq_stableClass_iff {b b' : ℕ} :
     stableClass K V b = stableClass K V' b' ↔ finrank K V * 2 ^ b' = finrank K V' * 2 ^ b := by
@@ -394,15 +399,23 @@ theorem hatDifferential_lensSpace_comp_self_eq_zero (p : ℕ) [NeZero p] (q : (Z
     (lensSpace p q r).hatDifferential 1 ∘ₗ (lensSpace p q r).hatDifferential 1 = 0 := by
   simp
 
+/-- The hat homology of the genus-one diagram of `L(p, q)` has dimension `p`: the hat differential
+vanishes, and there is one generator for each `Spin^c` structure. -/
+theorem finrank_hatHomology_lensSpace (p : ℕ) [NeZero p] (q : (ZMod p)ˣ) (r : ZMod p) :
+    finrank (ZMod 2)
+        ((lensSpace p q r).hatHomology 1 (hatDifferential_lensSpace_comp_self_eq_zero p q r)) =
+      p := by
+  rw [((lensSpace p q r).hatDifferential 1).homologyEquivOfEqZero _ hatDifferential_lensSpace
+      |>.finrank_eq, finrank_finsupp_self,
+    ← Fintype.card_of_bijective (lensSpaceGenerator_bijective (p := p) (q := q) (r := r)),
+    ZMod.card]
+
 /-- The stable hat invariant of the genus-one diagram of `L(p, q)` is `[𝔽^p, 1]`, recorded as
 `p / 2`: one generator for each `Spin^c` structure and one basepoint. -/
 theorem hatStableClass_lensSpace (p : ℕ) [NeZero p] (q : (ZMod p)ˣ) (r : ZMod p) :
     (lensSpace p q r).hatStableClass 1 (hatDifferential_lensSpace_comp_self_eq_zero p q r) =
       p / 2 := by
-  rw [hatStableClass_of_hatDifferential_eq_zero
-      (hatDifferential_lensSpace (p := p) (q := q) (r := r)),
-    ← Fintype.card_of_bijective (lensSpaceGenerator_bijective (p := p) (q := q) (r := r)),
-    ZMod.card]
+  rw [hatStableClass_def, stableClass_def, finrank_hatHomology_lensSpace]
   simp
 
 /-- The hat differential of the genus-one diagram of `S¹ × S²` with the basepoint in the annulus

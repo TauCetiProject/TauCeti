@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Block
+-- `TauCeti.unitDiagonalMatrixOfEntries` is a source of block unitriangular matrices.
+public import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # Block `LDU` factorization
@@ -49,6 +51,8 @@ how membership in the big cell is read off a Bruhat normal form.
 * `Matrix.BlockUnitriangular.det_eq_one`, `Matrix.BlockUnitriangular.mul` and
   `Matrix.BlockUnitriangular.inv`: block unitriangular matrices have determinant one and are
   closed under products and inverses.
+* `TauCeti.blockUnitriangular_unitDiagonalMatrixOfEntries`: the unit diagonal matrix with
+  prescribed entries above the diagonal blocks is block unitriangular.
 * `Matrix.BlockUnitriangular.mul_apply_of_covBy`: one step above the diagonal blocks, a product
   of block unitriangular matrices has the sum of the entries of its factors.
 * `Matrix.mul_eq_of_blockUnitriangular_toDual`: a block diagonal matrix multiplied on the left by
@@ -449,3 +453,20 @@ theorem exists_blockLDU_iff (M : Matrix m m R) :
 end CommRing
 
 end Matrix
+
+namespace TauCeti
+
+/-- A unit diagonal matrix whose prescribed entries lie above the diagonal blocks of `b` is block
+unitriangular: its entries in the diagonal blocks are those of the identity matrix. -/
+theorem blockUnitriangular_unitDiagonalMatrixOfEntries {ι α R : Type*} [DecidableEq ι] [Zero R]
+    [One R] [Preorder α] {b : ι → α} {P : ι × ι → Prop} (hP : ∀ p, P p → b p.1 < b p.2)
+    (f : {p : ι × ι // P p} → R) :
+    (unitDiagonalMatrixOfEntries P f).BlockUnitriangular b :=
+  Matrix.blockUnitriangular_of_apply_eq_one_apply_of_not_lt fun i j hij => by
+    by_cases h_eq : i = j
+    · subst h_eq
+      rw [unitDiagonalMatrixOfEntries_apply_self, Matrix.one_apply_eq]
+    · rw [unitDiagonalMatrixOfEntries_apply_of_notMem P f h_eq fun h => hij (hP _ h),
+        Matrix.one_apply_ne h_eq]
+
+end TauCeti
