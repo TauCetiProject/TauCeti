@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Cyclotomic.PadicTower.Reduction
 public import Mathlib.RingTheory.PowerSeries.Basic
-import TauCeti.RingTheory.PowerSeries.PowerBasis
+import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
 # Power series unit lifts in the local cyclotomic tower
@@ -34,7 +34,7 @@ theorem exists_polynomial_lift_powerSeries_unit (n : ℕ)
     (u : (integralClosure ℤ_[p] (padicCyclotomicField p Ω n))ˣ) :
     ∃ f : ℤ_[p][X], f.natDegree < p ^ n * (p - 1) ∧
       aeval (integralRoot p Ω n - 1) f = u ∧ IsUnit (f : PowerSeries ℤ_[p]) := by
-  simpa using (integralPowerBasis p Ω n).exists_polynomial_lift_powerSeries_unit
-    (by simp [maximalIdeal_eq_span_integralRoot_sub_one]) u
+  simpa only [PowerSeries.isUnit_iff_constantCoeff, Polynomial.constantCoeff_coe] using
+    exists_polynomial_lift_isUnit_coeff_zero p Ω n u
 
 end TauCeti.padicCyclotomicField
