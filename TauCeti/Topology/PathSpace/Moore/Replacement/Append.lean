@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.PathSpace.Moore.Between.Append
+public import TauCeti.Topology.PathSpace.Moore.From
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Basic
 
 /-!
@@ -26,6 +27,13 @@ retracing loop `δ⁻¹|[0, s] ⋆ (δ⁻¹|[0, s])⁻¹` acting from behind
 equivalence between the fibres over its endpoints, for every map `p`
 (`TauCeti.MooreReplacement.Fiber.appendHomotopyEquiv`).
 
+A Moore path `δ` starting at `b`, with no condition on its end point, moves a point `(e, γ)` of
+`F'_b` into the total space `E'` of the replacement, `(e, γ) ↦ (e, γ ⋆ δ)`
+(`TauCeti.MooreReplacement.Fiber.appendFrom`), a point over the end point of `δ`. This is balanced
+over the loops at `b`, which act on the Moore paths from `b` in front
+(`TauCeti.MooreReplacement.Fiber.act_appendFrom`): it is the map through which a model of the
+chains on the paths from `b` is compared with the chains on the total space.
+
 ## Main definitions
 
 * `TauCeti.MooreReplacement.Fiber.append`: the point `(e, γ ⋆ δ)` of `F'_b`.
@@ -36,6 +44,9 @@ equivalence between the fibres over its endpoints, for every map `p`
 * `TauCeti.MooreReplacement.Fiber.appendSymmHomotopy`: the homotopy from the identity of `F'_b` to
   appending `δ⁻¹` and then `δ`.
 * `TauCeti.MooreReplacement.Fiber.appendHomotopyEquiv`: `F'_a ≃ₕ F'_b`, by appending `δ`.
+* `TauCeti.MooreReplacement.Fiber.appendFrom`: the point `(e, γ ⋆ δ)` of `E'`, for a Moore path
+  `δ` from `b`.
+* `TauCeti.MooreReplacement.Fiber.appendFromMap`: as a continuous map `F'_b × P_b B → E'`.
 
 ## Main results
 
@@ -45,6 +56,8 @@ equivalence between the fibres over its endpoints, for every map `p`
   concatenation.
 * `TauCeti.MooreReplacement.Fiber.map_append`: appending commutes with the maps of fibres induced
   by maps over `B`.
+* `TauCeti.MooreReplacement.Fiber.act_appendFrom`: appending a path from `b` is balanced over the
+  loops at `b`.
 
 ## References
 
@@ -167,6 +180,53 @@ theorem appendHomotopyEquiv_apply (δ : MoorePathBetween B a b) (x : Fiber p a) 
 @[simp]
 theorem appendHomotopyEquiv_symm_apply (δ : MoorePathBetween B a b) (x : Fiber p b) :
     (appendHomotopyEquiv δ).symm x = x.append δ.symm :=
+  (rfl)
+
+/-! ### Appending a path from the base point -/
+
+/-- **Appending a Moore path from the base point**: a Moore path `δ` starting at `b` moves the point
+`(e, γ)` of the fibre over `b` to the point `(e, γ ⋆ δ)` of the total space of the replacement,
+which lies over the end point of `δ`. -/
+def appendFrom (x : Fiber p b) (δ : MoorePathFrom B b) : MooreReplacement p :=
+  MooreReplacement.mk x.val.point (x.val.path.trans δ.toMoorePath (by simp))
+    (by rw [MoorePath.source_trans, source_path])
+
+@[simp]
+theorem point_appendFrom (x : Fiber p b) (δ : MoorePathFrom B b) :
+    (x.appendFrom δ).point = x.val.point :=
+  point_mk _ _ _
+
+@[simp]
+theorem path_appendFrom (x : Fiber p b) (δ : MoorePathFrom B b) :
+    (x.appendFrom δ).path = x.val.path.trans δ.toMoorePath (by simp) :=
+  path_mk _ _ _
+
+/-- The point `(e, γ ⋆ δ)` lies over the end point of `δ`. -/
+theorem endpoint_appendFrom (x : Fiber p b) (δ : MoorePathFrom B b) :
+    endpoint p (x.appendFrom δ) = δ.toMoorePath.target := by
+  simp
+
+/-- **Appending a path from `b` is balanced over the loops at `b`**: acting by a loop `ω` on
+`(e, γ)` and then appending `δ` is appending `ω ⋆ δ`. -/
+theorem act_appendFrom (x : Fiber p b) (ω : MooreLoopSpace B b) (δ : MoorePathFrom B b) :
+    (x.act ω).appendFrom δ = x.appendFrom (ω • δ) :=
+  MooreReplacement.ext (by simp) (by simp [MoorePath.trans_assoc])
+
+/-- Appending a path from `b` is jointly continuous. -/
+theorem continuous_appendFrom :
+    Continuous fun q : Fiber p b × MoorePathFrom B b ↦ q.1.appendFrom q.2 :=
+  continuous_mk (continuous_point.comp (continuous_val.comp continuous_fst))
+    ((continuous_path.comp (continuous_val.comp continuous_fst)).moorePath_trans
+      (MoorePathFrom.continuous_toMoorePath.comp continuous_snd) _) _
+
+variable (p b) in
+/-- Appending a path from `b`, as a continuous map `F'_b × P_b B → E'`. -/
+def appendFromMap : C(Fiber p b × MoorePathFrom B b, MooreReplacement p) :=
+  ⟨fun q ↦ q.1.appendFrom q.2, continuous_appendFrom⟩
+
+@[simp]
+theorem appendFromMap_apply (q : Fiber p b × MoorePathFrom B b) :
+    appendFromMap p b q = q.1.appendFrom q.2 :=
   (rfl)
 
 end TauCeti.MooreReplacement.Fiber
