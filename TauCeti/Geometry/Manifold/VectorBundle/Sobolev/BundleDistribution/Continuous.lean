@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BundleDistribution
 import Mathlib.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.Lp
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.BaseSetChart
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.LocalRep
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartCutoffs
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -82,25 +83,33 @@ local macro "𝒸" i:term:max : term =>
 
 omit [MeasurableSpace E] [BorelSpace E] [T2Space M] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
-/-- The restricted chart at the centre of chart `i` has source `A.dom i` and image `A.image i`,
-lies over the base set of the preferred frame of the dual-density bundle, and is the preferred
-extended chart at the centre. -/
-private theorem restrChart_props (i : Fin A.n) :
-    (𝒸 i).source = A.dom i ∧ (𝒸 i).target = A.image i ∧ (𝒸 i).source ⊆ (𝒯 i).baseSet ∧
-      ∀ x ∈ (𝒸 i).source, (𝒸 i) x = extChartAt 𝓘(ℝ, E) (A.center i) x := by
-  have hdom : A.dom i ⊆ (baseSetChart (F →L[ℝ] ℝ) 𝓘(ℝ, E)
-      (fun x ↦ V x →L[ℝ] DensityBundle 𝓘(ℝ, E) M x) (A.center i)).source := fun x hx ↦ by
-    rw [baseSetChart_source, hom_trivializationAt_baseSet, TauCeti.Density.trivializationAt_eq,
-      Trivialization.density_baseSet, TangentBundle.trivializationAt_baseSet]
-    exact ⟨A.dom_subset_chart_source i hx, A.dom_subset_baseSet i hx,
-      A.dom_subset_chart_source i hx⟩
-  have hsrc : (𝒸 i).source = A.dom i := by
-    rw [OpenPartialHomeomorph.restrOpen_source, inter_eq_right.2 hdom]
-  refine ⟨hsrc, ?_, by rw [hsrc]; exact hdom.trans (baseSetChart_source_subset _ _),
-    fun x _ ↦ ?_⟩
-  · rw [← (𝒸 i).image_source_eq_target, hsrc, OpenPartialHomeomorph.coe_restrOpen,
-      coe_baseSetChart, A.image_extChartAt_center (𝕜 := ℝ)]
-  · rw [OpenPartialHomeomorph.coe_restrOpen, coe_baseSetChart]
+/-- The restricted chart at the centre of chart `i` has source `A.dom i`. -/
+private theorem restrChart_source (i : Fin A.n) : (𝒸 i).source = A.dom i := by
+  rw [OpenPartialHomeomorph.restrOpen_source,
+    inter_eq_right.2 (A.dom_subset_baseSetChart_source i)]
+
+omit [MeasurableSpace E] [BorelSpace E] [T2Space M] [FiniteDimensional ℝ F]
+  [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
+/-- The restricted chart at the centre of chart `i` is the preferred extended chart there. -/
+private theorem restrChart_apply (i : Fin A.n) :
+    ∀ x ∈ (𝒸 i).source, (𝒸 i) x = extChartAt 𝓘(ℝ, E) (A.center i) x := fun _ _ ↦ by
+  rw [OpenPartialHomeomorph.coe_restrOpen, coe_baseSetChart]
+
+omit [MeasurableSpace E] [BorelSpace E] [T2Space M] [FiniteDimensional ℝ F]
+  [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
+/-- The restricted chart at the centre of chart `i` has target `A.image i`. -/
+private theorem restrChart_target (i : Fin A.n) : (𝒸 i).target = A.image i := by
+  rw [← (𝒸 i).image_source_eq_target, restrChart_source, OpenPartialHomeomorph.coe_restrOpen,
+    coe_baseSetChart, A.image_extChartAt_center (𝕜 := ℝ)]
+
+omit [MeasurableSpace E] [BorelSpace E] [T2Space M] [FiniteDimensional ℝ F]
+  [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
+/-- The restricted chart at the centre of chart `i` lies over the base set of the preferred frame
+of the dual-density bundle. -/
+private theorem restrChart_source_subset_baseSet (i : Fin A.n) :
+    (𝒸 i).source ⊆ (𝒯 i).baseSet := by
+  rw [restrChart_source]
+  exact (A.dom_subset_baseSetChart_source i).trans (baseSetChart_source_subset _ _)
 
 omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
@@ -121,7 +130,7 @@ private theorem exists_chartCutoffs [SigmaCompactSpace M] :
       rw [OpenPartialHomeomorph.restrOpen_source] at hz
       exact (baseSetChart _ _ _ _).map_source hz.1
     cutoff := fun i ↦ ⟨ρ i, (ρ i).contMDiff.of_le (WithTop.coe_le_coe.2 le_top)⟩
-    tsupport_subset := fun i ↦ by rw [(restrChart_props i).1]; exact hρ i
+    tsupport_subset := fun i ↦ by rw [restrChart_source]; exact hρ i
     isCompact_tsupport := fun i ↦ (A.isCompact_closure_dom i).of_isClosed_subset
       (isClosed_tsupport _) ((hρ i).trans subset_closure)
     finite := fun _ _ ↦ toFinite _
@@ -172,18 +181,28 @@ private theorem toBundleDistribution_chartTestCLM [SigmaCompactSpace M] (i : Fin
       (Module.finBasis ℝ E).addHaar := by
     rw [htgt, A.localRep_center]
     exact ((Lp.locallyIntegrableOn _ Fact.out).congr (hs i)).of_isAddHaarMeasure _
-  rw [toBundleDistribution_eq_ofSection hs, BundleDistribution.ofSection_apply hsl,
-    integralDensity_chartTestCLM c hc hct hcα hu ψ,
-    TestFunction.integralAgainstBilinCLM_eq_integral hu,
-    hc₀, integral_smul_nnreal_measure,
-    NNReal.smul_def, smul_eq_mul,
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := A.image i) fun y hy ↦ by
-      rw [ψ.zero_on_compl fun h ↦ hy (htgt ▸ h), Pi.zero_apply,
-        ContinuousLinearMap.id_apply, zero_apply]]
-  congr 1
-  refine integral_congr_ae ?_
-  filter_upwards [hs i] with y hy
-  rw [A.localRep_center, ← hy, ContinuousLinearMap.id_apply]
+  -- The pairing is the integral of `ψ` against the reading at the centre.
+  have hint : toBundleDistribution A μ p k w ((𝒯 i).chartTestCLM c hc hct ψ) =
+      ∫ y, ψ y (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y)
+        ∂(Module.finBasis ℝ E).addHaar := by
+    rw [toBundleDistribution_eq_ofSection hs, BundleDistribution.ofSection_apply hsl,
+      integralDensity_chartTestCLM c hc hct hcα hu ψ,
+      TestFunction.integralAgainstBilinCLM_eq_integral hu]
+    simp only [ContinuousLinearMap.id_apply]
+  -- The Haar measure of the fixed basis is `c₀ • μ`.
+  have hmeas : ∫ y, ψ y (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y)
+      ∂(Module.finBasis ℝ E).addHaar =
+      c₀ * ∫ y, ψ y (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y) ∂μ := by
+    rw [hc₀, integral_smul_nnreal_measure, NNReal.smul_def, smul_eq_mul]
+  -- `ψ` vanishes off `A.image i`, where the reading is the chart data.
+  have hres : ∫ y, ψ y (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y) ∂μ =
+      ∫ y in A.image i, ψ y (A.sectionChartData.chartValueL μ p k i w y) ∂μ := by
+    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := A.image i) fun y hy ↦ by
+      rw [ψ.zero_on_compl fun h ↦ hy (htgt ▸ h), Pi.zero_apply, zero_apply]]
+    refine integral_congr_ae ?_
+    filter_upwards [hs i] with y hy
+    rw [A.localRep_center, ← hy]
+  rw [hint, hmeas, hres]
 
 /-- **Continuity of the evaluations.** For every test `φ` of the dual-density bundle, the
 evaluation `w ↦ toBundleDistribution w φ` is continuous on `W^{k,p}(V)`. -/
@@ -195,17 +214,18 @@ theorem continuous_toBundleDistribution_apply (φ : DualDensityTest 𝓘(ℝ, E)
     ⟨_, Measure.isAddLeftInvariant_eq_smul (Module.finBasis ℝ E).addHaar μ⟩
   have ht (i : Fin A.n) : (C.chart i).source ⊆ (𝒯 i).baseSet := by
     rw [hC]
-    exact (restrChart_props i).2.2.1
+    exact restrChart_source_subset_baseSet i
   rw [← C.sum_chartTestCLM_localize (fun i ↦ 𝒯 i) ht (BundleTest.isCompact_tsupport φ)
     subset_rfl]
   simp_rw [map_sum]
   refine continuous_finsetSum _ fun i _ ↦ ?_
   refine ((continuous_const (y := (c₀ : ℝ))).mul (pairingCLM (A := A) (μ := μ) (p := p) (k := k) i
     (C.localize (fun i ↦ 𝒯 i) ht i φ)).continuous).congr fun w ↦ ?_
-  have hp := restrChart_props (A := A) i
-  rw [← hC] at hp
+  have happly := restrChart_apply (A := A) i
+  have htarget := restrChart_target (A := A) i
+  rw [← hC] at happly htarget
   exact ((toBundleDistribution_chartTestCLM i (C.chart i) (C.contMDiffOn_chart i) (ht i)
-    hp.2.2.2 hp.2.1 _ c₀ hc₀ w).trans (congrArg _ (pairingCLM_apply i _ w).symm)).symm
+    happly htarget _ c₀ hc₀ w).trans (congrArg _ (pairingCLM_apply i _ w).symm)).symm
 
 end SobolevSection
 
