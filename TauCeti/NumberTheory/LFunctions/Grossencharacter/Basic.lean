@@ -223,14 +223,6 @@ theorem conductorExponent_le_exponent (χ : Grossencharacter K 𝔪)
     exact χ.eq_one_of_mem _ (ofAdicCompletion_mem_ideleCongruenceSubgroup_iff.mpr hu)
       fun w ↦ InfinitePlace.ideleInfiniteCoord_ofAdicCompletion w v u
 
-/-- At a finite place outside the support of the modulus, the conductor exponent of a
-presentation vanishes. -/
-theorem conductorExponent_eq_zero_of_notMem_support (χ : Grossencharacter K 𝔪)
-    {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ 𝔪.support) :
-    χ.toHeckeCharacter.conductorExponent v = 0 :=
-  Nat.le_zero.mp (Modulus.exponent_eq_zero_of_notMem_support hv ▸
-    χ.conductorExponent_le_exponent v)
-
 /-- **The finite conductor of a presentation divides the finite part of its modulus.** -/
 theorem finiteConductor_dvd_finitePart (χ : Grossencharacter K 𝔪) :
     χ.toHeckeCharacter.finiteConductor ∣ 𝔪.finitePart :=

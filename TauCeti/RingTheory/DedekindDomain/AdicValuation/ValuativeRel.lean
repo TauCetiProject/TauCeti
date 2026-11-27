@@ -337,40 +337,8 @@ theorem unitsMap_algebraMap_mem_unitFiltration_zero_iff
         TauCeti.unitFiltration (v.adicCompletion K) 0 ↔
       v.valuation K a = 1 := by
   rw [mem_unitFiltration_zero_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass,
-    valued_algebraMap_adicCompletion]
-
-/-- **Units of `K` in the `k`-th unit filtration of the completion.** The image in `K_v` of a
-unit `a` of `K` lies in the depth-`k` step `U(K_v, k)` of the unit filtration exactly when `a` has
-`v`-adic valuation one and `v.valuation K (a - 1) ≤ exp (-k)`. -/
-theorem unitsMap_algebraMap_mem_unitFiltration_iff_valuation
-    [IsNonarchimedeanLocalField (v.adicCompletion K)] (k : ℕ) (a : Kˣ) :
-    Units.map (algebraMap K (v.adicCompletion K) : K →* v.adicCompletion K) a ∈
-        TauCeti.unitFiltration (v.adicCompletion K) k ↔
-      v.valuation K (a : K) = 1 ∧ v.valuation K ((a : K) - 1) ≤ WithZero.exp (-(k : ℤ)) := by
-  rw [mem_unitFiltration_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass,
-    ← map_one (algebraMap K (v.adicCompletion K)), ← map_sub,
-    valued_algebraMap_adicCompletion, valued_algebraMap_adicCompletion]
-
-/-- **Unit filtration membership from `Valued.v` approximation.** If a unit `u` of `K_v`
-approximates a local unit `z` of valuation `1` strictly within `exp (-n)` for `Valued.v`, then
-`u * z⁻¹` lies in the `n`-th step `U(K_v, n)` of the unit filtration. -/
-theorem mul_inv_mem_unitFiltration_of_valued_sub_lt
-    [IsNonarchimedeanLocalField (v.adicCompletion K)] {n : ℕ} {u z : (v.adicCompletion K)ˣ}
-    (hz : Valued.v (z : v.adicCompletion K) = 1)
-    (huz : Valued.v ((u : v.adicCompletion K) - (z : v.adicCompletion K)) <
-      WithZero.exp (-(n : ℤ))) :
-    u * z⁻¹ ∈ TauCeti.unitFiltration (v.adicCompletion K) n := by
-  have : Finite (R ⧸ v.asIdeal) :=
-    Finite.of_equiv _ (v.residueFieldEquivAdicCompletion (K := K)).toEquiv.symm
-  obtain ⟨πu, hπu⟩ := TauCeti.exists_isUniformizer (v.adicCompletion K)
-  obtain ⟨π, hπ, hπ_coe⟩ := (TauCeti.isUniformizer_iff_exists_irreducible _ _).mp hπu
-  have h1 : Valued.v (π : v.adicCompletion K) = WithZero.exp (-1) :=
-    hπ_coe ▸ v.isUniformizer_iff_valued_eq_exp_neg_one.mp hπu
-  have hequiv := ValuativeRel.isEquiv (ValuativeRel.valuation (v.adicCompletion K))
-    (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)
-  refine TauCeti.mul_inv_mem_unitFiltration_of_valuation_sub_lt hπ
-    (hequiv.eq_one_iff_eq_one.mpr hz) ?_
-  rwa [← map_pow, hequiv.lt_iff_lt, map_pow, h1, ← WithZero.exp_nsmul, smul_neg, nsmul_one]
+    algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+    Algebra.algebraMap_self_apply]
 
 /-- **Elements of `R` congruent to `1` in the completion.** Let `a` be the image in `Kˣ` of an
 element `r` of `R`. The image of `a` in `K_v` lies in the step `U(K_v, n)` of the unit filtration

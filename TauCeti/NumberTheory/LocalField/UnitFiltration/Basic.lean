@@ -188,25 +188,6 @@ theorem mem_unitFiltration_iff_valuation_sub_one_le {i : ℕ} (hi : i ≠ 0) {π
   obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hi
   rw [mem_unitFiltration_succ_valuation j x π hπ, map_pow]
 
-/-- If `u` approximates a local unit `z` of valuation `1` strictly within `v(π) ^ i`, then
-`u * z⁻¹` lies in the `i`-th step `U(K,i)` of the unit filtration. -/
-theorem mul_inv_mem_unitFiltration_of_valuation_sub_lt {i : ℕ} {π : 𝒪[K]} (hπ : Irreducible π)
-    {u z : Kˣ} (hz : valuation K (z : K) = 1)
-    (huz : valuation K ((u : K) - (z : K)) < valuation K (π : K) ^ i) :
-    u * z⁻¹ ∈ unitFiltration K i := by
-  have hsub : ((u * z⁻¹ : Kˣ) : K) - 1 = ((u : K) - (z : K)) * (z : K)⁻¹ := by
-    simp [sub_mul]
-  have hlt : valuation K (((u * z⁻¹ : Kˣ) : K) - 1) < valuation K (π : K) ^ i := by
-    rw [hsub, map_mul, map_inv₀, hz, inv_one, mul_one]
-    exact huz
-  have hπ_le : valuation K (π : K) ^ i ≤ 1 :=
-    pow_le_one₀ zero_le (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ).le
-  have hle1 : valuation K (((u * z⁻¹ : Kˣ) : K) - 1) < valuation K (1 : K) := by
-    rw [map_one]
-    exact hlt.trans_le hπ_le
-  exact (mem_unitFiltration_iff_valuation_le hπ).mpr
-    ⟨(Valuation.map_eq_of_sub_lt (valuation K) hle1).trans (map_one _), hlt.le⟩
-
 /-- For `x ≠ 1` and a positive depth `i`, membership of `x` in the unit filtration step `U(K,i)`
 is the inequality `i ≤ v_K(x - 1)` on the normalized valuation of `x - 1`. -/
 theorem mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one {i : ℕ} (hi : i ≠ 0)
