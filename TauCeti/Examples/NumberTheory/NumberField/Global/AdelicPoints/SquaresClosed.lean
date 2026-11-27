@@ -30,6 +30,6 @@ namespace TauCeti.Examples.AdelicSquares
 theorem isClosed_range_sq :
     IsClosed ((powMonoidHom 2 : IdeleGroup (𝓞 ℚ) ℚ →* IdeleGroup (𝓞 ℚ) ℚ).range :
       Set (IdeleGroup (𝓞 ℚ) ℚ)) :=
-  IdeleGroup.isClosed_range_powMonoidHom two_ne_zero
+  IdeleGroup.isClosed_range_powMonoidHom 2
 
 end TauCeti.Examples.AdelicSquares

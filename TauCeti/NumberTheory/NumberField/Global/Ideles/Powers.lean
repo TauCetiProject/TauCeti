@@ -9,16 +9,18 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import TauCeti.Analysis.Normed.Field.Powers
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 
+import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
+
 /-!
 # Powers in the ideles
 
-For `n ≠ 0`, an idele is an `n`-th power exactly when each of its local coordinates is an `n`-th
-power. A root of a local unit of valuation one again has valuation one, so local roots chosen at
-every place assemble to an idele. For a number field `K` the `n`-th powers of the local unit groups
-`K_vˣ` are open subgroups, hence closed, and the coordinates of an idele are continuous; so the
-`n`-th powers form a closed subgroup of the ideles. In the language of adelic points, the image of
-the `n`-th power map of `𝔾ₘ` on `𝔾ₘ(𝔸_K) = 𝔸_K^×` is closed. For `K = ℚ` and `n = 2` this
-image `(𝔸_ℚ^×)²` is not open, so the adelic power map is not open.
+An idele is an `n`-th power exactly when each of its local coordinates is an `n`-th power. For
+`n ≠ 0` a root of a local unit of valuation one again has valuation one, so local roots chosen at
+every place assemble to an idele. For a number field `K` and `n ≠ 0` the `n`-th powers of the local
+unit groups `K_vˣ` are open subgroups, hence closed, and the coordinates of an idele are
+continuous; so the `n`-th powers form a closed subgroup of the ideles (for `n = 0` it is the
+trivial subgroup). In the language of adelic points, the image of the `n`-th power map of `𝔾ₘ` on
+`𝔾ₘ(𝔸_K) = 𝔸_K^×` is closed.
 
 ## Main statements
 
@@ -39,10 +41,8 @@ section Coordinates
 variable {K : Type*} [Field K]
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
 
-/-- **An idele is an `n`-th power if and only if each of its coordinates is**, for `n ≠ 0`. An
-`n`-th root of a local unit of valuation one has valuation one, so roots chosen at every place
-form an idele. -/
-theorem mem_range_powMonoidHom_iff {n : ℕ} (hn : n ≠ 0) (x : IdeleGroup R K) :
+/-- **An idele is an `n`-th power if and only if each of its coordinates is.** -/
+theorem mem_range_powMonoidHom_iff {n : ℕ} (x : IdeleGroup R K) :
     x ∈ (powMonoidHom n : IdeleGroup R K →* IdeleGroup R K).range ↔
       (∀ w : InfinitePlace K,
         w.ideleInfiniteCoord x ∈ (powMonoidHom n : w.Completionˣ →* w.Completionˣ).range) ∧
@@ -51,6 +51,13 @@ theorem mem_range_powMonoidHom_iff {n : ℕ} (hn : n ≠ 0) (x : IdeleGroup R K)
   refine ⟨?_, fun ⟨hinf, hfin⟩ ↦ ?_⟩
   · rintro ⟨y, rfl⟩
     exact ⟨fun w ↦ ⟨w.ideleInfiniteCoord y, by simp⟩, fun v ↦ ⟨v.ideleFiniteCoord y, by simp⟩⟩
+  rcases eq_or_ne n 0 with rfl | hn
+  · -- For `n = 0` every coordinate of `x` is `1`, so `x = 1`.
+    refine ⟨1, NumberField.IdeleGroup.ext (fun w ↦ ?_) (fun v ↦ ?_)⟩
+    · obtain ⟨y, hy⟩ := hinf w
+      simpa [eq_comm] using hy
+    · obtain ⟨y, hy⟩ := hfin v
+      simpa [eq_comm] using hy
   choose zi hzi using hinf
   choose z hz using hfin
   -- `x` is a local unit of valuation one at almost every place, and so is its root `z v` there.
@@ -72,34 +79,19 @@ theorem mem_range_powMonoidHom_iff {n : ℕ} (hn : n ≠ 0) (x : IdeleGroup R K)
   · rw [powMonoidHom_apply, map_pow, TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleOfUnits,
       ← powMonoidHom_apply, hz]
 
-/-- The coordinate of an idele at an infinite place is continuous. -/
-theorem continuous_ideleInfiniteCoord (w : InfinitePlace K) :
-    Continuous (w.ideleInfiniteCoord : IdeleGroup R K → w.Completionˣ) := by
-  have : (w.ideleInfiniteCoord : IdeleGroup R K → w.Completionˣ) =
-      fun x ↦ (localUnitsEquiv R K x).1 w := funext fun x ↦ (localUnitsEquiv_apply_fst x w).symm
-  rw [this]
-  exact (continuous_apply w).comp (continuous_fst.comp (localUnitsEquiv R K).continuous)
-
-/-- The coordinate of an idele at a finite place is continuous. -/
-theorem continuous_ideleFiniteCoord (v : HeightOneSpectrum R) :
-    Continuous (v.ideleFiniteCoord : IdeleGroup R K → (v.adicCompletion K)ˣ) := by
-  have : (v.ideleFiniteCoord : IdeleGroup R K → (v.adicCompletion K)ˣ) =
-      fun x ↦ (localUnitsEquiv R K x).2 v := funext fun x ↦ (localUnitsEquiv_apply_snd x v).symm
-  rw [this]
-  exact (RestrictedProduct.continuous_eval v).comp
-    (continuous_snd.comp (localUnitsEquiv R K).continuous)
-
 end Coordinates
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- **The `n`-th powers are closed in the ideles of a number field**, for `n ≠ 0`. By
-`mem_range_powMonoidHom_iff` they are the ideles whose coordinates are `n`-th powers, and the
-`n`-th powers of each local unit group are an open, hence closed, subgroup
-(`TauCeti.isOpen_range_powMonoidHom_units`). -/
-theorem isClosed_range_powMonoidHom {n : ℕ} (hn : n ≠ 0) :
+/-- **The `n`-th powers are closed in the ideles of a number field.** -/
+theorem isClosed_range_powMonoidHom (n : ℕ) :
     IsClosed ((powMonoidHom n : IdeleGroup (𝓞 K) K →* IdeleGroup (𝓞 K) K).range :
       Set (IdeleGroup (𝓞 K) K)) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · -- The `0`-th powers are the trivial subgroup.
+    convert isClosed_singleton (x := (1 : IdeleGroup (𝓞 K) K))
+    ext x
+    simp [eq_comm]
   have hS : ((powMonoidHom n : IdeleGroup (𝓞 K) K →* IdeleGroup (𝓞 K) K).range :
       Set (IdeleGroup (𝓞 K) K)) =
       (⋂ w : InfinitePlace K, w.ideleInfiniteCoord ⁻¹'
@@ -108,14 +100,15 @@ theorem isClosed_range_powMonoidHom {n : ℕ} (hn : n ≠ 0) :
         (powMonoidHom n : (v.adicCompletion K)ˣ →* (v.adicCompletion K)ˣ).range := by
     ext x
     simp only [SetLike.mem_coe, Set.mem_inter_iff, Set.mem_iInter, Set.mem_preimage]
-    exact mem_range_powMonoidHom_iff hn x
+    exact mem_range_powMonoidHom_iff x
   rw [hS]
+  -- The `n`-th powers of each local unit group form an open, hence closed, subgroup.
   refine (isClosed_iInter fun w ↦ ?_).inter (isClosed_iInter fun v ↦ ?_)
-  · refine IsClosed.preimage (continuous_ideleInfiniteCoord w) (Subgroup.isClosed_of_isOpen _ ?_)
+  · refine IsClosed.preimage w.continuous_ideleInfiniteCoord (Subgroup.isClosed_of_isOpen _ ?_)
     refine TauCeti.isOpen_range_powMonoidHom_units ?_
     rw [← map_natCast (algebraMap K w.Completion)]
     exact (map_ne_zero _).2 (Nat.cast_ne_zero.2 hn)
-  · refine IsClosed.preimage (continuous_ideleFiniteCoord v) (Subgroup.isClosed_of_isOpen _ ?_)
+  · refine IsClosed.preimage v.continuous_ideleFiniteCoord (Subgroup.isClosed_of_isOpen _ ?_)
     refine TauCeti.isOpen_range_powMonoidHom_units ?_
     rw [← map_natCast (algebraMap K (v.adicCompletion K))]
     exact (map_ne_zero _).2 (Nat.cast_ne_zero.2 hn)
