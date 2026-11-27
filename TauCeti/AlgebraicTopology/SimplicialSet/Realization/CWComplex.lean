@@ -576,15 +576,18 @@ namespace TauCeti
 
 open SSet
 
+private def simplicialRealizationCWStdSimplexCellEquiv (n k : ℕ) :
+    (simplicialRealizationCW (Δ[n] : SSet.{u})).cell k ≃
+      Set.powersetCard (Fin (n + 1)) (k + 1) :=
+  (simplicialRealizationCWCellEquiv (Δ[n] : SSet.{u}) k).trans
+    (stdSimplex.nonDegenerateEquiv' (n := n) (d := k))
+
 /-- The number of `k`-cells of `simplicialRealizationCW Δ[n]` is `Nat.choose (n + 1) (k + 1)`. -/
 lemma natCard_simplicialRealizationCW_stdSimplex_cell (n k : ℕ) :
     Nat.card ((simplicialRealizationCW (Δ[n] : SSet.{u})).cell k) =
       Nat.choose (n + 1) (k + 1) := by
-  have he : (simplicialRealizationCW (Δ[n] : SSet.{u})).cell k ≃
-      Set.powersetCard (Fin (n + 1)) (k + 1) :=
-    (simplicialRealizationCWCellEquiv (Δ[n] : SSet.{u}) k).trans
-      (stdSimplex.nonDegenerateEquiv' (n := n) (d := k))
-  rw [Nat.card_congr he, Set.powersetCard.card, Nat.card_eq_fintype_card, Fintype.card_fin]
+  rw [Nat.card_congr (simplicialRealizationCWStdSimplexCellEquiv.{u} n k),
+    Set.powersetCard.card, Nat.card_eq_fintype_card, Fintype.card_fin]
 
 /-- The CW structure on `|Δ[0]|` has a unique `0`-cell. -/
 @[instance_reducible]
@@ -597,12 +600,8 @@ noncomputable def uniqueSimplicialRealizationCWStdSimplexZeroCellZero :
 /-- The CW structure on `|Δ[0]|` has no cells of positive dimension. -/
 lemma isEmpty_simplicialRealizationCW_stdSimplex_zero_cell_succ (n : ℕ) :
     IsEmpty ((simplicialRealizationCW (Δ[0] : SSet.{u})).cell (n + 1)) := by
-  have he : (simplicialRealizationCW (Δ[0] : SSet.{u})).cell (n + 1) ≃
-      Set.powersetCard (Fin 1) (n + 2) :=
-    (simplicialRealizationCWCellEquiv (Δ[0] : SSet.{u}) (n + 1)).trans
-      (stdSimplex.nonDegenerateEquiv' (n := 0) (d := n + 1))
   have : _root_.Finite ((simplicialRealizationCW (Δ[0] : SSet.{u})).cell (n + 1)) :=
-    (Equiv.finite_iff he).2 inferInstance
+    (Equiv.finite_iff (simplicialRealizationCWStdSimplexCellEquiv.{u} 0 (n + 1))).2 inferInstance
   rw [← Finite.card_eq_zero_iff, natCard_simplicialRealizationCW_stdSimplex_cell]
   exact Nat.choose_eq_zero_of_lt (by omega)
 

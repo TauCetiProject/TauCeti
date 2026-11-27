@@ -98,6 +98,10 @@ private lemma tangentVec_eq_zero_iff {n : ℕ} (z : Fin n → ℝ) :
     ext i
     refine Fin.cases ?_ ?_ i <;> simp [tangentVec]
 
+@[simp]
+lemma tangentVec_zero {n : ℕ} : tangentVec (0 : Fin n → ℝ) = 0 :=
+  (tangentVec_eq_zero_iff 0).2 rfl
+
 private lemma tangentVec_smul {n : ℕ} (t : ℝ) (z : Fin n → ℝ) :
     tangentVec (t • z) = t • tangentVec z := by
   ext i
@@ -132,6 +136,12 @@ private lemma exists_negMax_eq {n : ℕ} (v : Fin (n + 1) → ℝ) :
 private lemma negMax_le_iff {n : ℕ} (v : Fin (n + 1) → ℝ) (c : ℝ) :
     negMax v ≤ c ↔ ∀ i, -v i ≤ c := by
   simp [negMax, Finset.sup'_le_iff]
+
+@[simp]
+lemma negMax_zero {n : ℕ} : negMax (0 : Fin (n + 1) → ℝ) = 0 := by
+  apply le_antisymm
+  · rw [negMax_le_iff]; intro i; simp
+  · simpa using neg_le_negMax (0 : Fin (n + 1) → ℝ) 0
 
 /-- If every `-v j` is at most `c` and `-v i = c` at some vertex `i`, then `negMax v = c`. -/
 lemma negMax_eq_of_attained {n : ℕ} {v : Fin (n + 1) → ℝ} {c : ℝ}
@@ -242,12 +252,7 @@ private lemma targetSet_mem_nhds_zero (n : ℕ) : targetSet n ∈ nhds (0 : Fin 
     isOpen_lt (continuous_const.mul (continuous_negMax.comp (continuous_pi continuous_tangentVec)))
       continuous_const
   have h0 : (0 : Fin n → ℝ) ∈ {z : Fin n → ℝ | (n + 1 : ℝ) * negMax (tangentVec z) < 1} := by
-    have htan0 : tangentVec (0 : Fin n → ℝ) = 0 := (tangentVec_eq_zero_iff 0).2 rfl
-    have hneg0 : negMax (0 : Fin (n + 1) → ℝ) = 0 := by
-      apply le_antisymm
-      · rw [negMax_le_iff]; intro i; simp
-      · simpa using neg_le_negMax (0 : Fin (n + 1) → ℝ) 0
-    simp [htan0, hneg0]
+    simp
   refine Filter.mem_of_superset (hopen.mem_nhds h0) fun z hz ↦ ?_
   simp only [targetSet, Set.mem_ofPred_eq] at hz ⊢
   exact le_of_lt hz
@@ -269,12 +274,7 @@ private lemma gauge_targetSet (n : ℕ) (z : Fin n → ℝ) :
     gauge (targetSet n) z = (n + 1 : ℝ) * negMax (tangentVec z) := by
   by_cases hz : z = 0
   · subst hz
-    have htan0 : tangentVec (0 : Fin n → ℝ) = 0 := (tangentVec_eq_zero_iff 0).2 rfl
-    have hneg0 : negMax (0 : Fin (n + 1) → ℝ) = 0 := by
-      apply le_antisymm
-      · rw [negMax_le_iff]; intro i; simp
-      · simpa using neg_le_negMax (0 : Fin (n + 1) → ℝ) 0
-    simp [htan0, hneg0]
+    simp
   · have hm : 0 < negMax (tangentVec z) := negMax_tangentVec_pos hz
     have hpos : 0 < (n + 1 : ℝ) * negMax (tangentVec z) := by positivity
     rw [gauge_def']
@@ -323,7 +323,7 @@ private lemma offsetTail_eq_zero_iff {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))
   constructor
   · intro h
     have hoff : offset y = 0 := by
-      rw [← tangentVec_offsetTail y, h, (tangentVec_eq_zero_iff _).2 rfl]
+      rw [← tangentVec_offsetTail y, h, tangentVec_zero]
     ext i
     have hi := congrFun hoff i
     simp only [offset, Pi.zero_apply, sub_eq_zero] at hi
@@ -431,7 +431,7 @@ lemma weights_standardCellBallToOrderedSimplex (n : ℕ)
   rw [weights_standardCellBallToOrderedSimplex_eq, rescaleHomeomorph_apply, gaugeRescale_def,
     gauge_closedBall zero_le_one, div_one, gauge_targetSet]
   split_ifs with hz
-  · simp [hz, (tangentVec_eq_zero_iff 0).2 rfl]
+  · simp [hz]
   · rw [tangentVec_smul, Pi.smul_apply, smul_eq_mul]
     ring
 
@@ -469,6 +469,16 @@ lemma standardCellBallToOrderedSimplex_symm_subBarycenter (n : ℕ) :
   (standardCellBallToOrderedSimplex n).symm_apply_eq.2
     (standardCellBallToOrderedSimplex_zero n).symm
 
+private lemma coe_standardCellBallToOrderedSimplex_symm_eq (n : ℕ)
+    (y : StdSimplex ℝ (Fin (n + 1))) :
+    (((standardCellBallToOrderedSimplex n).symm y : closedBall (0 : Fin n → ℝ) 1) :
+        Fin n → ℝ) =
+      (rescaleHomeomorph n).symm (offsetTail y) :=
+  -- `(standardCellBallToOrderedSimplex n).symm` unfolds through `Homeomorph.trans`
+  -- (`ballToTarget` and `targetToSimplex`), `simplexToTargetFun`, and `Homeomorph.subtype`
+  -- to `(rescaleHomeomorph n).symm ∘ offsetTail`.
+  rfl
+
 open scoped Classical in
 /-- Explicit formula for the inverse of `standardCellBallToOrderedSimplex n` in `Fin n → ℝ`. -/
 lemma coe_standardCellBallToOrderedSimplex_symm_apply (n : ℕ)
@@ -476,13 +486,8 @@ lemma coe_standardCellBallToOrderedSimplex_symm_apply (n : ℕ)
     (((standardCellBallToOrderedSimplex n).symm y : closedBall (0 : Fin n → ℝ) 1) : Fin n → ℝ) =
       if y = StdSimplex.subBarycenter Finset.univ Finset.univ_nonempty then 0
       else ((n + 1 : ℝ) * negMax (offset y) / ‖offsetTail y‖) • offsetTail y := by
-  have hcoe :
-      (((standardCellBallToOrderedSimplex n).symm y : closedBall (0 : Fin n → ℝ) 1) :
-          Fin n → ℝ) =
-        (rescaleHomeomorph n).symm (offsetTail y) :=
-    rfl
-  rw [hcoe, rescaleHomeomorph_symm_apply, gaugeRescale_def, gauge_targetSet,
-    tangentVec_offsetTail, gauge_closedBall zero_le_one, div_one]
+  rw [coe_standardCellBallToOrderedSimplex_symm_eq, rescaleHomeomorph_symm_apply, gaugeRescale_def,
+    gauge_targetSet, tangentVec_offsetTail, gauge_closedBall zero_le_one, div_one]
   split_ifs with hy
   · have htail : offsetTail y = 0 := (offsetTail_eq_zero_iff y).2 hy
     simp [htail]
