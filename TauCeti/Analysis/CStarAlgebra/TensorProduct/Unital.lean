@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.TensorProduct
 public import Mathlib.RingTheory.Flat.Basic
+import Mathlib.Analysis.CStarAlgebra.Hom
 
 /-!
 # The C*-tensor product of unital C*-algebras
@@ -20,8 +21,9 @@ unital ring, algebra and normed structures, which extend the ones of the nonunit
 (`TauCeti.CStarTensorProduct.ofStarAlgHom`).
 
 The unital star homomorphisms `a ↦ a ⊗ 1` and `b ↦ 1 ⊗ b`
-(`TauCeti.CStarTensorProduct.includeLeft`, `TauCeti.CStarTensorProduct.includeRight`) have
-commuting ranges, and their products `(a ⊗ 1)(1 ⊗ b) = a ⊗ b` span a dense subalgebra, so unital
+(`TauCeti.CStarTensorProduct.includeLeft`, `TauCeti.CStarTensorProduct.includeRight`) are
+injective, hence isometric, when the other factor is nonzero. They have commuting
+ranges, and their products `(a ⊗ 1)(1 ⊗ b) = a ⊗ b` span a dense subalgebra, so unital
 star homomorphisms out of `TauCeti.CStarTensorProduct N` are determined by their composites with
 `includeLeft` and `includeRight` (`TauCeti.CStarTensorProduct.starAlgHom_ext'`).
 
@@ -35,7 +37,8 @@ The maximal and minimal tensor products `TauCeti.MaxTensorProduct A B` and
 * `TauCeti.CStarTensorProduct.ofStarAlgHom`: the unital star homomorphism
   `A ⊗[ℂ] B → TauCeti.CStarTensorProduct N`.
 * `TauCeti.CStarTensorProduct.includeLeft`, `TauCeti.CStarTensorProduct.includeRight`: the unital
-  star homomorphisms `a ↦ a ⊗ 1` and `b ↦ 1 ⊗ b`.
+  star homomorphisms `a ↦ a ⊗ 1` and `b ↦ 1 ⊗ b`, isometric for nonzero factors
+  (`TauCeti.CStarTensorProduct.norm_includeLeft`, `TauCeti.CStarTensorProduct.norm_includeRight`).
 
 ## References
 
@@ -149,6 +152,23 @@ theorem includeLeft_apply (a : A) : includeLeft N a = of N (a ⊗ₜ 1) :=
 @[simp]
 theorem includeRight_apply (b : B) : includeRight N b = of N (1 ⊗ₜ b) :=
   (rfl)
+
+/-- For nonzero `B`, `a ↦ a ⊗ 1` is injective. -/
+theorem includeLeft_injective [Nontrivial B] : Function.Injective (includeLeft N) :=
+  of_injective.comp (Algebra.TensorProduct.includeLeft_injective (S := ℂ)
+    (algebraMap ℂ B).injective)
+
+/-- For nonzero `A`, `b ↦ 1 ⊗ b` is injective. -/
+theorem includeRight_injective [Nontrivial A] : Function.Injective (includeRight N) :=
+  of_injective.comp (Algebra.TensorProduct.includeRight_injective (algebraMap ℂ A).injective)
+
+/-- For nonzero `B`, `a ↦ a ⊗ 1` is isometric: `‖a ⊗ 1‖ = ‖a‖`. -/
+theorem norm_includeLeft [Nontrivial B] (a : A) : ‖includeLeft N a‖ = ‖a‖ :=
+  NonUnitalStarAlgHom.norm_map _ includeLeft_injective a
+
+/-- For nonzero `A`, `b ↦ 1 ⊗ b` is isometric: `‖1 ⊗ b‖ = ‖b‖`. -/
+theorem norm_includeRight [Nontrivial A] (b : B) : ‖includeRight N b‖ = ‖b‖ :=
+  NonUnitalStarAlgHom.norm_map _ includeRight_injective b
 
 /-- `(a ⊗ 1)(1 ⊗ b) = a ⊗ b`. -/
 theorem includeLeft_mul_includeRight (a : A) (b : B) :

@@ -15,9 +15,8 @@ Let `A` and `B` be unital C*-algebras. Like every C*-tensor product of unital C*
 minimal tensor product `A ⊗min B` (`TauCeti.MinTensorProduct A B`) is a unital C*-algebra with unit
 `1 ⊗ 1` (`TauCeti.CStarTensorProduct.instCStarAlgebra`), with the unital star homomorphisms
 `a ↦ a ⊗ 1` and `b ↦ 1 ⊗ b` (`TauCeti.CStarTensorProduct.includeLeft`,
-`TauCeti.CStarTensorProduct.includeRight`). Since
-`‖a ⊗ b‖_min = ‖a‖ ‖b‖`, for nonzero `B` the inclusion `a ↦ a ⊗ 1` is isometric
-(`TauCeti.MinTensorProduct.norm_includeLeft`), and similarly on the right.
+`TauCeti.CStarTensorProduct.includeRight`), which are isometric for nonzero factors
+(`TauCeti.CStarTensorProduct.norm_includeLeft`, `TauCeti.CStarTensorProduct.norm_includeRight`).
 
 Functoriality is unital: unital star homomorphisms `φ : A → A'` and `ψ : B → B'` give the unital
 star homomorphism `TauCeti.MinTensorProduct.mapStarAlgHom φ ψ` extending `φ ⊗ ψ`, and the
@@ -26,8 +25,6 @@ canonical surjection `A ⊗max B → A ⊗min B` is unital
 
 ## Main declarations
 
-* `TauCeti.MinTensorProduct.norm_includeLeft`, `TauCeti.MinTensorProduct.norm_includeRight`: the
-  inclusions `a ↦ a ⊗ 1` and `b ↦ 1 ⊗ b` are isometric for nonzero factors.
 * `TauCeti.MinTensorProduct.mapStarAlgHom`: unital functoriality.
 * `TauCeti.MaxTensorProduct.toMinStarAlgHom`: the canonical surjection `A ⊗max B → A ⊗min B` as
   a unital star homomorphism.
@@ -54,26 +51,6 @@ namespace MinTensorProduct
 
 open CStarTensorProduct
 
-/-- For nonzero `B`, `a ↦ a ⊗ 1` is isometric: `‖a ⊗ 1‖ = ‖a‖`. -/
-theorem norm_includeLeft [Nontrivial B] (a : A) :
-    ‖includeLeft (minCStarTensorNorm A B) a‖ = ‖a‖ := by
-  rw [includeLeft_apply, norm_of_tmul, norm_one, mul_one]
-
-/-- For nonzero `A`, `b ↦ 1 ⊗ b` is isometric: `‖1 ⊗ b‖ = ‖b‖`. -/
-theorem norm_includeRight [Nontrivial A] (b : B) :
-    ‖includeRight (minCStarTensorNorm A B) b‖ = ‖b‖ := by
-  rw [includeRight_apply, norm_of_tmul, norm_one, one_mul]
-
-/-- For nonzero `B`, `a ↦ a ⊗ 1` is injective. -/
-theorem includeLeft_injective [Nontrivial B] :
-    Function.Injective (includeLeft (minCStarTensorNorm A B)) :=
-  (AddMonoidHomClass.isometry_of_norm _ norm_includeLeft).injective
-
-/-- For nonzero `A`, `b ↦ 1 ⊗ b` is injective. -/
-theorem includeRight_injective [Nontrivial A] :
-    Function.Injective (includeRight (minCStarTensorNorm A B)) :=
-  (AddMonoidHomClass.isometry_of_norm _ norm_includeRight).injective
-
 section Map
 
 variable {A' B' A'' B'' : Type*} [CStarAlgebra A'] [CStarAlgebra B'] [CStarAlgebra A'']
@@ -81,7 +58,7 @@ variable {A' B' A'' B'' : Type*} [CStarAlgebra A'] [CStarAlgebra B'] [CStarAlgeb
 
 /-- `φ ⊗ ψ` is unital for unital `φ` and `ψ`. -/
 @[simp]
-theorem map_one (φ : A →⋆ₐ[ℂ] A') (ψ : B →⋆ₐ[ℂ] B') :
+theorem map_toNonUnitalStarAlgHom_one (φ : A →⋆ₐ[ℂ] A') (ψ : B →⋆ₐ[ℂ] B') :
     map φ.toNonUnitalStarAlgHom ψ.toNonUnitalStarAlgHom 1 = 1 := by
   simpa using map_of_tmul φ.toNonUnitalStarAlgHom ψ.toNonUnitalStarAlgHom 1 1
 
@@ -91,10 +68,10 @@ unital star homomorphism `A ⊗min B → A' ⊗min B'` extending `φ ⊗ ψ`, th
 def mapStarAlgHom (φ : A →⋆ₐ[ℂ] A') (ψ : B →⋆ₐ[ℂ] B') :
     MinTensorProduct A B →⋆ₐ[ℂ] MinTensorProduct A' B' where
   __ := map φ.toNonUnitalStarAlgHom ψ.toNonUnitalStarAlgHom
-  map_one' := map_one φ ψ
+  map_one' := map_toNonUnitalStarAlgHom_one φ ψ
   commutes' r := by
     rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one]
-    exact (map_smul _ r 1).trans (congrArg (r • ·) (map_one φ ψ))
+    exact (map_smul _ r 1).trans (congrArg (r • ·) (map_toNonUnitalStarAlgHom_one φ ψ))
 
 /-- The unital functoriality map is `TauCeti.MinTensorProduct.map`. -/
 @[simp]
