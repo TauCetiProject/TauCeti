@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Ergodic.MeasureEntropy.CoverCount
+import TauCeti.Data.EReal.Operations
 import TauCeti.Dynamics.Ergodic.MeasureEntropy.FinitePartition
 import TauCeti.Dynamics.Ergodic.MeasureEntropy.Iterate
+import TauCeti.Dynamics.TopologicalEntropy.Basic
 import TauCeti.Dynamics.TopologicalEntropy.Iterate
 import TauCeti.MeasureTheory.Measure.Regular
 import TauCeti.Topology.UniformSpace.Compact
@@ -55,21 +57,6 @@ namespace TauCeti
 
 variable {X ι : Type*}
 
-/-- A nonnegative real bound on the `EReal` image of `x : ℝ≥0∞` is the bound `ENNReal.ofReal r`
-in `ℝ≥0∞`. -/
-private theorem coe_ennreal_le_coe_iff_le_ofReal {x : ℝ≥0∞} {r : ℝ} (hr : 0 ≤ r) :
-    (x : EReal) ≤ r ↔ x ≤ ENNReal.ofReal r := by
-  rw [← EReal.coe_ennreal_le_coe_ennreal_iff, EReal.coe_ennreal_ofReal, max_eq_left hr]
-
-/-- The topological entropy of a map of a nonempty uniform space is `⊤` or a nonnegative real. -/
-private theorem coverEntropy_univ_eq_top_or_eq_coe [UniformSpace X] [Nonempty X] (T : X → X) :
-    coverEntropy T univ = ⊤ ∨ ∃ t : ℝ, 0 ≤ t ∧ coverEntropy T univ = t := by
-  rcases eq_or_ne (coverEntropy T univ) ⊤ with htop | htop
-  · exact .inl htop
-  have h0 := coverEntropy_nonneg T univ_nonempty
-  exact .inr ⟨_, EReal.toReal_nonneg h0,
-    (EReal.coe_toReal htop (h0.trans_lt' EReal.bot_lt_zero).ne').symm⟩
-
 section RateStep
 
 variable [MeasurableSpace X] {μ : Measure X} [IsZeroOrProbabilityMeasure μ] [MeasurableSpace ι]
@@ -105,10 +92,10 @@ theorem IsInlSeparated.partitionEntropyRate_le_log_div [Nonempty X] (hT : Measur
     gcongr
     exact countablePartitionEntropy_iteratedPartitionLabel_le_ofReal_log_card_mul_two_pow hT hζ h
       hs
-  refine ((coe_ennreal_le_coe_iff_le_ofReal hlog).2 key).trans_eq ?_
+  refine ((EReal.coe_ennreal_le_coe_iff_le_ofReal hlog).2 key).trans_eq ?_
   have hval : (2 : ℝ≥0∞) ^ n * ((s.card : ℕ∞) : ℝ≥0∞) = ENNReal.ofReal (s.card * 2 ^ n) := by
-    rw [ENNReal.ofReal_mul (Nat.cast_nonneg _), ENNReal.ofReal_natCast,
-      ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat, mul_comm, ENat.toENNReal_coe]
+    rw [ENNReal.ofReal_mul (Nat.cast_nonneg _)]
+    simp [mul_comm]
   rw [← hcard, hval, ENNReal.log_ofReal_of_pos (by linarith), EReal.coe_div, EReal.coe_natCast]
 
 /-- **The rate step of Goodwyn's inequality.** For a nonempty space and an entourage `U`
@@ -124,14 +111,10 @@ theorem IsInlSeparated.partitionEntropyRate_le_log_two_add [Nonempty X] (hT : Me
     rw [expGrowthInf]
     refine le_liminf_of_le (by isBoundedDefault) (eventually_atTop.2 ⟨1, fun n hn ↦ ?_⟩)
     exact h.partitionEntropyRate_le_log_div hT hζ (Nat.one_le_iff_ne_zero.1 hn)
-  refine h1.trans ((expGrowthInf_mul_le ?_ ?_).trans_eq ?_)
-  · left
-    rw [expGrowthSup_pow, hl2]
-    exact EReal.coe_ne_bot _
-  · left
-    rw [expGrowthSup_pow, hl2]
-    exact EReal.coe_ne_top _
-  · rw [expGrowthSup_pow, hl2, coverEntropyInfEntourage]
+  refine h1.trans ((expGrowthInf_mul_le ?_ ?_).trans_eq ?_) <;> rw [expGrowthSup_pow, hl2]
+  · exact .inl (EReal.coe_ne_bot _)
+  · exact .inl (EReal.coe_ne_top _)
+  · rw [coverEntropyInfEntourage]
 
 end RateStep
 
@@ -166,7 +149,7 @@ private theorem partitionEntropyRate_le_ofReal_log_two_add (hT : MeasurePreservi
   have hζ := measurable_restrictLabel ha hFm
   have hrate : partitionEntropyRate μ T (restrictLabel a (⋃ i, F i)) ≤
       ENNReal.ofReal (Real.log 2 + t) := by
-    rw [← coe_ennreal_le_coe_iff_le_ofReal hc0, EReal.coe_add, ← ht]
+    rw [← EReal.coe_ennreal_le_coe_iff_le_ofReal hc0, EReal.coe_add, ← ht]
     refine ((isInlSeparated_restrictLabel_iUnion hFa hUdisj).partitionEntropyRate_le_log_two_add
       hT.measurable hζ).trans ?_
     gcongr
@@ -196,11 +179,11 @@ probability measure, `h_μ(T) ≤ log 2 + h_top(T)`. -/
 theorem measureEntropy_le_log_two_add_coverEntropy (hT : MeasurePreserving T μ μ) :
     (measureEntropy μ T : EReal) ≤ Real.log 2 + coverEntropy T univ := by
   have hX : Nonempty X := nonempty_of_isProbabilityMeasure μ
-  obtain htop | ⟨t, ht0, ht⟩ := coverEntropy_univ_eq_top_or_eq_coe T
+  obtain htop | ⟨t, ht0, ht⟩ := coverEntropy_eq_top_or_exists_eq_coe T univ_nonempty
   · rw [htop, EReal.coe_add_top]
     exact le_top
   rw [ht, ← EReal.coe_add,
-    coe_ennreal_le_coe_iff_le_ofReal (add_nonneg (Real.log_nonneg one_le_two) ht0)]
+    EReal.coe_ennreal_le_coe_iff_le_ofReal (add_nonneg (Real.log_nonneg one_le_two) ht0)]
   exact measureEntropy_le_ofReal_log_two_add hT ht
 
 /-- **Goodwyn's inequality.** For a continuous map `T` of a compact uniform space (for instance a
@@ -209,24 +192,24 @@ measure entropy is at most the topological entropy: `h_μ(T) ≤ coverEntropy T 
 theorem measureEntropy_le_coverEntropy (hT : MeasurePreserving T μ μ) (hTc : Continuous T) :
     (measureEntropy μ T : EReal) ≤ coverEntropy T univ := by
   have hX : Nonempty X := nonempty_of_isProbabilityMeasure μ
-  obtain htop | ⟨t, ht0, ht⟩ := coverEntropy_univ_eq_top_or_eq_coe T
+  obtain htop | ⟨t, ht0, ht⟩ := coverEntropy_eq_top_or_exists_eq_coe T univ_nonempty
   · rw [htop]
     exact le_top
-  rw [ht, coe_ennreal_le_coe_iff_le_ofReal ht0]
+  rw [ht, EReal.coe_ennreal_le_coe_iff_le_ofReal ht0]
   -- Apply the bound with `log 2` to `T^[k]` and divide by `k`.
-  have hk (k : ℕ) (hk : k ≠ 0) :
+  have hk (k : ℕ) (hk0 : k ≠ 0) :
       measureEntropy μ T ≤ ENNReal.ofReal (Real.log 2 / k + t) := by
-    have hk0 : (0 : ℝ) < k := by exact_mod_cast Nat.pos_of_ne_zero hk
+    have hkpos : (0 : ℝ) < k := by exact_mod_cast Nat.pos_of_ne_zero hk0
     have htk : coverEntropy T^[k] univ = ((k * t : ℝ) : EReal) := by
-      rw [coverEntropy_iterate_of_compactSpace hTc hk, ht]
+      rw [coverEntropy_iterate_of_compactSpace hTc hk0, ht]
       norm_cast
     have h := measureEntropy_le_ofReal_log_two_add (hT.iterate k) htk
     rw [measureEntropy_iterate hT] at h
     have hdiv : Real.log 2 / k + t = (Real.log 2 + k * t) / k := by
       field_simp
-    rw [hdiv, ENNReal.ofReal_div_of_pos hk0, ENNReal.ofReal_natCast,
-      ENNReal.le_div_iff_mul_le (Or.inl (by simpa using hk)) (by simp), mul_comm]
-    exact h
+    rw [hdiv, ENNReal.ofReal_div_of_pos hkpos,
+      ENNReal.le_div_iff_mul_le (Or.inl (by simpa using hk0)) (by simp)]
+    simpa [mul_comm] using h
   have hlim : Tendsto (fun k : ℕ ↦ ENNReal.ofReal (Real.log 2 / k + t)) atTop
       (𝓝 (ENNReal.ofReal t)) := by
     refine ENNReal.tendsto_ofReal ?_
