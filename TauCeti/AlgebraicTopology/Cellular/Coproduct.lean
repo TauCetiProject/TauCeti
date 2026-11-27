@@ -84,9 +84,12 @@ private lemma sigmaDiskBoundaryPairIso_hom_fst_apply
     (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst) :
     TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p =
       ⟨p.1, diskHomeomorphClosedBall n p.2⟩ := by
-  rw [sigmaDiskBoundaryPairIso, Iso.trans_hom, TopPair.Hom.fst_comp, TopCat.comp_app,
-    TopPair.isoOfSubsetRange_hom_fst_apply]
-  erw [TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst_apply]
+  simp only [sigmaDiskBoundaryPairIso, Iso.trans_hom, TopPair.Hom.fst_comp, TopCat.comp_app,
+    TopPair.isoOfSubsetRange_hom_fst_apply, TopPair.ofSubsetIso_hom]
+  -- `erw` is required because `TopPair.ofSubsetIso_hom` exposes `fun x ↦ (h x).1`, which
+  -- unifies with `TopPair.ofSubsetMap_fst_apply`'s `Set.MapsTo (TopCat.ofHom _)` argument
+  -- only after unfolding semireducible `ConcreteCategory.hom (TopCat.ofHom _)`.
+  erw [TopPair.ofSubsetMap_fst_apply]
   exact Homeomorph.sigmaCongrRight_apply (fun _ : ι ↦ diskHomeomorphClosedBall n) p
 
 /-- On the ambient spaces, `TauCeti.sigmaDiskBoundaryPairIso` preserves the summand. -/

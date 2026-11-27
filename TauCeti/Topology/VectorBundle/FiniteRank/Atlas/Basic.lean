@@ -277,7 +277,12 @@ def totalSpaceHomeomorphOfCoordChangeEqId
       (A.charts n).coordChange i j x v = v)
     (p : TotalSpace Unit A.Fiber) :
     A.totalSpaceHomeomorphOfCoordChangeEqId hcoord p = ⟨A.rank p.proj, (⟨p.proj, rfl⟩, p.snd)⟩ := by
-  simp [totalSpaceHomeomorphOfCoordChangeEqId]
+  simp only [totalSpaceHomeomorphOfCoordChangeEqId, Homeomorph.trans_apply,
+    totalSpaceHomeomorph_symm_apply, Homeomorph.sigmaCongrRight_apply,
+    Trivialization.coe_toHomeomorphOfBaseSetEqUniv,
+    VectorBundleCore.globalTrivializationOfCoordChangeEqId_apply]
+  -- `VectorBundleCore.Fiber` is semireducible, so `rfl` identifies the core fibre
+  -- `(A.charts (A.rank p.proj)).Fiber ⟨p.proj, rfl⟩` with `A.Fiber p.proj`.
   rfl
 
 /-- Inverse evaluation of `FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId`. -/
@@ -342,8 +347,11 @@ noncomputable def reconstructionHomeomorph :
     reconstructionHomeomorph 𝕜 r E p =
       ⟨r p.proj, ⟨⟨p.proj, rfl⟩,
         pointIndexedCoreFiberEquiv 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) ⟨p.proj, rfl⟩ p.snd⟩⟩ := by
-  rw [reconstructionHomeomorph, Homeomorph.trans_apply, totalSpaceHomeomorph_symm_apply,
+  simp only [reconstructionHomeomorph, Homeomorph.trans_apply, totalSpaceHomeomorph_symm_apply,
     gluedReconstructionHomeomorph]
+  -- `gluedReconstructionHomeomorph` has domain `(ofBundles 𝕜 r E).GluedTotalSpace` with
+  -- `charts` = `pointIndexedCore`; align the domain type so `Homeomorph.sigmaCongrRight_apply`
+  -- matches at reducible transparency.
   change (Homeomorph.sigmaCongrRight fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n))
     ⟨r p.proj, ⟨⟨p.proj, rfl⟩, p.snd⟩⟩ = _
   rw [Homeomorph.sigmaCongrRight_apply, pointIndexedCoreHomeomorph_apply]
@@ -356,13 +364,17 @@ by the canonical inclusion of that stratum into the reconstructed total space. -
       (ofBundles 𝕜 r E).totalSpaceHomeomorph
         ⟨p.1, ⟨p.2.proj,
           (pointIndexedCoreFiberEquiv 𝕜 (Fin p.1 → 𝕜) (E p.1) p.2.proj).symm p.2.snd⟩⟩ := by
-  rw [reconstructionHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
+  simp only [reconstructionHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
     gluedReconstructionHomeomorph]
   refine congrArg (ofBundles 𝕜 r E).totalSpaceHomeomorph ?_
+  -- Align the codomain `(ofBundles 𝕜 r E).GluedTotalSpace` with
+  -- `Σ n, (pointIndexedCore ...).TotalSpace` so `Homeomorph.sigmaCongrRight_symm` matches.
   change (Homeomorph.sigmaCongrRight fun n =>
     pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm p = _
   rw [Homeomorph.sigmaCongrRight_symm, Homeomorph.sigmaCongrRight_apply,
     pointIndexedCoreHomeomorph_symm_apply]
+  -- `Sigma.mk` on `(ofBundles 𝕜 r E).GluedTotalSpace` identifies `(pointIndexedCore ...).Fiber`
+  -- with `(ofBundles 𝕜 r E).charts p.1 |>.Fiber`.
   rfl
 
 /-- The reconstruction comparison covers the identity map on the original base. -/
