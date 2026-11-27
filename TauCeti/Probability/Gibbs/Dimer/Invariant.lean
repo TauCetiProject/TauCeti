@@ -22,8 +22,8 @@ are the `Γ`-invariant probability measures on configurations that are dimer Gib
 
 **The face property** (`SimpleGraph.dimerGibbsInvariant_isExtreme`). If every finite set of edges
 can be moved off every finite set of edges by `Γ` (for instance when `Γ` is infinite and acts
-properly, `TauCeti.exists_forall_smul_notMem_of_finite`), then `𝒢_inv` is a face of the
-invariant probability measures: if `a μ₁ + b μ₂` with `a, b > 0` is an invariant dimer Gibbs
+properly, `TauCeti.Probability.exists_forall_smul_notMem_of_proper`), then `𝒢_inv` is a face of
+the invariant probability measures: if `a μ₁ + b μ₂` with `a, b > 0` is an invariant dimer Gibbs
 measure and `μ₁`, `μ₂` are invariant probability measures, then `μ₁` is dimer Gibbs. The proof
 transports the face property of invariant Gibbs measures of a specification on a subshift
 (`TauCeti.Specification.isExtreme_gibbsInvariant`) through the inclusion of the subshift `𝔛(G)` of
@@ -52,17 +52,6 @@ noncomputable section
 open MeasureTheory Set TauCeti.MeasureTheory
 open scoped ENNReal
 
-namespace TauCeti
-
-/-- If only finitely many elements of an infinite group move some point of `F` into `Λ` (as for a
-proper action and finite `F`, `Λ`), then some element moves `F` off `Λ`. -/
-theorem exists_forall_smul_notMem_of_finite {Γ I : Type*} [SMul Γ I] [Infinite Γ] {F Λ : Set I}
-    (hprop : {g : Γ | ∃ i ∈ F, g • i ∈ Λ}.Finite) : ∃ g : Γ, ∀ i ∈ F, g • i ∉ Λ := by
-  obtain ⟨g, hg⟩ := hprop.infinite_compl.nonempty
-  exact ⟨g, fun i hi h => hg ⟨i, hi, h⟩⟩
-
-end TauCeti
-
 namespace SimpleGraph
 
 variable {V : Type*} {G : SimpleGraph V}
@@ -82,14 +71,6 @@ theorem mem_dimerGibbsInvariant_iff {Γ : Type*} [SMul Γ (G.edgeSet → Bool)]
 
 variable [G.LocallyFinite] [Countable G.edgeSet] {Γ : Type*} [Group Γ] [MulAction Γ G.edgeSet]
 
-/-- A measure carried by dimer configurations is the push-forward of its pull-back to `𝔛(G)`. -/
-private theorem map_comap_val_of_measure_eq_zero
-    (hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e) {μ : Measure (G.edgeSet → Bool)}
-    (hμ : μ {ω | ¬ G.IsDimerConfiguration ω} = 0) :
-    (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)).map Subtype.val = μ :=
-  (map_comap_subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe μ).trans
-    (Measure.restrict_eq_self_of_ae_mem ((ae_iff.2 hμ).mono fun _ h => mem_dimerSubshift.2 h))
-
 /-- An invariant probability measure carried by dimer configurations pulls back to an invariant
 probability measure on `𝔛(G)`. -/
 private theorem comap_val_mem_invariantMeasuresOfMeasureUnivEq
@@ -105,7 +86,7 @@ private theorem comap_val_mem_invariantMeasuresOfMeasureUnivEq
   have hequiv : ∀ (g : Γ) (x : G.dimerSubshift Γ hΓ),
       ((g • x : G.dimerSubshift Γ hΓ) : G.edgeSet → Bool) = g • (x : G.edgeSet → Bool) :=
     fun g x => funext fun e => by rw [hσ, TauCeti.Subshift.smul_apply]
-  have hmap := map_comap_val_of_measure_eq_zero hΓ hμ₀
+  have hmap := map_comap_val_of_ae_isDimerConfiguration Γ hΓ (ae_iff.2 hμ₀)
   obtain ⟨hinv, huniv⟩ := mem_invariantMeasuresOfMeasureUnivEq_iff.1 hμ
   refine mem_invariantMeasuresOfMeasureUnivEq_iff.2 ⟨(hemb.smulInvariantMeasure_map_iff hequiv).1
     (by rw [hmap]; exact hinv), ?_⟩
@@ -131,6 +112,8 @@ theorem dimerGibbsInvariant_isExtreme
     have hnull := hμ.2.measure_setOf_not_isDimerConfiguration
     simp only [add_apply, smul_apply, smul_eq_mul, add_eq_zero,
       mul_eq_zero, ha.ne', hb.ne', false_or] at hnull
+    have hmap₁ := map_comap_val_of_ae_isDimerConfiguration Γ hΓ (ae_iff.2 hnull.1)
+    have hmap₂ := map_comap_val_of_ae_isDimerConfiguration Γ hΓ (ae_iff.2 hnull.2)
     set ν₁ := μ₁.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)
     set ν₂ := μ₂.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)
     have hν₁ := comap_val_mem_invariantMeasuresOfMeasureUnivEq hΓ hσ hμ₁ hnull.1
@@ -138,8 +121,7 @@ theorem dimerGibbsInvariant_isExtreme
     -- the pull-back of the combination is the combination of the pull-backs, and is Gibbs
     have hcomb : (a • μ₁ + b • μ₂).comap Subtype.val = a • ν₁ + b • ν₂ := by
       rw [← hemb.comap_map (a • ν₁ + b • ν₂), Measure.map_add _ _ hemb.measurable,
-        Measure.map_smul, Measure.map_smul, map_comap_val_of_measure_eq_zero hΓ hnull.1,
-        map_comap_val_of_measure_eq_zero hΓ hnull.2]
+        Measure.map_smul, Measure.map_smul, hmap₁, hmap₂]
       all_goals exact hemb.measurable.aemeasurable
     have hG : a • ν₁ + b • ν₂ ∈ (dimerSpecification Γ hΓ hw).gibbsInvariant :=
       TauCeti.Specification.mem_gibbsInvariant_iff.2
@@ -149,7 +131,7 @@ theorem dimerGibbsInvariant_isExtreme
       (((dimerSpecification Γ hΓ hw).isExtreme_gibbsInvariant hmove).left_mem_of_mem_openSegment
         hν₁ hν₂ hG ⟨a, b, ha, hb, hab, rfl⟩)
     have : IsProbabilityMeasure ν₁ := ⟨(mem_invariantMeasuresOfMeasureUnivEq_iff.1 h₁.1).2⟩
-    rw [← map_comap_val_of_measure_eq_zero hΓ hnull.1]
+    rw [← hmap₁]
     exact isDimerGibbs_map_val hw h₁.2
 
 /-- **Ergodic invariant dimer Gibbs measures are the extreme ones.** For a countable group `Γ` that

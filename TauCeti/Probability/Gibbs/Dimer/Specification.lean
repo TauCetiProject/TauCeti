@@ -394,13 +394,21 @@ theorem IsDimerGibbs.ae_mem_dimerSubshift {w : G.edgeSet → ℝ} {μ : Measure 
   hμ.ae_isDimerConfiguration.mono fun _ => mem_dimerSubshift.2
 
 variable (Γ hΓ) in
+/-- A measure carried by dimer configurations is carried by `𝔛(G)`: pulling it back to `𝔛(G)` and
+pushing forward along the inclusion gives it back. -/
+theorem map_comap_val_of_ae_isDimerConfiguration {μ : Measure (G.edgeSet → Bool)}
+    (hμ : ∀ᵐ ω ∂μ, G.IsDimerConfiguration ω) :
+    (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)).map Subtype.val = μ :=
+  (map_comap_subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe μ).trans
+    (Measure.restrict_eq_self_of_ae_mem (hμ.mono fun _ => mem_dimerSubshift.2))
+
+variable (Γ hΓ) in
 /-- A dimer Gibbs measure is carried by `𝔛(G)`: pulling it back to `𝔛(G)` and pushing forward
 along the inclusion gives it back. -/
 theorem IsDimerGibbs.map_comap_val {w : G.edgeSet → ℝ} {μ : Measure (G.edgeSet → Bool)}
     (hμ : G.IsDimerGibbs w μ) :
     (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)).map Subtype.val = μ :=
-  (map_comap_subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe μ).trans
-    (Measure.restrict_eq_self_of_ae_mem (hμ.ae_mem_dimerSubshift Γ hΓ))
+  map_comap_val_of_ae_isDimerConfiguration Γ hΓ hμ.ae_isDimerConfiguration
 
 variable (Γ hΓ) in
 /-- The pull-back to `𝔛(G)` of a dimer Gibbs measure is a probability measure. -/
