@@ -34,9 +34,13 @@ count that do not involve the homotopy class of `u`:
   is at most the intersection number, which vanishes exactly when `f` misses `V_z` on `U`.
 * **Reparametrization.** The intersection number is unchanged by an injective holomorphic change
   of parameter with nonzero derivative, in particular by a translation of the parameter domain.
+* **Additivity.** The intersection number is additive over finitely many disjoint parameter sets,
+  each meeting `V_z` at finitely many parameters, and it may be computed on any subset containing
+  all the intersections.
 
 Identifying this count with the topological intersection number of the homotopy class of `u` with
-`V_z` is not formalized here.
+`V_z` is not formalized here. Its stability under deformations of `u` is
+`TauCeti.Geometry.Manifold.SymmetricPower.BasepointIntersection.Stability`.
 
 ## Main declarations
 
@@ -49,6 +53,8 @@ Identifying this count with the topological intersection number of the homotopy 
 * `TauCeti.encard_le_basepointIntersectionNumber` and
   `TauCeti.basepointIntersectionNumber_eq_zero_iff`: positivity.
 * `TauCeti.basepointIntersectionNumber_comp`: invariance under holomorphic reparametrization.
+* `TauCeti.basepointIntersectionNumber_union`, `TauCeti.basepointIntersectionNumber_biUnion` and
+  `TauCeti.basepointIntersectionNumber_eq_of_subset`: additivity.
 
 ## References
 
@@ -173,6 +179,27 @@ theorem basepointIntersectionNumber_union (hUW : Disjoint U W)
   finsum_mem_union' hUW
     (hU.subset (inter_subset_inter_right U support_basepointIntersectionOrder_subset))
     (hW.subset (inter_subset_inter_right W support_basepointIntersectionOrder_subset))
+
+/-- The basepoint intersection number is additive over a finite family of pairwise disjoint
+parameter sets, each meeting the divisor at finitely many parameters. -/
+theorem basepointIntersectionNumber_biUnion {ι : Type*} {I : Set ι} {B : ι → Set ℂ}
+    (hI : I.Finite) (hB : I.PairwiseDisjoint B)
+    (hfin : ∀ i ∈ I, (B i ∩ f ⁻¹' Sym.basepointDivisor z).Finite) :
+    basepointIntersectionNumber z f (⋃ i ∈ I, B i) =
+      ∑ᶠ i ∈ I, basepointIntersectionNumber z f (B i) := by
+  simp only [basepointIntersectionNumber_def]
+  rw [← finsum_mem_inter_support, iUnion₂_inter, finsum_mem_biUnion
+    (hB.mono fun i => inter_subset_left) hI fun i hi => (hfin i hi).subset
+      (inter_subset_inter_right _ support_basepointIntersectionOrder_subset)]
+  exact finsum_mem_congr rfl fun i _ => finsum_mem_inter_support _ _
+
+/-- The basepoint intersection number on `U` is the number on a subset `W` of `U` that contains
+every intersection with the divisor in `U`. -/
+theorem basepointIntersectionNumber_eq_of_subset (hWU : W ⊆ U)
+    (h : ∀ w ∈ U, f w ∈ Sym.basepointDivisor z → w ∈ W) :
+    basepointIntersectionNumber z f U = basepointIntersectionNumber z f W :=
+  finsum_mem_inter_support_eq' _ _ _ fun w hw =>
+    ⟨fun hwU => h w hwU (support_basepointIntersectionOrder_subset hw), fun hwW => hWU hwW⟩
 
 /-- **Invariance under holomorphic reparametrization.** If `g` is injective on `W`, analytic with
 nonzero derivative at every parameter of `W`, then `f ∘ g` has the same basepoint intersection
