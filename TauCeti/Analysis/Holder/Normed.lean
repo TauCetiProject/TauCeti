@@ -127,19 +127,6 @@ theorem ofBoundedContinuousFunction_toBoundedContinuousFunction (f : HolderSpace
     ofBoundedContinuousFunction f.toBoundedContinuousFunction f.memHolder = f :=
   (rfl)
 
-/-- A continuous `α`-Hölder function on a compact metric space, as a bounded `α`-Hölder
-function. -/
-def ofHolderWithOfCompact [CompactSpace X] (g : X → Y) (hg_cont : Continuous g) {H : ℝ≥0}
-    (hg : HolderWith H α g) : HolderSpace α X Y :=
-  ofBoundedContinuousFunction (BoundedContinuousFunction.mkOfCompact ⟨g, hg_cont⟩) <|
-    HolderWith.memHolder (C := H) fun x y ↦ by
-      simpa only [BoundedContinuousFunction.mkOfCompact_apply, ContinuousMap.coe_mk] using hg x y
-
-/-- Evaluation of `ofHolderWithOfCompact` at a point of the domain. -/
-@[simp]
-theorem ofHolderWithOfCompact_apply [CompactSpace X] (g : X → Y) (hg_cont : Continuous g) {H : ℝ≥0}
-    (hg : HolderWith H α g) (x : X) : ofHolderWithOfCompact g hg_cont hg x = g x := (rfl)
-
 /-- Two Hölder-space elements are equal when they agree pointwise. -/
 @[ext]
 theorem ext {f g : HolderSpace α X Y} (h : ∀ x, f x = g x) : f = g := by

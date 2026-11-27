@@ -460,41 +460,22 @@ theorem norm_compSlabSpaceL_apply_le (f : HolderSpace α E Y) :
     (norm_le_norm_of_apply_comp (ι := (slabMk · t₀)) (fun _ ↦ by simp)
       fun _ _ ↦ by simp [edist_slabMk])
 
-private theorem holderWith_comp_slabTime (f : HolderSpace (α / 2) (Icc a b) Y) :
-    HolderWith (nnHolderNorm (α / 2) (f : Icc a b → Y)) α
-      (fun p : slab (E := E) a b ↦ f (slabTime p)) := by
-  simpa only [zero_add] using holderWith_of_holderWith_slices
-    (v := fun p : slab (E := E) a b ↦ f (slabTime p))
-    (C₁ := 0) (fun t x y ↦ by simp) (fun _ ↦ by simpa only [slabTime_slabMk] using f.holderWith)
-
 /-- A bounded `α / 2`-Hölder function of time on `[a, b]`, viewed as a spatially constant bounded
 parabolically `α`-Hölder field on the slab `E × [a, b]`. -/
 def compSlabTimeL : HolderSpace (α / 2) (Icc a b) Y →L[ℝ] HolderSpace α (slab (E := E) a b) Y :=
-  LinearMap.mkContinuous
-    { toFun f := ofBoundedContinuousFunction
-        (f.toBoundedContinuousFunction.compContinuous ⟨slabTime, continuous_slabTime⟩)
-        (by simpa [BoundedContinuousFunction.coe_compContinuous, Function.comp_def] using
-          (holderWith_comp_slabTime (E := E) f).memHolder)
-      map_add' _ _ := by ext; simp [ofBoundedContinuousFunction_apply]
-      map_smul' _ _ := by ext; simp [ofBoundedContinuousFunction_apply] }
-    1 fun f ↦ by
-      rw [LinearMap.coe_mk, AddHom.coe_mk, one_mul]
-      refine (norm_le_of_norm_le_of_holderWith (M := ‖f.toBoundedContinuousFunction‖)
-        (K := nnHolderNorm (α / 2) (f : Icc a b → Y)) (norm_nonneg _) (fun p ↦ ?_) ?_).trans ?_
-      · simpa [ofBoundedContinuousFunction_apply] using
-          f.toBoundedContinuousFunction.norm_coe_le_norm (slabTime p)
-      · convert holderWith_comp_slabTime (E := E) f using 1
-        ext p; simp [ofBoundedContinuousFunction_apply]
-      · rw [norm_def f, coe_toBoundedContinuousFunction]
+  (castLIE (div_mul_cancel₀ α two_ne_zero)).toLinearIsometry.toContinuousLinearMap.comp
+    (compHolderL slabTime continuous_slabTime holderWith_slabTime)
 
 @[simp] theorem compSlabTimeL_apply (f : HolderSpace (α / 2) (Icc a b) Y) (p : slab (E := E) a b) :
-    compSlabTimeL f p = f (slabTime p) := by simp [compSlabTimeL, ofBoundedContinuousFunction_apply]
+    compSlabTimeL f p = f (slabTime p) := by simp [compSlabTimeL]
 
 /-- Viewing a temporal `α / 2`-Hölder function on a slab does not increase its norm, even when the
 spatial fibre is empty. -/
 theorem norm_compSlabTimeL_le_one :
     ‖compSlabTimeL (α := α) (E := E) (Y := Y) (a := a) (b := b)‖ ≤ 1 :=
-  LinearMap.mkContinuous_norm_le _ zero_le_one _
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa [compSlabTimeL] using
+      norm_compHolderL_apply_le continuous_slabTime (holderWith_slabTime (E := E)) f
 
 /-- The Hölder-space norm of a spatially constant field on a slab is at most that of the temporal
 field on `[a, b]`. -/
