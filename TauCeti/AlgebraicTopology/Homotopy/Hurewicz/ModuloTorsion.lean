@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.FlatBaseChange
-import TauCeti.Algebra.Module.LocalizedModule.BaseChange
 import TauCeti.Algebra.Module.Torsion.Int
 import TauCeti.AlgebraicTopology.EilenbergMacLane.Torsion
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
@@ -35,7 +34,7 @@ on `Y`:
 * Base change to any localization `A` of `ℤ` at `S` preserves injectivity and surjectivity
   exactly when kernel and cokernel are `S`-torsion
   (`LinearMap.baseChange_injective_iff_isTorsion'_ker`,
-  `LinearMap.baseChange_surjective_iff_isTorsion'_quotient_range`), yielding the localized Hurewicz
+  `LinearMap.baseChange_surjective_iff_isTorsion'_coker`), yielding the localized Hurewicz
   isomorphism in degree `n + 2`, and strong induction gives the reverse direction of the
   connectivity equivalence.
 
@@ -133,9 +132,9 @@ theorem bijective_hurewiczModuleCatHom_baseChange
     Function.Bijective ((hurewiczModuleCatHom Y y n).hom.baseChange A) :=
   ⟨((hurewiczModuleCatHom Y y n).hom.baseChange_injective_iff_isTorsion'_ker S A).2
       (isTorsion'_ker_hurewiczModuleCatHom hπ),
-    ((hurewiczModuleCatHom Y y n).hom.baseChange_surjective_iff_isTorsion'_quotient_range S A).2
+    ((hurewiczModuleCatHom Y y n).hom.baseChange_surjective_iff_isTorsion'_coker S A).2
       -- `isTorsion'_quotient_range_hurewiczModuleCatHom` uses `AddCommGroup.toIntModule`,
-      -- whereas `baseChange_surjective_iff_isTorsion'_quotient_range` uses
+      -- whereas `baseChange_surjective_iff_isTorsion'_coker` uses
       -- `Submodule.Quotient.module`.
       (Module.isTorsion'_of_intModule (AddCommGroup.toIntModule _) (Submodule.Quotient.module _)
         (isTorsion'_quotient_range_hurewiczModuleCatHom hπ))⟩

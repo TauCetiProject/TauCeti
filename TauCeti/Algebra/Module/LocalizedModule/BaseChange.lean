@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
-import Mathlib.RingTheory.Flat.Localization
-import TauCeti.Algebra.Module.Torsion.Localization
 
 /-!
 # Base change and scalar restriction for localized modules
@@ -35,11 +32,6 @@ of the two localized maps are equivalent, and the underlying localized modules a
 `R`-linearly isomorphic (`LocalizedModule.restrictScalarsEquiv`, naturally via
 `LocalizedModule.restrictScalarsEquiv_map_apply`).
 
-Third, for an `R`-linear map `f : M →ₗ[R] N` over a commutative ring `R`, base change to a
-localization `A` of `R` at `S` is exact and kills a module iff it is `S`-torsion, characterizing
-injectivity and surjectivity of `f.baseChange A` via `S`-torsion of `LinearMap.ker f` and
-`N ⧸ LinearMap.range f`.
-
 ## Main declarations
 
 * `IsLocalizedModule.baseChange`: scalar extension of a localization map is a localization map at
@@ -61,10 +53,6 @@ injectivity and surjectivity of `f.baseChange A` via `S`-torsion of `LinearMap.k
   `IsLocalization.baseChange_bijective_iff`: when `A` is a localization of `R` at `T`,
   injectivity, surjectivity, and bijectivity of `f.baseChange A` coincide with those of
   `LocalizedModule.map T f`.
-* `LinearMap.baseChange_injective_iff_isTorsion'_ker`,
-  `LinearMap.baseChange_surjective_iff_isTorsion'_quotient_range`: base change of `f` to a
-  localization at `S` is injective iff `LinearMap.ker f` is `S`-torsion and surjective iff
-  `N ⧸ LinearMap.range f` is `S`-torsion.
 -/
 
 public section
@@ -347,43 +335,3 @@ theorem baseChange_bijective_iff (f : M →ₗ[R] N) :
     IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective]
 
 end IsLocalization
-
-namespace LinearMap
-
-variable {R : Type*} [CommRing R] {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N]
-  [Module R N]
-
-/-- Base change of `f : M →ₗ[R] N` to a localization `A` of `R` at `S` is injective if and only
-if `LinearMap.ker f` is `S`-torsion. -/
-theorem baseChange_injective_iff_isTorsion'_ker (f : M →ₗ[R] N) (S : Submonoid R) (A : Type*)
-    [CommRing A] [Algebra R A] [IsLocalization S A] :
-    Function.Injective (f.baseChange A) ↔ Module.IsTorsion' (LinearMap.ker f) S := by
-  have : Module.Flat R A := IsLocalization.flat A S
-  have hex : Function.Exact ((LinearMap.ker f).subtype.lTensor A) (f.lTensor A) :=
-    Module.Flat.lTensor_exact A f.exact_subtype_ker_map
-  have hinj : Function.Injective ((LinearMap.ker f).subtype.lTensor A) :=
-    Module.Flat.lTensor_preserves_injective_linearMap _ Subtype.val_injective
-  rw [S.isTorsion'_iff_subsingleton_tensorProduct A, LinearMap.baseChange_eq_lTensor,
-    ← LinearMap.ker_eq_bot, hex.linearMap_ker_eq, LinearMap.range_eq_bot]
-  refine ⟨fun h ↦ subsingleton_of_forall_eq 0 fun x ↦ hinj ?_,
-    fun _ ↦ LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, map_zero]⟩
-  rw [map_zero]
-  exact LinearMap.congr_fun h x
-
-/-- Base change of `f : M →ₗ[R] N` to a localization `A` of `R` at `S` is surjective if and only
-if the cokernel `N ⧸ LinearMap.range f` is `S`-torsion. -/
-theorem baseChange_surjective_iff_isTorsion'_quotient_range (f : M →ₗ[R] N) (S : Submonoid R)
-    (A : Type*) [CommRing A] [Algebra R A] [IsLocalization S A] :
-    Function.Surjective (f.baseChange A) ↔ Module.IsTorsion' (N ⧸ LinearMap.range f) S := by
-  have hex : Function.Exact (f.lTensor A) ((LinearMap.range f).mkQ.lTensor A) :=
-    lTensor_exact A f.exact_map_mkQ_range (Submodule.mkQ_surjective _)
-  have hsurj : Function.Surjective ((LinearMap.range f).mkQ.lTensor A) :=
-    LinearMap.lTensor_surjective A (Submodule.mkQ_surjective _)
-  rw [S.isTorsion'_iff_subsingleton_tensorProduct A, LinearMap.baseChange_eq_lTensor,
-    ← LinearMap.range_eq_top, ← hex.linearMap_ker_eq, LinearMap.ker_eq_top]
-  refine ⟨fun h ↦ subsingleton_of_forall_eq 0 fun y ↦ ?_,
-    fun _ ↦ LinearMap.ext fun _ ↦ Subsingleton.elim _ _⟩
-  obtain ⟨x, rfl⟩ := hsurj y
-  exact LinearMap.congr_fun h x
-
-end LinearMap

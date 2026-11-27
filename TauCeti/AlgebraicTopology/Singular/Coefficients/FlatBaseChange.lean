@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Module.Torsion.Localization
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
-import TauCeti.Algebra.Module.LocalizedModule.BaseChange
 import TauCeti.Algebra.Module.Torsion.Int
 import TauCeti.AlgebraicTopology.Singular.ModuleChains.Contractible
 
@@ -214,6 +213,6 @@ theorem isIso_singularHomologyMap_localization_iff {R : Type u} [CommRing R] (M 
   have := IsLocalization.flat A M
   rw [← bijective_singularHomologyMap_baseChange_iff_isIso R A f n, Function.Bijective,
     LinearMap.baseChange_injective_iff_isTorsion'_ker _ M A,
-    LinearMap.baseChange_surjective_iff_isTorsion'_quotient_range _ M A]
+    LinearMap.baseChange_surjective_iff_isTorsion'_coker _ M A]
 
 end TauCeti
