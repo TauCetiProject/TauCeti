@@ -15,6 +15,11 @@ A real-valued set function assigns a worth to each finite coalition of players. 
 when the empty coalition has worth zero. Convexity means that its negative is submodular,
 and superadditivity means that disjoint coalitions lose no worth by joining.
 
+A convex worth function is superadditive if the empty coalition has nonpositive worth
+(`TauCeti.IsSubmodular.isSuperadditive`). Superadditivity forces that bound on the empty
+coalition (`TauCeti.IsSuperadditive.empty_le_zero`) and implies monotonicity when every
+singleton has nonnegative worth (`TauCeti.IsSuperadditive.monotone_of_nonneg_singleton`).
+
 The increasing-marginals characterization `TauCeti.isSubmodular_neg_iff_forall_insert`
 explains how convexity controls the gain from adding a player to a coalition.
 
