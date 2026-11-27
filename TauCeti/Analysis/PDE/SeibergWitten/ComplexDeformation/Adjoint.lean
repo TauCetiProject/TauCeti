@@ -147,19 +147,15 @@ theorem deformationHomotopyFormalAdjoint_one :
 /-- **The kernel of `δ_ω` is `J₁`-invariant:** `δ_ω (J₁ a) = 0` exactly when `δ_ω a = 0`. -/
 theorem complexDeformationOperator_covectorComplexStructure_eq_zero_iff (a : SmoothForm I M ℝ 1) :
     complexDeformationOperator o J hJo (J.covectorComplexStructure a) = 0 ↔
-      complexDeformationOperator o J hJo a = 0 := by
-  rw [(isComplexLinearMap_iff_apply _ _ _).mp
-    (isComplexLinearMap_complexDeformationOperator o J hJo)]
-  exact AlmostComplexStructure.map_eq_zero_iff _
+      complexDeformationOperator o J hJo a = 0 :=
+  (isComplexLinearMap_complexDeformationOperator o J hJo).apply_apply_eq_zero_iff a
 
 /-- **The kernel of `δ_ω*` is `J′`-invariant:** `δ_ω* (J′ p) = 0` exactly when `δ_ω* p = 0`. -/
 theorem complexDeformationFormalAdjoint_deformationTargetComplexStructure_eq_zero_iff
     (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
     complexDeformationFormalAdjoint o J hJo (deformationTargetComplexStructure o J hJo p) = 0 ↔
-      complexDeformationFormalAdjoint o J hJo p = 0 := by
-  rw [(isComplexLinearMap_iff_apply _ _ _).mp
-    (isComplexLinearMap_complexDeformationFormalAdjoint o J hJo)]
-  exact AlmostComplexStructure.map_eq_zero_iff _
+      complexDeformationFormalAdjoint o J hJo p = 0 :=
+  (isComplexLinearMap_complexDeformationFormalAdjoint o J hJo).apply_apply_eq_zero_iff p
 
 /-! ### Green's formulas on a closed four-manifold -/
 
