@@ -76,13 +76,13 @@ private theorem integral_norm_sq_tailVec_le {ι Y : Type*} [Fintype ι]
     mul_nonneg C.property (gaussianSecondMoment_nonneg y)
   have hmem : MemLp (EuclideanSpace.tailVec (ι := ι) t) 2 (stdGaussian (EuclideanSpace ℝ ι)) := by
     simpa only [ContinuousLinearMap.id_apply] using
-      Probability.memLp_comp_tailVec (ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι)) t (by simp)
+      (ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι)).memLp_comp_tailVec t (by simp)
   have hs : MeasurableSet {r : ℝ | t < |r|} :=
     measurableSet_lt measurable_const continuous_abs.measurable
   have hpietsch := (gaussianSumCLM y).integral_norm_apply_rpow_le_of_summingENorm_le (p := 2)
     (by simp) hCG hsum hmem (M := ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1) fun f hf ↦ by
       simp only [ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs,
-        Probability.integral_sq_apply_tailVec]
+        ContinuousLinearMap.integral_sq_apply_tailVec]
       exact mul_le_of_le_one_left (setIntegral_nonneg hs fun _ _ ↦ sq_nonneg _)
         (by nlinarith [norm_nonneg f])
   simpa only [gaussianSumCLM_apply, ENNReal.toReal_ofNat, Real.rpow_two] using hpietsch

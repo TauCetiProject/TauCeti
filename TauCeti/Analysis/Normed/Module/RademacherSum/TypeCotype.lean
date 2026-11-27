@@ -39,7 +39,8 @@ constant along linear isometries, hence to subspaces, and along a bounded linear
   inequalities for families indexed by any finite type.
 * `TauCeti.HasType.of_map`, `TauCeti.HasCotype.of_map`: transport along bounded additive maps
   with a lower bound; `of_linearIsometry` and `of_continuousLinearEquiv` specialise them, and
-  `TauCeti.HasCotype.separationQuotient` transports cotype to `SeparationQuotient`.
+  `TauCeti.HasType.separationQuotient`, `TauCeti.HasCotype.separationQuotient` transport type and
+  cotype to `SeparationQuotient`.
 * `TauCeti.hasType_one`, `TauCeti.hasCotype_top`: the trivial type and cotype.
 * `TauCeti.hasType_two_of_innerProductSpace`, `TauCeti.hasCotype_two_of_innerProductSpace`:
   inner product spaces have type and cotype `2` with constant `1`.
@@ -193,6 +194,17 @@ theorem HasCotype.of_continuousLinearEquiv [Fact (1 ≤ q)] (h : HasCotype F q C
 end ContinuousLinearEquiv
 
 end Transport
+
+/-- Rademacher type passes from a seminormed group to its separation quotient with the same
+constant. -/
+theorem HasType.separationQuotient (h : HasType E p C) :
+    HasType (SeparationQuotient E) p C := by
+  rw [hasType_iff]
+  intro n z
+  choose y hy using fun i ↦ SeparationQuotient.surjective_mk (z i)
+  have hz : z = fun i ↦ SeparationQuotient.mk (y i) := funext fun i ↦ (hy i).symm
+  rw [hz, PiLp.norm_toLp_comp_separationQuotient, rademacherSecondMoment_comp_separationQuotient]
+  exact h.rademacherSecondMoment_le y
 
 /-- Rademacher cotype passes from a seminormed group to its separation quotient with the same
 constant. -/

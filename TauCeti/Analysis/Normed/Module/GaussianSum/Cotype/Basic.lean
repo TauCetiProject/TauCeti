@@ -172,13 +172,7 @@ theorem HasGaussianCotype.of_map (h : HasGaussianCotype F q C) (f : 𝓕)
   · intro n y
     have hy (i : Fin n) : ‖y i‖ = 0 :=
       le_antisymm ((hK (y i)).trans (by simp [Subsingleton.elim (f (y i)) 0])) (norm_nonneg _)
-    have hnorm : ‖WithLp.toLp q y‖ = 0 := by
-      rcases q.trichotomy with rfl | rfl | hq
-      · simp [PiLp.norm_eq_card, hy]
-      · simp [PiLp.norm_eq_ciSup, hy]
-      · simp [PiLp.norm_eq_sum hq, hy, Real.zero_rpow hq.ne',
-          Real.zero_rpow (inv_ne_zero hq.ne')]
-    rw [hnorm]
+    rw [PiLp.norm_eq_zero_of_forall_norm_eq_zero hy]
     exact mul_nonneg (NNReal.coe_nonneg _) (gaussianSecondMoment_nonneg _)
   · have : Fact (1 ≤ q) := ⟨one_le_two.trans h.two_le⟩
     intro n y

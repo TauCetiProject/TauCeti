@@ -122,6 +122,15 @@ protected theorem norm_nonneg' [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) 
   · rw [norm_eq_sum hp]
     exact Real.rpow_nonneg (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _) _
 
+/-- If every coordinate of a vector in `PiLp p E` has norm zero, then the `Lᵖ` norm is zero,
+for every exponent including `p < 1`. -/
+theorem norm_eq_zero_of_forall_norm_eq_zero [∀ i, SeminormedAddGroup (E i)] {x : PiLp p E}
+    (h : ∀ i, ‖x i‖ = 0) : ‖x‖ = 0 := by
+  rcases p.trichotomy with rfl | rfl | hp
+  · simp [norm_eq_card, h]
+  · simp [norm_eq_ciSup, h]
+  · simp [norm_eq_sum hp, h, Real.zero_rpow hp.ne', Real.zero_rpow (inv_ne_zero hp.ne')]
+
 /-- For `0 < p < ∞`, the `p`-th power of the finite `PiLp` norm equals the sum of the `p`-th powers
 of the coordinate norms. -/
 theorem norm_rpow_eq_sum [∀ i, SeminormedAddGroup (E i)] (hp : 0 < p.toReal) (x : PiLp p E) :
@@ -453,14 +462,6 @@ theorem coordIndicator_add_compl [AddCommGroup α] (s : Set α) (g : PiLp p fun 
 theorem norm_coordIndicator_le [Fintype ι'] [SeminormedAddGroup α] (s : Set α)
     (g : PiLp p fun _ : ι' ↦ α) : ‖coordIndicator s g‖ ≤ ‖g‖ :=
   PiLp.norm_mono fun i ↦ norm_indicator_le_norm_self (f := id) (s := s) (a := g i)
-
-/-- Coordinatewise masking onto a symmetric set commutes with coordinatewise sign flips. -/
-theorem coordIndicator_units_smul [AddCommGroup α] {s : Set α} (hs : ∀ r, -r ∈ s ↔ r ∈ s)
-    (ε : ι' → ℤˣ) (g : PiLp p fun _ : ι' ↦ α) (i : ι') :
-    coordIndicator s (WithLp.toLp p fun j ↦ ε j • g j) i = ε i • coordIndicator s g i := by
-  classical
-  rcases Int.units_eq_one_or (ε i) with h | h <;>
-    simp [coordIndicator_apply, Set.indicator_apply, h, hs]
 
 end coordIndicator
 

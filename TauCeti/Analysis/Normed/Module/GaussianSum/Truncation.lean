@@ -51,8 +51,7 @@ theorem integral_norm_sq_truncVec_le [DecidableEq ι] (y : ι → Y) {t : ℝ} (
         ‖∑ i, EuclideanSpace.truncVec t g i • y i‖ ^ 2)
       (stdGaussian (EuclideanSpace ℝ ι)) := by
     simpa only [gaussianSumCLM_apply] using
-      (Probability.memLp_comp_truncVec (gaussianSumCLM y) t (by simp)).integrable_norm_pow
-        two_ne_zero
+      ((gaussianSumCLM y).memLp_comp_truncVec t (by simp)).integrable_norm_pow two_ne_zero
   rw [Probability.integral_eq_integral_expect_signFlip hint]
   refine (integral_mono_of_nonneg (ae_of_all _ fun _ ↦ Finset.expect_nonneg fun _ _ ↦
     sq_nonneg _) (integrable_const ((t * rademacherSecondMoment y) ^ 2))
@@ -63,13 +62,7 @@ theorem integral_norm_sq_truncVec_le [DecidableEq ι] (y : ι → Y) {t : ℝ} (
   refine h.trans_eq' (Finset.expect_congr rfl fun ε _ ↦ ?_)
   congr 2
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have habs : |Probability.signFlip ε g i| = |g i| := by
-    rw [Probability.signFlip_apply, ← Real.norm_eq_abs, norm_units_zsmul, Real.norm_eq_abs]
-  rw [EuclideanSpace.truncVec_apply, EuclideanSpace.truncVec_apply, habs,
-    Probability.signFlip_apply]
-  split_ifs
-  · rw [smul_assoc]
-  · simp
+  rw [Probability.truncVec_signFlip, smul_assoc]
 
 /-- The `L²` Minkowski triangle inequality splits `G₂(y)` into its truncated and tail parts. -/
 theorem gaussianSecondMoment_le_trunc_add_tail (y : ι → Y) (t : ℝ) :
@@ -86,8 +79,7 @@ theorem gaussianSecondMoment_le_trunc_add_tail (y : ι → Y) (t : ℝ) :
   simp_rw [← gaussianSumCLM_apply y]
   rw [gaussianSecondMoment_def]
   simp_rw [hsplit]
-  exact (Probability.memLp_comp_truncVec (gaussianSumCLM y) t
-    (by simp)).sqrt_integral_norm_add_sq_le
-    (Probability.memLp_comp_tailVec (gaussianSumCLM y) t (by simp))
+  exact ((gaussianSumCLM y).memLp_comp_truncVec t (by simp)).sqrt_integral_norm_add_sq_le
+    ((gaussianSumCLM y).memLp_comp_tailVec t (by simp))
 
 end TauCeti

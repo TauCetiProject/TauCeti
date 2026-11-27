@@ -933,36 +933,6 @@ theorem truncVec_add_tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) :
   simpa only [truncVec, tailVec, hcompl] using
     PiLp.coordIndicator_add_compl {r : ℝ | |r| ≤ t} g
 
-/-- Coordinatewise truncation is measurable. -/
-theorem measurable_truncVec (t : ℝ) : Measurable (truncVec (ι := ι) t) := by
-  unfold truncVec
-  exact PiLp.measurable_coordIndicator (measurableSet_le continuous_abs.measurable measurable_const)
-
-/-- Coordinatewise tail masking is measurable. -/
-theorem measurable_tailVec (t : ℝ) : Measurable (tailVec (ι := ι) t) := by
-  unfold tailVec
-  exact PiLp.measurable_coordIndicator (measurableSet_lt measurable_const continuous_abs.measurable)
-
-/-- Coordinatewise truncation commutes with coordinatewise sign flips. -/
-theorem truncVec_units_smul (t : ℝ) (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι) (i : ι) :
-    truncVec t (WithLp.toLp 2 fun j ↦ ε j • g j) i = ε i • truncVec t g i :=
-  PiLp.coordIndicator_units_smul (fun r ↦ by simp) ε g i
-
-/-- Coordinatewise tail masking commutes with coordinatewise sign flips. -/
-theorem tailVec_units_smul (t : ℝ) (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι) (i : ι) :
-    tailVec t (WithLp.toLp 2 fun j ↦ ε j • g j) i = ε i • tailVec t g i :=
-  PiLp.coordIndicator_units_smul (fun r ↦ by simp) ε g i
-
-/-- Coordinatewise truncation does not increase the Euclidean norm. -/
-theorem norm_truncVec_le [Fintype ι] (t : ℝ) (g : EuclideanSpace ℝ ι) :
-    ‖truncVec t g‖ ≤ ‖g‖ :=
-  PiLp.norm_coordIndicator_le _ g
-
-/-- Coordinatewise tail masking does not increase the Euclidean norm. -/
-theorem norm_tailVec_le [Fintype ι] (t : ℝ) (g : EuclideanSpace ℝ ι) :
-    ‖tailVec t g‖ ≤ ‖g‖ :=
-  PiLp.norm_coordIndicator_le _ g
-
 /-- Each coordinate of `EuclideanSpace.truncVec t g` has absolute value at most `t` when `0 ≤ t`. -/
 theorem abs_truncVec_apply_le {t : ℝ} (ht : 0 ≤ t) (g : EuclideanSpace ℝ ι) (i : ι) :
     |truncVec t g i| ≤ t := by

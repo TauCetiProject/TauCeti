@@ -79,11 +79,10 @@ theorem weakTwo_dom_of_orthonormalBasis {𝕜 ι κ E Y : Type*} [RCLike 𝕜] [
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
     [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedSpace ℝ Y]
     (U : E →L[𝕜] Y) (b : OrthonormalBasis ι 𝕜 E) (x : κ → E) (f : StrongDual ℝ Y) :
-    let W := weakLpNorm (𝕜 := 𝕜) 2 x
     ∑ j, |f (U (x j))| ^ 2 ≤
-      ∑ k, |f (Sum.elim (fun i ↦ W • (U ∘ b) i)
-        (fun i ↦ W • ((RCLike.I : 𝕜) • (U ∘ b) i)) k)| ^ 2 := by
-  intro W
+      ∑ k, |f (Sum.elim (fun i ↦ weakLpNorm (𝕜 := 𝕜) 2 x • (U ∘ b) i)
+        (fun i ↦ weakLpNorm (𝕜 := 𝕜) 2 x • ((RCLike.I : 𝕜) • (U ∘ b) i)) k)| ^ 2 := by
+  set W := weakLpNorm (𝕜 := 𝕜) 2 x
   have hW : 0 ≤ W := apply_nonneg _ _
   let g : StrongDual 𝕜 Y := f.extendRCLike (𝕜 := 𝕜)
   have hre (v : Y) : |f v| ^ 2 ≤ ‖g v‖ ^ 2 := by
