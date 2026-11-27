@@ -24,7 +24,7 @@ one-sided full shift on two symbols.
 
 * `TauCeti.binaryExpansion`: the point of the circle with given binary digits, the class of
   `Real.ofDigits x` (`TauCeti.binaryExpansion_apply`).
-* `TauCeti.continuous_binaryExpansion`, `TauCeti.surjective_binaryExpansion`: it is a continuous
+* `TauCeti.continuous_binaryExpansion`, `TauCeti.binaryExpansion_surjective`: it is a continuous
   surjection.
 * `TauCeti.uniformContinuous_binaryExpansion`: it is uniformly continuous for the product of
   discrete uniformities on `ℕ → Fin 2`.
@@ -74,7 +74,7 @@ theorem uniformContinuous_binaryExpansion {u : UniformSpace (Fin 2)} [DiscreteUn
   exact h
 
 /-- Every point of the circle has a binary expansion. -/
-theorem surjective_binaryExpansion : Function.Surjective binaryExpansion := by
+theorem binaryExpansion_surjective : Function.Surjective binaryExpansion := by
   rw [← Set.surjOn_univ, binaryExpansion_eq_comp]
   have hcoe : SurjOn ((↑) : ℝ → UnitAddCircle) (Icc 0 1) univ := by
     have := AddCircle.coe_image_Icc_eq (1 : ℝ) 0

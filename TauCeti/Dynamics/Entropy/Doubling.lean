@@ -111,7 +111,7 @@ theorem coverEntropy_two_nsmul_unitAddCircle :
   refine le_antisymm ?_ ?_
   · calc coverEntropy (fun z : UnitAddCircle ↦ 2 • z) univ =
           coverEntropy (fun z : UnitAddCircle ↦ 2 • z) (binaryExpansion '' univ) := by
-          rw [image_univ, surjective_binaryExpansion.range_eq]
+          rw [image_univ, binaryExpansion_surjective.range_eq]
       _ ≤ coverEntropy (SymbolicDynamics.FullShift.shift (1 : ℕ)) (univ : Set (ℕ → Fin 2)) :=
           coverEntropy_image_le_of_uniformContinuous semiconj_binaryExpansion
             uniformContinuous_binaryExpansion univ
