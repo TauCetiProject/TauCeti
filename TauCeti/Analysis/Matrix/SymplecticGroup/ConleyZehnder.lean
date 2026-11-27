@@ -305,8 +305,8 @@ theorem exists_mem_Ioo_isUnit_det_add_one_sub_smul {Ψ : Matrix (n ⊕ n) (n ⊕
     rw [hp, AlgHom.map_det]
     have hne : (diagonalStraightening n * graphFrame Ψ).det ≠ 0 := by
       rw [det_mul]
-      exact mul_ne_zero (isUnit_det_of_left_inverse (mem_unitaryGroup_iff'.1
-        (diagonalStraightening_mem_unitaryGroup (n := n)))).ne_zero
+      exact mul_ne_zero (UnitaryGroup.det_isUnit
+        ⟨_, diagonalStraightening_mem_unitaryGroup (n := n)⟩).ne_zero
         (isUnit_det_graphFrame hΨ).ne_zero
     rw [diagonalStraightening_mul_graphFrame, det_smul] at hne
     have heq : (Polynomial.aeval Complex.I).mapMatrix ((1 + Ψ).map Polynomial.C +
