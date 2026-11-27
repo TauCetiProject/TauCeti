@@ -34,6 +34,11 @@ growth estimates for completed and pole-cleared L-functions to be assembled from
 
 A function with vertical-strip growth that is continuous on a closed strip is bounded there by a
 power of `1 + |Im s|` at every height, not only at large height.
+
+A bound `C (a (|Im s| + 2)) ^ B` on a closed strip of half-width `R` about `Re s = σ₀` gives the
+bound `C (|R| + 1) ^ B (a (|Im s₀| + 2)) ^ B` on the closed disc of radius `R` about each `s₀` on
+that line (`TauCeti.le_mul_rpow_mul_rpow_of_norm_sub_le`); this is the form of growth bounds used
+by Jensen's and Landau's lemmas on discs.
 -/
 
 public section
@@ -409,5 +414,27 @@ theorem tendsto_conj_comp_conj_mul_exp_neg_mul_abs_im {f : ℂ → ℂ} {a b r :
   simp only [map_zero] at h1
   refine h1.congr fun z => ?_
   simp only [Function.comp_apply, map_mul, Complex.conj_ofReal, Complex.conj_im, abs_neg]
+
+
+/-- **From vertical strips to discs.** If `g s ≤ C (a (|Im s| + 2)) ^ B` on the closed strip
+`σ₀ - R ≤ Re s ≤ σ₀ + R`, with `C, a, B ≥ 0`, then
+`g w ≤ C (|R| + 1) ^ B (a (|Im s₀| + 2)) ^ B` on the closed disc of radius `R` about every `s₀`
+with `Re s₀ = σ₀`, since the height of `w` differs from that of `s₀` by at most `R`. -/
+theorem le_mul_rpow_mul_rpow_of_norm_sub_le {g : ℂ → ℝ} {σ₀ R C a B : ℝ} (hC : 0 ≤ C)
+    (ha : 0 ≤ a) (hB : 0 ≤ B)
+    (hg : ∀ s : ℂ, σ₀ - R ≤ s.re → s.re ≤ σ₀ + R → g s ≤ C * (a * (|s.im| + 2)) ^ B)
+    {s₀ w : ℂ} (hs₀ : s₀.re = σ₀) (hw : ‖w - s₀‖ ≤ R) :
+    g w ≤ C * (|R| + 1) ^ B * (a * (|s₀.im| + 2)) ^ B := by
+  have hre := Complex.abs_re_le_norm (w - s₀)
+  rw [Complex.sub_re, hs₀, abs_le] at hre
+  have him := (abs_sub_abs_le_abs_sub w.im s₀.im).trans
+    ((Complex.sub_im w s₀ ▸ Complex.abs_im_le_norm _).trans hw)
+  have ht : |w.im| + 2 ≤ (|R| + 1) * (|s₀.im| + 2) := by
+    nlinarith [abs_nonneg s₀.im, le_abs_self R, abs_nonneg R]
+  calc g w ≤ C * (a * (|w.im| + 2)) ^ B := hg w (by linarith) (by linarith)
+    _ ≤ C * ((|R| + 1) * (a * (|s₀.im| + 2))) ^ B := by
+        rw [mul_left_comm (|R| + 1)]
+        gcongr
+    _ = _ := by rw [Real.mul_rpow (by positivity) (by positivity), mul_assoc]
 
 end TauCeti
