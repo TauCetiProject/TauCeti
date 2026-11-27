@@ -273,7 +273,7 @@ theorem gram_inv_mem_matsOfSize : J⁻¹ ∈ S.matsOfSize 1 :=
 /-- A matrix belongs to `matsOfSize i` when each of its columns does to `vecsOfSize i`. -/
 theorem mem_matsOfSize_of_col {M : Matrix m n A} (h : ∀ b, M.col b ∈ S.vecsOfSize i) :
     M ∈ S.matsOfSize i :=
-  fun a b => h b a
+  fun a b => col_apply M b a ▸ h b a
 
 /-- A dot product of vectors indexed by `ι`, of sizes `i` and `j`, has size `i + j + 1`. -/
 theorem dotProduct_mem {v w : ι → A} (hv : v ∈ S.vecsOfSize i) (hw : w ∈ S.vecsOfSize j) :
@@ -354,7 +354,7 @@ section ofSubring
 self-adjoint element `α ∈ O` such that `α • J` and `α • J⁻¹` have entries in `O`, the numbers `x`
 with `α ^ i * x ∈ O` are a size for `J`. -/
 def ofSubring (O : Subring A) (hO : ∀ x ∈ O, star x ∈ O) (α : A) (hα : α ∈ O)
-    (hα' : star α = α) (hJ : ∀ a b, α * J a b ∈ O) (hJ' : ∀ a b, α * J⁻¹ a b ∈ O) :
+    (hα' : IsSelfAdjoint α) (hJ : ∀ a b, α * J a b ∈ O) (hJ' : ∀ a b, α * J⁻¹ a b ∈ O) :
     GramSize J where
   ofSize i := {x | α ^ i * x ∈ O}
   mul_mem' {i j x y} hx hy := by
@@ -371,7 +371,7 @@ def ofSubring (O : Subring A) (hO : ∀ x ∈ O, star x ∈ O) (α : A) (hα : �
   neg_mem_iff' := by simp
   star_mem_iff' {i x} := by
     have key (y : A) : star (α ^ i * y) = α ^ i * star y := by
-      rw [star_mul, star_pow, hα', mul_comm]
+      rw [star_mul, star_pow, hα'.star_eq, mul_comm]
     simp only [Set.mem_ofPred_eq]
     refine ⟨fun h => ?_, fun h => ?_⟩
     · have := hO _ h
@@ -385,7 +385,7 @@ def ofSubring (O : Subring A) (hO : ∀ x ∈ O, star x ∈ O) (α : A) (hα : �
 
 @[simp]
 theorem mem_ofSubring_ofSize {O : Subring A} {hO : ∀ x ∈ O, star x ∈ O} {α : A} {hα : α ∈ O}
-    {hα' : star α = α} {hJ : ∀ a b, α * J a b ∈ O} {hJ' : ∀ a b, α * J⁻¹ a b ∈ O} {i : ℕ}
+    {hα' : IsSelfAdjoint α} {hJ : ∀ a b, α * J a b ∈ O} {hJ' : ∀ a b, α * J⁻¹ a b ∈ O} {i : ℕ}
     {x : A} : x ∈ (ofSubring O hO α hα hα' hJ hJ').ofSize i ↔ α ^ i * x ∈ O :=
   Iff.rfl
 

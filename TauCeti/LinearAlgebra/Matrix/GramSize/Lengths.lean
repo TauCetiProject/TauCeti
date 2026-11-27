@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.LinearAlgebra.Matrix.GramSize.Basic
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Star.SelfAdjoint
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
@@ -46,8 +47,9 @@ Hermitian form, for a self-adjoint unit `ρ` of size `1`:
   induced length at most `L ^ c` at `g` and at `g'`, `e_a` has a short dual of exponent `c`, and
   the lengths differ by at most `L ^ t` on `Y^(a + 1)`, then they differ by at most
   `L ^ (t + 4c + 12)` on `Y^(a)` (`TauCeti.GramSize.LengthsDifferLe.of_succ`);
-* by induction, if `e_0, …, e_(j-1)` are pairwise orthogonal, the hypotheses on `e_a` hold for
-  every `a < j`, and the lengths differ by at most `L ^ t` on `Y^(j)`, then they differ by at most
+* by induction, if `⟨e_b, e_b'⟩ = 0` for all `b, b' < j` (the `e_b`, `b < j`, span a totally
+  isotropic subspace), the hypotheses on the class and the dual of `e_a` hold for every
+  `a < j`, and the lengths differ by at most `L ^ t` on `Y^(j)`, then they differ by at most
   `L ^ (t + (4c + 12) j)` on the whole space `Y^(0)`
   (`TauCeti.GramSize.LengthsDifferLe.zero_of_hasShortDual`).
 
@@ -156,24 +158,55 @@ theorem hasShortDual_iff {e : ℕ → ι → A} {a : ℕ} {ρ : Aˣ} {g g' : GL 
       star (e a) ⬝ᵥ J *ᵥ ζ = 1 ∧ S.LengthLeAt g c ζ ∧ S.AgreesWithLift e a ρ g g' c ζ :=
   Iff.rfl
 
+/-! ### Raising the exponents -/
+
+/-- A vector of length at most `L ^ i` at `g` has length at most `L ^ j` there for `i ≤ j`. -/
+theorem LengthLeAt.mono {g : GL ι A} {i j : ℕ} {y : ι → A} (h : S.LengthLeAt g i y)
+    (hij : i ≤ j) : S.LengthLeAt g j y :=
+  S.mem_vecsOfSize_of_le h hij
+
+/-- A vector of length at most `L ^ i` at `g` has a class of induced length at most `L ^ i`. -/
+theorem LengthLeAt.inducedLengthLe {e : ℕ → ι → A} {l : ℕ} {g : GL ι A} {i : ℕ} {y : ι → A}
+    (h : S.LengthLeAt g i y) : S.InducedLengthLe e l g i y :=
+  ⟨y, by simp, h⟩
+
+/-- Induced lengths increase with the exponent. -/
+theorem InducedLengthLe.mono {e : ℕ → ι → A} {l : ℕ} {g : GL ι A} {i j : ℕ} {y : ι → A}
+    (h : S.InducedLengthLe e l g i y) (hij : i ≤ j) : S.InducedLengthLe e l g j y :=
+  let ⟨y', hy', hy'g⟩ := h
+  ⟨y', hy', hy'g.mono hij⟩
+
+/-- Agreement with a lift up to size `i` implies agreement up to every size `j ≥ i`. -/
+theorem AgreesWithLift.mono {e : ℕ → ι → A} {l : ℕ} {ρ : Aˣ} {g g' : GL ι A} {i j : ℕ}
+    {ω : ι → A} (h : S.AgreesWithLift e l ρ g g' i ω) (hij : i ≤ j) :
+    S.AgreesWithLift e l ρ g g' j ω :=
+  let ⟨ω', hω', hD⟩ := h
+  ⟨ω', hω', S.mem_vecsOfSize_of_le hD hij⟩
+
+/-- Lengths differing by at most `L ^ t` differ by at most `L ^ t'` for `t ≤ t'`. -/
+theorem LengthsDifferLe.mono {e : ℕ → ι → A} {l : ℕ} {ρ : Aˣ} {g g' : GL ι A} {t t' : ℕ}
+    (h : S.LengthsDifferLe e l ρ g g' t) (htt' : t ≤ t') : S.LengthsDifferLe e l ρ g g' t' :=
+  fun i ω hω hωg => (h i ω hω hωg).mono (by omega)
+
+/-- A short dual of exponent `c` is a short dual of every exponent `c' ≥ c`. -/
+theorem HasShortDual.mono {e : ℕ → ι → A} {a : ℕ} {ρ : Aˣ} {g g' : GL ι A} {c c' : ℕ}
+    (h : S.HasShortDual e a ρ g g' c) (hcc' : c ≤ c') : S.HasShortDual e a ρ g g' c' :=
+  let ⟨ζ, hζ, hζa, hζg, hD⟩ := h
+  ⟨ζ, hζ, hζa, hζg.mono hcc', hD.mono hcc'⟩
+
 /-! ### Elementary facts about the form -/
 
 section Form
 
-/-- The inverse of a self-adjoint unit is self-adjoint. -/
-private theorem star_val_inv_eq {ρ : Aˣ} (hρ : star (ρ : A) = ρ) :
-    star ((ρ⁻¹ : Aˣ) : A) = ((ρ⁻¹ : Aˣ) : A) := by
-  rw [← Units.coe_star_inv, show star ρ = ρ from Units.ext hρ]
-
 omit [DecidableEq ι] in
 /-- The difference of two values of the form at nearby vectors: with `D₁ = (u - u') / ρ` and
 `D₂ = (v - v') / ρ`, `⟨u, v⟩ - ⟨u', v'⟩ = ρ (⟨D₁, v⟩ + ⟨u', D₂⟩)` for self-adjoint `ρ`. -/
-private theorem star_dotProduct_mulVec_sub_eq {ρ : Aˣ} (hρ : star (ρ : A) = ρ)
+private theorem star_dotProduct_mulVec_sub_eq {ρ : Aˣ} (hρ : IsSelfAdjoint (ρ : A))
     (u u' v v' : ι → A) :
     star u ⬝ᵥ J *ᵥ v - star u' ⬝ᵥ J *ᵥ v' =
       ρ * (star (((ρ⁻¹ : Aˣ) : A) • (u - u')) ⬝ᵥ J *ᵥ v +
         star u' ⬝ᵥ J *ᵥ (((ρ⁻¹ : Aˣ) : A) • (v - v'))) := by
-  have hρ' := star_val_inv_eq hρ
+  have hρ' := (hρ.of_mul_eq_one (Units.mul_inv ρ)).star_eq
   have h1 : (ρ : A) * ((ρ⁻¹ : Aˣ) : A) = 1 := Units.mul_inv ρ
   simp only [star_smul, hρ', star_sub, mulVec_smul, mulVec_sub, smul_dotProduct, dotProduct_smul,
     sub_dotProduct, dotProduct_sub, smul_eq_mul]
@@ -213,7 +246,7 @@ private theorem star_dotProduct_mulVec_sub_smul_eq_zero {a : ℕ} {ω ζ : ι �
 and a lift `ω₀'` of its class, divided by `ρ`, is small. It is read off by a short dual `ζ` of
 `e_a`, as a difference of two values of the form, at `g` and at `g'`. -/
 private theorem inv_mul_mem_of_add_eq_sub [Nonempty ι] (hJ : J.IsHermitian)
-    (hg : g ∈ unitaryGroupOf J) (hg' : g' ∈ unitaryGroupOf J) (hρ : star (ρ : A) = ρ)
+    (hg : g ∈ unitaryGroupOf J) (hg' : g' ∈ unitaryGroupOf J) (hρ : IsSelfAdjoint (ρ : A))
     (hρS : (ρ : A) ∈ S.ofSize 1) {a c i t : ℕ}
     (he : ∀ b < a, ∀ b' ≤ a, star (e b) ⬝ᵥ J *ᵥ e b' = 0) {ζ ζ' ω₀ ω₀' s : ι → A} {μ : A}
     (hζ : ∀ b < a, star (e b) ⬝ᵥ J *ᵥ ζ = 0) (hζa : star (e a) ⬝ᵥ J *ᵥ ζ = 1)
@@ -248,12 +281,17 @@ private theorem inv_mul_mem_of_add_eq_sub [Nonempty ι] (hJ : J.IsHermitian)
     rwa [mulVec_sub, dotProduct_sub, hω₀ b (by omega), zero_sub, neg_eq_zero] at h0
   have hζζ'ω₀' : star ζ ⬝ᵥ J *ᵥ ω₀' = star ζ' ⬝ᵥ J *ᵥ ω₀' :=
     star_dotProduct_mulVec_eq_of_sub_mem_span (by rintro _ ⟨b, hb, rfl⟩; exact hω₀' b hb) hζζ'
-  rw [hμ, hζζ'ω₀', ← mem_unitaryGroupOf_iff_forall_dotProduct.mp (inv_mem hg) ζ ω₀,
-    ← mem_unitaryGroupOf_iff_forall_dotProduct.mp (inv_mem hg') ζ' ω₀',
-    star_dotProduct_mulVec_sub_eq hρ, ← mul_assoc, Units.inv_mul, one_mul]
+  -- Read at `g⁻¹` and `g'⁻¹`, which preserve the form, `μ` is a difference of two nearby values.
+  have hμ' : μ = star (((g⁻¹ : GL ι A) : Matrix ι ι A) *ᵥ ζ) ⬝ᵥ
+      J *ᵥ (((g⁻¹ : GL ι A) : Matrix ι ι A) *ᵥ ω₀) -
+      star (((g'⁻¹ : GL ι A) : Matrix ι ι A) *ᵥ ζ') ⬝ᵥ
+        J *ᵥ (((g'⁻¹ : GL ι A) : Matrix ι ι A) *ᵥ ω₀') := by
+    rw [hμ, hζζ'ω₀', mem_unitaryGroupOf_iff_forall_dotProduct.mp (inv_mem hg) ζ ω₀,
+      mem_unitaryGroupOf_iff_forall_dotProduct.mp (inv_mem hg') ζ' ω₀']
+  rw [hμ', star_dotProduct_mulVec_sub_eq hρ, Units.inv_mul_cancel_left]
   -- `g'⁻¹ ζ' = g⁻¹ ζ - ρ D₁` has size `c + 2`.
   have hu' : ((g'⁻¹ : GL ι A) : Matrix ι ι A) *ᵥ ζ' ∈ S.vecsOfSize (c + 2) := by
-    have h := S.sub_mem_vecsOfSize (S.mem_vecsOfSize_of_le hζg (by omega : c ≤ 1 + c))
+    have h := S.sub_mem_vecsOfSize (hζg.mono (by omega : c ≤ 1 + c))
       (S.smul_mem_vecsOfSize hρS hD₁)
     rw [smul_smul, Units.mul_inv, one_smul, sub_sub_cancel] at h
     exact S.mem_vecsOfSize_of_le h (by omega)
@@ -268,7 +306,7 @@ induced length at most `L ^ c` at `g` and at `g'`, `e_a` has a short dual of exp
 `(g, g')` modulo `ρ`, and the lengths at `g` and `g'` differ by at most `L ^ t` on `Y^(a + 1)`
 modulo `ρ`, then they differ by at most `L ^ (t + 4c + 12)` on `Y^(a)` modulo `ρ`. -/
 theorem LengthsDifferLe.of_succ (hJ : J.IsHermitian) (hg : g ∈ unitaryGroupOf J)
-    (hg' : g' ∈ unitaryGroupOf J) (hρ : star (ρ : A) = ρ) (hρS : (ρ : A) ∈ S.ofSize 1)
+    (hg' : g' ∈ unitaryGroupOf J) (hρ : IsSelfAdjoint (ρ : A)) (hρS : (ρ : A) ∈ S.ofSize 1)
     {a c t : ℕ} (he : ∀ b < a, ∀ b' ≤ a, star (e b) ⬝ᵥ J *ᵥ e b' = 0)
     (h₁ : S.InducedLengthLe e a g c (e a)) (h₂ : S.InducedLengthLe e a g' c (e a))
     (hd : S.HasShortDual e a ρ g g' c) (ht : S.LengthsDifferLe e (a + 1) ρ g g' t) :
@@ -284,7 +322,7 @@ theorem LengthsDifferLe.of_succ (hJ : J.IsHermitian) (hg : g ∈ unitaryGroupOf 
     star_dotProduct_mulVec_mem_of_inducedLengthLe hg h₁ hω hωg
   set ω₀ := ω - lam • ζ with hω₀
   have hω₀g : S.LengthLeAt g (i + 2 * c + 4) ω₀ := by
-    have h := S.sub_mem_vecsOfSize (S.mem_vecsOfSize_of_le hωg (by omega : i ≤ c + i + 3 + c))
+    have h := S.sub_mem_vecsOfSize (hωg.mono (by omega : i ≤ c + i + 3 + c))
       (S.smul_mem_vecsOfSize hlam hζg)
     simpa only [LengthLeAt, hω₀, mulVec_sub, mulVec_smul,
       show c + i + 3 + c + 1 = i + 2 * c + 4 by omega] using h
@@ -292,7 +330,7 @@ theorem LengthsDifferLe.of_succ (hJ : J.IsHermitian) (hg : g ∈ unitaryGroupOf 
   have hω₀orth := star_dotProduct_mulVec_sub_smul_eq_zero hω hζ hζa
   obtain ⟨ω₀', hω₀ω₀', hD₂⟩ := ht (i + 2 * c + 4) ω₀ hω₀orth hω₀g
   have hIio : e '' Set.Iio (a + 1) = insert (e a) (e '' Set.Iio a) := by
-    rw [← Set.image_insert_eq, ← Order.Iio_succ_eq_insert, Nat.succ_eq_succ]
+    rw [← Set.image_insert_eq, ← Order.succ_eq_add_one, Order.Iio_succ_eq_insert]
   rw [hIio, Submodule.span_insert, Submodule.mem_sup] at hω₀ω₀'
   obtain ⟨y, hy, s, hs, hys⟩ := hω₀ω₀'
   obtain ⟨μ, rfl⟩ := Submodule.mem_span_singleton.mp hy
@@ -320,12 +358,15 @@ theorem LengthsDifferLe.of_succ (hJ : J.IsHermitian) (hg : g ∈ unitaryGroupOf 
     exact S.mem_vecsOfSize_of_le (S.add_mem_vecsOfSize hsub
       (S.mem_vecsOfSize_of_le (S.smul_mem_vecsOfSize hlam hD₁) (by omega))) (by omega)
 
-/-- **The comparison of the lengths on the whole space.** Under the hypotheses of
-`TauCeti.GramSize.LengthsDifferLe.of_succ` for every `a < j`, if the lengths at `g` and `g'`
-differ by at most `L ^ t` on `Y^(j)` modulo `ρ`, then they differ by at most
-`L ^ (t + (4c + 12) j)` on the whole space `Y^(0)` modulo `ρ`. -/
+/-- **The comparison of the lengths on the whole space.** Let `g` and `g'` lie in the unitary
+group of a Hermitian Gram matrix `J`, let `ρ` be a self-adjoint unit of size `1`, and let
+`⟨e_b, e_b'⟩ = 0` for all `b, b' < j` (each `e_b` is isotropic as well as orthogonal to the
+others). If, for every `a < j`, the class of `e_a` in `Y^(a)` has induced length at most `L ^ c`
+at `g` and at `g'` and `e_a` has a short dual of exponent `c` for `(g, g')` modulo `ρ`, and the
+lengths at `g` and `g'` differ by at most `L ^ t` on `Y^(j)` modulo `ρ`, then they differ by at
+most `L ^ (t + (4c + 12) j)` on the whole space `Y^(0)` modulo `ρ`. -/
 theorem LengthsDifferLe.zero_of_hasShortDual (hJ : J.IsHermitian) (hg : g ∈ unitaryGroupOf J)
-    (hg' : g' ∈ unitaryGroupOf J) (hρ : star (ρ : A) = ρ) (hρS : (ρ : A) ∈ S.ofSize 1)
+    (hg' : g' ∈ unitaryGroupOf J) (hρ : IsSelfAdjoint (ρ : A)) (hρS : (ρ : A) ∈ S.ofSize 1)
     {j c t : ℕ} (he : ∀ b < j, ∀ b' < j, star (e b) ⬝ᵥ J *ᵥ e b' = 0)
     (h : ∀ a < j, S.InducedLengthLe e a g c (e a) ∧ S.InducedLengthLe e a g' c (e a) ∧
       S.HasShortDual e a ρ g g' c)
@@ -345,7 +386,7 @@ theorem LengthsDifferLe.zero_of_hasShortDual (hJ : J.IsHermitian) (hg : g ∈ un
 invertible Gram matrix `J`, `ρ` is a self-adjoint unit, and the lengths at `g` and `g x` differ by
 at most `L ^ i` on the whole space `Y^(0)` modulo `ρ`, then `(x - 1) / ρ` has size `i + 4`. -/
 theorem LengthsDifferLe.smul_sub_one_mem_matsOfSize (hJ : IsUnit J) {x : GL ι A}
-    (hx : x ∈ unitaryGroupOf J) (hρ : star (ρ : A) = ρ) {i : ℕ}
+    (hx : x ∈ unitaryGroupOf J) (hρ : IsSelfAdjoint (ρ : A)) {i : ℕ}
     (h : S.LengthsDifferLe e 0 ρ g (g * x) i) :
     ((ρ⁻¹ : Aˣ) : A) • ((x : Matrix ι ι A) - 1) ∈ S.matsOfSize (i + 4) := by
   set r : A := ((ρ⁻¹ : Aˣ) : A) with hr
@@ -370,7 +411,7 @@ theorem LengthsDifferLe.smul_sub_one_mem_matsOfSize (hJ : IsUnit J) {x : GL ι A
   -- `x = J⁻¹ * star x⁻¹ * J`, so that `(x - 1) / ρ = -(J⁻¹ * Mᴴ * J)`.
   have hxJ : (x : Matrix ι ι A) = J⁻¹ * star ((x⁻¹ : GL ι A) : Matrix ι ι A) * J := by
     rw [← val_inv_of_mem_unitaryGroupOf hJ (inv_mem hx), inv_inv]
-  have hρ' : star r = r := star_val_inv_eq hρ
+  have hρ' : star r = r := (hρ.of_mul_eq_one (Units.mul_inv ρ)).star_eq
   have hJJ : J⁻¹ * J = 1 := nonsing_inv_mul J ((isUnit_iff_isUnit_det J).mp hJ)
   have hkey : r • ((x : Matrix ι ι A) - 1) = -(J⁻¹ * Mᴴ * J) := by
     rw [hxJ]
