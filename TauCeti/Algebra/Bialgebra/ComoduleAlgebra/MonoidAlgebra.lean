@@ -45,7 +45,7 @@ open Comodule
 
 section Monoid
 
-variable {R G A : Type*} [CommSemiring R] [Monoid G] [CommSemiring A] [Algebra R A]
+variable {R G A : Type*} [CommSemiring R] [Monoid G] [Semiring A] [Algebra R A]
   [ComoduleAlgebra R (MonoidAlgebra R G) A]
 
 local notation "W" => weightSpace R G A
@@ -53,8 +53,8 @@ local notation "W" => weightSpace R G A
 /-- A product of homogeneous elements has the product character. -/
 theorem mul_mem_weightSpace {g h : G} {a b : A} (ha : a ∈ W g) (hb : b ∈ W h) :
     a * b ∈ W (g * h) := by
-  rw [mem_weightSpace, coact_mul, mem_weightSpace.mp ha, mem_weightSpace.mp hb,
-    Algebra.TensorProduct.tmul_mul_tmul, MonoidAlgebra.single_mul_single, one_mul]
+  simp [mem_weightSpace, mem_weightSpace.mp ha, mem_weightSpace.mp hb,
+    MonoidAlgebra.single_mul_single]
 
 /-- The trivial weight space is the underlying submodule of the coinvariant algebra. -/
 theorem weightSpace_one_eq_coinvariants :
@@ -103,9 +103,9 @@ theorem coe_decompose_weightSpace [DecidableEq G] (a : A) (g : Additive G) :
 
 end Monoid
 
-section Group
+section StrongGrading
 
-variable {R G A : Type*} [CommSemiring R] [Group G] [CommSemiring A] [Algebra R A]
+variable {R G A : Type*} [CommSemiring R] [Group G] [Semiring A] [Algebra R A]
   [ComoduleAlgebra R (MonoidAlgebra R G) A]
 
 local notation "W" => weightSpace R G A
@@ -119,6 +119,47 @@ theorem weightProj_mul_right_of_mem_weightSpace {h : G} {b : A} (hb : b ∈ W h)
   simpa only [coe_decompose_weightSpace, toMul_add, toMul_ofMul] using
     (DirectSum.coe_decompose_mul_add_of_right_mem (fun i : Additive G ↦ W i.toMul)
       (i := Additive.ofMul g) (j := Additive.ofMul h) (a := a) hb)
+
+/-- If opposite weight submodules multiply to the scalar submodule, multiplication is strong:
+the product spans the entire submodule of the product weight. -/
+theorem weightSpace_mul_eq (g h : G) (hInv : W h⁻¹ * W h = 1) : W g * W h = W (g * h) := by
+  refine le_antisymm (weightSpace_mul_le g h) ?_
+  calc
+    W (g * h) = W (g * h) * (W h⁻¹ * W h) := by rw [hInv, mul_one]
+    _ = (W (g * h) * W h⁻¹) * W h := by rw [mul_assoc]
+    _ ≤ W g * W h := by
+      gcongr
+      simpa [mul_assoc] using (weightSpace_mul_le (R := R) (A := A) (g * h) h⁻¹)
+
+/-- In a strong grading the weights form a homomorphism to the group of invertible submodules
+of the coordinate algebra. -/
+noncomputable def weightSpaceUnits (hInv : ∀ g : G, W g⁻¹ * W g = 1) :
+    G →* (Submodule R A)ˣ :=
+  MonoidHom.mk' (fun g ↦ ⟨W g, W g⁻¹, by simpa only [inv_inv] using hInv g⁻¹, hInv g⟩)
+    fun g h ↦ Units.ext (weightSpace_mul_eq g h (hInv h)).symm
+
+variable (hInv : ∀ g : G, weightSpace R G A g⁻¹ * weightSpace R G A g = 1)
+
+/-- The underlying submodule attached to a character is its original weight submodule. -/
+@[simp]
+theorem coe_weightSpaceUnits (g : G) : (weightSpaceUnits hInv g : Submodule R A) = W g :=
+  (rfl)
+
+/-- The inverse character unit has the opposite weight as its underlying submodule. -/
+@[simp]
+theorem coe_inv_weightSpaceUnits (g : G) :
+    (((weightSpaceUnits hInv g)⁻¹ : (Submodule R A)ˣ) : Submodule R A) = W g⁻¹ := by
+  rfl
+
+end StrongGrading
+
+section Group
+
+variable {R G A : Type*} [CommSemiring R] [Group G] [CommSemiring A] [Algebra R A]
+  [ComoduleAlgebra R (MonoidAlgebra R G) A]
+
+local notation "W" => weightSpace R G A
+local notation "P" => weightProj R G A
 
 /-- Surjectivity of the Galois map forces a finite sum of products of opposite-weight elements
 to be equal to one. -/
@@ -135,8 +176,12 @@ theorem one_mem_weightSpace_inv_mul_of_surjective_galoisMap
       have hcoeff : coeff (β (a ⊗ₜ[R] b)) = a * P g b := by
         have hone : β ((1 : A) ⊗ₜ[R] b) = coact (R := R) (C := MonoidAlgebra R G) b := by
           rw [galoisMap_tmul, ← Algebra.TensorProduct.one_def, one_mul]
-        rw [TensorProduct.tmul_eq_smul_one_tmul, map_smul, map_smul, hone,
-          ← LinearMap.tensorComponent_eq_liftBaseChange, ← weightProj_apply, smul_eq_mul]
+        calc
+          coeff (β (a ⊗ₜ[R] b)) = a * coeff (coact (R := R) (C := MonoidAlgebra R G) b) := by
+            rw [TensorProduct.tmul_eq_smul_one_tmul]
+            simp only [map_smul, hone, smul_eq_mul]
+          _ = a * P g b := by
+            rw [weightProj_apply, LinearMap.tensorComponent_eq_liftBaseChange]
       rw [hcoeff]
       have hb := weightProj_mem_weightSpace (R := R) (G := G) g b
       have he := weightProj_mul_right_of_mem_weightSpace hb g⁻¹ a
@@ -160,37 +205,6 @@ theorem weightSpace_inv_mul_eq_one_of_surjective_galoisMap (h₁ : W 1 = 1)
     (one_mem_weightSpace_inv_mul_of_surjective_galoisMap hsurj g))
   simpa only [inv_mul_cancel, h₁] using (weightSpace_mul_le (R := R) (A := A) g⁻¹ g)
 
-/-- If opposite weight submodules multiply to the scalar submodule, multiplication is strong:
-the product spans the entire submodule of the product weight. -/
-theorem weightSpace_mul_eq (g h : G) (hInv : W h⁻¹ * W h = 1) : W g * W h = W (g * h) := by
-  refine le_antisymm (weightSpace_mul_le g h) ?_
-  calc
-    W (g * h) = W (g * h) * (W h⁻¹ * W h) := by rw [hInv, mul_one]
-    _ = (W (g * h) * W h⁻¹) * W h := by rw [mul_assoc]
-    _ ≤ W g * W h := by
-      gcongr
-      simpa [mul_assoc] using (weightSpace_mul_le (R := R) (A := A) (g * h) h⁻¹)
-
-/-- In a strong grading the weights form a homomorphism to the group of invertible submodules
-of the coordinate algebra. -/
-noncomputable def weightSpaceUnits (hInv : ∀ g : G, W g⁻¹ * W g = 1) :
-    G →* (Submodule R A)ˣ :=
-  MonoidHom.mk' (fun g ↦ (Units.mkOfMulEqOne (W g⁻¹) (W g) (hInv g))⁻¹)
-    fun g h ↦ Units.ext (weightSpace_mul_eq g h (hInv h)).symm
-
-variable (hInv : ∀ g : G, weightSpace R G A g⁻¹ * weightSpace R G A g = 1)
-
-/-- The underlying submodule attached to a character is its original weight submodule. -/
-@[simp]
-theorem coe_weightSpaceUnits (g : G) : (weightSpaceUnits hInv g : Submodule R A) = W g :=
-  (rfl)
-
-/-- The inverse character unit has the opposite weight as its underlying submodule. -/
-@[simp]
-theorem coe_inv_weightSpaceUnits (g : G) :
-    (((weightSpaceUnits hInv g)⁻¹ : (Submodule R A)ˣ) : Submodule R A) = W g⁻¹ := by
-  rfl
-
 variable [FaithfulSMul R A]
 
 /-- A weight space whose product with its opposite is the scalar submodule is an invertible
@@ -202,14 +216,17 @@ theorem invertible_weightSpace (g : G) (h : W g⁻¹ * W g = 1) : Module.Inverti
 
 /-- Multiplication identifies the tensor product of two character lines with the character line
 of the product weight. -/
-noncomputable def weightSpaceMulEquiv (g h : G) : W g ⊗[R] W h ≃ₗ[R] W (g * h) :=
+noncomputable def weightSpaceMulEquiv (hInv : ∀ g : G, W g⁻¹ * W g = 1) (g h : G) :
+    W g ⊗[R] W h ≃ₗ[R] W (g * h) :=
   (Submodule.tensorEquivMul (weightSpaceUnits hInv g) (weightSpaceUnits hInv h)).trans
     (LinearEquiv.ofEq _ _ (weightSpace_mul_eq g h (hInv h)))
 
 /-- The multiplication equivalence takes pure tensors to the product in the coordinate ring. -/
 @[simp]
-theorem coe_weightSpaceMulEquiv_tmul {g h : G} (a : W g) (b : W h) :
+theorem coe_weightSpaceMulEquiv_tmul (hInv : ∀ g : G, W g⁻¹ * W g = 1) {g h : G}
+    (a : W g) (b : W h) :
     (weightSpaceMulEquiv hInv g h (a ⊗ₜ[R] b) : A) = (a : A) * (b : A) :=
+  -- Mathlib constructs `tensorEquivMul` with `Submodule.mulMap'` as its forward map.
   (rfl)
 
 /-- Multiplication trivializes a character line over the coordinate algebra itself. -/
@@ -226,7 +243,8 @@ noncomputable def weightSpaceBaseChangeEquiv (g : G) (h : W g⁻¹ * W g = 1) :
     exact Submodule.top_mul_eq_top_of_mul_eq_one h
   have hcomp : Function.Surjective (m ∘ e) := by
     rw [← hm] at hs
-    exact hs
+    simpa only [LinearMap.coe_comp, LinearMap.coe_restrictScalars,
+      LinearEquiv.coe_toLinearMap] using hs
   exact hcomp.of_comp
 
 /-- The trivialization is multiplication on pure tensors. -/
@@ -268,9 +286,11 @@ theorem bijective_galoisMap_of_weightSpace_inv_mul_eq_one
         Finsupp.single g x := by
       rw [← tensorCoeffEquiv_symm_single, LinearEquiv.apply_symm_apply]
     simp [he, hβ, hf, f, m, DirectSum.congrLinearEquiv_toLinearMap]
+  have hfun : f ∘ β ∘ e = ⇑(DirectSum.congrLinearEquiv m) := by
+    simpa only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, LinearEquiv.coe_toLinearMap,
+      AlgHom.coe_toLinearMap] using congrArg DFunLike.coe h
   have hb : Function.Bijective (f ∘ β ∘ e) :=
-    (funext (DFunLike.congr_fun h) : (f ∘ β ∘ e) = DirectSum.congrLinearEquiv m) ▸
-      (DirectSum.congrLinearEquiv m).bijective
+    hfun ▸ (DirectSum.congrLinearEquiv m).bijective
   exact (f.bijective.of_comp_iff' β).1 ((Function.Bijective.of_comp_iff (f ∘ β) e.bijective).1 hb)
 
 end Group
@@ -288,8 +308,8 @@ theorem weightSpace_one_eq_one_of_injective_galoisMap [Module.FaithfullyFlat R A
     (hinj : Function.Injective (galoisMap R
       (fun r ↦ (coinvariants R (MonoidAlgebra R G) A).algebraMap_mem r))) : W 1 = 1 := by
   rw [weightSpace_one_eq_coinvariants, coinvariants_eq_range _ hinj]
-  change (Algebra.ofId R A).range.toSubmodule = 1
-  rw [Algebra.range_ofId, Algebra.toSubmodule_bot]
+  ext a
+  simp [Submodule.mem_one]
 
 /-- If opposite weight spaces in a faithful algebra multiply to the scalar submodule, the
 coordinate algebra is faithfully flat. -/
@@ -302,7 +322,9 @@ theorem faithfullyFlat_of_weightSpace_inv_mul_eq_one [FaithfulSMul R A]
   let (g : G) : Module.Flat R (W g) := inferInstance
   rw [Module.FaithfullyFlat.iff_flat_and_lTensor_faithful]
   refine ⟨Module.Flat.of_linearEquiv fromWeights.symm, fun N _ _ hN ↦ ?_⟩
-  have h₁ : W (1 : G) = 1 := congrArg Units.val (map_one (weightSpaceUnits hInv))
+  have h₁ : W (1 : G) = 1 := by
+    simpa only [coe_weightSpaceUnits, Units.val_one] using
+      congrArg Units.val (map_one (weightSpaceUnits hInv))
   let base : W (1 : G) ≃ₗ[R] R :=
     (LinearEquiv.ofEq _ _ (h₁.trans Submodule.one_eq_range)).trans
       (LinearEquiv.ofInjective (Algebra.linearMap R A) (FaithfulSMul.algebraMap_injective R A)).symm
