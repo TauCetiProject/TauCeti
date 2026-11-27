@@ -57,18 +57,17 @@ This file promotes that descended equation to a **model** of `X` over `K`
 
 ## Main results
 
-* `TauCeti.AlgebraicBelyiPair.exists_generator_fieldRange_modelOverPointedFieldOfModuli`,
-  `TauCeti.AlgebraicBelyiPair.nonempty_model_pointedFieldOfModuli`, and
-  `TauCeti.AlgebraicBelyiPair.isDefinedOver_pointedFieldOfModuli`: existence and generator
+* `TauCeti.AlgebraicBelyiPair.exists_generator_fieldRange_modelOverPointedFieldOfModuli` and
+  `TauCeti.AlgebraicBelyiPair.nonempty_model_pointedFieldOfModuli`: existence and generator
   properties of the model over the pointed field of moduli.
 * `TauCeti.AlgebraicBelyiPair.exists_relfinrank_le_finrank_and_nonempty_model` and
   `TauCeti.AlgebraicBelyiPair.IsoClass.exists_finrank_le_degree_and_isDefinedOver`: **Köck's
   Theorem 2.2(a)**, every Belyi pair over an algebraically closed field of characteristic zero is
   defined over a finite extension of its field of moduli of degree at most the Belyi degree.
-* `TauCeti.AlgebraicBelyiPair.nonempty_model_fieldOfModuli_of_isGalois` and
-  `TauCeti.AlgebraicBelyiPair.IsoClass.isDefinedOver_fieldOfModuli_of_isGalois`: **Köck's
+* `TauCeti.AlgebraicBelyiPair.nonempty_model_fieldOfModuli_of_isGalois_of_degree_eq_one` and
+  `TauCeti.AlgebraicBelyiPair.nonempty_model_fieldOfModuli_of_isGalois`: **Köck's
   Theorem 2.2(b)**, every Galois Belyi pair over an algebraically closed field of characteristic
-  zero is defined over its field of moduli.
+  zero has a model over its field of moduli.
 
 ## References
 
@@ -159,15 +158,6 @@ theorem nonempty_model_pointedFieldOfModuli {P : Place k X} {q : ℚ}
     (hP : P.degree = 1) : Nonempty (Model (X.pointedFieldOfModuli P) X) :=
   ⟨X.modelOverPointedFieldOfModuli hq₀ hq₁ hPa hP⟩
 
-/-- The isomorphism class of a pair admitting a degree-one place over a finite point `t = q` with
-`q : ℚ` and `q ≠ 0, 1` is defined over its pointed field of moduli at that place. -/
-theorem isDefinedOver_pointedFieldOfModuli {P : Place k X} {q : ℚ}
-    (hq₀ : (q : k) ≠ 0) (hq₁ : (q : k) ≠ 1)
-    (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
-    (hP : P.degree = 1) :
-    (IsoClass.mk X).IsDefinedOver (X.pointedFieldOfModuli P) :=
-  IsoClass.isDefinedOver_mk_iff.mpr (X.nonempty_model_pointedFieldOfModuli hq₀ hq₁ hPa hP)
-
 end PointedModel
 
 /-! ### Köck's Theorem 2.2(a): descent to a bounded extension of the field of moduli -/
@@ -249,13 +239,6 @@ theorem nonempty_model_fieldOfModuli_of_isGalois [IsAlgClosed k] :
   (exists_place_over_two_and_degree_eq_one X).elim fun P ⟨hPa, hP⟩ ↦
   nonempty_model_fieldOfModuli_of_isGalois_of_degree_eq_one
     X (q := 2) (by norm_num) (by norm_num) hPa hP
-
-/-- **Köck's Theorem 2.2(b)**: over an algebraically closed field `k` of characteristic zero, the
-isomorphism class of every Galois algebraic Belyi pair is defined over its field of moduli. -/
-theorem _root_.TauCeti.AlgebraicBelyiPair.IsoClass.isDefinedOver_fieldOfModuli_of_isGalois
-    [IsAlgClosed k] :
-    (IsoClass.mk X).IsDefinedOver (IsoClass.mk X).fieldOfModuli :=
-  IsoClass.isDefinedOver_mk_iff.mpr X.nonempty_model_fieldOfModuli_of_isGalois
 
 end Galois
 

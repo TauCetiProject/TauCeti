@@ -146,7 +146,7 @@ namespace Model
 
 variable {X X' : AlgebraicBelyiPair k}
 
-attribute [simp] embedding_algebraMap embedding_algebraMap_X
+attribute [simp] embedding_algebraMap
 
 variable (X) in
 /-- Every algebraic Belyi pair is a model of itself over its own field of constants. -/
@@ -196,6 +196,23 @@ noncomputable def congrConstants {K₀ K₁ : Type v} [Field K₀] [CharZero K�
       (conjRingEquiv e M.pair).symm.surjective.range_eq, Set.image_univ, M.adjoin_range_embedding]
 
 variable (M : Model K X)
+
+/-- The embedding of a model acts on `K(t)` by applying `K → k` to the coefficients. -/
+@[simp]
+theorem embedding_algebraMap_ratFunc (r : RatFunc K) :
+    M.embedding (algebraMap (RatFunc K) M.pair r) =
+      algebraMap (RatFunc k) X (ratFuncMapRingHom K k r) := by
+  have h : (M.embedding.comp (algebraMap (RatFunc K) M.pair)).comp
+      (algebraMap (Polynomial K) (RatFunc K)) =
+      ((algebraMap (RatFunc k) X).comp (ratFuncMapRingHom K k)).comp
+      (algebraMap (Polynomial K) (RatFunc K)) := by
+    refine Polynomial.ringHom_ext (fun c ↦ ?_) ?_
+    · simp only [RingHom.comp_apply, RatFunc.algebraMap_C, ratFuncMapRingHom_C]
+      rw [← RatFunc.algebraMap_eq_C, ← RatFunc.algebraMap_eq_C,
+        ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply, M.embedding_algebraMap]
+    · simp only [RingHom.comp_apply, RatFunc.algebraMap_X, M.embedding_algebraMap_X,
+        ratFuncMapRingHom_X]
+  exact RingHom.congr_fun (IsFractionRing.injective_comp_algebraMap h) r
 
 /-- The `M.pair`-algebra structure on `X` induced by `M.embedding`. -/
 @[instance_reducible]
@@ -452,11 +469,6 @@ theorem baseChangeAut_algebraMap (c : k) :
 /-- The automorphism induced by `1` through a model is the identity. -/
 @[simp]
 theorem baseChangeAut_one : M.baseChangeAut 1 = RingEquiv.refl X :=
-  RingEquiv.toRingHom_injective <| M.ringHom_ext (fun y ↦ by simp) fun c ↦ by simp
-
-/-- Composition of model-induced automorphisms (in `RingEquiv.trans` order). -/
-theorem baseChangeAut_trans :
-    M.baseChangeAut (σ.trans τ) = (M.baseChangeAut σ).trans (M.baseChangeAut τ) :=
   RingEquiv.toRingHom_injective <| M.ringHom_ext (fun y ↦ by simp) fun c ↦ by simp
 
 /-- Multiplication of model-induced automorphisms in `Aut(k/K)` matches `RingAut X`

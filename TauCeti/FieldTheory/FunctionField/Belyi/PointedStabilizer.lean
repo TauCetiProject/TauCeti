@@ -402,25 +402,32 @@ variable (X)
 
 /-- Lift an ordinary `k(t)`-automorphism of `X` to a semilinear automorphism acting trivially on
 `k`. -/
-private noncomputable def ofAlgEquiv (σ : X ≃ₐ[RatFunc k] X) : semilinearAut X :=
-  ⟨(σ.toRingEquiv, 1), mem_semilinearAut_iff.mpr fun r ↦ by
+noncomputable def ofAlgEquiv : (X ≃ₐ[RatFunc k] X) →* semilinearAut X where
+  toFun σ := ⟨(σ.toRingEquiv, 1), mem_semilinearAut_iff.mpr fun r ↦ by
     rw [AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, AlgEquiv.toRingEquiv_one,
       RatFunc.mapRingEquiv_refl, RingEquiv.refl_apply]⟩
+  map_one' := Subtype.ext <| Prod.ext AlgEquiv.toRingEquiv_one rfl
+  map_mul' _ _ := Subtype.ext <| Prod.ext (RingEquiv.ext fun _ ↦ rfl) rfl
 
+/-- The first projection of `ofAlgEquiv X σ` is `σ` as a ring automorphism. -/
 @[simp]
-private theorem ofAlgEquiv_fst (σ : X ≃ₐ[RatFunc k] X) :
+theorem ofAlgEquiv_fst (σ : X ≃ₐ[RatFunc k] X) :
     ((ofAlgEquiv X σ : semilinearAut X) : RingAut X × (k ≃ₐ[ℚ] k)).1 = σ.toRingEquiv :=
-  rfl
+  (rfl)
 
-private theorem ofAlgEquiv_smul (σ : X ≃ₐ[RatFunc k] X) (Q : Place k X) :
+/-- The second projection of `ofAlgEquiv X σ` is trivial on `k`. -/
+@[simp]
+theorem ofAlgEquiv_snd (σ : X ≃ₐ[RatFunc k] X) :
+    ((ofAlgEquiv X σ : semilinearAut X) : RingAut X × (k ≃ₐ[ℚ] k)).2 = 1 :=
+  (rfl)
+
+/-- Lifting a `k(t)`-automorphism to `semilinearAut X` preserves the action on places. -/
+@[simp]
+theorem ofAlgEquiv_smul (σ : X ≃ₐ[RatFunc k] X) (Q : Place k X) :
     ofAlgEquiv X σ • Q = σ • Q :=
   Place.ext <| Valuation.ext fun z ↦ by
     rw [valuation_smul, Place.valuation_smul, ofAlgEquiv_fst, ← AlgEquiv.symm_toRingEquiv,
       AlgEquiv.coe_toRingEquiv]
-
-private theorem snd_ofAlgEquiv (σ : X ≃ₐ[RatFunc k] X) :
-    ((MonoidHom.snd _ _).comp (semilinearAut X).subtype) (ofAlgEquiv X σ) = 1 :=
-  rfl
 
 variable [IsGalois (RatFunc k) X]
 
@@ -436,8 +443,7 @@ theorem pointedStabilizer_eq_stabilizer_of_isGalois_of_forall_restrict_eq {P : P
   rw [pointedStabilizer_def, Subgroup.mem_map]
   refine ⟨ofAlgEquiv X σ * ⟨p, hp⟩, ?_, ?_⟩
   · rw [MulAction.mem_stabilizer_iff, mul_smul, ofAlgEquiv_smul, hσ]
-  · rw [map_mul, snd_ofAlgEquiv, one_mul]
-    exact hpg
+  · simpa using hpg
 
 /-- **For a Galois Belyi pair, the pointed stabilizer at any place over a finite point `t = q`
 with `q : ℚ` equals the full stabilizer of the isomorphism class.** -/
