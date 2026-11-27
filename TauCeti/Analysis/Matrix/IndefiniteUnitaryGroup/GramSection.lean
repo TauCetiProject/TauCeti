@@ -125,29 +125,6 @@ section Existence
 
 variable {A : Matrix n n ℂ}
 
-/-- The Hermitian part `(Y + Yᴴ) / 2` of a square matrix, as a real linear map onto the Hermitian
-matrices. -/
-private def hermPart : Matrix n n ℂ →ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix n n ℂ) where
-  toFun Y := ⟨(2⁻¹ : ℝ) • (Y + star Y),
-    (IsSelfAdjoint.all (2⁻¹ : ℝ)).smul (IsSelfAdjoint.add_star_self Y)⟩
-  map_add' Y Z := by
-    ext : 1
-    simp only [star_add, Submodule.coe_add, ← smul_add]
-    congr 1
-    abel
-  map_smul' c Y := by
-    ext : 1
-    simp [smul_add, smul_comm c]
-
-omit [Fintype n] [DecidableEq n] in
-private theorem coe_hermPart (Y : Matrix n n ℂ) :
-    (hermPart Y : Matrix n n ℂ) = (2⁻¹ : ℝ) • (Y + star Y) := rfl
-
-omit [Fintype n] [DecidableEq n] in
-private theorem coe_hermPart_of_isSelfAdjoint {Y : Matrix n n ℂ} (hY : IsSelfAdjoint Y) :
-    (hermPart Y : Matrix n n ℂ) = Y := by
-  rw [coe_hermPart, hY.star_eq, ← two_smul ℝ Y, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
-
 /-- The slice `X ↦ 1 + A⁻¹ X / 2` of square matrices through `1`, on which the Gram map has
 derivative the identity at `X = 0`. -/
 private def gramSlice (A : Matrix n n ℂ) (X : selfAdjoint.submodule ℝ (Matrix n n ℂ)) :
@@ -176,11 +153,11 @@ private theorem contDiff_gramSlice : ContDiff ℝ 1 (gramSlice A) := by
 /-- The Gram map of `A` on the slice `gramSlice A`, projected to the Hermitian matrices. -/
 private def gramOnSlice (A : Matrix n n ℂ) (X : selfAdjoint.submodule ℝ (Matrix n n ℂ)) :
     selfAdjoint.submodule ℝ (Matrix n n ℂ) :=
-  hermPart (star (gramSlice A X) * A * gramSlice A X)
+  selfAdjointPart ℝ (star (gramSlice A X) * A * gramSlice A X)
 
 private theorem coe_gramOnSlice (hA : A.IsHermitian) (X : selfAdjoint.submodule ℝ (Matrix n n ℂ)) :
     (gramOnSlice A X : Matrix n n ℂ) = (gramSlice A X)ᴴ * A * gramSlice A X := by
-  refine coe_hermPart_of_isSelfAdjoint ?_
+  refine IsSelfAdjoint.coe_selfAdjointPart_apply ℝ ?_
   rw [IsSelfAdjoint, star_mul, star_mul, star_star, ← Matrix.mul_assoc]
   exact congrArg (· * _) (congrArg (_ * ·) hA.eq)
 
@@ -188,7 +165,10 @@ private theorem contDiff_gramOnSlice : ContDiff ℝ 1 (gramOnSlice A) := by
   have h_star : ContDiff ℝ 1 fun X ↦ star (gramSlice A X) :=
     ((starL' ℝ : Matrix n n ℂ ≃L[ℝ] Matrix n n ℂ) : Matrix n n ℂ →L[ℝ] Matrix n n ℂ).contDiff.comp
       contDiff_gramSlice
-  exact (LinearMap.toContinuousLinearMap hermPart).contDiff.comp
+  -- `selfAdjointPartL` is read with codomain the Hermitian submodule, whose carrier is
+  -- `selfAdjoint (Matrix n n ℂ)`: only the submodule carries the normed-space structure.
+  exact (show Matrix n n ℂ →L[ℝ] selfAdjoint.submodule ℝ (Matrix n n ℂ) from
+      selfAdjointPartL ℝ (Matrix n n ℂ)).contDiff.comp
     ((h_star.mul contDiff_const).mul contDiff_gramSlice)
 
 /-- At `X = 0` the Gram map on the slice has derivative the identity. -/
@@ -199,7 +179,8 @@ private theorem hasFDerivAt_gramOnSlice_zero (hA : A.IsHermitian) (hA' : IsUnit 
       0 := by
   have hd := (((hasFDerivAt_gramSlice (A := A) 0).star.mul_const' A).mul'
     (hasFDerivAt_gramSlice (A := A) 0))
-  refine ((LinearMap.toContinuousLinearMap hermPart).hasFDerivAt.comp 0 hd).congr_fderiv ?_
+  refine ((show Matrix n n ℂ →L[ℝ] selfAdjoint.submodule ℝ (Matrix n n ℂ) from
+    selfAdjointPartL ℝ (Matrix n n ℂ)).hasFDerivAt.comp 0 hd).congr_fderiv ?_
   ext1 X
   have hdet : IsUnit A.det := (Matrix.isUnit_iff_isUnit_det A).1 hA'
   have hinv : star A⁻¹ = A⁻¹ := by
@@ -216,9 +197,9 @@ private theorem hasFDerivAt_gramOnSlice_zero (hA : A.IsHermitian) (hA' : IsUnit 
       ← add_smul]
     norm_num
   apply Subtype.ext
-  change (hermPart (star (gramSlice A 0) * A * gramSliceDeriv A X +
+  change (selfAdjointPart ℝ (star (gramSlice A 0) * A * gramSliceDeriv A X +
     star (gramSliceDeriv A X) * A * gramSlice A 0) : Matrix n n ℂ) = X
-  rw [hsum, coe_hermPart_of_isSelfAdjoint X.property]
+  rw [hsum, X.property.coe_selfAdjointPart_apply ℝ]
 
 /-- **Local sections of the Gram map.** For an invertible Hermitian matrix `A`, there are an open
 set `V` of Hermitian matrices containing `A` and a section `σ` of the Gram map `Y ↦ Yᴴ * A * Y`

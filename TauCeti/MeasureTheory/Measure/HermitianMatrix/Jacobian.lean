@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.MeasureTheory.Integral.Dilation
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # Lebesgue Jacobians on complex and Hermitian matrices
@@ -149,23 +150,16 @@ private theorem entryBasis_addHaar :
     (entryBasis p).addHaar = (volume : Measure (Fin p → Fin p → ℂ)) := by
   have : (volume : Measure (Fin p → ℂ)).IsAddHaarMeasure := ⟨⟩
   have : (volume : Measure (Fin p → Fin p → ℂ)).IsAddHaarMeasure := ⟨⟩
-  have h_box : volume {z : ℂ | z.re ∈ Set.Icc 0 1 ∧ z.im ∈ Set.Icc 0 1} = 1 := by
-    have h := Complex.volume_preserving_equiv_real_prod.measure_preimage
-      (s := Set.Icc (0 : ℝ) 1 ×ˢ Set.Icc (0 : ℝ) 1)
-      (measurableSet_Icc.prod measurableSet_Icc).nullMeasurableSet
-    rw [Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Icc] at h
-    convert h using 2
-    · ext z
-      simp only [Set.mem_ofPred_eq, Set.mem_Icc, Set.mem_preimage, Set.mem_prod,
-        Complex.measurableEquivRealProd_apply]
-    · simp
+  have h_box : volume (parallelepiped Complex.basisOneI) = 1 := by
+    rw [← Complex.addHaar_basisOneI]
+    exact Complex.basisOneI.addHaar_self
   rw [Module.Basis.addHaar_eq_iff, Module.Basis.coe_parallelepiped, parallelepiped_basis_eq]
   have h_set : {x : Fin p → Fin p → ℂ | ∀ σ, (entryBasis p).repr x σ ∈ Set.Icc 0 1} =
-      Set.univ.pi fun _ ↦ Set.univ.pi fun _ ↦
-        {z : ℂ | z.re ∈ Set.Icc 0 1 ∧ z.im ∈ Set.Icc 0 1} := by
+      Set.univ.pi fun _ ↦ Set.univ.pi fun _ ↦ parallelepiped Complex.basisOneI := by
     ext x
-    simp only [Set.mem_ofPred_eq, Set.mem_pi, Set.mem_univ, true_implies, Sigma.forall,
-      entryBasis_repr, Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
+    simp only [parallelepiped_basis_eq, Set.mem_ofPred_eq, Set.mem_pi, Set.mem_univ, true_implies,
+      Sigma.forall, entryBasis_repr, Fin.forall_fin_two, Complex.coe_basisOneI_repr,
+      Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [h_set, volume_pi, Measure.pi_pi]
   simp_rw [volume_pi, Measure.pi_pi, h_box, Finset.prod_const_one]
 

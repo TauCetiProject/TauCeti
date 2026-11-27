@@ -17,7 +17,7 @@ import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 # Change of variables for complex matrix actions on Lebesgue measure
 
 Derives lower Lebesgue integral change-of-variables formulas for invertible complex matrices acting
-on `κ → ℂ` by `mulVec` and on `ι → κ → ℂ` by affine left matrix multiplication from
+on `κ → ℂ` by `mulVec` and on `ι → κ → ℂ` by two-sided and by affine left matrix multiplication from
 `MeasureTheory.lintegral_comp_linearMap`. No measurability assumption on the integrand is needed.
 
 ## Main results
@@ -51,34 +51,6 @@ theorem lintegral_comp_mulVec {κ : Type*} [Fintype κ] [DecidableEq κ]
   rw [lintegral_congr fun y ↦ by rw [← hf],
     lintegral_comp_linearMap (volume : Measure (κ → ℂ)) (h_det.trans_ne h_pos.ne') g,
     h_det, abs_of_pos (inv_pos.2 h_pos), inv_pow]
-
-/-- Change of variables on `ι → κ → ℂ` for the affine matrix substitution `A ↦ S * A + c` with
-invertible `S : Matrix ι ι ℂ`. -/
-theorem lintegral_comp_matrix_mul_add {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
-    {S : Matrix ι ι ℂ} (hS : S.det ≠ 0) (c : Matrix ι κ ℂ) (g : (ι → κ → ℂ) → ENNReal) :
-    ∫⁻ A : ι → κ → ℂ, g (of.symm (S * of A + c)) =
-      ENNReal.ofReal (‖S.det‖⁻¹ ^ (2 * card κ)) * ∫⁻ A : ι → κ → ℂ, g A := by
-  classical
-  let e : (ι × κ → ℂ) ≃ₗ[ℂ] (ι → κ → ℂ) := LinearEquiv.curry ℂ ℂ ι κ
-  let f : (ι → κ → ℂ) →ₗ[ℂ] (ι → κ → ℂ) :=
-    e.toLinearMap ∘ₗ (kroneckerMap (· * ·) S (1 : Matrix κ κ ℂ)).toLin' ∘ₗ e.symm.toLinearMap
-  have hf (A : ι → κ → ℂ) : f A = of.symm (S * of A) := by
-    ext a b
-    simp [f, e, mulVec, dotProduct, Matrix.mul_apply, Fintype.sum_prod_type, Matrix.one_apply]
-  have h_det : LinearMap.det (f.restrictScalars ℝ) = ‖S.det‖ ^ (2 * card κ) := by
-    rw [LinearMap.det_restrictScalars, LinearMap.det_conj]
-    simp [det_kronecker, Algebra.norm_complex_apply, Complex.normSq_eq_norm_sq, ← pow_mul, mul_comm]
-  have h_pos : 0 < ‖S.det‖ ^ (2 * card κ) := pow_pos (norm_pos_iff.2 hS) _
-  have h_arg (A : ι → κ → ℂ) : of.symm (S * of A + c) = f.restrictScalars ℝ A + of.symm c := by
-    ext i j
-    simp [hf]
-  -- Typeclass search does not chain `IsAddHaarMeasure` across nested `Pi` spaces `ι → κ → ℂ`.
-  have : (volume : Measure (κ → ℂ)).IsAddHaarMeasure := ⟨⟩
-  have : (volume : Measure (ι → κ → ℂ)).IsAddHaarMeasure := ⟨⟩
-  rw [lintegral_congr fun A ↦ by rw [h_arg],
-    lintegral_comp_linearMap (volume : Measure (ι → κ → ℂ)) (h_det.trans_ne h_pos.ne')
-      (fun A ↦ g (A + of.symm c)),
-    lintegral_add_right_eq_self, h_det, abs_of_pos (inv_pos.2 h_pos), inv_pow]
 
 /-- **Change of variables for two-sided multiplication** on `ι → κ → ℂ`: for invertible complex
 matrices `P` and `Q`, the substitution `A ↦ P * A * Q` has the real Jacobian
@@ -118,5 +90,22 @@ theorem lintegral_comp_matrix_mul_mul {ι κ : Type*} [Fintype ι] [DecidableEq 
   refine (lintegral_comp_linearMap (volume : Measure (ι → κ → ℂ))
     (h_det.trans_ne h_pos.ne') g).trans ?_
   rw [h_det, abs_of_pos (inv_pos.2 h_pos)]
+
+/-- Change of variables on `ι → κ → ℂ` for the affine matrix substitution `A ↦ S * A + c` with
+invertible `S : Matrix ι ι ℂ`. -/
+theorem lintegral_comp_matrix_mul_add {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
+    {S : Matrix ι ι ℂ} (hS : S.det ≠ 0) (c : Matrix ι κ ℂ) (g : (ι → κ → ℂ) → ENNReal) :
+    ∫⁻ A : ι → κ → ℂ, g (of.symm (S * of A + c)) =
+      ENNReal.ofReal (‖S.det‖⁻¹ ^ (2 * card κ)) * ∫⁻ A : ι → κ → ℂ, g A := by
+  classical
+  -- The case `Q = 1` of `lintegral_comp_matrix_mul_mul`, followed by a translation.
+  have : (volume : Measure (κ → ℂ)).IsAddHaarMeasure := ⟨⟩
+  have : (volume : Measure (ι → κ → ℂ)).IsAddHaarMeasure := ⟨⟩
+  have h := lintegral_comp_matrix_mul_mul hS (by simp : (1 : Matrix κ κ ℂ).det ≠ 0)
+    fun A ↦ g (A + of.symm c)
+  simp only [Matrix.mul_one, det_one, norm_one, one_pow, mul_one,
+    lintegral_add_right_eq_self] at h
+  rw [inv_pow, ← h]
+  rfl
 
 end MeasureTheory
