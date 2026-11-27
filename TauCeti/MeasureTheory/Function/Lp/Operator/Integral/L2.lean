@@ -247,10 +247,24 @@ theorem coeFn_adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) :
     with p hs hc
   rw [adjointKernel, hs, Pi.star_apply, hc, Function.comp_apply, RCLike.star_def]
 
+/-- The conjugate transpose bundled as a conjugate-linear isometry: `star` after the swap
+`Lp.compMeasurePreservingₗᵢ`. Its algebra and norm lemmas below are instances of `map_*` and
+`LinearIsometry.norm_map`. -/
+private def adjointKernelₗᵢ : Lp 𝕜 2 (ν.prod μ) →ₗᵢ⋆[𝕜] Lp 𝕜 2 (μ.prod ν) :=
+  (starₗᵢ 𝕜).toLinearIsometry.comp
+    (Lp.compMeasurePreservingₗᵢ 𝕜 Prod.swap Measure.measurePreserving_swap)
+
+private theorem adjointKernelₗᵢ_apply (K : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernelₗᵢ K = adjointKernel K := by
+  rw [adjointKernelₗᵢ, LinearIsometry.coe_comp, Function.comp_apply,
+    LinearIsometryEquiv.coe_toLinearIsometry, starₗᵢ_apply, adjointKernel]
+  exact congrArg star <| Subtype.ext <| by
+    rw [compMeasurePreservingₗᵢ_apply_coe, compMeasurePreserving_val]
+
 /-- The conjugate transpose preserves the `L²` norm: `‖K⋆‖ = ‖K‖`. -/
 @[simp]
 theorem norm_adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) : ‖adjointKernel K‖ = ‖K‖ := by
-  rw [adjointKernel, norm_star, norm_compMeasurePreserving]
+  rw [← adjointKernelₗᵢ_apply, LinearIsometry.norm_map]
 
 /-- The conjugate transpose is an involution: `K⋆⋆ = K`. -/
 @[simp]
@@ -266,34 +280,31 @@ theorem adjointKernel_adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) :
 /-- The conjugate transpose of the zero kernel is zero. -/
 @[simp]
 theorem adjointKernel_zero : adjointKernel (0 : Lp 𝕜 2 (ν.prod μ)) = 0 := by
-  rw [adjointKernel, map_zero, star_zero]
+  rw [← adjointKernelₗᵢ_apply, map_zero]
 
 /-- The conjugate transpose is additive. -/
 @[simp]
 theorem adjointKernel_add (K L : Lp 𝕜 2 (ν.prod μ)) :
     adjointKernel (K + L) = adjointKernel K + adjointKernel L := by
-  rw [adjointKernel, map_add, star_add, adjointKernel, adjointKernel]
+  simp only [← adjointKernelₗᵢ_apply, map_add]
 
 /-- The conjugate transpose commutes with negation. -/
 @[simp]
 theorem adjointKernel_neg (K : Lp 𝕜 2 (ν.prod μ)) :
     adjointKernel (-K) = -adjointKernel K := by
-  rw [adjointKernel, map_neg, star_neg, adjointKernel]
+  simp only [← adjointKernelₗᵢ_apply, map_neg]
 
 /-- The conjugate transpose commutes with subtraction. -/
 @[simp]
 theorem adjointKernel_sub (K L : Lp 𝕜 2 (ν.prod μ)) :
     adjointKernel (K - L) = adjointKernel K - adjointKernel L := by
-  rw [adjointKernel, map_sub, star_sub, adjointKernel, adjointKernel]
+  simp only [← adjointKernelₗᵢ_apply, map_sub]
 
 /-- The conjugate transpose is conjugate linear: `(c • K)⋆ = conj c • K⋆`. -/
 @[simp]
 theorem adjointKernel_smul (c : 𝕜) (K : Lp 𝕜 2 (ν.prod μ)) :
     adjointKernel (c • K) = conj c • adjointKernel K := by
-  have h := map_smul (compMeasurePreservingₗ 𝕜 Prod.swap
-    (Measure.measurePreserving_swap (μ := μ) (ν := ν))) c K
-  simp only [compMeasurePreservingₗ_apply, ZeroHom.toFun_eq_coe, AddMonoidHom.toZeroHom_coe] at h
-  rw [adjointKernel, adjointKernel, ← RCLike.star_def, ← star_smul, h]
+  simp only [← adjointKernelₗᵢ_apply, map_smulₛₗ]
 
 /-- The conjugate transpose preserves the `L²` pairing up to conjugation:
 `⟪K⋆, L⋆⟫ = conj ⟪K, L⟫ = ⟪L, K⟫`. -/
