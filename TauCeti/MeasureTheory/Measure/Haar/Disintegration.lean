@@ -126,8 +126,7 @@ private theorem integrableOn_map_linearCoord_iff (hA : Function.Surjective A) {g
       g ∘ A :=
     funext fun y => by simp
   refine (A.linearCoord hA).toHomeomorph.measurableEmbedding.integrableOn_map_iff.trans ?_
-  rw [hgL]
-  rfl
+  rw [hgL, ContinuousLinearEquiv.coe_toHomeomorph]
 
 /-- Local integrability on an open set `V` pulls back along a surjective linear map `A` to
 `A⁻¹ V`. -/
