@@ -678,16 +678,11 @@ private theorem meromorphicOrderAt_invDedekindZetaCompletionFactor_zero :
     fun_meromorphicOrderAt_mul (analyticAt_discr_inv_cpow K 0).meromorphicAt hGℝ_an.meromorphicAt,
     hdiscr_ord, hGℝ_ord, hGℂ_ord, zero_add]
 
-private theorem rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces :
-    Units.rank K + 1 = nrRealPlaces K + nrComplexPlaces K := by
-  rw [Units.rank_add_one, Nat.card_eq_fintype_card,
-    InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
-
 /-- **Order of vanishing of `ζ_K` at `s = 0`** (Neukirch VII (5.11)):
 `meromorphicOrderAt (dedekindZetaC K) 0 = Units.rank K = r₁ + r₂ - 1`. -/
 theorem meromorphicOrderAt_dedekindZetaC_zero :
     meromorphicOrderAt (dedekindZetaC K) 0 = (Units.rank K : ℤ) := by
-  have hrank := rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
+  have hrank := Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
   rw [meromorphicOrderAt_congr
       (dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul K 0),
     fun_meromorphicOrderAt_mul (analyticAt_invDedekindZetaCompletionFactor K 0).meromorphicAt
@@ -712,7 +707,7 @@ private theorem dedekindZetaC_zero_factor_identity {z : ℂ} (hz0 : z ≠ 0)
     z * completedDedekindZeta K z * ((|discr K| : ℤ) : ℂ) ^ (-z / 2) *
         ((z * Gammaℝ z)⁻¹ ^ nrRealPlaces K * (z * Gammaℂ z)⁻¹ ^ nrComplexPlaces K) =
       dedekindZetaC K z / z ^ Units.rank K := by
-  have hrank := rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
+  have hrank := Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
   rw [hz, invDedekindZetaCompletionFactor_def]
   simp only [mul_inv, mul_pow]
   have hzpow : z * (z⁻¹ ^ nrRealPlaces K * z⁻¹ ^ nrComplexPlaces K) = (z ^ Units.rank K)⁻¹ := by
