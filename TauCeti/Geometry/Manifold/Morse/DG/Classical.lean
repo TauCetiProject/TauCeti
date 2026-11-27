@@ -57,7 +57,7 @@ entrywise identity gives the comparison of complexes.
   twisted complex with the chains of the Morse complex with coefficients in `θ^* L`, and carries
   the twisted differential of the Barraud–Cornea cocycle to the Morse boundary with coefficients
   in `θ^* L`
-  (`IsMorseSmale.criticalPointsFiberTransportEquiv_twistedDifferential`).
+  (`IsMorseSmale.criticalPointsFiberTransportEquiv_twistedDifferential_eq_twistedMorseBoundary`).
 * **`∂² = 0`.** Since the twisted differential squares to zero by the twisting equation, so does
   the Morse boundary with coefficients in `θ^* L`, for every local system `L` on `Y`
   (`IsMorseSmale.twistedMorseBoundary_comp_twistedMorseBoundary_pullback_eq_zero`). So a signed
@@ -84,8 +84,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   `IsMorseSmale.classicalAction_barraudCorneaCocycle_m_eq_twistedMorseBoundaryMap_of_charTwo`:
   classical recovery, entry by entry, over any ring for the oriented chain system and in
   characteristic two.
-* `IsMorseSmale.criticalPointsFiberTransportEquiv_twistedDifferential`: transport carries the
-  twisted differential to the Morse boundary with coefficients in `θ^* L`.
+* `IsMorseSmale.criticalPointsFiberTransportEquiv_twistedDifferential_eq_twistedMorseBoundary`:
+  transport carries the twisted differential to the Morse boundary with coefficients in `θ^* L`.
 * `IsMorseSmale.twistedMorseBoundary_comp_twistedMorseBoundary_pullback_eq_zero`: the Morse
   boundary with coefficients in `θ^* L` squares to zero.
 * `IsMorseSmale.dgMorseComplexClassicalIso`: the DG Morse complex with coefficients in a classical
@@ -167,7 +167,8 @@ omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] 
 carries the chains of total degree `n` of the twisted complex of `L(y₀)`, concentrated in degree
 zero, onto the families supported on the critical points of Morse index `-n`, the chains of
 degree `n` of the Morse complex with coefficients in `θ^* L`. -/
-theorem map_twistedTotalGrading_criticalPointsFiberTransportEquiv (n : ℤ) :
+theorem map_twistedTotalGrading_criticalPointsFiberTransportEquiv_eq_twistedMorseGrading
+    (n : ℤ) :
     (twistedTotalGrading (trivialGrading R (L.obj (FundamentalGroupoid.mk y₀)))
         (fun x : criticalPoints 𝓘(ℝ, E) f ↦ (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ)) n).map
         (criticalPointsFiberTransportEquiv hθ L : _ →ₗ[R] _) =
@@ -425,7 +426,7 @@ gives each trajectory between critical points of consecutive index its sign for 
 (`TauCeti.criticalPointsFiberTransportEquiv`) carries the twisted differential of the
 Barraud–Cornea cocycle of `S` on the chains `Crit f → L(y₀)` to the Morse boundary of `f` with
 coefficients in `θ^* L` (`TauCeti.IsAdaptedPseudoGradient.twistedMorseBoundary`). -/
-theorem criticalPointsFiberTransportEquiv_twistedDifferential
+theorem criticalPointsFiberTransportEquiv_twistedDifferential_eq_twistedMorseBoundary
     (g : criticalPoints 𝓘(ℝ, E) f → L.obj (FundamentalGroupoid.mk y₀)) :
     criticalPointsFiberTransportEquiv hθ L
         (twistedDifferential (hX.barraudCorneaCocycle hf hdense hθ hc S).m
@@ -459,8 +460,10 @@ theorem twistedMorseBoundary_comp_twistedMorseBoundary_pullback_eq_zero :
   refine LinearMap.ext fun c ↦ ?_
   obtain ⟨g, rfl⟩ := (criticalPointsFiberTransportEquiv hθ L).surjective c
   rw [LinearMap.comp_apply,
-    ← h.criticalPointsFiberTransportEquiv_twistedDifferential hf hdense hθ hc S 𝔬 hS L,
-    ← h.criticalPointsFiberTransportEquiv_twistedDifferential hf hdense hθ hc S 𝔬 hS L,
+    ← h.criticalPointsFiberTransportEquiv_twistedDifferential_eq_twistedMorseBoundary
+      hf hdense hθ hc S 𝔬 hS L,
+    ← h.criticalPointsFiberTransportEquiv_twistedDifferential_eq_twistedMorseBoundary
+      hf hdense hθ hc S 𝔬 hS L,
     LinearMap.zero_apply]
   exact (congrArg _ ((hX.barraudCorneaCocycle hf hdense hθ hc S).twistedDifferential_sq_zero
     0 (isDGRightModule_fiber L) g)).trans (map_zero _)
@@ -476,7 +479,8 @@ private noncomputable def dgMorseComplexClassicalXEquiv (n : ℤ) :
   (twistedCochainComplexXEquiv (hX.barraudCorneaCocycle hf hdense hθ hc S).mem_graded
       (hX.barraudCorneaCocycle hf hdense hθ hc S).twisting (isDGRightModule_fiber L) n).trans
     (((criticalPointsFiberTransportEquiv hθ L).ofSubmodules _ _
-      (map_twistedTotalGrading_criticalPointsFiberTransportEquiv hθ L n)).trans
+      (map_twistedTotalGrading_criticalPointsFiberTransportEquiv_eq_twistedMorseGrading hθ L
+        n)).trans
         (twistedMorseComplexXEquiv hf _ n).symm)
 
 private theorem twistedMorseComplexXEquiv_dgMorseComplexClassicalXEquiv (n : ℤ)
@@ -520,7 +524,8 @@ noncomputable def dgMorseComplexClassicalIso :
       rw [twistedMorseComplexXEquiv_d_of_add_one_eq hf _ rfl,
         twistedMorseComplexXEquiv_dgMorseComplexClassicalXEquiv,
         twistedMorseComplexXEquiv_dgMorseComplexClassicalXEquiv,
-        ← h.criticalPointsFiberTransportEquiv_twistedDifferential hf hdense hθ hc S 𝔬 hS L]
+        ← h.criticalPointsFiberTransportEquiv_twistedDifferential_eq_twistedMorseBoundary
+          hf hdense hθ hc S 𝔬 hS L]
       -- The differential of the DG Morse complex is, by definition, that of the twisted complex.
       exact congrArg _ (twistedCochainComplexXEquiv_d _ _ _ i g).symm
 
