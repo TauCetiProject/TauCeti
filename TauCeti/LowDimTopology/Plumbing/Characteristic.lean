@@ -274,6 +274,20 @@ theorem addTwoMul_val (k : P.characteristicVectors) (x : V → ℤ) :
     (P.addTwoMul k x).val = fun v => k.val v + 2 * x v :=
   (rfl)
 
+/-- Shifting by `2 * 0` does nothing. -/
+@[simp]
+theorem addTwoMul_zero (k : P.characteristicVectors) : P.addTwoMul k 0 = k := by
+  ext v
+  simp
+
+/-- Shifts compose by addition: shifting `k + 2 * x` by `2 * y` gives `k + 2 * (x + y)`. -/
+@[simp]
+theorem addTwoMul_addTwoMul (k : P.characteristicVectors) (x y : V → ℤ) :
+    P.addTwoMul (P.addTwoMul k x) y = P.addTwoMul k (x + y) := by
+  ext v
+  simp only [addTwoMul_val, Pi.add_apply]
+  ring
+
 /-- Half the difference `(l - k) / 2` of two characteristic covectors, an integral covector since
 the difference is even. -/
 def halfSub (l k : P.characteristicVectors) : V → ℤ :=

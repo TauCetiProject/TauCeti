@@ -70,13 +70,13 @@ variable {V : Type*} [DecidableEq V] [Fintype V] (P : PlumbingGraph V)
 /-- The characteristic covector `k + 2 * A x`, the shift of `k` by twice the image of the lattice
 point `x` under the intersection matrix `A`. -/
 def addTwoMulVec (k : P.characteristicVectors) (x : V → ℤ) : P.characteristicVectors :=
-  ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v, k.property.add_two_mul⟩
+  P.addTwoMul k (P.intersectionMatrix.mulVec x)
 
 /-- The value of the shifted covector `k + 2 * A x`. -/
 @[simp]
 theorem addTwoMulVec_val (k : P.characteristicVectors) (x : V → ℤ) :
     (P.addTwoMulVec k x).val = fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v :=
-  (rfl)
+  P.addTwoMul_val k _
 
 /-- Shifting by `2 * A 0` does nothing. -/
 @[simp]
@@ -162,9 +162,8 @@ theorem characteristicOrbit_addTwoMulVec (k : P.characteristicVectors) (x : V �
 /-- Shifting by twice the image `A x` of a lattice point is `addTwoMulVec`. -/
 @[simp]
 theorem addTwoMul_mulVec (k : P.characteristicVectors) (x : V → ℤ) :
-    P.addTwoMul k (P.intersectionMatrix.mulVec x) = P.addTwoMulVec k x := by
-  ext v
-  simp
+    P.addTwoMul k (P.intersectionMatrix.mulVec x) = P.addTwoMulVec k x :=
+  (rfl)
 
 /-- Shifting both covectors by lattice-image vectors changes their half difference by a
 lattice-image vector. -/
@@ -201,9 +200,10 @@ theorem mk_eq_mk_iff_exists_eq_add_mulVec {x x' : V → ℤ} :
 /-- Translating the characteristic orbit of `k` by the class of `x`: the orbit of `k + 2 * x`. -/
 instance : VAdd P.intersectionCokernel P.characteristicOrbits where
   vadd c o := Quotient.liftOn₂' c o (fun x k => P.characteristicOrbit (P.addTwoMul k x)) <| by
-    rintro x k x' k' hx ⟨z, rfl⟩
+    intro x k x' k' hx hk
     obtain ⟨y, rfl⟩ := (P.mk_eq_mk_iff_exists_eq_add_mulVec).1 (Quotient.sound' hx)
-    refine (P.characteristicOrbit_eq_iff _ _).2 ⟨z - y, ?_⟩
+    obtain ⟨z, rfl⟩ := (P.isSpinCEquivalent_iff _ _).1 hk
+    refine (P.characteristicOrbit_eq_iff _ _).2 ((P.isSpinCEquivalent_iff _ _).2 ⟨z - y, ?_⟩)
     ext v
     simp only [addTwoMulVec_val, addTwoMul_val, Matrix.mulVec_sub, Pi.add_apply, Pi.sub_apply]
     ring
@@ -211,10 +211,11 @@ instance : VAdd P.intersectionCokernel P.characteristicOrbits where
 /-- The difference of the orbits of `l` and `k`: the cokernel class of `(l - k) / 2`. -/
 instance : VSub P.intersectionCokernel P.characteristicOrbits where
   vsub o o' := Quotient.liftOn₂' o o' (fun l k => Submodule.Quotient.mk (P.halfSub l k)) <| by
-    rintro l k l' k' ⟨y, rfl⟩ ⟨x, rfl⟩
+    intro l k l' k' hl hk
+    obtain ⟨y, rfl⟩ := (P.isSpinCEquivalent_iff _ _).1 hl
+    obtain ⟨x, rfl⟩ := (P.isSpinCEquivalent_iff _ _).1 hk
     refine (P.mk_eq_mk_iff_exists_eq_add_mulVec).2 ⟨x - y, ?_⟩
-    rw [halfSub_addTwoMulVec, add_assoc, ← Matrix.mulVec_add, sub_add_sub_cancel, sub_self,
-      Matrix.mulVec_zero, add_zero]
+    simp [halfSub_addTwoMulVec, add_assoc, ← Matrix.mulVec_add]
 
 /-- Translating the orbit of `k` by the class of `x` gives the orbit of `k + 2 * x`. -/
 @[simp]
@@ -236,20 +237,13 @@ statement that the spin-c structures of the boundary form a torsor over its seco
 instance : AddTorsor P.intersectionCokernel P.characteristicOrbits where
   zero_vadd o := by
     obtain ⟨k, rfl⟩ := P.characteristicOrbit_surjective o
-    rw [← Submodule.Quotient.mk_zero, mk_vadd_characteristicOrbit]
-    congr 1
-    ext v
-    simp
+    rw [← Submodule.Quotient.mk_zero, mk_vadd_characteristicOrbit, addTwoMul_zero]
   add_vadd c c' o := by
     induction c using Submodule.Quotient.induction_on with | H x =>
     induction c' using Submodule.Quotient.induction_on with | H x' =>
     obtain ⟨k, rfl⟩ := P.characteristicOrbit_surjective o
     rw [← Submodule.Quotient.mk_add, mk_vadd_characteristicOrbit, mk_vadd_characteristicOrbit,
-      mk_vadd_characteristicOrbit]
-    congr 1
-    ext v
-    simp only [addTwoMul_val, Pi.add_apply]
-    ring
+      mk_vadd_characteristicOrbit, addTwoMul_addTwoMul, add_comm x']
   nonempty := ⟨P.characteristicOrbit ⟨_, P.isCharacteristicVector_canonicalCharacteristic⟩⟩
   vsub_vadd' o o' := by
     obtain ⟨l, rfl⟩ := P.characteristicOrbit_surjective o
