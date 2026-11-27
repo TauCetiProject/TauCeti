@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.MultiplicativeMatrix
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Algebra.Lie.GeneralLinear.Embedding
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.BlockSucc
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Succ
 
 /-!
 # The block inclusion `GLₙ → GLₙ₊₁` as a morphism of group schemes

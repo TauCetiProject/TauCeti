@@ -370,7 +370,7 @@ theorem pushforwardCLM_eq_smul_transportTestFunction (L : E ≃L[ℝ] E)
     {hU : (U : Set E) ⊆ L.toHomeomorph.toOpenPartialHomeomorph.source} (hUΩ : MapsTo L U Ω)
     (φ : 𝓓(U, F)) :
     pushforwardCLM L.toHomeomorph.toOpenPartialHomeomorph hL hL' hU hUΩ φ =
-      |(L : E →L[ℝ] E).det|⁻¹ • L.transportTestFunction hUΩ φ := by
+      |(L : E →L[ℝ] E).det|⁻¹ • L.transportTestFunction ℝ hUΩ φ := by
   ext y
   -- `hUΩ` is stated for `L` rather than for its coercion to a partial homeomorphism, so the value
   -- is unfolded by unification rather than by rewriting.

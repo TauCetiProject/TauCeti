@@ -37,7 +37,9 @@ need an automorphism are in `RingEquiv`.
 
 For a module with a finite basis `b`, Mathlib's `Matrix.toLinearMapₛₗ₂ σ b b 1` is the
 sesquilinear form, `σ`-semilinear in its first argument, for which `b` is orthonormal. In
-coordinates it is `∑ i, σ (x i) * y i` (`Matrix.toLinearMapₛₗ₂_one_apply`). For complex
+coordinates it is `∑ i, σ (x i) * y i` (`Matrix.toLinearMapₛₗ₂_one_apply`); likewise the form of a
+diagonal matrix `diag (a₁, …, aₙ)` on `n → R` is `∑ i, σ (x i) * a i * y i`
+(`Matrix.toLinearMapₛₗ₂'_diagonal_apply`). For complex
 conjugation, or any star ring, it is Hermitian (`Matrix.star_toLinearMapₛₗ₂_one_apply`), and over
 a star-ordered ring without zero divisors it is positive definite
 (`Matrix.toLinearMapₛₗ₂_one_self_nonneg`, `Matrix.toLinearMapₛₗ₂_one_self_eq_zero_iff`). This is
@@ -876,6 +878,14 @@ theorem toLinearMapₛₗ₂_one_basis_eq_coord (σ : R →+* R) (i : n) :
     toLinearMapₛₗ₂ σ b b (1 : Matrix n n R) (b i) = b.coord i := by
   refine b.ext fun j ↦ ?_
   simp [Matrix.one_apply, Finsupp.single_apply, eq_comm]
+
+/-- **The sesquilinear form of a diagonal matrix in coordinates**:
+`toLinearMapₛₗ₂' R σ (RingHom.id R) (diagonal a) x y = ∑ i, σ (x i) * a i * y i`. -/
+theorem toLinearMapₛₗ₂'_diagonal_apply (σ : R →+* R) (a x y : n → R) :
+    toLinearMapₛₗ₂' R σ (RingHom.id R) (diagonal a) x y = ∑ i, σ (x i) * a i * y i := by
+  simp only [toLinearMapₛₗ₂'_apply, diagonal_apply, RingHom.id_apply, smul_eq_mul, mul_ite,
+    mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  exact Finset.sum_congr rfl fun _ _ ↦ by ring
 
 variable [StarRing R]
 

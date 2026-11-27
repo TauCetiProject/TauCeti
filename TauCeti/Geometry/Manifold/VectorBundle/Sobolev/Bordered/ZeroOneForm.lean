@@ -151,7 +151,10 @@ theorem mem_borderedZeroOneSobolevSections_iff
             (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.chartValueL
               volume p k i w z v) := by
   rw [borderedZeroOneSobolevSections]
-  simp_rw [← halfSectionChartData_image_tangentHom]
+  conv_rhs =>
+    ext i
+    rw [← A.halfImage_tangentHom i,
+      ← (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData_image i]
   exact SectionChartData.mem_antilinearSobolevSections_iff
 
 /-- An element of `W^{k,p}` of `V`-valued one-forms whose chart data on `A.halfImage i` are the
@@ -239,7 +242,8 @@ theorem chartValueL_borderedZeroOnePartSobolevL_ae
         complexAntilinearPartL
           ((A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.chartValueL
             volume p k i w z) := by
-  rw [← halfSectionChartData_image_tangentHom]
+  rw [← A.halfImage_tangentHom i,
+    ← (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData_image i]
   exact SectionChartData.chartValueL_antilinearPartSobolevL_ae _ _ w i
 
 /-- The `(0,1)`-projection of `w` vanishes iff the chart data of `w` are complex linear almost
@@ -253,7 +257,10 @@ theorem borderedZeroOnePartSobolevL_eq_zero_iff
           Complex.I •
             (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.chartValueL
               volume p k i w z v := by
-  simp_rw [← halfSectionChartData_image_tangentHom]
+  conv_rhs =>
+    ext i
+    rw [← A.halfImage_tangentHom i,
+      ← (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData_image i]
   exact SectionChartData.antilinearPartSobolevL_eq_zero_iff _ _
 
 variable [∀ x, ContinuousSMul ℂ (V x)] in
@@ -455,8 +462,7 @@ variable (A p k) in
 `(0,1)`-forms `borderedZeroOneSobolevSections A p k`. -/
 def borderedZeroOneContMDiffSMulL (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ) :
     borderedZeroOneSobolevSections A p k →L[ℝ] borderedZeroOneSobolevSections A p k :=
-  SectionChartData.antilinearRestrictL
-    (BorderedSobolevSection.contMDiffSMulL _ p k hφ) fun _ ↦
+  (BorderedSobolevSection.contMDiffSMulL _ p k hφ).restrict fun _ ↦
     SectionChartData.mem_antilinearSobolevSections_of_chartValueL_ae_smul
       (BorderedSobolevSection.chartValueL_contMDiffSMulL_ae hφ)
 
@@ -466,25 +472,31 @@ theorem coe_borderedZeroOneContMDiffSMulL (hφ : ContMDiff closedUpperHalfPlaneM
     (borderedZeroOneContMDiffSMulL A p k hφ w :
         BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p k) =
       BorderedSobolevSection.contMDiffSMulL (A.tangentHom closedUpperHalfPlaneModel) p k hφ w :=
-  SectionChartData.coe_antilinearRestrictL _ _ w
+  ContinuousLinearMap.coe_restrict_apply _ w
 
 @[simp]
 theorem borderedZeroOneContMDiffSMulL_const (c : ℝ) :
     borderedZeroOneContMDiffSMulL A p k (contMDiff_const (c := c)) =
-      c • ContinuousLinearMap.id ℝ _ :=
-  SectionChartData.antilinearRestrictL_eq_smul_id (BorderedSobolevSection.contMDiffSMulL_const c)
+      c • ContinuousLinearMap.id ℝ _ := by
+  ext1 w
+  apply Subtype.ext
+  simp
 
 theorem borderedZeroOneContMDiffSMulL_add (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
     borderedZeroOneContMDiffSMulL A p k (hφ.add hψ) =
-      borderedZeroOneContMDiffSMulL A p k hφ + borderedZeroOneContMDiffSMulL A p k hψ :=
-  SectionChartData.antilinearRestrictL_eq_add (BorderedSobolevSection.contMDiffSMulL_add hφ hψ)
+      borderedZeroOneContMDiffSMulL A p k hφ + borderedZeroOneContMDiffSMulL A p k hψ := by
+  ext1 w
+  apply Subtype.ext
+  simp [BorderedSobolevSection.contMDiffSMulL_add hφ hψ]
 
 theorem borderedZeroOneContMDiffSMulL_mul (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
     borderedZeroOneContMDiffSMulL A p k (hφ.mul hψ) =
-      (borderedZeroOneContMDiffSMulL A p k hφ).comp (borderedZeroOneContMDiffSMulL A p k hψ) :=
-  SectionChartData.antilinearRestrictL_eq_comp (BorderedSobolevSection.contMDiffSMulL_mul hφ hψ)
+      (borderedZeroOneContMDiffSMulL A p k hφ).comp (borderedZeroOneContMDiffSMulL A p k hψ) := by
+  ext1 w
+  apply Subtype.ext
+  simp [BorderedSobolevSection.contMDiffSMulL_mul hφ hψ]
 
 /-- Smooth real multiplication up to the boundary commutes with forgetting derivatives on
 `(0,1)`-forms. -/
@@ -493,7 +505,7 @@ theorem borderedZeroOneLowerOrdersL_borderedZeroOneContMDiffSMulL (d : ℕ)
     (w : borderedZeroOneSobolevSections A p (k + d)) :
     borderedZeroOneLowerOrdersL A p k d (borderedZeroOneContMDiffSMulL A p (k + d) hφ w) =
       borderedZeroOneContMDiffSMulL A p k hφ (borderedZeroOneLowerOrdersL A p k d w) :=
-  SectionChartData.antilinearLowerOrdersL_antilinearRestrictL d
+  SectionChartData.antilinearLowerOrdersL_restrict d
     (fun m ↦ BorderedSobolevSection.contMDiffSMulL _ p m hφ)
     (fun _ _ ↦
       SectionChartData.mem_antilinearSobolevSections_of_chartValueL_ae_smul

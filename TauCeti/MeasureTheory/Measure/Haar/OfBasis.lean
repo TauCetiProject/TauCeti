@@ -5,6 +5,8 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -31,9 +33,15 @@ carries the normalized Haar measure of the first to that of the second.
   is the Dirac mass at `0`.
 * `Module.Basis.measurePreserving_equiv` — the linear equivalence matching two bases carries the
   additive Haar measure of one to that of the other.
+* `Module.Basis.setIntegral_addHaar_congr_measurableSpace` — set integrals against `b.addHaar` do
+  not depend on the choice of Borel measurable-space instance.
 * `ContinuousLinearEquiv.exists_map_restrict_preimage_eq_smul_addHaar` — a continuous linear
   equivalence onto a finite-dimensional space maps an additive Haar measure, restricted to
   preimages, to a fixed positive multiple of the restricted Haar measure of `Module.finBasis`.
+* `TauCeti.EuclideanSpace.finBasisAddHaarFactor`,
+  `TauCeti.EuclideanSpace.finBasis_addHaar_eq_smul_volume` — the Haar measure of
+  `Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))` is the positive constant multiple
+  `finBasisAddHaarFactor m` of Lebesgue `volume`.
 
 ## Attribution
 
@@ -134,6 +142,18 @@ theorem measurePreserving_equiv (b : Basis ι ℝ E) (b' : Basis ι' ℝ F) (e :
 
 end Equiv
 
+/-- Set integrals against `b.addHaar` are independent of the choice of Borel measurable-space
+instance on the ambient vector space. -/
+theorem setIntegral_addHaar_congr_measurableSpace
+    {V ι F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [Fintype ι]
+    (b : Basis ι ℝ V) (s : Set V) (f : V → F)
+    (ms₁ ms₂ : MeasurableSpace V) (hb₁ : @BorelSpace V _ ms₁) (hb₂ : @BorelSpace V _ ms₂) :
+    ∫ v in s, f v ∂(@Basis.addHaar _ _ _ _ _ ms₁ hb₁ b) =
+      ∫ v in s, f v ∂(@Basis.addHaar _ _ _ _ _ ms₂ hb₂ b) := by
+  obtain rfl : ms₁ = ms₂ := hb₁.measurable_eq.trans hb₂.measurable_eq.symm
+  rfl
+
 end Module.Basis
 
 /-- A continuous linear equivalence `L` onto a finite-dimensional space `E` maps an additive Haar
@@ -154,5 +174,44 @@ theorem ContinuousLinearEquiv.exists_map_restrict_preimage_eq_smul_addHaar
 theorem Complex.addHaar_basisOneI : Complex.basisOneI.addHaar = (volume : Measure ℂ) := by
   rw [← Complex.toBasis_orthonormalBasisOneI]
   exact Complex.orthonormalBasisOneI.addHaar_eq_volume
+
+namespace TauCeti.EuclideanSpace
+
+/-- The constant rescaling factor `|det ((finBasis).reindex _)|⁻¹` relating
+`(Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).addHaar` to Lebesgue measure `volume` on
+`EuclideanSpace ℝ (Fin m)`. -/
+noncomputable def finBasisAddHaarFactor (m : ℕ) : ℝ :=
+  |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
+    ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+      (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹
+
+/-- The defining formula for `TauCeti.EuclideanSpace.finBasisAddHaarFactor`. -/
+theorem finBasisAddHaarFactor_def (m : ℕ) :
+    finBasisAddHaarFactor m =
+      |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
+        ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+          (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹ :=
+  (rfl)
+
+/-- `TauCeti.EuclideanSpace.finBasisAddHaarFactor m` is strictly positive. -/
+theorem finBasisAddHaarFactor_pos (m : ℕ) : 0 < finBasisAddHaarFactor m :=
+  inv_pos.2 <| abs_pos.2 ((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.isUnit_det _).ne_zero
+
+/-- `TauCeti.EuclideanSpace.finBasisAddHaarFactor m` is nonzero. -/
+theorem finBasisAddHaarFactor_ne_zero (m : ℕ) : finBasisAddHaarFactor m ≠ 0 :=
+  (finBasisAddHaarFactor_pos m).ne'
+
+/-- The Haar measure on `EuclideanSpace ℝ (Fin m)` normalized by `Module.finBasis` is
+`TauCeti.EuclideanSpace.finBasisAddHaarFactor m` times Lebesgue volume. -/
+theorem finBasis_addHaar_eq_smul_volume (m : ℕ) :
+    (Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).addHaar =
+      ENNReal.ofReal (finBasisAddHaarFactor m) • (volume : Measure (EuclideanSpace ℝ (Fin m))) := by
+  let stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
+  let finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
+  rw [← Module.Basis.addHaar_reindex _ finσ, Module.Basis.addHaar_eq_smul_of_basis stdB,
+    finBasisAddHaarFactor_def]
+  simp only [stdB, finσ, OrthonormalBasis.addHaar_eq_volume, abs_inv]
+
+end TauCeti.EuclideanSpace
 
 end

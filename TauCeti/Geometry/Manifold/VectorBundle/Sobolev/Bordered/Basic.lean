@@ -215,20 +215,6 @@ instance isFiniteMeasure_restrict_halfSectionChartData_image (i : Fin A.halfSect
     IsFiniteMeasure (volume.restrict (A.halfSectionChartData.image i : Set ℂ)) :=
   A.isFiniteMeasure_restrict_halfImage i
 
-section TangentHom
-
-variable [IsManifold closedUpperHalfPlaneModel 1 M]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-
-/-- The chart images of the half-plane section chart data of `V`-valued one-forms are those of
-`A`. -/
-theorem halfSectionChartData_image_tangentHom (i : Fin A.n) :
-    (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.image i = A.halfImage i :=
-  ((A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData_image i).trans
-    (A.halfImage_tangentHom i)
-
-end TangentHom
-
 end FiniteBundleAtlas
 
 end Linear

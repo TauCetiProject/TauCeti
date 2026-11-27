@@ -154,6 +154,16 @@ theorem closedHom_zero (M N : CurvedDGRightModuleCat.{u, u, u} h) :
   rw [closedHom_eq, dgClosedHom_zero R _ _, map_zero]
   rfl
 
+/-- A vanishing composition of closed morphisms acts as zero on elements. -/
+theorem closedHom_apply_eq_zero_of_comp_eq_zero
+    {f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N}
+    {g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P}
+    (hfg : f ≫ g = 0) (x : M) :
+    closedHom g (closedHom f x) = 0 := by
+  rw [← LinearMap.comp_apply, ← closedHom_comp, hfg, closedHom_zero, LinearMap.zero_apply]
+
 /-- Addition of closed morphisms is addition of their underlying linear maps. -/
 @[simp]
 theorem closedHom_add {M N : CurvedDGRightModuleCat.{u, u, u} h}
@@ -163,6 +173,14 @@ theorem closedHom_add {M N : CurvedDGRightModuleCat.{u, u, u} h}
   simp only [closedHom_eq]
   rw [dgClosedHom_add R f g, map_add]
   rfl
+
+/-- Subtraction of closed morphisms is subtraction of their underlying linear maps. -/
+@[simp]
+theorem closedHom_sub {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    closedHom (f - g) = closedHom f - closedHom g :=
+  eq_sub_of_add_eq (by rw [← closedHom_add, sub_add_cancel])
 
 /-- A graded right-linear equivalence commuting with differentials is a closed isomorphism. -/
 noncomputable def closedIsoOf (e : M ≃ₗ[Aᵐᵒᵖ] N)

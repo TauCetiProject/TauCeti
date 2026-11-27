@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 public import TauCeti.Analysis.Normed.Module.Quotient
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Lp.PiLp.ModuleTopology
+import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
 # Kolmogorov numbers
@@ -23,9 +25,10 @@ precomposition with normed quotient maps (`NormedAddGroupHom.IsQuotient`), so th
 Kolmogorov numbers are surjective, the bound by approximation numbers, and the index laws: the
 Kolmogorov numbers are additive, `d_{m+n}(S + T) ≤ dₘ(S) + dₙ(T)`, and multiplicative,
 `d_{m+n}(S T) ≤ dₘ(S) dₙ(T)`; with one index zero these recover the perturbation and
-postcomposition laws. Over a complete scalar field, finite-dimensional subspaces are closed, and
-the Kolmogorov numbers form a strict s-number sequence. No completeness of the domain or codomain
-is needed.
+postcomposition laws. The Kolmogorov numbers form an s-number sequence over every nontrivially
+normed field, since all subspaces of finite Euclidean coordinate spaces are closed. Over a complete
+scalar field, finite-dimensional subspaces of any normed space are closed, giving a strict
+s-number sequence.
 
 ## References
 
@@ -231,34 +234,37 @@ end ContinuousLinearMap
 
 namespace ContinuousLinearMap
 
-variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜]
+
+/-- The identity has Kolmogorov number one below the dimension if every admissible subspace
+is closed. -/
+theorem kolmogorovNumber_id_eq_one_of_isClosed [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+    {n : ℕ} (hn : (n : Cardinal) < Module.rank 𝕜 X)
+    (hclosed : ∀ V : Submodule 𝕜 X, Module.rank 𝕜 V ≤ n → IsClosed (V : Set X)) :
+    (ContinuousLinearMap.id 𝕜 X).kolmogorovNumber n = 1 := by
+  have hnorm : ‖ContinuousLinearMap.id 𝕜 X‖₊ ≤ 1 := by
+    exact_mod_cast norm_id_le (𝕜 := 𝕜) (E := X)
+  refine le_antisymm (((ContinuousLinearMap.id 𝕜 X).kolmogorovNumber_le_nnnorm n).trans hnorm)
+    (le_kolmogorovNumber_iff.mpr fun V hV ↦ ?_)
+  have hnot : ¬ Dense (V : Set X) := by
+    rw [Submodule.dense_iff_topologicalClosure_eq_top,
+      (hclosed V hV).submodule_topologicalClosure_eq]
+    rintro rfl
+    exact hn.not_ge (by simpa only [rank_top] using hV)
+  rw [comp_id]
+  exact_mod_cast (V.norm_mkQL hnot).ge
 
 /-- Over a complete scalar field, the identity has Kolmogorov number one below the
 cardinal dimension, and zero from the dimension onwards. -/
 @[simp]
-theorem kolmogorovNumber_id (n : ℕ) :
+theorem kolmogorovNumber_id [CompleteSpace 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] (n : ℕ) :
     (ContinuousLinearMap.id 𝕜 X).kolmogorovNumber n =
       if (n : Cardinal) < Module.rank 𝕜 X then 1 else 0 := by
   split_ifs with hn
-  · apply le_antisymm
-    · exact ((ContinuousLinearMap.id 𝕜 X).kolmogorovNumber_le_nnnorm n).trans (by
-        exact_mod_cast norm_id_le (𝕜 := 𝕜) (E := X))
-    · apply le_kolmogorovNumber_iff.mpr
-      intro V hV
-      have : FiniteDimensional 𝕜 V :=
-        Module.rank_lt_aleph0_iff.mp (hV.trans_lt Cardinal.natCast_lt_aleph0)
-      have hproper : V ≠ ⊤ := by
-        intro h
-        subst V
-        exact hn.not_ge (by simpa using hV)
-      have hnot : ¬ Dense (V : Set X) := by
-        intro h
-        apply hproper
-        apply SetLike.coe_injective
-        exact V.isClosed_of_finiteDimensional.closure_eq.symm.trans h.closure_eq
-      rw [comp_id]
-      exact_mod_cast (V.norm_mkQL hnot).ge
+  · refine kolmogorovNumber_id_eq_one_of_isClosed hn fun V hV ↦ ?_
+    have : FiniteDimensional 𝕜 V :=
+      Module.rank_lt_aleph0_iff.mp (hV.trans_lt Cardinal.natCast_lt_aleph0)
+    exact V.isClosed_of_finiteDimensional
   · exact kolmogorovNumber_eq_zero_of_rank_le
       ((LinearMap.rank_le_domain _).trans (le_of_not_gt hn))
 
@@ -284,21 +290,24 @@ unchanged, over every nontrivially normed field. -/
 theorem isSurjective_kolmogorov : IsSurjective (kolmogorov (𝕜 := 𝕜)) where
   comp_of_isQuotient T _ hQ n := T.kolmogorovNumber_comp_of_isQuotient hQ n
 
+/-- Kolmogorov numbers satisfy the s-number axioms over every nontrivially normed field. -/
+theorem isSNumberSequence_kolmogorov : IsSNumberSequence (kolmogorov (𝕜 := 𝕜)) where
+  norm T := T.kolmogorovNumber_zero
+  antitone T := T.antitone_kolmogorovNumber
+  add_le S T n := S.kolmogorovNumber_add_le T n
+  comp_le B T A n := B.kolmogorovNumber_comp_comp_le T A n
+  eq_zero_of_rank_le := ContinuousLinearMap.kolmogorovNumber_eq_zero_of_rank_le
+  normalize n := by
+    apply ContinuousLinearMap.kolmogorovNumber_id_eq_one_of_isClosed
+    · rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq, rank_fin_fun]
+      exact_mod_cast n.lt_succ_self
+    · exact fun V _ ↦ V.isClosed_of_isModuleTopology
+
 /-- Over a complete scalar field, Kolmogorov numbers are a strict s-number sequence.
 The normed spaces themselves need not be complete. -/
 theorem isStrictSNumberSequence_kolmogorov [CompleteSpace 𝕜] :
-    IsStrictSNumberSequence (kolmogorov (𝕜 := 𝕜)) :=
-  .of_normalize_of_lt_rank
-    (fun T ↦ T.kolmogorovNumber_zero)
-    (fun T ↦ T.antitone_kolmogorovNumber)
-    (fun S T n ↦ S.kolmogorovNumber_add_le T n)
-    (fun B T A n ↦ B.kolmogorovNumber_comp_comp_le T A n)
-    ContinuousLinearMap.kolmogorovNumber_eq_zero_of_rank_le
-    fun n hn ↦ by simp [ContinuousLinearMap.kolmogorovNumber_id, hn]
-
-/-- Kolmogorov numbers satisfy the s-number axioms over complete scalar fields. -/
-theorem isSNumberSequence_kolmogorov [CompleteSpace 𝕜] :
-    IsSNumberSequence (kolmogorov (𝕜 := 𝕜)) :=
-  isStrictSNumberSequence_kolmogorov.toIsSNumberSequence
+    IsStrictSNumberSequence (kolmogorov (𝕜 := 𝕜)) where
+  toIsSNumberSequence := isSNumberSequence_kolmogorov
+  normalize_of_lt_rank n hn := by simp [ContinuousLinearMap.kolmogorovNumber_id, hn]
 
 end TauCeti.SNumbers

@@ -27,13 +27,13 @@ Instantiating the chart-data theory of `TauCeti.Geometry.Manifold.VectorBundle.S
 on `(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData` and using
 `TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Chart` yields
 `TauCeti.zeroOneSobolevSections A μ p k`, `TauCeti.zeroOnePartSobolevL`,
-`TauCeti.zeroOneLowerOrdersL`, `TauCeti.zeroOneOfExponentLEL`, and `TauCeti.zeroOneContMDiffSMulL`.
+`TauCeti.zeroOneLowerOrdersL`, and `TauCeti.zeroOneContMDiffSMulL`.
 
 ## Main definitions
 
 * `TauCeti.zeroOneSobolevSections`, `TauCeti.zeroOnePartSobolevL`, `TauCeti.zeroOneLowerOrdersL`,
-  `TauCeti.zeroOneOfExponentLEL`, `TauCeti.zeroOneContMDiffSMulL`: native `(0,1)`-forms,
-  `(0,1)`-projection, order/exponent inclusions, and multiplication by smooth real functions.
+  `TauCeti.zeroOneContMDiffSMulL`: native `(0,1)`-forms, `(0,1)`-projection, order inclusions,
+  and multiplication by smooth real functions.
 
 ## Main results
 
@@ -50,8 +50,7 @@ on `(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData` and using
   `TauCeti.chartValueL_zeroOnePartSobolevL_ae`,
   `TauCeti.chartValueL_zeroOnePartSobolevL_ae_coord`: properties of the `(0,1)`-projection.
 * `TauCeti.zeroOneLowerOrdersL_zeroOnePartSobolevL`,
-  `TauCeti.zeroOneOfExponentLEL_zeroOnePartSobolevL`,
-  `TauCeti.zeroOneContMDiffSMulL_zeroOnePartSobolevL`: commutation with scale inclusions and smooth
+  `TauCeti.zeroOneContMDiffSMulL_zeroOnePartSobolevL`: commutation with order inclusions and smooth
   real multiplication.
 
 ## References
@@ -263,6 +262,18 @@ theorem chartValueL_zeroOnePartSobolevL_ae (w : SobolevSection (A.tangentHom �
         complexAntilinearPartL ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i w y) :=
   SectionChartData.chartValueL_antilinearPartSobolevL_ae _ _ w i
 
+/-- The chart data of the zero `(0,1)`-form vanish almost everywhere on the chart image. -/
+theorem chartValueL_zero_zeroOneSobolevSections_ae (i : Fin A.n) :
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i
+        (((0 : zeroOneSobolevSections A μ p k) :
+            SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) :
+          (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p k)
+      =ᵐ[μ.restrict (A.image i)] 0 := by
+  simp only [ZeroMemClass.coe_zero, map_zero]
+  exact (FiniteBundleAtlas.ae_image_tangentHom_iff A μ i).1
+    (Lp.coeFn_zero (ℂ →L[ℝ] F) p
+      (μ.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i : Set ℂ)))
+
 /-- The `(0,1)`-projection of `w` vanishes exactly when the chart data of `w` are complex linear
 almost everywhere on the image of every chart. -/
 theorem zeroOnePartSobolevL_eq_zero_iff {w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k} :
@@ -388,60 +399,6 @@ theorem zeroOneLowerOrdersL_zeroOnePartSobolevL (d : ℕ)
         ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrdersL μ p k d w) :=
   SectionChartData.antilinearLowerOrdersL_antilinearPartSobolevL d _ _ w
 
-/-! ### Lowering the integrability exponent -/
-
-section Exponent
-
-variable {q : ℝ≥0∞} [Fact (1 ≤ q)]
-
-variable (A μ k) in
-/-- For `p ≤ q`, the continuous inclusion of the `(0,1)`-forms of exponent `q` into those of
-exponent `p`. -/
-def zeroOneOfExponentLEL (hpq : p ≤ q) :
-    zeroOneSobolevSections A μ q k →L[ℝ] zeroOneSobolevSections A μ p k :=
-  (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.antilinearOfExponentLEL μ k hpq
-
-@[simp]
-theorem coe_zeroOneOfExponentLEL (hpq : p ≤ q) (w : zeroOneSobolevSections A μ q k) :
-    (zeroOneOfExponentLEL A μ k hpq w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) =
-      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.ofExponentLEL μ k hpq w :=
-  SectionChartData.coe_antilinearOfExponentLEL hpq w
-
-/-- Lowering the integrability exponent on `(0,1)`-forms is injective. -/
-theorem zeroOneOfExponentLEL_injective (hpq : p ≤ q) :
-    Function.Injective (zeroOneOfExponentLEL A μ k hpq) :=
-  SectionChartData.antilinearOfExponentLEL_injective hpq
-
-omit [Fact (1 ≤ q)] in
-@[simp]
-theorem zeroOneOfExponentLEL_self (w : zeroOneSobolevSections A μ p k) :
-    zeroOneOfExponentLEL A μ k le_rfl w = w :=
-  SectionChartData.antilinearOfExponentLEL_self w
-
-@[simp]
-theorem zeroOneOfExponentLEL_zeroOneOfExponentLEL {r : ℝ≥0∞} [Fact (1 ≤ r)]
-    (hpq : p ≤ q) (hqr : q ≤ r) (w : zeroOneSobolevSections A μ r k) :
-    zeroOneOfExponentLEL A μ k hpq (zeroOneOfExponentLEL A μ k hqr w) =
-      zeroOneOfExponentLEL A μ k (hpq.trans hqr) w :=
-  SectionChartData.antilinearOfExponentLEL_antilinearOfExponentLEL hpq hqr w
-
-/-- Lowering the exponent commutes with forgetting derivatives on `(0,1)`-forms. -/
-theorem zeroOneLowerOrdersL_zeroOneOfExponentLEL (d : ℕ) (hpq : p ≤ q)
-    (w : zeroOneSobolevSections A μ q (k + d)) :
-    zeroOneLowerOrdersL A μ p k d (zeroOneOfExponentLEL A μ (k + d) hpq w) =
-      zeroOneOfExponentLEL A μ k hpq (zeroOneLowerOrdersL A μ q k d w) :=
-  SectionChartData.antilinearLowerOrdersL_antilinearOfExponentLEL d hpq w
-
-/-- Lowering the exponent commutes with the `(0,1)`-projection. -/
-theorem zeroOneOfExponentLEL_zeroOnePartSobolevL (hpq : p ≤ q)
-    (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ q k) :
-    zeroOneOfExponentLEL A μ k hpq (zeroOnePartSobolevL A μ q k w) =
-      zeroOnePartSobolevL A μ p k
-        ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.ofExponentLEL μ k hpq w) :=
-  SectionChartData.antilinearOfExponentLEL_antilinearPartSobolevL _ _ hpq w
-
-end Exponent
-
 /-! ### Multiplication by smooth real functions -/
 
 section SMul
@@ -453,8 +410,7 @@ variable (A μ p k) in
 `zeroOneSobolevSections A μ p k`. -/
 def zeroOneContMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ) :
     zeroOneSobolevSections A μ p k →L[ℝ] zeroOneSobolevSections A μ p k :=
-  SectionChartData.antilinearRestrictL
-    (SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) μ p k hφ) fun _ ↦
+  (SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) μ p k hφ).restrict fun _ ↦
     (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.mem_antilinearSobolevSections_of_chartValueL_ae_smul
       (SobolevSection.chartValueL_contMDiffSMulL_ae hφ)
 
@@ -463,31 +419,37 @@ theorem coe_zeroOneContMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ 
     (w : zeroOneSobolevSections A μ p k) :
     (zeroOneContMDiffSMulL A μ p k hφ w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) =
       SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) μ p k hφ w :=
-  SectionChartData.coe_antilinearRestrictL _ _ w
+  ContinuousLinearMap.coe_restrict_apply _ w
 
 @[simp]
 theorem zeroOneContMDiffSMulL_const (c : ℝ) :
-    zeroOneContMDiffSMulL A μ p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ :=
-  SectionChartData.antilinearRestrictL_eq_smul_id (SobolevSection.contMDiffSMulL_const c)
+    zeroOneContMDiffSMulL A μ p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ := by
+  ext1 w
+  apply Subtype.ext
+  simp
 
 theorem zeroOneContMDiffSMulL_add (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ ψ) :
     zeroOneContMDiffSMulL A μ p k (hφ.add hψ) =
-      zeroOneContMDiffSMulL A μ p k hφ + zeroOneContMDiffSMulL A μ p k hψ :=
-  SectionChartData.antilinearRestrictL_eq_add (SobolevSection.contMDiffSMulL_add hφ hψ)
+      zeroOneContMDiffSMulL A μ p k hφ + zeroOneContMDiffSMulL A μ p k hψ := by
+  ext1 w
+  apply Subtype.ext
+  simp [SobolevSection.contMDiffSMulL_add hφ hψ]
 
 theorem zeroOneContMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ ψ) :
     zeroOneContMDiffSMulL A μ p k (hφ.mul hψ) =
-      (zeroOneContMDiffSMulL A μ p k hφ).comp (zeroOneContMDiffSMulL A μ p k hψ) :=
-  SectionChartData.antilinearRestrictL_eq_comp (SobolevSection.contMDiffSMulL_mul hφ hψ)
+      (zeroOneContMDiffSMulL A μ p k hφ).comp (zeroOneContMDiffSMulL A μ p k hψ) := by
+  ext1 w
+  apply Subtype.ext
+  simp [SobolevSection.contMDiffSMulL_mul hφ hψ]
 
 /-- Smooth real multiplication commutes with forgetting derivatives on `(0,1)`-forms. -/
 theorem zeroOneLowerOrdersL_zeroOneContMDiffSMulL (d : ℕ) (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
     (w : zeroOneSobolevSections A μ p (k + d)) :
     zeroOneLowerOrdersL A μ p k d (zeroOneContMDiffSMulL A μ p (k + d) hφ w) =
       zeroOneContMDiffSMulL A μ p k hφ (zeroOneLowerOrdersL A μ p k d w) :=
-  SectionChartData.antilinearLowerOrdersL_antilinearRestrictL d
+  SectionChartData.antilinearLowerOrdersL_restrict d
     (fun m ↦ SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) μ p m hφ)
     (fun _ _ ↦
       (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.mem_antilinearSobolevSections_of_chartValueL_ae_smul
