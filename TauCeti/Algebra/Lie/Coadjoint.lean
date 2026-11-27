@@ -90,8 +90,9 @@ the stabilizer `L_ν`, the kernel of the alternating form `ν.kirillovForm`.
 ## Main results
 
 * `Module.Dual.ker_kirillovForm`: the kernel of the Kirillov form is the stabilizer `L_ν`.
-* `Module.Dual.forall_kirillovForm_add_eq_zero_iff`: the radical of the Marle–Guillemin–Sternberg
-  tensor `b(π ξ) - a(π ζ) + ν ⁅ξ, ζ⁆ + β(v, w)` on `L × P* × V` is `(L_ν ∩ ker π) × 0 × 0`.
+* `Module.Dual.forall_kirillovForm_add_eq_zero_iff`: when `π : L → P` maps `L_ν` onto `P` and
+  `β` has trivial left radical, the left radical of the Marle–Guillemin–Sternberg tensor
+  `b(π ξ) - a(π ζ) + ν ⁅ξ, ζ⁆ + β(v, w)` on `L × P* × V` is `(L_ν ∩ ker π) × 0 × 0`.
 * `Module.Dual.coadjointTangentMap_injective`: the orbit derivative is injective.
 * `Module.Dual.isAlt_kksForm`, `Module.Dual.kksForm_nondegenerate`: `ω_ν` is alternating and
   nondegenerate.

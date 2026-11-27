@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.TwoForm.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Kernels of pulled-back smooth two-forms
@@ -17,6 +18,9 @@ preimage of the original kernel under that derivative
 criterion for descended symplectic forms. If the derivative is bijective, for instance for a
 diffeomorphism, the pullback is nondegenerate at a point exactly when the original form is
 nondegenerate at its image (`TauCeti.SmoothTwoForm.nondegenerate_bilinFormAt_mpullback_iff`).
+In particular, a two-form invariant under the translation by `g` of an action by smooth maps is
+nondegenerate at `g • y` exactly when it is nondegenerate at `y`
+(`TauCeti.SmoothTwoForm.nondegenerate_bilinFormAt_smul_iff`).
 -/
 
 public section
@@ -68,5 +72,17 @@ theorem nondegenerate_bilinFormAt_mpullback_iff (hp : ContMDiff I J ∞ p) (η :
     ← LinearMap.ker_eq_bot_of_injective hdp.1,
     ← Submodule.comap_bot]
   exact (Submodule.comap_injective_of_surjective hdp.2).eq_iff
+
+/-- If a two-form `η` is invariant under the translation by `g` of a group acting by smooth maps,
+then `η` is nondegenerate at `g • y` exactly when it is nondegenerate at `y`. -/
+theorem nondegenerate_bilinFormAt_smul_iff {G : Type*} [Group G] [MulAction G Z]
+    [ContMDiffConstSMul I ∞ G Z] {g : G} {η : SmoothTwoForm I Z}
+    (hη : SmoothForm.mpullback (fun x ↦ g • x) (contMDiff_const_smul g) η = η) (y : Z) :
+    (η.bilinFormAt (g • y)).Nondegenerate ↔ (η.bilinFormAt y).Nondegenerate := by
+  have hd : Bijective (mfderiv I I (fun x ↦ g • x) y) :=
+    ⟨ContMDiffConstSMul.injective_mfderiv_const_smul (n := ∞) (by simp) g y,
+      fun w ↦ ⟨_, ContMDiffConstSMul.mfderiv_smul_mfderiv_inv_smul (n := ∞) (by simp) g y rfl w⟩⟩
+  conv_rhs => rw [← hη]
+  exact (nondegenerate_bilinFormAt_mpullback_iff _ _ hd).symm
 
 end TauCeti.SmoothTwoForm

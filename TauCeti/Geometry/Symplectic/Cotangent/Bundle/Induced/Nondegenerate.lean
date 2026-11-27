@@ -25,7 +25,8 @@ This file gives a criterion for `Ω` to be nondegenerate along the `G`-orbit of 
   (`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one_iff`).
 * **`G`-invariance.** `Ω` is `G`-invariant, so it is nondegenerate at `g • y` exactly when it is
   nondegenerate at `y`
-  (`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff`). As
+  (`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff`, an
+  instance of `TauCeti.SmoothTwoForm.nondegenerate_bilinFormAt_smul_iff`). As
   `[g, n] = g • [1, n]`, nondegeneracy at `[1, n]` gives nondegeneracy at every `[g, n]`
   (`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_mk`).
 * **Marle–Guillemin–Sternberg coordinates.** In the local model `G ×_H (𝔪* × V)` of a Hamiltonian
@@ -150,14 +151,9 @@ theorem nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff (g : G)
     (F := F)
   have := ContMDiffSMul.contMDiffConstSMul I (I' := 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EN)))
     (n := ∞) (G := G) (M := BalancedProduct K K.RightTranslation N)
-  -- Left translation by `g` preserves the induced form and has bijective differential.
-  have hd : Bijective (mfderiv 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EN))
-      𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EN)) (fun x ↦ g • x) y) :=
-    ⟨ContMDiffConstSMul.injective_mfderiv_const_smul (n := ∞) (by simp) g y,
-      fun w ↦ ⟨_, ContMDiffConstSMul.mfderiv_smul_mfderiv_inv_smul (n := ∞) (by simp) g y rfl w⟩⟩
-  conv_rhs => rw [← mpullback_smul_balancedProductInducedForm (hf := hf) (hfK := hfK)
-    (hσK := hσK) (hμ := hμ) g]
-  exact (SmoothTwoForm.nondegenerate_bilinFormAt_mpullback_iff _ _ hd).symm
+  exact SmoothTwoForm.nondegenerate_bilinFormAt_smul_iff
+    (mpullback_smul_balancedProductInducedForm (hf := hf) (hfK := hfK) (hσK := hσK) (hμ := hμ) g)
+    y
 
 /-- **The induced form is nondegenerate along the orbit of `[1, n]`.** If the radical of the
 induced form on `G × N` at `(1, n)` consists of orbit directions of `K`, the induced form on
