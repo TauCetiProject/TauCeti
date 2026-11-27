@@ -43,16 +43,32 @@ def ZetaArgumentBoundUpTo (H C : ℝ) : Prop :=
   ∀ T ∈ Icc 0 H,
     |(riemannZetaData.zeroCountingFunction T : ℝ) - riemannSiegelTheta T / π - 1| ≤ C
 
-/-- The height record gives an absolute discrepancy bound at every height in `[0, H]`.
-This is not a simp lemma so that simp does not expand record hypotheses into quantified formulas. -/
-theorem zetaArgumentBoundUpTo_iff {H C : ℝ} :
-    ZetaArgumentBoundUpTo H C ↔ ∀ T ∈ Icc 0 H,
+/-- The defining equation for the zeta argument record on `[0, H]`. -/
+theorem zetaArgumentBoundUpTo_def (H C : ℝ) :
+    ZetaArgumentBoundUpTo H C = ∀ T ∈ Icc 0 H,
       |(riemannZetaData.zeroCountingFunction T : ℝ) - riemannSiegelTheta T / π - 1| ≤ C :=
-  Iff.rfl
+  (rfl)
+
+/-- Apply the zeta argument record at a height `T` with `0 ≤ T ≤ H`. -/
+theorem ZetaArgumentBoundUpTo.abs_sub_le {H C T : ℝ} (h : ZetaArgumentBoundUpTo H C)
+    (hT0 : 0 ≤ T) (hTH : T ≤ H) :
+    |(riemannZetaData.zeroCountingFunction T : ℝ) - riemannSiegelTheta T / π - 1| ≤ C :=
+  Eq.mp (zetaArgumentBoundUpTo_def H C) h T ⟨hT0, hTH⟩
+
+/-- A zeta argument record persists when the height decreases and the error bound increases. -/
+theorem ZetaArgumentBoundUpTo.mono {H H' C C' : ℝ} (h : ZetaArgumentBoundUpTo H' C)
+    (hH : H ≤ H') (hC : C ≤ C') : ZetaArgumentBoundUpTo H C' := by
+  rw [zetaArgumentBoundUpTo_def]
+  exact fun _ hT ↦ (h.abs_sub_le hT.1 (hT.2.trans hH)).trans hC
+
+/-- For `H < 0`, the zeta argument record holds for any error bound because `[0, H]` is empty. -/
+theorem zetaArgumentBoundUpTo_of_neg {H : ℝ} (hH : H < 0) (C : ℝ) : ZetaArgumentBoundUpTo H C := by
+  simp only [zetaArgumentBoundUpTo_def, Icc_eq_empty_of_lt hH, Set.notMem_empty, false_implies,
+    implies_true]
 
 /-- At height zero the zero count and theta both vanish, so the discrepancy has modulus one. -/
 @[simp] theorem zetaArgumentBoundUpTo_zero_iff {C : ℝ} : ZetaArgumentBoundUpTo 0 C ↔ 1 ≤ C := by
-  rw [zetaArgumentBoundUpTo_iff, Icc_self]
+  rw [zetaArgumentBoundUpTo_def, Icc_self]
   simp
 
 /-- On the positive heights covered by the record, the zero count differs from the logarithmic
@@ -62,7 +78,7 @@ theorem ZetaArgumentBoundUpTo.abs_zeroCountingFunction_sub_log_sub_le {H C T : �
     (h : ZetaArgumentBoundUpTo H C) (hT : T ∈ Ioc 0 H) (κ : ℝ) :
     |(riemannZetaData.zeroCountingFunction T : ℝ) -
         T / (2 * π) * log (T / (2 * π * exp 1)) - κ| ≤ C + 1 / (π * T) + |7 / 8 - κ| := by
-  have hrecord := zetaArgumentBoundUpTo_iff.mp h T ⟨hT.1.le, hT.2⟩
+  have hrecord := h.abs_sub_le hT.1.le hT.2
   have htheta :
       |riemannSiegelTheta T / π + 1 - T / (2 * π) * log (T / (2 * π * exp 1)) - 7 / 8| ≤
         1 / (π * T) := by
