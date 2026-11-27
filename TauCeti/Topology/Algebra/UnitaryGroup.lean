@@ -391,15 +391,9 @@ theorem reindex_trans (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (e : n �
   ext V
   have hL : V ∈ (G.reindex (e.trans f)).toSubgroup ↔ V ∈ G.reindex (e.trans f) := Iff.rfl
   have hR : V ∈ ((G.reindex e).reindex f).toSubgroup ↔ V ∈ (G.reindex e).reindex f := Iff.rfl
-  rw [hL, hR, mem_reindex_iff, mem_reindex_iff, mem_reindex_iff]
-  -- Reindexing by `(e.trans f).symm` equals reindexing by `f.symm` followed by `e.symm`.
-  have heq : Matrix.unitaryReindexContinuousMulEquiv 𝕜 (e.trans f).symm V =
-      Matrix.unitaryReindexContinuousMulEquiv 𝕜 e.symm
-        (Matrix.unitaryReindexContinuousMulEquiv 𝕜 f.symm V) := by
-    apply Subtype.ext
-    ext i j
-    simp [Matrix.coe_unitaryReindexContinuousMulEquiv_apply]
-  rw [heq]
+  rw [hL, hR, mem_reindex_iff, mem_reindex_iff, mem_reindex_iff, Equiv.symm_trans,
+    ← Matrix.unitaryReindexContinuousMulEquiv_trans_unitaryReindexContinuousMulEquiv]
+  rfl
 
 end Reindex
 

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Differential
 public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 import TauCeti.Geometry.Lie.Subgroup.CartanChart
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 
 /-!
@@ -384,46 +385,27 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal
   let _ : ChartedSpace E' K := d.chartedSpace
   let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   let ι : K → R := fun k ↦ ((k : Rˣ) : R)
-  let L_K : K → K := fun k ↦ g * k
-  let L_K_inv : K → K := fun k ↦ g⁻¹ * k
   let L_R : R →L[ℝ] R := LinearMap.toContinuousLinearMap (LinearMap.mulLeft ℝ ((g : Rˣ) : R))
-  have hfun : ι ∘ L_K = L_R ∘ ι := by
+  have hfun : ι ∘ Diffeomorph.smul 𝓘(ℝ, E') 𝓘(ℝ, E') ∞ g = L_R ∘ ι := by
     funext k
-    simp [ι, L_K, L_R]
-  have hι : MDifferentiable 𝓘(ℝ, E') 𝓘(ℝ, R) ι :=
-    d.contMDiff_unitsVal_subtypeVal.mdifferentiable (by simp)
-  have hLK : MDifferentiable 𝓘(ℝ, E') 𝓘(ℝ, E') L_K :=
-    (contMDiff_mul_left (I := 𝓘(ℝ, E')) (n := ∞) (a := g)).mdifferentiable (by simp)
-  have hLK_inv : MDifferentiable 𝓘(ℝ, E') 𝓘(ℝ, E') L_K_inv :=
-    (contMDiff_mul_left (I := 𝓘(ℝ, E')) (n := ∞) (a := g⁻¹)).mdifferentiable (by simp)
-  have hchain : ∀ w : TangentSpace 𝓘(ℝ, E') (1 : K),
-      mvfderiv 𝓘(ℝ, E') ι g (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') L_K (1 : K) w) =
-      L_R (mvfderiv 𝓘(ℝ, E') ι (1 : K) w) := by
-    intro w
-    calc mvfderiv 𝓘(ℝ, E') ι g (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') L_K (1 : K) w)
-        = mvfderiv 𝓘(ℝ, E') (ι ∘ L_K) (1 : K) w :=
-          (mvfderiv_comp_apply_of_eq (x := (1 : K)) (hι g) (hLK 1) (mul_one g) w).symm
-      _ = mvfderiv 𝓘(ℝ, E') (L_R ∘ ι) (1 : K) w := by rw [hfun]
-      _ = L_R (mvfderiv 𝓘(ℝ, E') ι (1 : K) w) := L_R.mvfderiv_comp_apply (hι 1) w
-  have hsurj : Function.Surjective (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') L_K (1 : K)) := by
-    have hcomp_id : L_K ∘ L_K_inv = id := by
-      funext k
-      simp [L_K, L_K_inv]
-    intro w
-    refine ⟨mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') L_K_inv g w, ?_⟩
-    have h := mfderiv_comp_apply_of_eq (I := 𝓘(ℝ, E')) (I' := 𝓘(ℝ, E')) (I'' := 𝓘(ℝ, E'))
-      (x := g) (hLK 1) (hLK_inv g) (inv_mul_cancel g) w
-    rw [hcomp_id, mfderiv_id] at h
+    simp [ι, L_R]
+  have hι : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ, R) ι 1 :=
+    (d.contMDiff_unitsVal_subtypeVal.mdifferentiable (by simp)).mdifferentiableAt
+  have h1 : (mvfderiv 𝓘(ℝ, E') ι g).range =
+      (mvfderiv 𝓘(ℝ, E') (ι ∘ Diffeomorph.smul 𝓘(ℝ, E') 𝓘(ℝ, E') ∞ g) 1).range := by
+    have h := (Diffeomorph.smul 𝓘(ℝ, E') 𝓘(ℝ, E') ∞ g).range_mvfderiv_comp_diffeomorph
+      (by simp) ι 1
+    simp only [Diffeomorph.smul_apply, smul_eq_mul] at h
+    rw [mul_one] at h
     exact h.symm
-  ext v
-  simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe, Submodule.mem_map,
-    ← d.range_mvfderiv_unitsVal_subtypeVal_one, LinearMap.mulLeft_apply]
-  constructor
-  · rintro ⟨w, rfl⟩
-    obtain ⟨u, rfl⟩ := hsurj w
-    exact ⟨mvfderiv 𝓘(ℝ, E') ι (1 : K) u, ⟨u, rfl⟩, (hchain u).symm⟩
-  · rintro ⟨_, ⟨u, rfl⟩, rfl⟩
-    exact ⟨mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') L_K (1 : K) u, hchain u⟩
+  have hcomp : mvfderiv 𝓘(ℝ, E') (L_R ∘ ι) 1 = L_R.comp (mvfderiv 𝓘(ℝ, E') ι 1) :=
+    ContinuousLinearMap.ext fun w ↦ L_R.mvfderiv_comp_apply hι w
+  dsimp only
+  rw [show (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) g).range =
+      (mvfderiv 𝓘(ℝ, E') ι g).range from rfl, h1, hfun, hcomp,
+    ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
+    d.range_mvfderiv_unitsVal_subtypeVal_one]
+  rfl
 
 /-- At any `g ∈ K`, the tangent space in `R` of an embedded Lie subgroup `K ≤ Rˣ` is also the
 right translate `𝔤 · g` of its Lie subalgebra. -/
