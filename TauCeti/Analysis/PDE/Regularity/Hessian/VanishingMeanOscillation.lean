@@ -59,8 +59,10 @@ with the same `r₀` and `C` depending only on `n`, `p`, `λ` and `Λ`
 terms `⟪b, ∇u⟫ + c u` are then absorbed by the interpolation inequality for the gradient
 (`TauCeti.PDE.exists_norm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_of_memVMO`).
 For `2 < p < ∞` these give the Hessian part of the a priori estimate in Krylov's whole-space
-theorem, without its zero-order shift `λ u`, `λ ≥ λ₀` (which removes `‖u‖_{Lᵖ}` from the right
-side), and without the range `1 < p ≤ 2`.
+theorem. Its zero-order shift `λ u`, `λ ≥ λ₀`, which removes `‖u‖_{Lᵖ}` from the right side, is
+proved for `2 < p < ∞` in `TauCeti.Analysis.PDE.Regularity.Hessian.ZeroOrderShift`
+(`TauCeti.PDE.exists_mul_norm_add_sqrt_mul_norm_add_norm_le_of_sum_mul_inner_sub_mul_eq_of_memVMO`);
+the range `1 < p ≤ 2` remains open.
 
 ## The argument
 

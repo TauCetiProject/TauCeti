@@ -21,7 +21,10 @@ component isomorphisms from an isomorphism of descent data (`DescentData.isoApp`
 `DescentData.isoApp_hom_comm`, `DescentData.isoApp_isoMk`), and expresses transition maps and
 compatibility squares of `toDescentData` and `pullFunctor` in terms of `Pseudofunctor.compIso`
 and flexible factorizations (`DescentData.toDescentData_obj_hom`,
-`DescentData.hom_toDescentData_obj_iff`, `DescentData.pullFunctor_obj_hom_eq`).
+`DescentData.hom_toDescentData_obj_iff`, `DescentData.pullFunctor_obj_hom_eq`). It also states the
+identity, cocycle and symmetry laws of the gluing isomorphisms `DescentData.iso`
+(`DescentData.iso_self`, `DescentData.iso_trans`, `DescentData.iso_symm`); the inverse law is
+Mathlib's `DescentData.iso_inv`.
 
 A morphism of Mathlib's descent data `D₁ ⟶ D₂` along `f` is a family of morphisms
 `φ i : D₁.obj i ⟶ D₂.obj i` commuting with the gluing morphisms over every `Y` mapping to two of
@@ -125,6 +128,26 @@ lemma hom_comp_hom ⦃Y : C⦄ ⦃i₁ i₂ i₃ : ι⦄ (q q' : Y ⟶ S) (f₁ 
       D.hom q f₁ f₃ hf₁ (hf₃.trans (hf₂'.symm.trans hf₂)) := by
   obtain rfl : q' = q := hf₂'.symm.trans hf₂
   exact D.hom_comp _ _ _ _ _ _ _
+
+/-- On the diagonal, the gluing isomorphism `DescentData.iso` is the identity. -/
+@[simp]
+lemma iso_self ⦃Y : C⦄ (q : Y ⟶ S) ⦃i : ι⦄ (g : Y ⟶ X i) (hg : g ≫ f i = q) :
+    D.iso q g g hg hg = Iso.refl _ :=
+  Iso.ext (D.hom_self q g hg)
+
+/-- **The cocycle condition** for the gluing isomorphisms `DescentData.iso`. -/
+@[simp]
+lemma iso_trans ⦃Y : C⦄ (q : Y ⟶ S) ⦃i₁ i₂ i₃ : ι⦄ (f₁ : Y ⟶ X i₁) (f₂ : Y ⟶ X i₂)
+    (f₃ : Y ⟶ X i₃) (hf₁ : f₁ ≫ f i₁ = q) (hf₂ : f₂ ≫ f i₂ = q) (hf₃ : f₃ ≫ f i₃ = q) :
+    D.iso q f₁ f₂ hf₁ hf₂ ≪≫ D.iso q f₂ f₃ hf₂ hf₃ = D.iso q f₁ f₃ hf₁ hf₃ :=
+  Iso.ext (D.hom_comp q f₁ f₂ f₃ hf₁ hf₂ hf₃)
+
+/-- Interchanging the two maps inverts the gluing isomorphism `DescentData.iso`. -/
+@[simp]
+lemma iso_symm ⦃Y : C⦄ (q : Y ⟶ S) ⦃i₁ i₂ : ι⦄ (f₁ : Y ⟶ X i₁) (f₂ : Y ⟶ X i₂)
+    (hf₁ : f₁ ≫ f i₁ = q) (hf₂ : f₂ ≫ f i₂ = q) :
+    (D.iso q f₁ f₂ hf₁ hf₂).symm = D.iso q f₂ f₁ hf₂ hf₁ :=
+  rfl
 
 /-- The transition morphisms of `(F.toDescentData f).obj M` expressed in terms of
 `Pseudofunctor.compIso`. -/

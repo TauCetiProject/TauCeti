@@ -204,6 +204,8 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
 * `TauCeti.SmoothTwoForm.hamiltonianVectorField_comp_subtype_val`,
   `TauCeti.SmoothTwoForm.poissonBracket_comp_subtype_val`: restriction to an open submanifold
   preserves Hamiltonian vector fields and Poisson brackets.
+* `IsMIntegralCurveOn.coe_of_hamiltonianVectorField_mpullback_subtype_val`: integral curves of
+  restricted Hamiltonian vector fields are integral curves of the ambient ones.
 
 ## References
 
@@ -369,8 +371,7 @@ def hamiltonianVectorField (σ : SmoothTwoForm I M) (f : M → ℝ) (x : M) : Ta
 
 /-- The Hamiltonian vector field unfolds as the inverse flat map applied to `df`. -/
 theorem hamiltonianVectorField_def (σ : SmoothTwoForm I M) (f : M → ℝ) (x : M) :
-    σ.hamiltonianVectorField f x = (σ.flat x).inverse (mvfderiv I f x) :=
-  (rfl)
+    σ.hamiltonianVectorField f x = (σ.flat x).inverse (mvfderiv I f x) := (rfl)
 
 /-- **The Hamiltonian vector field is local**: at `x` it depends only on the germ of the
 Hamiltonian at `x`. -/
@@ -428,8 +429,7 @@ theorem hamiltonianVectorField_eq_zero_of_not_isInvertible_flat {x : M}
 
 /-- The Hamiltonian vector field is additive on differentiable functions. -/
 theorem hamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
-    (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
-    σ.hamiltonianVectorField (f + g) x =
+    (hg : MDifferentiableAt I 𝓘(ℝ) g x) : σ.hamiltonianVectorField (f + g) x =
       σ.hamiltonianVectorField f x + σ.hamiltonianVectorField g x := by
   simp [hamiltonianVectorField_def, mvfderiv_add hf hg]
 
@@ -577,8 +577,7 @@ variable {x : M}
 differential of the Hamiltonian: `σ_x(X_f x, ·) = df_x`. -/
 @[simp]
 theorem flat_hamiltonianVectorField_of_isInvertible (hx : (σ.flat x).IsInvertible) (f : M → ℝ) :
-    σ.flat x (σ.hamiltonianVectorField f x) = mvfderiv I f x :=
-  hx.self_apply_inverse _
+    σ.flat x (σ.hamiltonianVectorField f x) = mvfderiv I f x := hx.self_apply_inverse _
 
 /-- At a point where the flat map is invertible, contraction with the Hamiltonian vector field is
 the differential of the Hamiltonian: `σ_x(X_f x, v) = df_x(v)`. -/
@@ -991,8 +990,7 @@ theorem neg_poissonBracket (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) :
 
 @[simp]
 theorem poissonBracket_self (σ : SmoothTwoForm I M) (f : M → ℝ) (x : M) :
-    σ.poissonBracket f f x = 0 :=
-  SmoothBundleForm.eval₂_self σ x _
+    σ.poissonBracket f f x = 0 := SmoothBundleForm.eval₂_self σ x _
 
 @[simp]
 theorem poissonBracket_const_left (σ : SmoothTwoForm I M) (c : ℝ) (g : M → ℝ) (x : M) :
@@ -1266,10 +1264,6 @@ theorem map_hamiltonianVectorField_of_eval₂ (hσ : σ.IsNondegenerate) (hσ₂
   map_hamiltonianVectorField_of_eval₂_of_isInvertible (hσ.isInvertible_flat x)
     (hσ₂.isInvertible_flat y) hDg hD hfg
 
-end IsNondegenerate
-
-namespace IsNondegenerate
-
 variable (hσ : σ.IsNondegenerate) (hσ₂ : σ₂.IsNondegenerate) (hφ : ContMDiff I I₂ ∞ φ)
   (hφσ : SmoothForm.mpullback φ hφ σ₂ = σ)
 include hσ hσ₂ hφσ
@@ -1401,8 +1395,7 @@ theorem hamiltonianVectorField_comp_subtype_val (σ : SmoothTwoForm I M)
       Manifold.tangentSpaceOpenEquiv_apply]
     exact (flat_apply σ x v w).symm
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hflat,
-    Manifold.mvfderiv_comp_subtype_val,
-    Manifold.tangentSpaceOpenEquiv_symm_apply]
+    Manifold.mvfderiv_comp_subtype_val, Manifold.tangentSpaceOpenEquiv_symm_apply]
   -- The tangent spaces at `x` in `U` and at `(x : M)` in `M` are both the model space `E`.
   exact (rfl)
 
@@ -1414,12 +1407,23 @@ theorem poissonBracket_comp_subtype_val (σ : SmoothTwoForm I M)
     {U : TopologicalSpace.Opens M} (f g : M → ℝ) (x : U) :
     SmoothTwoForm.poissonBracket
         (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ)
-        (f ∘ Subtype.val) (g ∘ Subtype.val) x =
-      σ.poissonBracket f g x := by
+        (f ∘ Subtype.val) (g ∘ Subtype.val) x = σ.poissonBracket f g x := by
   rw [poissonBracket_def, poissonBracket_def, hamiltonianVectorField_comp_subtype_val,
     hamiltonianVectorField_comp_subtype_val, SmoothForm.eval₂_mpullback,
     Manifold.mfderiv_subtype_val]
   simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- **Integral curves of restricted Hamiltonian vector fields.** For an open set `U`, an integral
+curve in `U` of the Hamiltonian vector field of the restriction of `f` to `U`, for the restriction
+of `σ` to `U`, is, read in `M`, an integral curve of the Hamiltonian vector field of `f`. -/
+theorem _root_.IsMIntegralCurveOn.coe_of_hamiltonianVectorField_mpullback_subtype_val
+    {U : TopologicalSpace.Opens M} {γ : ℝ → U} {s : Set ℝ}
+    (hγ : IsMIntegralCurveOn γ (SmoothTwoForm.hamiltonianVectorField
+      (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ) (f ∘ Subtype.val)) s) :
+    IsMIntegralCurveOn (fun t ↦ (γ t : M)) (σ.hamiltonianVectorField f) s :=
+  hγ.map_of_mfderiv_eq (fun _ _ ↦ contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) fun _ _ ↦ by
+    rw [Manifold.mfderiv_subtype_val_apply, hamiltonianVectorField_comp_subtype_val,
+      Manifold.tangentSpaceOpenEquiv_symm_apply]
 
 end Opens
 
@@ -1463,11 +1467,7 @@ theorem hasDerivAt_coe_of_isMIntegralCurve (omegaForm : SymplecticForm V)
       (f ∘ Subtype.val))) (t : ℝ) :
     HasDerivAt (fun s ↦ (γ s : V)) (omegaForm.hamiltonianVectorField f (γ t)) t := by
   -- The inclusion of `U` carries the restricted Hamiltonian vector field to that of `f`.
-  have h := (hγ.isMIntegralCurveOn Set.univ).map_of_mfderiv_eq (f := (Subtype.val : U → V))
-    (W := fun y ↦ omegaForm.constSmooth.hamiltonianVectorField f y)
-    (fun _ _ ↦ contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) fun s _ ↦ by
-      rw [Manifold.mfderiv_subtype_val, SmoothTwoForm.hamiltonianVectorField_comp_subtype_val,
-        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+  have h := (hγ.isMIntegralCurveOn Set.univ).coe_of_hamiltonianVectorField_mpullback_subtype_val
   have h' := (TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn.1 h t (Set.mem_univ t)).hasDerivAt
     Filter.univ_mem
   simpa [Function.comp_def, hamiltonianVectorField_constSmooth] using h'

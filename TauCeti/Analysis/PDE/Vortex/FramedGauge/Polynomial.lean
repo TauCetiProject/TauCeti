@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Moduli
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 public import TauCeti.RingTheory.Polynomial.SymmetricPower
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Polynomial.SymmetricPower

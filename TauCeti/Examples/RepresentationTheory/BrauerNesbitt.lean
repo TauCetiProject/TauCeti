@@ -12,6 +12,7 @@ public import Mathlib.RepresentationTheory.Maschke
 public import TauCeti.Algebra.MonoidAlgebra.CyclicTwo
 public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.FDRep.Basic
+public import TauCeti.RepresentationTheory.BrauerNesbitt.TraceForm
 
 /-!
 # Checks for the hypotheses of the Brauer–Nesbitt theorem
@@ -27,9 +28,10 @@ polynomials. These examples show what fails when the hypotheses or the invariant
   `sgn^{⊕p}` and `1^{⊕p}` of `ℤ/2` over `𝔽_p` are semisimple (Maschke, since `2 ≠ 0` in `𝔽_p`),
   have equal characters (the traces `±p` vanish), and are not equivalent (the generator acts by
   `-1` on one and by `1` on the other). For `p = 3` this shows the bound `p > d` in the trace form
-  of Brauer–Nesbitt is sharp, and `p = 7` gives the same failure in dimension `7`. The lemmas are
-  stated for `sgn^{⊕n}` and `1^{⊕n}` over any field `k`, under the conditions on `n` and `k` that
-  each argument uses.
+  of Brauer–Nesbitt (`Representation.nonempty_equiv_of_character_eq_of_finrank_lt`) is sharp, and
+  `p = 7` gives the same failure in dimension `7`. Over `𝔽₃` in dimension `2` the trace form
+  applies. The lemmas are stated for `sgn^{⊕n}` and `1^{⊕n}` over any field `k`, under the
+  conditions on `n` and `k` that each argument uses.
 -/
 
 public section
@@ -165,6 +167,18 @@ example : ((sign (ZMod 3) 3).IsSemisimpleRepresentation ∧
   ⟨isSemisimpleRepresentation_sign_and_trivial (by decide),
     character_sign_eq_trivial (ZMod.natCast_self 3),
     isEmpty_equiv_sign_trivial (by decide) (by decide)⟩
+
+/-- **Below the bound, traces suffice.** Over `𝔽₃`, semisimple representations of a monoid of
+dimension `2 < 3` with equal characters are equivalent; `sgn^{⊕3}` and `1^{⊕3}` above satisfy
+every hypothesis except `d < p`. -/
+example {G V W : Type*} [Monoid G] [AddCommGroup V] [Module (ZMod 3) V]
+    [FiniteDimensional (ZMod 3) V] [AddCommGroup W] [Module (ZMod 3) W]
+    [FiniteDimensional (ZMod 3) W] (ρ : Representation (ZMod 3) G V)
+    (σ : Representation (ZMod 3) G W) [ρ.IsSemisimpleRepresentation]
+    [σ.IsSemisimpleRepresentation] (hV : Module.finrank (ZMod 3) V = 2)
+    (hW : Module.finrank (ZMod 3) W = 2) (h : ∀ g, ρ.character g = σ.character g) :
+    Nonempty (ρ.Equiv σ) :=
+  nonempty_equiv_of_character_eq_of_finrank_lt 3 ρ σ (hV.trans hW.symm) (by omega) h
 
 /-- `7` is prime. -/
 local instance fact_prime_seven : Fact (Nat.Prime 7) := ⟨by decide⟩
