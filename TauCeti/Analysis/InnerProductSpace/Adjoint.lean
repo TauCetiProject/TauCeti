@@ -104,8 +104,9 @@ of an invertible real operator and of the adjoint of its inverse multiply to `1`
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
 
-Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
-(`LinearMap.toContinuousLinearMap_star`) and its normality
+Passing a finite-dimensional operator to continuous linear maps and back preserves its adjoint
+(`LinearMap.toContinuousLinearMap_star`, `ContinuousLinearMap.toLinearMap_star`) and the first
+passage preserves its normality
 (the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
 The Hermitian part `H` of a finite-dimensional operator `T`, given by `2 • H = T + T†`, has the
 real quadratic form of `T` (`LinearMap.re_inner_apply_self_eq_of_two_smul_eq`) and is symmetric
@@ -845,6 +846,14 @@ theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
     (star T).toContinuousLinearMap = star T.toContinuousLinearMap := by
   rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
     LinearMap.adjoint_toContinuousLinearMap]
+
+/-- Forgetting the continuity of an operator on a finite-dimensional space preserves its adjoint. -/
+@[simp, norm_cast]
+theorem _root_.ContinuousLinearMap.toLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →L[𝕜] E) : ((star T : E →L[𝕜] E) : E →ₗ[𝕜] E) = star (T : E →ₗ[𝕜] E) := by
+  rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_toLinearMap,
+    ContinuousLinearMap.star_eq_adjoint]
 
 open scoped InnerProductSpace in
 /-- An endomorphism `T` and its Hermitian part `H`, given by `2 • H = T + T†`, have the same real

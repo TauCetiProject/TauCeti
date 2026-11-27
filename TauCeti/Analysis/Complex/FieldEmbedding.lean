@@ -12,30 +12,32 @@ public import Mathlib.Analysis.Complex.Polynomial.Basic
 /-!
 # Field embeddings into `ℂ` extending a given embedding
 
-Let `k` be a countable field with a field embedding `σ : k → ℂ`, viewed as the `k`-algebra
-structure `σ.toAlgebra` on `ℂ`, and let `E` be a field extension of `k`, or more generally a
-domain containing `k`.
+Let `k` be a countable commutative ring with an injective ring homomorphism `σ : k →+* ℂ`,
+viewed as the `k`-algebra structure `σ.toAlgebra` on `ℂ`, and let `E` be a domain containing `k`.
 
-* If `#E ≤ 𝔠`, then `σ` extends to `E`: there is a `k`-algebra homomorphism `E →ₐ[k] ℂ`,
-  a field embedding when `E` is a field.
+* If `#E ≤ 𝔠`, then `σ` extends to `E`: there is an injective `k`-algebra homomorphism
+  `E →ₐ[k] ℂ`.
 * If moreover `E` is algebraically closed with `#E = 𝔠`, then `σ` extends to a field
   isomorphism `E ≃ₐ[k] ℂ`.
 * In both cases a prescribed element `α ∈ E` transcendental over `k` may be sent to any
   prescribed `z ∈ ℂ` transcendental over `k`.
 
 The proofs extend a transcendence basis: `ℂ` has transcendence degree `𝔠` over every countable
-subfield, while `E` has transcendence degree at most `#E`. These embeddings are the
+subring, while `E` has transcendence degree at most `#E`. These embeddings are the
 non-canonical and discontinuous complex embeddings of coefficient fields, such as algebraic
 closures of `ℚ_[p]`, through which `ℓ`-adic Frobenius eigenvalues are compared with complex
 absolute values.
 
 ## Main results
 
-* `TauCeti.Complex.trdeg_eq_continuum`: `ℂ` has transcendence degree `𝔠` over a countable field.
-* `TauCeti.Complex.nonempty_algHom`, `TauCeti.Complex.nonempty_algEquiv`: extension of a complex
-  embedding of a countable field to a homomorphism, respectively an isomorphism.
-* `TauCeti.Complex.exists_algHom_apply_eq`, `TauCeti.Complex.exists_algEquiv_apply_eq`: the same,
-  with a transcendental element sent to a prescribed transcendental complex number.
+* `TauCeti.Complex.trdeg_eq_continuum`: `ℂ` has transcendence degree `𝔠` over a countable
+  commutative ring acting faithfully.
+* `TauCeti.Complex.exists_algHom_injective`, `TauCeti.Complex.nonempty_algEquiv`: extension of a
+  complex embedding of a countable commutative ring to an injective homomorphism, respectively
+  an isomorphism.
+* `TauCeti.Complex.exists_algHom_apply_eq`, `TauCeti.Complex.exists_algEquiv_apply_eq`: the same
+  over a countable commutative ring, with a transcendental element sent to a prescribed
+  transcendental complex number.
 
 ## References
 
@@ -51,55 +53,69 @@ open Cardinal Algebra
 
 namespace TauCeti.Complex
 
-variable {k : Type*} {E : Type u} [Field k] [Countable k] [Algebra k ℂ]
-
-/-- `ℂ` has transcendence degree `𝔠` over every countable field `k`, for every `k`-algebra
-structure on `ℂ`. -/
+/-- `ℂ` has transcendence degree `𝔠` over every countable commutative ring `k` acting faithfully
+on `ℂ`. -/
 @[simp]
-theorem trdeg_eq_continuum : trdeg k ℂ = 𝔠 := by
-  rw [IsAlgClosed.trdeg_eq_cardinalMk (by rw [mk_complex]; exact aleph0_lt_continuum),
+theorem trdeg_eq_continuum {k : Type*} [CommRing k] [Countable k] [Algebra k ℂ]
+    [FaithfulSMul k ℂ] : trdeg k ℂ = 𝔠 := by
+  rw [trdeg_eq_cardinalMk (by rw [mk_complex]; exact aleph0_lt_continuum),
     mk_complex]
 
-/-- A domain of cardinality at most `𝔠` has transcendence degree at most that of `ℂ` over a
-countable field. -/
-private theorem lift_trdeg_le [CommRing E] [IsDomain E] [Algebra k E] (hE : #E ≤ 𝔠) :
-    Cardinal.lift.{0} (trdeg k E) ≤ Cardinal.lift.{u} (trdeg k ℂ) := by
-  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis k E
-  rw [trdeg_eq_continuum, lift_continuum, lift_le_continuum, ← hs.cardinalMk_eq_trdeg]
-  exact (mk_set_le s).trans hE
-
-/-- An algebraically closed field of cardinality `𝔠` has the same transcendence degree as `ℂ`
-over a countable field. -/
-private theorem lift_trdeg_eq [Field E] [IsAlgClosed E] [Algebra k E] (hE : #E = 𝔠) :
+/-- A domain of cardinality `𝔠` has the same transcendence degree as `ℂ` over a
+countable commutative ring acting faithfully on both. -/
+private theorem lift_trdeg_eq {k : Type*} {E : Type u} [CommRing k] [Countable k]
+    [Algebra k ℂ] [FaithfulSMul k ℂ] [CommRing E] [IsDomain E] [Algebra k E]
+    [FaithfulSMul k E] (hE : #E = 𝔠) :
     Cardinal.lift.{0} (trdeg k E) = Cardinal.lift.{u} (trdeg k ℂ) := by
-  rw [trdeg_eq_continuum, lift_continuum,
-    IsAlgClosed.trdeg_eq_cardinalMk (hE ▸ aleph0_lt_continuum), hE, lift_continuum]
+  simp [trdeg_eq_continuum, trdeg_eq_cardinalMk (hE ▸ aleph0_lt_continuum), hE]
 
-/-- Every complex embedding of a countable field `k`, given as a `k`-algebra structure on `ℂ`,
-extends to every field extension `E` of `k`, or domain containing `k`, with `#E ≤ 𝔠`. -/
-theorem nonempty_algHom [CommRing E] [IsDomain E] [Algebra k E] (hE : #E ≤ 𝔠) :
-    Nonempty (E →ₐ[k] ℂ) :=
-  IsAlgClosed.nonempty_algHom_of_lift_trdeg_le (lift_trdeg_le hE)
+section CommRing
 
-/-- Every complex embedding of a countable field `k`, given as a `k`-algebra structure on `ℂ`,
-extends to an isomorphism with `ℂ` of every algebraically closed extension `E` of `k` with
-`#E = 𝔠`. -/
-theorem nonempty_algEquiv [Field E] [IsAlgClosed E] [Algebra k E] (hE : #E = 𝔠) :
+variable {k : Type*} {E : Type u} [CommRing k] [Countable k] [Algebra k ℂ] [FaithfulSMul k ℂ]
+
+/-- A commutative algebra of cardinality at most `𝔠` has transcendence degree at most that of
+`ℂ` over a countable commutative ring acting faithfully on `ℂ`. -/
+private theorem lift_trdeg_le [CommRing E] [Algebra k E] (hE : #E ≤ 𝔠) :
+    Cardinal.lift.{0} (trdeg k E) ≤ Cardinal.lift.{u} (trdeg k ℂ) := by
+  rw [trdeg_eq_continuum, lift_continuum, lift_le_continuum]
+  exact (trdeg_le_cardinalMk k E).trans hE
+
+/-- Every complex embedding of a countable commutative ring `k`, given as a faithful `k`-algebra
+structure on `ℂ`, extends to an injective homomorphism on every domain `E` containing `k`
+with `#E ≤ 𝔠`. -/
+theorem exists_algHom_injective [CommRing E] [IsDomain E] [Algebra k E] [FaithfulSMul k E]
+    (hE : #E ≤ 𝔠) :
+    ∃ φ : E →ₐ[k] ℂ, Function.Injective φ :=
+  IsAlgClosed.exists_algHom_injective_of_lift_trdeg_le (lift_trdeg_le hE)
+
+/-- Every complex embedding of a countable commutative ring `k`, given as a faithful `k`-algebra
+structure on `ℂ`, extends to an isomorphism with `ℂ` of every algebraically closed field `E`
+containing `k` with `#E = 𝔠`. -/
+theorem nonempty_algEquiv [Field E] [IsAlgClosed E] [Algebra k E] [FaithfulSMul k E]
+    (hE : #E = 𝔠) :
     Nonempty (E ≃ₐ[k] ℂ) :=
   IsAlgClosed.nonempty_algEquiv_of_lift_trdeg_eq (lift_trdeg_eq hE)
 
-/-- For a field extension `E` of a countable field `k`, or a domain containing `k`, with
-`#E ≤ 𝔠`, an element `α ∈ E` transcendental over `k` and a complex number `z` transcendental
-over `k`, some `k`-algebra homomorphism `E →ₐ[k] ℂ` sends `α` to `z`. -/
+omit [FaithfulSMul k ℂ] in
+/-- For a domain `E` over a countable commutative ring `k` with `#E ≤ 𝔠`, an element `α ∈ E`
+transcendental over `k` and a complex number `z` transcendental over `k`, some injective `k`-algebra
+homomorphism `E →ₐ[k] ℂ` sends `α` to `z`. -/
 theorem exists_algHom_apply_eq [CommRing E] [IsDomain E] [Algebra k E] (hE : #E ≤ 𝔠) {α : E}
-    {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E →ₐ[k] ℂ, φ α = z :=
-  hα.exists_algHom_apply_eq hz (lift_trdeg_le hE)
+    {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) :
+    ∃ φ : E →ₐ[k] ℂ, Function.Injective φ ∧ φ α = z := by
+  have := hz.faithfulSMul
+  exact hα.exists_algHom_apply_eq hz (lift_trdeg_le hE)
 
-/-- For an algebraically closed extension `E` of a countable field `k` with `#E = 𝔠`, an element
-`α ∈ E` transcendental over `k` and a complex number `z` transcendental over `k`, some
+omit [FaithfulSMul k ℂ] in
+/-- For an algebraically closed field `E` over a countable commutative ring `k` with `#E = 𝔠`,
+an element `α ∈ E` transcendental over `k` and a complex number `z` transcendental over `k`, some
 isomorphism `E ≃ₐ[k] ℂ` sends `α` to `z`. -/
 theorem exists_algEquiv_apply_eq [Field E] [IsAlgClosed E] [Algebra k E] (hE : #E = 𝔠) {α : E}
-    {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E ≃ₐ[k] ℂ, φ α = z :=
-  hα.exists_algEquiv_apply_eq hz (lift_trdeg_eq hE)
+    {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E ≃ₐ[k] ℂ, φ α = z := by
+  have := hα.faithfulSMul
+  have := hz.faithfulSMul
+  exact hα.exists_algEquiv_apply_eq hz (lift_trdeg_eq hE)
+
+end CommRing
 
 end TauCeti.Complex

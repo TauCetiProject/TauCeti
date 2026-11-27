@@ -33,7 +33,8 @@ This file also shows that `pullHom` is compatible with composition and identitie
 hence sends isomorphisms to isomorphisms
 (`CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.inv_pullHom`), and that it sends the
 pullback `f^* φ` of a morphism `φ` to its pullback along the composite
-(`CategoryTheory.Pseudofunctor.pullHom_map`). Composition and identities of local morphisms are
+(`CategoryTheory.Pseudofunctor.pullHom_map`).
+Composition and identities of local morphisms are
 therefore morphisms of presheaves on `Over S`
 (`CategoryTheory.Pseudofunctor.presheafHomComp`, `CategoryTheory.Pseudofunctor.presheafHomId`),
 and so is postcomposition with a morphism `φ : N ⟶ N'`
