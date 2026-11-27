@@ -24,6 +24,8 @@ on tensor products to be read as membership statements in extended ideals.
 A two-sided ideal with flat quotient is recovered by contracting its scalar extension along an
 injective scalar map (`Ideal.comap_map_includeRight_of_flat_quotient_of_injective`). In particular,
 a flat closed subscheme over a domain is the schematic closure of its generic fibre.
+Contraction of a two-sided ideal to the coefficients commutes with flat scalar extension
+(`Ideal.map_comap_algebraMap_eq_of_flat`).
 The extension of a module annihilator is contained in its annihilator after arbitrary
 scalar extension, without a flatness hypothesis. The coefficient algebra `S` need not be
 commutative; extended ideals are left ideals.
@@ -106,6 +108,36 @@ theorem mem_map_ker_iff_of_flat [Module.Flat R S] (f : R →ₗ[R] M) (s : S) :
     Submodule.mem_map_equiv, AlgebraTensorModule.rid_symm_apply, mem_ker]
 
 end LinearMap
+
+namespace Ideal
+
+variable {R S T : Type*} [CommRing R] [Ring S] [Ring T]
+  [Algebra R S] [Algebra R T]
+
+/-- Extension along a flat coefficient algebra commutes with contracting a two-sided ideal to
+the coefficient ring. The ideal of `T` is extended along the right tensor inclusion and
+contracted along the left tensor inclusion. -/
+theorem map_comap_algebraMap_eq_of_flat [Module.Flat R S] (I : Ideal T) [I.IsTwoSided] :
+    (I.comap (algebraMap R T)).map (algebraMap R S) =
+      (I.map (Algebra.TensorProduct.includeRight : T →ₐ[R] S ⊗[R] T)).comap
+        (Algebra.TensorProduct.includeLeft : S →ₐ[R] S ⊗[R] T) := by
+  let f := (Algebra.ofId R (T ⧸ I)).toLinearMap
+  have hf : LinearMap.ker f = I.comap (algebraMap R T) := by
+    ext r
+    rw [LinearMap.mem_ker, Ideal.mem_comap]
+    exact Ideal.Quotient.eq_zero_iff_mem
+  let q := Ideal.Quotient.mkₐ R I
+  have hq : RingHom.ker (Algebra.TensorProduct.map (AlgHom.id R S) q) =
+      I.map (Algebra.TensorProduct.includeRight : T →ₐ[R] S ⊗[R] T) := by
+    simpa only [q, AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker] using
+      Algebra.TensorProduct.lTensor_ker (A := S) q (Ideal.Quotient.mkₐ_surjective R I)
+  ext s
+  simp only [← hf, LinearMap.mem_map_ker_iff_of_flat, Ideal.mem_comap, ← hq,
+    RingHom.mem_ker, LinearMap.baseChange_tmul,
+    Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+    f, AlgHom.toLinearMap_apply, map_one]
+
+end Ideal
 
 namespace TauCeti
 

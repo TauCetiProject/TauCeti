@@ -19,10 +19,13 @@ A semilinear map of two arguments `B` that is definite off the origin, `B x x �
 their difference pairs to zero with itself. On a finite-dimensional space, a separating form
 represents every pairing by a linear map, and a form definite off the origin identifies the space
 semilinearly with its dual. In any dimension, the pairings of a vector with two linearly
-independent vectors can be prescribed independently through a left-separating form.
+independent vectors can be prescribed independently through a left-separating form. In general,
+a sesquilinear map separates on the left exactly when it is injective in its left argument.
 
 ## Main results
 
+* `LinearMap.separatingLeft_iff_injective`, `LinearMap.SeparatingLeft.injective`: a sesquilinear
+  map is left-separating exactly when it is injective in its left argument.
 * `LinearMap.eq_of_forall_sesq_eq`: a form definite off the origin separates vectors.
 * `LinearMap.exists_linearMap_forall_apply_eq_apply`: every pairing factors through a separating
   form on a finite-dimensional space.
@@ -36,6 +39,23 @@ independent vectors can be prescribed independently through a left-separating fo
 public section
 
 namespace LinearMap
+
+section Injective
+
+variable {R R₁ R₂ M M₁ M₂ : Type*} [CommSemiring R] [Semiring R₁] [Semiring R₂]
+  [AddCommMonoid M] [Module R M] [AddCommGroup M₁] [Module R₁ M₁] [AddCommMonoid M₂]
+  [Module R₂ M₂] {I₁ : R₁ →+* R} {I₂ : R₂ →+* R} {B : M₁ →ₛₗ[I₁] M₂ →ₛₗ[I₂] M}
+
+/-- A sesquilinear map is left-separating exactly when it is injective as a map from its left
+argument to the space of maps out of its right argument. -/
+theorem separatingLeft_iff_injective : B.SeparatingLeft ↔ Function.Injective B :=
+  separatingLeft_iff_linear_nontrivial.trans (injective_iff_map_eq_zero B).symm
+
+/-- A left-separating sesquilinear map is injective in its left argument. -/
+theorem SeparatingLeft.injective (hB : B.SeparatingLeft) : Function.Injective B :=
+  separatingLeft_iff_injective.mp hB
+
+end Injective
 
 variable {R S M P : Type*} [Semiring R] [CommSemiring S] [AddCommGroup M] [Module R M]
   [AddCommGroup P] [Module S P] {I₁ I₂ : R →+* S}

@@ -43,7 +43,8 @@ the normalized real-boundary disc solver of the linear theory of holomorphic dis
 * `TauCeti.rotatingLineSubspace`: the closed subspace `X_k` of `C^{1,α}(D)`, with
   `TauCeti.mem_rotatingLineSubspace_iff`.
 * `TauCeti.augmentedConjWirtingerDerivL`: the augmented operator
-  `C^{1,α}(D, F) →L[ℝ] C^{0,α}(D, F) × F × F`.
+  `C^{1,α}(D, F) →L[ℝ] C^{0,α}(D, F) × F × F`, which commutes with postcomposition by complex-linear
+  maps (`TauCeti.augmentedConjWirtingerDerivL_compLeftL`).
 * `TauCeti.exists_mem_rotatingLineSubspace_augmentedConjWirtingerDerivL_eq`: surjectivity on
   `X_k` for `k ≥ 3`.
 * `TauCeti.injOn_augmentedConjWirtingerDerivL`: injectivity on `X_3`.
@@ -138,19 +139,45 @@ theorem augmentedConjWirtingerDerivL_compLeftL {G : Type*} [NormedAddCommGroup G
       (HolderSpace.compLeftL (L.restrictScalars ℝ) (conjWirtingerDerivL α (unitBallOpens ℂ) F u),
         L (u.extend 0), L (fderiv ℝ u.extend 0 1)) := by
   have h0 := zero_mem_unitBallOpens ℂ
-  have hu : DifferentiableAt ℝ u.extend 0 :=
-    (u.contDiffOn_extend.contDiffAt ((unitBallOpens ℂ).isOpen.mem_nhds h0)).differentiableAt
-      one_ne_zero
   have hgerm := extend_compLeftL_eventuallyEq (L.restrictScalars ℝ) u h0
   rw [augmentedConjWirtingerDerivL_apply, conjWirtingerDerivL_compLeftL, hgerm.eq_of_nhds,
     hgerm.fderiv_eq]
   have hd : fderiv ℝ (fun y ↦ L.restrictScalars ℝ (u.extend y)) 0 =
       L.restrictScalars ℝ ∘L fderiv ℝ u.extend 0 :=
-    (L.restrictScalars ℝ).fderiv_comp_left hu
+    (L.restrictScalars ℝ).fderiv_comp_left (u.differentiableAt_extend h0)
   rw [hd]
   simp
 
 end augmented
+
+/-! ### Elements of `X_k` from functions on the closed disc -/
+
+/-- A function `u` on the plane that is `α`-Hölder on the closed unit disc, real differentiable on
+the open disc with an `α`-Hölder derivative field on the closed disc, and satisfies the
+rotating-line boundary condition `u w = w ^ k * conj (u w)` on the unit circle, gives an element
+of `X_k` agreeing with `u` near every point of the open disc. -/
+theorem exists_mem_rotatingLineSubspace_eventuallyEq (hα0 : 0 < α) {u : ℂ → ℂ} {K : ℝ≥0}
+    (huH : HolderOnWith K α u (closedBall 0 1)) (hud : DifferentiableOn ℝ u (ball 0 1))
+    {u' : ℂ → ℂ →L[ℝ] ℂ} {K' : ℝ≥0} (hu'H : HolderOnWith K' α u' (closedBall 0 1))
+    (hu' : ∀ z ∈ ball (0 : ℂ) 1, fderiv ℝ u z = u' z)
+    (hub : ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w)) :
+    ∃ U ∈ rotatingLineSubspace k α, ∀ z ∈ ball (0 : ℂ) 1, U.extend =ᶠ[𝓝 z] u := by
+  obtain ⟨C, hC⟩ := (huH.isBounded_image isBounded_closedBall).exists_norm_le
+  obtain ⟨U, hU⟩ := exists_apply_eq_of_differentiableOn_of_holderOnWith (Ω := unitBallOpens ℂ)
+    hα0 (coe_unitBallOpens ℂ ▸ isBounded_ball) (coe_unitBallOpens ℂ ▸ hud)
+    ⟨C, fun x hx ↦
+      hC _ ⟨x, ball_subset_closedBall (mem_unitBallOpens_iff_mem_ball.1 hx), rfl⟩⟩
+    (coe_unitBallOpens ℂ ▸ hu'H.mono ball_subset_closedBall)
+    fun x hx ↦ hu' x (mem_unitBallOpens_iff_mem_ball.1 hx)
+  refine ⟨U, mem_rotatingLineSubspace_iff.2 fun w hw ↦ ?_, fun z hz ↦ ?_⟩
+  · -- The continuous extension of `U` to the closed disc is `u`.
+    rw [U.closureExtend_eq_of_continuousWithinAt hU
+      (closure_unitBallOpens ℂ ▸ sphere_subset_closedBall hw)
+      (coe_unitBallOpens ℂ ▸
+        (huH.continuousOn hα0 w (sphere_subset_closedBall hw)).mono ball_subset_closedBall)]
+    exact hub w hw
+  · filter_upwards [isOpen_ball.mem_nhds hz] with x hx
+    rw [U.extend_apply_of_mem (mem_unitBallOpens_iff_mem_ball.2 hx), hU]
 
 /-! ### Surjectivity -/
 
@@ -169,28 +196,13 @@ theorem exists_mem_rotatingLineSubspace_augmentedConjWirtingerDerivL_eq (hk : 3 
     exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_and_eq_and_fderiv_eq_of_holderOnWith hk
       hα0 hα1 hG a b
   -- The solution as an element of `C^{1,α}(D)`.
-  obtain ⟨C, hC⟩ := (huH.isBounded_image isBounded_closedBall).exists_norm_le
-  obtain ⟨U, hU⟩ := exists_apply_eq_of_differentiableOn_of_holderOnWith (Ω := unitBallOpens ℂ)
-    hα0 (coe_unitBallOpens ℂ ▸ isBounded_ball) (coe_unitBallOpens ℂ ▸ hud)
-    ⟨C, fun x hx ↦
-      hC _ ⟨x, ball_subset_closedBall (mem_unitBallOpens_iff_mem_ball.1 hx), rfl⟩⟩
-    (coe_unitBallOpens ℂ ▸ hu'H.mono ball_subset_closedBall)
-    fun x hx ↦ hu' x (mem_unitBallOpens_iff_mem_ball.1 hx)
-  have hUe {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) : U.extend =ᶠ[𝓝 z] u := by
-    filter_upwards [isOpen_ball.mem_nhds hz] with x hx
-    rw [U.extend_apply_of_mem (mem_unitBallOpens_iff_mem_ball.2 hx), hU]
-  refine ⟨U, mem_rotatingLineSubspace_iff.2 fun w hw ↦ ?_, ?_⟩
-  · -- The continuous extension of `U` to the closed disc is `u`.
-    rw [U.closureExtend_eq_of_continuousWithinAt hU
-      (closure_unitBallOpens ℂ ▸ sphere_subset_closedBall hw)
-      (coe_unitBallOpens ℂ ▸
-        (huH.continuousOn hα0 w (sphere_subset_closedBall hw)).mono ball_subset_closedBall)]
-    exact hub w hw
-  rw [augmentedConjWirtingerDerivL_apply, (hUe (mem_ball_self one_pos)).eq_of_nhds,
-    (hUe (mem_ball_self one_pos)).fderiv_eq, hu0, hu1]
+  obtain ⟨U, hUk, hUe⟩ := exists_mem_rotatingLineSubspace_eventuallyEq hα0 huH hud hu'H hu' hub
+  refine ⟨U, hUk, ?_⟩
+  rw [augmentedConjWirtingerDerivL_apply, (hUe 0 (mem_ball_self one_pos)).eq_of_nhds,
+    (hUe 0 (mem_ball_self one_pos)).fderiv_eq, hu0, hu1]
   refine Prod.ext (HolderSpace.ext fun z ↦ ?_) rfl
   have hz := mem_unitBallOpens_iff_mem_ball.1 z.property
-  rw [conjWirtingerDerivL_apply U z (hUe hz), hubar z hz, hGg]
+  rw [conjWirtingerDerivL_apply U z (hUe z hz), hubar z hz, hGg]
 
 /-! ### Injectivity -/
 
@@ -214,11 +226,10 @@ theorem injOn_augmentedConjWirtingerDerivL :
   have h0' := mem_ball_self (x := (0 : ℂ)) one_pos
   have heq := eqOn_of_conjWirtingerDeriv_eq_of_eq_zpow_mul_conj_of_eq_of_fderiv_eq (hc u) (hc v)
     (hdiff u) (hdiff v) (fun z hz ↦ by
-      rw [(hcl hz).conjWirtingerDeriv_eq, (hcl hz).conjWirtingerDeriv_eq,
-        ← conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_extend u
-          ⟨z, mem_unitBallOpens_iff_mem_ball.2 hz⟩,
-        ← conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_extend v
-          ⟨z, mem_unitBallOpens_iff_mem_ball.2 hz⟩, hd])
+      have hz' := mem_unitBallOpens_iff_mem_ball.2 hz
+      exact (conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend u ⟨z, hz'⟩).symm.trans
+        (congr($hd ⟨z, hz'⟩).trans
+          (conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend v ⟨z, hz'⟩)))
     (mem_rotatingLineSubspace_iff.1 hu) (mem_rotatingLineSubspace_iff.1 hv)
     (by rw [(hcl h0').eq_of_nhds, (hcl h0').eq_of_nhds, h0])
     (by rw [(hcl h0').fderiv_eq, (hcl h0').fderiv_eq, h1])

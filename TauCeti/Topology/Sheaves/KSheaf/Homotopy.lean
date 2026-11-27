@@ -53,6 +53,8 @@ that every compact set has a compact neighbourhood.
 
 * `TopCat.KPresheaf.IsHomotopyKSheaf.quasiIso_desc`: in a homotopy K-sheaf, the map to `F(K)`
   from any colimit over the compact neighbourhoods of `K` is a quasi-isomorphism.
+* `TopCat.KPresheaf.IsHomotopyKSheaf.of_iso`: a K-presheaf isomorphic to a homotopy K-sheaf is a
+  homotopy K-sheaf.
 * `TopCat.KPresheaf.isPullback_homologyMap`: where `mayerVietorisDesc` is a quasi-isomorphism,
   the cohomology squares are pullbacks in the degree above a degree where `F(K₂ ∩ K₃)` has no
   cohomology.
@@ -168,6 +170,30 @@ theorem IsHomotopyKSheaf.quasiIso_desc (hF : F.IsHomotopyKSheaf) (K : Compacts X
   obtain ⟨c', hc', _⟩ := hF.exists_isColimit_quasiIso_desc K
   rw [← hc.coconePointUniqueUpToIso_hom_desc hc']
   infer_instance
+
+/-- A K-presheaf isomorphic to a homotopy K-sheaf is a homotopy K-sheaf. -/
+theorem IsHomotopyKSheaf.of_iso {F G : KPresheaf (CochainComplex C ℤ) X} (e : F ≅ G)
+    (hF : F.IsHomotopyKSheaf) : G.IsHomotopyKSheaf where
+  acyclic_bot i := (exactAt_iff_of_quasiIsoAt (e.hom.app (op ⊥)) i).1 (hF.acyclic_bot i)
+  quasiIso_mayerVietorisDesc {K₁ K₂ K₃ K₄} h := by
+    have := hF.quasiIso_mayerVietorisDesc h
+    -- `mayerVietorisDesc` is natural (`mappingConeMap_comp_mayerVietorisDesc`)
+    exact quasiIso_of_arrow_mk_iso (F.mayerVietorisDesc h) (G.mayerVietorisDesc h)
+      (Arrow.isoMk (mappingCone.mapIso (e.app (op K₄))
+          (biprod.mapIso (e.app (op K₂)) (e.app (op K₃))) (by apply biprod.hom_ext <;> simp))
+        (e.app (op K₁)) (mappingConeMap_comp_mayerVietorisDesc e.hom h))
+  exists_isColimit_quasiIso_desc K := by
+    obtain ⟨c, hc, _⟩ := hF.exists_isColimit_quasiIso_desc K
+    -- transport the colimit cocone of `F` along `e`
+    let α := Functor.isoWhiskerLeft (Set.mono_coe K.compactNhds).functor.op e
+    let hc' := (IsColimit.precomposeInvEquiv α c).symm hc
+    refine ⟨(Cocone.precompose α.inv).obj c, hc', ?_⟩
+    have : hc'.desc (G.coconeOfCompacts K) = hc.desc (F.coconeOfCompacts K) ≫ e.hom.app (op K) :=
+      hc'.hom_ext fun L ↦ by
+        rw [IsColimit.fac, ← cancel_epi (α.hom.app L)]
+        simp [α]
+    rw [this]
+    infer_instance
 
 /-- If the map `mappingCone φ ⟶ F(K₁)` of a bicartesian square is a quasi-isomorphism and `F(K₁)`
 has vanishing cohomology in degree `i`, then the square of cohomology groups in degree `i + 1` is
