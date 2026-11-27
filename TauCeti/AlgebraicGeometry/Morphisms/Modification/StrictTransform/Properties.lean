@@ -28,9 +28,10 @@ assume instead that the inclusion `φ⁻¹(U) ⟶ S'` is quasi-compact.
   (`map_snd_strictTransform`). For `f` a closed immersion, so that `X ×_S S' ⟶ S'` is one, the
   strict transform is the inverse image of that closure: it is the closure of `X ∩ U` in `S'`
   (`strictTransform_closedImmersion`). For the blowup along an ideal sheaf `I` with `U` the
-  complement of its centre, the image of the strict transform in `Bl_I S` is the blowup of `X`
-  along `I.comap f` (`map_snd_strictTransform_blowupToBase`,
-  `strictTransform_closedImmersion_blowupToBase`).
+  complement of its centre, the image of the strict transform in `Bl_I S` is the
+  scheme-theoretic image of the morphism of blowups `Bl_{I.comap f} X ⟶ Bl_I S`
+  (`map_snd_strictTransform_blowupToBase`); for `f` a closed immersion it is the blowup of `X`
+  along `X ∩ V(I)` (`strictTransform_closedImmersion_blowupToBase`).
 * **Uniqueness of flat closed subschemes.** If `φ⁻¹(U)` is scheme-theoretically dense in `S'`
   and its inclusion is quasi-compact, a closed subscheme `Z ⊆ X ×_S S'` which is flat over `S'`
   and agrees with `X ×_S S'` over `φ⁻¹(U)` *as closed subschemes* (its ideal sheaf pulls back to
