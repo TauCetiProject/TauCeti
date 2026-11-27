@@ -241,7 +241,8 @@ theorem two_mul_self_mul_angerJ (ν z : ℂ) :
       (fun θ _ => (hasDerivAt_sin _).comp θ (hasDerivAt_phase ν z θ))
       ((by fun_prop : Continuous fun θ : ℝ =>
         cos (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ)).intervalIntegrable 0 π)]
-    simp [mul_comm]
+    simp only [Real.sin_pi, Real.sin_zero, ofReal_zero, mul_zero, sub_zero, sin_zero]
+    rw [mul_comm ν]
   have key (θ : ℝ) : cos (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ) =
       ν * cos (ν * θ - z * Real.sin θ) -
         z / 2 * (cos ((ν - 1) * θ - z * Real.sin θ) + cos ((ν + 1) * θ - z * Real.sin θ)) := by
@@ -270,7 +271,8 @@ theorem two_mul_self_mul_weberE (ν z : ℂ) :
       (fun θ _ => ((hasDerivAt_cos _).comp θ (hasDerivAt_phase ν z θ)).neg.congr_deriv (by ring))
       ((by fun_prop : Continuous fun θ : ℝ =>
         sin (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ)).intervalIntegrable 0 π)]
-    simp [mul_comm]
+    simp only [Real.sin_pi, Real.sin_zero, ofReal_zero, mul_zero, sub_zero, cos_zero]
+    rw [mul_comm ν]
     ring
   have key (θ : ℝ) : sin (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ) =
       ν * sin (ν * θ - z * Real.sin θ) -
@@ -305,8 +307,9 @@ theorem integral_zero_two_pi_cos_mul_sub_mul_sin (ν z : ℂ) :
     rw [← h]
     refine intervalIntegral.integral_congr fun θ _ => ?_
     rw [Real.sin_two_pi_sub, ← cos_sub]
+    congr 1
     push_cast
-    ring_nf
+    ring
   rw [← intervalIntegral.integral_add_adjacent_intervals (b := π) (hc.intervalIntegrable _ _)
     (hc.intervalIntegrable _ _), h2, intervalIntegral.integral_add
     ((intervalIntegrable_integrand continuous_cos ν z).const_mul _)
