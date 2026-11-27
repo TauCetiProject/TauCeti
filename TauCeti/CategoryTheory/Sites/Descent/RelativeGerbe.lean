@@ -38,6 +38,11 @@ of `G` is locally essentially surjective but no relative gerbe
 Every transformation whose components are equivalences, in particular every identity, is a
 relative gerbe.
 
+Conversely, if `F` is a stack, `G` a prestack and the components of `η` are fully faithful, then
+local essential surjectivity descends: `η` is locally essentially surjective exactly when its
+components are essentially surjective, and then they are equivalences of categories
+(`StrongTrans.isLocallyEssSurj_iff_essSurj`, `StrongTrans.isEquivalence_of_isLocallyEssSurj`).
+
 Stacks states the equivalent form that the projection of the iso-comma stack of `η` to `G` is a
 gerbe over `G`, for the topology induced from `C`. Here this is tested on each object `y` of `G`
 over `U`: the *relative fibre* `StrongTrans.relativeFiber η y` is the 2-fibre product
@@ -69,6 +74,11 @@ the universe `v` of the morphisms of `C`; this holds for pseudofunctors with val
 * `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_of_isEquivalence`,
   `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_id`: transformations whose components
   are equivalences, and identities, are relative gerbes.
+* `CategoryTheory.Pseudofunctor.StrongTrans.essSurj_of_isLocallyEssSurj`,
+  `CategoryTheory.Pseudofunctor.StrongTrans.isLocallyEssSurj_iff_essSurj`,
+  `CategoryTheory.Pseudofunctor.StrongTrans.isEquivalence_of_isLocallyEssSurj`: for a
+  transformation with fully faithful components from a stack to a prestack, local essential
+  surjectivity is essential surjectivity of the components.
 * `CategoryTheory.Pseudofunctor.StrongTrans.isLocallyEssSurj_bot_iff`,
   `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_bot_iff`: the two notions for the
   trivial topology.
@@ -262,6 +272,43 @@ theorem isRelativeGerbe_bot_iff :
               fun V f _ ↦ h₂ V _ _ ((Cat.Hom.toNatIso (η.naturality f.op.toLoc)).app x ≪≫
                 (G.map f.op.toLoc).toFunctor.mapIso b ≪≫
                   ((Cat.Hom.toNatIso (η.naturality f.op.toLoc)).app x').symm)⟩ }
+
+/-! ### Fully faithful transformations of stacks -/
+
+section FullyFaithful
+
+variable [F.IsStack J] [G.IsPrestack J]
+  (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful)
+include hη
+
+/-- **Local essential surjectivity descends.** If `F` is a stack, `G` a prestack and the
+components of `η : F ⟶ G` are fully faithful, then a locally essentially surjective `η` has
+essentially surjective components: an object of `G` over `U` whose pullbacks along a covering
+sieve are images under `η` is an image under `η` up to isomorphism. -/
+theorem essSurj_of_isLocallyEssSurj [η.IsLocallyEssSurj J] (U : C) :
+    (η.app (.mk (op U))).toFunctor.EssSurj where
+  mem_essImage z := by
+    obtain ⟨R, hR, h⟩ := IsLocallyEssSurj.exists_covering_lift (η := η) (J := J) z
+    have := (F.isStackFor' R hR).essSurj
+    exact η.mem_essImage_of_toDescentData _ hη (G.isPrestackFor' R hR).fullyFaithful z
+      fun i ↦ h _ i.property
+
+/-- If `F` is a stack, `G` a prestack and the components of `η : F ⟶ G` are fully faithful, then
+`η` is locally essentially surjective if and only if its components are essentially surjective. -/
+theorem isLocallyEssSurj_iff_essSurj :
+    η.IsLocallyEssSurj J ↔ ∀ U : C, (η.app (.mk (op U))).toFunctor.EssSurj :=
+  ⟨fun _ ↦ essSurj_of_isLocallyEssSurj (J := J) η hη, isLocallyEssSurj_of_essSurj η⟩
+
+/-- If `F` is a stack, `G` a prestack and the components of `η : F ⟶ G` are fully faithful, then
+the components of a locally essentially surjective `η` are equivalences of categories. -/
+theorem isEquivalence_of_isLocallyEssSurj [η.IsLocallyEssSurj J] (U : C) :
+    (η.app (.mk (op U))).toFunctor.IsEquivalence :=
+  have := (hη U).full
+  have := (hη U).faithful
+  have := essSurj_of_isLocallyEssSurj (J := J) η hη U
+  { }
+
+end FullyFaithful
 
 /-! ### The relative fibre -/
 
