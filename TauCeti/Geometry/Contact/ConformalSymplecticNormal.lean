@@ -67,7 +67,9 @@ carries the Levi form of `ξ` to that of `ξ₁` up to this isomorphism
 conformal symplectic normal space of `f` onto that of `F ∘ f`
 (`TauCeti.conformalSymplecticNormalEquiv`), conformally symplectic for the two line-valued forms
 (`TauCeti.conformalSymplecticNormalForm_conformalSymplecticNormalEquiv`), and compatible with
-composition (`TauCeti.conformalSymplecticNormalEquiv_trans`).
+composition (`TauCeti.conformalSymplecticNormalEquiv_trans`). On representatives, `dF` maps the
+Levi orthogonal of the tangent image of `f` into that of `F ∘ f`
+(`TauCeti.mfderiv_mem_leviOrthogonal`).
 
 A local defining form `α` of `ξ` at `f y`, with `ker α_(f y) = ξ_(f y)`, identifies the contact
 line with `ℝ` and turns the line-valued form into a linear symplectic form
@@ -501,6 +503,37 @@ theorem conformalSymplecticNormalEquiv_trans {n n₁ n₂ : ℕ∞ω}
       ((congrArg _ (Subtype.ext (Subtype.ext ?_))).trans
         (LinearMap.symplecticNormalCongr_mk _ _ _ u).symm)
     simp [hcomp]
+
+/-- **The differential of a map carrying `D` to `D₁` preserves Levi orthogonals.** Let `F` be `C²`
+at `f y` with invertible differential, mapping `D (f y)` into `D₁ (F (f y))`, and whose inverse
+differentials map `D₁` into `D` near `f y`, and let `f` be differentiable at `y`. Then `dF` maps the
+Levi orthogonal of the tangent image of `f` at `y` into that of `F ∘ f`. -/
+theorem mfderiv_mem_leviOrthogonal {n : ℕ∞ω} (hD : IsContMDiffDistribution I 1 k D)
+    (hD₁ : IsContMDiffDistribution I₁ 1 k₁ D₁) (hF : ContMDiffAt I I₁ n F (f y)) (hn : 2 ≤ n)
+    (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
+    (hFD : ∀ u ∈ D (f y), mfderiv I I₁ F (f y) u ∈ D₁ (F (f y)))
+    (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
+    (hf : MDifferentiableAt J I f y) {u : TangentSpace I (f y)}
+    (hu : u ∈ leviOrthogonal J D f y) :
+    mfderiv I I₁ F (f y) u ∈ leviOrthogonal J D₁ (F ∘ f) y := by
+  obtain ⟨huD, hu⟩ := mem_leviOrthogonal_iff.1 hu
+  refine mem_leviOrthogonal_iff.2 ⟨hFD u huD, fun w hw ↦ ?_⟩
+  obtain ⟨a, ha⟩ := hw
+  rw [ContinuousLinearMap.coe_coe,
+    mfderiv_comp y (hF.mdifferentiableAt (two_pos.trans_le hn).ne') hf,
+    ContinuousLinearMap.comp_apply] at ha
+  -- `w` is the image under `dF` of the tangent vector `df a`, which lies in `D`.
+  have ha' : mfderiv J I f y a ∈ D (f y) := by
+    have h := hFD'.self_of_nhds _ w.property
+    rwa [← ha, hFx.inverse_apply_self] at h
+  have hw' : w = (mfderiv I I₁ F (f y)).toLinearMap.restrict hFD ⟨_, ha'⟩ :=
+    Subtype.ext ha.symm
+  have hu' : (⟨mfderiv I I₁ F (f y) u, hFD u huD⟩ : D₁ (F (f y))) =
+      (mfderiv I I₁ F (f y)).toLinearMap.restrict hFD ⟨u, huD⟩ :=
+    (LinearMap.restrict_apply hFD ⟨u, huD⟩).symm
+  rw [hw', hu']
+  refine (distributionLeviForm_restrict_mfderiv hD hD₁ hF hn hFx hFD hFD' _ _).trans ?_
+  rw [hu ⟨_, ha'⟩ ⟨a, rfl⟩, map_zero]
 
 end NaturalityInvertible
 
