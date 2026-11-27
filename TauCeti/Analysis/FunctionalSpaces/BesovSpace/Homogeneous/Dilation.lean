@@ -107,8 +107,7 @@ theorem exists_homogeneousLittlewoodPaleyBlock_compCLMOfContinuousLinearEquiv_eq
     have he' : (e : E →ₗ[ℝ] E) = (2 : ℝ) ^ m • LinearMap.id := LinearMap.ext fun x ↦ by simp [he]
     rw [he', LinearMap.det_smul, LinearMap.det_id, mul_one, ← zpow_natCast, ← zpow_mul,
       abs_of_pos (by positivity), ← Real.rpow_intCast]
-    push_cast
-    rfl
+    norm_cast
   rw [hnorm, hdet, ← Real.rpow_neg zero_le_two, ← Real.rpow_mul zero_le_two, ← mul_assoc,
     ← mul_assoc, ← Real.rpow_add two_pos, ← Real.rpow_add two_pos]
   congr 2
@@ -162,7 +161,7 @@ theorem norm_eq_of_toDistr_eq_compCLMOfContinuousLinearEquiv {e : E ≃L[ℝ] E}
       (s := s) he (coe_block u (j - m)).symm
   -- The block of `v` is the `Lᵖ` function `w`, since both have the same distribution.
   have hvw : v.block j = w :=
-    Lp.toTemperedDistribution_injective (by dsimp only; rw [coe_block, huv, hw])
+    Lp.toTemperedDistribution_injective ((coe_block v j).trans (by rw [huv, hw]))
   rw [norm_weightedBlocks_apply, hvw, hwn, Equiv.subRight_apply, lp.coeFn_smul, Pi.smul_apply,
     norm_smul, norm_weightedBlocks_apply, Complex.norm_of_nonneg hc]
 

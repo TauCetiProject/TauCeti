@@ -202,9 +202,8 @@ theorem exists_compCLMOfContinuousLinearEquiv_toTemperedDistribution_eq_and_norm
     (e : E ≃L[ℝ] E) (u : Lp F p μ) :
     ∃ v : Lp F p μ, compCLMOfContinuousLinearEquiv F e (u : 𝓢'(E, F)) = v ∧ v =ᵐ[μ] u ∘ e ∧
       ‖v‖ = |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ ^ p.toReal⁻¹ * ‖u‖ := by
-  have hdet : 0 < |LinearMap.det (e : E →ₗ[ℝ] E)| := by
-    rw [abs_pos, ← LinearEquiv.coe_det]
-    exact Units.ne_zero _
+  have hdet : 0 < |LinearMap.det (e : E →ₗ[ℝ] E)| :=
+    abs_pos.2 (e : E ≃ₗ[ℝ] E).isUnit_det'.ne_zero
   obtain ⟨v, hv, hae, -⟩ := exists_compCLM_toTemperedDistribution_eq_and_norm_le μ (φ := e.toEquiv)
     (by rw [ContinuousLinearEquiv.coe_toEquiv]; exact e.hasTemperateGrowth)
     (by rw [ContinuousLinearEquiv.coe_toEquiv_symm]; exact e.symm.hasTemperateGrowth) hdet
@@ -212,8 +211,8 @@ theorem exists_compCLMOfContinuousLinearEquiv_toTemperedDistribution_eq_and_norm
   rw [ContinuousLinearEquiv.coe_toEquiv] at hae
   refine ⟨v, hv, hae, ?_⟩
   rw [Lp.norm_def, eLpNorm_congr_ae hae, Measure.eLpNorm_comp_continuousLinearEquiv,
-    ENNReal.toReal_mul, ← Lp.norm_def, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _),
-    abs_inv, one_div, ENNReal.toReal_inv]
+    ENNReal.toReal_mul, ← Lp.norm_def]
+  simp [← ENNReal.toReal_rpow]
 
 end Embedding
 
@@ -229,6 +228,37 @@ section TVS
 variable [AddCommGroup F] [Module ℂ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
   [ContinuousConstSMul ℂ F]
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The common step of `fourier_compCLMOfContinuousLinearEquiv_eq_smul` and
+`fourierInv_compCLMOfContinuousLinearEquiv_eq_smul`: if `Φ` is the transpose of a map `φ` of test
+functions with the change of variables law `φ (f ∘ A) = |det A|⁻¹ • φ f ∘ (A⁻¹)†`, then
+`Φ (e^* T) = |det e|⁻¹ • ((e⁻¹)†)^* (Φ T)`. -/
+private theorem compCLMOfContinuousLinearEquiv_eq_smul_of_comp {Φ : 𝓢'(E, F) → 𝓢'(E, F)}
+    {φ : 𝓢(E, ℂ) → 𝓢(E, ℂ)} (hΦ : ∀ T f, Φ T f = T (φ f))
+    (hφ : ∀ (A : E ≃L[ℝ] E) (f : 𝓢(E, ℂ)) (y : E),
+      φ (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A f) y =
+        |LinearMap.det (A : E →ₗ[ℝ] E)|⁻¹ •
+          φ f (ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) y))
+    (e : E ≃L[ℝ] E) (T : 𝓢'(E, F)) :
+    Φ (compCLMOfContinuousLinearEquiv F e T) =
+      ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) •
+        compCLMOfContinuousLinearEquiv F e.symm.adjointEquiv (Φ T) := by
+  set e' := e.symm.adjointEquiv
+  have hne : LinearMap.det (e' : E →ₗ[ℝ] E) ≠ 0 := (e' : E ≃ₗ[ℝ] E).isUnit_det'.ne_zero
+  -- On test functions: `φ (f ∘ e'⁻¹) = |det e'| • φ f ∘ e⁻¹`, since `(e'⁻¹)⁻¹† = e'† = e⁻¹`.
+  have hf (f : 𝓢(E, ℂ)) : φ (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e'.symm f) =
+      ((|LinearMap.det (e' : E →ₗ[ℝ] E)| : ℝ) : ℂ) •
+        SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e.symm (φ f) := by
+    ext ξ
+    have hadj : ContinuousLinearMap.adjoint (e' : E →L[ℝ] E) ξ = e.symm ξ := by
+      simp [e', ContinuousLinearEquiv.coe_adjointEquiv]
+    simp [hφ, hadj, LinearEquiv.det_coe_symm, Complex.coe_smul]
+  ext f
+  rw [hΦ, compCLMOfContinuousLinearEquiv_apply_apply, smul_apply,
+    compCLMOfContinuousLinearEquiv_apply_apply, hΦ, hf, map_smul, smul_smul, smul_smul]
+  congr 1
+  simp [hne]
+
 /-- **The Fourier transform under a linear change of variables.** The pullback along a continuous
 linear automorphism `e` acts on the frequencies by the adjoint of `e⁻¹`:
 `𝓕 (e^* T) = |det e|⁻¹ • ((e⁻¹)†)^* (𝓕 T)`. On a Schwartz function this is
@@ -237,30 +267,9 @@ is `TemperedDistribution.fourier_compCLMOfContinuousLinearEquiv`. -/
 theorem fourier_compCLMOfContinuousLinearEquiv_eq_smul (e : E ≃L[ℝ] E) (T : 𝓢'(E, F)) :
     𝓕 (compCLMOfContinuousLinearEquiv F e T) =
       ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) •
-        compCLMOfContinuousLinearEquiv F e.symm.adjointEquiv (𝓕 T) := by
-  set e' := e.symm.adjointEquiv
-  -- On test functions: `𝓕 (f ∘ e'⁻¹) = |det e'| • 𝓕 f ∘ e⁻¹`, since `(e'⁻¹)⁻¹† = e'† = e⁻¹`.
-  have hf (f : 𝓢(E, ℂ)) : 𝓕 (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e'.symm f) =
-      ((|LinearMap.det (e' : E →ₗ[ℝ] E)| : ℝ) : ℂ) •
-        SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e.symm (𝓕 f) := by
-    ext ξ
-    rw [SchwartzMap.fourier_coe, SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
-      ContinuousLinearEquiv.fourier_comp, smul_apply,
-      SchwartzMap.compCLMOfContinuousLinearEquiv_apply, Function.comp_apply,
-      SchwartzMap.fourier_coe, e'.symm_symm, Complex.coe_smul]
-    have hdet : LinearMap.det (e'.symm : E →ₗ[ℝ] E) = (LinearMap.det (e' : E →ₗ[ℝ] E))⁻¹ :=
-      LinearEquiv.det_coe_symm (e' : E ≃ₗ[ℝ] E)
-    have hadj : ContinuousLinearMap.adjoint (e' : E →L[ℝ] E) ξ = e.symm ξ := by
-      simp [e', ContinuousLinearEquiv.coe_adjointEquiv]
-    rw [hdet, abs_inv, inv_inv, hadj]
-  ext f
-  have hne : LinearMap.det (e' : E →ₗ[ℝ] E) ≠ 0 := by
-    rw [← LinearEquiv.coe_det]
-    exact Units.ne_zero _
-  rw [fourier_apply, compCLMOfContinuousLinearEquiv_apply_apply, smul_apply,
-    compCLMOfContinuousLinearEquiv_apply_apply, fourier_apply, hf, map_smul, smul_smul,
-    smul_smul, ← Complex.ofReal_mul, ← Complex.ofReal_mul, mul_assoc,
-    inv_mul_cancel₀ (abs_ne_zero.2 hne), mul_one]
+        compCLMOfContinuousLinearEquiv F e.symm.adjointEquiv (𝓕 T) :=
+  compCLMOfContinuousLinearEquiv_eq_smul_of_comp fourier_apply
+    (fun A f y ↦ by simp [SchwartzMap.fourier_coe, ContinuousLinearEquiv.fourier_comp]) e T
 
 /-- **The inverse Fourier transform under a linear change of variables**:
 `𝓕⁻ (e^* T) = |det e|⁻¹ • ((e⁻¹)†)^* (𝓕⁻ T)`. On a Schwartz function this is
@@ -268,30 +277,9 @@ theorem fourier_compCLMOfContinuousLinearEquiv_eq_smul (e : E ≃L[ℝ] E) (T : 
 theorem fourierInv_compCLMOfContinuousLinearEquiv_eq_smul (e : E ≃L[ℝ] E) (T : 𝓢'(E, F)) :
     𝓕⁻ (compCLMOfContinuousLinearEquiv F e T) =
       ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) •
-        compCLMOfContinuousLinearEquiv F e.symm.adjointEquiv (𝓕⁻ T) := by
-  set e' := e.symm.adjointEquiv
-  -- On test functions: `𝓕⁻ (f ∘ e'⁻¹) = |det e'| • 𝓕⁻ f ∘ e⁻¹`, since `(e'⁻¹)⁻¹† = e'† = e⁻¹`.
-  have hf (f : 𝓢(E, ℂ)) : 𝓕⁻ (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e'.symm f) =
-      ((|LinearMap.det (e' : E →ₗ[ℝ] E)| : ℝ) : ℂ) •
-        SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e.symm (𝓕⁻ f) := by
-    ext ξ
-    rw [SchwartzMap.fourierInv_coe, SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
-      ContinuousLinearEquiv.fourierInv_comp, smul_apply,
-      SchwartzMap.compCLMOfContinuousLinearEquiv_apply, Function.comp_apply,
-      SchwartzMap.fourierInv_coe, e'.symm_symm, Complex.coe_smul]
-    have hdet : LinearMap.det (e'.symm : E →ₗ[ℝ] E) = (LinearMap.det (e' : E →ₗ[ℝ] E))⁻¹ :=
-      LinearEquiv.det_coe_symm (e' : E ≃ₗ[ℝ] E)
-    have hadj : ContinuousLinearMap.adjoint (e' : E →L[ℝ] E) ξ = e.symm ξ := by
-      simp [e', ContinuousLinearEquiv.coe_adjointEquiv]
-    rw [hdet, abs_inv, inv_inv, hadj]
-  ext f
-  have hne : LinearMap.det (e' : E →ₗ[ℝ] E) ≠ 0 := by
-    rw [← LinearEquiv.coe_det]
-    exact Units.ne_zero _
-  rw [fourierInv_apply, compCLMOfContinuousLinearEquiv_apply_apply, smul_apply,
-    compCLMOfContinuousLinearEquiv_apply_apply, fourierInv_apply, hf, map_smul, smul_smul,
-    smul_smul, ← Complex.ofReal_mul, ← Complex.ofReal_mul, mul_assoc,
-    inv_mul_cancel₀ (abs_ne_zero.2 hne), mul_one]
+        compCLMOfContinuousLinearEquiv F e.symm.adjointEquiv (𝓕⁻ T) :=
+  compCLMOfContinuousLinearEquiv_eq_smul_of_comp fourierInv_apply
+    (fun A f y ↦ by simp [SchwartzMap.fourierInv_coe, ContinuousLinearEquiv.fourierInv_comp]) e T
 
 end TVS
 
@@ -319,18 +307,17 @@ theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv_eq (e : E ≃L[ℝ] 
     have hdet : |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ * |LinearMap.det (e' : E →ₗ[ℝ] E)|⁻¹ = 1 := by
       have he : LinearMap.det (e.symm : E →ₗ[ℝ] E) = (LinearMap.det (e : E →ₗ[ℝ] E))⁻¹ :=
         LinearEquiv.det_coe_symm (e : E ≃ₗ[ℝ] E)
-      have hne : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 := by
-        rw [← LinearEquiv.coe_det]
-        exact Units.ne_zero _
-      rw [ContinuousLinearEquiv.det_adjointEquiv, star_trivial, he, abs_inv, inv_inv,
-        inv_mul_cancel₀ (abs_ne_zero.2 hne)]
+      have hne : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 := (e : E ≃ₗ[ℝ] E).isUnit_det'.ne_zero
+      rw [ContinuousLinearEquiv.det_adjointEquiv, star_trivial, he]
+      simp [hne]
     have hsmul (S : 𝓢'(E, F)) : smulLeftCLM F g (compCLMOfContinuousLinearEquiv F e' S) =
         compCLMOfContinuousLinearEquiv F e' (smulLeftCLM F (g ∘ e.adjointEquiv) S) := by
       rw [compCLMOfContinuousLinearEquiv_smulLeftCLM _ hg', hcomp]
     rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
       fourier_compCLMOfContinuousLinearEquiv_eq_smul, map_smul, hsmul, fourierInv_smul,
       fourierInv_compCLMOfContinuousLinearEquiv_eq_smul, hsymm, smul_smul, ← Complex.ofReal_mul,
-      hdet, Complex.ofReal_one, one_smul]
+      hdet]
+    simp
   · have hg' : ¬(g ∘ e.adjointEquiv).HasTemperateGrowth :=
       e.adjointEquiv.hasTemperateGrowth_comp_iff.not.2 hg
     ext u
