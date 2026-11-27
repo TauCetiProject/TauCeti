@@ -101,14 +101,18 @@ theorem tendsto_sub_mul_Gamma_sub_two_mul (A : ℂ) (n : ℕ) :
     refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
     · have h : Tendsto (fun t : ℂ ↦ A - 2 * t) (𝓝 ((A + n) / 2)) (𝓝 (A - 2 * ((A + n) / 2))) :=
         (continuous_const.sub (continuous_const.mul continuous_id)).tendsto _
-      rw [show A - 2 * ((A + n) / 2) = -(n : ℂ) by ring] at h
+      have hpole : A - 2 * ((A + n) / 2) = -(n : ℂ) := by ring
+      rw [hpole] at h
       exact h.mono_left nhdsWithin_le_nhds
     · filter_upwards [self_mem_nhdsWithin] with t ht h
       exact ht (Set.mem_singleton_iff.mpr
         (by linear_combination (-1 / 2 : ℂ) * Set.mem_singleton_iff.mp h))
   have h := ((tendsto_add_natCast_mul_Gamma n).comp hs).const_mul (-1 / 2 : ℂ)
-  rw [show (-1 / 2 : ℂ) * ((-1) ^ n / (n.factorial : ℂ)) =
-      (-1 : ℂ) ^ (n + 1) / (2 * n.factorial) by rw [pow_succ]; ring] at h
+  have hres : (-1 / 2 : ℂ) * ((-1) ^ n / (n.factorial : ℂ)) =
+      (-1 : ℂ) ^ (n + 1) / (2 * n.factorial) := by
+    rw [pow_succ]
+    ring
+  rw [hres] at h
   refine h.congr fun t ↦ ?_
   simp only [Function.comp_apply]
   ring

@@ -29,26 +29,28 @@ compact strip `c₁ ≤ Re t ≤ c₂`, poles or not. When the rate is positive,
 `|arg z| < 3π/4` (respectively `|arg z| < π/4`), the kernels are integrable on admissible lines,
 and the horizontal connectors of every strip tend to zero; these are the integrability and
 connector hypotheses of the vertical line shift
-`TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue`. At the poles
-`t = (A + n) / 2` the kernel has the residues of `Complex.tendsto_sub_mul_Gamma_sub_two_mul`
-times the regular factor `Γ(t) 2^t z^(2t)`.
+`TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue`. At a pole `t = (A + n) / 2`
+of `Γ(A - 2t)` that is not a pole of `Γ(t)`, that is when `(A + n) / 2` is not a nonpositive
+integer, the kernel has the residue of `Complex.tendsto_sub_mul_Gamma_sub_two_mul` times the
+regular factor `Γ(t) 2^t z^(2t)`; where the two poles collide the kernel can have a double pole.
 
 ## Main results
 
-* `TauCeti.norm_two_cpow_mul_cpow_two_mul`: `‖2^t z^(2t)‖ = 2^c ‖z‖^(2c) exp (-2y arg z)` at
+* `Complex.norm_two_cpow_mul_cpow_two_mul`: `‖2^t z^(2t)‖ = 2^c ‖z‖^(2c) exp (-2y arg z)` at
   `t = c + iy`.
 * `TauCeti.exists_norm_barnes_kernel_le`: the bound with `κ = 3π/2 - 2|arg z|` on an admissible
   line, and `TauCeti.exists_norm_barnes_kernel_mul_cos_le`: the bound with `κ = π/2 - 2|arg z|`
   for the kernel times `cos (π t)`.
-* `TauCeti.exists_norm_barnes_kernel_le_of_mem_Icc`,
-  `TauCeti.exists_norm_barnes_kernel_mul_cos_le_of_mem_Icc`: the same tail bounds for `|y| ≥ T₀`,
+* `Complex.exists_norm_barnes_kernel_le_of_mem_Icc`,
+  `Complex.exists_norm_barnes_kernel_mul_cos_le_of_mem_Icc`: the same tail bounds for `|y| ≥ T₀`,
   uniformly for `Re t` in a compact interval `[c₁, c₂]`.
-* `TauCeti.integrable_barnes_kernel`, `TauCeti.integrable_barnes_kernel_mul_cos`: integrability on
+* `Complex.integrable_barnes_kernel`, `Complex.integrable_barnes_kernel_mul_cos`: integrability on
   admissible lines.
-* `TauCeti.tendsto_intervalIntegral_barnes_kernel`,
-  `TauCeti.tendsto_intervalIntegral_barnes_kernel_mul_cos`: the horizontal connectors vanish.
-* `TauCeti.tendsto_sub_mul_barnes_kernel`: the residue
-  `(-1)^(n+1) Γ((A + n)/2) 2^((A + n)/2) z^(A + n) / (2 n!)` of the kernel at `t = (A + n) / 2`.
+* `Complex.tendsto_intervalIntegral_barnes_kernel`,
+  `Complex.tendsto_intervalIntegral_barnes_kernel_mul_cos`: the horizontal connectors vanish.
+* `Complex.tendsto_sub_mul_barnes_kernel`: the residue
+  `(-1)^(n+1) Γ((A + n)/2) 2^((A + n)/2) z^(A + n) / (2 n!)` of the kernel at `t = (A + n) / 2`,
+  when `(A + n) / 2` is not a nonpositive integer.
 
 ## References
 
@@ -61,10 +63,10 @@ replaced by Tau Ceti's Stirling bounds on vertical strips
 
 public section
 
-open Complex Filter Set MeasureTheory
+open Complex Filter Set MeasureTheory TauCeti
 open scoped Real Topology Interval Nat
 
-namespace TauCeti
+namespace Complex
 
 /-- **The power factor of the Barnes kernel.** For `z ≠ 0` and `t = x + iy`,
 `‖2^t z^(2t)‖ = 2^x ‖z‖^(2x) exp (-2y arg z)`; this is the source of the term `2|arg z|` in the
@@ -114,11 +116,16 @@ theorem norm_barnes_kernel_le_of_norm_Gamma_le (A z : ℂ) {x y C₁ C₂ : ℝ}
         (norm_two_cpow_mul_cpow_two_mul_le z x y) (norm_nonneg _)
         (mul_nonneg hC₁ ((norm_nonneg _).trans h₂))
     _ = _ := by
-      rw [pow_add, show -(3 * π / 2 - 2 * |arg z|) * |y| =
-        -(π * |y|) / 2 + -(π * |y|) + 2 * |arg z| * |y| by ring, Real.exp_add, Real.exp_add]
+      have he : -(3 * π / 2 - 2 * |arg z|) * |y| =
+          -(π * |y|) / 2 + -(π * |y|) + 2 * |arg z| * |y| := by ring
+      rw [pow_add, he, Real.exp_add, Real.exp_add]
       ring
 
-/-- **6.6(c) The Barnes kernel of `U` on a vertical line.** On a line `Re t = c` avoiding the poles
+end Complex
+
+namespace TauCeti
+
+/-- **The Barnes kernel of `U` on a vertical line.** On a line `Re t = c` avoiding the poles
 of `Γ(t)` and the poles `t = (A + n) / 2` of `Γ(A - 2t)`,
 `‖Γ(t) Γ(A - 2t) 2^t z^(2t)‖ ≤ C (1 + |y|)^K exp (-(3π/2 - 2|arg z|) |y|)` at `t = c + iy`. -/
 theorem exists_norm_barnes_kernel_le (A z : ℂ) {c : ℝ} (hc : ∀ n : ℕ, c ≠ -n)
@@ -142,8 +149,11 @@ theorem exists_norm_barnes_kernel_le (A z : ℂ) {c : ℝ} (hc : ∀ n : ℕ, c 
   have hΓ (y : ℝ) : ‖Gamma (A - 2 * ((c : ℂ) + y * I))‖ ≤
       C₂ * 2 ^ ⌈p⌉₊ * (1 + |y|) ^ ⌈p⌉₊ * Real.exp (-(π * |y|)) := by
     have hy := h₂ (2 * y)
-    rw [show A - 2 * c - ((2 * y : ℝ) : ℂ) * I = A - 2 * ((c : ℂ) + y * I) by push_cast; ring,
-      abs_mul, abs_two, show π * (2 * |y|) / 2 = π * |y| by ring] at hy
+    have harg : A - 2 * c - ((2 * y : ℝ) : ℂ) * I = A - 2 * ((c : ℂ) + y * I) := by
+      push_cast
+      ring
+    have hexp : π * (2 * |y|) / 2 = π * |y| := by ring
+    rw [harg, abs_mul, abs_two, hexp] at hy
     calc _ ≤ C₂ * (2 * (1 + |y|)) ^ (⌈p⌉₊ : ℝ) * Real.exp (-(π * |y|)) := by
           refine hy.trans ?_
           gcongr
@@ -156,7 +166,7 @@ theorem exists_norm_barnes_kernel_le (A z : ℂ) {c : ℝ} (hc : ∀ n : ℕ, c 
   gcongr
   linarith
 
-/-- **6.6(c) The Barnes kernel of `V` on a vertical line.** The factor `cos (π t)` lowers the decay
+/-- **The Barnes kernel of `V` on a vertical line.** The factor `cos (π t)` lowers the decay
 rate of `TauCeti.exists_norm_barnes_kernel_le` by `π`: at `t = c + iy`,
 `‖Γ(t) Γ(A - 2t) 2^t z^(2t) cos (π t)‖ ≤ C (1 + |y|)^K exp (-(π/2 - 2|arg z|) |y|)`. -/
 theorem exists_norm_barnes_kernel_mul_cos_le (A z : ℂ) {c : ℝ} (hc : ∀ n : ℕ, c ≠ -n)
@@ -176,45 +186,37 @@ theorem exists_norm_barnes_kernel_mul_cos_le (A z : ℂ) {c : ℝ} (hc : ∀ n :
       rw [mul_assoc, ← Real.exp_add]
       ring_nf
 
-/-- Stirling's tail bound for the second Gamma factor of the Barnes kernel on a strip: for
-`x ∈ [c₁, c₂]` and `|y| ≥ |Im A| + 1`, `‖Γ(A - 2(x + iy))‖ ≤ D (1 + |y|)^K exp (-π|y|)`. -/
-private theorem exists_norm_Gamma_sub_two_mul_le_of_mem_Icc (A : ℂ) (c₁ c₂ : ℝ) :
-    ∃ D : ℝ, 0 < D ∧ ∃ K : ℕ, ∀ x ∈ Icc c₁ c₂, ∀ y : ℝ, |A.im| + 1 ≤ |y| →
-      ‖Gamma (A - 2 * ((x : ℂ) + y * I))‖ ≤ D * (1 + |y|) ^ K * Real.exp (-(π * |y|)) := by
-  obtain ⟨C₂, hC₂, h₂⟩ :=
-    exists_norm_Gamma_vertical_strip_le (A.re - 2 * c₂) (A.re - 2 * c₁) one_pos
-  set a := |A.im|
-  set K₂ := ⌈A.re - 2 * c₁ - 1 / 2⌉₊
-  set D := C₂ * (2 * (1 + a)) ^ K₂ * Real.exp (π * a / 2)
-  have ha : 0 ≤ a := abs_nonneg _
-  refine ⟨D, by positivity, K₂, fun x hx y hy ↦ ?_⟩
-  set s := A - 2 * ((x : ℂ) + y * I)
-  have hre : s.re = A.re - 2 * x := by simp [s]
-  have him : s.im = A.im - 2 * y := by simp [s]
-  have hlow : 2 * |y| - a ≤ |s.im| := by
-    have := abs_sub_abs_le_abs_sub (2 * y) A.im
-    rw [abs_sub_comm, abs_mul, abs_two] at this
-    rw [him]
-    linarith
-  have hup : 1 + |s.im| ≤ 2 * (1 + a) * (1 + |y|) := by
-    have := abs_sub A.im (2 * y)
-    rw [abs_mul, abs_two] at this
-    rw [him]
-    nlinarith [abs_nonneg A.im, abs_nonneg y]
-  refine (h₂ s (by rw [hre]; constructor <;> linarith [hx.1, hx.2]) (by linarith)).trans ?_
-  calc C₂ * (1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2))
-      ≤ C₂ * (2 * (1 + a) * (1 + |y|)) ^ K₂ * Real.exp (π * a / 2 + -(π * |y|)) := by
-        gcongr ?_ * ?_ * ?_
-        · rw [← Real.rpow_natCast]
-          exact (Real.rpow_le_rpow_of_exponent_le (by linarith [abs_nonneg s.im])
-            (by rw [hre]; linarith [Nat.le_ceil (A.re - 2 * c₁ - 1 / 2), hx.1])).trans
-            (Real.rpow_le_rpow (by positivity) hup (by positivity))
-        · exact Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])
-    _ = D * (1 + |y|) ^ K₂ * Real.exp (-(π * |y|)) := by
-        rw [mul_pow, Real.exp_add]
-        ring
+end TauCeti
 
-/-- **6.6(c) Tail bound for the Barnes kernel of `U`, uniform on a strip.** There are `C`, `K` and
+namespace Complex
+
+/-- Stirling's tail bound for the second Gamma factor of the Barnes kernel on a strip: there are
+`D`, `K` and `T₀` such that `‖Γ(A - 2(x + iy))‖ ≤ D (1 + |y|)^K exp (-π|y|)` for `x ∈ [c₁, c₂]`
+and `|y| ≥ T₀`. This is `TauCeti.exists_norm_Gamma_add_vertical_strip_le` at `-2x` and `-2y`. -/
+private theorem exists_norm_Gamma_sub_two_mul_le_of_mem_Icc (A : ℂ) (c₁ c₂ : ℝ) :
+    ∃ D : ℝ, 0 < D ∧ ∃ K : ℕ, ∃ T₀ : ℝ, ∀ x ∈ Icc c₁ c₂, ∀ y : ℝ, T₀ ≤ |y| →
+      ‖Gamma (A - 2 * ((x : ℂ) + y * I))‖ ≤ D * (1 + |y|) ^ K * Real.exp (-(π * |y|)) := by
+  obtain ⟨C, hC, K, T₀, h⟩ := exists_norm_Gamma_add_vertical_strip_le A (-2 * c₂) (-2 * c₁)
+  refine ⟨(C + 1) * 2 ^ ⌈K⌉₊, by positivity, ⌈K⌉₊, T₀ / 2, fun x hx y hy ↦ ?_⟩
+  have hx' : -2 * x ∈ Icc (-2 * c₂) (-2 * c₁) := ⟨by linarith [hx.2], by linarith [hx.1]⟩
+  have habs : |-2 * y| = 2 * |y| := by rw [abs_mul, abs_neg, abs_two]
+  have harg : A + (((-2 * x : ℝ) : ℂ) + ((-2 * y : ℝ) : ℂ) * I) = A - 2 * ((x : ℂ) + y * I) := by
+    push_cast
+    ring
+  have hexp : -(π * (2 * |y|) / 2) = -(π * |y|) := by ring
+  have hb := h (-2 * x) hx' (-2 * y) (by rw [habs]; linarith)
+  rw [harg, habs, hexp] at hb
+  -- `(1 + 2|y|)^K ≤ (2 (1 + |y|))^⌈K⌉₊ = 2^⌈K⌉₊ (1 + |y|)^⌈K⌉₊`
+  have hpow : (1 + 2 * |y|) ^ K ≤ 2 ^ ⌈K⌉₊ * (1 + |y|) ^ ⌈K⌉₊ := by
+    rw [← mul_pow, ← Real.rpow_natCast]
+    exact (Real.rpow_le_rpow_of_exponent_le (by linarith [abs_nonneg y]) (Nat.le_ceil K)).trans
+      (Real.rpow_le_rpow (by positivity) (by linarith) (by positivity))
+  have hC1 : C ≤ C + 1 := by linarith
+  calc _ ≤ C * (1 + 2 * |y|) ^ K * Real.exp (-(π * |y|)) := hb
+    _ ≤ (C + 1) * (2 ^ ⌈K⌉₊ * (1 + |y|) ^ ⌈K⌉₊) * Real.exp (-(π * |y|)) := by gcongr
+    _ = _ := by ring
+
+/-- **Tail bound for the Barnes kernel of `U`, uniform on a strip.** There are `C`, `K` and
 `T₀` such that at `t = x + iy`,
 `‖Γ(t) Γ(A - 2t) 2^t z^(2t)‖ ≤ C (1 + |y|)^K exp (-(3π/2 - 2|arg z|) |y|)` for all `x ∈ [c₁, c₂]`
 and `|y| ≥ T₀`. -/
@@ -235,7 +237,7 @@ theorem exists_norm_barnes_kernel_le_of_mem_Icc (A z : ℂ) (c₁ c₂ : ℝ) :
     gcongr
     exact (Real.rpow_le_rpow_of_exponent_le (by linarith [abs_nonneg y])
       (by linarith [hx.2, Nat.le_ceil (c₂ - 1 / 2)])).trans_eq (Real.rpow_natCast _ _)
-  obtain ⟨D, hD, K₂, hΓ⟩ := exists_norm_Gamma_sub_two_mul_le_of_mem_Icc A c₁ c₂
+  obtain ⟨D, hD, K₂, T₂, hΓ⟩ := exists_norm_Gamma_sub_two_mul_le_of_mem_Icc A c₁ c₂
   -- On `[c₁, c₂]`, `2^x ≤ 2^c₂` and `‖z‖^(2x) ≤ ‖z‖^(2c₁) + ‖z‖^(2c₂) + 1`.
   have hz : ∀ x ∈ Icc c₁ c₂, ‖z‖ ^ (2 * x) ≤ ‖z‖ ^ (2 * c₁) + ‖z‖ ^ (2 * c₂) + 1 := by
     intro x hx
@@ -245,19 +247,20 @@ theorem exists_norm_barnes_kernel_le_of_mem_Icc (A z : ℂ) (c₁ c₂ : ℝ) :
     · rw [norm_zero] at h₁ h₂ ⊢
       linarith [Real.zero_rpow_le_one (2 * x)]
     rcases le_total 1 ‖z‖ with h | h
-    · linarith [Real.rpow_le_rpow_of_exponent_le h (show 2 * x ≤ 2 * c₂ by linarith [hx.2])]
-    · linarith [Real.rpow_le_rpow_of_exponent_ge (norm_pos_iff.mpr hz0) h
-        (show 2 * c₁ ≤ 2 * x by linarith [hx.1])]
+    · have hx₂ : 2 * x ≤ 2 * c₂ := by linarith [hx.2]
+      linarith [Real.rpow_le_rpow_of_exponent_le h hx₂]
+    · have hx₁ : 2 * c₁ ≤ 2 * x := by linarith [hx.1]
+      linarith [Real.rpow_le_rpow_of_exponent_ge (norm_pos_iff.mpr hz0) h hx₁]
   refine ⟨C₁ * D * 2 ^ c₂ * (‖z‖ ^ (2 * c₁) + ‖z‖ ^ (2 * c₂) + 1), by positivity, K₁ + K₂,
-    |A.im| + 1, fun x hx y hy ↦ (norm_barnes_kernel_le_of_norm_Gamma_le A z
-      (hΓ₁ x hx y (by linarith [abs_nonneg A.im])) (hΓ x hx y hy)).trans ?_⟩
+    max 1 T₂, fun x hx y hy ↦ (norm_barnes_kernel_le_of_norm_Gamma_le A z
+      (hΓ₁ x hx y (le_of_max_le_left hy)) (hΓ x hx y (le_of_max_le_right hy))).trans ?_⟩
   gcongr
   · norm_num
   · exact hx.2
   · exact hz x hx
 
-/-- **6.6(c) Tail bound for the Barnes kernel of `V`, uniform on a strip.** The cosine factor
-lowers the rate of `TauCeti.exists_norm_barnes_kernel_le_of_mem_Icc` by `π`. -/
+/-- **Tail bound for the Barnes kernel of `V`, uniform on a strip.** The cosine factor
+lowers the rate of `Complex.exists_norm_barnes_kernel_le_of_mem_Icc` by `π`. -/
 theorem exists_norm_barnes_kernel_mul_cos_le_of_mem_Icc (A z : ℂ) (c₁ c₂ : ℝ) :
     ∃ C : ℝ, 0 < C ∧ ∃ K : ℕ, ∃ T₀ : ℝ, ∀ x ∈ Icc c₁ c₂, ∀ y : ℝ, T₀ ≤ |y| →
       ‖Gamma ((x : ℂ) + y * I) * Gamma (A - 2 * ((x : ℂ) + y * I)) * 2 ^ ((x : ℂ) + y * I) *
@@ -293,14 +296,14 @@ theorem continuous_barnes_kernel (A z : ℂ) {c : ℝ} (hc : ∀ n : ℕ, c ≠ 
     (by fun_prop : Continuous fun y : ℝ ↦ 2 * ((c : ℂ) + y * I)).const_cpow (.inr hne)
   exact ((h₁.mul h₂).mul h₃).mul h₄
 
-/-- **6.6(c)** For `|arg z| < 3π/4` the Barnes kernel of `U` is integrable on every line
+/-- For `|arg z| < 3π/4` the Barnes kernel of `U` is integrable on every line
 `Re t = c` that avoids the poles of `Γ(t)` and of `Γ(A - 2t)`. -/
 theorem integrable_barnes_kernel {A z : ℂ} (hz : |arg z| < 3 * π / 4) {c : ℝ}
     (hc : ∀ n : ℕ, c ≠ -n)
     (havoid : ∀ n : ℕ, 2 * c ≠ A.re + n) :
     Integrable fun y : ℝ ↦ Gamma ((c : ℂ) + y * I) * Gamma (A - 2 * ((c : ℂ) + y * I)) *
       2 ^ ((c : ℂ) + y * I) * z ^ (2 * ((c : ℂ) + y * I)) := by
-  obtain ⟨C, -, K, h⟩ := exists_norm_barnes_kernel_le A z hc havoid
+  obtain ⟨C, -, K, h⟩ := TauCeti.exists_norm_barnes_kernel_le A z hc havoid
   refine ((integrable_one_add_abs_rpow_mul_exp_neg_mul_abs K
     (a := 3 * π / 2 - 2 * |arg z|) (by linarith)).const_mul C).mono'
     (continuous_barnes_kernel A z hc havoid).aestronglyMeasurable
@@ -308,14 +311,14 @@ theorem integrable_barnes_kernel {A z : ℂ} (hz : |arg z| < 3 * π / 4) {c : �
   rw [Real.rpow_natCast, neg_mul]
   ring
 
-/-- **6.6(c)** For `|arg z| < π/4` the Barnes kernel of `V` (with the factor `cos (π t)`) is
+/-- For `|arg z| < π/4` the Barnes kernel of `V` (with the factor `cos (π t)`) is
 integrable on every line `Re t = c` that avoids the poles of `Γ(t)` and of `Γ(A - 2t)`. -/
 theorem integrable_barnes_kernel_mul_cos {A z : ℂ} (hz : |arg z| < π / 4) {c : ℝ}
     (hc : ∀ n : ℕ, c ≠ -n)
     (havoid : ∀ n : ℕ, 2 * c ≠ A.re + n) :
     Integrable fun y : ℝ ↦ Gamma ((c : ℂ) + y * I) * Gamma (A - 2 * ((c : ℂ) + y * I)) *
       2 ^ ((c : ℂ) + y * I) * z ^ (2 * ((c : ℂ) + y * I)) * cos (π * ((c : ℂ) + y * I)) := by
-  obtain ⟨C, -, K, h⟩ := exists_norm_barnes_kernel_mul_cos_le A z hc havoid
+  obtain ⟨C, -, K, h⟩ := TauCeti.exists_norm_barnes_kernel_mul_cos_le A z hc havoid
   refine ((integrable_one_add_abs_rpow_mul_exp_neg_mul_abs K
     (a := π / 2 - 2 * |arg z|) (by linarith)).const_mul C).mono'
     ((continuous_barnes_kernel A z hc havoid).mul (by fun_prop)).aestronglyMeasurable
@@ -323,7 +326,7 @@ theorem integrable_barnes_kernel_mul_cos {A z : ℂ} (hz : |arg z| < π / 4) {c 
   rw [Real.rpow_natCast, neg_mul]
   ring
 
-/-- **6.6(c) Horizontal connectors for the Barnes kernel of `U`.** For `|arg z| < 3π/4`,
+/-- **Horizontal connectors for the Barnes kernel of `U`.** For `|arg z| < 3π/4`,
 `∫ x in c₁..c₂, Γ(t) Γ(A - 2t) 2^t z^(2t)` at `t = x + iT` tends to `0` as
 `|T| → ∞`, in particular along `atTop` and `atBot`. -/
 theorem tendsto_intervalIntegral_barnes_kernel {A z : ℂ} (hz : |arg z| < 3 * π / 4) (c₁ c₂ : ℝ)
@@ -341,7 +344,7 @@ theorem tendsto_intervalIntegral_barnes_kernel {A z : ℂ} (hz : |arg z| < 3 * �
   refine .of_forall fun x hx ↦ (h x (uIoc_subset_uIcc hx) T hT).trans_eq ?_
   rw [neg_mul, mul_assoc]
 
-/-- **6.6(c) Horizontal connectors for the Barnes kernel of `V`.** For `|arg z| < π/4`,
+/-- **Horizontal connectors for the Barnes kernel of `V`.** For `|arg z| < π/4`,
 `∫ x in c₁..c₂, Γ(t) Γ(A - 2t) 2^t z^(2t) cos (π t)` at `t = x + iT` tends to `0` as
 `|T| → ∞`, in particular along `atTop` and `atBot`. -/
 theorem tendsto_intervalIntegral_barnes_kernel_mul_cos {A z : ℂ} (hz : |arg z| < π / 4)
@@ -359,7 +362,7 @@ theorem tendsto_intervalIntegral_barnes_kernel_mul_cos {A z : ℂ} (hz : |arg z|
   refine .of_forall fun x hx ↦ (h x (uIoc_subset_uIcc hx) T hT).trans_eq ?_
   rw [neg_mul, mul_assoc]
 
-/-- **6.6(b) The residues of the Barnes kernel.** At a pole `t = (A + n) / 2` of `Γ(A - 2t)` that
+/-- **The residues of the Barnes kernel.** At a pole `t = (A + n) / 2` of `Γ(A - 2t)` that
 is not a pole of `Γ(t)`, `(t - (A + n) / 2) Γ(t) Γ(A - 2t) 2^t z^(2t)` tends to
 `(-1)^(n+1) Γ((A + n) / 2) 2^((A + n) / 2) z^(A + n) / (2 n!)`. -/
 theorem tendsto_sub_mul_barnes_kernel (A z : ℂ) (n : ℕ) (hA : ∀ m : ℕ, (A + n) / 2 ≠ -m) :
@@ -372,9 +375,10 @@ theorem tendsto_sub_mul_barnes_kernel (A z : ℂ) (n : ℕ) (hA : ∀ m : ℕ, (
     ((continuousAt_Gamma _ hA).mul (continuousAt_const_cpow two_ne_zero)).mul
       ((continuousAt_const_cpow' hp).comp (continuousAt_id.const_mul 2))
   have h := (tendsto_sub_mul_Gamma_sub_two_mul A n).mul (hg.tendsto.mono_left nhdsWithin_le_nhds)
-  rw [show 2 * ((A + n) / 2) = A + n by ring] at h
+  have hA2 : 2 * ((A + n) / 2) = A + n := by ring
+  rw [hA2] at h
   convert h using 2
   · ring
   · ring
 
-end TauCeti
+end Complex
