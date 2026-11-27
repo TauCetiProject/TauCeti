@@ -356,6 +356,18 @@ theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol
 /-! ### Square partitions in charts -/
 
 omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- If the chart cutoffs `χᵢ`, read on `M`, have locally finite supports, then only finitely many
+of them are nonzero at a given point. -/
+private theorem finite_support_cutoffPullback {ι : Type*}
+    {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    {χ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ)}
+    (hS : LocallyFinite fun i ↦ (e i).symm '' tsupport (χ i)) (x : M) :
+    (Function.support fun i ↦ (e i).cutoffPullback (he i) (χ i) 1 x).Finite :=
+  (hS.point_finite x).subset fun i hi ↦
+    ((e i).tsupport_cutoffPullback_one (he i) (χ i)).subset (subset_tsupport _ hi)
+
+omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
 /-- If the chart cutoffs `χᵢ`, read on `M`, have locally finite supports and squares adding up to
 `1`, then `∑ᵢ χᵢ(x)² z = z`. -/
 private theorem finsum_cutoffPullback_sq_mul {ι : Type*}
@@ -366,10 +378,9 @@ private theorem finsum_cutoffPullback_sq_mul {ι : Type*}
     (hsq : ∀ y, ∑ᶠ i, (e i).cutoffPullback (he i) (χ i) 1 y ^ 2 = 1) (x : M) (z : ℂ) :
     ∑ᶠ i, (((e i).cutoffPullback (he i) (χ i) 1 x ^ 2 : ℝ) : ℂ) * z = z := by
   -- Only the finitely many charts whose cutoff supports contain `x` contribute.
-  have hfin := hS.point_finite x
+  have hfin := finite_support_cutoffPullback he hS x
   have hr : Function.support (fun i ↦ (e i).cutoffPullback (he i) (χ i) 1 x) ⊆ hfin.toFinset :=
-    fun i hi ↦ hfin.mem_toFinset.2 <|
-      ((e i).tsupport_cutoffPullback_one (he i) (χ i)).subset (subset_tsupport _ hi)
+    fun i hi ↦ hfin.mem_toFinset.2 hi
   have hsq' := hsq x
   rw [finsum_eq_sum_of_support_subset _ fun i hi ↦ hr (by simpa using hi)] at hsq'
   rw [finsum_eq_sum_of_support_subset _ fun i hi ↦ hr fun h ↦ hi (by simp [h]),
@@ -440,13 +451,11 @@ theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol
   -- The cutoff `χᵢ` read on `M`, and the frequency of `ξ` in the `i`-th chart.
   set r := fun i ↦ (e i).cutoffPullback (he i) (χ i) 1 y
   set η := fun i ↦ (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
-    (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) (e i) y).inverse) with hηdef
+    (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) (e i) y).inverse)
   -- Over the chart source the frequency of `ξ ≠ 0` is nonzero.
-  have hη {i : ι} (hy : y ∈ (e i).source) : η i ≠ 0 := fun h ↦ hξ <| by
-    simp only [hηdef] at h
-    rw [← innerSL_toDual_symm_comp_inverse_mvfderiv
-      (IsManifold.maximalAtlas_subset_of_le (by simp) (he i)) hy ξ, h, map_zero,
-      ContinuousLinearMap.zero_comp]
+  have hη {i : ι} (hy : y ∈ (e i).source) : η i ≠ 0 :=
+    toDual_symm_comp_inverse_mvfderiv_ne_zero
+      (IsManifold.maximalAtlas_subset_of_le (by simp) (he i)) hy hξ
   -- Each chart contributes `χᵢ(eᵢ y)² ‖ηᵢ‖ ^ m`, or `0` when `y` is outside its source.
   have hterm (i : ι) : classicalPrincipalSymbol m ((e i).chartQuantization (he i) (χ i) (χ i)
       (a i)) y ξ = ((r i ^ 2 * ‖η i‖ ^ m : ℝ) : ℂ) := by
@@ -468,10 +477,7 @@ theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol
     ⟨i, Complex.zero_lt_real.2 (mul_pos (pow_pos (abs_pos.2 hi) 2 |>.trans_eq (sq_abs _))
       (Real.rpow_pos_of_pos (norm_pos_iff.2 (hη hy)) m))⟩ ?_
   -- Only the charts whose cutoff supports contain `y` contribute.
-  refine (hS.point_finite y).subset fun j hj ↦ ?_
-  have hrj : r j ≠ 0 := fun h ↦ hj (by simp [h])
-  exact image_mono subset_union_left (((e j).tsupport_cutoffPullback_one (he j) (χ j)).subset
-    (subset_tsupport _ hrj))
+  exact (finite_support_cutoffPullback he hχ y).subset fun j hj h ↦ hj (by simp [r, h])
 
 /-! ### Symmetric localization -/
 
