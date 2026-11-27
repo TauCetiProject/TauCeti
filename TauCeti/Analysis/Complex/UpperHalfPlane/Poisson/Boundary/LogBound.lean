@@ -139,9 +139,10 @@ theorem ae_tendsto_circleMap_upperHalfPlaneBoundaryFun
   set x := inverseCayleyCoord (circleMap 0 1 θ)
   -- ... and `x` has nontangential limits, as `θ` is a Cayley angle of `x` modulo `2π`
   have hxN : x ∉ N := fun hxN ↦ by
-    obtain ⟨n, hn⟩ := (Circle.exp_eq_exp (x := θ) (y := cayleyAngle x)).1 <| Circle.ext <| by
-      rw [Circle.coe_exp, Circle.coe_exp, exp_cayleyAngle_mul_I, hζ, circleMap_zero, ofReal_one,
-        one_mul]
+    obtain ⟨n, hn⟩ := (Circle.exp_eq_exp (x := θ) (y := cayleyAngle x)).1 <| by
+      rw [exp_cayleyAngle]
+      ext1
+      rw [Circle.coe_exp, coe_boundaryCayley, hζ, circleMap_zero, ofReal_one, one_mul]
     exact hθN (mem_iUnion.2 ⟨n, x, hxN, hn.symm⟩)
   -- the radius ending at `e^{iθ}` is carried into every cone at `x`
   refine hθ ?_
@@ -199,7 +200,7 @@ theorem log_norm_le_integral_upperHalfPlanePoissonKernel_mul_log_norm
   set b := z.im
   set H : ℂ → ℂ := fun w ↦ F ((a : ℂ) + b * w)
   have hA : MapsTo (fun w : ℂ ↦ (a : ℂ) + b * w) upperHalfPlaneSet upperHalfPlaneSet :=
-    fun w (hw : 0 < w.im) ↦ show 0 < ((a : ℂ) + b * w).im by simpa using mul_pos hb hw
+    fun w hw ↦ by simpa [upperHalfPlaneSet] using mul_pos hb hw
   have hH : DifferentiableOn ℂ H upperHalfPlaneSet :=
     hF.comp (by fun_prop) hA
   have hHS : ∀ w ∈ upperHalfPlaneSet, ‖H w‖ ≤ S := fun w hw ↦ hS _ (hA hw)
@@ -214,10 +215,10 @@ theorem log_norm_le_integral_upperHalfPlanePoissonKernel_mul_log_norm
     upperHalfPlanePoissonKernel z y * Real.log ‖upperHalfPlaneBoundaryFun F y‖
   have hK : ∀ x : ℝ, upperHalfPlanePoissonKernel I x *
       Real.log ‖upperHalfPlaneBoundaryFun F (a + b * x)‖ = b * K (a + b * x) := fun x ↦ by
-    -- `P(i, x) = b P(b i, b x) = b P(z, a + b x)` by the covariance of the Poisson kernel
-    have hz : z - a = b * I := by rw [← hzab, add_sub_cancel_left]
-    rw [← mul_div_cancel_left₀ x hb.ne', upperHalfPlanePoissonKernel_div I hb.ne', ← hz,
-      ← upperHalfPlanePoissonKernel_add, mul_div_cancel_left₀ x hb.ne', add_comm, mul_assoc]
+    -- `P(z, a + b x) = P(a + b i, a + b x) = b⁻¹ P(i, x)` by the affine covariance of the kernel
+    simp only [K]
+    rw [← hzab, upperHalfPlanePoissonKernel_add_mul a hb.ne', mul_assoc,
+      mul_inv_cancel_left₀ hb.ne']
   simp_rw [hK]
   rw [integral_const_mul, Measure.integral_comp_mul_left (fun x ↦ K (a + x)) b,
     integral_add_left_eq_self K a, smul_eq_mul, abs_inv, abs_of_pos hb, ← mul_assoc,

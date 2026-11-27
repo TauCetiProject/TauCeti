@@ -141,7 +141,9 @@ theorem tendsto_add_mul_nontangentialFilter (a : ℝ) {b : ℝ} (hb : 0 < b) (α
   · filter_upwards [self_mem_nhdsWithin] with z hz
     obtain ⟨hz0, hzα, -⟩ := mem_nontangentialCone.1 hz
     have him : ((a : ℂ) + b * z).im = b * z.im := by simp
-    have hre : ((a : ℂ) + b * z).re - (a + b * x) = b * (z.re - x) := by simp; ring
+    have hre : ((a : ℂ) + b * z).re - (a + b * x) = b * (z.re - x) := by
+      simp only [add_re, ofReal_re, mul_re, ofReal_im, zero_mul, sub_zero]
+      ring
     refine mem_nontangentialCone.2 ⟨?_, ?_, ENNReal.ofReal_lt_top⟩
     · rw [him]
       positivity

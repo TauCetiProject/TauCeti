@@ -72,8 +72,9 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   transform, `re (i (1 + w) / (1 - w)) ‖1 - w‖² = -2 im w`.
 * `TauCeti.boundaryCayley`: the boundary Cayley map from `ℝ` to `Circle`.
 * `TauCeti.cayleyAngle`: the angle `θ = π + 2 arctan x`, with `e^{iθ} = (x - i) / (x + i)`
-  (`TauCeti.exp_cayleyAngle_mul_I`), derivative `2 / (1 + x ^ 2)` (`TauCeti.hasDerivAt_cayleyAngle`)
-  and range `(0, 2π)` (`TauCeti.range_cayleyAngle`); the inverse Cayley coordinate inverts it
+  (`TauCeti.exp_cayleyAngle` in `Circle`, `TauCeti.exp_cayleyAngle_mul_I` in `ℂ`), derivative
+  `2 / (1 + x ^ 2)` (`TauCeti.hasDerivAt_cayleyAngle`) and range `(0, 2π)`
+  (`TauCeti.range_cayleyAngle`); the inverse Cayley coordinate inverts it
   (`TauCeti.inverseCayleyCoord_exp_cayleyAngle_mul_I`).
 * `TauCeti.I_mul_one_add_div_one_sub_ofReal_mul_sub_I_div_add_I` and
   `TauCeti.re_I_mul_one_add_div_one_sub_ofReal_mul_sub_I_div_add_I`: the inverse transform on the
@@ -481,18 +482,26 @@ open scoped Real in
 /-- The defining formula of `TauCeti.cayleyAngle`. -/
 theorem cayleyAngle_def (x : ℝ) : cayleyAngle x = π + 2 * Real.arctan x := (rfl)
 
-/-- The boundary point `(x - i) / (x + i)` of the Cayley transform is `e^{iθ}` for the Cayley angle
-`θ = π + 2 arctan x`. -/
-theorem exp_cayleyAngle_mul_I (x : ℝ) :
-    exp (cayleyAngle x * I) = ((x : ℂ) - I) / ((x : ℂ) + I) := by
+/-- The point `e^{iθ}` of the circle at the Cayley angle `θ = π + 2 arctan x` is the boundary
+Cayley point `TauCeti.boundaryCayley x = (x - i) / (x + i)`. -/
+@[simp]
+theorem exp_cayleyAngle (x : ℝ) : Circle.exp (cayleyAngle x) = boundaryCayley x := by
   have hxI : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
   have hxI' : 1 - (x : ℂ) * I ≠ 0 := by
     rw [show 1 - (x : ℂ) * I = -I * ((x : ℂ) + I) by linear_combination I_sq]
     exact mul_ne_zero (neg_ne_zero.2 I_ne_zero) hxI
-  rw [cayleyAngle_def, ofReal_add, add_mul, exp_add, exp_pi_mul_I,
-    ← one_add_mul_I_div_one_sub_mul_I_eq_exp]
+  ext1
+  rw [Circle.coe_exp, coe_boundaryCayley, cayleyAngle_def, ofReal_add, add_mul, exp_add,
+    exp_pi_mul_I, ← one_add_mul_I_div_one_sub_mul_I_eq_exp]
   field_simp
   linear_combination -2 * (x : ℂ) * I_sq
+
+/-- The boundary point `(x - i) / (x + i)` of the Cayley transform is `e^{iθ}` for the Cayley angle
+`θ = π + 2 arctan x`. -/
+@[simp]
+theorem exp_cayleyAngle_mul_I (x : ℝ) :
+    exp (cayleyAngle x * I) = ((x : ℂ) - I) / ((x : ℂ) + I) := by
+  rw [← Circle.coe_exp, exp_cayleyAngle, coe_boundaryCayley]
 
 /-- The derivative of the Cayley angle `π + 2 arctan x` is `2 / (1 + x ^ 2)`. -/
 theorem hasDerivAt_cayleyAngle (x : ℝ) : HasDerivAt cayleyAngle (2 * (1 + x ^ 2)⁻¹) x := by
@@ -507,8 +516,9 @@ theorem cayleyAngle_injective : Function.Injective cayleyAngle := fun x y h ↦ 
 open scoped Real in
 /-- The Cayley angle takes exactly the values in `(0, 2π)`. -/
 theorem range_cayleyAngle : range cayleyAngle = Ioo 0 (2 * π) := by
-  rw [show cayleyAngle = (π + ·) ∘ (2 * ·) ∘ Real.arctan from rfl, range_comp, range_comp,
-    Real.range_arctan, image_mul_left_Ioo two_pos, image_const_add_Ioo]
+  have h : cayleyAngle = (π + ·) ∘ (2 * ·) ∘ Real.arctan := funext cayleyAngle_def
+  rw [h, range_comp, range_comp, Real.range_arctan, image_mul_left_Ioo two_pos,
+    image_const_add_Ioo]
   congr 1 <;> ring
 
 /-- The inverse Cayley transform of a point `r ζ` on the radius of the disc through the boundary
