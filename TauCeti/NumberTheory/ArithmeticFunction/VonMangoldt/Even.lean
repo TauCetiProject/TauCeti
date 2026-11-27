@@ -14,27 +14,29 @@ public import Mathlib.RingTheory.Int.Basic
 Sums of the von Mangoldt function over the values of an integer polynomial, as in
 Skorobogatov and Sofos, *Schinzel Hypothesis on average and rational points*,
 Invent. Math. 231 (2023), §3, evaluate `Λ` at integers of either sign. This file defines the even
-extension `ArithmeticFunction.evenVonMangoldt n = Λ |n|` of the von Mangoldt function to `ℤ`,
+extension `TauCeti.evenVonMangoldt n = Λ |n|` of the von Mangoldt function to `ℤ`,
 which vanishes at `0`, and transfers the basic API of `ArithmeticFunction.vonMangoldt` to it.
 
 ## Main definitions
 
-* `ArithmeticFunction.evenVonMangoldt`: the function `n ↦ Λ n.natAbs` on `ℤ`.
+* `TauCeti.evenVonMangoldt`: the function `n ↦ Λ n.natAbs` on `ℤ`.
 
 ## Main results
 
-* `ArithmeticFunction.evenVonMangoldt_natCast`: on natural numbers it is the von Mangoldt function.
-* `ArithmeticFunction.evenVonMangoldt_neg`: it is an even function.
-* `ArithmeticFunction.evenVonMangoldt_apply_prime`: its value at a prime integer `p` of either
+* `TauCeti.evenVonMangoldt_natCast`: on natural numbers it is the von Mangoldt function.
+* `TauCeti.evenVonMangoldt_neg`: it is an even function.
+* `TauCeti.evenVonMangoldt_apply_prime`: its value at a prime integer `p` of either
   sign is `Real.log p`.
-* `ArithmeticFunction.evenVonMangoldt_eq_zero_iff`: it vanishes exactly where the absolute value
+* `TauCeti.evenVonMangoldt_eq_zero_iff`: it vanishes exactly where the absolute value
   is not a prime power.
-* `ArithmeticFunction.evenVonMangoldt_le_log`: it is at most `Real.log n`.
+* `TauCeti.evenVonMangoldt_le_log`: it is at most `Real.log n`.
 -/
 
 public section
 
-namespace ArithmeticFunction
+open ArithmeticFunction
+
+namespace TauCeti
 
 /-- The even extension of the von Mangoldt function to the integers: `evenVonMangoldt n` is
 `Λ |n|`, so it is `Real.log p` when `n = ± p ^ k` for a prime `p` and `k ≥ 1`, and `0` otherwise,
@@ -67,7 +69,7 @@ theorem evenVonMangoldt_abs (n : ℤ) : evenVonMangoldt |n| = evenVonMangoldt n 
 
 /-- The even von Mangoldt function vanishes at zero. -/
 theorem evenVonMangoldt_zero : evenVonMangoldt 0 = 0 := by
-  rw [evenVonMangoldt_def, Int.natAbs_zero, map_zero]
+  rw [evenVonMangoldt_def, Int.natAbs_zero, ArithmeticFunction.map_zero]
 
 /-- The even von Mangoldt function vanishes at one. -/
 theorem evenVonMangoldt_one : evenVonMangoldt 1 = 0 := by
@@ -126,4 +128,4 @@ example : evenVonMangoldt (-6) = 0 := by
   have h3 := hp 3 ⟨Nat.prime_three, by decide⟩
   omega
 
-end ArithmeticFunction
+end TauCeti
