@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Prod.Basic
 public import TauCeti.Geometry.Manifold.Morse.Stable.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
+import TauCeti.Geometry.Manifold.Morse.Boundary.OrientationChange
 
 /-!
 # The integral Morse complex of a product manifold
@@ -33,6 +34,9 @@ every commutative ring of coefficients. Since the boundary anticommutes with the
 `p ↦ (-1) ^ ind p • p`, the mixed terms of the square of this boundary cancel, so it squares to zero
 whenever the boundaries of the factors do
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_prod`).
+Likewise it vanishes whenever the boundaries of the factors do, and then for every choice of
+orientation data on the product, not only the product orientation data
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundaryCoeff_prod_eq_zero`).
 
 The trajectories of index one of the product are those of `X` with a constant second component
 and those of `Y` with a constant first component
@@ -72,6 +76,8 @@ the identity of the constant one:
   components.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundaryCoeff_prod`: the boundary
   coefficients of a product.
+* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundaryCoeff_prod_eq_zero`: the
+  integral Morse boundary of a product vanishes when those of the factors do.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseChainProdEquiv_comp_signedMorseBoundary`: the
   integral Morse complex of a product is the tensor product complex, with the Koszul sign.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_prod`:
@@ -611,6 +617,27 @@ theorem signedMorseBoundaryCoeff_prod (hXs : hX.IsMorseSmale) (hYs : hY.IsMorseS
       hX.signedMorseBoundaryCoeff_prod_right hY hf hg 𝔬 𝔬' hXs]
   · rw [ite_eq_right hpp, ite_eq_right hqq, add_zero,
       hXs.signedMorseBoundaryCoeff_prod_eq_zero_of_ne hf hg 𝔬 𝔬' hYs hpp hqq]
+
+variable {𝔬 𝔬'} in
+/-- **The integral Morse boundary of a product vanishes when those of the factors do.** For
+Morse–Smale pseudo-gradients `X` and `Y`, if every coefficient of the integral Morse boundary of
+`(f, X)` for some orientation data `𝔬` vanishes, and likewise for `(g, Y)` and `𝔬'`, then every
+coefficient of the integral Morse boundary of the separated sum with the product field vanishes, for
+every choice `𝔬P` of orientation data on the product. -/
+theorem signedMorseBoundaryCoeff_prod_eq_zero (hXs : hX.IsMorseSmale) (hYs : hY.IsMorseSmale)
+    (h𝔬 : ∀ p p', hX.signedMorseBoundaryCoeff 𝔬 p p' = 0)
+    (h𝔬' : ∀ q q', hY.signedMorseBoundaryCoeff 𝔬' q q' = 0)
+    (𝔬P : MorseOrientation (f ∘ Prod.fst + g ∘ Prod.snd) (Manifold.prodVectorField X Y))
+    (P P' : criticalPoints 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd)) :
+    (hX.prod hY).signedMorseBoundaryCoeff 𝔬P P P' = 0 := by
+  set e := criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable
+  -- Whether a coefficient vanishes does not depend on the orientation data, so it suffices to
+  -- treat the product orientation data.
+  rw [signedMorseBoundaryCoeff_eq_zero_iff_eq_zero
+    (𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable) 𝔬P
+    (hf.comp_fst_add_comp_snd_chartedSpaceProd hg), ← e.symm_apply_apply P,
+    ← e.symm_apply_apply P', hXs.signedMorseBoundaryCoeff_prod hf hg 𝔬 𝔬' hYs]
+  simp [h𝔬, h𝔬']
 
 /-- **The integral Morse complex of a product is the tensor product complex.** For Morse–Smale
 pseudo-gradients `X` and `Y`, the product orientation data and any commutative ring `R`, under the

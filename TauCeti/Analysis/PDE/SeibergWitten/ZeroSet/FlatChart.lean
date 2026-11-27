@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature
 public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Covering
-public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.DefectEnergy
+public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Defect.Energy
 public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Monotonicity
 
 /-!
@@ -22,12 +22,12 @@ twisting line satisfies
 `F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η`
 
 (see `TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature`). Its defect energy is the
-measure `E_r = δ dμ` with density `δ = (r / 4) |1 - |φ|² - |β|²|`. This file works in a flat chart:
-the four-dimensional real inner product space `E` with an orthogonal complex structure `J` and a
-positively oriented unitary frame `e` (`J e₀ = e₁`, `J e₂ = e₃`), whose Kähler form is
-`ω = e⁰ ∧ e¹ + e² ∧ e³`. The curvature `F` is a closed two-form field, and the curvature equation
-is read through the identification of two-forms with `⋀² E`
-(`TauCeti.alternatingFormEquiv`).
+measure `E_r = δ dμ` with density `δ = (r / 4) |1 - |φ|² - |β|²|`
+(`TauCeti.SeibergWitten.defectMeasure`). This file works in a flat chart: the four-dimensional
+real inner product space `E` with an orthogonal complex structure `J` and a positively oriented
+unitary frame `e` (`J e₀ = e₁`, `J e₂ = e₃`), whose Kähler form is `ω = e⁰ ∧ e¹ + e² ∧ e³`.
+The curvature `F` is a closed two-form field, and the curvature equation is read through the
+identification of two-forms with `⋀² E` (`TauCeti.alternatingFormEquiv`).
 
 Taubes's monotonicity inequality in a flat chart
 (`TauCeti.SeibergWitten.measure_closedBall_le_mul_deriv_add`) takes two pointwise inequalities as
@@ -189,10 +189,8 @@ theorem measure_closedBall_le_mul_deriv_add_of_add_hodgeStar_eq
     (hFm : ∀ x ∈ ball c R, ‖(2⁻¹ : ℝ) • ((alternatingFormEquiv E 2).symm (F x) -
         o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (F x)))‖ ≤
         r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ x‖ ^ 2) 0 + C) (hσ : σ ∈ Ioo 0 R) :
-    ((μ.withDensity fun x ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|))
-        (closedBall c σ)).toReal ≤
-      σ / 2 * (1 + C / √r) * deriv (fun s ↦ ((μ.withDensity fun x ↦
-          ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) (closedBall c s)).toReal) σ +
+    (defectMeasure μ r φ β (closedBall c σ)).toReal ≤
+      σ / 2 * (1 + C / √r) * deriv (fun s ↦ (defectMeasure μ r φ β (closedBall c s)).toReal) σ +
         ((1 + C) * K + √2 * H / 2 + C) * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)) *
           σ ^ 4 := by
   have hr0 : 0 < r := by linarith
@@ -215,6 +213,7 @@ theorem measure_closedBall_le_mul_deriv_add_of_add_hodgeStar_eq
     linarith
   have hδ : ContinuousOn (fun x ↦ r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|) (ball c R) :=
     continuousOn_const.mul ((continuousOn_const.sub (hφc.norm.pow 2)).sub (hβc.norm.pow 2)).abs
+  rw [defectMeasure_def]
   exact measure_closedBall_le_mul_deriv_add (μ := μ) h₀ h₂₃ hF hdF hδ
     (fun x _ ↦ by positivity) hω
     (fun x hx ↦ hB x (sphere_subset_closedBall.trans (closedBall_subset_ball hσ.2) hx)) hσ
@@ -253,18 +252,18 @@ theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_add_hodgeStar_eq {K
           r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ x‖ ^ 2) 0 + C) →
       α x₀ = 0 →
       ∀ σ, c₀ / √r ≤ σ → σ ≤ ρ₀ →
-        ENNReal.ofReal (c * σ ^ 2) ≤ (μ.withDensity fun x ↦
-          ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) (closedBall x₀ σ) := by
+        ENNReal.ofReal (c * σ ^ 2) ≤ defectMeasure μ r φ β (closedBall x₀ σ) := by
   obtain ⟨c₀, hc₀, c, hc, ρ₀, hρ₀, hdens⟩ :=
     exists_forall_ofReal_mul_sq_le_withDensity_closedBall_of_eq_zero (G := positiveHalfSpinors o ρ)
       (F := positiveHalfSpinors o ρ) (μ := μ) Fact.out hK le_rfl hC
       (K' := ((1 + C) * K + √2 * H / 2 + C) * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)))
       (by positivity) hR
   refine ⟨c₀, hc₀, c, hc, ρ₀, hρ₀, fun r hr hrK F φ β α b η x₀ hF hdF hφc hβc hα hφα hφ hβ
-    hφβ hβK hgrad hη hFeq hFm hα₀ ↦ hdens r hr hrK φ β α b x₀ hφc hβc hα hφα hφβ hβK hgrad
-      (fun s hs ↦ ?_) hα₀⟩
+    hφβ hβK hgrad hη hFeq hFm hα₀ ↦ ?_⟩
+  rw [defectMeasure_def]
+  refine hdens r hr hrK φ β α b x₀ hφc hβc hα hφα hφβ hβK hgrad (fun s hs ↦ ?_) hα₀
   -- Taubes's monotonicity inequality holds at every radius below `R`.
-  rw [zero_mul, add_zero, mul_one]
+  rw [← defectMeasure_def μ r φ β, zero_mul, add_zero, mul_one]
   exact (measure_closedBall_le_mul_deriv_add_of_add_hodgeStar_eq (μ := μ) h₀ h₂₃ hQ hkl he hr hK
     hC hF hdF hφc hβc hφ hβ hφβ hβK hη hFeq hFm hs).trans_eq (by ring)
 
@@ -299,8 +298,7 @@ theorem exists_forall_coveringNumber_le_of_add_hodgeStar_eq {K C H R : ℝ} (hK 
       (∀ x ∈ Z, α x = 0 ∧ ball x R ⊆ U) →
       ∀ σ : ℝ≥0, σ ≠ 0 → (σ : ℝ) ≤ 2 * ρ₀ → (2 * c₀ / σ) ^ 2 ≤ r →
         (coveringNumber σ Z : ℝ≥0∞) ≤ ENNReal.ofReal (4 / (c * σ ^ 2)) *
-          (μ.withDensity fun x ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|))
-            (cthickening (σ / 2) Z) := by
+          defectMeasure μ r φ β (cthickening (σ / 2) Z) := by
   obtain ⟨c₀, hc₀, c, hc, ρ₀, hρ₀, hdens⟩ :=
     exists_forall_ofReal_mul_sq_le_measure_closedBall_of_add_hodgeStar_eq (μ := μ) (ρ := ρ) h₀ h₂₃
       hQ hkl he hK hC hH hR

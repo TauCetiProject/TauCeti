@@ -65,8 +65,9 @@ denotes the weighted norm `‖exp(c ρ) g‖₂` of the values of `g`.
   (`exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_forall_mem_norm_le`).
 * **The adjoints.** Read through the values of the fields, `Q` is an operator on `L²(ℂ; ℝ⁴)`
   with Hilbert space adjoint `Q†`, formally `(L_a L_a*)⁻¹ L_a`. The derivative of `p ↦ Q†` is
-  `(Q')†` (`fderiv_clm_adjoint`). Both rates `±c` are allowed above, so the estimates for `Q` and
-  `Q'` at the rate `-c` pass to their adjoints by duality
+  `(Q')†` (`fderiv_adjoint_orthogonalRightInverse_apply`, from `fderiv_clm_adjoint`). Both rates
+  `±c` are allowed above, so the estimates for `Q` and `Q'` at the rate `-c` pass to their adjoints
+  by duality
   (`ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le`). This gives `‖Q† g‖_c ≤ K ‖g‖_c`
   (`exists_forall_eLpNorm_exp_mul_smul_adjoint_orthogonalRightInverse_le_of_forall_mem_norm_le`)
   and `‖(Q†)' g‖_c ≤ K ‖b‖∞ ‖g‖_c` (the same name with `fderiv_adjoint` in place of `adjoint`).
@@ -109,7 +110,11 @@ denotes the weighted norm `‖exp(c ρ) g‖₂` of the values of `g`.
   (`exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjection_le`), with `K`
   depending only on `m`, `R₀` and `c`.
 
-The weighted Sobolev versions of the second derivative estimates are in
+* **The second derivative of the adjoints.** The derivative `(Q†)''` along `w` of
+  `p ↦ D(Q†)(p) v` is the adjoint of `Q''`, and its weighted `L²` and Sobolev estimates are in
+  `TauCeti.Analysis.PDE.Vortex.ParameterDerivative.AdjointSobolev`.
+
+The weighted Sobolev versions of the second derivative estimates for `Q` and `π` are in
 `TauCeti.Analysis.PDE.Vortex.SecondParameterDerivative`. The weighted `L²` estimates for the
 derivatives of every order along curves are in
 `TauCeti.Analysis.PDE.Vortex.ParameterDerivative.IteratedDeriv`
@@ -1334,6 +1339,29 @@ theorem exists_forall_eLpNorm_exp_mul_smul_adjoint_orthogonalRightInverse_le_of_
     ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h
   simpa only [ContinuousLinearMap.comp_apply] using h
 
+/-- The derivative along `u` of the adjoints `(ι ∘ Q p)†` of the orthogonal right inverses, read as
+operators on `L²(ℂ; ℝ⁴)` through the values `ι` of the fields, is the adjoint `(ι ∘ Q'_u)†` of the
+derivative of the right inverses. -/
+theorem fderiv_adjoint_orthogonalRightInverse_apply {m : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X} (hax : a p₀ =ᵐ[μ⊤] x)
+    (ha : DifferentiableAt ℝ a p₀) (u : X) (h : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
+    fderiv ℝ (fun p ↦ ContinuousLinearMap.adjoint (sobolevFieldValues ∘L
+      orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a p)))) p₀ u h =
+      ContinuousLinearMap.adjoint (sobolevFieldValues ∘L fderiv ℝ (fun p ↦
+        orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a p))) p₀ u) h := by
+  obtain ⟨hT, hsurj, hd, -⟩ :=
+    isFredholm_and_differentiableAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
+  have hQd : DifferentiableAt ℝ (fun p ↦ orthogonalRightInverse sobolevFieldValues
+      (sobolevGaugeFixedOperator (a p))) p₀ :=
+    ((hT.contDiffAt_orthogonalRightInverse (n := 1) sobolevFieldValues_injective
+      hsurj).differentiableAt one_ne_zero).comp p₀ hd
+  rw [((hasFDerivAt_const sobolevFieldValues p₀).clm_comp hQd.hasFDerivAt).clm_adjoint.fderiv]
+  simp only [ContinuousLinearMap.comp_zero, add_zero, ContinuousLinearMap.comp_apply,
+    adjointRealCLM_apply, compL_apply]
+
 /-- **The weighted estimate for the parameter derivative of the adjoints of the orthogonal right
 inverses, uniformly over a window of divisors.** For every degree `m`, radius `R₀` and rate
 `|c| < 1/2` there is a constant `K` with the following property, where `ρ(z) = √(1 + |z|²)`. Let
@@ -1368,16 +1396,8 @@ theorem
     exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_forall_mem_norm_le
       m R₀ (c := -c) (by rwa [abs_neg])
   refine ⟨K, fun x D hx hbound hsol hframe hD hD₀ X _ _ a p₀ hax ha v g ↦ ?_⟩
-  obtain ⟨hT, hsurj, hd, -⟩ :=
-    isFredholm_and_differentiableAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
-  have hQ : DifferentiableAt ℝ (fun p ↦ orthogonalRightInverse sobolevFieldValues
-      (sobolevGaugeFixedOperator (a p))) p₀ :=
-    ((hT.contDiffAt_orthogonalRightInverse (n := 1) sobolevFieldValues_injective
-      hsurj).differentiableAt one_ne_zero).comp p₀ hd
   -- The derivative of `p ↦ (ι ∘ Q p)†` is `(ι ∘ Q')†`, and `ι ∘ Q'` is estimated at the rate `-c`.
-  rw [((hasFDerivAt_const sobolevFieldValues p₀).clm_comp hQ.hasFDerivAt).clm_adjoint.fderiv]
-  simp only [ContinuousLinearMap.comp_zero, add_zero, ContinuousLinearMap.comp_apply,
-    adjointRealCLM_apply, compL_apply]
+  rw [fderiv_adjoint_orthogonalRightInverse_apply hx hsol hframe hax ha]
   rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
     ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
   refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
@@ -1385,5 +1405,27 @@ theorem
   rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
     ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h
   simpa only [ContinuousLinearMap.comp_apply] using h
+
+/-- Along a family of coefficients `C²` at `p₀`, whose value at `p₀` is the class of a smooth plane
+vortex with the degree-`m` end framing, the adjoints `(ι ∘ Q p)†` of the orthogonal right inverses,
+read as operators on `L²(ℂ; ℝ⁴)`, are `C²` at `p₀`. -/
+theorem contDiffAt_adjoint_orthogonalRightInverse {m : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X} (hax : a p₀ =ᵐ[μ⊤] x)
+    (ha : ContDiffAt ℝ 2 a p₀) :
+    ContDiffAt ℝ 2 (fun p ↦ orthogonalRightInverse sobolevFieldValues
+        (sobolevGaugeFixedOperator (a p))) p₀ ∧
+      ContDiffAt ℝ 2 (fun p ↦ ContinuousLinearMap.adjoint (sobolevFieldValues ∘L
+        orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a p)))) p₀ := by
+  obtain ⟨hT, hsurj, -, hT2, -⟩ :=
+    isFredholm_and_contDiffAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
+  have hQ2 := (hT.contDiffAt_orthogonalRightInverse sobolevFieldValues_injective hsurj).comp p₀ hT2
+  -- The adjoints are the image of `Q` under the real-linear map `R ↦ (ι ∘ R)†`.
+  refine ⟨hQ2, ?_⟩
+  simpa only [Function.comp_def, ContinuousLinearMap.comp_apply, compL_apply,
+    adjointRealCLM_apply] using
+    (adjointRealCLM.comp (compL ℝ _ _ _ sobolevFieldValues)).contDiff.contDiffAt.comp p₀ hQ2
 
 end TauCeti.Vortex
