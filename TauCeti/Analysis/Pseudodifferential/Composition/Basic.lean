@@ -258,14 +258,14 @@ private theorem seminorm_append_le_of_leibniz [DecidableEq (List (Fin n))] {μ :
   rw [← seminorm_spatialDeriv, hspatial]
   exact (map_add_le_add _ _ _).trans (add_le_add_mul_mul (hC _ b hb hbK)
     (hC a _ _ fun x hx ↦ coefficient_spatialDeriv_eq_zero K.isCompact.isClosed hbK j hx)
-    (sum_seminorm_le_of_image_subset hf (fun i ↦ seminorm_spatialDeriv j L i.1 i.2 a)
-      Finset.subset_union_right)
+    (Finset.sum_le_sum_of_injOn _ hf.injOn Finset.subset_union_right
+      (fun i _ ↦ (seminorm_spatialDeriv j L i.1 i.2 a).le) fun _ _ _ ↦ apply_nonneg _ _)
     (Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left
       fun _ _ _ ↦ apply_nonneg _ _)
     (Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left
       fun _ _ _ ↦ apply_nonneg _ _)
-    (sum_seminorm_le_of_image_subset hf (fun i ↦ seminorm_spatialDeriv j K i.1 i.2 b)
-      Finset.subset_union_right)
+    (Finset.sum_le_sum_of_injOn _ hf.injOn Finset.subset_union_right
+      (fun i _ ↦ (seminorm_spatialDeriv j K i.1 i.2 b).le) fun _ _ _ ↦ apply_nonneg _ _)
     hC0 hC0 (by positivity) (by positivity) (by positivity) (by positivity))
 
 /-- **The step of a frequency derivative** in `exists_seminorm_le_of_leibniz`: bilinear seminorm
@@ -309,14 +309,14 @@ private theorem seminorm_frequency_append_le_of_leibniz [DecidableEq (List (Fin 
     ((seminorm_inclusion_le _ L α β _).trans (hC₁ _ b hb hbK))
     ((seminorm_inclusion_le _ L α β _).trans
       (hC₂ a _ _ fun x hx ↦ coefficient_frequencyDeriv_eq_zero (hbK x hx) j))
-    (sum_seminorm_le_of_image_subset hg (fun i ↦ seminorm_frequencyDeriv j L i.1 i.2 a)
-      Finset.subset_union_left)
+    (Finset.sum_le_sum_of_injOn _ hg.injOn Finset.subset_union_left
+      (fun i _ ↦ (seminorm_frequencyDeriv j L i.1 i.2 a).le) fun _ _ _ ↦ apply_nonneg _ _)
     (Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_right
       fun _ _ _ ↦ apply_nonneg _ _)
     (Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left
       fun _ _ _ ↦ apply_nonneg _ _)
-    (sum_seminorm_le_of_image_subset hg (fun i ↦ seminorm_frequencyDeriv j K i.1 i.2 b)
-      Finset.subset_union_right)
+    (Finset.sum_le_sum_of_injOn _ hg.injOn Finset.subset_union_right
+      (fun i _ ↦ (seminorm_frequencyDeriv j K i.1 i.2 b).le) fun _ _ _ ↦ apply_nonneg _ _)
     hC₁0 hC₂0 (by positivity) (by positivity) (by positivity) (by positivity))
 
 /-- **Bilinear seminorm estimates from the Leibniz rules.** Let `B a b` be symbols of order

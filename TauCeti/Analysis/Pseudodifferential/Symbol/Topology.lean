@@ -37,9 +37,7 @@ The main results are:
 * `TauCeti.Symbol.continuous_inclusion`, `TauCeti.Symbol.continuous_frequencyDeriv`,
   `TauCeti.Symbol.continuous_spatialDeriv`: order inclusions and derivatives are continuous, with
   the exact seminorm identities `TauCeti.Symbol.seminorm_frequencyDeriv` and
-  `TauCeti.Symbol.seminorm_spatialDeriv`, and the resulting comparison of finite sums of
-  seminorms of a derivative with those of the symbol
-  (`TauCeti.Symbol.sum_seminorm_le_of_image_subset`);
+  `TauCeti.Symbol.seminorm_spatialDeriv`;
 * `TauCeti.Symbol.inclusionCLM`, `TauCeti.Symbol.frequencyDerivCLM`,
   `TauCeti.Symbol.spatialDerivCLM`: these operations as continuous linear maps;
 * `TauCeti.Symbol.mixedDerivCLM`, `TauCeti.Symbol.continuous_mixedDeriv`: every mixed derivative
@@ -179,22 +177,6 @@ theorem seminorm_spatialDeriv (j : Fin n) (K : Compacts (CoordinateSpace n))
     exact le_seminorm K (α ++ [j]) β a hx ξ
   · rw [← mixedDeriv_spatialDeriv]
     exact le_seminorm K α β (spatialDeriv j a) hx ξ
-
-/-- A finite sum of seminorms of `a` which are seminorms of `a'` along an injective relabelling
-`f` of the words, such as the seminorms of a derivative `a = ∂a'`
-(`TauCeti.Symbol.seminorm_frequencyDeriv`, `TauCeti.Symbol.seminorm_spatialDeriv`), is at most the
-sum of the seminorms of `a'` over any index set containing the relabelled words. -/
-theorem sum_seminorm_le_of_image_subset [DecidableEq (List (Fin n))]
-    {f : List (Fin n) × List (Fin n) → List (Fin n) × List (Fin n)} (hf : Function.Injective f)
-    {K : Compacts (CoordinateSpace n)} {a : Symbol n V W m} {a' : Symbol n V W m'}
-    {s s' : Finset (List (Fin n) × List (Fin n))}
-    (ha : ∀ i, Symbol.seminorm K i.1 i.2 a = Symbol.seminorm K (f i).1 (f i).2 a')
-    (hs : s.image f ⊆ s') :
-    ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a ≤ ∑ i ∈ s', Symbol.seminorm K i.1 i.2 a' := by
-  calc ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a = ∑ i ∈ s.image f, Symbol.seminorm K i.1 i.2 a' := by
-        rw [Finset.sum_image fun i _ j _ h ↦ hf h]
-        exact Finset.sum_congr rfl fun i _ ↦ ha i
-    _ ≤ _ := Finset.sum_le_sum_of_subset_of_nonneg hs fun _ _ _ ↦ apply_nonneg _ _
 
 /-- On a nonempty compact set, the constant symbol `T` has seminorm `‖T‖` without derivatives. -/
 @[simp]

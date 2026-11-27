@@ -979,27 +979,20 @@ theorem sharpRemainder_smul (a : Symbol n W U m') (hb : b.HasCompactSpatialSuppo
 /-- The remainder of the composition expansion is subtractive in the left symbol. -/
 theorem sub_sharpRemainder (a₁ a₂ : Symbol n W U m') (hb : b.HasCompactSpatialSupport) (N : ℕ) :
     (a₁ - a₂).sharpRemainder b hb N = a₁.sharpRemainder b hb N - a₂.sharpRemainder b hb N := by
-  have h (k : ℕ) : ((a₁ - a₂).sharpTerm b k).coefficient =
-      (a₁.sharpTerm b k).coefficient - (a₂.sharpTerm b k).coefficient :=
-    eq_sub_of_add_eq (coefficient_sharpTerm_eq_add_left
-      (by rw [coefficient_sub, sub_add_cancel]) b k).symm
-  ext1
-  simp only [coefficient_sub, coefficient_sharpRemainder, sub_sharp, h, Finset.sum_sub_distrib]
-  abel
+  rw [sub_eq_add_neg a₁, ← neg_one_smul ℂ a₂, add_sharpRemainder, smul_sharpRemainder,
+    neg_one_smul, ← sub_eq_add_neg]
 
 /-- The remainder of the composition expansion is subtractive in the right symbol. -/
 theorem sharpRemainder_sub (a : Symbol n W U m') {b₁ b₂ : Symbol n V W m}
     (hb₁ : b₁.HasCompactSpatialSupport) (hb₂ : b₂.HasCompactSpatialSupport) (N : ℕ) :
     a.sharpRemainder (b₁ - b₂) (hb₁.sub hb₂) N =
       a.sharpRemainder b₁ hb₁ N - a.sharpRemainder b₂ hb₂ N := by
-  have h (k : ℕ) : (a.sharpTerm (b₁ - b₂) k).coefficient =
-      (a.sharpTerm b₁ k).coefficient - (a.sharpTerm b₂ k).coefficient :=
-    eq_sub_of_add_eq (coefficient_sharpTerm_eq_add_right
-      (by rw [coefficient_sub, sub_add_cancel]) a k).symm
-  ext1
-  rw [coefficient_sharpRemainder, sharp_sub a hb₁ hb₂]
-  simp only [coefficient_sub, coefficient_sharpRemainder, h, Finset.sum_sub_distrib]
-  abel
+  calc a.sharpRemainder (b₁ - b₂) (hb₁.sub hb₂) N =
+      a.sharpRemainder (b₁ + (-1 : ℂ) • b₂) (hb₁.add (hb₂.smul (-1))) N := by
+        simp only [sub_eq_add_neg, neg_one_smul]
+    _ = a.sharpRemainder b₁ hb₁ N - a.sharpRemainder b₂ hb₂ N := by
+        rw [sharpRemainder_add a hb₁ (hb₂.smul (-1)), sharpRemainder_smul, neg_one_smul,
+          ← sub_eq_add_neg]
 
 /-! #### Seminorm estimates for the remainder -/
 
@@ -1057,15 +1050,17 @@ private theorem exists_norm_remainderAt_succ_le_seminorm {K L : Compacts (Coordi
         ξ).trans ?_
     rw [hw]
     have hPj : ∑ i ∈ s, Symbol.seminorm L i.1 i.2 (frequencyDeriv j a) ≤ P :=
-      sum_seminorm_le_of_image_subset (Function.injective_id.prodMap
-        (List.append_left_injective [j])) (fun i ↦ seminorm_frequencyDeriv j L i.1 i.2 a)
+      Finset.sum_le_sum_of_injOn _
+        (Function.injective_id.prodMap (List.append_left_injective [j])).injOn
         (Finset.subset_biUnion_of_mem (fun j : Fin n ↦ s.image (Prod.map id (· ++ [j])))
           (Finset.mem_univ j))
+        (fun i _ ↦ (seminorm_frequencyDeriv j L i.1 i.2 a).le) fun _ _ _ ↦ apply_nonneg _ _
     have hQj : ∑ i ∈ t, Symbol.seminorm K i.1 i.2 (spatialDeriv j b) ≤ Q :=
-      sum_seminorm_le_of_image_subset ((List.append_left_injective [j]).prodMap
-        Function.injective_id) (fun i ↦ seminorm_spatialDeriv j K i.1 i.2 b)
+      Finset.sum_le_sum_of_injOn _
+        ((List.append_left_injective [j]).prodMap Function.injective_id).injOn
         (Finset.subset_biUnion_of_mem (fun j : Fin n ↦ t.image (Prod.map (· ++ [j]) id))
           (Finset.mem_univ j))
+        (fun i _ ↦ (seminorm_spatialDeriv j K i.1 i.2 b).le) fun _ _ _ ↦ apply_nonneg _ _
     exact mul_le_mul_of_nonneg_right (mul_le_mul (mul_le_mul_of_nonneg_left hPj hC0) hQj
       (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _)
       (mul_nonneg hC0 (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _))) (by positivity)
