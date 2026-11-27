@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.WaveFrontSet.DifferentialOperator
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Differential operators on bundles and wave front sets
@@ -425,8 +426,8 @@ private theorem isMicrolocallySmoothAt_chartComponent_of_localOperatorDualCLM {r
     TestFunction.exists_opens_le_forall_eq_one (n := ⊤) (Ω := ⟨c.target, c.open_target⟩) hy
   -- The model fibre of `W` is a line, with basis `b 0`, so the coordinate along `b 0` is injective.
   let b := Module.finBasisOfFinrankEq ℝ F' hF'
-  have hℓ : Injective (LinearMap.toContinuousLinearMap (b.coord 0)) :=
-    (b.equivFun.trans (LinearEquiv.funUnique (Fin 1) ℝ ℝ)).injective
+  have hℓ : Injective (LinearMap.toContinuousLinearMap (b.coord 0)) := by
+    simpa only [LinearMap.coe_toContinuousLinearMap'] using b.coord_injective_of_subsingleton 0
   -- Read at `x`, the covector `⟪η, ·⟫ ∘ dc` is `ξ`, for the vector `η` of `ξ ∘ dc⁻¹`.
   have hcov : (innerSL ℝ ((toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x))) :
       E →L[ℝ] ℝ).comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c x) = ξ := by

@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalBesov
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalSobolev
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Local elliptic regularity for differential operators on bundles
@@ -139,8 +140,8 @@ theorem IsLocallyAt.of_localOperatorDualCLM {A B : (Ω : Opens E) → 𝓓'(Ω, 
   have hu : (trivializationAt F V x).symmL ℝ x v = u :=
     (trivializationAt F V x).symmL_continuousLinearMapAt (hV hxc) u
   let b := Module.finBasisOfFinrankEq ℝ F' hF'
-  have hℓ : Injective (LinearMap.toContinuousLinearMap (b.coord 0)) :=
-    (b.equivFun.trans (LinearEquiv.funUnique (Fin 1) ℝ ℝ)).injective
+  have hℓ : Injective (LinearMap.toContinuousLinearMap (b.coord 0)) := by
+    simpa only [LinearMap.coe_toContinuousLinearMap'] using b.coord_injective_of_subsingleton 0
   -- A cutoff `χ` equal to `1` on a neighbourhood `U` of `c x` in the chart target.
   obtain ⟨χ, U, hUt, hyU, hU1⟩ :=
     TestFunction.exists_opens_le_forall_eq_one (n := ⊤) (Ω := ⟨c.target, c.open_target⟩) hy

@@ -36,6 +36,8 @@ vectors indexed by `ι`.
   intertwines them everywhere.
 * `Module.Basis.coord_map_apply`: the coordinates with respect to a basis transported along a
   linear equivalence are the coordinates of the vector transported back.
+* `Module.Basis.coord_injective_of_subsingleton`: for a basis indexed by a subsingleton type, the
+  coordinate along any basis vector is injective.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
 * `Module.Basis.span_range_coe`: the vectors of a basis of a submodule `U`, viewed in the ambient
@@ -156,6 +158,12 @@ theorem coord_map_apply {R M M' ι : Type*} [Semiring R] [AddCommMonoid M] [Modu
     [AddCommMonoid M'] [Module R M'] (b : Module.Basis ι R M) (f : M ≃ₗ[R] M') (i : ι) (x : M') :
     (b.map f).coord i x = b.coord i (f.symm x) := by
   simp only [coord_apply, map_repr, LinearEquiv.trans_apply]
+
+/-- For a basis indexed by a subsingleton type, the coordinate along any basis vector is
+injective, since it is the only coordinate. -/
+theorem coord_injective_of_subsingleton [Subsingleton ι] (b : Module.Basis ι K V) (i : ι) :
+    Function.Injective (b.coord i) := fun w w' h ↦
+  b.ext_elem fun j ↦ by simpa [Subsingleton.elim j i] using h
 
 /-- A family of vectors indexed by a finite set `S` of indices, whose `s`-th member has the
 coordinates of `b s` at the indices in `S`, is linearly independent. -/
