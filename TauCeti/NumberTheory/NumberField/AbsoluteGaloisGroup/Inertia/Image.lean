@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Inertia.Basic
 import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Transitivity
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
-import TauCeti.RingTheory.Invariant.ProfiniteInertia
+import TauCeti.RingTheory.Invariant.Profinite.Inertia
 
 /-!
 # The image of an inertia group in a finite Galois quotient

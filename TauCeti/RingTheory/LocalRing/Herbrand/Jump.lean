@@ -15,8 +15,6 @@ This module extends `TauCeti.RingTheory.LocalRing.Herbrand.Basic` with:
 * `TauCeti.IsLocalRing.UpperJump`: upper breaks of the ramification filtration of a finite group
   acting on a local ring, and their correspondence with `LowerJump`.
 * `TauCeti.IsLocalRing.psiNat`: the integral inverse Herbrand function `ψℕ : ℕ → ℕ`.
-* `TauCeti.IsLocalRing.subgroupOf_upperRamificationGroup`: the subgroup trace identity
-  `(G^u).subgroupOf H = H^{φ_H(ψ_G(u))}`.
 * Order/sign `simp` lemmas, behavior below `-1`, trivial-inertia simplifications, kernel
   stabilization, and transport along bijective action-compatible homomorphisms.
 
@@ -274,13 +272,6 @@ theorem exists_forall_upperRamificationGroup_eq_ker [IsNoetherianRing S] :
   refine ⟨herbrandFun G S N, fun _ hv ↦ ?_⟩
   rw [upperRamificationGroup_def, ramificationGroupReal_def]
   exact hN _ (Int.le_ceil_iff.2 (by linarith [le_inverseHerbrandFun_iff.2 hv]))
-
-/-- **Subgroup trace identity**: for finite `G` and `H ≤ G`, `(G^u) ∩ H = H^{φ_H(ψ_G(u))}`. -/
-theorem subgroupOf_upperRamificationGroup (H : Subgroup G) (u : ℝ) :
-    (upperRamificationGroup G S u).subgroupOf H =
-      upperRamificationGroup H S (herbrandFun H S (inverseHerbrandFun G S u)) := by
-  rw [upperRamificationGroup_def, subgroupOf_ramificationGroupReal,
-    upperRamificationGroup_herbrandFun]
 
 /-- `herbrandFun G S u` is an upper break if and only if `u` is a lower break. -/
 @[simp] theorem upperJump_herbrandFun_iff (u : ℝ) :

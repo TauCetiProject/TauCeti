@@ -14,8 +14,8 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 Let `M` and `N` carry internal integer gradings `G` and `H`, and give their reduced tensor
 coalgebras `Tᶜ(M)` and `Tᶜ(N)` the total letter degree.  This file combines the ungraded
 correspondence between coalgebra morphisms `Tᶜ(M) ⟶ Tᶜ(N)` and their Taylor components
-(`TauCeti.ReducedTensorWords.coalgHomEquivTaylor`) with the grading, and with graded
-coderivations.
+(`LinearMap.IsConilpotent.coalgHomEquiv` for `Δ = TauCeti.ReducedTensorWords.deconcatenation`)
+with the grading, and with graded coderivations.
 
 First, the Taylor expansion `coalgHom f` of a degree-zero family of components `f` is itself of
 degree zero: each word `f(B₁) ⋯ f(B_k)` produced from a cut of a homogeneous word into blocks has

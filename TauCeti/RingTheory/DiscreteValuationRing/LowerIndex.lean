@@ -30,10 +30,10 @@ of its residue field is assumed. Adapts the coset formula and its counting form 
 
 * `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top`: the quotient
   formula `e · i(σ|_C) = ∑_{τ ∈ H} i(σ τ)` for a tower of monogenic discrete valuation rings.
-* `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum` and
-  `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_quotient_mk'_eq_sum_card`: **Serre's
+* `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_finsum` and
+  `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_sum_card`: **Serre's
   quotient formula** `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)` and its counting form
-  `e · i_{G/H}(σ H) = ∑_{k < j} #H_k` over a general local ring `A` using `QuotientGroup.mk' H`.
+  `e · i_{G/H}(σ H) = ∑_{k < j} #H_k` over a general local ring `A`.
 
 ## References
 
@@ -110,11 +110,11 @@ variable (A B G : Type*) [CommRing A] [IsLocalRing A] [CommRing B] [IsDomain B]
   [Algebra.IsSeparable (ResidueField A) (ResidueField B)]
 
 /-- **Serre's quotient formula for the lower index**: for normal `H ≤ G`,
-`e(B / B^H) · i_{G ⧸ H}(g H) = ∑ᶠ h : H, i_G(g h)`. -/
-theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [H.Normal] (g : G) :
+`e(B / B^H) · i_{G ⧸ H}(σ H) = ∑ᶠ τ : H, i_G(σ τ)`. -/
+theorem ramificationIdx_mul_lowerIndex_mk_eq_finsum (H : Subgroup G) [H.Normal] (σ : G) :
     ((maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B H) : ℕ∞) *
-        lowerIndex (FixedPoints.subalgebra A B H) (QuotientGroup.mk' H g) =
-      ∑ᶠ h : H, lowerIndex B (g * h) := by
+        lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
+      ∑ᶠ τ : H, lowerIndex B (σ * τ) := by
   obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top
     (R := FixedPoints.subalgebra A B G) (S := B)
   obtain ⟨y, hy⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top
@@ -122,43 +122,22 @@ theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [
   exact ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top (G := G)
     (G' := G ⧸ H) (H := H) (A := FixedPoints.subalgebra A B G)
     (C := FixedPoints.subalgebra A B H) (B := B) hx hy
-    (fun c ↦ (H.coe_mk_smul g c).symm) fun τ b ↦ (Subgroup.smul_def τ b).symm
+    (fun c ↦ (H.coe_mk_smul σ c).symm) fun τ b ↦ (Subgroup.smul_def τ b).symm
 
-/-- If `g` maximizes `lowerIndex` in `g H` with `i_G(g) = j`, then
-`e(B / B^H) · i_{G ⧸ H}(g H) = ∑ k ∈ range j, #H_k`. -/
-theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_sum_card (H : Subgroup G) [H.Normal]
-    (g : G) {j : ℕ} (hj : lowerIndex B g = j)
-    (hg : ∀ h : H, lowerIndex B (g * h) ≤ lowerIndex B g) :
+/-- **Serre's lemma on the lower index of a quotient**, in counting form. If `σ` maximizes
+`lowerIndex` in `σ H` with `i_G(σ) = j`, then
+`e(B / B^H) · i_{G ⧸ H}(σ H) = ∑ k ∈ range j, #H_k`. -/
+theorem ramificationIdx_mul_lowerIndex_mk_eq_sum_card (H : Subgroup G) [H.Normal]
+    {σ : G} {j : ℕ} (hj : lowerIndex B σ = j)
+    (hσ : ∀ τ ∈ H, lowerIndex B (σ * τ) ≤ lowerIndex B σ) :
     ((maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B H) : ℕ∞) *
-        lowerIndex (FixedPoints.subalgebra A B H) (QuotientGroup.mk' H g) =
+        lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
       ∑ k ∈ Finset.range j, (Nat.card (ramificationGroup H B k) : ℕ∞) := by
   let _ := Fintype.ofFinite H
-  rw [ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum A B G H g, finsum_eq_sum_of_fintype,
+  rw [ramificationIdx_mul_lowerIndex_mk_eq_finsum A B G H σ, finsum_eq_sum_of_fintype,
     ← sum_min_lowerIndex_natCast (G := H) (S := B) j]
-  refine Finset.sum_congr rfl fun h _ ↦ ?_
-  rw [lowerIndex_mul_eq_min_of_le (hg h), lowerIndex_coe, hj]
-
-end
-
-section
-
-variable (A B G : Type*) [CommRing A] [CommRing B] [IsDomain B] [IsDiscreteValuationRing B]
-  [Algebra A B] [Group G] [MulSemiringAction G B] [SMulCommClass G A B] [FaithfulSMul G B]
-  (H : Subgroup G) [H.Normal] [Finite H] (g : G)
-
-/-- For a faithful action of `G` on a DVR `B` over `A` and a finite normal subgroup `H ≤ G`,
-`i_{G ⧸ H}(g H) = ⊤` if and only if `g ∈ H`. -/
-theorem lowerIndex_quotient_mk'_eq_top_iff :
-    lowerIndex (FixedPoints.subalgebra A B H) (QuotientGroup.mk' H g) = ⊤ ↔ g ∈ H := by
-  rw [lowerIndex_eq_top_iff, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff]
-
-/-- If `g` maximizes `lowerIndex` in `g H` and `lowerIndex B g ≠ ⊤`, then
-`lowerIndex B^H (QuotientGroup.mk' H g) ≠ ⊤`. -/
-theorem lowerIndex_quotient_mk'_ne_top (hj : lowerIndex B g ≠ ⊤)
-    (hg : ∀ h : H, lowerIndex B (g * h) ≤ lowerIndex B g) :
-    lowerIndex (FixedPoints.subalgebra A B H) (QuotientGroup.mk' H g) ≠ ⊤ :=
-  lowerIndex_ne_top_of_forall_mem_ker_le hj fun h hh ↦
-    hg ⟨h, by simpa [QuotientGroup.ker_mk'] using hh⟩
+  refine Finset.sum_congr rfl fun τ _ ↦ ?_
+  rw [lowerIndex_mul_eq_min_of_le (hσ τ τ.property), lowerIndex_coe, hj]
 
 end
 

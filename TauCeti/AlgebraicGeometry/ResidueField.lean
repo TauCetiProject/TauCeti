@@ -56,7 +56,9 @@ give residue-field generators even after restricting the source to an open subsc
 * `RingHom.isIso_SpecMap_residueFieldMap_iff`: for a ring map `φ : R →+* S` and a prime
   `x` of `S`, the residue field map of `Spec S ⟶ Spec R` at `x` is an isomorphism iff the map of
   residue fields `κ(φ⁻¹ x) → κ(x)` is bijective. This translates conditions on residue fields
-  between schemes and rings, for instance for étale neighbourhoods built from algebras.
+  between schemes and rings, for instance for étale neighbourhoods built from algebras. For a
+  homomorphism of fields `φ : k →+* K` it is an isomorphism iff `φ` is surjective
+  (`RingHom.isIso_SpecMap_residueFieldMap_iff_surjective`).
 * `AlgebraicGeometry.Scheme.Hom.isIso_residueFieldMap_of_lift`: a lift along `f` of a morphism
   `Spec A ⟶ X` from a local ring, inducing an isomorphism of residue fields, sends the closed point
   to a preimage of `x` at which `f` induces an isomorphism of residue fields.
@@ -448,6 +450,22 @@ theorem isIso_residueFieldMap_fst (z : ↑(pullback f g))
   have hz : T.SpecTensorTo (SpecOfPoint z) = z := SpecTensorTo_SpecOfPoint z
   rwa [hz] at h
 
+/-- If `f` preserves the residue field at `pullback.fst f g z`, then its base change
+`pullback.snd f g` along `g` preserves the residue field at `z`: the mirror image of
+`isIso_residueFieldMap_fst`. -/
+theorem isIso_residueFieldMap_snd (z : ↑(pullback f g))
+    [IsIso (f.residueFieldMap (pullback.fst f g z))] :
+    IsIso ((pullback.snd f g).residueFieldMap z) := by
+  have : IsIso (f.residueFieldMap (pullback.snd g f ((pullbackSymmetry f g).hom z))) := by
+    rw [show pullback.snd g f ((pullbackSymmetry f g).hom z) = pullback.fst f g z by
+      rw [← Scheme.Hom.comp_apply, pullbackSymmetry_hom_comp_snd]]
+    infer_instance
+  have := isIso_residueFieldMap_fst (f := g) (g := f) ((pullbackSymmetry f g).hom z)
+  have h : IsIso (((pullbackSymmetry f g).hom ≫ pullback.fst g f).residueFieldMap z) := by
+    rw [Scheme.residueFieldMap_comp]
+    exact IsIso.comp_isIso' this inferInstance
+  rwa [pullbackSymmetry_hom_comp_fst] at h
+
 end Scheme.Pullback
 
 section FromSpecResidueField
@@ -555,6 +573,22 @@ theorem isIso_SpecMap_residueFieldMap_iff {R S : Type u} [CommRing R] [CommRing 
       (Scheme.localRingHom_comp_stalkIso_apply (CommRingCat.ofHom φ) x a).symm)
   rw [key, isIso_comp_left_iff, isIso_comp_right_iff, ConcreteCategory.isIso_iff_bijective]
   rfl
+
+/-- For a homomorphism of fields `φ : k →+* K`, the residue field map of `Spec K ⟶ Spec k` at the
+point of `Spec K` is an isomorphism iff `φ` is surjective. -/
+theorem isIso_SpecMap_residueFieldMap_iff_surjective {k K : Type u} [Field k] [Field K]
+    (φ : k →+* K) (x : Spec (.of K)) :
+    IsIso ((Spec.map (CommRingCat.ofHom φ)).residueFieldMap x) ↔ Function.Surjective φ := by
+  have := x.isPrime
+  rw [φ.isIso_SpecMap_residueFieldMap_iff x _ rfl,
+    ← Function.Bijective.of_comp_iff _ (Ideal.algEquivResidueFieldOfField _).bijective]
+  -- Both residue fields are the fields themselves, through their algebra maps.
+  have hc : ⇑(Ideal.ResidueField.map _ x.asIdeal φ rfl) ∘
+      ⇑(Ideal.algEquivResidueFieldOfField (x.asIdeal.comap φ)) =
+        ⇑(Ideal.algEquivResidueFieldOfField x.asIdeal) ∘ φ :=
+    funext fun r ↦ Ideal.ResidueField.map_algebraMap _ _ _ _ r
+  rw [hc, Function.Bijective.of_comp_iff' (Ideal.algEquivResidueFieldOfField _).bijective]
+  exact and_iff_right φ.injective
 
 end RingHom
 

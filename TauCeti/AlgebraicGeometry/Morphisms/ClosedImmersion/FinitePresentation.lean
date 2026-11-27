@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 
@@ -86,6 +87,21 @@ theorem fg_ideal (I : X.IdealSheafData) [LocallyOfFinitePresentation I.subscheme
     (U : X.affineOpens) : (I.ideal U).FG := by
   simpa only [I.ker_subschemeι] using
     (IsClosedImmersion.locallyOfFinitePresentation_iff (f := I.subschemeι)).mp inferInstance U
+
+/-- The closed inclusion of an ideal sheaf is locally of finite presentation exactly when its
+section ideals are finitely generated on every affine open. -/
+theorem locallyOfFinitePresentation_subschemeι_iff (I : X.IdealSheafData) :
+    LocallyOfFinitePresentation I.subschemeι ↔ ∀ U : X.affineOpens, (I.ideal U).FG := by
+  simpa only [I.ker_subschemeι] using
+    IsClosedImmersion.locallyOfFinitePresentation_iff (f := I.subschemeι)
+
+/-- Finite presentation of the closed inclusion of an ideal sheaf is preserved by pullback along
+any morphism of schemes. -/
+instance locallyOfFinitePresentation_comap_subschemeι {Y : Scheme.{u}} (I : Y.IdealSheafData)
+    [LocallyOfFinitePresentation I.subschemeι] (f : X ⟶ Y) :
+    LocallyOfFinitePresentation (I.comap f).subschemeι := by
+  rw [← I.comapIso_hom_fst f]
+  infer_instance
 
 /-- Finite generation of section ideals on affine neighborhoods implies finite generation
 on every affine open. -/

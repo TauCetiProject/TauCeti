@@ -17,6 +17,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Calculus.PowerGrowth
 import TauCeti.Analysis.Analytic.Order
+import TauCeti.Analysis.Normed.Module.Ball.Rescale
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
@@ -129,12 +130,6 @@ private theorem integrableOn_of_sdiff_eq_zero {U K : Set ℂ} {f : ℂ → ℝ} 
     (hf : ContinuousOn f U) (hKU : K ⊆ U) (hK : IsCompact K) (h0 : ∀ z ∈ U \ K, f z = 0) :
     IntegrableOn f U :=
   ((hf.mono hKU).integrableOn_compact hK).of_forall_sdiff_eq_zero hU h0
-
-/-- The rescaled point `z₀ + s ζ` lies in the closed disc of radius `δ ≥ s ‖ζ‖` about `z₀`. -/
-private theorem add_smul_mem_closedBall {z₀ ζ : ℂ} {s δ : ℝ} (hs : 0 ≤ s) (hsζ : s * ‖ζ‖ ≤ δ) :
-    z₀ + s • ζ ∈ closedBall z₀ δ := by
-  rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
-    abs_of_nonneg hs]
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
 
@@ -754,7 +749,8 @@ private theorem rescaledDensity_eq_blowupProfile {U : Set ℂ} {u : ℂ → E} {
       deriv u z = ((m : ℂ) * (z - z₀) ^ (m - 1)) • g z + (z - z₀) ^ m • deriv g z)
     {s : ℝ} (hs : 0 < s) {ζ : ℂ} (hsζ : s * ‖ζ‖ ≤ δ) :
     rescaledDensity U u z₀ χ m s ζ = blowupProfile g z₀ χ m ζ s := by
-  have hz : z₀ + s • ζ ∈ closedBall z₀ δ := add_smul_mem_closedBall hs.le hsζ
+  have hz : z₀ + s • ζ ∈ closedBall z₀ δ := closedBall_subset_closedBall hsζ
+    (add_smul_mem_closedBall hs.le (mem_closedBall_zero_iff.2 le_rfl))
   obtain ⟨hfu, hfdu⟩ := hfac _ hz
   have hsub : z₀ + s • ζ - z₀ = (s : ℂ) * ζ := by rw [add_sub_cancel_left, real_smul]
   rw [hsub] at hfu hfdu
@@ -809,7 +805,8 @@ private theorem blowupProfile_le {g : ℂ → E} {z₀ : ℂ} {χ : ℝ → ℝ}
     (hMg : ∀ z ∈ closedBall z₀ δ, ‖g z‖ ≤ Mg) (hMdg : ∀ z ∈ closedBall z₀ δ, ‖deriv g z‖ ≤ Mdg)
     {s : ℝ} {ζ : ℂ} (hs : 0 < s) (hs1 : s ≤ 1) (hζ : ‖ζ‖ ≤ R) (hsζ : s * ‖ζ‖ ≤ δ) :
     ‖blowupProfile g z₀ χ m ζ s‖ ≤ χ 0 * (m * R ^ (m - 1) * Mg + R ^ m * Mdg) ^ 2 := by
-  have hz : z₀ + s • ζ ∈ closedBall z₀ δ := add_smul_mem_closedBall hs.le hsζ
+  have hz : z₀ + s • ζ ∈ closedBall z₀ δ := closedBall_subset_closedBall hsζ
+    (add_smul_mem_closedBall hs.le (mem_closedBall_zero_iff.2 le_rfl))
   have hχ0 := cutoff_nonneg hχa hχ1
   rw [blowupProfile, Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (hχ0 _) (sq_nonneg _))]
   refine mul_le_mul (hχa (sq_nonneg _)) (pow_le_pow_left₀ (norm_nonneg _) ?_ 2)

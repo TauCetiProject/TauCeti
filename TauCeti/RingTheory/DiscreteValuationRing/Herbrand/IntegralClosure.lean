@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DiscreteValuationRing.Herbrand.Basic
+public import TauCeti.RingTheory.DiscreteValuationRing.Herbrand
 public import TauCeti.RingTheory.IntegralClosure.Action
 public import TauCeti.RingTheory.LocalRing.Herbrand.IntegralClosure
 import TauCeti.FieldTheory.Galois.Basic
@@ -16,7 +16,7 @@ import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 
 For a finite Galois extension `L / K` whose integral closure of a local base ring `A` is a DVR
 with separable residue extension, and a normal intermediate field `E / K`, we transport the
-quotient Herbrand identities from `TauCeti.RingTheory.DiscreteValuationRing.Herbrand.Basic` along
+quotient Herbrand identities from `TauCeti.RingTheory.DiscreteValuationRing.Herbrand` along
 Galois fixed fields (`IsGalois.normalAutEquivQuotient`) and `K`-tower restriction
 (`AlgEquiv.restrictNormalHom E`, `AlgEquiv.restrictScalarsHom K`), adapting
 `NumberTheory/LocalField/Herbrand/{Tower,UpperQuotient}.lean`.
@@ -52,7 +52,7 @@ variable (A : Type*) {K L : Type*} [CommRing A] [Field K] [Field L] [Algebra A K
         (QuotientGroup.mk' H)).map (IsGalois.normalAutEquivQuotient H : _ →* _) =
       upperRamificationGroup (fixedField H ≃ₐ[K] fixedField H)
         (integralClosure A (fixedField H)) v := by
-  rw [← upperRamificationGroup_quotient_eq_map A (integralClosure A L) (L ≃ₐ[K] L) H v,
+  rw [map_mk'_upperRamificationGroup A H v,
     upperRamificationGroup_fixedPoints_integralClosure_eq_comap A H v]
   exact Subgroup.map_comap_eq_self_of_surjective (IsGalois.normalAutEquivQuotient H).surjective _
 
@@ -152,7 +152,7 @@ theorem herbrandFun_integralClosure_tower (u : ℝ) :
     herbrandFun (L ≃ₐ[K] L) (integralClosure A L) u =
       herbrandFun (E ≃ₐ[K] E) (integralClosure A E)
         (herbrandFun (L ≃ₐ[E] L) (integralClosure A L) u) := by
-  rw [herbrandFun_tower A (integralClosure A L) (L ≃ₐ[K] L) (TauCeti.embeddingSubgroup K E L) u,
+  rw [← herbrandFun_tower A (TauCeti.embeddingSubgroup K E L) u,
     herbrandFun_embeddingSubgroup_integralClosure,
     herbrandFun_quotient_embeddingSubgroup_integralClosure]
 
@@ -203,8 +203,8 @@ theorem upperJump_integralClosure_tower_iff (v : ℝ) :
       UpperJump (E ≃ₐ[K] E) (integralClosure A E) v ∨
         UpperJump (L ≃ₐ[E] L) (integralClosure A L)
           (inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v) := by
-  rw [upperJump_iff_upperJump_quotient_or_upperJump_inverseHerbrandFun A (integralClosure A L)
-      (L ≃ₐ[K] L) (TauCeti.embeddingSubgroup K E L) v,
+  rw [upperJump_iff_upperJump_quotient_or_upperJump_inverseHerbrandFun (A := A)
+      (TauCeti.embeddingSubgroup K E L) v,
     upperJump_quotient_embeddingSubgroup_integralClosure_iff,
     upperJump_embeddingSubgroup_integralClosure_iff,
     inverseHerbrandFun_quotient_embeddingSubgroup_integralClosure]

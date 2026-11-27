@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.IsGaloisGroup.Defs
 public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
@@ -17,7 +16,7 @@ import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 /-!
 # Inertia group cardinality on discrete valuation rings
 
-For a faithful finite Galois action `G` on a discrete valuation ring `B` with invariant DVR `A`
+For a faithful finite action `G` on a discrete valuation ring `B` with invariant DVR `A`
 and separable residue extension, `#G_0 = e(B / A)` (`natCard_ramificationGroup_zero`). More
 generally, over any local ring `A` with separable residue extension, `#G_0 = e(B / B^G)`
 (`natCard_ramificationGroup_zero_fixedPoints`). Neither completeness of `A` nor finiteness of its
@@ -41,15 +40,17 @@ namespace TauCeti
 
 namespace IsLocalRing
 
-/-- For a faithful finite Galois action `G` on a DVR `B` with invariant DVR `A` and separable
-residue extension, `#G_0 = e(B / A)`. -/
+/-- For a faithful finite action `G` on a DVR `B` with invariant DVR `A` and separable residue
+extension, `#G_0 = e(B / A)`. -/
 theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
     [_root_.IsDiscreteValuationRing A] [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B]
     [Algebra A B] [IsLocalHom (algebraMap A B)] [Group G] [Finite G] [MulSemiringAction G B]
-    [IsGaloisGroup G A B] [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
+    [SMulCommClass G A B] [Algebra.IsInvariant A B G] [FaithfulSMul G B]
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
     Nat.card (ramificationGroup G B 0) = (maximalIdeal B).ramificationIdx A := by
   have _ : Algebra.IsIntegral A B := Algebra.IsInvariant.isIntegral A B G
   have _ : FaithfulSMul A B := IsDiscreteValuationRing.faithfulSMul_of_isIntegral (R := A) (S := B)
+  have _ : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
   have _ : Module.Finite A B := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
   let := Ideal.Quotient.field (maximalIdeal A)
   let := Ideal.Quotient.field (maximalIdeal B)
@@ -69,7 +70,7 @@ theorem natCard_ramificationGroup_zero_fixedPoints
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
     Nat.card (ramificationGroup G B 0) =
       (maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B G) :=
-  let _ := FixedPoints.isGaloisGroup_subalgebra A B G
+  have _ := FixedPoints.isGaloisGroup_subalgebra A B G
   have _ := isSeparable_residueField_fixedPointsSubalgebra A B G
   natCard_ramificationGroup_zero
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Horn
 
 import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.RelativeCellComplex
 import Mathlib.AlgebraicTopology.SimplicialSet.Presentable
@@ -27,6 +28,9 @@ of a left or right fibration over a quasicategory is a quasicategory. Left and r
 are the covariant and contravariant models of space-valued functors on their base. For instance,
 the projections from the coslices and slices of a quasicategory to it are left and right
 fibrations, and they underlie the Yoneda embedding, the theory of final maps and straightening.
+Reversing the vertices of simplices exchanges the horns `Λ[n, i]` and `Λ[n, i.rev]`, so the
+opposite functor `SSet.opFunctor` exchanges left and right fibrations
+(`SSet.leftFibration_opFunctor_map_iff`, `SSet.rightFibration_opFunctor_map_iff`).
 
 As for Mathlib's inner anodyne extensions, the small object argument identifies left (resp.
 right) anodyne extensions with the retracts of transfinite compositions of pushouts of
@@ -201,6 +205,31 @@ open modelCategoryQuillen in
 /-- Kan fibrations are right fibrations. -/
 instance (p : X ⟶ Y) [Fibration p] : RightFibration p :=
   ⟨antitone_rlp rightHornInclusions_le_J _ ((modelCategoryQuillen.fibration_iff p).1 ‹_›)⟩
+
+/-- The opposite functor exchanges left and right fibrations: the opposite of `p` is a left
+fibration exactly when `p` is a right fibration, as reversing the vertices exchanges the horns
+`Λ[n, i]` and `Λ[n, i.rev]`. -/
+theorem leftFibration_opFunctor_map_iff (p : X ⟶ Y) :
+    LeftFibration (opFunctor.map p) ↔ RightFibration p := by
+  simp only [leftFibration_iff_hasLiftingProperty, rightFibration_iff_hasLiftingProperty,
+    hasLiftingProperty_horn_ι_opFunctor_map_iff]
+  refine ⟨fun h n i h0 ↦ ?_, fun h n i hn ↦ h i.rev (by simpa using Fin.rev_lt_rev.2 hn)⟩
+  exact Fin.rev_rev i ▸ h i.rev (by simpa using Fin.rev_lt_rev.2 h0)
+
+/-- The opposite functor exchanges left and right fibrations: the opposite of `p` is a right
+fibration exactly when `p` is a left fibration. -/
+theorem rightFibration_opFunctor_map_iff (p : X ⟶ Y) :
+    RightFibration (opFunctor.map p) ↔ LeftFibration p := by
+  simp only [leftFibration_iff_hasLiftingProperty, rightFibration_iff_hasLiftingProperty,
+    hasLiftingProperty_horn_ι_opFunctor_map_iff]
+  refine ⟨fun h n i hn ↦ ?_, fun h n i h0 ↦ h i.rev (by simpa using Fin.rev_lt_rev.2 h0)⟩
+  exact Fin.rev_rev i ▸ h i.rev (by simpa using Fin.rev_lt_rev.2 hn)
+
+instance (p : X ⟶ Y) [RightFibration p] : LeftFibration (opFunctor.map p) :=
+  (leftFibration_opFunctor_map_iff p).2 inferInstance
+
+instance (p : X ⟶ Y) [LeftFibration p] : RightFibration (opFunctor.map p) :=
+  (rightFibration_opFunctor_map_iff p).2 inferInstance
 
 /-- Left fibrations are inner fibrations. -/
 instance (p : X ⟶ Y) [LeftFibration p] : InnerFibration p :=

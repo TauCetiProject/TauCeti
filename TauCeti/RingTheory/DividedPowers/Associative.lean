@@ -312,6 +312,23 @@ theorem dividedPower_add {x y : A} (hxy : Commute x y) (n : ℕ) :
     smul_mul_smul]
   rw [Nat.inv_factorial_mul_choose n ij.1 ij.2 (mem_antidiagonal.mp hij)]
 
+/-- If three rational algebra maps satisfy `D z = L z + R z + e`, the image of a
+divided power expands as the antidiagonal convolution of the three divided-power sequences. -/
+theorem _root_.AlgHom.dividedPower_eq_sum {B : Type*} [CommSemiring B] [Algebra ℚ B]
+    (D L R : A →ₐ[ℚ] B) (z : A) (e : B)
+    (hz : D z = L z + R z + e) (n : ℕ) :
+    D (dividedPower n z) = ∑ jl ∈ antidiagonal n,
+      (∑ ab ∈ antidiagonal jl.1,
+        L (dividedPower ab.1 z) * R (dividedPower ab.2 z)) * dividedPower jl.2 e := by
+  rw [map_dividedPower, hz, dividedPower_add (Commute.all _ _)]
+  apply sum_congr rfl
+  intro jl _
+  rw [dividedPower_add (Commute.all _ _)]
+  congr 1
+  apply sum_congr rfl
+  intro ab _
+  rw [map_dividedPower, map_dividedPower]
+
 end Semiring
 
 section Ring
