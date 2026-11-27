@@ -13,8 +13,10 @@ import Mathlib.Tactic.Ring
 /-!
 # The Chinese remainder theorem on unit groups and in gcd–lcm form
 
-For coprime `m` and `n`, `ZMod.unitsChineseRemainder` identifies `(ZMod (m * n))ˣ` with
-`(ZMod m)ˣ × (ZMod n)ˣ` through the two reductions (`ZMod.unitsChineseRemainder_apply_fst`,
+For coprime `m` and `n`, Mathlib's ring equivalence `ZMod.chineseRemainder` is the pair of
+reductions modulo `m` and modulo `n` (`ZMod.chineseRemainder_eq_prod_castHom`), and
+`ZMod.unitsChineseRemainder` identifies `(ZMod (m * n))ˣ` with `(ZMod m)ˣ × (ZMod n)ˣ` through
+the two reductions (`ZMod.unitsChineseRemainder_apply_fst`,
 `ZMod.unitsChineseRemainder_apply_snd`), and `ZMod.eq_mul_comp_unitsMap_of_coprime` splits a hom
 out of `(ZMod (m * n))ˣ` as the product of its restrictions to the two factors, composed with the
 reductions. This is the splitting used for the Dirichlet character factorizations at coprime
@@ -36,6 +38,12 @@ public section
 
 namespace ZMod
 
+/-- The Chinese remainder ring equivalence is the pair of reductions modulo `m` and modulo `n`. -/
+theorem chineseRemainder_eq_prod_castHom {m n : ℕ} (h : m.Coprime n) :
+    (chineseRemainder h : ZMod (m * n) →+* ZMod m × ZMod n) =
+      (castHom (dvd_mul_right m n) (ZMod m)).prod (castHom (dvd_mul_left n m) (ZMod n)) :=
+  RingHom.ext_zmod _ _
+
 section Units
 
 variable {m n : ℕ}
@@ -45,12 +53,6 @@ variable {m n : ℕ}
 (`ZMod.unitsChineseRemainder_apply_fst`, `ZMod.unitsChineseRemainder_apply_snd`). -/
 def unitsChineseRemainder (h : m.Coprime n) : (ZMod (m * n))ˣ ≃* (ZMod m)ˣ × (ZMod n)ˣ :=
   (Units.mapEquiv (chineseRemainder h).toMulEquiv).trans MulEquiv.prodUnits
-
-/-- The Chinese remainder ring equivalence is the pair of reductions modulo `m` and modulo `n`. -/
-private theorem chineseRemainder_eq_prod_castHom (h : m.Coprime n) :
-    (chineseRemainder h : ZMod (m * n) →+* ZMod m × ZMod n) =
-      (castHom (dvd_mul_right m n) (ZMod m)).prod (castHom (dvd_mul_left n m) (ZMod n)) :=
-  RingHom.ext_zmod _ _
 
 /-- The first component of the unit-group Chinese remainder equivalence is reduction modulo
 `m`. -/
