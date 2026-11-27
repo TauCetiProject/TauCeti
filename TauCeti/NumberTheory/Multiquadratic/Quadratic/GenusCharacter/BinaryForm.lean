@@ -8,8 +8,9 @@ module
 public import TauCeti.NumberTheory.BinaryQuadraticForm.GenusCharacter
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Reflection
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.Dirichlet
-import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Subfactorization
-import TauCeti.NumberTheory.QuadraticOrder.Basic
+import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Basic
+import TauCeti.Data.Int.DivMod
+import TauCeti.Data.ZMod.Units
 
 /-!
 # Genus characters attached to fundamental divisors
@@ -25,6 +26,19 @@ the character of the scalar.
 `binaryFormGenusChar` gives a total integer-valued character with the same evaluation rule on
 that domain. Its definition gives precedence to a represented value with character `1`.
 
+## Main results
+
+* `isGenusChar_genusChar`: the bundled product character is a genus character on the
+  fundamental-divisor domain.
+* `binaryFormGenusChar_eq_binaryQuadraticFormGenusChar`: comparison of the total character
+  with the bundled form character.
+* `binaryFormGenusChar_eq_of_represents`: evaluation at any coprime represented integer.
+* `binaryFormGenusChar_eq_zero_iff`: the content criterion for vanishing at nonzero products.
+* `binaryFormGenusChar_congr_of_exists_eval_iff`: forms representing the same integers have
+  the same total character, without restrictions on the indices.
+* `binaryFormGenusChar_smul`, `binaryFormGenusChar_reflected`, and `binaryFormGenusChar_smul'`:
+  proper invariance, reflection invariance, and the scaling law.
+
 ## References
 
 * B. Gross, W. Kohnen, and D. Zagier, *Heegner points and derivatives of L-series. II*,
@@ -39,11 +53,6 @@ namespace TauCeti.Multiquadratic
 
 open BinaryQuadraticForm
 
-private theorem isUnit_intCast_natAbs_iff_isCoprime (n d : ℤ) :
-    IsUnit (n : ZMod d.natAbs) ↔ IsCoprime n d := by
-  rw [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm]
-  simp only [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast]
-
 /-- A prime-discriminant character is trivial on coprime values of the principal form
 when its complementary factor satisfies the dyadic congruence. -/
 private theorem primeDiscriminantCharFun_principalForm_eq_one {P e : ℤ}
@@ -54,24 +63,33 @@ private theorem primeDiscriminantCharFun_principalForm_eq_one {P e : ℤ}
   by_cases hzero : IsEvenPrimeDiscriminant P ∧ e % 4 = 0
   · obtain ⟨hPe, he₀⟩ := hzero
     have hunit : IsUnit (((principalForm (P * e)).eval x y : ℤ) : ZMod P.natAbs) :=
-      (isUnit_intCast_natAbs_iff_isCoprime _ _).mpr hcop
+      (ZMod.isUnit_intCast_natAbs_iff_isCoprime _ _).mpr hcop
     -- An even prime discriminant with a cofactor divisible by four reduces to the
     -- already established genus-character laws for the principal form of discriminant `4N`.
     rcases hPe with rfl | rfl | rfl
-    · have h : (-4 : ℤ) * e = 4 * (-e) := by ring
-      rw [h] at hunit ⊢
+    · have hmod : (-4 : ℤ).natAbs = 4 := rfl
+      have hunit' : IsUnit (((principalForm (-4 * e)).eval x y : ℤ) : ZMod 4) :=
+        hmod ▸ hunit
+      have h : (-4 : ℤ) * e = 4 * (-e) := by ring
+      rw [h] at hunit' ⊢
       rw [primeDiscriminantCharFun_neg_four]
-      exact isGenusChar_iff.mp (isGenusChar_χ₄ (N := -e) (Or.inl (by omega))) x y hunit
-    · have h : (8 : ℤ) * e = 4 * (2 * e) := by ring
-      rw [h] at hunit ⊢
+      exact isGenusChar_iff.mp (isGenusChar_χ₄ (N := -e) (Or.inl (by omega))) x y hunit'
+    · have hmod : (8 : ℤ).natAbs = 8 := rfl
+      have hunit' : IsUnit (((principalForm (8 * e)).eval x y : ℤ) : ZMod 8) :=
+        hmod ▸ hunit
+      have h : (8 : ℤ) * e = 4 * (2 * e) := by ring
+      rw [h] at hunit' ⊢
       rw [primeDiscriminantCharFun_eight]
       exact isGenusChar_iff.mp
-        (isGenusChar_of_emod_eight_eq_zero (N := 2 * e) (by omega) ZMod.χ₈) x y hunit
-    · have h : (-8 : ℤ) * e = 4 * (-2 * e) := by ring
-      rw [h] at hunit ⊢
+        (isGenusChar_of_emod_eight_eq_zero (N := 2 * e) (by omega) ZMod.χ₈) x y hunit'
+    · have hmod : (-8 : ℤ).natAbs = 8 := rfl
+      have hunit' : IsUnit (((principalForm (-8 * e)).eval x y : ℤ) : ZMod 8) :=
+        hmod ▸ hunit
+      have h : (-8 : ℤ) * e = 4 * (-2 * e) := by ring
+      rw [h] at hunit' ⊢
       rw [primeDiscriminantCharFun_neg_eight]
       exact isGenusChar_iff.mp
-        (isGenusChar_of_emod_eight_eq_zero (N := -2 * e) (by omega) ZMod.χ₈') x y hunit
+        (isGenusChar_of_emod_eight_eq_zero (N := -2 * e) (by omega) ZMod.χ₈') x y hunit'
   · exact primeDiscriminantCharFun_eq_one_of_four_mul_eq_sq_sub_mul_sq hP
       (fun hPe => (he hPe).resolve_left (fun h => hzero ⟨hPe, h⟩)) hcop
       (four_mul_eval_principalForm hD x y)
@@ -87,7 +105,7 @@ theorem isGenusChar_genusChar {t : Finset ℤ}
   rw [isGenusChar_iff]
   intro x y hunit
   have hcop : IsCoprime ((principalForm ((∏ P ∈ t, P) * e)).eval x y) (∏ P ∈ t, P) := by
-    exact (isUnit_intCast_natAbs_iff_isCoprime _ _).mp hunit
+    exact (ZMod.isUnit_intCast_natAbs_iff_isCoprime _ _).mp hunit
   rw [genusChar_apply_int, genusCharFun_def]
   refine Finset.prod_eq_one fun P hP => ?_
   have hfactor : (∏ P' ∈ t, P') * e = P * ((∏ P' ∈ t.erase P, P') * e) := by
@@ -154,31 +172,6 @@ theorem binaryFormGenusChar_eq_one_or_eq_neg_one_or_eq_zero
   rw [binaryFormGenusChar_def]
   split_ifs <;> simp
 
-/-- For a fundamental divisor of the form's discriminant, evaluate the form character at any
-represented integer coprime to the product of the prime discriminants. -/
-theorem binaryFormGenusChar_eq_of_represents {t : Finset ℤ}
-    (ht : ∀ P ∈ t, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ t, ∀ P' ∈ t, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
-    {Q : BinaryQuadraticForm ℤ} {e : ℤ} (he : e % 4 = 0 ∨ e % 4 = 1)
-    (hD : Q.discrim = (∏ P ∈ t, P) * e) {x y : ℤ}
-    (hcop : IsCoprime (Q.eval x y) (∏ P ∈ t, P)) :
-    binaryFormGenusChar t Q = genusCharFun t (Q.eval x y) := by
-  classical
-  rw [binaryFormGenusChar_def]
-  by_cases hone : ∃ u v : ℤ, IsCoprime (Q.eval u v) (∏ P ∈ t, P) ∧
-      genusCharFun t (Q.eval u v) = 1
-  · rw [ite_eq_left hone]
-    obtain ⟨u, v, huv, hval⟩ := hone
-    have hχ : IsGenusChar Q.discrim (genusChar t ht) := hD ▸ isGenusChar_genusChar ht heven he
-    simpa only [genusChar_apply_int, hval] using
-      hχ.apply_eval_eq_apply_eval
-        ((isUnit_intCast_natAbs_iff_isCoprime _ _).mpr huv)
-        ((isUnit_intCast_natAbs_iff_isCoprime _ _).mpr hcop)
-  · have hex : ∃ u v, IsCoprime (Q.eval u v) (∏ P ∈ t, P) := ⟨x, y, hcop⟩
-    rw [ite_eq_right hone, ite_eq_left hex]
-    exact ((genusCharFun_eq_one_or_eq_neg_one ht hcop).resolve_left
-      (fun h => hone ⟨x, y, hcop, h⟩)).symm
-
 /-- The total form character vanishes exactly when there is no represented integer coprime
 to the product of the indices. -/
 theorem binaryFormGenusChar_eq_zero_iff_not_exists (t : Finset ℤ) (Q : BinaryQuadraticForm ℤ) :
@@ -194,7 +187,7 @@ theorem binaryFormGenusChar_eq_zero_iff_not_exists (t : Finset ℤ) (Q : BinaryQ
 
 /-- For a nonzero product of indices the total form character vanishes exactly when the
 content and that product have a common nonunit factor. -/
-theorem binaryFormGenusChar_eq_zero_iff {t : Finset ℤ}
+@[simp] theorem binaryFormGenusChar_eq_zero_iff {t : Finset ℤ}
     (hprod : (∏ P ∈ t, P) ≠ 0) (Q : BinaryQuadraticForm ℤ) :
     binaryFormGenusChar t Q = 0 ↔ ¬ IsCoprime (Q.content : ℤ) (∏ P ∈ t, P) := by
   rw [binaryFormGenusChar_eq_zero_iff_not_exists, Q.exists_isCoprime_eval_iff hprod]
@@ -207,44 +200,76 @@ theorem binaryFormGenusChar_eq_zero_iff {t : Finset ℤ}
 
 /-- For a fundamental divisor, the total character agrees with the form character of the
 bundled Dirichlet character. -/
-theorem binaryFormGenusChar_eq_genusChar {t : Finset ℤ}
+theorem binaryFormGenusChar_eq_binaryQuadraticFormGenusChar {t : Finset ℤ}
     (ht : ∀ P ∈ t, IsPrimeDiscriminant P)
     (heven : ∀ P ∈ t, ∀ P' ∈ t, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     {Q : BinaryQuadraticForm ℤ} {e : ℤ} (he : e % 4 = 0 ∨ e % 4 = 1)
     (hD : Q.discrim = (∏ P ∈ t, P) * e) :
     binaryFormGenusChar t Q = BinaryQuadraticForm.genusChar (genusChar t ht) Q := by
-  by_cases hex : ∃ x y, IsCoprime (Q.eval x y) (∏ P ∈ t, P)
-  · obtain ⟨x, y, hxy⟩ := hex
-    have hχ : IsGenusChar Q.discrim (genusChar t ht) := hD ▸ isGenusChar_genusChar ht heven he
-    rw [binaryFormGenusChar_eq_of_represents ht heven he hD hxy,
-      hχ.genusChar_eq ((isUnit_intCast_natAbs_iff_isCoprime _ _).2 hxy), genusChar_apply_int]
-  · rw [(binaryFormGenusChar_eq_zero_iff_not_exists t Q).2 hex,
-      genusChar_eq_zero (fun x y hu => hex ⟨x, y,
-        (isUnit_intCast_natAbs_iff_isCoprime _ _).1 hu⟩)]
+  classical
+  have hχ : IsGenusChar Q.discrim (genusChar t ht) := hD ▸ isGenusChar_genusChar ht heven he
+  by_cases hone : ∃ x y : ℤ, IsCoprime (Q.eval x y) (∏ P ∈ t, P) ∧
+      genusCharFun t (Q.eval x y) = 1
+  · obtain ⟨x, y, hcop, hval⟩ := hone
+    rw [(binaryFormGenusChar_eq_one_iff t Q).2 ⟨x, y, hcop, hval⟩,
+      hχ.genusChar_eq ((ZMod.isUnit_intCast_natAbs_iff_isCoprime _ _).2 hcop),
+      genusChar_apply_int, hval]
+  · by_cases hex : ∃ x y, IsCoprime (Q.eval x y) (∏ P ∈ t, P)
+    · obtain ⟨x, y, hcop⟩ := hex
+      rw [(binaryFormGenusChar_eq_neg_one_iff t Q).2 ⟨⟨x, y, hcop⟩, hone⟩,
+        hχ.genusChar_eq ((ZMod.isUnit_intCast_natAbs_iff_isCoprime _ _).2 hcop),
+        genusChar_apply_int]
+      exact ((genusCharFun_eq_one_or_eq_neg_one ht hcop).resolve_left
+        (fun h => hone ⟨x, y, hcop, h⟩)).symm
+    · rw [(binaryFormGenusChar_eq_zero_iff_not_exists t Q).2 hex,
+        genusChar_eq_zero (fun x y hu => hex ⟨x, y,
+          (ZMod.isUnit_intCast_natAbs_iff_isCoprime _ _).1 hu⟩)]
 
-private theorem binaryFormGenusChar_congr_of_exists_eval_iff (t : Finset ℤ)
+/-- For a fundamental divisor of the form's discriminant, evaluate the form character at any
+represented integer coprime to the product of the prime discriminants. -/
+theorem binaryFormGenusChar_eq_of_represents {t : Finset ℤ}
+    (ht : ∀ P ∈ t, IsPrimeDiscriminant P)
+    (heven : ∀ P ∈ t, ∀ P' ∈ t, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
+    {Q : BinaryQuadraticForm ℤ} {e : ℤ} (he : e % 4 = 0 ∨ e % 4 = 1)
+    (hD : Q.discrim = (∏ P ∈ t, P) * e) {x y : ℤ}
+    (hcop : IsCoprime (Q.eval x y) (∏ P ∈ t, P)) :
+    binaryFormGenusChar t Q = genusCharFun t (Q.eval x y) := by
+  have hχ : IsGenusChar Q.discrim (genusChar t ht) := hD ▸ isGenusChar_genusChar ht heven he
+  rw [binaryFormGenusChar_eq_binaryQuadraticFormGenusChar ht heven he hD,
+    hχ.genusChar_eq ((ZMod.isUnit_intCast_natAbs_iff_isCoprime _ _).2 hcop), genusChar_apply_int]
+
+/-- Forms representing the same integers have the same total form character. -/
+theorem binaryFormGenusChar_congr_of_exists_eval_iff (t : Finset ℤ)
     {Q Q' : BinaryQuadraticForm ℤ}
-    (h : ∀ p : ℤ → Prop, (∃ x y, p (Q'.eval x y)) ↔ ∃ x y, p (Q.eval x y)) :
+    (h : ∀ m : ℤ, (∃ x y, Q'.eval x y = m) ↔ ∃ x y, Q.eval x y = m) :
     binaryFormGenusChar t Q' = binaryFormGenusChar t Q := by
   classical
+  have hp (p : ℤ → Prop) : (∃ x y, p (Q'.eval x y)) ↔ ∃ x y, p (Q.eval x y) := by
+    constructor
+    · rintro ⟨x, y, hxy⟩
+      obtain ⟨u, v, huv⟩ := (h (Q'.eval x y)).1 ⟨x, y, rfl⟩
+      exact ⟨u, v, huv ▸ hxy⟩
+    · rintro ⟨x, y, hxy⟩
+      obtain ⟨u, v, huv⟩ := (h (Q.eval x y)).2 ⟨x, y, rfl⟩
+      exact ⟨u, v, huv ▸ hxy⟩
   rw [binaryFormGenusChar_def, binaryFormGenusChar_def]
-  exact if_congr (h (fun m => IsCoprime m (∏ P ∈ t, P) ∧ genusCharFun t m = 1)) rfl
-    (if_congr (h (fun m => IsCoprime m (∏ P ∈ t, P))) rfl rfl)
+  exact if_congr (hp (fun m => IsCoprime m (∏ P ∈ t, P) ∧ genusCharFun t m = 1)) rfl
+    (if_congr (hp (fun m => IsCoprime m (∏ P ∈ t, P))) rfl rfl)
 
 /-- Invertible substitutions preserve the total form character. -/
 theorem binaryFormGenusChar_eq_of_eval_comp_equiv (t : Finset ℤ) {Q Q' : BinaryQuadraticForm ℤ}
     (g : (ℤ × ℤ) ≃ (ℤ × ℤ))
     (h : ∀ v : ℤ × ℤ, Q'.eval v.1 v.2 = Q.eval (g v).1 (g v).2) :
     binaryFormGenusChar t Q' = binaryFormGenusChar t Q := by
-  refine binaryFormGenusChar_congr_of_exists_eval_iff t fun p => ?_
+  refine binaryFormGenusChar_congr_of_exists_eval_iff t fun m => ?_
   simpa only [Prod.exists] using g.exists_congr
-    (p := fun v => p (Q'.eval v.1 v.2)) (q := fun v => p (Q.eval v.1 v.2))
-    (fun v => iff_of_eq (congrArg p (h v)))
+    (p := fun v => Q'.eval v.1 v.2 = m) (q := fun v => Q.eval v.1 v.2 = m)
+    (fun v => by rw [h v])
 
 /-- The total form character is invariant under proper changes of variables. -/
 @[simp] theorem binaryFormGenusChar_smul (t : Finset ℤ) (γ : SL(2, ℤ))
     (Q : BinaryQuadraticForm ℤ) : binaryFormGenusChar t (γ • Q) = binaryFormGenusChar t Q :=
-  binaryFormGenusChar_congr_of_exists_eval_iff t (exists_eval_smul_iff γ Q)
+  binaryFormGenusChar_congr_of_exists_eval_iff t (fun m => exists_eval_smul_iff γ Q (· = m))
 
 /-- Changing the sign of the middle coefficient preserves the total form character. -/
 @[simp] theorem binaryFormGenusChar_reflected (t : Finset ℤ) (Q : BinaryQuadraticForm ℤ) :
@@ -273,7 +298,7 @@ theorem binaryFormGenusChar_smul' {t : Finset ℤ}
       rw [eval_smul']
       exact hμ.mul_left hxy
     rw [binaryFormGenusChar_eq_of_represents ht heven
-        (QuadraticOrder.sq_mul_emod_four_eq_zero_or_one he μ) hD' hxy',
+        (Int.sq_mul_emod_four_eq_zero_or_one he μ) hD' hxy',
       binaryFormGenusChar_eq_of_represents ht heven he hD hxy, eval_smul', genusCharFun_mul_right]
   · rw [(binaryFormGenusChar_eq_zero_iff_not_exists t (μ • Q)).2 (hc ∘ hscaled.mp)]
     rcases not_and_or.mp hc with hμ | hQ

@@ -149,12 +149,6 @@ theorem primeDiscriminantCharFun_eq_one_of_four_mul_eq_sq_sub_mul_sq {P Q n x y 
 
 /-! ### The genus characters of a fundamental discriminant -/
 
-/-- A product of integers congruent to `1` modulo `4` is congruent to `1` modulo `4`. -/
-private theorem prod_emod_four_eq_one {s : Finset ℤ} (hs : ∀ P ∈ s, P % 4 = 1) :
-    (∏ P ∈ s, P) % 4 = 1 :=
-  Finset.prod_induction _ (fun z => z % 4 = 1)
-    (fun a b ha hb => by rw [Int.mul_emod, ha, hb]; norm_num) (by norm_num) hs
-
 /-- **The genus-character relation.** Let `D = ∏ P ∈ s, P` be a factorization of a discriminant
 into prime discriminants, at most one of them even, as produced by
 `Int.IsFundamentalDiscr.exists_finset_primeDiscriminant`. For each `P ∈ s`, every integer `n`
@@ -175,11 +169,10 @@ theorem primeDiscriminantCharFun_eq_one_of_mem_of_four_mul_eq_sq_sub_mul_sq {s :
   refine primeDiscriminantCharFun_eq_one_of_four_mul_eq_sq_sub_mul_sq (hs P hP) ?_
     hcop h
   intro hPeven
-  refine prod_emod_four_eq_one fun P' hP' => ?_
-  have hmem : P' ∈ s := Finset.mem_of_mem_erase hP'
-  rcases isPrimeDiscriminant_iff.mp (hs P' hmem) with hev | ⟨p, _, hodd, rfl⟩
-  · exact absurd (heven P hP P' hmem hPeven hev).symm (Finset.ne_of_mem_erase hP')
-  · exact oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd
+  exact prod_primeDiscriminant_mod_four_eq_one
+    (fun P' hP' => hs P' (Finset.mem_of_mem_erase hP'))
+    (fun P' hP' hev => Finset.ne_of_mem_erase hP'
+      (heven P hP P' (Finset.mem_of_mem_erase hP') hPeven hev).symm)
 
 /-- The genus character indexed by a finite set `s` of prime discriminants: the product of the
 characters they carry. The genus characters of a fundamental discriminant `D` are those indexed by

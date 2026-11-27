@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.BinaryQuadraticForm.United
+public import TauCeti.NumberTheory.BinaryQuadraticForm.CoprimeValue
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 import Mathlib.Data.ZMod.Units

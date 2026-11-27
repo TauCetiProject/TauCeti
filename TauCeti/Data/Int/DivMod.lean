@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Int.Init
+import Mathlib.Algebra.Ring.Int.Parity
 import Mathlib.Tactic.Ring
 
 /-!
@@ -24,6 +25,8 @@ by the remainder so that they apply to the periodic indexing `m ↦ (m / n, m % 
   `m % n + 1 = n` then `(m + 1) / n = m / n + 1` (for `n ≠ 0`) and `(m + 1) % n = 0`.
 * `Int.ediv_add_sub_ediv_eq_zero_or_one`: the quotient by `N` rises by `0` or `1` when the
   numerator rises by `d ∈ [0, N]`.
+* `Int.sq_mul_emod_four_eq_zero_or_one`: multiplying a residue `0` or `1` modulo `4`
+  by a square preserves this property.
 * `TauCeti.natCast_mul_sub_div`: reflecting `x ↦ T - x` reflects the quotient of `b x` by `T`:
   `⌊b (T - x) / T⌋ = b - 1 - ⌊b x / T⌋` for `x ≤ T` with `T ∤ b x`.
 -/
@@ -65,6 +68,15 @@ theorem ediv_add_sub_ediv_eq_zero_or_one {t d N : ℤ} (hd : 0 ≤ d) (hdN : d �
   have h₂ : (t + d) / N ≤ (t + N) / N := Int.ediv_le_ediv hN (by omega)
   rw [show t + N = t + 1 * N by ring, Int.add_mul_ediv_right _ _ hN.ne'] at h₂
   omega
+
+/-- For `D ≡ 0, 1 mod 4` and any integer `f`, `f² D ≡ 0, 1 mod 4`. -/
+theorem sq_mul_emod_four_eq_zero_or_one {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) (f : ℤ) :
+    f ^ 2 * D % 4 = 0 ∨ f ^ 2 * D % 4 = 1 := by
+  rw [Int.mul_emod, Int.sq_emod_four]
+  rcases hD with hd | hd
+  · simp [hd]
+  · simp only [hd, mul_one]
+    omega
 
 end Int
 
