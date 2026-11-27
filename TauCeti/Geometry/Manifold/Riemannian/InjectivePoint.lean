@@ -16,8 +16,9 @@ import TauCeti.Geometry.Manifold.Riemannian.MetricBridge
 
 Let `f : M → N` be a map between Riemannian manifolds, both carrying their Riemannian distances. A
 point `x` is an injective point of `f` (`TauCeti.IsInjectivePoint`) when the manifold derivative of
-`f` at `x` is injective and `x` is the only point with image `f x`. This file shows that on a
-compact boundaryless source this qualitative condition is the quantitative one
+`f` at `x` is injective and `x` is the only point with image `f x`. This file shows that, for a
+continuous map differentiable at `x`, from a compact boundaryless source modelled on a
+finite-dimensional space, this qualitative condition is equivalent to the quantitative one
 
 `dist x y ≤ K * dist (f x) (f y)` for every `y` in `M`,
 
@@ -34,22 +35,23 @@ that is, `f` is antilipschitz from `x` (`TauCeti.AntilipschitzWithFrom`), for so
   `TauCeti.Manifold.exists_eventually_dist_le_mul_dist_extChartAt`). The source may have boundary
   here. Conversely, on a boundaryless source, such a bound near `x` at a point of
   differentiability makes the derivative injective
-  (`TauCeti.injective_mfderiv_of_eventually_dist_le_mul_dist`), by
+  (`MDifferentiableAt.injective_mfderiv_of_eventually_dist_le_mul_dist`), by
   `HasFDerivAt.antilipschitzWith_of_eventually_dist_le_mul_dist`.
 * **On a compact source.** If moreover `x` is alone in its fibre and `f` is continuous, the bound
   near `x` extends to all of a compact source
   (`Continuous.exists_antilipschitzWithFrom_of_eventually`). Hence, for a continuous map
   differentiable at `x`, `x` is an injective point exactly when `f` is antilipschitz from `x` with
-  some constant (`TauCeti.isInjectivePoint_iff_exists_antilipschitzWithFrom`), and a
+  some constant (`Continuous.isInjectivePoint_iff_exists_antilipschitzWithFrom`), and a
   differentiable map is somewhere injective exactly when it is antilipschitz from some point with
-  some constant (`TauCeti.isSomewhereInjective_iff_exists_antilipschitzWithFrom`).
+  some constant (`Continuous.isSomewhereInjective_iff_exists_antilipschitzWithFrom`).
 
 For a fixed constant `K` the pairs of a continuous map and a point from which it is antilipschitz
 with constant `K` form a closed set (`TauCeti.isClosed_setOfPred_antilipschitzWithFrom`). In the
 transversality theory of pseudoholomorphic spheres, these sets intersected with a bound `K` on the
 derivatives are the pieces of the exhaustion of the simple curves, the somewhere injective ones.
-The theorems above say that, for maps from a compact boundaryless Riemannian source, every
-somewhere injective map satisfies the first condition for some `K`, and only those do.
+The theorems above say that, for continuous differentiable maps from a compact boundaryless
+Riemannian source modelled on a finite-dimensional space, every somewhere injective map satisfies
+the first condition for some `K`, and only those do.
 
 ## References
 
@@ -89,7 +91,10 @@ theorem exists_eventually_dist_le_mul_dist_of_injective_mfderiv [FiniteDimension
   have hf : MDifferentiableAt I J f x := mdifferentiableAt_of_mfderiv_injective hinj
   -- In the extended charts, the derivative of the coordinate expression of `f` within `range I`
   -- is `mfderiv I J f x` read in the model spaces. It is injective, so the coordinate expression
-  -- satisfies the bound near `extChartAt I x x`.
+  -- satisfies the bound near `extChartAt I x x`. The casts in `f'` are exactly those in Mathlib's
+  -- definition of `HasMFDerivAt`, so `hf.hasMFDerivAt.2` has derivative `f'` syntactically. They
+  -- are needed: the tangent spaces carry the Riemannian norms, while the coordinate estimate
+  -- requires `f'` to be antilipschitz for the model-space norms.
   let f' : E →L[ℝ] E' := (tangentSpaceCastModel J (f x) : TangentSpace J (f x) →L[ℝ] E') ∘L
     mfderiv I J f x ∘L ((tangentSpaceCastModel I x).symm : E →L[ℝ] TangentSpace I x)
   have hf' : Injective f' := by
@@ -117,8 +122,8 @@ theorem exists_eventually_dist_le_mul_dist_of_injective_mfderiv [FiniteDimension
 Riemannian manifolds, the source without boundary, differentiable at `x`, if
 `dist x y ≤ K * dist (f x) (f y)` for every `y` near `x`, then the manifold derivative of `f` at `x`
 is injective. -/
-theorem injective_mfderiv_of_eventually_dist_le_mul_dist [I.Boundaryless] {K : ℝ≥0}
-    (hf : MDifferentiableAt I J f x) (hK : ∀ᶠ y in 𝓝 x, dist x y ≤ K * dist (f x) (f y)) :
+theorem _root_.MDifferentiableAt.injective_mfderiv_of_eventually_dist_le_mul_dist [I.Boundaryless]
+    {K : ℝ≥0} (hf : MDifferentiableAt I J f x) (hK : ∀ᶠ y in 𝓝 x, dist x y ≤ K * dist (f x) (f y)) :
     Injective (mfderiv I J f x) := by
   -- Without boundary, the coordinate expression of `f` has derivative `mfderiv I J f x` at
   -- `extChartAt I x x`.
@@ -166,23 +171,23 @@ Riemannian manifolds, the source compact, without boundary and modelled on a fin
 space, and let `f` be differentiable at `x`. Then `x` is an injective point of `f` if and only if
 `f` is antilipschitz from `x` with some constant `K`: `dist x y ≤ K * dist (f x) (f y)` for every
 `y` in `M`. -/
-theorem isInjectivePoint_iff_exists_antilipschitzWithFrom {x : M} (hf : Continuous f)
-    (hfx : MDifferentiableAt I J f x) :
+theorem _root_.Continuous.isInjectivePoint_iff_exists_antilipschitzWithFrom {x : M}
+    (hf : Continuous f) (hfx : MDifferentiableAt I J f x) :
     IsInjectivePoint I J f x ↔ ∃ K, AntilipschitzWithFrom K f x := by
   refine ⟨fun h ↦ ?_, fun ⟨K, hK⟩ ↦ ⟨?_, fun y hy ↦ hK.eq_of_apply_eq hy⟩⟩
   · obtain ⟨K, hK⟩ := exists_eventually_dist_le_mul_dist_of_injective_mfderiv h.injective_mfderiv
     exact hf.exists_antilipschitzWithFrom_of_eventually h.eq_of_apply_eq hK
-  · exact injective_mfderiv_of_eventually_dist_le_mul_dist hfx
+  · exact hfx.injective_mfderiv_of_eventually_dist_le_mul_dist
       (.of_forall (antilipschitzWithFrom_iff_le_mul_dist.1 hK))
 
 /-- **Somewhere injective maps are quantitatively injective somewhere.** A continuous
 differentiable map between Riemannian manifolds, the source compact, without boundary and modelled
 on a finite-dimensional space, is somewhere injective if and only if it is antilipschitz from some
 point with some constant. -/
-theorem isSomewhereInjective_iff_exists_antilipschitzWithFrom (hf : Continuous f)
-    (hdf : MDifferentiable I J f) :
+theorem _root_.Continuous.isSomewhereInjective_iff_exists_antilipschitzWithFrom
+    (hf : Continuous f) (hdf : MDifferentiable I J f) :
     IsSomewhereInjective I J f ↔ ∃ K x, AntilipschitzWithFrom K f x := by
-  simp only [isSomewhereInjective_iff, isInjectivePoint_iff_exists_antilipschitzWithFrom hf (hdf _)]
+  simp only [isSomewhereInjective_iff, hf.isInjectivePoint_iff_exists_antilipschitzWithFrom (hdf _)]
   exact exists_comm
 
 end Compact

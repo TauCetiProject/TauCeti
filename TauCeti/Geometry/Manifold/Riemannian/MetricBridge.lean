@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Riemannian.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.Riemannian.Distance
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Coordinate displacement is bounded by Riemannian path length
@@ -269,11 +270,7 @@ theorem exists_eventually_dist_extChartAt_le_mul_dist (x : M) :
   -- carries the Riemannian norm and its codomain carries the model-space norm.
   let ℓ : TangentSpace I x →L[ℝ] E :=
     (trivializationAt E (fun x : M ↦ TangentSpace I x) x).continuousLinearMapAt ℝ x
-  have hℓ (v : E) : ℓ v = v := by
-    dsimp only [ℓ]
-    rw [TangentBundle.continuousLinearMapAt_trivializationAt (mem_chart_source H x),
-      mfderiv_extChartAt_self]
-    rfl
+  have hℓ (v : E) : ℓ v = v := continuousLinearMapAt_trivializationAt_self (I := I) x v
   refine ⟨2 * ‖ℓ‖₊, ?_⟩
   filter_upwards [eventually_enorm_apply_extChartAt_sub_le (I := I) (F := E) x one_lt_two]
     with y hy

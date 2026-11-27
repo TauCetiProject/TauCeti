@@ -119,27 +119,14 @@ theorem _root_.ContMDiffAt.exists_norm_mgradient_le_mul_dist
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f p) (hp : mvfderiv I f p = 0) :
     ∃ C > 0, ∀ᶠ y in 𝓝 p, ‖mgradient I f y‖ ≤ C * dist y p := by
   obtain ⟨A, hA, hupper⟩ := hf.exists_norm_mgradient_le_mul_norm_extChartAt_sub hp
-  let T := trivializationAt E (fun x : M ↦ TangentSpace I x) p
-  let ℓ : TangentSpace I p →L[ℝ] E := T.continuousLinearMapAt ℝ p
-  -- The tangent chart at its own centre is the identity on coordinates, although its domain
-  -- carries the Riemannian norm and its codomain carries the model-space norm.
-  have hℓ (v : E) : ℓ v = v := by
-    dsimp only [ℓ, T]
-    rw [TangentBundle.continuousLinearMapAt_trivializationAt (mem_chart_source H p),
-      mfderiv_extChartAt_self]
-    rfl
-  refine ⟨A * (2 * ‖ℓ‖ + 1), by positivity, ?_⟩
-  filter_upwards [hupper, eventually_enorm_apply_extChartAt_sub_le
-    (I := I) (F := E) p (by norm_num : (1 : ℝ) < 2)] with y hy hchart
-  have hc := hchart ℓ
-  rw [hℓ] at hc
-  have hcoord : ‖extChartAt I p y - extChartAt I p p‖ ≤ 2 * ‖ℓ‖ * dist y p := by
-    have hc' := ENNReal.toReal_mono (by finiteness) hc
-    simpa [← ofReal_norm, ENNReal.toReal_mul, edist_dist, dist_comm] using hc'
+  obtain ⟨C, hC⟩ := Manifold.exists_eventually_dist_extChartAt_le_mul_dist (I := I) p
+  refine ⟨A * (C + 1), by positivity, ?_⟩
+  filter_upwards [hupper, hC] with y hy hcoord
+  rw [dist_comm, dist_eq_norm, dist_comm] at hcoord
   calc
     ‖mgradient I f y‖ ≤ A * ‖extChartAt I p y - extChartAt I p p‖ := hy
-    _ ≤ A * (2 * ‖ℓ‖ * dist y p) := mul_le_mul_of_nonneg_left hcoord hA.le
-    _ ≤ A * (2 * ‖ℓ‖ + 1) * dist y p := by nlinarith [dist_nonneg (x := y) (y := p)]
+    _ ≤ A * (C * dist y p) := mul_le_mul_of_nonneg_left hcoord hA.le
+    _ ≤ A * (C + 1) * dist y p := by nlinarith [dist_nonneg (x := y) (y := p)]
 
 omit [I.Boundaryless] in
 /-- Near a nondegenerate critical point on a Riemannian metric space, the gradient norm is
