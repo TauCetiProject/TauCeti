@@ -267,6 +267,12 @@ theorem adelicTranslateDiagonalIsometry_apply (γ : orthogonalGroup L.norm) (v :
     L.adelicTranslateDiagonalIsometry g γ v = (γ : V ≃ₗ[ℚ] V) v :=
   (rfl)
 
+/-- The isometry `g • L ≅ γ g • L` has ambient linear equivalence `γ`. -/
+@[simp]
+theorem coe_adelicTranslateDiagonalIsometry (γ : orthogonalGroup L.norm) :
+    (L.adelicTranslateDiagonalIsometry g γ : V ≃ₗ[ℚ] V) = γ :=
+  (rfl)
+
 /-- **Every isometry of translates comes from a rational isometry**: an isometry
 `e : g • L ≅ h • L` is the ambient action of some `γ ∈ O(V)(ℚ)`, and then `γ g • L = h • L`. -/
 theorem exists_coe_eq_toLinearEquiv_and_adelicTranslate_eq
@@ -395,6 +401,16 @@ theorem exists_mem_integralSubgroup_mul_mem_range_finiteAdelicSpecialOrthogonalT
   refine ⟨⟨k, Eventually.of_forall hk'⟩, (mem_integralSubgroup _ _).mpr hk', ?_⟩
   exact (mem_range_finiteAdelicSpecialOrthogonalToOrthogonal_iff _ _).mpr hgk
 
+/-- **When two proper adeles give the same translate**: for `g, h ∈ SO(V)(𝔸_f)`, the translates
+`g • L` and `h • L` agree exactly when `g⁻¹ h ∈ K_f⁺(L)`. -/
+theorem adelicTranslate_finiteAdelicSpecialOrthogonalToOrthogonal_eq_iff
+    {g h : L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonal} :
+    L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal g) =
+        L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal h) ↔
+      g⁻¹ * h ∈ integralSubgroup L.orthogonalCompactOpens.specialOrthogonal := by
+  rw [adelicTranslate_eq_adelicTranslate_iff, ← map_inv, ← map_mul,
+    finiteAdelicSpecialOrthogonalToOrthogonal_mem_integralSubgroup_iff]
+
 variable [FiniteDimensional ℚ V]
 
 /-- **The proper class of the translates of `L` by a double coset.** The proper isometry class of
@@ -419,9 +435,8 @@ noncomputable def properDoubleCosetClass :
       -- The rational isometry `γ` has determinant one, so it gives a proper isometry.
       refine Isometry.IsProper.properIsometryClass_eq
         (e := L.adelicTranslateDiagonalIsometry _ (specialOrthogonalToOrthogonal L.norm γ)) ?_
-      refine (Isometry.isProper_iff _).mpr (?_ : 0 < (LinearEquiv.det
-        ((specialOrthogonalToOrthogonal L.norm γ : orthogonalGroup L.norm) : V ≃ₗ[ℚ] V) : ℚ))
-      rw [coe_specialOrthogonalToOrthogonal, det_coe_specialOrthogonalGroup, Units.val_one]
+      rw [Isometry.isProper_iff, coe_adelicTranslateDiagonalIsometry,
+        coe_specialOrthogonalToOrthogonal, det_coe_specialOrthogonalGroup, Units.val_one]
       exact one_pos
 
 /-- The proper class of the double coset of `g` is the proper class of `g • L`. -/
@@ -458,8 +473,7 @@ theorem properDoubleCosetClass_injective : Function.Injective L.properDoubleCose
     rwa [range_specialOrthogonalToOrthogonal, mem_specialOrthogonalWithin_iff,
       ← orthogonalDet_apply]
   rw [← hδ, ← finiteAdelicSpecialOrthogonalToOrthogonal_finiteAdelicSpecialOrthogonalDiagonal,
-    ← map_mul, adelicTranslate_eq_adelicTranslate_iff, ← map_inv, ← map_mul,
-    finiteAdelicSpecialOrthogonalToOrthogonal_mem_integralSubgroup_iff] at hγh
+    ← map_mul, adelicTranslate_finiteAdelicSpecialOrthogonalToOrthogonal_eq_iff] at hγh
   exact DoubleCoset.eq.mpr ⟨_, ⟨δ, rfl⟩, _, hγh, by group⟩
 
 /-- **The proper classes of the double cosets are the proper classes of the genus of `L`
