@@ -256,38 +256,37 @@ theorem IsComplexPositiveDetLine.detLineCongrOfEq_detLineProdMapEquiv_symm_tmul
     isComplexPositiveTMulDual_iff.1 (isComplexPositiveDetLine_iff.1 hx)
   obtain ⟨a₂, φ₂, ha₂, hφ₂, h₂⟩ :=
     isComplexPositiveTMulDual_iff.1 (isComplexPositiveDetLine_iff.1 hy)
-  -- Write the element through the componentwise splittings of the kernel and the cokernel of the
-  -- real direct sum, and the factors through the complex kernels and cokernels of `f` and `g`.
+  -- Write `x` and `y` as tensors of complex positive elements of the complex kernels and
+  -- cokernels of `f` and `g`.
   rw [← f.detLineRestrictScalarsEquiv.symm_apply_apply x, h₁,
-    ← g.detLineRestrictScalarsEquiv.symm_apply_apply y, h₂,
-    LinearMap.detLineProdMapEquiv_symm_tmul _ _ (kerProdMapEquiv _ _).symm
+    ← g.detLineRestrictScalarsEquiv.symm_apply_apply y, h₂]
+  -- Split through the componentwise splittings of the kernel and the cokernel of the real direct
+  -- sum; the Koszul sign is `1`.
+  rw [LinearMap.detLineProdMapEquiv_symm_tmul _ _ (kerProdMapEquiv _ _).symm
       (coe_kerProdMapEquiv_symm_apply _ _)
       (cokerProdMapEquiv _ _).symm (fun _ _ ↦ cokerProdMapEquiv_symm_mk _ _ _ _),
-    (hf.mul_right _).neg_one_pow, one_smul, detLineRestrictScalarsEquiv_symm_tmul,
-    detLineRestrictScalarsEquiv_symm_tmul, detLineTensorDualProdEquiv_tmul,
+    (hf.mul_right _).neg_one_pow, one_smul]
+  -- Evaluate the tensor isomorphisms on the factors.
+  simp only [detLineRestrictScalarsEquiv_symm_tmul, detLineTensorDualProdEquiv_tmul,
     TensorProduct.congr_tmul, detLineCongrOfEq_eq_detLineCongr, detLineCongr_tmul,
     isComplexPositiveDetLine_iff, detLineRestrictScalarsEquiv_tmul]
   refine isComplexPositiveTMulDual_iff.2 ⟨_, _, ?_, ?_, rfl⟩
   · -- The kernel factor is the image of `a₁ ⊗ a₂` under the complex splitting of the kernel.
-    rw [← TensorProduct.congr_tmul, ← detLineCongr_prodCongr_detLineProdEquiv,
-      ← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply,
-      ← LinearEquiv.detLineCongr_trans, ← LinearEquiv.detLineCongr_trans,
-      ← LinearEquiv.detLineCongr_trans,
-      kerRestrictScalarsEquiv_prodCongr_trans_kerProdMapEquiv_symm]
-    exact (isComplexPositive_detLineProdEquiv_tmul ha₁ ha₂).detLineCongr _
+    have :=
+      (isComplexPositive_detLineProdEquiv_tmul ha₁ ha₂).detLineCongr (kerProdMapEquiv f g).symm
+    rw [← kerRestrictScalarsEquiv_prodCongr_trans_kerProdMapEquiv_symm] at this
+    simpa only [LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply,
+      detLineCongr_prodCongr_detLineProdEquiv, TensorProduct.congr_tmul] using this
   · -- The cokernel factor is the product of `φ₁` and `φ₂` pulled back along the complex splitting
     -- of the cokernel.
     convert (isComplexPositiveDual_comp_detLineCongr_iff (cokerProdMapEquiv f g)).2
       (isComplexPositiveDual_detLineDualProdEquiv_tmul hφ₁ hφ₂) using 1
+    rw [← cokerRestrictScalarsEquiv_symm_trans_cokerProdMapEquiv
+      (by rw [LinearEquiv.refl_toLinearMap, Submodule.map_id, hh])]
     refine LinearMap.ext fun w ↦ ?_
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-      LinearEquiv.dualMap_apply, ← detLineDualProdEquiv_tmul_comp_detLineCongr_prodCongr,
-      LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.detLineCongr_symm,
-      LinearEquiv.detLineCongr_symm, ← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply,
-      ← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans,
-      ← LinearEquiv.detLineCongr_trans, ← LinearEquiv.detLineCongr_trans, LinearEquiv.symm_symm,
-      cokerRestrictScalarsEquiv_symm_trans_cokerProdMapEquiv, LinearMap.comp_apply,
-      LinearEquiv.coe_coe]
+    simp only [LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, LinearEquiv.dualMap_apply, LinearEquiv.detLineCongr_symm,
+      LinearEquiv.symm_symm, ← detLineDualProdEquiv_tmul_comp_detLineCongr_prodCongr]
 
 /-- **The complex orientation of a direct sum splits.** Let `f` and `g` be complex-linear maps
 with finite-dimensional kernels and cokernels, and `h` a complex-linear map whose underlying real
