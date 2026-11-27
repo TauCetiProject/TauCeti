@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.Kaehler.BaseChange
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 public import TauCeti.RingTheory.Kaehler.Separable
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
+import TauCeti.FieldTheory.RatFunc.Kaehler
 
 /-!
 # One-dimensionality of the Kähler differentials of a function field
@@ -43,7 +44,6 @@ differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence fo
 
 ## Main results
 
-* `TauCeti.kaehlerBasisRatFunc`: `d X` is a basis of `Ω[k(X)⁄k]`.
 * `TauCeti.finrank_kaehlerDifferential_eq_one_of_separating`: `dim_F Ω[F⁄k] = 1`.
 * `TauCeti.kaehlerBasisOfSeparating`: `d x` is a basis of `Ω[F⁄k]`.
 * `TauCeti.derivativeOfSeparating`: differentiation `y ↦ dy/dx` with respect to `x`, as a
@@ -90,30 +90,7 @@ open Module Polynomial KaehlerDifferential
 
 open scoped IntermediateField nonZeroDivisors
 
-variable (k : Type*) [Field k]
-
-/-- `d X` is a basis of the module of Kähler differentials of the rational function field
-`k(X)` over `k`. -/
-def kaehlerBasisRatFunc : Basis Unit (RatFunc k) Ω[RatFunc k⁄k] :=
-  haveI : Algebra.FormallyEtale k[X] (RatFunc k) :=
-    Algebra.FormallyEtale.of_isLocalization (Rₘ := RatFunc k) (k[X])⁰
-  kaehlerBasisOfFormallyEtale k k[X] (RatFunc k)
-    ((Basis.singleton Unit k[X]).map (KaehlerDifferential.polynomialEquiv k).symm)
-
-@[simp]
-theorem kaehlerBasisRatFunc_apply (i : Unit) :
-    kaehlerBasisRatFunc k i = D k (RatFunc k) RatFunc.X := by
-  have : Algebra.FormallyEtale k[X] (RatFunc k) :=
-    Algebra.FormallyEtale.of_isLocalization (Rₘ := RatFunc k) (k[X])⁰
-  rw [kaehlerBasisRatFunc, kaehlerBasisOfFormallyEtale_apply]
-  simp [KaehlerDifferential.map_D, RatFunc.algebraMap_X]
-
-/-- The differential of the variable of a rational function field is nonzero. -/
-@[simp]
-theorem _root_.RatFunc.D_X_ne_zero : D k (RatFunc k) RatFunc.X ≠ 0 := by
-  simpa only [kaehlerBasisRatFunc_apply] using (kaehlerBasisRatFunc k).ne_zero ()
-
-variable {k} {F : Type*} [Field F] [Algebra k F] {x : F}
+variable {k F : Type*} [Field k] [Field F] [Algebra k F] {x : F}
 
 /-- The differentials of `F` over `k` are free of rank one on `d x`, for `x` a separating
 element. This is the whole content of the file; the public statements below are read off it. -/
