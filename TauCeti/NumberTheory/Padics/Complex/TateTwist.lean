@@ -57,6 +57,7 @@ then `x = 0`.
   the native Galois group `Gal(PadicAlgCl p / K)`.
 * `TauCeti.padicComplexTateTwistContinuousRep`: the twist on the fixed carrier `ℂ_p`.
 * `TauCeti.padicComplexTateTwist`: the associated bundled Banach representation.
+* `PadicComplex.twist i σ`: the scalar `χ(σ) ^ i ∈ ℂ_p` by which `σ` is twisted in `ℂ_p(i)`.
 
 ## Main results
 
@@ -98,14 +99,14 @@ namespace PadicComplex
 variable {p : ℕ} [hp : Fact p.Prime]
 
 /-- The scalar `χ(σ) ^ i ∈ ℂ_p` by which `σ` is twisted in `ℂ_p(i)`. -/
-private noncomputable def twist (i : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) : ℂ_[p] :=
+noncomputable def twist (i : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) : ℂ_[p] :=
   algebraMap ℚ_[p] ℂ_[p] (((cyclotomicCharacter (PadicAlgCl p) p σ ^ i : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p])
 
-private theorem twist_def (i : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) :
+theorem twist_def (i : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) :
     twist i σ =
       algebraMap ℚ_[p] ℂ_[p] (((cyclotomicCharacter (PadicAlgCl p) p σ ^ i : ℤ_[p]ˣ) : ℤ_[p]) :
         ℚ_[p]) :=
-  rfl
+  (rfl)
 
 private theorem twist_mul (i : ℤ) (σ τ : PadicAlgCl p ≃+* PadicAlgCl p) :
     twist i (σ * τ) = twist i σ * twist i τ := by

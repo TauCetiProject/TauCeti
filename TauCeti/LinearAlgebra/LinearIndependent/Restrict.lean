@@ -12,12 +12,12 @@ import Mathlib.RingTheory.Artinian.Module
 /-!
 # Restricting independent functions to finitely many points
 
-A finite family of functions `f i : X → K` that is linearly independent over `K` stays linearly
-independent after restriction to some finite set of points of `X`. Equivalently, a linear relation
-`∑ i, c i * f i x = 0` that holds at the points of this finite set holds everywhere, and so has
-`c = 0`. This lets an argument that produces, for each point `x`, a relation valid only for
-parameters near some limit (a neighbourhood depending on `x`) produce a single relation valid
-for all `x` at once.
+A finite family of functions `f i : X → K` that is linearly independent over an Artinian ring `K`
+(for instance a field) stays linearly independent after restriction to some finite set of points
+of `X`. Equivalently, a linear relation `∑ i, c i * f i x = 0` that holds at the points of this
+finite set holds everywhere, and so has `c = 0`. This lets an argument that produces, for each
+point `x`, a relation valid only for parameters near some limit (a neighbourhood depending on `x`)
+produce a single relation valid for all `x` at once.
 
 The proof takes a finite set of points whose relation module is minimal, which exists since the
 relation modules are submodules of the Artinian module `ι → K`.
@@ -25,15 +25,17 @@ relation modules are submodules of the Artinian module `ι → K`.
 ## Main results
 
 * `LinearIndependent.exists_finset_linearIndependent_restrict`: a linearly independent finite
-  family of functions stays linearly independent on some finite set of points.
+  family of functions with values in an Artinian ring stays linearly independent on some finite
+  set of points.
 -/
 
 public section
 
 variable {ι X K : Type*} [Finite ι] [Ring K] [IsArtinianRing K]
 
-/-- A linearly independent finite family of functions `X → K` stays linearly independent after
-restriction to some finite set of points of `X`. -/
+/-- Over an Artinian ring `K` (for instance a field), a linearly independent finite family of
+functions `X → K` stays linearly independent after restriction to some finite set of points of
+`X`. -/
 theorem LinearIndependent.exists_finset_linearIndependent_restrict {f : ι → X → K}
     (hf : LinearIndependent K f) : ∃ s : Finset X, LinearIndependent K fun i (x : s) ↦ f i x := by
   classical

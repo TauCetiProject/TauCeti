@@ -6,14 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Finrank
-public import Mathlib.NumberTheory.Cyclotomic.CyclotomicCharacter
 public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.NumberTheory.Padics.Complex.GaloisAction
+public import TauCeti.NumberTheory.Padics.Complex.TateTwist
 
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.LinearAlgebra.LinearIndependent.Restrict
 import TauCeti.NumberTheory.Padics.Complex.FixedPoints
-import TauCeti.NumberTheory.Padics.Complex.TateTwist
 
 /-!
 # Hodge–Tate maps and Hodge–Tate jumps
@@ -86,10 +84,7 @@ every `x ∈ T`, `f (ρ g x) = χ(j g) ^ (-u) · (j g) (f x)` for all `g` near `
 with `j g` in a neighbourhood of `1` that may depend on `x`. They form a subspace over
 `PadicAlgCl p`, since algebraic elements of `ℂ_p` are fixed near `1`. -/
 noncomputable def hodgeTateMaps (u : ℤ) : Submodule (PadicAlgCl p) (T →ₛₗ[γ] ℂ_[p]) where
-  carrier := {f | ∀ x, ∀ᶠ g in comap j (𝓝 1), f (ρ g x) =
-    algebraMap ℚ_[p] ℂ_[p]
-      (((cyclotomicCharacter (PadicAlgCl p) p (j g).toRingEquiv ^ (-u) : ℤ_[p]ˣ) : ℤ_[p]) :
-        ℚ_[p]) * j g • f x}
+  carrier := {f | ∀ x, ∀ᶠ g in comap j (𝓝 1), f (ρ g x) = twist (-u) (j g).toRingEquiv * j g • f x}
   zero_mem' _ := by simp
   add_mem' hf hf' x := by
     filter_upwards [hf x, hf' x] with g h h'
@@ -97,15 +92,13 @@ noncomputable def hodgeTateMaps (u : ℤ) : Submodule (PadicAlgCl p) (T →ₛ�
   smul_mem' a f hf x := by
     filter_upwards [hf x, (mem_range_coe_iff_eventually_smul_eq.1 ⟨a, rfl⟩).comap j] with g h ha
     simp only [LinearMap.smul_apply, Algebra.smul_def, smul_mul', h]
-    rw [UniformSpace.Completion.algebraMap_def, Algebra.algebraMap_self_apply, ha, mul_left_comm]
+    rw [← coe_eq, ha, mul_left_comm]
 
 variable {j ρ γ} in
 @[simp]
 theorem mem_hodgeTateMaps {u : ℤ} {f : T →ₛₗ[γ] ℂ_[p]} :
-    f ∈ hodgeTateMaps j ρ γ u ↔ ∀ x, ∀ᶠ g in comap j (𝓝 1), f (ρ g x) =
-      algebraMap ℚ_[p] ℂ_[p]
-        (((cyclotomicCharacter (PadicAlgCl p) p (j g).toRingEquiv ^ (-u) : ℤ_[p]ˣ) : ℤ_[p]) :
-          ℚ_[p]) * j g • f x :=
+    f ∈ hodgeTateMaps j ρ γ u ↔
+      ∀ x, ∀ᶠ g in comap j (𝓝 1), f (ρ g x) = twist (-u) (j g).toRingEquiv * j g • f x :=
   Iff.rfl
 
 /-- The *Hodge–Tate jump* of weight `u` at `γ`: the dimension over `PadicAlgCl p` of the space of
@@ -140,31 +133,31 @@ private theorem weight_eq_and_mem_range_of_linearIndependent (hj : Set.range j �
     (hli : LinearIndependent ℂ_[p] f) (hf : ∀ i, f i ∈ hodgeTateMaps j ρ γ (k i)) {u : ℤ}
     {c : ι → ℂ_[p]} (hc : ∑ i, c i • f i ∈ hodgeTateMaps j ρ γ u) {i : ι} (hci : c i ≠ 0) :
     k i = u ∧ c i ∈ Set.range ((↑) : PadicAlgCl p → ℂ_[p]) := by
-  set χ : ℤ → (PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p) → ℂ_[p] := fun n σ ↦ algebraMap ℚ_[p] ℂ_[p]
-    (((cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv ^ n : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p])
-    with hχ
   -- The maps `f i`, as functions on `T`, stay independent on a finite set `s` of points.
   let L : (T →ₛₗ[γ] ℂ_[p]) →ₗ[ℂ_[p]] T → ℂ_[p] :=
     { toFun := (⇑), map_add' := fun _ _ ↦ rfl, map_smul' := fun _ _ ↦ rfl }
   obtain ⟨s, hs⟩ := (hli.map' L (LinearMap.ker_eq_bot.2 DFunLike.coe_injective)
     ).exists_finset_linearIndependent_restrict
   -- At the points of `s`, a single neighbourhood of `1` carries all the twisted relations.
-  have hev : ∀ᶠ g in comap j (𝓝 1), ∀ x ∈ s, (∑ i, c i • f i) (ρ g x) =
-      χ (-u) (j g) * j g • (∑ i, c i • f i) x ∧ ∀ i, f i (ρ g x) = χ (-k i) (j g) * j g • f i x :=
+  have hev : ∀ᶠ g in comap j (𝓝 1), ∀ x ∈ s,
+      (∑ i, c i • f i) (ρ g x) = twist (-u) (j g).toRingEquiv * j g • (∑ i, c i • f i) x ∧
+        ∀ i, f i (ρ g x) = twist (-k i) (j g).toRingEquiv * j g • f i x :=
     s.eventually_all.2 fun x _ ↦ (hc x).and (eventually_all.2 fun i ↦ hf i x)
-  have hkey : ∀ᶠ g in comap j (𝓝 1), χ (-u) (j g) * j g • c i = χ (-k i) (j g) * c i := by
+  have hkey : ∀ᶠ g in comap j (𝓝 1),
+      twist (-u) (j g).toRingEquiv * j g • c i = twist (-k i) (j g).toRingEquiv * c i := by
     filter_upwards [hev] with g hg
     set σ := j g
     -- Comparing the two expressions for `(∑ i, c i • f i) (ρ g x)` and applying `σ⁻¹` gives a
     -- relation among the `f i` on `s`, whose coefficients therefore vanish.
-    have hrel : ∀ x ∈ s,
-        ∑ i, σ⁻¹ • (χ (-u) σ * σ • c i - χ (-k i) σ * c i) * f i x = 0 := fun x hx ↦ by
+    have hrel : ∀ x ∈ s, ∑ i, σ⁻¹ • (twist (-u) σ.toRingEquiv * σ • c i -
+        twist (-k i) σ.toRingEquiv * c i) * f i x = 0 := fun x hx ↦ by
       obtain ⟨h₁, h₂⟩ := hg x hx
       simp only [LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, h₂,
         Finset.smul_sum, smul_mul'] at h₁
       rw [← smul_eq_zero_iff_eq σ, Finset.smul_sum]
       simp only [smul_mul', smul_inv_smul]
-      calc _ = χ (-u) σ * ∑ i, σ • c i * σ • f i x - ∑ i, c i * (χ (-k i) σ * σ • f i x) := by
+      calc _ = twist (-u) σ.toRingEquiv * ∑ i, σ • c i * σ • f i x -
+            ∑ i, c i * (twist (-k i) σ.toRingEquiv * σ • f i x) := by
             simp only [sub_mul, Finset.sum_sub_distrib, Finset.mul_sum]
             congr 1 <;> exact Finset.sum_congr rfl fun i _ ↦ by ring
         _ = 0 := by rw [h₁]; ring
@@ -172,16 +165,16 @@ private theorem weight_eq_and_mem_range_of_linearIndependent (hj : Set.range j �
       simpa [L, Finset.sum_apply] using hrel x x.property) i
     rwa [smul_eq_zero_iff_eq, sub_eq_zero] at this
   have hkey' : ∀ᶠ σ in 𝓝 (1 : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p),
-      χ (-u) σ * σ • c i = χ (-k i) σ * c i := by
+      twist (-u) σ.toRingEquiv * σ • c i = twist (-k i) σ.toRingEquiv * c i := by
     rw [← map_comap_of_mem hj]
     exact hkey
   by_cases hki : k i = u
   · refine ⟨hki, mem_range_coe_iff_eventually_smul_eq.2 ?_⟩
     filter_upwards [hkey'] with σ hσ
     rw [hki] at hσ
-    exact mul_left_cancel₀ (by simp [hχ]) hσ
+    exact mul_left_cancel₀ (by simp [twist_def]) hσ
   · exact absurd (eq_zero_of_eventually_cyclotomicCharacter_zpow_mul_smul_eq
-      (fun h ↦ hki (neg_inj.1 h).symm) hkey') hci
+      (fun h ↦ hki (neg_inj.1 h).symm) (by simpa only [twist_def] using hkey')) hci
 
 /-- Let the image of `j` be a neighbourhood of `1`. If a Hodge–Tate map `φ` of weight `u` lies in
 the `ℂ_p`-span of Hodge–Tate maps `f i` of weights `k i`, then it lies in the `PadicAlgCl p`-span of
@@ -203,8 +196,7 @@ theorem mem_span_image_of_mem_hodgeTateMaps (hj : Set.range j ∈ 𝓝 1) {ι : 
   obtain ⟨hk, d, hd⟩ := weight_eq_and_mem_range_of_linearIndependent hj
     (hli.comp _ Subtype.val_injective) (fun l ↦ hf (a l)) hφ
     (Finsupp.mem_support_iff.1 l.property)
-  rw [← hd, ← Algebra.algebraMap_self_apply d, ← UniformSpace.Completion.algebraMap_def,
-    algebraMap_smul]
+  rw [← hd, coe_eq, algebraMap_smul]
   exact Submodule.smul_mem _ d (Submodule.subset_span ⟨a l, hk, rfl⟩)
 
 /-- Let the image of `j` be a neighbourhood of `1`. Hodge–Tate maps of different weights meet only
