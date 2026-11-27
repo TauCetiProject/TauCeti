@@ -119,6 +119,7 @@ theorem normDet_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
     fun u w ↦ by
       rw [inner_tangentSpace_sphere, mvfderiv_apply_eq_mfderiv_apply,
         mvfderiv_apply_eq_mfderiv_apply]
+      -- The two sides use the inner products of `TangentSpace 𝓘(ℝ, E) _` and of `E`, which agree.
       rfl]
   exact riemannianJacobian_stereographic'_symm v y
 
