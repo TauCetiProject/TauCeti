@@ -24,7 +24,7 @@ public section
 
 open scoped MonoidAlgebra
 
-open TauCeti.Representation
+open Representation TauCeti.Representation
 
 namespace TauCeti.Examples.SplitCentralIdempotent
 
@@ -83,8 +83,7 @@ example : IsIdempotentElem ePlus :=
 -- `e₊ + e₋ = 1`: the two characters are a complete list for `C₂`, which has two classes.
 example : ePlus + eMinus = 1 := by
   have hcard : Nat.card (ConjClasses ℤˣ) = 2 := by
-    rw [Nat.card_congr (Equiv.ofBijective ConjClasses.mk ⟨fun a b h ↦
-      isConj_iff_eq.1 (ConjClasses.mk_eq_mk_iff_isConj.1 h), ConjClasses.mk_surjective⟩).symm]
+    rw [Nat.card_congr ConjClasses.mkEquiv.symm]
     simp [Fintype.card_units_int]
   have (i : Fin 2) : ((![Representation.ofLinearCharacter 1,
       Representation.ofLinearCharacter signCharacter] i : Representation ℚ_[2] ℤˣ ℚ_[2]).baseChange

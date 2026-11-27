@@ -87,7 +87,7 @@ section Orthogonal
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)] {ι : Type*} {V : ι → Type w} [∀ i, AddCommGroup (V i)]
-  [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)] (ρ : ∀ i, Representation k G (V i))
+  [∀ i, Module k (V i)] (ρ : ∀ i, Representation k G (V i))
   [∀ i, (ρ i).IsIrreducible] (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
 
 include hind
@@ -102,7 +102,8 @@ theorem primitiveCentralIdempotent_mul_eq_zero {i j : ι} (hij : i ≠ j) :
 
 /-- **A member of the family other than `ρ i` sees `e_{ρ i}` as `0`.** -/
 @[simp]
-theorem centralCharacter_primitiveCentralIdempotentCenter_eq_zero {i j : ι} (hij : i ≠ j) :
+theorem centralCharacter_primitiveCentralIdempotentCenter_eq_zero [∀ i, FiniteDimensional k (V i)]
+    {i j : ι} (hij : i ≠ j) :
     centralCharacter (ρ j) (primitiveCentralIdempotentCenter (ρ i)) = 0 := by
   classical
   rw [centralCharacter_primitiveCentralIdempotentCenter,
@@ -147,7 +148,7 @@ section Complete
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)] {ι : Type*} {V : ι → Type w} [∀ i, AddCommGroup (V i)]
-  [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)] (ρ : ∀ i, Representation k G (V i))
+  [∀ i, Module k (V i)] (ρ : ∀ i, Representation k G (V i))
   [∀ i, (ρ i).IsIrreducible] (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
   (hcard : Nat.card ι = Nat.card (ConjClasses G))
 
@@ -155,7 +156,6 @@ section Exhaust
 
 include hind hcard
 
-omit [∀ i, FiniteDimensional k (V i)] in
 /-- **A complete family lists every primitive central idempotent.** Every irreducible
 representation is equivalent to a member of the family, and equivalent representations have the
 same idempotent. -/
@@ -180,6 +180,7 @@ the coefficients of `1 : k[G]`. -/
 theorem sum_primitiveCentralIdempotent :
     ∑ i, primitiveCentralIdempotent (ρ i) = 1 := by
   classical
+  have (i : ι) : FiniteDimensional k (V i) := (ρ i).asModuleEquiv.finiteDimensional
   refine MonoidAlgebra.ext (Finsupp.ext fun y => ?_)
   have hcoeff : (∑ i, primitiveCentralIdempotent (ρ i)).coeff y =
       (Nat.card G : k)⁻¹ * ∑ i, (ρ i).character 1 * (ρ i).character y⁻¹ := by
@@ -235,7 +236,8 @@ theorem coe_basisPrimitiveCentralIdempotentCenter :
 central character to the basis expansion of a central element `z` reads off its `i`-th coordinate,
 because the `i`-th idempotent is the only member of the basis that character does not kill. -/
 @[simp]
-theorem basisPrimitiveCentralIdempotentCenter_repr_apply (z : Subalgebra.center k k[G]) (i : ι) :
+theorem basisPrimitiveCentralIdempotentCenter_repr_apply [∀ i, FiniteDimensional k (V i)]
+    (z : Subalgebra.center k k[G]) (i : ι) :
     (basisPrimitiveCentralIdempotentCenter ρ hind hcard).repr z i = centralCharacter (ρ i) z := by
   have hbj : ∀ j, basisPrimitiveCentralIdempotentCenter ρ hind hcard j =
       primitiveCentralIdempotentCenter (ρ j) := fun j =>
@@ -255,7 +257,7 @@ are its central characters.** This is the expansion of `z` in the idempotent bas
 coordinates identified by
 `TauCeti.Representation.basisPrimitiveCentralIdempotentCenter_repr_apply`. -/
 theorem sum_centralCharacter_smul_primitiveCentralIdempotentCenter
-    (z : Subalgebra.center k k[G]) :
+    [∀ i, FiniteDimensional k (V i)] (z : Subalgebra.center k k[G]) :
     ∑ i, centralCharacter (ρ i) z • primitiveCentralIdempotentCenter (ρ i) = z := by
   have hsum := (basisPrimitiveCentralIdempotentCenter ρ hind hcard).sum_repr z
   simpa only [basisPrimitiveCentralIdempotentCenter_repr_apply,

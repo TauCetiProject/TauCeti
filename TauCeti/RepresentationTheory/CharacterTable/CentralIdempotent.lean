@@ -412,7 +412,7 @@ end Action
 
 section Orthogonality
 
-variable [FiniteDimensional k W] [IsAlgClosed k]
+variable [IsAlgClosed k]
 variable [Invertible (Nat.card G : k)] [ρ.IsIrreducible] [σ.IsIrreducible]
 
 open scoped Classical in
@@ -421,6 +421,7 @@ isomorphic, and `0` otherwise. -/
 theorem primitiveCentralIdempotent_mul_primitiveCentralIdempotent :
     primitiveCentralIdempotent ρ * primitiveCentralIdempotent σ =
       if Nonempty (ρ.Equiv σ) then primitiveCentralIdempotent σ else 0 := by
+  have : FiniteDimensional k W := σ.asModuleEquiv.finiteDimensional
   have hval : ((Nat.card G : k)⁻¹ * ρ.character 1) *
       centralCharacter σ (characterSumCenter ρ) = if Nonempty (ρ.Equiv σ) then 1 else 0 := by
     rw [← centralCharacter_primitiveCentralIdempotentCenter ρ σ,
@@ -435,7 +436,6 @@ theorem primitiveCentralIdempotent_mul_primitiveCentralIdempotent :
 theorem isIdempotentElem_primitiveCentralIdempotent :
     IsIdempotentElem (primitiveCentralIdempotent ρ) := by
   classical
-  have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
   rw [IsIdempotentElem, primitiveCentralIdempotent_mul_primitiveCentralIdempotent ρ ρ,
     ite_eq_left ⟨_root_.Representation.Equiv.refl ρ⟩]
 
