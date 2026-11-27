@@ -49,7 +49,8 @@ half-space.
   symmetric (`ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint`), which has the same real
   quadratic form as `A` (`ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply`).
 * `ContinuousLinearMap.posDef_toMatrix_symmPart`: over the reals, the matrix of the symmetric part
-  of a positive-definite operator in an orthonormal basis is positive definite.
+  of a positive-definite operator in an orthonormal basis is positive definite, and
+  `ContinuousLinearMap.det_two_inv_smul_add_adjoint_pos`: so its determinant is positive.
 * `ContinuousLinearMap.norm_conj_symmPart_sub_id_le`: over the reals, after the change of
   variables `e` with `e e† = (A + A†) / 2` and `‖e⁻¹‖ ≤ λ^{-1/2}`, the symmetric part of `a` becomes
   `e⁻¹ ((a + a†) / 2) e⁻†`, within `‖a - A‖ / λ` of the identity;
@@ -276,6 +277,14 @@ theorem posDef_toMatrix_symmPart {V : Type*} [NormedAddCommGroup V] [InnerProduc
     _ = star x ⬝ᵥ (LinearMap.toMatrix b.toBasis b.toBasis (S : V →ₗ[ℝ] V) *ᵥ x) := by
         simp only [dotProduct, Matrix.mulVec, star_trivial,
           LinearMap.toMatrix_orthonormalBasis_apply, coe_coe, ← hS, hxv, real_inner_comm v]
+
+/-- The determinant of the symmetric part `(A + A†) / 2` of a positive definite endomorphism `A`
+of a finite-dimensional real inner product space is positive. -/
+theorem det_two_inv_smul_add_adjoint_pos {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {A : V →L[ℝ] V}
+    (hA : ∀ ξ, ξ ≠ 0 → 0 < ⟪A ξ, ξ⟫_ℝ) : 0 < ((2⁻¹ : ℝ) • (A + A.adjoint)).det := by
+  rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix (stdOrthonormalBasis ℝ V).toBasis]
+  exact (posDef_toMatrix_symmPart hA _).det_pos
 
 section ConjSymmPart
 

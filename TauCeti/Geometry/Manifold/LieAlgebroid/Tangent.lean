@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
@@ -83,6 +83,13 @@ theorem tangent_anchor_apply (x : M) (v : TangentSpace I x) : (tangent I M).anch
 
 @[simp] theorem tangent_bracket_apply (X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (x : M) :
     (tangent I M).bracket X Y x = mlieBracket I X Y x := (rfl)
+
+/-- The bracket of smooth vector fields, as sections of the tangent Lie algebroid, is the Lie
+bracket `VectorField.mlieBracket` of the underlying vector fields. -/
+theorem coe_tangent_sectionsEquiv_lie (X Y : (tangent I M).Sections) :
+    ⇑((tangent I M).sectionsEquiv ⁅X, Y⁆) =
+      mlieBracket I ((tangent I M).sectionsEquiv X) ((tangent I M).sectionsEquiv Y) :=
+  funext fun x ↦ by rw [sectionsEquiv_lie, tangent_bracket_apply]
 
 /-- `anchorDeriv` on the tangent Lie algebroid intertwines the section bracket with the commutator
 of directional derivatives, without requiring `T2Space M`. -/

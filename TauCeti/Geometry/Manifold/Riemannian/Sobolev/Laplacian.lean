@@ -67,8 +67,10 @@ resolvent of `Δ⁺` at `-t` (`TauCeti.Manifold.SobolevH1.isResolventAt_negLapla
   (`TauCeti.Manifold.SobolevH1.compMeasurePreserving_negLaplacian_eq_self`).
 
 The domain is the maximal weak domain `{J w | v ↦ D(w, v) is L²-bounded}`
-(`TauCeti.Manifold.SobolevH1.mem_domain_negLaplacian_iff`). For a smooth metric, elliptic
-regularity identifies it with the Sobolev space `H²(M)`.
+(`TauCeti.Manifold.SobolevH1.mem_domain_negLaplacian_iff`). For a smooth metric, interior elliptic
+regularity puts it inside `H²`: near every point, the reading in a chart of an element of the domain
+has square-integrable second weak derivatives
+(`TauCeti.Manifold.SobolevH1.exists_wkp_ae_eq_of_mem_domain_negLaplacian`).
 
 ## References
 
@@ -103,8 +105,13 @@ consists of the pairs `(J w, g)` with `D(w, v) = ⟪g, J v⟫_{L²}` for every `
 def negLaplacian : Lp ℝ 2 (riemannianVolume I M) →ₗ.[ℝ] Lp ℝ 2 (riemannianVolume I M) :=
   isCoercive_innerSL.formOperator toLp 1
 
+/-- The Laplacian is the operator of the Dirichlet form along the value map
+`J : H¹(M) → L²(M)`, shifted by `1`. -/
+theorem negLaplacian_def : negLaplacian I M = isCoercive_innerSL.formOperator toLp 1 :=
+  (rfl)
+
 /-- The `H¹` inner product is the Dirichlet form shifted by the `L²` inner product. -/
-private theorem inner_eq_dirichletForm_add (w v : SobolevH1 I M) :
+theorem inner_eq_dirichletForm_add (w v : SobolevH1 I M) :
     innerSL ℝ w v = dirichletForm w v + 1 * ⟪toLp w, toLp v⟫_ℝ := by
   rw [dirichletForm_apply, innerSL_apply_apply]
   ring
@@ -396,6 +403,27 @@ theorem negLaplacian_toLp_ofSmooth (u : C^∞⟮I, M; ℝ⟯) :
       -toLp (ofSmooth (smoothLaplaceBeltrami I M u)) :=
   (negLaplacian I M).mem_graph_snd_inj (LinearPMap.mem_graph _ _)
     (mem_graph_negLaplacian_toLp_ofSmooth u) rfl
+
+/-- **The domain of the Laplacian lies in `H²`.** For a smooth metric, every `f` in the domain of
+`Δ⁺` has square-integrable second weak derivatives near every point of `M`: for every `p ∈ M`
+there are a linear identification `L` of the model space with `ℝⁿ`, an open neighbourhood `Ω` of
+`L (φ p)` in `ℝⁿ`, where `φ = extChartAt I p`, on which `φ⁻¹ ∘ L⁻¹` is defined, and an element of
+`W^{2,2}(Ω)` whose value is `f ∘ φ⁻¹ ∘ L⁻¹` almost everywhere on `Ω`. -/
+theorem exists_wkp_ae_eq_of_mem_domain_negLaplacian {f : Lp ℝ 2 (riemannianVolume I M)}
+    (hf : f ∈ (negLaplacian I M).domain) (p : M) :
+    ∃ (L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
+      (Ω : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))),
+      L (extChartAt I p p) ∈ Ω ∧ Set.MapsTo L.symm Ω (extChartAt I p).target ∧
+      ∃ u : Wkp volume Ω 2 2, (Wkp.value 2 u : _ → ℝ) =ᵐ[volume.restrict (Ω : Set _)]
+        fun y ↦ f ((extChartAt I p).symm (L.symm y)) := by
+  obtain ⟨w, rfl, hw⟩ := exists_dirichletForm_eq_inner_negLaplacian ⟨f, hf⟩
+  -- `w` weakly solves `Δ⁺w = g` with `g = Δ⁺ f ∈ L²`.
+  refine exists_wkp_ae_eq_of_dirichletForm_add_eq (V := 0) continuous_const
+    (Lp.memLp (negLaplacian I M ⟨toLp w, hf⟩)) (fun φ ↦ ?_) p
+  rw [hw, L2.inner_def]
+  simp only [Pi.zero_apply, zero_mul, integral_zero, add_zero]
+  refine integral_congr_ae ((toLp_ofSmooth_ae_eq φ).mono fun x hx ↦ ?_)
+  simp only [hx, RCLike.inner_apply, conj_trivial, mul_comm]
 
 end Smooth
 

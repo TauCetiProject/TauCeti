@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.NumberTheory.Padics.RingHoms
-public import TauCeti.MeasureTheory.Measure.Haar.MatrixUnits
+public import TauCeti.MeasureTheory.Measure.Haar.Matrix.Units
 
 import Mathlib.Topology.Algebra.Ring.Compact
 

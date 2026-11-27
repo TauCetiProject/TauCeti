@@ -140,7 +140,7 @@ theorem eq_sum_evalTupleL_rankOne {ι : Type*} [Fintype ι] (b : OrthonormalBasi
       symm; rw [← (Equiv.funUnique (Fin 1) ι).symm.sum_comp]
       exact (Finset.sum_congr rfl fun _ _ => by simp).trans (b.sum_repr' G)
   | k + 1, G => by
-      ext w
+      refine ContinuousLinearMap.ext fun w => ?_
       rw [FunLike.coe_sum, Finset.sum_apply, ← (Fin.snocEquiv fun _ : Fin (k + 2) => ι).sum_comp]
       simp only [Fintype.sum_prod_type, Fin.snocEquiv_apply]
       conv_lhs => rw [← b.sum_repr' w, map_sum]

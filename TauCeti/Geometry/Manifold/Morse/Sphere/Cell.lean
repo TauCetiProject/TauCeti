@@ -79,26 +79,6 @@ namespace TauCeti
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- The sublevel `{h ≤ a}`, for `a < 1`, misses the north pole `v`, so it lies in the source of
-the stereographic projection from `v`. -/
-private theorem sublevel_sphereHeight_subset_source (v : sphere (0 : E) 1) {a : ℝ} (ha' : a < 1) :
-    {x | sphereHeight v x ≤ a} ⊆ (stereographic (norm_eq_of_mem_sphere v)).source := by
-  intro x hx hxv
-  rw [mem_singleton_iff] at hxv
-  simp only [mem_ofPred_eq, hxv, Subtype.coe_eta, sphereHeight_self] at hx
-  linarith
-
-/-- The stereographic projection from the north pole `v` carries the sublevel `{h ≤ a}`, for
-`a < 1`, onto the sublevel `{w | -stereographicHeight w ≤ a}` of the height read in the chart. -/
-private theorem image_stereographic_sublevel_sphereHeight (v : sphere (0 : E) 1) {a : ℝ}
-    (ha' : a < 1) : stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x ≤ a} =
-      {w | -stereographicHeight w ≤ a} := by
-  rw [OpenPartialHomeomorph.image_eq_target_inter_inv_preimage _
-    (sublevel_sphereHeight_subset_source v ha')]
-  ext w
-  simp only [stereographic_target, univ_inter, mem_preimage, mem_ofPred_eq,
-    sphereHeight_stereographic_symm_apply]
-
 /-- **The lower sublevels of the height are contractible.** For `-1 ≤ a < 1`, the sublevel
 `{x | ⟪x, v⟫ ≤ a}` of the unit sphere is contractible: it misses the north pole `v`, and the
 stereographic projection from `v` carries it onto a closed ball about the origin. -/
@@ -147,11 +127,7 @@ theorem exists_homeomorph_sublevel_sphereHeight_disk (v : sphere (0 : E) 1) {a :
         sphereHeight v x = a ↔ ‖((e x).down : EuclideanSpace ℝ (Fin n))‖ = 1 := by
   set R := √(4 * (1 + a) / (1 - a))
   have hR : 0 < R := Real.sqrt_pos.2 (div_pos (by linarith) (by linarith))
-  have himage : stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x ≤ a} =
-      closedBall 0 R := by
-    rw [image_stereographic_sublevel_sphereHeight v ha']
-    ext w
-    rw [mem_ofPred_eq, neg_stereographicHeight_le_iff ha.le ha' w, mem_closedBall_zero_iff]
+  have himage := image_stereographic_sublevel_sphereHeight_eq_closedBall v ha.le ha'
   set U := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
     (ne_zero_of_mem_unit_sphere v)).repr
   set e₀ := (stereographic (norm_eq_of_mem_sphere v)).homeomorphOfImageSubsetSource

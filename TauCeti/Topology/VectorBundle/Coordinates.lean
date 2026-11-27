@@ -35,6 +35,9 @@ of fibre maps as the composite of their coordinate expressions, and
 `ContinuousLinearMap.inCoordinates_id` and `ContinuousLinearMap.inCoordinates_smul` read the
 identity map and scalar multiples in a compatible target vector-bundle structure, and
 `ContinuousLinearMap.inCoordinates_finset_sum` reads finite sums of fibre maps.
+`ContinuousLinearMap.continuousAt_inCoordinates_of_trivializationAt_apply` shows that fibre maps
+over a continuous base map which are the identity of the model fibre in the preferred
+trivializations are continuous in coordinates.
 `ContinuousLinearMap.mem_ker_inCoordinates_iff`, `ContinuousLinearMap.mem_range_inCoordinates_iff`
 and `ContinuousLinearMap.finrank_range_inCoordinates` read the kernel, the range and the rank of
 a fibre map off its coordinate expression, and `ContinuousLinearMap.range_inCoordinates`
@@ -424,6 +427,42 @@ theorem hasLeftInverse_inCoordinates_iff {x₀ x : B} {y₀ y : B'} {ϕ : V x �
   simp only [comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
 
 end Inverse
+
+section Identity
+
+open Filter Topology
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B] {B' : Type*} [TopologicalSpace B']
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {W : B' → Type*} [∀ x, AddCommMonoid (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace F W)]
+  [FiberBundle F W] [VectorBundle 𝕜 F W]
+
+/-- A family of fibre maps `A x : V x →L[𝕜] W (f x)` over a base map `f` continuous at `x₀` that,
+near `x₀`, is the identity of the model fibre `F` in the coordinates of the trivializations at
+`x₀` and `f x₀`, is continuous in coordinates at `x₀`. -/
+theorem continuousAt_inCoordinates_of_trivializationAt_apply {f : B → B'} {x₀ : B}
+    (hf : ContinuousAt f x₀) {A : ∀ x, V x →L[𝕜] W (f x)}
+    (hA : ∀ᶠ x in 𝓝 x₀, ∀ v,
+      (trivializationAt F W (f x₀) ⟨f x, A x v⟩).2 = (trivializationAt F V x₀ ⟨x, v⟩).2) :
+    ContinuousAt (fun x ↦ inCoordinates F V F W x₀ x (f x₀) (f x) (A x)) x₀ := by
+  refine (continuousAt_const (y := ContinuousLinearMap.id 𝕜 F)).congr ?_
+  filter_upwards [hA, (trivializationAt F V x₀).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F V x₀),
+    hf.eventually_mem ((trivializationAt F W (f x₀)).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F W (f x₀)))] with x hAx hx hfx
+  ext v
+  rw [inCoordinates_eq hx hfx]
+  simp only [coe_comp, ContinuousLinearEquiv.coe_coe, Function.comp_apply,
+    Trivialization.continuousLinearEquivAt_apply, hAx]
+  -- The right side is the chart at `x` applied to its own inverse.
+  exact ((trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x hx).apply_symm_apply v |>.symm
+
+end Identity
 
 section Conj
 

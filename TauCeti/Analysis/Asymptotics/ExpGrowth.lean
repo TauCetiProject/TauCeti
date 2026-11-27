@@ -29,6 +29,10 @@ equality when `exp (c * n) * u n` is monotone for some real `c`. This extends Ma
   for `k ≠ 0`.
 * `ExpGrowth.expGrowthSup_comp_mul_of_monotone_exp_mul` — if `exp (c * n) * u n` is monotone
   for some real `c`, then `expGrowthSup (fun n ↦ u (k * n)) = k * expGrowthSup u` for `k ≠ 0`.
+* `Monotone.expGrowthSup_comp_add`: a monotone sequence has the same upper exponential growth
+  along the shifted times `n + k`.
+* `ExpGrowth.expGrowthSup_rpow` — `expGrowthSup (fun n ↦ u n ^ t) = t * expGrowthSup u` for
+  real `t ≥ 0`.
 -/
 
 public section
@@ -86,4 +90,29 @@ theorem expGrowthSup_comp_mul_of_monotone_exp_mul {u : ℕ → ℝ≥0∞} {c : 
   push_cast
   rw [mul_comm]
 
+/-- Raising a sequence to a nonnegative real power `t` multiplies its upper exponential growth
+by `t`. -/
+theorem expGrowthSup_rpow {t : ℝ} (ht : 0 ≤ t) (u : ℕ → ℝ≥0∞) :
+    expGrowthSup (fun n ↦ u n ^ t) = t * expGrowthSup u := by
+  simp only [expGrowthSup, ENNReal.log_rpow, ← EReal.mul_div]
+  exact limsup_const_mul_of_nonneg_of_ne_top (EReal.coe_nonneg.mpr ht) (EReal.coe_ne_top t)
+
 end ExpGrowth
+
+open ENNReal EReal ExpGrowth Filter Topology in
+/-- A monotone sequence has the same upper exponential growth along the shifted times `n + k`. -/
+theorem Monotone.expGrowthSup_comp_add {u : ℕ → ℝ≥0∞} (h : Monotone u) (k : ℕ) :
+    expGrowthSup (fun n ↦ u (n + k)) = expGrowthSup u := by
+  have hr : Tendsto (fun n : ℕ ↦ (1 : ℝ) + k * (1 / (n : ℝ))) atTop (𝓝 1) := by
+    have := (tendsto_const_nhds (x := (1 : ℝ))).add
+      ((tendsto_const_nhds (x := (k : ℝ))).mul tendsto_one_div_atTop_nhds_zero_nat)
+    rwa [mul_zero, add_zero] at this
+  have hv : Tendsto (fun n : ℕ ↦ ((n + k : ℕ) : EReal) / n) atTop (𝓝 1) := by
+    refine (EReal.tendsto_coe.2 hr).congr' ((eventually_gt_atTop 0).mono fun n hn ↦ ?_)
+    have hn' : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
+    dsimp only
+    rw [← EReal.coe_natCast, ← EReal.coe_natCast, ← EReal.coe_div, Nat.cast_add]
+    congr 1
+    field_simp
+  have := h.expGrowthSup_comp (v := fun n ↦ n + k) hv one_ne_zero (EReal.coe_ne_top 1)
+  rwa [one_mul] at this

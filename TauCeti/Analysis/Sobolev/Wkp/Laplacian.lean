@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 import TauCeti.Topology.Algebra.Module.Trace
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
@@ -45,6 +45,11 @@ No boundedness or boundary regularity of `Ω` is used.
 
 * `TauCeti.Wkp.integral_laplacian_smul_value_eq`: the distributional Laplacian of a `W^{2,p}`
   function is the trace of its weak Hessian.
+* `TauCeti.Wkp.integral_fderiv_fderiv_smul_value_eq_inner_iteratedGradient`: more generally,
+  `∫ D²φ(v, w) • u = ∫ φ • ⟪D²u v, w⟫` for all directions `v` and `w`.
+* `TauCeti.Wkp.integral_sum_smul_fderiv_fderiv_smul_value_eq_sum_mul_inner_iteratedGradient`: the
+  distributional action of a constant-coefficient operator `∑ᵢⱼ Aᵢⱼ ∂_{bᵢ}∂_{bⱼ}` on a `W^{2,p}`
+  function is its strong form `∑ᵢⱼ Aᵢⱼ ⟪D²u bᵢ, bⱼ⟫`.
 * `TauCeti.Wkp.forall_integral_laplacian_smul_value_eq_iff`: weak and strong solutions of
   `Δu = f` agree in `W^{2,p}(Ω)`.
 * `TauCeti.Wkp.trace_iteratedGradient_ofTestFunctionₗ_ae_eq`: for a test function `φ`, regarded
@@ -83,6 +88,81 @@ theorem integral_laplacian_smul_value_eq (u : Wkp mu Omega p 2) (φ : 𝓓(Omega
   rw [value_succ]
   exact (hasWeakFDerivOn_value (lowerOrder 1 u)).integral_laplacian_smul_eq_integral_smul_trace
     (hasWeakFDerivOn_iteratedGradient 0 u) φ
+
+/-- **Second weak derivatives against test functions.** For `u ∈ W^{2,p}(Ω)`, a test function `φ`
+on `Ω` and directions `v` and `w`, `∫ D²φ(v, w) • u = ∫ φ • ⟪D²u v, w⟫`, where `D²u` is the weak
+Hessian. Contracting with a coefficient matrix identifies the distributional action of a
+constant-coefficient second-order operator on `u` with its strong form. -/
+theorem integral_fderiv_fderiv_smul_value_eq_inner_iteratedGradient (u : Wkp mu Omega p 2)
+    (φ : 𝓓(Omega, ℝ)) (v w : E) :
+    ∫ x, fderiv ℝ (fderiv ℝ (φ : E → ℝ)) x v w • value 2 u x ∂mu =
+      ∫ x, (φ : E → ℝ) x • ⟪iteratedGradient 1 u x v, w⟫_ℝ ∂mu := by
+  set g := iteratedGradient 0 (lowerOrder 1 u)
+  -- `∂_w u = ⟪∇u, w⟫` and `∂_v ⟪∇u, w⟫ = ⟪D²u v, w⟫` weakly.
+  have hval : HasWeakLineDerivOn mu Omega (value 1 (lowerOrder 1 u)) (fun x => ⟪g x, w⟫_ℝ) w := by
+    simpa only [innerSL_apply_apply, real_inner_comm w] using
+      (hasWeakFDerivOn_value (lowerOrder 1 u)).hasWeakLineDerivOn w
+  have hcomp : HasWeakLineDerivOn mu Omega (fun x => ⟪g x, w⟫_ℝ)
+      (fun x => ⟪iteratedGradient 1 u x v, w⟫_ℝ) v := by
+    simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm w] using
+      ((hasWeakFDerivOn_iteratedGradient 0 u).clm_comp (innerSL ℝ w)).hasWeakLineDerivOn v
+  -- `∂_w (∂_v φ) = ∂_v (∂_w φ)`, whose value at `x` is `D²φ(x) v w`.
+  have e1 := hval.integral_lineDeriv_smul_eq_neg_integral_smul (LineDeriv.lineDerivOp v φ)
+  have e2 := hcomp.integral_lineDeriv_smul_eq_neg_integral_smul φ
+  simp_rw [TestFunction.lineDerivOp_apply_eq_fderiv, TestFunction.lineDeriv_lineDerivOp_comm φ v w]
+    at e1
+  simp_rw [TestFunction.lineDeriv_eq_fderiv] at e2
+  rw [value_succ, ← neg_neg (∫ x, (φ : E → ℝ) x • _ ∂mu), ← e2, ← e1]
+  refine integral_congr_ae (ae_of_all _ fun x => ?_)
+  dsimp only
+  rw [← TestFunction.lineDerivCLM_lineDerivCLM_apply, TestFunction.coe_lineDerivCLM,
+    TestFunction.lineDerivOp_eq_lineDerivCLM ℝ]
+
+/-- **Constant-coefficient second-order operators against test functions.** For
+`u ∈ W^{2,p}(Ω)`, a test function `φ` on `Ω`, a coefficient matrix `A` and directions `bᵢ`, the
+distributional action of `∑ᵢⱼ Aᵢⱼ ∂_{bᵢ}∂_{bⱼ}` on `u` is its strong form:
+`∫ (∑ᵢⱼ Aᵢⱼ D²φ(bᵢ, bⱼ)) • u = ∫ φ • ∑ᵢⱼ Aᵢⱼ ⟪D²u bᵢ, bⱼ⟫`, where `D²u` is the weak Hessian. -/
+theorem integral_sum_smul_fderiv_fderiv_smul_value_eq_sum_mul_inner_iteratedGradient {ι : Type*}
+    [Fintype ι] (A : Matrix ι ι ℝ) (b : ι → E) (u : Wkp mu Omega p 2) (φ : 𝓓(Omega, ℝ)) :
+    ∫ x, (∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ (φ : E → ℝ)) x (b i) (b j)) • value 2 u x ∂mu =
+      ∫ x, (φ : E → ℝ) x • ∑ i, ∑ j, A i j * ⟪iteratedGradient 1 u x (b i), b j⟫_ℝ ∂mu := by
+  -- The second derivatives of `φ` are test functions, so their products with `u` are integrable.
+  set φ₂ : ι → ι → 𝓓(Omega, ℝ) := fun i j =>
+    TestFunction.lineDerivCLM ℝ (b i) (TestFunction.lineDerivCLM ℝ (b j) φ)
+  have hφ₂ : ∀ i j x, φ₂ i j x = fderiv ℝ (fderiv ℝ (φ : E → ℝ)) x (b i) (b j) :=
+    fun i j x => TestFunction.lineDerivCLM_lineDerivCLM_apply φ (b i) (b j) x
+  have hval : LocallyIntegrableOn (value 2 u : E → ℝ) Omega mu := locallyIntegrableOn_value 2 u
+  have hH : ∀ i j, LocallyIntegrableOn
+      (fun x => ⟪iteratedGradient 1 u x (b i), b j⟫_ℝ) Omega mu := fun i j => by
+    simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm (b j)] using
+      (((hasWeakFDerivOn_iteratedGradient 0 u).clm_comp (innerSL ℝ (b j))).hasWeakLineDerivOn
+        (b i)).locallyIntegrableOn_deriv
+  -- Exchange the finite sums with the integrals on both sides.
+  have hsum : ∀ (F : ι → ι → E → ℝ), (∀ i j, Integrable (F i j) mu) →
+      ∫ x, ∑ i, ∑ j, A i j * F i j x ∂mu = ∑ i, ∑ j, A i j * ∫ x, F i j x ∂mu := fun F hF =>
+    (integral_finsetSum (f := fun i x => ∑ j, A i j * F i j x) Finset.univ fun i _ =>
+      integrable_finsetSum _ fun j _ => (hF i j).const_mul (A i j)).trans
+      (Finset.sum_congr rfl fun i _ =>
+        (integral_finsetSum (f := fun j x => A i j * F i j x) Finset.univ fun j _ =>
+          (hF i j).const_mul (A i j)).trans
+          (Finset.sum_congr rfl fun j _ => integral_const_mul _ _))
+  calc ∫ x, (∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ (φ : E → ℝ)) x (b i) (b j)) • value 2 u x ∂mu
+      = ∫ x, ∑ i, ∑ j, A i j * (φ₂ i j x * value 2 u x) ∂mu := by
+        refine integral_congr_ae (ae_of_all _ fun x => ?_)
+        simp only [hφ₂, smul_eq_mul, Finset.sum_mul, mul_assoc]
+    _ = ∑ i, ∑ j, A i j * ∫ x, φ₂ i j x * value 2 u x ∂mu :=
+        hsum _ fun i j => (φ₂ i j).integrable_smul hval
+    _ = ∑ i, ∑ j, A i j * ∫ x, (φ : E → ℝ) x * ⟪iteratedGradient 1 u x (b i), b j⟫_ℝ ∂mu := by
+        refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+        simp only [hφ₂]
+        exact congrArg (A i j * ·)
+          (integral_fderiv_fderiv_smul_value_eq_inner_iteratedGradient u φ (b i) (b j))
+    _ = _ := by
+        refine (hsum (fun i j x => (φ : E → ℝ) x * ⟪iteratedGradient 1 u x (b i), b j⟫_ℝ)
+          fun i j => φ.integrable_smul (hH i j)).symm.trans
+          (integral_congr_ae (ae_of_all _ fun x => ?_))
+        simp only [smul_eq_mul, Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
 /-- **Weak and strong solutions of `Δu = f` agree in `W^{2,p}(Ω)`.** For `u ∈ W^{2,p}(Ω)` and `f`
 locally integrable on `Ω`, `∫ Δφ • u = ∫ φ • f` holds for every test function `φ` on `Ω` if and
