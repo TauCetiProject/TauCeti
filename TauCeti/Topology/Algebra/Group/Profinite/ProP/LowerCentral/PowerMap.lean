@@ -23,7 +23,7 @@ public section
 
 namespace TauCeti
 
-open scoped Topology commutatorElement
+open scoped Topology
 
 variable {p : ℕ} [hp : Fact p.Prime] {G : Type*}
   [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -97,29 +97,5 @@ theorem IsUniform.coe_powHomeomorph_apply (hG : IsUniform p G) (n : ℕ)
 theorem IsUniform.coe_powHomeomorph_symm_apply_pow (hG : IsUniform p G) (n : ℕ)
     (x : pLowerCentralSeries p G (n + 1)) : ((hG.powHomeomorph n).symm x : G) ^ p = x := by
   rw [← hG.coe_powHomeomorph_apply, Homeomorph.apply_symm_apply]
-
-/-- At `2`, commutators in a topologically finitely generated powerful pro-`2` group lie
-one step deeper than the lower `p`-series estimate for general pro-`p` groups. -/
-theorem IsPowerful.commutator_mem_pLowerCentralSeries_of_two
-    (hG : IsPowerful 2 G) (hP : IsProP 2 G) (hfg : IsTopologicallyFinitelyGenerated G)
-    {i j : ℕ} {x y : G} (hx : x ∈ pLowerCentralSeries 2 G i) (hy : y ∈ pLowerCentralSeries 2 G j) :
-    ⁅x, y⁆ ∈ pLowerCentralSeries 2 G (i + j + 2) := by
-  induction j generalizing y with
-  | zero =>
-    have hz := hG.gradedBracket_eq_zero_of_two
-      (hfg.isOpen_pLowerCentralSeries Nat.prime_two (i + 1))
-      (gradedMk 2 G i ⟨x, hx⟩) (gradedMkZero 2 G y)
-    rw [gradedBracket_gradedMk_gradedMkZero, gradedMk_eq_zero_iff] at hz
-    simpa only [Nat.add_zero, Nat.add_assoc] using hz
-  | succ j ih =>
-    have hy' : ((1 : G) ^ 2)⁻¹ * y ∈ pLowerCentralSeries 2 G (j + 1) := by
-      simpa only [one_pow, inv_one, one_mul] using hy
-    obtain ⟨z, hz, rfl⟩ := hG.exists_pow_eq_of_inv_mul_mem_pLowerCentralSeries_succ
-      Nat.prime_two hP hfg hy'
-    have hc := ih (by simpa only [inv_one, one_mul] using hz)
-    have hcentral := commutator_mem_pLowerCentralSeries_succ hc z
-    have hmem := (commutatorElement_pow_right_mem_iff hcentral 2).mpr
-      (pow_mem_pLowerCentralSeries hc)
-    simpa only [Nat.add_assoc, Nat.add_comm 2 1] using hmem
 
 end TauCeti

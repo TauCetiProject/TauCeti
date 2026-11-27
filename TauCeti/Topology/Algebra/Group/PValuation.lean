@@ -92,6 +92,7 @@ theorem add_le_commutator (x y : G) : v x + v y ≤ v ⁅x, y⁆ :=
   v.add_le_commutator' x y
 
 /-- The `p`-th power increases the weight by one. -/
+@[simp]
 theorem map_pow (x : G) : v (x ^ p) = v x + 1 :=
   v.map_pow' x
 

@@ -242,19 +242,16 @@ theorem IsUniform.isSaturated_pValuation (hG : IsUniform p G) :
   let a : pLowerCentralSeries p G 1 := ⟨x, hmem⟩
   exact ⟨(hG.powHomeomorph 0).symm a, hG.coe_powHomeomorph_symm_apply_pow 0 a⟩
 
-/-- Lifts of a basis of the first graded piece satisfy the weight inequality in
-Schneider–Teitelbaum's condition (HYP). Each lift has the smallest valuation. -/
-theorem IsUniform.div_lt_pValuation_add_of_gradedMkZero_eq_basis (hG : IsUniform p G)
-    {ι : Type*} (b : Module.Basis ι (ZMod p) (gradedPiece p G 0))
-    {g : ι → G} (hg : ∀ i, gradedMkZero p G (g i) = b i) (i j : ι) :
-    (p : ℝ≥0∞) / (↑(p - 1 : ℕ) : ℝ≥0∞) < hG.pValuation (g i) + hG.pValuation (g j) := by
-  have hweight (k : ι) : hG.pValuation (g k) = ↑(uniformValuationOffset p) := by
-    have hk : g k ∉ pLowerCentralSeries p G 1 := by
-      rw [← gradedMkZero_eq_zero_iff, hg]
-      exact b.ne_zero k
-    simpa only [zero_add] using
-      hG.pValuation_apply_eq (mem_pLowerCentralSeries_zero p (g k)) hk
-  rw [hweight i, hweight j]
+/-- The sum of any two canonical weights exceeds the saturation threshold.
+In particular, the weights of basis lifts satisfy Schneider–Teitelbaum's condition (HYP). -/
+theorem IsUniform.div_lt_pValuation_add (hG : IsUniform p G) (x y : G) :
+    (p : ℝ≥0∞) / (↑(p - 1 : ℕ) : ℝ≥0∞) < hG.pValuation x + hG.pValuation y := by
+  have hweight (z : G) : (uniformValuationOffset p : ℝ≥0∞) ≤ hG.pValuation z := by
+    have hz : z ∈ hG.pValuation.filtration (↑(0 : ℕ) + ↑(uniformValuationOffset p)) := by
+      rw [hG.filtration_pValuation]
+      exact mem_pLowerCentralSeries_zero p z
+    simpa only [PValuation.mem_filtration, Nat.cast_zero, zero_add] using hz
+  refine lt_of_lt_of_le ?_ (add_le_add (hweight x) (hweight y))
   by_cases h : p = 2
   · subst p
     norm_num

@@ -62,6 +62,8 @@ Then `z = 1` in a torsion-free group.
   `[λ_{k+1} : λ_{k+2}] ≤ [λ_k : λ_{k+1}]`.
 * `TauCeti.IsPowerful.gradedBracket_eq_zero_of_two`: for `p = 2`, `[x, y] = 0` for `y` of degree
   zero, that is `⁅λ_j, G⁆ ≤ λ_{j+2}`.
+* `TauCeti.IsPowerful.commutator_mem_pLowerCentralSeries_of_two`: at `p = 2`, commutators
+  of elements of `λ_i` and `λ_j` belong to `λ_{i+j+2}`.
 * `TauCeti.IsPowerful.mk_mul_pow`: `(y * w) ^ p ≡ y ^ p * w ^ p` modulo `λ_{j+2}` for `w ∈ λ_j`.
 * `TauCeti.IsPowerful.exists_pow_eq_of_inv_mul_mem_pLowerCentralSeries_succ`: a power equation
   solved modulo `λ_{k+1}` has an exact solution in the same coset of `λ_k`.
@@ -360,6 +362,30 @@ theorem IsPowerful.exists_pow_eq_of_inv_mul_mem_pLowerCentralSeries_succ (hp : p
   refine ⟨z, (hz 0).1, inv_mul_eq_one.mp (Subgroup.mem_bot.mp ?_)⟩
   rw [← hP.iInf_pLowerCentralSeries_eq_bot hp, Subgroup.mem_iInf]
   exact fun k ↦ pLowerCentralSeries_antitone (by omega) (hz k).2
+
+/-- At `2`, commutators in a topologically finitely generated powerful pro-`2` group lie
+one step deeper than the lower `p`-series estimate for general pro-`p` groups. -/
+theorem IsPowerful.commutator_mem_pLowerCentralSeries_of_two
+    (hG : IsPowerful 2 G) (hP : IsProP 2 G) (hfg : IsTopologicallyFinitelyGenerated G)
+    {i j : ℕ} {x y : G} (hx : x ∈ pLowerCentralSeries 2 G i) (hy : y ∈ pLowerCentralSeries 2 G j) :
+    ⁅x, y⁆ ∈ pLowerCentralSeries 2 G (i + j + 2) := by
+  induction j generalizing y with
+  | zero =>
+    have hz := hG.gradedBracket_eq_zero_of_two
+      (hfg.isOpen_pLowerCentralSeries Nat.prime_two (i + 1))
+      (gradedMk 2 G i ⟨x, hx⟩) (gradedMkZero 2 G y)
+    rw [gradedBracket_gradedMk_gradedMkZero, gradedMk_eq_zero_iff] at hz
+    simpa only [Nat.add_zero, Nat.add_assoc] using hz
+  | succ j ih =>
+    have hy' : ((1 : G) ^ 2)⁻¹ * y ∈ pLowerCentralSeries 2 G (j + 1) := by
+      simpa only [one_pow, inv_one, one_mul] using hy
+    obtain ⟨z, hz, rfl⟩ := hG.exists_pow_eq_of_inv_mul_mem_pLowerCentralSeries_succ
+      Nat.prime_two hP hfg hy'
+    have hc := ih (by simpa only [inv_one, one_mul] using hz)
+    have hcentral := commutator_mem_pLowerCentralSeries_succ hc z
+    have hmem := (commutatorElement_pow_right_mem_iff hcentral 2).mpr
+      (pow_mem_pLowerCentralSeries hc)
+    simpa only [Nat.add_assoc, Nat.add_comm 2 1] using hmem
 
 /-- **In a torsion-free powerful group the `p`-power operator is injective**: `π` maps `gr_k(G)`
 injectively to `gr_{k+1}(G)` for a topologically finitely generated, torsion-free, powerful pro-`p`
