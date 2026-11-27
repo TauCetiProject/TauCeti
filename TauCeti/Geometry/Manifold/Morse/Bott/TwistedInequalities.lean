@@ -74,7 +74,7 @@ The negative normal spaces depend on the fibre metrics `g j`, but the twisted Be
 not: the negative normal bundles of two metrics are isomorphic, and so are their orientation local
 systems and the twisted homologies over every ring (in the namespace
 `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`,
-`nonempty_twistedHomology_negativeNormalSpace_iso`), whence `twistedBettiNumber_congr_metric`.
+`negativeNormalSpaceTwistedHomologyIso`), whence `twistedBettiNumber_congr_metric`.
 So the counts `cₙ` do not depend on the metrics.
 The manifolds, the pieces, the model space `E` of `M` and the coefficient field lie in one
 universe. The band computation reads `ν⁻ j` through frames relabelled by `ULift (Fin (r j))`, whose
@@ -245,11 +245,9 @@ theorem twistedBettiNumber_congr_metric
   have : IsManifold (J j) (∞ + 1) (S j) := by
     simpa using (inferInstance : IsManifold (J j) ∞ (S j))
   rw [twistedBettiNumber_def, twistedBettiNumber_def]
-  obtain ⟨e⟩ :=
-    (h.isNondegenerateCriticalSubmanifold j).nonempty_twistedHomology_negativeNormalSpace_iso hn K
-      (k := ∞) (by simp) (fun s ↦ (h.contMDiff (i j s)).of_le (by simp)) (hdim j) (g j) (g' j)
-      (hV j) (hV' j) k
-  exact e.toLinearEquiv.finrank_eq
+  exact ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpaceTwistedHomologyIso hn K
+    (k := ∞) (by simp) (fun s ↦ (h.contMDiff (i j s)).of_le (by simp)) (hdim j) (g j) (g' j)
+    (hV j) (hV' j) k).toLinearEquiv.finrank_eq
 
 omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
   [∀ j, (J j).Boundaryless] in

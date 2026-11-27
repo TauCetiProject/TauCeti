@@ -40,7 +40,7 @@ The computation of the homology across a level gives the negative normal spaces 
 structures of arbitrary local frames, not only those of the smooth frames above. For any such
 frames, the homology of `S` with coefficients in `o(ν⁻_g)` and in `o(ν⁻_{g'})` is the same,
 `Hₚ(S; o(ν⁻_g) ⊗ R) ≅ Hₚ(S; o(ν⁻_{g'}) ⊗ R)`, in every degree and over every ring `R`, `ℤ`
-included (`nonempty_twistedHomology_negativeNormalSpace_iso`).
+included (`negativeNormalSpaceTwistedHomologyIso`).
 
 ## Main definitions
 
@@ -48,6 +48,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
 * `negativeNormalSpaceSignLocalSystemIso`: the isomorphism between the orientation local systems
   of the negative normal bundles of two fibre metrics.
+* `negativeNormalSpaceTwistedHomologyIso`: the isomorphism between the homologies of `S` with
+  coefficients in these orientation local systems, over every ring, for any local frames.
 
 ## Main results
 
@@ -57,9 +59,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
   one induced by projecting along the positive normal spaces of `g`.
 * `nonempty_vectorBundleOrientation_negativeNormalSpace_iff`: the negative normal bundles of two
   fibre metrics are orientable together.
-* `nonempty_twistedHomology_negativeNormalSpace_iso`: the homologies of `S` with coefficients in
-  the orientation local systems of the negative normal bundles of two fibre metrics are isomorphic,
-  over every ring.
+* `negativeNormalSpaceTwistedHomologyIso_hom`: the isomorphism of twisted homologies is the map
+  induced by projecting along the positive normal spaces of `g`.
 
 ## References
 
@@ -233,7 +234,7 @@ of `S` with coefficients in the orientation local systems of the two negative no
 same, `Hₚ(S; o(ν⁻_g) ⊗ R) ≅ Hₚ(S; o(ν⁻_{g'}) ⊗ R)`, in every degree `p` and over every ring `R`,
 `ℤ` included: projecting along the positive normal spaces of `g` identifies the two negative normal
 bundles, hence their orientation local systems. -/
-theorem nonempty_twistedHomology_negativeNormalSpace_iso
+def negativeNormalSpaceTwistedHomologyIso
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
@@ -266,27 +267,74 @@ theorem nonempty_twistedHomology_negativeNormalSpace_iso
     letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
     letI := hV'.fiberBundle
     haveI := hV'.vectorBundle
-    Nonempty (twistedHomology (VectorBundleOrientationCover.signLocalSystem (Fin r → ℝ)
+    twistedHomology (VectorBundleOrientationCover.signLocalSystem (Fin r → ℝ)
         (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) R (ι := Fin r) (by simp)) p ≅
       twistedHomology (VectorBundleOrientationCover.signLocalSystem (Fin r → ℝ)
         (fun s ↦ h.negativeNormalSpace hn g'.toRiemannianMetric s) R (ι := Fin r) (by simp))
-          p) := by
-  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
-  have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
-  have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
-  let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-  let := hV.fiberBundle
-  have := hV.vectorBundle
-  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
-  let := hV'.fiberBundle
-  have := hV'.vectorBundle
-  exact ⟨asIso (twistedHomologyCoefficientMap
+          p :=
+  haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  letI := i.normalSpaceFiberBundle hn hdim
+  letI := i.normalSpaceVectorBundle hn hdim
+  letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  letI := hV.fiberBundle
+  haveI := hV.vectorBundle
+  letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
+  letI := hV'.fiberBundle
+  haveI := hV'.vectorBundle
+  asIso (twistedHomologyCoefficientMap
     (VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise R _ _
       (φ := fun s ↦ (h.negativeNormalSpaceEquiv hn g'.toRiemannianMetric
         g.toRiemannianMetric s).toContinuousLinearEquiv)
     (h.continuous_negativeNormalSpaceEquiv hn hk hf hdim g g'
-      (h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV))).hom p)⟩
+      (h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV))).hom p)
+
+open CategoryTheory LocalCoefficientSystem in
+/-- The isomorphism between the homologies of `S` with coefficients in the orientation local
+systems of the negative normal bundles of two fibre metrics is the map induced by projecting along
+the positive normal spaces of `g`
+(`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`). -/
+theorem negativeNormalSpaceTwistedHomologyIso_hom
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g g' : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
+    (hV : haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+      haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g.toRiemannianMetric))
+    (hV' : haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+      haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g'.toRiemannianMetric))
+    (p : ℕ) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
+    letI := hV'.fiberBundle
+    haveI := hV'.vectorBundle
+    (h.negativeNormalSpaceTwistedHomologyIso hn R hk hf hdim g g' hV hV' p).hom =
+      twistedHomologyCoefficientMap
+        (VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise R _ _
+          (φ := fun s ↦ (h.negativeNormalSpaceEquiv hn g'.toRiemannianMetric
+            g.toRiemannianMetric s).toContinuousLinearEquiv)
+        (h.continuous_negativeNormalSpaceEquiv hn hk hf hdim g g'
+          (h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV))).hom p :=
+  (rfl)
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold

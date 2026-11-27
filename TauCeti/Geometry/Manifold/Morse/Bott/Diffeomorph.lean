@@ -55,7 +55,7 @@ normal bundle of a piece of `f ∘ σ` with that of the corresponding piece of `
 whatever fibre metrics define them, so their orientation local systems, and the twisted homologies
 of the piece with these coefficients, are isomorphic over every ring, `ℤ` included (in the
 namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`,
-`nonempty_twistedHomology_negativeNormalSpace_iso_of_comp`). Hence the twisted Betti numbers of
+`negativeNormalSpaceTwistedHomologyIsoOfComp`). Hence the twisted Betti numbers of
 the two families agree (`TauCeti.IsMorseBottFamily.twistedBettiNumber_comp_diffeomorph`), even for
 non-orientable negative normal bundles, where they can differ from the ordinary Betti numbers of
 the pieces.
@@ -346,8 +346,7 @@ theorem twistedBettiNumber_comp_diffeomorph (hn : (∞ : ℕ∞ω) ≠ 0) (h : I
   have hf (s : S j) : ContMDiffAt I' 𝓘(ℝ) (∞ + 2) f (i' j s) :=
     h.contMDiff.contMDiffAt.of_le (by simp)
   rw [twistedBettiNumber_def, twistedBettiNumber_def]
-  obtain ⟨e⟩ := h₁.nonempty_twistedHomology_negativeNormalSpace_iso_of_comp hn hn hσi K h₂
-    (k := ∞) (by simp) (by simp) hσ hσs hf (hdim j) (hdim' j) (g j) (g' j) (hV j) (hV' j) k
-  exact e.toLinearEquiv.finrank_eq
+  exact (h₁.negativeNormalSpaceTwistedHomologyIsoOfComp hn hn hσi K h₂ (k := ∞) (by simp)
+    (by simp) hσ hσs hf (hdim j) (hdim' j) (g j) (g' j) (hV j) (hV' j) k).toLinearEquiv.finrank_eq
 
 end TauCeti.IsMorseBottFamily
