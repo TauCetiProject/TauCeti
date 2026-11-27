@@ -85,11 +85,8 @@ conditioning on the ambient σ-algebra, or on the label itself, gives zero. -/
 theorem condExpCountablePartitionEntropy_eq_zero_of_measurableSet {a : X → ι}
     (ha : ∀ i, MeasurableSet[m] (a ⁻¹' {i})) :
     condExpCountablePartitionEntropy μ m a = 0 := by
-  have h0 : ∀ i x, negMulLog (condAtomProb μ m a i x) = 0 := fun i x ↦ by
-    rcases condAtomProb_eq_indicator_or_zero_of_measurableSet (μ := μ) (ha i) with h | h
-    · by_cases hx : x ∈ a ⁻¹' {i} <;> simp [h, hx]
-    · simp [h]
-  simp [condExpCountablePartitionEntropy_def, h0]
+  simp [condExpCountablePartitionEntropy_def,
+    negMulLog_condAtomProb_eq_zero_of_measurableSet (ha _)]
 
 section Finite
 

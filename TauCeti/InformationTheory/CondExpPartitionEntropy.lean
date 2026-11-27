@@ -108,6 +108,15 @@ theorem condAtomProb_eq_indicator_or_zero_of_measurableSet {a : X → ι} {i : �
   · exact .inr h
   · exact .inl (condAtomProb_of_measurableSet hm hi hs)
 
+/-- `negMulLog` of the conditional probability of an `m`-measurable atom vanishes everywhere:
+the conditional probability is the indicator of the atom, or `0` in the degenerate cases. -/
+theorem negMulLog_condAtomProb_eq_zero_of_measurableSet {a : X → ι} {i : ι}
+    (hs : MeasurableSet[m] (a ⁻¹' {i})) (x : X) :
+    negMulLog (condAtomProb μ m a i x) = 0 := by
+  rcases condAtomProb_eq_indicator_or_zero_of_measurableSet (μ := μ) hs with h | h
+  · by_cases hx : x ∈ a ⁻¹' {i} <;> simp [h, hx]
+  · simp [h]
+
 /-- The conditional probabilities of the atoms lie in `[0, 1]` almost everywhere. No hypothesis is
 needed: in the degenerate cases the conditional expectation is `0`. -/
 theorem condAtomProb_mem_Icc (a : X → ι) (i : ι) :
@@ -293,10 +302,6 @@ label itself, gives zero. -/
 theorem condExpPartitionEntropy_eq_zero_of_measurableSet {a : X → ι}
     (ha : ∀ i, MeasurableSet[m] (a ⁻¹' {i})) :
     condExpPartitionEntropy μ m a = 0 := by
-  have h0 : ∀ i x, negMulLog (condAtomProb μ m a i x) = 0 := fun i x ↦ by
-    rcases condAtomProb_eq_indicator_or_zero_of_measurableSet (μ := μ) (ha i) with h | h
-    · by_cases hx : x ∈ a ⁻¹' {i} <;> simp [h, hx]
-    · simp [h]
-  simp [condExpPartitionEntropy_def, h0]
+  simp [condExpPartitionEntropy_def, negMulLog_condAtomProb_eq_zero_of_measurableSet (ha _)]
 
 end TauCeti
