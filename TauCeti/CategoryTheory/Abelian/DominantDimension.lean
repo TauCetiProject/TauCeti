@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Abelian.Injective.Dimension
 public import Mathlib.CategoryTheory.Preadditive.Injective.Preserves
 public import Mathlib.CategoryTheory.Preadditive.Projective.Preserves
 public import TauCeti.Data.ENat.Lattice
@@ -252,6 +253,27 @@ theorem HasProjectiveInjectiveCoresolution.of_shortExact {S : ShortComplex C} (h
     (h₃ : HasProjectiveInjectiveCoresolution S.X₃ n) : HasProjectiveInjectiveCoresolution S.X₂ n :=
   ObjectProperty.IsSyzygy.of_shortExact (fun _ h ↦ h.2)
     (fun A B ↦ projective_and_injective_biprod A B) hS h₁ h₃
+
+/-- An object of injective dimension at most `n` with a projective-injective coresolution of
+length `n + 1` is itself projective and injective. -/
+theorem HasProjectiveInjectiveCoresolution.projective_injective_of_hasInjectiveDimensionLE
+    {X : C} {n : ℕ} (h : HasProjectiveInjectiveCoresolution X (n + 1))
+    (hdim : HasInjectiveDimensionLE X n) : Projective X ∧ Injective X := by
+  induction n generalizing X with
+  | zero =>
+    obtain ⟨S, hS, ⟨e⟩, ⟨hP, _⟩, _⟩ := (ObjectProperty.isSyzygy_succ_iff _ 0 X).1 h
+    have hI : Injective X := (injective_iff_hasInjectiveDimensionLE_zero (X := X)).mpr hdim
+    have : Injective S.X₁ := Injective.of_iso e hI
+    let s := ShortComplex.ShortExact.splittingOfInjective (S := S) hS
+    exact ⟨(e.retract.trans ⟨S.f, s.r, s.f_r⟩).projective, hI⟩
+  | succ n ih =>
+    obtain ⟨S, hS, ⟨e⟩, ⟨hP, hI⟩, h₃⟩ := (ObjectProperty.isSyzygy_succ_iff _ (n + 1) X).1 h
+    have hdim₁ := hasInjectiveDimensionLT_of_iso e (n + 2)
+    have hdim₃ := (hS.hasInjectiveDimensionLT_X₃_iff n hI).mpr hdim₁
+    have : Projective S.X₃ := (ih h₃ hdim₃).1
+    let s := ShortComplex.ShortExact.splittingOfProjective (S := S) hS
+    let r : Retract X S.X₂ := e.retract.trans ⟨S.f, s.r, s.f_r⟩
+    exact ⟨r.projective, r.injective⟩
 
 /-- **The case `dom.dim X ≥ 1`.** It holds exactly when `X` embeds into a projective-injective
 object. -/

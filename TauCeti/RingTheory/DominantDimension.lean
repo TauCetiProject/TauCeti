@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.DominantDimension
 public import TauCeti.Algebra.Module.Injective.Int
+public import TauCeti.RingTheory.GlobalDimension
 
 import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.LinearAlgebra.Exact
@@ -137,6 +138,17 @@ theorem dominantDimension_eq_top_of_injective (Γ : Type u) [Ring Γ] [Module.In
   have : Projective (ModuleCat.of Γ Γ) := (IsProjective.iff_projective Γ).1 inferInstance
   have : Injective (ModuleCat.of Γ Γ) := Module.injective_object_of_injective_module Γ Γ
   exact CategoryTheory.dominantDimension_eq_top _
+
+/-- A ring that is not left self-injective has dominant dimension at most any finite upper bound
+on its global dimension. -/
+theorem dominantDimension_le_of_globalDimension_le {Γ : Type u} [Ring Γ] {n : ℕ}
+    (hgl : globalDimension.{u} Γ ≤ n) (hinj : ¬ Module.Injective Γ Γ) :
+    dominantDimension Γ ≤ n := by
+  rw [dominantDimension_eq_dominantDimension_of, CategoryTheory.dominantDimension_le_natCast_iff]
+  intro h
+  have hdim := (globalDimension_le_iff_hasInjectiveDimensionLE Γ n).mp hgl (ModuleCat.of Γ Γ)
+  have := (h.projective_injective_of_hasInjectiveDimensionLE hdim).2
+  exact hinj (Module.injective_module_of_injective_object Γ Γ)
 
 /-- The zero ring has dominant dimension `⊤`. -/
 theorem dominantDimension_eq_top_of_subsingleton (Γ : Type u) [Ring Γ] [Subsingleton Γ] :
