@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.AbsolutelyContinuous
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Integral.L2NormSq
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
@@ -152,11 +153,7 @@ theorem holderOnWith_of_value_ae_eq (hab : a < b) {f : ℝ → ℝ}
     (hf : ContinuousOn f (Icc a b)) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
     (hu : value u =ᵐ[volume.restrict (Ioo a b)] f) :
     HolderOnWith ‖gradient u‖₊ (1 - 1 / p.toReal).toNNReal f (Icc a b) := by
-  have hexp : 0 ≤ 1 - 1 / p.toReal := by
-    rcases eq_or_ne p ⊤ with rfl | hp
-    · simp
-    · exact sub_nonneg.2 (div_le_one_of_le₀
-        (ENNReal.toReal_one ▸ ENNReal.toReal_mono hp Fact.out) ENNReal.toReal_nonneg)
+  have hexp : 0 ≤ 1 - 1 / p.toReal := ENNReal.one_sub_one_div_toReal_nonneg Fact.out
   refine HolderOnWith.of_dist_le fun x hx y hy => ?_
   have h := abs_intervalRepresentativeL_sub_le hab u ⟨y, hy⟩ ⟨x, hx⟩
   rw [intervalRepresentativeL_apply_of_value_ae_eq hab hf hu,

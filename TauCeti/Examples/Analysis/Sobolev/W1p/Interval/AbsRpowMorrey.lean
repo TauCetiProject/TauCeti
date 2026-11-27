@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 import TauCeti.Analysis.Holder.Examples
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.Analysis.Sobolev.W1p.NormRpow
-import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Morrey's embedding on `(-1, 1)` for the cusps `|x|^{3/4}` and `|x|^{1/4}`

@@ -75,11 +75,10 @@ theorem norm_value_sq_eq_and_norm_gradient_sq_eq {j : ℕ} (hj : j ≠ 0)
   refine ⟨?_,
     (norm_gradient_sq_eq_intervalIntegral_of_ae_eq pi_pos (gradient_ae_eq_cos hj hv)).trans
     (by simpa only [Int.cast_natCast] using integral_cos_int_mul_sq (k := j) (by omega))⟩
-  have h := integral_sin_int_mul_mul_sin_int_mul j j
-  rw [ite_eq_left rfl, ite_eq_right (by omega : (j : ℤ) ≠ -j), sub_zero] at h
-  simp only [Int.cast_natCast] at h
+  have h : ∫ x in (0 : ℝ)..π, sin (j * x) ^ 2 = π / 2 := by
+    simpa only [Int.cast_natCast] using integral_sin_int_mul_sq (k := j) (by omega)
   rw [norm_value_sq_eq_intervalIntegral_of_ae_eq pi_pos hv]
-  simp_rw [div_pow, sq]
+  simp_rw [div_pow]
   rw [intervalIntegral.integral_div, h]
   field_simp
 
@@ -115,21 +114,24 @@ theorem norm_sub_sq_eq {j k : ℕ} (hj : j ≠ 0) (hk : k ≠ 0) (hjk : j ≠ k)
     ‖f - g‖ ^ 2 = π := by
   rw [L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq pi_pos.le ((Lp.coeFn_sub f g).trans (hf.sub hg))]
   have h : ∀ x : ℝ, ((fun x => sin (j * x)) - fun x => sin (k * x)) x ^ 2 =
-      sin (j * x) * sin (j * x) + sin (k * x) * sin (k * x) - 2 * (sin (j * x) * sin (k * x)) :=
+      sin (j * x) ^ 2 + sin (k * x) ^ 2 - 2 * (sin (j * x) * sin (k * x)) :=
     fun x => by
       simp only [Pi.sub_apply]
       ring
-  -- The sine orthogonality relation, read at natural frequencies.
-  have hs (m n : ℕ) := integral_sin_int_mul_mul_sin_int_mul m n
-  simp only [Int.cast_natCast] at hs
+  -- The square norm of a sine mode and the orthogonality of two distinct modes.
+  have hsq {m : ℕ} (hm : m ≠ 0) : ∫ x in (0 : ℝ)..π, sin (m * x) ^ 2 = π / 2 := by
+    simpa only [Int.cast_natCast] using integral_sin_int_mul_sq (k := m) (by omega)
+  have hjk' : ∫ x in (0 : ℝ)..π, sin (j * x) * sin (k * x) = 0 := by
+    have hs := integral_sin_int_mul_mul_sin_int_mul j k
+    simp only [Int.cast_natCast] at hs
+    rw [hs]
+    split_ifs <;> first | omega | simp
   simp_rw [h]
   rw [intervalIntegral.integral_sub (Continuous.intervalIntegrable (by fun_prop) _ _)
       (Continuous.intervalIntegrable (by fun_prop) _ _),
     intervalIntegral.integral_add (Continuous.intervalIntegrable (by fun_prop) _ _)
       (Continuous.intervalIntegrable (by fun_prop) _ _),
-    intervalIntegral.integral_const_mul, hs, hs, hs, ite_eq_left rfl, ite_eq_left rfl,
-    ite_eq_right (by omega : (j : ℤ) ≠ -j), ite_eq_right (by omega : (k : ℤ) ≠ -k),
-    ite_eq_right (by omega : (j : ℤ) ≠ k), ite_eq_right (by omega : (j : ℤ) ≠ -k)]
+    intervalIntegral.integral_const_mul, hsq hj, hsq hk, hjk']
   ring
 
 /-- **No subsequence of the sine modes is Cauchy in `L²`.** If `v_j` has value `sin (j x)` in

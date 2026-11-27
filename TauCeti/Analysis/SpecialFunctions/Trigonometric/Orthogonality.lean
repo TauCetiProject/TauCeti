@@ -34,7 +34,8 @@ degree-`0` cosine mode has square norm `π`.
   otherwise.
 * `TauCeti.integral_sin_int_mul_mul_sin_int_mul`: the orthogonality relation
   `∫₀^π sin (m θ) sin (n θ) dθ = (π / 2) · (δ_{m,n} - δ_{m,-n})` for all integers `m` and `n`.
-* `TauCeti.integral_cos_int_mul_sq`: `∫₀^π cos (k θ)² dθ = π / 2` for a nonzero integer `k`.
+* `TauCeti.integral_sin_int_mul_sq` and `TauCeti.integral_cos_int_mul_sq`: `∫₀^π sin (k θ)² dθ`
+  and `∫₀^π cos (k θ)² dθ` are both `π / 2` for a nonzero integer `k`.
 * `TauCeti.integral_sin_succ_mul_sin_succ`: the same relation indexed by the positive frequencies
   `m + 1`, where the right-hand side is a plain Kronecker delta, and
   `TauCeti.two_div_pi_mul_integral_sin_succ_mul_sin_succ`, its normalized restatement
@@ -80,16 +81,20 @@ theorem integral_sin_int_mul_mul_sin_int_mul (m n : ℤ) :
   simp only [sub_eq_zero, add_eq_zero_iff_eq_neg]
   split_ifs <;> ring
 
+/-- `∫₀^π sin (k θ)² dθ = π / 2` for a nonzero integer `k`: the square norm of a nonzero sine
+mode on `[0, π]`, the diagonal case of `TauCeti.integral_sin_int_mul_mul_sin_int_mul`. -/
+theorem integral_sin_int_mul_sq {k : ℤ} (hk : k ≠ 0) :
+    ∫ θ in (0 : ℝ)..Real.pi, Real.sin ((k : ℝ) * θ) ^ 2 = Real.pi / 2 := by
+  simp_rw [sq]
+  rw [integral_sin_int_mul_mul_sin_int_mul, ite_eq_left rfl, ite_eq_right (by omega), sub_zero]
+
 /-- `∫₀^π cos (k θ)² dθ = π / 2` for a nonzero integer `k`: the square norm of a nonzero cosine
-mode on `[0, π]`, obtained from the diagonal case of
-`TauCeti.integral_sin_int_mul_mul_sin_int_mul` since `cos² = 1 - sin²`. -/
+mode on `[0, π]`, obtained from `TauCeti.integral_sin_int_mul_sq` since `cos² = 1 - sin²`. -/
 theorem integral_cos_int_mul_sq {k : ℤ} (hk : k ≠ 0) :
     ∫ θ in (0 : ℝ)..Real.pi, Real.cos ((k : ℝ) * θ) ^ 2 = Real.pi / 2 := by
-  have h := integral_sin_int_mul_mul_sin_int_mul k k
-  rw [ite_eq_left rfl, ite_eq_right (by omega : k ≠ -k), sub_zero] at h
-  simp_rw [Real.cos_sq', sq]
+  simp_rw [Real.cos_sq']
   rw [intervalIntegral.integral_sub intervalIntegrable_const
-    ((by fun_prop : Continuous _).intervalIntegrable _ _), h]
+    ((by fun_prop : Continuous _).intervalIntegrable _ _), integral_sin_int_mul_sq hk]
   simp
   ring
 
