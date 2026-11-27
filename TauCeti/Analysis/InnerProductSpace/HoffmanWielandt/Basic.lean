@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.SchurHorn
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius.Basic
 
 /-!
 # The von Neumann trace inequality and the Hoffman–Wielandt inequality

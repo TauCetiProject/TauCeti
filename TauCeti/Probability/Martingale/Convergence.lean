@@ -46,6 +46,9 @@ result (`Martingale/AntitoneLimit.lean`) all feed into `tendsto_ae_condExp_iInf`
   case following from the real one by taking real and imaginary parts. Its bounded step
   `tendsto_eLpNorm_condExp_of_ae_bdd` upgrades `L¹` convergence to `Lᵖ` convergence, for `p < ∞`,
   for an essentially bounded function.
+- `exists_forall_abs_measureReal_inter_sub_mul_le_of_forall_zero_or_one_iInf`: asymptotic
+  independence along a decreasing filtration with `μ`-trivial intersection — for a measurable
+  `A` and `ε > 0`, some `n` has `|μ (A ∩ B) - μ A * μ B| ≤ ε` for every `𝔽 n`-measurable `B`.
 - `measure_inter_eq_mul_of_forall_zero_or_one_iInf`: factorization along a decreasing filtration
   with `μ`-trivial intersection — if `B' n` is `𝔽 n`-measurable with `μ (B' n)` and `μ (A ∩ B' n)`
   independent of `n`, then `μ (A ∩ B) = μ A * μ B`.
@@ -337,6 +340,52 @@ theorem MemLp.tendsto_eLpNorm_condExp [IsFiniteMeasure μ] {ℱ : Filtration ℕ
   hf.tendsto_eLpNorm_condExp_of_tendsto
     (fun g => MeasureTheory.tendsto_eLpNorm_condExp g) hp
 
+/-- **Asymptotic independence along a decreasing filtration with trivial tail.** If the
+intersection of an antitone sequence of sub-σ-algebras `𝔽 n` is `μ`-trivial, then every measurable
+event `A` is asymptotically independent of the `𝔽 n`: for every `ε > 0` some `n` has
+`|μ (A ∩ B) - μ A * μ B| ≤ ε` for every `𝔽 n`-measurable `B`. -/
+theorem exists_forall_abs_measureReal_inter_sub_mul_le_of_forall_zero_or_one_iInf
+    {𝔽 : ℕ → MeasurableSpace Ω} (hanti : Antitone 𝔽) (h𝔽 : 𝔽 0 ≤ ‹MeasurableSpace Ω›)
+    (htriv : ∀ s, MeasurableSet[⨅ n, 𝔽 n] s → μ s = 0 ∨ μ s = 1)
+    {A : Set Ω} (hA : MeasurableSet A) {ε : ℝ} (hε : 0 < ε) :
+    ∃ n, ∀ B, MeasurableSet[𝔽 n] B → |μ.real (A ∩ B) - μ.real A * μ.real B| ≤ ε := by
+  have : IsZeroOrProbabilityMeasure μ := ⟨htriv Set.univ MeasurableSet.univ⟩
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
+  · exact ⟨0, fun B _ => by simpa using hε.le⟩
+  have h𝔽' : ∀ n, 𝔽 n ≤ ‹MeasurableSpace Ω› := fun n => (hanti (Nat.zero_le n)).trans h𝔽
+  have hinf : (⨅ n, 𝔽 n) ≤ ‹MeasurableSpace Ω› := (iInf_le 𝔽 0).trans h𝔽
+  set f₀ : Ω → ℝ := A.indicator fun _ => 1 with hf₀def
+  have hf₀ : Integrable f₀ μ := (integrable_const 1).indicator hA
+  -- Given the trivial intersection, the conditional expectation of `1_A` is the constant `μ A`.
+  have hconst : μ[f₀|⨅ n, 𝔽 n] =ᵐ[μ] fun _ => μ.real A := by
+    refine (condExp_ae_eq_integral_of_forall_zero_or_one hinf htriv f₀).trans ?_
+    rw [hf₀def, integral_indicator_const (1 : ℝ) hA, smul_eq_mul, mul_one]
+  -- By Lévy's downward theorem, `μ[1_A | 𝔽 n]` is eventually `ε`-close to it in `L¹`.
+  obtain ⟨n, hn⟩ := ((tendsto_eLpNorm_condExp_iInf (μ := μ) hanti h𝔽 f₀).eventually
+    (gt_mem_nhds (ENNReal.ofReal_pos.2 hε))).exists
+  refine ⟨n, fun B hB => ?_⟩
+  have hBm : MeasurableSet B := h𝔽' n _ hB
+  have hg : Integrable (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) μ :=
+    integrable_condExp.sub integrable_condExp
+  have h1 : ∫ x in B, (μ[f₀|𝔽 n]) x ∂μ = μ.real (A ∩ B) := by
+    rw [setIntegral_condExp (h𝔽' n) hf₀ hB, hf₀def, setIntegral_indicator hA,
+      setIntegral_const, smul_eq_mul, mul_one, Set.inter_comm]
+  have h2 : ∫ x in B, (μ[f₀|⨅ m, 𝔽 m]) x ∂μ = μ.real A * μ.real B := by
+    rw [setIntegral_congr_ae hBm (hconst.mono fun x hx _ => hx), setIntegral_const,
+      smul_eq_mul, mul_comm]
+  calc |μ.real (A ∩ B) - μ.real A * μ.real B|
+      = ‖∫ x in B, (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) x ∂μ‖ := by
+        rw [Real.norm_eq_abs, ← h1, ← h2, ← integral_sub integrable_condExp.integrableOn
+          integrable_condExp.integrableOn]
+        simp only [Pi.sub_apply]
+    _ ≤ ∫ x in B, ‖(μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) x‖ ∂μ := norm_integral_le_integral_norm _
+    _ ≤ ∫ x, ‖(μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) x‖ ∂μ :=
+        setIntegral_le_integral hg.norm (Eventually.of_forall fun x => norm_nonneg _)
+    _ = (eLpNorm (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) 1 μ).toReal := by
+        rw [integral_norm_eq_lintegral_eNorm hg.aestronglyMeasurable,
+          eLpNorm_one_eq_lintegral_eNorm hg.aestronglyMeasurable]
+    _ ≤ ε := ENNReal.toReal_le_of_le_ofReal hε.le hn.le
+
 /-- **Factorization along a decreasing filtration with trivial tail.** If `B' n` is `𝔽 n`-measurable
 along an antitone sequence of sub-σ-algebras whose intersection is `μ`-trivial, and neither
 `μ (B' n)` nor `μ (A ∩ B' n)` depends on `n`, then `μ (A ∩ B) = μ A * μ B`. This is the step that
@@ -352,55 +401,24 @@ theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf
   rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
   · simp
   have h𝔽' : ∀ n, 𝔽 n ≤ ‹MeasurableSpace Ω› := fun n => (hanti (Nat.zero_le n)).trans h𝔽
-  have hinf : (⨅ n, 𝔽 n) ≤ ‹MeasurableSpace Ω› := (iInf_le 𝔽 0).trans h𝔽
   -- Work with a measurable hull of `A`, which has the same mass against every `B' n`.
   have hA : MeasurableSet (toMeasurable μ A) := measurableSet_toMeasurable μ A
-  have hAmass : μ (toMeasurable μ A) = μ A := measure_toMeasurable A
-  have hjoint' : ∀ n, μ (toMeasurable μ A ∩ B' n) = μ (A ∩ B) := fun n => by
-    rw [Measure.measure_toMeasurable_inter (h𝔽' n _ (hB' n)) (measure_ne_top μ A), hjoint n]
-  set f₀ : Ω → ℝ := (toMeasurable μ A).indicator fun _ => 1 with hf₀def
-  have hf₀ : Integrable f₀ μ := (integrable_const 1).indicator hA
-  have hconst : μ[f₀|⨅ n, 𝔽 n] =ᵐ[μ] fun _ => ∫ x, f₀ x ∂μ :=
-    condExp_ae_eq_integral_of_forall_zero_or_one hinf htriv f₀
-  have hc : ∫ x, f₀ x ∂μ = (μ A).toReal := by
-    rw [hf₀def, integral_indicator_const (1 : ℝ) hA, smul_eq_mul, mul_one, measureReal_def, hAmass]
-  have hbound : ∀ n, |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal| ≤
-      (eLpNorm (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) 1 μ).toReal := by
-    intro n
-    have hBn : MeasurableSet (B' n) := h𝔽' n _ (hB' n)
-    have hg : Integrable (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) μ :=
-      integrable_condExp.sub integrable_condExp
-    have h1 : ∫ x in B' n, (μ[f₀|𝔽 n]) x ∂μ = (μ (A ∩ B)).toReal := by
-      rw [setIntegral_condExp (h𝔽' n) hf₀ (hB' n), hf₀def, setIntegral_indicator hA,
-        setIntegral_const, smul_eq_mul, mul_one, Set.inter_comm (B' n) (toMeasurable μ A),
-        measureReal_def, hjoint' n]
-    have h2 : ∫ x in B' n, (μ[f₀|⨅ m, 𝔽 m]) x ∂μ = (μ A).toReal * (μ B).toReal := by
-      rw [setIntegral_congr_ae hBn (hconst.mono fun x hx _ => hx), setIntegral_const,
-        smul_eq_mul, hc, measureReal_def, hBmass n, mul_comm]
-    have hsplit : ∫ x in B' n, (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) x ∂μ =
-        (μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal := by
-      simp only [Pi.sub_apply]
-      rw [integral_sub integrable_condExp.integrableOn integrable_condExp.integrableOn, h1, h2]
-    calc |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|
-        = ‖∫ x in B' n, (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) x ∂μ‖ := by
-          rw [hsplit, Real.norm_eq_abs]
-      _ ≤ ∫ x in B' n, ‖(μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) x‖ ∂μ :=
-          norm_integral_le_integral_norm _
-      _ ≤ ∫ x, ‖(μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) x‖ ∂μ :=
-          setIntegral_le_integral hg.norm (Eventually.of_forall fun x => norm_nonneg _)
-      _ = (eLpNorm (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) 1 μ).toReal := by
-          rw [integral_norm_eq_lintegral_eNorm hg.aestronglyMeasurable,
-            eLpNorm_one_eq_lintegral_eNorm hg.aestronglyMeasurable]
-  have hLevyReal : Tendsto
-      (fun n => (eLpNorm (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) 1 μ).toReal) atTop (𝓝 0) := by
-    simpa [Function.comp_def] using (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
-      (tendsto_eLpNorm_condExp_iInf hanti h𝔽 f₀)
-  have habs0 : |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal| = 0 :=
-    le_antisymm (ge_of_tendsto' hLevyReal hbound) (abs_nonneg _)
+  have hAmass : μ.real (toMeasurable μ A) = μ.real A := by
+    rw [measureReal_def, measure_toMeasurable, measureReal_def]
+  have hjoint' (n : ℕ) : μ.real (toMeasurable μ A ∩ B' n) = μ.real (A ∩ B) := by
+    rw [measureReal_def, Measure.measure_toMeasurable_inter (h𝔽' n _ (hB' n)) (measure_ne_top μ A),
+      hjoint n, measureReal_def]
+  -- The defect `μ (A ∩ B) - μ A * μ B` is at most every `ε > 0`.
+  have hdefect : |μ.real (A ∩ B) - μ.real A * μ.real B| ≤ 0 := by
+    refine le_of_forall_pos_le_add fun ε hε => ?_
+    obtain ⟨n, hn⟩ :=
+      exists_forall_abs_measureReal_inter_sub_mul_le_of_forall_zero_or_one_iInf hanti h𝔽 htriv hA hε
+    simpa [hjoint' n, hAmass, measureReal_def, hBmass n] using hn (B' n) (hB' n)
   refine (ENNReal.toReal_eq_toReal_iff' (measure_ne_top μ _)
     (ENNReal.mul_ne_top (measure_ne_top μ _) (measure_ne_top μ _))).mp ?_
   rw [ENNReal.toReal_mul]
-  have := abs_eq_zero.mp habs0
+  have := abs_nonpos_iff.mp hdefect
+  simp only [measureReal_def] at this
   linarith
 
 /-- **Conditional factorization along a decreasing filtration.** If `B' n` is `𝔽 n`-measurable

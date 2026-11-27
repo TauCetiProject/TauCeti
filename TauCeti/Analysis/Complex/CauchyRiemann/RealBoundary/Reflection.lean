@@ -56,8 +56,10 @@ domain (`TauCeti.MemLpLoc.starSchwarzReflection`), and the transfer of zeros
 (`TauCeti.isBigO_starSchwarzReflection_sub_pow`) from the closed upper half-plane, so that the
 interior unique continuation theorems apply to the reflected solution.
 
-Only the structure `i` is treated: a variable structure equal to `i` on the axis is first
-trivialized to `i`, which is not done here.
+Only the structure `i` is treated here. A variable structure anticommuting with the real
+structure on the axis, such as one equal to `i` there, is reflected directly in
+`TauCeti.Analysis.Complex.CauchyRiemann.RealBoundary.VariableStructure`, for solutions with
+derivatives locally `Lᵖ` up to the axis.
 
 ## References
 

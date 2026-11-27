@@ -102,6 +102,8 @@ consecutive counts one vanishes, the spectral sequence degenerates
 (`filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_twistedBettiNumber_eq_zero_or_eq_zero`)
 and its graded pieces have these dimensions
 (`finrank_cokernel_abutmentFiltrationMap_of_forall_twistedBettiNumber_eq_zero_or_eq_zero`).
+These twisted statements take the manifolds and the field in any one universe, while those of
+characteristic two take them in `Type`, as the untwisted Thom isomorphism they rest on does.
 Over `ℚ` a piece whose negative normal bundle is not orientable may contribute nothing even though
 its ordinary homology does not vanish, as for the critical circle of index one with Möbius negative
 normal bundle of the function `[x : y : z] ↦ (x² + y²) / (x² + y² + z²)` on the real projective
@@ -329,11 +331,11 @@ section Dimension
 
 open _root_.Module (finrank)
 
-variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E M : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   [SecondCountableTopology M] [CompactSpace M]
-  {ι : Type*} [Fintype ι] {E' H' : ι → Type*} {S : ι → Type}
+  {ι : Type*} [Fintype ι] {E' H' : ι → Type*} {S : ι → Type u}
   [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)] [∀ j, FiniteDimensional ℝ (E' j)]
   [∀ j, TopologicalSpace (H' j)] {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)}
   [∀ j, TopologicalSpace (S j)] [∀ j, ChartedSpace (H' j) (S j)] [∀ j, IsManifold (J j) ∞ (S j)]
@@ -362,7 +364,7 @@ degree `n` of a band with a single critical value, whenever it lies on that leve
 statements of characteristic two and with twisted coefficients below are the instances in which
 `d j k` is the Betti number `bₖ(S j; K)` and the twisted Betti number `dim Hₖ(S j; o(ν⁻ j) ⊗ K)`. -/
 
-variable (h : IsMorseBottFamily i f) {r : ι → ℕ} (K : Type) [Field K] {d : ι → ℕ → ℕ}
+variable (h : IsMorseBottFamily i f) {r : ι → ℕ} (K : Type u) [Field K] {d : ι → ℕ → ℕ}
 
 include h
 
@@ -532,75 +534,6 @@ theorem finrank_cokernel_abutmentFiltrationMap_of_finrank_sublevelPair
 
 end Contribution
 
-/-! #### Coefficients of characteristic two -/
-
-section TwoEqZero
-
-variable (h : IsMorseBottFamily i f) {r : ι → ℕ} (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j)
-  (K : Type) [Field K] (h2 : (2 : K) = 0)
-
-include h hr h2
-
-open scoped Classical in
-/-- **The first page of the critical-band spectral sequence of a Morse–Bott function in
-characteristic two.** Let the family `i j : S j → M` exhibit `f` as a Morse–Bott function on a
-compact boundaryless manifold, the piece `S j` having index `r j`, and let `K` be a field of
-characteristic two, such as `ZMod 2`. Let `a : ℤ → ℝ` be monotone and let
-`f⁻¹[a q, a (q + 1)]` be a critical band of `f`. On the first page of the spectral sequence of the
-filtration `q ↦ {f ≤ a q}` with coefficients in `K`, the object at `(p, q)` with `p + q = -n` has
-dimension `∑ b_{n - r j}(S j; K)`, the sum running over the pieces with values in
-`(a q, a (q + 1)]` of index at most `n`. -/
-theorem finrank_filteredSpaceSpectralSequence_page_two_X (ha : Monotone a) {q : ℤ}
-    (hband : IsCriticalBand I f (a q) (a (q + 1))) (pq : ℤ × ℤ) (hq : pq.2 = q) (n : ℕ)
-    (hpq : pq.1 + pq.2 = -n) :
-    finrank K (((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
-        ((sublevel_mono f).comp ha)).page 2).X pq : ModuleCat K) =
-      ∑ j with (∀ s, f (i j s) ∈ Ioc (a q) (a (q + 1))) ∧ r j ≤ n,
-        bettiNumber K (S j) (n - r j) :=
-  h.finrank_filteredSpaceSpectralSequence_page_two_X_of_finrank_sublevelPair K
-    (h.finrank_singularHomology_sublevelPair_eq_sum K h2 hr) ha hband pq hq n hpq
-
-variable (hlac : ∀ n, ∑ j with r j ≤ n, bettiNumber K (S j) (n - r j) = 0 ∨
-  ∑ j with r j ≤ n + 1, bettiNumber K (S j) (n + 1 - r j) = 0)
-include hlac
-
-/-- **Lacunary degeneration in characteristic two.** Let the family `i j : S j → M` exhibit `f` as a
-Morse–Bott function on a compact boundaryless manifold, the piece `S j` having index `r j`, let
-`K` be a field of characteristic two, such as `ZMod 2`, and let `a : ℤ → ℝ` be a critical-band
-cut of `f`. Write `cₙ = ∑ b_{n - r j}(S j; K)` over the pieces of index at most `n`. If of any two
-consecutive counts `cₙ` and `cₙ₊₁` one vanishes, every differential on every page of the spectral
-sequence of the filtration `q ↦ {f ≤ a q}` with coefficients in `K` vanishes. -/
-theorem filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_eq_zero_or_eq_zero
-    (ha : IsCriticalBandCut I f a) (r' : ℤ) (hr' : 2 ≤ r') (pq pq' : ℤ × ℤ) :
-    ((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
-      ((sublevel_mono f).comp ha.monotone)).page r').d pq pq' = 0 :=
-  h.filteredSpaceSpectralSequence_page_d_eq_zero_of_finrank_sublevelPair K
-    (h.finrank_singularHomology_sublevelPair_eq_sum K h2 hr) hlac ha r' hr' pq pq'
-
-open scoped Classical in
-/-- **The graded homology of a lacunary Morse–Bott function in characteristic two.** Let the family
-`i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the piece
-`S j` having index `r j`, let `K` be a field of characteristic two, such as `ZMod 2`, and let
-`a : ℤ → ℝ` be a critical-band cut of `f` starting below and ending above all values of `f`.
-Filter `Hₙ(M; K)` by the images `F_q Hₙ` of the homology of the sublevels `{f ≤ a q}`. If of any
-two consecutive counts `cₙ = ∑ b_{n - r j}(S j; K)` one vanishes, the graded piece
-`F_{q+1} Hₙ / F_q Hₙ` has dimension `∑ b_{n - r j}(S j; K)` over the pieces with values in
-`(a q, a (q + 1)]` of index at most `n`. The graded piece is written as the cokernel of the
-inclusion `F_q Hₙ ⟶ F_{q+1} Hₙ` of the filtration of the abutment of the spectral sequence, which
-is `Hₙ(M)` in total degree `p + q = -n` (`TauCeti.chainFiltrationAbutmentIso`). -/
-theorem finrank_cokernel_abutmentFiltrationMap_of_forall_eq_zero_or_eq_zero
-    (ha : IsCriticalBandCut I f a) {q₀ q₁ : ℤ} (hq₀ : ∀ x, a q₀ < f x) (hq₁ : ∀ x, f x ≤ a q₁)
-    (pq : ℤ × ℤ) (n : ℕ) (hn : pq.1 + pq.2 = -n) :
-    finrank K (cokernel ((filteredSpaceSpectralObject (Y := TopCat.of M) (ModuleCat.of K K)
-        ((sublevel_mono f).comp ha.monotone)).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :
-        ModuleCat K) =
-      ∑ j with (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧ r j ≤ n,
-        bettiNumber K (S j) (n - r j) :=
-  h.finrank_cokernel_abutmentFiltrationMap_of_finrank_sublevelPair K
-    (h.finrank_singularHomology_sublevelPair_eq_sum K h2 hr) hlac ha hq₀ hq₁ pq n hn
-
-end TwoEqZero
-
 /-! #### Coefficients twisted by the negative orientation -/
 
 section Twisted
@@ -620,7 +553,7 @@ variable {P : ι → Type*} [∀ j, NormedAddCommGroup (P j)] [∀ j, NormedSpac
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
-  (K : Type) [Field K]
+  (K : Type u) [Field K]
 
 include hV
 
@@ -697,6 +630,92 @@ end Twisted
 end IsMorseBottFamily
 
 end Dimension
+
+/-! ### The dimensions of the first page in characteristic two -/
+
+section TwoEqZero
+
+open _root_.Module (finrank)
+
+variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [SecondCountableTopology M] [CompactSpace M]
+  {ι : Type*} [Fintype ι] {E' H' : ι → Type*} {S : ι → Type}
+  [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)] [∀ j, FiniteDimensional ℝ (E' j)]
+  [∀ j, TopologicalSpace (H' j)] {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)}
+  [∀ j, TopologicalSpace (S j)] [∀ j, ChartedSpace (H' j) (S j)] [∀ j, IsManifold (J j) ∞ (S j)]
+  [∀ j, (J j).Boundaryless] {f : M → ℝ} {i : ∀ j, SmoothEmbedding (J j) I ∞ (S j) M}
+  {a : ℤ → ℝ}
+
+namespace IsMorseBottFamily
+
+variable (h : IsMorseBottFamily i f) {r : ι → ℕ} (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j)
+  (K : Type) [Field K] (h2 : (2 : K) = 0)
+
+include h hr h2
+
+open scoped Classical in
+/-- **The first page of the critical-band spectral sequence of a Morse–Bott function in
+characteristic two.** Let the family `i j : S j → M` exhibit `f` as a Morse–Bott function on a
+compact boundaryless manifold, the piece `S j` having index `r j`, and let `K` be a field of
+characteristic two, such as `ZMod 2`. Let `a : ℤ → ℝ` be monotone and let
+`f⁻¹[a q, a (q + 1)]` be a critical band of `f`. On the first page of the spectral sequence of the
+filtration `q ↦ {f ≤ a q}` with coefficients in `K`, the object at `(p, q)` with `p + q = -n` has
+dimension `∑ b_{n - r j}(S j; K)`, the sum running over the pieces with values in
+`(a q, a (q + 1)]` of index at most `n`. -/
+theorem finrank_filteredSpaceSpectralSequence_page_two_X (ha : Monotone a) {q : ℤ}
+    (hband : IsCriticalBand I f (a q) (a (q + 1))) (pq : ℤ × ℤ) (hq : pq.2 = q) (n : ℕ)
+    (hpq : pq.1 + pq.2 = -n) :
+    finrank K (((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
+        ((sublevel_mono f).comp ha)).page 2).X pq : ModuleCat K) =
+      ∑ j with (∀ s, f (i j s) ∈ Ioc (a q) (a (q + 1))) ∧ r j ≤ n,
+        bettiNumber K (S j) (n - r j) :=
+  h.finrank_filteredSpaceSpectralSequence_page_two_X_of_finrank_sublevelPair K
+    (h.finrank_singularHomology_sublevelPair_eq_sum K h2 hr) ha hband pq hq n hpq
+
+variable (hlac : ∀ n, ∑ j with r j ≤ n, bettiNumber K (S j) (n - r j) = 0 ∨
+  ∑ j with r j ≤ n + 1, bettiNumber K (S j) (n + 1 - r j) = 0)
+include hlac
+
+/-- **Lacunary degeneration in characteristic two.** Let the family `i j : S j → M` exhibit `f` as a
+Morse–Bott function on a compact boundaryless manifold, the piece `S j` having index `r j`, let
+`K` be a field of characteristic two, such as `ZMod 2`, and let `a : ℤ → ℝ` be a critical-band
+cut of `f`. Write `cₙ = ∑ b_{n - r j}(S j; K)` over the pieces of index at most `n`. If of any two
+consecutive counts `cₙ` and `cₙ₊₁` one vanishes, every differential on every page of the spectral
+sequence of the filtration `q ↦ {f ≤ a q}` with coefficients in `K` vanishes. -/
+theorem filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_eq_zero_or_eq_zero
+    (ha : IsCriticalBandCut I f a) (r' : ℤ) (hr' : 2 ≤ r') (pq pq' : ℤ × ℤ) :
+    ((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
+      ((sublevel_mono f).comp ha.monotone)).page r').d pq pq' = 0 :=
+  h.filteredSpaceSpectralSequence_page_d_eq_zero_of_finrank_sublevelPair K
+    (h.finrank_singularHomology_sublevelPair_eq_sum K h2 hr) hlac ha r' hr' pq pq'
+
+open scoped Classical in
+/-- **The graded homology of a lacunary Morse–Bott function in characteristic two.** Let the family
+`i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the piece
+`S j` having index `r j`, let `K` be a field of characteristic two, such as `ZMod 2`, and let
+`a : ℤ → ℝ` be a critical-band cut of `f` starting below and ending above all values of `f`.
+Filter `Hₙ(M; K)` by the images `F_q Hₙ` of the homology of the sublevels `{f ≤ a q}`. If of any
+two consecutive counts `cₙ = ∑ b_{n - r j}(S j; K)` one vanishes, the graded piece
+`F_{q+1} Hₙ / F_q Hₙ` has dimension `∑ b_{n - r j}(S j; K)` over the pieces with values in
+`(a q, a (q + 1)]` of index at most `n`. The graded piece is written as the cokernel of the
+inclusion `F_q Hₙ ⟶ F_{q+1} Hₙ` of the filtration of the abutment of the spectral sequence, which
+is `Hₙ(M)` in total degree `p + q = -n` (`TauCeti.chainFiltrationAbutmentIso`). -/
+theorem finrank_cokernel_abutmentFiltrationMap_of_forall_eq_zero_or_eq_zero
+    (ha : IsCriticalBandCut I f a) {q₀ q₁ : ℤ} (hq₀ : ∀ x, a q₀ < f x) (hq₁ : ∀ x, f x ≤ a q₁)
+    (pq : ℤ × ℤ) (n : ℕ) (hn : pq.1 + pq.2 = -n) :
+    finrank K (cokernel ((filteredSpaceSpectralObject (Y := TopCat.of M) (ModuleCat.of K K)
+        ((sublevel_mono f).comp ha.monotone)).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :
+        ModuleCat K) =
+      ∑ j with (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧ r j ≤ n,
+        bettiNumber K (S j) (n - r j) :=
+  h.finrank_cokernel_abutmentFiltrationMap_of_finrank_sublevelPair K
+    (h.finrank_singularHomology_sublevelPair_eq_sum K h2 hr) hlac ha hq₀ hq₁ pq n hn
+
+end IsMorseBottFamily
+
+end TwoEqZero
 
 section ThomPair
 

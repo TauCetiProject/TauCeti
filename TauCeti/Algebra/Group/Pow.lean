@@ -24,6 +24,8 @@ import TauCeti.Data.Nat.Periodic.Basic
 * `TauCeti.pow_eq_pow_of_pow_succ_eq_pow`: if `a ^ (n + 1) = a ^ n` then `a ^ k = a ^ n` for all
   `k ≥ n`.
 * `TauCeti.pow_pow_eq_self_of_pow_sq_eq_self`: if `a ^ (q ^ 2) = a` then `(a ^ q) ^ q = a`.
+* `TauCeti.pow_eq_one_or_pow_eq_self_of_sq_eq_one`: if `x ^ 2 = 1`, every power of `x` is `1`
+  or `x`.
 * `TauCeti.mul_zpow_mul_mul_zpow`: in a commutative group, integer powers of monomials
   `a ^ i * b ^ j` multiply by adding their exponent vectors.
 * `TauCeti.mul_pow_mul_eq_pow_succ_mul_pow`: in a commutative monoid, a natural power of a product
@@ -72,6 +74,14 @@ theorem pow_eq_pow_of_pow_succ_eq_pow {n : ℕ} (h : a ^ (n + 1) = a ^ n) {k : �
 elements is fixed by applying the `q`-power map twice. -/
 theorem pow_pow_eq_self_of_pow_sq_eq_self (ha : a ^ q ^ 2 = a) : (a ^ q) ^ q = a := by
   rw [← pow_mul, ← sq q, ha]
+
+/-- If `x ^ 2 = 1`, every power of `x` is `1` or `x`: the power is determined by the parity of
+the exponent. This is the monoid form, for natural exponents, of the group statement
+`Subgroup.mem_zpowers_iff_of_sq_eq_one`. -/
+theorem pow_eq_one_or_pow_eq_self_of_sq_eq_one {x : M} (hx : x ^ 2 = 1) (n : ℕ) :
+    x ^ n = 1 ∨ x ^ n = x := by
+  rw [pow_eq_pow_mod n hx]
+  rcases Nat.mod_two_eq_zero_or_one n with h | h <;> simp [h]
 
 /-- In a commutative group, `(a ^ i * b ^ j) ^ k * (a ^ i' * b ^ j') ^ k'` is the monomial with
 exponents `(i * k + i' * k', j * k + j' * k')`: the integer matrix with columns `(i, j)` and
