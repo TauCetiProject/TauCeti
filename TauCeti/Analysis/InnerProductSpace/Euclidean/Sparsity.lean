@@ -170,6 +170,7 @@ theorem restrictedL1Norm_le_of_card_le (x : EuclideanSpace ℝ ι)
 
 /-- The restricted `ℓ¹` norm on `T` of the truncation of `x` to `S`, which replaces the
 coordinates of `x` outside `S` by zero, is the restricted norm of `x` on `T ∩ S`. -/
+@[simp]
 theorem restrictedL1Norm_toLp_indicator [DecidableEq ι] (x : EuclideanSpace ℝ ι)
     (S T : Finset ι) :
     restrictedL1Norm (WithLp.toLp 2 ((S : Set ι).indicator (WithLp.ofLp x))) T =
