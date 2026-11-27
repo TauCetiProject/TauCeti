@@ -144,7 +144,8 @@ theorem exists_cluster_perimeter_eq_isoperimetricProfile_of_ne_top (hW : ContDif
     exact (Finset.sum_le_sum fun i _ => hlsc i).trans
       ((ENNReal.sum_liminf_le_liminf_sum _ _).trans_eq hlim'.liminf_eq)
   -- A null modification of the limits is a cluster attaining the profile.
-  obtain ⟨Ω', hΩ'⟩ := exists_cluster_ae_eq hW.continuous.aemeasurable ht hdisj
+  obtain ⟨Ω', hΩ'⟩ := exists_cluster_ae_eq hW.continuous.aemeasurable
+    (fun i => (ht i).nullMeasurableSet) hdisj
     (by rw [← (Ω 0).sum_weightedMeasure_cell]; simp [hmeas, hΩ])
     fun i => ((hlsc i).trans ((liminf_le_liminf (.of_forall fun j => hM i (φ j))).trans_eq
       (liminf_const (M : ℝ≥0∞)))).trans_lt ENNReal.coe_lt_top

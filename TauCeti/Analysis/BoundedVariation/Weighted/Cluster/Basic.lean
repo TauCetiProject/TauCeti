@@ -21,8 +21,8 @@ cells is the sum of their measures (`TauCeti.Cluster.weightedMeasure_biUnion_cel
 (`TauCeti.Cluster.sum_weightedMeasure_cell`).
 Two clusters are equivalent when corresponding cells agree up to null sets
 (`TauCeti.Cluster.IsEquivalent`). Conversely, for an almost everywhere measurable weight whose
-measure `μ` is finite, measurable sets of finite weighted perimeter that pairwise meet in null sets
-and whose measures add up to `μ(E)` agree up to null sets with the cells of a cluster
+measure `μ` is finite, Lebesgue-measurable sets of finite weighted perimeter that pairwise meet in
+null sets and whose measures add up to `μ(E)` agree up to null sets with the cells of a cluster
 (`TauCeti.exists_cluster_ae_eq`).
 
 * Equivalent clusters have the same total perimeter and the same cell measures.
@@ -79,18 +79,18 @@ structure Cluster (W : E → ℝ) (q : ℕ) where
 variable {W : E → ℝ} {p q : ℕ}
 
 /-- **A null modification of almost disjoint cells is a cluster.** For an almost everywhere
-measurable weight with finite measure, measurable sets `t i` that pairwise meet in null sets, whose
-measures add up to `μ(E)` and which have finite weighted perimeters, agree up to null sets with
-the cells of a cluster. -/
+measurable weight with finite measure, Lebesgue-measurable sets `t i` that pairwise meet in null
+sets, whose measures add up to `μ(E)` and which have finite weighted perimeters, agree up to null
+sets with the cells of a cluster. -/
 theorem exists_cluster_ae_eq (hW : AEMeasurable W volume)
-    [IsFiniteMeasure (weightedMeasure W)] {t : Fin q → Set E} (ht : ∀ i, MeasurableSet (t i))
+    [IsFiniteMeasure (weightedMeasure W)] {t : Fin q → Set E}
+    (ht : ∀ i, NullMeasurableSet (t i) volume)
     (hdisj : Pairwise fun i j => volume (t i ∩ t j) = 0)
     (hsum : ∑ i, weightedMeasure W (t i) = weightedMeasure W univ)
     (hP : ∀ i, weightedPerimeter W ⊤ (t i) < ⊤) :
     ∃ Ω : Cluster W q, ∀ i, Ω.cell i =ᵐ[volume] t i := by
   -- Measurable, pairwise disjoint sets agreeing with the `t i` up to null sets.
-  obtain ⟨u, -, htu, hm, hud⟩ :=
-    exists_subordinate_pairwise_disjoint (μ := volume) (fun i => (ht i).nullMeasurableSet) hdisj
+  obtain ⟨u, -, htu, hm, hud⟩ := exists_subordinate_pairwise_disjoint ht hdisj
   have hae (i : Fin q) : u i =ᵐ[volume] t i := (htu i).symm
   have hμ (i : Fin q) : weightedMeasure W (u i) = weightedMeasure W (t i) :=
     measure_congr (weightedMeasure_absolutelyContinuous.ae_le (hae i))
