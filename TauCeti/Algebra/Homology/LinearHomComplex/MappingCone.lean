@@ -154,7 +154,8 @@ lemma linearHomComplexMappingConeIso_inr_hom :
 
 /-- Naturality of the comparison in the contravariant argument of the Hom complex. -/
 @[reassoc]
-lemma linearHomComplexMappingConeIso_hom_naturality {Z' : CochainComplex C ℤ} (a : Z' ⟶ Z) :
+lemma linearHomComplexMappingConeIso_hom_naturality_source
+    {Z' : CochainComplex C ℤ} (a : Z' ⟶ Z) :
     mappingCone.map (linearHomComplexPostcomp R Z f) (linearHomComplexPostcomp R Z' f)
         (linearHomComplexPrecomp R a X) (linearHomComplexPrecomp R a Y)
         (linearHomComplexPrecomp_postcomp_comm R a f).symm ≫
@@ -171,16 +172,14 @@ lemma linearHomComplexMappingConeIso_hom_naturality {Z' : CochainComplex C ℤ} 
     exact (Cochain.comp_assoc (n₁₂₃ := n) (Cochain.ofHom a) z (mappingCone.inl f)
       (zero_add (n + 1)) (show n + 1 + -1 = n by omega) (by omega))
   · simp only [HomologicalComplex.comp_f, ← Category.assoc, mappingCone.inr_f_map_f]
-    rw [Category.assoc, ← HomologicalComplex.comp_f,
-      linearHomComplexMappingConeIso_inr_hom]
-    rw [← HomologicalComplex.comp_f (mappingCone.inr _) _,
-      linearHomComplexMappingConeIso_inr_hom]
-    exact HomologicalComplex.congr_hom
-      (linearHomComplexPrecomp_postcomp_comm R a (mappingCone.inr f)) n
+    simpa only [Category.assoc, ← HomologicalComplex.comp_f,
+      linearHomComplexMappingConeIso_inr_hom_assoc, linearHomComplexMappingConeIso_inr_hom] using
+      HomologicalComplex.congr_hom
+        (linearHomComplexPrecomp_postcomp_comm R a (mappingCone.inr f)) n
 
 /-- Naturality in a commutative square of maps of complexes. -/
 @[reassoc]
-lemma linearHomComplexMappingConeIso_hom_naturality_mappingConeMap
+lemma linearHomComplexMappingConeIso_hom_naturality_target
     (f : X ⟶ Y) (Z : CochainComplex C ℤ) [HasBinaryBiproducts C]
     {X' Y' : CochainComplex C ℤ} (g : X' ⟶ Y') (a : X ⟶ X') (b : Y ⟶ Y')
     (h : f ≫ b = a ≫ g) :
@@ -197,19 +196,11 @@ lemma linearHomComplexMappingConeIso_hom_naturality_mappingConeMap
       ModuleCat.comp_apply]
     rw [linearHomComplexPostcomp_f_apply, linearHomComplexPostcomp_f_apply,
       linearHomComplexMappingConeIso_hom_f_inl, linearHomComplexMappingConeIso_hom_f_inl]
-    apply Cochain.ext
-    intro p q hpq
-    simp only [Cochain.comp_v _ _ (show n + 1 + -1 = n by omega) p (p + (n + 1)) q
-      rfl (by omega), Cochain.comp_zero_cochain_v,
-      Cochain.ofHom_v, Category.assoc, mappingCone.inl_v_map_f]
+    simp only [Cochain.comp_assoc_of_second_is_zero_cochain,
+      Cochain.comp_assoc_of_third_is_zero_cochain, mappingCone.map, mappingCone.inl_desc]
   · simp only [HomologicalComplex.comp_f, ← Category.assoc, mappingCone.inr_f_map_f]
-    rw [Category.assoc, ← HomologicalComplex.comp_f,
-      linearHomComplexMappingConeIso_inr_hom]
-    rw [← HomologicalComplex.comp_f (mappingCone.inr _) _,
-      linearHomComplexMappingConeIso_inr_hom]
-    simp only [← HomologicalComplex.comp_f, ← linearHomComplexPostcomp_comp]
-    congr 2
-    ext p
-    exact (mappingCone.inr_f_map_f _ _ _ _ h p).symm
+    simp only [Category.assoc, ← HomologicalComplex.comp_f,
+      linearHomComplexMappingConeIso_inr_hom, ← linearHomComplexPostcomp_comp,
+      mappingCone.map, mappingCone.inr_desc]
 
 end TauCeti
