@@ -63,6 +63,8 @@ representation, makes `G` a group, as does averaging over `G`
   the intertwiners from `ρ` to its dual.
 * `TauCeti.Representation.IsInvariantForm.equivDual`: in finite dimensions, a nondegenerate
   invariant form identifies `ρ` with its dual.
+* `TauCeti.Representation.IsInvariantForm.toDual_symm_dual_apply`: the inverse `V* → V` of a
+  nondegenerate invariant form intertwines `ρ.dual` with `ρ`.
 * `TauCeti.Representation.IsInvariantForm.kerRepresentation`: the restriction of `ρ` to the left
   radical of an invariant form.
 
@@ -484,6 +486,13 @@ noncomputable def IsInvariantForm.equivDual (hB : IsInvariantForm ρ B) (hB' : B
 theorem IsInvariantForm.equivDual_apply (hB : IsInvariantForm ρ B) (hB' : B.Nondegenerate)
     (v w : V) : hB.equivDual hB' v w = B v w :=
   LinearMap.BilinForm.toDual_def hB'
+
+/-- **The inverse of a nondegenerate invariant form intertwines `ρ.dual` with `ρ`.** The inverse
+`B⁻¹ : V* → V` of `v ↦ B v` satisfies `B⁻¹ (ρ.dual g ν) = ρ g (B⁻¹ ν)`. -/
+theorem IsInvariantForm.toDual_symm_dual_apply (hB : IsInvariantForm ρ B)
+    (hB' : B.Nondegenerate) (g : G) (ν : Module.Dual k V) :
+    (B.toDual hB').symm (ρ.dual g ν) = ρ g ((B.toDual hB').symm ν) :=
+  (hB.equivDual hB').symm.toIntertwiningMap.isIntertwining _ _ g ν
 
 end Nondegenerate
 
