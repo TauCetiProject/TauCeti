@@ -229,6 +229,11 @@ def restrict (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
 theorem restrict_apply (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) (x : U) :
     dsimp% only [ContinuousMap.coe_mk] (s.restrict U x = s x) := (rfl)
 
+/-- Restriction to an open subset is pullback along its inclusion. -/
+theorem restrict_eq_pullback (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
+    s.restrict U = s.pullback (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯) :=
+  (rfl)
+
 end Restriction
 
 variable [∀ x, AddCommGroup (V x)]

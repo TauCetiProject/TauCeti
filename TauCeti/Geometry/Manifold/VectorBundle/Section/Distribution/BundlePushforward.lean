@@ -40,7 +40,10 @@ sends `δ_x ℓ`, for a functional `ℓ` on `V (f x)`, to `χ(x) δ_(f x) ℓ`. 
 support of `T` (`TauCeti.BundleTest.IsProperOnSupport`), `T` has a **pushforward**
 `f_* T` (`TauCeti.BundleTest.Pullback.pushforward`), the functional `s ↦ T (χ f^*s)` with `χ` equal
 to one near `supp T ∩ f⁻¹(supp s)`; it does not depend on the cutoffs, is linear in `T`, is
-supported in `f (supp T)` and sends `δ_x ℓ` to `δ_(f x) ℓ`.
+supported in `f (supp T)` and sends `δ_x ℓ` to `δ_(f x) ℓ`. The cutoff pullbacks form a family of
+cutoff pullbacks along `f` (`TauCeti.BundleTest.Pullback.isCutoffPullback_cutoffCompCLM`), so
+the pushforward, its cutoff independence, support bounds and linearity specialize the generic
+results for `TauCeti.BundleTest.IsCutoffPullback`, shared with the scalar pushforward.
 
 ## Main declarations
 
@@ -208,6 +211,15 @@ theorem closure_cutoffCompCLM_sub_ne_zero_subset {χ χ' : C^∞⟮I, X; ℝ⟯}
     rw [← sub_smul, smul_ne_zero_iff] at hx'
     exact sub_ne_zero.1 hx'.1
 
+variable (f) in
+/-- The cutoff pullbacks `s ↦ χ f^*s` form a family of cutoff pullbacks along `f`, so the generic
+pushforward theory of `TauCeti.BundleTest.IsCutoffPullback` applies to them. -/
+theorem isCutoffPullback_cutoffCompCLM (f : C^∞⟮I, X; J, Y⟯) :
+    IsCutoffPullback (I := I) (J := J) (F := F) (V := V) (F' := F)
+      (V' := (f : C(X, Y)) *ᵖ V) f fun χ hχ ↦ cutoffCompCLM χ hχ f where
+  closure_ne_zero_subset χ hχ := closure_cutoffCompCLM_ne_zero_subset χ hχ f
+  closure_sub_ne_zero_subset hχ hχ' := closure_cutoffCompCLM_sub_ne_zero_subset hχ hχ' f
+
 /-- Multiplying a cutoff pullback by a smooth function `ψ` on `X` multiplies the cutoff by `ψ`. -/
 theorem smulLeftCLM_cutoffCompCLM (ψ : C^∞⟮I, X; ℝ⟯) (χ : C^∞⟮I, X; ℝ⟯) (hχ : HasCompactSupport χ)
     (f : C^∞⟮I, X; J, Y⟯) (s : BundleTest J F V) :
@@ -267,8 +279,7 @@ theorem cutoffPushforwardCLM_congr {χ χ' : C^∞⟮I, X; ℝ⟯} (hχ : HasCom
     (hχχ' : closure {x | χ x ≠ χ' x} ⊆ O) :
     cutoffPushforwardCLM χ hχ f T = cutoffPushforwardCLM χ' hχ' f T := by
   ext s
-  rw [cutoffPushforwardCLM_apply, cutoffPushforwardCLM_apply, ← sub_eq_zero, ← map_sub]
-  exact hT _ ((closure_cutoffCompCLM_sub_ne_zero_subset hχ hχ' f s).trans hχχ')
+  exact (isCutoffPullback_cutoffCompCLM f).map_congr hχ hχ' hT hχχ' s
 
 /-- **The support of a pushforward.** If `T` vanishes on the tests supported in `O`, then
 `f_* (χ T)` vanishes on the tests whose support avoids the image under `f` of the part of the
@@ -280,10 +291,8 @@ theorem cutoffPushforwardCLM_apply_eq_zero_of_disjoint {χ : C^∞⟮I, X; ℝ�
     (hT : ∀ s : BundleTest I F ((f : C(X, Y)) *ᵖ V), closure {x | s x ≠ 0} ⊆ O → T s = 0)
     {s : BundleTest J F V}
     (hs : Disjoint (closure {y | s y ≠ 0}) (f '' (_root_.tsupport χ \ O))) :
-    cutoffPushforwardCLM χ hχ f T s = 0 := by
-  refine hT _ fun x hx ↦ by_contra fun hxO ↦ ?_
-  obtain ⟨hxχ, hxs⟩ := closure_cutoffCompCLM_ne_zero_subset χ hχ f s hx
-  exact hs.ne_of_mem hxs (mem_image_of_mem f ⟨hxχ, hxO⟩) rfl
+    cutoffPushforwardCLM χ hχ f T s = 0 :=
+  (isCutoffPullback_cutoffCompCLM f).map_eq_zero_of_disjoint hχ hT hs
 
 /-- Multiplying `T` by a smooth function `ψ` before pushing it forward with the cutoff `χ` is
 pushing `T` forward with the cutoff `ψ χ`. -/
@@ -335,96 +344,21 @@ variable [FiniteDimensional ℝ E]
 section Pushforward
 
 variable [T2Space X] {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W]
+  [IsTopologicalAddGroup W] [ContinuousSMul ℝ W] [LocallyConvexSpace ℝ W]
   {f : C^∞⟮I, X; J, Y⟯} {T : BundleTest I F ((f : C(X, Y)) *ᵖ V) →L_c[ℝ] W}
-
-/-- The pairing of `T` with a cutoff pullback of `s` is its pairing with any test agreeing with
-`f^*s` near each point of the support of `T`. -/
-private theorem map_cutoffCompCLM_eq {s : BundleTest J F V} {χ : C^∞⟮I, X; ℝ⟯}
-    (hχc : HasCompactSupport χ)
-    (hχ : ∀ᶠ x in 𝓝ˢ (dsupport ⇑T ∩ f ⁻¹' closure {y | s y ≠ 0}), χ x = 1)
-    {t : BundleTest I F ((f : C(X, Y)) *ᵖ V)}
-    (ht : ∀ x ∈ dsupport ⇑T, ∀ᶠ z in 𝓝 x, t z = s (f z)) :
-    T (cutoffCompCLM χ hχc f s) = T t :=
-  map_eq_map_of_eventuallyEq T <| eventually_nhdsSet_iff_forall.2 fun x hx ↦
-    ((cutoffCompCLM_eventuallyEq hχc f s hχ hx).and (ht x hx)).mono fun _ h ↦ h.1.trans h.2.symm
-
-variable [IsTopologicalAddGroup W] [ContinuousSMul ℝ W] [LocallyConvexSpace ℝ W]
-
-omit [ContinuousSMul ℝ W] [LocallyConvexSpace ℝ W] in
-/-- **The support of a pushforward with a cutoff** lies in the image of the part of the support of
-`T` in the support of the cutoff: `supp f_* (χ T) ⊆ f (supp χ ∩ supp T)`. -/
-theorem dsupport_cutoffPushforwardCLM_subset [T2Space Y] [ContinuousConstSMul ℝ W]
-    {χ : C^∞⟮I, X; ℝ⟯} (hχ : HasCompactSupport χ) :
-    dsupport ⇑(cutoffPushforwardCLM χ hχ f T) ⊆ f '' (_root_.tsupport χ ∩ dsupport ⇑T) := by
-  intro y hy
-  by_contra hyT
-  have hC : IsCompact (f '' (_root_.tsupport χ ∩ dsupport ⇑T)) :=
-    (hχ.inter_right (isClosed_dsupport _)).image f.contMDiff.continuous
-  refine (notMem_dsupport_iff.2 ⟨_, hC.isClosed.isOpen_compl, hyT, isVanishingOn_iff.2
-    fun s hs ↦ ?_⟩) hy
-  refine cutoffPushforwardCLM_apply_eq_zero_of_disjoint hχ f
-    (isVanishingOn_iff.1 (isVanishingOn_compl_dsupport T)) ?_
-  rw [Set.sdiff_compl]
-  exact disjoint_compl_left.mono_left hs
-
-variable (T) in
-/-- The linear map underlying `TauCeti.BundleTest.Pullback.pushforward`. -/
-private def pushforwardLinearMap (hT : IsProperOnSupport ⇑T f) : BundleTest J F V →ₗ[ℝ] W where
-  toFun s := T (cutoffCompCLM (hT.exists_eventually_eq_one s.isCompact_tsupport).choose
-    (hT.exists_eventually_eq_one s.isCompact_tsupport).choose_spec.1 f s)
-  map_add' s t := by
-    rw [← map_add]
-    refine map_cutoffCompCLM_eq _ (hT.exists_eventually_eq_one
-      (s + t).isCompact_tsupport).choose_spec.2 fun x hx ↦ ?_
-    have hs := (hT.exists_eventually_eq_one s.isCompact_tsupport).choose_spec
-    have ht := (hT.exists_eventually_eq_one t.isCompact_tsupport).choose_spec
-    filter_upwards [cutoffCompCLM_eventuallyEq hs.1 f s hs.2 hx,
-      cutoffCompCLM_eventuallyEq ht.1 f t ht.2 hx] with z hs ht
-    rw [add_apply, hs, ht, add_apply]
-    -- The fibre of `f*V` at `z` is `V (f z)`.
-    rfl
-  map_smul' a s := by
-    rw [RingHom.id_apply, ← map_smul]
-    refine map_cutoffCompCLM_eq _ (hT.exists_eventually_eq_one
-      (a • s).isCompact_tsupport).choose_spec.2 fun x hx ↦ ?_
-    have hs := (hT.exists_eventually_eq_one s.isCompact_tsupport).choose_spec
-    filter_upwards [cutoffCompCLM_eventuallyEq hs.1 f s hs.2 hx] with z hs
-    rw [smul_apply, hs, smul_apply]
-    -- The fibre of `f*V` at `z` is `V (f z)`.
-    rfl
 
 variable (T) in
 /-- The **pushforward** `f_* T` of a continuous linear functional `T` on the tests of the pullback
 bundle `f*V` over `X`, along a smooth map `f : X → Y` proper on the support of `T`: the functional
 on the tests of `V` over `Y` pairing a test `s` with `T` through `T (χ f^*s)`, where `χ` is a smooth
 compactly supported function on `X` equal to one near `supp T ∩ f⁻¹(supp s)`. Its value does not
-depend on `χ` (`TauCeti.BundleTest.Pullback.pushforward_apply_of_eventuallyEq`). For `V = B*`
-the dual of a vector bundle `B → Y`, the functionals on the tests of `f*V` are the distribution
-densities with values in `f*B`, and `f_* T` is their pushforward, a distribution density with
-values in `B`. -/
-def pushforward (hT : IsProperOnSupport ⇑T f) : BundleTest J F V →L_c[ℝ] W where
-  toLinearMap := pushforwardLinearMap T hT
-  cont := by
-    let := frameTopology (I := J) (n := ∞) (fun y : Y ↦ trivializationAt F V y)
-      (fun y ↦ ⟨_, (trivializationAt F V y).open_baseSet⟩) fun _ ↦ subset_rfl
-    refine (continuous_iff_continuous_comp _).2 fun K ↦ ?_
-    -- On tests supported in `K`, one cutoff serves all tests.
-    obtain ⟨χ, hχc, hχ⟩ := hT.exists_eventually_eq_one K.isCompact
-    refine (T.continuous.comp ((cutoffCompCLM χ hχc f).continuous.comp
-      (continuous_ofSupportedIn K))).congr fun σ ↦ ?_
-    exact (map_cutoffCompCLM_eq _ (hT.exists_eventually_eq_one
-      ((ofCompactlySupported J F V (ofSupportedIn K σ)).isCompact_tsupport)).choose_spec.2
-      fun x hx ↦ cutoffCompCLM_eventuallyEq hχc f _ (hχ.filter_mono (nhdsSet_mono
-        (inter_subset_inter_right _ (preimage_mono (tsupport_ofSupportedIn_subset K σ)))))
-        hx).symm
-
-/-- **Values of the pushforward.** `(f_* T) s = T t` for every test `t` of `f*V` which agrees with
-`f^*s` near each point of the support of `T`. -/
-theorem pushforward_apply_of_eventuallyEq (hT : IsProperOnSupport ⇑T f) (s : BundleTest J F V)
-    {t : BundleTest I F ((f : C(X, Y)) *ᵖ V)}
-    (ht : ∀ x ∈ dsupport ⇑T, ∀ᶠ z in 𝓝 x, t z = s (f z)) : pushforward T hT s = T t :=
-  map_cutoffCompCLM_eq _ (hT.exists_eventually_eq_one
-    s.isCompact_tsupport).choose_spec.2 ht
+depend on `χ` (`TauCeti.BundleTest.Pullback.pushforward_apply_of_eventuallyEq`). It is the
+pushforward through the family of cutoff pullbacks `TauCeti.BundleTest.Pullback.cutoffCompCLM`
+(`TauCeti.BundleTest.IsCutoffPullback.pushforward`). For `V = B*` the dual of a vector bundle
+`B → Y`, the functionals on the tests of `f*V` are the distribution densities with values in
+`f*B`, and `f_* T` is their pushforward, a distribution density with values in `B`. -/
+def pushforward (hT : IsProperOnSupport ⇑T f) : BundleTest J F V →L_c[ℝ] W :=
+  (isCutoffPullback_cutoffCompCLM f).pushforward T hT
 
 /-- **Values of the pushforward with a cutoff.** `(f_* T) s = T (χ f^*s)` for every smooth
 compactly supported `χ` equal to one near `supp T ∩ f⁻¹(supp s)`. -/
@@ -432,7 +366,17 @@ theorem pushforward_apply_eq_cutoffCompCLM (hT : IsProperOnSupport ⇑T f) (s : 
     {χ : C^∞⟮I, X; ℝ⟯} (hχc : HasCompactSupport χ)
     (hχ : ∀ᶠ x in 𝓝ˢ (dsupport ⇑T ∩ f ⁻¹' closure {y | s y ≠ 0}), χ x = 1) :
     pushforward T hT s = T (cutoffCompCLM χ hχc f s) :=
-  pushforward_apply_of_eventuallyEq hT s fun _ hx ↦ cutoffCompCLM_eventuallyEq hχc f s hχ hx
+  (isCutoffPullback_cutoffCompCLM f).pushforward_apply_eq hT s hχc hχ
+
+/-- **Values of the pushforward.** `(f_* T) s = T t` for every test `t` of `f*V` which agrees with
+`f^*s` near each point of the support of `T`. -/
+theorem pushforward_apply_of_eventuallyEq (hT : IsProperOnSupport ⇑T f) (s : BundleTest J F V)
+    {t : BundleTest I F ((f : C(X, Y)) *ᵖ V)}
+    (ht : ∀ x ∈ dsupport ⇑T, ∀ᶠ z in 𝓝 x, t z = s (f z)) : pushforward T hT s = T t := by
+  obtain ⟨χ, hχc, hχ⟩ := hT.exists_eventually_eq_one s.isCompact_tsupport
+  rw [pushforward_apply_eq_cutoffCompCLM hT s hχc hχ]
+  exact map_eq_map_of_eventuallyEq T <| eventually_nhdsSet_iff_forall.2 fun x hx ↦
+    ((cutoffCompCLM_eventuallyEq hχc f s hχ hx).and (ht x hx)).mono fun _ h ↦ h.1.trans h.2.symm
 
 /-- **The pushforward of a compactly supported functional** is its pushforward cut off by any
 smooth compactly supported function equal to one near its support. -/
@@ -445,48 +389,26 @@ theorem pushforward_eq_cutoffPushforwardCLM (hT : IsProperOnSupport ⇑T f) {χ 
 
 /-! ### The support of the pushforward -/
 
-/-- The pushforward vanishes on tests supported away from the image of the support. -/
-private theorem pushforward_apply_eq_zero (hT : IsProperOnSupport ⇑T f) {s : BundleTest J F V}
-    (hs : Disjoint (closure {y | s y ≠ 0}) (f '' dsupport ⇑T)) : pushforward T hT s = 0 := by
-  rw [pushforward_apply_of_eventuallyEq hT s (t := 0) fun x hx ↦ ?_, map_zero]
-  -- Near `x`, `f` takes values off the support of `s`.
-  filter_upwards [BundleTest.eventually_apply_comp_eq_zero f.contMDiff.continuous s
-    fun h ↦ disjoint_left.1 hs h ⟨x, hx, rfl⟩] with z hz
-  rw [zero_apply, hz]
-  -- The fibre of `f*V` at `z` is `V (f z)`.
-  rfl
+omit [ContinuousSMul ℝ W] [LocallyConvexSpace ℝ W] in
+/-- **The support of a pushforward with a cutoff** lies in the image of the part of the support of
+`T` in the support of the cutoff: `supp f_* (χ T) ⊆ f (supp χ ∩ supp T)`. -/
+theorem dsupport_cutoffPushforwardCLM_subset [T2Space Y] [ContinuousConstSMul ℝ W]
+    {χ : C^∞⟮I, X; ℝ⟯} (hχ : HasCompactSupport χ) :
+    dsupport ⇑(cutoffPushforwardCLM χ hχ f T) ⊆ f '' (_root_.tsupport χ ∩ dsupport ⇑T) :=
+  (isCutoffPullback_cutoffCompCLM f).dsupport_comp_subset f.contMDiff.continuous hχ
 
 /-- **The support of the pushforward** lies in the image of the support:
 `supp (f_* T) ⊆ f (supp T)`. -/
 theorem dsupport_pushforward_subset [T2Space Y] (hT : IsProperOnSupport ⇑T f) :
-    dsupport ⇑(pushforward T hT) ⊆ f '' dsupport ⇑T := by
-  have := J.locallyCompactSpace
-  have := ChartedSpace.locallyCompactSpace H' Y
-  intro y hy
-  by_contra hyT
-  obtain ⟨K, hK, hyK⟩ := exists_compact_mem_nhds y
-  -- Over `K` the image of the support is the compact, hence closed, image of `supp T ∩ f⁻¹(K)`.
-  have hC := (hT.isCompact hK).image f.contMDiff.continuous
-  refine (notMem_dsupport_iff.2 ⟨interior K \ f '' (dsupport ⇑T ∩ f ⁻¹' K),
-    isOpen_interior.sdiff hC.isClosed, ⟨mem_interior_iff_mem_nhds.2 hyK,
-      fun ⟨x, hx, hxy⟩ ↦ hyT ⟨x, hx.1, hxy⟩⟩, isVanishingOn_iff.2 fun s hs ↦ ?_⟩) hy
-  refine pushforward_apply_eq_zero hT (disjoint_left.2 fun z hz ⟨x, hx, hxz⟩ ↦ (hs hz).2 ?_)
-  exact ⟨x, ⟨hx, mem_preimage.2 (hxz ▸ interior_subset (hs hz).1)⟩, hxz⟩
+    dsupport ⇑(pushforward T hT) ⊆ f '' dsupport ⇑T :=
+  (isCutoffPullback_cutoffCompCLM f).dsupport_pushforward_subset f.contMDiff.continuous hT
 
 /-- If `f` is proper on the support of `T` and `g ∘ f` is too, then `g` is proper on the support of
 the pushforward `f_* T`. -/
 theorem isProperOnSupport_pushforward [T2Space Y] {Z : Type*} [TopologicalSpace Z] {g : Y → Z}
     (hT : IsProperOnSupport ⇑T f) (hgfT : IsProperOnSupport ⇑T (g ∘ f)) :
-    IsProperOnSupport ⇑(pushforward T hT) g := isProperOnSupport_iff.2 fun K hK ↦ by
-  -- Over `K`, the support of `f_* T` lies in the compact image of `supp T ∩ (g ∘ f)⁻¹(K)`.
-  have h : dsupport ⇑(pushforward T hT) ∩ g ⁻¹' K =
-      f '' (dsupport ⇑T ∩ (g ∘ f) ⁻¹' K) ∩ dsupport ⇑(pushforward T hT) := by
-    ext y
-    refine ⟨fun hy ↦ ⟨?_, hy.1⟩, fun ⟨⟨x, hx, hxy⟩, hy⟩ ↦ ⟨hy, hxy ▸ hx.2⟩⟩
-    obtain ⟨x, hx, rfl⟩ := dsupport_pushforward_subset hT hy.1
-    exact ⟨x, ⟨hx, hy.2⟩, rfl⟩
-  rw [h]
-  exact ((hgfT.isCompact hK).image f.contMDiff.continuous).inter_right (isClosed_dsupport _)
+    IsProperOnSupport ⇑(pushforward T hT) g :=
+  (isCutoffPullback_cutoffCompCLM f).isProperOnSupport_pushforward f.contMDiff.continuous hT hgfT
 
 /-! ### Linearity -/
 
@@ -494,41 +416,22 @@ theorem isProperOnSupport_pushforward [T2Space Y] {Z : Type*} [TopologicalSpace 
 @[simp]
 theorem pushforward_zero
     (h0 : IsProperOnSupport ⇑(0 : BundleTest I F ((f : C(X, Y)) *ᵖ V) →L_c[ℝ] W) f) :
-    pushforward 0 h0 = 0 := by
-  ext s
-  rw [pushforward_apply_of_eventuallyEq h0 s (t := 0) fun x hx ↦ by simp at hx]
-  simp
+    pushforward 0 h0 = 0 :=
+  (isCutoffPullback_cutoffCompCLM f).pushforward_zero h0
 
 /-- The pushforward is additive. -/
 theorem pushforward_add {S : BundleTest I F ((f : C(X, Y)) *ᵖ V) →L_c[ℝ] W}
     (hS : IsProperOnSupport ⇑S f) (hT : IsProperOnSupport ⇑T f)
     (hST : IsProperOnSupport ⇑(S + T) f := hS.add hT) :
-    pushforward (S + T) hST = pushforward S hS + pushforward T hT := by
-  ext s
-  -- One cutoff serves `S`, `T` and `S + T`.
-  obtain ⟨χ, hc, h1⟩ := ((hS.isCompact s.isCompact_tsupport).union
-    (hT.isCompact s.isCompact_tsupport)).exists_contMDiffMap_one_nhds_hasCompactSupport I
-  have hsub {R : BundleTest I F ((f : C(X, Y)) *ᵖ V) →L_c[ℝ] W}
-      (hR : dsupport ⇑R ⊆ dsupport ⇑S ∪ dsupport ⇑T) :
-      ∀ᶠ x in 𝓝ˢ (dsupport ⇑R ∩ f ⁻¹' closure {y | s y ≠ 0}), χ x = 1 :=
-    h1.filter_mono <| nhdsSet_mono fun x (hx : x ∈ dsupport ⇑R ∩ _) ↦
-      (hR hx.1).imp (fun h ↦ ⟨h, hx.2⟩) (fun h ↦ ⟨h, hx.2⟩)
-  rw [_root_.add_apply,
-    pushforward_apply_eq_cutoffCompCLM hST s hc (hsub (by simpa using dsupport_add_subset ⇑S ⇑T)),
-    pushforward_apply_eq_cutoffCompCLM hS s hc (hsub subset_union_left),
-    pushforward_apply_eq_cutoffCompCLM hT s hc (hsub subset_union_right), _root_.add_apply]
+    pushforward (S + T) hST = pushforward S hS + pushforward T hT :=
+  (isCutoffPullback_cutoffCompCLM f).pushforward_add hS hT hST
 
 /-- The pushforward commutes with scalar multiplication. -/
 theorem pushforward_smul {R : Type*} [Monoid R] [DistribMulAction R W] [SMulCommClass ℝ R W]
     [ContinuousConstSMul R W] (hT : IsProperOnSupport ⇑T f) (c : R)
     (hcT : IsProperOnSupport ⇑(c • T) f := hT.smul c) :
-    pushforward (c • T) hcT = c • pushforward T hT := by
-  ext s
-  obtain ⟨χ, hc, h1⟩ := hT.exists_eventually_eq_one s.isCompact_tsupport
-  have hcT' : dsupport ⇑(c • T) ⊆ dsupport ⇑T := by simpa using dsupport_smul_subset c ⇑T
-  rw [_root_.smul_apply, pushforward_apply_eq_cutoffCompCLM hT s hc h1,
-    pushforward_apply_eq_cutoffCompCLM hcT s hc (h1.filter_mono <| nhdsSet_mono <|
-      inter_subset_inter_left _ hcT'), _root_.smul_apply]
+    pushforward (c • T) hcT = c • pushforward T hT :=
+  (isCutoffPullback_cutoffCompCLM f).pushforward_smul hT c hcT
 
 /-! ### Point masses -/
 
