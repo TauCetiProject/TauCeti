@@ -21,9 +21,10 @@ import Mathlib.LinearAlgebra.Dimension.RankNullity
 import Mathlib.RingTheory.MvPolynomial.Homogeneous
 import TauCeti.Algebra.MvPolynomial.Degrees
 import TauCeti.Data.Nat.Choose.Basic
+import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
 import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Subst
+import TauCeti.NumberTheory.Padics.SpecialLinearGroup.FirstCongruence
 import TauCeti.RingTheory.MvPolynomial.Finrank
-import TauCeti.Topology.Algebra.Matrix.SpecialLinearGroup
 
 /-!
 # Algebraic functions on an open subgroup of `SL₂(ℤ_p)`
@@ -37,12 +38,13 @@ images `C^alg_{≤m}` of the polynomials of total degree at most `m`
 `C^alg_{≤m}` is stable under the two-sided translation action `f ↦ (g ↦ f (g₁ * g * g₂))` of
 `G × G`.
 
-For `n = 2`, `K` a field and `G` open, restriction identifies `C^alg(G, K)` with the coordinate ring
-`K[SL₂] = K[x, y, z, w] / (xw - yz - 1)` (`TauCeti.ker_polynomialRestriction_fin_two`,
-`TauCeti.algebraicFunctionsEquiv`): an open subgroup is Zariski dense in `SL₂`. Since a nonzero
-multiple of `xw - yz - 1` has degree two more than its cofactor, the filtration is then computed
-degree by degree: `dim C^alg_{≤m} = C(m + 4, 4) - C(m + 2, 4)`
-(`TauCeti.finrank_algebraicFunctionsDegreeLE`), and the graded pieces have dimension
+For `n = 2`, `K` an integral domain and `G` open, restriction identifies `C^alg(G, K)` with the
+coordinate ring `K[SL₂] = K[x, y, z, w] / (xw - yz - 1)`
+(`TauCeti.ker_polynomialRestriction_fin_two`, `TauCeti.algebraicFunctionsEquiv`): an open subgroup
+is Zariski dense in `SL₂`. Since a nonzero multiple of `xw - yz - 1` has degree two more than its
+cofactor, for `K` a field the filtration is then computed degree by degree:
+`dim C^alg_{≤m} = C(m + 4, 4) - C(m + 2, 4)` (`TauCeti.finrank_algebraicFunctionsDegreeLE`),
+and the graded pieces have dimension
 `dim C^alg_{≤m+1} / C^alg_{≤m} = C(m + 4, 3) - C(m + 2, 3) = (m + 2)²`
 (`TauCeti.finrank_algebraicFunctionsDegreeLE_quotient`). This is the dimension of `W ⊗ W^*` for
 `W = Sym^{m+1}(K²)`, the count behind the algebraic Peter–Weyl theorem for open subgroups of
@@ -58,8 +60,6 @@ degree by degree: `dim C^alg_{≤m} = C(m + 4, 4) - C(m + 2, 4)`
 
 ## Main results
 
-* `TauCeti.exists_setOf_pow_dvd_sub_one_subset`: an open subgroup of `SL_n(ℤ_p)` contains all
-  matrices congruent to the identity modulo some power of `p`.
 * `TauCeti.comp_mul_mul_mem_algebraicFunctionsDegreeLE`: `C^alg_{≤m}` is stable under
   `f ↦ (g ↦ f (g₁ * g * g₂))` for `g₁, g₂ ∈ G`.
 * `TauCeti.ker_polynomialRestriction_fin_two`: for open `G ≤ SL₂(ℤ_p)`, the kernel of restriction
@@ -72,7 +72,8 @@ degree by degree: `dim C^alg_{≤m} = C(m + 4, 4) - C(m + 2, 4)`
 
 The kernel of restriction is computed by eliminating `w` with `xw = 1 + yz`: for every polynomial
 `f`, some `x ^ N * f` is congruent modulo `xw - yz - 1` to a polynomial `r` in `x, y, z` alone. On
-`G` the entries `(x, y, z)` take every value in a box `(1 + p^m ℤ_p) × p^m ℤ_p × p^m ℤ_p`, so `r`
+`G` the entries `(x, y, z)` take every value in a box `(1 + p^m ℤ_p) × p^m ℤ_p × p^m ℤ_p`, since `G`
+contains a congruence neighbourhood (`TauCeti.exists_setOf_pow_dvd_sub_one_subset`), so `r`
 vanishes there and is zero; and `x` is a nonzerodivisor modulo `xw - yz - 1`, being prime and not
 dividing `xw - yz - 1`.
 
@@ -84,7 +85,7 @@ dividing `xw - yz - 1`.
 
 public section
 
-open MvPolynomial Matrix Filter Topology
+open MvPolynomial Matrix
 
 namespace TauCeti
 
@@ -137,17 +138,21 @@ theorem polynomialRestriction_apply (f : MvPolynomial (n × n) K) (g : G) :
     (ContinuousMap.evalAlgHom K K g)) f)
   simpa [polynomialRestriction, coe_aeval_eq_eval] using h
 
+/-- The restriction of `f` takes at `g` the value of `f` at the entries of the image of `g` under
+the ring homomorphism `ℤ_p → ℚ_p → K`, applied entrywise. -/
+theorem polynomialRestriction_apply_eq_eval_mapMatrix (f : MvPolynomial (n × n) K) (g : G) :
+    polynomialRestriction K G f g = eval (fun ij ↦ ((algebraMap ℚ_[p] K).comp
+      PadicInt.Coe.ringHom).mapMatrix (g : SpecialLinearGroup n ℤ_[p]) ij.1 ij.2) f :=
+  polynomialRestriction_apply K G f g
+
 /-- The generic determinant minus one restricts to zero on every subgroup of `SL_n(ℤ_p)`. -/
 @[simp]
 theorem polynomialRestriction_det_sub_one :
     polynomialRestriction K G ((mvPolynomialX n n K).det - 1) = 0 := by
   ext g
-  let ι : ℤ_[p] →+* K := (algebraMap ℚ_[p] K).comp PadicInt.Coe.ringHom
-  rw [polynomialRestriction_apply, map_sub, map_one, eval_det_mvPolynomialX]
-  have h : (Matrix.of fun i j ↦ algebraMap ℚ_[p] K ((g : SpecialLinearGroup n ℤ_[p]) i j :
-      ℚ_[p])) = ι.mapMatrix (g : SpecialLinearGroup n ℤ_[p]) := rfl
-  rw [h, ← RingHom.map_det, SpecialLinearGroup.det_coe, map_one, sub_self,
-    ContinuousMap.zero_apply]
+  rw [polynomialRestriction_apply_eq_eval_mapMatrix, map_sub, map_one, RingHom.map_det,
+    mvPolynomialX_mapMatrix_eval, ← RingHom.map_det, SpecialLinearGroup.det_coe, map_one,
+    sub_self, ContinuousMap.zero_apply]
 
 /-- The ideal generated by `det - 1` lies in the kernel of restriction. -/
 theorem span_det_sub_one_le_ker_polynomialRestriction :
@@ -225,9 +230,6 @@ theorem comp_mul_mul_mem_algebraicFunctionsDegreeLE (g₁ g₂ : G) {m : ℕ} {f
       (isHomogeneous_map_mul_mvPolynomialX_mul_map_apply _ _ _ _).totalDegree_le).trans
         (by simpa using hP)
   · ext g
-    have h : ∀ x : G, (fun ij : n × n ↦
-        algebraMap ℚ_[p] K ((x : SpecialLinearGroup n ℤ_[p]) ij.1 ij.2 : ℚ_[p])) =
-          fun ij ↦ ι.mapMatrix (x : SpecialLinearGroup n ℤ_[p]) ij.1 ij.2 := fun _ ↦ rfl
     have hm : (ι.mapMatrix (g₁ : SpecialLinearGroup n ℤ_[p])).map (algebraMap K K) *
         ι.mapMatrix (g : SpecialLinearGroup n ℤ_[p]) *
           (ι.mapMatrix (g₂ : SpecialLinearGroup n ℤ_[p])).map (algebraMap K K) =
@@ -236,8 +238,10 @@ theorem comp_mul_mul_mem_algebraicFunctionsDegreeLE (g₁ g₂ : G) {m : ℕ} {f
       rw [Subgroup.coe_mul, Subgroup.coe_mul, SpecialLinearGroup.coe_mul,
         SpecialLinearGroup.coe_mul, map_mul, map_mul, Algebra.algebraMap_self, RingHom.coe_id,
         Matrix.map_id, Matrix.map_id]
-    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, polynomialRestriction_apply]
-    rw [h, h, ← aeval_eq_eval, ← aeval_eq_eval, aeval_mvPolynomialSubst, hm]
+    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk]
+    rw [polynomialRestriction_apply_eq_eval_mapMatrix,
+      polynomialRestriction_apply_eq_eval_mapMatrix, ← aeval_eq_eval, ← aeval_eq_eval,
+      aeval_mvPolynomialSubst, hm]
 
 /-- `C^alg(G, K)` is stable under the two-sided translation action of `G × G`. -/
 theorem comp_mul_mul_mem_algebraicFunctions (g₁ g₂ : G) {f : C(G, K)}
@@ -252,38 +256,12 @@ theorem comp_mul_mul_mem_algebraicFunctions (g₁ g₂ : G) {f : C(G, K)}
 
 end Restriction
 
-/-! ### Open subgroups contain congruence neighbourhoods -/
-
-/-- An open subgroup of `SL_n(ℤ_p)` contains every matrix congruent to the identity modulo a
-suitable power of `p`. -/
-theorem exists_setOf_pow_dvd_sub_one_subset {n : Type*} [Fintype n] [DecidableEq n]
-    {G : Subgroup (SpecialLinearGroup n ℤ_[p])}
-    (hG : IsOpen (G : Set (SpecialLinearGroup n ℤ_[p]))) :
-    ∃ m : ℕ, {g : SpecialLinearGroup n ℤ_[p] |
-      ∀ i j, (p : ℤ_[p]) ^ m ∣ ((g : Matrix n n ℤ_[p]) - 1) i j} ⊆ G := by
-  by_contra! h
-  choose g hg hgG using fun m ↦ Set.not_subset.mp (h m)
-  have hlim : Tendsto g atTop (𝓝 1) := by
-    rw [SpecialLinearGroup.tendsto_iff_tendsto_apply]
-    intro i j
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    have hp : ‖(p : ℤ_[p])‖ < 1 := by
-      rw [PadicInt.norm_p]
-      exact inv_lt_one_of_one_lt₀ (mod_cast (Fact.out : p.Prime).one_lt)
-    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun m ↦ ?_)
-      (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) hp)
-    obtain ⟨c, hc⟩ := hg m i j
-    rw [SpecialLinearGroup.coe_one, ← Matrix.sub_apply, hc, norm_mul, norm_pow]
-    exact mul_le_of_le_one_right (by positivity) (PadicInt.norm_le_one c)
-  obtain ⟨m, hm⟩ := (hlim.eventually (hG.mem_nhds G.one_mem)).exists
-  exact hgG m hm
-
 /-! ### The kernel of restriction to an open subgroup of `SL₂(ℤ_p)` -/
 
 section FinTwo
 
-variable {K : Type*} [Field K] [Algebra ℚ_[p] K] [TopologicalSpace K] [IsTopologicalRing K]
-  [ContinuousSMul ℚ_[p] K]
+variable {K : Type*} [CommRing K] [IsDomain K] [Algebra ℚ_[p] K] [TopologicalSpace K]
+  [IsTopologicalRing K] [ContinuousSMul ℚ_[p] K]
 
 omit [TopologicalSpace K] [IsTopologicalRing K] [ContinuousSMul ℚ_[p] K] in
 /-- Modulo `xw - yz - 1`, the relation `xw = 1 + yz` eliminates `w`: some `x ^ N * f` is congruent
@@ -376,7 +354,7 @@ theorem ker_polynomialRestriction_fin_two {G : Subgroup (SpecialLinearGroup (Fin
     RingHom.ker (polynomialRestriction K G) =
       Ideal.span {(mvPolynomialX (Fin 2) (Fin 2) K).det - 1} := by
   refine le_antisymm (fun f hf ↦ ?_) (span_det_sub_one_le_ker_polynomialRestriction K G)
-  obtain ⟨m, hm⟩ := exists_setOf_pow_dvd_sub_one_subset hG
+  obtain ⟨m, hm⟩ := exists_setOf_pow_dvd_sub_one_subset (hG.mem_nhds G.one_mem)
   obtain ⟨N, r, hr, hfr⟩ := exists_X_pow_mul_sub_mem f
   have hrker : polynomialRestriction K G r = 0 := by
     have h := span_det_sub_one_le_ker_polynomialRestriction K G hfr
@@ -440,21 +418,25 @@ theorem coe_algebraicFunctionsEquiv_mk {G : Subgroup (SpecialLinearGroup (Fin 2)
       polynomialRestriction K G f :=
   (rfl)
 
+end FinTwo
+
 /-! ### Dimensions of the degree filtration -/
+
+section Finrank
+
+variable {K : Type*} [Field K] [Algebra ℚ_[p] K] [TopologicalSpace K] [IsTopologicalRing K]
+  [ContinuousSMul ℚ_[p] K]
 
 omit [TopologicalSpace K] [IsTopologicalRing K] [ContinuousSMul ℚ_[p] K] in
 /-- The polynomial `xw - yz - 1` has total degree two. -/
 private theorem totalDegree_det_sub_one_fin_two :
     ((mvPolynomialX (Fin 2) (Fin 2) K).det - 1).totalDegree = 2 := by
-  have hdet : (mvPolynomialX (Fin 2) (Fin 2) K).det =
-      X (0, 0) * X (1, 1) - X (0, 1) * X (1, 0) := by
-    simp [det_fin_two]
-  have hH : (mvPolynomialX (Fin 2) (Fin 2) K).det.IsHomogeneous 2 := hdet ▸
-    ((isHomogeneous_X K _).mul (isHomogeneous_X K _)).sub
-      ((isHomogeneous_X K _).mul (isHomogeneous_X K _))
-  have hH₀ := det_mvPolynomialX_ne_zero (Fin 2) K
-  rw [sub_eq_add_neg, ← C_1, ← map_neg C, totalDegree_add_eq_left_of_totalDegree_lt
-    (by rw [totalDegree_C, hH.totalDegree hH₀]; norm_num), hH.totalDegree hH₀]
+  simpa using totalDegree_det_mvPolynomialX_sub_one (R := K) (n := Fin 2) (by simp)
+
+omit [TopologicalSpace K] [IsTopologicalRing K] [ContinuousSMul ℚ_[p] K] in
+/-- The polynomial `xw - yz - 1` is nonzero. -/
+private theorem det_sub_one_ne_zero_fin_two : (mvPolynomialX (Fin 2) (Fin 2) K).det - 1 ≠ 0 :=
+  fun h ↦ by simpa [h] using (totalDegree_det_sub_one_fin_two (K := K))
 
 /-- A polynomial vanishing on an open subgroup of `SL₂(ℤ_p)` is `(det - 1) * q` with `q = 0` or
 of total degree two less. -/
@@ -466,9 +448,8 @@ private theorem exists_eq_det_sub_one_mul {G : Subgroup (SpecialLinearGroup (Fin
   rw [← RingHom.mem_ker, ker_polynomialRestriction_fin_two K hG, Ideal.mem_span_singleton'] at hx
   obtain ⟨q, rfl⟩ := hx
   refine ⟨q, mul_comm _ _, or_iff_not_imp_left.mpr fun hq ↦ ?_⟩
-  have hD : (mvPolynomialX (Fin 2) (Fin 2) K).det - 1 ≠ 0 := fun h ↦ by
-    simpa [h] using (totalDegree_det_sub_one_fin_two (K := K))
-  rw [totalDegree_mul_of_isDomain hq hD, totalDegree_det_sub_one_fin_two]
+  rw [totalDegree_mul_of_isDomain hq det_sub_one_ne_zero_fin_two,
+    totalDegree_det_sub_one_fin_two]
 
 /-- The polynomials of total degree at most `m` vanishing on an open subgroup of `SL₂(ℤ_p)` are
 `(det - 1)` times those of total degree at most `m - 2`, a space of dimension `C(m + 2, 4)`. -/
@@ -493,8 +474,6 @@ private theorem finrank_restrictTotalDegree_inf_ker
     rw [hbot _ (by norm_num), finrank_bot]
     rfl
   | k + 2 =>
-    have hD : (mvPolynomialX (Fin 2) (Fin 2) K).det - 1 ≠ 0 := fun h ↦ by
-      simpa [h] using (totalDegree_det_sub_one_fin_two (K := K))
     have hmap : restrictTotalDegree (Fin 2 × Fin 2) K (k + 2) ⊓
         LinearMap.ker (polynomialRestriction K G).toLinearMap =
         (restrictTotalDegree (Fin 2 × Fin 2) K k).map
@@ -511,7 +490,8 @@ private theorem finrank_restrictTotalDegree_inf_ker
         rw [totalDegree_det_sub_one_fin_two]
         have := (mem_restrictTotalDegree _ _ _).mp hq
         omega
-    rw [hmap, ← (Submodule.equivMapOfInjective _ (mul_right_injective₀ hD) _).finrank_eq,
+    rw [hmap, ← (Submodule.equivMapOfInjective _
+      (mul_right_injective₀ det_sub_one_ne_zero_fin_two) _).finrank_eq,
       finrank_restrictTotalDegree]
     simp
 
@@ -564,14 +544,12 @@ theorem finrank_algebraicFunctionsDegreeLE_quotient
   have h₁ := finrank_algebraicFunctionsDegreeLE_add (K := K) hG m
   have h₂ := finrank_algebraicFunctionsDegreeLE_add (K := K) hG (m + 1)
   have h₃ := Nat.add_three_choose_three (m + 1)
-  have h₄ : (m + 1 + 4).choose 4 = (m + 4).choose 3 + (m + 4).choose 4 :=
-    Nat.choose_succ_succ _ _
-  have h₅ : (m + 1 + 2).choose 4 = (m + 2).choose 3 + (m + 2).choose 4 :=
-    Nat.choose_succ_succ _ _
+  have h₄ := Nat.choose_succ_succ' (m + 4) 3
+  have h₅ := Nat.choose_succ_succ' (m + 2) 3
+  simp only [add_assoc, Nat.reduceAdd] at h₂ h₃ h₄ h₅
   generalize (m + 2) ^ 2 = s at h₃ ⊢
-  simp only [show m + 1 + 3 = m + 4 by omega, show m + 1 + 1 = m + 2 by omega] at h₃
   omega
 
-end FinTwo
+end Finrank
 
 end TauCeti

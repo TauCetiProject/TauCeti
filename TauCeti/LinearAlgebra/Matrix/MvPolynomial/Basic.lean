@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Degrees
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.MvPolynomial
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.Algebra.MvPolynomial.CommRing
@@ -22,6 +23,10 @@ at most `∑ l, e l` in `Xᵢ`.
 
 The minors of a matrix `Z`, and of its powers, are polynomials in the entries of `Z`: they are
 the values at `Z` of the corresponding minors of the generic matrix `Matrix.mvPolynomialX`.
+
+The generic determinant of an `n × n` matrix is homogeneous of degree `n`: every term of its
+Leibniz expansion is, up to sign, a product of `n` variables. Over a nontrivial ring it is nonzero,
+so its total degree is exactly `n`, and so is that of `det - 1` for `n ≠ 0`.
 
 The generic determinant is a non-zero-divisor over every commutative ring.
 Translating the generic matrix by the identity and embedding into power series
@@ -42,6 +47,10 @@ bases of determinantal and flag-minor algebras. For finite index types such as `
 
 * `Matrix.degreeOf_det_le_sum`: the partial degree of a determinant is bounded by
   the sum of the column-wise partial-degree bounds.
+* `Matrix.isHomogeneous_det_mvPolynomialX`, `Matrix.totalDegree_det_mvPolynomialX` and
+  `Matrix.totalDegree_det_mvPolynomialX_sub_one`: the generic determinant is homogeneous of
+  degree `Fintype.card n`, and over a nontrivial ring both it and, for `n` nonempty, `det - 1`
+  have total degree `Fintype.card n`.
 * `Matrix.aeval_det_submatrix_mvPolynomialX` and `Matrix.aeval_det_submatrix_pow_mvPolynomialX`:
   the minors of a matrix `Z`, and of `Z ^ j`, are evaluations of minors of the generic matrix.
 * `Matrix.det_mvPolynomialX_mem_nonZeroDivisors`: the generic determinant is regular.
@@ -82,6 +91,32 @@ theorem degreeOf_det_le_sum (A : Matrix n n (MvPolynomial σ R)) (i : σ) (e : n
       · rw [hp, Units.neg_smul, one_smul, degreeOf_neg]
     _ ≤ ∑ l, (A (p l) l).degreeOf i := degreeOf_prod_le i univ _
     _ ≤ ∑ l, e l := Finset.sum_le_sum fun l _ ↦ hA (p l) l
+
+/-- The generic determinant of an `n × n` matrix is homogeneous of degree `Fintype.card n`. -/
+theorem isHomogeneous_det_mvPolynomialX :
+    (mvPolynomialX n n R).det.IsHomogeneous (Fintype.card n) := by
+  rw [det_apply]
+  refine IsHomogeneous.sum _ _ _ fun σ _ ↦ ?_
+  have h : (∏ i, mvPolynomialX n n R (σ i) i).IsHomogeneous (Fintype.card n) := by
+    simpa using IsHomogeneous.prod univ (fun i ↦ mvPolynomialX n n R (σ i) i) (fun _ ↦ 1)
+      fun i _ ↦ isHomogeneous_X R (σ i, i)
+  rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with hσ | hσ
+  · rwa [hσ, one_smul]
+  · rw [hσ, Units.neg_smul, one_smul]
+    exact h.neg
+
+/-- Over a nontrivial ring, the generic determinant of an `n × n` matrix has total degree
+`Fintype.card n`. -/
+theorem totalDegree_det_mvPolynomialX [Nontrivial R] :
+    (mvPolynomialX n n R).det.totalDegree = Fintype.card n :=
+  isHomogeneous_det_mvPolynomialX.totalDegree (det_mvPolynomialX_ne_zero (m := n) (R := R))
+
+/-- Over a nontrivial ring, for a nonempty index type `n`, the polynomial `det - 1` of the generic
+`n × n` matrix has total degree `Fintype.card n`. -/
+theorem totalDegree_det_mvPolynomialX_sub_one [Nontrivial R] (hn : Fintype.card n ≠ 0) :
+    ((mvPolynomialX n n R).det - 1).totalDegree = Fintype.card n := by
+  rw [sub_eq_add_neg, ← C_1, ← map_neg C, totalDegree_add_eq_left_of_totalDegree_lt
+    (by rw [totalDegree_C, totalDegree_det_mvPolynomialX]; omega), totalDegree_det_mvPolynomialX]
 
 /-- The generic determinant is a non-zero-divisor over every commutative ring,
 including the zero ring and matrices of size zero. -/

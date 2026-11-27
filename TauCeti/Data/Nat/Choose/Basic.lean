@@ -115,12 +115,13 @@ theorem add_choose_two (m n : ℕ) : (m + n).choose 2 = m.choose 2 + n.choose 2 
 /-- Raising the upper index of `C(·, 3)` by two adds a square:
 `C(n + 3, 3) = C(n + 1, 3) + (n + 1)²`, that is `C(n + 3, 3) - C(n + 1, 3) = (n + 1)²`. -/
 theorem add_three_choose_three (n : ℕ) : (n + 3).choose 3 = (n + 1).choose 3 + (n + 1) ^ 2 := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    rw [choose_succ_succ (n + 3) 2, ih, choose_succ_succ (n + 1) 2, choose_succ_succ (n + 2) 1,
-      choose_succ_succ (n + 1) 1, choose_one_right, choose_one_right]
-    ring
+  have h₃ := choose_succ_succ' (n + 2) 2
+  have h₂ := choose_succ_succ' (n + 1) 2
+  have h₁ := choose_succ_succ' (n + 1) 1
+  have h := add_one_mul_choose_eq n 1
+  simp only [add_assoc, Nat.reduceAdd, choose_one_right] at h₃ h₂ h₁ h
+  rw [h₃, h₂, h₁]
+  nlinarith [h]
 
 /-- Twice `C(a, 2)`, plus `ab`, is `a(a + b - 1)`, with truncated subtraction. -/
 theorem two_mul_choose_two_add_mul (a b : ℕ) : 2 * a.choose 2 + a * b = a * (a + b - 1) := by
