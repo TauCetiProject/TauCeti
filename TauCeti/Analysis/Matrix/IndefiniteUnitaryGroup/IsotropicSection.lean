@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.QuasiReflectio
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Topology.Instances.Matrix
+import TauCeti.Analysis.Calculus.ContDiff.Star
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
@@ -25,7 +26,8 @@ real coordinates of the target vector.
   `g` from `𝕜ⁿ` to `U(J)`, whose matrix entries are real-analytic on `N`, with `g x *ᵥ y₀ = x` for
   every isotropic `x ∈ N` (`Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_eq`).
 * If `J` is moreover invertible and `x₀ ≠ 0`, the same holds with `g x *ᵥ x₀ = x`
-  (`Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_self_eq`).
+  (`Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_self_eq`). This has content only for isotropic
+  `x₀`, whose orbit consists of isotropic vectors.
 
 Neither statement assumes that `x₀` is isotropic: if it is not, a neighbourhood of `x₀` contains no
 isotropic vector and the constant map `1` is a section.
@@ -48,8 +50,9 @@ matrices; over the finite index type it is equivalent to smoothness for any such
 
 * `Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_eq`: smooth local sections of the map
   `g ↦ g y₀`, for isotropic `y₀`, near a vector `x₀` with `⟨y₀, x₀⟩ ≠ 0`.
-* `Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_self_eq`: smooth local sections of the map
-  `g ↦ g x₀` near a nonzero vector `x₀`, for invertible `J`.
+* `Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_self_eq`: smooth local sections, over the
+  isotropic vectors near a nonzero `x₀`, of the map `g ↦ g x₀`, for invertible `J` (with content
+  only when `x₀` is isotropic).
 
 ## Attribution
 
@@ -79,9 +82,6 @@ omit [DecidableEq n] in
 /-- The parameter `x ↦ ⟨x, x⟩ / 2 - ⟨x, y⟩` of the section is a real-analytic function of `x`. -/
 private theorem contDiff_half_dotProduct_sub_dotProduct (y : n → 𝕜) :
     ContDiff ℝ ω fun x : n → 𝕜 => star x ⬝ᵥ J *ᵥ x / 2 - star x ⬝ᵥ J *ᵥ y := by
-  have hc (l : n) : ContDiff ℝ ω fun x : n → 𝕜 => star (x l) := by
-    simpa [RCLike.conjCLE_apply, Function.comp_def] using
-      (RCLike.conjCLE (K := 𝕜)).contDiff.comp (contDiff_apply ℝ (F' := fun _ : n => 𝕜) l)
   simp only [dotProduct, mulVec, Pi.star_apply]
   fun_prop
 
@@ -96,14 +96,11 @@ private theorem contDiffOn_quasiReflection_sub_apply (hJ : J.IsHermitian) {y₀ 
     smul_eq_mul]
   refine contDiffOn_const.sub
     (((contDiff_half_dotProduct_sub_dotProduct y₀).contDiffOn.inv fun x hx => hx).mul ?_)
-  have hc (l : n) : ContDiff ℝ ω fun x : n → 𝕜 => star (x l) := by
-    simpa [RCLike.conjCLE_apply, Function.comp_def] using
-      (RCLike.conjCLE (K := 𝕜)).contDiff.comp (contDiff_apply ℝ (F' := fun _ : n => 𝕜) l)
   simp only [vecMul, dotProduct, Pi.star_apply, Pi.sub_apply, star_sub]
   fun_prop
 
-/-- Near a non-isotropic vector there are no isotropic vectors, so the constant map `1` is a
-section there of the orbit map of any vector. -/
+/-- Near a non-isotropic vector there are no isotropic vectors, so the constant map `1` satisfies
+the section property over the isotropic vectors there for any vector `y`, vacuously. -/
 private theorem exists_contDiffOn_mulVec_eq_of_ne_zero {x₀ : n → 𝕜}
     (hx₀ : star x₀ ⬝ᵥ J *ᵥ x₀ ≠ 0) (y : n → 𝕜) :
     ∃ N, IsOpen N ∧ x₀ ∈ N ∧ ∃ g : (n → 𝕜) → unitaryGroupOf J,
@@ -126,20 +123,22 @@ theorem exists_contDiffOn_mulVec_eq (hJ : J.IsHermitian) {x₀ y₀ : n → 𝕜
   by_cases hx₀ : star x₀ ⬝ᵥ J *ᵥ x₀ = 0
   swap
   · exact exists_contDiffOn_mulVec_eq_of_ne_zero hx₀ y₀
+  have hs (x : n → 𝕜) (hx : star x ⬝ᵥ J *ᵥ x = 0) :
+      star x ⬝ᵥ J *ᵥ x / 2 - star x ⬝ᵥ J *ᵥ y₀ = -(star x ⬝ᵥ J *ᵥ y₀) := by
+    rw [hx, zero_div, zero_sub]
   refine ⟨{x | star x ⬝ᵥ J *ᵥ x / 2 - star x ⬝ᵥ J *ᵥ y₀ ≠ 0},
     isOpen_ne_fun (contDiff_half_dotProduct_sub_dotProduct y₀).continuous continuous_const, ?_,
     fun x => quasiReflection hJ (x - y₀) _ (add_star_half_dotProduct_sub_dotProduct hJ hy₀ x),
     contDiffOn_quasiReflection_sub_apply hJ hy₀, fun x hx hxx => ?_⟩
-  · rw [Set.mem_ofPred_eq, hx₀, zero_div, zero_sub, neg_ne_zero, ← star_ne_zero,
-      hJ.star_dotProduct_mulVec_comm]
-    exact hxy
-  · refine quasiReflection_sub_mulVec_of_isotropic hJ hxx hy₀ ?_
-    rwa [Set.mem_ofPred_eq, hxx, zero_div, zero_sub, neg_ne_zero] at hx
+  · simpa [hs x₀ hx₀, hJ.star_dotProduct_mulVec_comm] using star_ne_zero.mpr hxy
+  · exact quasiReflection_sub_mulVec_of_isotropic hJ hxx hy₀ (by simpa [hs x hxx] using hx)
 
-/-- **Smooth local sections of the orbit of a nonzero vector.** Let `J` be Hermitian and invertible
-and `x₀ ≠ 0`. Then there are an open neighbourhood `N` of `x₀` and a map `g` to the unitary group
-of `J`, whose matrix entries are real-analytic (in particular smooth) functions of the real
-coordinates on `N`, with `g x *ᵥ x₀ = x` for every isotropic `x ∈ N`. -/
+/-- **Smooth local sections, over the isotropic vectors, of the orbit map of a nonzero vector.**
+Let `J` be Hermitian and invertible and `x₀ ≠ 0`. Then there are an open neighbourhood `N` of `x₀`
+and a map `g` to the unitary group of `J`, whose matrix entries are real-analytic (in particular
+smooth) functions of the real coordinates on `N`, with `g x *ᵥ x₀ = x` for every isotropic
+`x ∈ N`. This has content only when `x₀` is isotropic: otherwise `N` can be chosen to contain no
+isotropic vector. -/
 theorem exists_contDiffOn_mulVec_self_eq (hJ : J.IsHermitian) (hJ' : IsUnit J) {x₀ : n → 𝕜}
     (hx₀ : x₀ ≠ 0) :
     ∃ N, IsOpen N ∧ x₀ ∈ N ∧ ∃ g : (n → 𝕜) → unitaryGroupOf J,

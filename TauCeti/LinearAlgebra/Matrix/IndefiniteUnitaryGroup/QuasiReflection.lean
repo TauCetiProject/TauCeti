@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
-import Mathlib.Tactic.Module
 import Mathlib.Tactic.FieldSimp
 
 /-!
@@ -37,11 +36,14 @@ the isotropic orbit in `TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup.Isotropic
 
 * `Matrix.unitaryGroupOf.quasiReflection`: the quasi-reflection along `v` with parameter `s`.
 
+The form identity and the product formula for the rank-one perturbations
+`1 + c • v (star v ᵥ* A)` of the identity behind these facts are
+`Matrix.star_one_add_smul_vecMulVec_mul_mul` and
+`Matrix.one_add_smul_vecMulVec_mul_one_add_smul_vecMulVec`, over a commutative ring, in
+`TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup`, where they also give the reflections.
+
 ## Main results
 
-* `Matrix.star_one_add_smul_vecMulVec_mul_mul`: the change of the form of `A` under the rank-one
-  perturbation `1 + c • v (star v ᵥ* A)` of the identity, over a commutative ring.
-* `Matrix.one_add_smul_vecMulVec_mul_one_add_smul_vecMulVec`: products of such perturbations.
 * `Matrix.unitaryGroupOf.quasiReflection_mulVec`: the quasi-reflection sends `x` to
   `x - s⁻¹ ⟨v, x⟩ v`.
 * `Matrix.unitaryGroupOf.inv_quasiReflection`: its inverse is the quasi-reflection with parameter
@@ -56,9 +58,8 @@ Quasi-reflections of an invertible Hermitian matrix are `New.quasiReflection` of
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
 `src/Lib/Adelic/Witt/WittTheorem.lean`, which uses them in `src/Lib/Adelic/Witt/SmoothWitt.lean`
 to carry isotropic vectors. Here they are stated for Hermitian matrices that need not be
-invertible, with the form identity over a commutative ring, and the parameter
-`⟨x, x⟩ / 2 - ⟨x, y⟩` is chosen so that the quasi-reflection along `x - y` lies in the unitary group
-for every `x`.
+invertible, and the parameter `⟨x, x⟩ / 2 - ⟨x, y⟩` is chosen so that the quasi-reflection along
+`x - y` lies in the unitary group for every `x`.
 
 ## References
 
@@ -71,54 +72,6 @@ public section
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-section CommRing
-
-variable {R : Type*} [CommRing R] [StarRing R] {A : Matrix n n R}
-
-omit [DecidableEq n] in
-/-- For Hermitian `A`, the conjugate transpose of the rank-one matrix `v (star v ᵥ* A)`, multiplied
-by `A`, is `(A v) (star v ᵥ* A)`. -/
-theorem star_vecMulVec_vecMul_mul (hA : A.IsHermitian) (v : n → R) :
-    star (vecMulVec v (star v ᵥ* A)) * A = vecMulVec (A *ᵥ v) (star v ᵥ* A) := by
-  rw [star_eq_conjTranspose, conjTranspose_vecMulVec, star_vecMul, star_star, hA.eq,
-    vecMulVec_mul]
-
-omit [DecidableEq n] in
-/-- The rank-one matrix `P = v (star v ᵥ* A)` satisfies `M * P = ⟨v, v⟩ • M` for every matrix
-`M = w (star v ᵥ* A)` with the same row vector. -/
-private theorem vecMulVec_vecMul_mul_vecMulVec_vecMul (v w : n → R) :
-    vecMulVec w (star v ᵥ* A) * vecMulVec v (star v ᵥ* A) =
-      (star v ⬝ᵥ A *ᵥ v) • vecMulVec w (star v ᵥ* A) := by
-  rw [vecMulVec_mul_vecMulVec, ← dotProduct_mulVec, vecMulVec_smul]
-
-/-- **The form under a rank-one perturbation of the identity.** For Hermitian `A`, the matrix
-`M = 1 + c • v (star v ᵥ* A)` changes the form of `A` by
-`(c + star c + star c * c * ⟨v, v⟩) • (A v) (star v ᵥ* A)`. In particular `M` preserves the form
-when `c + star c + star c * c * ⟨v, v⟩ = 0`. -/
-theorem star_one_add_smul_vecMulVec_mul_mul (hA : A.IsHermitian) (c : R) (v : n → R) :
-    star (1 + c • vecMulVec v (star v ᵥ* A)) * A * (1 + c • vecMulVec v (star v ᵥ* A)) =
-      A + (c + star c + star c * c * (star v ⬝ᵥ A *ᵥ v)) •
-        vecMulVec (A *ᵥ v) (star v ᵥ* A) := by
-  have h : star (1 + c • vecMulVec v (star v ᵥ* A)) * A =
-      A + star c • vecMulVec (A *ᵥ v) (star v ᵥ* A) := by
-    rw [star_add, star_one, star_smul, add_mul, Matrix.one_mul, Matrix.smul_mul,
-      star_vecMulVec_vecMul_mul hA]
-  rw [h]
-  simp only [add_mul, mul_add, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_smul]
-  rw [vecMulVec_vecMul_mul_vecMulVec_vecMul, mul_vecMulVec]
-  module
-
-/-- The product of two rank-one perturbations `1 + a • P` and `1 + b • P` of the identity along
-the same `P = v (star v ᵥ* A)` is `1 + (a + b + a * b * ⟨v, v⟩) • P`. -/
-theorem one_add_smul_vecMulVec_mul_one_add_smul_vecMulVec (a b : R) (v : n → R) :
-    (1 + a • vecMulVec v (star v ᵥ* A)) * (1 + b • vecMulVec v (star v ᵥ* A)) =
-      1 + (a + b + a * b * (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A) := by
-  simp only [add_mul, mul_add, Matrix.one_mul, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_smul]
-  rw [vecMulVec_vecMul_mul_vecMulVec_vecMul]
-  module
-
-end CommRing
 
 section Field
 
@@ -204,11 +157,10 @@ theorem inv_quasiReflection :
 
 /-- For a non-isotropic `v`, the quasi-reflection along `v` with parameter `⟨v, v⟩ / 2` is the
 reflection in `v`. -/
-theorem quasiReflection_eq_reflection [NeZero (2 : K)] (hA' : IsUnit A)
-    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
+theorem quasiReflection_eq_reflection [NeZero (2 : K)] (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
     quasiReflection hA v ((star v ⬝ᵥ A *ᵥ v) / 2)
         (by rw [star_div₀, star_ofNat, hA.star_dotProduct_mulVec_comm, add_halves]) =
-      reflection hA hA' v hv := by
+      reflection hA v hv := by
   ext : 1
   rw [val_quasiReflection, val_reflection, inv_div]
 
@@ -247,8 +199,8 @@ theorem quasiReflection_sub_mulVec_of_isotropic (hA : A.IsHermitian) {x y : n �
     rw [hx, zero_div, zero_sub]
   have hv : star (x - y) ⬝ᵥ A *ᵥ y = star x ⬝ᵥ A *ᵥ y := by
     rw [star_sub, sub_dotProduct, hy, sub_zero]
-  rw [quasiReflection_mulVec, hs, hv, inv_neg, neg_mul, inv_mul_cancel₀ hxy, neg_one_smul,
-    sub_neg_eq_add, add_sub_cancel]
+  rw [quasiReflection_mulVec, hs, hv]
+  simp [hxy]
 
 end unitaryGroupOf
 

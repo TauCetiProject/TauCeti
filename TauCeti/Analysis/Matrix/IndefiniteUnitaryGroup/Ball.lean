@@ -576,7 +576,7 @@ private theorem exists_mulVec_sumElim_one_zero_eq_smul {w : EuclideanSpace 𝕜 
   have hv0 : star v ⬝ᵥ indefiniteDiagonal (Fin 1) q 𝕜 *ᵥ v ≠ 0 := by
     rw [hvv, RCLike.ofReal_ne_zero]
     exact mul_ne_zero (mul_ne_zero two_ne_zero hs0.ne') (sub_ne_zero.mpr hs1)
-  set R := unitaryGroupOf.reflection isHermitian_indefiniteDiagonal isUnit_indefiniteDiagonal v hv0
+  set R := unitaryGroupOf.reflection isHermitian_indefiniteDiagonal v hv0
   -- The reflection sends `e₀` to `s⁻¹ (1, w)`.
   have hR : ((R : GL (Fin 1 ⊕ q) 𝕜) : Matrix (Fin 1 ⊕ q) (Fin 1 ⊕ q) 𝕜) *ᵥ e =
       (s : 𝕜)⁻¹ • (Sum.elim 1 w.ofLp : Fin 1 ⊕ q → 𝕜) := by
