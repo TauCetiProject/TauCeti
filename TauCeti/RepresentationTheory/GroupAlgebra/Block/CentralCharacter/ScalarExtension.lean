@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.CenterMap
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.CentralCharacter
-public import TauCeti.RingTheory.Idempotents.Line
+public import TauCeti.RingTheory.Idempotents.Corner.Line
 public import TauCeti.RingTheory.Idempotents.Primitive.AlgHom
 
 /-!
@@ -42,9 +42,8 @@ has none, splits into two blocks of `𝔽₄[C₃]`
 * `TauCeti.IsBlockIdempotent.exists_algHom_of_forall_exists_mul_classSumCenter`: a block on which
   every class sum acts by a scalar has a central character.
 * `TauCeti.IsBlockIdempotent.centerMapRingHom_of_forall_exists_mul_classSumCenter`: such a block
-  stays a block along every `k → k'`, and
-  `TauCeti.exists_mul_classSumCenter_centerMapRingHom` shows that its image again has class sums
-  acting by scalars.
+  stays a block along every `k → k'`, and its image again has class sums acting by scalars
+  (`TauCeti.exists_mul_classSumCenter_centerMapRingHom`).
 -/
 
 public section
@@ -95,28 +94,12 @@ theorem IsBlockIdempotent.exists_algHom_of_forall_exists_mul_classSumCenter
     (h : ∀ C : ConjClasses G, ∃ c : k, b * classSumCenter C = c • b) :
     ∃ φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k, φ b = 1 ∧ ∀ z, b * z = φ z • b := by
   refine hb.isIdempotentElem.exists_algHom_of_forall_exists_mul_eq_smul hb.ne_zero
-    (IsIdempotentElem.forall_exists_mul_eq_smul_of_span_eq_top
-      (s := Set.range classSumCenter) ?_ ?_)
+    (forall_exists_mul_eq_smul_of_span_eq_top (s := Set.range classSumCenter) ?_ ?_)
   · rw [← (classSumBasis (k := k) (G := G)).span_eq]
     exact congrArg (fun f ↦ Submodule.span k (Set.range f))
       (funext fun C ↦ (classSumBasis_apply C).symm)
   · rintro _ ⟨C, rfl⟩
     exact h C
-
-omit [Finite G] in
-/-- **Class sums acting by scalars survive scalar extension.** If every class sum acts on a central
-element `b` of `k[G]` by a scalar, the same holds for the image of `b` in `k'[G]` along any ring
-homomorphism `f : k →+* k'`: the image of `e_B K_C = c e_B` is `f(e_B) K_C = f(c) f(e_B)`. -/
-theorem exists_mul_classSumCenter_centerMapRingHom (f : k →+* k')
-    {b : Subalgebra.center k (MonoidAlgebra k G)}
-    (h : ∀ C : ConjClasses G, ∃ c : k, b * classSumCenter C = c • b) (C : ConjClasses G) :
-    ∃ c : k', MonoidAlgebra.centerMapRingHom G f b * classSumCenter C =
-      c • MonoidAlgebra.centerMapRingHom G f b := by
-  obtain ⟨c, hc⟩ := h C
-  refine ⟨f c, ?_⟩
-  have := congrArg (centerMapRingHom G f) hc
-  rwa [map_mul, centerMapRingHom_classSumCenter, Algebra.smul_def, map_mul,
-    centerMapRingHom_algebraMap, ← Algebra.smul_def] at this
 
 /-- **Blocks on which the class sums act by scalars stay blocks.** If `e_B` is a block idempotent
 of `k[G]` and `e_B K_C ∈ k e_B` for every class `C`, then the image of `e_B` in `k'[G]` is a block

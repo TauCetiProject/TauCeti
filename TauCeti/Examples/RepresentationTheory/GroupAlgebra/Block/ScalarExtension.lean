@@ -13,8 +13,8 @@ public import TauCeti.RepresentationTheory.GroupAlgebra.Block.ScalarExtension
 /-!
 # Blocks of `S₃` and `C₃` in characteristic `2` under scalar extension
 
-The scalar-extension Check of ModularCharactersAndBlocks §6.2, along `𝔽₄ ⊆ 𝔽₂^alg`, where `𝔽₄`
-splits `S₃` and all its subgroups.
+Blocks of `S₃` and `C₃` in characteristic `2` stay blocks along `𝔽₄ ⊆ 𝔽₂^alg`, where `𝔽₄` splits
+`S₃` and all its subgroups.
 
 * **`S₃`.** The blocks `e₀ = 1 + ρ + ρ²` and `e₁ = ρ + ρ²` of `𝔽₂[S₃]` have central characters:
   the augmentation for `e₀`, with values `(1, 0, 1)` on the class sums of `1`, of the `3`-cycles
@@ -25,7 +25,8 @@ splits `S₃` and all its subgroups.
   sums do not act on `e₀` by scalars: `Z(𝔽₂[S₃]) e₀` is `2`-dimensional.
 * **`C₃`.** Over a field `K` of characteristic `2` containing a root `α` of `X² + X + 1`, for
   instance `𝔽₄`, the blocks `1 + r + r²`, `1 + α² r + α r²` and `1 + α r + α² r²` of `K[C₃]` have
-  central characters (`r ↦ 1`, `r ↦ α`, `r ↦ α²`), so they stay blocks along every `K → K'`.
+  central characters (`r ↦ 1`, `r ↦ α`, `r ↦ α²`), so they stay blocks along every `K → K'`. The
+  first is the principal block, whose central character is the augmentation.
 * **Against it**, `𝔽₂` splits `S₃` but not `C₃`: the block `r + r²` of `𝔽₂[C₃]` maps to the sum of
   the last two blocks of `𝔽₄[C₃]`
   (`TauCeti.GroupAlgebraBlockExamples.not_isBlockIdempotent_centerMapRingHom_r_add_r_sq`), so
@@ -65,12 +66,6 @@ theorem blockTwoS₃_mul_classSumCenter (g : S₃) :
 
 variable {K K' : Type*} [Field K] [Field K']
 
-/-- The value of a character `φ` with `b z = φ(z) b` at an element acting on `b ≠ 0` by `c`. -/
-private theorem apply_eq_of_mul_eq_smul {A : Type*} [CommRing A] [Algebra K A] {b z : A}
-    (hb : b ≠ 0) {φ : A →ₐ[K] K} (hφ : ∀ z, b * z = φ z • b) {c : K} (hc : b * z = c • b) :
-    φ z = c :=
-  smul_left_injective K hb ((hφ z).symm.trans hc)
-
 /-- The class sums act on `ρ + ρ²` by scalars. -/
 theorem forall_exists_mul_classSumCenter_blockTwoS₃ (C : ConjClasses S₃) :
     ∃ c : ZMod 2, blockTwoS₃ * classSumCenter C = c • blockTwoS₃ := by
@@ -78,7 +73,7 @@ theorem forall_exists_mul_classSumCenter_blockTwoS₃ (C : ConjClasses S₃) :
   exact ⟨_, blockTwoS₃_mul_classSumCenter g⟩
 
 /-- The class sums act on each image of `ρ + ρ²` by scalars. -/
-theorem exists_mul_classSumCenter_blockTwoS₃ (f : ZMod 2 →+* K) (C : ConjClasses S₃) :
+theorem exists_mul_classSumCenter_blockTwoS₃_map (f : ZMod 2 →+* K) (C : ConjClasses S₃) :
     ∃ c : K, centerMapRingHom S₃ f blockTwoS₃ * classSumCenter C =
       c • centerMapRingHom S₃ f blockTwoS₃ :=
   exists_mul_classSumCenter_centerMapRingHom f forall_exists_mul_classSumCenter_blockTwoS₃ C
@@ -102,41 +97,39 @@ theorem isBlockIdempotent_blockTwoS₃_map (f : ZMod 2 →+* K) :
   isBlockIdempotent_blockTwoS₃.centerMapRingHom_of_forall_exists_mul_classSumCenter f
     forall_exists_mul_classSumCenter_blockTwoS₃
 
-/-- **The central character of `1 + ρ + ρ²` over `K`**, the augmentation, takes the values `1`,
-`0`, `1` on the class sums of `1`, of the `3`-cycles and of the transpositions. -/
-theorem centerAugmentation_classSumCenter_map (f : ZMod 2 →+* K) (g : S₃) :
+/-- **The central character of `1 + ρ + ρ²` over a field `K` of characteristic `2`**, the
+augmentation, takes the values `1`, `0`, `1` on the class sums of `1`, of the `3`-cycles and of the
+transpositions. -/
+theorem centerAugmentation_classSumCenter_of_charP [CharP K 2] (g : S₃) :
     centerAugmentation K S₃ (classSumCenter (ConjClasses.mk g)) =
       if g ≠ 1 ∧ g * g * g = 1 then 0 else 1 := by
-  rw [← centerMapRingHom_classSumCenter f, centerAugmentation_centerMapRingHom,
+  rw [← centerMapRingHom_classSumCenter (ZMod.castHom (dvd_refl 2) K),
+    centerAugmentation_centerMapRingHom,
     centerAugmentation_classSumCenter]
   split_ifs <;> simp
 
 /-- **The central character of `ρ + ρ²` over `K`** takes the values `1`, `1`, `0` on the class sums
 of `1`, of the `3`-cycles and of the transpositions. -/
-theorem exists_centralCharacter_blockTwoS₃ (f : ZMod 2 →+* K) :
+theorem exists_centralCharacter_blockTwoS₃_map (f : ZMod 2 →+* K) :
     ∃ φ : Subalgebra.center K (MonoidAlgebra K S₃) →ₐ[K] K,
       φ (centerMapRingHom S₃ f blockTwoS₃) = 1 ∧ ∀ g : S₃,
         φ (classSumCenter (ConjClasses.mk g)) = if g ≠ 1 ∧ g * g = 1 then 0 else 1 := by
   have hb := isBlockIdempotent_blockTwoS₃_map f
   obtain ⟨φ, hφ1, hφ⟩ := hb.exists_algHom_of_forall_exists_mul_classSumCenter
-    (exists_mul_classSumCenter_blockTwoS₃ f)
-  refine ⟨φ, hφ1, fun g ↦ apply_eq_of_mul_eq_smul hb.ne_zero hφ ?_⟩
-  have := congrArg (centerMapRingHom S₃ f) (blockTwoS₃_mul_classSumCenter g)
-  rw [map_mul, centerMapRingHom_classSumCenter, Algebra.smul_def, map_mul,
-    centerMapRingHom_algebraMap, ← Algebra.smul_def] at this
-  rw [this]
+    (exists_mul_classSumCenter_blockTwoS₃_map f)
+  refine ⟨φ, hφ1, fun g ↦ (apply_eq_of_mul_eq_smul hb.ne_zero hφ
+    (centerMapRingHom_mul_classSumCenter f (blockTwoS₃_mul_classSumCenter g))).trans ?_⟩
   split_ifs <;> simp
 
 /-- **The blocks of `K[S₃]` stay blocks.** For fields `K`, `K'` of characteristic `2`, for
 instance `𝔽₄ ⊆ 𝔽₂^alg`, the blocks `1 + ρ + ρ²` and `ρ + ρ²` of `K[S₃]` map to blocks of
-`K'[S₃]`: the theorem for blocks with a central character, applied over `K` to the augmentation
-and to the central character of `ρ + ρ²`. -/
+`K'[S₃]`, since both blocks have central characters over `K`. -/
 theorem isBlockIdempotent_centerMapRingHom_blockS₃ (f : ZMod 2 →+* K) (f' : K →+* K') :
     IsBlockIdempotent (centerMapRingHom S₃ f' (centerMapRingHom S₃ f blockOneS₃)) ∧
       IsBlockIdempotent (centerMapRingHom S₃ f' (centerMapRingHom S₃ f blockTwoS₃)) :=
   ⟨(isBlockIdempotent_blockOneS₃_map f).centerMapRingHom f' (centerAugmentation_blockOneS₃_map f),
     (isBlockIdempotent_blockTwoS₃_map f).centerMapRingHom_of_forall_exists_mul_classSumCenter f'
-      (exists_mul_classSumCenter_blockTwoS₃ f)⟩
+      (exists_mul_classSumCenter_blockTwoS₃_map f)⟩
 
 /-! ### `C₃` -/
 
@@ -144,24 +137,10 @@ section C₃
 
 variable {α : K}
 
-/-- `1 + r + r²` of `K[C₃]` is fixed by every `r^i`. -/
-private theorem one_add_r_add_r_sq_mul_of (g : C₃) :
-    (1 + of K C₃ r + of K C₃ (r ^ 2)) * of K C₃ g =
-      (1 : K) • (1 + of K C₃ r + of K C₃ (r ^ 2)) := by
-  refine ext (Finsupp.ext fun h ↦ ?_)
-  fin_cases g <;> fin_cases h <;>
-    simp +decide [coeff_mul_single_apply, Finsupp.single_apply, one_def]
-
-/-- Over a field of characteristic `2`, `1 + r + r²` is a block idempotent of `K[C₃]`. -/
-theorem isBlockIdempotent_one_add_r_add_r_sq_of_charP [CharP K 2] :
-    IsBlockIdempotent (toCenter (1 + of K C₃ r + of K C₃ (r ^ 2))) := by
-  refine isBlockIdempotent_of_mul_of_eq_smul (fun _ ↦ 1)
-    (by simpa only [coe_toCenter] using one_add_r_add_r_sq_mul_of (K := K))
-    (by simp +decide [one_def]) ?_
-  rw [sum_c₃]
-  simp +decide [one_def]
-  have h2 : (2 : K) = 0 := CharTwo.two_eq_zero
-  linear_combination h2
+/-- Over a field of characteristic `2`, `1 + r + r²` is the principal block of `K[C₃]`. -/
+private theorem toCenter_one_add_r_add_r_sq [CharP K 2] :
+    toCenter (1 + of K C₃ r + of K C₃ (r ^ 2)) = principalBlockIdempotent K C₃ :=
+  Subtype.ext ((coe_toCenter _).trans (coe_principalBlockIdempotent_c₃ K).symm)
 
 /-- If every `r^i` acts on a central `b ∈ K[C₃]` by a scalar, so does every class sum. -/
 private theorem exists_mul_classSumCenter_of_mul_of {b : MonoidAlgebra K C₃} (c : C₃ → K)
@@ -179,9 +158,9 @@ theorem isBlockIdempotent_centerMapRingHom_blockC₃ [CharP K 2] (hα : α ^ 2 +
     IsBlockIdempotent (centerMapRingHom C₃ f (toCenter (1 + of K C₃ r + of K C₃ (r ^ 2)))) ∧
       IsBlockIdempotent (centerMapRingHom C₃ f (toCenter (eOne α))) ∧
       IsBlockIdempotent (centerMapRingHom C₃ f (toCenter (eTwo α))) :=
-  ⟨IsBlockIdempotent.centerMapRingHom_of_forall_exists_mul_classSumCenter f
-      isBlockIdempotent_one_add_r_add_r_sq_of_charP
-      (exists_mul_classSumCenter_of_mul_of _ one_add_r_add_r_sq_mul_of),
+  ⟨(toCenter_one_add_r_add_r_sq (K := K)).symm ▸
+      (isBlockIdempotent_principalBlockIdempotent K C₃).centerMapRingHom f
+        (centerAugmentation_principalBlockIdempotent K C₃),
     (isBlockIdempotent_eOne hα).centerMapRingHom_of_forall_exists_mul_classSumCenter f
       (exists_mul_classSumCenter_of_mul_of _ (eOne_mul_of hα)),
     (isBlockIdempotent_eTwo hα).centerMapRingHom_of_forall_exists_mul_classSumCenter f
@@ -189,10 +168,10 @@ theorem isBlockIdempotent_centerMapRingHom_blockC₃ [CharP K 2] (hα : α ^ 2 +
 
 end C₃
 
-/-- **`𝔽₄ ⊆ 𝔽₂^alg`.** For a root `α ∈ 𝔽₄` of `X² + X + 1`, the three blocks `1 + r + r²`,
-`1 + α² r + α r²` and `1 + α r + α² r²` of `𝔽₄[C₃]` stay blocks of `𝔽₂^alg[C₃]`, and the two
-blocks of `𝔽₄[S₃]` stay blocks of `𝔽₂^alg[S₃]`. -/
-theorem galoisField_two_two_algebraicClosure :
+/-- **`𝔽₄ ⊆ 𝔽₂^alg`.** There is a root `α ∈ 𝔽₄` of `X² + X + 1` such that the three blocks
+`1 + r + r²`, `1 + α² r + α r²` and `1 + α r + α² r²` of `𝔽₄[C₃]` stay blocks of `𝔽₂^alg[C₃]`;
+and the two blocks of `𝔽₄[S₃]` stay blocks of `𝔽₂^alg[S₃]`. -/
+theorem exists_isBlockIdempotent_centerMapRingHom_galoisField_two_two_algebraicClosure :
     ∃ α : GaloisField 2 2, α ^ 2 + α + 1 = 0 ∧
       IsBlockIdempotent (centerMapRingHom C₃ (algebraMap _ (AlgebraicClosure (GaloisField 2 2)))
           (toCenter (1 + of (GaloisField 2 2) C₃ r + of (GaloisField 2 2) C₃ (r ^ 2)))) ∧
