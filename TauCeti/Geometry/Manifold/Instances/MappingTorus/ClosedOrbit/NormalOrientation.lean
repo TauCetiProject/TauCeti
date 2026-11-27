@@ -221,6 +221,7 @@ theorem nonempty_vectorBundleOrientation_normalSpace_of_det_pos
   let := c.normalSpaceVectorBundle hn hdim
   let b : Basis ι ℝ E := (Module.finBasis ℝ E).reindex (Fintype.equivFinOfCardEq hι).symm
   let D := LinearMap.equivOfDetNeZero _ hdet.ne'
+  have hD (w : E) : D w = mfderiv I I φ x w := LinearEquiv.ofIsUnitDet_apply _ w
   let F (t : ℝ) : VectorBundleOrientationCover P (fun s ↦ c.isImmersion.NormalSpace s hn) ι :=
     ⟨t, (normalFrame hn hc b t).orientation⟩
   -- At the seam the frame comes back composed with `dφₓ`, which preserves its orientation.
@@ -229,7 +230,7 @@ theorem nonempty_vectorBundleOrientation_normalSpace_of_det_pos
     refine (VectorBundleOrientationCover.mk_orientation_eq_of_totalSpaceMk_eq (F := P)
       (E := fun s ↦ c.isImmersion.NormalSpace s hn) (by simp) _
       (normalFrame hn hc (b.map D) t) fun i ↦
-      totalSpaceMk_normalFrame_add_one hn hc b D (fun _ ↦ rfl) t i P).trans ?_
+      totalSpaceMk_normalFrame_add_one hn hc b D hD t i P).trans ?_
     simp only [F, normalFrame, Basis.orientation_map]
     rw [(b.orientation_comp_linearEquiv_eq_iff_det_pos D).2 hdet]
   -- So the orientations of the frames descend to a continuous section of the orientation cover.
@@ -258,13 +259,14 @@ theorem isEmpty_vectorBundleOrientation_normalSpace_of_det_neg
   let := c.normalSpaceVectorBundle hn hdim
   let b : Basis ι ℝ E := (Module.finBasis ℝ E).reindex (Fintype.equivFinOfCardEq hι).symm
   let D := LinearMap.equivOfDetNeZero _ hdet.ne
+  have hD (w : E) : D w = mfderiv I I φ x w := LinearEquiv.ofIsUnitDet_apply _ w
   -- At the seam the frame comes back composed with `dφₓ`, which reverses its orientation.
   refine VectorBundleOrientation.isEmpty_of_continuous_basis
     (hι.trans (finrank_eq_of_finrank_eq_sub hdim).symm)
     (g := ((↑) : ℝ → AddCircle ((1 : ℕ) : ℝ))) (AddCircle.continuous_mk' (p := ((1 : ℕ) : ℝ)))
     (normalFrame hn hc b) (continuous_normalFrame hn hc hdim b) (x := 0) (y := 0 + 1) (by simp)
     (normalFrame hn hc (b.map D) 0)
-    (fun i ↦ totalSpaceMk_normalFrame_add_one hn hc b D (fun _ ↦ rfl) 0 i P) ?_
+    (fun i ↦ totalSpaceMk_normalFrame_add_one hn hc b D hD 0 i P) ?_
   simp only [normalFrame, Basis.orientation_map]
   rw [(b.orientation_comp_linearEquiv_eq_neg_iff_det_neg D).2 hdet, Orientation.map_neg]
 

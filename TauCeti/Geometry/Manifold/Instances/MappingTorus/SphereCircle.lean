@@ -163,7 +163,9 @@ theorem det_mfderiv_sphereCircleReflection_pos (hv : v ≠ 0)
       _).mdifferentiableAt one_ne_zero)
     ((LinearIsometryEquiv.contMDiff_unitSphereEquiv (n := 1) (k := 1) (m := 1)
       _).mdifferentiableAt one_ne_zero)]
-  -- The linear map underlying the product of the two differentials is their product.
+  -- `rw [LinearMap.det_prodMap]` cannot fire: the factors map `T_{x.i}` to `T_{τ x.i}`, which
+  -- agree only definitionally, so the product formula is applied as a term.
+  simp only [ContinuousLinearMap.coe_prodMap]
   exact (mul_pos_of_neg_of_neg hρ hκ).trans_eq (LinearMap.det_prodMap _ _).symm
 
 namespace sphereCircleReflection
