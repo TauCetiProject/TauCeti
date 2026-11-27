@@ -29,7 +29,8 @@ also the infimum.
 ## References
 
 * O. Sarig, *Lecture Notes on Ergodic Theory* (author notes dated 3 April 2023), Definition 4.2,
-  with natural logarithms.
+  with natural logarithms, for the definition of conditional entropy only. The continuity results
+  here follow from Lévy's upward theorem, Mathlib's `MeasureTheory.tendsto_ae_condExp`.
 -/
 
 public section
@@ -45,8 +46,8 @@ section Finite
 
 variable [IsFiniteMeasure μ]
 
-/-- One atom of a finite partition along a filtration: by Lévy's upward theorem and dominated
-convergence, `∫ negMulLog μ[1_{a = i} | ℱ n] → ∫ negMulLog μ[1_{a = i} | ⨆ n, ℱ n]`. -/
+/-- One atom of a partition along a filtration: for a finite measure, by Lévy's upward theorem and
+dominated convergence, `∫ negMulLog μ[1_{a = i} | ℱ n] → ∫ negMulLog μ[1_{a = i} | ⨆ n, ℱ n]`. -/
 theorem tendsto_integral_negMulLog_condAtomProb_iSup (ℱ : Filtration ℕ mX) (a : X → ι)
     (i : ι) :
     Tendsto (fun n ↦ ∫ x, negMulLog (condAtomProb μ (ℱ n) a i x) ∂μ) atTop
