@@ -332,6 +332,8 @@ private theorem snd_ofSubsetMap_comp_complSingletonHomotopyEquivSphere_of_eq
         e.toLinearIsometry.continuous_unitSphereMap⟩ := by
   subst q
   ext z
+  -- The subspace of `TopPair.ofSubset` is the subtype only after unfolding the pair, so
+  -- `ConcreteCategory.comp_apply` matches `complSingletonHomotopyEquivSphere`'s domain.
   refine (congrArg Subtype.val (ConcreteCategory.comp_apply _ _ z)).trans ?_
   refine (coe_complSingletonHomotopyEquivSphere_apply (e p) _).trans ?_
   refine Eq.trans ?_ (congrArg Subtype.val (ConcreteCategory.comp_apply _ _ z)).symm
@@ -476,6 +478,8 @@ theorem singularHomologyComplSingletonIsoOfOrientation_transHomeomorph_linearIso
           (B := {φ x}ᶜ) (B' := {(φ.transHomeomorph e.toHomeomorph) x}ᶜ)
           (fun _ hy h ↦ hy (e.toHomeomorph.injective h))) R (n + 1) =
       localHomologyMap R (e.toHomeomorph : C(E, F)) he (n + 1) := by
+    -- `(φ.transHomeomorph e.toHomeomorph) x` unfolds to `e (φ x)` in the `MapsTo` proof,
+    -- and `⟨e.toHomeomorph, _⟩` is definitionally `(e.toHomeomorph : C(E, F))`.
     rw [localHomologyMap_def]
   rw [singularHomologyComplSingletonIsoOfOrientation_hom_eq R (φ.transHomeomorph e.toHomeomorph)
       hx' (OpenPartialHomeomorph.mem_refl_source _),

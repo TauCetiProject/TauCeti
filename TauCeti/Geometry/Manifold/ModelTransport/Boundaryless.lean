@@ -123,13 +123,11 @@ theorem _root_.HasMFDerivAt.hasFDerivAt_chartAt
     {f' : TangentSpace 𝓘(𝕜, E) x →L[𝕜] TangentSpace 𝓘(𝕜, E') (f x)}
     (hf : HasMFDerivAt 𝓘(𝕜, E) 𝓘(𝕜, E') f x f') :
     HasFDerivAt (chartAt E' (f x) ∘ f ∘ (chartAt E x).symm) f' (chartAt E x x) := by
-  have h := hf.2
-  have hext : writtenInExtChartAt 𝓘(𝕜, E) 𝓘(𝕜, E') x f =
-      chartAt E' (f x) ∘ f ∘ (chartAt E x).symm := by
-    ext z
-    simp [writtenInExtChartAt]
-  have hx : extChartAt 𝓘(𝕜, E) x x = chartAt E x x := by simp
-  rwa [hext, (𝓘(𝕜, E)).range_eq_univ, hasFDerivWithinAt_univ, hx] at h
+  have hL : (chartAt E' (f x)).transHomeomorph 𝓘(𝕜, E').toHomeomorph = chartAt E' (f x) := by
+    ext <;> simp
+  have hR : (chartAt E x).transHomeomorph 𝓘(𝕜, E).toHomeomorph = chartAt E x := by
+    ext <;> simp
+  simpa only [hL, hR] using hf.hasFDerivAt_chartAt_transHomeomorph
 
 end ExtendedCharts
 
