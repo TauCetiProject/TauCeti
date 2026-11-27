@@ -62,6 +62,8 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
   statements on the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)`, transported along
   `TauCeti.RealProjectiveSpace.homeomorphProjectivization` by
   `TauCeti.RealProjectiveSpace.singularHomologyProjectivizationIso`.
+* `TauCeti.RealProjectiveSpace.nontrivial_singularHomology_projectivization_top_iff`: the integral
+  top homology `H_N(ℙ ℝ (Fin (N + 1) → ℝ); ℤ)` is nonzero exactly when `N = 0` or `N` is odd.
 
 ## References
 
@@ -423,5 +425,24 @@ def singularHomologyProjectivizationIntLinearEquivOfOdd (hk : Odd k) (hkN : k < 
       (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) ≃ₗ[ℤ] ZMod 2 :=
   (singularHomologyProjectivizationIso (N := N) ℤ k).symm.toLinearEquiv ≪≫ₗ
     singularHomologyIntLinearEquivOfOdd hk hkN
+
+/-- **Integral top homology of `ℙ ℝ (Fin (N + 1) → ℝ)`.** `H_N(ℙ ℝ (Fin (N + 1) → ℝ); ℤ)` is
+nonzero exactly when `N = 0` or `N` is odd: it is `ℤ` in these cases and vanishes for `N` even and
+positive. -/
+theorem nontrivial_singularHomology_projectivization_top_iff :
+    Nontrivial (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) N).obj
+      (ModuleCat.of ℤ ℤ)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) ↔ N = 0 ∨ Odd N := by
+  have e := singularHomologyProjectivizationIso (N := N) ℤ N
+  by_cases hN : N = 0 ∨ Odd N
+  · refine iff_of_true ?_ hN
+    -- In both cases `H_N(ℝℙᴺ; ℤ) ≅ ℤ`, which is nontrivial.
+    rcases hN with rfl | hN
+    · exact (e.symm.toLinearEquiv ≪≫ₗ singularHomologyZeroLinearEquiv ℤ).toEquiv.nontrivial
+    · exact (e.symm.toLinearEquiv ≪≫ₗ
+        singularHomologyTopLinearEquivOfOdd ℤ hN).toEquiv.nontrivial
+  · refine iff_of_false (fun h ↦ ?_) hN
+    rw [not_or, Nat.not_odd_iff_even] at hN
+    have hzero := (isZero_singularHomology_int_of_even (N := N) hN.2 hN.1).of_iso e.symm
+    exact not_subsingleton _ (ModuleCat.isZero_iff_subsingleton.1 hzero)
 
 end TauCeti.RealProjectiveSpace
