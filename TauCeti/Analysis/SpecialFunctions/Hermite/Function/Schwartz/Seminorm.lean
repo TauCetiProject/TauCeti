@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
-public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Schwartz
+public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Schwartz.Basic
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.SpecialFunctions.Hermite.Function.MemLp
 import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Orthonormal
 
@@ -93,25 +95,19 @@ Integrating `(ψₙ²)' = 2ψₙψₙ'` over `(-∞, x]` and using `2uv ≤ u² 
 theorem hermiteFunction_sq_le (n : ℕ) (x : ℝ) : hermiteFunction n x ^ 2 ≤ 2 * (n + 1) := by
   set f := hermiteFunction n
   set f' := deriv f
-  have hd : ∀ y, HasDerivAt (fun y => f y ^ 2) (2 * f y * f' y) y := fun y => by
-    have hfd : HasDerivAt f (f' y) y :=
-      ((contDiff_hermiteFunction n).differentiable (by simp) y).hasDerivAt
-    refine ((hasDerivAt_pow 2 (f y)).comp y hfd).congr_deriv ?_
-    simp
   have hf'eq : f' = fun y => Real.sqrt ((n : ℝ) / 2) * hermiteFunction (n - 1) y -
       Real.sqrt (((n : ℝ) + 1) / 2) * hermiteFunction (n + 1) y :=
     funext (deriv_hermiteFunction n)
+  have hd : ∀ y, HasDerivAt (fun y => f y ^ 2) (2 * f y * f' y) y := fun y => by
+    refine ((hasDerivAt_pow 2 (f y)).comp y (hasDerivAt_hermiteFunction n y)).congr_deriv ?_
+    simp [hf'eq]
   have hf2 : MemLp f 2 volume := memLp_two_hermiteFunction n
   have hf'2 : MemLp f' 2 volume := by
     rw [hf'eq]
     exact ((memLp_two_hermiteFunction _).const_mul _).sub
       ((memLp_two_hermiteFunction _).const_mul _)
-  have hff : Integrable (fun y => f y ^ 2) := by
-    have h : Integrable (fun y => f y * f y) := hf2.integrable_mul hf2
-    simpa only [sq] using h
-  have hf'f' : Integrable (fun y => f' y ^ 2) := by
-    have h : Integrable (fun y => f' y * f' y) := hf'2.integrable_mul hf'2
-    simpa only [sq] using h
+  have hff : Integrable (fun y => f y ^ 2) := hf2.integrable_sq
+  have hf'f' : Integrable (fun y => f' y ^ 2) := hf'2.integrable_sq
   have hff' : Integrable (fun y => 2 * f y * f' y) := by
     have h : Integrable (fun y => f y * f' y) := hf2.integrable_mul hf'2
     simpa only [mul_assoc] using h.const_mul 2
@@ -189,24 +185,23 @@ private theorem PolyBoundedOnHermite.mul {T L : 𝓢(ℝ, ℝ) →L[ℝ] 𝓢(�
         gcongr
     _ = C * (2 ^ N + 1) * (1 + n) ^ (N + 1) := by ring
 
-private theorem sqrt_le_one_add {y : ℝ} (n : ℕ) (hy : y ≤ 1 + n) : |Real.sqrt y| ≤ 1 + n := by
+private theorem sqrt_le_one_add {y : ℝ} (n : ℕ) (hy : y ≤ ((n : ℝ) + 1) / 2) :
+    |Real.sqrt y| ≤ 1 + n := by
+  have : (0 : ℝ) ≤ n := n.cast_nonneg
   rw [abs_of_nonneg (Real.sqrt_nonneg _)]
   exact Real.sqrt_le_iff.mpr ⟨by positivity, by nlinarith⟩
 
 private theorem PolyBoundedOnHermite.mul_position {T : 𝓢(ℝ, ℝ) →L[ℝ] 𝓢(ℝ, ℝ)}
     (hT : PolyBoundedOnHermite T) : PolyBoundedOnHermite (T * positionCLM) :=
   hT.mul (fun n => Real.sqrt (((n : ℝ) + 1) / 2)) (fun n => Real.sqrt ((n : ℝ) / 2))
-    (fun n => sqrt_le_one_add n (by have : (0 : ℝ) ≤ n := n.cast_nonneg; linarith))
-    (fun n => sqrt_le_one_add n (by have : (0 : ℝ) ≤ n := n.cast_nonneg; linarith))
+    (fun n => sqrt_le_one_add n le_rfl) (fun n => sqrt_le_one_add n (by linarith))
     mul_hermiteSchwartzMap
 
 private theorem PolyBoundedOnHermite.mul_deriv {T : 𝓢(ℝ, ℝ) →L[ℝ] 𝓢(ℝ, ℝ)}
     (hT : PolyBoundedOnHermite T) : PolyBoundedOnHermite (T * SchwartzMap.derivCLM ℝ ℝ) :=
   hT.mul (fun n => -Real.sqrt (((n : ℝ) + 1) / 2)) (fun n => Real.sqrt ((n : ℝ) / 2))
-    (fun n => by
-      rw [abs_neg]
-      exact sqrt_le_one_add n (by have : (0 : ℝ) ≤ n := n.cast_nonneg; linarith))
-    (fun n => sqrt_le_one_add n (by have : (0 : ℝ) ≤ n := n.cast_nonneg; linarith))
+    (fun n => by rw [abs_neg]; exact sqrt_le_one_add n le_rfl)
+    (fun n => sqrt_le_one_add n (by linarith))
     (fun n => by rw [deriv_hermiteSchwartzMap, neg_smul]; abel)
 
 private theorem polyBoundedOnHermite_position_pow_mul_deriv_pow (k m : ℕ) :
@@ -219,23 +214,6 @@ private theorem polyBoundedOnHermite_position_pow_mul_deriv_pow (k m : ℕ) :
     | succ k ih => simpa [pow_succ] using ih.mul_position
   | succ m ih => simpa [pow_succ, ← mul_assoc] using ih.mul_deriv
 
-private theorem coe_derivCLM_pow (m : ℕ) (f : 𝓢(ℝ, ℝ)) :
-    ⇑((SchwartzMap.derivCLM ℝ ℝ ^ m) f) = iteratedDeriv m f := by
-  induction m generalizing f with
-  | zero => simp
-  | succ m ih =>
-    rw [pow_succ, mul_apply_eq_comp, ih, iteratedDeriv_succ']
-    congr 1
-
-private theorem positionCLM_pow_apply (k : ℕ) (g : 𝓢(ℝ, ℝ)) (x : ℝ) :
-    (positionCLM ^ k) g x = x ^ k * g x := by
-  induction k generalizing g with
-  | zero => simp
-  | succ k ih =>
-    rw [pow_succ', mul_apply_eq_comp, positionCLM,
-      SchwartzMap.smulLeftCLM_apply_apply Function.HasTemperateGrowth.id', smul_eq_mul, ih]
-    ring
-
 /-! ## Schwartz seminorms -/
 
 /-- **Polynomial growth of the Schwartz seminorms of the Hermite functions.** For each Schwartz
@@ -247,8 +225,9 @@ theorem exists_seminorm_hermiteSchwartzMap_le (k m : ℕ) :
   obtain ⟨C, N, hC, h⟩ := polyBoundedOnHermite_position_pow_mul_deriv_pow k m
   refine ⟨C, N, hC, fun n => SchwartzMap.seminorm_le_bound' ℝ k m _ (by positivity) fun x => ?_⟩
   have hx := h n x
-  rw [mul_apply_eq_comp, positionCLM_pow_apply, coe_derivCLM_pow, abs_mul,
-    abs_pow] at hx
+  rw [mul_apply_eq_comp, positionCLM,
+    SchwartzMap.smulLeftCLM_pow_apply Function.HasTemperateGrowth.id',
+    SchwartzMap.coe_derivCLM_pow, smul_eq_mul, abs_mul, abs_pow] at hx
   simpa [Real.norm_eq_abs] using hx
 
 /-- **Polynomial growth of every continuous seminorm along the Hermite functions.** For every
@@ -273,7 +252,8 @@ theorem exists_hermiteSchwartzMap_le_of_continuous (p : Seminorm ℝ 𝓢(ℝ, �
       (Finset.sum_nonneg fun j _ => hC j))
   calc p (hermiteSchwartzMap n)
       ≤ (C₀ • s.sup (schwartzSeminormFamily ℝ ℝ ℝ)) (hermiteSchwartzMap n) := hle _
-    _ = C₀ * s.sup (schwartzSeminormFamily ℝ ℝ ℝ) (hermiteSchwartzMap n) := rfl
+    _ = C₀ * s.sup (schwartzSeminormFamily ℝ ℝ ℝ) (hermiteSchwartzMap n) := by
+        rw [smul_apply, NNReal.smul_def, smul_eq_mul]
     _ ≤ C₀ * ((∑ i ∈ s, C i) * (1 + n) ^ s.sup N) := by gcongr
     _ = (C₀ * ∑ i ∈ s, C i) * (1 + n) ^ s.sup N := by ring
 
