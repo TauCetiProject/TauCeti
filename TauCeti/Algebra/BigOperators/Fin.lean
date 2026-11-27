@@ -99,6 +99,17 @@ theorem sum_univ_castSucc_sub_succ {G : Type*} [AddCommGroup G] {n : ℕ}
     ∑ i : Fin n, (f i.castSucc - f i.succ) = f 0 - f (last n) := by
   simpa only [neg_sub_neg] using sum_univ_succ_sub_castSucc (fun i ↦ -f i)
 
+/-- A sum of piece-indexed endpoint differences splits into the outer endpoint difference plus the
+sum of interior jumps between consecutive pieces. -/
+theorem sum_univ_sub_eq_boundary_add_sum_jump {G : Type*} [AddCommGroup G] {n : ℕ}
+    (f : Fin (n + 1) → Fin (n + 2) → G) :
+    ∑ i : Fin (n + 1), (f i i.succ - f i i.castSucc) =
+      f (last n) (last (n + 1)) - f 0 0 +
+        ∑ j : Fin n, (f j.castSucc j.succ.castSucc - f j.succ j.succ.castSucc) := by
+  rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib, sum_univ_castSucc, sum_univ_succ]
+  simp only [succ_castSucc, succ_last, castSucc_zero]
+  rw [add_comm (f 0 0), add_sub_add_comm, add_comm]
+
 /-- Multiplying the products of a tuple on `Fin (k + 1)` with one index left out, over all `k + 1`
 choices of the omitted index, takes every entry `k` times. -/
 @[to_additive /-- Summing a tuple on `Fin (k + 1)` with one index left out, over all `k + 1`
