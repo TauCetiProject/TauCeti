@@ -545,7 +545,9 @@ theorem smulCommutator_restrictScalars (a : A) (D : M →ₗ[S] N) :
   ext x
   simp
 
-/-- The iterated form of `TauCeti.smulCommutator_restrictScalars`. -/
+/-- The iterated form of `TauCeti.smulCommutator_restrictScalars`: the `k`-fold commutator with
+multiplication by `a` of an `S`-linear map, viewed as an `R`-linear map, is its `k`-fold commutator
+as an `S`-linear map, viewed as an `R`-linear map. -/
 @[simp]
 theorem smulCommutator_pow_restrictScalars (a : A) (D : M →ₗ[S] N) (k : ℕ) :
     (smulCommutator R a ^ k) (D.restrictScalars R) =

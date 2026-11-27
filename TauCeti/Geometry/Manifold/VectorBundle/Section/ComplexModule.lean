@@ -42,7 +42,9 @@ vanishes near every point near which `s` vanishes
 the fibres are those underlying their complex structures, a real function acts on sections as its
 complex inclusion does, so such an operator is also, as a real-linear operator, a differential
 operator of the same order for commutators with real-valued functions
-(`TauCeti.restrictScalars_mem_differentialOperators_of_complex`).
+(`TauCeti.restrictScalars_mem_differentialOperators_of_complex`), and its iterated commutators with
+a real function are those of the complex operator with the function's complex inclusion
+(`TauCeti.smulCommutator_pow_restrictScalars_ofReal`).
 
 ## References
 
@@ -285,5 +287,17 @@ theorem restrictScalars_mem_differentialOperators_of_complex {m : ℕ}
   comp_comp_mem_differentialOperators (ρ := LinearMap.id) (σ := LinearMap.id)
     (fun b ↦ ⟨ContMDiffMap.ofReal b, fun s ↦ by simp, fun s ↦ by simp⟩)
     (restrictScalars_mem_differentialOperators hP)
+
+/-- The `k`-fold commutator with a real function `f` of the real operator underlying `P` is the
+real operator underlying the `k`-fold commutator of `P` with `f` viewed as a complex function,
+since real functions act on sections through their complex inclusions. -/
+theorem smulCommutator_pow_restrictScalars_ofReal {k : ℕ}
+    (P : Cₛ^n⟮I; F, V⟯ →ₗ[ℂ] Cₛ^n⟮I; F', W⟯) (f : C^n⟮I, M; ℝ⟯) :
+    (smulCommutator ℝ f ^ k) (P.restrictScalars ℝ) =
+      ((smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) P).restrictScalars ℝ := by
+  have h : (smulCommutator ℝ (ContMDiffMap.ofReal f) :
+      Module.End ℝ (Cₛ^n⟮I; F, V⟯ →ₗ[ℝ] Cₛ^n⟮I; F', W⟯)) = smulCommutator ℝ f :=
+    LinearMap.ext fun D ↦ LinearMap.ext fun s ↦ by simp
+  rw [← h, smulCommutator_pow_restrictScalars]
 
 end TauCeti
