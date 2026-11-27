@@ -107,6 +107,9 @@ functors with coefficients in `M` and in `N`. -/
 noncomputable def homologyFunctorMap {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) (n : ℤ) :
     S.homologyFunctor M.isDGRightModule n ⟶ S.homologyFunctor N.isDGRightModule n where
   app i := HomologicalComplex.homologyMap (((S.m i).twistedCochainComplexFunctor h).map f) n
+  -- The objects of the cohomology functors are the cohomology of the twisted complexes only up to
+  -- unfolding, so `rw` and `simp` cannot rewrite with `homologyMap_comp` here; the composites are
+  -- matched by unification instead.
   naturality _ _ g :=
     ((HomologicalComplex.homologyMap_comp _ _ n).symm.trans (congrArg
       (HomologicalComplex.homologyMap · n)
@@ -122,21 +125,20 @@ theorem homologyFunctorMap_app {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M �
 
 @[simp]
 theorem homologyFunctorMap_id (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ) :
-    S.homologyFunctorMap (𝟙 M) n = 𝟙 _ :=
-  NatTrans.ext <| funext fun i ↦ (S.homologyFunctorMap_app (𝟙 M) n i).trans <|
-    (congrArg (HomologicalComplex.homologyMap · n)
-      (((S.m i).twistedCochainComplexFunctor h).map_id M)).trans
-        (HomologicalComplex.homologyMap_id _ n)
+    S.homologyFunctorMap (𝟙 M) n = 𝟙 _ := by
+  ext i : 2
+  simp only [homologyFunctorMap_app, CategoryTheory.Functor.map_id,
+    HomologicalComplex.homologyMap_id, NatTrans.id_app]
+  rfl
 
 @[simp]
 theorem homologyFunctorMap_comp {M N L : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N)
     (g : N ⟶ L) (n : ℤ) :
-    S.homologyFunctorMap (f ≫ g) n = S.homologyFunctorMap f n ≫ S.homologyFunctorMap g n :=
-  NatTrans.ext <| funext fun i ↦ (S.homologyFunctorMap_app (f ≫ g) n i).trans <|
-    ((congrArg (HomologicalComplex.homologyMap · n)
-      (((S.m i).twistedCochainComplexFunctor h).map_comp f g)).trans
-        (HomologicalComplex.homologyMap_comp _ _ n)).trans
-      (congrArg₂ (· ≫ ·) (S.homologyFunctorMap_app f n i) (S.homologyFunctorMap_app g n i)).symm
+    S.homologyFunctorMap (f ≫ g) n = S.homologyFunctorMap f n ≫ S.homologyFunctorMap g n := by
+  ext i : 2
+  simp only [homologyFunctorMap_app, CategoryTheory.Functor.map_comp,
+    HomologicalComplex.homologyMap_comp, NatTrans.comp_app]
+  rfl
 
 /-- **The cohomology functors of a continuation system as a functor of the coefficients**:
 `M ↦ (i ↦ H^n(M ⊗ ⟨P i⟩))`. The body is exposed: its objects are the cohomology functors, which the
@@ -202,7 +204,7 @@ theorem directLimitFunctor_map_ι_apply (n : ℤ) {M N : DGRightModuleCat.{uR, u
     (S.directLimitFunctor n).map f (colimit.ι ((S.coefficientHomologyFunctor n).obj M) i y) =
       colimit.ι ((S.coefficientHomologyFunctor n).obj N) i
         (((S.coefficientHomologyFunctor n).map f).app i y) :=
-  colimit.ι_map_apply ((S.coefficientHomologyFunctor n).map f) i y
+  ConcreteCategory.congr_hom (S.ι_directLimitFunctor_map n f i) y
 
 /-! ### Directed unions of coefficients -/
 
@@ -260,15 +262,11 @@ theorem exists_directLimitFunctor_map_eq_zero [IsFiltered ι] [Preorder κ] [IsD
     hy.trans (map_zero _).symm
   obtain ⟨i', g, g', hg⟩ := (Concrete.colimit_rep_eq_iff_exists _ _ _).1 hy'
   -- The image of `z` at the stage `i'` already dies in the cohomology with coefficients in `M`.
-  rw [map_zero, ← ConcreteCategory.comp_apply, ← NatTrans.naturality,
-    ConcreteCategory.comp_apply] at hg
+  rw [map_zero, ← NatTrans.naturality_apply] at hg
   obtain ⟨k', hkk', hk'⟩ := (S.m i').exists_homologyMap_twistedCochainComplexMap_eq_zero hj hN t ht
     (((S.coefficientHomologyFunctor n).obj (N k)).map g z) hg
   refine ⟨k', hkk', ?_⟩
-  rw [S.directLimitFunctor_map_ι_apply,
-    ← colimit.w ((S.coefficientHomologyFunctor n).obj (N k')) g, ConcreteCategory.comp_apply,
-    ← ConcreteCategory.comp_apply (((S.coefficientHomologyFunctor n).map (t hkk')).app i),
-    ← NatTrans.naturality, ConcreteCategory.comp_apply]
+  rw [S.directLimitFunctor_map_ι_apply, ← colimit.w_apply _ g, ← NatTrans.naturality_apply]
   exact (congrArg _ hk').trans (map_zero _)
 
 end DirectedUnion

@@ -520,21 +520,19 @@ theorem isIso_app_of_forall_cohomologyGrading_eq_bot {R' : Type*} [Ring R']
   have hτ (k : ℤ) : Function.Bijective (α.app (M.truncLE h𝒜 k)) :=
     (ConcreteCategory.isIso_iff_bijective _).1
       (hα _ ⟨k, fun _ hp ↦ M.cohomologyGrading_truncLE_eq_bot hp⟩)
-  have hnat {N N' : DGRightModuleCat.{uR, uA, uM} h} (f : N ⟶ N') (y : F.obj N) :
-      α.app N' (F.map f y) = G.map f (α.app N y) := by
-    rw [← ConcreteCategory.comp_apply, α.naturality, ConcreteCategory.comp_apply]
   rw [ConcreteCategory.isIso_iff_bijective]
   refine ⟨(injective_iff_map_eq_zero (α.app M).hom).2 fun x hx ↦ ?_, fun z ↦ ?_⟩
   · -- `x` comes from `τ^{≤ k} M`, and its image under `α` vanishes in some `τ^{≤ k'} M`.
     obtain ⟨k, y, rfl⟩ := hF x
-    obtain ⟨k', hkk', hk'⟩ := hG₀ k _ ((hnat _ y).symm.trans hx)
+    obtain ⟨k', hkk', hk'⟩ := hG₀ k _ ((NatTrans.naturality_apply α _ y).symm.trans hx)
     have hy : F.map (M.truncLEInclusion h𝒜 hkk') y = 0 :=
-      (injective_iff_map_eq_zero (α.app _).hom).1 (hτ k').1 _ ((hnat _ y).trans hk')
+      (injective_iff_map_eq_zero (α.app _).hom).1 (hτ k').1 _
+        ((NatTrans.naturality_apply α _ y).trans hk')
     rw [← M.truncLEInclusion_ιTruncLE hkk', F.map_comp, ConcreteCategory.comp_apply, hy,
       map_zero]
   · obtain ⟨k, w, rfl⟩ := hG z
     obtain ⟨y, rfl⟩ := (hτ k).2 w
-    exact ⟨F.map (M.ιTruncLE h𝒜 k) y, hnat _ y⟩
+    exact ⟨F.map (M.ιTruncLE h𝒜 k) y, NatTrans.naturality_apply α _ y⟩
 
 end DGRightModuleCat
 
