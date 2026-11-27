@@ -159,6 +159,85 @@ private theorem phase_sub_one (ν z : ℂ) (θ : ℝ) :
 private theorem phase_add_one (ν z : ℂ) (θ : ℝ) :
     (ν + 1) * θ - z * Real.sin θ = (ν * θ - z * Real.sin θ) + θ := by ring
 
+/-- `π` is nonzero as a complex number. -/
+private theorem ofReal_pi_ne_zero : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
+
+/-- The derivative formula shared by the Anger and Weber functions: if
+`f μ w = π⁻¹ ∫₀^π G(μθ − w sin θ) dθ` for an entire `G` with derivative `G'` satisfying
+`−sin b · G'(a) = (G(a − b) − G(a + b))/2`, then `f_ν′(z) = (f_{ν−1}(z) − f_{ν+1}(z))/2`. -/
+private theorem hasDerivAt_of_eq_integral {f : ℂ → ℂ → ℂ} {G G' : ℂ → ℂ}
+    (hf : ∀ μ w, f μ w = (π : ℂ)⁻¹ * ∫ θ in (0 : ℝ)..π, G (μ * θ - w * Real.sin θ))
+    (hG : ∀ w, HasDerivAt G (G' w) w) (hG' : ∀ a b, -(sin b * G' a) = (G (a - b) - G (a + b)) / 2)
+    (ν z : ℂ) : HasDerivAt (f ν) ((f (ν - 1) z - f (ν + 1) z) / 2) z := by
+  have hGc : Continuous G := continuous_iff_continuousAt.2 fun w => (hG w).continuousAt
+  have h := (hasDerivAt_integral hG ν z).const_mul (π : ℂ)⁻¹
+  convert h using 1
+  · exact funext (hf ν)
+  · have key (θ : ℝ) : -((Real.sin θ : ℂ) * G' (ν * θ - z * Real.sin θ)) =
+        (G ((ν - 1) * θ - z * Real.sin θ) - G ((ν + 1) * θ - z * Real.sin θ)) / 2 := by
+      rw [phase_sub_one, phase_add_one, ofReal_sin]
+      exact hG' _ _
+    rw [hf, hf, intervalIntegral.integral_congr fun θ _ => key θ,
+      intervalIntegral.integral_div, intervalIntegral.integral_sub
+        (intervalIntegrable_integrand hGc _ _) (intervalIntegrable_integrand hGc _ _)]
+    ring
+
+/-- The three-term recurrence shared by the Anger and Weber functions: if
+`f μ w = π⁻¹ ∫₀^π G(μθ − w sin θ) dθ` for a continuous `G` with antiderivative `F` satisfying
+`G(a) cos b = (G(a − b) + G(a + b))/2`, then
+`2ν f_ν(z) = z f_{ν−1}(z) + z f_{ν+1}(z) + (2/π)(F(πν) − F(0))`. It comes from integrating the
+derivative `G(νθ − z sin θ)(ν − z cos θ)` of `θ ↦ F(νθ − z sin θ)` over `[0, π]`. -/
+private theorem two_mul_self_mul_of_eq_integral {f : ℂ → ℂ → ℂ} {F G : ℂ → ℂ}
+    (hf : ∀ μ w, f μ w = (π : ℂ)⁻¹ * ∫ θ in (0 : ℝ)..π, G (μ * θ - w * Real.sin θ))
+    (hF : ∀ w, HasDerivAt F (G w) w) (hGc : Continuous G)
+    (hG : ∀ a b, G a * cos b = (G (a - b) + G (a + b)) / 2) (ν z : ℂ) :
+    2 * ν * f ν z = z * f (ν - 1) z + z * f (ν + 1) z + 2 / π * (F (π * ν) - F 0) := by
+  have hftc : ∫ θ in (0 : ℝ)..π, G (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ) =
+      F (π * ν) - F 0 := by
+    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt
+      (f := fun θ : ℝ => F (ν * θ - z * Real.sin θ))
+      (fun θ _ => (hF _).comp θ (hasDerivAt_phase ν z θ))
+      ((by fun_prop : Continuous fun θ : ℝ =>
+        G (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ)).intervalIntegrable 0 π)]
+    simp only [Real.sin_pi, Real.sin_zero, ofReal_zero, mul_zero, sub_zero]
+    rw [mul_comm ν]
+  have key (θ : ℝ) : G (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ) =
+      ν * G (ν * θ - z * Real.sin θ) -
+        z / 2 * (G ((ν - 1) * θ - z * Real.sin θ) + G ((ν + 1) * θ - z * Real.sin θ)) := by
+    rw [phase_sub_one, phase_add_one, ofReal_cos]
+    linear_combination (-z) * hG (ν * θ - z * Real.sin θ) θ
+  have hi := intervalIntegrable_integrand hGc
+  rw [intervalIntegral.integral_congr fun θ _ => key θ, intervalIntegral.integral_sub
+    ((hi ν z).const_mul ν) (((hi _ z).add (hi _ z)).const_mul _),
+    intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
+    intervalIntegral.integral_add (hi _ z) (hi _ z)] at hftc
+  have hπ := ofReal_pi_ne_zero
+  rw [hf, hf, hf, ← hftc]
+  field_simp
+  ring
+
+/-- The inhomogeneous Bessel equation shared by the Anger and Weber functions: if
+`f_μ′(w) = (f_{μ−1}(w) − f_{μ+1}(w))/2` for all `μ` and `w`, and
+`2μ f_μ(z) = z f_{μ−1}(z) + z f_{μ+1}(z) + c(μ)` for all `μ`, then
+`z² f_ν′′(z) + z f_ν′(z) + (z² − ν²) f_ν(z) = −(z (c(ν−1) + c(ν+1))/4 + ν c(ν)/2)`. -/
+private theorem ode_of_hasDerivAt_of_recurrence {f : ℂ → ℂ → ℂ} {c : ℂ → ℂ} {z : ℂ}
+    (hd : ∀ μ w, HasDerivAt (f μ) ((f (μ - 1) w - f (μ + 1) w) / 2) w)
+    (hr : ∀ μ, 2 * μ * f μ z = z * f (μ - 1) z + z * f (μ + 1) z + c μ) (ν : ℂ) :
+    z ^ 2 * deriv^[2] (f ν) z + z * deriv (f ν) z + (z ^ 2 - ν ^ 2) * f ν z =
+      -(z * (c (ν - 1) + c (ν + 1)) / 4 + ν * c ν / 2) := by
+  have hd' (μ : ℂ) : deriv (f μ) = fun w => (f (μ - 1) w - f (μ + 1) w) / 2 :=
+    funext fun w => (hd μ w).deriv
+  have h2 : deriv^[2] (f ν) z = ((f (ν - 1 - 1) z - f (ν - 1 + 1) z) / 2 -
+      (f (ν + 1 - 1) z - f (ν + 1 + 1) z) / 2) / 2 := by
+    rw [Function.iterate_succ_apply', Function.iterate_one, hd']
+    exact (((hd (ν - 1) z).sub (hd (ν + 1) z)).div_const 2).deriv
+  have r₀ := hr ν
+  have r₁ := hr (ν - 1)
+  have r₂ := hr (ν + 1)
+  rw [h2, hd']
+  simp only [sub_add_cancel, add_sub_cancel_right] at r₁ r₂ ⊢
+  linear_combination -(z / 4) * r₁ - z / 4 * r₂ - ν / 2 * r₀
+
 /-! ### Holomorphy -/
 
 /-- The Anger function `𝐉_ν(z)` is an entire function of the pair `(ν, z)`. -/
@@ -184,36 +263,16 @@ theorem differentiable_weberE : Differentiable ℂ fun p : ℂ × ℂ => weberE 
 /-- The derivative of the Anger function (DLMF 11.10.33): `𝐉_ν′(z) = (𝐉_{ν−1}(z) − 𝐉_{ν+1}(z))/2`,
 for every order `ν` and argument `z`. -/
 theorem hasDerivAt_angerJ (ν z : ℂ) :
-    HasDerivAt (angerJ ν) ((angerJ (ν - 1) z - angerJ (ν + 1) z) / 2) z := by
-  have h := (hasDerivAt_integral (fun w => hasDerivAt_cos w) ν z).const_mul (π : ℂ)⁻¹
-  convert h using 1
-  · exact funext fun w => angerJ_def ν w
-  · have key (θ : ℝ) : -((Real.sin θ : ℂ) * -sin (ν * θ - z * Real.sin θ)) =
-        (cos ((ν - 1) * θ - z * Real.sin θ) - cos ((ν + 1) * θ - z * Real.sin θ)) / 2 := by
-      rw [phase_sub_one, phase_add_one, cos_sub, cos_add, ofReal_sin]
-      ring
-    rw [angerJ_def, angerJ_def, intervalIntegral.integral_congr fun θ _ => key θ,
-      intervalIntegral.integral_div, intervalIntegral.integral_sub
-        (intervalIntegrable_integrand continuous_cos _ _)
-        (intervalIntegrable_integrand continuous_cos _ _)]
-    ring
+    HasDerivAt (angerJ ν) ((angerJ (ν - 1) z - angerJ (ν + 1) z) / 2) z :=
+  hasDerivAt_of_eq_integral angerJ_def (fun w => hasDerivAt_cos w)
+    (fun a b => by rw [cos_sub, cos_add]; ring) ν z
 
 /-- The derivative of the Weber function (DLMF 11.10.36): `𝐄_ν′(z) = (𝐄_{ν−1}(z) − 𝐄_{ν+1}(z))/2`,
 for every order `ν` and argument `z`. -/
 theorem hasDerivAt_weberE (ν z : ℂ) :
-    HasDerivAt (weberE ν) ((weberE (ν - 1) z - weberE (ν + 1) z) / 2) z := by
-  have h := (hasDerivAt_integral (fun w => hasDerivAt_sin w) ν z).const_mul (π : ℂ)⁻¹
-  convert h using 1
-  · exact funext fun w => weberE_def ν w
-  · have key (θ : ℝ) : -((Real.sin θ : ℂ) * cos (ν * θ - z * Real.sin θ)) =
-        (sin ((ν - 1) * θ - z * Real.sin θ) - sin ((ν + 1) * θ - z * Real.sin θ)) / 2 := by
-      rw [phase_sub_one, phase_add_one, sin_sub, sin_add, ofReal_sin]
-      ring
-    rw [weberE_def, weberE_def, intervalIntegral.integral_congr fun θ _ => key θ,
-      intervalIntegral.integral_div, intervalIntegral.integral_sub
-        (intervalIntegrable_integrand continuous_sin _ _)
-        (intervalIntegrable_integrand continuous_sin _ _)]
-    ring
+    HasDerivAt (weberE ν) ((weberE (ν - 1) z - weberE (ν + 1) z) / 2) z :=
+  hasDerivAt_of_eq_integral weberE_def (fun w => hasDerivAt_sin w)
+    (fun a b => by rw [sin_sub, sin_add]; ring) ν z
 
 /-- `2 𝐉_ν′(z) = 𝐉_{ν−1}(z) − 𝐉_{ν+1}(z)` (DLMF 11.10.33), as a value of `deriv`. -/
 theorem two_mul_deriv_angerJ (ν z : ℂ) :
@@ -234,29 +293,8 @@ theorem two_mul_deriv_weberE (ν z : ℂ) :
 `z`. -/
 theorem two_mul_self_mul_angerJ (ν z : ℂ) :
     2 * ν * angerJ ν z = z * angerJ (ν - 1) z + z * angerJ (ν + 1) z + 2 / π * sin (π * ν) := by
-  have hftc : ∫ θ in (0 : ℝ)..π, cos (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ) =
-      sin (π * ν) := by
-    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt
-      (f := fun θ : ℝ => sin (ν * θ - z * Real.sin θ))
-      (fun θ _ => (hasDerivAt_sin _).comp θ (hasDerivAt_phase ν z θ))
-      ((by fun_prop : Continuous fun θ : ℝ =>
-        cos (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ)).intervalIntegrable 0 π)]
-    simp only [Real.sin_pi, Real.sin_zero, ofReal_zero, mul_zero, sub_zero, sin_zero]
-    rw [mul_comm ν]
-  have key (θ : ℝ) : cos (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ) =
-      ν * cos (ν * θ - z * Real.sin θ) -
-        z / 2 * (cos ((ν - 1) * θ - z * Real.sin θ) + cos ((ν + 1) * θ - z * Real.sin θ)) := by
-    rw [phase_sub_one, phase_add_one, cos_sub _ (θ : ℂ), cos_add _ (θ : ℂ), ofReal_cos]
-    ring
-  have hi := intervalIntegrable_integrand continuous_cos
-  rw [intervalIntegral.integral_congr fun θ _ => key θ, intervalIntegral.integral_sub
-    ((hi ν z).const_mul ν) (((hi _ z).add (hi _ z)).const_mul _),
-    intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
-    intervalIntegral.integral_add (hi _ z) (hi _ z)] at hftc
-  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
-  rw [angerJ_def, angerJ_def, angerJ_def, ← hftc]
-  field_simp
-  ring
+  rw [two_mul_self_mul_of_eq_integral angerJ_def (fun w => hasDerivAt_sin w) continuous_cos
+    (fun a b => by rw [cos_sub, cos_add]; ring), sin_zero, sub_zero]
 
 /-- The three-term recurrence of the Weber function (DLMF 11.10.35), multiplied by `z`:
 `2ν 𝐄_ν(z) = z 𝐄_{ν−1}(z) + z 𝐄_{ν+1}(z) + (2/π)(1 − cos(πν))` for every order `ν` and argument
@@ -264,29 +302,9 @@ theorem two_mul_self_mul_angerJ (ν z : ℂ) :
 theorem two_mul_self_mul_weberE (ν z : ℂ) :
     2 * ν * weberE ν z =
       z * weberE (ν - 1) z + z * weberE (ν + 1) z + 2 / π * (1 - cos (π * ν)) := by
-  have hftc : ∫ θ in (0 : ℝ)..π, sin (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ) =
-      1 - cos (π * ν) := by
-    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt
-      (f := fun θ : ℝ => -cos (ν * θ - z * Real.sin θ))
-      (fun θ _ => ((hasDerivAt_cos _).comp θ (hasDerivAt_phase ν z θ)).neg.congr_deriv (by ring))
-      ((by fun_prop : Continuous fun θ : ℝ =>
-        sin (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ)).intervalIntegrable 0 π)]
-    simp only [Real.sin_pi, Real.sin_zero, ofReal_zero, mul_zero, sub_zero, cos_zero]
-    rw [mul_comm ν]
-    ring
-  have key (θ : ℝ) : sin (ν * θ - z * Real.sin θ) * (ν - z * Real.cos θ) =
-      ν * sin (ν * θ - z * Real.sin θ) -
-        z / 2 * (sin ((ν - 1) * θ - z * Real.sin θ) + sin ((ν + 1) * θ - z * Real.sin θ)) := by
-    rw [phase_sub_one, phase_add_one, sin_sub _ (θ : ℂ), sin_add _ (θ : ℂ), ofReal_cos]
-    ring
-  have hi := intervalIntegrable_integrand continuous_sin
-  rw [intervalIntegral.integral_congr fun θ _ => key θ, intervalIntegral.integral_sub
-    ((hi ν z).const_mul ν) (((hi _ z).add (hi _ z)).const_mul _),
-    intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
-    intervalIntegral.integral_add (hi _ z) (hi _ z)] at hftc
-  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
-  rw [weberE_def, weberE_def, weberE_def, ← hftc]
-  field_simp
+  rw [two_mul_self_mul_of_eq_integral weberE_def
+    (fun w => (hasDerivAt_cos w).neg.congr_deriv (neg_neg _)) continuous_sin
+    (fun a b => by rw [sin_sub, sin_add]; ring), Pi.neg_apply, Pi.neg_apply, cos_zero]
   ring
 
 /-! ### The integral over a full period -/
@@ -316,7 +334,7 @@ theorem integral_zero_two_pi_cos_mul_sub_mul_sin (ν z : ℂ) :
     ((intervalIntegrable_integrand continuous_sin ν z).const_mul _),
     intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul, angerJ_def,
     weberE_def]
-  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
+  have hπ := ofReal_pi_ne_zero
   field_simp
   ring
 
@@ -325,7 +343,7 @@ theorem integral_zero_two_pi_cos_mul_sub_mul_sin (ν z : ℂ) :
 /-- The Anger function at `z = 0` (DLMF 11.10.25): `𝐉_ν(0) = sin(πν)/(πν)` for `ν ≠ 0`. -/
 theorem angerJ_zero {ν : ℂ} (hν : ν ≠ 0) : angerJ ν 0 = sin (π * ν) / (π * ν) := by
   have h := two_mul_self_mul_angerJ ν 0
-  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
+  have hπ := ofReal_pi_ne_zero
   simp only [zero_mul, zero_add] at h
   rw [eq_div_iff (mul_ne_zero hπ hν)]
   linear_combination (norm := (field_simp; ring)) π / 2 * h
@@ -333,7 +351,7 @@ theorem angerJ_zero {ν : ℂ} (hν : ν ≠ 0) : angerJ ν 0 = sin (π * ν) / 
 /-- The Weber function at `z = 0` (DLMF 11.10.25): `𝐄_ν(0) = (1 − cos(πν))/(πν)` for `ν ≠ 0`. -/
 theorem weberE_zero {ν : ℂ} (hν : ν ≠ 0) : weberE ν 0 = (1 - cos (π * ν)) / (π * ν) := by
   have h := two_mul_self_mul_weberE ν 0
-  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
+  have hπ := ofReal_pi_ne_zero
   simp only [zero_mul, zero_add] at h
   rw [eq_div_iff (mul_ne_zero hπ hν)]
   linear_combination (norm := (field_simp; ring)) π / 2 * h
@@ -341,8 +359,7 @@ theorem weberE_zero {ν : ℂ} (hν : ν ≠ 0) : weberE ν 0 = (1 - cos (π * �
 /-- `𝐉_0(0) = π⁻¹ ∫₀^π dθ = 1`. -/
 @[simp]
 theorem angerJ_zero_zero : angerJ 0 0 = 1 := by
-  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
-  simp [angerJ_def, hπ]
+  simp [angerJ_def]
 
 /-- `𝐄_0(0) = π⁻¹ ∫₀^π sin 0 dθ = 0`. -/
 @[simp]
@@ -357,21 +374,12 @@ argument `z`. -/
 theorem angerJ_ode (ν z : ℂ) :
     z ^ 2 * deriv^[2] (angerJ ν) z + z * deriv (angerJ ν) z + (z ^ 2 - ν ^ 2) * angerJ ν z =
       (z - ν) * sin (π * ν) / π := by
-  have hd (μ : ℂ) : deriv (angerJ μ) = fun w => (angerJ (μ - 1) w - angerJ (μ + 1) w) / 2 :=
-    funext fun w => (hasDerivAt_angerJ μ w).deriv
-  have h2 : deriv^[2] (angerJ ν) z = ((angerJ (ν - 1 - 1) z - angerJ (ν - 1 + 1) z) / 2 -
-      (angerJ (ν + 1 - 1) z - angerJ (ν + 1 + 1) z) / 2) / 2 := by
-    rw [Function.iterate_succ_apply', Function.iterate_one, hd]
-    exact (((hasDerivAt_angerJ (ν - 1) z).sub (hasDerivAt_angerJ (ν + 1) z)).div_const 2).deriv
-  have r₀ := two_mul_self_mul_angerJ ν z
-  have r₁ := two_mul_self_mul_angerJ (ν - 1) z
-  have r₂ := two_mul_self_mul_angerJ (ν + 1) z
-  rw [mul_sub (π : ℂ) ν 1, mul_one, sin_sub_pi] at r₁
-  rw [mul_add (π : ℂ) ν 1, mul_one, sin_add_pi] at r₂
-  rw [h2, hd]
-  simp only [sub_add_cancel, add_sub_cancel_right] at r₁ r₂ ⊢
-  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
-  linear_combination (norm := (field_simp; ring)) -(z / 4) * r₁ - z / 4 * r₂ - ν / 2 * r₀
+  rw [ode_of_hasDerivAt_of_recurrence (c := fun μ => 2 / π * sin (π * μ)) hasDerivAt_angerJ
+    (fun μ => two_mul_self_mul_angerJ μ z), mul_sub (π : ℂ) ν 1, mul_add (π : ℂ) ν 1, mul_one,
+    sin_sub_pi, sin_add_pi]
+  have hπ := ofReal_pi_ne_zero
+  field_simp
+  ring
 
 /-- The equation of the Weber function (DLMF 11.10.5 and 11.10.7), multiplied by `z²`:
 `z² 𝐄_ν′′(z) + z 𝐄_ν′(z) + (z² − ν²) 𝐄_ν(z) = −(z + ν + (z − ν) cos(πν))/π` for every order `ν`
@@ -379,20 +387,11 @@ and argument `z`. -/
 theorem weberE_ode (ν z : ℂ) :
     z ^ 2 * deriv^[2] (weberE ν) z + z * deriv (weberE ν) z + (z ^ 2 - ν ^ 2) * weberE ν z =
       -(z + ν + (z - ν) * cos (π * ν)) / π := by
-  have hd (μ : ℂ) : deriv (weberE μ) = fun w => (weberE (μ - 1) w - weberE (μ + 1) w) / 2 :=
-    funext fun w => (hasDerivAt_weberE μ w).deriv
-  have h2 : deriv^[2] (weberE ν) z = ((weberE (ν - 1 - 1) z - weberE (ν - 1 + 1) z) / 2 -
-      (weberE (ν + 1 - 1) z - weberE (ν + 1 + 1) z) / 2) / 2 := by
-    rw [Function.iterate_succ_apply', Function.iterate_one, hd]
-    exact (((hasDerivAt_weberE (ν - 1) z).sub (hasDerivAt_weberE (ν + 1) z)).div_const 2).deriv
-  have r₀ := two_mul_self_mul_weberE ν z
-  have r₁ := two_mul_self_mul_weberE (ν - 1) z
-  have r₂ := two_mul_self_mul_weberE (ν + 1) z
-  rw [mul_sub (π : ℂ) ν 1, mul_one, cos_sub_pi] at r₁
-  rw [mul_add (π : ℂ) ν 1, mul_one, cos_add_pi] at r₂
-  rw [h2, hd]
-  simp only [sub_add_cancel, add_sub_cancel_right] at r₁ r₂ ⊢
-  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
-  linear_combination (norm := (field_simp; ring)) -(z / 4) * r₁ - z / 4 * r₂ - ν / 2 * r₀
+  rw [ode_of_hasDerivAt_of_recurrence (c := fun μ => 2 / π * (1 - cos (π * μ)))
+    hasDerivAt_weberE (fun μ => two_mul_self_mul_weberE μ z), mul_sub (π : ℂ) ν 1,
+    mul_add (π : ℂ) ν 1, mul_one, cos_sub_pi, cos_add_pi]
+  have hπ := ofReal_pi_ne_zero
+  field_simp
+  ring
 
 end Complex
