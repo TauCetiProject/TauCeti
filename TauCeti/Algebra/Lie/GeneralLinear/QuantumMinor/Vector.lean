@@ -12,9 +12,13 @@ import TauCeti.Data.Fin.Tuple.Basic
 /-!
 # Vector commutators of quantum minors
 
-For a vector operator, the commutator with a quantum minor contracts the row cofactors
-with the vector on the left. Commuting the vector through the last-column expansion
-accounts for the one-unit shift in the last spectral parameter of each cofactor.
+For a vector operator `y` (so `⁅E i j, y k⁆ = if i = k then -y j else 0`), this file computes
+`⁅y c, Δ_ab(u)⁆` for a quantum minor `Δ_ab(u)` as the sum, over the rows `i` with `a i = c`, of
+the signed row cofactors at the same parameter `u`, each multiplied by the vector on the left
+(`lie_vector_quantumMinor`). For the full quantum determinant `Δ(u)` this gives
+`Δ(u) * y c = y c * Δ(u) - ∑ j, ± y j * Δ_{c,j}(u)` (`quantumMinor_id_mul_vector`). These
+identities move vector components across quantum (Capelli) determinants in spectral-shift
+computations.
 
 The full determinant formula is L. Alpöge's `Formalism.FourierDecayAlt.Qr.DetVec`
 in the formalization of the Riemann hypothesis for Dirichlet L-functions.
@@ -180,14 +184,19 @@ the left. This needs only the vector commutation relations on the selected entri
 the relations among the matrix entries themselves. -/
 theorem lie_vector_quantumMinor (E : Matrix ι ι A) (y : ι → A) (u : K)
     {n : ℕ} (a b : Fin (n + 1) → ι) (c : ι)
-    (hc : ∀ i j, ⁅y c, E (a i) (b j)⁆ = if c = a i then y (b j) else 0)
-    (hy : ∀ i j k, ⁅y (b k), E (a i) (b j)⁆ = if b k = a i then y (b j) else 0) :
+    (hc : ∀ i j, ⁅E (a i) (b j), y c⁆ = if a i = c then -y (b j) else 0)
+    (hy : ∀ i j k, ⁅E (a i) (b j), y (b k)⁆ = if a i = b k then -y (b j) else 0) :
     ⁅y c, E.quantumMinor u a b⁆ = ∑ i, if c = a i then
       ∑ j, (-1 : ℤ) ^ (i.val + j.val) •
         (y (b j) * E.quantumMinor u (i.removeNth a) (j.removeNth b)) else 0 := by
-  rw [lie_vector_quantumMinor_rows E y u a b c hc]
+  have skew {k : ι} (h : ∀ i j, ⁅E (a i) (b j), y k⁆ = if a i = k then -y (b j) else 0)
+      (i j : Fin (n + 1)) : ⁅y k, E (a i) (b j)⁆ = if k = a i then y (b j) else 0 := by
+    rw [← lie_skew, h]
+    by_cases h' : a i = k <;> simp [h', eq_comm]
+  rw [lie_vector_quantumMinor_rows E y u a b c (skew hc)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [quantumMinor_vectorRow E y u (i.removeNth a) b (fun r ↦ hy (i.succAbove r))]
+  rw [quantumMinor_vectorRow E y u (i.removeNth a) b
+    (fun r j k ↦ skew (fun i j ↦ hy i j k) (i.succAbove r) j)]
   simp only [Finset.smul_sum, smul_smul, ← pow_add]
 
 /-- Moving a vector component through the full quantum determinant subtracts the signed
@@ -199,10 +208,7 @@ theorem quantumMinor_id_mul_vector {n : ℕ} (E : Matrix (Fin (n + 1)) (Fin (n +
     E.quantumMinor u id id * y c = y c * E.quantumMinor u id id -
       ∑ j, (-1 : ℤ) ^ (c.val + j.val) •
         (y j * E.quantumMinor u (c.removeNth id) (j.removeNth id)) := by
-  have hy' (i j k : Fin (n + 1)) : ⁅y k, E i j⁆ = if k = i then y j else 0 := by
-    rw [← lie_skew, hy]
-    by_cases h : i = k <;> simp [h, eq_comm]
-  have h := E.lie_vector_quantumMinor y u id id c (fun i j ↦ hy' i j c) hy'
+  have h := E.lie_vector_quantumMinor y u id id c (fun i j ↦ hy i j c) hy
   rw [Finset.sum_eq_single c] at h
   · simp only [id_eq, ↓reduceIte, Ring.lie_def] at h
     rw [← h]
