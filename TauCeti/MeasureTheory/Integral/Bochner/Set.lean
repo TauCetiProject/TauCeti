@@ -60,6 +60,8 @@ integral.
   extension `1_s f` and `Φ x 0 = 0`, then `∫ Φ x (f₀ x) = ∫_s Φ x (f x)`.
 * `TauCeti.integral_mul_eq_setIntegral_sub_mul`: if `h` vanishes off `B` and has integral zero,
   then `∫ h φ = ∫_B (φ - c) h` for every constant `c`.
+* `TauCeti.setIntegral_norm_sq_le_setIntegral_add`: if `g = η` off a measurable set `T`, the
+  `L²` norm of `η` on any set `S` is at most that of `g` there plus the `L²` norm of `η` on `T`.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
   `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
   exponential `exp (t x I)` are integrable on a set of finite measure.
@@ -317,6 +319,28 @@ theorem integral_mul_eq_setIntegral_sub_mul {α : Type*} [MeasurableSpace α]
     _ = _ := by
         rw [integral_add hint (hh.const_mul c), integral_const_mul,
           (setIntegral_eq_integral_of_ae_compl_eq_zero hsupp).trans hmean, mul_zero, add_zero]
+
+/-- If `g = η` off a measurable set `T`, then on every set `S` the `L²` norm of `η` is at most
+that of `g` plus the `L²` norm of `η` on `T`. -/
+theorem setIntegral_norm_sq_le_setIntegral_add {X E : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] {μ : Measure X} {η g : X → E} {S T : Set X} (hT : MeasurableSet T)
+    (hηi : Integrable (fun z ↦ ‖η z‖ ^ 2) μ) (hgi : Integrable (fun z ↦ ‖g z‖ ^ 2) μ)
+    (hgη : ∀ z ∉ T, g z = η z) :
+    ∫ z in S, ‖η z‖ ^ 2 ∂μ ≤ (∫ z in S, ‖g z‖ ^ 2 ∂μ) + ∫ z in T, ‖η z‖ ^ 2 ∂μ := by
+  have hind : Integrable (T.indicator fun z ↦ ‖η z‖ ^ 2) μ := hηi.indicator hT
+  calc ∫ z in S, ‖η z‖ ^ 2 ∂μ ≤ ∫ z in S, (‖g z‖ ^ 2 + T.indicator (fun z ↦ ‖η z‖ ^ 2) z) ∂μ := by
+        refine setIntegral_mono hηi.integrableOn (hgi.integrableOn.add hind.integrableOn)
+          fun z ↦ ?_
+        by_cases hz : z ∈ T
+        · rw [indicator_of_mem hz]
+          linarith [sq_nonneg ‖g z‖]
+        · rw [indicator_of_notMem hz, hgη z hz, add_zero]
+    _ = (∫ z in S, ‖g z‖ ^ 2 ∂μ) + ∫ z in S, T.indicator (fun z ↦ ‖η z‖ ^ 2) z ∂μ :=
+        integral_add hgi.integrableOn hind.integrableOn
+    _ ≤ (∫ z in S, ‖g z‖ ^ 2 ∂μ) + ∫ z in T, ‖η z‖ ^ 2 ∂μ := by
+        gcongr
+        rw [← integral_indicator hT]
+        exact setIntegral_le_integral hind (ae_of_all _ (indicator_nonneg fun z _ ↦ by positivity))
 
 end TauCeti
 

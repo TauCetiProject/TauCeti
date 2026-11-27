@@ -16,6 +16,7 @@ import TauCeti.Geometry.Symplectic.Floer.Plane.SemiFredholm
 import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Cokernel
 import TauCeti.Analysis.Complex.EquivRealProd
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Fredholm.SemiFredholm
@@ -356,9 +357,12 @@ private theorem exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero
     (hη.of_le one_le_two) hD hηi (hχs.of_le (by simp)) (by exact_mod_cast le_of_add_le_right hn)
     hχd0 hχd2 hχM
   -- On the disc `D₀` the cutoff is `1`, and off it the cutoff costs at most the tail.
-  have hDisc := setIntegral_norm_sq_le_setIntegral_sobolevDensity_of_eq hηi (hg.of_le one_le_two)
-    fun z hz ↦ hgη z (le_trans hz hR0n)
-  have hEnd := setIntegral_norm_sq_le_setIntegral_add (S := D₀ᶜ) hηi hgi hgη
+  have hDisc := setIntegral_norm_sq_le_setIntegral_sobolevDensity
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le (Real.exp (2 * π * R))) hηi.integrableOn
+    (hg.of_le one_le_two) fun z hz ↦ hgη z (le_trans hz hR0n)
+  have hEnd := setIntegral_norm_sq_le_setIntegral_add (S := D₀ᶜ)
+    (measurableSet_le measurable_const Complex.equivRealProdCLM.symm.continuous.norm.measurable)
+    hηi hgi fun z hz ↦ hgη z (not_le.1 hz).le
   have hEnd' := setIntegral_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPullback hJ hu hB
     (hg.of_le one_le_two) hgc R
   rw [show {z : ℝ × ℝ | Real.exp (2 * π * R) < ν z} = D₀ᶜ by ext z; simp [D₀]] at hEnd'

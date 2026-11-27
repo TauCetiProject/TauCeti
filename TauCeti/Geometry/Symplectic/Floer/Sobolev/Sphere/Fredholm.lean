@@ -14,6 +14,7 @@ import TauCeti.Geometry.Symplectic.Floer.Linearization.Infinity
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Cokernel
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Topology.Constructions.SumProd
@@ -418,11 +419,13 @@ private theorem integral_norm_sq_le_of_cutoff (ω : SymplecticForm V)
   have hsplit := integral_add_compl hD₀ hηi
   rw [show {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ R}ᶜ =
     {z | R < ‖Complex.equivRealProdCLM.symm z‖} by ext z; simp] at hsplit
-  have hDisc := Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity_of_eq hηi
-    (hg.of_le one_le_two) (a := R) fun z hz ↦ hgη z (hz.trans (by linarith))
+  have hDisc := Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le R) hηi.integrableOn (hg.of_le one_le_two)
+    fun z hz ↦ hgη z (le_trans hz (by linarith))
   have hEnd := setIntegral_norm_sq_le_setIntegral_add
-    (S := {z : ℝ × ℝ | R < ‖Complex.equivRealProdCLM.symm z‖}) hηi
-    (hg.continuous.integrable_norm_sq_of_hasCompactSupport hgc) hgη
+    (S := {z : ℝ × ℝ | R < ‖Complex.equivRealProdCLM.symm z‖})
+    (measurableSet_le measurable_const hNc.measurable) hηi
+    (hg.continuous.integrable_norm_sq_of_hasCompactSupport hgc) fun z hz ↦ hgη z (not_le.1 hz).le
   have hCV := setIntegral_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPullback_inv hJ hu hB
     (hg.of_le one_le_two) hgc hR
   have hX₁ := setIntegral_nonneg (μ := volume) hD₀ fun z _ ↦ sobolevDensity_nonneg g z

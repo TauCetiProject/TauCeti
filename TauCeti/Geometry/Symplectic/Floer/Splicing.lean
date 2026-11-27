@@ -327,7 +327,9 @@ theorem setIntegral_sobolev_le_mul_setIntegral_of_splice {P P₁ P₂ : (ℝ × 
     (fun s hs ↦ by rw [hβm s (le_of_lt (not_le.1 hs)), sub_self])
     (fun s hs ↦ by rw [(hγd s).deriv, hβ'0 s fun h ↦ hs (le_of_lt h.1), neg_zero])
   have hsplit := setIntegral_sobolev_le_add_of_cutoff hξ hβc a b
-  have hL := setIntegral_norm_sq_le_setIntegral_sobolevDensity (hξ.of_le one_le_two) a b
+  have hL := setIntegral_norm_sq_le_setIntegral_sobolevDensity (s := Icc a b ×ˢ Icc (0 : ℝ) 1)
+    (isCompact_Icc.prod isCompact_Icc) (hξ.continuous.norm.pow 2).integrableOn_Icc_prod_Icc
+    (hξ.of_le one_le_two) (eqOn_refl ξ _)
   simp only [sobolevDensity_apply] at hL
   -- The cutoff error `32 C (‖σ‖ / T)²` is at most `1 / 2`, and is absorbed.
   have hk : 64 * C * (1 / T * ‖σ‖) ^ 2 ≤ 1 := by

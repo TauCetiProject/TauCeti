@@ -47,9 +47,7 @@ The real coordinates `(x, y) ↦ x + y i` of the plane preserve area
 (`Complex.measurePreserving_equivRealProdCLM_symm`). Since the disc `|w| ≤ r`, read in the real
 coordinates, lies in the square `‖z‖ ≤ r`, the integral of a nonnegative function over the disc is
 at most its integral over any square `‖z‖ ≤ s` with `r ≤ s`
-(`TauCeti.setIntegral_setOf_norm_equivRealProdCLM_symm_le_le`), and if `g = η` on the disc
-`|w| ≤ n`, the `L²` norm of `η` on any set is at most that of `g` plus the `L²` norm of `η` on
-`|w| ≥ n` (`TauCeti.setIntegral_norm_sq_le_setIntegral_add`).
+(`TauCeti.setIntegral_setOf_norm_equivRealProdCLM_symm_le_le`).
 Multiplication by a complex number of modulus one is a rotation, so it preserves integrals
 (`Complex.integral_comp_mul_left_of_norm_eq_one`).
 -/
@@ -252,32 +250,6 @@ theorem setIntegral_setOf_norm_equivRealProdCLM_symm_le_le {μ : Measure (ℝ ×
   setIntegral_mono_set hf hf0 (Filter.Eventually.of_forall fun _ hz ↦
     Metric.closedBall_subset_closedBall hrs
       (setOf_norm_equivRealProdCLM_symm_le_subset_closedBall r hz))
-
-/-- If `g = η` on the disc `|w| ≤ n`, read in the real coordinates, then on every set the `L²` norm
-of `η` is at most that of `g` plus the `L²` norm of `η` on `|w| ≥ n`. -/
-theorem setIntegral_norm_sq_le_setIntegral_add {E : Type*} [NormedAddCommGroup E]
-    {η g : ℝ × ℝ → E} {n : ℝ} {S : Set (ℝ × ℝ)}
-    (hηi : Integrable fun z ↦ ‖η z‖ ^ 2) (hgi : Integrable fun z ↦ ‖g z‖ ^ 2)
-    (hgη : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ n → g z = η z) :
-    ∫ z in S, ‖η z‖ ^ 2 ≤ (∫ z in S, ‖g z‖ ^ 2) +
-      ∫ z in {z : ℝ × ℝ | n ≤ ‖Complex.equivRealProdCLM.symm z‖}, ‖η z‖ ^ 2 := by
-  set T := {z : ℝ × ℝ | n ≤ ‖Complex.equivRealProdCLM.symm z‖}
-  have hT : MeasurableSet T :=
-    measurableSet_le measurable_const Complex.equivRealProdCLM.symm.continuous.norm.measurable
-  have hind : Integrable (T.indicator fun z ↦ ‖η z‖ ^ 2) := hηi.indicator hT
-  calc ∫ z in S, ‖η z‖ ^ 2 ≤ ∫ z in S, (‖g z‖ ^ 2 + T.indicator (fun z ↦ ‖η z‖ ^ 2) z) := by
-        refine setIntegral_mono hηi.integrableOn (hgi.integrableOn.add hind.integrableOn)
-          fun z ↦ ?_
-        by_cases hz : z ∈ T
-        · rw [indicator_of_mem hz]
-          linarith [sq_nonneg ‖g z‖]
-        · rw [indicator_of_notMem hz, hgη z (not_le.1 hz).le, add_zero]
-    _ = (∫ z in S, ‖g z‖ ^ 2) + ∫ z in S, T.indicator (fun z ↦ ‖η z‖ ^ 2) z :=
-        integral_add hgi.integrableOn hind.integrableOn
-    _ ≤ (∫ z in S, ‖g z‖ ^ 2) + ∫ z in T, ‖η z‖ ^ 2 := by
-        gcongr
-        rw [← integral_indicator hT]
-        exact setIntegral_le_integral hind (ae_of_all _ (indicator_nonneg fun z _ ↦ by positivity))
 
 /-- The half-disc `Ω ∩ {0 ≤ im}` and its interior `Ω ∩ {0 < im}` agree up to a null set: they
 differ by a subset of the real axis. So the half-disc and its interior carry the same restricted
