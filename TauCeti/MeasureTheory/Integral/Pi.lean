@@ -140,7 +140,9 @@ theorem integral_integral_update_pi {E : Type*} [NormedAddCommGroup E] [NormedSp
 
 /-- **Fubini against a function of one coordinate.** If `x ↦ T x * h (xᵢ)` is integrable under a
 product of σ-finite measures whose `i`-th factor is a probability measure, its integral is the
-integral under `P i` of `a ↦ E(T | Xᵢ = a) * h a`. -/
+integral under `P i` of `a ↦ (∫ y, T (update y i a) ∂(Measure.pi P)) * h a`. This partial
+integral integrates `T` over the other coordinates with the `i`-th held at `a`; only when every
+factor is a probability measure is it a version of the conditional expectation `E(T | Xᵢ = a)`. -/
 theorem integral_mul_comp_eval_eq (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)]
     {T : (∀ i, α i) → ℝ} (i : ι) [IsProbabilityMeasure (P i)] {h : α i → ℝ}
     (hTh : Integrable (fun x ↦ T x * h (x i)) (Measure.pi P)) :
