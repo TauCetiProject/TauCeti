@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
 public import TauCeti.RingTheory.Huber.Restricted.PolydiscReduction
 
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Basic
+
 /-!
 # Residue reduction of polydisc evaluation
 
@@ -43,8 +45,12 @@ theorem evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
     evalAtHom a ha f.val ∈ powerBoundedSubring K := by
-  rw [evalAtHom_def]
-  exact weightedEvalHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha _ f
+  have : IsHuberRing K := by
+    rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨_, rfl⟩
+    · infer_instance
+    · exact (IsTateRing.of_nontriviallyNormedField K).toIsHuberRing
+  exact evalAtHom_mem_powerBoundedSubring a ha
+    (weightedSubring_le_powerBoundedSubring isWeightFamily_one_weight le_rfl f.property)
 
 /-- **Reduction commutes with evaluation at power-bounded tuples.** For `f ∈ K°⟨T₁, …, Tₙ⟩` and
 `a ∈ (K°)ⁿ`, the residue of `f(a)` in `𝓀[K]` equals the value of `polydiscReduction n K f` at
@@ -65,6 +71,10 @@ theorem residue_evalAtHom_eq_eval_polydiscReduction (a : Fin n → K)
   simpa only [evalAtHom_def] using
     residue_weightedEvalHom_eq_eval_polydiscReduction a ha
       ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id K) a).2 ha) f
+      (by
+        rw [← evalAtHom_def a ha]
+        exact (powerBoundedSubring_eq_integer (K := K)).le
+          (evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f))
 
 /-- A unit-bounded series `f ∈ K°⟨T₁, …, Tₙ⟩` evaluates to an element of norm `1` at `a ∈ (K°)ⁿ`
 if and only if its reduction does not vanish at the residue tuple `ā`. -/

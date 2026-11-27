@@ -47,8 +47,6 @@ commutes with residue reduction by `TauCeti.Huber.mk_weightedEvalHom_eq_eval₂_
 * `TauCeti.Huber.polydiscReduction_eq_zero_iff` and
   `TauCeti.Huber.polydiscReduction_ne_zero_iff`: vanishing of the reduced polynomial is
   `unitGaussValuation n K f.val < 1`, and nonvanishing is `unitGaussValuation n K f.val = 1`.
-* `TauCeti.Huber.weightedEvalHom_mem_powerBoundedSubring_of_mem_weightedSubring`: evaluating a
-  unit-bounded series at a power-bounded tuple yields a power-bounded element.
 * `TauCeti.Huber.residue_weightedEvalHom_eq_eval_polydiscReduction`: residue reduction commutes
   with evaluation at power-bounded tuples.
 * `TauCeti.Huber.norm_weightedEvalHom_eq_one_iff_eval_polydiscReduction_ne_zero`: `‖f(a)‖ = 1` iff
@@ -269,15 +267,6 @@ private theorem coe_weightedEvalHom_symm
     using RingHom.congr_fun hExt
       ((weightedRestrictedSubringEquivWeightedSubring (powerBoundedSubring K)).symm f)
 
-/-- Evaluating a unit-bounded series at a power-bounded tuple yields a power-bounded element. -/
-theorem weightedEvalHom_mem_powerBoundedSubring_of_mem_weightedSubring
-    (a : Fin n → K) (ha : ∀ i, IsPowerBounded (a i))
-    (hb : IsWeightBounded (RingHom.id K) (fun _ : Fin n ↦ ({1} : Set K)) a)
-    (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
-      (powerBoundedSubring K)) :
-    weightedEvalHom isWeightFamily_one_weight continuousAt_id hb f.val ∈ powerBoundedSubring K :=
-  coe_weightedEvalHom_symm a ha hb f ▸ SetLike.coe_mem _
-
 /-- **Reduction commutes with evaluation at power-bounded tuples.** For `f ∈ K°⟨T₁, …, Tₙ⟩` and
 `a ∈ (K°)ⁿ`, the residue of `f(a)` in `𝓀[K]` equals the value of `polydiscReduction n K f` at the
 residue tuple `ā`. -/
@@ -285,11 +274,10 @@ theorem residue_weightedEvalHom_eq_eval_polydiscReduction
     (a : Fin n → K) (ha : ∀ i, IsPowerBounded (a i))
     (hb : IsWeightBounded (RingHom.id K) (fun _ : Fin n ↦ ({1} : Set K)) a)
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
-      (powerBoundedSubring K)) :
+      (powerBoundedSubring K))
+    (hf : weightedEvalHom isWeightFamily_one_weight continuousAt_id hb f.val ∈ 𝒪[K]) :
     IsLocalRing.residue 𝒪[K]
-        ⟨weightedEvalHom isWeightFamily_one_weight continuousAt_id hb f.val,
-          (powerBoundedSubring_eq_integer (K := K)).le
-            (weightedEvalHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha hb f)⟩ =
+        ⟨weightedEvalHom isWeightFamily_one_weight continuousAt_id hb f.val, hf⟩ =
       MvPolynomial.eval
         (fun i ↦ IsLocalRing.residue 𝒪[K]
           ⟨a i, (powerBoundedSubring_eq_integer (K := K)).le
@@ -298,16 +286,13 @@ theorem residue_weightedEvalHom_eq_eval_polydiscReduction
   let g := (weightedRestrictedSubringEquivWeightedSubring (powerBoundedSubring K)).symm f
   have hsub :
       (⟨weightedEvalHom isWeightFamily_one_weight continuousAt_id hb f.val,
-          weightedEvalHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha hb f⟩ :
+          (powerBoundedSubring_eq_integer (K := K)).ge hf⟩ :
           powerBoundedSubring K) =
         weightedEvalHom isWeightFamily_one_weight continuousAt_id
           (isWeightBounded_powerBoundedSubring a ha) g :=
     Subtype.ext (coe_weightedEvalHom_symm a ha hb f).symm
   have hres_lhs :
-      (⟨weightedEvalHom isWeightFamily_one_weight continuousAt_id hb f.val,
-          (powerBoundedSubring_eq_integer (K := K)).le
-            (weightedEvalHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha hb f)⟩ :
-          𝒪[K]) =
+      (⟨weightedEvalHom isWeightFamily_one_weight continuousAt_id hb f.val, hf⟩ : 𝒪[K]) =
         powerBoundedSubringEquivInteger
           (weightedEvalHom isWeightFamily_one_weight continuousAt_id
             (isWeightBounded_powerBoundedSubring a ha) g) :=
@@ -342,7 +327,7 @@ theorem norm_weightedEvalHom_eq_one_iff_eval_polydiscReduction_ne_zero
         (polydiscReduction n K f) ≠ 0 := by
   let y : powerBoundedSubring K :=
     ⟨weightedEvalHom isWeightFamily_one_weight continuousAt_id hb f.val,
-      weightedEvalHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha hb f⟩
+      coe_weightedEvalHom_symm a ha hb f ▸ SetLike.coe_mem _⟩
   have hle : ‖(y : K)‖ ≤ 1 :=
     isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp y.property)
   have hy : (⟨(y : K), (powerBoundedSubring_eq_integer (K := K)).le y.property⟩ : 𝒪[K]) =
@@ -354,8 +339,9 @@ theorem norm_weightedEvalHom_eq_one_iff_eval_polydiscReduction_ne_zero
         canonicalReductionRingEquivResidueField (Ideal.Quotient.mk _ y) :=
     (congrArg (IsLocalRing.residue 𝒪[K]) hy).trans
       (canonicalReductionRingEquivResidueField_mk y).symm
-  rw [← residue_weightedEvalHom_eq_eval_polydiscReduction a ha hb f, Ne, hres,
-    map_eq_zero_iff _ canonicalReductionRingEquivResidueField.injective,
+  rw [← residue_weightedEvalHom_eq_eval_polydiscReduction a ha hb f
+      ((powerBoundedSubring_eq_integer (K := K)).le y.property),
+    Ne, hres, map_eq_zero_iff _ canonicalReductionRingEquivResidueField.injective,
     Ideal.Quotient.eq_zero_iff_mem, mem_topologicallyNilpotentIdeal,
     IsTopologicallyNilpotent, tendsto_pow_atTop_nhds_zero_iff_norm_lt_one, not_lt]
   exact ⟨fun h ↦ h.ge, fun h ↦ le_antisymm hle h⟩
