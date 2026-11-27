@@ -24,7 +24,7 @@ The partial derivatives of such a polynomial are again polynomials in the variab
 
 For an `R`-algebra `B`, `MvPolynomial σ B` is also generated as an `R`-algebra by the base
 constants `C b` and the polynomial variables `X i`
-(`TauCeti.MvPolynomial.adjoin_range_C_union_range_X`).
+(`TauCeti.mvPolynomial_adjoin_range_C_union_range_X`).
 
 ## Main results
 
@@ -33,7 +33,7 @@ constants `C b` and the polynomial variables `X i`
 * `MvPolynomial.pderiv_eq_zero_of_mem_supported`: partial derivatives along variables outside `s`
   vanish on `MvPolynomial.supported R s`.
 * `MvPolynomial.pderiv_mem_supported`: partial derivatives preserve `MvPolynomial.supported R s`.
-* `TauCeti.MvPolynomial.adjoin_range_C_union_range_X`: `MvPolynomial σ B` is generated as an
+* `TauCeti.mvPolynomial_adjoin_range_C_union_range_X`: `MvPolynomial σ B` is generated as an
   `R`-algebra by base constants and variables.
 -/
 
@@ -69,11 +69,11 @@ theorem pderiv_mem_supported {s : Set σ} {p : MvPolynomial σ R} (hp : p ∈ su
 
 end MvPolynomial
 
-namespace TauCeti.MvPolynomial
+namespace TauCeti
 
 /-- `MvPolynomial σ B` is generated as an `R`-algebra by base constants `C b` and polynomial
 variables `X i`. -/
-theorem adjoin_range_C_union_range_X (R B σ : Type*) [CommSemiring R] [CommSemiring B]
+theorem mvPolynomial_adjoin_range_C_union_range_X (R B σ : Type*) [CommSemiring R] [CommSemiring B]
     [Algebra R B] :
     Algebra.adjoin R
         (Set.range (_root_.MvPolynomial.C : B → _root_.MvPolynomial σ B) ∪
@@ -86,4 +86,4 @@ theorem adjoin_range_C_union_range_X (R B σ : Type*) [CommSemiring R] [CommSemi
   | add p q hp hq => exact add_mem hp hq
   | mul_X p i hp => exact mul_mem hp (Algebra.subset_adjoin (Or.inr ⟨i, rfl⟩))
 
-end TauCeti.MvPolynomial
+end TauCeti
