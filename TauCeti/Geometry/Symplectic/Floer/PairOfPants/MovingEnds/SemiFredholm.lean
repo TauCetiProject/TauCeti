@@ -801,7 +801,7 @@ private theorem setIntegral_sobolevDensity_covectorPullback_movingEndChart_le_of
     (fun z _ ↦ abs_le.2 ⟨by linarith [movingEndCutoff_nonneg (c := c) (a := a) R₀ e z],
       movingEndCutoff_le_one R₀ e z⟩)
     (fun z hz ↦ mem_movingEndsTruncation_of_fderiv_movingEndCutoff_ne_zero ha hsep hout hR₀ hz)
-    hM hB hw hwc hΛ₀ hΛ hη hηc hηU
+    hM hB hw hwc hΛ₀ hΛ (hη.of_le one_le_two) hηc hηU
   have hD₀ : 0 ≤ ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u
       (fun z ↦ movingEndCutoff c a R₀ e z • η z) z‖ ^ 2 :=
     integral_nonneg fun z ↦ mul_nonneg (hw z) (sq_nonneg _)
@@ -896,7 +896,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
             (fun z hz ↦ abs_movingCoreCutoff_le_one ha hsep hout hR₀.le hz)
             (fun z hz ↦
               mem_movingEndsTruncation_of_fderiv_movingCoreCutoff_ne_zero ha hsep hout hR₀ hz)
-            hMc hB hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).1) hη hηc hηU)
+            hMc hB hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).1) (hη.of_le one_le_two) hηc hηU)
   -- Summing the pieces.
   exact sum_add_le_mul_add_of_weight (fun e ↦ le_max_right _ _) hC₀ hΛ₀ hX hY hends hcore
 
