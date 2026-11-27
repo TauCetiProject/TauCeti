@@ -12,7 +12,7 @@ import Mathlib.LinearAlgebra.Matrix.ToLin
 /-!
 # Algebra homomorphisms and actions of polynomial matrices
 
-`AlgHom.polynomialExtension` extends a matrix-valued algebra homomorphism coefficientwise,
+`AlgHom.polyToMatrix` extends a matrix-valued algebra homomorphism coefficientwise,
 retaining compatibility with scalars over the polynomial ring.
 `TauCeti.matrixPolynomialMulRightAction` lifts the polynomial action by right multiplication
 to vectors, using the equivalence between matrices of endomorphisms and vector endomorphisms.
@@ -37,7 +37,7 @@ variable {R L Λ σ : Type*} [CommSemiring R] [CommSemiring L] [Algebra R L]
 attribute [local instance] Polynomial.algebra
 
 /-- The coefficientwise extension `Λ[X] →ₐ[R[X]] Matrix σ σ L[X]` of `ρ : Λ →ₐ[R] Matrix σ σ L`. -/
-noncomputable def polynomialExtension (ρ : Λ →ₐ[R] Matrix σ σ L) :
+noncomputable def polyToMatrix (ρ : Λ →ₐ[R] Matrix σ σ L) :
     Λ[X] →ₐ[R[X]] Matrix σ σ L[X] where
   toRingHom := ρ.toRingHom.polyToMatrix
   commutes' q := by
@@ -47,24 +47,24 @@ noncomputable def polynomialExtension (ρ : Λ →ₐ[R] Matrix σ σ L) :
       simp [RingHom.polyToMatrix, matPolyEquiv_symm_apply_coeff, algebraMap_matrix_apply, *]
 
 /-- The underlying ring homomorphism of the extension is Mathlib's `RingHom.polyToMatrix`. -/
-theorem toRingHom_polynomialExtension (ρ : Λ →ₐ[R] Matrix σ σ L) :
-    (polynomialExtension ρ).toRingHom = ρ.toRingHom.polyToMatrix := (rfl)
+theorem toRingHom_polyToMatrix (ρ : Λ →ₐ[R] Matrix σ σ L) :
+    (polyToMatrix ρ).toRingHom = ρ.toRingHom.polyToMatrix := (rfl)
 
 /-- Coefficients of the extension are obtained by applying the original matrix homomorphism. -/
-@[simp] theorem coeff_polynomialExtension_apply (ρ : Λ →ₐ[R] Matrix σ σ L) (p : Λ[X]) (s t : σ)
-    (k : ℕ) : (polynomialExtension ρ p s t).coeff k = ρ (p.coeff k) s t := by
-  simp [polynomialExtension, RingHom.polyToMatrix, matPolyEquiv_symm_apply_coeff]
+@[simp] theorem coeff_polyToMatrix_apply (ρ : Λ →ₐ[R] Matrix σ σ L) (p : Λ[X]) (s t : σ)
+    (k : ℕ) : (polyToMatrix ρ p s t).coeff k = ρ (p.coeff k) s t := by
+  simp [polyToMatrix, RingHom.polyToMatrix, matPolyEquiv_symm_apply_coeff]
 
 /-- A constant polynomial is sent to the image of its coefficient, with constant entries. -/
-@[simp] theorem polynomialExtension_C (ρ : Λ →ₐ[R] Matrix σ σ L) (w : Λ) :
-    polynomialExtension ρ (C w) = (ρ w).map C := by
+@[simp] theorem polyToMatrix_C (ρ : Λ →ₐ[R] Matrix σ σ L) (w : Λ) :
+    polyToMatrix ρ (C w) = (ρ w).map C := by
   ext s t k
   simp [coeff_C, apply_ite (ρ · s t)]
 
 /-- The variable is sent to the diagonal matrix with entries `X`. -/
-@[simp] theorem polynomialExtension_X (ρ : Λ →ₐ[R] Matrix σ σ L) :
-    polynomialExtension ρ X = diagonal fun _ ↦ X := by
-  have h := (polynomialExtension ρ).commutes X
+@[simp] theorem polyToMatrix_X (ρ : Λ →ₐ[R] Matrix σ σ L) :
+    polyToMatrix ρ X = diagonal fun _ ↦ X := by
+  have h := (polyToMatrix ρ).commutes X
   rw [Polynomial.algebraMap_def, coe_mapRingHom, map_X] at h
   rw [h, algebraMap_eq_diagonal]
   congr 1

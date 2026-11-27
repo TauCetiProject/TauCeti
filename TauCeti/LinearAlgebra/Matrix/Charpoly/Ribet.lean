@@ -79,17 +79,17 @@ private theorem exists_polynomial_of_mulVec_sub_mem (ρ : Λ →ₐ[R] Matrix σ
     (B B₁ : Matrix N N Λ) (hB : ∀ i, (B *ᵥ y) i - (B₁ *ᵥ y) i * ρ₀ ∈ 𝔞) :
     ∃ P : R[X], algebraMap R L (P.eval 0) = (Matrix.comp N N σ σ L (B.map ρ)).det ∧
       ∀ i, y i * aeval ρ₀ P ∈ 𝔞 := by
-  let ρX := polynomialExtension ρ
+  let ρX := polyToMatrix ρ
   let BX : Matrix N N Λ[X] := of fun i j ↦ C (B i j) - X * C (B₁ i j)
   let φX : Matrix N N Λ[X] →ₐ[R[X]] Matrix (N × σ) (N × σ) L[X] :=
     (Matrix.compAlgEquiv N σ L[X] R[X]).toAlgHom.comp ρX.mapMatrix
   obtain ⟨V, F, hdet, hVB, -⟩ := exists_mul_eq_smul_one_of_charpoly_coeff_mem_range φX
-    (charpoly_comp_map_coeff_mem_range ρX (charpoly_polynomialExtension_coeff_mem_range ρ hρ) BX)
+    (charpoly_comp_map_coeff_mem_range ρX (charpoly_polyToMatrix_coeff_mem_range ρ hρ) BX)
   refine ⟨F, ?_, fun i ↦ ?_⟩
   · -- At `X = 0` the block matrix of `B - X • B₁` is that of `B`.
     have h0 : (evalRingHom 0).mapMatrix (φX BX) = Matrix.comp N N σ σ L (B.map ρ) := by
       ext ⟨i, s⟩ ⟨j, t⟩
-      simp [φX, BX, ρX, ← coeff_zero_eq_eval_zero, coeff_polynomialExtension_apply, -map_sub,
+      simp [φX, BX, ρX, ← coeff_zero_eq_eval_zero, coeff_polyToMatrix_apply, -map_sub,
         -map_mul]
     rw [← h0, ← RingHom.map_det, hdet, Polynomial.algebraMap_def, coe_mapRingHom, coe_evalRingHom,
       eval_zero_map]
@@ -101,7 +101,7 @@ private theorem exists_polynomial_of_mulVec_sub_mem (ρ : Λ →ₐ[R] Matrix σ
       intro i j k
       refine h𝔞 _ (Matrix.ext fun s t ↦ ?_)
       have := congrArg (fun M : Matrix (N × σ) (N × σ) L[X] ↦ (M (i, s) (j, t)).coeff k) hφK
-      simpa [φX, ρX, coeff_polynomialExtension_apply] using this
+      simpa [φX, ρX, coeff_polyToMatrix_apply] using this
     have hBX : ∀ i, matrixPolynomialMulRightAction R ρ₀ BX y i ∈ 𝔞 := fun i ↦ by
       convert hB i using 1
       simp [matrixPolynomialMulRightAction_apply, BX, mulVec, dotProduct, Finset.sum_mul, mul_assoc]
@@ -156,8 +156,8 @@ theorem exists_ribet_polynomial (ρ : Λ →ₐ[R] Matrix σ σ L)
     · simp [Matrix.trace]
     · rw [trace_eq_neg_charpoly_coeff]
       exact neg_mem (hall _ _)
-  · rw [map_mul, map_mul, map_mul ρ z, hzδ, ← mul_assoc, ← Algebra.commutes, mul_assoc,
-      ← Algebra.smul_def δ (ρ ρ₁ * _), trace_smul, Algebra.smul_def]
+  · simp only [map_mul, hzδ]
+    simp [Algebra.algebraMap_eq_smul_one]
 
 end Ribet
 
