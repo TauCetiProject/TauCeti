@@ -12,7 +12,7 @@ import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
 import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 
 /-!
-# The index of a PSS plane does not depend on the data over the disc
+# The index of a PSS plane does not depend on the almost complex structure or the map over the disc
 
 Let `u` be a finite-energy solution of the Floer equation of the positive PSS plane for a
 period-one Hamiltonian `H` on a finite-dimensional symplectic inner product space `(V, ω)`, on the
@@ -293,6 +293,13 @@ private theorem isFredholm_and_memLp_of_eventuallyEq_end (ω : SymplecticForm V)
       hJq hJqper (fun t y hy ↦ (hJqK t y hy).tames) (fun z ↦ (hJ z).of_le (by norm_num)) hJr
       (hv.of_le (by norm_num)) hv.contDiffOn hvK hvF hvE hnd⟩
 
+/-- The maps `u + c(ν) (u' - u)`, reparametrized by `c = projIcc 0 1`, take their values on the
+segments between `u` and `u'`. -/
+private theorem add_projIcc_smul_sub_mem_segment {E : Type*} [AddCommGroup E] [Module ℝ E]
+    (u u' : ℝ × ℝ → E) (ν : ℝ) (z : ℝ × ℝ) :
+    (u + (projIcc 0 1 zero_le_one ν : ℝ) • (u' - u)) z ∈ segment ℝ (u z) (u' z) := by
+  rw [segment_eq_image']
+  exact ⟨_, (projIcc 0 1 zero_le_one ν).prop, rfl⟩
 
 /-- Along the segment of maps `u + c(ν) (u' - u)` from `u` to a map `u'` equal to `u` on the end
 `‖w‖ > r`, reparametrized by `c = projIcc 0 1`, the realizations of the linearized Floer operators
@@ -323,9 +330,6 @@ private theorem continuous_floerConformalSobolevOperator_projIcc (ω : Symplecti
       (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       (u + c ν • (u' - u))
-  have hseg (ν : ℝ) (z : ℝ × ℝ) : (u + c ν • (u' - u)) z ∈ segment ℝ (u z) (u' z) := by
-    rw [segment_eq_image']
-    exact ⟨c ν, (projIcc 0 1 zero_le_one ν).prop, rfl⟩
   have hKs (c' : ℂ) (p : (ℝ × ℝ) × V) : ContDiffAt ℝ 2
       (uncurry fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x c') p :=
     (contDiff_uncurry_perturbation (p := positive) hH hHs c').contDiffAt
@@ -333,7 +337,8 @@ private theorem continuous_floerConformalSobolevOperator_projIcc (ω : Symplecti
   have hjoint (ν : ℝ) (z : ℝ × ℝ) : ContinuousAt (uncurry M) (ν, z) :=
     ContinuousAt.comp (f := fun x : ℝ × (ℝ × ℝ) ↦ (c x.1, x.2)) (x := (ν, z))
       (ω.continuousAt_floerConformalJetCoeff_add_smul_sub (u := u) (u' := u') (lam := c ν) (z := z)
-        (J := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) (hJ z _ (hseg ν z))
+        (J := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+        (hJ z _ (add_projIcc_smul_sub_mem_segment u u' ν z))
         (hKs 1 _) (hKs Complex.I _) hu.contDiffAt hu'.contDiffAt
         continuous_cylindricalWeight.continuousAt (isWeight_cylindricalWeight.pos _ (mem_univ z)))
       (((continuous_subtypeVal.comp continuous_projIcc).continuousAt.comp
@@ -409,10 +414,7 @@ theorem index_floerConformalSobolevOperator_eq_of_pssPlane_map (ω : SymplecticF
   -- The maps `u + c(ν) (u' - u)` of the segment, reparametrized by `c = projIcc 0 1` so that
   -- every member of the family lies on the segment. On the end they agree with `u`, so their
   -- operators are Fredholm.
-  have hseg (ν : ℝ) (z : ℝ × ℝ) :
-      (u + (projIcc 0 1 zero_le_one ν : ℝ) • (u' - u)) z ∈ segment ℝ (u z) (u' z) := by
-    rw [segment_eq_image']
-    exact ⟨_, (projIcc 0 1 zero_le_one ν).prop, rfl⟩
+  have hseg := add_projIcc_smul_sub_mem_segment u u'
   have hu'E (z : ℝ × ℝ) (hz : r < ‖Complex.equivRealProdCLM.symm z‖) : u' =ᶠ[𝓝 z] u :=
     Filter.eventuallyEq_of_mem (hEo.mem_nhds hz) hu'r
   have hfam (ν : ℝ) := isFredholm_and_memLp_of_eventuallyEq_end ω hH hHs hL hK hJq hJqper hJqK
