@@ -22,14 +22,16 @@ This file proves that precomposition with `Φ` controls mean oscillation scale b
 
 `η_{f ∘ Φ}(r) ≤ 2 K D η_f(L r)`
 
-(`TauCeti.vmoModulus_comp_le_of_map_le`), and hence `‖f ∘ Φ‖_{BMO} ≤ 2 K D ‖f‖_{BMO}`
-(`TauCeti.bmoSeminorm_comp_le_of_map_le`), and that `f ∘ Φ` has bounded, respectively vanishing,
-mean oscillation when `f` has (`TauCeti.MemBMO.comp_of_map_le`, `TauCeti.MemVMO.comp_of_map_le`).
+(`LipschitzWith.vmoModulus_comp_le_of_map_le`), and hence `‖f ∘ Φ‖_{BMO} ≤ 2 K D ‖f‖_{BMO}`
+(`LipschitzWith.bmoSeminorm_comp_le_of_map_le`), and that `f ∘ Φ` has bounded, respectively
+vanishing, mean oscillation when `f` has (`TauCeti.MemBMO.comp_of_map_le`,
+`TauCeti.MemVMO.comp_of_map_le`).
 
 On a finite-dimensional real normed space `E` with an additive Haar measure `μ`, the ball
 condition holds with `D = Lⁿ`, `n = dim E`, for every map, so only the Lipschitz bound and the
 bound `Φ_* μ ≤ K μ` on the push-forward remain
-(`TauCeti.vmoModulus_comp_le_pow_finrank_of_map_le`, `TauCeti.MemVMO.comp_of_map_le_of_addHaar`).
+(`LipschitzWith.vmoModulus_comp_le_pow_finrank_of_map_le`,
+`TauCeti.MemVMO.comp_of_map_le_of_addHaar`).
 For a diffeomorphism the push-forward bound says that the Jacobian determinant of `Φ` is at least
 `1 / K`. Measure-preserving maps have `K = 1`; the shear `(t, y) ↦ (t - γ y, y)` by a Lipschitz
 `γ`, which flattens the region above the graph of `γ`, is such a map.
@@ -41,11 +43,12 @@ continuous bilinear map `B`, an essentially bounded `f` and a bounded `g`,
 `η_{B(f, g)}(r) ≤ ‖B‖ (2 N η_f(r) + M ε)`
 
 whenever `‖f‖ ≤ M` almost everywhere, `‖g‖ ≤ N`, and `g` varies by at most `ε` between points at
-distance less than `2 r` (`TauCeti.vmoModulus_bilinear_le`). So `x ↦ B (f x) (g x)` has vanishing
-mean oscillation when `f` does and `g` is uniformly continuous (`TauCeti.MemVMO.bilinear`). With
-both results, a coefficient field of vanishing mean oscillation stays one after flattening, which
-is what the `W^{2,p}` and `W^{1,p}` estimates for coefficients of vanishing mean oscillation up to
-the boundary require of the transformed equation.
+distance less than `2 r` (`ContinuousLinearMap.vmoModulus_bilinear_le`). So `x ↦ B (f x) (g x)`
+has vanishing mean oscillation when `f` does and `g` is uniformly continuous
+(`TauCeti.MemVMO.bilinear`). With both results, a coefficient field of vanishing mean
+oscillation stays one after flattening, which is what the `W^{2,p}` and `W^{1,p}` estimates for
+coefficients of vanishing mean oscillation up to the boundary require of the transformed
+equation.
 
 ## The argument
 
@@ -86,9 +89,9 @@ variable {X Y F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasura
   [PseudoMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y] [NormedAddCommGroup F] {μ : Measure X}
   {ν : Measure Y} {f : Y → F} {Φ : X → Y} {L K D : ℝ≥0}
 
-/-- **Pushing a ball average forward.** Under the hypotheses of `vmoModulus_comp_le_of_map_le`,
-the mean deviation of `f ∘ Φ` from a constant `k` on `B(c, s)` is at most `K D` times that of `f`
-on `B(Φ c, L s)`. -/
+/-- **Pushing a ball average forward.** Under the hypotheses of
+`LipschitzWith.vmoModulus_comp_le_of_map_le`, the mean deviation of `f ∘ Φ` from a constant `k` on
+`B(c, s)` is at most `K D` times that of `f` on `B(Φ c, L s)`. -/
 private theorem setLAverage_ball_enorm_comp_sub_le (hΦ : LipschitzWith L Φ) (hL : L ≠ 0)
     (hmap : μ.map Φ ≤ K • ν) (hf : StronglyMeasurable f) (k : F) {c : X} {s : ℝ}
     (hD : ν (ball (Φ c) (L * s)) ≤ D * μ (ball c s)) :
@@ -116,8 +119,8 @@ variable [NormedSpace ℝ F] [CompleteSpace F]
 /-- **Mean oscillation under a change of variables.** Let `Φ : X → Y` be `L`-Lipschitz, `L ≠ 0`,
 with `Φ_* μ ≤ K ν`, and suppose that `ν (B(Φ c, L s)) ≤ D μ (B(c, s))` for every ball. Then
 `η_{f ∘ Φ}(r) ≤ 2 K D η_f(L r)`. -/
-theorem vmoModulus_comp_le_of_map_le (hΦ : LipschitzWith L Φ) (hL : L ≠ 0)
-    (hmap : μ.map Φ ≤ K • ν)
+theorem _root_.LipschitzWith.vmoModulus_comp_le_of_map_le (hΦ : LipschitzWith L Φ)
+    (hL : L ≠ 0) (hmap : μ.map Φ ≤ K • ν)
     (hD : ∀ c s, 0 < s → ν (ball (Φ c) (L * s)) ≤ D * μ (ball c s))
     (hf : AEStronglyMeasurable f ν) (r : ℝ) :
     vmoModulus (f ∘ Φ) μ r ≤ 2 * K * D * vmoModulus f ν (L * r) := by
@@ -146,30 +149,32 @@ theorem vmoModulus_comp_le_of_map_le (hΦ : LipschitzWith L Φ) (hL : L ≠ 0)
     _ = 2 * K * D * vmoModulus g ν (L * r) := by ring
 
 /-- **The BMO seminorm under a change of variables.** Under the hypotheses of
-`vmoModulus_comp_le_of_map_le`, `‖f ∘ Φ‖_{BMO} ≤ 2 K D ‖f‖_{BMO}`. -/
-theorem bmoSeminorm_comp_le_of_map_le (hΦ : LipschitzWith L Φ) (hL : L ≠ 0)
-    (hmap : μ.map Φ ≤ K • ν)
+`LipschitzWith.vmoModulus_comp_le_of_map_le`, `‖f ∘ Φ‖_{BMO} ≤ 2 K D ‖f‖_{BMO}`. -/
+theorem _root_.LipschitzWith.bmoSeminorm_comp_le_of_map_le (hΦ : LipschitzWith L Φ)
+    (hL : L ≠ 0) (hmap : μ.map Φ ≤ K • ν)
     (hD : ∀ c s, 0 < s → ν (ball (Φ c) (L * s)) ≤ D * μ (ball c s))
     (hf : AEStronglyMeasurable f ν) :
     bmoSeminorm (f ∘ Φ) μ ≤ 2 * K * D * bmoSeminorm f ν := by
   rw [← iSup_vmoModulus]
-  exact iSup_le fun r => (vmoModulus_comp_le_of_map_le hΦ hL hmap hD hf r).trans
+  exact iSup_le fun r => (hΦ.vmoModulus_comp_le_of_map_le hL hmap hD hf r).trans
     (mul_le_mul_right (vmoModulus_le_bmoSeminorm f ν _) _)
 
 /-- **Bounded mean oscillation under a change of variables.** Under the hypotheses of
-`vmoModulus_comp_le_of_map_le`, `f ∘ Φ` has bounded mean oscillation when `f` has. -/
+`LipschitzWith.vmoModulus_comp_le_of_map_le`, `f ∘ Φ` has bounded mean oscillation when `f`
+has. -/
 theorem MemBMO.comp_of_map_le [SecondCountableTopology Y] (hf : MemBMO f ν)
     (hΦ : LipschitzWith L Φ) (hL : L ≠ 0)
     (hmap : μ.map Φ ≤ K • ν)
     (hD : ∀ c s, 0 < s → ν (ball (Φ c) (L * s)) ≤ D * μ (ball c s)) :
     MemBMO (f ∘ Φ) μ :=
   memBMO_iff.2 ⟨hf.locallyIntegrable.comp_of_map_le hΦ.continuous hmap ENNReal.coe_ne_top,
-    (bmoSeminorm_comp_le_of_map_le hΦ hL hmap hD
+    (hΦ.bmoSeminorm_comp_le_of_map_le hL hmap hD
       hf.locallyIntegrable.aestronglyMeasurable).trans_lt
         (ENNReal.mul_lt_top (by finiteness) hf.bmoSeminorm_lt_top)⟩
 
 /-- **Vanishing mean oscillation under a change of variables.** Under the hypotheses of
-`vmoModulus_comp_le_of_map_le`, `f ∘ Φ` has vanishing mean oscillation when `f` has. -/
+`LipschitzWith.vmoModulus_comp_le_of_map_le`, `f ∘ Φ` has vanishing mean oscillation when `f`
+has. -/
 theorem MemVMO.comp_of_map_le [SecondCountableTopology Y] (hf : MemVMO f ν)
     (hΦ : LipschitzWith L Φ) (hL : L ≠ 0)
     (hmap : μ.map Φ ≤ K • ν)
@@ -182,7 +187,7 @@ theorem MemVMO.comp_of_map_le [SecondCountableTopology Y] (hf : MemVMO f ν)
     (Or.inr (show 2 * (K : ℝ≥0∞) * D ≠ ∞ by finiteness))
   rw [mul_zero] at hlim
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le)
-    fun r => vmoModulus_comp_le_of_map_le hΦ hL hmap hD
+    fun r => hΦ.vmoModulus_comp_le_of_map_le hL hmap hD
       hf.memBMO.locallyIntegrable.aestronglyMeasurable r
 
 end PseudoMetricSpace
@@ -198,8 +203,8 @@ variable {X F G H : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasu
 almost everywhere and `g` bounded by `N`, and suppose that `g` varies by at most `ε` between points
 at distance less than `2 r`. Then the mean oscillation of `x ↦ B (f x) (g x)` on balls of radius at
 most `r` is at most `‖B‖ (2 N η_f(r) + M ε)`. -/
-theorem vmoModulus_bilinear_le (B : F →L[ℝ] G →L[ℝ] H) (hf : AEStronglyMeasurable f μ)
-    (hg : AEStronglyMeasurable g μ) {M N : ℝ≥0} {ε : ℝ≥0∞} {r : ℝ}
+theorem _root_.ContinuousLinearMap.vmoModulus_bilinear_le (B : F →L[ℝ] G →L[ℝ] H)
+    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) {M N : ℝ≥0} {ε : ℝ≥0∞} {r : ℝ}
     (hfM : ∀ᵐ x ∂μ, ‖f x‖ₑ ≤ M) (hgN : ∀ x, ‖g x‖ₑ ≤ N)
     (hgε : ∀ x y, dist x y < 2 * r → ‖g x - g y‖ₑ ≤ ε) :
     vmoModulus (fun x => B (f x) (g x)) μ r ≤ ‖B‖ₑ * (2 * N * vmoModulus f μ r + M * ε) := by
@@ -263,7 +268,7 @@ theorem MemVMO.bilinear [SecondCountableTopology X] (B : F →L[ℝ] G →L[ℝ]
   set ω := fun r : ℝ => ⨆ (x : X) (y : X) (_ : dist x y < 2 * r), ‖g x - g y‖ₑ
   have hη (r : ℝ) : vmoModulus (fun x => B (f x) (g x)) μ r ≤
       ‖B‖ₑ * (2 * N * vmoModulus f μ r + M * ω r) :=
-    vmoModulus_bilinear_le B hfm hgm hfM' hgN' fun x y hxy => le_iSup₂_of_le x y (le_iSup_of_le
+    B.vmoModulus_bilinear_le hfm hgm hfM' hgN' fun x y hxy => le_iSup₂_of_le x y (le_iSup_of_le
       hxy le_rfl)
   have hloc : LocallyIntegrable (fun x => B (f x) (g x)) μ :=
     (hf.memBMO.locallyIntegrable.smul (‖B‖ * N)).mono
@@ -313,10 +318,10 @@ private theorem addHaar_ball_mul_le (hL : L ≠ 0) (c : E) (s : ℝ) :
 /-- **Mean oscillation under a change of variables of `E`.** For an additive Haar measure on a
 finite-dimensional space `E` of dimension `n`, if `Φ : E → E` is `L`-Lipschitz, `L ≠ 0`, with
 `Φ_* μ ≤ K μ`, then `η_{f ∘ Φ}(r) ≤ 2 K Lⁿ η_f(L r)`. -/
-theorem vmoModulus_comp_le_pow_finrank_of_map_le (hΦ : LipschitzWith L Φ) (hL : L ≠ 0)
-    (hmap : μ.map Φ ≤ K • μ) (hf : AEStronglyMeasurable f μ) (r : ℝ) :
+theorem _root_.LipschitzWith.vmoModulus_comp_le_pow_finrank_of_map_le (hΦ : LipschitzWith L Φ)
+    (hL : L ≠ 0) (hmap : μ.map Φ ≤ K • μ) (hf : AEStronglyMeasurable f μ) (r : ℝ) :
     vmoModulus (f ∘ Φ) μ r ≤ 2 * K * L ^ Module.finrank ℝ E * vmoModulus f μ (L * r) := by
-  simpa using vmoModulus_comp_le_of_map_le hΦ hL hmap
+  simpa using hΦ.vmoModulus_comp_le_of_map_le hL hmap
     (fun c s _ => addHaar_ball_mul_le hL c s) hf r
 
 /-- **Vanishing mean oscillation under a change of variables of `E`.** For an additive Haar measure
