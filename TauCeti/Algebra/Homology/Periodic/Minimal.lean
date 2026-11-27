@@ -66,11 +66,6 @@ end CategoryTheory.ProjectiveResolution
 
 namespace TauCeti.PeriodicComplex
 
-private theorem zmod_sub_natCast_add_one {n : ℕ} (j : ℤ) (k : ℕ) :
-    ((j - (k + 1 : ℕ) : ℤ) : ZMod n) + 1 = ((j - k : ℤ) : ZMod n) := by
-  push_cast
-  ring
-
 /-- Unfolding a positive-period `ZMod n`-indexed complex of modules from any starting index `j : ℤ`
 gives a minimal chain complex if and only if the periodic complex is minimal. -/
 @[simp]
@@ -81,12 +76,16 @@ theorem resolutionComplex_isMinimal_iff {R : Type u} [CommRing R] {n : ℕ} [NeZ
   refine ⟨fun h a b hab ↦ ?_, fun h k ↦ ?_⟩
   · obtain ⟨k, hk⟩ : ∃ k : ℕ, ((j - k : ℤ) : ZMod n) = b :=
       ⟨((j : ZMod n) - b).val, by push_cast; simp⟩
-    have hk' : ((j - (k + 1 : ℕ) : ℤ) : ZMod n) = a :=
-      add_right_cancel ((zmod_sub_natCast_add_one j k).trans (hk.trans hab.symm))
+    have hk' : ((j - (k + 1 : ℕ) : ℤ) : ZMod n) = a := by
+      apply add_right_cancel (b := (1 : ZMod n))
+      rw [ComplexShape.up_Rel] at hab
+      rw [hab, ← hk]
+      push_cast
+      ring
     subst hk hk'
     rintro _ ⟨x, rfl⟩
     exact resolutionComplex_d Q j k ▸ h k ⟨x, rfl⟩
   · rw [resolutionComplex_d]
-    exact h _ _ (zmod_sub_natCast_add_one j k)
+    exact h _ _ (by rw [ComplexShape.up_Rel]; push_cast; ring)
 
 end TauCeti.PeriodicComplex

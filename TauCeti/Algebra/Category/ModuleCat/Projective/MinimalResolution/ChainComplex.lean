@@ -116,13 +116,6 @@ end ModuleCat
 
 namespace CategoryTheory.ProjectiveResolution
 
-private theorem range_eqToHom_comp_le {R : Type u} [CommRing R] {I : Ideal R}
-    {X Y Z W : ModuleCat.{v} R} (hX : X = Y) (hW : Z = W) (f : Y ⟶ Z)
-    (hf : LinearMap.range f.hom ≤ I • ⊤) :
-    LinearMap.range (eqToHom hX ≫ f ≫ eqToHom hW).hom ≤ I • ⊤ := by
-  subst hX hW
-  simp [hf]
-
 /-- Prepending a minimal finite-free presentation `0 → K --i--> F --p--> M → 0` to a minimal
 finite-free projective resolution `Q` of `K` yields a minimal finite-free projective resolution `P`
 of `M` whose truncation is isomorphic to `Q`. -/
@@ -150,14 +143,18 @@ theorem exists_minimal_cons {R : Type u} [CommRing R]
       have := (hQ_ff k).2
       have e := (eqToIso (Q.cons_complex_X_succ hS k)).symm.toLinearEquiv
       exact ⟨Module.Finite.equiv e, Module.Free.of_equiv e⟩
-  · rw [ChainComplex.isMinimal_iff_range_d_succ_le]
-    rw [ChainComplex.isMinimal_iff_range_d_succ_le] at hQ_min
+  · have htr : (ChainComplex.truncate.obj P.complex).IsMinimal :=
+      hQ_min.of_iso (Q.consTruncateIso hS).symm
+    rw [ChainComplex.isMinimal_iff_range_d_succ_le] at htr ⊢
     rintro (_ | k)
-    · rw [Q.cons_complex_d_one_zero hS, ← Category.assoc (Q.π.f 0) i]
-      exact range_eqToHom_comp_le _ _ _ (by
-        rw [ModuleCat.hom_comp]
-        exact (LinearMap.range_comp_le_range _ i.hom).trans hi_min)
-    · rw [Q.cons_complex_d_succ_succ hS (k + 1) k]
-      exact range_eqToHom_comp_le _ _ _ (hQ_min k)
+    · rw [Q.cons_complex_d_one_zero hS, ← Category.assoc (Q.π.f 0) i, ← Category.assoc,
+        ModuleCat.hom_comp, LinearMap.range_comp]
+      refine le_trans (Submodule.map_mono (p' := Ring.jacobson R • (⊤ : Submodule R F)) ?_) ?_
+      · rw [ModuleCat.hom_comp]
+        exact (LinearMap.range_comp_le_range _ _).trans
+          ((LinearMap.range_comp_le_range _ i.hom).trans hi_min)
+      · rw [Submodule.map_smul'']
+        exact Submodule.smul_mono le_rfl le_top
+    · simpa only [ChainComplex.truncate_obj_d] using htr k
 
 end CategoryTheory.ProjectiveResolution

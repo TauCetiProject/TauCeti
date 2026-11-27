@@ -210,17 +210,6 @@ theorem IsMaximalCohenMacaulay.depth_restrictScalars_add_one_eq_ringKrullDim
   rw [ModuleCat.depth_restrictScalars_of_surjective _ Ideal.Quotient.mk_surjective, hM.depth_eq]
   exact ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim hw hwm
 
-omit [IsLocalRing S] [IsNoetherianRing S] [IsLocalRing (S ⧸ Ideal.span {w})] in
-private theorem projectiveDimension_restrictScalars_ne_zero
-    (hw : IsSMulRegular S w) (M : ModuleCat.{v} (S ⧸ Ideal.span {w})) [Nontrivial M]
-    {p : ℕ}
-    (hp : projectiveDimension
-      ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) = p) :
-    p ≠ 0 := fun h0 ↦
-  ModuleCat.not_projective_restrictScalars_quotient_span_singleton hw M <|
-    (projective_iff_hasProjectiveDimensionLE_zero _).2 <|
-      (projectiveDimension_le_iff _ 0).1 (by simp [hp, h0])
-
 /-- **Auslander–Buchsbaum bound for maximal Cohen–Macaulay hypersurface modules.** If a finite
 maximal Cohen–Macaulay `S ⧸ (w)`-module `M` has finite projective dimension over `S`, then
 `pd_S M ≤ 1`. -/
@@ -244,7 +233,9 @@ theorem IsMaximalCohenMacaulay.hasProjectiveDimensionLE_restrictScalars
       Ideal.Quotient.mk_surjective M).2 ‹_›
     have : Nontrivial M' := ‹Nontrivial M›
     obtain ⟨p, hp⟩ := ModuleCat.exists_projectiveDimension_eq_natCast hpd
-    have hp0 := projectiveDimension_restrictScalars_ne_zero hw M hp
+    have hp0 : p ≠ 0 := by
+      simpa [M', hp] using
+        ModuleCat.projectiveDimension_restrictScalars_quotient_span_singleton_ne_zero hw M
     have h1 : (1 : WithBot ℕ∞) ≤ projectiveDimension M' := by
       dsimp only [M']
       rw [hp]
@@ -280,7 +271,9 @@ theorem IsMaximalCohenMacaulay.projectiveDimension_restrictScalars_eq_one
     dsimp only [M'] at hle
     rw [hp] at hle
     exact_mod_cast hle
-  have hp_ne := projectiveDimension_restrictScalars_ne_zero hw M hp
+  have hp_ne : p ≠ 0 := by
+    simpa [M', hp] using
+      ModuleCat.projectiveDimension_restrictScalars_quotient_span_singleton_ne_zero hw M
   have hp1 : p = 1 := by omega
   simp [hp, hp1]
 

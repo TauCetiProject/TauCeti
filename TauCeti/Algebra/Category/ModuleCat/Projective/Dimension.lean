@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Finsupp
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Ext.Baer
 public import Mathlib.Algebra.Category.ModuleCat.Ext.DimensionShifting
 public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.Algebra.Regular.SMul
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Basic
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.RingTheory.Jacobson.Semiprimary
 import TauCeti.Algebra.Category.ModuleCat.Projective.Basic
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.LinearAlgebra.FreeModule.PID
 
 /-!
@@ -260,5 +263,15 @@ theorem exists_projectiveDimension_eq_natCast {R : Type u} [Ring R] {M : ModuleC
     ∃ p : ℕ, projectiveDimension M = p :=
   CategoryTheory.exists_projectiveDimension_eq_natCast
     (fun h ↦ not_subsingleton M (ModuleCat.subsingleton_of_isZero h)) hpd
+
+/-- A nonzero `R ⧸ (w)`-module (`w` regular) has nonzero projective dimension after restricting
+scalars to `R`. -/
+theorem projectiveDimension_restrictScalars_quotient_span_singleton_ne_zero {R : Type u}
+    [CommRing R] [Small.{v} R] {w : R} (hw : IsSMulRegular R w)
+    (M : ModuleCat.{v} (R ⧸ Ideal.span {w})) [Nontrivial M] :
+    projectiveDimension
+      ((restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) ≠ 0 := by
+  rw [ne_eq, projectiveDimension_eq_zero_iff]
+  exact fun h ↦ not_projective_restrictScalars_quotient_span_singleton hw M h.1
 
 end ModuleCat
