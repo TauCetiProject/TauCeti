@@ -30,7 +30,9 @@ This file supplies restriction to arbitrary subsets (also combined with a change
 off the subset), linearity, continuous-linear composition, pairing, pointwise product maps of
 operator fields, decreasing the integrability exponent, and decreasing the derivative order.
 Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension,
-and smooth maps on the whole plane are in every class on every set.
+and so does smoothness up to the boundary on a set of unique differentiability, such as a
+half-disc (`ContDiffOn.memWkpLoc_of_uniqueDiffOn`). Smooth maps on the whole plane are in every
+class on every set.
 Conversely, let `U` agree almost everywhere with its interior, as open sets and half-discs do.
 If `g` is `Cᵏ` on the interior of `U` and agrees almost everywhere on `U` with
 `u ∈ MemWkpLoc p U (k + m)`, then `fderiv ℝ g` is a weak derivative of `u`
@@ -333,6 +335,22 @@ theorem _root_.ContDiffOn.memWkpLoc [CompleteSpace F]
       hf.fderiv_of_isOpen Ω.isOpen (by simp)
     refine ⟨(hf.continuousOn.mono hU).memLpLoc, fderiv ℝ f, ?_, ih hD⟩
     exact (hf.of_le (by simp)).hasWeakFDerivOn_fderiv.mono (interior_subset.trans hU)
+
+/-- **`Cᵏ` up to the boundary.** A map that is `Cᵏ` on a set `U` of unique differentiability, such
+as a half-disc `Ω ∩ {0 ≤ im}`, has locally `Lᵖ` weak derivatives through order `k` on `U`, with
+bounds reaching its boundary, for every exponent. The first weak derivative is the derivative
+within `U`, which is continuous up to the boundary of `U`. -/
+theorem _root_.ContDiffOn.memWkpLoc_of_uniqueDiffOn [CompleteSpace F]
+    (hf : ContDiffOn ℝ k f U) (hU : UniqueDiffOn ℝ U) : MemWkpLoc p U k f := by
+  induction k generalizing F with
+  | zero => exact hf.continuousOn.memLpLoc
+  | succ k ih =>
+    refine ⟨hf.continuousOn.memLpLoc, fderivWithin ℝ f U, ?_, ih (hf.fderivWithin hU le_rfl)⟩
+    -- on the interior of `U` the derivative within `U` is the classical derivative
+    refine ((hf.of_le (by simp)).mono interior_subset).hasWeakFDerivOn_fderiv.congr_ae_deriv
+      ((ae_restrict_iff' (Opens.interior U).isOpen.measurableSet).2
+        (Filter.Eventually.of_forall fun z hz ↦ ?_))
+    exact (fderivWithin_of_mem_nhds (mem_interior_iff_mem_nhds.1 hz)).symm
 
 /-- A `Cᵏ` map on the whole plane is in the local class `W^{k,p}` on every set, for every
 exponent. -/
