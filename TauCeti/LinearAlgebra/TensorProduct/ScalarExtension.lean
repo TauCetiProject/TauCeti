@@ -340,12 +340,8 @@ restricts to `σ` on scalars, the `τ`-semilinear equivalence `A ⊗[R] M ≃ B 
 def baseChangeₛₗ (f : M ≃ₛₗ[σ] M') (h : ∀ r, τ (algebraMap R A r) = algebraMap S B (σ r)) :
     A ⊗[R] M ≃ₛₗ[τ] B ⊗[S] M' where
   __ := TensorProduct.congr
-    { toFun := τ
-      invFun := τ'
-      map_add' := map_add τ
-      map_smul' r a := by simp [Algebra.smul_def, h]
-      left_inv _ := RingHomInvPair.comp_apply_eq
-      right_inv _ := RingHomInvPair.comp_apply_eq₂ : A ≃ₛₗ[σ] B } f
+    { __ := (RingHomInvPair.toRingEquiv τ τ').toAddEquiv
+      map_smul' r a := by simp [Algebra.smul_def, h] : A ≃ₛₗ[σ] B } f
   map_smul' a t := by
     induction t with
     | tmul b m => simp [smul_tmul']
