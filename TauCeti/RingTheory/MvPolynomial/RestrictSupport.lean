@@ -23,6 +23,8 @@ with the native degree spaces.
 
 * `MvPolynomial.eq_of_mem_restrictSupport_of_coeff_eq`: two polynomials supported on `s` with
   the same coefficients on `s` are equal.
+* `MvPolynomial.mem_submodule_of_support`: a submodule containing every unit monomial in the
+  support of a polynomial contains the polynomial.
 * `MvPolynomial.finrank_restrictSupport`, `MvPolynomial.finrank_restrictSupport_finset`: the
   rank of `restrictSupport R T` over a ring with the strong rank condition is the number of
   exponents in `T`.
@@ -88,6 +90,13 @@ theorem eq_of_mem_restrictSupport_of_coeff_eq {p q : MvPolynomial σ R}
 theorem restrictSupport_ext {p q : restrictSupport R s}
     (h : ∀ μ ∈ s, (p : MvPolynomial σ R).coeff μ = (q : MvPolynomial σ R).coeff μ) : p = q :=
   Subtype.ext <| eq_of_mem_restrictSupport_of_coeff_eq p.property q.property h
+
+/-- A submodule containing the unit monomials indexed by a polynomial's support contains it. -/
+theorem mem_submodule_of_support {p : MvPolynomial σ R} {N : Submodule R (MvPolynomial σ R)}
+    (h : ∀ α ∈ p.support, monomial α 1 ∈ N) : p ∈ N := by
+  have hp : p ∈ restrictSupport R (p.support : Set (σ →₀ ℕ)) := (mem_restrictSupport_iff R).2 le_rfl
+  rw [restrictSupport_eq_span] at hp
+  exact Submodule.span_le.2 (Set.image_subset_iff.2 h) hp
 
 variable (R s) in
 /-- The rank of `restrictSupport R s` is the number of exponents in `s` (`0` if `s` is infinite).

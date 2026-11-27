@@ -18,8 +18,8 @@ import TauCeti.Probability.Independence.Basic
 
 For a measurable label `b`, the conditional partition entropy
 `H(a | b)` is the average over the atoms `B_j = b ⁻¹' {j}` of the entropy of `a` under the
-conditional probability `μ[|B_j]`, weighted by `μ B_j`. This formula gives the refinement and
-independence properties of conditional entropy.
+conditional probability `μ[|B_j]`, weighted by `μ B_j`. This formula gives the refinement,
+subadditivity and independence properties of conditional entropy.
 
 ## Main results
 
@@ -32,6 +32,9 @@ independence properties of conditional entropy.
 * `TauCeti.conditionalPartitionEntropy_pair_le`, `TauCeti.conditionalPartitionEntropy_le_comp`:
   refining the conditioning label does not increase conditional entropy,
   `H(a | b ∨ c) ≤ H(a | b)` and `H(a | c) ≤ H(a | f ∘ c)`.
+* `TauCeti.conditionalPartitionEntropy_pair_left_le_add`,
+  `TauCeti.conditionalPartitionEntropy_pair_pair_le_add`: conditional subadditivity,
+  `H(a ∨ a' | b) ≤ H(a | b) + H(a' | b)` and `H(a ∨ a' | b ∨ b') ≤ H(a | b) + H(a' | b')`.
 
 Together with `TauCeti.conditionalPartitionEntropy_le` these give `H(ξ | η) ≤ H(ξ)` with equality
 for independent labels, and monotonicity of `H(ξ | η)` in both arguments.
@@ -172,6 +175,37 @@ theorem conditionalPartitionEntropy_le_comp [IsFiniteMeasure μ] [Countable κ]
         (conditionalPartitionEntropy_comp_right_of_injective (e := fun j ↦ (f j, j)) a c
           fun _ _ h ↦ congrArg Prod.snd h).symm
     _ ≤ _ := conditionalPartitionEntropy_pair_le a ((measurable_of_countable f).comp hc) hc
+
+/-- **Conditional subadditivity.** For a measurable label `b`, conditional entropy is subadditive
+in the conditioned label: `H(a ∨ a' | b) ≤ H(a | b) + H(a' | b)` for measurable countable labels
+`a`, `a'`. -/
+theorem conditionalPartitionEntropy_pair_left_le_add {ι' : Type*} [Countable ι]
+    [MeasurableSpace ι] [MeasurableSingletonClass ι] [Countable ι'] [MeasurableSpace ι']
+    [MeasurableSingletonClass ι'] {a : X → ι} {a' : X → ι'} (ha : Measurable a)
+    (ha' : Measurable a') {b : X → κ} (hb : Measurable b) :
+    conditionalPartitionEntropy μ (fun x ↦ (a x, a' x)) b ≤
+      conditionalPartitionEntropy μ a b + conditionalPartitionEntropy μ a' b := by
+  rw [conditionalPartitionEntropy_eq_tsum_cond _ hb, conditionalPartitionEntropy_eq_tsum_cond _ hb,
+    conditionalPartitionEntropy_eq_tsum_cond _ hb, ← tsum_add]
+  refine tsum_le_tsum fun j ↦ ?_
+  rw [← mul_add]
+  gcongr
+  exact countablePartitionEntropy_pair_le_add ha ha'
+
+/-- **Subadditivity of conditional entropy over joins.** For a finite measure and measurable
+countable labels, `H(a ∨ a' | b ∨ b') ≤ H(a | b) + H(a' | b')`. -/
+theorem conditionalPartitionEntropy_pair_pair_le_add {ι' : Type*} [IsFiniteMeasure μ]
+    [Countable ι] [MeasurableSpace ι] [MeasurableSingletonClass ι] [Countable ι']
+    [MeasurableSpace ι'] [MeasurableSingletonClass ι'] [Countable κ] [Countable κ']
+    [MeasurableSpace κ'] [MeasurableSingletonClass κ'] {a : X → ι} {a' : X → ι'} {b : X → κ}
+    {b' : X → κ'} (ha : Measurable a) (ha' : Measurable a') (hb : Measurable b)
+    (hb' : Measurable b') :
+    conditionalPartitionEntropy μ (fun x ↦ (a x, a' x)) (fun x ↦ (b x, b' x)) ≤
+      conditionalPartitionEntropy μ a b + conditionalPartitionEntropy μ a' b' := by
+  refine (conditionalPartitionEntropy_pair_left_le_add ha ha' (hb.prodMk hb')).trans ?_
+  gcongr
+  · exact conditionalPartitionEntropy_le_comp a (hb.prodMk hb') Prod.fst
+  · exact conditionalPartitionEntropy_le_comp a' (hb.prodMk hb') Prod.snd
 
 end Measurable
 

@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Lp.PiLp
-public import TauCeti.Analysis.Normed.Module.Seminorm.Word
-public import TauCeti.Data.List.MonomialWord
+public import TauCeti.Analysis.Normed.Module.Seminorm.Sobolev
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector
 
 /-!
@@ -37,11 +35,12 @@ the derived action lowers the order by one: if `Y = ∑ i, c i • X i`, then
 The word seminorms and these properties are the case of the norm on the smooth vectors and
 `D i = dπ(X_i)` of the word seminorms `P^D_k(x) = ∑_{|w| ≤ k} p(D_w x)` of a seminorm `p` along a
 family `D` of operators on a module (`Seminorm.endWordSeminorm`, in
-`TauCeti.Analysis.Normed.Module.Seminorm.Word`).
+`TauCeti.Analysis.Normed.Module.Seminorm.Word`). Likewise the Sobolev seminorms are the Sobolev
+seminorms `LinearMap.endSobolevSeminorm` along the operators `dπ(X_i)` (in
+`TauCeti.Analysis.Normed.Module.Seminorm.Sobolev`).
 
 ## Main definitions
 
-* `TauCeti.SobolevIndex m k`: the exponent vectors `α : Fin m → ℕ` with `|α| ≤ k`.
 * `ContRepresentation.wordAction I π X w`: the operator `dπ(X_w)` of a word `w`, for a
   representation over any ring.
 * `ContRepresentation.wordSeminorm I π X k`: the word seminorm `P_k`.
@@ -58,8 +57,6 @@ family `D` of operators on a module (`Seminorm.endWordSeminorm`, in
 * `ContRepresentation.wordSeminorm_lieSmoothVectorsDerivative_le`: `P_k(dπ(X_i) v) ≤ P_{k+1}(v)`.
 * `ContRepresentation.wordSeminorm_lieSmoothVectorsDerivative_le_basis`: for a real basis `b`,
   `P_k(dπ(Y) v) ≤ (∑ i, |b.repr Y i|) P_{k+1}(v)`.
-* `TauCeti.exists_sobolevIndex_monomialWord_eq`: a sorted word of length at most `k` is the
-  ordered monomial word `TauCeti.monomialWord α` of an index `α` in `SobolevIndex m k`.
 * `ContRepresentation.wordSeminorm_trivial`, `ContRepresentation.sobolevSeminorm_trivial`: for
   the trivial representation, every nonempty word acts by zero, so `P_k = Q_k = ‖·‖`.
 
@@ -74,66 +71,6 @@ public section
 noncomputable section
 
 open scoped ContDiff Manifold
-
-namespace TauCeti
-
-/-! ### Ordered monomials -/
-
-variable {m : ℕ}
-
-/-- The exponent vectors `α : Fin m → ℕ` of total degree `|α| = ∑ i, α i ≤ k`, with entries
-recorded in `Fin (k + 1)` so that they form a finite type. -/
-abbrev SobolevIndex (m k : ℕ) : Type :=
-  {α : Fin m → Fin (k + 1) // ∑ i, (α i : ℕ) ≤ k}
-
-/-- The exponent vector in `ℕ` of an index in `SobolevIndex m k`. -/
-def SobolevIndex.exponent {k : ℕ} (α : SobolevIndex m k) (i : Fin m) : ℕ :=
-  α.val i
-
-/-- The `i`-th entry of the exponent vector of `α`. -/
-@[simp]
-theorem SobolevIndex.exponent_apply {k : ℕ} (α : SobolevIndex m k) (i : Fin m) :
-    α.exponent i = α.val i :=
-  (rfl)
-
-/-- An index in `SobolevIndex m k` is determined by its exponent vector. -/
-theorem SobolevIndex.exponent_injective {k : ℕ} :
-    Function.Injective (SobolevIndex.exponent (m := m) (k := k)) := fun _ _ h ↦
-  Subtype.ext (funext fun i ↦ Fin.ext (congrFun h i))
-
-/-- The ordered monomial word of an index in `SobolevIndex m k`, as a word of length at most
-`k`. -/
-def SobolevIndex.toBoundedWord {k : ℕ} (α : SobolevIndex m k) : BoundedWord (Fin m) k :=
-  ⟨⟨(monomialWord α.exponent).length, by
-      rw [length_monomialWord]; exact Nat.lt_succ_of_le α.property⟩,
-    (monomialWord α.exponent).get⟩
-
-/-- The word `SobolevIndex.toBoundedWord α` spells the ordered monomial word of `α`. -/
-@[simp]
-theorem SobolevIndex.ofFn_toBoundedWord {k : ℕ} (α : SobolevIndex m k) :
-    List.ofFn α.toBoundedWord.2 = monomialWord α.exponent :=
-  List.ofFn_get _
-
-/-- Distinct ordered monomials give distinct words. -/
-theorem SobolevIndex.toBoundedWord_injective {k : ℕ} :
-    Function.Injective (SobolevIndex.toBoundedWord (m := m) (k := k)) := fun α β h ↦ by
-  have := congrArg (fun w : BoundedWord (Fin m) k ↦ List.ofFn w.2) h
-  simp only [SobolevIndex.ofFn_toBoundedWord] at this
-  exact SobolevIndex.exponent_injective (monomialWord_injective this)
-
-/-- A sorted word of length at most `k` is the ordered monomial word of an index in
-`SobolevIndex m k`. -/
-theorem exists_sobolevIndex_monomialWord_eq {k : ℕ} {w : List (Fin m)}
-    (hw : w.Pairwise (· ≤ ·)) (hk : w.length ≤ k) :
-    ∃ α : SobolevIndex m k, monomialWord α.exponent = w := by
-  have hsum : ∑ i, w.count i = w.length := by
-    rw [← length_monomialWord, monomialWord_count hw]
-  refine ⟨⟨fun i ↦ ⟨w.count i, Nat.lt_succ_of_le (List.count_le_length.trans hk)⟩, ?_⟩, ?_⟩
-  · simpa [hsum] using hk
-  · refine (congrArg monomialWord (funext fun i ↦ ?_)).trans (monomialWord_count hw)
-    simp only [SobolevIndex.exponent_apply]
-
-end TauCeti
 
 namespace ContRepresentation
 
@@ -319,33 +256,26 @@ theorem wordSeminorm_trivial (X : ι → LeftInvariantDerivation I G) (k : ℕ)
 variable {m : ℕ}
 
 variable (I π) in
-/-- The vector `(dπ(X^α) v)_{|α| ≤ k}` of ordered monomial derivatives, in the `ℓ²` product. -/
-def sobolevVector (X : Fin m → LeftInvariantDerivation I G) (k : ℕ) :
-    lieSmoothVectors I π →ₗ[𝕜] PiLp 2 (fun _ : SobolevIndex m k ↦ V) :=
-  (WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ
-    LinearMap.pi fun α ↦
-      (lieSmoothVectors I π).subtype ∘ₗ wordAction I π X (monomialWord α.exponent)
-
-/-- The `α`-component of `sobolevVector` is `dπ(X^α) v`. -/
-@[simp]
-theorem sobolevVector_apply (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
-    (v : lieSmoothVectors I π) (α : SobolevIndex m k) :
-    sobolevVector I π X k v α = (wordAction I π X (monomialWord α.exponent) v : V) :=
-  (rfl)
-
-variable (I π) in
 /-- The Sobolev seminorm `Q_k(v) = (∑_{|α| ≤ k} ‖dπ(X^α) v‖²)^{1/2}` of Bernstein–Krötz, over
 the ordered monomials `X^α = X₁^{α₁} ⋯ X_m^{α_m}` of degree at most `k`. -/
 def sobolevSeminorm (X : Fin m → LeftInvariantDerivation I G) (k : ℕ) :
     Seminorm 𝕜 (lieSmoothVectors I π) :=
-  (normSeminorm 𝕜 (PiLp 2 fun _ : SobolevIndex m k ↦ V)).comp (sobolevVector I π X k)
+  LinearMap.endSobolevSeminorm (lieSmoothVectors I π).subtype
+    (fun i ↦ lieSmoothVectorsDerivative I π (X i)) k
+
+/-- The Sobolev seminorm along `X` is the Sobolev seminorm along the operators `dπ(X_i)`. -/
+theorem sobolevSeminorm_eq_endSobolevSeminorm (X : Fin m → LeftInvariantDerivation I G) (k : ℕ) :
+    sobolevSeminorm I π X k =
+      LinearMap.endSobolevSeminorm (lieSmoothVectors I π).subtype
+        (fun i ↦ lieSmoothVectorsDerivative I π (X i)) k :=
+  (rfl)
 
 /-- The Sobolev seminorm as an explicit square root of a sum of squares. -/
 theorem sobolevSeminorm_apply (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
     (v : lieSmoothVectors I π) :
     sobolevSeminorm I π X k v =
       √(∑ α : SobolevIndex m k, ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ ^ 2) := by
-  simp [sobolevSeminorm, PiLp.norm_eq_of_L2]
+  simp [sobolevSeminorm_eq_endSobolevSeminorm, LinearMap.endSobolevSeminorm_apply, wordAction]
 
 /-- **The Sobolev seminorms of the trivial representation are the norm**: `Q_k(v) = ‖v‖` for every
 `k`, since only the constant monomial acts nontrivially. -/
@@ -368,21 +298,7 @@ theorem sobolevSeminorm_trivial (X : Fin m → LeftInvariantDerivation I G) (k :
 the `ℓ²` norm of a finite family is at most its `ℓ¹` norm. -/
 theorem sobolevSeminorm_le_wordSeminorm (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
     (v : lieSmoothVectors I π) : sobolevSeminorm I π X k v ≤ wordSeminorm I π X k v := by
-  classical
-  set b : BoundedWord (Fin m) k → ℝ := fun w ↦ ‖(wordAction I π X (List.ofFn w.2) v : V)‖
-  have hb : ∀ α : SobolevIndex m k,
-      ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ = b α.toBoundedWord := fun α ↦ by
-    simp only [b, SobolevIndex.ofFn_toBoundedWord]
-  have hsum : ∑ α : SobolevIndex m k, b α.toBoundedWord ≤ ∑ w, b w :=
-    Finset.sum_le_sum_of_injOn SobolevIndex.toBoundedWord
-      SobolevIndex.toBoundedWord_injective.injOn (Finset.subset_univ _) (fun _ _ ↦ le_rfl)
-      fun _ _ _ ↦ norm_nonneg _
-  rw [sobolevSeminorm_apply, wordSeminorm_apply, Real.sqrt_le_iff]
-  refine ⟨Finset.sum_nonneg fun _ _ ↦ norm_nonneg _, ?_⟩
-  simp_rw [hb]
-  calc ∑ α : SobolevIndex m k, b α.toBoundedWord ^ 2
-    _ ≤ (∑ α : SobolevIndex m k, b α.toBoundedWord) ^ 2 :=
-        Finset.sum_sq_le_sq_sum_of_nonneg fun _ _ ↦ norm_nonneg _
-    _ ≤ (∑ w, b w) ^ 2 := pow_le_pow_left₀ (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) hsum 2
+  rw [sobolevSeminorm_eq_endSobolevSeminorm, wordSeminorm_eq_endWordSeminorm]
+  exact LinearMap.endSobolevSeminorm_le_endWordSeminorm _ _ k v
 
 end ContRepresentation

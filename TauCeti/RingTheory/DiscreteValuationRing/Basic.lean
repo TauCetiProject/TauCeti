@@ -79,6 +79,15 @@ namespace TauCeti.IsDiscreteValuationRing
 
 variable {S : Type*} [CommRing S] [IsDomain S] [_root_.IsDiscreteValuationRing S]
 
+/-- In a discrete valuation ring, every nonzero element divides a power of every non-unit. -/
+theorem exists_dvd_pow_of_ne_zero_of_not_isUnit {b π : S} (hb : b ≠ 0) (hπ : ¬IsUnit π) :
+    ∃ j, b ∣ π ^ j := by
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+  obtain ⟨j, u, rfl⟩ := _root_.IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hb hϖ
+  have hϖπ : ϖ ∣ π := Ideal.mem_span_singleton.1 <| hϖ.maximalIdeal_eq ▸
+    (IsLocalRing.mem_maximalIdeal π).2 hπ
+  exact ⟨j, (Units.mul_left_dvd).2 (pow_dvd_pow_of_dvd hϖπ j)⟩
+
 /-- Cancelling a uniformizer power from membership in the next maximal-ideal power leaves
 the coefficient in the maximal ideal. -/
 theorem mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ {ϖ c : S} {n : ℕ}

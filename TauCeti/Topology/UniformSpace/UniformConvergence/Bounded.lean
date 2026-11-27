@@ -33,11 +33,14 @@ to the compact graph of the limit, near which `g` is bounded.
 A sequence of maps continuous on a compact set `K` and converging uniformly on `K` is uniformly
 bounded on `K` (`TendstoUniformlyOn.exists_forall_norm_le_of_isCompact`): far out, every term is
 within `2` of one fixed term, and the finitely many remaining terms are bounded.
+
+On the cylinder, a continuous map `f` of period one in `t` that, far out on each end, does not
+depend on `s` is bounded (`TauCeti.exists_forall_norm_le_of_periodic_of_eventually_eq`).
 -/
 
 public section
 
-open Filter Set
+open Filter Set Topology Function
 
 namespace TauCeti
 
@@ -67,6 +70,25 @@ theorem exists_forall_norm_le_of_tendstoUniformlyOn {β E : Type*} [TopologicalS
   · exact hnear gp R ⟨le_max_left _ _, le_rfl⟩ (hRp s ((le_max_right _ _).trans hs') t ht)
       (hRp R (le_max_right _ _) t ht)
   · linarith [hC (s, t) ⟨⟨hs.le, hs'.le⟩, ht⟩]
+
+/-- A continuous function on the cylinder, of period one in `t`, which far out on each end does not
+depend on `s`, is bounded. -/
+theorem exists_forall_norm_le_of_periodic_of_eventually_eq {E : Type*}
+    [SeminormedAddCommGroup E] {f : ℝ × ℝ → E} (hf : Continuous f)
+    (hper : ∀ s t, f (s, t + 1) = f (s, t)) {gm gp : ℝ → E}
+    (hm : ∀ᶠ s in atBot, ∀ t, f (s, t) = gm t) (hp : ∀ᶠ s in atTop, ∀ t, f (s, t) = gp t) :
+    ∃ C, ∀ z, ‖f z‖ ≤ C := by
+  have hlim {l : Filter ℝ} {g : ℝ → E} (h : ∀ᶠ s in l, ∀ t, f (s, t) = g t) :
+      TendstoUniformlyOn (fun s t ↦ f (s, t)) g l (Icc 0 1) :=
+    (tendstoUniformlyOn_const g l _).congr (h.mono fun s hs t _ ↦ (hs t).symm)
+  obtain ⟨C, hC⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc hf.continuousOn
+    (hlim hm) (hlim hp)
+  refine ⟨C, fun ⟨s, t⟩ ↦ ?_⟩
+  -- Reduce `t` modulo `1` to `[0, 1)`.
+  obtain ⟨t', ht', heq⟩ :=
+    (show Periodic (fun t ↦ f (s, t)) 1 from hper s).exists_mem_Ico₀ one_pos t
+  rw [show f (s, t) = f (s, t') from heq]
+  exact hC s t' (Ico_subset_Icc_self ht')
 
 end TauCeti
 

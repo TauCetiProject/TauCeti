@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.CyclicFamily.RayClass
-public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz
+public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz.RayClass
 public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder.Family
 
 /-!

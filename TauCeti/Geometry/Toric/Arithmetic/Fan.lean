@@ -129,9 +129,7 @@ theorem bot_mem (hσ : σ ∈ Φ.cones) : (⊥ : PointedCone ℝ V) ∈ Φ.cones
 theorem map_mem_iff {g : V ≃ₗ[ℝ] V} (hg : g ∈ Γ) :
     σ.map (g : V →ₗ[ℝ] V) ∈ Φ.cones ↔ σ ∈ Φ.cones := by
   refine ⟨fun h ↦ ?_, fun h ↦ Φ.map_mem hg h⟩
-  have h' := Φ.map_mem (inv_mem hg) h
-  rwa [← PointedCone.map_linearEquiv_mul, inv_mul_cancel, LinearEquiv.coe_toLinearMap_one,
-    PointedCone.map_id] at h'
+  simpa using Φ.map_mem (inv_mem hg) h
 
 /-! ### Local finiteness -/
 

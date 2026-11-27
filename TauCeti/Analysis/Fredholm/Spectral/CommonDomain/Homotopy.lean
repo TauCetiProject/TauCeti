@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Spectral.CommonDomain
+import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Perturbation
 import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Spectrum
 import TauCeti.Topology.LocallyConstant.Preconnected
 
@@ -32,6 +33,18 @@ relative to its endpoints. This is what allows the path `A` in the index formula
 `ind (∂ₛ - A) = -SF(A)` for the linearized Floer operator to be deformed into a normal form; that
 formula is not proved here.
 
+**Deformations bounded through `ι`.** The invertible shifts need only be given along one path
+`G u` when the other paths differ from it by operators bounded through `ι`,
+`‖(G s t - G u t) x‖ ≤ C ‖ι x‖`: a symmetric perturbation of this kind keeps an invertible shift
+(`ContinuousLinearMap.exists_isInvertible_ofReal_smul_sub_of_norm_sub_apply_le`). For instance the
+operators `J₀ ∂ₜ + S(t)` of the Floer equation differ by multiplication operators, bounded on `L²`.
+Since the straight segment between two paths is such a deformation, the spectral flow of a path
+with given endpoints `A a` and `A b` does not depend on the path, among those differing from it by
+operators bounded through `ι` (`TauCeti.domainSpectralFlow_eq_of_norm_sub_apply_le`). This is the
+counterpart of the fact that the index of the operator `∂ₛ + A` depends only on the limits of `A`
+(`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq`); together they reduce the index
+formula to a single path for each pair of endpoints.
+
 ## Main results
 
 * `TauCeti.domainSpectralFlow_add_domainSpectralFlow_eq_add`: the spectral flow around a
@@ -39,6 +52,11 @@ formula is not proved here.
 * `TauCeti.domainSpectralFlow_eq_of_homotopy`: homotopy invariance with fixed endpoints.
 * `TauCeti.domainSpectralFlow_eq_of_homotopy_of_isInvertible`: homotopy invariance with
   invertible endpoints.
+* `TauCeti.domainSpectralFlow_eq_of_homotopy_of_norm_sub_apply_le`,
+  `TauCeti.domainSpectralFlow_eq_of_homotopy_of_isInvertible_of_norm_sub_apply_le`: the same for
+  deformations bounded through `ι`, with invertible shifts given along one path only.
+* `TauCeti.domainSpectralFlow_eq_of_norm_sub_apply_le`: paths with the same endpoints, differing
+  by operators bounded through `ι`, have the same spectral flow.
 
 ## References
 
@@ -213,5 +231,91 @@ theorem domainSpectralFlow_eq_of_homotopy_of_isInvertible (hab : a ≤ b) (huv :
     domainSpectralFlow_eq_zero_of_forall_isInvertible hι huv (hG.uncurry_right b hb')
       (fun s hs ↦ hsymm s hs b hb') hb] at this
   linarith
+
+/-! ### Deformations bounded through `ι` -/
+
+omit [NormedAlgebra ℝ (H →L[𝕜] H)]
+  [IsometricContinuousFunctionalCalculus ℝ (H →L[𝕜] H) IsSelfAdjoint]
+  [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
+/-- Paths symmetric through `ι` and differing from a path `G u` with invertible shifts by operators
+bounded through `ι` have invertible shifts. -/
+private theorem forall_exists_isInvertible_smul_sub_of_norm_sub_apply_le
+    (hsymm : ∀ s ∈ Icc u v, ∀ t ∈ Icc a b, ∀ x y, ⟪G s t x, ι y⟫ = ⟪ι x, G s t y⟫)
+    (h₀ : ∀ t ∈ Icc a b, ∃ c₀ : 𝕜, (c₀ • ι - G u t).IsInvertible)
+    (hbdd : ∀ s ∈ Icc u v, ∀ t ∈ Icc a b, ∃ C, ∀ x, ‖(G s t - G u t) x‖ ≤ C * ‖ι x‖) :
+    ∀ s ∈ Icc u v, ∀ t ∈ Icc a b, ∃ c₀ : 𝕜, (c₀ • ι - G s t).IsInvertible := fun s hs t ht ↦ by
+  obtain ⟨c₀, hc₀⟩ := h₀ t ht
+  obtain ⟨C, hC⟩ := hbdd s hs t ht
+  obtain ⟨c, hc⟩ := ι.exists_isInvertible_ofReal_smul_sub_of_norm_sub_apply_le hι hc₀
+    (hsymm s hs t ht) hC
+  exact ⟨c, hc⟩
+
+/-- **Homotopy invariance under deformations bounded through `ι`.** Let `G` be a continuous family
+over `[u, v]` of paths of operators on `[a, b]`, symmetric through a compact `ι`, whose endpoints
+`G s a` and `G s b` do not move. If every `G u t` has some invertible shift and every `G s t`
+differs from `G u t` by an operator bounded through `ι`, then `G v` and `G u` have the same spectral
+flow. -/
+theorem domainSpectralFlow_eq_of_homotopy_of_norm_sub_apply_le (hab : a ≤ b) (huv : u ≤ v)
+    (hG : ContinuousOn (Function.uncurry G) (Icc u v ×ˢ Icc a b))
+    (hsymm : ∀ s ∈ Icc u v, ∀ t ∈ Icc a b, ∀ x y, ⟪G s t x, ι y⟫ = ⟪ι x, G s t y⟫)
+    (h₀ : ∀ t ∈ Icc a b, ∃ c₀ : 𝕜, (c₀ • ι - G u t).IsInvertible)
+    (hbdd : ∀ s ∈ Icc u v, ∀ t ∈ Icc a b, ∃ C, ∀ x, ‖(G s t - G u t) x‖ ≤ C * ‖ι x‖)
+    (ha : ∀ s ∈ Icc u v, G s a = G u a) (hb : ∀ s ∈ Icc u v, G s b = G u b) :
+    domainSpectralFlow ι (G v) a b = domainSpectralFlow ι (G u) a b :=
+  domainSpectralFlow_eq_of_homotopy hι hab huv hG hsymm
+    (forall_exists_isInvertible_smul_sub_of_norm_sub_apply_le hι hsymm h₀ hbdd) ha hb
+
+/-- **Homotopy invariance with invertible endpoints, under deformations bounded through `ι`.** Let
+`G` be a continuous family over `[u, v]` of paths of operators on `[a, b]`, symmetric through a
+compact `ι`, whose endpoints `G s a` and `G s b` stay invertible as maps `D → H`. If every `G u t`
+has some invertible shift and every `G s t` differs from `G u t` by an operator bounded through
+`ι`, then `G v` and `G u` have the same spectral flow. -/
+theorem domainSpectralFlow_eq_of_homotopy_of_isInvertible_of_norm_sub_apply_le (hab : a ≤ b)
+    (huv : u ≤ v) (hG : ContinuousOn (Function.uncurry G) (Icc u v ×ˢ Icc a b))
+    (hsymm : ∀ s ∈ Icc u v, ∀ t ∈ Icc a b, ∀ x y, ⟪G s t x, ι y⟫ = ⟪ι x, G s t y⟫)
+    (h₀ : ∀ t ∈ Icc a b, ∃ c₀ : 𝕜, (c₀ • ι - G u t).IsInvertible)
+    (hbdd : ∀ s ∈ Icc u v, ∀ t ∈ Icc a b, ∃ C, ∀ x, ‖(G s t - G u t) x‖ ≤ C * ‖ι x‖)
+    (ha : ∀ s ∈ Icc u v, (G s a).IsInvertible) (hb : ∀ s ∈ Icc u v, (G s b).IsInvertible) :
+    domainSpectralFlow ι (G v) a b = domainSpectralFlow ι (G u) a b :=
+  domainSpectralFlow_eq_of_homotopy_of_isInvertible hι hab huv hG hsymm
+    (forall_exists_isInvertible_smul_sub_of_norm_sub_apply_le hι hsymm h₀ hbdd) ha hb
+
+/-- **The spectral flow depends only on the endpoints.** Let `A` and `A'` be continuous paths of
+operators on `[a, b]`, symmetric through a compact `ι`, with the same endpoints `A' a = A a` and
+`A' b = A b`. If every `A t` has some invertible shift and every `A' t` differs from `A t` by an
+operator bounded through `ι`, then `A` and `A'` have the same spectral flow. -/
+theorem domainSpectralFlow_eq_of_norm_sub_apply_le {A A' : ℝ → D →L[𝕜] H} (hab : a ≤ b)
+    (hA : ContinuousOn A (Icc a b)) (hA' : ContinuousOn A' (Icc a b))
+    (hsymm : ∀ t ∈ Icc a b, ∀ x y, ⟪A t x, ι y⟫ = ⟪ι x, A t y⟫)
+    (hsymm' : ∀ t ∈ Icc a b, ∀ x y, ⟪A' t x, ι y⟫ = ⟪ι x, A' t y⟫)
+    (h₀ : ∀ t ∈ Icc a b, ∃ c₀ : 𝕜, (c₀ • ι - A t).IsInvertible)
+    (hbdd : ∀ t ∈ Icc a b, ∃ C, ∀ x, ‖(A' t - A t) x‖ ≤ C * ‖ι x‖) (ha : A' a = A a)
+    (hb : A' b = A b) : domainSpectralFlow ι A' a b = domainSpectralFlow ι A a b := by
+  -- Deform `A` into `A'` along the straight segment `A t + s (A' t - A t)`, `s ∈ [0, 1]`.
+  set G : ℝ → ℝ → D →L[𝕜] H := fun s t ↦ A t + (s : 𝕜) • (A' t - A t)
+  have hG0 : G 0 = A := funext fun t ↦ by simp [G]
+  have hG1 : G 1 = A' := funext fun t ↦ by simp [G]
+  have hGc : ContinuousOn (Function.uncurry G) (Icc 0 1 ×ˢ Icc a b) := by
+    have hA₂ : ContinuousOn (fun p : ℝ × ℝ ↦ A p.2) (Icc 0 1 ×ˢ Icc a b) :=
+      hA.comp continuousOn_snd fun _ hp ↦ hp.2
+    have hA'₂ : ContinuousOn (fun p : ℝ × ℝ ↦ A' p.2) (Icc 0 1 ×ˢ Icc a b) :=
+      hA'.comp continuousOn_snd fun _ hp ↦ hp.2
+    have hs : ContinuousOn (fun p : ℝ × ℝ ↦ ((p.1 : ℝ) : 𝕜)) (Icc 0 1 ×ˢ Icc a b) := by fun_prop
+    exact (hA₂.add (hs.smul (hA'₂.sub hA₂))).congr fun _ _ ↦ rfl
+  have hGsymm : ∀ s ∈ Icc (0 : ℝ) 1, ∀ t ∈ Icc a b, ∀ x y, ⟪G s t x, ι y⟫ = ⟪ι x, G s t y⟫ :=
+    fun s _ t ht x y ↦ by
+      simp only [G, add_apply, smul_apply, sub_apply, inner_add_left, inner_add_right,
+        inner_smul_left, inner_smul_right, inner_sub_left, inner_sub_right, RCLike.conj_ofReal,
+        hsymm t ht, hsymm' t ht]
+  have hGbdd : ∀ s ∈ Icc (0 : ℝ) 1, ∀ t ∈ Icc a b, ∃ C, ∀ x, ‖(G s t - G 0 t) x‖ ≤ C * ‖ι x‖ := by
+    intro s _ t ht
+    obtain ⟨C, hC⟩ := hbdd t ht
+    refine ⟨|s| * C, fun x ↦ ?_⟩
+    rw [hG0]
+    simp only [G, add_sub_cancel_left, smul_apply, norm_smul, RCLike.norm_ofReal, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (hC x) (abs_nonneg s)
+  have h := domainSpectralFlow_eq_of_homotopy_of_norm_sub_apply_le hι hab zero_le_one hGc hGsymm
+    (by rwa [hG0]) hGbdd (fun s _ ↦ by simp [G, ha]) (fun s _ ↦ by simp [G, hb])
+  rwa [hG0, hG1] at h
 
 end TauCeti

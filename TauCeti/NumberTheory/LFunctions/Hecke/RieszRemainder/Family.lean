@@ -82,27 +82,15 @@ theorem ofReal_finsuppRieszRemainder_of_mapDomain_inv_eq (w : PrimitiveRayClassC
   exact continuous_finsetSum _ fun ψ _ ↦
     (continuous_re.comp ψ.continuous_rieszRemainder).const_mul _
 
-/-- A power bound on the remainder of each character in the support of the weights gives
-one for the family remainder. The weights may have either sign. -/
-theorem exists_norm_finsuppRieszRemainder_le_rpow_of_forall_mem_support
-    (w : PrimitiveRayClassCharacter K →₀ ℝ) {a σ : ℝ}
-    (h : ∀ ψ ∈ w.support, ∃ C : ℝ, ∀ y ≥ a, ‖ψ.rieszRemainder y‖ ≤ C * y ^ σ) :
-    ∃ C : ℝ, ∀ y ≥ a, ‖finsuppRieszRemainder w y‖ ≤ C * y ^ σ := by
-  classical
-  choose C hC using h
-  let D (ψ : PrimitiveRayClassCharacter K) := if hψ : ψ ∈ w.support then C ψ hψ else 0
-  refine ⟨∑ ψ ∈ w.support, ‖w ψ‖ * D ψ, fun y hy ↦ ?_⟩
-  rw [finsuppRieszRemainder_apply, Finsupp.sum, Finset.sum_mul]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun ψ hψ ↦ ?_)
-  rw [norm_mul, mul_assoc, Real.norm_eq_abs (ψ.rieszRemainder y).re]
-  have hD : D ψ = C ψ hψ := dite_eq_left hψ
-  exact mul_le_mul_of_nonneg_left ((abs_re_le_norm _).trans (hD ▸ hC ψ hψ y hy)) (norm_nonneg _)
-
 /-- The family remainder has growth at most `y ^ σ` for each `σ > 1` on `[1, ∞)`. -/
 theorem exists_norm_finsuppRieszRemainder_le_rpow (w : PrimitiveRayClassCharacter K →₀ ℝ)
-    {σ : ℝ} (hσ : 1 < σ) : ∃ C : ℝ, ∀ y ≥ 1, ‖finsuppRieszRemainder w y‖ ≤ C * y ^ σ :=
-  exists_norm_finsuppRieszRemainder_le_rpow_of_forall_mem_support w
-    fun ψ _ ↦ ψ.exists_norm_rieszRemainder_le_rpow hσ
+    {σ : ℝ} (hσ : 1 < σ) : ∃ C : ℝ, ∀ y ≥ 1, ‖finsuppRieszRemainder w y‖ ≤ C * y ^ σ := by
+  choose C hC using fun ψ : PrimitiveRayClassCharacter K ↦ ψ.exists_norm_rieszRemainder_le_rpow hσ
+  refine ⟨∑ ψ ∈ w.support, ‖w ψ‖ * C ψ, fun y hy ↦ ?_⟩
+  rw [finsuppRieszRemainder_apply, Finsupp.sum, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun ψ _ ↦ ?_)
+  rw [norm_mul, mul_assoc, Real.norm_eq_abs (ψ.rieszRemainder y).re]
+  exact mul_le_mul_of_nonneg_left ((abs_re_le_norm _).trans (hC ψ y hy)) (norm_nonneg _)
 
 /-- The upper-tail Mellin integrand for the family remainder is absolutely integrable for
 `Re s > 1`. -/
