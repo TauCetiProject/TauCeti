@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Tensor
 public import TauCeti.AlgebraicTopology.LocalCoefficient.UniversalCover
-public import TauCeti.RepresentationTheory.LinearCharacter.Basic
-public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character.Basic
 
 /-!
 # Twisting a local system by the orientation character
@@ -21,12 +20,12 @@ representation `k_{w₁}` of `π₁(B, b)` on `k`. This file identifies the loca
 `k_{w₁}` and its tensor products produce on `B` through the universal cover
 (`IsQuotientCoveringMap.associatedLocalSystem` for `TauCeti.UniversalCover.projTopHom`):
 
-* The monodromy representation of the orientation local system `o(E)` at `b` is `k_{w₁}`, by
+* `L_{k_{w₁}} ≅ o(E)`
+  (`TauCeti.VectorBundleOrientationCover.associatedLocalSystemOrientationCharacterIso`), since
+  the monodromy representation of the orientation local system `o(E)` at `b` is `k_{w₁}`, by
   evaluation at an orientation `o` of the fibre `E_b`
   (`TauCeti.VectorBundleOrientationCover.monodromySignLocalSystemIso`): transport around a loop
   `g` multiplies by `w₁(g)`.
-* Hence `L_{k_{w₁}} ≅ o(E)`
-  (`TauCeti.VectorBundleOrientationCover.associatedLocalSystemOrientationCharacterIso`).
 * For every local system `L` on `B`, with monodromy representation `D_L` on `L_b`,
 
   `L_{D_L ⊗ k_{w₁}} ≅ L ⊗ o(E)`
@@ -53,8 +52,6 @@ ring in one universe, so the base, the fibres and the ring lie in a common unive
 
 ## Main definitions
 
-* `TauCeti.VectorBundleOrientationCover.monodromySignLocalSystemIso`: the monodromy of `o(E)` is the
-  orientation character.
 * `TauCeti.VectorBundleOrientationCover.associatedLocalSystemOrientationCharacterIso`:
   `L_{k_{w₁}} ≅ o(E)`.
 * `TauCeti.VectorBundleOrientationCover.associatedLocalSystemTensorOrientationCharacterIso`:
@@ -85,35 +82,6 @@ variable {B : Type u} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
   [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
   [VectorBundle ℝ F E] {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
   (k : Type u) [CommRing k]
-
-/-! ### The monodromy of the orientation local system -/
-
-/-- **The monodromy of the orientation local system is the orientation character.** Evaluation at
-an orientation `o` of the fibre `E_b` identifies the monodromy representation of `o(E)` at `b` with
-the rank-one representation of `π₁(B, b)` on `k` given by the orientation character `w₁`, read in
-`kˣ`: transport around a loop `g` multiplies by `w₁(g)` (`signLocalSystemFiberEquiv_map_asHom`). -/
-def monodromySignLocalSystemIso {b : B} (o : Orientation ℝ (E b) ι) :
-    (LocalCoefficientSystem.monodromyFunctor k (TopCat.of B) b).obj (signLocalSystem F E k hι) ≅
-      Rep.of (Representation.ofLinearCharacter
-        ((Units.map (Int.castRingHom k).toMonoidHom).comp (orientationCharacter F E hι b))) :=
-  Rep.mkIso (Representation.Equiv.mk (signLocalSystemFiberEquiv hι o) fun g ↦ by
-    ext f
-    exact (signLocalSystemFiberEquiv_map_asHom hι o g f).trans (by simp))
-
-/-- The identification of the monodromy of `o(E)` with the orientation character is evaluation at
-the chosen orientation. -/
--- Not a simp lemma: `simp` rewrites the carrier of the monodromy representation first.
-theorem monodromySignLocalSystemIso_hom_apply {b : B} (o : Orientation ℝ (E b) ι)
-    (f : (signLocalSystem F E k hι).obj (FundamentalGroupoid.mk b)) :
-    (monodromySignLocalSystemIso hι k o).hom f = signLocalSystemFiberEquiv hι o f :=
-  (rfl)
-
-/-- The inverse identification of the orientation character with the monodromy of `o(E)` sends
-`r` to the element of the fibre whose value at the chosen orientation is `r`. -/
--- Not a simp lemma: `simp` rewrites the carrier of the monodromy representation first.
-theorem monodromySignLocalSystemIso_inv_apply {b : B} (o : Orientation ℝ (E b) ι) (r : k) :
-    (monodromySignLocalSystemIso hι k o).inv r = (signLocalSystemFiberEquiv hι o).symm r :=
-  (rfl)
 
 /-! ### The orientation local system through the universal cover -/
 
@@ -157,7 +125,9 @@ theorem associatedLocalSystemOrientationCharacterIso_hom_app_comp {b : B}
   congr 1
   -- The inverse of `monodromySignLocalSystemIso` is the inverse of evaluation at `o`.
   ext
-  exact (signLocalSystemFiberEquiv hι o).apply_symm_apply 1
+  exact (congrArg (signLocalSystemFiberEquiv hι o)
+    (monodromySignLocalSystemIso_inv_apply hι k o 1)).trans
+      ((signLocalSystemFiberEquiv hι o).apply_symm_apply 1)
 
 /-! ### Twisting by the orientation character -/
 

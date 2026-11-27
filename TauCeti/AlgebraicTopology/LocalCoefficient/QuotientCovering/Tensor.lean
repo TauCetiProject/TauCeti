@@ -72,7 +72,9 @@ private lemma tensorCoordinates_smul {x : FundamentalGroupoid B} (e : p ⁻¹' {
   rw [tensorIso_hom, tensorIso_hom, associatedLocalSystemFiberIso_hom_smul,
     associatedLocalSystemFiberIso_hom_smul, ← tensorHom_comp_tensorHom]
   -- The diagonal action of `g` on `A ⊗ A'` is the tensor product of the two actions.
-  rfl
+  refine congrArg (_ ≫ ·) (ModuleCat.hom_ext ?_)
+  rw [ModuleCat.hom_tensorHom, ModuleCat.hom_ofHom, ModuleCat.hom_ofHom, ModuleCat.hom_ofHom,
+    Rep.tensor_ρ, Representation.tprod_apply]
 
 /-- Transport in `L_A ⊗ L_{A'}` is the identity in the coordinates of a sheet and of its transport,
 factor by factor. -/
@@ -99,22 +101,38 @@ def associatedLocalSystemTensorIso :
 
 /-- In the coordinates of any sheet `e`, on the tensor product read factor by factor, the
 isomorphism `L_{A ⊗ A'} ≅ L_A ⊗ L_{A'}` is the identity of `A ⊗ A'`. -/
--- Not a simp lemma: `simp` rewrites the coordinates `tensorIso` on the left-hand side first.
+-- Not a simp lemma: `simp` first rewrites the middle object of the composite to the tensor product
+-- of the fibres (`Monoidal.tensorObj_obj`), after which the left-hand side no longer matches.
 @[reassoc]
 lemma associatedLocalSystemTensorIso_hom_app_comp {x : FundamentalGroupoid B}
     (e : p ⁻¹' {x.as}) :
     (hG.associatedLocalSystemTensorIso k A A').hom.app x ≫
-        (hG.associatedLocalSystemFiberIso k A e ⊗ᵢ hG.associatedLocalSystemFiberIso k A' e).hom =
+        ((hG.associatedLocalSystemFiberIso k A e).hom ⊗ₘ
+          (hG.associatedLocalSystemFiberIso k A' e).hom) =
       (hG.associatedLocalSystemFiberIso k (A ⊗ A') e).hom :=
   hG.associatedLocalSystemIsoOfSheetCoordinates_hom_app_comp k (tensorCoordinates hG k A A')
     (tensorCoordinates_smul hG k A A') (tensorCoordinates_map hG k A A') e
+
+/-- In the coordinates of any sheet `e`, on the tensor product read factor by factor, the inverse
+isomorphism `L_A ⊗ L_{A'} ≅ L_{A ⊗ A'}` is the identity of `A ⊗ A'`. -/
+-- Only the unassociated form is a simp lemma: `simp` proves the reassociated one from it.
+@[simp, reassoc]
+lemma associatedLocalSystemTensorIso_comp_inv_app {x : FundamentalGroupoid B}
+    (e : p ⁻¹' {x.as}) :
+    ((hG.associatedLocalSystemFiberIso k A e).inv ⊗ₘ
+        (hG.associatedLocalSystemFiberIso k A' e).inv) ≫
+        (hG.associatedLocalSystemTensorIso k A A').inv.app x =
+      (hG.associatedLocalSystemFiberIso k (A ⊗ A') e).inv :=
+  congrArg Iso.inv (Iso.ext (α := (hG.associatedLocalSystemTensorIso k A A').app x ≪≫
+    tensorCoordinates hG k A A' e) (hG.associatedLocalSystemTensorIso_hom_app_comp k A A' e))
 
 /-- The isomorphism `L_{A ⊗ A'} ≅ L_A ⊗ L_{A'}` reads the fibre in the coordinates of a sheet `e`
 and returns to the tensor product through the coordinates of `e` on both factors. -/
 lemma associatedLocalSystemTensorIso_hom_app {x : FundamentalGroupoid B} (e : p ⁻¹' {x.as}) :
     (hG.associatedLocalSystemTensorIso k A A').hom.app x =
       (hG.associatedLocalSystemFiberIso k (A ⊗ A') e).hom ≫
-        (hG.associatedLocalSystemFiberIso k A e ⊗ᵢ hG.associatedLocalSystemFiberIso k A' e).inv :=
+        ((hG.associatedLocalSystemFiberIso k A e).inv ⊗ₘ
+          (hG.associatedLocalSystemFiberIso k A' e).inv) :=
   (Iso.eq_comp_inv (tensorCoordinates hG k A A' e)).2
     (hG.associatedLocalSystemTensorIso_hom_app_comp k A A' e)
 
@@ -132,15 +150,31 @@ lemma associatedLocalSystemTensorIso_hom_app_coinvariantsTensorMk_tmul
           (Finsupp.single e 1) := by
   rw [associatedLocalSystemTensorIso_hom_app hG k A A' e]
   -- In the coordinates of `e` itself, the class of `(a ⊗ a') ⊗ [e]` is `a ⊗ a'`.
+  have h : (1 : k) • (A ⊗ A').ρ (hG.fiberEquivGroup e e)⁻¹ (a ⊗ₜ[k] a') = a ⊗ₜ[k] a' := by
+    rw [fiberEquivGroup_self, inv_one, map_one, one_smul, one_apply_eq_self]
   refine (congrArg (ModuleCat.Hom.hom ((hG.associatedLocalSystemFiberIso k A e).inv ⊗ₘ
     (hG.associatedLocalSystemFiberIso k A' e).inv))
-    (hG.associatedLocalSystemFiberIso_hom_coinvariantsTensorMk k (A ⊗ A') e e (a ⊗ₜ a') 1)).trans
-    ?_
-  refine (ModuleCat.MonoidalCategory.tensorHom_tmul _ _ _ _).trans ?_
-  simp
-  -- The two sides differ only in how the tensor product of the fibres is presented: as the fibre
-  -- of the pointwise tensor product `L_A ⊗ L_{A'}`, or as `(L_A)_x ⊗ (L_{A'})_x`.
-  rfl
+    ((hG.associatedLocalSystemFiberIso_hom_coinvariantsTensorMk k (A ⊗ A') e e (a ⊗ₜ a') 1).trans
+      h)).trans ?_
+  exact (ModuleCat.MonoidalCategory.tensorHom_tmul _ _ _ _).trans
+    (congrArg₂ (· ⊗ₜ[k] ·) (hG.associatedLocalSystemFiberIso_inv_apply k A e a)
+      (hG.associatedLocalSystemFiberIso_inv_apply k A' e a'))
+
+/-- The inverse isomorphism `L_A ⊗ L_{A'} ≅ L_{A ⊗ A'}` sends the tensor product of the classes of
+`a ⊗ [e]` and `a' ⊗ [e]` to the class of `(a ⊗ a') ⊗ [e]`. -/
+-- Not a simp lemma: `simp` unfolds `Rep.coinvariantsTensorMk` on the left-hand side first.
+lemma associatedLocalSystemTensorIso_inv_app_tmul {x : FundamentalGroupoid B}
+    (e : p ⁻¹' {x.as}) (a : A) (a' : A') :
+    ((hG.associatedLocalSystemTensorIso k A A').inv.app x).hom
+        (Rep.coinvariantsTensorMk A (Rep.of (hG.fiberRepresentation k x.as)) a
+            (Finsupp.single e 1) ⊗ₜ[k]
+          Rep.coinvariantsTensorMk A' (Rep.of (hG.fiberRepresentation k x.as)) a'
+            (Finsupp.single e 1)) =
+      Rep.coinvariantsTensorMk (A ⊗ A') (Rep.of (hG.fiberRepresentation k x.as))
+        (a ⊗ₜ[k] a') (Finsupp.single e 1) :=
+  (congrArg ((hG.associatedLocalSystemTensorIso k A A').inv.app x).hom
+    (hG.associatedLocalSystemTensorIso_hom_app_coinvariantsTensorMk_tmul k A A' e a a').symm).trans
+      (((hG.associatedLocalSystemTensorIso k A A').app x).hom_inv_id_apply _)
 
 /-- The isomorphism `L_{A ⊗ A'} ≅ L_A ⊗ L_{A'}` is natural in both representations. -/
 @[reassoc]
@@ -154,7 +188,7 @@ lemma associatedLocalSystemTensorIso_hom_naturality {A₁ A₂ A₁' A₂' : Rep
   let e : p ⁻¹' {x.as} := ⟨z, hz⟩
   -- Compare both sides in the coordinates of the sheet `e` on both factors.
   refine (cancel_mono (tensorCoordinates hG k A₂ A₂' e).hom).1 ?_
-  rw [NatTrans.comp_app, NatTrans.comp_app, Category.assoc, Category.assoc,
+  rw [NatTrans.comp_app, NatTrans.comp_app, Category.assoc, Category.assoc, tensorIso_hom,
     associatedLocalSystemTensorIso_hom_app_comp, associatedLocalSystemFiberIso_hom_naturality]
   refine (congrArg (· ≫ _) (associatedLocalSystemTensorIso_hom_app_comp hG k A₁ A₁' e).symm).trans
     ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ?_))
@@ -165,6 +199,9 @@ lemma associatedLocalSystemTensorIso_hom_naturality {A₁ A₂ A₁' A₂' : Rep
   rw [associatedLocalSystemFiberIso_hom_naturality, associatedLocalSystemFiberIso_hom_naturality,
     ← tensorHom_comp_tensorHom]
   -- The forgetful functor from representations sends `f ⊗ f'` to the tensor product of the maps.
-  rfl
+  refine congrArg (_ ≫ ·) (ModuleCat.hom_ext ?_)
+  rw [Rep.forget₂_moduleCat_map, Rep.forget₂_moduleCat_map, Rep.forget₂_moduleCat_map,
+    ModuleCat.hom_tensorHom, ModuleCat.hom_ofHom, ModuleCat.hom_ofHom, ModuleCat.hom_ofHom,
+    Rep.hom_tensorHom, Representation.IntertwiningMap.toLinearMap_tensor]
 
 end IsQuotientCoveringMap
