@@ -42,6 +42,12 @@ are used.
 
 The restriction to an open set containing `S` (`OpenPartialHomeomorph.restrOpen`) has the same
 underlying map, hence the same germ along `S`.
+
+**Image germs.** If a map `f` reads as `g` in a chart `e`, and `g` is continuous at `e x`, takes
+values in a set `S` near `e x` and sends every neighbourhood of `e x` onto a neighbourhood of
+`g (e x)` within `S`, then `f` maps the neighbourhood filter of `x` onto that of `f x` within `S`
+(`OpenPartialHomeomorph.map_nhds_eq_nhdsWithin_of_eqOn`). So the germ of the image of `f` at `x`
+is read off from the local model alone.
 -/
 
 public section
@@ -106,5 +112,22 @@ theorem eventuallyEq_comp_trans_symm {e₁ e₂ : OpenPartialHomeomorph X Y} (h�
   mem_of_superset ((e₁.trans e₂.symm).open_source.mem_nhdsSet.2
     (PartialEquiv.subset_trans_symm_source (e₁ := e₁.toPartialEquiv) h₁ h₂ h))
     fun _ hx ↦ (PartialEquiv.apply_trans_symm_apply (e₁ := e₁.toPartialEquiv) hx).symm
+
+/-! ### Image germs read through a chart -/
+
+/-- **The image germ of a map read through a chart.** Let `f` agree on the source of `e` with
+`g ∘ e`. If `g` is continuous at `e x`, takes values in `S` near `e x` and sends every
+neighbourhood of `e x` onto a neighbourhood of `g (e x)` within `S`, then `f` maps the
+neighbourhood filter of `x` onto the neighbourhood filter of `f x` within `S`. -/
+theorem map_nhds_eq_nhdsWithin_of_eqOn (e : OpenPartialHomeomorph X Y) {f : X → Z} {g : Y → Z}
+    {S : Set Z} {x : X} (hf : EqOn f (g ∘ e) e.source) (hx : x ∈ e.source)
+    (hg : ContinuousAt g (e x)) (hgS : ∀ᶠ y in 𝓝 (e x), g y ∈ S)
+    (hopen : ∀ N ∈ 𝓝 (e x), g '' N ∈ 𝓝[S] (g (e x))) :
+    map f (𝓝 x) = 𝓝[S] (f x) := by
+  -- Near `x`, `f = g ∘ e`, and `e` maps the neighbourhoods of `x` onto those of `e x`.
+  rw [map_congr (eventuallyEq_of_mem (e.open_source.mem_nhds hx) hf), ← map_map,
+    e.map_nhds_eq hx, hf hx, Function.comp_apply]
+  exact le_antisymm (tendsto_nhdsWithin_iff.2 ⟨hg, hgS⟩) fun T hT ↦
+    mem_of_superset (hopen _ hT) (image_preimage_subset g T)
 
 end OpenPartialHomeomorph

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
+public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.ScreenedDecay
 public import TauCeti.Analysis.PDE.SeibergWitten.NormSqGradient
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -51,20 +52,37 @@ subsolutions of `-Δ + c²`
 (`TauCeti.le_div_sq_add_two_mul_mul_exp_of_mul_sub_le_laplacian`), with `c² = θ r / 4`, and
 `1 - |α|² ≤ u` conclude.
 
+On a manifold the estimate is read in a chart, where the Laplace–Beltrami operator of the metric
+`g` is the operator in non-divergence form `L = ∑ᵢⱼ Aⁱʲ ∂ᵢ∂ⱼ + ∂_v` with `A = g⁻¹` and the drift
+`v = -gⁱʲ Γᵏᵢⱼ`, and `|∇ |α|²|²` is `∑ᵢⱼ Aⁱʲ ∂ᵢ|α|² ∂ⱼ|α|²`. The pointwise inequality is the same,
+since `L (log s) = L s / s - ∑ᵢⱼ Aⁱʲ ∂ᵢs ∂ⱼs / s²`
+(`TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_log`), and the decay estimate for screened
+subsolutions in non-divergence form
+(`TauCeti.PDE.le_div_sq_add_exp_mul_mul_exp_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv`)
+replaces the flat one. With `0 ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `‖v‖ ≤ B` on the ball, the vacuum defect at
+the centre is
+
+`1 - |α(x)|² ≤ 1216 C² / (θ³ r) + e^{n/8} log θ⁻¹ exp (-θ r R / (8 (√(θ r) √Λ + B)))`
+
+(`TauCeti.SeibergWitten.one_sub_sq_le_div_add_exp_mul_mul_exp`), whose rate is again a multiple
+of `R / h` for large `r`, the multiple depending on the metric only through `Λ` and `B`.
+
 The analytic inputs are hypotheses, in the form in which Taubes's coarse bounds are stated
 elsewhere: the projected Weitzenböck equation is used in the direction opposite to
 `TauCeti.SeibergWitten.norm_sq_add_norm_sq_le_one_add_div`, the bound on `β` is the conclusion of
 `TauCeti.SeibergWitten.norm_sq_le_div_mul_max_add_div_sq`, and the lower bound `|α|² ≥ θ` on the
-ball is assumed. The estimate is the decay mechanism behind the off-zero bound taken as a
-hypothesis by `TauCeti.SeibergWitten.exists_forall_exists_dist_le_of_le`, but it does not yet give
-that bound: it still has to be transported from the flat chart to the manifold, and combined with a
-lower bound on `|α|` at distance at least a fixed multiple of `h` from the zeros of `α`. Neither
-step is carried out here.
+ball is assumed. The estimates are the decay mechanism behind the off-zero bound taken as a
+hypothesis by `TauCeti.SeibergWitten.exists_forall_exists_dist_le_of_le`, but they do not yet give
+that bound: the hypotheses still have to be derived in a chart from an actual solution on the
+manifold, and the estimate combined with a lower bound on `|α|` at distance at least a fixed
+multiple of `h` from the zeros of `α`. Neither step is carried out here.
 
 ## Main results
 
 * `TauCeti.SeibergWitten.one_sub_sq_le_div_add_mul_exp`: exponential decay of the vacuum defect
-  on balls where `|α|² ≥ θ`.
+  on balls of a flat chart where `|α|² ≥ θ`.
+* `TauCeti.SeibergWitten.one_sub_sq_le_div_add_exp_mul_mul_exp`: the same in a chart of a curved
+  metric, for the Laplace–Beltrami operator in non-divergence form.
 
 ## References
 
@@ -354,5 +372,96 @@ theorem one_sub_sq_le_div_add_mul_exp [Nontrivial E] {a b da db q : E → ℝ} {
   rw [hB, hexp, Real.exp_add] at hdecay
   linarith [mul_assoc (2 * Real.log θ⁻¹) (Real.exp (2 * Module.finrank ℝ E / 3))
     (Real.exp (-(√(θ * r) * R / 4)))]
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **Exponential decay of the vacuum defect in a chart of a curved metric.** Consider, on the
+ball of radius `R > 0` about `x` in `ℝⁿ = EuclideanSpace ℝ ι`, the operator in non-divergence form
+`L = ∑ᵢⱼ Aⁱʲ ∂ᵢ∂ⱼ + ∂_v`, with `0 ≤ ξᵀ A(y) ξ ≤ Λ ‖ξ‖²` and `‖v(y)‖ ≤ B`. For the Laplace–Beltrami
+operator of a metric `g` written in a chart, `A = g⁻¹` and `v` is the drift `-gⁱʲ Γᵏᵢⱼ`, and
+`∑ᵢⱼ Aⁱʲ ∂ᵢs ∂ⱼs` is the squared `g`-norm of the gradient of `s`. Let functions `a`, `b`, `da`,
+`db`, `q` stand for `|α|`, `|β|`, `|∇_a α|`, `|∇β|`, `|∂bar_a α|` of a solution of Taubes's
+large-parameter Seiberg–Witten equations at parameter `r ≥ 1`, with `|α|²` of class `C²` on the
+ball. Assume, with a constant `C ≥ 1`,
+
+* the projected Weitzenböck equation for `α`, in the direction
+  `-L|α|² / 2 + |∇_a α|² + (r / 4) (|α|² + |β|² - 1) |α|² ≥ -C |α| (|∇β| + |α| + |β|)`;
+* the gradient inequality `2 |α|² ((1 - ε) |∇_a α|² - (2 + 18 / ε) |∂bar_a α|²) ≤ |∇ |α|²|²_g` at
+  `ε = θ / (8 C)`, with norms taken in the metric `g`; for the flat metric it is
+  `two_mul_norm_sq_mul_sub_le_norm_gradient_norm_sq`;
+* Taubes's coarse bounds `|β|² ≤ (C / r) w₊ + C / r²`, `|∇_a α|² + r |∇β|² ≤ C r w₊ + C`,
+  `|α|² ≤ 1 + C / r` and `|∂bar_a α|² ≤ C`, with `w₊ = max (1 - |α|²) 0`.
+
+If `|α|² ≥ θ` on the ball, `0 < θ ≤ 1`, then at its centre
+
+`1 - |α(x)|² ≤ 1216 C² / (θ³ r) + e^{n/8} log θ⁻¹ exp (-θ r R / (8 (√(θ r) √Λ + B)))`.
+
+For large `r` the rate is `√(θ r) R / (8 √Λ)` up to a factor `1 + O(B / √(θ r Λ))`: as in the
+flat chart (`one_sub_sq_le_div_add_mul_exp`), the vacuum defect is `O(1 / r)` up to an error
+`exp (-c R / h)` with `h = (2 r)^(-1/2)`, and `c` depends on the metric only through `Λ` and `B`.
+-/
+theorem one_sub_sq_le_div_add_exp_mul_mul_exp {A : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {v : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {a b da db q : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} {r R C θ Λ B : ℝ} (hr : 1 ≤ r) (hR : 0 < R) (hC : 1 ≤ C)
+    (hθ : 0 < θ) (hθ1 : θ ≤ 1)
+    (hA : ∀ y ∈ ball x R, ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ (A y).toQuadraticForm' ξ)
+    (hΛ : ∀ y ∈ ball x R, ∀ ξ : EuclideanSpace ℝ ι, (A y).toQuadraticForm' ξ ≤ Λ * ‖ξ‖ ^ 2)
+    (hv : ∀ y ∈ ball x R, ‖v y‖ ≤ B)
+    (hcd : ∀ y ∈ ball x R, ContDiffAt ℝ 2 (fun z ↦ a z ^ 2) y)
+    (hθa : ∀ y ∈ ball x R, θ ≤ a y ^ 2)
+    (hW : ∀ y ∈ ball x R, -(C * a y * (db y + a y + b y)) ≤
+      -(∑ i, ∑ j, A y i j * fderiv ℝ (fderiv ℝ fun z ↦ a z ^ 2) y (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) + fderiv ℝ (fun z ↦ a z ^ 2) y (v y)) / 2 +
+        da y ^ 2 + r / 4 * (a y ^ 2 + b y ^ 2 - 1) * a y ^ 2)
+    (hG : ∀ y ∈ ball x R, 2 * a y ^ 2 * ((1 - θ / (8 * C)) * da y ^ 2 -
+      (2 + 18 / (θ / (8 * C))) * q y ^ 2) ≤
+        ∑ i, ∑ j, A y i j * (fderiv ℝ (fun z ↦ a z ^ 2) y (EuclideanSpace.single i 1) *
+          fderiv ℝ (fun z ↦ a z ^ 2) y (EuclideanSpace.single j 1)))
+    (hβ : ∀ y ∈ ball x R, b y ^ 2 ≤ C / r * max (1 - a y ^ 2) 0 + C / r ^ 2)
+    (hgrad : ∀ y ∈ ball x R, da y ^ 2 + r * db y ^ 2 ≤ C * r * max (1 - a y ^ 2) 0 + C)
+    (hup : ∀ y ∈ ball x R, a y ^ 2 ≤ 1 + C / r) (hq : ∀ y ∈ ball x R, q y ^ 2 ≤ C) :
+    1 - a x ^ 2 ≤ 1216 * C ^ 2 / (θ ^ 3 * r) +
+      Real.exp ((Fintype.card ι : ℝ) / 8) * Real.log θ⁻¹ *
+        Real.exp (-(θ * r * R / (8 * (√(θ * r) * √Λ + B)))) := by
+  have hpos : ∀ y ∈ ball x R, 0 < a y ^ 2 := fun y hy ↦ hθ.trans_le (hθa y hy)
+  -- `u = -log |α|²` is a subsolution of `-L + θ r / 4` with forcing `304 C² / θ²`.
+  set c := √(θ * r) / 2 with hc
+  have hc0 : 0 < c := by positivity
+  have hc2 : c ^ 2 = θ * r / 4 := by
+    rw [hc, div_pow, Real.sq_sqrt (by positivity)]
+    ring
+  have hsub : ∀ y ∈ ball x R, (fun _ ↦ θ * r / 4) y * (-fun z ↦ Real.log (a z ^ 2)) y -
+      304 * C ^ 2 / θ ^ 2 ≤
+        ∑ i, ∑ j, A y i j * fderiv ℝ (fderiv ℝ (-fun z ↦ Real.log (a z ^ 2))) y
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+        fderiv ℝ (-fun z ↦ Real.log (a z ^ 2)) y (v y) := by
+    intro y hy
+    rw [PDE.sum_mul_fderiv_fderiv_add_fderiv_neg,
+      PDE.sum_mul_fderiv_fderiv_add_fderiv_log _ (hcd y hy) (hpos y hy).ne', neg_sub]
+    exact mul_neg_log_sub_le_div_sub_div hr hC hθ hθ1 (hθa y hy) (hW y hy) (hG y hy) (hβ y hy)
+      (hgrad y hy) (hup y hy) (hq y hy)
+  have hdecay := PDE.le_div_sq_add_exp_mul_mul_exp_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv
+    hc0 hR (by positivity) (Real.log_nonneg (one_le_inv_iff₀.mpr ⟨hθ, hθ1⟩)) hA hΛ hv
+    (fun y hy ↦ ((hcd y hy).log (hpos y hy).ne').neg) (fun _ _ ↦ hc2.le) hsub
+    (fun y hy ↦ by
+      rw [Real.log_inv, neg_le_neg_iff]
+      exact Real.log_le_log hθ (hθa y hy))
+  -- `1 - |α|² ≤ -log |α|²`.
+  have hlog : 1 - a x ^ 2 ≤ -Real.log (a x ^ 2) := by
+    linarith [Real.log_le_sub_one_of_pos (hpos x (mem_ball_self hR))]
+  -- Simplify the constants of the decay estimate.
+  have hK : 304 * C ^ 2 / θ ^ 2 / c ^ 2 = 1216 * C ^ 2 / (θ ^ 3 * r) := by
+    rw [hc2]
+    field_simp
+    ring
+  have hden : 4 * c * √Λ + 2 * B = 2 * (√(θ * r) * √Λ + B) := by
+    rw [hc]
+    ring
+  have hrate : c ^ 2 * R / (4 * c * √Λ + 2 * B) = θ * r * R / (8 * (√(θ * r) * √Λ + B)) := by
+    rw [hden, hc2]
+    generalize √(θ * r) * √Λ + B = S
+    ring
+  rw [hK, hrate] at hdecay
+  exact hlog.trans hdecay
 
 end TauCeti.SeibergWitten

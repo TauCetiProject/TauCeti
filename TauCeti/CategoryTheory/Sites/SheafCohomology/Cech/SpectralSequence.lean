@@ -42,8 +42,10 @@ first page need nothing more; the identification of the abutment needs the augme
 * `TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequence U I`: the spectral sequence of
   the filtration by Čech degree of the Čech double complex, with its first page
   (`TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequenceFirstPageXIso`, and
-  `TauCeti.CategoryTheory.presheafCechColumnHomologyIso` with exact products) and its abutment
-  (`TauCeti.CategoryTheory.presheafCechDoubleComplexAbutmentIso`).
+  `TauCeti.CategoryTheory.presheafCechColumnHomologyIso` with exact products, which identifies it
+  with the Čech cochains of a presheaf isomorphic to the cohomology presheaf in
+  `TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso`) and its
+  abutment (`TauCeti.CategoryTheory.presheafCechDoubleComplexAbutmentIso`).
 * `TauCeti.CategoryTheory.cechToCohomologySpectralSequence U R`: the Čech-to-cohomology spectral
   sequence of an injective resolution `R` of an abelian sheaf `F`. Its object at `(-k - 2p, p)` on
   the first page (numbered `2`) is the opposite of `Čᵖ(U, Hᵏ(F))`
@@ -53,9 +55,9 @@ first page need nothing more; the identification of the abutment needs the augme
   `HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty` for
   `(presheafCechDoubleComplex U I).flip`.
 
-The differential of the first page is not identified here with the Čech differential of the
-presheaf `Hᵏ(F)`, so the second page is not identified with the Čech cohomology
-`Hᵖ(U, Hᵏ(F))`.
+The differential of the first page is, up to sign, the Čech differential of the presheaf `Hᵏ(F)`
+(`TauCeti.CategoryTheory.cechToCohomologySpectralSequence_page_two_d`, in
+`TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.FirstDifferential`).
 
 ## References
 
@@ -108,6 +110,29 @@ lemma presheafCechDoubleComplexSpectralSequenceFirstPageXIso_hom
     (presheafCechDoubleComplexSpectralSequenceFirstPageXIso U I p k).hom =
       ((presheafCechDoubleComplex U I).columnFiltrationSpectralSequenceFirstPageXIso p k).hom ≫
         (homologyOp (cechColumn U I p) k).hom :=
+  (rfl)
+
+/-- The object at `(-k - 2p, p)` on the first page (numbered `2`) of the spectral sequence of the
+Čech double complex is, with exact products of the shape of Čech degree `p`, the opposite of the
+Čech cochains `Čᵖ(U, P)` of a presheaf `P` isomorphic to the cohomology presheaf `Hᵏ(I)`. -/
+def presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ)
+    (p : ℕ) [HasExactLimitsOfShape (Discrete (Fin (p + 1) → ι)) A] (k : ℕ) {P : Cᵒᵖ ⥤ A}
+    (e : I.homology k ≅ P) :
+    ((presheafCechDoubleComplexSpectralSequence U I).page 2).X (-(k : ℤ) - 2 * p, p) ≅
+      op (((cechComplexFunctor U).obj P).X p) :=
+  presheafCechDoubleComplexSpectralSequenceFirstPageXIso U I p k ≪≫
+    (presheafCechColumnHomologyIso U I p k ≪≫
+      (cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) p).mapIso e).symm.op
+
+/-- The identification `presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso` is that of
+the first page with the column homology, followed by `presheafCechColumnHomologyIso` and `e`. -/
+lemma presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso_hom
+    (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ) [HasExactLimitsOfShape (Discrete (Fin (p + 1) → ι)) A]
+    (k : ℕ) {P : Cᵒᵖ ⥤ A} (e : I.homology k ≅ P) :
+    (presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso U I p k e).hom =
+      (presheafCechDoubleComplexSpectralSequenceFirstPageXIso U I p k).hom ≫
+        ((cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) p).map e.inv ≫
+          (presheafCechColumnHomologyIso U I p k).inv).op :=
   (rfl)
 
 /-- The abutment in degree `-n` of the spectral sequence of the Čech double complex is the
@@ -209,23 +234,20 @@ of degree `p` of the cohomology presheaf `V ↦ Hᵏ(V, F)`. -/
 def cechToCohomologyFirstPageXIso (p k : ℕ) :
     ((cechToCohomologySpectralSequence U R).page 2).X (-(k : ℤ) - 2 * p, p) ≅
       op (((cechComplexFunctor U).obj (F.cohomologyPresheaf k)).X p) :=
-  presheafCechDoubleComplexSpectralSequenceFirstPageXIso U R.presheafComplex p k ≪≫
-    (presheafCechColumnHomologyIso U R.presheafComplex p k ≪≫
-      (cechComplexFunctor U ⋙ HomologicalComplex.eval _ (ComplexShape.up ℕ) p).mapIso
-        (_root_.CategoryTheory.Sheaf.H'.homologyIsoCohomologyPresheaf (R.ι.f 0)
-          R.ι_f_zero_comp_complex_d R.exact₀ R.cocomplex_exactAt_succ
-          (fun _ j k ↦ Abelian.Ext.subsingleton_of_injective _ (R.cocomplex.X j) k) k)).symm.op
+  presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso U R.presheafComplex p k
+    (_root_.CategoryTheory.Sheaf.H'.homologyIsoCohomologyPresheaf (R.ι.f 0)
+      R.ι_f_zero_comp_complex_d R.exact₀ R.cocomplex_exactAt_succ
+      (fun _ j k ↦ Abelian.Ext.subsingleton_of_injective _ (R.cocomplex.X j) k) k)
 
-/-- The first page of the Čech-to-cohomology spectral sequence is identified with Čech cochains
-through the column homology of the Čech double complex and the cohomology presheaves. -/
+/-- The identification `cechToCohomologyFirstPageXIso` of the first page with Čech cochains is
+`presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso` for the isomorphism of the
+cohomology of the sections of `R` with the cohomology presheaf of `F`. -/
 lemma cechToCohomologyFirstPageXIso_hom (p k : ℕ) :
     (cechToCohomologyFirstPageXIso U R p k).hom =
-      (presheafCechDoubleComplexSpectralSequenceFirstPageXIso U R.presheafComplex p k).hom ≫
-        ((cechComplexFunctor U ⋙ HomologicalComplex.eval _ (ComplexShape.up ℕ) p).map
-          (_root_.CategoryTheory.Sheaf.H'.homologyIsoCohomologyPresheaf (R.ι.f 0)
-            R.ι_f_zero_comp_complex_d R.exact₀ R.cocomplex_exactAt_succ
-            (fun _ j k ↦ Abelian.Ext.subsingleton_of_injective _ (R.cocomplex.X j) k) k).inv ≫
-          (presheafCechColumnHomologyIso U R.presheafComplex p k).inv).op :=
+      (presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso U R.presheafComplex p k
+        (_root_.CategoryTheory.Sheaf.H'.homologyIsoCohomologyPresheaf (R.ι.f 0)
+          R.ι_f_zero_comp_complex_d R.exact₀ R.cocomplex_exactAt_succ
+          (fun _ j k ↦ Abelian.Ext.subsingleton_of_injective _ (R.cocomplex.X j) k) k)).hom :=
   (rfl)
 
 end Sheaf

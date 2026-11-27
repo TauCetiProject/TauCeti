@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Endomorphism
+public import Mathlib.CategoryTheory.Products.Basic
 
 /-!
 # Units of the endomorphism monoid of a functor
@@ -13,6 +14,11 @@ public import Mathlib.CategoryTheory.Endomorphism
 A unit `z` of the monoid `End F` of natural endomorphisms of a functor `F : C ⥤ D` acts on every
 object `X` by an isomorphism: its component `z.val.asHom.app X` has inverse
 `z⁻¹.val.asHom.app X`. For `F = 𝟭 C` these are the units of the centre `CatCenter C`.
+Evaluation at `X` is a group homomorphism `(End F)ˣ →* Aut (F.obj X)`
+(`CategoryTheory.NatTrans.unitsEndEval`).
+
+The action `Functor.mapAut` of a composite functor on automorphisms is the composite of the
+actions (`CategoryTheory.Functor.comp_mapAut`).
 -/
 
 public section
@@ -43,4 +49,34 @@ instance isIso_app (z : (End F)ˣ) (X : C) : IsIso (z.val.asHom.app X) :=
 lemma inv_val_app (z : (End F)ˣ) (X : C) : z⁻¹.val.asHom.app X = inv (z.val.asHom.app X) :=
   (IsIso.inv_eq_of_hom_inv_id (app_comp_inv_app z X)).symm
 
+variable (F) in
+/-- **Evaluation of a unit of `End F` at `X`**, as a group homomorphism `(End F)ˣ →* Aut (F.obj X)`:
+Mathlib's `Aut.unitsEndEquivAut` at `F`, followed by the component at `X` of a natural
+automorphism. -/
+def unitsEndEval (X : C) : (End F)ˣ →* Aut (F.obj X) :=
+  (((evaluation C D).obj X).mapAut F).comp (Aut.unitsEndEquivAut F).toMonoidHom
+
+/-- The automorphism of `F.obj X` given by a unit `z` of `End F` is the component of `z`. -/
+@[simp]
+lemma unitsEndEval_asIso_hom (X : C) (z : (End F)ˣ) :
+    (unitsEndEval F X z).asIso.hom = z.val.asHom.app X :=
+  (rfl)
+
+/-- The inverse of the automorphism given by `z` is the component of `z⁻¹`. -/
+@[simp]
+lemma unitsEndEval_asIso_inv (X : C) (z : (End F)ˣ) :
+    (unitsEndEval F X z).asIso.inv = z⁻¹.val.asHom.app X :=
+  (rfl)
+
 end CategoryTheory.NatTrans
+
+namespace CategoryTheory.Functor
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D] {E : Type*} [Category* E]
+
+/-- The action of a composite functor on automorphisms is the composite of the actions. -/
+theorem comp_mapAut (G : C ⥤ D) (H : D ⥤ E) (y : C) (b : Aut y) :
+    (G ⋙ H).mapAut y b = H.mapAut (G.obj y) (G.mapAut y b) :=
+  Aut.ext (Iso.ext (by simp))
+
+end CategoryTheory.Functor

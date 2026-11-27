@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Analysis.InnerProductSpace.NormPow
-public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+public import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
@@ -22,7 +22,9 @@ For `n = 1` and `3 ≤ n`, this file defines the Newtonian kernel for the negati
 
 where `ωₙ` is the volume of the Euclidean unit ball.  It proves the full Fréchet derivative
 formula and the pointwise equation `Δ Gₙ = 0` away from the pole, together with translated
-versions for a pole at an arbitrary point.  The dimension-one specialization is `-|x| / 2` and
+versions for a pole at an arbitrary point.  Although `Gₙ` is harmonic away from the origin, it
+has no harmonic extension across it: it tends to `+∞` there for `n ≥ 3`, and it is not
+differentiable there for `n = 1`.  The dimension-one specialization is `-|x| / 2` and
 the dimension-three specialization recovers the classical kernel `1 / (4π‖x‖)`.  The planar
 kernel is the logarithmic one, `TauCeti.planarNewtonianKernel`.
 
@@ -36,6 +38,8 @@ The distributional identity `-Δ Gₙ = δ₀` is proved from the derivative for
 * `TauCeti.hasFDerivAt_newtonianKernel`: its derivative away from the origin.
 * `TauCeti.norm_fderiv_newtonianKernel`: the `‖x‖ ^ (1 - n)` operator norm of that derivative.
 * `TauCeti.laplacian_newtonianKernel`: the pointwise equation `Δ Gₙ = 0` away from the origin.
+* `TauCeti.not_harmonicAt_zero_of_eventuallyEq_newtonianKernel`: the pole is not removable; no
+  function harmonic at the origin agrees with `Gₙ` on a punctured neighbourhood of it.
 * `TauCeti.harmonicAt_newtonianKernel_sub`: harmonicity of the kernel with a translated pole.
 * `TauCeti.newtonianKernel_one`, `TauCeti.newtonianKernel_three`: the familiar one- and
   three-dimensional formulas.
@@ -113,6 +117,11 @@ theorem newtonianKernel_sub_comm (n : ℕ) (x a : EuclideanSpace ℝ (Fin n)) :
     newtonianKernel n (x - a) = newtonianKernel n (a - x) := by
   simp [newtonianKernel, norm_sub_rev]
 
+/-- The Newtonian kernel is radial: its values at two points of the same norm agree. -/
+theorem newtonianKernel_eq_of_norm_eq (n : ℕ) {x y : EuclideanSpace ℝ (Fin n)}
+    (h : ‖x‖ = ‖y‖) : newtonianKernel n x = newtonianKernel n y := by
+  rw [newtonianKernel_def, newtonianKernel_def, h]
+
 /-- Real dilation scales the Newtonian kernel with radial homogeneity `2 - n`. -/
 theorem newtonianKernel_smul (n : ℕ) (r : ℝ)
     (x : EuclideanSpace ℝ (Fin n)) :
@@ -120,13 +129,6 @@ theorem newtonianKernel_smul (n : ℕ) (r : ℝ)
   rw [newtonianKernel_def, newtonianKernel_def, norm_smul,
     Real.mul_rpow (norm_nonneg r) (norm_nonneg x)]
   ring
-
-/-- The Euclidean unit ball has positive real volume in every dimension. -/
-theorem volume_real_unitBall_pos (n : ℕ) :
-    0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) := by
-  exact ENNReal.toReal_pos
-    (measure_ball_pos volume (0 : EuclideanSpace ℝ (Fin n)) zero_lt_one).ne'
-    measure_ball_ne_top
 
 /-- Away from its pole, and outside dimension two, the Newtonian kernel does not vanish. -/
 theorem newtonianKernel_ne_zero (n : ℕ) (hn : n ≠ 2) {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
@@ -218,6 +220,21 @@ theorem hasFDerivAt_newtonianKernel (n : ℕ) (hn : n ≠ 2)
   field_simp
   ring
 
+/-- In dimensions `n ≥ 3` the Newtonian kernel tends to `+∞` at its pole. -/
+theorem tendsto_newtonianKernel_nhdsNE_zero_atTop (n : ℕ) (hn : 3 ≤ n) :
+    Tendsto (newtonianKernel n) (𝓝[≠] (0 : EuclideanSpace ℝ (Fin n))) atTop := by
+  have hn3 : (3 : ℝ) ≤ n := by exact_mod_cast hn
+  have hC : 0 < ((n : ℝ) * ((n : ℝ) - 2) *
+      volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
+    inv_pos.2 (by have : 0 < (n : ℝ) - 2 := by linarith
+                  have := volume_real_unitBall_pos n
+                  positivity)
+  have hpow : Tendsto (fun y : EuclideanSpace ℝ (Fin n) ↦ ‖y‖ ^ (2 - (n : ℝ)))
+      (𝓝[≠] 0) atTop :=
+    (tendsto_rpow_neg_nhdsGT_zero (by linarith)).comp tendsto_norm_nhdsNE_zero
+  rw [funext (newtonianKernel_def n)]
+  exact hpow.const_mul_atTop hC
+
 /-- Away from dimension two and dimension zero, the Newtonian kernel is not differentiable at its
 pole: it is unbounded there in dimensions `n ≥ 3`, but takes the value `0` at the origin, and it is
 a multiple of the norm in dimension one. -/
@@ -239,20 +256,9 @@ theorem not_differentiableAt_newtonianKernel_zero (n : ℕ) (hn : n ≠ 2) (hn0 
     rw [hfun] at h
     refine not_differentiableAt_norm_zero (EuclideanSpace ℝ (Fin 1)) ?_
     simpa only [← mul_assoc, inv_mul_cancel₀ hc0, one_mul] using h.const_mul c⁻¹
-  · have hn3 : (3 : ℝ) ≤ n := by exact_mod_cast h3
-    have hC : 0 < ((n : ℝ) * ((n : ℝ) - 2) *
-        volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
-      inv_pos.2 (by have : 0 < (n : ℝ) - 2 := by linarith
-                    positivity)
-    have hc : Tendsto (newtonianKernel n) (𝓝[≠] (0 : EuclideanSpace ℝ (Fin n))) (𝓝 0) := by
+  · have hc : Tendsto (newtonianKernel n) (𝓝[≠] (0 : EuclideanSpace ℝ (Fin n))) (𝓝 0) := by
       simpa using h.continuousAt.tendsto.mono_left (nhdsWithin_le_nhds (s := {0}ᶜ))
-    have hpow : Tendsto (fun y : EuclideanSpace ℝ (Fin n) ↦ ‖y‖ ^ (2 - (n : ℝ)))
-        (𝓝[≠] 0) atTop :=
-      (tendsto_rpow_neg_nhdsGT_zero (by linarith)).comp tendsto_norm_nhdsNE_zero
-    have hatTop : Tendsto (newtonianKernel n) (𝓝[≠] (0 : EuclideanSpace ℝ (Fin n))) atTop := by
-      rw [funext (newtonianKernel_def n)]
-      exact hpow.const_mul_atTop hC
-    exact not_tendsto_nhds_of_tendsto_atTop hatTop _ hc
+    exact not_tendsto_nhds_of_tendsto_atTop (tendsto_newtonianKernel_nhdsNE_zero_atTop n h3) _ hc
 
 /-- The Fréchet derivative of the Newtonian kernel as a continuous linear functional. At the pole,
 where the kernel is not differentiable (or the space is trivial), both sides are `0`. -/
@@ -374,6 +380,34 @@ theorem harmonicOnNhd_newtonianKernel (n : ℕ) :
   intro x hx
   exact harmonicAt_newtonianKernel n (Set.mem_compl_singleton_iff.mp hx)
 
+/-- **The pole of the Newtonian kernel is not removable.** Away from dimensions zero and two, no
+function harmonic at the origin agrees with the Newtonian kernel on a punctured neighbourhood of
+the origin, although the kernel is harmonic on the punctured space
+(`TauCeti.harmonicOnNhd_newtonianKernel`). In dimensions `n ≥ 3` the kernel tends to `+∞` at the
+pole, while a harmonic function is continuous; in dimension one it is a nonzero multiple of `‖x‖`,
+which is not differentiable at the origin. -/
+theorem not_harmonicAt_zero_of_eventuallyEq_newtonianKernel (n : ℕ) (hn : n ≠ 2) (hn0 : n ≠ 0)
+    {h : EuclideanSpace ℝ (Fin n) → ℝ} (hh : h =ᶠ[𝓝[≠] 0] newtonianKernel n) :
+    ¬HarmonicAt h 0 := by
+  intro hH
+  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn0⟩⟩
+  have hc := hH.1.continuousAt
+  rcases (by omega : n = 1 ∨ 3 ≤ n) with rfl | h3
+  · -- In dimension one the kernel is continuous, so `h` agrees with it at the origin too.
+    have hK : ContinuousAt (newtonianKernel 1) 0 := by
+      rw [funext (newtonianKernel_def 1)]
+      exact (continuous_const.mul
+        (continuous_norm.rpow_const fun _ ↦ Or.inr (by norm_num))).continuousAt
+    have h0 : h 0 = newtonianKernel 1 0 :=
+      tendsto_nhds_unique (hc.tendsto.mono_left nhdsWithin_le_nhds)
+        ((hK.tendsto.mono_left nhdsWithin_le_nhds).congr' hh.symm)
+    exact not_differentiableAt_newtonianKernel_zero 1 (by norm_num) one_ne_zero
+      ((hH.1.differentiableAt (by norm_num)).congr_of_eventuallyEq
+        (eventuallyEq_nhds_of_eventuallyEq_nhdsNE hh h0).symm)
+  · exact not_tendsto_nhds_of_tendsto_atTop
+      ((tendsto_newtonianKernel_nhdsNE_zero_atTop n h3).congr' hh.symm) _
+      (hc.tendsto.mono_left nhdsWithin_le_nhds)
+
 /-- A Newtonian kernel with pole at `a` is harmonic away from that pole. -/
 theorem harmonicAt_newtonianKernel_sub (n : ℕ)
     {x a : EuclideanSpace ℝ (Fin n)} (hxa : x ≠ a) :
@@ -444,7 +478,7 @@ theorem harmonicOnNhd_newtonianKernel_sub (n : ℕ)
 theorem newtonianKernel_one (x : EuclideanSpace ℝ (Fin 1)) :
     newtonianKernel 1 x = -‖x‖ / 2 := by
   have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin 1)) 1) = 2 := by
-    rw [Measure.real_def, InnerProductSpace.volume_ball_of_dim_odd (k := 0) (by simp)]
+    rw [Measure.real_def, EuclideanSpace.volume_ball_fin_one]
     norm_num
   rw [newtonianKernel_def, hvol]
   norm_num

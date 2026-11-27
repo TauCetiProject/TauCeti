@@ -39,7 +39,11 @@ regular case.
 * `QuadraticMap.nondegenerate_neg`: negating a quadratic map does not change its nondegeneracy.
 * `QuadraticMap.radical_smul`, `QuadraticMap.nondegenerate_smul_iff`: scaling a quadratic map by a
   unit does not change its radical or its nondegeneracy.
+* `QuadraticMap.radical_prod_radical_le_radical_prod`: the product of two radicals lies in the
+  radical of the orthogonal product, in every characteristic.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
+* `QuadraticMap.nondegenerate_prod_iff`: an orthogonal product is nondegenerate exactly when both
+  factors are.
 * `QuadraticMap.orthogonal_polarBilin_eq_radical_of_isCompl`: the polar orthogonal complement of
   a radical complement is the radical.
 * `QuadraticMap.nondegenerate_restrict_of_isCompl_radical`: a radical complement is regular.
@@ -166,6 +170,16 @@ theorem nondegenerate_smul_iff {a : R} (ha : IsUnit a) (Q : QuadraticMap R M P) 
 
 variable {M' : Type*} [AddCommGroup M'] [Module R M']
 
+/-- The product of the radicals of two quadratic maps lies in the radical of their orthogonal
+product. The inclusion can be strict when two is not invertible: in characteristic two, `(1, 1)`
+lies in the radical of `x² + y²` although `1` does not lie in the radical of `x²`. -/
+theorem radical_prod_radical_le_radical_prod (Q : QuadraticMap R M P)
+    (Q' : QuadraticMap R M' P) : Q.radical.prod Q'.radical ≤ (Q.prod Q').radical := by
+  rintro ⟨x, y⟩ ⟨hx, hy⟩
+  rw [SetLike.mem_coe, mem_radical_iff'] at hx hy
+  rw [mem_radical_iff']
+  exact ⟨by simp [hx.1, hy.1], fun n ↦ by simp [hx.2, hy.2]⟩
+
 /-- The radical of an orthogonal product is the product of the two radicals when two is
 invertible. -/
 @[simp]
@@ -180,6 +194,14 @@ theorem radical_prod [Invertible (2 : R)] (Q : QuadraticMap R M P) (Q' : Quadrat
     exact ⟨fun x ↦ by simpa using hp (x, 0), fun x ↦ by simpa using hp (0, x)⟩
   · rintro ⟨hp, hp'⟩ x
     simpa using congrArg₂ (· + ·) (hp x.1) (hp' x.2)
+
+/-- An orthogonal product is nondegenerate exactly when both factors are, when two is
+invertible. -/
+@[simp]
+theorem nondegenerate_prod_iff [Invertible (2 : R)] {Q : QuadraticMap R M P}
+    {Q' : QuadraticMap R M' P} :
+    (Q.prod Q').Nondegenerate ↔ Q.Nondegenerate ∧ Q'.Nondegenerate := by
+  simp only [nondegenerate_iff_radical_eq_bot, radical_prod, Submodule.prod_eq_bot_iff]
 
 /-- A quadratic map whose polar form has trivial kernel is nondegenerate. -/
 theorem nondegenerate_of_ker_polarBilin_eq_bot {Q : QuadraticMap R M P}
@@ -588,9 +610,8 @@ theorem polarBilin_ne_zero [Invertible (2 : R)] {Q : QuadraticMap R M P} {u : M}
 /-- The orthogonal product of two nondegenerate quadratic maps is nondegenerate, when `2` is
 invertible in the coefficient ring. -/
 theorem prod [Invertible (2 : R)] {Q : QuadraticMap R M P} {Q' : QuadraticMap R M' P}
-    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate) : (Q.prod Q').Nondegenerate := by
-  rw [QuadraticMap.nondegenerate_iff_radical_eq_bot, QuadraticMap.radical_prod,
-    hQ.radical_eq_bot, hQ'.radical_eq_bot, Submodule.prod_bot]
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate) : (Q.prod Q').Nondegenerate :=
+  QuadraticMap.nondegenerate_prod_iff.2 ⟨hQ, hQ'⟩
 
 /-- A nondegenerate quadratic map on a nontrivial module is nonzero. -/
 theorem ne_zero [Nontrivial M] {Q : QuadraticMap R M P} (hQ : Q.Nondegenerate) : Q ≠ 0 := by

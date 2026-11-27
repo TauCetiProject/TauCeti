@@ -53,6 +53,9 @@ As consequences:
   differentiable on `Ω`: it is almost everywhere the even reflection of `L ∘ g` plus the extension
   by zero of `g - L ∘ g`. This is how the leading coefficient of a Cauchy–Riemann equation with a
   totally real boundary condition is reflected.
+* `TauCeti.HasWeakFDerivOn.ite_conj`: the same for the reflection that keeps the values of `g` on
+  the axis, which agrees with the twisted reflection almost everywhere
+  (`TauCeti.ite_conj_ae_eq_twistedReflection`) and is continuous when `g` is.
 
 Without the boundary condition the odd reflection jumps across the axis, and the conclusions fail.
 
@@ -181,13 +184,37 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_continuousOn {Ω : 
 omit [NormedSpace ℝ F] in
 /-- The extension by zero of a function locally integrable up to the real axis is locally
 integrable on `Ω`. -/
-private theorem locallyIntegrableOn_indicator_setOf_im_nonneg {Ω : Opens ℂ} {g : ℂ → F}
+theorem MemLpLoc.locallyIntegrableOn_indicator_setOf_im_nonneg {Ω : Opens ℂ} {g : ℂ → F}
     (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g) :
     LocallyIntegrableOn ({z : ℂ | 0 ≤ z.im}.indicator g) Ω :=
   LocallyIntegrableOn.indicator_of_closure
     (by rw [(Complex.isClosed_setOfPred_le_im 0).closure_eq]
         exact hg.locallyIntegrableOn le_rfl (Ω.isOpen.isLocallyClosed_inter_setOfPred_le_im 0))
     (measurableSet_le measurable_const measurable_im).nullMeasurableSet
+
+/-- **Extension by zero, from integration by parts up to the axis.** If `g` and `g'` are
+integrable on compact subsets of `Ω ∩ {0 ≤ im}` and the integration-by-parts identity in the
+direction `v` holds on the upper half-plane against every smooth compactly supported test
+function on `Ω`, then the extensions by zero below the axis satisfy the weak derivative relation
+on all of `Ω`. -/
+theorem hasWeakLineDerivOn_indicator_setOf_im_nonneg_of_setIntegral [CompleteSpace F]
+    {Ω : Opens ℂ} {g g' : ℂ → F} {v : ℂ} (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g)
+    (hg' : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g')
+    (hibp : ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ → tsupport φ ⊆ Ω →
+      ∫ z in {z : ℂ | 0 < z.im}, fderiv ℝ φ z v • g z = -∫ z in {z : ℂ | 0 < z.im}, φ z • g' z) :
+    HasWeakLineDerivOn volume Ω ({z : ℂ | 0 ≤ z.im}.indicator g)
+      ({z : ℂ | 0 ≤ z.im}.indicator g') v := by
+  refine (hasWeakLineDerivOn_iff hg.locallyIntegrableOn_indicator_setOf_im_nonneg
+    hg'.locallyIntegrableOn_indicator_setOf_im_nonneg).2 fun φ hφ hφc hφΩ => ?_
+  have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
+  have hind (a : ℂ → ℝ) (f : ℂ → F) : (fun z => a z • {z : ℂ | 0 ≤ z.im}.indicator f z) =
+      {z : ℂ | 0 ≤ z.im}.indicator fun z => a z • f z :=
+    funext fun z => (indicator_smul_apply _ _ _ _).symm
+  simp_rw [((hφ.differentiable (by simp)) _).lineDeriv_eq_fderiv]
+  rw [hind (fun z => fderiv ℝ φ z v) g, hind φ g', integral_indicator hH, integral_indicator hH,
+    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0),
+    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0)]
+  exact hibp φ hφ hφc hφΩ
 
 /-- **Extension by zero.** If `g'` is the weak derivative of `g` in the direction `v` on the upper
 part of `Ω`, with `g` continuous on `Ω ∩ {0 ≤ im}` and zero on `Ω ∩ ℝ` and `g'` integrable on
@@ -200,16 +227,8 @@ theorem HasWeakLineDerivOn.indicator_setOf_im_nonneg {Ω : Opens ℂ} {g g' : �
     HasWeakLineDerivOn volume Ω ({z : ℂ | 0 ≤ z.im}.indicator g)
       ({z : ℂ | 0 ≤ z.im}.indicator g') v := by
   have := hgW.completeSpace
-  refine (hasWeakLineDerivOn_iff (locallyIntegrableOn_indicator_setOf_im_nonneg hgc.memLpLoc)
-    (locallyIntegrableOn_indicator_setOf_im_nonneg hg')).2 fun φ hφ hφc hφΩ => ?_
-  have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
-  have hind (a : ℂ → ℝ) (f : ℂ → F) : (fun z => a z • {z : ℂ | 0 ≤ z.im}.indicator f z) =
-      {z : ℂ | 0 ≤ z.im}.indicator fun z => a z • f z :=
-    funext fun z => (indicator_smul_apply _ _ _ _).symm
-  simp_rw [((hφ.differentiable (by simp)) _).lineDeriv_eq_fderiv]
-  rw [hind (fun z => fderiv ℝ φ z v) g, hind φ g', integral_indicator hH, integral_indicator hH,
-    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0),
-    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0)]
+  refine hasWeakLineDerivOn_indicator_setOf_im_nonneg_of_setIntegral hgc.memLpLoc hg'
+    fun φ hφ hφc hφΩ => ?_
   exact hgW.setIntegral_fderiv_smul_eq_neg_of_continuousOn hgc hg0 hg' hφ hφc
     fun z hz => hφΩ hz.1
 
@@ -310,5 +329,22 @@ theorem HasWeakFDerivOn.twistedReflection {Ω : Opens ℂ} (hΩ : ∀ z ∈ Ω, 
   · ext v
     simp [hz, not_le.2 hz, imDilation_higherReflectionNode_fin_one_eq_conjCLE]
   · simp [hz, hz.le]
+
+/-- **Weak derivative of the continuous twisted reflection.** Under the hypotheses of
+`TauCeti.HasWeakFDerivOn.twistedReflection`, the reflection of `g` twisted by `L` that keeps the
+values of `g` on the real axis, equal to `g` on `0 ≤ im` and to `L (g (conj z))` below, has the
+same weak derivative on `Ω`. Unlike the twisted reflection, it is continuous when `g` is
+continuous up to the axis. -/
+theorem HasWeakFDerivOn.ite_conj {Ω : Opens ℂ} (hΩ : ∀ z ∈ Ω, z.im < 0 → conj z ∈ Ω)
+    (L : F →L[ℝ] F) {g : ℂ → F} {Dg : ℂ → ℂ →L[ℝ] F}
+    (hgW : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) g Dg)
+    (hgc : ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hg0 : ∀ x : ℝ, (x : ℂ) ∈ Ω → L (g x) = g x)
+    (hDg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) Dg) :
+    HasWeakFDerivOn volume Ω (fun z ↦ if 0 ≤ z.im then g z else L (g (conj z)))
+      (TauCeti.twistedReflection ((ContinuousLinearMap.compL ℝ ℂ F F L).comp
+        ((ContinuousLinearMap.compL ℝ ℂ ℂ F).flip (conjCLE : ℂ →L[ℝ] ℂ))) Dg) :=
+  (hgW.twistedReflection hΩ L hgc hg0 hDg).congr_ae
+    (ae_restrict_of_ae (ite_conj_ae_eq_twistedReflection L g).symm)
 
 end TauCeti

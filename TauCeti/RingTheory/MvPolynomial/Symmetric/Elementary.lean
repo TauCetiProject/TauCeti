@@ -33,16 +33,21 @@ product in elementary symmetric polynomials.
 * `Multiset.esymm_replicate_zero`: the positive-degree elementary symmetric functions of a
   multiset of zeros vanish.
 * `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
-* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables.
+* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables, and
+  `MvPolynomial.esymm_eq_zero_of_card_lt`: `e_k(X₁, …, X_n)` vanishes for `k > n`.
 * `Multiset.esymm_map`: elementary symmetric functions commute with ring homomorphisms.
 * `Multiset.esymm_nonneg`, `Multiset.esymm_eq_zero_of_le`: for a multiset of nonnegative elements
   of an ordered semiring, every `eₙ(s)` is nonnegative, and once one vanishes so do all those of
   higher degree.
 * `Multiset.esymm_erase`: removing an element `a ∈ s` gives
   `eₙ(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`, and `Multiset.sum_map_mul_esymm_erase` sums it
-  over `a ∈ s` against weights `w(a)`.
+  over `a ∈ s` against weights `w(a)`; `Multiset.sum_map_mul_esymm_erase_map_mul` scales that sum
+  under `s ↦ c s`.
+* `Multiset.esymm_card_eq_prod` and `Multiset.esymm_map_inv_mul_prod`: `e_{card s}(s) = ∏ s`
+  and the reversal `e_j(s⁻¹) ∏ s = e_{card s - j}(s)` for `0 ∉ s`.
 * `TauCeti.esymmInt`: the elementary symmetric polynomial `e_m` of an integer degree `m`, which
   is `0` for `m < 0`.
+* `TauCeti.symmetricEsymm`: `e_k` as an element of `MvPolynomial.symmetricSubalgebra`.
 * `TauCeti.coeff_prod_one_add_C_mul_X`: the coefficient of `tⁿ` in `∏ᵢ (1 + xᵢ t)`, as a sum
   over the `n`-element subsets of the variables.
 * `TauCeti.mk_esymm_eq_prod_one_add_X`: the generating function of the `eₙ`.
@@ -53,10 +58,15 @@ product in elementary symmetric polynomials.
   `∑ₙ (-1)ⁿ eₙ tⁿ = ∏ᵢ (1 - xᵢ t)`.
 * `TauCeti.eval_add_smul_one_esymm`: the shift expansion
   `e_k(μ + t·(1, …, 1)) = ∑_{j ≤ k} binom(n - j, k - j) e_j(μ) t^(k - j)` in `n` variables.
+* `TauCeti.eval_one_esymm`, `TauCeti.eval_comp_perm_esymm`, `TauCeti.eval_esymm_card`: `e_k` at
+  `(1, …, 1)` is `binom(n, k)`, `e_k` is invariant under permuting the entries, and
+  `e_n(μ) = ∏ᵢ μᵢ`.
 * `TauCeti.aeval_update_zero_esymm`: `σ_{k;i}(μ)`, the value of `e_k` with the `i`-th entry of
   `μ` set to zero, is `e_k` of the entries other than the `i`-th.
 * `TauCeti.aeval_esymm_succ_eq_mul_add`: `σ_{k+1} = μ_i σ_{k;i} + σ_{k+1;i}`, for values in any
   algebra; at `μ = X` it is the decomposition of `e_{k+1}` along `X_i`.
+* `TauCeti.eval_add_smul_single_esymm_succ`: on the line `μ + t eᵢ`, `σ_{k+1}` is affine with
+  slope `σ_{k;i}(μ)`.
 * `TauCeti.sum_eval_update_zero_esymm`: `∑_i σ_{k;i}(μ) = (n - k) σ_k(μ)` in `n` variables.
 * `TauCeti.esymm_fin_four`: the four elementary symmetric polynomials in four variables.
 
@@ -184,11 +194,73 @@ theorem Multiset.sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R
   rw [← Multiset.sum_map_mul_left]
   exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by ring)
 
+/-- Scaling a multiset `s` by `c`, with a weight `w` satisfying `w(c a) = d w(a)`, scales
+`∑_{a ∈ s} w(a) eₙ(s ∖ a)` by `cⁿ d`. No condition on `c` is needed. -/
+theorem Multiset.sum_map_mul_esymm_erase_map_mul {R : Type*} [CommRing R] [DecidableEq R]
+    (s : Multiset R) {w : R → R} {c d : R} (hw : ∀ a, w (c * a) = d * w a) (n : ℕ) :
+    ((s.map (c * ·)).map fun a ↦ w a * ((s.map (c * ·)).erase a).esymm n).sum =
+      c ^ n * d * (s.map fun a ↦ w a * (s.erase a).esymm n).sum := by
+  rw [Multiset.sum_map_mul_esymm_erase, Multiset.sum_map_mul_esymm_erase, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  have hkn : k ≤ n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)
+  have hesymm : (s.map (c * ·)).esymm (n - k) = c ^ (n - k) * s.esymm (n - k) := by
+    simpa only [smul_eq_mul] using (Multiset.pow_smul_esymm c (n - k) s).symm
+  have hsum : ((s.map (c * ·)).map fun a ↦ a ^ k * w a).sum =
+      c ^ k * d * (s.map fun a ↦ a ^ k * w a).sum := by
+    rw [Multiset.map_map, ← Multiset.sum_map_mul_left]
+    exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by
+      simp only [Function.comp_apply, hw, mul_pow]; ring)
+  rw [hesymm, hsum, ← pow_sub_mul_pow c hkn]
+  ring
+
+/-- The top elementary symmetric function of a multiset is its product: `e_{card s}(s) = ∏ s`. -/
+@[simp]
+theorem Multiset.esymm_card_eq_prod {R : Type*} [CommSemiring R] (s : Multiset R) :
+    s.esymm (Multiset.card s) = s.prod := by
+  simp [Multiset.esymm, Multiset.powersetCard_self]
+
+/-- Reversal: the elementary symmetric functions of the inverses of a multiset `s` of nonzero
+elements of a semifield are those of `s`, read backwards and divided by `e_{card s}(s) = ∏ s`. -/
+theorem Multiset.esymm_map_inv_mul_prod {K : Type*} [Semifield K] (s : Multiset K)
+    (hs : (0 : K) ∉ s) {j : ℕ} (hj : j ≤ Multiset.card s) :
+    (s.map (·⁻¹)).esymm j * s.prod = s.esymm (Multiset.card s - j) := by
+  induction s using Multiset.induction_on generalizing j with
+  | empty =>
+    obtain rfl : j = 0 := by simpa using hj
+    simp
+  | cons a t ih =>
+    have ha : a ≠ 0 := fun h ↦ hs (h ▸ Multiset.mem_cons_self _ _)
+    have ht : (0 : K) ∉ t := fun h ↦ hs (Multiset.mem_cons_of_mem h)
+    -- The factor `a⁻¹` of the new term cancels against the factor `a` of the new product.
+    have hinv (x : K) : a⁻¹ * x * (a * t.prod) = x * t.prod := by
+      rw [mul_mul_mul_comm, inv_mul_cancel₀ ha, one_mul]
+    rw [Multiset.card_cons] at hj ⊢
+    rcases j with _ | i
+    · rw [Multiset.esymm_zero, one_mul, Nat.sub_zero, ← Multiset.card_cons a t,
+        Multiset.esymm_card_eq_prod]
+    rw [Multiset.map_cons, Multiset.esymm_cons, Multiset.prod_cons, add_mul, hinv,
+      ih ht (j := i) (by omega)]
+    rcases Nat.lt_or_ge i (Multiset.card t) with hlt | hge
+    · -- Both remaining indices are one more than `card t - (i + 1)`; expand by `esymm_cons`.
+      have h1 : Multiset.card t - i = Multiset.card t - (i + 1) + 1 := by omega
+      have h2 : Multiset.card t + 1 - (i + 1) = Multiset.card t - (i + 1) + 1 := by omega
+      rw [h1, h2, Multiset.esymm_cons, ← ih ht hlt]
+      ring
+    · obtain rfl : i = Multiset.card t := by omega
+      rw [Multiset.esymm_of_card_lt (by simp), zero_mul, zero_add, Nat.sub_self, Nat.sub_self,
+        Multiset.esymm_zero, Multiset.esymm_zero]
+
 /-- The elementary symmetric polynomial whose degree is the number of variables is the product of
 all the variables: `e_n(X₁, …, X_n) = X₁ ⋯ X_n`. -/
 theorem MvPolynomial.esymm_card (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R] :
     MvPolynomial.esymm σ R (Fintype.card σ) = ∏ i, MvPolynomial.X i := by
   rw [MvPolynomial.esymm, ← Finset.card_univ, Finset.powersetCard_self, Finset.sum_singleton]
+
+/-- The elementary symmetric polynomial `e_k` vanishes when `k` exceeds the number of variables. -/
+theorem MvPolynomial.esymm_eq_zero_of_card_lt {σ : Type*} [Fintype σ] {R : Type*}
+    [CommSemiring R] {k : ℕ} (h : Fintype.card σ < k) : MvPolynomial.esymm σ R k = 0 := by
+  rw [MvPolynomial.esymm_eq_multiset_esymm]
+  exact Multiset.esymm_of_card_lt (by simpa using h)
 
 namespace TauCeti
 
@@ -238,6 +310,32 @@ theorem rename_esymmInt {τ : Type*} [Fintype τ] (m : ℤ) (e : σ ≃ τ) :
   split_ifs <;> simp [MvPolynomial.rename_esymm]
 
 end esymmInt
+
+section symmetricEsymm
+
+variable (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R]
+
+/-- The elementary symmetric polynomial `MvPolynomial.esymm σ R k`, as an element of
+`MvPolynomial.symmetricSubalgebra`. -/
+noncomputable def symmetricEsymm (k : ℕ) : MvPolynomial.symmetricSubalgebra σ R :=
+  ⟨MvPolynomial.esymm σ R k, MvPolynomial.esymm_isSymmetric σ R k⟩
+
+variable {σ R}
+
+@[simp, norm_cast]
+theorem coe_symmetricEsymm (k : ℕ) :
+    (symmetricEsymm σ R k : MvPolynomial σ R) = MvPolynomial.esymm σ R k :=
+  (rfl)
+
+/-- The elementary symmetric polynomial `e_k` in the symmetric subalgebra vanishes when `k`
+exceeds the number of variables. -/
+theorem symmetricEsymm_eq_zero_of_lt {k : ℕ} (h : Fintype.card σ < k) :
+    symmetricEsymm σ R k = 0 := by
+  ext1
+  rw [coe_symmetricEsymm, ZeroMemClass.coe_zero]
+  exact MvPolynomial.esymm_eq_zero_of_card_lt h
+
+end symmetricEsymm
 
 section GeneratingFunction
 
@@ -370,6 +468,29 @@ theorem eval_add_smul_one_esymm {σ R : Type*} [Fintype σ] [CommSemiring R] (μ
         refine sum_congr rfl fun u hu ↦ ?_
         rw [(mem_powersetCard.mp hu).2]
 
+section Evaluation
+
+open MvPolynomial
+
+variable {σ R : Type*} [Fintype σ] [CommSemiring R]
+
+/-- `e_k(1, …, 1) = binom(n, k)`, where `n = |σ|`. -/
+@[simp]
+theorem eval_one_esymm (k : ℕ) : eval 1 (esymm σ R k) = (Fintype.card σ).choose k := by
+  simp [esymm, card_powersetCard]
+
+/-- `e_k` is symmetric: `e_k(μ ∘ e) = e_k(μ)` for every permutation `e` of the variables. -/
+@[simp]
+theorem eval_comp_perm_esymm (e : Equiv.Perm σ) (μ : σ → R) (k : ℕ) :
+    eval (μ ∘ e) (esymm σ R k) = eval μ (esymm σ R k) := by
+  rw [← eval_rename, esymm_isSymmetric σ R k e]
+
+/-- `e_n(μ) = ∏ᵢ μᵢ`, where `n = |σ|`. -/
+theorem eval_esymm_card (μ : σ → R) : eval μ (esymm σ R (Fintype.card σ)) = ∏ i, μ i := by
+  simp [esymm_card]
+
+end Evaluation
+
 section DeletedEntry
 
 open Function MvPolynomial
@@ -398,6 +519,19 @@ theorem aeval_esymm_succ_eq_mul_add {S : Type*} [CommSemiring S] [Algebra R S] (
   rw [aeval_update_zero_esymm, aeval_update_zero_esymm, aeval_esymm_eq_multiset_esymm,
     ← Multiset.cons_erase (mem_univ i), Multiset.map_cons, erase_val, Multiset.esymm_cons,
     add_comm]
+
+/-- **`σ_{k+1}` is affine along a coordinate line**: on the line `f + t eᵢ`,
+`σ_{k+1}(f + t eᵢ) = (f_i + t) σ_{k;i}(f) + σ_{k+1;i}(f)`, so its slope is `σ_{k;i}(f)`. -/
+theorem eval_add_smul_single_esymm_succ (f : σ → R) (i : σ) (k : ℕ) (t : R) :
+    eval (f + t • Pi.single i 1) (esymm σ R (k + 1)) =
+      (f i + t) * eval (update f i 0) (esymm σ R k) +
+        eval (update f i 0) (esymm σ R (k + 1)) := by
+  have hu : update (f + t • Pi.single i 1) i 0 = update f i 0 := by
+    ext j
+    by_cases hj : j = i <;> simp [hj, update_of_ne]
+  have h := aeval_esymm_succ_eq_mul_add (R := R) (f + t • Pi.single i 1) i k
+  simp only [hu] at h
+  simpa using h
 
 /-- **The sum of the elementary symmetric functions with one entry deleted**:
 `∑_i σ_{k;i}(μ) = (n - k) σ_k(μ)` for `n` variables, where `σ_{k;i}(μ)` is the value of `e_k`

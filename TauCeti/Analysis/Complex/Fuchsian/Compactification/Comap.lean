@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Conj
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Holomorphic
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Comap
+public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Holomorphic
 import TauCeti.Analysis.Complex.Fuchsian.Covolume
 
 /-!
@@ -38,6 +39,8 @@ field of `X(N)` by fractional linear maps, which fixes the functions pulled back
 * `Subgroup.compactifiedQuotientComap`: the pullback of meromorphic functions, as a homomorphism of
   `ℂ`-algebras.
 * `Subgroup.compactifiedQuotientComap_injective`: the pullback is a field embedding.
+* `Subgroup.compactifiedQuotientComap_mem_holomorphicSubalgebra_iff`: the pullback is holomorphic
+  on the image of the upper half-plane exactly when the original function is.
 * `Subgroup.compactifiedQuotientComap_refl` and `Subgroup.compactifiedQuotientComap_trans`: it is
   functorial in the subgroup inclusion.
 * `Subgroup.compactifiedQuotientConjComap`: the pullback along the biholomorphism induced by a
@@ -147,6 +150,21 @@ theorem compactifiedQuotientComap_trans [DiscreteTopology Θ] (k : Γ ≤ Θ)
     compactifiedQuotientComap (h.trans k) F =
       compactifiedQuotientComap h (compactifiedQuotientComap k F) :=
   MeromorphicFunction.ext fun x ↦ by simp
+
+/-- **Holomorphy on the open curve.** The pullback of `F` has no pole at the orbit of any point of
+the upper half-plane exactly when `F` has none, since the map of compactified quotients sends the
+orbit of `τ` under `Δ` to its orbit under `Γ`. -/
+@[simp]
+theorem compactifiedQuotientComap_mem_holomorphicSubalgebra_iff
+    {F : MeromorphicFunction Γ.CompactifiedQuotient} :
+    compactifiedQuotientComap h F ∈ MeromorphicFunction.holomorphicSubalgebra
+        (Set.range CompactifiedQuotient.ofQuotient) ↔
+      F ∈ MeromorphicFunction.holomorphicSubalgebra
+        (Set.range CompactifiedQuotient.ofQuotient) := by
+  simp only [MeromorphicFunction.mem_holomorphicSubalgebra, Set.forall_mem_range,
+    compactifiedQuotientComap_apply, compactifiedQuotientMap_ofQuotient]
+  refine ⟨fun hF p ↦ Quotient.inductionOn p fun τ ↦ ?_, fun hF _ ↦ hF _⟩
+  simpa only [TauCeti.Setoid.map_of_le_mk] using hF (Quotient.mk _ τ)
 
 /-! ### Pulling back along conjugations -/
 
