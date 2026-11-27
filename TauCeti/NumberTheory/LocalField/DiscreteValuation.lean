@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.NormedField
 public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
-public import TauCeti.NumberTheory.LocalField.RealAddValuation
 public import TauCeti.NumberTheory.Padics.LogGauge
 public import TauCeti.RingTheory.Valuation.Discrete.Extension
 public import TauCeti.RingTheory.Valuation.ValuativeRel.ValueGroup
@@ -74,15 +73,9 @@ theorem normalizedNormedField_norm_eq_rpow_neg_realAddVal {x : K} (hx : x ≠ 0)
     ‖x‖ = (Nat.card 𝓀[K] : ℝ) ^ (-((valuation K).realAddVal x).untop₀) := by
   let _ := normalizedNormedField K
   rw [normalizedNormedField_norm_def, normalizedAbsoluteValue_apply_ne_zero x hx,
-    untop₀_realAddVal_valuation, NNRat.cast_zpow, NNRat.cast_natCast, ← Real.rpow_intCast,
-    Int.cast_neg]
-  congr 2
-  have hlog : WithZero.log (normalizedValuationWithZero K x) =
-      (normalizedValuation K (Units.mk0 x hx)).toAdd := by
-    conv_lhs => rw [← Units.val_mk0 hx]
-    rw [normalizedValuationWithZero_coe, ← WithZero.toAdd_unzero_eq_log WithZero.coe_ne_zero,
-      WithZero.unzero_coe]
-  rw [hlog]
+    (valuation K).realAddVal_of_ne_zero hx, WithTop.untop₀_coe, NNRat.cast_zpow,
+    NNRat.cast_natCast, ← Real.rpow_intCast, Int.cast_neg, toAdd_normalizedValuation_eq_ord,
+    Units.val_mk0]
 
 private def intValuationUnitsEquiv : ℤᵐ⁰ˣ ≃* Multiplicative ℤ :=
   WithZero.unitsWithZeroEquiv.trans (MulEquiv.inv (Multiplicative ℤ))
@@ -137,7 +130,7 @@ theorem isTotallyRamified_iff_ramificationIdx_eq_finrank :
 theorem extRealAddVal_valuation_coe (x : Lˣ) :
     (valuation L).extRealAddVal K (x : L) =
       ((((normalizedValuation L x).toAdd : ℝ) / (ramificationIndex K L : ℝ)) : WithTop ℝ) := by
-  rw [(valuation L).extRealAddVal_eq_map_realAddVal, realAddVal_valuation_coe, WithTop.map_coe,
+  rw [(valuation L).extRealAddVal_apply, intAddVal_valuation_coe, WithTop.map_coe,
     ramificationIdx_valuation_eq_ramificationIndex]
 
 /-- Outside `0`, `((valuation L).extRealAddVal K x).untop₀` is the normalized valuation over `e`. -/

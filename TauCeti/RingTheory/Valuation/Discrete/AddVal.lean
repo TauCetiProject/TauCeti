@@ -87,6 +87,14 @@ theorem intAddVal_def : v.intAddVal = v.intValuation.addVal := (rfl)
 theorem intAddVal_apply (x : R) : v.intAddVal x = WithZero.negLog (v.intValuation x) :=
   v.intValuation.addVal_apply x
 
+/-- The defining formula of `Valuation.realAddVal`. -/
+theorem realAddVal_def :
+    v.realAddVal =
+      v.intAddVal.map
+        { (Int.castAddHom ℝ).withTopMap with
+          monotone' := WithTop.monotone_map_iff.mpr fun _ _ h ↦ Int.cast_le.mpr h }
+        rfl := (rfl)
+
 /-- `v.realAddVal` agrees pointwise with `v.intAddVal` cast from `ℤ` to `ℝ`. -/
 theorem realAddVal_eq_map (x : R) : v.realAddVal x = (v.intAddVal x).map ((↑) : ℤ → ℝ) := (rfl)
 
@@ -319,7 +327,7 @@ theorem IsEquiv.intAddVal_eq {v₁ : Valuation R Γ₁} {v₂ : Valuation R Γ�
 theorem IsEquiv.realAddVal_eq {v₁ : Valuation R Γ₁} {v₂ : Valuation R Γ₂}
     [v₁.IsRankOneDiscrete] [v₂.IsRankOneDiscrete] (h : v₁.IsEquiv v₂) :
     v₁.realAddVal = v₂.realAddVal := by
-  rw [realAddVal, realAddVal, h.intAddVal_eq]
+  rw [realAddVal_def, realAddVal_def, h.intAddVal_eq]
 
 end IsEquiv
 

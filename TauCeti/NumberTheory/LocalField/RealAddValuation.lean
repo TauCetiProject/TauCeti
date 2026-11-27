@@ -10,7 +10,10 @@ public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.RingTheory.Valuation.Discrete.AddVal
 public import TauCeti.RingTheory.Valuation.ToAdditive
+import TauCeti.Algebra.Order.Monoid.Unbundled.WithTop
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
+import TauCeti.NumberTheory.LocalField.DiscreteValuation
+import TauCeti.RingTheory.Valuation.Discrete.Extension
 
 /-!
 # The real-valued normalized additive valuation of a nonarchimedean local field
@@ -107,16 +110,9 @@ theorem realAddVal_valuation_irreducible {π : 𝒪[K]} (hπ : Irreducible π) :
 
 /-- An element of `𝒪[K]` is a unit if and only if its `(valuation K).realAddVal` is `0`. -/
 theorem isUnit_iff_realAddVal_valuation_eq_zero {a : 𝒪[K]} :
-    IsUnit a ↔ (valuation K).realAddVal (a : K) = 0 := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · simp
-  · rw [isUnit_iff_normalizedValuationWithZero_eq_one,
-      realAddVal_valuation_of_ne_zero fun h ↦ ha (Subtype.ext h), ← WithTop.coe_zero,
-      WithTop.coe_eq_coe, Int.cast_eq_zero]
-    have h0 : normalizedValuationWithZero K (a : K) ≠ 0 :=
-      (normalizedValuationWithZero_eq_zero_iff (a : K)).not.mpr fun h ↦ ha (Subtype.ext h)
-    exact ⟨fun h ↦ by simp [h], fun h ↦ by
-      rw [← WithZero.exp_log h0, h, WithZero.exp_zero]⟩
+    IsUnit a ↔ (valuation K).realAddVal (a : K) = 0 :=
+  (Valuation.Integers.isUnit_iff_valuation_eq_one
+    (Valuation.integer.integers (valuation K))).trans (valuation K).realAddVal_eq_zero_iff.symm
 
 /-- A unit of `𝒪[K]` has `(valuation K).realAddVal` equal to `0`. -/
 @[simp]
@@ -127,13 +123,8 @@ theorem realAddVal_valuation_coe_integer_unit (u : 𝒪[K]ˣ) :
 /-- An element of `K` lies in `𝒪[K]` if and only if its `(valuation K).realAddVal` is nonnegative.
 -/
 theorem mem_integer_iff_realAddVal_valuation_nonneg {x : K} :
-    x ∈ 𝒪[K] ↔ 0 ≤ (valuation K).realAddVal x := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · have h := mem_integer_iff_toAdd_normalizedValuation_nonneg (Units.mk0 x hx)
-    have hval := realAddVal_valuation_coe (Units.mk0 x hx)
-    simp only [Units.val_mk0] at h hval
-    rw [h, hval, ← WithTop.coe_zero, WithTop.coe_le_coe]; exact_mod_cast Iff.rfl
+    x ∈ 𝒪[K] ↔ 0 ≤ (valuation K).realAddVal x :=
+  (Valuation.mem_integer_iff (valuation K) x).trans (valuation K).realAddVal_nonneg_iff.symm
 
 /-- On `𝒪[K]`, `(valuation K).realAddVal` agrees with `IsDiscreteValuationRing.addVal` cast to
 `ℝ`. -/
@@ -221,11 +212,10 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 theorem realAddVal_valuation_algebraMap (x : K) :
     (valuation L).realAddVal (algebraMap K L x) =
       ((valuation K).realAddVal x).map ((ramificationIndex K L : ℝ) * ·) := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · rw [realAddVal_valuation_of_ne_zero ((map_ne_zero (algebraMap K L)).mpr hx),
-      realAddVal_valuation_of_ne_zero hx, normalizedValuationWithZero_algebraMap (K := K) (L := L),
-      WithTop.map_coe, WithZero.log_pow, nsmul_eq_mul]; push_cast; rfl
+  rw [Valuation.realAddVal_algebraMap (valuation K) (valuation L),
+    ramificationIdx_valuation_eq_ramificationIndex,
+    WithTop.nsmul_eq_map_of_ne_zero (ramificationIndex_pos (K := K) (L := L)).ne']
+  simp only [nsmul_eq_mul]
 
 end Extension
 

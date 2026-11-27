@@ -133,7 +133,9 @@ def normalizedValuationWithZero : K →*₀ ℤᵐ⁰ :=
     ((valueGroupWithZeroIsoInt K).toMonoidWithZeroHom.comp
       (valuation K).toMonoidWithZeroHom)
 
-private theorem intValuation_eq_map :
+/-- On a nonarchimedean local field `K`, `(valuation K).intValuation` is the pushforward of
+`valuation K` along `valueGroupWithZeroIsoInt K`. -/
+theorem intValuation_valuation_eq_map :
     (valuation K).intValuation =
       (valuation K).map (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰) := by
   refine Valuation.eq_of_isEquiv_of_surjective (valuation K).intValuation_surjective ?_ ?_
@@ -146,7 +148,7 @@ private theorem intValuation_eq_map :
 
 private theorem intValuation_valuationSubring :
     ((valuation K).intValuation).valuationSubring.toSubring = 𝒪[K] := by
-  rw [intValuation_eq_map]
+  rw [intValuation_valuation_eq_map]
   ext x
   change valueGroupWithZeroIsoInt K (valuation K x) ≤ 1 ↔ valuation K x ≤ 1
   simpa only [map_one] using
@@ -190,7 +192,8 @@ on its fraction field. The `Ring.ordFrac` API therefore applies to `normalizedVa
 theorem normalizedValuationWithZero_eq_ordFrac :
     normalizedValuationWithZero K = Ring.ordFrac 𝒪[K] := by
   ext x
-  rw [Ring.ordFrac_eq_valuation_inv, ← intValuation_eq_maximalIdeal_valuation, intValuation_eq_map]
+  rw [Ring.ordFrac_eq_valuation_inv, ← intValuation_eq_maximalIdeal_valuation,
+    intValuation_valuation_eq_map]
   simp [normalizedValuationWithZero, invMonoidWithZeroHom]
 
 /-- The zero-preserving normalized valuation is the inverse of any surjective `ℤᵐ⁰`-valued
@@ -204,7 +207,7 @@ theorem _root_.Valuation.normalizedValuationWithZero_eq_inv_of_surjective
     DFunLike.congr_fun
       (Valuation.eq_of_isEquiv_of_surjective (valuation K).intValuation_surjective hv
         ((valuation K).isEquiv_intValuation.trans (ValuativeRel.isEquiv _ _))) x
-  rw [← h, intValuation_eq_map]
+  rw [← h, intValuation_valuation_eq_map]
   simp [normalizedValuationWithZero, invMonoidWithZeroHom]
 
 /-- The translation between Mathlib's multiplicative valuation and the additive normalization:
@@ -219,7 +222,7 @@ theorem toAdd_normalizedValuation_eq_neg_log (x : Kˣ) :
 -/
 theorem toAdd_normalizedValuation_eq_ord (x : Kˣ) :
     (normalizedValuation K x).toAdd = Valuation.ord (valuation K).intValuation (x : K) := by
-  rw [toAdd_normalizedValuation_eq_neg_log, intValuation_eq_map, Valuation.ord_def]
+  rw [toAdd_normalizedValuation_eq_neg_log, intValuation_valuation_eq_map, Valuation.ord_def]
   rfl
 
 private theorem valueGroupWithZeroIsoInt_valuation_ne_zero (x : Kˣ) :
@@ -232,8 +235,9 @@ theorem valueGroupWithZeroIsoInt_valuation (x : Kˣ) :
     valueGroupWithZeroIsoInt K (valuation K (x : K))
       = WithZero.exp (-(normalizedValuation K x).toAdd) := by
   rw [toAdd_normalizedValuation_eq_ord]
-  simpa [intValuation_eq_map] using Valuation.valuation_eq_exp_neg_ord (valuation K).intValuation
-    ((valuation K).intValuation.ne_zero_iff.mpr x.ne_zero)
+  simpa [intValuation_valuation_eq_map] using
+    Valuation.valuation_eq_exp_neg_ord (valuation K).intValuation
+      ((valuation K).intValuation.ne_zero_iff.mpr x.ne_zero)
 
 /-- The normalized valuation vanishes exactly on the elements of valuation `1`. -/
 @[simp]
@@ -242,7 +246,7 @@ theorem normalizedValuation_eq_one_iff (x : Kˣ) :
   rw [← toAdd_eq_zero, toAdd_normalizedValuation_eq_ord,
     Valuation.ord_eq_iff_valuation_eq_exp_neg (valuation K).intValuation
       ((valuation K).intValuation.ne_zero_iff.mpr x.ne_zero),
-    intValuation_eq_map]
+    intValuation_valuation_eq_map]
   simp
 
 /-- The normalized valuation vanishes on every root of unity: `Multiplicative ℤ` is torsion
@@ -337,7 +341,7 @@ theorem mem_integer_iff_toAdd_normalizedValuation_nonneg (x : Kˣ) :
   simp only [map_one]
   change ((valuation K).map (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰))
       (x : K) ≤ 1 ↔ 0 ≤ Valuation.ord (valuation K).intValuation (x : K)
-  rw [← intValuation_eq_map]
+  rw [← intValuation_valuation_eq_map]
   exact Valuation.mem_valuationSubring_iff_ord_nonneg (valuation K).intValuation
 
 /-- The normalized value group of a nonarchimedean local field is all of `ℤ`. -/
