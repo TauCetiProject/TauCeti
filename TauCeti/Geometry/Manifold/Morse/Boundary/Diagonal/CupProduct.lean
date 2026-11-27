@@ -47,8 +47,9 @@ complex of a product (`morseChainProdEquiv_comp_signedMorseBoundary` in the name
 
 for all linear forms `a` and `b` exactly when the diagonal is a chain map for this differential,
 `Δ ∘ ∂₀ = (∂₁ ⊗ 1 + σ₁ ⊗ ∂₂) ∘ Δ`
-(`signedMorseCupProduct_comp_signedMorseBoundary_eq_iff`). For `a` of degree `k`, `a ∘ σ₁` is
-`(-1) ^ k a` (`LinearMap.comp_signEquiv_eq_smul`), so this is the graded Leibniz rule
+(`signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagonalMap_comp_eq`).
+For `a` of degree `k`, `a ∘ σ₁` is `(-1) ^ k a` (`LinearMap.comp_signEquiv_eq_smul`), so this is
+the graded Leibniz rule
 
 `δ(a ∪ b) = δa ∪ b + (-1) ^ k a ∪ δb`
 
@@ -78,8 +79,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `signedMorseCupProduct_apply_single_eq_zero`: it has degree zero.
 * `signedMorseCupProduct_reverse`: change of orientations.
 * `signedMorseCupProduct_zmod_two`: the mod-two reduction.
-* `signedMorseCupProduct_comp_signedMorseBoundary_eq_iff`: the Leibniz rule holds exactly when the
-  diagonal is a chain map for the Koszul differential.
+* `signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagonalMap_comp_eq`:
+  the Leibniz rule holds exactly when the diagonal is a chain map for the Koszul differential.
 * `signedMorseCupProduct_comp_signedMorseBoundary_of_degree`: the graded Leibniz rule.
 * `signedMorseCupProduct_comp_signedMorseBoundary_eq_zero`,
   `signedMorseCupProduct_comp_signedMorseBoundary_left`,
@@ -243,7 +244,7 @@ critical point `q` of `f₁` by `(-1) ^ ind q`, the cup product satisfies
 `δ(a ∪ b) = δa ∪ b + (a ∘ σ₁) ∪ δb` for all linear forms `a` and `b` on the Morse chains, where
 `δa = a ∘ ∂` is the Morse coboundary, exactly when the integral Morse diagonal is a chain map for
 the Koszul differential of the tensor product: `Δ ∘ ∂₀ = (∂₁ ⊗ 1 + σ₁ ⊗ ∂₂) ∘ Δ`. -/
-theorem signedMorseCupProduct_comp_signedMorseBoundary_eq_iff :
+theorem signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagonalMap_comp_eq :
     (∀ (a : (criticalPoints 𝓘(ℝ, E) f₁ →₀ R) →ₗ[R] R)
         (b : (criticalPoints 𝓘(ℝ, E) f₂ →₀ R) →ₗ[R] R),
         hX₀.signedMorseCupProduct hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R a b ∘ₗ
@@ -297,7 +298,8 @@ theorem signedMorseCupProduct_comp_signedMorseBoundary_of_degree {k : ℕ}
     refine (a.comp_signEquiv_eq_smul (u := (-1) ^ k) fun q hq c ↦ ?_).trans (by
       rw [Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one])
     rw [← Finsupp.smul_single_one, map_smul, ha q fun hk ↦ hq (by rw [hk]), smul_zero]
-  rw [(signedMorseCupProduct_comp_signedMorseBoundary_eq_iff hf₁ hf₂ hf₀).2 hΔ a b, hσ,
+  rw [(signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagonalMap_comp_eq
+    hf₁ hf₂ hf₀).2 hΔ a b, hσ,
     LinearMap.map_smul_of_tower, LinearMap.smul_apply]
 
 /-- **The cup product of two cocycles is a cocycle.** When the integral Morse diagonal is a chain
@@ -308,8 +310,8 @@ theorem signedMorseCupProduct_comp_signedMorseBoundary_eq_zero
     (hb : b ∘ₗ hX₂.signedMorseBoundary 𝔬₂ hf₂ R = 0) :
     hX₀.signedMorseCupProduct hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R a b ∘ₗ
       hX₀.signedMorseBoundary 𝔬₀ hf₀ R = 0 := by
-  rw [(signedMorseCupProduct_comp_signedMorseBoundary_eq_iff hf₁ hf₂ hf₀).2 hΔ a b, ha, hb,
-    map_zero, map_zero, LinearMap.zero_apply, add_zero]
+  rw [(signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagonalMap_comp_eq
+    hf₁ hf₂ hf₀).2 hΔ a b, ha, hb, map_zero, map_zero, LinearMap.zero_apply, add_zero]
 
 /-- **The cup product of a coboundary and a cocycle is a coboundary.** When the integral Morse
 diagonal is a chain map for the Koszul differential and `δb = 0`, the cup product `δa ∪ b` is the
@@ -321,8 +323,8 @@ theorem signedMorseCupProduct_comp_signedMorseBoundary_left
         (a ∘ₗ hX₁.signedMorseBoundary 𝔬₁ hf₁ R) b =
       hX₀.signedMorseCupProduct hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R a b ∘ₗ
         hX₀.signedMorseBoundary 𝔬₀ hf₀ R := by
-  rw [(signedMorseCupProduct_comp_signedMorseBoundary_eq_iff hf₁ hf₂ hf₀).2 hΔ a b, hb, map_zero,
-    add_zero]
+  rw [(signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagonalMap_comp_eq
+    hf₁ hf₂ hf₀).2 hΔ a b, hb, map_zero, add_zero]
 
 /-- **The cup product of a cocycle and a coboundary is a coboundary.** When the integral Morse
 diagonal is a chain map for the Koszul differential and `δa = 0`, the cup product `a ∪ δb` is the
@@ -348,8 +350,8 @@ theorem signedMorseCupProduct_comp_signedMorseBoundary_right
       LinearMap.zero_comp, neg_zero]
   have hσσ : (a ∘ₗ σ) ∘ₗ σ = a :=
     LinearMap.ext fun c ↦ congrArg a (Finsupp.signEquiv_signEquiv c)
-  rw [(signedMorseCupProduct_comp_signedMorseBoundary_eq_iff hf₁ hf₂ hf₀).2 hΔ (a ∘ₗ σ) b, hσa,
-    hσσ, map_zero, LinearMap.zero_apply, zero_add]
+  rw [(signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagonalMap_comp_eq
+    hf₁ hf₂ hf₀).2 hΔ (a ∘ₗ σ) b, hσa, hσσ, map_zero, LinearMap.zero_apply, zero_add]
 
 end Leibniz
 
