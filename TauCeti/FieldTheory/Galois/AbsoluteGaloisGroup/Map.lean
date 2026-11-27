@@ -60,6 +60,8 @@ groups transport between isomorphic fields.
 * `TauCeti.absoluteGaloisGroup_mapOfAlgebra_commutes`: Mathlib's map
   `Field.absoluteGaloisGroup.mapOfAlgebra K L g` is intertwined with `g` by the embedding of
   algebraic closures.
+* `TauCeti.algebraMap_algebraicClosure_bijective`: that embedding is bijective when `L` is
+  algebraic over `K`.
 * `TauCeti.bijective_absoluteGaloisGroup_mapOfAlgebra`,
   `TauCeti.bijective_absoluteGaloisGroup_map`: the map is bijective along an isomorphism of
   fields.
@@ -209,6 +211,15 @@ theorem absoluteGaloisGroup_mapOfAlgebra_commutes (g : Field.absoluteGaloisGroup
         (algebraMap (AlgebraicClosure K) (AlgebraicClosure L) x) :=
   AlgEquiv.restrictNormal_commutes _ _ x
 
+/-- **The embedding `Kᵃˡᵍ → Lᵃˡᵍ` is bijective when `L` is algebraic over `K`**: then `Lᵃˡᵍ` is
+algebraic over `K`, hence over the algebraically closed field `Kᵃˡᵍ`. -/
+theorem algebraMap_algebraicClosure_bijective [Algebra.IsAlgebraic K L] :
+    Function.Bijective (algebraMap (AlgebraicClosure K) (AlgebraicClosure L)) := by
+  have : Algebra.IsIntegral K (AlgebraicClosure L) := Algebra.IsIntegral.trans L
+  have : Algebra.IsIntegral (AlgebraicClosure K) (AlgebraicClosure L) :=
+    Algebra.IsIntegral.tower_top K
+  exact IsAlgClosed.algebraMap_bijective_of_isIntegral
+
 variable {K L} in
 /-- **Along an isomorphism of fields the map of absolute Galois groups is bijective.** If
 `algebraMap K L` is bijective, the embedding `Kᵃˡᵍ → Lᵃˡᵍ` is onto, since `Lᵃˡᵍ` is algebraic over
@@ -218,10 +229,7 @@ theorem bijective_absoluteGaloisGroup_mapOfAlgebra (h : Function.Bijective (alge
     Function.Bijective (Field.absoluteGaloisGroup.mapOfAlgebra K L) := by
   let φ := algebraMap (AlgebraicClosure K) (AlgebraicClosure L)
   have : Algebra.IsIntegral K L := Algebra.isIntegral_of_surjective h.2
-  have : Algebra.IsIntegral K (AlgebraicClosure L) := Algebra.IsIntegral.trans L
-  have : Algebra.IsIntegral (AlgebraicClosure K) (AlgebraicClosure L) :=
-    Algebra.IsIntegral.tower_top K
-  have hφ : Function.Bijective φ := IsAlgClosed.algebraMap_bijective_of_isIntegral
+  have hφ : Function.Bijective φ := algebraMap_algebraicClosure_bijective K L
   refine ⟨fun g₁ g₂ hg ↦ AlgEquiv.ext fun y ↦ ?_, fun τ ↦ ?_⟩
   · obtain ⟨x, rfl⟩ := hφ.2 y
     rw [← absoluteGaloisGroup_mapOfAlgebra_commutes, ← absoluteGaloisGroup_mapOfAlgebra_commutes,

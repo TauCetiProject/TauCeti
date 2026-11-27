@@ -258,8 +258,16 @@ sum over positive naturals. -/
 theorem gaussianDirichletTheta_eq_gaussianTheta (j : Fin 2) (a : ℕ → ℂ) (t : ℝ) :
     gaussianDirichletTheta j.val a t = gaussianTheta j a t := by
   rw [gaussianDirichletTheta_def, gaussianTheta_def, ← Equiv.pnatEquivNat.symm.tsum_eq]
-  simp only [gaussianMonomial, Equiv.pnatEquivNat, Equiv.coe_fn_symm_mk,
-    Nat.succPNat_coe, Nat.succ_eq_add_one]
+  simp only [gaussianMonomial, Equiv.pnatEquivNat_symm_apply, Nat.succPNat_coe, Nat.succ_eq_add_one]
+
+/-- On a positive scale, the norm of the degree-indexed Mellin integrand in degrees zero and
+one factors into a real power and the norm of the parity-indexed theta sum. -/
+theorem norm_cpow_mul_gaussianDirichletTheta (j : Fin 2) (a : ℕ → ℂ) (s : ℂ)
+    {t : ℝ} (ht : 0 < t) :
+    ‖(t : ℂ) ^ (s - 1) * gaussianDirichletTheta j.val a t‖ =
+      t ^ (s.re - 1) * ‖gaussianTheta j a t‖ := by
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht, sub_re, one_re,
+    gaussianDirichletTheta_eq_gaussianTheta]
 
 /-- The degree-indexed Gaussian theta sum is measurable in the scale. -/
 @[fun_prop] theorem measurable_gaussianDirichletTheta (j : ℕ) (a : ℕ → ℂ) :

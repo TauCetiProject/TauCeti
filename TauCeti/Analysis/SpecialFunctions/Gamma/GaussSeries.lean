@@ -180,6 +180,7 @@ private theorem digamma_ofReal_eq_gaussSeries {x : ℝ} (hx : 0 < x) :
   rw [he]
   ring
 
+
 private theorem digamma_eq_gaussSeries_of_re_pos {s : ℂ} (hs : 0 < s.re) :
     digamma s = gaussSeries s := by
   let v : ℕ → ℝ := fun n ↦ 1 + ((n : ℝ) + 1)⁻¹

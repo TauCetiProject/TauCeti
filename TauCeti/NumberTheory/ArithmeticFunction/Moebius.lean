@@ -5,6 +5,7 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 import Mathlib.Algebra.Order.Ring.Abs
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
@@ -43,7 +44,8 @@ Summing `μ²` over the divisors of `n ≠ 0` counts its squarefree divisors, gi
 behind the Dirichlet series `ζ(s)² / ζ(2s)` of `2 ^ ω`. Over an interval `L < m ≤ M` the same
 squares sum to at most `M - L` (`ArithmeticFunction.sum_Ioc_moebius_sq_le`), the Möbius coefficient
 energy of bilinear estimates. Since `|μ(n)| ≤ 1`, multiplying by `μ(n)` never increases an
-absolute value (`ArithmeticFunction.abs_moebius_mul_le`).
+absolute value (`ArithmeticFunction.abs_moebius_mul_le`) or norm
+(`ArithmeticFunction.norm_moebius_smul_le`).
 
 ## Main results
 
@@ -299,7 +301,12 @@ theorem sum_Ioc_moebius_sq_le [Ring R] [PartialOrder R] [IsOrderedRing R] (L M :
   rw [← Int.cast_pow, moebius_sq]
   split_ifs <;> simp
 
-/-! ### Absolute values -/
+/-! ### Absolute values and norms -/
+
+/-- Scaling by a value of the Möbius function does not increase the norm. -/
+theorem norm_moebius_smul_le [SeminormedAddGroup G] (n : ℕ) (a : G) :
+    ‖μ n • a‖ ≤ ‖a‖ := by
+  rcases moebius_eq_or n with h | h | h <;> simp [h]
 
 /-- Multiplying by a value of the Möbius function does not increase the absolute value:
 `|μ(n) a| ≤ |a|`, as `μ(n)` is `0` or `±1`. -/
