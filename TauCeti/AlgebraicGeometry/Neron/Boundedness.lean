@@ -44,13 +44,12 @@ open GroupScheme
 variable {R K : Type u} [CommRing R] [CommRing K] [Algebra R K]
   {P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop} {A : Over (Spec (.of K))}
 
-/-- For a regular function on the marked fibre, one denominator makes its value at every
-section over the localized base lie in the image of the base ring. -/
-theorem Model.exists_isInteger_mul_eval (M : Model P (Spec.algebraMap R K) A)
-    (D : Submonoid R) [IsLocalization D K] (hP : P (𝟙 (Spec (.of R))))
-    (b : Γ(A.left, ⊤)) : ∃ d : D, ∀ x : Over.mk (𝟙 (Spec (.of K))) ⟶ A,
-      IsLocalization.IsInteger R
-        (algebraMap R K d * (Scheme.ΓSpecIso (.of K)).hom (x.left.appTop b)) := by
+/-- After multiplication by a denominator from the base, a regular function on the marked fibre
+is the restriction of a global regular function on the model. -/
+theorem Model.exists_appTop_genericι_eq_mul (M : Model P (Spec.algebraMap R K) A)
+    (D : Submonoid R) [IsLocalization D K] (b : Γ(A.left, ⊤)) :
+    ∃ (a : Γ(M.model.left, ⊤)) (d : D), M.genericι.appTop a =
+      A.hom.appTop ((Scheme.ΓSpecIso (.of K)).inv (algebraMap R K d)) * b := by
   let _ : M.model.left.Over (Spec (.of R)) := ⟨M.model.hom⟩
   let _ : A.left.Over (Spec (.of K)) := ⟨A.hom⟩
   have := QuasiCompact.compactSpace_of_compactSpace M.model.hom
@@ -69,18 +68,27 @@ theorem Model.exists_isInteger_mul_eval (M : Model P (Spec.algebraMap R K) A)
   have := (isLocalizedModule_iff_isBaseChange D K _).2
     (isBaseChange_sectionsBaseChange H isCompact_univ isQuasiSeparated_univ htop)
   obtain ⟨⟨a, d⟩, hd⟩ := IsLocalizedModule.surj D (sectionsBaseChange H htop.le) b
-  rw [sectionsBaseChange_apply] at hd
-  have ha : M.genericι.appTop a = A.hom.appTop
-      ((Scheme.ΓSpecIso (.of K)).inv (algebraMap R K d)) * b := by
-    have happ : M.genericι.appLE ⊤ ⊤ htop.le = M.genericι.appTop := M.genericι.appLE_eq_app
-    calc
-      _ = M.genericι.appLE ⊤ ⊤ htop.le a := congr($(happ.symm) a)
-      _ = (Y.baseRingToStructurePresheaf K).app (op ⊤) (algebraMap R K d) * b := hd.symm
-      _ = _ := by
-        have hY : (Y ↘ Spec (.of K)) = A.hom := rfl
-        rw [Scheme.baseRingToStructurePresheaf_app_top, CommRingCat.ofHom_apply,
-          Scheme.Modules.baseRingToGlobalSections_apply, hY]
-  -- Evaluate the integral numerator on the section extending the given point.
+  have happ : M.genericι.appLE ⊤ ⊤ htop.le = M.genericι.appTop := M.genericι.appLE_eq_app
+  refine ⟨a, d, ?_⟩
+  calc
+    _ = (Y.baseRingToStructurePresheaf K).app (op ⊤) (algebraMap R K d) * b := by
+      rw [← happ, ← sectionsBaseChange_apply H htop.le]
+      -- The restricted scalar action of `d` is multiplication by its image on `Y`.
+      exact hd.symm
+    _ = _ := by
+      -- The local `Over` instance uses `A.hom` as the structure morphism of `Y`.
+      have hbase : (Y ↘ Spec (.of K)).appLE ⊤ ⊤ le_top = A.hom.appTop :=
+        A.hom.appLE_eq_app
+      rw [Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.comp_apply, hbase]
+
+/-- For a regular function on the marked fibre, one denominator makes its value at every
+section over the localized base lie in the image of the base ring. -/
+theorem Model.exists_isInteger_mul_eval (M : Model P (Spec.algebraMap R K) A)
+    (D : Submonoid R) [IsLocalization D K] (hP : P (𝟙 (Spec (.of R))))
+    (b : Γ(A.left, ⊤)) : ∃ d : D, ∀ x : Over.mk (𝟙 (Spec (.of K))) ⟶ A,
+      IsLocalization.IsInteger R
+        (algebraMap R K d * (Scheme.ΓSpecIso (.of K)).hom (x.left.appTop b)) := by
+  obtain ⟨a, d, ha⟩ := M.exists_appTop_genericι_eq_mul D b
   refine ⟨d, fun x ↦ ?_⟩
   obtain ⟨s, hs⟩ := (M.existsUnique_section hP x).exists
   refine ⟨(Scheme.ΓSpecIso (.of R)).hom (s.left.appTop a), ?_⟩
@@ -132,9 +140,13 @@ theorem isEmpty_model_Gm (hR : ¬ IsField R) (hP : P (𝟙 (Spec (.of R)))) :
   apply M.surjective_algebraMap_of_units_subset_range R⁰ hP
     (Gm.pointsMulEquiv G (𝟙 G) : Γ(G.left, ⊤))
   intro u
-  let x := (Gm.pointsMulEquiv (Over.mk (𝟙 (Spec (.of K))))).symm u
-  exact ⟨x, by simpa [x, G] using (congrArg Units.val
-    (Gm.pointsMulEquiv_naturality x (𝟙 G))).symm⟩
+  let T := Over.mk (𝟙 (Spec (.of K)))
+  let x := (Gm.pointsMulEquiv T).symm u
+  refine ⟨x, ?_⟩
+  calc
+    _ = (Gm.pointsMulEquiv T (x ≫ 𝟙 G) : Γ(T.left, ⊤)) :=
+      (congrArg Units.val (Gm.pointsMulEquiv_naturality x (𝟙 G))).symm
+    _ = _ := by rw [Category.comp_id, MulEquiv.apply_symm_apply]
 
 /-- A positive-rank split torus over the fraction field of a domain that is not a field admits
 no finite-type marked model for a test class containing the base. -/
