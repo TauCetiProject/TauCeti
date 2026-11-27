@@ -14,9 +14,9 @@ import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 # Tests of place-constant functions with the conjugation relation
 
 `K = ℚ(i)`, here any `4`-th cyclotomic extension of `ℚ`, and a prime `p ≡ 3 mod 4`. The prime
-`p` is inert in `K`: it is unramified with inertia degree `2`, so by the cyclotomic splitting law
-(`TauCeti.NumberField.ncard_primesOver_mul_orderOf_eq_totient`) a single place of `K` lies above
-`p`. A function `m` on the embeddings `K →+* Ω` with `m(c ∘ τ) + m(τ) = w` for every complex
+`p` is inert in `K`: it is unramified with inertia degree `2`, so by the splitting law of `ℚ(i)`
+(`TauCeti.NumberField.ncard_primesOver_eq_one_of_mod_four_eq_three`) a single place of `K` lies
+above `p`. A function `m` on the embeddings `K →+* Ω` with `m(c ∘ τ) + m(τ) = w` for every complex
 conjugation `c`, whose value at `τ` depends only on the place above `p` induced by `τ`, is
 therefore constant, and `2 m(τ) = w` on both embeddings: the half-weight conclusion of
 Lawrence–Venkatesh (§2.4, proof of Lemma 2.8) at an inert prime.
@@ -25,7 +25,8 @@ At a prime `p ≡ 1 mod 4` the conclusion fails, so the hypothesis on the place 
 `p` splits into two places of `K`, and with `Ω = K`, the embedding `id` sent to one place and the
 complex conjugation to the other, the exponents `m(id) = 1`, `m(conj) = 0` (those of the CM
 elliptic curve with multiplication by `ℤ[i]`) satisfy `m(c ∘ τ) + m(τ) = 1` and are constant on
-places, while `2 m(τ) ≠ 1`.
+places. The conclusion `2 m(τ) = 1` has no solution in `ℤ`, so the content is that exponents
+satisfying every other hypothesis with `w = 1` exist at such a prime.
 
 ## References
 
@@ -43,15 +44,6 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
   {Ω : Type*} [Field Ω] [CharZero Ω] [Normal ℚ Ω]
   {A : Type*} [AddRightCancelMonoid A] {m : (K →+* Ω) → A} {w : A}
 
-/-- For a prime `p ≠ 2`, the number of places of `K = ℚ(i)` above `p` times the order of `p`
-modulo `4` is `φ(4) = 2`. -/
-private theorem ncard_primesOver_mul_orderOf_eq_two (p : ℕ) [Fact p.Prime] (hp : p ≠ 2) :
-    ((Ideal.span {(p : ℤ)}).primesOver (𝓞 K)).ncard * orderOf (p : ZMod 4) = 2 := by
-  have h4 : ¬p ∣ 4 := fun h' ↦ hp <| (Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp <|
-    (Fact.out : p.Prime).dvd_of_dvd_pow (n := 2) h'
-  rw [ncard_primesOver_mul_orderOf_eq_totient (K := K) p h4]
-  decide
-
 /-- **`ℚ(i)` at `p ≡ 3 mod 4`: `2 m = w` on both embeddings.** Let `m` be a function on the
 embeddings `K →+* Ω` with `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c`, constant on
 the fibres of a map `v` sending each embedding to a place of `K` above `p`. Then `2 m(τ) = w` for
@@ -61,14 +53,8 @@ theorem two_nsmul_eq_of_mod_four_eq_three (p : ℕ) [Fact p.Prime] (h : p % 4 = 
     (v : (K →+* Ω) → HeightOneSpectrum (𝓞 K))
     (hvp : ∀ τ, (v τ).asIdeal.LiesOver (Ideal.span {(p : ℤ)}))
     (hv : ∀ τ τ', v τ = v τ' → m τ = m τ') (τ : K →+* Ω) : 2 • m τ = w := by
-  -- `p` has order `2 = φ(4)` modulo `4`, so a single place of `K` lies above `p`.
-  have hf : orderOf (p : ZMod 4) = 2 := by
-    rw [← ZMod.natCast_mod, h]
-    exact orderOf_eq_prime (by decide) (by decide)
-  have key := ncard_primesOver_mul_orderOf_eq_two (K := K) p (by omega)
-  rw [hf] at key
-  have hone : ((Ideal.span {(p : ℤ)}).primesOver (𝓞 K)).ncard = 1 := by omega
-  obtain ⟨P, hP⟩ := Set.ncard_eq_one.mp hone
+  -- `p` is inert: a single place of `K` lies above `p`.
+  obtain ⟨P, hP⟩ := Set.ncard_eq_one.mp (ncard_primesOver_eq_one_of_mod_four_eq_three (K := K) p h)
   obtain ⟨c, hc⟩ := complexConjugations_nonempty Ω
   have hvP (τ' : K →+* Ω) : (v τ').asIdeal = P := by
     have : (v τ').asIdeal ∈ (Ideal.span {(p : ℤ)}).primesOver (𝓞 K) :=
@@ -85,22 +71,20 @@ theorem two_nsmul_eq_of_mod_four_eq_three (p : ℕ) [Fact p.Prime] (h : p % 4 = 
 section Split
 
 /-- **The `p ≡ 3 mod 4` hypothesis of `two_nsmul_eq_of_mod_four_eq_three` is needed.** For
-`K = ℚ(i)`, `Ω = K` and a prime `p ≡ 1 mod 4`, there are `m` with `m(id) = 1` and `m = 0` at the
-complex conjugation, and `v` sending the two embeddings to the two places above `p`, such that
-`m(c ∘ τ) + m(τ) = 1` for every complex conjugation `c` and `m` is constant on the fibres of `v`;
-yet `2 m(τ) ≠ 1` for every `τ`. -/
+`K = ℚ(i)`, `Ω = K`, `w = 1` and a prime `p ≡ 1 mod 4`, there are `m : (K →+* K) → ℤ` with
+`m(id) = 1` and `v` sending each embedding to a place above `p`, such that `m(c ∘ τ) + m(τ) = 1`
+for every complex conjugation `c` and `m` is constant on the fibres of `v`: every other hypothesis
+of `two_nsmul_eq_of_mod_four_eq_three` holds. Its conclusion `2 m(τ) = 1` fails for every `τ`,
+since `2 n = 1` has no solution `n : ℤ`; the content is the existence of `m` and `v`. -/
 theorem exists_not_two_nsmul_eq_of_mod_four_eq_one (p : ℕ) [Fact p.Prime] (h : p % 4 = 1) :
     ∃ (m : (K →+* K) → ℤ) (v : (K →+* K) → HeightOneSpectrum (𝓞 K)),
       (∀ c ∈ complexConjugations K, ∀ τ, m ((c : K →+* K).comp τ) + m τ = 1) ∧
       (∀ τ, (v τ).asIdeal.LiesOver (Ideal.span {(p : ℤ)})) ∧
       (∀ τ τ', v τ = v τ' → m τ = m τ') ∧ m (RingHom.id K) = 1 ∧ ∀ τ, 2 • m τ ≠ 1 := by
   classical
-  -- `p` has order `1` modulo `4`, so two places of `K` lie above `p`.
-  have hf : orderOf (p : ZMod 4) = 1 := by
-    rw [← ZMod.natCast_mod, h, Nat.cast_one, orderOf_one]
-  have key := ncard_primesOver_mul_orderOf_eq_two (K := K) p (by omega)
-  rw [hf, mul_one] at key
-  obtain ⟨P₁, P₂, hne, hP⟩ := Set.ncard_eq_two.mp key
+  -- `p` splits: two places of `K` lie above `p`.
+  obtain ⟨P₁, P₂, hne, hP⟩ :=
+    Set.ncard_eq_two.mp (ncard_primesOver_eq_two_of_mod_four_eq_one (K := K) p h)
   have hp0 : Ideal.span {(p : ℤ)} ≠ ⊥ := by simpa using (Fact.out : p.Prime).ne_zero
   have hP₁ : P₁ ∈ (Ideal.span {(p : ℤ)}).primesOver (𝓞 K) := hP ▸ Set.mem_insert _ _
   have hP₂ : P₂ ∈ (Ideal.span {(p : ℤ)}).primesOver (𝓞 K) := hP ▸ Set.mem_insert_of_mem _ rfl

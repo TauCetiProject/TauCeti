@@ -59,6 +59,9 @@ inert although `2 ∣ 6`, and in `ℚ(ζ₂) = ℚ` the prime `2` splits complet
   prime `p` is inert iff `p ∤ n` and `p` has order `φ(n)` modulo `n`;
   `isPrime_span_natCast_iff_orderOf_eq_totient_of_mod_four_eq_two` is the version for
   `n ≡ 2 mod 4`.
+* `TauCeti.NumberField.ncard_primesOver_eq_one_of_mod_four_eq_three` and
+  `TauCeti.NumberField.ncard_primesOver_eq_two_of_mod_four_eq_one`: in `ℚ(i)`, one prime lies
+  above `p ≡ 3 mod 4` and two primes lie above `p ≡ 1 mod 4`.
 * `TauCeti.NumberField.inertiaDeg_dvd_totient_of_not_dvd` and
   `TauCeti.NumberField.not_dvd_inertiaDeg_of_not_dvd`: for `p ∤ m` and a maximal ideal `P` of
   `𝓞 K` over `p`, `P.inertiaDeg ℤ` divides `φ(m)`, and hence `m ∤ P.inertiaDeg ℤ` when `m > 1`.
@@ -282,6 +285,31 @@ theorem ncard_primesOver_mul_orderOf_eq_totient {m : ℕ} [IsCyclotomicExtension
     [Fact p.Prime] (hm : ¬ p ∣ m) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * orderOf (p : ZMod m) = Nat.totient m :=
   ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul (k := 0) (by rw [pow_zero, one_mul]) hm
+
+section Four
+
+variable [IsCyclotomicExtension {4} ℚ K]
+
+/-- **A prime `p ≡ 3 mod 4` is inert in `ℚ(i)`.** A single prime lies above `p` in a `4`-th
+cyclotomic field over `ℚ`: `p` has order `2 = φ(4)` modulo `4`. -/
+theorem ncard_primesOver_eq_one_of_mod_four_eq_three (p : ℕ) [hp : Fact p.Prime] (h : p % 4 = 3) :
+    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 1 := by
+  have h4 : ¬p ∣ 4 := fun h' ↦ by
+    have := (Nat.prime_dvd_prime_iff_eq hp.out Nat.prime_two).mp (hp.out.dvd_of_dvd_pow (n := 2) h')
+    omega
+  have key := ncard_primesOver_mul_orderOf_eq_totient (K := K) p h4
+  rw [← ZMod.natCast_mod, h, show orderOf ((3 : ℕ) : ZMod 4) = 2 from
+    orderOf_eq_prime (by decide) (by decide), show Nat.totient 4 = 2 by decide] at key
+  omega
+
+/-- **A prime `p ≡ 1 mod 4` splits in `ℚ(i)`.** Two primes lie above `p` in a `4`-th cyclotomic
+field over `ℚ`. This is `ncard_primesOver_eq_totient_iff` at `n = 4`. -/
+theorem ncard_primesOver_eq_two_of_mod_four_eq_one (p : ℕ) [Fact p.Prime] (h : p % 4 = 1) :
+    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 2 := by
+  rw [← show Nat.totient 4 = 2 by decide, ncard_primesOver_eq_totient_iff (by decide),
+    ← ZMod.natCast_mod, h, Nat.cast_one]
+
+end Four
 
 /-- **The residue degree of an unramified prime divides `φ(m)`.** For a maximal ideal `P` of `𝓞 K`
 lying over `(p)` with `p ∤ m` in an `m`-th cyclotomic field `K` over `ℚ`, the inertia degree
