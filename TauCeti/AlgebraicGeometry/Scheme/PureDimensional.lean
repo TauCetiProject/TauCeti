@@ -39,7 +39,8 @@ All in the namespace `TauCeti.AlgebraicGeometry`:
   are the points with `trdeg_k κ(x) = d`.
 * `mem_minimalPrimes_stalk_of_le_trdeg`: a prime of `𝒪_{X,x}` whose residue field has
   transcendence degree at least `d` over `k` is a minimal prime.
-* `ringKrullDim_stalk_eq_of_isPureDimensional`: at a closed point `x`, `dim 𝒪_{X,x} = d`.
+* `ringKrullDim_stalk_eq_of_isPureDimensional_of_isClosed`: at a closed point `x`,
+  `dim 𝒪_{X,x} = d`.
 
 ## References
 
@@ -56,37 +57,6 @@ open CategoryTheory AlgebraicGeometry Topology IsLocalRing
 namespace TauCeti.AlgebraicGeometry
 
 universe u
-
-section ResidueFieldComap
-
-variable {k : Type u} [CommRing k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
-
-/-- For a generization `η ⤳ x`, the residue field of the prime of `𝒪_{X,x}` lying under the
-maximal ideal of `𝒪_{X,η}` embeds into `κ(η)` over `k`, so its transcendence degree is at most
-that of `κ(η)`. -/
-private theorem trdeg_residueField_comap_le {x η : X} (hηx : η ⤳ x)
-    (P : Ideal (X.presheaf.stalk x)) [P.IsPrime]
-    (hP : (maximalIdeal (X.presheaf.stalk η)).comap (X.presheaf.stalkSpecializes hηx).hom = P) :
-    Algebra.trdeg k P.ResidueField ≤ Algebra.trdeg k (X.residueField η) := by
-  -- The specialization map followed by the residue map is a `k`-algebra map `𝒪_{X,x} → κ(η)`.
-  have hcomm : X.presheaf.germ ⊤ x trivial ≫ X.presheaf.stalkSpecializes hηx ≫ X.residue η =
-      X.presheaf.germ ⊤ η trivial ≫ X.residue η :=
-    X.presheaf.germ_stalkSpecializes_assoc trivial hηx (X.residue η)
-  let f : X.presheaf.stalk x →ₐ[k] X.residueField η :=
-    { toRingHom := (X.presheaf.stalkSpecializes hηx ≫ X.residue η).hom
-      commutes' c := by
-        simp only [Scheme.algebraMap_stalk_eq_baseRingToStalk, Scheme.baseRingToStalk_apply,
-          Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk, RingHom.comp_apply]
-        exact congr($hcomm (Scheme.Modules.baseRingToGlobalSections k X c)) }
-  have hker (a : X.presheaf.stalk x) : f a = 0 ↔ a ∈ P := by
-    -- `f a` is by definition the residue of the image of `a` in `𝒪_{X,η}`.
-    rw [← hP, Ideal.mem_comap, ← residue_eq_zero_iff]
-    rfl
-  let g := Ideal.ResidueField.liftₐ P f (fun a ha ↦ (hker a).mpr ha)
-    (fun a ha ↦ (isUnit_iff_ne_zero.mpr fun h0 ↦ ha ((hker a).mp h0)))
-  exact trdeg_le_of_injective g g.toRingHom.injective
-
-end ResidueFieldComap
 
 variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
   [LocallyOfFiniteType (X ↘ Spec (.of k))] {d : ℕ}
@@ -150,20 +120,20 @@ theorem mem_minimalPrimes_stalk_of_le_trdeg (h : IsPureDimensional d X) (x : X)
     (hP : (d : Cardinal) ≤ Algebra.trdeg k P.ResidueField) :
     P ∈ minimalPrimes (X.presheaf.stalk x) := by
   -- `P` is the prime of a generization `η` of `x`, of codimension the height of `P`.
-  obtain ⟨η, hcoh, hηx, hηP⟩ :=
+  obtain ⟨η, hcoh, hηx, rfl⟩ :=
     Scheme.exists_specializes_and_comap_stalkSpecializes_maximalIdeal_eq P
   have hη : η ∈ genericPoints X :=
     (mem_genericPoints_iff_trdeg_residueField_eq k h η).mpr <|
       (trdeg_residueField_le_of_isPureDimensional k h η).antisymm
-        (hP.trans (trdeg_residueField_comap_le hηx P hηP))
+        (hP.trans (Scheme.residueFieldAlgEquivOfSpecializes k hηx).trdeg_eq.le)
   rw [← Ideal.height_eq_zero_iff, ← hcoh, Order.coheight_eq_zero]
   exact fun y hy ↦ (TauCeti.mem_genericPoints_iff.mp hη y hy).le
 
 include k in
 /-- **Local rings at closed points of a pure-dimensional scheme.** On a scheme locally of finite
 type over a field and pure of dimension `d`, the local ring at a closed point has dimension `d`. -/
-theorem ringKrullDim_stalk_eq_of_isPureDimensional (h : IsPureDimensional d X) {x : X}
-    (hx : IsClosed {x}) : ringKrullDim (X.presheaf.stalk x) = d := by
+theorem ringKrullDim_stalk_eq_of_isPureDimensional_of_isClosed (h : IsPureDimensional d X)
+    {x : X} (hx : IsClosed {x}) : ringKrullDim (X.presheaf.stalk x) = d := by
   -- A closed point has no proper specialization, so its closure has dimension zero.
   have hmin : IsMin x := fun y (hy : x ⤳ y) ↦ (Set.mem_singleton_iff.mp (hy.mem_closed hx rfl)).ge
   have hdim := topologicalKrullDimAt_eq_ringKrullDim_stalk_add_topologicalKrullDim_closure k x
