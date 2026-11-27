@@ -373,12 +373,9 @@ theorem isRoot_of_glnHeckePolynomial_star_mul_eq {N : ℕ} {q : ℝ} {t : Fin (N
     refine sum_congr rfl fun d _ ↦ mul_right_cancel₀ (pow_ne_zero d.val hqC) ?_
     have hN : N = d.val + d.rev.val := by simp [Fin.val_rev]; omega
     have h_exp : N.choose 2 + d.val.choose 2 + d.val = d.rev.val.choose 2 + N * d.val := by
-      have h2a : ∀ a : ℕ, 2 * a.choose 2 + a = a * a := fun a ↦ by
-        induction a with
-        | zero => simp
-        | succ k ih => simp [Nat.choose_succ_succ]; linarith
+      have hsq : 2 * d.val.choose 2 + d.val = d.val * d.val := by
+        simpa [sq] using Nat.two_mul_choose_two_add_mul d.val 1
       have hadd := Nat.add_choose_two d.val d.rev.val
-      have hsq := h2a d.val
       have hNc : N.choose 2 = (d.val + d.rev.val).choose 2 := congrArg (·.choose 2) hN
       have hNm : N * d.val = (d.val + d.rev.val) * d.val := congrArg (· * d.val) hN
       nlinarith
