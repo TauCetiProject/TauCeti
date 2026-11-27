@@ -236,6 +236,9 @@ private noncomputable def quotAugmentationIdeal (c : ℕ) :
     Ideal (_root_.UniversalEnvelopingAlgebra ℚ 𝔣 ⧸ J ^ (c + 1)) :=
   Ideal.map (Ideal.Quotient.mk (J ^ (c + 1))) J
 
+private theorem quotAugmentationIdeal_def (c : ℕ) :
+    quotAugmentationIdeal c = Ideal.map (Ideal.Quotient.mk (J ^ (c + 1))) J := rfl
+
 private theorem mk_ι_mem_quotAugmentationIdeal (c : ℕ) (x : 𝔣) :
     Ideal.Quotient.mk (J ^ (c + 1)) (ι x) ∈ quotAugmentationIdeal c :=
   Ideal.mem_map_of_mem _
@@ -258,9 +261,8 @@ theorem bchElement_one :
       (mk_ι_mem_quotAugmentationIdeal 1 X) (mk_ι_mem_quotAugmentationIdeal 1 Y)]
   have hcomm : Ideal.Quotient.mk (J ^ (1 + 1)) (ι X) * Ideal.Quotient.mk (J ^ (1 + 1)) (ι Y) -
       Ideal.Quotient.mk (J ^ (1 + 1)) (ι Y) * Ideal.Quotient.mk (J ^ (1 + 1)) (ι X) = 0 := by
-    rw [← Ideal.mem_bot, ← Ideal.map_mk_pow_self J 2]
-    change _ ∈ quotAugmentationIdeal 1 ^ 2
-    rw [Submodule.pow_succ (quotAugmentationIdeal 1), Submodule.pow_one]
+    rw [← Ideal.mem_bot, ← Ideal.map_mk_pow_self J (1 + 1), ← quotAugmentationIdeal_def 1,
+      Submodule.pow_succ (quotAugmentationIdeal 1), Submodule.pow_one]
     exact Submodule.sub_mem _
       (Ideal.mul_mem_mul (mk_ι_mem_quotAugmentationIdeal 1 X)
         (mk_ι_mem_quotAugmentationIdeal 1 Y))
@@ -268,21 +270,6 @@ theorem bchElement_one :
         (mk_ι_mem_quotAugmentationIdeal 1 X))
   simp only [map_add, lowerCentralQuotientι_mk, LieRing.of_associative_ring_bracket, hcomm,
     smul_zero, add_zero]
-
-local notation "q0(" c ")" =>
-  (LieSubmodule.Quotient.mk X : 𝔣 ⧸ LieModule.lowerCentralSeries ℚ 𝔣 𝔣 c)
-local notation "q1(" c ")" =>
-  (LieSubmodule.Quotient.mk Y : 𝔣 ⧸ LieModule.lowerCentralSeries ℚ 𝔣 𝔣 c)
-
-/-- At class `2`, `bchElement 2` is `X + Y + (1 / 2) • ⁅X, Y⁆`. -/
-theorem bchElement_two : bchElement 2 = q0(2) + q1(2) + (1 / 2 : ℚ) • ⁅q0(2), q1(2)⁆ := by
-  symm
-  apply lowerCentralQuotientι_injective ℚ (Fin 2) (ι_injective ℚ 𝔣) 2
-  rw [lowerCentralQuotientι_bchElement,
-    Ideal.log_exp_mul_exp_of_pow_three_eq_bot (quotAugmentationIdeal 2)
-      (Ideal.map_mk_pow_self J 3)
-      (mk_ι_mem_quotAugmentationIdeal 2 X) (mk_ι_mem_quotAugmentationIdeal 2 Y)]
-  simp only [map_add, map_smul, LieHom.map_lie, lowerCentralQuotientι_mk]
 
 /-- **The Baker–Campbell–Hausdorff element through degree three**: the element of class three is
 `X + Y + ½ ⁅X, Y⁆ + 1/12 (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆)`. -/
@@ -300,5 +287,18 @@ theorem bchElement_three :
     ← Ideal.exp_bch_of_pow_four_eq_bot _ hI (hmem X) (hmem Y)]
   simp only [map_add, map_smul, LieHom.map_lie, Ring.lie_def, map_add, map_sub,
     map_mul, map_rat_smul]
+
+/-- The Baker–Campbell–Hausdorff element of class two is the class of `X + Y + ½ ⁅X, Y⁆`. -/
+theorem bchElement_two :
+    bchElement 2 = LieSubmodule.Quotient.mk (X + Y + (1 / 2 : ℚ) • ⁅X, Y⁆) := by
+  rw [← factor_bchElement (show 2 ≤ 3 by norm_num), bchElement_three, LieIdeal.factor_apply]
+  refine (Submodule.Quotient.eq _).mpr ?_
+  have hmem : ∀ a b c : 𝔣, ⁅a, ⁅b, c⁆⁆ ∈ LieModule.lowerCentralSeries ℚ 𝔣 𝔣 2 := fun a b c => by
+    rw [LieModule.lowerCentralSeries_succ, LieModule.lowerCentralSeries_succ,
+      LieModule.lowerCentralSeries_zero]
+    exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top a)
+      (LieSubmodule.lie_mem_lie (LieSubmodule.mem_top b) (LieSubmodule.mem_top c))
+  rw [add_sub_cancel_left]
+  exact Submodule.smul_mem _ _ (add_mem (hmem _ _ _) (hmem _ _ _))
 
 end TauCeti.FreeLieAlgebra

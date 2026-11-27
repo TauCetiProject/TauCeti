@@ -53,9 +53,7 @@ theorem tensorGrading_def (p : Γ × Γ) :
 of `U(L) ⊗[R] U(L)`. -/
 theorem isInternal_tensorGrading [DecidableEq Γ] [GradedLieAlgebra ℒ] :
     _root_.DirectSum.IsInternal (tensorGrading ℒ) := by
-  rw [show tensorGrading ℒ = fun p => Submodule.map₂ (TensorProduct.mk R U U)
-      (homogeneousSubmodule ℒ p.1) (homogeneousSubmodule ℒ p.2) from
-    funext (tensorGrading_def ℒ)]
+  rw [funext (tensorGrading_def ℒ)]
   exact _root_.DirectSum.IsInternal.tensorProduct _ _
     (isInternal_homogeneousSubmodule ℒ) (isInternal_homogeneousSubmodule ℒ)
 

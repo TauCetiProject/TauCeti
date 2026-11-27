@@ -158,6 +158,13 @@ theorem smulLeftDualCLM_add (f g : C^∞⟮I, M; ℝ⟯) :
   ext T s
   simp [smulLeftCLM_add]
 
+/-- Multiplication of functionals by a finite sum of functions is the sum of the multiplications. -/
+theorem smulLeftDualCLM_sum {ι : Type*} (s : Finset ι) (f : ι → C^∞⟮I, M; ℝ⟯) :
+    smulLeftDualCLM (∑ i ∈ s, f i) =
+      (∑ i ∈ s, smulLeftDualCLM (f i) : (BundleTest I F V →L_c[ℝ] W) →L[ℝ] _) :=
+  map_sum (AddMonoidHom.mk' (fun g : C^∞⟮I, M; ℝ⟯ ↦
+    (smulLeftDualCLM g : (BundleTest I F V →L_c[ℝ] W) →L[ℝ] _)) smulLeftDualCLM_add) f s
+
 /-- A smooth multiple of a point mass is a point mass: `f δ_x ℓ = f(x) δ_x ℓ`. -/
 @[simp]
 theorem smulLeftDualCLM_delta (f : C^∞⟮I, M; ℝ⟯) (x : M) (ℓ : V x →L[ℝ] W) :

@@ -22,6 +22,11 @@ elements can be studied through the homogeneous pieces of the free Lie algebra. 
 of degree tails, `TauCeti.FreeLieAlgebra.degreeTail_eq_lowerCentralSeries` states that the degree
 tail of word length at least `c + 1` is the `c`-th term of the lower central series.
 
+On the free Lie algebra on two generators, evaluation at a pair `(x, y)` whose bracket `⁅x, y⁆`
+commutes with `x` and `y` kills the second term of the lower central series
+(`TauCeti.FreeLieAlgebra.lowerCentralSeries_two_le_ker_lift`). This is what reduces the BCH
+product of such a pair to its terms of degree at most two.
+
 Adapted from `Mei/Algebra/Lie/Free/LowerCentral.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `68536122a97fed8e87bc6870b9427151971b9ab2` (Apache 2.0). The degree-tail form
@@ -134,5 +139,43 @@ theorem naturals_degreeIdeal_eq_lowerCentralSeries (S : Type*) (c : ℕ) :
     lowerCentralSeries_toSubmodule_eq_iSup, iSup_subtype]
   refine iSup_congr fun n => iSup_congr_Prop ?_ fun _ => rfl
   simp [Nat.cast_lt]
+
+section ClassTwo
+
+variable {R} {L : Type*} [LieRing L] [LieAlgebra R L]
+
+/-- If `⁅x, y⁆` commutes with `x` and `y`, then evaluation at `(x, y)` kills the second term of
+the lower central series of the free Lie algebra on two generators. -/
+theorem lowerCentralSeries_two_le_ker_lift {x y : L} (hx : ⁅x, ⁅x, y⁆⁆ = 0)
+    (hy : ⁅y, ⁅x, y⁆⁆ = 0) :
+    LieModule.lowerCentralSeries R (_root_.FreeLieAlgebra R (Fin 2))
+      (_root_.FreeLieAlgebra R (Fin 2)) 2 ≤ (_root_.FreeLieAlgebra.lift R ![x, y]).ker := by
+  set f := _root_.FreeLieAlgebra.lift R ![x, y]
+  -- The evaluation factors through the Lie subalgebra spanned by `x`, `y` and `⁅x, y⁆`.
+  let K : LieSubalgebra R L :=
+    { Submodule.span R {x, y, ⁅x, y⁆} with
+      lie_mem' := fun {u v} hu hv =>
+        Submodule.span_mono (by simp) (lie_mem_span_singleton_of_mem_span hx hy hu hv) }
+  have hK (a : _root_.FreeLieAlgebra R (Fin 2)) : f a ∈ Submodule.span R {x, y, ⁅x, y⁆} := by
+    have hφ : f = K.incl.comp (_root_.FreeLieAlgebra.lift R
+        ![⟨x, Submodule.subset_span (by simp)⟩, ⟨y, Submodule.subset_span (by simp)⟩]) := by
+      rw [comp_lift_pair]
+      simp only [f, LieSubalgebra.coe_incl]
+    rw [hφ]
+    exact SetLike.coe_mem _
+  -- The first term of the lower central series maps into `R ∙ ⁅x, y⁆`, the second to zero.
+  have h₁ := toSubmodule_lowerCentralSeries_succ_le (k := 0)
+    (N := (R ∙ ⁅x, y⁆).comap f.toLinearMap) fun a b _ => by
+      rw [Submodule.mem_comap, LieHom.coe_toLinearMap, LieHom.map_lie]
+      exact lie_mem_span_singleton_of_mem_span hx hy (hK a) (hK b)
+  have h₂ := toSubmodule_lowerCentralSeries_succ_le (k := 1) (N := f.ker.toSubmodule)
+    fun a b hb => by
+      obtain ⟨q, hq⟩ := Submodule.mem_span_singleton.mp (h₁ hb)
+      rw [LieSubmodule.mem_toSubmodule, LieHom.mem_ker, LieHom.map_lie]
+      rw [LieHom.coe_toLinearMap] at hq
+      rw [← hq, lie_smul, lie_lie_eq_zero_of_mem_span hx hy (hK a), smul_zero]
+  exact (LieSubmodule.toSubmodule_le_toSubmodule _ _).mp h₂
+
+end ClassTwo
 
 end TauCeti.FreeLieAlgebra

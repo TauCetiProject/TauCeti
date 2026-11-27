@@ -203,6 +203,13 @@ theorem lie_soThreeEquiv_single_two_zero :
   ext i
   fin_cases i <;> simp [cross_apply]
 
+/-- **`so(3)` is not abelian**: `⁅ê₁, ê₂⁆ = ê₀ ≠ 0`. -/
+theorem not_isLieAbelian_so_three : ¬IsLieAbelian (so (Fin 3) R) := fun _ ↦ by
+  have : Nontrivial R := nontrivial_of_ne 2 0 two_ne_zero
+  have h := lie_soThreeEquiv_single_one_two (R := R)
+  rw [trivial_lie_zero, eq_comm, (soThreeEquiv R).map_eq_zero_iff] at h
+  simpa using congrFun h 0
+
 /-- The orthogonal Lie algebra `so(3)` has dimension `3`. -/
 theorem finrank_so_three : finrank R (so (Fin 3) R) = 3 := by
   have : Nontrivial R := nontrivial_of_ne 2 0 two_ne_zero
