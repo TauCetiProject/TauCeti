@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import TauCeti.MeasureTheory.Function.Lp.One
 import Mathlib.Analysis.InnerProductSpace.Continuous
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -46,6 +47,8 @@ integration-by-parts arguments:
   `‖B.lpPairing μ p q g f‖ ≤ ‖B‖ * ‖g‖ * ‖f‖` for the integral pairing of a bilinear map `B`.
 * `ContinuousLinearMap.norm_lpPairing_le`: the Hölder pairing induced by a continuous bilinear map
   `B` has norm at most `‖B‖`.
+* `ContinuousLinearMap.lpPairing_indicatorConstLp`: pairing with the indicator function of a set
+  `s` with value `y` is the integral of `B (g x) y` over `s`.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
 * `TauCeti.eNorm_integral_smul_sub_integral_smul_le`: against an integrable weight, the integrals
@@ -257,6 +260,17 @@ theorem norm_lpPairing_apply_apply_le (B : E →L[𝕜] F →L[𝕜] G) (g : Lp 
 pairing induced by a continuous bilinear map `B` has norm at most `‖B‖`. -/
 theorem norm_lpPairing_le (B : E →L[𝕜] F →L[𝕜] G) : ‖B.lpPairing μ p q‖ ≤ ‖B‖ :=
   opNorm_le_bound₂ _ (norm_nonneg B) B.norm_lpPairing_apply_apply_le
+
+/-- Pairing `g ∈ Lᵖ(μ; E)` through `B` with the indicator function of a set `s` of finite measure
+with value `y` gives the integral of `B (g x) y` over `s`. -/
+theorem lpPairing_indicatorConstLp (B : E →L[𝕜] F →L[𝕜] G) (g : Lp E p μ) {s : Set α}
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (y : F) :
+    B.lpPairing μ p q g (indicatorConstLp q hs hμs y) = ∫ x in s, B (g x) y ∂μ := by
+  rw [lpPairing_eq_integral, ← integral_indicator hs]
+  refine integral_congr_ae ?_
+  filter_upwards [indicatorConstLp_coeFn (p := q) (hs := hs) (hμs := hμs) (c := y)] with x hx
+  rw [hx]
+  by_cases hxs : x ∈ s <;> simp [hxs]
 
 end ContinuousLinearMap
 

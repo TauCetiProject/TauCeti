@@ -70,27 +70,6 @@ open scoped ENNReal
 
 namespace ContinuousLinearMap
 
-section Indicator
-
-variable {α 𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] {mα : MeasurableSpace α}
-  {μ : Measure α} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
-  [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace ℝ G]
-  [SMulCommClass ℝ 𝕜 G] [CompleteSpace G] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-  [p.HolderConjugate q]
-
-/-- Pairing `g ∈ Lᵖ(μ; E)` through `B` with the indicator function of a set `s` of finite measure
-with value `y` gives the integral of `B (g x) y` over `s`. -/
-theorem lpPairing_indicatorConstLp (B : E →L[𝕜] F →L[𝕜] G) (g : Lp E p μ) {s : Set α}
-    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (y : F) :
-    B.lpPairing μ p q g (indicatorConstLp q hs hμs y) = ∫ x in s, B (g x) y ∂μ := by
-  rw [lpPairing_eq_integral, ← integral_indicator hs]
-  refine integral_congr_ae ?_
-  filter_upwards [indicatorConstLp_coeFn (p := q) (hs := hs) (hμs := hμs) (c := y)] with x hx
-  rw [hx]
-  by_cases hxs : x ∈ s <;> simp [hxs]
-
-end Indicator
-
 variable {α 𝕜 E F : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {μ : Measure α}
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
