@@ -10,8 +10,10 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Normed.Module.CoveringNumber
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -64,6 +66,8 @@ exact form of the bounded-overlap count.
 * `MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm_of_dist_le`:
   off-centre Chebyshev point selection on a ball `B(q', r)` from the `Lᵖ` norm on `B(q, r)` when
   `dist q' q ≤ r / 2`.
+* `TauCeti.toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall`: covering `closedBall x₀ r`
+  by balls of radius `s` upgrades uniform finite local `Lᵖ` bounds to a bound on `B(x₀, r)`.
 -/
 
 public section
@@ -446,5 +450,43 @@ theorem _root_.MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal
         dsimp only [G]
         gcongr
     _ = 2 ^ ((finrank ℝ E : ℝ) / p) * mu.real (ball (0 : E) 1) ^ (-p⁻¹) * G := by ring
+
+section Covering
+
+variable {E ε : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [TopologicalSpace ε] [ENorm ε]
+  [TopologicalSpace.PseudoMetrizableSpace ε]
+
+/-- **Covering bound for `eLpNorm` on a ball.** Let `E` be a finite-dimensional real normed space
+and `0 < p < ∞`. If `r ≥ 0`, `s > 0`, and on every ball `B(c, s)` with `c ∈ closedBall x₀ r` the
+function `f` has finite `Lᵖ` seminorm at most `B ≥ 0`, then covering `closedBall x₀ r` by at most
+`(1 + 4 r / s) ^ dim E` balls `B(c, s)` gives
+
+`(eLpNorm f p (μ.restrict (ball x₀ r))).toReal ≤ ((1 + 4 r / s) ^ dim E) ^ (1 / p.toReal) * B`. -/
+theorem toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall {μ : Measure E} (f : E → ε)
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {x₀ : E} {r s B : ℝ} (hr : 0 ≤ r) (hs : 0 < s)
+    (hB : 0 ≤ B)
+    (hfin : ∀ c ∈ closedBall x₀ r, eLpNorm f p (μ.restrict (ball c s)) ≠ ∞)
+    (hle : ∀ c ∈ closedBall x₀ r, (eLpNorm f p (μ.restrict (ball c s))).toReal ≤ B) :
+    (eLpNorm f p (μ.restrict (ball x₀ r))).toReal ≤
+      ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * B := by
+  set ε₀ : ℝ≥0 := NNReal.mk (s / 2) (half_pos hs).le
+  have hε₀ : ε₀ ≠ 0 := mt (congrArg NNReal.toReal) (half_pos hs).ne'
+  obtain ⟨S, hSsub, hScov, hScard⟩ := exists_finset_isCover_of_subset_closedBall
+    (r := NNReal.mk r hr) hε₀ (Set.Subset.rfl : closedBall x₀ r ⊆ _)
+  have hS_le : (S.card : ℝ) ≤ (1 + 4 * r / s) ^ finrank ℝ E := by
+    refine hScard.trans_eq ?_
+    simp only [ε₀, NNReal.coe_mk]
+    congr 1
+    field_simp
+    ring
+  have hcover : ball x₀ r ⊆ ⋃ c ∈ S, ball c s :=
+    ball_subset_closedBall.trans <| hScov.subset_iUnion_closedBall.trans <|
+      Set.iUnion₂_mono fun _ _ => closedBall_subset_ball (half_lt_self hs)
+  have hcov_le := toReal_eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion f hp0 hp hB hcover
+    (fun c hc => hfin c (hSsub hc)) (fun c hc => hle c (hSsub hc))
+  exact hcov_le.trans (by gcongr)
+
+end Covering
 
 end TauCeti

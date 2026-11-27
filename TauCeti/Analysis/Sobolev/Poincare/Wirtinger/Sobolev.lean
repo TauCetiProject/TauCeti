@@ -426,7 +426,7 @@ theorem W1p.memLp_value_of_convex_of_isBounded_of_finrank_le
     (hp : (finrank ℝ E : ℝ≥0∞) ≤ p) {U : Set E} (hUo : IsOpen U) (hconv : Convex ℝ U)
     (hb : Bornology.IsBounded U) (hUΩ : U ⊆ (Omega : Set E)) {q : ℝ≥0∞} (hq : q ≠ ∞)
     (u : W1p mu Omega p) : MemLp (W1p.value u) q (mu.restrict U) := by
-  rcases U.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+  rcases U.eq_empty_or_nonempty with rfl | ⟨x₀, _⟩
   · rw [Measure.restrict_empty]
     exact memLp_iff.2 (by simp)
   have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
@@ -446,23 +446,11 @@ theorem W1p.memLp_value_of_convex_of_isBounded_of_finrank_le
   have hq'pos : (0 : ℝ) < q' :=
     lt_of_lt_of_le (Nat.cast_pos.2 finrank_pos)
       (by exact_mod_cast le_max_left (n : ℝ≥0) q.toNNReal)
-  have hδn : ((n : ℝ≥0∞).toReal)⁻¹ - (q' : ℝ)⁻¹ < (n : ℝ)⁻¹ := by
+  have hδn : ((n : ℝ≥0∞).toReal)⁻¹ - (q' : ℝ)⁻¹ < (finrank ℝ E : ℝ)⁻¹ := by
     rw [ENNReal.toReal_natCast]
     exact sub_lt_self _ (inv_pos.2 hq'pos)
-  have hU0 : mu U ≠ 0 := (hUo.measure_pos mu ⟨x₀, hx₀⟩).ne'
-  have hSP := W1p.eLpNorm_value_sub_setAverage_le_mul_measure_rpow_of_convex (Omega := V)
-    (p := (n : ℝ≥0∞)) (ENNReal.natCast_ne_top n) hconv hb subset_rfl hU0 hnq' rfl hδn uV
-  have hsub : MemLp (fun x ↦ W1p.value uV x - ⨍ y in U, W1p.value uV y ∂mu) q' (mu.restrict U) :=
-    memLp_iff.2 (hSP.trans_lt (ENNReal.mul_lt_top (ENNReal.mul_lt_top
-      (ENNReal.div_lt_top ENNReal.ofReal_ne_top hU0)
-      (ENNReal.rpow_lt_top_of_nonneg (sub_nonneg.2 hδn.le) hb.measure_lt_top.ne))
-      eNorm_lt_top))
-  have heq : (fun x ↦ W1p.value uV x - ⨍ y in U, W1p.value uV y ∂mu) +
-      (fun _ ↦ ⨍ y in U, W1p.value uV y ∂mu) = (W1p.value uV : E → ℝ) := by
-    funext x
-    simp
   have huV : MemLp (W1p.value uV) q' (mu.restrict U) :=
-    heq ▸ hsub.add (memLp_const (⨍ y in U, W1p.value uV y ∂mu))
+    W1p.memLp_value_of_subcritical_gain_of_convex uV hconv hb hnq' hδn
   have hval : W1p.value uV =ᵐ[mu.restrict U] W1p.value u :=
     (W1p.coeFn_value_ofExponentLE _ _).eventuallyEq.trans (W1p.value_restrictL_ae hV u)
   exact (huV.mono_exponent hqq').ae_eq hval

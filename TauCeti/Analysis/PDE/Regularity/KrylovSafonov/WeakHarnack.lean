@@ -11,17 +11,16 @@ import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.Convex.HarnackChain
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
-import TauCeti.Analysis.Normed.Module.CoveringNumber
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.Basic.ENNReal.Real
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Function.LpSeminorm.PosPart
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 import TauCeti.Topology.Order.OrderClosed
 
 /-!
@@ -64,7 +63,7 @@ the small-ball estimate along segments inside `closedBall x₀ (θ R)` via
 `Convex.le_pow_mul_add_mul_of_dist_le_mul` (using Chebyshev point selection
 `MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm` to pick a pointwise
 bound inside each overlapping ball) and cover `closedBall x₀ (θ R)` by finitely many small balls
-using `TauCeti.exists_finset_isCover_of_subset_closedBall`.
+using `TauCeti.toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall`.
 
 ## Main declarations
 
@@ -298,15 +297,8 @@ private theorem exists_eLpNorm_le_mul_rpow_mul_of_le [Nonempty ι] {κ : ℝ} (h
   · gcongr
     exact div_le_self hR.le (by linarith)
 
-/-- **The weak Harnack inequality of Krylov and Safonov** (Gilbarg–Trudinger, Theorem 9.22;
-Caffarelli–Cabré, Theorem 4.8). Let `κ > 0`. There are `p > 0` and `C > 0`, depending only on the
-dimension `n ≥ 1` and on `κ`, with the following property. Let `a` be uniformly elliptic on
-`B(c, R)` with constants `λ ≤ Λ ≤ κ λ`, and let `u` be continuous on `closedBall c R`, nonnegative
-there and `C²` in `B(c, R)` with `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` there. Then for every `y ∈ B(c, R / 4)`,
-
-`‖u‖_{Lᵖ(B(c, R / (16 √n)))} ≤ C R^(n / p) (u(y) + R ‖f⁺‖_{Lⁿ(B(c, R))} / λ)`.
-
-The coefficients need be neither measurable nor symmetric. -/
+/-- Small-ball weak Harnack estimate on `B(c, R / (16 √n))` for `y ∈ B(c, R / 4)`, the starting
+step for the chaining argument. -/
 private theorem exists_eLpNorm_le_mul_rpow_mul_add_eLpNorm_posPart {κ : ℝ} (hκ : 0 < κ) :
     ∃ p C : ℝ, 0 < p ∧ 0 < C ∧
       ∀ ⦃lam Lam R : ℝ⦄ ⦃c : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
@@ -371,7 +363,7 @@ omit [DecidableEq ι] in
 private theorem closedBall_half_one_sub_mul_subset_ball {θ R : ℝ}
     {x₀ c : EuclideanSpace ℝ ι} (hR : 0 < R) (hθ1 : θ < 1) (hc : c ∈ closedBall x₀ (θ * R)) :
     closedBall c ((1 - θ) / 2 * R) ⊆ ball x₀ R :=
-  closedBall_subset_ball' (by nlinarith [mem_closedBall.1 hc])
+  TauCeti.closedBall_mul_subset_ball_of_mem_closedBall hR (by linarith) hc
 
 omit [DecidableEq ι] in
 private theorem closedBall_eta_mul_subset_ball [Nonempty ι] {θ R : ℝ}
@@ -380,8 +372,7 @@ private theorem closedBall_eta_mul_subset_ball [Nonempty ι] {θ R : ℝ}
   have hsq : 1 ≤ √(Fintype.card ι : ℝ) := Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
   have hησ : (16 * √(Fintype.card ι : ℝ))⁻¹ * ((1 - θ) / 2) ≤ (1 - θ) / 2 :=
     mul_le_of_le_one_left (by positivity) (inv_le_one_of_one_le₀ (by linarith))
-  exact (closedBall_subset_closedBall (mul_le_mul_of_nonneg_right hησ hR.le)).trans
-    (closedBall_half_one_sub_mul_subset_ball hR hθ1 hc)
+  exact TauCeti.closedBall_mul_subset_ball_of_mem_closedBall hR (by linarith) hc
 
 /-- The localized small-ball weak Harnack contract with exponent `p` and constant `C₁` under
 ellipticity ratio `κ`. -/
@@ -582,48 +573,6 @@ private theorem exists_rpow_neg_mul_eLpNorm_le_mul_add_of_isEmpty [IsEmpty ι] {
     ENNReal.ofReal_one, hu_eq]
   exact le_add_of_le_of_nonneg le_rfl (by positivity)
 
-omit [DecidableEq ι] in
-/-- **Covering bound for the weak Harnack inequality**: covering `closedBall x₀ (θ R)` by at most
-`(1 + 4 θ / η₀)ⁿ` balls `B(c, η₀ R)` centred in `closedBall x₀ (θ R)` upgrades a uniform `Lᵖ`
-bound `≤ B` on each small ball to a bound on `B(x₀, θ R)`. -/
-private theorem toReal_eLpNorm_ball_le_of_chain_cover [Nonempty ι] {θ R p η₀ B : ℝ}
-    (hθ0 : 0 < θ) (hθ1 : θ < 1) (hR : 0 < R) (hp : 0 < p) (hB : 0 ≤ B)
-    (hη₀_def : η₀ = (16 * √(Fintype.card ι : ℝ))⁻¹ * ((1 - θ) / 2))
-    {x₀ : EuclideanSpace ℝ ι} {u : EuclideanSpace ℝ ι → ℝ} (hu : ContinuousOn u (ball x₀ R))
-    (hc_le : ∀ c ∈ closedBall x₀ (θ * R),
-      (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball c (η₀ * R)))).toReal ≤ B) :
-    (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball x₀ (θ * R)))).toReal ≤
-      ((1 + 4 * θ / η₀) ^ Fintype.card ι) ^ p⁻¹ * B := by
-  have hη₀ : 0 < η₀ := by
-    rw [hη₀_def]
-    positivity
-  have hθR : 0 < θ * R := mul_pos hθ0 hR
-  set ε : ℝ≥0 := NNReal.mk (η₀ * R / 2) (by positivity)
-  have hε0 : ε ≠ 0 := mt (congrArg NNReal.toReal) (half_pos (mul_pos hη₀ hR)).ne'
-  obtain ⟨S, hSsub, hScov, hScard⟩ := exists_finset_isCover_of_subset_closedBall
-    (r := NNReal.mk (θ * R) hθR.le) hε0 (Subset.rfl : closedBall x₀ (θ * R) ⊆ _)
-  have hS_le : (S.card : ℝ) ≤ (1 + 4 * θ / η₀) ^ Fintype.card ι := by
-    refine hScard.trans_eq ?_
-    rw [finrank_euclideanSpace]
-    simp only [ε, NNReal.coe_mk]
-    congr 1
-    field_simp
-    ring
-  have hcoverR : ball x₀ (θ * R) ⊆ ⋃ c ∈ S, ball c (η₀ * R) :=
-    ball_subset_closedBall.trans <| hScov.subset_iUnion_closedBall.trans <|
-      iUnion₂_mono fun _ _ ↦ closedBall_subset_ball (half_lt_self (mul_pos hη₀ hR))
-  have hfin : ∀ c ∈ S, eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball c (η₀ * R))) ≠ ∞ :=
-    fun c hc ↦ by
-      rw [hη₀_def]
-      exact ((hu.mono (closedBall_eta_mul_subset_ball hR hθ1
-        (hSsub hc))).memLp_restrict_of_subset_isCompact (isCompact_closedBall _ _)
-        measurableSet_ball ball_subset_closedBall _).eLpNorm_ne_top
-  have hcov_le := toReal_eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion u
-    (ENNReal.ofReal_pos.2 hp).ne' ENNReal.ofReal_ne_top hB hcoverR hfin
-    (fun c hc ↦ hc_le c (hSsub hc))
-  rw [ENNReal.toReal_ofReal hp.le] at hcov_le
-  exact hcov_le.trans (by gcongr)
-
 /-- **The weak Harnack inequality of Krylov and Safonov** (Gilbarg–Trudinger, Theorem 9.22;
 Caffarelli–Cabré, Theorem 4.8). Let `κ` be given. There is an exponent `p > 0`, depending only on
 the dimension `n` and on `κ`, such that for every `0 < θ < 1` there is a constant `C > 0`,
@@ -675,12 +624,19 @@ theorem exists_rpow_neg_mul_eLpNorm_le_mul_add_of_sum_mul_fderiv_fderiv_le (κ :
   have hy_nn : 0 ≤ u y := hnn y (ball_subset_ball (mul_le_of_le_one_left hR.le hθ1.le) hy)
   set B_each : ℝ := (η₀ * R) ^ (n / p) * (C₂ * (u y + R * F / lam))
   have hnorm_le : (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball x₀ (θ * R)))).toReal ≤
-      M₀ ^ p⁻¹ * B_each :=
-    toReal_eLpNorm_ball_le_of_chain_cover hθ0 hθ1 hR hp (by positivity) (rfl : η₀ = _)
-      hu.continuousOn fun c hc ↦ by
+      M₀ ^ p⁻¹ * B_each := by
+    have h := toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall (μ := volume) (B := B_each) u
+      (ENNReal.ofReal_pos.2 hp).ne' ENNReal.ofReal_ne_top hθR.le (mul_pos hη₀ hR) (by positivity)
+      (fun c hc ↦ ((hu.continuousOn.mono (closedBall_eta_mul_subset_ball hR hθ1
+        hc)).memLp_restrict_of_subset_isCompact (isCompact_closedBall _ _) measurableSet_ball
+        ball_subset_closedBall _).eLpNorm_ne_top)
+      fun c hc ↦ by
         have hc_est := Hchain hR ha hLam' hu hnn hsuper hf (ball_subset_closedBall hy) hc
         rwa [neg_div, Real.rpow_neg (mul_pos hη₀ hR).le,
           inv_mul_le_iff₀ (Real.rpow_pos_of_pos (mul_pos hη₀ hR) _)] at hc_est
+    rw [ENNReal.toReal_ofReal hp.le, finrank_euclideanSpace,
+      show 4 * (θ * R) / (η₀ * R) = 4 * θ / η₀ by field_simp] at h
+    exact h
   have hratio : (θ * R) ^ (-n / p) * (η₀ * R) ^ (n / p) = (η₀ / θ) ^ (n / p) := by
     rw [neg_div, Real.mul_rpow_neg_mul_mul_rpow hθ0 hη₀.le hR]
   calc (θ * R) ^ (-n / p) *

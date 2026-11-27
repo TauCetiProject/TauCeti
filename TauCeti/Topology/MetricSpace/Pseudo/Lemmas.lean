@@ -21,7 +21,9 @@ The frontier of the closed annulus `closedBall y R \ ball y r` lies on its two b
 support of a function lies outside its closed support
 (`TauCeti.notMem_tsupport_of_support_subset_closedBall`). Given `a < r` and two points in
 `ball x₀ r`, there is an intermediate radius `a < s < r` keeping both points in `ball x₀ s`
-(`TauCeti.exists_lt_mem_ball_of_mem_ball`).
+(`TauCeti.exists_lt_mem_ball_of_mem_ball`). A closed ball of radius `η * R` centred in
+`closedBall x₀ (θ * R)` lies in `ball x₀ R` whenever `η < 1 - θ`
+(`TauCeti.closedBall_mul_subset_ball_of_mem_closedBall`).
 
 Of pairwise disjoint balls, a point of one of them lying in the union of their shrunk concentric
 balls lies in its own shrunk ball (`Metric.mem_ball_mul_of_mem_iUnion`).
@@ -49,6 +51,13 @@ theorem exists_pos_lt_closedBall_subset {U : Set X} {x : X} (hU : U ∈ 𝓝 x) 
   obtain ⟨δ, hδ, hδU⟩ := nhds_basis_closedBall.mem_iff.1 hU
   exact ⟨min δ (ε / 2), lt_min hδ (half_pos hε), (min_le_right _ _).trans_lt (half_lt_self hε),
     (closedBall_subset_closedBall (min_le_left _ _)).trans hδU⟩
+
+/-- If `c ∈ closedBall x₀ (θ * R)` with `0 < R` and `η < 1 - θ`, then
+`closedBall c (η * R) ⊆ ball x₀ R`. -/
+theorem closedBall_mul_subset_ball_of_mem_closedBall {x₀ c : X} {θ η R : ℝ}
+    (hR : 0 < R) (hη : η < 1 - θ) (hc : c ∈ closedBall x₀ (θ * R)) :
+    closedBall c (η * R) ⊆ ball x₀ R :=
+  closedBall_subset_ball' (by nlinarith [mem_closedBall.1 hc])
 
 /-- Given `a < r` and two points `x, y ∈ ball x₀ r`, there is a radius `a < s < r` such that
 `x, y ∈ ball x₀ s`. -/
