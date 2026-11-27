@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import Mathlib.RingTheory.Multiplicity
+import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.Data.Nat.Choose.Factorization
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.Ideal.Quotient.Defs
@@ -39,6 +40,11 @@ number coprime to `n` has norm one. For a prime `p` with `‖p‖ < 1`, the bino
 `(p ^ (k + 1)).choose (p ^ k)`, exactly divisible by `p`, thus has the norm of `p`. Since the
 forward differences of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
 
+If moreover the seminorm is power-multiplicative, the `p`-th power map raises a distance
+`‖x‖ ≥ 1` from `1` to its `p`-th power, `‖(1 + x) ^ p - 1‖ = ‖x‖ ^ p`, because the intermediate
+binomial coefficients are divisible by `p`. Hence an element whose `p`-power powers `y ^ p ^ n`
+tend to `1` lies strictly within distance one of `1`.
+
 ## Main results
 
 * `IsUltrametricDist.norm_le_one_of_isIntegral`: algebraic integers lie in the closed unit ball of
@@ -51,6 +57,10 @@ forward differences of a monomial are divisible by `k!`, their norms carry the f
   number coprime to `n` has norm one.
 * `IsUltrametricDist.norm_choose_prime_pow_succ`: if a prime `p` has `‖p‖ < 1`, the binomial
   coefficient `(p ^ (k + 1)).choose (p ^ k)` has the norm of `p`.
+* `TauCeti.norm_one_add_pow_prime_sub_one`, `TauCeti.norm_one_add_pow_prime_pow_sub_one`: for a
+  power-multiplicative seminorm with `‖p‖ < 1` and `1 ≤ ‖x‖`, `‖(1 + x) ^ p ^ n - 1‖ = ‖x‖ ^ p ^ n`.
+* `TauCeti.norm_sub_one_lt_one_of_tendsto_pow_prime_pow`: for such a seminorm, `y ^ p ^ n → 1`
+  forces `‖y - 1‖ < 1`.
 * `IsUltrametricDist.nonarchimedeanRing`: an ultrametric seminormed ring is a nonarchimedean
   ring.
 * `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
@@ -569,6 +579,72 @@ theorem norm_prod_pow_sub_prod_pow_le {ι R : Type*} [SeminormedCommRing R] [IsU
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (mul_nonneg hN0 hδ) fun i _ ↦ ?_
   calc ‖(c i : R) * (b i - y i)‖ ≤ ‖(c i : R)‖ * ‖b i - y i‖ := norm_mul_le _ _
     _ ≤ N * δ := mul_le_mul (hN _ (c i).property) (hby i i.property) (norm_nonneg _) hN0
+
+section PrimePower
+
+open Filter Topology
+
+variable {R : Type*} [SeminormedRing R] [NormOneClass R] [IsUltrametricDist R] {p : ℕ}
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1` and power-multiplicative seminorm in which the
+prime `p` has norm less than one, the `p`-th power map raises the distance to `1` to the `p`-th
+power once that distance is at least one: if `1 ≤ ‖x‖`, then `‖(1 + x) ^ p - 1‖ = ‖x‖ ^ p`. The
+intermediate binomial coefficients are divisible by `p`, so their terms are strictly smaller than
+`x ^ p`. -/
+theorem norm_one_add_pow_prime_sub_one (hR : IsPowMul (‖·‖ : R → ℝ)) (hp : p.Prime)
+    (hpR : ‖(p : R)‖ < 1) {x : R} (hx : 1 ≤ ‖x‖) : ‖(1 + x) ^ p - 1‖ = ‖x‖ ^ p := by
+  have hx0 : 0 < ‖x‖ := one_pos.trans_le hx
+  have hxp : ‖x ^ p‖ = ‖x‖ ^ p := hR x hp.one_le
+  have hS : ‖(p : R) * ∑ k ∈ Finset.Ioo 0 p, 1 ^ k * x ^ (p - k) * ((p.choose k / p : ℕ) : R)‖ <
+      ‖x‖ ^ p := by
+    refine (norm_mul_le _ _).trans_lt ?_
+    rcases (Finset.Ioo 0 p).eq_empty_or_nonempty with h | h
+    · simpa [h] using pow_pos hx0 p
+    obtain ⟨k, hk, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty h
+      fun k ↦ 1 ^ k * x ^ (p - k) * ((p.choose k / p : ℕ) : R)
+    have hk' := Finset.mem_Ioo.mp hk
+    calc ‖(p : R)‖ * ‖∑ k ∈ Finset.Ioo 0 p, 1 ^ k * x ^ (p - k) * ((p.choose k / p : ℕ) : R)‖
+        ≤ ‖(p : R)‖ * ‖x‖ ^ (p - 1) := by
+          refine mul_le_mul_of_nonneg_left (hle.trans ?_) (norm_nonneg _)
+          rw [one_pow, one_mul]
+          refine (norm_mul_le _ _).trans ?_
+          refine (mul_le_of_le_one_right (norm_nonneg _)
+            (IsUltrametricDist.norm_natCast_le_one R _)).trans ?_
+          exact (norm_pow_le _ _).trans (pow_le_pow_right₀ hx (by omega))
+      _ < ‖x‖ ^ (p - 1) := mul_lt_of_lt_one_left (pow_pos hx0 _) hpR
+      _ ≤ ‖x‖ ^ p := pow_le_pow_right₀ hx (Nat.sub_le _ _)
+  rw [(Commute.one_left x).add_pow_prime_eq' hp, one_pow, add_sub_right_comm, add_sub_cancel_left,
+    IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by rw [hxp]; exact hS.ne'), hxp,
+    max_eq_left hS.le]
+
+/-- Iterating `TauCeti.norm_one_add_pow_prime_sub_one`: if `1 ≤ ‖x‖`, then
+`‖(1 + x) ^ p ^ n - 1‖ = ‖x‖ ^ p ^ n` for every `n`. -/
+theorem norm_one_add_pow_prime_pow_sub_one (hR : IsPowMul (‖·‖ : R → ℝ)) (hp : p.Prime)
+    (hpR : ‖(p : R)‖ < 1) {x : R} (hx : 1 ≤ ‖x‖) (n : ℕ) :
+    ‖(1 + x) ^ p ^ n - 1‖ = ‖x‖ ^ p ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have h := norm_one_add_pow_prime_sub_one hR hp hpR (x := (1 + x) ^ p ^ n - 1)
+      (ih ▸ one_le_pow₀ hx)
+    rw [add_sub_cancel, ← pow_mul, ← pow_succ, ih, ← pow_mul, ← pow_succ] at h
+    exact h
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1` and power-multiplicative seminorm in which the
+prime `p` has norm less than one, an element whose `p`-power powers tend to `1` lies strictly within
+distance one of `1`. -/
+theorem norm_sub_one_lt_one_of_tendsto_pow_prime_pow (hR : IsPowMul (‖·‖ : R → ℝ))
+    (hp : p.Prime) (hpR : ‖(p : R)‖ < 1) {y : R} (hy : Tendsto (fun n ↦ y ^ p ^ n) atTop (𝓝 1)) :
+    ‖y - 1‖ < 1 := by
+  by_contra! h
+  have hge (n : ℕ) : 1 ≤ ‖y ^ p ^ n - 1‖ := by
+    have := norm_one_add_pow_prime_pow_sub_one hR hp hpR h n
+    rw [add_sub_cancel] at this
+    exact this ▸ one_le_pow₀ h
+  have h0 : (1 : ℝ) ≤ 0 := ge_of_tendsto' (tendsto_iff_norm_sub_tendsto_zero.mp hy) hge
+  exact absurd h0 (by norm_num)
+
+end PrimePower
 
 section FwdDiff
 

@@ -73,13 +73,10 @@ open scoped Matrix.Norms.Operator in
 theorem IsMetzler.exp_apply_nonneg {B : Matrix n n ℝ} (hB : B.IsMetzler) (i j : n) :
     0 ≤ exp B i j := by
   obtain ⟨c, hc⟩ := isMetzler_iff_exists_add_smul_one_nonneg.mp hB
-  have hcomm : Commute (B + c • 1) ((-c) • 1) := (Commute.one_right _).smul_right _
-  have hexp : exp B = exp (B + c • 1) * exp ((-c) • (1 : Matrix n n ℝ)) := by
-    rw [← exp_add_of_commute _ _ hcomm, add_assoc, ← add_smul, add_neg_cancel, zero_smul,
-      add_zero]
-  -- This typed specialization pins the operator-norm matrix ring instance.
-  have hscalar : exp ((-c) • (1 : Matrix n n ℝ)) = Real.exp (-c) • 1 := exp_real_smul_one _
-  rw [hexp, hscalar, mul_smul_comm, mul_one, Matrix.smul_apply, smul_eq_mul]
+  have hexp : exp B = Real.exp (-c) • exp (B + c • 1) := by
+    conv_lhs => rw [← add_neg_cancel_right B (c • 1), ← neg_smul]
+    exact exp_add_real_smul_one (A := Matrix n n ℝ) _ _
+  rw [hexp, Matrix.smul_apply, smul_eq_mul]
   exact mul_nonneg (Real.exp_pos _).le (exp_apply_nonneg_of_nonneg hc i j)
 
 /-- **Positivity of the exponential of a Metzler matrix.** The exponential `exp (t • B)` of a
@@ -92,7 +89,8 @@ theorem exp_smul_nonneg_iff_isMetzler (B : Matrix n n ℝ) :
   -- `B i j` at `0` is nonnegative.
   refine IsLocalMinOn.hasDerivWithinAt_Ici_nonneg
     (eventually_mem_nhdsWithin.mono fun t (ht : 0 ≤ t) ↦ ?_)
-    (hasDerivAt_exp_smul_apply B i j).hasDerivWithinAt
+    ((hasDerivAt_exp_smul_apply B i j (0 : ℝ)).congr_deriv
+      (by rw [zero_smul, exp_zero, one_mul])).hasDerivWithinAt
   rw [zero_smul, exp_zero, one_apply_ne hij]
   exact h t ht i j
 
@@ -112,7 +110,8 @@ theorem exp_smul_mem_rowStochastic_iff (Q : Matrix n n ℝ) :
   -- The row sum `g t = ∑ j, exp (t • Q) i j` is constant on `[0, ∞)` and has right derivative
   -- `∑ j, Q i j` at `0`, which is therefore both nonnegative and nonpositive.
   have hd : HasDerivWithinAt (fun t : ℝ ↦ ∑ j, exp (t • Q) i j) (∑ j, Q i j) (Set.Ici 0) 0 :=
-    (HasDerivAt.fun_sum fun j _ ↦ hasDerivAt_exp_smul_apply Q i j).hasDerivWithinAt
+    (HasDerivAt.fun_sum fun j _ ↦ (hasDerivAt_exp_smul_apply Q i j (0 : ℝ)).congr_deriv
+      (by rw [zero_smul, exp_zero, one_mul])).hasDerivWithinAt
   have hconst : ∀ᶠ t in 𝓝[Set.Ici 0] (0 : ℝ),
       ∑ j, exp (t • Q) i j = ∑ j, exp ((0 : ℝ) • Q) i j :=
     eventually_mem_nhdsWithin.mono fun t (ht : 0 ≤ t) ↦ by

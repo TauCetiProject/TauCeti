@@ -41,7 +41,9 @@ member of the family its coefficient field is essentially bounded
 sphere to `L²`, and it has finite-dimensional kernel
 (`finiteDimensional_ker_floerConformalSobolevOperator_cappedComparison`) and closed range
 (`isClosed_range_floerConformalSobolevOperator_cappedComparison`), all in the namespace
-`TauCeti.SymplecticForm`. The finiteness of the cokernel and the index are not treated here.
+`TauCeti.SymplecticForm`. The finiteness of the cokernel is proved in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped.Fredholm`, together with the invariance of
+the index along the family.
 
 ## References
 
@@ -65,7 +67,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-- Near the pole `∞`, on `‖w‖ ≥ T` in the plane chart, the data of the capped comparison family
 are the base structure `J₀` and the zero perturbation. -/
-private theorem exists_cappedComparison_eq_base {ω : SymplecticForm V} (h₀ : ω.Compatible J₀)
+theorem exists_cappedComparison_eq_base {ω : SymplecticForm V} (h₀ : ω.Compatible J₀)
     (hJ : ∀ q t x, ω.Tames (J q t x)) (R : ℝ) :
     ∃ T, (∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y,
         cappedComparisonAlmostComplex h₀ J hJ R (equivRealProdCLM.symm z) y = J₀) ∧
@@ -113,9 +115,7 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_cappedComparis
     (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
-    fun z ↦ by
-      rw [cappedComparisonAlmostComplex_def]
-      exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
+    fun z ↦ compatible_cappedComparisonAlmostComplex h₀ hJc R _ _
 
 /-- **The coefficient field along the capped comparison family is bounded.** Under the hypotheses
 of `exists_forall_integral_le_mul_integral_floerLinearization_cappedComparison_add`, without the
@@ -165,9 +165,7 @@ theorem finiteDimensional_ker_floerConformalSobolevOperator_cappedComparison
     (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
-    fun z ↦ by
-      rw [cappedComparisonAlmostComplex_def]
-      exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
+    fun z ↦ compatible_cappedComparisonAlmostComplex h₀ hJc R _ _
 
 /-- **The linearized operator along the capped comparison family has closed range on
 `W^{1,2}`.** Under the hypotheses of
@@ -191,8 +189,6 @@ theorem isClosed_range_floerConformalSobolevOperator_cappedComparison
     (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
-    fun z ↦ by
-      rw [cappedComparisonAlmostComplex_def]
-      exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
+    fun z ↦ compatible_cappedComparisonAlmostComplex h₀ hJc R _ _
 
 end TauCeti.SymplecticForm

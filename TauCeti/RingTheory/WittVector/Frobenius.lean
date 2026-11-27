@@ -50,6 +50,8 @@ inverse of `V`, a frame in the sense of displays.
   ring, with its value on representatives given by `TauCeti.WittVector.frobeniusMod_mk`.
 * `TauCeti.WittVector.mk_eq_mk_iff_forall_coeff_eq` : over a perfect ring of characteristic `p`,
   two classes modulo `p^n` agree exactly when their first `n` coefficients agree.
+* `TauCeti.WittVector.intCast_pow_mul_eq_iterate_verschiebung` : in characteristic `p`, the
+  integer `p^n d` is the iterated Verschiebung `V^n d`.
 * `TauCeti.WittVector.continuous_frobenius` : `φ` is continuous for the `(p, [ϖ])`-adic topology.
 * `TauCeti.WittVector.continuous_frobeniusEquiv_symm` : so is `φ⁻¹`, for perfect `R`.
 
@@ -209,6 +211,16 @@ theorem mk_eq_mk_iff_forall_coeff_eq (n : ℕ) (x y : W) :
       ∀ i < n, x.coeff i = y.coeff i := by
   rw [Ideal.Quotient.eq, mem_span_p_pow_iff_le_coeff_eq_zero,
     ← le_coeff_eq_iff_le_sub_coeff_eq_zero]
+
+omit [PerfectRing k p] in
+/-- Over a ring of characteristic `p`, the integer `p^n d` is the iterated Verschiebung
+`V^n d = V^n (F^n d)` of `d`. -/
+theorem intCast_pow_mul_eq_iterate_verschiebung (n : ℕ) (d : ℤ) :
+    ((p ^ n * d : ℤ) : W) = verschiebung^[n] (d : W) := by
+  rw [← Function.iterate_fixed (map_intCast (_root_.WittVector.frobenius : W →+* W) d) n,
+    iterate_verschiebung_iterate_frobenius]
+  push_cast
+  ring
 
 end
 

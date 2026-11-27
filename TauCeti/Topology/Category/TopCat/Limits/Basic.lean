@@ -45,7 +45,9 @@ disjoint unions, the map of coproducts `Limits.Sigma.map φ` of a family of maps
 `Sigma.map id φ` of disjoint unions (`TauCeti.TopCat.coe_sigmaMap`). Hence a coproduct of
 embeddings is an embedding (`TauCeti.TopCat.isEmbedding_sigmaMap`). Likewise a map out of a
 coproduct is the map `ContinuousMap.sigma` glued from its restrictions to the summands
-(`TauCeti.TopCat.hom_eq_sigma_comp_sigmaIsoSigma_hom`).
+(`TauCeti.TopCat.hom_eq_sigma_comp_sigmaIsoSigma_hom`), and a map out of a disjoint union is the
+map out of the coproduct glued from its restrictions
+(`TauCeti.TopCat.sigmaIsoSigma_hom_comp_eq_desc`).
 -/
 
 public section
@@ -208,6 +210,17 @@ theorem hom_eq_sigma_comp_sigmaIsoSigma_hom {Y : TopCat.{u}} (χ : ∐ X ⟶ Y) 
     TopCat.ofHom (ContinuousMap.sigma fun i ↦ (Limits.Sigma.ι X i ≫ χ).hom)) fun i ↦ ?_)
   rw [TopCat.sigmaIsoSigma_hom_ι_assoc]
   exact TopCat.ext fun _ ↦ by simp
+
+/-- Read through the homeomorphism `TopCat.sigmaIsoSigma` with the disjoint union, a map `g` out
+of a disjoint union is the map `Limits.Sigma.desc` out of the coproduct glued from its restrictions
+to the summands. -/
+theorem sigmaIsoSigma_hom_comp_eq_desc {Y : TopCat.{u}} (g : TopCat.of (Σ i, X i) ⟶ Y) :
+    (TopCat.sigmaIsoSigma X).hom ≫ g =
+      Limits.Sigma.desc fun i ↦ TopCat.ofHom (g.hom.comp (ContinuousMap.sigmaMk i)) :=
+  Limits.Sigma.hom_ext _ _ fun i ↦ by
+    rw [TopCat.sigmaIsoSigma_hom_ι_assoc, Limits.Sigma.ι_comp_desc]
+    ext
+    simp
 
 end Sigma
 
