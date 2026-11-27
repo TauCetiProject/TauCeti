@@ -10,6 +10,11 @@ public import TauCeti.LinearAlgebra.TotallyReal.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.RealBoundary.DifferentialInequality
+import TauCeti.Analysis.Complex.CauchyRiemann.RealBoundary.VariableStructure
+import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.VariableStructure
+import TauCeti.Analysis.Complex.ReImTopology
+import TauCeti.Analysis.Sobolev.Local.HalfPlane
+import TauCeti.Topology.Codiscrete
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -70,6 +75,20 @@ to the boundary, also at the points `z₀` of the axis where `u z₀ = x₀`. Th
 conjugation-invariant domain, so `Ω` is first replaced by `{z | re z + i |im z| ∈ Ω}`, which has
 the same closed upper part.
 
+**Boundary values fixed by a reflection.** The critical-point theorems of
+`TauCeti.Geometry.Symplectic.JHolomorphic.CriticalPoint` state the totally real boundary condition
+differently: `u` solves `∂ₜu = A ∂ₛu` off the axis for a `C¹` field `A(z)` of complex structures
+up to the axis, and a real-linear automorphism `R` fixes the boundary values `u(s)` and
+anticommutes with `A(s)` on `Ω ∩ ℝ`. In this form the preimage of every value `x₀` is still
+discrete in `Ω ∩ {0 ≤ im}` unless `u ≡ x₀`
+(`TauCeti.setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg`), whether or not `x₀`
+is a boundary value. If `R x₀ = x₀`, then `u - x₀` also satisfies the boundary condition and solves
+the linear equation `∂ₛξ + A ∂ₜξ = 0`, so the similarity principle for a variable structure up to
+a totally real boundary (`TauCeti.Analysis.Complex.CauchyRiemann.RealBoundary.VariableStructure`)
+applies to it. If `R x₀ ≠ x₀`, then `u` does not take the value `x₀` on the axis, and the interior
+similarity principle for a variable structure applies to `u - x₀` on the connected components of
+`Ω ∩ {0 < im}`.
+
 ## Main results
 
 * `TauCeti.eqOn_const_of_cauchyRiemann_of_eventually_eq`: a solution equal to `x₀` near one point
@@ -90,6 +109,9 @@ the same closed upper part.
   locally finitely many, preimages up to a totally real boundary.
 * `TauCeti.exists_isTheta_pow_of_cauchyRiemann_of_isMaximalTotallyReal`: positive orders of
   contact up to a totally real boundary.
+* `TauCeti.setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg` and
+  `TauCeti.finite_inter_preimage_singleton_of_cauchyRiemann_inter_im_nonneg`: isolated, and
+  locally finitely many, preimages of any value for boundary values fixed by a reflection.
 
 ## References
 
@@ -624,5 +646,170 @@ theorem exists_isTheta_pow_of_cauchyRiemann_of_isMaximalTotallyReal
     by simpa using hθ.2.trans (Ψ.isBigO_comp_rev _ _)⟩⟩
 
 end TotallyRealBoundary
+
+/-! ### Boundary values fixed by a reflection -/
+
+section Reflection
+
+variable {A : ℂ → E →L[ℝ] E} {R : E ≃L[ℝ] E}
+
+omit [FiniteDimensional ℝ E] in
+/-- A solution of `∂ₜu = A ∂ₛu` with `A² = -1` solves `∂ₛu + A ∂ₜu = 0`, the linear
+Cauchy–Riemann equation with structure `A` and no zeroth-order term. -/
+private theorem fderiv_apply_one_add_apply_fderiv_apply_I_eq_zero {z : ℂ}
+    (hAA : A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hCR : fderiv ℝ u z I = A z (fderiv ℝ u z 1)) :
+    fderiv ℝ u z 1 + A z (fderiv ℝ u z I) = 0 := by
+  rw [hCR, ← ContinuousLinearMap.comp_apply, hAA]
+  simp
+
+/-- The boundary case of `TauCeti.setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg`
+for a value `x₀` fixed by `R`: then `u - x₀` satisfies the boundary condition, and is a solution
+of the linear equation `∂ₛξ + A ∂ₜξ = 0` to which the similarity principle up to a totally real
+boundary applies. -/
+private theorem setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg_of_apply_eq
+    (hΩ : IsOpen Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hAR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (A x v) = -A x (R v))
+    (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x) (hx₀ : R x₀ = x₀)
+    (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ x₀) :
+    {z | u z ≠ x₀} ∈ codiscreteWithin (Ω ∩ {z | 0 ≤ z.im}) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  -- pass to a conjugation-invariant open set with the same closed upper part
+  obtain ⟨Ω', hΩ', hΩs, heq⟩ := exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq hΩ
+  have hsub {z : ℂ} (hz : z ∈ Ω') (h : 0 ≤ z.im) : z ∈ Ω := (heq.subset ⟨hz, h⟩).1
+  rw [← heq] at hΩc hA hAA hu hne ⊢
+  have hOo : IsOpen (Ω' ∩ {z | 0 < z.im}) := hΩ'.inter (isOpen_lt continuous_const continuous_im)
+  have hOS : Ω' ∩ {z | 0 < z.im} ⊆ Ω' ∩ {z | 0 ≤ z.im} := fun w hw ↦ ⟨hw.1, hw.2.out.le⟩
+  -- `ξ = u - x₀` is a weak solution of `∂ₛξ + A ∂ₜξ = 0` up to the axis
+  have hξu : ContDiffOn ℝ 1 (fun z ↦ u z - x₀) (Ω' ∩ {z | 0 ≤ z.im}) := hu.sub contDiffOn_const
+  have hξ : IsWeakLinearCauchyRiemannOn 3 (Ω' ∩ {z | 0 ≤ z.im}) A 0 (fun z ↦ u z - x₀) := by
+    refine isWeakCauchyRiemannOn_iff_continuousOn_memWkpLoc_interior.2
+      ⟨hξu.continuousOn, hξu.memWkpLoc_inter_setOf_im_nonneg hΩ', ?_⟩
+    rw [interior_inter_setOf_im_nonneg hΩ']
+    refine isWeakCauchyRiemannOn_of_contDiffOn (Ω := ⟨_, hOo⟩) (hξu.mono hOS)
+      fun z (hz : z ∈ Ω' ∩ {z | 0 < z.im}) ↦ ?_
+    simpa [fderiv_sub_const] using fderiv_apply_one_add_apply_fderiv_apply_I_eq_zero
+      (hAA z (hOS hz)) (hCR z (hsub hz.1 hz.2.out.le) hz.2)
+  refine Filter.mem_of_superset
+    (setOf_ne_zero_mem_codiscreteWithin_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg
+      (Ω := ⟨Ω', hΩ'⟩) (by norm_num) hΩs hΩc (hA.memWkpLoc_inter_setOf_im_nonneg hΩ')
+      hA.continuousOn hAA (fun x hx ↦ hAR x (hsub hx (by simp))) continuousOn_const.memLpLoc hξ
+      (fun x hx ↦ by simp [hbd x (hsub hx (by simp)), hx₀])
+      (hne.imp fun _ ↦ .imp_right sub_ne_zero.2)) fun z hz ↦ sub_ne_zero.1 hz
+
+/-- The interior case of `TauCeti.setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg`
+for a value `x₀` not fixed by `R`: then `u` does not take the value `x₀` on the axis, and the
+interior similarity principle applies to `u - x₀` on the connected component of
+`Ω ∩ {0 < im}` containing a given point of `u⁻¹(x₀)`. That component is relatively closed in
+`Ω ∩ {0 ≤ im}` wherever `u = x₀` on it, so `u - x₀` does not vanish identically on it. -/
+private theorem setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg_of_apply_ne
+    (hΩ : IsOpen Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x) (hx₀ : R x₀ ≠ x₀)
+    (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ x₀) :
+    {z | u z ≠ x₀} ∈ codiscreteWithin (Ω ∩ {z | 0 ≤ z.im}) := by
+  have hOo : IsOpen (Ω ∩ {z | 0 < z.im}) := hΩ.inter (isOpen_lt continuous_const continuous_im)
+  have hOS : Ω ∩ {z | 0 < z.im} ⊆ Ω ∩ {z | 0 ≤ z.im} := fun w hw ↦ ⟨hw.1, hw.2.out.le⟩
+  -- `u` does not take the value `x₀` on the axis
+  have hax {z : ℂ} (hz : z ∈ Ω ∩ {z | 0 ≤ z.im}) (hz₀ : u z = x₀) :
+      z ∈ Ω ∩ {z | 0 < z.im} := by
+    have him : 0 ≤ z.im := hz.2
+    refine ⟨hz.1, (him.lt_of_ne fun h ↦ hx₀ ?_ : 0 < z.im)⟩
+    have hre : ((z.re : ℝ) : ℂ) = z := Complex.ext rfl (by simp [← h])
+    simpa [hre, hz₀] using hbd z.re (hre ▸ hz.1)
+  refine eventually_codiscreteWithin_iff_forall_eventually_nhdsNE.2 fun z hz ↦ ?_
+  by_cases hz₀ : u z = x₀
+  swap
+  · -- near a point where `u ≠ x₀`, by continuity
+    filter_upwards [nhdsWithin_le_nhds (eventually_nhdsWithin_iff.1
+      (Filter.Tendsto.eventually_ne (hu.continuousOn z hz) hz₀))] with w hw using hw
+  -- otherwise `z` lies off the axis, in a component `C` of `Ω ∩ {0 < im}`
+  have hzO := hax hz hz₀
+  have hCo : IsOpen (connectedComponentIn (Ω ∩ {z | 0 < z.im}) z) := hOo.connectedComponentIn
+  have hCS : connectedComponentIn (Ω ∩ {z | 0 < z.im}) z ⊆ Ω ∩ {z | 0 ≤ z.im} :=
+    (connectedComponentIn_subset _ _).trans hOS
+  have hzC : z ∈ connectedComponentIn (Ω ∩ {z | 0 < z.im}) z := mem_connectedComponentIn hzO
+  -- `u - x₀` does not vanish identically on `C`
+  have hneC : ∃ w ∈ connectedComponentIn (Ω ∩ {z | 0 < z.im}) z, u w - x₀ ≠ 0 := by
+    by_contra! hC
+    obtain ⟨w, hw, hwx⟩ := hne
+    refine hwx (sub_eq_zero.1 (hC w ?_))
+    -- otherwise `C` contains its limit points in `Ω ∩ {0 ≤ im}`, so it is all of it
+    refine hΩc.subset_of_closure_inter_subset hCo ⟨z, hz, hzC⟩ ?_ hw
+    rintro y ⟨hyc, hyS⟩
+    have hy : u y = x₀ := by
+      have hsub : u '' connectedComponentIn (Ω ∩ {z | 0 < z.im}) z ⊆ {x₀} := by
+        rintro _ ⟨v, hv, rfl⟩
+        exact sub_eq_zero.1 (hC v hv)
+      simpa using closure_mono hsub (((hu.continuousOn y hyS).mono hCS).mem_closure_image hyc)
+    have hyO := hax hyS hy
+    obtain ⟨v, hv, hvC⟩ := mem_closure_iff_nhds.1 hyc _
+      (connectedComponentIn_mem_nhds (hOo.mem_nhds hyO))
+    rw [connectedComponentIn_eq hvC, ← connectedComponentIn_eq hv]
+    exact mem_connectedComponentIn hyO
+  -- so the zeros of `u - x₀` are isolated in `C`, a neighbourhood of `z`
+  have h := setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure (C := 0) hCo
+    isPreconnected_connectedComponentIn (hA.mono hCS) (fun w hw ↦ hAA w (hCS hw))
+    ((hu.sub contDiffOn_const).mono hCS) aestronglyMeasurable_zero
+    (fun _ _ ↦ ⟨0, by simp⟩) (fun w hw ↦ by
+      have hwO := connectedComponentIn_subset _ _ hw
+      simpa [fderiv_sub_const] using fderiv_apply_one_add_apply_fderiv_apply_I_eq_zero
+        (hAA w (hOS hwO)) (hCR w hwO.1 hwO.2)) hneC
+  filter_upwards [TauCeti.inter_mem_nhdsNE_of_mem_codiscreteWithin (hCo.mem_nhds hzC) h]
+    with w hw using fun _ ↦ sub_ne_zero.1 hw.2
+
+/-- **Isolated point preimages, with boundary values fixed by a reflection.** Let `R` be a
+real-linear automorphism of a finite-dimensional real normed space `E`, such as complex
+conjugation on `ℂⁿ`. Let `Ω` be open with `Ω ∩ {0 ≤ im}` preconnected, and `u` a map of class `C¹`
+up to the real axis on `Ω ∩ {0 ≤ im}`, solving `∂ₜu = A ∂ₛu` off the axis, for a field `A` of
+class `C¹` up to the axis with `A(z)² = -1`. Assume that `R` fixes the boundary values `u(s)` and
+anticommutes with `A(s)` on `Ω ∩ ℝ`. If `u` is not identically equal to `x₀` on `Ω ∩ {0 ≤ im}`, it
+takes the value `x₀` on a discrete subset of `Ω ∩ {0 ≤ im}`, also near the real axis. The value
+`x₀` is arbitrary: it need not be a boundary value of `u`, nor fixed by `R`. -/
+theorem setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg
+    (hΩ : IsOpen Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hAR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (A x v) = -A x (R v))
+    (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x) (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ x₀) :
+    {z | u z ≠ x₀} ∈ codiscreteWithin (Ω ∩ {z | 0 ≤ z.im}) := by
+  by_cases hx₀ : R x₀ = x₀
+  · exact setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg_of_apply_eq hΩ hΩc hA
+      hAA hAR hu hCR hbd hx₀ hne
+  · exact setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg_of_apply_ne hΩ hΩc hA
+      hAA hu hCR hbd hx₀ hne
+
+/-- **Finite point preimages on compact sets, with boundary values fixed by a reflection.** Let
+`Ω`, `u`, `A` and `R` be as in
+`TauCeti.setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg`, with `u` not
+identically equal to `x₀` on `Ω ∩ {0 ≤ im}`. Then `u` takes the value `x₀` at finitely many
+points of each compact subset of `Ω ∩ {0 ≤ im}`, which may meet the real axis. -/
+theorem finite_inter_preimage_singleton_of_cauchyRiemann_inter_im_nonneg
+    (hΩ : IsOpen Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hAR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (A x v) = -A x (R v))
+    (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x) (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ x₀)
+    {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω ∩ {z | 0 ≤ z.im}) :
+    (K ∩ u ⁻¹' {x₀}).Finite := by
+  have h := hK.finite_sdiff_of_mem_codiscreteWithin (codiscreteWithin_mono hKΩ
+    (setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_inter_im_nonneg hΩ hΩc hA hAA hAR hu hCR
+      hbd hne))
+  convert h using 1
+  ext z
+  simp
+
+end Reflection
 
 end TauCeti
