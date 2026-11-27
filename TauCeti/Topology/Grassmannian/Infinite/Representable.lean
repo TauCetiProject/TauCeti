@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Yoneda
+public import Mathlib.Topology.ContinuousMap.Basic
 public import TauCeti.Topology.Compactness.Paracompact
 public import TauCeti.Topology.Grassmannian.Infinite.Classification
 public import TauCeti.Topology.VectorBundle.FiniteRank.RankClassFunctor
@@ -69,7 +70,8 @@ abbrev infiniteGrassmannianObj : ParacompactHomotopyCat.{u} :=
 along the projection `ULift.down`. -/
 abbrev universalRankClass : (rankClassFunctor 𝕜 k).obj (op (infiniteGrassmannianObj.{u} 𝕜 k)) :=
   infiniteGrassmannian.classificationEquiv 𝕜 (ULift.{u} (infiniteGrassmannian 𝕜 k)) k
-    (Quotient.mk _ (ContinuousMap.mk ULift.down continuous_uliftDown))
+    (Quotient.mk _ (Homeomorph.ulift.{u} (X := infiniteGrassmannian 𝕜 k) :
+      C(ULift.{u} (infiniteGrassmannian 𝕜 k), infiniteGrassmannian 𝕜 k)))
 
 /-- Pulling the universal class back along `f` gives the class classified by `f` followed by the
 projection from the lift. -/
@@ -78,15 +80,10 @@ theorem rankClassFunctor_map_homMk_universalRankClass {X : ParacompactHomotopyCa
     (rankClassFunctor 𝕜 k).map (ParacompactHomotopyCat.homMk
         (Y := infiniteGrassmannianObj.{u} 𝕜 k) f).op (universalRankClass 𝕜 k) =
       infiniteGrassmannian.classificationEquiv 𝕜 X.as.obj k
-        (Quotient.mk _ ((ContinuousMap.mk ULift.down continuous_uliftDown).comp f)) :=
-  (infiniteGrassmannian.classificationEquiv_comp f k _).symm
-
-/-- Lifting after projecting from the lift is the identity. -/
-private theorem uliftUp_comp_uliftDown_comp {X : Type*} [TopologicalSpace X]
-    (f : C(X, ULift.{u} (infiniteGrassmannian 𝕜 k))) :
-    (ContinuousMap.mk ULift.up continuous_uliftUp).comp
-      ((ContinuousMap.mk ULift.down continuous_uliftDown).comp f) = f :=
-  ContinuousMap.ext fun _ ↦ rfl
+        (Quotient.mk _ ((Homeomorph.ulift.{u} (X := infiniteGrassmannian 𝕜 k) :
+      C(ULift.{u} (infiniteGrassmannian 𝕜 k), infiniteGrassmannian 𝕜 k)).comp f)) := by
+  rw [rankClassFunctor_map_homMk]
+  exact (infiniteGrassmannian.classificationEquiv_comp f k _).symm
 
 /-- **The infinite Grassmannian represents rank-`k` vector bundles** on the homotopy category of
 paracompact Hausdorff spaces: the homotopy class of `f : X → Gr_k(𝕜^∞)` corresponds to the class
@@ -96,20 +93,29 @@ def rankClassFunctorRepresentableBy :
     (rankClassFunctor 𝕜 k).RepresentableBy (infiniteGrassmannianObj.{u} 𝕜 k) where
   homEquiv {X} := Equiv.ofBijective
     (fun g ↦ (rankClassFunctor 𝕜 k).map g.op (universalRankClass 𝕜 k)) <| by
+    -- The lift `Gr_k(𝕜^∞) → ULift Gr_k(𝕜^∞)`, inverse to the projection.
+    let up : C(infiniteGrassmannian 𝕜 k, ULift.{u} (infiniteGrassmannian 𝕜 k)) :=
+      (Homeomorph.ulift.{u} (X := infiniteGrassmannian 𝕜 k)).symm
     refine ⟨fun g₁ g₂ h ↦ ?_, fun c ↦ ?_⟩
     · obtain ⟨f₁, rfl⟩ := ParacompactHomotopyCat.homMk_surjective g₁
       obtain ⟨f₂, rfl⟩ := ParacompactHomotopyCat.homMk_surjective g₂
       have h₁ := (rankClassFunctor_map_homMk_universalRankClass 𝕜 k f₁).symm.trans
         (h.trans (rankClassFunctor_map_homMk_universalRankClass 𝕜 k f₂))
-      have h' := (ContinuousMap.Homotopic.refl (ContinuousMap.mk ULift.up continuous_uliftUp)).comp
+      have h' := (ContinuousMap.Homotopic.refl up).comp
         (Quotient.exact ((infiniteGrassmannian.classificationEquiv 𝕜 X.as.obj k).injective h₁))
-      rw [uliftUp_comp_uliftDown_comp, uliftUp_comp_uliftDown_comp] at h'
+      simp only [up, ← ContinuousMap.comp_assoc, Homeomorph.symm_comp_toContinuousMap,
+        ContinuousMap.id_comp] at h'
       exact ParacompactHomotopyCat.homMk_eq_homMk_iff.2 h'
     · obtain ⟨q, rfl⟩ := (infiniteGrassmannian.classificationEquiv 𝕜 X.as.obj k).surjective c
       induction q using Quotient.inductionOn with
       | h f =>
-        exact ⟨ParacompactHomotopyCat.homMk ((ContinuousMap.mk ULift.up continuous_uliftUp).comp f),
-          rankClassFunctor_map_homMk_universalRankClass 𝕜 k _⟩
+        have hf : (Homeomorph.ulift.{u} (X := infiniteGrassmannian 𝕜 k) :
+            C(ULift.{u} (infiniteGrassmannian 𝕜 k), infiniteGrassmannian 𝕜 k)).comp
+              (up.comp f) = f := by
+          rw [← ContinuousMap.comp_assoc, Homeomorph.toContinuousMap_comp_symm,
+            ContinuousMap.id_comp]
+        refine ⟨ParacompactHomotopyCat.homMk (up.comp f), ?_⟩
+        exact (rankClassFunctor_map_homMk_universalRankClass 𝕜 k _).trans (by rw [hf])
   homEquiv_comp f g := by
     simp only [Equiv.ofBijective, Equiv.coe_fn_mk, op_comp, Functor.map_comp,
       ConcreteCategory.comp_apply]
@@ -122,7 +128,8 @@ theorem rankClassFunctorRepresentableBy_homEquiv_homMk {X : ParacompactHomotopyC
     (rankClassFunctorRepresentableBy 𝕜 k).homEquiv
         (ParacompactHomotopyCat.homMk (Y := infiniteGrassmannianObj.{u} 𝕜 k) f) =
       infiniteGrassmannian.classificationEquiv 𝕜 X.as.obj k
-        (Quotient.mk _ ((ContinuousMap.mk ULift.down continuous_uliftDown).comp f)) := by
+        (Quotient.mk _ ((Homeomorph.ulift.{u} (X := infiniteGrassmannian 𝕜 k) :
+      C(ULift.{u} (infiniteGrassmannian 𝕜 k), infiniteGrassmannian 𝕜 k)).comp f)) := by
   simp only [rankClassFunctorRepresentableBy, Equiv.ofBijective, Equiv.coe_fn_mk]
   exact rankClassFunctor_map_homMk_universalRankClass 𝕜 k f
 

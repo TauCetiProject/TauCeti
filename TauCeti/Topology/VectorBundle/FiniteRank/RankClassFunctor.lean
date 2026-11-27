@@ -40,8 +40,8 @@ open FiniteRankBundleCore
 variable (𝕜 : Type v) [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜] (k : ℕ)
 
 /-- Pullback of isomorphism classes of rank-`k` cores, as a contravariant functor on paracompact
-Hausdorff spaces into types, before passing to homotopy classes. It is public and exposed because
-the exposed `rankClassFunctor` is built from it. -/
+Hausdorff spaces into types, before passing to homotopy classes. -/
+-- Public and exposed because the exposed `rankClassFunctor` is built from it.
 @[expose] def rankClassFunctorAux : isParacompactT2.{u}.FullSubcategory ⥤ (Type (max u v))ᵒᵖ where
   obj X := op (RankClass 𝕜 X.obj k)
   map f := (TypeCat.ofHom (pullbackRankClass f.hom.hom k)).op
@@ -56,8 +56,9 @@ the exposed `rankClassFunctor` is built from it. -/
 
 /-- **Rank-`k` vector bundles on the homotopy category.** `X ↦ Vect_k(X)`, the isomorphism
 classes of rank-`k` vector-bundle cores over `X`, with pullback of classes; homotopic maps pull
-back isomorphic cores. The body is exposed because the statement of `rankClassFunctor_map_homMk`
-types its argument through `rankClassFunctor_obj`, which holds by unfolding. -/
+back isomorphic cores. -/
+-- Exposed because the statement of `rankClassFunctor_map_homMk` types its argument through
+-- `rankClassFunctor_obj`, which holds by unfolding.
 @[expose] def rankClassFunctor : ParacompactHomotopyCat.{u}ᵒᵖ ⥤ Type (max u v) :=
   (CategoryTheory.Quotient.lift paracompactHomotopicRel.{u} (rankClassFunctorAux.{u, v} 𝕜 k)
     fun _ _ _ _ h ↦
