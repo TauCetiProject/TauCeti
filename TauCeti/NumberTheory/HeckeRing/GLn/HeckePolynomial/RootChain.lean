@@ -59,6 +59,31 @@ section RootChain
 
 variable {V : Type*} [AddCommGroup V] [Module ℂ V]
 
+/-- Applying `glnHeckePolynomial (m + 1)` at `U` unfolds via `glnHeckePolynomial_succ`. -/
+private lemma aeval_glnHeckePolynomial_succ_apply (U : End ℂ V) (m : ℕ) (q : ℂ)
+    (T : Fin (m + 2) → ℂ) (y : V) :
+    aeval U (glnHeckePolynomial (m + 1) q T) y =
+      U (aeval U (glnHeckePolynomial m q (fun i ↦ T i.castSucc)) y) +
+        ((-1) ^ (m + 1) * q ^ (m + 1).choose 2 * T (Fin.last (m + 1))) • y := by
+  rw [glnHeckePolynomial_succ]
+  simp only [map_add, LinearMap.add_apply, map_mul, aeval_X, mul_apply_eq_comp,
+    aeval_C, Module.algebraMap_end_apply, smul_smul, ← mul_assoc]
+
+/-- Reindexing `t ∘ Fin.castLE` along `Fin.castSucc`. -/
+private lemma comp_castLE_castSucc {k m : ℕ} (h : k + 1 ≤ m) (f : Fin m → ℂ) :
+    (fun i : Fin k ↦ (f ∘ Fin.castLE h) i.castSucc) = f ∘ Fin.castLE (Nat.le_of_succ_le h) :=
+  rfl
+
+/-- `Fin.castLE` sends `Fin.last k` to `⟨k, h⟩`. -/
+private lemma castLE_last {k m : ℕ} (h : k + 1 ≤ m) :
+    Fin.castLE h (Fin.last k) = ⟨k, h⟩ :=
+  rfl
+
+/-- For real `q > 1`, `0 < (q : ℂ) ^ (n + 1) - 1`. -/
+private lemma pow_succ_sub_one_pos {q : ℝ} (hq : 1 < q) (n : ℕ) :
+    (0 : ℂ) < (q : ℂ) ^ (n + 1) - 1 :=
+  sub_pos.mpr (one_lt_pow₀ (by exact_mod_cast hq) n.succ_ne_zero)
+
 /-- If `P (U)` kills `y` and `(P / (X - c)) (U)` still kills `y` whenever `c ≠ 0` and `q * c` are
 both roots of `P`, then any geometric chain `q ^ i / d` (`i < k`) ending below a root `q ^ k / d`
 cancels from `P`. -/
@@ -125,7 +150,7 @@ private lemma aeval_glnHeckePolynomial_prefix {U : End ℂ V} {n : ℕ} {q : ℂ
     (rec_U : ∀ j : Fin n,
       U (T j.castSucc) = q ^ (j : ℕ) • (t j.succ.castSucc • T 0 - T j.succ))
     (m : ℕ) (hm : m ≤ n) :
-    aeval U (glnHeckePolynomial m q (fun i ↦ t ⟨i.val, by omega⟩)) (T 0) =
+    aeval U (glnHeckePolynomial m q (t ∘ Fin.castLE (by omega))) (T 0) =
       ((-1) ^ m * q ^ m.choose 2) • T ⟨m, by omega⟩ := by
   induction m with
   | zero => simpa [glnHeckePolynomial_zero] using ht_zero
@@ -134,12 +159,8 @@ private lemma aeval_glnHeckePolynomial_prefix {U : End ℂ V} {n : ℕ} {q : ℂ
     have hrec : U (T ⟨m, by omega⟩) =
         q ^ m • (t ⟨m + 1, by omega⟩ • T 0 - T ⟨m + 1, by omega⟩) := by
       simpa [Fin.castSucc_mk, Fin.succ_mk] using rec_U ⟨m, hm_lt⟩
-    have hstep := glnHeckePolynomial_succ m q (fun i : Fin (m + 2) ↦ t ⟨i.val, by omega⟩)
-    simp only [Fin.val_castSucc, Fin.val_last] at hstep
-    rw [hstep]
-    simp only [map_add, LinearMap.add_apply, map_mul, aeval_X, mul_apply_eq_comp,
-      aeval_C, Module.algebraMap_end_apply, Nat.choose_succ_succ, Nat.choose_one_right]
-    rw [ih hm_lt.le, map_smul, hrec]
+    rw [aeval_glnHeckePolynomial_succ_apply, comp_castLE_castSucc, ih hm_lt.le, map_smul, hrec]
+    simp only [Function.comp_apply, castLE_last, Nat.choose_succ_succ, Nat.choose_one_right]
     module
 
 /-- Action of `U'` on the quotient of a prefix Hecke polynomial by `X - c`. -/
@@ -150,11 +171,11 @@ private lemma exists_mul_eq_sub_eval_and_apply {U U' : End ℂ V} {n : ℕ} {q :
         q ^ (n - (i : ℕ) - 1) • ((t i.succ.castSucc / q ^ n) • U' (T 0) - T i.castSucc))
     (U'_first : U' (T 0) = q ^ n • (t (Fin.last (n + 1)))⁻¹ • T (Fin.last n))
     (aeval_p : ∀ (m : ℕ) (hm : m ≤ n),
-      aeval U (glnHeckePolynomial m q (fun i ↦ t ⟨i.val, by omega⟩)) (T 0) =
+      aeval U (glnHeckePolynomial m q (t ∘ Fin.castLE (by omega))) (T 0) =
         ((-1) ^ m * q ^ m.choose 2) • T ⟨m, by omega⟩)
     (aeval_top : aeval U (glnHeckePolynomial (n + 1) q t) (T 0) = 0)
     (m : ℕ) (hm : m ≤ n + 1) (c : ℂ) :
-    let Pm : ℂ[X] := glnHeckePolynomial m q (fun i ↦ t ⟨i.val, by omega⟩)
+    let Pm : ℂ[X] := glnHeckePolynomial m q (t ∘ Fin.castLE (by omega))
     ∃ D : ℂ[X], (X - C c) * D = Pm - C (Pm.eval c) ∧
       U' (aeval U (c • D + Pm) (T 0)) =
         (Pm.eval (q * c) / q ^ m) • U' (T 0) + (q ^ n / q) • aeval U D (T 0) := by
@@ -162,25 +183,21 @@ private lemma exists_mul_eq_sub_eval_and_apply {U U' : End ℂ V} {n : ℕ} {q :
   | zero => exact ⟨0, by simp [glnHeckePolynomial_zero]⟩
   | succ m ih =>
     obtain ⟨D, hD, hU'⟩ := ih (Nat.lt_of_succ_le hm).le
-    have hstep := glnHeckePolynomial_succ m q (fun i : Fin (m + 2) ↦ t ⟨i.val, by omega⟩)
-    simp only [Fin.val_castSucc, Fin.val_last] at hstep
-    refine ⟨c • D + glnHeckePolynomial m q (fun i ↦ t ⟨i.val, by omega⟩), ?_, ?_⟩
+    have hstep := glnHeckePolynomial_succ m q (t ∘ Fin.castLE (by omega : m + 2 ≤ n + 2))
+    rw [comp_castLE_castSucc] at hstep
+    refine ⟨c • D + glnHeckePolynomial m q (t ∘ Fin.castLE (by omega)), ?_, ?_⟩
     · rw [hstep]
       have h_poly :
-          (X - C c) * (C c * D + glnHeckePolynomial m q (fun i ↦ t ⟨i.val, by omega⟩)) =
-            X * glnHeckePolynomial m q (fun i ↦ t ⟨i.val, by omega⟩) -
-              C c * C ((glnHeckePolynomial m q (fun i ↦ t ⟨i.val, by omega⟩)).eval c) := by
+          (X - C c) * (C c * D + glnHeckePolynomial m q (t ∘ Fin.castLE (by omega))) =
+            X * glnHeckePolynomial m q (t ∘ Fin.castLE (by omega)) -
+              C c * C ((glnHeckePolynomial m q (t ∘ Fin.castLE (by omega))).eval c) := by
         linear_combination C c * hD
       simpa [smul_eq_C_mul] using h_poly
     · rw [map_add, LinearMap.add_apply, map_smul, LinearMap.smul_apply, map_add, map_smul, hU']
       rcases eq_or_lt_of_le (Nat.le_of_succ_le_succ hm) with hmn | hmlt
       · subst hmn
-        have hfun : (fun i : Fin (m + 2) ↦ t ⟨i.val, by omega⟩) = t :=
-          funext fun i ↦ congrArg t (Fin.eta i _)
-        have htop : aeval U (glnHeckePolynomial (m + 1) q fun i ↦ t ⟨i.val, by omega⟩) (T 0) = 0 :=
-          by rwa [hfun]
-        have hlast_t : (⟨m + 1, by omega⟩ : Fin (m + 2)) = Fin.last (m + 1) := Fin.ext rfl
-        have hlast_T : (⟨m, by omega⟩ : Fin (m + 1)) = Fin.last m := Fin.ext rfl
+        have htop : aeval U (glnHeckePolynomial (m + 1) q (t ∘ Fin.castLE le_rfl)) (T 0) = 0 := by
+          simpa using aeval_top
         have hT_last : T (Fin.last m) = (q ^ m)⁻¹ • t (Fin.last (m + 1)) • U' (T 0) := by
           rw [U'_first]
           have h1 : (q ^ m)⁻¹ * t (Fin.last (m + 1)) * q ^ m * (t (Fin.last (m + 1)))⁻¹ = 1 := by
@@ -189,8 +206,9 @@ private lemma exists_mul_eq_sub_eval_and_apply {U U' : End ℂ V} {n : ℕ} {q :
         rw [htop, hstep]
         simp only [map_zero, add_zero, eval_add, eval_mul, eval_X, eval_C, map_add,
           LinearMap.add_apply, map_smul, LinearMap.smul_apply, Nat.choose_succ_succ,
-          Nat.choose_one_right]
-        rw [aeval_p m le_rfl, hlast_T, hlast_t, hT_last]
+          Nat.choose_one_right, Function.comp_apply, Fin.castLE_refl]
+        rw [aeval_p m le_rfl, show (⟨m, by omega⟩ : Fin (m + 1)) = Fin.last m from Fin.ext rfl,
+          hT_last]
         match_scalars <;> field
       · have hrec : U' (T ⟨m + 1, by omega⟩) =
             q ^ (n - m - 1) • ((t ⟨m + 1, by omega⟩ / q ^ n) • U' (T 0) - T ⟨m, by omega⟩) := by
@@ -200,7 +218,8 @@ private lemma exists_mul_eq_sub_eval_and_apply {U U' : End ℂ V} {n : ℕ} {q :
           rw [eq_div_iff (pow_ne_zero _ hq), ← pow_add, hexp]
         rw [aeval_p (m + 1) hmlt, hstep]
         simp only [map_smul, eval_add, eval_mul, eval_X, eval_C, map_add, LinearMap.add_apply,
-          LinearMap.smul_apply, Nat.choose_succ_succ, Nat.choose_one_right]
+          LinearMap.smul_apply, Nat.choose_succ_succ, Nat.choose_one_right, Function.comp_apply,
+          castLE_last]
         rw [hrec, hpow, aeval_p m hmlt.le]
         match_scalars <;> field
 
@@ -212,8 +231,7 @@ private lemma le_norm_sq_of_pairing {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[�
     (U'_z : c • U' z = (a / (q : ℂ) ^ (n + 1)) • U' x + ((q : ℂ) ^ n / q) • z)
     (pair_x : c * B x z * ((q : ℂ) ^ (n + 1) - 1) = a * B x x) :
     q ^ (n + 1) / q ^ 2 ≤ ‖c‖ ^ 2 := by
-  have hqC : (1 : ℂ) < (q : ℂ) := by exact_mod_cast hq
-  have pow_sub_pos : (0 : ℂ) < (q : ℂ) ^ (n + 1) - 1 := sub_pos.mpr (one_lt_pow₀ hqC n.succ_ne_zero)
+  have pow_sub_pos := pow_succ_sub_one_pos hq n
   have x_pos : 0 < B x x := hB x hx_ne
   have z_pos : 0 < B z z := hB z fun hz ↦ ha (by simpa [hz, x_pos.ne'] using pair_x)
   have pair_z : (‖c‖ ^ 2 - (q : ℂ) ^ n / q) * B z z =
@@ -227,23 +245,26 @@ private lemma le_norm_sq_of_pairing {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[�
     rw [eq_div_iff (mul_pos pow_sub_pos z_pos).ne', ← Complex.mul_conj' a]
     linear_combination (norm := field) ((q : ℂ) ^ (n + 1) - 1) * pair_z +
       starRingEnd ℂ a / (q : ℂ) ^ (n + 1) * pair_x
-  have : (0 : ℂ) < (q : ℂ) := zero_lt_one.trans hqC
+  have : (0 : ℂ) < (q : ℂ) := by exact_mod_cast zero_lt_one.trans hq
   have gap_nonneg : (0 : ℂ) ≤ ((‖c‖ ^ 2 : ℂ) - (q : ℂ) ^ (n + 1) / (q : ℂ) ^ 2) :=
     gap.ge.trans' (by positivity)
   exact Complex.real_le_real.mp (by simpa using gap_nonneg)
 
-/-- Top-degree evaluation of `glnHeckePolynomial` vanishes when `U (T n)` closes the recursion. -/
-private lemma aeval_glnHeckePolynomial_top_eq_zero {U : End ℂ V} {n : ℕ} {q : ℂ}
-    {t : Fin (n + 2) → ℂ} {T : Fin (n + 1) → V}
-    (hn : aeval U (glnHeckePolynomial n q (fun i ↦ t i.castSucc)) (T 0) =
-      ((-1) ^ n * q ^ n.choose 2) • T (Fin.last n))
-    (U_last : U (T (Fin.last n)) = q ^ n • t (Fin.last (n + 1)) • T 0) :
-    aeval U (glnHeckePolynomial (n + 1) q t) (T 0) = 0 := by
-  rw [glnHeckePolynomial_succ]
-  simp only [map_add, LinearMap.add_apply, map_mul, aeval_X, mul_apply_eq_comp,
-    aeval_C, Module.algebraMap_end_apply, Nat.choose_succ_succ, Nat.choose_one_right]
-  rw [hn, map_smul, U_last]
-  module
+/-- Pairing `U' x` with `c • U' z` yields `c * B x z * (q ^ (n + 1) - 1) = a * B x x`. -/
+private lemma mul_pair_eq_of_adjoint {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ] ℂ} {U U' : End ℂ V}
+    {n : ℕ} {q : ℝ} {x z : V} {c a : ℂ} (hq : 1 < q)
+    (adj : ∀ y w : V, B (U' y) w = B y (U w)) (adj' : ∀ y w : V, B (U y) w = B y (U' w))
+    (hUU' : U (U' x) = ((q : ℂ) ^ n * (q : ℂ) ^ n) • x) (U_z : U z = c • z)
+    (U'_z : c • U' z = (a / (q : ℂ) ^ (n + 1)) • U' x + ((q : ℂ) ^ n / q) • z) :
+    c * B x z * ((q : ℂ) ^ (n + 1) - 1) = a * B x x := by
+  have q_ne : (q : ℂ) ≠ 0 := by exact_mod_cast (zero_lt_one.trans hq).ne'
+  have pair_U' (y : V) : B (U' x) (U' y) = (q : ℂ) ^ n * (q : ℂ) ^ n * B x y := by
+    rw [← adj', hUU']
+    simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, map_mul, map_pow, Complex.conj_ofReal]
+  have paired : B (U' x) (c • U' z) =
+      B (U' x) ((a / (q : ℂ) ^ (n + 1)) • U' x + ((q : ℂ) ^ n / q) • z) := by rw [U'_z]
+  simp only [map_add, map_smul, pair_U', adj _ z, U_z, smul_eq_mul] at paired
+  linear_combination (norm := field) (q : ℂ) / (q : ℂ) ^ n * paired
 
 /-- If `c ≠ 0` and `q * c` are both roots of `P`, then `(P / (X - c)) (U)` kills `T 0`. -/
 private lemma aeval_quot_eq_zero_of_two_roots {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ] ℂ}
@@ -255,16 +276,20 @@ private lemma aeval_quot_eq_zero_of_two_roots {B : V →ₛₗ[starRingEnd ℂ] 
       (P.eval ((q : ℂ) * c) / (q : ℂ) ^ (n + 1)) • U' x + ((q : ℂ) ^ n / q) • aeval U D x)
     (pair_x : c * B x (aeval U D x) * ((q : ℂ) ^ (n + 1) - 1) = P.eval ((q : ℂ) * c) * B x x) :
     aeval U F x = 0 := by
-  have hqC : (1 : ℂ) < (q : ℂ) := by exact_mod_cast hq
-  have pow_sub_pos : (0 : ℂ) < (q : ℂ) ^ (n + 1) - 1 := sub_pos.mpr (one_lt_pow₀ hqC n.succ_ne_zero)
+  have pow_sub_pos := pow_succ_sub_one_pos hq n
   have root : P.IsRoot c := by simp [← hF]
   obtain rfl : F = D := mul_left_cancel₀ (X_sub_C_ne_zero c) (by simp [hF, hD, root.eq_zero])
   have eigen_z : U' (aeval U F x) = (c⁻¹ * ((q : ℂ) ^ n / q)) • aeval U F x := by
     rw [← smul_smul]; exact (eq_inv_smul_iff₀ hc).mpr (by simpa [hqc.eq_zero] using U'_z)
   have orth_x : B x (aeval U F x) = 0 := by
     simpa [hqc.eq_zero, hc, pow_sub_pos.ne'] using pair_x
-  exact by_contra fun hz ↦
-    (hB _ hz).ne' (B.apply_aeval_eq_zero_of_apply_eq_smul adj' eigen_z orth_x F)
+  have hF_conj : (F.map (starRingEnd ℂ)).map (starRingEnd ℂ) = F := by
+    rw [Polynomial.map_map]; simp
+  have hself : B (aeval U ((F.map (starRingEnd ℂ)).map (starRingEnd ℂ)) x) (aeval U F x) = 0 := by
+    rw [B.apply_aeval_map_starRingEnd_apply adj',
+      Module.End.aeval_apply_of_mem_apply_eq_smul eigen_z, map_smul, orth_x, smul_zero]
+  rw [hF_conj] at hself
+  exact by_contra fun hz ↦ (hB _ hz).ne' hself
 
 /-- Shared pairing and two-root vanishing setup for the `GL_N` Hecke polynomial adjoint lemma. -/
 private lemma glnHeckePolynomial_adjoint_core {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ] ℂ}
@@ -286,64 +311,48 @@ private lemma glnHeckePolynomial_adjoint_core {B : V →ₛₗ[starRingEnd ℂ] 
       P = (∏ i ∈ range k, (C d * X - C ((q : ℂ) ^ i))) * R →
       aeval U' (R.map (starRingEnd ℂ)) (T 0) = 0 := by
   intro P
-  have hB_symm : B.IsSymm :=
-    (LinearMap.IsNonneg.mk fun x ↦ by
-      rcases eq_or_ne x 0 with rfl | hx
-      · simp
-      · exact (hB x hx).le).isSymm
+  have hB_symm : B.IsSymm := (LinearMap.IsNonneg.mk fun x ↦ by
+    by_cases hx : x = 0 <;> [simp [hx]; exact (hB x hx).le]).isSymm
   have adj' (a y : V) : B (U a) y = B a (U' y) := by rw [← hB_symm.eq, ← adj y a, hB_symm.eq]
   have q_ne : (q : ℂ) ≠ 0 := by exact_mod_cast (zero_lt_one.trans hq).ne'
   have aeval_p := aeval_glnHeckePolynomial_prefix ht_zero rec_U
-  have hcast : (fun i : Fin (n + 1) ↦ t ⟨i.val, by omega⟩) = fun i ↦ t i.castSucc :=
-    funext fun i ↦ congrArg t (Fin.ext rfl)
-  have hlast : (⟨n, by omega⟩ : Fin (n + 1)) = Fin.last n := Fin.ext rfl
-  have hn : aeval U (glnHeckePolynomial n (q : ℂ) (fun i ↦ t i.castSucc)) (T 0) =
-      ((-1) ^ n * (q : ℂ) ^ n.choose 2) • T (Fin.last n) := by
-    simpa [hcast, hlast] using aeval_p n le_rfl
-  have aeval_P : aeval U P (T 0) = 0 := aeval_glnHeckePolynomial_top_eq_zero hn U_last
-  have hfun : (fun i : Fin (n + 2) ↦ t ⟨i.val, by omega⟩) = t :=
-    funext fun i ↦ congrArg t (Fin.eta i _)
-  have quot (c : ℂ) : ∃ D : ℂ[X], (X - C c) * D = P - C (P.eval c) ∧
-      U' (aeval U (c • D + P) (T 0)) =
-        (P.eval ((q : ℂ) * c) / (q : ℂ) ^ (n + 1)) • U' (T 0) +
-          ((q : ℂ) ^ n / q) • aeval U D (T 0) := by
-    simpa [P, hfun] using
-      exists_mul_eq_sub_eval_and_apply q_ne ht_last rec_U' U'_first aeval_p aeval_P (n + 1) le_rfl c
-  choose D hD hU' using quot
-  let z (c : ℂ) : V := aeval U (D c) (T 0)
-  have U'_z (c : ℂ) : c • U' (z c) =
-      (P.eval ((q : ℂ) * c) / (q : ℂ) ^ (n + 1)) • U' (T 0) + ((q : ℂ) ^ n / q) • z c := by
-    simpa [aeval_P] using hU' c
-  have U_z (c : ℂ) (hc : P.IsRoot c) : U (z c) = c • z c := by
-    simpa [aeval_P, hc.eq_zero, sub_eq_zero] using congrArg (aeval U · (T 0)) (hD c)
-  have pair_U' (y : V) : B (U' (T 0)) (U' y) = (q : ℂ) ^ n * (q : ℂ) ^ n * B (T 0) y := by
-    have hUU' : U (U' (T 0)) = ((q : ℂ) ^ n * (q : ℂ) ^ n) • T 0 := by
-      rw [U'_first, map_smul, map_smul, U_last, smul_smul, smul_smul, smul_smul]
-      congr 1; field_simp [ht_last]
-    rw [← adj', hUU']
-    simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, map_mul, map_pow, Complex.conj_ofReal]
-  have pair_x (c : ℂ) (hc : P.IsRoot c) :
-      c * B (T 0) (z c) * ((q : ℂ) ^ (n + 1) - 1) = P.eval ((q : ℂ) * c) * B (T 0) (T 0) := by
-    have paired : B (U' (T 0)) (c • U' (z c)) =
-        B (U' (T 0)) ((P.eval ((q : ℂ) * c) / (q : ℂ) ^ (n + 1)) • U' (T 0) +
-          ((q : ℂ) ^ n / q) • z c) := by rw [U'_z c]
-    simp only [map_add, map_smul, pair_U', adj _ (z c), U_z c hc, smul_eq_mul] at paired
-    linear_combination (norm := field) (q : ℂ) / (q : ℂ) ^ n * paired
+  have aeval_P : aeval U P (T 0) = 0 := by
+    rw [show P = glnHeckePolynomial (n + 1) (q : ℂ) t from rfl, aeval_glnHeckePolynomial_succ_apply,
+      show (fun i : Fin (n + 1) ↦ t i.castSucc) = t ∘ Fin.castLE (by omega) from rfl,
+      aeval_p n le_rfl, show (⟨n, by omega⟩ : Fin (n + 1)) = Fin.last n from Fin.ext rfl,
+      map_smul, U_last]
+    simp only [Nat.choose_succ_succ, Nat.choose_one_right]; module
+  choose D hD hU' using fun c : ℂ ↦
+    exists_mul_eq_sub_eval_and_apply q_ne ht_last rec_U' U'_first aeval_p aeval_P (n + 1) le_rfl c
+  have hUU' : U (U' (T 0)) = ((q : ℂ) ^ n * (q : ℂ) ^ n) • T 0 := by
+    rw [U'_first, map_smul, map_smul, U_last, smul_smul, smul_smul, smul_smul]
+    congr 1; field_simp [ht_last]
+  have U'_z (c : ℂ) : c • U' (aeval U (D c) (T 0)) =
+      (P.eval ((q : ℂ) * c) / (q : ℂ) ^ (n + 1)) • U' (T 0) +
+        ((q : ℂ) ^ n / q) • aeval U (D c) (T 0) := by simpa [P, aeval_P] using hU' c
+  have U_z (c : ℂ) (hc : P.IsRoot c) : U (aeval U (D c) (T 0)) = c • aeval U (D c) (T 0) := by
+    simpa [P, aeval_P, hc.eq_zero, sub_eq_zero] using congrArg (aeval U · (T 0)) (hD c)
+  have pair_x (c : ℂ) (hc : P.IsRoot c) :=
+    mul_pair_eq_of_adjoint hq adj adj' hUU' (U_z c hc) (U'_z c)
   refine ⟨fun c hc hqc ↦
     le_norm_sq_of_pairing hB adj hq hT_ne hqc (U_z c hc) (U'_z c) (pair_x c hc), ?_⟩
   have two_roots {c : ℂ} (F : ℂ[X]) (hF : (X - C c) * F = P) (hqc : P.IsRoot ((q : ℂ) * c))
       (hc : c ≠ 0) : aeval U F (T 0) = 0 :=
-    aeval_quot_eq_zero_of_two_roots hB adj' hq (hD c) hF hqc hc (U'_z c) (pair_x c (by simp [← hF]))
+    aeval_quot_eq_zero_of_two_roots hB adj' hq (by simpa [P] using hD c) hF hqc hc (U'_z c)
+      (pair_x c (by simp [← hF]))
   intro d hd k R hroot hP
   have kills_x : aeval U R (T 0) = 0 :=
     aeval_apply_eq_zero_of_eq_prod_mul hq aeval_P two_roots hd k R hroot hP
   refine aeval_conj_eq_zero hB adj (fun j ↦ ?_) (U'_first.trans (smul_smul _ _ _)) rec_U'
-  have hj_eta : (⟨j.val, by omega⟩ : Fin (n + 1)) = j := Fin.eta j _
-  have haeval_j := aeval_p j.val j.is_le
-  rw [hj_eta] at haeval_j
-  simpa [haeval_j, kills_x, q_ne] using
-    congrArg (aeval U · (T 0))
-      (mul_comm R (glnHeckePolynomial j.val (q : ℂ) fun i ↦ t ⟨i.val, by omega⟩))
+  set Pj := glnHeckePolynomial j.val (q : ℂ) (t ∘ Fin.castLE (by omega))
+  have hcomm : aeval U R (aeval U Pj (T 0)) = aeval U Pj (aeval U R (T 0)) := by
+    rw [← mul_apply_eq_comp, ← map_mul, mul_comm, map_mul, mul_apply_eq_comp]
+  have haeval_j : aeval U Pj (T 0) = ((-1) ^ j.val * (q : ℂ) ^ j.val.choose 2) • T j := by
+    simpa [Pj, Fin.eta] using aeval_p j.val j.is_le
+  have hscalar_ne : (-1 : ℂ) ^ j.val * (q : ℂ) ^ j.val.choose 2 ≠ 0 :=
+    mul_ne_zero (pow_ne_zero _ (by norm_num)) (pow_ne_zero _ q_ne)
+  rw [haeval_j, map_smul, kills_x, map_zero] at hcomm
+  exact (smul_eq_zero_iff_right hscalar_ne).mp hcomm
 
 /-- **Top-root lower bound for `GL_N` Hecke polynomials.** Let `B` be a positive-definite
 sesquilinear form on `V`, `U'` left-adjoint to `U` for `B`, `q > 1` real,

@@ -41,6 +41,8 @@ the summation index. The weighted sum is again a single binomial coefficient,
 * `Nat.two_mul_choose_two_add_mul`: `2 C(a, 2) + ab = a(a + b - 1)`, and its form
   `Nat.two_mul_choose_two_add_mul_sub`: `2 C(i, 2) + i (n - i) = (n - 1) i` for `i ≤ n`.
 * `Nat.add_choose_two_add_choose_two`: `C(m + i, 2) + C(i, 2) = (m + i - 1) i + C(m, 2)`.
+* `Nat.add_choose_two_add_choose_two_add_left`:
+  `(a + b).choose 2 + a.choose 2 + a = b.choose 2 + (a + b) * a`.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
 * `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
   parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
@@ -131,6 +133,16 @@ theorem add_choose_two_add_choose_two (m i : ℕ) :
   qify [h]
   push_cast [Nat.cast_choose_two]
   ring
+
+
+/-- Exponent identity `(a + b).choose 2 + a.choose 2 + a = b.choose 2 + (a + b) * a`. -/
+theorem add_choose_two_add_choose_two_add_left (a b : ℕ) :
+    (a + b).choose 2 + a.choose 2 + a = b.choose 2 + (a + b) * a := by
+  have h1 := add_choose_two a b
+  have h2 : 2 * a.choose 2 + a = a * a := by
+    simpa [sq] using two_mul_choose_two_add_mul a 1
+  have h3 : (a + b) * a = a * a + a * b := by ring
+  omega
 
 /-- `g³ - g = (2g + 2) · C(g, 2)`. -/
 theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
@@ -291,14 +303,5 @@ theorem mem_filter_range_not_dvd_choose {p n k : ℕ} :
   refine ⟨fun h ↦ (mem_filter.mp h).2, fun h ↦ mem_filter.mpr ⟨mem_range.mpr ?_, h⟩⟩
   by_contra! hk
   exact h (by simp [choose_eq_zero_of_lt (lt_of_succ_le hk)])
-
-/-- Exponent identity `(a + b).choose 2 + a.choose 2 + a = b.choose 2 + (a + b) * a`. -/
-theorem add_choose_two_add_choose_two_add_left (a b : ℕ) :
-    (a + b).choose 2 + a.choose 2 + a = b.choose 2 + (a + b) * a := by
-  have h1 := add_choose_two a b
-  have h2 : 2 * a.choose 2 + a = a * a := by
-    simpa [sq] using two_mul_choose_two_add_mul a 1
-  have h3 : (a + b) * a = a * a + a * b := by ring
-  omega
 
 end Nat
