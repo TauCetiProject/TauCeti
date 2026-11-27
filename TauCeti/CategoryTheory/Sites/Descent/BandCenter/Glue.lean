@@ -38,6 +38,8 @@ in Definition 8.4.1 (026F).
 * `IntrinsicBandSections.coverCenterAt`: the descended centre unit over an arbitrary `a : V ⟶ U`.
 * `IntrinsicBandSections.glue`: the glued central section.
 * `IntrinsicBandSections.presheaf`: the presheaf of abelian groups `U ↦ Additive ZF(U)`.
+* `IntrinsicBandSections.sheaf`: `IntrinsicBandSections.presheaf` as an object of
+  `Sheaf J AddCommGrpCat`.
 
 ## Main results
 
@@ -46,6 +48,8 @@ in Definition 8.4.1 (026F).
 * `IntrinsicBandSections.restrict_glue`, `IntrinsicBandSections.glue_unique`,
   `IntrinsicBandSections.glue_restrict`.
 * `IntrinsicBandSections.isSheaf_of_prestack`: `U ↦ Additive ZF(U)` is a sheaf for `J`.
+* `IntrinsicBandSections.sheaf_obj`, `IntrinsicBandSections.sheaf_obj_obj`,
+  `IntrinsicBandSections.sheaf_obj_map_apply`: the sections and restrictions of `sheaf`.
 
 ## References
 
@@ -263,5 +267,32 @@ theorem isSheaf_of_prestack : Presheaf.IsSheaf J (presheaf F) := by
       (congrArg Additive.ofMul (restrict_glue hR hy (Presieve.categoryMk _ f hf)))
   · exact congrArg Additive.ofMul (glue_unique hR hy fun i ↦
       congrArg Additive.toMul ((presheaf_map_apply _ _).symm.trans (ht i.obj.hom i.property)))
+
+/-! ### The sheaf of intrinsic central sections -/
+
+section Sheaf
+
+variable (F) (J : GrothendieckTopology C) [F.IsPrestack J]
+
+/-- **The sheaf of intrinsic central sections** of a prestack: `U ↦ Additive ZF(U)`, with
+restriction along `f : V ⟶ U` as transition map. -/
+@[expose]
+def sheaf : Sheaf J AddCommGrpCat.{max u v u' v'} :=
+  ⟨presheaf F, isSheaf_of_prestack⟩
+
+/-- The underlying presheaf of `sheaf F J` is `presheaf F`. -/
+theorem sheaf_obj : (sheaf F J).obj = presheaf F :=
+  rfl
+
+theorem sheaf_obj_obj (U : C) :
+    (sheaf F J).obj.obj (op U) = AddCommGrpCat.of (Additive (IntrinsicBandSections F U)) :=
+  rfl
+
+/-- The restriction maps of `sheaf F J` are `restrict` through the `Additive` wrapper. -/
+theorem sheaf_obj_map_apply {U V : C} (f : V ⟶ U) (s : Additive (IntrinsicBandSections F U)) :
+    (sheaf F J).obj.map f.op s = Additive.ofMul (restrict f (Additive.toMul s)) :=
+  rfl
+
+end Sheaf
 
 end CategoryTheory.Pseudofunctor.IntrinsicBandSections

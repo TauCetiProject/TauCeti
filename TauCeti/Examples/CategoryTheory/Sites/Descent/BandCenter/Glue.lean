@@ -17,6 +17,8 @@ public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Glue
   identity, whatever the family.
 * For a prestack all of whose fibres have only identity endomorphisms, the sheaf
   `U ↦ Additive ZF(U)` has a single section over every `U`.
+* The coefficient group of the sheaf of central sections over `U` is `Additive ZF(U)`, and its
+  restriction maps are restrictions of sections.
 -/
 
 public section
@@ -52,5 +54,15 @@ example (h : ∀ (V : C) (x : F.obj (.mk (op V))), Subsingleton (x ⟶ x)) (V : 
     Subsingleton ((presheaf F).obj V) :=
   have := subsingleton_of_subsingleton_end (U := V.unop) h
   inferInstanceAs (Subsingleton (Additive (IntrinsicBandSections F V.unop)))
+
+/-- The coefficient group over `U` is `Additive ZF(U)`. -/
+example (U : C) :
+    (sheaf F J).obj.obj (op U) = AddCommGrpCat.of (Additive (IntrinsicBandSections F U)) :=
+  sheaf_obj_obj F J U
+
+/-- The restriction maps of the coefficient sheaf are restrictions of sections. -/
+example {U V : C} (f : V ⟶ U) (s : IntrinsicBandSections F U) :
+    (sheaf F J).obj.map f.op (Additive.ofMul s) = Additive.ofMul (restrict f s) :=
+  sheaf_obj_map_apply F J f _
 
 end TauCeti.Examples.BandCenterGlue

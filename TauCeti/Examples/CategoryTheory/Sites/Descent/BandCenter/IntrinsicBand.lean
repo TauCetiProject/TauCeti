@@ -10,10 +10,8 @@ public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.IntrinsicBand
 /-!
 # Checks for the intrinsic band of a gerbe with abelian inertia
 
-For a prestack `F` and a gerbe with abelian inertia:
+For a gerbe with abelian inertia:
 
-* the coefficient group of the sheaf of central sections over `U` is `Additive ZF(U)`, and its
-  restriction maps are restrictions of sections;
 * the band automorphism of a section at `x` is its evaluation at `(𝟙, x)`, and the band
   automorphism of the lift `L_x(a)` at `x` is `a`;
 * the band automorphism of a section other than the unit is not the identity, at every object;
@@ -30,16 +28,6 @@ open IntrinsicBandSections
 
 variable {C : Type*} [Category* C] {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat}
   {J : GrothendieckTopology C}
-
-/-- The coefficient group over `U` is `Additive ZF(U)`. -/
-example [F.IsPrestack J] (U : C) :
-    (sheaf F J).obj.obj (op U) = AddCommGrpCat.of (Additive (IntrinsicBandSections F U)) :=
-  sheaf_obj_obj F J U
-
-/-- The restriction maps of the coefficient sheaf are restrictions of sections. -/
-example [F.IsPrestack J] {U V : C} (f : V ⟶ U) (s : IntrinsicBandSections F U) :
-    (sheaf F J).obj.map f.op (Additive.ofMul s) = Additive.ofMul (restrict f s) :=
-  sheaf_obj_map_apply F J f _
 
 variable [F.IsGerbe J] (hF : ∀ (V : C) (z : F.obj (.mk (op V))) (a b : Aut z), a * b = b * a)
   {U : C} (x : F.obj (.mk (op U)))
