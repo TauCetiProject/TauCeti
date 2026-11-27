@@ -12,6 +12,8 @@ public import TauCeti.Analysis.PDE.EnergyForm.VariableLp
 public import TauCeti.Analysis.Sobolev.Poincare.W1p0
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.SpecificCodomains.WithLp
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.Topology.Instances.Matrix
 
@@ -96,6 +98,8 @@ estimates do not see the boundary.
 * `TauCeti.PDE.energyFormH1`: the divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`.
 * `TauCeti.PDE.energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero`: the energy form only sees the
   principal coefficients where `∇u` does not vanish.
+* `TauCeti.PDE.energyFormH1_eq_of_ae_jetField_eq`: the energy form only sees its second argument
+  through its jet where the coefficients do not all vanish.
 * `TauCeti.PDE.aestronglyMeasurable_energyFormH1`: for coefficients jointly measurable in a
   parameter and in space, the energy form is a.e. strongly measurable in the parameter.
 * `TauCeti.PDE.energyFormH1_zero_zero_eq_setIntegral`: the energy form with no lower-order
@@ -114,6 +118,8 @@ estimates do not see the boundary.
   `TauCeti.PDE.abs_energyFormH1_le_norm_energyFormH1L_mul`: `|B(u, v)| ≤ ‖B‖ ‖u‖ ‖v‖`.
 * `TauCeti.PDE.energyFormH1L0_comm`: symmetry of the bundled `H¹₀` energy form, from symmetry of
   the energy form at the functions of `H¹₀(Ω)`.
+* `TauCeti.PDE.memLp_drift` and `TauCeti.PDE.memLp_drift_apply`: the drift of an essentially
+  bounded field of pointwise energy forms, and each of its coordinates, is essentially bounded.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_energyIntegrand_jetField`: the energy density of
   two Sobolev functions is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.memLp_energyIntegrand_zero_drift`: without drift, the energy
@@ -319,6 +325,34 @@ theorem memLp_energyIntegrand_mass_sub_const
   simp only [Pi.sub_apply]
   simpa only [sub_zero] using (energyIntegrand_sub (a x) 0 (b x) 0 (c x) kappa).symm
 
+/-- The coordinates of the drift of an essentially bounded field of pointwise energy forms are
+essentially bounded. -/
+theorem memLp_drift_apply
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) (k : ι) :
+    MemLp (fun x ↦ b x k) ⊤ (mu.restrict Omega) := by
+  classical
+  -- The drift coordinate `b_k` is the jet form evaluated at `((0, e_k), (1, 0))`.
+  set U : ℝ × EuclideanSpace ℝ ι := (0, EuclideanSpace.single k 1)
+  set V : ℝ × EuclideanSpace ℝ ι := (1, 0)
+  have h₁ : eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x) U) ⊤ (mu.restrict Omega) ≤
+      ‖U‖₊ * eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) :=
+    eLpNorm_clm_apply_const_le U
+  have h₂ : eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x) U V) ⊤ (mu.restrict Omega) ≤
+      ‖V‖₊ * eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x) U) ⊤ (mu.restrict Omega) :=
+    eLpNorm_clm_apply_const_le V
+  have hUV : (fun x ↦ energyIntegrand (a x) (b x) (c x) U V) = fun x ↦ b x k := by
+    funext x
+    simp [U, V, energyIntegrand_apply, EuclideanSpace.inner_single_right]
+  rw [← hUV]
+  exact memLp_iff.2 (h₂.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
+    (h₁.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hcoeff))))
+
+/-- The drift of an essentially bounded field of pointwise energy forms is essentially bounded. -/
+theorem memLp_drift
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    MemLp b ⊤ (mu.restrict Omega) :=
+  MemLp.of_eval_piLp (memLp_drift_apply hcoeff)
+
 /-- A bounded coefficient field with continuously varying matrix bilinear forms has an essentially
 bounded field of drift- and mass-free energy integrands on every open set. -/
 theorem memLp_energyIntegrand_of_continuous (hLam : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
@@ -516,6 +550,21 @@ theorem energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero {a a' : EuclideanSpace �
   by_cases hxs : x ∈ s
   · rw [ha hxs]
   · simp [hx hxs]
+
+/-- The energy form `a(u, v)` only sees its second argument through its jet where the coefficients
+do not all vanish: if `a, b, c` all vanish on `Ω \ s`, it is unchanged when `v` is replaced by a
+function `w` with the same jet almost everywhere on `s ∩ Ω`. -/
+theorem energyFormH1_eq_of_ae_jetField_eq {s : Set (EuclideanSpace ℝ ι)}
+    (hs : ∀ x ∈ Omega, x ∉ s → a x = 0 ∧ b x = 0 ∧ c x = 0) {u v w : W1p mu Omega 2}
+    (h : ∀ᵐ x ∂mu.restrict Omega, x ∈ s → jetField v x = jetField w x) :
+    energyFormH1 a b c u v = energyFormH1 a b c u w := by
+  rw [energyFormH1_def, energyFormH1_def]
+  refine integral_congr_ae ?_
+  filter_upwards [h, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
+  by_cases hxs : x ∈ s
+  · rw [hx hxs]
+  · obtain ⟨ha, hb, hc⟩ := hs x hxΩ hxs
+    simp [ha, hb, hc]
 
 /-- The energy form on `H¹(Ω)` is homogeneous in the coefficient triple `(a, b, c)`. -/
 theorem energyFormH1_smul_coefficients (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
