@@ -40,6 +40,8 @@ parameter sets are the ellipsoids `∑' j, a j² θ j² ≤ C²`.
   is `∑' j, (c j² ε² + (1 - c j)² θ j²)`.
 * `TauCeti.map_restrict_gaussSeqLaw_eq`: if `θ` and `θ'` agree outside a finite set `S`, the
   coordinates outside `S` have the same law under `gaussSeqLaw θ ε` and `gaussSeqLaw θ' ε`.
+* `TauCeti.ellipsoid_mono`: lowering the squared weights and raising the squared radius enlarges
+  an ellipsoid.
 * `TauCeti.gaussSeqLaw_map_restrict`: the coordinates in any set of indices have the product law.
 * `TauCeti.gaussSeqMinimax_le_gaussSeqLinearMinimax`: the minimax risk is at most the linear
   minimax risk.
@@ -148,6 +150,26 @@ theorem ellipsoid_neg_left (a : ℕ → ℝ) (C : ℝ) : ellipsoid (-a) C = elli
 theorem ellipsoid_zero_left (C : ℝ) : ellipsoid 0 C = univ := by
   ext θ
   simp
+
+/-- **Inclusion of ellipsoids.** Lowering the squared weights and raising the squared radius
+enlarges an ellipsoid. -/
+theorem ellipsoid_mono {a a' : ℕ → ℝ} {C C' : ℝ} (ha : ∀ j, a' j ^ 2 ≤ a j ^ 2)
+    (hC : C ^ 2 ≤ C' ^ 2) : ellipsoid a C ⊆ ellipsoid a' C' := fun θ hθ ↦
+  calc ∑' j, ENNReal.ofReal (a' j ^ 2 * θ j ^ 2)
+      ≤ ∑' j, ENNReal.ofReal (a j ^ 2 * θ j ^ 2) := tsum_le_tsum fun j ↦
+        ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_right (ha j) (sq_nonneg _))
+    _ ≤ ENNReal.ofReal (C ^ 2) := hθ
+    _ ≤ ENNReal.ofReal (C' ^ 2) := ENNReal.ofReal_le_ofReal hC
+
+/-- Lowering the squared weights enlarges an ellipsoid. -/
+theorem ellipsoid_mono_left {a a' : ℕ → ℝ} (ha : ∀ j, a' j ^ 2 ≤ a j ^ 2) (C : ℝ) :
+    ellipsoid a C ⊆ ellipsoid a' C :=
+  ellipsoid_mono ha le_rfl
+
+/-- Raising the squared radius enlarges an ellipsoid. -/
+theorem ellipsoid_mono_right (a : ℕ → ℝ) {C C' : ℝ} (hC : C ^ 2 ≤ C' ^ 2) :
+    ellipsoid a C ⊆ ellipsoid a C' :=
+  ellipsoid_mono (fun _ ↦ le_rfl) hC
 
 /-- The zero parameter lies in every ellipsoid. -/
 theorem zero_mem_ellipsoid (a : ℕ → ℝ) (C : ℝ) : (0 : ℕ → ℝ) ∈ ellipsoid a C := by
