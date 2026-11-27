@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import TauCeti.Analysis.Normed.Module.DualitySet
 import Mathlib.Analysis.InnerProductSpace.LinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
@@ -61,6 +62,14 @@ For `h ∈ L²` and every `1 ≤ q ≤ ∞`, the `L^q` norm of `h` is the suprem
 of the `L²` pairings `⟪h, g⟫` over the `g ∈ L²` in the unit ball of `L^{q'}`, the form used to
 norm mixed norms `L^p_t L^q_x`.
 
+For `1 ≤ p < ∞` and `u ∈ Lᵖ(μ)` with values in an inner product space, the extremal function
+`|u| ^ (p - 2) u` of `L^{p'}`, read with the convention `0 ^ s = 0` for `s ≠ 0` so that it vanishes
+where `u` does, gives an explicit element of the duality set `J(u) = {f | f u = ‖u‖², ‖f‖ = ‖u‖}`:
+the functional `v ↦ ‖u‖_p ^ (2 - p) ∫ ⟪|u| ^ (p - 2) u, v⟫ dμ`. For `1 < p < ∞` it is the only
+element of `J(u)`; for `p = 1` the duality set is in general larger. This is the element through
+which dissipativity of concrete operators on `Lᵖ` is verified: an operator `A` is dissipative
+when `∫ ⟪|u| ^ (p - 2) u, A u⟫ ≤ 0` on its domain.
+
 The integral Hölder bounds apply to arbitrary functions, using the convention that `eLpNorm`
 is `∞` outside the almost everywhere strongly measurable functions.
 
@@ -105,10 +114,16 @@ is `∞` outside the almost everywhere strongly measurable functions.
   `L^{q'}`.
 * `TopologicalSpace.IsSeparable.exists_seq_eLpNorm_eq_iSup_ofReal_re_inner`: a countable family
   of such `g` norms every element of a separable subset of `L²` in `L^q`.
+* `MeasureTheory.Lp.exists_mem_dualitySet_apply_eq_integral`: integration against
+  `‖u‖_p ^ (2 - p) |u| ^ (p - 2) u` lies in the duality set of `u ∈ Lᵖ`.
 
 ## References
 
 * G. B. Folland, *Real Analysis*, second edition, Theorem 6.14.
+* K.-J. Engel and R. Nagel, *One-Parameter Semigroups for Linear Evolution Equations*,
+  Example II.3.26 (the duality set of an `Lᵖ` function).
+* A. Pazy, *Semigroups of Linear Operators and Applications to Partial Differential Equations*,
+  Chapter 7, §7.3 (the duality map of `Lᵖ`).
 -/
 
 public section
@@ -859,5 +874,59 @@ theorem exists_ae_sum_norm_sq_le_one_sum_integral_mul_eq {ι : Type*} [Fintype �
       field_simp [hN.ne']
 
 end NormingByLinfty
+
+section DualitySet
+
+open TauCeti
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+variable (𝕜) in
+/-- **An element of the duality set of an `Lᵖ` function.** For `1 ≤ p < ∞` and `u ∈ Lᵖ(μ)`, some
+element `f` of the duality set of `u` is the functional
+`v ↦ ‖u‖ ^ (2 - p) ∫ ⟪|u| ^ (p - 2) u, v⟫ dμ`, where `|u| ^ (p - 2) u` vanishes where `u` does. -/
+theorem exists_mem_dualitySet_apply_eq_integral (hp : p ≠ ∞) (u : Lp H p μ) :
+    ∃ f ∈ dualitySet 𝕜 u, ∀ v : Lp H p μ, f v = ((‖u‖ ^ (2 - p.toReal) : ℝ) : 𝕜) *
+      ∫ x, ⟪((‖u x‖ ^ (p.toReal - 2) : ℝ) : 𝕜) • u x, v x⟫_𝕜 ∂μ := by
+  have hp1 : 1 ≤ p := Fact.out
+  have hr1 : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp hp1
+  -- The conjugate exponent `q`, with `1 / p + 1 / q = 1`.
+  set q : ℝ≥0∞ := (1 - p⁻¹)⁻¹
+  have : p.HolderConjugate q := ENNReal.HolderConjugate.inv_one_sub_inv' hp1
+  -- `w = |u| ^ (p - 2) u` lies in `L^q`, with `‖w‖_q ≤ ‖u‖_p ^ (p - 1)`.
+  set w : α → H := fun x ↦ ((‖u x‖ ^ (p.toReal - 2) : ℝ) : 𝕜) • u x
+  have hwq : eLpNorm w q μ ≤ eLpNorm u p μ ^ (p.toReal - 1) :=
+    eLpNorm_le_eLpNorm_rpow_toReal_sub_one hp
+      ((RCLike.continuous_ofReal.comp_aestronglyMeasurable
+        ((Lp.aestronglyMeasurable u).norm.aemeasurable.pow_const _).aestronglyMeasurable).smul
+        (Lp.aestronglyMeasurable u))
+      (ae_of_all _ fun x ↦ norm_ofReal_rpow_sub_two_smul_le p.toReal (u x))
+  have hwmem : MemLp w q μ :=
+    hwq.trans_lt (ENNReal.rpow_lt_top_of_nonneg (by linarith) (Lp.eLpNorm_ne_top u))
+  -- Integration against `w` has norm at most `‖u‖ ^ (p - 1)`, by Hölder.
+  have hgnorm : ‖hwmem.innerLpCLM 𝕜 (q' := p)‖ ≤ ‖u‖ ^ (p.toReal - 1) := by
+    refine (MemLp.norm_innerLpCLM_le hwmem).trans ?_
+    rw [Lp.norm_def, ENNReal.toReal_rpow]
+    exact ENNReal.toReal_mono
+      (ENNReal.rpow_ne_top_of_nonneg (by linarith) (Lp.eLpNorm_ne_top u)) hwq
+  refine ⟨((‖u‖ ^ (2 - p.toReal) : ℝ) : 𝕜) • hwmem.innerLpCLM 𝕜 (q' := p),
+    mem_dualitySet_iff_norm_le.2 ⟨?_, ?_⟩, fun v ↦ by simp [w]⟩
+  · have hwu : ∫ x, ⟪w x, u x⟫_𝕜 ∂μ = ((‖u‖ ^ p.toReal : ℝ) : 𝕜) := by
+      rw [← Lp.integral_norm_rpow_eq_norm_rpow (zero_lt_one.trans_le hp1).ne' hp,
+        ← integral_ofReal]
+      refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+      dsimp only [w]
+      rw [← inner_conj_symm, inner_ofReal_rpow_sub_two_smul (by linarith), RCLike.conj_ofReal]
+    rw [smul_apply, MemLp.innerLpCLM_apply, hwu, smul_eq_mul, ← RCLike.ofReal_mul,
+      ← Real.rpow_add' (norm_nonneg _) (by norm_num)]
+    norm_num
+  · rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by positivity)]
+    calc ‖u‖ ^ (2 - p.toReal) * ‖hwmem.innerLpCLM 𝕜 (q' := p)‖
+        ≤ ‖u‖ ^ (2 - p.toReal) * ‖u‖ ^ (p.toReal - 1) := by gcongr
+      _ = ‖u‖ := by
+        rw [← Real.rpow_add' (norm_nonneg _) (by norm_num)]
+        norm_num
+
+end DualitySet
 
 end MeasureTheory.Lp
