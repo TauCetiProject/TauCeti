@@ -164,6 +164,24 @@ theorem barraudCorneaCollapseCocycle_ν
           hθ₀ hθ₁ H x y) (T.chain x y) :=
   TwistingChainSystem.MarkedHomotopy.mooreHomotopyCocycle_ν ..
 
+/-- The entries of the continuation cocycle of a homotopy of collapse maps are those of the
+continuation cocycle `TauCeti.TwistingChainSystem.MarkedHomotopy.mooreHomotopyCocycle` of `H` for
+the evaluations of the trajectory spaces into Moore paths. -/
+theorem barraudCorneaCollapseCocycle_ν_eq_mooreHomotopyCocycle_ν
+    (T : S.MarkedHomotopy
+      (hX.length_morseLevelPath_comp_inclusion_morseBrokenTrajectorySpaceComp hf hdense hc))
+    (x y : criticalPoints 𝓘(ℝ, E) f) :
+    (hX.barraudCorneaCollapseCocycle hf hdense hθ₀ hθ₁ hc H T).ν x y =
+      (TwistingChainSystem.MarkedHomotopy.mooreHomotopyCocycle (S := S)
+        (c := ((↑) : criticalPoints 𝓘(ℝ, E) f → M))
+        (e := fun x y ↦ (hX.morseLevelPath hf
+          (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))).comp
+            (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _)))
+        (fun _ _ _ ↦ hX.source_morseLevelPath ..) (fun _ _ _ ↦ hX.target_morseLevelPath ..)
+        (hX.morseLevelPath_comp_inclusion_morseBrokenTrajectorySpaceComp hf hdense hc) hθ₀ hθ₁ H
+        T).ν x y :=
+  (rfl)
+
 end Cocycle
 
 /-! ### Independence of the collapse map -/
@@ -209,13 +227,13 @@ theorem quasiIso_dgMorseComplexCollapseHom (hMS : hX.IsMorseSmale)
       manifoldMorseIndex 𝓘(ℝ, E) f y) : IsEmpty (hX.morseBrokenTrajectorySpace c x y) := by
     rw [hMS.morseBrokenTrajectorySpace_eq_empty_of_le hf hxy.le]
     infer_instance
-  ContinuationCocycle.quasiIso_continuationHom_of_isUnit_loopChainToGroupAlgebra
-    (hX.barraudCorneaCollapseCocycle hf hdense hθ₀ hθ₁ hc H T)
-    (fun _ _ hxy ↦ TwistingChainSystem.MarkedHomotopy.mooreHomotopyCocycle_ν_eq_zero_of_ne hθ₀ hθ₁
-      H T (hM (by exact_mod_cast hxy)))
-    (fun _ ↦
-      TwistingChainSystem.MarkedHomotopy.isUnit_loopChainToGroupAlgebra_mooreHomotopyCocycle_ν
-        hθ₀ hθ₁ H T (hM rfl)) 𝓕.isDGRightModule
+  (ContinuationCocycle.quasiIso_continuationHom_iff_of_eq
+    (hX.barraudCorneaCocycle_eq_mooreTwistingCocycle hf hdense hθ₀ hc S)
+    (hX.barraudCorneaCocycle_eq_mooreTwistingCocycle hf hdense hθ₁ hc S) _ _
+    (hX.barraudCorneaCollapseCocycle_ν_eq_mooreHomotopyCocycle_ν hf hdense hθ₀ hθ₁ hc H T)
+    𝓕.isDGRightModule).mpr
+    (TwistingChainSystem.MarkedHomotopy.quasiIso_continuationHom_mooreHomotopyCocycle hθ₀ hθ₁ H
+      (fun _ _ hxy ↦ hM (by exact_mod_cast hxy)) T 𝓕.isDGRightModule)
 
 /-- **The isomorphism of DG Morse homology given by a homotopy of collapse maps**, under the
 Morse–Smale condition: the map induced in each degree by the quasi-isomorphism
