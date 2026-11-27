@@ -97,6 +97,14 @@ theorem commute_scalarHom (c : unitary R) (A : unitaryGroup n R) :
     Commute (scalarHom n R c) A :=
   Subtype.ext <| scalar_commute (c : R) (fun _ ↦ Commute.all _ _) (A : Matrix n n R)
 
+/-- Conjugation by a unit scalar fixes every matrix. -/
+theorem mul_mul_star_eq_self_of_mem_range_scalarHom {U : unitaryGroup n R}
+    (hU : U ∈ (scalarHom n R).range) (X : Matrix n n R) :
+    U * X * star (U : Matrix n n R) = X := by
+  obtain ⟨c, rfl⟩ := hU
+  rw [← commute_unitary_iff_star_right_conjugate (scalarHom n R c).property, coe_scalarHom]
+  exact scalar_commute _ (fun _ ↦ Commute.all _ _) X
+
 /-- The unit scalars are central in the unitary group. -/
 theorem range_scalarHom_le_center : (scalarHom n R).range ≤ Subgroup.center (unitaryGroup n R) := by
   rintro _ ⟨c, rfl⟩

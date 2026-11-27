@@ -23,6 +23,7 @@ import TauCeti.Analysis.Sobolev.W1p.Lipschitz
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import TauCeti.Analysis.PDE.Neumann.SecondEigenvalue
 
 /-!
 # The Dirichlet, Neumann and mixed eigenvalues of `-Δ` on an interval
@@ -80,6 +81,14 @@ continuous representative of `v ∈ H¹(a, b)` (`TauCeti.W1p.intervalRepresentat
 boundary terms vanish because `w'` vanishes at `a` and `b`, whatever the values of `v` there.
 This form does not need `H¹_∅(a, b) = H¹(a, b)`.
 
+For finite `p` the space `H¹_∅(a, b)` is in fact all of `H¹(a, b)`
+(`TauCeti.PDE.w1pVanishingOnSubmodule_empty_intervalDomain_eq_top`), so the two weak Neumann
+problems agree. On the connected interval the eigenvalue `0`
+is simple, and the next one, the second Neumann eigenvalue `(π / (b - a))²`, is the minimum of the
+Rayleigh quotient `‖∇u‖² / ‖u‖²` over the nonzero `u ∈ H¹(a, b)` of mean zero
+(`TauCeti.PDE.exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero`). Its eigenfunctions are
+exactly the minimizers, and the cosine `cos (π (x - a) / (b - a))` is one of them.
+
 ## Main declarations
 
 * `TauCeti.PDE.exists_value_ae_eq_sin_and_energyFormH1_eq`: the sine modes are weak Dirichlet
@@ -127,6 +136,12 @@ This form does not need `H¹_∅(a, b) = H¹(a, b)`.
   spectrum of `-Δ` on `(a, b)`, tested on `H¹(a, b)`, is `{(k π / (b - a))² | k ≥ 0}`.
 * `TauCeti.PDE.isLeast_setOf_exists_ne_zero_forall_energyFormH1_eq_intervalDomain`: its least
   element is `0`.
+* `TauCeti.PDE.isLeast_neumannEigenvalue_pos_intervalDomain` and
+  `TauCeti.PDE.isLeast_rayleigh_meanZero_intervalDomain`: the second Neumann eigenvalue
+  `(π / (b - a))²` is the least positive one and the least Rayleigh quotient of mean zero.
+* `TauCeti.PDE.forall_inner_gradient_eq_iff_intervalDomain` and
+  `TauCeti.PDE.exists_value_ae_eq_cos_and_setIntegral_eq_zero_and_rayleigh_eq`: its
+  eigenfunctions are the Rayleigh minimizers of mean zero, among them the first cosine mode.
 
 ## References
 
@@ -134,6 +149,12 @@ This form does not need `H¹_∅(a, b) = H¹(a, b)`.
   (the Sturm--Liouville problem), §8.4, Example 5 (a boundary condition at one endpoint),
   Section 9.8 and Problem 47 (the Neumann problem).
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., Section 6.5.1.
+* R. Courant and D. Hilbert, *Methods of Mathematical Physics*, Vol. I, Chapter VI, §1 (the
+  eigenvalues as minima of the Rayleigh quotient under orthogonality constraints, with natural
+  boundary conditions when no boundary condition is imposed).
+* R. Courant and D. Hilbert, *Methods of Mathematical Physics*, Vol. I, Chapter VI, §1 (the
+  eigenvalues as minima of the Rayleigh quotient under orthogonality constraints, with natural
+  boundary conditions when no boundary condition is imposed).
 -/
 
 public section
@@ -732,9 +753,9 @@ numbers `(k π / (b - a))²` with `k ≥ 0`: the problem
 imposing `u'(a) = u'(b) = 0` weakly, exactly for these `κ`. Here `H¹_∅(a, b)` is the space of the
 mixed problem with no Dirichlet part, as in the spectrum of the mixed Laplacian
 (`TauCeti.PDE.spectrum_mixedOperator_laplacian`): the closure in `H¹(a, b)` of the restrictions of
-test functions on the line. It agrees with `H¹(a, b)` exactly when these restrictions are dense
-(`TauCeti.w1pVanishingOnSubmodule_empty_eq_top_iff`), which is not proved here. These numbers
-are the spectrum of the Neumann Laplacian
+test functions on the line. It is all of `H¹(a, b)`
+(`TauCeti.PDE.w1pVanishingOnSubmodule_empty_intervalDomain_eq_top`), so these are also the weak
+Neumann eigenvalues tested on `H¹(a, b)`. These numbers are the spectrum of the Neumann Laplacian
 (`TauCeti.PDE.spectrum_mixedOperator_laplacian_empty_intervalDomain`). -/
 theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty (hab : a < b)
     {kappa : ℝ} :
@@ -820,6 +841,104 @@ theorem spectrum_mixedOperator_laplacian_empty_intervalDomain (hab : a < b) :
     isCompactOperator_valueL_intervalDomain]
   ext kappa
   exact exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty hab
+
+/-! ### The second Neumann eigenvalue -/
+
+/-- The weak Neumann eigenvalues of `-Δ` on `(a, b)` tested on `H¹(a, b)` are those tested on
+`H¹_∅(a, b)`, the numbers `(k π / (b - a))²`, since the two spaces agree. -/
+private theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain (hab : a < b)
+    {kappa : ℝ} :
+    (∃ u : W1p volume (intervalDomain a b) 2, u ≠ 0 ∧ ∀ v : W1p volume (intervalDomain a b) 2,
+        ⟪W1p.gradient u, W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ) ↔
+      ∃ k : ℕ, kappa = (k * π / (b - a)) ^ 2 := by
+  rw [← exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty hab]
+  constructor
+  · rintro ⟨u, hu, h⟩
+    exact ⟨⟨u, mem_w1pVanishingOnSubmodule_empty_intervalDomain ENNReal.ofNat_ne_top u⟩,
+      fun h0 => hu (congrArg Subtype.val h0), fun v => h v⟩
+  · rintro ⟨u, hu, h⟩
+    exact ⟨u, fun h0 => hu (Subtype.ext h0),
+      fun v => h ⟨v, mem_w1pVanishingOnSubmodule_empty_intervalDomain ENNReal.ofNat_ne_top v⟩⟩
+
+/-- **The second Neumann eigenvalue of an interval.** The least positive weak Neumann eigenvalue of
+`-Δ` on `(a, b)`, tested on `H¹(a, b)`, is `(π / (b - a))²`. Counted with multiplicity it is the
+second one, after the simple eigenvalue `0` of the constants. -/
+theorem isLeast_neumannEigenvalue_pos_intervalDomain (hab : a < b) :
+    IsLeast {kappa | 0 < kappa ∧ ∃ u : W1p volume (intervalDomain a b) 2, u ≠ 0 ∧
+      ∀ v : W1p volume (intervalDomain a b) 2,
+        ⟪W1p.gradient u, W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ}
+      ((π / (b - a)) ^ 2) := by
+  refine ⟨⟨pow_pos (div_pos Real.pi_pos (sub_pos.2 hab)) 2,
+    (exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain hab).2 ⟨1, by simp⟩⟩, ?_⟩
+  rintro kappa ⟨hpos, hkappa⟩
+  obtain ⟨k, rfl⟩ := (exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain hab).1 hkappa
+  have hk : k ≠ 0 := by
+    rintro rfl
+    simp at hpos
+  gcongr
+  exact le_mul_of_one_le_left Real.pi_pos.le (Nat.one_le_cast.2 (Nat.one_le_iff_ne_zero.2 hk))
+
+/-- **The second Neumann eigenvalue of an interval is the least Rayleigh quotient of mean zero.**
+The minimum of `‖∇u‖² / ‖u‖²` over the `u ∈ H¹(a, b)` with `u ≠ 0` and `∫_a^b u = 0` is
+`(π / (b - a))²`, the least positive weak Neumann eigenvalue
+(`TauCeti.PDE.isLeast_neumannEigenvalue_pos_intervalDomain`). The lower bound is the sharp
+inequality `∫_a^b u² ≤ ((b - a) / π)² ∫_a^b u'²` for `u ∈ H¹(a, b)` of mean zero, the Neumann
+case of Wirtinger's inequality for arcs (`TauCeti.exists_mem_integral_norm_sub_sq_le`), and the
+first cosine mode attains it. -/
+theorem isLeast_rayleigh_meanZero_intervalDomain (hab : a < b) :
+    IsLeast {r | ∃ u : W1p volume (intervalDomain a b) 2, W1p.value u ≠ 0 ∧
+        ∫ x in intervalDomain a b, W1p.value u x = 0 ∧
+        r = ‖W1p.gradient u‖ ^ 2 / ‖W1p.value u‖ ^ 2}
+      ((π / (b - a)) ^ 2) := by
+  obtain ⟨kappa, h1, h2⟩ := exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero
+    isCompactOperator_valueL_intervalDomain (isPreconnected_intervalDomain a b)
+    (nonempty_intervalDomain_iff.2 hab)
+  rwa [h1.unique (isLeast_neumannEigenvalue_pos_intervalDomain hab)] at h2
+
+/-- **The eigenfunctions of the second Neumann eigenvalue of an interval are the Rayleigh
+minimizers of mean zero.** A class `u ∈ H¹(a, b)` satisfies
+`∫ ∇u · ∇v = (π / (b - a))² ∫ u v` for every `v ∈ H¹(a, b)` exactly when `∫_a^b u = 0` and
+`‖∇u‖² = (π / (b - a))² ‖u‖²`. -/
+theorem forall_inner_gradient_eq_iff_intervalDomain (u : W1p volume (intervalDomain a b) 2) :
+    (∀ v : W1p volume (intervalDomain a b) 2,
+        ⟪W1p.gradient u, W1p.gradient v⟫_ℝ =
+          (π / (b - a)) ^ 2 * ⟪W1p.value u, W1p.value v⟫_ℝ) ↔
+      ∫ x in intervalDomain a b, W1p.value u x = 0 ∧
+        ‖W1p.gradient u‖ ^ 2 = (π / (b - a)) ^ 2 * ‖W1p.value u‖ ^ 2 := by
+  rcases le_or_gt b a with hba | hab
+  · -- On an empty interval every class is zero, and both sides hold.
+    have h0 : volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = 0 := by
+      rw [Measure.restrict_eq_zero, Set.not_nonempty_iff_eq_empty.1
+        (mt nonempty_intervalDomain_iff.1 (not_lt.2 hba)), measure_empty]
+    obtain rfl : u = 0 := W1p.ext_value <| Lp.ext <| by simp [h0, Filter.EventuallyEq]
+    simp [h0]
+  exact forall_inner_gradient_eq_iff_of_isLeast_neumannEigenvalue_pos
+    isCompactOperator_valueL_intervalDomain (isPreconnected_intervalDomain a b)
+    (isLeast_neumannEigenvalue_pos_intervalDomain hab) u
+
+/-- **The second Neumann eigenvalue of an interval is attained by the first cosine mode.** Some
+`u ∈ H¹(a, b)` with value `x ↦ cos (π (x - a) / (b - a))` has mean zero and Rayleigh quotient
+`‖∇u‖² / ‖u‖² = (π / (b - a))²`. -/
+theorem exists_value_ae_eq_cos_and_setIntegral_eq_zero_and_rayleigh_eq (hab : a < b) :
+    ∃ u : W1p volume (intervalDomain a b) 2,
+      W1p.value u =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+        (fun x => Real.cos (π * (x 0 - a) / (b - a))) ∧
+      ∫ x in intervalDomain a b, W1p.value u x = 0 ∧
+      ‖W1p.gradient u‖ ^ 2 / ‖W1p.value u‖ ^ 2 = (π / (b - a)) ^ 2 := by
+  obtain ⟨w, hwv, hw⟩ := exists_value_ae_eq_cos_and_inner_gradient_eq hab 1
+  have hv : W1p.value (w : W1p volume (intervalDomain a b) 2)
+      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+        (fun x => Real.cos (π * (x 0 - a) / (b - a))) := by
+    simpa only [Nat.cast_one, one_mul] using hwv
+  obtain ⟨hmean, hnorm⟩ := (forall_inner_gradient_eq_iff_intervalDomain w).1 fun v => by
+    simpa only [Nat.cast_one, one_mul] using
+      hw ⟨v, mem_w1pVanishingOnSubmodule_empty_intervalDomain ENNReal.ofNat_ne_top v⟩
+  have hne : W1p.value (w : W1p volume (intervalDomain a b) 2) ≠ 0 :=
+    value_ne_zero_of_value_ae_eq hab (F := fun t => Real.cos (π * (t - a) / (b - a)))
+      (by fun_prop) (left_mem_Icc.2 hab.le) (by simp) hv
+  refine ⟨w, hv, hmean, ?_⟩
+  rw [hnorm]
+  field_simp [norm_ne_zero_iff.2 hne]
 
 end Mixed
 

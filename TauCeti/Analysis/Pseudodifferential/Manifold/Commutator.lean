@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
+import TauCeti.Algebra.Algebra.Bilinear
 import TauCeti.Analysis.Pseudodifferential.Composition.Compression
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
@@ -62,6 +63,9 @@ derivative of `σ(c)(e x, ·)` on `T*ₓM` gives the formula.
 
 ## Main results
 
+* `TauCeti.smulCommutator_mem_classicalPseudodifferentialOperators`: the commutator
+  `u ↦ P (g u) - g P u` (`TauCeti.smulCommutator`) has order `m - 1`; this is
+  `-⁅g, P⁆`.
 * `TauCeti.classicalPrincipalSymbol_lie_mulLeft_ofReal`: the principal symbol of `⁅f, P⁆`.
 * `TauCeti.sum_mulLeft_comp_comp_mulLeft_sub_mem_classicalPseudodifferentialOperators`: square
   partitions of unity reproduce `P` up to order `m - 2`.
@@ -393,6 +397,19 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {m : ℝ} {ι : Type*} {s : Finset ι}
 
+/-- **Commutators with multiplication operators lose one order.** If `P` is a classical
+pseudodifferential operator of order `m` and `g` a complex-valued smooth function on `M`, the
+commutator `u ↦ P (g u) - g P u` (`TauCeti.smulCommutator`) is a classical pseudodifferential
+operator of order `m - 1`. -/
+theorem smulCommutator_mem_classicalPseudodifferentialOperators
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    smulCommutator ℂ g P ∈ classicalPseudodifferentialOperators (m - 1) := by
+  have h : smulCommutator ℂ g P = -⁅LinearMap.mulLeft ℂ g, P⁆ := by
+    rw [smulCommutator_eq_lie, Algebra.lsmul_eq_mulLeft, Ring.lie_def, Ring.lie_def, neg_sub]
+  rw [h]
+  exact neg_mem (lie_mulLeft_mem_classicalPseudodifferentialOperators hP g)
+
 /-- **Square partitions reproduce an operator modulo order `m - 2`.** If `P` is a classical
 pseudodifferential operator of order `m` and the smooth functions `gᵢ` satisfy `∑ᵢ gᵢ² = 1`, then
 `∑ᵢ gᵢ P gᵢ - P` has order `m - 2`, not only `m - 1`: it is `-½ ∑ᵢ ⁅gᵢ, ⁅gᵢ, P⁆⁆`, and each
@@ -402,36 +419,19 @@ theorem sum_mulLeft_comp_comp_mulLeft_sub_mem_classicalPseudodifferentialOperato
     {g : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} (hg : ∑ i ∈ s, g i ^ 2 = 1) :
     ∑ i ∈ s, LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g i) - P ∈
       classicalPseudodifferentialOperators (m - 2) := by
-  set A := fun i ↦ LinearMap.mulLeft ℂ (g i)
-  -- Composition in `Module.End` is multiplication.
-  have hcomp : ∑ i ∈ s, LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g i) =
-      ∑ i ∈ s, A i * P * A i := by
-    simp only [A, Module.End.mul_eq_comp, LinearMap.comp_assoc]
-  have hA : ∑ i ∈ s, A i * A i = 1 := by
-    ext u : 1
-    rw [LinearMap.sum_apply, one_apply_eq_self]
-    calc ∑ i ∈ s, (A i * A i) u = (∑ i ∈ s, g i ^ 2) * u := by
-          rw [Finset.sum_mul]
-          refine Finset.sum_congr rfl fun i _ ↦ ?_
-          simp only [A, mul_apply_eq_comp, LinearMap.mulLeft_apply, sq, mul_assoc]
-      _ = u := by rw [hg, one_mul]
-  -- `∑ᵢ ⁅gᵢ, ⁅gᵢ, P⁆⁆ = 2 (P - ∑ᵢ gᵢ P gᵢ)`.
-  have key : ∑ i ∈ s, ⁅A i, ⁅A i, P⁆⁆ = (2 : ℂ) • (P - ∑ i ∈ s, A i * P * A i) := by
-    have hexp (i : ι) : ⁅A i, ⁅A i, P⁆⁆ =
-        A i * A i * P - A i * P * A i - A i * P * A i + P * (A i * A i) := by
-      rw [Ring.lie_def, Ring.lie_def, mul_sub, sub_mul]
-      simp only [mul_assoc]
-      abel
-    rw [Finset.sum_congr rfl fun i _ ↦ hexp i, Finset.sum_add_distrib, Finset.sum_sub_distrib,
-      Finset.sum_sub_distrib, ← Finset.sum_mul, ← Finset.mul_sum, hA, one_mul, mul_one, two_smul]
-    abel
-  have hmem : ∑ i ∈ s, ⁅A i, ⁅A i, P⁆⁆ ∈ classicalPseudodifferentialOperators (m - 2) :=
+  have hmem : ∑ i ∈ s, smulCommutator ℂ (g i) (smulCommutator ℂ (g i) P) ∈
+      classicalPseudodifferentialOperators (m - 2) :=
     Submodule.sum_mem _ fun i _ ↦ by
-      simpa [sub_sub, one_add_one_eq_two] using lie_mulLeft_mem_classicalPseudodifferentialOperators
-        (lie_mulLeft_mem_classicalPseudodifferentialOperators hP (g i)) (g i)
-  have h := Submodule.smul_mem _ (-(1 / 2 : ℂ)) hmem
-  rwa [key, smul_smul, show -(1 / 2 : ℂ) * 2 = -1 by norm_num, neg_one_smul, neg_sub, ← hcomp]
-    at h
+      simpa [sub_sub, one_add_one_eq_two] using
+        smulCommutator_mem_classicalPseudodifferentialOperators
+          (smulCommutator_mem_classicalPseudodifferentialOperators hP (g i)) (g i)
+  -- `gᵢ P gᵢ` is `gᵢ • P ∘ₗ Algebra.lsmul ℂ ℂ _ gᵢ`.
+  have hcomp : ∑ i ∈ s, LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g i) =
+      ∑ i ∈ s, g i • P ∘ₗ Algebra.lsmul ℂ ℂ _ (g i) := by
+    simp only [← Algebra.lsmul_eq_mulLeft, Algebra.lsmul_eq_smul_one, LinearMap.smul_comp,
+      Module.End.one_eq_id, LinearMap.id_comp]
+  rw [hcomp, ← neg_mem_iff, neg_sub, sub_sum_smul_comp_lsmul_eq hg]
+  exact Submodule.smul_mem _ _ hmem
 
 variable {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
   {he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
