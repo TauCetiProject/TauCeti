@@ -332,7 +332,7 @@ def sphereMappingConeSingularHomologyIntLinearEquiv :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of (sphereMappingCone f)) ≃ₗ[ℤ] ZMod m.natAbs :=
   sphereMappingConeSingularHomologyLinearEquiv h ℤ f b hf ≪≫ₗ
-    Submodule.quotEquivOfEq _ _ (by simp [Ideal.span]) ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ Ideal.submodule_span_eq ≪≫ₗ
     (Int.quotientSpanEquivZMod m).toAddEquiv.toIntLinearEquiv
 
 include h hf in
