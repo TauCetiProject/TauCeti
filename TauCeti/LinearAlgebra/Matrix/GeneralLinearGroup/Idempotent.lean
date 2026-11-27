@@ -22,6 +22,8 @@ endomorphism of `Matrix n n A`, hence induces a group endomorphism `IsIdempotent
 * `IsIdempotentElem.val_cutGL`: characterizing formula for the underlying matrix of `he.cutGL g`.
 * `IsIdempotentElem.val_mul_cutGL_inv_mul`: patching `c` and `d` along `e` gives
   `e • d + (1 - e) • c`.
+* `IsIdempotentElem.val_map_mul_cutGL_inv_mul`: the same patch mapped along a ring hom `f` is
+  `f e • map f d + (1 - f e) • map f c`.
 
 ## References
 
@@ -58,5 +60,15 @@ theorem val_mul_cutGL_inv_mul (he : IsIdempotentElem e) (c d : GL n A) :
     (c * he.cutGL (c⁻¹ * d)).val = e • d.val + (1 - e) • c.val := by
   rw [Units.val_mul, val_cutGL]
   simp [mul_add, -Matrix.coe_units_inv]
+
+/-- Patching `c` and `d` along an idempotent `e`, then mapping along a ring hom `f`, gives
+`f e • map f d + (1 - f e) • map f c`. -/
+theorem val_map_mul_cutGL_inv_mul {B : Type*} [CommRing B] (f : A →+* B)
+    (he : IsIdempotentElem e) (c d : GL n A) :
+    (GeneralLinearGroup.map f (c * he.cutGL (c⁻¹ * d))).val =
+      f e • (GeneralLinearGroup.map f d).val + (1 - f e) • (GeneralLinearGroup.map f c).val := by
+  ext k l
+  rw [GeneralLinearGroup.map_apply, he.val_mul_cutGL_inv_mul]
+  simp
 
 end IsIdempotentElem

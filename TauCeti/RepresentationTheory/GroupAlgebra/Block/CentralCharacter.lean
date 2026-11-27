@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupWithZero.Hom
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Principal
 public import TauCeti.RingTheory.FiniteType.PointSeparation
 public import TauCeti.RingTheory.Idempotents.Primitive.AlgHom
@@ -21,9 +22,11 @@ A **central character** of `B` is a `k`-algebra homomorphism `λ_B : Z(k[G]) →
 `λ_B(e_B) = 1`. A block has at most one, over every field
 (`TauCeti.IsPrimitiveIdempotent.algHom_ext`, applied to `e_B`). Over an algebraically closed
 field a central character exists (`IsIdempotentElem.exists_algHom_apply_eq_one`); this file names
-it `TauCeti.IsBlockIdempotent.centralCharacter`. It vanishes on every central element orthogonal to
-`e_B`, in particular on the other block idempotents. The augmentation is the central character of
-the principal block, over every field (`TauCeti.eq_centerAugmentation`).
+it `TauCeti.IsBlockIdempotent.centralCharacter`. Every character with value `1` at `e_B` vanishes
+on every central element orthogonal to `e_B`
+(`MulHomClass.map_eq_zero_of_map_eq_one_of_mul_eq_zero`), in particular on the other block
+idempotents. The augmentation is the central character of the principal block, over every field
+(`TauCeti.eq_centerAugmentation`).
 
 ## Main definitions
 
@@ -32,11 +35,11 @@ the principal block, over every field (`TauCeti.eq_centerAugmentation`).
 
 ## Main results
 
-* `TauCeti.IsBlockIdempotent.centralCharacter_self`,
-  `TauCeti.IsBlockIdempotent.centralCharacter_eq_zero_of_mul_eq_zero`: `λ_B(e_B) = 1`, and
-  `λ_B(e) = 0` for every `e` with `e_B e = 0`.
+* `TauCeti.IsBlockIdempotent.centralCharacter_self`: `λ_B(e_B) = 1`.
 * `TauCeti.IsBlockIdempotent.eq_centralCharacter_iff`: `λ_B` is the only `k`-algebra
   homomorphism `Z(k[G]) → k` taking the value `1` at `e_B`.
+* `TauCeti.IsBlockIdempotent.apply_eq_zero_of_ne`: an `R`-algebra homomorphism `Z(R[G]) → R`
+  with value `1` at a block idempotent vanishes at every other block idempotent.
 * `TauCeti.eq_centerAugmentation`: a `k`-algebra homomorphism `Z(k[G]) → k` taking the value `1`
   at the principal block idempotent is the augmentation.
 * `TauCeti.IsBlockIdempotent.centralCharacter_principalBlockIdempotent`: over an algebraically
@@ -54,6 +57,15 @@ public section
 noncomputable section
 
 namespace TauCeti
+
+/-- A character `φ : Z(R[G]) → R` with value `1` at a block idempotent `e_B` vanishes at every
+other block idempotent. -/
+theorem IsBlockIdempotent.apply_eq_zero_of_ne {R G : Type*} [CommRing R] [Monoid G]
+    {φ : Subalgebra.center R (MonoidAlgebra R G) →ₐ[R] R}
+    {b b' : Subalgebra.center R (MonoidAlgebra R G)} (hb : IsBlockIdempotent b)
+    (hb' : IsBlockIdempotent b') (hφ : φ b = 1) (h : b ≠ b') : φ b' = 0 :=
+  MulHomClass.map_eq_zero_of_map_eq_one_of_mul_eq_zero φ hφ
+    (hb.mul_eq_zero_of_ne hb' (Commute.all _ _) h)
 
 variable {k G : Type*} [Field k] [Monoid G] [Finite G]
 
@@ -87,14 +99,6 @@ theorem eq_centralCharacter_iff (hb : IsBlockIdempotent b)
     (φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k) :
     φ = hb.centralCharacter ↔ φ b = 1 :=
   ⟨fun h ↦ h ▸ hb.centralCharacter_self, fun h ↦ hb.algHom_ext h hb.centralCharacter_self⟩
-
-/-- The central character of `B` vanishes at every central `e` with `e_B e = 0`, in particular
-at the block idempotents of the other blocks. -/
-theorem centralCharacter_eq_zero_of_mul_eq_zero (hb : IsBlockIdempotent b)
-    {e : Subalgebra.center k (MonoidAlgebra k G)} (h : b * e = 0) :
-    hb.centralCharacter e = 0 := by
-  have := congrArg hb.centralCharacter h
-  rwa [map_mul, centralCharacter_self, one_mul, map_zero] at this
 
 /-- Over an algebraically closed field, the central character of the principal block is the
 augmentation. -/

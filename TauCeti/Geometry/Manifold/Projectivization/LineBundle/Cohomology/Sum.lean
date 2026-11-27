@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Cohomology
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Čech cohomology of the split bundles `⨁ₗ 𝒪(k l)` on complex projective space
@@ -22,8 +23,8 @@ makes this precise on sheaves and passes it to Čech cohomology:
   sections of the `𝒪(k l)` (`Projectivization.twistSumSectionBiconeIsBilimit`);
 * since Čech cohomology is an additive functor of the sheaf, in every degree `p` the cohomology
   `Hᵖ(ℂℙⁿ, ⨁ₗ 𝒪(k l))` is the biproduct of the `Hᵖ(ℂℙⁿ, 𝒪(k l))`
-  (`Projectivization.twistSumCechIso`), and it vanishes when every summand does
-  (`Projectivization.isZero_holomorphicSectionCechCohomology_twistSumCore`).
+  (`Projectivization.twistSumCechIso`), and it vanishes exactly when every summand does
+  (`Projectivization.isZero_holomorphicSectionCechCohomology_twistSumCore_iff`).
 
 On the projective line this gives `H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` as soon as every `k l ≥ -1`
 (`Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`), from
@@ -221,6 +222,17 @@ theorem ι_twistSumCechIso_inv (p : ℕ) (l : κ) :
 omit [DecidableEq κ]
 variable {n k}
 
+/-- **The cohomology of a split bundle vanishes exactly when that of every summand does.** The
+Čech cohomology `Hᵖ(ℂℙⁿ, ⨁ₗ 𝒪(k l))` is zero if and only if every `Hᵖ(ℂℙⁿ, 𝒪(k l))` is zero,
+since it is their biproduct (`Projectivization.twistSumCechBiconeIsBilimit`). -/
+theorem isZero_holomorphicSectionCechCohomology_twistSumCore_iff (p : ℕ) :
+    IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin n → ℂ) (κ → ℂ)
+        (twistSumCore (𝕜 := ℂ) (n := n) k).Fiber p) ↔
+      ∀ l, IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin n → ℂ) ℂ
+        (twistCore (𝕜 := ℂ) (n := n) (k l)).Fiber p) := by
+  classical
+  exact (twistSumCechBiconeIsBilimit n k p).isZero_pt_iff
+
 /-- The Čech cohomology of `⨁ₗ 𝒪(k l)` in degree `p` vanishes when the cohomology of every
 summand `𝒪(k l)` in degree `p` does. -/
 theorem isZero_holomorphicSectionCechCohomology_twistSumCore {p : ℕ}
@@ -229,10 +241,7 @@ theorem isZero_holomorphicSectionCechCohomology_twistSumCore {p : ℕ}
     IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin n → ℂ) (κ → ℂ)
       (twistSumCore (𝕜 := ℂ) (n := n) k).Fiber p) := by
   classical
-  -- The identity of the cohomology of the sum is the sum of maps factoring through the summands.
-  have htotal := IsBilimit.total (twistSumCechBiconeIsBilimit n k p)
-  refine (IsZero.iff_id_eq_zero _).2 (htotal.symm.trans (Finset.sum_eq_zero fun l _ ↦ ?_))
-  rw [(h l).eq_of_tgt ((twistSumCechBicone n k p).π l) 0, zero_comp]
+  exact (twistSumCechBiconeIsBilimit n k p).isLimit.isZero_pt (Functor.isZero _ fun j ↦ h j.as)
 
 /-- **`H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.** The first Čech cohomology of the sheaf
 of holomorphic sections of the split bundle `⨁ₗ 𝒪(k l)` on the complex projective line vanishes

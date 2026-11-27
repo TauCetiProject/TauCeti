@@ -92,7 +92,8 @@ theorem exp_smul_nonneg_iff_isMetzler (B : Matrix n n ℝ) :
   -- `B i j` at `0` is nonnegative.
   refine IsLocalMinOn.hasDerivWithinAt_Ici_nonneg
     (eventually_mem_nhdsWithin.mono fun t (ht : 0 ≤ t) ↦ ?_)
-    (hasDerivAt_exp_smul_apply B i j).hasDerivWithinAt
+    ((hasDerivAt_exp_smul_apply B i j (0 : ℝ)).congr_deriv
+      (by rw [zero_smul, exp_zero, one_mul])).hasDerivWithinAt
   rw [zero_smul, exp_zero, one_apply_ne hij]
   exact h t ht i j
 
@@ -112,7 +113,8 @@ theorem exp_smul_mem_rowStochastic_iff (Q : Matrix n n ℝ) :
   -- The row sum `g t = ∑ j, exp (t • Q) i j` is constant on `[0, ∞)` and has right derivative
   -- `∑ j, Q i j` at `0`, which is therefore both nonnegative and nonpositive.
   have hd : HasDerivWithinAt (fun t : ℝ ↦ ∑ j, exp (t • Q) i j) (∑ j, Q i j) (Set.Ici 0) 0 :=
-    (HasDerivAt.fun_sum fun j _ ↦ hasDerivAt_exp_smul_apply Q i j).hasDerivWithinAt
+    (HasDerivAt.fun_sum fun j _ ↦ (hasDerivAt_exp_smul_apply Q i j (0 : ℝ)).congr_deriv
+      (by rw [zero_smul, exp_zero, one_mul])).hasDerivWithinAt
   have hconst : ∀ᶠ t in 𝓝[Set.Ici 0] (0 : ℝ),
       ∑ j, exp (t • Q) i j = ∑ j, exp ((0 : ℝ) • Q) i j :=
     eventually_mem_nhdsWithin.mono fun t (ht : 0 ≤ t) ↦ by
