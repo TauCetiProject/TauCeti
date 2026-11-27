@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.DefiningFunction
+public import TauCeti.Geometry.Manifold.Boundary.DefiningFunction.Basic
+public import TauCeti.Geometry.Manifold.Boundary.DefiningFunction.Comparison
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 
 /-!
@@ -23,7 +24,11 @@ is negative. In particular `ν_in(q)` is the unique inward unit vector orthogona
 A function `f` with a local minimum at a boundary point `q`, such as a boundary defining function
 `ρ`, has gradient `grad f(q) = |df_q| ν_in(q)`, so `df_q(ν_in) = |df_q|`
 (`TauCeti.mgradient_eq_norm_smul_inwardUnitNormal_of_isLocalMin`,
-`TauCeti.IsBoundaryDefiningFunctionOn.mgradient_eq_norm_smul_inwardUnitNormal`). In any chart of the
+`TauCeti.IsBoundaryDefiningFunctionOn.mgradient_eq_norm_smul_inwardUnitNormal`). Two boundary
+defining functions on the same open set differ by a smooth positive factor
+(`TauCeti.IsBoundaryDefiningFunctionOn.exists_eq_mul`), which on the boundary is the ratio
+`|dρ'| / |dρ|` of the norms of their differentials
+(`TauCeti.IsBoundaryDefiningFunctionOn.exists_eq_mul_norm_div_norm`). In any chart of the
 `C¹` maximal atlas, `ν_in = grad x⁰ / |grad x⁰|` for the normal coordinate `x⁰`
 (`TauCeti.inwardUnitNormal_eq_normalize_mgradient`). For a `C^k` metric on a `C^(k + 1)` manifold,
 `q ↦ (q, ν_in(q))` is a `C^k` map, like the outward unit normal
@@ -44,6 +49,9 @@ of Riemannian manifolds with boundary carries inward unit normals to inward unit
 * `TauCeti.IsBoundaryDefiningFunctionOn.mgradient_eq_norm_smul_inwardUnitNormal` and
   `TauCeti.IsBoundaryDefiningFunctionOn.mvfderiv_inwardUnitNormal`: the gradient formula for
   boundary defining functions.
+* `TauCeti.IsBoundaryDefiningFunctionOn.norm_mvfderiv_pos`: `|dρ_q| > 0` at boundary points.
+* `TauCeti.IsBoundaryDefiningFunctionOn.exists_eq_mul_norm_div_norm`: two boundary defining
+  functions differ by a smooth positive factor, equal to `|dρ'| / |dρ|` on the boundary.
 * `TauCeti.inwardUnitNormal_eq_normalize_mgradient`: the chart formula in any chart of the `C¹`
   maximal atlas.
 * `TauCeti.contMDiff_inwardUnitNormal`: it is a `C^k` map `∂M → TM` for a `C^k` metric on a
@@ -247,6 +255,34 @@ theorem IsBoundaryDefiningFunctionOn.mvfderiv_inwardUnitNormal {ρ : M → ℝ} 
     (hqU : (q : M) ∈ U) :
     mvfderiv (𝓡∂ (n + 1)) ρ q (inwardUnitNormal q) = ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ :=
   mvfderiv_inwardUnitNormal_of_isLocalMin (hρ.isLocalMin hqU q.property)
+
+omit [IsManifold (𝓡∂ (n + 1)) 1 M] in
+/-- At a boundary point `q` of its domain, the differential of a boundary defining function `ρ` has
+positive norm `|dρ_q| > 0`. -/
+theorem IsBoundaryDefiningFunctionOn.norm_mvfderiv_pos {ρ : M → ℝ} {U : Set M}
+    (hρ : IsBoundaryDefiningFunctionOn n ρ U) {q : M} (hqU : q ∈ U)
+    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) : 0 < ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ := by
+  have hne : ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ ≠ 0 := by simpa using hρ.mvfderiv_ne_zero q hqU hq
+  exact (ContinuousLinearMap.opNorm_nonneg _).lt_of_ne' hne
+
+omit [IsManifold (𝓡∂ (n + 1)) 1 M] in
+/-- **Comparison of boundary defining functions, Riemannian form.** Two boundary defining functions
+`ρ`, `ρ'` on the same open set `U` satisfy `ρ' = u ρ` on `U` for a function `u` smooth and positive
+on `U` with `u = |dρ'| / |dρ|` at the boundary points of `U`. -/
+theorem IsBoundaryDefiningFunctionOn.exists_eq_mul_norm_div_norm [IsManifold (𝓡∂ (n + 1)) ∞ M]
+    {ρ ρ' : M → ℝ} {U : Set M} (hρ : IsBoundaryDefiningFunctionOn n ρ U)
+    (hρ' : IsBoundaryDefiningFunctionOn n ρ' U) :
+    ∃ u : M → ℝ, ContMDiffOn (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ u U ∧ (∀ x ∈ U, 0 < u x) ∧
+      (∀ x ∈ U, ρ' x = u x * ρ x) ∧
+      ∀ q : (𝓡∂ (n + 1)).boundary M, (q : M) ∈ U →
+        u q = ‖mvfderiv (𝓡∂ (n + 1)) ρ' q‖ / ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ := by
+  obtain ⟨u, hu, hpos, hmul, hderiv⟩ := hρ.exists_eq_mul hρ'
+  refine ⟨u, hu, hpos, hmul, fun q hqU ↦ ?_⟩
+  -- Both norms are the derivatives along the inward unit normal, where `dρ` is positive.
+  rw [← hρ.mvfderiv_inwardUnitNormal hqU, ← hρ'.mvfderiv_inwardUnitNormal hqU,
+    hderiv q hqU q.property, smul_apply, smul_eq_mul, mul_div_cancel_right₀]
+  exact ((hρ.isOutwardPointing_neg_iff_mvfderiv_pos hqU q.property _).mp
+    (isOutwardPointing_neg_inwardUnitNormal q)).ne'
 
 /-- **Chart formula.** For every chart of the `C¹` maximal atlas whose source contains the boundary
 point `q`, the inward unit normal at `q` is the unit gradient of the normal coordinate `x⁰` of that

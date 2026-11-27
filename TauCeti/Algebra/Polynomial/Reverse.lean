@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.RingDivision
+public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Taylor
@@ -42,9 +43,10 @@ degree of `p`: the reversal is `p` read in the reciprocal coordinate.
 The file also records how reversal interacts with products of monic polynomials and with the
 binomials `X ^ n - C a`, which together compute the reverse of a characteristic polynomial that
 factors into such binomials, and that reflection at a sum of degree bounds is multiplicative on
-finite products (`Polynomial.reflect_prod`), which computes the reflection of a determinant of
-polynomials term by term. The reverse of a scalar multiple of a product of linear factors with
-nonzero roots is again such a product in the reciprocal roots
+finite products (`Polynomial.reflect_prod`) and, over a semiring without zero divisors, so is
+reversal (`Polynomial.reverse_prod_of_domain`); these compute the reflection or reversal of a
+determinant of polynomials term by term. The reverse of a scalar multiple of a product of linear
+factors with nonzero roots is again such a product in the reciprocal roots
 (`Polynomial.reverse_C_mul_prod_X_sub_C`), unit-scalar multiplication preserves the leading-
 coefficient-normalised reversal (`Polynomial.C_inverse_leadingCoeff_mul_reverse_C_mul`), and
 evaluating a unit-rescaled reversal in an algebra scales the evaluation
@@ -69,6 +71,9 @@ the subleading term is read off from the Taylor expansion of `p` at `-a`.
 
 Over a semifield, translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ`
 of `p` to the root `a` of `(taylor τ p).reflect d` (`Polynomial.isRoot_reflect_taylor_iff`).
+
+Over a field, reversal and reflection at a bound on the degree preserve splitting
+(`Polynomial.Splits.reverse`, `Polynomial.Splits.reflect`).
 -/
 
 public section
@@ -403,6 +408,15 @@ theorem reverse_multiset_prod_of_monic [CommSemiring R] {s : Multiset R[X]}
       reverse_mul (by rw [hp.leadingCoeff, hprod.leadingCoeff, one_mul]; exact one_ne_zero),
       ih hs']
 
+/-- Over a semiring without zero divisors, the reverse of a finite product is the product of the
+reverses. -/
+@[simp]
+theorem reverse_prod_of_domain [CommSemiring R] [NoZeroDivisors R] {ι : Type*} (s : Finset ι)
+    (f : ι → R[X]) : (∏ i ∈ s, f i).reverse = ∏ i ∈ s, (f i).reverse := by
+  induction s using Finset.cons_induction with
+  | empty => exact reverse_one
+  | cons i s hi ih => rw [Finset.prod_cons, Finset.prod_cons, reverse_mul_of_domain, ih]
+
 /-- The reverse of `(X - C a) ^ n` is `(1 - C a * X) ^ n`. -/
 @[simp]
 theorem reverse_X_sub_C_pow [CommRing R] (a : R) (n : ℕ) :
@@ -494,5 +508,25 @@ theorem reverse_C_mul_prod_X_sub_C {K ι : Type*} [Field K] (s : Finset ι) (r :
   rw [Finset.prod_congr rfl hlin]
   simp only [Finset.prod_mul_distrib, ← map_prod]
   rw [← mul_assoc, ← C_mul]
+
+/-- Over a field, the reverse of a split polynomial splits: each linear factor `X + C a` reverses
+to `1 + C a * X`, of degree at most one. -/
+theorem Splits.reverse {K : Type*} [Field K] {p : K[X]} (hp : p.Splits) : p.reverse.Splits := by
+  obtain ⟨m, hm⟩ := splits_iff_exists_multiset'.mp hp
+  rw [hm, reverse_mul_of_domain, reverse_C,
+    reverse_multiset_prod_of_monic (by simp [monic_X_add_C]), Multiset.map_map]
+  refine (Splits.C _).mul (.multisetProd fun q hq ↦ ?_)
+  obtain ⟨a, -, rfl⟩ := Multiset.mem_map.mp hq
+  exact .of_natDegree_le_one ((reverse_natDegree_le _).trans (natDegree_X_add_C a).le)
+
+/-- Over a field, the reflection of a split polynomial at a bound on its degree splits: it is
+the reverse times a power of `X`. -/
+theorem Splits.reflect {K : Type*} [Field K] {p : K[X]} (hp : p.Splits) {N : ℕ}
+    (hN : p.natDegree ≤ N) : (p.reflect N).Splits := by
+  have h := reflect_mul p 1 le_rfl (natDegree_one.trans_le (Nat.zero_le (N - p.natDegree)))
+  -- `reverse p` is by definition `reflect p.natDegree p`.
+  rw [mul_one, Nat.add_sub_cancel' hN, reflect_one, ← Polynomial.reverse] at h
+  rw [h]
+  exact hp.reverse.mul (.X_pow _)
 
 end Polynomial

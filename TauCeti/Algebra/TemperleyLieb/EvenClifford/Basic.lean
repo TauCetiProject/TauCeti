@@ -118,14 +118,6 @@ open scoped ComplexConjugate ComplexOrder TensorProduct
 
 namespace TauCeti.TemperleyLieb
 
-/-! ### Arithmetic helpers for `√2` in `ℂ` -/
-
-/-- Registers `IsSelfAdjoint (Real.sqrt 2 : ℂ)` as a `Fact` so that
-`TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m` carries the analytic adjoint instances
-`TemperleyLieb.instStarRing` and `TemperleyLieb.instStarModule`. -/
-instance : Fact (IsSelfAdjoint (Real.sqrt 2 : ℂ)) :=
-  ⟨Complex.conj_ofReal _⟩
-
 /-! ### The quadratic form, even Clifford carrier, and Majorana generators -/
 
 /-- The standard sum-of-squares quadratic form `v ↦ ∑ i, v i * v i` on `Fin m → ℂ`. -/

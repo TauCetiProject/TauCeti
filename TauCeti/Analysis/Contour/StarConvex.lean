@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Contour.Cycle.HungerbuhlerWasem
 public import TauCeti.Analysis.Contour.Cycle.Residue
 public import TauCeti.Analysis.Contour.Winding.StarConvex
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 
 /-!
 # Contour integration in a star-shaped domain
@@ -24,8 +25,8 @@ neighborhood of a rectangle or triangle, and a contour drawn inside it.
 
 `AbsolutelyContinuousOnInterval.isNullHomologous_of_starConvex` closes that gap: a closed absolutely
 continuous curve in a set that is star-shaped about some point is null-homologous there. The
-statements below about piecewise-`C¹` curves and immersions use its piecewise-`C¹` form
-`TauCeti.Contour.isNullHomologous_of_starConvex`, and the statements about cycles use
+statements below about piecewise-`C¹` immersions use it too, an immersion being absolutely
+continuous, and the statements about cycles use
 `TauCeti.Contour.Cycle.isNullHomologous_of_starConvex`. This file records the resulting statements,
 in which star-shapedness of the domain discharges the null-homology hypothesis:
 
@@ -47,9 +48,9 @@ null-homology only: each statement keeps the remaining hypotheses of its null-ho
 counterpart. The domain is open, the curve is closed and contained in it, the integral formulas are
 evaluated at a point off the curve, and the residue theorem and the argument principle for
 singularities off the curve ask the curve to avoid the singular set. The regularity of the curve is
-also that of the counterpart: absolute continuity for Cauchy's theorem and for Cauchy's integral
-formula in every derivative order, piecewise-`C¹` regularity for the residue theorem and the
-argument principle, and the immersion regularity where a principal value is taken.
+also that of the counterpart: absolute continuity for Cauchy's theorem, for Cauchy's integral
+formula in every derivative order, and for the residue theorem and the argument principle with
+singularities off the curve, and the immersion regularity where a principal value is taken.
 
 The other route to null-homology is `TauCeti.Contour.isNullHomologous_of_pathHomotopy_refl`, for a
 piecewise-`C¹` loop that is contracted inside the domain. For such loops the relation is one-way:
@@ -93,9 +94,9 @@ which are posed on a disc or a half-plane, both star-shaped.
 ## Provenance
 
 No formalization is vendored: each statement is its null-homologous counterpart with the
-null-homology discharged by `AbsolutelyContinuousOnInterval.isNullHomologous_of_starConvex` for an
-absolutely continuous curve, by `TauCeti.Contour.isNullHomologous_of_starConvex` for a
-piecewise-`C¹` curve, and by `TauCeti.Contour.Cycle.isNullHomologous_of_starConvex` for a cycle.
+null-homology discharged by `AbsolutelyContinuousOnInterval.isNullHomologous_of_starConvex` for a
+curve, a piecewise-`C¹` immersion being absolutely continuous, and by
+`TauCeti.Contour.Cycle.isNullHomologous_of_starConvex` for a cycle.
 
 ## References
 
@@ -195,7 +196,7 @@ theorem cauchyIntegralFormula_ball {c : ℂ} {r : ℝ} {z : ℂ}
 
 /-- **The classical residue theorem on a star-shaped open set.** Let `Ω` be open and star-shaped
 about `x`, `S` a finite set, `f` holomorphic on `Ω ∖ S` and meromorphic at each point of `S` lying
-in `Ω`, and let `γ` be a closed piecewise-`C¹` curve in `Ω` avoiding `S`. Then
+in `Ω`, and let `γ` be a closed absolutely continuous curve in `Ω` avoiding `S`. Then
 
 `∫ t in a..b, γ' t • f (γ t) = 2πi · ∑_{s ∈ S} n_s(γ) · Res_s f`.
 
@@ -205,16 +206,16 @@ weight `0`. -/
 theorem classicalResidueTheorem_starConvex {S : Finset ℂ} (hstar : StarConvex ℝ x Ω)
     (hopen : IsOpen Ω) (hf : DifferentiableOn ℂ f (Ω \ (↑S : Set ℂ)))
     (hmero : ∀ s ∈ S, s ∈ Ω → MeromorphicAt f s)
-    (hγ : IsPiecewiseC1On γ a b) (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hclosed : γ a = γ b)
-    (hoff : ∀ t ∈ uIcc a b, γ t ∉ (↑S : Set ℂ)) :
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω)
+    (hclosed : γ a = γ b) (hoff : ∀ t ∈ uIcc a b, γ t ∉ (↑S : Set ℂ)) :
     ∫ t in a..b, deriv γ t • f (γ t)
       = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber γ a b s * residue f s :=
   classicalResidueTheorem_nullHomologous hopen hf hmero hγ hγΩ hclosed hoff
-    (isNullHomologous_of_starConvex hstar hγ hclosed hγΩ)
+    (hγ.isNullHomologous_of_starConvex hstar hclosed hγΩ)
 
 /-- **The argument principle on a star-shaped open set.** For `f` analytic and non-vanishing on an
 open `Ω` star-shaped about `x`, off a finite `S`, meromorphic of order `ord` at each point of `S`
-lying in `Ω`, and a closed piecewise-`C¹` curve `γ` in `Ω` avoiding `S`,
+lying in `Ω`, and a closed absolutely continuous curve `γ` in `Ω` avoiding `S`,
 
 `∫ t in a..b, γ' t • (f'/f) (γ t) = 2πi · ∑_{z ∈ S} n_z(γ) · ord z`,
 
@@ -223,12 +224,12 @@ theorem argumentPrinciple_starConvex {S : Finset ℂ} {ord : ℂ → ℤ} (hstar
     (hopen : IsOpen Ω) (hoffS : ∀ z ∈ Ω, z ∉ S → AnalyticAt ℂ f z ∧ f z ≠ 0)
     (hmero : ∀ s ∈ S, s ∈ Ω → MeromorphicAt f s)
     (hord : ∀ s ∈ S, s ∈ Ω → meromorphicOrderAt f s = (ord s : WithTop ℤ))
-    (hγ : IsPiecewiseC1On γ a b) (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hclosed : γ a = γ b)
-    (hγoff : ∀ t ∈ uIcc a b, γ t ∉ (↑S : Set ℂ)) :
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω)
+    (hclosed : γ a = γ b) (hγoff : ∀ t ∈ uIcc a b, γ t ∉ (↑S : Set ℂ)) :
     ∫ t in a..b, deriv γ t • logDeriv f (γ t)
       = 2 * (Real.pi : ℂ) * Complex.I * ∑ z ∈ S, windingNumber γ a b z * (ord z : ℂ) :=
   argumentPrinciple_nullHomologous hopen hoffS hmero hord hγ hγΩ hclosed hγoff
-    (isNullHomologous_of_starConvex hstar hγ hclosed hγΩ)
+    (hγ.isNullHomologous_of_starConvex hstar hclosed hγΩ)
 
 /-- **The generalized residue theorem on a star-shaped open set, simple-pole regime.** Let `Ω` be
 open and star-shaped about `x`, `S` finite, `f` holomorphic on `Ω ∖ S` with at worst a simple
@@ -251,7 +252,8 @@ theorem hungerbuhlerWasem_residueTheorem_of_simple_poles_starConvex {S : Finset 
     HasCauchyPV γ a b f
       (2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, windingNumber γ a b s * residue f s)) :=
   hungerbuhlerWasem_residueTheorem_of_simple_poles hopen S γ a b hγ_imm hclosed hγa hγΩ hf
-    hmero (isNullHomologous_of_starConvex hstar hγ_imm.isPiecewiseC1On hclosed hγΩ) h_simple
+    hmero (hγ_imm.isPiecewiseC1On.absolutelyContinuousOnInterval.isNullHomologous_of_starConvex
+      hstar hclosed hγΩ) h_simple
 
 /-- **The half-residue on a star-shaped open set.** An on-curve simple pole about which the
 immersion has generalized winding number `½` contributes `πi · Res_s f` to the principal value —
@@ -265,7 +267,8 @@ theorem hasCauchyPV_half_residue_of_simple_pole_starConvex {s : ℂ} (hstar : St
     (hwind : windingNumber γ a b s = 1 / 2) :
     HasCauchyPV γ a b f ((Real.pi : ℂ) * Complex.I * residue f s) :=
   hasCauchyPV_half_residue_of_simple_pole hopen γ a b s hγ_imm hclosed hγa hγΩ hf hmero
-    (isNullHomologous_of_starConvex hstar hγ_imm.isPiecewiseC1On hclosed hγΩ) h_simple hwind
+    (hγ_imm.isPiecewiseC1On.absolutelyContinuousOnInterval.isNullHomologous_of_starConvex
+      hstar hclosed hγΩ) h_simple hwind
 
 /-- **The argument principle on a star-shaped open set, for a curve running through the zeros.**
 With `f` analytic and non-vanishing on an open `Ω` star-shaped about `x`, off a finite `S`,
@@ -286,7 +289,8 @@ theorem hasCauchyPV_logDeriv_starConvex {S : Finset ℂ} {ord : ℂ → ℤ} (hs
     HasCauchyPV γ a b (logDeriv f)
       (2 * (Real.pi : ℂ) * Complex.I * ∑ z ∈ S, windingNumber γ a b z * (ord z : ℂ)) :=
   hasCauchyPV_logDeriv_nullHomologous hopen hoffS hmero hord hγ_imm hγΩ hclosed hγa
-    (isNullHomologous_of_starConvex hstar hγ_imm.isPiecewiseC1On hclosed hγΩ)
+    (hγ_imm.isPiecewiseC1On.absolutelyContinuousOnInterval.isNullHomologous_of_starConvex hstar
+      hclosed hγΩ)
 
 namespace Cycle
 

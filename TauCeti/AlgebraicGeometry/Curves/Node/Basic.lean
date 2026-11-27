@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.PureRelativeDimension
 public import TauCeti.RingTheory.Node.Basic
 import Mathlib.AlgebraicGeometry.Fiber
@@ -21,17 +22,17 @@ of a node in a family of curves: over a discrete valuation ring with uniformizer
 `a = πⁿ` with `n > 0`, its generic fibre is smooth and its special fibre is the union of two
 lines crossing transversally at the origin.
 
-This file shows that this morphism is flat, locally of finite presentation, and of pure relative
-dimension one. These are the conditions, beside nodality of the geometric fibres, in the fibrewise
-characterization of families of curves with at worst nodal singularities. The fibre over a prime
-`p` of `R` is the spectrum of `κ(p) ⊗[R] R[x, y] ⧸ (xy - a)`, that is, of the node algebra of the
-image of `a` in the residue field `κ(p)` (`TauCeti.NodeAlgebra.baseChange`), and over a field
-the node algebra is pure of dimension one (`TauCeti.NodeAlgebra.isPureDimensional_primeSpectrum`).
+This file shows that this morphism is flat and of pure relative dimension one; it is locally of
+finite presentation by `AlgebraicGeometry.locallyOfFinitePresentation_SpecMap_algebraMap`. These
+are the conditions, beside nodality of the geometric fibres, in the fibrewise characterization
+of families of curves with at worst nodal singularities. The fibre over a prime `p` of `R` is the
+spectrum of `κ(p) ⊗[R] R[x, y] ⧸ (xy - a)`, that is, of the node algebra of the image of `a` in
+the residue field `κ(p)` (`TauCeti.NodeAlgebra.baseChange`), and over a field the node algebra
+is pure of dimension one (`TauCeti.NodeAlgebra.isPureDimensional_primeSpectrum`).
 
 ## Main results
 
 * `TauCeti.NodeAlgebra.flat_spec`: the local model of a node is flat.
-* `TauCeti.NodeAlgebra.locallyOfFinitePresentation_spec`: it is locally of finite presentation.
 * `TauCeti.NodeAlgebra.fiberIso`: its fibres are spectra of node algebras over residue fields.
 * `TauCeti.NodeAlgebra.pureRelativeDimension_spec`: it has pure relative dimension one.
 
@@ -58,12 +59,6 @@ variable {R : Type u} [CommRing R] (a : R)
 /-- The local model of a node is flat. -/
 instance flat_spec : Flat (Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))) :=
   Flat.SpecMap_iff.mpr (RingHom.flat_algebraMap_iff.mpr inferInstance)
-
-/-- The local model of a node is locally of finite presentation. -/
-instance locallyOfFinitePresentation_spec :
-    LocallyOfFinitePresentation (Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))) :=
-  (HasRingHomProperty.Spec_iff (P := @LocallyOfFinitePresentation)).mpr <|
-    RingHom.finitePresentation_algebraMap.mpr inferInstance
 
 /-- The fibre of the local model of a node over a prime `p` of `R` is the spectrum of the node
 algebra of the image of `a` in the residue field `κ(p)`. -/

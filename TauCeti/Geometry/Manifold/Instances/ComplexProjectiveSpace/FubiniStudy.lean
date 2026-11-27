@@ -111,6 +111,19 @@ theorem fubiniStudyHermitian_affineVector_insertZeroL_single (k : Fin (n + 1)) (
     field_simp
     ring
 
+/-- **The Fubini–Study metric is positive definite in an affine chart.** The lift
+`insertZeroL k a` of a nonzero tangent vector `a` of the chart `X_k ≠ 0` has entry `0` in
+position `k`, so it is not a multiple of the homogeneous coordinate vector `affineVector k w`,
+whose entry there is `1`; hence the homogeneous Fubini–Study form is positive on it. -/
+theorem re_fubiniStudyHermitian_affineVector_insertZeroL_self_pos (k : Fin (n + 1))
+    (w : Fin n → ℂ) {a : Fin n → ℂ} (ha : a ≠ 0) :
+    0 < re (fubiniStudyHermitian ℂ (affineVector k w) (insertZeroL k a) (insertZeroL k a)) := by
+  refine (re_fubiniStudyHermitian_apply_self_pos_iff (affineVector_ne_zero k w)).2 fun hmem ↦ ha ?_
+  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 hmem
+  have hc0 : c = 0 := by simpa using congrArg (· k) hc
+  funext j
+  simpa [hc0] using (congrArg (· (k.succAbove j)) hc).symm
+
 end
 
 end TauCeti.ComplexProjectiveSpace

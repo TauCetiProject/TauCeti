@@ -50,7 +50,9 @@ existential is what keeps the fibres free of them.
   any unramifiedness proof in hand, membership is the equation `artinSymbol 𝔭.asIdeal hur = C`.
 * `NumberField.Chebotarev.mem_frobeniusPrimeSet_mk_iff_exists_isArithFrobAt`: for an unramified
   `𝔭` and an element `σ`, membership in the fibre of `[σ]` says exactly that `σ` is an arithmetic
-  Frobenius at *some* prime of `𝓞 L` above `𝔭`.
+  Frobenius at *some* prime of `𝓞 L` above `𝔭`; by
+  `NumberField.Chebotarev.exists_isArithFrobAt_conj_of_mem_frobeniusPrimeSet_mk`, a conjugate of
+  `σ` is one at *every* prime above `𝔭`.
 * `NumberField.Chebotarev.frobeniusPrimeSet_map_autCongr`: equivariance — an isomorphism
   `e : L ≃ₐ[K] L'` of extensions of `K` matches the fibre of `C` in `L` with the fibre in `L'` of
   the image of `C` under the induced isomorphism `AlgEquiv.autCongr e` of Galois groups.
@@ -166,6 +168,19 @@ theorem exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk {𝔭 : HeightOneSpectr
     ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.val := by
   obtain ⟨hur, hC⟩ := mem_frobeniusPrimeSet_iff.mp h
   exact exists_isArithFrobAt_of_artinSymbol_eq_mk 𝔭.asIdeal hur hC
+
+/-- **Every prime above is reached by a conjugate.** If `𝔭` lies in the fibre of the class of `σ`,
+then at every prime `Q` of `𝓞 L` above `𝔭` some conjugate of `σ` is an arithmetic Frobenius. -/
+theorem exists_isArithFrobAt_conj_of_mem_frobeniusPrimeSet_mk {𝔭 : HeightOneSpectrum (𝓞 K)}
+    {σ : L ≃ₐ[K] L} (h : 𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ)) (Q : Ideal (𝓞 L))
+    [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] :
+    ∃ γ : L ≃ₐ[K] L, IsArithFrobAt (𝓞 K) (γ * σ * γ⁻¹) Q := by
+  obtain ⟨⟨Q₁, hQ₁⟩, hσ⟩ := exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk h
+  have := hQ₁.1
+  have := hQ₁.2
+  obtain ⟨γ, rfl⟩ := Algebra.IsInvariant.exists_smul_of_under_eq (𝓞 K) (𝓞 L) (L ≃ₐ[K] L) Q₁ Q
+    (by rw [← Q₁.over_def 𝔭.asIdeal, ← Q.over_def 𝔭.asIdeal])
+  exact ⟨γ, hσ.conj γ⟩
 
 /-- **The fibre of a class, read off from any one representative.** For `𝔭` unramified in `L`,
 membership in the fibre of `[σ]` says exactly that `σ` is an arithmetic Frobenius at some prime

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Topology.ContinuousMap.Basic
+import Mathlib.Analysis.Normed.Module.RCLike.Real
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Round subdiscs of the open unit disc
@@ -22,7 +24,15 @@ into `K` form a compact set (`TauCeti.Complex.UnitDisc.isCompact_subdisc_preimag
 rescaled points of `K` inside the disc, and the points of `K` in `B(c, r)` are its points at
 distance at most `r` from `c`, a compact set. This is what makes the restriction of a disc map to a
 round subdisc again a map with compact preimage of a closed set, as in the theory of positive
-cohomology assignments.
+cohomology assignments. In particular, if finitely many pairwise disjoint round discs contain a
+compact set, its preimage under each of their subdisc maps is compact
+(`TauCeti.Complex.UnitDisc.isCompact_subdisc_preimage_of_subset_iUnion`). Concentric discs
+correspond under `subdisc c r` to discs about `0`: `subdisc c r` sends `w` into `B(c, r t)` exactly
+when `‖w‖ < t` (`TauCeti.Complex.UnitDisc.coe_subdisc_mem_ball_mul_iff`).
+
+Points of a finite subset of `𝔻` can be isolated in pairwise disjoint round discs inside `𝔻`, on
+which a function continuous at these points varies arbitrarily little
+(`Complex.UnitDisc.exists_isolating_radius`).
 -/
 
 public section
@@ -50,6 +60,54 @@ theorem exists_pos_lt_and_norm_add_le_one (z : 𝔻) {ε : ℝ} (hε : 0 < ε) :
   refine ⟨min (ε / 2) (1 - ‖(z : ℂ)‖), lt_min (by positivity) (by linarith),
     (min_le_left _ _).trans_lt (by linarith), ?_⟩
   linarith [min_le_right (ε / 2) (1 - ‖(z : ℂ)‖)]
+
+/-- A function continuous at a point `z` of the disc is uniformly close to its value at `z` on a
+round disc about `z`. -/
+theorem exists_pos_forall_dist_lt {F : Type*} [PseudoMetricSpace F] {g : 𝔻 → F} {z : 𝔻}
+    (hg : ContinuousAt g z) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ ρ > 0, ∀ x : 𝔻, (x : ℂ) ∈ ball (z : ℂ) ρ → dist (g x) (g z) < δ := by
+  have hmem := hg (ball_mem_nhds (g z) hδ)
+  rw [isEmbedding_coe.isInducing.nhds_eq_comap, Filter.mem_map, Filter.mem_comap] at hmem
+  obtain ⟨t, ht, hts⟩ := hmem
+  obtain ⟨ρ, hρ, hball⟩ := Metric.mem_nhds_iff.1 ht
+  exact ⟨ρ, hρ, fun x hx ↦ hts (hball hx)⟩
+
+/-- **Isolating radii.** Around the points of a finite set `s₀ ⊆ 𝔻` there are round discs
+`B(z, r z) ⊆ 𝔻`, pairwise disjoint and isolating each point of `s₀` even at twice the radius, on
+which a function continuous at the points of `s₀` varies by less than a given `δ > 0`. -/
+theorem exists_isolating_radius {F : Type*} [PseudoMetricSpace F] (s₀ : Finset 𝔻)
+    {g : 𝔻 → F} (hg : ∀ z ∈ s₀, ContinuousAt g z) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ r : 𝔻 → ℝ, (∀ z, 0 < r z) ∧ (∀ z : 𝔻, ‖(z : ℂ)‖ + r z ≤ 1) ∧
+      (∀ z w : 𝔻, w ∈ s₀ → (w : ℂ) ∈ ball (z : ℂ) (2 * r z) → w = z) ∧
+      (∀ z ∈ s₀, ∀ x : 𝔻, (x : ℂ) ∈ ball (z : ℂ) (r z) → dist (g x) (g z) < δ) ∧
+      ∀ x : 𝔻, ∀ z ∈ s₀, ∀ z' ∈ s₀, (x : ℂ) ∈ ball (z : ℂ) (r z) →
+        (x : ℂ) ∈ ball (z' : ℂ) (r z') → z = z' := by
+  have hrad : ∀ z : 𝔻, ∃ r > 0, ‖(z : ℂ)‖ + r ≤ 1 ∧
+      (∀ w ∈ s₀, (w : ℂ) ∈ ball (z : ℂ) (2 * r) → w = z) ∧
+      (z ∈ s₀ → ∀ x : 𝔻, (x : ℂ) ∈ ball (z : ℂ) r → dist (g x) (g z) < δ) := by
+    intro z
+    obtain ⟨R, hR, hisoR⟩ := z.exists_pos_forall_mem_ball_eq s₀
+    obtain ⟨ρ, hρ, hgρ⟩ : ∃ ρ > 0, z ∈ s₀ →
+        ∀ x : 𝔻, (x : ℂ) ∈ ball (z : ℂ) ρ → dist (g x) (g z) < δ := by
+      by_cases hz : z ∈ s₀
+      · obtain ⟨ρ, hρ, h⟩ := exists_pos_forall_dist_lt (hg z hz) hδ
+        exact ⟨ρ, hρ, fun _ ↦ h⟩
+      · exact ⟨1, one_pos, fun h ↦ (hz h).elim⟩
+    obtain ⟨r, hr, hrlt, hc⟩ := exists_pos_lt_and_norm_add_le_one z (lt_min (half_pos hR) hρ)
+    refine ⟨r, hr, hc, fun w hw hwb ↦ hisoR w hw (ball_subset_ball ?_ hwb), fun hz x hx ↦
+      hgρ hz x (ball_subset_ball ?_ hx)⟩
+    · linarith [min_le_left (R / 2) ρ]
+    · linarith [min_le_right (R / 2) ρ]
+  choose r hr hc hiso hgr using hrad
+  refine ⟨r, hr, hc, fun z ↦ hiso z, hgr, fun x z hz z' hz' hxz hxz' ↦ ?_⟩
+  -- Two points of `s₀` are at least twice either radius apart, so their discs are disjoint.
+  by_contra hne
+  have h1 : 2 * r z ≤ dist (z' : ℂ) z := not_lt.1 fun h ↦ hne (hiso z z' hz' h).symm
+  have h2 : 2 * r z' ≤ dist (z : ℂ) z' := not_lt.1 fun h ↦ hne (hiso z' z hz h)
+  have := dist_triangle (z : ℂ) x z'
+  rw [mem_ball] at hxz hxz'
+  rw [dist_comm] at hxz
+  linarith [dist_comm (z : ℂ) z']
 
 end Complex.UnitDisc
 
@@ -147,5 +205,26 @@ theorem isCompact_subdisc_preimage {K : Set 𝔻} (hK : IsCompact K)
   rw [hKb]
   exact ((hK.image continuous_coe).inter_right isClosed_closedBall).image
     ((continuous_id.sub continuous_const).div_const _)
+
+/-- The round subdisc map `subdisc c r` sends `w` into the concentric disc of radius `r t` exactly
+when `‖w‖ < t`. -/
+theorem coe_subdisc_mem_ball_mul_iff (w : 𝔻) (t : ℝ) :
+    (subdisc c r hc hr w : ℂ) ∈ ball c (r * t) ↔ ‖(w : ℂ)‖ < t := by
+  rw [coe_subdisc_apply]
+  simp [dist_eq_norm, abs_of_pos hr, mul_lt_mul_iff_right₀ hr]
+
+/-- If finitely many pairwise disjoint round discs `B(cⱼ, rⱼ) ⊆ 𝔻` contain a compact set `K ⊆ 𝔻`,
+then the points of `𝔻` that each `subdisc cⱼ rⱼ` sends into `K` form a compact set: no point of `K`
+lies on a boundary circle. -/
+theorem isCompact_subdisc_preimage_of_subset_iUnion {ι : Type*} {c : ι → ℂ} {r : ι → ℝ}
+    (hc : ∀ i, ‖c i‖ + r i ≤ 1) (hr : ∀ i, 0 < r i)
+    (hdisj : Pairwise fun i j ↦ Disjoint (ball (c i) (r i)) (ball (c j) (r j))) {K : Set 𝔻}
+    (hK : IsCompact K) (hKc : ∀ z ∈ K, ∃ j, (z : ℂ) ∈ ball (c j) (r j)) (i : ι) :
+    IsCompact (subdisc (c i) (r i) (hc i) (hr i) ⁻¹' K) := by
+  refine isCompact_subdisc_preimage hK fun z hz hzc ↦ ?_
+  obtain ⟨j, hj⟩ := hKc z hz
+  obtain rfl | hij := eq_or_ne i j
+  · exact (mem_ball_iff_norm.1 hj).ne hzc
+  · exact norm_sub_ne_of_disjoint_ball (hr i).ne' (hdisj hij) hj hzc
 
 end TauCeti.Complex.UnitDisc

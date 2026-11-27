@@ -123,6 +123,14 @@ theorem toOperator_mk (u : StrongDual 𝕜 E ⊗[𝕜] F) :
     toOperator 𝕜 E F ⟨u⟩ = TensorProduct.toOperator u := by
   simp [toOperator]
 
+/-- The injective norm of the swapped tensor `comm u ∈ F ⊗ E*` is the operator norm of the
+finite-rank operator `E →L[𝕜] F` represented by `u ∈ E* ⊗ F`. -/
+theorem norm_mk_comm (u : StrongDual 𝕜 E ⊗[𝕜] F) :
+    ‖(⟨TensorProduct.comm 𝕜 (StrongDual 𝕜 E) F u⟩ : InjectiveTensor 𝕜 F (StrongDual 𝕜 E))‖ =
+      ‖TensorProduct.toOperator u‖ := by
+  rw [norm_def, TensorProduct.injectiveSeminorm_comm,
+    TensorProduct.injectiveSeminorm_eq_norm_toOperator]
+
 /-- Every tensor induces an operator with finitely generated range. -/
 theorem hasFiniteRange_toOperator (u : InjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
     (toOperator 𝕜 E F u).toLinearMap.HasFiniteRange := by

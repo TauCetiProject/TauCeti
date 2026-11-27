@@ -30,6 +30,9 @@ A Hermitian matrix is determined by its quadratic form: if `star v ⬝ᵥ A *ᵥ
 then `A = 0` (`Matrix.IsHermitian.forall_star_dotProduct_mulVec_self_eq_zero_iff`). This is
 polarization for Hermitian forms, read from Mathlib's
 `LinearMap.IsSymmetric.inner_map_self_eq_zero` through `Matrix.toEuclideanLin`.
+
+The self pairing `star x ⬝ᵥ x` is real: it is the cast of its real part
+(`Matrix.star_dotProduct_self_eq_ofReal_re`).
 -/
 
 public section
@@ -96,5 +99,11 @@ theorem IsHermitian.forall_star_dotProduct_mulVec_self_eq_zero_iff {A : Matrix n
   intro x
   rw [inner_eq_zero_symm, EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm]
   simpa using h x
+
+omit [DecidableEq n] in
+/-- The self pairing `star x ⬝ᵥ x` is real: it is the cast of its real part. -/
+theorem star_dotProduct_self_eq_ofReal_re (x : n → 𝕜) :
+    star x ⬝ᵥ x = (RCLike.re (star x ⬝ᵥ x) : 𝕜) :=
+  (RCLike.conj_eq_iff_re.mp (by rw [← RCLike.star_def, ← star_dotProduct_star, star_star])).symm
 
 end Matrix

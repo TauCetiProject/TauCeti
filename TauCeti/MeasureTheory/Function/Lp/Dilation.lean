@@ -35,7 +35,9 @@ the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a continuou
 
 ## Main declarations
 
-* `MeasureTheory.Measure.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = |r| ^ (n / p) * ‖u‖_p`.
+* `MeasureTheory.Measure.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = |r| ^ (n / p) * ‖u‖_p`, and
+  `MeasureTheory.Measure.eLpNorm_comp_inv_smul_restrict_smul`, the same law for the `Lᵖ` seminorms
+  on `r • s` and on `s`.
 * `MeasureTheory.Measure.dilateLp`: the normalized dilation of `Lᵖ`, and
   `MeasureTheory.Measure.eLpNorm_dilateLp`, its effect `r ^ (n / q - n / p)` on every `Lᵠ`
   seminorm.
@@ -43,7 +45,11 @@ the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a continuou
   `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
 * `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity
   for the `Lᵖ` seminorms on `e ⁻¹' s` and on `s`.
-* `MeasureTheory.MemLp.comp_continuousLinearEquiv`: so composing with `e` preserves `Lᵖ`.
+* `MeasureTheory.Measure.eLpNorm_comp_smul_restrict_preimage`: the dilation case,
+  `‖u (c • ·)‖_{Lᵖ((c • ·)⁻¹' s)} = |c| ^ (-n / p) * ‖u‖_{Lᵖ(s)}`.
+* `MeasureTheory.MemLp.comp_continuousLinearEquiv`: so composing with `e` preserves `Lᵖ`, and
+  `MeasureTheory.MemLp.comp_continuousLinearEquiv_restrict_preimage` carries `Lᵖ` on `s` to `Lᵖ`
+  on `e ⁻¹' s`.
 -/
 
 public section
@@ -51,11 +57,29 @@ public section
 namespace MeasureTheory.Measure
 
 open Module
-open scoped ENNReal
+open scoped ENNReal Pointwise
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
   {G : Type*} [TopologicalSpace G] [ContinuousENorm G]
+
+/-- **Dilation scaling of the `Lᵖ` seminorm on a set:**
+`‖u (r⁻¹ • ·)‖_{Lᵖ(r • s)} = |r| ^ (n / p) * ‖u‖_{Lᵖ(s)}` for `r ≠ 0`, where `n` is the dimension
+of the ambient space. The set `s` need not be measurable. The exponent `n / p` is `n / p.toReal`,
+which is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. -/
+theorem eLpNorm_comp_inv_smul_restrict_smul (u : E → G) {r : ℝ} (hr : r ≠ 0) (p : ℝ≥0∞)
+    (s : Set E) :
+    eLpNorm (fun x => u (r⁻¹ • x)) p (μ.restrict (r • s)) =
+      ENNReal.ofReal (|r| ^ ((finrank ℝ E : ℝ) / p.toReal)) * eLpNorm u p (μ.restrict s) := by
+  have hr' : r⁻¹ ≠ 0 := inv_ne_zero hr
+  have he := measurableEmbedding_const_smul₀ (α := E) hr'
+  rw [← Function.comp_def, ← Set.preimage_smul_inv₀ hr, ← he.eLpNorm_map_measure, ← he.restrict_map,
+    map_addHaar_smul μ hr', restrict_smul, eLpNorm_smul_measure_of_ne_zero (by positivity),
+    smul_eq_mul]
+  congr 1
+  -- The measure factor is `|(r⁻¹ ^ n)⁻¹| = |r| ^ n`, raised to the power `1 / p`.
+  rw [ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) ENNReal.toReal_nonneg]
+  simp [div_eq_mul_inv, Real.rpow_natCast_mul (abs_nonneg r)]
 
 /-- **Dilation scaling of the `Lᵖ` seminorm:** `‖u (r⁻¹ • ·)‖_p = |r| ^ (n / p) * ‖u‖_p` for
 `r ≠ 0`, where `n` is the dimension of the ambient space. The exponent `n / p` is `n / p.toReal`,
@@ -63,12 +87,7 @@ which is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. -/
 theorem eLpNorm_comp_inv_smul (u : E → G) {r : ℝ} (hr : r ≠ 0) (p : ℝ≥0∞) :
     eLpNorm (fun x => u (r⁻¹ • x)) p μ =
       ENNReal.ofReal (|r| ^ ((finrank ℝ E : ℝ) / p.toReal)) * eLpNorm u p μ := by
-  have hr' : r⁻¹ ≠ 0 := inv_ne_zero hr
-  rw [← Function.comp_def, ← (measurableEmbedding_const_smul₀ hr').eLpNorm_map_measure,
-    map_addHaar_smul μ hr', eLpNorm_smul_measure_of_ne_zero (by positivity), smul_eq_mul]
-  congr 1
-  rw [inv_pow, inv_inv, abs_pow, ENNReal.ofReal_rpow_of_pos (by positivity), ← Real.rpow_natCast,
-    ← Real.rpow_mul (abs_nonneg r), one_div, ENNReal.toReal_inv, div_eq_mul_inv]
+  simpa [Set.smul_set_univ₀ hr] using eLpNorm_comp_inv_smul_restrict_smul μ u hr p Set.univ
 
 /-- **Linear change of variables in the `Lᵖ` seminorm on a set:** composing with a linear
 automorphism `e` multiplies the `Lᵖ` seminorm on `e ⁻¹' s`, against an additive Haar measure, by
@@ -94,13 +113,45 @@ theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p 
       eLpNorm u p μ := by
   simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
 
+/-- **Dilation scaling of the `Lᵖ` seminorm on a set:** for `c ≠ 0` and any set `s`,
+`‖u (c • ·)‖_{Lᵖ((c • ·)⁻¹' s)} = |c| ^ (-n / p) * ‖u‖_{Lᵖ(s)}`, where `n` is the dimension of the
+ambient space. This is the dilation case of `eLpNorm_comp_continuousLinearEquiv_restrict_preimage`,
+the restricted counterpart of `eLpNorm_comp_inv_smul`. The exponent `n / p` is `n / p.toReal`,
+which is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. -/
+theorem eLpNorm_comp_smul_restrict_preimage (u : E → G) {c : ℝ} (hc : c ≠ 0) (p : ℝ≥0∞)
+    (s : Set E) :
+    eLpNorm (fun x => u (c • x)) p (μ.restrict ((c • ·) ⁻¹' s)) =
+      ENNReal.ofReal (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ * eLpNorm u p (μ.restrict s) := by
+  -- Scaling by `c` as a linear automorphism, whose determinant is `c ^ n`.
+  let e : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)
+  have he : ⇑e = (c • ·) := by ext; simp [e]
+  have hlin : (e : E →ₗ[ℝ] E) = c • LinearMap.id := by ext; simp [e]
+  have hdet : LinearMap.det (e : E →ₗ[ℝ] E) = c ^ finrank ℝ E := by
+    rw [hlin, LinearMap.det_smul, LinearMap.det_id, mul_one]
+  -- The Jacobian factor: `|c ^ n|⁻¹ ^ (1 / p) = (|c| ^ (n / p))⁻¹`.
+  have hfac : ENNReal.ofReal |(c ^ finrank ℝ E)⁻¹| ^ (1 / p).toReal =
+      ENNReal.ofReal (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ := by
+    rw [ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) ENNReal.toReal_nonneg, abs_inv, abs_pow,
+      Real.inv_rpow (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul (abs_nonneg c)]
+    simp [div_eq_mul_inv]
+  simpa only [Function.comp_def, he, hdet, hfac] using
+    eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := s)
+
+variable {μ} in
+/-- Precomposition with a linear automorphism `e` maps `Lᵖ` on a set `s` to `Lᵖ` on `e ⁻¹' s`, for
+an additive Haar measure. -/
+theorem _root_.MeasureTheory.MemLp.comp_continuousLinearEquiv_restrict_preimage {p : ℝ≥0∞}
+    {u : E → G} {s : Set E} (hu : MemLp u p (μ.restrict s)) (e : E ≃L[ℝ] E) :
+    MemLp (fun x ↦ u (e x)) p (μ.restrict (e ⁻¹' s)) := by
+  rw [memLp_iff, ← Function.comp_def, eLpNorm_comp_continuousLinearEquiv_restrict_preimage]
+  exact ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg
+    ENNReal.ofReal_ne_top) hu.eLpNorm_lt_top
+
 variable {μ} in
 /-- Precomposition with a linear automorphism preserves `Lᵖ` for an additive Haar measure. -/
 theorem _root_.MeasureTheory.MemLp.comp_continuousLinearEquiv {p : ℝ≥0∞} {u : E → G}
     (hu : MemLp u p μ) (e : E ≃L[ℝ] E) : MemLp (fun x ↦ u (e x)) p μ := by
-  rw [memLp_iff, ← Function.comp_def, eLpNorm_comp_continuousLinearEquiv]
-  exact ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg
-    ENNReal.ofReal_ne_top) hu.eLpNorm_lt_top
+  simpa using (hu.restrict Set.univ).comp_continuousLinearEquiv_restrict_preimage e
 
 variable {μ} {𝕜 F : Type*} [NormedField 𝕜] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {r s : ℝ}

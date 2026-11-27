@@ -22,11 +22,17 @@ contravariant in proper maps. When the target is locally compact, the preimages 
 neighbourhoods of `K` are cofinal among the compact neighbourhoods of `f⁻¹(K)`
 (`TopologicalSpace.Compacts.exists_comap_le_of_mem_compactNhds`). It also
 records that Mathlib's image `TopologicalSpace.Compacts.map` is monotone, which makes cohomology
-with compact supports covariant in open embeddings. A compact set lies in one member of a
-directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). A compact set
+with compact supports covariant in open embeddings, and that it preserves `⊥` and `⊔`, and `⊓` for
+an injective map. When the source is locally compact, every compact neighbourhood of `f(K)` is a
+neighbourhood of `f(K')` for some compact neighbourhood `K'` of `K`
+(`TopologicalSpace.Compacts.exists_mem_compactNhds_mem_compactNhds_map`), so the images of the
+compact neighbourhoods of `K` are cofinal among the compact neighbourhoods of `f(K)`
+(`TopologicalSpace.Compacts.exists_map_le_of_mem_compactNhds`). A compact set lies in one member
+of a directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). A compact set
 whose interior contains `K` is a compact neighbourhood of `K`
 (`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`); in a weakly locally compact space every
-compact set has one. Open sets containing two compact sets
+compact set has one, and a compact neighbourhood of `K` is one of every smaller compact set
+(`TopologicalSpace.Compacts.compactNhds_anti`). Open sets containing two compact sets
 together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). In an R₁
 space, for instance a Hausdorff space, a compact set covered by two open sets is the union of two
 compact sets, one inside each of them (`TopologicalSpace.Compacts.exists_sup_eq_of_subset_union`).
@@ -37,8 +43,9 @@ neighbourhood of `K` (`TopologicalSpace.Compacts.exists_mem_compactNhds_disjoint
 along `K` is the colimit over the compact neighbourhoods of `K`.
 A compact open set is nonempty exactly when it is not `⊥`
 (`TopologicalSpace.CompactOpens.coe_nonempty`), as Mathlib records for compact sets.
-Finally, inducing maps pull back compact sets contained in their range
-(`IsInducing.preimageCompacts`).
+`TopologicalSpace.Compacts.mem_inf_compl_toCloseds` describes the intersection of an open set with
+the open complement of a compact set of a Hausdorff space. Finally, inducing maps pull back compact
+sets contained in their range (`IsInducing.preimageCompacts`).
 -/
 
 public section
@@ -103,18 +110,31 @@ lemma exists_comap_le_of_mem_compactNhds [LocallyCompactSpace β] (f : α → β
     (hL' : L' ∈ (Compacts.comap f hf K).compactNhds) :
     ∃ L ∈ K.compactNhds, Compacts.comap f hf L ≤ L' := by
   obtain ⟨U, hKU, hUL'⟩ := exists_open_set_nhds_of_mem_compactsNhds hL'
-  have hK : (K : Set β) ⊆ (f '' (U : Set α)ᶜ)ᶜ := by
-    rintro _ hy ⟨x, hx, rfl⟩
-    exact hx (hKU hy)
   obtain ⟨L, hL, hKL, hLU⟩ := exists_compact_between K.isCompact
-    (hf.isClosedMap _ U.isOpen.isClosed_compl).isOpen_compl hK
-  refine ⟨⟨L, hL⟩, fun y ↦ mem_interior_iff_mem_nhds.mp (hKL y.property), fun x hx ↦ hUL' ?_⟩
-  by_contra hxU
-  exact hLU hx ⟨x, hxU, rfl⟩
+    (isClosedMap_iff_kernImage.mp hf.isClosedMap U.isOpen) (subset_kernImage_iff.mpr hKU)
+  exact ⟨⟨L, hL⟩, fun y ↦ mem_interior_iff_mem_nhds.mp (hKL y.property),
+    fun x hx ↦ hUL' (subset_kernImage_iff.mp hLU hx)⟩
 
 /-- The image of compact sets under a continuous map is monotone. -/
 lemma map_mono (f : α → β) (hf : Continuous f) : Monotone (Compacts.map f hf) :=
   fun _ _ h ↦ image_mono h
+
+@[simp]
+lemma map_bot (f : α → β) (hf : Continuous f) : Compacts.map f hf ⊥ = ⊥ :=
+  Compacts.ext (image_empty f)
+
+@[simp]
+lemma map_sup (f : α → β) (hf : Continuous f) (K L : Compacts α) :
+    Compacts.map f hf (K ⊔ L) = Compacts.map f hf K ⊔ Compacts.map f hf L :=
+  Compacts.ext (image_union f K L)
+
+/-- An injective map takes the intersection of two compact sets to the intersection of their
+images. -/
+@[simp]
+lemma map_inf [T2Space α] [T2Space β] (f : α → β) (hf : Continuous f) (hinj : f.Injective)
+    (K L : Compacts α) :
+    Compacts.map f hf (K ⊓ L) = Compacts.map f hf K ⊓ Compacts.map f hf L :=
+  Compacts.ext (image_inter hinj)
 
 /-- A compact set lies in one member of a directed family of open sets covering the space. -/
 lemma exists_subset_of_iSup_eq_top {ι : Type*} [Nonempty ι] {U : ι → Opens α}
@@ -122,6 +142,12 @@ lemma exists_subset_of_iSup_eq_top {ι : Type*} [Nonempty ι] {U : ι → Opens 
     ∃ i, (K : Set α) ⊆ U i :=
   K.isCompact.elim_directed_cover (fun i ↦ (U i : Set α)) (fun i ↦ (U i).isOpen)
     (fun x _ ↦ by simp [← Opens.coe_iSup, hcover]) (hU.mono_comp _ fun _ _ h ↦ h)
+
+/-- The open set `U ⊓ Kᶜ` cut out of an open set `U` by a compact set `K` of a Hausdorff space is
+the set difference `U ∖ K`. -/
+lemma mem_inf_compl_toCloseds [T2Space α] {U : Opens α} {K : Compacts α} {x : α} :
+    x ∈ U ⊓ K.toCloseds.compl ↔ x ∈ (U : Set α) \ K :=
+  Iff.rfl
 
 /-- A compact set `L` whose interior contains `K`, as a compact neighbourhood of `K`. The body is
 exposed, as for Mathlib's `compactNhdsMkOfOpens`, so that the underlying compact set is `L` by
@@ -134,6 +160,10 @@ definition. -/
 lemma coe_compactNhdsOfSubsetInterior {K : Compacts α} (L : Compacts α)
     (h : (K : Set α) ⊆ interior L) : (compactNhdsOfSubsetInterior L h : Compacts α) = L :=
   (rfl)
+
+/-- A compact neighbourhood of a compact set is a compact neighbourhood of every smaller one. -/
+lemma compactNhds_anti : Antitone (compactNhds (α := α)) :=
+  fun _ _ h _ hL x ↦ hL ⟨x, h x.property⟩
 
 /-- In a weakly locally compact space, every compact set has a compact neighbourhood. -/
 instance [WeaklyLocallyCompactSpace α] (K : Compacts α) : Nonempty K.compactNhds :=
@@ -179,6 +209,28 @@ lemma exists_mem_compactNhds_disjoint (K : Compacts α) {T : Set α} (hT : IsClo
     hKT.subset_compl_right
   exact ⟨⟨L, hL⟩, fun x ↦ mem_interior_iff_mem_nhds.1 (hKL x.property),
     disjoint_compl_left.mono_left hLT⟩
+
+/-- For a continuous map `f` out of a locally compact space, every compact neighbourhood `L` of
+the image `f(K)` of a compact set `K` is a neighbourhood of the image `f(K')` of some compact
+neighbourhood `K'` of `K`. -/
+lemma exists_mem_compactNhds_mem_compactNhds_map {f : α → β} (hf : Continuous f) {K : Compacts α}
+    {L : Compacts β} (hL : L ∈ (Compacts.map f hf K).compactNhds) :
+    ∃ K' ∈ K.compactNhds, L ∈ (Compacts.map f hf K').compactNhds := by
+  obtain ⟨U, hKU, hUL⟩ := exists_open_set_nhds_of_mem_compactsNhds hL
+  obtain ⟨K', hK', hKK', hK'U⟩ := exists_compact_between K.isCompact (U.isOpen.preimage hf)
+    (image_subset_iff.mp hKU)
+  exact ⟨⟨K', hK'⟩, fun x ↦ mem_interior_iff_mem_nhds.mp (hKK' x.property),
+    fun y ↦ Filter.mem_of_superset (U.isOpen.mem_nhds (image_subset_iff.mpr hK'U y.property)) hUL⟩
+
+/-- In a locally compact space, the images of the compact neighbourhoods of `K` under a continuous
+map `f` are cofinal among the compact neighbourhoods of `f(K)`: every compact neighbourhood of
+`f(K)` contains the image of a compact neighbourhood of `K`. The images need not themselves be
+neighbourhoods of `f(K)`. -/
+lemma exists_map_le_of_mem_compactNhds {f : α → β} (hf : Continuous f) {K : Compacts α}
+    {L : Compacts β} (hL : L ∈ (Compacts.map f hf K).compactNhds) :
+    ∃ K' ∈ K.compactNhds, Compacts.map f hf K' ≤ L :=
+  let ⟨K', hK', hL'⟩ := exists_mem_compactNhds_mem_compactNhds_map hf hL
+  ⟨K', hK', subset_of_mem_compactNhds hL'⟩
 
 end CompactNhds
 

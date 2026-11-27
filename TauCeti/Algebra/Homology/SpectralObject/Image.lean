@@ -59,8 +59,12 @@ objects as images and of the differentials as connecting maps on representatives
 * `CategoryTheory.Abelian.SpectralObject.toE_map`,
   `CategoryTheory.Abelian.SpectralObject.map_fromE`: the maps between the objects `E` induced by
   morphisms in `ComposableArrows ι 3`, on representatives and through the embeddings;
-  `CategoryTheory.Abelian.SpectralObject.mapFourδ₄Toδ₃'_fromE` is the case of the canonical maps
-  `E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₄)` for an index preorder.
+  `CategoryTheory.Abelian.SpectralObject.mapFourδ₄Toδ₃'_fromE` and
+  `CategoryTheory.Abelian.SpectralObject.mapFourδ₁Toδ₀'_fromE` are the cases of the canonical maps
+  `E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₄)` and
+  `E^n(i₀ ≤ i₂ ≤ i₃ ≤ i₄) ⟶ E^n(i₁ ≤ i₂ ≤ i₃ ≤ i₄)` for an index preorder.
+* `CategoryTheory.Abelian.SpectralObject.EIsoH_hom_eq_fromE`: Mathlib's identification `X.EIsoH`
+  of `E^n(𝟙, f, 𝟙)` with `H^n(f)` is `X.fromE`.
 * `CategoryTheory.Abelian.SpectralObject.toE_EMap`,
   `CategoryTheory.Abelian.SpectralObject.EMap_fromE`: the representatives and the embeddings are
   natural in the spectral object.
@@ -181,6 +185,15 @@ lemma EIsoImage_hom_ι (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n
 
 end
 
+/-- The identification `X.EIsoH` of `E^n(𝟙, f, 𝟙)` with `H^n(f)` is the embedding `X.fromE`. -/
+lemma EIsoH_hom_eq_fromE {ι : Type*} [Category* ι] (X : SpectralObject C ι) {i j : ι}
+    (f : i ⟶ j) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
+    (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
+      X.fromE (𝟙 i) f (𝟙 j) f (Category.comp_id f) n₀ n₁ n₂ hn₁ hn₂ := by
+  rw [← cancel_mono (X.opcyclesIsoH f n₀ n₁ hn₁).inv, EIsoH_hom_opcyclesIsoH_inv,
+    ← X.ιE_fromOpcycles (𝟙 i) f (𝟙 j) f (Category.comp_id f) n₀ n₁ n₂ hn₁ hn₂, Category.assoc,
+    X.opcyclesIsoH_hom_inv_id f n₀ n₁ hn₁, Category.comp_id]
+
 section Naturality
 
 variable {ι : Type*} [Category* ι] (X : SpectralObject C ι)
@@ -262,6 +275,22 @@ lemma mapFourδ₄Toδ₃'_fromE (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n�
         (X.H n₁).map (twoδ₂Toδ₁' i₁ i₃ i₄ (hi₁₂.trans hi₂₃) hi₃₄) :=
   X.map_fromE _ _ _ _ rfl _ _ _ _ rfl _ n₀ n₁ n₂ _ (Subsingleton.elim _ _) (Subsingleton.elim _ _)
     hn₁ hn₂
+
+/-- The canonical map `E^{n₁}(i₀ ≤ i₂ ≤ i₃ ≤ i₄) ⟶ E^{n₁}(i₁ ≤ i₂ ≤ i₃ ≤ i₄)` for `i₀ ≤ i₁`
+commutes with the embeddings `X.fromE` into `H^{n₁}(i₂ ≤ i₄)`. -/
+@[reassoc]
+lemma mapFourδ₁Toδ₀'_fromE (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
+    X.mapFourδ₁Toδ₀' i₀ i₁ i₂ i₃ i₄ hi₀₁ hi₁₂ hi₂₃ hi₃₄ n₀ n₁ n₂ hn₁ hn₂ ≫
+        X.fromE (homOfLE hi₁₂) (homOfLE hi₂₃) (homOfLE hi₃₄) (homOfLE (hi₂₃.trans hi₃₄)) rfl
+          n₀ n₁ n₂ hn₁ hn₂ =
+      X.fromE (homOfLE (hi₀₁.trans hi₁₂)) (homOfLE hi₂₃) (homOfLE hi₃₄)
+        (homOfLE (hi₂₃.trans hi₃₄)) rfl n₀ n₁ n₂ hn₁ hn₂ := by
+  have h := X.map_fromE (homOfLE (hi₀₁.trans hi₁₂)) (homOfLE hi₂₃) (homOfLE hi₃₄)
+    (homOfLE (hi₂₃.trans hi₃₄)) rfl (homOfLE hi₁₂) (homOfLE hi₂₃) (homOfLE hi₃₄)
+    (homOfLE (hi₂₃.trans hi₃₄)) rfl (fourδ₁Toδ₀' i₀ i₁ i₂ i₃ i₄ hi₀₁ hi₁₂ hi₂₃ hi₃₄) n₀ n₁ n₂
+    (𝟙 _) (Subsingleton.elim _ _) (Subsingleton.elim _ _) hn₁ hn₂
+  rw [Functor.map_id, Category.comp_id] at h
+  exact h
 
 end Preorder
 

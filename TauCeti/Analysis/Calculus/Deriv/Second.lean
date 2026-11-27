@@ -9,8 +9,10 @@ public import Mathlib.Analysis.Calculus.Deriv.CompMul
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Analysis.Analytic.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
@@ -38,12 +40,27 @@ Under the change of variables `x = e^y` the operators `x d/dx` and `x² d²/dx²
 `(f ∘ exp)''(y) = e^y f'(e^y) + e^{2y} f''(e^y)`. These turn equations of Euler type, whose
 coefficients `x` and `x²` degenerate at `0`, into equations with constant coefficients.
 
+If `f′ = f ℓ` near a point `z` and `ℓ` has derivative `ℓ′` at `z`, then `f′` has derivative
+`f(z) (ℓ(z) ^ 2 + ℓ′)` at `z`.
+
+For `p` and `φ` differentiable near `z` and `F` differentiable near `φ z`, the product and chain
+rules give `(p · (F ∘ φ))′ = p′ · (F ∘ φ) + p · (F′ ∘ φ) · φ′` on a neighbourhood of `z`; if also
+`p′`, `φ′` are differentiable at `z` and `F′` at `φ z`, then
+
+`(p · (F ∘ φ))′′ = p′′ · (F ∘ φ) + 2 p′ · (F′ ∘ φ) · φ′ + p · ((F′′ ∘ φ) · φ′ ^ 2 + (F′ ∘ φ) · φ′′)`
+
+at `z`. These formulas transform a linear second-order differential equation under a change of
+dependent variable `w = p · u` combined with a change of independent variable `ζ = φ(z)`. Over a
+complete field they hold in particular when `p`, `φ` are analytic at `z` and `F` at `φ z`.
+
 ## Main results
 
 * `TauCeti.iteratedDeriv_comp_mul_left`: the iterated derivatives of `fun x ↦ f (c * x)`, and
   `TauCeti.deriv_deriv_comp_mul_left` its second derivative.
 * `TauCeti.deriv_deriv_fun_add`, `TauCeti.deriv_deriv_fun_sub`: the second derivative of a sum and
   of a difference of functions that are `C²` at the point.
+* `TauCeti.hasDerivAt_deriv_sum_of_eventuallyEq`: the second derivative of a function locally
+  equal to a finite sum.
 * `TauCeti.deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
 * `TauCeti.deriv_const_add_smul`, `TauCeti.iteratedDeriv_two_const_add_smul`: the first and
   second derivatives of the affine line `t ↦ a + t • b`.
@@ -51,6 +68,16 @@ coefficients `x` and `x²` degenerate at `0`, into equations with constant coeff
   `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
 * `TauCeti.sq_mul_deriv_deriv_comp_log`, `TauCeti.deriv_deriv_comp_exp`: the second derivatives
   under the change of variables `x = e^y`.
+* `TauCeti.hasDerivAt_deriv_of_eventually_hasDerivAt_mul`: the second derivative of `f` from a
+  logarithmic derivative `ℓ` of `f`.
+* `TauCeti.deriv_mul_comp_eventuallyEq`, `TauCeti.hasDerivAt_deriv_mul_comp`: the first
+  derivative of `p · (F ∘ φ)` near a point and its second derivative at the point, with the
+  analytic special cases `AnalyticAt.deriv_mul_comp_eventuallyEq`,
+  `AnalyticAt.hasDerivAt_deriv_mul_comp`.
+
+The derivatives of `p · (F ∘ φ)` are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/Hypergeometric/FurtherTransformations/Quadratic.lean`.
 -/
 
 public section
@@ -99,6 +126,19 @@ theorem deriv_deriv_fun_add (hf : ContDiffAt 𝕜 2 f x) (hg : ContDiffAt 𝕜 2
 theorem deriv_deriv_fun_sub (hf : ContDiffAt 𝕜 2 f x) (hg : ContDiffAt 𝕜 2 g x) :
     deriv (deriv fun y ↦ f y - g y) x = deriv (deriv f) x - deriv (deriv g) x := by
   simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using iteratedDeriv_fun_sub hf hg
+
+/-- If `f` agrees near `u` with a finite sum `∑ i ∈ t, g i`, each `g i` is differentiable near
+`u`, and each `deriv (g i)` has derivative `d i` at `u`, then `deriv f` has derivative
+`∑ i ∈ t, d i` at `u`. -/
+theorem hasDerivAt_deriv_sum_of_eventuallyEq {ι : Type*} {t : Finset ι} {g : ι → 𝕜 → F}
+    {d : ι → F} {u : 𝕜} (heq : f =ᶠ[𝓝 u] fun s ↦ ∑ i ∈ t, g i s)
+    (hd₁ : ∀ i ∈ t, ∀ᶠ s in 𝓝 u, DifferentiableAt 𝕜 (g i) s)
+    (hd₂ : ∀ i ∈ t, HasDerivAt (deriv (g i)) (d i) u) :
+    HasDerivAt (deriv f) (∑ i ∈ t, d i) u := by
+  have hdeq : deriv f =ᶠ[𝓝 u] fun s ↦ ∑ i ∈ t, deriv (g i) s := by
+    filter_upwards [heq.deriv, (Filter.eventually_all_finset t).mpr hd₁] with s hs hds
+    rw [hs, deriv_fun_sum hds]
+  exact (HasDerivAt.fun_sum hd₂).congr_of_eventuallyEq hdeq
 
 end AddSub
 
@@ -152,6 +192,58 @@ theorem iteratedDeriv_two_const_add_smul (a b : F) :
     Pi.zero_def]
 
 end AffineLine
+
+section LogDeriv
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+
+/-- If `f′ = f · ℓ` near `z`, so that `ℓ` is a logarithmic derivative of `f` there, and `ℓ` has
+derivative `ℓ′` at `z`, then `f′` has derivative `f(z) (ℓ(z) ^ 2 + ℓ′)` at `z`. -/
+theorem hasDerivAt_deriv_of_eventually_hasDerivAt_mul {f ℓ : 𝕜 → 𝕜} {ℓ' z : 𝕜}
+    (hf : ∀ᶠ w in 𝓝 z, HasDerivAt f (f w * ℓ w) w) (hℓ : HasDerivAt ℓ ℓ' z) :
+    HasDerivAt (deriv f) (f z * (ℓ z ^ 2 + ℓ')) z := by
+  have hev : deriv f =ᶠ[𝓝 z] fun w ↦ f w * ℓ w := hf.mono fun w hw ↦ hw.deriv
+  refine ((hf.self_of_nhds.mul hℓ).congr_of_eventuallyEq hev).congr_deriv ?_
+  ring
+
+end LogDeriv
+
+section MulComp
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {p φ F : 𝕜 → 𝕜} {z : 𝕜}
+
+/-- The derivative of `p · (F ∘ φ)` near a point `z` near which `p` and `φ` are differentiable
+and `F` is differentiable at the values of `φ`: it agrees on a neighbourhood of `z` with
+`p′ · (F ∘ φ) + p · (F′ ∘ φ) · φ′`. -/
+theorem deriv_mul_comp_eventuallyEq (hp : ∀ᶠ w in 𝓝 z, DifferentiableAt 𝕜 p w)
+    (hφ : ∀ᶠ w in 𝓝 z, DifferentiableAt 𝕜 φ w) (hF : ∀ᶠ w in 𝓝 z, DifferentiableAt 𝕜 F (φ w)) :
+    deriv (fun w ↦ p w * F (φ w)) =ᶠ[𝓝 z]
+      fun w ↦ deriv p w * F (φ w) + p w * (deriv F (φ w) * deriv φ w) := by
+  filter_upwards [hp, hφ, hF] with w h1 h2 h3
+  exact (h1.hasDerivAt.mul (h3.hasDerivAt.comp w h2.hasDerivAt)).deriv
+
+/-- The derivative of `p · (F ∘ φ)`, as a function, has derivative
+`p′′ · F(φ) + 2 p′ · F′(φ) · φ′ + p · (F′′(φ) · φ′ ^ 2 + F′(φ) · φ′′)` at a point `z`, when `p`,
+`φ` are differentiable near `z`, `F` is differentiable at the values of `φ` near `z`, and `p′`,
+`φ′` are differentiable at `z` and `F′` at `φ z`. -/
+theorem hasDerivAt_deriv_mul_comp (hp : ∀ᶠ w in 𝓝 z, DifferentiableAt 𝕜 p w)
+    (hφ : ∀ᶠ w in 𝓝 z, DifferentiableAt 𝕜 φ w) (hF : ∀ᶠ w in 𝓝 z, DifferentiableAt 𝕜 F (φ w))
+    (hp' : DifferentiableAt 𝕜 (deriv p) z) (hφ' : DifferentiableAt 𝕜 (deriv φ) z)
+    (hF' : DifferentiableAt 𝕜 (deriv F) (φ z)) :
+    HasDerivAt (deriv fun w ↦ p w * F (φ w))
+      (deriv (deriv p) z * F (φ z) + 2 * deriv p z * (deriv F (φ z) * deriv φ z) +
+        p z * (deriv (deriv F) (φ z) * deriv φ z ^ 2 + deriv F (φ z) * deriv (deriv φ) z)) z := by
+  -- Differentiate the first-derivative formula once more, term by term.
+  have hφz := hφ.self_of_nhds.hasDerivAt
+  have hFφ := hF.self_of_nhds.hasDerivAt.comp z hφz
+  have hF'φ := hF'.hasDerivAt.comp z hφz
+  have h : HasDerivAt (fun w ↦ deriv p w * F (φ w) + p w * (deriv F (φ w) * deriv φ w)) _ z :=
+    (hp'.hasDerivAt.mul hFφ).add (hp.self_of_nhds.hasDerivAt.mul (hF'φ.mul hφ'.hasDerivAt))
+  refine (h.congr_of_eventuallyEq (deriv_mul_comp_eventuallyEq hp hφ hF)).congr_deriv ?_
+  simp only [Function.comp_apply]
+  ring
+
+end MulComp
 
 /-- The second derivative of the square root of a quadratic polynomial
 `Q s = a + b * s + c * s ^ 2` at a point `t` where `Q` is positive is
@@ -215,3 +307,32 @@ theorem deriv_deriv_comp_exp (hf' : DifferentiableAt ℝ (deriv f) (exp y)) :
 end LogExp
 
 end TauCeti
+
+namespace AnalyticAt
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {p φ F : 𝕜 → 𝕜} {z : 𝕜}
+
+/-- The derivative of `p · (F ∘ φ)` near a point `z` where `p` and `φ` are analytic and `F` is
+analytic at `φ z`: it agrees on a neighbourhood of `z` with `p′ · (F ∘ φ) + p · (F′ ∘ φ) · φ′`. -/
+theorem deriv_mul_comp_eventuallyEq (hp : AnalyticAt 𝕜 p z) (hφ : AnalyticAt 𝕜 φ z)
+    (hF : AnalyticAt 𝕜 F (φ z)) :
+    deriv (fun w ↦ p w * F (φ w)) =ᶠ[𝓝 z]
+      fun w ↦ deriv p w * F (φ w) + p w * (deriv F (φ w) * deriv φ w) :=
+  TauCeti.deriv_mul_comp_eventuallyEq (hp.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt)
+    (hφ.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt)
+    (hφ.continuousAt.eventually (hF.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt))
+
+/-- The derivative of `p · (F ∘ φ)`, as a function, has derivative
+`p′′ · F(φ) + 2 p′ · F′(φ) · φ′ + p · (F′′(φ) · φ′ ^ 2 + F′(φ) · φ′′)` at a point `z` where `p`
+and `φ` are analytic and `F` is analytic at `φ z`. -/
+theorem hasDerivAt_deriv_mul_comp (hp : AnalyticAt 𝕜 p z) (hφ : AnalyticAt 𝕜 φ z)
+    (hF : AnalyticAt 𝕜 F (φ z)) :
+    HasDerivAt (deriv fun w ↦ p w * F (φ w))
+      (deriv (deriv p) z * F (φ z) + 2 * deriv p z * (deriv F (φ z) * deriv φ z) +
+        p z * (deriv (deriv F) (φ z) * deriv φ z ^ 2 + deriv F (φ z) * deriv (deriv φ) z)) z :=
+  TauCeti.hasDerivAt_deriv_mul_comp (hp.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt)
+    (hφ.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt)
+    (hφ.continuousAt.eventually (hF.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt))
+    hp.deriv.differentiableAt hφ.deriv.differentiableAt hF.deriv.differentiableAt
+
+end AnalyticAt

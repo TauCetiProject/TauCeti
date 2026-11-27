@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import Mathlib.Topology.Algebra.Module.Determinant
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
@@ -28,15 +29,22 @@ not only in the base field.
 At a zero of a differentiable scalar factor, continuity of the vector factor suffices for
 Fréchet differentiability of their product, including scalars in a normed algebra.
 
+The dilation `x ↦ a • x` has derivative `a • id` at every point, hence derivative norm
+`‖a‖ ‖id‖` and Jacobian determinant `a ^ n`, where `n` is the dimension.
+
 ## Main results
 
 * `HasFDerivWithinAt.smul_of_eq_zero` and `HasFDerivAt.smul_of_eq_zero`: the scalar-multiplication
   rule at a zero of the scalar factor, with only continuity of the vector factor.
 * `TauCeti.fderiv_smul_apply`: the Leibniz rule for the derivative of a scalar multiple, applied to
   a direction.
+* `TauCeti.norm_fderiv_fun_smul_le`: the Leibniz estimate for the norm of the derivative of a
+  scalar multiple.
 * `TauCeti.cutoff_sq_mul_norm_fderiv_sq_le`: the two-direction cutoff derivative estimate.
 * `TauCeti.hasStrictFDerivAt_smul_of_isBigO_sub`: a product of two Lipschitz factors vanishing
   at a point is strictly differentiable there, with derivative zero.
+* `TauCeti.fderiv_const_smul_id`, `TauCeti.norm_fderiv_const_smul_id`,
+  `TauCeti.det_fderiv_const_smul_id`: the derivative of a dilation, its norm and its determinant.
 -/
 
 public section
@@ -80,7 +88,39 @@ theorem fderiv_smul_apply {c : E → 𝕜'} {f : E → F} {x : E} (hc : Differen
     fderiv 𝕜 (c • f) x e = c x • fderiv 𝕜 f x e + fderiv 𝕜 c x e • f x := by
   simp [fderiv_smul hc hf]
 
+/-- **The Leibniz estimate.** The derivative of a scalar multiple `c • f` at `x` is bounded by
+`‖c x‖ ‖Df(x)‖ + ‖Dc(x)‖ ‖f x‖`. -/
+theorem norm_fderiv_fun_smul_le {c : E → 𝕜} {f : E → F} {x : E}
+    (hc : DifferentiableAt 𝕜 c x) (hf : DifferentiableAt 𝕜 f x) :
+    ‖fderiv 𝕜 (fun y => c y • f y) x‖ ≤ ‖c x‖ * ‖fderiv 𝕜 f x‖ + ‖fderiv 𝕜 c x‖ * ‖f x‖ := by
+  rw [fderiv_fun_smul hc hf]
+  refine (norm_add_le _ _).trans_eq ?_
+  rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply]
+
 end Leibniz
+
+section Dilation
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E]
+
+/-- The derivative of the dilation `x ↦ a • x` is `a • id` at every point. -/
+theorem fderiv_const_smul_id (a : 𝕜) (x : E) :
+    fderiv 𝕜 (fun x : E => a • x) x = a • ContinuousLinearMap.id 𝕜 E := by
+  simp only [fderiv_fun_const_smul differentiableAt_fun_id, fderiv_fun_id]
+
+/-- The derivative of the dilation `x ↦ a • x` has norm `‖a‖ ‖id‖` at every point. -/
+theorem norm_fderiv_const_smul_id (a : 𝕜) (x : E) :
+    ‖fderiv 𝕜 (fun x : E => a • x) x‖ = ‖a‖ * ‖ContinuousLinearMap.id 𝕜 E‖ := by
+  rw [fderiv_const_smul_id, norm_smul]
+
+/-- The Jacobian determinant of the dilation `x ↦ a • x` is `a ^ n` at every point, where `n` is
+the dimension. -/
+theorem det_fderiv_const_smul_id (a : 𝕜) (x : E) :
+    (fderiv 𝕜 (fun x : E => a • x) x).det = a ^ Module.finrank 𝕜 E := by
+  simp [fderiv_const_smul_id, ContinuousLinearMap.det, LinearMap.det_smul]
+
+end Dilation
 
 variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup V] [NormedSpace ℝ V]

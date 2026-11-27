@@ -16,7 +16,15 @@ underlying spaces. Such maps are surjective, universally injective and universal
 Conversely, these three properties suffice. Equivalently, a universal homeomorphism is an
 integral, universally injective, surjective morphism.
 
-This criterion applies to Frobenius without imposing finiteness or reducedness assumptions.
+This criterion applies to Frobenius without imposing finiteness or reducedness assumptions. It
+also shows that being a universal homeomorphism descends along surjections: if `f ≫ g` is a
+universal homeomorphism and `f` is surjective, so is `g`
+(`TauCeti.AlgebraicGeometry.IsUniversalHomeomorphism.of_comp_surjective`). This, and the same
+descent for universal closedness, are also instances of `MorphismProperty.HasOfPrecompProperty`.
+
+For a ring map `B → R` with `Spec R → Spec B` a universal homeomorphism and any `B`-algebra `C`,
+contraction along `C → R ⊗[B] C` is a homeomorphism of prime spectra
+(`TauCeti.AlgebraicGeometry.IsUniversalHomeomorphism.isHomeomorph_comap_includeRight`).
 
 ## References
 
@@ -190,6 +198,24 @@ theorem IsUniversalHomeomorphism.SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶
     funext (Spec.map_apply φ)]
   exact Iff.rfl
 
+open scoped TensorProduct in
+/-- If `Spec R ⟶ Spec B` is a universal homeomorphism, then for every `B`-algebra `C`,
+contraction of prime ideals along `C → R ⊗[B] C` is a homeomorphism of prime spectra. -/
+theorem IsUniversalHomeomorphism.isHomeomorph_comap_includeRight {B R : Type u} [CommRing B]
+    [CommRing R] [Algebra B R]
+    [IsUniversalHomeomorphism (Spec.map (CommRingCat.ofHom (algebraMap B R)))]
+    (C : Type u) [CommRing C] [Algebra B C] :
+    IsHomeomorph (PrimeSpectrum.comap
+      (Algebra.TensorProduct.includeRight : C →ₐ[B] R ⊗[B] C).toRingHom) := by
+  have : IsUniversalHomeomorphism (Spec.map (CommRingCat.ofHom
+      (Algebra.TensorProduct.includeRight : C →ₐ[B] R ⊗[B] C).toRingHom)) :=
+    MorphismProperty.IsStableUnderBaseChange.of_isPullback (P := @IsUniversalHomeomorphism.{u})
+      (isPullback_SpecMap_of_isPushout _ _ _ _ (CommRingCat.isPushout_tensorProduct B R C))
+      inferInstance
+  have h := IsUniversalHomeomorphism.isHomeomorph (Spec.map (CommRingCat.ofHom
+    (Algebra.TensorProduct.includeRight : C →ₐ[B] R ⊗[B] C).toRingHom))
+  rwa [funext (Spec.map_apply _)] at h
+
 /-- Composites of universal homeomorphisms are universal homeomorphisms. -/
 instance isUniversalHomeomorphism_isStableUnderComposition :
     MorphismProperty.IsStableUnderComposition @IsUniversalHomeomorphism.{u} where
@@ -201,6 +227,24 @@ instance isUniversalHomeomorphism_isStableUnderComposition :
 instance (f : X ⟶ Y) (g : Y ⟶ Z) [IsUniversalHomeomorphism f]
     [IsUniversalHomeomorphism g] : IsUniversalHomeomorphism (f ≫ g) :=
   MorphismProperty.comp_mem @IsUniversalHomeomorphism f g inferInstance inferInstance
+
+/-- **Being a universal homeomorphism descends along surjections**: if `f ≫ g` is a universal
+homeomorphism and `f` is surjective, then `g` is a universal homeomorphism, since universal
+closedness, universal injectivity and surjectivity each descend along `f`. -/
+theorem IsUniversalHomeomorphism.of_comp_surjective (f : X ⟶ Y) (g : Y ⟶ Z)
+    [IsUniversalHomeomorphism (f ≫ g)] [Surjective f] : IsUniversalHomeomorphism g :=
+  (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective g).mpr
+    ⟨.of_comp_surjective f g, .of_comp_surjective f g, .of_comp f g⟩
+
+/-- Universal closedness descends along surjections (Mathlib's
+`UniversallyClosed.of_comp_surjective`). -/
+instance : MorphismProperty.HasOfPrecompProperty @UniversallyClosed @Surjective.{u} where
+  of_precomp f g _ (_ : UniversallyClosed (f ≫ g)) := .of_comp_surjective f g
+
+/-- Being a universal homeomorphism descends along surjections
+(`IsUniversalHomeomorphism.of_comp_surjective`). -/
+instance : MorphismProperty.HasOfPrecompProperty @IsUniversalHomeomorphism @Surjective.{u} where
+  of_precomp f g _ (_ : IsUniversalHomeomorphism (f ≫ g)) := .of_comp_surjective f g
 
 /-- Every isomorphism of schemes is a universal homeomorphism. -/
 instance IsUniversalHomeomorphism.of_isIso (f : X ⟶ Y) [IsIso f] :

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Restrict
 public import TauCeti.Geometry.Symplectic.Spectrum
 import Mathlib.LinearAlgebra.Semisimple
 import TauCeti.LinearAlgebra.Eigenspace.Commute
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
@@ -68,6 +69,10 @@ form a nondegenerate family
   `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.restrict_orthogonal`: restrictions of a
   nondegenerate family to an invariant symplectic subspace and its symplectic complement are
   nondegenerate.
+* `TauCeti.SymplecticForm.comp_prodEquivOfIsCompl_eq_prod`,
+  `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.mem_span_range_iff_exists_prod`: along an
+  invariant symplectic splitting `V = L ⊕ L^ω`, every form of the family is the orthogonal sum of
+  its restrictions, and the span of the family is the sum of the spans of the restrictions.
 * `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval`:
   restrictions of a nondegenerate family to the generalized eigenspaces cut out by even
   polynomials in one of its Hamiltonian endomorphisms are nondegenerate.
@@ -301,6 +306,40 @@ section Restrict
 
 variable {Q : ι → QuadraticForm ℝ V} {L : Submodule ℝ V}
 
+/-- **A form preserved by a symplectic splitting is the sum of its restrictions.** If the
+Hamiltonian endomorphism of `R` preserves a symplectic subspace `L`, then along the isomorphism
+`L × L^ω ≃ V`, `(a, b) ↦ a + b`, the form `R` is the orthogonal sum of its restrictions to `L` and
+to `L^ω`: the cross term `polar R a b = ω (A_R a) b` vanishes since `A_R a ∈ L`. -/
+theorem comp_prodEquivOfIsCompl_eq_prod (hL : ω.IsSymplectic L) {R : QuadraticForm ℝ V}
+    (hR : L ∈ Module.End.invtSubmodule (ω.hamiltonianEnd R)) :
+    R.comp (Submodule.prodEquivOfIsCompl L (ω.orthogonal L) hL.isCompl :
+        L × ω.orthogonal L →ₗ[ℝ] V) =
+      (R.comp L.subtype).prod (R.comp (ω.orthogonal L).subtype) := by
+  ext ⟨a, b⟩
+  have hab : QuadraticMap.polar R a b = 0 := by
+    rw [← ω.apply_hamiltonianEnd]
+    exact mem_orthogonal_iff.1 b.property _ ((Module.End.mem_invtSubmodule _).1 hR a.property)
+  simp only [QuadraticMap.comp_apply, LinearEquiv.coe_coe, Submodule.coe_prodEquivOfIsCompl',
+    QuadraticMap.prod_apply, Submodule.subtype_apply]
+  rw [QuadraticMap.map_add R, hab, add_zero]
+
+/-- Along `L × L^ω ≃ V`, a nondegenerate family preserving the symplectic subspace `L` becomes
+the family of orthogonal sums of its restrictions, which is therefore nondegenerate for the product
+of the restricted forms. -/
+private theorem IsNondegenerateQuadraticFamily.isNondegenerateQuadraticFamily_prod
+    (h : ω.IsNondegenerateQuadraticFamily Q) (hL : ω.IsSymplectic L)
+    (hQL : ∀ i, L ∈ Module.End.invtSubmodule (ω.hamiltonianEnd (Q i))) :
+    ((ω.restrict L hL.nondegenerate_restrict).prod (ω.restrict (ω.orthogonal L)
+        hL.orthogonal.nondegenerate_restrict)).IsNondegenerateQuadraticFamily
+      fun i ↦ ((Q i).comp L.subtype).prod ((Q i).comp (ω.orthogonal L).subtype) := by
+  have hQe : (fun i ↦ (Q i).comp (Submodule.prodEquivOfIsCompl L (ω.orthogonal L) hL.isCompl :
+      L × ω.orthogonal L →ₗ[ℝ] V)) = fun i ↦
+        ((Q i).comp L.subtype).prod ((Q i).comp (ω.orthogonal L).subtype) :=
+    funext fun i ↦ comp_prodEquivOfIsCompl_eq_prod hL (hQL i)
+  have := (isNondegenerateQuadraticFamily_comp_iff
+    (ω.isSymplectomorphism_prodEquivOfIsCompl hL.isCompl) Q).2 h
+  rwa [hQe] at this
+
 /-- Restrictions of a nondegenerate family to an invariant symplectic subspace `L` and to its
 symplectic complement are nondegenerate. -/
 private theorem IsNondegenerateQuadraticFamily.restrict_and_restrict_orthogonal
@@ -310,27 +349,29 @@ private theorem IsNondegenerateQuadraticFamily.restrict_and_restrict_orthogonal
         (fun i ↦ (Q i).comp L.subtype) ∧
       (ω.restrict (ω.orthogonal L)
         hL.orthogonal.nondegenerate_restrict).IsNondegenerateQuadraticFamily
-        (fun i ↦ (Q i).comp (ω.orthogonal L).subtype) := by
-  -- Along the symplectomorphism `L × L^ω ≃ V`, every `Q i` is the direct sum of its restrictions.
-  have hc := isSymplectic_iff_isCompl.1 hL
-  have he := ω.isSymplectomorphism_prodEquivOfIsCompl hc
-  -- The cross term `polar (Q i) a b = ω (A_{Q i} a) b` vanishes since `A_{Q i} a ∈ L`.
-  have hQe : (fun i ↦ (Q i).comp (Submodule.prodEquivOfIsCompl L (ω.orthogonal L) hc :
-      L × ω.orthogonal L →ₗ[ℝ] V)) = fun i ↦
-        ((Q i).comp L.subtype).prod ((Q i).comp (ω.orthogonal L).subtype) := by
-    funext i
-    ext ⟨a, b⟩
-    have hab : QuadraticMap.polar (Q i) a b = 0 := by
-      rw [← ω.apply_hamiltonianEnd]
-      exact mem_orthogonal_iff.1 b.property _
-        ((Module.End.mem_invtSubmodule _).1 (hQL i) a.property)
-    simp only [QuadraticMap.comp_apply, LinearEquiv.coe_coe, Submodule.coe_prodEquivOfIsCompl',
-      QuadraticMap.prod_apply, Submodule.subtype_apply]
-    rw [QuadraticMap.map_add (Q i), hab, add_zero]
-  have := (isNondegenerateQuadraticFamily_comp_iff he Q).2 h
-  rw [hQe] at this
-  exact ⟨(isNondegenerateQuadraticFamily_prod_iff.1 this).1,
+        (fun i ↦ (Q i).comp (ω.orthogonal L).subtype) :=
+  have := h.isNondegenerateQuadraticFamily_prod hL hQL
+  ⟨(isNondegenerateQuadraticFamily_prod_iff.1 this).1,
     (isNondegenerateQuadraticFamily_prod_iff.1 this).2.1⟩
+
+/-- **Spans of a nondegenerate family along an invariant symplectic splitting.** If a symplectic
+subspace `L` is preserved by every Hamiltonian endomorphism of a nondegenerate family `Q`, a form
+`R` lies in the span of `Q` exactly when, along `L × L^ω ≃ V`, it is the orthogonal sum of a form
+in the span of the restrictions of `Q` to `L` and a form in the span of its restrictions to
+`L^ω`. -/
+theorem IsNondegenerateQuadraticFamily.mem_span_range_iff_exists_prod
+    (h : ω.IsNondegenerateQuadraticFamily Q) (hL : ω.IsSymplectic L)
+    (hQL : ∀ i, L ∈ Module.End.invtSubmodule (ω.hamiltonianEnd (Q i))) {R : QuadraticForm ℝ V} :
+    R ∈ Submodule.span ℝ (Set.range Q) ↔
+      ∃ R₁ ∈ Submodule.span ℝ (Set.range fun i ↦ (Q i).comp L.subtype),
+        ∃ R₂ ∈ Submodule.span ℝ (Set.range fun i ↦ (Q i).comp (ω.orthogonal L).subtype),
+          R₁.prod R₂ = R.comp (Submodule.prodEquivOfIsCompl L (ω.orthogonal L) hL.isCompl :
+            L × ω.orthogonal L →ₗ[ℝ] V) := by
+  rw [← QuadraticMap.comp_mem_span_range_comp_iff
+      (Submodule.prodEquivOfIsCompl L (ω.orthogonal L) hL.isCompl),
+    funext fun i ↦ comp_prodEquivOfIsCompl_eq_prod hL (hQL i),
+    (isNondegenerateQuadraticFamily_prod_iff.1 (h.isNondegenerateQuadraticFamily_prod hL hQL)).2.2,
+    QuadraticMap.mem_span_range_sumElim_prod_iff]
 
 /-- **Restricting a nondegenerate family to an invariant symplectic subspace.** If a symplectic
 subspace `L` is preserved by every Hamiltonian endomorphism of a nondegenerate family, the

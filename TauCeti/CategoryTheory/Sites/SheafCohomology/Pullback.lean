@@ -42,8 +42,12 @@ formalised here.) In degree zero it is restriction of global sections:
   naturality in the coefficient sheaf, the identity, composition, and compatibility with the
   connecting homomorphisms of a short exact sequence and its image under `pb`, also followed by
   a morphism of short exact sequences.
+* `CategoryTheory.Sheaf.H.map_app_pullback`: a natural transformation `τ : pb ⟶ pb'` applied
+  after the pullback along `pb` gives the pullback along `pb'`.
 * `CategoryTheory.Sheaf.H.equiv₀_pullback_sheafPullback`: for a morphism of sites, the pullback
-  in degree zero is restriction of global sections along the unit of `u^* ⊣ u_*`.
+  in degree zero is restriction of global sections along the unit of `u^* ⊣ u_*`; before
+  evaluation, `CategoryTheory.Sheaf.H.whiskerLeft_toSheafify_comp_sheafPullback_map` describes
+  the pulled-back morphism from the constant sheaf by the unit.
 
 ## Cohomology over objects and Mayer-Vietoris sequences
 
@@ -121,6 +125,16 @@ lemma pullback_naturality {G₁ G₂ : Sheaf J AddCommGrpCat.{w}} (f : G₁ ⟶ 
     pullback pb c G₂ n (H.map f n x) = H.map (pb.map f) n (pullback pb c G₁ n x) := by
   simp [pullback_apply, H.map_apply, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀]
 
+/-- The map on coefficients induced by a natural transformation `τ : pb ⟶ pb'`, applied after the
+pullback along `pb`, is the pullback along `pb'` for the comparison `c ≫ τ.app ℤ_J`. -/
+lemma map_app_pullback {pb' : Sheaf J AddCommGrpCat.{w} ⥤ Sheaf K AddCommGrpCat.{w}}
+    [pb'.Additive] [PreservesFiniteLimits pb'] [PreservesFiniteColimits pb'] (τ : pb ⟶ pb')
+    {G : Sheaf J AddCommGrpCat.{w}} {n : ℕ} (x : H G n) :
+    H.map (τ.app G) n (pullback pb c G n x) = pullback pb' (c ≫ τ.app _) G n x := by
+  rw [pullback_apply, pullback_apply, H.map_apply, Ext.comp_assoc_of_third_deg_zero,
+    Ext.mapExactFunctor_comp_mk₀_natTransApp, ← Ext.comp_assoc_of_second_deg_zero,
+    Ext.mk₀_comp_mk₀]
+
 /-- The pullback along the identity functor with the identity comparison is the identity. -/
 @[simp]
 lemma pullback_id (G : Sheaf J AddCommGrpCat.{w}) (n : ℕ) :
@@ -184,6 +198,25 @@ variable {C : Type*} [Category* C] {J : GrothendieckTopology C}
   [(u.sheafPushforwardContinuous AddCommGrpCat.{w} J K).IsRightAdjoint] [u.Final]
   [PreservesFiniteLimits (u.sheafPullback AddCommGrpCat.{w} J K)]
 
+omit [HasExt.{w₁} (Sheaf J AddCommGrpCat.{w})] [HasExt.{w₂} (Sheaf K AddCommGrpCat.{w})]
+  [PreservesFiniteLimits (u.sheafPullback AddCommGrpCat.{w} J K)] in
+/-- The degree-zero pullback before evaluating at `1`: for `f : ℤ_J ⟶ G`, the morphism
+`ℤ_K ⟶ u^* ℤ_J ⟶ u^* G` (the class of the pullback of `f`), restricted to the objects `u(U)`
+and precomposed with sheafification, is `f` followed by the unit `G ⟶ u_* u^* G`. -/
+lemma whiskerLeft_toSheafify_comp_sheafPullback_map (G : Sheaf J AddCommGrpCat.{w})
+    (f : (constantSheaf J AddCommGrpCat.{w}).obj (of (ULift ℤ)) ⟶ G) :
+    Functor.whiskerLeft u.op (toSheafify K _ ≫
+      ((u.sheafPullbackConstantSheafIso AddCommGrpCat.{w} J K (of (ULift ℤ))).inv ≫
+        (u.sheafPullback AddCommGrpCat.{w} J K).map f).hom) =
+      toSheafify J _ ≫ f.hom ≫
+        ((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app G).hom := by
+  have nat := congrArg (·.hom)
+    ((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit_naturality f)
+  simp only [ObjectProperty.FullSubcategory.comp_hom] at nat
+  rw [ObjectProperty.FullSubcategory.comp_hom, ← Category.assoc, Functor.whiskerLeft_comp,
+    u.whiskerLeft_toSheafify_comp_sheafPullbackConstantSheafIso_inv]
+  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) nat)
+
 /-- For a morphism of sites `u`, the pullback in degree zero is restriction of global sections:
 under `Sheaf.H.equiv₀` at a terminal object `T` of `C` whose image `u(T)` is terminal in `D`, it
 is the unit `G(T) ⟶ (u^* G)(u(T))` of the adjunction `u^* ⊣ u_*`. -/
@@ -197,12 +230,7 @@ lemma equiv₀_pullback_sheafPullback {T : C} (hT : IsTerminal T) (huT : IsTermi
   rw [equiv₀, equiv₀, AddEquiv.trans_apply, AddEquiv.trans_apply, AddEquiv.trans_apply,
     AddEquiv.trans_apply, addEquiv₀_pullback, AddEquiv.apply_symm_apply]
   have key := congrArg (fun α => α.app (op T))
-    (u.whiskerLeft_toSheafify_comp_sheafPullbackConstantSheafIso_inv AddCommGrpCat.{w} J K
-      (of (ULift ℤ)))
-  have nat := congrArg (fun φ => φ.hom.app (op T))
-    ((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit_naturality f)
-  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-    Functor.sheafPushforwardContinuous_map_hom_app] at nat
+    (whiskerLeft_toSheafify_comp_sheafPullback_map (K := K) u G f)
   have hM : (constantSheafAdj K AddCommGrpCat.{w} huT).homAddEquiv _ _
       ((u.sheafPullbackConstantSheafIso AddCommGrpCat.{w} J K (of (ULift ℤ))).inv ≫
         (u.sheafPullback AddCommGrpCat.{w} J K).map f) =
@@ -217,8 +245,7 @@ lemma equiv₀_pullback_sheafPullback {T : C} (hT : IsTerminal T) (huT : IsTermi
       Functor.const_obj_obj, Functor.whiskerLeft_comp, NatTrans.comp_app, Functor.whiskerLeft_app,
       Functor.id_obj, Functor.flip_obj_obj, ObjectProperty.ι_obj, evaluation_obj_obj,
       constantPresheafAdj_unit_app, evaluation_obj_map, Category.id_comp] at key ⊢
-    exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) key).trans
-      ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) nat)))
+    exact key.trans (Category.assoc _ _ _).symm
   rw [hM]
   -- Both sides evaluate the same morphism `ℤ ⟶ (u^* G)(u(T))` at `1`.
   rfl

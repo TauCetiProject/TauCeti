@@ -278,6 +278,23 @@ lemma fCofactor_eq_of_f_eq_mul {x : R} {q : R[X]} (hf : W.f = q * (X - C x)) :
   have hx : W.f.eval x = 0 := by rw [hf]; simp
   exact (monic_X_sub_C x).isRegular.right <| (W.f_eq_mul_of_eval_eq_zero hx).symm.trans hf
 
+/-- A root `t ≠ e` of `f` is a root of the cofactor `fCofactor e`, since
+`f = fCofactor e · (X - e)`. -/
+lemma isRoot_fCofactor_of_ne [IsDomain R] {e t : R} (he : W.f.eval e = 0)
+    (ht : W.f.eval t = 0) (hte : t ≠ e) : (W.fCofactor e).IsRoot t := by
+  rw [W.f_eq_mul_of_eval_eq_zero he, eval_mul, eval_sub, eval_X, eval_C] at ht
+  exact (mul_eq_zero.mp ht).resolve_right (sub_ne_zero.mpr hte)
+
+/-- A root `r` of the cofactor `fCofactor e` splits it as `(X - r) (X - r')`, where
+`r' = -(e + a₂) - r` is the other root. -/
+lemma fCofactor_eq_mul_of_isRoot {e r : R} (hr : (W.fCofactor e).IsRoot r) :
+    W.fCofactor e = (X - C r) * (X - C (-(e + W.a₂) - r)) := by
+  have hr' : e ^ 2 + W.a₂ * e + W.a₄ = -r ^ 2 - (e + W.a₂) * r := by
+    simp only [IsRoot, eval_add, eval_pow, eval_X, eval_mul, eval_C] at hr
+    linear_combination hr
+  simp only [fCofactor, hr', map_sub, map_neg, map_add, map_mul, map_pow]
+  ring
+
 lemma separable_f [W.IsElliptic] [W.IsCharNeTwoNF] : W.f.Separable := by
   let u := W.isUnit_Δ.unit
   have hu : (↑u⁻¹ : R) * W.Δ = 1 := W.isUnit_Δ.val_inv_mul
