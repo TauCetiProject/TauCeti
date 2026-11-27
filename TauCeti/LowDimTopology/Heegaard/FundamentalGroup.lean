@@ -69,6 +69,9 @@ surjectivity from `π₁(Hᵢ)`.
 * `TauCeti.HeegaardSplitting.rank_fundamentalGroup_le_genus`: its rank is at most the genus of the
   splitting.
 * `TauCeti.rank_fundamentalGroup_le_heegaardGenus`: its rank is at most the Heegaard genus.
+* `TauCeti.HeegaardSplitting.isPathConnected_left_inter_right` and
+  `TauCeti.HeegaardSplitting.pathConnectedSpace`: the Heegaard surface and the manifold are path
+  connected.
 * `TauCeti.HeegaardSplitting.fundamentalGroup_map_inclusion_inter_left_surjective` and
   `TauCeti.HeegaardSplitting.fundamentalGroup_map_inclusion_inter_right_surjective`: the Heegaard
   surface carries the fundamental group of either handlebody.
@@ -157,6 +160,37 @@ theorem fundamentalGroup_map_inclusion_inter_right_surjective (hE : finrank ℝ 
   exact fundamentalGroup_map_inclusion_frontier_surjective inter_subset_right eR
     (fun p ↦ (and_iff_left p.property).trans (s.coe_mem_left_iff hE eR p)) x
 
+
+/-- **The Heegaard surface is path connected.** For a Heegaard splitting of a manifold without
+boundary charted on a three-dimensional real normed space, the Heegaard surface `H₁ ∩ H₂` is path
+connected: it corresponds to the boundary surface of the standard handlebody. -/
+theorem isPathConnected_left_inter_right (hE : finrank ℝ E = 3) :
+    IsPathConnected (s.left ∩ s.right) := by
+  obtain ⟨eL⟩ := s.nonempty_homeomorph_left
+  have h : s.left ∩ s.right =
+      (↑) '' (eL.symm '' ((↑) ⁻¹' frontier (handlebody s.genus))) := by
+    ext p
+    constructor
+    · rintro ⟨hpL, hpR⟩
+      exact ⟨⟨p, hpL⟩, ⟨eL ⟨p, hpL⟩, (s.coe_mem_right_iff hE eL ⟨p, hpL⟩).1 hpR, by simp⟩, rfl⟩
+    · rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
+      exact ⟨(eL.symm y).property, (s.coe_mem_right_iff hE eL _).2 (by simpa using hy)⟩
+  rw [h]
+  exact (((isPathConnected_frontier_handlebody s.genus).preimage_coe
+    (isClosed_handlebody s.genus).frontier_subset).image eL.symm.continuous).image
+    continuous_subtypeVal
+
+include s in
+/-- **A Heegaard-split manifold is path connected.** This holds for a manifold without boundary
+charted on a three-dimensional real normed space: the two handlebodies are path connected and
+meet in the Heegaard surface. -/
+theorem pathConnectedSpace (hE : finrank ℝ E = 3) : PathConnectedSpace M := by
+  have hL : IsPathConnected s.left := isPathConnected_iff_pathConnectedSpace.2
+    s.nonempty_homeomorph_left.some.symm.toHomotopyEquiv.pathConnectedSpace
+  have hR : IsPathConnected s.right := isPathConnected_iff_pathConnectedSpace.2
+    s.nonempty_homeomorph_right.some.symm.toHomotopyEquiv.pathConnectedSpace
+  rw [pathConnectedSpace_iff_univ, ← s.union_eq_univ]
+  exact hL.union hR (s.isPathConnected_left_inter_right hE).nonempty
 
 /-! ### Deforming collars of the Heegaard surface -/
 
