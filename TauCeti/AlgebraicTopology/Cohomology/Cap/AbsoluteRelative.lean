@@ -122,19 +122,6 @@ lemma absoluteSingularCap_homologyπ (P : TopPair.{w}) (k : Type*) [Ring k] [Lin
         (P.singularChainComplex N).homologyπ q :=
   TauCeti.ChainComplex.cap_homologyπ _ _ _ _ _ _ _
 
-omit [HasCoproducts.{w} C] [MonoidalCategory C] [MonoidalPreadditive C]
-  [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)] in
-/-- The identity of a chain complex `K` induces the identity on the cohomology of the cochains
-`Hom(K, M)`. `TauCeti.ChainComplex.cap_naturality` types this map between `linearYonedaObj`
-complexes, so it is stated that way for `rw` to find it; the identity morphism's type is matched
-only up to unfolding `linearYonedaFunctor`, which `exact` performs. -/
-private lemma homologyMap_linearYonedaFunctor_map_id (K : ChainComplex C ℕ) (k : Type*) [Ring k]
-    [Linear k C] (p : ℕ) :
-    HomologicalComplex.homologyMap (K := K.linearYonedaObj k M) (L := K.linearYonedaObj k M)
-      ((TauCeti.ChainComplex.linearYonedaFunctor k M).map (𝟙 K).op) p = 𝟙 _ := by
-  rw [op_id, CategoryTheory.Functor.map_id]
-  exact HomologicalComplex.homologyMap_id _ _
-
 /-- **Compatibility of the absolute and relative cap products**: for a class `x` of `Hₙ(X)` with
 image `j_*x` in `Hₙ(X, A)` and a class `α` of `Hᵖ(X)`, `j_*(x ⌢ α) = j_*x ⌢ α`. -/
 lemma singularHomologyπ_comp_absoluteSingularCap (P : TopPair.{w}) (k : Type*) [Ring k]
@@ -148,7 +135,7 @@ lemma singularHomologyπ_comp_absoluteSingularCap (P : TopPair.{w}) (k : Type*) 
     (P.singularChainComplexπ S) (P.singularChainComplexπ N)
     (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)
     (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n h α
-  rw [homologyMap_linearYonedaFunctor_map_id, ModuleCat.id_apply] at this
+  rw [TauCeti.ChainComplex.homologyMap_linearYonedaFunctor_map_id, ModuleCat.id_apply] at this
   rw [TopCat.singularCap_def, absoluteSingularCap_def]
   exact this.symm
 
@@ -213,8 +200,8 @@ lemma absoluteSingularCap_singularCohomologyπ (P : TopPair.{w}) (k : Type*) [Ri
     (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n h α
   rw [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_id, Category.comp_id,
     Category.id_comp] at h₁
-  rw [HomologicalComplex.homologyMap_id, Category.id_comp, homologyMap_linearYonedaFunctor_map_id,
-    ModuleCat.id_apply] at h₂
+  rw [HomologicalComplex.homologyMap_id, Category.id_comp,
+    TauCeti.ChainComplex.homologyMap_linearYonedaFunctor_map_id, ModuleCat.id_apply] at h₂
   rw [absoluteSingularCap_def, singularCap_def]
   exact h₁.trans h₂.symm
 

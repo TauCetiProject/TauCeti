@@ -84,6 +84,9 @@ Without a manifold structure on the boundary there is no duality on `∂X` for t
   fundamental class of `M` along `K` after excision, followed by the map induced by `ι`.
 * `TauCeti.HomologicalOrientation.bijective_capFundamentalClassRel`: **Lefschetz duality**, and
   `TauCeti.HomologicalOrientation.isIso_capFundamentalClassRel` as an isomorphism.
+* `TauCeti.HomologicalOrientation.absoluteCapFundamentalClassRel_singularCohomologyπ` and
+  `TauCeti.HomologicalOrientation.singularHomologyδ_absoluteCapFundamentalClassRel`: the squares
+  relating the two dualities through the long exact sequences of `(X, ∂X)`.
 * `TauCeti.HomologicalOrientation.bijective_absoluteCapFundamentalClassRel`: **Lefschetz duality
   from absolute cohomology**, and
   `TauCeti.HomologicalOrientation.isIso_absoluteCapFundamentalClassRel` as an isomorphism.
@@ -367,6 +370,42 @@ lemma absoluteCapFundamentalClassRel_apply (p q : ℕ) (h : p + q = n)
         (ρ_ L).hom p q n h α).hom (o.fundamentalClassRel hn hι hιf hf) :=
   (rfl)
 
+/-- **The square at `j^*` and `j_*`.** Capping with `[X, ∂X]` the image `j^*y ∈ Hᵖ(X)` of a
+relative class `y ∈ Hᵖ(X, ∂X)` is the image under `j_* : H_q(X) ⟶ H_q(X, ∂X)` of its Lefschetz
+dual `[X, ∂X] ⌢ y`. -/
+lemma absoluteCapFundamentalClassRel_singularCohomologyπ (p q : ℕ) (h : p + q = n)
+    (y : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h
+        ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomologyπ
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p y) =
+      (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyπ L q
+        (o.capFundamentalClassRel hn hι hιf hf L p q h y) :=
+  (o.absoluteCapFundamentalClassRel_apply hn hι hιf hf L p q h _).trans <|
+    (ConcreteCategory.congr_hom ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X)))
+      |>.absoluteSingularCap_singularCohomologyπ ℤ (ρ_ _).inv (ρ_ L).hom p q n h y)
+        (o.fundamentalClassRel hn hι hιf hf)).trans <|
+      (ConcreteCategory.comp_apply _ _ _).trans
+        (congrArg _ (o.capFundamentalClassRel_apply hn hι hιf hf L p q h y).symm)
+
+/-- **The square at the connecting morphisms.** Capping with `[X, ∂X]` and taking the boundary is,
+up to the sign `(-1)ᵖ`, restricting to `∂X` and capping with `∂[X, ∂X] ∈ Hₘ(∂X; ℤ)`, where
+`m + 1 = n`. -/
+lemma singularHomologyδ_absoluteCapFundamentalClassRel (m : ℕ) (hm : m + 1 = n)
+    (p q q' : ℕ) (h : p + q = n) (hq : q' + 1 = q)
+    (x : (TopCat.of X).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ L q q' hq
+        (o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h x) =
+      ((-1 : ℤ) ^ p) • ((TopCat.of ((range ι)ᶜ : Set X)).singularCap ℤ (ρ_ _).inv (ρ_ L).hom p q'
+        m (by omega) (TopCat.singularCohomologyMap
+          (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).map p x)).hom
+        ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) n m hm (o.fundamentalClassRel hn hι hιf hf)) := by
+  subst hq hm
+  exact ConcreteCategory.congr_hom ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X)))
+    |>.absoluteSingularCap_comp_singularHomologyδ ℤ (ρ_ _).inv (ρ_ L).hom p q' _ (q' + 1) _
+      (by omega) h x) (o.fundamentalClassRel hn hι hιf hf)
+
 section AbsoluteProof
 
 /-! The boundary `∂X` is assumed here to be a manifold of dimension `n - 1`, charted on `E'`; it is
@@ -402,23 +441,6 @@ private lemma bijective_singularCapAddHom_boundary (hE' : finrank ℝ E' + 1 = n
   exact (o.isFundamentalClass_singularHomologyδ_fundamentalClassRel hn hι hιf hf)
     |>.bijective_singularCapAddHom rfl L p' q' h'
 
-omit [FiniteDimensional ℝ E'] [ChartedSpace E' ((range ι)ᶜ : Set X)] in
-/-- **The square at the connecting morphisms.** Capping with `[X, ∂X]` and taking the boundary is,
-up to the sign `(-1)ᵖ`, restricting to `∂X` and capping with `∂[X, ∂X]`. -/
-private lemma singularHomologyδ_absoluteCapFundamentalClassRel (hE' : finrank ℝ E' + 1 = n)
-    (p q q' : ℕ) (h : p + q = n) (hq : q' + 1 = q)
-    (x : (TopCat.of X).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
-    (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ L q q' hq
-        (o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h x) =
-      ((-1 : ℤ) ^ p) • ((TopCat.of ((range ι)ᶜ : Set X)).singularCap ℤ (ρ_ _).inv (ρ_ L).hom p q'
-        (finrank ℝ E') (by omega) (TopCat.singularCohomologyMap
-          (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).map p x)).hom
-        (o.boundaryClass hn hι hιf hf hE') := by
-  subst hq hE'
-  exact ConcreteCategory.congr_hom ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X)))
-    |>.absoluteSingularCap_comp_singularHomologyδ ℤ (ρ_ _).inv (ρ_ L).hom p q' _ (q' + 1) _
-      (by omega) h x) (o.fundamentalClassRel hn hι hιf hf)
-
 /-- **Injectivity at the subspace.** A class of `Hᵖ(X)` whose cap product with `[X, ∂X]` vanishes
 restricts to zero on `∂X`. -/
 private lemma singularCohomologyMap_eq_zero (hE' : finrank ℝ E' + 1 = n) (p q : ℕ) (h : p + q = n)
@@ -437,8 +459,8 @@ private lemma singularCohomologyMap_eq_zero (hE' : finrank ℝ E' + 1 = n) (p q 
         (M := ((range ι)ᶜ : Set X)) (E := E') rfl (m := p) (by omega)
       exact Subsingleton.elim _ _
     exact (ModuleCat.subsingleton_of_isZero hz).elim _ _
-  · have h₀ := o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L hE' p (q' + 1) q'
-      h rfl x
+  · have h₀ := o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L _ hE' p (q' + 1)
+      q' h rfl x
     rw [hx, map_zero] at h₀
     refine (injective_iff_map_eq_zero _).1
       (o.bijective_singularCapAddHom_boundary hn hι hιf hf L hE' p q' (by omega)).1 _ ?_
@@ -522,8 +544,8 @@ private lemma exists_sub_mem_range (hE' : finrank ℝ E' + 1 = n) (p q : ℕ) (h
   refine ⟨x, (ShortComplex.moduleCat_exact_iff _).1
     (P.singularHomology_exact_relative L (q' + 1) q' rfl) _ ?_⟩
   dsimp only
-  rw [map_sub, o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L rfl p (q' + 1) q'
-    h rfl x, hx, hw]
+  rw [map_sub, o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L _ rfl p (q' + 1)
+    q' h rfl x, hx, hw]
   exact sub_eq_zero.2 (neg_one_pow_smul_neg_one_pow_smul (R := ℤ) p _).symm
 
 /-- Lefschetz duality from absolute cohomology, for a boundary carrying a manifold structure. -/
@@ -531,16 +553,6 @@ private lemma bijective_absoluteCapFundamentalClassRel_aux (hE' : finrank ℝ E'
     (p q : ℕ) (h : p + q = n) :
     Function.Bijective (o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h) := by
   let P := TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))
-  -- The square at the maps `j^* : Hᵖ(X, ∂X) ⟶ Hᵖ(X)` and `j_* : H_q(X) ⟶ H_q(X, ∂X)`.
-  have hj (y : P.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
-      o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h
-          (P.singularCohomologyπ (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p y) =
-        P.singularHomologyπ L q (o.capFundamentalClassRel hn hι hιf hf L p q h y) :=
-    (o.absoluteCapFundamentalClassRel_apply hn hι hιf hf L p q h _).trans <|
-      (ConcreteCategory.congr_hom (P.absoluteSingularCap_singularCohomologyπ ℤ (ρ_ _).inv
-        (ρ_ L).hom p q n h y) (o.fundamentalClassRel hn hι hιf hf)).trans <|
-          (ConcreteCategory.comp_apply _ _ _).trans
-            (congrArg _ (o.capFundamentalClassRel_apply hn hι hιf hf L p q h y).symm)
   refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun c ↦ ?_⟩
   · -- `x` restricts to zero on `∂X`, so it is `j^* y` for a relative class `y`, whose dual comes
     -- from `∂X`; so `x = 0`.
@@ -548,7 +560,8 @@ private lemma bijective_absoluteCapFundamentalClassRel_aux (hE' : finrank ℝ E'
       (P.singularCohomology_exact_space _ ℤ L p) x
       (o.singularCohomologyMap_eq_zero hn hι hιf hf L hE' p q h x hx)
     obtain ⟨z, hz⟩ := (ShortComplex.moduleCat_exact_iff _).1 (P.singularHomology_exact_space L q)
-      (o.capFundamentalClassRel hn hι hιf hf L p q h y) ((hj y).symm.trans hx)
+      (o.capFundamentalClassRel hn hι hιf hf L p q h y)
+      ((o.absoluteCapFundamentalClassRel_singularCohomologyπ hn hι hιf hf L p q h y).symm.trans hx)
     exact o.singularCohomologyπ_eq_zero hn hι hιf hf L hE' p q h y z hz
   · -- Up to the dual of a class of `X`, `c` is `j_*` of a dual of a relative class.
     obtain ⟨x, b, hb⟩ := o.exists_sub_mem_range hn hι hιf hf L hE' p q h c
@@ -556,7 +569,7 @@ private lemma bijective_absoluteCapFundamentalClassRel_aux (hE' : finrank ℝ E'
     let x' : (TopCat.of X).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p :=
       P.singularCohomologyπ _ ℤ L p y
     refine ⟨x + x', ?_⟩
-    rw [map_add, hj, hb, add_sub_cancel]
+    rw [map_add, o.absoluteCapFundamentalClassRel_singularCohomologyπ, hb, add_sub_cancel]
 
 end AbsoluteProof
 
