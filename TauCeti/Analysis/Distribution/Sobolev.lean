@@ -43,6 +43,7 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   is `1 - (2π)⁻² Δ`.
 * `TemperedDistribution.besselPotential_eq_id_of_subsingleton`: on a zero-dimensional space every
   Bessel potential is the identity.
+* `TemperedDistribution.besselPotential_injective`: every Bessel potential is injective.
 * `TemperedDistribution.MemSobolev.sum`: `H^{s,p}` is closed under finite sums.
 * `TemperedDistribution.MemSobolev.smul_of_tower`: `H^{s,p}` is closed under scalar
   multiplication by scalars acting through `ℂ`, such as real numbers.
@@ -152,6 +153,11 @@ theorem besselPotential_eq_id_of_subsingleton [Subsingleton E] (s : ℝ) :
     besselPotential E F s = ContinuousLinearMap.id ℂ _ := by
   rw [besselPotential, show (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) = fun _ ↦ 1 from
     funext fun x ↦ by simp [Subsingleton.elim x 0], fourierMultiplierCLM_const, one_smul]
+
+/-- The Bessel potential `J^s` is injective on the tempered distributions, with left inverse
+`J^{-s}`. -/
+theorem besselPotential_injective (s : ℝ) : Function.Injective (besselPotential E F s) :=
+  fun f g h ↦ by simpa using congrArg (besselPotential E F (-s)) h
 
 /-- Fourier multipliers whose symbols have temperate growth commute with the Bessel potentials. -/
 theorem besselPotential_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (s : ℝ)

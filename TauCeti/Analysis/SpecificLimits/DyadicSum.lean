@@ -46,6 +46,11 @@ exponents `s + δ` and `N (1 - δ)`, so the series sums to at most
 `E D^δ C^(1 - δ) d^δ r^(-(s + δ))` when `0 < s + δ < N (1 - δ)`. This is how increments of a
 kernel at distance `d`, cut into dyadic pieces, are bounded by `d^δ`.
 
+If `2^{s tₖ} aₖ ≤ M` and `‖gₖ‖ ≤ C 2^{(s - 1) tₖ} aₖ` with exponents `tₖ ≥ k`, the terms
+`gₖ` are at most `C M 2^{-k}`, so in a complete group `∑ₖ gₖ` converges with norm at most
+`2 C M`. This is how the blocks of a Besov element are summed after a Bessel potential of
+order `-1`.
+
 For `Q ≥ 1`, at most `2Q + 1` dyadic scales `2^k` are comparable to a given `2^j` up to the factor
 `Q`, that is, satisfy `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, and for these `2^{σ (j - k)} ≤ Q ^ |σ|`.
 These count and weigh the Littlewood–Paley pieces met by a translated piece.
@@ -85,6 +90,8 @@ dyadic series.
 * `TauCeti.exists_norm_le_of_hasSum_of_le_of_le`: a series whose terms are bounded by
   `D (2^j)^(s + 1) d` and by `C (2^j)^s (1 + 2^j r)^(-N)` sums to at most
   `E D^δ C^(1 - δ) d^δ r^(-(s + δ))`.
+* `TauCeti.exists_hasSum_and_norm_le_of_two_rpow_mul_le`: if `2^{s tₖ} aₖ ≤ M` and
+  `‖gₖ‖ ≤ C 2^{(s - 1) tₖ} aₖ` with `tₖ ≥ k`, then `∑ₖ gₖ` converges with norm at most `2 C M`.
 * `TauCeti.card_filter_two_pow_le_mul_two_pow_le`: for `Q ≥ 1`, at most `2Q + 1` indices `k` have
   `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, and for these `2^{σ (j - k)} ≤ Q ^ |σ|`
   (`TauCeti.two_rpow_mul_sub_le_rpow_abs`).
@@ -374,6 +381,34 @@ theorem exists_norm_le_of_hasSum_of_le_of_le {s δ : ℝ} {N : ℕ} (hsδ : 0 < 
           |>.trans_eq (tsum_mul_left)
     _ ≤ c * (E * r ^ (-(s + δ))) := mul_le_mul_of_nonneg_left hle (by positivity)
     _ = E * D ^ δ * C ^ (1 - δ) * d ^ δ * r ^ (-(s + δ)) := by ring
+
+/-- **Summing blocks with a dyadic gain.** In a complete seminormed group, let `C ≥ 0` and let
+the exponents satisfy `tₖ ≥ k`. If `2^{s tₖ} aₖ ≤ M` and `‖gₖ‖ ≤ C 2^{(s - 1) tₖ} aₖ` for all
+`k`, then each `‖gₖ‖` is at most `C M 2^{-k}`, so `∑ₖ gₖ` converges to some `w` with
+`‖w‖ ≤ 2 C M`. This sums the Littlewood–Paley blocks of a Besov element after a Bessel potential
+of order `-1`. -/
+theorem exists_hasSum_and_norm_le_of_two_rpow_mul_le {X : Type*} [SeminormedAddCommGroup X]
+    [CompleteSpace X] {g : ℕ → X} {a t : ℕ → ℝ} {s C M : ℝ} (hC : 0 ≤ C)
+    (ht : ∀ k : ℕ, (k : ℝ) ≤ t k) (ha : ∀ k, 2 ^ (s * t k) * a k ≤ M)
+    (hg : ∀ k, ‖g k‖ ≤ C * 2 ^ ((s - 1) * t k) * a k) :
+    ∃ w, HasSum g w ∧ ‖w‖ ≤ 2 * C * M := by
+  have hterm (k : ℕ) : ‖g k‖ ≤ C * M * (1 / 2) ^ k := by
+    have h1 : ‖g k‖ ≤ C * M * 2 ^ (-t k) :=
+      calc ‖g k‖ ≤ C * 2 ^ ((s - 1) * t k) * a k := hg k
+        _ = C * (2 ^ (-t k) * 2 ^ (s * t k)) * a k := by
+          rw [← Real.rpow_add two_pos]
+          ring_nf
+        _ = C * 2 ^ (-t k) * (2 ^ (s * t k) * a k) := by ring
+        _ ≤ C * 2 ^ (-t k) * M := mul_le_mul_of_nonneg_left (ha k) (by positivity)
+        _ = C * M * 2 ^ (-t k) := by ring
+    have hCM : 0 ≤ C * M := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans h1) (by positivity)
+    have hpow : (2 : ℝ) ^ (-t k) ≤ (1 / 2) ^ k := by
+      rw [one_div, inv_pow, ← Real.rpow_natCast, ← Real.rpow_neg zero_le_two]
+      exact Real.rpow_le_rpow_of_exponent_le one_le_two (neg_le_neg (ht k))
+    exact h1.trans (mul_le_mul_of_nonneg_left hpow hCM)
+  have hgeom := hasSum_geometric_two.mul_left (C * M)
+  obtain ⟨w, hw⟩ := hgeom.summable.of_norm_bounded hterm
+  exact ⟨w, hw, (hw.norm_le_of_bounded hgeom hterm).trans_eq (by ring)⟩
 
 /-- **Counting comparable dyadic scales.** If `Q ≥ 1`, at most `2Q + 1` indices `k` satisfy both
 `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`. -/
