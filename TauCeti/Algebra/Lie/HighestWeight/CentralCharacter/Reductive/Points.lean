@@ -88,8 +88,8 @@ theorem exists_eq_reductiveCentralCharacter (χ : Subalgebra.center K (U L) →�
   | tmul a c =>
     calc χ ((reductiveCenterEquiv K L).symm (a ⊗ₜ[K] c))
         = φ (a ⊗ₜ[K] 1) * φ (1 ⊗ₜ[K] c) := by
-          rw [← map_mul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul, AlgHom.comp_apply,
-            AlgEquiv.coe_toAlgHom]
+          rw [← map_mul]
+          simp [φ]
       _ = _root_.SymmetricAlgebra.lift ζ a * vermaCentralCharacter b lam c := by
           rw [← hζ, ← hlam]
           simp only [AlgHom.comp_apply, Algebra.TensorProduct.includeLeft_apply,

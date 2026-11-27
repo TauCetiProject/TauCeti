@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Isomorphism
-public import TauCeti.RepresentationTheory.SymmetricAlgebra.FiniteType
 public import TauCeti.RingTheory.IntegralClosure.ExtendAlgHom
 
 /-!
@@ -24,7 +23,6 @@ is evaluation at a weight `μ`; then `χ = χ_{μ - ρ}`.
 
 ## Main results
 
-* `TauCeti.isIntegral_linearInvariants`: `S(H)` is integral over the Weyl invariants `S(H)^W`.
 * `TauCeti.exists_eq_vermaCentralCharacter`: every character of `Z(U(L))` is a Verma central
   character.
 
@@ -47,15 +45,6 @@ variable {K : Type u} [Field K] [CharZero K]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra K
-
-/-- `S(H)` is integral over the Weyl invariants `S(H)^W`: it is a finite module over them. -/
-instance isIntegral_linearInvariants :
-    Algebra.IsIntegral (linearInvariants H) (_root_.SymmetricAlgebra K H) := by
-  have : Finite (IsKilling.rootSystem H).weylGroup :=
-    RootPairing.finite_weylGroup (IsKilling.rootSystem H)
-  have : Finite (IsKilling.rootSystem H).weylGroup.op := Finite.of_equiv _ (Subgroup.equivOp _)
-  rw [linearInvariants_eq_symmetricAlgebraInvariants]
-  infer_instance
 
 variable [IsAlgClosed K] (b : (IsKilling.rootSystem H).Base)
 

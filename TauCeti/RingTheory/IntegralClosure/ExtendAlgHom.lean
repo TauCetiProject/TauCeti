@@ -58,10 +58,9 @@ theorem exists_algHom_comp_toAlgHom_eq {R : Type*} [CommRing R] [Algebra k R] [A
   have hA (a : R) : Ideal.Quotient.mk Q (algebraMap R S a) = algebraMap k (S ⧸ Q) (f a) := by
     have ha : a - algebraMap k R (f a) ∈ RingHom.ker f := by
       simp [RingHom.mem_ker]
-    rw [← hQf, Ideal.mem_comap, map_sub] at ha
-    rw [← Ideal.Quotient.mk_algebraMap, ← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem,
-      IsScalarTower.algebraMap_apply k R S]
-    exact ha
+    rw [← hQf, Ideal.mem_comap] at ha
+    simpa [← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.eq,
+      ← IsScalarTower.algebraMap_apply] using ha
   -- So `S ⧸ Q` is integral over `k`, hence equal to `k`.
   have : Algebra.IsIntegral k (S ⧸ Q) := by
     refine ⟨fun x ↦ ?_⟩
@@ -75,8 +74,6 @@ theorem exists_algHom_comp_toAlgHom_eq {R : Type*} [CommRing R] [Algebra k R] [A
   let e : k ≃ₐ[k] S ⧸ Q := AlgEquiv.ofBijective (Algebra.ofId k _)
     IsAlgClosed.algebraMap_bijective_of_isIntegral
   refine ⟨e.symm.toAlgHom.comp (Ideal.Quotient.mkₐ k Q), AlgHom.ext fun a ↦ ?_⟩
-  rw [AlgHom.comp_apply, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
-    Ideal.Quotient.mkₐ_eq_mk, hA, AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_eq, ← e.commutes,
-    Algebra.algebraMap_self_apply]
+  simp [e, hA]
 
 end TauCeti
