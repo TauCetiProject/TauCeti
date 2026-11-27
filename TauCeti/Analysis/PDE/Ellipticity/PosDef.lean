@@ -85,35 +85,28 @@ theorem exists_uniformlyEllipticOn_of_isCompact_of_posDef {K : Set X} (hK : IsCo
   simpa only [Matrix.toQuadraticForm'_apply, star_trivial] using
     (hpos x hx).dotProduct_mulVec_pos hξ'
 
-section CompactPatch
-variable {Omega U : TopologicalSpace.Opens (EuclideanSpace ℝ ι)} {lam : ℝ}
-  {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-local notation "E" => EuclideanSpace ℝ ι
-
-/-- A positive lower bound for a continuous coefficient field gives uniform ellipticity on
-a relatively compact chart patch; compactness supplies the upper bound. -/
-theorem exists_uniformlyEllipticOn_inter_of_isCompact_closure {W : TopologicalSpace.Opens E}
-    (hW : IsCompact (closure (W : Set E))) (hWU : closure (W : Set E) ⊆ U)
-    (hlam : 0 < lam) (ha : ∀ x ∈ (Omega : Set E) ∩ U, ∀ v : E,
+/-- A continuous matrix field with a positive lower bound on `S ∩ K`, where `K` is compact,
+is uniformly elliptic there; compactness supplies the upper bound. -/
+theorem exists_uniformlyEllipticOn_inter_of_isCompact {S K : Set X} (hK : IsCompact K)
+    {lam : ℝ} {a : X → Matrix ι ι ℝ} (hlam : 0 < lam)
+    (ha : ∀ x ∈ S ∩ K, ∀ v : EuclideanSpace ℝ ι,
       lam * ‖v‖ ^ 2 ≤ matrixBilinearForm (a x) v v)
-    (hcont : ∀ i j, ContinuousOn (fun x ↦ a x i j) U) :
-    ∃ Lam, UniformlyEllipticOn ((Omega : Set E) ∩ W) a lam Lam := by
+    (hcont : ContinuousOn a K) :
+    ∃ Lam, UniformlyEllipticOn (S ∩ K) a lam Lam := by
   classical
-  choose C hC using fun i j ↦ hW.exists_bound_of_continuousOn
-    ((hcont i j).mono hWU)
+  choose C hC using fun i j ↦ hK.exists_bound_of_continuousOn
+    (continuousOn_pi.1 (continuousOn_pi.1 hcont i) j)
   let M := ∑ i, ∑ j, C i j
   refine ⟨max lam M, UniformlyEllipticOn.of_bounds hlam (le_max_left _ _) ?_ ?_⟩
   · intro x hx v
-    simpa only [matrixBilinearForm_self] using ha x ⟨hx.1, hWU (subset_closure hx.2)⟩ v
+    simpa only [matrixBilinearForm_self] using ha x hx v
   · intro x hx v w
     have hB : ‖matrixBilinearForm (a x)‖ ≤ M :=
       (norm_matrixBilinearForm_le_sum_abs _).trans (Finset.sum_le_sum fun i _ ↦
         Finset.sum_le_sum fun j _ ↦ by
-          simpa only [Real.norm_eq_abs] using hC i j x (subset_closure hx.2))
+          simpa only [Real.norm_eq_abs] using hC i j x hx.2)
     simpa only [matrixBilinearForm_apply, Real.norm_eq_abs] using
       (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le
         (hB.trans (le_max_right lam M)) (le_refl ‖v‖) (le_refl ‖w‖)
-
-end CompactPatch
 
 end TauCeti.PDE

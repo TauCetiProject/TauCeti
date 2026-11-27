@@ -336,35 +336,36 @@ open scoped BigOperators
 variable {K : Set (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
 local notation "E" => EuclideanSpace ℝ ι
 
-/-- A smooth matrix field constant off a compact set has a common bound for its derivatives
-of orders two through any fixed order. -/
-theorem exists_coefficient_derivative_bound
+/-- A `C^n` matrix field constant off a compact set has a common bound for its derivatives
+of orders one through `n`. -/
+theorem exists_coefficient_derivative_bound {n : ℕ}
     (hK : IsCompact K) (hconst : EqOn a (fun _ ↦ A) Kᶜ)
-    (hsm : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j)) (k : ℕ) :
-    ∃ C : ℝ, ∀ i j, ∀ r, 2 ≤ r → r ≤ k + 1 → ∀ x,
+    (hsm : ∀ i j, ContDiff ℝ n (fun x ↦ a x i j)) :
+    ∃ C : ℝ, ∀ i j, ∀ r, 1 ≤ r → r ≤ n → ∀ x,
       ‖iteratedFDeriv ℝ r (fun y ↦ a y i j) x‖ ≤ C := by
   classical
-  choose C hC using fun (i j : ι) (r : Fin (k + 1)) ↦
+  choose C hC using fun (i j : ι) (r : Fin n) ↦
     ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl (i := r.val + 1)
-      ((hsm i j).of_le (by simp) : ContDiff ℝ (r.val + 1) (fun x ↦ a x i j))
+      ((hsm i j).of_le (by exact_mod_cast Nat.succ_le_of_lt r.isLt) :
+        ContDiff ℝ (r.val + 1) (fun x ↦ a x i j))
       (by omega) hK (b := A i j) (L := 0) (fun x hx ↦ by
         simpa using congrArg (fun B ↦ B i j) (hconst hx))
-  refine ⟨∑ i, ∑ j, ∑ s : Fin (k + 1), |C i j s|, fun i j r hr hrk x ↦ ?_⟩
-  have hs : r - 1 < k + 1 := by omega
+  refine ⟨∑ i, ∑ j, ∑ s : Fin n, |C i j s|, fun i j r hr hrk x ↦ ?_⟩
+  have hs : r - 1 < n := by omega
   have h := hC i j ⟨r - 1, hs⟩ x
   -- Expose the finite index in the chosen bound so the natural-number rewrite applies.
   change ‖iteratedFDeriv ℝ (r - 1 + 1) (fun y ↦ a y i j) x‖ ≤ C i j ⟨r - 1, hs⟩ at h
   rw [Nat.sub_add_cancel (by omega : 1 ≤ r)] at h
   apply (h.trans (le_abs_self _)).trans
   calc
-    |C i j ⟨r - 1, hs⟩| ≤ ∑ s : Fin (k + 1), |C i j s| :=
-      Finset.single_le_sum (f := fun s : Fin (k + 1) ↦ |C i j s|)
-        (fun _ _ ↦ abs_nonneg _) (Finset.mem_univ (⟨r - 1, hs⟩ : Fin (k + 1)))
-    _ ≤ ∑ t : ι, ∑ s : Fin (k + 1), |C i t s| :=
-      Finset.single_le_sum (f := fun t : ι ↦ ∑ s : Fin (k + 1), |C i t s|)
+    |C i j ⟨r - 1, hs⟩| ≤ ∑ s : Fin n, |C i j s| :=
+      Finset.single_le_sum (f := fun s : Fin n ↦ |C i j s|)
+        (fun _ _ ↦ abs_nonneg _) (Finset.mem_univ (⟨r - 1, hs⟩ : Fin n))
+    _ ≤ ∑ t : ι, ∑ s : Fin n, |C i t s| :=
+      Finset.single_le_sum (f := fun t : ι ↦ ∑ s : Fin n, |C i t s|)
         (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ abs_nonneg _) (Finset.mem_univ j)
-    _ ≤ ∑ t : ι, ∑ v : ι, ∑ s : Fin (k + 1), |C t v s| :=
-      Finset.single_le_sum (f := fun t : ι ↦ ∑ v : ι, ∑ s : Fin (k + 1), |C t v s|)
+    _ ≤ ∑ t : ι, ∑ v : ι, ∑ s : Fin n, |C t v s| :=
+      Finset.single_le_sum (f := fun t : ι ↦ ∑ v : ι, ∑ s : Fin n, |C t v s|)
         (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ abs_nonneg _)
         (Finset.mem_univ i)
 

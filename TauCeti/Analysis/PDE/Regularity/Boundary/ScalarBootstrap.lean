@@ -122,11 +122,11 @@ private theorem exists_value_eq_value_restrictL_of_mapsTo_of_order
     ⟨(hΩH x (hWsub (hψs hx.1))).2 hx.2, hψs hx.1⟩
   obtain ⟨w, G, hw, hwv⟩ := exists_isWeakSolutionDirichlet_value_ae_eq_indicator
     hM hL hsm' hDH k FD Z huD hψ hψc hts hN _ _ (hψu ▸ d.property)
-  obtain ⟨C, hC⟩ := exists_coefficient_derivative_bound hK hconst hsm' k
+  obtain ⟨C, hC⟩ := exists_coefficient_derivative_bound (n := k + 1) hK hconst
+    (fun i j ↦ (hsm' i j).of_le (by simp))
   obtain ⟨Q, hQ⟩ := ha'.exists_value_eq_value_of_mapsTo_of_contDiffOn
-    hν hHc hH hL.lipschitzOnWith k
-    (fun i j ↦ (hsm' i j).contDiffOn.of_le (by simp))
-    (fun i j r hr hrk x _ ↦ hC i j r hr hrk x) hw
+    hν hHc hH hL.lipschitzOnWith k (fun i j ↦ (hsm' i j).contDiffOn.of_le (by simp))
+    (fun i j r hr hrk x _ ↦ hC i j r (by omega) hrk x) hw
   have hVD : Omega ⊓ V ≤ D := fun _ hx ↦ ⟨hx.1, hVW (subset_closure hx.2)⟩
   have hVH : Omega ⊓ V ≤ H := hVD.trans hDH
   refine ⟨Wkp.restrictL hVH (k + 2) Q, Lp.ext ?_⟩
@@ -317,9 +317,11 @@ theorem exists_value_eq_value_restrictL_allOrders_of_halfSpace
     ext x
     simp only [mem_inter_iff]
     exact and_congr_left fun hx ↦ mem_iff_mem_of_inter_eq hΩU (hWsub hx)
-  obtain ⟨_, haW⟩ :=
-    exists_uniformlyEllipticOn_inter_of_isCompact_closure (W := W) hW hWU hlam
-      ha (fun i j ↦ (hsmooth i j).continuousOn)
+  obtain ⟨_, haK⟩ := exists_uniformlyEllipticOn_inter_of_isCompact hW hlam
+    (fun x hx ↦ ha x ⟨hx.1, hWU hx.2⟩)
+    ((continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦
+      (hsmooth i j).continuousOn).mono hWU)
+  have haW := haK.mono_set (inter_subset_inter_right _ subset_closure)
   have huW (v : W1p0 mu (Omega ⊓ W) 2) :
       energyFormH1 a 0 0 (W1p.restrictL inf_le_left u) (v : W1p mu (Omega ⊓ W) 2) =
         ∫ x in Omega ⊓ W, f x * W1p.value (v : W1p mu (Omega ⊓ W) 2) x ∂mu := by
