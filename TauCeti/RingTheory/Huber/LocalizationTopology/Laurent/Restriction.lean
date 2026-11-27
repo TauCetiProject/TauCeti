@@ -214,14 +214,14 @@ section ScopedAPI
 open scoped TauCeti.Huber.Laurent
 
 /-- The structure map of `laurentLeftAlgebra` is `laurentLeftAlgHom`. -/
-theorem algebraMap_laurentLeftAlgebra (P : PairOfDefinition A) (f : A)
+@[simp] theorem algebraMap_laurentLeftAlgebra (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     algebraMap (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) =
       (laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)).toRingHom := by rfl
 
 /-- The structure map of `laurentRightAlgebra` is `laurentRightAlgHom`. -/
-theorem algebraMap_laurentRightAlgebra (P : PairOfDefinition A) (f : A)
+@[simp] theorem algebraMap_laurentRightAlgebra (P : PairOfDefinition A) (f : A)
     {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     algebraMap (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) =
