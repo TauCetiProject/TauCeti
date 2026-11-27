@@ -297,10 +297,9 @@ theorem exists_forall_eLpNorm_exp_mul_smul_le_of_mul_integral_norm_sq_le {c c₁
         (fun _ ↦ (Real.exp_pos _).le) hε.le) hV0
       (fun _ ↦ div_one_add_mul_le_one_div (Real.exp_pos _).le hε) (fun z ↦ ?_) (fun z hz ↦ ?_)
       hyK
-    · refine (norm_fderiv_exp_div_one_add_mul_exp_le d one_pos hε.le z).trans ?_
-      rw [abs_of_nonneg hd0]
-      exact mul_le_mul_of_nonneg_right
-        (mul_le_of_le_one_right hd0 (norm_div_sqrt_add_norm_sq_le_one zero_le_one z)) (hV0 z)
+    · simpa only [abs_of_nonneg hd0] using norm_fderiv_div_one_add_mul_le
+        ((contDiff_exp_mul_sqrt_add_norm_sq (n := 1) d one_pos).differentiable (by simp) z)
+        (Real.exp_pos _) hε.le (norm_fderiv_exp_mul_sqrt_add_norm_sq_le d one_pos z)
     · exact (div_one_add_mul_le_self (Real.exp_pos _).le hε.le).trans (Real.exp_le_exp.2
         (mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (by gcongr)) hd0))
   have hWy := lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le

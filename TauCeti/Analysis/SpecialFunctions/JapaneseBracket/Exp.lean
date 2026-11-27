@@ -155,19 +155,6 @@ theorem norm_fderiv_div_one_add_mul_le [NormedSpace ℝ E] {W : E → ℝ} {z : 
       rw [div_le_one hd]
       nlinarith [mul_nonneg hε hW₀.le]
 
-/-- The truncated radial exponential weight `W / (1 + ε W)`, `W = exp(c √(b + ‖z‖²))`, `ε ≥ 0`,
-has logarithmic gradient at most that of `W`, namely `|c| ‖z‖ / √(b + ‖z‖²)`. -/
-theorem norm_fderiv_exp_div_one_add_mul_exp_le (c : ℝ) (hb : 0 < b) {ε : ℝ} (hε : 0 ≤ ε)
-    (z : E) :
-    ‖fderiv ℝ (fun t : E ↦ Real.exp (c * √(b + ‖t‖ ^ 2)) /
-        (1 + ε * Real.exp (c * √(b + ‖t‖ ^ 2)))) z‖ ≤
-      |c| * (‖z‖ / √(b + ‖z‖ ^ 2)) *
-        (Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2)))) :=
-  norm_fderiv_div_one_add_mul_le
-    ((contDiff_exp_mul_sqrt_add_norm_sq (n := 1) c hb).differentiable (by simp) z)
-    (Real.exp_pos _) hε
-    ((norm_fderiv_exp_mul_sqrt_add_norm_sq c hb z).trans_le (le_of_eq (by ring)))
-
 omit [InnerProductSpace ℝ E] in
 /-- Changing the regularization parameter changes the radial exponential weight by at most the
 factor `exp(|c| √|s - t|)`, uniformly in `z`, since the square root is `1/2`-Hölder. -/
