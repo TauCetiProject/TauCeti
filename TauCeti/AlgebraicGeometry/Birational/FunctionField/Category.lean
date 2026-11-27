@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
-public import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 public import TauCeti.AlgebraicGeometry.Birational.FunctionField.Determination
 public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
+public import TauCeti.RingTheory.EssentialFiniteness
 
 /-!
 # The function-field functor on dominant rational maps
@@ -31,7 +31,7 @@ by functoriality of `Scheme.RationalMap.functionFieldAlgHom`. By determination
 
 Over a field `k`, its essential image is the finitely generated field extensions of `k`, written
 as fields essentially of finite type over `k` as in Mathlib's `IntermediateField.fg_top_iff`
-(`TauCeti.AlgebraicGeometry.DominantRationalMapCat.functionFieldFunctor_essImage_iff`). Such a field
+(`TauCeti.AlgebraicGeometry.DominantRationalMapCat.essImage_functionFieldFunctor`). Such a field
 `L` is the fraction field of a finitely generated `k`-subalgebra `A`, and `Spec A` has function
 field `L`.
 
@@ -46,7 +46,7 @@ field `L`.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.DominantRationalMapCat.functionFieldFunctor_essImage_iff`: over a
+* `TauCeti.AlgebraicGeometry.DominantRationalMapCat.essImage_functionFieldFunctor`: over a
   field, the essential image is the fields essentially of finite type over `k`.
 
 ## References
@@ -196,12 +196,7 @@ private lemma exists_iso_functionFieldFunctor_obj (L : Type u) [Field L] [Algebr
     ∃ X : DominantRationalMapCat k, Nonempty (CommAlgCat.of k L ≅
       CommAlgCat.of k X.toScheme.functionField) := by
   let A := Algebra.EssFiniteType.subalgebra k L
-  -- `L` is the localization of `A` at a submonoid of units, hence its fraction field.
-  have : IsFractionRing A L := IsLocalization.of_le (Algebra.EssFiniteType.submonoid k L) _
-    (fun a ha ↦ mem_nonZeroDivisors_of_ne_zero fun h0 ↦ by
-      simpa [h0] using (ha : IsUnit (algebraMap A L a)).ne_zero)
-    (fun a ha ↦ (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective A L)).mpr
-      (nonZeroDivisors.ne_zero ha) |>.isUnit)
+  have := Algebra.EssFiniteType.isFractionRing_subalgebra k L
   let _ : (Spec (.of A)).Over (Spec (.of k)) := ⟨Spec.algebraMap k A⟩
   have : LocallyOfFiniteType (Spec (.of A) ↘ Spec (.of k)) :=
     inferInstanceAs (LocallyOfFiniteType (Spec.algebraMap k A))
@@ -213,7 +208,7 @@ private lemma exists_iso_functionFieldFunctor_obj (L : Type u) [Field L] [Algebr
 extensions of `k`: a commutative `k`-algebra is isomorphic to the function field of an integral
 `k`-scheme locally of finite type exactly when it is a field essentially of finite type over `k`
 (Stacks Project, Tag 0BXN). -/
-theorem functionFieldFunctor_essImage_iff (L : CommAlgCat.{u} k) :
+theorem essImage_functionFieldFunctor (L : CommAlgCat.{u} k) :
     (functionFieldFunctor k).essImage (op L) ↔ IsField L ∧ Algebra.EssFiniteType k L := by
   -- `(functionFieldFunctor k).obj X` is `op (CommAlgCat.of k k(X))` by definition.
   refine ⟨fun ⟨X, ⟨e⟩⟩ ↦ isField_essFiniteType_of_iso X

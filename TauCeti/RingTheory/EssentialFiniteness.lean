@@ -22,6 +22,8 @@ smoothness and regularity.
 * `Algebra.EssFiniteType.isLocalization_atPrime_subalgebra`: a local algebra essentially of
   finite type is the localization of `Algebra.EssFiniteType.subalgebra R S` at the contraction of
   its maximal ideal.
+* `Algebra.EssFiniteType.isFractionRing_subalgebra`: a field essentially of finite type is the
+  fraction field of `Algebra.EssFiniteType.subalgebra R S`.
 -/
 
 public section
@@ -41,5 +43,21 @@ theorem isLocalization_atPrime_subalgebra :
     (fun r hr h ↦ (maximalIdeal.isMaximal S).ne_top
       (Ideal.eq_top_of_isUnit_mem _ h (IsLocalization.map_units S ⟨r, hr⟩)))
     fun _ hr ↦ not_not.mp ((mem_maximalIdeal _).not.mp hr)
+
+end Algebra.EssFiniteType
+
+namespace Algebra.EssFiniteType
+
+variable (R S : Type*) [CommRing R] [Field S] [Algebra R S] [EssFiniteType R S]
+
+/-- A field `S` essentially of finite type over `R` is the fraction field of its finite type
+subalgebra `Algebra.EssFiniteType.subalgebra R S`: it is the localization at a submonoid of
+nonzero elements, and every nonzero element is a unit of `S`. -/
+theorem isFractionRing_subalgebra : IsFractionRing (subalgebra R S) S :=
+  IsLocalization.of_le (submonoid R S) _
+    (fun a ha ↦ mem_nonZeroDivisors_of_ne_zero fun h0 ↦ by
+      simpa [h0] using IsUnit.mem_submonoid_iff _ |>.mp (Submonoid.mem_comap.mp ha))
+    (fun a ha ↦ ((map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective _ S)).mpr
+      (nonZeroDivisors.ne_zero ha)).isUnit)
 
 end Algebra.EssFiniteType
