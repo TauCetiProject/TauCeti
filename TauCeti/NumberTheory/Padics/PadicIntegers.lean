@@ -28,7 +28,7 @@ The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of t
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
 `ℤ_p` is a complete normed ring. Compactness is Mathlib's instance for the units of a compact `T₁`
 topological monoid, recorded here as a shortcut instance; totally disconnectedness follows from
-`Units.instTotallyDisconnectedSpace`.
+`Units.instTotallyDisconnectedSpace`, likewise recorded as a shortcut instance.
 
 Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well: an element
 divides every element of no larger norm, so that a nonempty family of `p`-adic integers is a common
@@ -98,8 +98,8 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
 * `Padic.exists_forall_norm_pow_mul_le_one`: a single power of `p` carries a finite family of
   `p`-adic numbers into `ℤ_[p]`.
-* `PadicInt.compactSpace_units`: `ℤ_[p]ˣ` is compact (and totally disconnected via
-  `Units.instTotallyDisconnectedSpace`), hence a profinite group.
+* `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
+  profinite group (using `Units.instTotallyDisconnectedSpace` via a shortcut instance).
 
 ## Main definitions
 
@@ -290,6 +290,13 @@ instance term matters for unification: elaborating continuous linear maps on `C(
 (`TauCeti.NumberTheory.Padics.Measure.UnitCoordinates`) identifies the sup-norm topology with the
 compact-open topology, which times out at `whnf` with Mathlib's applied instance term. -/
 instance compactSpace_units : CompactSpace ℤ_[p]ˣ := inferInstance
+
+/-- `ℤ_pˣ` is totally disconnected: `Units.instTotallyDisconnectedSpace` applied to `ℤ_p`. It is
+recorded as a shortcut instance because the instance term matters for unification: elaborating
+scalar pseudomeasure evaluation on `ℤ_[p]ˣ`
+(`TauCeti.NumberTheory.Padics.WeightSpace.Pseudomeasure`) otherwise times out at `typeclass`
+synthesizing `MulActionSemiHomClass`. -/
+instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ := inferInstance
 
 variable (p) in
 /-- The power character `u ↦ u ^ k` of the unit group `ℤ_pˣ`, as a continuous homomorphism to
