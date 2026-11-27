@@ -23,6 +23,7 @@ determinant `-1`.
 ## Main results
 
 * `TauCeti.realCliffordCoordReflection_apply`: the reflection negates the `i`-th coordinate.
+* `TauCeti.realCliffordCoordReflection_involutive`: the reflection is an involution.
 * `TauCeti.det_realCliffordCoordReflection`: the reflection has determinant `-1`.
 -/
 
@@ -65,6 +66,12 @@ theorem realCliffordCoordReflection_apply (i : Fin n) (v : Fin n → ℝ) :
   · simp
     ring
   · simp [hj]
+
+/-- The reflection in a coordinate hyperplane is an involution. -/
+theorem realCliffordCoordReflection_involutive (i : Fin n) :
+    Function.Involutive (realCliffordCoordReflection i) := fun v ↦ by
+  ext j
+  rcases eq_or_ne j i with rfl | hj <;> simp [*]
 
 /-- The reflection in a coordinate hyperplane has determinant `-1`. -/
 @[simp]

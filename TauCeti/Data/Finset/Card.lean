@@ -18,12 +18,18 @@ import Mathlib.Data.Finset.Basic
   two elements.
 * `TauCeti.two_mul_card_image_le_of_no_singleton_fiber`: a map with no singleton fiber has
   at most half as many image elements as domain elements.
+* `TauCeti.card_filter_eq_true_eq_card_filter_eq_false` and
+  `TauCeti.two_mul_card_filter_eq_true`: a permutation exchanging the two values of a `Bool`-valued
+  function, such as a colour-exchanging graph automorphism, matches its two fibres, so the number of
+  elements is even.
 * `Finset.card_sdiff_insert_add_one`: adding an element `a ∈ T \ S` to `S` lowers the number of
   elements of `T` outside `S` by one.
 * `Finset.subset_induction`: downward induction on `S ⊆ T`, from `T` itself and steps from
   `S ∪ {a}` to `S`. Mathlib's `Finset.induction_on'` is the upward analogue.
 * `Finset.card_sdiff_lt_of_card_eq_min`: if `F ⊆ U` has `min k #U` elements of a nonempty `U`
   and `T ⊆ U` has fewer than `k`, then fewer elements of `T` lie outside `F` than in `F`.
+* `Finset.disjoint_and_injOn_of_add_le_card_image_union`: if `#S + #B ≤ #(S.image f ∪ B)`, then
+  `S.image f` and `B` are disjoint and `f` is injective on `S`.
 -/
 
 public section
@@ -75,11 +81,47 @@ theorem card_sdiff_lt_of_card_eq_min {F T U : Finset ι} {k : ℕ}
   · rw [eq_of_subset_of_card_le hFU (by omega), sdiff_eq_empty_iff_subset.2 hTU, card_empty]
     exact hU.card_pos
 
+/-- If `#S + #B ≤ #(S.image f ∪ B)`, then `S.image f` and `B` are disjoint and `f` is injective
+on `S`. -/
+theorem disjoint_and_injOn_of_add_le_card_image_union {α β : Type*} [DecidableEq β]
+    {S : Finset α} {B : Finset β} {f : α → β} (h : #S + #B ≤ #(S.image f ∪ B)) :
+    Disjoint (S.image f) B ∧ Set.InjOn f S := by
+  have hunion := card_union_add_card_inter (S.image f) B
+  have hle : #(S.image f) ≤ #S := card_image_le
+  refine ⟨disjoint_iff_inter_eq_empty.2 (card_eq_zero.1 (by omega)),
+    card_image_iff.1 (by omega)⟩
+
 end Finset
 
 namespace TauCeti
 
 open Finset
+
+section BoolFibres
+
+variable {V : Type*} [Fintype V]
+
+/-- **A permutation exchanging the two values of a `Bool`-valued function matches its two fibres**:
+if `c (f v) = !c v` for every `v`, then `c` takes the values `true` and `false` equally often. For
+a two-colouring of a graph, this says that a colour-exchanging permutation matches the two colour
+classes. -/
+theorem card_filter_eq_true_eq_card_filter_eq_false (c : V → Bool) (f : V ≃ V)
+    (h : ∀ v, c (f v) = !c v) : #{v | c v = true} = #{v | c v = false} :=
+  Finset.card_equiv f fun v ↦ by simp [h]
+
+/-- **A finite type with a permutation exchanging the two values of a `Bool`-valued function has
+even cardinality**: each fibre holds half of the elements. In particular, a finite graph with a
+colour-exchanging automorphism has an even number of vertices. -/
+theorem two_mul_card_filter_eq_true (c : V → Bool) (f : V ≃ V) (h : ∀ v, c (f v) = !c v) :
+    2 * #{v | c v = true} = Fintype.card V := by
+  have htot := Finset.card_filter_add_card_filter_not (s := Finset.univ) fun v ↦ c v = true
+  rw [Finset.card_univ] at htot
+  rw [Nat.two_mul, ← htot]
+  congr 1
+  convert card_filter_eq_true_eq_card_filter_eq_false c f h using 3
+  simp
+
+end BoolFibres
 
 variable {ι β : Type*} [Fintype ι] [DecidableEq β] {f : ι → β}
 

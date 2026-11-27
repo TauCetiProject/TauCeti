@@ -13,14 +13,20 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 Nonnegative diagonal weights give a positive functional on matrices. Strictly positive weights
 make this functional faithful on squares, including for rectangular matrices. These facts allow
 finite matrix representations with nonuniform weights to detect null vectors of trace forms.
-
-For nonzero matrices over a strictly ordered ring, `(X * Xᵀ).trace` is strictly positive
-(`Matrix.trace_mul_transpose_pos`).
+Without weights, `Matrix.trace_mul_conjTranspose_self_pos` gives `0 < tr(A Aᴴ)` for `A ≠ 0`, and
+`Matrix.trace_mul_transpose_pos` gives `0 < (X * Xᵀ).trace` over a strictly ordered ring.
 -/
 
 public section
 
 namespace Matrix
+
+/-- `tr(A Aᴴ)` is positive for a nonzero matrix `A` over a star-ordered ring with a proper star. -/
+theorem trace_mul_conjTranspose_self_pos {R m n : Type*} [Ring R] [PartialOrder R] [StarRing R]
+    [StarOrderedRing R] [IsProperStar R] [Fintype m] [Fintype n] {A : Matrix m n R}
+    (hA : A ≠ 0) : 0 < (A * Aᴴ).trace :=
+  (posSemidef_self_mul_conjTranspose A).trace_nonneg.lt_of_ne'
+    (trace_mul_conjTranspose_self_eq_zero_iff.not.2 hA)
 
 section
 

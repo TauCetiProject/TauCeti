@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.Algebra.Module.LinearMap.Polynomial
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.MvPolynomial.PDeriv
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Rescale
 import Mathlib.Algebra.MvPolynomial.Coeff
+import TauCeti.Algebra.MvPolynomial.Degrees
 import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
@@ -51,6 +53,9 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
 * `MvPolynomial.aeval_linearSubst`: `linearSubst M p` evaluated at `x` is `p` evaluated at
   `M *ᵥ x`.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
+* `MvPolynomial.linearSubst_injective_of_det_mem_nonZeroDivisors`,
+  `MvPolynomial.linearSubst_injective`: linear substitutions with regular determinant (or
+  nonzero determinant over a domain) are injective.
 * `MvPolynomial.pderiv_linearSubst`: the chain rule
   `∂/∂Xⱼ (linearSubst M p) = ∑ᵢ Mᵢⱼ linearSubst M (∂p/∂Xᵢ)`.
 * `MvPolynomial.exists_aeval_pderiv_linearSubst_ne_zero`: a substitution with nonzero
@@ -66,6 +71,7 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
 * `MvPolynomial.coeff_linearSubst_upperTriangular_monomial`: under an upper-triangular
   substitution in two variables, the coefficient of `X₀ᵏ X₁ˡ` in its own image is `aᵏ dˡ`.
 * `MvPolynomial.IsHomogeneous.linearSubst`: the substitution preserves homogeneity.
+* `MvPolynomial.totalDegree_linearSubst_le`: linear substitution does not increase total degree.
 * `MvPolynomial.IsHomogeneous.linearSubst_smul`: rescaling the matrix by `c` rescales a form
   of degree `n` by `cⁿ`.
 * `MvPolynomial.homogeneousComponent_linearSubst`: the substitution commutes with taking
@@ -75,6 +81,8 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
 * `TauCeti.polynomialAction_mul`: the substitution of standard vectors is a left action.
 * `TauCeti.polynomialAction_sum_C_mul_X`: on linear forms it is matrix-vector multiplication of
   the coefficient vector.
+* `Matrix.eval_aeval_toMvPolynomial`: substituting the rows of a rectangular matrix `A` as linear
+  forms gives the polynomial `x ↦ p(A x)`.
 -/
 
 public section
@@ -262,6 +270,35 @@ theorem homogeneousComponent_linearSubst (M : Matrix σ σ R) (n : ℕ) (p : MvP
   weightedHomogeneousComponent_aeval (w := 1)
     (fun i ↦ IsHomogeneous.sum _ _ _ fun j _ ↦ isHomogeneous_C_mul_X (M i j) j) p n
 
+/-- Linear substitution does not increase the total degree of a multivariate polynomial. -/
+theorem totalDegree_linearSubst_le (M : Matrix σ σ R) (p : MvPolynomial σ R) :
+    (linearSubst M p).totalDegree ≤ p.totalDegree := by
+  rw [linearSubst_eq_aeval]
+  refine (totalDegree_aeval_le (D := 1) p fun i _ ↦ ?_).trans_eq (mul_one _)
+  exact (IsHomogeneous.sum _ _ _ fun j _ ↦ isHomogeneous_C_mul_X (M i j) j).totalDegree_le
+
+/-- A linear change of variables whose determinant is a nonzerodivisor is injective over any
+commutative ring. -/
+theorem linearSubst_injective_of_det_mem_nonZeroDivisors [DecidableEq σ] {R : Type*}
+    [CommRing R] {M : Matrix σ σ R} (hM : M.det ∈ nonZeroDivisors R) :
+    Function.Injective (linearSubst M) := by
+  intro p q hpq
+  have hres : rescale (fun _ ↦ M.det) p = rescale (fun _ ↦ M.det) q := by
+    rw [← linearSubst_diagonal, ← Matrix.smul_one_eq_diagonal, ← Matrix.mul_adjugate M,
+      linearSubst_mul_apply, linearSubst_mul_apply, hpq]
+  ext n
+  have hcoeff := congrArg (fun r : MvPolynomial σ R ↦ r.coeff n) hres
+  simp only [coeff_rescale] at hcoeff
+  have hprod : (n.prod fun _ k ↦ M.det ^ k) ∈ nonZeroDivisors R :=
+    prod_mem fun _ _ ↦ pow_mem hM _
+  rw [← sub_eq_zero]
+  exact (mem_nonZeroDivisors_iff_left.mp hprod) _ (by rw [mul_sub, sub_eq_zero, hcoeff])
+
+/-- A linear change of variables with nonzero determinant is injective over any integral domain. -/
+theorem linearSubst_injective [DecidableEq σ] {R : Type*} [CommRing R] [IsDomain R]
+    {M : Matrix σ σ R} (hM : M.det ≠ 0) : Function.Injective (linearSubst M) :=
+  linearSubst_injective_of_det_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hM)
+
 variable (σ R) in
 /-- The linear changes of variables restricted to the forms of degree `n`, as a representation
 of the opposite matrix monoid: `op M` acts by `p ↦ linearSubst M p`. -/
@@ -366,3 +403,19 @@ theorem coe_polynomialRep_apply [DecidableEq σ] {d : ℕ} (g : GL σ R)
 end Action
 
 end TauCeti
+
+namespace Matrix
+
+/-- Substituting the linear forms `∑ⱼ Aᵢⱼ Xⱼ` given by the rows of a rectangular matrix `A` into
+`p` gives the polynomial `x ↦ p(A x)`: this is the pullback of polynomial functions along the
+linear map `A`, generalizing `MvPolynomial.eval_linearSubst` to rectangular matrices. -/
+theorem eval_aeval_toMvPolynomial {m n R : Type*} [Fintype n] [CommSemiring R]
+    (A : Matrix m n R) (x : n → R) (p : MvPolynomial m R) :
+    MvPolynomial.eval x (MvPolynomial.aeval A.toMvPolynomial p) = MvPolynomial.eval (A *ᵥ x) p := by
+  have hpt : (fun i ↦ MvPolynomial.eval x (A.toMvPolynomial i)) = A *ᵥ x :=
+    funext (A.toMvPolynomial_eval_eq_apply · x)
+  rw [← hpt]
+  simpa only [MvPolynomial.aeval_eq_eval] using
+    MvPolynomial.comp_aeval_apply (f := A.toMvPolynomial) (MvPolynomial.aeval x) p
+
+end Matrix

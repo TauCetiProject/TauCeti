@@ -527,7 +527,7 @@ theorem form_a11d7e6GlueVector_self :
           hform (Isometry.ofEq (rootLattice_E6 (isSimplyLaced_a11d7e6 2)))
             (by rw [a11d7e6GlueVector_two]; exact Isometry.ofEq_apply _ _)
       _ = 4 / 3 := form_typeE₆MinusculeWeight_self
-  rw [a11d7e6Lattice_form, pi_form, piForm_apply, Fin.sum_univ_three, h0, h1, h2]
+  rw [a11d7e6Lattice_form, pi_form, LinearMap.BilinForm.pi_apply, Fin.sum_univ_three, h0, h1, h2]
   norm_num
 
 /-- The discriminant class of `(k : ℤ) • a11d7e6GlueDual` corresponds to `k • [111]`. -/

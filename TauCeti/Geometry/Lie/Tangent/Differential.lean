@@ -26,6 +26,8 @@ identify the tangent Lie algebra of `G × K` with the product of those of `G` an
 
 * `MonoidHom.groupLieAlgebraMap_id`: the differential of the identity is the identity.
 * `MonoidHom.groupLieAlgebraMap_comp`: the chain rule at the identity.
+* `MonoidHom.groupLieAlgebraMap_comp_groupLieAlgebraMap_eq_zero`: if `ψ ∘ φ = 1`, then
+  `dψ ∘ dφ = 0`.
 * `MonoidHom.groupLieAlgebraMap_fst`, `MonoidHom.groupLieAlgebraMap_snd`,
   `MonoidHom.groupLieAlgebraMap_inl`, `MonoidHom.groupLieAlgebraMap_inr`: the tangent Lie algebra
   of `G × K` at the identity is the product of those of `G` and `K`, and the projections and
@@ -78,6 +80,36 @@ theorem groupLieAlgebraMap_comp {F' HK' : Type*} [NormedAddCommGroup F']
   ext ξ
   simp only [ContinuousLinearMap.comp_apply, groupLieAlgebraMap_apply, coe_comp]
   exact mfderiv_comp_apply_of_eq 1 hψ hφ (map_one φ) ξ
+
+/-- The differential at the identity of a homomorphism that is not differentiable there is zero. -/
+theorem groupLieAlgebraMap_eq_zero_of_not_mdifferentiableAt {J : ModelWithCorners 𝕜 F HK}
+    (φ : K →* G) (h : ¬MDifferentiableAt J I φ 1) : φ.groupLieAlgebraMap J I = 0 :=
+  -- `mfderiv` lands in the tangent space of `G` at `φ 1`, which is the model space `E` by
+  -- definition, as is `GroupLieAlgebra I G`.
+  mfderiv_zero_of_not_mdifferentiableAt h
+
+/-- The trivial homomorphism has zero differential. -/
+@[simp]
+theorem groupLieAlgebraMap_one {J : ModelWithCorners 𝕜 F HK} :
+    (1 : K →* G).groupLieAlgebraMap J I = 0 := by
+  ext ξ
+  -- `rw` closes the goal by `rfl`: the two zeros lie in the tangent space of `G` at `1` and in
+  -- `GroupLieAlgebra I G`, which are the same model space by definition.
+  rw [groupLieAlgebraMap_apply, show ⇑(1 : K →* G) = fun _ ↦ 1 from funext one_apply,
+    mfderiv_const]
+
+/-- If `ψ ∘ φ = 1`, then `dψ ∘ dφ = 0`. -/
+theorem groupLieAlgebraMap_comp_groupLieAlgebraMap_eq_zero {F' HK' : Type*}
+    [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] [TopologicalSpace HK']
+    {J' : ModelWithCorners 𝕜 F' HK'} {K' : Type*} [TopologicalSpace K'] [ChartedSpace HK' K']
+    [Group K'] {J : ModelWithCorners 𝕜 F HK} (ψ : K →* G) (φ : K' →* K) (h : ψ.comp φ = 1) :
+    (ψ.groupLieAlgebraMap J I).comp (φ.groupLieAlgebraMap J' J) = 0 := by
+  by_cases hφ : MDifferentiableAt J' J φ 1
+  · by_cases hψ : MDifferentiableAt J I ψ 1
+    · rw [← groupLieAlgebraMap_comp ψ φ hψ hφ, h, groupLieAlgebraMap_one]
+    · rw [groupLieAlgebraMap_eq_zero_of_not_mdifferentiableAt ψ hψ,
+        ContinuousLinearMap.zero_comp]
+  · rw [groupLieAlgebraMap_eq_zero_of_not_mdifferentiableAt φ hφ, ContinuousLinearMap.comp_zero]
 
 /-! ### Products
 

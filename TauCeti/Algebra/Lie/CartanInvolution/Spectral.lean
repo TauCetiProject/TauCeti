@@ -6,19 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
-public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import TauCeti.Algebra.Lie.CartanInvolution.Reductive.Basic
+public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 import TauCeti.Algebra.Lie.AdjointAction.Basic
 import TauCeti.Algebra.Lie.Prod
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
-import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
 /-!
-# Spectral properties of real Cartan involutions
+# `ad X` is diagonalizable on `𝔭`
 
-Over `ℝ`, self-adjointness of `ad x` for `x ∈ 𝔭` with respect to the twisted Killing inner product
-`B_θ` makes `ad x` diagonalizable (`LieEquiv.IsCartanInvolution.iSup_eigenspace_ad_eq_top`) and
-semisimple (`LieEquiv.IsCartanInvolution.isSemisimple_ad`).
+Let `θ` be a Cartan involution of a real Lie algebra `𝔤₀`, with `-1`-eigenspace `𝔭`. For
+`X ∈ 𝔭`, `ad X` is self-adjoint for the positive definite twisted Killing form `B_θ`
+(`LieEquiv.ad_mem_selfAdjointSubmodule_twistedKillingForm`), so it is diagonalizable over `ℝ`: its
+eigenspaces span `𝔤₀`, and it is a semisimple endomorphism. This feeds the restricted root space
+decomposition `LieEquiv.IsCartanInvolution.iSup_restrictedRootSpace_eq_top`.
 
 For a reductive Cartan involution of a real Lie algebra, whenever `θ x + x ∈ Z(L)`, splitting `x`
 into its central and derived components forces the derived component to lie in `𝔭` and decomposes
@@ -29,9 +30,9 @@ is diagonalizable and semisimple on all of `L` as well
 
 ## Main results
 
-* `LieEquiv.IsCartanInvolution.iSup_eigenspace_ad_eq_top`,
-  `LieEquiv.IsCartanInvolution.isSemisimple_ad`: diagonalizability and semisimplicity of `ad x`
-  for `x ∈ θ.cartanP` when `θ` is a Cartan involution over `ℝ`.
+* `LieEquiv.IsCartanInvolution.iSup_eigenspace_ad_eq_top`: the eigenspaces of `ad X`, `X ∈ 𝔭`,
+  span `𝔤₀`.
+* `LieEquiv.IsCartanInvolution.isSemisimple_ad`: `ad X` is semisimple for `X ∈ 𝔭`.
 * `LieEquiv.IsReductiveCartanInvolution.iSup_eigenspace_ad_eq_top`,
   `LieEquiv.IsReductiveCartanInvolution.isSemisimple_ad`: diagonalizability and semisimplicity of
   `ad x` when `θ x + x ∈ center ℝ L` and `θ` is a reductive Cartan involution over `ℝ`.
@@ -39,35 +40,33 @@ is diagonalizable and semisimple on all of `L` as well
 
 public section
 
-open LieAlgebra LieModule
+open LieAlgebra Module
 
 namespace LieEquiv
 
-variable {L : Type*} [LieRing L] [LieAlgebra ℝ L]
-
 namespace IsCartanInvolution
 
-/-- **Diagonalizability of `ad x` on `𝔭`.** For a Cartan involution of a real Lie algebra and
-every `x ∈ 𝔭`, the eigenspaces of `ad x` over `ℝ` span `L`. -/
-theorem iSup_eigenspace_ad_eq_top {θ : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanInvolution)
-    {x : L} (hx : x ∈ θ.cartanP) :
-    ⨆ μ : ℝ, Module.End.eigenspace (ad ℝ L x) μ = ⊤ := by
-  have : FiniteDimensional ℝ L := hθ.finiteDimensional
-  exact LinearMap.IsSelfAdjoint.iSup_eigenspace_eq_top
-    (fun _ ↦ hθ.twistedKillingForm_self_pos)
-    ((LinearMap.mem_selfAdjointSubmodule _).mp
-      (θ.ad_mem_selfAdjointSubmodule_twistedKillingForm hx))
+variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] {θ : L ≃ₗ⁅ℝ⁆ L} {x : L}
 
-/-- For a Cartan involution of a real Lie algebra and every `x ∈ 𝔭`, the adjoint operator `ad x`
-is semisimple. -/
-theorem isSemisimple_ad {θ : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanInvolution)
-    {x : L} (hx : x ∈ θ.cartanP) :
+/-- **`ad X` is diagonalizable over `ℝ` for `X ∈ 𝔭`.** The eigenspaces of `ad X` span the Lie
+algebra: `ad X` is self-adjoint for the positive definite twisted Killing form. -/
+theorem iSup_eigenspace_ad_eq_top (hθ : θ.IsCartanInvolution) (hx : x ∈ θ.cartanP) :
+    ⨆ μ : ℝ, (ad ℝ L x).eigenspace μ = ⊤ :=
+  have := hθ.finiteDimensional
+  ((LinearMap.mem_selfAdjointSubmodule _).mp
+    (θ.ad_mem_selfAdjointSubmodule_twistedKillingForm hx)).iSup_eigenspace_eq_top
+      hθ.posDef_twistedKillingForm
+
+/-- `ad X` is a semisimple endomorphism for `X ∈ 𝔭`. -/
+theorem isSemisimple_ad (hθ : θ.IsCartanInvolution) (hx : x ∈ θ.cartanP) :
     (ad ℝ L x).IsSemisimple :=
   TauCeti.isSemisimple_of_iSup_eigenspace_eq_top (hθ.iSup_eigenspace_ad_eq_top hx)
 
 end IsCartanInvolution
 
 namespace IsReductiveCartanInvolution
+
+variable {L : Type*} [LieRing L] [LieAlgebra ℝ L]
 
 /-- If `θ x + x` is central in `L = Z(L) ⊕ [L, L]`, then the `[L, L]`-component of `x` lies in
 `(θ.derivedSeriesCongr 1).cartanP`. -/

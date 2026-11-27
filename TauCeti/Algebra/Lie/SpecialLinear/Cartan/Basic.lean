@@ -17,7 +17,7 @@ import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 # Negative transpose on the special linear Lie algebra
 
 The special linear Lie algebra `sl n R` is stable under negative transpose. Restricting the matrix
-Lie automorphism `TauCeti.negTransposeLieEquiv` via `LieSubalgebra.negTransposeEquiv` gives the
+Lie automorphism `TauCeti.negTransposeLieEquiv` via `LieSubalgebra.restrictNegTranspose` gives the
 involutive automorphism `X ↦ -Xᵀ` (`LieAlgebra.SpecialLinear.cartanInvolution`) over every
 commutative ring. Its fixed vectors are the skew-symmetric trace-zero matrices
 (`LieAlgebra.SpecialLinear.mem_fixedSubalgebra_cartanInvolution_iff`, matching
@@ -60,8 +60,8 @@ variable (n R)
 
 /-- The involutive Lie automorphism `X ↦ -Xᵀ` of the special linear Lie algebra `sl n R`. -/
 def cartanInvolution : sl n R ≃ₗ⁅R⁆ sl n R :=
-  (sl n R).negTransposeEquiv fun X hX ↦ by
-    rw [mem_sl_iff, trace_neg, trace_transpose, mem_sl_iff.mp hX, neg_zero]
+  (sl n R).restrictNegTranspose fun X hX ↦ by
+    rw [mem_sl_iff, trace_transpose, mem_sl_iff.mp hX]
 
 variable {n R}
 
@@ -69,30 +69,30 @@ variable {n R}
 @[simp]
 theorem coe_cartanInvolution (X : sl n R) :
     (cartanInvolution n R X : Matrix n n R) = -(X : Matrix n n R)ᵀ :=
-  (sl n R).coe_negTransposeEquiv _ X
+  (sl n R).coe_restrictNegTranspose_apply _ X
 
 /-- Applying `SpecialLinear.cartanInvolution` twice returns the original matrix. -/
 @[simp]
 theorem cartanInvolution_cartanInvolution (X : sl n R) :
     cartanInvolution n R (cartanInvolution n R X) = X :=
-  (sl n R).negTransposeEquiv_negTransposeEquiv _ X
+  (sl n R).restrictNegTranspose_restrictNegTranspose _ X
 
 /-- `SpecialLinear.cartanInvolution` is its own inverse. -/
 @[simp]
 theorem cartanInvolution_symm : (cartanInvolution n R).symm = cartanInvolution n R :=
-  (sl n R).negTransposeEquiv_symm _
+  (sl n R).restrictNegTranspose_symm _
 
 /-- Fixed vectors of `SpecialLinear.cartanInvolution` are the skew-symmetric trace-zero matrices. -/
 @[simp]
 theorem cartanInvolution_eq_self_iff (X : sl n R) :
     cartanInvolution n R X = X ↔ (X : Matrix n n R)ᵀ = -(X : Matrix n n R) :=
-  (sl n R).negTransposeEquiv_eq_self_iff _ X
+  (sl n R).restrictNegTranspose_eq_self_iff _ X
 
 /-- Negated vectors of `SpecialLinear.cartanInvolution` are the symmetric trace-zero matrices. -/
 @[simp]
 theorem cartanInvolution_eq_neg_iff (X : sl n R) :
     cartanInvolution n R X = -X ↔ (X : Matrix n n R)ᵀ = (X : Matrix n n R) :=
-  (sl n R).negTransposeEquiv_eq_neg_iff _ X
+  (sl n R).restrictNegTranspose_eq_neg_iff _ X
 
 /-- Fixed vectors of `SpecialLinear.cartanInvolution` are the skew-symmetric matrices in
 `sl n R`. -/

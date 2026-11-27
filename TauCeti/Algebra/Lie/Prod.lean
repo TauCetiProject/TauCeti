@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Prod
+public import TauCeti.Algebra.Lie.Basic
+public import TauCeti.Algebra.Lie.Hom
 
 import Mathlib.LinearAlgebra.Projection
 
@@ -47,7 +49,9 @@ ideals (`LieIdeal.prodEquivOfIsCompl`), and combining automorphisms on complemen
 * `TauCeti.lie_prod_apply`: the componentwise bracket on a product.
 * `LieHom.prodRepresentation`: the product of two explicit Lie representations.
 * `LieHom.piRepresentation`: the product of a family of explicit Lie representations.
-* `LieIdeal.prodEquivOfIsCompl`: Lie algebra equivalence `I × J ≃ₗ⁅R⁆ L` for complementary ideals.
+* `LieIdeal.prodEquivOfIsCompl`: for complementary ideals `I` and `J` of a Lie algebra `L`,
+  addition `I × J ≃ₗ⁅R⁆ L`; its inverse is natural for Lie maps preserving both ideals
+  (`LieIdeal.prodEquivOfIsCompl_symm_map`).
 * `LieEquiv.prodCongr`: product of two Lie algebra equivalences.
 * `LieEquiv.ofIsCompl`: combine automorphisms of complementary ideals into an automorphism of `L`.
 -/
@@ -405,45 +409,72 @@ end Pi
 
 end LieHom
 
-section IdealComplement
+namespace LieIdeal
 
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
 
-/-- Two complementary ideals `I` and `J` of a Lie algebra commute, so addition identifies their
-direct product `I × J` with `L` as a Lie algebra. -/
-noncomputable def LieIdeal.prodEquivOfIsCompl (I J : LieIdeal R L) (h : IsCompl I J) :
-    (I × J) ≃ₗ⁅R⁆ L :=
+variable (I J : LieIdeal R L) (h : IsCompl I J)
+
+/-- For complementary ideals `I` and `J` of a Lie algebra `L`, addition `I × J → L` is an
+equivalence of Lie algebras: the cross brackets vanish because `I ⊓ J = ⊥`. -/
+noncomputable def prodEquivOfIsCompl : (I × J) ≃ₗ⁅R⁆ L :=
   { Submodule.prodEquivOfIsCompl I.toSubmodule J.toSubmodule
       (LieSubmodule.isCompl_toSubmodule.mpr h) with
-    map_lie' {p q} := by
-      have hIJ (x : I) (y : J) : ⁅(x : L), (y : L)⁆ = 0 := by
-        have hmem : ⁅(x : L), (y : L)⁆ ∈ I ⊓ J :=
-          (LieSubmodule.lie_le_inf I J) (LieSubmodule.lie_mem_lie x.property y.property)
-        rwa [h.inf_eq_bot, LieSubmodule.mem_bot] at hmem
-      have hJI (y : J) (x : I) : ⁅(y : L), (x : L)⁆ = 0 := by
-        rw [← lie_skew, hIJ x y, neg_zero]
-      simp [lie_add, add_lie, hIJ, hJI] }
+    map_lie' := by
+      rintro ⟨a, b⟩ ⟨c, d⟩
+      simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+        Submodule.coe_prodEquivOfIsCompl', LieAlgebra.Prod.bracket_apply, lie_add, add_lie,
+        lie_eq_zero_of_disjoint h.disjoint a.property d.property,
+        lie_eq_zero_of_disjoint h.symm.disjoint b.property c.property]
+      abel }
 
-/-- `LieIdeal.prodEquivOfIsCompl` acts by addition in `L`. -/
+/-- `prodEquivOfIsCompl` is addition. -/
 @[simp]
-theorem LieIdeal.prodEquivOfIsCompl_apply (I J : LieIdeal R L) (h : IsCompl I J) (p : I × J) :
-    LieIdeal.prodEquivOfIsCompl I J h p = (p.1 : L) + (p.2 : L) :=
-  Submodule.coe_prodEquivOfIsCompl' I.toSubmodule J.toSubmodule
-    (LieSubmodule.isCompl_toSubmodule.mpr h) p
+theorem prodEquivOfIsCompl_apply (p : I × J) : prodEquivOfIsCompl I J h p = (p.1 : L) + p.2 :=
+  (rfl)
 
-/-- On an element of `I`, the inverse of `LieIdeal.prodEquivOfIsCompl` yields `(x, 0)`. -/
+/-- The inverse of `prodEquivOfIsCompl` on an element of the first ideal. -/
 @[simp]
-theorem LieIdeal.prodEquivOfIsCompl_symm_apply_left (I J : LieIdeal R L) (h : IsCompl I J)
-    (x : I) : (LieIdeal.prodEquivOfIsCompl I J h).symm (x : L) = (x, 0) :=
-  (LieIdeal.prodEquivOfIsCompl I J h).injective (by simp)
+theorem prodEquivOfIsCompl_symm_apply_left (x : I) : (prodEquivOfIsCompl I J h).symm x = (x, 0) :=
+  (prodEquivOfIsCompl I J h).symm_apply_eq.2 <| by simp
 
-/-- On an element of `J`, the inverse of `LieIdeal.prodEquivOfIsCompl` yields `(0, y)`. -/
+/-- The inverse of `prodEquivOfIsCompl` on an element of the second ideal. -/
 @[simp]
-theorem LieIdeal.prodEquivOfIsCompl_symm_apply_right (I J : LieIdeal R L) (h : IsCompl I J)
-    (y : J) : (LieIdeal.prodEquivOfIsCompl I J h).symm (y : L) = (0, y) :=
-  (LieIdeal.prodEquivOfIsCompl I J h).injective (by simp)
+theorem prodEquivOfIsCompl_symm_apply_right (x : J) :
+    (prodEquivOfIsCompl I J h).symm x = (0, x) :=
+  (prodEquivOfIsCompl I J h).symm_apply_eq.2 <| by simp
 
-end IdealComplement
+/-- The two components of the inverse of `prodEquivOfIsCompl` add up to the original element. -/
+@[simp]
+theorem prodEquivOfIsCompl_symm_fst_add_snd (x : L) :
+    (((prodEquivOfIsCompl I J h).symm x).1 : L) + ((prodEquivOfIsCompl I J h).symm x).2 = x := by
+  rw [← prodEquivOfIsCompl_apply I J h, LieEquiv.apply_symm_apply]
+
+/-- The inverse of `prodEquivOfIsCompl` composed with the inclusion of the first ideal is the first
+factor inclusion. -/
+@[simp]
+theorem prodEquivOfIsCompl_symm_comp_incl_left :
+    (prodEquivOfIsCompl I J h).symm.toLieHom.comp I.incl = LieHom.inl R I J := by
+  ext x <;> simp
+
+/-- The inverse of `prodEquivOfIsCompl` composed with the inclusion of the second ideal is the
+second factor inclusion. -/
+@[simp]
+theorem prodEquivOfIsCompl_symm_comp_incl_right :
+    (prodEquivOfIsCompl I J h).symm.toLieHom.comp J.incl = LieHom.inr R I J := by
+  ext x <;> simp
+
+/-- The inverse of `prodEquivOfIsCompl` is natural for Lie maps `f` sending `I` into `I'` and `J`
+into `J'`: it acts on the components through the restrictions of `f`. -/
+theorem prodEquivOfIsCompl_symm_map {I' J' : LieIdeal R L'} (h' : IsCompl I' J')
+    (f : L →ₗ⁅R⁆ L') (hI : ∀ x ∈ I, f x ∈ I') (hJ : ∀ x ∈ J, f x ∈ J') (x : L) :
+    (prodEquivOfIsCompl I' J' h').symm (f x) =
+      (f.restrictIdeal hI ((prodEquivOfIsCompl I J h).symm x).1,
+        f.restrictIdeal hJ ((prodEquivOfIsCompl I J h).symm x).2) := by
+  rw [LieEquiv.symm_apply_eq, prodEquivOfIsCompl_apply, LieHom.coe_restrictIdeal_apply,
+    LieHom.coe_restrictIdeal_apply, ← map_add, prodEquivOfIsCompl_symm_fst_add_snd]
+
+end LieIdeal
 
 namespace LieEquiv
 

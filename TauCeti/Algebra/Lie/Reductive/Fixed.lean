@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Prod
+public import TauCeti.Algebra.Lie.Reductive.Basic
 public import TauCeti.Algebra.Lie.Solvable.Basic
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 import TauCeti.Algebra.Lie.Reductive.Decomposition
@@ -22,6 +23,10 @@ splits as the supremum of its central and derived parts
 (`LieEquiv.fixedSubalgebra_eq_sup_inf_center_inf_derivedSeries`), and addition gives a Lie algebra
 equivalence from the product of these two fixed subalgebras to the full fixed algebra
 (`LieEquiv.fixedCenterDerivedEquivOfIsCompl`).
+
+Specializing to a finite-dimensional reductive Lie algebra over a field of characteristic zero via
+`TauCeti.isCompl_center_derivedSeries` yields
+`LieEquiv.existsUnique_fixed_center_add_fixed_derivedSeries` and `LieEquiv.fixedCenterDerivedEquiv`.
 
 This keeps the fixed central summand separate from a presentation of the remaining fixed
 algebra. The latter is the fixed part of the **ambient** derived ideal, not by definition the
@@ -88,50 +93,28 @@ theorem fixedSubalgebra_eq_sup_inf_center_inf_derivedSeries (e : L ≃ₗ⁅R⁆
     (le_sup_right (b := e.toLieHom.fixedSubalgebra ⊓
       (derivedSeries R L 1).toLieSubalgebra) hd)
 
-private noncomputable def fixedCenterLinearEquiv (e : L ≃ₗ⁅R⁆ L) :
-    ↥(e.toLieHom.fixedSubalgebra ⊓ (center R L).toLieSubalgebra) ≃ₗ[R]
-      Module.End.eigenspace (e.centerCongr.toLinearEquiv : Module.End R (center R L)) 1 where
+private noncomputable def fixedSubmoduleLinearEquiv (e : L ≃ₗ⁅R⁆ L) {I : LieIdeal R L}
+    (f : I ≃ₗ⁅R⁆ I) (hf : ∀ x : I, (f x : L) = e x) :
+    ↥(e.toLieHom.fixedSubalgebra ⊓ I.toLieSubalgebra) ≃ₗ[R]
+      Module.End.eigenspace (f.toLinearEquiv : Module.End R I) 1 where
   toFun x := ⟨⟨(x : L), x.property.2⟩, by
     rw [Module.End.mem_eigenspace_iff, one_smul]
-    exact Subtype.ext ((e.coe_centerCongr _).trans (LieHom.mem_fixedSubalgebra.mp x.property.1))⟩
-  invFun z := ⟨(z.val : L),
+    exact Subtype.ext ((hf _).trans (LieHom.mem_fixedSubalgebra.mp x.property.1))⟩
+  invFun s := ⟨(s.val : L),
     ⟨LieHom.mem_fixedSubalgebra.mpr <| by
-      simpa [coe_centerCongr] using congrArg Subtype.val
-        ((Module.End.mem_eigenspace_iff.mp z.property).trans (one_smul _ _)),
-      z.val.property⟩⟩
+      simpa [hf] using congrArg Subtype.val
+        ((Module.End.mem_eigenspace_iff.mp s.property).trans (one_smul _ _)),
+      s.val.property⟩⟩
   left_inv _ := Subtype.ext rfl
   right_inv _ := Subtype.ext (Subtype.ext rfl)
   map_add' _ _ := Subtype.ext (Subtype.ext rfl)
   map_smul' _ _ := Subtype.ext (Subtype.ext rfl)
 
 @[simp]
-private theorem coe_fixedCenterLinearEquiv_apply (e : L ≃ₗ⁅R⁆ L)
-    (x : ↥(e.toLieHom.fixedSubalgebra ⊓ (center R L).toLieSubalgebra)) :
-    ((e.fixedCenterLinearEquiv x).val : L) = (x : L) :=
-  rfl
-
-private noncomputable def fixedDerivedLinearEquiv (e : L ≃ₗ⁅R⁆ L) :
-    ↥(e.toLieHom.fixedSubalgebra ⊓ (derivedSeries R L 1).toLieSubalgebra) ≃ₗ[R]
-      Module.End.eigenspace
-        ((e.derivedSeriesCongr 1).toLinearEquiv : Module.End R (derivedSeries R L 1)) 1 where
-  toFun x := ⟨⟨(x : L), x.property.2⟩, by
-    rw [Module.End.mem_eigenspace_iff, one_smul]
-    exact Subtype.ext ((e.coe_derivedSeriesCongr 1 _).trans
-      (LieHom.mem_fixedSubalgebra.mp x.property.1))⟩
-  invFun d := ⟨(d.val : L),
-    ⟨LieHom.mem_fixedSubalgebra.mpr <| by
-      simpa [coe_derivedSeriesCongr] using congrArg Subtype.val
-        ((Module.End.mem_eigenspace_iff.mp d.property).trans (one_smul _ _)),
-      d.val.property⟩⟩
-  left_inv _ := Subtype.ext rfl
-  right_inv _ := Subtype.ext (Subtype.ext rfl)
-  map_add' _ _ := Subtype.ext (Subtype.ext rfl)
-  map_smul' _ _ := Subtype.ext (Subtype.ext rfl)
-
-@[simp]
-private theorem coe_fixedDerivedLinearEquiv_apply (e : L ≃ₗ⁅R⁆ L)
-    (x : ↥(e.toLieHom.fixedSubalgebra ⊓ (derivedSeries R L 1).toLieSubalgebra)) :
-    ((e.fixedDerivedLinearEquiv x).val : L) = (x : L) :=
+private theorem coe_fixedSubmoduleLinearEquiv_apply (e : L ≃ₗ⁅R⁆ L) {I : LieIdeal R L}
+    (f : I ≃ₗ⁅R⁆ I) (hf : ∀ x : I, (f x : L) = e x)
+    (x : ↥(e.toLieHom.fixedSubalgebra ⊓ I.toLieSubalgebra)) :
+    ((fixedSubmoduleLinearEquiv e f hf x).val : L) = (x : L) :=
   rfl
 
 private noncomputable def fixedCenterDerivedLinearEquiv (e : L ≃ₗ⁅R⁆ L)
@@ -139,7 +122,8 @@ private noncomputable def fixedCenterDerivedLinearEquiv (e : L ≃ₗ⁅R⁆ L)
     (↥(e.toLieHom.fixedSubalgebra ⊓ (center R L).toLieSubalgebra) ×
       ↥(e.toLieHom.fixedSubalgebra ⊓ (derivedSeries R L 1).toLieSubalgebra)) ≃ₗ[R]
         e.toLieHom.fixedSubalgebra :=
-  ((e.fixedCenterLinearEquiv.prodCongr e.fixedDerivedLinearEquiv).trans
+  ((fixedSubmoduleLinearEquiv e e.centerCongr e.coe_centerCongr |>.prodCongr
+      (fixedSubmoduleLinearEquiv e (e.derivedSeriesCongr 1) (e.coe_derivedSeriesCongr 1))).trans
     (e.eigenspaceCenterDerivedEquiv h 1)).trans
     (LinearEquiv.ofEq _ e.toLieHom.fixedSubalgebra.toSubmodule
       (by
@@ -197,5 +181,46 @@ theorem fixedCenterDerivedEquivOfIsCompl_symm_add (e : L ≃ₗ⁅R⁆ L)
   rw [← fixedCenterDerivedEquivOfIsCompl_apply e h, LieEquiv.apply_symm_apply]
 
 end Ring
+
+section Reductive
+
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L] [HasCentralRadical K L]
+
+/-- Every fixed vector has a unique decomposition into a fixed central vector and a fixed
+vector in the ambient derived ideal. -/
+theorem existsUnique_fixed_center_add_fixed_derivedSeries (e : L ≃ₗ⁅K⁆ L)
+    (x : e.toLieHom.fixedSubalgebra) :
+    ∃! p : (center K L) × derivedSeries K L 1,
+      e p.1 = p.1 ∧ e p.2 = p.2 ∧ (p.1 : L) + p.2 = x :=
+  e.existsUnique_fixed_center_add_fixed_derivedSeries_of_isCompl
+    (TauCeti.isCompl_center_derivedSeries K L) x
+
+/-- Addition identifies the fixed algebra with the product of its fixed central part and the
+fixed part of the ambient derived ideal. The factors are subalgebras of the ambient algebra,
+so their elements retain their original central and derived membership proofs. -/
+noncomputable def fixedCenterDerivedEquiv (e : L ≃ₗ⁅K⁆ L) :
+    (↥(e.toLieHom.fixedSubalgebra ⊓ (center K L).toLieSubalgebra) ×
+      ↥(e.toLieHom.fixedSubalgebra ⊓ (derivedSeries K L 1).toLieSubalgebra)) ≃ₗ⁅K⁆
+        e.toLieHom.fixedSubalgebra :=
+  e.fixedCenterDerivedEquivOfIsCompl (TauCeti.isCompl_center_derivedSeries K L)
+
+/-- The fixed-part decomposition is addition in the ambient Lie algebra. -/
+@[simp]
+theorem fixedCenterDerivedEquiv_apply (e : L ≃ₗ⁅K⁆ L)
+    (p : ↥(e.toLieHom.fixedSubalgebra ⊓ (center K L).toLieSubalgebra) ×
+      ↥(e.toLieHom.fixedSubalgebra ⊓ (derivedSeries K L 1).toLieSubalgebra)) :
+    (e.fixedCenterDerivedEquiv p : L) = (p.1 : L) + p.2 :=
+  e.fixedCenterDerivedEquivOfIsCompl_apply (TauCeti.isCompl_center_derivedSeries K L) p
+
+/-- The inverse decomposition recovers a fixed vector by adding its two components. -/
+@[simp]
+theorem fixedCenterDerivedEquiv_symm_add (e : L ≃ₗ⁅K⁆ L)
+    (x : e.toLieHom.fixedSubalgebra) :
+    ((e.fixedCenterDerivedEquiv.symm x).1 : L) +
+      (e.fixedCenterDerivedEquiv.symm x).2 = x :=
+  e.fixedCenterDerivedEquivOfIsCompl_symm_add (TauCeti.isCompl_center_derivedSeries K L) x
+
+end Reductive
 
 end LieEquiv

@@ -395,6 +395,34 @@ theorem deleteCircle_true [Fintype σ] [DecidableEq σ] :
   rw [circleDuality_fiberwiseSplit, circleDuality_deleteCircle, Bool.not_true, insertCircle_false,
     AlgHom.toLinearMap_apply]
 
+variable {R} {ρ τ σ' : Type*}
+
+/-- A birth labelled `1`, reindexings and a merge compose to the merge along the composite of
+the circle maps. -/
+theorem reindex_fiberwiseMul_reindex_insertCircle [Fintype σ] [Fintype ρ] [Finite τ]
+    [DecidableEq τ] [DecidableEq σ'] (b : σ ⊕ Unit ≃ ρ) (g : ρ → τ) (a : τ ≃ σ')
+    (x : CircleTensor R σ) :
+    reindex R (fun _ ↦ R[ε]) a (fiberwiseMul (A := fun _ ↦ R[ε]) g
+      (reindex R (fun _ ↦ R[ε]) b (insertCircle R false x))) =
+      fiberwiseMul (A := fun _ ↦ R[ε]) (a ∘ g ∘ b ∘ Sum.inl) x := by
+  classical
+  have := Fintype.ofFinite τ
+  rw [insertCircle_false, AlgHom.toLinearMap_apply,
+    ← fiberwiseMul_equiv_apply, ← fiberwiseMul_equiv_apply]
+  simp only [← AlgHom.comp_apply, fiberwiseMul_comp]
+
+/-- Reindexings, a split and a death of the label `X` compose to the split along the composite of
+the circle maps. -/
+theorem deleteCircle_reindex_fiberwiseSplit_reindex [Fintype σ] [Fintype ρ] [Fintype τ]
+    [DecidableEq τ] [Fintype σ'] [DecidableEq σ'] (a : τ ≃ σ') (g : ρ → τ) (b : σ ⊕ Unit ≃ ρ)
+    (x : CircleTensor R σ') :
+    deleteCircle R true (reindex R (fun _ ↦ R[ε]) b.symm
+      (fiberwiseSplit g (reindex R (fun _ ↦ R[ε]) a.symm x))) =
+      fiberwiseSplit (a ∘ g ∘ b ∘ Sum.inl) x := by
+  classical
+  rw [deleteCircle_true, ← fiberwiseSplit_equiv_apply, ← fiberwiseSplit_equiv_apply]
+  simp only [← LinearMap.comp_apply, fiberwiseSplit_comp, Function.comp_assoc]
+
 end Semiring
 
 section Grading

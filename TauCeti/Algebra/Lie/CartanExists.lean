@@ -28,17 +28,28 @@ nondegenerate, a Cartan subalgebra comes with a base of its root system
 (`TauCeti.exists_isCartanSubalgebra_base`). This is the choice behind statements that mention
 neither.
 
+Mathlib's existence proof shows that the Engel subalgebra of an element that is regular in the
+sense of `LieAlgebra.IsRegular` is a Cartan subalgebra, but records only the existence. This file
+states it for every regular element (`LieAlgebra.IsRegular.isCartanSubalgebra_engel`), following
+the same argument: the Engel subalgebra of a regular element has the minimal dimension
+`LieAlgebra.rank K L`, so by Barnes's lemma `LieAlgebra.engel_isBot_of_isMin` it lies in the
+Engel subalgebra of each of its elements, and is therefore nilpotent and self-normalizing.
+
 ## Main results
 
 * `TauCeti.exists_isCartanSubalgebra_mem_of_isSemisimple_ad`: an element with semisimple adjoint
   action lies in a Cartan subalgebra.
 * `TauCeti.exists_isCartanSubalgebra_base`: a Lie algebra with nondegenerate Killing form has a
   Cartan subalgebra whose root system has a base.
+* `LieAlgebra.IsRegular.isCartanSubalgebra_engel_of_finrank_le_card` and
+  `LieAlgebra.IsRegular.isCartanSubalgebra_engel`: the Engel subalgebra of a regular element is a
+  Cartan subalgebra.
 
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Springer GTM 9
   (1972), §15.
+* D. W. Barnes, *On Cartan subalgebras of Lie algebras*, Math. Z. **101** (1967), 350–355.
 -/
 
 public section
@@ -108,3 +119,35 @@ theorem exists_isCartanSubalgebra_base [CharZero K] [IsAlgClosed K] [FiniteDimen
   exact ⟨_, _i, (IsKilling.rootSystem _).nonempty_base⟩
 
 end TauCeti
+
+namespace LieAlgebra
+
+open Cardinal
+
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L] {x : L}
+
+/-- **The Engel subalgebra of a regular element is a Cartan subalgebra**, over a field with at
+least `finrank K L` elements: if `x` is regular in Mathlib's sense, then `engel K x` is a Cartan
+subalgebra of `L`. -/
+theorem IsRegular.isCartanSubalgebra_engel_of_finrank_le_card (hx : IsRegular K x)
+    (hLK : finrank K L ≤ #K) : (engel K x).IsCartanSubalgebra := by
+  refine ⟨isNilpotent_of_forall_le_engel _ fun y hy ↦ ?_, normalizer_engel _ _⟩
+  -- `engel K x` is minimal among the Engel subalgebras of its elements, hence the least of them
+  let Ex : {engel K z | z ∈ engel K x} := ⟨engel K x, x, self_mem_engel _ _, rfl⟩
+  suffices IsBot Ex from this ⟨engel K y, y, hy, rfl⟩
+  refine engel_isBot_of_isMin hLK (engel K x) Ex le_rfl ?_
+  rintro ⟨_, y, _, rfl⟩ hyx
+  -- an Engel subalgebra inside `engel K x` has dimension at least `rank K L`, so it is equal
+  suffices finrank K (engel K x) ≤ finrank K (engel K y) from
+    (LieSubalgebra.toSubmodule_injective (Submodule.eq_of_le_of_finrank_le hyx this)).ge
+  rw [(isRegular_iff_finrank_engel_eq_rank K x).mp hx]
+  exact rank_le_finrank_engel K y
+
+/-- **The Engel subalgebra of a regular element is a Cartan subalgebra**, over an infinite
+field. -/
+theorem IsRegular.isCartanSubalgebra_engel [Infinite K] (hx : IsRegular K x) :
+    (engel K x).IsCartanSubalgebra :=
+  hx.isCartanSubalgebra_engel_of_finrank_le_card <|
+    natCast_le_aleph0.trans <| Cardinal.infinite_iff.mp ‹Infinite K›
+
+end LieAlgebra

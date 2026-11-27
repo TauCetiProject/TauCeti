@@ -152,14 +152,20 @@ theorem eq_ofIsCompl (hθ : θ.IsReductiveCartanInvolution) :
 
 end IsReductiveCartanInvolution
 
+private theorem isCartanInvolution_derivedSeriesCongr_iff {θ : L ≃ₗ⁅K⁆ L}
+    (htop : derivedSeries K L 1 = ⊤) :
+    (θ.derivedSeriesCongr 1).IsCartanInvolution ↔ θ.IsCartanInvolution := by
+  refine (isCartanInvolution_iff_of_intertwine (derivedSeriesTopEquiv htop) fun x ↦ ?_).symm
+  rw [coe_derivedSeriesTopEquiv, coe_derivedSeriesTopEquiv, coe_derivedSeriesCongr]
+
 /-- Every semisimple Cartan involution is in particular a reductive Cartan involution, since a
 Killing Lie algebra over a field is perfect. -/
 theorem IsCartanInvolution.isReductiveCartanInvolution {θ : L ≃ₗ⁅K⁆ L}
-    (hθ : θ.IsCartanInvolution) : θ.IsReductiveCartanInvolution := by
+    (hθ : θ.IsCartanInvolution) : θ.IsReductiveCartanInvolution :=
   have : LieAlgebra.IsKilling K L := hθ.isKilling
-  let e := derivedSeriesTopEquiv (TauCeti.derivedSeries_one_eq_top_of_isKilling K L)
-  refine ⟨hθ.involutive, (isCartanInvolution_iff_of_intertwine e fun x ↦ ?_).mp hθ⟩
-  rw [coe_derivedSeriesTopEquiv, coe_derivedSeriesTopEquiv, coe_derivedSeriesCongr]
+  ⟨hθ.involutive,
+    (isCartanInvolution_derivedSeriesCongr_iff
+      (TauCeti.derivedSeries_one_eq_top_of_isKilling K L)).mpr hθ⟩
 
 /-- A reductive Cartan involution is a (semisimple) Cartan involution if and only if the centre
 vanishes. -/
@@ -173,10 +179,7 @@ theorem IsReductiveCartanInvolution.isCartanInvolution_iff_center_eq_bot {θ : L
   · intro hZ
     have htop : derivedSeries K L 1 = ⊤ := by
       have hc := hθ.isCompl_center_derivedSeries
-      rw [hZ] at hc
-      rw [← hc.sup_eq_top, bot_sup_eq]
-    let e := derivedSeriesTopEquiv htop
-    refine (isCartanInvolution_iff_of_intertwine e fun x ↦ ?_).mpr hθ.2
-    rw [coe_derivedSeriesTopEquiv, coe_derivedSeriesTopEquiv, coe_derivedSeriesCongr]
+      rw [← hc.sup_eq_top, hZ, bot_sup_eq]
+    exact (isCartanInvolution_derivedSeriesCongr_iff htop).mp hθ.2
 
 end LieEquiv

@@ -209,6 +209,14 @@ theorem coe_stalkMapCommRing (f : N ⟶ N') :
   exact (stalkMapCommRing_germ x f U hx m).trans
     (TopCat.Presheaf.stalkFunctor_map_germ_apply U x hx ((toPresheaf _).map f) m).symm
 
+/-- A linear stalk map over the commutative-ring stalk is bijective exactly when the stalk map
+of the underlying presheaves of abelian groups is an isomorphism. -/
+theorem bijective_stalkMapCommRing_iff_isIso (f : N ⟶ N') :
+    Function.Bijective (stalkMapCommRing x f) ↔
+      IsIso ((TopCat.Presheaf.stalkFunctor AddCommGrpCat x).map ((toPresheaf _).map f)) := by
+  rw [coe_stalkMapCommRing]
+  exact (ConcreteCategory.isIso_iff_bijective _).symm
+
 end CommRing
 
 variable {N : PresheafOfModules.{u} R}

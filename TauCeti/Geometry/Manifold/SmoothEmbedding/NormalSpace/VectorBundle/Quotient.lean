@@ -101,12 +101,12 @@ representatives. The right-inverse identity holds on a neighbourhood of that nor
 theorem exists_contMDiffOn_normalQuotientMap_rightInverse
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (p : TotalSpace P (fun x => f.NormalSpace x hn)) :
+    (p : TotalSpace P (fun x => f.isImmersion.NormalSpace x hn)) :
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     haveI : IsManifold J 1 N := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
-    ∃ U : Set (TotalSpace P (fun x => f.NormalSpace x hn)), IsOpen U ∧ p ∈ U ∧
-      ∃ s : TotalSpace P (fun x => f.NormalSpace x hn) →
+    ∃ U : Set (TotalSpace P (fun x => f.isImmersion.NormalSpace x hn)), IsOpen U ∧ p ∈ U ∧
+      ∃ s : TotalSpace P (fun x => f.isImmersion.NormalSpace x hn) →
           TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)),
         ContMDiffOn (I.prod 𝓘(𝕜, P)) (I.prod 𝓘(𝕜, V)) m s U ∧
           EqOn (f.normalQuotientMap hn ∘ s) _root_.id U := by
@@ -124,7 +124,7 @@ theorem exists_contMDiffOn_normalQuotientMap_rightInverse
   let a := (trivializationAt V (TangentSpace J) (f p.proj)).pullback f
   have he : MemTrivializationAtlas e := ⟨p.proj, rfl⟩
   have ha : MemTrivializationAtlas a := ⟨_, inferInstance, rfl⟩
-  let s : TotalSpace P (fun x => f.NormalSpace x hn) →
+  let s : TotalSpace P (fun x => f.isImmersion.NormalSpace x hn) →
       TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) := fun q =>
     ⟨q.proj, (trivializationAt V (TangentSpace J) (f p.proj)).symm
       (f q.proj) (d.complement (e q).2)⟩
@@ -135,7 +135,7 @@ theorem exists_contMDiffOn_normalQuotientMap_rightInverse
     apply ContMDiffAt.contMDiffWithinAt
     have hqe : q ∈ e.source := by rw [e.mem_source, d.baseSet_trivialization]; exact hq
     apply (a.contMDiffAt_iff ?_).mpr
-    · refine ⟨contMDiffAt_proj (fun x => f.NormalSpace x hn), ?_⟩
+    · refine ⟨contMDiffAt_proj (fun x => f.isImmersion.NormalSpace x hn), ?_⟩
       have hc : ContMDiffAt (I.prod 𝓘(𝕜, P)) 𝓘(𝕜, V) m
           (fun q => d.complement (e q).2) q :=
         d.complement.contDiff.comp_contMDiffAt
@@ -162,7 +162,7 @@ theorem contMDiff_normalBundle_iff
     {E' H' X : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
     [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     [TopologicalSpace X] [ChartedSpace H' X]
-    (q : TotalSpace P (fun x => f.NormalSpace x hn) → X) :
+    (q : TotalSpace P (fun x => f.isImmersion.NormalSpace x hn) → X) :
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     haveI : IsManifold J 1 N := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim

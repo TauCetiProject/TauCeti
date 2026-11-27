@@ -18,6 +18,7 @@ import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -52,7 +53,9 @@ differentiable.
 * `TauCeti.SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartAt_symm`: on a
   complex curve, a `(0,1)`-form read in a chart is `w ↦ conj w • η (∂/∂x)`.
 * `TauCeti.IsRealCauchyRiemannOperator.apply_eq_of_eventuallyEq`: locality, a real Cauchy–Riemann
-  operator at `x` only sees the germ at `x` of a section differentiable at `x`.
+  operator at `x` only sees the germ at `x` of a section differentiable at `x`, and
+  `TauCeti.IsRealCauchyRiemannOperator.apply_eq_zero_of_notMem_closure`: it vanishes off the
+  closure of the nonzero locus of the section.
 * `TauCeti.IsRealCauchyRiemannOperator.leibniz_complex`: the Leibniz rule
   `D (f • ξ) = f • D ξ + (∂bar f) ⊗ ξ` of a complex linear real Cauchy–Riemann operator for
   complex valued `f`.
@@ -548,6 +551,18 @@ theorem apply_eq_of_eventuallyEq [VectorBundle ℝ F V] (hD : IsRealCauchyRieman
     ext y
     simp [τ]
   rw [hστ, hD.add hσ' hτ, hDτ, add_zero]
+
+/-- **Locality.** A real Cauchy–Riemann operator vanishes off the closure of the nonzero locus of
+the section. -/
+theorem apply_eq_zero_of_notMem_closure [VectorBundle ℝ F V]
+    (hD : IsRealCauchyRiemannOperator F j D) {σ : Π x : M, V x} {x : M}
+    (hx : x ∉ closure {y | σ y ≠ 0}) : D σ x = 0 := by
+  have hev : ∀ᶠ y in 𝓝 x, σ y = (0 : Π y : M, V y) y := by
+    filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hx] with y hy
+    exact Bundle.apply_eq_zero_of_notMem_closure hy
+  have h0 : MDiffAt (T% (0 : Π y : M, V y)) x := mdifferentiableAt_zeroSection ..
+  rw [hD.apply_eq_of_eventuallyEq h0 hev]
+  simpa using hD.smul_const 0 h0
 
 section Difference
 

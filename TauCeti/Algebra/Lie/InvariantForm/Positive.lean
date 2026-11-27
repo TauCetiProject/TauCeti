@@ -23,8 +23,8 @@ A reflexive invariant bilinear form with anisotropic diagonal on a finite-dimens
 Lie algebra makes its centre and derived ideal orthogonal complementary ideals. The derived
 algebra is semisimple, hence centreless, and the radical of the ambient algebra is its centre.
 For a positive-definite symmetric invariant form over an ordered field, the Killing form is
-nonpositive, has diagonal zero exactly on the centre, and is negative definite on the derived
-algebra.
+nonpositive, has diagonal zero exactly on the centre (so it is negative definite exactly when the
+centre is trivial), and is negative definite on the derived algebra.
 
 ## Main results
 
@@ -42,6 +42,8 @@ algebra.
   centre.
 * `LinearMap.BilinForm.killingForm_self_neg_of_posDef_of_notMem_center`:
   it is strictly negative on noncentral vectors.
+* `LinearMap.BilinForm.posDef_neg_killingForm_iff_center_eq_bot_of_posDef`: its negative is
+  positive definite exactly when the centre is trivial.
 * `LinearMap.BilinForm.killingForm_derivedSeries_one_self_neg_of_posDef_of_ne_zero`:
   the derived algebra has negative-definite Killing form.
 
@@ -98,6 +100,14 @@ theorem isCompl_center_derivedSeries_one_of_anisotropic (B : LinearMap.BilinForm
     exact B.isCompl_orthogonal_of_restrict_nondegenerate hrefl hrestrict
   rw [orthogonal_derivedSeries_one_eq_center B hnd.2 hinv] at hcompl
   exact hcompl.symm
+
+/-- A central element of the derived algebra vanishes when a finite-dimensional Lie algebra has a
+reflexive invariant form with anisotropic diagonal. -/
+theorem eq_zero_of_mem_center_of_mem_derivedSeries_one (B : LinearMap.BilinForm F L)
+    (hrefl : B.IsRefl) (hani : B.toQuadraticMap.Anisotropic) (hinv : B.lieInvariant L) {x : L}
+    (hc : x ∈ center F L) (hd : x ∈ derivedSeries F L 1) : x = 0 :=
+  Submodule.disjoint_def.mp (LieSubmodule.disjoint_toSubmodule.mpr
+    (B.isCompl_center_derivedSeries_one_of_anisotropic hrefl hani hinv).disjoint) x hc hd
 
 /-- The derived algebra of a finite-dimensional Lie algebra with a reflexive invariant form
 with anisotropic diagonal is semisimple. -/
@@ -171,6 +181,19 @@ theorem killingForm_self_neg_of_posDef_of_notMem_center (B : LinearMap.BilinForm
   have hne : killingForm F L x x ≠ 0 := fun h ↦
     hx ((killingForm_self_eq_zero_iff_of_posDef B hsymm hpos hinv x).mp h)
   exact lt_of_le_of_ne hle hne
+
+/-- For a Lie algebra with a symmetric positive-definite invariant form, the negative of the
+Killing form is positive definite exactly when the centre is trivial. -/
+theorem posDef_neg_killingForm_iff_center_eq_bot_of_posDef (B : LinearMap.BilinForm F L)
+    (hsymm : LinearMap.BilinForm.IsSymm B) (hpos : B.toQuadraticMap.PosDef)
+    (hinv : B.lieInvariant L) :
+    (-killingForm F L).toQuadraticMap.PosDef ↔ center F L = ⊥ := by
+  simp only [QuadraticMap.PosDef, LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.neg_apply,
+    neg_pos, LieSubmodule.eq_bot_iff]
+  refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
+  · by_contra hne
+    exact (h x hne).ne ((killingForm_self_eq_zero_iff_of_posDef B hsymm hpos hinv x).2 hx)
+  · exact killingForm_self_neg_of_posDef_of_notMem_center B hsymm hpos hinv x (hx ∘ h x)
 
 /-- The Killing form of the derived algebra is strictly negative on nonzero vectors when
 the ambient algebra has a symmetric positive-definite invariant form. -/

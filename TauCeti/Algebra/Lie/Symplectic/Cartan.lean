@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Lie.Symplectic.Basic
 # Negative transpose on the symplectic Lie algebra
 
 The symplectic Lie algebra is stable under transpose. Restricting the matrix Lie
-automorphism `TauCeti.negTransposeLieEquiv` via `LieSubalgebra.negTransposeEquiv` gives its
+automorphism `TauCeti.negTransposeLieEquiv` via `LieSubalgebra.restrictNegTranspose` gives its
 involution `X ↦ -Xᵀ`.
 On symplectic Lie matrices it is conjugation by `J`, just as inverse transpose is
 conjugation by `J` on the symplectic group. The fixed and negated vectors are
@@ -41,7 +41,7 @@ variable (l R)
 
 /-- The involutive Lie automorphism `X ↦ -Xᵀ` of the symplectic Lie algebra. -/
 def cartanInvolution : sp l R ≃ₗ⁅R⁆ sp l R :=
-  (sp l R).negTransposeEquiv fun _ hX ↦ (sp l R).neg_mem (transpose_mem_sp hX)
+  (sp l R).restrictNegTranspose fun _ ↦ transpose_mem_sp
 
 variable {l R}
 
@@ -49,31 +49,31 @@ variable {l R}
 @[simp]
 theorem coe_cartanInvolution (X : sp l R) :
     (cartanInvolution l R X : Matrix (l ⊕ l) (l ⊕ l) R) = -(X : Matrix _ _ R)ᵀ :=
-  (sp l R).coe_negTransposeEquiv _ X
+  (sp l R).coe_restrictNegTranspose_apply _ X
 
 /-- Applying the symplectic Lie involution twice gives the original vector. -/
 @[simp]
 theorem cartanInvolution_cartanInvolution (X : sp l R) :
     cartanInvolution l R (cartanInvolution l R X) = X :=
-  (sp l R).negTransposeEquiv_negTransposeEquiv _ X
+  LieSubalgebra.restrictNegTranspose_restrictNegTranspose _ _ X
 
 /-- The symplectic Lie involution is its own inverse. -/
 @[simp]
 theorem cartanInvolution_symm : (cartanInvolution l R).symm = cartanInvolution l R :=
-  (sp l R).negTransposeEquiv_symm _
+  LieSubalgebra.restrictNegTranspose_symm _ _
 
 /-- Fixed vectors of the Lie involution are the skew-symmetric symplectic Lie matrices. -/
 @[simp]
 theorem cartanInvolution_eq_self_iff (X : sp l R) :
     cartanInvolution l R X = X ↔
       (X : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = -(X : Matrix (l ⊕ l) (l ⊕ l) R) :=
-  (sp l R).negTransposeEquiv_eq_self_iff _ X
+  (sp l R).restrictNegTranspose_eq_self_iff _ X
 
 /-- Negated vectors of the Lie involution are the symmetric symplectic Lie matrices. -/
 @[simp]
 theorem cartanInvolution_eq_neg_iff (X : sp l R) :
     cartanInvolution l R X = -X ↔ (X : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = X :=
-  (sp l R).negTransposeEquiv_eq_neg_iff _ X
+  (sp l R).restrictNegTranspose_eq_neg_iff _ X
 
 /-- On the real symplectic Lie algebra, `X ↦ -Xᴴ` is `LieAlgebra.Symplectic.cartanInvolution`. -/
 theorem restrictNegConjTranspose_sp :

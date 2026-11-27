@@ -14,7 +14,8 @@ The repetition code consists of constant words, and the single-parity-check code
 words whose coordinate sum is zero. They are Euclidean duals. A positive-length repetition
 code has as many words as its alphabet; at length zero it has only one word.
 Over a finite field with `q` elements, the parity-check code has `q^(n - 1)` words at length `n`,
-including length zero, where the natural-number subtraction gives exponent zero.
+including length zero, where the natural-number subtraction gives exponent zero. Over any
+division ring it has dimension `n - 1`.
 
 Their weight enumerators are computed in
 `TauCeti.InformationTheory.Coding.Elementary.WeightEnumerator`.
@@ -101,5 +102,21 @@ theorem natCard_singleParityCheckCode [Field R] [Finite R] [Fintype ι] :
     rw [mul_pow_sub_one (ne_of_gt (Fintype.card_pos))]
     simpa only [natCard_repetitionCode, euclideanDual_repetitionCode] using
       Submodule.natCard_mul_natCard_euclideanDual (repetitionCode R ι)
+
+/-- Over a division ring, the parity-check code has dimension `n - 1` at length `n`, including at
+length zero, where the natural-number subtraction gives dimension zero. -/
+@[simp]
+theorem finrank_singleParityCheckCode [DivisionRing R] [Fintype ι] :
+    Module.finrank R (singleParityCheckCode R ι) = Fintype.card ι - 1 := by
+  cases isEmpty_or_nonempty ι with
+  | inl hι => simp [Fintype.card_eq_zero, Module.finrank_zero_of_subsingleton]
+  | inr hι =>
+    obtain ⟨i₀⟩ := hι
+    classical
+    have hs : (∑ i, LinearMap.proj i : Module.Dual R (ι → R)) ≠ 0 := fun h ↦ by
+      simpa [LinearMap.sum_apply] using LinearMap.congr_fun h (Pi.single i₀ 1)
+    have := Module.Dual.finrank_ker_add_one_of_ne_zero hs
+    rw [Module.finrank_fintype_fun_eq_card] at this
+    exact Nat.eq_sub_of_add_eq this
 
 end TauCeti

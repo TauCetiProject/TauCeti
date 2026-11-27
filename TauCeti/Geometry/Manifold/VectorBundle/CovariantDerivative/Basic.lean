@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 
 /-!
 # Covariant derivatives of sections and evaluation of connection operations
 
 Mathlib's `IsCovariantDerivativeOn` is additive on pairs of sections differentiable at a point of
 the set it is a covariant derivative on. This file derives the corresponding statements for
-negatives and differences, and iterates additivity to finite sums of sections. It also evaluates
-Mathlib's `CovariantDerivative.addOneForm` on sections and `CovariantDerivative.difference` on
-section values and fibre vectors.
+negatives and differences, and iterates additivity to finite sums of sections and to finite linear
+combinations with constant coefficients. It also evaluates Mathlib's
+`CovariantDerivative.addOneForm` on sections and `CovariantDerivative.difference` on section values
+and fibre vectors.
 
 ## Main results
 
@@ -22,6 +24,8 @@ section values and fibre vectors.
   `u` commutes with negation and subtraction of sections differentiable at a point of `u`.
 * `IsCovariantDerivativeOn.sum`: a covariant derivative over `u` commutes with finite sums of
   sections differentiable at a point of `u`.
+* `IsCovariantDerivativeOn.sum_smul_const`: the same for finite linear combinations with constant
+  coefficients.
 * `IsCovariantDerivativeOn.leibniz_apply` and
   `CovariantDerivative.covariantDerivative_smul_section_vectorField`: the Leibniz rule for the
   covariant derivative of a function multiple of a section at a tangent vector and along a
@@ -90,6 +94,16 @@ theorem sum (hcov : IsCovariantDerivativeOn F cov u) {κ : Type*} {s : Finset κ
         MDifferentiableAt.sum_section (t := fun j (y : M) ↦ τ j y) (s := s) hτ.2
     rw [Finset.sum_insert hi, hcov.add hτ.1 hsum hx, ih hτ.2, Finset.sum_insert hi]
 
+/-- A covariant derivative over `u` sends a finite linear combination with constant coefficients
+of sections differentiable at a point of `u` to the same combination of their covariant
+derivatives there. -/
+theorem sum_smul_const (hcov : IsCovariantDerivativeOn F cov u) {κ : Type*} {s : Finset κ}
+    (c : κ → 𝕜) {τ : κ → Π x : M, V x} (hτ : ∀ i ∈ s, MDiffAt (T% (τ i)) x)
+    (hx : x ∈ u := by trivial) :
+    cov (∑ i ∈ s, c i • τ i) x = ∑ i ∈ s, c i • cov (τ i) x := by
+  rw [hcov.sum (fun i hi ↦ (hτ i hi).smul_const_section) hx]
+  exact Finset.sum_congr rfl fun i hi ↦ hcov.smul_const _ (hτ i hi) hx
+
 omit [VectorBundle 𝕜 F V] in
 /-- **Leibniz rule at a tangent vector.** The covariant derivative over `u` of `f • σ` at a point
 `x` of `u` along `v` is `f x • ∇_v σ + df_x(v) • σ x`, for `f` and `σ` differentiable at `x`. -/
@@ -142,8 +156,7 @@ theorem apply_eq_zero_of_notMem_closure (cov : CovariantDerivative I F V) {σ : 
     {x : M} (hx : x ∉ closure {y | σ y ≠ 0}) : cov σ x = 0 := by
   have hev : ∀ᶠ y in 𝓝 x, σ y = (0 : Π y : M, V y) y := by
     filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hx] with y hy
-    by_contra h
-    exact hy (subset_closure h)
+    exact Bundle.apply_eq_zero_of_notMem_closure hy
   have h0 : MDiffAt (T% (0 : Π y : M, V y)) x := mdifferentiableAt_zeroSection ..
   have hσ : MDiffAt (T% σ) x := h0.congr_of_eventuallyEq (hev.mono fun y hy ↦ by simp [hy])
   rw [cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hσ h0 Filter.univ_mem hev]
