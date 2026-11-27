@@ -65,6 +65,8 @@ The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.Fini
 * `AbsoluteValue.Place.isNonarchimedean_iff`, `AbsoluteValue.Place.not_isNonarchimedean_iff`: a
   place is finite if and only if its restriction to `ℚ` is `p`-adic, and infinite if and only if it
   is real.
+* `AbsoluteValue.Place.exists_prime_apply_natCast_lt_one`: a finite place is less than one at some
+  prime number.
 * `AbsoluteValue.Place.under_smul`: the action does not change the restriction to a subfield that
   the group fixes pointwise.
 * `AbsoluteValue.Place.existsUnique_isEquiv_of_isNontrivial_under`,
@@ -192,6 +194,15 @@ theorem not_isNonarchimedean_iff (w : Place L) :
   · refine iff_of_false (not_not_intro h) fun hr ↦ ?_
     obtain ⟨p, _, hp⟩ := h
     exact Rat.AbsoluteValue.not_real_isEquiv_padic p (hr ▸ hp ▸ .rfl)
+
+/-- A finite place is less than one at some prime number, the prime `p` for which its restriction
+to `ℚ` is the `p`-adic absolute value. -/
+theorem exists_prime_apply_natCast_lt_one {w : Place L} (hw : IsNonarchimedean w.val) :
+    ∃ p : ℕ, p.Prime ∧ w.val p < 1 := by
+  obtain ⟨p, hp, hwp⟩ := w.isNonarchimedean_iff.mp hw
+  refine ⟨p, hp.out, ?_⟩
+  rw [val_natCast, hwp, Rat.AbsoluteValue.padic_eq_padicNorm]
+  exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
 
 /-! ### Restriction to a subfield -/
 

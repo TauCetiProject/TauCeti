@@ -165,12 +165,9 @@ theorem exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one_of_numberField (w
     (hp : ∀ r : 𝓞 K, r ∈ p ↔ w.val (algebraMap (𝓞 K) L r) < 1) :
     ∃ σ : G, σ ∈ stabilizer G w ∧
       ∀ x, w.val x ≤ 1 → w.val (σ • x - x ^ Nat.card (𝓞 K ⧸ p)) < 1 := by
-  obtain ⟨q, hq, hwq⟩ := (isNonarchimedean_iff w).mp hw
-  have hp0 : p ≠ ⊥ := fun h ↦ hq.out.ne_zero <| (Nat.cast_eq_zero (R := 𝓞 K)).mp <|
-    (Submodule.mem_bot _).mp <| h ▸ (hp q).mpr <| by
-      rw [map_natCast, ← map_natCast (algebraMap ℚ L), ← AbsoluteValue.under_apply, hwq,
-        Rat.AbsoluteValue.padic_eq_padicNorm]
-      exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
+  obtain ⟨q, hq, hwq⟩ := exists_prime_apply_natCast_lt_one hw
+  have hp0 : p ≠ ⊥ := (Submodule.ne_bot_iff p).mpr
+    ⟨q, (hp q).mpr (by rwa [map_natCast]), Nat.cast_ne_zero.mpr hq.ne_zero⟩
   obtain ⟨σ, hσ, h⟩ :=
     AbsoluteValue.exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one_of_numberField (G := G)
       hw hp hp0
