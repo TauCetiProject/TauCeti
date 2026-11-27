@@ -100,8 +100,7 @@ theorem tendsto_measure_preimage_inv_smul_symmDiff {A : Set X} (hA : MeasurableS
   have hfin (g : G) : μ ((g⁻¹ • ·) ⁻¹' A) ≠ ∞ := by
     rwa [(hμ g⁻¹).measure_preimage hA.nullMeasurableSet]
   have hsd (g : G) : μ (((g⁻¹ • ·) ⁻¹' A) ∆ ((g₀⁻¹ • ·) ⁻¹' A)) ≠ ∞ :=
-    ((measure_mono Set.symmDiff_subset_union).trans_lt
-      (measure_union_lt_top (hfin g).lt_top (hfin g₀).lt_top)).ne
+    measure_symmDiff_ne_top (hfin g) (hfin g₀)
   have hcont := continuous_lpKoopman_two_apply_of_measurableSMul₂ (𝕜 := ℝ) (E := ℝ) hμ
     (indicatorConstLp 2 hA hμA (1 : ℝ))
   have hdist := (tendsto_iff_dist_tendsto_zero.1 (hcont.tendsto g₀))
