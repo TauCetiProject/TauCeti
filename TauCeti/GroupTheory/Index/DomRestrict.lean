@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.Dimension.Free
+public import TauCeti.Data.ZMod.Two
 import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.LinearAlgebra.FreeModule.Int
 
@@ -91,14 +92,6 @@ end MonoidHom
 
 namespace AddMonoidHom
 
-/-- Twice any element lies in the kernel of a homomorphism to `ℤ/2`. -/
-theorem add_self_mem_ker_zmod_two {G : Type*} [AddGroup G] (ι : G →+ ZMod 2) (g : G) :
-    g + g ∈ ι.ker := by
-  rw [mem_ker, map_add]
-  generalize ι g = a
-  revert a
-  decide
-
 section Comm
 
 variable {G : Type*} [AddCommGroup G]
@@ -137,8 +130,9 @@ theorem exists_domRestrict_ker_eq_iff_zmod_two {ι : G →+ ZMod 2} {g₀ : G} (
       simp only [AddSubgroup.coe_add, AddSubgroup.coe_nsmul, map_add, ZMod.val_add]
       have key : (((ι g).val + (ι g').val) % 2) • g₀ =
           (ι g).val • g₀ + (ι g').val • g₀ - (((ι g).val + (ι g').val) / 2) • (g₀ + g₀) := by
-        rw [eq_sub_iff_add_eq, ← two_nsmul, smul_smul, ← add_nsmul, ← add_nsmul,
-          Nat.mod_add_div']
+        rw [← add_nsmul]
+        nth_rw 2 [← Nat.mod_add_div' ((ι g).val + (ι g').val) 2]
+        module
       rw [key]
       abel
     rw [e, map_add, map_nsmul, h, smul_zero, add_zero, map_add]

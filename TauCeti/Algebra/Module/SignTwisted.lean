@@ -10,9 +10,9 @@ public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.Module.Pi
 public import Mathlib.LinearAlgebra.Pi
 public import TauCeti.Data.ZMod.IntUnitsPower
-public import TauCeti.GroupTheory.Index.DomRestrict
+public import TauCeti.Data.ZMod.Two
 import TauCeti.Algebra.CharP.Invertible
-import TauCeti.Data.ZMod.Two
+import TauCeti.GroupTheory.Index.DomRestrict
 import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
@@ -228,7 +228,7 @@ theorem even_finrank_signTwisted_domRestrict_ker_inf {K : Type*} [Field K] [Modu
     Even (Module.finrank K ↥(signTwisted K (j.domRestrict ι.ker) φ ⊓ S)) := by
   -- For `ι = 0` the cover is trivial and `φ` is the restriction of itself.
   rcases eq_or_ne ι 0 with rfl | hι
-  · exact (hφ (φ.comp ((AddMonoidHom.id G).codRestrict _ fun g ↦ by simp)) (by ext; rfl)).elim
+  · exact (hφ (φ.comp ((AddMonoidHom.id G).codRestrict _ fun g ↦ by simp)) (by ext; simp)).elim
   obtain ⟨g₀, hg₀⟩ := ι.exists_eq_one_of_ne_zero hι
   have h₁ : φ ⟨g₀ + g₀, ι.add_self_mem_ker_zmod_two g₀⟩ = 1 :=
     ZMod.ne_zero_iff_eq_one.1 fun h ↦

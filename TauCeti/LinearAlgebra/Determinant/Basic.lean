@@ -496,7 +496,7 @@ theorem even_finrank_of_mul_self_eq_neg_one {K V : Type*} [Field K] [AddCommGrou
       (Nat.not_even_iff_odd.1 hodd).neg_one_pow] at h
     exact h.symm
   · rw [finrank_of_not_finite hV]
-    exact ⟨0, rfl⟩
+    exact Even.zero
 
 end Module.End
 
