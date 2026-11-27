@@ -106,19 +106,30 @@ extension `H^m(M) → H⁰(M)` of `P` (`TauCeti.chartSobolevExtension`) read in 
 pseudodifferential operator of order `m`; it then agrees with `P` on smooth functions
 (`TauCeti.chartSobolevRealization_toLp`). Otherwise the extension, and with it the realization, is
 a junk value unrelated to `P`. -/
-abbrev chartSobolevRealization : Lp ℂ 2 μ →ₗ.[ℂ] Lp ℂ 2 μ :=
+def chartSobolevRealization : Lp ℂ 2 μ →ₗ.[ℂ] Lp ℂ 2 μ :=
   ContinuousLinearMap.domainOperator (chartSobolevToLp hμ hc ψ hψ hm)
     ((chartSobolevSpaceZeroEquivLp hμ hc ψ hψ : chartSobolevSpace hc ψ 0 →L[ℂ] Lp ℂ 2 μ) ∘L
       chartSobolevExtension hc ψ hc ψ P m 0)
     (chartSobolevToLp_injective hμ hc ψ hψ hm)
 
+/-- The realization is the partial operator `ContinuousLinearMap.domainOperator` of the injection
+`H^m(M) → L²(M, μ)` and the extension of `P` read in `L²`; rewrite with this lemma to apply the
+graph, domain and evaluation lemmas of `domainOperator`. -/
+theorem chartSobolevRealization_def :
+    chartSobolevRealization hμ hc ψ hψ P hm =
+      ContinuousLinearMap.domainOperator (chartSobolevToLp hμ hc ψ hψ hm)
+        ((chartSobolevSpaceZeroEquivLp hμ hc ψ hψ : chartSobolevSpace hc ψ 0 →L[ℂ] Lp ℂ 2 μ) ∘L
+          chartSobolevExtension hc ψ hc ψ P m 0)
+        (chartSobolevToLp_injective hμ hc ψ hψ hm) :=
+  (rfl)
+
 /-- Smooth functions lie in the domain of the realization. -/
 theorem toLp_mem_domain_chartSobolevRealization
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u ∈
-      (chartSobolevRealization hμ hc ψ hψ P hm).domain :=
-  chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u ▸
-    ContinuousLinearMap.apply_mem_domain_domainOperator _ _ _ _
+      (chartSobolevRealization hμ hc ψ hψ P hm).domain := by
+  rw [chartSobolevRealization_def, ← chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u]
+  exact ContinuousLinearMap.apply_mem_domain_domainOperator _ _ _ _
 
 /-- **On smooth functions the realization is `P`.** For a classical pseudodifferential operator
 `P` of order `m`, the realization of `P` sends the class of a smooth function `u` in `L²` to the
@@ -129,8 +140,12 @@ theorem chartSobolevRealization_toLp (hP : P ∈ classicalPseudodifferentialOper
         ⟨ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u,
           toLp_mem_domain_chartSobolevRealization hμ hc ψ hψ P hm u⟩ =
       ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ (P u) := by
-  rw [ContinuousLinearMap.domainOperator_apply _ _ _
-    (chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u), ContinuousLinearMap.comp_apply,
+  -- The domain of the realization depends on it, so `chartSobolevRealization_def` cannot be
+  -- rewritten here; `domainOperator_apply` applies through the definitional unfolding instead.
+  refine (ContinuousLinearMap.domainOperator_apply _ _ _
+    (y := ⟨_, toLp_mem_domain_chartSobolevRealization hμ hc ψ hψ P hm u⟩)
+    (chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u)).trans ?_
+  rw [ContinuousLinearMap.comp_apply,
     chartSobolevExtension_toChartSobolevSpace_of_mem hP hψ (by linarith),
     ContinuousLinearEquiv.coe_coe, chartSobolevSpaceZeroEquivLp_toChartSobolevSpace]
 
@@ -153,6 +168,7 @@ theorem isFormalAdjoint_chartSobolevRealization (hP : P ∈ classicalPseudodiffe
       ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q v x) ∂μ) :
     (chartSobolevRealization hμ hc ψ hψ P hm).IsFormalAdjoint
       (chartSobolevRealization hμ hc ψ hψ Q hm) := by
+  rw [chartSobolevRealization_def, chartSobolevRealization_def]
   intro f g
   obtain ⟨x, hx⟩ := (ContinuousLinearMap.mem_domain_domainOperator_iff _ _ _).1 f.property
   obtain ⟨y, hy⟩ := (ContinuousLinearMap.mem_domain_domainOperator_iff _ _ _).1 g.property
@@ -184,6 +200,7 @@ by the graph norm. -/
 theorem IsClassicalElliptic.isClosed_chartSobolevRealization
     (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P) :
     (chartSobolevRealization hμ hc ψ hψ P hm).IsClosed := by
+  rw [chartSobolevRealization_def]
   set J₀ := chartSobolevSpaceZeroEquivLp hμ hc ψ hψ
   -- The norm on `H⁰(M)` is bounded by that on `L²`.
   set E₀ := (J₀.symm : Lp ℂ 2 μ →L[ℂ] chartSobolevSpace hc ψ 0)
