@@ -30,6 +30,8 @@ import TauCeti.Data.Nat.Periodic.Basic
   `a ^ i * b ^ j` multiply by adding their exponent vectors.
 * `TauCeti.mul_pow_mul_eq_pow_succ_mul_pow`: in a commutative monoid, a natural power of a product
   times the first factor gives consecutive monomial exponents.
+* `TauCeti.pow_mul_eq_pow_mul_of_mul_eq` and `TauCeti.nsmul_add_eq_nsmul_add_of_add_eq`: if
+  `b * y = c * y` in a commutative monoid, then `b ^ n * y = c ^ n * y` for all `n`.
 * `TauCeti.eq_mul_zpow_sub_iff_mul_zpow_eq`: in a group, `a = b * h ^ (n - m)` if and only if
   `a * h ^ m = b * h ^ n`.
 * `TauCeti.pow_mul_mul_pow_mul_eq`: the carry of `Nat.add_eq_mod_add_carry`, read in the
@@ -92,6 +94,15 @@ theorem mul_pow_mul_eq_pow_succ_mul_pow {M : Type*} [CommMonoid M] (a b : M) (n 
     (a * b) ^ n * a = a ^ (n + 1) * b ^ n := by
   simp only [mul_pow, pow_succ]
   ac_rfl
+
+/-- If `b * y = c * y` in a commutative monoid, then `b ^ n * y = c ^ n * y` for every `n`. -/
+@[to_additive /-- If `b + y = c + y` in an additive commutative monoid, then
+`n • b + y = n • c + y` for every `n`. -/]
+theorem pow_mul_eq_pow_mul_of_mul_eq {M : Type*} [CommMonoid M] {b c y : M}
+    (h : b * y = c * y) (n : ℕ) : b ^ n * y = c ^ n * y := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, mul_assoc, h, mul_left_comm, ih, ← mul_assoc, ← pow_succ']
 
 /-- Moving a power of `h` across an equation: `a = b * h ^ (n - m)` if and only if
 `a * h ^ m = b * h ^ n`. -/

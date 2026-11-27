@@ -444,15 +444,3 @@ end Generators
 end AdditivePowers
 
 end TauCeti.PD
-
-namespace DividedPowers
-
-/-- Transporting a divided power structure along an equality of ideals leaves its divided power
-operations unchanged. -/
-@[simp]
-theorem dpow_cast {A : Type*} [CommSemiring A] {I K : Ideal A} (h : I = K)
-    (hI : DividedPowers I) (n : ℕ) (z : A) :
-    (h ▸ hI).dpow n z = hI.dpow n z := by
-  subst h; rfl
-
-end DividedPowers

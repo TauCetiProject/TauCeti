@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.DividedPowers.Generators
 import Mathlib.Algebra.Order.Antidiag.Pi
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Localization.Ideal
+import TauCeti.Algebra.Group.Pow
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Ideal
 import TauCeti.RingTheory.RingHom.Flat
@@ -51,7 +52,6 @@ We prove Stacks Project Lemma 23.4.2 (Tag 07H1):
   principal.
 * `DividedPowers.extCoeff`: the scalar-extension coefficient formula
   `∑ e ∈ piAntidiag s n, ∏ i ∈ s, b i ^ e i * f (hI.dpow (e i) (x i))`.
-* `DividedPowers.flatCandidate`: the `AdditivePowers` candidate on `I.map f` for a flat map `f`.
 * `DividedPowers.ofFlat`: the unique extension of `DividedPowers I` along a flat `f : A →+* B`.
 * `DividedPowers.ofLocalization`: the unique extension of `DividedPowers I` to a localization.
 
@@ -82,6 +82,14 @@ open Finset
 
 namespace DividedPowers
 
+/-- Transporting a divided power structure along an equality of ideals leaves its divided power
+operations unchanged. -/
+@[simp]
+theorem dpow_cast {A : Type*} [CommSemiring A] {I K : Ideal A} (h : I = K)
+    (hI : DividedPowers I) (n : ℕ) (z : A) :
+    (h ▸ hI).dpow n z = hI.dpow n z := by
+  subst h; rfl
+
 section UniquenessAndPrincipal
 
 variable {A B : Type*} [CommSemiring A] [CommSemiring B] {I : Ideal A}
@@ -103,18 +111,6 @@ theorem eq_of_isDPMorphism_map (hI : DividedPowers I) {f : A →+* B}
     ((mem_dpEqualizer_iff hJ hJ').mp
       (le_equalizer_of_isDPMorphism hI f le_rfl hJ hJ' h1 h2 hy)).2 n
 
-private theorem pow_mul_eq_pow_mul_of_mul_eq {M : Type*} [CommMonoid M] {b c y : M}
-    (h : b * y = c * y) (n : ℕ) : b ^ n * y = c ^ n * y := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    calc
-      b ^ (n + 1) * y = b ^ n * (b * y) := by rw [pow_succ, mul_assoc]
-      _ = b ^ n * (c * y) := by rw [h]
-      _ = c * (b ^ n * y) := mul_left_comm _ _ _
-      _ = c * (c ^ n * y) := by rw [ih]
-      _ = c ^ (n + 1) * y := by rw [← mul_assoc, ← pow_succ']
-
 /-- Well-definedness of the principal-ideal extension formula: if `I = Ideal.span {x}` and
 `b * f x = c * f x`, then `b ^ n * f (hI.dpow n x) = c ^ n * f (hI.dpow n x)` for every `n`. -/
 theorem pow_mul_map_dpow_eq_of_mul_eq (hI : DividedPowers I) {x : A} (hx : I = Ideal.span {x})
@@ -127,7 +123,7 @@ theorem pow_mul_map_dpow_eq_of_mul_eq (hI : DividedPowers I) {x : A} (hx : I = I
     rw [← ha, map_mul]
     calc
       b ^ n * (f a * f x) = f a * (b ^ n * f x) := by ring
-      _ = f a * (c ^ n * f x) := by rw [pow_mul_eq_pow_mul_of_mul_eq hbc n]
+      _ = f a * (c ^ n * f x) := by rw [TauCeti.pow_mul_eq_pow_mul_of_mul_eq hbc n]
       _ = c ^ n * (f a * f x) := by ring
 
 private noncomputable def principalDpow (hI : DividedPowers I) {x : A} (hx : I = Ideal.span {x})
@@ -383,23 +379,12 @@ private theorem scaledExp_sum_right (hI : DividedPowers I) (f : A →+* B)
     simp [scaledExp_add_right hI f c (hy a (mem_cons_self a s)) (Submodule.sum_mem I hy'),
       ih hy']
 
-private theorem sum_finsuppAntidiag_eq_sum_piAntidiag {ι M : Type*} [DecidableEq ι]
-    [AddCommMonoid M] (s : Finset ι) (n : ℕ) (g : (ι → ℕ) → M) :
-    ∑ e ∈ finsuppAntidiag s n, g e = ∑ e ∈ piAntidiag s n, g e := by
-  refine sum_bij' (fun e _ ↦ (e : ι → ℕ))
-    (fun e he ↦ ⟨s.filter (e · ≠ 0), e, by simpa using (mem_piAntidiag.mp he).2⟩)
-    (fun _ he ↦ mem_piAntidiag.mpr
-      ⟨(mem_finsuppAntidiag.mp he).1, fun _ h ↦ (mem_finsuppAntidiag.mp he).2 (by simpa)⟩)
-    (fun _ he ↦ mem_finsuppAntidiag.mpr ⟨(mem_piAntidiag.mp he).1, filter_subset _ _⟩)
-    (fun _ _ ↦ Finsupp.ext fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
-
 private theorem extCoeff_eq_coeff_prod_scaledExp (hI : DividedPowers I) (f : A →+* B)
     {ι : Type*} [DecidableEq ι] (s : Finset ι) (b : ι → B) (x : ι → A) (n : ℕ) :
     hI.extCoeff f n s b x = PowerSeries.coeff n (∏ i ∈ s, scaledExp hI f (b i) (x i)) := by
-  rw [PowerSeries.coeff_prod, extCoeff_def]
-  simp only [coeff_scaledExp]
-  exact (sum_finsuppAntidiag_eq_sum_piAntidiag s n
-    (fun e ↦ ∏ i ∈ s, b i ^ e i * f (hI.dpow (e i) (x i)))).symm
+  rw [PowerSeries.coeff_prod, extCoeff_def, finsuppAntidiag, sum_map,
+    ← sum_attach (piAntidiag s n)]
+  simp [coeff_scaledExp]
 
 private theorem extCoeff_eq_sum_antidiag_of_prod_eq (hI : DividedPowers I) (f : A →+* B) (n : ℕ)
     {ι ι₁ ι₂ : Type*} [DecidableEq ι] [DecidableEq ι₁] [DecidableEq ι₂]
@@ -651,9 +636,7 @@ private theorem flatDpow_mul (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat
   rw [hmul, flatDpow_sum_eq hI hf n _ fun i _ ↦ hx i,
     flatDpow_sum_eq hI hf n b fun i _ ↦ hx i, extCoeff_smul]
 
-/-- The additive divided-power candidate on `I.map f` associated to a flat ring homomorphism
-`f : A →+* B`. -/
-noncomputable def flatCandidate (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat) :
+private noncomputable def flatCandidate (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat) :
     TauCeti.PD.AdditivePowers (I.map f) where
   dpow := flatDpow hI f
   dpow_null {n z} hz := by classical simp [flatDpow, hz]
@@ -681,18 +664,14 @@ private theorem flatDpow_map_eq (hI : DividedPowers I) {f : A →+* B} (hf : f.F
     (b := fun _ ↦ 1) (x := fun _ ↦ x) (fun _ _ ↦ hx)
   simpa using h
 
-/-- Evaluation of `flatCandidate` on any finite presentation `∑ i ∈ s, b i * f (x i)`
-(`x i ∈ I`). -/
-theorem flatCandidate_dpow_sum (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat) (n : ℕ)
+private theorem flatCandidate_dpow_sum (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat) (n : ℕ)
     {ι : Type*} [DecidableEq ι] {s : Finset ι} (b : ι → B) {x : ι → A}
     (hx : ∀ i ∈ s, x i ∈ I) :
     (hI.flatCandidate hf).dpow n (∑ i ∈ s, b i * f (x i)) = hI.extCoeff f n s b x := by
   rw [flatCandidate_dpow]
   exact flatDpow_sum_eq hI hf n b hx
 
-/-- Evaluation of `flatCandidate` on the image of an element of `I`. -/
-@[simp]
-theorem flatCandidate_dpow_map (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat)
+private theorem flatCandidate_dpow_map (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat)
     (n : ℕ) {x : A} (hx : x ∈ I) :
     (hI.flatCandidate hf).dpow n (f x) = f (hI.dpow n x) := by
   rw [flatCandidate_dpow]
