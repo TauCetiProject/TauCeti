@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.PartitionOfUnity.ChartCutoffs
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
 
 /-!
 # Chart localization of bundle tests
@@ -59,9 +58,6 @@ The converse direction of the universal property is
 * `TauCeti.exists_chart_source_subset_baseSet`: on a boundaryless manifold, every point lies in a
   smooth chart into the model space with smooth inverse, inside the base set of the trivialization
   at that point.
-* `TauCeti.exists_mem_maximalAtlas_source_subset_baseSet`: every point lies in the source of a
-  chart of the maximal atlas inside the base sets of the trivializations at that point of two
-  fiber bundles.
 * `TauCeti.ChartCutoffs.exists_source_subset_baseSet`: on a boundaryless Hausdorff `σ`-compact
   manifold, chart cutoffs whose charts lie inside the base sets of the trivializations.
 * `ContMDiffSection.ChartTestData`: a trivialization together with a chart smooth on its source
@@ -375,22 +371,6 @@ theorem ChartCutoffs.exists_source_subset_baseSet {n : ℕ∞} [FiniteDimensiona
       ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet :=
   ChartCutoffs.exists_source_subset (fun x ↦ (trivializationAt F V x).open_baseSet)
     (FiberBundle.mem_baseSet_trivializationAt' ·)
-
-omit [I.Boundaryless] in
-variable (I F) in
-/-- Every point `x` lies in the source of a chart of the maximal atlas whose source lies in the
-base sets of the trivializations at `x` of two fiber bundles `V` and `W`. -/
-theorem exists_mem_maximalAtlas_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M]
-    (F' : Type*) [TopologicalSpace F'] (W : M → Type*) [∀ x, TopologicalSpace (W x)]
-    [TopologicalSpace (TotalSpace F' W)] [FiberBundle F' W] (x : M) :
-    ∃ c : OpenPartialHomeomorph M H, c ∈ IsManifold.maximalAtlas I n M ∧ x ∈ c.source ∧
-      c.source ⊆ (trivializationAt F V x).baseSet ∧
-        c.source ⊆ (trivializationAt F' W x).baseSet := by
-  obtain ⟨c, he, hxc, hVW⟩ := OpenPartialHomeomorph.exists_mem_maximalAtlas_source_subset
-    (I := I) (n := n)
-    ((trivializationAt F V x).open_baseSet.inter (trivializationAt F' W x).open_baseSet)
-    ⟨FiberBundle.mem_baseSet_trivializationAt' x, FiberBundle.mem_baseSet_trivializationAt' x⟩
-  exact ⟨c, he, hxc, hVW.trans inter_subset_left, hVW.trans inter_subset_right⟩
 
 end TauCeti
 
