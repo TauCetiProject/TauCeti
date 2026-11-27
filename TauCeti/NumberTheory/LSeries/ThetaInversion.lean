@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-public import TauCeti.Analysis.SpecialFunctions.Gaussian.PoissonSummation
 public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.NumberTheory.MulChar.Lemmas
+import TauCeti.Analysis.SpecialFunctions.Gaussian.PoissonSummation
+import TauCeti.NumberTheory.LSeries.GaussianTheta.Poisson
 
 /-!
 # Inversion of Dirichlet theta sums
@@ -64,32 +66,6 @@ theorem tsum_gaussian_eq_zero_add_two_mul_tsum_succ {N : ℕ} [NeZero N]
   · simp
   · simp [hj, zero_pow hj]
 
-private theorem norm_tsum_gaussian_eq_norm_tsum_inv {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) {j : ℕ} (hj : j ≤ 1)
-    {t : ℝ} (ht : 0 < t) :
-    ‖∑' n : ℤ, χ n * W j ((n : ℝ) * t)‖ =
-      (Real.sqrt N * t)⁻¹ * ‖∑' n : ℤ, χ n * W j ((n : ℝ) * (1 / (N * t)))‖ := by
-  have hDFT (n : ℤ) : (𝓕⁻ (χ : ZMod N → ℂ)) n =
-      ((N : ℂ)⁻¹ * gaussSum χ ZMod.stdAddChar) * conj (χ n) := by
-    rw [ZMod.invDFT_apply', hχ.fourierTransform_eq_inv_mul_gaussSum]
-    simp only [neg_neg, smul_eq_mul]
-    rw [← MulChar.star_apply', Complex.star_def]
-    ring
-  have hconj : (∑' n : ℤ, conj (χ n) * W j ((n : ℝ) * (1 / (N * t)))) =
-      conj (∑' n : ℤ, χ n * W j ((n : ℝ) * (1 / (N * t)))) := by
-    simp only [conj_tsum, map_mul, conj_ofReal]
-  rw [ZMod.tsum_periodic_gaussian_eq_invDFT χ hj ht]
-  simp_rw [hDFT, mul_assoc ((N : ℂ)⁻¹ * gaussSum χ ZMod.stdAddChar)]
-  rw [tsum_mul_left, hconj, norm_mul, norm_mul, norm_conj, ← mul_assoc]
-  congr 1
-  simp only [norm_div, norm_pow, norm_neg, norm_I, one_pow,
-    norm_real, Real.norm_eq_abs, abs_of_pos ht, norm_inv, norm_mul, Complex.norm_natCast,
-    χ.norm_gaussSum_stdAddChar hχ]
-  have hN : 0 < (N : ℝ) := Nat.cast_pos.mpr (NeZero.pos N)
-  have hs := Real.sq_sqrt hN.le
-  field_simp [Real.sqrt_pos.mpr hN, ht.ne', hN.ne']
-  nlinarith
-
 /-- The norm of the normalized theta series of a primitive nonprincipal character, with
 matching parity, is invariant under `t ↦ 1 / (N * t)`. Both norms vanish if `t ≤ 0`. -/
 theorem IsPrimitive.norm_gaussianThetaSeries_inv {N : ℕ} [NeZero N]
@@ -98,30 +74,31 @@ theorem IsPrimitive.norm_gaussianThetaSeries_inv {N : ℕ} [NeZero N]
     ‖gaussianThetaSeries j (fun n ↦ χ n) t‖ =
       ‖gaussianThetaSeries j (fun n ↦ χ n) (1 / (N * t))‖ := by
   have hN : 0 < (N : ℝ) := Nat.cast_pos.mpr (NeZero.pos N)
-  have htheta (u : ℝ) : gaussianTheta j (fun n ↦ χ n) u =
-      ∑' n : ℕ, χ (n + 1 : ℕ) * W j.val ((n + 1 : ℕ) * u) := by
-    rw [gaussianTheta_def, tsum_pnat_eq_tsum_succ
-      (f := fun n : ℕ ↦ χ n * gaussianMonomial j (n * u))]
-    simp only [gaussianMonomial_def]
-  simp only [gaussianThetaSeries_def, norm_mul, norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _),
-    htheta]
+  simp only [gaussianThetaSeries_def, norm_mul, norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
   rcases le_or_gt t 0 with ht | ht
   · rw [Real.sqrt_eq_zero_of_nonpos ht, Real.sqrt_eq_zero_of_nonpos
       (one_div_nonpos.mpr (mul_nonpos_of_nonneg_of_nonpos hN.le ht)), zero_mul, zero_mul]
-  -- The missing term at zero vanishes, so the bilateral sum is twice the positive sum.
-  have hq : N ≠ 1 := fun h ↦ hχ₀ (level_one' χ h)
-  have hy : 0 < 1 / ((N : ℝ) * t) := one_div_pos.mpr (mul_pos hN ht)
-  have h := norm_tsum_gaussian_eq_norm_tsum_inv hχ (Nat.le_of_lt_succ j.isLt) ht
-  rw [tsum_gaussian_eq_zero_add_two_mul_tsum_succ χ hpar ht.ne',
-    tsum_gaussian_eq_zero_add_two_mul_tsum_succ χ hpar hy.ne'] at h
-  simp only [χ.map_zero' hq, ite_self, zero_add] at h
-  rw [norm_mul, norm_mul, Complex.norm_two, mul_left_comm ((Real.sqrt N * t)⁻¹),
-    mul_right_inj' (by norm_num : (2 : ℝ) ≠ 0)] at h
-  rw [h, ← mul_assoc, Real.sqrt_div (by norm_num : (0 : ℝ) ≤ 1), Real.sqrt_one,
-    Real.sqrt_mul hN.le]
+  rw [χ.gaussianTheta_eq_invDFT hχ₀ j hpar ht]
+  have hDFT (n : ℕ) : (𝓕⁻ (χ : ZMod N → ℂ)) n =
+      ((N : ℂ)⁻¹ * gaussSum χ ZMod.stdAddChar) * conj (χ n) := by
+    rw [ZMod.invDFT_apply', hχ.fourierTransform_eq_inv_mul_gaussSum]
+    simp only [neg_neg, smul_eq_mul, ← MulChar.star_apply', Complex.star_def]
+    ring
+  let v := 1 / ((N : ℝ) * t)
+  have hconj : (∑' n : ℕ+, conj (χ (n : ℕ)) * gaussianMonomial j (n * v)) =
+      conj (∑' n : ℕ+, χ (n : ℕ) * gaussianMonomial j (n * v)) := by
+    simp only [conj_tsum, map_mul, conj_ofReal]
+  rw [gaussianTheta_def, gaussianTheta_def]
+  simp_rw [hDFT, mul_assoc ((N : ℂ)⁻¹ * gaussSum χ ZMod.stdAddChar)]
+  rw [tsum_mul_left, hconj]
+  simp only [norm_mul, norm_div, norm_pow, norm_neg, norm_I, one_pow, norm_real,
+    Real.norm_eq_abs, abs_of_pos ht, norm_inv, Complex.norm_natCast, norm_conj,
+    χ.norm_gaussSum_stdAddChar hχ, Real.sqrt_div zero_le_one, Real.sqrt_one, Real.sqrt_mul hN.le]
+  simp only [v, ← mul_assoc]
   congr 1
-  have hs := Real.sq_sqrt ht.le
-  field_simp [Real.sqrt_pos.mpr hN, Real.sqrt_pos.mpr ht, ht.ne']
+  have ht₂ := Real.sq_sqrt ht.le
+  have hN₂ := Real.sq_sqrt hN.le
+  field_simp [Real.sqrt_pos.mpr hN, Real.sqrt_pos.mpr ht, ht.ne', hN.ne']
   nlinarith
 
 end DirichletCharacter
