@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Preadditive.SingleObj
+public import Mathlib.CategoryTheory.SingleObj
 public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
+public import TauCeti.CategoryTheory.VonNeumannRegular
 public import TauCeti.RingTheory.VonNeumannRegular
 
 /-!
@@ -27,31 +28,9 @@ namespace TauCeti
 
 open CategoryTheory
 
-/-- A preadditive category is von Neumann regular if every morphism has an inner inverse. -/
-class IsVonNeumannRegularCategory (C : Type*) [Category* C] [Preadditive C] : Prop where
-  exists_comp_comp_eq_self ⦃X Y : C⦄ (f : X ⟶ Y) : ∃ g : Y ⟶ X, f ≫ g ≫ f = f
-
 namespace IsVonNeumannRegularCategory
 
 variable {C : Type*} [Category* C] [Preadditive C]
-
-/-- Von Neumann regularity is invariant under passing to the opposite category. -/
-@[simp]
-theorem op_iff : IsVonNeumannRegularCategory Cᵒᵖ ↔ IsVonNeumannRegularCategory C := by
-  constructor
-  · intro h
-    constructor
-    intro X Y f
-    obtain ⟨g, hg⟩ := h.exists_comp_comp_eq_self f.op
-    refine ⟨g.unop, ?_⟩
-    simpa only [unop_comp, Quiver.Hom.unop_op, Category.assoc]
-      using congrArg Quiver.Hom.unop hg
-  · intro h
-    constructor
-    intro X Y f
-    obtain ⟨g, hg⟩ := h.exists_comp_comp_eq_self f.unop
-    exact ⟨g.op, Quiver.Hom.unop_inj (by simpa only [unop_comp, Quiver.Hom.unop_op,
-      Category.assoc] using hg)⟩
 
 /-- Endomorphism rings in a von Neumann regular category are von Neumann regular. -/
 instance [IsVonNeumannRegularCategory C] (X : C) : IsVonNeumannRegularRing (End X) where
@@ -60,6 +39,7 @@ instance [IsVonNeumannRegularCategory C] (X : C) : IsVonNeumannRegularRing (End 
     exact ⟨End.of g, End.ext (by simpa only [End.mul_asHom, Category.assoc] using hg)⟩
 
 /-- A von Neumann regular category has zero Jacobson radical. -/
+@[simp]
 theorem jacobsonRadicalIdeal_eq_bot [IsVonNeumannRegularCategory C] :
     jacobsonRadicalIdeal C = ⊥ := by
   refine eq_bot_iff.mpr (MorphismIdeal.le_def.mpr fun X Y f hf ↦ MorphismIdeal.mem_bot.mpr ?_)
@@ -72,9 +52,9 @@ theorem jacobsonRadicalIdeal_eq_bot [IsVonNeumannRegularCategory C] :
 
 end IsVonNeumannRegularCategory
 
-/-- The one-object category of a ring is von Neumann regular exactly when the ring is. -/
+/-- The one-object category of a semiring is von Neumann regular exactly when the semiring is. -/
 @[simp]
-theorem isVonNeumannRegularCategory_singleObj_iff (R : Type*) [Ring R] :
+theorem isVonNeumannRegularCategory_singleObj_iff (R : Type*) [Semiring R] :
     IsVonNeumannRegularCategory (SingleObj R) ↔ IsVonNeumannRegularRing R := by
   constructor
   · intro h

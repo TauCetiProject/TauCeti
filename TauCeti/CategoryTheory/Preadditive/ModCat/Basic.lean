@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
+import TauCeti.CategoryTheory.Projective.Images
 
 /-!
 # Modules over a preadditive category
@@ -89,6 +90,19 @@ instance (X : C) : Projective ((yoneda C).obj X) where
     have : Epi π.hom := (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.map_epi π
     obtain ⟨s, hs⟩ := exists_comp_eq_preadditiveYoneda_obj_of_epi π.hom g.hom
     exact ⟨ObjectProperty.homMk s, ObjectProperty.hom_ext _ hs⟩
+
+/-- The image of a map between representable modules is a direct summand precisely when the
+representing morphism has an inner inverse. -/
+theorem _root_.Quiver.Hom.isSplitMono_image_ι_yoneda_map_iff {X Y : C} (f : X ⟶ Y) :
+    IsSplitMono (image.ι ((yoneda C).map f)) ↔ ∃ g : Y ⟶ X, f ≫ g ≫ f = f := by
+  let F := yoneda C
+  rw [(F.map f).isSplitMono_image_ι_iff_exists_comp_comp_eq_self]
+  constructor
+  · rintro ⟨g, hg⟩
+    obtain ⟨g', rfl⟩ := F.map_surjective g
+    exact ⟨g', F.map_injective (by simpa only [Functor.map_comp] using hg)⟩
+  · rintro ⟨g, hg⟩
+    exact ⟨F.map g, by simpa only [Functor.map_comp] using congrArg F.map hg⟩
 
 end ModCat
 
