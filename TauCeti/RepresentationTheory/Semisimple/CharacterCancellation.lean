@@ -188,10 +188,13 @@ theorem exists_subrepresentation_character_eq_sub_sum [CharZero k] [FiniteDimens
     have hf : Function.Injective f := σ.subtype_injective.comp τ.subtype_injective
     let e' := f.equivOfRange hf (IntertwiningMap.range_toSubmodule _ _ f).symm
     refine ⟨f.range, ?_, fun g ↦ ?_⟩
-    · rw [← e'.toLinearEquiv.finrank_eq, Finset.card_insert_of_notMem hi, ← hσr,
-        e.toLinearEquiv.finrank_eq, finrank_prod, finrank_self]
-      ring
-    · rw [← char_iso e', Finset.sum_insert hi, ← sub_sub, sub_right_comm, ← hσc, char_iso e,
-        char_prod, char_ofLinearCharacter, add_sub_cancel_right]
+    · have hσd := e.toLinearEquiv.finrank_eq
+      rw [finrank_prod, finrank_self] at hσd
+      rw [← e'.toLinearEquiv.finrank_eq, Finset.card_insert_of_notMem hi]
+      omega
+    · have hσg := hσc g
+      rw [char_iso e, char_prod, char_ofLinearCharacter] at hσg
+      rw [← char_iso e', Finset.sum_insert hi]
+      linear_combination hσg
 
 end Representation

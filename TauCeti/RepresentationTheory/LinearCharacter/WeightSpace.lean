@@ -45,9 +45,9 @@ theorem weightSpace_ofLinearCharacter_eq_bot [CommRing k] [NoZeroDivisors k] {ψ
     exact h (MonoidHom.ext fun g ↦ Units.ext (H g))
   refine eq_bot_iff.mpr fun x hx ↦ (Submodule.mem_bot k).mpr ?_
   have hx := mem_weightSpace.mp hx g
-  rw [ofLinearCharacter_apply, MonoidHom.comp_apply, Units.coeHom_apply, smul_eq_mul,
-    mul_comm] at hx
-  have hx' : x * ((ψ g : k) - χ g) = 0 := by rw [mul_sub, hx, mul_comm, sub_self]
+  simp only [ofLinearCharacter_apply, MonoidHom.comp_apply, Units.coeHom_apply,
+    smul_eq_mul] at hx
+  have hx' : x * ((ψ g : k) - χ g) = 0 := by linear_combination hx
   exact (mul_eq_zero.mp hx').resolve_right (sub_ne_zero.mpr hg)
 
 /-- Every vector of the line of `χ` is acted on through `χ`. -/
@@ -55,6 +55,6 @@ theorem weightSpace_ofLinearCharacter_eq_bot [CommRing k] [NoZeroDivisors k] {ψ
 theorem weightSpace_ofLinearCharacter_self [CommSemiring k] (χ : G →* kˣ) :
     (ofLinearCharacter χ).weightSpace ((Units.coeHom k).comp χ) = ⊤ :=
   eq_top_iff.mpr fun x _ ↦ mem_weightSpace.mpr fun g ↦ by
-    rw [ofLinearCharacter_apply, MonoidHom.comp_apply, Units.coeHom_apply, smul_eq_mul, mul_comm]
+    simp [ofLinearCharacter_apply, mul_comm]
 
 end Representation
