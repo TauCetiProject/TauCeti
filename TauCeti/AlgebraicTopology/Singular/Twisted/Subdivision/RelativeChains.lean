@@ -17,9 +17,9 @@ ambient subdivision and prism of `LocalCoefficientSystem` using `TopPair.twisted
 and `Homotopy.descCokernel`.
 In positive degrees, `TopPair.twistedPrismX_boundary_add_boundary_twistedPrismX` gives
 the relative prism identity `∂T + T∂ = id - Sd` from `Homotopy.comm`.
-Both operators are natural in pairs and local coefficients, and subdivision induces the identity on
-relative homology compatibly with the pair sequence (Hatcher, *Algebraic Topology*, §2.1,
-proof of Proposition 2.21, and §3.H).
+Both operators are natural in pairs and local coefficients, and
+`TopPair.homologyMap_twistedSubdivisionChainMap` identifies subdivision with the identity on
+relative homology (Hatcher, *Algebraic Topology*, §2.1, proof of Proposition 2.21, and §3.H).
 -/
 
 public section
@@ -133,24 +133,6 @@ lemma twistedPrismX_boundary_add_boundary_twistedPrismX (n : ℕ) :
 lemma homologyMap_twistedSubdivisionChainMap (n : ℕ) :
     HomologicalComplex.homologyMap (P.twistedSubdivisionChainMap L) n = 𝟙 _ := by
   rw [← (P.twistedSubdivisionHomotopy L).homologyMap_eq n, HomologicalComplex.homologyMap_id]
-
-/-- Subdivision commutes with the connecting morphism of the pair from degree `n` to degree `m`,
-where `m + 1 = n`. -/
-@[reassoc]
-lemma twistedHomologyδ_naturality_subdivision (n m : ℕ) (h : m + 1 = n := by lia) :
-    P.twistedHomologyδ L n m h ≫
-        HomologicalComplex.homologyMap (P.subspaceSystem L).twistedSubdivisionChainMap m =
-      HomologicalComplex.homologyMap (P.twistedSubdivisionChainMap L) n ≫
-        P.twistedHomologyδ L n m h := by
-  let S := P.twistedChainComplexShortComplex L
-  let sd : S ⟶ S :=
-    ShortComplex.homMk (P.subspaceSystem L).twistedSubdivisionChainMap
-      L.twistedSubdivisionChainMap (P.twistedSubdivisionChainMap L)
-      (LocalCoefficientSystem.twistedChainComplexMap_comp_twistedSubdivisionChainMap P.map L).symm
-      (P.twistedChainComplexπ_comp_twistedSubdivisionChainMap L).symm
-  exact HomologicalComplex.HomologySequence.δ_naturality sd
-    (P.shortExact_twistedChainComplexShortComplex L)
-    (P.shortExact_twistedChainComplexShortComplex L) n m (by simpa using h)
 
 variable {P} {Q : TopPair.{v}} (f : P ⟶ Q)
   (K : LocalCoefficientSystem.{u, v, max v w} R Q.fst)
