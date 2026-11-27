@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Analysis.Holder.IsBigO
+import TauCeti.Analysis.Holder.MeanValue
+import TauCeti.Analysis.Normed.Operator.Holder
 
 /-!
 # Hölder continuity of the top derivative of a composite
@@ -28,6 +30,12 @@ resulting estimate gives a Hölder bound on a ball (`Asymptotics.IsBigO.exists_h
 
 This is the estimate behind the independence of the Hölder spaces `C^{k,α}` of a compact manifold
 from the choice of charts: with `τ` a transition map between two charts.
+
+In the other order, a `C²` map `g` after a `C¹` map `p` with `α`-Hölder derivative has
+`α`-Hölder derivative on a ball (`TauCeti.exists_ball_contDiffOn_holderOnWith_fderiv_comp`): the
+derivative `Dg(p x) ∘ Dp(x)` is a bilinear expression in the factor `Dg ∘ p`, which is `C¹` and
+hence Lipschitz on a closed ball, and in the Hölder factor `Dp`. This is how a coefficient field
+built from `C^{1,α}` functions by smooth operations stays of class `C^{1,α}`.
 -/
 
 public section
@@ -114,5 +122,54 @@ theorem exists_holderOnWith_iteratedFDerivWithin_comp (hα : α ≤ 1) (hs : s �
         (eventuallyEqSet_univ.mpr (mem_interior_iff_mem_nhds.mp hz)).symm) k
   filter_upwards [prod_mem_prod hs' hs'] with a ha
   rw [hint _ ha.1, hint _ ha.2]
+
+/-- **A `C²` map after a `C^{1,α}` map is `C^{1,α}`.** If `p` is `C¹` on a neighbourhood `s` of
+`z₀` with `α`-Hölder derivative there, `α ≤ 1`, and `g` is `C²` at `p z₀`, then `g ∘ p` is `C¹`
+with `α`-Hölder derivative on a ball around `z₀`. -/
+theorem exists_ball_contDiffOn_holderOnWith_fderiv_comp {E V W : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+    [NormedSpace ℝ W] {g : V → W} {p : E → V} {s : Set E} {z₀ : E} {α C : ℝ≥0} (hα : α ≤ 1)
+    (hs : s ∈ 𝓝 z₀) (hp : ContDiffOn ℝ 1 p s) (hpH : HolderOnWith C α (fderiv ℝ p) s)
+    (hg : ContDiffAt ℝ 2 g (p z₀)) :
+    ∃ r > 0, Metric.ball z₀ r ⊆ s ∧ ContDiffOn ℝ 1 (g ∘ p) (Metric.ball z₀ r) ∧
+      ∃ K, HolderOnWith K α (fderiv ℝ (g ∘ p)) (Metric.ball z₀ r) := by
+  obtain ⟨t, ht, hgt⟩ := hg.contDiffOn (m := 2) le_rfl (by simp)
+  have hgt' : ContDiffOn ℝ 2 g (interior t) := hgt.mono interior_subset
+  have hps : ContDiffOn ℝ 1 p (interior s) := hp.mono interior_subset
+  -- The open set `U` on which `p` is `C¹` and `g` is `C²` near the values of `p`.
+  set U := interior s ∩ p ⁻¹' interior t
+  have hU : U ∈ 𝓝 z₀ :=
+    inter_mem (interior_mem_nhds.mpr hs) ((hp.continuousOn.continuousAt hs).preimage_mem_nhds
+      (interior_mem_nhds.mpr ht))
+  have hmaps : MapsTo p U (interior t) := fun _ hx ↦ hx.2
+  -- The factor `x ↦ Dg (p x)` is `C¹`, so Lipschitz near `z₀`; both factors are bounded there.
+  have hDg : ContDiffOn ℝ 1 (fun x ↦ fderiv ℝ g (p x)) U :=
+    (hgt'.fderiv_of_isOpen isOpen_interior (by norm_num)).comp
+      (hps.mono inter_subset_left) hmaps
+  have hDp : ContinuousOn (fderiv ℝ p) U :=
+    (hps.continuousOn_fderiv_of_isOpen isOpen_interior le_rfl).mono inter_subset_left
+  obtain ⟨L, t', ht', hL⟩ := (hDg.contDiffAt hU).exists_lipschitzOnWith
+  obtain ⟨r, hr, hrU⟩ := Metric.eventually_nhds_iff_ball.mp <|
+    (Filter.Eventually.and (eventually_mem_set.2 hU) (eventually_mem_set.2 ht')).and <|
+    ((hDg.continuousOn.continuousAt hU).norm.eventually_lt_const (lt_add_one _)).and
+      ((hDp.continuousAt hU).norm.eventually_lt_const (lt_add_one _))
+  have hball : Metric.ball z₀ r ⊆ U := fun x hx ↦ (hrU x hx).1.1
+  have hK₁ := (hL.mono fun x hx ↦ (hrU x hx).1.2).holderOnWith_of_norm_le
+    (M := (‖fderiv ℝ g (p z₀)‖ + 1).toNNReal)
+    (fun x hx ↦ (hrU x hx).2.1.le.trans (Real.le_coe_toNNReal _)) hα
+  have hprod := (ContinuousLinearMap.compL ℝ E V W).holderOnWith_comp₂ hK₁
+    (hpH.mono (hball.trans (inter_subset_left.trans interior_subset)))
+    (Mf := (‖fderiv ℝ g (p z₀)‖ + 1).toNNReal) (Mg := (‖fderiv ℝ p z₀‖ + 1).toNNReal)
+    (fun x hx ↦ (hrU x hx).2.1.le.trans (Real.le_coe_toNNReal _))
+    (fun x hx ↦ (hrU x hx).2.2.le.trans (Real.le_coe_toNNReal _))
+  refine ⟨r, hr, hball.trans (inter_subset_left.trans interior_subset),
+    ((hgt'.of_le (by norm_num)).comp (hps.mono inter_subset_left) hmaps).mono hball, _,
+    hprod.congr fun x hx ↦ ?_⟩
+  -- The chain rule at points of the ball.
+  have hpx : DifferentiableAt ℝ p x :=
+    (hps.contDiffAt (isOpen_interior.mem_nhds (hball hx).1)).differentiableAt one_ne_zero
+  have hgx : DifferentiableAt ℝ g (p x) :=
+    (hgt'.contDiffAt (isOpen_interior.mem_nhds (hball hx).2)).differentiableAt two_ne_zero
+  simp [fderiv_comp x hgx hpx]
 
 end TauCeti
