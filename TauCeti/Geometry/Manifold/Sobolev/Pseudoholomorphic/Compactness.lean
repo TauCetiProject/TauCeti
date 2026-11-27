@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.TendstoAt
 import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Compactness.Uniform
@@ -74,25 +74,6 @@ open scoped Manifold ContDiff Topology NNReal TauCeti.ComplexManifold
 
 namespace TauCeti
 
-/-- Around each point `z₀` of an open set `T` of a normed space there is a closed ball inside `T`
-and a smooth map with values in `T` that is the identity on that ball. -/
-private theorem exists_closedBall_contDiff_mapsTo_eqOn {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [HasContDiffBump E] {T : Set E} (hT : IsOpen T) {z₀ : E} (hz₀ : z₀ ∈ T) :
-    ∃ r > 0, closedBall z₀ r ⊆ T ∧ ∃ c : E → E, ContDiff ℝ ∞ c ∧ (∀ z, c z ∈ T) ∧
-      ∀ z ∈ closedBall z₀ r, c z = z := by
-  obtain ⟨ε, hε, hεT⟩ := Metric.isOpen_iff.1 hT z₀ hz₀
-  set r := ε / 3 with hr_def
-  have hr : 0 < r := by positivity
-  let χ : ContDiffBump z₀ := ⟨r, 2 * r, hr, by linarith⟩
-  refine ⟨r, hr, (closedBall_subset_ball (by linarith)).trans hεT, fun z ↦ z₀ + χ z • (z - z₀),
-    contDiff_const.add (χ.contDiff.smul (contDiff_id.sub contDiff_const)), fun z ↦ hεT ?_,
-    fun z hz ↦ by simp [χ.one_of_mem_closedBall hz]⟩
-  rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg χ.nonneg]
-  by_cases hz : ‖z - z₀‖ < ε
-  · exact (mul_le_of_le_one_left (norm_nonneg _) χ.le_one).trans_lt hz
-  · rw [χ.zero_of_le_dist (by rw [dist_eq_norm]; simp only [χ]; linarith), zero_mul]
-    exact hε
-
 variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) ∞ X]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {J : ℕ → ContMDiffAlmostComplexStructureFamily 𝓘(ℝ, V) V 𝓘(ℝ, ℂ) X ⊤}
@@ -119,42 +100,6 @@ private theorem isWeakCauchyRiemannOn_chartAt
   exact h'.mono fun z hz ↦ ⟨hW hz, hWs hz, by simp⟩
 
 omit [FiniteDimensional ℝ V] in
-/-- In a preferred chart of `X` and the identity chart of `V`, a structure is smooth on
-`(chartAt ℂ x).target ×ˢ univ`. -/
-private theorem contDiffOn_chartField_refl
-    (J' : ContMDiffAlmostComplexStructureFamily 𝓘(ℝ, V) V 𝓘(ℝ, ℂ) X ⊤) (x : X) :
-    ContDiffOn ℝ ∞
-      (fun q : ℂ × V ↦ J'.chartField (chartAt ℂ x) (OpenPartialHomeomorph.refl V) q.1 q.2)
-      ((chartAt ℂ x).target ×ˢ univ) := by
-  simpa only [OpenPartialHomeomorph.extendTrans_modelWithCornersSelf_refl, chartAt_self_eq,
-    extChartAt_model_space_eq_id, PartialEquiv.refl_target] using
-    J'.contDiffOn_chartField_chartAt x (0 : V)
-
-omit [FiniteDimensional ℝ V] in
-/-- In a preferred chart of `X` and the identity chart of `V`, an inhomogeneous term is smooth on
-`(chartAt ℂ x).target ×ˢ univ`. -/
-private theorem contDiffOn_chartTerm_refl
-    {J' : ContMDiffAlmostComplexStructureFamily 𝓘(ℝ, V) V 𝓘(ℝ, ℂ) X ⊤}
-    (ν' : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ⊤) J')
-    (x : X) :
-    ContDiffOn ℝ ∞
-      (fun q : ℂ × V ↦ ν'.chartTerm (chartAt ℂ x) (OpenPartialHomeomorph.refl V) q.1 q.2)
-      ((chartAt ℂ x).target ×ˢ univ) := by
-  simpa only [OpenPartialHomeomorph.extendTrans_modelWithCornersSelf_refl, chartAt_self_eq,
-    extChartAt_model_space_eq_id, PartialEquiv.refl_target] using
-    ν'.contDiffOn_chartTerm_chartAt x (0 : V)
-
-omit [IsManifold 𝓘(ℂ) ∞ X] [FiniteDimensional ℝ V] in
-/-- In a preferred chart of `X` and the identity chart of `V`, a structure squares to `-1`. -/
-private theorem chartField_refl_mul_self
-    (J' : ContMDiffAlmostComplexStructureFamily 𝓘(ℝ, V) V 𝓘(ℝ, ℂ) X ⊤) (x : X) (z : ℂ) (y : V) :
-    J'.chartField (chartAt ℂ x) (OpenPartialHomeomorph.refl V) z y *
-      J'.chartField (chartAt ℂ x) (OpenPartialHomeomorph.refl V) z y = -1 := by
-  have h := J'.chartField_chartAt_apply_apply x (0 : V) z (v := y) (by simp)
-  simp only [OpenPartialHomeomorph.extendTrans_modelWithCornersSelf_refl, chartAt_self_eq] at h
-  exact ContinuousLinearMap.ext h
-
-omit [FiniteDimensional ℝ V] in
 /-- On a ball on whose closure `c` is the identity, composing the data with `c` does not change the
 planar equation. -/
 private theorem isWeakCauchyRiemannOn_ball_comp_iff {p : ENNReal} {z₀ : ℂ} {r : ℝ} {c : ℂ → ℂ}
@@ -166,20 +111,50 @@ private theorem isWeakCauchyRiemannOn_ball_comp_iff {p : ENNReal} {z₀ : ℂ} {
     rw [hc z (ball_subset_closedBall (interior_subset hz))]
 
 omit [FiniteDimensional ℝ V] in
-/-- Composing data on `T ×ˢ univ` converging in `C^∞` with the smooth map `(z, y) ↦ (c z, y)`,
-for `c` with values in `T`, gives data on `ℂ × V` converging in `C^∞`. -/
-private theorem tendstoLocallyUniformly_iteratedFDeriv_comp_prodMap {G : Type*}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {T : Set ℂ} (hT : IsOpen T) {f : ℕ → ℂ × V → G}
-    {f₀ : ℂ × V → G} (hf : ∀ n, ContDiffOn ℝ ∞ (f n) (T ×ˢ univ))
-    (hf₀ : ContDiffOn ℝ ∞ f₀ (T ×ˢ univ))
-    (hconv : ∀ k : ℕ, TendstoLocallyUniformlyOn (fun n ↦ iteratedFDeriv ℝ k (f n))
-      (iteratedFDeriv ℝ k f₀) atTop (T ×ˢ univ))
-    {c : ℂ → ℂ} (hc : ContDiff ℝ ∞ c) (hcT : ∀ z, c z ∈ T) (k : ℕ) :
-    TendstoLocallyUniformly (fun n ↦ iteratedFDeriv ℝ k (f n ∘ Prod.map c id))
-      (iteratedFDeriv ℝ k (f₀ ∘ Prod.map c id)) atTop :=
-  tendstoLocallyUniformlyOn_univ.1 (tendstoLocallyUniformlyOn_iteratedFDeriv_comp
-    (hT.prod isOpen_univ) isOpen_univ (fun q _ ↦ mk_mem_prod (hcT q.1) (mem_univ q.2))
-    (Eventually.of_forall hf) hf₀ (hc.prodMap contDiff_id).contDiffOn (fun k _ ↦ hconv k) k le_top)
+/-- Composed with `(z, y) ↦ (c z, y)` for a smooth `c` with values in a preferred chart target,
+the chart data of `J n` and `ν n` are smooth on `ℂ × V` and converge in `C^∞` to those of `J₀`
+and `ν₀`. -/
+private theorem contDiff_tendstoLocallyUniformly_chartData_comp
+    (hJt : ∀ (x : X) (k : ℕ), TendstoLocallyUniformlyOn
+      (fun n ↦ iteratedFDeriv ℝ k fun q : ℂ × V ↦
+        (J n).chartField (chartAt ℂ x) (OpenPartialHomeomorph.refl V) q.1 q.2)
+      (iteratedFDeriv ℝ k fun q : ℂ × V ↦
+        J₀.chartField (chartAt ℂ x) (OpenPartialHomeomorph.refl V) q.1 q.2)
+      atTop ((chartAt ℂ x).target ×ˢ univ))
+    (hνt : ∀ (x : X) (k : ℕ), TendstoLocallyUniformlyOn
+      (fun n ↦ iteratedFDeriv ℝ k fun q : ℂ × V ↦
+        (ν n).chartTerm (chartAt ℂ x) (OpenPartialHomeomorph.refl V) q.1 q.2)
+      (iteratedFDeriv ℝ k fun q : ℂ × V ↦
+        ν₀.chartTerm (chartAt ℂ x) (OpenPartialHomeomorph.refl V) q.1 q.2)
+      atTop ((chartAt ℂ x).target ×ˢ univ))
+    (x : X) {c : ℂ → ℂ} (hc : ContDiff ℝ ∞ c) (hcT : ∀ z, c z ∈ (chartAt ℂ x).target) :
+    (∀ n, ContDiff ℝ ∞ fun q : ℂ × V ↦
+      (J n).chartField (chartAt ℂ x) (OpenPartialHomeomorph.refl V) (c q.1) q.2) ∧
+    (∀ n, ContDiff ℝ ∞ fun q : ℂ × V ↦
+      (ν n).chartTerm (chartAt ℂ x) (OpenPartialHomeomorph.refl V) (c q.1) q.2) ∧
+    (∀ k : ℕ, TendstoLocallyUniformly
+      (fun n ↦ iteratedFDeriv ℝ k fun q : ℂ × V ↦
+        (J n).chartField (chartAt ℂ x) (OpenPartialHomeomorph.refl V) (c q.1) q.2)
+      (iteratedFDeriv ℝ k fun q : ℂ × V ↦
+        J₀.chartField (chartAt ℂ x) (OpenPartialHomeomorph.refl V) (c q.1) q.2) atTop) ∧
+    ∀ k : ℕ, TendstoLocallyUniformly
+      (fun n ↦ iteratedFDeriv ℝ k fun q : ℂ × V ↦
+        (ν n).chartTerm (chartAt ℂ x) (OpenPartialHomeomorph.refl V) (c q.1) q.2)
+      (iteratedFDeriv ℝ k fun q : ℂ × V ↦
+        ν₀.chartTerm (chartAt ℂ x) (OpenPartialHomeomorph.refl V) (c q.1) q.2) atTop := by
+  have hg : ContDiff ℝ ∞ (Prod.map c id : ℂ × V → ℂ × V) := hc.prodMap contDiff_id
+  have hgT : MapsTo (Prod.map c id : ℂ × V → ℂ × V) univ ((chartAt ℂ x).target ×ˢ univ) :=
+    fun q _ ↦ mk_mem_prod (hcT q.1) (mem_univ q.2)
+  have hopen := (chartAt ℂ x).open_target.prod (isOpen_univ (X := V))
+  refine ⟨fun n ↦ ((J n).contDiffOn_chartField_chartAt_refl x).comp_contDiff hg fun _ ↦ hgT trivial,
+    fun n ↦ ((ν n).contDiffOn_chartTerm_chartAt_refl x).comp_contDiff hg fun _ ↦ hgT trivial,
+    fun k ↦ tendstoLocallyUniformlyOn_univ.1 ?_, fun k ↦ tendstoLocallyUniformlyOn_univ.1 ?_⟩
+  · exact tendstoLocallyUniformlyOn_iteratedFDeriv_comp hopen isOpen_univ hgT
+      (Eventually.of_forall fun n ↦ (J n).contDiffOn_chartField_chartAt_refl x)
+      (J₀.contDiffOn_chartField_chartAt_refl x) hg.contDiffOn (fun k _ ↦ hJt x k) k le_top
+  · exact tendstoLocallyUniformlyOn_iteratedFDeriv_comp hopen isOpen_univ hgT
+      (Eventually.of_forall fun n ↦ (ν n).contDiffOn_chartTerm_chartAt_refl x)
+      (ν₀.contDiffOn_chartTerm_chartAt_refl x) hg.contDiffOn (fun k _ ↦ hνt x k) k le_top
 
 /-- **The local step.** Near each point `z₀` of a preferred chart target of `X` there is a ball on
 which, along every subsequence, a further subsequence of the chart expressions of the `u n`
@@ -214,12 +189,14 @@ private theorem exists_ball_forall_exists_subseq (hp : 2 < p)
           (fun n ↦ iteratedFDeriv ℝ k (u (ψ (ψ' n)) ∘ (chartAt ℂ x).symm))
           (iteratedFDeriv ℝ k w) atTop (ball z₀ r) := by
   set φ := chartAt ℂ x
-  -- A smooth map `c` of `ℂ` into the chart target, equal to the identity on `closedBall z₀ r`;
-  -- composing the chart data with `c` gives smooth data on `ℂ × V`, converging in `C^∞`.
-  obtain ⟨r, hr, hcl, c, hc, hcT, hcid⟩ := exists_closedBall_contDiff_mapsTo_eqOn φ.open_target hz₀
-  have hg : ContDiff ℝ ∞ (Prod.map c id : ℂ × V → ℂ × V) := hc.prodMap contDiff_id
-  have hdata {F : ℂ → V → V →L[ℝ] V} {G : ℂ → V → V} {w : ℂ → V} :=
-    isWeakCauchyRiemannOn_ball_comp_iff (p := p) (F := F) (G := G) (w := w) hcid
+  -- A smooth `c : ℂ → φ.target` equal to the identity on `closedBall z₀ r`.
+  obtain ⟨ε, hε, hεT⟩ := Metric.isOpen_iff.1 φ.open_target z₀ hz₀
+  obtain ⟨c, hc, hcε, hcid, -⟩ := exists_contDiff_cutoff_self z₀ (half_pos hε) (half_lt_self hε)
+  set r := ε / 2
+  have hcl : closedBall z₀ r ⊆ φ.target := (closedBall_subset_ball (half_lt_self hε)).trans hεT
+  have hcT (z : ℂ) : c z ∈ φ.target := hεT (hcε z)
+  obtain ⟨hJs, hνs, hJc, hνc⟩ :=
+    contDiff_tendstoLocallyUniformly_chartData_comp hJt hνt x hc hcT
   -- From some index `N` on, the hypotheses hold uniformly over the ball.
   set K₀ := φ.symm '' closedBall z₀ r
   have hK₀ : IsCompact K₀ :=
@@ -230,7 +207,7 @@ private theorem exists_ball_forall_exists_subseq (hp : 2 < p)
   obtain ⟨C, hCev⟩ := hd x W ((isCompact_closedBall z₀ r).of_isClosed_subset isClosed_closure hWcl)
     (hWcl.trans hcl)
   obtain ⟨N, hN⟩ := eventually_atTop.1 ((hU K₀ hK₀).and (hKev.and hCev))
-  refine ⟨r, hr, ball_subset_closedBall.trans hcl, fun ψ hψ ↦ ?_⟩
+  refine ⟨r, half_pos hε, ball_subset_closedBall.trans hcl, fun ψ hψ ↦ ?_⟩
   have hNψ (n : ℕ) : N ≤ ψ (N + n) := (Nat.le_add_right N n).trans (hψ.id_le _)
   have hshift : Tendsto (fun n ↦ ψ (N + n)) atTop atTop :=
     (hψ.comp fun _ _ h ↦ Nat.add_lt_add_left h N).tendsto_atTop
@@ -244,23 +221,18 @@ private theorem exists_ball_forall_exists_subseq (hp : 2 < p)
       (J₀ := fun z ↦ J₀.chartField φ (OpenPartialHomeomorph.refl V) (c z))
       (η₀ := fun z ↦ ν₀.chartTerm φ (OpenPartialHomeomorph.refl V) (c z))
       (u := fun n ↦ u (ψ (N + n)) ∘ φ.symm)
-      (fun _ ↦ (contDiffOn_chartField_refl _ x).comp_contDiff hg fun q ↦ ⟨hcT q.1, mem_univ _⟩)
-      (fun _ ↦ (contDiffOn_chartTerm_refl _ x).comp_contDiff hg fun q ↦ ⟨hcT q.1, mem_univ _⟩)
-      (fun k ↦ (tendstoLocallyUniformly_iteratedFDeriv_comp_prodMap φ.open_target
-        (fun _ ↦ contDiffOn_chartField_refl _ x) (contDiffOn_chartField_refl J₀ x) (hJt x) hc hcT
-        k).comp_tendsto hshift)
-      (fun k ↦ (tendstoLocallyUniformly_iteratedFDeriv_comp_prodMap φ.open_target
-        (fun _ ↦ contDiffOn_chartTerm_refl _ x) (contDiffOn_chartTerm_refl ν₀ x) (hνt x) hc hcT
-        k).comp_tendsto hshift)
-      (fun _ ↦ Eventually.of_forall fun _ ↦ chartField_refl_mul_self _ x _ _)
-      (fun n ↦ hdata.2 (isWeakCauchyRiemannOn_chartAt (hu _) x (ball_subset_closedBall.trans hcl)
-        (hmaps.mono_right (hN _ (hNψ n)).1)))
+      (fun n ↦ hJs _) (fun n ↦ hνs _) (fun k ↦ (hJc k).comp_tendsto hshift)
+      (fun k ↦ (hνc k).comp_tendsto hshift)
+      (fun n ↦ Eventually.of_forall fun _ ↦ (J _).chartField_refl_mul_self _ _ _)
+      (fun n ↦ (isWeakCauchyRiemannOn_ball_comp_iff hcid).2 (isWeakCauchyRiemannOn_chartAt (hu _) x
+        (ball_subset_closedBall.trans hcl) (hmaps.mono_right (hN _ (hNψ n)).1)))
       (fun Q hQW _ ↦ ⟨K, hK, fun n z hz ↦ (hN _ (hNψ n)).2.1 (hmaps (hQW hz))⟩)
       fun W' _ hW'W ↦ ⟨C, fun n ↦ (hN _ (hNψ n)).2.2.imp fun D hD ↦
         ⟨hD.1.mono (subset_closure.trans hW'W),
           (eLpNorm_mono_measure _ (Measure.restrict_mono (subset_closure.trans hW'W) le_rfl)).trans
             hD.2⟩⟩
-  exact ⟨fun n ↦ N + ψ' n, fun m n hmn ↦ by simpa using hψ' hmn, w, hdata.1 hw, hconv⟩
+  exact ⟨fun n ↦ N + ψ' n, fun m n hmn ↦ by simpa using hψ' hmn, w,
+    (isWeakCauchyRiemannOn_ball_comp_iff hcid).1 hw, hconv⟩
 
 /-- **The diagonal step.** A subsequence of the `u n` converges at every point of `X`. -/
 private theorem exists_strictMono_forall_tendsto [SecondCountableTopology X] (hp : 2 < p)

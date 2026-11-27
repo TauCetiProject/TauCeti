@@ -51,6 +51,10 @@ is the prescribed field.
   coordinate expression `inChart`; hence it is jointly `Cⁿ` on the product of the chart targets
   (`ContMDiffAlmostComplexStructureFamily.contDiffOn_chartField_chartAt`) and squares to minus
   the identity there (`ContMDiffAlmostComplexStructureFamily.chartField_chartAt_apply_apply`).
+* `ContMDiffAlmostComplexStructureFamily.contDiffOn_chartField_chartAt_refl`,
+  `ContMDiffAlmostComplexStructureFamily.chartField_refl_mul_self`: with values in a normed space
+  read in its identity chart, the structure read in a preferred chart is jointly `Cⁿ` on the
+  product of the chart target with the whole space, and it squares to minus the identity.
 
 ## References
 
@@ -471,6 +475,34 @@ theorem chartField_chartAt_apply_apply
   exact (J.freeze _).inChart_inChart y hv w
 
 end PreferredCharts
+
+section IdentityChart
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- On a normed space, read in the identity chart, a structure squares to minus the identity. -/
+theorem chartField_refl_mul_self {D : Type*} [TopologicalSpace D]
+    (J : ContMDiffAlmostComplexStructureFamily 𝓘(ℝ, F) F IP P n) (φ : OpenPartialHomeomorph P D)
+    (z : D) (v : F) :
+    J.chartField φ (OpenPartialHomeomorph.refl F) z v *
+      J.chartField φ (OpenPartialHomeomorph.refl F) z v = -1 := by
+  rw [chartField_refl]
+  exact (J.freeze _).toEndomorphism_mul_self v
+
+/-- In a preferred chart of a domain modelled on `ℂ` and the identity chart of a normed space, a
+domain-dependent structure read through `chartField` is jointly `Cⁿ` on the product of the chart
+target with the whole space. -/
+theorem contDiffOn_chartField_chartAt_refl {Y : Type*} [TopologicalSpace Y] [ChartedSpace ℂ Y]
+    [IsManifold 𝓘(ℝ, ℂ) n Y] (J : ContMDiffAlmostComplexStructureFamily 𝓘(ℝ, F) F 𝓘(ℝ, ℂ) Y n)
+    (x : Y) :
+    ContDiffOn ℝ n
+      (fun q : ℂ × F ↦ J.chartField (chartAt ℂ x) (OpenPartialHomeomorph.refl F) q.1 q.2)
+      ((chartAt ℂ x).target ×ˢ Set.univ) := by
+  simpa only [OpenPartialHomeomorph.extendTrans_modelWithCornersSelf_refl, chartAt_self_eq,
+    extChartAt_model_space_eq_id, PartialEquiv.refl_target] using
+    J.contDiffOn_chartField_chartAt x (0 : F)
+
+end IdentityChart
 
 end ContMDiffAlmostComplexStructureFamily
 

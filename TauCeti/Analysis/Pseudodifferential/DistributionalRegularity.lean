@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Holder.Distribution
 public import TauCeti.Analysis.Sobolev.BesselPotential.Local
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
@@ -171,16 +172,8 @@ private theorem exists_isEllipticAbove_ofDifferentialSymbol {c : ι → ℂ}
     ∃ (b : ι → CoordinateSpace n → ℂ →L[ℂ] ℂ) (hb : ∀ i ∈ t, ContDiff ℝ ∞ (b i)) (R : ℝ),
       (ClassicalSymbol.ofDifferentialSymbol M t m b hb hk).toSymbol.IsEllipticAbove R ∧
         ∀ y ∈ closedBall x r, ∀ i, b i y = (c i * g i y) • ContinuousLinearMap.id ℂ ℂ := by
-  -- `ρ y = x + θ(y) (y - x)` is the identity on `closedBall x r`, maps into `B(x, ε)` and is
-  -- constant outside it.
-  let θ : ContDiffBump x := ⟨r, ε, hr, hrε⟩
-  let ρ : CoordinateSpace n → CoordinateSpace n := fun y ↦ x + θ y • (y - x)
-  have hρ : ContDiff ℝ ∞ ρ := contDiff_const.add (θ.contDiff.smul (contDiff_id.sub contDiff_const))
-  have hρε (y : CoordinateSpace n) : ρ y ∈ ball x ε := by
-    by_cases hy : y ∈ ball x ε
-    · rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg θ.nonneg]
-      exact (mul_le_of_le_one_left (norm_nonneg _) θ.le_one).trans_lt (mem_ball_iff_norm.1 hy)
-    · simpa [ρ, θ.zero_of_le_dist (not_lt.1 hy)] using mem_ball_self (x := x) (hr.trans hrε)
+  -- `ρ` is the identity on `closedBall x r`, maps into `B(x, ε)` and is constant outside it.
+  obtain ⟨ρ, hρ, hρε, hρid, hρout⟩ := exists_contDiff_cutoff_self x hr hrε
   set β : ι → CoordinateSpace n → ℂ := fun i y ↦ c i * g i (ρ y)
   have hβ (i : ι) : ContDiff ℝ ∞ (β i) :=
     contDiff_const.mul (Complex.ofRealCLM.contDiff.comp ((hg i).comp hρ))
@@ -191,13 +184,14 @@ private theorem exists_isEllipticAbove_ofDifferentialSymbol {c : ι → ℂ}
     (ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff M hb hk).2
       fun y ξ hξ ↦ hσ _ (hρε y) ξ hξ
   have hρx (y : CoordinateSpace n) (hy : y ∉ closedBall x ε) : ρ y = ρ x := by
-    simp [ρ, θ.zero_of_le_dist (le_of_lt (not_le.1 hy))]
+    rw [hρout y fun h ↦ hy (ball_subset_closedBall h),
+      hρid x (mem_closedBall_self hr.le)]
   obtain ⟨R, hR⟩ := ha.exists_isEllipticAbove (isCompact_closedBall x ε) fun y hy ↦
     ⟨x, mem_closedBall_self (hr.trans hrε).le, fun ξ ↦ by
       simp only [a, ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol,
         differentialSymbol_def, β, hρx y hy]⟩
   refine ⟨_, hb, R, hR, fun y hy i ↦ ?_⟩
-  simp [β, ρ, θ.one_of_mem_closedBall hy]
+  simp [β, hρid y hy]
 
 end TauCeti
 
