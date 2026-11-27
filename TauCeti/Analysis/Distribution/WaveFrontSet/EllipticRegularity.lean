@@ -72,13 +72,15 @@ determinant of the principal symbol matrix is homogeneous of degree `M r`
 (`TauCeti.exists_nhds_cone_le_norm_of_continuous_of_homogeneous`). To estimate `L(T q, φ)(η)`
 for a cutoff `φ`, apply the identity to the frequency-dependent cutoffs `Ψ j = (A⁻¹) j q φ`
 (Hörmander I, proof of Theorem 8.3.1), obtained by multiplying `φ` by an entry of the adjugate of
-`A` and dividing by its determinant, so that `∑ j, A i j Ψ j = δ_iq φ`. Their derivatives are
+`A` and dividing by its determinant, so that `∑ j, A i j Ψ j = δ_iq φ`
+(`TestFunction.exists_sum_mul_eq_ite_of_forall_det_ne_zero`). Their derivatives are
 `O((1 + ‖η‖) ^ (-M))`, and the terms of order less than `M` of the full symbols become errors one
 power of `η` smaller. Since the cutoffs depend on `η`, every estimate is made uniform over the
 cutoffs supported in a fixed compact set with bounded derivatives of some order: the polynomial
 growth of the localized Fourier transform (`Distribution.exists_forall_norm_localFourier_le`) and
 the rapid decay of `L((P T) j, Ψ)` on `Γ`
-(`IsMicrolocallySmoothAt.exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le`).
+(`IsMicrolocallySmoothAt.exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le`, on one
+cone for all `j` by `exists_nhds_cone_forall_forall_one_add_norm_pow_mul_norm_localFourier_le`).
 If every `L(T i, φ)` is `O(B (1 + ‖η‖) ^ (k - d))` on `Γ` for the cutoffs `φ` whose derivatives
 are bounded by `B`, the identity shows that it is `O(B (1 + ‖η‖) ^ (k - d - 1))`, and induction on
 `d` gives rapid decay on `Γ`.
@@ -574,66 +576,6 @@ private theorem exists_localFourier_iteratedLineDerivOp_sub_le {T : 𝓓'(Ω, �
           gcongr
       _ = (2 * π * ‖m 0‖ * C₁ + C₂ * ‖m 0‖) * B * (1 + ‖η‖) ^ (k + (r + 1)) := by ring
 
-/-! ### Dividing cutoffs by a matrix of smooth functions -/
-
-/-- **Dividing a test function by a matrix of smooth functions.** Let `φ` be a test function
-supported in `K`, and let `A` be a matrix of smooth functions whose determinant does not vanish on
-an open set `W ⊇ K`. For each `k` there are test functions `Ψ j` supported in `K` with
-`∑ j, A y i j Ψ j y = δ_ik φ y`, namely `Ψ j = (A⁻¹) j k φ`. If the derivatives of order at most
-`n` of the reciprocal of the determinant are bounded by `Q ≥ 0` on `K`, those of the entries of
-the adjugate by `G ≥ 0` on `K`, and those of `φ` by `B`, then those of every `Ψ j` are bounded by
-`2 ^ n Q (2 ^ n G B)`. -/
-private theorem exists_sum_mul_eq_ite {ι : Type*} [Fintype ι] [DecidableEq ι] (φ : 𝓓(Ω, ℂ))
-    {K W : Set E} (hW : IsOpen W) (hKW : K ⊆ W) (hφK : tsupport φ ⊆ K) {A : E → Matrix ι ι ℂ}
-    (hA : ∀ i j, ContDiff ℝ ∞ fun z ↦ A z i j) (hAW : ∀ y ∈ W, (A y).det ≠ 0) {n : ℕ}
-    {Q G B : ℝ} (hQ0 : 0 ≤ Q) (hG0 : 0 ≤ G)
-    (hQ : ∀ l ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ l (fun z ↦ ((A z).det)⁻¹) y‖ ≤ Q)
-    (hG : ∀ j k, ∀ l ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ l (fun z ↦ (A z).adjugate j k) y‖ ≤ G)
-    (hB : ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) (k : ι) :
-    ∃ Ψ : ι → 𝓓(Ω, ℂ), (∀ j, tsupport (Ψ j) ⊆ K) ∧
-      (∀ i y, ∑ j, A y i j * Ψ j y = if i = k then φ y else 0) ∧
-      ∀ j, ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l (Ψ j) y‖ ≤ 2 ^ n * Q * (2 ^ n * G * B) := by
-  have hadj (j : ι) := ContDiff.matrix_adjugate hA j k
-  -- The test functions `adj(A) j k φ`.
-  choose φ' hφ' using fun j ↦ TestFunction.exists_coe_eq_of_tsupport_subset
-    ((hadj j).mul φ.contDiff) (tsupport_mul_subset_right (f := fun z ↦ (A z).adjugate j k))
-  have hφ'K (j : ι) : tsupport (φ' j) ⊆ K := by
-    rw [hφ' j]
-    exact tsupport_mul_subset_right.trans hφK
-  have hφ'B (j : ι) : ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l (φ' j) y‖ ≤ 2 ^ n * G * B := by
-    intro l hl y
-    rw [hφ' j]
-    refine (TauCeti.norm_iteratedFDeriv_mul_le_of_tsupport_subset isOpen_univ (subset_univ K)
-      (hadj j).contDiffOn φ.contDiff hφK (by exact_mod_cast le_top) hG0
-      (fun l' hl' z hz ↦ hG j k l' (hl'.trans hl) z hz) (fun l' hl' z ↦ hB l' (hl'.trans hl) z)
-      y).trans ?_
-    have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) y)
-    gcongr
-    exact one_le_two
-  -- Divide them by the determinant.
-  choose Ψ hΨK hΨ hΨB using fun j ↦ (φ' j).exists_mul_eq_of_forall_ne_zero hW hKW (hφ'K j)
-    (ContDiff.matrix_det hA).contDiffOn hAW hQ0 hQ (hφ'B j)
-  refine ⟨Ψ, hΨK, fun i y ↦ ?_, hΨB⟩
-  by_cases hy : y ∈ W
-  · refine mul_left_cancel₀ (hAW y hy) ?_
-    have h := congrFun (Matrix.mul_adjugate (A y)) i
-    have h' := congrFun h k
-    rw [Matrix.mul_apply] at h'
-    calc (A y).det * ∑ j, A y i j * Ψ j y = ∑ j, A y i j * (A y).adjugate j k * φ y := by
-          rw [Finset.mul_sum]
-          refine Finset.sum_congr rfl fun j _ ↦ ?_
-          have hj := congrFun (hφ' j) y
-          rw [← hΨ j y] at hj
-          rw [mul_assoc, ← hj]
-          ring
-      _ = (A y).det * if i = k then φ y else 0 := by
-          rw [← Finset.sum_mul, h']
-          split_ifs with hik <;> simp [hik]
-  · have hy' : y ∉ K := fun h ↦ hy (hKW h)
-    have hφy : φ y = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hy' (hφK h)
-    have hΨy (j : ι) : Ψ j y = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hy' (hΨK j h)
-    simp [hφy, hΨy]
-
 /-! ### The regularity induction -/
 
 /-- The terms of order `M` of the full symbol matrix of the system
@@ -751,7 +693,7 @@ private theorem exists_forall_exists_sum_topSymbolMatrix_mul_eq_ite {ι τ : Typ
         Aa * (1 + ‖η‖) ^ (M * (r - 1)) :=
     fun l hl ↦ (TauCeti.norm_iteratedFDeriv_adjugate_apply_le (hA η) (by exact_mod_cast le_top)
       (hent y hy η) j k l hl).trans_eq (by rw [hpow]; ring)
-  obtain ⟨Ψ, hΨK, hΨ, hΨB⟩ := exists_sum_mul_eq_ite φ hW hKW hφK (hA η)
+  obtain ⟨Ψ, hΨK, hΨ, hΨB⟩ := φ.exists_sum_mul_eq_ite_of_forall_det_ne_zero hW hKW hφK (hA η)
     (fun y hy ↦ norm_pos_iff.1 ((mul_pos hc' (by positivity)).trans_le (hp y hy η hη hηR)))
     (Q := Q / (1 + ‖η‖) ^ (M * r)) (G := Aa * (1 + ‖η‖) ^ (M * (r - 1))) (by positivity)
     (by positivity)
@@ -1018,31 +960,6 @@ private theorem exists_nhds_cone_le_norm_det_topSymbolMatrix {ι τ : Type*} [Fi
         gcongr
     _ = (2 * π) ^ N * (c₀ * ‖η‖ ^ N) := by field_simp
     _ ≤ (2 * π) ^ N * ‖(σ (y, η)).det‖ := by gcongr; exact hell y hy η hη
-
-/-- Rapid decay of the localized Fourier transforms of finitely many distributions microlocally
-smooth at `(x, ξ)`, on one neighbourhood of `x` and one cone around `ξ`, uniformly over the cutoffs
-with bounded derivatives. -/
-private theorem exists_nhds_cone_forall_forall_one_add_norm_pow_mul_norm_localFourier_le
-    {ι : Type*} [Finite ι] {R : ι → 𝓓'(Ω, ℂ)} {x ξ : E}
-    (h : ∀ j, (R j).IsMicrolocallySmoothAt x ξ) :
-    ∃ U ∈ 𝓝 x, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
-      ∀ N : ℕ, ∃ (r : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ j, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ U → ∀ B : ℝ,
-        (∀ l ≤ r, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) →
-          ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖(R j).localFourier φ η‖ ≤ C * B := by
-  have := Fintype.ofFinite ι
-  choose U hU Γ hΓ hξ hcone hdecay using fun j ↦
-    (h j).exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le
-  refine ⟨⋂ j, U j, Filter.iInter_mem.2 hU, ⋂ j, Γ j, isOpen_iInter_of_finite hΓ,
-    mem_iInter.2 hξ, fun t ht η hη ↦ mem_iInter.2 fun j ↦ hcone j t ht η (mem_iInter.1 hη j),
-    fun N ↦ ?_⟩
-  choose r C hC0 hC using fun j ↦ hdecay j N
-  refine ⟨∑ j, r j, ∑ j, C j, Finset.sum_nonneg fun j _ ↦ hC0 j, fun j φ hφ B hB η hη ↦ ?_⟩
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) 0)
-  refine (hC j φ (hφ.trans (iInter_subset _ j)) B (fun l hl ↦ hB l (hl.trans
-    (Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ j)))) η
-    (mem_iInter.1 hη j)).trans ?_
-  gcongr
-  exact Finset.single_le_sum (fun j _ ↦ hC0 j) (Finset.mem_univ j)
 
 /-- **Microlocal elliptic regularity for systems of differential operators** (Hörmander I,
 Theorem 8.3.1; Taylor, Lecture I, §7). Let `P` be the square system

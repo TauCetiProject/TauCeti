@@ -72,7 +72,9 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
   supported in `U` has localized Fourier transform rapidly decreasing on `Γ`;
   `IsMicrolocallySmoothAt.exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le`
   makes the decay uniform over the cutoffs supported in `U` with bounded derivatives of some order,
-  so that it applies to cutoffs depending on the frequency.
+  so that it applies to cutoffs depending on the frequency;
+  `Distribution.exists_nhds_cone_forall_forall_one_add_norm_pow_mul_norm_localFourier_le` does so
+  for finitely many distributions on one neighbourhood and one cone.
 * `Distribution.exists_isOpen_cone_forall_decay_of_isCompact`: the same holds uniformly over a
   compact set `K` of points of microlocal smoothness: there is an open `W ⊇ K` such that it holds
   for every cutoff supported in `W ∪ (dsupport T)ᶜ`, that is, whose support meets the support of
@@ -567,6 +569,31 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone_forall_one_add_norm_pow_mul_norm
         gcongr
         exact (hC₁ φK).trans (by gcongr)
     _ = ‖(ZLattice.covolume L : ℂ)⁻¹‖ * C₁ * B := by ring
+
+/-- Rapid decay of the localized Fourier transforms of finitely many distributions microlocally
+smooth at `(x, ξ)`, on one neighbourhood of `x` and one cone around `ξ`, uniformly over the cutoffs
+with bounded derivatives. -/
+theorem exists_nhds_cone_forall_forall_one_add_norm_pow_mul_norm_localFourier_le
+    {ι : Type*} [Finite ι] {R : ι → 𝓓'(Ω, ℂ)} {x ξ : E}
+    (h : ∀ j, (R j).IsMicrolocallySmoothAt x ξ) :
+    ∃ U ∈ 𝓝 x, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∀ N : ℕ, ∃ (r : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ j, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ U → ∀ B : ℝ,
+        (∀ l ≤ r, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) →
+          ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖(R j).localFourier φ η‖ ≤ C * B := by
+  have := Fintype.ofFinite ι
+  choose U hU Γ hΓ hξ hcone hdecay using fun j ↦
+    (h j).exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le
+  refine ⟨⋂ j, U j, Filter.iInter_mem.2 hU, ⋂ j, Γ j, isOpen_iInter_of_finite hΓ,
+    mem_iInter.2 hξ, fun t ht η hη ↦ mem_iInter.2 fun j ↦ hcone j t ht η (mem_iInter.1 hη j),
+    fun N ↦ ?_⟩
+  choose r C hC0 hC using fun j ↦ hdecay j N
+  refine ⟨∑ j, r j, ∑ j, C j, Finset.sum_nonneg fun j _ ↦ hC0 j, fun j φ hφ B hB η hη ↦ ?_⟩
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) 0)
+  refine (hC j φ (hφ.trans (iInter_subset _ j)) B (fun l hl ↦ hB l (hl.trans
+    (Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ j)))) η
+    (mem_iInter.1 hη j)).trans ?_
+  gcongr
+  exact Finset.single_le_sum (fun j _ ↦ hC0 j) (Finset.mem_univ j)
 
 /-- **Uniform decay over a compact set.** If `T` is microlocally smooth at `(x, ξ)` for every `x` in
 a compact set `K`, then there are an open set `W` containing `K` and an open cone `Γ` containing
