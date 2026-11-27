@@ -65,7 +65,7 @@ theorem dualSubmoduleEquivDual_comp_inclusion_range_mk_one [Module.Flat R M]
 linear dual exactly when the integral lattice in the fraction-field extension is self-dual.
 The inclusion is identified with the pairing map by `dualSubmoduleEquivDual` and
 `TensorProduct.unitTmulEquiv`. -/
-theorem dualSubmodule_range_mk_eq_self_iff_isPerfPair [Module.Free R M]
+theorem dualSubmodule_range_mk_eq_self_iff_isPerfPair [Module.Flat R M] [Module.IsReflexive R M]
     (B : LinearMap.BilinForm R M) (hB : (B.baseChange K).Nondegenerate) :
     let N := LinearMap.range (TensorProduct.mk R K M 1)
     (B.baseChange K).dualSubmodule N = N ↔ B.IsPerfPair := by
