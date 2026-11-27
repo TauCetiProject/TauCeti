@@ -23,7 +23,7 @@ The constant family `1` has no negative height bound. A multiplier is algebraic 
 complex images are bounded. Taking its norm to `ℚ` turns each place bound into a bound for a
 rational number, to which the finite rational product formula applies.
 
-The application of the product formula is that of `New.HeightLe.nonneg_of_one` in
+The argument follows `New.HeightLe.nonneg_of_one` and `New.HeightLe.neg_le_of_norm_map_le` in
 `grh/src/New/Reduction/Lattices/Heights.lean` of grh-lean (https://github.com/lsernau/grh-lean,
 commit `72fead102f663d5c7a407964a13dc0cf9d977207`). Here algebraicity follows from the
 archimedean bound alone.
