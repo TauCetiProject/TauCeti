@@ -98,6 +98,14 @@ theorem pinnedRepresentation_ι (x : (DynkinType.C (n + 1)).lieAlgebra ht) :
   rw [pinnedRepresentation_def, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι,
     LieEquiv.coe_toLieHom]
 
+/-- On Lie elements, the pinned action is the linear map associated to the corresponding
+symplectic matrix. -/
+theorem pinnedRepresentation_ι_matrix (x : (DynkinType.C (n + 1)).lieAlgebra ht) :
+    pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) =
+      Matrix.toLinAlgEquiv' (pinnedLieEquiv n ht x : Matrix _ _ ℚ) := by
+  rw [pinnedRepresentation_ι, rep_def]
+  exact UniversalEnvelopingAlgebra.representation_ι_matrix (pinnedLieEquiv n ht x)
+
 /-- On the Lie algebra, `pinnedRepresentation` multiplies a coordinate vector by the symplectic
 matrix `pinnedLieEquiv n ht x`. -/
 theorem pinnedRepresentation_ι_apply (x : (DynkinType.C (n + 1)).lieAlgebra ht)
@@ -105,7 +113,7 @@ theorem pinnedRepresentation_ι_apply (x : (DynkinType.C (n + 1)).lieAlgebra ht)
     pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (pinnedLieEquiv n ht x :
         Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *ᵥ v := by
-  rw [pinnedRepresentation_ι, rep_ι_apply]
+  rw [pinnedRepresentation_ι_matrix, Matrix.toLinAlgEquiv'_apply]
 
 /-- A pinned Cartan generator acts as the standard symplectic simple coroot with the same
 number. -/
@@ -158,12 +166,10 @@ theorem pinnedRepresentation_ι_injective :
     Function.Injective fun x : (DynkinType.C (n + 1)).lieAlgebra ht =>
       pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
   intro x y hxy
-  apply (pinnedLieEquiv n ht).injective
-  apply Subtype.ext
-  ext a b
-  have hcol := congrFun (DFunLike.congr_fun hxy (Pi.single b 1)) a
-  simpa only [pinnedRepresentation_ι_apply, mulVec_single_one, col_apply,
-    LieEquiv.coe_toLieHom] using hcol
+  simp only [pinnedRepresentation_ι, rep_def] at hxy
+  exact (pinnedLieEquiv n ht).injective
+    (UniversalEnvelopingAlgebra.representation_ι_injective ℚ (sp (Fin (n + 1)) ℚ)
+      ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) hxy)
 
 /-- **The standard coordinate lattice is stable under the Kostant integral form of the pinned
 type-`C_(n+1)` generators.** -/
@@ -232,6 +238,14 @@ theorem chevalleyDatum_dim : (chevalleyDatum n ht).dim = (n + 1) + (n + 1) :=
 theorem chevalleyDatum_representation :
     (chevalleyDatum n ht).representation = pinnedRepresentation n ht :=
   (rfl)
+
+/-- The datum acts through `TauCeti.SpStd.pinnedRepresentation` on enveloping algebra elements. -/
+-- Rewrite before simplifying the argument, since the generator equations are keyed on `ι`.
+@[simp↓]
+theorem chevalleyDatum_representation_apply
+    (u : _root_.UniversalEnvelopingAlgebra ℚ ((DynkinType.C (n + 1)).lieAlgebra ht)) :
+    (chevalleyDatum n ht).representation u = pinnedRepresentation n ht u :=
+  DFunLike.congr_fun (chevalleyDatum_representation n ht) u
 
 /-- The admissible lattice of the datum is `(TauCeti.SpStd.lattice n).toAddSubgroup`. -/
 @[simp]

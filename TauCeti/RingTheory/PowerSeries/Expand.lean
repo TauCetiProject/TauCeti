@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finset.Finsupp
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.RingTheory.PowerSeries.Expand
+public import TauCeti.Data.Finset.Finsupp
 public import TauCeti.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.PiTopology
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # Substitution and products of expanded power series
@@ -19,12 +19,12 @@ import TauCeti.RingTheory.PowerSeries.Geometric
 For a family of power series `f c` and positive multipliers `m c`, this file computes the
 coefficients of the product `∏ c, f c (X ^ m c)` of the expanded series
 `PowerSeries.expand (m c) _ (f c)`. The `n`-th coefficient of a finite product is a sum over the
-weighted antidiagonal `Finset.weightedFinsuppAntidiag s m n` of the assignments `l` supported in
-`s` with `∑ c ∈ s, m c * l c = n`. When every `f c` has constant term `1`, factors with
-`n < m c` do not change the `n`-th coefficient. So if only finitely many `m c` lie below each
-bound, the infinite product converges in the coefficientwise topology
-(`PowerSeries.WithPiTopology`), and each coefficient is that of a finite product. Over a finite
-field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power maps.
+weighted antidiagonal `Finset.weightedFinsuppAntidiag s m n` (from `TauCeti.Data.Finset.Finsupp`)
+of the assignments `l` supported in `s` with `∑ c ∈ s, m c * l c = n`. When every `f c` has
+constant term `1`, factors with `n < m c` do not change the `n`-th coefficient. So if only
+finitely many `m c` lie below each bound, the infinite product converges in the coefficientwise
+topology (`PowerSeries.WithPiTopology`), and each coefficient is that of a finite product. Over a
+finite field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power maps.
 
 ## Main declarations
 
@@ -36,8 +36,6 @@ field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power map
 * `PowerSeries.toMvPowerSeries_expand`: embedding in one coordinate commutes with expansion.
 * `PowerSeries.expand_mk_pow_mul_one_sub_C_mul_X_pow_eq_one`: the geometric series `∑ aⁿ Xᵖⁿ`
   inverts `1 - a Xᵖ`.
-* `Finset.weightedFinsuppAntidiag s m n`: the assignments `l : ι →₀ ℕ` supported in `s` with
-  `∑ c ∈ s, m c * l c = n`.
 * `PowerSeries.coeff_prod_expand`: the `n`-th coefficient of `∏ c ∈ s, f c (X ^ m c)` is the sum
   over `l ∈ s.weightedFinsuppAntidiag m n` of `∏ c ∈ s, coeff (l c) (f c)`.
 * `PowerSeries.coeff_prod_expand_of_subset`: adjoining factors with `n < m c` and constant term
@@ -58,41 +56,6 @@ field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power map
 public section
 
 variable {ι : Type*}
-
-namespace Finset
-
-/-- The weighted antidiagonal: the assignments `l : ι →₀ ℕ` supported in `s` with
-`∑ c ∈ s, m c * l c = n`. -/
-noncomputable def weightedFinsuppAntidiag (s : Finset ι) (m : ι → ℕ+) (n : ℕ) :
-    Finset (ι →₀ ℕ) :=
-  {l ∈ s.finsupp fun _ ↦ range (n + 1) | ∑ c ∈ s, (m c : ℕ) * l c = n}
-
-/-- A summand of `∑ c ∈ s, m c * l c = n` is at most `n`. -/
-private theorem mul_le_of_sum_mul_eq {s : Finset ι} {m : ι → ℕ+} {n : ℕ} {l : ι →₀ ℕ}
-    (h : ∑ c ∈ s, (m c : ℕ) * l c = n) {c : ι} (hc : c ∈ s) : (m c : ℕ) * l c ≤ n :=
-  h ▸ single_le_sum (f := fun c ↦ (m c : ℕ) * l c) (by simp) hc
-
-/-- An assignment lies in the weighted antidiagonal exactly when it is supported in `s` and has
-weighted sum `n`. -/
-@[simp]
-theorem mem_weightedFinsuppAntidiag {s : Finset ι} {m : ι → ℕ+} {n : ℕ} {l : ι →₀ ℕ} :
-    l ∈ s.weightedFinsuppAntidiag m n ↔ l.support ⊆ s ∧ ∑ c ∈ s, (m c : ℕ) * l c = n := by
-  simp only [weightedFinsuppAntidiag, mem_filter, mem_finsupp_iff, mem_range]
-  refine ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, fun c hc ↦ ?_⟩, h.2⟩⟩
-  have hle := mul_le_of_sum_mul_eq h.2 hc
-  have := Nat.le_mul_of_pos_left (l c) (m c).pos
-  omega
-
-/-- Every summand `m c * l c` of an element `l` of the weighted antidiagonal is at most `n`. -/
-theorem mul_le_of_mem_weightedFinsuppAntidiag {s : Finset ι} {m : ι → ℕ+} {n : ℕ}
-    {l : ι →₀ ℕ} (hl : l ∈ s.weightedFinsuppAntidiag m n) (c : ι) :
-    (m c : ℕ) * l c ≤ n := by
-  obtain ⟨hsupp, hsum⟩ := mem_weightedFinsuppAntidiag.1 hl
-  by_cases hc : c ∈ s
-  · exact mul_le_of_sum_mul_eq hsum hc
-  · simp [Finsupp.notMem_support_iff.1 fun h ↦ hc (hsupp h)]
-
-end Finset
 
 namespace PowerSeries
 

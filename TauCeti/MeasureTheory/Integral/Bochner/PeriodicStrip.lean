@@ -44,7 +44,8 @@ integral over the ball about `(x, a)`. So the integral of a nonnegative such `f`
 most twice the integral over one period (`TauCeti.setIntegral_ball_le_two_mul_of_periodic`). For
 the energy density of a map on the cylinder `ℝ × S¹`, lifted to a map on `ℝ × ℝ` that is
 `1`-periodic in `t`, this bounds the energy over a disc of radius `1` about an integer point
-`(s, n)` by twice the energy over the strip `ℝ × [0, 1)`.
+`(s, n)` by twice the energy over the strip `ℝ × [0, 1)`
+(`TauCeti.setIntegral_ball_intCast_le_two_mul_of_periodic`).
 
 For densities `e i ≥ 0`, periodic in the second variable with energy at most `M` over one period,
 energy concentrating at a point of that period also concentrates on the two periods about it. So a
@@ -248,6 +249,18 @@ theorem setIntegral_ball_le_two_mul_of_periodic {f : α × ℝ → ℝ} (hf0 : �
           (Filter.Eventually.of_forall hf0) (ball_subset_univ_prod_Ico_sub_add x).eventuallySubset
     _ = 2 * ∫ z in univ ×ˢ Ico a (a + c), f z ∂μ.prod volume := by
         rw [setIntegral_prod_Ico_sub_add_of_periodic MeasurableSet.univ hf h, two_nsmul, two_mul]
+
+/-- The integral of a nonnegative function of period one in the second variable over the ball of
+radius `1` about a point `(x, n)`, `n ∈ ℤ`, is at most `2 * E` if its integral over the strip
+`univ ×ˢ [0, 1)` is at most `E`. -/
+theorem setIntegral_ball_intCast_le_two_mul_of_periodic {f : α × ℝ → ℝ} {E : ℝ}
+    (hf0 : ∀ z, 0 ≤ f z) (hf : ∀ x t, f (x, t + 1) = f (x, t))
+    (h : IntegrableOn f (univ ×ˢ Ico 0 1) (μ.prod volume))
+    (hE : ∫ z in univ ×ˢ Ico 0 1, f z ∂μ.prod volume ≤ E) (x : α) (n : ℤ) :
+    ∫ z in Metric.ball (x, (n : ℝ)) 1, f z ∂μ.prod volume ≤ 2 * E := by
+  have h2 := setIntegral_ball_le_two_mul_of_periodic (a := 0) hf0 hf (by simpa using h) x n
+  simp only [zero_add, mul_one] at h2
+  exact h2.trans (mul_le_mul_of_nonneg_left hE two_pos.le)
 
 end Ball
 
