@@ -79,15 +79,10 @@ theorem jacobiBracket_standardContactForm (f g : ℝ × ℝ × ℝ → ℝ) (p :
         (f p - p.1 * fderiv ℝ f p (1, 0, 0)) * fderiv ℝ g p (0, 0, 1) -
           g p * fderiv ℝ f p (0, 0, 1) := by
   -- `{f, g}_α = X_f(g) - g R_α(f)`, with `X_f(g)` expanded in the coordinates of `X_f`.
-  have hdg (a b c : ℝ) : fderiv ℝ g p (a, b, c) =
-      a * fderiv ℝ g p (1, 0, 0) + b * fderiv ℝ g p (0, 1, 0) + c * fderiv ℝ g p (0, 0, 1) := by
-    have h : ((a, b, c) : ℝ × ℝ × ℝ) = a • ((1, 0, 0) : ℝ × ℝ × ℝ) +
-        b • ((0, 1, 0) : ℝ × ℝ × ℝ) + c • ((0, 0, 1) : ℝ × ℝ × ℝ) := by
-      simp
-    rw [h, map_add, map_add, map_smul, map_smul, map_smul, smul_eq_mul, smul_eq_mul, smul_eq_mul]
   rw [isContactForm_standardContactForm.jacobiBracket_eq_mvfderiv, mvfderiv_eq_fderiv_apply,
     mvfderiv_eq_fderiv_apply, reebVectorField_standardContactForm, standardReebField_apply,
-    contactHamiltonianVectorField_standardContactForm, hdg]
+    fderiv_apply_eq_coords g p (standardContactForm.contactHamiltonianVectorField f p),
+    contactHamiltonianVectorField_standardContactForm]
   ring
 
 /-- The Jacobi bracket of the coordinates `x` and `y` for `dz - x dy` is `{x, y}_α = -1`. -/
