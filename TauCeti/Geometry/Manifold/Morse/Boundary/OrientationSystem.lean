@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.LocalCoefficient.Dual
 public import TauCeti.Geometry.Manifold.Morse.Boundary.DualOrientation
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ReversedSign
 public import TauCeti.Geometry.Manifold.Morse.Boundary.LocalCoefficient
@@ -64,6 +65,21 @@ compact manifold. This is the chain-level comparison behind Poincaré duality wi
 the orientation system, which on a nonorientable manifold such as `ℝP²` differs from untwisted
 duality: there `H₂(ℝP²; ℤ) = 0` while `H⁰(ℝP²; ℤ) = ℤ`.
 
+**Local coefficients.** The same holds with coefficients in a local system `L` of modules over a
+commutative ring `S` on `M`, with `S` and the fibres in the universe of `M` and its model space.
+Let `L^∨` be the dual system and read the fibre of `L^∨ ⊗ o(TM)` at each critical point as the
+fibre of `L^∨` by evaluation at the orientation given by `ox` and `ox'`
+(`TauCeti.VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv`). Then the component
+from `q` to `p` of the Morse boundary of `-f` with coefficients in `L^∨ ⊗ o(TM)` is
+`(-1) ^ ind_f p` times the dual map of the component from `p` to `q` of the Morse boundary of `f`
+with coefficients in `L`
+(`IsMorseSmale.tensorSignLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg_dual`). Along each
+trajectory, transport in `L^∨` backwards is the dual map of transport in `L` forwards, and
+transport in `o(TM)` again cancels the factor `τ` of its sign. So the Morse complex of `-f` with
+coefficients in `L^∨ ⊗ o(TM)` is, up to the same signs, the dual of the Morse complex of `f` with
+coefficients in `L`, again without an orientation of `M`: the chain-level comparison behind
+Poincaré duality with local coefficients on a nonorientable manifold.
+
 ## Main definitions
 
 * `TauCeti.IsAdaptedPseudoGradient.criticalOrientation`: the orientation of `T_x M` at a critical
@@ -79,6 +95,10 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `IsMorseSmale.signLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg`: the Morse boundary of `-f`
   with coefficients in the orientation system is the signed transpose of the integral Morse
   boundary of `f`.
+* `IsMorseSmale.tensorSignLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg_dual` and
+  `IsMorseSmale.tensorSignLocalSystemFiberEquiv_twistedMorseBoundary_neg_dual_apply`: the Morse
+  boundary of `-f` with coefficients in `L^∨ ⊗ o(TM)` is the signed transpose of the Morse
+  boundary of `f` with coefficients in `L`.
 
 ## References
 
@@ -94,10 +114,12 @@ public section
 open Function Set
 open scoped ContDiff Manifold
 
+universe uE uM
+
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+variable {E : Type uE} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {M : Type uM} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
@@ -428,6 +450,217 @@ theorem IsMorseSmale.signLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg
         (p := Set.equivOfEq criticalPoints_neg p) (q := Set.equivOfEq criticalPoints_neg q) hpq,
       mul_zero, zero_smul, LinearMap.zero_apply]
     exact map_zero _
+
+/-! ### The Morse boundary of `-f` with coefficients in `L^∨ ⊗ o(TM)` -/
+
+section DualTensor
+
+open CategoryTheory MonoidalCategory
+open scoped TensorProduct
+
+variable {S : Type (max uM uE)} [CommRing S]
+  (N : LocalCoefficientSystem.{max uM uE, uM, max uM uE} S (TopCat.of M))
+
+open scoped Classical in
+/-- **One trajectory of the opposite function with coefficients in `N ⊗ o(TM)`.** For a trajectory
+of `X` from `p` to `q` through `y`, run backwards as a trajectory of `-X`, its sign for `-f` times
+transport in `N ⊗ o(TM)` along it, read at the orientations of `q` and `p`, is `(-1) ^ ind_f p`
+times its sign for `f` times transport in `N`. -/
+private theorem trajectorySign_smul_tensorSignLocalSystemFiberEquiv_transport
+    (hMS : hX.IsMorseSmale) (q p : criticalPoints 𝓘(ℝ, E) (-f))
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f (Set.equivOfEq criticalPoints_neg p) =
+      manifoldMorseIndex 𝓘(ℝ, E) f (Set.equivOfEq criticalPoints_neg q) + 1)
+    (hqp : manifoldMorseIndex 𝓘(ℝ, E) (-f) q = manifoldMorseIndex 𝓘(ℝ, E) (-f) p + 1) {y : M}
+    (hy : y ∈ hX.flow.unstableSet (Set.equivOfEq criticalPoints_neg p : M) ∩
+      hX.flow.stableSet (Set.equivOfEq criticalPoints_neg q : M))
+    (P : Path.Homotopic.Quotient (q : M) p)
+    (hP : P = .mk (Flow.connectingPath hy.1 hy.2).symm)
+    (c : (N ⊗ VectorBundleOrientationCover.signLocalSystem E (TangentSpace 𝓘(ℝ, E) : M → Type _)
+      S (Fintype.card_fin (Module.finrank ℝ E))).obj (FundamentalGroupoid.mk (q : M))) :
+    (hX.neg hf).trajectorySign ((𝔬.neg hf o').chart q) ((𝔬.neg hf o').chart p)
+        ((𝔬.neg hf o').orientation q) ((𝔬.neg hf o').orientation p) hqp y •
+      VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv (Fintype.card_fin _) N
+        (hX.criticalOrientation (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg p)) hf
+          (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+            (Set.equivOfEq criticalPoints_neg p).property)
+          (𝔬.orientation (Set.equivOfEq criticalPoints_neg p)) (o' p))
+        (LocalCoefficientSystem.transport (N ⊗ VectorBundleOrientationCover.signLocalSystem E
+          (TangentSpace 𝓘(ℝ, E) : M → Type _) S (Fintype.card_fin _)) P c) =
+      ((-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p *
+          hX.trajectorySign (𝔬.chart (Set.equivOfEq criticalPoints_neg p))
+            (𝔬.chart (Set.equivOfEq criticalPoints_neg q))
+            (𝔬.orientation (Set.equivOfEq criticalPoints_neg p))
+            (𝔬.orientation (Set.equivOfEq criticalPoints_neg q)) hpq y) •
+        LocalCoefficientSystem.transport N P
+          (VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv (Fintype.card_fin _) N
+            (hX.criticalOrientation (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg q))
+              hf (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+                (Set.equivOfEq criticalPoints_neg q).property)
+              (𝔬.orientation (Set.equivOfEq criticalPoints_neg q)) (o' q)) c) := by
+  subst hP
+  set Θp := hX.criticalOrientation (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg p))
+    hf _ (𝔬.orientation (Set.equivOfEq criticalPoints_neg p)) (o' p)
+  set Θq := hX.criticalOrientation (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg q))
+    hf _ (𝔬.orientation (Set.equivOfEq criticalPoints_neg q)) (o' q)
+  set γ := Flow.connectingPath hy.1 hy.2
+  -- The sign rule at the charts and orientations of `𝔬.neg hf o'`.
+  have hsign : (hX.neg hf).trajectorySign ((𝔬.neg hf o').chart q) ((𝔬.neg hf o').chart p)
+      ((𝔬.neg hf o').orientation q) ((𝔬.neg hf o').orientation p) hqp y =
+      (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p *
+        (if VectorBundleOrientationCover.orientationTransport (TangentSpace 𝓘(ℝ, E) : M → Type _)
+            (Fintype.card_fin _) γ Θp = Θq then 1 else -1) *
+        hX.trajectorySign (𝔬.chart (Set.equivOfEq criticalPoints_neg p))
+          (𝔬.chart (Set.equivOfEq criticalPoints_neg q))
+          (𝔬.orientation (Set.equivOfEq criticalPoints_neg p))
+          (𝔬.orientation (Set.equivOfEq criticalPoints_neg q)) hpq y :=
+    neg_trajectorySign_eq_ite_orientationTransport
+      (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg p))
+      (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg q)) hf _ _
+      (𝔬.orientation (Set.equivOfEq criticalPoints_neg p)) (o' p)
+      (𝔬.orientation (Set.equivOfEq criticalPoints_neg q)) (o' q) hMS hpq hy
+  by_cases hT : VectorBundleOrientationCover.orientationTransport
+    (TangentSpace 𝓘(ℝ, E) : M → Type _) (Fintype.card_fin _) γ Θp = Θq
+  · -- Transport along the trajectory keeps the orientations.
+    refine (congrArg _ (VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv_transport_mk
+      (Fintype.card_fin _) N γ.symm (o := Θq) (o' := Θp) (by
+        rw [VectorBundleOrientationCover.orientationTransport_symm, Equiv.symm_apply_eq, hT])
+      c)).trans ?_
+    congr 1
+    rw [hsign, ite_eq_left hT, mul_one]
+  · -- Transport along the trajectory reverses the orientations.
+    have hT' : VectorBundleOrientationCover.orientationTransport
+        (TangentSpace 𝓘(ℝ, E) : M → Type _) (Fintype.card_fin _) γ Θp = -Θq :=
+      ((VectorBundleOrientationCover.orientationTransport _ _ γ Θp).eq_or_eq_neg Θq
+        (by simp)).resolve_left hT
+    refine (congrArg _ ((VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv_transport_mk
+      (Fintype.card_fin _) N γ.symm (o := -Θq) (o' := Θp) (by
+        rw [VectorBundleOrientationCover.orientationTransport_symm, Equiv.symm_apply_eq, hT'])
+      c).trans (congrArg _
+        (VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv_neg _ N Θq c)))).trans ?_
+    rw [map_neg, smul_neg, ← neg_smul]
+    congr 1
+    rw [hsign, ite_eq_right hT]
+    ring
+
+variable (L : LocalCoefficientSystem.{max uM uE, uM, max uM uE} S (TopCat.of M))
+
+/-- **The Morse boundary of `-f` with coefficients in `L^∨ ⊗ o(TM)`.** Let `L` be a local system
+on `M`, `L^∨` its dual and `o(TM)` the orientation local system of `M`. Orient `T_p M`, at each
+critical point `p`, by `𝔬.orientation p` followed by `o' p` (`criticalOrientation`), and read the
+fibre of `L^∨ ⊗ o(TM)` at `p` as the fibre of `L^∨` by evaluation at this orientation
+(`TauCeti.VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv`). Then the component from
+`q` to `p` of the Morse boundary of `-f`, for the orientation data `𝔬.neg hf o'` and with
+coefficients in `L^∨ ⊗ o(TM)`, is `(-1) ^ ind_f p` times the dual map of the component from `p` to
+`q` of the Morse boundary of `f` with coefficients in `L`. No orientation of `M` is assumed: the
+transport of `o(TM)` along each trajectory cancels the twist in its sign
+(`neg_trajectorySign_eq_ite_orientationTransport`). -/
+theorem IsMorseSmale.tensorSignLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg_dual
+    (hMS : hX.IsMorseSmale) (q p : criticalPoints 𝓘(ℝ, E) (-f))
+    (c : (L.dual ⊗ VectorBundleOrientationCover.signLocalSystem E
+      (TangentSpace 𝓘(ℝ, E) : M → Type _) S (Fintype.card_fin (Module.finrank ℝ E))).obj
+        (FundamentalGroupoid.mk (q : M))) :
+    VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv (Fintype.card_fin _) L.dual
+        (hX.criticalOrientation (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg p)) hf
+          (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+            (Set.equivOfEq criticalPoints_neg p).property)
+          (𝔬.orientation (Set.equivOfEq criticalPoints_neg p)) (o' p))
+        ((hX.neg hf).twistedMorseBoundaryMap (𝔬.neg hf o')
+          (L.dual ⊗ VectorBundleOrientationCover.signLocalSystem E
+            (TangentSpace 𝓘(ℝ, E) : M → Type _) S (Fintype.card_fin _)) q p c) =
+      ((-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p : ℤ) •
+        (hX.twistedMorseBoundaryMap 𝔬 L (Set.equivOfEq criticalPoints_neg p)
+          (Set.equivOfEq criticalPoints_neg q)).dualMap
+          (VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv (Fintype.card_fin _) L.dual
+            (hX.criticalOrientation (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg q))
+              hf (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+                (Set.equivOfEq criticalPoints_neg q).property)
+              (𝔬.orientation (Set.equivOfEq criticalPoints_neg q)) (o' q)) c) := by
+  have hp : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f p :=
+    hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+      (Set.equivOfEq criticalPoints_neg p).property
+  have hq : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f q :=
+    hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+      (Set.equivOfEq criticalPoints_neg q).property
+  by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
+  · have hqp := hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq
+    have hpq' : manifoldMorseIndex 𝓘(ℝ, E) f (Set.equivOfEq criticalPoints_neg p) =
+        manifoldMorseIndex 𝓘(ℝ, E) f (Set.equivOfEq criticalPoints_neg q) + 1 := hpq
+    have := (hMS.finite_morseTrajectorySlice hf hpq').to_subtype
+    have := Fintype.ofFinite (hX.morseTrajectorySlice (Set.equivOfEq criticalPoints_neg p)
+      (Set.equivOfEq criticalPoints_neg q))
+    rw [twistedMorseBoundaryMap_of_morseIndex_eq_add_one hqp,
+      twistedMorseBoundaryMap_of_morseIndex_eq_add_one hpq']
+    -- Read the trajectories of `-X` from `q` to `p` as those of `X` from `p` to `q`.
+    have hslice : ∀ y, y ∈ hX.morseTrajectorySlice (Set.equivOfEq criticalPoints_neg p : M)
+        (Set.equivOfEq criticalPoints_neg q) ↔ y ∈ (hX.neg hf).morseTrajectorySlice q p :=
+      fun y ↦ (Set.ext_iff.1 (hX.neg_morseTrajectorySlice hf p q) y).symm
+    rw [← finsum_comp_equiv (Equiv.subtypeEquivRight hslice), LinearMap.dualMap_def,
+      map_finsum _ (Set.toFinite _), finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype,
+      LinearMap.sum_apply]
+    refine (map_sum _ _ _).trans (Eq.trans (Finset.sum_congr rfl fun y _ ↦ ?_)
+      ((congrArg (_ • ·) (LinearMap.sum_apply _ _ _)).trans Finset.smul_sum).symm)
+    -- Along each trajectory, transport in `L^∨` along the reversed path is the dual map of
+    -- transport in `L`, and the twist of `o(TM)` cancels the twist in the sign.
+    have hy := hX.mem_morseTrajectorySlice.1 y.property
+    have hP := hX.neg_trajectoryPathClass hf y ((Equiv.subtypeEquivRight hslice) y)
+      (Equiv.subtypeEquivRight_apply_coe _ _)
+    rw [LinearMap.smul_apply, LinearEquiv.coe_coe]
+    -- The fibres are read at the points `Set.equivOfEq criticalPoints_neg p` of `f` and `p` of
+    -- `-f`, equal only after unfolding, so the steps are chained as terms rather than rewritten.
+    refine (map_zsmul _ _ _).trans ((trajectorySign_smul_tensorSignLocalSystemFiberEquiv_transport
+      𝔬 hf o' L.dual hMS q p hpq' hqp ⟨hy.1, hy.2.1⟩ _ (hP.trans (by
+        rw [trajectoryPathClass_def]
+        exact (Path.Homotopic.Quotient.mk_symm _).symm)) c).trans
+      ((congrArg (_ • ·) (LinearEquiv.congr_fun ((congrArg (LocalCoefficientSystem.transport
+        L.dual) hP).trans (LocalCoefficientSystem.transport_dual_symm L _)) _)).trans
+        ((mul_smul _ _ _).trans (congrArg (_ • ·) (LinearMap.congr_fun
+          (map_zsmul (Module.Dual.transpose (R := S)) _ _) _).symm))))
+  · have hq' : manifoldMorseIndex 𝓘(ℝ, E) (-f) q ≠ manifoldMorseIndex 𝓘(ℝ, E) (-f) p + 1 := by
+      have := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+      have := hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+      omega
+    rw [twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one hq',
+      twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one (p := Set.equivOfEq criticalPoints_neg p)
+        (q := Set.equivOfEq criticalPoints_neg q) hpq, LinearMap.zero_apply]
+    -- Both sides are the zero form.
+    exact (map_zero _).trans ((smul_zero _).symm.trans (congrArg (_ • ·)
+      (LinearMap.congr_fun (map_zero (Module.Dual.transpose (R := S))) _).symm))
+
+/-- **The Morse boundary of `-f` with coefficients in `L^∨ ⊗ o(TM)` is the signed transpose.**
+Reading the fibres of `L^∨ ⊗ o(TM)` at the critical points as those of `L^∨` by evaluation at the
+orientations given by `𝔬` and `o'`, the `p`-component of the twisted Morse boundary of `-f` of a
+chain `c` is `(-1) ^ ind_f p` times the sum over the critical points `q` of the forms `c q`
+composed with the components of the twisted Morse boundary of `f` with coefficients in `L` from
+`p` to `q`. -/
+theorem IsMorseSmale.tensorSignLocalSystemFiberEquiv_twistedMorseBoundary_neg_dual_apply
+    (hMS : hX.IsMorseSmale)
+    (c : (q : criticalPoints 𝓘(ℝ, E) (-f)) → (L.dual ⊗ VectorBundleOrientationCover.signLocalSystem
+      E (TangentSpace 𝓘(ℝ, E) : M → Type _) S (Fintype.card_fin (Module.finrank ℝ E))).obj
+        (FundamentalGroupoid.mk (q : M)))
+    (p : criticalPoints 𝓘(ℝ, E) (-f)) :
+    VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv (Fintype.card_fin _) L.dual
+        (hX.criticalOrientation (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg p)) hf
+          (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+            (Set.equivOfEq criticalPoints_neg p).property)
+          (𝔬.orientation (Set.equivOfEq criticalPoints_neg p)) (o' p))
+        ((hX.neg hf).twistedMorseBoundary (𝔬.neg hf o')
+          (L.dual ⊗ VectorBundleOrientationCover.signLocalSystem E
+            (TangentSpace 𝓘(ℝ, E) : M → Type _) S (Fintype.card_fin _)) hf.neg c p) =
+      ((-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p : ℤ) •
+        ∑ᶠ q, (hX.twistedMorseBoundaryMap 𝔬 L (Set.equivOfEq criticalPoints_neg p)
+          (Set.equivOfEq criticalPoints_neg q)).dualMap
+          (VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv (Fintype.card_fin _) L.dual
+            (hX.criticalOrientation (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg q))
+              hf (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+                (Set.equivOfEq criticalPoints_neg q).property)
+              (𝔬.orientation (Set.equivOfEq criticalPoints_neg q)) (o' q)) (c q)) := by
+  have := hf.neg.finite_criticalPoints.to_subtype
+  rw [twistedMorseBoundary_apply]
+  exact (map_finsum _ (Set.toFinite _)).trans ((finsum_congr fun q ↦
+    hMS.tensorSignLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg_dual 𝔬 hf o' L q p (c q)).trans
+      (smul_finsum' _ (Set.toFinite _)).symm)
+
+end DualTensor
 
 end IsAdaptedPseudoGradient
 
