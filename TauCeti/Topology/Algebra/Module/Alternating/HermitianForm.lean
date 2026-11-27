@@ -295,6 +295,7 @@ def realOneOneForms : Submodule ℝ (E [⋀^Fin 2]→L[ℝ] ℝ) where
 
 variable {E}
 
+@[simp]
 theorem mem_realOneOneForms {α : E [⋀^Fin 2]→L[ℝ] ℝ} :
     α ∈ realOneOneForms E ↔ ∀ u v : E, α ![I • u, I • v] = α ![u, v] := Iff.rfl
 

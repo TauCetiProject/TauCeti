@@ -158,12 +158,14 @@ private theorem coe_update {k : ℕ} (α : Fin k → realOneOneForms E) (i : Fin
 /-- `M_k(α₁, …, α_k)`, scaled by `k! l! / n!` for `k + l = n`, is the value of
 `α₁ ∧ ⋯ ∧ α_k ∧ ω ^ l` measured against `ω ^ n`; so `M_k` is determined by the wedge product of the
 `αᵢ`. -/
-theorem mixedEsymm_eq_of_wedgeProd_eq {n k : ℕ} (hn : finrank ℂ E = n) (hkn : k ≤ n)
+theorem mixedEsymm_eq_of_wedgeProd_eq {n k : ℕ} (hn : finrank ℂ E = n)
     {α β : Fin k → realOneOneForms E}
     (h : (wedgeProd fun i ↦ (α i : E [⋀^Fin 2]→L[ℝ] ℝ)) =
       wedgeProd fun i ↦ (β i : E [⋀^Fin 2]→L[ℝ] ℝ)) :
-    mixedEsymm hn α = mixedEsymm hn β :=
-  mixedEsymm_eq_of_forall_wedge hn hkn fun v ↦ by
+    mixedEsymm hn α = mixedEsymm hn β := by
+  rcases lt_or_ge n k with hnk | hkn
+  · rw [mixedEsymm_eq_zero_of_lt hn hnk, mixedEsymm_eq_zero_of_lt hn hnk]
+  exact mixedEsymm_eq_of_forall_wedge hn hkn fun v ↦ by
     rw [h, wedge_wedgeProd_wedgePow_ofComplexModule hn (by omega)]
 
 /-- **The diagonal of `M_k`**: `M_k(α, …, α) = σ_k(λ[α])`. -/
@@ -182,10 +184,8 @@ theorem mixedEsymm_const {n k : ℕ} (hn : finrank ℂ E = n) (α : realOneOneFo
 
 /-- **Symmetry of `M_k`**: permuting its arguments does not change its value. -/
 theorem mixedEsymm_comp_perm {n k : ℕ} (hn : finrank ℂ E = n) (α : Fin k → realOneOneForms E)
-    (σ : Equiv.Perm (Fin k)) : mixedEsymm hn (α ∘ σ) = mixedEsymm hn α := by
-  rcases lt_or_ge n k with hnk | hkn
-  · rw [mixedEsymm_eq_zero_of_lt hn hnk, mixedEsymm_eq_zero_of_lt hn hnk]
-  exact mixedEsymm_eq_of_wedgeProd_eq hn hkn
+    (σ : Equiv.Perm (Fin k)) : mixedEsymm hn (α ∘ σ) = mixedEsymm hn α :=
+  mixedEsymm_eq_of_wedgeProd_eq hn
     (wedgeProd_comp_perm even_two (fun i ↦ (α i : E [⋀^Fin 2]→L[ℝ] ℝ)) σ)
 
 /-- `M_k` is additive in each argument. -/
