@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ObjectProperty.Small
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
 import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
@@ -51,6 +52,18 @@ theorem isFiniteFree_def {F : ModCat.{v} C} :
   · rintro ⟨n, Y, ⟨e⟩⟩
     exact ⟨n, Y, ⟨(ι C).mapIso e ≪≫ (yonedaCoproductIso Y).symm⟩⟩
 
+/-- Finite free modules are represented up to isomorphism by finite families in a small
+model of the source category. -/
+instance [EssentiallySmall.{v} C] :
+    ObjectProperty.EssentiallySmall.{v} (isFiniteFree C) := by
+  let e := equivSmallModel.{v} C
+  let P := ObjectProperty.ofObj fun X : Σ n : ℕ, Fin n → SmallModel.{v} C ↦
+    ∐ fun j ↦ (yoneda C).obj (e.inverse.obj (X.2 j))
+  refine ⟨P, inferInstance, fun F hF ↦ ?_⟩
+  obtain ⟨n, X, ⟨hX⟩⟩ := isFiniteFree_def.mp hF
+  refine ⟨_, ⟨⟨n, e.functor.obj ∘ X⟩⟩, ⟨hX ≪≫ ?_⟩⟩
+  exact Sigma.mapIso fun j ↦ (yoneda C).mapIso (e.unitIso.app (X j))
+
 /-- Finite free modules are equivalently the finite biproducts of representable modules,
 up to isomorphism. -/
 theorem isFiniteFree_iff_exists_iso_biproduct {F : ModCat.{v} C} :
@@ -79,6 +92,30 @@ theorem isFiniteFree_biproduct_yoneda {n : ℕ} (Y : Fin n → C) :
 /-- A representable module is finite free. -/
 theorem isFiniteFree_yoneda_obj (X : C) : isFiniteFree C ((yoneda C).obj X) :=
   isFiniteSumOfRepresentables_preadditiveYoneda_obj X
+
+/-- A choice of an element at each representing object defines a map from the sum of the
+representables, taking each identity generator to the chosen element. -/
+theorem exists_biproduct_desc_app_id {F : ModCat.{v} C} {m : ℕ} {Y : Fin m → C}
+    (y : ∀ j, F.obj.obj (op (Y j))) :
+    ∃ p : (⨁ (yoneda C).obj ∘ Y) ⟶ F, ∀ j,
+      (biproduct.ι ((yoneda C).obj ∘ Y) j ≫ p).hom.app (op (Y j)) (𝟙 (Y j)) = y j := by
+  have := (additiveFunctor_iff F.obj).1 F.property
+  let a (j : Fin m) : (yoneda C).obj (Y j) ⟶ F := by
+    let p : CategoryTheory.yoneda.obj (Y j) ⟶ F.obj ⋙ forget AddCommGrpCat :=
+      yonedaEquiv.symm (y j)
+    exact ObjectProperty.homMk
+      { app T := AddCommGrpCat.ofHom
+          (AddMonoidHom.mk' (fun f ↦ p.app T f) (fun f g ↦ by
+            -- The inverse Yoneda component evaluates the action of the arrow on `y j`.
+            change F.obj.map (f + g).op (y j) = F.obj.map f.op (y j) + F.obj.map g.op (y j)
+            simp only [op_add, Functor.map_add, AddCommGrpCat.hom_add_apply]) :
+            (T.unop ⟶ Y j) →+ F.obj.obj T)
+        naturality T U g := by
+          ext (f : T.unop ⟶ Y j)
+          exact p.naturality_apply g f }
+  refine ⟨biproduct.desc a, fun j ↦ ?_⟩
+  rw [biproduct.ι_desc]
+  exact (yonedaEquiv (X := Y j) (F := F.obj ⋙ forget AddCommGrpCat)).apply_symm_apply (y j)
 
 /-- A finite free module is projective. -/
 theorem projective_of_isFiniteFree {P : ModCat.{v} C} (hP : isFiniteFree C P) :
