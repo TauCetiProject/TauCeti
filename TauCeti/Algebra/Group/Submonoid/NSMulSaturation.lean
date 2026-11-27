@@ -320,6 +320,16 @@ end Submonoid
 
 namespace AddSubmonoid
 
+/-- A point of the graph image is determined by its second coordinate in the source monoid. -/
+theorem mem_map_prod_id_iff {N M : Type*} [AddMonoid N] [AddMonoid M]
+    (s : AddSubmonoid N) (f : N →+ M) (x : M × N) :
+    x ∈ s.map (f.prod (AddMonoidHom.id N)) ↔ x.2 ∈ s ∧ x.1 = f x.2 := by
+  have hf : ⇑(f.prod (AddMonoidHom.id N)) = fun n => (f n, n) := by
+    funext n
+    simp only [AddMonoidHom.prod_apply, AddMonoidHom.id_apply]
+  rw [← SetLike.mem_coe, AddSubmonoid.coe_map, hf]
+  simpa only [SetLike.mem_coe] using Set.mem_image_prodMk_self_snd_iff f (s : Set N) x
+
 /-- The image of `s` under `n ↦ (f n, n)` is `NSMulSaturated` exactly when `s` is,
 provided nonzero natural multiples are injective on the first coordinate `M`. -/
 theorem nsmulSaturated_map_prod_id {N M : Type*} [AddMonoid N] [AddMonoid M]
@@ -330,12 +340,12 @@ theorem nsmulSaturated_map_prod_id {N M : Type*} [AddMonoid N] [AddMonoid M]
     have hmem : a • (f n, n) ∈ s.map (f.prod (AddMonoidHom.id N)) :=
       ⟨a • n, hn, Prod.ext (map_nsmul f a n) rfl⟩
     exact (h hmem).imp_right fun hgraph =>
-      ((Set.mem_image_prodMk_self_snd_iff f s (f n, n)).mp hgraph).1
+      ((s.mem_map_prod_id_iff f (f n, n)).mp hgraph).1
   · rintro h a ⟨m, n⟩ hmem
     by_cases ha : a = 0
     · exact Or.inl ha
-    · have hgraph := (Set.mem_image_prodMk_self_snd_iff f s (a • m, a • n)).mp hmem
-      exact Or.inr ((Set.mem_image_prodMk_self_snd_iff f s (m, n)).mpr
+    · have hgraph := (s.mem_map_prod_id_iff f (a • m, a • n)).mp hmem
+      exact Or.inr ((s.mem_map_prod_id_iff f (m, n)).mpr
         ⟨(h hgraph.1).resolve_left ha,
           nsmul_right_injective ha (hgraph.2.trans (map_nsmul f a n))⟩)
 

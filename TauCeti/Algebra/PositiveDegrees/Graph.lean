@@ -40,14 +40,14 @@ def swappedGraph : PositiveDegrees (M × N) where
   finite_le k := by
     apply ((d.finite_cutoff k).image (fun n => (f n, n))).subset
     rintro x ⟨hx, hk⟩
-    have h := (Set.mem_image_prodMk_self_snd_iff f d.monoid x).mp hx
+    have h := (d.monoid.mem_map_prod_id_iff f x).mp hx
     exact (Set.mem_image_prodMk_self_snd_iff f (d.cutoff k) x).mpr ⟨d.mem_cutoff.mpr ⟨h.1, hk⟩, h.2⟩
 
 /-- An allowed graph exponent has its first coordinate determined by its second. -/
 @[simp]
 theorem mem_swappedGraph_monoid (x : M × N) :
-    x ∈ (d.swappedGraph f).monoid ↔ x.2 ∈ d.monoid ∧ x.1 = f x.2 :=
-  Set.mem_image_prodMk_self_snd_iff f d.monoid x
+    x ∈ (d.swappedGraph f).monoid ↔ x.2 ∈ d.monoid ∧ x.1 = f x.2 := by
+  rw [swappedGraph, AddSubmonoid.mem_map_prod_id_iff]
 
 /-- The graph monoid is saturated exactly when the source monoid is saturated, provided
 nonzero natural multiples are injective in the first coordinate. -/
