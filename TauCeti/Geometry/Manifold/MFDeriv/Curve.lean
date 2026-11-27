@@ -86,6 +86,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 * `TauCeti.Manifold.hasMFDerivWithinAt_curveVelocityWithin` and
   `TauCeti.Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt`: the two directions relating the
   named velocity to a `HasMFDerivWithinAt` witness.
+* `TauCeti.Manifold.injective_mfderiv_iff_curveVelocity_ne_zero`: the derivative of a curve is
+  injective exactly when its velocity is nonzero.
 * `TauCeti.Manifold.isMIntegralCurve_iff_curveVelocity_eq`: a curve is an integral curve of a
   vector field exactly when it is differentiable with velocity given by the field at every time.
 * `TauCeti.Manifold.curveVelocityWithin_subset`,
@@ -266,6 +268,17 @@ theorem mfderiv_apply_eq_smul_curveVelocity (c : 𝕜) :
   rw [curveVelocity_apply]
   -- On the tangent space `𝕜`, the scalar action is multiplication, so `c • 1 = c`.
   exact (congrArg _ (mul_one c).symm).trans ((mfderiv 𝓘(𝕜, 𝕜) I γ t).map_smul c (1 : 𝕜))
+
+/-- The derivative of a curve is injective exactly when its velocity is nonzero. -/
+theorem injective_mfderiv_iff_curveVelocity_ne_zero :
+    Function.Injective (mfderiv 𝓘(𝕜, 𝕜) I γ t) ↔ curveVelocity I γ t ≠ 0 := by
+  -- The tangent space `TangentSpace 𝓘(𝕜, 𝕜) t` is `𝕜` by definition, so its vectors are scalars.
+  refine ⟨fun h h0 ↦ one_ne_zero (α := 𝕜) (h (a₁ := (1 : 𝕜)) (a₂ := (0 : 𝕜)) ?_),
+    fun h (c₁ c₂ : 𝕜) hc ↦ ?_⟩
+  · rw [mfderiv_apply_eq_smul_curveVelocity, mfderiv_apply_eq_smul_curveVelocity, h0, smul_zero,
+      smul_zero]
+  · rw [mfderiv_apply_eq_smul_curveVelocity c₁, mfderiv_apply_eq_smul_curveVelocity c₂] at hc
+    exact smul_left_injective 𝕜 h hc
 
 /-- The velocity of the image of a curve under a differentiable map is the differential of the
 map applied to the velocity of the curve. The derivative within the parameter set is uniquely
