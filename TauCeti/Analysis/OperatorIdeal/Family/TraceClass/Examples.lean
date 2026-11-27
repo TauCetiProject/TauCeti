@@ -37,8 +37,8 @@ approximation numbers `1` below `r` and `0` from `r` on, so its trace norm is `r
   summable.
 * `lp.diagonalCLM_inv_succ_mem_hilbertSchmidt` and `lp.diagonalCLM_inv_succ_notMem_traceClass`:
   the diagonal operator with coefficients `1 / (n + 1)` is Hilbert–Schmidt and not trace class.
-* `Submodule.nuclearENorm_starProjection` and `Submodule.trace_starProjection`: the orthogonal
-  projection onto a subspace of dimension `r` has trace norm `r` and trace `r`.
+* `Submodule.nuclearENorm_starProjection` and `ContinuousLinearMap.trace_starProjection`: the
+  orthogonal projection onto a subspace of dimension `r` has trace norm `r` and trace `r`.
 
 ## References
 
@@ -131,6 +131,13 @@ theorem starProjection_mem_traceClass :
   rw [mem_finiteSubmodule_traceClass_iff_nuclearENorm_ne_top, nuclearENorm_starProjection]
   exact ENNReal.natCast_ne_top _
 
+end Submodule
+
+namespace ContinuousLinearMap
+
+variable {𝕜 : Type*} {E : Type u} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] (U : Submodule 𝕜 E) [FiniteDimensional 𝕜 U]
+
 /-- **Trace of a finite-rank projection.** The orthogonal projection onto a subspace of finite
 dimension `r` has trace `r`. -/
 @[simp]
@@ -139,8 +146,8 @@ theorem trace_starProjection : U.starProjection.trace = Module.finrank 𝕜 U :=
   have hsum : HasSum (fun i ↦ rankOne 𝕜 (e i : E) (e i : E)) U.starProjection := by
     rw [e.starProjection_eq_sum_rankOne]
     exact hasSum_fintype _
-  rw [ContinuousLinearMap.trace_eq_tsum_of_hasSum_rankOne .of_finite hsum, tsum_fintype]
+  rw [trace_eq_tsum_of_hasSum_rankOne .of_finite hsum, tsum_fintype]
   have he (i) : ‖(e i : E)‖ = 1 := e.norm_eq_one i
   simp [inner_self_eq_norm_sq_to_K, he]
 
-end Submodule
+end ContinuousLinearMap
