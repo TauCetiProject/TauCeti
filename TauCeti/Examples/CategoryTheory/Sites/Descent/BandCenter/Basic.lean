@@ -5,25 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
-public import Mathlib.CategoryTheory.SingleObj
-public import Mathlib.GroupTheory.Perm.Fin
-public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Basic
+public import TauCeti.Examples.CategoryTheory.Sites.Descent.BandFixtures.Constant
 
 /-!
 # Checks for the evaluation of intrinsic central sections
 
-On the point site `Discrete PUnit`, the constant pseudofunctor `B(G)` has as its only fibre the
-one-object groupoid of a group `G`. The evaluation of an intrinsic central section of `B(G)` is a
-central element of `G` (`IntrinsicBandSections.evaluation_comm`).
+On the point site `Discrete PUnit`, the constant pseudofunctor `B(G)` (`Pseudofunctor.constant`)
+has as its only fibre the one-object groupoid of a group `G`. The evaluation of an intrinsic
+central section of `B(G)` is a central element of `G` (`IntrinsicBandSections.evaluation_comm`).
 
-For `G = S₃` the transposition `(0 1)` does not commute with `(1 2)`, so it is not the evaluation
-of any central section, and since the centre of `S₃` is trivial, `B(S₃)` has only the identity
-section: evaluation onto all six automorphisms fails without abelian inertia.
+For `G = S₃` the centre of `S₃` is trivial, so `B(S₃)` has only the identity section (the point
+case of the Checks for `BandFixtures.constantSectionsEquiv`), every evaluation is the identity and
+the transposition `(0 1)` is not the evaluation of any central section: evaluation onto all six
+automorphisms fails without abelian inertia.
 
 For a commutative group `G` every element `g` gives a central section acting by `g`
-(`centralSection`), and these are all the sections: for `G = C₃` there are exactly three, and the
-section of the generator evaluates to the nonidentity automorphism `Multiplicative.ofAdd 1`.
+(`centralSection`, the constant section of a centre unit), and these are all the sections: for
+`G = C₃` there are exactly three, and the section of the generator evaluates to the nonidentity
+automorphism `Multiplicative.ofAdd 1`.
 -/
 
 @[expose] public section
@@ -32,12 +31,13 @@ noncomputable section
 
 namespace TauCeti.Examples.BandCenter
 
-open CategoryTheory CategoryTheory.Pseudofunctor Opposite Bicategory
+open CategoryTheory CategoryTheory.Pseudofunctor CategoryTheory.Pseudofunctor.BandFixtures
+  Opposite Bicategory
 
 /-- The constant pseudofunctor `B(G)` on the point site, with fibre the one-object groupoid of
 `G`. -/
 abbrev pointBG (G : Type) [Group G] : LocallyDiscrete (Discrete PUnit.{1})ᵒᵖ ⥤ᵖ Cat.{0, 0} :=
-  ((Functor.const (Discrete PUnit.{1})ᵒᵖ).obj (Cat.of (SingleObj G))).toPseudofunctor'
+  constant (Discrete PUnit.{1}) (SingleObj G)
 
 /-- The point of the site. -/
 abbrev pt : Discrete PUnit.{1} := ⟨⟨⟩⟩
@@ -61,36 +61,30 @@ theorem mul_evaluation_comm {G : Type} [Group G] {V : Discrete PUnit.{1}} (a : V
   (SingleObj.comp_as_mul G _ _).symm.trans
     ((IntrinsicBandSections.evaluation_comm a x s h).trans (SingleObj.comp_as_mul G _ _))
 
-/-- **The `B(S₃)` Check, transposition.** The transposition `(0 1)` does not commute with `(1 2)`,
-so it is not the evaluation of any central section of `B(S₃)`. -/
-theorem evaluation_ne_swap {V : Discrete PUnit.{1}} (a : V ⟶ pt)
-    (x : (pointBG (Equiv.Perm (Fin 3))).obj (.mk (op V)))
-    (s : IntrinsicBandSections (pointBG (Equiv.Perm (Fin 3))) pt) :
-    toElem (IntrinsicBandSections.evaluation a x s).asIso.hom ≠ Equiv.swap 0 1 := by
-  intro h
-  have hc := mul_evaluation_comm a x s (Equiv.swap 1 2)
-  rw [h] at hc
-  exact absurd hc (by decide)
+/-- **The `B(S₃)` Check, sections.** `B(S₃)` has only the identity central section over the point,
+rather than one for each of the six automorphisms of its object: the point-site case of the
+`B(S₃)` Check for `BandFixtures.constantSectionsEquiv`. -/
+instance : Subsingleton (IntrinsicBandSections (pointBG (Equiv.Perm (Fin 3))) pt) :=
+  inferInstance
 
 /-- **The `B(S₃)` Check, trivial centre.** Every evaluation of a central section of `B(S₃)` is the
-identity, since the centre of `S₃` is trivial. -/
+identity, since `B(S₃)` has only the identity central section. -/
 theorem evaluation_eq_one {V : Discrete PUnit.{1}} (a : V ⟶ pt)
     (x : (pointBG (Equiv.Perm (Fin 3))).obj (.mk (op V)))
     (s : IntrinsicBandSections (pointBG (Equiv.Perm (Fin 3))) pt) :
     IntrinsicBandSections.evaluation a x s = 1 := by
-  have key : ∀ z : Equiv.Perm (Fin 3), (∀ h : Equiv.Perm (Fin 3), z * h = h * z) → z = 1 := by
-    decide
-  ext
-  rw [Aut.one_asIso, Iso.refl_hom]
+  rw [Subsingleton.elim s 1, map_one]
+
+/-- **The `B(S₃)` Check, transposition.** The transposition `(0 1)` is not the evaluation of any
+central section of `B(S₃)`. -/
+theorem evaluation_ne_swap {V : Discrete PUnit.{1}} (a : V ⟶ pt)
+    (x : (pointBG (Equiv.Perm (Fin 3))).obj (.mk (op V)))
+    (s : IntrinsicBandSections (pointBG (Equiv.Perm (Fin 3))) pt) :
+    toElem (IntrinsicBandSections.evaluation a x s).asIso.hom ≠ Equiv.swap 0 1 := by
+  rw [evaluation_eq_one, Aut.one_asIso, Iso.refl_hom]
   -- The identity of `x` in the fibre `SingleObj (Equiv.Perm (Fin 3))` is `1`
   -- (`SingleObj.id_as_one`).
-  exact (key _ (mul_evaluation_comm a x s)).trans (SingleObj.id_as_one _ _).symm
-
-/-- **The `B(S₃)` Check, sections.** `B(S₃)` has only the identity central section over the point,
-rather than one for each of the six automorphisms of its object. -/
-instance : Subsingleton (IntrinsicBandSections (pointBG (Equiv.Perm (Fin 3))) pt) :=
-  ⟨fun s t ↦ IntrinsicBandSections.ext_evaluation fun _ a x ↦ by
-    rw [evaluation_eq_one a x s, evaluation_eq_one a x t]⟩
+  exact (SingleObj.id_as_one _ _).trans_ne (by decide : (1 : Equiv.Perm (Fin 3)) ≠ Equiv.swap 0 1)
 
 /-! ### `B(G)` for a commutative group -/
 
@@ -114,16 +108,13 @@ theorem toElem_centerUnit_app {G : Type} [CommGroup G] (g : G) {V : Discrete PUn
 /-- For a commutative group `G`, the central section of `B(G)` over the point acting by `g`
 on every fibre. -/
 def centralSection {G : Type} [CommGroup G] (g : G) : IntrinsicBandSections (pointBG G) pt :=
-  IntrinsicBandSections.ofCompatible (fun _ _ ↦ centerUnit g)
-    -- Every pullback functor of the constant pseudofunctor `pointBG G` is the identity functor of
-    -- `SingleObj G` by definition, so it fixes each component `g` of `centerUnit g`.
-    ((isPullbackCompatible_iff _).2 fun _ _ _ _ _ ↦ rfl)
+  constantSection pt (centerUnit g)
 
 /-- The components of `centralSection g` are `centerUnit g`. -/
 @[simp]
 theorem val_centralSection {G : Type} [CommGroup G] (g : G) (V : Discrete PUnit.{1})
     (a : V ⟶ pt) : (centralSection g).val V a = centerUnit g :=
-  IntrinsicBandSections.val_ofCompatible _ _ V a
+  val_constantSection pt _ V a
 
 /-- Evaluating `centralSection g` gives `g`. -/
 theorem toElem_evaluation_centralSection {G : Type} [CommGroup G] (g : G)
