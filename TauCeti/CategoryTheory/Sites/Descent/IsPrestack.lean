@@ -70,7 +70,8 @@ Mathlib's sheaf criteria (`Presieve.isSheafFor_trans`, `Presieve.isSheafFor_of_f
   `CategoryTheory.Pseudofunctor.pullHom_map`,
   `CategoryTheory.Pseudofunctor.pullHom_mapComp'_hom`,
   `CategoryTheory.Pseudofunctor.pullHom_mapComp'_inv`,
-  `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_toPseudofunctor_comp`:
+  `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_toPseudofunctor_comp`,
+  `CategoryTheory.Functor.pullHom_toPseudofunctor'_eq`:
   composition, identity, comparison, and restriction laws for `pullHom`.
 * `CategoryTheory.Pseudofunctor.IsPrestack.hom_ext`,
   `CategoryTheory.Pseudofunctor.IsPrestack.pullHom_ext`,
@@ -149,6 +150,23 @@ lemma isSeparatedFor_presheafHom_of_hom_ext {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ 
     map_eq_pullHom ψ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl, h']
 
 namespace LocallyDiscreteOpToCat
+
+/-- For a category-valued presheaf, `pullHom` is the restriction functor on morphisms
+transported along the two equalities of iterated and composite restrictions. -/
+lemma _root_.CategoryTheory.Functor.pullHom_toPseudofunctor'_eq (K : Cᵒᵖ ⥤ Cat.{v', u'})
+    {U₁ U₂ V W : C} {M : K.obj (op U₁)} {N : K.obj (op U₂)}
+    {p : V ⟶ U₁} {q : V ⟶ U₂}
+    (a : (K.map p.op).toFunctor.obj M ⟶ (K.map q.op).toFunctor.obj N) (f : W ⟶ V) :
+    pullHom (F := K.toPseudofunctor') a f (f ≫ p) (f ≫ q) =
+      eqToHom (congrArg (fun k ↦ k.toFunctor.obj M) (K.map_comp p.op f.op)) ≫
+        (K.map f.op).toFunctor.map a ≫
+        eqToHom (congrArg (fun k ↦ k.toFunctor.obj N) (K.map_comp q.op f.op).symm) := by
+  have hcomp {U : C} (r : V ⟶ U) : K.toPseudofunctor'.mapComp' r.op.toLoc f.op.toLoc
+      (f ≫ r).op.toLoc = eqToIso (K.map_comp r.op f.op) := by
+    rw [Pseudofunctor.mapComp', PrelaxFunctor.map₂Iso_eqToIso, Functor.toPseudofunctor'_mapComp]
+    exact eqToIso_trans _ _
+  simp only [pullHom, hcomp p, hcomp q, eqToIso.hom, eqToIso.inv, Cat.eqToHom_app]
+  rfl
 
 variable {D : Type*} [Category* D] (p : D ⥤ C)
 
