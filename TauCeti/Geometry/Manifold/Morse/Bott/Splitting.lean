@@ -280,6 +280,20 @@ theorem negativeNormalProjection_apply_eq_zero_iff {s : S} {v : i.isImmersion.No
     h.negativeNormalProjection hn g s v = 0 ↔ v ∈ h.positiveNormalSpace hn g s :=
   Submodule.projection_apply_eq_zero_iff _
 
+/-- **The projection is injective on a negative definite subspace.** If the normal Hessian is
+negative definite on the image of a linear map `L` into the normal space, then `L` followed by the
+projection onto the negative normal space is injective: the kernel of the projection is the
+positive normal space, on which the normal Hessian is nonnegative. -/
+theorem injective_negativeNormalProjection_comp {V : Type*} [AddCommGroup V] [Module ℝ V] {s : S}
+    (L : V →ₗ[ℝ] i.isImmersion.NormalSpace s hn)
+    (hL : ∀ v ≠ 0, h.normalHessian hn s (L v) (L v) < 0) :
+    Function.Injective (h.negativeNormalProjection hn g s ∘ₗ L) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro v hv
+  by_contra hv0
+  exact (hL v hv0).not_ge (h.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace hn g
+    ((h.negativeNormalProjection_apply_eq_zero_iff hn g).1 hv))
+
 /-- The projection kills the positive normal space. -/
 @[simp]
 theorem negativeNormalProjection_apply_eq_zero_of_mem {s : S} {v : i.isImmersion.NormalSpace s hn}
