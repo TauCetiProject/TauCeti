@@ -315,21 +315,19 @@ theorem exists_harmonicOnNhd_ball_eq_add_div_sub_pow_mul (hn : finrank ℝ E ≠
   set ξ : EuclideanSpace ℝ (Fin (finrank ℝ E)) :=
     EuclideanSpace.single ⟨0, Nat.pos_of_ne_zero hn⟩ 1
   have hξ : ‖ξ‖ = 1 := by simp [ξ]
+  have hξ_nmem : ξ ∉ ball 0 1 := by simp [hξ]
   let K : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ := fun w ↦ ballPoissonKernel _ w ξ
   have hK : HarmonicOnNhd K (ball 0 1) :=
-    (harmonicOnNhd_ballPoissonKernel_left hξ).mono fun w hw (h : w = ξ) ↦ by
-      rw [mem_ball_zero_iff, h, hξ] at hw
-      exact lt_irrefl _ hw
+    (harmonicOnNhd_ballPoissonKernel_left hξ).mono (Set.subset_compl_singleton_iff.2 hξ_nmem)
   -- `u z = K (e ((z - c) / R))`.
   let u : E → ℝ := fun z ↦ K (e (R⁻¹ • (z - c)))
   refine ⟨u, ?_, fun z hz ↦ ?_, c + r • e.symm ξ, ?_, c - r • e.symm ξ, ?_, ?_⟩
   · have h := (harmonicOnNhd_comp_inv_smul_sub_ball_iff e c hR 1).2 hK
     rwa [mul_one] at h
-  · have hzn := norm_inv_smul_sub e hR.le z c
-    have hlt : dist z c / R < 1 := (div_lt_one hR).2 (mem_ball.1 hz)
-    refine ballPoissonKernel_pos (hzn ▸ hlt) fun h ↦ ?_
-    rw [h, hξ] at hzn
-    exact hlt.ne hzn.symm
+  · have hz' : ‖e (R⁻¹ • (z - c))‖ < 1 := by
+      rw [norm_inv_smul_sub e hR.le z c]
+      exact (div_lt_one hR).2 (mem_ball.1 hz)
+    exact ballPoissonKernel_pos hz' (ne_of_mem_of_not_mem (mem_ball_zero_iff.2 hz') hξ_nmem)
   · simp [dist_eq_norm, norm_smul, hξ, abs_of_nonneg hr]
   · simp [norm_smul, hξ, abs_of_nonneg hr]
   · -- At these points `u` is the Poisson kernel at `(r / R) ξ` and `-(r / R) ξ`.
