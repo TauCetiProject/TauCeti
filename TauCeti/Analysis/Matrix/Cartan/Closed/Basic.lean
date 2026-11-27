@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Star.Unitary
 public import TauCeti.Analysis.Matrix.Cartan.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Units
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact
@@ -19,6 +20,7 @@ import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Geometry.Lie.Exponential.Units.Basic
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.Topology.Algebra.Group.Connected
+import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
 # The Cartan decomposition of a closed matrix group stable under conjugate transpose
@@ -65,16 +67,21 @@ subgroup of `GL(2, ℝ)` stable under transpose, which contains no other point o
   of an element of `H` lie in `H`.
 * `Subgroup.expUnit_smul_mem_of_isClosed`: the same line statement in the form of the hypothesis
   of `Subgroup.cartanHomeomorph`.
-* `Subgroup.forall_exists_mem_coe_eq_exp_smul_iff_mem_linearLieSubalgebra`: the Hermitian part
-  `𝔭_H` is the Hermitian part of the Lie algebra `Subgroup.linearLieSubalgebra H`.
-* `Subgroup.hermitianLieSubmodule`: the Hermitian part `𝔭_H` of the Lie algebra of `H`, as a real
-  subspace of the matrices, with `Subgroup.mem_hermitianLieSubmodule_iff` for closed `H`.
+* `Subgroup.forall_exists_mem_coe_eq_exp_smul_iff_mem_linearLieSubalgebra`: the Hermitian `X`
+  whose exponential line lies in `H` are the Hermitian elements of the Lie algebra
+  `Subgroup.linearLieSubalgebra H`.
+* `Subgroup.hermitianLieSubmodule`: the Hermitian part `𝔭_H` of the Lie algebra of `H`, a real
+  subspace of the matrices, with `Subgroup.mem_hermitianLieSubmodule_iff` describing it for closed
+  `H` as the Hermitian `X` with `exp (t X) ∈ H` for every real `t`.
 * `Subgroup.cartanHomeomorphOfIsClosed`: the homeomorphism `K_H × 𝔭_H ≃ₜ H`,
   `(k, X) ↦ k * exp X`, with `val_cartanHomeomorphOfIsClosed_apply`.
 * `Subgroup.existsUnique_unitary_mul_exp_of_isClosed`: every `g ∈ H` is uniquely `k * exp X` with
   `k ∈ K_H` and `X ∈ 𝔭_H`.
-* `Subgroup.maximal_isCompact_unitarySubgroup_subgroupOf_of_isClosed`: `K_H` is a maximal compact
-  subgroup of `H`.
+* `Subgroup.connectedSpace_iff_connectedSpace_unitaryPart`: `H` is connected exactly when `K_H` is.
+* `Subgroup.maximal_isCompact_unitarySubgroup_subgroupOf_of_isClosed`: `K_H`, as the subgroup
+  `(unitarySubgroup (GL n 𝕜)).subgroupOf H` of `H`, is a maximal compact subgroup of `H`; it has the
+  same image in `GL n 𝕜` as `Subgroup.unitaryPart H`
+  (`Subgroup.map_subtype_unitarySubgroup_subgroupOf`).
 
 ## References
 
@@ -405,6 +412,15 @@ theorem mem_hermitianLieSubmodule_iff (hH : IsClosed (H : Set (GL n 𝕜))) {X :
   rw [mem_hermitianLieSubmodule, forall_exists_mem_coe_eq_exp_smul_iff_mem_linearLieSubalgebra hH,
     ← Matrix.isHermitian_iff_isSelfAdjoint]
 
+/-- The Hermitian part of the Lie algebra of the whole group `GL n 𝕜` is the space of all
+Hermitian matrices. -/
+@[simp]
+theorem hermitianLieSubmodule_top :
+    (⊤ : Subgroup (GL n 𝕜)).hermitianLieSubmodule = selfAdjoint.submodule ℝ (Matrix n n 𝕜) :=
+  le_antisymm (fun _ hX ↦ (mem_hermitianLieSubmodule.1 hX).1) fun X hX ↦
+    (mem_hermitianLieSubmodule_iff isClosed_univ).2 ⟨Matrix.isHermitian_iff_isSelfAdjoint.2 hX,
+      fun t ↦ ⟨TauCeti.expUnit (t • X), mem_top _, TauCeti.expUnit_coe _⟩⟩
+
 /-- For a closed subgroup `H` of `GL n 𝕜` stable under the conjugate transpose and with finitely
 many connected components, the line through a Hermitian `x` with `exp x ∈ H` lies in `H`: the line
 hypothesis of `Subgroup.cartanHomeomorph`. -/
@@ -416,50 +432,83 @@ theorem expUnit_smul_mem_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)))
     (exists_mem_coe_eq_exp_smul_of_isClosed hH hstar hfin hx.isHermitian hxH
       (TauCeti.expUnit_coe x))) t
 
-/-- The Hermitian factor domain of `Subgroup.cartanHomeomorphOfIsClosed`, written through the
-matrix exponential, is the domain of `Subgroup.cartanHomeomorph`, written through the unit
-exponential. -/
-private def lineDomainHomeomorph (H : Subgroup (GL n 𝕜)) :
-    {X : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ,
-        ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • (X : Matrix n n 𝕜))} ≃ₜ
-      {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H} :=
-  (Homeomorph.refl _).subtype fun _ ↦
-    mem_linearLieAlgebra_iff_forall_exp.symm.trans mem_linearLieAlgebra_iff
+/-- The domain `K_H × 𝔭_H` of `Subgroup.cartanHomeomorphOfIsClosed`, with `K_H` the unitary part
+of `H` and `𝔭_H` the Hermitian part of its Lie algebra, is the domain of
+`Subgroup.cartanHomeomorph`, written through subtypes and the unit exponential. The identification
+keeps the values of both factors. -/
+private def cartanDomainHomeomorph (hH : IsClosed (H : Set (GL n 𝕜))) :
+    H.unitaryPart × H.hermitianLieSubmodule ≃ₜ
+      {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×
+        {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H} :=
+  ((Homeomorph.refl _).subtype fun _ ↦ by simp).prodCongr
+    { toFun X := ⟨⟨X, (mem_hermitianLieSubmodule.1 X.property).1⟩,
+        mem_linearLieAlgebra_iff.1
+          ((H.mem_linearLieSubalgebra_iff hH).1 (mem_hermitianLieSubmodule.1 X.property).2)⟩
+      invFun x := ⟨x, mem_hermitianLieSubmodule.2 ⟨x.val.property,
+        (H.mem_linearLieSubalgebra_iff hH).2 (mem_linearLieAlgebra_iff.2 x.property)⟩⟩
+      left_inv _ := rfl
+      right_inv _ := rfl
+      continuous_toFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _ }
+
+/-- `cartanDomainHomeomorph` keeps the value of the unitary factor. -/
+@[simp]
+private theorem coe_cartanDomainHomeomorph_apply_fst (hH : IsClosed (H : Set (GL n 𝕜)))
+    (p : H.unitaryPart × H.hermitianLieSubmodule) :
+    ((cartanDomainHomeomorph hH p).1 : unitaryGroup n 𝕜) = p.1 := by
+  simp [cartanDomainHomeomorph]
+
+/-- `cartanDomainHomeomorph` keeps the value of the Hermitian factor. -/
+@[simp]
+private theorem coe_cartanDomainHomeomorph_apply_snd (hH : IsClosed (H : Set (GL n 𝕜)))
+    (p : H.unitaryPart × H.hermitianLieSubmodule) :
+    (((cartanDomainHomeomorph hH p).2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) = p.2 :=
+  rfl
+
+/-- The inverse of `cartanDomainHomeomorph` keeps the value of the unitary factor. -/
+@[simp]
+private theorem coe_cartanDomainHomeomorph_symm_apply_fst (hH : IsClosed (H : Set (GL n 𝕜)))
+    (q : {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×
+      {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H}) :
+    (((cartanDomainHomeomorph hH).symm q).1 : unitaryGroup n 𝕜) = q.1 := by
+  simp [cartanDomainHomeomorph]
+
+/-- The inverse of `cartanDomainHomeomorph` keeps the value of the Hermitian factor. -/
+@[simp]
+private theorem coe_cartanDomainHomeomorph_symm_apply_snd (hH : IsClosed (H : Set (GL n 𝕜)))
+    (q : {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×
+      {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H}) :
+    (((cartanDomainHomeomorph hH).symm q).2 : Matrix n n 𝕜) =
+      ((q.2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) :=
+  rfl
 
 variable (H) in
 /-- **The Cartan decomposition of a closed matrix group stable under the conjugate transpose.**
 Let `H` be a closed subgroup of `GL n 𝕜`, for `𝕜 = ℝ` or `ℂ`, stable under the conjugate transpose
 and with finitely many connected components. Then `(k, X) ↦ k * exp X` is a homeomorphism from the
-product of the unitary elements `K_H` of `H` (the orthogonal ones when `𝕜 = ℝ`) and the Hermitian
-part `𝔭_H` of the Lie algebra of `H`, the Hermitian `X` with `exp (t X) ∈ H` for all real `t`, onto
-`H`.
+product of the unitary part `K_H` of `H` (its orthogonal elements when `𝕜 = ℝ`), a subgroup of the
+unitary group, and the Hermitian part `𝔭_H` of the Lie algebra of `H`, a real subspace of the
+matrices, onto `H`.
 
 It is `Subgroup.cartanHomeomorph`, whose line hypothesis is
-`Subgroup.exists_mem_coe_eq_exp_smul_of_isClosed`, with the domain `𝔭_H` written through the
-matrix exponential, so that the statement does not depend on a choice of norm on matrices. -/
+`Subgroup.exists_mem_coe_eq_exp_smul_of_isClosed`. Neither factor depends on a choice of norm on
+matrices: `𝔭_H` is the space of Hermitian `X` with `exp (t X) ∈ H` for all real `t`
+(`Subgroup.mem_hermitianLieSubmodule_iff`). -/
 def cartanHomeomorphOfIsClosed (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) :
-    {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×
-        {X : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ,
-          ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • (X : Matrix n n 𝕜))} ≃ₜ H :=
-  ((Homeomorph.refl _).prodCongr (lineDomainHomeomorph H)).trans
+    H.unitaryPart × H.hermitianLieSubmodule ≃ₜ H :=
+  (cartanDomainHomeomorph hH).trans
     (H.cartanHomeomorph hstar (expUnit_smul_mem_of_isClosed hH hstar hfin))
 
 /-- The Cartan decomposition of `H` sends `(k, X)` to `k * exp X`. -/
 @[simp]
 theorem val_cartanHomeomorphOfIsClosed_apply (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H))
-    (p : {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×
-      {X : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ,
-        ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • (X : Matrix n n 𝕜))}) :
+    (p : H.unitaryPart × H.hermitianLieSubmodule) :
     ((H.cartanHomeomorphOfIsClosed hH hstar hfin p : GL n 𝕜) : Matrix n n 𝕜) =
-      (p.1 : Matrix n n 𝕜) *
-        NormedSpace.exp ((p.2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) := by
-  rw [cartanHomeomorphOfIsClosed, Homeomorph.trans_apply, Subgroup.val_cartanHomeomorph_apply,
-    Homeomorph.coe_prodCongr, Prod.map_fst, Prod.map_snd, Homeomorph.refl_apply, id_eq]
-  -- The second factor of `cartanHomeomorphOfIsClosed` only changes the membership proof of the
-  -- Hermitian factor, not its value.
-  rfl
+      ((p.1 : unitaryGroup n 𝕜) : Matrix n n 𝕜) *
+        NormedSpace.exp (p.2 : Matrix n n 𝕜) := by
+  simp [cartanHomeomorphOfIsClosed]
 
 /-- The unitary factor of the Cartan decomposition of `g ∈ H` is the polar unitary factor of
 `g`. -/
@@ -468,41 +517,44 @@ theorem coe_cartanHomeomorphOfIsClosed_symm_apply_fst (hH : IsClosed (H : Set (G
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) (g : H) :
     (((H.cartanHomeomorphOfIsClosed hH hstar hfin).symm g).1 : unitaryGroup n 𝕜) =
       (g : GL n 𝕜).polarUnitary := by
-  rw [cartanHomeomorphOfIsClosed, Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm,
-    Homeomorph.coe_prodCongr, Prod.map_fst, Homeomorph.refl_symm, Homeomorph.refl_apply, id_eq]
-  exact Subgroup.coe_cartanHomeomorph_symm_apply_fst _ _ g
+  simp [cartanHomeomorphOfIsClosed]
 
 /-- The Hermitian factor of the Cartan decomposition of `g ∈ H` is the logarithm of `√(gᴴ g)`. -/
 @[simp]
 theorem coe_cartanHomeomorphOfIsClosed_symm_apply_snd (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) (g : H) :
-    ((((H.cartanHomeomorphOfIsClosed hH hstar hfin).symm g).2 : selfAdjoint (Matrix n n 𝕜)) :
-        Matrix n n 𝕜) =
+    (((H.cartanHomeomorphOfIsClosed hH hstar hfin).symm g).2 : Matrix n n 𝕜) =
       cfc Real.log (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜))) := by
-  rw [cartanHomeomorphOfIsClosed, Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm,
-    Homeomorph.coe_prodCongr, Prod.map_snd]
-  -- The inverse of the Hermitian subtype equivalence keeps the value.
-  refine (congrArg Subtype.val (Homeomorph.subtype_symm_apply_coe _ _ _)).trans ?_
-  rw [Homeomorph.refl_symm, Homeomorph.refl_apply, ← CFC.log]
-  exact Subgroup.coe_cartanHomeomorph_symm_apply_snd _ _ g
+  simp [cartanHomeomorphOfIsClosed, CFC.log]
 
 /-- **The global Cartan decomposition** `H = K_H exp 𝔭_H` of a closed subgroup `H` of `GL n 𝕜`
 stable under the conjugate transpose, with finitely many connected components: every `g ∈ H`
-factors uniquely as `k * exp X` with `k` a unitary element of `H` and `X` a Hermitian matrix with
-`exp (t X) ∈ H` for every real `t`. -/
+factors uniquely as `k * exp X` with `k` in the unitary part `K_H` of `H` and `X` in the Hermitian
+part `𝔭_H` of its Lie algebra. -/
 theorem existsUnique_unitary_mul_exp_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) {g : GL n 𝕜}
     (hg : g ∈ H) :
-    ∃! p : {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×
-        {X : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ,
-          ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • (X : Matrix n n 𝕜))},
+    ∃! p : H.unitaryPart × H.hermitianLieSubmodule,
       (g : Matrix n n 𝕜) =
-        (p.1 : Matrix n n 𝕜) * NormedSpace.exp ((p.2 : selfAdjoint (Matrix n n 𝕜)) :
-          Matrix n n 𝕜) := by
-  -- Transport the general uniqueness along the identification of the Hermitian factor domains,
-  -- which keeps both factors' values.
-  exact ((Homeomorph.refl _).prodCongr (lineDomainHomeomorph H)).toEquiv.existsUnique_congr_right.2
-    (H.existsUnique_unitary_mul_exp hstar (expUnit_smul_mem_of_isClosed hH hstar hfin) hg)
+        ((p.1 : unitaryGroup n 𝕜) : Matrix n n 𝕜) * NormedSpace.exp (p.2 : Matrix n n 𝕜) := by
+  refine (existsUnique_congr fun p ↦ ?_).1
+    ((H.cartanHomeomorphOfIsClosed hH hstar hfin).bijective.existsUnique ⟨g, hg⟩)
+  rw [Subtype.ext_iff, Units.ext_iff, val_cartanHomeomorphOfIsClosed_apply, eq_comm]
+
+/-- **`H` is connected exactly when its unitary part `K_H` is**: the Cartan decomposition
+identifies `H` with `K_H × 𝔭_H`, and the vector space `𝔭_H` is connected. -/
+theorem connectedSpace_iff_connectedSpace_unitaryPart (hH : IsClosed (H : Set (GL n 𝕜)))
+    (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) :
+    ConnectedSpace H ↔ ConnectedSpace H.unitaryPart := by
+  let e := H.cartanHomeomorphOfIsClosed hH hstar hfin
+  constructor
+  · intro _
+    exact (Prod.fst_surjective.comp e.symm.surjective).connectedSpace
+      (continuous_fst.comp e.symm.continuous)
+  · intro _
+    have : ConnectedSpace H.hermitianLieSubmodule :=
+      connectedSpace_iff_univ.2 (convex_univ.isConnected Set.univ_nonempty)
+    exact e.surjective.connectedSpace e.continuous
 
 /-- The unitary polar factor of an element of a closed subgroup `H` of `GL n 𝕜` stable under the
 conjugate transpose, with finitely many connected components, lies in `H`. -/
@@ -510,7 +562,7 @@ theorem toUnits_polarUnitary_mem_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) {g : GL n 𝕜}
     (hg : g ∈ H) : Unitary.toUnits g.polarUnitary ∈ H := by
   have h := ((H.cartanHomeomorphOfIsClosed hH hstar hfin).symm ⟨g, hg⟩).1.property
-  rwa [coe_cartanHomeomorphOfIsClosed_symm_apply_fst] at h
+  rwa [mem_unitaryPart, coe_cartanHomeomorphOfIsClosed_symm_apply_fst] at h
 
 /-- The positive polar factor `g u⁻¹` of an element `g = (g u⁻¹) u` of a closed subgroup `H` of
 `GL n 𝕜` stable under the conjugate transpose, with finitely many connected components, lies in
