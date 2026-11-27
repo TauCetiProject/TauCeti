@@ -69,15 +69,32 @@ theorem coe_homeomorphFiniteGrassmannian_mk (x : sphere (0 : EuclideanSpace ℂ 
   rw [homeomorphFiniteGrassmannian, Homeomorph.trans_apply, homeomorphProjectivization_mk,
     finiteGrassmannian.coe_projectivizationHomeomorph, Projectivization.submodule_mk]
 
+/-- The inverse of `CPⁿ ≃ₜ Gr₁(ℂⁿ⁺¹)` sends the line `ℂ ∙ x` of a unit vector `x` to its class. -/
+@[simp]
+theorem homeomorphFiniteGrassmannian_symm_mk (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1)
+    (h : Module.finrank ℂ
+      (Submodule.span ℂ {WithLp.ofLp (x : EuclideanSpace ℂ (Fin (n + 1)))}) = 1) :
+    (homeomorphFiniteGrassmannian n).symm
+        ⟨Submodule.span ℂ {WithLp.ofLp (x : EuclideanSpace ℂ (Fin (n + 1)))}, h⟩ = mk n x :=
+  (homeomorphFiniteGrassmannian n).symm_apply_eq.2
+    (Subtype.ext (coe_homeomorphFiniteGrassmannian_mk n x).symm)
+
 /-- **The stage `CPⁿ → CP∞`**: the line of `ℂⁿ⁺¹` represented by a point of `CPⁿ`, viewed in
 `ℕ →₀ ℂ` through the coordinate inclusion. -/
 def toInfiniteGrassmannian : C(ComplexProjectiveSpace n, infiniteGrassmannian ℂ 1) :=
-  ⟨fun p ↦ (homeomorphFiniteGrassmannian n p).toInfinite,
-    finiteGrassmannian.continuous_toInfinite.comp (homeomorphFiniteGrassmannian n).continuous⟩
+  finiteGrassmannian.toInfiniteContinuousMap.comp
+    (homeomorphFiniteGrassmannian n : C(ComplexProjectiveSpace n, finiteGrassmannian ℂ 1 (n + 1)))
 
+/-- The stage `CPⁿ → CP∞` is the comparison with `Gr₁(ℂⁿ⁺¹)` followed by the stage inclusion. -/
 theorem toInfiniteGrassmannian_apply (p : ComplexProjectiveSpace n) :
     toInfiniteGrassmannian n p = (homeomorphFiniteGrassmannian n p).toInfinite :=
   (rfl)
+
+/-- The stage `CPⁿ → CP∞` as a function: `toInfinite ∘ homeomorphFiniteGrassmannian n`. -/
+theorem coe_toInfiniteGrassmannian :
+    ⇑(toInfiniteGrassmannian n) =
+      finiteGrassmannian.toInfinite ∘ homeomorphFiniteGrassmannian n :=
+  funext (toInfiniteGrassmannian_apply n)
 
 /-- The stage `CPⁿ → CP∞` sends the class of a unit vector `x` to the line spanned by `x` in
 `ℕ →₀ ℂ`. -/
@@ -92,7 +109,7 @@ theorem coe_toInfiniteGrassmannian_mk (x : sphere (0 : EuclideanSpace ℂ (Fin (
 /-- The stage `CPⁿ → CP∞` is a closed embedding. -/
 theorem isClosedEmbedding_toInfiniteGrassmannian :
     Topology.IsClosedEmbedding (toInfiniteGrassmannian n) :=
-  finiteGrassmannian.isClosedEmbedding_toInfinite.comp
+  coe_toInfiniteGrassmannian n ▸ finiteGrassmannian.isClosedEmbedding_toInfinite.comp
     (homeomorphFiniteGrassmannian n).isClosedEmbedding
 
 /-- The range of the stage `CPⁿ → CP∞` is the range of the finite Grassmannian `Gr₁(ℂⁿ⁺¹)`: the
@@ -101,7 +118,7 @@ lines of functions vanishing from coordinate `n + 1` on
 theorem range_toInfiniteGrassmannian :
     range (toInfiniteGrassmannian n) =
       range (finiteGrassmannian.toInfinite : finiteGrassmannian ℂ 1 (n + 1) → _) :=
-  (homeomorphFiniteGrassmannian n).surjective.range_comp _
+  coe_toInfiniteGrassmannian n ▸ (homeomorphFiniteGrassmannian n).surjective.range_comp _
 
 /-- **The stages `CPⁿ` exhaust `CP∞`.** -/
 theorem iUnion_range_toInfiniteGrassmannian :
@@ -115,9 +132,8 @@ theorem iUnion_range_toInfiniteGrassmannian :
 theorem toInfiniteGrassmannian_zero (p : ComplexProjectiveSpace 0) :
     toInfiniteGrassmannian 0 p = infiniteGrassmannian.basepoint ℂ 1 := by
   refine Subtype.ext ?_
-  rw [infiniteGrassmannian.coe_basepoint, toInfiniteGrassmannian_apply,
-    finiteGrassmannian.coe_toInfinite, Submodule.eq_top_of_finrank_eq
-      ((homeomorphFiniteGrassmannian 0 p).property.trans (Module.finrank_fin_fun ℂ).symm),
-    Submodule.map_top, Finsupp.range_coordinateInclusion]
+  rw [toInfiniteGrassmannian_apply, finiteGrassmannian.coe_toInfinite,
+    finiteGrassmannian.coe_eq_top, infiniteGrassmannian.coe_basepoint, Submodule.map_top,
+    Finsupp.range_coordinateInclusion]
 
 end TauCeti.ComplexProjectiveSpace
