@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Lie.Exponential.Generation
 public import TauCeti.Geometry.Lie.Exponential.Trotter
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Topology.Algebra.Module.Submodule
+public import TauCeti.Algebra.Group.AddSubgroup.ToIntSubmodule
 import TauCeti.Topology.Algebra.Module.CompactQuotient
 import Mathlib.Topology.Algebra.Group.Neighborhood
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
@@ -39,6 +40,8 @@ its Lie algebra by a lattice.
   algebra.
 * `TauCeti.discreteTopology_ker_lieExpAddMonoidHom`: the kernel of the exponential is discrete.
 * `TauCeti.finite_lieExpLattice`: the exponential lattice is a finitely generated `ℤ`-module.
+* `TauCeti.finite_ker_lieExpAddMonoidHom`, `TauCeti.free_ker_lieExpAddMonoidHom`: so is the kernel
+  of the exponential, and it is free.
 * `TauCeti.isOpenMap_lieExpAddMonoidHom` and `TauCeti.isOpenMap_lieExp`: the exponential of a
   commutative Lie group is an open map.
 * `TauCeti.lieExpAddMonoidHom_surjective_of_preconnectedSpace`: the exponential homomorphism of
@@ -220,6 +223,19 @@ omit [IsTopologicalGroup G] in
 in the finite-dimensional Lie algebra. -/
 instance finite_lieExpLattice : Module.Finite ℤ (lieExpLattice (I := I) (G := G)) :=
   instModuleFinite_of_discrete_submodule _
+
+omit [IsTopologicalGroup G] in
+/-- The kernel of the exponential of a commutative Lie group is a finitely generated `ℤ`-module.
+-/
+instance finite_ker_lieExpAddMonoidHom :
+    Module.Finite ℤ (lieExpAddMonoidHom (I := I) (G := G)).ker :=
+  Module.Finite.equiv (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmoduleEquiv
+
+omit [IsTopologicalGroup G] in
+/-- The kernel of the exponential of a commutative Lie group is a free `ℤ`-module. -/
+instance free_ker_lieExpAddMonoidHom :
+    Module.Free ℤ (lieExpAddMonoidHom (I := I) (G := G)).ker :=
+  Module.Free.of_equiv (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmoduleEquiv
 
 section Preconnected
 

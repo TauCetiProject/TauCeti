@@ -48,6 +48,9 @@ tori `(S¹)ⁿ`, whose models live in the lowest universe, so the equivalence is
 
 ## Main results
 
+* `TauCeti.LieGroupCat.isTorus_iff`, `TauCeti.LieGroupCat.isTorus_of`,
+  `TauCeti.isFreeFiniteIntModule_iff`: membership in the two subcategories.
+* `TauCeti.lieExpKerFunctor_obj_obj`, `TauCeti.standardTorus_obj`: the objects.
 * `TauCeti.coe_lieExpKerFunctor_map_hom_hom_apply`: the functor acts on morphisms by the Lie map.
 * `TauCeti.finrank_lieExpKerFunctor_obj_standardTorus`: the lattice of `(S¹)ⁿ` has rank `n`.
 
@@ -70,75 +73,55 @@ namespace LieGroupCat
 
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-- The underlying continuous homomorphism of a smooth homomorphism of bundled Lie groups. -/
-@[expose] def Hom.toContinuousMonoidHom {G K : LieGroupCat.{u, v, w}} (f : G ⟶ K) : G →ₜ* K :=
-  ⟨f.hom.toMonoidHom, f.hom.contMDiff_toFun.continuous⟩
-
-@[simp]
-theorem Hom.toContinuousMonoidHom_id (G : LieGroupCat.{u, v, w}) :
-    Hom.toContinuousMonoidHom (𝟙 G) = ContinuousMonoidHom.id G :=
-  ContinuousMonoidHom.ext fun x ↦
-    congrFun (ContMDiffMonoidMorphism.coe_id (I := G.modelWithCorners) (n := ∞) (G := G)) x
-
-@[simp]
-theorem Hom.toContinuousMonoidHom_comp {G K L : LieGroupCat.{u, v, w}} (f : G ⟶ K) (g : K ⟶ L) :
-    Hom.toContinuousMonoidHom (f ≫ g) =
-      (Hom.toContinuousMonoidHom g).comp (Hom.toContinuousMonoidHom f) :=
-  ContinuousMonoidHom.ext fun x ↦ congrFun (ContMDiffMonoidMorphism.coe_comp g.hom f.hom) x
-
-@[simp]
-theorem Hom.coe_toContinuousMonoidHom {G K : LieGroupCat.{u, v, w}} (f : G ⟶ K) :
-    ⇑(Hom.toContinuousMonoidHom f) = f.hom :=
-  rfl
-
-@[simp]
-theorem Hom.toContinuousMonoidHom_ofHom_toContMDiffMonoidMorphism {G K : LieGroupCat.{u, v, w}}
-    (f : G →ₜ* K) :
-    Hom.toContinuousMonoidHom
-      (ofHom (f.toContMDiffMonoidMorphism G.modelWithCorners K.modelWithCorners)) = f :=
-  ContinuousMonoidHom.ext fun x ↦ congrFun (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism
-    (I := G.modelWithCorners) (I' := K.modelWithCorners) f) x
-
 /-- The compact connected commutative Lie groups, the tori. -/
-@[expose] def isTorus : ObjectProperty LieGroupCat.{u, v, w} :=
+def isTorus : ObjectProperty LieGroupCat.{u, v, w} :=
   fun G ↦ CompactSpace G ∧ ConnectedSpace G ∧ IsMulCommutative G
 
-instance (G : isTorus.{u, v, w}.FullSubcategory) : CompactSpace G.obj := G.property.1
-instance (G : isTorus.{u, v, w}.FullSubcategory) : ConnectedSpace G.obj := G.property.2.1
-instance (G : isTorus.{u, v, w}.FullSubcategory) : IsMulCommutative G.obj := G.property.2.2
-instance (G : isTorus.{u, v, w}.FullSubcategory) : IsTopologicalGroup G.obj :=
-  topologicalGroup_of_lieGroup G.obj.modelWithCorners ∞
+theorem isTorus_iff {G : LieGroupCat.{u, v, w}} :
+    isTorus G ↔ CompactSpace G ∧ ConnectedSpace G ∧ IsMulCommutative G :=
+  Iff.rfl
+
+/-- A compact connected commutative Lie group is a torus. -/
+theorem isTorus_of {G : LieGroupCat.{u, v, w}} [CompactSpace G] [ConnectedSpace G]
+    [IsMulCommutative G] : isTorus G :=
+  isTorus_iff.2 ⟨‹_›, ‹_›, ‹_›⟩
+
+instance (G : isTorus.{u, v, w}.FullSubcategory) : CompactSpace G.obj :=
+  (isTorus_iff.1 G.property).1
+instance (G : isTorus.{u, v, w}.FullSubcategory) : ConnectedSpace G.obj :=
+  (isTorus_iff.1 G.property).2.1
+instance (G : isTorus.{u, v, w}.FullSubcategory) : IsMulCommutative G.obj :=
+  (isTorus_iff.1 G.property).2.2
 
 end LieGroupCat
 
 /-- The finitely generated free `ℤ`-modules. -/
-@[expose] def isFreeFiniteIntModule : ObjectProperty (ModuleCat.{u} ℤ) :=
+def isFreeFiniteIntModule : ObjectProperty (ModuleCat.{u} ℤ) :=
   fun M ↦ Module.Free ℤ M ∧ Module.Finite ℤ M
+
+theorem isFreeFiniteIntModule_iff {M : ModuleCat.{u} ℤ} :
+    isFreeFiniteIntModule M ↔ Module.Free ℤ M ∧ Module.Finite ℤ M :=
+  Iff.rfl
+
+instance (M : isFreeFiniteIntModule.{u}.FullSubcategory) : Module.Free ℤ M.obj :=
+  (isFreeFiniteIntModule_iff.1 M.property).1
+instance (M : isFreeFiniteIntModule.{u}.FullSubcategory) : Module.Finite ℤ M.obj :=
+  (isFreeFiniteIntModule_iff.1 M.property).2
 
 open LieGroupCat ContinuousMonoidHom
 
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-- The kernel of the exponential of a Lie group is its exponential lattice, as a `ℤ`-module. -/
-private def lieExpLatticeEquivKer (G : LieGroupCat.{u, v, w}) [IsMulCommutative G] :
-    lieExpLattice (I := G.modelWithCorners) (G := G) ≃ₗ[ℤ]
-      (lieExpAddMonoidHom (I := G.modelWithCorners) (G := G)).ker where
-  toFun X := ⟨X.val, X.property⟩
-  invFun X := ⟨X.val, X.property⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := Subtype.ext (by simp)
-  left_inv _ := rfl
-  right_inv _ := rfl
-
 theorem isFreeFiniteIntModule_ker (G : isTorus.{u, v, w}.FullSubcategory) :
     isFreeFiniteIntModule
       (ModuleCat.of ℤ (lieExpAddMonoidHom (I := G.obj.modelWithCorners) (G := G.obj)).ker) :=
-  ⟨Module.Free.of_equiv (lieExpLatticeEquivKer G.obj),
-    Module.Finite.equiv (lieExpLatticeEquivKer G.obj)⟩
+  isFreeFiniteIntModule_iff.2 ⟨inferInstance, inferInstance⟩
 
 /-- **The exponential lattice functor.** It sends a torus `T` to the kernel of its exponential,
 a finitely generated free `ℤ`-module, and a smooth homomorphism to the restriction of its Lie
 map. -/
+-- Exposed: `coe_lieExpKerFunctor_map_hom_hom_apply` types its argument through
+-- `lieExpKerFunctor_obj_obj`, which holds by unfolding.
 @[expose] def lieExpKerFunctor :
     isTorus.{u, v, w}.FullSubcategory ⥤ isFreeFiniteIntModule.FullSubcategory where
   obj G := ⟨_, isFreeFiniteIntModule_ker G⟩
@@ -153,12 +136,18 @@ map. -/
   map_comp {G K L} f g := by
     apply ObjectProperty.hom_ext
     apply ModuleCat.hom_ext
-    refine LinearMap.ext fun X ↦ Subtype.ext ?_
     simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
-      ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
-      AddMonoidHom.coe_toIntLinearMap, coe_lieMapKer_apply, Hom.toContinuousMonoidHom_comp]
-    rw [ContinuousMonoidHom.lieMap_comp (I := G.obj.modelWithCorners)
-      (I' := K.obj.modelWithCorners) (I'' := L.obj.modelWithCorners), LieHom.comp_apply]
+      ModuleCat.hom_comp, ModuleCat.hom_ofHom, Hom.toContinuousMonoidHom_comp]
+    rw [lieMapKer_comp (I := G.obj.modelWithCorners) (I' := K.obj.modelWithCorners)
+      (I'' := L.obj.modelWithCorners)]
+    -- `AddMonoidHom.toIntLinearMap` of a composite is the composite of the `ℤ`-linear maps, by
+    -- definition; Mathlib has no lemma for it.
+    rfl
+
+theorem lieExpKerFunctor_obj_obj (G : isTorus.{u, v, w}.FullSubcategory) :
+    (lieExpKerFunctor.obj G).obj =
+      ModuleCat.of ℤ (lieExpAddMonoidHom (I := G.obj.modelWithCorners) (G := G.obj)).ker :=
+  (rfl)
 
 @[simp]
 theorem coe_lieExpKerFunctor_map_hom_hom_apply {G K : isTorus.{u, v, w}.FullSubcategory}
@@ -206,7 +195,7 @@ def lieExpKerFunctorFullyFaithful : lieExpKerFunctor.{u, v, w}.FullyFaithful whe
       (lieMap_lieExpKerPreimage (lieExpKerFunctor.map f))
       (fun X ↦ (coe_lieExpKerFunctor_map_hom_hom_apply f X).symm)
     rw [ObjectProperty.homMk_hom, hom_ofHom, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
-    exact DFunLike.congr_fun h x
+    exact (DFunLike.congr_fun h x).trans (congrFun (Hom.coe_toContinuousMonoidHom f.hom) x)
 
 instance : lieExpKerFunctor.{u, v, w}.Full := lieExpKerFunctorFullyFaithful.full
 
@@ -214,30 +203,32 @@ instance : lieExpKerFunctor.{u, v, w}.Faithful := lieExpKerFunctorFullyFaithful.
 
 /-- The `n`-dimensional torus `(S¹)ⁿ`, as a compact connected commutative Lie group. -/
 @[expose] def standardTorus (n : ℕ) : isTorus.{0, 0, 0}.FullSubcategory :=
-  ⟨LieGroupCat.of (ModelWithCorners.pi fun _ : Fin n ↦ 𝓡 1) (Fin n → Circle),
-    show CompactSpace (Fin n → Circle) ∧ ConnectedSpace (Fin n → Circle) ∧
-      IsMulCommutative (Fin n → Circle) from ⟨inferInstance, inferInstance, inferInstance⟩⟩
+  ⟨LieGroupCat.of (ModelWithCorners.pi fun _ : Fin n ↦ 𝓡 1) (Fin n → Circle), isTorus_of⟩
+
+theorem standardTorus_obj (n : ℕ) :
+    (standardTorus n).obj =
+      LieGroupCat.of (ModelWithCorners.pi fun _ : Fin n ↦ 𝓡 1) (Fin n → Circle) :=
+  (rfl)
 
 /-- The exponential lattice of `(S¹)ⁿ` has rank `n`. -/
 theorem finrank_lieExpKerFunctor_obj_standardTorus (n : ℕ) :
     Module.finrank ℤ (lieExpKerFunctor.obj (standardTorus n)).obj = n := by
   let T := (standardTorus n).obj
-  -- The object of `lieExpKerFunctor` is `ModuleCat.of ℤ ker(exp)`, whose carrier is `ker(exp)`.
-  change Module.finrank ℤ (lieExpAddMonoidHom (I := T.modelWithCorners) (G := T)).ker = n
-  rw [← (lieExpLatticeEquivKer T).finrank_eq, finrank_lieExpLattice,
-    finrank_leftInvariantDerivation_eq_modelVectorSpace BoundarylessManifold.isInteriorPoint]
-  -- The model vector space of `standardTorus n` is the product of `n` copies of that of `𝓡 1`.
-  change Module.finrank ℝ (Fin n → EuclideanSpace ℝ (Fin 1)) = n
-  rw [Module.finrank_pi_fintype]
-  simp
+  let K := (lieExpAddMonoidHom (I := T.modelWithCorners) (G := T)).ker
+  have h : Module.finrank ℤ K = n := by
+    rw [← K.toIntSubmoduleEquiv.finrank_eq, finrank_lieExpLattice,
+      finrank_leftInvariantDerivation_eq_modelVectorSpace BoundarylessManifold.isInteriorPoint]
+    -- The model vector space of `standardTorus n` is the product of `n` copies of that of `𝓡 1`
+    -- (`standardTorus_obj`).
+    exact (Module.finrank_pi_fintype (R := ℝ)
+      (M := fun _ : Fin n ↦ EuclideanSpace ℝ (Fin 1))).trans (by simp)
+  -- The carrier of `lieExpKerFunctor.obj (standardTorus n)` is `ker(exp)`
+  -- (`lieExpKerFunctor_obj_obj`).
+  exact h
 
 instance : lieExpKerFunctor.{0, 0, 0}.EssSurj where
   mem_essImage M := by
-    have := M.property.1
-    have := M.property.2
     let n := Module.finrank ℤ M.obj
-    have := (lieExpKerFunctor.obj (standardTorus n)).property.1
-    have := (lieExpKerFunctor.obj (standardTorus n)).property.2
     let e : (lieExpKerFunctor.obj (standardTorus n)).obj ≃ₗ[ℤ] M.obj :=
       (Module.finBasisOfFinrankEq ℤ _ (finrank_lieExpKerFunctor_obj_standardTorus n)).equiv
         (Module.finBasisOfFinrankEq ℤ M.obj rfl) (Equiv.refl _)

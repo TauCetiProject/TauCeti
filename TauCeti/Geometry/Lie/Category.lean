@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import TauCeti.Algebra.Category.LieAlgCat.Basic
+public import TauCeti.Geometry.Lie.AutomaticSmoothness
 public import TauCeti.Geometry.Lie.Functor
 public import TauCeti.Geometry.Lie.Integration
 import TauCeti.Geometry.Lie.Faithfulness
@@ -38,6 +39,8 @@ to every simply connected object.
 * `TauCeti.LieGroupCat.Hom.hom`, `TauCeti.LieGroupCat.ofHom`: conversions between categorical
   morphisms and smooth homomorphisms, with `hom_id`, `hom_comp`, `hom_ofHom`, `ofHom_hom` and
   `hom_ext`, and `ofHom_id` and `ofHom_comp` for conversion of identities and composites.
+* `TauCeti.LieGroupCat.Hom.toContinuousMonoidHom`: the underlying continuous homomorphism, with
+  `_id`, `_comp`, `coe_toContinuousMonoidHom` and `_ofHom_toContMDiffMonoidMorphism`.
 * `TauCeti.LieGroupCat.lieAlgebra`: the finite-dimensional Lie algebra of a bundled group.
 * `TauCeti.LieGroupCat.isoMk`: construct an isomorphism from inverse smooth homomorphisms,
   with `isoMk_hom_hom` and `isoMk_inv_hom`.
@@ -120,6 +123,10 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 instance (G : LieGroupCat.{u, v, w}) : T2Space G :=
   G.modelWithCorners.t2Space_of_lieGroup ∞
 
+/-- Bundled Lie groups are topological groups. -/
+instance (G : LieGroupCat.{u, v, w}) : IsTopologicalGroup G :=
+  topologicalGroup_of_lieGroup G.modelWithCorners ∞
+
 /-- Bundle a finite-dimensional smooth real Lie group. -/
 abbrev of {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {H : Type w} [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [I.Boundaryless]
@@ -199,6 +206,38 @@ theorem ofHom_comp
 /-- Categorical morphisms are equal if their underlying smooth homomorphisms agree. -/
 @[ext]
 theorem hom_ext {f g : G ⟶ K} (h : f.hom = g.hom) : f = g := ConcreteCategory.ext h
+
+/-- The underlying continuous homomorphism of a smooth homomorphism of bundled Lie groups. -/
+def Hom.toContinuousMonoidHom (f : G ⟶ K) : G →ₜ* K :=
+  ⟨f.hom.toMonoidHom, f.hom.contMDiff_toFun.continuous⟩
+
+/-- The continuous homomorphism of a morphism has the same underlying function. -/
+@[simp]
+theorem Hom.coe_toContinuousMonoidHom (f : G ⟶ K) : ⇑(Hom.toContinuousMonoidHom f) = f.hom :=
+  (rfl)
+
+/-- The continuous homomorphism of the identity morphism is the identity. -/
+@[simp]
+theorem Hom.toContinuousMonoidHom_id :
+    Hom.toContinuousMonoidHom (𝟙 G) = ContinuousMonoidHom.id G :=
+  ContinuousMonoidHom.ext fun x ↦
+    congrFun (ContMDiffMonoidMorphism.coe_id (I := G.modelWithCorners) (n := ∞) (G := G)) x
+
+/-- The continuous homomorphism of a composite is the composite. -/
+@[simp]
+theorem Hom.toContinuousMonoidHom_comp (f : G ⟶ K) (g : K ⟶ L) :
+    Hom.toContinuousMonoidHom (f ≫ g) =
+      (Hom.toContinuousMonoidHom g).comp (Hom.toContinuousMonoidHom f) :=
+  ContinuousMonoidHom.ext fun x ↦ congrFun (ContMDiffMonoidMorphism.coe_comp g.hom f.hom) x
+
+/-- A continuous homomorphism, made a morphism by automatic smoothness, has itself as its
+continuous homomorphism. -/
+@[simp]
+theorem Hom.toContinuousMonoidHom_ofHom_toContMDiffMonoidMorphism (f : G →ₜ* K) :
+    Hom.toContinuousMonoidHom
+      (ofHom (f.toContMDiffMonoidMorphism G.modelWithCorners K.modelWithCorners)) = f :=
+  ContinuousMonoidHom.ext fun x ↦ congrFun (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism
+    (I := G.modelWithCorners) (I' := K.modelWithCorners) f) x
 
 private theorem ofHom_comp_eq_id_of_leftInverse
     (f : ContMDiffMonoidMorphism G.modelWithCorners K.modelWithCorners ∞ G K)
