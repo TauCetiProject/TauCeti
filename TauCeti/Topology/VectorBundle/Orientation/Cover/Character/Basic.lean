@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Character
+public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
@@ -38,7 +39,10 @@ the two orientations of each fibre.
   character is orientable
   (`TauCeti.VectorBundleOrientation.nonempty_iff_orientationCharacter_eq_one`).
 * Transport along a loop `γ` in the orientation local system `o(E)` is multiplication by `w₁(γ)`
-  (`signLocalSystemFiberEquiv_map_asHom`): the character is the monodromy of `o(E)`.
+  (`signLocalSystemFiberEquiv_map_asHom`): the character is the monodromy of `o(E)`. Evaluation at
+  an orientation of `E_b` identifies the monodromy representation of `o(E)` at `b` with the
+  rank-one representation `k_{w₁}` given by `w₁` read in `kˣ`
+  (`monodromySignLocalSystemIso`).
 * Changing the basepoint along a path does not change the character
   (`orientationCharacter_fundamentalGroupMulEquivOfPath`), since the two monodromy permutations
   are conjugate by path lifting and the sign is invariant under conjugation.
@@ -81,6 +85,8 @@ and the orientation local system of `Q` has the orientation character as its mon
   trivial.
 * `signLocalSystemFiberEquiv_map_asHom`: transport in the orientation local system along a loop
   is multiplication by its orientation character.
+* `monodromySignLocalSystemIso`: the monodromy representation of the orientation local system is
+  the orientation character.
 * `orientationCharacter_fundamentalGroupMulEquivOfPath`: invariance under change of basepoint.
 * `freeLoopOrientationCharacter_toCircle`: the character of the free loop of a based loop.
 * `freeLoopOrientationCharacter_eq_of_joined`: the character of a free loop only depends on its
@@ -231,6 +237,35 @@ theorem signLocalSystemFiberEquiv_map_asHom {R : Type u} [Ring R] {b : B}
   exact (isCoveringMap_proj hι).apply_monodromy_inv_asHom_of_mem_signFiber deck_ne_self
     (fun _ _ h ↦ eq_or_eq_deck hι h) (finite_fiber hι b) g
     (signLocalSystemObjEquiv hι _ f).property _
+
+/-- **The monodromy of the orientation local system is the orientation character.** Evaluation at
+an orientation `o` of the fibre `E_b` identifies the monodromy representation of `o(E)` at `b` with
+the rank-one representation of `π₁(B, b)` on `k` given by the orientation character `w₁`, read in
+`kˣ`: transport around a loop `g` multiplies by `w₁(g)` (`signLocalSystemFiberEquiv_map_asHom`). -/
+def monodromySignLocalSystemIso (k : Type max uB uE uι) [CommRing k] {b : B}
+    (o : Orientation ℝ (E b) ι) :
+    (LocalCoefficientSystem.monodromyFunctor k (TopCat.of B) b).obj (signLocalSystem F E k hι) ≅
+      Rep.of (Representation.ofLinearCharacter
+        ((Units.map (Int.castRingHom k).toMonoidHom).comp (orientationCharacter F E hι b))) :=
+  Rep.mkIso (Representation.Equiv.mk (signLocalSystemFiberEquiv hι o) fun g ↦ by
+    ext f
+    exact (signLocalSystemFiberEquiv_map_asHom hι o g f).trans (by simp))
+
+/-- The identification of the monodromy of `o(E)` with the orientation character is evaluation at
+the chosen orientation. -/
+-- Not a simp lemma: `simp` rewrites the carrier of the monodromy representation first.
+theorem monodromySignLocalSystemIso_hom_apply (k : Type max uB uE uι) [CommRing k] {b : B}
+    (o : Orientation ℝ (E b) ι) (f : (signLocalSystem F E k hι).obj (FundamentalGroupoid.mk b)) :
+    (monodromySignLocalSystemIso hι k o).hom f = signLocalSystemFiberEquiv hι o f :=
+  (rfl)
+
+/-- The inverse identification of the orientation character with the monodromy of `o(E)` sends
+`r` to the element of the fibre whose value at the chosen orientation is `r`. -/
+-- Not a simp lemma: `simp` rewrites the carrier of the monodromy representation first.
+theorem monodromySignLocalSystemIso_inv_apply (k : Type max uB uE uι) [CommRing k] {b : B}
+    (o : Orientation ℝ (E b) ι) (r : k) :
+    (monodromySignLocalSystemIso hι k o).inv r = (signLocalSystemFiberEquiv hι o).symm r :=
+  (rfl)
 
 /-! ### Change of basepoint -/
 
