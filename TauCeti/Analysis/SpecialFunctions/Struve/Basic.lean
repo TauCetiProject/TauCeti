@@ -99,13 +99,15 @@ theorem struveL_def (ν z : ℂ) :
 private theorem hasSum_cpow_mul_regularizedHGFun (ν c : ℂ) {z : ℂ} (hz : z ≠ 0) :
     HasSum (fun k : ℕ => c ^ k * (z / 2) ^ (2 * k + ν + 1) /
         (Gamma (k + 3 / 2) * Gamma (k + ν + 3 / 2)))
-      ((z / 2) ^ (ν + 1) * regularizedHGFun {1} {3 / 2, ν + 3 / 2} (c * (z / 2) ^ 2)) := by
+      ((z / 2) ^ (ν + 1) * regularizedHGFun {1} {3 / 2, ν + 3 / 2} (c * z ^ 2 / 4)) := by
   have h2 : z / 2 ≠ 0 := div_ne_zero hz two_ne_zero
   refine ((hasSum_regularizedHGFun (by simp) _).mul_left ((z / 2) ^ (ν + 1))).congr_fun
     fun k => ?_
-  rw [Multiset.insert_eq_cons, regularizedHGFunCoeff_one_pair,
-    show 2 * (k : ℂ) + ν + 1 = ((2 * k : ℕ) : ℂ) + (ν + 1) by push_cast; ring,
-    cpow_add _ _ h2, cpow_natCast, mul_pow, ← pow_mul]
+  -- `cpow_add` splits the power only once the exponent is written as a natural number plus
+  -- `ν + 1`; the natural part then becomes an ordinary power.
+  have he : 2 * (k : ℂ) + ν + 1 = ((2 * k : ℕ) : ℂ) + (ν + 1) := by push_cast; ring
+  rw [Multiset.insert_eq_cons, regularizedHGFunCoeff_one_pair, he, cpow_add _ _ h2, cpow_natCast,
+    pow_mul]
   ring_nf
 
 /-- **The Struve series** (DLMF 11.2.1): for `z ≠ 0`,
@@ -113,31 +115,31 @@ private theorem hasSum_cpow_mul_regularizedHGFun (ν c : ℂ) {z : ℂ} (hz : z 
 theorem hasSum_struveH (ν : ℂ) {z : ℂ} (hz : z ≠ 0) :
     HasSum (fun k : ℕ => (-1) ^ k * (z / 2) ^ (2 * k + ν + 1) /
       (Gamma (k + 3 / 2) * Gamma (k + ν + 3 / 2))) (struveH ν z) := by
-  rw [struveH_def, show -(z ^ 2) / 4 = -1 * (z / 2) ^ 2 by ring]
-  exact hasSum_cpow_mul_regularizedHGFun ν (-1) hz
+  simpa [struveH_def, neg_div] using hasSum_cpow_mul_regularizedHGFun ν (-1) hz
 
 /-- **The modified Struve series** (DLMF 11.2.2): for `z ≠ 0`,
 `𝐋_ν(z) = ∑ₖ (z/2)^{2k+ν+1} / (Γ(k + 3/2) Γ(k + ν + 3/2))`, for every order `ν`. -/
 theorem hasSum_struveL (ν : ℂ) {z : ℂ} (hz : z ≠ 0) :
     HasSum (fun k : ℕ => (z / 2) ^ (2 * k + ν + 1) /
       (Gamma (k + 3 / 2) * Gamma (k + ν + 3 / 2))) (struveL ν z) := by
-  rw [struveL_def, show z ^ 2 / 4 = 1 * (z / 2) ^ 2 by ring]
-  simpa using hasSum_cpow_mul_regularizedHGFun ν 1 hz
+  simpa [struveL_def] using hasSum_cpow_mul_regularizedHGFun ν 1 hz
 
 /-- The common series of `𝐇₀` (`c = -1`) and `𝐋₀` (`c = 1`). -/
 private theorem hasSum_mul_regularizedHGFun_three_halves (c z : ℂ) :
     HasSum (fun k : ℕ => 2 / π * (c ^ k * z ^ (2 * k + 1) / ((2 * k + 1)‼ : ℂ) ^ 2))
-      (z / 2 * regularizedHGFun {1} {3 / 2, 0 + 3 / 2} (c * (z / 2) ^ 2)) := by
+      (z / 2 * regularizedHGFun {1} {3 / 2, 3 / 2} (c * z ^ 2 / 4)) := by
   refine ((hasSum_regularizedHGFun (by simp) _).mul_left (z / 2)).congr_fun fun k => ?_
   have hπ : ((√π : ℝ) : ℂ) ^ 2 = π := by exact_mod_cast Real.sq_sqrt Real.pi_pos.le
   have hd : ((2 * k + 1)‼ : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (Nat.doubleFactorial_pos _).ne'
-  -- Mathlib's `Γ(k + 1 + 1/2) = (2k + 1)!! √π / 2^{k+1}`, cast to `ℂ`
+  -- Mathlib's real `Γ(k + 1 + 1/2) = (2k + 1)!! √π / 2^{k+1}`, cast to `ℂ`: the complex argument
+  -- is first written as the cast of that real argument, so that `Gamma_ofReal` applies.
+  have hk : 3 / 2 + (k : ℂ) = ((k + 1 + 1 / 2 : ℝ) : ℂ) := by push_cast; ring
   have hΓ : Gamma (3 / 2 + k) = ((2 * k + 1)‼ : ℂ) * (√π : ℝ) / 2 ^ (k + 1) := by
-    rw [show 3 / 2 + (k : ℂ) = ((k + 1 + 1 / 2 : ℝ) : ℂ) by push_cast; ring, Gamma_ofReal,
-      Real.Gamma_nat_add_one_add_half]
+    rw [hk, Gamma_ofReal, Real.Gamma_nat_add_one_add_half]
     push_cast
     ring
-  rw [Multiset.insert_eq_cons, regularizedHGFunCoeff_one_pair, zero_add, hΓ]
+  have hx : c * z ^ 2 / 4 = c * (z / 2) ^ 2 := by ring
+  rw [Multiset.insert_eq_cons, regularizedHGFunCoeff_one_pair, hΓ, hx]
   rw [mul_pow, div_pow, div_pow, ← pow_mul, ← pow_mul]
   field_simp
   rw [hπ]
@@ -147,14 +149,12 @@ private theorem hasSum_mul_regularizedHGFun_three_halves (c z : ℂ) :
 theorem hasSum_struveH_zero (z : ℂ) :
     HasSum (fun k : ℕ => 2 / π * ((-1) ^ k * z ^ (2 * k + 1) / ((2 * k + 1)‼ : ℂ) ^ 2))
       (struveH 0 z) := by
-  rw [struveH_def, zero_add, cpow_one, show -(z ^ 2) / 4 = -1 * (z / 2) ^ 2 by ring]
-  simpa using hasSum_mul_regularizedHGFun_three_halves (-1) z
+  simpa [struveH_def, neg_div] using hasSum_mul_regularizedHGFun_three_halves (-1) z
 
 /-- DLMF 11.2.4: `𝐋₀(z) = (2/π) ∑ₖ z^{2k+1} / ((2k + 1)!!)²`, for every `z`. -/
 theorem hasSum_struveL_zero (z : ℂ) :
     HasSum (fun k : ℕ => 2 / π * (z ^ (2 * k + 1) / ((2 * k + 1)‼ : ℂ) ^ 2)) (struveL 0 z) := by
-  rw [struveL_def, zero_add, cpow_one, show z ^ 2 / 4 = 1 * (z / 2) ^ 2 by ring]
-  simpa using hasSum_mul_regularizedHGFun_three_halves 1 z
+  simpa [struveL_def] using hasSum_mul_regularizedHGFun_three_halves 1 z
 
 /-! ### Holomorphy in the argument -/
 
@@ -245,20 +245,17 @@ theorem struveL_eq_struveH_I_mul (ν : ℂ) {z : ℂ} (h : arg (I * z) = arg z +
     rintro rfl
     simp only [mul_zero, arg_zero, zero_add] at h
     linarith [Real.pi_pos]
-  have h2 : z / 2 ≠ 0 := div_ne_zero hz two_ne_zero
   have hmem : arg I + arg (z / 2) ∈ Ioc (-π) π := by
-    rw [show z / 2 = z / ((2 : ℕ) : ℂ) by norm_num, arg_div_natCast z two_ne_zero]
+    rw [arg_div_ofNat]
     exact (arg_mul_eq_add_arg_iff I_ne_zero hz).1 (by rw [h, arg_I, add_comm])
-  have hlog : log (I * (z / 2)) = log I + log (z / 2) :=
-    (log_mul_eq_add_log_iff I_ne_zero h2).2 hmem
   have hpow : (I * z / 2) ^ (ν + 1) = exp (π / 2 * I * (ν + 1)) * (z / 2) ^ (ν + 1) := by
-    rw [mul_div_assoc, cpow_def_of_ne_zero (mul_ne_zero I_ne_zero h2), hlog, log_I, add_mul,
-      exp_add, cpow_def_of_ne_zero h2]
-  rw [struveH_def, struveL_def, hpow,
-    show -((I * z) ^ 2) / 4 = z ^ 2 / 4 by rw [mul_pow, I_sq]; ring]
+    rw [mul_div_assoc, mul_cpow hmem, cpow_def_of_ne_zero I_ne_zero, log_I]
+  have hsq : -((I * z) ^ 2) / 4 = z ^ 2 / 4 := by rw [mul_pow, I_sq]; ring
+  rw [struveH_def, struveL_def, hpow, hsq]
+  -- the phase factors cancel: their exponents add up to `π/2 * I`, and `-I * e^{iπ/2} = 1`
+  have hphase : -I * ν * π / 2 + π / 2 * I * (ν + 1) = π / 2 * I := by ring
   have he : -I * exp (-I * ν * π / 2) * exp (π / 2 * I * (ν + 1)) = 1 := by
-    rw [mul_assoc, ← exp_add, show -I * ν * π / 2 + π / 2 * I * (ν + 1) = π / 2 * I by ring,
-      exp_pi_div_two_mul_I, neg_mul, I_mul_I, neg_neg]
+    rw [mul_assoc, ← exp_add, hphase, exp_pi_div_two_mul_I, neg_mul, I_mul_I, neg_neg]
   linear_combination (-(z / 2) ^ (ν + 1) * regularizedHGFun {1} {3 / 2, ν + 3 / 2} (z ^ 2 / 4)) * he
 
 /-- The factor `(x/2)^{ν+1}` and the core of `𝐇_ν`, `𝐋_ν` at real order and argument. -/
@@ -275,10 +272,12 @@ private theorem struve_ofReal_im (ν x c : ℝ) (hx : 0 ≤ x) :
   rw [h1, im_ofReal_mul, h2, mul_zero]
 
 /-- `𝐇_ν(x)` is real for real `ν` and `x ≥ 0`. -/
+@[simp]
 theorem struveH_ofReal_im (ν : ℝ) {x : ℝ} (hx : 0 ≤ x) : (struveH ν x).im = 0 := by
   simpa [struveH_def, neg_div] using struve_ofReal_im ν x (-1) hx
 
 /-- `𝐋_ν(x)` is real for real `ν` and `x ≥ 0`. -/
+@[simp]
 theorem struveL_ofReal_im (ν : ℝ) {x : ℝ} (hx : 0 ≤ x) : (struveL ν x).im = 0 := by
   simpa [struveL_def] using struve_ofReal_im ν x 1 hx
 

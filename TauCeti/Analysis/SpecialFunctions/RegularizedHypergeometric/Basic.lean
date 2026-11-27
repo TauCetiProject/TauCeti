@@ -306,6 +306,7 @@ theorem regularizedHGFunCoeff_map_ofReal (a b : Multiset ℝ) (n : ℕ) :
 
 /-- At real parameters and a real argument the regularized hypergeometric function is real. Where
 the series does not converge, `regularizedHGFun` takes the junk value `0`. -/
+@[simp]
 theorem regularizedHGFun_map_ofReal_im (a b : Multiset ℝ) (y : ℝ) :
     (regularizedHGFun (a.map ofReal) (b.map ofReal) y).im = 0 := by
   simp only [regularizedHGFun, FormalMultilinearSeries.sum, regularizedHGFunSeries,
