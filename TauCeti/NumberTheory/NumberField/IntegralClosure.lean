@@ -126,11 +126,11 @@ variable {K L}
 
 /-- If a group acts on `L` by `K`-algebra automorphisms with fixed field `K`, the elements of the
 integral closure of `𝓞 K` in `L` fixed by the group are those of `𝓞 K`: the instance form of
-`Algebra.isInvariant_integralClosure` for `𝓞 K`, which is integrally closed in `K`. -/
+`TauCeti.Algebra.isInvariant_integralClosure` for `𝓞 K`, which is integrally closed in `K`. -/
 instance NumberField.isInvariant_integralClosure {G : Type*} [Group G] [MulSemiringAction G L]
     [SMulCommClass G K L] [Algebra.IsInvariant K L G] :
     Algebra.IsInvariant (𝓞 K) (integralClosure (𝓞 K) L) G :=
-  Algebra.isInvariant_integralClosure (𝓞 K) K L G
+  TauCeti.Algebra.isInvariant_integralClosure (𝓞 K) K L G
 
 variable [NumberField K] [Algebra.IsAlgebraic K L]
 

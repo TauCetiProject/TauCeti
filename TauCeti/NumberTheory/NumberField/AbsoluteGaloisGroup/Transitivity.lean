@@ -50,7 +50,7 @@ variable {F : Type*} [Field F]
 instance isInvariant_integralClosure [PerfectField F] :
     Algebra.IsInvariant (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F))
       (Field.absoluteGaloisGroup F) :=
-  Algebra.isInvariant_integralClosure (𝓞 F) F (AlgebraicClosure F)
+  TauCeti.Algebra.isInvariant_integralClosure (𝓞 F) F (AlgebraicClosure F)
     (AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F)
 
 variable (F) in

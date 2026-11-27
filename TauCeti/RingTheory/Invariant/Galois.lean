@@ -21,8 +21,9 @@ infinite. An element of `L` lies in the image of `R` exactly when it is integral
 fixed by every `K`-automorphism of `L`. This combines the fixed-field theorem for infinite Galois
 extensions with the integral closedness of `R` in `K`. For instance, an algebraic integer in an
 algebraic closure of `ℚ` fixed by the absolute Galois group is a rational integer. The nontrivial
-direction is `Algebra.isInvariant_integralClosure` (`TauCeti/RingTheory/Invariant/Basic.lean`),
-stated for any group acting on `L` with fixed field `K`, applied to `Gal(L/K)`.
+direction is `TauCeti.Algebra.isInvariant_integralClosure`
+(`TauCeti/RingTheory/Invariant/Basic.lean`), stated for any group acting on `L` with fixed field
+`K`, applied to `Gal(L/K)`.
 
 Mathlib's `Algebra.isInvariant_of_isGalois` records the analogous fact for a finite Galois
 extension of the fraction field of an integrally closed domain, phrased through the integral
@@ -52,7 +53,7 @@ theorem mem_range_algebraMap_iff_isIntegral_and_fixed (x : L) :
   · rintro ⟨r, rfl⟩
     refine ⟨isIntegral_algebraMap, fun τ ↦ ?_⟩
     rw [IsScalarTower.algebraMap_apply R K L, τ.commutes]
-  obtain ⟨r, hr⟩ := (Algebra.isInvariant_integralClosure R K L Gal(L/K)).isInvariant
+  obtain ⟨r, hr⟩ := (TauCeti.Algebra.isInvariant_integralClosure R K L Gal(L/K)).isInvariant
     (⟨x, hx⟩ : integralClosure R L) fun σ ↦ Subtype.ext (hfix σ)
   exact ⟨r, congrArg Subtype.val hr⟩
 

@@ -43,7 +43,7 @@ contains `B` and has a centre `P_A` on `B`, a prime lying over the maximal ideal
 * `Gal(L/K)` is profinite, acts continuously on `B` with the discrete topology (stabilizers of
   algebraic elements are open, `TauCeti.InfiniteGalois.continuousSMul_integralClosure`), and the
   invariants of `B` are `O`, since `O` is integrally closed in `K`
-  (`Algebra.isInvariant_integralClosure`). Mathlib's
+  (`TauCeti.Algebra.isInvariant_integralClosure`). Mathlib's
   `Algebra.IsInvariant.exists_smul_of_under_eq_of_profinite` then moves `P_A` to `P_{A'}`, and the
   first point moves `A` to `A'`.
 
@@ -124,7 +124,7 @@ theorem exists_algEquiv_smul_eq_of_comap_eq_of_isGalois {A A' : ValuationSubring
   let _ : TopologicalSpace (integralClosure O L) := ⊥
   have : DiscreteTopology (integralClosure O L) := ⟨rfl⟩
   have := TauCeti.InfiniteGalois.continuousSMul_integralClosure O K L
-  have := Algebra.isInvariant_integralClosure O K L Gal(L/K)
+  have := TauCeti.Algebra.isInvariant_integralClosure O K L Gal(L/K)
   obtain ⟨σ, hσ⟩ := Algebra.IsInvariant.exists_smul_of_under_eq_of_profinite
     (G := Gal(L/K)) _ _ hunder
   refine ⟨σ, eq_of_comap_eq_of_isCenteredAt (comap_algebraMap_pointwise_smul σ A) h.symm
