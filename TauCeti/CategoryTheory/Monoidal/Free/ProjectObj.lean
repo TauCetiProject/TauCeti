@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Free.Basic
+import TauCeti.CategoryTheory.EqToHom
 import TauCeti.CategoryTheory.Monoidal.EqToHom
 
 /-!
@@ -107,6 +108,16 @@ theorem projectObjIso_eqToIso (h : ∀ a, f a = g a) (X : FreeMonoidalCategory C
     rw [hX, hY]
     exact TauCeti.eqToIso_tensorIso_eqToIso (projectObj_congr h X) (projectObj_congr h Y)
 
+/-- Transporting `projectObjIso e` along an equality of tensor words `w = w'` conjugates its
+component by `eqToHom`. -/
+theorem projectObjIso_congr_word (e : ∀ a, f a ≅ g a)
+    {w w' : FreeMonoidalCategory C} (hw : w = w') :
+    (projectObjIso e w).hom =
+      eqToHom (congrArg (projectObj f) hw) ≫ (projectObjIso e w').hom ≫
+        eqToHom (congrArg (projectObj g) hw).symm := by
+  subst hw
+  simp
+
 /-- Extending generator isomorphisms `e` along tensor words `h` and then over a word `X` agrees
 with evaluating `projectObjIso e` on the substituted word `projectObj h X`, up to
 `projectObj_projectObj`. -/
@@ -133,24 +144,22 @@ theorem projectObjIso_projectObj {C' : Type u''} {f g : C' → D} (e : ∀ b, f 
     rfl
   | tensor X Y ihX ihY =>
     ext
-    apply eq_of_heq
-    change (projectObjIso (fun a ↦ projectObjIso e (h a)) (X ⊗ Y)).hom ≍ _
+    -- `induction X` produces `FreeMonoidalCategory.tensor X Y`, whereas `projectObjIso_tensor`
+    -- and `projectObj_tensorObj` are stated with `X ⊗ Y`.
+    change (projectObjIso (fun a ↦ projectObjIso e (h a)) (X ⊗ Y)).hom =
+      (eqToIso (projectObj_projectObj f h (X ⊗ Y)).symm ≪≫
+        projectObjIso e (projectObj h (X ⊗ Y)) ≪≫
+        eqToIso (projectObj_projectObj g h (X ⊗ Y))).hom
     rw [projectObjIso_tensor, tensorIso_hom, ihX, ihY]
-    -- `projectObj h (X ⊗ Y) = projectObj h X ⊗ projectObj h Y` (`projectObj_tensorObj`) and
-    -- `projectObjIso e (_ ⊗ _) = projectObjIso e _ ⊗ᵢ projectObjIso e _`, and in `HEq` the outer
-    -- `eqToHom` conjugations match definitionally (proof-irrelevant equalities on defeq endpoints).
     simp only [Iso.trans_hom, eqToIso.hom, ← MonoidalCategory.tensorHom_comp_tensorHom,
       TauCeti.eqToHom_tensorHom_eqToHom]
-    rfl
-
-/-- Transporting `projectObjIso e` along an equality of tensor words `w = w'` conjugates its
-component by `eqToHom`. -/
-theorem projectObjIso_congr_word (e : ∀ a, f a ≅ g a)
-    {w w' : FreeMonoidalCategory C} (hw : w = w') :
-    (projectObjIso e w).hom =
-      eqToHom (congrArg (projectObj f) hw) ≫ (projectObjIso e w').hom ≫
-        eqToHom (congrArg (projectObj g) hw).symm := by
-  subst hw
-  simp
+    rw [projectObjIso_congr_word e (projectObj_tensorObj h X Y), projectObjIso_tensor,
+      tensorIso_hom]
+    refine TauCeti.eq_of_heq_conj
+      (m := (projectObjIso e (projectObj h X)).hom ⊗ₘ (projectObjIso e (projectObj h Y)).hom)
+      ((eqToHom_comp_heq _ _).trans (comp_eqToHom_heq _ _))
+      ((eqToHom_comp_heq _ _).trans ((comp_eqToHom_heq _ _).trans
+        ((eqToHom_comp_heq _ _).trans (comp_eqToHom_heq _ _))))
+      HEq.rfl
 
 end CategoryTheory.FreeMonoidalCategory
