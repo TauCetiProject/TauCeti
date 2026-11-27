@@ -27,9 +27,9 @@ The totally complex product and the comparison up to twice the logarithmic error
 
 public section
 
-namespace NumberField
+open Finset Module NumberField NumberField.InfinitePlace Real Set
 
-open Finset InfinitePlace Module Real Set
+namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -130,4 +130,4 @@ theorem rootDiscr_mem_Icc_of_different_generator {δ : 𝓞 K} {a b : ℝ}
     exact Finset.prod_le_prod₀ (fun w _ ↦ pow_nonneg (apply_nonneg w _) _)
       (fun w _ ↦ pow_le_pow_left₀ (apply_nonneg w _) (h w).2 _)
 
-end NumberField
+end TauCeti.NumberField
