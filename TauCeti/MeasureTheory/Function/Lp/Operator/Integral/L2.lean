@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.L2.Product
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
 import TauCeti.MeasureTheory.Function.Lp.Duality
@@ -43,6 +44,8 @@ The Hilbert–Schmidt norm of `T_K` is computed in
 * `TauCeti.inner_integralOperatorL2`: `⟪h, T_K f⟫ = ⟪h ⊗ star f, K⟫`.
 * `TauCeti.integralOperatorL2_prodMul_star`: the kernel `w ⊗ star u` gives the rank-one operator
   `InnerProductSpace.rankOne 𝕜 w u = ⟪u, ·⟫ • w`.
+* `TauCeti.adjointKernel`, `TauCeti.adjoint_integralOperatorL2`: the conjugate transpose kernel
+  `K⋆ (x, y) = conj (K (y, x))` and `T_K† = T_{K⋆}`.
 
 ## References
 
@@ -218,5 +221,60 @@ theorem integralOperatorL2_prodMul_star (w : Lp 𝕜 2 μ) (u : Lp 𝕜 2 ν) :
   filter_upwards [hK, coeFn_star u] with y hy hs
   simp only [hy, hs, Pi.star_apply, RCLike.star_def, RCLike.inner_apply]
   ring
+
+/-! ### The conjugate transpose kernel -/
+
+section Adjoint
+
+variable [SFinite μ]
+
+/-- The conjugate transpose `K⋆ (x, y) = conj (K (y, x))` of a kernel `K ∈ L²(ν ⊗ μ)`, an element
+of `L²(μ ⊗ ν)`. Its integral operator is the adjoint of that of `K`
+(`TauCeti.adjoint_integralOperatorL2`). -/
+def adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) : Lp 𝕜 2 (μ.prod ν) :=
+  star (Lp.compMeasurePreserving Prod.swap Measure.measurePreserving_swap K)
+
+theorem coeFn_adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel K =ᵐ[μ.prod ν] fun p ↦ conj (K p.swap) := by
+  filter_upwards [coeFn_star (Lp.compMeasurePreserving Prod.swap
+      Measure.measurePreserving_swap K),
+    coeFn_compMeasurePreserving K (Measure.measurePreserving_swap (μ := μ) (ν := ν))]
+    with p hs hc
+  rw [adjointKernel, hs, Pi.star_apply, hc, Function.comp_apply, RCLike.star_def]
+
+@[simp]
+theorem norm_adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) : ‖adjointKernel K‖ = ‖K‖ := by
+  rw [adjointKernel, norm_star, norm_compMeasurePreserving]
+
+@[simp]
+theorem adjointKernel_adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel (adjointKernel K) = K := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_adjointKernel (adjointKernel K),
+    Measure.measurePreserving_swap.quasiMeasurePreserving.ae_eq_comp
+      (coeFn_adjointKernel (μ := μ) K)] with q hq hK
+  simp only [Function.comp_apply] at hK
+  rw [hq, hK, Prod.swap_swap, RCLike.conj_conj]
+
+/-- **The kernel of the adjoint.** The adjoint of the integral operator of `K ∈ L²(ν ⊗ μ)` is the
+integral operator of the conjugate transpose kernel `(x, y) ↦ conj (K (y, x))`. -/
+@[simp]
+theorem adjoint_integralOperatorL2 (K : Lp 𝕜 2 (ν.prod μ)) :
+    ContinuousLinearMap.adjoint (integralOperatorL2 ν μ K) =
+      integralOperatorL2 μ ν (adjointKernel K) := by
+  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
+  rw [← inner_conj_symm, inner_integralOperatorL2, inner_integralOperatorL2, L2.inner_def,
+    L2.inner_def, ← integral_conj, ← integral_prod_swap (μ := ν) (ν := μ)]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_prodMul g (star f), coeFn_adjointKernel K,
+    Measure.measurePreserving_swap.quasiMeasurePreserving.ae_eq_comp (coeFn_prodMul f (star g)),
+    Measure.quasiMeasurePreserving_fst.ae_eq_comp (coeFn_star g),
+    Measure.quasiMeasurePreserving_snd.ae_eq_comp (coeFn_star f)] with p h₁ h₂ h₃ hg hf
+  simp only [Function.comp_apply, Pi.star_apply, RCLike.star_def, Prod.fst_swap,
+    Prod.snd_swap] at h₃ hg hf
+  simp only [h₁, h₂, h₃, hg, hf, RCLike.inner_apply, map_mul, RCLike.conj_conj]
+  ring
+
+end Adjoint
 
 end TauCeti
