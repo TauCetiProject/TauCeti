@@ -238,6 +238,7 @@ then `x + x⁻¹` lies in the maximal real subfield: under every complex embeddi
 value `1`, so `x⁻¹` maps to the complex conjugate of the image of `x`. -/
 theorem add_inv_mem_maximalRealSubfield_of_pow_eq_one {K : Type*} [Field K] {x : K} {n : ℕ}
     (hn : n ≠ 0) (hx : x ^ n = 1) : x + x⁻¹ ∈ maximalRealSubfield K := by
+  rw [mem_maximalRealSubfield_iff]
   intro φ
   have hφ : φ x ^ n = 1 := by rw [← map_pow, hx, map_one]
   rw [map_add, map_inv₀, Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hφ hn),
