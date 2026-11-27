@@ -110,7 +110,7 @@ noncomputable def isTerminalOfHomId (S : Scheme.{u}) : Limits.IsTerminal (ofHom 
 variable (R : CommRingCat.{u})
 
 /-- The spectrum functor on finite étale algebras, with target finite étale schemes. -/
-noncomputable def spec : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ ⥤ FiniteEtaleScheme (Spec R) :=
+@[expose] noncomputable def spec : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ ⥤ FiniteEtaleScheme (Spec R) :=
   (finiteEtaleSchemeProperty (Spec R)).lift
     ((CommAlgCat.finiteEtale R).ι.op ⋙ algSpec R) fun A ↦ by
       -- `algSpec` bundles the ordinary spectrum and its algebra structure map. Give the

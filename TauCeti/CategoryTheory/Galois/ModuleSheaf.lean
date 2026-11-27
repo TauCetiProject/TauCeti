@@ -22,7 +22,8 @@ continuous `G`-set `S`, the `G`-equivariant maps from `S` to `M` form a `Λ`-mod
 (`ContAction.modulePresheafCompForgetIso`), so it is a sheaf for the jointly surjective topology
 (`ContAction.isSheaf_modulePresheaf`), bundled as `ContAction.moduleSheaf ρ`. When `Λ` is
 Noetherian and `M` is finitely generated, its values are finitely generated. Its sections over a
-point are the invariants of `ρ` (`ContAction.modulePresheafObjEquivInvariants`), and for `G` finite
+point are the invariants of `ρ` (`ContAction.modulePresheafObjEquivInvariants`), its sections over a
+`G`-torsor are `M` (`ContAction.modulePresheafObjEquivOfBijective`), and for `G` finite
 discrete and `M ≠ 0` it has a nonzero section over the left regular `G`-set
 (`ContAction.nontrivial_modulePresheaf_obj_leftRegular`).
 
@@ -33,6 +34,8 @@ discrete and `M ≠ 0` it has a nonzero section over the left regular `G`-set
   sections `ContAction.modulePresheafObjEquiv`, determined by their values
   (`ContAction.modulePresheafObj_ext`).
 * `ContAction.moduleSheaf ρ`: the same presheaf, as a sheaf for the jointly surjective topology.
+* `ContAction.modulePresheafObjEquivOfBijective`: over a finite `G`-set on which `G` acts simply
+  transitively, evaluation at a point identifies `G`-maps into `ρ` with `M`.
 * `ContAction.modulePresheafObjEquivInvariants`: sections over a terminal `G`-set are invariants.
 
 ## Main results
@@ -99,6 +102,40 @@ theorem modulePresheafObj_ext {S : ContAction FintypeCat.{u} G}
     (h : ∀ s, (modulePresheafObjEquiv ρ S φ).val s = (modulePresheafObjEquiv ρ S ψ).val s) :
     φ = ψ :=
   (modulePresheafObjEquiv ρ S).injective (Subtype.ext (funext h))
+
+/-- **`G`-maps from a `G`-torsor.** On a finite continuous `G`-set on which `G` acts simply
+transitively, so that `g ↦ g • s₀` is a bijection, evaluation at `s₀` identifies the `G`-maps into
+`ρ` with `M`; the inverse sends `m` to the map `g • s₀ ↦ ρ g m`. -/
+noncomputable def modulePresheafObjEquivOfBijective {S : ContAction FintypeCat.{u} G}
+    (s₀ : (fiberFunctor G).obj S) (h : Function.Bijective fun g : G ↦ g • s₀) :
+    (modulePresheaf ρ).obj (op S) ≃ₗ[Λ] M :=
+  let e := Equiv.ofBijective _ h
+  have he (g : G) (s) : e.symm (g • s) = g * e.symm s :=
+    e.symm_apply_eq.mpr (by
+      change g • s = (g * e.symm s) • s₀
+      rw [mul_smul]
+      exact congrArg (g • ·) (e.apply_symm_apply s).symm)
+  { toFun φ := φ.val s₀
+    invFun m := ⟨fun s ↦ ρ (e.symm s) m, (mem_equivariantMaps ρ _).2 fun g s ↦ by
+      rw [he, map_mul, mul_apply_eq_comp]⟩
+    map_add' _ _ := rfl
+    map_smul' _ _ := rfl
+    left_inv φ := Subtype.ext (funext fun s ↦ by
+      change ρ (e.symm s) (φ.val s₀) = φ.val s
+      rw [← (mem_equivariantMaps ρ _).1 φ.property]
+      exact congrArg φ.val (e.apply_symm_apply s))
+    right_inv m := by
+      change ρ (e.symm s₀) m = m
+      rw [show e.symm s₀ = 1 from e.symm_apply_eq.mpr (one_smul G s₀).symm, map_one]
+      rfl }
+
+/-- `modulePresheafObjEquivOfBijective` evaluates a `G`-map at the base point. -/
+@[simp]
+theorem modulePresheafObjEquivOfBijective_apply {S : ContAction FintypeCat.{u} G}
+    (s₀ : (fiberFunctor G).obj S) (h : Function.Bijective fun g : G ↦ g • s₀)
+    (φ : (modulePresheaf ρ).obj (op S)) :
+    modulePresheafObjEquivOfBijective ρ s₀ h φ = (modulePresheafObjEquiv ρ S φ).val s₀ :=
+  (rfl)
 
 /-- The underlying presheaf of sets of `modulePresheaf ρ` is the presheaf of `G`-maps into the
 underlying `G`-set of `ρ`. -/

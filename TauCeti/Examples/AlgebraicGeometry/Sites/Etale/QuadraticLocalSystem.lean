@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.FieldTheory.KrullTopology
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.ModuleSheaf
+public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.ModuleSheafStalk
 public import TauCeti.FieldTheory.Galois.Basic
 public import TauCeti.FieldTheory.Galois.Complex
 
@@ -27,8 +27,10 @@ are the invariants, which vanish
 complex conjugation equals its negative and `2` is invertible in `ℤ/3`, so a constant such sheaf
 would be zero, while it is nonzero.
 
-The identification of its stalk at `Spec ℂ` with `ℤ/3`, on which complex conjugation acts by
-`-1`, is not part of this file.
+Its stalk at the geometric point `Spec ℂ ⟶ Spec ℝ` is `ℤ/3`
+(`TauCeti.Examples.QuadraticLocalSystem.etaleStalkQuadraticLocalSystemEquiv`), and complex
+conjugation, the nontrivial automorphism of this geometric point, acts on it by `-1`
+(`TauCeti.Examples.QuadraticLocalSystem.galoisStalkMap_conjAe_quadraticLocalSystem`).
 
 ## Main results
 
@@ -36,6 +38,9 @@ The identification of its stalk at `Spec ℂ` with `ℤ/3`, on which complex con
   lisse.
 * `TauCeti.Examples.QuadraticLocalSystem.not_isConstant_quadraticLocalSystem`: the sheaf is not
   constant.
+* `TauCeti.Examples.QuadraticLocalSystem.etaleStalkQuadraticLocalSystemEquiv` and
+  `TauCeti.Examples.QuadraticLocalSystem.galoisStalkMap_conjAe_quadraticLocalSystem`: the stalk at
+  `Spec ℂ` is `ℤ/3`, with complex conjugation acting by `-1`.
 -/
 
 public section
@@ -79,5 +84,23 @@ since `signRepresentation` has no nonzero fixed vector, but it is nonzero. -/
 theorem not_isConstant_quadraticLocalSystem :
     ¬ quadraticLocalSystem.IsConstant (Scheme.smallEtaleTopology (Spec (.of ℝ))) :=
   not_isConstant_galoisModuleSheaf _ invariants_signRepresentation
+
+/-- **The stalk of the quadratic local system at `Spec ℂ` is `ℤ/3`.** -/
+noncomputable def etaleStalkQuadraticLocalSystemEquiv :
+    (TauCeti.AlgebraicGeometry.Scheme.etaleStalk (ZMod 3)
+      (Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ)))).obj quadraticLocalSystem ≃ₗ[ZMod 3]
+        ZMod 3 :=
+  etaleStalkGaloisModuleSheafEquiv ℝ ℂ signRepresentation
+
+/-- **Complex conjugation acts by `-1` on the stalk at `Spec ℂ`** of the quadratic local system. -/
+theorem galoisStalkMap_conjAe_quadraticLocalSystem
+    (x : (TauCeti.AlgebraicGeometry.Scheme.etaleStalk (ZMod 3)
+      (Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ)))).obj quadraticLocalSystem) :
+    (TauCeti.AlgebraicGeometry.Scheme.galoisStalkMap ℝ ℂ (ModuleCat.{0} (ZMod 3)) conjAe).app
+      quadraticLocalSystem x = -x := by
+  apply etaleStalkQuadraticLocalSystemEquiv.injective
+  rw [map_neg]
+  exact (etaleStalkGaloisModuleSheafEquiv_galoisStalkMap ℝ ℂ signRepresentation conjAe x).trans
+    (signRepresentation_conjAe _)
 
 end TauCeti.Examples.QuadraticLocalSystem
