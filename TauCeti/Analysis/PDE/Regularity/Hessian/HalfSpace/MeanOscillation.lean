@@ -461,7 +461,7 @@ theorem exists_setIntegral_ball_inter_norm_iteratedGradient_sub_setAverage_sq_le
   -- The oscillation of `g` is at most its `L²` norm, which the equation controls.
   have hGt := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sq_of_subset
     (((Matrix.contraction A).comp_memLp' (Lp.memLp (Wkp.iteratedGradient 1 u))).mono_measure
-      (Measure.restrict_mono inter_subset_right le_rfl)) hts hsf
+      (Measure.restrict_mono inter_subset_right le_rfl)) hts htf
   simp only [Real.norm_eq_abs, sq_abs] at hGt
   have hG := setIntegral_contraction_iteratedGradient_sq_le hsm ha haK u inter_subset_right heq
   have hsum := Finset.sum_le_sum fun j (_ : j ∈ Finset.univ) => hcolj j
