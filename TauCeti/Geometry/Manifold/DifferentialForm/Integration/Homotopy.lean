@@ -355,12 +355,17 @@ theorem mpullback_comp_apply_eq_det_smul (φ : RoughForm I M F 2) {u : ℝ × �
       LinearMap.det (A : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) •
         mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (L y) ![(1, 0), (0, 1)] := by
   rw [mpullback_comp_apply_of_hasFDerivAt hL hu]
-  -- Read the pullback along `u` as a form on the plane, whose tangent spaces are `ℝ × ℝ`; an
-  -- endomorphism scales a top-degree alternating form by its determinant.
+  -- Read the pullback along `u` as a form on the plane: the tangent spaces of the plane are
+  -- `ℝ × ℝ` by definition, which is all this `change` uses.
   let ψ : (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (L y)
-  exact (ContinuousAlternatingMap.compContinuousLinearMap_apply ψ _ _).trans
-    (congrArg (· ![((1 : ℝ), (0 : ℝ)), (0, 1)]) (ψ.toAlternatingMap.compLinearMap_eq_det_smul
-      (Module.Basis.finTwoProd ℝ) (A : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ)))
+  change ψ.compContinuousLinearMap A ![((1 : ℝ), (0 : ℝ)), (0, 1)] =
+    LinearMap.det (A : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) • ψ ![((1 : ℝ), (0 : ℝ)), (0, 1)]
+  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    ← ContinuousAlternatingMap.coe_toAlternatingMap, ← ContinuousLinearMap.coe_coe A]
+  -- An endomorphism scales a top-degree alternating form by its determinant.
+  simpa only [AlternatingMap.compLinearMap_apply, smul_apply, Function.comp_def]
+    using congrArg (· ![((1 : ℝ), (0 : ℝ)), (0, 1)]) (ψ.toAlternatingMap.compLinearMap_eq_det_smul
+      (Module.Basis.finTwoProd ℝ) (A : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
 
 /-- **Translation invariance.** For a differentiable map `u` of the plane, the integral over the
 translate `z ↦ u (z + c)` on the rectangle with corners `a` and `b` is the integral over `u` on the

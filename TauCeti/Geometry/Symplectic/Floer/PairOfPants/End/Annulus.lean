@@ -9,12 +9,9 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CoreChart
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.Real.Pi.Bounds
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Measure.Prod
-import TauCeti.Geometry.Manifold.ContMDiff.Fract
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # The end annuli and the output circle of the pair of pants as cylinders
@@ -54,8 +51,9 @@ For a map `u` of the pair of pants into a manifold `M`:
 * **The output circle.** The core chart ends at the output circle `‖w‖ = 2`, which it runs around
   at the speed of the angle about `1/2`, while the end chart of the output end runs around the same
   circle, its circle at height `0`, at the speed of the angle about `0`. The **output circle chart**
-  `TauCeti.Floer.pairOfPantsOutputCircleChart` joins the two parametrizations inside the circle,
-  through a smooth lift of the first to the angular coordinate of the end. If `u` is `C²` on `S`,
+  `TauCeti.Floer.pairOfPantsOutputCircleChart` joins the two parametrizations on the circle,
+  through the smooth lift `TauCeti.Floer.pairOfPantsOutputLift` of the first to the angular
+  coordinate of the end. If `u` is `C²` on `S`,
   then `u` composed with it is a cylinder from the output loop of `u` along the core chart to its
   loop along the circle at height `0` of the output end
   (`TauCeti.Floer.isLoopCylinder_comp_pairOfPantsOutputCircleChart`), and this cylinder has no
@@ -98,12 +96,19 @@ namespace TauCeti.Floer
 /-! ### The end charts near the circles at height `0` -/
 
 /-- The end chart of `q` sends the half-plane `2π (±s) > -log 2`, which contains the circle at
-height `0` of the end, into `S`. -/
-private theorem endChart_mem_thricePuncturedSphereReal_of_neg_log_two_lt {q : Puncture}
+height `0` of the end, into `S`. This extends
+`TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, for the part `±s > 0` of the end, a little
+beyond that circle. -/
+theorem endChart_mem_thricePuncturedSphereReal_of_neg_log_two_lt {q : Puncture}
     {z : ℝ × ℝ} (hz : -Real.log 2 < 2 * π * (q.endSign * z.1)) :
     endChart q z ∈ thricePuncturedSphereReal := by
   rw [mem_thricePuncturedSphereReal_iff, equivRealProdCLM_symm_endChart]
   exact q.cylindricalEndLift_ne_zero_and_ne_one_of_neg_log_two_lt (by simpa using hz)
+
+/-- The circle at height `0` of the output end lies in `S`. -/
+private theorem endChart_inf_mk_zero_mem_thricePuncturedSphereReal (τ : ℝ) :
+    endChart .inf (0, τ) ∈ thricePuncturedSphereReal :=
+  endChart_mem_thricePuncturedSphereReal_of_neg_log_two_lt (by simp [Real.log_pos one_lt_two])
 
 /-- A smooth height that is the identity on `[0, ∞)` and stays above `-1/10`. -/
 private def heightClamp (x : ℝ) : ℝ :=
@@ -167,6 +172,20 @@ private theorem contMDiff_comp_endClampChart {n : ℕ∞} {u : ℝ × ℝ → M}
   hu.comp_contMDiff (contDiff_endClampChart q).contMDiff
     (endClampChart_mem_thricePuncturedSphereReal q)
 
+/-- Between two circles `±s = a` and `±s = b` of nonnegative heights the clamp does nothing, so
+the integrals over `u` composed with the clamped end chart and with the end chart agree. -/
+private theorem rectangleIntegral_comp_endClampChart {φ : RoughForm I M F 2} {u : ℝ × ℝ → M}
+    (q : Puncture) {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    rectangleIntegral φ (u ∘ endClampChart q) (q.endSign * a, 0) (q.endSign * b, 1) =
+      rectangleIntegral φ (u ∘ endChart q) (q.endSign * a, 0) (q.endSign * b, 1) := by
+  refine rectangleIntegral_congr fun z hz ↦ ?_
+  simp only [Function.comp_apply]
+  rw [endClampChart_of_nonneg]
+  have h₁ := hz.1
+  rcases q.endSign_eq_one_or_eq_neg_one with h | h <;>
+    simp only [h, one_mul, neg_one_mul, mem_uIcc] at h₁ ⊢ <;>
+    rcases h₁ with h₁ | h₁ <;> linarith [h₁.1, h₁.2]
+
 /-! ### The area of an end annulus -/
 
 /-- On the open part `±s > 0` of an end, the integrand along `u` composed with the clamped end
@@ -228,16 +247,6 @@ theorem rectangleIntegral_comp_endChart [IsManifold I 1 M] {φ : RoughForm I M F
         φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
   simp_rw [fst_positiveEndCoord]
   rw [preimage_truncation_inter_eq_image_endChart q ha b]
-  -- On the closed rectangle the heights `±s` lie in `[a, b]`, where the clamp does nothing.
-  have hcongr : rectangleIntegral φ (u ∘ endChart q) (q.endSign * a, 0) (q.endSign * b, 1) =
-      rectangleIntegral φ (u ∘ endClampChart q) (q.endSign * a, 0) (q.endSign * b, 1) := by
-    refine rectangleIntegral_congr fun z hz ↦ ?_
-    simp only [Function.comp_apply]
-    rw [endClampChart_of_nonneg]
-    have h₁ := hz.1
-    rcases q.endSign_eq_one_or_eq_neg_one with h | h <;>
-      simp only [h, one_mul, neg_one_mul, uIcc_of_le hab, uIcc_of_ge (neg_le_neg hab),
-        mem_Icc] at h₁ ⊢ <;> linarith [h₁.1, h₁.2]
   have hmeas (c : ℝ) : MeasurableSet {s : ℝ | c < q.endSign * s} :=
     measurableSet_lt measurable_const (measurable_const.mul measurable_id)
   have hmeas' : MeasurableSet {s : ℝ | q.endSign * s ≤ b} :=
@@ -246,7 +255,7 @@ theorem rectangleIntegral_comp_endChart [IsManifold I 1 M] {φ : RoughForm I M F
     (hmeas a).inter hmeas'
   have hPpos (s : ℝ) (hs : s ∈ {s : ℝ | a < q.endSign * s ∧ q.endSign * s ≤ b}) :
       0 < q.endSign * s := ha.trans_lt hs.1
-  rw [hcongr]
+  rw [← rectangleIntegral_comp_endClampChart q ha (ha.trans hab)]
   rcases q.endSign_eq_one_or_eq_neg_one with h | h
   · have hPae : {s : ℝ | a < q.endSign * s ∧ q.endSign * s ≤ b} =ᵐ[volume] Icc a b := by
       simp only [h, one_mul]
@@ -361,15 +370,7 @@ theorem rectangleIntegral_comp_endAnnulusChart [IsManifold I 1 M] {φ : RoughFor
       (contDiff_const.mul (contDiff_const.add (contDiff_const.mul smoothTransition.contDiff)))]
   simp only [smoothTransition.zero, smoothTransition.one, mul_zero, add_zero, mul_one,
     add_sub_cancel]
-  -- On the closed rectangle the heights `±s` lie between `a` and `b`, where the clamp does
-  -- nothing.
-  refine rectangleIntegral_congr fun z hz ↦ ?_
-  simp only [Function.comp_apply]
-  rw [endClampChart_of_nonneg]
-  have h₁ := hz.1
-  rcases q.endSign_eq_one_or_eq_neg_one with h | h <;>
-    simp only [h, one_mul, neg_one_mul, mem_uIcc] at h₁ ⊢ <;>
-    rcases h₁ with h₁ | h₁ <;> linarith [h₁.1, h₁.2]
+  exact rectangleIntegral_comp_endClampChart q ha hb
 
 /-! ### The truncation as its core and its end annuli -/
 
@@ -443,234 +444,8 @@ theorem setIntegral_preimage_truncation_eq_neg_rectangleIntegral_add_sum [IsMani
 The core chart runs at `s = 1` around the output circle `‖w‖ = 2` at the speed of the angle about
 `1/2` (`TauCeti.Floer.pairOfPantsCoreChart_mk_one`), while the end loop of the output end at
 height `0` runs around the same circle at the speed of the angle about `0`. The output circle
-chart joins the two parametrizations inside the circle, through a smooth lift of the first to the
-angular coordinate of the end. -/
-
-/-- The angle `-π/2 - π x` of the ray from `1/2` along which the core chart meets the output
-circle, at the parameter `x` of its output loop. -/
-private def coreOutputAngle (x : ℝ) : ℝ :=
-  -(π / 2) - π * x
-
-/-- The distance from `1/2` to the output circle `‖w‖ = 2` along the ray at the angle
-`coreOutputAngle x`, the positive root of `ρ² - ρ sin (π x) = 15/4`. -/
-private def coreOutputRadius (x : ℝ) : ℝ :=
-  (Real.sin (π * x) + √(Real.sin (π * x) ^ 2 + 15)) / 2
-
-/-- The point of the output circle on the ray from `1/2` at the angle `coreOutputAngle x`. -/
-private def coreOutputPoint (x : ℝ) : ℂ :=
-  circleMap (1 / 2) (coreOutputRadius x) (coreOutputAngle x)
-
-/-- The factor `ρ + exp (-i θ) / 2` with `coreOutputPoint x = exp (i θ) (ρ + exp (-i θ) / 2)`. -/
-private def coreOutputFactor (x : ℝ) : ℂ :=
-  coreOutputRadius x + Complex.exp (↑(-coreOutputAngle x) * Complex.I) / 2
-
-/-- A lift of the output loop of the core to the angular coordinate of the output end: the end
-chart of `∞` at height `0` and angle `coreOutputLift x` is `coreOutputPoint x`. -/
-private def coreOutputLift (x : ℝ) : ℝ :=
-  -(coreOutputAngle x + Complex.arg (coreOutputFactor x)) / (2 * π)
-
-private theorem coreOutputRadius_sq_sub (x : ℝ) :
-    coreOutputRadius x ^ 2 - Real.sin (π * x) * coreOutputRadius x = 15 / 4 := by
-  have h := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ Real.sin (π * x) ^ 2 + 15)
-  simp only [coreOutputRadius]
-  linear_combination h / 4
-
-private theorem one_le_coreOutputRadius (x : ℝ) : 1 ≤ coreOutputRadius x := by
-  have hs := Real.neg_one_le_sin (π * x)
-  have h : 3 ≤ √(Real.sin (π * x) ^ 2 + 15) :=
-    Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg (Real.sin (π * x))])
-  simp only [coreOutputRadius]
-  linarith
-
-private theorem contDiff_coreOutputRadius {n : ℕ∞} : ContDiff ℝ n coreOutputRadius := by
-  have hs : ContDiff ℝ n fun x ↦ Real.sin (π * x) :=
-    Real.contDiff_sin.comp (contDiff_const.mul contDiff_id)
-  exact (hs.add (((hs.pow 2).add contDiff_const).sqrt fun x ↦ by positivity)).div_const 2
-
-private theorem re_coreOutputFactor (x : ℝ) :
-    (coreOutputFactor x).re = coreOutputRadius x + Real.cos (coreOutputAngle x) / 2 := by
-  have h := Complex.exp_ofReal_mul_I_re (-coreOutputAngle x)
-  rw [Real.cos_neg] at h
-  rw [coreOutputFactor, Complex.add_re, Complex.ofReal_re, Complex.div_ofNat_re, h]
-
-private theorem im_coreOutputFactor (x : ℝ) :
-    (coreOutputFactor x).im = -Real.sin (coreOutputAngle x) / 2 := by
-  have h := Complex.exp_ofReal_mul_I_im (-coreOutputAngle x)
-  rw [Real.sin_neg] at h
-  rw [coreOutputFactor, Complex.add_im, Complex.ofReal_im, Complex.div_ofNat_im, h, zero_add]
-
-private theorem re_coreOutputFactor_pos (x : ℝ) : 0 < (coreOutputFactor x).re := by
-  rw [re_coreOutputFactor]
-  linarith [one_le_coreOutputRadius x, Real.neg_one_le_cos (coreOutputAngle x)]
-
-/-- The factor has norm `2`, since `coreOutputPoint x` lies on the output circle. -/
-private theorem norm_coreOutputFactor (x : ℝ) : ‖coreOutputFactor x‖ = 2 := by
-  have hcos : Real.cos (coreOutputAngle x) = -Real.sin (π * x) := by
-    rw [coreOutputAngle, show -(π / 2) - π * x = -(π / 2 + π * x) by ring, Real.cos_neg,
-      Real.cos_add, Real.cos_pi_div_two, Real.sin_pi_div_two]
-    ring
-  have hsq : ‖coreOutputFactor x‖ ^ 2 = 2 ^ 2 := by
-    rw [Complex.sq_norm, Complex.normSq_apply, re_coreOutputFactor, im_coreOutputFactor, hcos]
-    have h := coreOutputRadius_sq_sub x
-    have h₁ := Real.sin_sq_add_cos_sq (coreOutputAngle x)
-    rw [hcos] at h₁
-    nlinarith [h, h₁]
-  exact (sq_eq_sq₀ (norm_nonneg _) zero_le_two).1 hsq
-
-private theorem coreOutputPoint_eq (x : ℝ) :
-    coreOutputPoint x =
-      Complex.exp (↑(coreOutputAngle x) * Complex.I) * coreOutputFactor x := by
-  rw [coreOutputPoint, circleMap, coreOutputFactor, mul_add, ← mul_div_assoc,
-    ← Complex.exp_add]
-  push_cast
-  rw [show (coreOutputAngle x : ℂ) * Complex.I + -(coreOutputAngle x : ℂ) * Complex.I = 0 by
-    ring, Complex.exp_zero]
-  ring
-
-/-- The end chart of the output end at height `0` and angle `coreOutputLift x` is the point
-`coreOutputPoint x` of the output circle. -/
-private theorem endChart_inf_coreOutputLift (x : ℝ) :
-    endChart .inf (0, coreOutputLift x) = Complex.equivRealProdCLM (coreOutputPoint x) := by
-  have hπ : (π : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 Real.pi_ne_zero
-  have hψ : -(2 * (π : ℂ)) * (((0 : ℝ) : ℂ) + (coreOutputLift x : ℂ) * Complex.I) =
-      (coreOutputAngle x : ℂ) * Complex.I + (Complex.arg (coreOutputFactor x) : ℂ) * Complex.I := by
-    simp only [coreOutputLift]
-    push_cast
-    field_simp
-    ring
-  rw [endChart_mk, Puncture.cylindricalEndLift_inf]
-  beta_reduce
-  congr 1
-  rw [hψ, Complex.exp_add, coreOutputPoint_eq]
-  conv_rhs => rw [← Complex.norm_mul_exp_arg_mul_I (coreOutputFactor x), norm_coreOutputFactor]
-  push_cast
-  ring
-
-private theorem coreOutputFactor_add_two (x : ℝ) :
-    coreOutputFactor (x + 2) = coreOutputFactor x := by
-  have hρ : coreOutputRadius (x + 2) = coreOutputRadius x := by
-    simp only [coreOutputRadius, show π * (x + 2) = π * x + 2 * π by ring, Real.sin_add_two_pi]
-  have hθ : (↑(-coreOutputAngle (x + 2)) : ℂ) * Complex.I =
-      ↑(-coreOutputAngle x) * Complex.I + 2 * π * Complex.I := by
-    simp only [coreOutputAngle]
-    push_cast
-    ring
-  rw [coreOutputFactor, coreOutputFactor, hρ, hθ, Complex.exp_add, Complex.exp_two_pi_mul_I,
-    mul_one]
-
-private theorem coreOutputLift_add_two (x : ℝ) :
-    coreOutputLift (x + 2) = coreOutputLift x + 1 := by
-  rw [coreOutputLift, coreOutputLift, coreOutputFactor_add_two, coreOutputAngle, coreOutputAngle]
-  field_simp
-  ring
-
-private theorem contDiff_coreOutputLift {n : ℕ∞} : ContDiff ℝ n coreOutputLift := by
-  have hθ : ContDiff ℝ n coreOutputAngle := contDiff_const.sub (contDiff_const.mul contDiff_id)
-  have hw : ContDiff ℝ n coreOutputFactor :=
-    (Complex.ofRealCLM.contDiff.comp contDiff_coreOutputRadius).add
-      ((Complex.contDiff_exp.comp
-        ((Complex.ofRealCLM.contDiff.comp hθ.neg).mul contDiff_const)).div_const 2)
-  -- On the half-plane `re w > 0` the argument is the imaginary part of the principal logarithm.
-  have harg : ContDiff ℝ n fun x ↦ Complex.arg (coreOutputFactor x) := by
-    refine contDiff_iff_contDiffAt.2 fun x ↦ ?_
-    have hlog : ContDiffAt ℝ n Complex.log (coreOutputFactor x) :=
-      (Complex.contDiffAt_log (Or.inl (re_coreOutputFactor_pos x))).restrict_scalars ℝ
-    simpa only [Function.comp_def, Complex.imCLM_apply, Complex.log_im] using
-      Complex.imCLM.contDiff.contDiffAt.comp x (hlog.comp x hw.contDiffAt)
-  exact ((hθ.add harg).neg).div_const _
-
-/-- The correction of the parameter of the output loop of the core: on `[0, 1]` it runs from `0`
-to `0`, and it is `-2x` near both ends. -/
-private def coreStairCorrection (x : ℝ) : ℝ :=
-  smoothTransition (6 * x - 1) + smoothTransition (6 * x - 4) - 2 * x
-
-/-- The parameter of the output loop of the core: the output loop of the core at the time `t` is
-`coreOutputPoint (coreStair t)`. It increases by `2` over each period. -/
-private def coreStair (t : ℝ) : ℝ :=
-  2 * t + coreStairCorrection (Int.fract t)
-
-private theorem coreStair_add_one (t : ℝ) : coreStair (t + 1) = coreStair t + 2 := by
-  rw [coreStair, coreStair, Int.fract_add_one]
-  ring
-
-private theorem contDiff_coreStair {n : ℕ∞} : ContDiff ℝ n coreStair := by
-  have hc : ContDiff ℝ n coreStairCorrection :=
-    ((smoothTransition.contDiff.comp (contDiff_const.mul contDiff_id |>.sub contDiff_const)).add
-      (smoothTransition.contDiff.comp (contDiff_const.mul contDiff_id |>.sub contDiff_const))).sub
-      (contDiff_const.mul contDiff_id)
-  -- The correction is periodic near `0`, so its periodization is smooth.
-  have hper : ContDiff ℝ n fun w : ℝ × ℝ ↦ coreStairCorrection (Int.fract w.2) := by
-    rw [← contMDiff_iff_contDiff, ← contMDiff_prod_modelWithCornersSelf_iff]
-    refine (contMDiff_prod_modelWithCornersSelf_iff.2
-      (hc.comp contDiff_snd).contMDiff).comp_fract_snd
-      (G := fun w : ℝ × ℝ ↦ coreStairCorrection w.2) (ε := 1 / 6) (by norm_num)
-      fun _ t ht₀ ht₁ ↦ ?_
-    simp only [coreStairCorrection]
-    rw [smoothTransition.one_of_one_le (x := 6 * (t + 1) - 1) (by linarith),
-      smoothTransition.one_of_one_le (x := 6 * (t + 1) - 4) (by linarith),
-      smoothTransition.zero_of_nonpos (x := 6 * t - 1) (by linarith),
-      smoothTransition.zero_of_nonpos (x := 6 * t - 4) (by linarith)]
-    ring
-  exact (contDiff_const.mul contDiff_id).add
-    (hper.comp ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id))
-
-/-- The loopwise concatenation of the two halves of a function `Q` of period `2` is `Q` composed
-with `coreStair`. -/
-private theorem loopwiseTrans_eq_comp_coreStair {α : Type*} {Q : ℝ → α} (hQ : Periodic Q 2)
-    (s t : ℝ) :
-    loopwiseTrans (fun z ↦ Q z.2) (fun z ↦ Q (z.2 + 1)) (s, t) = Q (coreStair t) := by
-  have hper : Periodic (fun t ↦ loopwiseTrans (fun z ↦ Q z.2) (fun z ↦ Q (z.2 + 1)) (s, t)) 1 :=
-    fun t ↦ loopwiseTrans_apply_add_one _ _ s t
-  have hstair : coreStair t = coreStair (Int.fract t) + ⌊t⌋ * 2 := by
-    rw [coreStair, coreStair, Int.fract_fract, ← Int.self_sub_floor]
-    ring
-  rw [← hper.sub_int_mul_eq ⌊t⌋, mul_one, Int.self_sub_floor, hstair, hQ.int_mul ⌊t⌋]
-  have hf₀ := Int.fract_nonneg t
-  have hf₁ := Int.fract_lt_one t
-  rcases le_or_gt (Int.fract t) (1 / 2) with h | h
-  · rw [loopwiseTrans_of_le _ _ hf₀ h, coreStair, Int.fract_fract, coreStairCorrection,
-      smoothTransition.zero_of_nonpos (x := 6 * Int.fract t - 4) (by linarith)]
-    congr 1
-    ring
-  · rw [loopwiseTrans_of_lt _ _ h hf₁, coreStair, Int.fract_fract, coreStairCorrection,
-      smoothTransition.one_of_one_le (x := 6 * Int.fract t - 1) (by linarith)]
-    congr 1
-    ring
-
-/-- The output loop of the core runs through `coreOutputPoint` at the parameter `coreStair t`. -/
-private theorem pairOfPantsCoreChart_mk_one_eq (t : ℝ) :
-    pairOfPantsCoreChart (1, t) = Complex.equivRealProdCLM (coreOutputPoint (coreStair t)) := by
-  have hQ : Periodic (fun x ↦ Complex.equivRealProdCLM (coreOutputPoint x)) 2 := fun x ↦ by
-    beta_reduce
-    have hθ : (↑(coreOutputAngle (x + 2)) : ℂ) * Complex.I =
-        ↑(coreOutputAngle x) * Complex.I + -(2 * π * Complex.I) := by
-      simp only [coreOutputAngle]
-      push_cast
-      ring
-    rw [coreOutputPoint_eq, coreOutputPoint_eq, coreOutputFactor_add_two, hθ, Complex.exp_add,
-      Complex.exp_neg, Complex.exp_two_pi_mul_I, inv_one, mul_one]
-  rw [pairOfPantsCoreChart_mk_one, ← loopwiseTrans_eq_comp_coreStair hQ 1 t]
-  refine loopwiseTrans_congr (fun r _ ↦ rfl) (fun r _ ↦ ?_)
-  have hs : Real.sin (π * (r + 1)) = -Real.sin (π * r) := by
-    rw [mul_add, mul_one, Real.sin_add_pi]
-  simp only [coreOutputPoint, coreOutputRadius, coreOutputAngle, hs, neg_sq]
-  congr 2
-  ring
-
-/-- The lift of the output loop of the core to the angular coordinate of the output end. -/
-private def pairOfPantsOutputLift (t : ℝ) : ℝ :=
-  coreOutputLift (coreStair t)
-
-private theorem pairOfPantsOutputLift_add_one (t : ℝ) :
-    pairOfPantsOutputLift (t + 1) = pairOfPantsOutputLift t + 1 := by
-  rw [pairOfPantsOutputLift, pairOfPantsOutputLift, coreStair_add_one, coreOutputLift_add_two]
-
-private theorem endChart_inf_pairOfPantsOutputLift (t : ℝ) :
-    endChart .inf (0, pairOfPantsOutputLift t) = pairOfPantsCoreChart (1, t) := by
-  rw [pairOfPantsOutputLift, endChart_inf_coreOutputLift, pairOfPantsCoreChart_mk_one_eq]
-
-private theorem contDiff_pairOfPantsOutputLift {n : ℕ∞} : ContDiff ℝ n pairOfPantsOutputLift :=
-  contDiff_coreOutputLift.comp contDiff_coreStair
+chart joins the two parametrizations on the circle, through the smooth lift
+`TauCeti.Floer.pairOfPantsOutputLift` of the first to the angular coordinate of the end. -/
 
 /-- The angular coordinate of the output circle chart: the straight path from the lift of the
 output loop of the core to the identity, reparametrized by the smooth transition. -/
@@ -732,8 +507,7 @@ theorem norm_symm_pairOfPantsOutputCircleChart (z : ℝ × ℝ) :
 
 private theorem pairOfPantsOutputCircleChart_mem_thricePuncturedSphereReal (z : ℝ × ℝ) :
     pairOfPantsOutputCircleChart z ∈ thricePuncturedSphereReal :=
-  endChart_mem_thricePuncturedSphereReal_of_neg_log_two_lt (by
-    simp [Real.log_pos one_lt_two])
+  endChart_inf_mk_zero_mem_thricePuncturedSphereReal _
 
 /-- **The output circle as a cylinder.** For a map `u` of the pair of pants `S` into a manifold
 `M` which is `C²` on `S`, the composite of `u` with the output circle chart is a cylinder from
@@ -762,9 +536,8 @@ theorem rectangleIntegral_comp_pairOfPantsOutputCircleChart {φ : RoughForm I M 
   have hγ : MDifferentiable 𝓘(ℝ, ℝ) I fun τ : ℝ ↦ u (endChart .inf (0, τ)) := by
     have hc : ContDiff ℝ 1 fun τ : ℝ ↦ endChart .inf (0, τ) :=
       (contDiff_endChart _ 1).comp (contDiff_const.prodMk contDiff_id)
-    exact (hu.comp_contMDiff hc.contMDiff fun τ ↦
-      endChart_mem_thricePuncturedSphereReal_of_neg_log_two_lt (by
-        simp [Real.log_pos one_lt_two])).mdifferentiable one_ne_zero
+    exact (hu.comp_contMDiff hc.contMDiff
+      endChart_inf_mk_zero_mem_thricePuncturedSphereReal).mdifferentiable one_ne_zero
   exact rectangleIntegral_comp_eq_zero φ hγ (contDiff_outputCircleAngle (n := 1).differentiable
     one_ne_zero) a b
 

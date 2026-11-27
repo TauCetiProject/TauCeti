@@ -667,15 +667,6 @@ theorem exists_mem_neighborhood_cylindricalEndLift (q : Puncture) {z : ℂ}
     rw [coe_negativeEnd_apply_mk]
     simp [Complex.re_add_im]
 
-/-- A point of an end with positive signed longitudinal coordinate lies in the thrice-punctured
-sphere: it is neither `0` nor `1`. -/
-theorem cylindricalEndLift_ne_zero_and_ne_one (q : Puncture) {z : ℂ}
-    (hz : 0 < q.endSign * z.re) :
-    q.cylindricalEndLift z ≠ 0 ∧ q.cylindricalEndLift z ≠ 1 := by
-  obtain ⟨p, -, hp⟩ := q.exists_mem_neighborhood_cylindricalEndLift hz
-  rw [← hp]
-  exact p.property
-
 /-- **The end lift slightly beyond height `0`.** The end lift of `q` stays in the thrice-punctured
 sphere on the half-plane `2π (±Re z) > -log 2`, which contains the circle at height `0` of the end:
 on the input ends it stays within distance `exp (-2π Re z) / 2 < 1` of the centre `0` or `1` of the
@@ -687,46 +678,49 @@ theorem cylindricalEndLift_ne_zero_and_ne_one_of_neg_log_two_lt (q : Puncture) {
   have he : Complex.exp (-(2 * (π : ℂ)) * z) ≠ 0 := Complex.exp_ne_zero _
   have hn : ‖Complex.exp (-(2 * (π : ℂ)) * z)‖ = Real.exp (-(2 * π * z.re)) := by
     rw [Complex.norm_exp, re_neg_two_pi_mul, neg_mul]
+  -- The bound on the input ends, where `±Re z = Re z`, and on the output end, where it is `-Re z`.
+  have hlt (h : -Real.log 2 < 2 * π * z.re) : ‖Complex.exp (-(2 * (π : ℂ)) * z)‖ < 2 := by
+    rw [hn]
+    exact (Real.exp_lt_exp.2 (by linarith)).trans_eq (Real.exp_log two_pos)
+  have hgt (h : -Real.log 2 < 2 * π * -z.re) : 2⁻¹ < ‖Complex.exp (-(2 * (π : ℂ)) * z)‖ := by
+    have h2 : Real.exp (-Real.log 2) = 2⁻¹ := by rw [Real.exp_neg, Real.exp_log two_pos]
+    rw [hn, ← h2]
+    exact Real.exp_lt_exp.2 (by linarith)
   cases q with
   | zero =>
     simp only [endSign_zero, one_mul] at hz
+    have h₂ := hlt hz
     rw [cylindricalEndLift_zero]
-    beta_reduce
-    generalize Complex.exp (-(2 * (π : ℂ)) * z) = e at he hn ⊢
-    have hlt : ‖e‖ < 2 := by
-      rw [hn]
-      exact (Real.exp_lt_exp.2 (by linarith)).trans_eq (Real.exp_log two_pos)
     refine ⟨div_ne_zero he two_ne_zero, fun h ↦ ?_⟩
     rw [div_eq_one_iff_eq two_ne_zero] at h
-    rw [h] at hlt
-    norm_num at hlt
+    rw [h] at h₂
+    norm_num at h₂
   | one =>
     simp only [endSign_one, one_mul] at hz
+    have h₂ := hlt hz
     rw [cylindricalEndLift_one]
-    beta_reduce
-    generalize Complex.exp (-(2 * (π : ℂ)) * z) = e at he hn ⊢
-    have hlt : ‖e‖ < 2 := by
-      rw [hn]
-      exact (Real.exp_lt_exp.2 (by linarith)).trans_eq (Real.exp_log two_pos)
     refine ⟨fun h ↦ ?_, fun h ↦ he ?_⟩
     · rw [sub_eq_zero, eq_comm, div_eq_one_iff_eq two_ne_zero] at h
-      rw [h] at hlt
-      norm_num at hlt
+      rw [h] at h₂
+      norm_num at h₂
     · rw [sub_eq_self, div_eq_zero_iff] at h
       exact h.resolve_right two_ne_zero
   | inf =>
     simp only [endSign_inf, neg_one_mul] at hz
+    have h₂ := hgt hz
     rw [cylindricalEndLift_inf]
-    beta_reduce
-    generalize Complex.exp (-(2 * (π : ℂ)) * z) = e at he hn ⊢
-    have hgt : 2⁻¹ < ‖e‖ := by
-      have h2 : Real.exp (-Real.log 2) = 2⁻¹ := by rw [Real.exp_neg, Real.exp_log two_pos]
-      rw [hn, ← h2]
-      exact Real.exp_lt_exp.2 (by linarith)
     refine ⟨mul_ne_zero two_ne_zero he, fun h ↦ ?_⟩
     have h' := congrArg norm h
     rw [norm_mul, norm_one, Complex.norm_ofNat] at h'
     linarith
+
+/-- A point of an end with positive signed longitudinal coordinate lies in the thrice-punctured
+sphere: it is neither `0` nor `1`. -/
+theorem cylindricalEndLift_ne_zero_and_ne_one (q : Puncture) {z : ℂ}
+    (hz : 0 < q.endSign * z.re) :
+    q.cylindricalEndLift z ≠ 0 ∧ q.cylindricalEndLift z ≠ 1 :=
+  q.cylindricalEndLift_ne_zero_and_ne_one_of_neg_log_two_lt (by
+    nlinarith [Real.log_pos one_lt_two, Real.pi_pos])
 
 /-- A point with positive signed longitudinal coordinate on an end lies in the thrice-punctured
 sphere: it is neither `0` nor `1`. -/
