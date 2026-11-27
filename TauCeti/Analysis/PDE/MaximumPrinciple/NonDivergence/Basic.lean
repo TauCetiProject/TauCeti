@@ -85,6 +85,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
 * `TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`: the principal part only sees the
   symmetric part of the coefficient matrix.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_mul`: the principal part of a product.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_comp`: the chain rule for
+  `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to `F ∘ f` with scalar `F`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_log`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied
   to a logarithm.
 * `TauCeti.PDE.exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq`: conjugation of
@@ -340,6 +342,31 @@ theorem sum_mul_fderiv_fderiv_mul (A : Matrix ι ι ℝ) {η u : EuclideanSpace 
   simp only [fderiv_fderiv_mul_apply hη hu, Finset.mul_sum, ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
+/-- **The chain rule for `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.** For a function `f` that is `C²` at `x` and a
+scalar function `F` that is `C²` at `f x`, with `L = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`,
+
+`L (F ∘ f) = F' (f) L f + F'' (f) ∑ᵢⱼ Aᵢⱼ ∂ᵢf ∂ⱼf`
+
+at `x`. For `A = 1` and `v = 0` this is `ContDiffAt.laplacian_comp`. -/
+theorem sum_mul_fderiv_fderiv_add_fderiv_comp (A : Matrix ι ι ℝ) {F : ℝ → ℝ}
+    {f : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι} (hF : ContDiffAt ℝ 2 F (f x))
+    (hf : ContDiffAt ℝ 2 f x) (v : EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ (F ∘ f)) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ (F ∘ f) x v =
+      deriv F (f x) * (∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) + fderiv ℝ f x v) +
+        deriv (deriv F) (f x) * ∑ i, ∑ j, A i j * (fderiv ℝ f x (EuclideanSpace.single i 1) *
+          fderiv ℝ f x (EuclideanSpace.single j 1)) := by
+  have hD1 : fderiv ℝ (F ∘ f) x v = deriv F (f x) * fderiv ℝ f x v := by
+    rw [fderiv_comp x (hF.differentiableAt two_ne_zero) (hf.differentiableAt two_ne_zero),
+      ContinuousLinearMap.comp_apply, fderiv_eq_smul_deriv, smul_eq_mul, mul_comm]
+  simp only [hD1, fderiv_fderiv_scalar_comp_apply hF hf, iteratedDeriv_succ, iteratedDeriv_zero,
+    smul_eq_mul, Finset.mul_sum, mul_add]
+  rw [add_right_comm, ← Finset.sum_add_distrib]
+  refine congrArg (· + _) <| Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← Finset.sum_add_distrib]
+  exact Finset.sum_congr rfl fun j _ ↦ by ring
+
 /-- **The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to a logarithm.** For a function `f` that is `C²`
 at `x` with `f x ≠ 0`, with `L = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`,
 
@@ -354,22 +381,10 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_log (A : Matrix ι ι ℝ) {f : Euclide
           (EuclideanSpace.single j 1) + fderiv ℝ f x v) / f x -
         (∑ i, ∑ j, A i j * (fderiv ℝ f x (EuclideanSpace.single i 1) *
           fderiv ℝ f x (EuclideanSpace.single j 1))) / f x ^ 2 := by
-  have hlog : ContDiffAt ℝ 2 Real.log (f x) := Real.contDiffAt_log.mpr hfx
-  have hcomp : (fun y ↦ Real.log (f y)) = Real.log ∘ f := rfl
-  have hD1 : fderiv ℝ (Real.log ∘ f) x v = fderiv ℝ f x v / f x := by
-    rw [← hcomp, fderiv.log (hf.differentiableAt two_ne_zero) hfx]
-    simp [div_eq_inv_mul]
-  have hd2 : iteratedDeriv 2 Real.log (f x) = -(f x ^ 2)⁻¹ := by
-    simp [iteratedDeriv_succ, Real.deriv_log', deriv_inv]
-  simp only [hcomp, hD1, fderiv_fderiv_scalar_comp_apply hlog hf, hd2, smul_eq_mul,
-    Real.deriv_log]
-  calc _ = ∑ i, ∑ j, (A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
-          (EuclideanSpace.single j 1) / f x - A i j * (fderiv ℝ f x (EuclideanSpace.single i 1) *
-            fderiv ℝ f x (EuclideanSpace.single j 1)) / f x ^ 2) + fderiv ℝ f x v / f x :=
-        congrArg (· + _) <| Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
-    _ = _ := by
-      simp only [Finset.sum_sub_distrib, add_div, Finset.sum_div]
-      ring
+  have h := sum_mul_fderiv_fderiv_add_fderiv_comp A (Real.contDiffAt_log.mpr hfx) hf v
+  rw [Real.deriv_log', deriv_inv, Function.comp_def] at h
+  rw [h]
+  ring
 
 omit [DecidableEq ι] in
 /-- The algebra behind conjugation by a weight `W = exp ℓ`. Writing `A`, `c` for the
