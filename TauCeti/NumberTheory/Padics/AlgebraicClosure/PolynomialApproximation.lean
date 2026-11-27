@@ -84,6 +84,11 @@ the valuation `v(ζ - 1)`, normalised by `v ℓ = 1`, for `ζ` of order `ℓ ^ h
 def primePowerRootRadius (h : ℕ) : ℚ≥0 := (Nat.totient (ℓ ^ h) : ℚ≥0)⁻¹
 
 omit [Fact ℓ.Prime] in
+/-- The prime-power root radius as a nonnegative rational number. -/
+lemma primePowerRootRadius_def (h : ℕ) :
+    primePowerRootRadius ℓ h = ((ℓ ^ h).totient : ℚ≥0)⁻¹ := (rfl)
+
+omit [Fact ℓ.Prime] in
 /-- The real value of the prime-power root radius. -/
 @[simp]
 lemma coe_primePowerRootRadius (h : ℕ) :

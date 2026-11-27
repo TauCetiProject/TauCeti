@@ -388,6 +388,7 @@ end TauCeti
 namespace AddValuation
 
 /-- Membership in the valuation subring is nonnegativity of the additive valuation. -/
+@[simp high] -- Apply before `Valuation.mem_valuationSubring_iff`.
 theorem mem_toValuation_valuationSubring_iff {K Γ : Type*} [Field K]
     [LinearOrderedAddCommGroupWithTop Γ] (v : AddValuation K Γ) (x : K) :
     x ∈ v.toValuation.valuationSubring ↔ 0 ≤ v x := by
