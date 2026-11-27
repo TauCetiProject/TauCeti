@@ -41,6 +41,8 @@ set of `x` is the inverse different.
 * `IsDedekindDomain.FiniteAdeleRing.extendAddChar_apply_of_sub_mem`: the value at `a` is `χ x` for
   every `x ∈ K` with `a - x ∈ Ô`; in particular `extendAddChar_algebraMap` and
   `extendAddChar_apply_of_mem_integralAdeles`.
+* `IsDedekindDomain.FiniteAdeleRing.extendAddChar_add_of_mem_integralAdeles`: the extension is
+  invariant under translation by `Ô`.
 * `IsDedekindDomain.FiniteAdeleRing.addChar_ext`: a character of the finite adeles trivial on `Ô`
   is determined by its values on `K`.
 * `IsDedekindDomain.FiniteAdeleRing.eq_extendAddChar_iff`: the extension is the unique character
@@ -71,10 +73,10 @@ include hχ in
 /-- Two elements of `K` that differ from the same finite adele by integral finite adeles have the
 same value under a character trivial on `R`: their difference lies in `K ∩ Ô = R`. -/
 private theorem apply_eq_of_sub_mem {a : FiniteAdeleRing R K} {x y : K}
-    (hx : algebraMap K (FiniteAdeleRing R K) x - a ∈ integralAdeles R K)
-    (hy : algebraMap K (FiniteAdeleRing R K) y - a ∈ integralAdeles R K) : χ x = χ y := by
+    (hx : a - algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K)
+    (hy : a - algebraMap K (FiniteAdeleRing R K) y ∈ integralAdeles R K) : χ x = χ y := by
   have hxy : algebraMap K (FiniteAdeleRing R K) (x - y) ∈ integralAdeles R K := by
-    simpa only [map_sub, sub_sub_sub_cancel_right] using sub_mem hx hy
+    simpa only [map_sub, sub_sub_sub_cancel_left] using sub_mem hy hx
   obtain ⟨r, hr⟩ := (algebraMap_mem_integralAdeles_iff (x - y)).mp hxy
   rw [← sub_add_cancel x y, ← hr, AddChar.map_add_eq_mul, hχ, one_mul]
 
@@ -86,9 +88,10 @@ private noncomputable def rep (a : FiniteAdeleRing R K) : K :=
 
 omit [Monoid M] in
 /-- The representative `rep a` differs from `a` by an integral finite adele. -/
-private theorem algebraMap_rep_sub_mem (a : FiniteAdeleRing R K) :
-    algebraMap K (FiniteAdeleRing R K) (rep a) - a ∈ integralAdeles R K :=
-  (exists_algebraMap_mem_and_sub_mem_integralAdeles a Filter.univ_mem).choose_spec.2
+private theorem sub_algebraMap_rep_mem (a : FiniteAdeleRing R K) :
+    a - algebraMap K (FiniteAdeleRing R K) (rep a) ∈ integralAdeles R K :=
+  sub_mem_comm_iff.mp
+    (exists_algebraMap_mem_and_sub_mem_integralAdeles a Filter.univ_mem).choose_spec.2
 
 /-- The extension of an additive character `χ` of `K` that is trivial on `R` to the finite adele
 ring: the value at a finite adele `a` is `χ x` for any `x ∈ K` with `a - x` integral at every finite
@@ -97,20 +100,20 @@ trivial on the integral finite adeles and restricts to `χ` on `K` (`eq_extendAd
 def extendAddChar : AddChar (FiniteAdeleRing R K) M where
   toFun a := χ (rep a)
   map_zero_eq_one' := by
-    rw [apply_eq_of_sub_mem χ hχ (algebraMap_rep_sub_mem 0) (y := 0) (by simp),
+    rw [apply_eq_of_sub_mem χ hχ (sub_algebraMap_rep_mem 0) (y := 0) (by simp),
       AddChar.map_zero_eq_one]
   map_add_eq_mul' a b := by
-    have h : algebraMap K (FiniteAdeleRing R K) (rep a + rep b) - (a + b) ∈ integralAdeles R K := by
+    have h : a + b - algebraMap K (FiniteAdeleRing R K) (rep a + rep b) ∈ integralAdeles R K := by
       rw [map_add, add_sub_add_comm]
-      exact add_mem (algebraMap_rep_sub_mem a) (algebraMap_rep_sub_mem b)
-    rw [apply_eq_of_sub_mem χ hχ (algebraMap_rep_sub_mem (a + b)) h, AddChar.map_add_eq_mul]
+      exact add_mem (sub_algebraMap_rep_mem a) (sub_algebraMap_rep_mem b)
+    rw [apply_eq_of_sub_mem χ hχ (sub_algebraMap_rep_mem (a + b)) h, AddChar.map_add_eq_mul]
 
 /-- **The value of the extended character.** At a finite adele `a`, the extension of `χ` takes the
 value `χ x` for every `x ∈ K` such that `a - x` is an integral finite adele. -/
 theorem extendAddChar_apply_of_sub_mem {a : FiniteAdeleRing R K} {x : K}
     (hx : a - algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K) :
     extendAddChar χ hχ a = χ x :=
-  apply_eq_of_sub_mem χ hχ (algebraMap_rep_sub_mem a) (sub_mem_comm_iff.mp hx)
+  apply_eq_of_sub_mem χ hχ (sub_algebraMap_rep_mem a) hx
 
 /-- The extended character restricts to `χ` on the diagonal copy of `K`. -/
 @[simp]
@@ -123,6 +126,13 @@ theorem extendAddChar_apply_of_mem_integralAdeles {a : FiniteAdeleRing R K}
     (ha : a ∈ integralAdeles R K) : extendAddChar χ hχ a = 1 := by
   rw [extendAddChar_apply_of_sub_mem χ hχ (x := 0) (by simpa using ha), AddChar.map_zero_eq_one]
 
+/-- **Translation invariance.** The extended character is invariant under translation by an
+integral finite adele. -/
+theorem extendAddChar_add_of_mem_integralAdeles {a o : FiniteAdeleRing R K}
+    (ho : o ∈ integralAdeles R K) :
+    extendAddChar χ hχ (a + o) = extendAddChar χ hχ a := by
+  rw [AddChar.map_add_eq_mul, extendAddChar_apply_of_mem_integralAdeles χ hχ ho, mul_one]
+
 /-- **Uniqueness.** Two additive characters of the finite adele ring that are trivial on the
 integral finite adeles and agree on the diagonal copy of `K` are equal, since every finite adele is
 the sum of an element of `K` and an integral finite adele. -/
@@ -131,9 +141,8 @@ theorem addChar_ext {ψ ψ' : AddChar (FiniteAdeleRing R K) M}
     (hK : ∀ x : K, ψ (algebraMap K (FiniteAdeleRing R K) x) =
       ψ' (algebraMap K (FiniteAdeleRing R K) x)) : ψ = ψ' := by
   ext a
-  obtain ⟨x, -, hx⟩ := exists_algebraMap_mem_and_sub_mem_integralAdeles a Filter.univ_mem
-  rw [sub_mem_comm_iff] at hx
-  rw [← sub_add_cancel a (algebraMap K (FiniteAdeleRing R K) x), AddChar.map_add_eq_mul,
+  have hx := sub_algebraMap_rep_mem a
+  rw [← sub_add_cancel a (algebraMap K (FiniteAdeleRing R K) (rep a)), AddChar.map_add_eq_mul,
     AddChar.map_add_eq_mul, h _ hx, h' _ hx, hK]
 
 /-- **Characterization of the extended character**: it is the unique additive character of the
@@ -164,17 +173,15 @@ theorem forall_extendAddChar_mul_eq_one_iff (z : FiniteAdeleRing R K) :
   have hsplit {x : K} (hx : z - algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K)
       {u : FiniteAdeleRing R K} (hu : u ∈ integralAdeles R K) :
       extendAddChar χ hχ (z * u) = extendAddChar χ hχ (algebraMap K _ x * u) := by
-    rw [← sub_add_cancel z (algebraMap K (FiniteAdeleRing R K) x), add_mul,
-      AddChar.map_add_eq_mul, extendAddChar_apply_of_mem_integralAdeles χ hχ (mul_mem hx hu),
-      one_mul]
+    rw [← add_sub_cancel (algebraMap K (FiniteAdeleRing R K) x) z, add_mul,
+      extendAddChar_add_of_mem_integralAdeles χ hχ (mul_mem hx hu)]
   constructor
   · intro h
-    obtain ⟨x, -, hx⟩ := exists_algebraMap_mem_and_sub_mem_integralAdeles z Filter.univ_mem
-    rw [sub_mem_comm_iff] at hx
-    refine ⟨x, fun r ↦ ?_, hx⟩
+    have hz := sub_algebraMap_rep_mem z
+    refine ⟨rep z, fun r ↦ ?_, hz⟩
     have hr : algebraMap R (FiniteAdeleRing R K) r ∈ integralAdeles R K :=
       (integralAdeles R K).algebraMap_mem r
-    rw [← h _ hr, hsplit hx hr, IsScalarTower.algebraMap_apply R K (FiniteAdeleRing R K), ← map_mul,
+    rw [← h _ hr, hsplit hz hr, IsScalarTower.algebraMap_apply R K (FiniteAdeleRing R K), ← map_mul,
       extendAddChar_algebraMap]
   · rintro ⟨x, hxR, hx⟩ u hu
     rw [hsplit hx hu]
@@ -185,9 +192,9 @@ theorem forall_extendAddChar_mul_eq_one_iff (z : FiniteAdeleRing R K) :
     have hu' : u ∈ closure (Set.range (algebraMap R (FiniteAdeleRing R K))) := by
       rwa [closure_range_algebraMap]
     obtain ⟨_, hrU, r, rfl⟩ := mem_closure_iff.mp hu' _ hU (by simp)
-    rw [← sub_add_cancel u (algebraMap R (FiniteAdeleRing R K) r), mul_add,
-      AddChar.map_add_eq_mul, extendAddChar_apply_of_mem_integralAdeles χ hχ hrU, one_mul,
-      IsScalarTower.algebraMap_apply R K (FiniteAdeleRing R K), ← map_mul,
-      extendAddChar_algebraMap, hxR]
+    rw [← add_sub_cancel (algebraMap R (FiniteAdeleRing R K) r) u, mul_add,
+      extendAddChar_add_of_mem_integralAdeles χ hχ hrU,
+      IsScalarTower.algebraMap_apply R K (FiniteAdeleRing R K), ← map_mul, extendAddChar_algebraMap,
+      hxR]
 
 end IsDedekindDomain.FiniteAdeleRing

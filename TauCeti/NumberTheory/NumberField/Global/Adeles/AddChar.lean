@@ -112,6 +112,11 @@ theorem finiteAdeleAddChar_apply_of_mem_integralAdeles {a : FiniteAdeleRing (�
     (ha : a ∈ integralAdeles (𝓞 K) K) : finiteAdeleAddChar K a = 1 :=
   extendAddChar_apply_of_mem_integralAdeles _ _ ha
 
+/-- `ψ_f` is invariant under translation by an integral finite adele. -/
+theorem finiteAdeleAddChar_add_of_mem_integralAdeles {a o : FiniteAdeleRing (𝓞 K) K}
+    (ho : o ∈ integralAdeles (𝓞 K) K) : finiteAdeleAddChar K (a + o) = finiteAdeleAddChar K a :=
+  extendAddChar_add_of_mem_integralAdeles _ _ ho
+
 /-- **Characterization of `ψ_f`**: it is the unique additive character of the finite adeles that
 is trivial on the integral finite adeles and equals `exp (2πi Tr_{K/ℚ} x)` at every `x ∈ K`. -/
 theorem eq_finiteAdeleAddChar_iff {ψ : AddChar (FiniteAdeleRing (𝓞 K) K) Circle} :
