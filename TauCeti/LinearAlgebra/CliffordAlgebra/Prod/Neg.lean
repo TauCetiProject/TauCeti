@@ -115,12 +115,7 @@ theorem conjAlgEquiv_lTensor_cliffordProdTensor (δ : Module.End R F)
       cliffordProdTensor ρ₁ (-γ) ((neg_mul_neg γ γ).trans hγ)
         (neg_mul_map_ι_of_mul_map_ι ρ₁ γ hγρ) ρ₂ := by
   refine (LinearEquiv.conjAlgEquiv_toAlgHom_comp_eq_iff _ _ _).2 fun a z ↦ ?_
-  have hcoe : ∀ y : E ⊗[R] F, (LinearEquiv.lTensor E (LinearEquiv.ofInvolutive δ hδ)) y =
-      δ.lTensor E y := fun y ↦ by
-    induction y using TensorProduct.inductionOn with
-    | tmul e f => simp [LinearEquiv.coe_ofInvolutive]
-    | add x y hx hy => simp [hx, hy]
-  simpa [hcoe] using LinearMap.congr_fun
+  exact LinearMap.congr_fun
     (lTensor_mul_cliffordProdTensor_of_eq_neg ρ₁ γ hγ hγρ (-γ)
       ((neg_mul_neg γ γ).trans hγ) (neg_mul_map_ι_of_mul_map_ι ρ₁ γ hγρ) ρ₂ hδρ rfl a) z
 

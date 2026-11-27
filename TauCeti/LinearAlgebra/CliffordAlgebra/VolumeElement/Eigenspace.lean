@@ -47,7 +47,7 @@ Finally, suppose `n` is positive, and let `S` be a spinor module, a `Cℓ`-modul
 faithfully and as the whole of `End_ℂ S` (the action map `Cℓ → End_ℂ S` is bijective), as for the
 Fock module of an even-dimensional space (`TauCeti.SpinPolarizationData.cliffordEquivEnd`). Then
 `n` is even, `S` is finite-dimensional and `dim S = 2 ^ (n / 2)`
-(`CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`), its half-spin spaces `S⁺` and `S⁻` both
+(`CliffordAlgebra.finrank_eq_two_pow_of_bijective`), its half-spin spaces `S⁺` and `S⁻` both
 have dimension `2 ^ (n / 2 - 1)`, and by Morita evaluation
 (`TauCeti.eigenspaceTensorEquivOfBijective`) every module satisfies
 
@@ -313,7 +313,7 @@ theorem finrank_eigenspace_complexVolume_of_bijective_lsmul (hn0 : n ≠ 0) {μ 
     rw [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)]
   have hn : Even n := hV ▸ even_finrank_of_algEquiv_end _ (AlgEquiv.ofBijective _ h)
   have hS : finrank ℂ S = 2 ^ (n / 2) := by
-    rw [finrank_eq_two_pow_of_bijective_lsmul _ h, hV]
+    rw [finrank_eq_two_pow_of_bijective _ h, hV]
   have := Module.Finite.of_surjective_end _ h.2
   have hsum := Submodule.finrank_add_eq_of_isCompl (isCompl_eigenspace_complexVolume (E := S) o hQ)
   rw [hS, finrank_eigenspace_complexVolume_neg o hn hn0 1] at hsum

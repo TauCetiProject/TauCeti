@@ -113,9 +113,8 @@ theorem cliffordProdTensor_surjective [Module.Finite R E] [Module.Projective R E
       rw [AlgHom.toLinearMap_apply, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb₀]
       simp [homTensorHomEquiv_apply, homTensorHomMap_apply]
     · refine ⟨toProd Q₁ Q₂ ((a * g) ᵍ⊗ₜ b₁), ?_⟩
-      rw [AlgHom.toLinearMap_apply, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ (a * g) hb₁,
-        map_mul, hg, ZMod.val_one, pow_one, mul_assoc, hγ, mul_one]
-      simp [homTensorHomEquiv_apply, homTensorHomMap_apply]
+      rw [AlgHom.toLinearMap_apply, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ (a * g) hb₁]
+      simp [hg, ZMod.val_one, hγ, mul_assoc, homTensorHomEquiv_apply, homTensorHomMap_apply]
   | add x y hx hy => rw [map_add]; exact Submodule.add_mem _ hx hy
 
 /-- **Bijectivity of the graded tensor product of endomorphism representations.** When `E` and `F`

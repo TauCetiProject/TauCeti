@@ -723,7 +723,7 @@ theorem finrank_eq_two_pow_of_surjective_lsmul [Nontrivial S]
       (Algebra.lsmul ℂ ℂ S : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)) :
     finrank ℂ S = 2 ^ (finrank ℝ V / 2) := by
   rcases Nat.even_or_odd (finrank ℝ V) with heven | hodd
-  · rw [finrank_eq_two_pow_of_bijective_lsmul _
+  · rw [finrank_eq_two_pow_of_bijective _
       (bijective_lsmul_of_surjective_lsmul_of_even hQ heven hsurj), Module.finrank_baseChange]
   · obtain ⟨μ, -, hω⟩ := exists_sign_complexVolume_smul_eq_of_surjective_lsmul hQ hodd hsurj
     have : Fact (finrank ℝ V = finrank ℝ V) := ⟨rfl⟩
