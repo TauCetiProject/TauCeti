@@ -14,6 +14,7 @@ public import TauCeti.Algebra.Algebra.CyclicQuotient
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.Data.List.OfFn
 import Mathlib.GroupTheory.Perm.Fin
+import TauCeti.Algebra.BigOperators.Ring.List
 import TauCeti.GroupTheory.PGroup.FixedPointSum
 
 /-!
@@ -48,8 +49,8 @@ number of `p`-regular conjugacy classes (Webb, Theorem 9.3.6).
 
 * `TauCeti.add_pow_char_sub_mem_commutatorSubmodule`: `(a + b) ^ p - (a ^ p + b ^ p) ∈ [A, A]`.
 * `TauCeti.pow_char_mem_commutatorSubmodule`: `[A, A]` is closed under `p`-th powers.
-* `TauCeti.sum_pow_char_pow_sub_mem_commutatorSubmodule`: the same for `p ^ n`-th powers of finite
-  sums.
+* `TauCeti.sum_pow_char_pow_sub_mem_commutatorSubmodule`: the `p ^ n`-th power of a finite sum is
+  the sum of the `p ^ n`-th powers modulo `[A, A]`.
 * `TauCeti.mem_pPowerCommutatorSubmodule_of_isNilpotent`,
   `TauCeti.commutatorSubmodule_le_pPowerCommutatorSubmodule`: `T(A)` contains the nilpotent
   elements and `[A, A]`.
@@ -78,17 +79,6 @@ variable {A : Type*} [Ring A]
 private def wordProd (a b : A) {n : ℕ} (w : Fin n → Bool) : A :=
   (List.ofFn fun i ↦ cond (w i) a b).prod
 
-/-- **Noncommutative binomial expansion**: `(a + b) ^ n` is the sum of the products of `n` factors
-from `{a, b}`. -/
-private theorem add_pow_eq_sum_wordProd (a b : A) (n : ℕ) :
-    (a + b) ^ n = ∑ w : Fin n → Bool, wordProd a b w := by
-  induction n with
-  | zero => simp [wordProd]
-  | succ n ih =>
-    rw [pow_succ', ih, ← (Fin.consEquiv fun _ ↦ Bool).sum_comp, Fintype.sum_prod_type,
-      Fintype.sum_bool, add_mul, Finset.mul_sum, Finset.mul_sum]
-    simp [wordProd, Fin.consEquiv, List.ofFn_succ]
-
 /-- Rotation of words, `w ↦ w ∘ finRotate n`. -/
 private def rotateWords (n : ℕ) : Equiv.Perm (Fin n → Bool) :=
   (finRotate n).symm.arrowCongr (.refl _)
@@ -97,11 +87,6 @@ private theorem rotateWords_apply (n : ℕ) (w : Fin n → Bool) :
     rotateWords n w = w ∘ finRotate n := by
   ext i
   rw [rotateWords, Equiv.arrowCongr_apply, Equiv.symm_symm, Equiv.coe_refl, Function.id_comp]
-
-private theorem finRotate_castSucc {n : ℕ} (i : Fin (n + 1)) :
-    finRotate (n + 2) i.castSucc = i.succ :=
-  Fin.ext <| by
-    rw [coe_finRotate_of_ne_last (Fin.castSucc_ne_last i), Fin.val_castSucc, Fin.val_succ]
 
 /-- Rotation of words of length `n + 2` has order dividing `n + 2`. -/
 private theorem rotateWords_pow_self (n : ℕ) : rotateWords (n + 2) ^ (n + 2) = 1 := by
@@ -134,8 +119,7 @@ private theorem filter_rotateWords_eq (n : ℕ) :
       induction i using Fin.induction with
       | zero => rfl
       | succ i ih =>
-        rw [← ih, ← finRotate_castSucc]
-        exact congrFun h i.castSucc
+        simpa [← ih, Fin.coeSucc_eq_succ] using congrFun h i.castSucc
     cases h0 : w 0
     · exact Or.inr (funext fun i ↦ (hw i).trans h0)
     · exact Or.inl (funext fun i ↦ (hw i).trans h0)
@@ -146,17 +130,13 @@ private theorem exists_wordProd_rotateWords (a b : A) {n : ℕ} (w : Fin (n + 2)
     ∃ x y : A, wordProd a b (rotateWords (n + 2) w) = y * x ∧ wordProd a b w = x * y := by
   refine ⟨cond (w 0) a b, (List.ofFn fun i : Fin (n + 1) ↦ cond (w i.succ) a b).prod, ?_, ?_⟩
   · rw [rotateWords_apply, wordProd, List.ofFn_succ', List.prod_concat]
-    simp only [Function.comp_apply, finRotate_castSucc, finRotate_last]
+    simp only [Function.comp_apply, finRotate_apply, Fin.coeSucc_eq_succ, Fin.last_add_one]
   · rw [wordProd, List.ofFn_succ, List.prod_cons]
 
 end Words
 
 variable (p : ℕ) [hp : Fact p.Prime] (k : Type*) [CommRing k] [CharP k p]
 variable {A : Type*} [Ring A] [Algebra k A]
-
-omit hp in
-private theorem nsmul_char_eq_zero {B : Type*} [Ring B] [Algebra k B] (x : B) : p • x = 0 := by
-  rw [nsmul_eq_mul, ← map_natCast (algebraMap k B), CharP.cast_eq_zero, map_zero, zero_mul]
 
 include hp in
 /-- **The `p`-th power map is additive modulo commutators**: in characteristic `p`,
@@ -174,12 +154,13 @@ theorem add_pow_char_sub_mem_commutatorSubmodule (a b : A) :
     exact mul_sub_mul_mem_commutatorSubmodule k A y x
   have hM : ∀ m : A ⧸ C, (n + 2) • m = 0 := by
     intro m
-    obtain ⟨x, rfl⟩ := C.mkQ_surjective m
-    rw [← map_nsmul, nsmul_char_eq_zero (n + 2) k x, map_zero]
+    rw [← Nat.cast_smul_eq_nsmul k, CharP.cast_eq_zero, zero_smul]
   -- Only the two constant words survive modulo `n + 2`.
-  rw [← Submodule.Quotient.eq, ← Submodule.mkQ_apply, ← Submodule.mkQ_apply,
-    add_pow_eq_sum_wordProd, map_sum,
-    Equiv.Perm.sum_eq_sum_filter_apply_eq_self_of_pow_eq_one _ (rotateWords_pow_self n) hM _ hf,
+  have hpow : (a + b) ^ (n + 2) = ∑ w : Fin (n + 2) → Bool, wordProd a b w := by
+    simpa [wordProd] using sum_pow_eq_sum_prod_ofFn (fun x : Bool ↦ cond x a b) (n + 2)
+  rw [← Submodule.Quotient.eq, ← Submodule.mkQ_apply, ← Submodule.mkQ_apply, hpow, map_sum,
+    Equiv.Perm.sum_eq_sum_filter_apply_eq_self_of_pow_eq_one (n := 1) _
+      (by rw [pow_one]; exact rotateWords_pow_self n) hM _ hf,
     filter_rotateWords_eq, sum_pair (fun h ↦ Bool.noConfusion (congrFun h 0)), map_add]
   simp only [wordProd, Bool.cond_true, Bool.cond_false, List.ofFn_const, List.prod_replicate]
 
@@ -190,9 +171,7 @@ private theorem neg_one_pow_char_of_algebra {B : Type*} [Ring B] [Algebra k B] :
   simpa using h
 
 include hp in
-/-- In characteristic `p`, the commutator submodule is closed under `p`-th powers:
-`(x * y - y * x) ^ p ≡ (x * y) ^ p - (y * x) ^ p`, and the latter is the commutator of `x` and
-`y * (x * y) ^ (p - 1)`. -/
+/-- In characteristic `p`, the commutator submodule is closed under `p`-th powers. -/
 theorem pow_char_mem_commutatorSubmodule {c : A} (hc : c ∈ commutatorSubmodule k A) :
     c ^ p ∈ commutatorSubmodule k A := by
   set C := commutatorSubmodule k A
@@ -200,6 +179,8 @@ theorem pow_char_mem_commutatorSubmodule {c : A} (hc : c ∈ commutatorSubmodule
     simpa using add_mem (add_pow_char_sub_mem_commutatorSubmodule p k x y) (add_mem hx hy)
   induction hc using commutatorSubmodule_induction with
   | mem x y =>
+    -- `(x * y - y * x) ^ p ≡ (x * y) ^ p - (y * x) ^ p`, and the latter is the commutator of `x`
+    -- and `y * (x * y) ^ (p - 1)`.
     obtain ⟨m, hm⟩ : ∃ m, p = m + 1 := ⟨p - 1, (Nat.sub_add_cancel hp.out.one_le).symm⟩
     have hyx : (y * x) ^ p = y * (x * y) ^ m * x := by
       have hs : SemiconjBy y (x * y) (y * x) := by simp [SemiconjBy, mul_assoc]
@@ -295,6 +276,7 @@ def pPowerCommutatorSubmodule : Submodule k A where
     exact ⟨n, by rw [smul_pow]; exact Submodule.smul_mem _ _ hn⟩
 
 /-- Membership in the `p`-power commutator subspace. -/
+@[simp]
 theorem mem_pPowerCommutatorSubmodule {a : A} :
     a ∈ pPowerCommutatorSubmodule p k A ↔ ∃ n : ℕ, a ^ p ^ n ∈ commutatorSubmodule k A :=
   Iff.rfl

@@ -62,8 +62,7 @@ theorem pPowerCommutatorSubmodule_matrix_eq_ker_trace [IsReduced R] :
   refine le_antisymm (fun a ha ↦ ?_) ((commutatorSubmodule_matrix_eq_ker_trace R n).symm.le.trans
     (commutatorSubmodule_le_pPowerCommutatorSubmodule p R))
   obtain ⟨m, hm⟩ := (mem_pPowerCommutatorSubmodule p R).1 ha
-  rw [commutatorSubmodule_matrix_eq_ker_trace, LinearMap.mem_ker, traceLinearMap_apply,
-    trace_pow_char_pow] at hm
+  rw [mem_commutatorSubmodule_matrix_iff, trace_pow_char_pow] at hm
   rw [LinearMap.mem_ker, traceLinearMap_apply]
   exact IsReduced.eq_zero _ ⟨_, hm⟩
 

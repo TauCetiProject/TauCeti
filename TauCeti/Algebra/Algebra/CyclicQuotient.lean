@@ -53,8 +53,8 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
   commutator submodule.
 * `TauCeti.commutatorSubmodule_quotient_le_map`: the commutators of a quotient algebra are images
   of commutators.
-* `TauCeti.commutatorSubmodule_pi`: the commutator submodule of a finite product of algebras is
-  the product of the commutator submodules.
+* `TauCeti.commutatorSubmodule_pi`: the commutator submodule of a finite product of rings is the
+  product of the commutator submodules.
 
 The trace criterion for nonmembership in the commutator submodule (hence, over a ring of scalars,
 for nonvanishing cyclic classes), which needs matrices, is
@@ -200,6 +200,23 @@ theorem map_mem_commutatorSubmodule_of_ringHom {l B F : Type*} [Semiring l]
   | add y z _ _ hy hz => intro r; rw [smul_add, map_add]; exact add_mem (hy r) (hz r)
   | smul s y _ hy => intro r; rw [smul_smul]; exact hy (r * s)
 
+/-- The commutators of a finite product of rings are the families of commutators. -/
+theorem commutatorSubmodule_pi {ι : Type*} [Finite ι] (B : ι → Type*)
+    [∀ i, NonUnitalNonAssocRing (B i)] [∀ i, Module k (B i)] :
+    commutatorSubmodule k (Π i, B i) =
+      Submodule.pi Set.univ fun i ↦ commutatorSubmodule k (B i) := by
+  classical
+  have := Fintype.ofFinite ι
+  refine le_antisymm (commutatorSubmodule_le_iff.2 fun x y i _ ↦ ?_) fun v hv ↦ ?_
+  · exact mul_sub_mul_mem_commutatorSubmodule k (B i) (x i) (y i)
+  · rw [← Finset.univ_sum_single v]
+    refine sum_mem fun i _ ↦ ?_
+    have hle : commutatorSubmodule k (B i) ≤
+        (commutatorSubmodule k (Π i, B i)).comap (LinearMap.single k B i) :=
+      commutatorSubmodule_le_iff.2 fun x y ↦ by
+        simp [Pi.single_sub, Pi.single_mul]
+    exact hle (hv i (Set.mem_univ i))
+
 end Semiring
 
 /-- The **cyclic quotient** `A / [A, A]`.  Its elements are cyclic classes; for a path algebra,
@@ -220,13 +237,14 @@ section
 variable {A : Type*} [Ring A] [Algebra k A]
 
 /-- An algebra isomorphism preserves the commutator submodule. -/
+@[simp]
 theorem algEquiv_apply_mem_commutatorSubmodule_iff {B : Type*} [Ring B] [Algebra k B]
     (e : A ≃ₐ[k] B) {a : A} :
     e a ∈ commutatorSubmodule k B ↔ a ∈ commutatorSubmodule k A :=
   ⟨fun h ↦ by simpa using map_mem_commutatorSubmodule e.symm h, map_mem_commutatorSubmodule e⟩
 
 variable (k) in
-/-- The commutators of a quotient algebra are the images of the commutators. -/
+/-- Every commutator sum of a quotient algebra is the image of a commutator sum of `A`. -/
 theorem commutatorSubmodule_quotient_le_map (I : Ideal A) [I.IsTwoSided] :
     commutatorSubmodule k (A ⧸ I) ≤
       (commutatorSubmodule k A).map (Ideal.Quotient.mkₐ k I).toLinearMap := by
@@ -236,23 +254,5 @@ theorem commutatorSubmodule_quotient_le_map (I : Ideal A) [I.IsTwoSided] :
   exact ⟨x * y - y * x, mul_sub_mul_mem_commutatorSubmodule k A x y, by simp⟩
 
 end
-
-variable (k) in
-/-- The commutators of a finite product of algebras are the families of commutators. -/
-theorem commutatorSubmodule_pi {ι : Type*} [Finite ι] (B : ι → Type*) [∀ i, Ring (B i)]
-    [∀ i, Algebra k (B i)] :
-    commutatorSubmodule k (Π i, B i) =
-      Submodule.pi Set.univ fun i ↦ commutatorSubmodule k (B i) := by
-  classical
-  have := Fintype.ofFinite ι
-  refine le_antisymm (commutatorSubmodule_le_iff.2 fun x y i _ ↦ ?_) fun v hv ↦ ?_
-  · exact mul_sub_mul_mem_commutatorSubmodule k (B i) (x i) (y i)
-  · rw [← Finset.univ_sum_single v]
-    refine sum_mem fun i _ ↦ ?_
-    have hle : commutatorSubmodule k (B i) ≤
-        (commutatorSubmodule k (Π i, B i)).comap (LinearMap.single k B i) :=
-      commutatorSubmodule_le_iff.2 fun x y ↦ by
-        simp [Pi.single_sub, Pi.single_mul]
-    exact hle (hv i (Set.mem_univ i))
 
 end TauCeti

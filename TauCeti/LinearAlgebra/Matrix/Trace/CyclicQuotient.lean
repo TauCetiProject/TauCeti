@@ -31,6 +31,7 @@ the `p ^ m`-th power map is additive modulo commutators.
   which is an additive `k`-module, the trace of `f x` vanishes for every `x` in the commutator
   submodule over `k`.
 * `TauCeti.commutatorSubmodule_matrix_eq_ker_trace`: `[M_n(R), M_n(R)] = ker tr`.
+* `TauCeti.mem_commutatorSubmodule_matrix_iff`: `a ∈ [M_n(R), M_n(R)] ↔ tr a = 0`.
 * `TauCeti.trace_pow_char_pow`: `tr (a ^ (p ^ m)) = (tr a) ^ (p ^ m)` in characteristic `p`.
 
 ## References
@@ -101,6 +102,11 @@ theorem commutatorSubmodule_matrix_eq_ker_trace :
       simpa using hdiag i i₀ (a i i)
     · simpa [hij] using hoff i j hij (a i j)
 
+/-- A matrix over a commutative ring is a sum of commutators exactly when its trace vanishes. -/
+theorem mem_commutatorSubmodule_matrix_iff {a : Matrix n n R} :
+    a ∈ commutatorSubmodule R (Matrix n n R) ↔ trace a = 0 := by
+  rw [commutatorSubmodule_matrix_eq_ker_trace, LinearMap.mem_ker, traceLinearMap_apply]
+
 variable [DecidableEq n] (p : ℕ) [hp : Fact p.Prime] [CharP R p]
 
 include hp in
@@ -111,12 +117,11 @@ theorem trace_pow_char_pow (a : Matrix n n R) (m : ℕ) :
   classical
   -- `a` differs from its diagonal by a matrix of trace zero, hence by commutators.
   have hd : a - diagonal (diag a) ∈ commutatorSubmodule R (Matrix n n R) := by
-    rw [commutatorSubmodule_matrix_eq_ker_trace, LinearMap.mem_ker, traceLinearMap_apply,
-      trace_sub, trace_diagonal]
+    rw [mem_commutatorSubmodule_matrix_iff, trace_sub, trace_diagonal]
     exact sub_self _
   have h := pow_char_pow_sub_pow_char_pow_mem_commutatorSubmodule p R hd m
-  rw [commutatorSubmodule_matrix_eq_ker_trace, LinearMap.mem_ker, traceLinearMap_apply,
-    trace_sub, sub_eq_zero, diagonal_pow, trace_diagonal] at h
+  rw [mem_commutatorSubmodule_matrix_iff, trace_sub, sub_eq_zero, diagonal_pow,
+    trace_diagonal] at h
   simp only [Pi.pow_apply] at h
   rw [h, trace, sum_pow_char_pow]
 

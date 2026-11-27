@@ -10,8 +10,8 @@ public import Mathlib.RingTheory.SimpleModule.IsAlgClosed
 public import TauCeti.Algebra.Algebra.PPowerCommutator.Split
 public import TauCeti.GroupTheory.OrderOfElement.PPart.Section
 import Mathlib.Algebra.CharP.Algebra
+import Mathlib.Algebra.Group.ConjFinite
 import Mathlib.Algebra.MonoidAlgebra.Module
-import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.LinearAlgebra.Basis.Basic
 import Mathlib.LinearAlgebra.Dimension.Free
 import Mathlib.RingTheory.Artinian.Ring
@@ -25,8 +25,8 @@ are (`TauCeti.pRegularConjClasses p G`). The quotient of the group algebra `k[G]
 `p`-power commutator subspace `T(k[G]) = TauCeti.pPowerCommutatorSubmodule p k k[G]` has a basis
 given by representatives of the `p`-regular conjugacy classes (Webb, proof of Theorem 9.3.6):
 
-* the commutators of `k[G]` are spanned by the differences `x g x⁻¹ - g` of conjugate elements
-  (Webb, Lemma 9.3.5), so conjugate elements are congruent modulo `T(k[G])`;
+* the differences `x g x⁻¹ - g` of conjugate elements are commutators (Webb, Lemma 9.3.5), so
+  conjugate elements are congruent modulo `T(k[G])`;
 * every `g` is congruent to its `p`-regular part `s = pFreePart p g` modulo `T(k[G])`, since
   `g - s = (q - 1) s` with `q = pPart p g` of `p`-power order, and `(q - 1) ^ (p ^ a) = 0` once
   `q ^ (p ^ a) = 1`;
@@ -40,7 +40,14 @@ characteristic `p`. With `TauCeti.finrank_quotient_pPowerCommutatorSubmodule_of_
 this counts the matrix factors of `k[G] / rad k[G]` when `k` is a splitting field, in particular
 when `k` is algebraically closed.
 
+## Main definitions
+
+* `TauCeti.classCoeff k G c`: the `k`-linear sum of the coefficients over the conjugacy class `c`.
+
 ## Main results
+
+* `TauCeti.commutatorSubmodule_le_ker_classCoeff`: every coefficient sum over a conjugacy class
+  kills the commutators of `k[G]`.
 
 * `TauCeti.finrank_quotient_pPowerCommutatorSubmodule_monoidAlgebra`: `dim_k k[G] / T(k[G])` is
   the number of `p`-regular conjugacy classes of `G`.
@@ -70,25 +77,29 @@ variable (p : ℕ) (k : Type*) [CommRing k] {G : Type*} [Group G]
 variable (G) in
 open Classical in
 /-- The sum of the coefficients of an element of `k[G]` over a conjugacy class. -/
-private noncomputable def classCoeff [Fintype G] (c : ConjClasses G) :
+@[expose]
+noncomputable def classCoeff [Fintype G] (c : ConjClasses G) :
     MonoidAlgebra k G →ₗ[k] k where
   toFun x := ∑ g ∈ univ.filter (fun g ↦ ConjClasses.mk g = c), x.coeff g
   map_add' x y := by simp [coeff_add, sum_add_distrib]
   map_smul' r x := by simp [coeff_smul, mul_sum]
 
 open Classical in
-private theorem classCoeff_apply [Fintype G] (c : ConjClasses G) (x : MonoidAlgebra k G) :
+/-- `classCoeff k G c x` is the sum of the coefficients of `x` at the members of `c`. -/
+theorem classCoeff_apply [Fintype G] (c : ConjClasses G) (x : MonoidAlgebra k G) :
     classCoeff k G c x = ∑ g ∈ univ.filter (fun g ↦ ConjClasses.mk g = c), x.coeff g :=
   rfl
 
 open Classical in
-private theorem classCoeff_single [Fintype G] (c : ConjClasses G) (h : G) (r : k) :
+/-- The coefficient sum over `c` of `single h r` is `r` if `h ∈ c`, and `0` otherwise. -/
+@[simp]
+theorem classCoeff_single [Fintype G] (c : ConjClasses G) (h : G) (r : k) :
     classCoeff k G c (single h r) = if ConjClasses.mk h = c then r else 0 := by
   rw [classCoeff_apply]
   simp [coeff_single, Finsupp.single_apply]
 
 /-- The coefficient sum over a conjugacy class kills the commutators of `k[G]`. -/
-private theorem commutatorSubmodule_le_ker_classCoeff [Fintype G] (c : ConjClasses G) :
+theorem commutatorSubmodule_le_ker_classCoeff [Fintype G] (c : ConjClasses G) :
     commutatorSubmodule k (MonoidAlgebra k G) ≤ LinearMap.ker (classCoeff k G c) := by
   refine (commutatorSubmodule_le_ker_iff _).2 fun x y ↦ ?_
   induction x using MonoidAlgebra.induction_linear with
@@ -186,7 +197,6 @@ private theorem linearIndependent_mkQ_single_out [Finite G] :
       (pPowerCommutatorSubmodule p k (MonoidAlgebra k G)).mkQ (single c.val.out 1) := by
   classical
   have := Fintype.ofFinite G
-  have : Finite (ConjClasses G) := Quotient.finite _
   have := Fintype.ofFinite (pRegularConjClasses p G)
   set T := pPowerCommutatorSubmodule p k (MonoidAlgebra k G)
   have hmk : ∀ c : ConjClasses G, ConjClasses.mk c.out = c := fun c ↦ Quotient.out_eq c
@@ -199,13 +209,13 @@ private theorem linearIndependent_mkQ_single_out [Finite G] :
     exact hμ
   obtain ⟨n, hn⟩ := (mem_pPowerCommutatorSubmodule p k).1 hy
   -- Raise to a power `p ^ N`, `N ≥ n`, fixing every `p`-regular element.
-  obtain ⟨N, hnN, hfix⟩ := exists_le_forall_pow_char_pow_eq_self p (G := G) n
+  obtain ⟨N, hnN, hfix⟩ := exists_le_forall_pow_prime_pow_eq_self_of_coprime (G := G) hp.out n
   have hz : ∑ c : pRegularConjClasses p G, single c.val.out (μ c ^ p ^ N) ∈
       commutatorSubmodule k (MonoidAlgebra k G) := by
     have h := sum_pow_char_pow_sub_mem_commutatorSubmodule p k univ
       (fun c : pRegularConjClasses p G ↦ single c.val.out (μ c)) N
-    simp only [single_pow, fun c : pRegularConjClasses p G ↦ hfix c.val.out (by
-      simpa [hmk] using (mk_mem_pRegularConjClasses_iff p).1 (by rw [hmk]; exact c.prop))] at h
+    simp only [single_pow, fun c : pRegularConjClasses p G ↦
+      hfix c.val.out (coprime_orderOf_out_of_mem_pRegularConjClasses c.prop)] at h
     simpa using sub_mem (pow_char_pow_mem_commutatorSubmodule_of_le p k hnN hn) h
   -- The coefficient sum over the class of `c₀` picks out `μ c₀ ^ p ^ N`.
   have h0 := commutatorSubmodule_le_ker_classCoeff k c₀.val hz
@@ -222,7 +232,6 @@ finite group `G`. -/
 theorem finrank_quotient_pPowerCommutatorSubmodule_monoidAlgebra [Finite G] :
     finrank k (MonoidAlgebra k G ⧸ pPowerCommutatorSubmodule p k (MonoidAlgebra k G)) =
       Nat.card (pRegularConjClasses p G) := by
-  have : Finite (ConjClasses G) := Quotient.finite _
   have := Fintype.ofFinite (pRegularConjClasses p G)
   rw [finrank_eq_card_basis (Basis.mk (linearIndependent_mkQ_single_out p k)
     (span_range_mkQ_single_out p k)), Nat.card_eq_fintype_card]

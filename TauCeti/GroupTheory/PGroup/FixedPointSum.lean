@@ -25,7 +25,7 @@ weighted form of `IsPGroup.card_modEq_card_fixedPoints`, which is the case `f = 
 For a `p`-subgroup `P` of a finite group `G` acting by conjugation, the fixed points are the
 centralizer `C_G(P)`: the sum over `G` of a function invariant under conjugation by `P` is its sum
 over `C_G(P)` (`IsPGroup.sum_eq_sum_centralizer_of_nsmul_eq_zero`). For a single permutation `σ`
-with `σ ^ p = 1`, the fixed points are those of `σ`
+with `σ ^ p ^ n = 1`, the fixed points are those of `σ`
 (`Equiv.Perm.sum_eq_sum_filter_apply_eq_self_of_pow_eq_one`).
 
 ## References
@@ -133,18 +133,18 @@ namespace Equiv.Perm
 
 variable {X M : Type*} [Fintype X] [DecidableEq X] [AddCommMonoid M] {p : ℕ} [Fact p.Prime]
 
-/-- Let `σ` be a permutation of a finite type with `σ ^ p = 1`, for a prime `p`, and let `f` be a
-`σ`-invariant function into an additive monoid killed by `p`. Then the sum of `f` equals its sum
-over the fixed points of `σ`: the other points fall into `σ`-orbits of size `p`. -/
-theorem sum_eq_sum_filter_apply_eq_self_of_pow_eq_one (σ : Perm X) (hσ : σ ^ p = 1)
+/-- Let `σ` be a permutation of a finite type with `σ ^ p ^ n = 1`, for a prime `p`, and let `f` be
+a `σ`-invariant function into an additive monoid killed by `p`. Then the sum of `f` equals its sum
+over the fixed points of `σ`: the other points fall into `σ`-orbits of size divisible by `p`. -/
+theorem sum_eq_sum_filter_apply_eq_self_of_pow_eq_one {n : ℕ} (σ : Perm X) (hσ : σ ^ p ^ n = 1)
     (hM : ∀ m : M, p • m = 0) (f : X → M) (hf : ∀ x, f (σ x) = f x) :
     ∑ x, f x = ∑ x with σ x = x, f x := by
   classical
   -- The cyclic group `⟨σ⟩` is a `p`-group whose fixed points are those of `σ`.
   have hH : IsPGroup p (Subgroup.zpowers σ) := fun g ↦ by
     obtain ⟨g, z, rfl⟩ := g
-    refine ⟨1, Subtype.ext ?_⟩
-    simp only [pow_one, Subgroup.coe_pow, Subgroup.coe_one]
+    refine ⟨n, Subtype.ext ?_⟩
+    simp only [Subgroup.coe_pow, Subgroup.coe_one]
     rw [← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, hσ, one_zpow]
   have hfz : ∀ (z : ℤ) x, f ((σ ^ z) x) = f x := by
     intro z
