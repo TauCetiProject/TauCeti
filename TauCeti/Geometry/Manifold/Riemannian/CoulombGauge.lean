@@ -33,8 +33,9 @@ at most that of `a`
 * **The codifferential of a one-form has integral zero** against the Riemannian volume measure
   (`TauCeti.SmoothForm.integral_codifferential_eq_zero`).
 * **Existence and uniqueness**: on a closed connected manifold, `d*a` is therefore a smooth
-  function of integral zero, so the equation `Δf = d*df = d*a` has a unique smooth solution `f`
-  of integral zero by the smooth Poisson solver
+  function of integral zero, so the equation `Δ⁺f = d*df = d*a` (where `Δ⁺ = -div grad = -Δ` is
+  the nonnegative Laplacian) has a unique smooth solution `f` of integral zero by the smooth
+  Poisson solver
   (`TauCeti.Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq`),
   yielding both existence (`TauCeti.SmoothForm.exists_codifferential_sub_mextDerivₗ_eq_zero`) and
   uniqueness (`TauCeti.SmoothForm.existsUnique_codifferential_sub_mextDerivₗ_eq_zero`) of `f` with
@@ -111,7 +112,8 @@ end Measure
 
 /-! ### Existence and uniqueness on a closed connected manifold -/
 
-/-- Evaluating `d*df` on a smooth `0`-form `f` gives `-Δf`. -/
+/-- Evaluating `d*df` on a smooth `0`-form `f` gives `Δ⁺f = -Δf`, where `Δ = div grad` is the
+Laplace–Beltrami operator. -/
 private theorem codifferential_mextDerivₗ_apply_zero (hkl : 0 + 1 + l = m)
     (f : SmoothForm I M ℝ 0) (x : M) :
     (codifferential o hkl (mextDerivₗ I 0 f)).val x 0 =
@@ -122,7 +124,7 @@ private theorem codifferential_mextDerivₗ_apply_zero (hkl : 0 + 1 + l = m)
     RoughForm.ofFunction_apply, Pi.neg_apply] using h
 
 /-- The Coulomb gauge condition `d*(a - df) = 0` is equivalent to the pointwise Poisson equation
-`-Δf = d*a`. -/
+`Δ⁺f = -Δf = d*a`. -/
 private theorem codifferential_sub_mextDerivₗ_eq_zero_iff (hkl : 0 + 1 + l = m)
     (a : SmoothForm I M ℝ 1) (f : SmoothForm I M ℝ 0) :
     codifferential o hkl (a - mextDerivₗ I 0 f) = 0 ↔
@@ -142,7 +144,7 @@ variable [I.Boundaryless] [CompactSpace M] [T2Space M] [MeasurableSpace M] [Bore
 /-- **Uniqueness and existence of the global Coulomb gauge**: on a closed connected oriented
 Riemannian manifold of positive dimension, for every smooth one-form `a` there is a unique smooth
 function `f` of integral zero with `d*(a - df) = 0`. The function `f` is the unique mean-zero
-solution of `Δf = d*a` from the smooth Poisson equation. -/
+solution of `Δ⁺f = d*a` (where `Δ⁺ = -div grad`) from the smooth Poisson equation. -/
 theorem existsUnique_codifferential_sub_mextDerivₗ_eq_zero [PreconnectedSpace M]
     (a : SmoothForm I M ℝ 1) :
     ∃! f : SmoothForm I M ℝ 0, ∫ x, f.val x 0 ∂riemannianVolume I M = 0 ∧
