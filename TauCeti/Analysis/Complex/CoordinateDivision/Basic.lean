@@ -177,7 +177,8 @@ private theorem exists_eq_add_sum_mul_eval_of_list [Finite ι] {f : (ι → ℂ)
       rw [List.toFinset_cons, sum_insert hi_not]
       have hsum_eq : ∑ m ∈ l'.toFinset, g m z * (P m).eval (z m) =
           ∑ m ∈ l'.toFinset, g' m z * (P m).eval (z m) := sum_congr rfl fun m hm ↦ by
-        simp [g, show m ≠ i from fun h ↦ hi_not (h ▸ hm)]
+        have hmi : m ≠ i := fun h ↦ hi_not (h ▸ hm)
+        simp [g, hmi]
       have hdiv_i := (partialModByMonic_add_smul_partialDivByMonic i r' P₁ z).symm
       simp only [smul_eq_mul, P₁, eval_mul, eval_C] at hdiv_i
       rw [hsum_eq, hdiv' z, hdiv_i]

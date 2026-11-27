@@ -88,8 +88,8 @@ theorem iterate_partialDeriv_eq_zero_iff_exists_degree_lt {ι : Type*} [Decidabl
       have hline : Differentiable ℂ fun w ↦ f (update z i w) := differentiable_comp_update hf z i
       obtain ⟨Q, hQdeg, hQ⟩ :=
         hline.exists_eq_polynomial_eval_of_iteratedDeriv_eq_zero (n := n) fun k hk ↦ by
-          rw [iteratedDeriv_comp_update hf i z k,
-            show k = (k - (n + 1)) + (n + 1) by omega, iterate_add_apply, h,
+          have hk_split : k = (k - (n + 1)) + (n + 1) := by omega
+          rw [iteratedDeriv_comp_update hf i z k, hk_split, iterate_add_apply, h,
             iterate_fixed (partialDeriv_zero_fun i) _]
           simp only [Pi.zero_apply]
       refine ⟨Q, (natDegree_le_iff_degree_le.mp hQdeg).trans_lt

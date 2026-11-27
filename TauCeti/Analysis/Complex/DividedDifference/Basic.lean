@@ -59,6 +59,10 @@ Mathlib's `dslope`. -/
 noncomputable def partialDslope (i : ι) (f : (ι → ℂ) → E) (ζ : ℂ) : (ι → ℂ) → E :=
   fun z ↦ dslope (fun s ↦ f (update z i s)) ζ (z i)
 
+/-- Function-level defining identity of `partialDslope` in terms of `dslope`. -/
+theorem partialDslope_def (i : ι) (f : (ι → ℂ) → E) (ζ : ℂ) :
+    partialDslope i f ζ = fun z ↦ dslope (fun s ↦ f (update z i s)) ζ (z i) := (rfl)
+
 theorem partialDslope_apply (i : ι) (f : (ι → ℂ) → E) (ζ : ℂ) (z : ι → ℂ) :
     partialDslope i f ζ z = dslope (fun s ↦ f (update z i s)) ζ (z i) := (rfl)
 

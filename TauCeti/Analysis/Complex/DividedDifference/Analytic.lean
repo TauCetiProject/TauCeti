@@ -54,8 +54,7 @@ theorem differentiable_partialDslope [Finite ι] {f : (ι → ℂ) → E} (hf : 
   have hfz := hf.differentiableOn.analyticAt_of_finiteDimensional Filter.univ_mem (z := z)
   have hfζ :=
     hf.differentiableOn.analyticAt_of_finiteDimensional Filter.univ_mem (z := update z i ζ)
-  rw [show partialDslope i f ζ = fun q ↦ dslope (fun w ↦ f (update q i w)) ζ (q i) from
-    funext (partialDslope_apply i f ζ)]
+  rw [partialDslope_def]
   exact (TauCeti.analyticAt_dslope_update i ζ hfz hfζ).differentiableAt
 
 end TauCeti
