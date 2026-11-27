@@ -208,10 +208,8 @@ theorem not_tendsto_exp_neg_one_sub_div_one_add_neg_one (c : ℂ) :
     ((hc.comp (f := fun z : ℂ ↦ (z - I) / (z + I)) ?_).congr' ?_)
   · refine tendsto_nhdsWithin_iff.2 ⟨?_, eventually_nhdsWithin_of_forall fun z hz ↦
       bijOn_sub_I_div_add_I_upperHalfPlaneSet.mapsTo hz⟩
-    have : ContinuousAt (fun z : ℂ ↦ (z - I) / (z + I)) 0 :=
-      (continuousAt_id.sub continuousAt_const).div (continuousAt_id.add continuousAt_const)
-        (by simp)
-    simpa [ContinuousAt, I_ne_zero] using this.tendsto.mono_left nhdsWithin_le_nhds
+    simpa [ContinuousAt, I_ne_zero] using
+      (continuousAt_sub_I_div_add_I 0).tendsto.mono_left nhdsWithin_le_nhds
   · filter_upwards [self_mem_nhdsWithin] with z hz
     have hzI : z + I ≠ 0 := add_I_ne_zero_of_im_nonneg (le_of_lt hz)
     simp only [Function.comp_apply]
