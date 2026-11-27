@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.ComplexMultiplication.IdealLattice
 
+import TauCeti.RingTheory.FractionalIdeal.Operations
+
 /-!
 # Ideal classes and lattices with complex multiplication
 
@@ -113,18 +115,6 @@ private lemma exists_mem_im_ne_zero (hσ : ¬ ComplexEmbedding.IsReal σ) (O : N
   rw [ComplexEmbedding.conjugate_coe_eq, Complex.conj_eq_iff_im]
   simp [Complex.div_im, h _ a.property, h _ b.property]
 
-/-- The elements of the fractional ideal `O + O t` are the sums `o₁ + o₂ t` with `o₁, o₂ ∈ O`. -/
-private lemma mem_spanSingleton_one_sup_spanSingleton_iff {t z : K} :
-    z ∈ spanSingleton (nonZeroDivisors O.toSubalgebra) (1 : K) ⊔ spanSingleton _ t ↔
-      ∃ o₁ ∈ O.toSubalgebra, ∃ o₂ ∈ O.toSubalgebra, o₁ + o₂ * t = z := by
-  rw [← mem_coeToSubmodule, coeToSubmodule_sup, Submodule.mem_sup]
-  simp only [mem_coeToSubmodule, mem_spanSingleton, Algebra.smul_def, mul_one, Subtype.exists]
-  constructor
-  · rintro ⟨_, ⟨o₁, ho₁, rfl⟩, _, ⟨o₂, ho₂, rfl⟩, rfl⟩
-    exact ⟨o₁, ho₁, o₂, ho₂, rfl⟩
-  · rintro ⟨o₁, ho₁, o₂, ho₂, rfl⟩
-    exact ⟨_, ⟨o₁, ho₁, rfl⟩, _, ⟨o₂, ho₂, rfl⟩, rfl⟩
-
 /-- **Every lattice with complex multiplication by `O` comes from a proper ideal.** If the
 multiplier ring of `L` is `σ(O)`, then a rescaling of the lattice of `L` is `σ(I)` for a proper
 fractional ideal `I` of `O`. -/
@@ -157,7 +147,8 @@ theorem exists_isProper_lattice_smul_eq (hσ : ¬ ComplexEmbedding.IsReal σ) {L
   set I := spanSingleton (nonZeroDivisors O.toSubalgebra) (1 : K) ⊔ spanSingleton _ t
   have hlat : (L'.lattice : Set ℂ) = σ '' I := by
     ext w
-    simp only [SetLike.mem_coe, Set.mem_image, I, mem_spanSingleton_one_sup_spanSingleton_iff]
+    simp only [SetLike.mem_coe, Set.mem_image, I, mem_spanSingleton_sup_spanSingleton_iff,
+      Algebra.smul_def, mul_one, Subtype.exists]
     constructor
     · intro hw
       obtain ⟨m, n, rfl⟩ := PeriodPair.mem_lattice.mp hw
