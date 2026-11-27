@@ -372,6 +372,48 @@ theorem diffeomorphOfOrbitSubmersion_mk
   obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
   exact ProperSMul.diffeomorphOfOrbitSubmersion_mk 𝓘(ℝ, F) le_rfl p hp hp_surj hfib z
 
+/-- Composing the diffeomorphism of the reduced space induced by an orbit submersion `p` with the
+orbit projection recovers `p`. -/
+@[simp]
+theorem diffeomorphOfOrbitSubmersion_comp_mk
+    {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
+    {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
+    (p : h.levelSubMulAction c → Q)
+    (hp : letI := h.levelSubMulActionChartedSpace c hreg hn
+      Manifold.IsSubmersion 𝓘(ℝ, Fin n → ℝ) JQ ∞ p)
+    (hp_surj : Function.Surjective p)
+    (hfib : ∀ z z', p z = p z' ↔ ∃ k : (Lie.coadjointRepresentation ℝ I G).stabilizer c,
+      k • z' = z) :
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    ⇑(h.diffeomorphOfOrbitSubmersion c hreg hn d p hp hp_surj hfib) ∘
+      Quotient.mk (MulAction.orbitRel ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+        (h.levelSubMulAction c)) = p := by
+  let := d.chartedSpace
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
+  exact ProperSMul.diffeomorphOfOrbitSubmersion_comp_mk 𝓘(ℝ, F) le_rfl p hp hp_surj hfib
+
+/-- The inverse of the diffeomorphism of the reduced space induced by an orbit submersion `p`
+sends `p z` back to the orbit `[z]`. -/
+@[simp]
+theorem diffeomorphOfOrbitSubmersion_symm_apply
+    {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
+    {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
+    (p : h.levelSubMulAction c → Q)
+    (hp : letI := h.levelSubMulActionChartedSpace c hreg hn
+      Manifold.IsSubmersion 𝓘(ℝ, Fin n → ℝ) JQ ∞ p)
+    (hp_surj : Function.Surjective p)
+    (hfib : ∀ z z', p z = p z' ↔ ∃ k : (Lie.coadjointRepresentation ℝ I G).stabilizer c,
+      k • z' = z)
+    (z : h.levelSubMulAction c) :
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    (h.diffeomorphOfOrbitSubmersion c hreg hn d p hp hp_surj hfib).symm (p z) =
+      Quotient.mk _ z := by
+  let := d.chartedSpace
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
+  exact ProperSMul.diffeomorphOfOrbitSubmersion_symm_apply 𝓘(ℝ, F) le_rfl p hp hp_surj hfib z
+
 omit [I'.Boundaryless] [ProperSMul G M] [FiniteDimensional ℝ F]
   [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
 /-- The orbit directions of `G_c` on the level are orbit directions of `G`: the inclusion of the

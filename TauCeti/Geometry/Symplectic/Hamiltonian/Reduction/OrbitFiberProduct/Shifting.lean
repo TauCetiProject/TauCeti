@@ -399,8 +399,8 @@ theorem shiftingReducedSpaceDiffeomorph_comp_quotientMk :
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
   let _ := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
   let _ := h.orbitRelQuotientChartedSpace c hreg hn d
-  exact funext fun p ↦ (h.prod_neg_coadjointOrbitForm c).diffeomorphOfOrbitSubmersion_mk
-    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀ _ _ _ _ p
+  exact (h.prod_neg_coadjointOrbitForm c).diffeomorphOfOrbitSubmersion_comp_mk
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀ _ _ _ _
 
 /-- **The shifting diffeomorphism on a point of the zero level**: `Φ [p] = q_W (j p)`, where `j`
 identifies `Ψ⁻¹(0)` with the orbit fibre product
@@ -464,7 +464,19 @@ theorem shiftingReducedSpaceDiffeomorph_symm_mk (z : h.levelSubMulAction c) :
   let _ := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
   let _ := h.orbitRelQuotientChartedSpace c hreg hn d
-  rw [← Diffeomorph.toEquiv_coe_symm, Equiv.symm_apply_eq, Diffeomorph.coe_toEquiv,
+  let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+  let _ := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+  -- By definition (the `rfl` goal below), `Φ` is the reduced-space diffeomorphism induced by
+  -- `q_W ∘ j`, so its inverse sends `q_W (j (z, G_c)) = [z]` to `[(z, G_c)]`.
+  convert (h.prod_neg_coadjointOrbitForm c).diffeomorphOfOrbitSubmersion_symm_apply
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀ _
+    (h.isSubmersion_orbitFiberProductProj_comp_levelDiffeomorph hreg hn d hn₀)
+    ((h.orbitFiberProductProj_surjective _).comp
+      (h.levelDiffeomorphOrbitFiberProduct hreg hn₀).surjective)
+    (h.orbitFiberProductProj_levelDiffeomorph_eq_iff hreg hn₀) _ using 2
+  · rfl
+  rw [Function.comp_apply, ← h.shiftingReducedSpaceDiffeomorph_quotientMk hreg hn d hn₀ d₀,
     shiftingReducedSpaceDiffeomorph_mk]
   exact congrArg _ (Subtype.ext (by simp))
 
