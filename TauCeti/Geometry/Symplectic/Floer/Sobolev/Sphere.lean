@@ -12,6 +12,8 @@ import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
 import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Geometry.Symplectic.Floer.Linearization.Infinity
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Cokernel
+import TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal
+import TauCeti.MeasureTheory.Function.L2Space.InnerSL
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -67,7 +69,18 @@ sections are dense in `W^{1,2}` of the sphere.
   so that `D_u` is Fredholm (`isFredholm_floerConformalSobolevOperator_sphereWeight_of_eq_base`),
   all in the namespace `TauCeti.SymplecticForm`.
 
-The target is a symplectic vector space. The index of `D_u` is not treated here.
+* **Constant data.** If the data are an `ω`-compatible structure `J₀` and the zero perturbation on
+  the whole sphere, `D_u` is the Cauchy–Riemann operator `∂s + J₀ ∂t` along every map `u`
+  (`TauCeti.SymplecticForm.floerConformalSobolevOperator_const_eq`). Its cokernel vanishes: a
+  cokernel element is represented by a `C²` square-integrable covector field annihilated by the
+  formal adjoint, a holomorphic one-form on the sphere, which is zero
+  (`TauCeti.SymplecticForm.eq_zero_of_floerLinearizationAdjoint_const_eq_zero`). So `D_u` is
+  onto (`range_floerConformalSobolevOperator_sphereWeight_const`) and its index is the dimension
+  of its kernel (`index_floerConformalSobolevOperator_sphereWeight_const`), both in the namespace
+  `TauCeti.SymplecticForm`.
+
+The target is a symplectic vector space. The kernel of `D_u` for constant data is not identified
+here; Riemann–Roch predicts the constant sections, which would make the index `dim V`.
 
 ## References
 
@@ -651,6 +664,75 @@ theorem isFredholm_floerConformalSobolevOperator_sphereWeight_of_eq_base
       hJ₀ hKs₀ hKt₀ hJ hKs hKt hu hc)
 
 end Cokernel
+
+/-! ### Constant data on the sphere -/
+
+section ConstantData
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {J₀ : AlmostComplexStructure V}
+
+/-- For constant data, an element of `L²` orthogonal to the range of the realization of `D_u` on
+the sphere is represented by a `C²` covector field annihilated by the formal adjoint, which is
+square integrable on the plane and therefore vanishes. -/
+private theorem orthogonal_range_floerConformalSobolevOperator_sphereWeight_const
+    (ω : SymplecticForm V) (h₀ : ω.Compatible J₀) :
+    (ω.floerConformalSobolevOperator univ sphereWeight
+      (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0).rangeᗮ =
+      ⊥ := by
+  refine (Submodule.eq_bot_iff _).2 fun h hh ↦ ?_
+  have hM := ω.memLp_floerConformalJetCoeff_of_eq_base isWeight_sphereWeight (T := 0)
+    (J₀ := J₀.toLinearMap.toContinuousLinearMap) (u := 0) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl)
+    (fun _ _ _ ↦ rfl) (fun _ ↦ contDiffAt_const) (fun _ ↦ contDiffAt_const)
+    (fun _ ↦ contDiffAt_const) contDiff_const
+  obtain ⟨η, hηc, hae, hD⟩ := ω.exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero
+    isWeight_sphereWeight (fun _ _ ↦ contDiffAt_const) (fun _ _ ↦ J₀.toContinuousLinearMap_mul_self)
+    (fun _ _ ↦ contDiffAt_const) (fun _ _ ↦ contDiffAt_const) (fun _ _ ↦ contDiffAt_const) hM hh
+  obtain ⟨hnorm, hint⟩ := Lp.integral_norm_sq_eq_and_integrable_of_innerSL_ae_eq hae
+  have hη0 : η = 0 := eq_zero_of_floerLinearizationAdjoint_const_eq_zero h₀.invariant 0
+    ((contDiffOn_univ.1 hηc).differentiable two_ne_zero) (fun z ↦ hD z (mem_univ z))
+    (by simpa using hint)
+  rw [hη0] at hnorm
+  simpa using hnorm.symm
+
+/-- **The linearized operator of constant data on the sphere is onto.** Let the Floer data on the
+whole sphere be an `ω`-compatible structure `J₀` and the zero perturbation. Then along every map
+`u` the realization of `D_u` from `W^{1,2}` of the sphere to `L²`, the Cauchy–Riemann operator
+`∂s + J₀ ∂t` of the trivial bundle with fibre `(V, J₀)`, is onto: its cokernel, which consists of
+holomorphic one-forms on the sphere, vanishes. -/
+theorem range_floerConformalSobolevOperator_sphereWeight_const (ω : SymplecticForm V)
+    (h₀ : ω.Compatible J₀) (u : ℝ × ℝ → V) :
+    (ω.floerConformalSobolevOperator univ sphereWeight
+      (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u).range =
+      ⊤ := by
+  rw [floerConformalSobolevOperator_const_eq (u := u) (u' := 0)]
+  have hcl := isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base ω
+    (J := fun _ _ ↦ J₀) (J₀ := J₀) (T := 0) (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0) (u := 0)
+    (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl) (fun _ ↦ contDiffAt_const)
+    (fun _ ↦ contDiffAt_const) (fun _ ↦ contDiffAt_const) contDiff_const (fun _ ↦ h₀)
+  have hcl' : IsClosed (SetLike.coe (ω.floerConformalSobolevOperator univ sphereWeight
+      (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0).range) := by
+    simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using hcl
+  rw [← hcl'.submodule_topologicalClosure_eq, Submodule.topologicalClosure_eq_top_iff]
+  exact orthogonal_range_floerConformalSobolevOperator_sphereWeight_const ω h₀
+
+/-- **The index of the linearized operator of constant data on the sphere is the dimension of its
+kernel.** Let the Floer data on the whole sphere be an `ω`-compatible structure `J₀` and the zero
+perturbation. Then along every map `u` the realization of `D_u` from `W^{1,2}` of the sphere to
+`L²` is onto (`range_floerConformalSobolevOperator_sphereWeight_const`), so its index is the
+dimension of its kernel. -/
+theorem index_floerConformalSobolevOperator_sphereWeight_const (ω : SymplecticForm V)
+    (h₀ : ω.Compatible J₀) (u : ℝ × ℝ → V) :
+    (ω.floerConformalSobolevOperator univ sphereWeight
+      (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u).index =
+      Module.finrank ℝ (ω.floerConformalSobolevOperator univ sphereWeight
+        (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u).ker := by
+  have hs :=
+    LinearMap.range_eq_top.1 (range_floerConformalSobolevOperator_sphereWeight_const ω h₀ u)
+  rw [ContinuousLinearMap.index_eq_finrank_sub, LinearMap.range_eq_top.2 hs,
+    Module.finrank_zero_of_subsingleton (M := _ ⧸ (⊤ : Submodule ℝ _)), Nat.cast_zero, sub_zero]
+
+end ConstantData
 
 end SymplecticForm
 
