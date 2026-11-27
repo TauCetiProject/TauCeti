@@ -33,7 +33,7 @@ tableau bases:
   `H_n(q)` (`TauCeti.TypeAHeckeAlgebra.seminormalRep_cast_strandIncl_seminormalBranchingEquiv`).
 
 The diagrams `erase μ c` are distinct for distinct corners `c`
-(`YoungDiagram.IsCorner.erase_inj`), so each appears once. The hypothesis on `μ` is the
+(`YoungDiagram.erase_inj`), so each appears once. The hypothesis on `μ` is the
 split-semisimplicity criterion for the diagrams `erase μ c` with `n` cells, so every summand is a
 simple module (`TauCeti.TypeAHeckeAlgebra.isSimpleModule_seminormalRep`).
 
@@ -149,6 +149,15 @@ noncomputable def seminormalBranchingEquiv (hμ0 : 0 < μ.card) :
   (LinearEquiv.piCurry R fun _ _ => R).symm.trans
     (LinearEquiv.funCongrLeft R R (sigmaCornerEquiv hμ0)).symm
 
+/-- The component at the corner `c` of the inverse of the branching decomposition reads a
+function off at the tableaux obtained by restoring `c` with the largest label. -/
+@[simp]
+theorem seminormalBranchingEquiv_symm_apply (hμ0 : 0 < μ.card) (f : StandardYoungTableau μ → R)
+    (c : {c : ℕ × ℕ // c ∈ μ.corners}) (V : StandardYoungTableau (μ.erase c.val)) :
+    (seminormalBranchingEquiv hμ0).symm f c V =
+      f (extend (YoungDiagram.mem_corners.mp c.property) V) := by
+  simp [seminormalBranchingEquiv, Sigma.curry]
+
 /-- The value of the branching decomposition at the tableau obtained by restoring the corner `c`
 with the largest label. -/
 @[simp]
@@ -156,11 +165,8 @@ theorem seminormalBranchingEquiv_apply_extend (hμ0 : 0 < μ.card)
     (φ : Π c : {c : ℕ × ℕ // c ∈ μ.corners}, StandardYoungTableau (μ.erase c.val) → R)
     (hc : YoungDiagram.IsCorner μ c) (V : StandardYoungTableau (μ.erase c)) :
     seminormalBranchingEquiv hμ0 φ (extend hc V) = φ ⟨c, YoungDiagram.mem_corners.mpr hc⟩ V := by
-  rw [← sigmaCornerEquiv_apply hμ0 ⟨c, YoungDiagram.mem_corners.mpr hc⟩ V,
-    seminormalBranchingEquiv, LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_symm,
-    LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, Equiv.symm_apply_apply,
-    LinearEquiv.piCurry_symm_apply]
-  rfl
+  rw [← seminormalBranchingEquiv_symm_apply hμ0 (seminormalBranchingEquiv hμ0 φ)
+    ⟨c, YoungDiagram.mem_corners.mpr hc⟩ V, LinearEquiv.symm_apply_apply]
 
 /-- The branching decomposition sends a function supported on the corner `c` to its extension by
 zero from the tableaux carrying their largest label at `c`. -/
@@ -174,12 +180,8 @@ theorem seminormalBranchingEquiv_single (hμ0 : 0 < μ.card) (hc : YoungDiagram.
   by_cases h : c' = ⟨c, YoungDiagram.mem_corners.mpr hc⟩
   · subst h
     rw [Pi.single_eq_same, linearMap_apply_of_injective R (extend_injective hc)]
-  · have hV : extend (YoungDiagram.mem_corners.mp c'.property) V ∉ Set.range (extend hc) := by
-      intro hV
-      refine h (Subtype.ext ?_)
-      have hW' := (mem_range_extend_iff hc _).mp hV
-      exact ((maxCell_eq_iff hμ0 _ (YoungDiagram.mem_corners.mp c'.property).mem).mpr
-        (extend_apply_self _ V)).symm.trans ((maxCell_eq_iff hμ0 _ hc.mem).mpr hW')
+  · have hV : extend (YoungDiagram.mem_corners.mp c'.property) V ∉ Set.range (extend hc) :=
+      fun hV => h (Subtype.ext ((extend_mem_range_extend_iff hc _ V).mp hV))
     rw [Pi.single_eq_of_ne h, linearMap_apply_of_notMem_range R _ hV, Pi.zero_apply]
 
 /-- The branching decomposition is the sum over the corners of the extensions by zero. -/

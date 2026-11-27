@@ -162,6 +162,14 @@ theorem erase_eq_self_of_notMem (h : c ∉ μ) : erase μ c = μ := by
   refine ⟨fun hd => mem_of_mem_erase hd, fun hd => mem_erase.mpr ⟨hd, fun hcd => h ?_⟩⟩
   exact μ.isLowerSet hcd hd
 
+/-- Erasing distinct cells of `μ` gives distinct diagrams. -/
+theorem erase_inj (hc : c ∈ μ) (hd : d ∈ μ) : erase μ c = erase μ d ↔ c = d := by
+  refine ⟨fun h => by_contra fun hne => ?_, fun h => h ▸ rfl⟩
+  by_cases hdc : d ≤ c
+  · have hcd : ¬ c ≤ d := fun hcd => hne (le_antisymm hcd hdc)
+    exact notMem_erase (μ := μ) (c := d) (h ▸ mem_erase.mpr ⟨hd, hcd⟩)
+  · exact notMem_erase (μ := μ) (c := c) (h ▸ mem_erase.mpr ⟨hc, hdc⟩)
+
 namespace IsCorner
 
 theorem mem_erase_iff (h : IsCorner μ c) : d ∈ erase μ c ↔ d ∈ μ ∧ d ≠ c := by
@@ -182,12 +190,6 @@ theorem card_erase (h : IsCorner μ c) : (erase μ c).card + 1 = μ.card := by
 
 theorem card_pos (h : IsCorner μ c) : 0 < μ.card :=
   Finset.card_pos.mpr ⟨c, h.mem⟩
-
-/-- Erasing distinct corners gives distinct diagrams. -/
-theorem erase_inj (hc : IsCorner μ c) (hd : IsCorner μ d) : erase μ c = erase μ d ↔ c = d := by
-  refine ⟨fun h => by_contra fun hne => notMem_erase (μ := μ) (c := c) ?_, fun h => h ▸ rfl⟩
-  rw [h]
-  exact hd.mem_erase_iff.mpr ⟨hc.mem, hne⟩
 
 /-! ### Rows and columns after erasure -/
 

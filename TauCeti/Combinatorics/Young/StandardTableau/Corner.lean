@@ -311,14 +311,27 @@ theorem mem_range_extend_iff (hc : YoungDiagram.IsCorner μ c) (T : StandardYoun
   ⟨by rintro ⟨U, rfl⟩; exact extend_apply_self hc U,
     fun hT => ⟨restrict hc T hT, extend_restrict hc T hT⟩⟩
 
+/-- Restoring the corner `c'` lands among the tableaux obtained by restoring the corner `c` only
+when the two corners agree. -/
+theorem extend_mem_range_extend_iff {c' : ℕ × ℕ} (hc : YoungDiagram.IsCorner μ c)
+    (hc' : YoungDiagram.IsCorner μ c') (V : StandardYoungTableau (YoungDiagram.erase μ c')) :
+    extend hc' V ∈ Set.range (extend hc) ↔ c' = c := by
+  refine ⟨fun hV => by_contra fun hne => ?_, by rintro rfl; exact ⟨V, rfl⟩⟩
+  have hT := (mem_range_extend_iff hc _).mp hV
+  rw [extend_apply_val_of_ne hc' V ⟨c, hc.mem⟩ (Ne.symm hne)] at hT
+  have := (V ⟨c, hc'.mem_erase_iff.mpr ⟨hc.mem, Ne.symm hne⟩⟩).isLt
+  have := hc'.card_erase
+  omega
+
 private noncomputable def maxCorner (hμ : 0 < μ.card) (T : StandardYoungTableau μ) :
     {c : ℕ × ℕ // c ∈ YoungDiagram.corners μ} :=
   ⟨maxCell hμ T, YoungDiagram.mem_corners.mpr (isCorner_maxCell hμ T)⟩
 
 /-- **The corner decomposition** of the standard Young tableaux of a nonempty shape `μ`: a
 tableau is recorded by the corner `c` carrying its largest label together with the tableau of
-shape `erase μ c` left after deleting that corner. The inverse direction restores the corner
-(`TauCeti.StandardYoungTableau.sigmaCornerEquiv_apply`). -/
+shape `erase μ c` left after deleting that corner
+(`TauCeti.StandardYoungTableau.sigmaCornerEquiv_symm_apply`). The inverse direction restores the
+corner (`TauCeti.StandardYoungTableau.sigmaCornerEquiv_apply`). -/
 noncomputable def sigmaCornerEquiv (hμ : 0 < μ.card) :
     (Σ c : {c : ℕ × ℕ // c ∈ YoungDiagram.corners μ},
       StandardYoungTableau (YoungDiagram.erase μ c.val)) ≃ StandardYoungTableau μ :=
@@ -332,8 +345,17 @@ noncomputable def sigmaCornerEquiv (hμ : 0 < μ.card) :
 @[simp]
 theorem sigmaCornerEquiv_apply (hμ : 0 < μ.card) (c : {c : ℕ × ℕ // c ∈ YoungDiagram.corners μ})
     (T : StandardYoungTableau (YoungDiagram.erase μ c.val)) :
-    sigmaCornerEquiv hμ ⟨c, T⟩ = extend (YoungDiagram.mem_corners.mp c.property) T :=
-  (rfl)
+    sigmaCornerEquiv hμ ⟨c, T⟩ = extend (YoungDiagram.mem_corners.mp c.property) T := by
+  simp [sigmaCornerEquiv, cornerFiberEquiv]
+
+/-- The inverse of the corner decomposition reads off the corner carrying the largest label and
+deletes it. -/
+@[simp]
+theorem sigmaCornerEquiv_symm_apply (hμ : 0 < μ.card) (T : StandardYoungTableau μ) :
+    (sigmaCornerEquiv hμ).symm T =
+      ⟨⟨maxCell hμ T, YoungDiagram.mem_corners.mpr (isCorner_maxCell hμ T)⟩,
+        restrict (isCorner_maxCell hμ T) T (apply_maxCell hμ T)⟩ := by
+  rw [Equiv.symm_apply_eq, sigmaCornerEquiv_apply, extend_restrict]
 
 end StandardYoungTableau
 
