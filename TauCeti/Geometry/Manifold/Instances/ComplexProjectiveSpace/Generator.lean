@@ -508,7 +508,7 @@ theorem pi2MulEquivInt_map_riemannSphereSquare_of_polynomial {n : ℕ} (hn : n �
       Circle.coe_homeomorphSphere_apply, squarePoint, Subsingleton.elim (default : Fin 1) 0]
   have h1 : Circle.homeomorphSphere (1 : Circle) = 1 := by ext; simp
   -- The circle reads the boundary loop as `rightEdgeLoop d`, of degree `d`.
-  have hc : HomotopyGroup.map ⟨Circle.homeomorphSphere.symm, Homeomorph.continuous _⟩
+  have hcircle : HomotopyGroup.map ⟨Circle.homeomorphSphere.symm, Homeomorph.continuous _⟩
       (by ext; simp)
       (HomotopyGroup.map ⟨Circle.homeomorphSphere, Homeomorph.continuous _⟩ h1
         ⟦(genLoopEquivOfUnique (Fin 1)).symm (rightEdgeLoop d)⟧) =
@@ -523,7 +523,7 @@ theorem pi2MulEquivInt_map_riemannSphereSquare_of_polynomial {n : ℕ} (hn : n �
   refine (congrArg (fun a ↦ Circle.fundamentalGroupMulEquiv 1
     (HomotopyGroup.pi1MulEquivFundamentalGroup (HomotopyGroup.map _ _ a))) hb).trans ?_
   refine (congrArg (fun a ↦ Circle.fundamentalGroupMulEquiv 1
-    (HomotopyGroup.pi1MulEquivFundamentalGroup a)) hc).trans ?_
+    (HomotopyGroup.pi1MulEquivFundamentalGroup a)) hcircle).trans ?_
   rw [MulEquiv.apply_symm_apply, Circle.fundamentalGroupMulEquiv_fromPath, degree_rightEdgeLoop]
 
 /-! ### The class of the coordinate line -/
