@@ -418,14 +418,15 @@ private theorem stateRestrict_stateExtend (he : IsOrderUnitNorm e) :
 between the states of `OrderUnitCompletion he` and the states of `E`. -/
 def stateHomeomorph (he : IsOrderUnitNorm e) :
     OrderUnit.stateSpace (coe he e) ≃ₜ OrderUnit.stateSpace e :=
-  @Continuous.homeoOfEquivCompactToT2 _ _ _ _
-    (isCompact_iff_compactSpace.mp (isOrderUnitNorm he).isCompact_stateSpace) _
-    { toFun := stateRestrict he
-      invFun := stateExtend he
-      left_inv := stateExtend_stateRestrict he
-      right_inv := stateRestrict_stateExtend he }
-    (OrderUnit.continuous_statePullback (coe he).toContinuousLinearMap
-      (monotone_coe_toContinuousLinearMap he) rfl)
+  haveI : CompactSpace (OrderUnit.stateSpace (coe he e)) :=
+    isCompact_iff_compactSpace.mp (isOrderUnitNorm he).isCompact_stateSpace
+  (OrderUnit.continuous_statePullback (coe he).toContinuousLinearMap
+    (monotone_coe_toContinuousLinearMap he) rfl).homeoOfEquivCompactToT2
+    (f :=
+      { toFun := stateRestrict he
+        invFun := stateExtend he
+        left_inv := stateExtend_stateRestrict he
+        right_inv := stateRestrict_stateExtend he })
 
 @[simp]
 theorem stateHomeomorph_apply (he : IsOrderUnitNorm e)

@@ -393,14 +393,6 @@ theorem isOrderUnitNorm_real_one : IsOrderUnitNorm (1 : ℝ) where
   norm_eq_one := norm_one
   norm_le_iff _ := by simp [Real.norm_eq_abs, abs_le]
 
-/-- For a nonempty compact space `K`, the supremum norm on `C(K, ℝ)` is the order-unit norm of
-the constant function `1`. -/
-theorem isOrderUnitNorm_continuousMap_one {K : Type*} [TopologicalSpace K] [CompactSpace K]
-    [Nonempty K] : IsOrderUnitNorm (1 : C(K, ℝ)) where
-  norm_eq_one := norm_one
-  norm_le_iff hr := by
-    simp [ContinuousMap.norm_le _ hr, ContinuousMap.le_def, Real.norm_eq_abs, abs_le, forall_and]
-
 namespace IsOrderUnitNorm
 
 variable {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [PartialOrder E] {e : E}
@@ -574,9 +566,9 @@ theorem linearIsometryEquivOfOrderIso_symm_apply {F : Type*} [SeminormedAddCommG
 /-- Every unital positive linear map between order-unit spaces is contractive: `‖T a‖ ≤ ‖a‖`. -/
 theorem norm_map_le_of_map_unit {F G : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
     [PartialOrder F] [IsOrderedAddMonoid F] {f : F} [FunLike G E F] [LinearMapClass G ℝ E F]
-    [OrderHomClass G E F] (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : G)
-    (hunit : T e = f) (a : E) : ‖T a‖ ≤ ‖a‖ := by
-  simpa [hunit, hf.norm_eq_one] using hf.norm_map_le he.le_norm_smul T (OrderHomClass.mono T) a
+    (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : G)
+    (hT : ∀ ⦃a b : E⦄, a ≤ b → T a ≤ T b) (hunit : T e = f) (a : E) : ‖T a‖ ≤ ‖a‖ := by
+  simpa [hunit, hf.norm_eq_one] using hf.norm_map_le he.le_norm_smul T hT a
 
 end Extra
 
@@ -584,11 +576,9 @@ end PositiveMap
 
 end IsOrderUnitNorm
 
-/-- Finite nonempty products `ι → ℝ` with coordinatewise order and supremum norm are order-unit
-spaces with unit `1`. -/
-theorem isOrderUnitNorm_pi_real_one {ι : Type*} [Fintype ι] [Nonempty ι] :
-    IsOrderUnitNorm (1 : ι → ℝ) :=
-  IsOrderUnitNorm.pi fun _ => isOrderUnitNorm_real_one
+-- `BoundedContinuousFunction.instPartialOrder` is defined via `PartialOrder.lift` on `.toFun`.
+private theorem boundedContinuousFunction_le_iff {K : Type*} [TopologicalSpace K]
+    (g h : K →ᵇ ℝ) : g ≤ h ↔ ∀ x, g x ≤ h x := Iff.rfl
 
 /-- For a nonempty topological space `K`, the supremum norm on `K →ᵇ ℝ` is the order-unit norm
 of the constant function `1`. -/
@@ -597,9 +587,18 @@ theorem isOrderUnitNorm_boundedContinuousFunction_one {K : Type*} [TopologicalSp
   norm_eq_one := norm_one
   norm_le_iff hr := by
     rw [BoundedContinuousFunction.norm_le hr]
-    have hle : ∀ g h : K →ᵇ ℝ, g ≤ h ↔ ∀ x, g x ≤ h x := fun _ _ => Iff.rfl
-    simp only [Real.norm_eq_abs, abs_le, hle, FunLike.coe_neg, Pi.neg_apply,
-      FunLike.coe_smul, Pi.smul_apply, FunLike.coe_one, Pi.one_apply, smul_eq_mul, mul_one,
-      forall_and]
+    simp only [Real.norm_eq_abs, abs_le, boundedContinuousFunction_le_iff, FunLike.coe_neg,
+      Pi.neg_apply, FunLike.coe_smul, Pi.smul_apply, FunLike.coe_one, Pi.one_apply, smul_eq_mul,
+      mul_one, forall_and]
+
+/-- For a nonempty compact space `K`, the supremum norm on `C(K, ℝ)` is the order-unit norm of
+the constant function `1`. -/
+theorem isOrderUnitNorm_continuousMap_one {K : Type*} [TopologicalSpace K] [CompactSpace K]
+    [Nonempty K] : IsOrderUnitNorm (1 : C(K, ℝ)) := by
+  have h1 : (ContinuousMap.linearIsometryBoundedOfCompact K ℝ ℝ).symm (1 : K →ᵇ ℝ) = 1 :=
+    ContinuousMap.ext fun _ => rfl
+  simpa [h1] using (isOrderUnitNorm_boundedContinuousFunction_one (K := K)).map_linearIsometryEquiv
+    (ContinuousMap.linearIsometryBoundedOfCompact K ℝ ℝ).symm
+    fun f g => ContinuousMap.le_def.trans (boundedContinuousFunction_le_iff f g).symm
 
 end TauCeti

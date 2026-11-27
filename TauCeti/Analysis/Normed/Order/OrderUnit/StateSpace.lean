@@ -170,9 +170,7 @@ theorem continuous_statePullback {F : Type*} [AddCommGroup F] [Module ℝ F] [To
 @[simp]
 theorem statePullback_id (φ : stateSpace e) :
     statePullback (ContinuousLinearMap.id ℝ E) monotone_id rfl φ = φ :=
-  Subtype.ext <| DFunLike.ext _ _ fun a =>
-    (statePullback_apply (ContinuousLinearMap.id ℝ E) monotone_id rfl φ a).trans
-      (congrArg φ.val (ContinuousLinearMap.id_apply a))
+  Subtype.ext <| DFunLike.ext _ _ fun _ => rfl
 
 /-- Pulling back along a composition `S.comp T` reverses the order of composition: it applies the
 pullback along `S` first, then the pullback along `T`. -/
@@ -182,13 +180,7 @@ theorem statePullback_comp {F G : Type*} [AddCommGroup F] [Module ℝ F] [Topolo
     (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) (φ : stateSpace g) :
     statePullback (S.comp T) (hS.comp hT) (by simp [hTe, hSf]) φ =
       statePullback T hT hTe (statePullback S hS hSf φ) :=
-  Subtype.ext <| DFunLike.ext _ _ fun a =>
-    calc (statePullback (S.comp T) (hS.comp hT) (by simp [hTe, hSf]) φ).val a
-        = φ.val ((S.comp T) a) := statePullback_apply (S.comp T) (hS.comp hT) _ φ a
-      _ = φ.val (S (T a)) := congrArg φ.val (ContinuousLinearMap.comp_apply S T a)
-      _ = (statePullback S hS hSf φ).val (T a) := (statePullback_apply S hS hSf φ (T a)).symm
-      _ = (statePullback T hT hTe (statePullback S hS hSf φ)).val a :=
-        (statePullback_apply T hT hTe (statePullback S hS hSf φ) a).symm
+  Subtype.ext <| DFunLike.ext _ _ fun _ => rfl
 
 end Preorder
 
