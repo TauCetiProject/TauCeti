@@ -13,9 +13,10 @@ public import Mathlib.Topology.Connected.PathConnected
 
 For a topological monoid `M`, the path components `ZerothHomotopy M` form a monoid: if `γ` joins
 `a` to `a'` and `δ` joins `b` to `b'`, then `t ↦ γ t * δ t` joins `a * b` to `a' * b'` (Mathlib's
-`Joined.mul`), so multiplication descends to path components. For a topological group the path
-components form a group, by `Joined.inv`. The quotient map `ZerothHomotopy.mk` is then a monoid
-homomorphism `ZerothHomotopy.mkMonoidHom`.
+`Joined.mul`), so multiplication descends to path components. For a group with continuous
+multiplication the path components form a group: if `γ` joins `a` to `b`, then
+`t ↦ a⁻¹ * γ t * b⁻¹` joins `b⁻¹` to `a⁻¹`, so no continuity of inversion is needed. The quotient
+map `ZerothHomotopy.mk` is then a monoid homomorphism `ZerothHomotopy.mkMonoidHom`.
 
 The monoid structure is needed for topological monoids which are not groups, such as the
 Fredholm operators on a Banach space under composition, whose path components form a group only
@@ -106,14 +107,20 @@ theorem mkMonoidHom_apply [Monoid M] [ContinuousMul M] (a : M) : mkMonoidHom M a
 
 section Group
 
-variable [Group M] [IsTopologicalGroup M]
+variable [Group M] [ContinuousMul M]
 
-/-- Inversion of path components of a topological group, pointwise inversion of a path joining
-the representatives. -/
+/-- Inversion of path components of a topological group, pointwise inversion of the
+representatives. Continuity of multiplication suffices: if `γ` joins `a` to `b`, then
+`t ↦ a⁻¹ * γ t * b⁻¹` joins `b⁻¹` to `a⁻¹`. -/
 @[to_additive /-- Negation of path components of a topological additive group, pointwise negation
-of a path joining the representatives. -/]
+of the representatives. Continuity of addition suffices: if `γ` joins `a` to `b`, then
+`t ↦ -a + γ t + -b` joins `-b` to `-a`. -/]
 instance instInv : Inv (ZerothHomotopy M) where
-  inv := Quotient.map (·⁻¹) fun _ _ h => Joined.inv h
+  inv := Quotient.map (·⁻¹) fun a b (h : Joined a b) => by
+    have h' : Joined (a⁻¹ * a * b⁻¹) (a⁻¹ * b * b⁻¹) :=
+      ((Joined.refl a⁻¹).mul h).mul (Joined.refl b⁻¹)
+    rw [inv_mul_cancel, one_mul, mul_inv_cancel_right] at h'
+    exact h'.symm
 
 @[to_additive (attr := simp)]
 theorem mk_inv (a : M) : mk a⁻¹ = (mk a)⁻¹ :=
@@ -126,12 +133,20 @@ instance instGroup : Group (ZerothHomotopy M) where
     induction x
     rw [← mk_inv, ← mk_mul, inv_mul_cancel, mk_one]
 
+@[to_additive (attr := simp)]
+theorem mk_div (a b : M) : mk (a / b) = mk a / mk b :=
+  map_div (mkMonoidHom M) a b
+
+@[to_additive (attr := simp)]
+theorem mk_zpow (a : M) (n : ℤ) : mk (a ^ n) = mk a ^ n :=
+  map_zpow (mkMonoidHom M) a n
+
 end Group
 
 /-- The path components of a commutative topological group form a commutative group. -/
 @[to_additive /-- The path components of a commutative topological additive group form a
 commutative additive group. -/]
-instance instCommGroup [CommGroup M] [IsTopologicalGroup M] : CommGroup (ZerothHomotopy M) where
+instance instCommGroup [CommGroup M] [ContinuousMul M] : CommGroup (ZerothHomotopy M) where
   __ := instGroup
   __ := instCommMonoid
 
