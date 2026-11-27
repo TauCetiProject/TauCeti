@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.DirectSum.Internal
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.RingTheory.GradedAlgebra.Generators
 
 /-!
 # Total-degree grading of the symmetric algebra of a graded module
@@ -22,7 +23,8 @@ construction follows Mathlib's `TensorAlgebra.gradedAlgebra`: lift the homogeneo
 generators into the external direct sum, using the symmetric algebra's universal property,
 and show that the resulting map is inverse to recomposition.
 
-The word-span construction and decomposition proof are adapted from
+The word-span construction and decomposition proof use `TauCeti.GradedAlgebra.wordSpan` in
+`TauCeti.RingTheory.GradedAlgebra.Generators`, generalized from
 `TauCeti.Algebra.Lie.UniversalEnveloping.Grading`, itself adapted from
 `Mei/Algebra/Lie/UniversalEnveloping/Grading.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -42,33 +44,27 @@ variable {Γ R M : Type*} [AddCommMonoid Γ] [CommSemiring R]
 
 /-- Products of homogeneous generators with total degree `n`, and their linear span. -/
 def totalDegreeSubmodule (n : Γ) : Submodule R (SymmetricAlgebra R M) :=
-  Submodule.span R {a | ∃ l : List (Σ i, ℳ i), (l.map Sigma.fst).sum = n ∧
-    (l.map (fun x => ι R M (x.2 : M))).prod = a}
+  TauCeti.GradedAlgebra.wordSpan R (fun x : Σ i, ℳ i => ι R M (x.2 : M)) Sigma.fst n
 
 /-- The word-span description of a total-degree homogeneous piece. -/
 theorem totalDegreeSubmodule_def (n : Γ) :
     totalDegreeSubmodule ℳ n =
-      Submodule.span R {a | ∃ l : List (Σ i, ℳ i), (l.map Sigma.fst).sum = n ∧
-        (l.map (fun x => ι R M (x.2 : M))).prod = a} := (rfl)
+      TauCeti.GradedAlgebra.wordSpan R (fun x : Σ i, ℳ i => ι R M (x.2 : M)) Sigma.fst n :=
+  (rfl)
 
 /-- A homogeneous piece is contained in a submodule precisely when all its generating
 words are contained in that submodule. -/
 theorem totalDegreeSubmodule_le_iff (n : Γ) (p : Submodule R (SymmetricAlgebra R M)) :
     totalDegreeSubmodule ℳ n ≤ p ↔
       ∀ l : List (Σ i, ℳ i), (l.map Sigma.fst).sum = n →
-        (l.map (fun x => ι R M (x.2 : M))).prod ∈ p := by
-  rw [totalDegreeSubmodule_def, Submodule.span_le]
-  constructor
-  · intro h l hl
-    exact h ⟨l, hl, rfl⟩
-  · rintro h _ ⟨l, hl, rfl⟩
-    exact h l hl
+        (l.map (fun x => ι R M (x.2 : M))).prod ∈ p :=
+  TauCeti.GradedAlgebra.wordSpan_le_iff n p
 
 /-- A product of homogeneous generators has the sum of their degrees. -/
 theorem prod_mem_totalDegreeSubmodule (l : List (Σ i, ℳ i)) :
     (l.map (fun x => ι R M (x.2 : M))).prod ∈
       totalDegreeSubmodule ℳ (l.map Sigma.fst).sum :=
-  Submodule.subset_span ⟨l, rfl, rfl⟩
+  TauCeti.GradedAlgebra.prod_mem_wordSpan _ _ l
 
 /-- A generator retains its original degree in the symmetric algebra. -/
 theorem ι_mem_totalDegreeSubmodule {n : Γ} {x : M} (hx : x ∈ ℳ n) :
@@ -76,17 +72,9 @@ theorem ι_mem_totalDegreeSubmodule {n : Γ} {x : M} (hx : x ∈ ℳ n) :
   simpa using prod_mem_totalDegreeSubmodule ℳ [⟨n, x, hx⟩]
 
 /-- Multiplication adds the total degrees of homogeneous words. -/
-instance totalDegreeSubmodule_gradedMonoid : SetLike.GradedMonoid (totalDegreeSubmodule ℳ) where
-  one_mem := Submodule.subset_span ⟨[], by simp, rfl⟩
-  mul_mem := by
-    intro m n a b ha hb
-    have hmul : totalDegreeSubmodule ℳ m * totalDegreeSubmodule ℳ n ≤
-        totalDegreeSubmodule ℳ (m + n) := by
-      rw [totalDegreeSubmodule_def, totalDegreeSubmodule_def, Submodule.span_mul_span,
-        Submodule.span_le]
-      rintro _ ⟨_, ⟨l, hl, rfl⟩, _, ⟨t, ht, rfl⟩, rfl⟩
-      simpa [hl, ht] using prod_mem_totalDegreeSubmodule ℳ (l ++ t)
-    exact hmul (Submodule.mul_mem_mul ha hb)
+instance totalDegreeSubmodule_gradedMonoid : SetLike.GradedMonoid (totalDegreeSubmodule ℳ) :=
+  inferInstanceAs (SetLike.GradedMonoid
+    (TauCeti.GradedAlgebra.wordSpan R (fun x : Σ i, ℳ i => ι R M (x.2 : M)) Sigma.fst))
 
 /-- A generator belongs to a total-degree piece exactly when it has that degree in the
 original module, even when the pieces do not form a decomposition. -/
@@ -122,14 +110,9 @@ theorem totalDegreeSubmodule_le_comap_lift {Γ' A : Type*} [AddCommMonoid Γ']
     [CommSemiring A] [Algebra R A] (𝒜 : Γ' → Submodule R A)
     [SetLike.GradedMonoid 𝒜] (T : Γ →+ Γ') (f : M →ₗ[R] A)
     (hf : ∀ i, ∀ x ∈ ℳ i, f x ∈ 𝒜 (T i)) (n : Γ) :
-    totalDegreeSubmodule ℳ n ≤ (𝒜 (T n)).comap (lift f).toLinearMap := by
-  rw [totalDegreeSubmodule_le_iff]
-  intro l hl
-  have h := SetLike.list_prod_map_mem_graded (A := 𝒜) l (fun x => T x.1)
-    (fun x => f (x.2 : M)) (fun x _ => hf x.1 x.2 x.2.property)
-  have hsum : (l.map (fun x => T x.1)).sum = T n := by
-    simpa only [map_list_sum, List.map_map, Function.comp_def] using congrArg T hl
-  simpa [map_list_prod, List.map_map, Function.comp_def, hsum] using h
+    totalDegreeSubmodule ℳ n ≤ (𝒜 (T n)).comap (lift f).toLinearMap := fun _ hx =>
+  TauCeti.GradedAlgebra.map_mem_of_mem_wordSpan (lift f) T
+    (fun s => by simpa only [lift_ι_apply] using hf s.1 s.2 s.2.property) hx
 
 variable [DecidableEq Γ] [DirectSum.Decomposition ℳ]
 
@@ -169,41 +152,16 @@ private theorem coeAlgHom_comp_totalDegreeDecompose :
   | homogeneous x =>
     simp [totalDegreeDecompose_ι]
 
-private theorem totalDegreeDecompose_prod (l : List (Σ i, ℳ i)) :
-    totalDegreeDecompose ℳ (l.map (fun x => ι R M (x.2 : M))).prod =
-      DirectSum.of (fun n => ↥(totalDegreeSubmodule ℳ n)) (l.map Sigma.fst).sum
-        ⟨(l.map (fun x => ι R M (x.2 : M))).prod, prod_mem_totalDegreeSubmodule ℳ l⟩ := by
-  induction l with
-  | nil =>
-    simp only [List.map_nil, List.prod_nil, map_one, DirectSum.one_def]
-    -- The graded unit is the subtype whose underlying algebra element is one.
-    rfl
-  | cons x l ih =>
-    simp only [List.map_cons, List.prod_cons, map_mul, totalDegreeDecompose_ι, ih,
-      DirectSum.of_mul_of]
-    -- Graded multiplication is algebra multiplication bundled with its membership proof.
-    congr 1
-
 private theorem totalDegreeDecompose_apply (n : Γ) (x : totalDegreeSubmodule ℳ n) :
     totalDegreeDecompose ℳ (x : SymmetricAlgebra R M) =
       DirectSum.of (fun n => ↥(totalDegreeSubmodule ℳ n)) n x := by
-  obtain ⟨x, hx⟩ := x
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨l, hl, rfl⟩ := hx
-    subst n
-    exact totalDegreeDecompose_prod ℳ l
-  | zero =>
-    rw [map_zero]
-    exact (map_zero (DirectSum.of (fun n => ↥(totalDegreeSubmodule ℳ n)) n)).symm
-  | add x y hx hy hxi hyi =>
-    rw [map_add, hxi, hyi, ← map_add]
-    -- Addition in a submodule is addition of the underlying algebra elements.
-    rfl
-  | smul r x hx hxi =>
-    rw [map_smul, hxi, ← DirectSum.of_smul]
-    -- Scalar multiplication in a submodule is inherited from the ambient module.
-    rfl
+  have hf (z : Σ i, ℳ i) :
+      totalDegreeDecompose ℳ (ι R M (z.2 : M)) ∈
+        DirectSum.summand R (fun n => ↥(totalDegreeSubmodule ℳ n)) z.1 := by
+    rw [totalDegreeDecompose_ι ℳ z.2]
+    exact DirectSum.of_mem_summand (R := R) _ _
+  exact TauCeti.GradedAlgebra.algHom_apply_of_mem_wordSpan (totalDegreeDecompose ℳ)
+    (AlgHom.congr_fun (coeAlgHom_comp_totalDegreeDecompose ℳ)) hf x.property
 
 /-- The total-degree pieces decompose the symmetric algebra as an internal direct sum. -/
 theorem isInternal_totalDegreeSubmodule : DirectSum.IsInternal (totalDegreeSubmodule ℳ) := by
