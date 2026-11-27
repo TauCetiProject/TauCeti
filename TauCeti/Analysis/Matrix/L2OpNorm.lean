@@ -305,13 +305,10 @@ theorem l2_opNorm_sq_le_iff {m : Type*} [Fintype m] {A : Matrix m n 𝕜} {C : �
     (mul_le_mul_of_nonneg_right h (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)), fun h ↦ ?_⟩
   have hA : ‖A‖ ≤ √C := by
     rw [l2_opNorm_def]
-    refine ContinuousLinearMap.opNorm_le_bound _ (Real.sqrt_nonneg C) fun x ↦ ?_
-    refine (pow_le_pow_iff_left₀ (norm_nonneg _)
-      (mul_nonneg (Real.sqrt_nonneg C) (norm_nonneg _)) two_ne_zero).1 ?_
-    rw [mul_pow, Real.sq_sqrt hC, EuclideanSpace.norm_sq_eq, EuclideanSpace.norm_sq_eq]
+    refine ContinuousLinearMap.opNorm_le_sqrt_of_forall_sq_norm_le _ fun x ↦ ?_
+    rw [EuclideanSpace.norm_sq_eq, EuclideanSpace.norm_sq_eq]
     simpa using h (WithLp.ofLp x)
-  calc ‖A‖ ^ 2 ≤ √C ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hA 2
-    _ = C := Real.sq_sqrt hC
+  exact (Real.le_sqrt (norm_nonneg _) hC).1 hA
 
 omit [DecidableEq n] in
 /-- **Large-sieve duality.** For a rectangular matrix `A` and `C ≥ 0`, the inequality
