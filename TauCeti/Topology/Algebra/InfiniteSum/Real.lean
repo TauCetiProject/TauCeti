@@ -53,6 +53,7 @@ analogue of the power-rule integral identity for tails.
   the bilateral geometric series `r ^ k.natAbs` on `ℤ` for `0 ≤ r < 1`.
 * `TauCeti.cauchySeq_of_eventually_dist_le_of_summable`: a sequence whose steps are eventually
   bounded by a summable sequence is Cauchy.
+* `HasSum.exists_pos`: a nonnegative real family with a positive infinite sum has a positive term.
 -/
 
 public section
@@ -190,6 +191,14 @@ theorem Summable.tsum_Ioi_mul_pow_tsum_Ioi_le (ha : Summable a) (ha0 : ∀ m, 0 
   linarith [hpartial M, pow_nonneg (hΨ0 (n + M)) (k + 1)]
 
 end Tail
+
+/-- A family of nonnegative real numbers with a positive infinite sum has at least one positive
+term. -/
+theorem HasSum.exists_pos {ι : Type*} {f : ι → ℝ} {a : ℝ} (hsum : HasSum f a)
+    (hnn : ∀ i, 0 ≤ f i) (ha : 0 < a) : ∃ i, 0 < f i := by
+  by_contra! h
+  have h0 : f = 0 := funext fun i ↦ le_antisymm (h i) (hnn i)
+  exact ha.ne' (hsum.unique (h0 ▸ hasSum_zero))
 
 namespace TauCeti
 

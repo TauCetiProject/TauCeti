@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.PartitionOfUnity
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 import TauCeti.Topology.Order.Lattice
 
 /-!
@@ -134,15 +135,17 @@ theorem halfThresholdTrunc_pos_iff {f : ι → C(X, ℝ)} {m : C(X, ℝ)} {i : �
     0 < halfThresholdTrunc f m i x ↔ m x / 2 < f i x := by
   rw [halfThresholdTrunc_apply, lt_max_iff, or_iff_right (lt_irrefl 0), sub_pos]
 
+/-- A point `x` lies in the open support of `TauCeti.halfThresholdTrunc f m i` iff
+`m x / 2 < f i x`. -/
+theorem mem_support_halfThresholdTrunc_iff {f : ι → C(X, ℝ)} {m : C(X, ℝ)} {i : ι} {x : X} :
+    x ∈ support (halfThresholdTrunc f m i) ↔ m x / 2 < f i x :=
+  (halfThresholdTrunc_nonneg f m i x).lt_iff_ne'.symm.trans halfThresholdTrunc_pos_iff
+
 /-- When `m` is positive everywhere, the open support of `halfThresholdTrunc f m i` lies in
 `support (f i)`. -/
 theorem support_halfThresholdTrunc_subset {f : ι → C(X, ℝ)} {m : C(X, ℝ)} (hm : ∀ x, 0 < m x)
-    (i : ι) : support (halfThresholdTrunc f m i) ⊆ support (f i) := by
-  intro x hx
-  have hpos : m x / 2 < f i x :=
-    halfThresholdTrunc_pos_iff.mp
-      (lt_of_le_of_ne (halfThresholdTrunc_nonneg f m i x) (Ne.symm hx))
-  exact ((half_pos (hm x)).trans hpos).ne'
+    (i : ι) : support (halfThresholdTrunc f m i) ⊆ support (f i) :=
+  fun x hx ↦ ((half_pos (hm x)).trans (mem_support_halfThresholdTrunc_iff.mp hx)).ne'
 
 /-- When `m` is continuous and positive everywhere, the closed support of `halfThresholdTrunc f m i`
 lies in the open support `support (f i)`. -/
@@ -151,24 +154,13 @@ theorem tsupport_halfThresholdTrunc_subset {f : ι → C(X, ℝ)} {m : C(X, ℝ)
   intro x hx
   have hclosed : IsClosed {y : X | m y / 2 ≤ f i y} :=
     isClosed_le (m.continuous.div_const 2) (f i).continuous
-  have hle : m x / 2 ≤ f i x := by
-    refine closure_minimal (fun y hy ↦ ?_) hclosed hx
-    rw [mem_ofPred_eq]
-    exact (halfThresholdTrunc_pos_iff.mp
-      (lt_of_le_of_ne (halfThresholdTrunc_nonneg f m i y) (Ne.symm hy))).le
+  have hle : m x / 2 ≤ f i x :=
+    closure_minimal (fun y hy ↦ (mem_support_halfThresholdTrunc_iff.mp hy).le) hclosed hx
   exact ((half_pos (hm x)).trans_le hle).ne'
 
 end HalfThresholdTrunc
 
 section HasSumOne
-
-/-- A family of nonnegative real numbers with a positive infinite sum has at least one positive
-term. -/
-theorem exists_pos_of_hasSum_pos {ι : Type*} {f : ι → ℝ} {a : ℝ} (hnn : ∀ i, 0 ≤ f i)
-    (ha : 0 < a) (hsum : HasSum f a) : ∃ i, 0 < f i := by
-  by_contra! h
-  have h0 : f = 0 := funext fun i ↦ le_antisymm (h i) (hnn i)
-  exact ha.ne' (hsum.unique (h0 ▸ hasSum_zero))
 
 private theorem bddAbove_range_of_hasSum_one (f : ι → C(X, ℝ)) (hnn : ∀ i x, 0 ≤ f i x)
     (hsum : ∀ x, HasSum (fun i ↦ f i x) 1) (x : X) : BddAbove (range fun i ↦ f i x) :=
@@ -180,7 +172,7 @@ private theorem eventually_tail_lt_and_half_lt_finSup_of_hasSum_one (f : ι → 
       ∀ x ∈ W, (∀ j ∉ I, f j x < (⨆ i, f i x₀) / 4) ∧
         (⨆ i, f i x₀) / 2 < ⨆ i : I, f i x := by
   classical
-  obtain ⟨i₀, hi₀⟩ := exists_pos_of_hasSum_pos (fun i ↦ hnn i x₀) zero_lt_one (hsum x₀)
+  obtain ⟨i₀, hi₀⟩ := (hsum x₀).exists_pos (fun i ↦ hnn i x₀) zero_lt_one
   have : Nonempty ι := ⟨i₀⟩
   let m₀ : ℝ := ⨆ i, f i x₀
   have hm₀ : 0 < m₀ := hi₀.trans_le (le_ciSup (bddAbove_range_of_hasSum_one f hnn hsum x₀) i₀)
@@ -224,9 +216,7 @@ theorem locallyFinite_support_halfThresholdTrunc_of_hasSum_one (f : ι → C(X, 
   refine ⟨W, hW, I.finite_toSet.subset fun j ⟨x, hx_supp, hxW⟩ ↦ ?_⟩
   rw [Finset.mem_coe]
   by_contra hj
-  have hpos : m x / 2 < f j x :=
-    halfThresholdTrunc_pos_iff.mp
-      (lt_of_le_of_ne (halfThresholdTrunc_nonneg f m j x) (Ne.symm hx_supp))
+  have hpos : m x / 2 < f j x := mem_support_halfThresholdTrunc_iff.mp hx_supp
   have hfin : ⨆ i : I, f i.val x ≤ m x := by
     rw [hm x]
     exact Real.iSup_le (fun i ↦ le_ciSup (bddAbove_range_of_hasSum_one f hnn hsum x) i.val)
@@ -273,9 +263,9 @@ theorem support_shrinkOfThreshold (f : ι → C(X, ℝ)) (m : C(X, ℝ))
     (hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i))
     (hm_att : ∀ x, ∃ i, m x / 2 < f i x) (i : ι) :
     support (shrinkOfThreshold f m hlf hm_att i) = {x | m x / 2 < f i x} := by
+  rw [shrinkOfThreshold, support_ofExistsPos]
   ext x
-  exact ((shrinkOfThreshold f m hlf hm_att).nonneg i x).lt_iff_ne'.symm.trans
-    shrinkOfThreshold_pos_iff
+  exact mem_support_halfThresholdTrunc_iff
 
 /-- Every open support of `PartitionOfUnity.shrinkOfThreshold` lies in `support (f i)` when `m` is
 positive everywhere. -/

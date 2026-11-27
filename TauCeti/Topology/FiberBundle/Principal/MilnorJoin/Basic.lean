@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Action
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 public import Mathlib.Topology.Homotopy.Path
 import Mathlib.Topology.Algebra.InfiniteSum.Order
-import TauCeti.Topology.PartitionOfUnity.Shrink
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # The strong-coordinate Milnor join of a topological space or group
@@ -30,8 +30,9 @@ with the weak simplicial topology and left group action on `universalGSpace G`.
   fresh-index cone homotopy, path-connectedness, and Hausdorffness.
 * `TauCeti.MilnorTotalSpace.instContinuousSMul`, `instIsCancelSMulOp`,
   `TauCeti.weakToMilnorTotalSpace`, `MilnorTotalSpace.map_basepoint`,
-  `MilnorTotalSpace.map_op_smul`, `ContinuousMonoidHom.map_comp_weakToMilnorTotalSpace`: joint
-  continuity and freeness of the right `Gᵐᵒᵖ`-action, label-inversion dictionary
+  `MilnorTotalSpace.map_op_smul`,
+  `ContinuousMonoidHom.milnorTotalSpaceMap_comp_weakToMilnorTotalSpace`: joint continuity and
+  freeness of the right `Gᵐᵒᵖ`-action, label-inversion dictionary
   (`g⁻¹ • x ↦ weakToMilnorTotalSpace G x · g`), and homomorphism naturality.
 
 ## References
@@ -185,7 +186,7 @@ theorem weight_le_one (i : ℕ) (p : MilnorTotalSpace G) : weight i p ≤ 1 :=
   le_hasSum (hasSum_weight p) i fun j _ ↦ weight_nonneg j p
 
 theorem exists_weight_pos (p : MilnorTotalSpace G) : ∃ i, 0 < weight i p :=
-  exists_pos_of_hasSum_pos (fun i ↦ weight_nonneg i p) zero_lt_one (hasSum_weight p)
+  (hasSum_weight p).exists_pos (fun i ↦ weight_nonneg i p) zero_lt_one
 
 @[simp] theorem iUnion_coordSet (G : Type u) : ⋃ i, coordSet G i = univ :=
   eq_univ_of_forall fun p ↦ mem_iUnion.mpr (exists_weight_pos p)
@@ -823,7 +824,7 @@ open TauCeti
 variable {G : Type u} {H : Type v} [Group G] [Group H] [TopologicalSpace G] [TopologicalSpace H]
 
 /-- **Naturality of `weakToMilnorTotalSpace`** with respect to continuous group homomorphisms. -/
-theorem map_comp_weakToMilnorTotalSpace (φ : G →ₜ* H) :
+theorem milnorTotalSpaceMap_comp_weakToMilnorTotalSpace (φ : G →ₜ* H) :
     (MilnorTotalSpace.map (φ : C(G, H))).comp (weakToMilnorTotalSpace G) =
       (weakToMilnorTotalSpace H).comp φ.toMonoidHom.universalGSpaceMap := by
   ext1 x
@@ -835,18 +836,3 @@ theorem map_comp_weakToMilnorTotalSpace (φ : G →ₜ* H) :
   simp
 
 end ContinuousMonoidHom
-
-namespace Continuous
-
-open TauCeti
-
-/-- For a continuous map `f : Z → MilnorTotalSpace G`, `MilnorTotalSpace.label i ∘ f` is
-continuous at every point where `0 < MilnorTotalSpace.weight i (f z)`. -/
-theorem continuousAt_milnorTotalSpace_label_comp {G : Type u} [TopologicalSpace G]
-    {Z : Type*} [TopologicalSpace Z] {f : Z → MilnorTotalSpace G} (hf : Continuous f)
-    {i : ℕ} {z : Z} (hz : 0 < MilnorTotalSpace.weight i (f z)) :
-    ContinuousAt (fun x ↦ MilnorTotalSpace.label i (f x)) z :=
-  ((MilnorTotalSpace.continuous_iff.mp hf).2 i).continuousAt
-    ((isOpen_lt continuous_const ((MilnorTotalSpace.continuous_iff.mp hf).1 i)).mem_nhds hz)
-
-end Continuous

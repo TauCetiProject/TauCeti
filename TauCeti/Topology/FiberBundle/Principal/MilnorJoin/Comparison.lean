@@ -86,6 +86,6 @@ theorem milnorClassifyingSpaceMap_comp_weakToMilnorClassifyingSpace (φ : G →�
   simp only [ContinuousMap.comp_apply, weakToMilnorClassifyingSpace_proj,
     milnorClassifyingSpaceMap_proj, MonoidHom.classifyingSpaceMap_proj]
   exact congrArg (milnorClassifyingSpaceProj H)
-    (congrArg (· x) φ.map_comp_weakToMilnorTotalSpace)
+    (congrArg (· x) φ.milnorTotalSpaceMap_comp_weakToMilnorTotalSpace)
 
 end ContinuousMonoidHom

@@ -105,13 +105,6 @@ theorem exists_one_half_lt_partialWeightSum_of_isCompact_range {X : Type v} [Top
     (directed_of_isDirected_le fun _ _ h _ hp ↦ lt_of_lt_of_le hp (partialWeightSum_mono h _))
   exact ⟨N, fun x ↦ hN (Set.mem_range_self x)⟩
 
-/-- For a continuous map `f` from a compact space `X`, a single cutoff `N` satisfies
-`1 / 2 < S_N(f x)` for all `x : X`. -/
-theorem exists_one_half_lt_partialWeightSum_of_compactSpace {X : Type v} [TopologicalSpace X]
-    [CompactSpace X] (f : C(X, MilnorTotalSpace G)) :
-    ∃ N, ∀ x, 1 / 2 < partialWeightSum G N (f x) :=
-  exists_one_half_lt_partialWeightSum_of_isCompact_range (isCompact_range f.continuous)
-
 end PartialWeightSum
 
 /-! ### Tail-truncation homotopy and fresh-vertex cone homotopy -/
@@ -222,7 +215,7 @@ private theorem tailTruncationMap_apply (N : ℕ) (f : C(X, MilnorTotalSpace G))
   rw [tailTruncationMap_apply, weight_tailTruncationPt]
   by_cases hi : i < N <;> simp [hi, tailWeight, tailDenom]
 
-theorem weight_tailTruncationMap_of_le (N : ℕ) (f : C(X, MilnorTotalSpace G))
+theorem weight_tailTruncationMap_eq_zero_of_le (N : ℕ) (f : C(X, MilnorTotalSpace G))
     (hf : ∀ x, 0 < partialWeightSum G N (f x)) {i : ℕ} (hi : N ≤ i) (x : X) :
     weight i (tailTruncationMap N f hf x) = 0 := by
   rw [weight_tailTruncationMap, ite_eq_right (not_lt.mpr hi)]
@@ -284,7 +277,7 @@ theorem nullhomotopic_to_milnorTotalSpace_of_isCompact_range [Nonempty G]
   have hN_pos (x) : 0 < MilnorTotalSpace.partialWeightSum G N (f x) := by linarith [hN x]
   exact ⟨MilnorTotalSpace.vertex N a, ⟨(MilnorTotalSpace.tailTruncationHomotopy N f hN_pos).trans
     (MilnorTotalSpace.coneAtFreshIndexHomotopy N a (MilnorTotalSpace.tailTruncationMap N f hN_pos)
-      fun x ↦ MilnorTotalSpace.weight_tailTruncationMap_of_le N f hN_pos le_rfl x)⟩⟩
+      fun x ↦ MilnorTotalSpace.weight_tailTruncationMap_eq_zero_of_le N f hN_pos le_rfl x)⟩⟩
 
 /-- Every continuous map from a compact space `X` into `MilnorTotalSpace G` is null-homotopic
 when `G` is nonempty. -/
