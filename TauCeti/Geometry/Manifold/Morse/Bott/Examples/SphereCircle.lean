@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.SphereCircle
-public import TauCeti.Geometry.Manifold.Morse.Bott.MappingTorus
+public import TauCeti.Geometry.Manifold.Morse.Bott.MappingTorus.NegativeOrientation
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
+public import TauCeti.Geometry.Manifold.Orientation.Sphere
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.Morse.Prod
 import TauCeti.Geometry.Manifold.Morse.ScalarComposition
@@ -40,10 +41,25 @@ corresponding critical point: `3`, `2`, `1` and `0` for the circles `(N, 0)`, `(
 and `(S, π)`, where `N = u` and `S = -u` are the poles and `θ = 0, π` the points `w = 1, -1`
 (`TauCeti.manifoldMorseIndex_sphereCircleTorusHeight_self_one` and its three companions).
 
+Although the mapping torus is oriented, the negative normal bundle of the circle `(N, π)` is not
+orientable, for every fibre metric
+(`TauCeti.isEmpty_vectorBundleOrientation_negativeNormalSpace_sphereCircleCriticalCircle`).
+It is a plane bundle over the circle: at `(u, -1)` the Hessian of `h` is negative definite on the
+tangent plane `T_u S²` of the sphere, and going once around the circle the fibre comes back through
+the differential of `τ`, which acts on this plane as the reflection `ρ` does, by a map of
+determinant `-1` (for `E = ℝ³`, `diag(1, -1)` in the coordinates `x, y`). On the whole normal space
+`T_u S² × T_{-1} S¹` of the circle, `τ` also reverses the circle factor, so it acts with
+determinant `+1` (for `E = ℝ³`, `diag(1, -1, -1)`), as it must since the mapping torus and the
+circle are oriented. So the orientation local system that twists the homology across the level of
+`(N, π)` is that of the negative plane bundle, not that of the whole normal bundle; the
+orientability of the whole normal bundle is background here and is not formalized.
+
 ## Main definitions
 
 * `TauCeti.sphereCircleHeight u ε`: the function `(p, w) ↦ ⟪p, u⟫ + ε Re w` on `S² × S¹`.
 * `TauCeti.sphereCircleTorusHeight huv ε`: the function it induces on the mapping torus of `τ`.
+* `TauCeti.sphereCircleCriticalCircle huv hε x`: its critical circle `t ↦ [t, x]` through a
+  critical point `x` of `h`.
 
 ## Main results
 
@@ -59,6 +75,8 @@ and `(S, π)`, where `N = u` and `S = -u` are the poles and `θ = 0, π` the poi
   `TauCeti.manifoldMorseIndex_sphereCircleTorusHeight_neg_self_one`,
   `TauCeti.manifoldMorseIndex_sphereCircleTorusHeight_neg_self_neg_one`: its Morse indices `3`,
   `2`, `1` and `0` along the four critical circles.
+* `TauCeti.isEmpty_vectorBundleOrientation_negativeNormalSpace_sphereCircleCriticalCircle`:
+  the negative normal bundle of the circle `(N, π)` is not orientable.
 
 ## References
 
@@ -190,17 +208,33 @@ theorem sphereCircleTorusHeight_mk (huv : ⟪v, (u : E)⟫_ℝ = 0) (ε t : ℝ)
     sphereCircleTorusHeight huv ε (SmoothMappingTorus.mk _ t x) = sphereCircleHeight u ε x :=
   SmoothMappingTorus.liftOfInvariant_mk _ _ t x
 
+/-- The **critical circle** `t ↦ [t, p, w]` of the function on the mapping torus through a critical
+point `(p, w)` of `TauCeti.sphereCircleHeight u ε`: the closed orbit of the suspension flow through
+it, a smooth embedding of the circle `ℝ / ℤ`, since `(p, w)` is fixed by `τ`. -/
+def sphereCircleCriticalCircle (huv : ⟪v, (u : E)⟫_ℝ = 0) {ε : ℝ} (hε : ε ≠ 0)
+    (x : criticalPoints ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε)) :
+    SmoothEmbedding 𝓘(ℝ) (𝓘(ℝ).prod ((𝓡 2).prod (𝓡 1))) ∞ (AddCircle ((1 : ℕ) : ℝ))
+      (SmoothMappingTorus (sphereCircleReflection v)) :=
+  SmoothMappingTorus.closedOrbitEmbedding
+    ((isFixedPt_sphereCircleReflection_of_mem_criticalPoints huv hε x.property).isPeriodicPt 1)
+    (by simp) (minimalPeriod_eq_one_iff_isFixedPt.2
+      (isFixedPt_sphereCircleReflection_of_mem_criticalPoints huv hε x.property))
+
+/-- The critical circle through `x` sends `t` to `[t, x]`. -/
+@[simp]
+theorem sphereCircleCriticalCircle_coe (huv : ⟪v, (u : E)⟫_ℝ = 0) {ε : ℝ} (hε : ε ≠ 0)
+    (x : criticalPoints ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε)) (t : ℝ) :
+    sphereCircleCriticalCircle huv hε x t =
+      SmoothMappingTorus.mk _ t (x : sphere (0 : E) 1 × sphere (0 : ℂ) 1) := by
+  rw [sphereCircleCriticalCircle, SmoothMappingTorus.coe_closedOrbitEmbedding,
+    SmoothMappingTorus.closedOrbit_coe]
+
 /-- **The function on the mapping torus is Morse–Bott** for `ε ≠ 0`: the closed orbits
 `t ↦ [t, ±u, ±1]` of the suspension flow through the four critical points of
 `TauCeti.sphereCircleHeight u ε` are its critical circles. -/
 theorem isMorseBottFamily_sphereCircleTorusHeight (huv : ⟪v, (u : E)⟫_ℝ = 0) {ε : ℝ}
     (hε : ε ≠ 0) :
-    IsMorseBottFamily (fun x : criticalPoints ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε) ↦
-      SmoothMappingTorus.closedOrbitEmbedding
-        ((isFixedPt_sphereCircleReflection_of_mem_criticalPoints huv hε x.property).isPeriodicPt 1)
-        (by simp) (minimalPeriod_eq_one_iff_isFixedPt.2
-          (isFixedPt_sphereCircleReflection_of_mem_criticalPoints huv hε x.property)))
-      (sphereCircleTorusHeight huv ε) :=
+    IsMorseBottFamily (sphereCircleCriticalCircle huv hε) (sphereCircleTorusHeight huv ε) :=
   SmoothMappingTorus.isMorseBottFamily_liftOfInvariant _ _ (isMorse_sphereCircleHeight u hε)
     fun _ hx ↦ isFixedPt_sphereCircleReflection_of_mem_criticalPoints huv hε hx
 
@@ -264,5 +298,160 @@ theorem manifoldMorseIndex_sphereCircleTorusHeight_neg_self_neg_one (huv : ⟪v,
       (SmoothMappingTorus.mk _ t (-u, -1)) = 0 := by
   rw [manifoldMorseIndex_sphereCircleTorusHeight huv hε t (.inr rfl) (.inr rfl),
     manifoldMorseIndex_sphereHeight_neg, manifoldMorseIndex_sphereHeight_neg]
+
+/-! ### The negative normal plane of the circle `(N, π)` -/
+
+section NegativeNormal
+
+open Bundle Submodule
+
+variable (hn : (∞ : ℕ∞ω) ≠ 0)
+
+/-- At `(u, -1)` the Hessian of `TauCeti.sphereCircleHeight u ε` is negative definite on the sphere
+directions `(a, 0)`, since the height `⟪p, u⟫` has a nondegenerate maximum at `u`. -/
+private theorem criticalHessian_sphereCircleHeight_inl_neg (u : sphere (0 : E) 1) (ε : ℝ)
+    (a : EuclideanSpace ℝ (Fin 2)) (ha : a ≠ 0) :
+    criticalHessian ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε) (u, -1)
+      (LinearMap.inl ℝ _ (EuclideanSpace ℝ (Fin 1)) a)
+      (LinearMap.inl ℝ _ (EuclideanSpace ℝ (Fin 1)) a) < 0 := by
+  rw [sphereCircleHeight, criticalHessian_comp_fst_add_comp_snd_apply
+    (contMDiff_sphereHeight (m := 2) u u).contDiffAt_comp_extChartAt_symm
+    (contMDiff_mul_sphereHeight (m := 2) ε (-1)).contDiffAt_comp_extChartAt_symm]
+  have hmax := (manifoldMorseIndex_eq_finrank_iff (I := 𝓡 2) (f := sphereHeight u)
+    (x := u)).1 (by rw [manifoldMorseIndex_sphereHeight_self, finrank_euclideanSpace_fin]) a ha
+  -- The circle component of `(a, 0)` vanishes.
+  have h0 : criticalHessian (𝓡 1) ((ε * ·) ∘ sphereHeight 1) (-1 : sphere (0 : ℂ) 1)
+      (LinearMap.inl ℝ _ (EuclideanSpace ℝ (Fin 1)) a).2
+      (LinearMap.inl ℝ _ (EuclideanSpace ℝ (Fin 1)) a).2 = 0 := by
+    -- The second component is the zero of `EuclideanSpace ℝ (Fin 1)`; reading it as the zero of
+    -- the tangent space, the domain of the Hessian, lets `map_zero` apply. The zero bilinear map
+    -- then vanishes on it by definition.
+    change criticalHessian (𝓡 1) _ _ 0 (LinearMap.inl ℝ _ (EuclideanSpace ℝ (Fin 1)) a).2 = 0
+    rw [ContinuousLinearMap.map_zero]
+    rfl
+  rw [h0, add_zero]
+  exact hmax
+
+/-- The differential at `u` of the reflection `ρ` of the sphere across `v^⊥`, which fixes `u`, has
+negative determinant: `ρ` reverses the orientation of the sphere. -/
+private theorem det_mfderiv_reflection_unitSphereEquiv_neg (hv : v ≠ 0)
+    (huv : ⟪v, (u : E)⟫_ℝ = 0) :
+    LinearMap.det ((mfderiv (𝓡 2) (𝓡 2) (ℝ ∙ v)ᗮ.reflection.unitSphereEquiv u).toLinearMap :
+      EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) < 0 := by
+  have hρu : (ℝ ∙ v)ᗮ.reflection.unitSphereEquiv u = u := Subtype.ext (by
+    simpa using reflection_orthogonal_singleton_eq_self_of_inner_eq_zero huv)
+  let o := (finBasisOfFinrankEq ℝ E (Fact.out : finrank ℝ E = 2 + 1)).orientation
+  obtain ⟨e, he, ho⟩ := (Manifold.Orientation.isOrientationReversingAt_iff _ _ _ _).1
+    (o.isOrientationReversingAt_unitSphereEquiv (e := (ℝ ∙ v)ᗮ.reflection)
+      (by rw [← LinearEquiv.coe_det, linearEquiv_det_reflection_orthogonal_singleton hv]
+          exact neg_one_lt_zero) u)
+  -- All tangent spaces of the sphere are `EuclideanSpace ℝ (Fin 2)`, so the orientations of the
+  -- sphere at `u` and at `ρ u = u` can be compared.
+  let O : sphere (0 : E) 1 → Orientation ℝ (EuclideanSpace ℝ (Fin 2)) (Fin 2) :=
+    fun q ↦ o.sphereOrientation.orientationAt q
+  let e' : EuclideanSpace ℝ (Fin 2) ≃ₗ[ℝ] EuclideanSpace ℝ (Fin 2) := e.toLinearEquiv
+  have h := (Orientation.map_eq_neg_iff_det_neg (O u) e' (by simp)).1
+    (ho.trans (congrArg (fun q ↦ -O q) hρu))
+  rwa [show (e' : EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) = _ from
+    congrArg ContinuousLinearMap.toLinearMap he] at h
+
+/-- The Morse index of the function on the mapping torus is `2` along the critical circle through
+`(u, -1)`, the circle `(N, π)`. -/
+theorem manifoldMorseIndex_sphereCircleCriticalCircle_of_eq_self_neg_one
+    (huv : ⟪v, (u : E)⟫_ℝ = 0) {ε : ℝ} (hε : 0 < ε)
+    {x : criticalPoints ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε)}
+    (hx : (x : sphere (0 : E) 1 × sphere (0 : ℂ) 1) = (u, -1))
+    (s : AddCircle ((1 : ℕ) : ℝ)) :
+    manifoldMorseIndex (𝓘(ℝ).prod ((𝓡 2).prod (𝓡 1))) (sphereCircleTorusHeight huv ε)
+      (sphereCircleCriticalCircle huv hε.ne' x s) = 2 := by
+  induction s using QuotientAddGroup.induction_on with | H t => ?_
+  rw [sphereCircleCriticalCircle_coe, hx]
+  exact manifoldMorseIndex_sphereCircleTorusHeight_self_neg_one huv hε t
+
+/-- **The negative normal bundle of the circle `(N, π)` is not orientable.** Let `x = (u, -1)`, so
+that the critical circle `C = {[t, u, -1]}` is the circle `(N, π)` of Morse index `2`, and let `g`
+be a `C^k` fibre metric on its normal bundle, with negative normal bundle `ν⁻`, a plane bundle over
+the circle. Then `ν⁻` is not orientable.
+
+At `x` the Hessian of `h` is negative definite on the tangent plane `T_u S²` of the sphere, where
+the height `⟪p, u⟫` has its maximum, and `τ` acts on this plane by the differential of the
+reflection `ρ`, which reverses the orientation of the sphere and fixes `u`, so it has negative
+determinant (for `E = ℝ³` it is `diag(1, -1)`). Hence the orientation of `ν⁻` has monodromy `-1`
+around `C` (`isEmpty_vectorBundleOrientation_negativeNormalSpace_of_det_neg`, in the namespace
+`TauCeti.SmoothMappingTorus`).
+
+This happens although the mapping torus is oriented
+(`TauCeti.orientable_smoothMappingTorus_sphereCircleReflection`) and so is the circle `C`: on the
+whole normal space `T_u S² × T_{-1} S¹` of `C`, the differential of `τ` also reverses the circle
+factor (for `E = ℝ³` it is `diag(1, -1, -1)`, of determinant `+1`). So the orientation local system
+of the negative normal bundle, which twists the homology across the level of `C`, is not that of the
+whole normal bundle. -/
+theorem isEmpty_vectorBundleOrientation_negativeNormalSpace_sphereCircleCriticalCircle
+    (hv : v ≠ 0) (huv : ⟪v, (u : E)⟫_ℝ = 0) {ε : ℝ} (hε : 0 < ε)
+    {x : criticalPoints ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε)}
+    (hx : (x : sphere (0 : E) 1 × sphere (0 : ℂ) 1) = (u, -1))
+    {k : ℕ∞} {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+    (hdim : finrank ℝ P = finrank ℝ (ℝ × (EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 1))) -
+      finrank ℝ ℝ)
+    (g : letI := (sphereCircleCriticalCircle huv hε.ne' x).normalSpaceFiberBundle hn hdim
+      letI := (sphereCircleCriticalCircle huv hε.ne' x).normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric 𝓘(ℝ) k P
+        fun s ↦ (sphereCircleCriticalCircle huv hε.ne' x).isImmersion.NormalSpace s hn) :
+    haveI : IsManifold (𝓘(ℝ).prod ((𝓡 2).prod (𝓡 1))) ((k : ℕ∞ω) + 2)
+        (SmoothMappingTorus (sphereCircleReflection v)) :=
+      .of_le (n := ∞) (WithTop.coe_le_coe.2 le_top)
+    haveI : IsManifold 𝓘(ℝ) ((k : ℕ∞ω) + 1) (AddCircle ((1 : ℕ) : ℝ)) :=
+      .of_le (n := ∞) (WithTop.coe_le_coe.2 le_top)
+    letI := (sphereCircleCriticalCircle huv hε.ne' x).normalSpaceFiberBundle hn hdim
+    letI := (sphereCircleCriticalCircle huv hε.ne' x).normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology P (F' := Fin 2 → ℝ)
+      (((isMorseBottFamily_sphereCircleTorusHeight huv hε.ne').isNondegenerateCriticalSubmanifold
+        x).negativeNormalSpace hn g.toRiemannianMetric)
+    letI := (((isMorseBottFamily_sphereCircleTorusHeight huv
+      hε.ne').isNondegenerateCriticalSubmanifold
+        x).hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn
+        (WithTop.coe_le_coe.2 le_top : (k : ℕ∞ω) + 1 ≤ ∞)
+        (fun s ↦ ((isMorseBottFamily_sphereCircleTorusHeight huv hε.ne').contMDiff _).of_le
+          (WithTop.coe_le_coe.2 le_top)) hdim g
+        (manifoldMorseIndex_sphereCircleCriticalCircle_of_eq_self_neg_one huv hε hx)).fiberBundle
+    haveI := (((isMorseBottFamily_sphereCircleTorusHeight huv
+      hε.ne').isNondegenerateCriticalSubmanifold
+        x).hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn
+        (WithTop.coe_le_coe.2 le_top : (k : ℕ∞ω) + 1 ≤ ∞)
+        (fun s ↦ ((isMorseBottFamily_sphereCircleTorusHeight huv hε.ne').contMDiff _).of_le
+          (WithTop.coe_le_coe.2 le_top)) hdim g
+        (manifoldMorseIndex_sphereCircleCriticalCircle_of_eq_self_neg_one huv hε hx)).vectorBundle
+    IsEmpty (VectorBundleOrientation (Fin 2 → ℝ)
+      (fun s ↦ ((isMorseBottFamily_sphereCircleTorusHeight huv
+        hε.ne').isNondegenerateCriticalSubmanifold x).negativeNormalSpace hn g.toRiemannianMetric s)
+      (Fin 2)) := by
+  obtain ⟨⟨p, w⟩, hpw⟩ := x
+  obtain ⟨rfl, rfl⟩ := Prod.mk.inj hx
+  let j := LinearMap.inl ℝ (EuclideanSpace ℝ (Fin 2)) (EuclideanSpace ℝ (Fin 1))
+  -- `τ` acts on the sphere directions at `(u, -1)` by the differential `A` of `ρ` at `u`.
+  let A : EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2) :=
+    (mfderiv (𝓡 2) (𝓡 2) (ℝ ∙ v)ᗮ.reflection.unitSphereEquiv p).toLinearMap
+  have hA (a : EuclideanSpace ℝ (Fin 2)) :
+      mfderiv ((𝓡 2).prod (𝓡 1)) ((𝓡 2).prod (𝓡 1)) (sphereCircleReflection v) (p, -1) (j a) =
+        j (A a) := by
+    rw [coe_sphereCircleReflection,
+      mfderiv_prodMap ((LinearIsometryEquiv.contMDiff_unitSphereEquiv (n := 2) (k := 2) (m := 1)
+        _).mdifferentiableAt one_ne_zero)
+        ((LinearIsometryEquiv.contMDiff_unitSphereEquiv (n := 1) (k := 1) (m := 1)
+          _).mdifferentiableAt one_ne_zero)]
+    exact Prod.ext rfl
+      (mfderiv (𝓡 1) (𝓡 1) Complex.conjLIE.unitSphereEquiv (-1 : sphere (0 : ℂ) 1)).map_zero
+  exact SmoothMappingTorus.isEmpty_vectorBundleOrientation_negativeNormalSpace_of_det_neg hn
+    (h := sphereCircleHeight p ε) (hh := sphereCircleHeight_sphereCircleReflection huv ε)
+    (sphereCircleCriticalCircle_coe huv hε.ne' _)
+    ((isMorseBottFamily_sphereCircleTorusHeight huv hε.ne').isNondegenerateCriticalSubmanifold _)
+    (fun _ ↦ ((isMorseBottFamily_sphereCircleTorusHeight huv hε.ne').contMDiff _).of_le
+      (WithTop.coe_le_coe.2 le_top)) hdim g
+    (manifoldMorseIndex_sphereCircleCriticalCircle_of_eq_self_neg_one huv hε hx)
+    (V := EuclideanSpace ℝ (Fin 2)) finrank_euclideanSpace_fin j A hA
+    (det_mfderiv_reflection_unitSphereEquiv_neg hv huv)
+    (criticalHessian_sphereCircleHeight_inl_neg p ε)
+
+end NegativeNormal
 
 end TauCeti
