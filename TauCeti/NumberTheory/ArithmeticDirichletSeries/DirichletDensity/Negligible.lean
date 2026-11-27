@@ -36,6 +36,8 @@ restricted to the primes of residue degree one.
 * `NumberField.Set.hasDirichletDensity_iff_of_symmDiff`: sets whose symmetric difference has
   density zero have the same densities; `NumberField.Set.hasDirichletDensity_iff_of_finite_symmDiff`
   is the case of a finite symmetric difference.
+* `NumberField.Set.HasDirichletDensity.inter_of_hasDirichletDensity_one`: intersecting with a set
+  of density one does not change the Dirichlet density.
 * `NumberField.Set.isLowerDirichletDensityBound_iff_of_symmDiff` and
   `NumberField.Set.isUpperDirichletDensityBound_iff_of_symmDiff`: the same for one-sided bounds,
   assuming only an upper density bound of zero on the symmetric difference, with the finite cases
@@ -152,6 +154,15 @@ differs from `T` in finitely many primes, then `S` has Dirichlet density `δ`. -
 theorem HasDirichletDensity.of_finite_symmDiff (hT : T.HasDirichletDensity δ)
     (hST : (S ∆ T).Finite) : S.HasDirichletDensity δ :=
   hT.of_symmDiff (hasDirichletDensity_of_finite hST)
+
+/-- **Intersecting with a set of density one preserves Dirichlet density.** If `S` has Dirichlet
+density `δ` and `T` has Dirichlet density one, then `S ∩ T` has Dirichlet density `δ`: it differs
+from `S` by a subset of the complement of `T`, which has density zero. -/
+theorem HasDirichletDensity.inter_of_hasDirichletDensity_one (hS : S.HasDirichletDensity δ)
+    (hT : T.HasDirichletDensity 1) : (S ∩ T).HasDirichletDensity δ :=
+  hS.of_symmDiff <| (sub_self (1 : ℝ) ▸ hT.compl).zero_of_subset fun _ h ↦ by
+    simp only [Set.mem_symmDiff, Set.mem_inter_iff] at h
+    tauto
 
 /-- Two sets of primes differing in finitely many primes have the same Dirichlet densities. -/
 theorem hasDirichletDensity_iff_of_finite_symmDiff (hST : (S ∆ T).Finite) :
