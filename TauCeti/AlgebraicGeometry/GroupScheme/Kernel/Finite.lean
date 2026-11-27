@@ -6,8 +6,8 @@ Authors: Codex
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
-public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
-import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
+public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel.Basic
+import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
 import TauCeti.CategoryTheory.Monoidal.Grp.KernelPair
 
 /-!

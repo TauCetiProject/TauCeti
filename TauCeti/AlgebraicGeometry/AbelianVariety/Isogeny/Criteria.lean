@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Isogeny.Basic
-public import TauCeti.AlgebraicGeometry.GroupScheme.Isogeny.FiniteKernel
+public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel.Finite
 import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 
@@ -46,7 +46,7 @@ theorem isIsogeny_of_isFinite (f : A ⟶ B) [IsFinite (Hom.toSchemeHom f)]
     (hdim : A.dim = B.dim) : IsIsogeny f := by
   have : CompactSpace B.toScheme := QuasiCompact.compactSpace_of_compactSpace B.toOver.hom
   exact (isIsogeny_iff f).mpr ⟨inferInstance,
-    (Hom.toSchemeHom f).surjective_of_topologicalKrullDim_le_of_isClosed_range
+    (Hom.toSchemeHom f).surjective_of_isClosed_range_of_topologicalKrullDim_le
       (Hom.toSchemeHom f).isClosedMap.isClosed_range
       (topologicalKrullDim_ne_top_of_locallyOfFiniteType B.toOver.hom) hdim.ge⟩
 
@@ -56,12 +56,10 @@ theorem isIsogeny_iff_dim_eq_and_isFinite_kernel (f : A ⟶ B) :
     IsIsogeny f ↔ A.dim = B.dim ∧ IsFinite (kernel (Hom.homMulEquiv A B f)).X.hom := by
   let g := Hom.homMulEquiv A B f
   have hg : g.hom.hom.left = Hom.toSchemeHom f := by
-    simp only [g, Hom.homMulEquiv_apply]
-    rfl
-  have : IsProper (Hom.toSchemeHom f ≫ B.toOver.hom) := by
-    rw [Hom.toSchemeHom_comp_hom]
-    infer_instance
-  have hproper : IsProper g.hom.hom.left := hg.symm ▸ IsProper.of_comp _ B.toOver.hom
+    simp only [g, Hom.homMulEquiv_apply, Hom.toSchemeHom, toOverHom_eq_forget₂Grp_map,
+      CommGrp.forget₂Grp_map_hom]
+  have hproper : IsProper g.hom.hom.left := hg.symm ▸
+    (IsProper.comp_iff (g := B.toOver.hom)).mp ((Hom.toSchemeHom_comp_hom f).symm ▸ A.isProper)
   have hfin := Grp.isFinite_iff_isFinite_kernel g
   rw [hg] at hfin
   exact ⟨fun hf ↦ ⟨hf.dim_eq, hfin.mp hf.isFinite⟩, fun ⟨hdim, hk⟩ ↦
@@ -75,15 +73,13 @@ theorem isIsogeny_comp_iff (f : A ⟶ B) (g : B ⟶ C) (hdim : A.dim = B.dim) :
   refine ⟨fun hfg ↦ ?_, fun ⟨hf, hg⟩ ↦ hf.comp hg⟩
   have hcomp := hfg.isFinite
   rw [Hom.toSchemeHom_comp] at hcomp
-  have : IsProper (Hom.toSchemeHom g ≫ C.toOver.hom) := by
-    rw [Hom.toSchemeHom_comp_hom]
-    infer_instance
-  have : IsProper (Hom.toSchemeHom g) := IsProper.of_comp _ C.toOver.hom
+  have : IsProper (Hom.toSchemeHom g) :=
+    (IsProper.comp_iff (g := C.toOver.hom)).mp ((Hom.toSchemeHom_comp_hom g).symm ▸ B.isProper)
   have : IsFinite (Hom.toSchemeHom f) := IsFinite.of_comp _ (Hom.toSchemeHom g)
   have hf := isIsogeny_of_isFinite f hdim
   have := hf.surjective
   have : LocallyQuasiFinite (Hom.toSchemeHom g) :=
-    LocallyQuasiFinite.of_comp_of_surjective (Hom.toSchemeHom f) (Hom.toSchemeHom g)
+    LocallyQuasiFinite.of_comp_surjective (Hom.toSchemeHom f) (Hom.toSchemeHom g)
   have : IsFinite (Hom.toSchemeHom g) := IsFinite.of_isProper_of_locallyQuasiFinite _
   have hsurj := hfg.surjective
   rw [Hom.toSchemeHom_comp] at hsurj

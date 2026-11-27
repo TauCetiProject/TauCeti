@@ -47,10 +47,10 @@ of the chart is mapped into a hypersurface.
   morphism has dimension at most that of its target.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective`:
   a closed, surjective, locally quasi-finite morphism preserves dimension.
-* `AlgebraicGeometry.Scheme.Hom.surjective_of_topologicalKrullDim_le_of_isClosed_range`:
-  a locally quasi-finite morphism with closed range and equal dimensions is surjective when the
-  target is irreducible and finite-dimensional.
-* `AlgebraicGeometry.LocallyQuasiFinite.of_comp_of_surjective`: finite fibres descend along a
+* `AlgebraicGeometry.Scheme.Hom.surjective_of_isClosed_range_of_topologicalKrullDim_le`:
+  a locally quasi-finite morphism with closed range is surjective when the target is irreducible
+  and finite-dimensional and the source has dimension at least that of the target.
+* `AlgebraicGeometry.LocallyQuasiFinite.of_comp_surjective`: finite fibres descend along a
   surjection on the source.
 * `AlgebraicGeometry.Scheme.Hom.exists_ne_zero_image_subset_zeroLocus`: a locally quasi-finite
   morphism from an integral affine scheme to `Spec R` maps a proper closed subset into the zero
@@ -170,7 +170,7 @@ theorem Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective
 
 /-- A locally quasi-finite morphism with closed range in an irreducible scheme of finite Krull
 dimension is surjective if the source has dimension at least that of the target. -/
-theorem Scheme.Hom.surjective_of_topologicalKrullDim_le_of_isClosed_range
+theorem Scheme.Hom.surjective_of_isClosed_range_of_topologicalKrullDim_le
     {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyQuasiFinite f] [IrreducibleSpace Y]
     (hrange : IsClosed (Set.range f)) (hY : topologicalKrullDim Y ≠ ⊤)
     (hdim : topologicalKrullDim Y ≤ topologicalKrullDim X) : Surjective f := by
@@ -196,7 +196,7 @@ theorem Scheme.Hom.surjective_of_topologicalKrullDim_le_of_isClosed_range
 /-- A locally finite type morphism with finite fibres after precomposition by a surjection
 is locally quasi-finite. It suffices that the composite is quasi-compact and locally
 quasi-finite. -/
-theorem LocallyQuasiFinite.of_comp_of_surjective {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+theorem LocallyQuasiFinite.of_comp_surjective {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     [Surjective f] [LocallyOfFiniteType g] [LocallyQuasiFinite (f ≫ g)] [QuasiCompact (f ≫ g)] :
     LocallyQuasiFinite g := by
   apply LocallyQuasiFinite.of_finite_preimage_singleton

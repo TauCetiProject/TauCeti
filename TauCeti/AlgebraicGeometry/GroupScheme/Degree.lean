@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.GroupScheme.FiniteFlat
 public import TauCeti.AlgebraicGeometry.GroupScheme.Isogeny.BaseChange
-public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
+public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel.Basic
 public import TauCeti.AlgebraicGeometry.GroupScheme.Rank
 import TauCeti.AlgebraicGeometry.GroupScheme.KilledByRank
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
