@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Complex.UnitDisc.DiagonalBoundary
 public import TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Fredholm
 import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Analysis.Fredholm.Pi
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.LinearAlgebra.Pi.Map
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # The Cauchy–Riemann operator with a diagonal boundary condition in higher rank
@@ -107,7 +109,7 @@ theorem rotatingLineConjWirtingerDerivL_rotatingLinePiSubspaceEquiv_apply [Decid
       HolderSpace.compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i)
         (rotatingLinePiConjWirtingerDerivL k α u) := by
   rw [rotatingLineConjWirtingerDerivL_apply, rotatingLinePiConjWirtingerDerivL_apply,
-    coe_rotatingLinePiSubspaceEquiv_apply]
+    coe_rotatingLinePiSubspaceEquiv_apply, ← ContinuousLinearMap.restrictScalars_proj (A := ℂ)]
   exact conjWirtingerDerivL_compLeftL (.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i) u.val
 
 /-- **The operator is the product of the rank-one operators.** Through the coordinate isomorphisms
@@ -152,36 +154,6 @@ theorem index_rotatingLinePiConjWirtingerDerivL_eq_sum
 
 /-! ### The kernel -/
 
-variable [DecidableEq ι] in
-/-- The kernel of the Cauchy–Riemann operator on `X_k` is the product of the kernels of the
-rank-one operators on the subspaces `X_{k i}`, by taking coordinates. -/
-private def rotatingLinePiConjWirtingerDerivKerPiEquiv :
-    (rotatingLinePiConjWirtingerDerivL k α).ker ≃ₗ[ℝ]
-      ∀ i, (rotatingLineConjWirtingerDerivL (k i) α).ker where
-  toFun u i := ⟨rotatingLinePiSubspaceEquiv k α u i, by
-    have hu : rotatingLinePiConjWirtingerDerivL k α u = 0 := u.property
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-      rotatingLineConjWirtingerDerivL_rotatingLinePiSubspaceEquiv_apply, hu, map_zero]⟩
-  invFun v := ⟨(rotatingLinePiSubspaceEquiv k α).symm fun i ↦ v i, by
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-    refine HolderSpace.ext_compLeftL_proj fun i ↦ ?_
-    rw [← rotatingLineConjWirtingerDerivL_rotatingLinePiSubspaceEquiv_apply,
-      ContinuousLinearEquiv.apply_symm_apply, map_zero]
-    exact (v i).property⟩
-  map_add' _ _ := funext fun _ ↦ Subtype.ext (by simp)
-  map_smul' _ _ := funext fun _ ↦ Subtype.ext (by simp)
-  left_inv u := Subtype.ext ((rotatingLinePiSubspaceEquiv k α).symm_apply_apply u)
-  right_inv v := funext fun i ↦ Subtype.ext (by
-    simp only [ContinuousLinearEquiv.apply_symm_apply])
-
-/-- The coordinates of an element of the kernel. -/
-private theorem coe_rotatingLinePiConjWirtingerDerivKerPiEquiv_apply [DecidableEq ι]
-    (u : (rotatingLinePiConjWirtingerDerivL k α).ker) (i : ι) :
-    ((rotatingLinePiConjWirtingerDerivKerPiEquiv u i : rotatingLineSubspace (k i) α) :
-        CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ) =
-      compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) u.val.val :=
-  coe_rotatingLinePiSubspaceEquiv_apply u.val i
-
 variable (k α) in
 /-- **The kernel is the space of holomorphic solutions.** For `0 < α ≤ 1`, the values on the
 closed unit disc identify the kernel of the Cauchy–Riemann operator on `X_k` with the space
@@ -190,7 +162,12 @@ continuous on its closure, with boundary values in `⊕ᵢ e^{i kᵢ θ/2} ℝ`.
 def rotatingLinePiConjWirtingerDerivKerEquiv (hα0 : 0 < α) (hα1 : α ≤ 1) :
     (rotatingLinePiConjWirtingerDerivL k α).ker ≃ₗ[ℝ] unitDiscCauchyRiemannKernelPi k :=
   haveI := Classical.decEq ι
-  rotatingLinePiConjWirtingerDerivKerPiEquiv ≪≫ₗ
+  LinearMap.kerEquivOfComp (rotatingLinePiSubspaceEquiv k α).toLinearEquiv
+      (HolderSpace.piEquivL α (unitBallOpens ℂ) ℂ ι).toLinearEquiv
+      (g := LinearMap.piMap fun i ↦ (rotatingLineConjWirtingerDerivL (k i) α).toLinearMap)
+      (LinearMap.ext fun u ↦ DFunLike.congr_fun
+        (piEquivL_comp_rotatingLinePiConjWirtingerDerivL (k := k) (α := α)) u) ≪≫ₗ
+    LinearMap.kerPiMapEquiv _ ≪≫ₗ
     LinearEquiv.piCongrRight (fun i ↦ rotatingLineConjWirtingerDerivKerEquiv (k i) α hα0 hα1) ≪≫ₗ
       (unitDiscCauchyRiemannKernelPiEquiv k).symm
 
@@ -205,8 +182,9 @@ theorem rotatingLinePiConjWirtingerDerivKerEquiv_apply (hα0 : 0 < α) (hα1 : �
   funext i
   simp only [rotatingLinePiConjWirtingerDerivKerEquiv, LinearEquiv.trans_apply,
     unitDiscCauchyRiemannKernelPiEquiv_symm_apply, LinearEquiv.piCongrRight_apply,
-    rotatingLineConjWirtingerDerivKerEquiv_apply,
-    coe_rotatingLinePiConjWirtingerDerivKerPiEquiv_apply]
+    rotatingLineConjWirtingerDerivKerEquiv_apply, LinearMap.coe_kerPiMapEquiv_apply,
+    LinearMap.coe_kerEquivOfComp_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
+    coe_rotatingLinePiSubspaceEquiv_apply]
   exact closureExtend_compLeftL (convex_unitBallOpens ℂ) (.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i)
     u.val.val (mem_closure_unitBallOpens.2 (mem_closedBall_zero_iff.1 z.property))
 
@@ -255,7 +233,7 @@ theorem index_rotatingLinePiConjWirtingerDerivL (hk : ∀ i, -1 ≤ k i) (hα0 :
     (rotatingLinePiConjWirtingerDerivL k α).index = Fintype.card ι + ∑ i, k i := by
   rw [index_rotatingLinePiConjWirtingerDerivL_eq_sum fun i ↦
       isFredholm_rotatingLineConjWirtingerDerivL (hk i) hα0 hα1,
-    Finset.sum_congr rfl fun i _ ↦ index_rotatingLineConjWirtingerDerivL (hk i) hα0 hα1,
-    Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, nsmul_one, add_comm]
+    Finset.sum_congr rfl fun i _ ↦ index_rotatingLineConjWirtingerDerivL (hk i) hα0 hα1]
+  simp [Finset.sum_add_distrib, add_comm]
 
 end TauCeti

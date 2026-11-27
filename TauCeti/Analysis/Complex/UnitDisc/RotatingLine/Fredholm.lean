@@ -15,6 +15,7 @@ import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Fredholm.Criteria
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.Holder.Normed
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # The Cauchy–Riemann operator with rotating-line boundary values is Fredholm
@@ -385,21 +386,15 @@ private theorem rotatingLinePiZeroEvalL_apply
       fun i ↦ ((u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)).closureExtend 1 i).re) := by
   simp [rotatingLinePiZeroEvalL, closureEvalL_apply]
 
-/-- The `i`-th coordinate of a map `D → ℂ^ι` with boundary values in `ℝ^ι`, a function with real
-boundary values. -/
-private def rotatingLinePiZeroCoord (i : ι)
-    (u : rotatingLinePiSubspace (fun _ : ι ↦ 0) α) :
-    rotatingLineSubspace 0 α :=
-  ⟨compLeftL (piProjₗ i) u, mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.1 u.property i⟩
-
 /-- The operator `u ↦ (∂u/∂(conj z), Re u(1))` acts coordinatewise. -/
-private theorem rotatingLineZeroEvalEquiv_rotatingLinePiZeroCoord (hα0 : 0 < α) (hα1 : α < 1)
-    (i : ι) (u : rotatingLinePiSubspace (fun _ : ι ↦ 0) α) :
-    rotatingLineZeroEvalEquiv hα0 hα1 (rotatingLinePiZeroCoord i u) =
+private theorem rotatingLineZeroEvalEquiv_rotatingLinePiSubspaceEquiv [DecidableEq ι]
+    (hα0 : 0 < α) (hα1 : α < 1) (i : ι) (u : rotatingLinePiSubspace (fun _ : ι ↦ 0) α) :
+    rotatingLineZeroEvalEquiv hα0 hα1 (rotatingLinePiSubspaceEquiv (fun _ ↦ 0) α u i) =
       (HolderSpace.compLeftL (piProjₗ i) (rotatingLinePiZeroEvalL α ι u).1,
         (rotatingLinePiZeroEvalL α ι u).2 i) := by
   rw [rotatingLineZeroEvalEquiv_apply, rotatingLinePiZeroEvalL_apply,
-    rotatingLineConjWirtingerDerivL_apply, rotatingLinePiZeroCoord]
+    rotatingLineConjWirtingerDerivL_apply, coe_rotatingLinePiSubspaceEquiv_apply,
+    ← ContinuousLinearMap.restrictScalars_proj (A := ℂ)]
   simp only [conjWirtingerDerivL_compLeftL (ContinuousLinearMap.proj (R := ℂ)
     (φ := fun _ : ι ↦ ℂ) i), closureExtend_compLeftL (convex_unitBallOpens ℂ) _ _
       (mem_closure_unitBallOpens.2 norm_one.le), piProjₗ, ContinuousLinearMap.coe_restrictScalars',
@@ -418,28 +413,26 @@ def rotatingLinePiZeroEvalEquiv (hα0 : 0 < α) (hα1 : α < 1) :
       HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℝ) :=
   ContinuousLinearEquiv.ofBijective (rotatingLinePiZeroEvalL α ι)
     (LinearMap.ker_eq_bot.2 fun u v huv ↦ by
+      classical
       rw [ContinuousLinearMap.coe_coe] at huv
       -- Each coordinate is determined by the rank-one isomorphism.
-      have h (i : ι) : rotatingLinePiZeroCoord i u = rotatingLinePiZeroCoord i v :=
-        (rotatingLineZeroEvalEquiv hα0 hα1).injective (by
-          rw [rotatingLineZeroEvalEquiv_rotatingLinePiZeroCoord,
-            rotatingLineZeroEvalEquiv_rotatingLinePiZeroCoord, huv])
-      refine Subtype.ext (CkHolderSpaceOn.ext fun z ↦ funext fun i ↦ ?_)
-      simpa [rotatingLinePiZeroCoord] using
-        congr_arg (fun w : rotatingLineSubspace 0 α ↦
-          (w : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ) z) (h i))
+      refine (rotatingLinePiSubspaceEquiv (fun _ ↦ 0) α).injective (funext fun i ↦ ?_)
+      refine (rotatingLineZeroEvalEquiv hα0 hα1).injective ?_
+      rw [rotatingLineZeroEvalEquiv_rotatingLinePiSubspaceEquiv,
+        rotatingLineZeroEvalEquiv_rotatingLinePiSubspaceEquiv, huv])
     (LinearMap.range_eq_top.2 fun y ↦ by
+      classical
       obtain ⟨f, c⟩ := y
       -- Solve the rank-one problem in each coordinate and assemble the coordinates.
-      set v : ι → rotatingLineSubspace 0 α := fun i ↦
+      set u := (rotatingLinePiSubspaceEquiv (fun _ ↦ 0) α).symm fun i ↦
         (rotatingLineZeroEvalEquiv hα0 hα1).symm (HolderSpace.compLeftL (piProjₗ i) f, c i)
-      obtain ⟨u, hmem, hu⟩ :=
-        exists_mem_rotatingLinePiSubspace_compLeftL_eq (fun i ↦ (v i).val) fun i ↦ (v i).property
-      refine ⟨⟨u, hmem⟩, ?_⟩
+      refine ⟨u, ?_⟩
       rw [ContinuousLinearMap.coe_coe]
-      have hc (i : ι) := rotatingLineZeroEvalEquiv_rotatingLinePiZeroCoord hα0 hα1 i ⟨u, hmem⟩
-      have hv (i : ι) : rotatingLinePiZeroCoord i ⟨u, hmem⟩ = v i := Subtype.ext (hu i)
-      simp only [hv, v, ContinuousLinearEquiv.apply_symm_apply, Prod.mk.injEq] at hc
+      have hu (i : ι) : rotatingLinePiSubspaceEquiv (fun _ ↦ 0) α u i =
+          (rotatingLineZeroEvalEquiv hα0 hα1).symm (HolderSpace.compLeftL (piProjₗ i) f, c i) :=
+        congrFun ((rotatingLinePiSubspaceEquiv (fun _ ↦ 0) α).apply_symm_apply _) i
+      have hc (i : ι) := rotatingLineZeroEvalEquiv_rotatingLinePiSubspaceEquiv hα0 hα1 i u
+      simp only [hu, ContinuousLinearEquiv.apply_symm_apply, Prod.mk.injEq] at hc
       refine Prod.ext (HolderSpace.ext fun z ↦ funext fun i ↦ ?_) (funext fun i ↦ (hc i).2.symm)
       simpa [HolderSpace.compLeftL_apply] using congr_arg (· z) (hc i).1.symm)
 

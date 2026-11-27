@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Isomorphism
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # The normalized real-boundary disc solver on `ℂⁿ`
@@ -126,8 +127,8 @@ theorem sum_compLeftL_single_mem_rotatingLinePiSubspace [DecidableEq ι]
     (hv : ∀ i, v i ∈ rotatingLineSubspace (k i) α) :
     ∑ i, compLeftL (.single ℝ (fun _ ↦ ℂ) i) (v i) ∈ rotatingLinePiSubspace k α := by
   refine mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.2 fun i ↦ ?_
-  convert hv i using 1
-  exact compLeftL_proj_sum_compLeftL_single v i
+  rw [ContinuousLinearMap.restrictScalars_proj, compLeftL_proj_sum_compLeftL_single]
+  exact hv i
 
 /-- **Assembling coordinates.** Elements `v i` of the rank-one subspaces
 `TauCeti.rotatingLineSubspace (k i) α`, one for each coordinate `i`, are the coordinates of an
@@ -138,8 +139,8 @@ theorem exists_mem_rotatingLinePiSubspace_compLeftL_eq
     ∃ u ∈ rotatingLinePiSubspace k α, ∀ i : ι, compLeftL
       ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ) u = v i := by
   classical
-  exact ⟨_, sum_compLeftL_single_mem_rotatingLinePiSubspace v hv,
-    compLeftL_proj_sum_compLeftL_single v⟩
+  refine ⟨_, sum_compLeftL_single_mem_rotatingLinePiSubspace v hv, fun i ↦ ?_⟩
+  rw [ContinuousLinearMap.restrictScalars_proj, compLeftL_proj_sum_compLeftL_single]
 
 variable (k α) in
 /-- **Coordinates of the diagonal boundary subspace.** Taking coordinates is a continuous linear
@@ -147,8 +148,9 @@ equivalence from `rotatingLinePiSubspace k α` onto the product of the rank-one 
 `TauCeti.rotatingLineSubspace (k i) α`; its inverse puts the coordinates back in their places. -/
 def rotatingLinePiSubspaceEquiv [DecidableEq ι] :
     rotatingLinePiSubspace k α ≃L[ℝ] ∀ i, rotatingLineSubspace (k i) α where
-  toFun u i := ⟨compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) u,
-    mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.1 u.property i⟩
+  toFun u i := ⟨compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) u, by
+    rw [← ContinuousLinearMap.restrictScalars_proj (A := ℂ)]
+    exact mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.1 u.property i⟩
   invFun v := ⟨∑ i, compLeftL (.single ℝ (fun _ ↦ ℂ) i) (v i).val,
     sum_compLeftL_single_mem_rotatingLinePiSubspace _ fun i ↦ (v i).property⟩
   map_add' _ _ := funext fun _ ↦ Subtype.ext (map_add _ _ _)
