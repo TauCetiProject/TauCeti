@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.CongruenceModule.Basic
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Algebra.Module.Torsion.Localization
-import TauCeti.RingTheory.Localization.AlgHom
+import TauCeti.RingTheory.Localization.Ideal
 
 /-!
 # Localization of congruence modules
@@ -53,8 +53,9 @@ noncomputable def torsionByKerLocalizationEquiv (hfin : (RingHom.ker φ).FG) :
   ((IsLocalizedModule.linearEquiv S LinearMap.id
       ((torsionBySet A M (RingHom.ker φ)).toLocalized' B S f)).restrictScalars O).trans
     ((LinearEquiv.ofEq _ _ (by
-      rw [localized'_torsionBySet_ideal S f _ hfin,
-        ← φ.ker_eq_map_of_localization S ψ hψ])).restrictScalars O)
+      have hker : RingHom.ker ψ = (RingHom.ker φ).map (algebraMap A B) :=
+        ψ.toRingHom.ker_eq_map_of_isLocalization S (congrArg AlgHom.toRingHom hψ)
+      rw [localized'_torsionBySet_ideal S f _ hfin, ← hker])).restrictScalars O)
 
 /-- On the submodule killed by the augmentation kernel, the comparison is the original
 localization map. -/
@@ -80,8 +81,9 @@ noncomputable def quotientKerSMulLocalizationEquiv :
   ((IsLocalizedModule.linearEquiv S LinearMap.id
       ((RingHom.ker φ • ⊤ : Submodule A M).toLocalizedQuotient' B S f)).restrictScalars O).trans
     ((Submodule.quotEquivOfEq _ _ (by
-      rw [localized'_smul, localized'_top, Ideal.localized'_eq_map,
-        ← φ.ker_eq_map_of_localization S ψ hψ])).restrictScalars O)
+      have hker : RingHom.ker ψ = (RingHom.ker φ).map (algebraMap A B) :=
+        ψ.toRingHom.ker_eq_map_of_isLocalization S (congrArg AlgHom.toRingHom hψ)
+      rw [localized'_smul, localized'_top, Ideal.localized'_eq_map, ← hker])).restrictScalars O)
 
 /-- The comparison of quotients by the kernel actions sends the class of `x` to that of
 `f x`. -/

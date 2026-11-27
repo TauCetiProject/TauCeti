@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
-import Mathlib.RingTheory.Localization.Ideal
 
 /-!
 # Algebra homomorphisms out of a localization
@@ -24,8 +23,6 @@ the `R`-points of `Spec A` at which `f` takes a unit value.
   at `M` is `{x | ∀ m ∈ M, IsUnit (x m)}`.
 * `IsLocalization.Away.range_comp_toAlgHom`: for a localization away from `f`, the image is
   `{x | IsUnit (x f)}`.
-* `AlgHom.ker_eq_map_of_localization`: the kernel of an extended homomorphism is the
-  extension of the original kernel.
 -/
 
 public section
@@ -57,14 +54,3 @@ theorem IsLocalization.Away.range_comp_toAlgHom (f : A) [IsLocalization.Away f B
   refine ⟨fun hx ↦ hx f (Submonoid.mem_powers f), ?_⟩
   rintro hx _ ⟨n, rfl⟩
   simpa only [map_pow] using hx.pow n
-
-/-- The kernel of an algebra homomorphism extended to a localization is the extension of the
-original kernel. -/
-theorem AlgHom.ker_eq_map_of_localization (φ : A →ₐ[k] R) (M : Submonoid A)
-    [IsLocalization M B] (ψ : B →ₐ[k] R) (hψ : ψ.comp (IsScalarTower.toAlgHom k A B) = φ) :
-    RingHom.ker ψ = (RingHom.ker φ).map (algebraMap A B) := by
-  have hcomp : (ψ : B →+* R).comp (algebraMap A B) = (φ : A →+* R) :=
-    congrArg (fun f : A →ₐ[k] R ↦ (f : A →+* R)) hψ
-  rw [← RingHom.ker_coe_toRingHom ψ, ← RingHom.ker_coe_toRingHom φ,
-    ← IsLocalization.map_under M B (RingHom.ker (ψ : B →+* R)), Ideal.under,
-    RingHom.comap_ker, hcomp]
