@@ -21,7 +21,8 @@ degree `i` and next degree `k`. Suppose that `K.X i` is finite, `K.X j` finitely
 * the homology `H_j(K)` is a finite projective `R`-module
   (`HomologicalComplex.projective_homology_of_isLocallyConstant`,
   `HomologicalComplex.finite_homology_of_isLocallyConstant`), whose rank at `p` is the dimension
-  of the fibre homology at `p` (`HomologicalComplex.rankAtStalk_homology_of_isLocallyConstant`);
+  of the fibre homology at `p`
+  (`HomologicalComplex.rankAtStalk_homology_eq_finrank_fiber_homology_of_isLocallyConstant`);
 * its formation commutes with every base change: for every `R`-algebra `S`,
   `S ⊗_R H_j(K) ≅ H_j(S ⊗_R K)` (`HomologicalComplex.nonempty_linearEquiv_tensor_homology`);
 * so does the homology in the previous degree `i`, when `K.X j` is flat:
@@ -57,31 +58,6 @@ namespace HomologicalComplex
 variable {R : Type u} [CommRing R] {ι : Type*} {c : ComplexShape ι}
   (K : HomologicalComplex (ModuleCat.{u} R) c)
 
-/-- The homology in degree `j` of a complex `K` of `R`-modules is the image of the kernel of
-`d : K.X j → K.X k` in the cokernel of `d : K.X i → K.X j`, where `i` and `k` are the degrees
-before and after `j`. -/
-theorem nonempty_linearEquiv_homology {i j k : ι} (hi : c.prev j = i) (hk : c.next j = k) :
-    Nonempty (K.homology j ≃ₗ[R]
-      (LinearMap.ker (K.d j k).hom).map (LinearMap.range (K.d i j).hom).mkQ) :=
-  ⟨((K.homologyIsoSc' i j k hi hk) ≪≫ (K.sc' i j k).moduleCatHomologyIso).toLinearEquiv ≪≫ₗ
-    LinearMap.mapMkQKerEquiv _ _ _⟩
-
-private lemma d_comp_d_hom (i j k : ι) : (K.d j k).hom ∘ₗ (K.d i j).hom = 0 := by
-  rw [← ModuleCat.hom_comp, K.d_comp_d, ModuleCat.hom_zero]
-
-/-- The fibre homology dimension of `K` in degree `j` agrees with that of the kernel modulo
-image form. -/
-lemma finrank_homology_extendScalars_eq {i j k : ι} (hi : c.prev j = i) (hk : c.next j = k)
-    (p : PrimeSpectrum R) :
-    finrank p.asIdeal.ResidueField
-        ((((ModuleCat.extendScalars (algebraMap R p.asIdeal.ResidueField)).mapHomologicalComplex
-          c).obj K).homology j) =
-      finrank p.asIdeal.ResidueField
-        ((LinearMap.ker ((K.d j k).hom.baseChange p.asIdeal.ResidueField)).map
-          (LinearMap.range ((K.d i j).hom.baseChange p.asIdeal.ResidueField)).mkQ) := by
-  obtain ⟨e⟩ := K.nonempty_linearEquiv_homology_extendScalars p.asIdeal.ResidueField hi hk
-  exact e.finrank_eq
-
 variable [IsReduced R] {i j k : ι} (hi : c.prev j = i) (hk : c.next j = k)
   (h : IsLocallyConstant fun p : PrimeSpectrum R ↦ finrank p.asIdeal.ResidueField
     ((((ModuleCat.extendScalars (algebraMap R p.asIdeal.ResidueField)).mapHomologicalComplex
@@ -106,7 +82,8 @@ theorem finite_homology_of_isLocallyConstant [Module.Finite R (K.X j)] [Module.F
     [Module.Projective R (K.X k)] : Module.Finite R (K.homology j) := by
   obtain ⟨e⟩ := K.nonempty_linearEquiv_homology hi hk
   have := LinearMap.finite_homology_of_isLocallyConstant_finrank_fiber_homology
-    (K.d_comp_d_hom i j k) (K.isLocallyConstant_finrank_fiber_homology_of_isLocallyConstant hi hk h)
+    K.hom_d_comp_hom_d
+    (K.isLocallyConstant_finrank_fiber_homology_of_isLocallyConstant hi hk h)
   exact Module.Finite.equiv e.symm
 
 /-- **Grauert's theorem: homology is projective.** Over a reduced ring, if `K.X i` is finite,
@@ -118,7 +95,8 @@ theorem projective_homology_of_isLocallyConstant [Module.Finite R (K.X i)]
     [Module.Projective R (K.X k)] : Module.Projective R (K.homology j) := by
   obtain ⟨e⟩ := K.nonempty_linearEquiv_homology hi hk
   have := LinearMap.projective_homology_of_isLocallyConstant_finrank_fiber_homology
-    (K.d_comp_d_hom i j k) (K.isLocallyConstant_finrank_fiber_homology_of_isLocallyConstant hi hk h)
+    K.hom_d_comp_hom_d
+    (K.isLocallyConstant_finrank_fiber_homology_of_isLocallyConstant hi hk h)
   exact Module.Projective.of_equiv e.symm
 
 /-- **Grauert's theorem: homology commutes with base change.** Over a reduced ring, if `K.X j` is
@@ -133,21 +111,22 @@ theorem nonempty_linearEquiv_tensor_homology [Module.Finite R (K.X j)] [Module.F
   obtain ⟨e'⟩ := K.nonempty_linearEquiv_homology_extendScalars S hi hk
   exact ⟨LinearEquiv.baseChange R S _ _ e ≪≫ₗ LinearEquiv.ofBijective _
     (LinearMap.homologyBaseChange_bijective_of_isLocallyConstant_finrank_fiber_homology S
-      (K.d_comp_d_hom i j k)
+      K.hom_d_comp_hom_d
       (K.isLocallyConstant_finrank_fiber_homology_of_isLocallyConstant hi hk h)) ≪≫ₗ e'.symm⟩
 
 /-- **Grauert's theorem: the rank of homology.** Over a reduced ring, if `K.X j` is finite and
 `K.X k` finite projective, and the homology of the fibres `κ(p) ⊗_R K` in degree `j` has locally
 constant dimension, then the rank of `H_j(K)` at `p` is the dimension of the homology in degree
 `j` of the fibre `κ(p) ⊗_R K`. -/
-theorem rankAtStalk_homology_of_isLocallyConstant [Module.Finite R (K.X j)]
-    [Module.Finite R (K.X k)] [Module.Projective R (K.X k)] (p : PrimeSpectrum R) :
+theorem rankAtStalk_homology_eq_finrank_fiber_homology_of_isLocallyConstant
+    [Module.Finite R (K.X j)] [Module.Finite R (K.X k)] [Module.Projective R (K.X k)]
+    (p : PrimeSpectrum R) :
     rankAtStalk (K.homology j) p = finrank p.asIdeal.ResidueField
       ((((ModuleCat.extendScalars (algebraMap R p.asIdeal.ResidueField)).mapHomologicalComplex
         c).obj K).homology j) := by
   obtain ⟨e⟩ := K.nonempty_linearEquiv_homology hi hk
   rw [rankAtStalk_eq_of_equiv e, K.finrank_homology_extendScalars_eq hi hk p]
-  exact LinearMap.rankAtStalk_homology_eq_finrank_fiber_homology (K.d_comp_d_hom i j k)
+  exact LinearMap.rankAtStalk_homology_eq_finrank_fiber_homology K.hom_d_comp_hom_d
     (K.isLocallyConstant_finrank_fiber_homology_of_isLocallyConstant hi hk h) p
 
 /-- **Grauert's theorem: the previous homology commutes with base change.** Over a reduced ring,
@@ -166,9 +145,10 @@ theorem nonempty_linearEquiv_tensor_homology_prev {i' : ι} (hi' : c.prev i = i'
   -- The cokernel of `K.X i → K.X j` is flat by the algebraic Grauert theorem, and `K.X j` is
   -- flat, so homology in degree `i` commutes with every base change.
   have := LinearMap.flat_quotient_range_of_isLocallyConstant_finrank_fiber_homology
-    (K.d_comp_d_hom i j k) (K.isLocallyConstant_finrank_fiber_homology_of_isLocallyConstant hi hk h)
+    K.hom_d_comp_hom_d
+    (K.isLocallyConstant_finrank_fiber_homology_of_isLocallyConstant hi hk h)
   exact ⟨LinearEquiv.baseChange R S _ _ e ≪≫ₗ LinearEquiv.ofBijective _
-    (LinearMap.homologyBaseChange_bijective S (K.d_comp_d_hom i' i j)) ≪≫ₗ e'.symm⟩
+    (LinearMap.homologyBaseChange_bijective S K.hom_d_comp_hom_d) ≪≫ₗ e'.symm⟩
 
 /-- **Grauert's theorem: the previous homology is flat when it is a kernel.** Over a reduced ring,
 if `K.X j` is finite and `K.X k` finite projective, and the homology of the fibres `κ(p) ⊗_R K` in
@@ -181,13 +161,14 @@ theorem flat_homology_prev_of_isLocallyConstant {i' : ι} (hi' : c.prev i = i')
     Module.Flat R (K.homology i) := by
   obtain ⟨e⟩ := K.nonempty_linearEquiv_homology hi' hij
   have := LinearMap.flat_quotient_range_of_isLocallyConstant_finrank_fiber_homology
-    (K.d_comp_d_hom i j k) (K.isLocallyConstant_finrank_fiber_homology_of_isLocallyConstant hi hk h)
+    K.hom_d_comp_hom_d
+    (K.isLocallyConstant_finrank_fiber_homology_of_isLocallyConstant hi hk h)
   -- The homology in degree `i` sits in `0 → H_i → K.X i → range d → 0`, where `range d` is flat as
   -- a submodule of the flat module `K.X j` with flat quotient.
   have := (LinearMap.range (K.d i j).hom).flat_of_flat_quotient
   have : Module.Flat R (K.X i ⧸ LinearMap.range (K.d i' i).hom) :=
     Module.Flat.of_linearEquiv (Submodule.quotEquivOfEqBot _ (by simp [hd]))
-  have := LinearMap.flat_homology (K.d_comp_d_hom i' i j)
+  have := LinearMap.flat_homology (K.hom_d_comp_hom_d (i := i') (j := i) (k := j))
   exact Module.Flat.of_linearEquiv e
 
 end HomologicalComplex
