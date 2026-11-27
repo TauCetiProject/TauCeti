@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Defs
+import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
@@ -18,6 +19,8 @@ Elementary consequences of the definition of a root system that need no further 
 * `RootPairing.nonempty_of_isRootSystem`: a root system on a nontrivial module has a root.
 * `RootPairing.finite_weight_of_isRootSystem`: the weight module of a finite root system is finitely
   generated.
+* `RootPairing.not_isOfFinAddOrder_root`: in characteristic zero, a root has infinite additive
+  order.
 -/
 
 public section
@@ -41,5 +44,17 @@ theorem finite_weight_of_isRootSystem (P : RootPairing ι R M N) [Finite ι] [P.
     Module.Finite R M :=
   Module.finite_def.mpr
     (IsRootSystem.span_root_eq_top (P := P) ▸ Submodule.fg_span (Set.finite_range P.root))
+
+/-- **A root has infinite additive order** in characteristic zero: `n • α = 0` pairs with `α^∨`
+to `2 n = 0`. -/
+theorem not_isOfFinAddOrder_root [CharZero R] (P : RootPairing ι R M N) (i : ι) :
+    ¬IsOfFinAddOrder (P.root i) := by
+  rw [isOfFinAddOrder_iff_nsmul_eq_zero]
+  rintro ⟨n, hn, hnα⟩
+  have h := congrArg (P.coroot' i) hnα
+  simp only [map_nsmul, root_coroot'_eq_pairing, pairing_same, map_zero, nsmul_eq_mul] at h
+  have h' : ((n * 2 : ℕ) : R) = 0 := by exact_mod_cast h
+  rw [Nat.cast_eq_zero] at h'
+  omega
 
 end RootPairing

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
+public import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.CategoryTheory.Filtered.Basic
 public import Mathlib.CategoryTheory.MorphismProperty.Ind
 public import Mathlib.CategoryTheory.ObjectProperty.Ind
@@ -18,6 +19,7 @@ import TauCeti.Algebra.Category.CommAlgCat.BaseChange
 import TauCeti.Algebra.Category.CommAlgCat.FilteredColimits
 import TauCeti.Algebra.Category.CommAlgCat.Localization
 import TauCeti.RingTheory.Flat.Colimit
+import TauCeti.CategoryTheory.Limits.ConcreteCategory.Basic
 import TauCeti.RingTheory.RingHom.Etale
 
 /-!
@@ -38,6 +40,8 @@ fact that filtered colimits of flat modules are flat.
   diagram of étale algebras is ind-étale.
 * `TauCeti.Algebra.IndEtale.of_etale`: an étale algebra is ind-étale.
 * `TauCeti.Algebra.IndEtale.of_equiv`: being ind-étale is invariant under isomorphism.
+* `TauCeti.Algebra.IndEtale.exists_etale_aeval_eq_zero`: a polynomial equation satisfied by
+  finitely many elements of an ind-étale algebra is already satisfied at an étale stage.
 * `TauCeti.Algebra.IndEtale.flat`: an ind-étale algebra is flat (Stacks, Lemma 10.39.3 (05UU)).
 * `TauCeti.Algebra.IndEtale.baseChange`: ind-étale algebras remain ind-étale after arbitrary
   extension of scalars.
@@ -98,6 +102,29 @@ instance of_etale [Algebra.Etale R S] : IndEtale R S :=
 /-- Being ind-étale is invariant under isomorphism of algebras. -/
 theorem of_equiv [IndEtale R S] (e : S ≃ₐ[R] S') : IndEtale R S' :=
   ⟨ObjectProperty.prop_of_iso _ (CommAlgCat.isoMk e) (IndEtale.ind_etale (R := R) (S := S))⟩
+
+/-- **Equations in an ind-étale algebra are solved at an étale stage.** If finitely many elements
+`x` of an ind-étale `R`-algebra `S` satisfy a polynomial equation `P(x) = 0` with coefficients in
+`R`, then there are an étale `R`-algebra `D`, an `R`-algebra map `g : D → S` and elements `y` of
+`D` with `g ∘ y = x` and `P(y) = 0`. -/
+theorem exists_etale_aeval_eq_zero [IndEtale R S] {ι : Type*} [Finite ι] (x : ι → S)
+    (P : MvPolynomial ι R) (hP : MvPolynomial.aeval x P = 0) :
+    ∃ (D : Type u) (_ : CommRing D) (_ : Algebra R D) (_ : Algebra.Etale R D) (g : D →ₐ[R] S)
+      (y : ι → D), g ∘ y = x ∧ MvPolynomial.aeval y P = 0 := by
+  obtain ⟨J, _, _, pres, hD⟩ := IndEtale.ind_etale (R := R) (S := S)
+  -- Lift `x` to a stage `k` of the presentation.
+  obtain ⟨k, y, hy⟩ := Limits.Concrete.isColimit_exists_rep_fin pres.diag pres.isColimit x
+  have hy' : (pres.ι.app k).hom ∘ y = x := funext hy
+  -- `P(y)` maps to `P(x) = 0` in the colimit, so it vanishes at a later stage `l`.
+  obtain ⟨l, f, f', hf⟩ := Limits.Concrete.isColimit_exists_of_rep_eq pres.diag pres.isColimit
+    (MvPolynomial.aeval y P) 0 <| by
+      rw [MvPolynomial.comp_aeval_apply, map_zero, ← hP]
+      exact congrArg (MvPolynomial.aeval · P) hy'
+  refine ⟨pres.diag.obj l, inferInstance, inferInstance, hD l, (pres.ι.app l).hom,
+    (pres.diag.map f).hom ∘ y, ?_, ?_⟩
+  · ext i
+    simp [← hy']
+  · rwa [map_zero, MvPolynomial.comp_aeval_apply] at hf
 
 /-- An ind-étale algebra is flat: it is a filtered colimit of étale, hence flat, modules. -/
 instance flat [IndEtale R S] : Module.Flat R S := by

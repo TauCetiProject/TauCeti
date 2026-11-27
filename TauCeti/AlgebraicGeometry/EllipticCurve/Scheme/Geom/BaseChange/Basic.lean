@@ -47,6 +47,8 @@ Smoothness of relative dimension one, properness and the local-model condition
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap_id` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap_comp`: the canonical morphisms between
   base changes preserve identities and composition.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_baseChangeMap`: the canonical morphism
+  between base changes forms a pullback square with the structure morphisms.
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.isPullback_modelMap` and
   `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.projModelZero_modelMap`: the morphism
   `modelMap hg hh` is a base change square of projective models carrying the zero section to the
@@ -224,6 +226,16 @@ theorem baseChangeMap_comp (k : T' ⟶ T) (hk : k ≫ f = f') (l : T'' ⟶ T')
     E.baseChangeMap l hl ≫ E.baseChangeMap k hk =
       E.baseChangeMap (l ≫ k) (by rw [Category.assoc, hk, hl]) := by
   simp [baseChangeMap]
+
+/-- The canonical morphism between base changes of `E` along `k : T' ⟶ T` forms a pullback square
+with the two structure morphisms and `k`. -/
+theorem isPullback_baseChangeMap (k : T' ⟶ T) (hk : k ≫ f = f') :
+    IsPullback (E.baseChangeMap k hk) (E.baseChange f').structureMap
+      (E.baseChange f).structureMap k := by
+  refine IsPullback.of_right ?_ (E.baseChangeMap_structureMap k hk) (E.isPullback_baseChange f)
+  subst hk
+  convert E.isPullback_baseChange (k ≫ f) using 1
+  simp
 
 section BaseChangeLift
 

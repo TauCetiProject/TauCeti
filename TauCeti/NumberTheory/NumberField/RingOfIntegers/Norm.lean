@@ -31,6 +31,8 @@ nonzero algebraic integer with bounded conjugates bounds such a sum of prime log
 
 * `NumberField.RingOfIntegers.one_le_abs_norm`: `1 ≤ |N(α)|` for every nonzero `α : 𝓞 K`.
 * `NumberField.RingOfIntegers.dvd_natAbs_norm`: every `α : 𝓞 K` divides `|N(α)|`.
+* `NumberField.RingOfIntegers.natCard_quotient_span_natCast`:
+  `Nat.card (𝓞 K / n 𝓞 K) = n ^ [K : ℚ]`, so `𝓞 K / n 𝓞 K` has `n ^ [K : ℚ]` elements for `n ≠ 0`.
 * `NumberField.prod_norm_embedding_eq_abs_norm`: `∏ σ, ‖σ x‖ = |N(x)|` for `x : K`.
 * `NumberField.RingOfIntegers.pow_finrank_mul_dvd_norm`: `m ^ (finrank ℚ K * e) ∣ norm ℤ a`
   whenever `(m : 𝓞 K) ^ e ∣ a`.
@@ -64,6 +66,15 @@ theorem one_le_abs_norm {α : 𝓞 K} (hα : α ≠ 0) :
 theorem dvd_natAbs_norm (α : 𝓞 K) : α ∣ ((Algebra.norm ℤ α).natAbs : 𝓞 K) := by
   rw [← Ideal.absNorm_span_singleton, ← Ideal.mem_span_singleton]
   exact Ideal.absNorm_mem _
+
+/-- `Nat.card (𝓞 K ⧸ m 𝓞 K) = m ^ [K : ℚ]`: for `m ≠ 0` the quotient of `𝓞 K` by the natural
+number `m` has `m ^ [K : ℚ]` elements; for `m = 0` the quotient is infinite and both sides are
+`0`. This is `Ideal.absNorm_span_natCast` with the rank of `𝓞 K` over `ℤ` written as
+`[K : ℚ]`. -/
+theorem natCard_quotient_span_natCast (m : ℕ) :
+    Nat.card (𝓞 K ⧸ Ideal.span {(m : 𝓞 K)}) = m ^ finrank ℚ K := by
+  rw [← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, Ideal.absNorm_span_natCast,
+    RingOfIntegers.rank]
 
 /-- If `(m : 𝓞 K) ^ e` divides `a` for an integer `m`, then `m ^ (finrank ℚ K * e)` divides the
 integral norm of `a`. -/

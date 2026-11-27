@@ -22,8 +22,9 @@ at infinity imposes more than vanishing endpoint values.
 The bounded linear map `W1p.intervalLiftL` lifts any pair of endpoint values by affine
 interpolation, for every `1 ≤ p ≤ ∞`. Subtracting this lift reduces prescribed endpoint data
 to the zero-boundary condition at finite exponents. The restriction to `(a,b)` of a test function
-on `ℝ` has its values at `a` and `b` as endpoint data
-(`W1p.intervalTraceL_restrictL_ofTestFunctionₗ`).
+on `ℝ` has the test function itself as continuous representative on `[a,b]`
+(`W1p.intervalRepresentativeL_restrictL_ofTestFunctionₗ`), so its endpoint data are its values at
+`a` and `b` (`W1p.intervalTraceL_restrictL_ofTestFunctionₗ`).
 
 ## References
 
@@ -187,14 +188,14 @@ theorem intervalTraceL_intervalLiftL (hab : a < b) (z : ℝ × ℝ) :
   · rw [intervalRepresentativeL_intervalLiftL]
     simp [sub_ne_zero.mpr hab.ne']
 
-/-- The endpoint values of the restriction to `(a, b)` of a test function on `ℝ` are its values
-at `a` and `b`. -/
--- Evaluate the restricted test function before the generic endpoint-evaluation rule expands the
--- trace.
-@[simp↓ 1100]
-theorem intervalTraceL_restrictL_ofTestFunctionₗ (hab : a < b) (φ : 𝓓((⊤ : Opens ℝ), ℝ)) :
-    intervalTraceL hab (restrictL (le_top : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤)
-      (ofTestFunctionₗ volume ⊤ p φ)) = (φ a, φ b) := by
+/-- The continuous representative of the restriction to `(a, b)` of a test function on `ℝ` is the
+test function itself on `[a, b]`. -/
+-- Rewrite before simplification of the open-set coercion inside the Sobolev carrier.
+@[simp↓]
+theorem intervalRepresentativeL_restrictL_ofTestFunctionₗ (hab : a < b)
+    (φ : 𝓓((⊤ : Opens ℝ), ℝ)) (t : Icc a b) :
+    intervalRepresentativeL hab (restrictL (le_top : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤)
+      (ofTestFunctionₗ volume ⊤ p φ)) t = φ t := by
   have h : intervalRepresentativeL hab (restrictL (le_top : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤)
       (ofTestFunctionₗ volume ⊤ p φ)) = ⟨fun t ↦ φ t, φ.contDiff.continuous.comp
         continuous_subtypeVal⟩ := by
@@ -203,7 +204,18 @@ theorem intervalTraceL_restrictL_ofTestFunctionₗ (hab : a < b) (φ : 𝓓((⊤
         (le_top : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤) φ,
       ae_restrict_mem measurableSet_Ioo] with t ht hmem
     rw [ht, ContinuousMap.coe_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)]
-  rw [intervalTraceL_apply, h, ContinuousMap.coe_mk]
+  rw [h, ContinuousMap.coe_mk]
+
+/-- The endpoint values of the restriction to `(a, b)` of a test function on `ℝ` are its values
+at `a` and `b`. -/
+-- Evaluate the restricted test function before the generic endpoint-evaluation rule expands the
+-- trace.
+@[simp↓ 1100]
+theorem intervalTraceL_restrictL_ofTestFunctionₗ (hab : a < b) (φ : 𝓓((⊤ : Opens ℝ), ℝ)) :
+    intervalTraceL hab (restrictL (le_top : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤)
+      (ofTestFunctionₗ volume ⊤ p φ)) = (φ a, φ b) := by
+  rw [intervalTraceL_apply, intervalRepresentativeL_restrictL_ofTestFunctionₗ,
+    intervalRepresentativeL_restrictL_ofTestFunctionₗ]
 
 /-- Every pair of endpoint values is attained by a Sobolev class, including at `p = ∞`. -/
 theorem intervalTraceL_surjective (hab : a < b) :

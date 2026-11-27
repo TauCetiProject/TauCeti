@@ -70,7 +70,8 @@ Pairing a covector field along a map `u` with the image of a tangent field under
 
 In a chart `c` into a normed space, differentiable with its inverse, a covector `ξ` at `x` is read
 as the covector `ξ ∘ D(c⁻¹)(c x)` of the model space, and this reading is a bijection
-(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`).
+(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`); in particular only the zero
+covector is read as zero (`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff`).
 
 The construction follows the Zulip discussion `Cotangent Bundle as a Manifold` in the channel
 `Is there code for X?`, which observed that Mathlib's continuous-linear-map bundle operations
@@ -516,5 +517,13 @@ theorem comp_mfderiv_symm_bijective (hc : c.MDifferentiable I 𝓘(𝕜, G)) {x 
     exact congr($h u)
   · refine ⟨η ∘L mfderiv I 𝓘(𝕜, G) c (c.symm (c x)), ContinuousLinearMap.ext fun u ↦ ?_⟩
     exact congr_arg η congr($(hc.comp_symm_deriv (c.map_source hx)) u)
+
+/-- For an open partial homeomorphism `c` into a normed space, differentiable with its inverse, and
+`x` in its source, a covector `ξ` at `x` is read in `c` as the zero covector `ξ ∘ D(c⁻¹)(c x)`
+exactly when it is zero. -/
+theorem comp_mfderiv_symm_eq_zero_iff (hc : c.MDifferentiable I 𝓘(𝕜, G)) {x : M}
+    (hx : x ∈ c.source) {ξ : TangentSpace I x →L[𝕜] 𝕜} :
+    ξ ∘L mfderiv 𝓘(𝕜, G) I c.symm (c x) = 0 ↔ ξ = 0 :=
+  (comp_mfderiv_symm_bijective hc hx).1.eq_iff' (ContinuousLinearMap.zero_comp _)
 
 end OpenPartialHomeomorph.MDifferentiable

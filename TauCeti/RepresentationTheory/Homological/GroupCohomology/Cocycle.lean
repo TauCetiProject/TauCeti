@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
 
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Group
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Identities of cocycles
@@ -55,6 +56,9 @@ For the bundled one-cocycles `groupCohomology.cocycles₁ A` of a representation
 * `groupCohomology.cocycles₁_apply_mem_coinvariantsKer_of_mem_commutator`: modulo the coinvariant
   kernel a one-cocycle is a homomorphism, so it takes values in the coinvariant kernel on the
   commutator subgroup.
+* `groupCohomology.exists_forall_apply_smul_eq_iff`: for a `G`-set `X`, a one-cocycle is the
+  defect `F (g • x) - ρ g (F x)` of a function `F : X → A` iff it is a coboundary on every
+  stabiliser. This is the cusp term of the boundary exact sequence of modular symbols.
 
 Continuous cohomology uses the conjugation identity in the five-term sequence and in
 transgression, and the cyclic-group facts in its first and second cohomology computations.
@@ -235,6 +239,47 @@ theorem cocycles₁_apply_mem_coinvariantsKer_of_mem_commutator (f : cocycles₁
   have := hle hg
   rw [MonoidHom.mem_ker] at this
   exact (Representation.Coinvariants.mk_eq_zero _).1 (by simpa [φ] using this)
+
+/-- **A one-cocycle is the defect of a function on a `G`-set exactly when it splits on every
+stabiliser.** For a `G`-set `X`, a one-cocycle `f` satisfies `F (g • x) = ρ g (F x) + f g` for some
+function `F : X → A` iff for every `x : X` the restriction of `f` to the stabiliser of `x` is a
+coboundary `g ↦ ρ g v - v`. Given such `v`, the function `F` is built orbitwise from a chosen
+representative `r` of each orbit: `F (g • r) = f g - ρ g v_r`. This is the cusp-term argument of
+G. Wiese, *Computational arithmetic of modular forms*, Proposition 4.14. -/
+theorem exists_forall_apply_smul_eq_iff {X : Type*} [MulAction G X] (f : cocycles₁ A) :
+    (∃ F : X → A, ∀ (g : G) (x : X), F (g • x) = A.ρ g (F x) + f g) ↔
+      ∀ x : X, ∃ v : A, ∀ g ∈ MulAction.stabilizer G x, A.ρ g v - v = f g := by
+  constructor
+  · -- On the stabiliser of `x` the defect equation reads `f g = ρ g (-F x) - (-F x)`.
+    rintro ⟨F, hF⟩ x
+    refine ⟨-F x, fun g hg ↦ ?_⟩
+    have := hF g x
+    rw [MulAction.mem_stabilizer_iff.1 hg] at this
+    rw [map_neg, neg_sub_neg]
+    exact sub_eq_of_eq_add' this
+  · intro h
+    choose v hv using h
+    -- Two elements moving `y` to the same point give the same value of `g ↦ f g - ρ g v_y`.
+    have key {a b : G} {y : X} (hab : a • y = b • y) :
+        f b - A.ρ b (v y) = f a - A.ρ a (v y) := by
+      have hmem : a⁻¹ * b ∈ MulAction.stabilizer G y := by
+        rw [MulAction.mem_stabilizer_iff, mul_smul, ← hab, inv_smul_smul]
+      have hb : f b = A.ρ a (f (a⁻¹ * b)) + f a := by
+        rw [← cocycles₁_map_mul, mul_inv_cancel_left]
+      rw [hb, ← hv y _ hmem, map_sub, ← mul_apply_eq_comp, ← map_mul, mul_inv_cancel_left]
+      abel
+    -- An element `γ x` moving the representative of the orbit of `x` to `x`.
+    choose γ hγ using fun x : X ↦
+      TauCeti.MulAction.exists_smul_out_eq (G := G) (y := x) rfl
+    refine ⟨fun x ↦ f (γ x) - A.ρ (γ x) (v (⟦x⟧ : MulAction.orbitRel.Quotient G X).out),
+      fun g x ↦ ?_⟩
+    have hmove : (g * γ x) • (⟦g • x⟧ : MulAction.orbitRel.Quotient G X).out =
+        γ (g • x) • (⟦g • x⟧ : MulAction.orbitRel.Quotient G X).out := by
+      rw [hγ, MulAction.orbitRel.Quotient.quotient_smul_eq, mul_smul, hγ]
+    beta_reduce
+    rw [key hmove, MulAction.orbitRel.Quotient.quotient_smul_eq, cocycles₁_map_mul, map_mul,
+      mul_apply_eq_comp, map_sub]
+    abel
 
 end Rep
 

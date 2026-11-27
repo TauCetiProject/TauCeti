@@ -34,8 +34,9 @@ This file contains basic facts about finite partial sums.
   prefix sums, which are monotone in the length for nonnegative tuples.
 * `TauCeti.prefixSum_eq_sum_castLE`, `TauCeti.prefixSum_comp_rev`: up to `n`, prefix sums are sums
   over the first indices, and prefix sums of a reversed tuple are suffix sums.
-* `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
-  partial sums over `range`, capped at `n`.
+* `TauCeti.prefixSum_eq_sum_range`, `TauCeti.prefixSum_eq_sum_range_dite`: prefix sums of a
+  sequence restricted to `Fin n` are its partial sums over `range`, capped at `n`, and prefix sums
+  of a tuple equal the `range` sum padded with `0` beyond `n`.
 * `TauCeti.prefixSum_sum`, `TauCeti.prefixSum_sub`, `TauCeti.prefixSum_single`: prefix sums of
   finite sums and differences of tuples, and of a tuple supported at one coordinate.
 * `TauCeti.prefixSum_sum_single_castSucc_sub_single_succ`: prefix sums of a combination
@@ -159,6 +160,21 @@ theorem prefixSum_eq_sum_range (k : ℕ) (f : ℕ → M) :
   congr 1
   ext i
   simp [lt_min_iff, and_comm]
+
+/-- The prefix sum of length `k` of a tuple `x : Fin n → M` equals the `range k` sum padded with
+`0` beyond `n`. -/
+theorem prefixSum_eq_sum_range_dite (k : ℕ) (x : Fin n → M) :
+    prefixSum k x = ∑ i ∈ range k, if h : i < n then x ⟨i, h⟩ else 0 := by
+  let f : ℕ → M := fun i ↦ if h : i < n then x ⟨i, h⟩ else 0
+  have hx : x = fun i : Fin n ↦ f i := funext fun i ↦ by
+    dsimp only [f]; rw [dite_eq_left i.isLt]
+  calc
+    prefixSum k x = prefixSum k (fun i : Fin n ↦ f i) := congrArg (prefixSum k) hx
+    _ = ∑ i ∈ range (min k n), f i := prefixSum_eq_sum_range k f
+    _ = ∑ i ∈ range k, f i :=
+      sum_subset (range_mono (min_le_left k n)) fun i hi hni ↦ by
+        rw [mem_range] at hi hni
+        exact dite_eq_right (by omega)
 
 /-- Prefix sums are additive in the tuple. -/
 @[simp]

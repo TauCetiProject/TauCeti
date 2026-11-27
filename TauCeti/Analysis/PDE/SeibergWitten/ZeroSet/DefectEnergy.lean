@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Covering
 
 /-!
 # The defect energy of a ball centred at a zero of the spinor component
@@ -44,7 +45,12 @@ measure on a space of dimension four, `Vol(B_ρ) = Vol(B₁) ρ⁴`, and the rad
 smallest scale which Taubes's monotonicity inequality for the defect energy propagates to the
 quadratic lower bound `E_r(B_σ) + A σ⁴ ≥ c′ σ²` at a zero of `α`, for all radii `c₀ / √r ≤ σ ≤ 1`
 (`TauCeti.mul_sq_le_add_of_le_mul_deriv_add`). The constants `c₀` and `c₁` depend only on `C` and
-on the measure of the unit ball, not on `r` or on the solution.
+on the measure of the unit ball, not on `r` or on the solution. Stated for the measure
+`E_r = δ dμ`, with the monotonicity inequality
+`E_r(B_σ) ≤ (σ / 2) (1 + C σ) (1 + C₁ r^(-1/2)) E_r'(σ) + K' σ⁴` as a hypothesis, the
+propagation gives `E_r(B_σ) ≥ c σ²` for `c₀ / √r ≤ σ ≤ ρ₀`
+(`TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_withDensity_closedBall_of_eq_zero`); this
+is the step shared by the flat chart and the Darboux chart.
 
 The statements are local: the hypotheses are only required on the ball itself. As in
 `TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent`, the space `E` plays the role of a coordinate
@@ -64,6 +70,10 @@ computed only for an additive Haar measure.
   form `E_r(B_ρ) ≥ (r / 8) ρⁿ μ(B₁)` in dimension `n`.
 * `TauCeti.SeibergWitten.ofReal_div_le_setLIntegral_of_eq_zero`: in dimension four,
   `E_r(B_{c₀ / √r}) ≥ c₁ / r`.
+* `TauCeti.SeibergWitten.ofReal_div_le_withDensity_closedBall_of_eq_zero`: the same bound for
+  the measure `δ dμ`, with `|φ| = |α|`.
+* `TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_withDensity_closedBall_of_eq_zero`: the
+  quadratic lower bound `E_r(B_σ) ≥ c σ²` from Taubes's monotonicity inequality.
 
 ## References
 
@@ -234,5 +244,104 @@ theorem ofReal_div_le_setLIntegral_of_eq_zero {μ : Measure E} [μ.IsAddHaarMeas
   rw [hE, hρ4, ← ofReal_measureReal (measure_ball_lt_top (μ := μ)).ne,
     ← ENNReal.ofReal_mul (by positivity)]
   ring_nf
+
+/-- The smallest-scale lower bound `E_r(B_{c₀ / √r}) ≥ c₁ / r`, `c₁ = c₀⁴ |B₁| / 8`, for the defect
+energy `δ dμ`, `δ = (r / 4) |1 - |φ|² - |β|²|`, at a zero of `α`, when `|φ| = |α|`
+(`TauCeti.SeibergWitten.ofReal_div_le_setLIntegral_of_eq_zero`). -/
+theorem ofReal_div_le_withDensity_closedBall_of_eq_zero {G : Type*} [NormedAddCommGroup G]
+    {φ : E → G} {μ : Measure E} [μ.IsAddHaarMeasure] (hE : finrank ℝ E = 4) {K r c₀ : ℝ}
+    (hK : 0 ≤ K) (hr : 1 ≤ r) (hrK : 8 * K ≤ r) (hc₀ : 0 ≤ c₀) (hc₀K : 256 * K * c₀ ^ 2 ≤ 1)
+    (hα : ∀ y ∈ closedBall x₀ (c₀ / √r), DifferentiableAt ℝ α y)
+    (hφα : ∀ y ∈ closedBall x₀ (c₀ / √r), ‖φ y‖ = ‖α y‖)
+    (hφβ : ∀ y ∈ closedBall x₀ (c₀ / √r), ‖φ y‖ ^ 2 + ‖β y‖ ^ 2 ≤ 1 + K / r)
+    (hβK : ∀ y ∈ closedBall x₀ (c₀ / √r),
+      ‖β y‖ ^ 2 ≤ K / r * max (1 - ‖φ y‖ ^ 2) 0 + K / r ^ 2)
+    (hgrad : ∀ y ∈ closedBall x₀ (c₀ / √r),
+      ‖covariantDeriv b α y‖ ^ 2 ≤ K * r * max (1 - ‖φ y‖ ^ 2) 0 + K)
+    (hα₀ : α x₀ = 0) :
+    ENNReal.ofReal (c₀ ^ 4 * μ.real (ball (0 : E) 1) / 8 / r) ≤
+      (μ.withDensity fun x ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|))
+        (closedBall x₀ (c₀ / √r)) := by
+  have h := ofReal_div_le_setLIntegral_of_eq_zero (μ := μ) (b := b) (β := β) hE hK hr hrK hc₀
+    hc₀K hα (fun y hy ↦ by rw [← hφα y hy]; linarith [hφβ y hy, sq_nonneg ‖β y‖])
+    (fun y hy ↦ by rw [← hφα y hy]; exact hβK y hy)
+    (fun y hy ↦ by rw [← hφα y hy]; exact hgrad y hy) hα₀
+  rw [withDensity_apply _ measurableSet_closedBall]
+  refine h.trans_eq (setLIntegral_congr_fun measurableSet_closedBall fun y hy ↦ ?_)
+  rw [hφα y hy]
+
+/-- **Quadratic lower bound for the defect energy from the monotonicity inequality.** Let `μ` be
+an additive Haar measure on a space of dimension four, and fix constants `K, C, C₁, K' ≥ 0` and a
+radius `R > 0`. There are constants `c₀, c, ρ₀ > 0` with the following property. Let `r ≥ 1` with
+`r ≥ 8 K`, and let `x₀` be a zero of `α`. Suppose that on the ball `ball x₀ R` the fields `φ` and
+`β` are continuous, `α` is differentiable with `|α| = |φ|`, and Taubes's coarse bounds
+`|φ|² + |β|² ≤ 1 + K / r`, `|β|² ≤ (K / r) w₊ + K / r²` and `|∇_a α|² ≤ K r w₊ + K` hold, where
+`w₊ = max (1 - |φ|²) 0`. If the defect energy `ν = δ dμ`, `δ = (r / 4) |1 - |φ|² - |β|²|`,
+satisfies Taubes's monotonicity inequality
+
+`ν(B_σ) ≤ (σ / 2) (1 + C σ) (1 + C₁ / √r) d/dσ ν(B_σ) + K' σ⁴`
+
+at every radius `0 < σ < R`, then `ν(B_σ) ≥ c σ²` for every `c₀ / √r ≤ σ ≤ ρ₀`. The integration
+(`TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le`) propagates the
+smallest-scale bound `ofReal_div_le_withDensity_closedBall_of_eq_zero`. -/
+theorem exists_forall_ofReal_mul_sq_le_withDensity_closedBall_of_eq_zero {G : Type*}
+    [NormedAddCommGroup G] {μ : Measure E} [μ.IsAddHaarMeasure] (hE : finrank ℝ E = 4)
+    {K C C₁ K' R : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C) (hC₁ : 0 ≤ C₁) (hK' : 0 ≤ K') (hR : 0 < R) :
+    ∃ c₀ > 0, ∃ c > 0, ∃ ρ₀ > 0, ∀ r, 1 ≤ r → 8 * K ≤ r →
+      ∀ (φ : E → G) (β : E → F) (α : E → ℂ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (x₀ : E),
+      ContinuousOn φ (ball x₀ R) → ContinuousOn β (ball x₀ R) →
+      (∀ x ∈ ball x₀ R, DifferentiableAt ℝ α x) → (∀ x ∈ ball x₀ R, ‖φ x‖ = ‖α x‖) →
+      (∀ x ∈ ball x₀ R, ‖φ x‖ ^ 2 + ‖β x‖ ^ 2 ≤ 1 + K / r) →
+      (∀ x ∈ ball x₀ R, ‖β x‖ ^ 2 ≤ K / r * max (1 - ‖φ x‖ ^ 2) 0 + K / r ^ 2) →
+      (∀ x ∈ ball x₀ R, ‖covariantDeriv b α x‖ ^ 2 ≤ K * r * max (1 - ‖φ x‖ ^ 2) 0 + K) →
+      (∀ σ ∈ Set.Ioo 0 R,
+        ((μ.withDensity fun x ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|))
+            (closedBall x₀ σ)).toReal ≤
+          σ / 2 * (1 + C * σ) * (1 + C₁ / √r) * deriv (fun s ↦ ((μ.withDensity fun x ↦
+              ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) (closedBall x₀ s)).toReal) σ +
+            K' * σ ^ 4) →
+      α x₀ = 0 →
+      ∀ σ, c₀ / √r ≤ σ → σ ≤ ρ₀ →
+        ENNReal.ofReal (c * σ ^ 2) ≤ (μ.withDensity fun x ↦
+          ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) (closedBall x₀ σ) := by
+  have hB₁ : 0 < μ.real (ball (0 : E) 1) :=
+    ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  -- The smallest scale `c₀ / √r` is at most `R / 2` and keeps `|α|²` below `1 / 4`.
+  set c₀ := min (R / 2) (1 / (16 * (K + 1)))
+  have hc₀ : 0 < c₀ := lt_min (half_pos hR) (by positivity)
+  have hc₀K : 256 * K * c₀ ^ 2 ≤ 1 := by
+    have h1 : 256 * K * (1 / (16 * (K + 1))) ^ 2 ≤ 1 := by
+      rw [div_pow, one_pow, mul_one_div, div_le_one (by positivity)]
+      nlinarith
+    calc 256 * K * c₀ ^ 2 ≤ 256 * K * (1 / (16 * (K + 1))) ^ 2 := by
+          gcongr
+          exact min_le_right _ _
+      _ ≤ 1 := h1
+  obtain ⟨c, hc, ρ₀, hρ₀, hdens⟩ :=
+    TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le (X := E) hC hC₁ hK' hc₀
+      (by positivity : 0 < c₀ ^ 4 * μ.real (ball (0 : E) 1) / 8) (half_pos hR)
+  refine ⟨c₀, hc₀, c, hc, ρ₀, hρ₀, fun r hr hrK φ β α b x₀ hφc hβc hα hφα hφβ hβK hgrad hmono hα₀
+    σ hσ hσρ₀ ↦ ?_⟩
+  have hδ : ContinuousOn (fun x ↦ r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|) (ball x₀ R) :=
+    continuousOn_const.mul ((continuousOn_const.sub (hφc.norm.pow 2)).sub (hβc.norm.pow 2)).abs
+  have hfin : ∀ s < R, (μ.withDensity fun x ↦
+      ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) (closedBall x₀ s) ≠ ⊤ := by
+    intro s hs
+    rw [withDensity_apply _ measurableSet_closedBall]
+    exact ((hδ.mono (closedBall_subset_ball hs)).integrableOn_compact
+      (isCompact_closedBall x₀ s)).setLIntegral_lt_top.ne
+  refine hdens r hr _ x₀ (hfin _ (half_lt_self hR))
+    (Filter.Eventually.of_forall fun s hs ↦ ?_) ?_ σ hσ hσρ₀
+  · -- The monotonicity inequality holds at every radius below `R`.
+    exact hmono s ⟨(by positivity : 0 ≤ c₀ / √r).trans_lt hs.1, hs.2.trans (half_lt_self hR)⟩
+  · -- The defect energy at the smallest scale.
+    have hsR : c₀ / √r < R :=
+      (div_le_self hc₀.le (Real.one_le_sqrt.2 hr)).trans_lt
+        ((min_le_left _ _).trans_lt (half_lt_self hR))
+    have hsub : closedBall x₀ (c₀ / √r) ⊆ ball x₀ R := closedBall_subset_ball hsR
+    rw [← ENNReal.ofReal_le_iff_le_toReal (hfin _ hsR)]
+    exact ofReal_div_le_withDensity_closedBall_of_eq_zero hE hK hr hrK hc₀.le hc₀K
+      (fun y hy ↦ hα y (hsub hy)) (fun y hy ↦ hφα y (hsub hy)) (fun y hy ↦ hφβ y (hsub hy))
+      (fun y hy ↦ hβK y (hsub hy)) (fun y hy ↦ hgrad y (hsub hy)) hα₀
 
 end TauCeti.SeibergWitten

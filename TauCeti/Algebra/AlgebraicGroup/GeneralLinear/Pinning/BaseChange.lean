@@ -22,8 +22,12 @@ The other pinning data already commute with base change:
 `GeneralLinear.splitMaximalTorus_baseChange_comapOfIso` treats the parametrized torus,
 and `GeneralLinear.UpperTriangular.map_baseChangeHopfIdeal_definingHopfIdeal` treats
 its Borel. The computation rules `standardPinning_torus` and `standardPinning_borel`
-identify those data in the assembled pinning. Together these results identify the
-integral pinning after extension to any nontrivial ring with connected spectrum.
+identify those data in the assembled pinning. Together these results identify the root
+spaces, torus and Borel of the integral pinning after extension to any nontrivial ring with
+connected spectrum. Along an injective map `R → K` they identify the whole pinning:
+`GeneralLinear.comapOfIso_baseChange_standardPinning` shows that the base change
+`Pinning.baseChange` of the standard pinning over `R`, transported along the coordinate
+base-change isomorphism, is the standard pinning over `K`.
 
 ## References
 
@@ -108,5 +112,31 @@ theorem cotangentDualBaseChangeEquiv_tmul_standardPinning_rootVector (i : Fin r)
   exact cotangentDualBaseChangeEquiv_tmul_matrixUnitTangent R K i.castSucc i.succ c
 
 end
+
+section Pinning
+
+variable (R K : Type u) [CommRing R] [CommRing K] [Algebra R K] [FaithfulSMul R K]
+  [Nontrivial R] [Nontrivial K]
+  [ConnectedSpace (PrimeSpectrum R)] [ConnectedSpace (PrimeSpectrum K)] (r : ℕ)
+
+/-- **The base change of the standard pinning of `GL_{r+1}` is the standard pinning** over the new
+ring: transported along the coordinate base-change isomorphism, the base change
+`Pinning.baseChange` of the standard pinning over `R` is the standard pinning over `K`. -/
+theorem comapOfIso_baseChange_standardPinning :
+    ((standardPinning R r).baseChange K).comapOfIso
+        (coordinateHopfAlgebraBaseChangeIso R K (r + 1)).symm = standardPinning K r := by
+  refine Pinning.comapOfIso_baseChange_eq K (standardPinning R r) (standardPinning K r) _ ?_ ?_
+    fun α hQ ↦ ?_
+  · rw [standardPinning_torus, standardPinning_torus, splitMaximalTorus_baseChange_comapOfIso]
+  · rw [standardPinning_borel, standardPinning_borel]
+    exact UpperTriangular.map_baseChangeHopfIdeal_definingHopfIdeal R K
+  · obtain ⟨i, rfl⟩ := (standardPinningSimpleRootEquiv (R := R) (r := r)).surjective α
+    rw [dualCotangentMap_coordinateHopfAlgebraBaseChangeIso_inv_cotangentDualBaseChangeEquiv,
+      cotangentDualBaseChangeEquiv_tmul_standardPinning_rootVector, one_smul]
+    exact congrArg (standardPinning K r).rootVector (Subtype.ext
+      ((standardPinningSimpleRootEquiv_apply i).trans
+        (standardPinningSimpleRootEquiv_apply i).symm))
+
+end Pinning
 
 end TauCeti.GeneralLinear
