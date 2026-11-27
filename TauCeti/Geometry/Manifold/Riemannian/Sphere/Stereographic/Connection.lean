@@ -61,11 +61,13 @@ theorem chartMetric_eq (p : S) :
     OpenPartialHomeomorph.coe_toPartialEquiv_symm]
   exact (metric_two_apply_eq_inner_mfderiv (-p) y u v).symm
 
-/-- The native Levi-Civita Christoffel map in the preferred stereographic chart.
+/-- The native Levi-Civita Christoffel map in the preferred stereographic chart, for any
+finite basis of the model space.
 The field argument precedes the direction argument. At the projection pole the formula gives
 the zero value of the extended Christoffel map. -/
-theorem christoffelMap_eq (p q : S) (u v : V) :
-    christoffelMap (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
+theorem christoffelMap_eq {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ V)
+    (p q : S) (u v : V) :
+    christoffelMap b
       ((CovariantDerivative.leviCivitaConnection (𝓡 n) S).isCovariantDerivativeOn
         (s := (trivializationAt V (TangentSpace (𝓡 n)) p).baseSet)) q u v =
       (-2 / (4 + ‖extChartAt (𝓡 n) p q‖ ^ 2)) •
@@ -75,7 +77,7 @@ theorem christoffelMap_eq (p q : S) (u v : V) :
   · subst q
     have hs : -p ∉ (trivializationAt V (TangentSpace (𝓡 n)) p).baseSet := by
       simp [TangentBundle.trivializationAt_baseSet, chartAt_sphere]
-    rw [christoffelMap_of_notMem _ _ hs, extChartAt_sphere_apply_neg]
+    rw [christoffelMap_of_notMem b _ hs, extChartAt_sphere_apply_neg]
     simp
   have hs : q ∈ (extChartAt (𝓡 n) p).source := by
     rw [extChartAt_source, chartAt_sphere]
@@ -84,7 +86,7 @@ theorem christoffelMap_eq (p q : S) (u v : V) :
     ContMDiffNondegenerateMetric.isLeviCivitaConnection_ofRiemannianBundle_leviCivitaConnection
       (𝓡 n) S
   rw [hLC.christoffelMap_apply_eq_christoffelSecondKind
-    (EuclideanSpace.basisFun (Fin n) ℝ).toBasis hs (by simp) u v, chartMetric_eq,
+    b hs (by simp) u v, chartMetric_eq,
     christoffelSecondKind_metric_apply two_ne_zero]
   norm_num
 
