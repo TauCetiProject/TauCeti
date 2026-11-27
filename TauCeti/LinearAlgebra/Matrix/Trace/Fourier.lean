@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Bilinear
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.Analysis.Fourier.FiniteAbelian.ModuleDual
+import TauCeti.Data.Matrix.Block
 
 /-!
 # The Fourier transform on matrices for the trace pairing
@@ -23,7 +25,10 @@ When `R` is a ring, `ψ` is primitive and `Λ` is a domain, the trace pairing is
 the sum of `ψ (Tr (y x))` over all `x` vanishes for every nonzero `y`,
 `AddChar.IsPrimitive.sum_trace_mul_eq_zero`, and is the number of matrices for `y = 0`,
 `AddChar.IsPrimitive.sum_trace_mul_eq_ite`. This is the orthogonality relation behind Fourier
-inversion on matrices.
+inversion on matrices. Applied to the off-diagonal block `s` of the block matrices `(η s; 0 1)`,
+it shows that summing the transform of a function `G` of `(m ⊕ l) × (n ⊕ l)` matrices at these
+points over `s` keeps only the block matrices `(A B; 0 D)`, with weight `ψ (Tr (η A)) ψ (Tr D)`,
+`AddChar.IsPrimitive.sum_traceFourier_fromBlocks`.
 
 ## Provenance
 
@@ -122,5 +127,35 @@ theorem IsPrimitive.sum_trace_mul_eq_ite [DecidableEq R] [CommRing Λ] [IsDomain
   split_ifs with hy
   · simp [hy]
   · exact hψ.sum_trace_mul_eq_zero hy
+
+/-- **Averaging the transform over an off-diagonal block.** For a primitive additive character
+with values in a domain and a function `G` of `(m ⊕ l) × (n ⊕ l)` matrices, the sum over the
+blocks `s` of the Fourier transform of `G` at the block matrices `(η s; 0 1)` is `#M_{n×l}(R)`
+times the sum of `G (A B; 0 D) * (ψ (Tr (η A)) * ψ (Tr D))` over the blocks `A`, `B`, `D`: by
+orthogonality in `s`, the matrices with a nonzero lower left block do not contribute. -/
+theorem IsPrimitive.sum_traceFourier_fromBlocks {l : Type*} [Fintype l] [DecidableEq l]
+    [CommRing Λ] [IsDomain Λ] {ψ : AddChar R Λ} (hψ : ψ.IsPrimitive)
+    (G : Matrix (m ⊕ l) (n ⊕ l) R → Λ) (η : Matrix n m R) :
+    ∑ s : Matrix n l R, ψ.traceFourier G (Matrix.fromBlocks η s 0 1) =
+      Nat.card (Matrix n l R) * ∑ A, ∑ B, ∑ D,
+        G (Matrix.fromBlocks A B 0 D) * (ψ (η * A).trace * ψ D.trace) := by
+  classical
+  have hS (A : Matrix m n R) (B : Matrix m l R) (C : Matrix l n R) (D : Matrix l l R) :
+      ∑ s : Matrix n l R, ψ (Matrix.fromBlocks η s 0 1 * Matrix.fromBlocks A B C D).trace =
+        ψ (η * A).trace * ψ D.trace * if C = 0 then (Nat.card (Matrix n l R) : Λ) else 0 := by
+    rw [Nat.card_eq_fintype_card, ← hψ.sum_trace_mul_eq_ite C, mul_sum]
+    refine sum_congr rfl fun s _ ↦ ?_
+    rw [Matrix.fromBlocks_multiply, Matrix.trace_fromBlocks, Matrix.zero_mul, Matrix.one_mul,
+      zero_add, Matrix.trace_add, Matrix.trace_mul_comm s C, map_add_eq_mul, map_add_eq_mul]
+    ring
+  calc ∑ s : Matrix n l R, ψ.traceFourier G (Matrix.fromBlocks η s 0 1)
+      = ∑ x, G x * ∑ s : Matrix n l R, ψ (Matrix.fromBlocks η s 0 1 * x).trace := by
+        simp_rw [traceFourier_apply, mul_sum]
+        exact sum_comm
+    _ = _ := by
+        simp_rw [Matrix.sum_fromBlocks (fun x ↦ G x * _), hS, mul_sum]
+        refine sum_congr rfl fun A _ ↦ sum_congr rfl fun B _ ↦ ?_
+        rw [sum_eq_single (0 : Matrix l n R) (fun C _ hC ↦ by simp [hC]) (by simp)]
+        exact sum_congr rfl fun D _ ↦ by simp only [ite_true]; ring
 
 end AddChar

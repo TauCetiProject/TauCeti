@@ -12,6 +12,7 @@ public import TauCeti.Logic.Equiv.Sum
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Data.Matrix.Block
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.LinearAlgebra.Matrix.Determinant.GaussSum
 
 /-!
@@ -159,6 +160,7 @@ theorem sum_nextDatum_mul [Fintype R] [Fintype a] [Fintype b] [Fintype n] [Decid
   · exact Finset.sum_eq_zero fun D _ ↦ by rw [nextDatum_eq_zero p (by simp [hC]), zero_mul]
 
 /-- Conjugating the next datum is taking the next datum of the conjugate function. -/
+@[simp]
 theorem star_nextDatum [StarRing Λ] (p : Matrix n a R → Λ) :
     star (nextDatum b p) = nextDatum b (star p) := by
   funext x
@@ -217,20 +219,6 @@ private theorem SquareLaw.card_mul_apply_fromRows_eq [CommSemiring Λ] {χ : Mul
   · ext (i | i | i) j <;> simp
   · ext (i | i) (j | j | j) <;> simp [Matrix.one_apply]
 
-omit [Fintype R] [Fintype a] [DecidableEq a] in
-/-- The shears `(1 s; 0 1)` embed the additive group of `n × b` matrices in `GL_{n ⊕ b}(R)`, so
-`#M_{n×b}(R)` divides `#GL_{n ⊕ b}(R)`. -/
-private theorem natCard_matrix_dvd_natCard_GL :
-    Nat.card (Matrix n b R) ∣ Nat.card (GL (n ⊕ b) R) := by
-  let φ : Multiplicative (Matrix n b R) →* GL (n ⊕ b) R :=
-    { toFun s := GeneralLinearGroup.mk'' (fromBlocks 1 s.toAdd 0 1) (by simp)
-      map_one' := by ext : 1; simp
-      map_mul' s t := by ext : 1; simp [fromBlocks_multiply, add_comm] }
-  have hφ : Function.Injective φ := fun s t h ↦ by
-    simpa [φ] using congrArg (fun g : GL (n ⊕ b) R ↦ (g : Matrix (n ⊕ b) (n ⊕ b) R).toBlocks₁₂) h
-  rw [← Nat.card_congr (Multiplicative.toAdd : Multiplicative (Matrix n b R) ≃ _)]
-  exact Subgroup.card_dvd_of_injective φ hφ
-
 /-- **The finite square law against the next datum.** If `L` and `L'` satisfy the square law with
 constant `c` along the splitting `a ⊕ (n ⊕ b) ≃ n ⊕ (a ⊕ b)`, then for every function `p` of
 `n × a` matrices,
@@ -246,7 +234,7 @@ theorem SquareLaw.card_mul_sum_eq_mul_card_mul_sum_nextDatum [Semifield Λ]
         ∑ x, TauCeti.nextDatum b p x * L (fromCols (fromRows 1 0) x) := by
   by_cases hM : (Nat.card (Matrix n b R) : Λ) = 0
   · -- Then `#GL_{n ⊕ b}(R)` vanishes in `Λ` as well, and both sides are `0`.
-    obtain ⟨k, hk⟩ := natCard_matrix_dvd_natCard_GL (n := n) (b := b) (R := R)
+    obtain ⟨k, hk⟩ := natCard_matrix_dvd_natCard_GL (m := n) (k := b) (R := R)
     have hGL : (Nat.card (GL (n ⊕ b) R) : Λ) = 0 := by rw [hk, Nat.cast_mul, hM, zero_mul]
     rw [hGL, mul_zero, zero_mul, Finset.mul_sum]
     exact Finset.sum_eq_zero fun y _ ↦ by
@@ -260,32 +248,6 @@ theorem SquareLaw.card_mul_sum_eq_mul_card_mul_sum_nextDatum [Semifield Λ]
   rw [mul_left_comm, hL.card_mul_apply_fromRows_eq, Equiv.neg_apply, neg_neg, mul_left_comm]
 
 /-! ### The Fourier form of the square law -/
-
-/-- Summing the Fourier transform of a function `G` of `(n ⊕ b) × (a ⊕ b)` matrices at the
-block matrices `(η s; 0 1)` over `s` keeps, by orthogonality, the block matrices `(A B; 0 D)`. -/
-private theorem sum_traceFourier_fromBlocks {ψ : AddChar R ℂ} (hψ : ψ.IsPrimitive)
-    (G : Matrix (n ⊕ b) (a ⊕ b) R → ℂ) (η : Matrix a n R) :
-    ∑ s : Matrix a b R, ψ.traceFourier G (fromBlocks η s 0 1) =
-      Nat.card (Matrix a b R) *
-        ∑ A, ∑ B, ∑ D, G (fromBlocks A B 0 D) * (ψ (η * A).trace * ψ D.trace) := by
-  classical
-  have hS (A : Matrix n a R) (B : Matrix n b R) (C : Matrix b a R) (D : Matrix b b R) :
-      ∑ s : Matrix a b R, ψ (fromBlocks η s 0 1 * fromBlocks A B C D).trace =
-        ψ (η * A).trace * ψ D.trace * if C = 0 then (Nat.card (Matrix a b R) : ℂ) else 0 := by
-    rw [Nat.card_eq_fintype_card, ← hψ.sum_trace_mul_eq_ite C, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun s _ ↦ ?_
-    rw [fromBlocks_multiply, trace_fromBlocks, Matrix.zero_mul, Matrix.one_mul, zero_add,
-      trace_add, trace_mul_comm s C, AddChar.map_add_eq_mul, AddChar.map_add_eq_mul]
-    ring
-  calc ∑ s : Matrix a b R, ψ.traceFourier G (fromBlocks η s 0 1)
-      = ∑ x, G x * ∑ s : Matrix a b R, ψ (fromBlocks η s 0 1 * x).trace := by
-        simp_rw [AddChar.traceFourier_apply, Finset.mul_sum]
-        exact Finset.sum_comm
-    _ = _ := by
-        simp_rw [Matrix.sum_fromBlocks (fun x ↦ G x * _), hS, Finset.mul_sum]
-        refine Finset.sum_congr rfl fun A _ ↦ Finset.sum_congr rfl fun B _ ↦ ?_
-        rw [Finset.sum_eq_single (0 : Matrix b a R) (fun C _ hC ↦ by simp [hC]) (by simp)]
-        exact Finset.sum_congr rfl fun D _ ↦ by simp only [ite_true]; ring
 
 /-- The pairing of `L (1 x)` with the Fourier transform of the conjugate of a next datum. -/
 private theorem sum_traceFourier_star_nextDatum_mul {ψ : AddChar R ℂ} (hψ : ψ.IsPrimitive)
@@ -316,7 +278,7 @@ private theorem sum_traceFourier_star_nextDatum_mul {ψ : AddChar R ℂ} (hψ : 
           ∑ A, ψ (η * A).trace * L (fromCols (fromRows 1 0) (fromBlocks A 0 0 1))) := by
         rw [Finset.sum_div]
         refine Finset.sum_congr rfl fun η _ ↦ ?_
-        rw [← Finset.mul_sum, sum_traceFourier_fromBlocks hψ, mul_div_assoc,
+        rw [← Finset.mul_sum, hψ.sum_traceFourier_fromBlocks, mul_div_assoc,
           mul_div_cancel_left₀ _ hM]
         congr 1
         have hA (A : Matrix n a R) : ∑ B, ∑ D, L (fromCols (fromRows 1 0) (fromBlocks A B 0 D)) *

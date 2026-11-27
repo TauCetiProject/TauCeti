@@ -36,6 +36,11 @@ Over a field, `A.mulVec` is surjective exactly when the rows of `A` are linearly
 hyperplane section: the hyperplane `ℓ = 0` is transverse to the zero set exactly where `ℓ` is not
 a combination of the gradients of the equations.
 
+Along a splitting `σ : b ⊕ c ≃ n` of an index type, a matrix is determined by its two column
+blocks, or its two row blocks, and the blocks of `h * (A B)` and of `(A; B) * h`, with the columns,
+respectively rows, of the partitioned matrix reindexed along `σ`, are `h * A`, `h * B`, `A * h`
+and `B * h`.
+
 ## Main declarations
 
 * `Matrix.linearIndependent_row_fromCols_of_left`,
@@ -49,6 +54,11 @@ a combination of the gradients of the equations.
   `(0; 1)` is the frame of the standard basis columns `e⁻¹ (inr j)`.
 * `Matrix.mulVec_surjective_fromRows_replicateRow_iff`: if `A` has full row rank, the matrix
   `(A; r)` has full row rank exactly when `r` is not of the form `c ᵥ* A`.
+* `Matrix.ext_of_submatrix_id_comp_inl_inr`, `Matrix.ext_of_submatrix_comp_inl_inr_id`: a matrix
+  is determined by its column blocks, respectively row blocks, along a splitting `σ`.
+* `Matrix.submatrix_mul_fromCols_submatrix_comp_inl`,
+  `Matrix.submatrix_fromRows_submatrix_mul_comp_inl` and their `inr` companions: the blocks of
+  `h * (A B)` and `(A; B) * h` along `σ`.
 -/
 
 public section
@@ -135,5 +145,69 @@ theorem mulVec_surjective_fromRows_replicateRow_iff [Fintype m] {A : Matrix m n 
     fun hmem ↦ (h hmem).elim⟩⟩
 
 end Field
+
+section Splitting
+
+/-! ### Blocks along a splitting `σ : b ⊕ c ≃ n` of an index type -/
+
+variable {R l m n b c : Type*}
+
+/-- A matrix with columns indexed by `n` is determined by its two column blocks along a splitting
+`σ : b ⊕ c ≃ n`. -/
+theorem ext_of_submatrix_id_comp_inl_inr (σ : b ⊕ c ≃ n) {X Y : Matrix m n R}
+    (h₁ : X.submatrix id (σ ∘ Sum.inl) = Y.submatrix id (σ ∘ Sum.inl))
+    (h₂ : X.submatrix id (σ ∘ Sum.inr) = Y.submatrix id (σ ∘ Sum.inr)) : X = Y := by
+  ext i j
+  obtain ⟨j, rfl⟩ := σ.surjective j
+  rcases j with j | j
+  · simpa using congrArg (fun M : Matrix m b R ↦ M i j) h₁
+  · simpa using congrArg (fun M : Matrix m c R ↦ M i j) h₂
+
+/-- A matrix with rows indexed by `n` is determined by its two row blocks along a splitting
+`σ : b ⊕ c ≃ n`. -/
+theorem ext_of_submatrix_comp_inl_inr_id (σ : b ⊕ c ≃ n) {X Y : Matrix n m R}
+    (h₁ : X.submatrix (σ ∘ Sum.inl) id = Y.submatrix (σ ∘ Sum.inl) id)
+    (h₂ : X.submatrix (σ ∘ Sum.inr) id = Y.submatrix (σ ∘ Sum.inr) id) : X = Y := by
+  ext i j
+  obtain ⟨i, rfl⟩ := σ.surjective i
+  rcases i with i | i
+  · simpa using congrArg (fun M : Matrix b m R ↦ M i j) h₁
+  · simpa using congrArg (fun M : Matrix c m R ↦ M i j) h₂
+
+variable [NonUnitalNonAssocSemiring R] (σ : b ⊕ c ≃ n)
+
+/-- The column block `σ ∘ Sum.inl` of `h * (A B)`, with the columns of `(A B)` reindexed along
+`σ : b ⊕ c ≃ n`, is `h * A`. -/
+theorem submatrix_mul_fromCols_submatrix_comp_inl [Fintype m] (h : Matrix l m R)
+    (A : Matrix m b R) (B : Matrix m c R) :
+    (h * (fromCols A B).submatrix id σ.symm).submatrix id (σ ∘ Sum.inl) = h * A := by
+  ext i j
+  simp [Matrix.mul_apply]
+
+/-- The column block `σ ∘ Sum.inr` of `h * (A B)`, with the columns of `(A B)` reindexed along
+`σ : b ⊕ c ≃ n`, is `h * B`. -/
+theorem submatrix_mul_fromCols_submatrix_comp_inr [Fintype m] (h : Matrix l m R)
+    (A : Matrix m b R) (B : Matrix m c R) :
+    (h * (fromCols A B).submatrix id σ.symm).submatrix id (σ ∘ Sum.inr) = h * B := by
+  ext i j
+  simp [Matrix.mul_apply]
+
+/-- The row block `σ ∘ Sum.inl` of `(A; B) * h`, with the rows of `(A; B)` reindexed along
+`σ : b ⊕ c ≃ n`, is `A * h`. -/
+theorem submatrix_fromRows_submatrix_mul_comp_inl [Fintype m] (A : Matrix b m R)
+    (B : Matrix c m R) (h : Matrix m l R) :
+    ((fromRows A B).submatrix σ.symm id * h).submatrix (σ ∘ Sum.inl) id = A * h := by
+  ext i j
+  simp [Matrix.mul_apply]
+
+/-- The row block `σ ∘ Sum.inr` of `(A; B) * h`, with the rows of `(A; B)` reindexed along
+`σ : b ⊕ c ≃ n`, is `B * h`. -/
+theorem submatrix_fromRows_submatrix_mul_comp_inr [Fintype m] (A : Matrix b m R)
+    (B : Matrix c m R) (h : Matrix m l R) :
+    ((fromRows A B).submatrix σ.symm id * h).submatrix (σ ∘ Sum.inr) id = B * h := by
+  ext i j
+  simp [Matrix.mul_apply]
+
+end Splitting
 
 end Matrix

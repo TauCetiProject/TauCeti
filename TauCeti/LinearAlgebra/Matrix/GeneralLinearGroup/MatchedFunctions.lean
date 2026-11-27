@@ -8,7 +8,9 @@ module
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.MulChar.Basic
+import TauCeti.LinearAlgebra.Matrix.ColumnRowPartitioned
 import TauCeti.LinearAlgebra.Matrix.Determinant.ComplementaryMinor
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Completion
 import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
@@ -356,57 +358,14 @@ theorem colBlockFun_eq_zero [Fintype b] [DecidableEq b] {y : Matrix n b R}
     χ.colBlockFun σ f y = 0 := by
   rw [colBlockFun, χ⁻¹.map_nonunit hy, zero_mul]
 
-private theorem submatrix_mul_fromCols_inl [Fintype a] (h : Matrix a a R) (A : Matrix a b R)
-    (B : Matrix a a R) :
-    (h * (fromCols A B).submatrix id σ.symm).submatrix id (σ ∘ Sum.inl) = h * A := by
-  ext i j
-  simp [Matrix.mul_apply]
-
-private theorem submatrix_mul_fromCols_inr [Fintype a] (h : Matrix a a R) (A : Matrix a b R)
-    (B : Matrix a a R) :
-    (h * (fromCols A B).submatrix id σ.symm).submatrix id (σ ∘ Sum.inr) = h * B := by
-  ext i j
-  simp [Matrix.mul_apply]
-
-private theorem submatrix_fromRows_mul_inl [Fintype b] (A : Matrix b b R) (B : Matrix a b R)
-    (h : Matrix b b R) :
-    ((fromRows A B).submatrix σ.symm id * h).submatrix (σ ∘ Sum.inl) id = A * h := by
-  ext i j
-  simp [Matrix.mul_apply]
-
-private theorem submatrix_fromRows_mul_inr [Fintype b] (A : Matrix b b R) (B : Matrix a b R)
-    (h : Matrix b b R) :
-    ((fromRows A B).submatrix σ.symm id * h).submatrix (σ ∘ Sum.inr) id = B * h := by
-  ext i j
-  simp [Matrix.mul_apply]
-
-omit [CommRing R] in
-private theorem ext_of_submatrix_comp_inl_inr (σ : b ⊕ a ≃ n) {X Y : Matrix a n R}
-    (h₁ : X.submatrix id (σ ∘ Sum.inl) = Y.submatrix id (σ ∘ Sum.inl))
-    (h₂ : X.submatrix id (σ ∘ Sum.inr) = Y.submatrix id (σ ∘ Sum.inr)) : X = Y := by
-  ext i j
-  obtain ⟨j, rfl⟩ := σ.surjective j
-  rcases j with j | j
-  · simpa using congrArg (fun M : Matrix a b R ↦ M i j) h₁
-  · simpa using congrArg (fun M : Matrix a a R ↦ M i j) h₂
-
-omit [CommRing R] in
-private theorem ext_of_submatrix_comp_inl_inr' (σ : b ⊕ a ≃ n) {X Y : Matrix n b R}
-    (h₁ : X.submatrix (σ ∘ Sum.inl) id = Y.submatrix (σ ∘ Sum.inl) id)
-    (h₂ : X.submatrix (σ ∘ Sum.inr) id = Y.submatrix (σ ∘ Sum.inr) id) : X = Y := by
-  ext i j
-  obtain ⟨i, rfl⟩ := σ.surjective i
-  rcases i with i | i
-  · simpa using congrArg (fun M : Matrix b b R ↦ M i j) h₁
-  · simpa using congrArg (fun M : Matrix a b R ↦ M i j) h₂
-
 /-- The row block function at `h * (z 1)`, the matrix with blocks `h z` on the columns `b` and `h`
 on the columns `a`, is `χ⁻¹ (det h) * f z`. -/
 @[simp]
 theorem rowBlockFun_mul_fromCols [Fintype a] [DecidableEq a] (h : GL a R) (z : Matrix a b R) :
     χ.rowBlockFun σ f ((h : Matrix a a R) * (fromCols z 1).submatrix id σ.symm) =
       χ⁻¹ (h : Matrix a a R).det * f z := by
-  rw [rowBlockFun, submatrix_mul_fromCols_inl, submatrix_mul_fromCols_inr, Matrix.mul_one,
+  rw [rowBlockFun, submatrix_mul_fromCols_submatrix_comp_inl,
+    submatrix_mul_fromCols_submatrix_comp_inr, Matrix.mul_one,
     nonsing_inv_mul_cancel_left _ _ (isUnits_det_units h)]
 
 /-- The column block function at `(1; -z) * h`, the matrix with blocks `h` on the rows `b` and
@@ -415,81 +374,9 @@ theorem rowBlockFun_mul_fromCols [Fintype a] [DecidableEq a] (h : GL a R) (z : M
 theorem colBlockFun_fromRows_mul [Fintype b] [DecidableEq b] (h : GL b R) (z : Matrix a b R) :
     χ.colBlockFun σ f ((fromRows 1 (-z)).submatrix σ.symm id * (h : Matrix b b R)) =
       χ⁻¹ (h : Matrix b b R).det * f z := by
-  rw [colBlockFun, submatrix_fromRows_mul_inl, submatrix_fromRows_mul_inr, Matrix.one_mul,
+  rw [colBlockFun, submatrix_fromRows_submatrix_mul_comp_inl,
+    submatrix_fromRows_submatrix_mul_comp_inr, Matrix.one_mul,
     mul_nonsing_inv_cancel_right _ _ (isUnits_det_units h), neg_neg]
-
-omit [CommMonoidWithZero Λ] in
-/-- An `a × n` matrix whose square block on the columns `a` is invertible is the matrix of the
-rows indexed by `a` of the inverse of an invertible matrix. -/
-private theorem exists_submatrix_inv_eq_of_isUnit [Fintype a] [Fintype n] [DecidableEq a]
-    [DecidableEq n] (σ : b ⊕ a ≃ n) {x : Matrix a n R}
-    (hx : IsUnit (x.submatrix id (σ ∘ Sum.inr)).det) :
-    ∃ k : GL n R, ((k⁻¹ : GL n R) : Matrix n n R).submatrix (σ ∘ Sum.inr) id = x := by
-  classical
-  have : Fintype b := Fintype.ofInjective (σ ∘ Sum.inl) (σ.injective.comp Sum.inl_injective)
-  -- The matrix with the rows of the identity on `b` and the rows of `x` on `a`.
-  set N : Matrix n n R :=
-    (fromRows ((1 : Matrix n n R).submatrix (σ ∘ Sum.inl) id) x).submatrix σ.symm id
-  have hN : N.submatrix σ σ =
-      fromBlocks 1 0 (x.submatrix id (σ ∘ Sum.inl)) (x.submatrix id (σ ∘ Sum.inr)) := by
-    ext (i | i) (j | j) <;> simp [N, Matrix.one_apply, σ.injective.eq_iff]
-  have hNdet : IsUnit N.det := by
-    rwa [← det_submatrix_equiv_self σ, hN, det_fromBlocks_zero₁₂, det_one, one_mul]
-  refine ⟨(GeneralLinearGroup.mk'' N hNdet)⁻¹, ?_⟩
-  ext i j
-  simp [N]
-
-omit [CommMonoidWithZero Λ] in
-/-- An `n × b` matrix whose square block on the rows `b` is invertible is the matrix of the
-columns indexed by `b` of an invertible matrix. -/
-private theorem exists_submatrix_eq_of_isUnit [Fintype b] [Fintype n] [DecidableEq b]
-    [DecidableEq n] (σ : b ⊕ a ≃ n) {y : Matrix n b R}
-    (hy : IsUnit (y.submatrix (σ ∘ Sum.inl) id).det) :
-    ∃ k : GL n R, (k : Matrix n n R).submatrix id (σ ∘ Sum.inl) = y := by
-  classical
-  have : Fintype a := Fintype.ofInjective (σ ∘ Sum.inr) (σ.injective.comp Sum.inr_injective)
-  -- The matrix with the columns of `y` on `b` and the columns of the identity on `a`.
-  set K : Matrix n n R :=
-    (fromCols y ((1 : Matrix n n R).submatrix id (σ ∘ Sum.inr))).submatrix id σ.symm
-  have hK : K.submatrix σ σ =
-      fromBlocks (y.submatrix (σ ∘ Sum.inl) id) 0 (y.submatrix (σ ∘ Sum.inr) id) 1 := by
-    ext (i | i) (j | j) <;> simp [K, Matrix.one_apply, σ.injective.eq_iff]
-  have hKdet : IsUnit K.det := by
-    rwa [← det_submatrix_equiv_self σ, hK, det_fromBlocks_zero₁₂, det_one, mul_one]
-  refine ⟨GeneralLinearGroup.mk'' K hKdet, ?_⟩
-  ext i j
-  simp [K]
-
-omit [CommMonoidWithZero Λ] in
-/-- For an invertible matrix `K`, the square block `K_bb` of `K` on the indices `b` and the square
-block `(K⁻¹)_aa` of `K⁻¹` on the indices `a` satisfy `det K_bb = det K * det (K⁻¹)_aa`, and if
-both are invertible then `(K⁻¹)_aa⁻¹ (K⁻¹)_ab = -K_ab K_bb⁻¹`. -/
-private theorem det_submatrix_inl_and_inv_mul_eq [Fintype a] [Fintype b] [Fintype n]
-    [DecidableEq a] [DecidableEq b] [DecidableEq n] (σ : b ⊕ a ≃ n) {K : Matrix n n R}
-    (hK : IsUnit K.det) :
-    (K.submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inl)).det =
-        K.det * (K⁻¹.submatrix (σ ∘ Sum.inr) (σ ∘ Sum.inr)).det ∧
-      (IsUnit (K⁻¹.submatrix (σ ∘ Sum.inr) (σ ∘ Sum.inr)).det →
-        IsUnit (K.submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inl)).det →
-        (K⁻¹.submatrix (σ ∘ Sum.inr) (σ ∘ Sum.inr))⁻¹ *
-            K⁻¹.submatrix (σ ∘ Sum.inr) (σ ∘ Sum.inl) =
-          -(K.submatrix (σ ∘ Sum.inr) (σ ∘ Sum.inl) *
-            (K.submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inl))⁻¹)) := by
-  refine ⟨?_, fun hu hu' ↦ ?_⟩
-  -- Jacobi's complementary minor identity.
-  · simpa [Function.comp_def] using
-      det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl_nonsing_inv K hK
-        ((Equiv.sumComm a b).trans σ) 1 1
-  -- The block `(a, b)` of `K⁻¹ * K = 1`.
-  have hrel : K⁻¹.submatrix (σ ∘ Sum.inr) (σ ∘ Sum.inl) * K.submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inl)
-      + K⁻¹.submatrix (σ ∘ Sum.inr) (σ ∘ Sum.inr) * K.submatrix (σ ∘ Sum.inr) (σ ∘ Sum.inl) =
-        0 := by
-    ext i j
-    have := congrArg (fun M : Matrix n n R ↦ M (σ (.inr i)) (σ (.inl j))) (nonsing_inv_mul K hK)
-    simpa [Matrix.mul_apply, ← σ.sum_comp, Fintype.sum_sum_type, Matrix.one_apply] using this
-  rw [← mul_nonsing_inv_cancel_right _ (K⁻¹.submatrix (σ ∘ Sum.inr) (σ ∘ Sum.inl)) hu',
-    eq_neg_of_add_eq_zero_left hrel, Matrix.neg_mul, Matrix.mul_neg, ← Matrix.mul_assoc,
-    ← Matrix.mul_assoc, nonsing_inv_mul _ hu, Matrix.one_mul]
 
 /-- **Block functions are matched.** For every function `f` of `a × b` matrices, the row block
 function `x ↦ χ⁻¹ (det x₂) * f (x₂⁻¹ x₁)` and the column block function
@@ -497,19 +384,22 @@ function `x ↦ χ⁻¹ (det x₂) * f (x₂⁻¹ x₁)` and the column block fu
 theorem areMatched_rowBlockFun_colBlockFun [Fintype a] [Fintype b] [Fintype n] [DecidableEq a]
     [DecidableEq b] [DecidableEq n] (σ : b ⊕ a ≃ n) :
     χ.AreMatched σ (χ.rowBlockFun σ f) (χ.colBlockFun σ f) where
-  support_left_subset x hx :=
-    exists_submatrix_inv_eq_of_isUnit σ (by_contra fun hu ↦ hx (rowBlockFun_eq_zero χ f hu))
+  support_left_subset x hx := by
+    obtain ⟨k, hk⟩ := GeneralLinearGroup.exists_submatrix_comp_inr_id_eq_of_isUnit_det σ
+      (by_contra fun hu ↦ hx (rowBlockFun_eq_zero χ f hu))
+    exact ⟨k⁻¹, by simpa only [inv_inv] using hk⟩
   support_right_subset y hy :=
-    exists_submatrix_eq_of_isUnit σ (by_contra fun hu ↦ hy (colBlockFun_eq_zero χ f hu))
+    GeneralLinearGroup.exists_submatrix_id_comp_inl_eq_of_isUnit_det σ
+      (by_contra fun hu ↦ hy (colBlockFun_eq_zero χ f hu))
   apply_eq k := by
     set K : Matrix n n R := (k : Matrix n n R)
     have hK : IsUnit K.det := isUnits_det_units k
-    obtain ⟨hjac, harg⟩ := det_submatrix_inl_and_inv_mul_eq σ hK
+    have hjac := det_submatrix_comp_inl_eq_det_mul_det_submatrix_comp_inr_nonsing_inv K hK σ
     simp only [rowBlockFun, colBlockFun, coe_units_inv, submatrix_submatrix, Function.comp_id,
       Function.id_comp]
     by_cases hu : IsUnit (K⁻¹.submatrix (σ ∘ Sum.inr) (σ ∘ Sum.inr)).det
-    · rw [harg hu (hjac ▸ hK.mul hu), hjac, map_mul, ← mul_assoc, ← mul_assoc,
-        apply_mul_inv_apply_of_isUnit χ hK, one_mul]
+    · rw [inv_submatrix_nonsing_inv_mul_eq_neg_submatrix_mul_inv K hK σ, hjac, map_mul,
+        ← mul_assoc, ← mul_assoc, apply_mul_inv_apply_of_isUnit χ hK, one_mul]
     · have hu' : ¬IsUnit (K.submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inl)).det := by
         rw [hjac, IsUnit.mul_iff]
         exact fun h ↦ hu h.2
@@ -541,11 +431,11 @@ theorem sum_rowBlockFun_mul [Fintype R] [Fintype a] [Fintype b] [Fintype n] [Dec
         refine (Finset.sum_bij (fun p _ ↦ (p.1 : Matrix a a R) *
           (fromCols p.2 1).submatrix id σ.symm) (fun p _ ↦ ?_) (fun p _ p' _ hpp' ↦ ?_)
           (fun x hx ↦ ?_) (fun p _ ↦ ?_)).symm
-        · simp [submatrix_mul_fromCols_inr]
+        · simp [submatrix_mul_fromCols_submatrix_comp_inr]
         · have h₁ := congrArg (fun x : Matrix a n R ↦ x.submatrix id (σ ∘ Sum.inr)) hpp'
           have h₂ := congrArg (fun x : Matrix a n R ↦ x.submatrix id (σ ∘ Sum.inl)) hpp'
-          simp only [submatrix_mul_fromCols_inr, submatrix_mul_fromCols_inl, Matrix.mul_one]
-            at h₁ h₂
+          simp only [submatrix_mul_fromCols_submatrix_comp_inr,
+            submatrix_mul_fromCols_submatrix_comp_inl, Matrix.mul_one] at h₁ h₂
           rw [h₁] at h₂
           refine Prod.ext (Units.ext h₁) ?_
           simpa [nonsing_inv_mul_cancel_left _ _ (isUnits_det_units p'.1)] using
@@ -553,10 +443,11 @@ theorem sum_rowBlockFun_mul [Fintype R] [Fintype a] [Fintype b] [Fintype n] [Dec
         · have hu : IsUnit (x.submatrix id (σ ∘ Sum.inr)).det := (Finset.mem_filter.mp hx).2
           refine ⟨(GeneralLinearGroup.mk'' _ hu,
             (x.submatrix id (σ ∘ Sum.inr))⁻¹ * x.submatrix id (σ ∘ Sum.inl)), Finset.mem_univ _, ?_⟩
-          refine ext_of_submatrix_comp_inl_inr σ ?_ ?_
-          · rw [submatrix_mul_fromCols_inl, GeneralLinearGroup.val_mk'',
+          refine ext_of_submatrix_id_comp_inl_inr σ ?_ ?_
+          · rw [submatrix_mul_fromCols_submatrix_comp_inl, GeneralLinearGroup.val_mk'',
               mul_nonsing_inv_cancel_left _ _ hu]
-          · rw [submatrix_mul_fromCols_inr, GeneralLinearGroup.val_mk'', Matrix.mul_one]
+          · rw [submatrix_mul_fromCols_submatrix_comp_inr, GeneralLinearGroup.val_mk'',
+              Matrix.mul_one]
         · rw [rowBlockFun_mul_fromCols, hL, mul_mul_mul_comm, mul_comm (χ⁻¹ _),
             apply_mul_inv_apply_of_isUnit χ (isUnits_det_units p.1), one_mul]
     _ = _ := by
@@ -582,11 +473,11 @@ theorem sum_colBlockFun_mul [Fintype R] [Fintype a] [Fintype b] [Fintype n] [Dec
         refine (Finset.sum_bij (fun p _ ↦ (fromRows 1 (-p.2)).submatrix σ.symm id *
           (p.1 : Matrix b b R)) (fun p _ ↦ ?_) (fun p _ p' _ hpp' ↦ ?_)
           (fun y hy ↦ ?_) (fun p _ ↦ ?_)).symm
-        · simp [submatrix_fromRows_mul_inl]
+        · simp [submatrix_fromRows_submatrix_mul_comp_inl]
         · have h₁ := congrArg (fun y : Matrix n b R ↦ y.submatrix (σ ∘ Sum.inl) id) hpp'
           have h₂ := congrArg (fun y : Matrix n b R ↦ y.submatrix (σ ∘ Sum.inr) id) hpp'
-          simp only [submatrix_fromRows_mul_inl, submatrix_fromRows_mul_inr, Matrix.one_mul]
-            at h₁ h₂
+          simp only [submatrix_fromRows_submatrix_mul_comp_inl,
+            submatrix_fromRows_submatrix_mul_comp_inr, Matrix.one_mul] at h₁ h₂
           rw [h₁, Matrix.neg_mul, Matrix.neg_mul, neg_inj] at h₂
           refine Prod.ext (Units.ext h₁) ?_
           simpa [mul_nonsing_inv_cancel_right _ _ (isUnits_det_units p'.1)] using
@@ -595,9 +486,10 @@ theorem sum_colBlockFun_mul [Fintype R] [Fintype a] [Fintype b] [Fintype n] [Dec
           refine ⟨(GeneralLinearGroup.mk'' _ hu,
             -(y.submatrix (σ ∘ Sum.inr) id * (y.submatrix (σ ∘ Sum.inl) id)⁻¹)), Finset.mem_univ _,
             ?_⟩
-          refine ext_of_submatrix_comp_inl_inr' σ ?_ ?_
-          · rw [submatrix_fromRows_mul_inl, GeneralLinearGroup.val_mk'', Matrix.one_mul]
-          · rw [submatrix_fromRows_mul_inr, GeneralLinearGroup.val_mk'', neg_neg,
+          refine ext_of_submatrix_comp_inl_inr_id σ ?_ ?_
+          · rw [submatrix_fromRows_submatrix_mul_comp_inl, GeneralLinearGroup.val_mk'',
+              Matrix.one_mul]
+          · rw [submatrix_fromRows_submatrix_mul_comp_inr, GeneralLinearGroup.val_mk'', neg_neg,
               nonsing_inv_mul_cancel_right _ _ hu]
         · rw [colBlockFun_fromRows_mul, hL', mul_mul_mul_comm, mul_comm (χ⁻¹ _),
             apply_mul_inv_apply_of_isUnit χ (isUnits_det_units p.1), one_mul]
