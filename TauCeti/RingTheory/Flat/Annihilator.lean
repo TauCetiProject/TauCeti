@@ -18,7 +18,8 @@ product commutes with its product of targets. The cyclic statement applies to th
 element `1 ⊗ₜ m`, without any finiteness hypothesis on the ambient module.
 
 Together with right exactness of scalar extension, the finite-module formula also shows that
-flat scalar extension preserves the annihilator of a finite cokernel.
+flat scalar extension preserves the annihilator of a finite cokernel, and of a finite quotient
+`M ⧸ Q`, whose scalar extension is the quotient of `S ⊗[R] M` by `Q.baseChange S`.
 
 These formulas identify the scheme theoretic support of a finite module after flat
 base change. The main result is Stacks Project, Lemma 10.40.4,
@@ -100,3 +101,32 @@ theorem cokernel_annihilator_flat_baseChange [Module.Flat R S] (f : M →ₗ[R] 
     _ = _ := TauCeti.annihilator_flat_baseChange
 
 end LinearMap
+
+namespace Submodule
+
+open LinearMap
+
+variable {R S M : Type*} [CommRing R] [CommRing S] [Algebra R S]
+  [AddCommGroup M] [Module R M]
+
+/-- Flat scalar extension preserves the annihilator of a finite quotient: the annihilator of
+`(S ⊗[R] M) ⧸ Q.baseChange S` is the extension of that of `M ⧸ Q`. Only the quotient need be
+finite, not `M` or `Q`. -/
+@[simp]
+theorem quotient_annihilator_flat_baseChange [Module.Flat R S] (Q : Submodule R M)
+    [Module.Finite R (M ⧸ Q)] :
+    Module.annihilator S ((S ⊗[R] M) ⧸ Q.baseChange S) =
+      (Module.annihilator R (M ⧸ Q)).map (algebraMap R S) := by
+  -- Mathlib's `tensorQuotientEquiv` identifies `S ⊗[R] (M ⧸ Q)` with the quotient of `S ⊗[R] M`
+  -- by the range of `S ⊗ Q → S ⊗ M`, which is `Q.baseChange S`.
+  have hQ : range (AlgebraTensorModule.lTensor S S (Q.subtype.restrictScalars R)) =
+      Q.baseChange S := by
+    rw [baseChange]
+    exact congrArg range <| AlgebraTensorModule.ext fun s q ↦ by simp
+  calc
+    _ = Module.annihilator S (S ⊗[R] (M ⧸ Q)) :=
+      ((AlgebraTensorModule.tensorQuotientEquiv S R S Q).trans
+        (quotEquivOfEq _ _ hQ)).annihilator_eq.symm
+    _ = _ := TauCeti.annihilator_flat_baseChange
+
+end Submodule
