@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -37,7 +38,8 @@ trivialization: the closed two-form it produces near the zero section of a sympl
 bundle with a symplectic connection, such as the symplectic normal bundle of a symplectic
 submanifold, is `ω_A` in each local trivialization. The coupling form `TauCeti.normalCouplingForm`
 of a Hermitian connection `d + i a` on a line is the case `V = ℂ`, `σ(n, n') = Im (conj n n')`,
-`A = i a`, whose primitive is `Im (conj w (n + i a(v) w)) / 2`.
+`A = i a`, whose primitive is `Im (conj w (n + i a(v) w)) / 2`
+(`TauCeti.normalCouplingForm_eq_minimalCouplingForm`).
 
 This file proves the following.
 
@@ -47,7 +49,7 @@ This file proves the following.
   and `ω_A = ω + σ` along the zero section (`TauCeti.minimalCouplingForm_apply_pair_zero`). For
   a connection that is moreover symplectic at `z`,
   `ω_A((v, n), (v', n')) = ω(v, v') + σ(n + A_z(v) w, n' + A_z(v') w) + σ(w, F_z(v, v') w) / 2`,
-  where `F = dA + [A ∧ A]` is the curvature of `d + A` (`TauCeti.connectionCurvature`)
+  where `F = dA + ½[A ∧ A]` is the curvature of `d + A` (`TauCeti.connectionCurvature`)
   (`TauCeti.minimalCouplingForm_apply_pair`,
   `TauCeti.extDeriv_minimalCouplingPrimitive_apply_pair_eq_add_curvature`).
 * **Horizontal and vertical.** For a connection symplectic at `z`, the horizontal lift
@@ -106,12 +108,19 @@ def minimalCouplingPrimitive (σ : V →L[ℝ] V →L[ℝ] ℝ) (A : E → E →
   ofSubsingletonLIE (0 : Fin 1) ((2⁻¹ : ℝ) • (σ p.2).comp (ContinuousLinearMap.snd ℝ E V +
     ((ContinuousLinearMap.apply ℝ V p.2).comp (A p.1)).comp (ContinuousLinearMap.fst ℝ E V)))
 
-/-- The minimal coupling primitive on a vector `(v, n)` at `(z, w)` is `σ(w, n + A_z(v) w) / 2`. -/
+/-- The minimal coupling primitive at `p = (z, w)` on a vector `u 0 = (v, n)` is
+`σ(w, n + A_z(v) w) / 2`. -/
 @[simp]
 theorem minimalCouplingPrimitive_apply (σ : V →L[ℝ] V →L[ℝ] ℝ) (A : E → E →L[ℝ] V →L[ℝ] V)
-    (z : E) (w : V) (v : E) (n : V) :
-    minimalCouplingPrimitive σ A (z, w) (fun _ ↦ (v, n)) = σ w (n + A z v w) / 2 := by
+    (p : E × V) (u : Fin 1 → E × V) :
+    minimalCouplingPrimitive σ A p u = σ p.2 ((u 0).2 + A p.1 (u 0).1 p.2) / 2 := by
   simp [minimalCouplingPrimitive, ofSubsingletonLIE, div_eq_inv_mul, mul_add]
+
+/-- The minimal coupling primitive on a vector `(v, n)` at `(z, w)` is `σ(w, n + A_z(v) w) / 2`. -/
+theorem minimalCouplingPrimitive_apply_const (σ : V →L[ℝ] V →L[ℝ] ℝ)
+    (A : E → E →L[ℝ] V →L[ℝ] V) (z : E) (w : V) (v : E) (n : V) :
+    minimalCouplingPrimitive σ A (z, w) (fun _ ↦ (v, n)) = σ w (n + A z v w) / 2 :=
+  minimalCouplingPrimitive_apply σ A (z, w) _
 
 /-- The minimal coupling primitive of a connection form that is `C^n` at `z` is `C^n` at every
 point `(z, w)` of the fibre over `z`. -/
@@ -173,7 +182,7 @@ skew-symmetric and let the connection form take values in the Lie algebra of `σ
 
 `dλ((v, n), (v', n')) = σ(n + A_z(v) w, n' + A_z(v') w) + σ(w, F_z(v, v') w) / 2`,
 
-where `F = dA + [A ∧ A]` is the curvature of `d + A` (`TauCeti.connectionCurvature`). -/
+where `F = dA + ½[A ∧ A]` is the curvature of `d + A` (`TauCeti.connectionCurvature`). -/
 theorem extDeriv_minimalCouplingPrimitive_apply_pair_eq_add_curvature
     (hσ : ∀ u u', σ u u' = -σ u' u) (hAσ : ∀ v u u', σ (A z v u) u' = -σ u (A z v u'))
     (hA : DifferentiableAt ℝ A z) (v v' : E) (n n' : V) :
@@ -261,8 +270,7 @@ vertical vector `(0, n)`. -/
 theorem minimalCouplingForm_apply_horizontal_inr (v : E) (n : V) :
     minimalCouplingForm σ ω A (z, w) ![(v, -(A z v w)), (0, n)] = 0 := by
   rw [minimalCouplingForm_apply_pair hσ hAσ hA]
-  have h₀ : ω z ![v, 0] = 0 := by
-    simpa using (ω z).map_coord_zero 1 (m := ![v, 0]) rfl
+  have h₀ : ω z ![v, 0] = 0 := (ω z).map_coord_zero 1 rfl
   simp [h₀, Ring.lie_def]
 
 /-- **The minimal coupling form on horizontal lifts** is `ω + σ(w, F w) / 2`: on the horizontal
@@ -307,8 +315,7 @@ theorem forall_minimalCouplingForm_apply_zero_eq_zero_iff (hσ : ∀ u u', σ u 
     (hσn : ∀ u, (∀ u', σ u u' = 0) → u = 0) (hA : DifferentiableAt ℝ A z) (v : E) (n : V) :
     (∀ x : E × V, minimalCouplingForm σ ω A (z, 0) ![(v, n), x] = 0) ↔
       n = 0 ∧ ∀ v' : E, ω z ![v, v'] = 0 := by
-  have hω₀ (v' : E) : ω z ![v', 0] = 0 := by
-    simpa using (ω z).map_coord_zero 1 (m := ![v', 0]) rfl
+  have hω₀ (v' : E) : ω z ![v', 0] = 0 := (ω z).map_coord_zero 1 rfl
   constructor
   · intro h
     have hn : n = 0 := hσn n fun n' ↦ by
@@ -377,19 +384,6 @@ section Gauge
 
 variable {O : E → V →L[ℝ] V}
 
-/-- The derivative of the bundle map `(z, w) ↦ (z, O_z w)` of a gauge transformation `O`:
-`(v, n) ↦ (v, O_z n + (∂_v O)_z w)`. -/
-private theorem hasFDerivAt_prodMk_fst_apply_snd (hO : DifferentiableAt ℝ O z) (w : V) :
-    HasFDerivAt (fun p : E × V ↦ (p.1, O p.1 p.2))
-      ((ContinuousLinearMap.fst ℝ E V).prod ((O z).comp (ContinuousLinearMap.snd ℝ E V) +
-        ((fderiv ℝ O z).flip w).comp (ContinuousLinearMap.fst ℝ E V))) (z, w) := by
-  have hO' : HasFDerivAt (fun p : E × V ↦ O p.1)
-      ((fderiv ℝ O z).comp (ContinuousLinearMap.fst ℝ E V)) (z, w) :=
-    hO.hasFDerivAt.comp (z, w) (hasFDerivAt_fst (p := (z, w)))
-  refine ((hasFDerivAt_fst (p := (z, w))).prodMk
-    (hO'.clm_apply (hasFDerivAt_snd (p := (z, w))))).congr_fderiv
-      (ContinuousLinearMap.ext fun p ↦ Prod.ext ?_ ?_) <;> simp
-
 /-- **The gauge transformation of the minimal coupling primitive.** Let `O_z` be invertible and
 preserve `σ`, and let `O` be differentiable at `z`. The bundle map `(z, w) ↦ (z, O_z w)` pulls the
 minimal coupling primitive of the gauge transformed connection `O·A`
@@ -400,19 +394,20 @@ theorem compContinuousLinearMap_minimalCouplingPrimitive_gaugeAction
     (minimalCouplingPrimitive σ (gaugeAction ℝ O A) (z, O z w)).compContinuousLinearMap
         (fderiv ℝ (fun p : E × V ↦ (p.1, O p.1 p.2)) (z, w)) =
       minimalCouplingPrimitive σ A (z, w) := by
+  have hΦ (x : E × V) : fderiv ℝ (fun p : E × V ↦ (p.1, O p.1 p.2)) (z, w) x =
+      (x.1, O z x.2 + fderiv ℝ O z x.1 w) := by
+    simp [(((hO.hasFDerivAt.hasFDerivWithinAt (s := Set.univ)).fst_prodMk_clm_apply_snd
+      (p := (z, w)) (Set.mapsTo_univ _ _)).hasFDerivAt Filter.univ_mem).fderiv]
+  have hcov (v : E) (n : V) :
+      O z n + fderiv ℝ O z v w + gaugeAction ℝ O A z v (O z w) = O z (n + A z v w) := by
+    have hinv : (O z)⁻¹ʳ (O z w) = w := by
+      rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hOz, one_apply_eq_self]
+    simp only [gaugeAction_apply, rightMaurerCartan_apply, _root_.sub_apply, mul_apply_eq_comp,
+      hinv, map_add]
+    abel
   ext u
-  have hu : u = fun _ ↦ u 0 := funext fun i ↦ by rw [Subsingleton.elim i 0]
-  rw [hu, compContinuousLinearMap_apply, (hasFDerivAt_prodMk_fst_apply_snd hO w).fderiv]
-  generalize u 0 = x
-  obtain ⟨v, n⟩ := x
-  simp only [Function.comp_def, ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst',
-    _root_.add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
-    ContinuousLinearMap.coe_snd', ContinuousLinearMap.flip_apply, minimalCouplingPrimitive_apply,
-    gaugeAction_apply, rightMaurerCartan_apply, _root_.sub_apply, mul_apply_eq_comp]
-  have hinv : (O z)⁻¹ʳ (O z w) = w := by
-    rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hOz, one_apply_eq_self]
-  rw [hinv, show O z n + fderiv ℝ O z v w + (O z (A z v w) - fderiv ℝ O z v w) =
-    O z (n + A z v w) by rw [map_add]; abel, hOσ]
+  simp only [compContinuousLinearMap_apply, minimalCouplingPrimitive_apply, Function.comp_apply, hΦ,
+    hcov, hOσ]
 
 /-- **The gauge transformation of the minimal coupling form.** Let `O` be `C²` at `z`, with values
 near `z` that are invertible and preserve `σ`, and let `A` be differentiable at `z`. The bundle
@@ -450,7 +445,8 @@ theorem compContinuousLinearMap_minimalCouplingForm_gaugeAction [CompleteSpace V
   congr 1
   congr 1
   funext i
-  simp [Φ, (hasFDerivAt_prodMk_fst_apply_snd hO1 w).fderiv]
+  simp [Φ, (((hO1.hasFDerivAt.hasFDerivWithinAt (s := Set.univ)).fst_prodMk_clm_apply_snd
+    (p := (z, w)) (Set.mapsTo_univ _ _)).hasFDerivAt Filter.univ_mem).fderiv]
 
 end Gauge
 
