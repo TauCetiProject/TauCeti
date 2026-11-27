@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.MFDeriv.FamilyVariation
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.MeanCurvature
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.Weingarten
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Pullback
@@ -50,10 +51,6 @@ The metric of `M` used for the mean curvature vector is an arbitrary instance, a
 metric induced by `Φ t₀`, and the metric `h` of `N` that is pulled back is assumed to be the
 inner product of the instance on `TN` with which `∇` is compatible.
 
-## Main definitions
-
-* `TauCeti.familyVariationField`: the variation field `X = ∂_t Φ(t₀, ·)` of a family of maps.
-
 ## Main results
 
 * `TauCeti.hasDerivAt_inner_mfderiv_family`: the variation of the induced metric.
@@ -89,83 +86,6 @@ variable
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {Φ : ℝ → M → N} {t₀ : ℝ} {x : M}
 
-/-! ### The variation field -/
-
-variable (J Φ t₀) in
-/-- The **variation field** `X = ∂_t Φ(t₀, ·)` of a family of maps `Φ t : M → N` at `t₀`: at `y`,
-the velocity at `t₀` of the curve `t ↦ Φ t y`. It is a vector field along `Φ t₀`. -/
-def familyVariationField (y : M) : TangentSpace J (Φ t₀ y) :=
-  curveVelocity J (fun t ↦ Φ t y) t₀
-
-omit [TopologicalSpace M] in
-/-- The defining formula for the variation field. -/
-theorem familyVariationField_apply (y : M) :
-    familyVariationField J Φ t₀ y = curveVelocity J (fun t ↦ Φ t y) t₀ :=
-  (rfl)
-
-omit [TopologicalSpace M] in
-/-- The variation field as a function of the point: the unapplied form of
-`familyVariationField_apply`. -/
-theorem familyVariationField_def :
-    familyVariationField J Φ t₀ = fun y ↦ curveVelocity J (fun t ↦ Φ t y) t₀ :=
-  (rfl)
-
-omit [TopologicalSpace M] in
-/-- At a point which the maps of the family near `t₀` all send to the same image, the variation
-field vanishes. -/
-@[simp]
-theorem familyVariationField_eq_zero {y : M} (h : ∀ᶠ t in 𝓝 t₀, Φ t y = Φ t₀ y) :
-    familyVariationField J Φ t₀ y = 0 := by
-  rw [familyVariationField_apply, curveVelocity_apply,
-    Filter.EventuallyEq.mfderiv_eq (f := fun _ ↦ Φ t₀ y) h, mfderiv_const]
-  exact zero_apply _
-
-/-- The variation field is the differential of the uncurried family in the direction of the
-parameter. -/
-theorem familyVariationField_eq_mfderiv {y : M}
-    (hΦ : MDifferentiableAt (𝓘(ℝ).prod I) J (uncurry Φ) (t₀, y)) :
-    familyVariationField J Φ t₀ y = mfderiv (𝓘(ℝ).prod I) J (uncurry Φ) (t₀, y) (1, 0) :=
-  hΦ.curveVelocity_eq_mfderiv_uncurry_apply_mk_zero (g := id) (hasDerivAt_id t₀)
-
-variable [IsManifold I 2 M] [IsManifold J 2 N]
-
-/-- The variation field of a family which is `C²` at `(t₀, x)` is `C¹` at `x`, as a section of
-the tangent bundle of `N` along `Φ t₀`. -/
-theorem contMDiffAt_familyVariationField
-    (hΦ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, x)) :
-    ContMDiffAt I J.tangent 1
-      (fun y ↦ (⟨Φ t₀ y, familyVariationField J Φ t₀ y⟩ : TangentBundle J N)) x := by
-  have hf : ContMDiffAt (I.prod 𝓘(ℝ)) J 2 (uncurry fun (y : M) (t : ℝ) ↦ Φ t y) (x, t₀) :=
-    hΦ.comp (x, t₀) (contMDiffAt_snd.prodMk contMDiffAt_fst)
-  have hϕ := hf.mfderiv (fun (y : M) (t : ℝ) ↦ Φ t y) (fun _ ↦ t₀) (m := 1) contMDiffAt_const
-    (by norm_num)
-  have hv : ContMDiffAt I 𝓘(ℝ).tangent 1
-      (fun _ : M ↦ (⟨t₀, (1 : ℝ)⟩ : TangentBundle 𝓘(ℝ) ℝ)) x := contMDiffAt_const
-  have hb : ContMDiffAt I J 1 (fun y ↦ Φ t₀ y) x :=
-    (hΦ.comp x (contMDiffAt_const.prodMk contMDiffAt_id)).of_le (by norm_num)
-  have := ContMDiffAt.clm_apply_of_inCoordinates hϕ hv hb
-  simpa only [familyVariationField, curveVelocity_apply] using this
-
-/-- The variation field of a family which is `C²` at `(t₀, x)` has a differentiable coordinate
-reading at `x`. -/
-theorem mdifferentiableAt_sectionCoord_familyVariationField
-    (hΦ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, x)) :
-    MDifferentiableAt I 𝓘(ℝ, F)
-      (sectionCoord ℝ (F := F) (Φ t₀) (familyVariationField J Φ t₀) (Φ t₀ x)) x :=
-  mdifferentiableAt_sectionCoord (Φ t₀) _
-    ((contMDiffAt_familyVariationField hΦ).mdifferentiableAt (by norm_num))
-    (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (Φ t₀ x))
-
-/-- Near `t₀`, the maps `Φ t` of a family which is `C²` at `(t₀, x)` are differentiable at `x`. -/
-private theorem eventually_mdifferentiableAt_family
-    (hΦ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, x)) :
-    ∀ᶠ t in 𝓝 t₀, MDifferentiableAt I J (Φ t) x := by
-  have hcont : ContinuousAt (fun t : ℝ ↦ (t, x)) t₀ := by fun_prop
-  filter_upwards [hcont.eventually ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hΦ)]
-    with t ht
-  exact (ht.comp x (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt (by norm_num)
-
-omit [IsManifold I 2 M] [IsManifold J 2 N] in
 /-- The parametrized surface `(t, s) ↦ Φ t (c s)` of a family `C²` at `(t₀, c 0)` and a curve
 `C²` at `0` is `C²` at `(t₀, 0)`. -/
 private theorem contMDiffAt_surface_family {c : ℝ → M}
@@ -174,6 +94,8 @@ private theorem contMDiffAt_surface_family {c : ℝ → M}
     ContMDiffAt 𝓘(ℝ, ℝ × ℝ) J 2 (fun z : ℝ × ℝ ↦ Φ z.1 (c z.2)) (t₀, 0) :=
   hΦ.comp (t₀, (0 : ℝ)) ((contDiffAt_fst.contMDiffAt (n := 2)).prodMk
     (hc.comp (t₀, (0 : ℝ)) contDiffAt_snd.contMDiffAt))
+
+variable [IsManifold I 2 M] [IsManifold J 2 N]
 
 /-- The coordinate reading of `t ↦ dΦ_t v` along `t ↦ Φ t x` is differentiable at `t₀`. -/
 private theorem differentiableAt_sectionCoord_mfderiv_family
@@ -188,7 +110,7 @@ private theorem differentiableAt_sectionCoord_mfderiv_family
   have hd := ContMDiffAt.differentiableAt_sectionCoord_curveVelocity_snd
     (f := fun t s ↦ Φ t (c s)) hσ hy
   refine hd.congr_of_eventuallyEq ?_
-  filter_upwards [eventually_mdifferentiableAt_family hΦ] with t ht
+  filter_upwards [eventually_mdifferentiableAt_family hΦ two_ne_zero] with t ht
   simp only [sectionCoord_apply]
   exact congrArg _ (curveVelocity_map ht hc1).symm
 
@@ -214,7 +136,7 @@ theorem alongCurve_mfderiv_family (ht : cov.IsTorsionFree)
       CovariantDerivative.alongCurve cov (fun t ↦ Φ t (c 0))
       (fun t ↦ curveVelocity J (fun s ↦ Φ t (c s)) 0) t₀ :=
     CovariantDerivative.alongCurve_congr cov _ _
-      ((eventually_mdifferentiableAt_family hΦ).mono fun t ht ↦
+      ((eventually_mdifferentiableAt_family hΦ two_ne_zero).mono fun t ht ↦
       (curveVelocity_map (γ := c) ht hc1).symm)
   rw [hfield]
   have : IsManifold J (minSmoothness ℝ 2) N := by
@@ -226,8 +148,10 @@ theorem alongCurve_mfderiv_family (ht : cov.IsTorsionFree)
   rw [← hcomm]
   have hX := (contMDiffAt_familyVariationField (Φ := Φ) (t₀ := t₀) (x := c 0) hΦ).mdifferentiableAt
     (by norm_num)
-  exact (CovariantDerivative.alongMap_curveVelocity (Φ t₀) cov (familyVariationField J Φ t₀)
+  have h := (CovariantDerivative.alongMap_curveVelocity (Φ t₀) cov (familyVariationField J Φ t₀)
     hc1 hX).symm
+  simp only [familyVariationField_def] at h ⊢
+  exact h
 
 variable [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
