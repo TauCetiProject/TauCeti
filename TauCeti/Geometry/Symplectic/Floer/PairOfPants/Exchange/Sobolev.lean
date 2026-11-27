@@ -185,9 +185,7 @@ private theorem exists_positiveEndChart_inf_eq_add {c : ℝ} (hc : |c| ≤ 1) {T
       have h := TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero w c
       rw [show w + (c, 0) = positiveEndChart inf ζ from sub_add_cancel _ _] at h
       rw [h, add_sub_cancel_right]
-    have hexp : 2 * exp (2 * π * T) + 1 ≤ 2 * exp (2 * π * (T + 1)) := by
-      rw [mul_add, mul_one, exp_add]
-      nlinarith [fourteen_le_two_mul_exp_two_pi, one_le_exp (by positivity : 0 ≤ 2 * π * T)]
+    have hexp := two_mul_exp_two_pi_mul_add_one_le T (by linarith)
     rw [hsub]
     linarith [norm_sub_norm_le (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) (c : ℂ)]
   have hw0 : Complex.equivRealProdCLM.symm w ≠ 0 :=
@@ -204,7 +202,7 @@ period-one Hamiltonians `H_q` translated by `c`, and let `u` be `C¹` there and 
 equation. If `B` bounds the coefficient field on jets of the end datum along `u` read in the
 recentred chart over the band `t ∈ [0, 1]` beyond `T`, then the coefficient field on conformal jets
 is at most `1 + B + (1 + B) B / π` beyond the height `T + 1` of the standard end chart `φ'_∞`. -/
-private theorem norm_floerConformalJetCoeff_positiveEndChart_inf_le_of_recentered
+theorem norm_floerConformalJetCoeff_positiveEndChart_inf_le_of_recentered
     (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ContDiff ℝ 2 (uncurry (H inf))) {c : ℝ} (hc : |c| ≤ 1)
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
@@ -609,13 +607,11 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_exchangePer
   exact ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_recentered hH hHs
     hc₀ hc₁ hX hx hnd hJe hJex (fun q hq ζ hζ ↦ hJeq q hq ζ (hR₁.trans hζ))
     (fun ζ hζ ↦ hJeq_inf ζ (hR₁.trans hζ))
-    (fun q hq _ _ hz ↦ by
-      have h := exchangePerturbation_eq_of_pos_fst_positiveEndCoord (H := H) hc₀ hc₁ hq
-        (by linarith [h1 hz])
-      exact ⟨funext fun x ↦ by rw [h], funext fun x ↦ by rw [h]⟩)
-    (fun _ hz ↦ by
-      have h := exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord (H := H) hc₀ hc₁ (h1 hz)
-      exact ⟨funext fun x ↦ by rw [h], funext fun x ↦ by rw [h]⟩) hJ
+    (fun _ hq _ _ hz ↦
+      exchangePerturbation_components_eq_of_pos_fst_positiveEndCoord hc₀ hc₁ hq
+        (zero_lt_one.trans (h1 hz)))
+    (fun _ hz ↦ exchangePerturbation_add_components_eq_of_one_lt_fst_positiveEndCoord hc₀ hc₁
+      (h1 hz)) hJ
     (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) 1)
     (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) Complex.I) hu hc
     (fun q hq z hz hzR ↦ hF q hq z hz (hR₁.trans hzR)) (fun z hz ↦ hF_inf z (hR₁.trans hz)) hux

@@ -19,6 +19,7 @@ import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 import Mathlib.Topology.Instances.Real.Lemmas
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Periodicity of the derivative and the logarithmic derivative
@@ -50,6 +51,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   function is periodic.
 * `Function.Periodic.exists_lipschitzWith`: a continuously differentiable periodic function of a
   real variable is Lipschitz.
+* `Function.Periodic.exists_forall_norm_le_comp_snd`: such a function, read on `E × ℝ` through
+  the second coordinate, is bounded together with its Fréchet derivative.
 * `TauCeti.fderiv_add_eq_smul`: a scalar twist `f (x + c) = a • f x` under translation, by a
   scalar from any division semiring acting on the codomain, passes to the Fréchet derivative.
 * `TauCeti.fderiv_apply_eq_zero_of_forall_periodic_smul`: a function invariant under all
@@ -127,6 +130,21 @@ theorem Periodic.exists_lipschitzWith {F : Type*} [NormedAddCommGroup F] [Normed
     lipschitzWith_of_nnNorm_deriv_le (hf₁.differentiable one_ne_zero) fun x ↦ ?_⟩
   rw [← NNReal.coe_le_coe, coe_nnNorm]
   exact (hC _ (Set.mem_range_self x)).trans (Real.le_coe_toNNReal C)
+
+/-- A continuously differentiable periodic function `f` of a real variable with nonzero period,
+read on a product `E × ℝ` through the second coordinate, is bounded together with its Fréchet
+derivative there. -/
+theorem Periodic.exists_forall_norm_le_comp_snd {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : ℝ → F} {c : ℝ}
+    (hf : Periodic f c) (hc : c ≠ 0) (hf₁ : ContDiff ℝ 1 f) :
+    ∃ B, ∀ z : E × ℝ, ‖f z.2‖ ≤ B ∧ ‖fderiv ℝ (fun w : E × ℝ ↦ f w.2) z‖ ≤ B := by
+  obtain ⟨B₀, hB₀⟩ := (hf.isBounded_of_continuous hc hf₁.continuous).exists_norm_le
+  obtain ⟨B₁, hB₁⟩ :=
+    (hf.deriv.isBounded_of_continuous hc (hf₁.continuous_deriv le_rfl)).exists_norm_le
+  refine ⟨max B₀ B₁, fun z ↦ ⟨(hB₀ _ (Set.mem_range_self _)).trans (le_max_left _ _), ?_⟩⟩
+  refine (TauCeti.norm_fderiv_comp_snd_le f z).trans ?_
+  rw [← norm_deriv_eq_norm_fderiv]
+  exact (hB₁ _ (Set.mem_range_self _)).trans (le_max_right _ _)
 
 end Function
 

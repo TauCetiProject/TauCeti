@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.FDeriv.AddSnd
+public import TauCeti.Analysis.Distribution.TestFunction.Convolution
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Basic
+public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Cone
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Submersion
-import TauCeti.Analysis.Distribution.TestFunction.Convolution
 
 /-!
 # Pulling distributions back along smooth maps
@@ -26,7 +27,7 @@ over the fibres of `f` (`Distribution.pullback_eq_compCLMOfSubmersion`).
 The wave front set of the pullback lies in the pullback of the wave front set of `T`
 (`Distribution.waveFrontSet_pullback_subset`):
 
-`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}`.
+`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}` (`TauCeti.covectorPullback`).
 
 So `k^* (f^* T)` is defined whenever the wave front set of `T` meets neither the normal set of `f`
 nor that of `f ∘ k` (`Distribution.adjoint_fderiv_apply_ne_zero_of_comp`).
@@ -66,7 +67,9 @@ Taking for `k` the inclusion of an open set `U ≤ Ω`, along which the pullback
 on `U`. Locality in the target is the same comparison for `ψ ⊗ ρₙ` on the two domains
 `{(x, y) | f x + y ∈ Ω''}` and `{(x, y) | f x + y ∈ Ω'}`. These results give locality and
 invariance under changes of coordinates in the source only; changes of coordinates in the target
-need composition with maps that are not submersions, which is not proved here.
+need composition with maps that are not submersions, which is
+`Distribution.pullback_eq_pullback_compCLMOfSubmersion` in
+`TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Comp`.
 
 ## Main declarations
 
@@ -84,6 +87,10 @@ need composition with maps that are not submersions, which is not proved here.
   of `f` nor that of `f ∘ k`, then `WF(f^* T)` does not meet the normal set of `k`.
 * `Distribution.adjoint_fderiv_apply_ne_zero_of_surjective`: the hypothesis holds for every
   distribution when `f` is a submersion.
+* `Distribution.tendsto_addSndPullback_pullback`: `f^* T ψ` is the limit of the values of the
+  pullback along `(x, y) ↦ f x + y` at `ψ ⊗ ρₙ`, for normalized bumps `ρₙ` of radii tending to zero.
+* `Distribution.mollify_fiberIntegralCLM_apply`: the mollification of the fibre integral `f_♯ ψ`
+  by a normalized bump `ρ` is `z ↦ ∫ ψ(x) ρ(z - f x) dx`.
 * `Distribution.pullback_eq_compCLMOfSubmersion`: along a submersion, `f^*` is the pullback
   `Distribution.compCLMOfSubmersion` by integration over the fibres.
 * `Distribution.pullback_eq_compCLMOfSubmersion_pullback`,
@@ -156,7 +163,7 @@ theorem notMem_waveFrontSet_addSndPullback (hf : ContDiffOn ℝ ∞ f Ω) {T : �
       (toLp 2 (x, (0 : E')), toLp 2 ((0 : E), η)) ∉ (addSndPullback hf T).waveFrontSet := by
   intro x hx η' _ hmem
   rw [addSndPullback_eq_compCLMOfSubmersion, waveFrontSet_compCLMOfSubmersion] at hmem
-  obtain ⟨-, η, hη, hadj⟩ := hmem
+  obtain ⟨-, η, hη, hadj⟩ := mem_covectorPullback.1 hmem
   dsimp only at hη hadj
   rw [adjoint_fderiv_addSnd_apply (p := toLp 2 (x, 0))
     ((hf.differentiableOn (by simp) x hx).differentiableAt (Ω.isOpen.mem_nhds hx))] at hadj
@@ -313,7 +320,7 @@ theorem isMicrolocallySmoothAt_pullback (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : M
 wave front set of `f^* T` are of the form `(x, Df(x)ᵀ η)` with `x ∈ Ω` and `(f x, η)` in the wave
 front set of `T`:
 
-`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}`.
+`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}` (`TauCeti.covectorPullback`).
 
 Covectors with `Df(x)ᵀ η = 0` do not occur, by the hypothesis on `WF(T)`. For a submersion this
 is an equality (`Distribution.pullback_eq_compCLMOfSubmersion`,
@@ -321,11 +328,10 @@ is an equality (`Distribution.pullback_eq_compCLMOfSubmersion`,
 theorem waveFrontSet_pullback_subset (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
     {T : 𝓓'(Ω', ℂ)}
     (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) :
-    (T.pullback f hf hfΩ h).waveFrontSet ⊆
-      {p | p.1 ∈ Ω ∧ ∃ η, (f p.1, η) ∈ T.waveFrontSet ∧ (fderiv ℝ f p.1).adjoint η = p.2} := by
+    (T.pullback f hf hfΩ h).waveFrontSet ⊆ covectorPullback f Ω T.waveFrontSet := by
   rintro ⟨x, ξ⟩ hxξ
   obtain ⟨hx, hξ, hns⟩ := mem_waveFrontSet_iff.1 hxξ
-  refine ⟨hx, ?_⟩
+  refine mem_covectorPullback.2 ⟨hx, ?_⟩
   by_contra hmem
   refine hns (isMicrolocallySmoothAt_pullback hf hfΩ h hx hξ fun η hη ↦ ?_)
   by_contra hns'
@@ -347,7 +353,7 @@ theorem adjoint_fderiv_apply_ne_zero_of_comp {E₀ : Type*} [NormedAddCommGroup 
     ∀ x ∈ Ω₀, ∀ ζ, (k x, ζ) ∈ (T.pullback f hf hfΩ h).waveFrontSet →
       (fderiv ℝ k x).adjoint ζ ≠ 0 := by
   intro x hx ζ hζ
-  obtain ⟨-, η, hη, hηζ⟩ := waveFrontSet_pullback_subset hf hfΩ h hζ
+  obtain ⟨-, η, hη, hηζ⟩ := mem_covectorPullback.1 (waveFrontSet_pullback_subset hf hfΩ h hζ)
   dsimp only at hη hηζ
   subst hηζ
   have hkx : DifferentiableAt ℝ k x := (hk x hx).differentiableAt (Ω₀.isOpen.mem_nhds hx)
@@ -362,7 +368,7 @@ section Submersion
 
 /-- The values `g^* T (ψ ⊗ ρₙ)` of the pullback along `g (x, y) = f x + y` at the tensor products of
 `ψ` with normalized bumps `ρₙ` of radii tending to zero tend to `f^* T ψ`. -/
-private theorem tendsto_addSndPullback_pullback (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
+theorem tendsto_addSndPullback_pullback (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
     {T : 𝓓'(Ω', ℂ)}
     (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) (ψ : 𝓓(Ω, ℝ))
     {σ : ℕ → ContDiffBump (0 : E')} (hσ0 : Tendsto (fun n ↦ (σ n).rOut) atTop (𝓝 0))
@@ -370,18 +376,12 @@ private theorem tendsto_addSndPullback_pullback (hf : ContDiffOn ℝ ∞ f Ω) (
     (hG : ∀ n p, G n p = ψ p.fst * (σ n).normed volume p.snd) :
     Tendsto (fun n ↦ addSndPullback hf T (G n)) atTop (𝓝 (T.pullback f hf hfΩ h ψ)) := by
   rw [pullback_eq_pullbackInl hf hfΩ h rfl (notMem_waveFrontSet_addSndPullback hf h)]
-  exact tendsto_pullbackInl _ (mapsTo_inl_addSndDomain hf.continuousOn hfΩ) _ ψ (l := atTop)
-    (ρ := fun n ↦ (σ n).normed volume) (r := fun n ↦ (σ n).rOut) (M := 1) (f := G)
-    (Eventually.of_forall fun n ↦ by
-      simp_rw [abs_of_nonneg ((σ n).nonneg_normed _), (σ n).integral_normed, le_refl])
-    (by simp_rw [ContDiffBump.integral_normed, tendsto_const_nhds])
-    (Eventually.of_forall fun n ↦ by
-      simpa only [(σ n).support_normed_eq] using ball_subset_closedBall)
-    hσ0 (Eventually.of_forall hG)
+  exact tendsto_pullbackInl_bump _ (mapsTo_inl_addSndDomain hf.continuousOn hfΩ) _ ψ hσ0
+    (Eventually.of_forall hG)
 
 /-- Mollifying the fibre integral `f_♯ ψ` by the normalized bump `ρ` of `σ` gives
 `z ↦ ∫ ψ(x) ρ(z - f x) dx`. -/
-private theorem mollify_fiberIntegralCLM_apply (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
+theorem mollify_fiberIntegralCLM_apply (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
     (hsurj : ∀ x ∈ Ω, Surjective (fderiv ℝ f x)) (ψ : 𝓓(Ω, ℝ)) (σ : ContDiffBump (0 : E'))
     (hσ : closedBall (0 : E') σ.rOut +
       tsupport (fiberIntegralCLM volume volume f hf hfΩ hsurj ψ) ⊆ (Ω' : Set E')) (z : E') :

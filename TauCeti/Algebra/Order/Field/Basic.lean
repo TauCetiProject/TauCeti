@@ -128,6 +128,9 @@ zero only at `0`.
   `|m| * δ < 1`.
 * `TauCeti.exists_pos_forall_one_add_mul_pos`: given `m`, there exists `τ₀ > 0` such that
   `0 < 1 + m * δ` for all `0 ≤ δ ≤ τ₀`.
+* `TauCeti.add_mul_div_le_add`: `t + m * M / t ≤ m + M` for `0 < t` and `m ≤ t ≤ M`.
+* `TauCeti.mul_le_sq_div_of_add_mul_le`: `a * b ≤ c ^ 2 / (4 * k)` for `0 < k` and
+  `0 ≤ a + k * b ≤ c`.
 -/
 
 public section
@@ -561,6 +564,22 @@ theorem exists_pos_forall_one_add_mul_pos {K : Type*} [Field K] [LinearOrder K]
   let ⟨τ₀, hτ₀, _, hm⟩ := exists_pos_abs_mul_le m (by norm_num : (0 : K) < 1 / 2) one_pos
   ⟨τ₀, hτ₀, fun _ hδ0 hδ ↦
     one_add_mul_pos_of_abs_mul_lt_one hδ0 ((hm hδ).trans_lt (by norm_num))⟩
+
+/-- For `0 < t` with `m ≤ t ≤ M`, `t + m * M / t ≤ m + M`: this is `(t - m) * (t - M) ≤ 0`
+divided by `t`. -/
+theorem add_mul_div_le_add {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {t m M : K} (ht : 0 < t) (hmt : m ≤ t) (htM : t ≤ M) : t + m * M / t ≤ m + M := by
+  have key : m + M - (t + m * M / t) = (M - t) * (t - m) / t := by field_simp; ring
+  rw [← sub_nonneg, key]
+  exact div_nonneg (mul_nonneg (sub_nonneg.2 htM) (sub_nonneg.2 hmt)) ht.le
+
+/-- If `0 < k` and `0 ≤ a + k * b ≤ c`, then `a * b ≤ c ^ 2 / (4 * k)`: the inequality of
+arithmetic and geometric means for `a` and `k * b`. -/
+theorem mul_le_sq_div_of_add_mul_le {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b c k : K} (hk : 0 < k) (h₀ : 0 ≤ a + k * b)
+    (h : a + k * b ≤ c) : a * b ≤ c ^ 2 / (4 * k) := by
+  rw [le_div_iff₀ (by positivity)]
+  nlinarith [sq_nonneg (a - k * b), mul_self_le_mul_self h₀ h]
 
 end TauCeti
 

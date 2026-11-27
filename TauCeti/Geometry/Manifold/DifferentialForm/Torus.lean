@@ -50,7 +50,12 @@ coordinate time forms of the first `m` factors back to those of `T^m` along the 
 those of the last `k` factors back to those of `T^k` along the second projection, and the volume
 form back to the wedge product `pr₁^* vol_m ∧ pr₂^* vol_k`. Appending a circle,
 `(x, t) ↦ Fin.snoc x t` from `T^m × AddCircle (p m)` to `T^(m + 1)` (`Diffeomorph.piSnoc`), pulls
-the volume form back to `pr₁^* vol_m ∧ pr₂^* dt_(p m)`. A torus with a single factor is its circle:
+the volume form back to `pr₁^* vol_m ∧ pr₂^* dt_(p m)`. Splitting off the first circle instead,
+the association map `x ↦ (x 0, Fin.tail x)` from `T^(m + 1)` to `AddCircle (p 0) × T^m` is the
+inverse of `(t, x) ↦ Fin.cons t x` (`Diffeomorph.piCons`). It pulls the time form of the first
+circle back to `dt_0` and the coordinate time form `dt_i` of `T^m` back to `dt_(i + 1)`, and
+`Fin.cons` pulls the volume form back to `pr₁^* dt_(p 0) ∧ pr₂^* vol_m`, read in degree `m + 1`.
+A torus with a single factor is its circle:
 its volume form is the time form of that factor. The torus with no factors is a point, on which the
 volume form is the constant `1`, so a point factor `T^0` does not contribute to the volume form of
 `T^m × T^0`.
@@ -87,7 +92,8 @@ volume form is the constant `1`, so a point factor `T^0` does not contribute to 
   `TauCeti.mpullback_generalLinearGroup_smul_sum_smul_torusTimeForm` pulls `∑ j, b j • dt_j` back
   to `∑ k, (Aᵀ b)_k • dt_k`.
 * `TauCeti.torusVolumeForm_apply`, `TauCeti.torusVolumeForm_apply_ne_zero`: the determinant
-  formula for the volume form, which vanishes nowhere;
+  formula for the volume form, which vanishes nowhere, and its two-dimensional case
+  `TauCeti.torusVolumeForm_fin_two_apply`, `dt₀ ∧ dt₁ (v, w) = v₀ w₁ - w₀ v₁`;
   `TauCeti.torusVolumeForm_apply_eq_apply_zero`: its coefficients are constant.
 * `TauCeti.mpullback_reindex_torusVolumeForm`,
   `TauCeti.mpullback_piMap_diffeomorphAddCircle_torusVolumeForm`: the permutation sign law and the
@@ -97,6 +103,11 @@ volume form is the constant `1`, so a point factor `T^0` does not contribute to 
   `TauCeti.mpullback_piAddCases_torusVolumeForm`: concatenating two tori.
 * `TauCeti.mpullback_piSnoc_torusTimeForm_castSucc`, `TauCeti.mpullback_piSnoc_torusTimeForm_last`,
   `TauCeti.mpullback_piSnoc_torusVolumeForm`: appending a circle to a torus.
+* `TauCeti.mpullback_piCons_torusTimeForm_zero`, `TauCeti.mpullback_piCons_torusTimeForm_succ`,
+  `TauCeti.mpullback_piCons_torusVolumeForm`: prepending a circle to a torus;
+  `TauCeti.mpullback_piCons_symm_mpullback_fst_timeForm`,
+  `TauCeti.mpullback_piCons_symm_mpullback_snd_torusTimeForm`: the association map splitting off
+  the first circle pulls the time forms of the factors back to the coordinate time forms.
 * `TauCeti.mpullback_piUnique_timeForm`, `TauCeti.torusVolumeForm_fin_one`: the one-factor torus
   is its circle.
 * `TauCeti.torusVolumeForm_fin_zero_apply`, `TauCeti.mpullback_piAddCases_torusVolumeForm_zero`:
@@ -358,6 +369,14 @@ theorem torusVolumeForm_apply (x : ∀ i, AddCircle (p i))
   rw [torusVolumeForm, SmoothForm.wedgeFamily_apply]
   simp only [torusTimeForm_apply, Matrix.cons_val_fin_one]
 
+/-- On a two-torus the volume form `dt₀ ∧ dt₁` sends tangent vectors `v` and `w` to
+`v₀ w₁ - w₀ v₁`. -/
+theorem torusVolumeForm_fin_two_apply (p : Fin 2 → ℝ) [∀ i, Fact (0 < p i)]
+    (x : ∀ i, AddCircle (p i)) (v w : TangentSpace (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) x) :
+    (torusVolumeForm p).val x ![v, w] = v 0 * w 1 - w 0 * v 1 := by
+  rw [torusVolumeForm_apply, Matrix.det_fin_two]
+  simp
+
 /-- The volume form of the torus has constant coefficients in the product charts: at every point
 it is the same alternating map of `Fin n → ℝ` as at `0`. -/
 theorem torusVolumeForm_apply_eq_apply_zero (x : ∀ i, AddCircle (p i)) :
@@ -469,6 +488,69 @@ theorem mpullback_piSnoc_torusTimeForm_last (p : Fin (m + 1) → ℝ) [∀ i, Fa
       ⇑(Diffeomorph.piSnoc (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞) = Prod.snd :=
     funext fun _ ↦ by simp
   simp only [torusTimeForm_def, SmoothForm.mpullback_mpullback, h]
+
+/-- **Splitting off the first circle, the first factor.** The map `(t, x) ↦ Fin.cons t x` from
+`AddCircle (p 0) × T^m` to `T^(m + 1)`, inverse to the association map splitting off the first
+circle, pulls the coordinate time form of the first factor back to the pullback along the first
+projection of the time form of that circle. -/
+@[simp]
+theorem mpullback_piCons_torusTimeForm_zero (p : Fin (m + 1) → ℝ) [∀ i, Fact (0 < p i)] :
+    SmoothForm.mpullback (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞)
+        (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).contMDiff
+        (torusTimeForm p 0) =
+      SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm (p 0)) := by
+  have h : (fun x : ∀ i, AddCircle (p i) ↦ x 0) ∘
+      ⇑(Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞) = Prod.fst :=
+    funext fun _ ↦ by simp
+  simp only [torusTimeForm_def, SmoothForm.mpullback_mpullback, h]
+
+/-- **Splitting off the first circle, the remaining factors.** The map `(t, x) ↦ Fin.cons t x`
+from `AddCircle (p 0) × T^m` to `T^(m + 1)` pulls the coordinate time form of the factor
+`Fin.succ i` back to the pullback along the second projection of the coordinate time form `dt_i`
+of `T^m`. -/
+@[simp]
+theorem mpullback_piCons_torusTimeForm_succ (p : Fin (m + 1) → ℝ) [∀ i, Fact (0 < p i)]
+    (i : Fin m) :
+    SmoothForm.mpullback (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞)
+        (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).contMDiff
+        (torusTimeForm p i.succ) =
+      SmoothForm.mpullback Prod.snd contMDiff_snd
+        (torusTimeForm (fun i : Fin m ↦ p i.succ) i) := by
+  rw [torusTimeForm_def, torusTimeForm_def]
+  exact SmoothForm.mpullback_mpullback_of_comp_eq _ _ _ _ (funext fun _ ↦ by simp) _
+
+/-- **The association map, the first circle.** The association map `x ↦ (x 0, Fin.tail x)` from
+`T^(m + 1)` to `AddCircle (p 0) × T^m` pulls the time form of the first circle, read on the
+product along the first projection, back to the coordinate time form `dt_0`. -/
+@[simp]
+theorem mpullback_piCons_symm_mpullback_fst_timeForm (p : Fin (m + 1) → ℝ)
+    [∀ i, Fact (0 < p i)] :
+    SmoothForm.mpullback (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).symm
+        (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).symm.contMDiff
+        (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm (p 0))) =
+      torusTimeForm p 0 := by
+  have h : Prod.fst ∘ ⇑(Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).symm =
+      fun x : ∀ i, AddCircle (p i) ↦ x 0 :=
+    funext fun _ ↦ by simp
+  simp only [torusTimeForm_def, SmoothForm.mpullback_mpullback, h]
+
+/-- **The association map, the remaining circles.** The association map `x ↦ (x 0, Fin.tail x)`
+from `T^(m + 1)` to `AddCircle (p 0) × T^m` pulls the coordinate time form `dt_i` of `T^m`, read
+on the product along the second projection, back to the coordinate time form of the factor
+`Fin.succ i`. -/
+@[simp]
+theorem mpullback_piCons_symm_mpullback_snd_torusTimeForm (p : Fin (m + 1) → ℝ)
+    [∀ i, Fact (0 < p i)] (i : Fin m) :
+    SmoothForm.mpullback (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).symm
+        (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).symm.contMDiff
+        (SmoothForm.mpullback Prod.snd contMDiff_snd
+          (torusTimeForm (fun i : Fin m ↦ p i.succ) i)) =
+      torusTimeForm p i.succ := by
+  have h : (fun x : ∀ i : Fin m, AddCircle (p i.succ) ↦ x i) ∘ Prod.snd ∘
+      ⇑(Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).symm =
+      fun x : ∀ i, AddCircle (p i) ↦ x i.succ :=
+    funext fun _ ↦ by simp [Fin.tail]
+  simp only [torusTimeForm_def, SmoothForm.mpullback_mpullback, Function.comp_assoc, h]
 
 /-- **Concatenating tori, volume form.** The concatenation `(x, y) ↦ Fin.addCases x y` from
 `T^m × T^k` to `T^(m + k)` pulls the volume form of `T^(m + k)` back to the wedge product
@@ -592,6 +674,66 @@ theorem mpullback_piSnoc_torusVolumeForm (p : Fin (m + 1) → ℝ) [∀ i, Fact 
   -- The periods agree definitionally: `Fin.castAdd 1 i` is `i.castSucc`, and `Fin.natAdd m 0` is
   -- `Fin.last m`.
   rfl
+
+/-- **Splitting off the first circle, volume form.** The map `(t, x) ↦ Fin.cons t x` from
+`AddCircle (p 0) × T^m` to `T^(m + 1)` pulls the volume form of `T^(m + 1)` back to the wedge
+product `pr₁^* dt ∧ pr₂^* vol_m` of the pullbacks of the time form of the first circle and of the
+volume form of `T^m`, transported from degree `1 + m` to degree `m + 1`. -/
+theorem mpullback_piCons_torusVolumeForm (p : Fin (m + 1) → ℝ) [∀ i, Fact (0 < p i)] :
+    SmoothForm.mpullback (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞)
+        (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).contMDiff
+        (torusVolumeForm p) =
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦
+          SmoothForm (𝓘(ℝ).prod (ModelWithCorners.pi fun _ : Fin m ↦ 𝓘(ℝ)))
+            (AddCircle (p 0) × ∀ i : Fin m, AddCircle (p i.succ)) ℝ q) (add_comm 1 m)
+        (SmoothForm.wedge
+          (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm (p 0)))
+          (SmoothForm.mpullback Prod.snd contMDiff_snd
+            (torusVolumeForm fun i : Fin m ↦ p i.succ))) := by
+  -- The product of the unit basis of `ℝ` and the coordinate basis of `Fin m → ℝ`, the circle
+  -- first, indexed by `Fin (m + 1)`.
+  let b := ((Module.Basis.singleton (Fin 1) ℝ).prod (Pi.basisFun ℝ (Fin m))).reindex
+    (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
+  have hb : ⇑b = fun r ↦
+      Fin.append (fun i ↦ (Module.Basis.singleton (Fin 1) ℝ i, (0 : Fin m → ℝ)))
+        (fun j ↦ ((0 : ℝ), Pi.basisFun ℝ (Fin m) j)) (Fin.cast (add_comm 1 m).symm r) :=
+    Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr _ _ _
+  refine Subtype.ext (funext fun q ↦ ?_)
+  -- The differential of `Fin.cons` sends `b` to the coordinate basis of `Fin (m + 1) → ℝ`, so the
+  -- left side takes the value `1` on `b`.
+  have hd : (fun i ↦ mfderiv _ _ (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ))
+      (fun i ↦ AddCircle (p i)) ∞) q (b i)) = Pi.basisFun ℝ (Fin (m + 1)) := funext fun i ↦
+    (Diffeomorph.mfderiv_piCons_apply (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞ q
+      (b i).1 (b i).2).trans
+      (Module.Basis.cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr i)
+  have hL : (SmoothForm.mpullback _ (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ))
+      (fun i ↦ AddCircle (p i)) ∞).contMDiff (torusVolumeForm p)).val q b = 1 :=
+    (SmoothForm.mpullback_apply _ _ _ q b).trans (by rw [hd, torusVolumeForm_apply_basisFun])
+  -- On the right, the transported wedge of the pullbacks evaluates on `b` to the product of the
+  -- time form on the unit vector and the volume form on the coordinate basis.
+  have hR : (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦
+      SmoothForm (𝓘(ℝ).prod (ModelWithCorners.pi fun _ : Fin m ↦ 𝓘(ℝ)))
+        (AddCircle (p 0) × ∀ i : Fin m, AddCircle (p i.succ)) ℝ q) (add_comm 1 m)
+      (SmoothForm.wedge
+        (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm (p 0)))
+        (SmoothForm.mpullback Prod.snd contMDiff_snd
+          (torusVolumeForm fun i : Fin m ↦ p i.succ)))).val q b = 1 := by
+    refine (SmoothForm.cast_apply _ _ q b).trans ?_
+    have hbc : (⇑b ∘ Fin.cast (add_comm 1 m) : Fin (1 + m) →
+        TangentSpace (𝓘(ℝ).prod (ModelWithCorners.pi fun _ : Fin m ↦ 𝓘(ℝ))) q) =
+        Fin.append (fun i ↦ (Module.Basis.singleton (Fin 1) ℝ i, (0 : Fin m → ℝ)))
+          (fun j ↦ ((0 : ℝ), Pi.basisFun ℝ (Fin m) j)) :=
+      funext fun r ↦ (congrFun hb _).trans (by simp)
+    rw [hbc]
+    refine (SmoothForm.wedge_mpullback_fst_snd_apply_append _ _ q _
+      (Pi.basisFun ℝ (Fin m))).trans ?_
+    simp only [Module.Basis.coe_singleton, torusVolumeForm_apply_basisFun, mul_one]
+    exact AddCircle.timeForm_apply (p 0) q.1 _
+  -- Both sides are top-degree forms on the tangent space `ℝ × (Fin m → ℝ)` that agree on the
+  -- basis `b`, so they are equal.
+  refine sub_eq_zero.1 ((ContinuousAlternatingMap.map_basis_eq_zero_iff _ b).1 ?_)
+  exact (ContinuousAlternatingMap.sub_apply _ _ _).trans
+    ((congrArg₂ (· - ·) hL hR).trans (sub_self 1))
 
 /-- **The empty torus is a point.** For no factors the volume form is the constant function `1`,
 the positive orientation form of a point. -/

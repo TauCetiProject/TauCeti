@@ -97,7 +97,9 @@ Every continuous linear map `L : E →L[𝕜] G` out of a finite-dimensional spa
 of the rank-one maps `eᵏ ⊗ L(eₖ)`, `w ↦ eᵏ(w) L(eₖ)` (`ContinuousLinearMap.smulRight`), over a
 basis `(eₖ)` of `E` with coordinate functionals `(eᵏ)` (`Module.Basis.sum_coord_smulRight`). So a
 linear map out of `E →L[𝕜] G` is determined by its values on the rank-one maps `ξ ⊗ v`
-(`LinearMap.ext_smulRight`).
+(`LinearMap.ext_smulRight`), and a linear map out of `E →L[𝕜] E' →L[𝕜] G` by its values on the
+rank-one maps `ξ ⊗ η ⊗ v` (`LinearMap.ext_smulRight_smulRight`). A continuous functional `ξ` is
+`∑ₖ ξ(eₖ) eᵏ` (`Module.Basis.sum_apply_smul_coord_toContinuousLinearMap`).
 
 A closed subspace `S` of finite codimension has a topological complement inside every dense
 subspace `D`: `Submodule.exists_le_isTopCompl_of_dense`. Consequently `S ⊔ D` is the whole space
@@ -232,6 +234,45 @@ theorem isInvertible_iff_injective_of_finrank_eq {A : U →L[𝕜] G}
   have : T2Space U := .of_injective_continuous hinj A.continuous
   have := FiniteDimensional.of_injective (A : U →ₗ[𝕜] G) hinj
   exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, by ext; simp⟩
+
+/-- A continuous linear map from a finite-dimensional topological vector space into a
+finite-dimensional Hausdorff topological vector space of the same `finrank` is invertible exactly
+when it is surjective. -/
+theorem isInvertible_iff_surjective_of_finrank_eq [FiniteDimensional 𝕜 U] {A : U →L[𝕜] G}
+    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) :
+    A.IsInvertible ↔ Function.Surjective A :=
+  (isInvertible_iff_injective_of_finrank_eq hdim).trans
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := (A : U →ₗ[𝕜] G)) hdim)
+
+/-- **Completing a surjection to an isomorphism.** A surjective continuous linear map
+`A : U → G` out of a finite-dimensional Hausdorff topological vector space extends, for every
+finite-dimensional Hausdorff `F` with `dim F + dim G = dim U`, to an invertible map
+`(c, A) : U → F × G`. The map `c` is a projection onto the kernel of `A` followed by an
+isomorphism of that kernel with `F`. -/
+theorem exists_isInvertible_prod_of_surjective {F : Type*} [AddCommGroup F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [Module 𝕜 F] [ContinuousSMul 𝕜 F] [T2Space F] [FiniteDimensional 𝕜 F]
+    [T2Space U] [FiniteDimensional 𝕜 U] {A : U →L[𝕜] G} (hA : Function.Surjective A)
+    (hdim : Module.finrank 𝕜 F + Module.finrank 𝕜 G = Module.finrank 𝕜 U) :
+    ∃ c : U →L[𝕜] F, (c.prod A).IsInvertible := by
+  -- By rank–nullity the kernel `K` of `A` has the dimension of `F`.
+  have h := LinearMap.finrank_range_add_finrank_ker (A : U →ₗ[𝕜] G)
+  rw [LinearMap.range_eq_top_of_surjective _ hA, finrank_top] at h
+  set K := LinearMap.ker (A : U →ₗ[𝕜] G)
+  have hK : Module.finrank 𝕜 K = Module.finrank 𝕜 F := by omega
+  -- A projection of `U` onto the kernel, followed by an isomorphism of the kernel with `F`.
+  obtain ⟨π, hπ⟩ := LinearMap.exists_leftInverse_of_injective K.subtype K.ker_subtype
+  set e : K ≃ₗ[𝕜] F := LinearEquiv.ofFinrankEq K F hK
+  refine ⟨LinearMap.toContinuousLinearMap (e.toLinearMap ∘ₗ π),
+    (isInvertible_iff_injective_of_finrank_eq (by rw [Module.finrank_prod, hdim])).2 ?_⟩
+  rw [injective_iff_map_eq_zero]
+  intro z hz
+  rw [prod_apply, Prod.mk_eq_zero] at hz
+  -- `z` lies in the kernel of `A`, on which the projection is the identity.
+  have hzK : z ∈ K := LinearMap.mem_ker.2 hz.2
+  have hπz : π z = ⟨z, hzK⟩ := by simpa using LinearMap.congr_fun hπ ⟨z, hzK⟩
+  have h0 : e (π z) = 0 := by simpa using hz.1
+  rw [hπz, LinearEquiv.map_eq_zero_iff] at h0
+  exact congrArg Subtype.val h0
 
 end ContinuousLinearMap
 
@@ -470,6 +511,14 @@ variable {𝕜 E G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G] [IsTopologicalAddGroup G]
   [ContinuousSMul 𝕜 G]
 
+/-- A continuous linear functional on a finite-dimensional space is the combination
+`∑ₖ ξ(eₖ) eᵏ` of the coordinate functionals `(eᵏ)` of a basis `(eₖ)`. -/
+theorem Module.Basis.sum_apply_smul_coord_toContinuousLinearMap {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι 𝕜 E) (ξ : E →L[𝕜] 𝕜) :
+    ∑ k, ξ (b k) • LinearMap.toContinuousLinearMap (b.coord k) = ξ := by
+  ext w
+  simpa using LinearMap.congr_fun (b.sum_dual_apply_smul_coord ξ.toLinearMap) w
+
 /-- A continuous linear map out of a finite-dimensional space is the sum of the rank-one maps
 `eᵏ ⊗ L(eₖ)` over a basis `(eₖ)` and its coordinate functionals `(eᵏ)`. -/
 theorem Module.Basis.sum_coord_smulRight {ι : Type*} [Fintype ι] (b : Module.Basis ι 𝕜 E)
@@ -488,6 +537,19 @@ theorem LinearMap.ext_smulRight {W : Type*} [AddCommGroup W] [Module 𝕜 W]
   refine LinearMap.ext fun L ↦ ?_
   rw [← (Module.finBasis 𝕜 E).sum_coord_smulRight L]
   simp only [map_sum, h]
+
+/-- Linear maps out of the continuous bilinear maps `E →L[𝕜] E' →L[𝕜] G`, for finite-dimensional
+`E` and `E'`, agree as soon as they agree on the rank-one maps `ξ ⊗ η ⊗ v`,
+`(u, w) ↦ ξ(u) η(w) v`. -/
+theorem LinearMap.ext_smulRight_smulRight {E' W : Type*} [AddCommGroup E'] [Module 𝕜 E']
+    [TopologicalSpace E'] [IsTopologicalAddGroup E'] [ContinuousSMul 𝕜 E'] [FiniteDimensional 𝕜 E']
+    [T2Space E'] [AddCommGroup W] [Module 𝕜 W] {T T' : (E →L[𝕜] E' →L[𝕜] G) →ₗ[𝕜] W}
+    (h : ∀ (ξ : E →L[𝕜] 𝕜) (η : E' →L[𝕜] 𝕜) (v : G),
+      T (ξ.smulRight (η.smulRight v)) = T' (ξ.smulRight (η.smulRight v))) :
+    T = T' :=
+  LinearMap.ext_smulRight fun ξ L ↦ LinearMap.congr_fun
+    (LinearMap.ext_smulRight (T := T ∘ₗ ξ.smulRightₗ) (T' := T' ∘ₗ ξ.smulRightₗ)
+      fun η v ↦ h ξ η v) L
 
 end SmulRight
 

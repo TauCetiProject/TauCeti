@@ -31,6 +31,8 @@ may be degenerate.
   rewrites `prodEquiv`) intertwines `map (f₁.prodMap f₂)` with
   `GradedTensorProduct.map (mapEvenOdd f₁) (mapEvenOdd f₂)`.
 * `CliffordAlgebra.map_prodMap_toProd`: the same naturality for the inverse map `toProd`.
+* `AlgHom.cliffordProdTensor_comp_prodMap`: naturality of the graded tensor product of Clifford
+  modules under pulling back both actions along quadratic isometries.
 
 ## References
 
@@ -83,3 +85,29 @@ theorem map_prodMap_toProd (f₁ : Q₁ →qᵢ P₁) (f₂ : Q₂ →qᵢ P₂)
   DFunLike.congr_fun (map_prodMap_comp_toProd f₁ f₂) x
 
 end CliffordAlgebra
+
+namespace AlgHom
+
+open CliffordAlgebra
+
+/-- **Naturality of `AlgHom.cliffordProdTensor` under pullback of both actions.** Composing
+`cliffordProdTensor ρ₁ γ hγ hγρ ρ₂` with `CliffordAlgebra.map (f₁.prodMap f₂)` gives the graded
+tensor product of the pulled-back actions `ρ₁.comp (map f₁)` and `ρ₂.comp (map f₂)` with the same
+grading operator `γ`. -/
+theorem cliffordProdTensor_comp_prodMap {R M₁ M₂ M₁' M₂' E F : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup M₁'] [Module R M₁'] [AddCommGroup M₂'] [Module R M₂']
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    {Q₁' : QuadraticForm R M₁'} {Q₂' : QuadraticForm R M₂'}
+    [AddCommGroup E] [Module R E] [AddCommGroup F] [Module R F]
+    (ρ₁ : CliffordAlgebra Q₁' →ₐ[R] Module.End R E) (γ : Module.End R E)
+    (hγ : γ * γ = 1) (hγρ : ∀ v, γ * ρ₁ (ι Q₁' v) = -(ρ₁ (ι Q₁' v) * γ))
+    (ρ₂ : CliffordAlgebra Q₂' →ₐ[R] Module.End R F)
+    (f₁ : Q₁ →qᵢ Q₁') (f₂ : Q₂ →qᵢ Q₂') :
+    (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂).comp (map (f₁.prodMap f₂)) =
+      cliffordProdTensor (ρ₁.comp (map f₁)) γ hγ (fun v ↦ by simpa using hγρ (f₁ v))
+        (ρ₂.comp (map f₂)) := by
+  refine CliffordAlgebra.hom_ext <| LinearMap.ext fun ⟨v₁, v₂⟩ ↦ ?_
+  simp [cliffordProdTensor_ι]
+
+end AlgHom

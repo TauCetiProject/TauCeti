@@ -49,8 +49,6 @@ rank.
   `‖q(ψ)‖² = ‖ψ‖⁴ / 8`; in particular `q(ψ) = 0` only for `ψ = 0`
   (`quadraticTwoForm_eq_zero_iff`).
 * `inner_quadraticTwoForm_eq_re_inner`: `⟪q(ψ), ω⟫ = Re⟪ψ, C(iω) ψ⟫ / 4` for every two-form `ω`.
-* `abs_re_inner_cliffordRestriction_apply_self_le`: `|Re⟪ψ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖²` for every
-  two-form `μ`.
 * `cliffordRestriction_quadraticTwoFormPolar`: `C(i q'(ψ, φ)) = φψ* + ψφ* - Re⟪ψ, φ⟫ Id`.
 * `quadraticTwoForm_add`: `q(ψ + φ) = q(ψ) + q(φ) + q'(ψ, φ)`.
 * `inner_quadraticTwoFormPolar_eq_re_inner`: `⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2` for every
@@ -58,6 +56,9 @@ rank.
 * `quadraticTwoFormPolar_smul_self`: `q'(ψ, c ψ) = 2 Re(c) q(ψ)`, so the derivative of `q` kills
   the infinitesimal gauge directions `ξ ψ` with `ξ` imaginary.
 * `norm_quadraticTwoFormPolar_le`: `‖q'(ψ, φ)‖ ≤ ‖ψ‖ ‖φ‖ / √2`.
+* `abs_re_inner_cliffordRestriction_apply_le`, `abs_re_inner_cliffordRestriction_apply_self_le`:
+  `|Re⟪φ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖ ‖φ‖`, in particular `|Re⟪ψ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖²`, for every
+  two-form `μ`.
 * `norm_quadraticTwoForm_sub_le`: `q` is locally Lipschitz,
   `‖q(ψ) - q(φ)‖ ≤ ‖ψ - φ‖ (‖ψ‖ + ‖φ‖) / (2 √2)`.
 * `hasFDerivAt_quadraticTwoForm`, `contDiff_quadraticTwoForm`: `q` is smooth, with real Fréchet
@@ -355,24 +356,35 @@ theorem norm_quadraticTwoFormPolar_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q 
 
 include hQ in
 variable {ρ} in
+/-- The Clifford action of a two-form pairs two positive spinors boundedly:
+`|Re⟪φ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖ ‖φ‖`. -/
+theorem abs_re_inner_cliffordRestriction_apply_le
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (μ : ⋀[ℝ]^2 V) (ψ φ : positiveHalfSpinors o ρ) :
+    |(⟪φ, cliffordRestriction o ρ μ ψ⟫_ℂ).re| ≤ √2 * ‖μ‖ * ‖ψ‖ * ‖φ‖ := by
+  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
+  set p := quadraticTwoFormPolar o ρ hkl ψ φ
+  have hcs := abs_real_inner_le_norm (p : ⋀[ℝ]^2 V) μ
+  rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, abs_div,
+    abs_of_pos (two_pos : (0 : ℝ) < 2), Submodule.norm_coe] at hcs
+  apply (div_le_div_iff_of_pos_right (by norm_num : 0 < (2 : ℝ))).1
+  calc |(⟪φ, cliffordRestriction o ρ μ ψ⟫_ℂ).re| / 2 ≤ ‖p‖ * ‖μ‖ := hcs
+    _ ≤ (‖ψ‖ * ‖φ‖ / √2) * ‖μ‖ :=
+      mul_le_mul_of_nonneg_right (norm_quadraticTwoFormPolar_le o hQ hkl hρ ψ φ) (norm_nonneg _)
+    _ = (√2 * ‖μ‖ * ‖ψ‖ * ‖φ‖) / 2 := by
+      field_simp
+      linear_combination -‖μ‖ * ‖ψ‖ * ‖φ‖ * Real.mul_self_sqrt zero_le_two
+
+include hQ in
+variable {ρ} in
 /-- The pairing of a positive spinor with the Clifford action of a two-form on it is bounded:
 `|Re⟪ψ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖²`. -/
 theorem abs_re_inner_cliffordRestriction_apply_self_le
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (μ : ⋀[ℝ]^2 V) (ψ : positiveHalfSpinors o ρ) :
     |(⟪ψ, cliffordRestriction o ρ μ ψ⟫_ℂ).re| ≤ √2 * ‖μ‖ * ‖ψ‖ ^ 2 := by
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
-  set p := quadraticTwoFormPolar o ρ hkl ψ ψ
-  have hcs := abs_real_inner_le_norm (p : ⋀[ℝ]^2 V) μ
-  rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, abs_div,
-    abs_of_pos (two_pos : (0 : ℝ) < 2), Submodule.norm_coe] at hcs
-  apply (div_le_div_iff_of_pos_right (by norm_num : 0 < (2 : ℝ))).1
-  calc |(⟪ψ, cliffordRestriction o ρ μ ψ⟫_ℂ).re| / 2 ≤ ‖p‖ * ‖μ‖ := hcs
-    _ ≤ (‖ψ‖ * ‖ψ‖ / √2) * ‖μ‖ :=
-      mul_le_mul_of_nonneg_right (norm_quadraticTwoFormPolar_le o hQ hkl hρ ψ ψ) (norm_nonneg _)
-    _ = (√2 * ‖μ‖ * ‖ψ‖ ^ 2) / 2 := by
-      field_simp
-      linear_combination -‖μ‖ * ‖ψ‖ ^ 2 * Real.mul_self_sqrt zero_le_two
+  rw [sq, ← mul_assoc]
+  exact abs_re_inner_cliffordRestriction_apply_le o hQ hρ μ ψ ψ
 
 /-- `q'(ψ - φ, ψ + φ) = 2 (q(ψ) - q(φ))`. -/
 theorem quadraticTwoFormPolar_sub_add (ψ φ : positiveHalfSpinors o ρ) :

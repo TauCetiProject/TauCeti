@@ -113,6 +113,15 @@ theorem subtypeVal_apply (d : EmbeddedLieSubgroupData I K E') (k : K) :
     d.subtypeVal k = (k : G) := by
   rfl
 
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [LieGroup I ∞ G] [T2Space G] in
+/-- The smooth inclusion of an embedded Lie subgroup is the subgroup inclusion `K.subtype`. -/
+@[simp]
+theorem toMonoidHom_subtypeVal (d : EmbeddedLieSubgroupData I K E') :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
+    d.subtypeVal.toMonoidHom = K.subtype := by
+  rfl
+
 /-- The differential at the identity of the inclusion of an embedded Lie subgroup. -/
 noncomputable def lieMapSubtypeVal (d : EmbeddedLieSubgroupData I K E') :
     let _ : ChartedSpace E' K := d.chartedSpace
@@ -133,6 +142,19 @@ theorem lieMapSubtypeVal_apply (d : EmbeddedLieSubgroupData I K E') :
   dsimp only
   intro X
   rfl
+
+/-- The inclusion of an embedded Lie subgroup intertwines the exponentials: the ambient exponential
+of `dι Z` is the subgroup exponential of `Z`. -/
+theorem lieExp_lieMapSubtypeVal (d : EmbeddedLieSubgroupData I K E') :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
+    ∀ Z : LeftInvariantDerivation 𝓘(ℝ, E') K,
+      lieExp (d.lieMapSubtypeVal Z) = ((lieExp Z : K) : G) := by
+  let _ : ChartedSpace E' K := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
+  dsimp only
+  intro Z
+  rw [d.lieMapSubtypeVal_apply, ← map_lieExp d.subtypeVal, d.subtypeVal_apply]
 
 section Units
 

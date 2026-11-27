@@ -26,7 +26,8 @@ union of its unit translates (`Projectivization.preimage_image_mk'`). These two 
 from Zayn Blore's Mathlib pull request
 [mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117). Equivalently,
 two nonzero vectors give the same point exactly when the first lies on the line spanned by the
-second (`Projectivization.mk_eq_mk_iff_mem_span`).
+second (`Projectivization.mk_eq_mk_iff_mem_span`), and equal nonzero vectors give the same point
+whatever the proofs that they are nonzero (`Projectivization.mk_eq_mk_of_eq`).
 
 A linear map `G : V →ₗ[K] W` induces the map `Projectivization.linearProjection G`, sending
 `[v]` to `[G v]` on the set `Projectivization.linearProjectionDomain G` of points where `G` does
@@ -49,7 +50,8 @@ projective spaces (`Projectivization.map_smul_eq_map`), and a point lies in the 
 of a submodule exactly when its representative lies in the submodule
 (`Submodule.mem_projectivization_iff_rep_mem`).
 Over a field, `Projectivization.mk_eq_mk_iff_forall_mul_eq` characterizes equality of projective
-points by vanishing of all their `2 × 2` homogeneous minors.
+points by vanishing of all their `2 × 2` homogeneous minors; on the projective line this is the
+vanishing of a single determinant (`Projectivization.mk_eq_mk_iff_det_eq_zero`).
 
 The normalization lemmas are adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
@@ -77,6 +79,13 @@ spanned by the second. -/
 theorem mk_eq_mk_iff_mem_span {v w : V} (hv : v ≠ 0) (hw : w ≠ 0) :
     mk K v hv = mk K w hw ↔ v ∈ K ∙ w := by
   rw [mk_eq_mk_iff', Submodule.mem_span_singleton]
+
+variable {K} in
+/-- Equal nonzero vectors span the same projective point, whatever the nonvanishing proofs. -/
+theorem mk_eq_mk_of_eq {v w : V} (h : v = w) {hv : v ≠ 0} {hw : w ≠ 0} :
+    mk K v hv = mk K w hw := by
+  subst h
+  rfl
 
 variable {K} in
 /-- The projectivization of a vector space of dimension at most one has at most one point: all
@@ -193,6 +202,16 @@ theorem mk_eq_mk_iff_forall_mul_eq {x y : ι → K} (hx : x ≠ 0) (hy : y ≠ 0
     simp only [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, div_eq_iff hj₀]
     exact (h i j₀).symm
 
+/-- Two nonzero vectors of `K²` span the same line if and only if the `2 × 2` matrix with rows
+these vectors has determinant zero. -/
+theorem mk_eq_mk_iff_det_eq_zero {x y : Fin 2 → K} (hx : x ≠ 0) (hy : y ≠ 0) :
+    mk K x hx = mk K y hy ↔ (Matrix.of ![x, y]).det = 0 := by
+  rw [mk_eq_mk_iff_forall_mul_eq, Matrix.det_fin_two]
+  simp only [Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one, sub_eq_zero]
+  refine ⟨fun h ↦ h 0 1, fun h i j ↦ ?_⟩
+  fin_cases i <;> fin_cases j
+  exacts [rfl, h, h.symm, rfl]
+
 /-- At any nonzero coordinate of a projective point, there is a representative normalized
 to `1` whose coordinates are the ratios of the chosen representative's coordinates. -/
 lemma exists_rep_apply_eq_one_of_ne_zero (x : Projectivization K (ι → K)) {i : ι}
@@ -211,6 +230,14 @@ lemma exists_rep_apply_eq_one (x : Projectivization K (ι → K)) :
   obtain ⟨i, hi⟩ := Function.ne_iff.mp x.rep_ne_zero
   obtain ⟨v, hv, h1, hratio, hmk⟩ := exists_rep_apply_eq_one_of_ne_zero x hi
   exact ⟨v, hv, i, h1, hratio, hmk⟩
+
+/-- The ratio of two coordinates of the chosen representative of `[v]` is the ratio of the same
+coordinates of `v`, including the value `0` when the denominator vanishes. -/
+@[simp]
+theorem rep_div_rep_mk (v : ι → K) (hv : v ≠ 0) (i j : ι) :
+    (mk K v hv).rep j / (mk K v hv).rep i = v j / v i := by
+  obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep K v hv
+  simp [← ha, Units.smul_def, mul_div_mul_left _ _ a.ne_zero]
 
 /-- The line of the image of a projective point under an injective semilinear map is the image
 of its line. -/
