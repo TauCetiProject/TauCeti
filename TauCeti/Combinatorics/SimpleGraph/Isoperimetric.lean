@@ -20,8 +20,8 @@ For a finite simple graph `G` and a vertex set `S`, the edge boundary `G.edgeBou
 finset `G.interedges S Sᶜ` of ordered adjacent pairs `(x, y)` with `x ∈ S` and `y ∉ S`; it is in
 bijection with the edges leaving `S`. (It is the finite, ordered-pair counterpart for simple
 graphs of the edge set `Graph.edgeCut` of Mathlib's multigraphs.) The isoperimetric constant (or
-edge expansion, or Cheeger constant) is `h(G) = min |∂S| / |S|`, the minimum over the nonempty
-vertex sets `S` with `2|S| ≤ n`, where `n` is the number of vertices. A family of sparse graphs
+edge expansion) is `h(G) = min |∂S| / |S|`, the minimum over the nonempty vertex sets `S` with
+`2|S| ≤ n`, where `n` is the number of vertices. A family of sparse graphs
 whose isoperimetric constants are bounded away from `0` is a family of expanders.
 
 ## Main definitions
