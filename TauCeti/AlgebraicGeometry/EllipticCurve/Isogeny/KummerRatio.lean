@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapEquiv
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Factorisation
 import TauCeti.GroupTheory.Index.Comp
 
@@ -17,7 +19,10 @@ Over a field `F`, the Kummer ratio of `φ : E₁ → E₂` is
 `[E₂(F) : φ E₁(F)] / #E₁(F)[φ]`. The kernel is always finite. The ratio is positive when the
 image has finite index, and zero otherwise, following the convention for subgroup indices.
 It is multiplicative under composition, without a finite-index hypothesis, and equals `1` on
-isogenies of degree one and hence on changes of variables.
+isogenies of degree one and hence on changes of variables. The Kummer ratio of a base change
+depends on the extension field only up to isomorphism over the ground field
+(`TauCeti.Isogeny.kummerRatio_baseChange_congr`), so it can be computed in any model of a
+completion, such as `ℝ` for the completion of `ℚ` at its infinite place.
 
 Over completions of a global field, these ratios are the local factors in the global Selmer-ratio
 formula used in Cassels' proof of isogeny invariance of the Birch–Swinnerton-Dyer quotient.
@@ -120,5 +125,40 @@ theorem kummerRatio_baseChange {K : Type*} [Field K] [Algebra F K]
     (φ : Isogeny E₁.toAffine E₂.toAffine) :
     (φ.baseChange K).kummerRatio = (φ.map (algebraMap F K)).kummerRatio :=
   (rfl)
+
+/-- **The Kummer ratio of a base change is invariant under isomorphism of the extension**: along
+an `F`-algebra isomorphism `e : L ≃ₐ[F] M`, the base changes of `φ` to `L` and to `M` have the same
+Kummer ratio. Transport of points along `e` identifies the two point maps, hence their images and
+kernels. -/
+theorem kummerRatio_baseChange_congr {L M : Type*} [Field L] [Field M] [Algebra F L]
+    [Algebra F M] {E₁ E₂ : WeierstrassCurve F} [E₁.IsElliptic] [E₂.IsElliptic]
+    (φ : Isogeny E₁.toAffine E₂.toAffine) (e : L ≃ₐ[F] M) :
+    (φ.baseChange L).kummerRatio = (φ.baseChange M).kummerRatio := by
+  classical
+  rw [kummerRatio_def, kummerRatio_def]
+  set f := (Hom.ofIsogeny (φ.baseChange L)).pointMapHom
+  set g := (Hom.ofIsogeny (φ.baseChange M)).pointMapHom
+  set e₁ := WeierstrassCurve.Affine.Point.mapEquiv E₁ e
+  set e₂ := WeierstrassCurve.Affine.Point.mapEquiv E₂ e
+  -- transport of points along `e` intertwines the two point maps
+  have hcomm : ∀ P, g (e₁ P) = e₂ (f P) := fun P ↦ by
+    have h := Hom.pointMap_map_algebraMap_map (Hom.ofIsogeny φ) e.toAlgHom P
+    rw [Hom.ofIsogeny_map, Hom.ofIsogeny_map] at h
+    simp only [e₁, e₂, WeierstrassCurve.Affine.Point.mapEquiv_apply]
+    exact (Hom.pointMapHom_apply _ _).trans (h.trans (congrArg _ (Hom.pointMapHom_apply _ _).symm))
+  have hrange : g.range = f.range.map (e₂ : _ →+ _) := by
+    ext Q
+    refine ⟨fun ⟨P, hP⟩ ↦ ⟨f (e₁.symm P), ⟨_, rfl⟩, ?_⟩, fun ⟨_, ⟨P, hP⟩, hQ⟩ ↦ ⟨e₁ P, ?_⟩⟩
+    · simpa [← hcomm] using hP
+    · simpa [hcomm, hP] using hQ
+  have hker : g.ker = f.ker.map (e₁ : _ →+ _) := by
+    ext P
+    refine ⟨fun hP ↦ ⟨e₁.symm P, AddMonoidHom.mem_ker.2 ?_, by simp⟩, fun ⟨P', hP', hP⟩ ↦ ?_⟩
+    · rw [← e₂.map_eq_zero_iff, ← hcomm, AddEquiv.apply_symm_apply]
+      exact hP
+    · rw [← hP, AddMonoidHom.mem_ker]
+      simpa [hcomm] using hP'
+  rw [hrange, hker, AddSubgroup.index_map_equiv,
+    Nat.card_congr (f.ker.equivMapOfInjective _ e₁.injective).toEquiv.symm]
 
 end TauCeti.Isogeny
