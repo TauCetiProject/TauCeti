@@ -56,13 +56,28 @@ theorem simpleCorootCocharacter_def (i : Fin r) : simpleCorootCocharacter r R i 
 
 variable {r R}
 
+private theorem weight_castSucc (r : ℕ) (i : Fin r) : SlStd.weight r i.castSucc i = 1 := by
+  simp [(Fin.castSucc_lt_succ (i := i)).ne]
+
+private theorem weight_succ (r : ℕ) (i : Fin r) : SlStd.weight r i.succ i = -1 := by
+  simp [(Fin.castSucc_lt_succ (i := i)).ne']
+
+private theorem weight_of_ne {r : ℕ} {a : Fin (r + 1)} {i : Fin r}
+    (h1 : a ≠ i.castSucc) (h2 : a ≠ i.succ) : SlStd.weight r a i = 0 := by
+  simp [h1, h2]
+
+private theorem weight_eq_ite (r : ℕ) (a : Fin (r + 1)) (i : Fin r) :
+    SlStd.weight r a i = if a = i.castSucc then 1 else if a = i.succ then -1 else 0 := by
+  split_ifs with h1 h2
+  · subst h1; exact weight_castSucc r i
+  · subst h2; exact weight_succ r i
+  · exact weight_of_ne h1 h2
+
 /-- On `A`-points, `simpleCorootCocharacter r R i` sends `u : Aˣ` to `diag2nUnit _ u`. -/
 @[simp] theorem pointsMulEquiv_pointsHom_simpleCorootCocharacter {A : Type v} [CommRing A]
     [Algebra R A] (i : Fin r) (u : Aˣ) : pointsMulEquiv (R := R) (A := A) (r + 1)
       (Cocharacter.pointsHom A (simpleCorootCocharacter r R i) u) =
-      Matrix.SpecialLinearGroup.diag2nUnit
-        ((Fin.castSucc_lt_succ_iff (a := i) (b := i)).mpr le_rfl).ne u := by
-  have hne : i.castSucc ≠ i.succ := ((Fin.castSucc_lt_succ_iff (a := i) (b := i)).mpr le_rfl).ne
+      Matrix.SpecialLinearGroup.diag2nUnit (Fin.castSucc_lt_succ (i := i)).ne u := by
   let ψ := (Finsupp.applyAddHom (M := ℤ) (ULift.up.{u} i)).toMultiplicative
   let q := DiagonalizableGroup.cocharPoints ψ
     ((DiagonalizableGroup.pointsMulEquiv (R := R) (A := A)).symm (zpowersHom Aˣ u))
@@ -73,7 +88,8 @@ variable {r R}
   apply Matrix.SpecialLinearGroup.ext
   have hGL : Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := R) (A := A) (r + 1)
         (Cocharacter.pointsHom A (simpleCorootCocharacter r R i) u)) =
-      Matrix.SpecialLinearGroup.toGL (Matrix.SpecialLinearGroup.diag2nUnit hne u) := by
+      Matrix.SpecialLinearGroup.toGL
+        (Matrix.SpecialLinearGroup.diag2nUnit (Fin.castSucc_lt_succ (i := i)).ne u) := by
     rw [simpleCorootCocharacter, BialgHom.pointsHom_cocharacter, hmap,
       toGL_pointsMulEquiv_diagonalTorusPoints, Matrix.SpecialLinearGroup.toGL_diag2nUnit]
     congr 1; funext a; rw [torusCharacter_diagonalTorusWeight, torusCharacter_def]
@@ -87,9 +103,9 @@ variable {r R}
     simp_rw [hcoord, ← zpow_mul]
     rw [Finset.prod_eq_single i (fun j _ hji ↦ by simp [hji])
       (fun hi ↦ (hi (Finset.mem_univ i)).elim)]
-    simp only [↓reduceIte, one_mul, SlStd.weight_def]
-    by_cases h1 : a = i.castSucc; · subst h1; simp [hne]
-    · by_cases h2 : a = i.succ <;> [subst h2; skip] <;> simp [*]
+    simp only [↓reduceIte, one_mul]
+    rw [weight_eq_ite]
+    split_ifs <;> simp
   exact fun a b ↦ congr_fun (congr_fun
     (congrArg (fun g : GL (Fin (r + 1)) A ↦ (g : Matrix (Fin (r + 1)) (Fin (r + 1)) A)) hGL) a) b
 
@@ -100,7 +116,6 @@ variable {r R}
     tangentMatrix (r + 1) (derivationComp (B := B) (simpleCorootCocharacter r R i) d) =
       LieAlgebra.SpecialLinear.singleSubSingle i.castSucc i.succ
         (MultiplicativeGroup.tangentLinearEquiv d) := by
-  have hne : i.castSucc ≠ i.succ := ((Fin.castSucc_lt_succ_iff (a := i) (b := i)).mpr le_rfl).ne
   have hcomp : (diagonalTorusCoordinateMap r R).hom.comp (coordinateMap R (r + 1)).hom =
       GeneralLinear.weightTorusCoordinateBialgHom (S := R) (diagonalTorusWeight.{u} r) := by
     simpa only [CommHopfAlgCat.hom_comp, GeneralLinear.hom_weightTorusCoordinateMap] using
@@ -113,14 +128,15 @@ variable {r R}
       (diagonalTorusWeight.{u} r) hcomp _ d]
   ext a b; rw [Matrix.diagonal_apply, Matrix.sub_apply, Matrix.single_apply, Matrix.single_apply]
   by_cases hab : a = b
-  · subst hab; simp only [↓reduceIte, and_self, AddMonoidHom.coe_toMultiplicative,
-      Function.comp_apply, toAdd_ofAdd, Finsupp.applyAddHom_apply,
-      Finsupp.coe_equivFunOnFinite_symm, diagonalTorusWeight_apply, SlStd.weight_def]
-    by_cases h1 : a = i.castSucc
-    · subst h1; simp only [↓reduceIte, hne, hne.symm, sub_zero, one_zsmul]
-    · by_cases h2 : a = i.succ
-      · subst h2; simp only [↓reduceIte, h1, hne, zero_sub, neg_one_zsmul]
-      · simp only [↓reduceIte, h1, h2, Ne.symm h1, Ne.symm h2, sub_zero, zero_zsmul]
+  · subst hab
+    simp only [↓reduceIte, and_self, AddMonoidHom.coe_toMultiplicative, Function.comp_apply,
+      toAdd_ofAdd, Finsupp.applyAddHom_apply, Finsupp.coe_equivFunOnFinite_symm,
+      diagonalTorusWeight_apply, weight_eq_ite]
+    rcases eq_or_ne a i.castSucc with rfl | h1
+    · simp only [↓reduceIte, (Fin.castSucc_lt_succ (i := i)).ne', sub_zero, one_zsmul]
+    · rcases eq_or_ne a i.succ with rfl | h2
+      · simp only [↓reduceIte, h1, (Fin.castSucc_lt_succ (i := i)).ne, zero_sub, neg_one_zsmul]
+      · simp only [↓reduceIte, h1, h2, h1.symm, h2.symm, sub_zero, zero_zsmul]
   · have hno (x) : ¬(x = a ∧ x = b) := fun ⟨ha, hb⟩ ↦ hab (ha.symm.trans hb)
     simp only [hab, hno i.castSucc, hno i.succ, ↓reduceIte, sub_zero]
 

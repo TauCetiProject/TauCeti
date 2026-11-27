@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Root.Differential
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Scheme
 public import TauCeti.Algebra.Lie.Sl2.Embedding
 import TauCeti.Algebra.AlgebraicGroup.Representation.Embedding
-import TauCeti.Algebra.AlgebraicGroup.Representation.Tangent
+import TauCeti.Algebra.AlgebraicGroup.Representation.Kernel
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Connected
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent.Integration
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Naturality
@@ -68,16 +68,13 @@ theorem existsUnique_sl2CoordinateMap (t : IsSl2Triple h e f) :
       derivationCompLieHom (B := k) (Comodule.coordinateBialgHom (H := A) b) := by
     ext d : 1; rw [LieHom.comp_apply, LieHom.comp_apply, LieEquiv.coe_toLieHom,
       derivationCompLieHom_apply, derivationCompLieHom_apply]
-    apply (GeneralLinear.tangentLinearEquivMatrix (R := k) (B := k) n).injective; ext i j
+    apply (GeneralLinear.tangentLinearEquivMatrix (R := k) (B := k) n).injective
     rw [GeneralLinear.tangentLinearEquivMatrix_apply, GeneralLinear.tangentLinearEquivMatrix_apply,
-      d.tangentMatrix_derivationComp_coordinateBialgHom_apply (H := A) b i j,
-      Derivation.tangentMatrix_derivationComp_coordinateBialgHom_apply _ (H := H) b i j,
-      Comodule.coefficientMatrix_apply (C := A) b i j,
-      Comodule.coefficientMatrix_apply (C := H) b i j,
-      d.apply_matrixCoefficient (H := A) (b.coord i) (b j),
-      Derivation.apply_matrixCoefficient _ (H := H) (b.coord i) (b j),
-      SpecialLinear.differential_comoduleOfLieModule]
-    exact (congrArg (b.coord i) (LieRingModule.compLieHom_apply M ρLie _ (b j))).symm
+      Derivation.tangentMatrix_comp_coordinateBialgHom (H := H) _ b,
+      Derivation.tangentMatrix_comp_coordinateBialgHom (H := A) d b]
+    congr 1; refine LinearMap.ext fun m ↦ ?_
+    rw [SpecialLinear.differential_comoduleOfLieModule]
+    exact (LieRingModule.compLieHom_apply M ρLie _ m).symm
   have hconn := SpecialLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2
   obtain ⟨φ, ⟨-, hφ⟩, -⟩ :=
     CommHopfAlgCat.existsUnique_hom_of_surjective_of_derivationCompLieHom_eq hconn _ hq _ _ hdiff
@@ -143,7 +140,8 @@ theorem sl2CoordinateMap_map {H' : Type u} [CommRing H'] [HopfAlgebra k H']
     (hψ : derivationCompLieHom (B := k) ψ.hom h ≠ 0) :
     (t.map (derivationCompLieHom (B := k) ψ.hom) hψ).sl2CoordinateMap = ψ ≫ t.sl2CoordinateMap := by
   symm; rw [eq_sl2CoordinateMap_iff, CommHopfAlgCat.hom_comp, derivationCompLieHom_comp,
-    t.derivationCompLieHom_sl2CoordinateMap, t.toLieHom_map k _ hψ]; ext d; rfl
+    t.derivationCompLieHom_sl2CoordinateMap, t.toLieHom_map k _ hψ]
+  ext d; simp only [LieHom.comp_apply]
 
 /-- On `SL₂` itself, the standard `sl₂` triple integrates to the identity of `O(SL₂)`. -/
 @[simp] theorem sl2CoordinateMap_tangentLieEquivSl_symm_single (t : IsSl2Triple

@@ -513,6 +513,16 @@ theorem tangentScalarExtensionEquiv_tmul
         Bialgebra.CounitAlgebra R A B)]
   exact algEquivSelf_tangentScalarExtensionEquivBase_tmul_apply b f a
 
+/-- Over the base ring itself, scalar extension sends `1 ⊗ₜ f` to `cotangentLinearEquiv f`. -/
+theorem tangentScalarExtensionEquiv_one_tmul_self
+    (f : Module.Dual R (Bialgebra.CotangentSpace R A)) :
+    tangentScalarExtensionEquiv (R := R) (A := A) (B := R) (1 ⊗ₜ[R] f) =
+      cotangentLinearEquiv (R := R) (A := A) (B := R) f := by
+  ext a
+  apply (Bialgebra.CounitAlgebra.algEquivSelf R A R).injective
+  rw [tangentScalarExtensionEquiv_tmul, TauCeti.algEquivSelf_derivation_smul_apply,
+    one_mul, Algebra.ofId_self, mapValue_id, LinearMap.id_apply]
+
 /-- Scalar extension of tangent vectors intertwines the differential of `φ : A →ₐc[R] A'` on
 cotangent duals with precomposition of `B`-valued derivations. -/
 lemma tangentScalarExtensionEquiv_lTensor_dualCotangentMap {A' : Type*} [CommRing A']

@@ -286,6 +286,7 @@ theorem derivationMulEquivTangentKer_derivationComp_tangentLinearEquiv_symm
       Bialgebra.CounitAlgebra R H B) = (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm b := by
     rw [Bialgebra.CounitAlgebra.algEquivSelf_symm_apply,
       Bialgebra.CounitAlgebra.algEquivSelf_symm_apply]
+  -- `CounitAlgebra R (LaurentPolynomial R) B` and `CounitAlgebra R H B` are definitionally `B`.
   exact (congrArg
     (BialgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R H B)) l) hgm).trans
     (by rw [hb]; rfl)

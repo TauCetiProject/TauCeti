@@ -308,12 +308,12 @@ theorem map_cotangentLinearEquiv_adjointWeightSpace_cocharacter [IsDomain R] [Ch
   rw [l.adjointWeightSpace_cocharacter_eq_eigenspace]; ext d
   obtain ⟨x, rfl⟩ := (Derivation.cotangentLinearEquiv (R := R) (A := H) (B := R)).surjective d
   rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply,
-    ← Derivation.cotangentDualLieEquiv_apply, Module.End.mem_eigenspace_iff,
-    Module.End.mem_eigenspace_iff, ad_apply, ad_apply]
+    Module.End.mem_eigenspace_iff, Module.End.mem_eigenspace_iff, ad_apply, ad_apply]
   simp only [← (Derivation.cotangentDualLieEquiv (R := R) (H := H)).injective.eq_iff,
-    LieEquiv.coe_toLieHom, LieEquiv.map_lie, LieEquiv.apply_symm_apply]
-  rw [Derivation.cotangentDualLieEquiv_apply, map_smul,
-    ← Derivation.cotangentDualLieEquiv_apply]; rfl
+    LieEquiv.coe_toLieHom, LieEquiv.map_lie, LieEquiv.apply_symm_apply,
+    Derivation.cotangentDualLieEquiv_apply]
+  rw [map_smul]
+  exact Iff.rfl
 
 /-- Over a characteristic-zero domain `R`, the underlying submodule of `Lie(P_G(l))` is the
 supremum of the `(n : R)`-eigenspaces of `ad` of its unit tangent differential for `0 ≤ n`. -/

@@ -203,15 +203,10 @@ theorem adDerivationLieEquiv_pointsHom_cocharacter (t : IsSl2Triple h e f) (s : 
     (Module.Dual k (Bialgebra.CotangentSpace k H)) s hy
   have hend := Derivation.tangentScalarExtensionEquiv_adjointComodule_endOfPoint
     (R := k) (H := H) (CommAlgCat.of k k) (Cocharacter.pointsHom k t.cocharacter s) (1 ⊗ₜ[k] x)
-  have h1eq (f : Module.Dual k (Bialgebra.CotangentSpace k H)) :
-      Derivation.tangentScalarExtensionEquiv (R := k) (A := H) (B := CommAlgCat.of k k)
-        (1 ⊗ₜ[k] f) = Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k) f := by
-    ext a; apply (Bialgebra.CounitAlgebra.algEquivSelf k H k).injective
-    rw [Derivation.tangentScalarExtensionEquiv_tmul, TauCeti.algEquivSelf_derivation_smul_apply,
-      one_mul, Algebra.ofId_self, Derivation.mapValue_id, LinearMap.id_apply]
   rw [Comodule.endOfPoint_tmul, one_smul,
-    Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation, hact, h1eq, h1eq,
-    map_smul] at hend
+    Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation, hact,
+    Derivation.tangentScalarExtensionEquiv_one_tmul_self,
+    Derivation.tangentScalarExtensionEquiv_one_tmul_self, map_smul] at hend
   rw [LinearEquiv.coe_toLinearMap, LieEquiv.coe_toLinearEquiv,
     Derivation.adDerivationLieEquiv_apply]; exact hend.symm
 
