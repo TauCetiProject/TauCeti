@@ -95,8 +95,9 @@ this form the transversality condition for continuations is the transversality o
   as a smooth diffeomorphism of `M`.
 * `TauCeti.IsContinuationField.eventually_continuationTransition_apply_eq_flow`: moving the
   endpoints `a` and `b` further out composes the transition map with the flows of `X₀` and `X₁`.
-* `TauCeti.contMDiff_uncurry_timeDependentFlowOf_continuationSpaceField`: the transition maps of
-  a smooth family of fields are jointly smooth in the parameter and the point.
+* `TauCeti.contMDiff_uncurry_timeDependentFlowOf_continuationSpaceField`: on a compact manifold
+  `M`, the transition maps of a smooth family of fields, indexed by a boundaryless manifold, are
+  jointly smooth in the parameter and the point.
 
 ## References
 
@@ -571,12 +572,13 @@ variable [CompleteSpace E] [IsManifold 𝓘(ℝ, E) 1 M] [CompactSpace M] [T2Spa
   {J : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N] [T2Space N]
   [BoundarylessManifold J N] [IsManifold J 1 N]
 
-/-- **The transition maps of a family of fields depend smoothly on the parameter.** Let `V a` be a
-family of vector fields on `M × ℝ`, indexed by the points `a` of a manifold `N` and jointly `C^n`
-in the parameter and the point, with `1 ≤ n`, and let `φ^a_{s, t}` be the time-dependent flow of
-the space component of `V a` along the base trajectory (`TauCeti.continuationSpaceField`). Then
-for all times `a₀` and `b₀` the transition maps `(a, y) ↦ φ^a_{a₀, b₀} y` are jointly `C^n` in
-the parameter and the point. -/
+/-- **The transition maps of a family of fields depend smoothly on the parameter.** Let `M` be
+compact, and let `V a` be a family of vector fields on `M × ℝ`, indexed by the points `a` of a
+boundaryless manifold `N` and jointly `C^n` in the parameter and the point, with `1 ≤ n`. Let
+`φ^a_{s, t}` be the time-dependent flow of the space component of `V a` along the base trajectory
+(`TauCeti.continuationSpaceField`), which is defined at all times since `M` is compact. Then for
+all times `a₀` and `b₀` the transition maps `(a, y) ↦ φ^a_{a₀, b₀} y` are jointly `C^n` in the
+parameter and the point. -/
 theorem contMDiff_uncurry_timeDependentFlowOf_continuationSpaceField {n : ℕ∞} (hn : 1 ≤ n)
     [IsManifold 𝓘(ℝ, E) n M] [IsManifold J n N]
     {V : N → (z : M × ℝ) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ)) z}

@@ -184,6 +184,23 @@ theorem timeDependentSuspensionField_snd (X : ℝ → (x : M) → TangentSpace I
     (timeDependentSuspensionField X p).2 = X p.1 p.2 :=
   (rfl)
 
+/-- For a family `X` of time-dependent vector fields on `M`, indexed by the points `a` of a
+manifold `N` and jointly `C^n` in the parameter, the time and the point, and a real number `c`,
+the fields `(c, X a)` form a jointly `C^n` family of vector fields on `ℝ × M` indexed by `N`. -/
+theorem contMDiff_const_prod_field_param [IsManifold I 1 M] {n : ℕ∞ω} {F G N : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+    [TopologicalSpace N] [ChartedSpace G N] {X : N → ℝ → (x : M) → TangentSpace I x} (c : ℝ)
+    (hX : ContMDiff (J.prod (𝓘(ℝ, ℝ).prod I)) I.tangent n
+      (fun z : N × ℝ × M ↦ (⟨z.2.2, X z.1 z.2.1 z.2.2⟩ : TangentBundle I M))) :
+    ContMDiff (J.prod (𝓘(ℝ, ℝ).prod I)) (𝓘(ℝ, ℝ).prod I).tangent n
+      (fun z : N × ℝ × M ↦
+        (⟨z.2, (c, X z.1 z.2.1 z.2.2)⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) := by
+  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent n
+      (fun s : ℝ ↦ (⟨s, c⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
+    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+  exact (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
+    ((hclock.comp (contMDiff_fst.comp contMDiff_snd)).prodMk hX)
+
 /-- For a jointly `C^n` time-dependent vector field `X` and a real number `c`, the field `(c, X)`
 on `ℝ × M` is a `C^n` vector field. For `c = 1` it is the suspension of `X`, for `c = 0` it is the
 vertical field of `X`, and for `X = 0` and `c = 1` it is the unit field `∂_t` of the time
@@ -193,12 +210,10 @@ theorem contMDiff_const_prod_field [IsManifold I 1 M] {n : ℕ∞ω}
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) :
     ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I).tangent n
-      (fun p : ℝ × M ↦ (⟨p, (c, X p.1 p.2)⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) := by
-  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent n
-      (fun s : ℝ ↦ (⟨s, c⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
-    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
-  exact (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
-    ((hclock.comp contMDiff_fst).prodMk hX)
+      (fun p : ℝ × M ↦ (⟨p, (c, X p.1 p.2)⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) :=
+  -- The constant family at `X`, indexed by `ℝ`, read at the parameter `0`.
+  (contMDiff_const_prod_field_param (J := 𝓘(ℝ, ℝ)) (X := fun _ ↦ X) c
+    (hX.comp contMDiff_snd)).comp ((contMDiff_const (c := (0 : ℝ))).prodMk contMDiff_id)
 
 /-- The suspension of a jointly `C^n` time-dependent vector field is a `C^n` vector field on
 `ℝ × M`. -/

@@ -67,21 +67,10 @@ theorem contMDiff_timeDependentSuspensionField_param [IsManifold I 1 M] {n : ℕ
     ContMDiff (J.prod (𝓘(ℝ).prod I)) (𝓘(ℝ).prod I).tangent n
       (fun z : N × ℝ × M ↦ (⟨z.2, timeDependentSuspensionField (X z.1) z.2⟩ :
         TangentBundle (𝓘(ℝ).prod I) (ℝ × M))) := by
-  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent n
-      (fun s : ℝ ↦ (⟨s, (1 : ℝ)⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
-    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
-  have hsusp : (fun z : N × ℝ × M ↦ (⟨z.2, timeDependentSuspensionField (X z.1) z.2⟩ :
-      TangentBundle (𝓘(ℝ).prod I) (ℝ × M))) =
-        fun z ↦ ⟨z.2, ((1 : ℝ), X z.1 z.2.1 z.2.2)⟩ := by
-    funext z
-    rw [← timeDependentSuspensionField_fst (X z.1) z.2, ← timeDependentSuspensionField_snd (X z.1)]
-    -- The suspension is a pair, equal to the pair of its components.
-    rfl
-  rw [hsusp]
-  -- The tangent bundle of `ℝ × M` is the product of those of `ℝ` and `M`: the suspension is the
-  -- unit field of the clock paired with `X`.
-  exact contMDiff_equivTangentBundleProd_symm.comp
-    ((hclock.comp (contMDiff_fst.comp contMDiff_snd)).prodMk hX)
+  -- The suspension is the field `(1, X a)`.
+  convert contMDiff_const_prod_field_param 1 hX using 3 with z
+  congr 1
+  exact Prod.ext (timeDependentSuspensionField_fst _ _) (timeDependentSuspensionField_snd _ _)
 
 section Flow
 
