@@ -9,6 +9,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.RingTheory.FittingIdeal.BaseChange
 public import TauCeti.RingTheory.Grassmannian.Basic
 
+import TauCeti.RingTheory.FittingIdeal.Content
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.LocalProperties.Basic
 import TauCeti.RingTheory.FittingIdeal.Span
@@ -93,6 +94,14 @@ quotient by `N`. -/
 theorem rankLocus_def (N : G(k, A ⊗[R] M; A)) (F : Submodule R M) (s : ℕ) :
     N.rankLocus F s = ((F.baseChange A).map N.toSubmodule.mkQ).minorsIdeal (s + 1) :=
   (rfl)
+
+/-- Rank zero is exactly containment in the kernel, over every coefficient ring. -/
+@[simp]
+theorem rankLocus_zero_eq_bot_iff (N : G(k, A ⊗[R] M; A)) (F : Submodule R M) :
+    N.rankLocus F 0 = ⊥ ↔ F.baseChange A ≤ N.toSubmodule := by
+  rw [rankLocus_def, eq_bot_iff, Submodule.minorsIdeal_one_le_iff_le_smul_top,
+    Submodule.bot_smul, Submodule.map_le_iff_le_comap, Submodule.comap_bot,
+    Submodule.ker_mkQ]
 
 /-- The image of `A ⊗[R] F` in the quotient by `N` is spanned by the classes of the vectors
 `1 ⊗ₜ m`, `m ∈ F`. -/
