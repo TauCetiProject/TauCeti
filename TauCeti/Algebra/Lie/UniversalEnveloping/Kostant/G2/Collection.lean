@@ -337,7 +337,8 @@ theorem dividedPower_root_mul_eq_swap_add_of_g2_short_pair {α β γ δ ε : ι}
   · exact fun _ hp ↦ g2ShortPairIndex_degree_lt hp
 
 /-- Collection in the opposite orientation of the triple string. The factor order reverses,
-and the sum-root and third-string coefficients change sign. -/
+and the coefficient bases for `α + β` and `3α + β` are negated. The resulting summand
+coefficient changes sign exactly when the sum of their exponents is odd. -/
 theorem dividedPower_root_mul_of_g2_reverse_triple {α β γ δ ε ζ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ)
@@ -381,7 +382,8 @@ theorem dividedPower_root_mul_of_g2_reverse_triple {α β γ δ ε ζ : ι}
     neg_mul, neg_sq, neg_neg] using congrArg MulOpposite.unop h
 
 /-- The short-pair collection formula in the reverse orientation. The two double-root factors
-exchange places, and the sum-root coefficient changes sign. -/
+exchange places, and the sum-root coefficient base is negated. Its contribution changes sign
+exactly when the sum-root exponent is odd. -/
 theorem dividedPower_root_mul_of_g2_reverse_short_pair {α β γ δ ε : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ)

@@ -12,9 +12,9 @@ public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 /-!
 # Local coordinates in an embedded G₂
 
-The roots in the plane of a distinguished G₂ pair are exactly the twelve tabulated roots,
-even when the ambient root pairing has other components. This gives root exclusions and
-root-string lengths without an irreducibility or spanning assumption.
+The roots in the integral span of a distinguished G₂ pair are exactly the twelve tabulated
+roots, even when the ambient root pairing has other components. This gives root exclusions
+and root-string lengths without an irreducibility or spanning assumption.
 
 The inputs are Mathlib's `EmbeddedG2.allRoots_eq_map_allCoeffs` and
 `EmbeddedG2.isOrthogonal_short_and_long`. The short-pair extension uses the native
@@ -33,8 +33,8 @@ variable {ι R X Y : Type*} [CommRing R] [CharZero R] [IsDomain R]
   [AddCommGroup X] [Module R X] [AddCommGroup Y] [Module R Y] [Finite ι]
   (P : RootPairing ι R X Y) [P.EmbeddedG2]
 
-/-- A linear combination of the distinguished short and long roots is a root precisely
-when its two integral coefficients occur in the G₂ table. Other components are allowed. -/
+/-- An integral linear combination of the distinguished short and long roots is a root
+precisely when its coefficients occur in the G₂ table. Other components are allowed. -/
 theorem smul_add_smul_mem_range_root_iff (a b : ℤ) :
     a • shortRoot P + b • longRoot P ∈ Set.range P.root ↔ ![a, b] ∈ allCoeffs := by
   classical
