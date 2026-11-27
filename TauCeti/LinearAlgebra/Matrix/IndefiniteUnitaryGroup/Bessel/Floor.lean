@@ -24,13 +24,13 @@ the unipotent Bessel group `U = TauCeti.besselU ϱ T` rests on:
 * the leading principal minors `δ_j` of the frame Gram matrix (`Matrix.frameMinor`) are invariant
   under `γ ↦ s⁻¹ γ s'` for `s, s' ∈ Q_l` and `j ≤ l`, hence constant on the double cosets `U γ U`;
 * the Weyl elements `w_p` (`TauCeti.splitWeylElement`), which exchange `e_a` and `e*_a` up to
-  units for `a < l`, have `δ_j(w_p) = p₀ ⋯ p_{j-1}` for `j ≤ l` and commute with `H_l`;
+  units for `a < l`, have `δ_j(w_p) = p₀ ⋯ p_{j-1}` for `j ≤ l ≤ ϱ` and commute with `H_l`;
 * the Bessel subgroup `S = Q_{ϱ+1}` (`TauCeti.besselS`) normalises `U`;
 * the sum `σ` of the entries just above the diagonal of the frame block
   (`TauCeti.besselSimpleRootSum`) is additive on `S` and vanishes on `H = H_{ϱ+1}`
   (`TauCeti.besselH`);
-* for a subring `𝒪` and a unit `g`, the `h ∈ H` with `h y ∈ U K_𝒪(g)` form one right coset of
-  `H ∩ K_𝒪(g)`, where `K_𝒪(g)` (`TauCeti.besselCongruenceSubgroup`) is the principal congruence
+* for a subring `𝒪` and a unit `g`, the `h ∈ H` with `h y ∈ U K_𝒪(g)` lie in a single right coset
+  of `H ∩ K_𝒪(g)`, where `K_𝒪(g)` (`TauCeti.besselCongruenceSubgroup`) is the principal congruence
   subgroup of `G_T` of level `g` over `𝒪`.
 
 ## Main definitions
@@ -60,7 +60,7 @@ the unipotent Bessel group `U = TauCeti.besselU ϱ T` rests on:
 * `TauCeti.frameMinor_inv_mul_mul`: `δ_j(s⁻¹ γ s') = δ_j(γ)` for `s, s' ∈ Q_l` and `j ≤ l`;
   `TauCeti.frameMinor_inv_mul_mul_of_mem_besselU` is the case of `U`.
 * `TauCeti.frameMinor_splitWeylElement`, `TauCeti.commute_splitWeylElement`: the leading minors
-  of `w_p`, and `w_p` commutes with `H_l`.
+  of `w_p`, and `w_p` commutes with `H_l`; `TauCeti.splitWeylElement_inv`: `w_p⁻¹ = w_{star p}`.
 * `TauCeti.besselS_le_normalizer_besselU`: `S` normalises `U`.
 * `TauCeti.besselSimpleRootSum_mul`, `TauCeti.besselSimpleRootSum_inv`,
   `TauCeti.besselSimpleRootSum_eq_zero_of_mem_besselH`: `σ` is additive on `S` and vanishes on `H`.
@@ -256,29 +256,6 @@ theorem besselH_le_besselS : besselH ϱ T ≤ besselS ϱ T :=
 
 /-! ### Rows of isometries -/
 
-/-- If an isometry `g` fixes the basis vector `x`, then the row `x` of `J g` is that of the Gram
-matrix `J` of the split form. -/
-theorem splitGram_mul_apply_of_forall_apply_eq_one_apply {g : unitaryGroupOf (splitGram ϱ T)}
-    {x : BesselIndex ϱ κ}
-    (hx : ∀ m, ((g : GL (BesselIndex ϱ κ) R) : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) m x =
-      (1 : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) m x) (k : BesselIndex ϱ κ) :
-    (splitGram ϱ T * ((g : GL (BesselIndex ϱ κ) R) : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R))
-      x k = splitGram ϱ T x k := by
-  set G : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R :=
-    ((g : GL (BesselIndex ϱ κ) R) : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R)
-  -- The row `x` of `star G` is that of `1`, and `star G * J * G = J`.
-  have hrow (m : BesselIndex ϱ κ) :
-      star G x m = (1 : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) x m := by
-    rw [star_apply, hx m]
-    rcases eq_or_ne m x with rfl | h
-    · simp
-    · simp [h, h.symm]
-  calc (splitGram ϱ T * G) x k
-      = ((1 : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) * (splitGram ϱ T * G)) x k := by
-        rw [Matrix.one_mul]
-    _ = (star G * (splitGram ϱ T * G)) x k := by simp only [Matrix.mul_apply, hrow]
-    _ = splitGram ϱ T x k := by rw [← Matrix.mul_assoc, mem_unitaryGroupOf_iff.1 g.property]
-
 /-- The row `e*_a` of an element of `H_l` is that of `1` for `a < l`. -/
 theorem floorFixingSubgroup_apply_eStar {l : ℕ} {s : unitaryGroupOf (splitGram ϱ T)}
     (hs : s ∈ floorFixingSubgroup ϱ T l) {a : Fin ϱ} (ha : (a : ℕ) < l) (k : BesselIndex ϱ κ) :
@@ -286,7 +263,7 @@ theorem floorFixingSubgroup_apply_eStar {l : ℕ} {s : unitaryGroupOf (splitGram
         (.inr (.inr a)) k =
       (1 : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) (.inr (.inr a)) k :=
   ((splitGram_mul_apply_inl T _ a k).symm.trans
-    (splitGram_mul_apply_of_forall_apply_eq_one_apply
+    (mul_val_apply_eq_apply_of_mem_unitaryGroupOf s.property
       (fun m ↦ (mem_floorFixingSubgroup ϱ T).1 hs m _ (by simpa using ha)) k)).trans
     (splitGram_apply_inl T a k)
 
@@ -296,7 +273,7 @@ theorem floorFixingSubgroup_apply_inl {l : ℕ} {s : unitaryGroupOf (splitGram �
     ((s : GL (BesselIndex ϱ κ) R) : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) (.inl a) k =
       (1 : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) (.inl a) k :=
   ((splitGram_mul_apply_eStar T _ a k).symm.trans
-    (splitGram_mul_apply_of_forall_apply_eq_one_apply
+    (mul_val_apply_eq_apply_of_mem_unitaryGroupOf s.property
       (fun m ↦ (mem_floorFixingSubgroup ϱ T).1 hs m _ (by simpa using ha)) k)).trans
     (splitGram_apply_eStar T a k)
 
@@ -373,7 +350,7 @@ theorem det_submatrix_besselFrame_mul {l : ℕ} {s : unitaryGroupOf (splitGram �
   obtain ⟨c, rfl⟩ := exists_eq_inl_of_splitLevel_lt hlt (by omega)
   simp only [splitLevel_inl] at hlt
   have := hk ⟨c, by omega⟩ ((besselFrame_eq_inl (b := Fin.castLE j.is_le ⟨c, by omega⟩)
-    (by simp)).trans (congrArg Sum.inl (Fin.ext rfl)))
+    (by simp)).trans (congrArg Sum.inl (Fin.ext (by simp))))
   simp only [Fin.le_iff_val_le_val] at this
   omega
 
@@ -582,6 +559,13 @@ theorem coe_splitWeylElement :
       splitWeylMatrix ϱ l p :=
   (rfl)
 
+/-- The inverse of the Weyl element `w_p` is the Weyl element `w_{star p}`. -/
+@[simp]
+theorem splitWeylElement_inv : (splitWeylElement l p T)⁻¹ = splitWeylElement l (star p) T :=
+  inv_eq_of_mul_eq_one_right <| Subtype.ext <| Units.ext <| by
+    simpa only [Subgroup.coe_mul, Units.val_mul, coe_splitWeylElement, Subgroup.coe_one,
+      Units.val_one] using splitWeylMatrix_mul_splitWeylMatrix_star l p
+
 end Weyl
 
 section WeylFloor
@@ -608,7 +592,8 @@ theorem frameMinor_splitWeylElement {l : ℕ} (hl : l ≤ ϱ) (p : Fin ϱ → R�
       besselFrame_eq_inl (b := Fin.castLE j.is_le b) (by simp; omega), splitGram_mul_apply_inl,
       splitWeylMatrix_eStar_inl, diagonal_apply, diagonal_apply]
     simp only [Fin.val_castLE, Fin.mk.injEq, Fin.val_inj, show (a : ℕ) < l by omega, ↓reduceIte]
-    rfl
+    exact if_congr Iff.rfl
+      (congrArg (fun c ↦ ((p c : Rˣ) : R)) (Fin.ext (Fin.val_castLE _ a).symm)) rfl
   rw [frameMinor_def, h_block, det_diagonal]
 
 /-- **A Weyl element commutes with the fixer of its floors.** The Weyl element of the first `l`
@@ -715,12 +700,7 @@ theorem blockTriangular_of_mem_besselS {s : unitaryGroupOf (splitGram ϱ T)}
       · exact (splitLevel_middle _).ge
       · exact (splitLevel_middle _).ge
       · simp only [splitLevel_eStar]; omega
-    obtain ⟨a, rfl⟩ : ∃ a : Fin ϱ, i = .inr (.inr a) := by
-      rcases i with c | (i | u) | c
-      · simp only [splitLevel_inl] at hij; omega
-      · simp only [splitLevel_middle] at hij; omega
-      · simp only [splitLevel_middle] at hij; omega
-      · exact ⟨c, rfl⟩
+    obtain ⟨a, rfl⟩ := exists_eq_eStar_of_lt_splitLevel (hjl.trans_lt hij)
     refine partialUnitriangularSubgroup_apply_eStar hs (by omega) fun b hb h ↦ ?_
     subst h
     simp only [splitLevel_eStar] at hij
@@ -873,11 +853,7 @@ theorem besselH_apply_eq_or {u h : unitaryGroupOf (splitGram ϱ T)} (hu : u ∈ 
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     by_cases hk : splitLevel k ≤ ϱ
     · rw [(mem_besselU_iff_forall_le ϱ T).1 hu _ k (by simpa using hk)]
-    · obtain ⟨b, rfl⟩ : ∃ b : Fin ϱ, k = .inr (.inr b) := by
-        rcases k with b | k | b
-        · simp only [splitLevel_inl] at hk; omega
-        · simp at hk
-        · exact ⟨b, rfl⟩
+    · obtain ⟨b, rfl⟩ := exists_eq_eStar_of_lt_splitLevel (not_le.1 hk)
       have hbj : (.inr (.inr b) : BesselIndex ϱ κ) ≠ j := fun h' ↦
         hj (by rw [← h', besselFloor_eStar]; omega)
       rw [floorFixingSubgroup_apply_eStar hh (by omega), Matrix.one_apply_ne hbj, mul_zero,
@@ -894,30 +870,26 @@ theorem mem_besselCongruenceSubgroup_of_besselU_mul {𝒪 : Subring R} {g : Rˣ}
     simpa using (Subgroup.mem_normalizer_iff''.1
       (besselS_le_normalizer_besselU (besselH_le_besselS hh)) u⁻¹).1 (inv_mem hu)
   have hinv : h⁻¹ * u⁻¹ * h * h⁻¹ = (u * h)⁻¹ := by group
-  have h_one (i j : BesselIndex ϱ κ) :
-      (1 : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) i j ∈ 𝒪 := by
-    rw [Matrix.one_apply]
-    split_ifs
-    exacts [𝒪.one_mem, 𝒪.zero_mem]
   obtain ⟨h₁, h₂, h₃⟩ := mem_subringCongruenceSubgroup.1 (mem_besselCongruenceSubgroup.1 huh)
   refine mem_besselCongruenceSubgroup.2 (mem_subringCongruenceSubgroup.2
     ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩)
   · rcases besselH_apply_eq_or hu hh i j with e | e <;> rw [e]
-    exacts [h₁ i j, h_one i j]
+    exacts [h₁ i j, 𝒪.matrix.one_mem i j]
   · have e := besselH_apply_eq_or hconj (inv_mem hh) i j
     rw [hinv] at e
     rw [← Subgroup.coe_inv]
     rcases e with e | e <;> rw [e]
     · simpa using h₂ i j
-    · exact h_one i j
-  · rw [Matrix.sub_apply]
+    · exact 𝒪.matrix.one_mem i j
+  · rw [Matrix.smul_apply, Matrix.sub_apply]
     rcases besselH_apply_eq_or hu hh i j with e | e <;> rw [e]
     · simpa [Matrix.sub_apply] using h₃ i j
     · simp
 
 /-- **The `H`-part of an element of `U K_𝒪(g)` is determined up to `H ∩ K_𝒪(g)`.** If `h, h' ∈ H`,
 `u, u' ∈ U` and `y ∈ G_T` satisfy `u h y ∈ K_𝒪(g)` and `u' h' y ∈ K_𝒪(g)`, then
-`h' h⁻¹ ∈ K_𝒪(g)`. So the `h ∈ H` with `h y ∈ U K_𝒪(g)` form one right coset of `H ∩ K_𝒪(g)`. -/
+`h' h⁻¹ ∈ K_𝒪(g)`. So the `h ∈ H` with `h y ∈ U K_𝒪(g)` lie in a single right coset of
+`H ∩ K_𝒪(g)`. -/
 theorem mul_inv_mem_besselCongruenceSubgroup {𝒪 : Subring R} {g : Rˣ}
     {h h' u u' y : unitaryGroupOf (splitGram ϱ T)} (hh : h ∈ besselH ϱ T)
     (hh' : h' ∈ besselH ϱ T) (hu : u ∈ besselU ϱ T) (hu' : u' ∈ besselU ϱ T)

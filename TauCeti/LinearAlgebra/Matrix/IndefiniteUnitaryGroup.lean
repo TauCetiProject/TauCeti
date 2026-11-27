@@ -80,6 +80,8 @@ The basic structure of these groups is recorded here.
 * `Matrix.mem_unitaryGroupOf_iff'`: membership as the equation `g * A⁻¹ * star g = A⁻¹`.
 * `Matrix.val_inv_of_mem_unitaryGroupOf`: the inverse of `g` is `A⁻¹ * star g * A`;
   `Matrix.mul_val_inv_eq_star_mul_of_mem_unitaryGroupOf`: `A * g⁻¹ = star g * A`.
+* `Matrix.mul_val_apply_eq_apply_of_mem_unitaryGroupOf`: if `g` fixes the basis vector `x`, the
+  row `x` of `A * g` is that of `A`.
 * `Matrix.star_mem_unitaryGroupOf_iff_of_mul_self_eq_one`: for an involution `A` (`A * A = 1`),
   `unitaryGroupOf A` is stable under conjugate transposition.
 * `Matrix.det_mem_unitary_of_mem_unitaryGroupOf`: `star (det g) * det g = 1`.
@@ -195,6 +197,23 @@ theorem mul_val_inv_eq_star_mul_of_mem_unitaryGroupOf {g : GL n R} (hg : g ∈ u
         rw [mem_unitaryGroupOf_iff.mp hg]
     _ = star (g : Matrix n n R) * A := by
         rw [Matrix.mul_assoc _ (g : Matrix n n R), Units.mul_inv, Matrix.mul_one]
+
+/-- If an element `g` of `unitaryGroupOf A` fixes the basis vector `x`, then the row `x` of
+`A * g` is that of `A`. -/
+theorem mul_val_apply_eq_apply_of_mem_unitaryGroupOf {g : GL n R} (hg : g ∈ unitaryGroupOf A)
+    {x : n} (hx : ∀ m, (g : Matrix n n R) m x = (1 : Matrix n n R) m x) (k : n) :
+    (A * (g : Matrix n n R)) x k = A x k := by
+  -- The row `x` of `star g` is that of `1`, and `star g * A * g = A`.
+  have hrow (m : n) : star (g : Matrix n n R) x m = (1 : Matrix n n R) x m := by
+    rw [star_apply, hx m]
+    rcases eq_or_ne m x with rfl | h
+    · simp
+    · simp [h, h.symm]
+  calc (A * (g : Matrix n n R)) x k = ((1 : Matrix n n R) * (A * (g : Matrix n n R))) x k := by
+        rw [Matrix.one_mul]
+    _ = (star (g : Matrix n n R) * (A * (g : Matrix n n R))) x k := by
+        simp only [Matrix.mul_apply, hrow]
+    _ = A x k := by rw [← Matrix.mul_assoc, mem_unitaryGroupOf_iff.1 hg]
 
 /-- **The inverse of an element of `unitaryGroupOf A`**, for invertible `A`, is
 `A⁻¹ * star g * A`. -/

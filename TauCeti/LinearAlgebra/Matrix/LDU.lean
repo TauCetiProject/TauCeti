@@ -425,9 +425,8 @@ theorem det_submatrix_castLE_eq_det_toSquareBlockProp {n l : ℕ} (M : Matrix (F
 indices, ordered by a linear order on its domain. If each column `f b` of `A` agrees with the
 identity matrix outside the rows `f a` with `a < b`, then the minor of `M * A` on the rows and
 columns `f` is that of `M`. -/
-theorem det_submatrix_mul_of_apply_eq_one_apply {ι : Type*} [Fintype ι]
-    [DecidableEq ι] [LinearOrder ι] (M A : Matrix m m R) {f : ι → m}
-    (hf : Function.Injective f)
+theorem det_submatrix_mul_of_apply_eq_one_apply {ι : Type*} [Fintype ι] [LinearOrder ι]
+    (M A : Matrix m m R) {f : ι → m} (hf : Function.Injective f)
     (hA : ∀ k b, (∀ a, f a = k → b ≤ a) → A k (f b) = (1 : Matrix m m R) k (f b)) :
     ((M * A).submatrix f f).det = (M.submatrix f f).det := by
   -- The columns `f b` of `A` vanish outside the rows `f a`, so the block of `M * A` on `f` is the

@@ -51,6 +51,7 @@ products of the frame with its image under `γ`.
   split form exchanges the rows `e_a` and `e*_a`.
 * `TauCeti.exists_eq_inl_of_splitLevel_lt`, `TauCeti.exists_besselFrame_eq_of_besselFloor_lt`: the
   basis vectors of small level, or of small floor and level, are frame vectors.
+* `TauCeti.exists_eq_eStar_of_lt_splitLevel`: the basis vectors of level above `ϱ` are the `e*_a`.
 
 ## References
 
@@ -235,6 +236,15 @@ theorem exists_eq_inl_of_splitLevel_lt {i : BesselIndex ϱ κ} {b : ℕ} (hi : s
   · simp at hi; omega
   · simp at hi; omega
   · simp only [splitLevel_eStar] at hi; omega
+
+/-- A basis vector of level above `ϱ` is one of the `e*_a`. -/
+theorem exists_eq_eStar_of_lt_splitLevel {i : BesselIndex ϱ κ} (hi : ϱ < splitLevel i) :
+    ∃ a : Fin ϱ, i = .inr (.inr a) := by
+  rcases i with a | (i | ⟨⟩) | a
+  · simp only [splitLevel_inl] at hi; omega
+  · simp at hi
+  · simp at hi
+  · exact ⟨a, rfl⟩
 
 /-- A basis vector of floor and level below `l ≤ ϱ + 1` is a frame vector `f_b` with `b < l`. -/
 theorem exists_besselFrame_eq_of_besselFloor_lt {j : BesselIndex ϱ κ} {l : ℕ}
