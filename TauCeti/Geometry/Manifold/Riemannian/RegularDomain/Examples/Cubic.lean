@@ -76,7 +76,7 @@ theorem not_isOpen_setOf_isConvexAt_cubicEpigraph :
   let := graphEpigraphRiemannianBundle (contDiff_fun_id.pow 3)
   have := isContMDiffRiemannianBundle_graphEpigraph (contDiff_fun_id.pow 3)
   have hmem : ∀ t : ℝ, (!₂[-t, -t ^ 3] : ℝ²) ∈ graphEpigraph fun x : ℝ ↦ x ^ 3 := fun t ↦ by
-    simp only [mem_ofPred_eq]
+    simp only [mem_ofPred_eq, graphSub]
     simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
       sub_neg_eq_add]
     exact le_of_eq (by ring)

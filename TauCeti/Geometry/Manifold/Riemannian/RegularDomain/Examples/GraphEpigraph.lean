@@ -17,9 +17,11 @@ import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 /-!
 # The region above the graph of a function as a regular domain
 
-Let `w : ℝ → ℝ` be smooth. In the Euclidean plane `ℝ²`, every value of `f(x, y) = w(x) - y` is
-regular: `df(v) = w'(x) v₀ - v₁` is onto. The region `M = {y ≥ w(x)} = {f ≤ 0}` above the graph of
-`w` is therefore a regular sublevel, a manifold with boundary the graph `{y = w(x)}`
+Let `w : ℝ → ℝ` be smooth. In the Euclidean plane `ℝ²`, every value of `f(x, y) = w(x) - y`
+(`TauCeti.graphSub`) is regular: `df(v) = w'(x) v₀ - v₁` is onto. Its gradient is `(w'(x), -1)`,
+of length `√(1 + w'(x)²)` (`TauCeti.mgradient_graphSub`, `TauCeti.norm_mgradient_graphSub`). The
+region `M = {y ≥ w(x)} = {f ≤ 0}` above the graph of `w` is therefore a regular sublevel, a manifold
+with boundary the graph `{y = w(x)}`
 (`TauCeti.graphEpigraph`, with the atlas `TauCeti.graphEpigraphChartedSpace`;
 `TauCeti.boundary_graphEpigraph`), with the metric pulled back along the inclusion `j : M → ℝ²`.
 Since `Hess f(v, v') = w''(x) v₀ v'₀`, the second fundamental form of the boundary at
@@ -47,22 +49,46 @@ local notation "π₁" => (EuclideanSpace.proj (1 : Fin 2) : EuclideanSpace ℝ 
 /-- The Euclidean plane. -/
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
+/-- The function `f(x, y) = w(x) - y` on the plane, whose sublevel `{f ≤ 0}` is the region above
+the graph of `w` and whose zero level is the graph. -/
+abbrev graphSub (w : ℝ → ℝ) : ℝ² → ℝ :=
+  fun p ↦ w (p 0) - p 1
+
 variable {w : ℝ → ℝ}
 
 /-- The derivative of `f(x, y) = w(x) - y` is `v ↦ w'(x) v₀ - v₁`. -/
-private theorem hasFDerivAt_graphSub (hw : Differentiable ℝ w) (p : ℝ²) :
-    HasFDerivAt (fun p : ℝ² ↦ w (p 0) - p 1) (deriv w (p 0) • π₀ - π₁) p :=
+theorem hasFDerivAt_graphSub (hw : Differentiable ℝ w) (p : ℝ²) :
+    HasFDerivAt (graphSub w) (deriv w (p 0) • π₀ - π₁) p :=
   ((hw (p 0)).hasDerivAt.comp_hasFDerivAt p (π₀).hasFDerivAt).sub (π₁).hasFDerivAt
 
 /-- The smoothness of `f(x, y) = w(x) - y` on the plane, for `w` of class `C^k`. -/
 theorem contMDiff_graphSub {k : ℕ∞ω} (hw : ContDiff ℝ k w) :
-    ContMDiff 𝓘(ℝ, ℝ²) 𝓘(ℝ) k (fun p : ℝ² ↦ w (p 0) - p 1) :=
+    ContMDiff 𝓘(ℝ, ℝ²) 𝓘(ℝ) k (graphSub w) :=
   ((hw.comp (π₀).contDiff).sub (π₁).contDiff).contMDiff
+
+/-- On the flat plane, the gradient of `f(x, y) = w(x) - y` is `(w'(x), -1)`. -/
+theorem mgradient_graphSub (hw : Differentiable ℝ w) (p : ℝ²) :
+    Manifold.mgradient 𝓘(ℝ, ℝ²) (graphSub w) p = !₂[deriv w (p 0), -1] := by
+  have h : HasGradientAt (graphSub w) !₂[deriv w (p 0), -1] p := by
+    rw [hasGradientAt_iff_hasFDerivAt]
+    convert hasFDerivAt_graphSub hw p using 1
+    ext v
+    simp [EuclideanSpace.inner_eq_star_dotProduct, Fin.sum_univ_two, dotProduct]
+    ring
+  exact (Manifold.mgradient_eq_gradient_of_eq rfl _ _).trans h.gradient
+
+/-- On the flat plane, the gradient of `f(x, y) = w(x) - y` has length `√(1 + w'(x)²)`. -/
+theorem norm_mgradient_graphSub (hw : Differentiable ℝ w) (p : ℝ²) :
+    ‖Manifold.mgradient 𝓘(ℝ, ℝ²) (graphSub w) p‖ = √(1 + deriv w (p 0) ^ 2) := by
+  rw [Manifold.norm_mgradient_eq_norm_gradient_of_eq rfl,
+    ← Manifold.mgradient_eq_gradient_of_eq rfl, mgradient_graphSub hw,
+    EuclideanSpace.norm_eq]
+  simp [Fin.sum_univ_two, add_comm]
 
 /-- Every value of `f(x, y) = w(x) - y` on the plane is regular: its derivative
 `v ↦ w'(x) v₀ - v₁` is onto. -/
 theorem isRegularValue_graphSub (hw : Differentiable ℝ w) (a : ℝ) :
-    IsRegularValue 𝓘(ℝ, ℝ²) 𝓘(ℝ) (fun p : ℝ² ↦ w (p 0) - p 1) a := by
+    IsRegularValue 𝓘(ℝ, ℝ²) 𝓘(ℝ) (graphSub w) a := by
   rw [isRegularValue_iff]
   intro p _
   rw [isRegularPoint_iff_surjective_fderiv]
@@ -74,15 +100,15 @@ theorem isRegularValue_graphSub (hw : Differentiable ℝ w) (a : ℝ) :
 /-- On the flat plane, the Hessian of `f(x, y) = w(x) - y` is `w''(x) v₀ v'₀`. -/
 private theorem hessian_graphSub (hw : ContDiff ℝ 2 w) (p : ℝ²)
     (v v' : TangentSpace 𝓘(ℝ, ℝ²) p) :
-    Manifold.hessian 𝓘(ℝ, ℝ²) (fun p : ℝ² ↦ w (p 0) - p 1) p v v' =
+    Manifold.hessian 𝓘(ℝ, ℝ²) (graphSub w) p v v' =
       deriv^[2] w (p 0) * π₀ v * π₀ v' := by
-  have hf : ContDiffAt ℝ 2 (fun p : ℝ² ↦ w (p 0) - p 1) p :=
+  have hf : ContDiffAt ℝ 2 (graphSub w) p :=
     ((hw.comp (π₀).contDiff).sub (π₁).contDiff).contDiffAt
   have hgrad := (hf.gradient_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
   rw [Manifold.hessian_eq_iteratedFDeriv_model_space hgrad, iteratedFDeriv_two_apply]
   simp only [Matrix.cons_val, NormedSpace.fromTangentSpace_apply]
   have hd : Differentiable ℝ w := hw.differentiable (by norm_num)
-  have hD : fderiv ℝ (fun p : ℝ² ↦ w (p 0) - p 1) = fun q ↦ deriv w (q 0) • π₀ - π₁ :=
+  have hD : fderiv ℝ (graphSub w) = fun q ↦ deriv w (q 0) • π₀ - π₁ :=
     funext fun q ↦ (hasFDerivAt_graphSub hd q).fderiv
   have hd' : DifferentiableAt ℝ (deriv w) (p 0) :=
     ((contDiff_succ_iff_deriv (n := 1)).1 hw).2.2.differentiable one_ne_zero (p 0)
@@ -98,7 +124,7 @@ private theorem hessian_graphSub (hw : ContDiff ℝ 2 w) (p : ℝ²)
 
 /-- The closed region `{y ≥ w(x)} = {w(x) - y ≤ 0}` above the graph of `w` in the plane. -/
 abbrev graphEpigraph (w : ℝ → ℝ) : Set ℝ² :=
-  {p : ℝ² | w (p 0) - p 1 ≤ 0}
+  {p : ℝ² | graphSub w p ≤ 0}
 
 /-- The half-space atlas of the region `{y ≥ w(x)} = {w(x) - y ≤ 0}` above the graph of `w`:
 `TauCeti.scalarRegularSublevelChartedSpace` for `w(x) - y` at its regular value `0`. -/
@@ -156,7 +182,7 @@ theorem isContMDiffRiemannianBundle_graphEpigraph (hw : ContDiff ℝ ∞ w) :
 
 /-- **The second fundamental form of the graph `y = w(x)`** bounding the region above it, at
 `q = (x, w(x))`: `II_q(u, u') = w''(x) (dj dι u)₀ (dj dι u')₀ / |grad f|` for
-`f(x, y) = w(x) - y`. -/
+`f(x, y) = w(x) - y`, where `|grad f| = √(1 + w'(x)²)` (`TauCeti.norm_mgradient_graphSub`). -/
 theorem boundarySecondFundamentalForm_graphEpigraph_apply (hw : ContDiff ℝ ∞ w)
     (q : letI := graphEpigraphChartedSpace hw
       (𝓡∂ (1 + 1)).boundary (graphEpigraph w))
@@ -174,7 +200,7 @@ theorem boundarySecondFundamentalForm_graphEpigraph_apply (hw : ContDiff ℝ ∞
         (Subtype.val : graphEpigraph w → ℝ²) q
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) (𝓡∂ (1 + 1))
           (Subtype.val : (𝓡∂ (1 + 1)).boundary (graphEpigraph w) → graphEpigraph w) q u')) /
-      ‖Manifold.mgradient 𝓘(ℝ, ℝ²) (fun p : ℝ² ↦ w (p 0) - p 1) (q : ℝ²)‖ := by
+      ‖Manifold.mgradient 𝓘(ℝ, ℝ²) (graphSub w) (q : ℝ²)‖ := by
   let := graphEpigraphChartedSpace hw
   have := isManifold_graphEpigraph hw
   let := graphEpigraphRiemannianBundle hw
@@ -257,7 +283,7 @@ private theorem exists_boundarySecondFundamentalForm_graphEpigraph_eq_mul (hw : 
     ∃ b : LinearMap.BilinForm ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) q),
       (∀ u, u ≠ 0 → 0 < b u u) ∧ ∀ u, boundarySecondFundamentalForm q u u =
         deriv^[2] w ((q : ℝ²) 0) / ‖Manifold.mgradient 𝓘(ℝ, ℝ²)
-          (fun p : ℝ² ↦ w (p 0) - p 1) (q : ℝ²)‖ * b u u := by
+          (graphSub w) (q : ℝ²)‖ * b u u := by
   let := graphEpigraphChartedSpace hw
   have := isManifold_graphEpigraph hw
   let := graphEpigraphRiemannianBundle hw
