@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Vortex.ParameterDerivative
 import TauCeti.Analysis.Fredholm.OrthogonalSplitting.IteratedDeriv
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Weighted estimates for the parameter derivatives of every order of the vortex splitting
@@ -82,10 +81,9 @@ private theorem eLpNorm_exp_mul_smul_natCast_smul (c : ℝ) (r : ℕ)
     (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • ((r : ℝ) • g) z) 2 μ⊤ =
       r * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ⊤ := by
-  rw [eLpNorm_congr_ae ((Lp.coeFn_smul (r : ℝ) g).mono fun z hz ↦ by
-    rw [hz, Pi.smul_apply, smul_comm])]
-  change eLpNorm ((r : ℝ) • fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ⊤ = _
-  rw [eLpNorm_const_smul]
+  rw [eLpNorm_congr_ae (g := (r : ℝ) • fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z)
+    ((Lp.coeFn_smul (r : ℝ) g).mono fun z hz ↦ by
+      rw [hz, Pi.smul_apply, Pi.smul_apply, smul_comm]), eLpNorm_const_smul]
   simp
 
 /-- The weighted norm of a sum is at most the sum of the weighted norms, with multiplicities. -/
@@ -144,6 +142,19 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_sum_holderL_le {c : ℝ}
 
 /-! ### The induction step -/
 
+/-- The derivatives `T_(n-i)`, `i < n`, of the realizations along `a` are the zeroth-order operators
+`Z(a_(n-i), ·)`, inside the Leibniz sums of the orthogonal splitting. -/
+private theorem sum_choose_smul_iteratedDeriv_sobolevGaugeFixedOperator_apply
+    {a : ℝ → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {t₀ : ℝ} {n : ℕ} (ha : ContDiffAt ℝ n a t₀)
+    (y : ℕ → Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    ∑ i ∈ Finset.range n, n.choose i •
+        iteratedDeriv (n - i) (fun t ↦ sobolevGaugeFixedOperator (a t)) t₀ (y i) =
+      ∑ i ∈ Finset.range n, n.choose i • gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2
+        (iteratedDeriv (n - i) a t₀) (sobolevFieldValues (y i)) :=
+  Finset.sum_congr rfl fun i hi ↦ by
+    rw [iteratedDeriv_sobolevGaugeFixedOperator_comp_apply (ha.of_le (by norm_cast; omega))
+      (by have := Finset.mem_range.1 hi; omega)]
+
 /-- **The derivatives of the kernel projections on the kernel.** At a parameter `t₀` where the
 realization `L_(a t₀)` is Fredholm and onto, with `‖aⱼ‖∞ ≤ Mʲ` for `1 ≤ j ≤ N + 1`, suppose that
 `Q₀` costs at most `q` in the weighted norm at the rate `s`, and that the derivatives `πⱼ` of order
@@ -184,13 +195,8 @@ private theorem eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalKerProjection_le_of
     sobolevFieldValues_injective hsurj hd hk
   have h₂ := hT.sub_orthogonalKerProjection_iteratedDeriv_orthogonalKerProjection_apply
     sobolevFieldValues_injective hsurj hd k
-  have hZ : ∀ i ∈ Finset.range (N + 1), (N + 1).choose i •
-      iteratedDeriv (N + 1 - i) (fun t ↦ sobolevGaugeFixedOperator (a t)) t₀ (P i k) =
-        (N + 1).choose i • gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2
-          (iteratedDeriv (N + 1 - i) a t₀) (sobolevFieldValues (P i k)) := fun i hi ↦ by
-    rw [iteratedDeriv_sobolevGaugeFixedOperator_comp_apply (ha.of_le (by norm_cast; omega))
-      (by have := Finset.mem_range.1 hi; omega)]
-  rw [Finset.sum_congr rfl hZ] at h₂
+  rw [sum_choose_smul_iteratedDeriv_sobolevGaugeFixedOperator_apply (by exact_mod_cast ha)
+    (fun i ↦ P i k)] at h₂
   have h₃ := sub_eq_iff_eq_add'.1 h₂
   rw [h₁] at h₃
   rw [h₃, map_add, map_neg, map_neg]
@@ -212,19 +218,6 @@ private theorem eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalKerProjection_le_of
         rw [show M ^ (N + 1) = M ^ (i + 1) * M ^ (N - i) by rw [← pow_add]; congr 1; omega]
         push_cast
         ring
-
-/-- The derivatives `T_(n-i)`, `i < n`, of the realizations along `a` are the zeroth-order operators
-`Z(a_(n-i), ·)`, inside the Leibniz sums of the orthogonal splitting. -/
-private theorem sum_choose_smul_iteratedDeriv_sobolevGaugeFixedOperator_apply
-    {a : ℝ → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {t₀ : ℝ} {n : ℕ} (ha : ContDiffAt ℝ n a t₀)
-    (y : ℕ → Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
-    ∑ i ∈ Finset.range n, n.choose i •
-        iteratedDeriv (n - i) (fun t ↦ sobolevGaugeFixedOperator (a t)) t₀ (y i) =
-      ∑ i ∈ Finset.range n, n.choose i • gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2
-        (iteratedDeriv (n - i) a t₀) (sobolevFieldValues (y i)) :=
-  Finset.sum_congr rfl fun i hi ↦ by
-    rw [iteratedDeriv_sobolevGaugeFixedOperator_comp_apply (ha.of_le (by norm_cast; omega))
-      (by have := Finset.mem_range.1 hi; omega)]
 
 /-- **The derivatives of the right inverses.** At a parameter `t₀` where the realization
 `L_(a t₀)` is Fredholm and onto, with `‖aⱼ‖∞ ≤ Mʲ` for `1 ≤ j ≤ N`, `N ≠ 0`, suppose that the
@@ -368,8 +361,8 @@ private theorem eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalKerProjection_le_of
       _ = _ := by
           push_cast
           ring
-  · rw [hT.inner_iteratedDeriv_orthogonalKerProjection_apply sobolevFieldValues_injective hsurj hd
-      e k, real_inner_comm]
+  · rw [hT.inner_iteratedDeriv_orthogonalKerProjection_apply_comm sobolevFieldValues_injective
+      hsurj hd e k, real_inner_comm]
     simp only [Finset.univ_unique, Finset.sum_singleton]
     exact le_rfl
   -- The complement component, through `-Q₀ (∑_{i<N} C(N,i) Z(a_(N-i), πᵢ e))`.

@@ -40,7 +40,7 @@ of this file, which determine `Qₙ` and `πₙ` from the derivatives of lower o
 * on the kernel, `π₀ (π_(m+1) k) = -∑_{i < m} (m + 1 choose i + 1) π_(i+1) (π_(m-i) k)`
   (`IsFredholm.orthogonalKerProjection_iteratedDeriv_orthogonalKerProjection_of_mem_ker`),
   and the pairings of `πₙ` are symmetric
-  (`IsFredholm.inner_iteratedDeriv_orthogonalKerProjection_apply`), so the kernel
+  (`IsFredholm.inner_iteratedDeriv_orthogonalKerProjection_apply_comm`), so the kernel
   component of `πₙ e` is determined by `⟪ι (πₙ e), ι k⟫ = ⟪ι e, ι (πₙ k)⟫` and the two previous
   identities applied to `k`.
 
@@ -176,7 +176,7 @@ theorem IsFredholm.sum_iteratedDeriv_orthogonalKerProjection_apply_apply
 /-- **The derivatives of the orthogonal kernel projections are symmetric:**
 `⟪ι (πₙ e), ι e'⟫ = ⟪ι e, ι (πₙ e')⟫` for every `n`, in the setting of
 `IsFredholm.sum_iteratedDeriv_apply_iteratedDeriv_orthogonalKerProjection_apply`. -/
-theorem IsFredholm.inner_iteratedDeriv_orthogonalKerProjection_apply (hι : Injective ι)
+theorem IsFredholm.inner_iteratedDeriv_orthogonalKerProjection_apply_comm (hι : Injective ι)
     (hT : IsFredholm (T t₀)) (hsurj : Surjective (T t₀)) (hd : ContDiffAt ℝ n T t₀)
     (e e' : E) :
     ⟪ι (iteratedDeriv n (fun t ↦ orthogonalKerProjection ι (T t)) t₀ e), ι e'⟫_ℝ =

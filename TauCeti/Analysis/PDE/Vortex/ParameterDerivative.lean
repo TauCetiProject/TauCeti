@@ -110,8 +110,12 @@ denotes the weighted norm `‖exp(c ρ) g‖₂` of the values of `g`.
   depending only on `m`, `R₀` and `c`.
 
 The weighted Sobolev versions of the second derivative estimates are in
-`TauCeti.Analysis.PDE.Vortex.SecondParameterDerivative`. Derivatives in the parameter of order three
-and higher are not treated.
+`TauCeti.Analysis.PDE.Vortex.SecondParameterDerivative`. The weighted `L²` estimates for the
+derivatives of every order along curves are in
+`TauCeti.Analysis.PDE.Vortex.ParameterDerivative.IteratedDeriv`
+(`exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalRightInverse_le` and
+`exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalKerProjection_le`); their weighted
+Sobolev versions at order three and higher are not treated.
 
 ## References
 
