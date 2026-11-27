@@ -241,8 +241,7 @@ theorem finish_rightSide : rightSide.finish = 1 + I := by
 
 /-- The right side of the unit square has direction `i`. -/
 theorem coe_direction_rightSide : (rightSide.direction : ℂ) = I := by
-  rw [Side.coe_direction, finish_rightSide, start_rightSide, add_sub_cancel_left, norm_I,
-    ofReal_one, div_one]
+  simp [Side.coe_direction, finish_rightSide, start_rightSide]
 
 /-- The point `1 + i/2` lies in the relative interior of the right side. -/
 theorem one_add_I_div_two_mem_sideInterior :

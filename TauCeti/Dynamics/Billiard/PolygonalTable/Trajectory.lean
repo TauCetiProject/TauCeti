@@ -284,11 +284,11 @@ theorem PointsInward.exists_mem_frontier {x : ℂ} {v : Circle} (h : T.PointsInw
     intro hmem
     have h₁ := mem_closedBall_zero_iff.1 (hR hmem)
     have h₂ : ‖(t₁ : ℂ) * v‖ = t₁ := by
-      rw [norm_mul, Circle.norm_coe, mul_one, Complex.norm_real, Real.norm_of_nonneg]
       have : (0 : ℝ) ≤ t₀ := ht₀.le
-      positivity
+      simp [abs_of_nonneg (show 0 ≤ t₁ by positivity)]
     have h₃ := norm_sub_norm_le ((t₁ : ℂ) * v) (-x)
-    rw [sub_neg_eq_add, norm_neg, h₂, add_comm] at h₃
+    simp only [sub_neg_eq_add, norm_neg, h₂] at h₃
+    rw [add_comm] at h₃
     have : 0 ≤ ‖x‖ := norm_nonneg x
     linarith
   have ht₀₁ : t₀ ≤ t₁ := by
@@ -367,14 +367,6 @@ theorem PointsInward.add_mul_mem_interior {x : ℂ} {v : Circle} (h : T.PointsIn
 
 /-! ### The reflection at a side -/
 
-/-- The signed rate of change of the distance from a side along the reflected direction is
-opposite to that along the original direction. -/
-theorem im_conj_direction_mul_directionReflection (s : T.Side) (v : Circle) :
-    (conj (s.direction : ℂ) * (Billiard.directionReflection s.direction v : ℂ)).im =
-      -(conj (s.direction : ℂ) * (v : ℂ)).im := by
-  rw [Billiard.coe_directionReflection, Billiard.sideReflection_apply]
-  simp [sq, ← mul_assoc, Circle.conj_coe_mul_self, add_comm]
-
 /-- At a point of the relative interior of a side, a direction points inward exactly when the
 table lies on its side of the line through the side: in a half-disc about the point,
 `ε · Im (conj d · v) > 0`. -/
@@ -413,7 +405,7 @@ theorem pointsInward_iff_not_pointsInward_directionReflection {s : T.Side} {y : 
   obtain ⟨r, hr, ε, hε, hball⟩ := T.exists_halfDisc hy
   have hball' z (hz : z ∈ ball y r) := (hball z hz).1
   rw [pointsInward_iff_of_halfDisc hr hball', pointsInward_iff_of_halfDisc hr hball',
-    im_conj_direction_mul_directionReflection, not_lt, mul_neg, neg_nonpos]
+    Billiard.im_conj_mul_directionReflection, not_lt, mul_neg, neg_nonpos]
   have hε0 : ε ≠ 0 := by rcases hε with rfl | rfl <;> norm_num
   exact ⟨le_of_lt, fun h => lt_of_le_of_ne h (mul_ne_zero hε0 hv).symm⟩
 
@@ -472,7 +464,7 @@ theorem PointsInward.pointsInward_directionReflection {x : ℂ} {v : Circle}
   obtain ⟨r, hr, ε, -, hball⟩ := T.exists_halfDisc hy
   have hneg := h.mul_im_neg_of_halfDisc hr fun z hz => (hball z hz).1.1
   rw [pointsInward_iff_of_halfDisc hr fun z hz => (hball z hz).1,
-    im_conj_direction_mul_directionReflection]
+    Billiard.im_conj_mul_directionReflection]
   linarith
 
 /-- If an inward state does not hit a vertex, the state after the reflection points inward. -/
@@ -570,7 +562,7 @@ theorem PointsInward.exists_mem_vertexSet_tendsto_collisionState {q : ℂ × Cir
 theorem trajectory_collisionTime {q : ℂ × Circle} {n : ℕ}
     (hn : T.collisionTime q n < T.collisionTime q (n + 1)) :
     T.trajectory q (T.collisionTime q n) = T.collisionState q n := by
-  rw [trajectory_eq ⟨le_rfl, hn⟩, sub_self, Complex.ofReal_zero, zero_mul, add_zero]
+  simp [trajectory_eq ⟨le_rfl, hn⟩]
 
 /-- **Between two collisions an inward trajectory runs through the interior of the table.** -/
 theorem PointsInward.trajectory_mem_interior {q : ℂ × Circle} (h : T.PointsInward q.1 q.2)

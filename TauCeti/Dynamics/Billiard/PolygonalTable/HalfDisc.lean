@@ -76,8 +76,8 @@ theorem sideHeight_add_mul (s : T.Side) (p z w : ℂ) (t : ℝ) :
 /-- The signed distance from a side increases at unit rate along `i d`. -/
 theorem sideHeight_add_mul_I_mul_direction (s : T.Side) (p z : ℂ) (t : ℝ) :
     sideHeight s p (z + t * (Complex.I * s.direction)) = sideHeight s p z + t := by
-  rw [sideHeight_add_mul, mul_left_comm, Circle.conj_coe_mul_self, mul_one, Complex.I_im,
-    mul_one]
+  rw [sideHeight_add_mul]
+  simp [mul_left_comm, Circle.conj_coe_mul_self]
 
 /-- Every point of a side lies on the line through any point of the side. -/
 theorem sideHeight_eq_zero_of_mem_side {s : T.Side} {p z : ℂ} (hp : p ∈ T.side s)
@@ -94,7 +94,8 @@ theorem sideHeight_eq_zero_of_mem_side {s : T.Side} {p z : ℂ} (hp : p ∈ T.si
     push_cast
     field_simp
     ring
-  rw [sideHeight, hsub, mul_left_comm, Circle.conj_coe_mul_self, mul_one, Complex.ofReal_im]
+  rw [sideHeight, hsub]
+  simp [mul_left_comm, Circle.conj_coe_mul_self]
 
 /-- **Near a point of the relative interior of a side, the frontier of the table lies in that
 side.** -/
