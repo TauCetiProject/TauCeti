@@ -410,7 +410,7 @@ field. The isomorphism is induced by reduction modulo the maximal ideal. -/
 noncomputable def unitFiltrationGradedZeroEquivResidueFieldUnits :
     UnitFiltrationGraded K 0 ≃* (𝓀[K])ˣ :=
   (unitFiltrationGradedEquivPrincipalUnitGroupPowGraded 0).trans
-    (TauCeti.IsLocalRing.maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits 𝒪[K])
+    (maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits 𝒪[K])
 
 /-- On a class represented by `x ∈ U(K,0)`, the depth-zero graded equivalence is reduction of
 `x` modulo the maximal ideal. -/
@@ -421,7 +421,7 @@ theorem unitFiltrationGradedZeroEquivResidueFieldUnits_mk (x : unitFiltration K 
         ⟨(x : Kˣ), (unitFiltration_zero (K := K)).le x.prop⟩ := by
   rw [unitFiltrationGradedZeroEquivResidueFieldUnits, MulEquiv.trans_apply,
     unitFiltrationGradedEquivPrincipalUnitGroupPowGraded_mk,
-    TauCeti.IsLocalRing.maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits_mk,
+    maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits_mk,
     coe_unitFiltrationEquivPrincipalUnitGroup_apply]
   refine Units.ext ?_
   rw [Units.coe_map, ValuationSubring.coe_unitGroupToResidueFieldUnits_apply]

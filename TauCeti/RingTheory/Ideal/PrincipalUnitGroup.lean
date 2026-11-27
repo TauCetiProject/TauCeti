@@ -52,7 +52,7 @@ so `1 + I` is an iterated extension of additive groups.
 * `Ideal.principalUnitGroupPowZeroQuotientEquiv`: at depth zero,
   `(1 + I ^ 0) ⧸ (1 + I ^ 1) ≃* (R ⧸ I)ˣ` for `I` in the Jacobson radical; specialized to the
   maximal ideal of a local ring as
-  `TauCeti.IsLocalRing.maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits`.
+  `TauCeti.maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits`.
 * `Ideal.principalUnitGroupPowQuotientEquiv`: the positive-depth successive quotients
   `(1 + I ^ (n + 1)) ⧸ (1 + I ^ (n + 2)) ≃* I ^ (n + 1) ⧸ I ^ (n + 2)` of the filtration by powers.
 
@@ -308,9 +308,9 @@ end CommRing
 
 end Ideal
 
-namespace TauCeti.IsLocalRing
+namespace TauCeti
 
-open _root_.IsLocalRing
+open IsLocalRing
 
 /-- For a commutative local ring `R`, the depth-zero graded piece of the filtration of `Rˣ` by
 principal unit groups of powers of the maximal ideal is canonically the unit group of the residue
@@ -329,4 +329,4 @@ theorem maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits_mk
       Units.map (residue R).toMonoidHom (u : Rˣ) :=
   Ideal.principalUnitGroupPowZeroQuotientEquiv_mk _ u
 
-end TauCeti.IsLocalRing
+end TauCeti
