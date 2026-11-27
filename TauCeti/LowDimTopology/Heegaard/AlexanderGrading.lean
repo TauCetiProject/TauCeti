@@ -8,7 +8,11 @@ module
 public import TauCeti.LowDimTopology.Heegaard.HatDifferential
 
 /-!
-# The relative Alexander grading of a doubly pointed Heegaard diagram
+# The relative Alexander multigrading of a multi-pointed Heegaard diagram
+
+This file defines the relative Alexander multigrading of a multi-pointed Heegaard diagram of a
+link, with one grading for each component, and the Alexander grading of a doubly pointed diagram
+of a knot as its one-component case.
 
 A knot `K` in a closed three-manifold `Y` is presented by a *doubly pointed* Heegaard diagram
 `(Σ, α, β, w, z)`: the knot is an arc from `w` to `z` in the complement of the `α`-curves followed
@@ -53,9 +57,9 @@ computed from a chosen domain from `x` to `y`. It is well defined modulo the sub
 `TauCeti.HeegaardRegionSystem.periodicComponentAlexanderValues ws zs` of `K → ℤ`. The grading of
 a knot is the case of a single component, indexed by `Unit`, with one `w` and one `z`:
 `relativeAlexanderGrading w z` is the value of the multigrading at that component, and
-`periodicAlexanderValues w z` is the image of its periodic values. The integrality of the
-multigrading of a link diagram and its behaviour under the full multi-pointed differential are in
-`TauCeti.LowDimTopology.Heegaard.Knot.Multigrading`.
+`periodicAlexanderValues w z` is the image of its periodic values. A criterion for the periodic
+values of a link diagram to vanish, and the behaviour of the multigrading under the full
+multi-pointed differential, are in `TauCeti.LowDimTopology.Heegaard.Knot.Multigrading`.
 
 The filtration is made explicit for any number of basepoints. The diagram `H` carries all the
 basepoints, the `w`'s and the `z`'s, and `H.withBasepoints (H.basepoint ∘ ι)` keeps only the `w`'s,
