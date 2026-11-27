@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Instances.KleinBottle
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Lift
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
+public import TauCeti.Geometry.Manifold.Morse.Bott.RankDegreeHomology
 public import TauCeti.Geometry.Manifold.Morse.Bott.Splitting
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Basic
@@ -18,6 +19,7 @@ import TauCeti.Geometry.Manifold.Immersion.NormalSpace.Basic
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Morse.Prod
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
+import TauCeti.RingTheory.Ideal.Quotient.LinearEquiv
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.VectorBundle.Orientation.ZeroSectionCompl
 
@@ -57,6 +59,23 @@ what is formalized is the non-orientability that twists the coefficients of the 
 top level. The negative normal bundle of `C₀` has rank `0` and carries its canonical orientation
 (`TauCeti.VectorBundleOrientation.positive`).
 
+The twist is visible in the homology across the top level. Let `-1 < a < 1 < b`, so that the band
+`{a ≤ h ≤ b}` contains `C₁` and no other critical point. Bott's description of a level in the
+degree of its index (`nonempty_singularHomology_sublevelPair_iso_twistedHomology`, in the namespace
+`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`) identifies
+`H₁({h ≤ b}, {h ≤ a}; R)` with the zeroth homology `H₀(C₁; o(ν⁻) ⊗ R)` of the circle twisted by the
+orientation local system of its negative normal line, and since that line is not orientable this is
+`R ⧸ 2R` for every commutative ring `R`
+(`nonempty_singularHomology_sublevelPair_linearEquiv_quotient_two` in the same namespace, and
+`TauCeti.KleinBottle.nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two`).
+Constant coefficients would give `H₀(C₁; R) = R` instead. Whenever `2 ≠ 0` in `R`, for instance
+over `ℤ`, where the top level contributes `ℤ/2` and not `ℤ`, the group is not `R`
+(`KleinBottle.not_nonempty_singularHomology_sublevelPair_height_linearEquiv_self_of_two_ne_zero`),
+and over a ring in which `2` is a unit, such as `ℚ`, it contributes nothing in degree one
+(`TauCeti.KleinBottle.subsingleton_singularHomology_sublevelPair_height_of_isUnit_two`). Below the
+index the relative homology vanishes
+(`TauCeti.KleinBottle.isZero_singularHomology_zero_sublevelPair_height`).
+
 ## Main definitions
 
 * `TauCeti.KleinBottle.height`: the function `[t, z] ↦ Re z` on the Klein bottle.
@@ -77,12 +96,18 @@ top level. The negative normal bundle of `C₀` has rank `0` and carries its can
   negative normal space is the whole normal line.
 * `TauCeti.KleinBottle.isEmpty_vectorBundleOrientation_negativeNormalSpace_criticalCircle_one`: the
   negative normal bundle of the maximum circle is not orientable.
+* `TauCeti.KleinBottle.nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two`:
+  across the top level, `H₁({h ≤ b}, {h ≤ a}; R) ≅ R ⧸ 2R`.
+* `KleinBottle.not_nonempty_singularHomology_sublevelPair_height_linearEquiv_self_of_two_ne_zero`:
+  when `2 ≠ 0` in `R`, for instance over `ℤ`, this group is not `R`.
 
 ## References
 
 * M. Hutchings, *Lecture notes on Morse homology (with an eye towards Floer theory and
   pseudoholomorphic curves)*, 2002, §6.2 (Morse–Bott homology and its orientation local systems).
 * R. Bott, *Nondegenerate critical manifolds*, Annals of Mathematics 60 (1954), 248–261.
+* R. L. Cohen, K. Iga and P. Norbury, *Topics in Morse theory: lecture notes*, 2006,
+  Theorem 15.4.
 -/
 
 public section
@@ -258,6 +283,12 @@ section NegativeNormal
 
 variable (hn : (∞ : ℕ∞ω) ≠ 0)
 
+/-- The Morse index of the height function along the maximum circle is `1`. -/
+private theorem manifoldMorseIndex_height_criticalCircle_one (s : AddCircle ((1 : ℕ) : ℝ)) :
+    manifoldMorseIndex (𝓘(ℝ).prod (𝓡 1)) height (criticalCircle 1 (.inl rfl) s) = 1 := by
+  induction s using QuotientAddGroup.induction_on with | H t => ?_
+  rw [criticalCircle_coe, manifoldMorseIndex_height_mk_one]
+
 /-- **The negative normal space along the maximum circle is its whole normal line**, for every
 fibre metric `g`: the Morse index `1` along the circle is its codimension. -/
 @[simp]
@@ -271,8 +302,7 @@ theorem negativeNormalSpace_criticalCircle_one_eq_top
       hn (by simp) s,
     SmoothEmbedding.IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace _
       (isNondegenerateCriticalSubmanifold_criticalCircle (.inl rfl))]
-  induction s using QuotientAddGroup.induction_on with | H t => ?_
-  rw [criticalCircle_coe, manifoldMorseIndex_height_mk_one]
+  exact manifoldMorseIndex_height_criticalCircle_one s
 
 /-- The vertical tangent vectors `d[t, ·]₁ w` at the points `[t, 1]` of the maximum circle depend
 continuously on `t`: on the cylinder they form the constant vector field `(0, w)` along
@@ -452,6 +482,114 @@ theorem isEmpty_vectorBundleOrientation_negativeNormalSpace_criticalCircle_one
   exact zeroSectionComplOrientation_neg _ hx
 
 end NegativeNormal
+
+/-! ### The homology across the top level -/
+
+section TopLevel
+
+/-- The height function is constant along the critical circle through `z`, equal to `Re z`. -/
+@[simp]
+theorem height_criticalCircle {z : sphere (0 : ℂ) 1} (hz : z = 1 ∨ z = -1)
+    (s : AddCircle ((1 : ℕ) : ℝ)) : height (criticalCircle z hz s) = (z : ℂ).re := by
+  induction s using QuotientAddGroup.induction_on with | H t => ?_
+  rw [criticalCircle_coe, height_mk]
+
+/-- A band `[a, b]` of heights with `-1 < a` contains no critical point off the maximum circle. -/
+private theorem criticalPoints_inter_preimage_Icc_subset {a b : ℝ} (ha : -1 < a) :
+    criticalPoints (𝓘(ℝ).prod (𝓡 1)) height ∩ height ⁻¹' Icc a b ⊆
+      range (criticalCircle 1 (.inl rfl)) := by
+  rintro x ⟨hx, hab⟩
+  rw [criticalPoints_height] at hx
+  rcases hx with hx | ⟨s, rfl⟩
+  · exact hx
+  · rw [mem_preimage, height_criticalCircle] at hab
+    exact absurd hab.1 (not_le.2 (by simpa using ha))
+
+/-- **The homology across the top level of the Klein bottle is `R ⧸ 2R` in degree one.** Let
+`-1 < a < 1 < b`, so that the band `{a ≤ h ≤ b}` of the height function `h = Re z` on the Klein
+bottle contains the maximum circle `C₁ = {h = 1}` and no other critical point. Then, for every
+commutative ring `R`, `H₁({h ≤ b}, {h ≤ a}; R) ≅ R ⧸ 2R`.
+
+Bott's description of the level identifies this group with `H₀(C₁; o(ν⁻) ⊗ R)`, the zeroth homology
+of the circle twisted by the orientation local system of the negative normal line `ν⁻` of `C₁`,
+which is not orientable (`isEmpty_vectorBundleOrientation_negativeNormalSpace_criticalCircle_one`).
+Constant coefficients would give `H₀(C₁; R) = R` instead. -/
+theorem nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two {a b : ℝ}
+    (ha : a ∈ Ioo (-1) 1) (hb : 1 < b) (R : Type) [CommRing R] :
+    Nonempty (((sublevelPair height (ha.2.trans hb).le).singularHomology (ModuleCat.of R R) 1 :
+      ModuleCat R) ≃ₗ[R] R ⧸ Ideal.span {(2 : R)}) := by
+  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+  let c := criticalCircle 1 (.inl rfl)
+  have h := isNondegenerateCriticalSubmanifold_criticalCircle (.inl rfl)
+  have : IsManifold 𝓘(ℝ) (∞ + 1) (AddCircle ((1 : ℕ) : ℝ)) := by
+    simpa using (inferInstance : IsManifold 𝓘(ℝ) ∞ (AddCircle ((1 : ℕ) : ℝ)))
+  -- Choose a smooth fibre metric `g` on the normal bundle of `C₁`; since the Morse index is `1`
+  -- along `C₁`, the negative normal spaces relative to `g` form a line bundle `ν⁻`.
+  have hdim : finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ (ℝ × EuclideanSpace ℝ (Fin 1)) -
+      finrank ℝ ℝ))) = finrank ℝ (ℝ × EuclideanSpace ℝ (Fin 1)) - finrank ℝ ℝ :=
+    finrank_euclideanSpace_fin
+  let := c.normalSpaceFiberBundle hn hdim
+  let := c.normalSpaceVectorBundle hn hdim
+  have := c.normalSpaceContMDiffVectorBundle hn (m := ∞) (by simp) hdim
+  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := 𝓘(ℝ)) (n := ⊤)
+    (F := EuclideanSpace ℝ (Fin (finrank ℝ (ℝ × EuclideanSpace ℝ (Fin 1)) - finrank ℝ ℝ)))
+    (E := fun s ↦ c.isImmersion.NormalSpace s hn)
+  let := subbundleTopology
+    (EuclideanSpace ℝ (Fin (finrank ℝ (ℝ × EuclideanSpace ℝ (Fin 1)) - finrank ℝ ℝ)))
+    (F' := Fin 1 → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  have hV := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
+    (fun s ↦ (contMDiff_height (c s)).of_le (by simp)) hdim g
+    manifoldMorseIndex_height_criticalCircle_one).hasLocalSubbundleFrames
+  -- Across a connected level whose negative normal bundle is not orientable, the homology in the
+  -- degree of the index is `R ⧸ 2R`.
+  exact h.nonempty_singularHomology_sublevelPair_linearEquiv_quotient_two hn contMDiff_height
+    (fun s ↦ by simp) ha.2 hb (isClosed_Icc.preimage contMDiff_height.continuous).isCompact
+    (criticalPoints_inter_preimage_Icc_subset ha.1) hdim g hV
+    (isEmpty_vectorBundleOrientation_negativeNormalSpace_criticalCircle_one hn hdim
+      g.toRiemannianMetric hV) R
+
+/-- **Below the index the top level contributes nothing.** For `-1 < a < 1 < b`, the relative
+homology `H₀({h ≤ b}, {h ≤ a})` of the height function on the Klein bottle vanishes, with
+coefficients in any abelian category with coproducts: the maximum circle has Morse index `1`. -/
+theorem isZero_singularHomology_zero_sublevelPair_height {a b : ℝ} (ha : a ∈ Ioo (-1) 1)
+    (hb : 1 < b) {C : Type*} [CategoryTheory.Category C] [CategoryTheory.Abelian C]
+    [CategoryTheory.Limits.HasCoproducts.{0} C] (R : C) :
+    CategoryTheory.Limits.IsZero
+      ((sublevelPair height (ha.2.trans hb).le).singularHomology R 0) :=
+  SmoothEmbedding.IsNondegenerateCriticalSubmanifold.isZero_singularHomology_sublevelPair_of_lt
+    (isNondegenerateCriticalSubmanifold_criticalCircle (.inl rfl)) contMDiff_height
+    (fun s ↦ by simp) ha.2 hb (isClosed_Icc.preimage contMDiff_height.continuous).isCompact
+    (criticalPoints_inter_preimage_Icc_subset ha.1) manifoldMorseIndex_height_criticalCircle_one R
+    zero_lt_one
+
+/-- **Unless `2 = 0`, the top level does not contribute `R`.** For `-1 < a < 1 < b` and a
+commutative ring `R` in which `2 ≠ 0`, the group `H₁({h ≤ b}, {h ≤ a}; R)` of the height function on
+the Klein bottle is not isomorphic to `R = H₀(C₁; R)`, the group that constant coefficients on the
+maximum circle `C₁` would give. Over `ℤ` the top level contributes `ℤ/2`, not `ℤ`. -/
+theorem not_nonempty_singularHomology_sublevelPair_height_linearEquiv_self_of_two_ne_zero {a b : ℝ}
+    (ha : a ∈ Ioo (-1) 1) (hb : 1 < b) (R : Type) [CommRing R] (h2 : (2 : R) ≠ 0) :
+    ¬Nonempty (((sublevelPair height (ha.2.trans hb).le).singularHomology (ModuleCat.of R R) 1 :
+      ModuleCat R) ≃ₗ[R] R) := fun ⟨φ⟩ ↦ by
+  obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two ha hb R
+  -- `R ⧸ 2R` is not isomorphic to `R` since `2R ≠ 0`.
+  exact h2 (Ideal.span_singleton_eq_bot.1
+    (Ideal.nonempty_quotient_linearEquiv_self_iff.1 ⟨e.symm ≪≫ₗ φ⟩))
+
+/-- **With `2` invertible the top level contributes nothing in degree one.** For `-1 < a < 1 < b`
+and a commutative ring `R` in which `2` is a unit, for instance `ℚ`, the group
+`H₁({h ≤ b}, {h ≤ a}; R)` of the height function on the Klein bottle is trivial, although
+`H₀(C₁; R) = R` for the maximum circle `C₁`. -/
+theorem subsingleton_singularHomology_sublevelPair_height_of_isUnit_two {a b : ℝ}
+    (ha : a ∈ Ioo (-1) 1) (hb : 1 < b) (R : Type) [CommRing R] (h2 : IsUnit (2 : R)) :
+    Subsingleton ((sublevelPair height (ha.2.trans hb).le).singularHomology (ModuleCat.of R R) 1 :
+      ModuleCat R) := by
+  obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two ha hb R
+  have : Subsingleton (R ⧸ Ideal.span {(2 : R)}) := by
+    rw [Ideal.Quotient.subsingleton_iff, Ideal.span_singleton_eq_top]
+    exact h2
+  exact e.toEquiv.subsingleton
+
+end TopLevel
 
 end KleinBottle
 
