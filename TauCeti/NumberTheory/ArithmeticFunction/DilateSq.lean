@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Floor.Semifield
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 
 /-!
@@ -29,6 +30,8 @@ summatory functions of the Liouville and Möbius functions.
 * `ArithmeticFunction.sum_Ioc_dilateSq_mul`:
   `∑_{0 < n ≤ N} (g_□ * f)(n) = ∑_{0 < d ≤ √N} g(d) ∑_{0 < k ≤ N / d²} f(k)`.
 * `ArithmeticFunction.sum_Ioc_dilateSq`: `∑_{0 < m ≤ N} g_□(m) = ∑_{0 < d ≤ √N} g(d)`.
+* `ArithmeticFunction.sum_Icc_natFloor_mul_dilateSq`: the same grouping up to a real bound `x`, in
+  an ordered field with a floor, `∑_{n ≤ x} (f * g_□)(n) = ∑_{w ≤ √x} g(w) ∑_{k ≤ x / w²} f(k)`.
 -/
 
 public section
@@ -181,5 +184,20 @@ theorem sum_Ioc_dilateSq (g : ArithmeticFunction R) (N : ℕ) :
   rw [sum_eq_single_of_mem 1 h1 fun k _ hk ↦ one_apply_ne hk, one_one, mul_one]
 
 end Semiring
+
+/-- Summing `f * g_□` over `n ≤ x` and grouping by the square divisor `w²`:
+`∑_{n ≤ x} (f * g_□)(n) = ∑_{w ≤ √x} g(w) ∑_{k ≤ x / w²} f(k)`, for integer-valued `f` and `g`
+and `x` in an ordered field with a floor. -/
+theorem sum_Icc_natFloor_mul_dilateSq {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    [FloorSemiring K] (f g : ArithmeticFunction ℤ) (x : K) :
+    ∑ n ∈ Icc 1 ⌊x⌋₊, ((f * g.dilateSq) n : K) =
+      ∑ w ∈ Icc 1 (Nat.sqrt ⌊x⌋₊), (g w : K) * ∑ k ∈ Icc 1 ⌊x / w ^ 2⌋₊, (f k : K) := by
+  have h := congrArg (Int.cast : ℤ → K) (sum_Ioc_dilateSq_mul f g ⌊x⌋₊)
+  rw [mul_comm g.dilateSq f] at h
+  push_cast at h
+  simp only [← Icc_add_one_left_eq_Ioc, zero_add] at h
+  rw [h]
+  refine sum_congr rfl fun w _ ↦ ?_
+  rw [← Nat.cast_pow, Nat.floor_div_natCast]
 
 end ArithmeticFunction

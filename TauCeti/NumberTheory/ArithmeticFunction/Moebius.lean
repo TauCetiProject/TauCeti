@@ -381,15 +381,14 @@ theorem sum_divisors_filter_sq_dvd_moebius [Ring R] (n : ℕ) :
       (Int.cast_commute _ _).mul_pow]
 
 /-- **`μ² = ζ * μ_□`**: the convolution of `ζ` with the dilation of `μ` by squares is `μ²`,
-`(ζ * μ_□)(n) = ∑_{d² ∣ n} μ(d) = μ(n)²`. -/
-theorem coe_zeta_mul_dilateSq_moebius_apply (n : ℕ) :
-    ((ζ : ArithmeticFunction ℤ) * (μ : ArithmeticFunction ℤ).dilateSq) n = μ n ^ 2 := by
-  have h := sum_divisors_filter_sq_dvd_moebius (R := ℤ) n
-  simp only [Int.cast_id] at h
-  rw [mul_dilateSq_apply, ← h]
+`(ζ * μ_□)(n) = ∑_{d² ∣ n} μ(d) = μ(n)²`, in any ring. -/
+theorem coe_zeta_mul_dilateSq_moebius_apply [Ring R] (n : ℕ) :
+    ((ζ : ArithmeticFunction R) * (μ : ArithmeticFunction R).dilateSq) n = (μ n : R) ^ 2 := by
+  rw [mul_dilateSq_apply, ← sum_divisors_filter_sq_dvd_moebius]
   refine sum_congr rfl fun d hd ↦ ?_
   rw [mem_filter, mem_divisors] at hd
   rw [natCoe_apply, zeta_apply_ne ((Nat.div_ne_zero_iff_of_dvd hd.2).2
-    ⟨hd.1.2, pow_ne_zero 2 (ne_zero_of_dvd_ne_zero hd.1.2 hd.1.1)⟩), Nat.cast_one, one_mul]
+    ⟨hd.1.2, pow_ne_zero 2 (ne_zero_of_dvd_ne_zero hd.1.2 hd.1.1)⟩), Nat.cast_one, one_mul,
+    intCoe_apply]
 
 end ArithmeticFunction

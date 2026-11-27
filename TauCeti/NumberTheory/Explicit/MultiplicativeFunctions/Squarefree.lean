@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import TauCeti.NumberTheory.Explicit.MultiplicativeFunctions.Moebius.Basic
 import Mathlib.Algebra.Order.Floor.Semifield
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.ArithmeticFunction.DilateSq
 import TauCeti.NumberTheory.ArithmeticFunction.Moebius
-import TauCeti.NumberTheory.Explicit.MultiplicativeFunctions.Liouville
 
 /-!
 # The squarefree count through the Mertens function
@@ -34,8 +34,11 @@ The squarefree count and its expression through `M` are adapted from `Q-def` and
 ## Main declarations
 
 * `TauCeti.squarefreeCount`: the squarefree count `Q`.
-* `TauCeti.squarefreeCount_natCast`, `TauCeti.squarefreeCount_natFloor`: agreement with the sum
-  over `Finset.Icc 1 N` and constancy on `[N, N + 1)`.
+* `TauCeti.squarefreeCount_eq_card`: `Q(x)` counts the squarefree `n` with `1 ≤ n ≤ x`.
+* `TauCeti.squarefreeCount_natCast`, `TauCeti.squarefreeCount_natFloor`,
+  `TauCeti.squarefreeCount_natCast_add_one`: agreement with the sum over `Finset.Icc 1 N`,
+  constancy on `[N, N + 1)` and the jump `μ(N + 1)²`.
+* `TauCeti.squarefreeCount_one`: `Q(1) = 1`.
 * `TauCeti.squarefreeCount_eq_sum_moebius_mul_natFloor`: `Q(x) = ∑_{d ≤ √x} μ(d) ⌊x / d²⌋`.
 * `TauCeti.squarefreeCount_eq_sum_moebiusSum`: `Q(x) = ∑_{k ≤ x} M(√(x / k))`.
 
@@ -77,14 +80,36 @@ theorem squarefreeCount_natCast (N : ℕ) :
 theorem squarefreeCount_natFloor (x : ℝ) : squarefreeCount ⌊x⌋₊ = squarefreeCount x := by
   simp [squarefreeCount]
 
+/-- `Q` jumps by `μ(N + 1)²` at `N + 1`. -/
+theorem squarefreeCount_natCast_add_one (N : ℕ) :
+    squarefreeCount (N + 1) = squarefreeCount N + (μ (N + 1) : ℝ) ^ 2 := by
+  rw [← Nat.cast_add_one, squarefreeCount_natCast, squarefreeCount_natCast,
+    sum_Icc_succ_top (Nat.le_add_left 1 N)]
+
+/-- `Q(1) = μ(1)² = 1`. -/
+@[simp]
+theorem squarefreeCount_one : squarefreeCount 1 = 1 := by
+  simpa using squarefreeCount_natCast 1
+
+/-- `Q(x)` is the number of squarefree `n` with `1 ≤ n ≤ x`, since `μ(n)²` is `1` for squarefree
+`n` and `0` otherwise. -/
+theorem squarefreeCount_eq_card (x : ℝ) :
+    squarefreeCount x = #{n ∈ Icc 1 ⌊x⌋₊ | Squarefree n} := by
+  rw [squarefreeCount_def, natCast_card_filter]
+  refine sum_congr rfl fun n _ ↦ ?_
+  rw [← Int.cast_pow, ArithmeticFunction.moebius_sq]
+  split_ifs <;> simp
+
 /-! ### The squarefree count through the Möbius function -/
 
 /-- `Q(x) = ∑_{d ≤ √x} μ(d) ⌊x / d²⌋`, the sum running over the naturals `1 ≤ d ≤ √x`: the pairs
 `(k, d)` with `k d² ≤ x` grouped by `d`. -/
 theorem squarefreeCount_eq_sum_moebius_mul_natFloor (x : ℝ) :
     squarefreeCount x = ∑ d ∈ Icc 1 (Nat.sqrt ⌊x⌋₊), (μ d : ℝ) * ⌊x / d ^ 2⌋₊ := by
-  have h := sum_Icc_natFloor_mul_dilateSq (ζ : ArithmeticFunction ℤ) μ x
-  simp only [ArithmeticFunction.coe_zeta_mul_dilateSq_moebius_apply] at h
+  have hμ := ArithmeticFunction.coe_zeta_mul_dilateSq_moebius_apply (R := ℤ)
+  simp only [ArithmeticFunction.intCoe_int, Int.cast_id] at hμ
+  have h := ArithmeticFunction.sum_Icc_natFloor_mul_dilateSq (ζ : ArithmeticFunction ℤ) μ x
+  simp only [hμ] at h
   push_cast at h
   rw [squarefreeCount_def, h]
   refine sum_congr rfl fun d _ ↦ congrArg _ ?_
@@ -94,31 +119,21 @@ theorem squarefreeCount_eq_sum_moebius_mul_natFloor (x : ℝ) :
         (Nat.one_le_iff_ne_zero.1 (mem_Icc.1 hk).1), Nat.cast_one, Int.cast_one]
   rw [sum_congr rfl hζ, sum_const, Nat.card_Icc, add_tsub_cancel_right, nsmul_one]
 
-/-- For a natural `k`, `⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / k)`. -/
-private theorem natFloor_sqrt_div_natCast (x : ℝ) (k : ℕ) :
-    ⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / k) := by
-  rw [← Nat.floor_div_natCast]
-  rcases lt_or_ge (x / k) 0 with hy | hy
-  · rw [Real.sqrt_eq_zero'.2 hy.le, Nat.floor_zero, Nat.floor_eq_zero.2 (hy.trans one_pos),
-      Nat.sqrt_zero]
-  refine eq_of_forall_le_iff fun d ↦ ?_
-  rw [Nat.le_floor_iff (Real.sqrt_nonneg _), Real.le_sqrt (Nat.cast_nonneg _) hy, Nat.le_sqrt',
-    Nat.le_floor_iff hy, Nat.cast_pow]
-
 /-- `Q(x) = ∑_{k ≤ x} M(√(x / k))`, the sum running over the naturals `1 ≤ k ≤ x`: the pairs
 `(k, d)` with `k d² ≤ x` grouped by `k`. -/
 theorem squarefreeCount_eq_sum_moebiusSum (x : ℝ) :
     squarefreeCount x = ∑ k ∈ Icc 1 ⌊x⌋₊, moebiusSum √(x / k) := by
+  have hμ := ArithmeticFunction.coe_zeta_mul_dilateSq_moebius_apply (R := ℤ)
+  simp only [ArithmeticFunction.intCoe_int, Int.cast_id] at hμ
   have h := congrArg (Int.cast : ℤ → ℝ) (ArithmeticFunction.sum_Ioc_mul_eq_sum_sum
     (ζ : ArithmeticFunction ℤ) (μ : ArithmeticFunction ℤ).dilateSq ⌊x⌋₊)
-  simp only [ArithmeticFunction.coe_zeta_mul_dilateSq_moebius_apply,
-    ArithmeticFunction.sum_Ioc_dilateSq] at h
+  simp only [hμ, ArithmeticFunction.sum_Ioc_dilateSq] at h
   push_cast at h
   simp only [← Icc_add_one_left_eq_Ioc, zero_add] at h
   rw [squarefreeCount_def, h]
   refine sum_congr rfl fun k hk ↦ ?_
   rw [ArithmeticFunction.natCoe_apply, ArithmeticFunction.zeta_apply_ne
     (Nat.one_le_iff_ne_zero.1 (mem_Icc.1 hk).1), Nat.cast_one, Int.cast_one, one_mul,
-    moebiusSum_def, natFloor_sqrt_div_natCast]
+    moebiusSum_def, Nat.floor_sqrt_div_natCast]
 
 end TauCeti
