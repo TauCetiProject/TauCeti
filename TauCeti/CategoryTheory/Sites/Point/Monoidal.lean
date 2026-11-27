@@ -16,9 +16,9 @@ commutes with filtered colimits. Mathlib makes the fibre functor `Φ.sheafFiber`
 the stalk of a tensor product of sheaves `F ⊗ G` is the tensor product of the stalks
 (`CategoryTheory.Functor.Monoidal.μIso Φ.sheafFiber F G`). This file describes this identification
 through the canonical map `Sheaf.toTensorObj F G : F.obj ⊗ G.obj ⟶ (F ⊗ G).obj`: its stalk is an
-isomorphism, it intertwines the tensor comparisons of `Φ.presheafFiber` and `Φ.sheafFiber`, and
-on germs `OplaxMonoidal.δ Φ.sheafFiber F G` sends the germ of the image of a section of
-`F.obj ⊗ G.obj` to the tensor product of the germs.
+isomorphism (as is the stalk of `Sheaf.toTensorUnit J A`), it intertwines the tensor comparisons
+of `Φ.presheafFiber` and `Φ.sheafFiber`, and on germs `OplaxMonoidal.δ Φ.sheafFiber F G` sends
+the germ of the image of a section of `F.obj ⊗ G.obj` to the tensor product of the germs.
 
 ## Main declarations
 
@@ -53,6 +53,13 @@ sheafification is inverted by the fibre functor of a point. -/
 instance isIso_presheafFiber_map_toTensorObj (F G : Sheaf J A) :
     IsIso (Φ.presheafFiber.map (Sheaf.toTensorObj F G)) := by
   rw [Sheaf.toTensorObj_def, Functor.map_comp]
+  infer_instance
+
+/-- On stalks, the comparison `Sheaf.toTensorUnit J A` is an isomorphism: the unit of
+sheafification is inverted by the fibre functor of a point. -/
+instance isIso_presheafFiber_map_toTensorUnit :
+    IsIso (Φ.presheafFiber.map (Sheaf.toTensorUnit J A)) := by
+  rw [Sheaf.toTensorUnit_def, Functor.map_comp]
   infer_instance
 
 end Fiber

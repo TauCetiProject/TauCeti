@@ -10,7 +10,7 @@ public import TauCeti.CategoryTheory.Sites.Point.Monoidal
 public import TauCeti.CategoryTheory.Sites.Pullback.Monoidal
 
 /-!
-# Pullback of sheaves commutes with tensor products on stalks
+# Pullback of sheaves commutes with tensor products and units on stalks
 
 Let `A` be a monoidal category and `u : (C, J) ⥤ (D, K)` a continuous functor between sites whose
 sheaf pushforward `u_*` has a left adjoint, the pullback `u^*`. Equip `Sheaf J A` and `Sheaf K A`
@@ -21,8 +21,9 @@ with the tensor product obtained by sheafifying the sectionwise tensor product
 the stalk at every point `Φ` of `(D, K)` whose fibre functor restricts along `u` to the fibre
 functor of a point `Ψ` of `(C, J)`; this is checked on germs, through the identification of the
 stalks of `u^* F` at `Φ` with the stalks of `F` at `Ψ`
-(`CategoryTheory.GrothendieckTopology.Point.sheafPullbackCompSheafFiberIso`). When such points
-jointly reflect isomorphisms of sheaves on `D`, the comparison is an isomorphism.
+(`CategoryTheory.GrothendieckTopology.Point.sheafPullbackCompSheafFiberIso`). The same holds for
+the unit comparison `OplaxMonoidal.η (u.sheafPullback A J K) : u^* 𝟙_ ⟶ 𝟙_`. When such points
+jointly reflect isomorphisms of sheaves on `D`, both comparisons are isomorphisms.
 
 ## Main declarations
 
@@ -30,6 +31,8 @@ jointly reflect isomorphisms of sheaves on `D`, the comparison is an isomorphism
   comparison is an isomorphism on the stalk at a point `Φ` with `u ⋙ Φ.fiber ≅ Ψ.fiber`.
 * `CategoryTheory.Functor.isIso_sheafPullback_δ`: if such points jointly reflect isomorphisms,
   the comparison is an isomorphism.
+* `CategoryTheory.GrothendieckTopology.Point.isIso_sheafFiber_map_sheafPullback_η`,
+  `CategoryTheory.Functor.isIso_sheafPullback_η`: the same for the unit comparison.
 -/
 
 public section
@@ -129,6 +132,47 @@ theorem isIso_sheafFiber_map_sheafPullback_δ (F G : Sheaf J A) :
     (Φ.toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app u e A (F ⊗ G))
     (u.toTensorObj_app_comp_unit_app_comp_sheafPullback_δ_app A J K F G)
 
+omit [LocallySmall.{w} C] [LocallySmall.{w} D]
+  [∀ (X : A), PreservesFilteredColimitsOfSize.{w, w} (tensorLeft X)]
+  [∀ (X : A), PreservesFilteredColimitsOfSize.{w, w} (tensorRight X)] in
+include e in
+/-- **Stalks of the unit comparison of sheaf pullback.** At a point `Φ` of `(D, K)` with
+`u ⋙ Φ.fiber ≅ Ψ.fiber` for a point `Ψ` of `(C, J)`, the stalk of the comparison
+`u^* 𝟙_ ⟶ 𝟙_` is an isomorphism. This is checked on germs, as for the tensor comparison
+(`Point.isIso_sheafFiber_map_sheafPullback_δ`), using the stalks of `Sheaf.toTensorUnit` and the
+unit comparisons `OplaxMonoidal.η` of the fibre functors on presheaves. -/
+theorem isIso_sheafFiber_map_sheafPullback_η :
+    IsIso (Φ.sheafFiber.map (η (u.sheafPullback A J K))) := by
+  let N := (Φ.sheafPullbackCompSheafFiberIso u e A).app (𝟙_ (Sheaf J A))
+  have key : Ψ.presheafFiber.map (Sheaf.toTensorUnit J A) ≫ N.inv ≫
+      Φ.presheafFiber.map (η (u.sheafPullback A J K)).hom ≫
+        inv (Φ.presheafFiber.map (Sheaf.toTensorUnit K A)) ≫ η Φ.presheafFiber =
+      η Ψ.presheafFiber := by
+    refine Ψ.presheafFiber_hom_ext fun X y ↦ ?_
+    rw [toPresheafFiber_naturality_assoc, toPresheafFiber_η]
+    -- `erw` crosses the definition of `Point.sheafFiber`, through which the germ formula for
+    -- `sheafPullbackCompSheafFiberIso` types the stalks of `u^* 𝟙_`.
+    erw [Φ.toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app_assoc u e A,
+      Φ.toPresheafFiber_naturality_assoc (η (u.sheafPullback A J K)).hom]
+    -- Reassociate by hand to apply the sections formula for `η`: `Category.assoc` does not
+    -- rewrite across the sections of `u_* (u^* 𝟙_)` over `X`, which are those of `u^* 𝟙_` over
+    -- `u X` only after unfolding `Functor.sheafPushforwardContinuous`.
+    refine (((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Category.assoc _ _ _))).symm.trans
+      (congrArg (· ≫ _) (u.toTensorUnit_app_comp_unit_app_comp_sheafPullback_η_app A J K X))).trans
+        ?_
+    rw [← Φ.toPresheafFiber_naturality_assoc, IsIso.hom_inv_id_assoc, toPresheafFiber_η]
+  have h : IsIso (Ψ.presheafFiber.map (Sheaf.toTensorUnit J A) ≫ N.inv ≫
+      Φ.presheafFiber.map (η (u.sheafPullback A J K)).hom ≫
+        inv (Φ.presheafFiber.map (Sheaf.toTensorUnit K A)) ≫ η Φ.presheafFiber) := by
+    rw [key]
+    infer_instance
+  rw [isIso_comp_left_iff] at h
+  -- Instance search does not see through the `Point.sheafFiber` boundary in the type of `N.inv`.
+  have h' := @IsIso.of_isIso_comp_left _ _ _ _ _ N.inv _ inferInstance h
+  exact @IsIso.of_isIso_comp_right _ _ _ _ _
+    (Φ.presheafFiber.map (η (u.sheafPullback A J K)).hom)
+    (inv (Φ.presheafFiber.map (Sheaf.toTensorUnit K A)) ≫ η Φ.presheafFiber) inferInstance h'
+
 end GrothendieckTopology.Point
 
 namespace Functor
@@ -151,6 +195,19 @@ theorem isIso_sheafPullback_δ {ι : Type*} (Φ : ι → GrothendieckTopology.Po
     (hΦ : JointlyReflectIsomorphisms fun i ↦ (Φ i).sheafFiber (A := A)) (F G : Sheaf J A) :
     IsIso (δ (u.sheafPullback A J K) F G) :=
   have := fun i ↦ (Φ i).isIso_sheafFiber_map_sheafPullback_δ u (e i) A F G
+  hΦ.isIso _
+
+omit [LocallySmall.{w} C] [LocallySmall.{w} D]
+  [∀ (X : A), PreservesFilteredColimitsOfSize.{w, w} (tensorLeft X)]
+  [∀ (X : A), PreservesFilteredColimitsOfSize.{w, w} (tensorRight X)] in
+/-- **Pullback of sheaves preserves the unit.** If the stalk functors at a family of points `Φ i`
+of `(D, K)` jointly reflect isomorphisms, and each `u ⋙ (Φ i).fiber` is the fibre functor of a
+point `Ψ i` of `(C, J)`, then the comparison `u^* 𝟙_ ⟶ 𝟙_` is an isomorphism. -/
+theorem isIso_sheafPullback_η {ι : Type*} (Φ : ι → GrothendieckTopology.Point.{w} K)
+    (Ψ : ι → GrothendieckTopology.Point.{w} J) (e : ∀ i, u ⋙ (Φ i).fiber ≅ (Ψ i).fiber)
+    (hΦ : JointlyReflectIsomorphisms fun i ↦ (Φ i).sheafFiber (A := A)) :
+    IsIso (η (u.sheafPullback A J K)) :=
+  have := fun i ↦ (Φ i).isIso_sheafFiber_map_sheafPullback_η u (e i) A
   hΦ.isIso _
 
 end Functor
