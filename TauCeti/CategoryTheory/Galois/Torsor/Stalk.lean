@@ -38,6 +38,8 @@ stalk can be used: the cocycle of a smooth torsor is locally constant.
 
 ## Main results
 
+* `ContAction.grpGerm_ext`, `ContAction.exists_grpGerm_eq`: through germs, the sections of a sheaf
+  of groups are exactly the `G`-maps into its stalk.
 * `ContAction.smul_torsorStalk_smul`: the actions of `G` and of the stalk of `𝒢` on the stalk of a
   torsor are compatible.
 * `ContAction.nonabelianH1ToStalk_mk`: the class of a torsor goes to the class of its stalk.
@@ -54,6 +56,20 @@ namespace ContAction
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {𝒢 : Sheaf (jointlySurjectiveTopology G) GrpCat.{u}} (P : Sheaf.Torsor 𝒢)
+
+/-- Sections of a sheaf of groups are determined by their germs. -/
+theorem grpGerm_ext {S : ContAction FintypeCat.{u} G} {a b : 𝒢.obj.obj (op S)}
+    (h : ∀ s, (point G).grpGerm 𝒢.obj S s a = (point G).grpGerm 𝒢.obj S s b) : a = b :=
+  germ_ext (Sheaf.Torsor.trivial 𝒢).sheaf fun s ↦ ((point G).grpGerm_apply 𝒢.obj S s a).symm.trans
+    ((h s).trans ((point G).grpGerm_apply 𝒢.obj S s b))
+
+/-- Every `G`-map into the stalk of a sheaf of groups is given by the germs of a section. -/
+theorem exists_grpGerm_eq (S : ContAction FintypeCat.{u} G)
+    (φ : (fiberFunctor G).obj S →[G] (point G).GrpStalk 𝒢.obj) :
+    ∃ a : 𝒢.obj.obj (op S), ∀ s, (point G).grpGerm 𝒢.obj S s a = φ s := by
+  obtain ⟨a, ha⟩ := germHom_surjective (Sheaf.Torsor.trivial 𝒢).sheaf S φ
+  exact ⟨a, fun s ↦ ((point G).grpGerm_apply 𝒢.obj S s a).trans
+    ((germHom_apply _ S a s).symm.trans congr($ha s))⟩
 
 /-- `G` acts on the stalk of a torsor as on the stalk of its underlying sheaf of sets, by
 translating the point. -/

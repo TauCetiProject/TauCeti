@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Galois.TorsorStalk
+public import TauCeti.CategoryTheory.Galois.Torsor.Stalk
 
 /-!
 # Torsors on finite continuous `G`-sets are classified by continuous nonabelian `H¹`
@@ -27,7 +27,8 @@ because `g • (b • x) = (g • b) • (g • x)`. Simple transitivity follows
 since sections of `𝒢` are the `G`-maps into `A` (`ContAction.exists_grpGerm_eq` and
 `ContAction.grpGerm_ext`), and the sheaf is locally nonempty because every point of `T` lies in
 a finite orbit. Evaluation of germs identifies the stalk of this torsor with `T`, compatibly with
-both actions, so it has the class of `T` (`ContAction.cls_torsorStalkSmoothTorsor_torsorOf`).
+both actions, so it has the class of `T`
+(`ContAction.cls_torsorStalkSmoothTorsor_torsorOfSmoothTorsor`).
 
 Conversely, an isomorphism of the stalks of two `𝒢`-torsors as smooth torsors is a morphism of
 smooth `G`-sets, so it comes from a morphism of the underlying sheaves (taking stalks is fully
@@ -44,8 +45,8 @@ because it does so on germs, so it is a morphism of torsors (`ContAction.torsorH
 
 ## Main results
 
-* `ContAction.cls_torsorStalkSmoothTorsor_torsorOf`: the stalk of `torsorOfSmoothTorsor T` has
-  the class of `T`.
+* `ContAction.cls_torsorStalkSmoothTorsor_torsorOfSmoothTorsor`: the stalk of
+  `torsorOfSmoothTorsor T` has the class of `T`.
 * `ContAction.nonabelianH1ToStalk_injective`, `ContAction.nonabelianH1ToStalk_surjective`,
   `ContAction.nonabelianH1ToStalk_bijective`: taking stalks is a bijection from the classes of
   `𝒢`-torsors to `H¹(G, A)`.
@@ -62,28 +63,6 @@ namespace ContAction
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {𝒢 : Sheaf (jointlySurjectiveTopology G) GrpCat.{u}}
 
-section Germs
-
-/-- Sections of a sheaf of groups are determined by their germs. -/
-theorem grpGerm_ext {S : ContAction FintypeCat.{u} G} {a b : 𝒢.obj.obj (op S)}
-    (h : ∀ s, (point G).grpGerm 𝒢.obj S s a = (point G).grpGerm 𝒢.obj S s b) : a = b := by
-  refine germ_ext (Sheaf.Torsor.trivial 𝒢).sheaf fun s ↦ ?_
-  have := h s
-  rw [GrothendieckTopology.Point.grpGerm_apply, GrothendieckTopology.Point.grpGerm_apply] at this
-  exact this
-
-/-- Every `G`-map into the stalk of a sheaf of groups is given by the germs of a section. -/
-theorem exists_grpGerm_eq (S : ContAction FintypeCat.{u} G)
-    (φ : (fiberFunctor G).obj S →[G] (point G).GrpStalk 𝒢.obj) :
-    ∃ a : 𝒢.obj.obj (op S), ∀ s, (point G).grpGerm 𝒢.obj S s a = φ s := by
-  obtain ⟨a, ha⟩ := germHom_surjective (Sheaf.Torsor.trivial 𝒢).sheaf S φ
-  refine ⟨a, fun s ↦ ?_⟩
-  have := congr($ha s)
-  rw [germHom_apply] at this
-  exact ((point G).grpGerm_apply 𝒢.obj S s a).trans this
-
-end Germs
-
 section OfSmoothTorsor
 
 variable (T : TauCeti.NonabelianH1.SmoothTorsor.{u, u, u} G ((point G).GrpStalk 𝒢.obj))
@@ -93,14 +72,18 @@ variable (T : TauCeti.NonabelianH1.SmoothTorsor.{u, u, u} G ((point G).GrpStalk 
 def smoothSetOfSmoothTorsor : Action.SmoothSet G :=
   ⟨Action.ofMulAction G T.carrier, (Action.isSmooth_iff _).2 T.isOpen_stabilizer⟩
 
+/-- The `G`-set underlying `smoothSetOfSmoothTorsor T` is `T` with its action of `G`. -/
+theorem smoothSetOfSmoothTorsor_obj :
+    (smoothSetOfSmoothTorsor T).obj = Action.ofMulAction G T.carrier :=
+  (rfl)
+
 /-- A section `a` of `𝒢` over `S` acts on `G`-maps `φ : S → T` through its germs,
 `(a • φ)(s) = [a]_s • φ(s)`. -/
-@[expose]
 noncomputable def torsorSMulHom {S : ContAction FintypeCat.{u} G} (a : 𝒢.obj.obj (op S))
     (φ : (fiberFunctor G).obj S →[G] T.carrier) : (fiberFunctor G).obj S →[G] T.carrier where
   toFun s := (point G).grpGerm 𝒢.obj S s a • φ s
   map_smul' g s := by
-    change _ = g • ((point G).grpGerm 𝒢.obj S s a • φ s)
+    dsimp only [id]
     rw [T.smul_distrib_smul, smul_grpGerm, map_smul]
 
 /-- `torsorSMulHom T a φ` multiplies the value of `φ` at `s` by the germ of `a` at `s`. -/
@@ -112,19 +95,19 @@ theorem torsorSMulHom_apply {S : ContAction FintypeCat.{u} G} (a : 𝒢.obj.obj 
 /-- The sections of `𝒢` over `S` act on `G`-maps from `S` into a smooth torsor through their
 germs. -/
 @[implicit_reducible]
-noncomputable def torsorMulActionHom (S : ContAction FintypeCat.{u} G) :
+private noncomputable def torsorMulActionHom (S : ContAction FintypeCat.{u} G) :
     MulAction (𝒢.obj.obj (op S)) ((fiberFunctor G).obj S →[G] T.carrier) where
   smul a φ := torsorSMulHom T a φ
+  -- The action being defined is `torsorSMulHom` by construction; `change` states the goals with
+  -- it, so that `torsorSMulHom_apply` applies.
   one_smul φ := MulActionHom.ext fun s ↦ by
-    change (point G).grpGerm 𝒢.obj S s 1 • φ s = φ s
-    rw [map_one, one_smul]
+    change torsorSMulHom T 1 φ s = φ s
+    rw [torsorSMulHom_apply, map_one, one_smul]
   mul_smul a b φ := MulActionHom.ext fun s ↦ by
-    change (point G).grpGerm 𝒢.obj S s (a * b) • φ s =
-      (point G).grpGerm 𝒢.obj S s a • (point G).grpGerm 𝒢.obj S s b • φ s
-    rw [map_mul, mul_smul]
+    change torsorSMulHom T (a * b) φ s = torsorSMulHom T a (torsorSMulHom T b φ) s
+    rw [torsorSMulHom_apply, torsorSMulHom_apply, torsorSMulHom_apply, map_mul, mul_smul]
 
 /-- A section of the presheaf of `G`-maps into `T` is a `G`-map into `T`. -/
-@[expose]
 def sectionHom (S : ContAction FintypeCat.{u} G) :
     ((homPresheaf G).obj (Action.ofMulAction G T.carrier)).obj (op S) ≃
       ((fiberFunctor G).obj S →[G] T.carrier) :=
@@ -133,13 +116,6 @@ def sectionHom (S : ContAction FintypeCat.{u} G) :
       invFun φ := ⟨φ, φ.map_smul⟩
       left_inv _ := rfl
       right_inv _ := rfl }
-
-/-- `sectionHom` is `homPresheafObjEquiv`. -/
-theorem homPresheafObjEquiv_apply_eq_sectionHom {S : ContAction FintypeCat.{u} G}
-    (φ : ((homPresheaf G).obj (Action.ofMulAction G T.carrier)).obj (op S))
-    (s : (fiberFunctor G).obj S) :
-    homPresheafObjEquiv (Action.ofMulAction G T.carrier) S φ s = sectionHom T S φ s :=
-  (rfl)
 
 /-- Restriction of `G`-maps into `T` is precomposition. -/
 theorem sectionHom_map {S S' : ContAction FintypeCat.{u} G} (f : S' ⟶ S)
@@ -166,19 +142,18 @@ theorem sectionHom_torsorSMul {S : ContAction FintypeCat.{u} G} (a : 𝒢.obj.ob
       (point G).grpGerm 𝒢.obj S s a • sectionHom T S φ s :=
   congr($(Equiv.apply_symm_apply (sectionHom T S) (torsorSMulHom T a (sectionHom T S φ))) s)
 
-/-- The quotient by `G`-maps `S → T` of a section of `𝒢`: for `G`-maps `ψ, φ : S → T`, the
-`G`-map `s ↦ ψ(s) /ₛ φ(s)` into the stalk of `𝒢`. -/
-@[expose]
-noncomputable def torsorSDivHom {S : ContAction FintypeCat.{u} G}
+/-- For `G`-maps `ψ, φ : S → T`, the `G`-map `s ↦ ψ(s) /ₛ φ(s)` from `S` into the stalk of
+`𝒢`. -/
+private noncomputable def torsorSDivHom {S : ContAction FintypeCat.{u} G}
     (ψ φ : (fiberFunctor G).obj S →[G] T.carrier) :
     (fiberFunctor G).obj S →[G] (point G).GrpStalk 𝒢.obj where
   toFun s := ψ s /ₛ φ s
   map_smul' g s := by
-    change ψ (g • s) /ₛ φ (g • s) = g • (ψ s /ₛ φ s)
+    dsimp only [id]
     rw [map_smul, map_smul, ← eq_smul_iff_sdiv_eq, ← T.smul_distrib_smul, sdiv_smul]
 
 /-- The sections of `𝒢` act simply transitively on `G`-maps into a smooth torsor `T`. -/
-theorem torsorOfSmoothTorsor_bijective (S : ContAction FintypeCat.{u} G) :
+theorem torsorMulAction_bijective (S : ContAction FintypeCat.{u} G) :
     Function.Bijective fun x : 𝒢.obj.obj (op S) ×
         ((homPresheaf G).obj (Action.ofMulAction G T.carrier)).obj (op S) ↦
       ((torsorMulAction T S).smul x.1 x.2, x.2) := by
@@ -209,7 +184,7 @@ variable [CompactSpace G]
 /-- The sheaf of `G`-maps into a smooth torsor `T` has sections locally: every point of an
 object lies in the image of a product with a finite orbit of `T`, over which the inclusion of
 the orbit is a section. -/
-theorem torsorOfSmoothTorsor_coversTop :
+theorem coversTop_nonempty_homPresheaf :
     (jointlySurjectiveTopology G).CoversTop fun U : {U : ContAction FintypeCat.{u} G //
       Nonempty (((homPresheaf G).obj (Action.ofMulAction G T.carrier)).obj (op U))} ↦
         U.val := by
@@ -231,8 +206,8 @@ noncomputable def torsorOfSmoothTorsor : Sheaf.Torsor 𝒢 where
   sheaf := (toSheaf G).obj (smoothSetOfSmoothTorsor T)
   mulAction U := torsorMulAction T U.unop
   map_smul _ _ f a φ := torsorSMul_map T f.unop a φ
-  coversTop := torsorOfSmoothTorsor_coversTop T
-  bijective U := torsorOfSmoothTorsor_bijective T U.unop
+  coversTop := coversTop_nonempty_homPresheaf T
+  bijective U := torsorMulAction_bijective T U.unop
 
 /-- The underlying sheaf of `torsorOfSmoothTorsor T` is the sheaf of `G`-maps into `T`. -/
 theorem torsorOfSmoothTorsor_sheaf :
@@ -244,6 +219,7 @@ noncomputable def evalTorsorStalk : (point G).TorsorStalk (torsorOfSmoothTorsor 
   fun x ↦ evalStalk (Action.ofMulAction G T.carrier) x
 
 /-- Evaluating the germ at `s` of a section `φ` gives `φ s`. -/
+@[simp]
 theorem evalTorsorStalk_toPresheafFiber (S : ContAction FintypeCat.{u} G)
     (s : (fiberFunctor G).obj S) (φ : (torsorOfSmoothTorsor T).sheaf.obj.obj (op S)) :
     evalTorsorStalk T ((point G).toPresheafFiber S s (torsorOfSmoothTorsor T).sheaf.obj φ) =
@@ -252,12 +228,14 @@ theorem evalTorsorStalk_toPresheafFiber (S : ContAction FintypeCat.{u} G)
 
 /-- Evaluation of germs from the stalk of `torsorOfSmoothTorsor T` to `T` commutes with the
 action of `G`. -/
+@[simp]
 theorem evalTorsorStalk_smul_G (g : G) (x : (point G).TorsorStalk (torsorOfSmoothTorsor T)) :
     evalTorsorStalk T (g • x) = g • evalTorsorStalk T x :=
   evalStalk_smul _ g x
 
 /-- Evaluation of germs from the stalk of `torsorOfSmoothTorsor T` to `T` commutes with the
 action of the stalk of `𝒢`. -/
+@[simp]
 theorem evalTorsorStalk_smul_A (a : (point G).GrpStalk 𝒢.obj)
     (x : (point G).TorsorStalk (torsorOfSmoothTorsor T)) :
     evalTorsorStalk T (a • x) = a • evalTorsorStalk T x := by
@@ -269,7 +247,8 @@ theorem evalTorsorStalk_smul_A (a : (point G).GrpStalk 𝒢.obj)
 
 /-- **The stalk of `torsorOfSmoothTorsor T` has the class of `T`**: evaluation of germs is a
 map to `T` commuting with the actions of `G` and of the stalk of `𝒢`. -/
-theorem cls_torsorStalkSmoothTorsor_torsorOf [TopologicalSpace ((point G).GrpStalk 𝒢.obj)] :
+theorem cls_torsorStalkSmoothTorsor_torsorOfSmoothTorsor
+    [TopologicalSpace ((point G).GrpStalk 𝒢.obj)] :
     (torsorStalkSmoothTorsor (torsorOfSmoothTorsor T)).cls = T.cls :=
   TauCeti.NonabelianH1.SmoothTorsor.cls_eq_cls_of_map (evalTorsorStalk T)
     (evalTorsorStalk_smul_A T) (evalTorsorStalk_smul_G T)
@@ -282,7 +261,6 @@ variable {P Q : Sheaf.Torsor 𝒢}
 
 /-- An isomorphism of the stalks of two torsors, as smooth torsors, is a morphism of smooth
 `G`-sets between the stalks of their underlying sheaves of sets. -/
-@[expose]
 noncomputable def smoothSetHomOfIso
     (e : (torsorStalkSmoothTorsor P).Iso (torsorStalkSmoothTorsor Q)) :
     (fromSheaf G).obj P.sheaf ⟶ (fromSheaf G).obj Q.sheaf :=
@@ -292,14 +270,14 @@ noncomputable def smoothSetHomOfIso
         ext x
         exact e.map_smul_G g x }
 
-variable [CompactSpace G]
+/-- `smoothSetHomOfIso e` is `e` on stalks. -/
+theorem smoothSetHomOfIso_hom_apply
+    (e : (torsorStalkSmoothTorsor P).Iso (torsorStalkSmoothTorsor Q))
+    (x : (point G).TorsorStalk P) :
+    (smoothSetHomOfIso e).hom.hom x = e.toEquiv x :=
+  (rfl)
 
-variable (G) in
-/-- For compact `G`, taking stalks is a fully faithful functor from sheaves of sets on finite
-continuous `G`-sets to smooth `G`-sets. -/
-noncomputable def fromSheafFullyFaithful : (fromSheaf G).FullyFaithful := by
-  rw [← sheafEquiv_functor]
-  exact (sheafEquiv G).fullyFaithfulFunctor
+variable [CompactSpace G]
 
 /-- The morphism of sheaves of sets underlying `torsorHomOfIso e`: the morphism whose map of
 stalks is `e`. -/
@@ -308,6 +286,7 @@ noncomputable def sheafHomOfIso
   (fromSheafFullyFaithful G).preimage (smoothSetHomOfIso e)
 
 /-- The map of stalks induced by `sheafHomOfIso e` is `e`. -/
+@[simp]
 theorem presheafFiber_map_sheafHomOfIso
     (e : (torsorStalkSmoothTorsor P).Iso (torsorStalkSmoothTorsor Q))
     (x : (point G).TorsorStalk P) :
@@ -321,8 +300,7 @@ noncomputable def torsorHomOfIso
     (e : (torsorStalkSmoothTorsor P).Iso (torsorStalkSmoothTorsor Q)) : P ⟶ Q where
   hom := sheafHomOfIso e
   map_smul U a p := germ_ext Q.sheaf fun s ↦ by
-    change (point G).toPresheafFiber U.unop s Q.sheaf.obj _ =
-      (point G).toPresheafFiber U.unop s Q.sheaf.obj _
+    dsimp only [germ]
     rw [← GrothendieckTopology.Point.grpGerm_smul_toPresheafFiber,
       ← GrothendieckTopology.Point.toPresheafFiber_naturality_apply,
       ← GrothendieckTopology.Point.toPresheafFiber_naturality_apply,
@@ -360,7 +338,7 @@ theorem nonabelianH1ToStalk_surjective : Function.Surjective (nonabelianH1ToStal
   intro c
   obtain ⟨T, rfl⟩ := TauCeti.NonabelianH1.SmoothTorsor.cls_surjective c
   exact ⟨Sheaf.NonabelianH1.mk (torsorOfSmoothTorsor T), by
-    rw [nonabelianH1ToStalk_mk, cls_torsorStalkSmoothTorsor_torsorOf]⟩
+    rw [nonabelianH1ToStalk_mk, cls_torsorStalkSmoothTorsor_torsorOfSmoothTorsor]⟩
 
 variable (𝒢) in
 /-- **Torsors under a sheaf of groups on finite continuous `G`-sets are classified by continuous
@@ -381,6 +359,15 @@ noncomputable def nonabelianH1EquivStalk :
 theorem nonabelianH1EquivStalk_mk (P : Sheaf.Torsor 𝒢) :
     nonabelianH1EquivStalk 𝒢 (Sheaf.NonabelianH1.mk P) = (torsorStalkSmoothTorsor P).cls :=
   nonabelianH1ToStalk_mk P
+
+/-- The inverse of `nonabelianH1EquivStalk 𝒢` sends the class of a smooth torsor `T` to the class
+of the torsor of `G`-maps into `T`. -/
+@[simp]
+theorem nonabelianH1EquivStalk_symm_cls
+    (T : TauCeti.NonabelianH1.SmoothTorsor.{u, u, u} G ((point G).GrpStalk 𝒢.obj)) :
+    (nonabelianH1EquivStalk 𝒢).symm T.cls = Sheaf.NonabelianH1.mk (torsorOfSmoothTorsor T) := by
+  rw [Equiv.symm_apply_eq, nonabelianH1EquivStalk_mk,
+    cls_torsorStalkSmoothTorsor_torsorOfSmoothTorsor]
 
 end Bijective
 
