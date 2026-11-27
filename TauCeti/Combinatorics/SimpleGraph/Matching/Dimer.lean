@@ -64,7 +64,8 @@ as above gives a dimer configuration in the same cases
 (`SimpleGraph.isDimerConfiguration_updateFinset_congr`).
 
 For a finite vertex set `Λ`, `G.insideEdges Λ` is the set of edges with both endpoints in `Λ`, and
-`G.IsMatchedIn Λ ω` says that every vertex of `Λ` lies in one of them of value `true`. For a dimer
+`G.IsMatchedIn Λ ω` says that the edges of value `true` among them cover `Λ`
+(`SimpleGraph.isMatchedIn_iff_subset`). For a dimer
 configuration matching `Λ` inside `Λ` the edges leaving `Λ` have value `false`
 (`SimpleGraph.IsDimerConfiguration.eq_false_of_isMatchedIn`), so its completion set at the edges
 inside `Λ` consists of the gluings of the perfect matchings of `Λ`
@@ -503,25 +504,28 @@ theorem mem_insideEdges {Λ : Finset V} {e : G.edgeSet} :
   simp [insideEdges, Finset.mem_sym2_iff]
 
 variable (G) in
-/-- `ω` matches every vertex of `Λ` inside `Λ`: each vertex of `Λ` lies in an edge of value `true`
-with both endpoints in `Λ`. -/
-def IsMatchedIn (Λ : Finset V) (ω : G.edgeSet → Bool) : Prop :=
-  ∀ v ∈ Λ, ∃ e ∈ G.insideEdges Λ, ω e = true ∧ v ∈ (e : Sym2 V)
+/-- `ω` matches every vertex of `Λ` inside `Λ`: the edges inside `Λ` of value `true` cover `Λ`. -/
+def IsMatchedIn (Λ : Finset V) (ω : G.edgeSet → Bool) : Prop := by
+  classical exact Λ ⊆ G.dimerCoveredVertices (G.insideEdges Λ) ω
+
+theorem isMatchedIn_iff_subset [DecidableEq V] {Λ : Finset V} {ω : G.edgeSet → Bool} :
+    G.IsMatchedIn Λ ω ↔ Λ ⊆ G.dimerCoveredVertices (G.insideEdges Λ) ω := by
+  unfold IsMatchedIn
+  convert Iff.rfl
 
 theorem isMatchedIn_iff {Λ : Finset V} {ω : G.edgeSet → Bool} :
-    G.IsMatchedIn Λ ω ↔ ∀ v ∈ Λ, ∃ e ∈ G.insideEdges Λ, ω e = true ∧ v ∈ (e : Sym2 V) :=
-  Iff.rfl
+    G.IsMatchedIn Λ ω ↔ ∀ v ∈ Λ, ∃ e ∈ G.insideEdges Λ, ω e = true ∧ v ∈ (e : Sym2 V) := by
+  classical
+  simp only [isMatchedIn_iff_subset, Finset.subset_iff, mem_dimerCoveredVertices]
 
 /-- If a dimer configuration matches every vertex of `Λ` inside `Λ`, the edges leaving `Λ` have
 value `false`. -/
 theorem IsDimerConfiguration.eq_false_of_isMatchedIn {Λ : Finset V} {ω : G.edgeSet → Bool}
     (hω : G.IsDimerConfiguration ω) (hΛ : G.IsMatchedIn Λ ω) {e : G.edgeSet}
     (he : e ∉ G.insideEdges Λ) {v : V} (hv : v ∈ Λ) (hve : v ∈ (e : Sym2 V)) : ω e = false := by
-  obtain ⟨f, hf, hωf, hvf⟩ := hΛ v hv
-  obtain ⟨_, -, huniq⟩ := hω v
-  rw [Bool.eq_false_iff]
-  intro hωe
-  exact he ((huniq e ⟨hωe, hve⟩).trans (huniq f ⟨hωf, hvf⟩).symm ▸ hf)
+  classical
+  exact Bool.eq_false_iff.2 fun h =>
+    (hω.mem_dimerCoveredVertices_iff.1 (isMatchedIn_iff_subset.1 hΛ hv)).2 e he h hve
 
 /-- **The completion set inside `Λ` consists of the perfect matchings of `Λ`.** If a dimer
 configuration `ω` matches every vertex of `Λ` inside `Λ`, the gluing of a configuration `η` on the
@@ -538,7 +542,7 @@ theorem IsDimerConfiguration.isDimerConfiguration_updateFinset_insideEdges_iff
     exact hω.eq_false_of_isMatchedIn hΛ he hv hve
   rw [isDimerConfiguration_updateFinset_iff, mem_image_restrict_dimerCompletionSet hω]
   refine ⟨fun h v hv => ?_, fun h v ⟨f, hf, hvf⟩ => ?_⟩
-  · obtain ⟨f, hf, -, hvf⟩ := hΛ v hv
+  · obtain ⟨f, hf, -, hvf⟩ := isMatchedIn_iff.1 hΛ v hv
     obtain ⟨e, ⟨hηe, hve⟩, huniq⟩ := h v ⟨f, hf, hvf⟩
     have he : e ∈ G.insideEdges Λ := by
       by_contra he

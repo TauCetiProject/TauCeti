@@ -73,14 +73,11 @@ theorem IsDimerGibbs.measure_inter_setOf_isMatchedIn (hμ : G.IsDimerGibbs w μ)
       μ {η | ∀ e ∈ E, e ∉ G.insideEdges Λ → η e = ω e} := by
   refine measure_congr (Filter.eventuallyEqSet_iff.2 ?_)
   filter_upwards [hμ.ae_isDimerConfiguration] with η hη
-  refine ⟨fun h => h.1, fun h => ⟨h, isMatchedIn_iff.2 fun v hv => ?_⟩⟩
-  obtain ⟨f, hf, -, hvf⟩ := isMatchedIn_iff.1 hΛ v hv
-  obtain ⟨e, ⟨hηe, hve⟩, -⟩ := isDimerConfiguration_iff.1 hη v
-  refine ⟨e, ?_, hηe, hve⟩
-  by_contra he
-  have hωe := hω.eq_false_of_isMatchedIn hΛ he hv hve
-  rw [h e (hE f hf e ⟨v, hvf, hve⟩) he, hωe] at hηe
-  exact Bool.false_ne_true hηe
+  classical
+  refine ⟨fun h => h.1, fun h => ⟨h, isMatchedIn_iff_subset.2 fun v hv => ?_⟩⟩
+  obtain ⟨⟨f, hf, hvf⟩, hout⟩ := hω.mem_dimerCoveredVertices_iff.1 (isMatchedIn_iff_subset.1 hΛ hv)
+  refine hη.mem_dimerCoveredVertices_iff.2 ⟨⟨f, hf, hvf⟩, fun e he hηe hve => ?_⟩
+  exact hout e he (h e (hE f hf e ⟨v, hvf, hve⟩) he ▸ hηe) hve
 
 /-- **The vertex form of the dimer Gibbs property.** Let `μ` be dimer Gibbs for a positive weight
 `w`, `Λ` a finite set of vertices, and `E` a finite set containing every edge sharing a vertex with
