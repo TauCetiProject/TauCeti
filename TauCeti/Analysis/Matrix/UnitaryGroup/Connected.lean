@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.PathConnected
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
+import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
 # Hermitian logarithms and connectedness of the complex unitary group
@@ -25,8 +26,8 @@ assumption on the finite index type is needed.
 
 The complex special unitary group is path connected as well
 (`Matrix.specialUnitaryGroup.instPathConnectedSpace`): multiplying a unitary matrix `U` by the
-diagonal matrix `diag(conj (det U), 1, …, 1)` is a continuous map onto the special unitary group
-which fixes the special unitary matrices.
+diagonal matrix `diag(conj (det U), 1, …, 1)` (`Matrix.UnitaryGroup.toSpecialUnitaryAt`) is a
+continuous map onto the special unitary group which fixes the special unitary matrices.
 
 ## References
 
@@ -96,21 +97,12 @@ instance instPathConnectedSpace : PathConnectedSpace (specialUnitaryGroup n ℂ)
       ⟨fun A B ↦ Subtype.ext (Subsingleton.elim _ _)⟩
     exact Function.Surjective.pathConnectedSpace (f := fun _ : unitaryGroup n ℂ ↦ 1)
       (fun A ↦ ⟨1, Subsingleton.elim _ _⟩) continuous_const
-  -- Multiply `U` by `diag(conj (det U), 1, …, 1)`, which corrects its determinant to `1`.
-  let d (U : unitaryGroup n ℂ) : n → ℂ := Function.update 1 i₀ (star (U : Matrix n n ℂ).det)
-  have hd (U : unitaryGroup n ℂ) : diagonal (d U) ∈ unitaryGroup n ℂ := by
-    have hU := Unitary.mem_iff.1 (det_of_mem_unitary U.property)
-    refine diagonal_mem_unitary.2 (Unitary.mem_iff.2 ⟨funext fun i ↦ ?_, funext fun i ↦ ?_⟩) <;>
-      rcases eq_or_ne i i₀ with rfl | hi <;> simp_all [d]
-  have hdet (U : unitaryGroup n ℂ) : ((U : Matrix n n ℂ) * diagonal (d U)).det = 1 := by
-    rw [det_mul, det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ i₀)]
-    simpa using (Unitary.mem_iff.1 (det_of_mem_unitary U.property)).2
-  refine Function.Surjective.pathConnectedSpace
-    (f := fun U : unitaryGroup n ℂ ↦ (⟨(U : Matrix n n ℂ) * diagonal (d U),
-      mem_specialUnitaryGroup_iff.2 ⟨mul_mem U.property (hd U), hdet U⟩⟩ :
-        specialUnitaryGroup n ℂ))
-    (fun A ↦ ⟨⟨A, (mem_specialUnitaryGroup_iff.1 A.property).1⟩, Subtype.ext ?_⟩) ?_
-  · simp [d, (mem_specialUnitaryGroup_iff.1 A.property).2]
-  · fun_prop
+  -- Multiply `U` by `diag(conj (det U), 1, …, 1)`, which corrects its determinant to `1` and
+  -- fixes the special unitary matrices.
+  exact Function.Surjective.pathConnectedSpace (f := UnitaryGroup.toSpecialUnitaryAt i₀)
+    (fun A ↦ ⟨⟨A, (mem_specialUnitaryGroup_iff.1 A.property).1⟩,
+      Subtype.ext (UnitaryGroup.toSpecialUnitaryAt_of_det_eq_one i₀
+        (mem_specialUnitaryGroup_iff.1 A.property).2)⟩)
+    (UnitaryGroup.continuous_toSpecialUnitaryAt i₀)
 
 end Matrix.specialUnitaryGroup

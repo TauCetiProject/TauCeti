@@ -232,8 +232,7 @@ theorem IsContMDiff.isRegularPoint_proj (hA : A.IsContMDiff n IB IF IP) (hn : n 
   have h : IsRegularPoint (IB.prod IF) IB (proj ∘ A.totalSpaceDiffeomorph hA) x :=
     (ManifoldTotalSpace.isRegularPoint_proj IB IF x).congr_of_eventuallyEq
       (Filter.Eventually.of_forall (A.proj_totalSpaceDiffeomorph hA))
-  exact h.of_comp ((hA.contMDiff_proj _).mdifferentiableAt hn)
-    ((A.totalSpaceDiffeomorph hA).contMDiff.mdifferentiableAt hn)
+  exact ((A.totalSpaceDiffeomorph hA).isRegularPoint_comp_iff hn).1 h
 
 /-- For a right action on `P` preserving the fibres of `proj`, the diffeomorphism
 `totalSpaceDiffeomorph` carries the fibrewise action on the total space to the action on `P`. -/
