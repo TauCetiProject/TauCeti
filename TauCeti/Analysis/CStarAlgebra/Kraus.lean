@@ -19,6 +19,9 @@ Rectangular complex matrices `V k : Matrix n m ℂ` define the completely positi
 The trace dual is `ρ ↦ ∑ k, V k * ρ * (V k)ᴴ`; it preserves trace exactly when
 that normalization sum is one. Isometric changes of Kraus family preserve the map.
 
+`krausMapLinearMap` is `Matrix.krausMap` on ordinary matrices, and its Choi matrix is
+`∑ i, Matrix.vecMulVec (V i)ᴴ.vec (star (V i)ᴴ.vec)` by `choiMatrix_krausMapLinearMap`.
+
 The normalization criterion connects the Heisenberg and Schrödinger pictures of
 a finite-dimensional quantum channel.
 
