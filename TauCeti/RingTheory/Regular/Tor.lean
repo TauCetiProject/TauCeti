@@ -193,7 +193,7 @@ theorem torOneQuotientSpanSingletonSelfIso_hom (hf : IsSMulRegular R f) :
         ofHom (torsionBy R (R ⧸ Ideal.span {f}) f).subtype := by
   rw [torOneQuotientSpanSingletonSelfIso, torOneQuotientSpanSingletonIsoOfIsTorsionBy_hom]
 
-open scoped TensorProduct in
+open scoped Pointwise TensorProduct in
 /-- **`Tor₁` and the cone of multiplication by a regular element.** For `f` regular on `R`, the
 complex `R → R` of multiplication by `f` resolves `R ⧸ (f)`. With coefficients in `X` it becomes
 the cone `(x, y) ↦ (0, f • x)` of multiplication by `f` on `X`, and its homology is
@@ -209,7 +209,8 @@ def mappingConeSMulHomologyEquiv (hf : IsSMulRegular R f) (X : Type u) [AddCommG
     -- `torsionBy R X f` is by definition the kernel of `DistribSMul.toLinearMap R X f`.
     LinearEquiv.prodCongr
       (LinearEquiv.ofEq _ _ rfl ≪≫ₗ (torOneQuotientSpanSingletonIso hf (of R X)).toLinearEquiv.symm)
-      (Submodule.quotEquivOfEq _ _ (LinearMap.range_eq_map _) ≪≫ₗ QuotSMulTop.equivTensorQuot f X)
+      (Submodule.quotEquivOfEq _ (f • ⊤) (LinearMap.range_eq_map _) ≪≫ₗ
+        QuotSMulTop.equivTensorQuot f X)
 
 open scoped TensorProduct in
 /-- The class of a cycle `(x, y)` of the cone of multiplication by `f` on `X`, with `f • x = 0`,
@@ -225,8 +226,7 @@ theorem mappingConeSMulHomologyEquiv_mk (hf : IsSMulRegular R f) (X : Type u) [A
         (z : X × X).2 ⊗ₜ 1) := by
   simp only [mappingConeSMulHomologyEquiv, LinearEquiv.trans_apply,
     LinearMap.mappingConeZeroZeroHomologyEquiv_mk, LinearEquiv.prodCongr_apply,
-    QuotSMulTop.equivTensorQuot, Submodule.quotEquivOfEq_mk,
-    TensorProduct.tensorQuotEquivQuotSMul_symm_mk]
+    Submodule.quotEquivOfEq_mk, QuotSMulTop.equivTensorQuot_mk]
   -- `LinearEquiv.ofEq _ _ rfl` only changes the type of the membership proof, and
   -- `Iso.toLinearEquiv.symm` applies `Iso.inv`.
   rfl

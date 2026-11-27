@@ -352,6 +352,13 @@ theorem mem_annihilator_ker_map (x : R) {f : M →ₗ[R] N} {b : R} (hf : Inject
   rw [hbz, Submodule.Quotient.mk_eq_zero]
   exact Submodule.smul_mem_pointwise_smul m x ⊤ trivial
 
+open scoped TensorProduct in
+/-- The identification `M ⧸ x M ≃ M ⊗[R] R ⧸ (x)` sends the residue class of `m` to `m ⊗ 1`. -/
+@[simp]
+theorem equivTensorQuot_mk (x : R) (m : M) :
+    equivTensorQuot x M (Submodule.Quotient.mk m) = m ⊗ₜ 1 := by
+  simp [equivTensorQuot]
+
 end QuotSMulTop
 
 namespace Module.IsTorsionBy
@@ -389,10 +396,8 @@ open scoped TensorProduct in
 @[simp]
 theorem tensorQuotEquiv_tmul_one {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
     hx.tensorQuotEquiv (m ⊗ₜ 1) = m := by
-  have h : QuotSMulTop.equivTensorQuot x M (Submodule.Quotient.mk m) = m ⊗ₜ 1 := by
-    simp [QuotSMulTop.equivTensorQuot]
-  rw [tensorQuotEquiv, LinearEquiv.trans_apply, ← h, LinearEquiv.symm_apply_apply,
-    quotSMulTopEquiv_mk]
+  rw [tensorQuotEquiv, LinearEquiv.trans_apply, ← QuotSMulTop.equivTensorQuot_mk,
+    LinearEquiv.symm_apply_apply, quotSMulTopEquiv_mk]
 
 open scoped TensorProduct in
 /-- The inverse of the identification `M ⊗[R] R ⧸ (x) ≃ M` sends `m` to `m ⊗ 1`. -/
