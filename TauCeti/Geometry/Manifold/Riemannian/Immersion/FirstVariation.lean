@@ -112,8 +112,7 @@ theorem alongCurve_mfderiv_family (ht : cov.IsTorsionFree)
       CovariantDerivative.alongCurve cov (fun t ↦ Φ t (c 0))
       (fun t ↦ curveVelocity J (fun s ↦ Φ t (c s)) 0) t₀ :=
     CovariantDerivative.alongCurve_congr cov _ _
-      ((eventually_mdifferentiableAt_family hΦ two_ne_zero).mono fun t ht ↦
-      (curveVelocity_map (γ := c) ht hc1).symm)
+      (eventually_mfderiv_family_apply_curveVelocity hΦ two_ne_zero hc1)
   rw [hfield]
   have : IsManifold J (minSmoothness ℝ 2) N := by
     rw [minSmoothness_of_isRCLikeNormedField]
@@ -172,6 +171,11 @@ variable
   {Φ : ℝ → M → N} {t₀ : ℝ} {x : M}
   {n : ℕ∞ω} (h : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y))
 
+/-- `2 ≤ n + 1` when `1 ≤ n`, so a `C^(n+1)` family with `n ≥ 1` is `C²`. -/
+private theorem two_le_add_one (hn : 1 ≤ n) : (2 : ℕ∞ω) ≤ n + 1 :=
+  calc (2 : ℕ∞ω) = 1 + 1 := by norm_num
+    _ ≤ n + 1 := by gcongr
+
 /-- **The first variation of the relative volume density of a family of immersions.** Let
 `Φ t : M → N` be a jointly `C^(n+1)` family of immersions, `n ≥ 1`, into a manifold whose metric
 `h` is the inner product of a torsion-free metric-compatible connection, and let `x` be an interior
@@ -192,10 +196,8 @@ theorem hasDerivAt_relativeVolumeDensity_pullback_family
         (h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t)) x)
       (∑ i, ⟪cov.alongMap I (Φ t₀) (familyVariationField J Φ t₀) x (b i),
         mfderiv I J (Φ t₀) x (b i)⟫_ℝ) t₀ := by
-  have hΦ₂ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, x) := by
-    refine (hΦ (t₀, x)).of_le ?_
-    calc (2 : ℕ∞ω) = 1 + 1 := by norm_num
-      _ ≤ n + 1 := by gcongr
+  have hΦ₂ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, x) :=
+    (hΦ _).of_le (two_le_add_one hn)
   have hd := hasDerivAt_relativeVolumeDensity
     (g := fun t ↦ h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t)) (t₀ := t₀) b
     (by simpa only [ContMDiffRiemannianMetric.pullback_inner, hh] using hb)
@@ -229,10 +231,8 @@ theorem hasDerivAt_relativeVolumeDensity_pullback_family_of_normal
       (-(Module.finrank ℝ E : ℝ) *
         ⟪immersionMeanCurvatureVector (I := I) cov (Φ t₀) x, familyVariationField J Φ t₀ x⟫_ℝ)
       t₀ := by
-  have hΦ₂ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, x) := by
-    refine (hΦ (t₀, x)).of_le ?_
-    calc (2 : ℕ∞ω) = 1 + 1 := by norm_num
-      _ ≤ n + 1 := by gcongr
+  have hΦ₂ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, x) :=
+    (hΦ _).of_le (two_le_add_one hn)
   have hf : ContMDiffAt I J 2 (Φ t₀) x := hΦ₂.curry_right
   let e := stdOrthonormalBasis ℝ (TangentSpace I x)
   have hb : ∀ i j, ⟪mfderiv I J (Φ t₀) x (e.toBasis i), mfderiv I J (Φ t₀) x (e.toBasis j)⟫_ℝ =

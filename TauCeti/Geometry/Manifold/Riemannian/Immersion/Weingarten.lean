@@ -139,7 +139,7 @@ theorem inner_alongMap_mfderiv_of_eventually_mem [FiniteDimensional ℝ E] [IsMa
     hνn V hdW
   have hv : V x = v := FiberBundle.extend_apply_self E v
   have hw : W x = w := FiberBundle.extend_apply_self E w
-  rw [hB, ← h, ← hv, ← hw, ← neg_immersionShapeOperator_add_immersionNormalConnection ν V x,
-    inner_add_left, inner_neg_left, hN, add_zero]
+  rw [hB, ← h, ← hv, ← hw, ← neg_immersionShapeOperator_add_immersionNormalConnection ν V x]
+  simp [inner_add_left, hN]
 
 end TauCeti

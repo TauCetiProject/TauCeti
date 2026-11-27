@@ -34,6 +34,8 @@ deformation in the first variation of volume of an immersion
   `TauCeti.mdifferentiableAt_sectionCoord_familyVariationField`: the variation field of a family
   which is `C²` at `(t₀, x)` is a `C¹` section along `Φ t₀` near `x`, with a differentiable
   coordinate reading.
+* `TauCeti.eventually_mfderiv_family_apply_curveVelocity`: near `t₀`, `dΦ_t` sends the velocity
+  of a curve `c` to the velocity of `s ↦ Φ t (c s)`.
 * `TauCeti.contMDiffAt_surface_family`,
   `TauCeti.differentiableAt_sectionCoord_mfderiv_family`: through a curve `c`, a `C²` family
   gives the `C²` parametrized surface `(t, s) ↦ Φ t (c s)`, and the coordinate reading of
@@ -104,6 +106,16 @@ theorem contMDiffAt_surface_family {c : ℝ → M}
   hΦ.comp (t₀, (0 : ℝ)) ((contDiffAt_fst.contMDiffAt (n := 2)).prodMk
     (hc.comp (t₀, (0 : ℝ)) contDiffAt_snd.contMDiffAt))
 
+/-- For a family which is jointly `C^n`, `n ≠ 0`, at `(t₀, c s)` and a curve `c` differentiable
+at `s`, for every `t` near `t₀` the differential `dΦ_t` sends the velocity of `c` at `s` to the
+velocity of `s ↦ Φ t (c s)`. -/
+theorem eventually_mfderiv_family_apply_curveVelocity [IsManifold I 1 M] [IsManifold J 1 N]
+    {n : ℕ∞ω} {c : ℝ → M} {s : ℝ} (hΦ : ContMDiffAt (𝓘(ℝ).prod I) J n (uncurry Φ) (t₀, c s))
+    (hn : n ≠ 0) (hc : MDifferentiableAt 𝓘(ℝ, ℝ) I c s) :
+    ∀ᶠ t in 𝓝 t₀, mfderiv I J (Φ t) (c s) (curveVelocity I c s) =
+      curveVelocity J (fun u ↦ Φ t (c u)) s :=
+  (eventually_mdifferentiableAt_family hΦ hn).mono fun _ ht ↦ (curveVelocity_map ht hc).symm
+
 variable [IsManifold I 2 M] [IsManifold J 2 N]
 
 /-- The variation field of a family which is `C²` at `(t₀, x)` is `C¹` at `x`, as a section of
@@ -146,8 +158,7 @@ theorem differentiableAt_sectionCoord_mfderiv_family
   have hd := ContMDiffAt.differentiableAt_sectionCoord_curveVelocity_snd
     (f := fun t s ↦ Φ t (c s)) hσ hy
   refine hd.congr_of_eventuallyEq ?_
-  filter_upwards [eventually_mdifferentiableAt_family hΦ two_ne_zero] with t ht
-  simp only [sectionCoord_apply]
-  exact congrArg _ (curveVelocity_map ht hc1).symm
+  filter_upwards [eventually_mfderiv_family_apply_curveVelocity hΦ two_ne_zero hc1] with t ht
+  simp only [sectionCoord_apply, ht]
 
 end TauCeti
