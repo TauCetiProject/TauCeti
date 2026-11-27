@@ -345,8 +345,7 @@ theorem isCompact_setOf_norm_sectionValue_le (hs : 1 < s) (x : SobolevFieldSpace
     · exact Eventually.of_forall fun z ↦ hc0.trans_le (norm_nonneg _)
     filter_upwards [(tendsto_normSq_of_mem_framedFieldSpace hs x.mem_framedFieldSpace
       x.continuous).eventually (lt_mem_nhds (by nlinarith : c ^ 2 < 1))] with z hz
-    rw [← sq_norm_sectionValue] at hz
-    nlinarith [norm_nonneg (sectionValue x z)]
+    exact lt_norm_sectionValue_of_sq_lt hz
   obtain ⟨t, ht, hts⟩ := mem_cocompact.1 hev
   refine ht.of_isClosed_subset
     (isClosed_le (continuous_sectionValue x.continuous).norm continuous_const) fun z hz ↦ ?_
