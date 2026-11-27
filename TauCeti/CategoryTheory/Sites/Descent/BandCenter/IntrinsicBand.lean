@@ -24,7 +24,7 @@ If `F` is moreover a gerbe all of whose automorphism groups are commutative, eva
 isomorphisms of objects, so they form an abelian banding of `F` by the sheaf of central sections
 (`IntrinsicBandSections.banding`): the intrinsic band of `F`. It is defined over every `U` at once,
 including those over which the fibre of `F` is empty, and uses no terminal object, no fibre products
-and no global object. This is the varying-base step of the Stacks Project, Lemma 8.11.8 (06NY).
+and no global object. This is the varying-base step of the Stacks Project, Lemma 8.11.8 (0CJY).
 
 ## Main definitions
 
@@ -43,7 +43,7 @@ In the namespace `CategoryTheory.Pseudofunctor.IntrinsicBandSections`:
 
 ## References
 
-* [The Stacks Project, Lemma 8.11.8 (06NY)](https://stacks.math.columbia.edu/tag/06NY)
+* [The Stacks Project, Lemma 8.11.8 (0CJY)](https://stacks.math.columbia.edu/tag/0CJY)
 -/
 
 public section
