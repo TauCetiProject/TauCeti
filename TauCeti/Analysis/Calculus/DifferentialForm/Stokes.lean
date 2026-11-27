@@ -302,6 +302,7 @@ theorem extDeriv_pullback_polarCoord_symm_apply
       (![(1, 0), (0, 1)] i)) = ![exp (p.2 * I), circleMap 0 p.1 p.2 * I] := by
     funext i
     rw [(hasFDerivAt_add_polarCoord_symm p z₀).fderiv]
+    -- At each Fin index, both length-two vectors reduce definitionally to their entries.
     fin_cases i
     · exact fderivComplexPolarCoordSymm_apply_one_zero p
     · exact fderivComplexPolarCoordSymm_apply_zero_one p

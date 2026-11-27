@@ -48,6 +48,12 @@ theorem fderivComplexPolarCoordSymm_def (x : ℝ × ℝ) :
     fderivComplexPolarCoordSymm x =
       Complex.equivRealProdCLM.symm.toContinuousLinearMap.comp (fderivPolarCoordSymm x) := (rfl)
 
+/-- In real coordinates, the complex polar differential is the real polar differential. -/
+theorem equivRealProdCLM_fderivComplexPolarCoordSymm (x v : ℝ × ℝ) :
+    Complex.equivRealProdCLM (fderivComplexPolarCoordSymm x v) = fderivPolarCoordSymm x v := by
+  simp only [fderivComplexPolarCoordSymm_def, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+
 /-- The derivative of the translated inverse complex polar-coordinate map at any `(r, θ)`.
 No restriction to the positive-radius chart is needed for this derivative formula. -/
 theorem hasFDerivAt_add_polarCoord_symm (p : ℝ × ℝ) (z₀ : ℂ) :
