@@ -54,17 +54,17 @@ theorem denseRange_convolutionMap (hφ : DenseRange φ) :
   choose a ha using fun i : s => i.val.property
   let g : ConvolutionAlgebra α μ := ∑ i : s, ConvolutionAlgebra.smulRight (χ i) (a i)
   refine ⟨g, ?_⟩
-  rw [dist_eq_norm, ConvolutionAlgebra.norm_eq_integral_norm]
+  rw [dist_eq_norm, CompactlySupportedL1.norm_eq_integral_norm]
   convert hχ using 1
   apply integral_congr_ae
   filter_upwards [] with x
   congr 1
-  simp only [ConvolutionAlgebra.ofConv_sub, CompactlySupportedContinuousMap.sub_apply,
+  simp only [CompactlySupportedL1.toFun_sub, CompactlySupportedContinuousMap.sub_apply,
     convolutionMap_apply]
   have hg : g.ofConv = ∑ i : s, (ConvolutionAlgebra.smulRight (χ i) (a i) :
       ConvolutionAlgebra α μ).ofConv := by
-    simpa only [ConvolutionAlgebra.linearEquiv_apply] using
-      map_sum (ConvolutionAlgebra.linearEquiv α μ)
+    simpa only [CompactlySupportedL1.linearEquiv_apply] using
+      map_sum (CompactlySupportedL1.linearEquiv α A μ ℂ)
         (fun i : s => ConvolutionAlgebra.smulRight (χ i) (a i)) Finset.univ
   simp only [hg, CompactlySupportedContinuousMap.sum_apply,
     ConvolutionAlgebra.ofConv_smulRight_apply, map_sum]

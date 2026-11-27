@@ -23,9 +23,6 @@ into series decompositions of completed tensors.
 
 * `UniformSpace.Completion.exists_hasSum_coe_of_norm_lt`: if `‖u‖ < c`, then `u = ∑ n, v n` for
   some `v : ℕ → V` with `∑ n, ‖v n‖ < c`.
-* `UniformSpace.Completion.norm_extension_le`: a bound `‖f x‖ ≤ C * ‖x‖` for a uniformly
-  continuous map into a complete separated seminormed additive group extends to
-  `‖Completion.extension f y‖ ≤ C * ‖y‖`.
 -/
 
 public section
@@ -68,19 +65,5 @@ theorem exists_hasSum_coe_of_norm_lt (u : Completion V) {c : ℝ} (hu : ‖u‖ 
     exact (tendsto_add_atTop_iff_nat 1).1 hv_lim
   · calc ∑' n, ‖v n‖ ≤ ‖u‖ + ε := hasSum_le hle hvs.hasSum hg
       _ < c := by rw [hε_def]; linarith
-
-/-- If a uniformly continuous map `f : E → F` from a seminormed additive commutative group into a
-complete separated seminormed additive group satisfies `‖f x‖ ≤ C * ‖x‖` for all `x`, then its
-extension `Completion.extension f` satisfies `‖Completion.extension f y‖ ≤ C * ‖y‖` for all
-`y`. -/
-theorem norm_extension_le {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddGroup F]
-    [T0Space F] [CompleteSpace F] {f : E → F} (hf : UniformContinuous f) {C : ℝ}
-    (hC : ∀ x : E, ‖f x‖ ≤ C * ‖x‖) (y : Completion E) :
-    ‖Completion.extension f y‖ ≤ C * ‖y‖ := by
-  induction y using Completion.induction_on with
-  | hp =>
-    exact isClosed_le (continuous_norm.comp Completion.continuous_extension)
-      (continuous_const.mul continuous_norm)
-  | ih x => simpa only [Completion.extension_coe hf, Completion.norm_coe] using hC x
 
 end UniformSpace.Completion

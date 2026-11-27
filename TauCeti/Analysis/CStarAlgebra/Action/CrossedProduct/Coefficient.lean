@@ -80,7 +80,7 @@ def coefficient : A →⋆ₙₐ[ℂ] regularAlgebra α ρ Measure.count :=
   (CovariantRepresentation.regular α ρ Measure.count).coefficient.codRestrict _ fun a => by
     rw [← integratedOperator_identitySupported α ρ a]
     simpa only [coe_of, CovariantRepresentation.integratedStarAlgHom_apply,
-      ConvolutionAlgebra.ofConv_toConv] using
+      CompactlySupportedL1.toFun_ofFun] using
       (of α ρ Measure.count (ConvolutionAlgebra.toConv (identitySupported a))).property
 
 /-- The inclusion acts by the coefficient representation of the regular covariant pair. -/
@@ -93,7 +93,7 @@ private theorem coefficient_eq_of (a : A) :
     coefficient α ρ a = of α ρ Measure.count (ConvolutionAlgebra.toConv (identitySupported a)) := by
   apply Subtype.ext
   simpa only [coe_coefficient, coe_of, CovariantRepresentation.integratedStarAlgHom_apply,
-    ConvolutionAlgebra.ofConv_toConv] using (integratedOperator_identitySupported α ρ a).symm
+    CompactlySupportedL1.toFun_ofFun] using (integratedOperator_identitySupported α ρ a).symm
 
 open scoped Classical in
 /-- Fourier coefficients of an included coefficient vanish off the identity. -/
@@ -115,7 +115,7 @@ theorem coefficient_mul_of (a : A) (f : ConvolutionAlgebra α Measure.count) :
       of α ρ Measure.count (ConvolutionAlgebra.toConv (a • f.ofConv)) := by
   apply Subtype.ext
   simpa only [MulMemClass.coe_mul, coe_coefficient, coe_of,
-    CovariantRepresentation.integratedStarAlgHom_apply, ConvolutionAlgebra.ofConv_toConv] using
+    CovariantRepresentation.integratedStarAlgHom_apply, CompactlySupportedL1.toFun_ofFun] using
     ((CovariantRepresentation.regular α ρ Measure.count).integratedOperator_smul
       Measure.count a f.ofConv).symm
 

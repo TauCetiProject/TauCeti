@@ -51,12 +51,7 @@ The modular factor in the involution cancels the change of Haar measure under in
 @[simp]
 theorem integratedOperator_twistedInvolution (f : C_c(G, A)) :
     P.integratedOperator μ (α.twistedInvolution f) = star (P.integratedOperator μ f) := by
-  have hdef (h : C_c(G, A)) : P.integratedOperator μ h =
-      P.coefficient.integratedOperator (fun g => P.group g) P.continuous_orbit
-        P.isUnitary.exists_norm_le μ h := by
-    ext v
-    simp [integratedOperator_apply, NonUnitalStarAlgHom.integratedOperator_apply]
-  rw [hdef, hdef]
+  rw [P.integratedOperator_eq_coefficient μ]
   refine P.coefficient.integratedOperator_eq_star P.continuous_orbit P.isUnitary.exists_norm_le μ
     (.of_forall fun g => ?_)
   rw [twistedInvolution_apply, map_smul, smul_mul_assoc, ← P.group_mul_coefficient,
@@ -92,16 +87,17 @@ theorem continuous_integratedStarAlgHom : Continuous (P.integratedStarAlgHom μ)
 `⋆`-algebra homomorphism. -/
 def integratedStarAlgHomL1 :
     Completion (ConvolutionAlgebra α μ) →⋆ₙₐ[ℂ] (H →L[ℂ] H) :=
-  (P.integratedOperatorCLM μ).fromCompletionNonUnitalStarAlgHomOfMulStar (fun f g => by simp)
-    (fun f => by simp)
+  ((P.integratedOperatorCLM μ).toNonUnitalStarAlgHomOfMulStar (fun f g => by simp)
+    (fun f => by simp)).fromCompletion
+    ((P.integratedOperatorCLM μ).continuous_toNonUnitalStarAlgHomOfMulStar _ _)
 
 @[simp]
 theorem toNonUnitalAlgHom_integratedStarAlgHomL1 :
     (P.integratedStarAlgHomL1 μ).toNonUnitalAlgHom = P.integratedOperatorL1 μ := by
-  rw [integratedStarAlgHomL1,
-    ContinuousLinearMap.toNonUnitalAlgHom_fromCompletionNonUnitalStarAlgHomOfMulStar]
-  exact (P.integratedOperatorCLM μ).fromCompletionNonUnitalAlgHomOfMul_unique _
-    (P.integratedOperatorL1 μ) (P.continuous_integratedOperatorL1 μ) fun f => by simp
+  simp only [integratedStarAlgHomL1, NonUnitalStarAlgHom.toNonUnitalAlgHom_fromCompletion,
+    ContinuousLinearMap.toNonUnitalAlgHom_toNonUnitalStarAlgHomOfMulStar]
+  exact NonUnitalAlgHom.fromCompletion_unique _ _ _ (P.continuous_integratedOperatorL1 μ)
+    fun f => by simp
 
 @[simp]
 theorem integratedStarAlgHomL1_apply (x : Completion (ConvolutionAlgebra α μ)) :
@@ -117,7 +113,7 @@ theorem integratedOperatorL1_star (x : Completion (ConvolutionAlgebra α μ)) :
 /-- The L¹ integrated `⋆`-homomorphism is continuous. -/
 @[fun_prop]
 theorem continuous_integratedStarAlgHomL1 : Continuous (P.integratedStarAlgHomL1 μ) :=
-  (P.integratedOperatorCLM μ).continuous_fromCompletionNonUnitalStarAlgHomOfMulStar _ _
+  NonUnitalStarAlgHom.continuous_fromCompletion _ _
 
 /-- The L¹ integrated `⋆`-homomorphism is a contraction on the twisted L¹ completion. -/
 theorem norm_integratedStarAlgHomL1_le (x : Completion (ConvolutionAlgebra α μ)) :

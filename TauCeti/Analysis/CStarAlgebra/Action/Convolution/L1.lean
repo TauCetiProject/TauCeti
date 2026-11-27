@@ -16,7 +16,6 @@ import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.CStarAlgebra.Hom
 import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
-import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 import TauCeti.MeasureTheory.Group.Convolution.Support
@@ -26,21 +25,23 @@ import TauCeti.MeasureTheory.Group.Convolution.Support
 
 Let `α : CStarAction G A` be a point-norm continuous action of a topological group `G` on a
 possibly nonunital complex C⋆-algebra `A`. In
-`TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed`, the compact-support convolution algebra
-`CStarAction.ConvolutionAlgebra α μ` carries the `L¹` seminorm pulled back along
-`ConvolutionAlgebra.toL1 : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ`, and its abstract completion
-`UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted `L¹` Banach ⋆-algebra.
+`TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed` and `TauCeti.CompactlySupportedL1`, the
+compact-support convolution algebra `CStarAction.ConvolutionAlgebra α μ` carries the `L¹` seminorm
+pulled back along `CompactlySupportedL1.toL1 ℂ : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ`, and its
+abstract completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted `L¹` Banach
+⋆-algebra.
 
 When `G` is weakly locally compact and `μ` is finite on compact sets and inner regular on sets of
 finite measure (`IsFiniteMeasureOnCompacts μ` and `μ.InnerRegularCompactLTTop`), compactly supported
-continuous functions are dense in `Lp A 1 μ`. Consequently `toL1` has dense range and extends to a
-linear isometric equivalence
-`ConvolutionAlgebra.completionEquivL1 α μ : Completion (ConvolutionAlgebra α μ) ≃ₗᵢ[ℂ] Lp A 1 μ`.
-This holds without separability of `A`, second countability of `G`, σ-finiteness of `μ`, unitality
-of `A`, or full support of `μ`, including zero algebras and the zero measure.
+continuous functions are dense in `Lp A 1 μ`. Consequently `CompactlySupportedL1.toL1 ℂ` has dense
+range and extends to a linear isometric equivalence
+`CompactlySupportedL1.completionEquivL1 α A μ ℂ` from `Completion (ConvolutionAlgebra α μ)`
+to `Lp A 1 μ`. This holds without separability of `A`, second countability of `G`,
+σ-finiteness of `μ`, unitality of `A`, or full support of `μ`, including zero algebras and the zero
+measure.
 
 On `Lp A p μ` and `Lp A 1 μ` we construct the concrete dynamical operations and show that they match
-those of `Completion (ConvolutionAlgebra α μ)` across `completionEquivL1`:
+those of `Completion (ConvolutionAlgebra α μ)` across `CompactlySupportedL1.completionEquivL1`:
 
 * `CStarAction.translateLp`: twisted left translation `(r • f)(s) = α r (f (r⁻¹ * s))` on
   `Lp A p μ`, jointly continuous on `G × Lp A p μ` for `1 ≤ p < ∞` whenever `μ` is locally finite,
@@ -227,87 +228,61 @@ section CompletionEquiv
 variable {G A : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
   [NonUnitalCStarAlgebra A] {α : CStarAction G A} {μ : Measure G}
 
-/-- `ConvolutionAlgebra.toL1` realizes a compactly supported coefficient via
-`CompactlySupportedContinuousMap.toLp`. -/
-theorem toL1_eq_toLp [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
-    (f : ConvolutionAlgebra α μ) :
-    toL1 f = CompactlySupportedContinuousMap.toLp 1 μ ℂ f.ofConv :=
-  CompactlySupportedL1.toL1_eq_toLp ℂ f
-
 @[simp]
 theorem toL1_coefficientMul [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
     (a : A) (f : ConvolutionAlgebra α μ) :
-    toL1 (coefficientMul a f) = (ContinuousLinearMap.mul ℂ A a).compLp (toL1 f) := by
+    CompactlySupportedL1.toL1 ℂ (coefficientMul a f) =
+      (ContinuousLinearMap.mul ℂ A a).compLp (CompactlySupportedL1.toL1 ℂ f) := by
   refine Lp.ext ?_
-  filter_upwards [coeFn_toL1 (coefficientMul a f),
-    (ContinuousLinearMap.mul ℂ A a).coeFn_compLp (toL1 f), coeFn_toL1 f] with s h₁ h₂ h₃
-  rw [h₁, ofConv_coefficientMul, CompactlySupportedContinuousMap.smul_apply, smul_eq_mul,
-    h₂, ContinuousLinearMap.mul_apply', h₃]
+  filter_upwards [CompactlySupportedL1.coeFn_toL1 ℂ (coefficientMul a f),
+    (ContinuousLinearMap.mul ℂ A a).coeFn_compLp (CompactlySupportedL1.toL1 ℂ f),
+    CompactlySupportedL1.coeFn_toL1 ℂ f] with s h₁ h₂ h₃
+  rw [h₁, h₂, h₃]
+  simp [CompactlySupportedContinuousMap.smul_apply, smul_eq_mul, ContinuousLinearMap.mul_apply']
 
 @[simp]
 theorem toL1_translateLIE [OpensMeasurableSpace G] [IsTopologicalGroup G] [MeasurableMul G]
     [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] (r : G) (f : ConvolutionAlgebra α μ) :
-    toL1 (translateLIE r f) = α.translateLp μ 1 r (toL1 f) := by
-  rw [toL1_eq_toLp, toL1_eq_toLp, ofConv_translateLIE, α.translateLp_toLp]
+    CompactlySupportedL1.toL1 ℂ (translateLIE r f) =
+      α.translateLp μ 1 r (CompactlySupportedL1.toL1 ℂ f) := by
+  rw [CompactlySupportedL1.toL1_eq_toLp ℂ, CompactlySupportedL1.toL1_eq_toLp ℂ]
+  simpa only [ofConv_translateLIE] using (α.translateLp_toLp (μ := μ) r f.ofConv).symm
 
 variable [R1Space G] [WeaklyLocallyCompactSpace G] [BorelSpace G]
   [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
 
-/-- The compact-support convolution algebra has dense image in `Lp A 1 μ` for any measure finite
-on compact sets and inner regular on sets of finite measure. -/
-theorem denseRange_toL1 : DenseRange (toL1 (α := α) (μ := μ)) :=
-  CompactlySupportedL1.denseRange_toL1 ℂ
-
-theorem denseRange_toL1LI : DenseRange (toL1LI α μ) :=
-  CompactlySupportedL1.denseRange_toL1LI ℂ
-
-variable (α μ) in
-/-- **Identification of the twisted `L¹` completion with Bochner `L¹`**: the canonical inclusion
-`toL1` extends to a complex linear isometric equivalence between
-`UniformSpace.Completion (ConvolutionAlgebra α μ)` and `Lp A 1 μ`. -/
-abbrev completionEquivL1 : Completion (ConvolutionAlgebra α μ) ≃ₗᵢ[ℂ] Lp A 1 μ :=
-  CompactlySupportedL1.completionEquivL1 α A μ ℂ
-
-theorem completionEquivL1_coe (f : ConvolutionAlgebra α μ) :
-    completionEquivL1 α μ f = toL1 f :=
-  CompactlySupportedL1.completionEquivL1_coe ℂ f
-
-theorem completionEquivL1_symm_toL1 (f : ConvolutionAlgebra α μ) :
-    (completionEquivL1 α μ).symm (toL1 f) = f :=
-  CompactlySupportedL1.completionEquivL1_symm_toL1 ℂ f
-
-theorem completionEquivL1_symm_toLp (f : C_c(G, A)) :
-    (completionEquivL1 α μ).symm (CompactlySupportedContinuousMap.toLp 1 μ ℂ f) =
-      ((toConv f : ConvolutionAlgebra α μ) : Completion (ConvolutionAlgebra α μ)) :=
-  CompactlySupportedL1.completionEquivL1_symm_toLp ℂ f
-
 @[simp]
 theorem completionEquivL1_completion_coefficientMul (a : A)
     (x : Completion (ConvolutionAlgebra α μ)) :
-    completionEquivL1 α μ ((coefficientMul a).completion x) =
-      (ContinuousLinearMap.mul ℂ A a).compLp (completionEquivL1 α μ x) := by
+    CompactlySupportedL1.completionEquivL1 α A μ ℂ ((coefficientMul a).completion x) =
+      (ContinuousLinearMap.mul ℂ A a).compLp
+        (CompactlySupportedL1.completionEquivL1 α A μ ℂ x) := by
   induction x using Completion.induction_on with
   | hp =>
     exact isClosed_eq
-      ((completionEquivL1 α μ).continuous.comp (coefficientMul a).completion.continuous)
+      ((CompactlySupportedL1.completionEquivL1 α A μ ℂ).continuous.comp
+        (coefficientMul a).completion.continuous)
       (((ContinuousLinearMap.mul ℂ A a).compLpL 1 μ).continuous.comp
-        (completionEquivL1 α μ).continuous)
+        (CompactlySupportedL1.completionEquivL1 α A μ ℂ).continuous)
   | ih f =>
-    rw [ContinuousLinearMap.completion_apply_coe, completionEquivL1_coe, completionEquivL1_coe,
-      toL1_coefficientMul]
+    rw [ContinuousLinearMap.completion_apply_coe, CompactlySupportedL1.completionEquivL1_coe,
+      CompactlySupportedL1.completionEquivL1_coe, toL1_coefficientMul]
 
 @[simp]
 theorem completionEquivL1_map_coefficientMul (a : A)
     (x : Completion (ConvolutionAlgebra α μ)) :
-    completionEquivL1 α μ (Completion.map (coefficientMul a) x) =
-      (ContinuousLinearMap.mul ℂ A a).compLp (completionEquivL1 α μ x) := by
+    CompactlySupportedL1.completionEquivL1 α A μ ℂ (Completion.map (coefficientMul a) x) =
+      (ContinuousLinearMap.mul ℂ A a).compLp
+        (CompactlySupportedL1.completionEquivL1 α A μ ℂ x) := by
   rw [← ContinuousLinearMap.coe_completion, completionEquivL1_completion_coefficientMul]
 
 @[simp]
 theorem completionEquivL1_symm_compLp_mul (a : A) (f : Lp A 1 μ) :
-    (completionEquivL1 α μ).symm ((ContinuousLinearMap.mul ℂ A a).compLp f) =
-      (coefficientMul a).completion ((completionEquivL1 α μ).symm f) := by
-  apply (completionEquivL1 α μ).injective
+    (CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm
+        ((ContinuousLinearMap.mul ℂ A a).compLp f) =
+      (coefficientMul a).completion
+        ((CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm f) := by
+  apply (CompactlySupportedL1.completionEquivL1 α A μ ℂ).injective
   rw [LinearIsometryEquiv.apply_symm_apply, completionEquivL1_completion_coefficientMul,
     LinearIsometryEquiv.apply_symm_apply]
 
@@ -322,28 +297,29 @@ variable {G A : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 theorem completionEquivL1_completion_translateLIE (r : G)
     (x : Completion (ConvolutionAlgebra α μ)) :
-    completionEquivL1 α μ ((translateLIE r).completion x) =
-      α.translateLp μ 1 r (completionEquivL1 α μ x) := by
+    CompactlySupportedL1.completionEquivL1 α A μ ℂ ((translateLIE r).completion x) =
+      α.translateLp μ 1 r (CompactlySupportedL1.completionEquivL1 α A μ ℂ x) := by
   induction x using Completion.induction_on with
   | hp =>
     exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih f =>
-    rw [LinearIsometryEquiv.completion_apply_coe, completionEquivL1_coe, completionEquivL1_coe,
-      toL1_translateLIE]
+    rw [LinearIsometryEquiv.completion_apply_coe, CompactlySupportedL1.completionEquivL1_coe,
+      CompactlySupportedL1.completionEquivL1_coe, toL1_translateLIE]
 
 @[simp]
 theorem completionEquivL1_map_translateLIE (r : G)
     (x : Completion (ConvolutionAlgebra α μ)) :
-    completionEquivL1 α μ (Completion.map (translateLIE r) x) =
-      α.translateLp μ 1 r (completionEquivL1 α μ x) := by
+    CompactlySupportedL1.completionEquivL1 α A μ ℂ (Completion.map (translateLIE r) x) =
+      α.translateLp μ 1 r (CompactlySupportedL1.completionEquivL1 α A μ ℂ x) := by
   simpa only [LinearIsometryEquiv.coe_completion] using
     completionEquivL1_completion_translateLIE (α := α) r x
 
 @[simp]
 theorem completionEquivL1_symm_translateLp (r : G) (f : Lp A 1 μ) :
-    (completionEquivL1 α μ).symm (α.translateLp μ 1 r f) =
-      Completion.map (translateLIE r) ((completionEquivL1 α μ).symm f) := by
-  apply (completionEquivL1 α μ).injective
+    (CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm (α.translateLp μ 1 r f) =
+      Completion.map (translateLIE r)
+        ((CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm f) := by
+  apply (CompactlySupportedL1.completionEquivL1 α A μ ℂ).injective
   rw [LinearIsometryEquiv.apply_symm_apply, completionEquivL1_map_translateLIE,
     LinearIsometryEquiv.apply_symm_apply]
 
@@ -499,11 +475,14 @@ theorem convolutionL1_toLp (f g : C_c(G, A)) :
     (CompactlySupportedContinuousMap.coeFn_toLp ℂ (α.convolution μ f g)).symm)
 
 variable {α} in
-/-- `ConvolutionAlgebra.toL1` turns the convolution product into `CStarAction.convolutionL1`. -/
+/-- `CompactlySupportedL1.toL1 ℂ` turns the convolution product into `CStarAction.convolutionL1`. -/
 @[simp]
 theorem ConvolutionAlgebra.toL1_mul (f g : ConvolutionAlgebra α μ) :
-    toL1 (f * g) = α.convolutionL1 μ (toL1 f) (toL1 g) := by
-  rw [toL1_eq_toLp, toL1_eq_toLp, toL1_eq_toLp, ofConv_mul, α.convolutionL1_toLp]
+    CompactlySupportedL1.toL1 ℂ (f * g) =
+      α.convolutionL1 μ (CompactlySupportedL1.toL1 ℂ f) (CompactlySupportedL1.toL1 ℂ g) := by
+  rw [CompactlySupportedL1.toL1_eq_toLp ℂ, CompactlySupportedL1.toL1_eq_toLp ℂ,
+    CompactlySupportedL1.toL1_eq_toLp ℂ]
+  simpa only [ofConv_mul] using (α.convolutionL1_toLp (μ := μ) f.ofConv g.ofConv).symm
 
 /-- Pointwise left coefficient multiplication is a left multiplier of twisted `L¹` convolution. -/
 theorem compLp_mul_convolutionL1 (a : A) (f g : Lp A 1 μ) :
@@ -605,19 +584,22 @@ variable {G A : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 @[simp]
 theorem ConvolutionAlgebra.completionEquivL1_mul
     (x y : Completion (ConvolutionAlgebra α μ)) :
-    completionEquivL1 α μ (x * y) =
-      α.convolutionL1 μ (completionEquivL1 α μ x) (completionEquivL1 α μ y) := by
+    CompactlySupportedL1.completionEquivL1 α A μ ℂ (x * y) =
+      α.convolutionL1 μ (CompactlySupportedL1.completionEquivL1 α A μ ℂ x)
+        (CompactlySupportedL1.completionEquivL1 α A μ ℂ y) := by
   induction x, y using Completion.induction_on₂ with
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih f g =>
-    rw [← Completion.coe_mul', completionEquivL1_coe, completionEquivL1_coe,
-      completionEquivL1_coe, toL1_mul]
+    rw [← Completion.coe_mul', CompactlySupportedL1.completionEquivL1_coe,
+      CompactlySupportedL1.completionEquivL1_coe, CompactlySupportedL1.completionEquivL1_coe,
+      toL1_mul]
 
 @[simp]
 theorem ConvolutionAlgebra.completionEquivL1_symm_convolutionL1 (f g : Lp A 1 μ) :
-    (completionEquivL1 α μ).symm (α.convolutionL1 μ f g) =
-      (completionEquivL1 α μ).symm f * (completionEquivL1 α μ).symm g := by
-  apply (completionEquivL1 α μ).injective
+    (CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm (α.convolutionL1 μ f g) =
+      (CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm f *
+        (CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm g := by
+  apply (CompactlySupportedL1.completionEquivL1 α A μ ℂ).injective
   rw [LinearIsometryEquiv.apply_symm_apply, completionEquivL1_mul,
     LinearIsometryEquiv.apply_symm_apply, LinearIsometryEquiv.apply_symm_apply]
 
@@ -633,8 +615,8 @@ variable {G A : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 /-- **Twisted `L¹` involution** on `Lp A 1 μ`, transported from the isometric `⋆`-operation on
 `Completion (ConvolutionAlgebra α μ)` across `completionEquivL1`. -/
 def twistedInvolutionL1 : Lp A 1 μ ≃ₗᵢ⋆[ℂ] Lp A 1 μ :=
-  ((ConvolutionAlgebra.completionEquivL1 α μ).symm.trans (starₗᵢ ℂ)).trans
-    (ConvolutionAlgebra.completionEquivL1 α μ)
+  ((CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm.trans (starₗᵢ ℂ)).trans
+    (CompactlySupportedL1.completionEquivL1 α A μ ℂ)
 
 variable {μ}
 
@@ -643,21 +625,24 @@ variable {α}
 
 @[simp]
 theorem ConvolutionAlgebra.completionEquivL1_star (x : Completion (ConvolutionAlgebra α μ)) :
-    completionEquivL1 α μ (star x) = α.twistedInvolutionL1 μ (completionEquivL1 α μ x) := by
+    CompactlySupportedL1.completionEquivL1 α A μ ℂ (star x) =
+      α.twistedInvolutionL1 μ (CompactlySupportedL1.completionEquivL1 α A μ ℂ x) := by
   simp only [twistedInvolutionL1, LinearIsometryEquiv.trans_apply,
     LinearIsometryEquiv.symm_apply_apply, starₗᵢ_apply]
 
 @[simp]
 theorem ConvolutionAlgebra.completionEquivL1_symm_twistedInvolutionL1 (f : Lp A 1 μ) :
-    (completionEquivL1 α μ).symm (α.twistedInvolutionL1 μ f) =
-      star ((completionEquivL1 α μ).symm f) := by
+    (CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm (α.twistedInvolutionL1 μ f) =
+      star ((CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm f) := by
   simp only [twistedInvolutionL1, LinearIsometryEquiv.trans_apply,
     LinearIsometryEquiv.symm_apply_apply, starₗᵢ_apply]
 
 @[simp]
 theorem ConvolutionAlgebra.toL1_star (f : ConvolutionAlgebra α μ) :
-    toL1 (star f) = α.twistedInvolutionL1 μ (toL1 f) := by
-  rw [← completionEquivL1_coe, Completion.coe_star, completionEquivL1_star, completionEquivL1_coe]
+    CompactlySupportedL1.toL1 ℂ (star f) =
+      α.twistedInvolutionL1 μ (CompactlySupportedL1.toL1 ℂ f) := by
+  rw [← CompactlySupportedL1.completionEquivL1_coe, Completion.coe_star,
+    completionEquivL1_star, CompactlySupportedL1.completionEquivL1_coe]
 
 end
 
@@ -665,7 +650,7 @@ end
 theorem twistedInvolutionL1_toLp (f : C_c(G, A)) :
     α.twistedInvolutionL1 μ (CompactlySupportedContinuousMap.toLp 1 μ ℂ f) =
       CompactlySupportedContinuousMap.toLp 1 μ ℂ (α.twistedInvolution f) := by
-  simpa only [ConvolutionAlgebra.toL1_eq_toLp, ConvolutionAlgebra.ofConv_toConv,
+  simpa only [CompactlySupportedL1.toL1_eq_toLp, CompactlySupportedL1.toFun_ofFun,
     ConvolutionAlgebra.ofConv_star] using
     (ConvolutionAlgebra.toL1_star (α := α) (μ := μ) (ConvolutionAlgebra.toConv f)).symm
 
@@ -686,11 +671,11 @@ theorem twistedInvolutionL1_symm :
 theorem twistedInvolutionL1_convolutionL1 (f g : Lp A 1 μ) :
     α.twistedInvolutionL1 μ (α.convolutionL1 μ f g) =
       α.convolutionL1 μ (α.twistedInvolutionL1 μ g) (α.twistedInvolutionL1 μ f) := by
-  apply (ConvolutionAlgebra.completionEquivL1 α μ).symm.injective
+  apply (CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm.injective
   simp only [ConvolutionAlgebra.completionEquivL1_symm_twistedInvolutionL1,
     ConvolutionAlgebra.completionEquivL1_symm_convolutionL1]
-  exact star_mul ((ConvolutionAlgebra.completionEquivL1 α μ).symm f)
-    ((ConvolutionAlgebra.completionEquivL1 α μ).symm g)
+  exact star_mul ((CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm f)
+    ((CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm g)
 
 end InvolutionL1
 
@@ -751,19 +736,27 @@ private theorem twistedInvolutionL1_eq_actionPointwiseL1 (f : Lp A 1 μ) :
       α.actionPointwiseL1 (star (Lp.modularInversion μ 1 ℝ u)) :=
     α.actionPointwiseL1.continuous.comp
       (continuous_star.comp (Lp.modularInversion μ 1 ℝ).continuous)
-  refine congrFun ((ConvolutionAlgebra.denseRange_toL1 (α := α) (μ := μ)).equalizer hc₁ hc₂ ?_) f
+  refine congrFun ((CompactlySupportedL1.denseRange_toL1 ℂ
+    (tag := α) (E := A) (μ := μ)).equalizer hc₁ hc₂ ?_) f
   ext g : 1
-  simp only [Function.comp_apply, ← ConvolutionAlgebra.toL1_star]
+  simp only [Function.comp_apply]
+  let g' : ConvolutionAlgebra α μ := g
+  change α.twistedInvolutionL1 μ (CompactlySupportedL1.toL1 ℂ g') =
+    α.actionPointwiseL1 (star (Lp.modularInversion μ 1 ℝ (CompactlySupportedL1.toL1 ℂ g')))
+  rw [← ConvolutionAlgebra.toL1_star]
   refine Lp.ext ?_
-  filter_upwards [ConvolutionAlgebra.coeFn_toL1 (star g),
-    α.coeFn_actionPointwiseL1 (star (Lp.modularInversion μ 1 ℝ (ConvolutionAlgebra.toL1 g))),
-    Lp.coeFn_star (Lp.modularInversion μ 1 ℝ (ConvolutionAlgebra.toL1 g)),
-    Lp.coeFn_modularInversion (𝕜 := ℝ) (ConvolutionAlgebra.toL1 g),
-    (Measure.quasiMeasurePreserving_inv_of_regular μ).ae (ConvolutionAlgebra.coeFn_toL1 g)]
+  filter_upwards [CompactlySupportedL1.coeFn_toL1 ℂ (star g'),
+    α.coeFn_actionPointwiseL1 (star (Lp.modularInversion μ 1 ℝ (CompactlySupportedL1.toL1 ℂ g'))),
+    Lp.coeFn_star (Lp.modularInversion μ 1 ℝ (CompactlySupportedL1.toL1 ℂ g')),
+    Lp.coeFn_modularInversion (𝕜 := ℝ) (CompactlySupportedL1.toL1 ℂ g'),
+    (Measure.quasiMeasurePreserving_inv_of_regular μ).ae (CompactlySupportedL1.coeFn_toL1 ℂ g')]
     with s h₁ h₂ h₃ h₄ h₅
-  rw [h₁, ConvolutionAlgebra.ofConv_star, twistedInvolution_apply, h₂, h₃, Pi.star_apply, h₄, h₅]
+  rw [h₁, h₂, h₃, Pi.star_apply, h₄, h₅]
   simp only [ENNReal.toReal_one, inv_one, Real.rpow_one, star_smul, star_trivial]
-  rw [← map_smul, Complex.coe_smul]
+  have hstar : (star g').toFun s = α.twistedInvolution g'.ofConv s :=
+    congrArg (fun φ : C_c(G, A) => φ s) (ConvolutionAlgebra.ofConv_star g')
+  rw [twistedInvolution_apply, ← map_smul, Complex.coe_smul] at hstar
+  exact hstar
 
 /-- For a regular Haar measure, the twisted `L¹` involution is represented almost everywhere by
 `s ↦ (Measure.modularCharacter s : ℝ) • α s (star (f s⁻¹))`. -/

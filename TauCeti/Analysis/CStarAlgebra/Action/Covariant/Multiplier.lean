@@ -552,7 +552,7 @@ theorem multiplierExtension_integratedStarAlgHom {H : Type*} [NormedAddCommGroup
 /-- The integrated ⋆-homomorphism is contractive for the L¹ norm on `ConvolutionAlgebra α μ`. -/
 theorem norm_integratedStarAlgHom_le_norm (f : ConvolutionAlgebra α μ) :
     ‖M.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
-  simpa [ConvolutionAlgebra.norm_eq_integral_norm] using M.norm_integratedMultiplier_le μ f.ofConv
+  simpa [CompactlySupportedL1.norm_eq_integral_norm] using M.norm_integratedMultiplier_le μ f.ofConv
 
 /-- `M.integratedStarAlgHom μ` is bounded by `ConvolutionAlgebra.fullSeminorm`. -/
 theorem norm_integratedStarAlgHom_le_fullSeminorm (f : ConvolutionAlgebra α μ) :

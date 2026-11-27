@@ -90,7 +90,7 @@ theorem norm_of (f : ConvolutionAlgebra α μ) :
 
 /-- The regular norm is bounded by the L¹ norm. -/
 theorem norm_of_le (f : ConvolutionAlgebra α μ) : ‖of α ρ μ f‖ ≤ ‖f‖ := by
-  rw [norm_of, ConvolutionAlgebra.norm_eq_integral_norm]
+  rw [norm_of, CompactlySupportedL1.norm_eq_integral_norm]
   exact (CovariantRepresentation.regular α ρ μ).norm_integratedOperator_le μ f.ofConv
 
 /-- The compact-support inclusion is continuous for the L¹ topology. -/
@@ -116,7 +116,7 @@ theorem induction_on {p : regularAlgebra α ρ μ → Prop} (x : regularAlgebra 
 /-- A faithful coefficient representation gives a faithful compact-support inclusion. -/
 theorem of_injective (hρ : Function.Injective ρ) : Function.Injective (of α ρ μ) := by
   intro f g h
-  apply ConvolutionAlgebra.ofConv_injective
+  apply CompactlySupportedL1.toFun_injective
   apply (CovariantRepresentation.injective_integratedOperator_regular (α := α) (μ := μ) hρ)
   simpa only [coe_of, CovariantRepresentation.integratedStarAlgHom_apply] using
     congrArg (fun x : regularAlgebra α ρ μ => (x : Lp H 2 μ →L[ℂ] Lp H 2 μ)) h

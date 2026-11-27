@@ -139,7 +139,7 @@ theorem integratedOperator_toCovariantRepresentation (f : C_c(G, A)) :
     (L.toCovariantRepresentation hL).integratedOperator μ f =
       L (of α μ (ConvolutionAlgebra.toConv f)) := by
   simpa only [CovariantRepresentation.integratedFull_of,
-    CovariantRepresentation.integratedStarAlgHom_apply, ConvolutionAlgebra.ofConv_toConv] using
+    CovariantRepresentation.integratedStarAlgHom_apply, CompactlySupportedL1.toFun_ofFun] using
     congr($(integratedFull_toCovariantRepresentation L hL)
       (of α μ (ConvolutionAlgebra.toConv f)))
 

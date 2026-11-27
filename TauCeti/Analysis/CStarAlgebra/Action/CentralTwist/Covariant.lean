@@ -326,6 +326,14 @@ theorem integratedOperator_apply (f : C_c(G, A)) (v : H) :
     P.integratedOperator μ f v = ∫ s, P.pi (f s) ((P.unitaryMap s : H →L[ℂ] H) v) ∂μ :=
   P.pi.integratedOperator_apply P.strong_continuous P.exists_norm_unitaryMap_le μ f v
 
+/-- The integrated form of a twisted covariant pair equals `P.pi.integratedOperator` applied to
+`P.unitaryMap`. -/
+theorem integratedOperator_eq_pi :
+    P.integratedOperator μ =
+      P.pi.integratedOperator (fun s => (P.unitaryMap s : H →L[ℂ] H)) P.strong_continuous
+        P.exists_norm_unitaryMap_le μ :=
+  (rfl)
+
 /-- The operator norm of `P.integratedOperator μ f` is bounded by `∫ s, ‖f s‖ ∂μ`. Neither
 covariance nor the projective law is used in this estimate. -/
 theorem norm_integratedOperator_le (f : C_c(G, A)) :
@@ -407,8 +415,9 @@ covariant pair sends the cocycle-twisted involution `ω.involution` to the opera
 @[simp]
 theorem integratedOperator_involution [MeasurableSpace G] [BorelSpace G] (μ : Measure G)
     [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] (f : C_c(G, A)) :
-    P.integratedOperator μ (ω.involution f) = star (P.integratedOperator μ f) :=
-  P.pi.integratedOperator_eq_star P.strong_continuous P.exists_norm_unitaryMap_le μ
+    P.integratedOperator μ (ω.involution f) = star (P.integratedOperator μ f) := by
+  rw [P.integratedOperator_eq_pi μ]
+  exact P.pi.integratedOperator_eq_star P.strong_continuous P.exists_norm_unitaryMap_le μ
     (.of_forall (P.pi_involution_mul_unitaryMap f))
 
 end Involution

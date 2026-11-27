@@ -53,9 +53,10 @@ theorem tendsto_coefficientMul {l : Filter A} (hl : l.IsIncreasingApproximateUni
     simpa only [id_eq, dist_eq_norm, norm_sub_rev] using (he _ (Set.mem_range_self s)).le
   have hz (s : G) (hs : s ∉ K) : ‖e * f.ofConv s - f.ofConv s‖ = 0 := by
     simp [image_eq_zero_of_notMem_tsupport hs]
-  rw [dist_eq_norm, norm_eq_integral_norm]
-  simp only [ofConv_sub, ofConv_coefficientMul, CompactlySupportedContinuousMap.sub_apply,
-    CompactlySupportedContinuousMap.smul_apply, smul_eq_mul]
+  rw [dist_eq_norm, CompactlySupportedL1.norm_eq_integral_norm]
+  simp only [CompactlySupportedL1.toFun_sub, ofConv_coefficientMul,
+    CompactlySupportedContinuousMap.sub_apply, CompactlySupportedContinuousMap.smul_apply,
+    smul_eq_mul]
   calc
     (∫ s, ‖e * f.ofConv s - f.ofConv s‖ ∂μ)
         = ∫ s in K, ‖e * f.ofConv s - f.ofConv s‖ ∂μ :=

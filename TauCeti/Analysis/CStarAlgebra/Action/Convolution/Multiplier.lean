@@ -44,7 +44,7 @@ variable [IsFiniteMeasureOnCompacts μ]
 /-- Left multiplication by a coefficient `a` multiplies the L¹ norm by at most `‖a‖`. -/
 private theorem norm_toConv_smul_le (a : A) (f : ConvolutionAlgebra α μ) :
     ‖(toConv (a • f.ofConv) : ConvolutionAlgebra α μ)‖ ≤ ‖a‖ * ‖f‖ := by
-  simp only [norm_eq_integral_norm, ← integral_const_mul]
+  simp only [CompactlySupportedL1.norm_eq_integral_norm, ← integral_const_mul]
   exact integral_mono (a • f.ofConv).integrable.norm (f.ofConv.integrable.norm.const_mul _)
     fun s => norm_mul_le a (f.ofConv s)
 
@@ -94,7 +94,7 @@ variable [IsTopologicalGroup G]
 /-- A coefficient multiplier is a left multiplier of the convolution algebra. -/
 theorem coefficientMul_apply_mul (a : A) (f g : ConvolutionAlgebra α μ) :
     coefficientMul a (f * g) = coefficientMul a f * g := by
-  apply ext
+  apply CompactlySupportedL1.ext
   simp [α.smul_convolution]
 
 variable [MeasurableMul G] [μ.IsMulLeftInvariant]
@@ -107,8 +107,8 @@ def translateLIE (r : G) : ConvolutionAlgebra α μ ≃ₗᵢ[ℂ] ConvolutionAl
   right_inv f := by simp [← α.translate_mul]
   map_add' f g := by simp
   map_smul' c f := by simp
-  norm_map' f := (norm_toConv (α.translate r f.ofConv)).trans <| by
-    simp only [translate_apply, StarAlgEquiv.norm_map, norm_eq_integral_norm]
+  norm_map' f := (CompactlySupportedL1.norm_ofFun (α.translate r f.ofConv)).trans <| by
+    simp only [translate_apply, StarAlgEquiv.norm_map, CompactlySupportedL1.norm_eq_integral_norm]
     exact integral_mul_left_eq_self (μ := μ) (fun s => ‖f.ofConv s‖) r⁻¹
 
 @[simp]
@@ -153,7 +153,7 @@ theorem translateLIE_mul (r t : G) : translateLIE (α := α) (μ := μ) (r * t) 
 /-- A group multiplier is a left multiplier of the convolution algebra. -/
 theorem translateLIE_apply_mul (r : G) (f g : ConvolutionAlgebra α μ) :
     translateLIE r (f * g) = translateLIE r f * g := by
-  apply ext
+  apply CompactlySupportedL1.ext
   simp [α.translate_convolution]
 
 /-- The coefficient and group multipliers satisfy covariance. -/
@@ -172,8 +172,8 @@ theorem continuous_translateLIE (f : ConvolutionAlgebra α μ) :
   intro r
   obtain ⟨K, hK, hrK⟩ := exists_compact_mem_nhds r
   have hcont : ContinuousOn (fun t : G => ‖translateLIE t f - translateLIE r f‖) K := by
-    simp only [norm_eq_integral_norm, ofConv_sub, ofConv_translateLIE,
-      CompactlySupportedContinuousMap.sub_apply, translate_apply]
+    simp only [CompactlySupportedL1.norm_eq_integral_norm, CompactlySupportedL1.toFun_sub,
+      ofConv_translateLIE, CompactlySupportedContinuousMap.sub_apply, translate_apply]
     refine continuousOn_integral_of_compact_support (hK.mul f.ofConv.hasCompactSupport)
       ?_ ?_
     · exact ((α.continuous_apply continuous_fst

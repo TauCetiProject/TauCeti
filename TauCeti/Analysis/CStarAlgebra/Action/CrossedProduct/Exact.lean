@@ -72,7 +72,7 @@ private theorem fullCrossedProductMap_subtypeHom_eq_zero (h : ∀ a ∈ I, q a =
     exact isClosed_eq ((map_continuous _).comp (map_continuous _)) continuous_const
   | ih f =>
     have hf : q.convolutionMap μ (hI.subtypeHom.convolutionMap μ f) = 0 := by
-      apply ConvolutionAlgebra.ext
+      apply CompactlySupportedL1.ext
       ext s
       simp [h _ (f.ofConv s).property]
     rw [fullCrossedProductMap_of, fullCrossedProductMap_of, hf, map_zero]

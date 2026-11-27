@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 public import TauCeti.Analysis.CStarAlgebra.Completion
-public import TauCeti.Analysis.Normed.Algebra.Completion
+public import TauCeti.Analysis.Normed.Operator.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
 public import TauCeti.Topology.Algebra.LinearMapCompletion
 
@@ -84,25 +84,30 @@ theorem continuous_integratedNonUnitalAlgHom : Continuous (P.integratedNonUnital
 `integratedNonUnitalAlgHom` to the completion of the convolution algebra in its L¹ seminorm. -/
 def integratedOperatorL1 :
     Completion (ConvolutionAlgebra α μ) →ₙₐ[ℂ] (H →L[ℂ] H) :=
-  (P.integratedOperatorCLM μ).fromCompletionNonUnitalAlgHomOfMul fun f g => by simp
+  ((P.integratedOperatorCLM μ).toNonUnitalAlgHomOfMul fun f g => by simp).fromCompletion
+    ((P.integratedOperatorCLM μ).continuous_toNonUnitalAlgHomOfMul _)
 
 /-- On compactly supported coefficients the L¹ integrated form is the integrated form. -/
 @[simp]
 theorem integratedOperatorL1_coe (f : ConvolutionAlgebra α μ) :
     P.integratedOperatorL1 μ f = P.integratedOperator μ f.ofConv := by
-  rw [integratedOperatorL1, ContinuousLinearMap.fromCompletionNonUnitalAlgHomOfMul_coe,
-    integratedOperatorCLM_apply]
+  rw [integratedOperatorL1, NonUnitalAlgHom.fromCompletion_apply_coe,
+    ContinuousLinearMap.toNonUnitalAlgHomOfMul_apply, integratedOperatorCLM_apply]
 
 /-- The L¹ integrated form is continuous. -/
 @[fun_prop]
 theorem continuous_integratedOperatorL1 : Continuous (P.integratedOperatorL1 μ) :=
-  (P.integratedOperatorCLM μ).continuous_fromCompletionNonUnitalAlgHomOfMul _
+  NonUnitalAlgHom.continuous_fromCompletion _ _
 
 /-- The L¹ integrated form is a contraction: `‖(π ⋊ U)(x)‖ ≤ ‖x‖₁` on the twisted L¹ algebra. -/
 theorem norm_integratedOperatorL1_le (x : Completion (ConvolutionAlgebra α μ)) :
-    ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ :=
-  (P.integratedOperatorCLM μ).norm_fromCompletionNonUnitalAlgHomOfMul_le_of_opNorm_le_one _
-    (P.norm_integratedOperatorCLM_le μ) x
+    ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ := by
+  have hle : ‖(P.integratedOperatorCLM μ).fromCompletion‖ ≤ 1 := by
+    rw [ContinuousLinearMap.norm_fromCompletion]
+    exact P.norm_integratedOperatorCLM_le μ
+  simpa only [integratedOperatorL1, NonUnitalAlgHom.coe_fromCompletion,
+    ContinuousLinearMap.coe_toNonUnitalAlgHomOfMul, ContinuousLinearMap.coe_fromCompletion] using
+    ((P.integratedOperatorCLM μ).fromCompletion.le_of_opNorm_le hle x).trans_eq (one_mul _)
 
 end Multiplication
 

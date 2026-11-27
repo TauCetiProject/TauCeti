@@ -75,7 +75,7 @@ theorem mem_range_convolutionMap_subtypeHom_iff {f : CStarAction.ConvolutionAlge
       simpa only [HasCompactSupport, tsupport, hEq] using f.ofConv.hasCompactSupport
     let g : CStarAction.ConvolutionAlgebra hI.restrict μ :=
       .toConv ⟨⟨fun s => ⟨f.ofConv s, hf s⟩, (map_continuous f.ofConv).subtype_mk hf⟩, hsupp⟩
-    refine ⟨g, CStarAction.ConvolutionAlgebra.ext ?_⟩
+    refine ⟨g, CompactlySupportedL1.ext ?_⟩
     ext s
     simp [g]
 

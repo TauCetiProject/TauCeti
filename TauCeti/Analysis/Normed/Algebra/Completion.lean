@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Completion
-public import TauCeti.Topology.Algebra.LinearMapCompletion
-import TauCeti.Analysis.Normed.Group.Completion
 
 /-!
 # Algebraic comparison with a metric completion
@@ -16,10 +14,6 @@ An isometric algebra homomorphism with dense range into a complete normed algebr
 that algebra with the metric completion of its source. The comparison extends the given map
 and preserves distances. This allows completion comparisons for dense subalgebras and their
 presentation quotients to share the same construction.
-
-For a continuous nonunital algebra homomorphism into a complete separated seminormed target, any
-linear norm bound `‖f x‖ ≤ C * ‖x‖` extends by density to the completion
-(`NonUnitalAlgHom.norm_fromCompletion_le`).
 
 The construction factors the one used for the Monsky–Washnitzer algebra in
 `TauCeti.RingTheory.Dagger.Completion`.
@@ -76,23 +70,3 @@ theorem norm_completionAlgEquiv (f : A →ₐ[R] B) (hf : Isometry f) (hd : Dens
   (AddMonoidHomClass.isometry_iff_norm _).mp (isometry_completionAlgEquiv f hf hd) x
 
 end AlgHom
-
-namespace NonUnitalAlgHom
-
-variable {R S E F : Type*} [Monoid R] [Monoid S] {φ : R →* S}
-  [NonUnitalSeminormedRing E] [DistribMulAction R E] [UniformContinuousConstSMul R E]
-  [NonUnitalSeminormedRing F] [DistribMulAction S F] [ContinuousConstSMul S F]
-  [T0Space F] [CompleteSpace F]
-
-/-- If a continuous semilinear nonunital algebra homomorphism `f : E →ₛₙₐ[φ] F` into a complete
-separated seminormed target satisfies `‖f x‖ ≤ C * ‖x‖` for all `x`, then its extension
-`f.fromCompletion hf` to the completion satisfies `‖f.fromCompletion hf y‖ ≤ C * ‖y‖` for all
-`y`. -/
-theorem norm_fromCompletion_le (f : E →ₛₙₐ[φ] F) (hf : Continuous f) {C : ℝ}
-    (hC : ∀ x : E, ‖f x‖ ≤ C * ‖x‖) (y : Completion E) :
-    ‖f.fromCompletion hf y‖ ≤ C * ‖y‖ := by
-  simpa only [coe_fromCompletion] using
-    Completion.norm_extension_le (f := (f : E → F))
-      (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf) hC y
-
-end NonUnitalAlgHom

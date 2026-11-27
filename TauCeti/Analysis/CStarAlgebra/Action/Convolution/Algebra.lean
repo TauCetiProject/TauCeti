@@ -118,91 +118,10 @@ namespace ConvolutionAlgebra
 variable {α : CStarAction G A} {μ : Measure G}
 
 /-- Regard a compactly supported function as an element of the convolution algebra. -/
-abbrev toConv (f : C_c(G, A)) : ConvolutionAlgebra α μ := CompactlySupportedL1.toConv f
+abbrev toConv (f : C_c(G, A)) : ConvolutionAlgebra α μ := CompactlySupportedL1.ofFun f
 
 /-- The compactly supported function underlying an element of the convolution algebra. -/
-abbrev ofConv (f : ConvolutionAlgebra α μ) : C_c(G, A) := CompactlySupportedL1.ofConv f
-
-theorem ofConv_toConv (f : C_c(G, A)) : (toConv f : ConvolutionAlgebra α μ).ofConv = f :=
-  CompactlySupportedL1.ofConv_toConv f
-
-theorem toConv_ofConv (f : ConvolutionAlgebra α μ) : toConv f.ofConv = f :=
-  CompactlySupportedL1.toConv_ofConv f
-
-theorem ofConv_injective : Function.Injective (ofConv : ConvolutionAlgebra α μ → C_c(G, A)) :=
-  CompactlySupportedL1.ofConv_injective
-
-theorem toConv_injective : Function.Injective (toConv : C_c(G, A) → ConvolutionAlgebra α μ) :=
-  CompactlySupportedL1.toConv_injective
-
-theorem ext {f g : ConvolutionAlgebra α μ} (h : f.ofConv = g.ofConv) : f = g :=
-  ofConv_injective h
-
-variable (α μ) in
-/-- `ConvolutionAlgebra.ofConv` and `ConvolutionAlgebra.toConv` as an equivalence. -/
-abbrev equiv : ConvolutionAlgebra α μ ≃ C_c(G, A) :=
-  CompactlySupportedL1.equiv α A μ
-
-theorem equiv_apply (f : ConvolutionAlgebra α μ) : equiv α μ f = f.ofConv :=
-  CompactlySupportedL1.equiv_apply f
-
-theorem equiv_symm_apply (f : C_c(G, A)) : (equiv α μ).symm f = toConv f :=
-  CompactlySupportedL1.equiv_symm_apply f
-
-variable (α μ) in
-/-- `ConvolutionAlgebra.ofConv` as an additive equivalence with `C_c(G, A)`. -/
-abbrev addEquiv : ConvolutionAlgebra α μ ≃+ C_c(G, A) :=
-  CompactlySupportedL1.addEquiv α A μ
-
-theorem addEquiv_apply (f : ConvolutionAlgebra α μ) : addEquiv α μ f = f.ofConv :=
-  CompactlySupportedL1.addEquiv_apply f
-
-theorem addEquiv_symm_apply (f : C_c(G, A)) : (addEquiv α μ).symm f = toConv f :=
-  CompactlySupportedL1.addEquiv_symm_apply f
-
-theorem ofConv_zero : (0 : ConvolutionAlgebra α μ).ofConv = 0 :=
-  CompactlySupportedL1.ofConv_zero
-
-theorem ofConv_add (f g : ConvolutionAlgebra α μ) : (f + g).ofConv = f.ofConv + g.ofConv :=
-  CompactlySupportedL1.ofConv_add f g
-
-theorem ofConv_neg (f : ConvolutionAlgebra α μ) : (-f).ofConv = -f.ofConv :=
-  CompactlySupportedL1.ofConv_neg f
-
-theorem ofConv_sub (f g : ConvolutionAlgebra α μ) : (f - g).ofConv = f.ofConv - g.ofConv :=
-  CompactlySupportedL1.ofConv_sub f g
-
-theorem ofConv_smul (c : ℂ) (f : ConvolutionAlgebra α μ) : (c • f).ofConv = c • f.ofConv :=
-  CompactlySupportedL1.ofConv_smul c f
-
-theorem toConv_zero : (toConv 0 : ConvolutionAlgebra α μ) = 0 :=
-  CompactlySupportedL1.toConv_zero
-
-theorem toConv_add (f g : C_c(G, A)) :
-    (toConv (f + g) : ConvolutionAlgebra α μ) = toConv f + toConv g :=
-  CompactlySupportedL1.toConv_add f g
-
-theorem toConv_neg (f : C_c(G, A)) : (toConv (-f) : ConvolutionAlgebra α μ) = -toConv f :=
-  CompactlySupportedL1.toConv_neg f
-
-theorem toConv_sub (f g : C_c(G, A)) :
-    (toConv (f - g) : ConvolutionAlgebra α μ) = toConv f - toConv g :=
-  CompactlySupportedL1.toConv_sub f g
-
-theorem toConv_smul (c : ℂ) (f : C_c(G, A)) :
-    (toConv (c • f) : ConvolutionAlgebra α μ) = c • toConv f :=
-  CompactlySupportedL1.toConv_smul c f
-
-variable (α μ) in
-/-- `ConvolutionAlgebra.ofConv` as a complex linear equivalence with `C_c(G, A)`. -/
-abbrev linearEquiv : ConvolutionAlgebra α μ ≃ₗ[ℂ] C_c(G, A) :=
-  CompactlySupportedL1.linearEquiv α A μ ℂ
-
-theorem linearEquiv_apply (f : ConvolutionAlgebra α μ) : linearEquiv α μ f = f.ofConv :=
-  CompactlySupportedL1.linearEquiv_apply f
-
-theorem linearEquiv_symm_apply (f : C_c(G, A)) : (linearEquiv α μ).symm f = toConv f :=
-  CompactlySupportedL1.linearEquiv_symm_apply f
+abbrev ofConv (f : ConvolutionAlgebra α μ) : C_c(G, A) := CompactlySupportedL1.toFun f
 
 /-- The elementary function `s ↦ φ s • e` of a real compactly supported function `φ` and a
 coefficient `e`, as an element of the convolution algebra. -/
@@ -310,7 +229,8 @@ variable [OpensMeasurableSpace G] [MeasurableMul G] [IsFiniteMeasureOnCompacts �
 
 instance instStarRing : StarRing (ConvolutionAlgebra α μ) :=
   CompactlySupportedL1.starRingOf (fun f g => α.convolution μ f g) α.twistedInvolution ofConv_mul
-    ofConv_star ofConv_add (fun _ _ => by simp) fun _ _ => by simp [twistedInvolution_convolution]
+    ofConv_star CompactlySupportedL1.toFun_add (fun _ _ => by simp) fun _ _ => by
+      simp [twistedInvolution_convolution]
 
 end Star
 

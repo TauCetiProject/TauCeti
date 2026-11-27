@@ -66,27 +66,27 @@ def convolutionMap (φ : Hom α β) (μ : Measure G) [IsFiniteMeasureOnCompacts 
     ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] ConvolutionAlgebra β μ where
   toFun f := .toConv (f.ofConv.compLeft ⟨φ, map_continuous φ⟩)
   map_zero' := by
-    apply ConvolutionAlgebra.ext
+    apply CompactlySupportedL1.ext
     ext s
     simp [compLeft_apply]
   map_add' f g := by
-    apply ConvolutionAlgebra.ext
+    apply CompactlySupportedL1.ext
     ext s
     simp [compLeft_apply]
   map_smul' c f := by
-    apply ConvolutionAlgebra.ext
+    apply CompactlySupportedL1.ext
     ext s
     simp [compLeft_apply]
   map_mul' f g := by
-    apply ConvolutionAlgebra.ext
+    apply CompactlySupportedL1.ext
     ext s
-    simp only [ConvolutionAlgebra.ofConv_mul, ConvolutionAlgebra.ofConv_toConv, compLeft_apply]
+    simp only [ConvolutionAlgebra.ofConv_mul, CompactlySupportedL1.toFun_ofFun, compLeft_apply]
     rw [map_convolution, convolution_apply]
     simp only [compLeft_apply]
   map_star' f := by
-    apply ConvolutionAlgebra.ext
+    apply CompactlySupportedL1.ext
     ext s
-    simp only [ConvolutionAlgebra.ofConv_star, ConvolutionAlgebra.ofConv_toConv,
+    simp only [ConvolutionAlgebra.ofConv_star, CompactlySupportedL1.toFun_ofFun,
       twistedInvolution_apply, compLeft_apply, map_smul, map_action, map_star]
 
 variable {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
@@ -115,7 +115,7 @@ theorem convolutionMap_comp (ψ : Hom β γ) (φ : Hom α β) :
 theorem convolutionMap_injective (φ : Hom α β) (hφ : Function.Injective φ) :
     Function.Injective (φ.convolutionMap μ) := by
   intro f g h
-  apply ConvolutionAlgebra.ext
+  apply CompactlySupportedL1.ext
   ext s
   apply hφ
   simpa using congrArg (fun k : ConvolutionAlgebra β μ => k.ofConv s) h

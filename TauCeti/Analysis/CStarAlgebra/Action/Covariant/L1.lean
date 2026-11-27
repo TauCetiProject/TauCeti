@@ -26,9 +26,10 @@ abstract `L¹` completion `UniformSpace.Completion (ConvolutionAlgebra α μ)`.
 Here we construct the integrated form directly on the Bochner space `Lp A 1 μ` by Hilbert-space
 vector integration,
 `(P.integratedOperatorBochnerL1 μ f) v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ`,
-for any inner-regular Borel measure (`[R1Space G] [BorelSpace G] [μ.InnerRegularCompactLTTop]`), and
-prove that it matches `P.integratedOperatorL1 μ` across `ConvolutionAlgebra.completionEquivL1`. The
-vector-integral operator construction, covariance identities, and elementary-tensor comparison
+for any inner-regular Borel measure (`[R1Space G] [BorelSpace G] [μ.InnerRegularCompactLTTop]`),
+and prove that it matches `P.integratedOperatorL1 μ` across
+`CompactlySupportedL1.completionEquivL1`. The vector-integral operator construction, covariance
+identities, and elementary-tensor comparison
 closely adapt the scalar integrated representation `ContRepresentation.integratedOperatorL1` in
 `TauCeti.RepresentationTheory.Continuous.Integrated.Basic` and the compact-support covariant form
 `CovariantRepresentation.integratedOperator` /
@@ -263,9 +264,9 @@ theorem integratedOperatorBochnerL1_toLp {μ : Measure G} [IsFiniteMeasureOnComp
 @[simp]
 theorem integratedOperatorBochnerL1_convolutionAlgebra_toL1 {μ : Measure G}
     [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop] (f : ConvolutionAlgebra α μ) :
-    P.integratedOperatorBochnerL1 μ (ConvolutionAlgebra.toL1 f) =
+    P.integratedOperatorBochnerL1 μ (CompactlySupportedL1.toL1 ℂ f) =
       P.integratedOperator μ f.ofConv := by
-  rw [ConvolutionAlgebra.toL1_eq_toLp, P.integratedOperatorBochnerL1_toLp]
+  rw [CompactlySupportedL1.toL1_eq_toLp, P.integratedOperatorBochnerL1_toLp]
 
 /-- For the trivial covariant representation attached to `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)`, the `L¹`
 integrated form evaluates `π` at the Bochner integral `∫ g, f g ∂μ`. -/
@@ -333,32 +334,32 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {μ : Measure G} [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
 
 /-- **Agreement of the concrete and abstract `L¹` integrated forms**:
-`P.integratedOperatorBochnerL1 μ` composed with `ConvolutionAlgebra.completionEquivL1` equals
+`P.integratedOperatorBochnerL1 μ` composed with `CompactlySupportedL1.completionEquivL1` equals
 `P.integratedOperatorL1 μ`. -/
 @[simp]
 theorem integratedOperatorBochnerL1_completionEquivL1 (x : Completion (ConvolutionAlgebra α μ)) :
-    P.integratedOperatorBochnerL1 μ (ConvolutionAlgebra.completionEquivL1 α μ x) =
+    P.integratedOperatorBochnerL1 μ (CompactlySupportedL1.completionEquivL1 α A μ ℂ x) =
       P.integratedOperatorL1 μ x := by
   induction x using Completion.induction_on with
   | hp =>
     exact isClosed_eq
       ((P.integratedOperatorBochnerL1 μ).continuous.comp
-        (ConvolutionAlgebra.completionEquivL1 α μ).continuous)
+        (CompactlySupportedL1.completionEquivL1 α A μ ℂ).continuous)
       (P.continuous_integratedOperatorL1 μ)
   | ih f =>
-    rw [ConvolutionAlgebra.completionEquivL1_coe,
+    rw [CompactlySupportedL1.completionEquivL1_coe,
       P.integratedOperatorBochnerL1_convolutionAlgebra_toL1, P.integratedOperatorL1_coe]
 
 @[simp]
 theorem integratedOperatorL1_completionEquivL1_symm (f : Lp A 1 μ) :
-    P.integratedOperatorL1 μ ((ConvolutionAlgebra.completionEquivL1 α μ).symm f) =
+    P.integratedOperatorL1 μ ((CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm f) =
       P.integratedOperatorBochnerL1 μ f := by
   rw [← P.integratedOperatorBochnerL1_completionEquivL1, LinearIsometryEquiv.apply_symm_apply]
 
 /-- Evaluation of `P.integratedOperatorL1 μ` on the class in the completion corresponding to
 `f : Lp A 1 μ` is given by the Hilbert-space vector integral. -/
 theorem integratedOperatorL1_completionEquivL1_symm_apply (f : Lp A 1 μ) (v : H) :
-    P.integratedOperatorL1 μ ((ConvolutionAlgebra.completionEquivL1 α μ).symm f) v =
+    P.integratedOperatorL1 μ ((CompactlySupportedL1.completionEquivL1 α A μ ℂ).symm f) v =
       ∫ g, P.coefficient (f g) (P.group g v) ∂μ := by
   rw [P.integratedOperatorL1_completionEquivL1_symm, P.integratedOperatorBochnerL1_apply]
 

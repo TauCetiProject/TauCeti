@@ -183,10 +183,10 @@ theorem fullSeminorm_eq_zero_iff [μ.InnerRegularCompactLTTop] {H : Type w} [Nor
     [InnerProductSpace ℂ H] [CompleteSpace H] {ρ : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : Function.Injective ρ) {f : ConvolutionAlgebra α μ} :
     fullSeminorm α μ f = 0 ↔ f = 0 := by
-  refine ⟨fun hf => ext ?_, fun hf => hf ▸ map_zero _⟩
+  refine ⟨fun hf => CompactlySupportedL1.ext ?_, fun hf => hf ▸ map_zero _⟩
   refine CovariantRepresentation.injective_integratedOperator_regular (α := α) (μ := μ) hρ ?_
-  rw [ofConv_zero, map_zero, ← CovariantRepresentation.integratedStarAlgHom_apply,
-    ← norm_le_zero_iff, ← hf]
+  rw [CompactlySupportedL1.toFun_zero, map_zero,
+    ← CovariantRepresentation.integratedStarAlgHom_apply, ← norm_le_zero_iff, ← hf]
   exact norm_integratedStarAlgHom_le_fullSeminorm (CovariantRepresentation.regular α ρ μ) f
 
 /-- The canonical coefficient multiplier has bound `‖a‖` for the full C⋆-seminorm. -/

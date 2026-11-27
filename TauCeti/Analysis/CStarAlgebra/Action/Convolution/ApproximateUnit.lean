@@ -100,8 +100,9 @@ private theorem norm_sub_le_of_forall_mem_tsupport [OpensMeasurableSpace G]
   have hpt (s : G) : ‖u.ofConv s - f.ofConv s‖ ≤ ε :=
     hu s ▸ φ.norm_integral_smul_sub_le hφ hφ1 (hX s) (hε s)
   -- Outside `C` the difference vanishes, and on `C` it is at most `ε`.
-  rw [norm_eq_integral_norm, ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := C)
-    fun s hs => by simp [hsupp s hs]]
+  rw [CompactlySupportedL1.norm_eq_integral_norm,
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := C)
+      fun s hs => by simp [hsupp s hs]]
   refine (le_abs_self _).trans ?_
   simpa using norm_setIntegral_le_of_norm_le_const (s := C) (f := fun s => ‖(u - f).ofConv s‖)
     hC.measure_lt_top fun s _ => by simpa using hpt s

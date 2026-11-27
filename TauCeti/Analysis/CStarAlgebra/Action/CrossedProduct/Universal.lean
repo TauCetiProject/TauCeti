@@ -236,7 +236,7 @@ theorem topologicalClosure_span_integratedFull :
   rw [← NonUnitalStarAlgHom.topologicalClosure_span_fst_comp_eq denseRange_of_comp_toConv
     (M.integratedFull μ)]
   simpa only [Function.comp_apply, M.integratedFull_of, integratedStarAlgHom_apply,
-    ConvolutionAlgebra.ofConv_toConv] using M.topologicalClosure_span_integratedMultiplier μ
+    CompactlySupportedL1.toFun_ofFun] using M.topologicalClosure_span_integratedMultiplier μ
 
 variable (μ) in
 /-- `M.integratedFull μ` is multiplier-nondegenerate if and only if `M.coefficient` is. -/
