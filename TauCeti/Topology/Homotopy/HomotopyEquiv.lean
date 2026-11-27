@@ -49,8 +49,8 @@ homotopy equivalence is one too, with the same homotopy inverse.
   connected space is path connected.
 * `ContinuousMap.HomotopyEquiv.zerothHomotopyCongr`: a homotopy equivalence induces a bijection
   of the sets of path components.
-* `ContinuousMap.HomotopyEquiv.prodCongr_apply`: the product of two homotopy equivalences acts
-  componentwise.
+* `ContinuousMap.HomotopyEquiv.prodCongr_apply`, `ContinuousMap.HomotopyEquiv.prodCongr_symm_apply`:
+  the product of two homotopy equivalences and its homotopy inverse act componentwise.
 * `ContinuousMap.HomotopyEquiv.prodContractible`: the homotopy equivalence `X × Y ≃ₕ X` given by
   the projection, for `Y` contractible.
 * `ContinuousMap.HomotopyEquiv.prodIcc`: the slice `x ↦ (x, t)` is a homotopy equivalence
@@ -182,6 +182,13 @@ theorem HomotopyEquiv.zerothHomotopyCongr_symm_mk (e : X ≃ₕ Y) (b : Y) :
 @[simp]
 theorem HomotopyEquiv.prodCongr_apply (h₁ : X ≃ₕ Y) (h₂ : Z ≃ₕ Z')
     (x : X × Z) : h₁.prodCongr h₂ x = (h₁ x.1, h₂ x.2) :=
+  (rfl)
+
+/-- The homotopy inverse of the product of two homotopy equivalences is the product of their
+homotopy inverses, acting componentwise. -/
+@[simp]
+theorem HomotopyEquiv.prodCongr_symm_apply (h₁ : X ≃ₕ Y) (h₂ : Z ≃ₕ Z')
+    (y : Y × Z') : (h₁.prodCongr h₂).symm y = (h₁.symm y.1, h₂.symm y.2) :=
   (rfl)
 
 variable (X Y) in
