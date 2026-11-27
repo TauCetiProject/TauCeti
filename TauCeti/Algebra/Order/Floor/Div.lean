@@ -22,6 +22,7 @@ ceiling division after subtracting a residue smaller than the divisor, and Hermi
 
 * `ENat.natCast_le_nsmul_add_iff_ceilDiv_le` rewrites an affine inequality in `ℕ∞`
   using natural-number ceiling division.
+* `Nat.le_ceilDiv_iff_mul_lt` characterizes the lower bounds of a ceiling division.
 * `Nat.ceilDiv_mul_sub_of_lt` evaluates a ceiling division after subtracting a residue
   smaller than the divisor.
 * `Nat.sum_range_sub_ceilDiv` is Hermite's identity in ceiling-division form:
@@ -49,6 +50,11 @@ theorem natCast_le_nsmul_add_iff_ceilDiv_le {e : ℕ} (he : 0 < e) (r i : ℕ) (
 end ENat
 
 namespace Nat
+
+/-- For `0 < b`, a natural number `c` is at most `⌈a / b⌉` iff `c * b < a + b`. -/
+theorem le_ceilDiv_iff_mul_lt {a b c : ℕ} (hb : 0 < b) : c ≤ a ⌈/⌉ b ↔ c * b < a + b := by
+  rw [Nat.ceilDiv_eq_add_pred_div, Nat.le_div_iff_mul_le hb]
+  omega
 
 /-- For `i < e`, rounding `(e * ρ - i) / e` up gives back `ρ`. -/
 theorem ceilDiv_mul_sub_of_lt {e i : ℕ} (hi : i < e) (ρ : ℕ) : (e * ρ - i) ⌈/⌉ e = ρ := by
