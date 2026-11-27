@@ -25,8 +25,7 @@ Both functors send `V` to `V ×_Y X ⟶ X`, so the isomorphism has identity comp
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Hom.smallProEtBaseChange`: base change `Y.ProEt ⥤ X.ProEt` along
-  `f : X ⟶ Y`, with `smallProEtBaseChangeCompForgetIso` comparing it with base change of
-  `Y`-schemes.
+  `f : X ⟶ Y`.
 * `AlgebraicGeometry.Scheme.Hom.smallEtaleBaseChangeCompToProEtIso`: the isomorphism
   `f.smallEtaleBaseChange ⋙ toProEt X ≅ toProEt Y ⋙ f.smallProEtBaseChange`.
 
@@ -81,20 +80,15 @@ lemma smallProEtBaseChange_map_left {V W : Y.ProEt} (g : V ⟶ W) :
       pullback.lift (pullback.fst V.hom f ≫ g.left) (pullback.snd V.hom f)
         (by simp [pullback.condition]) := (rfl)
 
-/-- On underlying schemes over `X`, `smallProEtBaseChange f` is base change along `f`. -/
-noncomputable def smallProEtBaseChangeCompForgetIso :
-    f.smallProEtBaseChange ⋙ ProEt.forget X ≅ ProEt.forget Y ⋙ CategoryTheory.Over.pullback f :=
-  Iso.refl _
+/-- On underlying schemes, `f.smallProEtBaseChange.map g` is `pullback.map` along `g.left` and
+`𝟙 X`. -/
+lemma smallProEtBaseChange_map_left_eq_pullback_map {V W : Y.ProEt} (g : V ⟶ W) :
+    (f.smallProEtBaseChange.map g).left =
+      pullback.map V.hom f W.hom f g.left (𝟙 X) (𝟙 Y) (by simp) (by simp) := by
+  rw [smallProEtBaseChange_map_left]
+  apply pullback.hom_ext <;> simp
 
-@[simp]
-lemma smallProEtBaseChangeCompForgetIso_hom_app_left (V : Y.ProEt) :
-    (f.smallProEtBaseChangeCompForgetIso.hom.app V).left = 𝟙 (pullback V.hom f) := (rfl)
-
-@[simp]
-lemma smallProEtBaseChangeCompForgetIso_inv_app_left (V : Y.ProEt) :
-    (f.smallProEtBaseChangeCompForgetIso.inv.app V).left = 𝟙 (pullback V.hom f) := (rfl)
-
-/-- **Naturality of `ν`** (`toProEt_baseChange`): base change of étale `Y`-schemes along `f`
+/-- **Naturality of `ν`**: base change of étale `Y`-schemes along `f`
 followed by the inclusion into weakly étale `X`-schemes is the inclusion of étale `Y`-schemes
 followed by base change of weakly étale `Y`-schemes. Both send `V` to `V ×_Y X ⟶ X`. -/
 noncomputable def smallEtaleBaseChangeCompToProEtIso :

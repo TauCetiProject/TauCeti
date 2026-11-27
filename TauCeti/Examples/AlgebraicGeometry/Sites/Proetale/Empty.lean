@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Sites.Proetale.EtaleComparison
 public import TauCeti.AlgebraicGeometry.Sites.Small
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 
 /-!
 # The étale and pro-étale sites of the empty scheme
@@ -15,8 +16,6 @@ For the empty scheme `X`, every object of the small étale site and of the small
 has empty underlying scheme, so the empty sieve covers it and both topologies are the topology
 `⊤` in which every sieve covers. Every sheaf on either site, with values in any category, is then
 terminal, so between two sheaves there is exactly one morphism: each sheaf category is a point.
-This is the empty-scheme Check of SchemeAndStackFoundations §2.10 (the étale and pro-étale
-sites).
 -/
 
 public section
@@ -29,10 +28,6 @@ namespace TauCeti.Examples.ProetaleEmpty
 
 variable (X : Scheme.{u}) [IsEmpty X]
 
-/-- Every étale `X`-scheme over the empty scheme `X` is empty. -/
-theorem isEmpty_etale_left (V : X.Etale) : IsEmpty V.left :=
-  V.hom.base.hom'.toFun.isEmpty (β := X)
-
 /-- Every weakly étale `X`-scheme over the empty scheme `X` is empty. -/
 theorem isEmpty_proEt_left (V : X.ProEt) : IsEmpty V.left :=
   V.hom.base.hom'.toFun.isEmpty (β := X)
@@ -40,9 +35,7 @@ theorem isEmpty_proEt_left (V : X.ProEt) : IsEmpty V.left :=
 /-- On the empty scheme every sieve of the small étale site covers. -/
 theorem smallEtaleTopology_eq_top : Scheme.smallEtaleTopology X = ⊤ := by
   rw [GrothendieckTopology.eq_top_iff]
-  intro V
-  have := isEmpty_etale_left X V
-  exact Scheme.bot_mem_smallGrothendieckTopology V
+  exact fun V ↦ Scheme.bot_mem_smallGrothendieckTopology V
 
 variable (A : Type v) [Category A]
 
