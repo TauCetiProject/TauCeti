@@ -128,33 +128,6 @@ theorem div_one_add_mul_le_one_div {w ε : ℝ} (hw : 0 ≤ w) (hε : 0 < ε) :
   rw [div_le_div_iff₀ (by positivity) hε]
   linarith [mul_comm w ε]
 
-/-- The truncated radial exponential weight `W / (1 + ε W)`, `W = exp(c √(b + ‖z‖²))`, is smooth
-for `ε ≥ 0`, of every order. -/
-theorem contDiff_exp_div_one_add_mul_exp (c : ℝ) (hb : 0 < b) {ε : ℝ} (hε : 0 ≤ ε)
-    {n : WithTop ℕ∞} :
-    ContDiff ℝ n (fun z : E ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) /
-      (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2)))) :=
-  (contDiff_exp_mul_sqrt_add_norm_sq c hb).div_one_add_mul (fun _ ↦ (Real.exp_pos _).le) hε
-
-omit [InnerProductSpace ℝ E] in
-/-- The truncated radial exponential weight `W / (1 + ε W)`, `ε ≥ 0`, is nonnegative. -/
-theorem exp_div_one_add_mul_exp_nonneg (c : ℝ) {ε : ℝ} (hε : 0 ≤ ε) (z : E) :
-    0 ≤ Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) :=
-  div_one_add_mul_nonneg (Real.exp_pos _).le hε
-
-omit [InnerProductSpace ℝ E] in
-/-- The truncated radial exponential weight `W / (1 + ε W)`, `ε ≥ 0`, is at most `W`. -/
-theorem exp_div_one_add_mul_exp_le_exp (c : ℝ) {ε : ℝ} (hε : 0 ≤ ε) (z : E) :
-    Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) ≤
-      Real.exp (c * √(b + ‖z‖ ^ 2)) :=
-  div_one_add_mul_le_self (Real.exp_pos _).le hε
-
-omit [InnerProductSpace ℝ E] in
-/-- The truncated radial exponential weight `W / (1 + ε W)`, `ε > 0`, is bounded by `1 / ε`. -/
-theorem exp_div_one_add_mul_exp_le_one_div (c : ℝ) {ε : ℝ} (hε : 0 < ε) (z : E) :
-    Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) ≤ 1 / ε :=
-  div_one_add_mul_le_one_div (Real.exp_pos _).le hε
-
 omit [InnerProductSpace ℝ E] in
 /-- **Truncation keeps a bound on the logarithmic gradient.** If a positive weight `W`,
 differentiable at `z`, satisfies `‖dW z‖ ≤ g W z`, then so does its truncation `W / (1 + ε W)`,
