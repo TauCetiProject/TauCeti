@@ -7,30 +7,35 @@ module
 
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel
 import Mathlib.NumberTheory.NumberField.FiniteAdeleRing
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subalgebra
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
 # The finite adelic unitary group of a CM field and its levels
 
 Let `E` be a CM field with complex conjugation `x ↦ conj x`, `𝔸_f` its finite adeles with the
-conjugation acting componentwise through the places (`NumberField.IsCMField.finiteAdeleConj`), and
-`Ô ⊆ 𝔸_f` the integral finite adeles. For a finite index set `ι` (of size `n`), this file
-defines the **finite adelic unitary group**
+conjugation carrying the component at a finite place `w` to the component at the conjugate place
+`conj w` (`NumberField.IsCMField.finiteAdeleConj`), and `Ô ⊆ 𝔸_f` the integral finite adeles.
+For a finite index set `ι` (of size `n`), this file defines the **finite adelic unitary group**
 `G_f = U(1_n)(𝔸_f) = {g ∈ GL_n(𝔸_f) : g* g = 1}`, where `g* = (conj g)ᵀ` is the conjugate transpose,
 with the subspace topology of `GL_n(𝔸_f)`; it is the group `Matrix.unitaryGroupOf 1` of
 Tau Ceti's general theory of unitary groups, so its API applies. Then:
 
-* `K₀ = G_f ∩ GL_n(Ô)` is the subgroup of unitary matrices with integral entries: the inverse
-  `g⁻¹ = g*` of such a matrix is integral as well, since conjugation preserves `Ô`. Equivalently,
-  `K₀` consists of the `g` whose component `g_w` lies in `GL_n(𝒪_w)` at every finite place `w`.
-* `K₀` is open and compact in `G_f`; so `G_f` is locally compact.
+* `K₀ = G_f ∩ GL_n(Ô)`, the intersection of `G_f` with the image of
+  `IsDedekindDomain.FiniteAdeleRing.integralGL`, is the subgroup of unitary matrices with integral
+  entries: the inverse `g⁻¹ = g*` of such a matrix is integral as well, since conjugation preserves
+  `Ô`. Equivalently, `K₀` consists of the `g` whose component `g_w` lies in `GL_n(𝒪_w)` at every
+  finite place `w`.
+* `K₀` is open in `G_f`, as `GL_n(Ô)` is open in `GL_n(𝔸_f)`
+  (`IsDedekindDomain.FiniteAdeleRing.isOpenEmbedding_integralGL`), and compact; so `G_f` is
+  locally compact.
 * A **level** is an open subgroup `K` of `G_f` contained in `K₀`. A level is compact, of finite
   index in `K₀`, and the levels are stable under finite intersections.
-* At a finite place `w` and its conjugate place `conj w`, the components of `g ∈ G_f` determine each
-  other: `g_{conj w}` is the conjugate of the transpose of `(g_w)⁻¹`, read through the isomorphism
-  `E_w ≃ E_{conj w}` extending the conjugation of `E`.
+* At a finite place `w` and its conjugate place `conj w` (`NumberField.IsCMField.conjPlace`), the
+  components of `g ∈ G_f` determine each other: `g_{conj w}` is the conjugate of the transpose of
+  `(g_w)⁻¹`, read through the isomorphism `E_w ≃ E_{conj w}` extending the conjugation of `E`. At
+  a finite place split in `E / E⁺` these are two different places.
 
 The levels index the spaces of automorphic forms on unitary groups over `E` and their Hecke
 operators; `G_f` is the finite component of the adelic unitary groups of hermitian spaces with
@@ -107,20 +112,18 @@ theorem val_inv_of_mem_finiteAdelicUnitaryGroup {g : GL ι 𝔸ᶠ[E]}
     (↑g⁻¹ : Matrix ι ι 𝔸ᶠ[E]) = star (g : Matrix ι ι 𝔸ᶠ[E]) := by
   rw [val_inv_of_mem_unitaryGroupOf isUnit_one hg, inv_one, Matrix.one_mul, Matrix.mul_one]
 
-/-- **Components at conjugate places.** Let `w'` be the conjugate of the finite place `w`, that
-is `|conj x|_{w'} = |x|_w` for `x ∈ E` (it exists, `exists_valuation_complexConj_eq`). For
-`g ∈ G_f`, the entry `(i, j)` of the component `g_{w'}` is the image of the entry `(j, i)` of
-`(g⁻¹)_w = (g_w)⁻¹` under the isomorphism `E_w ≃ E_{w'}` extending the conjugation of `E`:
-`g_{w'}` is the conjugate of the transpose of `(g_w)⁻¹`. -/
+/-- **Components at conjugate places.** For `g ∈ G_f` and a finite place `w` with conjugate
+`conj w` (`conjPlace`), the entry `(i, j)` of the component `g_{conj w}` is the image of the entry
+`(j, i)` of `(g⁻¹)_w = (g_w)⁻¹` under the isomorphism `E_w ≃ E_{conj w}` extending the conjugation
+of `E`: `g_{conj w}` is the conjugate of the transpose of `(g_w)⁻¹`. -/
 theorem val_apply_apply_eq_adicCompletionCongr {g : GL ι 𝔸ᶠ[E]}
-    (hg : g ∈ finiteAdelicUnitaryGroup E ι) {w w' : HeightOneSpectrum (𝓞 E)}
-    (hw : ∀ x : E, w'.valuation E (complexConj E x) = w.valuation E x) (i j : ι) :
-    (g : Matrix ι ι 𝔸ᶠ[E]) i j w' =
-      adicCompletionCongr w w' (complexConj E).toRingEquiv hw
+    (hg : g ∈ finiteAdelicUnitaryGroup E ι) (w : HeightOneSpectrum (𝓞 E)) (i j : ι) :
+    (g : Matrix ι ι 𝔸ᶠ[E]) i j (conjPlace w) =
+      adicCompletionCongr w (conjPlace w) (complexConj E).toRingEquiv (valuation_conjPlace w)
         ((↑g⁻¹ : Matrix ι ι 𝔸ᶠ[E]) j i w) := by
   have h := val_inv_of_mem_finiteAdelicUnitaryGroup (inv_mem hg)
   rw [inv_inv] at h
-  rw [h, star_apply, finiteAdeleRing_star_apply hw]
+  rw [h, star_apply, finiteAdeleRing_star_apply]
 
 /-! ### The integral subgroup `K₀` -/
 
@@ -131,16 +134,14 @@ these are the elements with integral entries (`mem_integralAdelicUnitaryGroup_if
 elements whose component at every finite place `w` lies in `GL_n(𝒪_w)`
 (`mem_integralAdelicUnitaryGroup_iff_forall_place`). -/
 def integralAdelicUnitaryGroup : Subgroup (finiteAdelicUnitaryGroup E ι) :=
-  (GeneralLinearGroup.map ((FiniteAdeleRing.integralAdeles (𝓞 E) E).val :
-    FiniteAdeleRing.integralAdeles (𝓞 E) E →+* 𝔸ᶠ[E])).range.subgroupOf _
+  (FiniteAdeleRing.integralGL E ι (R := 𝓞 E)).range.subgroupOf _
 
 /-- `K₀` consists of the elements of `G_f` with integral entries. -/
 theorem mem_integralAdelicUnitaryGroup_iff {g : finiteAdelicUnitaryGroup E ι} :
     g ∈ integralAdelicUnitaryGroup E ι ↔
       ∀ i j,
         ((g : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) i j ∈ FiniteAdeleRing.integralAdeles (𝓞 E) E := by
-  rw [integralAdelicUnitaryGroup, Subgroup.mem_subgroupOf, MonoidHom.mem_range,
-    GeneralLinearGroup.mem_range_map_val_iff]
+  rw [integralAdelicUnitaryGroup, Subgroup.mem_subgroupOf, FiniteAdeleRing.mem_range_integralGL_iff]
   refine ⟨And.left, fun h ↦ ⟨h, fun i j ↦ ?_⟩⟩
   rw [val_inv_of_mem_finiteAdelicUnitaryGroup g.property, star_apply,
     star_mem_integralAdeles_iff]
@@ -160,29 +161,11 @@ theorem mem_integralAdelicUnitaryGroup_iff_forall_place {g : finiteAdelicUnitary
   · exact mem_integralAdelicUnitaryGroup_iff.2 fun i j ↦
       FiniteAdeleRing.mem_integralAdeles.2 fun w ↦ (h w).1 i j
 
-/-- The entry `(i, j)` of an element of `G_f`, as a continuous function on `G_f`. -/
-private theorem continuous_val_apply (i j : ι) :
-    Continuous fun g : finiteAdelicUnitaryGroup E ι ↦ ((g : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) i j :=
-  (Units.continuous_val.comp continuous_subtypeVal).matrix_elem i j
-
-/-- `K₀` as the set of elements of `G_f` with integral entries. -/
-private theorem coe_integralAdelicUnitaryGroup :
-    (integralAdelicUnitaryGroup E ι : Set (finiteAdelicUnitaryGroup E ι)) =
-      ⋂ i, ⋂ j, (fun g : finiteAdelicUnitaryGroup E ι ↦
-        ((g : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) i j) ⁻¹'
-          (FiniteAdeleRing.integralAdeles (𝓞 E) E : Set 𝔸ᶠ[E]) := by
-  ext g
-  simp only [SetLike.mem_coe, Set.mem_iInter, Set.mem_preimage]
-  exact mem_integralAdelicUnitaryGroup_iff
-
 variable (E ι) in
-/-- `K₀` is open in `G_f`: integrality of the entries is an open condition, `Ô` being open in
-`𝔸_f`. -/
+/-- `K₀` is open in `G_f`: it is the preimage of `GL_n(Ô)`, which is open in `GL_n(𝔸_f)`. -/
 theorem isOpen_integralAdelicUnitaryGroup :
-    IsOpen (integralAdelicUnitaryGroup E ι : Set (finiteAdelicUnitaryGroup E ι)) := by
-  rw [coe_integralAdelicUnitaryGroup]
-  exact isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦
-    (FiniteAdeleRing.isOpen_integralAdeles (𝓞 E) E).preimage (continuous_val_apply i j)
+    IsOpen (integralAdelicUnitaryGroup E ι : Set (finiteAdelicUnitaryGroup E ι)) :=
+  (FiniteAdeleRing.isOpenEmbedding_integralGL E ι).isOpen_range.preimage continuous_subtypeVal
 
 variable (E ι) in
 /-- `K₀` is compact: `G_f` is a closed subset of the matrices, and `K₀` is its intersection with

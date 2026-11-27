@@ -60,14 +60,14 @@ theorem not_isOpen_principalLevel_bot [∀ v : HeightOneSpectrum R, Finite (R �
   rw [principalLevel_bot, Subgroup.coe_bot] at h
   have := discreteTopology_of_isOpen_singleton_one h
   -- `GL₂(Ô)` is compact, hence finite, and contains `[[1, r], [0, 1]]` for every `r ∈ R`.
-  have hfin : ((integralGL K 2 (R := R)).range : Set (GL (Fin 2) 𝔸ᶠ[R, K])).Finite := by
+  have hfin : ((integralGL K (Fin 2) (R := R)).range : Set (GL (Fin 2) 𝔸ᶠ[R, K])).Finite := by
     rw [← level0_top]
     exact (isCompact_level0 K top_ne_bot).finite_of_discrete
-  have hmem (r : R) : upperRightHom (algebraMap R 𝔸ᶠ[R, K] r) ∈ (integralGL K 2).range :=
+  have hmem (r : R) : upperRightHom (algebraMap R 𝔸ᶠ[R, K] r) ∈ (integralGL K (Fin 2)).range :=
     level1_top (R := R) K ▸ upperRightHom_mem_level1 ((integralAdeles R K).algebraMap_mem r) ⊤
   have := hfin.to_subtype
   have : Finite R := Finite.of_injective
-    (fun r ↦ (⟨_, hmem r⟩ : ((integralGL K 2 (R := R)).range : Set (GL (Fin 2) 𝔸ᶠ[R, K]))))
+    (fun r ↦ (⟨_, hmem r⟩ : ((integralGL K (Fin 2) (R := R)).range : Set (GL (Fin 2) 𝔸ᶠ[R, K]))))
     fun r s h ↦ IsFractionRing.injective R K <| algebraMap_injective K hR <| by
       simpa [← IsScalarTower.algebraMap_apply] using
         injective_upperRightHom (congrArg Subtype.val h)

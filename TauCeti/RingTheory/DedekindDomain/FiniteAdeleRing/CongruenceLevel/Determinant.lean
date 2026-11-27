@@ -57,8 +57,9 @@ variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
 
 /-- The determinant of the image in `GL_n(𝔸_f)` of a subgroup `H ≤ GL_n(Ô)` is the image in
 `𝔸_f^×` of the determinant of `H`. -/
-theorem map_det_map_integralGL {n : ℕ} (H : Subgroup (GL (Fin n) (integralAdeles R K))) :
-    (H.map (integralGL K n)).map GeneralLinearGroup.det =
+theorem map_det_map_integralGL {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (H : Subgroup (GL ι (integralAdeles R K))) :
+    (H.map (integralGL K ι)).map GeneralLinearGroup.det =
       (H.map GeneralLinearGroup.det).map
         (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])) := by
   rw [Subgroup.map_map, Subgroup.map_map]
@@ -91,13 +92,13 @@ variable {K}
 
 /-- For a unit `u` of the integral adeles, `diag(u, 1)` lies in `K₁(N)`. -/
 theorem integralGL_diagGL_mem_level1 (N : Ideal R) (u : (integralAdeles R K)ˣ) :
-    integralGL K 2 (diagGL ![u, 1]) ∈ level1 K N := by
+    integralGL K (Fin 2) (diagGL ![u, 1]) ∈ level1 K N := by
   rw [level1_def]
   exact Subgroup.mem_map_of_mem _ (GL2K1.diagGL_mem _ u)
 
 /-- For a unit `u` of the integral adeles, `diag(u, 1)` lies in `K₀(N)`. -/
 theorem integralGL_diagGL_mem_level0 (N : Ideal R) (u : (integralAdeles R K)ˣ) :
-    integralGL K 2 (diagGL ![u, 1]) ∈ level0 K N :=
+    integralGL K (Fin 2) (diagGL ![u, 1]) ∈ level0 K N :=
   level1_le_level0 K N (integralGL_diagGL_mem_level1 N u)
 
 end IsDedekindDomain.FiniteAdeleRing

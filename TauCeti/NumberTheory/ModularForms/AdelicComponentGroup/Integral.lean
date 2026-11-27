@@ -53,12 +53,12 @@ theorem relIndex_range_mapGL_componentGroup_ne_zero
     (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ).range.relIndex (componentGroup U g) ≠ 0 := by
   set φ := GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))
   set V := MulAut.conj g • U
-  set O := (integralGL ℚ 2 (R := ℤ)).range
+  set O := (integralGL ℚ (Fin 2) (R := ℤ)).range
   -- `GL₂(Ô)` has finite index in the compact group `gUg⁻¹`, since it is open.
   have hV : IsCompact (V : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))) :=
     Subgroup.isCompact_conj_smul g hU
   have hO : IsOpen (O : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))) :=
-    (isOpenEmbedding_integralGL ℚ 2).isOpen_range
+    (isOpenEmbedding_integralGL ℚ (Fin 2)).isOpen_range
   have h1 : O.relIndex V ≠ 0 := by
     have : CompactSpace V := isCompact_iff_compactSpace.mp hV
     have := Subgroup.quotient_finite_of_isOpen (O.subgroupOf V) (Subgroup.subgroupOf_isOpen V O hO)
