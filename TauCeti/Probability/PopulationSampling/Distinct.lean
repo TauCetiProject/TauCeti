@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.PopulationSampling.Finite
 public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Distinct populations attain the exact sampling discrepancy
@@ -130,9 +131,7 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq {x : κ �
       (sampleWithReplacement (ι := ι) (Measure.dirac x)) =
       2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ) ^ Fintype.card ι) := by
-  let : Nonempty (ι → κ) := ⟨e⟩
-  rw [tvDist, etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq hx e hI,
-    ENNReal.toReal_mul, ENNReal.toReal_ofNat, ← uniformOn_not_injective_apply_eq,
-    ← measureReal_def, uniformOn_real_not_injective_apply_eq]
+  rw [tvDist, etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq hx e hI]
+  simp
 
 end TauCeti.Probability

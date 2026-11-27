@@ -7,8 +7,10 @@ module
 
 public import TauCeti.MeasureTheory.Measure.TotalVariation.Map
 public import TauCeti.Probability.PopulationSampling.Distinct
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.Logic.Function.Update
 import TauCeti.MeasureTheory.MeasurableSpace.Embedding
+import TauCeti.Probability.PopulationSampling.Discrepancy
 
 /-!
 # Sampling discrepancy under observations and repeated-value factorizations
@@ -49,7 +51,8 @@ one-pair case.
   deterministic population into a space with measurable singletons has the same discrepancy as
   `id : κ → κ`;
 * `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_of_injective`,
-  `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective`: exact finite
+  `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective`,
+  `tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective`: exact finite
   sampling discrepancy for injective populations into a space with measurable singletons, without
   a diagonal-measurability hypothesis;
 * `samplePopulation_dirac_eq_map_update_id`, `iSup_samplePopulation_dirac_sub_le_update_id`,
@@ -232,6 +235,18 @@ theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injec
   exact etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq Function.injective_id e
     (Set.to_countable _).measurableSet
 
+/-- When the value space has measurable singletons, the real total variation distance between
+sampling a distinct-valued finite population without and with replacement is twice the collision
+probability, without requiring measurability of `{f : ι → α | Function.Injective f}` in `ι → α`. -/
+theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective
+    {x : κ → α} (hx : Function.Injective x) (e : ι ↪ κ) :
+    tvDist (sampleWithoutReplacement (ι := ι) (Measure.dirac x))
+        (sampleWithReplacement (ι := ι) (Measure.dirac x)) =
+      2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ) ^ Fintype.card ι) := by
+  rw [tvDist, etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective hx e]
+  simp
+
 end DistinctMeasurableSingletons
 
 section RepeatedValues
@@ -302,10 +317,7 @@ theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_le_update_
       ⨆ (B : Set (ι → κ)) (_ : MeasurableSet B),
         sampleWithoutReplacement (Measure.dirac (Function.update id b a)) B -
           sampleWithReplacement (Measure.dirac (Function.update id b a)) B := by
-  let : Nonempty (ι → κ) := ⟨fun _ => a⟩
-  let := isProbabilityMeasure_sampleWithoutReplacement (Measure.dirac x) e
-  let := isProbabilityMeasure_sampleWithReplacement (ι := ι) (Measure.dirac x)
-  rw [iSup_measure_sub_comm (by rw [measure_univ, measure_univ])]
+  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_comm _ e]
   exact iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_le_update_id hxab
 
 /-- If `x a = x b`, the extended total variation distance between sampling `x` without and with
