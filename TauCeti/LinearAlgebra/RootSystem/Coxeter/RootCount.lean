@@ -11,17 +11,19 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Exponents
 # Root counts and Coxeter numbers for root pairings of Cartan type
 
 Supplements `TauCeti.LinearAlgebra.RootSystem.Coxeter.Number` with additional root-count,
-exponent-sum, and fundamental-degree formulas (`|Φ⁺| = ∑ mᵢ`, `∑ dᵢ = |Φ⁺| + r`, `|Φ| = r * h`,
-and `h = |Φ| / r`) for bases of valid Cartan type and for classified finite irreducible reduced
+exponent-sum, and fundamental-degree formulas (`∑ dᵢ = |Φ⁺| + r`, `|Φ| = r * h`, and
+`h = |Φ| / r`) for bases of valid Cartan type and for classified finite irreducible reduced
 crystallographic root systems.
 
 ## Main results
 
-* `TauCeti.HasCartanType.ncard_posRoots_eq_sum_exponents`,
-  `card_posRootsFinset_eq_sum_exponents`, `sum_degrees_eq_ncard_posRoots_add_card_support`,
-  `natCard_eq_card_support_mul_coxeterNumber`, and `coxeterNumber_eq_natCard_div_card_support`.
-* `RootPairing.Base.ncard_posRoots_eq_sum_exponents_classifiedDynkinType` and its three siblings
-  for classified finite irreducible root systems.
+* `TauCeti.HasCartanType.card_posRootsFinset_eq_sum_exponents`,
+  `sum_degrees_eq_ncard_posRoots_add_card_support`, `natCard_eq_card_support_mul_coxeterNumber`,
+  and `coxeterNumber_eq_natCard_div_card_support`.
+* `RootPairing.Base.card_posRootsFinset_eq_sum_exponents_classifiedDynkinType`,
+  `sum_degrees_classifiedDynkinType_eq_ncard_posRoots_add_card_support`, and
+  `coxeterNumber_classifiedDynkinType_eq_natCard_div_card_support` for classified finite
+  irreducible root systems.
 
 ## References
 
@@ -39,25 +41,18 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R] [Finite ι]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [P.IsCrystallographic] [P.IsReduced]
 
-/-- **The number of positive roots of a base of valid Cartan type `t` equals the sum of the
-exponents of `t`.** -/
-theorem HasCartanType.ncard_posRoots_eq_sum_exponents {b : P.Base} {t : DynkinType}
-    (h : HasCartanType P b t) (ht : t.Valid) :
-    (posRoots P b).ncard = t.exponents.sum :=
-  (h.sum_exponents_eq_ncard_posRoots ht).symm
-
-/-- Finset version of `TauCeti.HasCartanType.ncard_posRoots_eq_sum_exponents`. -/
+/-- Finset version of `TauCeti.HasCartanType.sum_exponents_eq_ncard_posRoots`. -/
 theorem HasCartanType.card_posRootsFinset_eq_sum_exponents {b : P.Base} {t : DynkinType}
     (h : HasCartanType P b t) (ht : t.Valid) :
     (posRootsFinset P b).card = t.exponents.sum :=
-  (card_posRootsFinset P b).trans (h.ncard_posRoots_eq_sum_exponents ht)
+  (card_posRootsFinset P b).trans (h.sum_exponents_eq_ncard_posRoots ht).symm
 
 /-- **The sum of the fundamental degrees of `t` equals `|Φ⁺| + r`** for any base `b` of valid
 Cartan type `t`. -/
 theorem HasCartanType.sum_degrees_eq_ncard_posRoots_add_card_support {b : P.Base}
     {t : DynkinType} (h : HasCartanType P b t) (ht : t.Valid) :
     t.degrees.sum = (posRoots P b).ncard + b.support.card := by
-  rw [t.sum_degrees, ← t.sum_exponents, ← h.ncard_posRoots_eq_sum_exponents ht, h.card_support]
+  rw [t.sum_degrees, ← t.sum_exponents, h.sum_exponents_eq_ncard_posRoots ht, h.card_support]
 
 /-- **For a base `b` of valid Cartan type `t`, `|Φ| = r * h`**, where `r = b.support.card` is the
 rank and `h = t.coxeterNumber` is the Coxeter number. -/
@@ -89,13 +84,7 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R] [Finite ι]
 
 open TauCeti
 
-/-- The number of positive roots equals the sum of exponents of `classifiedDynkinType b`. -/
-theorem ncard_posRoots_eq_sum_exponents_classifiedDynkinType (b : P.Base) :
-    (posRoots P b).ncard = (classifiedDynkinType b).exponents.sum :=
-  (hasCartanType_classifiedDynkinType b).ncard_posRoots_eq_sum_exponents
-    (valid_classifiedDynkinType b)
-
-/-- Finset version of `RootPairing.Base.ncard_posRoots_eq_sum_exponents_classifiedDynkinType`. -/
+/-- Finset version of `RootPairing.Base.sum_exponents_eq_ncard_posRoots`. -/
 theorem card_posRootsFinset_eq_sum_exponents_classifiedDynkinType (b : P.Base) :
     (posRootsFinset P b).card = (classifiedDynkinType b).exponents.sum :=
   (hasCartanType_classifiedDynkinType b).card_posRootsFinset_eq_sum_exponents

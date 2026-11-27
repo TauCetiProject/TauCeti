@@ -15,9 +15,7 @@ Supplements `TauCeti.LinearAlgebra.RootSystem.Coxeter.Number` with the remaining
 theorems for Coxeter elements and canonical Cartan Coxeter matrices:
 * `TauCeti.Coxeter.two_le_orderOf_wordProd`: every Coxeter element of a finite irreducible reduced
   crystallographic root system has order at least `2`.
-* `TauCeti.Coxeter.orderOf_wordProd_eq_natCard_div_card_support_of_hasCartanType`,
-  `orderOf_wordProd_eq_natCard_div_card_support`, and
-  `two_mul_card_posRootsFinset_eq_card_support_mul_orderOf_wordProd`: `h = |Φ| / r` and finset
+* `TauCeti.Coxeter.two_mul_card_posRootsFinset_eq_card_support_mul_orderOf_wordProd`: finset
   positive-root count.
 * `TauCeti.Coxeter.roots_charpoly_coxeterElement`,
   `mem_roots_charpoly_coxeterElement_of_coprime`,
@@ -38,15 +36,6 @@ section HasCartanType
 variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [P.IsCrystallographic]
-
-/-- **For any base `b` of valid Cartan type `t` and any Coxeter element `c`,
-`orderOf c = |Φ| / r`.** -/
-theorem orderOf_wordProd_eq_natCard_div_card_support_of_hasCartanType [Finite ι] [P.IsReduced]
-    {b : P.Base} {t : DynkinType} (ht : t.Valid) (h : HasCartanType P b t) {l : List b.support}
-    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    orderOf (wordProd P b l) = Nat.card ι / b.support.card := by
-  rw [h.orderOf_wordProd ht hnd hall]
-  exact h.coxeterNumber_eq_natCard_div_card_support ht
 
 /-- **Complex eigenvalue multiset of the canonical Coxeter matrix `Matrix.coxeterElement
 t.cartanMatrix`** for any valid Dynkin type `t`: counted with multiplicity, the eigenvalues are
@@ -100,14 +89,6 @@ theorem two_le_orderOf_wordProd {b : P.Base} {l : List b.support} (hnd : l.Nodup
     (hall : ∀ i, i ∈ l) : 2 ≤ orderOf (wordProd P b l) := by
   rw [b.orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType hnd hall]
   exact (classifiedDynkinType b).two_le_coxeterNumber (valid_classifiedDynkinType b)
-
-/-- **`h = |Φ| / r`**: in any finite irreducible reduced crystallographic root system, every Coxeter
-element has order equal to the number of roots divided by the rank. -/
-theorem orderOf_wordProd_eq_natCard_div_card_support {b : P.Base} {l : List b.support}
-    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    orderOf (wordProd P b l) = Nat.card ι / b.support.card :=
-  orderOf_wordProd_eq_natCard_div_card_support_of_hasCartanType (valid_classifiedDynkinType b)
-    (hasCartanType_classifiedDynkinType b) hnd hall
 
 /-- Finset version of
 `RootPairing.Base.two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd`. -/
