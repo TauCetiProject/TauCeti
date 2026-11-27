@@ -25,6 +25,8 @@ and analytic manifolds.
   open.
 * `ContMDiffAt.eventually_mdifferentiableAt`: `C^n` regularity at a point, with `n ≠ 0`,
   implies differentiability throughout a neighbourhood.
+* `ContMDiffWithinAt.congr_of_eventuallyEq_insert`: congruence of `C^n` regularity within `s` at
+  `x` under eventual equality along `𝓝[insert x s] x`.
 * The instances `NeZero (∞ : ℕ∞ω)` and `NeZero (ω : ℕ∞ω)`.
 -/
 
@@ -50,7 +52,7 @@ variable
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
-  {n : ℕ∞ω} {f : M → M'}
+  {n : ℕ∞ω} {f f₁ : M → M'}
 
 /-- For `n ≠ ∞`, the set of points where a map is `C^n` is open.  This fails for `n = ∞`, where
 the neighbourhood on which `f` is `C^k` may shrink with `k`. -/
@@ -66,6 +68,14 @@ theorem _root_.ContMDiffAt.eventually_mdifferentiableAt [IsManifold I 1 M] [IsMa
   ((contMDiffAt_iff_contMDiffAt_nhds (n := 1) (by simp)).1
     (hf.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn))).mono fun _ hy ↦
       hy.mdifferentiableAt one_ne_zero
+
+/-- If `f` is `C^n` within `s` at `x` and `f₁` agrees with `f` eventually along `𝓝[insert x s] x`,
+then `f₁` is `C^n` within `s` at `x`. -/
+theorem _root_.ContMDiffWithinAt.congr_of_eventuallyEq_insert {s : Set M} {x : M}
+    (h : ContMDiffWithinAt I I' n f s x) (h₁ : f₁ =ᶠ[𝓝[insert x s] x] f) :
+    ContMDiffWithinAt I I' n f₁ s x :=
+  h.congr_of_eventuallyEq (h₁.filter_mono (nhdsWithin_mono _ (Set.subset_insert x s)))
+    (h₁.self_of_nhdsWithin (Set.mem_insert x s))
 
 end TauCeti
 

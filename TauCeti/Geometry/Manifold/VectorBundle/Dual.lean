@@ -10,7 +10,9 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 public import TauCeti.Topology.VectorBundle.Dual
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # Smooth transpose maps and duality in vector bundles
@@ -124,20 +126,18 @@ theorem contMDiffWithinAt_clm_bundle_dual_precomp_iff {b : M → B}
       (ContinuousLinearMap.flipₗᵢ 𝕜 (StrongDual 𝕜 F₂) F₁ 𝕜).toLinearIsometry.toContinuousLinearMap
   have hret (T : F₁ →L[𝕜] F₂) : L_inv (ContinuousLinearMap.precomp 𝕜 T) = T := by
     ext v; apply j₂.injective; ext α; simp [L_inv, ContinuousLinearMap.flipₗᵢ, j₂]
-  have hnear := hdual.1.insert.continuousWithinAt.preimage_mem_nhdsWithin <|
-    ((trivializationAt F₁ V₁ (b x)).open_baseSet.inter
-      (trivializationAt F₂ V₂ (b x)).open_baseSet).mem_nhds
-      ⟨mem_baseSet_trivializationAt' (b x), mem_baseSet_trivializationAt' (b x)⟩
   have hcomp := L_inv.contDiff.contMDiff.contMDiffAt.comp_contMDiffWithinAt x hdual.2
   have heq : (fun y ↦ ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ (b x) (b y) (b x) (b y) (A y))
       =ᶠ[𝓝[insert x s] x] fun y ↦ L_inv (ContinuousLinearMap.inCoordinates (StrongDual 𝕜 F₂)
         (fun z ↦ StrongDual 𝕜 (V₂ z)) (StrongDual 𝕜 F₁) (fun z ↦ StrongDual 𝕜 (V₁ z))
         (b x) (b y) (b x) (b y) (.precomp 𝕜 (A y))) := by
-    filter_upwards [hnear] with y hy
-    rw [ContinuousLinearMap.inCoordinates_precomp (F₃ := 𝕜) (Trivial B 𝕜) (A y) hy.1 hy.2
+    filter_upwards
+      [hdual.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₁ V₁,
+        hdual.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₂ V₂]
+      with y hy₁ hy₂
+    rw [ContinuousLinearMap.inCoordinates_precomp (F₃ := 𝕜) (Trivial B 𝕜) (A y) hy₁ hy₂
       (by simp [Trivial.eq_trivialization]), hret]
-  exact hcomp.congr_of_eventuallyEq (heq.filter_mono (nhdsWithin_mono _ (subset_insert x s)))
-    (heq.self_of_nhdsWithin (mem_insert x s))
+  exact hcomp.congr_of_eventuallyEq_insert heq
 
 /-- Over a complete field with finite-dimensional target model fibre `F₂`, a Hom-bundle section
 along `b` is `C^n` iff its fibrewise dual (transpose) section is `C^n`. -/
@@ -186,6 +186,15 @@ def bundleDualDiffeomorph (e : ∀ x, V₁ x ≃L[𝕜] V₂ x)
       ⟨p.proj, ContinuousLinearMap.precomp 𝕜 (e p.proj).toContinuousLinearMap p.snd⟩ := by
   simp [bundleDualDiffeomorph]
 
+/-- Evaluation of the inverse of `bundleDualDiffeomorph`. -/
+@[simp] theorem bundleDualDiffeomorph_symm_apply (e : ∀ x, V₁ x ≃L[𝕜] V₂ x)
+    (he : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
+      (fun p : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd)))
+    (p : TotalSpace (StrongDual 𝕜 F₁) (fun x ↦ StrongDual 𝕜 (V₁ x))) :
+    (bundleDualDiffeomorph e he).symm p =
+      ⟨p.proj, ContinuousLinearMap.precomp 𝕜 (e p.proj).symm.toContinuousLinearMap p.snd⟩ := by
+  simp [bundleDualDiffeomorph]
+
 /-- In finite dimensions over a complete field, the fibrewise dual of `ψ : ∀ x, V₁ x →L[𝕜] V₂ x`
 underlies a `C^n` diffeomorphism of dual total spaces iff `ψ` underlies a `C^n` diffeomorphism of
 the original total spaces. -/
@@ -216,8 +225,9 @@ theorem exists_bundleDiffeomorph_dual_precomp_iff (ψ : ∀ x, V₁ x →L[𝕜]
         StrongDual 𝕜 (V₂ x) →L[𝕜] StrongDual 𝕜 (V₁ x)) := by
     rw [← hdual, EquivLike.comp_bijective, EquivLike.bijective_comp]
   have h2 : Function.Bijective T ↔ Function.Bijective (ψ x) := by
-    rw [show (T : F₁ → F₂) = e₂ ∘ (ψ x) ∘ e₁.symm from rfl,
-      EquivLike.comp_bijective, EquivLike.bijective_comp]
+    have hT : (T : F₁ → F₂) = e₂ ∘ (ψ x) ∘ e₁.symm := by
+      simp only [T, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe]
+    rw [hT, EquivLike.comp_bijective, EquivLike.bijective_comp]
   exact h1.symm.trans (T.precomp_bijective_iff_of_finiteDimensional.trans h2)
 
 end FiniteRankDual

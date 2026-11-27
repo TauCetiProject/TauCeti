@@ -213,10 +213,11 @@ theorem precomp_bijective_iff_of_finiteDimensional (T : E →L[𝕜] F) :
   let dE : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E := LinearMap.toContinuousLinearMap
   let dF : Module.Dual 𝕜 F ≃ₗ[𝕜] StrongDual 𝕜 F := LinearMap.toContinuousLinearMap
   have hT : (dE.symm : StrongDual 𝕜 E → Module.Dual 𝕜 E) ∘ (precomp 𝕜 T :
-      StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ∘ dF = (T : E →ₗ[𝕜] F).dualMap := by ext α v; rfl
-  change Function.Bijective (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ↔
-    Function.Bijective (T : E →ₗ[𝕜] F)
-  rw [← LinearMap.dualMap_bijective_iff (f := (T : E →ₗ[𝕜] F)), ← hT,
+      StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ∘ dF = (T : E →ₗ[𝕜] F).dualMap := by
+    ext α v
+    simp [dE, dF, LinearMap.dualMap_apply]
+  rw [← ContinuousLinearMap.coe_coe T,
+    ← LinearMap.dualMap_bijective_iff (f := (T : E →ₗ[𝕜] F)), ← hT,
     EquivLike.comp_bijective, EquivLike.bijective_comp]
 
 end ContinuousLinearMap

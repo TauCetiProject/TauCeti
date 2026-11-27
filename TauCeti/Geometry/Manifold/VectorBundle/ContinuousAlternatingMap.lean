@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
+import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.Basic
 
 /-!
@@ -242,8 +244,6 @@ theorem ContMDiffWithinAt.continuousAlternatingMap_bundle_compContinuousLinearMa
   rw [contMDiffWithinAt_continuousAlternatingMap_bundle] at hα ⊢
   rw [contMDiffWithinAt_hom_bundle] at hA
   refine ⟨hA.1, ?_⟩
-  have hnear := hA.1.insert.continuousWithinAt.preimage_mem_nhdsWithin
-    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds (mem_baseSet_trivializationAt' (b x)))
   have hpull := (ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
     (𝕜 := 𝕜) (E := F₁) (F := F₂) (G := F₃) (ι := ι) n hn).contMDiff.contMDiffAt
     |>.comp_contMDiffWithinAt x hA.2 |>.clm_apply hα.2
@@ -252,10 +252,10 @@ theorem ContMDiffWithinAt.continuousAlternatingMap_bundle_compContinuousLinearMa
       fun y ↦ ContinuousAlternatingMap.compContinuousLinearMapCLM
         (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ (b x) (b y) (b x) (b y) (A y))
         (ContinuousAlternatingMap.inCoordinates F₂ F₃ (b x) (b y) (b x) (b y) (α y)) := by
-    filter_upwards [hnear] with y hy
+    filter_upwards [hA.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₂ V₂]
+      with y hy
     exact ContinuousAlternatingMap.inCoordinates_compContinuousLinearMap (α y) (A y) hy
-  exact hpull.congr_of_eventuallyEq (heq.filter_mono (nhdsWithin_mono _ (subset_insert x s)))
-    (heq.self_of_nhdsWithin (mem_insert x s))
+  exact hpull.congr_of_eventuallyEq_insert heq
 
 /-- Pulling back a `C^n` section of an alternating-map bundle along a `C^n` Hom-bundle section at
 `x` is `C^n` at `x`. -/

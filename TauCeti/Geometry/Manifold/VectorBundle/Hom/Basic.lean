@@ -15,10 +15,12 @@ import TauCeti.Topology.VectorBundle.Coordinates
 import TauCeti.Topology.VectorBundle.Trivialization
 import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # Testing smooth bundle homomorphisms on sections
@@ -61,10 +63,10 @@ the preferred trivializations are `C^n` families of continuous linear maps of th
 trivializations).
 
 Fibrewise composition preserves joint `Cⁿ` regularity along any common base map
-(`ContMDiff.clm_bundle_comp`, and `ContMDiffWithinAt.clm_bundle_comp` within a set), and
-fibrewise precomposition into any third bundle `V₃` is `Cⁿ`
-(`ContMDiffWithinAt.clm_bundle_precomp`). The corresponding native section operation is
-`ContMDiffSection.clmComp`; it requires no finite rank or completeness assumption.
+(`ContMDiff.clm_bundle_comp`, and `ContMDiffWithinAt.clm_bundle_comp` within a set). The
+corresponding native section operation is `ContMDiffSection.clmComp`; it requires no finite rank
+or completeness assumption. Similarly, fibrewise precomposition into any third bundle `V₃` is `Cⁿ`
+(`ContMDiffWithinAt.clm_bundle_precomp`).
 
 Negation of a hom-bundle section along any base map preserves its regularity
 (`ContMDiff.clm_bundle_neg`). Taking the ordinary trace of an endomorphism family along a
@@ -929,22 +931,19 @@ theorem ContMDiffWithinAt.clm_bundle_precomp (V₃ : B → Type*) {n : ℕ∞ω}
   let _ : NormedSpace 𝕜 ((F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃) := inferInstance
   rw [contMDiffWithinAt_hom_bundle] at hA ⊢
   refine ⟨hA.1, ?_⟩
-  have hnear := hA.1.insert.continuousWithinAt.preimage_mem_nhdsWithin <|
-    (((trivializationAt F₁ V₁ (b x)).open_baseSet.inter
-      (trivializationAt F₂ V₂ (b x)).open_baseSet).inter
-      (trivializationAt F₃ V₃ (b x)).open_baseSet).mem_nhds
-        ⟨⟨mem_baseSet_trivializationAt' (b x), mem_baseSet_trivializationAt' (b x)⟩,
-          mem_baseSet_trivializationAt' (b x)⟩
   let L := (ContinuousLinearMap.compL 𝕜 F₁ F₂ F₃).flip
   have heq : (fun y ↦ ContinuousLinearMap.inCoordinates (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z)
       (F₁ →L[𝕜] F₃) (fun z ↦ V₁ z →L[𝕜] V₃ z) (b x) (b y) (b x) (b y)
         (ContinuousLinearMap.precomp (V₃ (b y)) (A y))) =ᶠ[𝓝[insert x s] x]
       fun y ↦ L (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ (b x) (b y) (b x) (b y) (A y)) := by
-    filter_upwards [hnear] with y hy
-    exact ContinuousLinearMap.inCoordinates_precomp V₃ (A y) hy.1.1 hy.1.2 hy.2
-  exact (L.contDiff.contMDiff.contMDiffAt.comp_contMDiffWithinAt x hA.2).congr_of_eventuallyEq
-    (heq.filter_mono (nhdsWithin_mono _ (subset_insert x s)))
-    (heq.self_of_nhdsWithin (mem_insert x s))
+    filter_upwards
+      [hA.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₁ V₁,
+        hA.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₂ V₂,
+        hA.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₃ V₃]
+      with y hy₁ hy₂ hy₃
+    exact ContinuousLinearMap.inCoordinates_precomp V₃ (A y) hy₁ hy₂ hy₃
+  exact (L.contDiff.contMDiff.contMDiffAt.comp_contMDiffWithinAt x
+    hA.2).congr_of_eventuallyEq_insert heq
 
 end Composition
 

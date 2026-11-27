@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
+import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -50,18 +52,16 @@ theorem ContMDiffWithinAt.clm_bundle_det (hφ : ContMDiffWithinAt IM (IB.prod �
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun z ↦ V z →L[𝕜] V z) (b y) (φ y)) s x) :
     ContMDiffWithinAt IM 𝓘(𝕜) n (fun y ↦ (φ y).det) s x := by
   rw [contMDiffWithinAt_hom_bundle] at hφ
-  have hnear := hφ.1.insert.continuousWithinAt.preimage_mem_nhdsWithin
-    ((trivializationAt F V (b x)).open_baseSet.mem_nhds (mem_baseSet_trivializationAt' (b x)))
   have hdet := (ContinuousLinearMap.contDiff_det (𝕜 := 𝕜) (E := F) (r := n)).contMDiff
     |>.contMDiffAt.comp_contMDiffWithinAt x hφ.2
   have heq : (fun y ↦ (φ y).det) =ᶠ[𝓝[insert x s] x]
       fun y ↦ (ContinuousLinearMap.inCoordinates F V F V (b x) (b y) (b x) (b y) (φ y)).det := by
-    filter_upwards [hnear] with y hy
+    filter_upwards [hφ.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F V]
+      with y hy
     rw [ContinuousLinearMap.inCoordinates_eq hy hy]
     exact (LinearMap.det_conj (φ y : V (b y) →ₗ[𝕜] V (b y))
       ((trivializationAt F V (b x)).continuousLinearEquivAt 𝕜 (b y) hy).toLinearEquiv).symm
-  exact hdet.congr_of_eventuallyEq (heq.filter_mono (nhdsWithin_mono _ (subset_insert x s)))
-    (heq.self_of_nhdsWithin (mem_insert x s))
+  exact hdet.congr_of_eventuallyEq_insert heq
 
 /-- The fibrewise determinant of an endomorphism-bundle section `C^n` at `x` is `C^n` at `x`. -/
 theorem ContMDiffAt.clm_bundle_det (hφ : ContMDiffAt IM (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
@@ -106,9 +106,8 @@ theorem exists_bundleDiffeomorph_iff_contMDiff_and_det_ne_zero (ψ : ∀ x, V x 
   rw [exists_bundleDiffeomorph_iff]
   refine and_congr_right fun _ ↦ forall_congr' fun x ↦ ?_
   let _ : FiniteDimensional 𝕜 (V x) := VectorBundle.finiteDimensional 𝕜 F V x
-  rw [ContinuousLinearMap.det, ← isUnit_iff_ne_zero,
-    ← LinearMap.isUnit_iff_isUnit_det (ψ x : V x →ₗ[𝕜] V x), Module.End.isUnit_iff]
-  rfl
+  rw [← isUnit_iff_ne_zero, ← LinearMap.isUnit_iff_isUnit_det (ψ x : V x →ₗ[𝕜] V x),
+    Module.End.isUnit_iff, ContinuousLinearMap.coe_coe]
 
 end TauCeti
 
