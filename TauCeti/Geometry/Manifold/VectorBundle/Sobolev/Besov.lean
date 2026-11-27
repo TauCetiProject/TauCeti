@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BesselPotential
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Lp
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalBesov
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Local
 import TauCeti.Analysis.Normed.Operator.Banach
@@ -33,8 +34,12 @@ Littlewood–Paley partition of a bump function `φ`, in the same way as the Sob
   its localizations lie in `B^s_{p,q}(E, ℂ)`. This does not depend on the bump function
   (`TauCeti.SquareChartPartition.MemBesov.of_bump`), it follows the inclusions of the Euclidean
   scale, and every functional lies in some `B^s_{p,q}` for `1 < p` and `q ≠ 0`
-  (`TauCeti.SquareChartPartition.exists_memBesov`). For `p = 2` it is compared with the Sobolev
-  scale: `H^s ⊆ B^s_{2,∞}`, `B^s_{2,1} ⊆ H^s` and `B^s_{2,2} = H^s`
+  (`TauCeti.SquareChartPartition.exists_memBesov`). It is compared with the Bessel-potential
+  scale `TauCeti.SquareChartPartition.MemBesselPotential` for every `1 ≤ p ≤ ∞`:
+  `H^{s,p} ⊆ B^s_{p,∞}` and `B^s_{p,1} ⊆ H^{s,p}`
+  (`TauCeti.SquareChartPartition.MemBesselPotential.memBesov`,
+  `TauCeti.SquareChartPartition.MemBesov.memBesselPotential`). For `p = 2` the comparison with the
+  Sobolev scale closes up: `B^s_{2,2} = H^s`
   (`TauCeti.SquareChartPartition.memBesov_two_two_iff_memSobolev`).
 * The **Besov space** `TauCeti.SquareChartPartition.besovSpace` is the real subspace of the tuples
   `(uᵢⱼ)` of elements of `B^s_{p,q}(E, ℂ)` that are reproduced by localizing their reconstruction,
@@ -50,8 +55,12 @@ The Euclidean comparisons pass to these spaces componentwise, as continuous line
 not change the represented functional: the inclusions `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' ≤ s`,
 `q ≤ q'` and for `s' < s` (`TauCeti.SquareChartPartition.besovInclusion`,
 `TauCeti.SquareChartPartition.besovInclusionOfLT`), the change of bump function
-(`TauCeti.SquareChartPartition.besovBumpEquiv`), and the isomorphism `B^s_{2,2} ≃ H^s` with the
-Sobolev space of the same partition (`TauCeti.SquareChartPartition.besovSpaceEquivSobolevSpace`).
+(`TauCeti.SquareChartPartition.besovBumpEquiv`), the inclusions `H^{s,p} ⊆ B^s_{p,∞}` and
+`B^s_{p,1} ⊆ H^{s,p}` with the Bessel-potential spaces of the same partition
+(`TauCeti.SquareChartPartition.besselPotentialSpaceToBesovSpace`,
+`TauCeti.SquareChartPartition.besovSpaceToBesselPotentialSpace`), and the isomorphism
+`B^s_{2,2} ≃ H^s` with its Sobolev space
+(`TauCeti.SquareChartPartition.besovSpaceEquivSobolevSpace`).
 
 **Independence of the partition.** For `1 ≤ q`, `T` is `B^s_{p,q}` with respect to `A` exactly
 when it is `B^s_{p,q}` near every point of `M`
@@ -72,7 +81,9 @@ This comparison gives no explicit equivalence constants.
 ## Main declarations
 
 * `TauCeti.SquareChartPartition.MemBesov`: `B^s_{p,q}` regularity with respect to the partition,
-  with `TauCeti.SquareChartPartition.exists_memBesov` (finite order) and the Sobolev comparisons
+  with `TauCeti.SquareChartPartition.exists_memBesov` (finite order), the Bessel-potential
+  comparisons `TauCeti.SquareChartPartition.MemBesselPotential.memBesov` and
+  `TauCeti.SquareChartPartition.MemBesov.memBesselPotential`, and the Sobolev comparisons
   `TauCeti.SquareChartPartition.MemSobolev.memBesov`,
   `TauCeti.SquareChartPartition.MemBesov.memSobolev` and
   `TauCeti.SquareChartPartition.memBesov_two_two_iff_memSobolev`.
@@ -83,7 +94,9 @@ This comparison gives no explicit equivalence constants.
   `TauCeti.SquareChartPartition.besovSpaceEquiv`: the Besov space represents exactly the
   functionals that are `B^s_{p,q}` with respect to the partition.
 * `TauCeti.SquareChartPartition.besovInclusion`, `TauCeti.SquareChartPartition.besovInclusionOfLT`,
-  `TauCeti.SquareChartPartition.besovBumpEquiv` and
+  `TauCeti.SquareChartPartition.besovBumpEquiv`,
+  `TauCeti.SquareChartPartition.besselPotentialSpaceToBesovSpace`,
+  `TauCeti.SquareChartPartition.besovSpaceToBesselPotentialSpace` and
   `TauCeti.SquareChartPartition.besovSpaceEquivSobolevSpace`.
 * `TauCeti.SquareChartPartition.memBesov_iff_forall_isLocallyMemBesovAt`,
   `TauCeti.SquareChartPartition.memBesov_iff_memBesov`: `B^s_{p,q}` with respect to a partition is
@@ -207,6 +220,17 @@ with respect to `A`. -/
 theorem memBesov_two_two_iff_memSobolev : A.MemBesov φ s 2 2 T ↔ A.MemSobolev s T := by
   rw [memSobolev_iff]
   exact forall₂_congr fun _ _ ↦ TemperedDistribution.memBesov_two_two_iff_memSobolev φ
+
+/-- **`H^{s,p} ⊆ B^s_{p,∞}`.** A functional which is `H^{s,p}` with respect to `A` is `B^s_{p,∞}`
+with respect to `A`, for every `1 ≤ p ≤ ∞`. -/
+theorem MemBesselPotential.memBesov (hT : A.MemBesselPotential s p T)
+    (φ : ContDiffBump (0 : E)) : A.MemBesov φ s p ∞ T :=
+  fun i j ↦ (hT.localization i j).memBesov φ
+
+/-- **`B^s_{p,1} ⊆ H^{s,p}`.** A functional which is `B^s_{p,1}` with respect to `A` is `H^{s,p}`
+with respect to `A`, for every `1 ≤ p ≤ ∞`. -/
+theorem MemBesov.memBesselPotential (hT : A.MemBesov φ s p 1 T) : A.MemBesselPotential s p T :=
+  A.memBesselPotential_iff.2 fun i j ↦ (hT i j).memSobolev
 
 variable (A φ p q) in
 /-- **Finite order.** Let `1 < p ≤ ∞` and `q ≠ 0`. Every real functional on bundle tests of `V`,
@@ -679,6 +703,87 @@ theorem besovSpaceEquivSobolevSpace_symm_ofMemSobolev {T : BundleTest I F V →L
     (A.besovSpaceEquivSobolevSpace φ s).symm (A.ofMemSobolev s hT) =
       A.ofMemBesov φ ((A.memBesov_two_two_iff_memSobolev φ).2 hT) :=
   A.besovToDistribution_injective φ (by simp)
+
+/-! ### Comparison with the Bessel-potential spaces `H^{s,p}` -/
+
+variable (s p) in
+/-- **The inclusion `H^{s,p} ⊆ B^s_{p,∞}`** of the spaces of `A`, for every `1 ≤ p ≤ ∞`: the
+inclusion `BesselPotentialSpace.toBesovSpace` of `H^{s,p}(E, ℂ)` in `B^s_{p,∞}(E, ℂ)` in every
+component. It represents the same functional on bundle tests
+(`TauCeti.SquareChartPartition.besovToDistribution_besselPotentialSpaceToBesovSpace`). -/
+def besselPotentialSpaceToBesovSpace : A.besselPotentialSpace s p →L[ℝ] A.besovSpace φ s p ∞ :=
+  (((ContinuousLinearMap.pi fun k : ι × Fin (Module.finrank ℝ F) ↦
+      BesselPotentialSpace.toBesovSpace φ ∘L
+        ContinuousLinearMap.proj (R := ℂ) (φ := fun _ ↦ H^{s, p}(E, ℂ)) k).restrictScalars ℝ) ∘L
+    (A.besselPotentialSpace s p).subtypeL).codRestrict (A.besovSpace φ s p ∞) fun u ↦
+    (A.mem_besovSpace φ).2 fun k ↦ by simpa using (A.mem_besselPotentialSpace).1 u.property k
+
+@[simp]
+theorem besselPotentialSpaceToBesovSpace_apply (u : A.besselPotentialSpace s p)
+    (k : ι × Fin (Module.finrank ℝ F)) :
+    (A.besselPotentialSpaceToBesovSpace φ s p u).val k =
+      BesselPotentialSpace.toBesovSpace φ (u.val k) :=
+  (rfl)
+
+/-- The inclusion `H^{s,p} ⊆ B^s_{p,∞}` does not change the represented functional. -/
+@[simp]
+theorem besovToDistribution_besselPotentialSpaceToBesovSpace (u : A.besselPotentialSpace s p) :
+    A.besovToDistribution φ s p ∞ (A.besselPotentialSpaceToBesovSpace φ s p u) =
+      A.besselPotentialToDistribution s p u := by
+  simp [besovToDistribution_apply, besselPotentialToDistribution_apply]
+
+@[simp]
+theorem besselPotentialSpaceToBesovSpace_ofMemBesselPotential {T : BundleTest I F V →L_c[ℝ] ℝ}
+    (hT : A.MemBesselPotential s p T) :
+    A.besselPotentialSpaceToBesovSpace φ s p (A.ofMemBesselPotential hT) =
+      A.ofMemBesov φ (hT.memBesov φ) :=
+  A.besovToDistribution_injective φ (by simp)
+
+theorem besselPotentialSpaceToBesovSpace_injective :
+    Function.Injective (A.besselPotentialSpaceToBesovSpace φ s p) := fun u u' huu' ↦
+  A.besselPotentialToDistribution_injective <| by
+    rw [← A.besovToDistribution_besselPotentialSpaceToBesovSpace φ u,
+      ← A.besovToDistribution_besselPotentialSpaceToBesovSpace φ u', huu']
+
+variable (s p) in
+/-- **The inclusion `B^s_{p,1} ⊆ H^{s,p}`** of the spaces of `A`, for every `1 ≤ p ≤ ∞`: the
+inclusion `TauCeti.BesovSpace.toBesselPotentialSpace` of `B^s_{p,1}(E, ℂ)` in `H^{s,p}(E, ℂ)` in
+every component. It represents the same functional on bundle tests
+(`TauCeti.SquareChartPartition.besselPotentialToDistribution_besovSpaceToBesselPotentialSpace`).
+-/
+def besovSpaceToBesselPotentialSpace : A.besovSpace φ s p 1 →L[ℝ] A.besselPotentialSpace s p :=
+  (((ContinuousLinearMap.pi fun k : ι × Fin (Module.finrank ℝ F) ↦
+      BesovSpace.toBesselPotentialSpace ∘L
+        ContinuousLinearMap.proj (R := ℂ) (φ := fun _ ↦ BesovSpace ℂ φ s p 1) k).restrictScalars
+      ℝ) ∘L (A.besovSpace φ s p 1).subtypeL).codRestrict (A.besselPotentialSpace s p) fun u ↦
+    (A.mem_besselPotentialSpace).2 fun k ↦ by simpa using u.property k
+
+@[simp]
+theorem besovSpaceToBesselPotentialSpace_apply (u : A.besovSpace φ s p 1)
+    (k : ι × Fin (Module.finrank ℝ F)) :
+    (A.besovSpaceToBesselPotentialSpace φ s p u).val k =
+      BesovSpace.toBesselPotentialSpace (u.val k) :=
+  (rfl)
+
+/-- The inclusion `B^s_{p,1} ⊆ H^{s,p}` does not change the represented functional. -/
+@[simp]
+theorem besselPotentialToDistribution_besovSpaceToBesselPotentialSpace (u : A.besovSpace φ s p 1) :
+    A.besselPotentialToDistribution s p (A.besovSpaceToBesselPotentialSpace φ s p u) =
+      A.besovToDistribution φ s p 1 u := by
+  simp [besovToDistribution_apply, besselPotentialToDistribution_apply]
+
+@[simp]
+theorem besovSpaceToBesselPotentialSpace_ofMemBesov {T : BundleTest I F V →L_c[ℝ] ℝ}
+    (hT : A.MemBesov φ s p 1 T) :
+    A.besovSpaceToBesselPotentialSpace φ s p (A.ofMemBesov φ hT) =
+      A.ofMemBesselPotential hT.memBesselPotential :=
+  A.besselPotentialToDistribution_injective (by simp)
+
+theorem besovSpaceToBesselPotentialSpace_injective :
+    Function.Injective (A.besovSpaceToBesselPotentialSpace φ s p) := fun u u' huu' ↦
+  A.besovToDistribution_injective φ <| by
+    rw [← A.besselPotentialToDistribution_besovSpaceToBesselPotentialSpace φ u,
+      ← A.besselPotentialToDistribution_besovSpaceToBesselPotentialSpace φ u', huu']
 
 end BesovSpace
 

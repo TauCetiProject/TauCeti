@@ -53,6 +53,10 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two`: the Cayley–Hamilton identity in size two.
 * `Matrix.pow_add_two_fin_two`, `Matrix.trace_pow_add_two_fin_two`: the Cayley–Hamilton recurrence
   for the powers of a `2 × 2` matrix and for their traces.
+* `Matrix.mul_add_mul_eq_fin_two`: the polarized Cayley–Hamilton identity, expressing the
+  anticommutator `A * B + B * A` through traces; hence
+  `Matrix.mul_eq_neg_mul_of_trace_eq_zero_fin_two`: traceless matrices with traceless product
+  anticommute.
 * `Matrix.two_lt_trace_pow`, `Matrix.two_lt_abs_trace_pow`: the nonzero powers of a
   determinant-one matrix of trace (respectively absolute trace) greater than `2` again have that
   property.
@@ -70,6 +74,8 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   `Matrix.det_one_sub_pow_pos_of_trace_lt_neg_two`,
   `Matrix.det_one_sub_pow_nonneg_of_abs_trace_le_two`: the sign of `det (1 - A ^ n)` for a
   determinant-one matrix `A`, according to its trace.
+* `Matrix.sign_det_one_sub_pow_of_trace_lt_neg_two`: for a determinant-one matrix of trace less
+  than `-2`, the sign of `det (1 - A ^ n)` is `(-1) ^ (n + 1)` for `n ≠ 0`.
 * `Matrix.trace_pow_eq_two_of_trace_eq_two`: the powers of a determinant-one matrix of trace `2`
   have trace `2`.
 * `Matrix.sign_det_one_sub_pow_succ_of_det_eq_one`: for a determinant-one matrix, the signs of
@@ -130,6 +136,23 @@ theorem trace_pow_eq_two_of_trace_eq_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : 
   | zero => norm_num [trace_one]
   | one => simpa using htr
   | more n h₀ h₁ => rw [trace_pow_add_two_fin_two, h₀, h₁, htr, hdet]; ring
+
+/-- **Polarized Cayley–Hamilton in size two**: for `2 × 2` matrices `A` and `B`,
+`A * B + B * A = trace A • B + trace B • A + (trace (A * B) - trace A * trace B) • 1`. -/
+theorem mul_add_mul_eq_fin_two (A B : Matrix (Fin 2) (Fin 2) R) :
+    A * B + B * A =
+      A.trace • B + B.trace • A + ((A * B).trace - A.trace * B.trace) • (1 : Matrix _ _ R) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+
+/-- Two traceless `2 × 2` matrices whose product is traceless anticommute. -/
+theorem mul_eq_neg_mul_of_trace_eq_zero_fin_two {A B : Matrix (Fin 2) (Fin 2) R}
+    (hA : A.trace = 0) (hB : B.trace = 0) (hAB : (A * B).trace = 0) : A * B = -(B * A) := by
+  have h := mul_add_mul_eq_fin_two A B
+  rw [hA, hB, hAB] at h
+  simp only [zero_smul, add_zero, mul_zero, sub_zero] at h
+  exact eq_neg_of_add_eq_zero_left h
 
 /-- Every power of a `2 × 2` matrix `A` is a linear combination `a • A - b • 1` of `A` and `1`, by
 the Cayley–Hamilton identity in size two. -/
@@ -296,6 +319,19 @@ theorem det_one_sub_pow_nonneg_of_abs_trace_le_two {A : Matrix (Fin 2) (Fin 2) R
   rw [det_one_sub_fin_two, det_pow, hdet, one_pow]
   linarith [(abs_le.1 (abs_trace_pow_le_two hdet htr n)).2]
 
+/-- If a `2 × 2` matrix `A` of determinant one has trace less than `-2`, then the sign of
+`det (1 - A ^ n)` is `(-1) ^ (n + 1)` for every `n ≠ 0`. -/
+theorem sign_det_one_sub_pow_of_trace_lt_neg_two {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) (htr : A.trace < -2) {n : ℕ} (hn : n ≠ 0) :
+    (SignType.sign (1 - A ^ n).det : ℤ) = (-1) ^ (n + 1) := by
+  rcases n.even_or_odd with he | ho
+  · rw [sign_neg (det_one_sub_pow_neg_of_trace_lt_neg_two hdet htr he hn),
+      he.add_one.neg_one_pow]
+    simp
+  · rw [sign_pos (det_one_sub_pow_pos_of_trace_lt_neg_two hdet htr ho),
+      ho.add_one.neg_one_pow]
+    simp
+
 /-- For a `2 × 2` matrix `A` of determinant one, the signs of `det (1 - A ^ n)` over the
 nondegenerate powers follow a geometric sequence: if `det (1 - A ^ (k + 1)) ≠ 0`, then
 `sgn det (1 - A ^ (k + 1)) = sgn det (1 - A) * σ ^ k`, where `σ = -1` if `det (1 + A) < 0` (that
@@ -314,13 +350,8 @@ theorem sign_det_one_sub_pow_succ_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R}
   rcases lt_or_ge A.trace (-2) with htr' | htr'
   · rw [ite_eq_left (by linarith), sign_pos (a := (1 - A).det)
       (by simpa using det_one_sub_pow_pos_of_trace_lt_neg_two hdet htr' odd_one)]
-    rcases k.even_or_odd with he | ho
-    · rw [sign_pos (det_one_sub_pow_pos_of_trace_lt_neg_two hdet htr' he.add_one),
-        he.neg_one_pow]
-      simp
-    · rw [sign_neg (det_one_sub_pow_neg_of_trace_lt_neg_two hdet htr' ho.add_one
-        k.succ_ne_zero), ho.neg_one_pow]
-      simp
+    rw [sign_det_one_sub_pow_of_trace_lt_neg_two hdet htr' k.succ_ne_zero]
+    simp [pow_succ]
   have hpos (n : ℕ) (hn : (1 - A ^ n).det ≠ 0) : 0 < (1 - A ^ n).det :=
     (det_one_sub_pow_nonneg_of_abs_trace_le_two hdet (abs_le.2 ⟨htr', htr⟩) n).lt_of_ne' hn
   -- If `trace A = 2`, every power has trace `2`, so `A ^ (k + 1)` would be degenerate.

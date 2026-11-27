@@ -42,6 +42,10 @@ the same vertices with all `n + 1` durations equal to `γ.length / (n + 1)`
 * `TauCeti.continuous_brokenMoorePath`: it depends continuously on the points and the durations.
 * `TauCeti.brokenMoorePath_apply_mul_add`: with all durations equal to `c`, at time `i * c + τ`
   the broken Moore path is on its `i`-th arc, at time `τ` of that arc.
+* `TauCeti.map_brokenMoorePath`: a map carrying interpolating paths to interpolating paths carries
+  broken Moore paths to broken Moore paths.
+* `TauCeti.brokenMoorePath_segment_apply`: in `ℝ`, broken segments whose durations are their steps
+  run at unit speed.
 * `TauCeti.MoorePath.brokenPathMap_eq_brokenMoorePath`: the end of the arc-straightening homotopy
   is the broken Moore path through the sampled vertices with equal durations.
 
@@ -233,6 +237,70 @@ theorem brokenMoorePath_apply_mul_add {n : ℕ} (q : Fin (n + 1) → X) (c : ℝ
       rw [ht, MoorePath.trans_apply_length_add]
       exact (ih (Fin.tail q) (forall_tail_mem h) j).trans (by rw [Fin.tail, Fin.tail,
         Fin.succ_castSucc])
+
+/-- **Naturality of broken Moore paths.** A continuous map `F` carrying the interpolating path of
+`ρ` between consecutive points `q i`, `q (i + 1)` to the interpolating path of `ρ'` between their
+images carries the broken Moore path through the `q i` to the broken Moore path through their
+images, with the same durations. -/
+theorem map_brokenMoorePath {ρ' : Y × Y → C(I, Y)} {U' : Set (Y × Y)}
+    (hρ' : IsPathInterpolation ρ' U') (F : C(X, Y)) (n : ℕ) (q : Fin (n + 1) → X)
+    (ℓ : Fin n → ℝ≥0)
+    (h : ∀ i : Fin n, (q i.castSucc, q i.succ) ∈ U ∧ (ℓ i = 0 → q i.castSucc = q i.succ))
+    (h' : ∀ i : Fin n, (F (q i.castSucc), F (q i.succ)) ∈ U' ∧
+      (ℓ i = 0 → F (q i.castSucc) = F (q i.succ)))
+    (hF : ∀ i : Fin n, ρ' (F (q i.castSucc), F (q i.succ)) = F.comp (ρ (q i.castSucc, q i.succ))) :
+    (brokenMoorePath hρ n q ℓ h).map F = brokenMoorePath hρ' n (F ∘ q) ℓ h' := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [brokenMoorePath_succ hρ n q ℓ h (forall_tail_mem h),
+      brokenMoorePath_succ hρ' n (F ∘ q) ℓ h' (forall_tail_mem h'), MoorePath.map_trans]
+    congr 1
+    · rw [MoorePath.map_rescale, MoorePath.map_ofUnitPath, ← hF 0]
+      simp only [Function.comp_apply]
+    · exact ih (Fin.tail q) (Fin.tail ℓ) (forall_tail_mem h)
+        (fun i ↦ by simpa only [Fin.tail, Fin.succ_castSucc] using h' i.succ) fun i ↦ by
+        simpa only [Fin.tail, Fin.succ_castSucc] using hF i.succ
+
+/-- **Broken segments run at unit speed.** In `ℝ`, with the segments as interpolating paths, the
+broken Moore path through points `v 0, …, v n` whose durations are the steps
+`ℓ i = v (i + 1) - v i` is at `v 0 + min t (∑ i, ℓ i)` at time `t`. -/
+theorem brokenMoorePath_segment_apply {n : ℕ} (v : Fin (n + 1) → ℝ) (ℓ : Fin n → ℝ≥0)
+    (h : ∀ i : Fin n, (v i.castSucc, v i.succ) ∈ (univ : Set (ℝ × ℝ)) ∧
+      (ℓ i = 0 → v i.castSucc = v i.succ))
+    (hv : ∀ i : Fin n, v i.succ = v i.castSucc + ℓ i) (t : ℝ≥0) :
+    brokenMoorePath isPathInterpolation_segment n v ℓ h t = v 0 + min (t : ℝ) (∑ i, ℓ i : ℝ≥0) := by
+  induction n generalizing t with
+  | zero => simp
+  | succ n ih =>
+    rw [brokenMoorePath_succ _ n v ℓ h (forall_tail_mem h), MoorePath.trans_apply,
+      MoorePath.length_rescale, Fin.sum_univ_succ]
+    split_ifs with ht
+    · -- On the first arc, the segment from `v 0` to `v 1` runs at unit speed.
+      rw [min_eq_left (by exact_mod_cast ht.trans le_self_add)]
+      rcases eq_or_ne (ℓ 0) 0 with h0 | h0
+      · rw [h0, nonpos_iff_eq_zero] at ht
+        rw [ht, h0, MoorePath.rescale_zero, MoorePath.refl_apply, MoorePath.source_ofUnitPath]
+        simp
+      · have hpos : (0 : ℝ) < ℓ 0 := by exact_mod_cast pos_iff_ne_zero.2 h0
+        have hle : (t : ℝ) / ℓ 0 ≤ 1 := (div_le_one hpos).2 (by exact_mod_cast ht)
+        have h1 : v 1 = v 0 + ℓ 0 := by simpa using hv 0
+        rw [MoorePath.rescale_apply, MoorePath.length_ofUnitPath, one_mul,
+          MoorePath.ofUnitPath_apply, NNReal.coe_div, projIcc_of_mem _ ⟨by positivity, hle⟩]
+        simp only [Fin.castSucc_zero, Fin.succ_zero_eq_one]
+        simp only [ContinuousMap.coe_mk, Path.segment_apply, AffineMap.lineMap_apply_module,
+          smul_eq_mul]
+        field_simp
+        rw [h1]
+        ring
+    · -- After the first arc, the rest runs at unit speed from `v 1`.
+      have ht' : ℓ 0 < t := not_le.1 ht
+      rw [ih (Fin.tail v) (Fin.tail ℓ) (forall_tail_mem h) (fun i ↦ by
+        simpa only [Fin.tail, Fin.succ_castSucc] using hv i.succ)]
+      have h1 : Fin.tail v 0 = v 0 + ℓ 0 := by simpa [Fin.tail] using hv 0
+      rw [h1, NNReal.coe_sub ht'.le, NNReal.coe_add, add_assoc, ← min_add_add_left,
+        add_sub_cancel]
+      simp only [Fin.tail]
 
 end Broken
 

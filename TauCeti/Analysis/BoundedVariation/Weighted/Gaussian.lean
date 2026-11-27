@@ -20,8 +20,9 @@ Gaussian measure `ProbabilityTheory.stdGaussian E`
 `TauCeti.Probability.stdGaussian_eq_withDensity_norm`.
 
 Consequences: the Gaussian density `e^{−W}` is Lebesgue integrable
-(`TauCeti.integrable_exp_neg_gaussianWeight`), and the Gaussian measure of a translate `v + A` is
-`∫_A e^{−⟨y, v⟩ − ‖v‖² / 2} e^{−W(y)} dy` (`TauCeti.measureReal_stdGaussian_vadd`).
+(`TauCeti.integrable_exp_neg_gaussianWeight`), and so is `⟪x, w⟫ e^{−W(x)}`
+(`TauCeti.integrable_inner_mul_exp_neg_gaussianWeight`); the Gaussian measure of a translate `v + A`
+is `∫_A e^{−⟨y, v⟩ − ‖v‖² / 2} e^{−W(y)} dy` (`TauCeti.measureReal_stdGaussian_vadd`).
 -/
 
 public section
@@ -49,6 +50,18 @@ theorem integrable_exp_neg_gaussianWeight :
     Integrable fun x : E => Real.exp (-gaussianWeight E x) :=
   MeasureTheory.integrable_of_eq_withDensity withDensity_exp_neg_gaussianWeight.symm
     continuous_exp_neg_gaussianWeight.aemeasurable (ae_of_all _ fun _ => (Real.exp_pos _).le)
+
+/-- For every `w`, the function `x ↦ ⟪x, w⟫ e^{−W(x)}` is Lebesgue integrable: the linear form
+`⟪·, w⟫` is integrable against the standard Gaussian measure. -/
+theorem integrable_inner_mul_exp_neg_gaussianWeight (w : E) :
+    Integrable fun x : E => ⟪x, w⟫ * Real.exp (-gaussianWeight E x) := by
+  have h := ProbabilityTheory.IsGaussian.integrable_dual (ProbabilityTheory.stdGaussian E)
+    (innerSL ℝ w)
+  rw [← withDensity_exp_neg_gaussianWeight, MeasureTheory.integrable_withDensity_ofReal_iff
+    continuous_exp_neg_gaussianWeight.aemeasurable
+    (ae_of_all _ fun _ => (Real.exp_pos _).le)] at h
+  refine h.congr (ae_of_all _ fun x => ?_)
+  simp [real_inner_comm, mul_comm]
 
 /-- The Gaussian measure of a translate `v + A`, as an integral over `A`. -/
 theorem measureReal_stdGaussian_vadd (v : E) {A : Set E} (hA : NullMeasurableSet A) :

@@ -30,6 +30,10 @@ simple-pole factor `1 / (σ + i t - 1)` for `σ > 1`.
 
 * `TauCeti.tendsto_fourierCoeff_cofinite`, `TauCeti.tendsto_fourierCoeffOn_cofinite`: the Fourier
   coefficients of any function on the circle, or on an interval, tend to `0` as `n → ±∞`.
+* `TauCeti.tendsto_integral_exp_sum_mul_I_smul_cocompact`,
+  `TauCeti.tendsto_integral_exp_sum_int_mul_I_smul_cofinite`: the Fourier integrals
+  `∫ e^{i ∑ᵢ ξᵢxᵢ} f(x) dx` of any function on `ℝ^ι` tend to `0` as `ξ → ∞` in `ℝ^ι`, or in
+  `ℤ^ι`.
 * `MeasureTheory.Integrable.tendsto_integral_sin_smul_atTop`: sine-modulated integrals
   tend to zero as the real frequency tends to positive infinity.
 
@@ -134,6 +138,50 @@ theorem integrable_inv_sub_one_mul_mul_cpow {psi : ℝ → ℂ} {x sigma : ℝ} 
     ((continuous_const.div (by fun_prop) hdenom).mul
       (continuous_cpow_mul_I hx)).aestronglyMeasurable (.of_forall hpolebound)).congr
     (.of_forall fun t ↦ by ring)
+
+/-- The linear map `x ↦ -(2π)⁻¹ ∑ᵢ xᵢ ⬝ᵢ` from `ℝ^ι` to its dual, sending `x` to the frequency
+of the character `e^{i ∑ᵢ xᵢyᵢ}` in the normalization of `Real.fourierChar`. It is Mathlib's
+`dotProductEquiv`, scaled by `-(2π)⁻¹`. -/
+private noncomputable def charFreq (ι : Type*) [Fintype ι] [DecidableEq ι] :
+    (ι → ℝ) →ₗ[ℝ] StrongDual ℝ (ι → ℝ) :=
+  -(2 * π)⁻¹ • (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ (dotProductEquiv ℝ ι).toLinearMap)
+
+private theorem charFreq_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (x y : ι → ℝ) :
+    charFreq ι x y = -(2 * π)⁻¹ * ∑ i, x i * y i := by
+  simp [charFreq, dotProduct]
+
+private theorem charFreq_injective (ι : Type*) [Fintype ι] [DecidableEq ι] :
+    Function.Injective (charFreq ι) :=
+  (smul_right_injective (StrongDual ℝ (ι → ℝ)) (r := -(2 * π)⁻¹)
+    (by simp [Real.pi_ne_zero])).comp
+    (LinearMap.toContinuousLinearMap.injective.comp (dotProductEquiv ℝ ι).injective)
+
+/-- **Riemann--Lebesgue on `ℝ^ι`**: the Fourier integrals `∫ e^{i ∑ᵢ ξᵢxᵢ} f(x) dx` of any
+function `f` on `ℝ^ι`, for a finite index type `ι`, tend to `0` as the real frequency `ξ → ∞` in
+`ℝ^ι`. If `f` is not integrable, every integral is `0`. -/
+theorem tendsto_integral_exp_sum_mul_I_smul_cocompact {ι : Type*} [Fintype ι]
+    (f : (ι → ℝ) → E) :
+    Tendsto (fun ξ : ι → ℝ ↦ ∫ x, exp ((∑ i, ξ i * x i : ℝ) * I) • f x) (cocompact (ι → ℝ))
+      (𝓝 0) := by
+  classical
+  refine ((tendsto_integral_exp_smul_cocompact f volume).comp
+    ((charFreq ι).isClosedEmbedding_of_injective
+      (LinearMap.ker_eq_bot.2 (charFreq_injective ι))).tendsto_cocompact).congr
+    fun ξ ↦ integral_congr_ae (.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [Circle.smul_def, Real.fourierChar_apply, charFreq_apply]
+  congr 3
+  field_simp
+
+/-- **Riemann--Lebesgue on `ℝ^ι` along `ℤ^ι`**: the Fourier integrals `∫ e^{i ∑ᵢ dᵢxᵢ} f(x) dx`
+of any function `f` on `ℝ^ι`, for a finite index type `ι`, tend to `0` as `d → ∞` in `ℤ^ι`. This
+is `tendsto_integral_exp_sum_mul_I_smul_cocompact` restricted to the closed lattice `ℤ^ι`. -/
+theorem tendsto_integral_exp_sum_int_mul_I_smul_cofinite {ι : Type*} [Fintype ι]
+    (f : (ι → ℝ) → E) :
+    Tendsto (fun d : ι → ℤ ↦ ∫ x, exp ((∑ i, d i * x i : ℝ) * I) • f x) cofinite (𝓝 0) := by
+  rw [← cocompact_eq_cofinite]
+  exact (tendsto_integral_exp_sum_mul_I_smul_cocompact f).comp
+    (Topology.IsClosedEmbedding.piMap fun _ ↦ Int.isClosedEmbedding_coe_real).tendsto_cocompact
 
 end TauCeti
 

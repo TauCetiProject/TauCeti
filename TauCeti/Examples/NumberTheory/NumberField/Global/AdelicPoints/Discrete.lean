@@ -52,8 +52,6 @@ theorem not_discreteTopology_range_algebraMap :
     |>.discreteTopology_iff_finite_inter_of_isCompact FiniteAdeleRing.isCompact_integralAdeles
     ((FiniteAdeleRing.isOpen_integralAdeles (𝓞 K) K).mem_nhds
       (FiniteAdeleRing.integralAdeles (𝓞 K) K).zero_mem)).mp h
-  obtain ⟨v⟩ : Nonempty (HeightOneSpectrum (𝓞 K)) := inferInstance
-  have : Nontrivial 𝔸ᶠ[K] := (FiniteAdeleRing.proj_surjective (K := K) v).nontrivial
   have : CharZero 𝔸ᶠ[K] := charZero_of_injective_algebraMap (algebraMap K 𝔸ᶠ[K]).injective
   refine Set.infinite_of_injective_forall_mem (f := fun n : ℕ ↦ (n : 𝔸ᶠ[K])) Nat.cast_injective
     (fun n ↦ ?_) hfin

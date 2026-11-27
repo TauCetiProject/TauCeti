@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 public import Mathlib.Analysis.Convolution
-import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+public import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
 
 /-!
@@ -476,7 +476,7 @@ theorem MemBMO.uniformContinuous_convolution (hf : MemBMO f μ) {ψ : E → ℝ}
 
 /-- Mollifying by the normalized bump `φ.normed μ` of outer radius `φ.rOut ≤ 2 φ.rIn` moves `f`
 in BMO by at most `(3 + 4ⁿ⁺¹ 2ⁿ) η_f(φ.rOut)`. -/
-private theorem bmoSeminorm_sub_normed_convolution_le (φ : ContDiffBump (0 : E))
+theorem bmoSeminorm_sub_normed_convolution_le (φ : ContDiffBump (0 : E))
     (hφ : φ.rOut ≤ 2 * φ.rIn) (hf : LocallyIntegrable f μ) :
     bmoSeminorm (f - φ.normed μ ⋆[lsmul ℝ ℝ, μ] f) μ ≤
       (3 + 4 ^ (finrank ℝ E + 1) * 2 ^ finrank ℝ E) * vmoModulus f μ φ.rOut := by

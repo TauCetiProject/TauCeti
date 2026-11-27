@@ -185,7 +185,7 @@ private def kroneckerTensorEquiv (p q : ℕ)
         Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :=
   haveI := hp
   TensorProduct.congr
-      ((X.singularKroneckerEquivOfProjectiveHomology _ _ p).trans ModuleCat.homLinearEquiv)
+      (X.singularKroneckerLinearEquivOfProjectiveHomology _ _ p)
       (LinearEquiv.refl k _) ≪≫ₗ
     dualTensorHomEquiv k _ _
 
