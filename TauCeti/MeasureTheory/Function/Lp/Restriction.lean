@@ -223,14 +223,20 @@ theorem MemLp.coeFn_toLp_indicator_restrict {E F : Type*} [MeasurableSpace E]
   filter_upwards [ae_restrict_of_ae hf.coeFn_toLp, ae_restrict_mem hW] with x h₁ h₂
   rw [h₁, Set.indicator_of_mem (hWs h₂)]
 
+/-- On a subset `s ⊆ Ω`, the `Lᵖ` seminorm of an element of `Lᵖ(Ω)` is finite. -/
+theorem Lp.eLpNorm_restrict_ne_top {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F]
+    {μ : Measure α} {p : ENNReal} {Ω : Set α} (g : Lp F p (μ.restrict Ω)) {s : Set α}
+    (hs : s ⊆ Ω) : eLpNorm g p (μ.restrict s) ≠ ⊤ :=
+  ((eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl)).trans_lt (Lp.eLpNorm_lt_top g)).ne
+
 /-- On nested sets `s ⊆ t ⊆ Ω`, the `Lᵖ` seminorm on `s` of an element of `Lᵖ(Ω)` is at most its
 seminorm on `t`; both are finite, so the inequality holds for their real values. -/
 theorem Lp.toReal_eLpNorm_restrict_mono {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F]
     {μ : Measure α} {p : ENNReal} {Ω : Set α} (g : Lp F p (μ.restrict Ω)) {s t : Set α}
     (hst : s ⊆ t) (htΩ : t ⊆ Ω) :
     (eLpNorm g p (μ.restrict s)).toReal ≤ (eLpNorm g p (μ.restrict t)).toReal :=
-  ENNReal.toReal_mono ((eLpNorm_mono_measure _ (Measure.restrict_mono htΩ le_rfl)).trans_lt
-    (Lp.eLpNorm_lt_top g)).ne (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
+  ENNReal.toReal_mono (Lp.eLpNorm_restrict_ne_top g htΩ)
+    (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
 
 /-- On a subset `s ⊆ Ω`, the `Lᵖ` seminorm of an element of `Lᵖ(Ω)` is at most its norm. -/
 theorem Lp.toReal_eLpNorm_restrict_le_norm {α F : Type*} [MeasurableSpace α]

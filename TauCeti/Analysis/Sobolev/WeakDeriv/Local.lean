@@ -41,7 +41,8 @@ uniqueness-based gluing is the only one that needs finite dimension; the cutoff 
 * `hasWeakFDerivOn_iff_forall_isCompact_closure`: detection of weak Fréchet derivatives.
 * `hasWeakLineDerivOn_iff_locally` and `hasWeakFDerivOn_iff_locally`: neighborhood locality.
 * `hasWeakLineDerivOn_iSup_iff` and `hasWeakFDerivOn_iSup_iff`: open-cover locality.
-* `exists_hasWeakFDerivOn_iSup`: gluing local derivative fields up to almost-everywhere equality.
+* `exists_hasWeakLineDerivOn_iSup` and `exists_hasWeakFDerivOn_iSup`: gluing local derivatives
+  up to almost-everywhere equality.
 * `exists_hasWeakFDerivOn_iff_locally`: local existence is equivalent to global existence.
 * `HasWeakFDerivOn.exists_open_memLp_indicator`: a compact subset of the domain has an open
   neighborhood on which the weakly differentiable pair is integrable, with compactly supported
@@ -208,6 +209,36 @@ end OpenCover
 section Gluing
 
 variable [FiniteDimensional ℝ E] [BorelSpace E] [CompleteSpace F]
+
+/-- Local weak derivatives of the same function in the same direction glue along any open cover.
+The glued derivative agrees almost everywhere with each local one; overlap compatibility follows
+from uniqueness of weak derivatives. The cover may be uncountable or empty. -/
+theorem exists_hasWeakLineDerivOn_iSup {ι : Type*} (V : ι → Opens E) (w : ι → E → F)
+    (h : ∀ i, HasWeakLineDerivOn μ (V i) u (w i) v) :
+    ∃ u' : E → F, HasWeakLineDerivOn μ (⨆ i, V i) u u' v ∧
+      ∀ i, u' =ᵐ[μ.restrict (V i)] w i := by
+  classical
+  obtain ⟨T, hTc, hT⟩ := isOpen_iUnion_countable (fun i ↦ (V i : Set E))
+    (fun i ↦ (V i).isOpen)
+  have hex : ∃ u' : E → F, HasWeakLineDerivOn μ (⨆ i, V i) u u' v := by
+    by_cases hne : T.Nonempty
+    · obtain ⟨f, hf⟩ := hTc.exists_eq_range hne
+      have hcover : (⨆ n, V (f n)) = ⨆ i, V i := by
+        apply SetLike.coe_injective
+        simpa only [Opens.coe_iSup, hf, biUnion_range] using hT
+      obtain ⟨u', hu'⟩ := exists_forall_ae_eq_restrict_of_ae_eq_restrict_inter
+        (fun n ↦ (V (f n)).isOpen.measurableSet) (a := fun n ↦ w (f n))
+        (fun k m ↦ ((h (f k)).mono (Ω' := V (f k) ⊓ V (f m)) inf_le_left).ae_eq
+          ((h (f m)).mono inf_le_right))
+      refine ⟨u', hcover ▸ (hasWeakLineDerivOn_iSup_iff (fun n ↦ V (f n))).2 (fun n ↦ ?_)⟩
+      exact (h (f n)).congr_ae_deriv (hu' n).symm
+    · have hempty : (⨆ i, V i : Opens E) = ⊥ := by
+        apply SetLike.coe_injective
+        simpa [Opens.coe_iSup, not_nonempty_iff_eq_empty.mp hne] using hT.symm
+      refine ⟨0, hasWeakLineDerivOn_iff_locally.2 ?_⟩
+      simp [hempty]
+  obtain ⟨u', hu'⟩ := hex
+  exact ⟨u', hu', fun i ↦ (hu'.mono (le_iSup V i)).ae_eq (h i)⟩
 
 /-- Local weak Fréchet derivatives of the same function glue along any open cover. The glued
 field agrees almost everywhere with each local field; overlap compatibility follows from
