@@ -87,23 +87,24 @@ theorem smulDet_eq_symm_apply_of_map_smul {V' : Type*} [AddCommGroup V'] [Module
   let eE : V ≃ₛₗ[(σ.symm : E →+* E)] V' :=
     { e.symm.toAddEquiv with
       map_smul' c v := e.injective (by simp [he]) }
-  have heE (v : V) : eE v = e.symm v := rfl
+  -- `eE` is `k`-linear, since `e` is.
+  have hk (a : k) (v : V) : eE (a • v) = a • eE v := e.symm.map_smul a v
   rw [smulDet_apply, smulDet_apply]
   by_cases H : ∃ s : Finset V, Nonempty (Module.Basis s E V)
   · classical
     obtain ⟨s, ⟨b⟩⟩ := H
     let b' := b.mapₛₗ eE
+    have hb' (j : s) : b' j = eE (b j) := b.mapₛₗ_apply eE j
     -- `eE` applies `σ⁻¹` to the coordinates in `b` and reads the result in `b'`.
-    have hb (v : V) : eE v = b.semilinearMap σ.symm b' v :=
-      LinearMap.congr_fun (b.ext (f₁ := (eE : V →ₛₗ[(σ.symm : E →+* E)] V')) fun i ↦ by
-        simp [b']) v
+    have hb (v : V) (i : s) : b'.repr (eE v) i = σ.symm (b.repr v i) := by
+      have h : eE v = b.semilinearMap σ.symm b' v :=
+        LinearMap.congr_fun (b.ext (f₁ := (eE : V →ₛₗ[(σ.symm : E →+* E)] V')) fun j ↦ by
+          simp [hb']) v
+      simp [h]
     rw [← LinearMap.det_toMatrix b, ← LinearMap.det_toMatrix b', RingEquiv.map_det]
     congr 1
     ext i j
-    rw [RingEquiv.mapMatrix_apply, Matrix.map_apply, LinearMap.toMatrix_apply,
-      LinearMap.toMatrix_apply, DistribSMul.toLinearMap_apply, DistribSMul.toLinearMap_apply,
-      Module.Basis.mapₛₗ_apply, heE, ← e.symm.map_smul, ← heE, hb,
-      Module.Basis.repr_semilinearMap_apply, RingEquiv.coe_toRingHom]
+    simp [LinearMap.toMatrix_apply, hb', ← hk, hb]
   · have H' : ¬∃ s : Finset V', Nonempty (Module.Basis s E V') := fun ⟨s, ⟨b⟩⟩ ↦ by
       classical
       exact H ⟨_, ⟨(b.mapₛₗ eE.symm).reindexFinsetRange⟩⟩

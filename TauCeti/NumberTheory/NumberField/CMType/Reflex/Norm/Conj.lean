@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.CMField
-public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Norm
+public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Norm.Basic
 import TauCeti.RingTheory.Unramified.TraceRepresentation
 
 /-!
@@ -55,34 +55,17 @@ theorem reflexNorm_star_apply (Φ : CMType E) (hk : Φ.reflexField ≤ k) (σ : 
   -- The representations `V` and `V'` with the type traces of `Φ` and `ιΦ`.
   obtain ⟨n, ρ, hρ⟩ := Φ.exists_trace_eq_typeTrace hk
   obtain ⟨n', ρ', hρ'⟩ := (star Φ).exists_trace_eq_typeTrace (reflexField_star Φ ▸ hk)
-  let V := Fin n → k
-  let V' := Fin n' → k
-  let := Module.compHom V ρ
-  have := SMul.comp.smulCommClass (α := V) (β := k) ρ
-  let := Module.compHom V' ρ'
-  have := SMul.comp.smulCommClass (α := V') (β := k) ρ'
-  have hV (c : E) : (LinearMap.trace k V (DistribSMul.toLinearMap k V c) : ℂ) = Φ.typeTrace c := by
-    rw [DistribSMul.toLinearMap_compHom]
-    exact hρ c
-  have hV' (c : E) : (LinearMap.trace k V' (DistribSMul.toLinearMap k V' c) : ℂ) =
-      (star Φ).typeTrace c := by
-    rw [DistribSMul.toLinearMap_compHom]
-    exact hρ' c
   -- Twisted by `σ`, `V` has the type trace of `ιΦ`: `typeTrace_Φ(σ c) = typeTrace_{ιΦ}(c)`.
-  have htw (c : E) : LinearMap.trace k V' (ρ' c) = LinearMap.trace k V (ρ (σ c)) := by
-    refine Subtype.ext ((hρ' c).trans ?_)
-    rw [hρ, typeTrace_apply, typeTrace_apply, coe_star_eq_image,
-      finsum_mem_image star_injective.injOn]
-    exact finsum_congr fun φ ↦ finsum_congr fun _ ↦ (RingHom.congr_fun (hσ φ) c).symm
   obtain ⟨e, he⟩ := exists_linearEquiv_of_trace_eq (R := ℚ) ρ'.toRatAlgHom
-    (ρ.comp σ.toRingHom).toRatAlgHom fun c ↦ by
-      rw [RingHom.toRatAlgHom_apply, RingHom.toRatAlgHom_apply]
-      exact htw c
-  rw [reflexNorm_eq_smulDet Φ hk V hV, reflexNorm_eq_smulDet (star Φ) _ V' hV']
-  refine smulDet_eq_symm_apply_of_map_smul σ e (fun c v ↦ ?_) a
-  have := he c v
-  rw [RingHom.toRatAlgHom_apply, RingHom.toRatAlgHom_apply] at this
-  exact this
+    (ρ.comp σ.toRingHom).toRatAlgHom fun c ↦ Subtype.ext <|
+      (hρ' c).trans ((typeTrace_star_eq_typeTrace_apply Φ hσ c).trans (hρ (σ c)).symm)
+  rw [reflexNorm_eq_smulDet_compHom Φ hk ρ hρ, reflexNorm_eq_smulDet_compHom (star Φ) _ ρ' hρ']
+  -- `E` acts on `V` and `V'` through `ρ` and `ρ'`, and `e` is `σ`-semilinear for these actions.
+  let := Module.compHom (Fin n → k) ρ
+  have := SMul.comp.smulCommClass (α := Fin n → k) (β := k) ρ
+  let := Module.compHom (Fin n' → k) ρ'
+  have := SMul.comp.smulCommClass (α := Fin n' → k) (β := k) ρ'
+  exact smulDet_eq_symm_apply_of_map_smul σ e he a
 
 end FormallyUnramified
 
