@@ -7,9 +7,6 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Garding
-import Mathlib.Analysis.Convex.Deriv
-import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import Mathlib.Topology.Algebra.Order.Polynomial
 import TauCeti.Algebra.BigOperators.Perm
 import TauCeti.Analysis.MvPolynomial.Hyperbolic.Concave
 
@@ -28,7 +25,9 @@ is `-s • e` with `s ≥ 0`, which is not in `Γ` since `p(-s • e + s • e) 
 
 If moreover `b` lies in the closure of the cone and `σ_1(b) > 0`, then the directional
 derivative `D_b p = ∑ᵢ bᵢ ∂p/∂Xᵢ` is positive on `Γ`
-(`MvPolynomial.IsHyperbolic.eval_sum_smul_pderiv_pos_of_mem_closure`). In particular, if the
+(`MvPolynomial.IsHyperbolic.eval_sum_smul_pderiv_pos_of_mem_closure_of_sum_pos`). This follows
+from the general `MvPolynomial.IsHyperbolic.eval_sum_smul_pderiv_pos_of_mem_closure`, since
+`σ_1 ≥ 0` on the closure of `Γ` puts `-b` outside it. In particular, if the
 coordinate vector `eᵢ` lies in the closure of the cone, then `∂p/∂Xᵢ > 0` on `Γ`
 (`MvPolynomial.IsHyperbolic.eval_pderiv_pos_of_single_mem_closure`). By
 `MvPolynomial.IsHyperbolic.setOf_forall_pos_subset_iff`, this condition for every `i` says that
@@ -40,22 +39,10 @@ that contains `(1, 0.7)`, where `∂p/∂x = -0.4`.
 
 * `MvPolynomial.IsHyperbolic.sum_pos_of_mem_gardingCone`: for symmetric `p` of degree `m ≥ 1`,
   `σ_1 > 0` on `Γ(p, e)`.
-* `MvPolynomial.IsHyperbolic.eval_sum_smul_pderiv_pos_of_mem_closure`: for symmetric `p` of
-  degree `m ≥ 1`, `b ∈ closure Γ(p, e)` and `σ_1(b) > 0`, `D_b p > 0` on `Γ(p, e)`.
+* `MvPolynomial.IsHyperbolic.eval_sum_smul_pderiv_pos_of_mem_closure_of_sum_pos`: for symmetric
+  `p` of degree `m ≥ 1`, `b ∈ closure Γ(p, e)` and `σ_1(b) > 0`, `D_b p > 0` on `Γ(p, e)`.
 * `MvPolynomial.IsHyperbolic.eval_pderiv_pos_of_single_mem_closure`: for symmetric `p` of degree
   `m ≥ 1` and `eᵢ ∈ closure Γ(p, e)`, `∂p/∂Xᵢ > 0` on `Γ(p, e)`.
-
-## Implementation notes
-
-For the derivative, fix `x ∈ Γ` and let `q(t) = p(x + t • b)`. The ray `x + t • b`, `t ≥ 0`, lies
-in `Γ`, since `Γ + closure Γ ⊆ Γ` (`MvPolynomial.IsHyperbolic.add_mem_gardingCone_of_mem_closure`),
-so `t ↦ q(t)^{1/m}` is concave on `[0, ∞)` by Gårding's theorem
-(`MvPolynomial.IsHyperbolic.concaveOn_rpow`). If `q'(0) ≤ 0`, concavity gives `0 < q(t) ≤ q(0)`
-for `t ≥ 0`, and a polynomial bounded on a half-line is constant
-(`Polynomial.isBoundedUnder_abs_atTop_iff`). Then the whole line `x + ℝ • b` avoids the zeros of
-`p`; it meets `Γ` at `x` and `Γ` is closed in `{p ≠ 0}`
-(`MvPolynomial.IsHyperbolic.mem_gardingCone_of_mem_closure`), so the line lies in `Γ`. This
-contradicts `σ_1 > 0` on `Γ`, since `σ_1(x + t • b) = σ_1(x) + t σ_1(b)` with `σ_1(b) > 0`.
 
 ## References
 
@@ -105,73 +92,19 @@ theorem sum_pos_of_mem_gardingCone (hp : IsHyperbolic p m 1) (hm : 1 ≤ m) (hsy
     nlinarith [show (0 : ℝ) < Fintype.card (Equiv.Perm σ) by exact_mod_cast Fintype.card_pos]
   exact smul_notMem_gardingCone hp.isHomogeneous (by omega) hy₀ (hyc ▸ hy)
 
-/-- A real polynomial `q`, positive on `[0, ∞)`, with `q^{1/m}` concave there for some `m ≥ 1` and
-`q'(0) ≤ 0`, satisfies `q(t) ≤ q(0)` for `t ≥ 0`. -/
-private theorem eval_le_eval_zero_of_concaveOn_rpow {q : Polynomial ℝ} {m : ℕ} (hm : 1 ≤ m)
-    (hpos : ∀ t, 0 ≤ t → 0 < q.eval t)
-    (hconc : ConcaveOn ℝ (Ici 0) fun t ↦ q.eval t ^ (m : ℝ)⁻¹) (hle : q.derivative.eval 0 ≤ 0)
-    {t : ℝ} (ht : 0 ≤ t) : q.eval t ≤ q.eval 0 := by
-  rcases ht.eq_or_lt with rfl | ht
-  · exact le_rfl
-  have hderiv := (q.hasDerivAt 0).rpow_const (p := (m : ℝ)⁻¹) (Or.inl (hpos 0 le_rfl).ne')
-  have hs := hconc.slope_le_of_hasDerivAt (mem_Ici.2 le_rfl) (mem_Ici.2 ht.le) ht hderiv
-  rw [slope_def_field, sub_zero] at hs
-  have hd : q.derivative.eval 0 * (m : ℝ)⁻¹ * q.eval 0 ^ ((m : ℝ)⁻¹ - 1) ≤ 0 :=
-    mul_nonpos_of_nonpos_of_nonneg (mul_nonpos_of_nonpos_of_nonneg hle (by positivity))
-      (Real.rpow_nonneg (hpos 0 le_rfl).le _)
-  have : q.eval t ^ (m : ℝ)⁻¹ ≤ q.eval 0 ^ (m : ℝ)⁻¹ := by
-    have := (div_le_iff₀ ht).1 (hs.trans hd)
-    linarith
-  have hm' : (0 : ℝ) < (m : ℝ)⁻¹ := inv_pos.2 (by exact_mod_cast hm)
-  exact (Real.rpow_le_rpow_iff (hpos t ht.le).le (hpos 0 le_rfl).le hm').1 this
-
 /-- **Positivity of the directional derivatives on a symmetric Gårding cone.** Let `p` be a
 symmetric polynomial, hyperbolic of degree `m ≥ 1` in the direction `e = (1, …, 1)`, and let `b`
 lie in the closure of the Gårding cone `Γ(p, e)` with `σ_1(b) > 0`. Then the directional
 derivative `D_b p = ∑ᵢ bᵢ ∂p/∂Xᵢ` is positive on `Γ(p, e)`. -/
-theorem eval_sum_smul_pderiv_pos_of_mem_closure (hp : IsHyperbolic p m 1) (hm : 1 ≤ m)
-    (hsymm : p.IsSymmetric) {b : σ → ℝ} (hb : b ∈ closure (gardingCone p 1))
+theorem eval_sum_smul_pderiv_pos_of_mem_closure_of_sum_pos (hp : IsHyperbolic p m 1)
+    (hm : 1 ≤ m) (hsymm : p.IsSymmetric) {b : σ → ℝ} (hb : b ∈ closure (gardingCone p 1))
     (hb0 : 0 < ∑ j, b j) {x : σ → ℝ} (hx : x ∈ gardingCone p 1) :
     0 < eval x (∑ i, b i • pderiv i p) := by
-  -- The ray `x + t • b`, `t ≥ 0`, lies in the cone, since `Γ + closure Γ ⊆ Γ`.
-  have hray (t : ℝ) (ht : 0 ≤ t) : x + t • b ∈ gardingCone p 1 := by
-    rcases ht.eq_or_lt with rfl | ht
-    · simpa using hx
-    convert smul_mem_gardingCone hp.isHomogeneous (hp.add_mem_gardingCone_of_mem_closure
-      (smul_mem_gardingCone hp.isHomogeneous hx (inv_pos.2 ht)) hb) ht using 1
-    match_scalars <;> field_simp
-  -- The restriction `q(t) = p(x + t • b)` is positive on `[0, ∞)`, with `q'(0) = D_b p (x)`.
-  set q := aeval (fun j ↦ Polynomial.C (x j) + Polynomial.C (b j) * Polynomial.X) p
-  have hq (t : ℝ) : q.eval t = eval (x + t • b) p := eval_aeval_C_add_C_mul_X p x b t
-  have hq' : q.derivative.eval 0 = eval x (∑ i, b i • pderiv i p) := by
-    rw [derivative_aeval_C_add_C_mul_X, eval_aeval_C_add_C_mul_X, zero_smul, add_zero]
-  have hpos (t : ℝ) (ht : 0 ≤ t) : 0 < q.eval t :=
-    hq t ▸ eval_pos_of_mem_gardingCone hp.isHomogeneous hp.eval_pos (hray t ht)
-  by_contra! hle
-  -- `q^{1/m}` is concave on `[0, ∞)` by Gårding's theorem, so `q` is bounded there, hence constant.
-  have hconc : ConcaveOn ℝ (Ici 0) fun t ↦ q.eval t ^ (m : ℝ)⁻¹ := by
-    refine ((hp.concaveOn_rpow.comp_affineMap (AffineMap.lineMap x (x + b))).subset
-      (fun t ht ↦ ?_) (convex_Ici 0)).congr fun t _ ↦ ?_
-    · simpa [AffineMap.lineMap_apply_module', add_comm] using hray t ht
-    · simp [AffineMap.lineMap_apply_module', hq, add_comm]
-  have hdeg : q.degree ≤ 0 := Polynomial.isBoundedUnder_abs_atTop_iff.1
-    ⟨q.eval 0, Filter.eventually_map.2 <| (Filter.eventually_ge_atTop 0).mono fun t ht ↦ by
-      rw [abs_of_pos (hpos t ht)]
-      exact eval_le_eval_zero_of_concaveOn_rpow hm hpos hconc (hq' ▸ hle) ht⟩
-  have hne (t : ℝ) : eval (x + t • b) p ≠ 0 := by
-    rw [← hq, Polynomial.eq_C_of_degree_le_zero hdeg, Polynomial.eval_C]
-    simpa [Polynomial.coeff_zero_eq_eval_zero] using (hpos 0 le_rfl).ne'
-  -- So the whole line `x + ℝ • b` lies in the cone, which contradicts `σ_1 > 0` on the cone.
-  have hcont : Continuous fun t : ℝ ↦ x + t • b := by fun_prop
-  have hclopen : IsClopen {t : ℝ | x + t • b ∈ gardingCone p 1} :=
-    ⟨isClosed_of_closure_subset fun t ht ↦ hp.mem_gardingCone_of_mem_closure
-      (map_mem_closure (f := fun t : ℝ ↦ x + t • b) (t := gardingCone p 1) hcont ht
-        fun _ hs ↦ hs) (hne t),
-      (isOpen_gardingCone hp.isHomogeneous hp.eval_pos.ne').preimage hcont⟩
-  have hline := hclopen.eq_univ ⟨0, by simpa using hx⟩ ▸ mem_univ (-(∑ j, x j + 1) / ∑ j, b j)
-  have hsum := hp.sum_pos_of_mem_gardingCone hm hsymm hline
-  simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_add_distrib,
-    ← Finset.mul_sum, div_mul_cancel₀ _ hb0.ne'] at hsum
+  -- `σ_1 > 0` on the cone, hence `σ_1 ≥ 0` on its closure, so `-b` is not in the closure.
+  refine hp.eval_sum_smul_pderiv_pos_of_mem_closure hm hb (fun hb' ↦ ?_) hx
+  have := closure_minimal (fun y hy ↦ (hp.sum_pos_of_mem_gardingCone hm hsymm hy).le)
+    (isClosed_le continuous_const (by fun_prop)) hb'
+  simp only [mem_ofPred_eq, Pi.neg_apply, Finset.sum_neg_distrib] at this
   linarith
 
 omit [Fintype σ] in
@@ -184,6 +117,7 @@ theorem eval_pderiv_pos_of_single_mem_closure [Finite σ] [DecidableEq σ] (hp :
     (hi : (Pi.single i 1 : σ → ℝ) ∈ closure (gardingCone p 1)) {x : σ → ℝ}
     (hx : x ∈ gardingCone p 1) : 0 < eval x (pderiv i p) := by
   have := Fintype.ofFinite σ
-  simpa [Pi.single_apply] using hp.eval_sum_smul_pderiv_pos_of_mem_closure hm hsymm hi (by simp) hx
+  simpa [Pi.single_apply] using
+    hp.eval_sum_smul_pderiv_pos_of_mem_closure_of_sum_pos hm hsymm hi (by simp) hx
 
 end MvPolynomial.IsHyperbolic
