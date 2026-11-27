@@ -30,7 +30,7 @@ logarithm series of `K`, which depend only on the topology, are then the same fo
 the valuation, and normed estimates for them apply verbatim in the valuation setting.
 
 Consequently a norm bound `‖x‖ ≤ p ^ (-r / e)` is the valuation bound `r ≤ v_K(x)`, read in the
-real-valued valuation `realAddValuation K`, with `v_K(0) = ⊤`.
+real-valued valuation `(ValuativeRel.valuation K).realAddVal`, with `v_K(0) = ⊤`.
 
 The structures are named definitions rather than global instances, so that installing them is
 always local; they are meant to be used as `letI := padicNormedField K p`.
@@ -144,7 +144,7 @@ For `x = 0` both sides hold, with `v_K(0) = ⊤`. -/
 theorem padicNormedField_norm_le_rpow_iff (x : K) (r : ℝ) :
     letI := padicNormedField K p
     ‖x‖ ≤ (p : ℝ) ^ (-r / absoluteRamificationIndex K p) ↔
-      (r : WithTop ℝ) ≤ realAddValuation K x := by
+      (r : WithTop ℝ) ≤ (valuation K).realAddVal x := by
   let _ := padicNormedField K p
   rcases eq_or_ne x 0 with rfl | hx
   · rw [norm_zero, AddValuation.map_zero]
@@ -152,7 +152,7 @@ theorem padicNormedField_norm_le_rpow_iff (x : K) (r : ℝ) :
     positivity
   have he : (0 : ℝ) < absoluteRamificationIndex K p :=
     Nat.cast_pos.mpr (absoluteRamificationIndex_pos K p)
-  rw [padicNormedField_norm_eq_rpow p hx, realAddValuation_of_ne_zero hx, WithTop.coe_le_coe,
+  rw [padicNormedField_norm_eq_rpow p hx, realAddVal_valuation_of_ne_zero hx, WithTop.coe_le_coe,
     Real.rpow_le_rpow_left_iff (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt),
     div_le_div_iff_of_pos_right he, neg_le_neg_iff]
 
@@ -163,7 +163,7 @@ real `r`. For `x = 0` both sides hold, with `v_K(0) = ⊤`. -/
 theorem padicNormedField_norm_lt_rpow_iff (x : K) (r : ℝ) :
     letI := padicNormedField K p
     ‖x‖ < (p : ℝ) ^ (-r / absoluteRamificationIndex K p) ↔
-      (r : WithTop ℝ) < realAddValuation K x := by
+      (r : WithTop ℝ) < (valuation K).realAddVal x := by
   let _ := padicNormedField K p
   rcases eq_or_ne x 0 with rfl | hx
   · rw [norm_zero, AddValuation.map_zero]
@@ -171,7 +171,7 @@ theorem padicNormedField_norm_lt_rpow_iff (x : K) (r : ℝ) :
     exact Real.rpow_pos_of_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) _
   have he : (0 : ℝ) < absoluteRamificationIndex K p :=
     Nat.cast_pos.mpr (absoluteRamificationIndex_pos K p)
-  rw [padicNormedField_norm_eq_rpow p hx, realAddValuation_of_ne_zero hx, WithTop.coe_lt_coe,
+  rw [padicNormedField_norm_eq_rpow p hx, realAddVal_valuation_of_ne_zero hx, WithTop.coe_lt_coe,
     Real.rpow_lt_rpow_left_iff (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt),
     div_lt_div_iff_of_pos_right he, neg_lt_neg_iff]
 

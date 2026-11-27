@@ -16,9 +16,9 @@ public import TauCeti.RingTheory.Valuation.RamificationIdx
 import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.Algebra.GroupWithZero.Range
 import TauCeti.Algebra.Order.Monoid.Unbundled.WithTop
-import TauCeti.Data.Rat.NumDenDvd
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
+import TauCeti.RingTheory.Valuation.Denominator
 import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 import TauCeti.RingTheory.Valuation.Integral.Basic
 import TauCeti.RingTheory.Valuation.Surjective
@@ -56,8 +56,7 @@ This file develops two complementary parts of the extension theory of discrete v
   agreement with `Ideal.ramificationIdx`.
 * `Valuation.normalization_comap_intValuation` and `Valuation.ramificationIdx_eq_ordIndex`:
   compatibility with `ordIndex` and `normalization` on a division ring over a field.
-* `Valuation.extRealAddVal_algebraMap`,
-  `Valuation.den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast`, and
+* `Valuation.extRealAddVal_algebraMap` and
   `Valuation.den_le_finrank_of_extRealAddVal_eq_ratCast`: restriction and denominator bounds for
   `w.extRealAddVal K`.
 * `Valuation.isDiscreteValuationRing_integralClosure`, `Valuation.normalizedExtension_surjective`,
@@ -446,19 +445,6 @@ theorem IsEquiv.extRealAddVal_eq {w₁ : Valuation L ΓL} {w₂ : Valuation L Γ
   ext y
   rw [extRealAddVal_apply, extRealAddVal_apply, h.intAddVal_eq, h.ramificationIdx_eq]
 
-/-- **Denominators of rational values divide the ramification index.** If `w.extRealAddVal K α = q`
-for `q : ℚ`, then `q.den ∣ w.ramificationIdx K`. -/
-theorem den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast {α : L} {q : ℚ}
-    (hα : w.extRealAddVal K α = ((q : ℝ) : WithTop ℝ)) :
-    q.den ∣ w.ramificationIdx K := by
-  rcases eq_or_ne (w.ramificationIdx K) 0 with he | he
-  · exact he ▸ dvd_zero _
-  have hα₀ : w α ≠ 0 := fun h ↦
-    WithTop.top_ne_coe (((w.extRealAddVal_eq_top_iff (K := K)).mpr h).symm.trans hα)
-  have hval := WithTop.coe_inj.mp (hα.symm.trans (w.extRealAddVal_of_map_ne_zero (K := K) hα₀))
-  exact (Rat.den_dvd_iff_exists_eq_intCast_div he).2
-    ⟨ord w.intValuation α, by exact_mod_cast hval⟩
-
 /-- **Restriction property of `extRealAddVal`.** When `w` extends `v`, `w.extRealAddVal K`
 restricts on `K` to `v.realAddVal`. -/
 theorem extRealAddVal_algebraMap (v : Valuation K ΓK) [v.IsRankOneDiscrete]
@@ -503,7 +489,9 @@ theorem den_le_finrank_of_extRealAddVal_eq_ratCast [Module.Finite K L]
     (w : Valuation L ΓL) [w.IsRankOneDiscrete] {α : L} {q : ℚ}
     (hα : w.extRealAddVal K α = ((q : ℝ) : WithTop ℝ)) :
     q.den ≤ Module.finrank K L :=
-  w.le_finrank_of_dvd_ramificationIdx (w.den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast hα)
+  w.le_finrank_of_dvd_ramificationIdx <|
+    AddValuation.den_dvd_of_map_eq_ratCast
+      (fun _ hy ↦ w.exists_div_ramificationIdx_extRealAddVal hy) hα
 
 /-- **Criterion for total ramification from a rational value.** In a finite extension `L / K`, if an
 element `α : L` has rational base-normalized valuation `q` with `Module.finrank K L ≤ q.den`, then
@@ -513,7 +501,8 @@ theorem ramificationIdx_eq_finrank_of_extRealAddVal_eq_ratCast [Module.Finite K 
     (hα : w.extRealAddVal K α = ((q : ℝ) : WithTop ℝ)) (hdeg : Module.finrank K L ≤ q.den) :
     w.ramificationIdx K = Module.finrank K L :=
   w.ramificationIdx_eq_finrank_of_dvd
-    (w.den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast hα) hdeg
+    (AddValuation.den_dvd_of_map_eq_ratCast
+      (fun _ hy ↦ w.exists_div_ramificationIdx_extRealAddVal hy) hα) hdeg
 
 end FieldBase
 

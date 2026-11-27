@@ -14,8 +14,8 @@ import TauCeti.Analysis.Convex.Sequence.Rationality
 /-!
 # Residual polynomials of segments of the ramification polygon
 
-To a segment `[k, k + l]` of `(ramificationPolynomial φ α).newtonPolygon (realAddValuation L)` of
-reduced slope `-h / m` (`0 < m`, `h.Coprime m`), Ore attaches the *residual polynomial*
+To a segment `[k, k + l]` of `(ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal`
+of reduced slope `-h / m` (`0 < m`, `h.Coprime m`), Ore attaches the *residual polynomial*
 `A(X) = ∑_{j = 0}^{l / m} \overline{ρ_{j m + k} α^{j h - v_L(ρ_k)}} X ^ j ∈ 𝓀[L][X]`.
 
 ## Main definitions
@@ -114,14 +114,15 @@ theorem natDegree_residualPolynomial_le (φ : K[X]) (α : L) (k l h m : ℕ) :
 /-- On any finite face `[k, k + l]` of reduced slope `-h / m` (`0 < m`, `h.Coprime m`), `m ∣ l`. -/
 theorem dvd_of_isFiniteFace_newtonPolygon_ramificationPolynomial {φ : K[X]} {α : L}
     {k l h m : ℕ} (hm : 0 < m) (hcop : h.Coprime m)
-    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (realAddValuation L))
+    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal)
       (-(h : ℝ) / m) k (k + l)) : m ∣ l := by
   rcases Nat.eq_zero_or_pos l with rfl | hl
   · exact dvd_zero m
   obtain ⟨q, hq, hdvd⟩ :=
     ((ramificationPolynomial φ α).isLowerConvexEnvelope_newtonPolygon
-      (realAddValuation L)).exists_rat_eq_and_den_dvd_of_isFiniteFace
-      (fun _ hi ↦ exists_int_realAddValuation (realAddValuation_eq_top_iff.not.mp hi))
+      (valuation L).realAddVal).exists_rat_eq_and_den_dvd_of_isFiniteFace
+      (fun _ hi ↦ (valuation L).exists_int_realAddVal
+        ((valuation L).realAddVal_eq_top_iff.not.mp hi))
       hface (Nat.lt_add_of_pos_right hl)
   have hq_eq : q = (-(h : ℤ) : ℚ) / (m : ℤ) :=
     Rat.cast_injective (α := ℝ) (by push_cast; exact hq)
@@ -129,36 +130,37 @@ theorem dvd_of_isFiniteFace_newtonPolygon_ramificationPolynomial {φ : K[X]} {α
     (hq_eq ▸ Rat.den_div_eq_of_coprime (Int.natCast_pos.mpr hm) (by simpa using hcop))
   simpa [hden] using hdvd
 
-private theorem realAddValuation_mul_zpow_of_isFiniteFace {φ : K[X]} {α : L} {k l h m : ℕ}
-    (hm : 0 < m) (hα : realAddValuation L α = 1)
-    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (realAddValuation L))
+private theorem realAddVal_mul_zpow_of_isFiniteFace {φ : K[X]} {α : L} {k l h m : ℕ}
+    (hm : 0 < m) (hα : (valuation L).realAddVal α = 1)
+    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal)
       (-(h : ℝ) / m) k (k + l)) (j : ℕ) :
-    0 ≤ realAddValuation L ((ramificationPolynomial φ α).coeff (j * m + k) *
+    0 ≤ (valuation L).realAddVal ((ramificationPolynomial φ α).coeff (j * m + k) *
           α ^ ((j * h : ℤ) - WithZero.log (normalizedValuationWithZero L
             ((ramificationPolynomial φ α).coeff k)))) ∧
-      (realAddValuation L ((ramificationPolynomial φ α).coeff (j * m + k) *
+      ((valuation L).realAddVal ((ramificationPolynomial φ α).coeff (j * m + k) *
           α ^ ((j * h : ℤ) - WithZero.log (normalizedValuationWithZero L
             ((ramificationPolynomial φ α).coeff k)))) = 0 ↔
-        realAddValuation L ((ramificationPolynomial φ α).coeff (j * m + k)) =
+        (valuation L).realAddVal ((ramificationPolynomial φ α).coeff (j * m + k)) =
           (((WithZero.log (normalizedValuationWithZero L
-            ((ramificationPolynomial φ α).coeff k)) - (j * h : ℤ) : ℤ) : ℝ) : WithTop ℝ)) := by
+            ((ramificationPolynomial φ α).coeff k)) - (j * h : ℤ) : ℤ) : ℝ) :
+            WithTop ℝ)) := by
   set ρ := ramificationPolynomial φ α
-  set N := ρ.newtonPolygon (realAddValuation L)
+  set N := ρ.newtonPolygon (valuation L).realAddVal
   set v₀ : ℤ := WithZero.log (normalizedValuationWithZero L (ρ.coeff k))
   have hα0 : α ≠ 0 := by rintro rfl; simp at hα
-  have henv := ρ.isLowerConvexEnvelope_newtonPolygon (realAddValuation L)
+  have henv := ρ.isLowerConvexEnvelope_newtonPolygon (valuation L).realAddVal
   have hbound := (isSupportingLine_iff_forall.mp
     (hface.isSupportingLine_untop₀_sub ⟨le_rfl, hface.left_le_right⟩) (j * m + k)).trans
     (henv.le (j * m + k))
   have hm0 : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hm.ne'
   have hline : (N k).untop₀ - (-(h : ℝ) / m) * k + (-(h : ℝ) / m) * (j * m + k : ℕ) =
       ((v₀ - (j * h : ℤ) : ℤ) : ℝ) := by
-    dsimp only [N]; rw [henv.eq_left_of_isFiniteFace hface, untop₀_realAddValuation]
+    dsimp only [N]; rw [henv.eq_left_of_isFiniteFace hface, untop₀_realAddVal_valuation]
     push_cast; field_simp [hm0]; ring
   rw [hline] at hbound
-  rw [(realAddValuation L).map_mul, realAddValuation_zpow_of_ne_zero hα0, hα,
+  rw [(valuation L).realAddVal.map_mul, realAddVal_valuation_zpow_of_ne_zero hα0, hα,
     WithTop.untop₀_one, mul_one]
-  cases hv : realAddValuation L (ρ.coeff (j * m + k)) with
+  cases hv : (valuation L).realAddVal (ρ.coeff (j * m + k)) with
   | top => simp only [top_add, le_top, WithTop.top_ne_zero, WithTop.top_ne_coe, true_and]
   | coe r =>
     rw [hv, WithTop.coe_le_coe] at hbound
@@ -169,31 +171,31 @@ private theorem realAddValuation_mul_zpow_of_isFiniteFace {φ : K[X]} {α : L} {
 /-- On any finite face `[k, k + l]` of slope `-h / m` (`0 < m`) with a uniformizer `α`, every
 rescaled term `ρ_{j m + k} α^{j h - v_L(ρ_k)}` lies in `𝒪[L]`. -/
 theorem mem_integer_mul_zpow_of_isFiniteFace {φ : K[X]} {α : L} {k l h m : ℕ}
-    (hm : 0 < m) (hα : realAddValuation L α = 1)
-    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (realAddValuation L))
+    (hm : 0 < m) (hα : (valuation L).realAddVal α = 1)
+    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal)
       (-(h : ℝ) / m) k (k + l)) (j : ℕ) :
     (ramificationPolynomial φ α).coeff (j * m + k) *
       α ^ ((j * h : ℤ) - WithZero.log (normalizedValuationWithZero L
         ((ramificationPolynomial φ α).coeff k))) ∈ 𝒪[L] :=
-  mem_integer_iff_realAddValuation_nonneg.mpr
-    (realAddValuation_mul_zpow_of_isFiniteFace hm hα hface j).1
+  mem_integer_iff_realAddVal_valuation_nonneg.mpr
+    (realAddVal_mul_zpow_of_isFiniteFace hm hα hface j).1
 
 /-- On a finite face `[k, k + l]` of slope `-h / m` (`0 < m`) with a uniformizer `α`,
 `(residualPolynomial φ α k l h m).coeff j ≠ 0` iff `j ≤ l / m` and `(j * m + k, v_L(ρ_{j m + k}))`
 lies on the face's supporting line. -/
 theorem coeff_residualPolynomial_ne_zero_iff {φ : K[X]} {α : L} {k l h m j : ℕ}
-    (hm : 0 < m) (hα : realAddValuation L α = 1)
-    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (realAddValuation L))
+    (hm : 0 < m) (hα : (valuation L).realAddVal α = 1)
+    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal)
       (-(h : ℝ) / m) k (k + l)) :
     (residualPolynomial φ α k l h m).coeff j ≠ 0 ↔
-      j ≤ l / m ∧ realAddValuation L ((ramificationPolynomial φ α).coeff (j * m + k)) =
+      j ≤ l / m ∧ (valuation L).realAddVal ((ramificationPolynomial φ α).coeff (j * m + k)) =
         (((WithZero.log (normalizedValuationWithZero L
           ((ramificationPolynomial φ α).coeff k)) - (j * h : ℤ) : ℤ) : ℝ) : WithTop ℝ) := by
   rcases le_or_gt j (l / m) with hj | hj
-  · obtain ⟨h0, hiff⟩ := realAddValuation_mul_zpow_of_isFiniteFace hm hα hface j
+  · obtain ⟨h0, hiff⟩ := realAddVal_mul_zpow_of_isFiniteFace hm hα hface j
     rw [coeff_residualPolynomial_of_mem_integer hj
         (mem_integer_mul_zpow_of_isFiniteFace hm hα hface j),
-      ne_eq, IsLocalRing.residue_eq_zero_iff, mem_maximalIdeal_iff_realAddValuation_pos,
+      ne_eq, IsLocalRing.residue_eq_zero_iff, mem_maximalIdeal_iff_realAddVal_valuation_pos,
       Subtype.coe_mk, not_lt]
     exact ⟨fun h ↦ ⟨hj, hiff.mp (le_antisymm h h0)⟩, fun h ↦ (hiff.mpr h.2).le⟩
   · simp [coeff_residualPolynomial_eq_zero_of_lt _ _ _ _ _ _ hj, not_le.mpr hj]
@@ -201,7 +203,7 @@ theorem coeff_residualPolynomial_ne_zero_iff {φ : K[X]} {α : L} {k l h m j : �
 /-- For a uniformizer `α` of `L`, `(residualPolynomial φ α k l h m).coeff 0 ≠ 0` iff
 `(ramificationPolynomial φ α).coeff k ≠ 0`. -/
 theorem coeff_zero_residualPolynomial_ne_zero_iff {φ : K[X]} {α : L} {k l h m : ℕ}
-    (hα : realAddValuation L α = 1) :
+    (hα : (valuation L).realAddVal α = 1) :
     (residualPolynomial φ α k l h m).coeff 0 ≠ 0 ↔
       (ramificationPolynomial φ α).coeff k ≠ 0 := by
   refine ⟨fun h0 hk ↦ h0 ?_, fun hc0 ↦ ?_⟩
@@ -212,38 +214,41 @@ theorem coeff_zero_residualPolynomial_ne_zero_iff {φ : K[X]} {α : L} {k l h m 
     have hz : (⟨_, hmem⟩ : 𝒪[L]) = 0 := Subtype.ext (by simp [hk])
     rw [coeff_residualPolynomial_of_mem_integer (Nat.zero_le _) hmem, hz, map_zero]
   · have hα0 : α ≠ 0 := by rintro rfl; simp at hα
-    have hval : realAddValuation L ((ramificationPolynomial φ α).coeff (0 * m + k) *
+    have hval : (valuation L).realAddVal ((ramificationPolynomial φ α).coeff (0 * m + k) *
         α ^ (((0 : ℕ) * (h : ℤ)) - WithZero.log (normalizedValuationWithZero L
           ((ramificationPolynomial φ α).coeff k)))) = 0 := by
-      simp [realAddValuation_of_ne_zero hc0, realAddValuation_zpow_of_ne_zero hα0, hα]
+      simp [realAddVal_valuation_of_ne_zero hc0, realAddVal_valuation_zpow_of_ne_zero hα0, hα]
     rw [coeff_residualPolynomial_of_mem_integer (Nat.zero_le _)
-        (mem_integer_iff_realAddValuation_nonneg.mpr hval.ge), ne_eq,
-      IsLocalRing.residue_eq_zero_iff, mem_maximalIdeal_iff_realAddValuation_pos, Subtype.coe_mk,
-      hval]
+        (mem_integer_iff_realAddVal_valuation_nonneg.mpr hval.ge), ne_eq,
+      IsLocalRing.residue_eq_zero_iff, mem_maximalIdeal_iff_realAddVal_valuation_pos,
+      Subtype.coe_mk, hval]
     exact lt_irrefl 0
 
 /-- On any finite face starting at `k`, `(residualPolynomial φ α k l h m).coeff 0 ≠ 0` whenever `α`
 is a uniformizer of `L`. -/
 theorem coeff_zero_residualPolynomial_ne_zero {φ : K[X]} {α : L} {k l h m : ℕ}
-    (hα : realAddValuation L α = 1) {σ : ℝ}
-    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (realAddValuation L))
+    (hα : (valuation L).realAddVal α = 1) {σ : ℝ}
+    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal)
       σ k (k + l)) : (residualPolynomial φ α k l h m).coeff 0 ≠ 0 :=
-  (coeff_zero_residualPolynomial_ne_zero_iff hα).mpr <| realAddValuation_eq_top_iff.not.mp <|
-    ((ramificationPolynomial φ α).isLowerConvexEnvelope_newtonPolygon
-      (realAddValuation L)).eq_left_of_isFiniteFace hface ▸ hface.left_ne_top
+  (coeff_zero_residualPolynomial_ne_zero_iff hα).mpr <| (valuation L).ne_zero_iff.mp <|
+    (valuation L).realAddVal_eq_top_iff.not.mp <|
+      ((ramificationPolynomial φ α).isLowerConvexEnvelope_newtonPolygon
+        (valuation L).realAddVal).eq_left_of_isFiniteFace hface ▸ hface.left_ne_top
 
 private theorem log_coeff_right_of_isFiniteFace {φ : K[X]} {α : L} {k l h m : ℕ}
     (hm : 0 < m) (hcop : h.Coprime m)
-    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (realAddValuation L))
+    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal)
       (-(h : ℝ) / m) k (k + l)) :
     WithZero.log (normalizedValuationWithZero L ((ramificationPolynomial φ α).coeff (k + l))) =
       WithZero.log (normalizedValuationWithZero L ((ramificationPolynomial φ α).coeff k)) -
         ((l / m : ℕ) * (h : ℤ)) := by
   obtain ⟨q, rfl⟩ := dvd_of_isFiniteFace_newtonPolygon_ramificationPolynomial hm hcop hface
-  have henv := (ramificationPolynomial φ α).isLowerConvexEnvelope_newtonPolygon (realAddValuation L)
+  have henv := (ramificationPolynomial φ α).isLowerConvexEnvelope_newtonPolygon
+    (valuation L).realAddVal
   have hw := hface.mul_width_eq_sub
   rw [Nat.add_sub_cancel_left, henv.eq_left_of_isFiniteFace hface,
-    henv.eq_right_of_isFiniteFace hface, untop₀_realAddValuation, untop₀_realAddValuation] at hw
+    henv.eq_right_of_isFiniteFace hface, untop₀_realAddVal_valuation,
+    untop₀_realAddVal_valuation] at hw
   rw [Nat.mul_div_right q hm]
   have hm0 : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hm.ne'
   exact Int.cast_injective (α := ℝ) (by push_cast at hw ⊢; field_simp [hm0] at hw; linarith)
@@ -251,25 +256,26 @@ private theorem log_coeff_right_of_isFiniteFace {φ : K[X]} {α : L} {k l h m : 
 /-- On a finite face `[k, k + l]` of reduced slope `-h / m`, the `(l / m)`-th coefficient of
 `residualPolynomial φ α k l h m` is nonzero whenever `α` is a uniformizer of `L`. -/
 theorem coeff_div_residualPolynomial_ne_zero {φ : K[X]} {α : L} {k l h m : ℕ}
-    (hm : 0 < m) (hcop : h.Coprime m) (hα : realAddValuation L α = 1)
-    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (realAddValuation L))
+    (hm : 0 < m) (hcop : h.Coprime m) (hα : (valuation L).realAddVal α = 1)
+    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal)
       (-(h : ℝ) / m) k (k + l)) :
     (residualPolynomial φ α k l h m).coeff (l / m) ≠ 0 := by
-  have hc0 : (ramificationPolynomial φ α).coeff (k + l) ≠ 0 := realAddValuation_eq_top_iff.not.mp
-    (((ramificationPolynomial φ α).isLowerConvexEnvelope_newtonPolygon
-      (realAddValuation L)).eq_right_of_isFiniteFace hface ▸ hface.right_ne_top)
+  have hc0 : (ramificationPolynomial φ α).coeff (k + l) ≠ 0 :=
+    (valuation L).ne_zero_iff.mp <| (valuation L).realAddVal_eq_top_iff.not.mp <|
+      ((ramificationPolynomial φ α).isLowerConvexEnvelope_newtonPolygon
+        (valuation L).realAddVal).eq_right_of_isFiniteFace hface ▸ hface.right_ne_top
   have hidx : (l / m) * m + k = k + l := by
     rw [Nat.div_mul_cancel
       (dvd_of_isFiniteFace_newtonPolygon_ramificationPolynomial hm hcop hface), add_comm]
-  rw [coeff_residualPolynomial_ne_zero_iff hm hα hface, hidx, realAddValuation_of_ne_zero hc0,
+  rw [coeff_residualPolynomial_ne_zero_iff hm hα hface, hidx, realAddVal_valuation_of_ne_zero hc0,
     log_coeff_right_of_isFiniteFace hm hcop hface]
   exact ⟨le_rfl, rfl⟩
 
 /-- On a finite face `[k, k + l]` of reduced slope `-h / m` with a uniformizer `α`,
 `(residualPolynomial φ α k l h m).natDegree = l / m`. -/
 theorem natDegree_residualPolynomial {φ : K[X]} {α : L} {k l h m : ℕ}
-    (hm : 0 < m) (hcop : h.Coprime m) (hα : realAddValuation L α = 1)
-    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (realAddValuation L))
+    (hm : 0 < m) (hcop : h.Coprime m) (hα : (valuation L).realAddVal α = 1)
+    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal)
       (-(h : ℝ) / m) k (k + l)) :
     (residualPolynomial φ α k l h m).natDegree = l / m :=
   le_antisymm (natDegree_residualPolynomial_le φ α k l h m)
@@ -278,8 +284,8 @@ theorem natDegree_residualPolynomial {φ : K[X]} {α : L} {k l h m : ℕ}
 /-- On a finite face `[k, k + l]` of reduced slope `-h / m` with a uniformizer `α`,
 `(residualPolynomial φ α k l h m).leadingCoeff ≠ 0`. -/
 theorem leadingCoeff_residualPolynomial_ne_zero {φ : K[X]} {α : L} {k l h m : ℕ}
-    (hm : 0 < m) (hcop : h.Coprime m) (hα : realAddValuation L α = 1)
-    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (realAddValuation L))
+    (hm : 0 < m) (hcop : h.Coprime m) (hα : (valuation L).realAddVal α = 1)
+    (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal)
       (-(h : ℝ) / m) k (k + l)) :
     (residualPolynomial φ α k l h m).leadingCoeff ≠ 0 := by
   rw [Polynomial.leadingCoeff, natDegree_residualPolynomial hm hcop hα hface]
@@ -290,8 +296,8 @@ slope `-h₁ / m₁` with a uniformizer `α`, then the constant coefficient of
 `residualPolynomial φ α (k + l₁) l₂ h₂ m₂` equals
 `(residualPolynomial φ α k l₁ h₁ m₁).leadingCoeff`. -/
 theorem coeff_zero_residualPolynomial_eq_leadingCoeff {φ : K[X]} {α : L} {k l₁ h₁ m₁ : ℕ}
-    (hm₁ : 0 < m₁) (hcop₁ : h₁.Coprime m₁) (hα : realAddValuation L α = 1)
-    (hface₁ : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (realAddValuation L))
+    (hm₁ : 0 < m₁) (hcop₁ : h₁.Coprime m₁) (hα : (valuation L).realAddVal α = 1)
+    (hface₁ : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal)
       (-(h₁ : ℝ) / m₁) k (k + l₁)) (l₂ h₂ m₂ : ℕ) :
     (residualPolynomial φ α (k + l₁) l₂ h₂ m₂).coeff 0 =
       (residualPolynomial φ α k l₁ h₁ m₁).leadingCoeff := by
@@ -328,23 +334,23 @@ theorem exists_eq_pow_of_coeff_residualPolynomial_ne_zero {φ : 𝒪[K][X]}
     (hroot : ((φ.map (algebraMap 𝒪[K] K)).map (algebraMap K L)).IsRoot α) (hgen : K⟮α⟯ = ⊤)
     {k l h m : ℕ} (hh : 0 < h) (hm : 0 < m)
     (hface : IsFiniteFace ((ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).newtonPolygon
-      (realAddValuation L)) (-(h : ℝ) / m) k (k + l))
+      (valuation L).realAddVal) (-(h : ℝ) / m) k (k + l))
     {j : ℕ} (hj : (residualPolynomial (φ.map (algebraMap 𝒪[K] K)) α k l h m).coeff j ≠ 0) :
     ∃ i : ℕ, k + j * m = (ringChar 𝓀[K]) ^ i := by
   obtain ⟨-, -, -, -, hα, -⟩ :=
-    irreducible_and_realAddValuation_of_eisenstein_adjoin_eq_top hφ hroot hgen
+    irreducible_and_realAddVal_of_eisenstein_adjoin_eq_top hφ hroot hgen
   obtain ⟨-, hjval⟩ := (coeff_residualPolynomial_ne_zero_iff hm hα hface).mp hj
   set ρ := ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α
-  set N := ρ.newtonPolygon (realAddValuation L)
-  have henv := ρ.isLowerConvexEnvelope_newtonPolygon (realAddValuation L)
+  set N := ρ.newtonPolygon (valuation L).realAddVal
+  have henv := ρ.isLowerConvexEnvelope_newtonPolygon (valuation L).realAddVal
   set c : ℝ := (N k).untop₀ - (-(h : ℝ) / m) * k
-  have hca : IsSupportingLine (fun i ↦ realAddValuation L (ρ.coeff i)) (-(h : ℝ) / m) c :=
+  have hca : IsSupportingLine (fun i ↦ (valuation L).realAddVal (ρ.coeff i)) (-(h : ℝ) / m) c :=
     henv.isSupportingLine_iff.mp (hface.isSupportingLine_untop₀_sub ⟨le_rfl, hface.left_le_right⟩)
   have hmem : j * m + k ∈
-      supportingFace (fun i ↦ realAddValuation L (ρ.coeff i)) (-(h : ℝ) / m) c := by
+      supportingFace (fun i ↦ (valuation L).realAddVal (ρ.coeff i)) (-(h : ℝ) / m) c := by
     rw [mem_supportingFace, hjval, WithTop.coe_eq_coe]
     have hm0 : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hm.ne'
-    simp only [c, N, henv.eq_left_of_isFiniteFace hface, untop₀_realAddValuation]
+    simp only [c, N, henv.eq_left_of_isFiniteFace hface, untop₀_realAddVal_valuation]
     push_cast; field_simp [hm0]; ring
   obtain ⟨i, hi⟩ := exists_eq_pow_of_mem_supportingFace_of_neg hφ hroot hgen
     (div_neg_of_neg_of_pos (neg_lt_zero.mpr (Nat.cast_pos.mpr hh)) (Nat.cast_pos.mpr hm)) hca hmem
@@ -359,7 +365,7 @@ theorem aeval_add_X_pow_mul_comp_residualPolynomial {B : Type*} [CommSemiring B]
     (hroot : ((φ.map (algebraMap 𝒪[K] K)).map (algebraMap K L)).IsRoot α) (hgen : K⟮α⟯ = ⊤)
     {k l h m : ℕ} (hh : 0 < h) (hm : 0 < m)
     (hface : IsFiniteFace ((ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).newtonPolygon
-      (realAddValuation L)) (-(h : ℝ) / m) k (k + l)) (x y : B) :
+      (valuation L).realAddVal) (-(h : ℝ) / m) k (k + l)) (x y : B) :
     aeval (x + y)
         (X ^ k * (residualPolynomial (φ.map (algebraMap 𝒪[K] K)) α k l h m).comp (X ^ m)) =
       aeval x (X ^ k * (residualPolynomial (φ.map (algebraMap 𝒪[K] K)) α k l h m).comp (X ^ m)) +
@@ -405,8 +411,8 @@ theorem coeff_tame_residualPolynomial {φ : 𝒪[K][X]}
   set k := (ringChar 𝓀[K]) ^ padicValNat (ringChar 𝓀[K]) φ.natDegree
   have hlog0 : WithZero.log (normalizedValuationWithZero L
       ((ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff k)) = 0 := by
-    simpa [untop₀_realAddValuation] using congrArg WithTop.untop₀
-      (realAddValuation_coeff_pow_padicValNat_ramificationPolynomial hφ hroot hgen)
+    simpa [untop₀_realAddVal_valuation] using congrArg WithTop.untop₀
+      (realAddVal_coeff_pow_padicValNat_ramificationPolynomial hφ hroot hgen)
   rw [coeff_residualPolynomial_of_mem_integer (by simpa using hj) (by
     simpa [hlog0, add_comm] using coeff_ramificationPolynomial_mem_integer hφ hroot hgen (k + j))]
   exact congrArg (residue 𝒪[L]) (Subtype.ext (by simp [hlog0, add_comm]))
@@ -442,8 +448,8 @@ theorem coeff_X_pow_mul_tame_residualPolynomial {φ : 𝒪[K][X]}
     rcases eq_or_ne j 0 with rfl | hj0
     · exact (Subtype.ext (coeff_zero_ramificationPolynomial_of_isRoot hroot) :
         (⟨_, _⟩ : 𝒪[L]) = 0) ▸ Ideal.zero_mem _
-    · exact mem_maximalIdeal_iff_one_le_realAddValuation.mpr
-        (one_le_realAddValuation_coeff_of_lt_pow_padicValNat hφ hroot hgen
+    · exact mem_maximalIdeal_iff_one_le_realAddVal_valuation.mpr
+        (one_le_realAddVal_coeff_of_lt_pow_padicValNat hφ hroot hgen
           (Nat.one_le_iff_ne_zero.mpr hj0) (not_le.mp hle))
 
 end Eisenstein

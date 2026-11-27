@@ -39,8 +39,8 @@ v_K(Φ⁽ᵏ⁾(z) / k!) ≥ k ρ + μ + (T - k) ((q - 1) e v_p(⌊N / q⌋!) + 
 This is the normed interpolation bound `TauCeti.norm_sum_mul_prod_zpow_le_mul_norm_factorial_pow`
 read through the `p`-adic norm `‖x‖ = p ^ (-v_K(x) / e)` of `TauCeti.padicNormedField`, with the
 radius `c = p ^ (ρ / e)`; the ramification index enters through the valuation `e v_p(n)` of an
-integer `n` in `K`. The valuation is `TauCeti.realAddValuation`, which is `⊤` at `0`, so the bound
-also covers vanishing values. The logarithm is that of the given topology of `K`.
+integer `n` in `K`. The valuation is `(ValuativeRel.valuation K).realAddVal`, which is `⊤` at `0`,
+so the bound also covers vanishing values. The logarithm is that of the given topology of `K`.
 
 The bound applies to arbitrary units of `𝒪[K]` after a residue-field power. If `v_K(αⱼ) = 0`
 for every `j`, then `βⱼ = αⱼ ^ M` with `M = (#𝓀[K] - 1) #𝓀[K] ^ m` satisfies
@@ -51,8 +51,8 @@ with `f` the residue degree, the exponent `M` is `(p ^ f - 1) p ^ (f m)`.
 
 ## Main results
 
-* `TauCeti.le_realAddValuation_sum_mul_prod_zpow`: the valuation bound above.
-* `TauCeti.le_realAddValuation_sum_mul_prod_pow_zpow`: the same bound for the residue-field
+* `TauCeti.le_realAddVal_sum_mul_prod_zpow`: the valuation bound above.
+* `TauCeti.le_realAddVal_sum_mul_prod_pow_zpow`: the same bound for the residue-field
   powers `αⱼ ^ ((#𝓀[K] - 1) #𝓀[K] ^ m)` of units `αⱼ`.
 
 ## References
@@ -82,19 +82,19 @@ v_K(∑_l a_l (x_l ^ k / k!) ∏ⱼ αⱼ ^ (lⱼ z)) ≥ k ρ + μ + (T - k) ((
 ```
 
 Here `T - k` and `q - 1` are natural-number subtractions, truncated at zero. -/
-theorem le_realAddValuation_sum_mul_prod_zpow {κ : Type*} {t : Finset κ} {α : κ → K} {ρ : ℝ}
+theorem le_realAddVal_sum_mul_prod_zpow {κ : Type*} {t : Finset κ} {α : κ → K} {ρ : ℝ}
     (hρ : 0 ≤ ρ)
     (hα : ∀ j ∈ t, ((ρ + absoluteRamificationIndex K p / (p - 1 : ℝ) : ℝ) : WithTop ℝ) <
-      realAddValuation K (α j - 1))
+      (valuation K).realAddVal (α j - 1))
     {Λ : Finset (κ → ℤ)} {a : (κ → ℤ) → K} {μ : ℝ}
-    (ha : ∀ l ∈ Λ, (μ : WithTop ℝ) ≤ realAddValuation K (a l)) {q : ℕ} (hq : p.Coprime q)
+    (ha : ∀ l ∈ Λ, (μ : WithTop ℝ) ≤ (valuation K).realAddVal (a l)) {q : ℕ} (hq : p.Coprime q)
     {N T : ℕ}
     (hzero : ∀ b < N, ¬q ∣ b → ∀ τ < T, ∑ l ∈ Λ,
       a l * (∑ j ∈ t, (l j : K) * log (α j)) ^ τ * ∏ j ∈ t, α j ^ (l j * b) = 0)
     (k : ℕ) (z : ℤ) :
     (((k * ρ + μ + (T - k : ℕ) * ((q - 1 : ℕ) * absoluteRamificationIndex K p *
         padicValNat p (N / q)! + ((range N).filter (¬q ∣ ·)).card * ρ) : ℝ)) : WithTop ℝ) ≤
-      realAddValuation K (∑ l ∈ Λ, a l * ((∑ j ∈ t, (l j : K) * log (α j)) ^ k / k !) *
+      (valuation K).realAddVal (∑ l ∈ Λ, a l * ((∑ j ∈ t, (l j : K) * log (α j)) ^ k / k !) *
         ∏ j ∈ t, α j ^ (l j * z)) := by
   let _ := padicNormedField K p
   let _ := padicNormedAlgebra K p
@@ -147,11 +147,11 @@ v_K(∑_l a_l (x_l ^ k / k!) ∏ⱼ (αⱼ ^ M) ^ (lⱼ z))
 ```
 
 Here `T - k` and `q - 1` are natural-number subtractions, truncated at zero. -/
-theorem le_realAddValuation_sum_mul_prod_pow_zpow {κ : Type*} {t : Finset κ} {α : κ → K}
-    (hα : ∀ j ∈ t, realAddValuation K (α j) = 0) {ρ : ℝ} (hρ : 0 ≤ ρ) {m : ℕ}
+theorem le_realAddVal_sum_mul_prod_pow_zpow {κ : Type*} {t : Finset κ} {α : κ → K}
+    (hα : ∀ j ∈ t, (valuation K).realAddVal (α j) = 0) {ρ : ℝ} (hρ : 0 ≤ ρ) {m : ℕ}
     (hm : ρ + absoluteRamificationIndex K p / (p - 1 : ℝ) < m + 1)
     {Λ : Finset (κ → ℤ)} {a : (κ → ℤ) → K} {μ : ℝ}
-    (ha : ∀ l ∈ Λ, (μ : WithTop ℝ) ≤ realAddValuation K (a l)) {q : ℕ} (hq : p.Coprime q)
+    (ha : ∀ l ∈ Λ, (μ : WithTop ℝ) ≤ (valuation K).realAddVal (a l)) {q : ℕ} (hq : p.Coprime q)
     {N T : ℕ}
     (hzero : ∀ b < N, ¬q ∣ b → ∀ τ < T, ∑ l ∈ Λ,
       a l * (∑ j ∈ t, (l j : K) * log (α j ^ ((Nat.card 𝓀[K] - 1) * Nat.card 𝓀[K] ^ m))) ^ τ *
@@ -159,12 +159,12 @@ theorem le_realAddValuation_sum_mul_prod_pow_zpow {κ : Type*} {t : Finset κ} {
     (k : ℕ) (z : ℤ) :
     (((k * ρ + μ + (T - k : ℕ) * ((q - 1 : ℕ) * absoluteRamificationIndex K p *
         padicValNat p (N / q)! + ((range N).filter (¬q ∣ ·)).card * ρ) : ℝ)) : WithTop ℝ) ≤
-      realAddValuation K (∑ l ∈ Λ, a l *
+      (valuation K).realAddVal (∑ l ∈ Λ, a l *
         ((∑ j ∈ t, (l j : K) * log (α j ^ ((Nat.card 𝓀[K] - 1) * Nat.card 𝓀[K] ^ m))) ^ k / k !) *
           ∏ j ∈ t, (α j ^ ((Nat.card 𝓀[K] - 1) * Nat.card 𝓀[K] ^ m)) ^ (l j * z)) :=
-  le_realAddValuation_sum_mul_prod_zpow hρ
+  le_realAddVal_sum_mul_prod_zpow hρ
     (fun j hj ↦ (WithTop.coe_lt_coe.mpr hm).trans_le
-      (le_realAddValuation_pow_natCard_sub_one_mul_pow_sub_one (hα j hj) m))
+      (le_realAddVal_pow_natCard_sub_one_mul_pow_sub_one (hα j hj) m))
     ha hq hzero k z
 
 end TauCeti
