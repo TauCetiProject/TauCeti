@@ -40,8 +40,8 @@ open Real Nat Finset
 
 namespace TauCeti
 
-private theorem norm_gaussianMonomial_le_exp (j : Fin 2) (x : ℝ) :
-    ‖gaussianMonomial j x‖ ≤ 3 * exp (-x) := by
+private theorem norm_gaussianMonomial_le_exp (j : Fin 2) {x y : ℝ} (hy : y ≤ |x|) :
+    ‖gaussianMonomial j x‖ ≤ 3 * exp (-y) := by
   calc
     _ ≤ 3 * exp (-|x|) ^ 2 := norm_gaussianMonomial_le j x
     _ ≤ 3 * exp (-|x|) := by
@@ -49,14 +49,16 @@ private theorem norm_gaussianMonomial_le_exp (j : Fin 2) (x : ℝ) :
       rw [pow_two]
       exact mul_le_of_le_one_right (exp_nonneg _)
         (exp_le_one_iff.mpr (neg_nonpos.mpr (abs_nonneg x)))
-    _ ≤ 3 * exp (-x) := by gcongr; exact le_abs_self x
+    _ ≤ 3 * exp (-y) := by gcongr
 
-private theorem sum_gaussianMonomial_divisorsAntidiagonal_le (j : Fin 2) {u : ℝ}
-    (hu : 0 < u) (m : ℕ+) :
-    ∑ p ∈ (m : ℕ).divisorsAntidiagonal,
-      ‖gaussianMonomial j (p.1 * u)‖ * ‖gaussianMonomial j (p.2 * u)‖ ≤
-      9 * (#(m : ℕ).divisors : ℝ) * exp (-(√(m : ℝ) * u)) := by
-  let B : ℝ := 9 * exp (-(√(m : ℝ) * u))
+private def gaussianPairFiber (j : Fin 2) (u : ℝ) (m : ℕ+) : ℝ :=
+  ∑ p ∈ (m : ℕ).divisorsAntidiagonal,
+    ‖gaussianMonomial j (p.1 * u)‖ * ‖gaussianMonomial j (p.2 * u)‖
+
+private theorem gaussianPairFiber_le (j : Fin 2) (u : ℝ) (m : ℕ+) :
+    gaussianPairFiber j u m ≤ 9 * (#(m : ℕ).divisors : ℝ) * exp (-(√(m : ℝ) * |u|)) := by
+  unfold gaussianPairFiber
+  let B : ℝ := 9 * exp (-(√(m : ℝ) * |u|))
   calc
     _ ≤ ∑ _ ∈ (m : ℕ).divisorsAntidiagonal, B := by
       apply sum_le_sum
@@ -67,11 +69,13 @@ private theorem sum_gaussianMonomial_divisorsAntidiagonal_le (j : Fin 2) {u : �
         rw [← hm']
         exact (Real.sqrt_le_iff).2 ⟨by positivity, by
           nlinarith [sq_nonneg (p.1 : ℝ), sq_nonneg (p.2 : ℝ)]⟩
+      have hy (n : ℕ) : n * |u| ≤ |(n : ℝ) * u| := by
+        rw [abs_mul, abs_of_nonneg (Nat.cast_nonneg (α := ℝ) n)]
       calc
-        _ ≤ (3 * exp (-(p.1 * u))) * (3 * exp (-(p.2 * u))) :=
-          mul_le_mul (norm_gaussianMonomial_le_exp j _) (norm_gaussianMonomial_le_exp j _)
-            (norm_nonneg _) (by positivity)
-        _ = 9 * exp (-(((p.1 : ℝ) + p.2) * u)) := by
+        _ ≤ (3 * exp (-(p.1 * |u|))) * (3 * exp (-(p.2 * |u|))) :=
+          mul_le_mul (norm_gaussianMonomial_le_exp j (hy p.1))
+            (norm_gaussianMonomial_le_exp j (hy p.2)) (norm_nonneg _) (by positivity)
+        _ = 9 * exp (-(((p.1 : ℝ) + p.2) * |u|)) := by
           rw [mul_mul_mul_comm, ← exp_add]
           ring_nf
         _ ≤ B := by
@@ -82,12 +86,15 @@ private theorem sum_gaussianMonomial_divisorsAntidiagonal_le (j : Fin 2) {u : �
       unfold B
       ring
 
-private def gaussianPairFiber (j : Fin 2) (u : ℝ) (m : ℕ+) : ℝ :=
-  ∑ p ∈ (m : ℕ).divisorsAntidiagonal,
-    ‖gaussianMonomial j (p.1 * u)‖ * ‖gaussianMonomial j (p.2 * u)‖
-
 private def gaussianPairWeight (j : Fin 2) (u : ℝ) (S : Set ℕ) (a b : ℕ) : ℝ :=
   S.indicator (fun _ ↦ ‖gaussianMonomial j (a * u)‖ * ‖gaussianMonomial j (b * u)‖) (a * b)
+
+private theorem gaussianPairWeight_apply (j : Fin 2) (u : ℝ) (S : Set ℕ) (a b : ℕ)
+    [Decidable (a * b ∈ S)] :
+    gaussianPairWeight j u S a b =
+      if a * b ∈ S then ‖gaussianMonomial j (a * u)‖ * ‖gaussianMonomial j (b * u)‖ else 0 := by
+  unfold gaussianPairWeight
+  rw [Set.indicator_apply]
 
 private theorem summable_gaussianPairWeight (j : Fin 2) {u : ℝ} (hu : 0 < u) (S : Set ℕ) :
     Summable (fun p : ℕ+ × ℕ+ ↦ gaussianPairWeight j u S p.1 p.2) := by
@@ -97,7 +104,7 @@ private theorem summable_gaussianPairWeight (j : Fin 2) {u : ℝ} (hu : 0 < u) (
       (summable_gaussianTheta (j := j) (c := fun _ ↦ 1) (fun _ ↦ norm_one.le) hu).norm
   have hs₂ := hs.mul_of_nonneg hs (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)
   refine (hs₂.indicator {p : ℕ+ × ℕ+ | (p.1 : ℕ) * p.2 ∈ S}).congr fun p ↦ ?_
-  simp only [gaussianPairWeight, Set.indicator_apply, Set.mem_ofPred_eq]
+  simp only [gaussianPairWeight_apply, Set.indicator_apply, Set.mem_ofPred_eq]
 
 private theorem sum_gaussianPairWeight (j : Fin 2) (u : ℝ) (S : Set ℕ) (m : ℕ+) :
     (∑ p ∈ (m : ℕ).divisorsAntidiagonal, gaussianPairWeight j u S p.1 p.2) =
@@ -117,11 +124,11 @@ private theorem hasSum_gaussianPairFiber (j : Fin 2) {u : ℝ} (hu : 0 < u) (S :
     (fun m ↦ (sum_gaussianPairWeight j u S m).symm)
 
 private theorem gaussianPairFiber_le_of_eq_pow_mul_sq {δ D : ℝ} (hδ : 0 ≤ δ)
-    (hdiv : ∀ n : ℕ, (#n.divisors : ℝ) ≤ D * (n : ℝ) ^ δ)
-    (j : Fin 2) {u : ℝ} (hu : 0 < u) {m k : ℕ+} {d : Fin 2}
+    (j : Fin 2) (u : ℝ) {m k : ℕ+} {d : Fin 2}
+    (hdiv : (#(m : ℕ).divisors : ℝ) ≤ D * (m : ℝ) ^ δ)
     (h : (m : ℕ) = (2 : ℕ) ^ d.val * (k : ℕ) ^ 2) :
-    gaussianPairFiber j u m ≤ (9 * D * 2 ^ δ) * ((k : ℝ) ^ (2 * δ) * exp (-(k * u))) := by
-  have hD : 0 ≤ D := zero_le_one.trans (by simpa using hdiv 1)
+    gaussianPairFiber j u m ≤ (9 * D * 2 ^ δ) * ((k : ℝ) ^ (2 * δ) * exp (-(k * |u|))) := by
+  have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((Nat.cast_nonneg _).trans hdiv) (by positivity)
   have hm : (m : ℝ) = (2 : ℝ) ^ d.val * (k : ℝ) ^ 2 := by exact_mod_cast h
   have hd : d.val ≤ 1 := by omega
   have htwo : 1 ≤ (2 : ℝ) ^ d.val := one_le_pow₀ (by norm_num)
@@ -133,27 +140,12 @@ private theorem gaussianPairFiber_le_of_eq_pow_mul_sq {δ D : ℝ} (hδ : 0 ≤ 
     rw [hm, mul_rpow (by positivity) (by positivity), rpow_mul (by positivity), rpow_two]
     gcongr
   calc
-    gaussianPairFiber j u m ≤ 9 * (#(m : ℕ).divisors : ℝ) * exp (-(√(m : ℝ) * u)) :=
-      sum_gaussianMonomial_divisorsAntidiagonal_le j hu m
-    _ ≤ 9 * (D * (2 ^ δ * (k : ℝ) ^ (2 * δ))) * exp (-(k * u)) := by
+    gaussianPairFiber j u m ≤ 9 * (#(m : ℕ).divisors : ℝ) * exp (-(√(m : ℝ) * |u|)) :=
+      gaussianPairFiber_le j u m
+    _ ≤ 9 * (D * (2 ^ δ * (k : ℝ) ^ (2 * δ))) * exp (-(k * |u|)) := by
       gcongr
-      exact (hdiv _).trans (by gcongr)
+      exact hdiv.trans (by gcongr)
     _ = _ := by ring
-
-private theorem exists_eq_two_pow_mul_sq_of_isSquare_ordCompl {m : ℕ+}
-    (h : IsSquare (ordCompl[2] (m : ℕ))) :
-    ∃ d : Fin 2, ∃ k : ℕ+, (m : ℕ) = (2 : ℕ) ^ d.val * (k : ℕ) ^ 2 := by
-  rcases (Nat.isSquare_ordCompl_iff Nat.prime_two).mp h with ⟨r, hr⟩ | ⟨r, hr⟩
-  · have hr₀ : r ≠ 0 := fun he ↦ by simp [he] at hr
-    exact ⟨0, ⟨r, Nat.pos_of_ne_zero hr₀⟩, by simpa [pow_two] using hr⟩
-  · have hd : 2 ∣ r := (Nat.prime_two.dvd_mul.mp ⟨(m : ℕ), hr.symm⟩).elim id id
-    obtain ⟨k, rfl⟩ := hd
-    have hm : (m : ℕ) = 2 * k ^ 2 := by
-      apply Nat.eq_of_mul_eq_mul_left (by decide : 0 < 2)
-      rw [hr]
-      ring
-    have hk₀ : k ≠ 0 := fun he ↦ by simp [he] at hm
-    exact ⟨1, ⟨k, Nat.pos_of_ne_zero hk₀⟩, by simpa using hm⟩
 
 /-- The Gaussian pair sum over products with square odd part, multiplied by the square
 of the theta normalization, converges with bound `C u⁻²ᵟ` for every positive scale. -/
@@ -171,10 +163,14 @@ theorem exists_summable_and_mul_tsum_gaussianMonomial_isSquare_ordCompl_le {δ :
   let S : Set ℕ+ := PNat.val ⁻¹' S₀
   refine ⟨?_, ?_⟩
   · refine (summable_gaussianPairWeight j hu S₀).congr fun p ↦ ?_
-    simp only [gaussianPairWeight, S₀, Set.indicator_apply, Set.mem_ofPred_eq]
+    simp only [gaussianPairWeight_apply, S₀, Set.mem_ofPred_eq]
   have hsum := hasSum_gaussianPairFiber j hu S₀
   have hFs := summable_subtype_iff_indicator.mpr hsum.summable
-  choose d k hdk using fun m : S ↦ exists_eq_two_pow_mul_sq_of_isSquare_ordCompl m.property
+  have hdecomp (m : S) : ∃ d : Fin 2, ∃ k : ℕ+, (m.val : ℕ) = 2 ^ d.val * (k : ℕ) ^ 2 := by
+    obtain ⟨d, k, hk⟩ := Nat.exists_eq_pow_mul_sq_of_isSquare_ordCompl m.property
+    have hk₀ : k ≠ 0 := fun he ↦ by simp [he] at hk
+    exact ⟨d, ⟨k, Nat.pos_of_ne_zero hk₀⟩, hk⟩
+  choose d k hdk using hdecomp
   let b : ℕ+ → ℝ := fun n ↦ (9 * D * 2 ^ δ) * ((n : ℝ) ^ (2 * δ) * exp (-(n * u)))
   have hb := (hmoment u hu).1.mul_left (9 * D * 2 ^ δ)
   have hb₂ : Summable (fun p : Fin 2 × ℕ+ ↦ b p.2) := by
@@ -186,14 +182,15 @@ theorem exists_summable_and_mul_tsum_gaussianMonomial_isSquare_ordCompl_le {δ :
       (congrArg (fun p : Fin 2 × ℕ+ ↦ (2 : ℕ) ^ p.1.val * (p.2 : ℕ) ^ 2) h).trans (hdk y).symm))
   have hbound := Summable.tsum_le_tsum_of_inj (fun m : S ↦ (d m, k m)) hinj
     (fun p _ ↦ by dsimp [b]; positivity)
-    (fun m ↦ gaussianPairFiber_le_of_eq_pow_mul_sq hδ.le hdiv j hu (hdk m)) hFs hb₂
+    (fun m ↦ by simpa only [Function.comp_apply, abs_of_pos hu, b] using
+      gaussianPairFiber_le_of_eq_pow_mul_sq hδ.le j u (hdiv m.val) (hdk m)) hFs hb₂
   calc
     _ = u * ∑' m : S, gaussianPairFiber j u m := by
       rw [tsum_subtype S, hsum.tsum_eq]
       congr 1
       apply tsum_congr
       intro p
-      simp only [gaussianPairWeight, S₀, Set.indicator_apply, Set.mem_ofPred_eq]
+      simp only [gaussianPairWeight_apply, S₀, Set.mem_ofPred_eq]
     _ ≤ u * ∑' p : Fin 2 × ℕ+, b p.2 := mul_le_mul_of_nonneg_left hbound hu.le
     _ = u * (2 * ((9 * D * 2 ^ δ) * ∑' n : ℕ+, (n : ℝ) ^ (2 * δ) * exp (-(n * u)))) := by
       rw [hb₂.tsum_prod, tsum_fintype, Fin.sum_univ_two]
@@ -212,9 +209,7 @@ private theorem gaussianPair_sqrt_mul_log_le {δ : ℝ} (hδ : 0 < δ) (j : Fin 
       (1 + δ⁻¹) * ((3 * ((p.1 : ℝ) ^ (1 / 2 + δ) * exp (-(p.1 * u)))) *
         (3 * ((p.2 : ℝ) ^ (1 / 2 + δ) * exp (-(p.2 * u))))) := by
   let a := 1 / 2 + δ
-  have hm : 1 ≤ (p.1 : ℝ) * p.2 := by
-    exact one_le_mul_of_one_le_of_one_le (by exact_mod_cast p.1.property)
-      (by exact_mod_cast p.2.property)
+  have hm : 1 ≤ (p.1 : ℝ) * p.2 := by exact_mod_cast (one_le (a := p.1 * p.2))
   let m : ℝ := (p.1 : ℝ) * p.2
   have hlog : 1 + log m ≤ (1 + δ⁻¹) * m ^ δ := by
     have hpow := Real.one_le_rpow hm hδ.le
@@ -223,8 +218,8 @@ private theorem gaussianPair_sqrt_mul_log_le {δ : ℝ} (hδ : 0 < δ) (j : Fin 
   calc
     _ ≤ (3 * exp (-(p.1 * u))) * (3 * exp (-(p.2 * u))) *
         (√m * ((1 + δ⁻¹) * m ^ δ)) := by
-      exact mul_le_mul (mul_le_mul (norm_gaussianMonomial_le_exp j _)
-        (norm_gaussianMonomial_le_exp j _) (norm_nonneg _) (by positivity))
+      exact mul_le_mul (mul_le_mul (norm_gaussianMonomial_le_exp j (le_abs_self _))
+        (norm_gaussianMonomial_le_exp j (le_abs_self _)) (norm_nonneg _) (by positivity))
         (mul_le_mul_of_nonneg_left hlog (sqrt_nonneg _)) (by positivity [log_nonneg hm])
         (by positivity)
     _ = (3 * exp (-(p.1 * u))) * (3 * exp (-(p.2 * u))) * ((1 + δ⁻¹) * m ^ a) := by
@@ -255,9 +250,7 @@ theorem exists_summable_and_mul_tsum_gaussianMonomial_sqrt_mul_log_le {δ : ℝ}
   let g : ℕ+ × ℕ+ → ℝ := fun p ↦ ‖gaussianMonomial j (p.1 * u)‖ *
     ‖gaussianMonomial j (p.2 * u)‖ * (√((p.1 : ℝ) * p.2) * (1 + log ((p.1 : ℝ) * p.2)))
   have hg₀ (p : ℕ+ × ℕ+) : 0 ≤ g p := by
-    have hm : 1 ≤ (p.1 : ℝ) * p.2 := by
-      exact one_le_mul_of_one_le_of_one_le (by exact_mod_cast p.1.property)
-        (by exact_mod_cast p.2.property)
+    have hm : 1 ≤ (p.1 : ℝ) * p.2 := by exact_mod_cast (one_le (a := p.1 * p.2))
     dsimp only [g]
     positivity [log_nonneg hm]
   have hg (p : ℕ+ × ℕ+) : g p ≤ (1 + δ⁻¹) * (f p.1 * f p.2) :=
