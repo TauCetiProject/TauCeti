@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Invariant.Profinite
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Decomposition
+import Mathlib.FieldTheory.Galois.IsGaloisGroup
 import TauCeti.RingTheory.Invariant.Galois
 
 /-!
@@ -48,7 +49,8 @@ variable {F : Type*} [Field F]
 instance isInvariant_integralClosure [PerfectField F] :
     Algebra.IsInvariant (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F))
       (Field.absoluteGaloisGroup F) :=
-  InfiniteGalois.isInvariant_integralClosure (𝓞 F) F (AlgebraicClosure F)
+  Algebra.isInvariant_integralClosure (𝓞 F) F (AlgebraicClosure F)
+    (AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F)
 
 variable (F) in
 /-- The action of `G_F` on `O` is continuous for the discrete topology on `O`. -/

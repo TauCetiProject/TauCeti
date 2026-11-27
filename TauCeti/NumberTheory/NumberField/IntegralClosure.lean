@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Valuation.ValuationRing
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import TauCeti.RingTheory.DedekindDomain.Prufer
 import TauCeti.RingTheory.IntegralClosure.Transfer
+import TauCeti.RingTheory.Invariant.Galois
 
 /-!
 # The integral closure of `𝓞 K` in an extension of a number field
@@ -124,18 +125,12 @@ section Algebraic
 variable {K L}
 
 /-- If a group acts on `L` by `K`-algebra automorphisms with fixed field `K`, the elements of the
-integral closure of `𝓞 K` in `L` fixed by the group are those of `𝓞 K`. -/
+integral closure of `𝓞 K` in `L` fixed by the group are those of `𝓞 K`: the instance form of
+`Algebra.isInvariant_integralClosure` for `𝓞 K`, which is integrally closed in `K`. -/
 instance NumberField.isInvariant_integralClosure {G : Type*} [Group G] [MulSemiringAction G L]
     [SMulCommClass G K L] [Algebra.IsInvariant K L G] :
-    Algebra.IsInvariant (𝓞 K) (integralClosure (𝓞 K) L) G where
-  isInvariant b hb := by
-    obtain ⟨k, hk⟩ := Algebra.IsInvariant.isInvariant (A := K) (G := G) (b : L)
-      fun g ↦ congr_arg Subtype.val (hb g)
-    have hint : IsIntegral ℤ (algebraMap K L k) := by
-      rw [hk]
-      exact isIntegral_trans (R := ℤ) (A := 𝓞 K) _ b.property
-    exact ⟨⟨k, (isIntegral_algHom_iff ((Algebra.ofId K L).restrictScalars ℤ)
-      (algebraMap K L).injective).mp hint⟩, Subtype.ext hk⟩
+    Algebra.IsInvariant (𝓞 K) (integralClosure (𝓞 K) L) G :=
+  Algebra.isInvariant_integralClosure (𝓞 K) K L G
 
 variable [NumberField K] [Algebra.IsAlgebraic K L]
 
