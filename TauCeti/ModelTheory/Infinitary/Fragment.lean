@@ -354,6 +354,17 @@ theorem generated_coe (A : Fragment L) :
     generated (A : Set (Σ n, L.BoundedFormulaω Empty n)) = A :=
   le_antisymm (generated_le_iff.2 le_rfl) (subset_generated _)
 
+/-- Atomic formulas have no components, so a set of atomic formulas generates the fragment
+consisting of exactly those formulas. -/
+theorem coe_generated_of_forall_isAtomic {S : Set (Σ n, L.BoundedFormulaω Empty n)}
+    (hS : ∀ p ∈ S, p.2.IsAtomic) :
+    ((generated S : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)) = S := by
+  refine Set.Subset.antisymm (fun p hp => ?_) (subset_generated _)
+  induction hp with
+  | base h => exact h
+  | imp_left _ ih | imp_right _ ih | all_body _ ih | iInf_comp _ _ ih | iSup_comp _ _ ih =>
+    cases hS _ ih
+
 /-! ### Countability -/
 
 /-- One component step, coded by a tag and an index. -/
@@ -477,6 +488,16 @@ theorem mem_slice {A : Fragment L} {n : ℕ} {φ : L.BoundedFormulaω Empty n} :
 slice subtypes is `Set.inclusion (slice_mono hAB n)`. -/
 theorem slice_mono {A B : Fragment L} (hAB : A ≤ B) (n : ℕ) : A.slice n ⊆ B.slice n :=
   fun _ hφ => hAB hφ
+
+/-- Every formula with `n` bound-variable slots lies in the arity slice of the top fragment. -/
+@[simp]
+theorem slice_top (n : ℕ) : (⊤ : Fragment L).slice n = Set.univ :=
+  Set.eq_univ_of_forall fun _ => mem_top _
+
+/-- The arity slices of the bottom fragment are empty. -/
+@[simp]
+theorem slice_bot (n : ℕ) : (⊥ : Fragment L).slice n = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ => notMem_bot _
 
 /-- Every arity slice of a countable fragment is countable. -/
 theorem slice_countable {A : Fragment L}
