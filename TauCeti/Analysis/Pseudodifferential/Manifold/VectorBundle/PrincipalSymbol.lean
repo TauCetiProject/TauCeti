@@ -63,7 +63,9 @@ commutator is linear over the functions, so its value at `x` only depends on `s(
 `TauCeti.classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators` for the matrix entries.
 In particular a smooth bundle map from `E` to `F`, acting on sections, has as principal symbol of
 order `0` its fibre map at every nonzero covector
-(`TauCeti.sectionClassicalPrincipalSymbol_apply_of_map_smul`).
+(`TauCeti.sectionClassicalPrincipalSymbol_apply_of_map_smul`), so over a manifold of positive
+dimension it has order `-1` only when it is zero
+(`TauCeti.mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul`).
 
 An operator is **elliptic at** `x` (`TauCeti.IsSectionClassicalEllipticAt`) when `σ_m(P)(x, ξ)` is
 bijective for every nonzero covector `ξ`. Ellipticity is unchanged by perturbations of order
@@ -120,6 +122,8 @@ pseudodifferential operators between bundles applies to elliptic differential op
   `f`, evaluated at `x`.
 * `TauCeti.sectionClassicalPrincipalSymbol_apply_of_map_smul`: a smooth bundle map acting on
   sections has as principal symbol of order `0` its fibre map at every nonzero covector.
+* `TauCeti.mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul`: in positive
+  dimension, a smooth bundle map of order `-1` is zero.
 * `TauCeti.isSectionClassicalEllipticAt_add_iff`: ellipticity only depends on the principal symbol.
 * `TauCeti.isSectionClassicalEllipticAt_smul_iff`: ellipticity is unchanged by nonzero scalars.
 * `TauCeti.IsSectionClassicalEllipticAt.finrank_eq`: in positive dimension, ellipticity at a
@@ -724,6 +728,21 @@ theorem sectionClassicalPrincipalSymbol_apply_of_map_smul
     (hf ▸ hξ) s
   rw [hf] at h
   simpa using h
+
+/-- **Bundle maps of order `-1` vanish.** Over a manifold of positive dimension, an operator
+`P : Γ(E) → Γ(F)` which is linear over the smooth functions, that is a smooth bundle map, is a
+classical pseudodifferential operator of order `-1` only when it is zero: its principal symbol of
+order `0` at a nonzero covector is its fibre map. -/
+theorem mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul
+    [Nontrivial (CoordinateSpace n)]
+    (hP : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s) :
+    P ∈ sectionClassicalPseudodifferentialOperators (-1) ↔ P = 0 := by
+  refine ⟨fun hP₁ ↦ ?_, fun h ↦ h ▸ zero_mem _⟩
+  ext s x
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
+  rw [← sectionClassicalPrincipalSymbol_apply_of_map_smul hP hξ s,
+    sectionClassicalPrincipalSymbol_eq_zero_of_mem_sub_one (m := 0) (by rwa [zero_sub]) x ξ]
+  simp
 
 /-! ### Ellipticity -/
 
