@@ -12,6 +12,8 @@ import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
 import TauCeti.AlgebraicGeometry.Fibers.Finite
 import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
+import TauCeti.AlgebraicGeometry.ResidueDegree
 import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.Topology.Sober
 
@@ -56,6 +58,9 @@ comparison with `IsAlteration` requires an irreducible source.
 * `Scheme.Hom.isFiniteOverGenericPoints_iff_exists_isFinite_morphismRestrict`:
   a proper morphism is finite over the generic points exactly when it is finite over an open
   subscheme containing them.
+* `AlgebraicGeometry.Scheme.Hom.IsNoetherianAlteration.residueDegree_pos`: the generic degrees
+  `[κ(x) : κ(f x)]` of a noetherian alteration, at the component-generic points `x` of its source,
+  are positive.
 * `AlgebraicGeometry.Scheme.Hom.IsNoetherianAlteration.comp`: noetherian alterations compose.
 * `AlgebraicGeometry.Scheme.Hom.isNoetherianAlteration_iff_isAlteration`: from an irreducible
   source, noetherian alterations are the alterations of `TauCeti.AlgebraicGeometry.IsAlteration`.
@@ -141,6 +146,16 @@ theorem IsFiniteOverGenericPoints.mem_genericPoints {f : X ⟶ Y}
   exact congrArg Subtype.val
     (((subtype_specializes_iff (p := (· ∈ f ⁻¹' {f x})) ⟨x', hfx'⟩ ⟨x, rfl⟩).mpr hx').eq)
 
+/-- **Generic degrees are positive.** If a morphism locally of finite type is finite over the
+generic points of its target, its residue degree `[κ(x) : κ(f x)]` is positive at every point `x`
+lying over a component-generic point of the target: the residue field extension is finite. -/
+theorem IsFiniteOverGenericPoints.residueDegree_pos {f : X ⟶ Y} [LocallyOfFiniteType f]
+    (hf : f.IsFiniteOverGenericPoints) {x : X} (hx : f x ∈ genericPoints Y) :
+    0 < f.residueDegree x := by
+  have := (f.isFiniteOverGenericPoints_iff_forall_isFinite_fiberToSpecResidueField.mp hf) _ hx
+  exact (f.residueDegree_pos_iff x).mpr
+    (f.quasiFiniteAt_of_isFinite_fiberToSpecResidueField (x := x)).finite_residueField
+
 /-- A composite of morphisms locally of finite type that are finite over the generic points of
 their targets is finite over the generic points of its target. -/
 theorem IsFiniteOverGenericPoints.comp {f : X ⟶ Y} {g : Y ⟶ Z} [LocallyOfFiniteType f]
@@ -208,6 +223,15 @@ theorem IsNoetherianAlteration.comp {f : X ⟶ Y} {g : Y ⟶ Z} (hg : g.IsNoethe
   have := hg.surjective
   exact ⟨inferInstance, inferInstance, hg.isMaximallyDominating.comp hf.isMaximallyDominating,
     hg.isFiniteOverGenericPoints.comp hf.isFiniteOverGenericPoints⟩
+
+/-- **Generic degrees of a noetherian alteration are positive.** At every component-generic point
+`x` of the source of a noetherian alteration `f`, the residue field extension `κ(f x) ⟶ κ(x)` is
+finite, so the generic degree `[κ(x) : κ(f x)]` is positive. -/
+theorem IsNoetherianAlteration.residueDegree_pos {f : X ⟶ Y} (hf : f.IsNoetherianAlteration)
+    {x : X} (hx : x ∈ genericPoints X) : 0 < f.residueDegree x :=
+  have := hf.isProper
+  hf.isFiniteOverGenericPoints.residueDegree_pos
+    (f.isMaximallyDominating_iff.mp hf.isMaximallyDominating x hx)
 
 /-- A finite surjective maximally dominating morphism is a noetherian alteration. -/
 theorem isNoetherianAlteration_of_isFinite (f : X ⟶ Y) [IsFinite f] [Surjective f]

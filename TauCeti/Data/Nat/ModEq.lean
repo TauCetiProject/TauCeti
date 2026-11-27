@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.ModEq
+import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic.Ring
 
 /-!
@@ -24,6 +25,9 @@ with `ν i < p`. Likewise, since `(p - 1) a ≡ -a` modulo `p`, two residues `a,
 * `Nat.eq_of_dvd_sub_one_mul_add`: for residues `a, b < p`, `p ∣ (p - 1) * a + b` forces `b = a`.
 * `Nat.modEq_div_two_sub_one_iff`: for even `q ≠ 0`, `d ≡ q / 2 - 1 (mod q)` if and only if
   `q ∣ 2 (d + 1)` and `q ∤ d + 1`.
+* `Nat.coprime_div_two_sub_one_iff`: for a positive even `q`, the class `q / 2 - 1` is reduced
+  exactly when `4 ∣ q`.
+* `Nat.div_two_sub_one_modEq_of_mul_dvd`: reduce that class modulo a divisor of `q / 2`.
 * `TauCeti.sq_sub_one_eq_four_mul_of_mod_four_eq_three`: for `q ≡ 3 (mod 4)`, factor `q² - 1`
   with the factor `4` made explicit.
 -/
@@ -83,6 +87,29 @@ theorem modEq_div_two_sub_one_iff {q d : ℕ} (hq : Even q) (hq₀ : q ≠ 0) :
   rw [h₃, h₁, h₂, Nat.ModEq, Nat.mod_eq_of_lt (by omega : m < m + m), hn,
     Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hr]
   omega
+
+/-- For a positive even modulus `q`, the residue `q / 2 - 1` is prime to `q` exactly when
+`q` is divisible by four. -/
+theorem coprime_div_two_sub_one_iff {q : ℕ} (hq : Even q) (hq₀ : q ≠ 0) :
+    (q / 2 - 1).Coprime q ↔ 4 ∣ q := by
+  obtain ⟨m, rfl⟩ := hq
+  have hdiv : (m + m) / 2 = m := by omega
+  have hpos : 1 ≤ m := by omega
+  have hc : (m - 1).Coprime m := (coprime_self_sub_left hpos).2 (by simp)
+  rw [hdiv, ← two_mul, coprime_mul_iff_right, and_iff_left hc, coprime_two_right, odd_iff]
+  omega
+
+/-- If `2m` divides the positive modulus `q`, its residue `q / 2 - 1` reduces to `m - 1`
+modulo `m`. -/
+theorem div_two_sub_one_modEq_of_mul_dvd {q m : ℕ} (hq : q ≠ 0) (hm : 2 * m ∣ q) :
+    q / 2 - 1 ≡ m - 1 [MOD m] := by
+  obtain ⟨k, hk⟩ := hm
+  have hpos : 0 < m ∧ 0 < k := by
+    simpa [hk, mul_ne_zero_iff, Nat.pos_iff_ne_zero] using hq
+  have hdiv : q / 2 = m * k := by rw [hk, mul_assoc, Nat.mul_div_cancel_left _ (by decide)]
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hpos.2.ne'
+  rw [hdiv, Nat.mul_succ, Nat.add_sub_assoc hpos.1]
+  simp [Nat.ModEq]
 
 end Nat
 
