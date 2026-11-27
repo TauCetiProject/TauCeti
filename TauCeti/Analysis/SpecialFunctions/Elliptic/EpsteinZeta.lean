@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Uniformization
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.LimitFormula
 import Mathlib.Algebra.Module.ZLattice.Summable
-import TauCeti.Algebra.Module.ZLattice.Complex
+import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Covolume
 
 /-!
 # Kronecker's first limit formula for a lattice
@@ -32,8 +32,6 @@ which is the form in which the constant term enters the Chowla–Selberg formula
 
 * `PeriodPair.epsteinZeta`: the real Epstein zeta function `E(Λ, s)` of the lattice of a period
   pair, normalised by its covolume.
-* `PeriodPair.covolume_lattice`, `PeriodPair.covolume_lattice_smul`: the covolume of the lattice
-  of `(ω₁, ω₂)` is `|Im (conj ω₁ * ω₂)|`, and rescaling by `c` multiplies it by `‖c‖ ^ 2`.
 * `PeriodPair.epsteinZeta_eq_of_lattice_eq`, `PeriodPair.epsteinZeta_smul`: `E(Λ, s)` depends only
   on the lattice, and only on its homothety class.
 * `PeriodPair.epsteinZeta_periodPair`: for `Λ = ℤ τ + ℤ` it is `UpperHalfPlane.epsteinZeta τ`.
@@ -63,7 +61,7 @@ public section
 noncomputable section
 
 open Complex Filter Set Topology
-open scoped ComplexConjugate Pointwise Real UpperHalfPlane
+open scoped Real UpperHalfPlane
 
 namespace PeriodPair
 
@@ -79,25 +77,6 @@ def epsteinZeta (s : ℝ) : ℝ :=
 theorem epsteinZeta_def (s : ℝ) :
     L.epsteinZeta s = ∑' l : L.lattice, (ZLattice.covolume L.lattice / ‖(l : ℂ)‖ ^ 2) ^ s :=
   (rfl)
-
-/-- The covolume of the lattice of the period pair `(ω₁, ω₂)` is `|Im (conj ω₁ * ω₂)|`, the area of
-the parallelogram spanned by `ω₁` and `ω₂`. -/
-theorem covolume_lattice :
-    ZLattice.covolume L.lattice = |(conj L.ω₁ * L.ω₂).im| := by
-  simpa using ZLattice.covolume_eq_abs_im L.lattice L.latticeBasis
-
-/-- Rescaling a period pair by `c` multiplies the covolume of its lattice by `‖c‖ ^ 2`. -/
-@[simp]
-theorem covolume_lattice_smul (c : ℂˣ) :
-    ZLattice.covolume (c • L).lattice = ‖(c : ℂ)‖ ^ 2 * ZLattice.covolume L.lattice := by
-  have : NeZero (c : ℂ) := ⟨c.ne_zero⟩
-  have h : (c • L).lattice = (c : ℂ) • L.lattice := by
-    ext x
-    simp [lattice_smul, Submodule.mem_smul_pointwise_iff_exists]
-  rw [← ZLattice.covolume_complex_smul]
-  -- The covolumes of the two sides are those of the submodules identified by `h`; the instance
-  -- arguments of `ZLattice.covolume` are propositions.
-  congr 1
 
 /-- The real Epstein zeta function depends only on the lattice, not on the chosen basis. -/
 theorem epsteinZeta_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
@@ -124,13 +103,6 @@ theorem epsteinZeta_smul (c : ℂˣ) : (c • L).epsteinZeta = L.epsteinZeta := 
 end PeriodPair
 
 namespace UpperHalfPlane
-
-/-- The lattice `ℤ τ + ℤ` has covolume `Im τ`. -/
-@[simp]
-theorem covolume_lattice_periodPair (τ : ℍ) :
-    ZLattice.covolume τ.periodPair.lattice = τ.im := by
-  rw [PeriodPair.covolume_lattice, periodPair_ω₁, periodPair_ω₂, mul_one, Complex.conj_im,
-    coe_im, abs_neg, abs_of_pos τ.im_pos]
 
 /-- For the lattice `ℤ τ + ℤ`, the real Epstein zeta function of the period pair `(τ, 1)` is
 `UpperHalfPlane.epsteinZeta τ`. -/
