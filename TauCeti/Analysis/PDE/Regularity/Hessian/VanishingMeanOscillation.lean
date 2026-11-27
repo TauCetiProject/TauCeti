@@ -191,8 +191,8 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 <
         lpNorm (Wkp.iteratedGradient 1 w) p (volume.restrict U) ≤
           C * lpNorm F p (volume.restrict U) := by
   obtain ⟨C, δ, hδ, hCZ⟩ :=
-    exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le (n := n) hp hp_top
-      lam Lam
+    exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le (n := n)
+      (ENNReal.one_lt_two.trans hp) hp_top lam Lam
   refine ⟨C, δ, hδ, fun {a} ha haΛ hosc {U} hUfin w hw0 hwp {F} hF heq => ?_⟩
   have : IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     isFiniteMeasure_restrict.2 hUfin
@@ -210,7 +210,8 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 <
     filter_upwards [ae_contraction_iteratedGradient_extendByZeroₗᵢ_eq_indicator (w := ⟨w, hw0⟩)
       heq] with x hx
     rw [← hx, Matrix.contraction_apply]
-  have hkey := hCZ ha (fun x => haΛ.opNorm_matrixBilinearForm_le (mem_univ x)) hosc W _ hWeq
+  have hkey := hCZ ha (fun x => haΛ.opNorm_matrixBilinearForm_le (mem_univ x)) hosc
+    (min_le_right p 2) W _ hWeq
     (((memLp_indicator_iff_restrict hUm.nullMeasurableSet).2 hwp).ae_eq
       (hW.mono fun _ h => h.symm))
     ((memLp_indicator_iff_restrict hUm.nullMeasurableSet).2 hF)

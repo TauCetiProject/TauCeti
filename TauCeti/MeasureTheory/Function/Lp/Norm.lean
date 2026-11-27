@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
@@ -49,6 +50,8 @@ bounds.
   power of the pointwise norm of an `Lᵖ` function is the `p`-th power of its `Lᵖ` norm.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.setAverage_norm_rpow_le_of_norm_le`: a bound `‖g‖ ≤ C ‖f‖` in `Lᵖ(s)`,
+  `0 < p < ∞`, as the bound `⨍_s ‖g‖ᵖ ≤ Cᵖ ⨍_s ‖f‖ᵖ` between averages.
 * `MeasureTheory.Lp.eNorm_rpow_eq_lintegral` and `MeasureTheory.Lp.eNorm_rpow_two_eq_lintegral`:
   the same identities for the extended norm and the lower integral of an `Lᵖ` function.
 * `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy–Schwarz, `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂` for
@@ -430,6 +433,24 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
+
+/-- On a set `s`, a bound `‖g‖ ≤ C ‖f‖` between functions in `Lᵖ(s)`, `p = γ ∈ (0, ∞)`, is the
+bound `⨍_s ‖g‖^γ ≤ C^γ ⨍_s ‖f‖^γ` between averages. -/
+theorem Lp.setAverage_norm_rpow_le_of_norm_le {alpha F G : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] [NormedAddCommGroup G] {s : Set alpha} {γ C : ℝ}
+    (hγ0 : 0 < γ) (hC : 0 ≤ C) {g : Lp G (ENNReal.ofReal γ) (m.restrict s)}
+    {f : Lp F (ENNReal.ofReal γ) (m.restrict s)} (h : ‖g‖ ≤ C * ‖f‖) :
+    ⨍ x in s, ‖g x‖ ^ γ ∂m ≤ C ^ γ * ⨍ x in s, ‖f x‖ ^ γ ∂m := by
+  have hγne : ENNReal.ofReal γ ≠ 0 := by simpa using hγ0
+  have h1 := Lp.integral_norm_rpow_eq_norm_rpow hγne ENNReal.ofReal_ne_top g
+  have h2 := Lp.integral_norm_rpow_eq_norm_rpow hγne ENNReal.ofReal_ne_top f
+  rw [ENNReal.toReal_ofReal hγ0.le] at h1 h2
+  have hf0 : 0 ≤ ‖f‖ := by rw [Lp.norm_def]; exact ENNReal.toReal_nonneg
+  have hg0 : 0 ≤ ‖g‖ := by rw [Lp.norm_def]; exact ENNReal.toReal_nonneg
+  simp only [setAverage_eq, smul_eq_mul]
+  rw [h1, h2, mul_left_comm (C ^ γ), ← Real.mul_rpow hC hf0]
+  exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow hg0 h hγ0.le)
+    (inv_nonneg.2 measureReal_nonneg)
 
 /-- For `0 < p < ∞`, the `p`-th power of the extended norm of an `Lᵖ` function is the lower
 integral of the `p`-th power of its pointwise extended norm. -/

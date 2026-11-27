@@ -290,7 +290,7 @@ theorem norm_iteratedGradient_compLinearIsometryEquiv (he : MeasurePreserving e 
     ← eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) her,
     eLpNorm_congr_norm_ae ((e.iteratedGradientCongr k).symm.continuous.comp_aestronglyMeasurable
       hm) hm (ae_of_all _ fun x => LinearIsometryEquiv.norm_map _ _)]
-  rfl
+  rw [Function.comp_def]
 
 /-- The transport commutes with forgetting the highest derivative. -/
 theorem lowerOrder_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)

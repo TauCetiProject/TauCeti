@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
+import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.InnerProductSpace.OfNorm
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Bochner.Holder
@@ -119,8 +120,6 @@ applied to an integrable function that is almost everywhere at least `a`.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le_setLAverage_setLAverage`,
   `TauCeti.setLAverage_setLAverage_enorm_sub_le`: the mean oscillation of `f` on `s` and the
   average of `‖f x - f y‖ₑ` over pairs of points of `s` agree up to a factor `2`.
-* `TauCeti.setIntegral_norm_sub_setAverage_sq_le`: the square mean oscillation of `f` about its
-  average is at most four times its square mean oscillation about any constant.
 * `TauCeti.setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add` and
   `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq`: in an inner product
   space the square mean oscillation about a constant splits orthogonally, so the average is the
@@ -137,8 +136,10 @@ applied to an integrable function that is almost everywhere at least `a`.
   most the integrated squared error on `t` of any of them.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
-* `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
-  `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
+* `TauCeti.rpow_setAverage_norm_le_setAverage_norm_rpow`: Jensen's inequality
+  `(⨍_s ‖g‖)^γ ≤ ⨍_s ‖g‖^γ`, `γ ≥ 1`, and its case `γ = 2`,
+  `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`, bounding the mean oscillation by the square
+  mean oscillation.
 * `TauCeti.measureReal_mul_sq_norm_setAverage_le`: the real form `μ s ‖f_s‖² ≤ ∫_s ‖f‖²`, for
   `f ∈ L²(s)`, of Hölder's bound `TauCeti.enorm_setAverage_rpow_le` at exponent `2`.
 * `TauCeti.norm_le_add_sqrt_of_ae_eq`: a pointwise bound from `L²` and oscillation bounds.
@@ -600,17 +601,32 @@ theorem sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq {E : Type*} [NormedAdd
   simpa only [ENNReal.rpow_two] using
     rpow_laverage_le_laverage_rpow (μ := μ.restrict s) (u := fun x => ‖h x‖ₑ) one_le_two
 
+/-- **Jensen's inequality for the mean of a norm.** For `γ ≥ 1`, if `‖g‖^γ` is integrable on `s`,
+then `(⨍_s ‖g‖)^γ ≤ ⨍_s ‖g‖^γ`. If `μ s` is `0` or `∞`, both averages are `0`. -/
+theorem rpow_setAverage_norm_le_setAverage_norm_rpow {E : Type*} [NormedAddCommGroup E]
+    {s : Set X} {g : X → E} {γ : ℝ} (hγ : 1 ≤ γ)
+    (hgγ : IntegrableOn (fun x ↦ ‖g x‖ ^ γ) s μ) :
+    (⨍ x in s, ‖g x‖ ∂μ) ^ γ ≤ ⨍ x in s, ‖g x‖ ^ γ ∂μ := by
+  have hγ0 : 0 < γ := zero_lt_one.trans_le hγ
+  have hR : 0 ≤ ⨍ x in s, ‖g x‖ ^ γ ∂μ := average_nonneg fun _ ↦ by positivity
+  by_cases hg : IntegrableOn (fun x ↦ ‖g x‖) s μ
+  swap
+  · rwa [setAverage_eq, integral_undef hg, smul_zero, Real.zero_rpow hγ0.ne']
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0, Real.zero_rpow hγ0.ne']
+  rcases eq_or_ne (μ s) ⊤ with ht | ht
+  · simp [setAverage_eq, measureReal_def, ht, Real.zero_rpow hγ0.ne']
+  exact ConvexOn.map_set_average_le (convexOn_rpow hγ)
+    (continuous_id.rpow_const fun _ ↦ Or.inr hγ0.le).continuousOn isClosed_Ici h0 ht
+    (ae_of_all _ fun x ↦ norm_nonneg (g x)) hg hgγ
+
 /-- **Jensen's inequality for the square of a mean.** The square of the mean of `‖g‖` over `s` is
 at most the mean of `‖g‖²`. If `μ s` is `0` or `∞`, both averages are `0`. -/
 theorem sq_setAverage_norm_le_setAverage_norm_sq {E : Type*} [NormedAddCommGroup E]
     {s : Set X} {g : X → E} (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
     (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ := by
-  have h1 := pow_le_pow_left' (enorm_setAverage_le_setLAverage μ (fun x ↦ ‖g x‖) s) 2
-  simp only [eNorm_norm] at h1
-  have h := h1.trans (sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq hg2)
-  have ha : 0 ≤ ⨍ x in s, ‖g x‖ ∂μ := average_nonneg fun _ ↦ norm_nonneg _
-  simp only [Real.eNorm_of_nonneg ha, ← ENNReal.ofReal_pow ha] at h
-  exact (ENNReal.ofReal_le_ofReal_iff (average_nonneg fun _ ↦ by positivity)).1 h
+  simpa only [Real.rpow_two] using rpow_setAverage_norm_le_setAverage_norm_rpow one_le_two
+    (by simpa only [Real.rpow_two] using hg2)
 
 /-- The measure of a set `s` of finite measure times the squared norm of the average of `f` over
 `s` is at most `∫_s ‖f‖²`. This is the real-valued form of `enorm_setAverage_rpow_le` at
@@ -875,45 +891,6 @@ theorem setLAverage_setLAverage_enorm_sub_le :
         exact eNorm_sub_le
     _ = A + A := by simp_rw [add_comm _ A, hadd]
     _ = 2 * A := (two_mul A).symm
-
-/-- The square mean oscillation of `f` on a set `s` of finite measure about its own average is at
-most four times its square mean oscillation about any constant `c`:
-`∫_s ‖f - f_s‖² ≤ 4 ∫_s ‖f - c‖²`. -/
-theorem setIntegral_norm_sub_setAverage_sq_le (hs : μ s ≠ ⊤) (hf : IntegrableOn f s μ) {c : F}
-    (hfc : IntegrableOn (fun x ↦ ‖f x - c‖ ^ 2) s μ) :
-    ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ 2 ∂μ ≤ 4 * ∫ x in s, ‖f x - c‖ ^ 2 ∂μ := by
-  rcases eq_or_ne (μ s) 0 with h0 | h0
-  · simp [Measure.restrict_eq_zero.2 h0]
-  have hm : 0 < μ.real s := ENNReal.toReal_pos h0 hs
-  set a := ‖(⨍ y in s, f y ∂μ) - c‖
-  set J := ∫ x in s, ‖f x - c‖ ^ 2 ∂μ
-  -- The average lies within the mean of `‖f - c‖` of `c`, and Jensen's inequality bounds the
-  -- square of that mean by the mean of `‖f - c‖²`, so `μ s * a² ≤ J`.
-  have ha : a ≤ ⨍ x in s, ‖f x - c‖ ∂μ := by
-    simpa [div_self hm.ne'] using norm_setAverage_sub_le_of_subset subset_rfl h0 hs hf c
-  have hJ : (⨍ x in s, ‖f x - c‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ :=
-    sq_setAverage_norm_le_setAverage_norm_sq hfc
-  have haJ : μ.real s * a ^ 2 ≤ J := by
-    calc μ.real s * a ^ 2 ≤ μ.real s * ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ := by
-          gcongr
-          exact (pow_le_pow_left₀ (norm_nonneg _) ha 2).trans hJ
-      _ = J := by rw [setAverage_eq, smul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hm.ne', one_mul]
-  -- Pointwise, `‖f x - f_s‖² ≤ 2 ‖f x - c‖² + 2 a²`.
-  calc ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ 2 ∂μ
-      ≤ ∫ x in s, (2 * ‖f x - c‖ ^ 2 + 2 * a ^ 2) ∂μ := by
-        refine integral_mono_of_nonneg (ae_of_all _ fun _ ↦ by positivity)
-          ((hfc.const_mul 2).add (integrableOn_const hs)) (ae_of_all _ fun x ↦ ?_)
-        have htri : ‖f x - ⨍ y in s, f y ∂μ‖ ≤ ‖f x - c‖ + a := by
-          calc ‖f x - ⨍ y in s, f y ∂μ‖ = ‖(f x - c) - ((⨍ y in s, f y ∂μ) - c)‖ := by
-                congr 1; abel
-            _ ≤ ‖f x - c‖ + a := norm_sub_le _ _
-        have h0' : 0 ≤ ‖f x - ⨍ y in s, f y ∂μ‖ := norm_nonneg _
-        nlinarith [sq_nonneg (‖f x - c‖ - a)]
-    _ = 2 * J + 2 * (μ.real s * a ^ 2) := by
-        rw [integral_add (hfc.const_mul 2) (integrableOn_const hs), integral_const_mul,
-          setIntegral_const, smul_eq_mul]
-        ring
-    _ ≤ 4 * J := by linarith
 
 end Subset
 

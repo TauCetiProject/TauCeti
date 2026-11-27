@@ -262,7 +262,8 @@ private theorem conj_toEuclideanCLM_bounds {m : ℕ} {V : Type*} [NormedAddCommG
       PDE.matrixBilinearForm_apply, ← Matrix.inner_toEuclideanCLM, real_inner_comm] at h
     refine h.trans_eq ?_
     rw [← e.inner_map_map, LinearIsometryEquiv.apply_symm_apply]
-    rfl
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv]
   · rw [ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
       ContinuousLinearMap.opNorm_comp_linearIsometryEquiv,
       ← PDE.norm_matrixBilinearForm_eq_norm_toEuclideanCLM]
@@ -309,7 +310,7 @@ theorem exists_sum_mul_inner_iteratedGradient_eq_and_norm_le_of_ball {n : ℕ} (
   -- The ball `Ω` is the preimage under `e` of the ball `W = e Ω` of `V`.
   set W : Opens V := ⟨g ⁻¹' Omega, Omega.isOpen.preimage g.continuous⟩
   have hW : (W : Set V) = ball (e x₀) R := by
-    change g ⁻¹' (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) = _
+    simp only [W, Opens.coe_mk]
     rw [hΩ, LinearIsometryEquiv.preimage_ball]
   have hΩW : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) = e ⁻¹' W := by
     ext x

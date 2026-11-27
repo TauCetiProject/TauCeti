@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.SmallMeanOscillation
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.Average.Oscillation
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.PDE.DirichletProblem.HomogeneousSobolev

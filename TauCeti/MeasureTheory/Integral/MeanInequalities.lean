@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.Basic.Real.ConjExponents
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Average
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.IntegrableOn
@@ -67,6 +68,8 @@ expected products without any independence assumption.
 * `TauCeti.setAverage_rpow_mul_norm_rpow_le_of_ae_le`: the same inequality for averages.
 * `TauCeti.setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq`: the averaged form of a decay
   estimate whose error is controlled by Hölder's inequality with a bounded weight.
+* `TauCeti.setIntegral_norm_rpow_le_of_ae_norm_le`: the power-mean inequality
+  `∫_s ‖φ‖^γ ≤ 2^(γ - 1) (∫_s ‖ψ‖^γ + ∫_s ‖χ‖^γ)` when `‖φ‖ ≤ ‖ψ‖ + ‖χ‖`, `γ ≥ 1`.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
   the absolute-moment bound for an integral of a finite product.
 
@@ -323,6 +326,20 @@ theorem setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq {E : Type*} [NormedAd
   rw [inv_pow]
   field_simp
   ring
+
+/-- **The power-mean inequality under a set integral.** If `‖φ‖ ≤ ‖ψ‖ + ‖χ‖` almost everywhere on
+`s`, then `∫_s ‖φ‖^γ ≤ 2^(γ - 1) (∫_s ‖ψ‖^γ + ∫_s ‖χ‖^γ)` for `γ ≥ 1`. -/
+theorem setIntegral_norm_rpow_le_of_ae_norm_le {F : Type*} [NormedAddCommGroup F] {s : Set β}
+    {φ ψ χ : β → F} {γ : ℝ} (hγ : 1 ≤ γ) (h : ∀ᵐ x ∂ν.restrict s, ‖φ x‖ ≤ ‖ψ x‖ + ‖χ x‖)
+    (hψ : IntegrableOn (fun x ↦ ‖ψ x‖ ^ γ) s ν) (hχ : IntegrableOn (fun x ↦ ‖χ x‖ ^ γ) s ν) :
+    ∫ x in s, ‖φ x‖ ^ γ ∂ν ≤
+      2 ^ (γ - 1) * ((∫ x in s, ‖ψ x‖ ^ γ ∂ν) + ∫ x in s, ‖χ x‖ ^ γ ∂ν) := by
+  rw [← integral_add hψ hχ, ← integral_const_mul]
+  refine integral_mono_of_nonneg (ae_of_all _ fun _ ↦ by positivity) ((hψ.add hχ).const_mul _)
+    (h.mono fun x hx ↦ ?_)
+  exact (Real.rpow_le_rpow (norm_nonneg _) hx (zero_le_one.trans hγ)).trans
+    (Real.rpow_add_le_mul_rpow_add_rpow (norm_nonneg _) (norm_nonneg _) hγ)
+
 end TauCeti
 
 namespace MeasureTheory
