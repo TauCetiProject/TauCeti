@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 import TauCeti.GroupTheory.OrderOfElement.InfiniteOrder
 import TauCeti.LinearAlgebra.Eigenspace.Decomposition
+import TauCeti.LinearAlgebra.LinearMap.EqOn
 import TauCeti.LinearAlgebra.Matrix.DetDescent
 
 /-!
@@ -34,9 +35,10 @@ the automorphism acts on the generalized `μ`-eigenspace of `F` by `a ^ k(μ)`, 
 satisfies `k (c * μ) = k μ + 1` for `μ ≠ 0`: such an exponent exists because the powers of `c`
 act freely on `Kˣ` (`TauCeti.exists_apply_mul_eq_add_one_of_not_isOfFinOrder`). The eigenvalue `0`
 does not occur since `F` is injective (`Module.End.maxGenEigenspace_zero_eq_bot_of_injective`),
-and the generalized eigenspaces decompose `V` (`Module.End.isInternal_maxGenEigenspace`). Over an
-infinite field the automorphism found over the algebraic closure descends, by the matrix form of
-the Noether–Deuring theorem `Matrix.exists_det_ne_zero_forall_mul_eq_mul_of_algebraMap`.
+and the generalized eigenspaces decompose `V` (`Module.End.isInternal_maxGenEigenspace`), so the
+automorphism is `Module.End.scalarOn F fun μ ↦ a ^ k μ`. Over an infinite field the automorphism
+found over the algebraic closure descends, by the matrix form of the Noether–Deuring theorem
+`Matrix.exists_det_ne_zero_forall_mul_eq_mul_of_algebraMap`.
 
 This is the linear algebra behind the isomorphism `(r, N) ≅ (r, a N)` of Weil–Deligne parameters
 with finite inertia image, `TauCeti.WeilDeligneParameter.nonempty_iso_rescale`: there `F` is the
@@ -81,30 +83,6 @@ section IsAlgClosed
 
 variable [IsAlgClosed K] [FiniteDimensional K V]
 
-open scoped Classical in
-/-- The endomorphism acting on the generalized `μ`-eigenspace of `F` by the scalar `s μ`. -/
-private noncomputable def scalarOn (F : End K V) (s : K → K) : End K V :=
-  DirectSum.toModule K K V (fun μ ↦ s μ • (F.maxGenEigenspace μ).subtype) ∘ₗ
-    (LinearEquiv.ofBijective (DirectSum.coeLinearMap fun μ ↦ F.maxGenEigenspace μ)
-      (isInternal_maxGenEigenspace F)).symm.toLinearMap
-
-open scoped Classical in
-private theorem scalarOn_apply (F : End K V) (s : K → K) {μ : K} {v : V}
-    (hv : v ∈ F.maxGenEigenspace μ) : scalarOn F s v = s μ • v := by
-  have h : (LinearEquiv.ofBijective (DirectSum.coeLinearMap fun μ ↦ F.maxGenEigenspace μ)
-      (isInternal_maxGenEigenspace F)).symm v =
-      DirectSum.lof K K (fun μ ↦ F.maxGenEigenspace μ) μ ⟨v, hv⟩ := by
-    rw [LinearEquiv.symm_apply_eq]
-    exact (DirectSum.coeLinearMap_lof _ μ ⟨v, hv⟩).symm
-  simp only [scalarOn, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply]
-  rw [h, DirectSum.toModule_lof, LinearMap.smul_apply, Submodule.subtype_apply]
-
-private theorem scalarOn_mul_scalarOn (F : End K V) {s t : K → K} (hst : ∀ μ, s μ * t μ = 1) :
-    scalarOn F s * scalarOn F t = 1 := by
-  refine ext_of_maxGenEigenspace (F := F) fun μ v hv ↦ ?_
-  rw [mul_apply_eq_comp, scalarOn_apply F t hv,
-    scalarOn_apply F s (Submodule.smul_mem _ _ hv), smul_smul, hst, one_smul, one_apply_eq_self]
-
 /-- The automorphism of `Module.End.exists_mul_eq_smul_mul_of_mul_eq_smul_mul` over an
 algebraically closed field, for `c ≠ 0`: it acts on the generalized `μ`-eigenspace of `F` by
 `a ^ k(μ)`. -/
@@ -120,22 +98,23 @@ private theorem exists_mul_eq_smul_mul_of_isAlgClosed {F N : End K V} (hF : Inje
     have hu : Units.mk0 (c * μ) (mul_ne_zero hc0 hμ) = Units.mk0 μ hμ * Units.mk0 c hc0 :=
       Units.ext (mul_comm c μ)
     simp only [k, hμ, mul_ne_zero hc0 hμ, dite_false, hu, he]
+  have hunit (m₁ m₂ : K → ℤ) (h : ∀ μ, m₁ μ + m₂ μ = 0) :
+      scalarOn F (fun μ ↦ a ^ m₁ μ) * scalarOn F (fun μ ↦ a ^ m₂ μ) = 1 := by
+    rw [← scalarOn_mul, ← scalarOn_one F]
+    congr 1
+    funext μ
+    rw [Pi.mul_apply, Pi.one_apply, ← zpow_add₀ ha, h, zpow_zero]
   refine ⟨⟨scalarOn F fun μ ↦ a ^ k μ, scalarOn F fun μ ↦ a ^ (-k μ),
-    scalarOn_mul_scalarOn F fun μ ↦ by rw [← zpow_add₀ ha, add_neg_cancel, zpow_zero],
-    scalarOn_mul_scalarOn F fun μ ↦ by rw [← zpow_add₀ ha, neg_add_cancel, zpow_zero]⟩,
-    fun T hT ↦ ?_, ?_⟩
-  · refine ext_of_maxGenEigenspace (F := F) fun μ v hv ↦ ?_
-    have hTv : T v ∈ F.maxGenEigenspace μ := mapsTo_maxGenEigenspace_of_comm hT μ hv
-    rw [mul_apply_eq_comp, mul_apply_eq_comp, scalarOn_apply F _ hv,
-      scalarOn_apply F _ hTv, map_smul]
-  · refine ext_of_maxGenEigenspace (F := F) fun μ v hv ↦ ?_
-    rcases eq_or_ne μ 0 with rfl | hμ
-    · rw [maxGenEigenspace_zero_eq_bot_of_injective hF, Submodule.mem_bot] at hv
-      simp [hv]
-    · have hNv := mapsTo_maxGenEigenspace_of_mul_eq_smul_mul hFN μ hv
-      rw [mul_apply_eq_comp, scalarOn_apply F _ hNv, LinearMap.smul_apply,
-        mul_apply_eq_comp, scalarOn_apply F _ hv, map_smul, smul_smul, hk μ hμ,
-        zpow_add_one₀ ha, mul_comm]
+    hunit _ _ fun μ ↦ add_neg_cancel _, hunit _ _ fun μ ↦ neg_add_cancel _⟩,
+    fun T hT ↦ commute_scalarOn hT _, ?_⟩
+  refine LinearMap.ext_of_iSup_eq_top (iSup_maxGenEigenspace_eq_top F) fun μ v hv ↦ ?_
+  rcases eq_or_ne μ 0 with rfl | hμ
+  · rw [maxGenEigenspace_zero_eq_bot_of_injective hF, Submodule.mem_bot] at hv
+    simp [hv]
+  · have hNv := mapsTo_maxGenEigenspace_of_mul_eq_smul_mul hFN μ hv
+    rw [mul_apply_eq_comp, scalarOn_apply F _ hNv, LinearMap.smul_apply,
+      mul_apply_eq_comp, scalarOn_apply F _ hv, map_smul, smul_smul, hk μ hμ,
+      zpow_add_one₀ ha, mul_comm]
 
 end IsAlgClosed
 
@@ -176,15 +155,13 @@ private theorem exists_mul_eq_smul_mul_of_infinite [Infinite K] [FiniteDimension
   let b := Module.finBasis K V
   let n := Module.finrank K V
   let M : End K V ≃ₐ[K] Matrix (Fin n) (Fin n) K := LinearMap.toMatrixAlgEquiv b
+  -- `P` identifies endomorphisms of `Fin n → L` with matrices; `ψ` is base change to `L`
+  let P := LinearMap.toMatrixAlgEquiv' (R := L) (n := Fin n)
   let ψ : End K V →ₐ[K] End L (Fin n → L) :=
-    ((Matrix.toLinAlgEquiv' (R := L) (n := Fin n)).restrictScalars K).toAlgHom.comp
-      ((Algebra.ofId K L).mapMatrix.comp M.toAlgHom)
-  have hψ (T : End K V) : ψ T = Matrix.toLin' ((M T).map (algebraMap K L)) := by
-    ext v i
-    simp only [ψ, AlgEquiv.toAlgHom_restrictScalars, AlgHom.coe_comp, AlgHom.coe_restrictScalars',
-      AlgEquiv.coe_toAlgHom, comp_apply, AlgHom.mapMatrix_apply, LinearMap.coe_comp,
-      LinearMap.coe_single, Matrix.toLinAlgEquiv'_apply, Matrix.toLin'_apply, Matrix.mulVec,
-      dotProduct, Matrix.map_apply, Algebra.ofId_apply]
+    (P.symm.restrictScalars K).toAlgHom.comp ((Algebra.ofId K L).mapMatrix.comp M.toAlgHom)
+  have hψ (T : End K V) : P (ψ T) = (M T).map (algebraMap K L) := by
+    ext i j
+    simp [ψ, AlgHom.mapMatrix_apply]
   have hψsmul (x : K) (T : End K V) : ψ (x • T) = algebraMap K L x • ψ T := by
     rw [map_smul, algebraMap_smul]
   have hFu : IsUnit F :=
@@ -196,28 +173,22 @@ private theorem exists_mul_eq_smul_mul_of_infinite [Infinite K] [FiniteDimension
     rw [← map_mul, ← map_mul, ← hψsmul, hFN]
   obtain ⟨gL, hgT, hgN⟩ := exists_mul_eq_smul_mul_of_isAlgClosed hFL
     ((map_ne_zero _).mpr hc0) hcL hFNL ((map_ne_zero (algebraMap K L)).mpr ha)
-  let X : Matrix (Fin n) (Fin n) L := LinearMap.toMatrix' (gL : End L (Fin n → L))
-  have hX : X.det ≠ 0 := by
-    have hu : IsUnit X := (gL.isUnit.map (LinearMap.toMatrixAlgEquiv' (R := L) (n := Fin n)))
-    exact ((Matrix.isUnit_iff_isUnit_det X).mp hu).ne_zero
-  have hmat (T : End K V) (hT : Commute (ψ F) (ψ T)) :
-      (M T).map (algebraMap K L) * X = X * (M T).map (algebraMap K L) := by
-    have h := congrArg LinearMap.toMatrix' (hgT _ hT).eq
-    rw [LinearMap.toMatrix'_mul, LinearMap.toMatrix'_mul, hψ, LinearMap.toMatrix'_toLin'] at h
-    exact h.symm
+  let X : Matrix (Fin n) (Fin n) L := P gL
+  have hX : X.det ≠ 0 := ((Matrix.isUnit_iff_isUnit_det X).mp (gL.isUnit.map P)).ne_zero
+  -- the relations satisfied by `gL` translate into relations between matrices
+  have hmat (T : End K V) {x : L} (h : (gL : End L (Fin n → L)) * ψ T = x • (ψ T * gL)) :
+      x • ((M T).map (algebraMap K L) * X) = X * (M T).map (algebraMap K L) := by
+    simpa only [map_mul, map_smul, hψ] using (congrArg P h).symm
   let ι := Option {T : End K V // Commute F T}
   let A : ι → Matrix (Fin n) (Fin n) K := fun s ↦ s.elim (M N) fun T ↦ M T
   let B : ι → Matrix (Fin n) (Fin n) K := fun s ↦ s.elim (a • M N) fun T ↦ M T
   obtain ⟨Y, hY, hYAB⟩ := Matrix.exists_det_ne_zero_forall_mul_eq_mul_of_algebraMap A B hX
     (by
       rintro (_ | ⟨T, hT⟩)
-      · have h := congrArg LinearMap.toMatrix' hgN
-        rw [LinearMap.toMatrix'_mul, map_smul, LinearMap.toMatrix'_mul, hψ,
-          LinearMap.toMatrix'_toLin'] at h
-        simp only [B, A, Option.elim_none]
-        rw [Matrix.map_smul' _ a _ (map_mul _), Matrix.smul_mul]
-        exact h.symm
-      · exact hmat T (hT.map ψ))
+      · simpa only [B, A, Option.elim_none, Matrix.map_smul' _ a _ (map_mul _), Matrix.smul_mul]
+          using hmat N hgN
+      · simpa only [A, B, Option.elim_some, one_smul] using
+          hmat T (x := 1) (by rw [one_smul]; exact (hgT _ (hT.map ψ)).eq))
   exact exists_unit_of_matrix b hY (fun T hT ↦ hYAB (some ⟨T, hT⟩)) (hYAB none)
 
 /-- **Rescaling a conjugation-scaled endomorphism.** Let `F` be an injective endomorphism of a
