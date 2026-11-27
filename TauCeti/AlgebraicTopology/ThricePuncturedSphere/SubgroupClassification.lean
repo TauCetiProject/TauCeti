@@ -136,8 +136,8 @@ theorem exists_subgroup_eq [NeZero n]
     ∃ c : MarkedIsoClass n, c.subgroup = H := by
   let p := UniversalCover.subgroupCover basePt H
   let e := UniversalCover.subgroupCoverBasepointFiber basePt H
-  have hcard : Nat.card (⇑p.proj ⁻¹' {basePt}) = n := by
-    rw [p.isCoveringMap_proj.card_fiber_eq_index e, UniversalCover.range_mapOfEq_subgroupCover, hH]
+  have hcard : Nat.card (⇑p.proj ⁻¹' {basePt}) = n :=
+    (UniversalCover.card_subgroupCover_fiber basePt H).trans hH
   have := Nat.finite_of_card_ne_zero (hcard.trans_ne (NeZero.ne n))
   let := Fintype.ofFinite (⇑p.proj ⁻¹' {basePt})
   let ν : ⇑p.proj ⁻¹' {basePt} ≃ Fin n :=

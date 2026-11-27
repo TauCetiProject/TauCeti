@@ -180,8 +180,9 @@ theorem ofSubgroup_val [LocallyPathConnectedSpace X] [SemilocallySimplyConnected
 /-- The pointed cover attached to a subgroup recovers it. -/
 @[simp]
 theorem subgroup_ofSubgroup [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
-    (H : Subgroup (FundamentalGroup X x₀)) : (ofSubgroup H).subgroup = H :=
-  UniversalCover.range_mapOfEq_subgroupCover x₀ H
+    (H : Subgroup (FundamentalGroup X x₀)) : (ofSubgroup H).subgroup = H := by
+  rw [subgroup_def]
+  exact UniversalCover.range_mapOfEq_subgroupCover x₀ H
 
 instance [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] :
     (subgroupFunctor x₀).EssSurj where
@@ -236,9 +237,9 @@ theorem subgroup_def (c : ConnectedPointedCover x₀ n) :
 
 /-- The subgroup recovered by a pointed connected cover of degree `n` has index `n`. -/
 theorem index_subgroup [LocallyPathConnectedSpace X] (c : ConnectedPointedCover x₀ n) :
-    c.subgroup.index = n :=
-  (c.cover.isCoveringMap_proj.card_fiber_eq_index c.e).symm.trans
-    ((Nat.card_congr c.nonempty_equiv_fin.some).trans (Nat.card_fin n))
+    c.subgroup.index = n := by
+  rw [subgroup_def, ← c.cover.isCoveringMap_proj.card_fiber_eq_index c.e,
+    Nat.card_congr c.nonempty_equiv_fin.some, Nat.card_fin]
 
 /-- A pointed isomorphism of covers of degree `n` gives a map of pointed connected covers. -/
 private def homOfIso {c c' : ConnectedPointedCover x₀ n} (f : c.cover ≅ c'.cover)
@@ -276,7 +277,8 @@ theorem subgroup_injective [LocallyPathConnectedSpace X] :
   induction C using ind with | h c =>
   induction C' using ind with | h c' =>
   have h' := congrArg Subtype.val h
-  rw [subgroup_mk, subgroup_mk] at h'
+  rw [subgroup_mk, subgroup_mk, ConnectedPointedCover.subgroup_def,
+    ConnectedPointedCover.subgroup_def] at h'
   exact mk_eq_mk_of_range_eq c c' h'
 
 theorem subgroup_surjective [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
@@ -284,11 +286,11 @@ theorem subgroup_surjective [LocallyPathConnectedSpace X] [SemilocallySimplyConn
   rintro ⟨H, hH⟩
   let p := UniversalCover.subgroupCover x₀ H
   let e := UniversalCover.subgroupCoverBasepointFiber x₀ H
-  have hcard : Nat.card (⇑p.proj ⁻¹' {x₀}) = n := by
-    rw [p.isCoveringMap_proj.card_fiber_eq_index e, UniversalCover.range_mapOfEq_subgroupCover, hH]
+  have hcard : Nat.card (⇑p.proj ⁻¹' {x₀}) = n :=
+    (UniversalCover.card_subgroupCover_fiber x₀ H).trans hH
   have := Nat.finite_of_card_ne_zero (hcard.trans_ne (NeZero.ne n))
   refine ⟨mk ⟨p, e, ⟨Finite.equivFinOfCardEq hcard⟩⟩, Subtype.ext ?_⟩
-  rw [subgroup_mk]
+  rw [subgroup_mk, ConnectedPointedCover.subgroup_def]
   exact UniversalCover.range_mapOfEq_subgroupCover x₀ H
 
 /-- **The index-`n` slice of the classification of pointed covers**: for `n ≠ 0`, a class of

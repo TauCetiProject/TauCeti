@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.RecoveredSubgroup
 public import TauCeti.Topology.Covering.Factorization
+public import TauCeti.Topology.Homotopy.Monodromy.Basic
 import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
@@ -42,6 +43,8 @@ the comparison map, and the upgrade above makes that map a covering map.
   attached to `H` covers the cover attached to `K` exactly when `H ≤ K`.**
 * `TauCeti.UniversalCover.range_mapOfEq_subgroupCover`: the cover attached to `H`, pointed at the
   class of the constant path, recovers `H`.
+* `TauCeti.UniversalCover.card_subgroupCover_fiber`: the cover attached to `H` has degree the
+  index of `H`.
 
 ## References
 
@@ -132,6 +135,12 @@ theorem range_mapOfEq_subgroupCover (x₀ : X) (H : Subgroup (FundamentalGroup X
       at he
     exact he
   · exact funext (subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph x₀ H)
+
+/-- The cover attached to `H ≤ π₁(X, x₀)` has degree the index of `H`. -/
+theorem card_subgroupCover_fiber (x₀ : X) (H : Subgroup (FundamentalGroup X x₀)) :
+    Nat.card (⇑(subgroupCover x₀ H).proj ⁻¹' {x₀}) = H.index := by
+  rw [(subgroupCover x₀ H).isCoveringMap_proj.card_fiber_eq_index
+    (subgroupCoverBasepointFiber x₀ H), range_mapOfEq_subgroupCover]
 
 end UniversalCover
 
