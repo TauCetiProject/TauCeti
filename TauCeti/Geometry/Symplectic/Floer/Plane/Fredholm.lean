@@ -60,7 +60,10 @@ so that `D_u` is Fredholm.
   `TauCeti.SymplecticForm`), and `D_u` is Fredholm
   (`TauCeti.SymplecticForm.isFredholm_floerConformalSobolevOperator_positive`).
 * **Finite-energy planes.** Along a finite-energy solution of the Floer equation of the positive
-  PSS plane with nondegenerate asymptotic orbit, both estimates hold, and `D_u` is Fredholm
+  PSS plane with nondegenerate asymptotic orbit, both estimates hold and the coefficient field of
+  `D_u` on conformal jets is bounded
+  (`TauCeti.SymplecticForm.memLp_floerConformalJetCoeff_of_finite_energy_positive`), so `D_u` is
+  Fredholm
   (`TauCeti.SymplecticForm.isFredholm_floerConformalSobolevOperator_of_finite_energy_positive`).
   Every PSS plane is the positive plane for a rescaled Hamiltonian
   (`TauCeti.Floer.PSSPlane.perturbation_eq_positive`).
@@ -880,6 +883,67 @@ private theorem exists_forall_norm_sliceDefect_le_one (ω : SymplecticForm V) {H
   rw [← hper.apply_fract t]
   exact h.le
 
+/-- **The coefficient field along a finite-energy PSS plane is bounded.** Let `H` be a `C³`
+Hamiltonian of period one in time, with globally Lipschitz suspended vector field, whose
+one-periodic orbits in a compact set `K` are nondegenerate. Let `u` be a `C¹` map of the plane,
+`C³` on the end `‖w‖ > r`, that solves the Floer equation of the positive PSS plane for `H` on that
+end, with finite energy there and values in `K`, for almost complex structures `J` that are `C¹`
+along `u` and equal on the end to a `C²` family `J_q(t)` of period one taming `ω` on `K`. Then the
+coefficient field of the linearized operator `D_u` on conformal jets, for the cylindrical weight of
+the plane, is essentially bounded. -/
+theorem memLp_floerConformalJetCoeff_of_finite_energy_positive (ω : SymplecticForm V)
+    {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 3 (uncurry H)) {L : ℝ≥0}
+    (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H)) {K : Set V}
+    (hK : IsCompact K) {Jq : ℝ → V → AlmostComplexStructure V}
+    (hJq : ContDiff ℝ 2 fun q : ℝ × V ↦ (Jq q.1 q.2).toLinearMap.toContinuousLinearMap)
+    (hJqper : Periodic Jq 1) (hJqK : ∀ t, ∀ y ∈ K, ω.Tames (Jq t y))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {r : ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 1
+      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hJr : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      J z = Jq (positive.endCoord (Complex.equivRealProdCLM.symm z)).im)
+    (hu : ContDiff ℝ 1 u) (hur : ContDiffOn ℝ 3 u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
+    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
+    (hF : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
+          z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
+      ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) ≠ ⊤)
+    (hnd : ∀ x : ℝ → V, Periodic x 1 →
+      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) → (∀ t, x t ∈ K) →
+      IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
+    MemLp (ω.floerConformalJetCoeff PSSPlane.cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u) ∞
+      (volume.restrict univ) := by
+  set φ := realChart positive.cylindricalEndLift
+  obtain ⟨x, -, -, -, a, hsub, hJeq, -, hδ⟩ :=
+    ω.exists_tendstoUniformlyOn_sliceDefect_of_finite_energy positive hH hHs hL hK hJq hJqper
+      hJqK hJr hur huK hF hE hnd
+  simp only [endSign_positive, one_mul] at hJeq hδ
+  obtain ⟨T₀, hT₀⟩ := exists_forall_norm_sliceDefect_le_one ω hH hδ
+  obtain ⟨Cu, hCu⟩ := hK.isBounded.exists_norm_le
+  have hend (ζ : ℝ × ℝ) (hζ : max T₀ (a + 1) ≤ positive.endSign * ζ.1) :
+      r < ‖Complex.equivRealProdCLM.symm (φ ζ)‖ := by
+    rw [endSign_positive, one_mul] at hζ
+    exact hsub (exp_lt_norm_realChart_positive (by linarith [le_max_right T₀ (a + 1)]))
+  exact ω.memLp_floerConformalJetCoeff_pssPlane (p := positive) hH (hHs.of_le (by norm_num))
+    hJ hu (hJq.of_le one_le_two) (T := max T₀ (a + 1))
+    (fun ζ hζ ↦ hJeq ζ (by
+      rw [endSign_positive, one_mul] at hζ
+      linarith [le_max_right T₀ (a + 1)]))
+    (fun ζ hζ ↦ hF _ (hend ζ hζ)) (Cu := Cu) (fun ζ hζ ↦ hCu _ (huK _ (hend ζ hζ)))
+    (Cδ := 1) fun ζ hζ ↦ hT₀ ζ (by
+      rw [endSign_positive, one_mul] at hζ
+      exact (le_max_left _ _).trans hζ)
+
 /-- **The linearized operator along a finite-energy PSS plane is Fredholm.** Let `H` be a `C⁴`
 Hamiltonian of period one in time, with globally Lipschitz suspended vector field, whose
 one-periodic orbits in a compact set `K` are nondegenerate. Let `u` be a `C³` map of the plane that
@@ -922,7 +986,6 @@ theorem isFredholm_floerConformalSobolevOperator_of_finite_energy_positive
       (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       u).IsFredholm := by
-  set φ := realChart positive.cylindricalEndLift
   have hHs3 : ContDiff ℝ 3 (uncurry H) := hHs.of_le (by norm_num)
   have hJ1 (z : ℝ × ℝ) : ContDiffAt ℝ 1
       (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z) :=
@@ -940,29 +1003,11 @@ theorem isFredholm_floerConformalSobolevOperator_of_finite_energy_positive
     · exact hc z hz
     · rw [hJr z hz]
       exact hJqK _ _ (huK z hz)
-  -- `J` is bounded along `u`, and the coefficient field on conformal jets is bounded: far out on
-  -- the end `u` stays in `K` and its slice defect is small, by the exponential decay of the end.
+  -- `J` is bounded along `u`, and so is the coefficient field on conformal jets.
   obtain ⟨B, hB⟩ := exists_forall_norm_le_of_end hK hJq.continuous hJqper
     (fun z ↦ (hJ1 z).continuousAt) hu1.continuous hJr huK
-  obtain ⟨x, -, -, -, a, hsub, hJeq, -, hδ⟩ :=
-    ω.exists_tendstoUniformlyOn_sliceDefect_of_finite_energy positive hH hHs3 hL hK hJq hJqper
-      (fun t y hy ↦ (hJqK t y hy).tames) hJr hu.contDiffOn huK hF hE hnd
-  simp only [endSign_positive, one_mul] at hJeq hδ
-  obtain ⟨T₀, hT₀⟩ := exists_forall_norm_sliceDefect_le_one ω hH hδ
-  obtain ⟨Cu, hCu⟩ := hK.isBounded.exists_norm_le
-  have hend (ζ : ℝ × ℝ) (hζ : max T₀ (a + 1) ≤ positive.endSign * ζ.1) :
-      r < ‖Complex.equivRealProdCLM.symm (φ ζ)‖ := by
-    rw [endSign_positive, one_mul] at hζ
-    exact hsub (exp_lt_norm_realChart_positive (by linarith [le_max_right T₀ (a + 1)]))
-  have hM := ω.memLp_floerConformalJetCoeff_pssPlane (p := positive) hH (hHs.of_le (by norm_num))
-    hJ1 hu1 (hJq.of_le one_le_two) (T := max T₀ (a + 1))
-    (fun ζ hζ ↦ hJeq ζ (by
-      rw [endSign_positive, one_mul] at hζ
-      linarith [le_max_right T₀ (a + 1)]))
-    (fun ζ hζ ↦ hF _ (hend ζ hζ)) (Cu := Cu) (fun ζ hζ ↦ hCu _ (huK _ (hend ζ hζ)))
-    (Cδ := 1) fun ζ hζ ↦ hT₀ ζ (by
-      rw [endSign_positive, one_mul] at hζ
-      exact (le_max_left _ _).trans hζ)
+  have hM := ω.memLp_floerConformalJetCoeff_of_finite_energy_positive hH hHs3 hL hK hJq hJqper
+    (fun t y hy ↦ (hJqK t y hy).tames) hJ1 hJr hu1 hu.contDiffOn huK hF hE hnd
   have hKs (z : ℝ × ℝ) : ContDiffAt ℝ 4 (uncurry fun z x ↦
       positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1) (z, u z) :=
     (contDiff_uncurry_perturbation (p := positive) hH hHs 1).contDiffAt

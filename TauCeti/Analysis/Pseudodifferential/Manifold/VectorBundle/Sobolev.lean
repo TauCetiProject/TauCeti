@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Sobolev
-public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.ChartQuantization
+public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 
 /-!
 # Sobolev estimates for pseudodifferential operators between vector bundles
@@ -43,6 +44,21 @@ This is the a priori estimate through which `P` extends to a bounded operator
 between bundles on a compact manifold. It is the bundle form of the scalar estimate
 `TauCeti.exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`.
 
+When `W` is finite-dimensional as well, the same estimate holds for the readings with values in the
+model fibres. In a chart `e`, a trivialization `t` of `E` and a cutoff `ψ` with `e⁻¹(supp ψ)` in
+the base set of `t`, the section `u` is read as the Schwartz function `y ↦ ψ(y) t(u(e⁻¹ y))` with
+values in `V` (`OpenPartialHomeomorph.sectionCutoffPushforwardSchwartz`), and
+
+`∑ⱼ ‖φⱼ · t'ⱼ((P u) ∘ eⱼ⁻¹)‖_{H^{s - m}} ≤ C ∑ᵢ ‖ψᵢ · tᵢ(u ∘ e'ᵢ⁻¹)‖_{H^s}`
+
+(`TauCeti.exists_sum_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_le_sum`).
+Here no auxiliary functions `ρᵢ`, `χⱼ` or functionals enter the statement: the `H^{s,p}` norm of a
+reading is comparable with those of its frame coefficients
+(`TauCeti.norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le` and
+`TauCeti.norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_le_sum`), and the matrix
+entries of `P` act on these coefficients
+(`TauCeti.cutoffFrameCoeff_map_smul_eq_sum_sectionEntry`).
+
 ## The argument
 
 The operator `P` is pseudodifferential when its matrix entries in cut-off frames
@@ -74,6 +90,14 @@ bounds the reading of each term through `φ` in `e` in `H^{s - m}` by the readin
   `eⱼ⁻¹(supp φⱼ)` and the `ℓₗ` are the coordinate functionals of a basis of `W` (so `W` is
   finite-dimensional). For other data it bounds the readings `φⱼ · (χⱼ ℓₗ(t'ⱼ (P u)) ∘ eⱼ⁻¹)`
   of `P u`, without being a norm of `P u` (for an empty family of `ℓₗ` it is `0`).
+* `norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le` and
+  `norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_le_sum`: the
+  `H^{s,p}` norm of the reading of a section compared with those of its cut-off frame coefficients.
+* `exists_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_smul_le`,
+  `exists_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_le_sum` and
+  `exists_sum_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_le_sum`: the
+  estimates between two charts, in one chart and on `M`, for the readings with values in `V`
+  and `W`.
 
 ## References
 
@@ -90,14 +114,14 @@ public section
 noncomputable section
 
 open Bundle Set TauCeti
-open scoped ContDiff Manifold Distributions SchwartzMap BesselPotentialSpace
+open scoped ContDiff Manifold Distributions SchwartzMap BesselPotentialSpace ENNReal
 
 namespace TauCeti
 
 open OpenPartialHomeomorph
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
-  [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
+  [T2Space M]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
   {E : M → Type*} [TopologicalSpace (TotalSpace V E)] [∀ x, AddCommGroup (E x)]
   [∀ x, Module ℝ (E x)] [∀ x, Module ℂ (E x)] [∀ x, TopologicalSpace (E x)] [FiberBundle V E]
@@ -108,6 +132,59 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   [VectorBundle ℝ W F] [VectorBundle ℂ W F] [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)]
   {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯} {m : ℝ}
   {ι : Type*} [Fintype ι]
+
+/-! ### Readings of sections and of their frame coefficients -/
+
+section Reading
+
+variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+  (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+  (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
+  (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (hψ : e.symm '' tsupport ψ ⊆ t.baseSet)
+  {ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯} (hρ : tsupport ρ ⊆ t.baseSet)
+  (hρψ : ∀ y ∈ tsupport ψ, ρ (e.symm y) = 1)
+
+include hρψ in
+/-- **A frame coefficient is bounded by the section.** The reading `ψ · (g ∘ e⁻¹)` of the cut-off
+frame coefficient `g = ρ ℓ(t u)` of a section `u`, for a cutoff `ρ` equal to `1` on `e⁻¹(supp ψ)`,
+is bounded in `H^{s,p}` by `‖ℓ‖` times the reading `ψ · t(u ∘ e⁻¹)` of `u`. -/
+theorem norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le (s : ℝ)
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (ℓ : V →L[ℂ] ℂ) (u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    ‖SchwartzMap.toBesselPotentialSpaceCLM s p
+        (e.cutoffPushforwardSchwartz he ψ (t.cutoffFrameCoeff ρ hρ ℓ u))‖ ≤
+      ‖ℓ‖ * ‖SchwartzMap.toBesselPotentialSpaceCLM s p
+        (e.sectionCutoffPushforwardSchwartz he t ψ hψ u)‖ := by
+  rw [← postcompCLM_sectionCutoffPushforwardSchwartz he t ψ hψ hρ hρψ,
+    SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM]
+  exact (BesselPotentialSpace.postcomp _ s p ℓ).le_of_opNorm_le
+    (BesselPotentialSpace.norm_postcomp_le ℓ) _
+
+include hρψ in
+/-- **A section is bounded by its frame coefficients.** For a basis `(cⱼ)` of `V` with coordinate
+functionals `cⱼ*`, the reading `ψ · t(u ∘ e⁻¹)` of a section `u` is bounded in `H^{s,p}` by the
+readings of its cut-off frame coefficients `ρ cⱼ*(t u)`, for a cutoff `ρ` equal to `1` on
+`e⁻¹(supp ψ)`. -/
+theorem norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_le_sum (s : ℝ)
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {κ : Type*} [Fintype κ] (c : Module.Basis κ ℂ V)
+    (u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    ‖SchwartzMap.toBesselPotentialSpaceCLM s p (e.sectionCutoffPushforwardSchwartz he t ψ hψ u)‖ ≤
+      ∑ j, ‖ContinuousLinearMap.toSpanSingleton ℂ (c j)‖ *
+        ‖SchwartzMap.toBesselPotentialSpaceCLM s p
+          (e.cutoffPushforwardSchwartz he ψ
+            (t.cutoffFrameCoeff ρ hρ (c.coord j).toContinuousLinearMap u))‖ := by
+  rw [← BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord c
+    (SchwartzMap.toBesselPotentialSpaceCLM s p _)]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
+  rw [← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
+    postcompCLM_sectionCutoffPushforwardSchwartz he t ψ hψ hρ hρψ]
+  exact (BesselPotentialSpace.postcomp _ s p _).le_of_opNorm_le
+    (BesselPotentialSpace.norm_postcomp_le _) _
+
+end Reading
+
+/-! ### The Sobolev estimates for frame coefficients -/
+
+variable [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
 
 /-- **The Sobolev estimate between two charts.** Let `P` be a classical pseudodifferential
 operator of order `m` between bundles, `φ` a cutoff in a chart `e`, `t'` a trivialization of `F`
@@ -137,7 +214,7 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFr
   choose C hC using fun k ↦
     exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le
       ((mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2 t ρ hρ (b k) t' χ hχ ℓ) he he'
-      φ ψ s
+      φ ψ ENNReal.one_lt_two ENNReal.ofNat_ne_top s
   refine ⟨∑ k, |C k|, fun u ↦ ?_⟩
   -- `ρ = 1` wherever `Ψ = ψ ∘ e'` does not vanish.
   have hΨρ (x : M) (hx : e'.cutoffPullback he' ψ 1 x ≠ 0) : ρ x = 1 := by
@@ -245,5 +322,156 @@ theorem exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cuto
   refine ⟨∑ j, ∑ l, C j l, fun u ↦ ?_⟩
   simp only [Finset.sum_mul]
   exact Finset.sum_le_sum fun j _ ↦ Finset.sum_le_sum fun l _ ↦ hC j l u
+
+/-! ### The Sobolev estimates for readings with values in the model fibres -/
+
+section FiberReading
+
+variable [FiniteDimensional ℂ W]
+
+/-- **The Sobolev estimate between two charts.** Let `P : Γ(E) → Γ(F)` be a classical
+pseudodifferential operator of order `m` between bundles, `φ` a cutoff in a chart `e` with
+`e⁻¹(supp φ)` in the base set of a trivialization `t'` of `F`, and `ψ` a cutoff in a chart `e'`
+with `e'⁻¹(supp ψ)` in the base set of a trivialization `t` of `E`; let `Ψ` be the smooth function
+`ψ ∘ e'` on `M`, extended by `0`. For every real `s` there is a constant `C` such that for every
+smooth section `u` of `E`, the reading `φ · t'(P (Ψ u) ∘ e⁻¹)` of `P (Ψ u)` satisfies
+
+`‖φ · t'(P (Ψ u) ∘ e⁻¹)‖_{H^{s - m}} ≤ C ‖ψ · t(u ∘ e'⁻¹)‖_{H^s}`. -/
+theorem exists_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_smul_le
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (t' : Trivialization W (π W F)) [MemTrivializationAtlas t']
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (hφ : e.symm '' tsupport φ ⊆ t'.baseSet)
+    {e' : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
+    (ψ : 𝓓(⟨e'.target, e'.open_target⟩, ℝ)) (hψ : e'.symm '' tsupport ψ ⊆ t.baseSet) (s : ℝ) :
+    ∃ C, ∀ u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯,
+      ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2 (e.sectionCutoffPushforwardSchwartz he t' φ
+          hφ (P (ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1) • u)))‖ ≤
+        C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
+          (e'.sectionCutoffPushforwardSchwartz he' t ψ hψ u)‖ := by
+  obtain ⟨ρ', hρ', hρ'φ⟩ := e.exists_tsupport_subset_eq_one he φ t'.open_baseSet hφ
+  obtain ⟨ρ, hρ, hρψ⟩ := e'.exists_tsupport_subset_eq_one he' ψ t.open_baseSet hψ
+  set b := Module.finBasis ℂ V
+  set c := Module.finBasis ℂ W
+  set Ψ := ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1)
+  -- The scalar estimate for each matrix entry `Aⱼₖ : f ↦ ρ' cⱼ*(t' (P (f ρ t⁻¹ bₖ)))`; the
+  -- constants are replaced by `max (C j k) 0` below.
+  choose C hC using fun j k ↦
+    exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le
+      ((mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2 t ρ hρ (b k) t' ρ' hρ'
+        (c.coord j).toContinuousLinearMap) he he' φ ψ ENNReal.one_lt_two ENNReal.ofNat_ne_top s
+  simp only [LinearMap.mulLeft_apply] at hC
+  refine ⟨∑ j, ∑ k, ‖ContinuousLinearMap.toSpanSingleton ℂ (c j)‖ * max (C j k) 0 *
+    ‖(b.coord k).toContinuousLinearMap‖, fun u ↦ ?_⟩
+  -- `ρ = 1` on the support `e'⁻¹(supp ψ)` of `Ψ`.
+  have hρΨ (x : M) (hx : x ∈ tsupport (e'.cutoffPullback he' ψ 1)) : ρ x = 1 := by
+    rw [tsupport_cutoffPullback_one] at hx
+    obtain ⟨y, hy, rfl⟩ := hx
+    exact hρψ y hy
+  set R := SchwartzMap.toBesselPotentialSpaceCLM s 2
+    (e'.sectionCutoffPushforwardSchwartz he' t ψ hψ u)
+  -- The coefficient `ρ' cⱼ*(t' (P (Ψ u)))` is `∑ₖ Aⱼₖ (Ψ gₖ)` with `gₖ = ρ bₖ*(t u)`, and the
+  -- reading of `gₖ` is bounded by that of `u`.
+  have hj (j) : ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2 (e.cutoffPushforwardSchwartz he φ
+      (t'.cutoffFrameCoeff ρ' hρ' (c.coord j).toContinuousLinearMap (P (Ψ • u))))‖ ≤
+      ∑ k, max (C j k) 0 * (‖(b.coord k).toContinuousLinearMap‖ * ‖R‖) := by
+    rw [cutoffFrameCoeff_map_smul_eq_sum_sectionEntry t ρ hρ t' ρ' hρ' _ P hρΨ b, map_sum, map_sum]
+    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ (hC j k _).trans ?_)
+    gcongr
+    · exact le_max_left _ _
+    · exact norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le he' t ψ
+        hψ hρ hρψ s _ u
+  -- Expand the reading of `P (Ψ u)` in the basis `(cⱼ)` of `W`.
+  refine (norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_le_sum he t' φ hφ hρ'
+    hρ'φ (s - m) c _).trans ?_
+  calc ∑ j, ‖ContinuousLinearMap.toSpanSingleton ℂ (c j)‖ *
+        ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2 (e.cutoffPushforwardSchwartz he φ
+          (t'.cutoffFrameCoeff ρ' hρ' (c.coord j).toContinuousLinearMap (P (Ψ • u))))‖
+      ≤ ∑ j, ‖ContinuousLinearMap.toSpanSingleton ℂ (c j)‖ *
+          ∑ k, max (C j k) 0 * (‖(b.coord k).toContinuousLinearMap‖ * ‖R‖) := by
+        gcongr with j
+        exact hj j
+    _ = _ := by
+        simp only [Finset.mul_sum, Finset.sum_mul, mul_assoc]
+
+/-- **The Sobolev estimate in one chart.** Let `P : Γ(E) → Γ(F)` be a classical pseudodifferential
+operator of order `m` between bundles, and let `ψᵢ` be finitely many cutoffs in charts `e'ᵢ`, with
+`e'ᵢ⁻¹(supp ψᵢ)` in the base set of a trivialization `tᵢ` of `E`, whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on
+`M`, extended by `0`, add up to `1`. For a cutoff `φ` in a chart `e` with `e⁻¹(supp φ)` in the base
+set of a trivialization `t'` of `F`, and every real `s`, there is a constant `C` such that every
+smooth section `u` of `E` satisfies
+
+`‖φ · t'((P u) ∘ e⁻¹)‖_{H^{s - m}} ≤ C ∑ᵢ ‖ψᵢ · tᵢ(u ∘ e'ᵢ⁻¹)‖_{H^s}`. -/
+theorem exists_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_le_sum
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (t' : Trivialization W (π W F)) [MemTrivializationAtlas t']
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (hφ : e.symm '' tsupport φ ⊆ t'.baseSet)
+    {ι : Type*} [Fintype ι] {e' : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (t : ι → Trivialization V (π V E)) [∀ i, MemTrivializationAtlas (t i)]
+    (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ))
+    (hψ : ∀ i, (e' i).symm '' tsupport (ψ i) ⊆ (t i).baseSet)
+    (hψ1 : ∀ x, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) (s : ℝ) :
+    ∃ C, ∀ u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯,
+      ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2
+          (e.sectionCutoffPushforwardSchwartz he t' φ hφ (P u))‖ ≤
+        C * ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
+          ((e' i).sectionCutoffPushforwardSchwartz (he' i) (t i) (ψ i) (hψ i) u)‖ := by
+  choose C hC using fun i ↦
+    exists_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_smul_le hP he
+      t' φ hφ (he' i) (t i) (ψ i) (hψ i) s
+  refine ⟨∑ i, max (C i) 0, fun u ↦ ?_⟩
+  -- `u = ∑ᵢ Ψᵢ u`.
+  conv_lhs => rw [ContMDiffSection.eq_sum_ofReal_smul (σ := u) Finset.univ _ (subset_univ _)
+    fun x _ ↦ hψ1 x, map_sum, map_sum, map_sum]
+  refine (norm_sum_le _ _).trans ((Finset.sum_le_sum fun i _ ↦ hC i u).trans ?_)
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i _ ↦ ?_
+  gcongr
+  · exact le_max_left _ _
+  · exact Finset.single_le_sum (f := fun i ↦ ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
+      ((e' i).sectionCutoffPushforwardSchwartz (he' i) (t i) (ψ i) (hψ i) u)‖)
+      (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ i)
+
+/-- **Sobolev estimate for classical pseudodifferential operators between vector bundles.** Let
+`P : Γ(E) → Γ(F)` be a classical pseudodifferential operator of order `m` between bundles, and let
+`ψᵢ` be finitely many cutoffs in charts `e'ᵢ`, with `e'ᵢ⁻¹(supp ψᵢ)` in the base set of a
+trivialization `tᵢ` of `E`, whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on `M`, extended by `0`, add up to `1`,
+which forces `M` to be compact. In the norm `∑ᵢ ‖ψᵢ · tᵢ(u ∘ e'ᵢ⁻¹)‖_{H^s}` of the sections of `E`,
+`P` loses `m` orders: for finitely many cutoffs `φⱼ` in charts `eⱼ`, with `eⱼ⁻¹(supp φⱼ)` in the
+base set of a trivialization `t'ⱼ` of `F`, and every real `s` there is a constant `C` such that
+every smooth section `u` of `E` satisfies
+
+`∑ⱼ ‖φⱼ · t'ⱼ((P u) ∘ eⱼ⁻¹)‖_{H^{s - m}} ≤ C ∑ᵢ ‖ψᵢ · tᵢ(u ∘ e'ᵢ⁻¹)‖_{H^s}`. -/
+theorem exists_sum_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_le_sum
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    {κ : Type*} [Fintype κ] {e : κ → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : ∀ j, e j ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (t' : κ → Trivialization W (π W F)) [∀ j, MemTrivializationAtlas (t' j)]
+    (φ : ∀ j, 𝓓(⟨(e j).target, (e j).open_target⟩, ℝ))
+    (hφ : ∀ j, (e j).symm '' tsupport (φ j) ⊆ (t' j).baseSet)
+    {ι : Type*} [Fintype ι] {e' : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (t : ι → Trivialization V (π V E)) [∀ i, MemTrivializationAtlas (t i)]
+    (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ))
+    (hψ : ∀ i, (e' i).symm '' tsupport (ψ i) ⊆ (t i).baseSet)
+    (hψ1 : ∀ x, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) (s : ℝ) :
+    ∃ C, ∀ u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯,
+      ∑ j, ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2
+          ((e j).sectionCutoffPushforwardSchwartz (he j) (t' j) (φ j) (hφ j) (P u))‖ ≤
+        C * ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
+          ((e' i).sectionCutoffPushforwardSchwartz (he' i) (t i) (ψ i) (hψ i) u)‖ := by
+  choose C hC using fun j ↦
+    exists_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_le_sum hP (he j)
+      (t' j) (φ j) (hφ j) he' t ψ hψ hψ1 s
+  exact ⟨∑ j, C j, fun u ↦
+    (Finset.sum_le_sum fun j _ ↦ hC j u).trans_eq (Finset.sum_mul _ _ _).symm⟩
+
+end FiberReading
 
 end TauCeti
