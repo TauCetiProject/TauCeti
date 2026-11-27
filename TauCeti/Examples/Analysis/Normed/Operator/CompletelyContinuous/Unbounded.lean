@@ -11,13 +11,13 @@ public import TauCeti.Analysis.Normed.Operator.CompletelyContinuous
 /-!
 # Continuous maps of ring-scalar operator norm zero
 
-On finitely supported sequences over trivially normed integers, give the `n`-th coordinate
-vector weight `2⁻ⁿ`. The map sending that vector to the coordinate vector at `n / 2` is
-continuous, as is its difference from the identity. Both maps have ring-scalar operator norm zero
-by `ContinuousLinearMap.ringOpNorm_def`, since the sets of uniform bounds are empty.
-The example also tests `ContinuousLinearMap.isCompletelyContinuous_iff`. Neither summand
-admits uniform finite-rank approximation, and the identity has operator distance at least
-one from every continuous finite-rank map.
+On finitely supported sequences over trivially normed integers, the vector `eₙ` has weight `2⁻ⁿ`.
+The shift `u(eₙ) = e_(n / 2)` and its complement `1 - u` are continuous but have no uniform bound.
+Their ring-scalar operator norms are zero because both sets of uniform bounds are empty.
+`exists_add_eq_id_ringOpNorm_eq_zero` shows that neither summand is completely continuous:
+uniform finite-rank approximation cannot be replaced by approximation in the ring-scalar norm.
+`one_le_ringOpNorm_id_sub` gives a lower bound of one on the ring-scalar operator distance
+from the identity to every continuous finite-rank map.
 -/
 
 public section
@@ -35,6 +35,10 @@ abbrev E := ℕ →₀ R
 
 /-- The dyadic weight of the coordinate vector at index `n`. -/
 noncomputable abbrev weight (n : ℕ) : ℝ≥0 := (2⁻¹ : ℝ≥0) ^ n
+
+/-- The real dyadic power formula for the weight, independent of the coercion implementation. -/
+private theorem coe_weight (n : ℕ) : (weight n : ℝ) = (2⁻¹ : ℝ) ^ n := by
+  simp [weight]
 
 private theorem weight_pos (n : ℕ) : 0 < (weight n : ℝ) := by
   positivity
@@ -58,8 +62,7 @@ noncomputable scoped instance : NormedAddCommGroup E :=
 /-- The defining formula for the norm, including zero for the empty support. -/
 theorem norm_eq (x : E) : ‖x‖ = (x.support.sup weight : ℝ≥0) := (rfl)
 
-private theorem weight_le_norm {x : E} {i : ℕ} (hi : x i ≠ 0) :
-    (weight i : ℝ) ≤ ‖x‖ := by
+private theorem weight_le_norm {x : E} {i : ℕ} (hi : x i ≠ 0) : (weight i : ℝ) ≤ ‖x‖ := by
   rw [norm_eq, NNReal.coe_le_coe]
   exact Finset.le_sup (Finsupp.mem_support_iff.mpr hi)
 
@@ -69,25 +72,26 @@ private theorem norm_single_one (i : ℕ) : ‖(Finsupp.single i (1 : R) : E)‖
 private theorem weight_antitone : Antitone weight :=
   fun _ _ h ↦ pow_le_pow_right_of_le_one' (by norm_num) h
 
+private theorem lt_index_of_norm_lt_weight {x : E} {N i : ℕ}
+    (hx : ‖x‖ < weight N) (hi : x i ≠ 0) : N < i :=
+  lt_of_not_ge fun h ↦
+    hx.not_ge ((NNReal.coe_le_coe.mpr (weight_antitone h)).trans (weight_le_norm hi))
+
 private noncomputable def halveIndex : E →L[R] E :=
   { Finsupp.lmapDomain R R (fun n : ℕ ↦ n / 2) with
     cont := by
       let f := Finsupp.lmapDomain R R (fun n : ℕ ↦ n / 2)
       refine continuous_of_tendsto_nhds_zero f (Metric.tendsto_nhds_nhds.2 fun ε hε ↦ ?_)
       obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one hε (by norm_num : (2⁻¹ : ℝ) < 1)
-      have hN' : (weight N : ℝ) < ε := by simpa only [weight, NNReal.coe_pow,
-        NNReal.coe_inv, NNReal.coe_ofNat] using hN
+      have hN' : (weight N : ℝ) < ε := by rwa [coe_weight]
       refine ⟨weight (2 * N), weight_pos _, fun x hx ↦ ?_⟩
       rw [dist_zero_right] at hx ⊢
       refine lt_of_le_of_lt ?_ hN'
       rw [norm_eq, NNReal.coe_le_coe, Finset.sup_le_iff, Finsupp.lmapDomain_apply]
       intro i hi
       obtain ⟨j, hj, rfl⟩ := Finset.mem_image.1 (Finsupp.mapDomain_support hi)
-      have hjN : 2 * N < j := by
-        by_contra! h
-        exact hx.not_ge ((NNReal.coe_le_coe.mpr (weight_antitone h)).trans
-          (weight_le_norm (Finsupp.mem_support_iff.mp hj)))
-      exact weight_antitone (by omega) }
+      have hjN := lt_index_of_norm_lt_weight hx (Finsupp.mem_support_iff.mp hj)
+      exact weight_antitone (by lia) }
 
 private theorem halveIndex_single (i : ℕ) :
     halveIndex (Finsupp.single i 1) = Finsupp.single (i / 2) 1 :=
@@ -121,10 +125,9 @@ private theorem not_uniformly_bounded_sub {d g : E →L[R] E}
       hgx, add_sub_cancel_right]
   have hratio : C * (weight k : ℝ) < 1 := by
     have hC : C < (2 : ℝ) ^ k := hm.trans_le (pow_le_pow_right₀ (by norm_num) (le_max_right _ _))
-    simpa only [weight, NNReal.coe_pow, NNReal.coe_inv, NNReal.coe_ofNat, inv_pow,
-      ← div_eq_mul_inv, div_lt_one (by positivity : (0 : ℝ) < 2 ^ k)] using hC
+    rwa [coe_weight, inv_pow, ← div_eq_mul_inv, div_lt_one (by positivity)]
   have hinput : ‖x‖ = (weight k : ℝ) * weight k := by
-    rw [norm_single_one, weight, two_mul, pow_add, NNReal.coe_mul]
+    rw [norm_single_one, coe_weight, coe_weight, two_mul, pow_add]
   have hlower := weight_le_norm (ne_zero_of_eq_one hcoord)
   have hupper := mul_lt_mul_of_pos_right hratio (weight_pos k)
   rw [one_mul, mul_assoc, ← hinput] at hupper
@@ -146,8 +149,7 @@ theorem one_le_ringOpNorm_id_sub {g : E →L[R] E} (hg : (g : E →ₗ[R] E).IsF
         by_cases hi : N ≤ i
         · exact hN x i hi
         by_contra h
-        exact hsmall.not_ge ((NNReal.coe_le_coe.mpr (weight_antitone (by omega))).trans
-          (weight_le_norm h))
+        exact hi (lt_index_of_norm_lt_weight hsmall h).le
       rw [hz, norm_zero]
       positivity
     refine (le_trans ?_ ((one_le_inv_mul₀ hr).2 (le_of_not_gt hx)))
@@ -177,7 +179,7 @@ theorem exists_add_eq_id_ringOpNorm_eq_zero :
     · rw [ContinuousLinearMap.ringOpNorm_def]
       have hempty : {c : ℝ | 0 ≤ c ∧ ∀ x, ‖(halveIndex + d) x‖ ≤ c * ‖x‖} = ∅ := by
         refine Set.eq_empty_iff_forall_notMem.2 fun c hc ↦ not_uniformly_bounded_sub (g := 0)
-          ⟨1, fun k hk ↦ by rw [hd k (by omega), zero_apply,
+          ⟨1, fun k hk ↦ by rw [hd k (by lia), zero_apply,
             Finsupp.zero_apply]⟩ c ?_
         simpa only [zero_apply, sub_zero] using hc.2
       rw [hempty, Real.sInf_empty]
@@ -185,11 +187,11 @@ theorem exists_add_eq_id_ringOpNorm_eq_zero :
       obtain ⟨g, hg, hC⟩ := ContinuousLinearMap.isCompletelyContinuous_iff.mp h 1 one_pos
       obtain ⟨N, hN⟩ := exists_cutoff_of_isFiniteRank hg
       exact not_uniformly_bounded_sub ⟨N + 1, fun k hk ↦
-        (hN _ k (by omega)).trans (hd k (by omega)).symm⟩ 1 hC
+        (hN _ k (by lia)).trans (hd k (by lia)).symm⟩ 1 hC
   have hzero := key 0 (by simp)
   have hid := key (-ContinuousLinearMap.id R E) (fun k hk ↦ by
     simp only [neg_apply, ContinuousLinearMap.id_apply, Finsupp.neg_apply, neg_eq_zero]
-    exact Finsupp.single_eq_of_ne (by omega))
+    exact Finsupp.single_eq_of_ne (by lia))
   rw [add_zero] at hzero
   rw [← sub_eq_add_neg, ← neg_sub, ContinuousLinearMap.ringOpNorm_neg,
     ContinuousLinearMap.IsCompletelyContinuous.neg_iff] at hid
