@@ -546,28 +546,25 @@ private theorem exists_isDarbouxBasis_block (h : ω.IsNondegenerateQuadraticFami
       (aeval A p).restrict (hmaps p) ∈ skewAdjointLieSubalgebra ω'.toBilinForm :=
     restrict_mem_skewAdjointLieSubalgebra ((LinearMap.mem_skewAdjointSubmodule _).2 <|
       ((LinearMap.mem_skewAdjointSubmodule A).1 hA).aeval_of_comp_neg_X_eq_neg hp) _ _
-  have hAP (p : ℝ[X]) (hp : p.comp (-X) = -p) :
-      ω'.hamiltonianEnd (ω'.hamiltonianEndEquiv.symm ⟨_, hmem p hp⟩) =
-        (aeval A p).restrict (hmaps p) := by
-    rw [← coe_hamiltonianEndEquiv_apply, LinearEquiv.apply_symm_apply]
-  -- Both forms Poisson-commute with the restricted family, so they lie in its span.
+  -- They commute with the restricted family, so they come from forms in its span.
   have hspan (p : ℝ[X]) (hp : p.comp (-X) = -p) :
-      ω'.hamiltonianEndEquiv.symm ⟨_, hmem p hp⟩ ∈
-        Submodule.span ℝ (Set.range fun i ↦ (Q i).comp G.subtype) := by
-    refine hnd.mem_span_of_forall_quadraticPoissonBracket_eq_zero fun i ↦
-      ω'.quadraticPoissonBracket_eq_zero_iff.2 ?_
+      ∃ R ∈ Submodule.span ℝ (Set.range fun i ↦ (Q i).comp G.subtype),
+        ω'.hamiltonianEnd R = (aeval A p).restrict (hmaps p) := by
+    refine hnd.exists_mem_span_hamiltonianEnd_eq (hmem p hp) fun i ↦ ?_
     have hQi := hcomm (Submodule.subset_span ⟨i, rfl⟩) (X : ℝ[X])
     rw [aeval_X] at hQi
     have hmapsQ : Set.MapsTo (ω.hamiltonianEnd (Q i)) G G :=
       Module.End.mapsTo_genEigenspace_aeval_of_comm hQi _ 0 ⊤
-    rw [hAP p hp, hamiltonianEnd_comp_subtype hGs fun v hv ↦ hmapsQ hv]
+    rw [hamiltonianEnd_comp_subtype hGs fun v hv ↦ hmapsQ hv]
     exact LinearMap.restrict_commute (hcomm (Submodule.subset_span ⟨i, rfl⟩) p) _ _
+  obtain ⟨R₁, hR₁, hAR₁⟩ := hspan p₁ hp₁
+  obtain ⟨R₂, hR₂, hAR₂⟩ := hspan p₂ hp₂
   -- The restrictions of `p(A)` and of `r(A)` evaluate on `G` as on `V`, definitionally.
   refine (exists_isDarbouxBasis_span_eq_span_focusFocus_iff hG
-    hnd.quadraticPoissonBracket_eq_zero).2 ⟨_, hspan p₁ hp₁, _, hspan p₂ hp₂, ?_, ?_⟩
-  · rw [hAP p₁ hp₁]
+    hnd.quadraticPoissonBracket_eq_zero).2 ⟨R₁, hR₁, R₂, hR₂, ?_, ?_⟩
+  · rw [hAR₁]
     exact LinearMap.ext fun v ↦ Subtype.ext <| (hsq hp₁sq v.property).trans (by simp)
-  · rw [hAP p₂ hp₂]
+  · rw [hAR₂]
     exact LinearMap.ext fun v ↦ Subtype.ext <| (hsq hp₂sq v.property).trans (by simp)
 
 /-- On the blocks of a Darboux basis assembled from Darboux bases of orthogonal four-dimensional

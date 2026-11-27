@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.FundamentalChain
 public import TauCeti.Geometry.Manifold.Morse.Boundary.OneDimensional
+public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedChainComplex
 public import TauCeti.Geometry.Manifold.Morse.Circle
 public import TauCeti.Geometry.Manifold.Orientation.AddCircle
 import Mathlib.Topology.Covering.AddCircle
@@ -21,7 +22,7 @@ On the circle `ℝ ⧸ 2πℤ`, the function `f_r(θ) = δ cos (2 (θ - r))` wit
 (`TauCeti.circleCosTwo δ r`) has the two maxima `p_j = r + j π` (`TauCeti.circleCosTwoMax r j`),
 of index `1`, and the two minima `q_j = r + π / 2 + j π` (`TauCeti.circleCosTwoMin r j`), of index
 `0`. This file computes its Morse boundary for every adapted pseudo-gradient `X`, which is
-automatically Morse–Smale in dimension one.
+automatically Morse–Smale in dimension one, and its integral Morse homology.
 
 Since `f` has a second maximum, the two trajectories leaving a maximum end at two different
 minima, which are therefore `q_0` and `q_1`
@@ -55,6 +56,28 @@ the integral Morse differential, in the ordered bases `(p_0, p_1)` and `(q_0, q_
 at the minima the differential is `S - I`: the trajectory signs measure `T W^u(p)` against the
 direction `-X` of the flow followed by `T W^u(q)`.
 
+**Homology.** Over every ring `R` and for every choice of orientations, the complex is
+`R² → R²` in degrees `1 → 0`, and `∂² = 0` holds since the circle has dimension one
+(`signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_one`). A chain `c` of index
+`1` is a cycle exactly when `c(p₀) ε₀ = c(p₁) ε₁`
+(`signedMorseBoundaryAt_zero_circleCosTwo_eq_zero_iff`), so the cycles are the multiples of
+`ε₀ p₀ + ε₁ p₁` and `H₁ = R` (`nonempty_linearEquiv_homology_one_signedMorseComplex_circleCosTwo`);
+the boundaries are the kernel of the signed augmentation `c ↦ c(q₀) η₀ + c(q₁) η₁`
+(`mem_range_signedMorseBoundaryAt_zero_circleCosTwo_iff`), so `H₀ = R`
+(`nonempty_linearEquiv_homology_zero_signedMorseComplex_circleCosTwo`). This is the integral
+homology of the circle.
+
+**The exchange and the chain homotopy `K = -I`.** When the differential is `D = I - S`, the
+exchange `S` of the two maxima and of the two minima is a chain map
+(`circleCosTwoExchange`), and the map `K = -I : q_i ↦ -p_i` from degree `0` to degree `1`
+satisfies `D K = S - I` and `K D = S - I` in the two degrees where they act. So `K` is a chain
+homotopy from `S` to the identity (`circleCosTwoExchangeHomotopy`), and `S` induces the identity on
+homology (`homologyMap_circleCosTwoExchange`). These are the matrices `D = I - S`, `S` and
+`K = -I` of the circle continuation examples, where continuation maps computed along different
+paths differ on chains by the exchange `S` (modulo two,
+`TauCeti.morseContinuationMap_single_circleCosTwoMaxCrit_add_pi`). Continuation maps on homology
+are not treated here.
+
 ## Main results
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
@@ -72,6 +95,15 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `signedMorseBoundaryCoeff_circleCosTwo_eq_ite`: for the orientations `+∂_θ` of the maxima and
   the negative orientations of the minima, the integral Morse differential is `I - S`.
 * `exists_morseOrientation_fundamentalSign_circleCosTwo_eq_one`: these orientations exist.
+* `signedMorseBoundaryAt_zero_circleCosTwo_eq_zero_iff`: the cycles of degree one.
+* `mem_range_signedMorseBoundaryAt_zero_circleCosTwo_iff`: the boundaries of degree zero.
+* `nonempty_linearEquiv_homology_zero_signedMorseComplex_circleCosTwo`,
+  `nonempty_linearEquiv_homology_one_signedMorseComplex_circleCosTwo`: `H₀ = H₁ = R`.
+* `circleCosTwoExchange`, `circleCosTwoExchange_f_zero_single`,
+  `circleCosTwoExchange_f_one_single`: the exchange `S` as a chain map, when `D = I - S`.
+* `circleCosTwoExchangeHomotopy`, `circleCosTwoExchangeHomotopy_hom_zero_one_single`: the chain
+  homotopy `K = -I` from `S` to the identity.
+* `homologyMap_circleCosTwoExchange`: `S` induces the identity on homology.
 
 ## References
 
@@ -280,7 +312,7 @@ theorem coe_mem_stableSet_circleCosTwoMin (hδ : 0 < δ)
     (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X) (j : Fin 2) :
     ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ∈ hX.flow.stableSet (circleCosTwoMin r j) := by
   have hπ := Real.pi_pos
-  obtain ⟨c, hc, hac⟩ := hX.exists_mem_stableSet (isMorse_circleCosTwo hδ.ne' r)
+  obtain ⟨c, hc, hac⟩ := hX.exists_mem_stableSet
     ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))
   -- Along the forward orbit of `r + j π + π / 4`, where `f` starts at `0`, `f ≤ 0`.
   have hle (t : ℝ) (ht : 0 ≤ t) :
@@ -323,7 +355,7 @@ theorem coe_mem_unstableSet_circleCosTwoMax (hδ : 0 < δ)
     ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ∈
       hX.flow.unstableSet (circleCosTwoMax r j) := by
   have hπ := Real.pi_pos
-  obtain ⟨c, hc, hac⟩ := hX.exists_mem_unstableSet (isMorse_circleCosTwo hδ.ne' r)
+  obtain ⟨c, hc, hac⟩ := hX.exists_mem_unstableSet
     ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))
   -- Along the backward orbit of `r + j π + π / 4`, where `f` starts at `0`, `f ≥ 0`.
   have hge (t : ℝ) (ht : t ≤ 0) :
@@ -531,6 +563,551 @@ theorem exists_morseOrientation_fundamentalSign_circleCosTwo_eq_one (hδ : 0 < �
     rw [MorseOrientation.augmentationSign_reverse]
     rcases 𝔬₀.augmentationSign_eq_one_or_eq_neg_one
       (manifoldMorseIndex_circleCosTwoMinCrit hδ r i) with h | h <;> simp [h, hfund]
+
+
+/-! ### The integral Morse homology of the circle -/
+
+/-- The maxima `p_0` and `p_1` enumerate the critical points of index `1`. -/
+private noncomputable def circleCosTwoMaxEquiv (hδ : 0 < δ) (r : ℝ) :
+    Fin 2 ≃ {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 1} :=
+  Equiv.ofBijective
+    (fun j ↦ ⟨circleCosTwoMaxCrit δ r j, manifoldMorseIndex_circleCosTwoMaxCrit hδ r j⟩)
+    ⟨fun _ _ h ↦ (circleCosTwoMaxCrit_inj δ r).1 (congrArg Subtype.val h), fun p ↦ by
+      obtain ⟨j, hj⟩ :=
+        exists_eq_circleCosTwoMax_of_manifoldMorseIndex_eq_one hδ r p.val.property p.property
+      exact ⟨j, Subtype.ext (Subtype.ext (by rw [coe_circleCosTwoMaxCrit, hj]))⟩⟩
+
+/-- The minima `q_0` and `q_1` enumerate the critical points of index `0`. -/
+private noncomputable def circleCosTwoMinEquiv (hδ : 0 < δ) (r : ℝ) :
+    Fin 2 ≃ {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 0} :=
+  Equiv.ofBijective
+    (fun j ↦ ⟨circleCosTwoMinCrit δ r j, manifoldMorseIndex_circleCosTwoMinCrit hδ r j⟩)
+    ⟨fun _ _ h ↦ (circleCosTwoMinCrit_inj δ r).1 (congrArg Subtype.val h), fun p ↦ by
+      obtain ⟨j, hj⟩ :=
+        exists_eq_circleCosTwoMin_of_manifoldMorseIndex_eq_zero hδ r p.val.property p.property
+      exact ⟨j, Subtype.ext (Subtype.ext (by rw [coe_circleCosTwoMinCrit, hj]))⟩⟩
+
+/-- A chain of index `1` is the sum of its terms at the two maxima. -/
+private theorem eq_single_add_single_circleCosTwoMaxEquiv {R : Type*} [Ring R] (hδ : 0 < δ)
+    (c : {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 1} →₀ R) :
+    c = Finsupp.single (circleCosTwoMaxEquiv hδ r 0) (c (circleCosTwoMaxEquiv hδ r 0)) +
+      Finsupp.single (circleCosTwoMaxEquiv hδ r 1) (c (circleCosTwoMaxEquiv hδ r 1)) := by
+  ext p
+  obtain ⟨j, rfl⟩ := (circleCosTwoMaxEquiv hδ r).surjective p
+  fin_cases j <;> simp [(circleCosTwoMaxEquiv hδ r).injective.eq_iff]
+
+/-- A chain of index `0` is the sum of its terms at the two minima. -/
+private theorem eq_single_add_single_circleCosTwoMinEquiv {R : Type*} [Ring R] (hδ : 0 < δ)
+    (c : {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 0} →₀ R) :
+    c = Finsupp.single (circleCosTwoMinEquiv hδ r 0) (c (circleCosTwoMinEquiv hδ r 0)) +
+      Finsupp.single (circleCosTwoMinEquiv hδ r 1) (c (circleCosTwoMinEquiv hδ r 1)) := by
+  ext p
+  obtain ⟨j, rfl⟩ := (circleCosTwoMinEquiv hδ r).surjective p
+  fin_cases j <;> simp [(circleCosTwoMinEquiv hδ r).injective.eq_iff]
+
+section Homology
+
+variable {R : Type*} [Ring R] {hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X}
+  {𝔬 : MorseOrientation (circleCosTwo δ r) X} {hf : IsMorse 𝓘(ℝ) (circleCosTwo δ r)}
+
+private theorem circleCosTwoMaxEquiv_apply (hδ : 0 < δ) (j : Fin 2) :
+    circleCosTwoMaxEquiv hδ r j =
+      ⟨circleCosTwoMaxCrit δ r j, manifoldMorseIndex_circleCosTwoMaxCrit hδ r j⟩ :=
+  (rfl)
+
+private theorem circleCosTwoMinEquiv_apply (hδ : 0 < δ) (i : Fin 2) :
+    circleCosTwoMinEquiv hδ r i =
+      ⟨circleCosTwoMinCrit δ r i, manifoldMorseIndex_circleCosTwoMinCrit hδ r i⟩ :=
+  (rfl)
+
+/-- The graded integral differential of the circle on a chain of index `1`, at the minimum `q_i`:
+`(∂ c)(q_i) = ∑ j, c(p_j) [∂ p_j : q_i]`. -/
+private theorem signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_eq_sum (hδ : 0 < δ)
+    (c : {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 1} →₀ R) (i : Fin 2) :
+    hX.signedMorseBoundaryAt 𝔬 hf R 0 c (circleCosTwoMinEquiv hδ r i) =
+      ∑ j : Fin 2, c (circleCosTwoMaxEquiv hδ r j) *
+        (hX.signedMorseBoundaryCoeff 𝔬 (circleCosTwoMaxCrit δ r j) (circleCosTwoMinCrit δ r i) :
+          R) := by
+  conv_lhs => rw [eq_single_add_single_circleCosTwoMaxEquiv hδ c]
+  rw [map_add, Finsupp.add_apply, signedMorseBoundaryAt_single_apply,
+    signedMorseBoundaryAt_single_apply, Fin.sum_univ_two]
+  simp only [circleCosTwoMaxEquiv_apply, circleCosTwoMinEquiv_apply]
+
+/-- The graded integral differential of the circle at the minimum `q_i`, in normal form:
+`(∂ c)(q_i) = (c(p_{i + 1}) ε_{i + 1} - c(p_i) ε_i) η_i`. -/
+private theorem signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_eq_sub_mul (hδ : 0 < δ)
+    (c : {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 1} →₀ R) (i : Fin 2) :
+    hX.signedMorseBoundaryAt 𝔬 hf R 0 c (circleCosTwoMinEquiv hδ r i) =
+      (c (circleCosTwoMaxEquiv hδ r (i + 1)) * (hX.fundamentalSign 𝔬
+          ((AddCircle.orientation (2 * π)).reindex (finCongr (finrank_self ℝ).symm))
+          (circleCosTwoMaxCrit δ r (i + 1)) : R) -
+        c (circleCosTwoMaxEquiv hδ r i) * (hX.fundamentalSign 𝔬
+          ((AddCircle.orientation (2 * π)).reindex (finCongr (finrank_self ℝ).symm))
+          (circleCosTwoMaxCrit δ r i) : R)) *
+        (𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R) := by
+  rw [signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_eq_sum, Fin.sum_univ_two,
+    signedMorseBoundaryCoeff_circleCosTwo hδ hX 𝔬, signedMorseBoundaryCoeff_circleCosTwo hδ hX 𝔬]
+  match i with
+  | 0 =>
+    rw [ite_eq_left rfl, ite_eq_right zero_ne_one, zero_add]
+    push_cast
+    noncomm_ring
+  | 1 =>
+    rw [ite_eq_right one_ne_zero, ite_eq_left rfl]
+    simp only [Fin.reduceAdd]
+    push_cast
+    noncomm_ring
+
+/-- A chain of index `0` vanishes when it vanishes at both minima. -/
+private theorem eq_zero_of_forall_circleCosTwoMinEquiv (hδ : 0 < δ)
+    {c : {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 0} →₀ R}
+    (h : ∀ i, c (circleCosTwoMinEquiv hδ r i) = 0) : c = 0 := by
+  ext q
+  obtain ⟨i, rfl⟩ := (circleCosTwoMinEquiv hδ r).surjective q
+  exact h i
+
+/-- **The cycles of degree one of the circle.** For `δ > 0`, every adapted pseudo-gradient and
+every choice of orientations, a chain `c` of index `1` with coefficients in a ring `R` is an
+integral Morse cycle exactly when `c(p₀) ε₀ = c(p₁) ε₁`, where `ε_j = ±1` is the fundamental sign
+of the maximum `p_j` for the positive orientation of the circle. So the cycles are the multiples of
+`ε₀ p₀ + ε₁ p₁`. -/
+theorem signedMorseBoundaryAt_zero_circleCosTwo_eq_zero_iff (hδ : 0 < δ)
+    (c : {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 1} →₀ R) :
+    hX.signedMorseBoundaryAt 𝔬 hf R 0 c = 0 ↔
+      c ⟨circleCosTwoMaxCrit δ r 0, manifoldMorseIndex_circleCosTwoMaxCrit hδ r 0⟩ *
+          (hX.fundamentalSign 𝔬
+            ((AddCircle.orientation (2 * π)).reindex (finCongr (finrank_self ℝ).symm))
+            (circleCosTwoMaxCrit δ r 0) : R) =
+        c ⟨circleCosTwoMaxCrit δ r 1, manifoldMorseIndex_circleCosTwoMaxCrit hδ r 1⟩ *
+          (hX.fundamentalSign 𝔬
+            ((AddCircle.orientation (2 * π)).reindex (finCongr (finrank_self ℝ).symm))
+            (circleCosTwoMaxCrit δ r 1) : R) := by
+  -- The sign `η_i = ±1` is a unit, so it cancels from `(∂ c)(q_i) = (⋯) η_i = 0`.
+  have hcancel (i : Fin 2) (x : R) :
+      x * (𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R) = 0 ↔ x = 0 :=
+    have hη := 𝔬.augmentationSign_mul_self (R := R) (manifoldMorseIndex_circleCosTwoMinCrit hδ r i)
+    (Units.mk _ _ hη hη).isUnit.mul_left_eq_zero
+  -- The chain `∂ c` vanishes exactly when it vanishes at both minima.
+  have hzero : hX.signedMorseBoundaryAt 𝔬 hf R 0 c = 0 ↔
+      ∀ i, hX.signedMorseBoundaryAt 𝔬 hf R 0 c (circleCosTwoMinEquiv hδ r i) = 0 :=
+    ⟨fun h i ↦ by rw [h, Finsupp.zero_apply], eq_zero_of_forall_circleCosTwoMinEquiv hδ⟩
+  rw [hzero, Fin.forall_fin_two, ← circleCosTwoMaxEquiv_apply hδ 0,
+    ← circleCosTwoMaxEquiv_apply hδ 1]
+  simp only [signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_eq_sub_mul, hcancel, zero_add,
+    Fin.reduceAdd, sub_eq_zero, eq_comm (a := c (circleCosTwoMaxEquiv hδ r 1) * _), and_self]
+
+/-- **`H₁` of the circle is `R`.** For `δ > 0`, every adapted pseudo-gradient, every choice of
+orientations and every ring `R` of coefficients, the integral Morse homology of
+`θ ↦ δ cos (2 (θ - r))` in degree `1` is isomorphic to `R`. -/
+theorem nonempty_linearEquiv_homology_one_signedMorseComplex_circleCosTwo (hδ : 0 < δ)
+    (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) :
+    Nonempty ((hX.signedMorseComplex 𝔬 hf R hsq).homology 1 ≃ₗ[R] R) := by
+  set oM := (AddCircle.orientation (2 * π)).reindex (finCongr (finrank_self ℝ).symm)
+  set K := hX.signedMorseComplex 𝔬 hf R hsq
+  set ε : Fin 2 → R := fun j ↦ (hX.fundamentalSign 𝔬 oM (circleCosTwoMaxCrit δ r j) : R)
+  have hε (j : Fin 2) : ε j * ε j = 1 :=
+    fundamentalSign_mul_self ((manifoldMorseIndex_circleCosTwoMaxCrit hδ r j).trans
+      (finrank_self ℝ).symm)
+  -- The fundamental cycle `z = ε₀ p₀ + ε₁ p₁` spans the cycles, freely.
+  set z := Finsupp.single (circleCosTwoMaxEquiv hδ r 0) (ε 0) +
+    Finsupp.single (circleCosTwoMaxEquiv hδ r 1) (ε 1)
+  have hz (j : Fin 2) : z (circleCosTwoMaxEquiv hδ r j) = ε j := by
+    fin_cases j <;> simp [z, (circleCosTwoMaxEquiv hδ r).injective.eq_iff]
+  set φ := LinearMap.toSpanSingleton R _ z
+  have hφ : Injective φ := fun a b hab ↦ by
+    have h := congrArg (fun c ↦ c (circleCosTwoMaxEquiv hδ r 0) * ε 0) hab
+    simpa [φ, hz, mul_assoc, hε] using h
+  have hrange : LinearMap.range φ = LinearMap.ker (hX.signedMorseBoundaryAt 𝔬 hf R 0) := by
+    ext c
+    rw [LinearMap.mem_range, LinearMap.mem_ker,
+      signedMorseBoundaryAt_zero_circleCosTwo_eq_zero_iff hδ, ← circleCosTwoMaxEquiv_apply hδ 0,
+      ← circleCosTwoMaxEquiv_apply hδ 1]
+    constructor
+    · rintro ⟨a, rfl⟩
+      have h : φ a (circleCosTwoMaxEquiv hδ r 0) * ε 0 =
+          φ a (circleCosTwoMaxEquiv hδ r 1) * ε 1 := by
+        simp [φ, hz, mul_assoc, hε]
+      simpa only [ε] using h
+    · intro h
+      have h' : c (circleCosTwoMaxEquiv hδ r 0) * ε 0 = c (circleCosTwoMaxEquiv hδ r 1) * ε 1 := by
+        simpa only [ε] using h
+      refine ⟨c (circleCosTwoMaxEquiv hδ r 0) * ε 0, ?_⟩
+      ext p
+      obtain ⟨j, rfl⟩ := (circleCosTwoMaxEquiv hδ r).surjective p
+      match j with
+      | 0 => simp [φ, hz, mul_assoc, hε]
+      | 1 =>
+        simp only [φ, LinearMap.toSpanSingleton_apply, Finsupp.smul_apply, smul_eq_mul]
+        rw [hz, h', mul_assoc, hε, mul_one]
+  -- In degree `1` the homology is the kernel of `∂`, since there are no chains of index `2`.
+  have hd21 : K.d 2 1 = 0 :=
+    (isZero_signedMorseComplex_X_of_finrank_lt hsq (by simp : finrank ℝ ℝ < 2)).eq_of_src _ _
+  have hg : ∀ j, j = 0 → LinearMap.ker (K.d 1 j).hom =
+      LinearMap.ker (hX.signedMorseBoundaryAt 𝔬 hf R 0) := by
+    rintro j rfl
+    exact congrArg LinearMap.ker (LinearMap.ext (signedMorseComplex_d_apply hsq 0))
+  have e₁ := ((K.isoHomologyπ 2 1 (by simp) hd21).symm ≪≫ (K.sc 1).moduleCatCyclesIso).toLinearEquiv
+  have e₂ := LinearEquiv.ofEq (LinearMap.ker (K.d 1 ((ComplexShape.down ℕ).next 1)).hom)
+    (LinearMap.range φ) ((hg _ (ChainComplex.next_nat_succ 0)).trans hrange.symm)
+  exact ⟨e₁.trans (e₂.trans (LinearEquiv.ofInjective φ hφ).symm)⟩
+
+/-- **The boundaries of degree zero of the circle.** For `δ > 0`, every adapted pseudo-gradient
+and every choice of orientations, a chain `c` of index `0` with coefficients in a ring `R` is an
+integral Morse boundary exactly when its signed augmentation `c(q₀) η₀ + c(q₁) η₁` vanishes, where
+`η_i = ±1` is the augmentation sign of the minimum `q_i`. -/
+theorem mem_range_signedMorseBoundaryAt_zero_circleCosTwo_iff (hδ : 0 < δ)
+    (c : {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 0} →₀ R) :
+    c ∈ LinearMap.range (hX.signedMorseBoundaryAt 𝔬 hf R 0) ↔
+      c ⟨circleCosTwoMinCrit δ r 0, manifoldMorseIndex_circleCosTwoMinCrit hδ r 0⟩ *
+          (𝔬.augmentationSign (circleCosTwoMinCrit δ r 0) : R) +
+        c ⟨circleCosTwoMinCrit δ r 1, manifoldMorseIndex_circleCosTwoMinCrit hδ r 1⟩ *
+          (𝔬.augmentationSign (circleCosTwoMinCrit δ r 1) : R) = 0 := by
+  rw [LinearMap.mem_range, ← circleCosTwoMinEquiv_apply hδ 0, ← circleCosTwoMinEquiv_apply hδ 1]
+  set oM := (AddCircle.orientation (2 * π)).reindex (finCongr (finrank_self ℝ).symm)
+  set ε : Fin 2 → R := fun j ↦ (hX.fundamentalSign 𝔬 oM (circleCosTwoMaxCrit δ r j) : R)
+  set η : Fin 2 → R := fun i ↦ (𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R)
+  have hε (j : Fin 2) : ε j * ε j = 1 :=
+    fundamentalSign_mul_self ((manifoldMorseIndex_circleCosTwoMaxCrit hδ r j).trans
+      (finrank_self ℝ).symm)
+  have hη (i : Fin 2) : η i * η i = 1 :=
+    𝔬.augmentationSign_mul_self (manifoldMorseIndex_circleCosTwoMinCrit hδ r i)
+  have hD (b) (i : Fin 2) : hX.signedMorseBoundaryAt 𝔬 hf R 0 b (circleCosTwoMinEquiv hδ r i) =
+      (b (circleCosTwoMaxEquiv hδ r (i + 1)) * ε (i + 1) -
+        b (circleCosTwoMaxEquiv hδ r i) * ε i) * η i :=
+    signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_eq_sub_mul hδ b i
+  -- The augmentation, in terms of the signs `η i`. `set` cannot fold the casts
+  -- `(𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R)` into `η i` here, since they are
+  -- beta-instances of the lambda defining `η` rather than syntactic occurrences of it, so we fold
+  -- them by `change`, which holds by unfolding the local definition `η`.
+  change _ ↔ c (circleCosTwoMinEquiv hδ r 0) * η 0 + c (circleCosTwoMinEquiv hδ r 1) * η 1 = 0
+  constructor
+  · -- The augmentation of a boundary vanishes.
+    rintro ⟨b, rfl⟩
+    simp only [hD, zero_add, Fin.reduceAdd, mul_assoc, hη, mul_one, sub_add_sub_cancel, sub_self]
+  · -- If `c(q₀) η₀ + c(q₁) η₁ = 0`, then `c` is the boundary of `c(q₀) η₀ ε₁ p₁`.
+    intro h
+    refine ⟨Finsupp.single (circleCosTwoMaxEquiv hδ r 1) (c (circleCosTwoMinEquiv hδ r 0) *
+      η 0 * ε 1), ?_⟩
+    ext q
+    obtain ⟨i, rfl⟩ := (circleCosTwoMinEquiv hδ r).surjective q
+    rw [hD]
+    match i with
+    | 0 =>
+      simp only [zero_add, Finsupp.single_eq_same,
+        Finsupp.single_eq_of_ne ((circleCosTwoMaxEquiv hδ r).injective.ne zero_ne_one), zero_mul,
+        sub_zero, mul_assoc, hε, mul_one, hη]
+    | 1 =>
+      have h' : c (circleCosTwoMinEquiv hδ r 1) =
+          -(c (circleCosTwoMinEquiv hδ r 0) * η 0) * η 1 := by
+        rw [← eq_neg_of_add_eq_zero_right h, mul_assoc, hη, mul_one]
+      simp only [h', Fin.reduceAdd, Finsupp.single_eq_same,
+        Finsupp.single_eq_of_ne ((circleCosTwoMaxEquiv hδ r).injective.ne zero_ne_one), zero_mul,
+        zero_sub, mul_assoc, hε, mul_one, neg_mul]
+
+/-- **`H₀` of the circle is `R`.** For `δ > 0`, every adapted pseudo-gradient, every choice of
+orientations and every ring `R` of coefficients, the integral Morse homology of
+`θ ↦ δ cos (2 (θ - r))` in degree `0` is isomorphic to `R`. The boundaries are described by
+`mem_range_signedMorseBoundaryAt_zero_circleCosTwo_iff`. -/
+theorem nonempty_linearEquiv_homology_zero_signedMorseComplex_circleCosTwo (hδ : 0 < δ)
+    (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) :
+    Nonempty ((hX.signedMorseComplex 𝔬 hf R hsq).homology 0 ≃ₗ[R] R) := by
+  set K := hX.signedMorseComplex 𝔬 hf R hsq
+  set η : Fin 2 → R := fun i ↦ (𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R)
+  have hη (i : Fin 2) : η i * η i = 1 :=
+    𝔬.augmentationSign_mul_self (manifoldMorseIndex_circleCosTwoMinCrit hδ r i)
+  -- The augmentation `ψ c = c(q₀) η₀ + c(q₁) η₁` is onto, with kernel the boundaries.
+  let ψ : ({p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 0} →₀ R) →ₗ[R] R :=
+    LinearMap.mulRight R (η 0) ∘ₗ Finsupp.lapply (circleCosTwoMinEquiv hδ r 0) +
+      LinearMap.mulRight R (η 1) ∘ₗ Finsupp.lapply (circleCosTwoMinEquiv hδ r 1)
+  have hψ : Surjective ψ := fun a ↦ ⟨Finsupp.single (circleCosTwoMinEquiv hδ r 0) (a * η 0), by
+    simp [ψ, (circleCosTwoMinEquiv hδ r).injective.eq_iff, mul_assoc, hη]⟩
+  have hexact : Function.Exact (hX.signedMorseBoundaryAt 𝔬 hf R 0) ψ := fun c ↦ by
+    rw [← LinearMap.coe_range, SetLike.mem_coe,
+      mem_range_signedMorseBoundaryAt_zero_circleCosTwo_iff hδ]
+    simp [ψ, η, circleCosTwoMinEquiv_apply]
+  -- In degree `0` the homology is the cokernel of `∂`.
+  have hd : (K.d (0 + 1) 0).hom = hX.signedMorseBoundaryAt 𝔬 hf R 0 :=
+    LinearMap.ext (signedMorseComplex_d_apply hsq 0)
+  rw [← hd, ← ChainComplex.prev ℕ 0] at hexact
+  exact ⟨((K.isoHomologyι 0 0 ChainComplex.next_nat_zero (K.shape 0 0 (by simp))) ≪≫
+    (K.sc 0).moduleCatOpcyclesIso).toLinearEquiv.trans (hexact.linearEquivOfSurjective hψ)⟩
+
+/-! ### The exchange of the critical points and the chain homotopy `K = -I` -/
+
+/-- The exchange `p_j ↦ p_{j + 1}` of the two maxima. -/
+private noncomputable def circleCosTwoMaxSwap (hδ : 0 < δ) (r : ℝ) :
+    {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 1} ≃
+    {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 1} :=
+  (circleCosTwoMaxEquiv hδ r).permCongr (Equiv.addRight 1)
+
+/-- The exchange `q_i ↦ q_{i + 1}` of the two minima. -/
+private noncomputable def circleCosTwoMinSwap (hδ : 0 < δ) (r : ℝ) :
+    {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 0} ≃
+    {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 0} :=
+  (circleCosTwoMinEquiv hδ r).permCongr (Equiv.addRight 1)
+
+private theorem circleCosTwoMaxSwap_apply (hδ : 0 < δ) (j : Fin 2) :
+    circleCosTwoMaxSwap hδ r (circleCosTwoMaxEquiv hδ r j) =
+      circleCosTwoMaxEquiv hδ r (j + 1) := by
+  simp [circleCosTwoMaxSwap, Equiv.permCongr_apply]
+
+private theorem circleCosTwoMinSwap_apply (hδ : 0 < δ) (i : Fin 2) :
+    circleCosTwoMinSwap hδ r (circleCosTwoMinEquiv hδ r i) =
+      circleCosTwoMinEquiv hδ r (i + 1) := by
+  simp [circleCosTwoMinSwap, Equiv.permCongr_apply]
+
+private theorem circleCosTwoMaxSwap_symm_apply (hδ : 0 < δ) (j : Fin 2) :
+    (circleCosTwoMaxSwap hδ r).symm (circleCosTwoMaxEquiv hδ r j) =
+      circleCosTwoMaxEquiv hδ r (j + 1) := by
+  rw [Equiv.symm_apply_eq, circleCosTwoMaxSwap_apply]
+  fin_cases j <;> rfl
+
+private theorem circleCosTwoMinSwap_symm_apply (hδ : 0 < δ) (i : Fin 2) :
+    (circleCosTwoMinSwap hδ r).symm (circleCosTwoMinEquiv hδ r i) =
+      circleCosTwoMinEquiv hδ r (i + 1) := by
+  rw [Equiv.symm_apply_eq, circleCosTwoMinSwap_apply]
+  fin_cases i <;> rfl
+
+/-- The map `q_i ↦ -p_i` from the chains of index `0` to those of index `1`. -/
+private noncomputable def circleCosTwoHomotopyMap (hδ : 0 < δ) (r : ℝ) :
+    ({p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 0} →₀ R) →ₗ[R]
+    ({p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 1} →₀ R) :=
+  -(Finsupp.domLCongr
+    ((circleCosTwoMinEquiv hδ r).symm.trans (circleCosTwoMaxEquiv hδ r))).toLinearMap
+
+private theorem circleCosTwoHomotopyMap_apply (hδ : 0 < δ)
+    (c : {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 0} →₀ R) (j : Fin 2) :
+    circleCosTwoHomotopyMap hδ r c (circleCosTwoMaxEquiv hδ r j) =
+      -c (circleCosTwoMinEquiv hδ r j) := by
+  simp [circleCosTwoHomotopyMap, Finsupp.domLCongr_apply]
+
+private theorem circleCosTwoHomotopyMap_single (hδ : 0 < δ) (i : Fin 2) (a : R) :
+    circleCosTwoHomotopyMap hδ r (Finsupp.single (circleCosTwoMinEquiv hδ r i) a) =
+      Finsupp.single (circleCosTwoMaxEquiv hδ r i) (-a) := by
+  simp [circleCosTwoHomotopyMap]
+
+variable (hδ : 0 < δ)
+  (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0)
+  (hD : ∀ i j : Fin 2, hX.signedMorseBoundaryCoeff 𝔬 (circleCosTwoMaxCrit δ r j)
+    (circleCosTwoMinCrit δ r i) = if i = j then 1 else -1)
+
+include hD in
+/-- When the differential is `I - S`, `(∂ c)(q_i) = c(p_i) - c(p_{i + 1})`. -/
+private theorem signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_of_eq_ite
+    (c : {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
+      manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 1} →₀ R) (i : Fin 2) :
+    hX.signedMorseBoundaryAt 𝔬 hf R 0 c (circleCosTwoMinEquiv hδ r i) =
+      c (circleCosTwoMaxEquiv hδ r i) - c (circleCosTwoMaxEquiv hδ r (i + 1)) := by
+  rw [signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_eq_sum, Fin.sum_univ_two, hD, hD]
+  fin_cases i <;> simp <;> abel
+
+include hD in
+/-- `∂ ∘ S = S ∘ ∂` on chains of index `1`, when the differential is `I - S`. -/
+private theorem signedMorseBoundaryAt_zero_comp_domLCongr_circleCosTwoMaxSwap :
+    hX.signedMorseBoundaryAt 𝔬 hf R 0 ∘ₗ
+        (Finsupp.domLCongr (R := R) (M := R) (circleCosTwoMaxSwap hδ r)).toLinearMap =
+      (Finsupp.domLCongr (R := R) (M := R) (circleCosTwoMinSwap hδ r)).toLinearMap ∘ₗ
+        hX.signedMorseBoundaryAt 𝔬 hf R 0 := by
+  refine LinearMap.ext fun c ↦ Finsupp.ext fun q ↦ ?_
+  obtain ⟨i, rfl⟩ := (circleCosTwoMinEquiv hδ r).surjective q
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Finsupp.domLCongr_apply,
+    Finsupp.domCongr_apply, Finsupp.equivMapDomain_apply, circleCosTwoMinSwap_symm_apply,
+    signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_of_eq_ite hδ hD,
+    circleCosTwoMaxSwap_symm_apply]
+
+include hD in
+/-- `D K + I = S` on chains of index `0`, when the differential is `D = I - S` and `K = -I`. -/
+private theorem signedMorseBoundaryAt_zero_comp_circleCosTwoHomotopyMap_add_id :
+    hX.signedMorseBoundaryAt 𝔬 hf R 0 ∘ₗ circleCosTwoHomotopyMap hδ r + LinearMap.id =
+      (Finsupp.domLCongr (R := R) (M := R) (circleCosTwoMinSwap hδ r)).toLinearMap := by
+  refine LinearMap.ext fun c ↦ Finsupp.ext fun q ↦ ?_
+  obtain ⟨i, rfl⟩ := (circleCosTwoMinEquiv hδ r).surjective q
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply, Finsupp.add_apply,
+    LinearEquiv.coe_coe, Finsupp.domLCongr_apply, Finsupp.domCongr_apply,
+    Finsupp.equivMapDomain_apply,
+    circleCosTwoMinSwap_symm_apply,
+    signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_of_eq_ite hδ hD,
+    circleCosTwoHomotopyMap_apply]
+  abel
+
+include hD in
+/-- `K D + I = S` on chains of index `1`, when the differential is `D = I - S` and `K = -I`. -/
+private theorem circleCosTwoHomotopyMap_comp_signedMorseBoundaryAt_zero_add_id :
+    circleCosTwoHomotopyMap hδ r ∘ₗ hX.signedMorseBoundaryAt 𝔬 hf R 0 + LinearMap.id =
+      (Finsupp.domLCongr (R := R) (M := R) (circleCosTwoMaxSwap hδ r)).toLinearMap := by
+  refine LinearMap.ext fun c ↦ Finsupp.ext fun p ↦ ?_
+  obtain ⟨j, rfl⟩ := (circleCosTwoMaxEquiv hδ r).surjective p
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply, Finsupp.add_apply,
+    LinearEquiv.coe_coe, Finsupp.domLCongr_apply, Finsupp.domCongr_apply,
+    Finsupp.equivMapDomain_apply,
+    circleCosTwoMaxSwap_symm_apply, circleCosTwoHomotopyMap_apply,
+    signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_of_eq_ite hδ hD]
+  abel
+
+/-- The degree-`n` component of `circleCosTwoExchange`. -/
+private noncomputable def circleCosTwoExchangeF :
+    (n : ℕ) → (hX.signedMorseComplex 𝔬 hf R hsq).X n ⟶ (hX.signedMorseComplex 𝔬 hf R hsq).X n
+  | 0 => ModuleCat.ofHom (Finsupp.domLCongr (circleCosTwoMinSwap hδ r)).toLinearMap
+  | 1 => ModuleCat.ofHom (Finsupp.domLCongr (circleCosTwoMaxSwap hδ r)).toLinearMap
+  | _ + 2 => CategoryTheory.CategoryStruct.id _
+
+/-- The components of `circleCosTwoExchangeHomotopy`: `K = -I` from degree `0` to degree `1`,
+and `0` otherwise. -/
+private noncomputable def circleCosTwoExchangeHomotopyHom :
+    (i j : ℕ) → (hX.signedMorseComplex 𝔬 hf R hsq).X i ⟶ (hX.signedMorseComplex 𝔬 hf R hsq).X j
+  | 0, 1 => ModuleCat.ofHom (circleCosTwoHomotopyMap hδ r)
+  | _, _ => 0
+
+/-- The differential from degree `1` to degree `0`, as a linear map, is the graded boundary. -/
+private theorem signedMorseComplex_d_one_zero_hom :
+    ((hX.signedMorseComplex 𝔬 hf R hsq).d 1 0).hom = hX.signedMorseBoundaryAt 𝔬 hf R 0 :=
+  LinearMap.ext (signedMorseComplex_d_apply hsq 0)
+
+/-- In degree `0`, `circleCosTwoExchangeF` is the exchange of the minima. -/
+private theorem circleCosTwoExchangeF_zero_hom :
+    (circleCosTwoExchangeF hδ hsq 0).hom =
+      (Finsupp.domLCongr (R := R) (M := R) (circleCosTwoMinSwap hδ r)).toLinearMap :=
+  rfl
+
+/-- In degree `1`, `circleCosTwoExchangeF` is the exchange of the maxima. -/
+private theorem circleCosTwoExchangeF_one_hom :
+    (circleCosTwoExchangeF hδ hsq 1).hom =
+      (Finsupp.domLCongr (R := R) (M := R) (circleCosTwoMaxSwap hδ r)).toLinearMap :=
+  rfl
+
+/-- From degree `0` to degree `1`, `circleCosTwoExchangeHomotopyHom` is `K = -I`. -/
+private theorem circleCosTwoExchangeHomotopyHom_zero_one_hom :
+    (circleCosTwoExchangeHomotopyHom hδ hsq 0 1).hom = circleCosTwoHomotopyMap hδ r :=
+  rfl
+
+/-- From degree `1` to degree `2`, `circleCosTwoExchangeHomotopyHom` vanishes. -/
+private theorem circleCosTwoExchangeHomotopyHom_one_two :
+    circleCosTwoExchangeHomotopyHom hδ hsq 1 2 = 0 :=
+  rfl
+
+include hD in
+/-- **The exchange `S` of the critical points of the circle.** For `δ > 0`, an adapted
+pseudo-gradient and orientations for which the integral Morse differential of
+`θ ↦ δ cos (2 (θ - r))` is `I - S` (the coefficient of `q_i` in `∂ p_j` is `1` for `i = j` and
+`-1` otherwise, as for the orientations of
+`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_circleCosTwo_eq_ite`), the exchange
+`p_j ↦ p_{j + 1}`, `q_i ↦ q_{i + 1}` of the two maxima and of the two minima is a chain map of the
+integral Morse complex. -/
+noncomputable def circleCosTwoExchange :
+    hX.signedMorseComplex 𝔬 hf R hsq ⟶ hX.signedMorseComplex 𝔬 hf R hsq where
+  f := circleCosTwoExchangeF hδ hsq
+  comm' := by
+    rintro (_ | _ | n) j (h : j + 1 = _)
+    · omega
+    · obtain rfl : j = 0 := by omega
+      ext1
+      rw [ModuleCat.hom_comp, ModuleCat.hom_comp, signedMorseComplex_d_one_zero_hom,
+        circleCosTwoExchangeF_zero_hom, circleCosTwoExchangeF_one_hom]
+      exact signedMorseBoundaryAt_zero_comp_domLCongr_circleCosTwoMaxSwap hδ hD
+    · -- There are no chains of index `n + 2`.
+      exact (isZero_signedMorseComplex_X_of_finrank_lt hsq (by simp)).eq_of_src _ _
+
+/-- In degree `0`, `circleCosTwoExchange` is the exchange of the minima. -/
+private theorem circleCosTwoExchange_f_zero_hom :
+    ((circleCosTwoExchange hδ hsq hD).f 0).hom =
+      (Finsupp.domLCongr (R := R) (M := R) (circleCosTwoMinSwap hδ r)).toLinearMap :=
+  circleCosTwoExchangeF_zero_hom hδ hsq
+
+/-- In degree `1`, `circleCosTwoExchange` is the exchange of the maxima. -/
+private theorem circleCosTwoExchange_f_one_hom :
+    ((circleCosTwoExchange hδ hsq hD).f 1).hom =
+      (Finsupp.domLCongr (R := R) (M := R) (circleCosTwoMaxSwap hδ r)).toLinearMap :=
+  circleCosTwoExchangeF_one_hom hδ hsq
+
+/-- The exchange `S` sends the minimum `q_i` to `q_{i + 1}`. -/
+@[simp]
+theorem circleCosTwoExchange_f_zero_single (i : Fin 2) (a : R) :
+    ((circleCosTwoExchange hδ hsq hD).f 0).hom (Finsupp.single
+        ⟨circleCosTwoMinCrit δ r i, manifoldMorseIndex_circleCosTwoMinCrit hδ r i⟩ a) =
+      Finsupp.single
+        ⟨circleCosTwoMinCrit δ r (i + 1), manifoldMorseIndex_circleCosTwoMinCrit hδ r (i + 1)⟩ a :=
+  (Finsupp.domLCongr_single _ _ _).trans
+    (congrArg (Finsupp.single · a) (circleCosTwoMinSwap_apply hδ i))
+
+/-- The exchange `S` sends the maximum `p_j` to `p_{j + 1}`. -/
+@[simp]
+theorem circleCosTwoExchange_f_one_single (j : Fin 2) (a : R) :
+    ((circleCosTwoExchange hδ hsq hD).f 1).hom (Finsupp.single
+        ⟨circleCosTwoMaxCrit δ r j, manifoldMorseIndex_circleCosTwoMaxCrit hδ r j⟩ a) =
+      Finsupp.single
+        ⟨circleCosTwoMaxCrit δ r (j + 1), manifoldMorseIndex_circleCosTwoMaxCrit hδ r (j + 1)⟩ a :=
+  (Finsupp.domLCongr_single _ _ _).trans
+    (congrArg (Finsupp.single · a) (circleCosTwoMaxSwap_apply hδ j))
+
+/-- **The chain homotopy `K = -I` between the exchange and the identity.** When the integral Morse
+differential of `θ ↦ δ cos (2 (θ - r))` is `D = I - S`, the map `K = -I : q_i ↦ -p_i` from
+degree `0` to degree `1` satisfies `D K = S - I` in degree `0` and `K D = S - I` in degree `1`, so
+it is a chain homotopy from the exchange `S` to the identity. -/
+noncomputable def circleCosTwoExchangeHomotopy :
+    Homotopy (circleCosTwoExchange hδ hsq hD) (CategoryTheory.CategoryStruct.id _) where
+  hom := circleCosTwoExchangeHomotopyHom hδ hsq
+  zero
+    | 0, 1, h => absurd rfl h
+    | 0, 0, _ => rfl
+    | 0, _ + 2, _ => rfl
+    | _ + 1, _, _ => rfl
+  comm
+    | 0 => by
+      -- In degree `0`: `S = D K + I`.
+      rw [Homotopy.dNext_zero_chainComplex,
+        prevD_eq _ (show (ComplexShape.down ℕ).Rel 1 0 from rfl), zero_add, HomologicalComplex.id_f]
+      ext1
+      rw [ModuleCat.hom_add, ModuleCat.hom_comp, ModuleCat.hom_id, circleCosTwoExchange_f_zero_hom,
+        circleCosTwoExchangeHomotopyHom_zero_one_hom, signedMorseComplex_d_one_zero_hom]
+      exact (signedMorseBoundaryAt_zero_comp_circleCosTwoHomotopyMap_add_id hδ hD).symm
+    | 1 => by
+      -- In degree `1`: `S = K D + I`.
+      rw [dNext_eq _ (show (ComplexShape.down ℕ).Rel 1 0 from rfl),
+        prevD_eq _ (show (ComplexShape.down ℕ).Rel 2 1 from rfl), HomologicalComplex.id_f,
+        circleCosTwoExchangeHomotopyHom_one_two, CategoryTheory.Limits.zero_comp, add_zero]
+      ext1
+      rw [ModuleCat.hom_add, ModuleCat.hom_comp, ModuleCat.hom_id, circleCosTwoExchange_f_one_hom,
+        circleCosTwoExchangeHomotopyHom_zero_one_hom, signedMorseComplex_d_one_zero_hom]
+      exact (circleCosTwoHomotopyMap_comp_signedMorseBoundaryAt_zero_add_id hδ hD).symm
+    | n + 2 => (isZero_signedMorseComplex_X_of_finrank_lt hsq (by simp)).eq_of_src _ _
+
+/-- The chain homotopy `K` sends the minimum `q_i` to `-p_i`. -/
+@[simp]
+theorem circleCosTwoExchangeHomotopy_hom_zero_one_single (i : Fin 2) (a : R) :
+    ((circleCosTwoExchangeHomotopy hδ hsq hD).hom 0 1).hom (Finsupp.single
+        ⟨circleCosTwoMinCrit δ r i, manifoldMorseIndex_circleCosTwoMinCrit hδ r i⟩ a) =
+      Finsupp.single ⟨circleCosTwoMaxCrit δ r i, manifoldMorseIndex_circleCosTwoMaxCrit hδ r i⟩
+        (-a) :=
+  circleCosTwoHomotopyMap_single hδ i a
+
+/-- **The exchange acts trivially on the integral Morse homology of the circle.** When the integral
+Morse differential of `θ ↦ δ cos (2 (θ - r))` is `I - S`, the exchange `S` of the critical points
+induces the identity on homology in every degree, being chain homotopic to the identity through
+`K = -I`. -/
+theorem homologyMap_circleCosTwoExchange (n : ℕ) :
+    HomologicalComplex.homologyMap (circleCosTwoExchange hδ hsq hD) n =
+      CategoryTheory.CategoryStruct.id _ :=
+  ((circleCosTwoExchangeHomotopy hδ hsq hD).homologyMap_eq n).trans
+    (HomologicalComplex.homologyMap_id _ n)
+
+end Homology
 
 end IsAdaptedPseudoGradient
 

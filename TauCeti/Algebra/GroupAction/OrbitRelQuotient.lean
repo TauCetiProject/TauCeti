@@ -36,6 +36,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   representative `Quotient.out` of that orbit.
 * `TauCeti.MulAction.injOn_quotientMk_slice`: if the slice map `(g, s) ↦ g • σ s` is injective
   on `G × U`, then distinct points of `U` lie in distinct orbits.
+* `TauCeti.MulAction.subsingleton_orbitRelQuotient`: a pretransitive action has at most one
+  orbit, so its orbit space is finite.
 * `TauCeti.MulAction.card_orbitRelQuotient_eq_one`: a pretransitive action on a nonempty type
   has exactly one orbit.
 * `TauCeti.MulAction.card_orbitRelQuotient_anti`: if there are finitely many `H`-orbits,
@@ -249,6 +251,13 @@ theorem MulAction.injOn_quotientMk_slice {S : Type*} {σ : S → X} {U : Set S}
   have h1 := hinj (x₁ := (g, s')) (x₂ := (1, s)) ⟨Set.mem_univ _, hs'⟩ ⟨Set.mem_univ _, hs⟩
     (by simpa only [one_smul] using hg)
   exact (Prod.ext_iff.1 h1).2.symm
+
+/-- **A pretransitive action has at most one orbit**: Mathlib's
+`MulAction.pretransitive_iff_subsingleton_quotient` as an instance. In particular the orbit space
+is finite. -/
+instance MulAction.subsingleton_orbitRelQuotient [MulAction.IsPretransitive G X] :
+    Subsingleton (MulAction.orbitRel.Quotient G X) :=
+  (MulAction.pretransitive_iff_subsingleton_quotient G X).1 ‹_›
 
 /-- **A pretransitive action on a nonempty type has one orbit.** This is Mathlib's
 `MulAction.pretransitive_iff_unique_quotient_of_nonempty` in counting form. -/

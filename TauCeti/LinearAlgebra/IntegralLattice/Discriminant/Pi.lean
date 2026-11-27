@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Quotient.Pi
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
+public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Pi
 
@@ -41,6 +42,8 @@ and permutations of the components.
 * `TauCeti.IntegralLattice.dualCarrier_pi`: the dual carrier of an orthogonal sum is the product
   of the dual carriers.
 * `TauCeti.IntegralLattice.discriminantGroupPiEquiv`: `A_(⊥ i, L i) ≃ Π i, A_(L i)`.
+* `TauCeti.IntegralLattice.discriminant_pi`: the discriminant of an orthogonal sum is the product
+  of the discriminants of the summands.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPi`: for even nondegenerate summands, this
   equivalence is an isometry of finite quadratic modules.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPiOfIsometry`: the isometry
@@ -153,6 +156,14 @@ theorem discriminantGroupPiEquiv_symm_mk (x : ∀ i, (L i).dualCarrier) :
     (discriminantGroupPiEquiv L).symm (fun i ↦ Submodule.Quotient.mk (x i)) =
       Submodule.Quotient.mk ((piDualCarrierEquiv L).symm x) := by
   rw [LinearEquiv.symm_apply_eq, discriminantGroupPiEquiv_mk, LinearEquiv.apply_symm_apply]
+
+/-- **The discriminant of an orthogonal sum is the product of the discriminants** of its summands.
+When some summand is degenerate, both sides are `0`. -/
+@[simp]
+theorem discriminant_pi : (pi L).discriminant = ∏ i, (L i).discriminant := by
+  rw [← natCard_discriminantGroup, Nat.card_congr (discriminantGroupPiEquiv L).toEquiv,
+    Nat.card_pi]
+  simp only [natCard_discriminantGroup]
 
 /-! ## The discriminant quadratic module -/
 

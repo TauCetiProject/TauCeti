@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.Immersion
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.MFDeriv.OfCompLeft
 
 /-!
@@ -55,14 +56,21 @@ both sides, in order to apply the rule to `e.symm` as well.
   `N × M` is an immersion when the preferred chart of `N` at `c` sends `c` to `0`.
 * `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
   an immersion exactly when it is an immersion at every point.
-* `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for nonempty manifolds
-  modelled on `ℝᵏ` and `ℝᵐ`, the complement of an immersion is a copy of `ℝᵐ⁻ᵏ`.
+* `Manifold.IsImmersionAtOfComplement.nonempty_continuousLinearEquiv`,
+  `Manifold.IsImmersionAt.nonempty_complement_continuousLinearEquiv`, and
+  `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for a finite-dimensional
+  target model, the complement of an immersion is isomorphic to any normed space of the codimension
+  (in particular `ℝᵐ⁻ᵏ` for nonempty manifolds modelled on `ℝᵏ` and `ℝᵐ`).
 * `Manifold.IsImmersion.of_le`, together with its `Manifold.IsImmersionAt`,
   `Manifold.IsImmersionAtOfComplement`, and `Manifold.IsImmersionOfComplement` counterparts:
   lowering the regularity order preserves immersions.
 * `Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq`: in the charts of
   immersion data, a point `b` of the source chart is sent by `f` to the point read as
   `h.equiv (b, 0)` in the target chart.
+* `Manifold.IsImmersionAt.exists_chart_eq_linearMap`: a continuous immersion of a manifold
+  modelled on `E` into a manifold with boundaryless model reads as an injective continuous linear
+  map in a chart of its source and a chart of its target of class `C^n` with inverse of class
+  `C^n`, inside any given open neighbourhood.
 * `IsDiffImmersionAt.mdifferentiableAt_iff_comp`: a map is differentiable at `x` exactly when it
   is continuous at `x` and its composite with a map whose differential at the image point has a
   continuous left inverse, such as an immersion of positive order, is differentiable at `x`.
@@ -72,6 +80,8 @@ both sides, in order to apply the rule to `e.symm` as well.
 * `ContMDiffWithinAt.iff_comp_isImmersionAt`, `ContMDiffOn.iff_comp_isImmersion`, and their
   `OfComplement` counterparts: within-a-set and on-a-set smoothness can be tested after composing
   with an immersion, given continuity in the same sense.
+* `Manifold.IsImmersion.tangentMap_injective_iff`: for a `C^n` immersion (`n ≠ 0`),
+  `tangentMap I J f` is injective if and only if `f` is injective.
 
 `Manifold.IsImmersion` asks for one complement serving every point, so it is not obviously a
 local property; Mathlib's docstring of `Manifold.IsImmersion.isImmersionAt` explains that the
@@ -92,8 +102,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Manifold
-open scoped Manifold ContDiff
+open _root_.Manifold
+open scoped _root_.Manifold ContDiff
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -355,6 +365,34 @@ theorem isImmersion_iff_forall_isImmersionAt :
     (h x₀).isImmersionAtOfComplement_complement.equiv
   exact (h x).isImmersionAtOfComplement_complement.trans_F e
 
+/-- For an immersion at `x` with complement `F` into a finite-dimensional model space `E'`, any
+finite-dimensional normed space `Q` of dimension `finrank 𝕜 E' - finrank 𝕜 E` is continuously
+linearly isomorphic to `F`. -/
+theorem _root_.Manifold.IsImmersionAtOfComplement.nonempty_continuousLinearEquiv {Q : Type*}
+    [NormedAddCommGroup Q] [NormedSpace 𝕜 Q] [FiniteDimensional 𝕜 Q] {x : M}
+    (h : IsImmersionAtOfComplement F I J n f x)
+    (hdim : Module.finrank 𝕜 Q = Module.finrank 𝕜 E' - Module.finrank 𝕜 E) :
+    Nonempty (F ≃L[𝕜] Q) := by
+  have : FiniteDimensional 𝕜 (E × F) := h.equiv.symm.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional 𝕜 E :=
+    Module.Finite.of_surjective (LinearMap.fst 𝕜 E F) LinearMap.fst_surjective
+  have : FiniteDimensional 𝕜 F :=
+    Module.Finite.of_surjective (LinearMap.snd 𝕜 E F) LinearMap.snd_surjective
+  refine ⟨ContinuousLinearEquiv.ofFinrankEq ?_⟩
+  have heq := h.equiv.toLinearEquiv.finrank_eq
+  rw [Module.finrank_prod] at heq
+  omega
+
+/-- For an immersion `h` at `x` into a finite-dimensional model space `E'`, any finite-dimensional
+normed space `Q` of dimension `finrank 𝕜 E' - finrank 𝕜 E` is continuously linearly isomorphic to
+`h.complement`. -/
+theorem _root_.Manifold.IsImmersionAt.nonempty_complement_continuousLinearEquiv {Q : Type*}
+    [NormedAddCommGroup Q] [NormedSpace 𝕜 Q] [FiniteDimensional 𝕜 Q] {x : M}
+    (h : IsImmersionAt I J n f x)
+    (hdim : Module.finrank 𝕜 Q = Module.finrank 𝕜 E' - Module.finrank 𝕜 E) :
+    Nonempty (h.complement ≃L[𝕜] Q) :=
+  h.isImmersionAtOfComplement_complement.nonempty_continuousLinearEquiv hdim
+
 end FiniteDimensional
 
 /-! ### Euclidean complements -/
@@ -371,16 +409,7 @@ theorem _root_.Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv [N
     (h : IsImmersion I J n f) {j : ℕ} (hj : m - k = j) :
     Nonempty (h.complement ≃L[ℝ] EuclideanSpace ℝ (Fin j)) := by
   obtain ⟨x⟩ := ‹Nonempty M›
-  let L := (h.isImmersionOfComplement_complement x).equiv
-  have : FiniteDimensional ℝ (EuclideanSpace ℝ (Fin k) × h.complement) :=
-    L.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℝ h.complement :=
-    Module.Finite.of_surjective (LinearMap.snd ℝ (EuclideanSpace ℝ (Fin k)) _) Prod.snd_surjective
-  refine ⟨ContinuousLinearEquiv.ofFinrankEq ?_⟩
-  have := L.toLinearEquiv.finrank_eq
-  rw [Module.finrank_prod, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin] at this
-  rw [finrank_euclideanSpace_fin]
-  omega
+  exact (h.isImmersionOfComplement_complement x).nonempty_continuousLinearEquiv (by simp [hj])
 
 end Euclidean
 
@@ -440,6 +469,74 @@ theorem _root_.Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend
     h.writtenInCharts hb
   refine ⟨hy, hw, ?_, h.target_subset_preimage_target hb⟩
   rw [← hw, (h.codChart.extend J).left_inv (by simpa using hy)]
+
+/-! ### Injectivity of `tangentMap` -/
+
+/-- For a `C^n` immersion (`n ≠ 0`), the induced map `tangentMap I J f` on tangent bundles is
+injective if and only if the base map `f` is injective. -/
+theorem _root_.Manifold.IsImmersion.tangentMap_injective_iff
+    (hf : IsImmersion I J n f) (hn : n ≠ 0) :
+    Function.Injective (tangentMap I J f) ↔ Function.Injective f := by
+  refine ⟨fun hinj x₁ x₂ hfx ↦ ?_, fun hinj ⟨x₁, v₁⟩ ⟨x₂, v₂⟩ hp ↦ ?_⟩
+  · have h0 : tangentMap I J f ⟨x₁, 0⟩ = tangentMap I J f ⟨x₂, 0⟩ := by
+      simp only [tangentMap, map_zero]; congr 1
+    exact congrArg Bundle.TotalSpace.proj (hinj h0)
+  · obtain rfl : x₁ = x₂ := hinj (congrArg Bundle.TotalSpace.proj hp)
+    simp only [tangentMap, Bundle.TotalSpace.mk_inj] at hp ⊢
+    exact hf.mfderiv_injective hn x₁ hp
+
+/-! ### Charts in which an immersion is linear -/
+
+section LinearChart
+
+open Set Function
+
+variable {M₀ : Type*} [TopologicalSpace M₀] [ChartedSpace E M₀] [J.Boundaryless] {g : M₀ → N}
+
+/-- **Charts in which an immersion is linear.** Let `g` be continuous and an immersion at `x`,
+with source modelled on `E` itself, and let `U` be an open neighbourhood of `g x`. There are a
+chart `c` of `N` into `E'` at `g x`, of class `C^n` with inverse of class `C^n`, whose source lies
+in `U`, a chart `φ` of the maximal atlas of the source at `x` mapped by `g` into the source of
+`c`, and an injective continuous linear map `L` with `c ∘ g = L ∘ φ` on the source of `φ`. -/
+theorem _root_.Manifold.IsImmersionAt.exists_chart_eq_linearMap {x : M₀}
+    (h : IsImmersionAt 𝓘(𝕜, E) J n g x) (hg : Continuous g) {U : Set N} (hU : IsOpen U)
+    (hxU : g x ∈ U) :
+    ∃ (c : OpenPartialHomeomorph N E') (_ : ContMDiffOn J 𝓘(𝕜, E') n c c.source)
+      (_ : ContMDiffOn 𝓘(𝕜, E') J n c.symm c.target) (_ : c.source ⊆ U)
+      (φ : OpenPartialHomeomorph M₀ E) (L : E →L[𝕜] E'), g x ∈ c.source ∧
+      φ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M₀ ∧ x ∈ φ.source ∧ Injective L ∧
+      MapsTo g φ.source c.source ∧ ∀ y ∈ φ.source, c (g y) = L (φ y) := by
+  set ψ := h.codChart
+  set c := (ψ.restr U).extendTrans J (Homeomorph.refl E')
+  have hψ : ψ.restr U ∈ IsManifold.maximalAtlas J n N :=
+    restr_mem_maximalAtlas _ h.codChart_mem_maximalAtlas hU
+  have hcs : c.source = ψ.source ∩ U := by
+    rw [OpenPartialHomeomorph.extendTrans_source, OpenPartialHomeomorph.restr_source' _ _ hU]
+  set φ := h.domChart.restr (g ⁻¹' U)
+  have hφs : φ.source = h.domChart.source ∩ g ⁻¹' U :=
+    OpenPartialHomeomorph.restr_source' _ _ (hU.preimage hg)
+  refine ⟨c, (ψ.restr U).contMDiffOn_extendTrans hψ contDiff_id,
+    (ψ.restr U).contMDiffOn_extendTrans_symm hψ contDiff_id, hcs ▸ inter_subset_right, φ,
+    (h.equiv : (E × h.complement) →L[𝕜] E') ∘L ContinuousLinearMap.inl 𝕜 E h.complement,
+    hcs ▸ ⟨h.mem_codChart_source, hxU⟩,
+    restr_mem_maximalAtlas _ h.domChart_mem_maximalAtlas (hU.preimage hg),
+    hφs ▸ ⟨h.mem_domChart_source, hxU⟩,
+    h.equiv.injective.comp fun u v h ↦ (Prod.ext_iff.1 h).1, fun y hy ↦ ?_, fun y hy ↦ ?_⟩
+  · rw [hφs] at hy
+    rw [hcs]
+    exact ⟨h.source_subset_preimage_source hy.1, hy.2⟩
+  · rw [hφs] at hy
+    -- In the charts of the immersion, `g` reads `u ↦ A (u, 0)`.
+    have h' := h.writtenInCharts (show h.domChart y ∈ (h.domChart.extend 𝓘(𝕜, E)).target by
+      rw [OpenPartialHomeomorph.extend_target']
+      exact ⟨_, h.domChart.map_source hy.1, rfl⟩)
+    simp only [comp_apply, OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
+      modelWithCornersSelf_coe_symm, id_eq, h.domChart.left_inv hy.1] at h'
+    simp only [c, φ, OpenPartialHomeomorph.extendTrans_apply, Homeomorph.refl_apply, id_eq,
+      OpenPartialHomeomorph.restr_apply, ContinuousLinearMap.coe_comp, comp_apply,
+      ContinuousLinearMap.inl_apply, ContinuousLinearEquiv.coe_coe, ← h', ψ]
+
+end LinearChart
 
 /-! ### Lifting differentiability through a split differential -/
 

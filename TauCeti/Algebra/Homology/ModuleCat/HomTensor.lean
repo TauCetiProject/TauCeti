@@ -118,15 +118,12 @@ theorem tensorLinearYonedaHomologyIso_homologyπ [Module.Flat R T] (i : α) :
           (C.linearYonedaObj R (T ⊗ N)).homologyπ i := by
   let S := (C.linearYonedaObj R N).sc i
   let F := tensorLeft T
-  have hclass := congrArg (fun f ↦ (S.mapCyclesIso F).inv ≫ f ≫
-    (S.mapHomologyIso F).inv) (S.homologyπ_comp_mapHomologyIso_hom F)
-  simp only [Category.assoc, Iso.hom_inv_id, Category.comp_id,
-    Iso.inv_hom_id_assoc] at hclass
+  have hclass := S.map_homologyπ_comp_mapHomologyIso_inv F
   -- The homology and cycles of `S.map F` are the objects of the mapped cochain complex.
   -- Paste the two squares as terms so rewriting need not unfold these bundled objects.
   exact (Category.assoc _ _ _).symm.trans <|
     (congrArg (· ≫ HomologicalComplex.homologyMap (C.tensorLinearYonedaObjIso T N).hom i)
-      hclass.symm).trans <|
+      hclass).trans <|
         (Category.assoc _ _ _).trans <|
           congrArg ((S.mapCyclesIso F).inv ≫ ·)
             (HomologicalComplex.homologyπ_naturality (C.tensorLinearYonedaObjIso T N).hom i)
