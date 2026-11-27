@@ -30,6 +30,10 @@ Finally, `ℚ ⊗[ℤ] M` is the localization of an additive group `M` at the po
 each of its elements is a single fraction: a common denominator clears every rational coefficient
 of a finite sum of elementary tensors.
 
+When `A` is the localization of `R` away from `r : R`, a `T`-algebra `B` is the localization of
+`T` away from the image of `r` exactly when `B` is the pushout `T ⊗[R] A`
+(`Algebra.isLocalization_away_iff_isPushout`).
+
 ## Main results
 
 * `TauCeti.IsLocalization.linearMap_compatibleSMul_tensorProduct`: `A`-linear maps between such
@@ -41,6 +45,9 @@ of a finite sum of elementary tensors.
   elements `1 ⊗ₜ z` is the induced map of localizations.
 * `TensorProduct.exists_eq_inv_natCast_tmul`: every element of `ℚ ⊗[ℤ] M` is an elementary
   tensor `(n : ℚ)⁻¹ ⊗ₜ m` with `n ≠ 0`.
+* `Algebra.isLocalization_away_iff_isPushout`: when `A` is the localization of `R` away from `r`,
+  a `T`-algebra `B` is the localization of `T` away from the image of `r` if and only if `B` is a
+  pushout of `T` and `A` over `R`.
 -/
 
 public section

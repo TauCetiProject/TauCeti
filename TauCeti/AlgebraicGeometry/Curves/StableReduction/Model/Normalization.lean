@@ -66,9 +66,9 @@ are the hypotheses of the ring-level finiteness theorem
 * `TauCeti.Model.normalization M`: the normalization of the total space of `M` in its generic
   fibre, as a model of `C`.
 * `TauCeti.Model.normalizationHom M`: the normalization morphism, as a morphism of models.
-* `TauCeti.Model.normalizationLift`: the morphism of models out of the normalization given by the
+* `TauCeti.Model.normalizationDesc`: the morphism of models out of the normalization given by the
   universal property of relative normalization.
-* `TauCeti.Model.liftToNormalization`: the unique factorization through `M.normalization` of any
+* `TauCeti.Model.normalizationLift`: the unique factorization through `M.normalization` of any
   morphism of models `N ⟶ M` whose source has normal total space.
 
 ## Main results
@@ -76,7 +76,7 @@ are the hypotheses of the ring-level finiteness theorem
 * `TauCeti.Model.genericι_normalization`: the generic fibre of the normalization is included
   through the canonical morphism to the normalization.
 * `TauCeti.Model.isProper_normalization`: the normalization of a proper model is a proper model.
-* `TauCeti.Model.normalizationLift_comp` and `TauCeti.Model.eq_normalizationLift`: the universal
+* `TauCeti.Model.normalizationDesc_comp` and `TauCeti.Model.eq_normalizationDesc`: the universal
   property of the normalization, in the category of models.
 * `TauCeti.Model.isNormalScheme_normalization_of_smooth`: normalizing a model with smooth
   generic fibre gives a normal total space, including for disconnected generic fibres.
@@ -85,7 +85,7 @@ are the hypotheses of the ring-level finiteness theorem
 * `TauCeti.Model.isIso_fromNormalization_of_isNormalScheme` and
   `TauCeti.Model.isIso_normalizationHom_of_isNormalScheme`: when the total space of `M` is already
   normal, `M.genericι.fromNormalization` and `M.normalizationHom` are isomorphisms.
-* `TauCeti.Model.liftToNormalization_normalizationHom` and `TauCeti.Model.eq_liftToNormalization`:
+* `TauCeti.Model.normalizationLift_normalizationHom` and `TauCeti.Model.eq_normalizationLift`:
   any morphism from a normal model factors uniquely through `M.normalization`.
 
 ## References
@@ -148,8 +148,8 @@ instance isIso_fromNormalization_of_isNormalScheme [AlgebraicGeometry.IsNormalSc
   have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
   have : IsIntegrallyClosed Γ(M.total, U) :=
     AlgebraicGeometry.IsNormalScheme.isIntegrallyClosed_of_isLocallyNoetherian_of_isAffineOpen hU
-  refine AlgebraicGeometry.with_finiteType_algebraIsPushout_of_isPullback
-    M.isPullback_genericι hU fun _ _ hXY ↦ ?_
+  refine AlgebraicGeometry.with_algebraIsPushout_of_isPullback
+    M.isPullback_genericι hU fun hXY ↦ ?_
   obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
   have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) :=
     hπ.isLocalizationAway_of_isPushout (K := K)
@@ -311,44 +311,44 @@ instance isIso_normalizationHom_of_isNormalScheme [AlgebraicGeometry.IsNormalSch
 
 variable {M} {N : Model R K C toK}
 
-/-- **The universal property of the normalization model: the lift.** A morphism of models
+/-- **The universal property of the normalization model: the descent map.** A morphism of models
 `f : N ⟶ M` that is integral on total spaces receives a morphism of models from the normalization
 of `M`. -/
-def normalizationLift (f : N ⟶ M) [IsIntegralHom f.hom] : M.normalization ⟶ N where
+def normalizationDesc (f : N ⟶ M) [IsIntegralHom f.hom] : M.normalization ⟶ N where
   hom := M.genericι.normalizationDesc N.genericι f.hom (genericι_hom f).symm
   overBase := by
     rw [normalization_toBase, ← f.overBase, Scheme.Hom.normalizationDesc_comp_assoc]
   genericFiber := baseChangeHom_genericFiberIso_hom_left _ _ (by
     rw [genericι_normalization, Scheme.Hom.toNormalization_normalizationDesc])
 
-/-- The lift out of the normalization model has the canonical morphism out of the relative
+/-- The descent map out of the normalization model has the canonical morphism out of the relative
 normalization as underlying morphism. -/
 @[simp]
-lemma normalizationLift_hom (f : N ⟶ M) [IsIntegralHom f.hom] :
-    (normalizationLift f).hom =
+lemma normalizationDesc_hom (f : N ⟶ M) [IsIntegralHom f.hom] :
+    (normalizationDesc f).hom =
       M.genericι.normalizationDesc N.genericι f.hom (genericι_hom f).symm :=
   (rfl)
 
-/-- The lift out of the normalization model is a morphism over `M`. -/
+/-- The descent map out of the normalization model is a morphism over `M`. -/
 @[reassoc (attr := simp)]
-lemma normalizationLift_comp (f : N ⟶ M) [IsIntegralHom f.hom] :
-    normalizationLift f ≫ f = M.normalizationHom :=
+lemma normalizationDesc_comp (f : N ⟶ M) [IsIntegralHom f.hom] :
+    normalizationDesc f ≫ f = M.normalizationHom :=
   Hom.ext (by simp)
 
 /-- **The universal property of the normalization model: uniqueness.** Every morphism of models
-from the normalization of `M` to a model `N` integral over `M`, lying over `M`, is the lift
-`normalizationLift`. -/
-theorem eq_normalizationLift {f : N ⟶ M} [IsIntegralHom f.hom] {g : M.normalization ⟶ N}
-    (hg : g ≫ f = M.normalizationHom) : g = normalizationLift f := by
+from the normalization of `M` to a model `N` integral over `M`, lying over `M`, is
+`normalizationDesc`. -/
+theorem eq_normalizationDesc {f : N ⟶ M} [IsIntegralHom f.hom] {g : M.normalization ⟶ N}
+    (hg : g ≫ f = M.normalizationHom) : g = normalizationDesc f := by
   refine Hom.ext (Scheme.Hom.normalization.hom_ext M.genericι _ _ f.hom ?_ ?_ ?_)
   · rw [← genericι_normalization, genericι_hom, genericι_hom]
   · rw [← comp_hom, hg, normalizationHom_hom]
-  · rw [← comp_hom, normalizationLift_comp, normalizationHom_hom]
+  · rw [← comp_hom, normalizationDesc_comp, normalizationHom_hom]
 
 /-- **Factorization through the normalization from a normal model: the lift.** Any morphism of
 models `f : N ⟶ M` from a model `N` with normal total space factors uniquely through
 `M.normalization`. -/
-def liftToNormalization [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M) :
+def normalizationLift [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M) :
     N ⟶ M.normalization where
   hom :=
     inv N.genericι.fromNormalization ≫
@@ -370,8 +370,8 @@ def liftToNormalization [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M)
 /-- The lift of `f` to `M.normalization` has the canonical factorization through the pullback as
 underlying morphism. -/
 @[simp]
-lemma liftToNormalization_hom [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M) :
-    (liftToNormalization f).hom =
+lemma normalizationLift_hom [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M) :
+    (normalizationLift f).hom =
       inv N.genericι.fromNormalization ≫
         N.genericι.normalizationDesc
           (pullback.lift M.genericι.toNormalization N.genericι (by simp))
@@ -381,21 +381,21 @@ lemma liftToNormalization_hom [AlgebraicGeometry.IsNormalScheme N.total] (f : N 
 
 /-- The lift of `f` to `M.normalization` commutes with `M.normalizationHom`. -/
 @[reassoc (attr := simp)]
-lemma liftToNormalization_normalizationHom [AlgebraicGeometry.IsNormalScheme N.total]
+lemma normalizationLift_normalizationHom [AlgebraicGeometry.IsNormalScheme N.total]
     (f : N ⟶ M) :
-    liftToNormalization f ≫ M.normalizationHom = f := by
+    normalizationLift f ≫ M.normalizationHom = f := by
   refine Hom.ext ?_
-  simp only [comp_hom, liftToNormalization_hom, normalizationHom_hom, Category.assoc,
+  simp only [comp_hom, normalizationLift_hom, normalizationHom_hom, Category.assoc,
     pullback.condition, Scheme.Hom.normalizationDesc_comp_assoc, IsIso.inv_hom_id_assoc]
 
 /-- **Uniqueness of factorization into the normalization model.** Every morphism of models
-`g : N ⟶ M.normalization` over `M` agrees with `liftToNormalization f`. -/
-theorem eq_liftToNormalization [AlgebraicGeometry.IsNormalScheme N.total] {f : N ⟶ M}
+`g : N ⟶ M.normalization` over `M` agrees with `normalizationLift f`. -/
+theorem eq_normalizationLift [AlgebraicGeometry.IsNormalScheme N.total] {f : N ⟶ M}
     {g : N ⟶ M.normalization} (hg : g ≫ M.normalizationHom = f) :
-    g = liftToNormalization f := by
+    g = normalizationLift f := by
   refine Hom.ext (TauCeti.ext_of_isSchemeTheoreticallyDominant N.genericι M.normalizationHom.hom
     ?_ ?_)
-  · rw [← comp_hom, hg, ← comp_hom, liftToNormalization_normalizationHom]
+  · rw [← comp_hom, hg, ← comp_hom, normalizationLift_normalizationHom]
   · rw [genericι_hom, genericι_hom]
 
 end Model

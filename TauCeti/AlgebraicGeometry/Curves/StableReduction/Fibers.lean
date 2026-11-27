@@ -29,13 +29,10 @@ Conversely, a flat finitely presented scheme over the discrete valuation ring to
 pullback square exhibiting a prescribed scheme over the fraction field as its generic fibre is a
 model (`TauCeti.Model.ofIsPullback`).
 
-When the model is a family of curves, so is its generic fibre
-(`TauCeti.Model.familyOfCurves_toK`). Conversely, since a model is flat over the discrete valuation
-ring, its special fibre is no larger than its generic fibre: if `C` has dimension at most `d` over
-`K`, the model has relative dimension at most `d` over `R`
-(`TauCeti.Model.relativeDimensionLE_toBase`), and a proper model of a curve over `K` is a family of
-curves over `Spec R` (`TauCeti.Model.familyOfCurves_toBase` and
-`TauCeti.Model.familyOfCurves_toBase_iff`).
+When the model is a family of curves, so is its generic fibre. Conversely, since a model is flat
+over the discrete valuation ring, its special fibre is no larger than its generic fibre: if `C`
+has dimension at most `d` over `K`, the model has relative dimension at most `d` over `R`
+(`TauCeti.Model.relativeDimensionLE_toBase`).
 
 Over an affine open `U` of the total space, with `π` a uniformizer of `R`, the sections `Γ(U)` are
 flat over `R`, so `π` is a nonzerodivisor on them
@@ -308,25 +305,6 @@ field. -/
 lemma familyOfCurves_toK (M : Model R K C toK) [AlgebraicGeometry.FamilyOfCurves M.toBase] :
     AlgebraicGeometry.FamilyOfCurves toK :=
   .of_isPullback M.isPullback_genericι
-
-/-- A proper model of a scheme of relative dimension at most `1` over `K` is a family of curves
-over `Spec R`. This is the converse of `TauCeti.Model.familyOfCurves_toK`. -/
-theorem familyOfCurves_toBase (M : Model R K C toK) [hM : M.IsProper]
-    [AlgebraicGeometry.RelativeDimensionLE 1 toK] :
-    AlgebraicGeometry.FamilyOfCurves M.toBase :=
-  have : _root_.AlgebraicGeometry.IsProper M.toBase := hM
-  ⟨⟩
-
-/-- A model `M` is a family of curves over `Spec R` if and only if `M` is proper and its generic
-fibre `C` has relative dimension at most `1` over `K`. -/
-theorem familyOfCurves_toBase_iff (M : Model R K C toK) :
-    AlgebraicGeometry.FamilyOfCurves M.toBase ↔
-      M.IsProper ∧ AlgebraicGeometry.RelativeDimensionLE 1 toK :=
-  ⟨fun h ↦ ⟨h.toIsProper, (M.familyOfCurves_toK).toRelativeDimensionLE⟩,
-    fun ⟨_, _⟩ ↦
-      have := ‹M.IsProper›
-      have := ‹AlgebraicGeometry.RelativeDimensionLE 1 toK›
-      M.familyOfCurves_toBase⟩
 
 end Model
 
