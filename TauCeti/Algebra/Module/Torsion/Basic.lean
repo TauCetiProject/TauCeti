@@ -91,6 +91,11 @@ submodule.
   containing a nonzerodivisor is a torsion module.
 * `Ideal.torsionOf_eq_span_pow_of_prime`: over a principal ideal domain, if `p ^ m` kills `t` but
   `p ^ (m - 1)` does not, for a prime `p`, the annihilator of `t` is `(p ^ m)`.
+* `Module.isTorsion'_iff`, `Module.not_isTorsion'_iff`,
+  `Module.exists_forall_smul_ne_zero_of_imp_of_not_isTorsion'`: elementwise characterizations of
+  `S`-torsion, its negation, and extracting a witness from a torsion implication.
+* `Module.isTorsion'_of_zero_mem`: every module is `S`-torsion when `0 ∈ S`.
+* `Submodule.isTorsion'_quotient_iff`: elementwise characterization of `S`-torsion quotients.
 -/
 
 public section
@@ -530,3 +535,52 @@ theorem torsionOf_eq_span_pow_of_prime {R M : Type*} [CommRing R] [IsDomain R]
   rw [hg, Ideal.submodule_span_eq, span_singleton_eq_span_singleton.mpr hgi, him']
 
 end Ideal
+
+namespace Module
+
+/-- A module is `S`-torsion if and only if every element is annihilated by some element of `S`. -/
+theorem isTorsion'_iff {R M : Type*} [MulOneClass R] [AddCommMonoid M] [SMul R M]
+    {S : Submonoid R} : Module.IsTorsion' M S ↔ ∀ x : M, ∃ s ∈ S, s • x = 0 :=
+  ⟨fun h x ↦ let ⟨s, hs⟩ := @h x; ⟨s, s.property, hs⟩,
+   fun h x ↦ let ⟨s, hs, hsx⟩ := h x; ⟨⟨s, hs⟩, hsx⟩⟩
+
+/-- A module is not `S`-torsion if and only if some element is not annihilated by any element of
+`S`. -/
+theorem not_isTorsion'_iff {R M : Type*} [MulOneClass R] [AddCommMonoid M] [SMul R M]
+    {S : Submonoid R} : ¬ Module.IsTorsion' M S ↔ ∃ x : M, ∀ s ∈ S, s • x ≠ 0 := by
+  simp [Module.isTorsion'_iff]
+
+/-- If `S`-torsion on a family `F` over all indices satisfying `p` implies `S`-torsion on `G`,
+then a failure of `S`-torsion on `G` produces an index `i` with `p i` and an element of `F i`
+annihilated by no scalar in `S`. -/
+theorem exists_forall_smul_ne_zero_of_imp_of_not_isTorsion' {ι R G : Type*} {F : ι → Type*}
+    {p : ι → Prop} [MulOneClass R] [AddCommMonoid G] [SMul R G]
+    [∀ i, AddCommMonoid (F i)] [∀ i, SMul R (F i)] {S : Submonoid R}
+    (himp : (∀ i, p i → IsTorsion' (F i) S) → IsTorsion' G S)
+    (hG : ¬ IsTorsion' G S) :
+    ∃ i, p i ∧ ∃ x : F i, ∀ s ∈ S, s • x ≠ 0 := by
+  obtain ⟨i, hi⟩ := Classical.not_forall.mp (mt himp hG)
+  rw [not_imp, not_isTorsion'_iff] at hi
+  exact ⟨i, hi.1, hi.2⟩
+
+/-- When `0 ∈ S`, every module is `S`-torsion. -/
+theorem isTorsion'_of_zero_mem {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {S : Submonoid R} (h0 : (0 : R) ∈ S) : Module.IsTorsion' M S :=
+  fun _ ↦ ⟨⟨0, h0⟩, by rw [Submonoid.smul_def, zero_smul]⟩
+
+end Module
+
+namespace Submodule
+
+/-- A quotient module `N ⧸ p` is `S`-torsion if and only if every element of `N` is carried into
+`p` by some element of `S`. -/
+theorem isTorsion'_quotient_iff {R N : Type*} [CommRing R] [AddCommGroup N] [Module R N]
+    (p : Submodule R N) (S : Submonoid R) :
+    Module.IsTorsion' (N ⧸ p) S ↔ ∀ y : N, ∃ s ∈ S, s • y ∈ p := by
+  refine ⟨fun h y ↦ ?_, fun h q ↦ Submodule.Quotient.induction_on p q fun y ↦ ?_⟩
+  · obtain ⟨⟨s, hs⟩, hsy⟩ := @h (Submodule.Quotient.mk y)
+    exact ⟨s, hs, by simpa [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul] using hsy⟩
+  · obtain ⟨s, hs, hsy⟩ := h y
+    exact ⟨⟨s, hs⟩, by simpa [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul] using hsy⟩
+
+end Submodule
