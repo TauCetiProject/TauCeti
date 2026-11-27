@@ -143,7 +143,7 @@ private theorem exists_continuousOn_mem_orientedSectionFrames
         ∀ y ∈ U, q y ∈ orientedSectionFrames s o σ v₀ ∧ (q y).proj = y := by
   -- A continuous local frame adapted to `σ`.
   obtain ⟨t₁, hx₁, -⟩ := exists_trivialization_sectionFrames (F := F) hσ hσ₁ hv₀ hF x
-  obtain ⟨r, hrv, hr⟩ := Unitary.exists_det_eq_neg_one_apply_eq_self
+  obtain ⟨r, hr, hrv⟩ := Unitary.exists_det_eq_neg_one_apply_eq_self
     (by rwa [finrank_euclideanSpace_fin]) v₀
   have hr' : r ∉ specialOrthogonalGroup (EuclideanSpace ℝ (Fin N)) :=
     notMem_specialOrthogonalGroup_iff_det_neg.2 (by rw [hr]; norm_num)
@@ -160,9 +160,9 @@ private theorem exists_continuousOn_mem_orientedSectionFrames
   have hkS (y : B) : op (k y) • s₁ y ∈ orientedSectionFrames s o σ v₀ := by
     refine ⟨(smul_mem_sectionFrames_iff (hs₁S y)).2 ?_,
       op_orientationCorrection_smul_mem_orientedFrames hr' y⟩
-    rcases orientationCorrection_eq_one_or_eq (s := s) (o := o) (q := s₁) (r := r) y with h | h
+    by_cases h : s₁ y ∈ orientedFrames s o
     · simp [k, h]
-    · rw [show k y = r from h]
+    · simp only [k, orientationCorrection_of_notMem h]
       exact hrv
   have hk : ContinuousOn k t₁.baseSet := fun y hy ↦
     (continuousAt_orientationCorrection

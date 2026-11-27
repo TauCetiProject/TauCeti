@@ -221,6 +221,20 @@ def orientationCorrection (y : Y) : unitary (V →L[ℝ] V) :=
 variable {s o q r}
 
 omit [Fintype ι] [Fact (Fintype.card ι = finrank ℝ V)] in
+/-- The orientation correction is `1` where the frame is positively oriented. -/
+@[simp]
+theorem orientationCorrection_of_mem {y : Y} (h : q y ∈ orientedFrames s o) :
+    orientationCorrection s o q r y = 1 :=
+  ite_eq_left h
+
+omit [Fintype ι] [Fact (Fintype.card ι = finrank ℝ V)] in
+/-- The orientation correction is `r` where the frame is not positively oriented. -/
+@[simp]
+theorem orientationCorrection_of_notMem {y : Y} (h : q y ∉ orientedFrames s o) :
+    orientationCorrection s o q r y = r :=
+  ite_eq_right h
+
+omit [Fintype ι] [Fact (Fintype.card ι = finrank ℝ V)] in
 /-- The orientation correction is `1` or `r`. -/
 theorem orientationCorrection_eq_one_or_eq (y : Y) :
     orientationCorrection s o q r y = 1 ∨ orientationCorrection s o q r y = r := by

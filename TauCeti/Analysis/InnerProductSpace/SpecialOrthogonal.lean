@@ -55,6 +55,15 @@ theorem det_eq_one_or_eq_neg_one (g : unitary (V →L[ℝ] V)) :
     (g : V →L[ℝ] V).det = 1 ∨ (g : V →L[ℝ] V).det = -1 :=
   abs_eq (zero_le_one' ℝ) |>.1 (abs_det_eq_one g)
 
+/-- The orthogonal transformation corresponding to a linear isometry `r` has the determinant of
+`r`. -/
+theorem det_coe_symm_linearIsometryEquiv (r : V ≃ₗᵢ[ℝ] V) :
+    ((linearIsometryEquiv.symm r : unitary (V →L[ℝ] V)) : V →L[ℝ] V).det =
+      LinearEquiv.det r.toLinearEquiv := by
+  rw [coe_symm_linearIsometryEquiv_apply, ContinuousLinearMap.det, LinearEquiv.coe_det]
+  -- Both sides are the determinant of the linear map underlying `r`, by definition.
+  rfl
+
 /-- In positive dimension there is an orthogonal transformation of determinant `-1`: the
 reflection in a hyperplane. -/
 theorem exists_det_eq_neg_one (hV : 0 < Module.finrank ℝ V) :
@@ -62,20 +71,16 @@ theorem exists_det_eq_neg_one (hV : 0 < Module.finrank ℝ V) :
   have := Module.finite_of_finrank_pos hV
   have := Module.nontrivial_of_finrank_pos hV
   obtain ⟨r, hr⟩ := TauCeti.exists_det_eq_neg_one (F := V)
-  refine ⟨linearIsometryEquiv.symm r, ?_⟩
-  rw [coe_symm_linearIsometryEquiv_apply, ContinuousLinearMap.det, ← hr, LinearEquiv.coe_det]
-  rfl
+  exact ⟨linearIsometryEquiv.symm r, by rw [det_coe_symm_linearIsometryEquiv, hr]⟩
 
 /-- In dimension at least two, every vector `v` is fixed by an orthogonal transformation of
 determinant `-1`: the reflection in the hyperplane orthogonal to a nonzero vector orthogonal to
 `v`. -/
 theorem exists_det_eq_neg_one_apply_eq_self (hV : 2 ≤ Module.finrank ℝ V) (v : V) :
-    ∃ r : unitary (V →L[ℝ] V), (r : V →L[ℝ] V) v = v ∧ (r : V →L[ℝ] V).det = -1 := by
+    ∃ r : unitary (V →L[ℝ] V), (r : V →L[ℝ] V).det = -1 ∧ (r : V →L[ℝ] V) v = v := by
   obtain ⟨r, hr, hrv⟩ := TauCeti.exists_det_eq_neg_one_apply_eq_self hV v
-  refine ⟨linearIsometryEquiv.symm r, by simpa using hrv, ?_⟩
-  rw [coe_symm_linearIsometryEquiv_apply, ContinuousLinearMap.det, ← hr, LinearEquiv.coe_det]
-  -- Both sides are the determinant of the linear map underlying `r`, by definition.
-  rfl
+  exact ⟨linearIsometryEquiv.symm r, by rw [det_coe_symm_linearIsometryEquiv, hr],
+    by simpa using hrv⟩
 
 end Unitary
 

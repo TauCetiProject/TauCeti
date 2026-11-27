@@ -106,6 +106,7 @@ theorem planeFieldFrameLift_toFrame
   (rfl)
 
 /-- The frame of a point of the adapted frame bundle sends `e₂` to the unit section `σ`. -/
+@[simp]
 theorem planeFieldFrameLift_frame_single_two {x : X}
     (p : (planeFieldFrameLift s o hσ hσ₁ hF).P x) :
     p.val.frame (EuclideanSpace.single 2 1) = σ x :=
@@ -177,8 +178,8 @@ theorem continuous_planeFieldSpinCStructureInl :
   PrincipalBundle.Extend.continuous_inl (planeFieldFrameLift s o hσ hσ₁ hF).P _
     continuous_axialSpinCLift
 
-/-- `[p • g, 1] = [p, 1] • σ(g)` for a rotation `g` about `e₂`, where `σ` is the lift
-`TauCeti.axialSpinCLift`. -/
+/-- `[p • g, 1] = [p, 1] • axialSpinCLift g` for a rotation `g` about `e₂`, where
+`TauCeti.axialSpinCLift` is the `Spinᶜ(3)` lift of the rotations about `e₂`. -/
 theorem planeFieldSpinCStructureInl_smul {x : X} (p : (planeFieldFrameLift s o hσ hσ₁ hF).P x)
     (g : specialOrthogonalStabilizer (EuclideanSpace ℝ (Fin 3)) (EuclideanSpace.single 2 1)) :
     planeFieldSpinCStructureInl s o hσ hσ₁ hF (op g • p) =
