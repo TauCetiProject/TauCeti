@@ -269,8 +269,9 @@ private theorem determinantModelConj_apply (w : DeterminantModel n) :
 `conj (det g w) = (det g)⁻¹ conj w`, since `det g` lies on the circle. -/
 private theorem determinantModelConj_smul (g : SpinC) (w : DeterminantModel n) :
     determinantModelConj (g • w) = δ g • determinantModelConj w := by
-  simp [determinantModelConj_apply, DeterminantModel.toComplex_smul, Circle.smul_def,
-    ← Circle.coe_inv_eq_conj]
+  rw [determinantModelConj_apply, determinantModelConj_apply, DeterminantModel.toComplex_smul]
+  -- Multiplication by a point of the circle is its action on `ℂ` by definition.
+  exact Circle.starRingEnd_smul _ _
 
 /-- **The line of the inverse determinant bundle is the conjugate of the determinant line**: for
 a `Spinᶜ` structure `s` with principal bundle `P` and determinant line `L = P ×_det ℂ`, the map
@@ -834,7 +835,7 @@ theorem chargeConjTwistLineEquiv_symm_tmul (s : SpinCStructure F V n) {x : X} (p
   refine (ContinuousLinearEquiv.symm_apply_eq _).2 ?_
   -- `[e, c] = c [e, 1]`, and the scalar `c` moves to the determinant factor.
   rw [chargeConjTwistLineEquiv_inl, starRingEnd_self_apply, AssociatedBundle.mk_eq_smul_mk_one e c,
-    TensorProduct.tmul_smul, TensorProduct.smul_tmul', ← AssociatedBundle.mk_smul_scalar]
+    ← TensorProduct.smul_tmul, ← AssociatedBundle.mk_smul_scalar]
   congr 2
   exact DeterminantModel.toComplex.injective (by simp [mul_comm])
 

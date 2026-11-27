@@ -168,8 +168,7 @@ theorem mk_tmul_mk_eq_smul [DistribMulAction G 𝕜] [SMulCommClass G 𝕜 𝕜]
     [DistribMulAction G' 𝕜] [SMulCommClass G' 𝕜 𝕜] [ContinuousSMul G' 𝕜]
     {b : B} (p : P b) (q : Q b) (a c : 𝕜) :
     mk G p a ⊗ₜ[𝕜] mk G' q c = (a * c) • (mk G p (1 : 𝕜) ⊗ₜ[𝕜] mk G' q (1 : 𝕜)) := by
-  rw [mk_eq_smul_mk_one p a, mk_eq_smul_mk_one q c, TensorProduct.tmul_smul,
-    ← TensorProduct.smul_tmul', smul_smul, mul_comm c a]
+  rw [mk_eq_smul_mk_one p a, mk_eq_smul_mk_one q c, TensorProduct.smul_tmul_smul]
 
 /-- The zero class is independent of the principal frame. -/
 @[simp]
