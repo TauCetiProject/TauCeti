@@ -34,7 +34,10 @@ symplectic form of the cotangent bundle is a constant linear form
 
 Over an open subset `U` of `E`, a covector is likewise an element of the dual of `E`, and a map
 into `T*U` is continuous as soon as its base point and its covector depend continuously on the
-parameter (`TauCeti.CotangentBundle.continuous_totalSpaceMk_opens`).
+parameter (`TauCeti.CotangentBundle.continuous_totalSpaceMk_opens`). Through a chart `c` of a
+manifold `M` modelled on `E`, the covector `p ∘ Dc(c⁻¹ y)` of `M` pulled back from a point `y` of
+the chart target and a covector `p` of `E` depends continuously on `(y, p)`
+(`TauCeti.CotangentBundle.continuousAt_mk_symm_comp_mfderiv`).
 
 ## References
 
@@ -188,5 +191,34 @@ theorem continuous_totalSpaceMk_opens {U : TopologicalSpace.Opens E} {X : Type*}
   rw [h]
   exact (modelSpaceDiffeomorph E).symm.continuous.comp
     ((continuous_subtypeVal.comp hβ).prodMk hφ)
+
+section Chart
+
+variable {E} {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+
+/-- **Covectors of the model space pulled back through a chart.** Let `c` be an open partial
+homeomorphism of `M` into its model space `E`, `C¹` at `c⁻¹ y₀` for a point `y₀` of its target.
+The covector `p ∘ Dc(c⁻¹ y)` at `c⁻¹ y`, pulled back from a covector `p` of `E`, depends
+continuously on `(y, p) ∈ E × E*` at `(y₀, p₀)`. -/
+theorem continuousAt_mk_symm_comp_mfderiv {c : OpenPartialHomeomorph M E}
+    {w₀ : E × (E →L[𝕜] 𝕜)} (hw₀ : w₀.1 ∈ c.target)
+    (hc : ContMDiffAt I 𝓘(𝕜, E) 1 c (c.symm w₀.1)) :
+    ContinuousAt (fun w : E × (E →L[𝕜] 𝕜) ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (c.symm w.1)
+      (w.2 ∘L mfderiv I 𝓘(𝕜, E) c (c.symm w.1)) : CotangentBundle I M)) w₀ := by
+  have hg : ContinuousAt (fun w : E × (E →L[𝕜] 𝕜) ↦ c.symm w.1) w₀ :=
+    ContinuousAt.comp (g := c.symm) (f := Prod.fst) (c.continuousAt_symm hw₀)
+      continuous_fst.continuousAt
+  -- The covector `p` of `E` at `c (c⁻¹ y)`, continuous through the global coordinates
+  -- `T*E ≃ E × E*`.
+  have hΨ : ContinuousAt (fun w : E × (E →L[𝕜] 𝕜) ↦
+      (TotalSpace.mk' (E →L[𝕜] 𝕜) (c (c.symm w.1)) w.2 : CotangentBundle 𝓘(𝕜, E) E)) w₀ := by
+    simpa only [Function.comp_def, modelSpaceDiffeomorph_symm_apply] using
+      (modelSpaceDiffeomorph E).symm.continuous.continuousAt.comp
+        ((ContinuousAt.comp (g := c) (f := fun w : E × (E →L[𝕜] 𝕜) ↦ c.symm w.1)
+          (c.continuousAt (c.map_target hw₀)) hg).prodMk continuous_snd.continuousAt)
+  exact continuousAt_mk_comp_mfderiv (f := c) (fun _ ↦ rfl) hΨ hg hc
+
+end Chart
 
 end TauCeti.CotangentBundle
