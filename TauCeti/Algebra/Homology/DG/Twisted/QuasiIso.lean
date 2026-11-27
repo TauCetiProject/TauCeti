@@ -49,6 +49,8 @@ property for the middle map of a morphism of short exact sequences
   entries invertible up to homotopy, induces quasi-isomorphisms of twisted complexes.
 * `TauCeti.ContinuationCocycle.quasiIso_continuationHom_of_nonpos`: over a nonpositively graded
   algebra, it suffices that the cocycle vanishes between distinct generators of equal index.
+* `TauCeti.ContinuationCocycle.quasiIso_continuationHom_iff_of_eq`: being a quasi-isomorphism
+  transfers between continuation maps of cocycles with equal entries and equal twisting cocycles.
 
 ## References
 
@@ -224,6 +226,17 @@ theorem quasiIso_continuationHom_of_nonpos (ν : ContinuationCocycle m₁ m₂)
     (hM : IsDGRightModule h ℳ dM) : QuasiIso (ν.continuationHom hM) :=
   ν.quasiIso_continuationHom (fun x y hxy hne ↦ hxy.lt_or_eq.elim
     (fun hlt ↦ ν.ν_eq_zero_of_lt_of_nonpos h𝒜 hlt) (fun heq ↦ hν x y heq hne)) hunit hM
+
+/-- Whether the continuation map of a continuation cocycle is a quasi-isomorphism depends only on
+the entries of the cocycle and on its two twisting cocycles, which may be given by equal but not
+definitionally equal expressions. -/
+theorem quasiIso_continuationHom_iff_of_eq {Q : Type uP} [Fintype Q] {indQ : Q → ℤ}
+    {mQ mQ' : TwistingCocycle 𝒜 d Q indQ} {m₁' : TwistingCocycle 𝒜 d P ind} (h₁ : m₁ = m₁')
+    (hQ : mQ = mQ') (ν : ContinuationCocycle m₁ mQ) (ν' : ContinuationCocycle m₁' mQ')
+    (hν : ∀ x y, ν.ν x y = ν'.ν x y) (hM : IsDGRightModule h ℳ dM) :
+    QuasiIso (ν.continuationHom hM) ↔ QuasiIso (ν'.continuationHom hM) := by
+  subst h₁ hQ
+  rw [ContinuationCocycle.ext hν]
 
 end ContinuationCocycle
 
