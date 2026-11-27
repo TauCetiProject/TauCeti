@@ -34,6 +34,8 @@ curve the transfer holds in both directions for every order and exponent
 * `TauCeti.zeroOnePartSobolevL_changeAtlas`: the change of atlas commutes with the
   `(0,1)`-projections.
 * `TauCeti.changeAtlas_mem_zeroOneSobolevSections`: the change of atlas preserves `(0,1)`-forms.
+* `TauCeti.zeroOneChangeAtlas_comp`, `TauCeti.zeroOneAtlasEquiv_trans`,
+  `TauCeti.zeroOneAtlasEquiv_refl`: changes of atlas compose, and the trivial one is the identity.
 -/
 
 public section
@@ -111,9 +113,23 @@ theorem zeroOneChangeAtlas_zeroOneChangeAtlas {A'' : FiniteBundleAtlas ℂ M F V
     zeroOneChangeAtlas h' (zeroOneChangeAtlas h w) = zeroOneChangeAtlas (h.trans h') w :=
   Subtype.ext <| by simp
 
+/-- Not `@[simp]`: `zeroOneChangeAtlas_refl` and `ContinuousLinearMap.id_apply` prove it. -/
 theorem zeroOneChangeAtlas_refl_apply (w : zeroOneSobolevSections A μ p k) :
     zeroOneChangeAtlas SobolevSection.transfersTo_refl w = w :=
   Subtype.ext <| by simp
+
+@[simp]
+theorem zeroOneChangeAtlas_refl :
+    zeroOneChangeAtlas (SobolevSection.transfersTo_refl (A := A.tangentHom) (μ := μ) (p := p)
+      (k := k)) = ContinuousLinearMap.id ℝ _ :=
+  ContinuousLinearMap.ext zeroOneChangeAtlas_refl_apply
+
+@[simp]
+theorem zeroOneChangeAtlas_comp {A'' : FiniteBundleAtlas ℂ M F V}
+    (h : SobolevSection.TransfersTo A.tangentHom A'.tangentHom μ p k)
+    (h' : SobolevSection.TransfersTo A'.tangentHom A''.tangentHom μ p k) :
+    (zeroOneChangeAtlas h').comp (zeroOneChangeAtlas h) = zeroOneChangeAtlas (h.trans h') :=
+  ContinuousLinearMap.ext (zeroOneChangeAtlas_zeroOneChangeAtlas h h')
 
 /-- **Independence of the atlas for `(0,1)`-forms.** If one-forms transfer between `A.tangentHom`
 and `A'.tangentHom` in both directions, the Sobolev `(0,1)`-forms of the two atlases are isomorphic
@@ -124,9 +140,9 @@ def zeroOneAtlasEquiv (h : SobolevSection.TransfersTo A.tangentHom A'.tangentHom
     zeroOneSobolevSections A μ p k ≃L[ℝ] zeroOneSobolevSections A' μ p k :=
   .ofContinuousLinearMap (zeroOneChangeAtlas h) (zeroOneChangeAtlas h')
     (ContinuousLinearMap.ext fun w ↦ by
-      simp [zeroOneChangeAtlas_zeroOneChangeAtlas, zeroOneChangeAtlas_refl_apply])
+      simp)
     (ContinuousLinearMap.ext fun w ↦ by
-      simp [zeroOneChangeAtlas_zeroOneChangeAtlas, zeroOneChangeAtlas_refl_apply])
+      simp)
 
 @[simp]
 theorem toContinuousLinearMap_zeroOneAtlasEquiv
@@ -144,10 +160,33 @@ theorem zeroOneAtlasEquiv_apply (h : SobolevSection.TransfersTo A.tangentHom A'.
     zeroOneAtlasEquiv h h' w = zeroOneChangeAtlas h w :=
   (rfl)
 
+theorem zeroOneAtlasEquiv_symm_apply
+    (h : SobolevSection.TransfersTo A.tangentHom A'.tangentHom μ p k)
+    (h' : SobolevSection.TransfersTo A'.tangentHom A.tangentHom μ p k)
+    (w : zeroOneSobolevSections A' μ p k) :
+    (zeroOneAtlasEquiv h h').symm w = zeroOneChangeAtlas h' w :=
+  (rfl)
+
 @[simp]
 theorem zeroOneAtlasEquiv_symm (h : SobolevSection.TransfersTo A.tangentHom A'.tangentHom μ p k)
     (h' : SobolevSection.TransfersTo A'.tangentHom A.tangentHom μ p k) :
     (zeroOneAtlasEquiv h h').symm = zeroOneAtlasEquiv h' h :=
   (rfl)
+
+@[simp]
+theorem zeroOneAtlasEquiv_refl :
+    zeroOneAtlasEquiv (SobolevSection.transfersTo_refl (A := A.tangentHom) (μ := μ) (p := p)
+      (k := k)) SobolevSection.transfersTo_refl = ContinuousLinearEquiv.refl ℝ _ :=
+  ContinuousLinearEquiv.ext <| funext zeroOneChangeAtlas_refl_apply
+
+@[simp]
+theorem zeroOneAtlasEquiv_trans {A'' : FiniteBundleAtlas ℂ M F V}
+    (h₁ : SobolevSection.TransfersTo A.tangentHom A'.tangentHom μ p k)
+    (h₁' : SobolevSection.TransfersTo A'.tangentHom A.tangentHom μ p k)
+    (h₂ : SobolevSection.TransfersTo A'.tangentHom A''.tangentHom μ p k)
+    (h₂' : SobolevSection.TransfersTo A''.tangentHom A'.tangentHom μ p k) :
+    (zeroOneAtlasEquiv h₁ h₁').trans (zeroOneAtlasEquiv h₂ h₂') =
+      zeroOneAtlasEquiv (h₁.trans h₂) (h₂'.trans h₁') :=
+  ContinuousLinearEquiv.ext <| funext <| zeroOneChangeAtlas_zeroOneChangeAtlas h₁ h₂
 
 end TauCeti
