@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Coadjoint.Orbit
 
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.RegularLevel
+
 /-!
 # The Kirillov–Kostant–Souriau form and the Lie–Poisson structure
 
@@ -63,6 +65,8 @@ tangent model `𝔤 ⧸ 𝔤_ν` is `Module.Dual.kksForm_eq_kirillovForm_of_coad
   Lie–Poisson sharp image `π♯_μ α` is tangent to the orbit, with lift `(-α)_O`.
 * `Module.Dual.range_differential_orbitMap_coadjointRepresentation`: the tangent image of the orbit
   is the Lie–Poisson sharp image `π♯_μ(𝔤)`.
+* `Module.Dual.range_mfderiv_orbitMap_coadjointRepresentation_components`: the same tangent image,
+  read in a basis of `𝔤`, as the coordinates of `{⁅ξ, μ⁆}`.
 * `Module.Dual.range_differential_orbitMap_coadjointRepresentation_eq_dualAnnihilator`: the tangent
   image of the orbit is `𝔤_μ^0`.
 * `Module.Dual.finrank_range_kirillovForm_orbitMap_coadjointRepresentation`: the rank of the
@@ -146,6 +150,36 @@ theorem range_differential_orbitMap_coadjointRepresentation
   obtain ⟨ξ, rfl⟩ := Subgroup.surjective_fundamentalVectorField (I := I)
     (isClosed_stabilizer_coadjointRepresentation I ν) x v
   exact ⟨-ξ, by rw [differential_orbitMap_coadjointRepresentation_fundamentalVectorField, map_neg]⟩
+
+/-- **The tangent images of the orbit map, in coordinates.** Read in a basis `b` of `𝔤`, the
+differential of the orbit map `ι : [g] ↦ Ad*_g ν` at `x` has as image the coordinates of the
+tangent space `{⁅ξ, μ⁆}` of the coadjoint orbit of `μ = ι x` in `𝔤*`. This is
+`Module.Dual.range_differential_orbitMap_coadjointRepresentation` read in coordinates, since
+`⁅ξ, μ⁆ = π♯_μ(-ξ)`. -/
+theorem range_mfderiv_orbitMap_coadjointRepresentation_components {κ : Type*} [Fintype κ]
+    (b : Basis κ ℝ (GroupLieAlgebra I G))
+    (x : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :
+    Set.range (mfderiv
+        𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+        𝓘(ℝ, κ → ℝ) (fun y i ↦ (coadjointRepresentation ℝ I G).orbitMap ν y (b i)) x) =
+      Set.range fun ξ : GroupLieAlgebra I G ↦
+        fun i ↦ (⁅ξ, (coadjointRepresentation ℝ I G).orbitMap ν x⁆ : Dual ℝ _) (b i) := by
+  have h := ν.isEquivariantMomentMap_coadjointOrbitForm.toIsMomentMap
+  ext w
+  constructor
+  · rintro ⟨v, rfl⟩
+    obtain ⟨α, hα⟩ : h.differential x v ∈
+        LinearMap.range ((coadjointRepresentation ℝ I G).orbitMap ν x).kirillovForm :=
+      range_differential_orbitMap_coadjointRepresentation x ▸ LinearMap.mem_range_self _ v
+    refine ⟨-α, funext fun i ↦ ?_⟩
+    dsimp only
+    rw [h.mfderiv_components_apply, ← hα, kirillovForm_eq_neg_lie_apply, neg_lie,
+      LinearMap.neg_apply]
+  · rintro ⟨ξ, rfl⟩
+    refine ⟨fundamentalVectorField _ ξ x, funext fun i ↦ ?_⟩
+    rw [h.mfderiv_components_apply,
+      differential_orbitMap_coadjointRepresentation_fundamentalVectorField, LinearMap.neg_apply,
+      kirillovForm_eq_neg_lie_apply, neg_neg]
 
 /-- **The tangent image of a coadjoint orbit is the annihilator of the stabilizer.** At a point `x`
 of the coadjoint orbit with image `μ = ι x`, the image of the differential of the orbit map is
