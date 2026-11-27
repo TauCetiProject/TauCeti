@@ -111,8 +111,7 @@ theorem isContMDiffRiemannianBundle_scalarRegularSublevel :
   haveI := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
   letI : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
     ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
-  ⟨(scalarRegularSublevelMetric hf hreg hn).inner,
-    (scalarRegularSublevelMetric hf hreg hn).contMDiff, fun _ _ _ ↦ rfl⟩
+  Bundle.instIsContMDiffRiemannianBundle (scalarRegularSublevelMetric hf hreg hn)
 
 /-- **The inclusion of a regular sublevel is a local Riemannian isometry** for the pulled-back
 metric `TauCeti.scalarRegularSublevelMetric`: it is smooth, its differential is invertible at
