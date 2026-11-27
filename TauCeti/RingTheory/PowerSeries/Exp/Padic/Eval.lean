@@ -16,7 +16,7 @@ On a closed disc strictly inside the p-adic exponential discs of all the frequen
 rescaled exponential series is restricted. This gives the termwise summability needed to apply the
 evaluation identities of `TauCeti.RingTheory.PowerSeries.Exp.Eval`. Likewise, for a polynomial
 `Q`, the power series `Q(X) exp(ψX)` converges at every `x` with `‖ψ x‖ < p ^ (-1 / (p - 1))`, to
-`Q(x) exp(ψ x)` (`TauCeti.hasSum_coeff_mul_rescale_exp`).
+`Q(x) exp(ψ x)` (`TauCeti.hasSum_coeff_coe_mul_rescale_exp`).
 -/
 
 public section
@@ -61,7 +61,7 @@ theorem evalAt_hasseDeriv_sum_smul_rescale_exp_eq_zero_iff
 
 /-- For a polynomial `Q` and a point `y` with `‖ψ y‖ < p ^ (-1 / (p - 1))`, the coefficients `cₖ` of
 the power series `Q(X) exp(ψX)` satisfy `∑ cₖ yᵏ = Q(y) exp(ψ y)`. -/
-theorem hasSum_coeff_mul_rescale_exp {Q : K[X]} {ψ y : K}
+theorem hasSum_coeff_coe_mul_rescale_exp {Q : K[X]} {ψ y : K}
     (hψy : ‖ψ * y‖ < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) :
     HasSum (fun k ↦ coeff k ((Q : K⟦X⟧) * rescale ψ (exp K)) * y ^ k)
       (Q.eval y * NormedSpace.exp (ψ * y)) := by

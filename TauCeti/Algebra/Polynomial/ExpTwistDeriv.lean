@@ -38,7 +38,8 @@ factors transformed by `expTwistDeriv ψ m`.
 * `Polynomial.expTwistDeriv_eq_iterate`: `expTwistDeriv c m` is the `m`-th iterate of
   `q ↦ q' + c q`.
 * `Polynomial.expTwistDeriv_eq_sum`: the binomial form `∑_{j ≤ m} C(m, j) c^{m - j} P^{(j)}`.
-* `Polynomial.expTwistDeriv_C`: on constants, `E_{c, m} (C a) = C (c ^ m * a)`.
+* `Polynomial.expTwistDeriv_C`, `Polynomial.expTwistDeriv_one`: on constants,
+  `E_{c, m} (C a) = C (c ^ m * a)`; in particular `E_{c, m} 1 = C (c ^ m)`.
 * `Polynomial.natDegree_expTwistDeriv_le`: `expTwistDeriv c m` does not raise the degree.
 
 ## References
@@ -96,6 +97,11 @@ theorem expTwistDeriv_C (c : R) (m : ℕ) (a : R) : expTwistDeriv c m (C a) = C 
   | zero => simp
   | succ m ih => rw [expTwistDeriv_succ, ih, derivative_C, zero_add, smul_C, smul_eq_mul, pow_succ',
       mul_assoc]
+
+/-- On the constant polynomial `1`, `E_{c, m} 1 = C (c ^ m)`. -/
+@[simp]
+theorem expTwistDeriv_one (c : R) (m : ℕ) : expTwistDeriv c m 1 = C (c ^ m) := by
+  simpa using expTwistDeriv_C c m 1
 
 /-- The twisted derivative does not raise the degree of a polynomial. -/
 theorem natDegree_expTwistDeriv_le (c : R) (m : ℕ) (P : R[X]) :

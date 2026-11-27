@@ -19,6 +19,7 @@ Concrete evaluations of `Polynomial.expTwistDeriv c m = (d/dX + c) ^ m` from
 * With `c = 0` the operator is an ordinary iterated derivative: `expTwistDeriv 0 3 (X ^ 4) = 24 X`.
 * `expTwistDeriv 7 1 (X ^ 2) = 2 X + 7 X ^ 2`, the polynomial factor of the derivative of
   `X ^ 2 e^{7X}`.
+* On the constant polynomial `1`, `expTwistDeriv c m 1 = c ^ m`.
 -/
 
 open Polynomial
@@ -39,5 +40,9 @@ example : expTwistDeriv (0 : ℚ) 3 (X ^ 4 : ℚ[X]) = 24 * X := by
 example : expTwistDeriv (7 : ℚ) 1 (X ^ 2 : ℚ[X]) = 2 * X + 7 * X ^ 2 := by
   rw [expTwistDeriv_succ, expTwistDeriv_zero, derivative_X_pow, smul_eq_C_mul]
   norm_num [map_ofNat]
+
+/-- On the constant polynomial `1`, the twisted derivative of order `m` is `c ^ m`. -/
+example (c : ℚ) (m : ℕ) : expTwistDeriv c m (1 : ℚ[X]) = C (c ^ m) := by
+  simp
 
 end TauCeti.Examples.ExpTwistDeriv
