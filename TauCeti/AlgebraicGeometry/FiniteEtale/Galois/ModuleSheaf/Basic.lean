@@ -149,9 +149,6 @@ representation `ρ` of `Gal(Ω/K)` on a finitely generated module over a Noether
 theorem isFiniteLisse_galoisModuleSheaf [FiniteDimensional K Ω] [IsNoetherianRing Λ]
     [Module.Finite Λ M] : (galoisModuleSheaf K Ω ρ).IsFiniteLisse := by
   let s : Spec (.of Ω) ⟶ Spec (.of K) := Spec.map (CommRingCat.ofHom (algebraMap K Ω))
-  have : Algebra.Etale K Ω := Algebra.Etale.of_isSeparable K Ω
-  have : Etale s :=
-    (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
   have : IsFinite s := (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr inferInstance)
   -- The geometric point `s : Spec Ω ⟶ Spec K` is finite étale and surjective.
   have : Surjective s := ⟨fun _ ↦ ⟨Nonempty.some inferInstance, Subsingleton.elim _ _⟩⟩
