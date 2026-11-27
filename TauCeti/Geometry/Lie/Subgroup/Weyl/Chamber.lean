@@ -41,7 +41,9 @@ homeomorphic to the adjoint and coadjoint orbit spaces.
   (`TauCeti.Lie.IsMaximalTorus.apply_weylAdjointRepresentation_ne_zero`). An element of `W`
   carrying one point of the open chamber of a regular `X₀` into it therefore carries the whole
   convex open chamber into itself, and so fixes the barycentre of an orbit of the cyclic group it
-  generates. That barycentre is regular, so the element is the identity
+  generates. That barycentre is regular, and `W` acts freely on regular elements
+  (`TauCeti.Lie.IsMaximalTorus.eq_one_of_weylAdjointRepresentation_apply_eq_self`), so the element
+  is the identity
   (`TauCeti.Lie.IsMaximalTorus.eq_one_of_forall_pos_mul_apply_weylAdjointRepresentation`).
 * **Uniqueness on the closed chamber**
   (`TauCeti.Lie.IsMaximalTorus.eq_of_weylAdjointRepresentation_apply_eq`). If `w X = Y` with
@@ -79,6 +81,8 @@ invariant form (`TauCeti.Lie.IsMaximalTorus.sameSideChamberCoadjointOrbitHomeomo
   orbit meets the closed chamber.
 * `TauCeti.Lie.IsMaximalTorus.apply_weylAdjointRepresentation_ne_zero`: for a compact connected
   group, the Weyl group preserves the regular elements.
+* `TauCeti.Lie.IsMaximalTorus.eq_one_of_weylAdjointRepresentation_apply_eq_self`: for a compact
+  connected group, the Weyl group acts freely on the regular elements.
 * `TauCeti.Lie.IsMaximalTorus.eq_one_of_forall_pos_mul_apply_weylAdjointRepresentation`: the Weyl
   group acts freely on the open chambers.
 * `TauCeti.Lie.IsMaximalTorus.eq_of_weylAdjointRepresentation_apply_eq`: two Weyl-related points of
@@ -248,6 +252,27 @@ theorem IsMaximalTorus.apply_weylAdjointRepresentation_ne_zero (hT : IsMaximalTo
   rw [Subgroup.coe_weylAdjointRepresentation_mk_apply, this]
   exact Subgroup.mem_normalizer_iff_map_conj_eq.1 n.property
 
+/-- **The Weyl group acts freely on the regular elements.** For a compact connected group, an
+element of the Weyl group fixing an element of `𝔱` at which no root vanishes is the identity: a
+representative fixes that element, so lies in its stabilizer `T`. -/
+theorem IsMaximalTorus.eq_one_of_weylAdjointRepresentation_apply_eq_self (hT : IsMaximalTorus T)
+    (hB : B.lieInvariant (LeftInvariantDerivation I G)) (hsep : B.SeparatingLeft)
+    (hD : IsRootPlaneDecomposition B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J)
+    (hV : ∀ i, V i ≠ ⊥) {w : T.normalizerQuotient}
+    {X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule} (hX : ∀ i, α i X ≠ 0)
+    (hw : T.weylAdjointRepresentation (I := I) w X = X) : w = 1 := by
+  have hα : ∀ i, α i ≠ 0 := fun i h0 ↦ hX i (by simp [h0])
+  rw [← hD.stabilizer_continuousAdjointRepresentation_eq_iff hT.isTorus rfl hB hsep hα hV] at hX
+  obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
+  have hn : (n : G) ∈
+      (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
+        (X : LeftInvariantDerivation I G) := by
+    rw [mem_stabilizer_continuousAdjointRepresentation_iff,
+      ← Subgroup.coe_weylAdjointRepresentation_mk_apply]
+    exact congrArg Subtype.val hw
+  rw [hX] at hn
+  exact (QuotientGroup.eq_one_iff n).2 (Subgroup.mem_subgroupOf.2 hn)
+
 variable (hT : IsMaximalTorus T) (hB : B.lieInvariant (LeftInvariantDerivation I G))
   (hsep : B.SeparatingLeft)
   (hD : IsRootPlaneDecomposition B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J)
@@ -291,7 +316,6 @@ theorem IsMaximalTorus.eq_one_of_forall_pos_mul_apply_weylAdjointRepresentation
     (hX₁ : ∀ i, 0 < α i X₀ * α i X₁)
     (hw : ∀ i, 0 < α i X₀ * α i (T.weylAdjointRepresentation (I := I) w X₁)) : w = 1 := by
   have := hT.finite_normalizerQuotient I
-  have hα : ∀ i, α i ≠ 0 := fun i h0 ↦ by simpa [h0] using hX₁ i
   set ρ := T.weylAdjointRepresentation (I := I)
   -- Every power of `w` preserves the open chamber.
   have hpow (k : ℕ) {Y : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule}
@@ -316,18 +340,9 @@ theorem IsMaximalTorus.eq_one_of_forall_pos_mul_apply_weylAdjointRepresentation
     rw [pow_orderOf_eq_one, pow_zero, add_left_inj] at hs
     rw [map_sum]
     exact (Finset.sum_congr rfl fun k _ ↦ by rw [pow_succ', map_mul, mul_apply_eq_comp]).trans hs
-  -- A representative of `w` fixes the regular element `Z`, so lies in `T`.
-  have hreg : ∀ i, α i Z ≠ 0 := fun i h0 ↦ by simpa [h0] using hZ i
-  rw [← hD.stabilizer_continuousAdjointRepresentation_eq_iff hT.isTorus rfl hB hsep hα hV] at hreg
-  obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
-  have hn : (n : G) ∈
-      (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
-        (Z : LeftInvariantDerivation I G) := by
-    rw [mem_stabilizer_continuousAdjointRepresentation_iff,
-      ← Subgroup.coe_weylAdjointRepresentation_mk_apply]
-    exact congrArg Subtype.val hwZ
-  rw [hreg] at hn
-  exact (QuotientGroup.eq_one_iff n).2 (Subgroup.mem_subgroupOf.2 hn)
+  -- `w` fixes the regular element `Z`.
+  exact hT.eq_one_of_weylAdjointRepresentation_apply_eq_self hB hsep hD hV
+    (fun i h0 ↦ by simpa [h0] using hZ i) hwZ
 
 end Connected
 
