@@ -57,6 +57,35 @@ namespace TauCeti
 
 variable {R : Type*}
 
+section Form
+
+variable [CommSemiring R]
+
+/-- The Hankel form on the coefficient vectors of two polynomials of degree less than `n` is the
+value `L_m (p * q)` of the Riesz functional. -/
+private theorem dotProduct_hankelMatrix_mulVec_degreeLTEquiv (m : ℕ → R) {n : ℕ}
+    (p q : degreeLT R n) :
+    degreeLTEquiv R n p ⬝ᵥ (hankelMatrix m n *ᵥ degreeLTEquiv R n q) =
+      rieszFunctional m (p * q) := by
+  -- the inverse of `degreeLTEquiv R n` is `ξ ↦ ∑ i, monomial i (ξ i)` by definition
+  have h (r : degreeLT R n) : (r : R[X]) = ∑ i : Fin n, monomial i (degreeLTEquiv R n r i) :=
+    congrArg Subtype.val ((degreeLTEquiv R n).symm_apply_apply r).symm
+  rw [dotProduct_hankelMatrix_mulVec, ← h, ← h]
+
+/-- The Hankel form `(p, q) ↦ L_m (p * q)` on the polynomials of degree less than `n`. -/
+private noncomputable def hankelForm (m : ℕ → R) (n : ℕ) :
+    LinearMap.BilinForm R (degreeLT R n) :=
+  ((LinearMap.mul R R[X]).compr₂ (rieszFunctional m)).domRestrict₁₂ _ _
+
+private theorem hankelForm_apply (m : ℕ → R) {n : ℕ} (p q : degreeLT R n) :
+    hankelForm m n p q = rieszFunctional m (p * q) := by
+  rw [hankelForm, LinearMap.domRestrict₁₂_apply, LinearMap.compr₂_apply, LinearMap.mul_apply']
+
+private theorem isSymm_hankelForm (m : ℕ → R) (n : ℕ) : LinearMap.IsSymm (hankelForm m n) :=
+  ⟨fun p q => by simp [hankelForm_apply, mul_comm]⟩
+
+end Form
+
 section Sections
 
 variable [CommRing R] [PartialOrder R] [StarRing R] [TrivialStar R]
@@ -68,12 +97,11 @@ theorem posSemidef_hankelMatrix_iff (m : ℕ → R) (n : ℕ) :
       ∀ p : R[X], p.degree < n → 0 ≤ rieszFunctional m (p * p) := by
   refine ⟨fun h p hp => ?_, fun h => .of_dotProduct_mulVec_nonneg
     (isHermitian_hankelMatrix m n) fun ξ => ?_⟩
-  · obtain ⟨ξ, rfl⟩ : ∃ ξ, ((degreeLTEquiv R n).symm ξ : R[X]) = p :=
-      ⟨degreeLTEquiv R n ⟨p, mem_degreeLT.mpr hp⟩, by simp⟩
-    have := h.dotProduct_mulVec_nonneg ξ
-    rwa [star_trivial, dotProduct_hankelMatrix_mulVec] at this
-  · rw [star_trivial, dotProduct_hankelMatrix_mulVec]
-    exact h ((degreeLTEquiv R n).symm ξ) (mem_degreeLT.mp ((degreeLTEquiv R n).symm ξ).property)
+  · have := h.dotProduct_mulVec_nonneg (degreeLTEquiv R n ⟨p, mem_degreeLT.mpr hp⟩)
+    rwa [star_trivial, dotProduct_hankelMatrix_mulVec_degreeLTEquiv] at this
+  · obtain ⟨p, rfl⟩ := (degreeLTEquiv R n).surjective ξ
+    rw [star_trivial, dotProduct_hankelMatrix_mulVec_degreeLTEquiv]
+    exact h p (mem_degreeLT.mp p.property)
 
 /-- The Hankel section of size `n` is positive definite iff the Riesz functional is positive on
 the squares of the nonzero polynomials of degree less than `n`. -/
@@ -82,13 +110,18 @@ theorem posDef_hankelMatrix_iff (m : ℕ → R) (n : ℕ) :
       ∀ p : R[X], p ≠ 0 → p.degree < n → 0 < rieszFunctional m (p * p) := by
   refine ⟨fun h p hp0 hp => ?_, fun h => .of_dotProduct_mulVec_pos
     (isHermitian_hankelMatrix m n) fun ξ hξ => ?_⟩
-  · obtain ⟨ξ, rfl⟩ : ∃ ξ, ((degreeLTEquiv R n).symm ξ : R[X]) = p :=
-      ⟨degreeLTEquiv R n ⟨p, mem_degreeLT.mpr hp⟩, by simp⟩
-    have := h.dotProduct_mulVec_pos (show ξ ≠ 0 by simpa using hp0)
-    rwa [star_trivial, dotProduct_hankelMatrix_mulVec] at this
-  · rw [star_trivial, dotProduct_hankelMatrix_mulVec]
-    exact h ((degreeLTEquiv R n).symm ξ) (by simpa using hξ)
-      (mem_degreeLT.mp ((degreeLTEquiv R n).symm ξ).property)
+  · have := h.dotProduct_mulVec_pos
+      ((degreeLTEquiv_eq_zero_iff_eq_zero (mem_degreeLT.mpr hp)).not.mpr hp0)
+    rwa [star_trivial, dotProduct_hankelMatrix_mulVec_degreeLTEquiv] at this
+  · obtain ⟨p, rfl⟩ := (degreeLTEquiv R n).surjective ξ
+    rw [star_trivial, dotProduct_hankelMatrix_mulVec_degreeLTEquiv]
+    exact h p (ZeroMemClass.coe_eq_zero.not.mpr ((degreeLTEquiv R n).map_ne_zero_iff.mp hξ))
+      (mem_degreeLT.mp p.property)
+
+private theorem hankelForm_self_nonneg {m : ℕ → R} {n : ℕ} (hm : (hankelMatrix m n).PosSemidef)
+    (p : degreeLT R n) : 0 ≤ hankelForm m n p p := by
+  rw [hankelForm_apply]
+  exact (posSemidef_hankelMatrix_iff m n).mp hm p (mem_degreeLT.mp p.property)
 
 end Sections
 
@@ -126,16 +159,9 @@ variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [StarRing R] [Triv
 theorem sq_rieszFunctional_mul_le_of_posSemidef_hankelMatrix {m : ℕ → R} {n : ℕ}
     (hm : (hankelMatrix m n).PosSemidef) {p q : R[X]} (hp : p.degree < n) (hq : q.degree < n) :
     rieszFunctional m (p * q) ^ 2 ≤ rieszFunctional m (p * p) * rieszFunctional m (q * q) := by
-  -- the form `(p, q) ↦ L_m (p * q)` on the polynomials of degree less than `n`
-  let B : LinearMap.BilinForm R (degreeLT R n) :=
-    ((LinearMap.mul R R[X]).compr₂ (rieszFunctional m)).domRestrict₁₂ _ _
-  have hB (x y : degreeLT R n) : B x y = rieszFunctional m (x * y) := by
-    rw [LinearMap.domRestrict₁₂_apply, LinearMap.compr₂_apply, LinearMap.mul_apply']
-  have h := B.apply_mul_apply_le_of_forall_zero_le (fun x => by
-    rw [hB]
-    exact (posSemidef_hankelMatrix_iff m n).mp hm x (mem_degreeLT.mp x.property))
-    ⟨p, mem_degreeLT.mpr hp⟩ ⟨q, mem_degreeLT.mpr hq⟩
-  simpa only [hB, mul_comm q p, ← sq] using h
+  simpa only [hankelForm_apply] using (hankelForm m n).apply_sq_le_of_symm
+    (hankelForm_self_nonneg hm) (isSymm_hankelForm m n) ⟨p, mem_degreeLT.mpr hp⟩
+    ⟨q, mem_degreeLT.mpr hq⟩
 
 /-- **Isotropic vectors of a positive semidefinite Hankel section lie in its radical:** if the
 section of size `n` is positive semidefinite, `p` and `q` have degree less than `n` and
@@ -143,9 +169,10 @@ section of size `n` is positive semidefinite, `p` and `q` have degree less than 
 theorem rieszFunctional_mul_eq_zero_of_posSemidef_hankelMatrix {m : ℕ → R} {n : ℕ}
     (hm : (hankelMatrix m n).PosSemidef) {p q : R[X]} (hp : p.degree < n) (hq : q.degree < n)
     (hpp : rieszFunctional m (p * p) = 0) : rieszFunctional m (p * q) = 0 := by
-  have h := sq_rieszFunctional_mul_le_of_posSemidef_hankelMatrix hm hp hq
-  rw [hpp, zero_mul] at h
-  exact pow_eq_zero_iff two_ne_zero |>.mp <| le_antisymm h (sq_nonneg _)
+  have h := ((hankelForm m n).apply_apply_same_eq_zero_iff (hankelForm_self_nonneg hm)
+    (isSymm_hankelForm m n) (x := ⟨p, mem_degreeLT.mpr hp⟩)).mp (by rwa [hankelForm_apply])
+  simpa only [hankelForm_apply, LinearMap.zero_apply] using
+    LinearMap.congr_fun (LinearMap.mem_ker.mp h) ⟨q, mem_degreeLT.mpr hq⟩
 
 /-- The **Cauchy–Schwarz inequality** for a positive semidefinite infinite Hankel matrix:
 `L_m (p * q) ^ 2 ≤ L_m (p * p) * L_m (q * q)` for all polynomials `p` and `q`. -/
@@ -163,10 +190,12 @@ positive semidefinite and `L_m (p * p) = 0`, then `L_m (p * q) = 0` for every po
 the polynomials `p` with `L_m (p * p) = 0` form an ideal. -/
 theorem rieszFunctional_mul_eq_zero_of_posSemidef_hankel {m : ℕ → R}
     (hm : (Matrix.of fun i j : ℕ => m (i + j)).PosSemidef) {p : R[X]}
-    (hpp : rieszFunctional m (p * p) = 0) (q : R[X]) : rieszFunctional m (p * q) = 0 := by
-  have h := sq_rieszFunctional_mul_le_of_posSemidef_hankel hm p q
-  rw [hpp, zero_mul] at h
-  exact pow_eq_zero_iff two_ne_zero |>.mp <| le_antisymm h (sq_nonneg _)
+    (hpp : rieszFunctional m (p * p) = 0) (q : R[X]) : rieszFunctional m (p * q) = 0 :=
+  rieszFunctional_mul_eq_zero_of_posSemidef_hankelMatrix
+    ((posSemidef_hankel_iff_forall_posSemidef_hankelMatrix m).mp hm
+      (max p.natDegree q.natDegree + 1))
+    (degree_le_natDegree.trans_lt (Nat.cast_lt.mpr (by omega)))
+    (degree_le_natDegree.trans_lt (Nat.cast_lt.mpr (by omega))) hpp
 
 end CauchySchwarz
 
