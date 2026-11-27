@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.Star.Rat
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Positive definiteness over the rationals
@@ -29,12 +30,16 @@ an empty index type is positive definite, which is what the rank-zero members of
 Cartan families need. So is the `1 × 1` criterion: such a matrix over a nontrivial star-ordered
 ring without zero divisors is positive definite exactly when its single entry is positive. So is
 the positive definiteness of `1 + A Aᴴ` over a star-ordered ring with a proper star, such as `ℝ`.
+On at most two indices over a linearly ordered ring with trivial star, a symmetric
+matrix is positive definite if its diagonal entries and order-two principal minors are positive.
 
 ## Main results
 
 * `Matrix.PosDef.of_isEmpty`: a matrix on an empty index type is positive definite.
 * `Matrix.posDef_fin_one_iff`: a `1 × 1` matrix is positive definite exactly when its single
   entry is positive.
+* `Matrix.IsSymm.posDef_of_card_le_two`: positive diagonal entries and order-two principal
+  minors imply positive definiteness on at most two indices.
 * `Matrix.posDef_one_add_mul_conjTranspose`: `1 + A Aᴴ` is positive definite over a star-ordered
   ring with a proper star.
 * `Matrix.IsHermitian.posDef_one_add_mul_self`: `1 + A²` is positive definite for Hermitian `A`
@@ -118,6 +123,49 @@ theorem _root_.Matrix.posDef_fin_one_iff {R : Type*} [Ring R] [PartialOrder R] [
     simp
   rw [hdiag, _root_.Matrix.posDef_diagonal_iff]
   simp
+
+/-- A symmetric matrix on at most two indices over a linearly ordered ring with
+trivial star is positive definite if its diagonal entries and order-two principal minors are
+positive. The minor condition is vacuous on an empty or singleton index type. -/
+theorem _root_.Matrix.IsSymm.posDef_of_card_le_two {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [StarRing R] [TrivialStar R] [Finite n] {M : Matrix n n R}
+    (hM : M.IsSymm) (hn : Nat.card n ≤ 2) (hdiag : ∀ i, 0 < M i i)
+    (hminor : ∀ i j, i ≠ j → 0 < M i i * M j j - M i j * M j i) : M.PosDef := by
+  classical
+  let : CommRing R := {
+    ‹Ring R› with
+    mul_comm := fun a b ↦ by simpa only [star_trivial] using star_mul a b }
+  let := Fintype.ofFinite n
+  refine _root_.Matrix.PosDef.of_dotProduct_mulVec_pos
+    (_root_.Matrix.isHermitian_iff_isSymm.mpr hM) ?_
+  intro x hx
+  obtain ⟨i, hxi⟩ : ∃ i, x i ≠ 0 := by
+    by_contra! h
+    exact hx (funext h)
+  by_cases hpair : ∃ j, j ≠ i
+  · obtain ⟨j, hji⟩ := hpair
+    have hij := hji.symm
+    simp only [dotProduct, _root_.Matrix.mulVec, Pi.star_apply, star_trivial,
+      Fintype.sum_eq_add_of_natCard_le_two hn hij]
+    -- Multiplying by the first diagonal entry completes the square without division.
+    have hquad :
+        M i i * (x i * (M i i * x i + M i j * x j) +
+          x j * (M j i * x i + M j j * x j)) =
+        (M i i * x i + M i j * x j) ^ 2 +
+          (M i i * M j j - M i j * M j i) * (x j) ^ 2 := by
+      rw [hM.apply i j]
+      ring
+    apply (mul_pos_iff_of_pos_left (hdiag i)).mp
+    rw [hquad]
+    by_cases hxj : x j = 0
+    · simpa only [hxj, mul_zero, zero_pow (by decide : (2 : ℕ) ≠ 0), add_zero] using
+        sq_pos_of_ne_zero (mul_ne_zero (hdiag i).ne' hxi)
+    · exact add_pos_of_nonneg_of_pos (sq_nonneg _)
+        (mul_pos (hminor i j hij) (sq_pos_of_ne_zero hxj))
+  · let : Unique n := ⟨⟨i⟩, fun j ↦ not_not.mp fun hji ↦ hpair ⟨j, hji⟩⟩
+    have hdefault : (default : n) = i := rfl
+    simpa only [dotProduct, _root_.Matrix.mulVec, Pi.star_apply, star_trivial, Fintype.sum_unique,
+      hdefault, mul_left_comm] using mul_pos (hdiag i) (mul_self_pos.mpr hxi)
 
 /-- The finite case of `TauCeti.Matrix.posDef_map_intCast`, where positive definiteness can be
 tested against ordinary vectors. -/
