@@ -604,9 +604,12 @@ theorem originalSet_subset_directOuterApprox [Finite ι] (hc : ConvexOn ℝ D (h
       (mem_originalSet_iff.1 hx).2⟩
 
 /-- **Weak objective-value ordering across the nested outer approximations with exact rows on `J`.**
-If `f xU` bounds `f` from below on `directOuterApprox` (with no feasibility requirement on `xU`),
-`zT` is feasible in and minimizes `f ∘ Prod.fst` on `sharedOuterApproxOn J`, and `xS` is feasible
-in `originalSet` (in particular, any feasible minimizers `xU` and `xS`), then
+Assume that `g` maps `D` into `E`, the coordinates of `g` outside `J` are convex on `D`, `h` is
+convex on `E`, `g` and `h` have derivatives `Dg i` within `D` at `a i ∈ D` and `Dh i` within `E`
+at `g (a i)`, and every `Dh i` is nonnegative on nonnegative directions vanishing on `J`. If
+`f xU` bounds `f` from below on `directOuterApprox` (with no feasibility requirement on `xU`),
+`zT` is feasible in and minimizes `f ∘ Prod.fst` on `sharedOuterApproxOn J`, and `xS` is a point
+of `originalSet` at which every component row is exact on `J`, then
 `f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS`. Attainment is not inferred. -/
 theorem objective_le_of_sharedOuterApproxOn {β : Type*} [Preorder β] [Finite ι] {f : X → β}
     (hgE : MapsTo g D E) (hc : ∀ j ∉ J, ConvexOn ℝ D fun x ↦ g x j) (hh : ConvexOn ℝ E h)
@@ -624,10 +627,12 @@ theorem objective_le_of_sharedOuterApproxOn {β : Type*} [Preorder β] [Finite �
     hminT (mk_mem_sharedOuterApproxOn_of_mem_originalSet hgE hc hh ha hg hdh hexact hxS)⟩
 
 /-- **Weak objective-value ordering across the nested outer approximations.** Specialization of
-`objective_le_of_sharedOuterApproxOn` to `J = ∅`: when every component of `g` is convex on `D`
-and every outer derivative `Dh i` is monotone, any lower bound `xU` on `directOuterApprox`,
-feasible minimizer `zT` on `sharedOuterApprox`, and feasible point `xS` of `originalSet` satisfy
-`f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS`. Attainment is not inferred. -/
+`objective_le_of_sharedOuterApproxOn` to `J = ∅`: when `g` maps `D` into `E`, every coordinate of
+`g` is convex on `D`, `h` is convex on `E`, `g` and `h` have derivatives `Dg i` within `D` at
+`a i ∈ D` and `Dh i` within `E` at `g (a i)`, and every outer derivative `Dh i` is monotone, any
+lower bound `xU` on `directOuterApprox`, feasible minimizer `zT` on `sharedOuterApprox`, and
+feasible point `xS` of `originalSet` satisfy `f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS`. Attainment is not
+inferred. -/
 theorem objective_le_of_sharedOuterApprox {β : Type*} [Preorder β] [Finite ι] {f : X → β}
     (hgE : MapsTo g D E) (hc : ∀ j, ConvexOn ℝ D fun x ↦ g x j) (hh : ConvexOn ℝ E h)
     (ha : ∀ i, a i ∈ D) (hg : ∀ i, HasFDerivWithinAt g (Dg i) D (a i))
@@ -641,24 +646,25 @@ theorem objective_le_of_sharedOuterApprox {β : Type*} [Preorder β] [Finite ι]
   ⟨hminU (fst_image_sharedOuterApprox_subset_directOuterApprox hD ⟨zT, hzT, rfl⟩),
     hminT (mk_mem_sharedOuterApprox_of_mem_originalSet hgE hc hh ha hg hdh hxS)⟩
 
-/-- **Weak objective-value ordering for a monotone outer function.** When `h` is convex and
-monotone on the whole height space and differentiable at every `g (a i)`, any lower bound `xU`
-on `directOuterApprox`, feasible minimizer `zT` on `sharedOuterApprox` with `E = Set.univ`, and
-feasible point `xS` of `originalSet` satisfy `f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS`. Attainment is not
-inferred. -/
+/-- **Weak objective-value ordering for a monotone outer function.** When `g` maps `D` into `E`,
+every coordinate of `g` is convex on `D`, `h` is convex on `E` and monotone on the whole height
+space, `a i ∈ D`, `g` has derivative `Dg i` within `D` at `a i`, and `h` has derivative `Dh i` at
+`g (a i)`, any lower bound `xU` on `directOuterApprox`, feasible minimizer `zT` on
+`sharedOuterApprox`, and feasible point `xS` of `originalSet` satisfy
+`f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS`. Attainment is not inferred. -/
 theorem objective_le_of_sharedOuterApprox_of_monotone {β : Type*} [Preorder β] [Finite ι]
-    {f : X → β} (hm : Monotone h) (hc : ∀ j, ConvexOn ℝ D fun x ↦ g x j)
-    (hh : ConvexOn ℝ univ h) (ha : ∀ i, a i ∈ D)
+    {f : X → β} (hgE : MapsTo g D E) (hm : Monotone h) (hc : ∀ j, ConvexOn ℝ D fun x ↦ g x j)
+    (hh : ConvexOn ℝ E h) (ha : ∀ i, a i ∈ D)
     (hg : ∀ i, HasFDerivWithinAt g (Dg i) D (a i))
     (hdh : ∀ i, HasFDerivAt h (Dh i) (g (a i)))
     {xU xS : X} {zT : X × (ι → ℝ)}
     (hminU : IsMinOn f (directOuterApprox D g h a Dg Dh b) xU)
-    (hzT : zT ∈ sharedOuterApprox D univ g h a Dg Dh b)
-    (hminT : IsMinOn (f ∘ Prod.fst) (sharedOuterApprox D univ g h a Dg Dh b) zT)
+    (hzT : zT ∈ sharedOuterApprox D E g h a Dg Dh b)
+    (hminT : IsMinOn (f ∘ Prod.fst) (sharedOuterApprox D E g h a Dg Dh b) zT)
     (hxS : xS ∈ originalSet D g h b) :
     f xU ≤ f zT.1 ∧ f zT.1 ≤ f xS :=
   have := Fintype.ofFinite ι
-  objective_le_of_sharedOuterApprox (mapsTo_univ g D) hc hh ha hg
+  objective_le_of_sharedOuterApprox hgE hc hh ha hg
     (fun i ↦ (hdh i).hasFDerivWithinAt) (fun i ↦ (hdh i).monotone_of_monotone hm)
     hminU hzT hminT hxS
 
