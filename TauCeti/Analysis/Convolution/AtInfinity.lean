@@ -15,9 +15,9 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 `MeasureTheory.tendsto_convolution_lsmul_atTop` gives the limit of the convolution of a
 Lebesgue-integrable scalar kernel and an essentially bounded function with a limit at positive
-infinity.
-It uses Mathlib's `MeasureTheory.convolution_def` and
-`MeasureTheory.tendsto_integral_filter_of_dominated_convergence`.
+infinity. The convolution acts by `ContinuousLinearMap.lsmul`, and a kernel of mass one
+preserves the limit. This applies to fixed-bandwidth smoothing, such as the squared-sinc
+smoothing of Delange's model.
 -/
 
 public section

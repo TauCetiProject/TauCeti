@@ -13,11 +13,12 @@ import TauCeti.Analysis.Convolution.AtInfinity
 # Squared-sinc smoothing of Delange's model
 
 `TauCeti.HigherPoleTauberian.tendsto_integral_delangeWeight_mul_pow_mul_squaredSinc`
-evaluates the limit of the squared-sinc smoothing of the normalised Delange weight on the
-positive half-line. This is the profile of the weighted model for a pole of order `k + 1`
-after removing its exponential and leading constant. Its limit follows from
-`tendsto_delangeWeight_mul_pow_atTop`, `squaredSinc_mass` and
-`MeasureTheory.tendsto_convolution_lsmul_atTop`, which uses Mathlib's convolution API.
+gives the limit of the squared-sinc smoothing of the normalised profile `w_k(t) t^k`
+on the positive half-line. There the profile is the regularised lower incomplete Gamma
+function `P(k + 1, t)` by `delangeWeight_mul_pow_eq_regularizedGamma`.
+The kernel has mass one for positive bandwidth (`squaredSinc_mass`), so the limit is one,
+a special case of `MeasureTheory.tendsto_convolution_lsmul_atTop`. Restoring the leading
+factor `A/k!` gives the model term in the smoothed Delange–Ikehara limit.
 
 ## References
 
@@ -57,10 +58,9 @@ theorem tendsto_integral_delangeWeight_mul_pow_mul_squaredSinc (k : ℕ) {ell : 
   refine h.congr fun T ↦ ?_
   rw [convolution_lsmul_swap, ← integral_indicator measurableSet_Ioi]
   refine integral_congr_ae (.of_forall fun t ↦ ?_)
-  dsimp only [f]
-  rw [← indicator_smul_apply (Ioi 0) (fun u ↦ squaredSinc ell (T - u))]
-  apply congrArg (fun g : ℝ → ℝ ↦ (Ioi 0).indicator g t)
-  funext u
-  rw [smul_eq_mul, ← squaredSinc_neg_right ell (T - u), neg_sub, mul_comm]
+  have hsymm : squaredSinc ell (T - t) = squaredSinc ell (t - T) := by
+    simpa only [neg_sub] using squaredSinc_neg_right ell (t - T)
+  simp only [f, hsymm, indicator_apply, smul_eq_mul, ite_mul, zero_mul,
+    mul_comm (squaredSinc ell (t - T))]
 
 end TauCeti.HigherPoleTauberian
