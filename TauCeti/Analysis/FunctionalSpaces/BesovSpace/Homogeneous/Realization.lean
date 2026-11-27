@@ -85,6 +85,13 @@ abbrev RealizationCondition (s : ℝ) (p q : ℝ≥0∞) : Prop :=
 
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [CompleteSpace F]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- At `p = 2` and `q ≤ 1` the realisation condition is `s ≤ n / 2`. -/
+theorem realizationCondition_two_of_le (hs : s ≤ (Module.finrank ℝ E : ℝ) / 2) (hq : q ≤ 1) :
+    RealizationCondition E s 2 q :=
+  hs.lt_or_eq.imp (fun h ↦ by simpa [div_eq_mul_inv] using h)
+    fun h ↦ ⟨by simp [h, div_eq_mul_inv], hq⟩
+
 /-- The representative in `𝓢'_h` of an element of `\dot B^s_{p,q}`, used to build
 `TauCeti.HomogeneousBesovSpace.realization`. -/
 private noncomputable def realizationFun (hs : RealizationCondition E s p q)

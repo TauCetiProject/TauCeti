@@ -62,7 +62,8 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
 * `Real.Gamma_add_natCast_eq_ascPochhammer_eval_mul` — `Γ(x + k) = (x)ₖ Γ(x)` off the poles.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
 * `Real.Gamma_le_one_of_mem_Icc` — `Γ s ≤ 1` for `s ∈ [1, 2]`.
-* `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
+* `Real.Gamma_nat_add_half_eq_factorial`, `Complex.Gamma_natCast_add_half_eq_factorial` —
+  `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
 * `Real.Gamma_three_halves` — `Γ(3 / 2) = √π / 2`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
@@ -284,6 +285,16 @@ theorem tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop {a b : ℝ} (hab :
 end Real
 
 namespace Complex
+
+open scoped Real in
+/-- The complex half-integer value `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`, the complex form of
+`Real.Gamma_nat_add_half_eq_factorial`. -/
+theorem Gamma_natCast_add_half_eq_factorial (n : ℕ) :
+    Gamma (n + 1 / 2) = (2 * n)! * √π / (4 ^ n * n !) := by
+  have h := congrArg ((↑) : ℝ → ℂ) (Real.Gamma_nat_add_half_eq_factorial n)
+  rw [← Gamma_ofReal] at h
+  push_cast at h
+  exact h
 
 /-- `Γ(c + k) = (c)ₖ Γ(c)` for `c` off the poles of `Γ`. -/
 theorem Gamma_add_natCast_eq_ascPochhammer_eval_mul {c : ℂ} (hc : ∀ m : ℕ, c ≠ -m) (k : ℕ) :

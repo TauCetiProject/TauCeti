@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Basic
 public import Mathlib.Probability.Independence.Basic
+import TauCeti.InformationTheory.PartitionEntropy.Independence
 
 /-!
 # Entropy rate of a label with independent iterates
@@ -19,8 +20,12 @@ the largest possible entropy, `H(join_n a) = n * H(a)`
 independent (`TauCeti.partitionEntropyRate_of_iIndepFun`): the itinerary of length `n + 1` is the
 join of the itinerary of length `n` with the independent label `a ∘ T^[n]`.
 
-The converse, that equality forces independence for finite labels, needs the equality case of
-subadditivity and is not proved here.
+For a label with finitely many values the converse holds
+(`TauCeti.iIndepFun_of_partitionEntropyRate_eq`): if `H(join_n a) = n * H(a)` for every `n`, then
+`H(join_{n+1} a) = H(join_n a) + H(a ∘ T^[n])`, so by the equality case of subadditivity
+(`TauCeti.indepFun_of_countablePartitionEntropy_pair_eq_add`) the itinerary of length `n` is
+independent of `a ∘ T^[n]`, and these independences combine into independence of all the labels
+`a ∘ T^[k]`.
 
 ## Main results
 
@@ -28,6 +33,11 @@ subadditivity and is not proved here.
   `a ∘ T^[k]` are independent, `H(join_n a) = n * H(a)`.
 * `TauCeti.partitionEntropyRate_of_iIndepFun`: if the labels `a ∘ T^[k]` are independent, the
   rate of `a` is its entropy.
+* `TauCeti.iIndepFun_of_forall_countablePartitionEntropy_iteratedPartitionLabel_eq`: for a label
+  with finitely many values, `H(join_n a) = n * H(a)` for all `n` forces the labels `a ∘ T^[k]` to
+  be independent.
+* `TauCeti.partitionEntropyRate_eq_iff_iIndepFun`: for a label with finitely many values, the rate
+  of `a` is its entropy exactly when the labels `a ∘ T^[k]` are independent.
 
 ## References
 
@@ -87,5 +97,92 @@ theorem partitionEntropyRate_of_iIndepFun (hT : MeasurePreserving T μ μ) (ha :
     partitionEntropyRate μ T a = countablePartitionEntropy μ a :=
   partitionEntropyRate_eq_of_forall
     (countablePartitionEntropy_iteratedPartitionLabel_of_iIndepFun hT ha hind)
+
+/-- For labels with independent past and present, intersections of preimages over an initial
+segment `{0, ..., N - 1}` have product measure. -/
+private lemma measure_biInter_range_eq_prod [IsProbabilityMeasure μ]
+    (hstep : ∀ n, IndepFun (iteratedPartitionLabel T a n) (fun x ↦ a (T^[n] x)) μ)
+    (t : ℕ → Set ι) (ht : ∀ i, MeasurableSet (t i)) (N : ℕ) :
+    μ (⋂ i ∈ Finset.range N, (fun x ↦ a (T^[i] x)) ⁻¹' t i) =
+      ∏ i ∈ Finset.range N, μ ((fun x ↦ a (T^[i] x)) ⁻¹' t i) := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    have hset : (⋂ i ∈ Finset.range N, (fun x ↦ a (T^[i] x)) ⁻¹' t i) =
+        iteratedPartitionLabel T a N ⁻¹' {w | ∀ k : Fin N, w k ∈ t k} := by
+      ext x
+      simp only [Set.mem_iInter, Finset.mem_range, Set.mem_preimage, Set.mem_ofPred_eq,
+        iteratedPartitionLabel_apply]
+      exact ⟨fun h k ↦ h k k.isLt, fun h i hi ↦ h ⟨i, hi⟩⟩
+    have hmeas : MeasurableSet {w : Fin N → ι | ∀ k : Fin N, w k ∈ t k} :=
+      (Set.to_countable _).measurableSet
+    -- Independence at time `N`, restated for the intersection over `{0, ..., N - 1}`.
+    have hN := (hstep N).measure_inter_preimage_eq_mul _ _ hmeas (ht N)
+    rw [← hset] at hN
+    rw [Finset.range_add_one, Finset.set_biInter_insert, Set.inter_comm, hN, ih,
+      Finset.prod_insert Finset.notMem_range_self, mul_comm]
+
+/-- **Maximal itinerary entropies force independence.** For a measure-preserving map of a
+probability space and a measurable label with finitely many values, if every itinerary has the
+largest possible entropy, `H(join_n a) = n * H(a)`, then the labels `a ∘ T^[k]` are
+independent. -/
+theorem iIndepFun_of_forall_countablePartitionEntropy_iteratedPartitionLabel_eq [Finite ι]
+    [IsProbabilityMeasure μ] (hT : MeasurePreserving T μ μ) (ha : Measurable a)
+    (h : ∀ n : ℕ, countablePartitionEntropy μ (iteratedPartitionLabel T a n) =
+      n * countablePartitionEntropy μ a) :
+    iIndepFun (fun k x ↦ a (T^[k] x)) μ := by
+  have hb := measurable_iteratedPartitionLabel hT.measurable ha
+  -- The itinerary of length `n` is independent of the label at time `n`.
+  have hstep : ∀ n, IndepFun (iteratedPartitionLabel T a n) (fun x ↦ a (T^[n] x)) μ := by
+    intro n
+    have hpair : countablePartitionEntropy μ
+        (fun x ↦ (iteratedPartitionLabel T a n x, iteratedPartitionLabel T a 1 (T^[n] x))) =
+        countablePartitionEntropy μ (iteratedPartitionLabel T a n) +
+          countablePartitionEntropy μ (iteratedPartitionLabel T a 1 ∘ T^[n]) := by
+      rw [← countablePartitionEntropy_iteratedPartitionLabel_add, h (n + 1), h n,
+        countablePartitionEntropy_comp_of_measurePreserving (hT.iterate n) (hb 1),
+        countablePartitionEntropy_iteratedPartitionLabel_one, Nat.cast_succ, add_mul, one_mul]
+    have hind := indepFun_of_countablePartitionEntropy_pair_eq_add (hb n)
+      ((hb 1).comp (hT.measurable.iterate n)) hpair
+    convert hind.comp measurable_id (measurable_pi_apply (0 : Fin 1)) using 1 <;>
+      funext x <;> simp
+  refine iIndepFun_iff_measure_inter_preimage_eq_mul.mpr fun S sets hsets ↦ ?_
+  classical
+  obtain ⟨N, hN⟩ := S.exists_nat_subset_range
+  set t : ℕ → Set ι := fun i ↦ if i ∈ S then sets i else Set.univ
+  have ht : ∀ i, MeasurableSet (t i) := fun i ↦ by
+    by_cases hi : i ∈ S
+    · simpa [t, hi] using hsets i hi
+    · simp [t, hi]
+  have key := measure_biInter_range_eq_prod hstep t ht N
+  have hinter : (⋂ i ∈ Finset.range N, (fun x ↦ a (T^[i] x)) ⁻¹' t i) =
+      ⋂ i ∈ S, (fun x ↦ a (T^[i] x)) ⁻¹' sets i := by
+    ext x
+    simp only [Set.mem_iInter, Set.mem_preimage, t]
+    refine ⟨fun h i hi ↦ by simpa [hi] using h i (hN hi), fun h i _ ↦ ?_⟩
+    by_cases hi : i ∈ S
+    · simpa [hi] using h i hi
+    · simp [hi]
+  rw [← hinter, key, ← Finset.prod_subset hN fun i _ hi ↦ by simp [t, hi]]
+  exact Finset.prod_congr rfl fun i hi ↦ by simp [t, hi]
+
+/-- **Maximal rate forces independence.** For a measure-preserving map of a probability space and
+a measurable label with finitely many values, if the entropy rate of `a` equals its entropy, the
+labels `a ∘ T^[k]` are independent. -/
+theorem iIndepFun_of_partitionEntropyRate_eq [Finite ι] [IsProbabilityMeasure μ]
+    (hT : MeasurePreserving T μ μ) (ha : Measurable a)
+    (h : partitionEntropyRate μ T a = countablePartitionEntropy μ a) :
+    iIndepFun (fun k x ↦ a (T^[k] x)) μ :=
+  iIndepFun_of_forall_countablePartitionEntropy_iteratedPartitionLabel_eq hT ha
+    ((partitionEntropyRate_eq_iff_forall hT ha).mp h)
+
+/-- **Equality case of `h_μ(T, a) ≤ H_μ(a)`.** For a measure-preserving map of a probability space
+and a measurable label with finitely many values, the entropy rate of `a` equals its entropy
+exactly when the labels `a ∘ T^[k]` are independent. -/
+theorem partitionEntropyRate_eq_iff_iIndepFun [Finite ι] [IsProbabilityMeasure μ]
+    (hT : MeasurePreserving T μ μ) (ha : Measurable a) :
+    partitionEntropyRate μ T a = countablePartitionEntropy μ a ↔
+      iIndepFun (fun k x ↦ a (T^[k] x)) μ :=
+  ⟨iIndepFun_of_partitionEntropyRate_eq hT ha, partitionEntropyRate_of_iIndepFun hT ha⟩
 
 end TauCeti
