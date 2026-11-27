@@ -166,7 +166,7 @@ private theorem integrableOn_pow_smul_sub_sum_succ (hα₀ : 0 < α) (hα₁ : �
 /-! ### The expansion -/
 
 /-- An expansion at `+∞` through `n + 1` terms gives one through `n` terms. -/
-private theorem isBigO_sub_sum_of_succ {n : ℕ}
+theorem isBigO_sub_sum_of_succ {n : ℕ}
     (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range (n + 1), (t : ℂ) ^ (-((k : ℂ) + α)) • a k)
       =O[atTop] fun t ↦ (t : ℂ) ^ (-(((n + 1 : ℕ) : ℂ) + α))) :
     (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + α)) • a k) =O[atTop]
@@ -188,7 +188,7 @@ private theorem isBigO_sub_sum_of_succ {n : ℕ}
 
 /-- Subtracting the term `k = n` does not change the continued Mellin transform at `s + 1`,
 `s < n`. -/
-private theorem mellinContAtTop_succ_natCast_add_one [CompleteSpace E] (hα₀ : 0 < α)
+theorem mellinContAtTop_succ_natCast_add_one [CompleteSpace E] (hα₀ : 0 < α)
     (hf : LocallyIntegrableOn f (Ici 0)) {n : ℕ}
     (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + α)) • a k) =O[atTop]
       fun t ↦ (t : ℂ) ^ (-((n : ℂ) + α)))
@@ -201,7 +201,7 @@ private theorem mellinContAtTop_succ_natCast_add_one [CompleteSpace E] (hα₀ :
 
 /-- At `n + 1`, the continued Mellin transform through `n + 1` terms is the absolutely convergent
 Mellin integral of the remainder `f_{n+1}`. -/
-private theorem mellinContAtTop_natCast_add_one_eq_integral [CompleteSpace E] (hα₀ : 0 < α)
+theorem mellinContAtTop_natCast_add_one_eq_integral [CompleteSpace E] (hα₀ : 0 < α)
     (hα₁ : α < 1) (hf : LocallyIntegrableOn f (Ici 0)) {n : ℕ}
     (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range (n + 1), (t : ℂ) ^ (-((k : ℂ) + α)) • a k)
       =O[atTop] fun t ↦ (t : ℂ) ^ (-(((n + 1 : ℕ) : ℂ) + α))) :
