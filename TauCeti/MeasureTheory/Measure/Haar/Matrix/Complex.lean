@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Matrix
+import Mathlib.Analysis.CStarAlgebra.Basic
 import Mathlib.LinearAlgebra.Matrix.Kronecker
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.RingTheory.Complex
@@ -35,6 +37,8 @@ on `κ → ℂ` by `mulVec` and on `ι → κ → ℂ` by two-sided and by affin
 * `MeasureTheory.lintegral_eq_enorm_det_pow_mul_enorm_det_pow_mul_lintegral_comp_matrix_mul_mul`:
   the same substitution `Y ↦ P * Y * Q` on `Matrix ι κ ℂ` with its product Lebesgue measure, in
   the form `∫⁻ Y, g Y = ‖P.det‖ₑ ^ (2 |κ|) * ‖Q.det‖ₑ ^ (2 |ι|) * ∫⁻ Y, g (P * Y * Q)`.
+* `MeasureTheory.lintegral_comp_unitary_mul`: left multiplication by a unitary matrix preserves
+  Lebesgue measure on `Matrix ι κ ℂ`.
 
 ## Provenance
 
@@ -144,5 +148,16 @@ theorem lintegral_eq_enorm_det_pow_mul_enorm_det_pow_mul_lintegral_comp_matrix_m
   rw [h, ← mul_assoc, ENNReal.ofReal_inv_of_pos (by positivity), ENNReal.ofReal_mul (by positivity),
     ENNReal.ofReal_pow hP'.le, ENNReal.ofReal_pow hQ'.le, ofReal_norm, ofReal_norm,
     ENNReal.mul_inv_cancel (by simp [hP, hQ]) (ENNReal.mul_ne_top (by simp) (by simp)), one_mul]
+
+/-- Left multiplication by a unitary matrix preserves Lebesgue measure on `Matrix ι κ ℂ`. -/
+theorem lintegral_comp_unitary_mul {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
+    {u : Matrix ι ι ℂ} (hu : u ∈ unitaryGroup ι ℂ) (g : Matrix ι κ ℂ → ENNReal) :
+    ∫⁻ Y, g (u * Y) = ∫⁻ Y, g Y := by
+  classical
+  have h_norm : ‖u.det‖ = 1 := CStarRing.norm_of_mem_unitary (det_of_mem_unitary hu)
+  have h_det : u.det ≠ 0 := norm_ne_zero_iff.1 (h_norm ▸ one_ne_zero)
+  conv_rhs => rw [lintegral_eq_enorm_det_pow_mul_enorm_det_pow_mul_lintegral_comp_matrix_mul_mul
+    h_det (Q := (1 : Matrix κ κ ℂ)) (by simp) g]
+  simp [← ofReal_norm, h_norm]
 
 end MeasureTheory
