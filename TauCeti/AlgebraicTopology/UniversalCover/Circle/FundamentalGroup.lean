@@ -13,6 +13,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.UniversalCover.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
+import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Monodromy
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 public import TauCeti.Topology.Circle.AddCircle
 public import TauCeti.Topology.Circle.Degree
@@ -63,6 +64,9 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
   its basepoint-`0` specialisation.
 * `AddCircle.fundamentalGroupMulEquiv_eq_windingNumberIso`: for positive periods the
   chosen-lift computation agrees with Mathlib, including the sign of the generator.
+* `AddCircle.windingNumberIso_fundamentalGroupMulEquivOfPath`: changing the basepoint along a
+  path preserves Mathlib's winding number, since monodromy commutes with the deck transformations,
+  the translations by periods (`TauCeti.Deck.monodromy_smul`).
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
 * `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `Circle.expLoop`, `t ↦ exp(2πit)`, going
   once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
@@ -330,6 +334,33 @@ lemma windingNumberIso_apply_eq_iff [hp : Fact (0 < p)] {x : AddCircle p}
       ((isCoveringMap_coe p).monodromy γ.toPath e : ℝ) = (e : ℝ) + n.toAdd • p := by
   rw [← fundamentalGroupMulEquiv_eq_windingNumberIso p e]
   exact fundamentalGroupMulEquiv_apply_eq_iff p hp.out.ne' e γ n
+
+/-- **The winding number does not depend on the basepoint**: changing the basepoint of the
+fundamental group of the circle along any path, by
+`FundamentalGroup.fundamentalGroupMulEquivOfPath`, preserves the winding number. -/
+theorem windingNumberIso_fundamentalGroupMulEquivOfPath [Fact (0 < p)] {a b : AddCircle p}
+    (δ : Path a b) (g : FundamentalGroup (AddCircle p) a) :
+    windingNumberIso b (FundamentalGroup.fundamentalGroupMulEquivOfPath δ g) =
+      windingNumberIso a g := by
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective a
+  let ea : ((↑) : ℝ → AddCircle p) ⁻¹' {(t : AddCircle p)} := ⟨t, rfl⟩
+  let q := Path.Homotopic.Quotient.mk δ
+  -- Read both winding numbers through the lift `ea` of `a` and its transport `eb` along `δ`.
+  set eb := (isCoveringMap_coe p).monodromy q ea
+  set n := windingNumberIso _ g
+  have hg := (windingNumberIso_apply_eq_iff p ea g n).mp rfl
+  have hback : (isCoveringMap_coe p).monodromy q.symm eb = ea := by
+    rw [← (isCoveringMap_coe p).monodromy_trans_apply, Path.Homotopic.Quotient.trans_symm,
+      (isCoveringMap_coe p).monodromy_refl, id]
+  rw [windingNumberIso_apply_eq_iff p eb _ n,
+    FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
+  dsimp only [FundamentalGroup.toPath, FundamentalGroup.toArrow]
+  -- The loop `g` moves `ea` by the deck transformation `+ n • p`, which commutes with monodromy.
+  have hτ : (isCoveringMap_coe p).monodromy g.asHom ea =
+      Deck.addRightZMultiples ⟨n.toAdd • p, zsmul_mem (mem_zmultiples p) _⟩ • ea :=
+    Subtype.ext (by rw [hg, deck.fiber_smul_coe, Deck.addRightZMultiples_apply])
+  rw [(isCoveringMap_coe p).monodromy_trans_apply, (isCoveringMap_coe p).monodromy_trans_apply,
+    hback, hτ, Deck.monodromy_smul, deck.fiber_smul_coe, Deck.addRightZMultiples_apply]
 
 end AddCircle
 

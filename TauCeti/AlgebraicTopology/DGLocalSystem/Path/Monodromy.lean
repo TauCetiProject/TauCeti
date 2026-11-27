@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Covering.FundamentalGroupCircle
 public import TauCeti.Algebra.Homology.DG.Module.Right.Homology
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Homology
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BasepointChange
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Augmentation
+public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.Topology.PathSpace.Moore.Between.FundamentalGroup
 
 /-!
@@ -46,12 +46,24 @@ paths `δ ⋆ λ ⋆ δ⁻¹ ⋆ δ` and `δ ⋆ λ` are joined by retracting th
 (`TauCeti.tensorPathChainPoint_op_smul_eq_op_smul_add_differential`).
 
 So changing the basepoint along `δ` turns a local system with monodromy `ρ` at `a` into one whose
-homology has the monodromy `λ ↦ ρ(δ ⋆ λ ⋆ δ⁻¹)` at `b`. When `b = a` and `π₁(B, a)` is
-commutative, as for the circle, conjugation is trivial
+homology has the monodromy `λ ↦ ρ(δ ⋆ λ ⋆ δ⁻¹)` at `b`. On classes, conjugation by `δ` is the
+inverse of Mathlib's change of basepoint `FundamentalGroup.fundamentalGroupMulEquivOfPath` along
+the reparametrization `δ.toPath` of `δ` (`TauCeti.MoorePathBetween`'s
+`fundamentalGroupMulEquivOfPath_fundamentalGroupHom_loopAppendHomotopyEquiv_symm_op_smul`). So the
+isomorphism carries the action of `g ∈ π₁(B, a)` to the action of its image in `π₁(B, b)`
+(`tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_fundamentalGroupMulEquivOfPath`).
+
+When `b = a` and `π₁(B, a)` is commutative, conjugation is trivial
 (`TauCeti.MoorePathBetween.fundamentalGroupHom_loopAppendHomotopyEquiv_symm_op_smul`) and the
 change of basepoint along a loop does not change the monodromy on homology
-(`TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_of_commute`,
-`TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_addCircle`).
+(`TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_of_commute`). On the circle
+the same holds along every path, between any two points, once both fundamental groups are read as
+`ℤ` through the winding number: changing the basepoint preserves winding numbers
+(`AddCircle.windingNumberIso_fundamentalGroupMulEquivOfPath`), so the isomorphism carries the
+action of the class of winding number `n` to the action of the class of winding number `n`
+(`TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_windingNumberIso_symm`). A
+DG local system on the circle with homology in degree `0` is a module over `ℤ[π₁(S¹)] = ℤ[t, t⁻¹]`,
+and changing its basepoint does not change this module.
 
 ## Main definitions
 
@@ -64,10 +76,13 @@ change of basepoint along a loop does not change the monodromy on homology
   the two actions.
 * `TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation`: the isomorphism carries
   the action of `δ ⋆ λ ⋆ δ⁻¹` to the action of `λ`.
-* `TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_of_commute`,
-  `TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_addCircle`: along a loop
-  whose class is central, in particular on the circle, the isomorphism intertwines the actions of
-  the fundamental group.
+* `tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_fundamentalGroupMulEquivOfPath`:
+  the isomorphism carries the action of `g` to the action of its change of basepoint along `δ`.
+* `TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_of_commute`: along a loop
+  whose class is central the isomorphism intertwines the actions of the fundamental group.
+* `TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_windingNumberIso_symm`: on
+  the circle, along any path, the isomorphism intertwines the actions of the classes of equal
+  winding number.
 
 ## References
 
@@ -83,7 +98,7 @@ noncomputable section
 
 namespace TauCeti
 
-open CategoryTheory MulOpposite BalancedTensorProduct DGRightModuleCat
+open CategoryTheory _root_.MulOpposite BalancedTensorProduct DGRightModuleCat
 
 universe u v w
 
@@ -210,6 +225,29 @@ theorem tensorPathChainPointCohomologyEquiv_cohomologyRepresentation (l : MooreL
     exact eq_sub_of_add_eq' (tensorPathChainPoint_op_smul_eq_op_smul_add_differential M δ l
       (M.isDGRightModule.mem_cycles.mp z.property)).symm
 
+open MoorePathBetween in
+/-- **Changing the basepoint along a path transports the monodromy.** Along a Moore path `δ` from
+`a` to `b`, the isomorphism `H(M) ≅ H(M ⊗ C_*(P_{a→b} B))` induced by `m ↦ m ⊗ [δ]` carries the
+action of each class `g` of `π₁(B, a)` to the action of its image in `π₁(B, b)` under Mathlib's
+change of basepoint `FundamentalGroup.fundamentalGroupMulEquivOfPath` along the reparametrization
+`δ.toPath` of `δ`. -/
+theorem tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_fundamentalGroupMulEquivOfPath
+    (g : FundamentalGroup B a) (x : M.isDGRightModule.Cohomology) :
+    tensorPathChainPointCohomologyEquiv M δ (M.isDGRightModule.cohomologyRepresentation g x) =
+      (tensorBimoduleObj M (pathChainBimodule B a b R)).isDGRightModule.cohomologyRepresentation
+        (FundamentalGroup.fundamentalGroupMulEquivOfPath δ.toPath g)
+        (tensorPathChainPointCohomologyEquiv M δ x) := by
+  obtain ⟨l, hl⟩ := MooreLoopSpace.fundamentalGroupHom_surjective b
+    (FundamentalGroup.fundamentalGroupMulEquivOfPath δ.toPath g)⁻¹
+  -- The loop `δ ⋆ λ ⋆ δ⁻¹` at `a` has class `g⁻¹`.
+  have hc : MooreLoopSpace.fundamentalGroupHom a
+      ((MoorePathBetween.loopAppendHomotopyEquiv δ).symm (op l • δ)) = g⁻¹ :=
+    (FundamentalGroup.fundamentalGroupMulEquivOfPath δ.toPath).injective <|
+      (fundamentalGroupMulEquivOfPath_fundamentalGroupHom_loopAppendHomotopyEquiv_symm_op_smul
+        δ l).trans (hl.trans (map_inv _ g).symm)
+  have h := tensorPathChainPointCohomologyEquiv_cohomologyRepresentation M δ l x
+  rwa [hc, hl, inv_inv, inv_inv] at h
+
 /-- **Changing the basepoint along a loop whose class is central does not change the monodromy.**
 For a Moore loop `γ` at `a`, read as a Moore path from `a` to itself, and a class `g` of
 `π₁(B, a)` commuting with the class of `γ`, the isomorphism `H(M) ≅ H(M ⊗ C_*(P_{a→a} B))`
@@ -235,23 +273,28 @@ end Representation
 
 section Circle
 
-variable {p : ℝ} [Fact (0 < p)] {x₀ : AddCircle p} {S : Type} [CommRing S]
+variable {p : ℝ} [Fact (0 < p)] {x₀ x₁ : AddCircle p} {S : Type} [CommRing S]
 
-/-- **On the circle, changing the basepoint along a loop does not change the monodromy**: the
-fundamental group of the circle is commutative (it is `ℤ` through the winding number,
-`AddCircle.windingNumberIso`), so for every Moore loop `γ` at `x₀` the isomorphism
-`H(M) ≅ H(M ⊗ C_*(P_{x₀→x₀} S¹))` induced by `m ↦ m ⊗ [γ]` intertwines the actions of
-`π₁(S¹, x₀)`. -/
-theorem tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_addCircle
+/-- **On the circle, changing the basepoint does not change the monodromy.** Read the
+fundamental groups of the circle at both ends as `ℤ` through the winding number
+(`AddCircle.windingNumberIso`). Then for every Moore path `δ` from `x₀` to `x₁`, the isomorphism
+`H(M) ≅ H(M ⊗ C_*(P_{x₀→x₁} S¹))` induced by `m ↦ m ⊗ [δ]` carries the action of the class of
+winding number `n` at `x₀` to the action of the class of winding number `n` at `x₁`. -/
+theorem tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_windingNumberIso_symm
     (M : DGRightModuleCat.{0, 0, v} (loopChain_isDGAlgebra (AddCircle p) x₀ S))
-    (γ : MoorePathBetween (AddCircle p) x₀ x₀) (g : FundamentalGroup (AddCircle p) x₀)
+    (δ : MoorePathBetween (AddCircle p) x₀ x₁) (n : Multiplicative ℤ)
     (x : M.isDGRightModule.Cohomology) :
-    tensorPathChainPointCohomologyEquiv M γ (M.isDGRightModule.cohomologyRepresentation g x) =
+    tensorPathChainPointCohomologyEquiv M δ
+        (M.isDGRightModule.cohomologyRepresentation ((AddCircle.windingNumberIso x₀).symm n) x) =
       (tensorBimoduleObj M
-        (pathChainBimodule (AddCircle p) x₀ x₀ S)).isDGRightModule.cohomologyRepresentation g
-        (tensorPathChainPointCohomologyEquiv M γ x) :=
-  tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_of_commute M γ (g := g)
-    ((AddCircle.windingNumberIso x₀).injective (by rw [map_mul, map_mul, mul_comm])) x
+        (pathChainBimodule (AddCircle p) x₀ x₁ S)).isDGRightModule.cohomologyRepresentation
+        ((AddCircle.windingNumberIso x₁).symm n) (tensorPathChainPointCohomologyEquiv M δ x) := by
+  have h : FundamentalGroup.fundamentalGroupMulEquivOfPath δ.toPath
+      ((AddCircle.windingNumberIso x₀).symm n) = (AddCircle.windingNumberIso x₁).symm n := by
+    rw [MulEquiv.eq_symm_apply, AddCircle.windingNumberIso_fundamentalGroupMulEquivOfPath,
+      MulEquiv.apply_symm_apply]
+  rw [tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_fundamentalGroupMulEquivOfPath,
+    h]
 
 end Circle
 
