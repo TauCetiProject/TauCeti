@@ -18,12 +18,12 @@ import Mathlib.RingTheory.AdicCompletion.Functoriality
 Let `k` be a perfect ring of characteristic `p` that is absolutely integrally closed: every monic
 polynomial of positive degree over `k` has a root in `k` (`TauCeti.IsAbsolutelyIntegrallyClosed`).
 Examples are algebraically closed fields of characteristic `p` and the tilt `O_C♭` of the valuation
-ring of a complete algebraically closed nonarchimedean field `C`
-(`PreTilt.instIsAbsolutelyIntegrallyClosed`). Then every equation `φ(y) - s * y = a` has a
-solution in `W(k)` and modulo every power of `p`; for `k = O_C♭` and `s = ξ ^ n` this solves
-`φ(c) - ξ ^ n * c = x` in `A_inf = W(O_C♭)`. Over a perfect domain the kernel of `φ - 1` at finite
-level is the canonical copy of `ℤ/p^n`. These are the scalar equations used in integral Frobenius
-descent.
+ring of a complete algebraically closed nonarchimedean field `C` in which `p` is topologically
+nilpotent (`PreTilt.instIsAbsolutelyIntegrallyClosed`). Then every equation `φ(y) - s * y = a`
+has a solution in `W(k)` and modulo every power of `p`; for `k = O_C♭` and `s = ξ ^ n` this
+solves `φ(c) - ξ ^ n * c = x` in `A_inf = W(O_C♭)`. Over a perfect domain the kernel of `φ - 1`
+at finite level is the canonical copy of `ℤ/p^n`. These are the scalar equations used in integral
+Frobenius descent.
 
 ## Provenance
 
@@ -84,7 +84,8 @@ theorem surjective_map_sub_mul_map (s : WittVector p k) (F G : k →+* k)
 
 /-- Every scalar Artin–Schreier–Witt equation `φ(y) - s * y = a` is solvable over a perfect
 ring of characteristic `p` in which every monic polynomial of positive degree has a root, for
-instance an algebraically closed field or the tilt `O_C♭`. -/
+instance an algebraically closed field, or the tilt `O_C♭` of the valuation ring of a complete
+algebraically closed nonarchimedean field `C` in which `p` is topologically nilpotent. -/
 theorem surjective_frobenius_sub_mul [TauCeti.IsAbsolutelyIntegrallyClosed k]
     (s : WittVector p k) :
     Function.Surjective fun y : WittVector p k ↦ frobenius y - s * y := by

@@ -166,9 +166,9 @@ theorem not_natCast_dvd_mu {ε : S} (hε : ε ≠ 1) : ¬(p : WittVector p S) �
 
 /-- For `ε ≠ 1`, `p` does not divide `τ = φ^(-1)(μ)`. -/
 theorem not_natCast_dvd_frobeniusEquiv_symm_mu {ε : S} (hε : ε ≠ 1) :
-    ¬(p : WittVector p S) ∣ (frobeniusEquiv p S).symm (mu p ε) := fun h ↦
-  not_natCast_dvd_mu p hε (by
-    simpa only [map_natCast, RingEquiv.apply_symm_apply] using map_dvd (frobeniusEquiv p S) h)
+    ¬(p : WittVector p S) ∣ (frobeniusEquiv p S).symm (mu p ε) := by
+  rw [← map_dvd_iff (frobeniusEquiv p S), map_natCast, RingEquiv.apply_symm_apply]
+  exact not_natCast_dvd_mu p hε
 
 end Periods
 

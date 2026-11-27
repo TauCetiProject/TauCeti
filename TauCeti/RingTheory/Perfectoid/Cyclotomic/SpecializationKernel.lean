@@ -166,6 +166,19 @@ theorem mem_span_mu_iff (ε : PreTilt (𝒪[C]) p)
     fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero ε (ε.untilt_eq_one_of_isPrimitiveRoot hε),
     zero_mul]
 
+/-- An element of `A_inf` lies in `(τ)`, where `τ = φ^(-1)(μ)`, exactly when it is killed by
+`θ ∘ φ^j` for every `j ≥ 1`, provided the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of
+unity. This is `mem_span_mu_iff` at `φ(a)`, transported across the Frobenius automorphism. -/
+theorem mem_span_frobeniusEquiv_symm_mu_iff (ε : PreTilt (𝒪[C]) p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p)
+    {a : WittVector p (PreTilt (𝒪[C]) p)} :
+    a ∈ Ideal.span {(frobeniusEquiv p (PreTilt (𝒪[C]) p)).symm (mu p ε)} ↔
+      ∀ j, fontaineTheta (𝒪[C]) p (((frobeniusEquiv p (PreTilt (𝒪[C]) p))^[j + 1]) a) = 0 := by
+  rw [Ideal.mem_span_singleton, ← map_dvd_iff (frobeniusEquiv p (PreTilt (𝒪[C]) p)),
+    RingEquiv.apply_symm_apply, ← Ideal.mem_span_singleton, mem_span_mu_iff ε hε]
+  simp only [Function.iterate_succ_apply]
+
 /-- **Divisibility by `τ = φ^(-1)(μ)`.** If the sharp of `ε ^ (1 / p)` is a primitive `p`-th root
 of unity and `θ(φ^j(a)) = 0` for every `j ≥ 1`, then `φ^(-1)(μ)` divides `a`. -/
 theorem frobeniusEquiv_symm_mu_dvd_of_forall_fontaineTheta_iterate_succ_eq_zero
@@ -174,26 +187,8 @@ theorem frobeniusEquiv_symm_mu_dvd_of_forall_fontaineTheta_iterate_succ_eq_zero
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p)
     {a : WittVector p (PreTilt (𝒪[C]) p)}
     (ha : ∀ j, fontaineTheta (𝒪[C]) p (((frobeniusEquiv p (PreTilt (𝒪[C]) p))^[j + 1]) a) = 0) :
-    (frobeniusEquiv p (PreTilt (𝒪[C]) p)).symm (mu p ε) ∣ a := by
-  -- `φ(a)` is killed by every `θ ∘ φ^j`, so `μ ∣ φ(a)`; apply `φ^(-1)`
-  have h := mu_dvd_of_forall_fontaineTheta_iterate_eq_zero ε hε
-    (a := frobeniusEquiv p _ a) fun j ↦ by rw [← Function.iterate_succ_apply]; exact ha j
-  simpa only [RingEquiv.symm_apply_apply] using map_dvd (frobeniusEquiv p _).symm h
-
-/-- An element of `A_inf` lies in `(τ)`, where `τ = φ^(-1)(μ)`, exactly when it is killed by
-`θ ∘ φ^j` for every `j ≥ 1`. -/
-theorem mem_span_frobeniusEquiv_symm_mu_iff (ε : PreTilt (𝒪[C]) p)
-    (hε : IsPrimitiveRoot
-      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p)
-    {a : WittVector p (PreTilt (𝒪[C]) p)} :
-    a ∈ Ideal.span {(frobeniusEquiv p (PreTilt (𝒪[C]) p)).symm (mu p ε)} ↔
-      ∀ j, fontaineTheta (𝒪[C]) p (((frobeniusEquiv p (PreTilt (𝒪[C]) p))^[j + 1]) a) = 0 := by
-  refine ⟨fun h j ↦ ?_, fun h ↦ Ideal.mem_span_singleton.mpr
-    (frobeniusEquiv_symm_mu_dvd_of_forall_fontaineTheta_iterate_succ_eq_zero ε hε h)⟩
-  obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton.mp h
-  rw [iterate_map_mul, Function.iterate_succ_apply, RingEquiv.apply_symm_apply, map_mul,
-    fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero ε (ε.untilt_eq_one_of_isPrimitiveRoot hε),
-    zero_mul]
+    (frobeniusEquiv p (PreTilt (𝒪[C]) p)).symm (mu p ε) ∣ a :=
+  Ideal.mem_span_singleton.mp ((mem_span_frobeniusEquiv_symm_mu_iff ε hε).mpr ha)
 
 /-- The ideal `(μ)` does not depend on the choice of `ε`: any two admissible compatible systems
 of roots of unity give the same ideal. -/
