@@ -17,6 +17,7 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.Polynomial.Reverse
+import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.SesquilinearForm.Complex
 import TauCeti.LinearAlgebra.SesquilinearForm.Polynomial
 
@@ -74,11 +75,6 @@ private lemma aeval_glnHeckePolynomial_succ_apply (U : End ℂ V) (m : ℕ) (q :
   rw [glnHeckePolynomial_succ]
   simp only [map_add, LinearMap.add_apply, map_mul, aeval_X, mul_apply_eq_comp,
     aeval_C, Module.algebraMap_end_apply, smul_smul, ← mul_assoc, Function.comp_def]
-
-/-- `Fin.castLE` sends `Fin.last k` to `⟨k, h⟩`. -/
-private lemma castLE_last {k m : ℕ} (h : k + 1 ≤ m) :
-    Fin.castLE h (Fin.last k) = ⟨k, h⟩ :=
-  Fin.ext (by simp)
 
 /-- For real `q > 1`, `0 < (q : ℂ) ^ (n + 1) - 1`. -/
 private lemma pow_succ_sub_one_pos {q : ℝ} (hq : 1 < q) (n : ℕ) :
@@ -162,7 +158,8 @@ private lemma aeval_glnHeckePolynomial_prefix {U : End ℂ V} {n : ℕ} {q : ℂ
       simpa [Fin.castSucc_mk, Fin.succ_mk] using rec_U ⟨m, hm_lt⟩
     rw [aeval_glnHeckePolynomial_succ_apply, Function.comp_assoc, Fin.castLE_comp_castSucc,
       ih hm_lt.le, map_smul, hrec]
-    simp only [Function.comp_apply, castLE_last, Nat.choose_succ_succ, Nat.choose_one_right]
+    simp only [Function.comp_apply, Fin.castLE_last (⟨m + 1, by omega⟩ : Fin (n + 2)),
+      Nat.choose_succ_succ, Nat.choose_one_right]
     module
 
 /-- Action of `U'` on the quotient of a prefix Hecke polynomial by `X - c`. -/
@@ -223,7 +220,7 @@ private lemma exists_mul_eq_sub_eval_and_apply {U U' : End ℂ V} {n : ℕ} {q :
         rw [aeval_p (m + 1) hmlt, hstep]
         simp only [map_smul, eval_add, eval_mul, eval_X, eval_C, map_add, LinearMap.add_apply,
           LinearMap.smul_apply, Nat.choose_succ_succ, Nat.choose_one_right, Function.comp_apply,
-          castLE_last]
+          Fin.castLE_last (⟨m + 1, by omega⟩ : Fin (n + 2))]
         rw [hrec, hpow, aeval_p m hmlt.le]
         match_scalars <;> field
 
