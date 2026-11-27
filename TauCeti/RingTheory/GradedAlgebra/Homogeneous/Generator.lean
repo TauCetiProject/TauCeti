@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.DirectSum.Laurent
 public import TauCeti.Algebra.Polynomial.Laurent.Units.Connected
+public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
 # Homogeneous generators on a connected spectrum
@@ -19,6 +20,11 @@ grading, using Mathlib's `SetLike.GradedSMul`.
 The Laurent polynomial recording the homogeneous components of `1` is a unit, without any
 connectedness hypothesis. On a connected spectrum, a coefficient of that unit is itself a
 unit, hence is the required homogeneous generator. The zero ring is included.
+
+Combining the existence of a homogeneous generator with the shift classification of
+`TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units`, every compatible `ℤ`-grading of the free
+rank-one module over a `ℤ`-graded commutative ring with preconnected prime spectrum is
+graded-isomorphic to a shift `A(d)`, uniquely up to `TauCeti.ShiftClassGroup 𝒜`.
 -/
 
 public section
@@ -41,9 +47,8 @@ theorem isUnit_decomposeLaurent_one : IsUnit (decomposeLaurent ℳ (1 : A)) := b
   classical
   let m (i : ℤ) : A := decompose ℳ (1 : A) i
   have h (i : ℤ) :
-      decomposeLaurent 𝒜 (m i) * decomposeLaurent ℳ (1 : A) = C (m i) * T i := by
-    rw [← decomposeLaurent_mul ℳ 𝒜, mul_one]
-    exact decomposeLaurent_of_mem ℳ (decompose ℳ (1 : A) i).property
+      decomposeLaurent 𝒜 (m i) * decomposeLaurent ℳ (1 : A) = C (m i) * T i :=
+    decomposeLaurent_decompose_one_mul ℳ 𝒜 i
   -- Shifting each identity back by its degree and summing gives an explicit inverse.
   apply isUnit_iff_exists_inv'.mpr
   refine ⟨∑ i ∈ (decompose ℳ (1 : A)).support, decomposeLaurent 𝒜 (m i) * T (-i), ?_⟩
@@ -74,5 +79,41 @@ theorem exists_isUnit_mem_of_connected : ∃ c : ℤ, ∃ u : A, IsUnit u ∧ u 
   simpa using hc
 
 end Ring
+
+section ShiftClassification
+
+variable {A σ τ : Type*} [CommRing A]
+    [SetLike σ A] [AddSubmonoidClass σ A] [SetLike τ A] [AddSubmonoidClass τ A]
+    (𝒜 : ℤ → σ) (ℳ : ℤ → τ) [GradedRing 𝒜] [Decomposition ℳ]
+    [SetLike.GradedSMul 𝒜 ℳ] [PreconnectedSpace (PrimeSpectrum A)]
+
+/-- Every compatible `ℤ`-grading of the free rank-one module over a `ℤ`-graded commutative ring
+with preconnected prime spectrum is graded-isomorphic to a shift `A(d)`. -/
+theorem exists_shift_linearEquiv_of_connected :
+    ∃ d : ℤ, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) := by
+  obtain ⟨c, u, hu, hmem⟩ := exists_isUnit_mem_of_connected 𝒜 ℳ
+  obtain ⟨φ, hφ⟩ := exists_linearEquiv_of_isUnit_mem 𝒜 ℳ hu hmem
+  exact ⟨-c, φ, fun n x ↦ by rw [hφ, sub_eq_add_neg]⟩
+
+/-- **Classification of rank-one gradings on a connected spectrum.** Over a `ℤ`-graded commutative
+ring with preconnected prime spectrum, every compatible `ℤ`-grading of the free rank-one module is
+graded-isomorphic to the shift `A(d)` if and only if `d` represents a unique class in
+`TauCeti.ShiftClassGroup 𝒜`. -/
+theorem existsUnique_shiftClass_of_connected :
+    ∃! c : ShiftClassGroup 𝒜,
+      ∀ d : ℤ, (∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) ↔
+        (d : ShiftClassGroup 𝒜) = c := by
+  obtain ⟨_, _, hu, hmem⟩ := exists_isUnit_mem_of_connected 𝒜 ℳ
+  exact existsUnique_shiftClass_of_isUnit_mem 𝒜 ℳ hu hmem
+
+/-- Over a `ℤ`-graded commutative ring with preconnected prime spectrum whose homogeneous units
+all have degree zero, every compatible `ℤ`-grading of the free rank-one module is
+graded-isomorphic to a shift `A(d)` for a unique integer `d`. -/
+theorem existsUnique_shift_linearEquiv_of_connected (hbot : homogeneousUnitDegrees 𝒜 = ⊥) :
+    ∃! d : ℤ, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) := by
+  obtain ⟨_, _, hu, hmem⟩ := exists_isUnit_mem_of_connected 𝒜 ℳ
+  exact existsUnique_shift_linearEquiv_of_isUnit_mem 𝒜 ℳ hu hmem hbot
+
+end ShiftClassification
 
 end TauCeti.GradedAlgebra

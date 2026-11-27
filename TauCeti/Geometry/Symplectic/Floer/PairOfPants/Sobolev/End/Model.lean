@@ -235,12 +235,12 @@ variable (q : Puncture) (J : ℝ → AlmostComplexStructure V) (S : ℝ → V �
 `TauCeti.Floer.endModelCoeff` on the cylinder, realized from `W^{1,2}(ℝ × S¹, V)` to
 `L²(ℝ × S¹, V)`. -/
 def endModelSobolevOperator : H1 V →L[ℝ] Lp V 2 stripMeasure :=
-  (jetOperator stripMeasure (endModelCoeff q J S)).comp (H1 V).subtypeL
+  (jetOperator 2 stripMeasure (endModelCoeff q J S)).comp (H1 V).subtypeL
 
 variable (q : Puncture) (J : ℝ → AlmostComplexStructure V) (S : ℝ → V →L[ℝ] V) in
 theorem endModelSobolevOperator_def :
     endModelSobolevOperator q J S =
-      (jetOperator stripMeasure (endModelCoeff q J S)).comp (H1 V).subtypeL :=
+      (jetOperator 2 stripMeasure (endModelCoeff q J S)).comp (H1 V).subtypeL :=
   (rfl)
 
 /-- For continuous loops `J_t` and `S_t`, the end model operator acts pointwise on an `L²` jet
@@ -250,7 +250,7 @@ theorem coeFn_endModelSobolevOperator (q : Puncture) {J : ℝ → AlmostComplexS
     (hS : Continuous S) (x : H1 V) :
     endModelSobolevOperator q J S x =ᵐ[stripMeasure]
       fun z ↦ endModelCoeff q J S z ((x : Lp (V × V × V) 2 stripMeasure) z) :=
-  coeFn_jetOperator (memLp_endModelCoeff q hJ hS) x
+  coeFn_jetOperator (p := 2) (memLp_endModelCoeff q hJ hS) x
 
 /-- **The end model is the stationary cylinder operator followed by a rotation.** For continuous
 loops `J_t` and `S_t`, the end model operator is the realization of `∂s + J_t (∂t - S_t)` on

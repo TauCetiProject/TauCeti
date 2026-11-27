@@ -383,6 +383,16 @@ theorem twistedCochainComplexXEquiv_d (n : ℤ) (f : (twistedCochainComplex hm h
   unfold twistedCochainComplexXEquiv
   exact gradedCochainComplexXEquiv_d n f
 
+/-- Under `twistedCochainComplexXEquiv`, the differential of the twisted complex between any two
+consecutive degrees is the twisted differential. -/
+theorem twistedCochainComplexXEquiv_d_of_add_one_eq {n n' : ℤ} (hn : n + 1 = n')
+    (f : (twistedCochainComplex hm htw hM).X n) :
+    (twistedCochainComplexXEquiv hm htw hM n'
+        (((twistedCochainComplex hm htw hM).d n n').hom f) : P → M) =
+      twistedDifferential m ℳ dM (twistedCochainComplexXEquiv hm htw hM n f) := by
+  unfold twistedCochainComplexXEquiv
+  exact gradedCochainComplexXEquiv_d_of_add_one_eq hn f
+
 end SqZero
 
 namespace TwistingCocycle
@@ -418,6 +428,17 @@ theorem twistedDifferential_sq_zero (hM : IsDGRightModule h ℳ dM) (f : P → M
 noncomputable abbrev twistedCochainComplex (hM : IsDGRightModule h ℳ dM) :
     CochainComplex (ModuleCat.{max uP uM} R) ℤ :=
   TauCeti.twistedCochainComplex m.mem_graded m.twisting hM
+
+/-- The identification of the twisted complexes of two equal twisting cocycles is the identity of
+the underlying functions. -/
+theorem twistedCochainComplexXEquiv_eqToHom_f {m m' : TwistingCocycle 𝒜 d P ind} (hm : m = m')
+    (hM : IsDGRightModule h ℳ dM) (n : ℤ) (g : (m.twistedCochainComplex dM hM).X n) :
+    (twistedCochainComplexXEquiv m'.mem_graded m'.twisting hM n
+        (((CategoryTheory.eqToHom (congrArg (twistedCochainComplex · dM hM) hm)).f n).hom g) :
+          P → M) =
+      twistedCochainComplexXEquiv m.mem_graded m.twisting hM n g := by
+  subst hm
+  rfl
 
 end TwistingCocycle
 

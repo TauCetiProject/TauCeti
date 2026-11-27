@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Quaternion.Ramification.Basic
+public import TauCeti.NumberTheory.Quaternion.Ramification.Discriminant
 import TauCeti.NumberTheory.LocalField.Quaternion.Examples
 
 /-!
@@ -18,9 +18,12 @@ on two classical examples.
 place, since `-1` is negative there. Over `ℚ` it is ramified at the prime `p` exactly when
 `p = 2`: the symbol `(-1, -1)_{ℚ_p}` is `+1` for odd `p` by Hensel's lemma and `-1` at `p = 2`.
 So `ℍ[ℚ,-1,-1]` is ramified at exactly one finite and one real place, and `1 + 1 = 2` is even, as
-the parity theorem `even_card_ramifiedFinitePlaces_add_card_ramifiedRealPlaces` demands.
+the parity theorem `even_card_ramifiedFinitePlaces_add_card_ramifiedRealPlaces` demands. Its
+discriminant is `D = 2`, which here equals the ramification bound `2`.
 
-**Split symbols.** `ℍ[F,1,b]` is isomorphic to `M₂(F)`, so it is ramified nowhere.
+**Split symbols.** `ℍ[F,1,b]` is isomorphic to `M₂(F)`, so it is ramified nowhere and its
+discriminant is the unit ideal. For `ℍ[ℚ,1,7]` the ramification bound is `14` while `D = 1`: the
+discriminant is not the radical of the bound.
 
 ## Main results
 
@@ -30,8 +33,11 @@ the parity theorem `even_card_ramifiedFinitePlaces_add_card_ramifiedRealPlaces` 
   place is the place above `2`.
 * `TauCeti.QuaternionAlgebra.ramifiedRealPlaces_neg_one_neg_one`: `ℍ[F,-1,-1]` is ramified at
   every real place.
+* `TauCeti.QuaternionAlgebra.discNat_neg_one_neg_one`: `ℍ[ℚ,-1,-1]` has discriminant `D = 2`.
 * `TauCeti.QuaternionAlgebra.ramifiedFinitePlaces_one_left`,
   `TauCeti.QuaternionAlgebra.ramifiedRealPlaces_one_left`: `ℍ[F,1,b]` is ramified nowhere.
+* `TauCeti.QuaternionAlgebra.discIdeal_one_left`, `TauCeti.QuaternionAlgebra.discNat_one_left`:
+  `ℍ[F,1,b]` has unit discriminant.
 
 ## References
 
@@ -89,6 +95,16 @@ example : (ramifiedFinitePlaces (-1 : ℚˣ) (-1)).card = 1 ∧
   rw [ramifiedRealPlaces_neg_one_neg_one, Finset.card_univ, Fintype.card_eq_one_iff]
   exact ⟨⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩, fun _ ↦ Subsingleton.elim _ _⟩
 
+/-- **Hamilton's quaternions over `ℚ`** have discriminant `D = 2`. -/
+theorem discNat_neg_one_neg_one : discNat (-1 : ℚˣ) (-1) = 2 := by
+  rw [discNat_def, ramifiedFinitePlaces_neg_one_neg_one_rat, Finset.prod_singleton]
+  exact Rat.HeightOneSpectrum.natGenerator_primesEquiv_symm ⟨2, Nat.prime_two⟩
+
+/-- The ramification bound of Hamilton's quaternions over `ℚ` is `2`, equal to their
+discriminant. -/
+example : ramificationBound (-1 : ℚˣ) (-1) = 2 := by
+  norm_num [ramificationBound_def]
+
 /-! ### Split symbols -/
 
 variable (b : Fˣ)
@@ -102,5 +118,20 @@ theorem ramifiedFinitePlaces_one_left : ramifiedFinitePlaces (1 : Fˣ) b = ∅ :
 theorem ramifiedRealPlaces_one_left : ramifiedRealPlaces (1 : Fˣ) b = ∅ := by
   ext w
   simp [isRamifiedAtReal_iff]
+
+/-- The split symbol algebra `ℍ[F,1,b]` has unit discriminant. -/
+theorem discIdeal_one_left : discIdeal (1 : Fˣ) b = 1 :=
+  discIdeal_eq_one_iff.2 (ramifiedFinitePlaces_one_left b)
+
+/-- The split symbol algebra `ℍ[ℚ,1,b]` has discriminant `D = 1`. -/
+theorem discNat_one_left (b : ℚˣ) : discNat 1 b = 1 :=
+  discNat_eq_one_iff.2 (ramifiedFinitePlaces_one_left b)
+
+/-- For the split symbol algebra `ℍ[ℚ,1,7]` the ramification bound is `14`, but the discriminant
+is `D = 1`. -/
+example : ramificationBound 1 (Units.mk0 (7 : ℚ) (by norm_num)) = 14 ∧
+    discNat 1 (Units.mk0 (7 : ℚ) (by norm_num)) = 1 := by
+  refine ⟨?_, discNat_one_left _⟩
+  norm_num [ramificationBound_def]
 
 end TauCeti.QuaternionAlgebra

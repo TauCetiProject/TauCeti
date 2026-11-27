@@ -89,12 +89,17 @@ theorem homogeneousUnitDegrees_awayGrading_depressedDiscr [IsDomain R] {m : ℕ}
       rw [mem_weightedHomogeneousSubmodule]
       convert isWeightedHomogeneous_X R (depressedWeight 2) 0
       simp [depressedWeight_apply]
+    have hfeq : depressedDiscr R 2 = C (-4 : R) * X 0 := by
+      rw [depressedDiscr_two, map_neg, map_ofNat]
+    have hreg : IsLeftRegular (depressedDiscr R 2) := by
+      refine (IsRegular.of_ne_zero ?_).left
+      rw [hfeq]
+      exact mul_ne_zero (by simpa using h4) (X_ne_zero 0)
     exact homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_C_mul_prime
-      (depressedWeight 2) (depressedDiscr_mem R 2) h4 hx prime_X
-      (by rw [depressedDiscr_two, map_neg, map_ofNat])
-  · exact homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_prime
-      (depressedWeight m) (depressedDiscr_mem R m)
-      (depressedDiscr_prime h2 hmR hm2 (fun h ↦ absurd h (by omega)))
+      (depressedWeight 2) (depressedDiscr_mem R 2) (-4) hx prime_X hreg hfeq
+  · have hp := depressedDiscr_prime h2 hmR hm2 (fun h ↦ absurd h (by omega))
+    exact homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_prime
+      (depressedWeight m) (depressedDiscr_mem R m) hp (IsRegular.of_ne_zero hp.ne_zero).left
 
 /-- Over a domain in which `2 ≠ 0` and `(m : R) ≠ 0` with `2 ≤ m`, the shift classes of
 `R[a₂, …, aₘ]_Δ`, with `aⱼ` of weight `j` and `Δ = depressedDiscr R m`, form `ZMod (m (m - 1))`. -/
@@ -126,9 +131,10 @@ theorem homogeneousUnitDegrees_awayGrading_depressedDiscr_three_four_six [IsDoma
         (weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ))
         (depressedDiscr_three_mem_four_six R)) =
       AddSubgroup.zmultiples 12 :=
-  homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_prime _ _
-    (depressedDiscr_prime h2 (m := 3) (by exact_mod_cast h3) (by norm_num)
-      (fun h ↦ absurd h (by omega)))
+  have hp := depressedDiscr_prime h2 (m := 3) (by exact_mod_cast h3) (by norm_num)
+    (fun h ↦ absurd h (by omega))
+  homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_prime _ _ hp
+    (IsRegular.of_ne_zero hp.ne_zero).left
 
 /-- Over a domain in which `2 ≠ 0` and `3 ≠ 0`, the shift classes of `R[a, b]_Δ`, with
 `a, b` of weights `4, 6` and `Δ = -4 a³ - 27 b²`, form `ZMod 12`. -/
@@ -139,9 +145,9 @@ noncomputable def shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv [IsD
         (depressedDiscr_three_mem_four_six R)) ≃+
       ZMod 12 :=
   -- The index `(12 : ℤ).natAbs` of `shiftClassGroupAwayGradingWeightedEquiv` reduces to `12`.
-  shiftClassGroupAwayGradingWeightedEquiv _ _
-    (depressedDiscr_prime h2 (m := 3) (by exact_mod_cast h3) (by norm_num)
-      (fun h ↦ absurd h (by omega)))
+  have hp := depressedDiscr_prime h2 (m := 3) (by exact_mod_cast h3) (by norm_num)
+    (fun h ↦ absurd h (by omega))
+  shiftClassGroupAwayGradingWeightedEquiv _ _ hp (IsRegular.of_ne_zero hp.ne_zero).left
 
 /-- The identification of the shift classes of `R[a, b]_Δ` with `ZMod 12` sends the class of a
 shift `c` to `c mod 12`. -/
@@ -149,7 +155,7 @@ shift `c` to `c mod 12`. -/
 theorem shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv_mk [IsDomain R]
     (h2 : (2 : R) ≠ 0) (h3 : (3 : R) ≠ 0) (c : ℤ) :
     shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv h2 h3 c = c :=
-  shiftClassGroupAwayGradingWeightedEquiv_mk _ _ _ c
+  shiftClassGroupAwayGradingWeightedEquiv_mk _ _ _ _ c
 
 /-- Inverting `4 * X 0 ^ 3 + 27 * X 1 ^ 2` in `R[a, b]` with weights `4, 6` over an integral
 domain `R` with `(2 : R) ≠ 0` and `(3 : R) ≠ 0` yields shift class group `ZMod 12`. -/
@@ -158,9 +164,9 @@ noncomputable def shiftClassGroupAwayGradingWeierstrassEquiv [IsDomain R]
     ShiftClassGroup (GradedAlgebra.awayGrading
         (weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ))
         (mem_weightedHomogeneousSubmodule_weierstrass R)) ≃+ ZMod 12 :=
+  have hp := prime_four_mul_X_pow_three_add_twentySeven_mul_X_sq h2 h3
   shiftClassGroupAwayGradingWeightedEquiv (![4, 6] : Fin 2 → ℤ)
-    (mem_weightedHomogeneousSubmodule_weierstrass R)
-    (prime_four_mul_X_pow_three_add_twentySeven_mul_X_sq h2 h3)
+    (mem_weightedHomogeneousSubmodule_weierstrass R) hp (IsRegular.of_ne_zero hp.ne_zero).left
 
 /-- The identification of the shift class group after inverting `4 * X 0 ^ 3 + 27 * X 1 ^ 2`
 with `ZMod 12` sends the class of `d` to `d mod 12`. -/
@@ -168,6 +174,6 @@ with `ZMod 12` sends the class of `d` to `d mod 12`. -/
 theorem shiftClassGroupAwayGradingWeierstrassEquiv_mk [IsDomain R]
     (h2 : (2 : R) ≠ 0) (h3 : (3 : R) ≠ 0) (d : ℤ) :
     shiftClassGroupAwayGradingWeierstrassEquiv h2 h3 d = d :=
-  shiftClassGroupAwayGradingWeightedEquiv_mk _ _ _ d
+  shiftClassGroupAwayGradingWeightedEquiv_mk _ _ _ _ d
 
 end TauCeti
