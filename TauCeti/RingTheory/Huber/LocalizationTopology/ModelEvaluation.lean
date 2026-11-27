@@ -76,6 +76,7 @@ theorem modelEvalHom_apply (x : letI := P.toNonarchimedeanRing
   rfl
 
 /-- `modelEvalHom` sends a constant series to its image under `algebraMap A B`. -/
+@[simp]
 theorem modelEvalHom_weightedC (a : A) :
     letI := P.toNonarchimedeanRing
     modelEvalHom P hT e t ht (weightedC _ isWeightFamily_one_weight a) = algebraMap A B a := by
