@@ -62,6 +62,7 @@ commuting squares of theta lifts built from it. This file develops the linear al
   `x ↦ χ (det g) * Φ (x g)` and `y ↦ Ψ (g⁻¹ y)`.
 * `MulChar.exists_areMatched_iff`: `Ψ` has a matched partner if and only if it vanishes off the
   `y_k` and `χ (det h) * Ψ (y h) = Ψ y` for all `h ∈ GL_b(R)`.
+* `MulChar.rowBlockFun_apply`, `MulChar.colBlockFun_apply`: the block functions at a general matrix.
 * `MulChar.areMatched_rowBlockFun_colBlockFun`: the block functions of `f` are matched.
 * `MulChar.sum_rowBlockFun_mul`, `MulChar.sum_colBlockFun_mul`: the pairings of the block
   functions with equivariant functions.
@@ -348,17 +349,35 @@ noncomputable def colBlockFun [Fintype b] [DecidableEq b] (χ : MulChar R Λ) (�
 
 variable (χ : MulChar R Λ) {σ : b ⊕ a ≃ n} (f : Matrix a b R → Λ)
 
+/-- The row block function at a general matrix `x` is `χ⁻¹ (det x₂) * f (x₂⁻¹ * x₁)`, where `x₂`
+is the square block of the columns indexed by `a` and `x₁` the block of the columns indexed by
+`b`. -/
+theorem rowBlockFun_apply [Fintype a] [DecidableEq a] (x : Matrix a n R) :
+    χ.rowBlockFun σ f x =
+      χ⁻¹ (x.submatrix id (σ ∘ Sum.inr)).det *
+        f ((x.submatrix id (σ ∘ Sum.inr))⁻¹ * x.submatrix id (σ ∘ Sum.inl)) :=
+  (rfl)
+
+/-- The column block function at a general matrix `y` is `χ⁻¹ (det y₁) * f (-(y₂ * y₁⁻¹))`, where
+`y₁` is the square block of the rows indexed by `b` and `y₂` the block of the rows indexed by
+`a`. -/
+theorem colBlockFun_apply [Fintype b] [DecidableEq b] (y : Matrix n b R) :
+    χ.colBlockFun σ f y =
+      χ⁻¹ (y.submatrix (σ ∘ Sum.inl) id).det *
+        f (-(y.submatrix (σ ∘ Sum.inr) id * (y.submatrix (σ ∘ Sum.inl) id)⁻¹)) :=
+  (rfl)
+
 /-- The row block function vanishes where the square block of the columns `a` is singular. -/
 theorem rowBlockFun_eq_zero [Fintype a] [DecidableEq a] {x : Matrix a n R}
     (hx : ¬IsUnit (x.submatrix id (σ ∘ Sum.inr)).det) :
     χ.rowBlockFun σ f x = 0 := by
-  rw [rowBlockFun, χ⁻¹.map_nonunit hx, zero_mul]
+  rw [rowBlockFun_apply, χ⁻¹.map_nonunit hx, zero_mul]
 
 /-- The column block function vanishes where the square block of the rows `b` is singular. -/
 theorem colBlockFun_eq_zero [Fintype b] [DecidableEq b] {y : Matrix n b R}
     (hy : ¬IsUnit (y.submatrix (σ ∘ Sum.inl) id).det) :
     χ.colBlockFun σ f y = 0 := by
-  rw [colBlockFun, χ⁻¹.map_nonunit hy, zero_mul]
+  rw [colBlockFun_apply, χ⁻¹.map_nonunit hy, zero_mul]
 
 /-- The row block function at `h * (z 1)`, the matrix with blocks `h z` on the columns `b` and `h`
 on the columns `a`, is `χ⁻¹ (det h) * f z`. -/
@@ -366,7 +385,7 @@ on the columns `a`, is `χ⁻¹ (det h) * f z`. -/
 theorem rowBlockFun_mul_fromCols [Fintype a] [DecidableEq a] (h : GL a R) (z : Matrix a b R) :
     χ.rowBlockFun σ f ((h : Matrix a a R) * (fromCols z 1).submatrix id σ.symm) =
       χ⁻¹ (h : Matrix a a R).det * f z := by
-  rw [rowBlockFun, submatrix_mul_fromCols_submatrix_comp_inl,
+  rw [rowBlockFun_apply, submatrix_mul_fromCols_submatrix_comp_inl,
     submatrix_mul_fromCols_submatrix_comp_inr, Matrix.mul_one,
     nonsing_inv_mul_cancel_left _ _ (isUnits_det_units h)]
 
@@ -376,7 +395,7 @@ theorem rowBlockFun_mul_fromCols [Fintype a] [DecidableEq a] (h : GL a R) (z : M
 theorem colBlockFun_fromRows_mul [Fintype b] [DecidableEq b] (h : GL b R) (z : Matrix a b R) :
     χ.colBlockFun σ f ((fromRows 1 (-z)).submatrix σ.symm id * (h : Matrix b b R)) =
       χ⁻¹ (h : Matrix b b R).det * f z := by
-  rw [colBlockFun, submatrix_fromRows_submatrix_mul_comp_inl,
+  rw [colBlockFun_apply, submatrix_fromRows_submatrix_mul_comp_inl,
     submatrix_fromRows_submatrix_mul_comp_inr, Matrix.one_mul,
     mul_nonsing_inv_cancel_right _ _ (isUnits_det_units h), neg_neg]
 
@@ -397,8 +416,8 @@ theorem areMatched_rowBlockFun_colBlockFun [Fintype a] [Fintype b] [Fintype n] [
     set K : Matrix n n R := (k : Matrix n n R)
     have hK : IsUnit K.det := isUnits_det_units k
     have hjac := det_submatrix_comp_inl_eq_det_mul_det_submatrix_comp_inr_nonsing_inv K hK σ
-    simp only [rowBlockFun, colBlockFun, coe_units_inv, submatrix_submatrix, Function.comp_id,
-      Function.id_comp]
+    simp only [rowBlockFun_apply, colBlockFun_apply, coe_units_inv, submatrix_submatrix,
+      Function.comp_id, Function.id_comp]
     by_cases hu : IsUnit (K⁻¹.submatrix (σ ∘ Sum.inr) (σ ∘ Sum.inr)).det
     · rw [inv_submatrix_nonsing_inv_mul_eq_neg_submatrix_mul_inv K hK σ, hjac, map_mul,
         ← mul_assoc, ← mul_assoc, apply_mul_inv_apply_of_isUnit χ hK, one_mul]
