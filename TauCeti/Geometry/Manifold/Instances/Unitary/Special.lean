@@ -9,12 +9,9 @@ public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Geometry.Lie.Subgroup.Transport
 public import TauCeti.Geometry.Manifold.Instances.Unitary
 public import TauCeti.Topology.Algebra.UnitaryGroup
-import TauCeti.Geometry.Lie.Exponential.Matrix.SpecialOrthogonal
-import TauCeti.Geometry.Lie.Subgroup.Units
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
-import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
-import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The special unitary group as a smooth Lie group
@@ -64,8 +61,9 @@ structure, `open scoped Matrix.Norms.L2Operator` and enable
   smoothness of maps into the special unitary group, tested after coercion to the matrices.
 * `Matrix.specialUnitaryGroup.isSmoothEmbedding_inclusion_unitaryGroup`: the inclusion into the
   unitary group is a smooth embedding.
+* `Matrix.instContMDiffSMulMulVec`: the matrices act smoothly on column vectors `n → 𝕜`.
 * `Matrix.specialUnitaryGroup.instContMDiffSMul`: a smooth action of the matrices restricts to the
-  special unitary group.
+  special unitary group; in particular the special unitary group acts smoothly on `n → 𝕜`.
 
 ## References
 
@@ -207,6 +205,16 @@ theorem isSmoothEmbedding_inclusion_unitaryGroup :
     .of_comp (continuous_inclusion specialUnitaryGroup_le_unitaryGroup) continuous_subtypeVal
       .subtypeVal⟩
 
+/-- The matrices act smoothly on column vectors, `A • v = A *ᵥ v` (`Matrix.smul_eq_mulVec`): the
+action is a real bilinear map of finite-dimensional spaces. -/
+instance _root_.Matrix.instContMDiffSMulMulVec {k : ℕ∞ω} :
+    ContMDiffSMul 𝓘(ℝ, Matrix n n 𝕜) 𝓘(ℝ, n → 𝕜) k (Matrix n n 𝕜) (n → 𝕜) where
+  contMDiff_smul := by
+    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
+    -- The action is the real bilinear map `(A, v) ↦ A *ᵥ v`.
+    exact (Matrix.mulVecBilin ℝ ℝ : Matrix n n 𝕜 →ₗ[ℝ] (n → 𝕜) →ₗ[ℝ] (n → 𝕜))
+      |>.toContinuousBilinearMap.isBoundedBilinearMap.contDiff.contMDiff
+
 /-- Any `C^k` action (`k ≤ ∞`) of the matrices on a manifold restricts to a `C^k` action of the
 special unitary group. -/
 instance instContMDiffSMul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -217,40 +225,5 @@ instance instContMDiffSMul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E
     ContMDiffSMul (model n 𝕜) I k (specialUnitaryGroup n 𝕜) M :=
   MulAction.contMDiffSMul_compHom (f := (specialUnitaryGroup n 𝕜).subtype)
     (contMDiff_val.of_le ENat.LEInfty.out)
-
-/-- The native model of the real special orthogonal group has one dimension for each
-strictly upper-triangular matrix entry. -/
-theorem finrank_model_real :
-    Module.finrank ℝ (LieSubalgebra.toSubmodule
-      (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n ℝ))
-        (TauCeti.GLSpecialUnitary n ℝ))) = (Fintype.card n).choose 2 := by
-  let : LieRing (Matrix n n ℝ) := LieRing.ofAssociativeRing
-  let e : TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n ℝ))
-      (TauCeti.GLSpecialUnitary n ℝ) ≃ₗ⁅ℝ⁆ LieAlgebra.Orthogonal.so n ℝ := by
-    apply LieEquiv.ofSubalgebras _ _ (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix n n ℝ))
-    ext A
-    simp only [Submodule.mem_map_equiv, LieSubalgebra.mem_map_submodule]
-    have hA : (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix n n ℝ)).symm A ∈
-        TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n ℝ))
-          (TauCeti.GLSpecialUnitary n ℝ) ↔ A ∈ LieAlgebra.Orthogonal.so n ℝ := by
-      rw [TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff
-        (TauCeti.isClosed_GLSpecialUnitary n ℝ)]
-      simp only [TauCeti.GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup, TauCeti.expUnit_coe]
-      exact Matrix.forall_exp_smul_mem_specialOrthogonalGroup_iff_mem_so A
-    exact hA
-  let : LinearOrder n := LinearOrder.lift' (Fintype.equivFin n) (Fintype.equivFin n).injective
-  let h : LieAlgebra.Orthogonal.so n ℝ ≃ Matrix.skewAddSubgroup n ℝ :=
-    Equiv.subtypeEquiv (Equiv.refl _) fun A ↦
-      (LieAlgebra.Orthogonal.mem_so n ℝ A).trans (Matrix.mem_skewAddSubgroup A).symm
-  let c : LieAlgebra.Orthogonal.so n ℝ ≃ₗ[ℝ] ({p : n × n // p.1 < p.2} → ℝ) :=
-    { toEquiv := h.trans (Matrix.skewStrictUpperAddEquiv (by intro x hx; linarith)).toEquiv
-      map_add' := by intro A B; ext p; simp [h]
-      map_smul' := by intro a A; ext p; simp [h] }
-  calc
-    _ = Module.finrank ℝ ({p : n × n // p.1 < p.2} → ℝ) :=
-      (e.toLinearEquiv.trans c).finrank_eq
-    _ = (Fintype.card n).choose 2 := by
-      rw [Module.finrank_fintype_fun_eq_card, ← Nat.card_eq_fintype_card,
-        Fintype.natCard_subtype_lt]
 
 end Matrix.specialUnitaryGroup

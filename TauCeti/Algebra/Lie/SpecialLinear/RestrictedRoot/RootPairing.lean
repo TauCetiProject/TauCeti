@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 import TauCeti.Algebra.Lie.Sl2.Basic
-import TauCeti.LinearAlgebra.RootSystem.ConsecutiveDifferenceBase
+import TauCeti.LinearAlgebra.RootSystem.TypeAPairing
 
 /-!
 # The restricted root system of `𝔰𝔩_n(ℝ)` has type `A`
@@ -27,10 +27,9 @@ root pairing `LieEquiv.IsCartanInvolution.restrictedRootPairing` of this example
   `CartanMatrix.A r`: the restricted root system has Cartan type `A_r`;
 * every restricted root has multiplicity `1`.
 
-The base is built in the same way as the standard base `TauCeti.specialLinearPositiveBase` of
-`TauCeti.Algebra.Lie.SpecialLinear.Root.Base`, through the consecutive-difference lemmas
-`RootPairing.root_mem_or_neg_mem_closure_of_forall_exists_eq_sub` and
-`RootPairing.linearIndepOn_root_range_of_root_mem_or_neg_mem_closure`.
+The reducedness, the base and the Cartan type depend only on the pairing formula, and are read off
+it by the general results `RootPairing.isReduced_of_pairing_eq_delta`, `RootPairing.typeABase` and
+`RootPairing.hasCartanType_typeABase` of `TauCeti.LinearAlgebra.RootSystem.TypeAPairing`.
 
 ## Main definitions
 
@@ -143,16 +142,9 @@ instance finite_restrictedRoots_specialLinearDiagonal :
 /-- **The restricted root system of `𝔰𝔩_{r+1}(ℝ)` is reduced**: the only restricted roots
 proportional to a restricted root `α` are `±α`. -/
 instance isReduced_specialLinearRestrictedRootPairing :
-    (specialLinearRestrictedRootPairing r).IsReduced := by
-  refine ⟨fun μ ν h ↦ ?_⟩
-  rw [← RootPairing.coxeterWeight_eq_four_iff_not_linearIndependent,
-    RootPairing.coxeterWeight] at h
-  obtain ⟨i, j, hij, rfl⟩ := exists_eq_specialLinearRestrictedRootIndex μ
-  obtain ⟨k, l, hkl, rfl⟩ := exists_eq_specialLinearRestrictedRootIndex ν
-  rw [specialLinearRestrictedRootPairing_pairing, specialLinearRestrictedRootPairing_pairing] at h
-  simp only [LieEquiv.IsCartanInvolution.restrictedRootPairing_root,
-    coe_specialLinearRestrictedRootIndex, neg_specialLinearRestrictedRoot]
-  split_ifs at h <;> subst_vars <;> simp_all
+    (specialLinearRestrictedRootPairing r).IsReduced :=
+  RootPairing.isReduced_of_pairing_eq_delta exists_eq_specialLinearRestrictedRootIndex
+    fun _ _ _ _ ↦ specialLinearRestrictedRootPairing_pairing
 
 /-! ### The base of simple roots -/
 
@@ -169,59 +161,45 @@ theorem specialLinearSimpleRestrictedRootIndex_def (k : Fin r) :
 
 /-- Distinct indices give distinct simple restricted roots. -/
 theorem specialLinearSimpleRestrictedRootIndex_injective :
-    Function.Injective (specialLinearSimpleRestrictedRootIndex r) := fun k l h ↦ by
-  have h' := congrArg (fun μ : (specialLinearDiagonal r ℝ).restrictedRoots ↦
-    (μ : Dual ℝ (specialLinearDiagonal r ℝ))) h
-  simp only [specialLinearSimpleRestrictedRootIndex_def, coe_specialLinearRestrictedRootIndex] at h'
-  exact Fin.castSucc_injective _ ((specialLinearRestrictedRoot_inj Fin.castSucc_lt_succ.ne).mp h').1
+    Function.Injective (specialLinearSimpleRestrictedRootIndex r) :=
+  RootPairing.injective_of_pairing_eq_delta (P := specialLinearRestrictedRootPairing r)
+    (fun _ _ _ _ ↦ specialLinearRestrictedRootPairing_pairing)
+    specialLinearSimpleRestrictedRootIndex_def
 
-/-- Every restricted root is a sum of simple roots or the negative of one. -/
-private theorem root_mem_or_neg_mem_closure (μ : (specialLinearDiagonal r ℝ).restrictedRoots) :
-    (specialLinearRestrictedRootPairing r).root μ ∈
-        AddSubmonoid.closure ((specialLinearRestrictedRootPairing r).root ''
-          range (specialLinearSimpleRestrictedRootIndex r)) ∨
-      -(specialLinearRestrictedRootPairing r).root μ ∈
-        AddSubmonoid.closure ((specialLinearRestrictedRootPairing r).root ''
-          range (specialLinearSimpleRestrictedRootIndex r)) := by
-  have hroot (i j : Fin (r + 1)) (hij : i ≠ j) :
-      (specialLinearRestrictedRootPairing r).root (specialLinearRestrictedRootIndex r i j hij) =
-        specialLinearRestrictedRoot r ℝ i 0 - specialLinearRestrictedRoot r ℝ j 0 := by
-    rw [LieEquiv.IsCartanInvolution.restrictedRootPairing_root,
-      coe_specialLinearRestrictedRootIndex,
-      specialLinearRestrictedRoot_sub_specialLinearRestrictedRoot]
-  refine RootPairing.root_mem_or_neg_mem_closure_of_forall_exists_eq_sub
-    (fun a ↦ specialLinearRestrictedRoot r ℝ a 0) (fun k ↦ hroot _ _ _) (fun ν ↦ ?_) μ
-  obtain ⟨i, j, hij, rfl⟩ := exists_eq_specialLinearRestrictedRootIndex ν
-  exact ⟨i, j, hroot i j hij⟩
+/-- `e_i - e_j = (e_i - e_0) - (e_j - e_0)`. -/
+private theorem specialLinearRestrictedRootPairing_root_eq_sub (i j : Fin (r + 1)) (hij : i ≠ j) :
+    (specialLinearRestrictedRootPairing r).root (specialLinearRestrictedRootIndex r i j hij) =
+      specialLinearRestrictedRoot r ℝ i 0 - specialLinearRestrictedRoot r ℝ j 0 := by
+  rw [LieEquiv.IsCartanInvolution.restrictedRootPairing_root,
+    coe_specialLinearRestrictedRootIndex,
+    specialLinearRestrictedRoot_sub_specialLinearRestrictedRoot]
 
 variable (r) in
 /-- **The base of simple restricted roots** `e_k - e_{k+1}`, `k < r`, of `𝔰𝔩_{r+1}(ℝ)`. -/
 noncomputable def specialLinearRestrictedRootBase :
     (specialLinearRestrictedRootPairing r).Base :=
-  RootPairing.Base.mk' _ (range (specialLinearSimpleRestrictedRootIndex r))
-    (RootPairing.linearIndepOn_root_range_of_root_mem_or_neg_mem_closure
-      specialLinearSimpleRestrictedRootIndex_injective root_mem_or_neg_mem_closure <| by
-        rw [Subspace.dual_finrank_eq, finrank_eq_card_basis (specialLinearCorootBasis r ℝ),
-          Fintype.card_fin])
-    root_mem_or_neg_mem_closure
+  RootPairing.typeABase (fun a ↦ specialLinearRestrictedRoot r ℝ a 0)
+    exists_eq_specialLinearRestrictedRootIndex
+    (fun _ _ _ _ ↦ specialLinearRestrictedRootPairing_pairing)
+    specialLinearRestrictedRootPairing_root_eq_sub specialLinearSimpleRestrictedRootIndex_def
+    (by rw [Subspace.dual_finrank_eq, finrank_eq_card_basis (specialLinearCorootBasis r ℝ),
+      Fintype.card_fin])
 
 /-- The simple roots of `TauCeti.specialLinearRestrictedRootBase` are the `e_k - e_{k+1}`. -/
 theorem specialLinearRestrictedRootBase_support :
     (specialLinearRestrictedRootBase r).support =
-      simpleSupport (specialLinearSimpleRestrictedRootIndex_injective (r := r)) := by
-  ext μ
-  simp [specialLinearRestrictedRootBase, RootPairing.Base.mk']
+      simpleSupport (specialLinearSimpleRestrictedRootIndex_injective (r := r)) :=
+  RootPairing.typeABase_support ..
 
 /-- The pairing of the simple roots `e_a - e_{a+1}` and `e_b - e_{b+1}` is the `(a, b)` entry of
 the Cartan matrix of type `A_r`. -/
 theorem specialLinearRestrictedRootPairing_pairing_simple (a b : Fin r) :
     (specialLinearRestrictedRootPairing r).pairing (specialLinearSimpleRestrictedRootIndex r a)
         (specialLinearSimpleRestrictedRootIndex r b) =
-      (CartanMatrix.A r a b : ℝ) := by
-  rw [specialLinearSimpleRestrictedRootIndex_def, specialLinearSimpleRestrictedRootIndex_def,
-    specialLinearRestrictedRootPairing_pairing]
-  simp only [CartanMatrix.A, Matrix.of_apply, Fin.ext_iff, Fin.val_castSucc, Fin.val_succ]
-  split_ifs <;> norm_num <;> omega
+      (CartanMatrix.A r a b : ℝ) :=
+  RootPairing.pairing_eq_cartanMatrix_A_of_pairing_eq_delta
+    (fun _ _ _ _ ↦ specialLinearRestrictedRootPairing_pairing)
+    specialLinearSimpleRestrictedRootIndex_def a b
 
 /-- **The restricted root system of `𝔰𝔩_{r+1}(ℝ)` has Cartan type `A_r`**: relative to the base
 of simple roots `e_k - e_{k+1}` its Cartan matrix is `CartanMatrix.A r`. In particular the
@@ -229,10 +207,7 @@ restricted root system of `𝔰𝔩₃(ℝ)` has type `A₂`. -/
 theorem hasCartanType_specialLinearRestrictedRootPairing :
     HasCartanType (specialLinearRestrictedRootPairing r) (specialLinearRestrictedRootBase r)
       (.A r) :=
-  hasCartanType_of_pairing_eq (t := .A r)
-    (specialLinearSimpleRestrictedRootIndex_injective (r := r))
-    specialLinearRestrictedRootBase_support fun a b ↦
-      (specialLinearRestrictedRootPairing_pairing_simple (r := r) a b).trans (by simp)
+  RootPairing.hasCartanType_typeABase ..
 
 /-- **Every restricted root of `𝔰𝔩_{r+1}(ℝ)` has multiplicity `1`**: its root space is the line
 `ℝ E_ij`. -/

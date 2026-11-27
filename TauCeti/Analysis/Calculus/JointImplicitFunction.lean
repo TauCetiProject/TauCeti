@@ -5,8 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.ImplicitContDiff
 public import TauCeti.Analysis.Analytic.Inverse
+import Mathlib.Analysis.Analytic.Constructions
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Topology.OpenPartialHomeomorph.Constructions
+import TauCeti.Analysis.Analytic.IteratedDeriv
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # The implicit function theorem with a moving level
@@ -33,8 +39,13 @@ map of a holomorphic equation, see `TauCeti.Analysis.Complex.ImplicitFunction`.
   `f (z, ψ (z, w)) = w`.
 * `HasStrictFDerivAt.eventually_jointImplicitFunctionOfProdDomain_apply`: near `u`,
   `ψ (z, f (z, v)) = v`.
+* `HasStrictFDerivAt.toOpenPartialHomeomorph_symm_implicitFunctionDataOfProdDomain`: pointwise
+  formula `(z, ψ (z, w))` for the inverse chart on its target.
 * `HasStrictFDerivAt.eventually_apply_eq_iff_jointImplicitFunctionOfProdDomain`: near
   `(u, f u)`, `f (z, v) = w ↔ ψ (z, w) = v`.
+* `HasStrictFDerivAt.exists_nhds_bijOn_jointImplicitFunctionOfProdDomain`: given `S ∈ 𝓝 u`,
+  provides neighbourhoods `U ∈ 𝓝 u` (`U ⊆ S`) and `V ∈ 𝓝 (u.1, f u)` where `(z, v) ↦ (z, f (z, v))`
+  and `(z, w) ↦ (z, ψ (z, w))` are mutually inverse bijections.
 * `HasStrictFDerivAt.eventuallyEq_jointImplicitFunctionOfProdDomain` and
   `HasStrictFDerivAt.eventuallyEq_jointImplicitFunctionOfProdDomain_of_continuousAt`: local
   uniqueness of `ψ`, from a left-inverse identity, or from a right-inverse identity together with
@@ -43,6 +54,13 @@ map of a holomorphic equation, see `TauCeti.Analysis.Complex.ImplicitFunction`.
   at `(u.1, f u)` is `(z, w) ↦ ∂₂f(u)⁻¹ (w - ∂₁f(u) z)`.
 * `HasStrictFDerivAt.contDiffAt_jointImplicitFunctionOfProdDomain` and
   `HasStrictFDerivAt.analyticAt_jointImplicitFunctionOfProdDomain`: `ψ` is as regular as `f`.
+* `TauCeti.eventually_mul_deriv_snd_eq`: pullback identity
+  `f(α, w(α, t)) ∂w/∂t (α, t) = q(α, t)` for the transformed amplitude
+  `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)` of a supplied local inverse `T`.
+* `AnalyticAt.exists_analyticAt_mul_deriv_eq`: for a scalar analytic coordinate `w : E × 𝕜 → 𝕜`
+  with `∂w/∂t ≠ 0` and analytic amplitude `q`, constructs the analytic local inverse `T` and
+  transformed amplitude `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)` satisfying
+  `f(α, w(α, t)) ∂w/∂t (α, t) = q(α, t)`.
 
 ## References
 
@@ -86,6 +104,21 @@ theorem implicitFunctionOfProdDomain_eq_jointImplicitFunctionOfProdDomain
     dfu.implicitFunctionOfProdDomain if₂u =
       fun z ↦ dfu.jointImplicitFunctionOfProdDomain if₂u (z, f u) := by
   rw [implicitFunctionOfProdDomain_def, jointImplicitFunctionOfProdDomain_def]
+
+/-- On the target of the underlying implicit-function chart, the local inverse computes
+`(z, ψ (z, w))` from `(w, z)`. -/
+theorem toOpenPartialHomeomorph_symm_implicitFunctionDataOfProdDomain
+    (dfu : HasStrictFDerivAt f f'u u) (if₂u : (f'u ∘L .inr 𝕜 E₁ E₂).IsInvertible)
+    {y : F × E₁}
+    (hy : y ∈ (dfu.implicitFunctionDataOfProdDomain if₂u).toOpenPartialHomeomorph.target) :
+    (dfu.implicitFunctionDataOfProdDomain if₂u).toOpenPartialHomeomorph.symm y =
+      (y.2, dfu.jointImplicitFunctionOfProdDomain if₂u y.swap) := by
+  have hD := (dfu.implicitFunctionDataOfProdDomain if₂u).toOpenPartialHomeomorph.right_inv hy
+  have h1 :
+      ((dfu.implicitFunctionDataOfProdDomain if₂u).toOpenPartialHomeomorph.symm y).1 = y.2 := by
+    simpa using congrArg Prod.snd hD
+  refine Prod.ext h1 ?_
+  simp [jointImplicitFunctionOfProdDomain_def, ImplicitFunctionData.implicitFunction_apply]
 
 /-- The joint implicit function, written through the uncurried implicit function of
 `implicitFunctionDataOfProdDomain`, whose variables are `(w, z)`. -/
@@ -251,9 +284,129 @@ theorem analyticAt_jointImplicitFunctionOfProdDomain (dfu : HasStrictFDerivAt f 
   rw [jointImplicitFunctionOfProdDomain_eq_comp]
   exact analyticAt_snd.comp (h.comp_of_eq (analyticAt_snd.prod analyticAt_fst) rfl)
 
+/-- For any neighbourhood `S ∈ 𝓝 u`, there exist neighbourhoods `U ∈ 𝓝 u` with `U ⊆ S` and
+`V ∈ 𝓝 (u.1, f u)` on which `p ↦ (p.1, ψ p)` (where `ψ` is the joint implicit function) maps
+`V` into `U` (`Set.MapsTo`), `q ↦ (q.1, f q)` and `p ↦ (p.1, ψ p)` are mutually inverse
+(`Set.InvOn`), and `q ↦ (q.1, f q)` forms a bijection from `U` to `V` (`Set.BijOn`). -/
+theorem exists_nhds_bijOn_jointImplicitFunctionOfProdDomain
+    (dfu : HasStrictFDerivAt f f'u u) (if₂u : (f'u ∘L .inr 𝕜 E₁ E₂).IsInvertible)
+    {S : Set (E₁ × E₂)} (hS : S ∈ 𝓝 u) :
+    ∃ U ∈ 𝓝 u, ∃ V ∈ 𝓝 (u.1, f u), U ⊆ S ∧
+      Set.MapsTo (fun p : E₁ × F ↦ (p.1, dfu.jointImplicitFunctionOfProdDomain if₂u p)) V U ∧
+      Set.InvOn (fun p : E₁ × F ↦ (p.1, dfu.jointImplicitFunctionOfProdDomain if₂u p))
+        (fun q : E₁ × E₂ ↦ (q.1, f q)) U V ∧
+      Set.BijOn (fun q : E₁ × E₂ ↦ (q.1, f q)) U V := by
+  set D := dfu.implicitFunctionDataOfProdDomain if₂u
+  set ψ : E₁ × F → E₂ := dfu.jointImplicitFunctionOfProdDomain if₂u
+  obtain ⟨S₀, hS₀_sub, hS₀_open, huS₀⟩ := _root_.mem_nhds_iff.1 hS
+  set e₀ : OpenPartialHomeomorph (E₁ × E₂) (E₁ × F) :=
+    D.toOpenPartialHomeomorph.transHomeomorph (Homeomorph.prodComm F E₁)
+  set e : OpenPartialHomeomorph (E₁ × E₂) (E₁ × F) := e₀.restrOpen S₀ hS₀_open
+  have he_coe : ⇑e = fun q : E₁ × E₂ ↦ (q.1, f q) := by
+    ext q <;> simp [e, OpenPartialHomeomorph.coe_restrOpen, e₀,
+      OpenPartialHomeomorph.transHomeomorph_apply, D]
+  have he_src : e.source = D.toOpenPartialHomeomorph.source ∩ S₀ := by
+    rw [OpenPartialHomeomorph.restrOpen_source, OpenPartialHomeomorph.transHomeomorph_source]
+  have he_tgt : e.target = e₀.target ∩ e₀.symm ⁻¹' S₀ :=
+    (congrArg PartialEquiv.target (e₀.restrOpen_toPartialEquiv S₀ hS₀_open)).trans
+      (e₀.toPartialEquiv.restr_target S₀)
+  have he_tgt_sub : e.target ⊆ e₀.target := he_tgt ▸ Set.inter_subset_left
+  have he_symm : Set.EqOn e.symm (fun p : E₁ × F ↦ (p.1, ψ p)) e.target := fun p hp ↦ by
+    have hp₀ : p.swap ∈ D.toOpenPartialHomeomorph.target := by
+      simpa [e₀, OpenPartialHomeomorph.transHomeomorph_target] using he_tgt_sub hp
+    rw [OpenPartialHomeomorph.coe_restrOpen_symm, OpenPartialHomeomorph.transHomeomorph_symm_apply]
+    simpa [ψ, D] using dfu.toOpenPartialHomeomorph_symm_implicitFunctionDataOfProdDomain if₂u hp₀
+  have hu_src : u ∈ e.source :=
+    he_src ▸ ⟨by simpa [D] using D.pt_mem_toOpenPartialHomeomorph_source, huS₀⟩
+  have hU_sub : e.source ⊆ S := fun q hq ↦ hS₀_sub (he_src ▸ hq).2
+  have hU_mem : e.source ∈ 𝓝 u := e.open_source.mem_nhds hu_src
+  have hV_mem : e.target ∈ 𝓝 (u.1, f u) :=
+    e.open_target.mem_nhds (by simpa [he_coe] using e.map_source hu_src)
+  have hU_maps : Set.MapsTo (fun q : E₁ × E₂ ↦ (q.1, f q)) e.source e.target := he_coe ▸ e.mapsTo
+  have hV_maps : Set.MapsTo (fun p : E₁ × F ↦ (p.1, ψ p)) e.target e.source :=
+    he_symm.mapsTo_iff.1 e.mapsTo_symm
+  have hinv_UV : Set.InvOn (fun p : E₁ × F ↦ (p.1, ψ p)) (fun q : E₁ × E₂ ↦ (q.1, f q))
+      e.source e.target := by
+    have hleft : Set.LeftInvOn e.symm (fun q : E₁ × E₂ ↦ (q.1, f q)) e.source := by
+      simpa [he_coe] using e.leftInvOn
+    have hright : Set.RightInvOn e.symm (fun q : E₁ × E₂ ↦ (q.1, f q)) e.target := by
+      simpa [he_coe] using e.rightInvOn
+    exact ⟨hleft.congr_left hU_maps he_symm, hright.congr_left he_symm⟩
+  have hbij : Set.BijOn (fun q : E₁ × E₂ ↦ (q.1, f q)) e.source e.target := he_coe ▸ e.bijOn
+  exact ⟨e.source, hU_mem, e.target, hV_mem, hU_sub, hV_maps, hinv_UV, hbij⟩
+
 end HasStrictFDerivAt
 
 end NontriviallyNormedField
+
+namespace TauCeti
+
+/-- **Pullback identity for a local inverse** (DLMF 2.4.20). If `w, T : E × 𝕜 → 𝕜` satisfy
+`T (α, w (α, t)) = t` near `(α₀, t₀)` and the vertical slices `t ↦ w (α, t)` (at `t`) and
+`s ↦ T (α, s)` (at `w (α, t)`) are differentiable for `(α, t)` near `(α₀, t₀)`, then for any
+amplitude `q : E × 𝕜 → 𝕜`, the transformed amplitude `f u = q (u.1, T u) * ∂T/∂u (u)` satisfies
+`f (α, w (α, t)) * ∂w/∂t (α, t) = q (α, t)` near `(α₀, t₀)`. -/
+theorem eventually_mul_deriv_snd_eq {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace E]
+    {w T : E × 𝕜 → 𝕜} (q : E × 𝕜 → 𝕜) {α₀ : E} {t₀ : 𝕜}
+    (hw : ∀ᶠ x in 𝓝 (α₀, t₀), DifferentiableAt 𝕜 (fun t => w (x.1, t)) x.2)
+    (hT : ∀ᶠ x in 𝓝 (α₀, t₀), DifferentiableAt 𝕜 (fun s => T (x.1, s)) (w x))
+    (hT_left : ∀ᶠ x in 𝓝 (α₀, t₀), T (x.1, w x) = x.2) :
+    ∀ᶠ x in 𝓝 (α₀, t₀),
+      (q (x.1, T (x.1, w x)) * deriv (fun s => T (x.1, s)) (w x)) *
+        deriv (fun t => w (x.1, t)) x.2 = q x := by
+  filter_upwards [hT_left.eventually_nhds, hw, hT] with x hx_nhds hwt hTs
+  have hx_eq : T (x.1, w x) = x.2 := hx_nhds.self_of_nhds
+  have hchain := (hTs.hasDerivAt.comp x.2 hwt.hasDerivAt).deriv
+  simp only [Function.comp_def] at hchain
+  have hid : (fun t => T (x.1, w (x.1, t))) =ᶠ[𝓝 x.2] id :=
+    ((continuous_const.prodMk continuous_id).tendsto x.2).eventually hx_nhds
+  have hjac : deriv (fun s => T (x.1, s)) (w x) * deriv (fun t => w (x.1, t)) x.2 = 1 := by
+    rw [← hchain, hid.deriv_eq, deriv_id]
+  rw [hx_eq, mul_assoc, hjac, mul_one]
+
+end TauCeti
+
+namespace AnalyticAt
+
+/-- **Analytic inverse coordinate and transformed amplitude** (DLMF 2.4.20). Given a coordinate
+`w : E × 𝕜 → 𝕜` analytic at `(α₀, t₀)` with `∂w/∂t (α₀, t₀) ≠ 0` and an amplitude `q : E × 𝕜 → 𝕜`
+analytic at `(α₀, t₀)` (over complete normed spaces `E, 𝕜`), there exist analytic functions `T` and
+`f` at `(α₀, w (α₀, t₀))` such that `T(α₀, w(α₀, t₀)) = t₀`, `w(α, T(α, u)) = u` and
+`f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)` near `(α₀, w (α₀, t₀))`, while `T(α, w(α, t)) = t` and
+`f(α, w(α, t)) ∂w/∂t (α, t) = q(α, t)` near `(α₀, t₀)`. -/
+theorem exists_analyticAt_mul_deriv_eq {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+    {w q : E × 𝕜 → 𝕜} {α₀ : E} {t₀ : 𝕜}
+    (hw : AnalyticAt 𝕜 w (α₀, t₀))
+    (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
+    (hq : AnalyticAt 𝕜 q (α₀, t₀)) :
+    ∃ T f : E × 𝕜 → 𝕜,
+      AnalyticAt 𝕜 T (α₀, w (α₀, t₀)) ∧ AnalyticAt 𝕜 f (α₀, w (α₀, t₀)) ∧
+      T (α₀, w (α₀, t₀)) = t₀ ∧
+      (∀ᶠ u in 𝓝 (α₀, w (α₀, t₀)),
+        w (u.1, T u) = u.2 ∧ f u = q (u.1, T u) * deriv (fun s => T (u.1, s)) u.2) ∧
+      ∀ᶠ x in 𝓝 (α₀, t₀),
+        T (x.1, w x) = x.2 ∧ f (x.1, w x) * deriv (fun t => w (x.1, t)) x.2 = q x := by
+  have df : HasStrictFDerivAt w (fderiv 𝕜 w (α₀, t₀)) (α₀, t₀) := hw.hasStrictFDerivAt
+  have hinv : (fderiv 𝕜 w (α₀, t₀) ∘L .inr 𝕜 E 𝕜).IsInvertible :=
+    hw.differentiableAt.isInvertible_fderiv_comp_inr_iff.2 hdw
+  set T : E × 𝕜 → 𝕜 := df.jointImplicitFunctionOfProdDomain hinv
+  have hTa : AnalyticAt 𝕜 T (α₀, w (α₀, t₀)) :=
+    df.analyticAt_jointImplicitFunctionOfProdDomain hinv hw
+  have hT0 : T (α₀, w (α₀, t₀)) = t₀ := df.jointImplicitFunctionOfProdDomain_apply_self hinv
+  have hT_left : ∀ᶠ x in 𝓝 (α₀, t₀), T (x.1, w x) = x.2 :=
+    df.eventually_jointImplicitFunctionOfProdDomain_apply hinv
+  have hwt : ∀ᶠ x in 𝓝 (α₀, t₀), DifferentiableAt 𝕜 (fun t => w (x.1, t)) x.2 :=
+    hw.eventually_analyticAt.mono fun _ h => h.curry_right.differentiableAt
+  have hTs : ∀ᶠ x in 𝓝 (α₀, t₀), DifferentiableAt 𝕜 (fun s => T (x.1, s)) (w x) :=
+    ((continuousAt_fst.prodMk hw.continuousAt).eventually hTa.eventually_analyticAt).mono
+      fun _ h => h.curry_right.differentiableAt
+  exact ⟨T, fun u => q (u.1, T u) * deriv (fun s => T (u.1, s)) u.2, hTa,
+    (hq.comp_of_eq (analyticAt_fst.prod hTa) (by simp [hT0])).fun_mul hTa.deriv_snd, hT0,
+    (df.eventually_apply_jointImplicitFunctionOfProdDomain hinv).mono fun _ hu => ⟨hu, rfl⟩,
+    hT_left.and (TauCeti.eventually_mul_deriv_snd_eq q hwt hTs hT_left)⟩
+
+end AnalyticAt
 
 section RCLike
 

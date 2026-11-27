@@ -12,7 +12,8 @@ public import TauCeti.Geometry.Manifold.Instances.Stiefel.LinearIsometry
 public import TauCeti.Geometry.Manifold.Instances.Unitary.Special
 public import TauCeti.Topology.Grassmannian.Oriented
 import Mathlib.Analysis.InnerProductSpace.Orientation
-import Mathlib.Data.Nat.Choose.Cast
+import TauCeti.Data.Nat.Choose.Basic
+import TauCeti.Geometry.Lie.Subgroup.Unitary.SpecialOrthogonal
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.Topology.Homeomorph.Quotient
 
@@ -439,12 +440,11 @@ abbrev Model :=
 
 /-- The quotient model has dimension `r (dim E - r)`. -/
 theorem finrank_model : finrank ℝ (Model E r) = (r : ℕ) * (finrank ℝ E - r) := by
+  have hSO : finrank ℝ (𝔰𝔬(r)) = (Fintype.card (Fin r)).choose 2 :=
+    finrank_specialOrthogonalLieAlgebra
   have h (k : ℕ) : (k + 1).choose 2 + k.choose 2 = k * k := by
-    have hQ : (((k + 1).choose 2 : ℕ) : ℚ) + (k.choose 2 : ℚ) = (k : ℚ) * k := by
-      push_cast [Nat.cast_choose_two]
-      ring
-    exact_mod_cast hQ
-  rw [ProperSMul.finrank_quotientModelSpace, specialUnitaryGroup.finrank_model_real,
+    simpa [Nat.add_comm 1 k] using Nat.add_choose_two_add_choose_two 1 k
+  rw [ProperSMul.finrank_quotientModelSpace, hSO,
     Fintype.card_fin, Module.finrank_fin_fun, Nat.sub_sub, h, Nat.mul_sub_left_distrib]
 
 variable [FiniteDimensional ℝ E]
