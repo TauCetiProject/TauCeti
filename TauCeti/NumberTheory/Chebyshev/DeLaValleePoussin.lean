@@ -28,6 +28,8 @@ writes `-ζ′/ζ = G + 1/(s - 1)` with `G` holomorphic on an open set containin
 
 * `Chebyshev.exists_abs_psi_sub_le_mul_exp_neg_mul_sqrt_log`: `|ψ(x) - x| ≤ C x exp(-c √(log x))`
   for `x ≥ 3`.
+* `Chebyshev.exists_abs_psi_sub_le_mul_exp_neg_mul_sqrt_log_one_le`: the same bound, with
+  `C > 0`, for every `x ≥ 1`.
 * `Chebyshev.exists_isBigO_psi_sub_id_mul_exp_neg_mul_sqrt_log`:
   `ψ(x) - x = O(x exp(-c √(log x)))`.
 
@@ -99,6 +101,28 @@ theorem exists_abs_psi_sub_le_mul_exp_neg_mul_sqrt_log :
     _ ≤ max C' 0 * x * Real.exp (-(c' * √c) * √(Real.log x)) := by
         refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) (by positivity)
         nlinarith [mul_le_mul_of_nonneg_left hω hc'.le]
+
+/-- The de la Vallée Poussin bound with a positive constant on the whole range `x ≥ 1`. -/
+theorem exists_abs_psi_sub_le_mul_exp_neg_mul_sqrt_log_one_le :
+    ∃ c > 0, ∃ C > 0, ∀ t : ℝ, 1 ≤ t → |ψ t - t| ≤ C * t * Real.exp (-c * √(Real.log t)) := by
+  obtain ⟨c, hc, C, hC⟩ := exists_abs_psi_sub_le_mul_exp_neg_mul_sqrt_log
+  let D := (ψ 3 + 3) / Real.exp (-c * √(Real.log 3))
+  have hD : 0 < D := div_pos (by linarith [psi_nonneg 3]) (Real.exp_pos _)
+  refine ⟨c, hc, max C D, hD.trans_le (le_max_right ..), fun t ht ↦ ?_⟩
+  rcases le_or_gt 3 t with ht₃ | ht₃
+  · exact (hC t ht₃).trans (by gcongr; exact le_max_left ..)
+  have hexp : Real.exp (-c * √(Real.log 3)) ≤ Real.exp (-c * √(Real.log t)) := by
+    apply Real.exp_le_exp.mpr
+    exact mul_le_mul_of_nonpos_left (Real.sqrt_le_sqrt (Real.log_le_log (by linarith) ht₃.le))
+      (neg_nonpos.mpr hc.le)
+  calc
+    |ψ t - t| ≤ ψ 3 + 3 := by
+      rw [abs_le]
+      constructor <;> linarith [psi_nonneg t, psi_nonneg 3, psi_mono ht₃.le]
+    _ = D * Real.exp (-c * √(Real.log 3)) := by dsimp [D]; field_simp
+    _ ≤ D * (t * Real.exp (-c * √(Real.log t))) :=
+      mul_le_mul_of_nonneg_left (hexp.trans (le_mul_of_one_le_left (Real.exp_pos _).le ht)) hD.le
+    _ ≤ _ := by rw [mul_assoc]; gcongr; exact le_max_right ..
 
 /-- **The prime number theorem with de la Vallée Poussin's error term**: there is `c > 0` with
 `ψ(x) - x = O(x exp(-c √(log x)))`. -/
