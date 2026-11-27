@@ -145,7 +145,7 @@ noncomputable def _root_.Subgroup.normalizerEquivOfNormal (D : Subgroup G) [D.No
 
 /-- `G ≃* N_G(D)` is the identity on underlying elements. -/
 @[to_additive (attr := simp) /-- `G ≃+ N_G(D)` is the identity on underlying elements. -/]
-theorem _root_.Subgroup.coe_normalizerEquivOfNormal (D : Subgroup G) [D.Normal] (g : G) :
+theorem _root_.Subgroup.normalizerEquivOfNormal_apply_coe (D : Subgroup G) [D.Normal] (g : G) :
     (normalizerEquivOfNormal D g : G) = g := by
   simp [normalizerEquivOfNormal]
 

@@ -204,9 +204,11 @@ theorem brauerProjection_conj_eq_zero_iff (g : G) {P : Subgroup G} {x : MonoidAl
 theorem brauerProjection_map_domCongr_eq_zero_iff {G' : Type*} [Group G'] (σ : G ≃* G')
     {P : Subgroup G} {x : MonoidAlgebra R G} :
     brauerProjection (P.map σ.toMonoidHom) (domCongr R R σ x) = 0 ↔ brauerProjection P x = 0 := by
-  rw [brauerProjection_eq_zero_iff, brauerProjection_eq_zero_iff, Subgroup.coe_map,
-    MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, ← MulEquiv.map_centralizer]
-  simp only [← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv, coeff_domCongr]
+  have hC : Subgroup.centralizer (P.map σ.toMonoidHom : Set G') =
+      (Subgroup.centralizer (P : Set G)).map σ.toMonoidHom := by
+    simpa using (σ.map_centralizer P).symm
+  rw [brauerProjection_eq_zero_iff, brauerProjection_eq_zero_iff, hC]
+  simp only [Subgroup.mem_map_equiv, coeff_domCongr]
   exact ⟨fun h c hc ↦ by simpa using h (σ c) (by simpa using hc), fun h c hc ↦ h _ hc⟩
 
 /-- **The Brauer projection of a conjugation-fixed element.** If conjugation by `g` fixes `x`, for
