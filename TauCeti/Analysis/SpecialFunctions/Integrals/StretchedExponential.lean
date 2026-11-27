@@ -24,10 +24,11 @@ open MeasureTheory Set
 
 namespace Real
 
-private theorem div_sqrt_add_le_div_sqrt_add {V v ℓ : ℝ}
-    (hℓ : 0 ≤ ℓ) (hV : 0 ≤ V) (hVv : V ≤ v) :
-    V / (√V + ℓ) ≤ v / (√v + ℓ) := by
-  rcases hV.eq_or_lt with rfl | hV
+/-- For `ℓ ≥ 0`, the exponent `v / (√v + ℓ)` is monotone on `[0, ∞)`. -/
+theorem monotoneOn_div_sqrt_add {ℓ : ℝ} (hℓ : 0 ≤ ℓ) :
+    MonotoneOn (fun v : ℝ ↦ v / (√v + ℓ)) (Ici 0) := by
+  intro V hV v _ hVv
+  rcases (mem_Ici.1 hV).eq_or_lt with rfl | hV
   · simp [div_nonneg hVv (by positivity : 0 ≤ √v + ℓ)]
   have hv := hV.trans_le hVv
   have hroot : √V ≤ √v := sqrt_le_sqrt hVv
@@ -39,7 +40,9 @@ private theorem div_sqrt_add_le_div_sqrt_add {V v ℓ : ℝ}
     _ ≤ √v * (√v / (√v + ℓ)) := by gcongr
     _ = v / (√v + ℓ) := by rw [← mul_div_assoc, ← sq, sq_sqrt hv.le]
 
-private theorem exp_neg_div_sqrt_add_le {c ℓ v : ℝ} (hc : 0 < c) (hℓ : 0 ≤ ℓ) (hv : 0 ≤ v) :
+/-- The mixed exponential is bounded by the sum of a square-root exponential and a linear
+exponential, each at a rate reduced by a factor `2`, the linear one also by `1 + ℓ`. -/
+theorem exp_neg_div_sqrt_add_le {c ℓ v : ℝ} (hc : 0 < c) (hℓ : 0 ≤ ℓ) (hv : 0 ≤ v) :
     exp (-(c * (v / (√v + ℓ)))) ≤
       exp (-(c / 2) * √v) + exp (-(c / (2 * (1 + ℓ))) * v) := by
   rcases hv.eq_or_lt with rfl | hv
@@ -53,16 +56,19 @@ private theorem exp_neg_div_sqrt_add_le {c ℓ v : ℝ} (hc : 0 < c) (hℓ : 0 �
   · have hlin : v / (2 * (1 + ℓ)) ≤ v / (√v + ℓ) :=
       div_le_div_of_nonneg_left hv.le hd (by linarith [lt_of_not_ge h])
     have he : -(c * (v / (√v + ℓ))) ≤ -(c / (2 * (1 + ℓ))) * v := by
-      have h := neg_le_neg (mul_le_mul_of_nonneg_left hlin hc.le)
-      simpa only [mul_div_assoc, neg_mul, div_mul_eq_mul_div, mul_comm v c] using h
+      rw [neg_mul, neg_le_neg_iff]
+      convert mul_le_mul_of_nonneg_left hlin hc.le using 1
+      ring
     exact (exp_le_exp.mpr he).trans (le_add_of_nonneg_left (exp_nonneg _))
 
-private theorem integrableOn_exp_mul_sqrt {r : ℝ} (hr : 0 < r) :
+/-- The square-root exponential `exp (-r √v)` is integrable on the positive ray. -/
+theorem integrableOn_Ioi_exp_neg_mul_sqrt {r : ℝ} (hr : 0 < r) :
     IntegrableOn (fun v : ℝ ↦ exp (-r * √v)) (Ioi 0) := by
   simpa [sqrt_eq_rpow] using integrableOn_rpow_mul_exp_neg_mul_rpow (s := 0) (p := 1 / 2)
     (by norm_num) (by norm_num) hr
 
-private theorem integral_exp_mul_sqrt {r : ℝ} (hr : 0 < r) :
+/-- The integral of the square-root exponential: `∫_{0}^{∞} exp (-r √v) dv = 2 / r ^ 2`. -/
+theorem integral_Ioi_exp_neg_mul_sqrt {r : ℝ} (hr : 0 < r) :
     ∫ v in Ioi (0 : ℝ), exp (-r * √v) = 2 / r ^ 2 := by
   have h := integral_exp_neg_mul_rpow (p := 1 / 2) (b := r) (by norm_num) hr
   have hGamma : Gamma (1 / (1 / 2 : ℝ) + 1) = 2 := by
@@ -70,15 +76,16 @@ private theorem integral_exp_mul_sqrt {r : ℝ} (hr : 0 < r) :
   have hpow : r ^ (-1 / (1 / 2 : ℝ)) = (r ^ 2)⁻¹ := by
     norm_num [rpow_neg hr.le, rpow_two]
   rw [hGamma, hpow] at h
-  simpa only [sqrt_eq_rpow, div_eq_mul_inv, mul_comm] using h
+  simp_rw [sqrt_eq_rpow, h]
+  ring
 
 /-- The mixed exponential majorant is integrable on the positive ray. -/
 theorem integrableOn_exp_neg_div_sqrt_add {c ℓ : ℝ} (hc : 0 < c) (hℓ : 0 ≤ ℓ) :
     IntegrableOn (fun v : ℝ ↦ exp (-(c * (v / (√v + ℓ))))) (Ioi 0) := by
   have hlin : -(c / (2 * (1 + ℓ))) < 0 := neg_neg_of_pos (by positivity)
   have hm : Measurable (fun v : ℝ ↦ exp (-(c * (v / (√v + ℓ))))) := by fun_prop
-  refine ((integrableOn_exp_mul_sqrt (half_pos hc)).add (integrableOn_exp_mul_Ioi hlin 0)).mono'
-    hm.aestronglyMeasurable ?_
+  refine ((integrableOn_Ioi_exp_neg_mul_sqrt (half_pos hc)).add
+    (integrableOn_exp_mul_Ioi hlin 0)).mono' hm.aestronglyMeasurable ?_
   filter_upwards [ae_restrict_mem (μ := volume) measurableSet_Ioi] with v hv
   rw [norm_of_nonneg (exp_nonneg _)]
   exact exp_neg_div_sqrt_add_le hc hℓ hv.le
@@ -96,7 +103,7 @@ theorem integral_Ioi_exp_neg_div_sqrt_add_le {c ℓ V : ℝ} (hc : 0 < c) (hℓ 
   have hs : 0 < s := by positivity
   let f (v : ℝ) := exp (-r * √v) + exp (-s * v)
   have hf : IntegrableOn f (Ioi 0) :=
-    (integrableOn_exp_mul_sqrt hr).add (integrableOn_exp_mul_Ioi (neg_neg_of_pos hs) 0)
+    (integrableOn_Ioi_exp_neg_mul_sqrt hr).add (integrableOn_exp_mul_Ioi (neg_neg_of_pos hs) 0)
   have hsub := Ioi_subset_Ioi hV
   have hb : (∫ v in Ioi V, exp (-(c * (v / (√v + ℓ))))) ≤ ∫ v in Ioi V, A * f v := by
     apply setIntegral_mono_on ((integrableOn_exp_neg_div_sqrt_add hc hℓ).mono_set hsub)
@@ -105,7 +112,7 @@ theorem integral_Ioi_exp_neg_div_sqrt_add_le {c ℓ V : ℝ} (hc : 0 < c) (hℓ 
     have hv₀ := hV.trans hv.le
     have hmono : exp (-(c / 2) * (v / (√v + ℓ))) ≤ A := by
       exact exp_le_exp.mpr (mul_le_mul_of_nonpos_left
-        (div_sqrt_add_le_div_sqrt_add hℓ hV hv.le) (by linarith))
+        (monotoneOn_div_sqrt_add hℓ hV (hV.trans hv.le) hv.le) (by linarith))
     have htail : exp (-(c / 2 * (v / (√v + ℓ)))) ≤ f v := by
       have hrate : c / 2 / (2 * (1 + ℓ)) = s := by dsimp [s]; rw [div_div]; ring_nf
       have hquarter : c / 2 / 2 = r := by dsimp [r]; ring
@@ -126,8 +133,8 @@ theorem integral_Ioi_exp_neg_div_sqrt_add_le {c ℓ V : ℝ} (hc : 0 < c) (hℓ 
         (setIntegral_mono_set hf (ae_of_all _ fun v ↦ add_nonneg (exp_nonneg _) (exp_nonneg _))
           (Filter.Eventually.of_forall hsub)) (exp_nonneg _)
     _ = A * (32 / c ^ 2 + 4 * (1 + ℓ) / c) := by
-      rw [integral_add (integrableOn_exp_mul_sqrt hr)
-        (integrableOn_exp_mul_Ioi (neg_neg_of_pos hs) 0), integral_exp_mul_sqrt hr,
+      rw [integral_add (integrableOn_Ioi_exp_neg_mul_sqrt hr)
+        (integrableOn_exp_mul_Ioi (neg_neg_of_pos hs) 0), integral_Ioi_exp_neg_mul_sqrt hr,
         integral_exp_mul_Ioi (neg_neg_of_pos hs)]
       simp only [mul_zero, exp_zero, div_neg]
       dsimp [r, s]
