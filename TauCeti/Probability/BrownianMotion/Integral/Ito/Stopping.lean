@@ -76,16 +76,13 @@ private theorem tendstoInMeasure_stoppedProcess_simpleGains_dyadicCeilTime
       TendstoInMeasure P (fun m ↦ Finance.simpleGains (τ₀ m) (n m) (a m) W s) atTop (I s) :=
     hI.tendstoInMeasure_simpleGains hW hτ₀ ha fun ε hε ↦
       MeasureTheory.tendsto_measure_lintegral_mono (timeMeasure_mono (hsT hs)) henergy hε
-  have hstop (X : ℝ≥0 → Ω → ℝ) (ω : Ω) :
-      MeasureTheory.stoppedProcess X (fun ω ↦ dyadicCeilTime k (σ ω)) T ω =
-        X (min (T : WithTop ℝ≥0) (dyadicCeilTime k (σ ω))).untopA ω := by
-    unfold MeasureTheory.stoppedProcess; rfl
   exact fun ε hε ↦ tendsto_measure_of_subset_biUnion_finset S (fun s hs ↦ hgains_s hs ε hε)
     fun m ω hω ↦ by
       let s := (min (T : WithTop ℝ≥0) (dyadicCeilTime k (σ ω))).untopA
       have hs : s ∈ S := hrange ω
       dsimp only at hω
-      rw [Set.mem_ofPred_eq, hstop _ ω, hstop _ ω] at hω
+      rw [Set.mem_ofPred_eq, MeasureTheory.stoppedProcess_apply,
+        MeasureTheory.stoppedProcess_apply] at hω
       exact mem_biUnion hs hω
 
 private theorem tendstoInMeasure_stoppedProcess_diag

@@ -184,6 +184,11 @@ theorem stoppedProcess_indicator_pos_apply {ι Ω E : Type*} [LinearOrder ι] [O
   rw [stoppedProcess_indicator_comm]
   simp only [Set.indicator_apply, Set.mem_ofPred_eq, stoppedProcess]
 
+/-- Pointwise evaluation of a stopped process. -/
+theorem stoppedProcess_apply {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    (u : ι → Ω → E) (τ : Ω → WithTop ι) (i : ι) (ω : Ω) :
+    stoppedProcess u τ i ω = u (min (i : WithTop ι) (τ ω)).untopA ω := rfl
+
 /-- At the initial time, stopping leaves any process unchanged. -/
 @[simp]
 theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]

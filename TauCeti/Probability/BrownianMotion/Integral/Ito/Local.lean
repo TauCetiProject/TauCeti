@@ -88,7 +88,7 @@ theorem locally_martingale
         rw [hcut]).martingale hW (hHs k)
       (hprog.stoppedProcess (hτ_loc.isStoppingTime k)).stronglyAdapted
   refine hprog.locally_martingale_of_ae_stopped_eq hτ_loc hmart fun k _ ↦ .of_forall fun ω ↦ by
-    simp only [MeasureTheory.stoppedProcess]; rw [indicator_of_mem]
+    rw [MeasureTheory.stoppedProcess_indicator_comm, indicator_of_mem]
     simpa only [Set.mem_ofPred_eq, ← WithTop.coe_bot, NNReal.bot_eq_zero, WithTop.coe_zero] using
       nnvolume.energyLocalizer_pos H (by positivity) ω
 

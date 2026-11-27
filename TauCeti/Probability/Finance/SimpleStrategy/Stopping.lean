@@ -101,8 +101,8 @@ private theorem simpleGains_dyadicStopHeight {G : ℝ≥0 → Ω → ℝ} {T s :
     have hrs : (dyadicNNRat k r : ℝ≥0) < s := WithTop.coe_lt_coe.mp (hρ ▸ hgt)
     have hrM : r ≤ M := ((strictMono_coe_dyadicNNRat k).lt_iff_lt.mp (hrs.trans_le hsM)).le
     have hfr : f r = MeasureTheory.stoppedProcess G (fun ω ↦ dyadicCeilTime k (τ ω)) s ω := by
-      unfold MeasureTheory.stoppedProcess
-      rw [min_eq_right hgt.le, hρ, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
+      rw [MeasureTheory.stoppedProcess_eq_of_ge (τ := fun ω ↦ dyadicCeilTime k (τ ω)) hgt.le,
+        hρ, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
       dsimp only [f]
       rw [min_eq_left hrs.le]
     have hfilt : (range M).filter (· < r) = range r := by
