@@ -49,6 +49,8 @@ bounds.
   power of the pointwise norm of an `Lᵖ` function is the `p`-th power of its `Lᵖ` norm.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.norm_sq_eq_integral_of_ae_eq`: the same for any function almost everywhere
+  equal to the class.
 * `MeasureTheory.Lp.eNorm_rpow_eq_lintegral` and `MeasureTheory.Lp.eNorm_rpow_two_eq_lintegral`:
   the same identities for the extended norm and the lower integral of an `Lᵖ` function.
 * `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy–Schwarz, `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂` for
@@ -430,6 +432,14 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
+
+/-- The squared `L²` norm of a class is the integral of the squared norm of any function almost
+everywhere equal to it. -/
+theorem Lp.norm_sq_eq_integral_of_ae_eq {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {f : Lp F 2 m} {g : alpha → F} (h : f =ᵐ[m] g) :
+    ‖f‖ ^ 2 = ∫ x, ‖g x‖ ^ 2 ∂m := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  exact integral_congr_ae (h.mono fun x hx ↦ by simp only [hx])
 
 /-- For `0 < p < ∞`, the `p`-th power of the extended norm of an `Lᵖ` function is the lower
 integral of the `p`-th power of its pointwise extended norm. -/

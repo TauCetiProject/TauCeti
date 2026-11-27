@@ -456,6 +456,12 @@ coordinates. -/
 theorem norm_testField_sq (z : ℂ) : ‖testField φ z‖ ^ 2 = ∑ j, φ j z ^ 2 := by
   simp [EuclideanSpace.real_norm_sq_eq]
 
+/-- The coordinates of the element of `H¹(ℂ)⁴` given by a quadruple of test functions are the
+coordinates of their field. -/
+theorem value_ofTestFunctionₗ_ae_eq_testField (j : Fin 4) :
+    W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) =ᵐ[μ⊤] fun z ↦ testField φ z j :=
+  (W1p.value_ofTestFunctionₗ_ae (p := 2) (φ j)).mono fun z hz ↦ by simp [hz]
+
 /-- The values of the element of `H¹(ℂ)⁴` given by a quadruple of test functions are the field of
 those test functions. -/
 theorem sobolevFieldValues_ofTestFunctionₗ_ae :
