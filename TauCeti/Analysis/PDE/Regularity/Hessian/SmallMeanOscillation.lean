@@ -12,7 +12,7 @@ import TauCeti.Analysis.PDE.Regularity.Hessian.Dirichlet.Ball
 import TauCeti.Analysis.PDE.Regularity.Hessian.OscillationDecay
 import TauCeti.Analysis.PDE.Regularity.SharpFunctionMethod
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
-import TauCeti.MeasureTheory.Function.Lp.Integral.NormRpow
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average.Comparison
 import TauCeti.MeasureTheory.Integral.Average.Oscillation
@@ -108,6 +108,33 @@ variable {n : ℕ}
 
 section Rpow
 
+/-- **The pointwise freezing bound in `L^γ`.** If `∑ᵢⱼ aᵢⱼ Hᵢⱼ = f` for a matrix `a` and `γ ≥ 1`,
+then freezing `a` at `A` gives
+`|∑ᵢⱼ Aᵢⱼ Hᵢⱼ| ^ γ ≤ 2^(γ - 1) (|f| ^ γ + (n + 1)^γ ‖a - A‖^γ ‖H‖^γ)`. -/
+private theorem norm_contraction_rpow_le_of_contraction_eq
+    {a A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    {H : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))} {f γ : ℝ}
+    (hγ : 1 ≤ γ) (hx : Matrix.contraction a H = f) :
+    ‖Matrix.contraction A H‖ ^ γ ≤ 2 ^ (γ - 1) * (‖f‖ ^ γ + (n + 1) ^ γ *
+      (‖matrixBilinearForm a - matrixBilinearForm A‖ ^ γ * ‖H‖ ^ γ)) := by
+  have hθ : 0 ≤ ‖matrixBilinearForm a - matrixBilinearForm A‖ :=
+    norm_nonneg (matrixBilinearForm a - matrixBilinearForm A)
+  set θ := ‖matrixBilinearForm a - matrixBilinearForm A‖
+  have hfr : |Matrix.contraction A H - f| ≤ (n + 1) * θ * ‖H‖ := by
+    rw [← hx]
+    exact_mod_cast
+      Matrix.abs_contraction_sub_contraction_le_mul_norm_matrixBilinearForm_sub_mul_norm A a H
+  have hle : ‖Matrix.contraction A H‖ ≤ ‖f‖ + (n + 1) * θ * ‖H‖ := by
+    rw [Real.norm_eq_abs, Real.norm_eq_abs]
+    linarith [abs_sub_abs_le_abs_sub (Matrix.contraction A H) f]
+  calc ‖Matrix.contraction A H‖ ^ γ ≤ (‖f‖ + (n + 1) * θ * ‖H‖) ^ γ :=
+        Real.rpow_le_rpow (norm_nonneg _) hle (zero_le_one.trans hγ)
+    _ ≤ 2 ^ (γ - 1) * (‖f‖ ^ γ + ((n + 1) * θ * ‖H‖) ^ γ) :=
+        Real.rpow_add_le_mul_rpow_add_rpow (norm_nonneg _) (by positivity) hγ
+    _ = 2 ^ (γ - 1) * (‖f‖ ^ γ + (n + 1) ^ γ * (θ ^ γ * ‖H‖ ^ γ)) := by
+        rw [Real.mul_rpow (by positivity) (norm_nonneg _), Real.mul_rpow (by positivity) hθ,
+          mul_assoc]
+
 /-- **The frozen right-hand side in `L^γ`.** Let `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere on a ball
 `B_r`, with `D²u ∈ L^{γq}(B_r)` and `f ∈ L^γ(B_r)` for `γ ≥ 1` and Hölder conjugate exponents
 `q, q'`, and let `‖a - A‖ ≤ K` on `B_r` with mean `⨍_{B_r} ‖a - A‖ ≤ δ`. Then the frozen
@@ -158,24 +185,10 @@ private theorem setAverage_abs_contraction_rpow_le {K : ℝ}
     (f := fun x => ‖Matrix.contraction A (H x)‖ ^ γ)
     ((memLp_ofReal_iff_integrable_norm_rpow hγ0 hf.aestronglyMeasurable).1 hf)
     (hθH.const_mul ((n + 1) ^ γ)) (ae_of_all _ fun x => by positivity) ?_).trans ?_
-  · filter_upwards [heq, hθ] with x hx hθx
+  · filter_upwards [heq] with x hx
     rw [← Matrix.contraction_apply] at hx
     -- Freezing the coefficients at `A` changes the right-hand side by at most `(n + 1) θ ‖D²u‖`.
-    have hfr : |Matrix.contraction A (H x) - f x| ≤ (n + 1) * θ x * ‖H x‖ := by
-      rw [← hx]
-      exact_mod_cast
-        Matrix.abs_contraction_sub_contraction_le_mul_norm_matrixBilinearForm_sub_mul_norm A (a x)
-          (H x)
-    have hle : ‖Matrix.contraction A (H x)‖ ≤ ‖f x‖ + (n + 1) * θ x * ‖H x‖ := by
-      rw [Real.norm_eq_abs, Real.norm_eq_abs]
-      linarith [abs_sub_abs_le_abs_sub (Matrix.contraction A (H x)) (f x)]
-    calc ‖Matrix.contraction A (H x)‖ ^ γ ≤ (‖f x‖ + (n + 1) * θ x * ‖H x‖) ^ γ :=
-          Real.rpow_le_rpow (norm_nonneg _) hle hγ0.le
-      _ ≤ 2 ^ (γ - 1) * (‖f x‖ ^ γ + ((n + 1) * θ x * ‖H x‖) ^ γ) :=
-          Real.rpow_add_le_mul_rpow_add_rpow (norm_nonneg _) (by have := hθx.1; positivity) hγ
-      _ = 2 ^ (γ - 1) * (‖f x‖ ^ γ + (n + 1) ^ γ * (θ x ^ γ * ‖H x‖ ^ γ)) := by
-          rw [Real.mul_rpow (by have := hθx.1; positivity) (norm_nonneg _),
-            Real.mul_rpow (by positivity) hθx.1, mul_assoc]
+    exact norm_contraction_rpow_le_of_contraction_eq hγ hx
   · rw [setAverage_eq (f := fun x => (n + 1) ^ γ * (θ x ^ γ * ‖H x‖ ^ γ)), smul_eq_mul,
       integral_const_mul, mul_left_comm, ← smul_eq_mul (a := (volume.real (ball c r))⁻¹),
       ← setAverage_eq]
@@ -272,12 +285,20 @@ private theorem exists_iteratedGradient_ae_eq_add {lam Lam C γ : ℝ} (hC0 : 0 
     rw [← Matrix.contraction_apply] at hwx ⊢
     rw [hx, map_sub, hwx, hFx, sub_self]
   -- The `W^{2,γ}` estimate for `w`, in averages.
+  have hγ' : (ENNReal.ofReal γ).toReal = γ := ENNReal.toReal_ofReal hγ0.le
+  have hFint := Lp.integral_norm_rpow_eq_norm_rpow (by simpa using hγ0) ENNReal.ofReal_ne_top F
+  have hwint : ∫ x in ball c r, ‖Wkp.iteratedGradient 1 w x‖ ^ γ =
+      ‖Wkp.iteratedGradient 1 w‖ ^ γ := by
+    have := Lp.integral_norm_rpow_eq_norm_rpow (by simpa using hγ0) ENNReal.ofReal_ne_top
+      (Wkp.iteratedGradient 1 w)
+    rwa [hγ'] at this
+  rw [hγ'] at hFint
   have hF : ⨍ y in ball c r, ‖Matrix.contraction A (H y)‖ ^ γ =
       (volume.real (ball c r))⁻¹ * ‖F‖ ^ γ := by
-    rw [Lp.norm_rpow_eq_integral_norm_rpow hγ0, setAverage_eq, smul_eq_mul]
+    rw [← hFint, setAverage_eq, smul_eq_mul]
     congr 1
     exact integral_congr_ae (hFH.mono fun x hx => by simp only [hx])
-  rw [hF, setAverage_eq, smul_eq_mul, ← Lp.norm_rpow_eq_integral_norm_rpow hγ0]
+  rw [hF, setAverage_eq, smul_eq_mul, hwint]
   calc (volume.real (ball c r))⁻¹ * ‖Wkp.iteratedGradient 1 w‖ ^ γ
       ≤ (volume.real (ball c r))⁻¹ * (C * ‖F‖) ^ γ := by gcongr
     _ = C ^ γ * ((volume.real (ball c r))⁻¹ * ‖F‖ ^ γ) := by
