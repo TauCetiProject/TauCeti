@@ -44,6 +44,7 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
   natural-number powers of `-1`.
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
 * `Int.negOnePow_sub_sub_one`, `Int.negOnePow_eq_neg_of_odd_sub`,
+  `Int.negOnePow_mul_negOnePow_sub`, `Int.negOnePow_add_one_sub`,
   `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity identities behind the sign cancellations
   of twisted differentials.
 * `TauCeti.negOnePow_smul_op_smul_negOnePow_smul_op_smul`: reassociating two right actions past
@@ -237,6 +238,18 @@ theorem _root_.Int.negOnePow_eq_neg_of_odd_sub {a b : ℤ} (h : Odd (a - b)) :
   rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff]
   obtain ⟨k, hk⟩ := h
   exact ⟨k, by omega⟩
+
+/-- Multiplying the sign of `i - j` by the sign of `i` gives the sign of `j`. -/
+theorem _root_.Int.negOnePow_mul_negOnePow_sub (i j : ℤ) :
+    i.negOnePow * (i - j).negOnePow = j.negOnePow := by
+  rw [Int.negOnePow_sub, ← mul_assoc, Int.units_mul_self, one_mul]
+
+/-- Shifting a difference up or down by one gives the same sign:
+`(-1) ^ (i + 1 - j) = (-1) ^ (i - j - 1)`. -/
+theorem _root_.Int.negOnePow_add_one_sub (i j : ℤ) :
+    (i + 1 - j).negOnePow = (i - j - 1).negOnePow := by
+  rw [Int.negOnePow_eq_iff]
+  exact ⟨1, by ring⟩
 
 /-- A product of two signs is the sign of any exponent congruent modulo two to the sum of their
 exponents. -/
