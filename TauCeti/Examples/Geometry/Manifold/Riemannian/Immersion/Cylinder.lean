@@ -77,6 +77,19 @@ def ν (y : ℝ²) : ℝ³ := cos (y 0) • e 0 + sin (y 0) • e 1
 /-- The unit tangent vector `(-sin θ, cos θ, 0)` of the cylinder in the direction of `θ`. -/
 def τ (y : ℝ²) : ℝ³ := -sin (y 0) • e 0 + cos (y 0) • e 1
 
+/-- The parametrization, unfolded. -/
+theorem cyl_apply (y : ℝ²) : cyl y = cos (y 0) • e 0 + sin (y 0) • e 1 + y 1 • e 2 := (rfl)
+
+/-- The outward normal, unfolded. -/
+theorem ν_apply (y : ℝ²) : ν y = cos (y 0) • e 0 + sin (y 0) • e 1 := (rfl)
+
+/-- The unit tangent vector in the direction of `θ`, unfolded. -/
+theorem τ_apply (y : ℝ²) : τ y = -sin (y 0) • e 0 + cos (y 0) • e 1 := (rfl)
+
+/-- The parametrization lands on the unit cylinder `{x₀² + x₁² = 1}`. -/
+theorem cyl_apply_zero_sq_add_cyl_apply_one_sq (y : ℝ²) : cyl y 0 ^ 2 + cyl y 1 ^ 2 = 1 := by
+  simp [cyl]
+
 /-- The derivative of `ν` is `(π₀ ·) • τ`. -/
 private theorem hasFDerivAt_ν (y : ℝ²) : HasFDerivAt ν ((π₀).smulRight (τ y)) y := by
   have hfun : ν = fun y ↦ cos (π₀ y) • e 0 + sin (π₀ y) • e 1 := by
@@ -222,6 +235,7 @@ theorem immersionShapeOperatorAt_cyl_apply (x v : ℝ²) :
 
 /-- **The principal curvatures of the unit cylinder** in the outward direction are `0, -1`, in
 decreasing order: the zero eigenvalue is counted. -/
+@[simp]
 theorem immersionPrincipalCurvatures_cyl (x : ℝ²)
     (ht : (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³).IsTorsionFree) :
     immersionPrincipalCurvatures 𝓘(ℝ, ℝ²) cyl x ht finrank_euclideanSpace_fin (ν x) =
@@ -253,6 +267,7 @@ theorem immersionPrincipalCurvatures_cyl (x : ℝ²)
     · exact h1
 
 /-- In the inward direction `-ν` the principal curvatures of the unit cylinder are `1, 0`. -/
+@[simp]
 theorem immersionPrincipalCurvatures_cyl_neg (x : ℝ²)
     (ht : (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³).IsTorsionFree) :
     immersionPrincipalCurvatures 𝓘(ℝ, ℝ²) cyl x ht finrank_euclideanSpace_fin (-ν x) =
