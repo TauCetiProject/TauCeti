@@ -19,7 +19,9 @@ the usual tensor-induced differential.
 
 `TopRep.gradedResolutionInternalGrading` packages the existing homogeneous pieces for
 `PiTensorProduct.signedDifferential`, which supplies the pure-tensor formula for
-`Subgroup.smoothTensorInducedGradedResolutionSignedDifferential`.
+`Subgroup.smoothTensorInducedGradedResolutionSignedDifferential`. Its coefficient naturality
+uses `PiTensorProduct.signedDifferential_comp_map` and the comparison with the slot sum
+uses `PiTensorProduct.signedDifferential_eq_slotSum`.
 
 This is the underlying differential for the tensor resolution in Evens' construction
 (*A generalization of the transfer map in the cohomology of groups*, Trans. Amer. Math. Soc.
@@ -28,31 +30,12 @@ This is the underlying differential for the tensor resolution in Evens' construc
 
 public section
 
+open CategoryTheory
 open scoped TensorProduct
 
 open TauCeti
 
 universe u v w
-
-namespace TopRep
-
-variable {R : Type u} [Ring R] [TopologicalSpace R]
-  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (X : TopRep.{max v w} R G)
-
-/-- The internal grading of the total coinduced resolution by its integer homogeneous pieces. -/
-noncomputable def gradedResolutionInternalGrading :
-    InternalGrading R X.gradedResolutionModule ℤ where
-  piece := X.gradedResolutionPiece
-  isInternal := X.isInternal_gradedResolutionPiece
-
-/-- The bundled grading has the same degree-`p` piece as the total resolution. -/
-@[simp]
-theorem gradedResolutionInternalGrading_piece (p : ℤ) :
-    X.gradedResolutionInternalGrading.piece p = X.gradedResolutionPiece p :=
-  (rfl)
-
-end TopRep
 
 namespace Subgroup
 
@@ -69,6 +52,15 @@ noncomputable def smoothTensorInducedGradedResolutionSignedDifferential :
   PiTensorProduct.signedDifferential
     (fun _ : G ⧸ U ↦ A.obj.gradedResolutionInternalGrading)
     (fun _ ↦ A.obj.gradedResolutionDifferential)
+
+/-- The underlying resolution differential is the signed tensor differential of the total
+coinduced resolution in each coset slot. -/
+theorem smoothTensorInducedGradedResolutionSignedDifferential_def :
+    smoothTensorInducedGradedResolutionSignedDifferential U hU s A =
+      PiTensorProduct.signedDifferential
+        (fun _ : G ⧸ U ↦ A.obj.gradedResolutionInternalGrading)
+        (fun _ ↦ A.obj.gradedResolutionDifferential) :=
+  (rfl)
 
 /-- On a pure tensor, the resolution differential sums over cosets, applying the Koszul twist
 in the slots preceding the differentiated slot. -/
@@ -87,9 +79,39 @@ theorem isHomogeneous_smoothTensorInducedGradedResolutionSignedDifferential :
     LinearMap.IsHomogeneous
       (smoothTensorInducedGradedResolutionSignedDifferential U hU s A)
       (smoothTensorInducedGradedResolutionPiece U hU s A)
-      (smoothTensorInducedGradedResolutionPiece U hU s A) 1 :=
-  PiTensorProduct.isHomogeneous_signedDifferential _ _
-    (fun _ ↦ A.obj.isHomogeneous_gradedResolutionDifferential)
+      (smoothTensorInducedGradedResolutionPiece U hU s A) 1 := by
+  have hpiece := funext A.obj.gradedResolutionInternalGrading_piece
+  rw [smoothTensorInducedGradedResolutionSignedDifferential_def]
+  have hd := PiTensorProduct.isHomogeneous_signedDifferential
+    (fun _ : G ⧸ U ↦ A.obj.gradedResolutionInternalGrading)
+    (fun _ ↦ A.obj.gradedResolutionDifferential)
+    (fun _ ↦ by
+      rw [hpiece]
+      exact A.obj.isHomogeneous_gradedResolutionDifferential)
+  rw [hpiece] at hd
+  exact hd
+
+/-- The map induced by a coefficient morphism intertwines the signed tensor differentials. -/
+theorem smoothTensorInducedGradedResolutionSignedDifferential_comp_map
+    {A B : SmoothDiscreteTopRep.{u, v, max v w} R U} (f : A ⟶ B) :
+    smoothTensorInducedGradedResolutionSignedDifferential U hU s B ∘ₗ
+        ((smoothTensorInducedGradedResolutionFunctor U hU s).map f).hom.hom.toLinearMap =
+      ((smoothTensorInducedGradedResolutionFunctor U hU s).map f).hom.hom.toLinearMap ∘ₗ
+        smoothTensorInducedGradedResolutionSignedDifferential U hU s A := by
+  have hmap :
+      ((smoothTensorInducedGradedResolutionFunctor U hU s).map f).hom.hom.toLinearMap =
+        PiTensorProduct.map (fun _ : G ⧸ U ↦
+          TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom) :=
+    LinearMap.ext (smoothTensorInducedGradedResolutionFunctor_map_hom_hom_apply U hU s f)
+  rw [hmap, smoothTensorInducedGradedResolutionSignedDifferential_def,
+    smoothTensorInducedGradedResolutionSignedDifferential_def]
+  apply PiTensorProduct.signedDifferential_comp_map
+  · intro i
+    rw [funext A.obj.gradedResolutionInternalGrading_piece,
+      funext B.obj.gradedResolutionInternalGrading_piece]
+    exact TopRep.isHomogeneous_gradedResolutionMap (ContinuousMonoidHom.id U) f.hom
+  · exact fun _ ↦ LinearMap.ext fun x ↦
+      (TopRep.gradedResolutionMap_differential (ContinuousMonoidHom.id U) f.hom x).symm
 
 /-- The signed differential squares to zero. -/
 @[simp]
@@ -98,7 +120,9 @@ theorem smoothTensorInducedGradedResolutionSignedDifferential_sq
     smoothTensorInducedGradedResolutionSignedDifferential U hU s A
       (smoothTensorInducedGradedResolutionSignedDifferential U hU s A z) = 0 :=
   LinearMap.congr_fun (PiTensorProduct.signedDifferential_comp_self _ _
-    (fun _ ↦ A.obj.isHomogeneous_gradedResolutionDifferential)
+    (fun _ ↦ by
+      rw [funext A.obj.gradedResolutionInternalGrading_piece]
+      exact A.obj.isHomogeneous_gradedResolutionDifferential)
     (fun _ ↦ LinearMap.ext A.obj.gradedResolutionDifferential_sq)) z
 
 /-- The diagonal tensor of a cocycle is killed by the signed differential. -/

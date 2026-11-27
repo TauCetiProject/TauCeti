@@ -37,6 +37,12 @@ variable {ι R : Type*} [Fintype ι] [LinearOrder ι] [CommRing R]
 noncomputable def signedDifferential : Module.End R (⨂[R] i, M i) :=
   slotHomotopy ι (fun j ↦ (G j).koszulTwist 1) d
 
+/-- The signed differential is the ordered slot operator with the degree-one Koszul twist
+in the preceding slots. -/
+theorem signedDifferential_def :
+    signedDifferential G d = slotHomotopy ι (fun j ↦ (G j).koszulTwist 1) d :=
+  (rfl)
+
 /-- On a pure tensor, the signed differential applies the Koszul twist in the slots preceding
 the differentiated slot. -/
 @[simp]
