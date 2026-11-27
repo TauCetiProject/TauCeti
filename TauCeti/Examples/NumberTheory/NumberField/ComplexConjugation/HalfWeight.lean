@@ -42,6 +42,15 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
   {Ω : Type*} [Field Ω] [CharZero Ω] [Normal ℚ Ω]
   {A : Type*} [AddRightCancelMonoid A] {m : (K →+* Ω) → A} {w : A}
 
+/-- For a prime `p ≠ 2`, the number of places of `K = ℚ(i)` above `p` times the order of `p`
+modulo `4` is `φ(4) = 2`. -/
+private theorem ncard_primesOver_mul_orderOf_eq_two (p : ℕ) [Fact p.Prime] (hp : p ≠ 2) :
+    ((Ideal.span {(p : ℤ)}).primesOver (𝓞 K)).ncard * orderOf (p : ZMod 4) = 2 := by
+  have h4 : ¬p ∣ 4 := fun h' ↦ hp <| (Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp <|
+    (Fact.out : p.Prime).dvd_of_dvd_pow (n := 2) h'
+  rw [ncard_primesOver_mul_orderOf_eq_totient (K := K) p h4]
+  decide
+
 /-- **`ℚ(i)` at `p ≡ 3 mod 4`: `2 m = w` on both embeddings.** Let `m` be a function on the
 embeddings `K →+* Ω` with `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c`, constant on
 the fibres of a map `v` sending each embedding to a place of `K` above `p`. Then `2 m(τ) = w` for
@@ -51,15 +60,12 @@ theorem two_nsmul_eq_of_mod_four_eq_three (p : ℕ) [Fact p.Prime] (h : p % 4 = 
     (v : (K →+* Ω) → HeightOneSpectrum (𝓞 K))
     (hvp : ∀ τ, (v τ).asIdeal.LiesOver (Ideal.span {(p : ℤ)}))
     (hv : ∀ τ τ', v τ = v τ' → m τ = m τ') (τ : K →+* Ω) : 2 • m τ = w := by
-  have h4 : ¬p ∣ 4 := fun h' ↦ by
-    have := Nat.le_of_dvd (by norm_num) h'
-    interval_cases p <;> simp_all
   -- `p` has order `2 = φ(4)` modulo `4`, so a single place of `K` lies above `p`.
   have hf : orderOf (p : ZMod 4) = 2 := by
     rw [← ZMod.natCast_mod, h]
     exact orderOf_eq_prime (by decide) (by decide)
-  have key := ncard_primesOver_mul_orderOf_eq_totient (K := K) p h4
-  rw [hf, show Nat.totient 4 = 2 by decide] at key
+  have key := ncard_primesOver_mul_orderOf_eq_two (K := K) p (by omega)
+  rw [hf] at key
   have hone : ((Ideal.span {(p : ℤ)}).primesOver (𝓞 K)).ncard = 1 := by omega
   obtain ⟨P, hP⟩ := Set.ncard_eq_one.mp hone
   obtain ⟨c, hc⟩ := complexConjugations_nonempty Ω
@@ -77,29 +83,6 @@ theorem two_nsmul_eq_of_mod_four_eq_three (p : ℕ) [Fact p.Prime] (h : p % 4 = 
 
 section Split
 
-/-- A complex conjugation of `K = ℚ(i)` is not the identity: `K` has no real embedding. -/
-theorem ne_one_of_mem_complexConjugations {c : Gal(K/ℚ)} (hc : c ∈ complexConjugations K) :
-    c ≠ 1 := by
-  intro h1
-  obtain ⟨ι, hι⟩ := mem_complexConjugations_iff.mp hc
-  rw [h1] at hι
-  have := IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) K (by norm_num)
-  exact IsTotallyComplex.complexEmbedding_not_isReal ι
-    (ComplexEmbedding.isConj_one_iff.mp hι)
-
-/-- The automorphisms of `K = ℚ(i)` are `1` and any complex conjugation. -/
-theorem eq_one_or_eq_of_mem_complexConjugations {c : Gal(K/ℚ)}
-    (hc : c ∈ complexConjugations K) (σ : Gal(K/ℚ)) : σ = 1 ∨ σ = c := by
-  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {4} ℚ K
-  have hcard : Nat.card Gal(K/ℚ) = 2 := by
-    rw [IsGalois.card_aut_eq_finrank, IsCyclotomicExtension.finrank (n := 4) K
-      (Polynomial.cyclotomic.irreducible_rat (by norm_num))]
-    decide
-  obtain ⟨y, -, hy⟩ := (Nat.card_eq_two_iff' (1 : Gal(K/ℚ))).mp hcard
-  by_cases hσ : σ = 1
-  · exact Or.inl hσ
-  · exact Or.inr ((hy σ hσ).trans (hy c (ne_one_of_mem_complexConjugations hc)).symm)
-
 /-- **The `p ≡ 3 mod 4` hypothesis of `two_nsmul_eq_of_mod_four_eq_three` is needed.** For
 `K = ℚ(i)`, `Ω = K` and a prime `p ≡ 1 mod 4`, there are `m` with `m(id) = 1` and `m = 0` at the
 complex conjugation, and `v` sending the two embeddings to the two places above `p`, such that
@@ -111,46 +94,36 @@ theorem exists_not_two_nsmul_eq_of_mod_four_eq_one (p : ℕ) [Fact p.Prime] (h :
       (∀ τ, (v τ).asIdeal.LiesOver (Ideal.span {(p : ℤ)})) ∧
       (∀ τ τ', v τ = v τ' → m τ = m τ') ∧ m (RingHom.id K) = 1 ∧ ∀ τ, 2 • m τ ≠ 1 := by
   classical
-  have h4 : ¬p ∣ 4 := fun h' ↦ by
-    have := Nat.le_of_dvd (by norm_num) h'
-    have := (Fact.out : p.Prime).two_le
-    interval_cases p <;> simp_all
   -- `p` has order `1` modulo `4`, so two places of `K` lie above `p`.
   have hf : orderOf (p : ZMod 4) = 1 := by
     rw [← ZMod.natCast_mod, h, Nat.cast_one, orderOf_one]
-  have key := ncard_primesOver_mul_orderOf_eq_totient (K := K) p h4
-  rw [hf, show Nat.totient 4 = 2 by decide, mul_one] at key
+  have key := ncard_primesOver_mul_orderOf_eq_two (K := K) p (by omega)
+  rw [hf, mul_one] at key
   obtain ⟨P₁, P₂, hne, hP⟩ := Set.ncard_eq_two.mp key
-  have hmem (P : Ideal (𝓞 K)) (hP' : P ∈ (Ideal.span {(p : ℤ)}).primesOver (𝓞 K)) :
-      P.IsPrime ∧ P ≠ ⊥ ∧ P.LiesOver (Ideal.span {(p : ℤ)}) := by
-    obtain ⟨hprime, hlies⟩ := hP'
-    refine ⟨hprime, Ideal.ne_bot_of_liesOver_of_ne_bot (p := Ideal.span {(p : ℤ)}) ?_ P, hlies⟩
-    simpa using (Fact.out : p.Prime).ne_zero
-  obtain ⟨h₁, h₁', h₁''⟩ := hmem P₁ (hP ▸ Set.mem_insert _ _)
-  obtain ⟨h₂, h₂', h₂''⟩ := hmem P₂ (hP ▸ Set.mem_insert_of_mem _ rfl)
-  let Q₁ : HeightOneSpectrum (𝓞 K) := ⟨P₁, h₁, h₁'⟩
-  let Q₂ : HeightOneSpectrum (𝓞 K) := ⟨P₂, h₂, h₂'⟩
+  have hp0 : Ideal.span {(p : ℤ)} ≠ ⊥ := by simpa using (Fact.out : p.Prime).ne_zero
+  have hP₁ : P₁ ∈ (Ideal.span {(p : ℤ)}).primesOver (𝓞 K) := hP ▸ Set.mem_insert _ _
+  have hP₂ : P₂ ∈ (Ideal.span {(p : ℤ)}).primesOver (𝓞 K) := hP ▸ Set.mem_insert_of_mem _ rfl
+  let Q₁ : HeightOneSpectrum (𝓞 K) := ⟨P₁, hP₁.1, Ideal.ne_bot_of_mem_primesOver hp0 hP₁⟩
+  let Q₂ : HeightOneSpectrum (𝓞 K) := ⟨P₂, hP₂.1, Ideal.ne_bot_of_mem_primesOver hp0 hP₂⟩
   have hQ : Q₁ ≠ Q₂ := fun hQ ↦ hne (congrArg HeightOneSpectrum.asIdeal hQ)
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {4} ℚ K
+  have := IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) K (by norm_num)
+  have hcard : Nat.card Gal(K/ℚ) = 2 := by
+    rw [IsGalois.card_aut_eq_finrank, IsCyclotomicExtension.finrank (n := 4) K
+      (Polynomial.cyclotomic.irreducible_rat (by norm_num))]
+    decide
   refine ⟨fun τ ↦ if τ = RingHom.id K then 1 else 0, fun τ ↦ if τ = RingHom.id K then Q₁ else Q₂,
     fun c hc τ ↦ ?_, fun τ ↦ ?_, fun τ τ' hττ' ↦ ?_, by simp, fun τ ↦ ?_⟩
   · have hc1 : (c : K →+* K) ≠ RingHom.id K := fun h1 ↦ ne_one_of_mem_complexConjugations hc
-      (AlgEquiv.ext fun x ↦ RingHom.congr_fun h1 x)
-    by_cases hτ : τ = RingHom.id K
-    · subst hτ
-      simp [hc1]
-    · -- `τ` is an automorphism other than `1`, hence the complex conjugation `c`, and `c² = 1`.
-      let σ : Gal(K/ℚ) := AlgEquiv.ofBijective τ.toRatAlgHom
-        (Algebra.IsAlgebraic.algHom_bijective _)
-      have hσ : σ = c := (eq_one_or_eq_of_mem_complexConjugations hc σ).resolve_left fun h1 ↦
-        hτ (RingHom.ext fun x ↦ by simpa [σ] using AlgEquiv.ext_iff.mp h1 x)
-      have hcτ : (c : K →+* K).comp τ = RingHom.id K := RingHom.ext fun x ↦ by
-        have hx : τ x = c x := by simpa [σ] using AlgEquiv.ext_iff.mp hσ x
-        simp only [RingHom.comp_apply, RingHom.coe_coe, RingHom.id_apply, hx]
-        exact apply_apply_of_mem_complexConjugations hc x
-      simp [hcτ, hτ]
+      (AlgEquiv.ext fun x ↦ by simpa using DFunLike.congr_fun h1 x)
+    -- `τ` is `1` or the complex conjugation `c`, and `c² = 1`.
+    rcases ringHom_eq_id_or_eq_of_mem_complexConjugations hcard hc τ with rfl | rfl
+    · simp [hc1]
+    · have hcc : (c : K →+* K).comp c = RingHom.id K := by ext x; simp [hc]
+      simp [hcc, hc1]
   · dsimp only
     split_ifs
-    exacts [h₁'', h₂'']
+    exacts [hP₁.2, hP₂.2]
   · dsimp only at hττ' ⊢
     split_ifs at hττ' ⊢ <;> simp_all
   · dsimp only
