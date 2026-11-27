@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
 public import Mathlib.Analysis.Real.Sqrt
+import TauCeti.Algebra.Order.GroupWithZero.Pow
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Combinatorics.TraceWord.Coding
 
@@ -41,6 +42,8 @@ have total weight `n / √(p * n) = √(n / p)`, and the discoveries of a row ha
 
 * `TauCeti.sum_pow_div_sqrt_mul_pow_le_of_no_singleton_edge`: the weighted enumeration of
   bipartite words.
+* `TauCeti.pow_card_bipartiteEdge_mul_pow_le_of_no_singleton_edge`: the bound on the product of
+  entry moment bounds for a single word.
 
 ## References
 
@@ -77,12 +80,7 @@ theorem sum_pow_div_sqrt_mul_pow_le_of_no_singleton_edge {k : ℕ} (hk : k ≠ 0
           (√(Fintype.card α / Fintype.card β) + 1 + 2 * k * γ)) ^ k := by
   have : NeZero (2 * k) := ⟨by omega⟩
   let e := finSumFinInterleaveEquiv k
-  -- The cyclic words visit rows at even times and columns at odd times.
-  let A (s : Fin (2 * k)) : Finset (α ⊕ β) :=
-    Sum.elim (fun _ ↦ univ.map .inl) (fun _ ↦ univ.map .inr) (e.symm s)
-  have hA (s : Fin (2 * k)) (x : (Fin k → α) × (Fin k → β)) : bipartiteWord x.1 x.2 s ∈ A s := by
-    obtain ⟨a, rfl⟩ := e.surjective s
-    cases a <;> simp [A, e]
+  let A (s : Fin (2 * k)) : Finset (α ⊕ β) := bipartiteVertexFinset s.val
   let g (w : Fin (2 * k) → α ⊕ β) : ℝ :=
     γ ^ (2 * (2 * k + 2 - 2 * #(univ.image w))) /
       √(Fintype.card α * Fintype.card β) ^ #(univ.image w)
@@ -103,19 +101,20 @@ theorem sum_pow_div_sqrt_mul_pow_le_of_no_singleton_edge {k : ℕ} (hk : k ≠ 0
         g w := by
         refine sum_le_sum_of_subset_of_nonneg (fun w hw ↦ ?_) fun w _ _ ↦ by positivity
         obtain ⟨x, hx, rfl⟩ := mem_image.mp hw
-        refine mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun s ↦ hA s x, fun t ↦ ?_⟩
-        -- A position read twice gives an edge of the cyclic word traversed twice.
-        obtain ⟨a, rfl⟩ := e.surjective t
-        obtain ⟨b, hba, hb⟩ := (mem_filter.mp hx).2 a
-        exact ⟨e b, e.injective.ne hba, by simp only [e, sym2_bipartiteWord, hb]⟩
+        exact mem_filter.mpr
+          ⟨Fintype.mem_piFinset.mpr (bipartiteWord_mem_bipartiteVertexFinset x.1 x.2),
+            bipartiteWord_no_singleton_edge (mem_filter.mp hx).2⟩
     _ ≤ _ := key
     _ = _ := by
       -- Steps from rows discover columns, and steps from columns discover rows.
       have h0 : (0 : Fin (2 * k)) = e (.inl ⟨0, Nat.pos_of_ne_zero hk⟩) := Fin.ext (by simp [e])
+      have hrow (t : Fin k) : #(A (finSumFinInterleaveEquiv k (.inl t))) = Fintype.card α := by
+        simp [A]
+      have hcol (t : Fin k) : #(A (finSumFinInterleaveEquiv k (.inr t))) = Fintype.card β := by
+        simp [A]
       rw [← e.prod_comp, Fintype.prod_sum_type, h0]
       simp only [e, finRotate_finSumFinInterleaveEquiv_inl, finRotate_finSumFinInterleaveEquiv_inr,
-        A, Equiv.symm_apply_apply, Sum.elim_inl, Sum.elim_inr, card_map, card_univ, prod_const,
-        Fintype.card_fin, ← mul_pow]
+        hrow, hcol, prod_const, card_univ, Fintype.card_fin, ← mul_pow]
       -- `√(a * b) = a * √(b / a)`, so `a / √(a * b) = (√(b / a))⁻¹ = √(a / b)`.
       have hdiv {a b : ℝ} (ha : 0 ≤ a) : a / √(a * b) = √(a / b) := by
         rcases ha.eq_or_lt with rfl | ha
@@ -125,5 +124,41 @@ theorem sum_pow_div_sqrt_mul_pow_le_of_no_singleton_edge {k : ℕ} (hk : k ≠ 0
       rw [hdiv (Nat.cast_nonneg _), mul_comm (Fintype.card α : ℝ), hdiv (Nat.cast_nonneg _)]
       push_cast
       ring
+
+/-- For a nonempty bipartite trace word of length `2 * k` reading every entry position at least
+twice, the product of entry moment bounds is at most its Füredi–Komlós weight times
+`(c * d) ^ k * d`, where `d = √(p * n)` for `p` row and `n` column labels.
+Here `c` bounds the second moments and `b ^ 2 ≤ c * d * γ ^ 4` controls the entry bound. -/
+theorem pow_card_bipartiteEdge_mul_pow_le_of_no_singleton_edge {k : ℕ} (hk : k ≠ 0)
+    {u : Fin k → α} {v : Fin k → β}
+    (h : ∀ a, ∃ b ≠ a, bipartiteEdge u v b = bipartiteEdge u v a)
+    {b c γ : ℝ} (hc : 0 ≤ c)
+    (hbc : b ^ 2 ≤ c * √(Fintype.card α * Fintype.card β) * γ ^ 4) :
+    let d : ℝ := √(Fintype.card α * Fintype.card β)
+    let e := #(univ.image (bipartiteEdge u v))
+    let t := #(univ.image u) + #(univ.image v)
+    min c (b ^ 2) ^ e * b ^ (2 * k - 2 * e) ≤
+      ((c * d) ^ k * d) * (γ ^ (2 * (2 * k + 2 - 2 * t)) / d ^ t) := by
+  intro d e t
+  let i : Fin k := ⟨0, Nat.pos_of_ne_zero hk⟩
+  have : Nonempty α := ⟨u i⟩
+  have : Nonempty β := ⟨v i⟩
+  have hd : 0 < d := Real.sqrt_pos.mpr
+    (mul_pos (Nat.cast_pos.mpr Fintype.card_pos) (Nat.cast_pos.mpr Fintype.card_pos))
+  have hsq : √(c * d) ^ 2 = c * d := Real.sq_sqrt (mul_nonneg hc hd.le)
+  have habs : |b| ≤ √(c * d) * γ ^ 2 := by
+    refine le_of_pow_le_pow_left₀ two_ne_zero (mul_nonneg (Real.sqrt_nonneg _) (sq_nonneg _)) ?_
+    rwa [sq_abs, mul_pow, hsq, ← pow_mul]
+  have hmin : min c (b ^ 2) ≤ √(c * d) ^ 2 / d := by
+    rw [hsq, mul_div_cancel_right₀ _ hd.ne']
+    exact min_le_left _ _
+  have hcb : min c (b ^ 2) ≤ |b| ^ 2 := by rw [sq_abs]; exact min_le_right _ _
+  have ht : 1 ≤ t :=
+    (card_pos.mpr ⟨u i, mem_image_of_mem _ (mem_univ i)⟩).trans_le le_self_add
+  have hweight := pow_mul_pow_sub_le_mul_pow_div_pow (abs_nonneg b) (le_min hc (sq_nonneg _))
+    hcb hmin habs hd ht (card_image_add_card_image_le_card_image_bipartiteEdge_add_one u v)
+    (Nat.mul_le_mul_left 2 (card_image_bipartiteEdge_le_of_no_singleton_edge h))
+  simpa only [← Nat.mul_sub_left_distrib, pow_abs_two_mul, pow_mul (√(c * d)) 2 k, hsq,
+    mul_comm d ((c * d) ^ k)] using hweight
 
 end TauCeti

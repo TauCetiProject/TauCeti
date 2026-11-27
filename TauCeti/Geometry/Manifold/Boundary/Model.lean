@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Instances.Real
+public import Mathlib.Topology.Perfect
 public import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.Geometry.Manifold.ModelWithCorners.Perfect
 
 /-!
 # The boundary model of a Euclidean half-space
@@ -27,7 +29,11 @@ coordinates given as a function on `Fin k`, reindexed along `k = n`.  Finally,
 `ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_pos` recognises a linear functional
 that is positive off the hyperplane near a boundary point within the half-space as a positive
 multiple of the boundary coordinate. Multiplication by a positive scalar is a diffeomorphism of the
-half-space model, `TauCeti.EuclideanHalfSpace.smulDiffeomorph`.
+half-space model, `TauCeti.EuclideanHalfSpace.smulDiffeomorph`. The model is not boundaryless
+(`TauCeti.not_boundaryless_modelWithCornersEuclideanHalfSpace`), so results stated for boundaryless
+models, such as the transport `TauCeti.BoundarylessModel` to the model vector space, do not apply
+to it. The half-space is Hausdorff (`EuclideanHalfSpace.instT2Space`), and in positive dimension it
+has no isolated points (`EuclideanHalfSpace.instPerfectSpace`).
 -/
 
 public section
@@ -251,6 +257,23 @@ theorem euclideanHalfSpaceBoundary_eq_frontier (n : ℕ) :
   ext x
   simp [eq_comm]
 
+/-- Inserting `0` at coordinate `0` of `Fin n → ℝ` corresponds under
+`(EuclideanSpace.equiv _ ℝ).symm` to `euclideanHalfSpaceBoundaryParam n`. -/
+theorem euclideanSpace_equiv_symm_finCons_zero (n : ℕ) (y : Fin n → ℝ) :
+    (EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm (Fin.cons 0 y) =
+      euclideanHalfSpaceBoundaryParam n ((EuclideanSpace.equiv (Fin n) ℝ).symm y) := by
+  ext k
+  refine Fin.cases ?_ (fun j ↦ ?_) k <;>
+    simp [euclideanHalfSpaceBoundaryParam_apply_zero, euclideanHalfSpaceBoundaryParam_apply_succ]
+
+/-- The preimage of `range (𝓡∂ (n + 1))` under `(EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm` is
+the coordinate half-space `{x | 0 ≤ x 0}`. -/
+theorem preimage_euclideanSpace_equiv_symm_range_modelWithCornersEuclideanHalfSpace (n : ℕ) :
+    (EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm ⁻¹' range (𝓡∂ (n + 1)) =
+      {x : Fin (n + 1) → ℝ | 0 ≤ x 0} := by
+  ext x
+  simp [range_modelWithCornersEuclideanHalfSpace]
+
 /-- The half-space model `𝓡∂ (n + 1)` sends a point to the frontier of its range exactly when the
 zeroth coordinate of the point vanishes. -/
 theorem modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff {n : ℕ}
@@ -258,6 +281,18 @@ theorem modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff {n : ℕ}
     (𝓡∂ (n + 1)) z ∈ frontier (range (𝓡∂ (n + 1))) ↔ z.val 0 = 0 := by
   rw [frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
   exact eq_comm
+
+/-- **The half-space model is not boundaryless.** The range of `𝓡∂ n`, `n ≠ 0`, is the closed
+half-space `{y | 0 ≤ y 0}`, which misses the points with negative zeroth coordinate; for `n = 1` it
+is the half-line `[0, ∞)` of `ℝ¹`. -/
+theorem not_boundaryless_modelWithCornersEuclideanHalfSpace (n : ℕ) [NeZero n] :
+    ¬(𝓡∂ n).Boundaryless := by
+  intro h
+  have hmem : EuclideanSpace.single (0 : Fin n) (-1 : ℝ) ∈ range (𝓡∂ n) := by
+    rw [h.range_eq_univ]
+    exact mem_univ _
+  rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq] at hmem
+  norm_num at hmem
 
 namespace EuclideanHalfSpace
 
@@ -466,3 +501,13 @@ theorem exists_pos_eq_mul_apply_zero_of_eventually_pos {k : ℕ} [NeZero k]
     (EuclideanSpace.projₗ (𝕜 := ℝ) 0) (ν : EuclideanSpace ℝ (Fin k) →ₗ[ℝ] ℝ) he₀ hν_nonneg⟩
 
 end ContinuousLinearMap
+
+/-- The half-space is Hausdorff, as a subspace of `EuclideanSpace ℝ (Fin n)`. -/
+instance EuclideanHalfSpace.instT2Space {n : ℕ} [NeZero n] : T2Space (EuclideanHalfSpace n) :=
+  inferInstanceAs (T2Space {x : EuclideanSpace ℝ (Fin n) // 0 ≤ x 0})
+
+/-- A half-space of positive dimension has no isolated points, as a manifold modelled on itself
+(`ModelWithCorners.perfectSpace`). -/
+instance EuclideanHalfSpace.instPerfectSpace {n : ℕ} [NeZero n] :
+    PerfectSpace (EuclideanHalfSpace n) :=
+  ModelWithCorners.perfectSpace (𝓡∂ n) (EuclideanHalfSpace n)

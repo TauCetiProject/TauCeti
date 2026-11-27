@@ -22,12 +22,22 @@ everywhere.
 
 A sequence of sets covered almost everywhere by the union of two vanishing sequences also has
 outer measure tending to zero (`TauCeti.tendsto_measure_of_ae_subset_union`).
+
+A property holding almost everywhere holds at every point of positive mass
+(`Filter.Eventually.self_of_ae_of_measure_singleton_ne_zero`).
 -/
 
 public section
 
 open Filter MeasureTheory
 open scoped ENNReal Topology
+
+variable {α : Type*} {M : Type*} [FunLike M (Set α) ℝ≥0∞] [OuterMeasureClass M α] {μ : M} in
+/-- A property holding almost everywhere holds at every point of positive mass. -/
+theorem Filter.Eventually.self_of_ae_of_measure_singleton_ne_zero {p : α → Prop}
+    (h : ∀ᵐ y ∂μ, p y) {x : α} (hx : μ {x} ≠ 0) : p x := by
+  by_contra hne
+  exact hx (measure_mono_null (Set.singleton_subset_iff.2 hne) (ae_iff.1 h))
 
 namespace TauCeti
 

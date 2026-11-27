@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.Normed.Algebra.MatrixExponential
+import TauCeti.Analysis.Normed.Algebra.Basic
 
 /-!
 # The logarithm and real powers of positive definite matrices
@@ -38,6 +39,8 @@ topology is the native matrix topology.
 * `Matrix.IsHermitian.exp_eq_exp_iff`: the exponential is injective on the Hermitian matrices.
 * `Matrix.IsHermitian.commute_exp_iff`: a matrix commutes with the exponential of a Hermitian
   matrix exactly when it commutes with the matrix.
+* `Matrix.IsHermitian.star_exp_mul_mul_exp_eq_iff`: the exponential of a Hermitian matrix `X`
+  preserves a form `J` (`star (exp X) * J * exp X = J`) exactly when `J * X + X * J = 0`.
 * `Matrix.PosDef.cfc_log_inv`: `log P⁻¹ = -log P` for positive definite `P`.
 * `Matrix.PosDef.rpow_eq_exp_smul_cfc_log`: `P ^ s = exp (s • log P)` for positive definite `P`.
 * `Matrix.contDiffOn_cfc_log`, `Matrix.contDiffOn_rpow`, `Matrix.contDiffOn_sqrt`: the logarithm,
@@ -88,6 +91,63 @@ theorem IsHermitian.commute_exp_iff {X U : Matrix n n 𝕜} (hX : X.IsHermitian)
   refine ⟨fun h ↦ ?_, fun h ↦ h.exp_right⟩
   -- `X = log (exp X)` lies in the functional calculus of `exp X`.
   simpa only [hX.cfc_log_exp] using (h.symm.cfc_real Real.log).symm
+
+/-- For any matrix `J` and a Hermitian matrix `X`, the exponential `exp X` preserves the form `J`
+if and only if `J * X + X * J = 0`. -/
+theorem IsHermitian.star_exp_mul_mul_exp_eq_iff (J : Matrix n n 𝕜) {X : Matrix n n 𝕜}
+    (hX : X.IsHermitian) : star (exp X) * J * exp X = J ↔ J * X + X * J = 0 := by
+  have hexp_star : star (NormedSpace.exp X) = NormedSpace.exp X := by
+    rw [star_eq_conjTranspose, ← exp_conjTranspose, hX.eq]
+  rw [hexp_star]
+  constructor
+  · intro h
+    -- Diagonalize `X = U diag(d) U⁻¹` with real eigenvalues `d`, so that
+    -- `exp X = U diag(exp d) U⁻¹`.
+    let u : (Matrix n n 𝕜)ˣ := Unitary.toUnits hX.eigenvectorUnitary
+    let d : n → 𝕜 := RCLike.ofReal ∘ hX.eigenvalues
+    have hX_eq : X = u.val * diagonal d * u⁻¹.val := by
+      simpa [u, d, Unitary.conjStarAlgAut_apply, Unitary.val_toUnits_apply] using
+        hX.spectral_theorem
+    have hexp_eq :
+        NormedSpace.exp X = u.val * diagonal (fun i ↦ NormedSpace.exp (d i)) * u⁻¹.val := by
+      rw [hX_eq, Matrix.exp_units_conj u (diagonal d), Matrix.exp_diagonal, Pi.exp_def]
+    -- In the eigenbasis, `J' = U⁻¹ J U` satisfies `diag(exp d) J' diag(exp d) = J'`.
+    let J' : Matrix n n 𝕜 := u⁻¹.val * J * u.val
+    have hJ' : diagonal (fun i ↦ NormedSpace.exp (d i)) * J' *
+        diagonal (fun i ↦ NormedSpace.exp (d i)) = J' := by
+      calc _ = u⁻¹.val * (NormedSpace.exp X * J * NormedSpace.exp X) * u.val := by
+            simp [hexp_eq, J', Matrix.mul_assoc]
+        _ = J' := by rw [h]
+    -- Compare entries: `exp (dᵢ + dⱼ) J'ᵢⱼ = J'ᵢⱼ`, and `exp (dᵢ + dⱼ) = 1` forces `dᵢ + dⱼ = 0`
+    -- because the eigenvalues are real. Hence `J'` anticommutes with `diag(d)`.
+    have hanti' : J' * diagonal d + diagonal d * J' = 0 := by
+      ext i j
+      have hij : NormedSpace.exp (d i) * J' i j * NormedSpace.exp (d j) = J' i j := by
+        simpa [Matrix.diagonal_mul, Matrix.mul_diagonal] using congrFun (congrFun hJ' i) j
+      have hmul : (NormedSpace.exp (d i + d j) - 1) * J' i j = 0 := by
+        rw [NormedSpace.exp_add_of_commute (Commute.all _ _), sub_mul, one_mul, sub_eq_zero]
+        linear_combination hij
+      rcases mul_eq_zero.1 hmul with h1 | h0
+      · have hreal : Real.exp (hX.eigenvalues i + hX.eigenvalues j) = 1 := by
+          refine RCLike.ofReal_injective (K := 𝕜) ?_
+          rw [Real.exp_eq_exp_ℝ, ← RCLike.algebraMap_eq_ofReal, algebraMap_exp_comm,
+            RCLike.algebraMap_eq_ofReal, RCLike.ofReal_one]
+          simpa [d] using sub_eq_zero.1 h1
+        have hd : d i + d j = 0 := by
+          simp [d, ← map_add, (Real.exp_eq_one_iff _).1 hreal]
+        simp only [Matrix.add_apply, Matrix.mul_diagonal, Matrix.diagonal_mul, Matrix.zero_apply]
+        linear_combination J' i j * hd
+      · simp [Matrix.mul_diagonal, Matrix.diagonal_mul, h0]
+    -- Undiagonalize.
+    calc J * X + X * J = u.val * (J' * diagonal d + diagonal d * J') * u⁻¹.val := by
+          simp [hX_eq, J', mul_add, add_mul, Matrix.mul_assoc]
+      _ = 0 := by rw [hanti', Matrix.mul_zero, Matrix.zero_mul]
+  · intro h
+    let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
+    let : NormedAlgebra ℚ (Matrix n n 𝕜) := TauCeti.normedAlgebraRatOfReal
+    have hS : SemiconjBy J X (-X) := by
+      rw [SemiconjBy, neg_mul, eq_neg_of_add_eq_zero_left h]
+    simpa only [neg_neg] using hS.exp_neg_mul_mul_exp_eq_self
 
 /-- The exponential of the logarithm of a positive definite matrix is the matrix itself. -/
 @[simp, grind =]

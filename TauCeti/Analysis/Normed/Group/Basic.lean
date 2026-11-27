@@ -110,6 +110,13 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
+/-- A real norm bound `‖f x‖ ≤ L * ‖x‖` yields a nonnegative real bound `C = max L 0`. -/
+theorem exists_nnreal_norm_le_of_norm_le {α β : Type*} [SeminormedAddGroup α] [Norm β]
+    {f : α → β} {L : ℝ} (hf : ∀ x, ‖f x‖ ≤ L * ‖x‖) :
+    ∃ C : ℝ≥0, ∀ x, ‖f x‖ ≤ C * ‖x‖ :=
+  ⟨⟨max L 0, le_max_right L 0⟩, fun x ↦
+    (hf x).trans (mul_le_mul_of_nonneg_right (le_max_left L 0) (norm_nonneg x))⟩
+
 /-- **Squared triangle inequality.** The squared distance from `a` to `b` is at most twice the sum
 of the squared distances from `a` and from `b` to an intermediate point `c`. -/
 theorem norm_sub_sq_le_two_mul {E : Type*} [SeminormedAddCommGroup E] (a b c : E) :
