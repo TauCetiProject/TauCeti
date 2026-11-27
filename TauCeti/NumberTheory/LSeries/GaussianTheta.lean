@@ -41,6 +41,9 @@ multiplies it by `t^(1/2)` and shifts the Mellin argument by `-1/2`.
 
 ## Provenance
 
+The theta–Mellin normalization follows the classical construction in H. L. Montgomery and
+R. C. Vaughan, *Multiplicative Number Theory I: Classical Theory*, Chapter 10.
+
 Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic,
 PBC), commit `72fead102f663d5c7a407964a13dc0cf9d977207`. The file
 `grh/src/Lib/Analytic/DirichletTheta.lean` supplies `New.gaussianMonomial`, `New.gaussianTheta`,
