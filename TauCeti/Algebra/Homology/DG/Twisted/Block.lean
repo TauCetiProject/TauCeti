@@ -43,8 +43,9 @@ the slab `M × (0, 1)`; the critical points of the corresponding function on the
 of index `ind q`, and no trajectory goes from the level `1` back to the level `0`. The twisting
 cocycle of the slab is block upper triangular, its diagonal blocks are the cocycles of `f₀` and
 `f₁`, and its off-diagonal block is the continuation cocycle from the one to the other. The
-twisted complex of `ν.cone` is, as a graded module, the mapping cone of the continuation map of
-`ν`; that identification is not made here.
+twisted complex of `ν.cone` is the mapping cone of the continuation map of `ν`
+(`TauCeti.ContinuationCocycle.coneTwistedCochainComplexIso`, in
+`TauCeti.Algebra.Homology.DG.Twisted.MappingCone`).
 
 ## Main definitions
 
