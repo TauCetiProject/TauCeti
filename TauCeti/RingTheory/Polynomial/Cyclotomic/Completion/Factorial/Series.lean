@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.Cyclotomic.Completion.FactorialExpansion
+public import TauCeti.RingTheory.Polynomial.Cyclotomic.Completion.Factorial.Expansion
 
 /-!
 # Factorial series in the full cyclotomic completion
@@ -78,6 +78,11 @@ theorem summable_fromPoly_mul_factorialPoly (b : ℕ → R[X]) :
 cyclotomic completion. -/
 noncomputable def factorialSeries (b : ℕ → R[X]) : CycloCompletion R {n | 0 < n} :=
   ∑' n, fromPoly R {n | 0 < n} (b n * factorialPoly R n)
+
+/-- The factorial series is the sum of the factorial terms `b_n P_n`. -/
+theorem factorialSeries_def (b : ℕ → R[X]) :
+    factorialSeries b = ∑' n, fromPoly R {n | 0 < n} (b n * factorialPoly R n) :=
+  (rfl)
 
 /-- The factorial terms `b_n P_n` sum to the factorial series. -/
 theorem hasSum_factorialSeries (b : ℕ → R[X]) :
@@ -220,7 +225,9 @@ factorial-series coefficients are not unique without the degree bound. -/
 example : factorialSeries (fun n ↦ if n = 0 then 1 - X else if n = 1 then -1 else 0 : ℕ → R[X]) =
     0 := by
   rw [factorialSeries_eq_fromPoly_sum (N := 2) fun n hn ↦ by
-    simp [show n ≠ 0 by omega, show n ≠ 1 by omega]]
+    have h0 : n ≠ 0 := by omega
+    have h1 : n ≠ 1 := by omega
+    simp [h0, h1]]
   simp [sum_range_succ]
 
 /-- Kontsevich's element is `2 - q` modulo `P_2`. -/
