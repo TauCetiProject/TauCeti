@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.RibbonGraph.Basic
-public import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # The bipartite ribbon graph of a permutation triple
