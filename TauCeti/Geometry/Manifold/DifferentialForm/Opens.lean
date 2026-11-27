@@ -19,7 +19,11 @@ inclusion `TopologicalSpace.Opens.inclusion`. The differential of that inclusion
 the model space, so restriction does not change the values of the form
 (`TauCeti.mpullback_inclusion_apply`), and the charts of `U` are restrictions of those of `W`, so
 the coordinate expressions agree near every point of `U`. The same holds for restriction from `M`
-itself (`TauCeti.mpullback_subtype_val_apply`).
+itself (`TauCeti.mpullback_subtype_val_apply`). Restricting to `W` and then to `U` is restricting
+to `U` (`TauCeti.mpullback_inclusion_mpullback_subtype_val`), and a restriction `f : U → V` of a
+map `A : M → M'` to open subsets pulls the restriction of a form back to the restriction of its
+pullback along `A` (`TauCeti.mpullback_mpullback_subtype_val_of_comp_eq`), with no
+differentiability assumption.
 
 Consequently regularity of forms is local (`TauCeti.contMDiffAt_mpullback_inclusion_iff`): a form
 on `W` is `C^n` as soon as its restrictions to the members of an open cover of `W` are
@@ -88,6 +92,35 @@ theorem mpullback_subtype_val_apply {U : Opens M} (γ : RoughForm I M F k) (x : 
   simp only [mpullback_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
     Manifold.tangentSpaceOpenEquiv_apply]
   rfl
+
+/-- Restricting a form on `M` to an open subset `W` and then to an open subset `U ≤ W` is
+restricting it to `U`. -/
+@[simp]
+theorem mpullback_inclusion_mpullback_subtype_val {U W : Opens M} (h : U ≤ W)
+    (γ : RoughForm I M F k) :
+    mpullback I I (Opens.inclusion h) (mpullback I I (Subtype.val : W → M) γ) =
+      mpullback I I (Subtype.val : U → M) γ := by
+  funext x
+  rw [mpullback_inclusion_apply, mpullback_subtype_val_apply, mpullback_subtype_val_apply]
+
+/-- **Pullback along a restricted map.** Let `f : U → V` be the restriction of a map `A : M → M'`
+to open subsets, that is `Subtype.val ∘ f = A ∘ Subtype.val`. Then `f` pulls the restriction to `V`
+of a form `γ` on `M'` back to the restriction to `U` of the pullback of `γ` along `A`. No
+differentiability is needed: where `A` is not differentiable, neither is `f`. -/
+theorem mpullback_mpullback_subtype_val_of_comp_eq {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {U : Opens M} {V : Opens M'} {f : U → V} {A : M → M'}
+    (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) (γ : RoughForm I' M' F k) :
+    mpullback I I' f (mpullback I' I' (Subtype.val : V → M') γ) =
+      mpullback I I (Subtype.val : U → M) (mpullback I I' A γ) := by
+  funext x
+  ext v
+  have hx : ((f x : V) : M') = A x := congrFun hcomp x
+  simp only [mpullback_apply, mpullback_subtype_val_apply,
+    Manifold.mfderiv_apply_of_subtype_val_comp_eq hcomp]
+  -- The points `f x` of `V` and `A x` of `M'` agree, and the tangent spaces are the model space.
+  rw [hx]
+  exact (mpullback_apply (I := I) A γ (x : M) v).symm
 
 /-- The extension by zero of a rough form on an open subset `U` to an open subset `W`: it agrees
 with the form at the points of `W` lying in `U` and vanishes at the others. -/
