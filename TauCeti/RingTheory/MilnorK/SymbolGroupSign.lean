@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Order.Ring.Units
 public import TauCeti.FieldTheory.RealClosure.Root
 public import TauCeti.RingTheory.MilnorK.SteinbergPairing
 
+import Mathlib.Algebra.Exact.Basic
+
 /-!
 # The sign symbol on the degree-two symbol group of an ordered ring
 
@@ -277,45 +279,47 @@ theorem ker_sign : LinearMap.ker (sign R) = positiveEntrySpan R := by
   ext q
   exact sign_eq_zero_iff
 
+private noncomputable def positiveEntrySplit :
+    { e : SymbolGroup R ≃ₗ[ℤ] positiveEntrySpan R × ZMod 2 //
+      (positiveEntrySpan R).subtype =
+          e.symm.toLinearMap ∘ₗ LinearMap.inl ℤ (positiveEntrySpan R) (ZMod 2) ∧
+        sign R = LinearMap.snd ℤ (positiveEntrySpan R) (ZMod 2) ∘ₗ e.toLinearMap } :=
+  (LinearMap.exact_iff.mpr (ker_sign.trans (Submodule.range_subtype _).symm)).splitSurjectiveEquiv
+    (positiveEntrySpan R).injective_subtype
+    ⟨signSection.toIntLinearMap, LinearMap.ext sign_signSection⟩
+
 variable (R) in
 /-- **The splitting of the symbol group of an ordered commutative ring**: every class is uniquely
 `ε • {-1, -1} + d` with `ε ∈ ZMod 2` and `d` in the positive-entry span. The first component is
 the sign map. -/
 noncomputable def positiveEntryEquiv : SymbolGroup R ≃ₗ[ℤ] ZMod 2 × positiveEntrySpan R :=
-  AddEquiv.toIntLinearEquiv
-    { toFun q := (sign R q, ⟨q - signSection (sign R q),
-        sign_eq_zero_iff.1 (by rw [map_sub, sign_signSection, sub_self])⟩)
-      invFun p := signSection p.1 + (p.2 : SymbolGroup R)
-      left_inv q := add_sub_cancel _ _
-      right_inv p := by
-        obtain ⟨ε, d, hd⟩ := p
-        ext
-        · simp [sign_signSection, sign_eq_zero_of_mem_positiveEntrySpan hd]
-        · simp [sign_signSection, sign_eq_zero_of_mem_positiveEntrySpan hd]
-      map_add' a b := by
-        ext
-        · simp
-        · simp only [map_add, Prod.snd_add, Submodule.coe_add]
-          abel }
+  (positiveEntrySplit (R := R)).val.trans
+    (LinearEquiv.prodComm ℤ (positiveEntrySpan R) (ZMod 2))
 
 /-- The first component of `positiveEntryEquiv` is the sign map. -/
 @[simp]
 theorem positiveEntryEquiv_apply_fst (q : SymbolGroup R) :
-    (positiveEntryEquiv R q).1 = sign R q :=
-  (rfl)
+    (positiveEntryEquiv R q).1 = sign R q := by
+  change ((positiveEntrySplit (R := R)).val q).2 = sign R q
+  exact (LinearMap.congr_fun (positiveEntrySplit (R := R)).property.2 q).symm
+
+/-- The inverse of `positiveEntryEquiv` sends `(ε, d)` to `ε.val • {-1, -1} + d`. -/
+@[simp]
+theorem positiveEntryEquiv_symm_apply (ε : ZMod 2) (d : positiveEntrySpan R) :
+    (positiveEntryEquiv R).symm (ε, d) = ε.val • symbol (-1 : Rˣ) (-1) + d := by
+  change (d : SymbolGroup R) + signSection ε = _
+  rw [add_comm, signSection_apply]
 
 /-- The second component of `positiveEntryEquiv` is `q - (sign R q).val • {-1, -1}`. -/
 @[simp]
 theorem coe_positiveEntryEquiv_apply_snd (q : SymbolGroup R) :
     ((positiveEntryEquiv R q).2 : SymbolGroup R) =
-      q - (sign R q).val • symbol (-1 : Rˣ) (-1) :=
-  congrArg (q - ·) (signSection_apply _)
-
-/-- The inverse of `positiveEntryEquiv` sends `(ε, d)` to `ε.val • {-1, -1} + d`. -/
-@[simp]
-theorem positiveEntryEquiv_symm_apply (ε : ZMod 2) (d : positiveEntrySpan R) :
-    (positiveEntryEquiv R).symm (ε, d) = ε.val • symbol (-1 : Rˣ) (-1) + d :=
-  congrArg (· + (d : SymbolGroup R)) (signSection_apply ε)
+      q - (sign R q).val • symbol (-1 : Rˣ) (-1) := by
+  have hq : (positiveEntryEquiv R).symm (positiveEntryEquiv R q) = q :=
+    (positiveEntryEquiv R).symm_apply_apply q
+  rw [← Prod.mk.eta (p := positiveEntryEquiv R q), positiveEntryEquiv_symm_apply,
+    positiveEntryEquiv_apply_fst] at hq
+  exact eq_sub_of_add_eq' hq
 
 /-- `positiveEntryEquiv` sends `{-1, -1}` to `(1, 0)`. -/
 @[simp]
