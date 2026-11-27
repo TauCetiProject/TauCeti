@@ -14,8 +14,9 @@ Density bounds `c ρ ^ d ≤ μ (closedBall x ρ) ≤ C ρ ^ d` are often proved
 balls of a model space `Y`, while packing and covering are counted with the balls of a
 pseudometric space `X`, as on a manifold with a distance. This file transfers such bounds from
 the balls of the chart to the balls of `X`. Let `e : X → Y` be a map on a set `s`, and let `ν` be
-a measure on `Y`, compared with `μ` on the ball `ball (e x) R` through the sets `s ∩ e ⁻¹' t`;
-when `ν` is the pushforward of `μ` restricted to `s`, both comparisons below hold with equality.
+a measure on `Y`, compared with `μ` on the ball `ball (e x) R` through the sets `s ∩ e ⁻¹' t`
+for measurable `t`; when `e` is measurable and `ν = (μ.restrict s).map e`, both comparisons
+below hold with equality.
 
 * If the inverse of `e` is `Λ`-Lipschitz at `e x`, that is `dist y x ≤ Λ * dist (e y) (e x)` for
   `y ∈ s` with `e y ∈ ball (e x) R`, and `ν t ≤ μ (s ∩ e ⁻¹' t)`, then the chart ball of radius
