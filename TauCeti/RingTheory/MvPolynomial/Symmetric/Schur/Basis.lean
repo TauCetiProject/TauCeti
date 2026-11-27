@@ -80,7 +80,7 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
   in at least `n` letters and smaller in fewer.
 * `TauCeti.linearIndependent_diagramSchurPoly`: in `N` variables, the Schur polynomials of all the
   Young diagrams with at most `N` rows, of every degree, are linearly independent over any
-  commutative ring.
+  additively cancellative commutative semiring.
 * `TauCeti.span_symmetricDiagramSchurPoly_eq_top`: the Schur polynomials span the symmetric
   polynomials over a commutative ring, since they span each homogeneous degree.
 * `TauCeti.map_mem_of_forall_symmetricDiagramSchurPoly`: a linear map out of the symmetric
@@ -419,6 +419,41 @@ theorem eq_of_sum_nsmul_diagramSchurPoly_eq [CharZero R] {N : ℕ} (h : n ≤ N)
   exact congrFun (eq_of_sum_nsmul_diagramSchurPoly_eq_of_colLen_le heq)
     ⟨ν, by rw [YoungDiagram.colLen_zero_ofPartition]; exact ν.card_parts_le.trans h⟩
 
+/-- **The Schur polynomials are linearly independent**: in `N` variables, the Schur polynomials of
+the Young diagrams with at most `N` rows are linearly independent over every additively
+cancellative commutative semiring. The diagrams with more rows have Schur polynomial zero
+(`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`). -/
+theorem linearIndependent_diagramSchurPoly [IsCancelAdd R] {N : ℕ} :
+    LinearIndependent R fun μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} => diagramSchurPoly N R μ := by
+  rw [linearIndependent_iff'ₛ]
+  intro s g g' hsum μ hμ
+  -- Keep the terms of degree `|μ|`, which are independent by
+  -- `linearIndependent_diagramSchurPoly_of_colLen_le`.
+  have hc (ν : {μ : YoungDiagram // μ.colLen 0 ≤ N}) :
+      homogeneousComponent μ.val.card (diagramSchurPoly N R ν) =
+        if ν.val.card = μ.val.card then diagramSchurPoly N R ν else 0 := by
+    rw [homogeneousComponent_of_mem
+      ((mem_homogeneousSubmodule _ _).mpr isHomogeneous_diagramSchurPoly)]
+    exact if_congr eq_comm rfl rfl
+  have h := congrArg (homogeneousComponent μ.val.card) hsum
+  simp only [map_sum, map_smul, hc, smul_ite, smul_zero] at h
+  rw [← sum_filter, ← sum_subtype_eq_sum_filter, ← sum_filter, ← sum_subtype_eq_sum_filter] at h
+  let e : {ν : {μ : YoungDiagram // μ.colLen 0 ≤ N} // ν.val.card = μ.val.card} ≃
+      {ν : μ.val.card.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} :=
+    { toFun := fun ν => ⟨ν.val.val.toPartition ν.property, by simpa using ν.val.property⟩
+      invFun := fun ν => ⟨⟨YoungDiagram.ofPartition ν.val, ν.property⟩,
+        YoungDiagram.card_ofPartition ν.val⟩
+      left_inv := fun ν => by ext : 2; simp
+      right_inv := fun ν => by ext : 1; simp }
+  have hli : LinearIndependent R
+      (fun ν : {ν : {μ : YoungDiagram // μ.colLen 0 ≤ N} // ν.val.card = μ.val.card} =>
+        diagramSchurPoly N R ν.val.val) := by
+    convert (linearIndependent_diagramSchurPoly_of_colLen_le
+      (R := R) (n := μ.val.card) (N := N)).comp e e.injective with ν
+    simp [e]
+  exact linearIndependent_iff'ₛ.mp hli (s.subtype fun ν => ν.val.card = μ.val.card)
+    (fun ν => g ν.val) (fun ν => g' ν.val) h ⟨μ, rfl⟩ (by simpa using hμ)
+
 end LinearIndependent
 
 /-! ### The Schur basis -/
@@ -498,41 +533,6 @@ theorem schurPolyBasis_repr_of_coe_eq_sum {p : symmetricHomogeneousSubmodule σ 
       Fintype.card σ), Fintype.sum_eq_zero (fun l : {l : n.Partition // ¬_} => _)
       fun l => by rw [schurPoly_eq_zero_of_card_lt _ (not_le.mp l.property), smul_zero], add_zero]
   rw [h, Module.Basis.repr_sum_self]
-
-/-- **The Schur polynomials are linearly independent**: in `N` variables, the Schur polynomials of
-the Young diagrams with at most `N` rows are linearly independent over every commutative ring.
-The diagrams with more rows have Schur polynomial zero
-(`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`). -/
-theorem linearIndependent_diagramSchurPoly {N : ℕ} :
-    LinearIndependent R fun μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} => diagramSchurPoly N R μ := by
-  rw [linearIndependent_iff']
-  intro s g hg μ hμ
-  -- Keep the terms of degree `|μ|`, which are independent by
-  -- `linearIndependent_diagramSchurPoly_of_colLen_le`.
-  have hc (ν : {μ : YoungDiagram // μ.colLen 0 ≤ N}) :
-      homogeneousComponent μ.val.card (diagramSchurPoly N R ν) =
-        if ν.val.card = μ.val.card then diagramSchurPoly N R ν else 0 := by
-    rw [homogeneousComponent_of_mem
-      ((mem_homogeneousSubmodule _ _).mpr isHomogeneous_diagramSchurPoly)]
-    exact if_congr eq_comm rfl rfl
-  have h := congrArg (homogeneousComponent μ.val.card) hg
-  simp only [map_sum, map_smul, map_zero, hc, smul_ite, smul_zero] at h
-  rw [← sum_filter, ← sum_subtype_eq_sum_filter] at h
-  let e : {ν : {μ : YoungDiagram // μ.colLen 0 ≤ N} // ν.val.card = μ.val.card} ≃
-      {ν : μ.val.card.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} :=
-    { toFun := fun ν => ⟨ν.val.val.toPartition ν.property, by simpa using ν.val.property⟩
-      invFun := fun ν => ⟨⟨YoungDiagram.ofPartition ν.val, ν.property⟩,
-        YoungDiagram.card_ofPartition ν.val⟩
-      left_inv := fun ν => by ext : 2; simp
-      right_inv := fun ν => by ext : 1; simp }
-  have hli : LinearIndependent R
-      (fun ν : {ν : {μ : YoungDiagram // μ.colLen 0 ≤ N} // ν.val.card = μ.val.card} =>
-        diagramSchurPoly N R ν.val.val) := by
-    convert (linearIndependent_diagramSchurPoly_of_colLen_le
-      (R := R) (n := μ.val.card) (N := N)).comp e e.injective with ν
-    simp [e]
-  exact linearIndependent_iff'.mp hli (s.subtype fun ν => ν.val.card = μ.val.card)
-    (fun ν => g ν.val) h ⟨μ, rfl⟩ (by simpa using hμ)
 
 /-- **The Schur polynomials span the symmetric polynomials**: every symmetric polynomial in `N`
 variables is an `R`-linear combination of Schur polynomials. Each homogeneous component of a

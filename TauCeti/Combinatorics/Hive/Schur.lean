@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hive.LittlewoodRichardson
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LittlewoodRichardson
+import TauCeti.Combinatorics.Hive.GelfandTsetlin
 
 /-!
 # The hive model of the Littlewood–Richardson rule for Schur polynomials
@@ -24,8 +25,7 @@ weights `λ, μ : DominantWeight n`, any `N ≤ n`, and any commutative semiring
 in `N` variables (`MvPolynomial (Fin N) R`). Non-polynomial weights `γ` and weights of total size
 distinct from `|λ| + |μ|` have zero hive count, while Young diagrams of more than `n` rows vanish in
 `N ≤ n` variables (`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`) without requiring
-representation theory; sharpness of the `N ≤ n` bound is recorded in
-`TauCeti.Combinatorics.Hive.Multiplicity` as
+representation theory; sharpness of the `N ≤ n` bound is recorded here as
 `TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`, and input-swap symmetry of `hiveCount`
 is `TauCeti.Hive.hiveCount_comm` (via `YoungDiagram.natCard_lrTableau_comm`).
 
@@ -34,6 +34,13 @@ is `TauCeti.Hive.hiveCount_comm` (via `YoungDiagram.natCard_lrTableau_comm`).
 * `TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`: **the hive model of the
   Littlewood–Richardson rule** for Schur polynomials in `N ≤ n` variables over any commutative
   semiring.
+* `TauCeti.Hive.map_finsum_hiveCount_smul_diagramSchurPoly`,
+  `TauCeti.Hive.eval₂_finsum_hiveCount_smul_diagramSchurPoly`,
+  `TauCeti.Hive.aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly`,
+  `TauCeti.Hive.aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly_eq_zero`, and
+  `TauCeti.Hive.aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly_weightOfShape`:
+  coefficient-ring transport, evaluation transport, and rank-lowering along `Fin.snoc · 0`.
+* `TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`: **sharpness** of the `N ≤ n` bound.
 * `TauCeti.Hive.hiveCount_comm`: **input symmetry** `hiveCount (productBoundary l m p) =
   hiveCount (productBoundary m l p)` without representation-theory imports.
 
@@ -48,6 +55,8 @@ is `TauCeti.Hive.hiveCount_comm` (via `YoungDiagram.natCard_lrTableau_comm`).
 public section
 
 open scoped BigOperators
+
+open MvPolynomial
 
 namespace TauCeti.Hive
 
@@ -105,6 +114,168 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n N : ℕ} (h
   congr 1
   rw [hiveCount_productBoundary_eq_natCard_lrTableau_shape hlam hμ
     (isPolynomial_weightOfShape n (ofPartition ν.val)), shape_weightOfShape ν.property]
+
+private theorem finite_support_hiveCount_smul_diagramSchurPoly {n : ℕ} {R : Type*}
+    [CommSemiring R] (lam μ : DominantWeight n) :
+    (Function.support fun γ : DominantWeight n =>
+      (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly n R γ.shape).Finite := by
+  refine (finite_support_hiveCount_productBoundary lam μ).subset fun γ hγ => ?_
+  rw [Function.mem_support] at hγ
+  refine Nat.pos_of_ne_zero fun h0 => hγ ?_
+  simp [h0]
+
+/-- Coefficient-ring transport for the hive-indexed Schur sum along any semiring homomorphism
+`f : R →+* S`. -/
+theorem map_finsum_hiveCount_smul_diagramSchurPoly {n : ℕ} {R S : Type*}
+    [CommSemiring R] [CommSemiring S] (f : R →+* S) (lam μ : DominantWeight n) :
+    MvPolynomial.map f
+        (∑ᶠ γ : DominantWeight n,
+          (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly n R γ.shape) =
+      ∑ᶠ γ : DominantWeight n,
+        (hiveCount (productBoundary lam μ γ) : S) • diagramSchurPoly n S γ.shape := by
+  rw [map_finsum (MvPolynomial.map f)
+    (finite_support_hiveCount_smul_diagramSchurPoly lam μ)]
+  refine finsum_congr fun γ => ?_
+  rw [smul_eq_C_mul, map_mul, MvPolynomial.map_C, map_natCast, map_diagramSchurPoly,
+    ← smul_eq_C_mul]
+
+/-- Evaluation transport for the hive-indexed Schur sum along any semiring homomorphism
+`f : R →+* S` and point `x : Fin n → S`. -/
+theorem eval₂_finsum_hiveCount_smul_diagramSchurPoly {n : ℕ} {R S : Type*}
+    [CommSemiring R] [CommSemiring S] (f : R →+* S) (x : Fin n → S) (lam μ : DominantWeight n) :
+    eval₂ f x
+        (∑ᶠ γ : DominantWeight n,
+          (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly n R γ.shape) =
+      ∑ᶠ γ : DominantWeight n,
+        (hiveCount (productBoundary lam μ γ) : S) • eval x (diagramSchurPoly n S γ.shape) := by
+  rw [← MvPolynomial.eval_map, map_finsum_hiveCount_smul_diagramSchurPoly,
+    map_finsum (eval x) (finite_support_hiveCount_smul_diagramSchurPoly lam μ)]
+  refine finsum_congr fun γ => ?_
+  rw [smul_eq_C_mul, map_mul, eval_C, smul_eq_mul]
+
+/-- Setting the last variable to `0` transports the `(n + 1)`-variable hive-indexed Schur
+expansion for polynomial weights of at most `n` rows to the `n`-variable expansion, where the
+surviving hive coefficients match across ranks by
+`TauCeti.Hive.hiveCount_productBoundary_eq_of_shape_eq`. -/
+theorem aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly {n : ℕ} {R : Type*}
+    [CommSemiring R] {lam μ : DominantWeight (n + 1)}
+    (hl : lam.IsPolynomial) (hm : μ.IsPolynomial)
+    (hln : lam.shape.colLen 0 ≤ n) (hmn : μ.shape.colLen 0 ≤ n) :
+    aeval (Fin.snoc (X : Fin n → MvPolynomial (Fin n) R) 0)
+        (∑ᶠ γ : DominantWeight (n + 1),
+          (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly (n + 1) R γ.shape) =
+      ∑ᶠ γ : DominantWeight n,
+        (hiveCount (productBoundary (weightOfShape n lam.shape) (weightOfShape n μ.shape) γ) :
+          R) • diagramSchurPoly n R γ.shape := by
+  simp_rw [Nat.cast_smul_eq_nsmul]
+  rw [← diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount le_rfl hl hm, map_mul,
+    aeval_snoc_zero_diagramSchurPoly, aeval_snoc_zero_diagramSchurPoly,
+    ← shape_weightOfShape hln, ← shape_weightOfShape hmn,
+    diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount le_rfl
+      (isPolynomial_weightOfShape _ _) (isPolynomial_weightOfShape _ _),
+    shape_weightOfShape hln, shape_weightOfShape hmn]
+
+/-- Setting the last variable to `0` annihilates the `(n + 1)`-variable hive-indexed Schur
+expansion when either polynomial input weight has `n + 1` rows. -/
+theorem aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly_eq_zero {n : ℕ} {R : Type*}
+    [CommSemiring R] {lam μ : DominantWeight (n + 1)}
+    (hl : lam.IsPolynomial) (hm : μ.IsPolynomial)
+    (hlt : n < lam.shape.colLen 0 ∨ n < μ.shape.colLen 0) :
+    aeval (Fin.snoc (X : Fin n → MvPolynomial (Fin n) R) 0)
+        (∑ᶠ γ : DominantWeight (n + 1),
+          (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly (n + 1) R γ.shape) = 0 := by
+  simp_rw [Nat.cast_smul_eq_nsmul]
+  rw [← diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount le_rfl hl hm, map_mul,
+    aeval_snoc_zero_diagramSchurPoly, aeval_snoc_zero_diagramSchurPoly]
+  rcases hlt with h | h
+  · rw [diagramSchurPoly_eq_zero_of_lt_colLen h, zero_mul]
+  · rw [diagramSchurPoly_eq_zero_of_lt_colLen h, mul_zero]
+
+/-- Lifting rank-`n` polynomial weights to rank `n + 1` via `TauCeti.weightOfShape (n + 1)` and
+setting the last variable to `0` recovers the rank-`n` hive-indexed Schur expansion. -/
+theorem aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly_weightOfShape {n : ℕ}
+    {R : Type*} [CommSemiring R] (lam μ : DominantWeight n)
+    (hl : lam.IsPolynomial) (hm : μ.IsPolynomial) :
+    aeval (Fin.snoc (X : Fin n → MvPolynomial (Fin n) R) 0)
+        (∑ᶠ γ : DominantWeight (n + 1),
+          (hiveCount (productBoundary (weightOfShape (n + 1) lam.shape)
+            (weightOfShape (n + 1) μ.shape) γ) : R) •
+            diagramSchurPoly (n + 1) R γ.shape) =
+      ∑ᶠ γ : DominantWeight n,
+        (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly n R γ.shape := by
+  have hln : (weightOfShape (n + 1) lam.shape).shape.colLen 0 ≤ n := by
+    rw [shape_weightOfShape ((DominantWeight.colLen_zero_shape_le lam).trans (Nat.le_succ n))]
+    exact DominantWeight.colLen_zero_shape_le lam
+  have hmn : (weightOfShape (n + 1) μ.shape).shape.colLen 0 ≤ n := by
+    rw [shape_weightOfShape ((DominantWeight.colLen_zero_shape_le μ).trans (Nat.le_succ n))]
+    exact DominantWeight.colLen_zero_shape_le μ
+  rw [aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly
+      (isPolynomial_weightOfShape _ _) (isPolynomial_weightOfShape _ _) hln hmn,
+    shape_weightOfShape ((DominantWeight.colLen_zero_shape_le lam).trans (Nat.le_succ n)),
+    shape_weightOfShape ((DominantWeight.colLen_zero_shape_le μ).trans (Nat.le_succ n)),
+    weightOfShape_shape hl, weightOfShape_shape hm]
+
+private theorem shape_eq_of_one_two (w₁ : DominantWeight 1) (w₂ : DominantWeight 2)
+    (h0 : w₁.val 0 = w₂.val 0) (h1 : w₂.val 1 = 0) : w₁.shape = w₂.shape := by
+  refine YoungDiagram.rowLen_injective (funext fun i => ?_)
+  match i with
+  | 0 =>
+    have a := w₁.rowLen_shape 0; have b := w₂.rowLen_shape 0
+    simp only [Fin.val_zero, h0] at a b; omega
+  | 1 =>
+    have b := w₂.rowLen_shape 1
+    rw [w₁.rowLen_shape_eq_zero_of_le le_rfl]; simp only [Fin.val_one, h1] at b; omega
+  | i + 2 =>
+    rw [w₁.rowLen_shape_eq_zero_of_le (by omega), w₂.rowLen_shape_eq_zero_of_le (by omega)]
+
+/-- Sharpness of the `N ≤ n` alphabet bound in
+`diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`: for rank `1` weights
+`λ = μ = (1)` evaluated in `2` variables, `s_{(1)}² = s_{(2)} + s_{(1, 1)}`, whereas the rank-`1`
+hive sum produces only `s_{(2)}` and omits the nonzero term `s_{(1, 1)}`. -/
+theorem schur_mul_two_vars_ne_finsum_hiveCount_one :
+    let ω : DominantWeight 1 := ⟨![1], by decide⟩
+    diagramSchurPoly 2 ℤ ω.shape * diagramSchurPoly 2 ℤ ω.shape ≠
+      ∑ᶠ γ : DominantWeight 1,
+        (hiveCount (productBoundary ω ω γ) : ℤ) • diagramSchurPoly 2 ℤ γ.shape := by
+  intro ω heq
+  let std₂ : DominantWeight 2 := ⟨![1, 0], by decide⟩
+  let sym₂ : DominantWeight 2 := ⟨![2, 0], by decide⟩
+  let det₂ : DominantWeight 2 := ⟨![1, 1], by decide⟩
+  have hstd₂ : std₂.IsPolynomial := by rw [DominantWeight.isPolynomial_def]; decide
+  have hrhs₁ : (∑ᶠ γ : DominantWeight 1,
+      (hiveCount (productBoundary ω ω γ) : ℤ) • diagramSchurPoly 2 ℤ γ.shape) =
+      diagramSchurPoly 2 ℤ sym₂.shape := by
+    rw [finsum_eq_single _ (ω + ω)]
+    · rw [shape_eq_of_one_two (ω + ω) sym₂ rfl rfl]
+      simp [hiveCount_one_productBoundary]
+    · intro γ hγ
+      have hne : ω.val 0 + ω.val 0 ≠ γ.val 0 := fun h => hγ <| by
+        ext i; rw [Fin.fin_one_eq_zero i]; simp [← h]
+      simp [hiveCount_one_productBoundary, hne]
+  have hsupp₂ : Function.support
+      (fun δ : DominantWeight 2 =>
+        (hiveCount (productBoundary std₂ std₂ δ) : ℤ) • diagramSchurPoly 2 ℤ δ.shape) ⊆
+      ({sym₂, det₂} : Finset (DominantWeight 2)) := by
+    intro δ hδ
+    rw [Function.mem_support] at hδ
+    rw [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton]
+    by_contra hnot
+    dsimp only [sym₂, det₂] at hnot
+    rw [hiveCount_two_std_std_eq] at hδ
+    simp only [hnot, ↓reduceIte, CharP.cast_eq_zero, zero_smul] at hδ
+    exact hδ rfl
+  have hlhs₂ : diagramSchurPoly 2 ℤ ω.shape * diagramSchurPoly 2 ℤ ω.shape =
+      diagramSchurPoly 2 ℤ sym₂.shape + diagramSchurPoly 2 ℤ det₂.shape := by
+    simp_rw [Nat.cast_smul_eq_nsmul] at hsupp₂ ⊢
+    rw [shape_eq_of_one_two ω std₂ rfl rfl,
+      diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount le_rfl hstd₂ hstd₂,
+      finsum_eq_sum_of_support_subset _ hsupp₂, Finset.sum_pair (by decide : sym₂ ≠ det₂),
+      hiveCount_two_std_std_eq, hiveCount_two_std_std_eq]
+    simp [sym₂, det₂]
+  rw [hlhs₂, hrhs₁] at heq
+  exact diagramSchurPoly_ne_zero det₂.colLen_zero_shape_le (add_eq_left.mp heq)
+
+/-! ### Input-swap symmetry of hive counts -/
 
 /-- **Symmetry of hive counts in the two inputs**: `c^p_{l, m} = c^p_{m, l}` for all dominant
 weights `l, m, p` of `GL n`. -/
