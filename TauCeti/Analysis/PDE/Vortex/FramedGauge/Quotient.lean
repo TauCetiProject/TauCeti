@@ -479,6 +479,17 @@ theorem isQuotientMap_vortexModuli_quotientMk (hk : 3 ≤ k) :
       Quotient.mk (MulAction.orbitRel (SobolevTopologicalGaugeGroup hs)
         (SobolevFieldSpace f m k)) ⁻¹' vortexModuli f m hs :=
     Set.ext fun _ ↦ (mk_mem_vortexModuli_iff hk).symm
+  have hq :
+      (Set.restrictPreimage (vortexModuli f m hs)
+          (Quotient.mk (MulAction.orbitRel (SobolevTopologicalGaugeGroup hs)
+            (SobolevFieldSpace f m k))) ∘
+        Homeomorph.setCongr hset) =
+      fun x : {x : SobolevFieldSpace f m k | ∀ z, equation x z = 0} ↦
+        (⟨Quotient.mk _ x.val, mk_mem_vortexModuli x.property⟩ : vortexModuli f m hs) := by
+    funext x
+    apply Subtype.ext
+    simp [Set.restrictPreimage, Homeomorph.setCongr]
+  rw [← hq]
   exact (MulAction.isOpenQuotientMap_quotientMk.restrictPreimage
     (vortexModuli f m hs)).isQuotientMap.comp (Homeomorph.setCongr hset).isQuotientMap
 

@@ -18,8 +18,9 @@ This file identifies `vortexModuli f m hs` with the set-level Sobolev vortex mod
 (`TauCeti.Vortex.SobolevFieldSpace.vortexModuliEquivSobolevVortexModuli`), and composes
 `vortexModuliHomeomorph` with `TauCeti.Vortex.framedVortexModuliHomeomorph` to give a
 homeomorphism `TauCeti.Vortex.SobolevFieldSpace.vortexModuliHomeomorphFramedVortexModuli` between
-`vortexModuli f m hs` and the smooth framed vortex moduli space with the topology of locally
-uniform convergence.
+`vortexModuli f m hs` and the orbit space of the smooth framed vortices `framedVortices 1 m`, where
+locally uniform convergence topologizes the representatives `framedVortices 1 m` and their orbit
+space carries the quotient topology.
 
 ## Main definitions
 
@@ -143,8 +144,9 @@ theorem vortexModuliEquivSobolevVortexModuli_mk (hk : 3 < k) {x : SobolevFieldSp
 
 /-- **Homeomorphism between `vortexModuli` and the smooth framed vortex moduli.** For `k ≥ 4`, the
 Sobolev vortex moduli space `vortexModuli f m hs` is homeomorphic to the orbit space of the smooth
-framed vortices `framedVortices 1 m` with the topology of locally uniform convergence, identifying
-orbits with the same zero divisor. -/
+framed vortices `framedVortices 1 m` (where locally uniform convergence topologizes the
+representatives `framedVortices 1 m`, and their orbit space carries the quotient topology),
+identifying orbits with the same zero divisor. -/
 noncomputable def vortexModuliHomeomorphFramedVortexModuli (hk : 3 < k) :
     vortexModuli f m hs ≃ₜ
       MulAction.orbitRel.Quotient framedGaugeGroup (framedVortices 1 m) :=
