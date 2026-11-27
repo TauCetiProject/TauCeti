@@ -44,7 +44,9 @@ saturation `(QuotientGroup.mk : G → G ⧸ N) ⁻¹' (QuotientGroup.mk '' U) = 
 up to a null set. In a first-countable topological group with measurable open sets and measurable
 multiplication, a compact set of positive measure for a left-invariant measure finite on compact
 sets forces the group to be locally compact
-(`IsCompact.locallyCompactSpace_of_measure_ne_zero_of_group`).
+(`IsCompact.locallyCompactSpace_of_measure_ne_zero_of_group`), and in a weakly locally compact group
+a left-invariant measure of finite mass that is positive on open sets forces the group to be
+compact.
 
 ## Main results
 
@@ -93,6 +95,9 @@ sets forces the group to be locally compact
   topological group with measurable open sets and measurable multiplication (or addition), a
   compact set of positive measure for a left-invariant measure finite on compact sets forces the
   group to be locally compact.
+* `Measure.compactSpace_of_isMulLeftInvariant_of_isFiniteMeasure`,
+  `Measure.compactSpace_of_isAddLeftInvariant_of_isFiniteMeasure`: a weakly locally compact
+  group with a left-invariant measure of finite mass, positive on open sets, is compact.
 -/
 
 public section
@@ -559,3 +564,20 @@ theorem IsCompact.locallyCompactSpace_of_measure_ne_zero_of_group
   exact hcompact.measure_lt_top.not_ge hle
 
 end LocallyCompact
+
+section CompactSpace
+
+/-- A weakly locally compact group carrying a left-invariant measure of finite total mass that is
+positive on open sets, such as a Haar probability measure, is compact. -/
+@[to_additive /-- A weakly locally compact additive group carrying a left-invariant measure of
+finite total mass that is positive on open sets, such as an additive Haar probability measure, is
+compact. -/]
+theorem MeasureTheory.Measure.compactSpace_of_isMulLeftInvariant_of_isFiniteMeasure {G : Type*}
+    [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [WeaklyLocallyCompactSpace G]
+    [MeasurableSpace G] [BorelSpace G] (μ : Measure G) [μ.IsOpenPosMeasure] [μ.IsMulLeftInvariant]
+    [IsFiniteMeasure μ] : CompactSpace G := by
+  by_contra h
+  have : NoncompactSpace G := not_compactSpace_iff.mp h
+  exact measure_ne_top μ univ (measure_univ_of_isMulLeftInvariant μ)
+
+end CompactSpace
