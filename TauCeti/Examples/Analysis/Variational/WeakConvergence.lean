@@ -185,29 +185,24 @@ theorem tendsto_inv_smul_e : Tendsto (fun n : ℕ ↦ ((n : ℝ) + 1)⁻¹ • e
 
 /-! ### Mazur's lemma along the subsequence realizing the lower limit -/
 
-/-- The energy `‖u‖²` is convex on `ℓ²`. -/
-theorem convexOn_norm_sq : ConvexOn ℝ univ fun u : L2 ↦ ‖u‖ ^ 2 :=
-  ConvexOn.pow (convexOn_norm convex_univ) (fun _ _ ↦ norm_nonneg _) 2
-
-/-- The energy `‖u‖²` is lower semicontinuous. -/
-theorem lowerSemicontinuousWithinAt_norm_sq {x : L2} :
-    LowerSemicontinuousWithinAt (fun u : L2 ↦ ‖u‖ ^ 2) univ x :=
-  (continuous_norm.pow 2 : Continuous fun u : L2 ↦ ‖u‖ ^ 2).lowerSemicontinuous
-    |>.lowerSemicontinuousWithinAt univ x
-
 /-- **Mazur along the subsequence `(eₙ)`**: the energies `‖u_{2n}‖² = 1` occur frequently, so
 `‖0‖² ≤ 1`. -/
 theorem norm_sq_zero_le_one_of_mazur : ‖(0 : L2)‖ ^ 2 ≤ 1 :=
-  convexOn_norm_sq.quasiconvexOn.le_of_tendsto_weak_of_frequently_le (𝕜 := ℝ)
-    lowerSemicontinuousWithinAt_norm_sq
+  ((convexOn_norm convex_univ).pow (fun _ _ ↦ norm_nonneg _) 2).quasiconvexOn
+    |>.le_of_tendsto_weak_of_frequently_le (𝕜 := ℝ)
+    ((continuous_norm.pow 2).lowerSemicontinuous.lowerSemicontinuousWithinAt univ 0)
     (.of_forall fun _ ↦ mem_univ _) tendsto_toWeakSpace_mixed
     (frequently_atTop.2 fun N ↦ ⟨2 * N, by omega, (norm_sq_mixed_two_mul N).le⟩)
 
-/-- The lower-semicontinuity inequality `‖0‖² ≤ liminf ‖uₖ‖² = 1` for the two-level sequence. -/
+/-- The lower-semicontinuity inequality `‖0‖² ≤ liminf ‖uₖ‖² = 1` for the two-level sequence,
+in `EReal`. -/
 theorem norm_sq_zero_le_liminf_mixed :
     ((‖(0 : L2)‖ ^ 2 : ℝ) : EReal) ≤ liminf (fun k ↦ ((‖mixed k‖ ^ 2 : ℝ) : EReal)) atTop :=
-  convexOn_norm_sq.quasiconvexOn.le_liminf_of_tendsto_weak (𝕜 := ℝ)
-    lowerSemicontinuousWithinAt_norm_sq
+  ((convexOn_norm convex_univ).pow (fun _ _ ↦ norm_nonneg _) 2).quasiconvexOn
+    |>.monotone_comp EReal.coe_strictMono.monotone
+    |>.le_liminf_of_tendsto_weak (𝕜 := ℝ)
+    ((continuous_coe_real_ereal.comp (continuous_norm.pow 2)).lowerSemicontinuous
+      |>.lowerSemicontinuousWithinAt univ 0)
     (.of_forall fun _ ↦ mem_univ _) tendsto_toWeakSpace_mixed
 
 end TauCeti.VariationalChecks

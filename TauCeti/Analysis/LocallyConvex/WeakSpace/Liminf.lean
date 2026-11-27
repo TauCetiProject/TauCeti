@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.LocallyConvex.Mazur
 public import Mathlib.Analysis.Convex.Quasiconvex
 public import Mathlib.Topology.Semicontinuity.Basic
-public import Mathlib.Topology.Instances.EReal.Lemmas
+public import Mathlib.Order.LiminfLimsup
 
 /-!
 # Quasiconvex energies at weak limits, by Mazur's lemma
@@ -19,14 +19,14 @@ convex), and lower semicontinuous within `s` at a point `x` in the original topo
 
 `f x ≤ liminf f (uᵢ)`
 
-(`QuasiconvexOn.le_liminf_of_tendsto_weak`, for real `f`, stated in `EReal` so that no
-boundedness is needed). The proof is Mazur's lemma: if `f (uᵢ) ≤ c` frequently, the weak limit
-`x` lies in the closure, in the original topology, of the convex hull of those `uᵢ`
-(`TauCeti.mem_closure_convexHull_range_of_tendsto_weak`), and that hull lies in the convex
-sublevel set `{y ∈ s | f y ≤ c}`; lower semicontinuity at `x` then gives `f x ≤ c`
-(`QuasiconvexOn.le_of_tendsto_weak_of_frequently_le`). The family is only used along the indices
-where `f (uᵢ) ≤ c`, that is along a subfamily realizing the lower limit: convex combinations of
-the whole family do not control the limiting energy.
+(`QuasiconvexOn.le_liminf_of_tendsto_weak`, for `f` valued in a densely ordered complete linear
+order such as `EReal` or `ℝ≥0∞`, so that no boundedness is needed). The proof is Mazur's lemma:
+if `f (uᵢ) ≤ c` frequently, the weak limit `x` lies in the closure, in the original topology, of
+the convex hull of those `uᵢ` (`TauCeti.mem_closure_convexHull_range_of_tendsto_weak`), and that
+hull lies in the convex sublevel set `{y ∈ s | f y ≤ c}`; lower semicontinuity at `x` then gives
+`f x ≤ c` (`QuasiconvexOn.le_of_tendsto_weak_of_frequently_le`). The family is only used along
+the indices where `f (uᵢ) ≤ c`, that is along a subfamily realizing the lower limit: convex
+combinations of the whole family do not control the limiting energy.
 
 Only lower semicontinuity at the limit point is used, and `s` need not be closed. Global weak
 lower semicontinuity of lower semicontinuous quasiconvex functions is
@@ -37,7 +37,8 @@ For a complex space, quasiconvexity is real quasiconvexity.
 
 * `QuasiconvexOn.le_of_tendsto_weak_of_frequently_le`: a bound `f (uᵢ) ≤ c` holding frequently
   passes to the weak limit.
-* `QuasiconvexOn.le_liminf_of_tendsto_weak`: `f x ≤ liminf f (uᵢ)`, in `EReal`.
+* `QuasiconvexOn.le_liminf_of_tendsto_weak`: `f x ≤ liminf f (uᵢ)`, in a densely ordered
+  complete linear order.
 -/
 
 public section
@@ -78,18 +79,14 @@ theorem le_of_tendsto_weak_of_frequently_le {β : Type*} [LinearOrder β] {f : E
 /-- **A quasiconvex energy is sequentially weakly lower semicontinuous at a point of lower
 semicontinuity**: if `f` is quasiconvex on `s` and lower semicontinuous within `s` at `x`, and the
 family `uᵢ` lies eventually in `s` and converges weakly to `x`, then `f x ≤ liminf f (uᵢ)`. The
-lower limit is taken in `EReal`, so no boundedness of `f (uᵢ)` is assumed. -/
-theorem le_liminf_of_tendsto_weak {f : E → ℝ} (hf : QuasiconvexOn ℝ s f)
+codomain is a densely ordered complete linear order (for instance `EReal` or `ℝ≥0∞`), so no
+boundedness of `f (uᵢ)` is assumed; for a real `f`, apply it to `fun y ↦ (f y : EReal)`. -/
+theorem le_liminf_of_tendsto_weak {β : Type*} [CompleteLinearOrder β] [DenselyOrdered β]
+    {f : E → β} (hf : QuasiconvexOn ℝ s f)
     (hfx : LowerSemicontinuousWithinAt f s x) (hus : ∀ᶠ i in l, u i ∈ s)
     (hu : Tendsto (fun i ↦ toWeakSpace 𝕜 E (u i)) l (𝓝 (toWeakSpace 𝕜 E x))) :
-    (f x : EReal) ≤ liminf (fun i ↦ (f (u i) : EReal)) l := by
-  refine le_of_forall_gt_imp_ge_of_dense fun c hc ↦ ?_
-  induction c using EReal.rec with
-  | bot => exact absurd hc not_lt_bot
-  | top => exact le_top
-  | coe c =>
-    refine EReal.coe_le_coe_iff.mpr (hf.le_of_tendsto_weak_of_frequently_le hfx hus hu ?_)
-    exact (frequently_lt_of_liminf_lt (by isBoundedDefault) hc).mono fun _ h ↦
-      (EReal.coe_lt_coe_iff.mp h).le
+    f x ≤ liminf (fun i ↦ f (u i)) l :=
+  le_of_forall_gt_imp_ge_of_dense fun _ hc ↦ hf.le_of_tendsto_weak_of_frequently_le hfx hus hu <|
+    (frequently_lt_of_liminf_lt (by isBoundedDefault) hc).mono fun _ h ↦ h.le
 
 end QuasiconvexOn
