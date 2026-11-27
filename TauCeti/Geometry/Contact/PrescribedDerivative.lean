@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Contact.Interpolation
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.DifferentialForm.Proportional
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Manifold.TubularNeighborhood.PrescribedDifferential
@@ -105,27 +104,6 @@ namespace PartialDiffeomorph
 
 open TauCeti
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- The pullback of `β` along a map `f` restricted to an open subset `U` of `M` is, at `z ∈ U`, the
-rough pullback of `β` along `f` itself at `z`. -/
-private theorem coe_mpullback_comp_subtypeVal_apply {U : Opens M} {f : M → N}
-    (hf : ContMDiff I K ∞ (f ∘ (Subtype.val : U → M))) (z : U) :
-    (SmoothForm.mpullback _ hf β).val z = TauCeti.mpullback I K f β.val z := by
-  ext u
-  rw [SmoothForm.mpullback_comp_subtypeVal_apply]
-  -- `u` reads as a family of tangent vectors of `M` at `z`: the two tangent spaces are the same.
-  exact (mpullback_apply f β.val z u).symm
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- The exterior derivative of the pullback of `β` along a map `f` restricted to an open subset `U`
-of `M` evaluates two tangent vectors at `z ∈ U` through the differential of `f` itself. -/
-private theorem mextDeriv_mpullback_comp_subtypeVal_apply_two {U : Opens M} {f : M → N}
-    (hf : ContMDiff I K ∞ (f ∘ (Subtype.val : U → M))) (z : U) (v w : TangentSpace I z) :
-    mextDeriv (SmoothForm.mpullback _ hf β).val z ![v, w] =
-      mextDeriv β.val (f z) ![mfderiv I K f z v, mfderiv I K f z w] := by
-  rw [SmoothForm.mextDeriv_mpullback_apply_two, Manifold.mfderiv_comp_subtype_val_apply,
-    Manifold.mfderiv_comp_subtype_val_apply, Function.comp_apply]
-
 /-- **Correcting a partial diffeomorphism to a contactomorphism.** Let `Ψ` be a partial
 diffeomorphism from `M` to `N`, with `M` finite-dimensional, boundaryless and Hausdorff, let `S` be
 a set of points of its source at which the one-form `α` is contact, and let `c` be positive on `S`.
@@ -154,7 +132,7 @@ theorem exists_eqOn_mpullback_eq_smul (Ψ : PartialDiffeomorph I K M N ∞) {S :
   set α₁ := SmoothForm.mpullback _ hΨU β
   -- As rough forms on `U`, `α₁` is the restriction of the rough form `Ψ^* β` on `M`.
   have hα₁ : α₁.val = mpullback I I (Subtype.val : U → M) (mpullback I K Ψ β.val) :=
-    funext fun z ↦ (coe_mpullback_comp_subtypeVal_apply hΨU z).trans
+    funext fun z ↦ (SmoothForm.coe_mpullback_comp_subtypeVal_apply hΨU β z).trans
       (mpullback_subtype_val_apply _ z).symm
   obtain ⟨Θ, hsrc, htgt, hfix, hΘ⟩ :=
     SmoothForm.exists_partialDiffeomorph_mpullback_eq_smul_of_eq_smul (α₀ := α₀) (α₁ := α₁)
@@ -171,24 +149,20 @@ theorem exists_eqOn_mpullback_eq_smul (Ψ : PartialDiffeomorph I K M N ∞) {S :
       fun z hz v hv w hw ↦ by
         have hα₀ : α₀.val z = α.val z := SmoothForm.coe_mpullback_subtype_val_apply α z
         rw [RoughForm.mem_ker, hα₀] at hv hw
-        rw [mextDeriv_mpullback_comp_subtypeVal_apply_two, SmoothForm.mextDeriv_mpullback_apply_two]
+        rw [SmoothForm.mextDeriv_mpullback_comp_subtypeVal_apply_two,
+          SmoothForm.mextDeriv_mpullback_apply_two]
         simpa only [Manifold.mfderiv_subtype_val_apply, Function.comp_apply] using
           hdβ z hz v (RoughForm.mem_ker.2 hv) w (RoughForm.mem_ker.2 hw)
   -- Read `Θ` in `M`, and correct `Ψ` to `φ = Ψ ∘ Θ`.
-  obtain ⟨Φ, hsrcΦ, -, hfixΦ, hΦ⟩ :=
-    exists_partialDiffeomorph_mpullback_apply_eq_of_opens (by simp) (W := U) hS Θ hsrc htgt hfix
-  refine ⟨Φ.trans Ψ, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [PartialDiffeomorph.trans_source]
-    exact ⟨hsrcΦ hx, by rw [mem_preimage, hfixΦ x hx]; exact hS hx⟩
-  · rw [PartialDiffeomorph.coe_trans, Function.comp_apply, hfixΦ x hx]
-  · rw [PartialDiffeomorph.trans_source] at hx
-    obtain ⟨y, hy, rfl, hΦy⟩ := hΦ x hx.1
-    obtain ⟨h, hh, hΘy⟩ := hΘ y hy
-    refine ⟨h, hh, ?_⟩
-    rw [PartialDiffeomorph.coe_trans,
-      mpullback_comp_at (Φ.mdifferentiableAt (by simp) hx.1) (Ψ.mdifferentiableAt (by simp) hx.2),
-      hΦy, ← hα₁, hΘy]
-    exact congrArg (h • ·) (SmoothForm.coe_mpullback_subtype_val_apply α y)
+  obtain ⟨φ, hφS, hφΨ, hφ⟩ :=
+    Ψ.exists_eqOn_mpullback_apply_eq_of_opens (by simp) hS Θ hsrc htgt hfix
+  refine ⟨φ, hφS, hφΨ, fun x hx ↦ ?_⟩
+  obtain ⟨y, hy, rfl, hφy⟩ := hφ x hx
+  obtain ⟨h, hh, hΘy⟩ := hΘ y hy
+  refine ⟨h, hh, ?_⟩
+  -- The pullback of `β` along `Ψ` restricted to `U` is `α₁`.
+  rw [hφy, ← SmoothForm.coe_mpullback _ hΨU]
+  exact hΘy.trans (congrArg (h • ·) (SmoothForm.coe_mpullback_subtype_val_apply α y))
 
 omit [I.Boundaryless] [T2Space M] in
 /-- **The Levi data of a conformal pullback.** Let `φ` be a partial diffeomorphism from `M` to `N`
@@ -212,7 +186,7 @@ theorem mextDeriv_mfderiv_eq_mul_of_mpullback_eq_smul (φ : PartialDiffeomorph I
   set βW := SmoothForm.mpullback _ hφW β
   have hαW (z : W) : αW.val z = α.val z := SmoothForm.coe_mpullback_subtype_val_apply α z
   have hβW (z : W) : βW.val z = TauCeti.mpullback I K φ β.val z :=
-    coe_mpullback_comp_subtypeVal_apply hφW z
+    SmoothForm.coe_mpullback_comp_subtypeVal_apply hφW β z
   -- On `W`, `φ^* β` is a smooth multiple `f α` of the nowhere-vanishing form `α`.
   obtain ⟨f, ⟨hf, hfβ⟩, -⟩ := SmoothForm.existsUnique_fun_smul_of_ker_le (α := αW) (β := βW)
     (fun z ↦ by rw [hαW]; exact z.property.2.ne_zero) fun z u hu ↦ by
@@ -239,7 +213,7 @@ theorem mextDeriv_mfderiv_eq_mul_of_mpullback_eq_smul (φ : PartialDiffeomorph I
     rw [SmoothForm.mextDeriv_mpullback_apply_two, Manifold.mfderiv_subtype_val_apply,
       Manifold.mfderiv_subtype_val_apply]
   -- The base points `z₀` of `W` and `x` of `M` agree, and so do their tangent spaces.
-  exact (mextDeriv_mpullback_comp_subtypeVal_apply_two hφW z₀ v w).symm.trans
+  exact (SmoothForm.mextDeriv_mpullback_comp_subtypeVal_apply_two hφW β z₀ v w).symm.trans
     (hd.trans (congrArg (h * ·) (hdαW v w)))
 
 end PartialDiffeomorph
