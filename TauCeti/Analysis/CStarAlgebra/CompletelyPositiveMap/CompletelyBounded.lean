@@ -128,13 +128,9 @@ theorem norm_mapCStarMatrix_apply_le (φ : A →CP B) {c : ℝ≥0} (hφ : ∀ a
     simp [h0]
   have hc' : (0 : ℝ) < c := by positivity
   have hψ (a : A) : ‖(c⁻¹ • φ) a‖ ≤ ‖a‖ := by
-    rw [smul_apply, NNReal.smul_def, norm_smul_of_nonneg (by positivity), NNReal.coe_inv,
-      inv_mul_le_iff₀ hc']
-    exact hφ a
+    simpa [NNReal.smul_def, norm_smul, inv_mul_le_iff₀ hc'] using hφ a
   have hφc : φ = c • (c⁻¹ • φ) := by rw [smul_smul, mul_inv_cancel₀ hc, one_smul]
-  rw [hφc, mapCStarMatrix_smul, smul_apply, NNReal.smul_def, norm_smul,
-    Real.norm_of_nonneg hc'.le]
-  gcongr
-  exact key _ hψ
+  rw [hφc, mapCStarMatrix_smul, smul_apply]
+  simpa [NNReal.smul_def, norm_smul] using mul_le_mul_of_nonneg_left (key _ hψ) hc'.le
 
 end CompletelyPositiveMap

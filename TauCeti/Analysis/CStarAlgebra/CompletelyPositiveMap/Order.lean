@@ -191,6 +191,9 @@ def comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) : A₁ →CP A₃ :=
     (c • φ).mapCStarMatrix n = c • φ.mapCStarMatrix n :=
   ext fun x ↦ by
     rw [smul_apply, mapCStarMatrix_apply, mapCStarMatrix_apply]
+    -- The `ℝ≥0`-action on `CStarMatrix n n A₂` is `NNReal.instSMulOfReal` through its `ℝ`-module
+    -- structure as a C⋆-algebra, which `CStarMatrix.smul_apply` does not match, so `simp` cannot
+    -- evaluate the entries; definitionally both sides have entries `c • φ (x i j)`.
     exact CStarMatrix.ext fun _ _ ↦ rfl
 
 /-- Converting a composite of non-unital star algebra homomorphisms to a completely positive map
