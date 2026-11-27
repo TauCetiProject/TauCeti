@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteSupport
 
 /-!
 # Almost everywhere limits with finite-measure simple approximants
@@ -30,32 +30,6 @@ theorem AEFinStronglyMeasurable.congr {α E : Type*} [MeasurableSpace α]
     (hf : AEFinStronglyMeasurable f μ) (hfg : f =ᵐ[μ] g) :
     AEFinStronglyMeasurable g μ :=
   ⟨hf.mk f, hf.finStronglyMeasurable_mk, hfg.symm.trans hf.ae_eq_mk⟩
-
-/-- Countably many almost everywhere finitely strongly measurable functions have a common
-measurable support on which the measure is sigma-finite: the union of the supports of the simple
-approximants of their finitely strongly measurable representatives. -/
-theorem AEFinStronglyMeasurable.exists_set_sigmaFinite_of_countable {α ι E : Type*}
-    [MeasurableSpace α] [TopologicalSpace E] [T2Space E] [Zero E] [Countable ι]
-    {μ : Measure α} {g : ι → α → E} (hg : ∀ i, AEFinStronglyMeasurable (g i) μ) :
-    ∃ t, MeasurableSet t ∧ (∀ i, g i =ᵐ[μ.restrict tᶜ] 0) ∧ SigmaFinite (μ.restrict t) := by
-  classical
-  have hu i : FinStronglyMeasurable ((hg i).mk (g i)) μ := (hg i).finStronglyMeasurable_mk
-  let T (p : ι × ℕ) := Function.support ((hu p.1).approx p.2)
-  let t := ⋃ p, T p
-  have ht : MeasurableSet t :=
-    MeasurableSet.iUnion fun p ↦ ((hu p.1).approx p.2).measurableSet_support
-  refine ⟨t, ht, fun i ↦ ?_, ?_⟩
-  · rw [EventuallyEq, ae_restrict_iff' ht.compl]
-    filter_upwards [(hg i).ae_eq_mk] with x hx hxt
-    have hz m : (hu i).approx m x = 0 :=
-      Function.notMem_support.mp fun h ↦ hxt (mem_iUnion.mpr ⟨(i, m), h⟩)
-    exact hx.trans (tendsto_nhds_unique ((hu i).tendsto_approx x)
-      (tendsto_const_nhds.congr fun m ↦ (hz m).symm))
-  · refine Measure.sigmaFinite_of_countable ((countable_range T).insert tᶜ) ?_
-      (by rw [sUnion_insert, sUnion_range, compl_union_self])
-    rintro _ (rfl | ⟨p, rfl⟩)
-    · simp [Measure.restrict_apply ht.compl]
-    · exact (Measure.restrict_le_self _).trans_lt ((hu p.1).fin_support_approx p.2)
 
 /-- An almost everywhere limit of a sequence of almost everywhere finitely strongly measurable
 functions is almost everywhere finitely strongly measurable. -/

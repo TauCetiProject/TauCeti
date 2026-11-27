@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteSupport
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.ContinuousOn
-import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteLimit
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.AEScalarTests
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Normed.Operator.Norming
