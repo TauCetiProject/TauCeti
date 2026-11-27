@@ -32,7 +32,9 @@ domain identifies it with the rank of `Γ(X, f⁻¹ U)` over `Γ(Y, U)`. For any
 morphism of integral schemes, flat or not, that rank is `[K(X) : f^* K(Y)]`
 (`AlgebraicGeometry.Scheme.Hom.finrank_appLE_eq_finrank_fieldRange_functionFieldMap`): both
 coordinate rings are domains whose fraction fields are the function fields, and `f^*` extends the
-map of coordinate rings.
+map of coordinate rings. That general identity is one of `Module.finrank`s, that is, of ranks
+after `Cardinal.toNat` truncation; here `f` is finite, so both ranks are finite and nothing is
+lost.
 
 The degree is stated as the dimension of `K(X)` over the subfield `f^* K(Y)`, as for the degree
 of an isogeny of Weierstrass curves (`TauCeti.Isogeny.degree`). This avoids putting an algebra

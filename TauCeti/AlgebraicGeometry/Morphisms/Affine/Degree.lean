@@ -20,6 +20,9 @@ coordinate rings are domains whose fraction fields are the function fields, `f^*
 of coordinate rings, and the rank of a torsion-free module over a domain is the dimension after
 passing to fraction fields (`IsFractionRing.finrank_eq`). No finiteness or flatness is needed.
 
+The identity is one of `Module.finrank`s, that is, of ranks after `Cardinal.toNat` truncation.
+It carries no information when `[K(X) : f^* K(Y)]` is infinite: both sides are then `0`.
+
 This computes the rank of a finite flat dominant morphism of integral schemes
 (`AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_fieldRange_functionFieldMap`) and the rank of
 the semilocal rings in the projection formula for finite dominant morphisms
@@ -42,7 +45,9 @@ variable {X Y : Scheme.{u}}
 /-- **The rank of the coordinate rings of a dominant affine morphism.** For a dominant affine
 morphism `f : X ⟶ Y` of integral schemes and a nonempty affine open `U` of `Y`, the ring
 `Γ(X, f⁻¹ U)` has rank `[K(X) : f^* K(Y)]` over `Γ(Y, U)`, the algebra structure being given by
-`f`. No finiteness or flatness is needed: the rank is that of the fraction fields. -/
+`f`. No finiteness or flatness is needed: the rank is that of the fraction fields. Both ranks
+are `Module.finrank`s, truncated by `Cardinal.toNat`, so both sides are `0` when the
+extension is infinite. -/
 theorem Scheme.Hom.finrank_appLE_eq_finrank_fieldRange_functionFieldMap (f : X ⟶ Y)
     [IsIntegral X] [IsIntegral Y] [IsAffineHom f] [IsDominant f] {U : Y.Opens}
     (hU : IsAffineOpen U) [Nonempty U] :
