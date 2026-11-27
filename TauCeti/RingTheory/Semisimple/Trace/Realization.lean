@@ -19,7 +19,13 @@ A tracial linear form on a finite product of matrix algebras over a commutative 
 characteristic zero is the trace of a matrix representation if its values on a diagonal matrix
 unit in each block are natural numbers. Its value at one is the dimension of the representation.
 This includes dimension zero. The matrix representation repeats each Wedderburn block with
-the multiplicity prescribed by the form.
+the multiplicity prescribed by the form. Both the input blocks and the output matrices may use
+arbitrary finite index types.
+
+## Main results
+
+* `LinearMap.exists_algHom_trace_eq_pi_matrix` realizes the form by matrices indexed by any
+  finite type whose cardinality is its value at one.
 
 ## Provenance
 
@@ -53,9 +59,9 @@ theorem exists_algHom_trace_eq_pi_matrix [CharZero k]
     {n : ι → Type*} [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
     (τ : (Π i, Matrix (n i) (n i) k) →ₗ[k] k)
     (hcomm : ∀ x y, τ (x * y) = τ (y * x)) (a : Π i, n i)
-    (hnat : ∀ i, ∃ c : ℕ, τ (Pi.single i (Matrix.single (a i) (a i) 1)) = c) {N : ℕ}
-    (hone : τ 1 = N) :
-    ∃ φ : (Π i, Matrix (n i) (n i) k) →ₐ[k] Matrix (Fin N) (Fin N) k,
+    (hnat : ∀ i, ∃ c : ℕ, τ (Pi.single i (Matrix.single (a i) (a i) 1)) = c)
+    {N : Type*} [Fintype N] [DecidableEq N] (hone : τ 1 = Fintype.card N) :
+    ∃ φ : (Π i, Matrix (n i) (n i) k) →ₐ[k] Matrix N N k,
       ∀ z, (φ z).trace = τ z := by
   classical
   let _ := Fintype.ofFinite ι
@@ -78,11 +84,12 @@ theorem exists_algHom_trace_eq_pi_matrix [CharZero k]
     intro i _
     simpa only [Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] using
       (Finset.sum_const (s := Finset.univ (α := Fin (c i))) (z i).trace)
-  have hcard : Fintype.card κ = N := by
+  have hcard : Fintype.card κ = Fintype.card N := by
     apply Nat.cast_injective (R := k)
     rw [← hone, ← htrace, map_one, Matrix.trace_one]
-  let φ := (reindexAlgEquiv k k (Fintype.equivFinOfCardEq hcard)).toAlgHom.comp blocks
-  exact ⟨φ, fun z ↦ (trace_reindex_self (Fintype.equivFinOfCardEq hcard) (blocks z)).trans
-    (htrace z)⟩
+  let φ := (reindexAlgEquiv k k (Fintype.equivOfCardEq hcard)).toAlgHom.comp blocks
+  refine ⟨φ, fun z ↦ ?_⟩
+  simpa only [φ, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    coe_reindexAlgEquiv, trace_reindex_self] using htrace z
 
 end LinearMap

@@ -18,9 +18,10 @@ import TauCeti.RingTheory.TraceFunctional.Semisimple
 # Semisimple realization from all trace identities
 
 Over an algebraically closed field of characteristic zero, every function on a group satisfying
-all polynomial identities among traces of representations of dimension `n` is the character of
-a semisimple representation of that dimension. The hypothesis includes all trace identities;
-this is weaker than reconstructing a representation from just the pseudocharacter relations.
+all polynomial identities among traces of homomorphisms to `GL n k`, for any finite index type
+`n`, is the character of a semisimple representation on `n → k`. Empty index types are allowed.
+The hypothesis includes all trace identities; this is weaker than reconstructing a representation
+from just the pseudocharacter relations.
 
 The proof extends the function to the group algebra and quotients by the trace-pairing kernel.
 Evaluation minors bound the dimension of this quotient. Integral Newton polynomials detect
@@ -30,8 +31,9 @@ then realizes the trace, and semisimplification supplies native representation s
 ## Main results
 
 * `TauCeti.exists_isSemisimpleRepresentation_character_eq_of_trace_identities` gives a native
-  semisimple representation with the prescribed character.
-* `TauCeti.exists_gl_trace_eq_of_trace_identities` gives the corresponding homomorphism to `GL`.
+  semisimple representation on `n → k` with the prescribed character.
+* `TauCeti.exists_gl_trace_eq_of_trace_identities` gives the corresponding homomorphism to
+  `GL n k`, using the same finite index type as the trace identities hypothesis.
 
 ## Provenance
 
@@ -65,14 +67,14 @@ variable {k G n : Type*}
 
 section
 
-variable [CommSemiring k] [Group G] [Fintype n] [DecidableEq n]
+variable [CommSemiring k] [Monoid G] [Fintype n] [DecidableEq n]
 
 /-- The linear form on `k[G]` that extends `T : G → k`. -/
 private noncomputable def linearExtension (T : G → k) : k[G] →ₗ[k] k :=
   (aeval T).toLinearMap ∘ₗ Finsupp.lift _ k G X ∘ₗ (coeffLinearEquiv k).toLinearMap
 
 -- `MonoidAlgebra.of` simplifies to `single`, so use that normal form for the generator rule.
-omit [Group G] in
+omit [Monoid G] in
 @[simp]
 private lemma linearExtension_of (T : G → k) (g : G) :
     linearExtension T (MonoidAlgebra.single g (1 : k)) = T g := by
@@ -100,7 +102,7 @@ variable [Field k] [Group G] [Fintype n] [DecidableEq n]
 private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
     (h_identities : ∀ B : MvPolynomial G k,
       (∀ x : G →* GL n k, eval (fun g ↦ (x g).val.trace) B = 0) → eval T B = 0) :
-    ∃ r : G →* GL (Fin (Fintype.card n)) k, ∀ g, (r g).val.trace = T g := by
+    ∃ r : G →* GL n k, ∀ g, (r g).val.trace = T g := by
   classical
   let t : k[G] →ₗ[k] k := linearExtension T
   have h_alg : ∀ B : MvPolynomial k[G] k,
@@ -131,6 +133,7 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
     simpa [sub_eq_zero] using h
   obtain ⟨m, d, _, ⟨e⟩⟩ := IsSemisimpleRing.exists_algEquiv_pi_matrix_of_isAlgClosed k (k[G] ⧸ I)
   obtain ⟨φ, hφ⟩ := (τ.comp e.symm.toLinearMap).exists_algHom_trace_eq_pi_matrix
+    (N := n)
     (fun x y ↦ by simpa using t.quotientTrace_mul_comm t_comm (e.symm x) (e.symm y)) (fun _ ↦ 0)
     (fun i ↦ by
       have hi : IsIdempotentElem (Pi.single i
@@ -146,13 +149,13 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
   refine ⟨r, fun g ↦ ?_⟩
   simpa [r, hτ, t] using hφ' (mk I (MonoidAlgebra.of k G g))
 
-/-- A function satisfying every polynomial identity among traces in dimension `n` is the
-character of a semisimple representation on `kⁿ`. No positivity assumption on `n` is needed. -/
+/-- A function satisfying every polynomial identity among traces of homomorphisms to `GL n k`
+is the character of a semisimple representation on `n → k`. The finite type `n` may be empty. -/
 theorem exists_isSemisimpleRepresentation_character_eq_of_trace_identities
-    [IsAlgClosed k] [CharZero k] {n : ℕ} {T : G → k}
+    [IsAlgClosed k] [CharZero k] {T : G → k}
     (h : ∀ B : MvPolynomial G k,
-      (∀ x : G →* GL (Fin n) k, eval (fun g ↦ (x g).val.trace) B = 0) → eval T B = 0) :
-    ∃ ρ : Representation k G (Fin n → k), ρ.IsSemisimpleRepresentation ∧ ρ.character = T := by
+      (∀ x : G →* GL n k, eval (fun g ↦ (x g).val.trace) B = 0) → eval T B = 0) :
+    ∃ ρ : Representation k G (n → k), ρ.IsSemisimpleRepresentation ∧ ρ.character = T := by
   classical
   obtain ⟨r, hr⟩ := exists_matrix_trace h
   let ρ := Representation.ofGL r
@@ -160,30 +163,30 @@ theorem exists_isSemisimpleRepresentation_character_eq_of_trace_identities
     ext g
     simpa [ρ, Representation.character, Matrix.trace_toLin'_eq] using hr g
   let σ := ρ.semisimplification
-  have hdim : Module.finrank k (TauCeti.semisimplification k[G] ρ.asModule) = n := by
+  have hdim : Module.finrank k (TauCeti.semisimplification k[G] ρ.asModule) = Fintype.card n := by
     apply Nat.cast_injective (R := k)
     have hc := congrFun ρ.char_semisimplification 1
     simpa [Representation.char_one, ρ] using hc
-  let e : TauCeti.semisimplification k[G] ρ.asModule ≃ₗ[k] (Fin n → k) :=
+  let e : TauCeti.semisimplification k[G] ρ.asModule ≃ₗ[k] (n → k) :=
     LinearEquiv.ofFinrankEq _ _ (by simpa using hdim)
-  let σ' : Representation k G (Fin n → k) := (e.conjAlgEquiv k).toMonoidHom.comp σ
+  let σ' : Representation k G (n → k) := (e.conjAlgEquiv k).toMonoidHom.comp σ
   have he : σ.Equiv σ' := .mk e fun g ↦ by
     ext v
     simp [σ', LinearEquiv.conjAlgEquiv_apply]
-  exact ⟨σ', he.toIntertwiningMap.isSemisimpleRepresentation_of_surjective
-    he.toLinearEquiv.surjective,
-    (Representation.char_iso he).symm.trans (ρ.char_semisimplification.trans hchar)⟩
+  refine ⟨σ', he.toIntertwiningMap.isSemisimpleRepresentation_of_surjective
+    he.toLinearEquiv.surjective, ?_⟩
+  simpa only [← Representation.char_iso he, σ, ρ.char_semisimplification] using hchar
 
 /-- Matrix form of semisimple realization from all polynomial trace identities. Semisimplicity
-is expressed using the associated native representation on `kⁿ`. -/
-theorem exists_gl_trace_eq_of_trace_identities [IsAlgClosed k] [CharZero k] {n : ℕ} {T : G → k}
+is expressed using the associated native representation on `n → k`, for any finite type `n`. -/
+theorem exists_gl_trace_eq_of_trace_identities [IsAlgClosed k] [CharZero k] {T : G → k}
     (h : ∀ B : MvPolynomial G k,
-      (∀ x : G →* GL (Fin n) k, eval (fun g ↦ (x g).val.trace) B = 0) → eval T B = 0) :
-    ∃ r : G →* GL (Fin n) k,
+      (∀ x : G →* GL n k, eval (fun g ↦ (x g).val.trace) B = 0) → eval T B = 0) :
+    ∃ r : G →* GL n k,
       (Representation.ofGL r).IsSemisimpleRepresentation ∧ ∀ g, (r g).val.trace = T g := by
   classical
   obtain ⟨ρ, hρ, hchar⟩ := exists_isSemisimpleRepresentation_character_eq_of_trace_identities h
-  let r := (Units.map (LinearMap.toMatrixAlgEquiv (Pi.basisFun k (Fin n))).toMonoidHom).comp
+  let r := (Units.map (LinearMap.toMatrixAlgEquiv (Pi.basisFun k n)).toMonoidHom).comp
     ρ.asGroupHom
   have heq : Representation.ofGL r = ρ := by
     ext g v i
