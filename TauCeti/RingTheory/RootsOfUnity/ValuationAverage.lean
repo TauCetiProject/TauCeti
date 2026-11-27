@@ -7,17 +7,18 @@ module
 
 public import TauCeti.RingTheory.Polynomial.GaussValuation.RootCounting
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
-import TauCeti.RingTheory.Valuation.Basic
-import TauCeti.Algebra.Order.WithTop.Untop0
+import TauCeti.RingTheory.Valuation.AddValuation
+import TauCeti.Algebra.Order.WithTop.Nsmul
 import Mathlib.Algebra.Polynomial.Coeff
 
 /-!
 # Averaging distances from primitive roots of unity
 
 For a real additive valuation normalized at `p`, the shifted primitive `p ^ h`-th roots
-`ζ - 1` cannot all be very close to a given finite multiset of points. The estimates do not depend
-on the
-number of points and form the averaging step in polynomial evaluation bounds.
+`ζ - 1` cannot all be very close to a given finite multiset of points. The per-point bound
+`h + 1` is independent of the point and of any polynomial degree. The total bound grows linearly
+in the multiset's cardinality. These estimates form the averaging step in polynomial evaluation
+bounds.
 
 ## Provenance
 
@@ -55,7 +56,7 @@ private lemma shifted_pow_sub_one_coeffs {α : K} (hu : v (1 + α) = 0) (h : ℕ
     rw [coeff_sub]
     apply v.map_le_sub
     · simp only [coeff_X_add_C_pow, v.map_mul, v.map_pow, hu, smul_zero, zero_add]
-      exact v.toValuation.map_natCast_le_one _
+      simpa only [nsmul_one, v.map_one] using v.le_map_nsmul (Nat.choose (p ^ h) k) 1
     · simp only [coeff_one]
       split_ifs <;> simp
   have hc : f.coeff 1 = (1 + α) ^ (p ^ h - 1) * p ^ h := by
@@ -109,7 +110,10 @@ theorem sum_max_min_primitiveRoots_sub_le (α : K) (h : ℕ) :
     have hvζ : v ζ = 0 := by
       have H := congrArg v.toValuation (isPrimitiveRoot_of_mem_primitiveRoots hζ).pow_eq_one
       rw [_root_.map_pow, _root_.map_one] at H
-      exact (pow_eq_one_iff_of_nonneg zero_le (pow_ne_zero _ hp0)).1 H
+      have H' := congrArg (fun t : Multiplicative (WithTop ℝ)ᵒᵈ ↦ t.toAdd.ofDual)
+        ((pow_eq_one_iff_of_nonneg zero_le (pow_ne_zero _ hp0)).1 H)
+      simpa only [AddValuation.toValuation_apply, toAdd_ofAdd, OrderDual.ofDual_toDual,
+        toAdd_one, ofDual_zero] using H'
     have heq : ζ - 1 - α = ζ - (1 + α) := by ring
     rw [heq, sub_eq_add_neg, v.map_add_of_distinct_val (by
       rw [hvζ, v.map_neg]
@@ -178,8 +182,9 @@ theorem exists_isPrimitiveRoot_sum_sub_le (h : ℕ)
         obtain ⟨b, _, rfl⟩ := Multiset.mem_map.1 hx
         exact le_max_left _ _) _ (Multiset.mem_map_of_mem _ ha)).trans hclip
     have hlt : v (ζ - 1 - a) < 1 := by
+      have hδ' : (δ : WithTop ℝ) < 1 := by exact_mod_cast hδ
       have H := (le_max_right 0 (min 1 (v (ζ - 1 - a)))).trans hsingle
-        |>.trans_lt (show (δ : WithTop ℝ) < 1 by exact_mod_cast hδ)
+        |>.trans_lt hδ'
       simpa using H
     rw [min_eq_right hlt.le]
     exact le_max_right _ _

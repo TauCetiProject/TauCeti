@@ -15,6 +15,7 @@ import TauCeti.RingTheory.RootsOfUnity.ValuationAverage
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.RingTheory.Valuation.AddValuation
 import TauCeti.Algebra.Order.BigOperators.WithTop
+import TauCeti.Algebra.Order.WithTop.Nsmul
 
 /-!
 # Sparse root multiplicities at prime-power cyclotomic radii
@@ -34,15 +35,15 @@ many multivariable polynomial values up to any prescribed positive loss.
 `src/New/Congruences/Selmer/RootsOfUnity.lean` in grh-lean
 (https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0,
 Copyright 2026 Anthropic, PBC). The radius definitions, harmonic estimate, sparse-radius
-selection, tied-root correction and coordinate induction follow the corresponding helpers
+selection and coordinate induction follow the corresponding helpers
 `rootRadius`, `radiusExponents`, `rootRadius_injOn`, `eventually_rootRadius_le`,
 `exists_lt_mul_sum_radiusExponents`, `exists_card_rootsOfValuation_mul_le`,
-`ellVal_eval_add_card_mul`, `freeCoordinate`, `eval_freeCoordinate`,
+`freeCoordinate`, `eval_freeCoordinate`,
 `exists_ellVal_eval_update_le_add` and `exists_ellVal_eval_piecewise_le_add` in that namespace.
 The implementation uses the additive reading of the native Gauss valuation and the existing
 `AddValuation.ofNorm` at base `p` on `PadicAlgCl`; on integral inputs this is the usual
 nonnegative normalized valuation. The general root-counting and averaging results are in their
-own modules.
+own modules, as is the general split-polynomial correction for roots tied in valuation.
 
 ## References
 
@@ -145,7 +146,6 @@ lemma exists_lt_mul_sum_primePowerRadiusExponents {ρ : ℚ≥0} {δ : ℝ≥0}
     exact mem_primePowerRadiusExponents.2 ⟨(hN h hNh).1, hh₀.le, (hN h hNh).2⟩
   exact ⟨h₀, (div_lt_iff₀' hδ).1 (h_tail.trans_le (sum_le_sum_of_subset h_subset))⟩
 
-
 end TauCeti
 
 namespace Polynomial
@@ -201,53 +201,6 @@ theorem exists_card_roots_valuation_mul_le (g : K[X])
 
 end Polynomial
 
-namespace TauCeti
-
-open Finset Polynomial TauCeti
-open scoped NNReal NNRat
-
-variable {p : ℕ} [Fact p.Prime]
-
--- Local names for the field and its fixed normalized valuation.
-local notation "K" => PadicAlgCl p
-local notation "V" =>
-  AddValuation.ofNorm (R := PadicAlgCl p) (p : ℝ)
-    (Nat.one_lt_cast.mpr (Nat.Prime.one_lt (Fact.out : p.Prime)))
-
-private lemma eval_add_card_tied_roots (g : K[X]) {r : ℝ} {y : K}
-    (hy : V y = (r : WithTop ℝ)) :
-    V (g.eval y) + (g.roots.filter fun a ↦ V a = (r : WithTop ℝ)).card • (r : WithTop ℝ) =
-      V g.leadingCoeff + (g.roots.map fun a ↦ min (r : WithTop ℝ) (V a)).sum +
-        ((g.roots.filter fun a ↦ V a = (r : WithTop ℝ)).map fun a ↦ V (y - a)).sum := by
-  classical
-  let R := g.roots.filter fun a ↦ V a = (r : WithTop ℝ)
-  let R' := g.roots.filter fun a ↦ ¬V a = (r : WithTop ℝ)
-  have hsplit : g.roots = R + R' := (Multiset.filter_add_not _ _).symm
-  have hother : ∀ a ∈ R', V (y - a) = min (r : WithTop ℝ) (V a) := by
-    intro a ha
-    rw [sub_eq_add_neg, (V).map_add_of_distinct_val (by
-      rw [hy, (V).map_neg]
-      exact Ne.symm (Multiset.mem_filter.1 ha).2), hy, (V).map_neg]
-  have hsame : ∀ a ∈ R, min (r : WithTop ℝ) (V a) = r := by
-    intro a ha
-    rw [(Multiset.mem_filter.1 ha).2, min_self]
-  have heval : V (g.eval y) =
-      V g.leadingCoeff + (g.roots.map fun a ↦ V (y - a)).sum :=
-    g.addValuation_eval_eq_add_sum_roots V (IsAlgClosed.splits _) y
-  have heval' : V (g.eval y) = V g.leadingCoeff +
-      ((R.map fun a ↦ V (y - a)).sum + (R'.map fun a ↦ min (r : WithTop ℝ) (V a)).sum) := by
-    conv_lhs => rw [heval, hsplit]
-    simp only [Multiset.map_add, Multiset.sum_add, Multiset.map_congr rfl hother]
-  have hgauss : (g.roots.map fun a ↦ min (r : WithTop ℝ) (V a)).sum =
-      R.card • (r : WithTop ℝ) + (R'.map fun a ↦ min (r : WithTop ℝ) (V a)).sum := by
-    conv_lhs => rw [hsplit]
-    simp only [Multiset.map_add, Multiset.sum_add, Multiset.map_congr rfl hsame,
-      Multiset.map_const', Multiset.sum_replicate]
-  rw [heval', hgauss]
-  ac_rfl
-
-end TauCeti
-
 namespace Polynomial
 
 open Finset TauCeti
@@ -284,7 +237,7 @@ theorem exists_isPrimitiveRoot_ofNorm_eval_le_addGaussValuation_add (g : K[X])
   have hy := ofNorm_sub_one_eq_primePowerRootRadius
     (mem_primePowerRadiusExponents.1 hh).1 hζ
   refine ⟨h, hh, ζ, hζ, ?_⟩
-  have htied := TauCeti.eval_add_card_tied_roots g hy
+  have htied := g.addValuation_eval_add_card_tied_roots V (IsAlgClosed.splits _) hy
   have hgauss : g.addGaussValuation V (primePowerRootRadius p h : ℝ) =
         V g.leadingCoeff + (g.roots.map fun a ↦
           min ((primePowerRootRadius p h : ℝ) : WithTop ℝ) (V a)).sum :=
@@ -379,9 +332,10 @@ private lemma exists_root_eval_family_le_add {ι : Type*} [Fintype ι]
   obtain ⟨h, hh, ζ, hpow, hy, hbound⟩ :=
     exists_integer_root_eval_le_gauss_add hδ h_harmonic (∏ i, g i) hG
   have hrρ := (mem_primePowerRadiusExponents.1 hh).2.2
+  have hrρ' : ((primePowerRootRadius p h : ℝ) : WithTop ℝ) ≤ ((ρ : ℝ) : WithTop ℝ) := by
+    exact_mod_cast hrρ
   have hold (i : ι) : G (primePowerRootRadius p h) (g i) ≤ V (↑((g i).eval (x i)) : K) :=
-    heval _ _ _ ((show ((primePowerRootRadius p h : ℝ) : WithTop ℝ) ≤
-      ((ρ : ℝ) : WithTop ℝ) by exact_mod_cast hrρ).trans (hx i))
+    heval _ _ _ (hrρ'.trans (hx i))
   have hnew (i : ι) : G (primePowerRootRadius p h) (g i) ≤ V (↑((g i).eval (ζ - 1)) : K) :=
     heval _ _ _ hy.ge
   have hsum : ∑ i, V (↑((g i).eval (ζ - 1)) : K) ≤
@@ -484,7 +438,9 @@ private lemma exists_root_eval_piecewise_le_add {σ ι : Type*}
 valuations, choose an order bound before the finite polynomial family. There are roots `ζ j`
 with `ζ j ^ p ^ h₀ = 1` and `v (ζ j - 1) ≤ ρ` such that evaluation at `(ζ j - 1)_j` loses at
 most `ε` against the value at `x i`, for every polynomial `i`. Here `v` is the base-`p`
-valuation `AddValuation.ofNorm`. -/
+valuation `AddValuation.ofNorm`. For fixed prime `p`, the bound `h₀` depends only on `s₀`,
+`ρ`, `β` and `ε`, uniformly over all families with at most `s₀` variables, any number of
+polynomials and any degrees. -/
 theorem exists_rootsOfUnity_ofNorm_eval_le_add
     (s₀ : ℕ) {ρ : ℚ≥0} (hρ : 0 < ρ) (β : ℝ≥0) {ε : ℝ≥0} (hε : 0 < ε) :
     ∃ h₀ : ℕ, ∀ (σ : Type u) (ι : Type v) [Fintype σ] [Fintype ι]
@@ -504,7 +460,7 @@ theorem exists_rootsOfUnity_ofNorm_eval_le_add
   have hδ : δ < 1 :=
     (div_lt_one hpos).2 ((min_le_right ε 1).trans_lt (one_lt_two.trans_le le_add_self))
   obtain ⟨h₀, hharmonic⟩ := exists_lt_mul_sum_primePowerRadiusExponents (ℓ := p) hρ
-    (β + 1) (show 0 < δ by positivity)
+    (δ := δ) (β + 1) (by positivity)
   refine ⟨h₀, fun σ ι _ _ P x hσ hx hP ↦ ?_⟩
   have hloss : (Fintype.card σ * δ : ℝ≥0) ≤ min ε 1 := by
     calc

@@ -19,6 +19,13 @@ set of distinct real valuations bounded by a nonnegative radius.
 This is the counting input for selecting radii at which evaluation loses little against the
 Gauss valuation.
 
+## Main results
+
+* `Polynomial.sum_max_min_valuation_roots_le`: a weighted coefficient bounds the sum of
+  positive root valuations clipped at a nonnegative radius.
+* `Polynomial.sum_card_roots_valuation_mul_le`: a weighted coefficient bounds the sum of
+  radius-weighted root counts over a finite set of distinct valuations.
+
 ## Provenance
 
 `Polynomial.sum_card_roots_valuation_mul_le` adapts
@@ -72,9 +79,9 @@ theorem sum_max_min_valuation_roots_le (g : K[X])
     congr 1
     apply Multiset.map_congr rfl
     intro a _
+    have hρ' : (0 : WithTop ℝ) ≤ ρ := by exact_mod_cast hρ
     have H := min_add_max (0 : WithTop ℝ) (min (ρ : WithTop ℝ) (v a))
-    rw [← min_assoc, min_eq_left (show (0 : WithTop ℝ) ≤ ρ by exact_mod_cast hρ),
-      zero_add] at H
+    rw [← min_assoc, min_eq_left hρ', zero_add] at H
     exact H.symm
   rw [hsplit] at H
   have H' : ((g.roots.map fun a ↦ min 0 (v a)).sum +

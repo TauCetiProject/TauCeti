@@ -25,7 +25,10 @@ only at zero. Membership in the associated valuation subring is nonnegativity.
 
 ## Main results
 
-* `AddValuation.map_prod`: `v (∏ i ∈ s, f i) = ∑ i ∈ s, v (f i)`.
+* `AddValuation.mem_toValuation_valuationSubring_iff`: membership in the associated valuation
+  subring is equivalent to nonnegativity of the additive valuation.
+* `AddValuation.map_prod`, `AddValuation.map_multiset_prod`: finite and multiset products
+  become sums of valuations.
 * `AddValuation.map_prod_castLE`: the valuation of the product of the first `k` entries of a
   tuple is the prefix sum of their valuations.
 * `AddValuation.map_neg_one_pow`: `v ((-1) ^ k) = 0`.
@@ -52,6 +55,14 @@ theorem map_prod {ι : Type*} (s : Finset ι) (f : ι → R) :
   induction s using Finset.cons_induction with
   | empty => simp [v.map_one]
   | cons a s ha ih => rw [Finset.prod_cons, Finset.sum_cons, v.map_mul, ih]
+
+/-- An additive valuation of a multiset product is the sum of the valuations. -/
+@[simp]
+theorem map_multiset_prod (s : Multiset R) : v s.prod = (s.map v).sum := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih => simp only [Multiset.prod_cons, v.map_mul, ih, Multiset.map_cons,
+      Multiset.sum_cons]
 
 /-- The valuation of the product of the first `k` entries of `s : Fin n → R` is the prefix sum of
 length `k` of their valuations. -/
@@ -107,7 +118,8 @@ end Ring
 theorem mem_toValuation_valuationSubring_iff {K Γ : Type*} [Field K]
     [LinearOrderedAddCommGroupWithTop Γ] (v : AddValuation K Γ) (x : K) :
     x ∈ v.toValuation.valuationSubring ↔ 0 ≤ v x := by
-  rw [Valuation.mem_valuationSubring_iff, toValuation_apply]
-  rfl
+  rw [Valuation.mem_valuationSubring_iff, toValuation_apply,
+    ← ofAdd_zero, Multiplicative.ofAdd_le, ← toDual_zero,
+    OrderDual.toDual_le_toDual]
 
 end AddValuation

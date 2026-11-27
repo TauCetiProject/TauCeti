@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.WithTop
-public import Mathlib.Basic.NNReal.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 /-!
 # Bounding individual excesses by their total
 
-For finite families in an ordered additive monoid with a top element, a finite lower bound on
-the sum lets one cancel the other terms and bound each individual excess.
+For finite families in an ordered additive monoid with a top element, termwise lower bounds
+with finite sum let one bound each individual excess by the total excess.
 
 ## Provenance
 
@@ -49,16 +48,3 @@ theorem le_add_of_sum_le_sum_add {ι Γ : Type*} [AddCommMonoid Γ] [LinearOrder
   exact H
 
 end Finset
-
-open scoped NNReal
-
-namespace WithTop
-
-/-- A natural multiple of a nonnegative real, cast through `ℝ` to `WithTop ℝ`, satisfies
-exactly the corresponding finite product bound. -/
-theorem nsmul_coe_nnreal_le_iff (n : ℕ) (a b : ℝ≥0) :
-    n • ((a : ℝ) : WithTop ℝ) ≤ (b : ℝ) ↔ (n * a : ℝ≥0) ≤ b := by
-  rw [← coe_nsmul, coe_le_coe, nsmul_eq_mul, ← NNReal.coe_natCast, ← NNReal.coe_mul,
-    NNReal.coe_le_coe]
-
-end WithTop
