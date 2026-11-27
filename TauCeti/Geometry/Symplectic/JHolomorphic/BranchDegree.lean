@@ -538,6 +538,23 @@ theorem image_coincidentBranches :
     exact ⟨(⟨z, hz⟩, ⟨ζ, h.notMem_criticalValuePreimage hz⟩), h, rfl⟩
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- `Γ` is the closure in `S × S` of the pairs `(z, ζ)` with `z ∉ u⁻¹(u(Crit u))` such that the
+branch of `u` at `z` factors holomorphically through the branch of `u` at `ζ`. -/
+theorem coincidentBranchClosure_eq : coincidentBranchClosure I u =
+    closure {p : S × S | p.1 ∉ criticalValuePreimage I u ∧ GermFactorsThrough u p.1 u p.2} := by
+  rw [coincidentBranchClosure, image_coincidentBranches]
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- `Γ` is contained in every closed set containing the pairs `(z, ζ)` with
+`z ∉ u⁻¹(u(Crit u))` such that the branch of `u` at `z` factors holomorphically through the branch
+of `u` at `ζ`. -/
+theorem coincidentBranchClosure_subset_of_isClosed {t : Set (S × S)}
+    (hst : {p : S × S | p.1 ∉ criticalValuePreimage I u ∧ GermFactorsThrough u p.1 u p.2} ⊆ t)
+    (ht : IsClosed t) : coincidentBranchClosure I u ⊆ t := by
+  rw [coincidentBranchClosure_eq]
+  exact closure_minimal hst ht
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
 /-- `Γ` is closed in `S × S`. -/
 theorem isClosed_coincidentBranchClosure : IsClosed (coincidentBranchClosure I u) :=
   isClosed_closure
@@ -546,17 +563,16 @@ omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [Is
 /-- Points outside `u⁻¹(u(Crit u))` with coincident branches are related by `Γ`. -/
 theorem mem_coincidentBranchClosure_of_germFactorsThrough {z ζ : S}
     (hz : z ∉ criticalValuePreimage I u) (h : GermFactorsThrough u z u ζ) :
-    (z, ζ) ∈ coincidentBranchClosure I u :=
-  subset_closure <| by rw [image_coincidentBranches]; exact ⟨hz, h⟩
+    (z, ζ) ∈ coincidentBranchClosure I u := by
+  rw [coincidentBranchClosure_eq]
+  exact subset_closure ⟨hz, h⟩
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
 /-- Points related by `Γ` have the same value under a continuous map into a Hausdorff space. -/
 theorem apply_eq_of_mem_coincidentBranchClosure [T2Space N] (hu : Continuous u) {z ζ : S}
-    (h : (z, ζ) ∈ coincidentBranchClosure I u) : u z = u ζ := by
-  refine closure_minimal (s := (fun p ↦ ((p.1 : S), (p.2 : S))) '' coincidentBranches I u) ?_
+    (h : (z, ζ) ∈ coincidentBranchClosure I u) : u z = u ζ :=
+  coincidentBranchClosure_subset_of_isClosed (fun _ hp ↦ hp.2.apply_eq)
     (isClosed_eq (hu.comp continuous_fst) (hu.comp continuous_snd)) h
-  rintro _ ⟨p, hp, rfl⟩
-  exact (mem_coincidentBranches.1 hp).apply_eq
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
 /-- **The preimage of the critical values is a union of classes of `Γ`.** -/
@@ -577,8 +593,9 @@ theorem mem_coincidentBranchClosure_iff_of_notMem [T2Space N] (hu : ContMDiff �
   -- `ζ` has the value of `z`, so it is immersed, and `(ζ, z)` is a limit of related pairs.
   have hζ : ζ ∉ criticalValuePreimage I u :=
     (mem_criticalValuePreimage_iff_of_mem_coincidentBranchClosure hu.continuous h).not.1 hz
+  rw [coincidentBranchClosure_eq] at h
   have hsw : Prod.swap (z, ζ) ∈ closure {p : S × S | GermFactorsThrough u p.2 u p.1} :=
-    map_mem_closure continuous_swap h fun _ ⟨_, hp, he⟩ ↦ he ▸ hp
+    map_mem_closure continuous_swap h fun _ hp ↦ hp.2
   exact germFactorsThrough_of_mem_closure hu hJu (hu.of_le one_le_two) hJu hsw
     (mfderiv_ne_zero_of_notMem_criticalValuePreimage hζ)
 
@@ -590,14 +607,11 @@ theorem mem_coincidentBranchClosure_comm (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
       (ζ, z) ∈ coincidentBranchClosure I u from ⟨h, h⟩
   intro z ζ h
   -- `Γ₀` is symmetric, since its points are immersed.
-  have hsw : MapsTo Prod.swap ((fun p ↦ ((p.1 : S), (p.2 : S))) '' coincidentBranches I u)
-      ((fun p ↦ ((p.1 : S), (p.2 : S))) '' coincidentBranches I u) := by
-    rw [image_coincidentBranches]
-    rintro p ⟨hp, hpu⟩
-    exact ⟨hpu.notMem_criticalValuePreimage hp, hpu.symm (hu.of_le one_le_two) hJu hu hJu
-      (mfderiv_ne_zero_of_notMem_criticalValuePreimage hp)⟩
-  rw [coincidentBranchClosure] at h ⊢
-  exact map_mem_closure (f := Prod.swap) continuous_swap h hsw
+  rw [coincidentBranchClosure_eq] at h ⊢
+  refine map_mem_closure (f := Prod.swap) continuous_swap h ?_
+  rintro p ⟨hp, hpu⟩
+  exact ⟨hpu.notMem_criticalValuePreimage hp, hpu.symm (hu.of_le one_le_two) hJu hu hJu
+    (mfderiv_ne_zero_of_notMem_criticalValuePreimage hp)⟩
 
 /-- For a nonconstant `C¹` pseudoholomorphic map from a compact connected Riemann surface, the
 points near `z` other than `z` lie outside the finite set `u⁻¹(u(Crit u))`. -/
@@ -608,6 +622,17 @@ private theorem compl_criticalValuePreimage_mem_nhdsNE [CompactSpace S] [Preconn
   simpa [← compl_eq_univ_sdiff] using nhdsNE_of_nhdsNE_sdiff_finite (x := z) univ_mem
     (finite_criticalValuePreimage hu hJu hne).to_subtype
 
+/-- For a nonconstant `C¹` pseudoholomorphic map from a compact connected Riemann surface, a
+property holding near `z` holds at some point outside `u⁻¹(u(Crit u))`. -/
+private theorem exists_notMem_criticalValuePreimage_of_eventually [CompactSpace S]
+    [PreconnectedSpace S] (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u)
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) {z : S}
+    {P : S → Prop} (h : ∀ᶠ w in 𝓝 z, P w) : ∃ w ∉ criticalValuePreimage I u, P w := by
+  have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
+  obtain ⟨w, hw, hwB⟩ := ((h.filter_mono nhdsWithin_le_nhds).and
+    (compl_criticalValuePreimage_mem_nhdsNE hu hJu hne z)).exists
+  exact ⟨w, hwB, hw⟩
+
 /-- **`Γ` is reflexive.** For a nonconstant `C¹` pseudoholomorphic map from a compact connected
 Riemann surface, every point `z` is related to itself by `Γ`: it is a limit of points outside the
 finite set `u⁻¹(u(Crit u))`, each of which is related to itself by `Γ₀`. -/
@@ -615,7 +640,7 @@ theorem mem_coincidentBranchClosure_self [CompactSpace S] [PreconnectedSpace S]
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
     (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) (z : S) : (z, z) ∈ coincidentBranchClosure I u := by
   have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
-  rw [coincidentBranchClosure, image_coincidentBranches]
+  rw [coincidentBranchClosure_eq]
   refine mem_closure_of_tendsto (b := 𝓝[≠] z)
     (((continuous_id.prodMk continuous_id).tendsto z).mono_left nhdsWithin_le_nhds) ?_
   filter_upwards [compl_criticalValuePreimage_mem_nhdsNE hu hJu hne z] with w hw
@@ -663,6 +688,27 @@ private theorem exists_isOpen_isPreconnected_sdiff_criticalValuePreimage [Compac
     (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat) hDo hDc.isPreconnected
     hB.isClosed hB.isDiscrete⟩
 
+/-- For a nonconstant `C¹` pseudoholomorphic map from a compact connected Hausdorff Riemann
+surface and points `ζ`, `ξ` with the same value, every neighbourhood of `ξ` contains an open
+neighbourhood `W'` of `ξ` whose closure meets the fibre `u⁻¹(u ξ)` only at `ξ`, and `ζ` has an open
+neighbourhood `D` with `D \ u⁻¹(u(Crit u))` preconnected on which `u` takes no value that it takes
+on the frontier of `W'`. -/
+private theorem exists_isOpen_isPreconnected_sdiff_forall_notMem_image_frontier [CompactSpace S]
+    [PreconnectedSpace S] [T2Space S] [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u)
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (hne : ∃ x₁ x₂, u x₁ ≠ u x₂)
+    {ζ ξ : S} (hζξ : u ζ = u ξ) {W : Set S} (hW : W ∈ 𝓝 ξ) :
+    ∃ W' ⊆ W, IsOpen W' ∧ ξ ∈ W' ∧ (∀ y ∈ closure W', u y = u ξ → y = ξ) ∧
+      ∃ D, IsOpen D ∧ ζ ∈ D ∧ IsPreconnected (D \ criticalValuePreimage I u) ∧
+        ∀ w ∈ D, u w ∉ u '' frontier W' := by
+  obtain ⟨W', hW'W, hW'o, hξW', hW'F⟩ :=
+    exists_isOpen_forall_mem_closure_apply_eq_imp_eq hu hJu hne hW
+  have huK : u ζ ∉ u '' frontier W' := fun ⟨y, hy, hyu⟩ ↦
+    hy.2 (by rw [hW'o.interior_eq]; exact hW'F y hy.1 (hyu.trans hζξ) ▸ hξW')
+  obtain ⟨D, hDO, hDo, hζD, hs⟩ := exists_isOpen_isPreconnected_sdiff_criticalValuePreimage hu hJu
+    hne (hu.continuous.continuousAt.preimage_mem_nhds
+      ((isClosed_frontier.isCompact.image hu.continuous).isClosed.isOpen_compl.mem_nhds huK))
+  exact ⟨W', hW'W, hW'o, hξW', hW'F, D, hDo, hζD, hs, fun _ hw ↦ hDO hw⟩
+
 /-- **Points near one end of a pair of `Γ` have partners near the other end.** Let `u` be a
 nonconstant `C²` pseudoholomorphic map from a compact connected Hausdorff Riemann surface into a
 Hausdorff almost complex manifold, and let `(ζ, ξ)` lie in `Γ`. For every neighbourhood `W` of `ξ`,
@@ -677,15 +723,9 @@ theorem eventually_exists_germFactorsThrough_of_mem_coincidentBranchClosure [Com
   have hu₁ : ContMDiff 𝓘(ℝ, ℂ) I 1 u := hu.of_le one_le_two
   -- An open neighbourhood `W' ⊆ W` of `ξ` whose frontier misses the fibre `u⁻¹(u ξ)`, and a
   -- neighbourhood `D` of `ζ` with `D \ B` preconnected on which `u` avoids `u '' frontier W'`.
-  obtain ⟨W', hW'W, hW'o, hξW', hW'F⟩ :=
-    exists_isOpen_forall_mem_closure_apply_eq_imp_eq hu₁ hJu hne hW
-  have huK : u ζ ∉ u '' frontier W' := fun ⟨y, hy, hyu⟩ ↦ hy.2 (by
-    rw [hW'o.interior_eq]
-    exact hW'F y hy.1 (hyu.trans (apply_eq_of_mem_coincidentBranchClosure hu.continuous h)) ▸
-      hξW')
-  obtain ⟨D, hDO, hDo, hζD, hs⟩ := exists_isOpen_isPreconnected_sdiff_criticalValuePreimage hu₁ hJu
-    hne (hu.continuous.continuousAt.preimage_mem_nhds
-      ((isClosed_frontier.isCompact.image hu.continuous).isClosed.isOpen_compl.mem_nhds huK))
+  obtain ⟨W', hW'W, hW'o, hξW', -, D, hDo, hζD, hs, hDK⟩ :=
+    exists_isOpen_isPreconnected_sdiff_forall_notMem_image_frontier hu₁ hJu hne
+      (apply_eq_of_mem_coincidentBranchClosure hu.continuous h) hW
   -- The points near which every point off `B` has a partner in `W'`, and those near which no
   -- point has a partner in `closure W'`, form two open sets covering `D \ B`.
   set U₁ := {w | ∀ᶠ w' in 𝓝 w, w' ∉ B → ∃ y ∈ W', GermFactorsThrough u w' u y}
@@ -707,14 +747,14 @@ theorem eventually_exists_germFactorsThrough_of_mem_coincidentBranchClosure [Com
             ((mem_criticalValuePreimage_iff_of_apply_eq hyw).not.2 hwB))
       by_cases hyW' : y ∈ W'
       · exact hex ⟨y, hyW', hwy⟩
-      · exact hDO hwD ⟨y, ⟨hy, by rwa [hW'o.interior_eq]⟩, hwy.apply_eq.symm⟩
+      · exact hDK w hwD ⟨y, ⟨hy, by rwa [hW'o.interior_eq]⟩, hwy.apply_eq.symm⟩
   have hU₁₂ : ∀ w ∈ D \ B, w ∈ U₁ → w ∉ U₂ := by
     rintro w ⟨-, hwB⟩ hw₁ hw₂
     obtain ⟨y, hyW', hy⟩ := hw₁.self_of_nhds hwB
     exact hw₂.self_of_nhds y (subset_closure hyW') hy
   -- Some point of `D \ B` has a partner in `W'`, since `(ζ, ξ)` is a limit of pairs of `Γ₀`, so by
   -- preconnectedness every point of `D \ B` lies in `U₁`.
-  rw [coincidentBranchClosure, image_coincidentBranches] at h
+  rw [coincidentBranchClosure_eq] at h
   obtain ⟨p, ⟨hp₁, hp₂⟩, hpB, hp⟩ :=
     mem_closure_iff_nhds.1 h _ (prod_mem_nhds (hDo.mem_nhds hζD) (hW'o.mem_nhds hξW'))
   have hsub : D \ B ⊆ U₁ := by
@@ -762,7 +802,7 @@ theorem equivalence_coincidentBranchClosure [CompactSpace S] [PreconnectedSpace 
     (mem_coincidentBranchClosure_comm hu hJu).1, fun {z ζ ξ} h₁ h₂ ↦ ?_⟩
   -- Near `(z, ζ)` lie pairs `(z', w)` of `Γ₀`, and the points `w` near `ζ` off
   -- `u⁻¹(u(Crit u))` have partners near `ξ`, which are then partners of `z'`.
-  rw [coincidentBranchClosure, image_coincidentBranches] at h₁ ⊢
+  rw [coincidentBranchClosure_eq] at h₁ ⊢
   refine mem_closure_iff_nhds.2 fun t ht ↦ ?_
   obtain ⟨U, hU, W, hW, hUW⟩ := mem_nhds_prod_iff.1 ht
   obtain ⟨p, ⟨hp₁, hp₂⟩, hpB, hp⟩ := mem_closure_iff_nhds.1 h₁ _ (prod_mem_nhds hU
@@ -818,24 +858,18 @@ private theorem exists_mem_nhds_forall_eventually_ncard_eq [CompactSpace S] [Pre
       (V' ∩ {y | GermFactorsThrough u w u y}).ncard = n := by
   set B := criticalValuePreimage I u
   have hu₁ : ContMDiff 𝓘(ℝ, ℂ) I 1 u := hu.of_le one_le_two
-  have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
   -- An open neighbourhood `W'` of `z` whose closure meets the fibre `u⁻¹(u z)` only at `z`, and a
-  -- neighbourhood `D ⊆ W'` of `z` with `D \ B` preconnected on which `u` avoids `u '' frontier W'`.
-  obtain ⟨W', -, hW'o, hzW', hW'F⟩ :=
-    exists_isOpen_forall_mem_closure_apply_eq_imp_eq hu₁ hJu hne univ_mem
-  have huK : u z ∉ u '' frontier W' := fun ⟨y, hy, hyu⟩ ↦
-    hy.2 (by rw [hW'o.interior_eq]; exact hW'F y hy.1 hyu ▸ hzW')
-  obtain ⟨D, hDO, hDo, hzD, hs⟩ := exists_isOpen_isPreconnected_sdiff_criticalValuePreimage hu₁ hJu
-    hne (inter_mem (hW'o.mem_nhds hzW') (hu.continuous.continuousAt.preimage_mem_nhds
-      ((isClosed_frontier.isCompact.image hu.continuous).isClosed.isOpen_compl.mem_nhds huK)))
+  -- neighbourhood `D` of `z` with `D \ B` preconnected on which `u` avoids `u '' frontier W'`.
+  obtain ⟨W', -, hW'o, hzW', hW'F, D, hDo, hzD, hs, hDK⟩ :=
+    exists_isOpen_isPreconnected_sdiff_forall_notMem_image_frontier hu₁ hJu hne rfl univ_mem
   -- No point of `D` has a partner on the frontier of `W'`, so the number of partners in `W'` is
   -- locally constant on `D \ B`, hence constant.
   have hcont : ContinuousOn (fun w ↦ (W' ∩ {y | GermFactorsThrough u w u y}).ncard) (D \ B) :=
     fun w ⟨hwD, hwB⟩ ↦ (continuousAt_const.congr (EventuallyEq.symm
       (eventually_ncard_inter_setOf_germFactorsThrough_eq hu hJu hne hwB hW'o
-        fun y hy hwy ↦ (hDO hwD).2 ⟨y, hy, hwy.apply_eq.symm⟩))).continuousWithinAt
-  obtain ⟨w₀, hw₀D, hw₀B⟩ := (Filter.Eventually.and (mem_nhdsWithin_of_mem_nhds
-    (hDo.mem_nhds hzD)) (compl_criticalValuePreimage_mem_nhdsNE hu₁ hJu hne z)).exists
+        fun y hy hwy ↦ hDK w hwD ⟨y, hy, hwy.apply_eq.symm⟩))).continuousWithinAt
+  obtain ⟨w₀, hw₀B, hw₀D⟩ :=
+    exists_notMem_criticalValuePreimage_of_eventually hu₁ hJu hne (hDo.mem_nhds hzD)
   refine ⟨W', hW'o.mem_nhds hzW', (W' ∩ {y | GermFactorsThrough u w₀ u y}).ncard,
     fun V' hV' hV'W' ↦ ?_⟩
   -- For `w` near `z`, the partners of `w` in `W'` lie in `V'`, since `u` takes the value `u z` at
@@ -879,7 +913,6 @@ theorem exists_mem_nhds_forall_eventually_ncard_eq_coincidentBranchMultiplicity 
     (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) (z : S) :
     ∃ V ∈ 𝓝 z, ∀ V' ∈ 𝓝 z, V' ⊆ V → ∀ᶠ w in 𝓝 z, w ∉ criticalValuePreimage I u →
       (V' ∩ {y | GermFactorsThrough u w u y}).ncard = coincidentBranchMultiplicity I u z := by
-  have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
   obtain ⟨V, hV, n, h⟩ := exists_mem_nhds_forall_eventually_ncard_eq hu hJu hne z
   have hmem : n ∈ {n | ∃ V ∈ 𝓝 z, ∀ᶠ w in 𝓝 z, w ∉ criticalValuePreimage I u →
       (V ∩ {y | GermFactorsThrough u w u y}).ncard ≤ n} :=
@@ -887,9 +920,8 @@ theorem exists_mem_nhds_forall_eventually_ncard_eq_coincidentBranchMultiplicity 
   -- Every bound `m` on the counts in some neighbourhood `V''` bounds the count `n` in `V'' ∩ V`.
   have hn : coincidentBranchMultiplicity I u z = n := by
     refine le_antisymm (Nat.sInf_le hmem) (le_csInf ⟨n, hmem⟩ fun m ⟨V'', hV'', hm⟩ ↦ ?_)
-    obtain ⟨w, ⟨hw₁, hw₂⟩, hwB⟩ := (((h _ (inter_mem hV'' hV) inter_subset_right).and
-      hm).filter_mono nhdsWithin_le_nhds |>.and (compl_criticalValuePreimage_mem_nhdsNE
-        (hu.of_le one_le_two) hJu hne z)).exists
+    obtain ⟨w, hwB, hw₁, hw₂⟩ := exists_notMem_criticalValuePreimage_of_eventually
+      (hu.of_le one_le_two) hJu hne ((h _ (inter_mem hV'' hV) inter_subset_right).and hm)
     calc n = (V'' ∩ V ∩ {y | GermFactorsThrough u w u y}).ncard := (hw₁ hwB).symm
       _ ≤ (V'' ∩ {y | GermFactorsThrough u w u y}).ncard :=
         ncard_le_ncard (inter_subset_inter_left _ inter_subset_left)
@@ -904,11 +936,10 @@ theorem coincidentBranchMultiplicity_pos [CompactSpace S] [PreconnectedSpace S] 
     [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
     (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) (z : S) :
     0 < coincidentBranchMultiplicity I u z := by
-  have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
   obtain ⟨V, hV, h⟩ :=
     exists_mem_nhds_forall_eventually_ncard_eq_coincidentBranchMultiplicity hu hJu hne z
-  obtain ⟨w, ⟨hw, hwV⟩, hwB⟩ := (((h V hV subset_rfl).and hV).filter_mono nhdsWithin_le_nhds
-    |>.and (compl_criticalValuePreimage_mem_nhdsNE (hu.of_le one_le_two) hJu hne z)).exists
+  obtain ⟨w, hwB, hw, hwV⟩ := exists_notMem_criticalValuePreimage_of_eventually
+    (hu.of_le one_le_two) hJu hne ((h V hV subset_rfl).and hV)
   rw [← hw hwB]
   exact (ncard_pos ((finite_setOf_germFactorsThrough (hu.of_le one_le_two) hJu hne
     w).inter_of_right _)).2 ⟨w, hwV, .refl u w⟩
@@ -946,7 +977,6 @@ theorem finsum_mem_coincidentBranchMultiplicity_eq [CompactSpace S] [Preconnecte
   set B := criticalValuePreimage I u
   set C := {ζ | (z, ζ) ∈ coincidentBranchClosure I u}
   have hu₁ : ContMDiff 𝓘(ℝ, ℂ) I 1 u := hu.of_le one_le_two
-  have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
   have hC : C.Finite := finite_setOf_mem_coincidentBranchClosure hu₁ hJu hne z
   -- Pairwise disjoint open neighbourhoods `V' ζ` of the points `ζ ∈ C`, small enough to count the
   -- partners of the points near `ζ` by `e_ζ`.
@@ -971,8 +1001,8 @@ theorem finsum_mem_coincidentBranchMultiplicity_eq [CompactSpace S] [Preconnecte
     hK.eventually_forall_of_forall_eventually fun y hy ↦
       isClosed_coincidentBranchClosure.isOpen_compl.mem_nhds fun hzy ↦
         hy (mem_biUnion hzy (hV'mem y hzy))
-  obtain ⟨w, ⟨hwc, hwo⟩, hwB⟩ := (((eventually_all_finite hC).2 hcount).and hout).filter_mono
-    nhdsWithin_le_nhds |>.and (compl_criticalValuePreimage_mem_nhdsNE hu₁ hJu hne z) |>.exists
+  obtain ⟨w, hwB, hwc, hwo⟩ := exists_notMem_criticalValuePreimage_of_eventually hu₁ hJu hne
+    (((eventually_all_finite hC).2 hcount).and hout)
   -- The partners of `w` are the disjoint union of its partners in the sets `V' ζ`.
   have hunion : {y | GermFactorsThrough u w u y} =
       ⋃ ζ ∈ C, (V' ζ ∩ {y | GermFactorsThrough u w u y}) := by
