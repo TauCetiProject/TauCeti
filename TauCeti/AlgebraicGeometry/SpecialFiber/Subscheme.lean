@@ -254,7 +254,6 @@ variable (R : Type u) [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X 
 /-- The **reduced special fibre** `X_{s,red}` of a scheme `X` over a local ring `R`: the reduced
 induced closed subscheme on the preimage of the closed point of `Spec R`, realized as the closed
 subscheme cut out by `(specialFiberι R toBase).ker.radical`. -/
-@[expose]
 noncomputable def reducedSpecialFiber : Scheme.{u} :=
   (specialFiberι R toBase).ker.radical.subscheme
 
@@ -267,12 +266,6 @@ instance isReduced_reducedSpecialFiber : IsReduced (reducedSpecialFiber R toBase
 space. -/
 noncomputable def reducedSpecialFiberι : reducedSpecialFiber R toBase ⟶ X :=
   (specialFiberι R toBase).ker.radical.subschemeι
-
-/-- The inclusion `X_{s,red} ⟶ X` is `(specialFiberι R toBase).ker.radical.subschemeι`. -/
-lemma reducedSpecialFiberι_eq_subschemeι :
-    reducedSpecialFiberι R toBase = (specialFiberι R toBase).ker.radical.subschemeι := by
-  unfold reducedSpecialFiberι
-  rfl
 
 /-- The canonical inclusion `X_{s,red} ⟶ X` is a closed immersion. -/
 instance isClosedImmersion_reducedSpecialFiberι :
@@ -350,13 +343,6 @@ noncomputable def reducedSpecialFiberToSpecialFiber :
     reducedSpecialFiber R toBase ⟶ (specialFiber R toBase).left :=
   subschemeToSpecialFiber (specialFiberι R toBase).ker.le_radical
 
-/-- `reducedSpecialFiberToSpecialFiber` is `subschemeToSpecialFiber` applied to `le_radical`. -/
-lemma reducedSpecialFiberToSpecialFiber_eq_subschemeToSpecialFiber :
-    reducedSpecialFiberToSpecialFiber R toBase =
-      subschemeToSpecialFiber (specialFiberι R toBase).ker.le_radical := by
-  unfold reducedSpecialFiberToSpecialFiber
-  rfl
-
 /-- The inclusion of the reduced special fibre into the total space factors through the
 scheme-theoretic special fibre. -/
 @[reassoc (attr := simp)]
@@ -417,15 +403,6 @@ noncomputable def subschemeToReducedSpecialFiber {I : X.IdealSheafData}
     I.subscheme ⟶ reducedSpecialFiber R toBase :=
   Scheme.IdealSheafData.inclusion
     ((ker_reducedSpecialFiberι_eq_radical R toBase).symm.trans_le hI)
-
-/-- `subschemeToReducedSpecialFiber` is `Scheme.IdealSheafData.inclusion`. -/
-lemma subschemeToReducedSpecialFiber_eq_inclusion {I : X.IdealSheafData}
-    (hI : (reducedSpecialFiberι R toBase).ker ≤ I) :
-    subschemeToReducedSpecialFiber hI =
-      Scheme.IdealSheafData.inclusion
-        ((ker_reducedSpecialFiberι_eq_radical R toBase).symm.trans_le hI) := by
-  unfold subschemeToReducedSpecialFiber
-  rfl
 
 /-- The inclusion of a closed subscheme whose ideal sheaf contains
 `(reducedSpecialFiberι R toBase).ker` factors through `X_{s,red}`. -/

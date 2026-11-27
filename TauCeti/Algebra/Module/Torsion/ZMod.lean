@@ -65,8 +65,9 @@ theorem coe_torsionByZModLinearMap_apply (f : A →+ B) (n : ℕ)
 theorem torsionByZModLinearMap_id (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))] :
     (AddMonoidHom.id A).torsionByZModLinearMap n = LinearMap.id := by
-  ext x
-  rw [coe_torsionByZModLinearMap_apply, AddMonoidHom.id_apply, LinearMap.id_apply]
+  rw [torsionByZModLinearMap, show (AddMonoidHom.id A).toIntLinearMap = LinearMap.id from rfl,
+    TauCeti.torsionByMap_id]
+  rfl
 
 /-- Restriction to `n`-torsion commutes with composition of additive homomorphisms. -/
 @[simp]
@@ -76,9 +77,10 @@ theorem torsionByZModLinearMap_comp (g : B →+ C) (f : A →+ B) (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy C (n : ℤ))] :
     (g.comp f).torsionByZModLinearMap n =
       g.torsionByZModLinearMap n ∘ₗ f.torsionByZModLinearMap n := by
-  ext x
-  rw [coe_torsionByZModLinearMap_apply, AddMonoidHom.comp_apply, LinearMap.comp_apply,
-    coe_torsionByZModLinearMap_apply, coe_torsionByZModLinearMap_apply]
+  rw [torsionByZModLinearMap, torsionByZModLinearMap, torsionByZModLinearMap,
+    show (g.comp f).toIntLinearMap = g.toIntLinearMap ∘ₗ f.toIntLinearMap from rfl,
+    TauCeti.torsionByMap_comp]
+  rfl
 
 /-- The zero additive homomorphism restricts to the zero `ZMod n`-linear map on `n`-torsion. -/
 @[simp]
@@ -86,9 +88,9 @@ theorem torsionByZModLinearMap_zero (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
     [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))] :
     (0 : A →+ B).torsionByZModLinearMap n = 0 := by
-  ext x
-  rw [coe_torsionByZModLinearMap_apply, AddMonoidHom.zero_apply, LinearMap.zero_apply,
-    AddSubgroup.coe_zero]
+  rw [torsionByZModLinearMap, show (0 : A →+ B).toIntLinearMap = 0 from rfl,
+    TauCeti.torsionByMap_zero]
+  rfl
 
 /-- Restriction to `n`-torsion preserves addition of additive homomorphisms. -/
 @[simp]
@@ -116,10 +118,8 @@ injective. -/
 theorem injective_torsionByZModLinearMap {f : A →+ B} (hf : Function.Injective f) (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
     [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))] :
-    Function.Injective (f.torsionByZModLinearMap n) := fun x y hxy ↦ by
-  have hval := congrArg Subtype.val hxy
-  simp only [coe_torsionByZModLinearMap_apply] at hval
-  exact Subtype.ext (hf hval)
+    Function.Injective (f.torsionByZModLinearMap n) :=
+  TauCeti.injective_torsionByMap (f := f.toIntLinearMap) hf
 
 end AddMonoidHom
 
