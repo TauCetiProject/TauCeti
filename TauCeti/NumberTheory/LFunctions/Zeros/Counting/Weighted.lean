@@ -32,10 +32,10 @@ private theorem exp_neg_mul_gap_le {V ℒ c κ D g : ℝ} (hℒ : 0 < ℒ) (hκ 
     exp (-(V / 2) * g) ≤ min 1 D * exp (-(c / 4) * V / ℒ) := by
   have hV₀ : 0 ≤ V := le_trans (by positivity) hV
   have hVκ : 1 ≤ V / 4 * (κ / ℒ) := by
-    rw [← mul_div_assoc, le_div_iff₀ hℒ, one_mul, div_mul_eq_mul_div, le_div_iff₀ (by norm_num)]
-    calc
-      ℒ * 4 = ((4 / κ) * ℒ) * κ := by field_simp
-      _ ≤ V * κ := mul_le_mul_of_nonneg_right hV hκ.le
+    rw [div_mul_div_comm, le_div_iff₀ (by positivity)]
+    have := mul_le_mul_of_nonneg_right hV hκ.le
+    field_simp at this
+    linarith
   have hbase' : exp (-(V / 4) * g) ≤ exp (-(c / 4) * V / ℒ) := by
     apply exp_le_exp.mpr
     calc
@@ -61,12 +61,17 @@ private theorem exp_neg_mul_gap_le {V ℒ c κ D g : ℝ} (hℒ : 0 < ℒ) (hκ 
   rw [show -(V / 2) * g = (-(V / 4) * g) + (-(V / 4) * g) by ring, exp_add]
   exact mul_le_mul hrep' hbase' (exp_pos _).le (le_min zero_le_one hD.le)
 
-/-- The normalized zero sum `∑ mρ x ^ (Re ρ - 1)` in Linnik's range. The index set
-contains the retained zeros with real part at least `1/2` and can include zeros from many
-L-functions. The count at each abscissa includes zeros on the boundary. In applications
-`ℒ = log (q * (T + 2))` and `D = (1 - β₁) * ℒ / κ` for the exceptional zero `β₁`;
-set `D = 1` when there is no exceptional zero. -/
-theorem sum_rpow_re_sub_one_le_of_zeroDensity {ι : Type*} {s : Finset ι} (ρ : ι → ℂ)
+/-- A bound for the normalized zero sum `∑ mρ x ^ (Re ρ - 1)` in Linnik's range: suppose
+that for every `σ ∈ [1/2, 1]` the multiplicity count of zeros with `σ ≤ Re ρ` is at most
+`C * exp (A * ℒ * (1 - σ))`, that every zero satisfies
+`max (c / ℒ) (κ / ℒ * log D⁻¹) ≤ 1 - Re ρ`, and that `log x ≥ max (2 * A) (4 / κ) * ℒ`.
+Then the sum is at most `2 * C * min 1 D * exp (-(c / 4) * log x / ℒ)`.
+
+The index set contains the retained zeros with real part at least `1/2` and can include
+zeros from many L-functions. The count at each abscissa includes zeros on the boundary.
+In applications `ℒ = log (q * (T + 2))` and `D = (1 - β₁) * ℒ / κ` for the exceptional
+zero `β₁`; set `D = 1` when there is no exceptional zero. -/
+theorem sum_rpow_re_sub_one_le_of_cumulative_le {ι : Type*} {s : Finset ι} (ρ : ι → ℂ)
     (m : ι → ℕ) {x ℒ A C c κ D : ℝ} (hℒ : 0 < ℒ) (hc : 0 ≤ c) (hκ : 0 < κ) (hD : 0 < D)
     (hx : exp (max (2 * A) (4 / κ) * ℒ) ≤ x) (hβ : ∀ i ∈ s, 1 / 2 ≤ (ρ i).re)
     (hgap : ∀ i ∈ s, max (c / ℒ) (κ / ℒ * log D⁻¹) ≤ 1 - (ρ i).re)
