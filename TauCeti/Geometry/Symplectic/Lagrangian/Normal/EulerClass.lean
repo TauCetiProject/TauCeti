@@ -21,7 +21,7 @@ import TauCeti.Topology.VectorBundle.Orientation.FiberwiseEquiv
 /-!
 # The normal Euler number of a Lagrangian submanifold
 
-Let `f : M → N` be an embedding of an `n`-manifold `M` into a `2n`-manifold `N` with a two-form `σ`
+Let `f : M → N` be an embedding of a `k`-manifold `M` into a `2k`-manifold `N` with a two-form `σ`
 taming an almost complex structure `J`, for instance a symplectic manifold with a compatible `J`,
 and suppose that `f` is Lagrangian. At each point `x` the structure `J` identifies the tangent space
 of `M` with the normal space `N_x = T_{f x} N ⧸ df_x(T_x M)` of the embedding by
@@ -36,17 +36,17 @@ they form an isomorphism of vector bundles `TM ≅ ν`.
 An orientation `o` of `M` and the symplectic orientations of the tangent spaces of `N` induce an
 orientation of each normal space: the one which, preceded by `o`, gives the symplectic orientation
 (`Orientation.cokerOfExact`). By the linear computation
-`TauCeti.SymplecticForm.Tames.cokerOfExact_orientation` it is `(-1) ^ n.choose 2` times the image of
+`TauCeti.SymplecticForm.Tames.cokerOfExact_orientation` it is `(-1) ^ k.choose 2` times the image of
 `o` under the identification above. So these normal orientations vary continuously: they form an
 orientation of the normal bundle
 (`TauCeti.SmoothEmbedding.lagrangianNormalOrientation`,
 `TauCeti.SmoothEmbedding.lagrangianNormalOrientation_apply`), and its Euler class is
-`(-1) ^ n.choose 2` times the Euler class of `TM`
+`(-1) ^ k.choose 2` times the Euler class of `TM`
 (`TauCeti.SmoothEmbedding.eulerClass_lagrangianNormalOrientation`). When `M` is compact and
 boundaryless, evaluating on the fundamental class and using `e(TM)[M] = χ(M)` gives the **normal
 Euler number of a Lagrangian submanifold**
 
-`e(ν)[M] = (-1) ^ n.choose 2 χ(M)`
+`e(ν)[M] = (-1) ^ k.choose 2 χ(M)`
 
 (`TauCeti.SmoothEmbedding.evalFundamentalClass_eulerClass_lagrangianNormalOrientation`).
 For a Lagrangian surface in a symplectic four-manifold the sign is `-1`, so `e(ν)[M] = -χ(M)`
@@ -67,10 +67,10 @@ number with the homological self-intersection needs a tubular neighbourhood and 
 
 * `TauCeti.SmoothEmbedding.lagrangianNormalOrientation_apply`: its fibres are the induced
   orientations `Orientation.cokerOfExact`.
-* `TauCeti.SmoothEmbedding.eulerClass_lagrangianNormalOrientation`:
-  `e(ν) = (-1) ^ n.choose 2 e(TM)`.
+* `TauCeti.SmoothEmbedding.eulerClass_lagrangianNormalOrientation`: for `M` of dimension
+  `k + 1`, `e(ν) = (-1) ^ (k + 1).choose 2 e(TM)`.
 * `TauCeti.SmoothEmbedding.evalFundamentalClass_eulerClass_lagrangianNormalOrientation`:
-  `e(ν)[M] = (-1) ^ n.choose 2 χ(M)` for compact `M`.
+  `e(ν)[M] = (-1) ^ (k + 1).choose 2 χ(M)` for compact `M` of dimension `k + 1`.
 * `SmoothEmbedding.evalFundamentalClass_eulerClass_lagrangianNormalOrientation_sphere`: an
   embedded Lagrangian sphere in a symplectic four-manifold has normal Euler number `-2`.
 
