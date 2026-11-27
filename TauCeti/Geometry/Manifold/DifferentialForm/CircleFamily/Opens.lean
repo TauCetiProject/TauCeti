@@ -21,7 +21,7 @@ restricted time forms back as `A` pulls back the time forms
 (`TauCeti.mpullback_mpullback_subtype_val_of_comp_eq`,
 `TauCeti.SmoothForm.mpullback_mpullback_subtype_val_of_comp_eq`). No open subset needs to be a
 product of an open subset of the base and an open subset of the fibre. The corresponding results
-for circles and tori are in `TauCeti.Geometry.Manifold.Instances.AddCircle.Opens`.
+for circles and tori are in `TauCeti.Geometry.Manifold.DifferentialForm.Torus.Opens`.
 
 ## Main results
 

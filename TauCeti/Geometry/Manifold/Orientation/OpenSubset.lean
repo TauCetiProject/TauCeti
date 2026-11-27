@@ -148,10 +148,7 @@ theorem isOrientationPreservingAt_restrict_comp_subtype_val_iff (o : Orientation
     rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
       tangentSpaceOpenEquiv_symm_apply]
     exact (congrArg (· v) he).trans (mfderiv_comp_subtype_val_apply (x := x) v)
-  · rw [ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans,
-      ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm,
-      ← map_orientationAt_restrict o U x, Equiv.symm_apply_apply]
-    exact hmap
+  · simpa [_root_.Orientation.map_trans, ← map_orientationAt_restrict o U x] using hmap
 
 /-- A map into an open subset `V` of a manifold preserves orientation at a point, for the
 restricted orientation of `V`, exactly when its composition with the inclusion of `V` does. -/
@@ -195,17 +192,9 @@ theorem orientationSign_restrict_of_comp_eq {U : Opens M} {V : Opens M'} {f : U 
     orientationSign (o.restrict U) (o'.restrict V) f x = orientationSign o o' A x := by
   have hp := isOrientationPreservingAt_restrict_iff_of_comp_eq hcomp o o' x
   have hr := isOrientationReversingAt_restrict_iff_of_comp_eq hcomp o o' x
-  -- Both signs lie in `{-1, 0, 1}`, and the values `1` and `-1` are attained simultaneously.
-  have h₁ := abs_le.mp (abs_orientationSign_le_one (o := o.restrict U) (o' := o'.restrict V)
-    (f := f) (x := x))
-  have h₂ := abs_le.mp (abs_orientationSign_le_one (o := o) (o' := o') (f := A) (x := (x : M)))
-  have e₁ : orientationSign (o.restrict U) (o'.restrict V) f x = 1 ↔
-      orientationSign o o' A x = 1 := by
-    rw [orientationSign_eq_one_iff, orientationSign_eq_one_iff, hp]
-  have e₂ : orientationSign (o.restrict U) (o'.restrict V) f x = -1 ↔
-      orientationSign o o' A x = -1 := by
-    rw [orientationSign_eq_neg_one_iff, orientationSign_eq_neg_one_iff, hr]
-  omega
+  classical
+  rw [orientationSign_def, orientationSign_def]
+  exact if_congr hp rfl (if_congr hr rfl rfl)
 
 /-- **Restriction commutes with products.** Let `U` and `V` be open subsets of `M` and `M'`, and let
 `g : U × V → W` be the inclusion of `U × V` into an open subset `W` of `M × M'`, that is
