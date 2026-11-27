@@ -16,6 +16,7 @@ import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Geometry.Lie.Basic
 import TauCeti.Geometry.Lie.Exponential.Smoothness
+import TauCeti.MeasureTheory.Function.L1Space.Star
 
 /-!
 # Quantization of symbols on the Lie algebra of a Lie group
@@ -45,6 +46,9 @@ of the quantization of `b` is the quantization of its complex conjugate `star b`
 
 ## Main statements
 
+* `ContRepresentation.integrable_quantize_integrand`: for an integrable symbol, a strongly
+  continuous representation and a continuous compactly supported cutoff, the defining integrand is
+  integrable.
 * `ContRepresentation.quantize_add_left`, `ContRepresentation.quantize_smul_left`: linearity in the
   symbol; `ContRepresentation.quantize_add_right`, `ContRepresentation.quantize_smul_right`:
   linearity in the vector.
@@ -62,7 +66,7 @@ of the quantization of `b` is the quantization of its complex conjugate `star b`
 
 public section
 
-open MeasureTheory Module
+open MeasureTheory
 open scoped ComplexConjugate ContDiff FourierTransform InnerProductSpace Manifold
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
@@ -96,7 +100,7 @@ theorem quantize_def (b : E → ℂ) (v : V) :
 
 /-- The integrand of the quantization of an integrable symbol is integrable, for a strongly
 continuous representation and a continuous compactly supported cutoff. -/
-private theorem integrable_quantize_integrand (hπ : ∀ v, Continuous fun g ↦ π g v)
+theorem integrable_quantize_integrand (hπ : ∀ v, Continuous fun g ↦ π g v)
     (hχ : Continuous χ) (hχc : HasCompactSupport χ) {b : E → ℂ} (hb : Integrable b) (v : V) :
     Integrable fun x : E ↦
       ((χ x : ℂ) * 𝓕 b x) • π (mulInvariantExp (I := 𝓘(ℝ, E)) (G := G) x) v := by
@@ -160,18 +164,13 @@ theorem quantize_comp_smul (b : E → ℂ) {h : ℝ} (hh : h ≠ 0) (v : V) :
     π.quantize χ (fun η ↦ b (h • η)) v =
       ∫ x : E, ((χ (h • x) : ℂ) * 𝓕 b x) •
         π (mulInvariantExp (I := 𝓘(ℝ, E)) (G := G) (h • x)) v := by
-  have hn : |h ^ finrank ℝ E| ≠ 0 := abs_ne_zero.2 (pow_ne_zero _ hh)
+  -- Change variables `y = h • x` in the integral of `(χ y * 𝓕 b (h⁻¹ • y)) • π (exp y) v`.
+  have hcv := Measure.integral_comp_smul (volume : Measure E) (fun y : E ↦
+    ((χ y : ℂ) * 𝓕 b (h⁻¹ • y)) • π (mulInvariantExp (I := 𝓘(ℝ, E)) (G := G) y) v) h
+  simp only [inv_smul_smul₀ hh, abs_inv] at hcv
   simp only [quantize_def, TauCeti.fourier_comp_smul b h]
-  have key := Measure.integral_comp_smul (volume : Measure E) (fun x : E ↦
-    ((χ x : ℂ) * (|h ^ finrank ℝ E|⁻¹ • 𝓕 b (h⁻¹ • x))) •
-      π (mulInvariantExp (I := 𝓘(ℝ, E)) (G := G) x) v) h
-  rw [abs_inv] at key
-  rw [← smul_inv_smul₀ hn (∫ x : E, _), ← key, ← integral_smul]
-  congr 1 with x
-  rw [inv_smul_smul₀ hh, ← Complex.coe_smul, smul_smul, Complex.real_smul, Complex.ofReal_inv]
-  congr 1
-  have hn' : ((|h ^ finrank ℝ E| : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hn
-  field_simp
+  rw [hcv, ← integral_smul]
+  simp only [mul_smul_comm, smul_assoc]
 
 end NormedSpace
 
@@ -197,13 +196,8 @@ theorem inner_quantize_left [CompleteSpace V] (hπ : π.IsUnitary)
     (hπc : ∀ v, Continuous fun g ↦ π g v) (hχ : Continuous χ) (hχc : HasCompactSupport χ)
     (hχe : χ.Even) (b : E → ℂ) (v w : V) :
     ⟪π.quantize χ b v, w⟫_ℂ = ⟪v, π.quantize χ (star b) w⟫_ℂ := by
-  have hstar : Integrable (star b) ↔ Integrable b := by
-    have h : star b = fun x ↦ Complex.conjLIE (b x) := by
-      ext x
-      rw [Pi.star_apply, Complex.conjLIE_apply, starRingEnd_apply]
-    rw [h, Complex.conjLIE.integrable_comp_iff]
   by_cases hb : Integrable b
-  · have hb' : Integrable (star b) := hstar.2 hb
+  · have hb' : Integrable (star b) := integrable_star_iff.2 hb
     rw [quantize_def, quantize_def, ← inner_conj_symm,
       ← integral_inner (π.integrable_quantize_integrand χ hπc hχ hχc hb v),
       ← integral_inner (π.integrable_quantize_integrand χ hπc hχ hχc hb' w), ← integral_conj,
@@ -214,9 +208,9 @@ theorem inner_quantize_left [CompleteSpace V] (hπ : π.IsUnitary)
     have hneg : mulInvariantExp (I := 𝓘(ℝ, E)) (G := G) (-x : E) =
         (mulInvariantExp (I := 𝓘(ℝ, E)) (G := G) x)⁻¹ :=
       mulInvariantExp_neg _
-    rw [inner_smul_right, inner_smul_right, map_mul, inner_conj_symm, hπ.inner_map_left, hχe,
-      hneg, inv_inv, Real.fourier_star_apply, map_mul, Complex.conj_ofReal]
-  · have hb' : ¬Integrable (star b) := hstar.not.2 hb
+    simp only [inner_smul_right, map_mul, inner_conj_symm, hπ.inner_map_left, hχe x, hneg, inv_inv,
+      Real.fourier_star_apply, Complex.conj_ofReal]
+  · have hb' : ¬Integrable (star b) := integrable_star_iff.not.2 hb
     simp [π.quantize_of_not_integrable χ hb, π.quantize_of_not_integrable χ hb']
 
 end InnerProductSpace

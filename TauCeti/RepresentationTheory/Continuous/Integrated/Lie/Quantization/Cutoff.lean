@@ -21,8 +21,7 @@ integral to a neighbourhood `U` of `0` on which the exponential map is well beha
 
 This file defines the admissible cutoffs: a **quantization cutoff in `U`** is a smooth, compactly
 supported, even function `χ : E → ℝ` with values in `[0, 1]`, supported in `U` and equal to `1`
-near `0`. Evenness is what makes the quantization of a real symbol self-adjoint, and the
-normalization near `0` is what makes the quantization of the constant symbol `1` the identity.
+near `0`. Evenness is what makes the quantization of a real symbol self-adjoint.
 
 ## Main definitions
 
@@ -110,12 +109,13 @@ theorem mono (h : IsQuantizationCutoff U χ) (hU : U ⊆ U') : IsQuantizationCut
   __ := h
   tsupport_subset := h.tsupport_subset.trans hU
 
-/-- The product of two cutoffs in `U` is a cutoff in `U`. -/
-theorem mul (h₁ : IsQuantizationCutoff U χ₁) (h₂ : IsQuantizationCutoff U χ₂) :
-    IsQuantizationCutoff U (χ₁ * χ₂) where
+/-- The product of a cutoff in `U` and a cutoff in `U'` is a cutoff in `U ∩ U'`. -/
+theorem mul (h₁ : IsQuantizationCutoff U χ₁) (h₂ : IsQuantizationCutoff U' χ₂) :
+    IsQuantizationCutoff (U ∩ U') (χ₁ * χ₂) where
   contDiff := h₁.contDiff.mul h₂.contDiff
   hasCompactSupport := h₁.hasCompactSupport.mul_right
-  tsupport_subset := (tsupport_mul_subset_left).trans h₁.tsupport_subset
+  tsupport_subset := subset_inter ((tsupport_mul_subset_left).trans h₁.tsupport_subset)
+    ((tsupport_mul_subset_right).trans h₂.tsupport_subset)
   even := h₁.even.mul_even h₂.even
   mem_Icc x := ⟨mul_nonneg (h₁.nonneg x) (h₂.nonneg x),
     by rw [Pi.mul_apply]; nlinarith [h₁.nonneg x, h₁.le_one x, h₂.nonneg x, h₂.le_one x]⟩
