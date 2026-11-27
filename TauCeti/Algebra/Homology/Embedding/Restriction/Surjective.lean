@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Embedding.Boundary
-public import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
+public import TauCeti.Algebra.Homology.Embedding.Restriction.Homology
 
 /-!
 # Restriction along surjective embeddings of complex shapes
@@ -75,18 +75,7 @@ lemma homologyMap_restrictionMap_restrictionHomologyIsoOfSurjective_hom
     [K.HasHomology j'] [L.HasHomology j'] [(K.restriction e).HasHomology j]
     [(L.restriction e).HasHomology j] :
     homologyMap (restrictionMap φ e) j ≫ (L.restrictionHomologyIsoOfSurjective e he j j' hj).hom =
-      (K.restrictionHomologyIsoOfSurjective e he j j' hj).hom ≫ homologyMap φ j' := by
-  subst hj
-  have hcycles : cyclesMap (restrictionMap φ e) j ≫
-      (L.restrictionCyclesIso e j _ rfl rfl rfl (e.next_f_of_surjective he j)).hom =
-      (K.restrictionCyclesIso e j _ rfl rfl rfl (e.next_f_of_surjective he j)).hom ≫
-        cyclesMap φ (e.f j) := by
-    rw [← cancel_mono (L.iCycles (e.f j))]
-    simp [restrictionXIso]
-  rw [← cancel_epi ((K.restriction e).homologyπ j)]
-  simp only [restrictionHomologyIsoOfSurjective, homologyπ_naturality_assoc,
-    homologyπ_restrictionHomologyIso_hom, homologyπ_restrictionHomologyIso_hom_assoc,
-    homologyπ_naturality]
-  rw [reassoc_of% hcycles]
+      (K.restrictionHomologyIsoOfSurjective e he j j' hj).hom ≫ homologyMap φ j' :=
+  restrictionHomologyIso_hom_naturality φ e ..
 
 end HomologicalComplex
