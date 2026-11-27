@@ -68,12 +68,22 @@ theorem denseRange_toLp (𝕜 : Type*) [RCLike 𝕜] :
     { carrier := Set.range fun u : C^∞⟮I, M; 𝓘(ℝ, 𝕜), 𝕜⟯ ↦ ContinuousMap.toLp 2 μ 𝕜 (u : C(M, 𝕜))
       add_mem' := by
         rintro _ _ ⟨u, rfl⟩ ⟨v, rfl⟩
-        exact ⟨u + v, (map_add (ContinuousMap.toLp 2 μ 𝕜) (u : C(M, 𝕜)) v :)⟩
+        refine ⟨u + v, ?_⟩
+        rw [← map_add]
+        exact congrArg (ContinuousMap.toLp 2 μ 𝕜) <| ContinuousMap.ext fun x ↦ by
+          rw [ContinuousMap.coe_ofClass, ContMDiffMap.coe_add, ContinuousMap.add_apply,
+            ContinuousMap.coe_ofClass, ContinuousMap.coe_ofClass, Pi.add_apply]
       zero_mem' := ⟨0, map_zero (ContinuousMap.toLp 2 μ 𝕜)⟩
       smul_mem' := by
         rintro c _ ⟨u, rfl⟩
-        exact ⟨⟨fun x ↦ c * u x, (ContinuousLinearMap.mul ℝ 𝕜 c).contMDiff.comp u.contMDiff⟩,
-          (map_smul (ContinuousMap.toLp 2 μ 𝕜) c (u : C(M, 𝕜)) :)⟩ }
+        let w : C^∞⟮I, M; 𝓘(ℝ, 𝕜), 𝕜⟯ :=
+          ⟨fun x ↦ c * u x, (ContinuousLinearMap.mul ℝ 𝕜 c).contMDiff.comp u.contMDiff⟩
+        have hw (x : M) : w x = c * u x := rfl
+        refine ⟨w, ?_⟩
+        rw [← map_smul]
+        exact congrArg (ContinuousMap.toLp 2 μ 𝕜) <| ContinuousMap.ext fun x ↦ by
+          rw [ContinuousMap.coe_ofClass, hw, ContinuousMap.smul_apply, ContinuousMap.coe_ofClass,
+            smul_eq_mul] }
   -- A function orthogonal to the smooth functions vanishes almost everywhere.
   have hK : Sᗮ = ⊥ := by
     refine (Submodule.eq_bot_iff _).2 fun f hf ↦ Lp.eq_zero_iff_ae_eq_zero.2 ?_

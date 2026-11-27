@@ -40,6 +40,7 @@ variable {α 𝕜 E : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSp
   [SecondCountableTopologyEither α E]
 
 /-- The norm of the `Lᵖ` class of a continuous function is its `Lᵖ` seminorm. -/
+@[simp]
 theorem norm_toLp {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : C(α, E)) :
     ‖toLp p μ 𝕜 f‖ = (eLpNorm f p μ).toReal := by
   rw [Lp.norm_def, eLpNorm_congr_ae (coeFn_toLp μ f)]
