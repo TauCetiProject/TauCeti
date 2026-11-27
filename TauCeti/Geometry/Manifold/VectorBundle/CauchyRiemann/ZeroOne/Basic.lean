@@ -21,10 +21,6 @@ homomorphisms has a smooth complex range bundle. Its fibres are exactly the nati
 The range has complex rank half the real base dimension times the complex rank of the coefficient
 bundle. The construction includes zero dimensions and the empty base.
 
-The pointwise `(0,1)`-part of a `C^n` one-form is again a `C^n` one-form
-(`TauCeti.SmoothAlmostComplexStructure.zeroOnePartContMDiffSection`), since the projection is
-smooth on the total space (`TauCeti.SmoothAlmostComplexStructure.contMDiff_totalSpace_zeroOnePart`).
-
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., Appendix C.1.
@@ -97,26 +93,6 @@ theorem contMDiff_totalSpace_zeroOnePart {n : ℕ∞ω} (hn : n ≤ ∞) :
   apply congrArg (TotalSpace.mk p.proj)
   ext v
   exact j.zeroOnePart_apply p.snd v
-
-/-- The `(0,1)`-part `x ↦ (σ x)^{0,1}` of a `C^n` `V`-valued one-form, as a `C^n` one-form. -/
-def zeroOnePartContMDiffSection {n : ℕ∞ω} (hn : n ≤ ∞)
-    (σ : Cₛ^n⟮I; E →L[ℝ] F, fun x : M ↦ TangentSpace I x →L[ℝ] V x⟯) :
-    Cₛ^n⟮I; E →L[ℝ] F, fun x : M ↦ TangentSpace I x →L[ℝ] V x⟯ :=
-  ⟨fun x ↦ j.zeroOnePart (σ x), (j.contMDiff_totalSpace_zeroOnePart (F := F) (V := V) hn).comp
-    σ.contMDiff⟩
-
-@[simp]
-theorem zeroOnePartContMDiffSection_apply {n : ℕ∞ω} (hn : n ≤ ∞)
-    (σ : Cₛ^n⟮I; E →L[ℝ] F, fun x : M ↦ TangentSpace I x →L[ℝ] V x⟯) (x : M) :
-    j.zeroOnePartContMDiffSection hn σ x = j.zeroOnePart (σ x) :=
-  (rfl)
-
-/-- The pointwise `(0,1)`-part of a one-form consists of `(0,1)`-forms. -/
-theorem isZeroOneForm_zeroOnePartContMDiffSection {n : ℕ∞ω} (hn : n ≤ ∞)
-    (σ : Cₛ^n⟮I; E →L[ℝ] F, fun x : M ↦ TangentSpace I x →L[ℝ] V x⟯) (x : M) :
-    j.IsZeroOneForm (j.zeroOnePartContMDiffSection hn σ x) := by
-  rw [zeroOnePartContMDiffSection_apply]
-  exact j.isZeroOneForm_zeroOnePart (σ x)
 
 section Rank
 

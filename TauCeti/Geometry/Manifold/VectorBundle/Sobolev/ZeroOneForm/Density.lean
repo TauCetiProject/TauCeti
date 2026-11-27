@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroOne.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Density
 
 /-!
@@ -26,11 +27,12 @@ and `1 ≤ p < ∞`.
 * The Sobolev forms of `C^∞` `(0,1)`-forms are dense in `W^{k,p}(Σ, Λ^{0,1} ⊗ V)`
   (`TauCeti.dense_ofContMDiffSection_zeroOneSobolevSections`): the `(0,1)`-projection of the
   Sobolev form of a smooth one-form `σ` is the Sobolev form of its pointwise `(0,1)`-part
-  `x ↦ (σ x)^{0,1}` (`TauCeti.zeroOnePartSobolevL_ofContMDiffSection`,
-  `TauCeti.SmoothAlmostComplexStructure.zeroOnePartContMDiffSection`), and smooth one-forms are
-  dense. With `Continuous.ext_on`, continuous maps out of the Sobolev `(0,1)`-forms are determined
-  by their values on smooth `(0,1)`-forms, as used for extending identities such as Green's
-  formula from smooth forms.
+  `x ↦ (σ x)^{0,1}` (`TauCeti.zeroOnePartSobolevL_ofContMDiffSection`), a `Cᵏ` section by
+  `ContMDiffSection.map` since the projection is smooth on the total space
+  (`TauCeti.SmoothAlmostComplexStructure.contMDiff_totalSpace_zeroOnePart`, `k ≤ ∞`), and smooth
+  one-forms are dense. With `Continuous.ext_on`, continuous maps out of the Sobolev
+  `(0,1)`-forms are determined by their values on smooth `(0,1)`-forms, as used for extending
+  identities such as Green's formula from smooth forms.
 -/
 
 
@@ -82,18 +84,21 @@ theorem zeroOnePartSobolevL_ofContMDiffSection
     (zeroOnePartSobolevL A μ p k (SobolevSection.ofContMDiffSection A.tangentHom μ p k σ) :
         SobolevSection A.tangentHom μ p k) =
       SobolevSection.ofContMDiffSection A.tangentHom μ p k
-        ((ofComplexManifold ℂ M).zeroOnePartContMDiffSection (mod_cast le_top) σ) := by
+        (ContMDiffSection.map (fun _ ↦ (ofComplexManifold ℂ M).zeroOnePart)
+          ((ofComplexManifold ℂ M).contMDiff_totalSpace_zeroOnePart (mod_cast le_top)) σ) := by
   refine SectionChartData.eq_of_chartValueL_ae_eq fun i ↦ ?_
   -- The chart data of a smooth form are almost everywhere on `A.image i`, which is the image of
   -- chart `i` of the one-form atlas.
   have hσ (τ : Cₛ^k⟮𝓘(ℝ, ℂ); ℂ →L[ℝ] F, fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x⟯) :=
     (SobolevSection.chartValueL_ofContMDiffSection_ae A.tangentHom μ p k τ i).filter_mono
       (ae_mono (Measure.restrict_mono (A.tangentHom.sectionChartData_image i).le le_rfl))
-  have h := hσ ((ofComplexManifold ℂ M).zeroOnePartContMDiffSection (mod_cast le_top) σ)
-  -- The section is pointwise the `(0,1)`-part of `σ`.
-  rw [show ⇑((ofComplexManifold ℂ M).zeroOnePartContMDiffSection (mod_cast le_top) σ) =
+  have h := hσ (ContMDiffSection.map (fun _ ↦ (ofComplexManifold ℂ M).zeroOnePart)
+    ((ofComplexManifold ℂ M).contMDiff_totalSpace_zeroOnePart (mod_cast le_top)) σ)
+  -- The mapped section is pointwise the `(0,1)`-part of `σ`.
+  rw [show ⇑(ContMDiffSection.map (fun _ ↦ (ofComplexManifold ℂ M).zeroOnePart)
+      ((ofComplexManifold ℂ M).contMDiff_totalSpace_zeroOnePart (mod_cast le_top)) σ) =
       fun x ↦ (ofComplexManifold ℂ M).zeroOnePart (σ x) from
-    funext (zeroOnePartContMDiffSection_apply _ _ σ)] at h
+    funext (ContMDiffSection.map_apply _ _ σ)] at h
   exact (chartValueL_zeroOnePartSobolevL_ae_coord (hσ σ)).trans h.symm
 
 /-- **Smooth `(0,1)`-forms are dense in the Sobolev `(0,1)`-forms.** For `1 ≤ p < ∞` and every
@@ -110,8 +115,11 @@ theorem dense_ofContMDiffSection_zeroOneSobolevSections (hp : p ≠ ⊤) :
     (zeroOnePartSobolevL A μ p k).continuous
   refine h.mono ?_
   rintro _ ⟨σ, rfl⟩
-  refine ⟨(ofComplexManifold ℂ M).zeroOnePartContMDiffSection le_rfl σ,
-    (ofComplexManifold ℂ M).isZeroOneForm_zeroOnePartContMDiffSection le_rfl σ, ?_⟩
+  refine ⟨ContMDiffSection.map (fun _ ↦ (ofComplexManifold ℂ M).zeroOnePart)
+      ((ofComplexManifold ℂ M).contMDiff_totalSpace_zeroOnePart le_rfl) σ,
+    fun x ↦ by
+      rw [ContMDiffSection.map_apply]
+      exact (ofComplexManifold ℂ M).isZeroOneForm_zeroOnePart (σ x), ?_⟩
   rw [Function.comp_apply, LinearMap.comp_apply, zeroOnePartSobolevL_ofContMDiffSection]
   exact congrArg _ (ContMDiffSection.ext fun x ↦ by simp)
 
