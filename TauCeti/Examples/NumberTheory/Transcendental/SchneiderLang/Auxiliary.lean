@@ -26,11 +26,7 @@ example (z : Fin 2 → ℂ) :
     auxiliaryFunction (by decide : 1 ≤ 2) (fun _ : Fin 1 ↦ ![0, 1])
       (Pi.single ((fun _ ↦ 1, fun _ ↦ 1) : AuxiliaryIndex 1 1 1) 1) z =
       z 0 * Complex.exp (z 1) := by
-  have hfirst : Fin.castLE (by decide : 1 ≤ 2) (0 : Fin 1) = 0 := rfl
-  have hτ₀ : auxiliaryExponent (by decide : 1 ≤ 2) (fun _ ↦ (1 : Fin 2)) 0 = 1 := by
-    rw [← hfirst, auxiliaryExponent_castLE]
-    rfl
-  simp [auxiliaryFunction_apply_single, hτ₀, Fin.sum_univ_two, Fin.prod_univ_two]
+  simp [auxiliaryFunction_apply_single, Fin.sum_univ_two, Fin.prod_univ_two]
 
 /-- A frequency multiplier of two gives `exp (2 z)` in the absence of polynomial coordinates. -/
 example (z : Fin 1 → ℂ) :

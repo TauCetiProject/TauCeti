@@ -54,7 +54,6 @@ theorem card_auxiliaryIndex (d₀ d₁ T : ℕ) :
 noncomputable def auxiliaryExponent (h : d₀ ≤ n) (τ : Fin d₀ → Fin (T + 1)) : Fin n → ℕ :=
   Function.extend (Fin.castLEEmb h) (fun j ↦ (τ j : ℕ)) 0
 
-@[simp]
 theorem auxiliaryExponent_castLE (h : d₀ ≤ n) (τ : Fin d₀ → Fin (T + 1)) (j : Fin d₀) :
     auxiliaryExponent h τ (Fin.castLE h j) = τ j :=
   (Fin.castLEEmb h).injective.extend_apply _ _ _
@@ -73,6 +72,12 @@ theorem auxiliaryExponent_apply (h : d₀ ≤ n) (τ : Fin d₀ → Fin (T + 1))
   · have hcast : Fin.castLE h ⟨v, hv⟩ = v := Fin.ext rfl
     rw [dite_eq_left hv, ← auxiliaryExponent_castLE h τ, hcast]
   · rw [dite_eq_right hv, auxiliaryExponent_eq_zero_of_le h τ (Nat.le_of_not_gt hv)]
+
+/-- In the first `d₀` coordinates the auxiliary exponent agrees with the original exponent. -/
+@[simp]
+theorem auxiliaryExponent_of_lt (h : d₀ ≤ n) (τ : Fin d₀ → Fin (T + 1)) {v : Fin n}
+    (hv : (v : ℕ) < d₀) : auxiliaryExponent h τ v = τ ⟨v, hv⟩ := by
+  rw [auxiliaryExponent_apply, dite_eq_left hv]
 
 /-- The zero monomial exponent vector extends to zero in the ambient space. -/
 @[simp]
