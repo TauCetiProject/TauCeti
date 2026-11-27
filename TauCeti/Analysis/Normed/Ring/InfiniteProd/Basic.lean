@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.Normed.Ring.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # Sharp and exponential bounds for products in normed rings
@@ -43,6 +44,8 @@ and Siegel functions on the upper half-plane, the exact zero-set characterizatio
   `∏ i ∈ s, (1 - u i)`.
 * `Finset.norm_prod_one_add_le_prod_one_add_norm`: `‖∏ i ∈ s, (1 + u i)‖ ≤ ∏ i ∈ s, (1 + ‖u i‖)`
   under `NormOneClass`.
+* `TauCeti.norm_pow_sub_one_le`: the power case `‖xⁿ - 1‖ ≤ (1 + ‖x - 1‖)ⁿ - 1`, in any
+  seminormed ring.
 * `HasProd.norm_le_exp_of_sum_le`: exponential norm bound for a supplied infinite product from
   factor bounds `‖f i‖ ≤ exp (b i)` and finite-sum bounds `∑ i ∈ s, b i ≤ B`.
 * `TauCeti.norm_tprod_one_add_sub_one_le_tprod_one_add_norm_sub_one`: sharp infinite-product
@@ -127,6 +130,23 @@ theorem HasProd.norm_le_exp_of_sum_le {ι R : Type*} [SeminormedCommRing R] [Nor
       (Real.exp_sum s b).symm.trans_le (Real.exp_le_exp.mpr (hB s))
 
 namespace TauCeti
+
+/-- **The distance of a power from one.** In any seminormed ring,
+`‖xⁿ - 1‖ ≤ (1 + ‖x - 1‖)ⁿ - 1`. This is the finite-product majorant
+`Finset.norm_prod_one_add_sub_one_le_prod_one_add_norm_sub_one` for `n` equal factors
+`1 + (x - 1)`, without commutativity. -/
+theorem norm_pow_sub_one_le {R : Type*} [SeminormedRing R] (x : R) (n : ℕ) :
+    ‖x ^ n - 1‖ ≤ (1 + ‖x - 1‖) ^ n - 1 := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have h : x ^ (n + 1) - 1 = (x ^ n - 1) + (x ^ n - 1) * (x - 1) + (x - 1) := by noncomm_ring
+    calc ‖x ^ (n + 1) - 1‖ ≤ ‖x ^ n - 1‖ + ‖(x ^ n - 1) * (x - 1)‖ + ‖x - 1‖ :=
+          h ▸ norm_add₃_le
+      _ ≤ ((1 + ‖x - 1‖) ^ n - 1) + ((1 + ‖x - 1‖) ^ n - 1) * ‖x - 1‖ + ‖x - 1‖ := by
+          gcongr
+          exact (norm_mul_le _ _).trans (by gcongr)
+      _ = (1 + ‖x - 1‖) ^ (n + 1) - 1 := by ring
 
 section SeminormedCommRing
 

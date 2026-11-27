@@ -15,7 +15,9 @@ The universe lift `SSet.uliftFunctor.{v}.obj X` of a simplicial set `X : SSet.{u
 simplices of `X`, wrapped in `ULift`. It is a fully faithful functor
 (`SSet.fullyFaithfulUliftFunctor`), and iterating universe lifts collapses to a single lift
 (`SSet.uliftFunctorCompIso`) and commutes up to natural isomorphism
-(`SSet.uliftFunctorCompCommIso`).
+(`SSet.uliftFunctorCompCommIso`); lifting to a universe the simplicial set already lives in is
+trivial (`SSet.uliftFunctorTrivial`). It also commutes with taking opposites
+(`SSet.opFunctorCompUliftFunctorIso`).
 
 Horn-filling conditions only involve finitely many simplices and their faces, so they do not see
 the universe: the lift of a map `p` has the right lifting property with respect to a horn inclusion
@@ -42,6 +44,9 @@ simplicial sets.
   `Full` and `Faithful` instances and preimage computation on simplices.
 * `SSet.uliftFunctorCompIso`, `SSet.uliftFunctorCompCommIso`: iterated universe lifts collapse
   to a single lift and commute up to natural isomorphism.
+* `SSet.uliftFunctorTrivial`: lifting to a universe the simplicial set already lives in is
+  naturally isomorphic to the identity.
+* `SSet.opFunctorCompUliftFunctorIso`: the universe lift commutes with taking opposites.
 * `SSet.hasLiftingProperty_horn_ι_uliftFunctor_map_iff`: the universe lift of a map has the right
   lifting property with respect to a horn inclusion exactly when the map has it.
 * `SSet.fibration_uliftFunctor_map_iff`, `SSet.innerFibration_uliftFunctor_map_iff`: the
@@ -84,6 +89,36 @@ lemma uliftFunctor_preimage_app_apply
     (f : uliftFunctor.{v}.obj X ⟶ uliftFunctor.{v}.obj Y) (n : SimplexCategoryᵒᵖ) (x : X.obj n) :
     (uliftFunctor.{v}.preimage f).app n x = (f.app n (ULift.up x)).down :=
   congrArg ULift.down congr($(uliftFunctor.{v}.map_preimage f).app n (ULift.up x))
+
+/-- The universe lift of a simplicial set is nonempty exactly when the simplicial set is. -/
+@[simp]
+lemma nonempty_uliftFunctor_obj_iff (X : SSet.{u}) :
+    (uliftFunctor.{v}.obj X).Nonempty ↔ X.Nonempty :=
+  ⟨fun ⟨x⟩ ↦ ⟨x.down⟩, fun ⟨x⟩ ↦ ⟨ULift.up x⟩⟩
+
+/-- The universe lift commutes with the involution `SSet.opFunctor`: both composites send a
+simplicial set to the same simplices, wrapped in `ULift`, with the reversed simplicial operators. -/
+def opFunctorCompUliftFunctorIso :
+    opFunctor.{u} ⋙ uliftFunctor.{v} ≅ uliftFunctor.{v} ⋙ opFunctor :=
+  Iso.refl _
+
+/-- On simplices, `SSet.opFunctorCompUliftFunctorIso.hom` moves the `ULift` wrapper inside the
+opposite, keeping the underlying simplex. -/
+@[simp]
+lemma opFunctorCompUliftFunctorIso_hom_app_app_apply (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{v}.obj X.op).obj m) :
+    dsimp% ((opFunctorCompUliftFunctorIso.{u, v}.hom.app X).app m) x =
+      opObjEquiv.symm (ULift.up (opObjEquiv x.down)) :=
+  (rfl)
+
+/-- On simplices, `SSet.opFunctorCompUliftFunctorIso.inv` moves the `ULift` wrapper outside the
+opposite, keeping the underlying simplex. -/
+@[simp]
+lemma opFunctorCompUliftFunctorIso_inv_app_app_apply (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{v}.obj X).op.obj m) :
+    dsimp% ((opFunctorCompUliftFunctorIso.{u, v}.inv.app X).app m) x =
+      ULift.up (opObjEquiv.symm (opObjEquiv x).down) :=
+  (rfl)
 
 /-- Iterating `SSet.uliftFunctor` is naturally isomorphic to a single universe lift. -/
 def uliftFunctorCompIso :
@@ -133,6 +168,33 @@ lemma uliftFunctorCompCommIso_inv_app_app_apply (X : SSet.{u}) (m : SimplexCateg
     (x : (uliftFunctor.{v, max u w}.obj (uliftFunctor.{w, u}.obj X)).obj m) :
     dsimp% ((uliftFunctorCompCommIso.{u, v, w}.inv.app X).app m) x =
       ULift.up (ULift.up x.down.down) :=
+  (rfl)
+
+/-- Lifting a simplicial set to a universe it already lives in is naturally isomorphic to the
+identity. -/
+def uliftFunctorTrivial : uliftFunctor.{v, max u v} ≅ 𝟭 SSet.{max u v} :=
+  NatIso.ofComponents
+    (fun _ ↦
+      { hom :=
+          { app _ := ↾fun x ↦ x.down
+            naturality _ _ _ := rfl }
+        inv :=
+          { app _ := ↾fun x ↦ ULift.up x
+            naturality _ _ _ := rfl } })
+    fun _ ↦ rfl
+
+/-- On simplices, `SSet.uliftFunctorTrivial.hom` removes the `ULift` wrapper. -/
+@[simp]
+lemma uliftFunctorTrivial_hom_app_app_apply (X : SSet.{max u v}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{v, max u v}.obj X).obj m) :
+    dsimp% ((uliftFunctorTrivial.{u, v}.hom.app X).app m) x = x.down :=
+  (rfl)
+
+/-- On simplices, `SSet.uliftFunctorTrivial.inv` adds a `ULift` wrapper. -/
+@[simp]
+lemma uliftFunctorTrivial_inv_app_app_apply (X : SSet.{max u v}) (m : SimplexCategoryᵒᵖ)
+    (x : X.obj m) :
+    dsimp% ((uliftFunctorTrivial.{u, v}.inv.app X).app m) x = ULift.up x :=
   (rfl)
 
 /-- Maps from a standard simplex into the universe lift of `X` are maps from the standard

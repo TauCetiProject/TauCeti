@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
@@ -37,6 +38,9 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 * `gaugeFixedOperator_eq_gaugeFixedFirstOrder_add`: `L_x y` splits as its constant-coefficient
   first-order part `gaugeFixedFirstOrder`, applied to the gradients of the coordinates of `y`, plus
   its zeroth-order part `gaugeFixedZerothOrder`, bilinear in the values of `x` and `y`.
+* `gaugeFixedAdjoint_eq_gaugeFixedAdjointFirstOrder_add`: likewise `L_x* η` splits as
+  `gaugeFixedAdjointFirstOrder` of the gradients plus `gaugeFixedAdjointZerothOrder`, the
+  transpose of the zeroth-order part of `L_x` (`inner_gaugeFixedAdjointZerothOrder`).
 * `gaugeAdjoint_gaugeDirection`: `d₀* d₀ f = -Δ f + (|α|² / 4) f` pointwise, at every field.
 * `gaugeFixedOperator_fun_smul` and `gaugeFixedAdjoint_fun_smul`: the Leibniz rules of `L_x` and
   `L_x*` for a real weight, whose commutators are the principal symbols
@@ -75,6 +79,9 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 * `integral_mul_gaugeAdjoint` and `integral_inner_gaugeFixedOperator`: the integration-by-parts
   identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
   factor compactly supported and any additive Haar measure.
+* `integrable_inner_gaugeFixedAdjoint` and `integral_inner_gaugeFixedAdjoint_eq_zero`: the
+  pairing `⟪y, L_x* η⟫` with a compactly supported `C¹` field `η` is integrable, and it integrates
+  to zero when `L_x y = 0`.
 * `gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq`: a `C¹` weak solution of
   `L_x y = g`, tested against smooth compactly supported fields, solves it almost everywhere, by
   integration by parts and the fundamental lemma of the calculus of variations
@@ -297,6 +304,13 @@ theorem gaugeFixedAdjoint_smul (x η : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
   ext i
   fin_cases i <;> simp [hd] <;> ring
 
+/-- `L_x*` sends zero to zero. -/
+@[simp]
+theorem gaugeFixedAdjoint_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjoint x 0 = 0 := by
+  funext z
+  simpa using gaugeFixedAdjoint_smul x 0 0 z
+
 /-- The coefficient matrix of the zeroth-order part of the gauge-fixed operator at a field with
 value `w`. It is linear in `w`, and `L_x - L₀` is multiplication by the matrix at
 `x z - vacuumField z` (`gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`). -/
@@ -373,6 +387,61 @@ theorem gaugeFixedOperator_eq_gaugeFixedFirstOrder_add (x y : ℂ → EuclideanS
   fin_cases i <;>
     simp [gaugeFixedFirstOrder_apply, gaugeFixedZerothOrder_apply, gaugeFixedZerothOrderMatrix,
       Fin.sum_univ_four, inner_gradient_left] <;> ring
+
+/-- The first-order part of the formal adjoint `L_x*`, as a linear map of the gradients
+`g j = ∇η_j` of the four coordinates of the test field. Along the frame `(∂₁, ∂₂) = (1, i)`,
+`∂_k η_j = ⟪g j, e_k⟫`, and the rows are `-∂₁η₀ - ∂₂η₁`, `∂₁η₁ - ∂₂η₀`, `-∂₁η₂ - ∂₂η₃` and
+`∂₂η₂ - ∂₁η₃`. -/
+def gaugeFixedAdjointFirstOrder : (Fin 4 → ℂ) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun g ↦ !₂[-⟪g 0, 1⟫_ℝ - ⟪g 1, I⟫_ℝ, ⟪g 1, 1⟫_ℝ - ⟪g 0, I⟫_ℝ,
+        -⟪g 2, 1⟫_ℝ - ⟪g 3, I⟫_ℝ, ⟪g 2, I⟫_ℝ - ⟪g 3, 1⟫_ℝ]
+      map_add' := fun _ _ ↦ by ext i; fin_cases i <;> simp [inner_add_left] <;> ring
+      map_smul' := fun _ _ ↦ by ext i; fin_cases i <;> simp <;> ring }
+
+/-- The defining formula of `gaugeFixedAdjointFirstOrder`. -/
+@[simp] theorem gaugeFixedAdjointFirstOrder_apply (g : Fin 4 → ℂ) :
+    gaugeFixedAdjointFirstOrder g = !₂[-⟪g 0, 1⟫_ℝ - ⟪g 1, I⟫_ℝ, ⟪g 1, 1⟫_ℝ - ⟪g 0, I⟫_ℝ,
+        -⟪g 2, 1⟫_ℝ - ⟪g 3, I⟫_ℝ, ⟪g 2, I⟫_ℝ - ⟪g 3, 1⟫_ℝ] :=
+  (rfl)
+
+/-- The zeroth-order part of the formal adjoint `L_x*`, as a bilinear map of the value `w` of the
+field and the value `v` of the test field: the adjoint of the zeroth-order part
+`gaugeFixedZerothOrder w` of `L_x` (`inner_gaugeFixedAdjointZerothOrder`), whose matrix is the
+transpose of `gaugeFixedZerothOrderMatrix w` (`gaugeFixedAdjointZerothOrder_apply`). -/
+def gaugeFixedAdjointZerothOrder :
+    EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun w ↦ ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w)
+      map_add' := fun _ _ ↦ by simp
+      map_smul' := fun _ _ ↦ by simp }
+
+/-- The zeroth-order part of `L_x*` is the transpose of the zeroth-order part of `L_x`. -/
+theorem inner_gaugeFixedAdjointZerothOrder (w u v : EuclideanSpace ℝ (Fin 4)) :
+    ⟪gaugeFixedAdjointZerothOrder w u, v⟫ = ⟪u, gaugeFixedZerothOrder w v⟫ :=
+  ContinuousLinearMap.adjoint_inner_left (gaugeFixedZerothOrder w) v u
+
+/-- The zeroth-order part of `L_x*` is multiplication by the transpose of
+`gaugeFixedZerothOrderMatrix w`. -/
+@[simp] theorem gaugeFixedAdjointZerothOrder_apply (w v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointZerothOrder w v =
+      WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * v j := by
+  ext i
+  have h := inner_gaugeFixedAdjointZerothOrder w v (EuclideanSpace.single i 1)
+  simp only [EuclideanSpace.inner_single_right, one_mul, conj_trivial] at h
+  simp [h, PiLp.inner_apply, mul_comm]
+
+/-- The formal adjoint is the sum of its first-order part, applied to the gradients of the
+coordinates of the test field, and its zeroth-order part. -/
+theorem gaugeFixedAdjoint_eq_gaugeFixedAdjointFirstOrder_add (x η : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) :
+    gaugeFixedAdjoint x η z =
+      gaugeFixedAdjointFirstOrder (fun j ↦ ∇ (fun w ↦ η w j) z) +
+        gaugeFixedAdjointZerothOrder (x z) (η z) := by
+  ext i
+  fin_cases i <;>
+    simp [gaugeFixedAdjointFirstOrder_apply, gaugeFixedAdjointZerothOrder_apply,
+      gaugeFixedZerothOrderMatrix, Fin.sum_univ_four, inner_gradient_left] <;> ring
 
 /-- The principal symbol of the gauge-fixed vortex adjoint, acting on a real covector
 and a target field value. It is independent of the vortex coefficients. -/
@@ -1108,6 +1177,24 @@ theorem integral_inner_gaugeFixedOperator {x y η : ℂ → EuclideanSpace ℝ (
     intro hn
     exact hmain (((hn.sub (hint V₂ hV₂ hV₂c I)).sub (hint V₁ hV₁ hV₁c 1)).congr
       (ae_of_all _ fun z ↦ by simp only [Pi.sub_apply]; ring))
+
+/-- For a continuous field `x`, the pairing `⟪y, L_x* η⟫` of a continuous field `y` with `L_x*` of
+a compactly supported `C¹` field `η` is integrable. -/
+theorem integrable_inner_gaugeFixedAdjoint {x y η : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : Continuous x) (hy : Continuous y) (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η) :
+    Integrable (fun z ↦ ⟪y z, gaugeFixedAdjoint x η z⟫) μ :=
+  (hy.inner (continuous_gaugeFixedAdjoint hx hη)).integrable_of_hasCompactSupport
+    ((hasCompactSupport_gaugeFixedAdjoint (x := x) hηc).mono fun z hz h0 ↦
+      hz (by simp only [h0, inner_zero_right]))
+
+/-- If `L_x y = 0`, then `∫ ⟪y, L_x* η⟫ = 0` for `C¹` fields `y`, `η`, one of which is compactly
+supported: by `integral_inner_gaugeFixedOperator`, the integral equals `∫ ⟪L_x y, η⟫`. -/
+theorem integral_inner_gaugeFixedAdjoint_eq_zero {x y η : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : ContDiff ℝ 1 y) (hη : ContDiff ℝ 1 η) (hc : HasCompactSupport y ∨ HasCompactSupport η)
+    (hLy : ∀ z, gaugeFixedOperator x y z = 0) :
+    ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
+  rw [← integral_inner_gaugeFixedOperator hy hη hc]
+  simp [hLy]
 
 open scoped ContDiff in
 /-- **`C¹` weak solutions are classical.** Let `x` be continuous, `y` a `C¹` field and `g` locally

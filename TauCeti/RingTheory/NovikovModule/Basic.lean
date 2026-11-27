@@ -125,6 +125,10 @@ theorem bddAbove_image_support (a : NovikovModule R F) :
   · exact (hm ⟨s, ⟨hs, h⟩, rfl⟩).trans (le_max_left _ _)
   · exact h.trans (le_max_right _ _)
 
+/-- A completed combination is nonzero exactly when one of its coefficients is. -/
+theorem ne_zero_iff {a : NovikovModule R F} : a ≠ 0 ↔ ∃ s, a.val s ≠ 0 :=
+  Subtype.coe_ne_coe.symm.trans Function.ne_iff
+
 variable (F) in
 /-- Finite combinations, viewed as completed combinations with the same coefficients. -/
 def ofFinsupp : (S →₀ R) →ₗ[R] NovikovModule R F where

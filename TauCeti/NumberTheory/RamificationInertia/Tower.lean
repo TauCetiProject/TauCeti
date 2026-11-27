@@ -31,6 +31,8 @@ the compositum is unramified over the quadratic base.
   prime to the fundamental identity is at most the rank of the extension.
 * `TauCeti.RamificationInertia.ramificationIdx_le_finrank`: a ramification index is at most the
   rank of a finite flat extension.
+* `TauCeti.RamificationInertia.inertiaDeg_le_finrank`: an inertia degree is at most the rank of a
+  finite flat extension.
 * `TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_eq_finrank_of_isLocalRing`: for a
   local ring `S`, the ramification index times the inertia degree of its maximal ideal is the rank.
 * `TauCeti.RamificationInertia.ramificationIdx_eq_one_iff_ramificationIdx_eq`: the relative
@@ -96,6 +98,14 @@ variable (R) in
 theorem ramificationIdx_le_finrank (q : Ideal S) [q.IsPrime] :
     q.ramificationIdx R ≤ finrank R S :=
   (Nat.le_mul_of_pos_right _ (q.inertiaDeg_pos R)).trans
+    (ramificationIdx_mul_inertiaDeg_le_finrank R q)
+
+variable (R) in
+/-- **An inertia degree is at most the rank of a finite flat extension.** For a prime `q` of `S`,
+`f(q / R) ≤ Module.finrank R S`. -/
+theorem inertiaDeg_le_finrank (q : Ideal S) [q.IsPrime] :
+    q.inertiaDeg R ≤ finrank R S :=
+  (Nat.le_mul_of_pos_left _ (q.ramificationIdx_pos R)).trans
     (ramificationIdx_mul_inertiaDeg_le_finrank R q)
 
 variable (R) in

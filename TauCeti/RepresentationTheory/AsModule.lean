@@ -35,6 +35,9 @@ representation with projective group-algebra module is a retract of Mathlib's fr
   map attached to a `k[G]`-linear map.
 * An instance `Module.Free k ρ.asModule` for a representation on a free `k`-module, next to
   Mathlib's `Module.Finite` one.
+* `Representation.isNoetherian_asModule`, `Representation.isArtinian_asModule`: the
+  `k[G]`-module of a representation on a Noetherian (Artinian) `k`-module is Noetherian (Artinian),
+  so the `k[G]`-module of a finite-dimensional representation over a field has finite length.
 * `Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff`: an intertwining map
   is surjective exactly when its attached `k[G]`-linear map is.
 * `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
@@ -142,6 +145,16 @@ end Semiring
 variable {k G V W : Type*} [CommSemiring k] [Monoid G]
 variable [AddCommMonoid V] [Module k V] [AddCommMonoid W] [Module k W]
 variable {ρ : _root_.Representation k G V} {σ : _root_.Representation k G W}
+
+/-- The `k[G]`-module of a representation on a Noetherian `k`-module is Noetherian. -/
+instance _root_.Representation.isNoetherian_asModule [IsNoetherian k V] :
+    IsNoetherian k[G] ρ.asModule :=
+  isNoetherian_of_tower k (isNoetherian_of_linearEquiv ρ.asModuleEquiv.symm)
+
+/-- The `k[G]`-module of a representation on an Artinian `k`-module is Artinian. -/
+instance _root_.Representation.isArtinian_asModule [IsArtinian k V] :
+    IsArtinian k[G] ρ.asModule :=
+  isArtinian_of_tower k (isArtinian_of_linearEquiv ρ.asModuleEquiv.symm)
 
 /-- **Evaluation of the intertwining map attached to a `k[G]`-linear map.** This is the inverse
 direction of `Representation.IntertwiningMap.equivLinearMapAsModule_apply`, with the changes of
