@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.HeatKernel.Generator
 public import TauCeti.Analysis.Semigroups.Generation.LumerPhillips
 import TauCeti.Analysis.Semigroups.Dissipative.Duality
-import TauCeti.MeasureTheory.Function.Lp.DualitySet
+import TauCeti.MeasureTheory.Function.Lp.Duality
 
 /-!
 # The Laplacian is m-dissipative on `Lᵖ`
@@ -25,17 +25,18 @@ Let `E` be a finite-dimensional real inner product space, `F` a real Banach spac
 * The contraction semigroup that the Lumer–Phillips theorem builds from `Δ`, the limit of the
   exponentials of the Yosida approximations, is the heat semigroup
   (`TauCeti.yosidaLimitSemigroup_weakLaplacianLp`).
-* For real-valued functions, dissipativity takes its classical integral form: every `u` in the
-  domain satisfies
+* For functions with values in a real inner product space, dissipativity takes its classical
+  integral form: every `u` in the domain satisfies
 
-  `∫ |u| ^ (p - 2) u Δu ≤ 0`
+  `∫ ‖u‖ ^ (p - 2) ⟪u, Δu⟫ ≤ 0`
 
-  (`TauCeti.integral_abs_rpow_sub_two_mul_mul_weakLaplacianLp_nonpos`), where `|u| ^ (p - 2) u`
-  vanishes where `u` does. For `p = 2` this is `∫ u Δu ≤ 0`, the nonnegativity of `-Δ`, and for
-  `p = 1` it is `∫ sign(u) Δu ≤ 0`. The integrand `|u| ^ (p - 2) u` is, up to the factor
-  `‖u‖_p ^ (2 - p)`, the element of the duality set of `u` in `Lᵖ`
-  (`MeasureTheory.Lp.exists_mem_dualitySet_apply_eq_integral`), and the generator of a contraction
-  semigroup is nonpositive against every element of the duality set
+  (`TauCeti.integral_norm_rpow_sub_two_mul_inner_weakLaplacianLp_nonpos`), where
+  `‖u‖ ^ (p - 2) u` vanishes where `u` does. For real-valued `u` this is `∫ |u| ^ (p - 2) u Δu ≤ 0`;
+  for `p = 2` it is `∫ u Δu ≤ 0`, the nonnegativity of `-Δ`, and for `p = 1` it is
+  `∫ sign(u) Δu ≤ 0`. Integration against `‖u‖ ^ (p - 2) u`, scaled by `‖u‖_p ^ (2 - p)`, is an
+  element of the duality set of `u` in `Lᵖ`
+  (`MeasureTheory.Lp.exists_mem_dualitySet_apply_eq_integral`; for `1 < p < ∞` the only one), and
+  the generator of a contraction semigroup is nonpositive against every element of the duality set
   (`TauCeti.Semigroups.ContractionSemigroup.apply_generator_nonpos_of_mem_dualitySet`).
 
 ## References
@@ -54,7 +55,7 @@ namespace TauCeti
 
 open MeasureTheory Semigroups
 
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
@@ -87,25 +88,26 @@ theorem yosidaLimitSemigroup_weakLaplacianLp (hp : p ≠ ∞) :
       (dense_domain_weakLaplacianLp hp)).trans (generator_heatSemigroup_eq_weakLaplacianLp hp).symm)
   exact ContractionSemigroup.ext fun t ↦ congrArg (fun S ↦ S t) h
 
-/-- **Dissipativity of the Laplacian on real `Lᵖ` in integral form.** For `1 ≤ p < ∞`, every real
-`u ∈ Lᵖ` whose distributional Laplacian lies in `Lᵖ` satisfies `∫ |u| ^ (p - 2) u Δu ≤ 0`. Here
-`|u| ^ (p - 2) u` vanishes where `u` does; for `p = 2` this is `∫ u Δu ≤ 0`, and for `p = 1` it is
+/-- **Dissipativity of the Laplacian on `Lᵖ` in integral form.** For `1 ≤ p < ∞`, every `u ∈ Lᵖ`
+with values in a real inner product space whose distributional Laplacian lies in `Lᵖ` satisfies
+`∫ ‖u‖ ^ (p - 2) ⟪u, Δu⟫ ≤ 0`. Here `‖u‖ ^ (p - 2) u` vanishes where `u` does; for real-valued `u`
+this is `∫ |u| ^ (p - 2) u Δu ≤ 0`, which for `p = 2` is `∫ u Δu ≤ 0` and for `p = 1` is
 `∫ sign(u) Δu ≤ 0`. -/
-theorem integral_abs_rpow_sub_two_mul_mul_weakLaplacianLp_nonpos (hp : p ≠ ∞)
-    (u : (weakLaplacianLp E ℝ p).domain) :
-    ∫ x, |(u : Lp ℝ p (volume : Measure E)) x| ^ (p.toReal - 2) *
-      (u : Lp ℝ p (volume : Measure E)) x * weakLaplacianLp E ℝ p u x ≤ 0 := by
+theorem integral_norm_rpow_sub_two_mul_inner_weakLaplacianLp_nonpos {H : Type*}
+    [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H] (hp : p ≠ ∞)
+    (u : (weakLaplacianLp E H p).domain) :
+    ∫ x, ‖(u : Lp H p (volume : Measure E)) x‖ ^ (p.toReal - 2) *
+      ⟪(u : Lp H p (volume : Measure E)) x, weakLaplacianLp E H p u x⟫_ℝ ≤ 0 := by
   obtain ⟨f, hf, hfv⟩ :=
-    Lp.exists_mem_dualitySet_apply_eq_integral hp (u : Lp ℝ p (volume : Measure E))
+    Lp.exists_mem_dualitySet_apply_eq_integral ℝ hp (u : Lp H p (volume : Measure E))
   -- The generator of the heat semigroup is nonpositive against the duality set.
-  have hnonpos : ∀ (A : Lp ℝ p (volume : Measure E) →ₗ.[ℝ] Lp ℝ p (volume : Measure E)),
-      (heatSemigroup (E := E) (F := ℝ) hp).generator = A → ∀ x : A.domain,
-        f ∈ dualitySet ℝ (x : Lp ℝ p (volume : Measure E)) → f (A x) ≤ 0 := by
-    rintro A rfl x hfx
-    exact (heatSemigroup hp).apply_generator_nonpos_of_mem_dualitySet x hfx
-  have hA := hnonpos _ (generator_heatSemigroup_eq_weakLaplacianLp hp) u hf
-  rw [hfv] at hA
-  rcases eq_or_ne (u : Lp ℝ p (volume : Measure E)) 0 with hu | hu
+  have hA : f (weakLaplacianLp E H p u) ≤ 0 :=
+    (generator_heatSemigroup_eq_weakLaplacianLp (E := E) (F := H) hp ▸
+      fun x hx ↦ (heatSemigroup hp).apply_generator_nonpos_of_mem_dualitySet x hx :
+      ∀ x : (weakLaplacianLp E H p).domain, f ∈ dualitySet ℝ (x : Lp H p (volume : Measure E)) →
+        f (weakLaplacianLp E H p x) ≤ 0) u hf
+  simp only [hfv, RCLike.ofReal_real_eq_id, id_eq, real_inner_smul_left] at hA
+  rcases eq_or_ne (u : Lp H p (volume : Measure E)) 0 with hu | hu
   · simp [hu]
   · exact nonpos_of_mul_nonpos_right hA (by positivity)
 
