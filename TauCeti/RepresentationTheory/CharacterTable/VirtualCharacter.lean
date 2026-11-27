@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.Span.IntegralDescent
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 public import TauCeti.RepresentationTheory.FDRep.Basic
 import Mathlib.RepresentationTheory.Maschke
-import TauCeti.Algebra.BigOperators.Finset.Erase
+import TauCeti.Algebra.Order.BigOperators.Ring.Finset
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.SetTheory.Cardinal.Finite
