@@ -97,6 +97,29 @@ def presheafExtension : ((Over U)ᵒᵖ ⥤ A) ⥤ Cᵒᵖ ⥤ A where
     intro f
     simp
 
+/-- The coproduct injection into the extension indexed by a map `f : X ⟶ U`. -/
+def presheafExtensionι (F : (Over U)ᵒᵖ ⥤ A) {X : C} (f : X ⟶ U) :
+    F.obj (op (Over.mk f)) ⟶ ((presheafExtension U).obj F).obj (op X) :=
+  Sigma.ι (fun f : X ⟶ U ↦ F.obj (op (Over.mk f))) f
+
+/-- Restriction in the extension sends the `f` summand to the `g ≫ f` summand. -/
+@[reassoc (attr := simp)]
+lemma presheafExtensionι_map (F : (Over U)ᵒᵖ ⥤ A) {X Y : C}
+    (g : Y ⟶ X) (f : X ⟶ U) :
+    presheafExtensionι U F f ≫ ((presheafExtension U).obj F).map g.op =
+      F.map (Over.homMk g rfl : Over.mk (g ≫ f) ⟶ Over.mk f).op ≫
+        presheafExtensionι U F (g ≫ f) :=
+  ι_extensionMap U F g.op f _ rfl
+
+/-- Extension acts on a natural transformation separately on each coproduct summand. -/
+@[reassoc (attr := simp)]
+lemma presheafExtensionι_map_app {F G : (Over U)ᵒᵖ ⥤ A} (α : F ⟶ G)
+    {X : C} (f : X ⟶ U) :
+    presheafExtensionι U F f ≫ ((presheafExtension U).map α).app (op X) =
+      α.app (op (Over.mk f)) ≫ presheafExtensionι U G f := by
+  dsimp only [presheafExtensionι, presheafExtension, extensionObj]
+  simp only [Sigma.ι_map]
+
 private def restrictHom {F : (Over U)ᵒᵖ ⥤ A} {G : Cᵒᵖ ⥤ A}
     (α : (presheafExtension U).obj F ⟶ G) : F ⟶ (Over.forget U).op ⋙ G where
   app Y := Sigma.ι (fun f : Y.unop.left ⟶ U ↦ F.obj (op (Over.mk f))) Y.unop.hom ≫
@@ -157,6 +180,28 @@ def presheafExtensionAdjunction : presheafExtension (A := A) U ⊣
         change (restrictHom U (α ≫ β)).app Y =
           (restrictHom U α).app Y ≫ β.app (op Y.unop.left)
         exact (Category.assoc _ _ _).symm }
+
+-- Avoid indexing the hom-equivalence coercions, whose functor-type projections can have
+-- different normal forms in importing modules.
+/-- The adjunction restricts a map by precomposing with the corresponding coproduct injection. -/
+@[simp]
+lemma presheafExtensionAdjunction_homEquiv_app {F : (Over U)ᵒᵖ ⥤ A} {G : Cᵒᵖ ⥤ A}
+    (α : (presheafExtension U).obj F ⟶ G) (Y : (Over U)ᵒᵖ) :
+    (no_index ((presheafExtensionAdjunction U).homEquiv F G α)).app Y =
+      presheafExtensionι U F Y.unop.hom ≫ α.app (op Y.unop.left) := by
+  simp only [presheafExtensionAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+  rfl
+
+/-- The inverse adjunction map has the prescribed component on each coproduct summand. -/
+@[reassoc (attr := simp)]
+lemma presheafExtensionι_homEquiv_symm_app {F : (Over U)ᵒᵖ ⥤ A} {G : Cᵒᵖ ⥤ A}
+    (α : F ⟶ (Over.forget U).op ⋙ G) {X : C} (f : X ⟶ U) :
+    presheafExtensionι U F f ≫
+        (no_index (((presheafExtensionAdjunction U).homEquiv F G).symm α)).app (op X) =
+      α.app (op (Over.mk f)) := by
+  simp only [presheafExtensionAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+  dsimp only [Equiv.symm, Equiv.coe_fn_mk, extendHom, presheafExtensionι]
+  exact Sigma.ι_comp_desc _ _
 
 /-- Evaluating extension at `X` is the coproduct of evaluations at the objects `(X, f)`. -/
 def presheafExtensionEvaluationIso (X : C) :
