@@ -69,7 +69,7 @@ theorem im_sub_mul_sub_div_sub (p q r : ℝ) {w : ℂ} (hw : w ≠ q) :
     field_simp
     push_cast
     ring
-  rw [key, add_im, add_im, ofReal_im, div_im, ofReal_im, ofReal_re, sub_im, ofReal_im]
+  simp only [key, add_im, sub_im, div_im, ofReal_re, ofReal_im]
   ring
 
 /-- For `q` strictly between `p` and `r`, the factor in `TauCeti.im_sub_mul_sub_div_sub` is
