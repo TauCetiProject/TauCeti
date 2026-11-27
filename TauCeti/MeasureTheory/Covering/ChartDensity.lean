@@ -85,7 +85,7 @@ theorem ofReal_div_mul_pow_le_measure_closedBall_of_dist_le_mul_dist_apply {a b 
   have hb : ρ / Λ ≤ b := by rwa [div_le_iff₀ hΛ, mul_comm]
   have hρ : Λ * (ρ / Λ) = ρ := mul_div_cancel₀ ρ hΛ.ne'
   calc ENNReal.ofReal (c / Λ ^ d * ρ ^ d) = ENNReal.ofReal (c * (ρ / Λ) ^ d) := by
-        rw [div_pow, mul_div_assoc', div_mul_eq_mul_div]
+        congr 1; ring
     _ ≤ ν (closedBall (e x) (ρ / Λ)) := hlow _ ha hb
     _ ≤ μ (closedBall x (Λ * (ρ / Λ))) :=
         measure_closedBall_le_measure_closedBall_mul_of_dist_le_mul_dist_apply hdist hν hΛ.le
@@ -108,14 +108,14 @@ theorem measure_closedBall_le_measure_closedBall_mul_of_dist_apply_le_mul_dist {
   exact (measure_mono hsub).trans (hν _ (closedBall_subset_ball hρR) measurableSet_closedBall)
 
 /-- **Upper density bounds through a chart.** Let `e : X → Y` be a map on a set `s` containing the
-closed ball of radius `R₁` about `x`, which is `Λ`-Lipschitz at `x` on that ball, with `Λ > 0`,
+closed ball of radius `R₁` about `x`, which is `Λ`-Lipschitz at `x` on that ball, with `Λ ≥ 0`,
 and let `ν` be a measure on `Y` with `μ (s ∩ e ⁻¹' t) ≤ ν t` for every measurable
 `t ⊆ ball (e x) R`. If `ν (closedBall (e x) ρ) ≤ C ρ ^ d` for every radius `a ≤ ρ ≤ b`, with
 `b < R`, then `μ (closedBall x ρ) ≤ C Λ ^ d ρ ^ d` for every radius `ρ ≤ R₁` with
 `a ≤ Λ ρ ≤ b`. -/
 theorem measure_closedBall_le_ofReal_mul_mul_pow_of_dist_apply_le_mul_dist {a b C R₁ : ℝ} {d : ℕ}
     (hs : closedBall x R₁ ⊆ s) (hdist : ∀ y ∈ closedBall x R₁, dist (e y) (e x) ≤ Λ * dist y x)
-    (hν : ∀ t ⊆ ball (e x) R, MeasurableSet t → μ (s ∩ e ⁻¹' t) ≤ ν t) (hΛ : 0 < Λ)
+    (hν : ∀ t ⊆ ball (e x) R, MeasurableSet t → μ (s ∩ e ⁻¹' t) ≤ ν t) (hΛ : 0 ≤ Λ)
     (hbR : b < R)
     (hup : ∀ ρ, a ≤ ρ → ρ ≤ b → ν (closedBall (e x) ρ) ≤ ENNReal.ofReal (C * ρ ^ d))
     {ρ : ℝ} (hρR₁ : ρ ≤ R₁) (haρ : a ≤ Λ * ρ) (hρb : Λ * ρ ≤ b) :
@@ -123,8 +123,8 @@ theorem measure_closedBall_le_ofReal_mul_mul_pow_of_dist_apply_le_mul_dist {a b 
   have hsub : closedBall x ρ ⊆ closedBall x R₁ := closedBall_subset_closedBall hρR₁
   calc μ (closedBall x ρ) ≤ ν (closedBall (e x) (Λ * ρ)) :=
         measure_closedBall_le_measure_closedBall_mul_of_dist_apply_le_mul_dist (hsub.trans hs)
-          (fun y hy ↦ hdist y (hsub hy)) hν hΛ.le (hρb.trans_lt hbR)
+          (fun y hy ↦ hdist y (hsub hy)) hν hΛ (hρb.trans_lt hbR)
     _ ≤ ENNReal.ofReal (C * (Λ * ρ) ^ d) := hup _ haρ hρb
-    _ = ENNReal.ofReal (C * Λ ^ d * ρ ^ d) := by rw [mul_pow, mul_assoc]
+    _ = ENNReal.ofReal (C * Λ ^ d * ρ ^ d) := by congr 1; ring
 
 end TauCeti

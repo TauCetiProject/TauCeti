@@ -92,7 +92,7 @@ the chart. The balls of `X` and of the chart are compared through Lipschitz boun
   (`TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le`);
 * the quadratic upper bound `μX (B_ρ(z)) ≤ C'' ρ²` for the balls of `X` at every centre, when the
   chart is `Λ`-Lipschitz at `z`
-  (`TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame_of_dist_le`);
+  (`TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame_of_dist_apply_le`);
 * Taubes's packing bound: a set `Z` of zeros of `α` with a Darboux chart about each of its points,
   with uniform constants, is covered by at most `4 μX(Z_{σ/2}) / (c σ²)` balls of `X` of radius
   `σ` centred in `Z`, for `r ≥ (2 c₀ / σ)²`
@@ -109,8 +109,8 @@ the chart. The balls of `X` and of the chart are compared through Lipschitz boun
 * `TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame`: the quadratic upper bound
   at every centre.
 * `TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le`,
-  `TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame_of_dist_le`: the quadratic
-  lower and upper bounds for the balls of a metric space, through a Darboux chart.
+  `TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame_of_dist_apply_le`: the
+  quadratic lower and upper bounds for the balls of a metric space, through a Darboux chart.
 * `TauCeti.SeibergWitten.exists_forall_coveringNumber_le_of_frame`: the covering of the zeros of
   `α` in a metric space with a Darboux chart about each of them.
 
@@ -408,9 +408,9 @@ the bound `M` on the defect energy `ν = δ dμ` of the chart ball of radius `R 
 `Λ ρ ≤ R / 2`, for the balls of `X`. Unlike the lower bound
 (`TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le`),
 the centre need not be a zero of `α`. -/
-theorem exists_forall_measure_closedBall_le_of_frame_of_dist_le {X : Type*} [PseudoMetricSpace X]
-    [MeasurableSpace X] {K C H L R R₁ M c₀ Λ : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C) (hH : 0 ≤ H)
-    (hL : 0 ≤ L) (hR : 0 < R) (hM : 0 ≤ M) (hc₀ : 0 < c₀) (hΛ : 0 < Λ) :
+theorem exists_forall_measure_closedBall_le_of_frame_of_dist_apply_le {X : Type*}
+    [PseudoMetricSpace X] [MeasurableSpace X] {K C H L R R₁ M c₀ Λ : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C)
+    (hH : 0 ≤ H) (hL : 0 ≤ L) (hR : 0 < R) (hM : 0 ≤ M) (hc₀ : 0 < c₀) (hΛ : 0 < Λ) :
     ∃ C'' > 0, ∀ r, 1 ≤ r →
       ∀ (μX : Measure X) (e : X → E) (s : Set X) (F G : E → E [⋀^Fin 2]→L[ℝ] ℝ)
         (S : E → E →L[ℝ] E) (φ β : E → positiveHalfSpinors o ρ) (η : E → ⋀[ℝ]^2 E) (z : X),
@@ -444,7 +444,7 @@ theorem exists_forall_measure_closedBall_le_of_frame_of_dist_le {X : Type*} [Pse
       hM (mul_pos hΛ hc₀)
   refine ⟨C'' * Λ ^ 2, by positivity, fun r hr μX e s F G S φ β η z hs hdist hν hF hdF hFG hSω hS
     hφc hβc hφ hβ hφβ hβK hη hGeq hGm hνM σ hσR₁ hσ hσR ↦ ?_⟩
-  refine measure_closedBall_le_ofReal_mul_mul_pow_of_dist_apply_le_mul_dist hs hdist hν hΛ
+  refine measure_closedBall_le_ofReal_mul_mul_pow_of_dist_apply_le_mul_dist hs hdist hν hΛ.le
     (half_lt_self hR) (fun τ hτ hτR ↦ hbound r hr F G S φ β η (e z) hF hdF hFG hSω hS hφc hβc hφ
       hβ hφβ hβK hη hGeq hGm hνM τ hτ hτR) hσR₁ ?_ hσR
   rw [mul_div_assoc]
