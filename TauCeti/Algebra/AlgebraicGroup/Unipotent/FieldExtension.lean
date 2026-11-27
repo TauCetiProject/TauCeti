@@ -56,8 +56,7 @@ variable {k : Type u} {K : Type w} {H : Type v} [Field k] [Field K] [Algebra k K
 namespace unipotentCommHopfAlgProperty
 
 /-- **Unipotence is preserved by extension of the base field**: if `H` is unipotent over `k`, then
-`K ⊗[k] H` is unipotent over `K`. A `K ⊗[k] H`-comodule is an `H`-comodule over `k` with the same
-fixed vectors. -/
+`K ⊗[k] H` is unipotent over `K`. -/
 theorem baseChange (hH : unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k H)) :
     unipotentCommHopfAlgProperty K (CommHopfAlgCat.of K (K ⊗[k] H)) := by
   refine (unipotentCommHopfAlgProperty_iff K _).mpr fun W _ _ _ _ _ ↦ ?_
@@ -71,9 +70,7 @@ theorem baseChange (hH : unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k H))
 end unipotentCommHopfAlgProperty
 
 /-- **Unipotence is reflected by extension of the base field**: if `K ⊗[k] H` is unipotent over
-`K`, then `H` is unipotent over `k`. If `m ↦ ρ(m) - m ⊗ 1` were injective on a nonzero comodule
-`M`, its scalar extension would be injective by flatness, and `K ⊗[k] M` would have no nonzero
-fixed vector. -/
+`K`, then `H` is unipotent over `k`. -/
 theorem unipotentCommHopfAlgProperty.of_baseChange
     (hH : unipotentCommHopfAlgProperty K (CommHopfAlgCat.of K (K ⊗[k] H))) :
     unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k H) := by
