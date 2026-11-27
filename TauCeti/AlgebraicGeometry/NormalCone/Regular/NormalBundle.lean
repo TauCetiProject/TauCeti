@@ -206,6 +206,20 @@ noncomputable def toQuasicoherentConormalIso (h : i.IsRegularImmersion d) :
     (FiniteLocallyFreeSheaf.toQuasicoherent X).obj h.conormal.obj ≅ i.conormal :=
   ObjectProperty.isoMk _ (eqToIso h.conormal_obj_obj)
 
+/-- The underlying morphism of `toQuasicoherentConormalIso` is the identification of the
+underlying sheaf of `h.conormal` with `I/I²`. -/
+@[simp]
+theorem toQuasicoherentConormalIso_hom_hom (h : i.IsRegularImmersion d) :
+    h.toQuasicoherentConormalIso.hom.hom = eqToHom h.conormal_obj_obj :=
+  (rfl)
+
+/-- The underlying morphism of the inverse of `toQuasicoherentConormalIso` is the identification
+of `I/I²` with the underlying sheaf of `h.conormal`. -/
+@[simp]
+theorem toQuasicoherentConormalIso_inv_hom (h : i.IsRegularImmersion d) :
+    h.toQuasicoherentConormalIso.inv.hom = eqToHom h.conormal_obj_obj.symm :=
+  (rfl)
+
 /-- **The normal cone of a regular immersion is its normal bundle** (Fulton, *Intersection
 Theory*, §B.7.1): the normal cone `C_X Y` is, over `X`, the total space of the dual
 `(I/I²)^∨` of the conormal sheaf, a finite locally free sheaf of rank the codimension `d`. -/

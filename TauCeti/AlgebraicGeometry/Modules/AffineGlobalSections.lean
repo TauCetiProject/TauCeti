@@ -340,6 +340,20 @@ lemma Scheme.Modules.section_ext_basicOpen {M : (Spec A).Modules} {U : (Spec A).
     PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hx U.is_open'
   exact ⟨_, hfU, hxf, h f hfU⟩
 
+/-- On `Spec R`, a morphism of quasicoherent modules that is an isomorphism on global sections is
+an isomorphism: global sections are the inverse of the tilde equivalence, which reflects
+isomorphisms. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_isIso_moduleSpecΓFunctor_map
+    [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) [IsIso (moduleSpecΓFunctor.map φ)] :
+    IsIso φ := by
+  -- Two definitional equalities are used: `tildeEquiv.inverse.map ψ` is
+  -- `moduleSpecΓFunctor.map φ`, and `P.ι.map ψ` is `φ`.
+  let P := SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf
+  let ψ : (⟨M, ‹_›⟩ : P.FullSubcategory) ⟶ ⟨N, ‹_›⟩ := ObjectProperty.homMk φ
+  have : IsIso (tildeEquiv.inverse.map ψ) := by assumption
+  have : IsIso ψ := isIso_of_reflects_iso ψ tildeEquiv.inverse
+  exact inferInstanceAs (IsIso (P.ι.map ψ))
+
 /-- On an affine scheme, a morphism of quasicoherent modules that is bijective on global
 sections is an isomorphism. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_bijective_sectionsFunctor_map_top
@@ -352,19 +366,10 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_bijective_sectionsFunct
     (ConcreteCategory.isIso_iff_bijective _).mpr hf
   have : IsIso (moduleSpecΓFunctor.map ((Scheme.Modules.restrictFunctor hU.fromSpec).map f)) :=
     (NatIso.isIso_map_iff hU.restrictFromSpecCompModuleSpecΓFunctorIso f).mpr this
-  -- On the spectrum, global sections of quasicoherent modules are the inverse of the tilde
-  -- equivalence, which reflects isomorphisms.
-  let P := SheafOfModules.isQuasicoherent (Spec Γ(X, ⊤)).ringCatSheaf
-  have hM : P ((Scheme.Modules.restrictFunctor hU.fromSpec).obj M) :=
-    Scheme.Modules.isQuasicoherent_restrictFunctor _ _
-  have hN : P ((Scheme.Modules.restrictFunctor hU.fromSpec).obj N) :=
-    Scheme.Modules.isQuasicoherent_restrictFunctor _ _
-  let g : (⟨_, hM⟩ : P.FullSubcategory) ⟶ ⟨_, hN⟩ :=
-    ObjectProperty.homMk ((Scheme.Modules.restrictFunctor hU.fromSpec).map f)
-  have : IsIso ((tildeEquiv (R := Γ(X, ⊤))).inverse.map g) := by assumption
-  have : IsIso g := isIso_of_reflects_iso g (tildeEquiv (R := Γ(X, ⊤))).inverse
-  have : IsIso ((Scheme.Modules.restrictFunctor hU.fromSpec).map f) :=
-    inferInstanceAs (IsIso (P.ι.map g))
+  have := Scheme.Modules.isQuasicoherent_restrictFunctor hU.fromSpec M
+  have := Scheme.Modules.isQuasicoherent_restrictFunctor hU.fromSpec N
+  have := Scheme.Modules.isIso_of_isIso_moduleSpecΓFunctor_map
+    ((Scheme.Modules.restrictFunctor hU.fromSpec).map f)
   have : IsIso hU.fromSpec := by rw [IsAffineOpen.fromSpec_top]; infer_instance
   exact Scheme.Modules.isIso_of_isIso_restrictFunctor_map hU.fromSpec f
 
@@ -398,14 +403,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_epi_of_iso
         (moduleSpecΓFunctor.mapIso e).toLinearEquiv.toLinearMap (moduleSpecΓFunctor.map φ).hom
         (moduleSpecΓFunctor.mapIso e).toLinearEquiv.injective
         (moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent φ))
-  -- Global sections are the inverse of the tilde equivalence, which reflects isomorphisms. As in
-  -- `isIso_of_bijective_sectionsFunctor_map_top`, two definitional equalities are used:
-  -- `tildeEquiv.inverse.map ψ` is `moduleSpecΓFunctor.map φ`, and `P.ι.map ψ` is `φ`.
-  let P := SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf
-  let ψ : (⟨M, ‹_›⟩ : P.FullSubcategory) ⟶ ⟨N, ‹_›⟩ := ObjectProperty.homMk φ
-  have : IsIso (tildeEquiv.inverse.map ψ) := by assumption
-  have : IsIso ψ := isIso_of_reflects_iso ψ tildeEquiv.inverse
-  exact inferInstanceAs (IsIso (P.ι.map ψ))
+  exact Scheme.Modules.isIso_of_isIso_moduleSpecΓFunctor_map φ
 
 end AlgebraicGeometry
 
