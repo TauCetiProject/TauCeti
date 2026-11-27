@@ -30,8 +30,9 @@ namespace TauCeti.SurfaceOfRevolution
 
 local notation "E₃" => EuclideanSpace ℝ (Fin 3)
 
-/-- The normal determined by the ordered angular and profile directions, divided by the
-radius. Its length is the speed of the profile. -/
+/-- The profile normal `(-g' cos u, -g' sin u, f')`, whose length is the profile speed.
+At differentiability points of nonzero radius, it is the cross product of the profile
+and angular directions, in that order, divided by the radius. -/
 def profileNormal (f g : ℝ → ℝ) (p : ℝ × ℝ) : E₃ :=
   (-deriv g p.2 * Real.cos p.1) • EuclideanSpace.basisFun (Fin 3) ℝ 0 +
     (-deriv g p.2 * Real.sin p.1) • EuclideanSpace.basisFun (Fin 3) ℝ 1 +
@@ -53,40 +54,14 @@ theorem inner_profileNormal_self (f g : ℝ → ℝ) (p : ℝ × ℝ) :
   norm_num
   linear_combination deriv g p.2 ^ 2 * Real.sin_sq_add_cos_sq p.1
 
-private theorem differentiableAt_profile_of_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
-    (h : DifferentiableAt ℝ (parametrization f g) p) :
-    DifferentiableAt ℝ f p.2 ∧ DifferentiableAt ℝ g p.2 := by
-  have hslice : DifferentiableAt ℝ (fun v : ℝ ↦ (p.1, v)) p.2 := by fun_prop
-  have h' := h.comp p.2 hslice
-  let radial : E₃ :=
-    Real.cos p.1 • EuclideanSpace.basisFun (Fin 3) ℝ 0 +
-    Real.sin p.1 • EuclideanSpace.basisFun (Fin 3) ℝ 1
-  constructor
-  · have hf : (fun v ↦ inner ℝ radial (parametrization f g (p.1, v))) = f := by
-      funext v
-      rw [parametrization_def]
-      simp only [radial, inner_add_left, inner_add_right, real_inner_smul_left,
-        real_inner_smul_right, EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left]
-      norm_num
-      linear_combination f v * Real.sin_sq_add_cos_sq p.1
-    rw [← hf]
-    exact (innerSL ℝ radial).differentiableAt.comp p.2 h'
-  · have hg : (fun v ↦ inner ℝ (EuclideanSpace.basisFun (Fin 3) ℝ 2)
-        (parametrization f g (p.1, v))) = g := by
-      funext v
-      rw [parametrization_def]
-      simp only [inner_add_right, EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left]
-      norm_num
-    rw [← hg]
-    exact (innerSL ℝ (EuclideanSpace.basisFun (Fin 3) ℝ 2)).differentiableAt.comp p.2 h'
-
 /-- The profile normal is orthogonal to every tangent vector of the parametrization. -/
-theorem inner_profileNormal_fderiv {f g : ℝ → ℝ} {p : ℝ × ℝ}
+@[simp]
+theorem inner_profileNormal_fderiv_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
     (w : ℝ × ℝ) : inner ℝ (profileNormal f g p) (fderiv ℝ (parametrization f g) p w) = 0 := by
   by_cases h : DifferentiableAt ℝ (parametrization f g) p
   swap
   · simp [fderiv_zero_of_not_differentiableAt h]
-  obtain ⟨hf, hg⟩ := differentiableAt_profile_of_parametrization h
+  obtain ⟨hf, hg⟩ := differentiableAt_parametrization_iff.mp h
   rw [fderiv_parametrization hf hg]
   simp only [profileNormal, inner_add_left, inner_add_right, real_inner_smul_left,
     real_inner_smul_right, EuclideanSpace.basisFun_apply,
@@ -95,12 +70,13 @@ theorem inner_profileNormal_fderiv {f g : ℝ → ℝ} {p : ℝ × ℝ}
   linear_combination -deriv f p.2 * deriv g p.2 * w.2 * Real.sin_sq_add_cos_sq p.1
 
 /-- The explicit profile normal lies in the native normal space of the parametrization. -/
-theorem profileNormal_mem_orthogonal {f g : ℝ → ℝ} {p : ℝ × ℝ}
+@[simp]
+theorem profileNormal_mem_orthogonal_range_fderiv_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
     : profileNormal f g p ∈ (fderiv ℝ (parametrization f g) p).rangeᗮ := by
   rw [Submodule.mem_orthogonal]
   rintro _ ⟨w, rfl⟩
   rw [real_inner_comm]
-  exact inner_profileNormal_fderiv w
+  exact inner_profileNormal_fderiv_parametrization w
 
 /-- The second derivative in arbitrary angular and profile directions. -/
 theorem fderiv_fderiv_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
@@ -152,7 +128,7 @@ theorem fderiv_fderiv_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
 
 /-- Pairing the native second fundamental form with the profile normal gives its two
 diagonal coefficients; the mixed angular-meridional coefficient vanishes. -/
-theorem inner_profileNormal_secondFundamentalForm {f g : ℝ → ℝ} {p : ℝ × ℝ}
+theorem inner_profileNormal_secondFundamentalForm_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
     (hf : ContDiffAt ℝ 2 f p.2) (hg : ContDiffAt ℝ 2 g p.2) (w z : ℝ × ℝ) :
     inner ℝ (profileNormal f g p) (TauCeti.secondFundamentalForm ℝ
       (parametrization f g) p w z) =
@@ -160,7 +136,7 @@ theorem inner_profileNormal_secondFundamentalForm {f g : ℝ → ℝ} {p : ℝ �
         (deriv f p.2 * deriv (deriv g) p.2 - deriv g p.2 * deriv (deriv f) p.2) *
           w.2 * z.2 := by
   rw [TauCeti.inner_secondFundamentalForm_apply_of_mem_orthogonal
-    profileNormal_mem_orthogonal, fderiv_fderiv_parametrization hf hg]
+    profileNormal_mem_orthogonal_range_fderiv_parametrization, fderiv_fderiv_parametrization hf hg]
   simp only [profileNormal, inner_add_left, inner_add_right, real_inner_smul_left,
     real_inner_smul_right, EuclideanSpace.basisFun_apply,
     EuclideanSpace.inner_single_left]
@@ -171,7 +147,7 @@ theorem inner_profileNormal_secondFundamentalForm {f g : ℝ → ℝ} {p : ℝ �
 
 /-- At a regular profile point of nonzero radius the profile normal spans the whole native
 normal space. -/
-theorem orthogonal_range_fderiv_eq_span_profileNormal {f g : ℝ → ℝ} {p : ℝ × ℝ}
+theorem orthogonal_range_fderiv_parametrization_eq_span_profileNormal {f g : ℝ → ℝ} {p : ℝ × ℝ}
     (hf : DifferentiableAt ℝ f p.2) (hg : DifferentiableAt ℝ g p.2)
     (hr : f p.2 ≠ 0) (hs : 0 < profileSpeedSq f g p.2) :
     (fderiv ℝ (parametrization f g) p).rangeᗮ =
@@ -181,16 +157,12 @@ theorem orthogonal_range_fderiv_eq_span_profileNormal {f g : ℝ → ℝ} {p : �
     have hi := inner_profileNormal_self f g p
     rw [h, inner_zero_left] at hi
     linarith
-  symm
-  apply Submodule.eq_of_le_of_finrank_eq
-    (Submodule.span_le.mpr (by
-      simpa using profileNormal_mem_orthogonal (f := f) (g := g) (p := p)))
   have hdim := (fderiv ℝ (parametrization f g) p).range.finrank_add_finrank_orthogonal
   have hrank := LinearMap.finrank_range_of_inj
     (injective_fderiv_parametrization hf hg hr hs)
-  rw [finrank_span_singleton hn]
   norm_num [Module.finrank_prod] at hdim hrank
-  omega
+  exact eq_span_singleton_of_mem_of_finrank_eq_one (by omega)
+    profileNormal_mem_orthogonal_range_fderiv_parametrization hn
 
 /-- The native second fundamental form in revolution coordinates. -/
 theorem secondFundamentalForm_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
@@ -202,11 +174,12 @@ theorem secondFundamentalForm_parametrization {f g : ℝ → ℝ} {p : ℝ × �
           w.2 * z.2) / profileSpeedSq f g p.2) • profileNormal f g p := by
   have hm := TauCeti.secondFundamentalForm_apply_mem_orthogonal (𝕜 := ℝ)
     (parametrization f g) p w z
-  rw [orthogonal_range_fderiv_eq_span_profileNormal (hf.differentiableAt (by norm_num))
+  rw [orthogonal_range_fderiv_parametrization_eq_span_profileNormal
+    (hf.differentiableAt (by norm_num))
     (hg.differentiableAt (by norm_num)) hr hs] at hm
   have hp := Submodule.starProjection_eq_self_iff.mpr hm
   rw [Submodule.starProjection_singleton, ← real_inner_self_eq_norm_sq,
-    inner_profileNormal_self, inner_profileNormal_secondFundamentalForm hf hg] at hp
+    inner_profileNormal_self, inner_profileNormal_secondFundamentalForm_parametrization hf hg] at hp
   exact hp.symm
 
 end TauCeti.SurfaceOfRevolution

@@ -67,6 +67,38 @@ theorem differentiableAt_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
   unfold parametrization
   fun_prop
 
+/-- The revolution parametrization is differentiable exactly when both profile functions are. -/
+theorem differentiableAt_parametrization_iff {f g : ℝ → ℝ} {p : ℝ × ℝ} :
+    DifferentiableAt ℝ (parametrization f g) p ↔
+      DifferentiableAt ℝ f p.2 ∧ DifferentiableAt ℝ g p.2 := by
+  constructor
+  · intro h
+    have hslice : DifferentiableAt ℝ (fun v : ℝ ↦ (p.1, v)) p.2 := by fun_prop
+    have h' := h.comp p.2 hslice
+    let radial : E₃ :=
+      Real.cos p.1 • EuclideanSpace.basisFun (Fin 3) ℝ 0 +
+      Real.sin p.1 • EuclideanSpace.basisFun (Fin 3) ℝ 1
+    constructor
+    · have hf : (fun v ↦ inner ℝ radial (parametrization f g (p.1, v))) = f := by
+        funext v
+        rw [parametrization_def]
+        simp only [radial, inner_add_left, inner_add_right, real_inner_smul_left,
+          real_inner_smul_right, EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left]
+        norm_num
+        linear_combination f v * Real.sin_sq_add_cos_sq p.1
+      rw [← hf]
+      exact (innerSL ℝ radial).differentiableAt.comp p.2 h'
+    · have hg : (fun v ↦ inner ℝ (EuclideanSpace.basisFun (Fin 3) ℝ 2)
+          (parametrization f g (p.1, v))) = g := by
+        funext v
+        rw [parametrization_def]
+        simp only [inner_add_right, EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left]
+        norm_num
+      rw [← hg]
+      exact (innerSL ℝ (EuclideanSpace.basisFun (Fin 3) ℝ 2)).differentiableAt.comp p.2 h'
+  · rintro ⟨hf, hg⟩
+    exact differentiableAt_parametrization hf hg
+
 /-- The coordinate formula for the differential of a surface of revolution. -/
 theorem fderiv_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
     (hf : DifferentiableAt ℝ f p.2) (hg : DifferentiableAt ℝ g p.2) (w : ℝ × ℝ) :
