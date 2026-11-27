@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Subring.ResidueClass
+public import TauCeti.MeasureTheory.Measure.Haar.ResidueClass
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
@@ -74,7 +74,7 @@ theorem classGaussSum_eq_of_mem {x₁ : ι → A} (hx : x₁ ∈ R.residueClass 
   simp only [classGaussSum, R.residueClass_eq_of_mem g hx]
 
 /-- Adding to the prescribed norm multiplies the integral by a character value. -/
-theorem classGaussSum_add_norm (a : A) :
+theorem classGaussSum_add_target (a : A) :
     classGaussSum R μ ψ τ J g x₀ (α + a) b =
       (ψ (-(τ * b * a)) : ℂ) * classGaussSum R μ ψ τ J g x₀ α b := by
   have hphase (x : ι → A) : τ * b * (star x ⬝ᵥ J.mulVec x - (α + a)) =
@@ -83,15 +83,15 @@ theorem classGaussSum_add_norm (a : A) :
   exact integral_const_mul _ _
 
 /-- The prescribed norm contributes only an explicit unit-modulus factor. -/
-theorem classGaussSum_eq_mul_zero_norm :
+theorem classGaussSum_eq_mul_classGaussSum_zero_target :
     classGaussSum R μ ψ τ J g x₀ α b =
       (ψ (-(τ * b * α)) : ℂ) * classGaussSum R μ ψ τ J g x₀ 0 b := by
-  simpa using classGaussSum_add_norm R μ ψ τ J g x₀ 0 b α
+  simpa using classGaussSum_add_target R μ ψ τ J g x₀ 0 b α
 
 /-- The absolute value of a class Gauss integral is independent of the prescribed norm. -/
-theorem norm_classGaussSum_eq_zero_norm :
+theorem norm_classGaussSum_eq_norm_classGaussSum_zero_target :
     ‖classGaussSum R μ ψ τ J g x₀ α b‖ = ‖classGaussSum R μ ψ τ J g x₀ 0 b‖ := by
-  rw [classGaussSum_eq_mul_zero_norm, norm_mul, Circle.norm_coe, one_mul]
+  rw [classGaussSum_eq_mul_classGaussSum_zero_target, norm_mul, Circle.norm_coe, one_mul]
 
 /-- Reversing the frequency conjugates the Gauss integral. -/
 @[simp]
@@ -118,7 +118,8 @@ variable [TopologicalSpace A] [IsTopologicalRing A] [ContinuousStar A] [T2Space 
   [BorelSpace A] [SecondCountableTopology A] [SigmaFinite μ] [IsFiniteMeasureOnCompacts μ]
 
 /-- For a continuous character and a compact subring, the Gauss integrand is integrable. -/
-theorem integrableOn_classGaussSum (hR : IsCompact (R : Set A)) (hψ : Continuous ψ) :
+theorem integrableOn_addChar_quadratic_residueClass (hR : IsCompact (R : Set A))
+    (hψ : Continuous ψ) :
     IntegrableOn (fun x : ι → A ↦
       (ψ (τ * b * (star x ⬝ᵥ J.mulVec x - α)) : ℂ))
       (R.residueClass g x₀) (Measure.pi (fun _ : ι ↦ μ)) := by
@@ -133,7 +134,8 @@ theorem continuous_classGaussSum (hR : IsCompact (R : Set A)) (hψ : Continuous 
   have : IsFiniteMeasure ν := ⟨by simpa [ν] using hK.measure_lt_top⟩
   apply continuous_of_dominated (μ := ν) (bound := fun _ ↦ (1 : ℝ))
   · intro p
-    exact (integrableOn_classGaussSum R μ ψ τ J g x₀ p.1 p.2 hR hψ).aestronglyMeasurable
+    exact (integrableOn_addChar_quadratic_residueClass R μ ψ τ J g x₀ p.1 p.2 hR
+      hψ).aestronglyMeasurable
   · intro p
     exact Filter.Eventually.of_forall fun x ↦ (Circle.norm_coe _).le
   · exact integrable_const _

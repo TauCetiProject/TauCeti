@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.Pi
-public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
+public import Mathlib.GroupTheory.Coset.Basic
 public import Mathlib.Topology.Algebra.Ring.Basic
 import Mathlib.Tactic.NoncommRing
 
@@ -14,17 +13,15 @@ import Mathlib.Tactic.NoncommRing
 # Residue classes over a subring
 
 For a subring `R` of a ring `A`, `R.residueClass g x₀` is the class
-`x₀ + g R^ι`, where `g` is a unit of `A`. Compactness passes from the subring
-to each class; for finite `ι`, openness passes as well. The product Haar measure
-of a class is `Δ(g)^|ι| μ(R)^|ι|`, where `Δ` is Mathlib's distributive Haar
-character. In particular, when `μ(R) = 1`, its volume is `Δ(g)^|ι|`.
+`x₀ + g R^ι`, where `g` is a unit of `A`. It is the additive coset through `x₀` of the
+subgroup `g R^ι`, so centre independence comes from Mathlib's coset API. Compactness
+passes from the subring to each class; for finite `ι`, openness passes as well.
 These classes are the domains of local quadratic Gauss integrals.
 -/
 
 public section
 
-open MeasureTheory
-open scoped Pointwise ENNReal
+open scoped Pointwise
 
 namespace Subring
 
@@ -64,21 +61,23 @@ theorem residueClass_eq_pi (g : Aˣ) (x₀ : ι → A) :
     rw [← hi]
     simpa [← mul_assoc] using hy
 
+/-- A class is the additive coset through its centre of the subgroup `g R^ι`. -/
+theorem residueClass_eq_vadd (g : Aˣ) (x₀ : ι → A) :
+    R.residueClass g x₀ = x₀ +ᵥ ((AddSubgroup.pi Set.univ fun _ : ι ↦
+      R.toAddSubgroup.comap (AddMonoidHom.mulLeft (↑g⁻¹ : A))) : Set (ι → A)) := by
+  ext x
+  simp [mem_leftAddCoset_iff, neg_add_eq_sub, AddSubgroup.mem_pi]
+
+/-- Two classes of the same scale agree exactly when their centres are congruent. -/
+theorem residueClass_eq_iff (g : Aˣ) (x₀ x₁ : ι → A) :
+    R.residueClass g x₁ = R.residueClass g x₀ ↔ x₁ ∈ R.residueClass g x₀ := by
+  rw [residueClass_eq_vadd, residueClass_eq_vadd, leftAddCoset_eq_iff, mem_leftAddCoset_iff,
+    SetLike.mem_coe, ← neg_mem_iff, neg_add_rev, neg_neg]
+
 /-- Changing the centre within a class does not change the class. -/
 theorem residueClass_eq_of_mem (g : Aˣ) {x₀ x₁ : ι → A}
-    (h : x₁ ∈ R.residueClass g x₀) : R.residueClass g x₁ = R.residueClass g x₀ := by
-  ext x
-  constructor
-  · intro hx i
-    have heq : (↑g⁻¹ : A) * (x i - x₀ i) =
-        (↑g⁻¹ : A) * (x i - x₁ i) + (↑g⁻¹ : A) * (x₁ i - x₀ i) := by noncomm_ring
-    rw [heq]
-    exact R.add_mem (hx i) (h i)
-  · intro hx i
-    have heq : (↑g⁻¹ : A) * (x i - x₁ i) =
-        (↑g⁻¹ : A) * (x i - x₀ i) - (↑g⁻¹ : A) * (x₁ i - x₀ i) := by noncomm_ring
-    rw [heq]
-    exact R.sub_mem (hx i) (h i)
+    (h : x₁ ∈ R.residueClass g x₀) : R.residueClass g x₁ = R.residueClass g x₀ :=
+  (R.residueClass_eq_iff g x₀ x₁).2 h
 
 /-- Adding two class members adds their centres. -/
 theorem add_mem_residueClass (g : Aˣ) {x₀ y₀ x y : ι → A}
@@ -96,15 +95,6 @@ theorem neg_mem_residueClass (g : Aˣ) {x₀ x : ι → A}
   convert R.neg_mem (hx i) using 1
   · dsimp
     noncomm_ring
-
-/-- Two classes of the same scale agree exactly when their centres are congruent. -/
-theorem residueClass_eq_iff (g : Aˣ) (x₀ x₁ : ι → A) :
-    R.residueClass g x₁ = R.residueClass g x₀ ↔ x₁ ∈ R.residueClass g x₀ := by
-  constructor
-  · intro h
-    rw [← h]
-    simp
-  · exact R.residueClass_eq_of_mem g
 
 section Topology
 
@@ -127,32 +117,5 @@ theorem isOpen_residueClass [Finite ι] (hR : IsOpen (R : Set A)) (g : Aˣ) (x�
   exact isOpen_iInter_of_finite fun i ↦ hR.preimage (by fun_prop)
 
 end Topology
-
-section Measure
-
-variable [TopologicalSpace A] [IsTopologicalRing A] [LocallyCompactSpace A]
-  [MeasurableSpace A] [BorelSpace A] [Fintype ι]
-  (μ : Measure A) [SigmaFinite μ] [μ.IsAddHaarMeasure] [μ.Regular]
-
-/-- The volume of a class for the product Haar measure, without normalizing `μ R`. -/
-theorem measure_residueClass (g : Aˣ) (x₀ : ι → A) :
-    Measure.pi (fun _ : ι ↦ μ) (R.residueClass g x₀) =
-      (distribHaarChar A g : ℝ≥0∞) ^ Fintype.card ι * μ R ^ Fintype.card ι := by
-  rw [R.residueClass_eq_pi, Measure.pi_pi]
-  have hcoord (i : ι) : μ ((fun y : A ↦ x₀ i + g * y) '' (R : Set A)) =
-      (distribHaarChar A g : ℝ≥0∞) * μ R := by
-    rw [← Set.image_image]
-    rw [Set.image_add_left, measure_preimage_add]
-    exact (distribHaarChar_mul μ g (R : Set A)).symm
-  simp_rw [hcoord]
-  simp [mul_pow]
-
-/-- For a Haar measure giving the subring volume one, a class has volume `Δ(g)^|ι|`. -/
-theorem measure_residueClass_of_measure_eq_one (hμ : μ R = 1) (g : Aˣ) (x₀ : ι → A) :
-    Measure.pi (fun _ : ι ↦ μ) (R.residueClass g x₀) =
-      (distribHaarChar A g : ℝ≥0∞) ^ Fintype.card ι := by
-  simp [R.measure_residueClass μ, hμ]
-
-end Measure
 
 end Subring
