@@ -30,19 +30,26 @@ For `sl₂` triples `(h₁, e₁, f₁)` and `(h₂, e₂, f₂)` whose neutral 
 conjugates `(φ h₁, e₂, φ f₁)` to `(h₂, e₂, f₂)` by an element of `expAdSubgroup K e₂ ≤ Int(L)`,
 which also preserves `S(L*)^L`, so `h₁` and `h₂` agree on `S(L*)^L`. In particular, each
 `Int(L)`-orbit of neutral elements meets `b.dominantNeutralElements` in a unique point
-(`RootPairing.Base.injOn_orbit_dominantNeutralElements`), and the weighted Dynkin diagram depends
-only on the `Int(L)`-orbit of the nilpositive element.
+(`RootPairing.Base.injOn_orbit_dominantNeutralElements`), so these orbits are exactly as many as
+the dominant neutral elements, and the weighted Dynkin diagram depends only on the `Int(L)`-orbit
+of the nilpositive element. Combined with Jacobson–Morozov, every nonzero `ad`-nilpotent element
+has exactly one dominant neutral element
+(`RootPairing.Base.existsUnique_mem_dominantNeutralElements_isSl2Triple_smul`).
 
 ## Main results
 
 * `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq` and
   `RootPairing.Base.injOn_orbit_dominantNeutralElements`: distinct dominant neutral elements have
   disjoint `Int(L)`-orbits.
+* `RootPairing.Base.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: there are exactly as many
+  `Int(L)`-orbits of neutral elements as dominant neutral elements.
 * `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`: an invariant-preserving Lie
   automorphism carrying `e₁` to `e₂` identifies the dominant neutral elements `h₁` and `h₂`.
 * `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq` and
   `IsSl2Triple.weightedDynkinDiagram_eq_of_mem_intLieAlgebra_smul_eq`: `Int(L)`-conjugate
   nilpositive elements share the same dominant neutral element and weighted Dynkin diagram.
+* `RootPairing.Base.existsUnique_mem_dominantNeutralElements_isSl2Triple_smul`: a nonzero
+  `ad`-nilpotent element has exactly one dominant neutral element.
 
 ## References
 
@@ -92,6 +99,13 @@ theorem injOn_orbit_dominantNeutralElements (b : (rootSystem H).Base) :
   obtain ⟨⟨g, hg⟩, hgh⟩ := hmem
   exact b.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq hh₁ hh₂ hg hgh
 
+/-- **Counting orbits of neutral elements exactly.** The `Int(L)`-orbits of neutral elements of
+`sl₂` triples are exactly as many as the dominant neutral elements for any base `b`. -/
+theorem ncard_image_orbit_setOf_exists_isSl2Triple_eq (b : (rootSystem H).Base) :
+    (MulAction.orbit (intLieAlgebra K L) '' {h : L | ∃ e f, IsSl2Triple h e f}).ncard =
+      b.dominantNeutralElements.ncard := by
+  rw [← b.image_orbit_dominantNeutralElements, b.injOn_orbit_dominantNeutralElements.ncard_image]
+
 end IntOrbits
 
 end RootPairing.Base
@@ -122,11 +136,11 @@ theorem eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq (b : (rootSystem 
     hφe ▸ t₁.map φ.toLieHom ((map_ne_zero_iff φ.toLieHom φ.injective).mpr t₁.h_ne_zero)
   -- Kostant's conjugacy theorem moves `(φ h₁, e₂, φ f₁)` to `(h₂, e₂, f₂)` inside `Int(L)`.
   obtain ⟨ψ, hψ, -, hψh, -⟩ := t₁'.exists_lieEquiv_apply_eq (K := K) t₂
-  let g : LinearMap.GeneralLinearGroup K L :=
-    (LinearMap.GeneralLinearGroup.generalLinearEquiv K L).symm ψ.toLinearEquiv
+  let g := LinearMap.GeneralLinearGroup.ofLinearEquiv ψ.toLinearEquiv
   have hg : g ∈ intLieAlgebra K L :=
     map_expAdSubgroup_le_intLieAlgebra e₂ ⟨ψ.toLinearEquiv, hψ, rfl⟩
-  have hgh : g • φ (h₁ : L) = (h₂ : L) := hψh
+  have hgh : g • φ (h₁ : L) = (h₂ : L) :=
+    (LinearMap.GeneralLinearGroup.ofLinearEquiv_smul _ _).trans hψh
   refine b.eq_of_forall_mem_lieInvariants_lift_eval_eq_of_dominant
     ((b.mem_dominantNeutralElements_iff h₁).mp hh₁).2
     ((b.mem_dominantNeutralElements_iff h₂).mp hh₂).2 fun p hp ↦ ?_
@@ -166,3 +180,27 @@ theorem weightedDynkinDiagram_eq_of_mem_intLieAlgebra_smul_eq (b : (rootSystem H
 end IntConjugacy
 
 end IsSl2Triple
+
+namespace RootPairing.Base
+
+open TauCeti
+
+variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
+  [LieAlgebra ℚ L] [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L}
+  [H.IsCartanSubalgebra]
+
+/-- **The dominant neutral element of a nilpotent element.** For any base `b`, a nonzero
+`ad`-nilpotent element `e` has exactly one dominant neutral element `h`: the neutral element of an
+`sl₂` triple whose nilpositive element is an `Int(L)`-conjugate of `e`. -/
+theorem existsUnique_mem_dominantNeutralElements_isSl2Triple_smul (b : (rootSystem H).Base)
+    {e : L} (he : IsNilpotent (ad K L e)) (he0 : e ≠ 0) :
+    ∃! h : H, h ∈ b.dominantNeutralElements ∧
+      ∃ g ∈ intLieAlgebra K L, ∃ f : L, IsSl2Triple (h : L) (g • e) f := by
+  obtain ⟨g, hg, h, hh, f, t⟩ :=
+    exists_mem_intLieAlgebra_isSl2Triple_smul_of_isNilpotent_ad b he he0
+  refine ⟨h, ⟨hh, g, hg, f, t⟩, fun h' ⟨hh', g', hg', f', t'⟩ ↦
+    (t.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq b t' hh hh'
+      (mul_mem hg' (inv_mem hg)) ?_).symm⟩
+  rw [mul_smul, inv_smul_smul]
+
+end RootPairing.Base

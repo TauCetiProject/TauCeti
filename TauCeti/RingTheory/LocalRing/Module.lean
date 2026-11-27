@@ -17,6 +17,8 @@ public import TauCeti.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.Unimodular
 public import TauCeti.RingTheory.LocalRing.Residue
 import Mathlib.Algebra.Module.Shrink
+import TauCeti.Algebra.Module.Projective.Schanuel
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Generators of modules over a local ring
@@ -48,12 +50,20 @@ Splitting off these summands one at a time shows that `M` is free.
 * `TauCeti.IsLocalRing.exists_basis_of_linearIndependent_residue_coord`: a family of `n`
   elements of a free module of rank `n` whose coordinates have linearly independent residues is a
   basis.
+* `TauCeti.IsLocalRing.span_eq_top_iff_span_image_residue_eq_top`: a set of vectors of `R ^ ι`,
+  `ι` finite, spans exactly when its reduction spans over the residue field.
 * `TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul`: a finite module over a local
   ring `(R, 𝔪, k)` is a quotient of `R ^ dim_k (k ⊗ M)` by a submodule of `𝔪 • R ^ dim_k (k ⊗ M)`.
 * `TauCeti.IsLocalRing.exists_linearMap_quotient_eq_one`: an element of a module `M` outside
   `𝔪 • M` is sent to `1` by a linear map `M → R ⧸ 𝔪`.
 * `Module.isUnimodular_iff_notMem_jacobson_smul_top`: over a possibly noncommutative local ring,
   an element of a projective module `M` is unimodular exactly when it lies outside `J • M`.
+* `Module.isUnimodular_iff_notMem_maximalIdeal_smul_top`: over a commutative local semiring with
+  maximal ideal `𝔪`, an element of a projective module `M` is unimodular exactly when it lies
+  outside `𝔪 • M`.
+* `TauCeti.IsLocalRing.free_ker_of_apply_eq_one` and
+  `TauCeti.IsLocalRing.finrank_ker_add_one_of_apply_eq_one`: the kernel of a linear form taking the
+  value `1` on a finite projective module is free of rank one less.
 * `Module.free_of_projective_of_isLocalRing`: a finitely generated projective module over a
   possibly noncommutative local ring is free, for any `AddCommMonoid` module.
 
@@ -131,6 +141,42 @@ theorem exists_basis_of_linearIndependent_residue_coord {ι κ : Type*} [Fintype
   refine ⟨(b.map (Matrix.toLinearEquiv b A hA)).reindex e.symm, fun k ↦ ?_⟩
   simp [A, Matrix.toLin_self, Module.Basis.sum_repr]
 
+/-- **Spanning in `R ^ ι` is detected on the residue field.** Over a local ring `R` with residue
+field `k` and a finite index type `ι`, a set `s` of vectors of `ι → R` spans `ι → R` if and only
+if the reductions `residue R ∘ v`, `v ∈ s`, span `ι → k` over `k`. The analogue for families of
+square matrices is `IsLocalRing.span_range_eq_top_of_span_range_map_residue_eq_top`. -/
+theorem span_eq_top_iff_span_image_residue_eq_top {ι : Type*} [Finite ι] {s : Set (ι → R)} :
+    Submodule.span R s = ⊤ ↔ Submodule.span (_root_.IsLocalRing.ResidueField R)
+      ((_root_.IsLocalRing.residue R ∘ ·) '' s) = ⊤ := by
+  classical
+  have := Fintype.ofFinite ι
+  -- Coordinatewise reduction is semilinear and onto, and carries `span R s` onto the span of the
+  -- reductions (`Submodule.map_span`).
+  let F : (ι → R) →ₛₗ[_root_.IsLocalRing.residue R] (ι → _root_.IsLocalRing.ResidueField R) :=
+    { toFun := (_root_.IsLocalRing.residue R ∘ ·)
+      map_add' := fun _ _ ↦ by ext; simp
+      map_smul' := fun _ _ ↦ by ext; simp }
+  have hF : (Submodule.span R s).map F = Submodule.span (_root_.IsLocalRing.ResidueField R)
+      ((_root_.IsLocalRing.residue R ∘ ·) '' s) := Submodule.map_span F s
+  refine ⟨fun hs ↦ ?_, fun hs ↦ ?_⟩
+  · rw [← hF, hs, Submodule.map_top, LinearMap.range_eq_top]
+    exact _root_.IsLocalRing.residue_surjective.comp_left
+  -- Nakayama (`IsLocalRing.map_mkQ_eq_top`): it suffices to span modulo `𝔪 • (ι → R)`, and a
+  -- vector with the same reduction as one of `span R s` differs from it by a vector with
+  -- coordinates in `𝔪`.
+  rw [← _root_.IsLocalRing.map_mkQ_eq_top, Submodule.eq_top_iff']
+  intro z
+  obtain ⟨u, rfl⟩ := Submodule.Quotient.mk_surjective _ z
+  obtain ⟨v, hv, huv⟩ : F u ∈ (Submodule.span R s).map F := by
+    rw [hF, hs]
+    exact Submodule.mem_top
+  refine ⟨v, hv, ?_⟩
+  rw [Submodule.mkQ_apply, Submodule.Quotient.eq, (Pi.basisFun R ι).mem_smul_top_iff]
+  intro i
+  rw [Pi.basisFun_repr, ← _root_.IsLocalRing.residue_eq_zero_iff, Pi.sub_apply, map_sub,
+    sub_eq_zero]
+  exact congrFun huv i
+
 variable (R M) in
 /-- **Minimal generators of a finite module over a local ring.** If `M` is a finite module over a
 local ring `(R, 𝔪, k)`, then `M` is the image of a surjection `R ^ μ → M`, with `μ = dim_k (k ⊗ M)`
@@ -187,6 +233,26 @@ theorem exists_linearMap_quotient_eq_one {m : M}
   obtain ⟨φ, hφ⟩ :=
     Module.Projective.exists_dual_eq_one (R ⧸ _root_.IsLocalRing.maximalIdeal R) hx
   exact ⟨(φ.restrictScalars R) ∘ₗ Submodule.mkQ _, hφ⟩
+
+/-- **The kernel of a linear form taking the value `1` is free.** If `φ : M → R` takes the value
+`1` on a finite projective module `M` over a local ring, then `ker φ` is a finite projective direct
+summand of `M`, hence free. -/
+theorem free_ker_of_apply_eq_one [Module.Finite R M] [Module.Projective R M]
+    {φ : M →ₗ[R] R} {w : M} (hw : φ w = 1) : Module.Free R (LinearMap.ker φ) :=
+  have := LinearMap.finite_ker_of_apply_eq_one hw
+  have := φ.projective_ker_of_surjective fun r ↦ ⟨r • w, by simp [hw]⟩
+  Module.free_of_flat_of_isLocalRing
+
+/-- **The kernel of a linear form taking the value `1` has rank one less.** If `φ : M → R` takes
+the value `1` on a finite projective module `M` over a local ring, then `M ≃ ker φ × R`, so
+`rank (ker φ) + 1 = rank M`. -/
+theorem finrank_ker_add_one_of_apply_eq_one [Module.Finite R M] [Module.Projective R M]
+    {φ : M →ₗ[R] R} {w : M} (hw : φ w = 1) :
+    Module.finrank R (LinearMap.ker φ) + 1 = Module.finrank R M := by
+  have := free_ker_of_apply_eq_one hw
+  have := LinearMap.finite_ker_of_apply_eq_one hw
+  rw [← (LinearMap.kerProdEquivOfApplyEqOne hw).finrank_eq, Module.finrank_prod,
+    Module.finrank_self]
 
 /-- A scalar killing a nonzero element lies in the maximal ideal, since a unit kills only zero.
 This holds for any distributive action of a local semiring on an additive monoid, in particular
@@ -249,8 +315,7 @@ private theorem free_of_span_finset_eq_top (n : ℕ) :
     let π : M →ₗ[R] LinearMap.ker φ := LinearMap.fst R _ R ∘ₗ e.symm.toLinearMap
     have hπ : Function.Surjective π := Prod.fst_surjective.comp e.symm.surjective
     have hπp : π p = 0 := Subtype.ext (by simp [π, e, hφ])
-    have : Module.Projective R (LinearMap.ker φ) :=
-      .of_split (LinearMap.ker φ).subtype π (LinearMap.ext fun x ↦ Subtype.ext (by simp [π, e]))
+    have := φ.projective_ker_of_surjective fun r ↦ ⟨r • p, by simp [hφ]⟩
     have : Module.Free R (LinearMap.ker φ) := by
       refine ih ((s.erase p).image π) (Finset.card_image_le.trans ?_) ?_
       · rw [Finset.card_erase_of_mem hps]
@@ -275,5 +340,24 @@ theorem free_of_projective_of_isLocalRing {M : Type*} [AddCommMonoid M] [Module 
   free_of_span_finset_eq_top s.card s le_rfl hs
 
 end Noncommutative
+
+section Commutative
+
+variable {R M : Type*} [CommSemiring R] [IsLocalRing R] [AddCommMonoid M] [Module R M]
+
+/-- In a projective module over a commutative local semiring with maximal ideal `𝔪`, an element
+is unimodular, that is some linear functional takes the value `1` at it, exactly when it lies
+outside `𝔪 • M`. Over a ring this is `Module.isUnimodular_iff_notMem_jacobson_smul_top`. -/
+theorem isUnimodular_iff_notMem_maximalIdeal_smul_top [Module.Projective R M] {m : M} :
+    IsUnimodular R m ↔ m ∉ IsLocalRing.maximalIdeal R • (⊤ : Submodule R M) := by
+  refine ⟨fun hm ↦ hm.notMem_smul_top (IsLocalRing.maximalIdeal.isMaximal R).ne_top,
+    fun hm ↦ ?_⟩
+  rw [← forall_dual_apply_mem_iff, not_forall] at hm
+  -- `φ m` is a unit `u`; rescaling `φ` by `u⁻¹` gives the value `1`.
+  obtain ⟨φ, hφ⟩ := hm
+  obtain ⟨u, hu⟩ := IsLocalRing.notMem_maximalIdeal.mp hφ
+  exact isUnimodular_iff.2 ⟨(↑u⁻¹ : R) • φ, by simp [← hu]⟩
+
+end Commutative
 
 end Module

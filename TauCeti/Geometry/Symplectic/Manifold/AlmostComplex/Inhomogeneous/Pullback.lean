@@ -38,8 +38,13 @@ intertwines `g^* J` with `J`. Read in a chart `φ` of `P` and the chart `g ≫ �
   the characterisation `TauCeti.InhomogeneousTerm.eq_pullback_iff`. The identity and composition
   laws `TauCeti.InhomogeneousTerm.pullback_refl` and `TauCeti.InhomogeneousTerm.pullback_trans`
   use `ofEq` to identify the pulled-back target structures.
+* `TauCeti.InhomogeneousTerm.mvfderiv_val_tangentHom_pullback`: the pointwise transport of values
+  in charts of the targets.
 * `TauCeti.InhomogeneousTerm.chartTerm_pullback`,
-  `TauCeti.InhomogeneousTerm.chartTerm_pullback_trans`: transport in charts.
+  `TauCeti.InhomogeneousTerm.chartTerm_pullback_trans`: transport in charts, and
+  `TauCeti.InhomogeneousTerm.chartTermExtend_pullback`,
+  `TauCeti.InhomogeneousTerm.chartTermExtend_pullback_trans`: transport in the extended charts of
+  domains with boundary or corners. Both follow from the pointwise transport.
 
 ## References
 
@@ -242,6 +247,25 @@ theorem eq_pullback_iff {μ : InhomogeneousTerm j (J.pullback g hnr)} :
 theorem pullback_zero : (0 : InhomogeneousTerm j J).pullback g hnr = 0 :=
   ((eq_pullback_iff 0 g hnr).2 fun q v ↦ by simp).symm
 
+/-- **Transport of values in charts.** Let `χ` be a chart of `M` and `ψ` a chart of `N` with
+`χ = ψ ∘ g` and `χ⁻¹ = g⁻¹ ∘ ψ⁻¹`, such as `g ≫ ψ`. At a domain point `x`, on a vector `w`
+tangent to the domain, the pulled-back term `g^* ν` at the point `χ⁻¹ v`, pushed forward along
+`χ`, is `ν` at the point `ψ⁻¹ v`, pushed forward along `ψ`. -/
+theorem mvfderiv_val_tangentHom_pullback {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {χ : OpenPartialHomeomorph M G} {ψ : OpenPartialHomeomorph N G} (hχ : ⇑χ = ψ ∘ g)
+    (hχs : ⇑χ.symm = g.symm ∘ ψ.symm) (x : P) (w : TangentSpace IP x) (v : G) :
+    mvfderiv I χ (χ.symm v) ((ν.pullback g hnr).val.tangentHom (x, χ.symm v) w) =
+      mvfderiv I' ψ (ψ.symm v) (ν.val.tangentHom (x, ψ.symm v) w) := by
+  have hr : (r : ℕ∞ω) ≠ 0 := ENat.coe_ne_zero_of_add_one_le hnr
+  set y := g.symm (ψ.symm v) with hy_def
+  have hy : g y = ψ.symm v := g.apply_symm_apply _
+  rw [hχs, Function.comp_apply, ← hy_def, hχ, mvfderiv_apply_eq_mfderiv_apply,
+    mvfderiv_apply_eq_mfderiv_apply, ← hy, g.mfderiv_comp_diffeomorph hr,
+    ContinuousLinearMap.comp_apply]
+  -- The base point `(x, y).2` of the pullback identity is `y` by definition.
+  exact congrArg _ (DomainDependentHomSection.mfderiv_tangentHom_pullback_apply g ν.val hnr
+    (x, y) w)
+
 /-- **Transport in charts.** Let `χ` be a chart of `M` and `ψ` a chart of `N` with
 `χ = ψ ∘ g` and `χ⁻¹ = g⁻¹ ∘ ψ⁻¹`, such as `g ≫ ψ`. Read in a chart `φ` of the domain and in
 `χ`, the pulled-back term `g^* ν` is `ν` read in `φ` and `ψ`. -/
@@ -249,17 +273,8 @@ theorem chartTerm_pullback {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G
     (φ : OpenPartialHomeomorph P ℂ) {χ : OpenPartialHomeomorph M G}
     {ψ : OpenPartialHomeomorph N G} (hχ : ⇑χ = ψ ∘ g) (hχs : ⇑χ.symm = g.symm ∘ ψ.symm) :
     (ν.pullback g hnr).chartTerm φ χ = ν.chartTerm φ ψ := by
-  have hr : (r : ℕ∞ω) ≠ 0 := ENat.coe_ne_zero_of_add_one_le hnr
   funext z v
-  set y := g.symm (ψ.symm v) with hy_def
-  have hy : g y = ψ.symm v := g.apply_symm_apply _
-  rw [chartTerm_apply, chartTerm_apply, hχs, Function.comp_apply, ← hy_def, hχ,
-    mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply, ← hy]
-  have h := DomainDependentHomSection.mfderiv_tangentHom_pullback_apply g ν.val hnr (φ.symm z, y)
-    (mfderiv 𝓘(ℝ, ℂ) IP φ.symm z (1 : ℂ))
-  rw [g.mfderiv_comp_diffeomorph hr, ContinuousLinearMap.comp_apply]
-  -- `h` is stated at the base point `(φ.symm z, y).2`, which is `y` by definition.
-  erw [h]
+  rw [chartTerm_apply, chartTerm_apply, ν.mvfderiv_val_tangentHom_pullback g hnr hχ hχs]
 
 /-- **Transport in charts.** Read in a chart `φ` of the domain and the chart `g ≫ ψ` of `M`, the
 pulled-back term `g^* ν` is `ν` read in `φ` and `ψ`. -/
@@ -269,6 +284,37 @@ theorem chartTerm_pullback_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace
     (ν.pullback g hnr).chartTerm φ (g.toHomeomorph.toOpenPartialHomeomorph.trans ψ) =
       ν.chartTerm φ ψ :=
   ν.chartTerm_pullback g hnr φ rfl rfl
+
+section Extend
+
+variable {HQ Q : Type*} [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ ℂ HQ} [TopologicalSpace Q]
+  [ChartedSpace HQ Q] [IsManifold IQ ∞ Q] {jQ : ContMDiffAlmostComplexStructure IQ n Q}
+  {JQ : ContMDiffAlmostComplexStructureFamily I' N IQ Q n}
+
+/-- **Transport in extended charts.** Let `χ` be a chart of `M` and `ψ` a chart of `N` with
+`χ = ψ ∘ g` and `χ⁻¹ = g⁻¹ ∘ ψ⁻¹`, such as `g ≫ ψ`. Read in the extended chart of a chart `φ` of a
+domain `Q` modelled on `ℂ`, possibly with corners, and in `χ`, the pulled-back term `g^* ν` is `ν`
+read in `φ` and `ψ`. -/
+theorem chartTermExtend_pullback {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (νQ : InhomogeneousTerm jQ JQ) (φ : OpenPartialHomeomorph Q HQ)
+    {χ : OpenPartialHomeomorph M G} {ψ : OpenPartialHomeomorph N G} (hχ : ⇑χ = ψ ∘ g)
+    (hχs : ⇑χ.symm = g.symm ∘ ψ.symm) :
+    (νQ.pullback g hnr).chartTermExtend φ χ = νQ.chartTermExtend φ ψ := by
+  funext z v
+  rw [chartTermExtend_apply, chartTermExtend_apply,
+    νQ.mvfderiv_val_tangentHom_pullback g hnr hχ hχs]
+
+/-- **Transport in extended charts.** Read in the extended chart of a chart `φ` of the domain and
+in the chart `g ≫ ψ` of `M`, the pulled-back term `g^* ν` is `ν` read in `φ` and `ψ`. -/
+@[simp]
+theorem chartTermExtend_pullback_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (νQ : InhomogeneousTerm jQ JQ) (φ : OpenPartialHomeomorph Q HQ)
+    (ψ : OpenPartialHomeomorph N G) :
+    (νQ.pullback g hnr).chartTermExtend φ (g.toHomeomorph.toOpenPartialHomeomorph.trans ψ) =
+      νQ.chartTermExtend φ ψ :=
+  chartTermExtend_pullback g hnr νQ φ rfl rfl
+
+end Extend
 
 end InhomogeneousTerm
 

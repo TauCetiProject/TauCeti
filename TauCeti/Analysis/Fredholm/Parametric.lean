@@ -121,6 +121,9 @@ spaces or of the scalar field is required.
   projection is surjective exactly when `D₁` is.
 * `ContinuousLinearMap.index_parameterProj`: for a surjective total linearization, the
   projection has the same index as `D₁`.
+* `ContinuousLinearMap.finrank_ker_add_finrank_range_parameterProj` and
+  `ContinuousLinearMap.finrank_range_parameterProj_add_finrank_quotient_range`: the dimension
+  counts of the kernel of the total linearization and, when it is onto, of the parameters.
 * `ContinuousLinearMap.isOpenMap_rangeFactorization_parameterProj`: the projection is open onto
   its range when `D₁` is.
 * `ContinuousLinearMap.isFredholm_parameterProj`: when `E` has continuous addition and `Λ`
@@ -709,6 +712,22 @@ theorem finrank_ker_coprod_add_finrank_range_parameterToCoker
   rw [ker_parameterToCoker] at hparam
   omega
 
+/-- The kernel of the total linearization splits into a copy of the kernel of `D₁` and the range
+of the parameter projection. -/
+theorem finrank_ker_add_finrank_range_parameterProj [FiniteDimensional 𝕜 (D₁.coprod D₂).ker] :
+    finrank 𝕜 D₁.ker + finrank 𝕜 (parameterProj D₁ D₂).range =
+      finrank 𝕜 (D₁.coprod D₂).ker := by
+  rw [← finrank_ker_parameterProj D₁ D₂, add_comm]
+  exact (parameterProj D₁ D₂).toLinearMap.finrank_range_add_finrank_ker
+
+/-- For a surjective total linearization, the parameters split into the range of the parameter
+projection and a copy of the cokernel of `D₁`. -/
+theorem finrank_range_parameterProj_add_finrank_quotient_range [FiniteDimensional 𝕜 Λ]
+    (hD : Function.Surjective (D₁.coprod D₂)) :
+    finrank 𝕜 (parameterProj D₁ D₂).range + finrank 𝕜 (F ⧸ D₁.range) = finrank 𝕜 Λ := by
+  rw [← finrank_quotient_range_parameterProj D₁ D₂ hD, add_comm]
+  exact Submodule.finrank_quotient_add_finrank _
+
 /-- The extended cokernel is smaller by the rank of the parameter map
 into the old cokernel. No finiteness of the parameter space is needed. -/
 theorem finrank_quotient_range_coprod_add_finrank_range_parameterToCoker
@@ -730,6 +749,19 @@ theorem index_coprod [FiniteDimensional 𝕜 D₁.ker]
   have hker := finrank_ker_coprod_add_finrank_range_parameterToCoker D₁ D₂
   have hcoker := finrank_quotient_range_coprod_add_finrank_range_parameterToCoker D₁ D₂
   rw [index_eq_finrank_sub, index_eq_finrank_sub]
+  omega
+
+/-- **The index from a surjective stabilization.** If adjoining finitely many domain variables
+makes `D₁` surjective, the index of `D₁` is the dimension of the kernel of the extension minus the
+number of variables, provided the kernel of `D₁` is finite dimensional. The cokernel of `D₁` is
+then finite dimensional too, spanned by the parameter directions. -/
+theorem index_eq_finrank_ker_coprod_sub_of_surjective [FiniteDimensional 𝕜 D₁.ker]
+    [FiniteDimensional 𝕜 Λ] (h : Function.Surjective (D₁.coprod D₂)) :
+    D₁.index = finrank 𝕜 (D₁.coprod D₂).ker - finrank 𝕜 Λ := by
+  have : FiniteDimensional 𝕜 (F ⧸ D₁.range) := Module.Finite.of_surjective _
+    ((parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 h)
+  have hi := index_coprod D₁ D₂
+  rw [index_of_surjective _ h] at hi
   omega
 
 end Dimension

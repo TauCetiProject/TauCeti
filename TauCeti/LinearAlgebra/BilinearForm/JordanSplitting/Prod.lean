@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
-import TauCeti.LinearAlgebra.Submodule.Prod
+import TauCeti.LinearAlgebra.Submodule.Prod.Basic
 
 /-!
 # Jordan splittings of orthogonal sums

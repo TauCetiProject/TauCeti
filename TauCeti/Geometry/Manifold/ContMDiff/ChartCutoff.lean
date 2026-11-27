@@ -36,6 +36,8 @@ space to a manifold.
 * `OpenPartialHomeomorph.contMDiff_indicator_comp_extend`: for a chart `e` of the maximal atlas,
   a `C^n` function on the model space with compact support in the target of the extended chart,
   read in the chart and extended by zero outside the chart source, is `C^n`.
+* `OpenPartialHomeomorph.exists_contMDiff_eq_comp_prodMap`: the same through the product of two
+  charts, giving a compactly supported `C^n` function on a product of manifolds.
 * `TauCeti.Manifold.exists_contMDiff_comp_extChartAt_symm_eq`: a `C^n` function on the model
   space with compact support in the chart target is the coordinate expression of a compactly
   supported `C^n` function on the manifold.
@@ -144,6 +146,32 @@ theorem contMDiff_indicator_comp_extend (he : e ∈ IsManifold.maximalAtlas I n 
   refine ContMDiffAt.congr_of_eventuallyEq (f := w ∘ e.extend I) ?_
     (Filter.eventually_of_mem (e.open_source.mem_nhds hys) fun z hz ↦ indicator_of_mem hz _)
   exact hw.contMDiff.contMDiffAt.comp _ (e.contMDiffAt_extend he hys)
+
+omit [NormedSpace 𝕜 F] in
+/-- **Transplanting a function through a product chart.** For charts `e` of `M` and `e'` of `M'`
+in the maximal `C^n` atlases, and a `C^n` function `v` on the product of the model spaces with
+compact support in the product of the targets of the extended charts, there is a compactly
+supported `C^n` function `K` on `M × M'` equal to `v` read through `e` and `e'` on the product of
+the chart sources, and to `0` elsewhere. -/
+theorem exists_contMDiff_eq_comp_prodMap [NormedSpace 𝕜 F] {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] [T2Space M'] [IsManifold I n M]
+    [IsManifold I' n M'] {e' : OpenPartialHomeomorph M' H'}
+    (he : e ∈ IsManifold.maximalAtlas I n M) (he' : e' ∈ IsManifold.maximalAtlas I' n M')
+    {v : E × E' → F} (hv : ContDiff 𝕜 n v) (hvc : HasCompactSupport v)
+    (hvt : tsupport v ⊆ (e.extend I).target ×ˢ (e'.extend I').target) :
+    ∃ K : M × M' → F, ContMDiff (I.prod I') 𝓘(𝕜, F) n K ∧ HasCompactSupport K ∧
+      (∀ p ∈ e.source ×ˢ e'.source, K p = v (e.extend I p.1, e'.extend I' p.2)) ∧
+        ∀ p ∉ e.source ×ˢ e'.source, K p = 0 := by
+  -- `K` is `v` read through the product chart `e × e'` of the maximal atlas of `M × M'`.
+  have hEt : tsupport v ⊆ ((e.prod e').extend (I.prod I')).target := by
+    simpa [extend_prod] using hvt
+  refine ⟨(e.prod e').source.indicator (v ∘ (e.prod e').extend (I.prod I')),
+    contMDiff_indicator_comp_extend (IsManifold.mem_maximalAtlas_prod he he') hv hvc hEt,
+    (hvc.isCompact.image_of_continuousOn
+      ((e.prod e').continuousOn_extend_symm.mono hEt)).of_isClosed_subset (isClosed_tsupport _)
+      (tsupport_indicator_comp_extend_subset hvc hEt),
+    fun p hp ↦ by simp [hp], fun p hp ↦ indicator_of_notMem (by simpa using hp) _⟩
 
 end OpenPartialHomeomorph
 

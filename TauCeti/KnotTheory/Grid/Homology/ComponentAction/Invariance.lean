@@ -8,7 +8,9 @@ module
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.Invariance
 public import TauCeti.KnotTheory.Grid.Homology.ComponentAction.Naturality
+public import TauCeti.KnotTheory.Grid.Homology.Transpose
 public import TauCeti.KnotTheory.Grid.Move.Stabilization
+public import TauCeti.KnotTheory.Grid.Stabilization.Components
 public import TauCeti.KnotTheory.Grid.Stabilization.Homology
 public import TauCeti.KnotTheory.Grid.Stabilization.NorthEast.Basic
 

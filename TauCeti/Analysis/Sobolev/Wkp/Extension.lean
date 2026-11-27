@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 import TauCeti.Analysis.Sobolev.CompactSupport
 import TauCeti.Analysis.Sobolev.W1p.Extension
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!

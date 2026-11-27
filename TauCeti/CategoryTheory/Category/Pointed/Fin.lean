@@ -25,7 +25,9 @@ exactly one preimage, and *active* when only the basepoint is sent to the basepo
 factors as an inert map followed by an active map: the inert map collapses the elements which
 `f` sends to the basepoint, and the active map is `f` on the remaining ones. For each
 `1 ≤ i ≤ n` the inert projection `ρ i : ⟨n⟩ ⟶ ⟨1⟩` sends `i` to `1` and everything else to the
-basepoint; these are the maps along which the Segal condition is stated.
+basepoint; these are the maps along which the Segal condition is stated. The fold map
+`fold n : ⟨n⟩ ⟶ ⟨1⟩` sending every element other than the basepoint to `1` is the unique active
+map to `⟨1⟩`; the multi-operations of an `∞`-operad lie over it.
 
 ## Main definitions
 
@@ -34,6 +36,7 @@ basepoint; these are the maps along which the Segal condition is stated.
 * `TauCeti.FinPointed.inert`, `TauCeti.FinPointed.active`: the inert and the active maps, both
   closed under composition.
 * `TauCeti.FinPointed.ρ i`: the inert projection `⟨n⟩ ⟶ ⟨1⟩` at `i`.
+* `TauCeti.FinPointed.fold n`: the fold map `⟨n⟩ ⟶ ⟨1⟩`.
 * `TauCeti.FinPointed.inertActiveFactorizationData`: the factorization of a map as an inert map
   followed by an active map.
 
@@ -42,6 +45,8 @@ basepoint; these are the maps along which the Segal condition is stated.
 * `CategoryTheory.Pointed.exists_iso_finPointed`: every finite pointed type is isomorphic to some
   `⟨n⟩`.
 * `TauCeti.FinPointed.isInert_ρ`: the projections `ρ i` are inert.
+* `TauCeti.FinPointed.isActive_fold`, `TauCeti.FinPointed.eq_fold_of_isActive`: the fold map is
+  the unique active map `⟨n⟩ ⟶ ⟨1⟩`.
 
 ## References
 
@@ -181,6 +186,33 @@ lemma isInert_ρ (i : Fin n.len) : (ρ i).IsInert := by
   refine ⟨i.succ, by simp, fun i' h ↦ ?_⟩
   by_contra h'
   simp [ρ_toFun, h'] at h
+
+/-- The fold map `⟨n⟩ ⟶ ⟨1⟩`, sending every element other than the basepoint to `1`. It is the
+unique active map to `⟨1⟩` (`FinPointed.eq_fold_of_isActive`); multi-operations of an
+`∞`-operad lie over it. -/
+def fold (n : FinPointed.{u}) : n ⟶ mk 1 :=
+  ⟨fun j ↦ if j = 0 then 0 else 1, by simp⟩
+
+lemma fold_toFun (j : Fin (n.len + 1)) : (fold n).toFun j = if j = 0 then 0 else 1 :=
+  (rfl)
+
+/-- The fold map is active. -/
+lemma isActive_fold (n : FinPointed.{u}) : (fold n).IsActive := by
+  intro j hj
+  by_contra h
+  simp [fold_toFun, h] at hj
+
+/-- The fold map is the only active map `⟨n⟩ ⟶ ⟨1⟩`. -/
+lemma eq_fold_of_isActive (f : n ⟶ mk 1) (hf : f.IsActive) : f = fold n := by
+  ext j
+  rw [fold_toFun]
+  split_ifs with h
+  · rw [h, Hom.map_zero]
+  · obtain h' | h' := Fin.eq_zero_or_eq_succ (f.toFun j)
+    · exact absurd (hf j h') h
+    · obtain ⟨k, hk⟩ := h'
+      rw [hk, Fin.fin_one_eq_zero k]
+      rfl
 
 /-! ### The inert-active factorization -/
 

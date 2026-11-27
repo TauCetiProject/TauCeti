@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Affine
 public import Mathlib.Analysis.Convex.Function
 public import TauCeti.Analysis.Convex.Lifting.Basic
+public import TauCeti.Analysis.Convex.Lifting.SupportRows
 import Mathlib.Algebra.Order.Hom.Monoid
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Prod
@@ -47,6 +48,15 @@ so the shared rows are valid and at least as tight as the direct ones with the s
 height space this follows from differentiability. On coordinates in `J` the outer derivatives may
 have either sign. No monotonicity of `h` itself enters the first inclusion.
 
+For the outer sum `h y = ∑ j, y j` with the sum of the coordinate projections as outer derivative,
+every outer row is the sum of the heights, so the rows become the finite support rows of
+`TauCeti.ConvexLifting.sharedRows` and `TauCeti.ConvexLifting.independentRows`: the coordinates
+`j` of the component rows at all anchors are the support rows of the height `y j`. With
+unrestricted heights the shared approximation is then `sharedRows`, so its projection is cut out by
+the sum of the coordinatewise row maxima, equivalently by every mixed choice of one anchor per
+coordinate. The direct approximation is the projection of `independentRows`, cut out by the
+same-anchor choices only.
+
 The inner map `g` is differentiated within `D` and the outer function `h` within `E`, so anchors
 and heights may lie on the boundary of the domains. Only the full-space comparison for a monotone
 `h` takes derivatives of `h` on the whole height space.
@@ -80,12 +90,25 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
 * `TauCeti.ConvexLifting.fst_image_sharedOuterApproxOn_eq_directOuterApprox` and
   `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_eq_directOuterApprox`: the two inclusions
   combined into an equality.
+* `TauCeti.ConvexLifting.mem_sharedOuterApprox_sum_coord_iff`: with at least one anchor, for the
+  outer sum, membership in the shared approximation is membership in the shared support rows
+  together with the height condition `z.2 ∈ E`.
+* `TauCeti.ConvexLifting.sharedOuterApprox_univ_sum_coord_eq_sharedRows`,
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_univ_sum_coord`,
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_univ_sum_coord_eq_forall` and
+  `TauCeti.ConvexLifting.directOuterApprox_sum_coord_eq_fst_image_independentRows`: for the outer
+  sum, the shared and direct approximations as shared and independent support rows.
 * `TauCeti.ConvexLifting.sharedOuterApprox_empty_heights`,
   `TauCeti.ConvexLifting.sharedOuterApproxOn_empty_heights`,
   `TauCeti.ConvexLifting.directOuterApprox_of_isEmpty`,
   `TauCeti.ConvexLifting.sharedOuterApproxOn_of_isEmpty` and
   `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_of_isEmpty`: the degenerate cases of no
   admissible heights and no anchors.
+* `TauCeti.ConvexLifting.directOuterApprox_of_isEmpty_heightCoords`,
+  `TauCeti.ConvexLifting.sharedOuterApprox_of_isEmpty_heightCoords`,
+  `TauCeti.ConvexLifting.sharedOuterApproxOn_of_isEmpty_heightCoords` and
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_of_isEmpty_heightCoords`: the degenerate case
+  of no height coordinates, where every row reduces to the scalar condition `h 0 ≤ b`.
 
 ## References
 
@@ -94,6 +117,9 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
   pairs, keeps affine inner coordinates as equalities and assumes monotonicity of the outer
   function in the other coordinates; here the budget is a fixed scalar and the sign condition is
   stated for the outer derivatives at the anchors.
+* J. Kronqvist, A. Lundell and T. Westerlund, *Reformulations for utilizing separability when
+  solving convex MINLP problems*, Journal of Global Optimization 71 (2018), 571–592, §3,
+  Eqs. (4)–(7) and Proposition 1, p. 574.
 -/
 
 public section
@@ -380,6 +406,43 @@ theorem fst_image_sharedOuterApprox_of_isEmpty [IsEmpty κ] (hE : E.Nonempty) :
     Prod.fst '' sharedOuterApprox D E g h a Dg Dh b = D := by
   rw [sharedOuterApprox_of_isEmpty, fst_image_prod _ hE]
 
+/-- With no height coordinates and at least one anchor, every direct row is the scalar `h 0`, so
+the direct approximation is the set of points of the domain satisfying `h 0 ≤ b`. -/
+@[simp]
+theorem directOuterApprox_of_isEmpty_heightCoords [IsEmpty ι] [Nonempty κ] :
+    directOuterApprox D g h a Dg Dh b = {x | x ∈ D ∧ h 0 ≤ b} := by
+  have hDh : ∀ i v, Dh i v = 0 := fun i v ↦ by rw [Subsingleton.elim v 0, map_zero]
+  ext x
+  simp [directRow_def, hDh, Subsingleton.elim (g _) 0]
+
+/-- With no height coordinates and at least one anchor, every component row is dominated and every
+outer row is the scalar `h 0`, so the shared approximation is the set of pairs of a point of the
+domain and an admissible height, provided `h 0 ≤ b`. -/
+@[simp]
+theorem sharedOuterApprox_of_isEmpty_heightCoords [IsEmpty ι] [Nonempty κ] :
+    sharedOuterApprox D E g h a Dg Dh b = {z | z.1 ∈ D ∧ z.2 ∈ E ∧ h 0 ≤ b} := by
+  have hDh : ∀ i v, Dh i v = 0 := fun i v ↦ by rw [Subsingleton.elim v 0, map_zero]
+  ext z
+  simp [outerRow_def, hDh, Subsingleton.elim (g _) 0, Subsingleton.elim (componentRow g _ _ _) z.2]
+
+/-- With no height coordinates and at least one anchor, the exact rows on `J` are vacuous, so the
+shared approximation with exact rows on `J` is the set of pairs of a point of the domain and an
+admissible height, provided `h 0 ≤ b`. -/
+@[simp]
+theorem sharedOuterApproxOn_of_isEmpty_heightCoords [IsEmpty ι] [Nonempty κ] :
+    sharedOuterApproxOn J D E g h a Dg Dh b = {z | z.1 ∈ D ∧ z.2 ∈ E ∧ h 0 ≤ b} := by
+  ext z
+  simp [sharedOuterApprox_of_isEmpty_heightCoords]
+
+/-- With no height coordinates and at least one anchor, the shared approximation projects onto the
+points of the domain satisfying `h 0 ≤ b`, provided the unique height `0` is admissible. -/
+theorem fst_image_sharedOuterApprox_of_isEmpty_heightCoords [IsEmpty ι] [Nonempty κ] :
+    Prod.fst '' sharedOuterApprox D E g h a Dg Dh b = {x | x ∈ D ∧ 0 ∈ E ∧ h 0 ≤ b} := by
+  ext x
+  simp only [sharedOuterApprox_of_isEmpty_heightCoords, mem_image, mem_ofPred_eq, Prod.exists,
+    exists_and_right, exists_eq_right]
+  exact ⟨fun ⟨y, hx, hy, hb⟩ ↦ ⟨hx, Subsingleton.elim y 0 ▸ hy, hb⟩, fun h ↦ ⟨0, h⟩⟩
+
 /-! ### The comparison theorems -/
 
 /-- **Shared rows contain the original set.** Assume that `g` maps `D` into `E`, that the
@@ -535,5 +598,73 @@ theorem originalSet_subset_directOuterApprox [Finite ι] (hc : ConvexOn ℝ D (h
       (mem_originalSet_iff.1 hx).2⟩
 
 end Sets
+
+/-! ### The outer sum: finite support rows -/
+
+section SumCoord
+
+open ContinuousLinearMap (proj)
+
+variable [Fintype ι] {D : Set X} {E : Set (ι → ℝ)} {g : X → ι → ℝ} {a : κ → X}
+  {Dg : κ → X →L[ℝ] ι → ℝ} {b : ℝ}
+
+/-- **Shared heights for the outer sum are shared support rows.** For the outer sum and at least one
+anchor, a pair lies in the shared approximation exactly when its height is admissible and the pair
+lies in `sharedRows` whose support rows for the coordinate `j` are the coordinates `j` of the
+component rows at all anchors. -/
+theorem mem_sharedOuterApprox_sum_coord_iff [Fintype κ] [Nonempty κ] {z : X × (ι → ℝ)} :
+    z ∈ sharedOuterApprox D E g (fun y ↦ ∑ j, y j) a Dg (fun _ ↦ ∑ j, proj j) b ↔
+      z ∈ sharedRows D (fun j i x ↦ componentRow g (a i) (Dg i) x j) (fun _ ↦ Finset.univ) b ∧
+        z.2 ∈ E := by
+  simp only [mem_sharedOuterApprox, outerRow_sum_coord, forall_and, forall_const, Pi.le_def,
+    mem_sharedRows_iff, Finset.mem_univ]
+  rw [forall_comm (α := κ)]
+  tauto
+
+/-- For the outer sum, unrestricted heights and at least one anchor, the shared approximation is
+`sharedRows` whose support rows for the coordinate `j` are the coordinates `j` of the component
+rows at all anchors. -/
+theorem sharedOuterApprox_univ_sum_coord_eq_sharedRows [Fintype κ] [Nonempty κ] :
+    sharedOuterApprox D univ g (fun y ↦ ∑ j, y j) a Dg (fun _ ↦ ∑ j, proj j) b =
+      sharedRows D (fun j i x ↦ componentRow g (a i) (Dg i) x j) (fun _ ↦ Finset.univ) b := by
+  ext z
+  rw [mem_sharedOuterApprox_sum_coord_iff, and_iff_left (mem_univ _)]
+
+/-- **Shared heights for the outer sum through row maxima.** For the outer sum, unrestricted heights
+and finitely many anchors, at least one, the shared approximation projects onto the points of `D`
+at which the coordinatewise maxima of the component rows over all anchors sum to at most `b`. -/
+theorem fst_image_sharedOuterApprox_univ_sum_coord [Fintype κ] [Nonempty κ] :
+    Prod.fst '' sharedOuterApprox D univ g (fun y ↦ ∑ j, y j) a Dg (fun _ ↦ ∑ j, proj j) b =
+      {x | x ∈ D ∧ ∑ j, Finset.univ.sup' Finset.univ_nonempty
+        (fun i ↦ componentRow g (a i) (Dg i) x j) ≤ b} := by
+  rw [sharedOuterApprox_univ_sum_coord_eq_sharedRows,
+    fst_image_sharedRows fun _ ↦ Finset.univ_nonempty]
+
+/-- **Shared heights for the outer sum through mixed choices of anchors.** For the outer sum,
+unrestricted heights and finitely many anchors, at least one, the shared approximation projects onto
+the points of `D` at which, for every choice `c j` of an anchor for each coordinate `j`, the
+coordinates `j` of the component rows at `a (c j)` sum to at most `b`. -/
+theorem fst_image_sharedOuterApprox_univ_sum_coord_eq_forall [Finite κ] [Nonempty κ] :
+    Prod.fst '' sharedOuterApprox D univ g (fun y ↦ ∑ j, y j) a Dg (fun _ ↦ ∑ j, proj j) b =
+      {x | x ∈ D ∧ ∀ c : ι → κ, ∑ j, componentRow g (a (c j)) (Dg (c j)) x j ≤ b} := by
+  have := Fintype.ofFinite κ
+  ext x
+  rw [sharedOuterApprox_univ_sum_coord_eq_sharedRows]
+  simpa only [mem_image, Prod.exists, exists_and_right, exists_eq_right, mem_ofPred_eq,
+    Finset.mem_univ, implies_true, true_implies] using
+    exists_mem_sharedRows_iff_forall_sum_le (fun _ ↦ Finset.univ_nonempty) x
+
+/-- **Direct rows for the outer sum are independent support rows.** For the outer sum, the direct
+approximation is the projection of `independentRows` whose rows at the anchor `i` are the
+coordinates of the component row at `a i`, with the budget `b` at every anchor: each direct row is
+the sum of the coordinates of the component row at the same anchor. -/
+theorem directOuterApprox_sum_coord_eq_fst_image_independentRows :
+    directOuterApprox D g (fun y ↦ ∑ j, y j) a Dg (fun _ ↦ ∑ j, proj j) b =
+      Prod.fst '' independentRows D (fun i j x ↦ componentRow g (a i) (Dg i) x j) fun _ ↦ b := by
+  rw [fst_image_independentRows]
+  ext x
+  simp
+
+end SumCoord
 
 end TauCeti.ConvexLifting

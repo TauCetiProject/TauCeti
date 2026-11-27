@@ -24,8 +24,10 @@ import TauCeti.LinearAlgebra.Alternating.Alternatization
 This file constructs the paired wedge of continuous alternating maps on real modules with a
 topology. Its determinant normalization is the signed-permutation sum divided by the two input
 factorials. It provides bilinearity and pullback compatibility for general topological coefficient
-spaces, including the flip law, and transports a degree equality in the first factor through the
-wedge (`ContinuousAlternatingMap.pairedWedge_apply_of_left_eq_smul_cast`). A pairing that turns
+spaces, including the flip law and its consequence that a form of odd degree wedges to zero with
+itself along a symmetric pairing (`ContinuousAlternatingMap.pairedWedge_self_eq_zero_of_odd`), and
+transports a degree equality in the first factor through the wedge
+(`ContinuousAlternatingMap.pairedWedge_apply_of_left_eq_smul_cast`). A pairing that turns
 multiplication by one scalar into multiplication by another, such as a complex-bilinear pairing,
 makes the paired wedge semilinear in the same way, and the paired wedge is natural for coefficient
 maps intertwining two pairings.
@@ -528,6 +530,28 @@ theorem pairedWedge_comm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
     pairedWedge mu hmu phi psi v =
       (-1 : ℝ) ^ (k * l) • pairedWedge mu hmu psi phi (v ∘ Fin.cast (Nat.add_comm l k)) :=
   pairedWedge_flip_of_forall_apply_eq mu hmu mu hmu (fun a b ↦ hsymm b a) phi psi v
+
+/-- Commutativity of the paired wedge along a symmetric pairing when the product of the degrees
+is even, for instance when one of the two forms has even degree. -/
+theorem pairedWedge_comm_of_even {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
+    (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
+    (hsymm : ∀ a b, mu a b = mu b a) (hkl : Even (k * l))
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₁) (v : Fin (k + l) → E) :
+    pairedWedge mu hmu phi psi v =
+      pairedWedge mu hmu psi phi (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  rw [pairedWedge_comm hmu hsymm phi psi v, hkl.neg_one_pow, one_smul]
+
+/-- A form of odd degree wedges to zero with itself along a symmetric pairing. For real one-forms
+this is `a ∧ a = 0`. -/
+theorem pairedWedge_self_eq_zero_of_odd {k : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
+    (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
+    (hsymm : ∀ a b, mu a b = mu b a) (hk : Odd k) (phi : E [⋀^Fin k]→L[ℝ] F₁) :
+    pairedWedge mu hmu phi phi = 0 := by
+  ext v
+  have h := pairedWedge_comm hmu hsymm phi phi v
+  rw [Fin.cast_refl, Function.comp_id, (hk.mul hk).neg_one_pow, neg_one_smul,
+    eq_neg_iff_add_eq_zero, ← two_smul ℝ, smul_eq_zero] at h
+  simpa using h
 
 /-- Wedge with a degree-zero form on the left pairs its value on the empty tuple with the other
 form. -/
