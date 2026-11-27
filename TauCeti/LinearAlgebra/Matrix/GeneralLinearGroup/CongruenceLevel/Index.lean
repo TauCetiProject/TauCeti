@@ -27,12 +27,6 @@ variable {A : Type*} [CommRing A] (I : Ideal A)
 
 open Matrix
 
-private theorem eq_of_smul_affineRow_eq {x y : A ⧸ I} (u : (A ⧸ I)ˣ)
-    (h : u • (![x, 1] : Fin 2 → A ⧸ I) = ![y, 1]) : x = y := by
-  have hu : (u : A ⧸ I) = 1 := by
-    simpa [Pi.smul_apply, Units.smul_def] using congrFun h 1
-  simpa [Pi.smul_apply, Units.smul_def, hu] using congrFun h 0
-
 private theorem index_GL2K0_eq_zero [Infinite (A ⧸ I)] : (GL2K0 I).index = 0 := by
   let lift := Function.surjInv (Ideal.Quotient.mk_surjective (I := I))
   let g (x : A ⧸ I) := transvectionUnit (one_ne_zero : (1 : Fin 2) ≠ 0) (lift x)
@@ -47,15 +41,11 @@ private theorem index_GL2K0_eq_zero [Infinite (A ⧸ I)] : (GL2K0 I).index = 0 :
     Infinite.of_injective (fun x ↦ Quotient.mk _ (g x)) fun x y h ↦ by
       obtain ⟨u, hu⟩ := GL2K0.rightRel_iff.mp (Quotient.exact h)
       rw [hrow, hrow] at hu
-      exact eq_of_smul_affineRow_eq I u hu
+      exact eq_of_smul_vecCons_one_eq (a := (u : A ⧸ I)) (by simpa only [Units.smul_def] using hu)
   exact Nat.card_eq_zero_of_infinite
 
 private theorem index_GL2K1_eq_zero [Infinite (A ⧸ I)] : (GL2K1 I).index = 0 :=
   eq_zero_of_zero_dvd (index_GL2K0_eq_zero I ▸ Subgroup.index_dvd_of_le (GL2K1.le_GL2K0 I))
-
-private theorem isUnimodular_affineRow (x : A ⧸ I) :
-    Module.IsUnimodular (A ⧸ I) (![x, 1] : Fin 2 → A ⧸ I) :=
-  IsUnit.isUnimodular_pi (i := 1) (by simp)
 
 /-- The index of `K₁(I)` is the `Nat.card` of the unimodular rows of `(A ⧸ I)²`.
 Both sides are zero when `A ⧸ I` is infinite. -/
@@ -66,8 +56,8 @@ theorem GL2K1.index_eq_card :
       ← Nat.card_congr (QuotientGroup.quotientRightRelEquivQuotientLeftRel _),
       Nat.card_congr (GL2K1.rightCosetEquiv I (hasStableRangeLE_one_of_finite_maximalSpectrum _))]
   · have : Infinite {v : Fin 2 → A ⧸ I // Module.IsUnimodular (A ⧸ I) v} :=
-      Infinite.of_injective (fun x ↦ ⟨![x, 1], isUnimodular_affineRow I x⟩) fun _ _ h ↦
-        congrArg (fun v ↦ v.val 0) h
+      Infinite.of_injective (fun x ↦ ⟨![x, 1], IsUnit.isUnimodular_pi (i := 1) (by simp)⟩)
+        fun _ _ h ↦ congrArg (fun v ↦ v.val 0) h
     rw [index_GL2K1_eq_zero I, Nat.card_eq_zero_of_infinite]
 
 /-- The index of `K₀(I)` is the `Nat.card` of the projective line `ℙ¹(A ⧸ I)`.
@@ -82,9 +72,12 @@ theorem GL2K0.index_eq_card :
   · have : Infinite (MulAction.orbitRel.Quotient (A ⧸ I)ˣ
         (Module.unimodularSubMulAction (A ⧸ I) (Fin 2 → A ⧸ I))) :=
       Infinite.of_injective (fun x ↦ Quotient.mk _ ⟨![x, 1],
-        Module.mem_unimodularSubMulAction.mpr (isUnimodular_affineRow I x)⟩) fun x y h ↦ by
-        obtain ⟨u, hu⟩ := MulAction.orbitRel_apply.mp (Quotient.exact h)
-        exact (eq_of_smul_affineRow_eq I u (congrArg Subtype.val hu)).symm
+        Module.mem_unimodularSubMulAction.mpr (IsUnit.isUnimodular_pi (i := 1) (by simp))⟩)
+        fun x y h ↦ by
+          obtain ⟨u, hu⟩ := MulAction.orbitRel_apply.mp (Quotient.exact h)
+          symm
+          exact eq_of_smul_vecCons_one_eq (a := (u : A ⧸ I)) (by
+            simpa only [SubMulAction.val_smul, Units.smul_def] using congrArg Subtype.val hu)
     rw [index_GL2K0_eq_zero I, Nat.card_eq_zero_of_infinite]
 
 /-- The index of `K₁(I)` is the product of the factor indices under a finite product decomposition

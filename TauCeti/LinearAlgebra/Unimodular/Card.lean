@@ -67,6 +67,8 @@ theorem card_isUnimodular_prod :
     (fun _ ↦ (inferInstance : Semiring (ULift.{u} S))) k
   let e := (RingEquiv.piFinTwo B).trans (RingEquiv.prodCongr ULift.ringEquiv ULift.ringEquiv)
   rw [card_isUnimodular_congr ι e, card_isUnimodular_pi, Fin.prod_univ_two]
+  -- Reduce the local family `B` and its `Fin.cases` instances at the two indices
+  -- so that the two cardinality factors can be rewritten using `ULift.ringEquiv`.
   change Nat.card {w : ι → ULift.{v} R // Module.IsUnimodular (ULift.{v} R) w} *
     Nat.card {w : ι → ULift.{u} S // Module.IsUnimodular (ULift.{u} S) w} = _
   rw [← card_isUnimodular_congr ι (ULift.ringEquiv : ULift.{v} R ≃+* R),
