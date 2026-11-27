@@ -8,12 +8,14 @@ module
 public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 
 /-!
-# Isomorphisms and rebased spectral sequences
+# Morphisms, isomorphisms, and rebased spectral sequences
 
 The components of an isomorphism `e : E ≅ E'` of spectral sequences at each position of each page
 are inverse to each other (`CategoryTheory.SpectralSequence.hom_inv_id_hom_f`,
 `CategoryTheory.SpectralSequence.inv_hom_id_hom_f`), and carry vanishing differentials to vanishing
-differentials (`CategoryTheory.SpectralSequence.d_eq_zero_of_iso`).
+differentials (`CategoryTheory.SpectralSequence.d_eq_zero_of_iso`). A morphism of spectral
+sequences also commutes with the inverses of the isomorphisms between the homology of a page and
+the next page (`CategoryTheory.SpectralSequence.Hom.hom_f_comp_iso_inv`).
 
 A spectral sequence `E` starting on page `r₀` can be restricted to start on any later page `s ≥ r₀`
 (`CategoryTheory.SpectralSequence.fromPage`), preserving all pages and homology identifications from
@@ -55,6 +57,15 @@ lemma d_eq_zero_of_iso (e : E ≅ E') {r : ℤ} (hr : r₀ ≤ r) {i j : κ}
     _ = (e.inv.hom r hr).f i ≫ (E.page r hr).d i j ≫ (e.hom.hom r hr).f j := by
         rw [Category.assoc, (e.hom.hom r hr).comm]
     _ = 0 := by simp [h]
+
+/-- A morphism of spectral sequences commutes with the inverses of the isomorphisms between the
+homology of a page and the next page: this is the inverse form of `Hom.comm`. -/
+@[reassoc]
+lemma Hom.hom_f_comp_iso_inv (f : E ⟶ E') (r r' : ℤ) (pq : κ) (hrr' : r + 1 = r' := by lia)
+    (hr : r₀ ≤ r := by lia) :
+    (f.hom r').f pq ≫ (E'.iso r r' pq hrr' hr).inv =
+      (E.iso r r' pq hrr' hr).inv ≫ HomologicalComplex.homologyMap (f.hom r hr) pq := by
+  rw [Iso.comp_inv_eq, Category.assoc, f.comm r r' pq hrr' hr, Iso.inv_hom_id_assoc]
 
 end Iso
 

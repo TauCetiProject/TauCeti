@@ -600,6 +600,18 @@ theorem tendsto_intervalBaseOrbit_atTop (hC : 0 < C) :
   rw [funext (intervalBaseOrbit_eq_intervalBaseFlow C)]
   exact tendsto_intervalBaseFlow_atTop hC (Ioo_subset_Ioc_self inv_sqrt_two_mem_Ioo)
 
+/-- For `C > 0`, the trajectory `q` tends to `0` from above at `-∞`. -/
+theorem tendsto_intervalBaseOrbit_atBot_nhdsGT (hC : 0 < C) :
+    Tendsto (intervalBaseOrbit C) atBot (𝓝[>] 0) :=
+  tendsto_nhdsWithin_iff.2
+    ⟨tendsto_intervalBaseOrbit_atBot hC, .of_forall fun s ↦ (intervalBaseOrbit_mem_Ioo C s).1⟩
+
+/-- For `C > 0`, the trajectory `q` tends to `1` from below at `+∞`. -/
+theorem tendsto_intervalBaseOrbit_atTop_nhdsLT (hC : 0 < C) :
+    Tendsto (intervalBaseOrbit C) atTop (𝓝[<] 1) :=
+  tendsto_nhdsWithin_iff.2
+    ⟨tendsto_intervalBaseOrbit_atTop hC, .of_forall fun s ↦ (intervalBaseOrbit_mem_Ioo C s).2⟩
+
 /-- The trajectory `q` is a negative gradient trajectory of the base potential. -/
 theorem isIntegralCurve_intervalBaseOrbit (C : ℝ) :
     IsIntegralCurve (intervalBaseOrbit C) (fun _ t ↦ -∇ (intervalBasePotential C) t) := by

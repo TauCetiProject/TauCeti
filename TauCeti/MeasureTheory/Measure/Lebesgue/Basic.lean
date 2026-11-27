@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Lebesgue measure of intervals and centered interval differences
@@ -27,7 +29,9 @@ Pulling real Lebesgue measure on `(0,T]` back to `ℝ≥0` commutes with restric
 and the resulting finite-horizon measure has total mass `T`.
 
 On a finite coordinate space `ι → ℝ`, permuting the coordinates and changing their signs
-preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
+preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`). In particular the reflection
+`(s, t) ↦ (-s, t)` of the plane preserves Lebesgue measure
+(`LinearIsometryEquiv.measurePreserving_negFst`).
 
 The Lebesgue measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of
 their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
@@ -43,7 +47,9 @@ A rectangle in `ℝ × ℝ` whose sides have lengths at least `ℓ ≤ r` and `�
 radius `r` about each of its points, a square for the sup norm, in a set of area at least `ℓ ℓ'`
 (`TauCeti.ofReal_mul_ofReal_le_volume_Ioo_prod_Ioo_inter_ball`), however long the rectangle is.
 This is the uniform lower bound on the local measure of a domain under which Sobolev estimates on
-rectangles of unbounded length have uniform constants.
+rectangles of unbounded length have uniform constants. In the other direction, the part of
+`[a, b]` in the interval of radius `r` about `y` has length at most `b - max a (y - r)`
+(`TauCeti.volume_Icc_inter_ball_le`).
 -/
 
 public section
@@ -124,6 +130,13 @@ theorem volume_preserving_signedPerm {ι : Type*} [Fintype ι] (e : Equiv.Perm �
   exact hmul.comp
     (volume_preserving_arrowCongr' e.symm (MeasurableEquiv.refl ℝ) (MeasurePreserving.id _))
 
+/-- The reflection `(s, t) ↦ (-s, t)` of the plane preserves Lebesgue measure. -/
+theorem _root_.LinearIsometryEquiv.measurePreserving_negFst :
+    MeasurePreserving (LinearIsometryEquiv.negFst ℝ ℝ ℝ) := by
+  rw [LinearIsometryEquiv.coe_negFst, Measure.volume_eq_prod]
+  exact (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
+    (MeasurePreserving.id (volume : Measure ℝ))
+
 /-- The measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of their
 lengths `max (a i) (b i) - min (a i) (b i)`. -/
 theorem volume_biUnion_uIoc_eq_ofReal_sum {ι : Type*} (I : Finset ι) (a b : ι → ℝ)
@@ -160,6 +173,16 @@ theorem ofReal_le_volume_Ioo_inter_ball {a b x r ℓ : ℝ} (hℓr : ℓ ≤ r) 
   refine ENNReal.ofReal_le_ofReal (le_sub_iff_add_le'.2 (le_inf ?_ ?_))
   · exact (le_sub_iff_add_le.1 (sup_le (by linarith) (by linarith [hx.2])))
   · exact (le_sub_iff_add_le.1 (sup_le (by linarith [hx.1]) (by linarith)))
+
+open Metric in
+/-- The part of `[a, b]` in the interval `ball y r = (y - r, y + r)` lies in
+`[max a (y - r), b]`, so its length is at most `b - max a (y - r)`. -/
+theorem volume_Icc_inter_ball_le {a b y r : ℝ} :
+    volume (Icc a b ∩ ball y r) ≤ ENNReal.ofReal (b - max a (y - r)) := by
+  rw [← Real.volume_Icc]
+  refine measure_mono fun z ⟨hz, hz'⟩ => ?_
+  rw [Real.ball_eq_Ioo] at hz'
+  exact ⟨max_le hz.1 hz'.1.le, hz.2⟩
 
 open Metric in
 /-- If `ℓ, ℓ' ≤ r`, then a rectangle in `ℝ × ℝ` with sides of lengths at least `ℓ` and `ℓ'` meets

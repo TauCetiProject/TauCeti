@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.WithTop.Untop0
 public import Mathlib.Topology.Algebra.InfiniteSum.Group
 public import Mathlib.Topology.Algebra.Valued.ValuationTopology
 public import TauCeti.RingTheory.HahnSeries.Valuation
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
+public import TauCeti.RingTheory.LaurentSeries.Valuation.Basic
 
 import TauCeti.RingTheory.LaurentSeries.Cartier
 import TauCeti.RingTheory.Valuation.Integral.Basic
@@ -20,7 +22,9 @@ import TauCeti.RingTheory.Valuation.Integral.Basic
 The Puiseux field `puiseuxField K ⊆ HahnSeries ℚ K` inherits from the rational Hahn series the
 additive valuation `ord = orderTop` with values in `WithTop ℚ`, and the multiplicative valuation
 `exp (-ord)` with values in `ℚᵐ⁰`. This file restricts both to the Puiseux field and gives it the
-resulting valuation topology, through a `Valued` instance.
+resulting valuation topology, through a `Valued` instance. After the inclusion `ℚ → ℝ`, the order
+is also a real additive valuation, extending the real order valuation of `K⸨X⸩`; real values are
+what the general Newton-polygon API expects of heights.
 
 On the level-`n` copy of `K⸨X⸩`, embedded by `X ↦ t ^ (1 / n)`, the Puiseux order is the integer
 order of the Laurent series divided by `n`. Consequently each level embedding is a topological
@@ -43,6 +47,7 @@ has them all in its support.
 * `TauCeti.puiseuxField.addVal K`: the additive valuation `ord` on the Puiseux field.
 * `TauCeti.puiseuxField.valuation K`: the multiplicative valuation `exp (-ord)`, which defines the
   `Valued` instance on `puiseuxField K`.
+* `TauCeti.puiseuxField.realAddVal K`: the order `ord` as a real additive valuation.
 
 ## Main results
 
@@ -50,6 +55,8 @@ has them all in its support.
   equivalence between valuation bounds at `1` and sign of the rational order.
 * `TauCeti.puiseuxField.addVal_levelEmbedding`: on level `n`, the order is the integer order
   divided by `n`.
+* `TauCeti.puiseuxField.realAddVal_algebraMap`: on `K⸨X⸩`, the real order valuation of the
+  Puiseux field is `LaurentSeries.realAddVal K`.
 * `TauCeti.puiseuxField.hasBasis_nhds_zero`: the order balls form a basis of neighbourhoods of
   zero, and `TauCeti.puiseuxField.tendsto_iff_addVal_sub` is the resulting convergence criterion.
 * `TauCeti.puiseuxField.isEmbedding_levelEmbedding`: every level embedding is a topological
@@ -166,6 +173,62 @@ theorem div_le_addVal_levelEmbedding_iff (n : ℕ+) (f : K⸨X⸩) (k : ℤ) :
   | coe m =>
     rw [WithTop.map_coe, WithTop.coe_le_coe, WithTop.coe_le_coe,
       div_le_div_iff_of_pos_right (by positivity), Int.cast_le]
+
+/-! ### The real valuation -/
+
+variable (K) in
+/-- The order of a Puiseux series as a real additive valuation: the rational order
+`TauCeti.puiseuxField.addVal K` after the inclusion `ℚ → ℝ`. A nonzero series of order `q` has
+valuation `q`, and zero has valuation `⊤`. Real values are what the general Newton-polygon API
+expects of heights. -/
+noncomputable def realAddVal : AddValuation (puiseuxField K) (WithTop ℝ) :=
+  (addVal K).map
+    { (Rat.castHom ℝ).toAddMonoidHom.withTopMap with
+      monotone' := WithTop.monotone_map_iff.mpr fun _ _ h => Rat.cast_le.mpr h }
+    rfl
+
+/-- The real valuation of a Puiseux series is its rational order, cast to the reals. -/
+theorem realAddVal_apply (x : puiseuxField K) :
+    realAddVal K x = (addVal K x).map ((↑) : ℚ → ℝ) :=
+  -- By construction, `realAddVal K` is `addVal K` followed by `WithTop.map`.
+  (rfl)
+
+/-- Only the zero Puiseux series has infinite real valuation. -/
+theorem realAddVal_eq_top_iff {x : puiseuxField K} : realAddVal K x = ⊤ ↔ x = 0 :=
+  (realAddVal K).top_iff
+
+/-- The real valuation of `x` is the rational number `q` exactly when the order of `x` is `q`. -/
+theorem realAddVal_eq_ratCast_iff {x : puiseuxField K} {q : ℚ} :
+    realAddVal K x = ((q : ℝ) : WithTop ℝ) ↔ addVal K x = q := by
+  rw [realAddVal_apply, ← WithTop.map_coe ((↑) : ℚ → ℝ) q]
+  exact (WithTop.map_injective Rat.cast_injective).eq_iff
+
+/-- `WithTop.untop₀` of the real valuation is the real cast of `WithTop.untop₀` of the order, for
+every Puiseux series including zero. -/
+@[simp]
+theorem untop₀_realAddVal (x : puiseuxField K) :
+    (realAddVal K x).untop₀ = ((addVal K x).untop₀ : ℝ) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rw [realAddVal_apply, ← WithTop.coe_untop₀_of_ne_top ((addVal K).ne_top_iff.mpr hx),
+    WithTop.map_coe, WithTop.untop₀_coe, WithTop.untop₀_coe]
+
+/-- On level `n`, the real valuation of the Puiseux field is the integer order of `K⸨X⸩` divided
+by `n`. -/
+theorem realAddVal_levelEmbedding (n : ℕ+) (f : K⸨X⸩) :
+    realAddVal K (levelEmbedding K n f) = f.orderTop.map fun k : ℤ ↦ (k : ℝ) / n := by
+  rw [realAddVal_apply, addVal_levelEmbedding, WithTop.map_map]
+  congr 1
+  funext k
+  simp
+
+/-- On the Laurent-series field `K⸨X⸩`, the real valuation of the Puiseux field is the real order
+valuation `LaurentSeries.realAddVal K`. -/
+@[simp]
+theorem realAddVal_algebraMap (f : K⸨X⸩) :
+    realAddVal K (algebraMap K⸨X⸩ (puiseuxField K) f) = LaurentSeries.realAddVal K f := by
+  rw [algebraMap_laurentSeries_apply, realAddVal_levelEmbedding, LaurentSeries.realAddVal_apply]
+  simp
 
 /-! ### The valuation topology -/
 

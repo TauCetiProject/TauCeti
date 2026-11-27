@@ -465,8 +465,7 @@ theorem configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq {K K'
       have := hpos c (Or.inl hc)
       rw [hcls c hc, map_nsmul, nsmul_eq_mul] at this
       exact pos_of_mul_pos_right this (Nat.cast_nonneg _)
-    have hinj : Function.Injective fun n : ℕ ↦ n • A₀ := .of_comp (f := ω) <| by
-      simpa only [Function.comp_def, map_nsmul] using (nsmul_left_strictMono hA₀).injective
+    have hinj := ω.nsmul_left_injective_of_map_ne_zero hA₀.ne'
     -- The class `j • A₀` is at most `A` in area, as `U` has a configuration in class `A - j • A₀`.
     have hj : ω (j • A₀) ≤ ω A := by
       have := area_nonneg_of_mem_compatibleConfigurations

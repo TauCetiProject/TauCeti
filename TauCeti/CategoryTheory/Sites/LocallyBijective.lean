@@ -27,6 +27,9 @@ along the sieve on which a given section lifts through a locally surjective morp
 (`CategoryTheory.Presheaf.ext_of_isLocallySurjective`), and that at an object whose only
 covering sieve is the maximal one, such as the terminal object of a local site, a locally
 injective (resp. locally surjective) morphism is injective (resp. surjective) on sections.
+A locally injective morphism out of a constant presheaf is injective on sections over every
+object that the empty sieve does not cover
+(`CategoryTheory.Presheaf.injective_app_of_isLocallyInjective_const`).
 -/
 
 public section
@@ -92,5 +95,17 @@ lemma injective_app_of_isLocallyInjective {F G : Cᵒᵖ ⥤ Type w} (η : F ⟶
     [IsLocallyInjective J η] {X : C} (hX : ∀ S ∈ J X, S = ⊤) :
     Function.Injective (η.app (op X)) := fun x y hxy ↦
   (equalizerSieve_eq_top_iff (F := F) x y).mp (hX _ (equalizerSieve_mem J η x y hxy))
+
+/-- At an object `X` that is not covered by the empty sieve, a locally injective morphism out of
+a constant presheaf is injective on sections: two distinct sections of a constant presheaf agree
+after restriction along no morphism, so their equalizer sieve is empty. -/
+lemma injective_app_of_isLocallyInjective_const {A : Type*} [Category* A] {FA : A → A → Type*}
+    {CA : A → Type*} [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory A FA] {N : A}
+    {G : Cᵒᵖ ⥤ A} (η : (Functor.const Cᵒᵖ).obj N ⟶ G) [IsLocallyInjective J η] {X : C}
+    (hX : ⊥ ∉ J X) : Function.Injective (η.app (op X)) := fun x y hxy ↦ by
+  by_contra hne
+  refine hX (J.superset_covering (fun W k hk ↦ hne ?_) (equalizerSieve_mem J η x y hxy))
+  -- The constant presheaf on `N` maps `k.op` to the identity of `N`.
+  simpa using hk
 
 end CategoryTheory.Presheaf

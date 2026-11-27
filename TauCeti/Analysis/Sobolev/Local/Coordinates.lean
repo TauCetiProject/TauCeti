@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Complex.OperatorNorm
 
@@ -13,9 +14,10 @@ import TauCeti.Analysis.Complex.OperatorNorm
 # Coordinates of local Sobolev maps
 
 A map into a finite-dimensional real normed space is locally Sobolev of order `k` if and
-only if all its coordinates in a finite basis are. The same criterion holds for local `Lᵖ`
-membership. These criteria allow scalar local estimates to be applied to vector-valued maps
-without choosing compatible representatives of their iterated weak derivatives.
+only if all its coordinates in a finite basis are (the local `Lᵖ` criterion
+`Module.Basis.memLpLoc_iff` lives in `TauCeti.MeasureTheory.Function.MemLpLoc`). These
+criteria allow scalar local estimates to be applied to vector-valued maps without choosing
+compatible representatives of their iterated weak derivatives.
 
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
 They also show that testing one basis is equivalent to testing every basis.
@@ -66,12 +68,6 @@ theorem memWkpLoc_iff (b : Module.Basis ι ℝ F) :
       intro i _
       exact (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
     simpa only [b.sum_repr] using hs
-
-/-- Local `Lᵖ` membership can be tested in any finite basis. No completeness of the
-codomain is needed. -/
-theorem memLpLoc_iff (b : Module.Basis ι ℝ F) :
-    MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) := by
-  simpa only [memWkpLoc_zero_iff] using b.memWkpLoc_iff (p := p) (U := U) (k := 0) (f := f)
 
 /-- Real functions `v i` in `MemWkpLoc p U k`, one for each vector of a finite basis `b` of `F`,
 are the coordinates in `b` of a single function `ℂ → F` in `MemWkpLoc p U k`. -/

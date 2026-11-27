@@ -41,6 +41,8 @@ continuous `G`-set because `G` is compact and stabilizers are open.
 * `ContAction.sheafEquiv G`: for compact `G`, sheaves of sets on finite continuous `G`-sets are
   equivalent to smooth `G`-sets (`Action.SmoothSet G`, from
   `TauCeti.CategoryTheory.Action.Smooth`).
+* `ContAction.fromSheafFullyFaithful G`: for compact `G`, taking stalks is fully faithful on
+  sheaves of sets.
 
 ## Main results
 
@@ -172,6 +174,16 @@ theorem germ_map (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u)
     (z : P.obj (op T)) :
     germ P S s (P.map f.op z) = germ P T ((fiberFunctor G).map f s) z :=
   (point G).toPresheafFiber_w_apply f s P z
+
+/-- The map of stalks induced by a morphism of presheaves commutes with the action of `G`. -/
+theorem presheafFiber_map_smul {P Q : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u} (φ : P ⟶ Q)
+    (g : G) (x : ((stalk G).obj P).V) :
+    (point G).presheafFiber.map φ (g • x) =
+      HSMul.hSMul (β := ((stalk G).obj Q).V) g ((point G).presheafFiber.map φ x) :=
+  -- The action on the right is the one on the stalk `((stalk G).obj Q).V`, which is
+  -- `(point G).presheafFiber.obj Q` by definition. By definition of `stalk`, the underlying map
+  -- of `(stalk G).map φ` is `(point G).presheafFiber.map φ`, and it is a morphism of `G`-sets.
+  ConcreteCategory.congr_hom (((stalk G).map φ).comm g) x
 
 /-- The stalk of a presheaf is a smooth `G`-set. -/
 theorem isSmooth_stalk (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u) :
@@ -535,5 +547,10 @@ theorem sheafEquiv_functor : (sheafEquiv G).functor = fromSheaf G :=
 @[simp]
 theorem sheafEquiv_inverse : (sheafEquiv G).inverse = toSheaf G :=
   (rfl)
+
+/-- For compact `G`, taking stalks is a fully faithful functor from sheaves of sets on finite
+continuous `G`-sets to smooth `G`-sets. -/
+noncomputable def fromSheafFullyFaithful : (fromSheaf G).FullyFaithful :=
+  (sheafEquiv G).fullyFaithfulFunctor
 
 end ContAction
