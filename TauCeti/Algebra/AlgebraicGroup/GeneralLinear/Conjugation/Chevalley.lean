@@ -129,7 +129,8 @@ theorem discr_genericMatrix_ne_zero : (genericMatrix R n).discr ≠ 0 := by
   rw [map_zero, ← AlgHom.coe_toRingHom, ← Matrix.discr_map] at h
   refine (Matrix.discr_diagonal_ne_zero_iff (d := fun i ↦ (t i : L))).2 ?_ ?_
   · intro i j hij
-    simpa [t, Fin.val_inj] using e.injective (sub_left_injective hij)
+    simp only [t, Units.val_mk0] at hij
+    simpa [Fin.val_inj] using e.injective (sub_left_injective hij)
   · simpa [map_genericMatrix_diagonalPoint] using h
 
 /-- A class function of `GLₙ` over a domain vanishing at every diagonal point with values in an
@@ -358,30 +359,28 @@ theorem charpolyCoeffAlgHom_surjective : Function.Surjective (charpolyCoeffAlgHo
   obtain ⟨Q, hQ⟩ := (AlgHom.mem_range _).1 <| MvPolynomial.range_vietaAlgHom R n ▸
     mem_symmetricSubalgebra_of_genericDiagonal hf hp
   -- Since `c₀ = (-1)ⁿ t₁ ⋯ tₙ` at the generic diagonal point, the preimage of `f` is
-  -- `(-1)^(nm) Q / c₀^m`.
-  let s : R := (-1) ^ (n * m)
-  let x : MvPolynomial (Fin n) R := MvPolynomial.X 0
-  let F := charpolyCoeffAlgHom R n
-    (algebraMap _ _ (MvPolynomial.C s * Q) * IsLocalization.Away.invSelf x ^ m)
-  have hF : F * charpolyCoeffAlgHom R n (algebraMap _ _ x) ^ m =
-      charpolyCoeffAlgHom R n (algebraMap _ _ (MvPolynomial.C s * Q)) := by
-    rw [← map_pow, ← map_mul, mul_assoc, ← mul_pow, mul_comm (IsLocalization.Away.invSelf x),
-      IsLocalization.Away.mul_invSelf, one_pow, mul_one]
-  -- Both `F` and `f` are class functions, so it suffices to compare their values at `δ`.
-  refine ⟨algebraMap _ _ (MvPolynomial.C s * Q) * IsLocalization.Away.invSelf x ^ m,
-    Subtype.ext (eq_of_genericDiagonal (f := (F : coordinateHopfAlgebra R n)) ?_ hf ?_)⟩
+  -- `(-1)^(nm) Q / c₀^m`. Both it and `f` are class functions, so it suffices to compare their
+  -- values at `δ`.
+  refine ⟨algebraMap _ _ ((-1) ^ (n * m) * Q) *
+      IsLocalization.Away.invSelf (MvPolynomial.X 0 : MvPolynomial (Fin n) R) ^ m,
+    Subtype.ext (eq_of_genericDiagonal ?_ hf ?_)⟩
   · exact HopfAlgebra.conjugationInvariants_eq_classFunctions R (coordinateHopfAlgebra R n) ▸
-      F.property
+      Subtype.property _
+  set F := charpolyCoeffAlgHom R n (algebraMap _ _ ((-1) ^ (n * m) * Q) *
+    IsLocalization.Away.invSelf (MvPolynomial.X 0 : MvPolynomial (Fin n) R) ^ m) with hF_def
+  have hF : F * charpolyCoeffAlgHom R n
+        (algebraMap _ _ (MvPolynomial.X 0 : MvPolynomial (Fin n) R)) ^ m =
+      charpolyCoeffAlgHom R n (algebraMap _ _ ((-1) ^ (n * m) * Q)) := by
+    rw [hF_def, ← map_pow, ← map_mul, mul_assoc, ← mul_pow,
+      mul_comm (IsLocalization.Away.invSelf _), IsLocalization.Away.mul_invSelf, one_pow, mul_one]
+  have hx : MvPolynomial.vietaAlgHom R n (MvPolynomial.X 0) =
+      (-1) ^ n * ∏ j : Fin n, MvPolynomial.X j := by
+    rw [MvPolynomial.vietaAlgHom_X, Fin.val_zero, MvPolynomial.prod_X_sub_C_coeff_zero]
   -- Read `hF` at `δ`: `δ(F) · ((-1)ⁿ t₁ ⋯ tₙ)^m = (-1)^(nm) p`.
   have h1 := congrArg (fun y : HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n) ↦
     δ.ofConv (y : coordinateHopfAlgebra R n)) hF
-  simp only [Subalgebra.coe_mul, Subalgebra.coe_pow, map_mul, map_pow, hδ] at h1
-  have hx : MvPolynomial.vietaAlgHom R n x = (-1) ^ n * ∏ j : Fin n, MvPolynomial.X j := by
-    simp only [x, MvPolynomial.vietaAlgHom_X, Fin.val_zero, MvPolynomial.prod_X_sub_C_coeff_zero]
-  simp only [hQ, hx, ← MvPolynomial.algebraMap_eq, AlgHom.commutes, map_mul, mul_pow, map_pow,
-    map_neg, map_one, ← pow_mul, ← IsScalarTower.algebraMap_apply] at h1
-  have hs : algebraMap R (DiagRing R n) s = (-1) ^ (n * m) := by simp [s]
-  rw [hs] at h1
+  simp only [Subalgebra.coe_mul, Subalgebra.coe_pow, Subalgebra.coe_neg, Subalgebra.coe_one,
+    map_mul, map_pow, map_neg, map_one, hδ, hx, hQ] at h1
   -- Comparing with `hp`, `δ(F) - δ(f)` is killed by a unit.
   have key : (δ.ofConv F - δ.ofConv f) * ((-1) ^ (n * m) *
         algebraMap (MvPolynomial (Fin n) R) (DiagRing R n) (∏ i : Fin n, MvPolynomial.X i) ^ m) =
