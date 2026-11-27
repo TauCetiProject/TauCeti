@@ -42,7 +42,7 @@ this file provides:
 
 ## Main results
 
-* `TauCeti.MilnorK.map_steinbergRelations_eq`: `TauCeti.steinbergRelations R` corresponds to
+* `TauCeti.MilnorK.map_symbolGroupRelations_eq`: `TauCeti.SymbolGroup.relations R` corresponds to
   `TauCeti.MilnorK.steinbergRelations R 2` under `TauCeti.tensorProductEquivTensorSquare`.
 * `TauCeti.MilnorK.degreeTwoEquiv_map`: naturality of `degreeTwoEquiv` with respect to ring
   homomorphisms.
@@ -156,14 +156,14 @@ theorem gradedMap_comp {S : Type v} {T : Type w} [CommRing S] [CommRing T]
 /-! ### Degree-two identification `K₂ᴹ ≃ SymbolGroup R` -/
 
 /-- Under `TauCeti.tensorProductEquivTensorSquare`, the binary Steinberg relation submodule
-`TauCeti.steinbergRelations R` corresponds to `TauCeti.MilnorK.steinbergRelations R 2`. -/
-theorem map_steinbergRelations_eq (R : Type u) [CommRing R] :
-    (TauCeti.steinbergRelations R).map
+`TauCeti.SymbolGroup.relations R` corresponds to `TauCeti.MilnorK.steinbergRelations R 2`. -/
+theorem map_symbolGroupRelations_eq (R : Type u) [CommRing R] :
+    (SymbolGroup.relations R).map
       (TauCeti.tensorProductEquivTensorSquare ℤ (Additive Rˣ)).toLinearMap =
       steinbergRelations R 2 := by
   refine le_antisymm ?_ ?_
   · rintro _ ⟨t, ht, rfl⟩
-    rw [TauCeti.steinbergRelations_eq_span] at ht
+    rw [SymbolGroup.relations_eq_span] at ht
     refine Submodule.span_induction
       (p := fun t _ ↦
         (TauCeti.tensorProductEquivTensorSquare ℤ (Additive Rˣ)) t ∈ steinbergRelations R 2)
@@ -186,14 +186,14 @@ theorem map_steinbergRelations_eq (R : Type u) [CommRing R] :
     rw [hfun]
     refine ⟨Additive.ofMul (f 0) ⊗ₜ Additive.ofMul (f 1), ?_,
       TauCeti.tensorProductEquivTensorSquare_tmul ℤ (Additive Rˣ) _ _⟩
-    rw [TauCeti.steinbergRelations_eq_span]
+    rw [SymbolGroup.relations_eq_span]
     exact Submodule.subset_span ⟨f 0, f 1, hab, rfl⟩
 
 /-- Canonical identification `MilnorK.degree R 2 ≃ₗ[ℤ] SymbolGroup R`. -/
 noncomputable def degreeTwoEquiv (R : Type u) [CommRing R] :
     degree R 2 ≃ₗ[ℤ] SymbolGroup R :=
   (degreeEquiv R 2).symm.trans
-    (Submodule.Quotient.equiv (TauCeti.steinbergRelations R) (steinbergRelations R 2)
+    (Submodule.Quotient.equiv (SymbolGroup.relations R) (steinbergRelations R 2)
       -- Re-synthesize `[Ring ℤ]` / `AddCommGroup.toIntModule` instances expected by
       -- `Submodule.Quotient.equiv` at `implicit` transparency (unlike
       -- `tensorProductEquivTensorSquare`, which carries `[CommSemiring ℤ]` and
@@ -202,7 +202,7 @@ noncomputable def degreeTwoEquiv (R : Type u) [CommRing R] :
       (by
         -- Both `Submodule.map` applications agree definitionally (same underlying map, differing
         -- only in those `ℤ`-module instance wrappers).
-        rw [← map_steinbergRelations_eq R]
+        rw [← map_symbolGroupRelations_eq R]
         congr 1)).symm
 
 /-- `degreeTwoEquiv` sends the product `ofUnit a * ofUnit b` to `SymbolGroup.symbol a b`. -/
@@ -259,7 +259,10 @@ theorem map_steinbergRelations_le {R : Type u} [CommRing R] {S : Type w} [CommRi
   rintro _ ⟨g, k, hk, hab, rfl⟩
   rw [SetLike.mem_coe, Submodule.mem_comap, PiTensorProduct.map_tprod]
   have hfun : (fun i : Fin n ↦ (Units.map f.toMonoidHom).toAdditive.toIntLinearMap
-      (Additive.ofMul (g i))) = fun k ↦ Additive.ofMul ((Units.map f.toMonoidHom ∘ g) k) := rfl
+      (Additive.ofMul (g i))) = fun k ↦ Additive.ofMul ((Units.map f.toMonoidHom ∘ g) k) := by
+    funext i
+    simp only [AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive, toMul_ofMul,
+      Function.comp_apply]
   rw [hfun]
   exact tprod_mem_steinbergRelations (Units.map f.toMonoidHom ∘ g) k hk (by simp [← map_add, hab])
 
@@ -331,11 +334,16 @@ theorem degreeEquiv_map {R : Type u} [CommRing R] {S : Type w} [CommRing S]
     have ha : (fun k : Fin n ↦ Additive.ofMul (a k).toMul) = a :=
       funext fun k ↦ ofMul_toMul (a k)
     have hmap : (fun i : Fin n ↦ (Units.map f.toMonoidHom).toAdditive.toIntLinearMap (a i)) =
-        fun k ↦ Additive.ofMul (Units.map f.toMonoidHom (a k).toMul) := rfl
+        fun k ↦ Additive.ofMul (Units.map f.toMonoidHom (a k).toMul) := by
+      funext k
+      simp only [AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive, Function.comp_apply]
     simp only [Submodule.Quotient.mk_smul, map_zsmul, SetLike.val_smul, coe_degreeEquiv_mk,
       quotTensorPowerMap_mk, PiTensorProduct.map_tprod]
     conv_lhs => rw [← ha, ofTensorPower_tprod, map_symbol, List.map_ofFn]
     rw [hmap, ofTensorPower_tprod]
+    simp only [Function.comp_def]
+    -- Both sides now have syntactically identical arguments up to definitional equality of `•` on
+    -- `MilnorK S` (`map_zsmul` vs. `SetLike.val_smul`).
     rfl
   | add w₁ w₂ hw₁ hw₂ =>
     simp only [Submodule.Quotient.mk_add, map_add, Submodule.coe_add] at hw₁ hw₂ ⊢

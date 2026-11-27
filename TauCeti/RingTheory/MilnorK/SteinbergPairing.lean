@@ -28,7 +28,7 @@ classical integral symbol identities: `c a (-a) = 0`, skew-symmetry `c a b = -c 
 relation `c a a = c a (-1)`, and hence `2 • c a a = 0` (with `c a a = 0` in characteristic `2`).
 
 For a commutative semiring `R`, the quotient
-`TauCeti.SymbolGroup R := (Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ steinbergRelations R`
+`TauCeti.SymbolGroup R := (Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ SymbolGroup.relations R`
 is the universal target of Steinberg pairings out of `Rˣ × Rˣ` into abelian groups. When `R` is
 a commutative ring, it is canonically isomorphic to Milnor's `K₂ᴹ(R)`
 (`TauCeti.MilnorK.degreeTwoEquiv`).
@@ -37,10 +37,10 @@ a commutative ring, it is canonically isomorphic to Milnor's `K₂ᴹ(R)`
 
 * `TauCeti.IsSteinbergPairing`: predicate on `c : Rˣ → Rˣ → A` asserting bimultiplicativity and
   vanishing on complementary units `a + b = 1`.
-* `TauCeti.steinbergRelations`: the `ℤ`-submodule of `Additive Rˣ ⊗[ℤ] Additive Rˣ` spanned by
+* `TauCeti.SymbolGroup.relations`: the `ℤ`-submodule of `Additive Rˣ ⊗[ℤ] Additive Rˣ` spanned by
   tensors `a ⊗ b` with `(a : R) + b = 1`.
 * `TauCeti.SymbolGroup`: the degree-two symbol group
-  `(Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ steinbergRelations R`.
+  `(Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ SymbolGroup.relations R`.
 * `TauCeti.SymbolGroup.symbol`: the universal Steinberg pairing `Rˣ → Rˣ → SymbolGroup R`.
 * `TauCeti.SymbolGroup.lift`, `TauCeti.SymbolGroup.liftEquiv`: the universal property identifying
   additive homomorphisms out of `SymbolGroup R` with Steinberg pairings.
@@ -247,22 +247,26 @@ section SymbolGroup
 
 variable (R : Type u) [CommSemiring R]
 
+namespace SymbolGroup
+
 /-- The `ℤ`-submodule of `Additive Rˣ ⊗[ℤ] Additive Rˣ` spanned by the Steinberg relations
 `a ⊗ b` with `(a : R) + b = 1`. -/
-def steinbergRelations : Submodule ℤ (Additive Rˣ ⊗[ℤ] Additive Rˣ) :=
+def relations : Submodule ℤ (Additive Rˣ ⊗[ℤ] Additive Rˣ) :=
   Submodule.span ℤ {x | ∃ a b : Rˣ, (a : R) + b = 1 ∧ x = Additive.ofMul a ⊗ₜ Additive.ofMul b}
 
-/-- Unfolding lemma for `steinbergRelations R`. -/
-theorem steinbergRelations_eq_span :
-    steinbergRelations R =
+/-- Unfolding lemma for `SymbolGroup.relations R`. -/
+theorem relations_eq_span :
+    relations R =
       Submodule.span ℤ
         {x | ∃ a b : Rˣ, (a : R) + b = 1 ∧ x = Additive.ofMul a ⊗ₜ Additive.ofMul b} := by
   rfl
 
-/-- The degree-two symbol group `(Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ steinbergRelations R`, the
+end SymbolGroup
+
+/-- The degree-two symbol group `(Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ SymbolGroup.relations R`, the
 universal target of Steinberg pairings on `Rˣ`; for a commutative ring `R`, it is canonically
 isomorphic to `K₂ᴹ(R)`. -/
-abbrev SymbolGroup : Type u := (Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ steinbergRelations R
+abbrev SymbolGroup : Type u := (Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ SymbolGroup.relations R
 
 namespace SymbolGroup
 
@@ -443,8 +447,8 @@ private def pairingBilin {A : Type v} [AddCommGroup A] (c : Rˣ → Rˣ → A)
 abelian group factors uniquely through a `ℤ`-linear map `SymbolGroup R →ₗ[ℤ] A`. -/
 noncomputable def lift {A : Type v} [AddCommGroup A] (c : Rˣ → Rˣ → A)
     (hc : IsSteinbergPairing c) : SymbolGroup R →ₗ[ℤ] A :=
-  Submodule.liftQ (steinbergRelations R) (TensorProduct.lift (pairingBilin c hc)) (by
-    rw [steinbergRelations, Submodule.span_le]
+  Submodule.liftQ (relations R) (TensorProduct.lift (pairingBilin c hc)) (by
+    rw [relations, Submodule.span_le]
     rintro _ ⟨a, b, hab, rfl⟩
     exact hc.map_add_eq_one a b hab)
 
@@ -454,7 +458,7 @@ theorem lift_symbol {A : Type v} [AddCommGroup A] (c : Rˣ → Rˣ → A)
     (hc : IsSteinbergPairing c) (a b : Rˣ) :
     lift c hc (symbol a b) = c a b := by
   rw [symbol_def]
-  exact (Submodule.liftQ_apply (steinbergRelations R) (TensorProduct.lift (pairingBilin c hc))
+  exact (Submodule.liftQ_apply (relations R) (TensorProduct.lift (pairingBilin c hc))
     (Additive.ofMul a ⊗ₜ Additive.ofMul b)).trans
     (TensorProduct.lift.tmul (f' := pairingBilin c hc) (Additive.ofMul a) (Additive.ofMul b))
 
