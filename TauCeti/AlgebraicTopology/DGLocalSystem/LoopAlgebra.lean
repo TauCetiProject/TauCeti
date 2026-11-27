@@ -49,6 +49,8 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChainMap_cubicalChainPoint`, `TauCeti.loopChainAugmentation_cubicalChainPoint`:
   `C_*(Ωf)` sends the point chain of `γ` to that of `Ωf γ`, and the augmentation sends it to `1`.
 * `TauCeti.loopChainMap_apply`: `C_*(Ωf)` is the push-forward of chains along `Ωf`.
+* `TauCeti.loopChainMap_cubicalChainSumMap`: `C_*(Ωf)` of a push-forward along `φ` is the
+  push-forward along `Ωf ∘ φ`.
 * `TauCeti.loopChainMap_id`, `TauCeti.loopChainMap_comp`: functoriality.
 * `TauCeti.loopChainAugmentation_comp_loopChainMap`: compatibility with the augmentations.
 * `TauCeti.loopChainToGroupAlgebra_differential`,
@@ -176,6 +178,15 @@ theorem loopChainMap_cubicalChainPoint (f : C(B, B')) (hf : f b = b') (γ : Moor
 theorem loopChainMap_apply (f : C(B, B')) (hf : f b = b') (a : loopChainAlgebra B b R) :
     loopChainMap R f hf a = cubicalChainSumMap R (MooreLoopSpace.map f hf).toContinuousMap a :=
   cubicalChainDGAlgHom_apply _ a
+
+/-- `C_*(Ωf)` of the push-forward of a chain along `φ` into the Moore loops is the push-forward
+along `Ωf ∘ φ`. -/
+@[simp]
+theorem loopChainMap_cubicalChainSumMap {X : Type*} [TopologicalSpace X] (f : C(B, B'))
+    (hf : f b = b') (φ : C(X, MooreLoopSpace B b)) (a : normalizedCubicalChainAlgebra X R) :
+    loopChainMap R f hf (cubicalChainSumMap R φ a) =
+      cubicalChainSumMap R ((MooreLoopSpace.map f hf).toContinuousMap.comp φ) a := by
+  rw [loopChainMap_apply, ← LinearMap.comp_apply, ← cubicalChainSumMap_comp]
 
 /-- The identity map induces the identity. -/
 @[simp]

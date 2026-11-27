@@ -429,6 +429,17 @@ noncomputable abbrev twistedCochainComplex (hM : IsDGRightModule h ℳ dM) :
     CochainComplex (ModuleCat.{max uP uM} R) ℤ :=
   TauCeti.twistedCochainComplex m.mem_graded m.twisting hM
 
+/-- The identification of the twisted complexes of two equal twisting cocycles is the identity of
+the underlying functions. -/
+theorem twistedCochainComplexXEquiv_eqToHom_f {m m' : TwistingCocycle 𝒜 d P ind} (hm : m = m')
+    (hM : IsDGRightModule h ℳ dM) (n : ℤ) (g : (m.twistedCochainComplex dM hM).X n) :
+    (twistedCochainComplexXEquiv m'.mem_graded m'.twisting hM n
+        (((CategoryTheory.eqToHom (congrArg (twistedCochainComplex · dM hM) hm)).f n).hom g) :
+          P → M) =
+      twistedCochainComplexXEquiv m.mem_graded m.twisting hM n g := by
+  subst hm
+  rfl
+
 end TwistingCocycle
 
 end TauCeti
