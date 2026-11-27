@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Group.Action
 import TauCeti.Analysis.Semigroups.Group.MeanErgodic
 import TauCeti.Analysis.SpecificLimits.Cesaro.Integral
 import TauCeti.Dynamics.Ergodic.Action.MeanErgodic
+import TauCeti.Analysis.InnerProductSpace.L2.Product
 import TauCeti.MeasureTheory.Function.L2Space
 
 /-!

@@ -18,7 +18,6 @@ import TauCeti.Algebra.Order.Ring.PosPart.Sq
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Inner products of square-integrable functions
@@ -51,8 +50,6 @@ zero with every function
 preserves the L² inner product (`MeasureTheory.Lp.inner_compMeasurePreserving`).
 An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
 almost everywhere on that set (`MeasureTheory.L2.ae_restrict_eq_zero_of_forall_inner_eq_zero`).
-For a finite measure on a product `X × Y`, the indicators of measurable rectangles are total in
-`L²` (`MeasureTheory.Lp.eq_zero_of_forall_inner_indicatorConstLp_prod`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
 product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
@@ -363,24 +360,6 @@ theorem L2.ae_restrict_eq_zero_of_forall_inner_eq_zero {A : Set α} (hA : Measur
   rw [Filter.EventuallyEq, ae_restrict_iff' hA]
   filter_upwards [h0] with x hx hxA
   rwa [Set.indicator_of_mem hxA] at hx
-
-/-- **Indicators of rectangles are total in `L²` of a product space.** For a finite measure `ρ` on
-`X × Y`, a vector of `L²(ρ)` orthogonal to the indicator of every measurable rectangle `A ×ˢ B`
-vanishes. -/
-theorem Lp.eq_zero_of_forall_inner_indicatorConstLp_prod {X Y : Type*} [MeasurableSpace X]
-    [MeasurableSpace Y] {ρ : Measure (X × Y)} [IsFiniteMeasure ρ] (w : Lp 𝕜 2 ρ)
-    (h : ∀ (A : Set X) (B : Set Y) (hA : MeasurableSet A) (hB : MeasurableSet B),
-      ⟪indicatorConstLp 2 (hA.prod hB) (measure_ne_top ρ _) (1 : 𝕜), w⟫_𝕜 = 0) :
-    w = 0 := by
-  have hint : Integrable w ρ := (Lp.memLp w).integrable one_le_two
-  have hrect : ∀ A, MeasurableSet A → ∀ B, MeasurableSet B → ∫ z in A ×ˢ B, w z ∂ρ = 0 :=
-    fun A hA B hB => by
-      rw [← L2.inner_indicatorConstLp_one (hA.prod hB) (measure_ne_top _ _)]
-      exact h A B hA hB
-  have hset := TauCeti.setIntegral_eq_zero_of_forall_prod hint hrect
-  refine Lp.ext ?_
-  exact (ae_eq_zero_of_forall_setIntegral_eq_of_sigmaFinite (fun s _ _ => hint.integrableOn)
-    fun s hs _ => hset s hs).trans (Lp.coeFn_zero 𝕜 2 _).symm
 
 open Filter in
 /-- **The squared `L²` norm of the positive part is differentiable**: on real `L²`, the map
