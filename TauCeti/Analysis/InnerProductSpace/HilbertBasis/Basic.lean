@@ -195,8 +195,8 @@ theorem inner_default_apply (x : ℓ²(ι, 𝕜)) (i : ι) :
 
 open scoped lp in
 /-- The vectors of the standard Hilbert basis of `ℓ²(ι, 𝕜)` are the coordinate vectors
-`lp.single 2 i 1`. -/
-@[simp]
+`lp.single 2 i 1`. Not a simp lemma: it would rewrite `default i` before `inner_default_apply`
+can fire on `⟪default i, x⟫`. -/
 theorem default_apply [DecidableEq ι] (i : ι) :
     (default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)) i = lp.single 2 i 1 :=
   (default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).repr_self i

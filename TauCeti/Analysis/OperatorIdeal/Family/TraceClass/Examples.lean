@@ -80,7 +80,8 @@ theorem diagonalCLM_mem_hilbertSchmidt_iff {ι : Type*} (d : ℓ^∞(ι, 𝕜)) 
   classical
   have h (i : ι) :
       ‖diagonalCLM (p := 2) d ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)) i)‖ₑ ^ 2 = ‖d i ^ 2‖ₑ := by
-    simp [diagonalCLM_single, ← ofReal_norm, lp.norm_single two_pos, ENNReal.ofReal_pow]
+    simp [HilbertBasis.default_apply, diagonalCLM_single, ← ofReal_norm, lp.norm_single two_pos,
+      ENNReal.ofReal_pow]
   rw [mem_finiteSubmodule_hilbertSchmidt_iff _ (default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)),
     ContinuousLinearMap.hilbertSchmidtEnergy_def, tsum_congr h,
     tsum_eNorm_ne_top_iff_summable_norm]
