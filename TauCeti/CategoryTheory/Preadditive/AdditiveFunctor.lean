@@ -217,15 +217,17 @@ Every subfunctor of an additive functor is additive. -/
 theorem simple_obj_iff (F : C ⥤+ D) : Simple F.obj ↔ Simple F := by
   constructor
   · intro hF
-    have : Simple ((forget C D).obj F) := hF
+    have : Simple ((forget C D).obj F) := by simpa only [forget_obj] using hF
     exact (forget C D).simple_of_simple_obj F
   · intro hF
     refine ⟨fun {G} i _ ↦ ?_⟩
     let : F.obj.Additive := F.property
     let G' : C ⥤+ D := ⟨G, Functor.additive_of_mono i⟩
     let j : G' ⟶ F := ObjectProperty.homMk i
-    have : Mono j := (forget C D).mono_of_mono_map (f := j) (inferInstanceAs (Mono i))
-    have hmap : (forget C D).map j = i := rfl
+    have hmap : (forget C D).map j = i := by
+      simp only [forget_map, j, ObjectProperty.homMk_hom]
+    have : Mono j :=
+      (forget C D).mono_of_mono_map (f := j) (by simpa only [hmap] using (inferInstance : Mono i))
     rw [← hmap, isIso_iff_of_reflects_iso j (forget C D), ne_eq, Functor.map_eq_zero_iff]
     exact Simple.mono_isIso_iff_nonzero j
 

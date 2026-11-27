@@ -45,8 +45,10 @@ theorem isFinitelyGeneratedFunctor_of_simple {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
     intro hp
     apply hx
     have he : preadditiveYonedaEquiv p = x := preadditiveYonedaEquiv.apply_symm_apply x
-    rw [hp, preadditiveYonedaEquiv_apply] at he
-    exact he.symm)
+    rw [hp, preadditiveYonedaEquiv_apply, Limits.zero_app] at he
+    refine he.symm.trans ?_
+    exact (congrArg (fun f : _ →+ _ ↦ f (𝟙 Y.unop)) AddCommGrpCat.hom_zero).trans
+      (AddMonoidHom.zero_apply _))
   exact (isFinitelyGeneratedFunctor_preadditiveYoneda_obj Y.unop).of_epi p
 
 variable [HasFiniteBiproducts C] [IsKrullSchmidt C]
