@@ -457,6 +457,7 @@ def _root_.TauCeti.twistedMorseGrading (n : ℤ) :
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- A family lies in degree `n` of the Morse-index grading exactly when it vanishes at every
 critical point whose Morse index is not `-n`. -/
+@[simp]
 theorem _root_.TauCeti.mem_twistedMorseGrading_iff {n : ℤ}
     {c : (p : criticalPoints 𝓘(ℝ, E) f) → L.obj (FundamentalGroupoid.mk (p : M))} :
     c ∈ twistedMorseGrading f L n ↔
