@@ -39,6 +39,9 @@ half-plane (`Complex.re_one_sub_conj_mul_nonneg`; strictly inside it for `z` in 
 As a continuous real-linear equivalence, conjugation is its own inverse (`Complex.conjCLE_symm`,
 the counterpart of Mathlib's `Complex.conjLIE_symm`).
 
+If `c * a = conj c * b` for every complex `c`, then `a = b = 0`
+(`Complex.eq_zero_of_forall_mul_eq_conj_mul`).
+
 The real part of `exp (θ * I) ^ j` is `cos (j θ)` (`Complex.re_exp_ofReal_mul_I_pow`), the real
 part of de Moivre's formula.
 
@@ -373,6 +376,16 @@ theorem re_exp_ofReal_mul_I_pow (θ : ℝ) (j : ℕ) : (exp (θ * I) ^ j).re = R
 @[simp]
 theorem conjCLE_symm : conjCLE.symm = conjCLE := by
   rw [← conjLIE_toCLE, ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm]
+
+/-- If `c * a = conj c * b` for every complex `c`, then `a = 0` and `b = 0`: the cases `c = 1` and
+`c = I` separate the two numbers. -/
+theorem eq_zero_of_forall_mul_eq_conj_mul {a b : ℂ} (h : ∀ c : ℂ, c * a = conj c * b) :
+    a = 0 ∧ b = 0 := by
+  have h₁ := h 1
+  have h₂ := h I
+  simp only [one_mul, map_one, conj_I] at h₁ h₂
+  exact ⟨by linear_combination (h₁ - I * h₂) / 2 + (a + b) / 2 * I_sq,
+    by linear_combination (-h₁ - I * h₂) / 2 + (a + b) / 2 * I_sq⟩
 
 /-- The imaginary part of a conjugate product is bounded by the product of the norms. -/
 theorem abs_im_conj_mul_le (u e : ℂ) : |(conj u * e).im| ≤ ‖u‖ * ‖e‖ := by
