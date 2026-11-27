@@ -366,7 +366,13 @@ private theorem homologyLinearEquivOfCycles_homologyπ {k : ℤ} {N : Type*} [Ad
     LinearMap.comp_apply] at hi
   simp only [homologyLinearEquivOfCycles, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
     Iso.trans_hom, ModuleCat.hom_comp, LinearMap.comp_apply]
-  rw [hπ, ShortComplex.moduleCatLeftHomologyData_π_hom, ← hi]
+  rw [hπ, ShortComplex.moduleCatLeftHomologyData_π_hom, ← hi, Submodule.mkQ_apply,
+    Submodule.quotEquivOfEq_mk]
+  refine (congrArg Subtype.val (LinearMap.quotKerEquivOfSurjective_apply_mk _ _ _)).trans ?_
+  refine (LinearMap.codRestrict_apply _ _ _).trans ?_
+  -- both sides apply `ψ` to the inclusion of the same cycle: the object `K.X k` of the complex
+  -- is by definition the submodule of chains of total degree `k`, and the second component of
+  -- `K.sc' (k + 1) k (k - 1)` is `K.d k (k - 1)`
   rfl
 
 /-- A chain of the model of total degree `k` vanishes once its coefficients that may be nonzero in
@@ -570,8 +576,9 @@ theorem circleMappingTorusComplex.homologyOneKleinBottleLinearEquiv_homologyπ
           ZMod 2)) := by
   rw [homologyOneKleinBottleLinearEquiv, LinearEquiv.trans_apply, homologyOneLinearEquiv_homologyπ,
     LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply, LinearEquiv.trans_apply,
-    Submodule.quotEquivOfEq_mk]
-  rfl
+    Submodule.quotEquivOfEq_mk, AddEquiv.coe_toIntLinearEquiv, RingEquiv.toAddEquiv_eq_coe,
+    RingEquiv.coe_toAddEquiv, Ideal.Quotient.mk_eq_mk]
+  exact Prod.ext rfl (RingHom.congr_fun (Int.quotientSpanNatEquivZMod_comp_Quotient_mk 2) _)
 
 /-- **`H₂ = 0` for the Klein bottle model over `ℤ`**: the edge of the maximum circle has
 boundary twice its vertex, so no nonzero multiple of it is a cycle. -/
