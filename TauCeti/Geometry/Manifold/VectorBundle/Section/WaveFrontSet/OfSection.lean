@@ -127,7 +127,7 @@ theorem notMem_singularSupport_ofSection {u : (x : M) → W x} (hu : LocallyInte
   have hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source := contMDiffOn_baseSetChart V x
   have hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target := contMDiffOn_baseSetChart_symm V x
   have hxc : x ∈ c.source := mem_baseSetChart_source V x
-  have hcα : ∀ y ∈ c.source, c y = extChartAt I x y := fun y _ ↦ by rw [coe_baseSetChart]
+  have hcα : EqOn c (extChartAt I x) c.source := eqOn_baseSetChart_extChartAt V x
   obtain ⟨r, -, hr⟩ := exists_pos_integral_finBasis_addHaar_eq (E := E)
   rw [notMem_singularSupport_iff _ hc hcs (baseSetChart_source_subset V x) hxc]
   refine fun v ↦ (Distribution.notMem_singularSupport_iff (c.map_source hxc)).2
@@ -220,7 +220,7 @@ private theorem localRep_smul_symm_eq {x : M} {ρ : M → ℝ} {k : E → G} {z 
   have hy := c.map_target hz
   have hy' := (FirstJetBundle.mem_baseSet_iff G W).1 (mem_firstJetBundle_baseSet hy)
   rw [FirstJetBundle.localRep_apply, ← symm_eq_extChartAt_symm c (baseSetChart_source_subset _ x)
-    (fun y _ ↦ by rw [coe_baseSetChart]) hz, hρ, one_smul,
+    (eqOn_baseSetChart_extChartAt _ x) hz, hρ, one_smul,
     (trivializationAt G W x).apply_mk_symm hy'.1, c.right_inv hz]
 
 /-- The reading of a distributional section near a point outside its singular support, divided by
@@ -236,7 +236,7 @@ private theorem exists_contMDiff_notMem_dsupport_sub_ofSection {T : BundleDistri
   have hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target := contMDiffOn_baseSetChart_symm V x
   have hct := baseSetChart_source_subset (I := I) (F := G →L[ℝ] ℝ) V x
   have hxc : x ∈ c.source := mem_baseSetChart_source V x
-  have hcα : ∀ y ∈ c.source, c y = extChartAt I x y := fun y _ ↦ by rw [coe_baseSetChart]
+  have hcα : EqOn c (extChartAt I x) c.source := eqOn_baseSetChart_extChartAt V x
   obtain ⟨B, hB, hxB, g, hg, hTg⟩ := exists_contDiffOn_chartDistributionCLM_eq_integral hc hct
     (c.map_source hxc) ((notMem_singularSupport_iff T hc hcs hct hxc).1 hx)
   obtain ⟨r, hr0, hr⟩ := exists_pos_integral_finBasis_addHaar_eq (E := E)

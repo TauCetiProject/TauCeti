@@ -54,7 +54,8 @@ The converse direction of the universal property is
 * `TauCeti.ChartCutoffs.sum_chartTestSection_chartLocalization`: a section supported in a compact
   set is the sum of the chart extensions of its localizations along chart cutoffs.
 * `TauCeti.baseSetChart`: the chart at a point restricted to the base set of the trivialization
-  there and read in the model space, with `TauCeti.coe_baseSetChart`.
+  there and read in the model space, with `TauCeti.coe_baseSetChart` and
+  `TauCeti.eqOn_baseSetChart_extChartAt`.
 * `TauCeti.exists_chart_source_subset_baseSet`: on a boundaryless manifold, every point lies in a
   smooth chart into the model space with smooth inverse, inside the base set of the trivialization
   at that point.
@@ -322,6 +323,12 @@ theorem baseSetChart_source (x : M) :
 theorem coe_baseSetChart (x : M) : ⇑(baseSetChart F I V x) = extChartAt I x := by
   rw [baseSetChart, OpenPartialHomeomorph.coe_extendTrans_refl, OpenPartialHomeomorph.extend_coe,
     extChartAt_coe, OpenPartialHomeomorph.restr_apply]
+
+/-- `baseSetChart F I V x` agrees with the extended chart at `x` on its source, the form in which
+restrictions of the extended chart at `x` are taken as hypotheses. -/
+theorem eqOn_baseSetChart_extChartAt (x : M) :
+    EqOn (baseSetChart F I V x) (extChartAt I x) (baseSetChart F I V x).source :=
+  fun y _ ↦ congrFun (coe_baseSetChart V x) y
 
 /-- The extended chart at `x` inverts `baseSetChart F I V x` on its target. -/
 theorem extChartAt_baseSetChart_symm (x : M) {z : E} (hz : z ∈ (baseSetChart F I V x).target) :
