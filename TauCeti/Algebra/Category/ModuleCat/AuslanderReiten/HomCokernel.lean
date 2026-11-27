@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Algebra
+public import TauCeti.Algebra.Category.ModuleCat.End
 public import TauCeti.CategoryTheory.Linear.HomCokernel.Basic
 public import Mathlib.Algebra.Module.ULift
 public import TauCeti.Algebra.Module.AuslanderReiten.DualPresentation
@@ -30,6 +31,35 @@ namespace TauCeti.FiniteProjectivePresentation
 universe u v w
 
 variable {A : Type u} [Ring A] {N : ModuleCat.{max u v} Aᵐᵒᵖ}
+
+/-- Bundle a functional as a morphism to the lifted right regular module. -/
+def rightTransposeRep {P : Type max u v} [AddCommGroup P] [Module Aᵐᵒᵖ P]
+    (g : P →ₗ[Aᵐᵒᵖ] A) :
+    ModuleCat.of Aᵐᵒᵖ P ⟶ ModuleCat.of Aᵐᵒᵖ (ULift.{v} A) :=
+  ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g)
+
+/-- The bundled transpose representative lifts the values of the original functional. -/
+theorem rightTransposeRep_eq {P : Type max u v} [AddCommGroup P] [Module Aᵐᵒᵖ P]
+    (g : P →ₗ[Aᵐᵒᵖ] A) :
+    rightTransposeRep g = ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g) :=
+  (rfl)
+
+/-- Bundling a transpose representative respects precomposition. -/
+@[simp]
+theorem rightTransposeRep_comp {P P' : Type max u v} [AddCommGroup P] [Module Aᵐᵒᵖ P]
+    [AddCommGroup P'] [Module Aᵐᵒᵖ P']
+    (g : P' →ₗ[Aᵐᵒᵖ] A) (f : P →ₗ[Aᵐᵒᵖ] P') :
+    rightTransposeRep (g ∘ₗ f) = ModuleCat.ofHom f ≫ rightTransposeRep g :=
+  ModuleCat.ofHom_comp f (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g)
+
+/-- Left multiplication on functionals becomes postcomposition on their representatives. -/
+@[simp↓]
+theorem rightTransposeRep_smul {P : Type max u v} [AddCommGroup P] [Module Aᵐᵒᵖ P]
+    (a : A) (g : P →ₗ[Aᵐᵒᵖ] A) :
+    rightTransposeRep (a • g) = rightTransposeRep g ≫ (rightRegularEnd.{u, v} a).asHom := by
+  simp [rightTransposeRep, LinearMap.smul_eq_mulLeft_comp, rightRegularEnd_asHom,
+    ← ModuleCat.ofHom_comp, LinearMap.comp_assoc]
+
 variable (Q : FiniteProjectivePresentation N)
 variable (k : Type w) [CommRing k] [Algebra k A]
 

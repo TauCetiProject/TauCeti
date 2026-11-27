@@ -23,6 +23,9 @@ the scalar comparing the images of one under two isomorphisms is a unit as well.
 A natural number `e` kills a module `M` exactly when the endomorphism `e • 𝟙 M` vanishes
 (`ModuleCat.nsmul_id_eq_zero_iff`).
 
+`TauCeti.rightRegularEnd` is the ring homomorphism from a ring to the endomorphisms of its
+lifted right regular module. `TauCeti.rightRegularEnd_asHom` computes it as left multiplication.
+
 An `R`-linear, additive, fully faithful functor `F : ModuleCat A ⥤ ModuleCat B`, for instance a
 Morita equivalence, identifies the endomorphism algebras:
 `Module.End A M ≃ₐ[R] Module.End B (F M)`

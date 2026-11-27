@@ -24,6 +24,10 @@ the presenting projectives and maps so that the canonical recovery is available 
 equivalence. `rightTransposeEquiv` compares the two codomain conventions semilinearly along
 the canonical equivalence from `A` to its double opposite.
 
+`rightTransposeMap` sends a morphism of presenting short complexes to a map of right transposes
+in the reverse direction. The representative formula and the identity and composition laws are
+`rightTransposeMap_mk`, `rightTransposeMap_id` and `rightTransposeMap_comp`.
+
 ## References
 
 * M. Auslander, M. Bridger, *Stable module theory*, Section 2.1.

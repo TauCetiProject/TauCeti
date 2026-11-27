@@ -37,29 +37,34 @@ variable (ρ : A →+* (End X)ᵐᵒᵖ) {Y Y' Y'' : C} {n : ℕ}
 instance : AddCommGroup (ExtWithSourceAction ρ Y n) :=
   inferInstanceAs (AddCommGroup (Ext X Y n))
 
+private abbrev precompose (a : A) (x : Ext X Y n) : Ext X Y n :=
+  (Ext.mk₀ (ρ a).unop.asHom).comp x (zero_add n)
+
+private lemma precompose_one (x : Ext X Y n) : precompose ρ 1 x = x := by
+  simp [precompose, End.one_asHom]
+
+private lemma precompose_mul (a b : A) (x : Ext X Y n) :
+    precompose ρ (a * b) x = precompose ρ a (precompose ρ b x) := by
+  simp [precompose, End.mul_asHom]
+
+private lemma precompose_zero (x : Ext X Y n) : precompose ρ 0 x = 0 := by
+  simp [precompose]
+
+private lemma precompose_add (a b : A) (x : Ext X Y n) :
+    precompose ρ (a + b) x = precompose ρ a x + precompose ρ b x := by
+  simp [precompose, Ext.mk₀_add]
+
 /-- Scalars act on Ext by precomposition with the corresponding source endomorphism. -/
 @[no_expose]
 instance : Module A (ExtWithSourceAction ρ Y n) :=
   show Module A (Ext X Y n) from
-    { smul a x := (Ext.mk₀ (ρ a).unop.asHom).comp x (zero_add n)
-      one_smul x := by
-        change (Ext.mk₀ (ρ 1).unop.asHom).comp x (zero_add n) = x
-        simp [End.one_asHom]
-      mul_smul a b x := by
-        change (Ext.mk₀ (ρ (a * b)).unop.asHom).comp x (zero_add n) =
-          (Ext.mk₀ (ρ a).unop.asHom).comp
-            ((Ext.mk₀ (ρ b).unop.asHom).comp x (zero_add n)) (zero_add n)
-        simp [End.mul_asHom]
-      smul_zero a := Ext.comp_zero _ _ _ _ _
-      smul_add a x y := Ext.comp_add _ _ _ _
-      zero_smul x := by
-        change (Ext.mk₀ (ρ 0).unop.asHom).comp x (zero_add n) = 0
-        simp
-      add_smul a b x := by
-        change (Ext.mk₀ (ρ (a + b)).unop.asHom).comp x (zero_add n) =
-          (Ext.mk₀ (ρ a).unop.asHom).comp x (zero_add n) +
-            (Ext.mk₀ (ρ b).unop.asHom).comp x (zero_add n)
-        simp [Ext.mk₀_add] }
+    { smul := precompose ρ
+      one_smul := precompose_one ρ
+      mul_smul := precompose_mul ρ
+      smul_zero a := Ext.comp_zero (Ext.mk₀ (ρ a).unop.asHom) Y n n (zero_add n)
+      smul_add a x y := Ext.comp_add (Ext.mk₀ (ρ a).unop.asHom) x y (zero_add n)
+      zero_smul := precompose_zero ρ
+      add_smul := precompose_add ρ }
 
 /-- Forget the action to recover the ordinary Ext group. -/
 def toExt : ExtWithSourceAction ρ Y n ≃+ Ext X Y n := AddEquiv.refl _
@@ -116,11 +121,9 @@ theorem toExt_linearEquivOfIso (e : Y ≅ Y') (n : ℕ) (x : ExtWithSourceAction
 def linearEquivOfCompat {V : Type*} [AddCommGroup V] [Module A V] (e : V ≃+ Ext X Y n)
     (he : ∀ (a : A) (x : V),
       e (a • x) = (Ext.mk₀ (ρ a).unop.asHom).comp (e x) (zero_add n)) :
-    V ≃ₗ[A] ExtWithSourceAction ρ Y n where
-  toAddEquiv := e.trans (toExt ρ).symm
-  map_smul' a x := (toExt ρ).injective (by
-    change toExt ρ ((toExt ρ).symm (e (a • x))) = toExt ρ (a • (toExt ρ).symm (e x))
-    simpa only [AddEquiv.apply_symm_apply, toExt_smul] using he a x)
+    V ≃ₗ[A] ExtWithSourceAction ρ Y n :=
+  (e.trans (toExt ρ).symm).toLinearEquiv fun a x ↦ (toExt ρ).injective (by
+    simpa only [AddEquiv.trans_apply, AddEquiv.apply_symm_apply, toExt_smul] using he a x)
 
 /-- Forgetting the source action recovers the original additive comparison. -/
 @[simp]

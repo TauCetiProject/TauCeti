@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
-# Cokernels of precomposition on Hom spaces
+# Cokernels of precomposition and postcomposition on Hom spaces
 
 For a morphism `f : X ⟶ P` in a linear category, `HomCokernel R f Y` is
 `Hom(X, Y)` modulo the maps extending across `f`. In a projective presentation
@@ -20,6 +20,10 @@ principle and universal property are those of `Submodule`. Postcomposition gives
 its covariant action on `Y`; precomposition acts contravariantly on the presenting
 object. A morphism killed by the presenting map defines a restriction out of the
 quotient. These operations need no abelian or projectivity hypothesis.
+
+For `g : Y ⟶ Z`, `CovariantHomCokernel R g X` is `Hom(X, Z)` modulo the maps factoring
+through `g`. In an injective copresentation `0 → N → Y → Z → 0`, it computes `Ext¹(X, N)`.
+Precomposition gives its contravariant action on `X`.
 -/
 
 public section

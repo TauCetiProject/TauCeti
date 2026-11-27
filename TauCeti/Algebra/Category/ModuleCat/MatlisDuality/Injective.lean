@@ -26,7 +26,7 @@ universe u v w
 attribute [local instance] ModuleCat.moduleOfAlgebra ModuleCat.isScalarTower_moduleOfAlgebra
 
 /-- **The Matlis dual of a projective right module is injective.** -/
-theorem isInjective_matlisDualOpObj_of_projective (R : Type*) [CommRing R]
+theorem injective_matlisDualOpObj_of_projective (R : Type*) [CommRing R]
     {A : Type u} [Ring A] [Algebra R A] (E : Type v) [AddCommGroup E] [Module R E]
     [Module.Injective R E] [Small.{v} R] (P : ModuleCat.{max u v w} Aᵐᵒᵖ)
     [Module.Projective Aᵐᵒᵖ P] : Injective (ModuleCat.matlisDualOpObj R E P) := by

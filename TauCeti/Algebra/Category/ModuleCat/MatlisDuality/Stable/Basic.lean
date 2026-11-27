@@ -73,7 +73,7 @@ theorem projectiveStableIdeal_op_le_comap_matlisDualOp :
   refine ⟨(ModuleCat.matlisDualOp R E).obj (op P), ?_, (ModuleCat.matlisDualOp R E).map p.op,
     (ModuleCat.matlisDualOp R E).map i.op, ?_⟩
   · exact (ExactStructure.abelian_isInjective_iff _).mpr
-      (isInjective_matlisDualOpObj_of_projective R E P)
+      (injective_matlisDualOpObj_of_projective R E P)
   · rw [← Functor.map_comp, ← op_comp, ← h]
     rfl
 

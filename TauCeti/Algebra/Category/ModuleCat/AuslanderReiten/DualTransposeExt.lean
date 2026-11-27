@@ -45,7 +45,7 @@ local notation "D" => ModuleCat.matlisDualOpObj R E
 
 private theorem injective_dual_shortComplex_X₂ :
     Injective (Q.shortComplex.op.map (ModuleCat.matlisDualOp.{w, v, a, max a u v} R E)).X₂ :=
-  isInjective_matlisDualOpObj_of_projective.{a, v, u, w} R E Q.P₀
+  injective_matlisDualOpObj_of_projective.{a, v, u, w} R E Q.P₀
 
 attribute [local instance] ModuleCat.moduleOfAlgebra ModuleCat.isScalarTower_moduleOfAlgebra
 
@@ -92,15 +92,10 @@ theorem rightTransposeEquivExtDual_smul (hp : Function.Injective Q.p) (a : A)
       (Ext.mk₀ (ModuleCat.matlisDualOpMap R E (rightRegularEnd a).asHom)).comp
         (Q.rightTransposeEquivExtDual.{u, v, w, a} R E hE hB hp x) (zero_add 1) := by
   obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-  let g' : Q.P₁ ⟶ ModuleCat.of Aᵐᵒᵖ (ULift.{max u v} A) :=
-    ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g)
-  have hg : ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ (a • g)) =
-      g' ≫ (rightRegularEnd a).asHom := by
-    rw [rightRegularEnd_asHom]
-    ext x
-    rfl
-  rw [← Submodule.Quotient.mk_smul, rightTransposeEquivExtDual_mk,
-    rightTransposeEquivExtDual_mk, hg, ModuleCat.matlisDualOpMap_comp]
+  have hrep := rightTransposeRep_smul.{a, max u v} a g
+  simp only [rightTransposeRep_eq] at hrep
+  rw [← Submodule.Quotient.mk_smul, rightTransposeEquivExtDual_mk, rightTransposeEquivExtDual_mk]
+  simp only [hrep, ModuleCat.matlisDualOpMap_comp]
   exact (Ext.mk₀_comp_mk₀_assoc _ _ _).symm
 
 /-- Precomposition on relation modules agrees, under the dual comparison, with pushforward along
@@ -117,24 +112,27 @@ theorem rightTransposeEquivExtDual_naturality {N' : ModuleCat.{max a u v} Aᵐ�
     ModuleCat.matlisDualOp.{w, v, a, max a u v} R E
   let ψ : P.shortComplex.op.map Df ⟶ Q.shortComplex.op.map Df :=
     Df.mapShortComplex.map (ShortComplex.opMap φ)
-  -- The opposite complex swaps the first and third components before taking their duals.
-  have hψ₁ : ψ.τ₁ = ModuleCat.matlisDualOpMap R E φ.τ₃ := rfl
-  have hψ₃ : ψ.τ₃ = ModuleCat.matlisDualOpMap R E φ.τ₁ := rfl
-  have hclass :=
+  -- The opposite complex swaps the endpoint maps before dualizing. State those
+  -- endpoints explicitly so subsequent Ext composition does not reduce functor wrappers.
+  have hclass :
+      ((P.shortExact_shortComplex hP).matlisDualOp.{w, v, a, max a u} R E).extClass.comp
+          (Ext.mk₀ (ModuleCat.matlisDualOpMap R E φ.τ₃)) (add_zero 1) =
+        (Ext.mk₀ (ModuleCat.matlisDualOpMap R E φ.τ₁)).comp
+          ((Q.shortExact_shortComplex hQ).matlisDualOp.{w, v, a, max a u} R E).extClass
+          (zero_add 1) :=
     ((P.shortExact_shortComplex hP).matlisDualOp.{w, v, a, max a u} R E).extClass_naturality
       ((Q.shortExact_shortComplex hQ).matlisDualOp.{w, v, a, max a u} R E) ψ
-  let g' : P.P₁ ⟶ ModuleCat.of Aᵐᵒᵖ (ULift.{max u v} A) :=
-    ModuleCat.ofHom (ULift.moduleEquiv.{a, a, max u v}.symm.toLinearMap ∘ₗ g)
-  have hg : ModuleCat.ofHom
-      (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g ∘ₗ φ.τ₁.hom) = φ.τ₁ ≫ g' := by
-    ext x
-    rfl
-  rw [rightTransposeMap_mk, rightTransposeEquivExtDual_mk, rightTransposeEquivExtDual_mk,
-    hg, ModuleCat.matlisDualOpMap_comp]
+  have hrep := rightTransposeRep_comp.{a, max u v} g φ.τ₁.hom
+  simp only [rightTransposeRep_eq, ModuleCat.ofHom_hom] at hrep
+  rw [rightTransposeMap_mk, rightTransposeEquivExtDual_mk, rightTransposeEquivExtDual_mk]
+  simp only [hrep, ModuleCat.matlisDualOpMap_comp]
   refine (Ext.mk₀_comp_mk₀_assoc _ _ _).symm.trans ?_
   refine Eq.trans ?_ (Ext.comp_assoc_of_third_deg_zero _ _ _ _).symm
-  simpa only [hψ₁, hψ₃] using!
-    congrArg (fun α ↦ (Ext.mk₀ (ModuleCat.matlisDualOpMap R E g')).comp α (zero_add 1)) hclass.symm
+  have h := congrArg (fun α : Ext (D P.shortComplex.X₁) (D N) 1 ↦
+    (Ext.mk₀ (ModuleCat.matlisDualOpMap R E (rightTransposeRep.{a, max u v} g))).comp
+      α (zero_add 1)) hclass.symm
+  rw [rightTransposeRep_eq] at h
+  exact h
 
 /-- The dual Ext computation as an equivalence of left `A`-modules under the same
 finite-length and dualizing-coefficient hypotheses as `rightTransposeEquivExtDual`. -/

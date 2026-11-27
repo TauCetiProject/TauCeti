@@ -67,28 +67,27 @@ theorem rightTransposeEquivExt_smul (hp : Function.Injective Q.p) (a : A)
     Q.rightTransposeEquivExt k hp (a • x) = (Q.rightTransposeEquivExt k hp x).comp
       (Ext.mk₀ (rightRegularEnd.{u, v} a).asHom) (add_zero 1) := by
   obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  have hrep := rightTransposeRep_smul.{u, v} a g
+  simp only [rightTransposeRep_eq] at hrep
   rw [← Submodule.Quotient.mk_smul, rightTransposeEquivExt_mk, rightTransposeEquivExt_mk]
-  simp only [Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀]
-  congr 2
-  ext x
-  simp [rightRegularEnd_asHom]
+  simp only [hrep,
+    Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀]
 
 /-- The projective right-transpose comparison is linear over `A` when Ext carries the
 left action induced by the right regular coefficient module. -/
 noncomputable def rightTransposeLinearEquivExt (hp : Function.Injective Q.p) :
-    Q.rightTranspose ≃ₗ[A] Abelian.ExtWithAction (rightRegularEnd.{u, v} (A := A)) N 1 where
-  toFun x := (Abelian.ExtWithAction.toExt rightRegularEnd.{u, v}).symm
-    (Q.rightTransposeEquivExt ℤ hp x)
-  invFun x := (Q.rightTransposeEquivExt ℤ hp).symm
-    (Abelian.ExtWithAction.toExt rightRegularEnd.{u, v} x)
-  left_inv x := by simp
-  right_inv x := by simp
-  map_add' x y := by simp
-  map_smul' a x := by
-    apply (Abelian.ExtWithAction.toExt rightRegularEnd.{u, v}).injective
-    simpa only [AddEquiv.apply_symm_apply, Abelian.ExtWithAction.toExt_smul,
-      RingHom.id_apply] using
-      Q.rightTransposeEquivExt_smul ℤ hp a x
+    Q.rightTranspose ≃ₗ[A] Abelian.ExtWithAction (rightRegularEnd.{u, v} (A := A)) N 1 :=
+  let e := Abelian.ExtWithAction.toExt (rightRegularEnd.{u, v} (A := A)) (P := N) (n := 1)
+  -- Use the integral action from the linear category when forgetting scalars.
+  let m := @Ext.instModule ℤ _ _ _ _ ModuleCat.Algebra.instLinear _ N
+    (ModuleCat.of Aᵐᵒᵖ (ULift.{v} A)) 1
+  let q := @LinearEquiv.toAddEquiv _ _ _ _ _ _ _ _ _ _ _ _ _ m
+    (Q.rightTransposeEquivExt ℤ hp)
+  (q.trans e.symm).toLinearEquiv fun a x ↦ by
+    apply e.injective
+    simp only [e, q, AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv,
+      AddEquiv.apply_symm_apply, Abelian.ExtWithAction.toExt_smul]
+    exact Q.rightTransposeEquivExt_smul ℤ hp a x
 
 /-- Forgetting the left action recovers the integral linear Ext comparison. -/
 @[simp↓]
@@ -115,12 +114,11 @@ theorem rightTransposeEquivExt_naturality {N' : ModuleCat.{max u v} Aᵐᵒᵖ}
       (Ext.mk₀ φ.τ₃).comp (P.rightTransposeEquivExt k hP x) (zero_add 1) := by
   obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   have h := (Q.shortExact_shortComplex hQ).extClass_naturality (P.shortExact_shortComplex hP) φ
-  have hg : ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g ∘ₗ φ.τ₁.hom) =
-      φ.τ₁ ≫ ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g) := by
-    ext x
-    rfl
+  have hrep := rightTransposeRep_comp.{u, v} g φ.τ₁.hom
+  simp only [rightTransposeRep_eq, ModuleCat.ofHom_hom] at hrep
   rw [rightTransposeMap_mk, rightTransposeEquivExt_mk, rightTransposeEquivExt_mk]
-  simpa only [Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀, hg] using
+  simpa only [hrep,
+    Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀] using
     congrArg (fun α ↦ α.comp
       (Ext.mk₀ (ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g))) (add_zero 1)) h
 

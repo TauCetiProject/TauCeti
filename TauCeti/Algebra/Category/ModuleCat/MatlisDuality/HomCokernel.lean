@@ -34,8 +34,8 @@ variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E]
 
 include hE in
 /-- Dualizing morphisms identifies the cokernel of precomposition with `f` and the
-cokernel of postcomposition with its Matlis dual, when the coefficient module has finite length
-over `R`, `E` is injective, and `Hom_R(R/𝔪, E)` has length one for every maximal ideal `𝔪`. -/
+cokernel of postcomposition with its Matlis dual, when the target `B` has finite length over `R`,
+`E` is injective, and `Hom_R(R/𝔪, E)` has length one for every maximal ideal `𝔪`. -/
 noncomputable def matlisDualOpHomCokernelEquiv {X Y B : ModuleCat.{max v w} Aᵐᵒᵖ}
     (hB : IsFiniteLength R B) (f : X ⟶ Y) :
     HomCokernel R f B ≃ₗ[R]
