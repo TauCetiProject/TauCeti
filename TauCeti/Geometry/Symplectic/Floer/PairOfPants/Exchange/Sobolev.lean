@@ -185,9 +185,7 @@ private theorem exists_positiveEndChart_inf_eq_add {c : ℝ} (hc : |c| ≤ 1) {T
       have h := TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero w c
       rw [show w + (c, 0) = positiveEndChart inf ζ from sub_add_cancel _ _] at h
       rw [h, add_sub_cancel_right]
-    have hexp : 2 * exp (2 * π * T) + 1 ≤ 2 * exp (2 * π * (T + 1)) := by
-      rw [mul_add, mul_one, exp_add]
-      nlinarith [fourteen_le_two_mul_exp_two_pi, one_le_exp (by positivity : 0 ≤ 2 * π * T)]
+    have hexp := two_mul_exp_two_pi_mul_add_one_le T (by linarith)
     rw [hsub]
     linarith [norm_sub_norm_le (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) (c : ℂ)]
   have hw0 : Complex.equivRealProdCLM.symm w ≠ 0 :=

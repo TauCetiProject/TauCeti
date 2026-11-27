@@ -56,6 +56,8 @@ Hilbert's Theorem 90, and then `x / bⁿ` is fixed by complex conjugation.
   square root `i` of `-1` to `-i`.
 * `NumberField.IsCMField.exists_mem_maximalRealSubfield_div_eq_pow_iff`: a unit `x` of a CM field
   is a totally real unit times an `n`-th power if and only if `x / conj x` is an `n`-th power.
+* `NumberField.IsCMField.exists_ringOfIntegersComplexConj_ne`: complex conjugation moves some
+  integer of a CM number field.
 
 ## References
 
@@ -201,5 +203,22 @@ theorem exists_mem_maximalRealSubfield_div_eq_pow_iff {x : Kˣ} {n : ℕ} :
     field_simp
 
 end Pow
+
+end NumberField.IsCMField
+
+namespace NumberField.IsCMField
+
+variable {K : Type*} [Field K] [NumberField K] [IsCMField K]
+
+/-- Complex conjugation acts nontrivially on the ring of integers of a CM number field: some
+integer `y` has `conj y ≠ y`, because `K` is the fraction field of `𝓞 K` and conjugation is not the
+identity of `K`. -/
+theorem exists_ringOfIntegersComplexConj_ne : ∃ y : 𝓞 K, ringOfIntegersComplexConj K y ≠ y := by
+  by_contra! h
+  refine complexConj_ne_one K (AlgEquiv.ext fun x ↦ ?_)
+  obtain ⟨a, b, -, rfl⟩ := IsFractionRing.div_surjective (A := 𝓞 K) x
+  have hc (z : 𝓞 K) : complexConj K (algebraMap (𝓞 K) K z) = algebraMap (𝓞 K) K z := by
+    simpa [← RingOfIntegers.coe_eq_algebraMap] using congrArg ((↑) : 𝓞 K → K) (h z)
+  rw [map_div₀, hc, hc, AlgEquiv.one_apply]
 
 end NumberField.IsCMField

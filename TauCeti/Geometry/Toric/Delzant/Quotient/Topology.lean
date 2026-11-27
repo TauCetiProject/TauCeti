@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber
+public import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
 public import TauCeti.Geometry.Toric.Delzant.Hirzebruch
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Hamiltonian
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Vertex
 public import TauCeti.Geometry.Toric.Delzant.Simplex
 import TauCeti.Algebra.AddCircle
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Perfect
-import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
 import TauCeti.Topology.Connected.TypeTags
 
 /-!
@@ -44,7 +44,9 @@ vertices of `Δ`, one over each vertex
 (`TauCeti.Toric.DelzantQuotient.bijOn_reducedMomentMap_fixedPoints`). So there are as many fixed
 points as vertices (`TauCeti.Toric.DelzantQuotient.ncard_fixedPoints_multiplicative`), finitely
 many, and each of them is isolated
-(`TauCeti.Toric.DelzantQuotient.eventually_eq_of_mem_fixedPoints_multiplicative`). For a torus
+(`TauCeti.Toric.DelzantQuotient.eventually_eq_of_mem_fixedPoints_multiplicative`), so `M_Δ` meets
+the hypotheses of the Morse theory of torus moment maps
+(`TauCeti.Toric.IsDelzant.isMomentMap_and_isolated_fixedPoints_delzantQuotient`). For a torus
 acting by symplectomorphisms of a compact manifold with a moment map and isolated fixed points, a
 generic component of the moment map is a perfect Morse function whose critical points are the
 fixed points, all of even index
@@ -69,8 +71,10 @@ the blowup raises the total Betti number by `n - 1`
 
 The homology here is singular homology with coefficients in a division ring. The individual even
 Betti numbers, counted at each vertex by the edges along which a generic linear function
-decreases, are computed in `TauCeti.Geometry.Toric.Delzant.Quotient.Betti`; the freeness and ring
-structure of the integral cohomology are not proved here.
+decreases, are computed in `TauCeti.Geometry.Toric.Delzant.Quotient.Betti`. The integral homology
+and cohomology of `M_Δ` are free, vanish in odd degrees and have the same ranks as the Betti
+numbers (`TauCeti.Geometry.Toric.Delzant.Quotient.Integral`); the ring structure of the
+cohomology is not proved.
 
 ## Main results
 
@@ -78,6 +82,8 @@ structure of the integral cohomology are not proved here.
   polyhedron is connected.
 * `TauCeti.Toric.DelzantQuotient.ncard_fixedPoints_multiplicative`: the torus has as many fixed
   points on the Delzant quotient as `Δ` has vertices.
+* `TauCeti.Toric.IsDelzant.isMomentMap_and_isolated_fixedPoints_delzantQuotient`: the torus acts
+  on a Delzant toric manifold by symplectomorphisms, with a moment map and isolated fixed points.
 * `TauCeti.Toric.IsDelzant.connectedSpace_delzantQuotient`,
   `TauCeti.Toric.IsDelzant.simplyConnectedSpace_delzantQuotient`: a Delzant toric manifold is
   connected and simply connected.
@@ -249,6 +255,37 @@ theorem connectedSpace_delzantQuotient : ConnectedSpace (DelzantQuotient i u c) 
     (surjective_linearCombination_real hi.span_range_eq_top hΔ.surjective_linearCombination)
     hΔ.isBounded hΔ.nonempty
 
+/-- **A Delzant toric manifold is a Hamiltonian torus manifold with isolated fixed points.** The
+torus `(ℝ / 2πℤ)^ι` acts on `M_Δ` by symplectomorphisms of the nondegenerate form `ω_Δ`, with
+moment map `μ_Δ`, and its fixed points are isolated: these are the hypotheses of the Morse theory of
+a generic component of a torus moment map. -/
+theorem isMomentMap_and_isolated_fixedPoints_delzantQuotient [FiniteDimensional ℝ V]
+    (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j))) :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    haveI := hΔ.isManifold_delzantQuotient hi
+    haveI := hΔ.contMDiffVAdd_delzantQuotient hi
+    (hΔ.delzantQuotientSymplecticForm hi).IsMomentMap
+        (InfinitesimalAction.fundamental (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+          (Multiplicative (ι → AddCircle (2 * π))) 𝓘(ℝ, ProperSMul.QuotientModelSpace
+            (kernelTorusLieAlgebra i u) (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
+          (DelzantQuotient i u c))
+        (fun q ↦ (DelzantQuotient.reducedMomentMap hβ q).toLinearMap ∘ₗ
+          Fintype.linearCombination ℝ fun j ↦ i (u j)) ∧
+      (hΔ.delzantQuotientSymplecticForm hi).IsNondegenerate ∧
+      (∀ g : Multiplicative (ι → AddCircle (2 * π)),
+        SmoothTwoForm.IsSymplecticMap (hΔ.delzantQuotientSymplecticForm hi)
+          (hΔ.delzantQuotientSymplecticForm hi) (g • ·)) ∧
+      ∀ p ∈ MulAction.fixedPoints (Multiplicative (ι → AddCircle (2 * π))) (DelzantQuotient i u c),
+        ∀ᶠ q in 𝓝 p, q ∈ MulAction.fixedPoints (Multiplicative (ι → AddCircle (2 * π)))
+          (DelzantQuotient i u c) → q = p := by
+  let _ := hΔ.delzantQuotientChartedSpace hi
+  have := hΔ.isManifold_delzantQuotient hi
+  have := hΔ.contMDiffVAdd_delzantQuotient hi
+  have h := hΔ.hamiltonianTorusData_delzantQuotientSymplecticForm hi hβ
+  exact ⟨h.toIsMomentMap, (hΔ.isSymplectic_delzantQuotientSymplecticForm hi).isNondegenerate,
+    fun g ↦ (SmoothTwoForm.isSymplecticMap_iff_mpullback_eq _).2 (h.mpullback_smul g),
+    fun _ hp ↦ DelzantQuotient.eventually_eq_of_mem_fixedPoints_multiplicative hβ hi hp⟩
+
 /-- The Morse theory of a generic component of the moment map of a Delzant toric manifold, done
 once: the manifold is simply connected and, for every division ring of coefficients, its odd Betti
 numbers vanish and its Betti numbers add up to the number of vertices of `Δ`. -/
@@ -266,18 +303,13 @@ private theorem simplyConnectedSpace_and_bettiNumber_delzantQuotient :
   have := hi.t2Space_delzantQuotient (u := u) (c := c)
   have := compactSpace_delzantQuotient (c := c) hΔ.isBounded
   have := hΔ.connectedSpace_delzantQuotient hi
-  have h := hΔ.hamiltonianTorusData_delzantQuotientSymplecticForm hi hβ
-  have hσ := (hΔ.isSymplectic_delzantQuotientSymplecticForm hi).isNondegenerate
-  have hσG := fun g ↦
-    ((SmoothTwoForm.isSymplecticMap_iff_mpullback_eq _).2 (h.mpullback_smul g)).apply
-  have hiso (p) (hp : p ∈ MulAction.fixedPoints (Multiplicative (ι → AddCircle (2 * π)))
-      (DelzantQuotient i u c)) :=
-    DelzantQuotient.eventually_eq_of_mem_fixedPoints_multiplicative hβ hi hp
-  refine ⟨h.toIsMomentMap.simplyConnectedSpace hσ hσG hiso, fun k _ ↦
-    ⟨fun _ ↦ h.toIsMomentMap.bettiNumber_eq_zero_of_odd hσ hσG k hiso, ?_⟩⟩
+  obtain ⟨h, hσ, hσG, hiso⟩ := hΔ.isMomentMap_and_isolated_fixedPoints_delzantQuotient hi hβ
+  replace hσG g := (hσG g).apply
+  refine ⟨h.simplyConnectedSpace hσ hσG hiso, fun k _ ↦
+    ⟨fun _ ↦ h.bettiNumber_eq_zero_of_odd hσ hσG k hiso, ?_⟩⟩
   rw [← hΔ.finrank_delzantQuotientModelSpace hi,
     ← DelzantQuotient.ncard_fixedPoints_multiplicative hβ hi]
-  exact h.toIsMomentMap.sum_bettiNumber_eq_ncard_fixedPoints hσ hσG k hiso
+  exact h.sum_bettiNumber_eq_ncard_fixedPoints hσ hσG k hiso
 
 /-- **A Delzant toric manifold is simply connected.** A generic component of the moment map is a
 Morse function whose critical points are the fixed points of the torus, all of even index, so it
