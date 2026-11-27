@@ -24,6 +24,8 @@ scheme-theoretic `GeometricallyConnected` predicate on its Hopf spectrum.
   of the coordinate-ring and scheme-theoretic predicates.
 * `TauCeti.geometricallyConnected_iff_geometricallyConnected_coordinate`: geometric
   connectedness of a finite-type affine group scheme in terms of its coordinate algebra.
+* `TauCeti.geometricallyConnected_hopfSpec_iff_connectedSpace`: over any field, the identity
+  section makes connectedness of a Hopf spectrum geometric.
 * `TauCeti.geometricallyConnected_hopfSpec_iff_idempotent_eq_zero_or_one`: the idempotent
   characterization of geometric connectedness for a Hopf spectrum.
 
@@ -121,5 +123,29 @@ theorem geometricallyConnected_hopfSpec_iff_idempotent_eq_zero_or_one
         IsIdempotentElem e → e = 0 ∨ e = 1 := by
   rw [← geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec,
     geometricallyConnectedCommHopfAlgProperty_iff_idempotent_eq_zero_or_one]
+
+
+/-- A Hopf spectrum over a field is geometrically connected exactly when its prime spectrum
+is connected. The identity point, given by the Hopf counit, supplies a rational section. -/
+theorem geometricallyConnected_hopfSpec_iff_connectedSpace
+    (k : Type u) [Field k] (H : CommHopfAlgCat.{u} k) :
+    GeometricallyConnected
+        (((hopfSpec (CommRingCat.of k)).obj (Opposite.op H)).X.hom) ↔
+      ConnectedSpace (PrimeSpectrum H) := by
+  constructor
+  · intro h
+    exact geometricallyConnectedCommHopfAlgProperty.connectedSpace
+      ((geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec k H).2 h)
+  · intro h
+    have : ConnectedSpace (Spec (CommRingCat.of H) : Scheme) := h
+    rw [hopfSpec_obj_X_hom, MorphismProperty.cancel_left_of_respectsIso
+      (P := @GeometricallyConnected) (eqToHom (hopfSpec_obj_X_left k H))]
+    apply geometricallyConnected_of_section
+      (s := Spec.map (CommRingCat.ofHom (Bialgebra.counitAlgHom k H)))
+    have hs : CommRingCat.ofHom (algebraMap k H) ≫
+        CommRingCat.ofHom (Bialgebra.counitAlgHom k H) = 𝟙 (CommRingCat.of k) := by
+      ext x
+      exact (Bialgebra.counitAlgHom k H).commutes x
+    rw [← Spec.map_comp, hs, Spec.map_id]
 
 end TauCeti

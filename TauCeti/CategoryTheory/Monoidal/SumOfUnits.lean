@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Category
+public import Mathlib.CategoryTheory.Monoidal.Functor
+public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 public import TauCeti.CategoryTheory.Abelian.SubquotientHull
 
 /-!
@@ -93,3 +94,33 @@ theorem IsSumOfUnits.subquotientHull_tensorUnit (h : IsSumOfUnits X) :
 end Preadditive
 
 end TauCeti
+
+namespace CategoryTheory
+
+open Limits MonoidalCategory TauCeti
+
+universe v' u'
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+  [HasZeroMorphisms C] [HasFiniteBiproducts C]
+  {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
+  [HasZeroMorphisms D] [HasFiniteBiproducts D]
+
+/-- A strong monoidal functor preserving finite products sends sums of units to sums of
+units. -/
+theorem Functor.map_isSumOfUnits (F : C ⥤ D) [F.Monoidal] [PreservesFiniteProducts F]
+    {X : C} (h : IsSumOfUnits X) : IsSumOfUnits (F.obj X) := by
+  obtain ⟨ι, _, ⟨e⟩⟩ := h
+  exact .mk (F.mapIso (e ≪≫ biproduct.isoProduct _) ≪≫ PreservesProduct.iso F _ ≪≫
+    Pi.mapIso (fun _ : ι ↦ (Functor.Monoidal.εIso F).symm) ≪≫
+    (biproduct.isoProduct _).symm)
+
+/-- A monoidal equivalence preserves and reflects finite sums of tensor units. -/
+@[simp]
+theorem Equivalence.isSumOfUnits_obj_iff (E : C ≌ D) [E.functor.Monoidal] (X : C) :
+    IsSumOfUnits (E.functor.obj X) ↔ IsSumOfUnits X := by
+  let := E.inverseMonoidal
+  exact ⟨fun h ↦ (E.inverse.map_isSumOfUnits h).of_iso (E.unitIso.app X).symm,
+    E.functor.map_isSumOfUnits⟩
+
+end CategoryTheory
