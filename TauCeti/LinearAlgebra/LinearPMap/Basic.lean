@@ -27,6 +27,8 @@ General lemmas on `LinearPMap` that Mathlib does not provide.
   graph.
 * `LinearPMap.exists_apply_eq_iff_mem_graph`: `x` lies in the domain with value `y` exactly when
   `(x, y)` lies in the graph.
+* `LinearPMap.mem_graph_add_iff`: the graph of a sum `f + g`, defined on the intersection of the
+  domains.
 -/
 
 public section
@@ -120,6 +122,18 @@ lies in its graph. -/
 theorem exists_apply_eq_iff_mem_graph {M : Type*} [AddCommGroup M] [Module R M] (f : E →ₗ.[R] M)
     {x : E} {y : M} : (∃ hx : x ∈ f.domain, f ⟨x, hx⟩ = y) ↔ (x, y) ∈ f.graph := by
   simp only [mem_graph_iff, Subtype.exists, exists_and_left, exists_eq_left]
+
+/-- `(x, z)` lies on the graph of a sum `f + g` exactly when `z = a + b` for points `(x, a)` of
+the graph of `f` and `(x, b)` of the graph of `g`. -/
+theorem mem_graph_add_iff {M : Type*} [AddCommGroup M] [Module R M] (f g : E →ₗ.[R] M) {x : E}
+    {z : M} : (x, z) ∈ (f + g).graph ↔
+      ∃ a b, (x, a) ∈ f.graph ∧ (x, b) ∈ g.graph ∧ a + b = z := by
+  simp only [← exists_apply_eq_iff_mem_graph]
+  constructor
+  · rintro ⟨hx, rfl⟩
+    exact ⟨_, _, ⟨hx.1, rfl⟩, ⟨hx.2, rfl⟩, (add_apply f g ⟨x, hx⟩).symm⟩
+  · rintro ⟨_, _, ⟨hf, rfl⟩, ⟨hg, rfl⟩, rfl⟩
+    exact ⟨⟨hf, hg⟩, add_apply f g ⟨x, _⟩⟩
 
 end LinearPMap
 

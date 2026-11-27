@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.AdjointComp
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedRange
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Basic
+
+import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
 # The Hodge decomposition of a Hilbert complex
@@ -35,6 +38,14 @@ compactness property of the `L²` de Rham complex is the content of Picard's com
 These are the consequences of the compactness property in Arnold, Falk and Winther (2010),
 §3.1.3.
 
+The **Laplacian** of the pair is `LinearPMap.hodgeLaplacian d₀ d₁ = d₀†† d₀† + d₁† d₁`, on its
+maximal domain; for the `L²` de Rham complex it is the Hodge Laplacian `d d* + d* d`. When `d₀†` is
+densely defined, that is when `d₀` is closable, it is self-adjoint, with
+`⟪Δ x, x⟫ = ‖d₀† x‖² + ‖d₁ x‖²`, and its kernel is the harmonic space. Self-adjointness comes from
+the surjectivity of `Δ + 1`: along `F = (ker d₀†)ᗮ ⊕ ker d₀†` the two terms of the Laplacian act on
+different summands, `(ker d₀†)ᗮ = closure (range d₀)` lies in `ker d₁`, and on each summand
+`Δ + 1` is `1 + T†T` for a closed operator `T`, which is surjective by von Neumann's theorem.
+
 For bounded operators with closed range, the decomposition of the kernel is
 `ContinuousLinearMap.range_sup_ker_inf_ker_adjoint`. Here the operators are unbounded, as the
 exterior derivative is on `L²` forms, so the decomposition uses the closures of the ranges, and
@@ -61,6 +72,9 @@ and `LinearPMap.topologicalClosure_range_adjoint_eq_orthogonal_ker`, in
   the ranges of `d₀` and `d₁`.
 * `LinearPMap.CompactProperty.finiteDimensional_harmonicSpace`: the compactness property at
   `ε = id` makes the harmonic space finite dimensional.
+* `LinearPMap.isSelfAdjoint_hodgeLaplacian`: the Laplacian of a Hilbert complex is self-adjoint;
+  `LinearPMap.inner_hodgeLaplacian_self` is its energy identity and `LinearPMap.ker_hodgeLaplacian`
+  identifies its kernel with the harmonic space.
 
 ## References
 
@@ -68,7 +82,8 @@ and `LinearPMap.topologicalClosure_range_adjoint_eq_orthogonal_ker`, in
   numerical stability*, Bull. Amer. Math. Soc. 47 (2010), §3.1.
 * D. N. Arnold, R. S. Falk, R. Winther, *Finite element exterior calculus, homological techniques,
   and applications*, Acta Numerica 15 (2006), §3.
-* J. Brüning, M. Lesch, *Hilbert complexes*, J. Funct. Anal. 108 (1992).
+* J. Brüning, M. Lesch, *Hilbert complexes*, J. Funct. Anal. 108 (1992), Lemma 2.1 and
+  Theorem 2.4.
 -/
 
 public section
@@ -362,5 +377,170 @@ theorem CompactProperty.finiteDimensional_harmonicSpace
   exact ⟨h₁, h₀, mem_closedBall_zero_iff.1 hx, hz₁, hz₀⟩
 
 end Compact
+
+/-! ### The Laplacian -/
+
+section Laplacian
+
+variable [CompleteSpace E] [CompleteSpace F] {d₀ : E →ₗ.[𝕜] F} {d₁ : F →ₗ.[𝕜] G}
+
+local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
+
+variable (d₀ d₁) in
+/-- The **Laplacian** `d₀ d₀† + d₁† d₁` of a pair of composable partial linear maps
+`d₀ : E →ₗ.[𝕜] F` and `d₁ : F →ₗ.[𝕜] G`, on its maximal domain: the vectors `x` of
+`dom d₀† ∩ dom d₁` with `d₀† x ∈ dom d₀††` and `d₁ x ∈ dom d₁†`. Its first term is `d₀†† d₀†`, and
+`d₀††` is the closure of `d₀` when `d₀` is closable and densely defined. For the `L²` de Rham
+complex this is the Hodge Laplacian `d d* + d* d`. -/
+def hodgeLaplacian : F →ₗ.[𝕜] F :=
+  d₀†.adjointComp + d₁.adjointComp
+
+variable (d₀ d₁) in
+/-- The Laplacian is the sum of `d₀†† d₀†` and `d₁† d₁`. -/
+theorem hodgeLaplacian_def : hodgeLaplacian d₀ d₁ = d₀†.adjointComp + d₁.adjointComp :=
+  (rfl)
+
+variable (d₀ d₁) in
+/-- The domain of the Laplacian is the intersection of the domains of `d₀†† d₀†` and `d₁† d₁`. -/
+theorem domain_hodgeLaplacian :
+    (hodgeLaplacian d₀ d₁).domain = d₀†.adjointComp.domain ⊓ d₁.adjointComp.domain :=
+  (rfl)
+
+/-- The Laplacian at `x` is `d₀†† d₀† x + d₁† d₁ x`. -/
+theorem hodgeLaplacian_apply (x : (hodgeLaplacian d₀ d₁).domain) :
+    hodgeLaplacian d₀ d₁ x =
+      d₀†.adjointComp ⟨x, (Submodule.mem_inf.1 ((domain_hodgeLaplacian d₀ d₁).le x.property)).1⟩ +
+        d₁.adjointComp ⟨x, (Submodule.mem_inf.1 ((domain_hodgeLaplacian d₀ d₁).le x.property)).2⟩ :=
+  add_apply _ _ x
+
+/-- `(x, z)` lies on the graph of the Laplacian exactly when `z = b + w` for `a = d₀† x`,
+`b = d₀†† a`, `v = d₁ x` and `w = d₁† v`. -/
+theorem mem_graph_hodgeLaplacian_iff {x z : F} :
+    (x, z) ∈ (hodgeLaplacian d₀ d₁).graph ↔ ∃ a b v w, (x, a) ∈ d₀†.graph ∧
+      (a, b) ∈ d₀††.graph ∧ (x, v) ∈ d₁.graph ∧ (v, w) ∈ d₁†.graph ∧ b + w = z := by
+  simp only [hodgeLaplacian_def, mem_graph_add_iff, mem_graph_adjointComp_iff]
+  constructor
+  · rintro ⟨b, w, ⟨a, hxa, hab⟩, ⟨v, hxv, hvw⟩, rfl⟩
+    exact ⟨a, b, v, w, hxa, hab, hxv, hvw, rfl⟩
+  · rintro ⟨a, b, v, w, hxa, hab, hxv, hvw, rfl⟩
+    exact ⟨b, w, ⟨a, hxa, hab⟩, ⟨v, hxv, hvw⟩, rfl⟩
+
+/-- The domain of the Laplacian lies in the domain of `d₀†`. -/
+theorem domain_hodgeLaplacian_le_domain_adjoint :
+    (hodgeLaplacian d₀ d₁).domain ≤ d₀†.domain :=
+  fun _ hx ↦ adjointComp_domain_le _ hx.1
+
+/-- The domain of the Laplacian lies in the domain of `d₁`. -/
+theorem domain_hodgeLaplacian_le_domain : (hodgeLaplacian d₀ d₁).domain ≤ d₁.domain :=
+  fun _ hx ↦ adjointComp_domain_le _ hx.2
+
+/-- **The energy identity of the Laplacian**: for `x` in its domain and `y ∈ dom d₀† ∩ dom d₁`,
+`⟪Δ x, y⟫ = ⟪d₀† x, d₀† y⟫ + ⟪d₁ x, d₁ y⟫`. -/
+theorem inner_hodgeLaplacian (hd₀' : Dense (d₀†.domain : Set F))
+    (hd₁ : Dense (d₁.domain : Set F)) (x : (hodgeLaplacian d₀ d₁).domain) {y : F}
+    (hy₀ : y ∈ d₀†.domain) (hy₁ : y ∈ d₁.domain) :
+    ⟪hodgeLaplacian d₀ d₁ x, y⟫ =
+      ⟪d₀† ⟨x, domain_hodgeLaplacian_le_domain_adjoint x.property⟩, d₀† ⟨y, hy₀⟩⟫ +
+        ⟪d₁ ⟨x, domain_hodgeLaplacian_le_domain x.property⟩, d₁ ⟨y, hy₁⟩⟫ := by
+  rw [hodgeLaplacian_apply, inner_add_left, inner_adjointComp hd₀', inner_adjointComp hd₁]
+
+variable (d₀ d₁) in
+/-- The Laplacian is symmetric. -/
+theorem isFormalAdjoint_hodgeLaplacian :
+    (hodgeLaplacian d₀ d₁).IsFormalAdjoint (hodgeLaplacian d₀ d₁) :=
+  (isFormalAdjoint_adjointComp d₀†).add (isFormalAdjoint_adjointComp d₁)
+
+/-- **The Laplacian is nonnegative**: `⟪Δ x, x⟫ = ‖d₀† x‖² + ‖d₁ x‖²`. -/
+theorem inner_hodgeLaplacian_self (hd₀' : Dense (d₀†.domain : Set F))
+    (hd₁ : Dense (d₁.domain : Set F)) (x : (hodgeLaplacian d₀ d₁).domain) :
+    ⟪hodgeLaplacian d₀ d₁ x, (x : F)⟫ =
+      ((‖d₀† ⟨x, domain_hodgeLaplacian_le_domain_adjoint x.property⟩‖ ^ 2 +
+        ‖d₁ ⟨x, domain_hodgeLaplacian_le_domain x.property⟩‖ ^ 2 : ℝ) : 𝕜) := by
+  rw [inner_hodgeLaplacian hd₀' hd₁ x (domain_hodgeLaplacian_le_domain_adjoint x.property)
+    (domain_hodgeLaplacian_le_domain x.property), inner_self_eq_norm_sq_to_K,
+    inner_self_eq_norm_sq_to_K, RCLike.ofReal_add, RCLike.ofReal_pow, RCLike.ofReal_pow]
+
+/-- **The kernel of the Laplacian is the harmonic space** `ker d₁ ⊓ ker d₀†`. -/
+theorem ker_hodgeLaplacian (hd₀' : Dense (d₀†.domain : Set F)) (hd₁ : Dense (d₁.domain : Set F)) :
+    (hodgeLaplacian d₀ d₁).ker = harmonicSpace d₀ d₁ := by
+  ext x
+  constructor
+  · -- `0 = ⟪Δ x, x⟫ = ‖d₀† x‖² + ‖d₁ x‖²`.
+    intro hx
+    obtain ⟨y, rfl, hy⟩ := mem_ker_iff.1 hx
+    have h := inner_hodgeLaplacian_self hd₀' hd₁ y
+    rw [hy, inner_zero_left, eq_comm, RCLike.ofReal_eq_zero,
+      add_eq_zero_iff_of_nonneg (sq_nonneg _) (sq_nonneg _), sq_eq_zero_iff, sq_eq_zero_iff,
+      norm_eq_zero, norm_eq_zero] at h
+    exact mem_harmonicSpace_iff.2 ⟨coe_mem_ker_iff.2 h.2, coe_mem_ker_iff.2 h.1⟩
+  · rw [mem_harmonicSpace_iff, ← ker_adjointComp hd₀', ← ker_adjointComp hd₁]
+    simp only [mem_ker_iff_mem_graph, hodgeLaplacian_def, mem_graph_add_iff]
+    rintro ⟨h₁, h₀⟩
+    exact ⟨0, 0, h₀, h₁, add_zero 0⟩
+
+/-- **`Δ + 1` is surjective.** If `d₀` and `d₀†` are densely defined, `d₁` is closed and densely
+defined, and `range d₀ ≤ ker d₁`, every vector is `Δ x + x` for some `x` in the domain of the
+Laplacian. -/
+theorem surjective_hodgeLaplacian_add [CompleteSpace G] (hd₀ : Dense (d₀.domain : Set E))
+    (hd₀' : Dense (d₀†.domain : Set F)) (hc₁ : d₁.IsClosed) (hd₁ : Dense (d₁.domain : Set F))
+    (hcomplex : LinearMap.range d₀.toFun ≤ d₁.ker) :
+    Function.Surjective fun x : (hodgeLaplacian d₀ d₁).domain ↦ hodgeLaplacian d₀ d₁ x + x := by
+  intro f
+  -- Split `f = f₂ + f₁` along `L = ker d₀†`, and solve `a + d₀†† d₀† a = f₁ ∈ Lᗮ` and
+  -- `b + d₁† d₁ b = f₂ ∈ L`. Then `a ∈ Lᗮ = closure (range d₀) ≤ ker d₁` and `b ∈ L`, so the
+  -- cross terms `d₀†† d₀† b` and `d₁† d₁ a` vanish and `x = a + b` solves `Δ x + x = f`.
+  have hL : _root_.IsClosed (d₀†.ker : Set F) := (adjoint_isClosed hd₀).isClosed_ker
+  have : d₀†.ker.HasOrthogonalProjection :=
+    have := hL.completeSpace_coe
+    inferInstance
+  obtain ⟨f₂, hf₂, f₁, hf₁, rfl⟩ := d₀†.ker.exists_add_mem_mem_orthogonal f
+  obtain ⟨a, ha⟩ := surjective_add_adjointComp d₀† (adjoint_isClosed hd₀) hd₀' f₁
+  obtain ⟨b, hb⟩ := surjective_add_adjointComp d₁ hc₁ hd₁ f₂
+  dsimp only at ha hb
+  have hker : d₀†.kerᗮ ≤ d₁.ker := by
+    rw [← topologicalClosure_range_eq_orthogonal_ker_adjoint hd₀]
+    exact topologicalClosure_range_le_ker hc₁ hcomplex
+  have ha' : (a : F) ∈ d₀†.kerᗮ := by
+    have h : d₀†.adjointComp a ∈ d₀†.kerᗮ := by
+      rw [adjointComp_apply]
+      exact (adjoint_isFormalAdjoint hd₀').apply_mem_orthogonal_ker _
+    rw [eq_sub_of_add_eq ha]
+    exact sub_mem hf₁ h
+  have hb' : (b : F) ∈ d₀†.ker := by
+    have h : d₁.adjointComp b ∈ d₀†.ker := by
+      refine ((Submodule.orthogonal_le hker).trans (Submodule.orthogonal_orthogonal _).le) ?_
+      rw [adjointComp_apply]
+      exact (adjoint_isFormalAdjoint hd₁).apply_mem_orthogonal_ker _
+    rw [eq_sub_of_add_eq hb]
+    exact sub_mem hf₂ h
+  have hb₀ : ((b : F), (0 : F)) ∈ d₀†.adjointComp.graph := by
+    rw [← mem_ker_iff_mem_graph, ker_adjointComp hd₀']
+    exact hb'
+  have ha₁ : ((a : F), (0 : F)) ∈ d₁.adjointComp.graph := by
+    rw [← mem_ker_iff_mem_graph, ker_adjointComp hd₁]
+    exact hker ha'
+  have hmem : ((a : F) + b, d₀†.adjointComp a + d₁.adjointComp b) ∈
+      (hodgeLaplacian d₀ d₁).graph := by
+    rw [hodgeLaplacian_def, mem_graph_add_iff]
+    refine ⟨_, _, ?_, ?_, rfl⟩
+    · simpa using add_mem (d₀†.adjointComp.mem_graph a) hb₀
+    · simpa using add_mem ha₁ (d₁.adjointComp.mem_graph b)
+  obtain ⟨x, hx₁, hx₂⟩ := (hodgeLaplacian d₀ d₁).mem_graph_iff.1 hmem
+  refine ⟨x, ?_⟩
+  dsimp only at hx₁ hx₂ ⊢
+  rw [hx₂, hx₁, ← ha, ← hb]
+  abel
+
+/-- **The Laplacian of a Hilbert complex is self-adjoint.** If `d₀` and `d₀†` are densely
+defined, `d₁` is closed and densely defined, and `range d₀ ≤ ker d₁`, then the Laplacian
+`d₀†† d₀† + d₁† d₁` is self-adjoint. -/
+theorem isSelfAdjoint_hodgeLaplacian [CompleteSpace G] (hd₀ : Dense (d₀.domain : Set E))
+    (hd₀' : Dense (d₀†.domain : Set F)) (hc₁ : d₁.IsClosed) (hd₁ : Dense (d₁.domain : Set F))
+    (hcomplex : LinearMap.range d₀.toFun ≤ d₁.ker) : IsSelfAdjoint (hodgeLaplacian d₀ d₁) :=
+  (isFormalAdjoint_hodgeLaplacian d₀ d₁).isSelfAdjoint_of_surjective_add_smul
+    (c := 1) RCLike.one_im <| by
+      simpa only [one_smul] using surjective_hodgeLaplacian_add hd₀ hd₀' hc₁ hd₁ hcomplex
+
+end Laplacian
 
 end LinearPMap

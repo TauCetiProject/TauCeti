@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
 
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.GraphProjection
+import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
 # The operator `T†T` for a closed densely defined operator
@@ -15,7 +16,9 @@ import TauCeti.Analysis.InnerProductSpace.LinearPMap.GraphProjection
 For a partially defined operator `T`, the domain of `LinearPMap.adjointComp T` consists
 of the vectors `x` in the domain of `T` for which `T x` belongs to the domain of `T†`.
 If `T` is closed and densely defined between real or complex Hilbert spaces, then
-`T†T` is densely defined, nonnegative and self-adjoint.
+`T†T` is densely defined, nonnegative and self-adjoint. The graph of `T†T` is the composite of
+the graphs of `T` and `T†` (`LinearPMap.mem_graph_adjointComp_iff`), and for densely defined `T`
+the kernel of `T†T` is that of `T` (`LinearPMap.ker_adjointComp`).
 
 Projecting `(z, 0)` onto the closed graph of `T` gives a solution of
 `x + T†T x = z`. This surjectivity and the form identity give density of the
@@ -74,6 +77,18 @@ theorem adjointComp_apply (T : E →ₗ.[𝕜] F) (x : (adjointComp T).domain) :
   -- by proof irrelevance of the membership witnesses.
   (rfl)
 
+/-- `(x, z)` lies on the graph of `T†T` exactly when `(x, y)` lies on the graph of `T` and
+`(y, z)` on that of `T†` for some `y`. -/
+theorem mem_graph_adjointComp_iff {T : E →ₗ.[𝕜] F} {x z : E} :
+    (x, z) ∈ T.adjointComp.graph ↔ ∃ y, (x, y) ∈ T.graph ∧ (y, z) ∈ T†.graph := by
+  simp only [← exists_apply_eq_iff_mem_graph]
+  constructor
+  · rintro ⟨hx, rfl⟩
+    obtain ⟨hx', hy⟩ := mem_adjointComp_domain.1 hx
+    exact ⟨_, ⟨hx', rfl⟩, hy, (adjointComp_apply T ⟨x, hx⟩).symm⟩
+  · rintro ⟨_, ⟨hx, rfl⟩, hy, rfl⟩
+    exact ⟨mem_adjointComp_domain.2 ⟨hx, hy⟩, adjointComp_apply T ⟨x, _⟩⟩
+
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
 /-- The form identity for `T†T` needs density of the domain of `T`, but not closedness. -/
@@ -90,15 +105,36 @@ theorem re_inner_adjointComp_nonneg {T : E →ₗ.[𝕜] F} (hd : Dense (T.domai
   rw [inner_adjointComp hd x (T.adjointComp_domain_le x.property)]
   exact inner_self_nonneg
 
-/-- The maximal-domain operator `T†T` is a formal adjoint of itself. -/
-private theorem adjointComp_isFormalAdjoint {T : E →ₗ.[𝕜] F}
-    (hd : Dense (T.domain : Set E)) :
+/-- The maximal-domain operator `T†T` is a formal adjoint of itself. When `T` is not densely
+defined, `T†` is the zero map on its domain, and so is `T†T`. -/
+theorem isFormalAdjoint_adjointComp (T : E →ₗ.[𝕜] F) :
     (adjointComp T).IsFormalAdjoint (adjointComp T) := by
   intro x y
-  rw [inner_adjointComp hd x (adjointComp_domain_le T y.property), adjointComp_apply]
-  exact (adjoint_isFormalAdjoint hd (T := T)).symm
-    ⟨x, adjointComp_domain_le T x.property⟩
-    ⟨T ⟨y, adjointComp_domain_le T y.property⟩, (mem_adjointComp_domain.mp y.property).choose_spec⟩
+  by_cases hd : Dense (T.domain : Set E)
+  · rw [inner_adjointComp hd x (adjointComp_domain_le T y.property), adjointComp_apply]
+    exact (adjoint_isFormalAdjoint hd (T := T)).symm
+      ⟨x, adjointComp_domain_le T x.property⟩
+      ⟨T ⟨y, adjointComp_domain_le T y.property⟩,
+        (mem_adjointComp_domain.mp y.property).choose_spec⟩
+  · rw [adjointComp_apply, adjointComp_apply, adjoint_apply_of_not_dense hd,
+      adjoint_apply_of_not_dense hd, inner_zero_left, inner_zero_right]
+
+/-- The kernel of `T†T` is the kernel of `T` when `T` is densely defined. -/
+theorem ker_adjointComp {T : E →ₗ.[𝕜] F} (hd : Dense (T.domain : Set E)) :
+    T.adjointComp.ker = T.ker := by
+  ext x
+  simp only [mem_ker_iff_mem_graph, mem_graph_adjointComp_iff]
+  constructor
+  · rintro ⟨y, hxy, hy⟩
+    -- `‖T x‖² = ⟪T†T x, x⟫ = 0`.
+    obtain ⟨hx, rfl⟩ := (exists_apply_eq_iff_mem_graph T).2 hxy
+    have hx' : x ∈ T.adjointComp.domain := mem_adjointComp_domain.2 ⟨hx, mem_domain_of_mem_graph hy⟩
+    have h := inner_adjointComp hd ⟨x, hx'⟩ hx
+    rw [← (T.adjointComp.image_iff hx').2 ((mem_graph_adjointComp_iff).2 ⟨_, hxy, hy⟩),
+      inner_zero_left, eq_comm, inner_self_eq_zero] at h
+    rwa [h] at hxy
+  · intro hx
+    exact ⟨0, hx, T†.graph.zero_mem⟩
 
 variable [CompleteSpace F]
 
@@ -148,7 +184,7 @@ and densely defined. -/
 theorem isSelfAdjoint_adjointComp (T : E →ₗ.[𝕜] F) (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) : IsSelfAdjoint (adjointComp T) := by
   have hdA := dense_adjointComp_domain T hT hd
-  have hsym := adjointComp_isFormalAdjoint hd
+  have hsym := isFormalAdjoint_adjointComp T
   have hle : adjointComp T ≤ (adjointComp T)† := hsym.le_adjoint hdA
   have hfa := (adjoint_isFormalAdjoint hdA (T := adjointComp T)).symm
   have key : ∀ y : ((adjointComp T)†).domain,
