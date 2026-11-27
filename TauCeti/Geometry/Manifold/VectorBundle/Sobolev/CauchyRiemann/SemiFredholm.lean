@@ -171,7 +171,8 @@ include hD hDs in
 compact error is the Rellich inclusion, survives the compact perturbation by the rough term. -/
 private theorem exists_compact_estimate_perturbedSobolevL (hp : 2 < p) (hq : 1 < q)
     (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0) :
+    (α : SobolevSection
+      (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p 0) :
     ∃ (C : ℝ) (K : SobolevSection A volume q 1 →L[ℝ]
         zeroOneSobolevSections A volume q 0 × SobolevSection A volume q 0),
       IsCompactOperator K ∧
@@ -194,7 +195,8 @@ satisfies `‖ξ‖_{W^{1,q}} ≤ C (‖(D₀ + α) ξ‖_{L^q} + ‖ξ‖_{L^q}
 realization `TauCeti.IsRealCauchyRiemannOperator.perturbedSobolevL` and `‖ξ‖_{L^q}` is the norm of
 `ξ` in `W^{0,q}(Σ, V)`. -/
 theorem exists_norm_le_norm_perturbedSobolevL_add_norm (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0) :
+    (α : SobolevSection
+      (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p 0) :
     ∃ C : ℝ, ∀ w : SobolevSection A volume q 1,
       ‖w‖ ≤ C * (‖hD.perturbedSobolevL A hDs volume hp hqp α w‖ +
         ‖A.sectionChartData.lowerOrderL volume q 0 w‖) := by
@@ -217,7 +219,8 @@ include hD hDs in
 realization `D₀ + α : W^{1,q}(Σ, V) → L^q(Σ, Λ^{0,1} ⊗ V)` of a real Cauchy–Riemann operator with
 an `L^p` zeroth-order term, `p > 2` and `1 < q ≤ p`, has finite-dimensional kernel. -/
 theorem finiteDimensional_ker_perturbedSobolevL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0) :
+    (α : SobolevSection
+      (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p 0) :
     FiniteDimensional ℝ (hD.perturbedSobolevL A hDs volume hp hqp α).ker := by
   obtain ⟨C, K, hK, hC⟩ := exists_compact_estimate_perturbedSobolevL A hD hDs hp hq hqp α
   have h := ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate (𝕜 := ℝ)
@@ -231,7 +234,8 @@ include hD hDs in
 `D₀ + α : W^{1,q}(Σ, V) → L^q(Σ, Λ^{0,1} ⊗ V)` of a real Cauchy–Riemann operator with an `L^p`
 zeroth-order term, `p > 2` and `1 < q ≤ p`, has closed range. -/
 theorem isClosed_range_perturbedSobolevL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0) :
+    (α : SobolevSection
+      (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p 0) :
     IsClosed ((hD.perturbedSobolevL A hDs volume hp hqp α).range :
       Set (zeroOneSobolevSections A volume q 0)) := by
   obtain ⟨C, K, hK, hC⟩ := exists_compact_estimate_perturbedSobolevL A hD hDs hp hq hqp α

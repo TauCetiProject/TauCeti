@@ -112,13 +112,13 @@ omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 `(0,1)`-forms extends, by Hahn–Banach, to the space of all chart data of `V`-valued one-forms. -/
 theorem exists_extension_zeroOneSobolevSections
     (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ) :
-    ∃ Λ' : A.tangentHom.sectionChartData.SobolevData volume p 0 →L[ℝ] ℝ,
+    ∃ Λ' : (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0 →L[ℝ] ℝ,
       ∀ w : zeroOneSobolevSections A volume p 0,
-        Λ' ((w : SobolevSection A.tangentHom volume p 0) :
-          A.tangentHom.sectionChartData.SobolevData volume p 0) = Λ w := by
+        Λ' ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+          (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0) = Λ w := by
   obtain ⟨g₁, hg₁, -⟩ := exists_extension_norm_eq (zeroOneSobolevSections A volume p 0) Λ
   obtain ⟨g₂, hg₂, -⟩ := exists_extension_norm_eq
-    (A.tangentHom.sectionChartData.sobolevSections volume p 0) g₁
+    ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.sobolevSections volume p 0) g₁
   exact ⟨g₂, fun w ↦ (hg₂ _).trans (hg₁ w)⟩
 
 variable {q : ℝ≥0∞} [hq₁ : Fact (1 ≤ q)] [hpq : p.HolderConjugate q]
@@ -134,19 +134,19 @@ theorem exists_memLp_forall_eq_setIntegral_of_mem_aeZeroOff (hp : 1 < p) (hp_top
     (hQi : closure (Q : Set ℂ) ⊆ A.image i) :
     ∃ θ : ℂ → F →L[ℝ] ℝ, MemLp θ q (volume.restrict Q) ∧
       ∀ w : zeroOneSobolevSections A volume p 0,
-        (w : SobolevSection A.tangentHom volume p 0) ∈
-            SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q) →
-          Λ w = ∫ z in Q, θ z (A.tangentHom.sectionChartData.chartValueL volume p 0 i
-            ((w : SobolevSection A.tangentHom volume p 0) :
-              A.tangentHom.sectionChartData.SobolevData volume p 0) z 1) := by
+        (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) ∈
+            SobolevSection.aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0 ((A.chart i).symm '' Q) →
+          Λ w = ∫ z in Q, θ z ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
+            ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+              (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0) z 1) := by
   obtain ⟨Λ', hΛ'⟩ := exists_extension_zeroOneSobolevSections A Λ
-  have hQi' : closure (Q : Set ℂ) ⊆ A.tangentHom.image i := by rwa [A.image_tangentHom]
-  have hQs : (Q : Set ℂ) ⊆ A.tangentHom.sectionChartData.image i := by
+  have hQi' : closure (Q : Set ℂ) ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).image i := by rwa [A.image_tangentHom]
+  have hQs : (Q : Set ℂ) ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i := by
     rw [sectionChartData_image_tangentHom]
     exact fun y hy ↦ hQi (subset_closure hy)
   -- `Λ` over `Q` is integration of the chart-`i` components against `H`.
   obtain ⟨H, hH, hHΛ⟩ := SobolevSection.exists_memLp_forall_apply_eq_sum_setIntegral (q := q)
-    A.tangentHom hp hp_top Λ' i hQi'
+    (A.tangentHom 𝓘(ℝ, ℂ)) hp hp_top Λ' i hQi'
   -- The coefficient field, assembled by a fixed continuous linear map: the `c`-th component of
   -- the complex antilinear map with value `v` on `1`, weighted by `H c`.
   let T : EuclideanSpace ℝ (Fin (finrank ℝ (ℂ →L[ℝ] F))) →L[ℝ] F →L[ℝ] ℝ :=
@@ -164,9 +164,9 @@ theorem exists_memLp_forall_eq_setIntegral_of_mem_aeZeroOff (hp : 1 < p) (hp_top
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hQs
       (mem_zeroOneSobolevSections_iff.1 w.prop i),
     ae_restrict_of_ae_restrict_of_subset hQs
-      (A.tangentHom.sectionChartData.chartValueL_apply_ae volume p 0 i
-        ((w : SobolevSection A.tangentHom volume p 0) :
-          A.tangentHom.sectionChartData.SobolevData volume p 0))] with z hza hzs
+      ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL_apply_ae volume p 0 i
+        ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+          (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0))] with z hza hzs
   simp only [T, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.smulRight_apply,
     smul_apply, smul_eq_mul, PiLp.proj_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.antilinearOfOneL_apply_eq_of_antilinear _ hza,
@@ -183,12 +183,12 @@ include hD hDs in
 /-- The chart data of the realization of a smooth section `ξ` are, in chart `j`, the reading of
 `D ξ`. -/
 private theorem chartValueL_sobolevL_ae (ξ : Cₛ^1⟮𝓘(ℝ, ℂ); F, V⟯) (j : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL volume p 0 j
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 j
       ((hD.sobolevL A hDs volume p (SobolevSection.ofContMDiffSection A volume p 1 ξ) :
-        SobolevSection A.tangentHom volume p 0) :
-          A.tangentHom.sectionChartData.SobolevData volume p 0)
-      =ᵐ[volume.restrict (A.tangentHom.sectionChartData.image j)]
-        A.tangentHom.coord j (D ξ) :=
+        SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+          (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0)
+      =ᵐ[volume.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image j)]
+        (A.tangentHom 𝓘(ℝ, ℂ)).coord j (D ξ) :=
   (ae_image_tangentHom_iff A volume j).2
     (IsRealCauchyRiemannOperator.chartValueL_sobolevL_ofContMDiffSection_ae A hD hDs volume p ξ j)
 
@@ -199,7 +199,7 @@ omit [T2Space M] in
 private theorem coord_tangentHom_eq_of_eqOn {i : Fin A.n} {ξ : Π x, V x}
     (hξ : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (T% ξ)) {φ : ℂ → F}
     (hξi : EqOn (A.coord i ξ) φ (A.image i)) {z : ℂ} (hz : z ∈ A.image i) :
-    A.tangentHom.coord i (D ξ) z =
+    (A.tangentHom 𝓘(ℝ, ℂ)).coord i (D ξ) z =
       complexAntilinearPartL (fderiv ℝ φ z) + A.chartZeroOrder D i z (φ z) := by
   have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
   have hev : A.coord i ξ =ᶠ[𝓝 z] φ :=
@@ -223,11 +223,11 @@ theorem exists_memLp_forall_integral_eq_zero_of_annihilator (hp : 1 < p) (hp_top
     (hQi : closure (Q : Set ℂ) ⊆ A.image i) :
     ∃ θ : ℂ → F →L[ℝ] ℝ, MemLp θ q (volume.restrict Q) ∧
       (∀ w : zeroOneSobolevSections A volume p 0,
-        (w : SobolevSection A.tangentHom volume p 0) ∈
-            SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q) →
-          Λ w = ∫ z in Q, θ z (A.tangentHom.sectionChartData.chartValueL volume p 0 i
-            ((w : SobolevSection A.tangentHom volume p 0) :
-              A.tangentHom.sectionChartData.SobolevData volume p 0) z 1)) ∧
+        (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) ∈
+            SobolevSection.aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0 ((A.chart i).symm '' Q) →
+          Λ w = ∫ z in Q, θ z ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
+            ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+              (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0) z 1)) ∧
       ∀ φ : 𝓓(Q, F), ∫ z, θ z ((complexAntilinearPartL (fderiv ℝ (φ : ℂ → F) z) +
         A.chartZeroOrder D i z ((φ : ℂ → F) z)) 1) = 0 := by
   have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
@@ -236,7 +236,7 @@ theorem exists_memLp_forall_integral_eq_zero_of_annihilator (hp : 1 < p) (hp_top
   refine ⟨θ, hθ, hrep, fun φ ↦ ?_⟩
   -- The smooth section read as `φ` in chart `i`.
   have hQimg : (Q : Set ℂ) ⊆ A.image i := fun y hy ↦ hQi (subset_closure hy)
-  have hQs : (Q : Set ℂ) ⊆ A.tangentHom.sectionChartData.image i := by
+  have hQs : (Q : Set ℂ) ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i := by
     rw [sectionChartData_image_tangentHom]
     exact hQimg
   obtain ⟨ξ, hξ, hξi, hξK⟩ := A.exists_contMDiff_eqOn_coord (i := i) φ.contDiff
@@ -244,8 +244,8 @@ theorem exists_memLp_forall_integral_eq_zero_of_annihilator (hp : 1 < p) (hp_top
   let ξ₁ : Cₛ^1⟮𝓘(ℝ, ℂ); F, V⟯ := ⟨ξ, hξ.of_le (by simp)⟩
   -- `D ξ` vanishes off the points of `Q`, so `Λ (D ξ)` is the integral of `θ` against its reading.
   have hmem : (hD.sobolevL A hDs volume p (SobolevSection.ofContMDiffSection A volume p 1 ξ₁) :
-      SobolevSection A.tangentHom volume p 0) ∈
-        SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q) :=
+      SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) ∈
+        SobolevSection.aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0 ((A.chart i).symm '' Q) :=
     SobolevSection.mem_aeZeroOff_of_ae_eq_coord (fun j ↦ chartValueL_sobolevL_ae A hD hDs ξ₁ j)
       fun x hx ↦ hD.apply_eq_zero_of_notMem_closure fun h ↦
         hx (image_mono φ.tsupport_subset (hξK h))
@@ -270,25 +270,25 @@ variable {i : Fin A.n} {Q' : Opens ℂ}
 
 omit [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 /-- A subset of the image of chart `i` of `A` lies in the image of chart `i` of the atlas
-`A.tangentHom` of `V`-valued one-forms: the two chart images agree. -/
+`(A.tangentHom 𝓘(ℝ, ℂ))` of `V`-valued one-forms: the two chart images agree. -/
 private theorem subset_image_tangentHom {s : Set ℂ} (h : s ⊆ A.image i) :
-    s ⊆ A.tangentHom.image i := by
+    s ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).image i := by
   rwa [A.image_tangentHom]
 
 omit [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 /-- A subset of the image of chart `i` of `A` lies in the image of chart `i` of the section chart
 data of `V`-valued one-forms. -/
 private theorem subset_sectionChartData_image_tangentHom {s : Set ℂ} (h : s ⊆ A.image i) :
-    s ⊆ A.tangentHom.sectionChartData.image i := by
+    s ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i := by
   rwa [sectionChartData_image_tangentHom]
 
 omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 /-- Chart-`i` data of one-forms built from `g ∈ Lᵖ(Q')` and `v : F`: the components, in
 `Module.finBasis ℝ (ℂ →L[ℝ] F)`, of `g₀ • antilinearOfOneL v`, where `g₀` is `g` extended by zero to
 the chart image. -/
-private def antilinearChartDataL (hQ' : (Q' : Set ℂ) ⊆ A.tangentHom.image i) (v : F) :
+private def antilinearChartDataL (hQ' : (Q' : Set ℂ) ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).image i) (v : F) :
     Lp ℝ p (volume.restrict (Q' : Set ℂ)) →L[ℝ]
-      (Fin (finrank ℝ (ℂ →L[ℝ] F)) → Wkp volume (A.tangentHom.image i) p 0) :=
+      (Fin (finrank ℝ (ℂ →L[ℝ] F)) → Wkp volume ((A.tangentHom 𝓘(ℝ, ℂ)).image i) p 0) :=
   -- `Wkp _ _ p 0` is `Lᵖ` by definition (`Wkp.value_zero` is `rfl`).
   ContinuousLinearMap.pi fun c ↦
     (finBasis ℝ (ℂ →L[ℝ] F)).repr (ContinuousLinearMap.antilinearOfOneL F v) c •
@@ -298,10 +298,11 @@ private def antilinearChartDataL (hQ' : (Q' : Set ℂ) ⊆ A.tangentHom.image i)
 omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 /-- The components of `antilinearChartDataL` are the coefficients times the extension of `g` by
 zero, almost everywhere on the chart image. -/
-private theorem value_antilinearChartDataL_ae (hQ' : (Q' : Set ℂ) ⊆ A.tangentHom.image i) (v : F)
+private theorem value_antilinearChartDataL_ae
+    (hQ' : (Q' : Set ℂ) ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).image i) (v : F)
     (g : Lp ℝ p (volume.restrict (Q' : Set ℂ))) (c : Fin (finrank ℝ (ℂ →L[ℝ] F))) :
     (Wkp.value 0 (antilinearChartDataL A hQ' v g c) : ℂ → ℝ)
-      =ᵐ[volume.restrict (A.tangentHom.image i : Set ℂ)] fun y ↦
+      =ᵐ[volume.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).image i : Set ℂ)] fun y ↦
         (finBasis ℝ (ℂ →L[ℝ] F)).repr (ContinuousLinearMap.antilinearOfOneL F v) c *
           extendByZeroLpₗᵢ ℝ volume Q'.isOpen.measurableSet.nullMeasurableSet hQ' g y := by
   rw [Wkp.value_zero]
@@ -309,10 +310,12 @@ private theorem value_antilinearChartDataL_ae (hQ' : (Q' : Set ℂ) ⊆ A.tangen
 
 omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 /-- The data `antilinearChartDataL` vanish off the points read in chart `i` inside `closure Q'`. -/
-private theorem antilinearChartDataL_mem (hQ' : (Q' : Set ℂ) ⊆ A.tangentHom.image i) (v : F)
+private theorem antilinearChartDataL_mem
+    (hQ' : (Q' : Set ℂ) ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).image i) (v : F)
     (g : Lp ℝ p (volume.restrict (Q' : Set ℂ))) :
-    antilinearChartDataL A hQ' v g ∈ SobolevSection.chartAeZeroOff A.tangentHom volume p 0 i
-      ((A.tangentHom.chart i).symm '' closure (Q' : Set ℂ)) :=
+    antilinearChartDataL A hQ' v g ∈
+      SobolevSection.chartAeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0 i
+      (((A.tangentHom 𝓘(ℝ, ℂ)).chart i).symm '' closure (Q' : Set ℂ)) :=
   SobolevSection.mem_chartAeZeroOff.2 fun c ↦ by
     filter_upwards [value_antilinearChartDataL_ae A hQ' v g c, ae_extendByZeroLpₗᵢ_eq_zero_of_notMem
       ℝ Q'.isOpen.measurableSet.nullMeasurableSet hQ' g] with y h₁ h₂ hL
@@ -321,24 +324,25 @@ private theorem antilinearChartDataL_mem (hQ' : (Q' : Set ℂ) ⊆ A.tangentHom.
 /-- The `(0,1)`-forms built from `g ∈ Lᵖ(Q')` and `v : F`: the extension by zero of
 `antilinearChartDataL`, a `(0,1)`-form vanishing off the points read in chart `i` inside
 `closure Q'` whose chart-`i` reading is `g₀ • antilinearOfOneL v`. -/
-private def antilinearExtL (hQ' : closure (Q' : Set ℂ) ⊆ A.tangentHom.image i) (v : F) :
+private def antilinearExtL (hQ' : closure (Q' : Set ℂ) ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).image i) (v : F) :
     Lp ℝ p (volume.restrict (Q' : Set ℂ)) →L[ℝ] zeroOneSobolevSections A volume p 0 :=
   zeroOneExtendByZeroL (SobolevSection.hasExtensionByZero_of_le_one zero_le_one)
-    (((A.tangentHom.isCompact_closure_image i).of_isClosed_subset isClosed_closure
+    ((((A.tangentHom 𝓘(ℝ, ℂ)).isCompact_closure_image i).of_isClosed_subset isClosed_closure
       (hQ'.trans subset_closure)).image_of_continuousOn
-        ((A.tangentHom.continuousOn_chart_symm i).mono hQ')).isClosed
-    (by rintro _ ⟨z, hz, rfl⟩; exact A.tangentHom.symm_mem_dom (hQ' hz)) |>.comp
+        (((A.tangentHom 𝓘(ℝ, ℂ)).continuousOn_chart_symm i).mono hQ')).isClosed
+    (by rintro _ ⟨z, hz, rfl⟩; exact (A.tangentHom 𝓘(ℝ, ℂ)).symm_mem_dom (hQ' hz)) |>.comp
     ((antilinearChartDataL A (subset_closure.trans hQ') v).codRestrict _
       (antilinearChartDataL_mem A (subset_closure.trans hQ') v))
 
 /-- On the chart image, the chart-`i` reading of `antilinearExtL v g`, evaluated on `1`, is
 `g₀ • v`, where `g₀` is `g` extended by zero. -/
-private theorem chartValueL_antilinearExtL_ae (hQ' : closure (Q' : Set ℂ) ⊆ A.tangentHom.image i)
+private theorem chartValueL_antilinearExtL_ae
+    (hQ' : closure (Q' : Set ℂ) ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).image i)
     (v : F) (g : Lp ℝ p (volume.restrict (Q' : Set ℂ))) :
-    ∀ᵐ y ∂volume.restrict (A.tangentHom.sectionChartData.image i : Set ℂ),
-      A.tangentHom.sectionChartData.chartValueL volume p 0 i
-        ((antilinearExtL A hQ' v g : SobolevSection A.tangentHom volume p 0) :
-          A.tangentHom.sectionChartData.SobolevData volume p 0) y 1 =
+    ∀ᵐ y ∂volume.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i : Set ℂ),
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
+        ((antilinearExtL A hQ' v g : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+          (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0) y 1 =
         extendByZeroLpₗᵢ ℝ volume Q'.isOpen.measurableSet.nullMeasurableSet
           (subset_closure.trans hQ') g y • v := by
   unfold antilinearExtL
@@ -369,19 +373,19 @@ private theorem apply_antilinearExtL_eq {Q : Opens ℂ} (hQi : (Q : Set ℂ) ⊆
     (hQ' : closure (Q' : Set ℂ) ⊆ Q)
     (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ) {θ : ℂ → F →L[ℝ] ℝ}
     (hrep : ∀ w : zeroOneSobolevSections A volume p 0,
-      (w : SobolevSection A.tangentHom volume p 0) ∈
-          SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q) →
-        Λ w = ∫ z in Q, θ z (A.tangentHom.sectionChartData.chartValueL volume p 0 i
-          ((w : SobolevSection A.tangentHom volume p 0) :
-            A.tangentHom.sectionChartData.SobolevData volume p 0) z 1))
+      (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) ∈
+          SobolevSection.aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0 ((A.chart i).symm '' Q) →
+        Λ w = ∫ z in Q, θ z ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
+          ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+            (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0) z 1))
     (v : F) (g : Lp ℝ p (volume.restrict (Q' : Set ℂ))) :
     Λ (antilinearExtL A (subset_image_tangentHom A (hQ'.trans hQi)) v g) =
       ∫ z in Q', g z * θ z v := by
   have hQ'' := subset_image_tangentHom A (hQ'.trans hQi)
   -- `antilinearExtL v g` vanishes off the points read in chart `i` inside `closure Q' ⊆ Q`. The
-  -- charts of `A.tangentHom` are those of `A` by definition.
-  have hmem : (antilinearExtL A hQ'' v g : SobolevSection A.tangentHom volume p 0) ∈
-      SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q) :=
+  -- charts of `(A.tangentHom 𝓘(ℝ, ℂ))` are those of `A` by definition.
+  have hmem : (antilinearExtL A hQ'' v g : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) ∈
+      SobolevSection.aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0 ((A.chart i).symm '' Q) :=
     SobolevSection.aeZeroOff_mono (image_mono hQ')
       (zeroOneExtendByZeroL_mem_aeZeroOff _ _ _ _)
   -- Over `Q`, the reading on `1` is `g₀ • v`, with `g₀` the extension of `g` by zero.
@@ -405,11 +409,11 @@ private theorem eLpNorm_apply_le {Q : Opens ℂ} (hQi : (Q : Set ℂ) ⊆ A.imag
     (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ) {θ : ℂ → F →L[ℝ] ℝ}
     (hθ : MemLp θ q (volume.restrict Q'))
     (hrep : ∀ w : zeroOneSobolevSections A volume p 0,
-      (w : SobolevSection A.tangentHom volume p 0) ∈
-          SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q) →
-        Λ w = ∫ z in Q, θ z (A.tangentHom.sectionChartData.chartValueL volume p 0 i
-          ((w : SobolevSection A.tangentHom volume p 0) :
-            A.tangentHom.sectionChartData.SobolevData volume p 0) z 1))
+      (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) ∈
+          SobolevSection.aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0 ((A.chart i).symm '' Q) →
+        Λ w = ∫ z in Q, θ z ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
+          ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+            (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0) z 1))
     (v : F) :
     (eLpNorm (fun z ↦ θ z v) q (volume.restrict Q')).toReal ≤
       ‖antilinearExtL (p := p) A (subset_image_tangentHom A (hQ'.trans hQi)) v‖ * ‖Λ‖ := by
@@ -444,11 +448,11 @@ theorem exists_eLpNorm_le_of_forall_eq_setIntegral (i : Fin A.n) {Q Q' : Opens �
     ∃ C : ℝ, ∀ (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ) (θ : ℂ → F →L[ℝ] ℝ),
       MemLp θ q (volume.restrict Q') →
       (∀ w : zeroOneSobolevSections A volume p 0,
-        (w : SobolevSection A.tangentHom volume p 0) ∈
-            SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q) →
-          Λ w = ∫ z in Q, θ z (A.tangentHom.sectionChartData.chartValueL volume p 0 i
-            ((w : SobolevSection A.tangentHom volume p 0) :
-              A.tangentHom.sectionChartData.SobolevData volume p 0) z 1)) →
+        (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) ∈
+            SobolevSection.aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0 ((A.chart i).symm '' Q) →
+          Λ w = ∫ z in Q, θ z ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
+            ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+              (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0) z 1)) →
       (eLpNorm θ q (volume.restrict Q')).toReal ≤ C * ‖Λ‖ := by
   have hq₁ : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
   have hQ'' := subset_image_tangentHom A (hQ'.trans hQi)

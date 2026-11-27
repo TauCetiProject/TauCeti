@@ -276,28 +276,30 @@ composition with the reading of `Φ` as coefficient. -/
 theorem isCoeffMap_tangentHomMap
     (hΦ : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F →L[ℝ] G)) ∞
       fun x ↦ TotalSpace.mk' (F →L[ℝ] G) (E := fun x ↦ V x →L[ℝ] W x) x (Φ x)) :
-    A.tangentHom.sectionChartData.IsCoeffMap (A.ofBaseSet h).tangentHom.sectionChartData
+    (A.tangentHom 𝓘(ℝ, E)).sectionChartData.IsCoeffMap
+      ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).sectionChartData
       fun θ x ↦ (Φ x).comp (θ x) := by
   intro (i : Fin A.n)
   have hL : ContDiff ℝ ∞ (ContinuousLinearMap.compL ℝ E F G) := ContinuousLinearMap.contDiff _
   refine ⟨i, _, ContinuousLinearMap.compL ℝ E F G ∘ (A.hom (𝕜 := ℝ) h).coord i Φ,
     SetLike.coe_subset_coe.1 ((A.sectionChartData_image_tangentHom_ofBaseSet h i).trans
       (A.sectionChartData_image_tangentHom i).symm).subset,
-    (A.ofBaseSet h).tangentHom.isCompact_closure_image i,
+    ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).isCompact_closure_image i,
     ((A.hom (𝕜 := ℝ) h).chart i).isOpen_inter_preimage_symm
       ((A.hom (𝕜 := ℝ) h).triv i).open_baseSet,
     ?_, hL.comp_contDiffOn ((A.hom (𝕜 := ℝ) h).contDiffOn_coord hΦ i), fun θ y hy ↦ ?_⟩
   · rw [A.sectionChartData_image_tangentHom_ofBaseSet h, ← image_hom (𝕜 := ℝ) (h := h)]
     exact (A.hom (𝕜 := ℝ) h).closure_image_subset_target_inter_preimage_baseSet i
   have hy' : y ∈ A.image i := (A.sectionChartData_image_tangentHom_ofBaseSet h i).subset hy
-  have hyA : y ∈ A.tangentHom.image i := (A.sectionChartData_image_tangentHom i).symm.subset hy'
+  have hyA : y ∈ (A.tangentHom 𝓘(ℝ, E)).image i :=
+    (A.sectionChartData_image_tangentHom i).symm.subset hy'
   have hx : (A.chart i).symm y ∈ (trivializationAt F V (A.center i)).baseSet :=
     A.dom_subset_baseSet i (A.symm_mem_dom hy')
-  refine ((A.ofBaseSet h).tangentHom.sectionChartData_coord_of_mem _ hy).trans ?_
-  refine ((A.ofBaseSet h).coord_tangentHom i _ y).trans ?_
+  refine (((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).sectionChartData_coord_of_mem _ hy).trans ?_
+  refine ((A.ofBaseSet h).coord_tangentHom 𝓘(ℝ, E) i _ y).trans ?_
   refine (ContinuousLinearMap.inCoordinates_comp _ _ hx).trans ?_
-  rw [A.tangentHom.sectionChartData_coord_of_mem _ hyA, coord_tangentHom, Function.comp_apply,
-    coord_hom, ContinuousLinearMap.compL_apply]
+  rw [(A.tangentHom 𝓘(ℝ, E)).sectionChartData_coord_of_mem _ hyA, coord_tangentHom,
+    Function.comp_apply, coord_hom, ContinuousLinearMap.compL_apply]
   simp only [ofBaseSet_center, chart_ofBaseSet]
 
 omit [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
@@ -315,7 +317,8 @@ theorem isCoeffMap_ofBaseSet_bundleMap {Ψ : ∀ x, W x →L[ℝ] V x}
 theorem isCoeffMap_ofBaseSet_tangentHomMap {Ψ : ∀ x, W x →L[ℝ] V x}
     (hΨ : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, G →L[ℝ] F)) ∞
       fun x ↦ TotalSpace.mk' (G →L[ℝ] F) (E := fun x ↦ W x →L[ℝ] V x) x (Ψ x)) :
-    (A.ofBaseSet h).tangentHom.sectionChartData.IsCoeffMap A.tangentHom.sectionChartData
+    ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).sectionChartData.IsCoeffMap
+      (A.tangentHom 𝓘(ℝ, E)).sectionChartData
       fun θ x ↦ (Ψ x).comp (θ x) := by
   have := (A.ofBaseSet h).isCoeffMap_tangentHomMap A.closure_dom_subset_baseSet hΨ
   rwa [ofBaseSet_ofBaseSet (A := A) (h := h) A.closure_dom_subset_baseSet] at this
@@ -355,7 +358,8 @@ variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] 
 sending an element with one-form `θ` to the element with one-form `Φ ∘ θ`
 (`TauCeti.SobolevSection.chartValueL_tangentHomMapL_ae_coord`). -/
 def tangentHomMapL [IsManifold 𝓘(ℝ, E) 1 M] :
-    SobolevSection A.tangentHom μ p k →L[ℝ] SobolevSection (A.ofBaseSet h).tangentHom μ p k :=
+    SobolevSection (A.tangentHom 𝓘(ℝ, E)) μ p k →L[ℝ]
+      SobolevSection ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)) μ p k :=
   (A.isCoeffMap_tangentHomMap h hΦ).mapL μ p k
 
 variable {A h hΦ μ p k}
@@ -373,16 +377,19 @@ theorem chartValueL_bundleMapL_ae_coord {w : SobolevSection A μ p k} {s : ∀ x
 variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] in
 /-- The image under `tangentHomMapL` of an element with one-form `θ` has one-form `Φ ∘ θ`. -/
 theorem chartValueL_tangentHomMapL_ae_coord [IsManifold 𝓘(ℝ, E) 1 M]
-    {w : SobolevSection A.tangentHom μ p k} {θ : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x}
-    (hθ : ∀ i, A.tangentHom.sectionChartData.chartValueL μ p k i w
-      =ᵐ[μ.restrict (A.tangentHom.image i)] A.tangentHom.coord i θ) (i : Fin A.n) :
-    (A.ofBaseSet h).tangentHom.sectionChartData.chartValueL μ p k i (tangentHomMapL A h hΦ μ p k w)
-      =ᵐ[μ.restrict ((A.ofBaseSet h).tangentHom.image i)]
-        (A.ofBaseSet h).tangentHom.coord i fun x ↦ (Φ x).comp (θ x) :=
-  ((A.ofBaseSet h).tangentHom.ae_eq_sectionChartData_coord_iff μ).1 <|
+    {w : SobolevSection (A.tangentHom 𝓘(ℝ, E)) μ p k}
+    {θ : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x}
+    (hθ : ∀ i, (A.tangentHom 𝓘(ℝ, E)).sectionChartData.chartValueL μ p k i w
+      =ᵐ[μ.restrict ((A.tangentHom 𝓘(ℝ, E)).image i)]
+        (A.tangentHom 𝓘(ℝ, E)).coord i θ) (i : Fin A.n) :
+    ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).sectionChartData.chartValueL μ p k i
+        (tangentHomMapL A h hΦ μ p k w)
+      =ᵐ[μ.restrict (((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).image i)]
+        ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).coord i fun x ↦ (Φ x).comp (θ x) :=
+  (((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).ae_eq_sectionChartData_coord_iff μ).1 <|
     SectionChartData.IsCoeffMap.chartValueL_mapL_ae_coord
       (hf := A.isCoeffMap_tangentHomMap h hΦ)
-      (fun i ↦ (A.tangentHom.ae_eq_sectionChartData_coord_iff μ).2 (hθ i)) i
+      (fun i ↦ ((A.tangentHom 𝓘(ℝ, E)).ae_eq_sectionChartData_coord_iff μ).2 (hθ i)) i
 
 /-- On a smooth section `s`, the map induced by `Φ` is the Sobolev section of the smooth section
 `Φ s`. -/
@@ -458,7 +465,8 @@ theorem chartValueL_bundleEquivL_symm_ae_coord {w : SobolevSection (A.ofBaseSet 
 between `W^{k,p}` `V`-valued and `W`-valued one-forms induced by a smooth bundle isomorphism `Φ`,
 sending an element with one-form `θ` to the element with one-form `Φ ∘ θ`. -/
 def tangentHomEquivL [IsManifold 𝓘(ℝ, E) 1 M] :
-    SobolevSection A.tangentHom μ p k ≃L[ℝ] SobolevSection (A.ofBaseSet h).tangentHom μ p k :=
+    SobolevSection (A.tangentHom 𝓘(ℝ, E)) μ p k ≃L[ℝ]
+      SobolevSection ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)) μ p k :=
   (A.isCoeffMap_tangentHomMap h hΦ).mapEquivL μ p k
     (A.isCoeffMap_ofBaseSet_tangentHomMap h hΦ.clm_bundle_equiv_symm)
     (fun _ ↦ funext fun x ↦ ContinuousLinearMap.ext fun _ ↦ (Φ x).symm_apply_apply _)
@@ -467,7 +475,8 @@ def tangentHomEquivL [IsManifold 𝓘(ℝ, E) 1 M] :
 @[simp]
 theorem coe_tangentHomEquivL [IsManifold 𝓘(ℝ, E) 1 M] :
     (tangentHomEquivL A h μ p k hΦ :
-      SobolevSection A.tangentHom μ p k →L[ℝ] SobolevSection (A.ofBaseSet h).tangentHom μ p k) =
+      SobolevSection (A.tangentHom 𝓘(ℝ, E)) μ p k →L[ℝ]
+        SobolevSection ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)) μ p k) =
       tangentHomMapL A h hΦ μ p k :=
   (rfl)
 
@@ -476,18 +485,20 @@ theorem coe_tangentHomEquivL [IsManifold 𝓘(ℝ, E) 1 M] :
 @[simp]
 theorem coe_tangentHomEquivL_symm [IsManifold 𝓘(ℝ, E) 1 M] :
     ((tangentHomEquivL A h μ p k hΦ).symm :
-      SobolevSection (A.ofBaseSet h).tangentHom μ p k →L[ℝ] SobolevSection A.tangentHom μ p k) =
+      SobolevSection ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)) μ p k →L[ℝ]
+        SobolevSection (A.tangentHom 𝓘(ℝ, E)) μ p k) =
       (A.isCoeffMap_ofBaseSet_tangentHomMap h hΦ.clm_bundle_equiv_symm).mapL μ p k :=
   (rfl)
 
 @[simp]
-theorem tangentHomEquivL_apply [IsManifold 𝓘(ℝ, E) 1 M] (w : SobolevSection A.tangentHom μ p k) :
+theorem tangentHomEquivL_apply [IsManifold 𝓘(ℝ, E) 1 M]
+    (w : SobolevSection (A.tangentHom 𝓘(ℝ, E)) μ p k) :
     tangentHomEquivL A h μ p k hΦ w = tangentHomMapL A h hΦ μ p k w :=
   (rfl)
 
 @[simp]
 theorem tangentHomEquivL_symm_apply [IsManifold 𝓘(ℝ, E) 1 M]
-    (w : SobolevSection (A.ofBaseSet h).tangentHom μ p k) :
+    (w : SobolevSection ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)) μ p k) :
     (tangentHomEquivL A h μ p k hΦ).symm w =
       (A.isCoeffMap_ofBaseSet_tangentHomMap h hΦ.clm_bundle_equiv_symm).mapL μ p k w :=
   (rfl)
@@ -496,18 +507,21 @@ variable {A h μ p k hΦ} in
 /-- The image under the inverse of `tangentHomEquivL` of an element with one-form `θ` has one-form
 `Φ⁻¹ ∘ θ`. -/
 theorem chartValueL_tangentHomEquivL_symm_ae_coord [IsManifold 𝓘(ℝ, E) 1 M]
-    {w : SobolevSection (A.ofBaseSet h).tangentHom μ p k}
+    {w : SobolevSection ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)) μ p k}
     {θ : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] W x}
-    (hθ : ∀ i, (A.ofBaseSet h).tangentHom.sectionChartData.chartValueL μ p k i w
-      =ᵐ[μ.restrict ((A.ofBaseSet h).tangentHom.image i)] (A.ofBaseSet h).tangentHom.coord i θ)
+    (hθ : ∀ i, ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).sectionChartData.chartValueL μ p k i w
+      =ᵐ[μ.restrict (((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).image i)]
+        ((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).coord i θ)
     (i : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL μ p k i ((tangentHomEquivL A h μ p k hΦ).symm w)
-      =ᵐ[μ.restrict (A.tangentHom.image i)]
-        A.tangentHom.coord i fun x ↦ ((Φ x).symm : W x →L[ℝ] V x).comp (θ x) :=
-  (A.tangentHom.ae_eq_sectionChartData_coord_iff μ).1 <|
+    (A.tangentHom 𝓘(ℝ, E)).sectionChartData.chartValueL μ p k i
+        ((tangentHomEquivL A h μ p k hΦ).symm w)
+      =ᵐ[μ.restrict ((A.tangentHom 𝓘(ℝ, E)).image i)]
+        (A.tangentHom 𝓘(ℝ, E)).coord i fun x ↦ ((Φ x).symm : W x →L[ℝ] V x).comp (θ x) :=
+  ((A.tangentHom 𝓘(ℝ, E)).ae_eq_sectionChartData_coord_iff μ).1 <|
     SectionChartData.IsCoeffMap.chartValueL_mapL_ae_coord
       (hf := A.isCoeffMap_ofBaseSet_tangentHomMap h hΦ.clm_bundle_equiv_symm)
-      (fun i ↦ ((A.ofBaseSet h).tangentHom.ae_eq_sectionChartData_coord_iff μ).2 (hθ i)) i
+      (fun i ↦ (((A.ofBaseSet h).tangentHom 𝓘(ℝ, E)).ae_eq_sectionChartData_coord_iff μ).2
+        (hθ i)) i
 
 end Equiv
 

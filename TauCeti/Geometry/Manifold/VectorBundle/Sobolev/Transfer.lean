@@ -109,7 +109,7 @@ theorem FiniteBundleAtlas.chartDerivL_ae_overlap (w : A.sectionChartData.sobolev
   have hτ := (A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i w).comp_contDiffOn_diffeo
     (U := O) (A.contDiffOn_transition i i')
     (fun y hy ↦ by
-      rw [A.fderiv_transition hy]
+      rw [A.fderiv_transition ℝ hy]
       exact ContinuousLinearEquiv.toLinearEquiv _ |>.isUnit_det'.ne_zero)
     fun y hy ↦ A.overlap_subset_image i' i (A.transition_mem_overlap hy)
   have hcoord := (A.contDiffOn_coordChangeL_transferDomain (n := 1) i i').mono

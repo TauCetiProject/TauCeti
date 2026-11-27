@@ -36,6 +36,15 @@ For a real Cauchy–Riemann operator on a real manifold with any smooth almost c
 sending smooth sections to smooth one-forms, the zeroth-order term of a chart is smooth, and
 bounded on the closure of the image of the chart.
 
+For any smooth almost complex structure `j` that reads as `i • id` in the tangent coordinates of
+chart `i`, the `(0,1)`-part of a `V`-valued one-form reads in chart `i` as
+`ContinuousLinearMap.complexAntilinearPartL` of its reading
+(`TauCeti.FiniteBundleAtlas.coord_tangentHom_zeroOnePart_of_inTangentCoordinates`), and on the
+image of chart `i` a one-form is a `(0,1)`-form iff its reading is complex antilinear
+(`TauCeti.FiniteBundleAtlas.isZeroOneForm_iff_coord_tangentHom_of_inTangentCoordinates`). On a
+complex manifold these specialize to `TauCeti.FiniteBundleAtlas.coord_tangentHom_zeroOnePart` and
+`TauCeti.FiniteBundleAtlas.isZeroOneForm_iff_coord_tangentHom`.
+
 This is the chart calculus behind the realization of a smooth real Cauchy–Riemann operator as a
 bounded operator between Sobolev spaces of sections, whose chart data are
 `∂bar uᵢ + Zᵢ uᵢ` for the chart data `uᵢ` of a Sobolev section.
@@ -60,6 +69,12 @@ bounded operator between Sobolev spaces of sections, whose chart data are
 * `TauCeti.FiniteBundleAtlas.contDiffOn_chartZeroOrder`,
   `TauCeti.FiniteBundleAtlas.exists_norm_chartZeroOrder_apply_le`: smoothness and boundedness of
   the zeroth-order term of a smooth operator.
+* `TauCeti.FiniteBundleAtlas.coord_tangentHom_zeroOnePart_of_inTangentCoordinates`,
+  `TauCeti.FiniteBundleAtlas.isZeroOneForm_iff_coord_tangentHom_of_inTangentCoordinates`,
+  `TauCeti.FiniteBundleAtlas.coord_tangentHom_zeroOnePart`,
+  `TauCeti.FiniteBundleAtlas.isZeroOneForm_iff_coord_tangentHom`: chart readings of `(0,1)`-parts
+  and `(0,1)`-forms for an almost complex structure reading as `i • id` in tangent coordinates, and
+  on complex manifolds.
 
 ## References
 
@@ -101,13 +116,13 @@ manifold, its values on the image of chart `i` do not depend on the basis
 def chartZeroOrder (D : (Π x : M, V x) → Π x : M, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x)
     (i : Fin A.n) (z : E) : F →L[ℝ] E →L[ℝ] F :=
   ∑ k, (LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord k)).smulRight
-    (A.tangentHom.coord i (D ((A.triv i).localFrame (finBasis ℝ F) k)) z)
+    ((A.tangentHom 𝓘(ℝ, E)).coord i (D ((A.triv i).localFrame (finBasis ℝ F) k)) z)
 
 theorem chartZeroOrder_apply (D : (Π x : M, V x) → Π x : M, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x)
     (i : Fin A.n) (z : E) (v : F) :
     A.chartZeroOrder D i z v =
       ∑ k, (finBasis ℝ F).coord k v •
-        A.tangentHom.coord i (D ((A.triv i).localFrame (finBasis ℝ F) k)) z := by
+        (A.tangentHom 𝓘(ℝ, E)).coord i (D ((A.triv i).localFrame (finBasis ℝ F) k)) z := by
   simp [chartZeroOrder]
 
 end Real
@@ -145,9 +160,11 @@ theorem contDiffOn_chartZeroOrder (hD : IsRealCauchyRiemannOperator F j D) {u : 
     (finBasis ℝ F) k).of_le
       (show (n : ℕ∞ω) + 1 ≤ ∞ from mod_cast (le_top : n + 1 ≤ ⊤))).mono
       (show a ⊆ (A.triv i).baseSet from fun x hx ↦ hx.2.1)
-  have hω := ((A.tangentHom.triv i).contMDiffOn_section_iff ha ?_).1 (hDa.contMDiff hframe)
+  have hω := (((A.tangentHom 𝓘(ℝ, E)).triv i).contMDiffOn_section_iff ha ?_).1
+    (hDa.contMDiff hframe)
   · exact ((hω.contDiffOn_comp_symm_of_mem_maximalAtlas
-      (IsManifold.chart_mem_maximalAtlas _)).congr fun y _ ↦ (A.tangentHom.coord_def i _ y)).mono
+      (IsManifold.chart_mem_maximalAtlas _)).congr
+        fun y _ ↦ ((A.tangentHom 𝓘(ℝ, E)).coord_def i _ y)).mono
         fun y hy ↦ ⟨hy.1, (A.chart i).map_target hy.1, hy.2⟩
   · intro x hx
     simp only [hom_trivializationAt_baseSet, TangentBundle.trivializationAt_baseSet]
@@ -210,7 +227,7 @@ theorem coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder
     (hz : z ∈ A.image i) {s : Π x, V x}
     (hs : MDifferentiableAt 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F))
       (fun x ↦ TotalSpace.mk' F x (s x)) ((A.chart i).symm z)) :
-    A.tangentHom.coord i (D s) z = complexAntilinearPartL (fderiv ℝ (A.coord i s) z) +
+    (A.tangentHom 𝓘(ℝ, E)).coord i (D s) z = complexAntilinearPartL (fderiv ℝ (A.coord i s) z) +
       A.chartZeroOrder D i z (A.coord i s z) := by
   have hxd : (A.chart i).symm z ∈ A.dom i := A.symm_mem_dom hz
   have hx : (A.chart i).symm z ∈ (A.triv i).baseSet := A.dom_subset_baseSet i hxd
@@ -232,7 +249,8 @@ particular it does not depend on the basis of `F` used to define it. -/
 theorem chartZeroOrder_apply_eq_coord_tangentHom
     (hD : IsRealCauchyRiemannOperator F (ofComplexManifold E M) D) {i : Fin A.n} {z : E}
     (hz : z ∈ A.image i) (v : F) :
-    A.chartZeroOrder D i z v = A.tangentHom.coord i (D fun x ↦ (A.triv i).symm x v) z := by
+    A.chartZeroOrder D i z v =
+      (A.tangentHom 𝓘(ℝ, E)).coord i (D fun x ↦ (A.triv i).symm x v) z := by
   have hc : A.coord i (fun x ↦ (A.triv i).symm x v) =ᶠ[𝓝 z] fun _ ↦ v := by
     filter_upwards [(A.image i).isOpen.mem_nhds hz] with y hy using A.coord_triv_symm v hy
   rw [A.coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder hD hz
@@ -288,11 +306,99 @@ theorem exists_norm_complexAntilinearPartL_fderiv_coord_le [FiniteDimensional �
   have h := A.coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder hD hy
     ((hs _).mdifferentiableAt one_ne_zero)
   -- The reading of the one-form `D s = 0` is zero.
-  rw [hs0, A.tangentHom.coord_zero i (by rwa [image_tangentHom])] at h
+  rw [hs0, (A.tangentHom 𝓘(ℝ, E)).coord_zero i (by rwa [image_tangentHom])] at h
   rw [eq_neg_of_add_eq_zero_left h.symm, norm_neg]
   exact (hC y (subset_closure hy) _).trans (by gcongr; exact le_max_left _ _)
 
 end Complex
+
+/-! ### Chart readings of `(0,1)`-forms -/
+
+section ZeroOneGeneral
+
+open SmoothAlmostComplexStructure
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace ℂ E]
+  [IsScalarTower ℝ ℂ E]
+  {H : Type u} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+  (A : FiniteBundleAtlas H M F V) (j : SmoothAlmostComplexStructure I M)
+
+variable [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
+/-- When an almost complex structure `j` reads as multiplication by `i` in the tangent coordinates
+on the whole source of chart `i`, the `(0,1)`-part of a one-form is read in chart `i` as the complex
+antilinear part `ContinuousLinearMap.complexAntilinearPartL` of its reading. -/
+theorem coord_tangentHom_zeroOnePart_of_inTangentCoordinates (i : Fin A.n)
+    (hj : ∀ x ∈ (A.chart i).source,
+      inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) (A.center i) x =
+        Complex.I • ContinuousLinearMap.id ℝ E)
+    (θ : ∀ x, TangentSpace I x →L[ℝ] V x) (y : H) :
+    (A.tangentHom I).coord i (fun x ↦ j.zeroOnePart (θ x)) y =
+      complexAntilinearPartL ((A.tangentHom I).coord i θ y) := by
+  rw [coord_tangentHom, coord_tangentHom]
+  by_cases hx : (A.chart i).symm y ∈ (chartAt H (A.center i)).source
+  · exact inCoordinates_zeroOnePart _ (hj _ hx) _
+  · -- Outside the chart both readings vanish.
+    have hx' : (A.chart i).symm y ∉
+        (trivializationAt E (TangentSpace I) (A.center i)).baseSet := by
+      rwa [TangentBundle.trivializationAt_baseSet]
+    ext v
+    simp [ContinuousLinearMap.inCoordinates, Trivialization.symmL_apply_of_notMem _ hx']
+
+/-- On the image of chart `i`, where `j` reads as multiplication by `i` in the tangent coordinates,
+a one-form is read as a complex antilinear map iff it is a `(0,1)`-form for `j` at the corresponding
+point. -/
+theorem isZeroOneForm_iff_coord_tangentHom_of_inTangentCoordinates (i : Fin A.n)
+    (θ : ∀ x, TangentSpace I x →L[ℝ] V x) {y : H} (hy : y ∈ A.image i)
+    (hj : inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) (A.center i)
+      ((A.chart i).symm y) = Complex.I • ContinuousLinearMap.id ℝ E) :
+    j.IsZeroOneForm (θ ((A.chart i).symm y)) ↔
+      ∀ v, (A.tangentHom I).coord i θ y (Complex.I • v) =
+        -(Complex.I • (A.tangentHom I).coord i θ y v) := by
+  rw [coord_tangentHom]
+  exact isZeroOneForm_iff_inCoordinates hj (A.dom_subset_baseSet i (A.symm_mem_dom hy))
+
+end ZeroOneGeneral
+
+section ZeroOneComplexManifold
+
+open SmoothAlmostComplexStructure
+
+variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+  (A : FiniteBundleAtlas E M F V)
+
+variable [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
+/-- The `(0,1)`-part of a one-form on a complex manifold is read in a chart as the complex
+antilinear part `ContinuousLinearMap.complexAntilinearPartL` of its reading. -/
+theorem coord_tangentHom_zeroOnePart (i : Fin A.n)
+    (θ : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) (y : E) :
+    (A.tangentHom 𝓘(ℝ, E)).coord i (fun x ↦ (ofComplexManifold E M).zeroOnePart (θ x)) y =
+      complexAntilinearPartL ((A.tangentHom 𝓘(ℝ, E)).coord i θ y) :=
+  A.coord_tangentHom_zeroOnePart_of_inTangentCoordinates (ofComplexManifold E M) i
+    (fun _ hx ↦ inTangentCoordinates_ofComplexManifold hx) θ y
+
+/-- On the image of a chart on a complex manifold, a one-form is read as a complex antilinear map
+exactly when it is a `(0,1)`-form at the corresponding point. -/
+theorem isZeroOneForm_iff_coord_tangentHom (i : Fin A.n)
+    (θ : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) {y : E} (hy : y ∈ A.image i) :
+    (ofComplexManifold E M).IsZeroOneForm (θ ((A.chart i).symm y)) ↔
+      ∀ v, (A.tangentHom 𝓘(ℝ, E)).coord i θ y (Complex.I • v) =
+        -(Complex.I • (A.tangentHom 𝓘(ℝ, E)).coord i θ y v) :=
+  A.isZeroOneForm_iff_coord_tangentHom_of_inTangentCoordinates (ofComplexManifold E M) i θ hy
+    (inTangentCoordinates_ofComplexManifold (A.dom_subset_chart_source i (A.symm_mem_dom hy)))
+
+end ZeroOneComplexManifold
 
 end FiniteBundleAtlas
 

@@ -117,7 +117,7 @@ include hD hDs in
 /-- The components of the realization, before restricting to Sobolev sections. -/
 private def dataSuccL :
     A.sectionChartData.SobolevData μ p (k + 1) →L[ℝ]
-      A.tangentHom.sectionChartData.SobolevData μ p k :=
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p k :=
   ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi fun c ↦
     (Wkp.restrictL (sectionChartData_image_tangentHom A i).le k).comp
       (chartSuccL A hD hDs μ p k i c)
@@ -141,12 +141,13 @@ tuple `w` of order `k + 1` are `∂bar uᵢ + Zᵢ uᵢ` almost everywhere, wher
 of `w` and `∂bar uᵢ` is the complex antilinear part of their weak derivative. -/
 private theorem chartValueL_dataSuccL_ae (w : A.sectionChartData.SobolevData μ p (k + 1))
     (i : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL μ p k i (dataSuccL A hD hDs μ p k w)
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i (dataSuccL A hD hDs μ p k w)
       =ᵐ[μ.restrict (A.image i)] fun y ↦
         complexAntilinearPartL (chartDeriv A μ p k i w y) +
           A.chartZeroOrder D i y (A.sectionChartData.chartValueL μ p (k + 1) i w y) := by
   have h₀ := (ae_image_tangentHom_iff A μ i).1
-    (A.tangentHom.sectionChartData.chartValueL_apply_ae μ p k i (dataSuccL A hD hDs μ p k w))
+    ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL_apply_ae μ p k i
+      (dataSuccL A hD hDs μ p k w))
   have hres := (ae_image_tangentHom_iff A μ i).1 <| ae_all_iff.2 fun c ↦
     Wkp.value_restrictL_ae (sectionChartData_image_tangentHom A i).le k
       (chartSuccL A hD hDs μ p k i c w)
@@ -188,10 +189,11 @@ private theorem chartValueL_toOrderOne (w : SobolevSection A μ p (k + 1)) (i : 
 realization of `w`. -/
 private theorem chartValueL_dataSuccL_ae_sobolevL (w : SobolevSection A μ p (k + 1))
     (i : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL μ p k i (dataSuccL A hD hDs μ p k w)
-      =ᵐ[μ.restrict (A.image i)] A.tangentHom.sectionChartData.chartValueL μ p 0 i
-        ((hD.sobolevL A hDs μ p (toOrderOne A μ p k w) : SobolevSection A.tangentHom μ p 0) :
-          A.tangentHom.sectionChartData.SobolevData μ p 0) := by
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i (dataSuccL A hD hDs μ p k w)
+      =ᵐ[μ.restrict (A.image i)] (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p 0 i
+        ((hD.sobolevL A hDs μ p (toOrderOne A μ p k w) :
+          SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p 0) :
+            (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p 0) := by
   have hDu : HasWeakFDerivOn μ (A.image i)
       (A.sectionChartData.chartValueL μ p 1 i (toOrderOne A μ p k w))
       (chartDeriv A μ p k i w) := by
@@ -205,10 +207,11 @@ include hD in
 /-- The components of the realization of a Sobolev section of order `k + 1` are those of a
 `V`-valued one-form of order `k`. -/
 private theorem dataSuccL_mem (w : SobolevSection A μ p (k + 1)) :
-    dataSuccL A hD hDs μ p k w ∈ A.tangentHom.sectionChartData.sobolevSections μ p k := by
-  obtain ⟨s, hs⟩ := A.tangentHom.sectionChartData.exists_section μ p 0
-    (hD.sobolevL A hDs μ p (toOrderOne A μ p k w) : SobolevSection A.tangentHom μ p 0)
-  exact (A.tangentHom.sectionChartData.mem_sobolevSections_iff μ p k).2
+    dataSuccL A hD hDs μ p k w ∈ (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.sobolevSections μ p k := by
+  obtain ⟨s, hs⟩ := (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.exists_section μ p 0
+    (hD.sobolevL A hDs μ p (toOrderOne A μ p k w) :
+      SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p 0)
+  exact ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.mem_sobolevSections_iff μ p k).2
     ⟨s, fun i ↦ Filter.EventuallyEq.trans ((ae_image_tangentHom_iff A μ i).2
       (chartValueL_dataSuccL_ae_sobolevL A hD hDs μ p k w i)) (hs i)⟩
 
@@ -217,7 +220,7 @@ include hD in
 `(0,1)`-form, since they are almost everywhere those of the order-one realization. -/
 private theorem dataSuccL_mem_zeroOne (w : SobolevSection A μ p (k + 1)) :
     (⟨dataSuccL A hD hDs μ p k w, dataSuccL_mem A hD hDs μ p k w⟩ :
-      SobolevSection A.tangentHom μ p k) ∈ zeroOneSobolevSections A μ p k := by
+      SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) ∈ zeroOneSobolevSections A μ p k := by
   have h := mem_zeroOneSobolevSections_iff.1 (hD.sobolevL A hDs μ p (toOrderOne A μ p k w)).property
   refine mem_zeroOneSobolevSections_iff.2 fun i ↦ ?_
   filter_upwards [h i, (ae_image_tangentHom_iff A μ i).2
@@ -234,14 +237,15 @@ zeroth-order term `Zᵢ` of `D` in chart `i`
 def sobolevSuccL : SobolevSection A μ p (k + 1) →L[ℝ] zeroOneSobolevSections A μ p k :=
   (((dataSuccL A hD hDs μ p k).comp
     (A.sectionChartData.sobolevSections μ p (k + 1)).subtypeL).codRestrict
-      (A.tangentHom.sectionChartData.sobolevSections μ p k)
+      ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.sobolevSections μ p k)
       (dataSuccL_mem A hD hDs μ p k)).codRestrict
     (zeroOneSobolevSections A μ p k) (dataSuccL_mem_zeroOne A hD hDs μ p k)
 
 /-- The underlying tuple of the realization of a Sobolev section is `dataSuccL`. -/
 private theorem coe_sobolevSuccL (w : SobolevSection A μ p (k + 1)) :
-    ((hD.sobolevSuccL A hDs μ p k w : SobolevSection A.tangentHom μ p k) :
-      A.tangentHom.sectionChartData.SobolevData μ p k) = dataSuccL A hD hDs μ p k w :=
+    ((hD.sobolevSuccL A hDs μ p k w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) :
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p k) =
+        dataSuccL A hD hDs μ p k w :=
   rfl
 
 /-- **The chart formula of the realization.** In chart `i`, the realization of a Sobolev section
@@ -251,9 +255,9 @@ is the zeroth-order term of `D` in chart `i`. -/
 theorem chartValueL_sobolevSuccL_ae (w : SobolevSection A μ p (k + 1)) {i : Fin A.n}
     {Du : ℂ → ℂ →L[ℝ] F}
     (hDu : HasWeakFDerivOn μ (A.image i) (A.sectionChartData.chartValueL μ p (k + 1) i w) Du) :
-    A.tangentHom.sectionChartData.chartValueL μ p k i
-        ((hD.sobolevSuccL A hDs μ p k w : SobolevSection A.tangentHom μ p k) :
-          A.tangentHom.sectionChartData.SobolevData μ p k)
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i
+        ((hD.sobolevSuccL A hDs μ p k w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) :
+          (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p k)
       =ᵐ[μ.restrict (A.image i)] fun y ↦ complexAntilinearPartL (Du y) +
         A.chartZeroOrder D i y (A.sectionChartData.chartValueL μ p (k + 1) i w y) := by
   rw [coe_sobolevSuccL]
@@ -293,14 +297,16 @@ theorem zeroOneLowerOrdersL_sobolevSuccL_add (d : ℕ) (w : SobolevSection A μ 
   have hDu' : HasWeakFDerivOn μ (A.image i) (A.sectionChartData.chartValueL μ p (k + 1) i
       (A.sectionChartData.lowerOrdersL μ p (k + 1) d ((Nat.add_right_comm k d 1) ▸ w))) _ :=
     hlow ▸ hDu
-  have hcoe : A.tangentHom.sectionChartData.chartValueL μ p k i
+  have hcoe : (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i
       ((zeroOneLowerOrdersL A μ p k d (hD.sobolevSuccL A hDs μ p (k + d) w) :
-        SobolevSection A.tangentHom μ p k) : A.tangentHom.sectionChartData.SobolevData μ p k) =
-      A.tangentHom.sectionChartData.chartValueL μ p (k + d) i
-        ((hD.sobolevSuccL A hDs μ p (k + d) w : SobolevSection A.tangentHom μ p (k + d)) :
-          A.tangentHom.sectionChartData.SobolevData μ p (k + d)) := by
+        SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) :
+          (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p k) =
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p (k + d) i
+        ((hD.sobolevSuccL A hDs μ p (k + d) w :
+          SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p (k + d)) :
+            (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p (k + d)) := by
     rw [coe_zeroOneLowerOrdersL]
-    exact A.tangentHom.sectionChartData.chartValueL_lowerOrdersL μ p k d _ i
+    exact (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL_lowerOrdersL μ p k d _ i
   rw [hcoe]
   filter_upwards [chartValueL_sobolevSuccL_ae A hD hDs μ p (k + d) w hDu,
     chartValueL_sobolevSuccL_ae A hD hDs μ p k _ hDu'] with y h₁ h₂
@@ -321,10 +327,11 @@ theorem zeroOneLowerOrdersL_sobolevSuccL (w : SobolevSection A μ p (k + 1 + 1))
 `C^{k+1}` section `s` to the `(0,1)`-form whose chart data are the readings of `D s`. -/
 theorem chartValueL_sobolevSuccL_ofContMDiffSection_ae
     (s : Cₛ^((k + 1 : ℕ) : WithTop ℕ∞)⟮𝓘(ℝ, ℂ); F, V⟯) (i : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL μ p k i
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i
         ((hD.sobolevSuccL A hDs μ p k (SobolevSection.ofContMDiffSection A μ p (k + 1) s) :
-          SobolevSection A.tangentHom μ p k) : A.tangentHom.sectionChartData.SobolevData μ p k)
-      =ᵐ[μ.restrict (A.image i)] A.tangentHom.coord i (D s) := by
+          SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) :
+            (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p k)
+      =ᵐ[μ.restrict (A.image i)] (A.tangentHom 𝓘(ℝ, ℂ)).coord i (D s) := by
   have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
   have hcoord := SobolevSection.chartValueL_ofContMDiffSection_ae A μ p (k + 1) s i
   have hc : ContDiffOn ℝ 1 (A.coord i s) (A.image i) :=
@@ -346,21 +353,21 @@ theorem chartValueL_sobolevSuccL_sub_ae
     (hD' : IsRealCauchyRiemannOperator F (ofComplexManifold ℂ M) D')
     (hD's : ContMDiffCovariantDerivativeOn F ∞ D' univ) (w : SobolevSection A μ p (k + 1))
     (i : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL μ p k i
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i
         (((hD'.sobolevSuccL A hD's μ p k w - hD.sobolevSuccL A hDs μ p k w :
-          zeroOneSobolevSections A μ p k) : SobolevSection A.tangentHom μ p k) :
-            A.tangentHom.sectionChartData.SobolevData μ p k)
+          zeroOneSobolevSections A μ p k) : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) :
+            (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p k)
       =ᵐ[μ.restrict (A.image i)] fun y ↦
         (A.chartZeroOrder D' i y - A.chartZeroOrder D i y)
           (A.sectionChartData.chartValueL μ p (k + 1) i w y) := by
   have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL_chartDerivDataL μ p k i w
   have h₃ := (ae_image_tangentHom_iff A μ i).1 (Lp.coeFn_sub
-    (A.tangentHom.sectionChartData.chartValueL μ p k i
-      ((hD'.sobolevSuccL A hD's μ p k w : SobolevSection A.tangentHom μ p k) :
-        A.tangentHom.sectionChartData.SobolevData μ p k))
-    (A.tangentHom.sectionChartData.chartValueL μ p k i
-      ((hD.sobolevSuccL A hDs μ p k w : SobolevSection A.tangentHom μ p k) :
-        A.tangentHom.sectionChartData.SobolevData μ p k)))
+    ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i
+      ((hD'.sobolevSuccL A hD's μ p k w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) :
+        (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p k))
+    ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i
+      ((hD.sobolevSuccL A hDs μ p k w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) :
+        (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p k)))
   filter_upwards [chartValueL_sobolevSuccL_ae A hD' hD's μ p k w hDu,
     chartValueL_sobolevSuccL_ae A hD hDs μ p k w hDu, h₃] with y h₁ h₂ h₃
   rw [Submodule.coe_sub, Submodule.coe_sub, map_sub, h₃, Pi.sub_apply, h₁, h₂,

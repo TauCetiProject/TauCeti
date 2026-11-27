@@ -79,10 +79,11 @@ variable {A : FiniteBundleAtlas ℂ M F V} {μ : Measure ℂ} [μ.IsAddHaarMeasu
   [Fact (1 ≤ p)] {k : ℕ}
 
 /-- The `(0,1)`-projection of a one-form vanishing off `L` vanishes off `L`. -/
-theorem zeroOnePartSobolevL_mem_aeZeroOff {L : Set M} {w : SobolevSection A.tangentHom μ p k}
-    (hw : w ∈ aeZeroOff A.tangentHom μ p k L) :
-    (zeroOnePartSobolevL A μ p k w : SobolevSection A.tangentHom μ p k) ∈
-      aeZeroOff A.tangentHom μ p k L := mem_aeZeroOff.2 fun i ↦ by
+theorem zeroOnePartSobolevL_mem_aeZeroOff {L : Set M}
+    {w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k}
+    (hw : w ∈ aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) μ p k L) :
+    (zeroOnePartSobolevL A μ p k w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) ∈
+      aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) μ p k L := mem_aeZeroOff.2 fun i ↦ by
   filter_upwards [mem_aeZeroOff.1 hw i, chartValueL_zeroOnePartSobolevL_ae w i] with y hy hz hL
   rw [hz, hy hL, map_zero]
 
@@ -91,10 +92,11 @@ the sum of the `(0,1)`-projections of the one-forms `χᵢ w`. -/
 theorem sum_zeroOnePartSobolevL_contMDiffSMulL_eq_self {ι : Type*} [Fintype ι] {χ : ι → M → ℝ}
     (hχ : ∀ i, ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ (χ i)) (h1 : ∀ x, ∑ i, χ i x = 1)
     (w : zeroOneSobolevSections A μ p k) :
-    ∑ i, zeroOnePartSobolevL A μ p k (contMDiffSMulL A.tangentHom μ p k (hχ i) w) = w := by
+    ∑ i, zeroOnePartSobolevL A μ p k (contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) μ p k (hχ i) w) =
+      w := by
   rw [← map_sum, sum_contMDiffSMulL_eq_self_of_sum_eq_one _ h1, zeroOnePartSobolevL_coe]
 
-variable (h : HasExtensionByZero A.tangentHom μ p k) {i : Fin A.n} {L : Set M}
+variable (h : HasExtensionByZero (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) {i : Fin A.n} {L : Set M}
   (hL : IsClosed L) (hLi : L ⊆ A.dom i)
 
 /-- **Extension by zero of `(0,1)`-forms.** Chart-`i` Sobolev data of one-forms vanishing off a
@@ -103,56 +105,59 @@ closed subset `L` of the domain of chart `i` extend by zero to a `V`-valued one-
 (`TauCeti.zeroOneExtendByZeroL_mem_aeZeroOff`) with chart-`i` data the complex antilinear part of
 the given data (`TauCeti.chartValueL_zeroOneExtendByZeroL_ae`). -/
 def zeroOneExtendByZeroL :
-    chartAeZeroOff A.tangentHom μ p k i L →L[ℝ] zeroOneSobolevSections A μ p k :=
+    chartAeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) μ p k i L →L[ℝ] zeroOneSobolevSections A μ p k :=
   (zeroOnePartSobolevL A μ p k).comp (extendByZeroL h hL hLi)
 
-theorem zeroOneExtendByZeroL_apply (g : chartAeZeroOff A.tangentHom μ p k i L) :
+theorem zeroOneExtendByZeroL_apply (g : chartAeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) μ p k i L) :
     zeroOneExtendByZeroL h hL hLi g = zeroOnePartSobolevL A μ p k (extendByZeroL h hL hLi g) :=
   (rfl)
 
 /-- The extension by zero of `(0,1)`-forms vanishes off `L`. -/
-theorem zeroOneExtendByZeroL_mem_aeZeroOff (g : chartAeZeroOff A.tangentHom μ p k i L) :
-    (zeroOneExtendByZeroL h hL hLi g : SobolevSection A.tangentHom μ p k) ∈
-      aeZeroOff A.tangentHom μ p k L :=
+theorem zeroOneExtendByZeroL_mem_aeZeroOff (g : chartAeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) μ p k i L) :
+    (zeroOneExtendByZeroL h hL hLi g : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) ∈
+      aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) μ p k L :=
   zeroOnePartSobolevL_mem_aeZeroOff (extendByZeroL_mem_aeZeroOff h hL hLi g)
 
 /-- The chart-`i` data of the extension by zero of `(0,1)`-forms are the complex antilinear part
 of the data `∑ⱼ gⱼ • eⱼ` defined by the components `g` in the basis `Module.finBasis ℝ (ℂ →L[ℝ] F)`.
 -/
-theorem chartValueL_zeroOneExtendByZeroL_ae (g : chartAeZeroOff A.tangentHom μ p k i L) :
-    A.tangentHom.sectionChartData.chartValueL μ p k i (zeroOneExtendByZeroL h hL hLi g)
-      =ᵐ[μ.restrict (A.tangentHom.sectionChartData.image i)] fun y ↦
+theorem chartValueL_zeroOneExtendByZeroL_ae (g : chartAeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) μ p k i L) :
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i (zeroOneExtendByZeroL h hL hLi g)
+      =ᵐ[μ.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i)] fun y ↦
         complexAntilinearPartL (∑ j, Wkp.value k
-          ((g : Fin (finrank ℝ (ℂ →L[ℝ] F)) → Wkp μ (A.tangentHom.image i) p k) j) y •
+          ((g : Fin (finrank ℝ (ℂ →L[ℝ] F)) → Wkp μ ((A.tangentHom 𝓘(ℝ, ℂ)).image i) p k) j) y •
             finBasis ℝ (ℂ →L[ℝ] F) j) := by
   filter_upwards [chartValueL_zeroOnePartSobolevL_ae (extendByZeroL h hL hLi g) i,
-    A.tangentHom.sectionChartData.chartValueL_apply_ae μ p k i
-      (extendByZeroL h hL hLi g : SobolevSection A.tangentHom μ p k)] with y h₁ h₂
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL_apply_ae μ p k i
+      (extendByZeroL h hL hLi g : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k)] with y h₁ h₂
   rw [zeroOneExtendByZeroL_apply, h₁, h₂]
   -- The chart index is `i : Fin A.n` in `extendByZeroL_apply_self` and an index of
-  -- `A.tangentHom.sectionChartData` here, so the chart-`i` block is replaced by `congrArg`.
+  -- `(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData` here, so the chart-`i` block is replaced by
+  -- `congrArg`.
   exact congrArg (fun d ↦ complexAntilinearPartL (∑ j, Wkp.value k (d j) y •
     finBasis ℝ (ℂ →L[ℝ] F) j)) (extendByZeroL_apply_self h hL hLi g)
 
 /-- **Antilinear data are preserved.** If the data defined by `g` are complex antilinear almost
 everywhere, the chart-`i` components of the extension by zero of `(0,1)`-forms have the values of
 `g`. -/
-theorem value_zeroOneExtendByZeroL_ae (g : chartAeZeroOff A.tangentHom μ p k i L)
-    (hg : ∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.image i), ∀ v : ℂ,
+theorem value_zeroOneExtendByZeroL_ae (g : chartAeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) μ p k i L)
+    (hg : ∀ᵐ y ∂μ.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i), ∀ v : ℂ,
       (∑ j, Wkp.value k
-        ((g : Fin (finrank ℝ (ℂ →L[ℝ] F)) → Wkp μ (A.tangentHom.image i) p k) j) y •
+        ((g : Fin (finrank ℝ (ℂ →L[ℝ] F)) → Wkp μ ((A.tangentHom 𝓘(ℝ, ℂ)).image i) p k) j) y •
           finBasis ℝ (ℂ →L[ℝ] F) j) (Complex.I • v) =
         -(Complex.I • (∑ j, Wkp.value k
-          ((g : Fin (finrank ℝ (ℂ →L[ℝ] F)) → Wkp μ (A.tangentHom.image i) p k) j) y •
+          ((g : Fin (finrank ℝ (ℂ →L[ℝ] F)) → Wkp μ ((A.tangentHom 𝓘(ℝ, ℂ)).image i) p k) j) y •
             finBasis ℝ (ℂ →L[ℝ] F) j) v))
     (c : Fin (finrank ℝ (ℂ →L[ℝ] F))) :
-    (Wkp.value k (((zeroOneExtendByZeroL h hL hLi g : SobolevSection A.tangentHom μ p k) :
-        A.tangentHom.sectionChartData.SobolevData μ p k) i c) : ℂ → ℝ)
-      =ᵐ[μ.restrict (A.tangentHom.sectionChartData.image i)]
-        Wkp.value k ((g : Fin (finrank ℝ (ℂ →L[ℝ] F)) → Wkp μ (A.tangentHom.image i) p k) c) := by
+    (Wkp.value k (((zeroOneExtendByZeroL h hL hLi g : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) :
+        (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p k) i c) : ℂ → ℝ)
+      =ᵐ[μ.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i)]
+        Wkp.value k ((g : Fin (finrank ℝ (ℂ →L[ℝ] F)) →
+          Wkp μ ((A.tangentHom 𝓘(ℝ, ℂ)).image i) p k) c) := by
   filter_upwards [chartValueL_zeroOneExtendByZeroL_ae h hL hLi g, hg,
-    A.tangentHom.sectionChartData.chartValueL_apply_ae μ p k i
-      (zeroOneExtendByZeroL h hL hLi g : SobolevSection A.tangentHom μ p k)] with y h₁ h₂ h₃
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL_apply_ae μ p k i
+      (zeroOneExtendByZeroL h hL hLi g :
+        SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k)] with y h₁ h₂ h₃
   rw [ContinuousLinearMap.complexAntilinearPartL_eq_self_iff.2 h₂, h₃] at h₁
   simpa [Finsupp.single_apply] using
     congrArg (fun v ↦ (finBasis ℝ (ℂ →L[ℝ] F)).repr v c) h₁

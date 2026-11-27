@@ -116,13 +116,13 @@ theorem sobolevL_ofExponentLEL (μ : Measure ℂ) [μ.IsAddHaarMeasure] (hpp' : 
       (A.sectionChartData.ofExponentLEL μ 1 hpp' w) : ℂ → F) =
         A.sectionChartData.chartValueL μ p' 1 i w :=
     SectionChartData.coeFn_chartValueL_ofExponentLEL (C := A.sectionChartData) hpp' w i
-  have hDw : (A.tangentHom.sectionChartData.chartValueL μ p 0 i
-      (A.tangentHom.sectionChartData.ofExponentLEL μ 0 hpp'
+  have hDw : ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p 0 i
+      ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.ofExponentLEL μ 0 hpp'
         (hD.sobolevL A hDs μ p' w)) : ℂ → ℂ →L[ℝ] F) =
-        A.tangentHom.sectionChartData.chartValueL μ p' 0 i
-          (hD.sobolevL A hDs μ p' w : SobolevSection A.tangentHom μ p' 0) :=
-    SectionChartData.coeFn_chartValueL_ofExponentLEL (C := A.tangentHom.sectionChartData) hpp'
-      _ i
+        (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p' 0 i
+          (hD.sobolevL A hDs μ p' w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p' 0) :=
+    SectionChartData.coeFn_chartValueL_ofExponentLEL
+      (C := (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData) hpp' _ i
   have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL μ p' i w
   rw [coe_zeroOneOfExponentLEL, hDw]
   filter_upwards [chartValueL_sobolevL_ae A hD hDs μ p _ (hw ▸ hDu),
@@ -169,28 +169,30 @@ private theorem norm_apply_zeroOnePartSobolevL_le {i : Fin A.n} {Q₀ Q₁ : Ope
     (hχ1 : ∀ x, |χ x| ≤ 1) {Λ : zeroOneSobolevSections A volume p' 0 →L[ℝ] ℝ}
     {θ : ℂ → F →L[ℝ] ℝ} {M₀ : ℝ} (hM₀ : 0 ≤ M₀)
     (hrep : ∀ w : zeroOneSobolevSections A volume p' 0,
-      (w : SobolevSection A.tangentHom volume p' 0) ∈
-          SobolevSection.aeZeroOff A.tangentHom volume p' 0 ((A.chart i).symm '' Q₁) →
-        Λ w = ∫ z in Q₁, θ z (A.tangentHom.sectionChartData.chartValueL volume p' 0 i
-          ((w : SobolevSection A.tangentHom volume p' 0) :
-            A.tangentHom.sectionChartData.SobolevData volume p' 0) z 1))
+      (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p' 0) ∈
+          SobolevSection.aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p' 0 ((A.chart i).symm '' Q₁) →
+        Λ w = ∫ z in Q₁, θ z ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p' 0 i
+          ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p' 0) :
+            (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p' 0) z 1))
     (hθ : ∀ᵐ z ∂volume.restrict Q₁, z ∈ Q₀ → ‖θ z‖ ≤ M₀)
-    (w : SobolevSection A.tangentHom volume p' 0) :
+    (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p' 0) :
     ‖Λ (zeroOnePartSobolevL A volume p' 0
-        (SobolevSection.contMDiffSMulL A.tangentHom volume p' 0 hχs w))‖ ≤
+        (SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) volume p' 0 hχs w))‖ ≤
       M₀ * ‖(complexAntilinearPartL : (ℂ →L[ℝ] F) →L[ℝ] ℂ →L[ℝ] F)‖ *
-        ‖A.tangentHom.sectionChartData.chartValueL volume 1 0 i‖ *
-          ‖A.tangentHom.sectionChartData.ofExponentLEL volume 0 (Fact.out : 1 ≤ p') w‖ := by
+        ‖(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume 1 0 i‖ *
+          ‖(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.ofExponentLEL volume 0
+            (Fact.out : 1 ≤ p') w‖ := by
   set K := ‖(complexAntilinearPartL : (ℂ →L[ℝ] F) →L[ℝ] ℂ →L[ℝ] F)‖
-  set v := A.tangentHom.sectionChartData.chartValueL volume p' 0 i
-    (w : A.tangentHom.sectionChartData.SobolevData volume p' 0)
+  set v := (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p' 0 i
+    (w : (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p' 0)
   -- The chart reading of the `L¹` copy of `w` is the chart reading of `w`.
-  set u := A.tangentHom.sectionChartData.chartValueL volume 1 0 i
-    (A.tangentHom.sectionChartData.ofExponentLEL volume 0 (Fact.out : 1 ≤ p') w :
-      A.tangentHom.sectionChartData.SobolevData volume 1 0)
+  set u := (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume 1 0 i
+    ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.ofExponentLEL volume 0 (Fact.out : 1 ≤ p') w :
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume 1 0)
   have hu : (u : ℂ → ℂ →L[ℝ] F) = v :=
-    SectionChartData.coeFn_chartValueL_ofExponentLEL (C := A.tangentHom.sectionChartData) _ w i
-  have hQ₁t : (Q₁ : Set ℂ) ⊆ A.tangentHom.sectionChartData.image i := by
+    SectionChartData.coeFn_chartValueL_ofExponentLEL
+      (C := (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData) _ w i
+  have hQ₁t : (Q₁ : Set ℂ) ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i := by
     rwa [sectionChartData_image_tangentHom]
   have hmem := SobolevSection.aeZeroOff_mono (hχ.trans (image_mono hQ₀₁))
     (zeroOnePartSobolevL_mem_aeZeroOff (SobolevSection.contMDiffSMulL_mem_aeZeroOff hχs w))
@@ -200,30 +202,31 @@ private theorem norm_apply_zeroOnePartSobolevL_le {i : Fin A.n} {Q₀ Q₁ : Ope
   refine (norm_integral_le_of_norm_le hint ?_).trans ?_
   · filter_upwards [hθ, ae_restrict_of_ae_restrict_of_subset hQ₁t
         (chartValueL_zeroOnePartSobolevL_ae
-          (SobolevSection.contMDiffSMulL A.tangentHom volume p' 0 hχs w) i),
+          (SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) volume p' 0 hχs w) i),
       ae_restrict_of_ae_restrict_of_subset hQ₁t
-        ((ae_image_tangentHom_iff A volume i).2 ((A.image_tangentHom i).symm ▸
+        ((ae_image_tangentHom_iff A volume i).2 ((A.image_tangentHom 𝓘(ℝ, ℂ) i).symm ▸
           SobolevSection.chartValueL_contMDiffSMulL_ae hχs w i)),
       ae_restrict_mem Q₁.isOpen.measurableSet] with z hθz h₁ h₂ hz
     rw [h₁, h₂, hu]
-    by_cases hχz : χ ((A.tangentHom.chart i).symm z) = 0
+    by_cases hχz : χ (((A.tangentHom 𝓘(ℝ, ℂ)).chart i).symm z) = 0
     · simp only [hχz, zero_smul, map_zero, zero_apply, norm_zero]
       positivity
     -- Where `χ` does not vanish, `z` lies in `Q₀`, where `θ` is bounded by `M₀`.
     have hzQ₀ := mem_of_apply_chart_symm_ne_zero A ((SetLike.coe_subset_coe.2 hQ₀₁).trans hQ₁)
       hχ (hQ₁ hz) hχz
     refine (norm_apply_complexAntilinearPartL_smul_le _ _ _).trans ?_
-    calc ‖θ z‖ * (K * (|χ ((A.tangentHom.chart i).symm z)| * ‖v z‖))
+    calc ‖θ z‖ * (K * (|χ (((A.tangentHom 𝓘(ℝ, ℂ)).chart i).symm z)| * ‖v z‖))
         ≤ M₀ * (K * (1 * ‖v z‖)) := by gcongr; exacts [hθz hzQ₀, hχ1 _]
       _ = M₀ * K * ‖v z‖ := by ring
   · calc ∫ z in Q₁, M₀ * K * ‖u z‖
         = M₀ * K * ∫ z in Q₁, ‖u z‖ := integral_const_mul _ _
-      _ ≤ M₀ * K * ∫ z in A.tangentHom.sectionChartData.image i, ‖u z‖ :=
+      _ ≤ M₀ * K * ∫ z in (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i, ‖u z‖ :=
           mul_le_mul_of_nonneg_left (setIntegral_mono_set (L1.integrable_coeFn u).norm
             (.of_forall fun _ ↦ norm_nonneg _) (.of_forall hQ₁t)) (by positivity)
       _ = M₀ * K * ‖u‖ := by rw [L1.norm_eq_integral_norm]
-      _ ≤ M₀ * K * (‖A.tangentHom.sectionChartData.chartValueL volume 1 0 i‖ *
-          ‖A.tangentHom.sectionChartData.ofExponentLEL volume 0 (Fact.out : 1 ≤ p') w‖) := by
+      _ ≤ M₀ * K * (‖(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume 1 0 i‖ *
+          ‖(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.ofExponentLEL volume 0
+            (Fact.out : 1 ≤ p') w‖) := by
           gcongr
           rw [← Submodule.norm_coe]
           exact ContinuousLinearMap.le_opNorm _ _
@@ -238,8 +241,8 @@ private theorem exists_norm_apply_le_norm_ofExponentLEL_one (hp' : 1 < p') (hp'_
     (Λ : zeroOneSobolevSections A volume p' 0 →L[ℝ] ℝ)
     (hΛ : ∀ w, Λ (hD.sobolevL A hDs volume p' w) = 0) :
     ∃ C : ℝ, ∀ w : zeroOneSobolevSections A volume p' 0, ‖Λ w‖ ≤
-      C * ‖A.tangentHom.sectionChartData.ofExponentLEL volume 0 (Fact.out : 1 ≤ p')
-        (w : SobolevSection A.tangentHom volume p' 0)‖ := by
+      C * ‖(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.ofExponentLEL volume 0 (Fact.out : 1 ≤ p')
+        (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p' 0)‖ := by
   have hpq : p'.HolderConjugate p'.conjExponent := .conjExponent hp'.le
   have : Fact (1 ≤ p'.conjExponent) := ⟨ENNReal.HolderConjugate.one_le _ p'⟩
   have hq : 1 < p'.conjExponent :=
@@ -261,12 +264,13 @@ private theorem exists_norm_apply_le_norm_ofExponentLEL_one (hp' : 1 < p') (hp'_
   have hχ1 (i : Fin A.n) (x : M) : |χ i x| ≤ 1 :=
     abs_le.2 ⟨by linarith [χ.nonneg i x], χ.le_one i x⟩
   refine ⟨∑ i, max (M₀ i) 0 * ‖(complexAntilinearPartL : (ℂ →L[ℝ] F) →L[ℝ] ℂ →L[ℝ] F)‖ *
-    ‖A.tangentHom.sectionChartData.chartValueL volume 1 0 i‖, fun w ↦ ?_⟩
+    ‖(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume 1 0 i‖, fun w ↦ ?_⟩
   -- `w` is the sum of the `(0,1)`-projections of the `χᵢ w`.
   have h1 (x : M) : ∑ i, χ i x = 1 := by
     simpa [finsum_eq_sum_of_fintype] using χ.sum_eq_one (mem_univ x)
   calc ‖Λ w‖ = ‖∑ i, Λ (zeroOnePartSobolevL A volume p' 0
-        (SobolevSection.contMDiffSMulL A.tangentHom volume p' 0 (χ i).contMDiff w))‖ := by
+        (SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) volume p' 0
+          (χ i).contMDiff w))‖ := by
         rw [← map_sum,
           sum_zeroOnePartSobolevL_contMDiffSMulL_eq_self (fun i ↦ (χ i).contMDiff) h1]
     _ ≤ _ := (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦
@@ -284,7 +288,7 @@ theorem exists_norm_apply_le_of_annihilator (hp' : 1 < p') (hp'_top : p' ≠ ⊤
     (hΛ : ∀ w, Λ (hD.sobolevL A hDs volume p' w) = 0) :
     ∃ C : ℝ, ∀ w, ‖Λ w‖ ≤ C * ‖zeroOneOfExponentLEL A volume 0 hpp' w‖ := by
   obtain ⟨C, hC⟩ := exists_norm_apply_le_norm_ofExponentLEL_one A hD hDs hp' hp'_top Λ hΛ
-  set ι₁ := A.tangentHom.sectionChartData.ofExponentLEL volume 0 (Fact.out : 1 ≤ p)
+  set ι₁ := (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.ofExponentLEL volume 0 (Fact.out : 1 ≤ p)
   refine ⟨|C| * ‖ι₁‖, fun w ↦ (hC w).trans ?_⟩
   rw [← SectionChartData.ofExponentLEL_ofExponentLEL (Fact.out : 1 ≤ p) hpp', mul_assoc,
     ← Submodule.norm_coe (zeroOneOfExponentLEL A volume 0 hpp' w), coe_zeroOneOfExponentLEL]

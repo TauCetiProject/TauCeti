@@ -28,33 +28,63 @@ namespace TauCeti
 
 namespace FiniteBundleAtlas
 
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
-  {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
+  {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
   {V₁ : M → Type*} [TopologicalSpace (TotalSpace F₁ V₁)] [∀ x, AddCommGroup (V₁ x)]
-  [∀ x, Module ℝ (V₁ x)] [∀ x, TopologicalSpace (V₁ x)] [FiberBundle F₁ V₁]
-  [VectorBundle ℝ F₁ V₁]
-  {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)] [FiberBundle F₁ V₁]
+  [VectorBundle 𝕜 F₁ V₁]
+  {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
   {V₂ : M → Type*} [TopologicalSpace (TotalSpace F₂ V₂)] [∀ x, AddCommGroup (V₂ x)]
-  [∀ x, Module ℝ (V₂ x)] [∀ x, TopologicalSpace (V₂ x)] [FiberBundle F₂ V₂]
-  [VectorBundle ℝ F₂ V₂] [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)]
+  [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)] [FiberBundle F₂ V₂]
+  [VectorBundle 𝕜 F₂ V₂] [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)]
   (A : FiniteBundleAtlas ClosedUpperHalfPlane M F₁ V₁)
   (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F₂ V₂ (A.center i)).baseSet)
 
 /-- The hom atlas has the interiors of the chart images of `A`. -/
 @[simp]
-theorem halfImage_hom (i : Fin A.n) : (A.hom (𝕜 := ℝ) h).halfImage i = A.halfImage i :=
+theorem halfImage_hom (i : Fin A.n) : (A.hom (𝕜 := 𝕜) h).halfImage i = A.halfImage i :=
   A.halfImage_ofBaseSet i
+
+/-- The hom atlas has the chart images in `ℂ` of `A`. -/
+@[simp]
+theorem halfClosedImage_hom (i : Fin A.n) :
+    (A.hom (𝕜 := 𝕜) h).halfClosedImage i = A.halfClosedImage i :=
+  halfClosedImage_ofBaseSet i
+
+/-- The hom atlas has the interiors of the overlaps in `ℂ` of `A`. -/
+@[simp]
+theorem halfOverlap_hom (i i' : Fin A.n) :
+    (A.hom (𝕜 := 𝕜) h).halfOverlap i i' = A.halfOverlap i i' :=
+  halfOverlap_ofBaseSet i i'
+
+/-- The hom atlas has the chart transitions in `ℂ` of `A`. -/
+@[simp]
+theorem halfTransition_hom (i i' : Fin A.n) :
+    (A.hom (𝕜 := 𝕜) h).halfTransition i i' = A.halfTransition i i' :=
+  halfTransition_ofBaseSet i i'
+
+/-- A section of the hom bundle read in `ℂ` in a chart of `A.hom h` is its value at the
+corresponding point of `M` expressed in the preferred trivializations of `V₁` and `V₂` at the
+centre of the chart. -/
+theorem halfCoord_hom (i : Fin A.n) (φ : ∀ x, V₁ x →L[𝕜] V₂ x) (z : ℂ) :
+    (A.hom h).halfCoord i φ z =
+      ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ (A.center i)
+        ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)) (A.center i)
+        ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))
+        (φ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))) := by
+  rw [halfCoord_def (A := A.hom h) i]
+  exact A.coord_hom h i φ (closedUpperHalfPlaneModel.symm z)
 
 /-- **Hom sections act chartwise.** At the points of the image of chart `i`, applying the reading
 of a section `φ` of the hom bundle to the reading of a section `s` of `V₁` gives the reading of the
 section `x ↦ φ x (s x)` of `V₂`. -/
-theorem halfCoord_hom_apply (i : Fin A.n) (φ : ∀ x, V₁ x →L[ℝ] V₂ x) (s : ∀ x, V₁ x) {z : ℂ}
+theorem halfCoord_hom_apply (i : Fin A.n) (φ : ∀ x, V₁ x →L[𝕜] V₂ x) (s : ∀ x, V₁ x) {z : ℂ}
     (hz : closedUpperHalfPlaneModel.symm z ∈ A.image i) :
-    (A.hom (𝕜 := ℝ) h).halfCoord i φ z (A.halfCoord i s z) =
+    (A.hom h).halfCoord i φ z (A.halfCoord i s z) =
       (A.ofBaseSet h).halfCoord i (fun x ↦ φ x (s x)) z := by
-  rw [halfCoord_def A i s z, halfCoord_def (A.ofBaseSet h) i _ z]
-  exact (congrArg (· (A.coord i s (closedUpperHalfPlaneModel.symm z)))
-    (halfCoord_def (A.hom (𝕜 := ℝ) h) i φ z)).trans (A.coord_hom_apply h i φ s hz)
+  rw [halfCoord_def (A := A.hom h) i, halfCoord_def A i, halfCoord_def (A := A.ofBaseSet h) i]
+  exact A.coord_hom_apply h i φ s hz
 
 end FiniteBundleAtlas
 

@@ -119,7 +119,8 @@ theorem sobolevL_ofContMDiffSection_eq_zero {s : Cₛ^1⟮𝓘(ℝ, ℂ); F, V�
     chartValueL_zero_zeroOneSobolevSections_ae (A := A) (μ := volume) (p := p) (k := 0) i,
     ae_restrict_mem (A.image i).isOpen.measurableSet] with y h₁ h₂ hy
   rw [h₁, h₂, show D s = 0 from funext hs]
-  exact A.tangentHom.coord_zero (i := (i : Fin A.tangentHom.n)) (A.image_tangentHom i ▸ hy)
+  exact (A.tangentHom 𝓘(ℝ, ℂ)).coord_zero (i := (i : Fin (A.tangentHom 𝓘(ℝ, ℂ)).n))
+    (A.image_tangentHom 𝓘(ℝ, ℂ) i ▸ hy)
 
 include hD hDs in
 /-- **The kernel equation for smooth sections.** If the Sobolev section of a `C¹` section `s` that
@@ -132,7 +133,7 @@ theorem apply_eq_zero_of_sobolevL_ofContMDiffSection_eq_zero {s : Cₛ^1⟮𝓘(
   have hDsc : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
       (E := fun x ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) x (D s x) :=
     (contMDiffOn_univ.1 (hDs.contMDiff (by simpa using hs.contMDiffOn))).continuous
-  refine congrFun (A.tangentHom.eq_of_continuous_of_coord_ae_eq (μ := volume)
+  refine congrFun ((A.tangentHom 𝓘(ℝ, ℂ)).eq_of_continuous_of_coord_ae_eq (μ := volume)
     (s := D s) (t := 0) hDsc
     (Bundle.contMDiff_zeroSection (IB := 𝓘(ℝ, ℂ)) (n := 0) ℝ
       (E := fun x ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x)).continuous fun (i : Fin A.n) ↦ ?_) x
@@ -142,8 +143,8 @@ theorem apply_eq_zero_of_sobolevL_ofContMDiffSection_eq_zero {s : Cₛ^1⟮𝓘(
   filter_upwards [h'.symm.trans
       (chartValueL_zero_zeroOneSobolevSections_ae (A := A) (μ := volume) (p := p) (k := 0) i),
     ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy hyi
-  exact hy.trans (A.tangentHom.coord_zero (i := (i : Fin A.tangentHom.n))
-    (A.image_tangentHom i ▸ hyi)).symm
+  exact hy.trans ((A.tangentHom 𝓘(ℝ, ℂ)).coord_zero (i := (i : Fin (A.tangentHom 𝓘(ℝ, ℂ)).n))
+    (A.image_tangentHom 𝓘(ℝ, ℂ) i ▸ hyi)).symm
 
 include hD hDs in
 /-- **The chart data of a kernel element are smooth.** For `1 < p ≤ ∞` and `w ∈ W^{1,p}(Σ, V)` with
@@ -280,7 +281,10 @@ theorem kerSobolevLEquiv_apply_ofContMDiffSection (hp : 1 < p) (hp' : 1 < p')
       (hD.sobolevL A hDs volume p).ker) :
     (kerSobolevLEquiv A hD hDs hp hp' ⟨_, hs⟩ : SobolevSection A volume p' 1) =
       SobolevSection.ofContMDiffSection A volume p' 1 s := by
-  simp [kerSobolevLEquiv]
+  delta kerSobolevLEquiv
+  rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    kerSobolevLEquivComap_symm_ofContMDiffSection, coe_kerSobolevLEquivComap_apply,
+    LinearEquiv.coe_ofEq_apply]
 
 /-- **The dimension of the kernel does not depend on the exponent.** -/
 theorem finrank_ker_sobolevL_eq (hp : 1 < p) (hp' : 1 < p') :

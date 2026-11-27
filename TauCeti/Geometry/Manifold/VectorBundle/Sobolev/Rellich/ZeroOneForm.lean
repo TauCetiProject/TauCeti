@@ -52,7 +52,7 @@ exponent `p`. -/
 theorem isCompactOperator_zeroOneLowerOrdersL (d : ℕ) :
     IsCompactOperator (zeroOneLowerOrdersL A μ p k (d + 1)) := by
   rw [coeFn_zeroOneLowerOrdersL_eq_codRestrict]
-  exact ((SobolevSection.isCompactOperator_lowerOrdersL A.tangentHom μ p k d).comp_clm
+  exact ((SobolevSection.isCompactOperator_lowerOrdersL (A.tangentHom 𝓘(ℝ, ℂ)) μ p k d).comp_clm
     (zeroOneSobolevSections A μ p (k + (d + 1))).subtypeL).codRestrict
       (fun w ↦ lowerOrdersL_mem_zeroOneSobolevSections (d + 1) w.property)
       isClosed_zeroOneSobolevSections

@@ -111,7 +111,7 @@ private theorem coord_equation (i : Fin A.n) :
   · -- The chart formula for `D s = 0`, evaluated on `1` and doubled.
     have h := A.coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder hD hw
       ((hs _).mdifferentiableAt one_ne_zero)
-    rw [hs0, A.tangentHom.coord_zero i (by rwa [A.image_tangentHom])] at h
+    rw [hs0, (A.tangentHom 𝓘(ℝ, ℂ)).coord_zero i (by rwa [A.image_tangentHom])] at h
     -- On `1`: `0 = ½ (∂ₛu + i ∂ₜu) + Zᵢ(u)(1)`, since `∂bar L (1) = ½ (L 1 + i L i)`.
     have h1 := congrArg (fun L : ℂ →L[ℝ] F ↦ L 1) h
     simp only [add_apply, zero_apply, ContinuousLinearMap.complexAntilinearPartL_apply_apply,

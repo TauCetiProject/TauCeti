@@ -111,7 +111,7 @@ include hD in
 private theorem coord_tangentHom_eq (i : Fin A.n) {s : Π x, V x}
     (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (fun x ↦ TotalSpace.mk' F x (s x)))
     {z : ℂ} (hz : z ∈ A.image i) :
-    A.tangentHom.coord i (D s) z = complexAntilinearPartL (fderiv ℝ (A.coord i s) z) +
+    (A.tangentHom 𝓘(ℝ, ℂ)).coord i (D s) z = complexAntilinearPartL (fderiv ℝ (A.coord i s) z) +
       A.chartZeroOrder D i z (A.coord i s z) :=
   have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
   A.coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder hD hz
@@ -122,7 +122,7 @@ include hD hDs in
 it is `∂bar u + Zᵢ u` for the smooth reading `u` of `s`. -/
 private theorem contDiffOn_coord_tangentHom (k : ℕ) (i : Fin A.n) {s : Π x, V x}
     (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (fun x ↦ TotalSpace.mk' F x (s x))) :
-    ContDiffOn ℝ k (A.tangentHom.coord i (D s)) (A.image i) := by
+    ContDiffOn ℝ k ((A.tangentHom 𝓘(ℝ, ℂ)).coord i (D s)) (A.image i) := by
   set O : Set ℂ := (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet
   have hu : ContDiffOn ℝ (k + 1 : ℕ) (A.coord i s) O :=
     A.contDiffOn_coord (hs.of_le ENat.LEInfty.out) i
@@ -146,7 +146,7 @@ theorem exists_eLpNormWkp_coord_smul_le (hp : 1 < p) (hp_top : p ≠ ⊤) (k : �
     ∃ C : ℝ≥0, ∀ s : Π x, V x,
       ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (fun x ↦ TotalSpace.mk' F x (s x)) →
       eLpNormWkp p (A.image i) (k + 1) (A.coord i fun x ↦ χ x • s x) ≤
-        C * (eLpNormWkp p (A.image i) k (A.tangentHom.coord i (D s)) +
+        C * (eLpNormWkp p (A.image i) k ((A.tangentHom 𝓘(ℝ, ℂ)).coord i (D s)) +
           eLpNormWkp p (A.image i) k (A.coord i s)) := by
   have := A.compactSpace
   set U : Set ℂ := (A.image i : Set ℂ)
@@ -196,21 +196,21 @@ and of `s` in chart `i` are bounded by a multiple of `‖D w‖_{W^{k,p}} + ‖w
 private theorem exists_eLpNormWkp_coord_le (k : ℕ) (i : Fin A.n) :
     ∃ c : ℝ≥0, ∀ s : Cₛ^((k + 1 : ℕ) : ℕ∞ω)⟮𝓘(ℝ, ℂ); F, V⟯,
       ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (fun x ↦ TotalSpace.mk' F x (s x)) →
-      eLpNormWkp p (A.image i) k (A.tangentHom.coord i (D s)) +
+      eLpNormWkp p (A.image i) k ((A.tangentHom 𝓘(ℝ, ℂ)).coord i (D s)) +
           eLpNormWkp p (A.image i) k (A.coord i s) ≤
         c * (ENNReal.ofReal ‖hD.sobolevSuccL A hDs volume p k
             (SobolevSection.ofContMDiffSection A volume p (k + 1) s)‖ +
           ENNReal.ofReal ‖A.sectionChartData.lowerOrderL volume p k
             (SobolevSection.ofContMDiffSection A volume p (k + 1) s)‖) := by
   obtain ⟨c₂, hc₂⟩ :=
-    A.tangentHom.sectionChartData.exists_eLpNormWkp_le_of_chartValueL_ae_eq (p := p) k
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.exists_eLpNormWkp_le_of_chartValueL_ae_eq (p := p) k
   obtain ⟨c₃, hc₃⟩ := A.sectionChartData.exists_eLpNormWkp_le_of_chartValueL_ae_eq (p := p) k
   refine ⟨c₂ + c₃, fun s hs ↦ ?_⟩
   set w := SobolevSection.ofContMDiffSection A volume p (k + 1) s
   set Dw := hD.sobolevSuccL A hDs volume p k w
   set w₀ := A.sectionChartData.lowerOrderL volume p k w
-  have h₂ := hc₂ (i := i) (w := ((Dw : SobolevSection A.tangentHom volume p k) :
-      A.tangentHom.sectionChartData.SobolevData volume p k))
+  have h₂ := hc₂ (i := i) (w := ((Dw : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p k) :
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p k))
     (by rw [sectionChartData_image_tangentHom]; exact contDiffOn_coord_tangentHom A hD hDs k i hs)
     ((ae_image_tangentHom_iff A volume i).2
       (chartValueL_sobolevSuccL_ofContMDiffSection_ae A hD hDs volume p k s i))
@@ -221,10 +221,10 @@ private theorem exists_eLpNormWkp_coord_le (k : ℕ) (i : Fin A.n) :
     ((A.sectionChartData.chartValueL_coe_lowerOrderL volume p k w i).symm ▸
       SobolevSection.chartValueL_ofContMDiffSection_ae A volume p (k + 1) s i)
   -- The norm of the chart-`i` components is at most the norm of the tuple.
-  have hDw : ‖((Dw : SobolevSection A.tangentHom volume p k) :
-      A.tangentHom.sectionChartData.SobolevData volume p k) i‖ ≤ ‖Dw‖ :=
-    (norm_le_pi_norm ((Dw : SobolevSection A.tangentHom volume p k) :
-      A.tangentHom.sectionChartData.SobolevData volume p k) i).trans_eq
+  have hDw : ‖((Dw : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p k) :
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p k) i‖ ≤ ‖Dw‖ :=
+    (norm_le_pi_norm ((Dw : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p k) :
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p k) i).trans_eq
         ((Submodule.norm_coe _).trans (Submodule.norm_coe Dw))
   have hw₀ : ‖(w₀ : A.sectionChartData.SobolevData volume p k) i‖ ≤ ‖w₀‖ :=
     (norm_le_pi_norm (w₀ : A.sectionChartData.SobolevData volume p k) i).trans_eq

@@ -80,7 +80,8 @@ def zeroOneHilbertSchmidtL (hν : IsPositiveDensityMeasure 𝓘(ℝ, ℂ) ν)
       (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x)) :
     zeroOneSobolevSections A μ p k →L[ℝ] ℝ :=
   ContinuousLinearMap.comp
-    (SobolevSection.integralL A.tangentHom μ p k hν (L := fun x ↦ (η x).hilbertSchmidtInnerL)
+    (SobolevSection.integralL (A.tangentHom 𝓘(ℝ, ℂ)) μ p k hν
+      (L := fun x ↦ (η x).hilbertSchmidtInnerL)
       (fun x₀ ↦ Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL _
         (trivializationAt _ _ x₀).open_baseSet subset_rfl hη.continuousOn))
     (zeroOneSobolevSections A μ p k).subtypeL
@@ -96,10 +97,11 @@ theorem zeroOneHilbertSchmidtL_apply_eq_integralL (hν : IsPositiveDensityMeasur
       (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x))
     (w : zeroOneSobolevSections A μ p k) :
     zeroOneHilbertSchmidtL A μ p k hν η hη w =
-      SobolevSection.integralL A.tangentHom μ p k hν (L := fun x ↦ (η x).hilbertSchmidtInnerL)
+      SobolevSection.integralL (A.tangentHom 𝓘(ℝ, ℂ)) μ p k hν
+        (L := fun x ↦ (η x).hilbertSchmidtInnerL)
         (fun x₀ ↦ Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL _
           (trivializationAt _ _ x₀).open_baseSet subset_rfl hη.continuousOn)
-        (w : SobolevSection A.tangentHom μ p k) := by
+        (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) := by
   rw [zeroOneHilbertSchmidtL, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
 
 /-- **The value of the pairing.** For every one-form `θ` with the chart data of the `(0,1)`-form
@@ -109,12 +111,13 @@ theorem zeroOneHilbertSchmidtL_apply (hν : IsPositiveDensityMeasure 𝓘(ℝ, �
     (hη : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
       (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x))
     {w : zeroOneSobolevSections A μ p k} {θ : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
-    (hθ : ∀ i, A.tangentHom.sectionChartData.chartValueL μ p k i
-      ((w : SobolevSection A.tangentHom μ p k) : A.tangentHom.sectionChartData.SobolevData μ p k)
-        =ᵐ[μ.restrict (A.image i)] A.tangentHom.coord i θ) :
+    (hθ : ∀ i, (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i
+      ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) :
+        (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData μ p k)
+        =ᵐ[μ.restrict (A.image i)] (A.tangentHom 𝓘(ℝ, ℂ)).coord i θ) :
     zeroOneHilbertSchmidtL A μ p k hν η hη w = ∫ x, (η x).hilbertSchmidtInner (θ x) ∂ν := by
   rw [zeroOneHilbertSchmidtL_apply_eq_integralL,
-    SobolevSection.integralL_apply (A := A.tangentHom) hν _ fun i ↦
+    SobolevSection.integralL_apply (A := A.tangentHom 𝓘(ℝ, ℂ)) hν _ fun i ↦
       (ae_image_tangentHom_iff A μ i).2 (hθ i)]
   simp only [ContinuousLinearMap.hilbertSchmidtInnerL_apply]
 

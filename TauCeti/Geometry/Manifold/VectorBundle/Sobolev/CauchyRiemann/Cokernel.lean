@@ -111,11 +111,11 @@ namespace IsRealCauchyRiemannOperator
 private def Represents (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ) (i : Fin A.n)
     (Q : Opens ℂ) (θ : ℂ → F →L[ℝ] ℝ) : Prop :=
   ∀ w : zeroOneSobolevSections A volume p 0,
-    (w : SobolevSection A.tangentHom volume p 0) ∈
-        SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q) →
-      Λ w = ∫ z in Q, θ z (A.tangentHom.sectionChartData.chartValueL volume p 0 i
-        ((w : SobolevSection A.tangentHom volume p 0) :
-          A.tangentHom.sectionChartData.SobolevData volume p 0) z 1)
+    (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) ∈
+        SobolevSection.aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0 ((A.chart i).symm '' Q) →
+      Λ w = ∫ z in Q, θ z ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
+        ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+          (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0) z 1)
 
 /-! ### The upper bound -/
 
@@ -212,16 +212,16 @@ private theorem norm_apply_sub_apply_le {i : Fin A.n} {Q₀ Q : Opens ℂ} (hQ�
     {θ θ' : ℂ → F →L[ℝ] ℝ} (hθ : MemLp θ q (volume.restrict Q))
     (hθ' : MemLp θ' q (volume.restrict Q)) (hrep : Represents A Λ i Q θ)
     (hrep' : Represents A Λ' i Q θ') {w : zeroOneSobolevSections A volume p 0}
-    (hw : (w : SobolevSection A.tangentHom volume p 0) ∈
-      SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q₀)) :
+    (hw : (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) ∈
+      SobolevSection.aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0 ((A.chart i).symm '' Q₀)) :
     ‖Λ w - Λ' w‖ ≤ (eLpNorm (θ - θ') q (volume.restrict Q₀)).toReal *
-      ‖A.tangentHom.sectionChartData.chartValueL volume p 0 i
-        ((w : SobolevSection A.tangentHom volume p 0) :
-          A.tangentHom.sectionChartData.SobolevData volume p 0)‖ := by
-  set g := A.tangentHom.sectionChartData.chartValueL volume p 0 i
-    ((w : SobolevSection A.tangentHom volume p 0) :
-      A.tangentHom.sectionChartData.SobolevData volume p 0)
-  have hQi : (Q : Set ℂ) ⊆ A.tangentHom.sectionChartData.image i := by
+      ‖(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
+        ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+          (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0)‖ := by
+  set g := (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
+    ((w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) :
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume p 0)
+  have hQi : (Q : Set ℂ) ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i := by
     rwa [sectionChartData_image_tangentHom]
   have hQ₀' : (Q₀ : Set ℂ) ⊆ Q := SetLike.coe_subset_coe.2 hQ₀
   have hg : MemLp g p (volume.restrict Q) :=
@@ -237,7 +237,7 @@ private theorem norm_apply_sub_apply_le {i : Fin A.n} {Q₀ Q : Opens ℂ} (hQ�
       hη hg hb (.of_forall fun z ↦ by rw [← NNReal.coe_le_coe]; push_cast; exact hbd _ _))
   -- The reading of `w` vanishes almost everywhere on `Q` off `Q₀`.
   have hvan : ∀ᵐ z ∂volume, z ∈ (Q : Set ℂ) \ Q₀ → (θ - θ') z (g z 1) = 0 := by
-    have hQ' : (Q : Set ℂ) ⊆ A.tangentHom.image i := by rwa [A.image_tangentHom]
+    have hQ' : (Q : Set ℂ) ⊆ (A.tangentHom 𝓘(ℝ, ℂ)).image i := by rwa [A.image_tangentHom]
     have h := SobolevSection.chartValueL_eq_zero_ae_of_mem_aeZeroOff_image
       (hQ₀'.trans hQ') hw
     filter_upwards [(ae_restrict_iff' Q.isOpen.measurableSet).1
@@ -287,13 +287,14 @@ private theorem exists_norm_sub_le_sum (χ : SmoothPartitionOfUnity (Fin A.n) �
   -- `P i w` is the `(0,1)`-projection of `χᵢ w`; the `P i` sum to the identity.
   let P (i : Fin A.n) :
       zeroOneSobolevSections A volume p 0 →L[ℝ] zeroOneSobolevSections A volume p 0 :=
-    (zeroOnePartSobolevL A volume p 0).comp ((SobolevSection.contMDiffSMulL A.tangentHom volume p 0
-      (χ i).contMDiff).comp (zeroOneSobolevSections A volume p 0).subtypeL)
+    (zeroOnePartSobolevL A volume p 0).comp
+      ((SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0
+        (χ i).contMDiff).comp (zeroOneSobolevSections A volume p 0).subtypeL)
   have hP (w : zeroOneSobolevSections A volume p 0) : ∑ i, P i w = w :=
     sum_zeroOnePartSobolevL_contMDiffSMulL_eq_self (fun i ↦ (χ i).contMDiff) hχ1 w
   set Kb := ∑ c, ‖(b.coord c).toContinuousLinearMap‖
   set k : Fin A.n → ℝ := fun i ↦
-    Kb * ‖A.tangentHom.sectionChartData.chartValueL volume p 0 i‖ * ‖P i‖ with hk
+    Kb * ‖(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i‖ * ‖P i‖ with hk
   have hk0 (i : Fin A.n) : 0 ≤ k i := by positivity
   refine ⟨∑ i, k i, Finset.sum_nonneg fun i _ ↦ hk0 i,
     fun Λ Λ' θ θ' hθ hθ' hrep hrep' ↦ ?_⟩
@@ -307,15 +308,15 @@ private theorem exists_norm_sub_le_sum (χ : SmoothPartitionOfUnity (Fin A.n) �
       (Measure.restrict_mono (hQ₀ i) le_rfl)).aestronglyMeasurable
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
   have hmem (i : Fin A.n) : ((P i w : zeroOneSobolevSections A volume p 0) :
-      SobolevSection A.tangentHom volume p 0) ∈
-        SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q₀ i) :=
+      SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) ∈
+        SobolevSection.aeZeroOff (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0 ((A.chart i).symm '' Q₀ i) :=
     SobolevSection.aeZeroOff_mono (hχ i)
       (zeroOnePartSobolevL_mem_aeZeroOff (SobolevSection.contMDiffSMulL_mem_aeZeroOff _ _))
   calc ‖(Λ - Λ') w‖ = ‖∑ i, (Λ (P i w) - Λ' (P i w))‖ := by
         rw [Finset.sum_sub_distrib, ← map_sum, ← map_sum, hP, sub_apply]
     _ ≤ ∑ i, ‖Λ (P i w) - Λ' (P i w)‖ := norm_sum_le _ _
     _ ≤ ∑ i, (Kb * ∑ c, e i c) *
-          (‖A.tangentHom.sectionChartData.chartValueL volume p 0 i‖ * (‖P i‖ * ‖w‖)) :=
+          (‖(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i‖ * (‖P i‖ * ‖w‖)) :=
         Finset.sum_le_sum fun i _ ↦ (norm_apply_sub_apply_le A (hQ₀ i) (hQ i) (hθ i) (hθ' i)
           (hrep i) (hrep' i) (hmem i)).trans (mul_le_mul (hE i) ((ContinuousLinearMap.le_opNorm
             _ _).trans (mul_le_mul_of_nonneg_left ((P i).le_opNorm w) (norm_nonneg _)))

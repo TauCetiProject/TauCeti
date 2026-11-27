@@ -84,16 +84,17 @@ chart data of the section `s`, and let the realization `D ξ` have the chart dat
 `W^{k+1,p}_loc` on the chart image. -/
 theorem memWkpLoc_coord_of_chartValuesL_sobolevL_eq (hp : 1 < p) (hp_top : p ≠ ⊤)
     {ξ : SobolevSection A volume p 1} {η : zeroOneSobolevSections A volume p k}
-    (h : A.tangentHom.sectionChartData.chartValuesL volume p 0
-        (hD.sobolevL A hDs volume p ξ : SobolevSection A.tangentHom volume p 0) =
-      A.tangentHom.sectionChartData.chartValuesL volume p k
-        (η : SobolevSection A.tangentHom volume p k))
+    (h : (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValuesL volume p 0
+        (hD.sobolevL A hDs volume p ξ : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) =
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValuesL volume p k
+        (η : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p k))
     {s : Π x, V x}
     (hs : ∀ i, A.sectionChartData.chartValueL volume p 1 i ξ
       =ᵐ[volume.restrict (A.image i)] A.coord i s)
     (i : Fin A.n) : MemWkpLoc p (A.image i) (k + 1) (A.coord i s) := by
-  obtain ⟨t, ht⟩ := SobolevSection.exists_ae_eq_coord (η : SobolevSection A.tangentHom volume p k)
-  have hg := SobolevSection.memWkpLoc_coord (A := A.tangentHom) _ ht i
+  obtain ⟨t, ht⟩ := SobolevSection.exists_ae_eq_coord
+    (η : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p k)
+  have hg := SobolevSection.memWkpLoc_coord (A := A.tangentHom 𝓘(ℝ, ℂ)) _ ht i
   rw [A.image_tangentHom] at hg
   have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL volume p i ξ
   have hi := SectionChartData.chartValuesL_eq_iff.1 h i
@@ -113,10 +114,10 @@ data of a `(0,1)`-form `η` of order `k`, then `ξ` has the chart data of an ele
 `W^{k+1,p}(Σ, V)`, and the realization of `D` at order `k + 1` sends `ζ` to `η`. -/
 theorem exists_chartValuesL_eq_of_chartValuesL_sobolevL_eq (hp : 1 < p) (hp_top : p ≠ ⊤)
     {ξ : SobolevSection A volume p 1} {η : zeroOneSobolevSections A volume p k}
-    (h : A.tangentHom.sectionChartData.chartValuesL volume p 0
-        (hD.sobolevL A hDs volume p ξ : SobolevSection A.tangentHom volume p 0) =
-      A.tangentHom.sectionChartData.chartValuesL volume p k
-        (η : SobolevSection A.tangentHom volume p k)) :
+    (h : (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValuesL volume p 0
+        (hD.sobolevL A hDs volume p ξ : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0) =
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValuesL volume p k
+        (η : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p k)) :
     ∃ ζ : SobolevSection A volume p (k + 1),
       A.sectionChartData.chartValuesL volume p (k + 1) ζ =
           A.sectionChartData.chartValuesL volume p 1 ξ ∧

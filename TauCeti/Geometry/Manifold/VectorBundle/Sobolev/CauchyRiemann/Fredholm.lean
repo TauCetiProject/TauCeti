@@ -130,7 +130,8 @@ include hD hDs in
 Cauchy–Riemann operator `D₀`, `p > 2`, `1 < q ≤ p` and an `Lᵖ` zeroth-order term `α`, the
 realization `D₀ + α : W^{1,q}(M, V) → L^q(M, Λ^{0,1} ⊗ V)` is a Fredholm operator. -/
 theorem isFredholm_perturbedSobolevL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0) :
+    (α : SobolevSection
+      (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p 0) :
     (hD.perturbedSobolevL A hDs volume hp hqp α).IsFredholm :=
   (isFredholm_and_index_eq_of_eq_add A hD hDs hq (perturbedSobolevL_apply A hD hDs volume hp hqp α)
     (isCompactOperator_perturbationL A volume hp hqp α)).1
@@ -141,7 +142,8 @@ at `ℓ = k = 1`, on closed surfaces). For a smooth real Cauchy–Riemann operat
 `1 < q ≤ p` and an `Lᵖ` zeroth-order term `α`, the realization of `D₀ + α` on `W^{1,q}` has the
 index of the realization of `D₀` on `W^{1,q}`. -/
 theorem index_perturbedSobolevL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0) :
+    (α : SobolevSection
+      (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p 0) :
     (hD.perturbedSobolevL A hDs volume hp hqp α).index = (hD.sobolevL A hDs volume q).index :=
   (isFredholm_and_index_eq_of_eq_add A hD hDs hq (perturbedSobolevL_apply A hD hDs volume hp hqp α)
     (isCompactOperator_perturbationL A volume hp hqp α)).2
@@ -152,7 +154,8 @@ include hD hDs in
 Cauchy–Riemann operator `D₀`, `p ≥ 2`, `q > 1` and a `W^{1,p}` zeroth-order term `α`, the
 realization `D₀ + α : W^{1,q}(M, V) → L^q(M, Λ^{0,1} ⊗ V)` is a Fredholm operator. -/
 theorem isFredholm_sobolevCoeffPerturbedSobolevL (hp : 2 ≤ p) (hq : 1 < q)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 1) :
+    (α : SobolevSection
+      (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p 1) :
     (hD.sobolevCoeffPerturbedSobolevL A hDs volume (q := q) hp α).IsFredholm :=
   (isFredholm_and_index_eq_of_eq_add A hD hDs hq
     (sobolevCoeffPerturbedSobolevL_apply A hD hDs volume hp α)
@@ -164,7 +167,8 @@ include hD hDs in
 `p ≥ 2`, `q > 1` and a `W^{1,p}` zeroth-order term `α`, the realization of `D₀ + α` on `W^{1,q}`
 has the index of the realization of `D₀` on `W^{1,q}`. -/
 theorem index_sobolevCoeffPerturbedSobolevL (hp : 2 ≤ p) (hq : 1 < q)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 1) :
+    (α : SobolevSection
+      (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p 1) :
     (hD.sobolevCoeffPerturbedSobolevL A hDs volume (q := q) hp α).index =
       (hD.sobolevL A hDs volume q).index :=
   (isFredholm_and_index_eq_of_eq_add A hD hDs hq
@@ -191,7 +195,7 @@ private def differenceSection :
 /-- In chart `i`, the difference section reads as the difference of the zeroth-order terms of the
 two operators. -/
 private theorem coord_differenceSection {i : Fin A.n} {y : ℂ} (hy : y ∈ A.image i) :
-    (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).coord i
+    (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet).coord i
         (differenceSection hD hDs hD' hD's) y =
       A.chartZeroOrder D' i y - A.chartZeroOrder D i y := by
   have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
@@ -199,16 +203,16 @@ private theorem coord_differenceSection {i : Fin A.n} {y : ℂ} (hy : y ∈ A.im
   set σ : Π x : M, V x := fun x ↦ (A.triv i).symm x v
   have hx : (A.chart i).symm y ∈ (A.triv i).baseSet := A.dom_subset_baseSet i (A.symm_mem_dom hy)
   -- The reading of `D' σ` is that of `D σ` plus the reading of the difference applied to `σ`.
-  have hD'σ : A.tangentHom.coord i (D' σ) y =
-      A.tangentHom.coord i (D σ) y +
-        A.tangentHom.coord i (fun x ↦ hD'.difference hD x (σ x)) y := by
-    rw [← A.tangentHom.coord_add i _ _ (by rwa [image_tangentHom]), A.coord_tangentHom,
-      A.coord_tangentHom, Pi.add_apply,
+  have hD'σ : (A.tangentHom 𝓘(ℝ, ℂ)).coord i (D' σ) y =
+      (A.tangentHom 𝓘(ℝ, ℂ)).coord i (D σ) y +
+        (A.tangentHom 𝓘(ℝ, ℂ)).coord i (fun x ↦ hD'.difference hD x (σ x)) y := by
+    rw [← (A.tangentHom 𝓘(ℝ, ℂ)).coord_add i _ _ (by rwa [image_tangentHom]),
+      A.coord_tangentHom 𝓘(ℝ, ℂ), A.coord_tangentHom 𝓘(ℝ, ℂ), Pi.add_apply,
       hD'.eq_add_difference hD (Manifold.mdifferentiableAt_symm_of_mem_baseSet v hx)]
   rw [sub_apply, A.chartZeroOrder_apply_eq_coord_tangentHom hD' hy,
     A.chartZeroOrder_apply_eq_coord_tangentHom hD hy, hD'σ, add_sub_cancel_left,
     ← A.coord_triv_symm v hy]
-  exact A.coord_hom_apply A.tangentHom.closure_dom_subset_baseSet i _ σ hy
+  exact A.coord_hom_apply (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet i _ σ hy
 
 include hD' hD's in
 /-- **The realization of `D'` is that of `D` perturbed by `D' - D`.** For finite exponents
@@ -224,10 +228,10 @@ private theorem sobolevL_apply_eq_add_perturbationL {q r : ℝ≥0} [Fact (1 ≤
   refine Subtype.ext (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
     (ae_image_tangentHom_iff A μ i).2 ?_)
   have hα := SobolevSection.chartValueL_ofContMDiffSection_ae
-    (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) μ r 0
+    (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) μ r 0
     (differenceSection hD hDs hD' hD's) i
-  rw [FiniteBundleAtlas.image_hom (A := A) (h := A.tangentHom.closure_dom_subset_baseSet)
-    (𝕜 := ℝ) i] at hα
+  rw [FiniteBundleAtlas.image_hom (A := A)
+    (h := (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) (𝕜 := ℝ) i] at hα
   filter_upwards [chartValueL_sobolevL_sub_ae A hD hDs μ q hD' hD's ξ i,
     chartValueL_perturbationL_ae A μ hr hqr _ ξ i,
     hα.trans (ae_restrict_of_forall_mem (A.image i).isOpen.measurableSet fun y hy ↦

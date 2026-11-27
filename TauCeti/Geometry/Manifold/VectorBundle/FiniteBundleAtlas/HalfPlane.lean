@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Geometry.Manifold.Complex.ClosedUpperHalfPlane
-public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
@@ -70,8 +70,10 @@ read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ
   expressions of a continuous section.
 * `TauCeti.FiniteBundleAtlas.eqOn_halfClosedImage_of_ae_eq`: functions continuous on a chart
   image that agree almost everywhere on its interior agree on the whole image.
-* `TauCeti.FiniteBundleAtlas.eq_of_continuous_of_halfCoord_ae_eq`: continuous sections are
-  determined by their chart expressions almost everywhere.
+* `TauCeti.FiniteBundleAtlas.eq_of_continuous_of_halfCoord_ae_eq`,
+  `TauCeti.FiniteBundleAtlas.continuous_comp_halfCoord_coe_chart_eq_zero_of_ae_eq_zero`: continuous
+  sections and continuous functions of their chart expressions are determined up to the boundary by
+  almost-everywhere agreement on chart interiors.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_halfCoord`: the chart coordinates of a `Cᵏ` section are
   `Cᵏ` up to the boundary.
 * `TauCeti.FiniteBundleAtlas.isCompact_closure_halfImage`,
@@ -88,6 +90,9 @@ read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ
   `ψ • G`, for a cutoff `ψ` and `G` smooth up to the real axis, is smooth, with that reading.
 * `TauCeti.FiniteBundleAtlas.halfCoord_focus`, `TauCeti.FiniteBundleAtlas.halfCoord_focus_eq_zero`:
   readings in `TauCeti.FiniteBundleAtlas.focus`.
+* `TauCeti.FiniteBundleAtlas.halfCoord_prod`, `TauCeti.FiniteBundleAtlas.halfCoord_tangentHom`,
+  `TauCeti.FiniteBundleAtlas.halfCoord_tangentHom_apply`: chart readings in `ℂ` of sections of
+  derived bundles.
 -/
 
 public section
@@ -162,6 +167,11 @@ theorem halfClosedImage_eq_image_val (i : Fin A.n) :
   refine ⟨fun ⟨hz, hz0⟩ ↦ ⟨_, hz, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz0⟩, ?_⟩
   rintro ⟨w, hw, rfl⟩
   exact ⟨by simpa using hw, w.property⟩
+
+theorem coe_chart_mem_halfClosedImage {i : Fin A.n} {x : M} (hx : x ∈ A.dom i) :
+    (A.chart i x : ℂ) ∈ A.halfClosedImage i := by
+  rw [halfClosedImage_eq_image_val]
+  exact mem_image_of_mem _ (A.mem_image.2 ⟨x, hx, rfl⟩)
 
 theorem halfImage_subset_halfClosedImage (i : Fin A.n) :
     (A.halfImage i : Set ℂ) ⊆ A.halfClosedImage i :=
@@ -288,6 +298,21 @@ theorem eq_of_continuous_of_halfCoord_ae_eq [T2Space F] {μ : Measure ℂ} [μ.I
   rw [halfCoord_def, halfCoord_def, closedUpperHalfPlaneModel_symm_coe] at hxz
   exact A.eq_of_coord_chart_eq hx hxz
 
+/-- If a continuous map `f : F → X` into a `T2` space with zero vanishes on `A.halfCoord i s`
+almost everywhere on the interior `A.halfImage i` of chart `i` for a continuous section `s` and a
+measure `μ` charging nonempty open sets, then it vanishes at `A.chart i x` for every `x ∈ A.dom i`,
+boundary points included. -/
+theorem continuous_comp_halfCoord_coe_chart_eq_zero_of_ae_eq_zero
+    {X : Type*} [TopologicalSpace X] [T2Space X] [Zero X]
+    {μ : Measure ℂ} [μ.IsOpenPosMeasure] {f : F → X} (hf : Continuous f)
+    {s : ∀ x, V x} (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
+    {i : Fin A.n} {x : M} (hx : x ∈ A.dom i)
+    (hae : (fun z ↦ f (A.halfCoord i s z)) =ᵐ[μ.restrict (A.halfImage i : Set ℂ)] 0) :
+    f (A.halfCoord i s (A.chart i x : ℂ)) = 0 :=
+  A.eqOn_halfClosedImage_of_ae_eq hae
+    (hf.comp_continuousOn (A.continuousOn_halfCoord hs i))
+    continuousOn_const (A.coe_chart_mem_halfClosedImage hx)
+
 /-- The readings of a section in the charts of `A.focus i hL hLi` are its readings in `A`. -/
 @[simp]
 theorem halfCoord_focus {i : Fin A.n} {L : Set M} (hL : IsClosed L) (hLi : L ⊆ A.dom i)
@@ -386,6 +411,12 @@ private theorem closure_halfImage_subset_extChartAt_image_closure_dom (i : Fin A
       extChartAt closedUpperHalfPlaneModel (A.center i) '' closure (A.dom i) :=
   closure_minimal (A.halfImage_subset_extChartAt_image_closure_dom i)
     (A.isCompact_extChartAt_image_closure_dom i).isClosed
+
+theorem halfClosedImage_subset_halfChartSet (i : Fin A.n) :
+    A.halfClosedImage i ⊆ A.halfChartSet i :=
+  (A.halfClosedImage_subset_closure_halfImage i).trans <|
+    (A.closure_halfImage_subset_extChartAt_image_closure_dom i).trans
+      (A.extChartAt_image_closure_dom_subset_halfChartSet i)
 
 /-- The interior of the image of chart `i` in `ℂ` has compact closure. -/
 theorem isCompact_closure_halfImage (i : Fin A.n) : IsCompact (closure (A.halfImage i : Set ℂ)) :=
@@ -742,5 +773,142 @@ theorem exists_continuous_halfCoord_eqOn {g : Fin A.n → ℂ → F}
 end FiniteBundleAtlas
 
 end Linear
+
+section Derived
+
+namespace FiniteBundleAtlas
+
+section OfBaseSet
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
+  {F : Type*} [TopologicalSpace F] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+  {F' : Type*} [TopologicalSpace F'] {V' : M → Type*} [TopologicalSpace (TotalSpace F' V')]
+  [∀ x, TopologicalSpace (V' x)] [FiberBundle F' V']
+  {A : FiniteBundleAtlas ClosedUpperHalfPlane M F V}
+  {h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet}
+
+@[simp]
+theorem halfClosedImage_ofBaseSet (i : Fin A.n) :
+    (A.ofBaseSet h).halfClosedImage i = A.halfClosedImage i := by
+  simp [halfClosedImage]
+
+@[simp]
+theorem halfOverlap_ofBaseSet (i i' : Fin A.n) :
+    (A.ofBaseSet h).halfOverlap i i' = A.halfOverlap i i' := by
+  simp [halfOverlap]
+
+@[simp]
+theorem halfTransition_ofBaseSet (i i' : Fin A.n) :
+    (A.ofBaseSet h).halfTransition i i' = A.halfTransition i i' := by
+  ext z; simp [halfTransition]
+
+section Prod
+
+variable [∀ x, Zero (V x)] [∀ x, Zero (V' x)]
+
+@[simp]
+theorem halfImage_prod (i : Fin A.n) : (A.prod h).halfImage i = A.halfImage i :=
+  A.halfImage_ofBaseSet i
+
+@[simp]
+theorem halfClosedImage_prod (i : Fin A.n) :
+    (A.prod h).halfClosedImage i = A.halfClosedImage i :=
+  halfClosedImage_ofBaseSet i
+
+@[simp]
+theorem halfOverlap_prod (i i' : Fin A.n) : (A.prod h).halfOverlap i i' = A.halfOverlap i i' :=
+  halfOverlap_ofBaseSet i i'
+
+@[simp]
+theorem halfTransition_prod (i i' : Fin A.n) :
+    (A.prod h).halfTransition i i' = A.halfTransition i i' :=
+  halfTransition_ofBaseSet i i'
+
+/-- A section of `V ×ᵇ V'` read in `ℂ` in a chart of `A.prod h` is the pair of its components read
+in the corresponding charts of `A` and `A.ofBaseSet h`. -/
+theorem halfCoord_prod (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V)
+    (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet)
+    (i : Fin A.n) (s : ∀ x, (V ×ᵇ V') x) (z : ℂ) :
+    (A.prod h).halfCoord i s z =
+      (A.halfCoord i (fun x ↦ (s x).fst) z, (A.ofBaseSet h).halfCoord i (fun x ↦ (s x).snd) z) := by
+  rw [halfCoord_def (A := A.prod h) i, halfCoord_def A i, halfCoord_def (A := A.ofBaseSet h) i]
+  exact A.coord_prod h i s (closedUpperHalfPlaneModel.symm z)
+
+end Prod
+
+end OfBaseSet
+
+section TangentHom
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
+  [IsManifold closedUpperHalfPlaneModel 1 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+section TangentHomSets
+
+variable {A : FiniteBundleAtlas ClosedUpperHalfPlane M F V}
+
+@[simp]
+theorem halfImage_tangentHom (i : Fin A.n) :
+    (A.tangentHom closedUpperHalfPlaneModel).halfImage i = A.halfImage i :=
+  ((A.tangent closedUpperHalfPlaneModel).halfImage_ofBaseSet i).trans (A.halfImage_ofBaseSet i)
+
+@[simp]
+theorem halfClosedImage_tangentHom (i : Fin A.n) :
+    (A.tangentHom closedUpperHalfPlaneModel).halfClosedImage i = A.halfClosedImage i :=
+  (halfClosedImage_ofBaseSet (A := A.tangent closedUpperHalfPlaneModel) i).trans
+    (halfClosedImage_ofBaseSet i)
+
+@[simp]
+theorem halfOverlap_tangentHom (i i' : Fin A.n) :
+    (A.tangentHom closedUpperHalfPlaneModel).halfOverlap i i' = A.halfOverlap i i' :=
+  (halfOverlap_ofBaseSet (A := A.tangent closedUpperHalfPlaneModel) i i').trans
+    (halfOverlap_ofBaseSet i i')
+
+@[simp]
+theorem halfTransition_tangentHom (i i' : Fin A.n) :
+    (A.tangentHom closedUpperHalfPlaneModel).halfTransition i i' = A.halfTransition i i' :=
+  (halfTransition_ofBaseSet (A := A.tangent closedUpperHalfPlaneModel) i i').trans
+    (halfTransition_ofBaseSet i i')
+
+end TangentHomSets
+
+variable (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V)
+
+/-- A `V`-valued one-form read in `ℂ` in a chart of `A.tangentHom closedUpperHalfPlaneModel` is its
+value at the corresponding point of `M` expressed in the preferred trivializations of the tangent
+bundle and of `V` at the centre of the chart. -/
+theorem halfCoord_tangentHom (i : Fin A.n)
+    (θ : ∀ x, TangentSpace closedUpperHalfPlaneModel x →L[ℝ] V x) (z : ℂ) :
+    (A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ z =
+      ContinuousLinearMap.inCoordinates ℂ (TangentSpace closedUpperHalfPlaneModel) F V
+        (A.center i) ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)) (A.center i)
+        ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))
+        (θ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))) := by
+  rw [halfCoord_def (A := A.tangentHom closedUpperHalfPlaneModel) i]
+  exact A.coord_tangentHom closedUpperHalfPlaneModel i θ (closedUpperHalfPlaneModel.symm z)
+
+/-- On the image of a chart, including its points on the real axis, applying the chart reading in
+`ℂ` of a `V`-valued one-form `θ` to the chart reading of a vector field `v` gives the chart reading
+of `x ↦ θ x (v x)`. -/
+theorem halfCoord_tangentHom_apply (i : Fin A.n)
+    (θ : ∀ x, TangentSpace closedUpperHalfPlaneModel x →L[ℝ] V x)
+    (v : ∀ x, TangentSpace closedUpperHalfPlaneModel x) {z : ℂ}
+    (hz : closedUpperHalfPlaneModel.symm z ∈ A.image i) :
+    (A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ z
+      ((A.tangent closedUpperHalfPlaneModel).halfCoord i v z) =
+        A.halfCoord i (fun x ↦ θ x (v x)) z := by
+  rw [halfCoord_def (A := A.tangentHom closedUpperHalfPlaneModel) i,
+    halfCoord_def (A := A.tangent closedUpperHalfPlaneModel) i, halfCoord_def A i]
+  exact A.coord_tangentHom_apply closedUpperHalfPlaneModel i θ v hz
+
+end TangentHom
+
+end FiniteBundleAtlas
+
+end Derived
 
 end TauCeti

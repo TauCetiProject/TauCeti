@@ -1191,8 +1191,9 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The chart images of the section chart data of `V`-valued one-forms are those of `A`. -/
 theorem sectionChartData_image_tangentHom (i : Fin A.n) :
-    (A.tangentHom.sectionChartData.image i : Set E) = A.image i :=
-  congrArg SetLike.coe ((A.tangentHom.sectionChartData_image i).trans (image_tangentHom A i))
+    ((A.tangentHom 𝓘(ℝ, E)).sectionChartData.image i : Set E) = A.image i :=
+  congrArg SetLike.coe
+    (((A.tangentHom 𝓘(ℝ, E)).sectionChartData_image i).trans (image_tangentHom A 𝓘(ℝ, E) i))
 
 /-- The chart images of the section chart data of `V`-valued one-forms on the atlas `A'.ofBaseSet h`
 of `V`, built on the charts of an atlas `A'` of a second fibre bundle, are those of `A'`. -/
@@ -1200,27 +1201,27 @@ theorem sectionChartData_image_tangentHom_ofBaseSet {F' : Type*} [TopologicalSpa
     {V' : M → Type*} [TopologicalSpace (TotalSpace F' V')] [∀ x, TopologicalSpace (V' x)]
     [FiberBundle F' V'] (A' : FiniteBundleAtlas E M F' V')
     (h : ∀ i, closure (A'.dom i) ⊆ (trivializationAt F V (A'.center i)).baseSet) (i : Fin A'.n) :
-    ((A'.ofBaseSet h).tangentHom.sectionChartData.image i : Set E) = A'.image i :=
+    (((A'.ofBaseSet h).tangentHom 𝓘(ℝ, E)).sectionChartData.image i : Set E) = A'.image i :=
   ((A'.ofBaseSet h).sectionChartData_image_tangentHom i).trans
     (congrArg SetLike.coe (image_ofBaseSet (A := A') (h := h) i))
 
 /-- The chart overlaps of the section chart data of `V`-valued one-forms are those of `A`. -/
 theorem sectionChartData_overlap_tangentHom (i i' : Fin A.n) :
-    A.tangentHom.sectionChartData.overlap i i' = A.overlap i i' :=
-  (A.tangentHom.sectionChartData_overlap i i').trans (overlap_tangentHom A i i')
+    (A.tangentHom 𝓘(ℝ, E)).sectionChartData.overlap i i' = A.overlap i i' :=
+  ((A.tangentHom 𝓘(ℝ, E)).sectionChartData_overlap i i').trans (overlap_tangentHom A 𝓘(ℝ, E) i i')
 
 /-- On an overlap, the chart transitions of the section chart data of `V`-valued one-forms are
 those of `A`. -/
 theorem sectionChartData_transition_tangentHom {i i' : Fin A.n} {y : E}
     (hy : y ∈ A.overlap i i') :
-    A.tangentHom.sectionChartData.transition i i' y = A.transition i i' y :=
-  (A.tangentHom.sectionChartData_transition_of_mem (by rwa [overlap_tangentHom])).trans
-    (congrFun (transition_tangentHom A i i') y)
+    (A.tangentHom 𝓘(ℝ, E)).sectionChartData.transition i i' y = A.transition i i' y :=
+  ((A.tangentHom 𝓘(ℝ, E)).sectionChartData_transition_of_mem
+    (by rwa [overlap_tangentHom])).trans (congrFun (transition_tangentHom A 𝓘(ℝ, E) i i') y)
 
 /-- Almost everywhere on a chart image of the section chart data of one-forms is almost everywhere
 on the corresponding chart image of `A`. -/
 theorem ae_image_tangentHom_iff [MeasurableSpace E] (μ : Measure E) (i : Fin A.n) {P : E → Prop} :
-    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.image i : Set E), P y) ↔
+    (∀ᵐ y ∂μ.restrict ((A.tangentHom 𝓘(ℝ, E)).sectionChartData.image i : Set E), P y) ↔
       ∀ᵐ y ∂μ.restrict (A.image i), P y := by
   rw [sectionChartData_image_tangentHom]
 
@@ -1228,16 +1229,16 @@ theorem ae_image_tangentHom_iff [MeasurableSpace E] (μ : Measure E) (i : Fin A.
 on the corresponding overlap of `A`. -/
 theorem ae_overlap_tangentHom_iff [MeasurableSpace E] (μ : Measure E) (i i' : Fin A.n)
     {P : E → Prop} :
-    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.overlap i i'), P y) ↔
+    (∀ᵐ y ∂μ.restrict ((A.tangentHom 𝓘(ℝ, E)).sectionChartData.overlap i i'), P y) ↔
       ∀ᵐ y ∂μ.restrict (A.overlap i i'), P y := by
   rw [sectionChartData_overlap_tangentHom]
 
 /-- The chart images of the section chart data of `V`-valued one-forms have finite measure, for
-the indices of `A`. Instance search does not identify `Fin A.n` with `Fin A.tangentHom.n`, so this
-is a separate instance. -/
+the indices of `A`. Instance search does not identify `Fin A.n` with `Fin (A.tangentHom 𝓘(ℝ, E)).n`,
+so this is a separate instance. -/
 instance isFiniteMeasure_restrict_sectionChartData_image_tangentHom [MeasurableSpace E]
     (μ : Measure E) [IsFiniteMeasureOnCompacts μ] (i : Fin A.n) :
-    IsFiniteMeasure (μ.restrict (A.tangentHom.sectionChartData.image i : Set E)) := by
+    IsFiniteMeasure (μ.restrict ((A.tangentHom 𝓘(ℝ, E)).sectionChartData.image i : Set E)) := by
   rw [sectionChartData_image_tangentHom]
   infer_instance
 
@@ -1245,17 +1246,19 @@ instance isFiniteMeasure_restrict_sectionChartData_image_tangentHom [MeasurableS
 one-forms is `η ↦ g ∘ η ∘ dτ`, for the coordinate change `g` of `V` and the chart transition `τ`. -/
 theorem sectionChartData_coordChange_tangentHom_apply {i i' : Fin A.n} {y : E}
     (hy : y ∈ A.overlap i i') (η : E →L[ℝ] F) :
-    A.tangentHom.sectionChartData.coordChange i i' y η =
+    (A.tangentHom 𝓘(ℝ, E)).sectionChartData.coordChange i i' y η =
       ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
         (η.comp (fderiv ℝ (A.transition i i') y)) := by
-  have hy' : y ∈ A.tangentHom.overlap i i' := by rwa [overlap_tangentHom]
-  have hτ : A.tangentHom.transition i i' y ∈ A.tangentHom.image i := by
+  have hy' : y ∈ (A.tangentHom 𝓘(ℝ, E)).overlap i i' := by rwa [overlap_tangentHom]
+  have hτ : (A.tangentHom 𝓘(ℝ, E)).transition i i' y ∈ (A.tangentHom 𝓘(ℝ, E)).image i := by
     rw [transition_tangentHom, image_tangentHom]
     exact A.overlap_subset_image i' i (A.transition_mem_overlap hy)
-  have h := A.tangentHom.coord_eq_coordChange (fun x ↦ (A.tangentHom.triv i).symm x η) hy'
-  rw [A.tangentHom.coord_triv_symm η hτ, A.coord_tangentHom_eq_coordChange _ hy,
-    ← transition_tangentHom, A.tangentHom.coord_triv_symm η hτ, transition_tangentHom] at h
-  rw [A.tangentHom.sectionChartData_coordChange_of_mem hy']
+  have h := (A.tangentHom 𝓘(ℝ, E)).coord_eq_coordChange
+    (fun x ↦ ((A.tangentHom 𝓘(ℝ, E)).triv i).symm x η) hy'
+  rw [(A.tangentHom 𝓘(ℝ, E)).coord_triv_symm η hτ, A.coord_tangentHom_eq_coordChange _ hy,
+    ← transition_tangentHom A 𝓘(ℝ, E), (A.tangentHom 𝓘(ℝ, E)).coord_triv_symm η hτ,
+    transition_tangentHom] at h
+  rw [(A.tangentHom 𝓘(ℝ, E)).sectionChartData_coordChange_of_mem hy']
   exact h.symm
 
 end TangentHom

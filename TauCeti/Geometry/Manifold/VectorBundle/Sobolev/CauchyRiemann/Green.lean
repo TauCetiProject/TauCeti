@@ -105,11 +105,12 @@ theorem integralL_sobolevL (hp_top : p ≠ ⊤) (hν : IsPositiveDensityMeasure 
       (trivializationAt F V x₀).baseSet)
     (h : ∀ σ : Cₛ^∞⟮𝓘(ℝ, ℂ); F, V⟯, ∫ x, L x (D σ x) ∂ν = ∫ x, L' x (σ x) ∂ν)
     (w : SobolevSection A μ p 1) :
-    SobolevSection.integralL A.tangentHom μ p 0 hν hL
-        (hD.sobolevL A hDs μ p w : SobolevSection A.tangentHom μ p 0) =
+    SobolevSection.integralL (A.tangentHom 𝓘(ℝ, ℂ)) μ p 0 hν hL
+        (hD.sobolevL A hDs μ p w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p 0) =
       SobolevSection.integralL A μ p 1 hν hL' w := by
-  let T : SobolevSection A μ p 1 →L[ℝ] ℝ := (SobolevSection.integralL A.tangentHom μ p 0 hν hL).comp
-    ((zeroOneSobolevSections A μ p 0).subtypeL.comp (hD.sobolevL A hDs μ p))
+  let T : SobolevSection A μ p 1 →L[ℝ] ℝ :=
+    (SobolevSection.integralL (A.tangentHom 𝓘(ℝ, ℂ)) μ p 0 hν hL).comp
+      ((zeroOneSobolevSections A μ p 0).subtypeL.comp (hD.sobolevL A hDs μ p))
   -- Both sides are continuous in `w` and agree on smooth sections, which are dense.
   have hT : (T : SobolevSection A μ p 1 → ℝ) = SobolevSection.integralL A μ p 1 hν hL' :=
     (SobolevSection.denseRange_ofContMDiffSection_comp_ofLE A μ p 1 hp_top).equalizer T.continuous
@@ -117,7 +118,7 @@ theorem integralL_sobolevL (hp_top : p ≠ ⊤) (hν : IsPositiveDensityMeasure 
         simp only [Function.comp_apply, LinearMap.comp_apply, T, ContinuousLinearMap.comp_apply,
           Submodule.subtypeL_apply]
         rw [SobolevSection.integralL_ofContMDiffSection,
-          SobolevSection.integralL_apply (A := A.tangentHom) hν hL
+          SobolevSection.integralL_apply (A := A.tangentHom 𝓘(ℝ, ℂ)) hν hL
           (s := D (ContMDiffSection.ofLE (m := ((1 : ℕ) : ℕ∞ω)) ENat.LEInfty.out σ)) fun i ↦
             (ae_image_tangentHom_iff A μ i).2
               (hD.chartValueL_sobolevL_ofContMDiffSection_ae A hDs μ p _ i)]

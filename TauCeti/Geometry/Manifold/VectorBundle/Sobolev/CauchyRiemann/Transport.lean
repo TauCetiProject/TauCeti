@@ -94,11 +94,11 @@ one-forms whose chart data are the readings of `L ∘ θ`, for fibrewise complex
 one-form `θ` which is a `(0,1)`-form almost everywhere in every chart, is a Sobolev
 `(0,1)`-form. -/
 theorem mem_zeroOneSobolevSections_of_comp {B : FiniteBundleAtlas ℂ M G W}
-    {w : SobolevSection B.tangentHom μ p k} (L : ∀ x, V x →L[ℂ] W x)
+    {w : SobolevSection (B.tangentHom 𝓘(ℝ, ℂ)) μ p k} (L : ∀ x, V x →L[ℂ] W x)
     {θ : ∀ x, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
-    (hw : ∀ i, B.tangentHom.sectionChartData.chartValueL μ p k i w
-      =ᵐ[μ.restrict (B.tangentHom.image i)]
-        B.tangentHom.coord i fun x ↦ ((L x).restrictScalars ℝ).comp (θ x))
+    (hw : ∀ i, (B.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i w
+      =ᵐ[μ.restrict ((B.tangentHom 𝓘(ℝ, ℂ)).image i)]
+        (B.tangentHom 𝓘(ℝ, ℂ)).coord i fun x ↦ ((L x).restrictScalars ℝ).comp (θ x))
     (hθ : ∀ i, ∀ᵐ y ∂μ.restrict (B.image i),
       (ofComplexManifold ℂ M).IsZeroOneForm (θ ((B.chart i).symm y))) :
     w ∈ zeroOneSobolevSections B μ p k :=
@@ -115,7 +115,8 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] [ContMDiffVectorBundle �
 
 include hΦ in
 /-- A complex linear smooth bundle isomorphism sends Sobolev `(0,1)`-forms to `(0,1)`-forms. -/
-theorem tangentHomEquivL_mem_zeroOneSobolevSections {w : SobolevSection A.tangentHom μ p k}
+theorem tangentHomEquivL_mem_zeroOneSobolevSections
+    {w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k}
     (hw : w ∈ zeroOneSobolevSections A μ p k) :
     SobolevSection.tangentHomEquivL A h μ p k hΦ w ∈
       zeroOneSobolevSections (A.ofBaseSet h) μ p k := by
@@ -133,7 +134,7 @@ include hΦ in
 /-- The inverse of a complex linear smooth bundle isomorphism sends Sobolev `(0,1)`-forms to
 `(0,1)`-forms. -/
 theorem tangentHomEquivL_symm_mem_zeroOneSobolevSections
-    {w : SobolevSection (A.ofBaseSet h).tangentHom μ p k}
+    {w : SobolevSection ((A.ofBaseSet h).tangentHom 𝓘(ℝ, ℂ)) μ p k}
     (hw : w ∈ zeroOneSobolevSections (A.ofBaseSet h) μ p k) :
     (SobolevSection.tangentHomEquivL A h μ p k hΦ).symm w ∈ zeroOneSobolevSections A μ p k := by
   obtain ⟨θ, hθ⟩ := SobolevSection.exists_ae_eq_coord w
@@ -154,13 +155,13 @@ def zeroOneTransportEquivL :
     zeroOneSobolevSections A μ p k ≃L[ℝ] zeroOneSobolevSections (A.ofBaseSet h) μ p k :=
   .ofContinuousLinearMap
     ((((SobolevSection.tangentHomEquivL A h μ p k hΦ :
-        SobolevSection A.tangentHom μ p k →L[ℝ]
-          SobolevSection (A.ofBaseSet h).tangentHom μ p k)).comp
+        SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k →L[ℝ]
+          SobolevSection ((A.ofBaseSet h).tangentHom 𝓘(ℝ, ℂ)) μ p k)).comp
       (zeroOneSobolevSections A μ p k).subtypeL).codRestrict _ fun w ↦
         tangentHomEquivL_mem_zeroOneSobolevSections μ p k hΦ A h w.property)
     ((((SobolevSection.tangentHomEquivL A h μ p k hΦ).symm :
-        SobolevSection (A.ofBaseSet h).tangentHom μ p k →L[ℝ]
-          SobolevSection A.tangentHom μ p k).comp
+        SobolevSection ((A.ofBaseSet h).tangentHom 𝓘(ℝ, ℂ)) μ p k →L[ℝ]
+          SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k).comp
       (zeroOneSobolevSections (A.ofBaseSet h) μ p k).subtypeL).codRestrict _ fun w ↦
         tangentHomEquivL_symm_mem_zeroOneSobolevSections μ p k hΦ A h w.property)
     (ContinuousLinearMap.ext fun _ ↦ Subtype.ext <|
@@ -171,7 +172,8 @@ def zeroOneTransportEquivL :
 /-- The underlying one-form of the image of a `(0,1)`-form under `zeroOneTransportEquivL`. -/
 @[simp]
 theorem coe_zeroOneTransportEquivL_apply (w : zeroOneSobolevSections A μ p k) :
-    (zeroOneTransportEquivL μ p k hΦ A h w : SobolevSection (A.ofBaseSet h).tangentHom μ p k) =
+    (zeroOneTransportEquivL μ p k hΦ A h w :
+        SobolevSection ((A.ofBaseSet h).tangentHom 𝓘(ℝ, ℂ)) μ p k) =
       SobolevSection.tangentHomEquivL A h μ p k hΦ w :=
   (rfl)
 
@@ -180,7 +182,8 @@ theorem coe_zeroOneTransportEquivL_apply (w : zeroOneSobolevSections A μ p k) :
 @[simp]
 theorem coe_zeroOneTransportEquivL_symm_apply
     (w : zeroOneSobolevSections (A.ofBaseSet h) μ p k) :
-    ((zeroOneTransportEquivL μ p k hΦ A h).symm w : SobolevSection A.tangentHom μ p k) =
+    ((zeroOneTransportEquivL μ p k hΦ A h).symm w :
+        SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) =
       (SobolevSection.tangentHomEquivL A h μ p k hΦ).symm w :=
   (rfl)
 
@@ -190,14 +193,16 @@ has one-form `Φ⁻¹ ∘ θ`. -/
 theorem chartValueL_zeroOneTransportEquivL_symm_ae_coord
     {w : zeroOneSobolevSections (A.ofBaseSet h) μ p k}
     {θ : ∀ x, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] W x}
-    (hθ : ∀ i, (A.ofBaseSet h).tangentHom.sectionChartData.chartValueL μ p k i
-      (w : SobolevSection (A.ofBaseSet h).tangentHom μ p k)
-        =ᵐ[μ.restrict ((A.ofBaseSet h).tangentHom.image i)] (A.ofBaseSet h).tangentHom.coord i θ)
+    (hθ : ∀ i, ((A.ofBaseSet h).tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i
+      (w : SobolevSection ((A.ofBaseSet h).tangentHom 𝓘(ℝ, ℂ)) μ p k)
+        =ᵐ[μ.restrict (((A.ofBaseSet h).tangentHom 𝓘(ℝ, ℂ)).image i)]
+          ((A.ofBaseSet h).tangentHom 𝓘(ℝ, ℂ)).coord i θ)
     (i : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL μ p k i
-      ((zeroOneTransportEquivL μ p k hΦ A h).symm w : SobolevSection A.tangentHom μ p k)
-        =ᵐ[μ.restrict (A.tangentHom.image i)]
-          A.tangentHom.coord i fun x ↦
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i
+      ((zeroOneTransportEquivL μ p k hΦ A h).symm w :
+        SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k)
+        =ᵐ[μ.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).image i)]
+          (A.tangentHom 𝓘(ℝ, ℂ)).coord i fun x ↦
             (((Φ x).symm : W x →L[ℂ] V x).restrictScalars ℝ).comp (θ x) := by
   rw [coe_zeroOneTransportEquivL_symm_apply]
   simpa [ContinuousLinearEquiv.restrictScalars'_symm,
@@ -252,9 +257,9 @@ theorem zeroOneTransportEquivL_comp_sobolevL (hp : p ≠ ⊤) :
       ⟨fun x ↦ ((Φ x).restrictScalars' ℝ : V x →L[ℝ] W x) (s x),
         ContMDiff.clm_bundle_apply (hΦ.of_le (by exact_mod_cast le_top)) s.contMDiff⟩ i
     have hμ : μ.restrict ((A.ofBaseSet h).image i : Set ℂ) =
-        μ.restrict ((A.ofBaseSet h).tangentHom.image i : Set ℂ) :=
+        μ.restrict (((A.ofBaseSet h).tangentHom 𝓘(ℝ, ℂ)).image i : Set ℂ) :=
       congrArg (fun U : TopologicalSpace.Opens ℂ ↦ μ.restrict (U : Set ℂ))
-        ((A.ofBaseSet h).image_tangentHom i).symm
+        ((A.ofBaseSet h).image_tangentHom 𝓘(ℝ, ℂ) i).symm
     simp only [hμ, ContMDiffSection.coeFn_mk, hDs'] at key
     exact key
 

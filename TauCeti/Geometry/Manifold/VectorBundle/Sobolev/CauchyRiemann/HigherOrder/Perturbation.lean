@@ -99,11 +99,12 @@ namespace IsRealCauchyRiemannOperator
 /-- Multiplication by a `W^{k+1,p}` section of the real hom bundle from `V` to the `V`-valued
 one-forms, on `W^{k+1,q}` sections of `V`. -/
 private def homMulTangentSuccL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1)) :
-    SobolevSection A volume q (k + 1) →L[ℝ] SobolevSection A.tangentHom volume q (k + 1) :=
-  SobolevSection.homMulSuccL A A.tangentHom.closure_dom_subset_baseSet ENat.LEInfty.out hp hq hqp
-    α
+    SobolevSection A volume q (k + 1) →L[ℝ]
+      SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume q (k + 1) :=
+  SobolevSection.homMulSuccL A (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet ENat.LEInfty.out
+    hp hq hqp α
 
 /-- **The zeroth-order term of class `W^{k+1,p}`.** For `p > 2`, `1 < q ≤ p` and a `W^{k+1,p}`
 section `α` of the real hom bundle `x ↦ V x →L[ℝ] (T_x M →L[ℝ] V x)`, the bounded operator sending
@@ -112,7 +113,7 @@ a `W^{k+2,q}` section `ξ` of `V` to the `(0,1)`-part of the one-form `α ξ`, a
 the complex antilinear part of `αᵢ uᵢ`
 (`TauCeti.IsRealCauchyRiemannOperator.chartValueL_perturbationSuccL_ae`). -/
 def perturbationSuccL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1)) :
     SobolevSection A volume q (k + 1 + 1) →L[ℝ] zeroOneSobolevSections A volume q (k + 1) :=
   (zeroOnePartSobolevL A volume q (k + 1)).comp
@@ -121,12 +122,12 @@ def perturbationSuccL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
 omit [T2Space M] in
 @[simp]
 theorem perturbationSuccL_apply (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1))
     (ξ : SobolevSection A volume q (k + 1 + 1)) :
     perturbationSuccL A k hp hq hqp α ξ = zeroOnePartSobolevL A volume q (k + 1)
-      (SobolevSection.homMulSuccL A A.tangentHom.closure_dom_subset_baseSet ENat.LEInfty.out hp hq
-        hqp α (A.sectionChartData.lowerOrderL volume q (k + 1) ξ)) :=
+      (SobolevSection.homMulSuccL A (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet
+        ENat.LEInfty.out hp hq hqp α (A.sectionChartData.lowerOrderL volume q (k + 1) ξ)) :=
   (rfl)
 
 /-- **Compact perturbation** (McDuff–Salamon, Lemma C.2.2, at the top order `ℓ = k + 2 ≥ 2`).
@@ -134,7 +135,7 @@ For a fixed `W^{k+1,p}` coefficient with `p > 2`, the zeroth-order term is compa
 `W^{k+2,q}` to `W^{k+1,q}`, for every `1 < q ≤ p`: it factors through the compact inclusion
 `W^{k+2,q} → W^{k+1,q}`. -/
 theorem isCompactOperator_perturbationSuccL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1)) :
     IsCompactOperator (perturbationSuccL A k hp hq hqp α) :=
   (SobolevSection.isCompactOperator_lowerOrderL A volume q (k + 1)).clm_comp
@@ -144,19 +145,22 @@ omit [T2Space M] in
 /-- In chart `i`, the zeroth-order term is the complex antilinear part of the pointwise application
 of the chart data `αᵢ` of the coefficient to the chart data `uᵢ` of the section. -/
 theorem chartValueL_perturbationSuccL_ae (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1))
     (ξ : SobolevSection A volume q (k + 1 + 1)) (i : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL volume q (k + 1) i
-        ((perturbationSuccL A k hp hq hqp α ξ : SobolevSection A.tangentHom volume q (k + 1)) :
-          A.tangentHom.sectionChartData.SobolevData volume q (k + 1))
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume q (k + 1) i
+        ((perturbationSuccL A k hp hq hqp α ξ :
+          SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume q (k + 1)) :
+            (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume q (k + 1))
       =ᵐ[volume.restrict (A.image i)] fun y ↦ complexAntilinearPartL
-        ((A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.chartValueL
-          volume p (k + 1) i α y
-            (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y)) := by
+        ((A.hom (𝕜 := ℝ)
+          (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet).sectionChartData.chartValueL
+            volume p (k + 1) i α y
+              (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y)) := by
   have h₁ := chartValueL_zeroOnePartSobolevL_ae
     (homMulTangentSuccL A k hp hq hqp α (A.sectionChartData.lowerOrderL volume q (k + 1) ξ)) i
-  have h₂ := SobolevSection.chartValueL_homMulSuccL_ae A A.tangentHom.closure_dom_subset_baseSet
+  have h₂ := SobolevSection.chartValueL_homMulSuccL_ae A
+    (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet
     ENat.LEInfty.out hp hq hqp α (A.sectionChartData.lowerOrderL volume q (k + 1) ξ) i
   filter_upwards [(FiniteBundleAtlas.ae_image_tangentHom_iff A volume i).1 h₁, h₂] with y hy₁ hy₂
   rw [perturbationSuccL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, hy₁]
@@ -168,13 +172,14 @@ omit [T2Space M] in
 term of a `W^{k+2,p}` coefficient on a `W^{k+3,q}` section gives the zeroth-order term at order
 `k + 2`, of the coefficient and the section regarded as one order rougher. -/
 theorem zeroOneLowerOrdersL_perturbationSuccL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1 + 1))
     (ξ : SobolevSection A volume q (k + 1 + 1 + 1)) :
     zeroOneLowerOrdersL A volume q (k + 1) 1 (perturbationSuccL A (k + 1) hp hq hqp α ξ) =
       perturbationSuccL A k hp hq hqp
-        ((A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.lowerOrderL
-          volume p (k + 1) α)
+        ((A.hom (𝕜 := ℝ)
+          (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet).sectionChartData.lowerOrderL
+            volume p (k + 1) α)
         (A.sectionChartData.lowerOrderL volume q (k + 1 + 1) ξ) := by
   rw [perturbationSuccL_apply, perturbationSuccL_apply]
   -- `rw` does not find these patterns through the hom atlas of the one-form bundle, so the steps
@@ -182,8 +187,8 @@ theorem zeroOneLowerOrdersL_perturbationSuccL (hp : 2 < p) (hq : 1 < q) (hqp : q
   exact (zeroOneLowerOrdersL_zeroOnePartSobolevL 1 _).trans
     (congrArg (zeroOnePartSobolevL A volume q (k + 1))
       ((DFunLike.congr_fun
-        (A.tangentHom.sectionChartData.lowerOrdersL_one volume q (k + 1)) _).trans
-        (SobolevSection.lowerOrderL_homMulSuccL A A.tangentHom.closure_dom_subset_baseSet
+        ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrdersL_one volume q (k + 1)) _).trans
+        (SobolevSection.lowerOrderL_homMulSuccL A (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet
           ENat.LEInfty.out hp hq hqp α _)))
 
 include hD in
@@ -194,7 +199,7 @@ include hD in
 in `(0,1)`-forms it is `D₀ + α` in every chart
 (`TauCeti.IsRealCauchyRiemannOperator.chartValueL_perturbedSobolevSuccL_ae_of_zeroOne`). -/
 def perturbedSobolevSuccL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1)) :
     SobolevSection A volume q (k + 1 + 1) →L[ℝ] zeroOneSobolevSections A volume q (k + 1) :=
   -- Instance search for this `ContinuousAdd` instance exceeds the default heartbeat limit.
@@ -204,7 +209,7 @@ def perturbedSobolevSuccL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
 
 @[simp]
 theorem perturbedSobolevSuccL_apply (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1))
     (ξ : SobolevSection A volume q (k + 1 + 1)) :
     hD.perturbedSobolevSuccL A hDs k hp hq hqp α ξ =
@@ -214,7 +219,7 @@ theorem perturbedSobolevSuccL_apply (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
 /-- The realizations of `D₀ + α` and of `D₀` at order `k + 2` differ by a compact operator, the
 zeroth-order term. -/
 theorem isCompactOperator_perturbedSobolevSuccL_sub (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1)) :
     IsCompactOperator fun ξ ↦
       hD.perturbedSobolevSuccL A hDs k hp hq hqp α ξ -
@@ -229,14 +234,15 @@ theorem isCompactOperator_perturbedSobolevSuccL_sub (hp : 2 < p) (hq : 1 < q) (h
 `D₀ + α` at order `k + 3`, for a `W^{k+2,p}` coefficient `α`, gives the realization at order `k + 2`
 of `D₀ + α`, with `α` and the section regarded as one order rougher. -/
 theorem zeroOneLowerOrdersL_perturbedSobolevSuccL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1 + 1))
     (ξ : SobolevSection A volume q (k + 1 + 1 + 1)) :
     zeroOneLowerOrdersL A volume q (k + 1) 1
         (hD.perturbedSobolevSuccL A hDs (k + 1) hp hq hqp α ξ) =
       hD.perturbedSobolevSuccL A hDs k hp hq hqp
-        ((A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.lowerOrderL
-          volume p (k + 1) α)
+        ((A.hom (𝕜 := ℝ)
+          (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet).sectionChartData.lowerOrderL
+            volume p (k + 1) α)
         (A.sectionChartData.lowerOrderL volume q (k + 1 + 1) ξ) := by
   rw [perturbedSobolevSuccL_apply, perturbedSobolevSuccL_apply, map_add,
     zeroOneLowerOrdersL_sobolevSuccL, zeroOneLowerOrdersL_perturbationSuccL]
@@ -246,28 +252,31 @@ section with chart data `uᵢ` to `∂bar uᵢ + Zᵢ uᵢ + (αᵢ uᵢ)^{0,1}`
 antilinear part of any weak derivative `Du` of `uᵢ` and `Zᵢ` is the zeroth-order term of `D₀` in
 chart `i`. -/
 theorem chartValueL_perturbedSobolevSuccL_ae (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1))
     (ξ : SobolevSection A volume q (k + 1 + 1)) {i : Fin A.n} {Du : ℂ → ℂ →L[ℝ] F}
     (hDu : HasWeakFDerivOn volume (A.image i)
       (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ) Du) :
-    A.tangentHom.sectionChartData.chartValueL volume q (k + 1) i
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume q (k + 1) i
         ((hD.perturbedSobolevSuccL A hDs k hp hq hqp α ξ :
-          SobolevSection A.tangentHom volume q (k + 1)) :
-            A.tangentHom.sectionChartData.SobolevData volume q (k + 1))
+          SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume q (k + 1)) :
+            (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume q (k + 1))
       =ᵐ[volume.restrict (A.image i)] fun y ↦ complexAntilinearPartL (Du y) +
         A.chartZeroOrder D i y (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y) +
         complexAntilinearPartL
-          ((A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.chartValueL
-            volume p (k + 1) i α y
-              (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y)) := by
+          ((A.hom (𝕜 := ℝ)
+            (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet).sectionChartData.chartValueL
+              volume p (k + 1) i α y
+                (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y)) := by
   have h₃ := (FiniteBundleAtlas.ae_image_tangentHom_iff A volume i).1 (Lp.coeFn_add
-    (A.tangentHom.sectionChartData.chartValueL volume q (k + 1) i
-      ((hD.sobolevSuccL A hDs volume q (k + 1) ξ : SobolevSection A.tangentHom volume q (k + 1)) :
-        A.tangentHom.sectionChartData.SobolevData volume q (k + 1)))
-    (A.tangentHom.sectionChartData.chartValueL volume q (k + 1) i
-      ((perturbationSuccL A k hp hq hqp α ξ : SobolevSection A.tangentHom volume q (k + 1)) :
-        A.tangentHom.sectionChartData.SobolevData volume q (k + 1))))
+    ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume q (k + 1) i
+      ((hD.sobolevSuccL A hDs volume q (k + 1) ξ :
+        SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume q (k + 1)) :
+          (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume q (k + 1)))
+    ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume q (k + 1) i
+      ((perturbationSuccL A k hp hq hqp α ξ :
+        SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume q (k + 1)) :
+          (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume q (k + 1))))
   filter_upwards [chartValueL_sobolevSuccL_ae A hD hDs volume q (k + 1) ξ hDu,
     chartValueL_perturbationSuccL_ae A k hp hq hqp α ξ i, h₃] with y h₁ h₂ h₃
   rw [perturbedSobolevSuccL_apply, Submodule.coe_add, Submodule.coe_add, map_add, h₃,
@@ -278,25 +287,28 @@ complex antilinear maps almost everywhere, that is `α` is a zeroth-order term i
 `Λ^{0,1} ⊗ End_ℝ V`, then in chart `i` the realization of `D₀ + α` at order `k + 2` is
 `∂bar uᵢ + Zᵢ uᵢ + αᵢ uᵢ`. -/
 theorem chartValueL_perturbedSobolevSuccL_ae_of_zeroOne (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+    (α : SobolevSection (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p
       (k + 1))
     (ξ : SobolevSection A volume q (k + 1 + 1)) {i : Fin A.n} {Du : ℂ → ℂ →L[ℝ] F}
     (hDu : HasWeakFDerivOn volume (A.image i)
       (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ) Du)
     (hα : ∀ᵐ y ∂volume.restrict (A.image i), ∀ (u : F) (v : ℂ),
-      (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.chartValueL
+      (A.hom (𝕜 := ℝ)
+        (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet).sectionChartData.chartValueL
           volume p (k + 1) i α y u (Complex.I • v) =
         -(Complex.I •
-          (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.chartValueL
-            volume p (k + 1) i α y u v)) :
-    A.tangentHom.sectionChartData.chartValueL volume q (k + 1) i
+          (A.hom (𝕜 := ℝ)
+            (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet).sectionChartData.chartValueL
+              volume p (k + 1) i α y u v)) :
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume q (k + 1) i
         ((hD.perturbedSobolevSuccL A hDs k hp hq hqp α ξ :
-          SobolevSection A.tangentHom volume q (k + 1)) :
-            A.tangentHom.sectionChartData.SobolevData volume q (k + 1))
+          SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume q (k + 1)) :
+            (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.SobolevData volume q (k + 1))
       =ᵐ[volume.restrict (A.image i)] fun y ↦ complexAntilinearPartL (Du y) +
         A.chartZeroOrder D i y (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y) +
-        (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.chartValueL
-          volume p (k + 1) i α y (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y) := by
+        (A.hom (𝕜 := ℝ)
+          (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet).sectionChartData.chartValueL
+            volume p (k + 1) i α y (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y) := by
   filter_upwards [hD.chartValueL_perturbedSobolevSuccL_ae A hDs k hp hq hqp α ξ hDu, hα]
     with y h hy
   rw [h, complexAntilinearPartL_eq_self_iff.2 (hy _)]

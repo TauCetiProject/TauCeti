@@ -121,7 +121,8 @@ satisfies `‖\bar∂ sᵢ‖ ≤ g ‖sᵢ‖` almost everywhere there, for som
 the chart data of `α` and `c` is the norm of the projection to the complex antilinear part. -/
 theorem exists_hasWeakFDerivOn_coord_toSection_of_perturbedSobolevL_eq_zero
     (hp : 2 < p) (hq : 2 < q) (hqp : q ≤ p)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0)
+    (α : SobolevSection
+      (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p 0)
     {ξ : SobolevSection A volume q 1} (hξ : hD.perturbedSobolevL A hDs volume hp hqp α ξ = 0)
     (i : Fin A.n) :
     ∃ (Du : ℂ → ℂ →L[ℝ] F) (g : ℂ → ℝ),
@@ -132,12 +133,12 @@ theorem exists_hasWeakFDerivOn_coord_toSection_of_perturbedSobolevL_eq_zero
   have hae := SobolevSection.chartValueL_ae_eq_coord_toSection hrep ξ i
   have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL volume q i ξ
   -- The chart data of `α`, an `Lᵖ` function on the chart image.
-  set a := (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.chartValueL
-    volume p 0 i α
+  set a := (A.hom (𝕜 := ℝ)
+    (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet).sectionChartData.chartValueL volume p 0 i α
   have ha : MemLp (a : ℂ → F →L[ℝ] ℂ →L[ℝ] F) p (volume.restrict (A.image i)) :=
     (Lp.memLp a).mono_measure (Measure.restrict_mono (congrArg SetLike.coe
       (FiniteBundleAtlas.image_hom (A := A) (𝕜 := ℝ)
-        (h := A.tangentHom.closure_dom_subset_baseSet) i)).ge le_rfl)
+        (h := (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) i)).ge le_rfl)
   obtain ⟨C, hC⟩ := A.exists_norm_chartZeroOrder_apply_le hD hDs i
   set c₀ := ‖complexAntilinearPartL (E := ℂ) (F := F)‖
   have hg : MemLpLoc p (A.image i) fun y ↦ C + c₀ * ‖a y‖ := by
@@ -180,7 +181,8 @@ variable (A : FiniteBundleAtlas ℂ X ℂ L) [ContMDiffVectorBundle ∞ ℂ L �
   (hDs : ContMDiffCovariantDerivativeOn ℂ ∞ D univ)
   {p q : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))] [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 2 < p) (hq : 2 < q)
   (hqp : q ≤ p)
-  (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0)
+  (α : SobolevSection
+    (A.hom (𝕜 := ℝ) (A.tangentHom 𝓘(ℝ, ℂ)).closure_dom_subset_baseSet) volume p 0)
   {ξ : SobolevSection A volume q 1}
 
 include hD hDs hq in

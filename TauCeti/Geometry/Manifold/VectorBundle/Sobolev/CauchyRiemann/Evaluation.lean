@@ -124,7 +124,8 @@ theorem kerSobolevLEval_apply_eq_kerSobolevLEquivComap_symm (hp : 1 < p) {ι : T
     kerSobolevLEval A hD hDs hp x w i =
       ((kerSobolevLEquivComap A hD hDs hp).symm w : Cₛ^((1 : ℕ) : WithTop ℕ∞)⟮𝓘(ℝ, ℂ); F, V⟯)
         (x i) := by
-  simp [kerSobolevLEval]
+  delta kerSobolevLEval
+  simp
 
 /-- The evaluation of the Sobolev section of a `C¹` section `s` in the kernel is the evaluation of
 `s`. -/
@@ -134,7 +135,8 @@ theorem kerSobolevLEval_apply (hp : 1 < p) {ι : Type*} (x : ι → M)
     (hs : SobolevSection.ofContMDiffSection A volume p 1 s ∈ (hD.sobolevL A hDs volume p).ker)
     (i : ι) :
     kerSobolevLEval A hD hDs hp x ⟨_, hs⟩ i = s (x i) := by
-  simp [kerSobolevLEval]
+  rw [kerSobolevLEval_apply_eq_kerSobolevLEquivComap_symm,
+    kerSobolevLEquivComap_symm_ofContMDiffSection]
 
 /-- The evaluation of a kernel element which is the Sobolev section of a `C¹` section `s` is the
 evaluation of `s`. -/

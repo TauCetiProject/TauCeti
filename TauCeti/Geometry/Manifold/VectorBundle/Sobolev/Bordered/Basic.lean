@@ -66,9 +66,10 @@ Conversely, the chart expression of every element lies in the local Sobolev clas
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_halfImage`: the interiors of the chart images
   have finite measure.
 * `TauCeti.BorderedSobolevSection.instCompleteSpace`: completeness.
-* `TauCeti.BorderedSobolevSection.norm_ofContMDiffSection_le`,
-  `TauCeti.BorderedSobolevSection.ofContMDiffSection_injective`: the norm bound and injectivity of
-  the inclusion of `Cᵏ` sections.
+* `TauCeti.BorderedSobolevSection.chartValueL_ofContMDiffSection_ae`,
+  `TauCeti.BorderedSobolevSection.norm_ofContMDiffSection_le`,
+  `TauCeti.BorderedSobolevSection.ofContMDiffSection_injective`: the chart data, norm bound and
+  injectivity of the inclusion of `Cᵏ` sections.
 * `TauCeti.BorderedSobolevSection.memWkpLoc_halfCoord`,
   `TauCeti.BorderedSobolevSection.exists_section_memWkpLoc`: localization to the local Sobolev
   classes on the chart images, up to the real axis.
@@ -154,6 +155,16 @@ the point. -/
       A.halfTransition_coe_chart hx, A.halfCoord_coe_chart _ (hidx x),
       (A.triv (idx x)).apply_mk_symm (A.dom_subset_baseSet _ (hidx x))]
     rfl
+
+@[simp]
+theorem halfSectionChartData_image (i : Fin A.n) :
+    A.halfSectionChartData.image i = A.halfImage i :=
+  rfl
+
+@[simp]
+theorem halfSectionChartData_overlap (i i' : Fin A.n) :
+    A.halfSectionChartData.overlap i i' = A.halfOverlap i i' :=
+  rfl
 
 theorem halfSectionChartData_transition_of_mem {i i' : Fin A.n} {z : ℂ}
     (hz : z ∈ A.halfOverlap i i') :
@@ -307,7 +318,8 @@ def ofContMDiffSection :
     (exists_value_ae_eq_halfCoord A p k)
 
 /-- The chart data in chart `i` of the Sobolev section of a `Cᵏ` section `s` are the chart
-coordinates `A.halfCoord i s`, almost everywhere on the interior of the image of the chart. -/
+coordinates `A.halfCoord i s`, almost everywhere on the interior `A.halfImage i` of the image of
+the chart. -/
 theorem chartValueL_ofContMDiffSection_ae (s : Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯)
     (i : Fin A.n) :
     A.halfSectionChartData.chartValueL volume p k i (ofContMDiffSection A p k s)
@@ -334,32 +346,15 @@ continuity, and hence also on the real axis, whose points are limits of interior
 theorem ofContMDiffSection_injective : Function.Injective (ofContMDiffSection A p k) := by
   refine (injective_iff_map_eq_zero _).2 fun s hs ↦ ContMDiffSection.ext fun x ↦ ?_
   obtain ⟨i, hx⟩ := A.exists_mem_dom x
-  have hcont : ContinuousOn (A.halfCoord i s) (A.halfChartSet i) :=
-    (A.contDiffOn_halfCoord s.contMDiff i).continuousOn
   have hae : A.halfCoord i s =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] 0 :=
     (A.halfSectionChartData_coord_ae_eq i s).symm.trans
       (A.halfSectionChartData.coord_ae_eq_zero_of_ofComponents_eq_zero volume p k _ _ hs i)
-  have hzero : EqOn (A.halfCoord i s) 0 (A.halfImage i) :=
-    Measure.eqOn_open_of_ae_eq hae (A.halfImage i).isOpen
-      (hcont.mono (A.halfImage_subset_halfChartSet i)) continuousOn_const
-  -- The point `chart i x` of `ℂ` is a limit of interior points of the chart image.
-  have hmem : (A.chart i x : ℂ) ∈ A.halfClosedImage i := by
-    rw [halfClosedImage_eq_image_val]
-    exact mem_image_of_mem _ (A.mem_image.2 ⟨x, hx, rfl⟩)
-  have hK : (A.chart i x : ℂ) ∈ A.halfChartSet i :=
-    A.extChartAt_image_closure_dom_subset_halfChartSet i
-      ⟨x, subset_closure hx, A.extChartAt_center_apply i x⟩
-  have hcl := ((hcont (A.chart i x : ℂ) hK).mono
-    (A.halfImage_subset_halfChartSet i)).mem_closure_image
-      (A.halfClosedImage_subset_closure_halfImage i hmem)
-  have himage : A.halfCoord i s '' (A.halfImage i) ⊆ {0} := by
-    rintro _ ⟨z, hz, rfl⟩
-    exact hzero hz
-  have hval := closure_mono himage hcl
-  rw [closure_singleton, mem_singleton_iff, A.halfCoord_coe_chart s hx] at hval
-  have hb := A.dom_subset_baseSet i hx
+  have hval : A.halfCoord i s (A.chart i x : ℂ) = 0 :=
+    A.continuous_comp_halfCoord_coe_chart_eq_zero_of_ae_eq_zero continuous_id
+      s.contMDiff.continuous hx hae
+  rw [A.halfCoord_coe_chart s hx] at hval
   rw [ContMDiffSection.coe_zero, Pi.zero_apply,
-    ← ((A.triv i).continuousLinearEquivAt ℝ x hb).map_eq_zero_iff]
+    ← ((A.triv i).continuousLinearEquivAt ℝ x (A.dom_subset_baseSet i hx)).map_eq_zero_iff]
   exact hval
 
 end BorderedSobolevSection
