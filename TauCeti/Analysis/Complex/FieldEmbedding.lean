@@ -19,8 +19,8 @@ viewed as the `k`-algebra structure `σ.toAlgebra` on `ℂ`, and let `E` be a do
   a field embedding when `E` is a field.
 * If moreover `E` is algebraically closed with `#E = 𝔠`, then `σ` extends to a field
   isomorphism `E ≃ₐ[k] ℂ`.
-* When `k` is a field, in both cases a prescribed element `α ∈ E` transcendental over `k` may
-  be sent to any prescribed `z ∈ ℂ` transcendental over `k`.
+* In both cases a prescribed element `α ∈ E` transcendental over `k` may be sent to any
+  prescribed `z ∈ ℂ` transcendental over `k`.
 
 The proofs extend a transcendence basis: `ℂ` has transcendence degree `𝔠` over every countable
 subring, while `E` has transcendence degree at most `#E`. These embeddings are the
@@ -34,9 +34,9 @@ absolute values.
   commutative ring acting faithfully.
 * `TauCeti.Complex.nonempty_algHom`, `TauCeti.Complex.nonempty_algEquiv`: extension of a complex
   embedding of a countable commutative ring to a homomorphism, respectively an isomorphism.
-* `TauCeti.Complex.exists_algHom_apply_eq`, `TauCeti.Complex.exists_algEquiv_apply_eq`: over a
-  countable field, the same with a transcendental element sent to a prescribed transcendental
-  complex number.
+* `TauCeti.Complex.exists_algHom_apply_eq`, `TauCeti.Complex.exists_algEquiv_apply_eq`: the same
+  over a countable commutative ring, with a transcendental element sent to a prescribed
+  transcendental complex number.
 
 ## References
 
@@ -95,22 +95,32 @@ theorem nonempty_algEquiv [Field E] [IsAlgClosed E] [Algebra k E] [FaithfulSMul 
     Nonempty (E ≃ₐ[k] ℂ) :=
   IsAlgClosed.nonempty_algEquiv_of_lift_trdeg_eq (lift_trdeg_eq hE)
 
-end CommRing
-
-variable {k : Type*} {E : Type u} [Field k] [Countable k] [Algebra k ℂ]
-
-/-- For a field extension `E` of a countable field `k`, or a domain containing `k`, with
-`#E ≤ 𝔠`, an element `α ∈ E` transcendental over `k` and a complex number `z` transcendental
-over `k`, some `k`-algebra homomorphism `E →ₐ[k] ℂ` sends `α` to `z`. -/
+omit [FaithfulSMul k ℂ] in
+/-- For a domain `E` over a countable commutative ring `k` with `#E ≤ 𝔠`, an element `α ∈ E`
+transcendental over `k` and a complex number `z` transcendental over `k`, some `k`-algebra
+homomorphism `E →ₐ[k] ℂ` sends `α` to `z`. -/
 theorem exists_algHom_apply_eq [CommRing E] [IsDomain E] [Algebra k E] (hE : #E ≤ 𝔠) {α : E}
-    {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E →ₐ[k] ℂ, φ α = z :=
-  let ⟨φ, _, hφ⟩ := hα.exists_algHom_apply_eq hz (lift_trdeg_le hE); ⟨φ, hφ⟩
+    {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E →ₐ[k] ℂ, φ α = z := by
+  obtain ⟨t, _, ht⟩ := hz.exists_isTranscendenceBasis_mem
+  have : FaithfulSMul k ℂ :=
+    (faithfulSMul_iff_algebraMap_injective k ℂ).2 ht.1.algebraMap_injective
+  obtain ⟨φ, _, hφ⟩ := hα.exists_algHom_apply_eq hz (lift_trdeg_le hE)
+  exact ⟨φ, hφ⟩
 
-/-- For an algebraically closed extension `E` of a countable field `k` with `#E = 𝔠`, an element
-`α ∈ E` transcendental over `k` and a complex number `z` transcendental over `k`, some
+omit [FaithfulSMul k ℂ] in
+/-- For an algebraically closed field `E` over a countable commutative ring `k` with `#E = 𝔠`,
+an element `α ∈ E` transcendental over `k` and a complex number `z` transcendental over `k`, some
 isomorphism `E ≃ₐ[k] ℂ` sends `α` to `z`. -/
 theorem exists_algEquiv_apply_eq [Field E] [IsAlgClosed E] [Algebra k E] (hE : #E = 𝔠) {α : E}
-    {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E ≃ₐ[k] ℂ, φ α = z :=
-  hα.exists_algEquiv_apply_eq hz (lift_trdeg_eq hE)
+    {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E ≃ₐ[k] ℂ, φ α = z := by
+  obtain ⟨s, _, hs⟩ := hα.exists_isTranscendenceBasis_mem
+  obtain ⟨t, _, ht⟩ := hz.exists_isTranscendenceBasis_mem
+  have : FaithfulSMul k E :=
+    (faithfulSMul_iff_algebraMap_injective k E).2 hs.1.algebraMap_injective
+  have : FaithfulSMul k ℂ :=
+    (faithfulSMul_iff_algebraMap_injective k ℂ).2 ht.1.algebraMap_injective
+  exact hα.exists_algEquiv_apply_eq hz (lift_trdeg_eq hE)
+
+end CommRing
 
 end TauCeti.Complex

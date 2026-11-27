@@ -23,8 +23,8 @@ gives the existence results:
 * two algebraically closed fields of the same transcendence degree over `R` are isomorphic over
   `R`.
 
-Over a base field `k`, either construction can send a prescribed element `α ∈ E` transcendental
-over `k` to any prescribed element `z ∈ Ω` transcendental over `k`.
+Either construction can send a prescribed element `α ∈ E` transcendental over the commutative
+base ring to any prescribed element `z ∈ Ω` transcendental over that ring.
 
 The cardinality result imported from
 `TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis` says that over a countable
@@ -116,8 +116,6 @@ theorem exists_algEquiv_apply_eq {E : Type*} [Field E] [Algebra R E] [IsAlgClose
 
 end IsTranscendenceBasis
 
-variable {k : Type*} {Ω : Type v} [Field k] [Field Ω] [Algebra k Ω] [IsAlgClosed Ω]
-
 namespace TauCeti.IsAlgClosed
 
 /-- A domain `E` over a commutative ring `R` acting faithfully on `E` and an algebraically closed
@@ -196,6 +194,8 @@ end TauCeti.IsAlgClosed
 
 namespace Transcendental
 
+variable {k : Type*} {Ω : Type v} [CommRing k] [Field Ω] [Algebra k Ω] [IsAlgClosed Ω]
+
 /-- If `trdeg k E ≤ trdeg k Ω` for a domain `E` containing `k`, then for elements `α ∈ E` and
 `z ∈ Ω` transcendental over `k`, some injective `k`-algebra homomorphism `E →ₐ[k] Ω` sends `α` to
 `z`. -/
@@ -204,6 +204,7 @@ theorem exists_algHom_apply_eq {E : Type u} [CommRing E] [IsDomain E] [Algebra k
     (h : Cardinal.lift.{v} (trdeg k E) ≤ Cardinal.lift.{u} (trdeg k Ω)) :
     ∃ φ : E →ₐ[k] Ω, Function.Injective φ ∧ φ α = z := by
   classical
+  have : Nontrivial k := RingHom.domain_nontrivial (algebraMap k E)
   obtain ⟨s, hαs, hs⟩ := hα.exists_isTranscendenceBasis_mem
   obtain ⟨t, hzt, ht⟩ := hz.exists_isTranscendenceBasis_mem
   obtain ⟨f⟩ := hs.nonempty_embedding_of_lift_trdeg_le ht h
@@ -220,6 +221,7 @@ theorem exists_algEquiv_apply_eq {E : Type u} [Field E] [Algebra k E] [IsAlgClos
     (h : Cardinal.lift.{v} (trdeg k E) = Cardinal.lift.{u} (trdeg k Ω)) :
     ∃ φ : E ≃ₐ[k] Ω, φ α = z := by
   classical
+  have : Nontrivial k := RingHom.domain_nontrivial (algebraMap k E)
   obtain ⟨s, hαs, hs⟩ := hα.exists_isTranscendenceBasis_mem
   obtain ⟨t, hzt, ht⟩ := hz.exists_isTranscendenceBasis_mem
   obtain ⟨e⟩ := hs.nonempty_equiv_of_lift_trdeg_eq ht h
