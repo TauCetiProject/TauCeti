@@ -203,8 +203,7 @@ theorem isLocalDiffeomorphOn_hamiltonianFlowAction_section
     funext q
     simp only [G, comp_apply, Prod.map_fst, Prod.map_snd, id_eq]
     rw [← hσ.hamiltonianFlowAction_add_apply, add_sub_cancel]
-  change IsLocalDiffeomorphAt _ I ∞ G (v, c)
-  rw [hG]
+  rw [Subtype.coe_mk, hG]
   have htr : IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ))
       (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) ∞ (Prod.map (· - v) (id : (ι → ℝ) → ι → ℝ)) (v, c) :=
     (isLocalDiffeomorphAt_of_fderiv_eq (e := ContinuousLinearEquiv.refl ℝ (ι → ℝ))

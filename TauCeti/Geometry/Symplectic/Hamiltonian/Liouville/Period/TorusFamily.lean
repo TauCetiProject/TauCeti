@@ -41,8 +41,9 @@ the parameter `c`. So `W` is a union of whole orbits, the regular Liouville tori
 `s c`, and `W` is identified with the family of tori `ℝ^ι / Λ_c`, one for each value `c ∈ D`.
 Composing with the global trivialization of the family of tori
 (`TauCeti.torusFamilyDiffeomorphProd`) along a `ℤ`-basis of `Λ` indexed by `κ` gives a
-diffeomorphism `D × ℝ^κ/ℤ^κ ≃ W` (`TauCeti.SmoothTwoForm.IsSymplectic.prodTorusDiffeomorph`), the
-angle coordinates of `W`.
+diffeomorphism `D × ℝ^κ/ℤ^κ ≃ W` (`TauCeti.SmoothTwoForm.IsSymplectic.prodTorusDiffeomorph`), a
+torus trivialization of `W`. It depends on the section `s`; its torus coordinates are not the
+symplectic angles of action–angle coordinates, and its base coordinate is `F`, not an action.
 
 Injectivity holds because `F` separates the parameters and the periods of `s c` are exactly the
 lattice of `c`; the local diffeomorphism property descends from that of the sweep
@@ -285,10 +286,11 @@ theorem coe_torusFamilyProjection_torusFamilyDiffeomorph_symm_apply
     ← hσ.coe_torusFamilyDiffeomorph_apply hF hcomm hc s P hper hinj hP hdim hs hFs hstab,
     Diffeomorph.apply_symm_apply]
 
-/-- **Angle coordinates on the swept set.** For a `ℤ`-basis `b` of `Λ`, the family of tori is
+/-- **Torus trivialization of the swept set.** For a `ℤ`-basis `b` of `Λ`, the family of tori is
 trivialized by the period coordinates (`TauCeti.torusFamilyDiffeomorphProd`), so the swept set is
 diffeomorphic to `U × ℝ^κ/ℤ^κ`, where `κ` indexes `b`: the class of `x ∈ ℝ^κ` over `c` goes to
-`(∑ i, xᵢ P c (b i)) • s c` (`prodTorusDiffeomorph_apply`). -/
+`(∑ i, xᵢ P c (b i)) • s c` (`prodTorusDiffeomorph_apply`). These coordinates depend on the
+section `s` and are not the symplectic angles of action–angle coordinates. -/
 def prodTorusDiffeomorph {κ : Type*} [Fintype κ] (b : Basis κ ℤ Λ)
     (hdim : 2 * Fintype.card ι = finrank ℝ E)
     (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s U) (hFs : ∀ c ∈ U, F (s c) = c)
@@ -304,7 +306,7 @@ def prodTorusDiffeomorph {κ : Type*} [Fintype κ] (b : Basis κ ℤ Λ)
   (torusFamilyDiffeomorphProd P b hinj hP).symm.trans
     (hσ.torusFamilyDiffeomorph hF hcomm hc s P hper hinj hP hdim hs hFs hstab)
 
-/-- The angle coordinates send the class of `x` over `c` to `(∑ i, xᵢ P c (b i)) • s c`. -/
+/-- The torus trivialization sends the class of `x` over `c` to `(∑ i, xᵢ P c (b i)) • s c`. -/
 @[simp]
 theorem prodTorusDiffeomorph_apply {κ : Type*} [Fintype κ] (b : Basis κ ℤ Λ)
     (hdim : 2 * Fintype.card ι = finrank ℝ E)
@@ -316,7 +318,7 @@ theorem prodTorusDiffeomorph_apply {κ : Type*} [Fintype κ] (b : Basis κ ℤ �
       (hσ.hamiltonianFlowAction hF hcomm hc (∑ i, x i • P c (b i))).toMul (s c) := by
   simp [prodTorusDiffeomorph, Basis.equivFun_symm_apply]
 
-/-- The angle coordinates lie over the values: the parameter of the inverse image of `y` is
+/-- The torus trivialization lies over the values: the parameter of the inverse image of `y` is
 `F y`. -/
 @[simp]
 theorem coe_fst_prodTorusDiffeomorph_symm_apply {κ : Type*} [Fintype κ] (b : Basis κ ℤ Λ)
