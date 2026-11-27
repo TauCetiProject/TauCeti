@@ -24,7 +24,6 @@ applies it to the staircase threshold at `q * (2 * t + 1)` vertices:
   (`Finset.ciInf_sum_distErr_mul_inv_le_of_le_card_div_add_one`,
   `Finset.ciInf₂_sum_distErr_mul_inv_eq_ciInf_of_le_card_div_add_one`,
   `Finset.ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le`,
-  `TauCeti.Cochain.card_div_add_one_le_costErr_of_ne`,
   `TauCeti.Cochain.gaugeDistErr_eq_ciInf_sum_edgeCost_div_of_le`, and
   `TauCeti.Cochain.gaugeDistErr_eq_gaugeDist_div_of_le`): on any two-complex `X` over `[Fintype V]`
   and `[LinearOrder V]`, if the equal-degree `movedNorm (Fin n)` unoriented edge-cost infimum (or
@@ -236,14 +235,6 @@ namespace Cochain
 section CochainThreshold
 
 variable {V : Type*} [Fintype V] [LinearOrder V] {X : TwoComplex V} {n m : ℕ}
-
-/-- Every gauge of unequal degree `m ≠ n` against a degree-`n` cochain on `X` incurs `costErr` at
-least `#X.edges / (n + 1)`. -/
-theorem card_div_add_one_le_costErr_of_ne (α : Cochain X (Perm (Fin n)))
-    (β : V → Perm (Fin m)) (hm : m ≠ n) :
-    (#X.edges : ℝ) / (n + 1) ≤ α.costErr β := by
-  have h := α.card_div_add_one_le_costErr β hm.symm
-  rwa [← X.orientedEdges_def, X.card_orientedEdges] at h
 
 /-- Whenever the equal-degree `costErr` infimum on `X` is at most `#X.edges / (n + 1)`, it is a
 lower bound for the degree-`m` `costErr` infimum in every degree `m : ℕ`. -/

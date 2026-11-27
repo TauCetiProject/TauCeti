@@ -92,12 +92,12 @@ theorem mul_costErr_eq_cost (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fi
   rw [costErr_def, cost_def, mul_sum]
   exact sum_congr rfl fun p _ => mul_distErr_mul_inv_eq_movedNorm _ _ _
 
-/-- In unequal degree, every edge `u < v` of `X` costs at least `1 / (n + 1)`. -/
+/-- In unequal degree, every edge of `X` costs at least `1 / (n + 1)`. -/
 theorem card_div_add_one_le_costErr {m : ℕ} (α : Cochain X (Perm (Fin n)))
     (β : V → Perm (Fin m)) (hnm : n ≠ m) :
-    (#(univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges) : ℝ) /
-      ((n : ℝ) + 1) ≤ α.costErr β :=
-  card_div_add_one_le_sum_distErr_of_ne _ _ _ hnm
+    (#X.edges : ℝ) / ((n : ℝ) + 1) ≤ α.costErr β := by
+  rw [← X.card_orientedEdges, X.orientedEdges_def]
+  exact card_div_add_one_le_sum_distErr_of_ne _ _ _ hnm
 
 /-! ### The cross-degree gauge distance -/
 
@@ -162,10 +162,10 @@ cochain's own degree cost at least `gaugeDist / n`, and gauges of any other degr
 `1 / (n + 1)` on each edge. -/
 theorem gaugeDistErr_pos_of_not_isCoboundary {α : Cochain X (Perm (Fin n))}
     (hα : ¬ α.IsCoboundary) : 0 < α.gaugeDistErr := by
-  set E := univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
   have hgd : 0 < α.gaugeDist (movedNorm (Fin n)) :=
     (α.gaugeDist_pos_iff_not_isCoboundary _).mpr hα
-  have hE : (0 : ℝ) < #E := by
+  have hE : (0 : ℝ) < #X.edges := by
+    rw [← X.card_orientedEdges, X.orientedEdges_def]
     have h := hgd.trans_le (α.gaugeDist_le_cost _ 1)
     rw [cost_def] at h
     exact_mod_cast card_pos.mpr (nonempty_of_sum_ne_zero h.ne')
@@ -175,7 +175,8 @@ theorem gaugeDistErr_pos_of_not_isCoboundary {α : Cochain X (Perm (Fin n))}
   by_cases hnm : n = m + 2
   · subst hnm
     have h := (α.gaugeDist_le_cost _ β).trans_eq (α.mul_costErr_eq_cost β).symm
-    nlinarith [min_le_left (α.gaugeDist (movedNorm (Fin (m + 2)))) (#E : ℝ), α.costErr_nonneg β]
+    nlinarith [min_le_left (α.gaugeDist (movedNorm (Fin (m + 2)))) (#X.edges : ℝ),
+      α.costErr_nonneg β]
   · have h := α.card_div_add_one_le_costErr β hnm
     rw [div_le_iff₀ hn] at h
     exact (min_le_right _ _).trans h
