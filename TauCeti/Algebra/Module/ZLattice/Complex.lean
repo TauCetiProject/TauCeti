@@ -30,6 +30,12 @@ the normalization of a cusp but not the cusp: it carries the shortest pairs of `
 the covolume by `‖c‖ ^ 2` (`ZLattice.covolume_complex_smul`). The rescaled lattice is again a
 discrete lattice by the scaling instances of `TauCeti.Algebra.Module.ZLattice.Scaling`.
 
+For lattices `L`, `L'` and `a ∈ ℂ`, multiplication by `a` is an **isogeny of degree `N`** from `L`
+to `L'` (`ZLattice.IsIsogeny`) if `a L ⊆ L'` and `|a|² covolume (L) = N covolume (L')`. Every
+nonzero `a` with `a L ⊆ L'` is an isogeny, of degree the index `[L' : a L]`
+(`ZLattice.isIsogeny_relIndex`, `ZLattice.IsIsogeny.degree_eq_relIndex`), and degrees multiply
+under composition (`ZLattice.IsIsogeny.mul`).
+
 ## Main results
 
 * `ZLattice.covolume_eq_abs_im`: the covolume of a lattice in `ℂ` with `ℤ`-basis `a, b` is
@@ -39,11 +45,25 @@ discrete lattice by the scaling instances of `TauCeti.Algebra.Module.ZLattice.Sc
   rescaling.
 * `ZLattice.covolume_complex_smul`: complex rescaling by `c` multiplies the covolume by
   `‖c‖ ^ 2`.
+* `ZLattice.IsIsogeny`: multiplication by `a` is an isogeny of degree `N`.
+* `ZLattice.isIsogeny_relIndex`, `ZLattice.IsIsogeny.degree_eq_relIndex`: the degree of an
+  isogeny by `a ≠ 0` is the index `[L' : a L]`.
+
+## Provenance
+
+`ZLattice.IsIsogeny` and `ZLattice.exists_isIsogeny` are adapted from `PeriodPair.IsIsogeny` and
+`New.exists_isIsogeny_of_mul_mem_lattice` (file `src/Lib/CM/Sigma/Basic.lean`) in grh-lean
+(https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0, Copyright 2026 Anthropic,
+PBC). There they are attached to period pairs, with the area `|Im (conj(ω₁) ω₂)|`; here they are
+attached to lattices, with the area their covolume. The identification of the degree of an
+isogeny with an index, and the composition of isogenies, are new here.
 
 ## References
 
 * C. Adams, M. Hildebrand and J. Weeks, *Hyperbolic invariants of knots and links*, Trans. Amer.
   Math. Soc. 326 (1991), §2 (cusp lattices, their shortest translations and cusp volumes).
+* J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, Springer,
+  1994, II.1 (isogenies of complex tori).
 -/
 
 public section
@@ -91,5 +111,68 @@ theorem covolume_complex_smul [DiscreteTopology L] [IsZLattice ℝ L] (c : ℂ) 
     ring
   rw [((isShortestPair_complex_smul_iff (NeZero.ne c)).2 h).covolume_eq, h.covolume_eq, hc,
     Complex.im_ofReal_mul, abs_mul, abs_of_nonneg (by positivity)]
+
+/-! ### Isogenies -/
+
+/-- Multiplication by `a ∈ ℂ` is an **isogeny of degree `N`** from the lattice `L` to the lattice
+`L'` if `a L ⊆ L'` and `|a|² covolume (L) = N covolume (L')`. For `a ≠ 0` the degree is the index
+`[L' : a L]` (`ZLattice.IsIsogeny.degree_eq_relIndex`). -/
+structure IsIsogeny (L L' : Submodule ℤ ℂ) (a : ℂ) (N : ℕ) : Prop where
+  /-- Multiplication by `a` maps `L` into `L'`. -/
+  smul_le : a • L ≤ L'
+  /-- The covolumes are related by `|a|² covolume (L) = N covolume (L')`. -/
+  norm_sq_mul_covolume : ‖a‖ ^ 2 * covolume L = N * covolume L'
+
+variable {L' L'' : Submodule ℤ ℂ} {a b : ℂ} {N N' : ℕ}
+
+/-- Unbundled form of `ZLattice.IsIsogeny`. -/
+theorem isIsogeny_iff :
+    IsIsogeny L L' a N ↔ a • L ≤ L' ∧ ‖a‖ ^ 2 * covolume L = N * covolume L' :=
+  ⟨fun h ↦ ⟨h.smul_le, h.norm_sq_mul_covolume⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+variable [DiscreteTopology L] [IsZLattice ℝ L] [DiscreteTopology L'] [IsZLattice ℝ L']
+
+variable (L) in
+/-- **A nonzero multiplier into a lattice is an isogeny of degree the index**: if `a ≠ 0` and
+`a L ⊆ L'`, then `|a|² covolume (L) = [L' : a L] covolume (L')`. -/
+theorem isIsogeny_relIndex (ha : a ≠ 0) (h : a • L ≤ L') :
+    IsIsogeny L L' a ((a • L).toAddSubgroup.relIndex L'.toAddSubgroup) := by
+  have : NeZero a := ⟨ha⟩
+  refine ⟨h, ?_⟩
+  rw [← covolume_complex_smul, ← covolume_div_covolume_eq_relIndex' _ _ h]
+  exact (div_mul_cancel₀ _ (covolume_pos L').ne').symm
+
+variable (L) in
+/-- If multiplication by `a` maps `L` into `L'`, it is an isogeny of some degree. -/
+theorem exists_isIsogeny (h : a • L ≤ L') : ∃ N : ℕ, IsIsogeny L L' a N := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · exact ⟨0, h, by simp⟩
+  · exact ⟨_, isIsogeny_relIndex L ha h⟩
+
+/-- The degree of an isogeny by `a ≠ 0` is the index `[L' : a L]`. -/
+theorem IsIsogeny.degree_eq_relIndex (hN : IsIsogeny L L' a N) (ha : a ≠ 0) :
+    N = (a • L).toAddSubgroup.relIndex L'.toAddSubgroup := by
+  have h₂ := (isIsogeny_relIndex L ha hN.smul_le).norm_sq_mul_covolume
+  rw [hN.norm_sq_mul_covolume] at h₂
+  exact Nat.cast_injective (R := ℝ) (mul_right_cancel₀ (covolume_pos L').ne' h₂)
+
+variable (L) in
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- Multiplication by `1` is an isogeny of degree `1` from a lattice to itself. -/
+theorem isIsogeny_one : IsIsogeny L L 1 1 := ⟨by simp, by simp⟩
+
+omit [DiscreteTopology L] [IsZLattice ℝ L] [DiscreteTopology L'] [IsZLattice ℝ L'] in
+/-- **Composition of isogenies**: degrees multiply. -/
+theorem IsIsogeny.mul (h₁ : IsIsogeny L L' a N) (h₂ : IsIsogeny L' L'' b N') :
+    IsIsogeny L L'' (b * a) (N' * N) := by
+  refine ⟨?_, ?_⟩
+  · rw [mul_smul]
+    refine le_trans ?_ h₂.smul_le
+    rw [pointwise_smul_def, pointwise_smul_def]
+    exact map_mono h₁.smul_le
+  · rw [norm_mul, mul_pow, mul_assoc, h₁.norm_sq_mul_covolume, mul_left_comm,
+      h₂.norm_sq_mul_covolume]
+    push_cast
+    ring
 
 end ZLattice

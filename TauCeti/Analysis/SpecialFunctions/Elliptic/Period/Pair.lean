@@ -31,13 +31,17 @@ coordinates of `m ω₁ + n ω₂` in `PeriodPair.latticeBasis` are `m` and `n`
 At positive level `N`, the division point `(m ω₁ + n ω₂) / N` lies in the lattice exactly when
 `m` and `n` vanish modulo `N` (`PeriodPair.div_mem_lattice_iff_intCast_eq_zero`); for a residue
 pair `a : (ℤ/Nℤ)²` this says that its division point is a period only for `a = 0`
-(`PeriodPair.val_mul_ω₁_add_val_mul_ω₂_div_mem_lattice_iff`).
+(`PeriodPair.val_mul_ω₁_add_val_mul_ω₂_div_mem_lattice_iff`); at level `2`, `(m ω₁ + n ω₂) / 2` is
+a period exactly when `m` and `n` are even (`PeriodPair.div_two_mem_lattice_iff`).
+
+In the coordinates of a period pair, `Im ((m ω₁ + n ω₂) conj (m' ω₁ + n' ω₂))` is the determinant
+`m n' - n m'` times `Im (ω₁ conj(ω₂))` (`PeriodPair.im_mul_conj_eq_det`).
 -/
 
 public section
 
 open Filter
-open scoped Topology
+open scoped Topology ComplexConjugate
 
 namespace Submodule
 
@@ -138,5 +142,23 @@ theorem val_mul_ω₁_add_val_mul_ω₂_div_mem_lattice_iff {N : ℕ} [NeZero N]
   have h := L.div_mem_lattice_iff_intCast_eq_zero (N := N) (m := (a 0).val) (n := (a 1).val)
   simp only [Int.cast_natCast, ZMod.natCast_zmod_val] at h
   rw [h, funext_iff, Fin.forall_fin_two, Pi.zero_apply, Pi.zero_apply]
+
+/-- The division point `(m ω₁ + n ω₂) / 2` lies in the period lattice exactly when `m` and `n` are
+even. -/
+@[simp]
+theorem div_two_mem_lattice_iff (m n : ℤ) :
+    (m * L.ω₁ + n * L.ω₂) / 2 ∈ L.lattice ↔ Even m ∧ Even n := by
+  simpa [ZMod.intCast_zmod_eq_zero_iff_dvd, even_iff_two_dvd] using
+    L.div_mem_lattice_iff_intCast_eq_zero (N := 2) (m := m) (n := n)
+
+/-- In the coordinates of a period pair, `Im ((m ω₁ + n ω₂) conj (m' ω₁ + n' ω₂))` is the
+determinant `m n' - n m'` times `Im (ω₁ conj(ω₂))`. -/
+theorem im_mul_conj_eq_det (m n m' n' : ℤ) :
+    ((m * L.ω₁ + n * L.ω₂) * conj (m' * L.ω₁ + n' * L.ω₂)).im =
+      (m * n' - n * m' : ℤ) * (L.ω₁ * conj L.ω₂).im := by
+  simp only [map_add, map_mul, map_intCast, Complex.mul_im, Complex.mul_re, Complex.add_re,
+    Complex.add_im, Complex.intCast_re, Complex.intCast_im, Complex.conj_re, Complex.conj_im]
+  push_cast
+  ring
 
 end PeriodPair
