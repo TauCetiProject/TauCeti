@@ -149,10 +149,7 @@ variable {ρ}
 /-- An irreducible representation is equivalent to its semisimplification. -/
 theorem nonempty_equiv_semisimplification_of_isIrreducible [ρ.IsIrreducible] :
     Nonempty (ρ.semisimplification.Equiv ρ) :=
-  ρ.nonempty_equiv_semisimplification_iff.mpr <|
-    (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mpr <|
-      have := (irreducible_iff_isSimpleModule_asModule ρ).mp inferInstance
-      inferInstance
+  ρ.nonempty_equiv_semisimplification_iff.mpr inferInstance
 
 section Exact
 

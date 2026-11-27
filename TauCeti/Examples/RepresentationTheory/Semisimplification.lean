@@ -30,7 +30,7 @@ variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V] [Fin
 
 -- An irreducible representation is equivalent to its semisimplification.
 example (ρ : Representation k G V) [ρ.IsIrreducible] : Nonempty (ρ.semisimplification.Equiv ρ) :=
-  ρ.nonempty_equiv_semisimplification_iff.mpr inferInstance
+  ρ.nonempty_equiv_semisimplification_of_isIrreducible
 
 -- The semisimplification of the zero representation is zero.
 example (ρ : Representation k G PUnit) :
@@ -51,12 +51,7 @@ example (ρ : Representation k G V) (W : Subrepresentation ρ) [W.toRepresentati
   obtain ⟨e⟩ := W.nonempty_equiv_semisimplification_prod_quotient
   obtain ⟨e₁⟩ := W.toRepresentation.nonempty_equiv_semisimplification_of_isIrreducible
   obtain ⟨e₂⟩ := W.quotient.nonempty_equiv_semisimplification_of_isIrreducible
-  exact ⟨TauCeti.Representation.equivOfAsModuleLinearEquiv
-    (TauCeti.Representation.asModuleLinearEquivOfEquiv e ≪≫ₗ
-      prodAsModuleEquiv _ _ ≪≫ₗ
-      (TauCeti.Representation.asModuleLinearEquivOfEquiv e₁).prodCongr
-        (TauCeti.Representation.asModuleLinearEquivOfEquiv e₂) ≪≫ₗ
-      (prodAsModuleEquiv _ _).symm)⟩
+  exact ⟨e.trans (e₁.prodCongr e₂)⟩
 
 section Cyclic
 
