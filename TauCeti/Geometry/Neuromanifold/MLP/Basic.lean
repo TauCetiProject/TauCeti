@@ -151,6 +151,20 @@ theorem evalPrefix_succ (A : MLPSpec K L) (θ : A.Parameters) (x : Fin (A.width 
       fun j => A.layerActivation i (((θ i).1 *ᵥ A.evalPrefix θ x i.castSucc) j + (θ i).2 j) :=
   Fin.induction_succ ..
 
+/-- Coordinatewise prefix recursion of an MLP. -/
+theorem evalPrefix_succ_apply (A : MLPSpec K L) (θ : A.Parameters) (x : Fin (A.width 0) → K)
+    (i : Fin L) (j : Fin (A.width i.succ)) :
+    A.evalPrefix θ x i.succ j =
+      A.layerActivation i (((θ i).1 *ᵥ A.evalPrefix θ x i.castSucc) j + (θ i).2 j) :=
+  congrFun (A.evalPrefix_succ θ x i) j
+
+/-- Transporting a prefix evaluation coordinate along an equality of layer indices. -/
+theorem evalPrefix_cast (A : MLPSpec K L) (θ : A.Parameters) (x : Fin (A.width 0) → K)
+    {i j : Fin (L + 1)} (hij : i = j) (r : Fin (A.width i)) :
+    A.evalPrefix θ x i r = A.evalPrefix θ x j (Fin.cast (congrArg A.width hij) r) := by
+  subst hij
+  rfl
+
 /-- The output layer is affine. -/
 theorem evalPrefix_succ_of_val_add_one_eq (A : MLPSpec K L) (θ : A.Parameters)
     (x : Fin (A.width 0) → K) (i : Fin L) (h : i.val + 1 = L) :
@@ -182,6 +196,16 @@ theorem evalPrefix_congr_of_le (A : MLPSpec K L) {θ θ' : A.Parameters}
       rw [evalPrefix_succ, evalPrefix_succ, h i hki, ih hki]
     · exact hk
 
+/-- If layer `k` of an MLP specification has width zero, every prefix evaluation at layer `k` or
+above is constant in the input `x`. -/
+theorem evalPrefix_eq_of_width_eq_zero (A : MLPSpec K L) (θ : A.Parameters) {k : Fin (L + 1)}
+    (hk : A.width k = 0) (x x' : Fin (A.width 0) → K) {i : Fin (L + 1)} (hi : k ≤ i) :
+    A.evalPrefix θ x i = A.evalPrefix θ x' i := by
+  have hk_eq : A.evalPrefix θ x k = A.evalPrefix θ x' k := by
+    funext j
+    exact Fin.elim0 (j.cast hk)
+  exact A.evalPrefix_congr_of_le hk_eq (fun _ _ => rfl) hi
+
 /-- The realization map of an MLP specification on affine parameters: the last prefix. -/
 def realize (A : MLPSpec K L) (θ : A.Parameters) (x : Fin (A.width 0) → K) :
     Fin (A.width (Fin.last L)) → K :=
@@ -190,6 +214,15 @@ def realize (A : MLPSpec K L) (θ : A.Parameters) (x : Fin (A.width 0) → K) :
 /-- The realization is the last prefix evaluation. -/
 theorem realize_def (A : MLPSpec K L) (θ : A.Parameters) (x : Fin (A.width 0) → K) :
     A.realize θ x = A.evalPrefix θ x (Fin.last L) := (rfl)
+
+/-- If any layer of an MLP specification has width zero, its realization is constant in the
+input. -/
+theorem realize_eq_of_width_eq_zero (A : MLPSpec K L) (θ : A.Parameters) {k : Fin (L + 1)}
+    (hk : A.width k = 0) (x x' : Fin (A.width 0) → K) :
+    A.realize θ x = A.realize θ x' :=
+  (A.realize_def θ x).trans
+    ((A.evalPrefix_eq_of_width_eq_zero θ hk x x' (Fin.le_last k)).trans
+      (A.realize_def θ x').symm)
 
 /-- A depth-zero MLP realizes the identity. -/
 @[simp]

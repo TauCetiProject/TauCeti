@@ -63,19 +63,20 @@ theorem infAffine_eq_of_mem_infCell {ι : Type*} (s : Finset ι) (hs : s.Nonempt
   · exact s.inf'_le _ i.property
   · exact s.le_inf' hs _ (fun j hj => hx j hj)
 
-/-- A finite minimum of continuous affine functionals is piecewise affine on the whole source. -/
-theorem isPLOn_infAffine {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
+/-- A finite minimum of continuous affine functionals is piecewise affine on the whole space. -/
+theorem isPiecewiseAffineOn_infAffine {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
     (f : ι → (E →ᴬ[ℝ] ℝ)) :
-    IsPLOn (fun x => s.inf' hs (fun i => f i x)) (Set.univ : Set E) := by
-  let C : s → Set E := s.infCell f
-  have hC : ∀ i, IsConvexPolyhedron (C i) := by
-    intro i
-    exact s.isConvexPolyhedron_infCell f i
-  have hcov : (Set.univ : Set E) ⊆ ⋃ i, C i := by
-    exact s.subset_iUnion_infCell hs f
-  refine (isPiecewiseAffineOn_of_finite (C := C) (A := fun i => f i)
-    hC hcov ?_).isPLOn
+    IsPiecewiseAffineOn (fun x => s.inf' hs (fun i => f i x)) (Set.univ : Set E) := by
+  refine isPiecewiseAffineOn_of_finite
+    (C := s.infCell f) (A := fun i => f i)
+    (fun i => s.isConvexPolyhedron_infCell f i) (s.subset_iUnion_infCell hs f) ?_
   intro i x hx
   exact s.infAffine_eq_of_mem_infCell hs f i hx.2
+
+/-- A finite minimum of continuous affine functionals is piecewise linear on the whole source. -/
+theorem isPLOn_infAffine {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
+    (f : ι → (E →ᴬ[ℝ] ℝ)) :
+    IsPLOn (fun x => s.inf' hs (fun i => f i x)) (Set.univ : Set E) :=
+  (s.isPiecewiseAffineOn_infAffine hs f).isPLOn
 
 end Finset
