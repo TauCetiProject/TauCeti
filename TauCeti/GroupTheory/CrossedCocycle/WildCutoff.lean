@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.CrossedCocycle.Splitting
-public import TauCeti.Topology.LocallyConstant.Basic
+public import TauCeti.Topology.Algebra.Group.LocallyConstant
 public import Mathlib.Algebra.Group.Subgroup.Basic
-public import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
 # The wild cutoff of a crossed cocycle
@@ -36,9 +35,10 @@ so it is not `P ⊓ ker η` either.
 
 When `c` is continuous on `P` with finite image there, `η` is continuous on `P` and `Q` is
 discrete, the wild cutoff is open in `P` (`TauCeti.CrossedCocycle.isOpen_wildCutoff_subgroupOf`).
-Conversely, for compact `P` in a topological group, a cutoff open in `P` has finitely many cosets
-in `P`, on each of which `c` is constant, so `c` has finite image on `P`
-(`TauCeti.CrossedCocycle.finite_image_of_isOpen_wildCutoff_subgroupOf`). Thus the wild cutoff
+Conversely, for compact `P` in a topological group, a cutoff open in `P` is the open kernel of the
+lift restricted to `P`, which therefore has finite range, so `c` has finite image on `P`
+(`TauCeti.CrossedCocycle.finite_image_of_isOpen_wildCutoff_subgroupOf`, from
+`MonoidHom.finite_range_of_isOpen_ker`). Thus the wild cutoff
 of a parameter continuous on compact wild inertia is open in wild inertia exactly when the
 parameter has finite image there (`TauCeti.CrossedCocycle.isOpen_wildCutoff_subgroupOf_iff`).
 The analogous criterion for continuous homomorphisms on compact groups is
@@ -167,17 +167,19 @@ theorem isOpen_wildCutoff_subgroupOf [TopologicalSpace H] [T1Space H] [Topologic
   exact hc₁.inter hη₁
 
 /-- If `P` is compact and the wild cutoff of `c` is open in `P`, then `c` has finite image on `P`:
-on `P` the cocycle is constant on the cosets of its wild cutoff, which are finite in number. -/
+the wild cutoff in `P` is the kernel of the lift `γ ↦ (c γ, η γ)` restricted to `P`, so that
+restriction has finite range. -/
 theorem finite_image_of_isOpen_wildCutoff_subgroupOf [IsTopologicalGroup Γ]
     (hP : IsCompact (P : Set Γ)) (h : IsOpen ((c.wildCutoff P).subgroupOf P : Set P)) :
     (c '' P).Finite := by
   have := isCompact_iff_compactSpace.mp hP
-  have := Subgroup.quotient_finite_of_isOpen _ h
-  refine (Set.finite_range fun x : P ⧸ (c.wildCutoff P).subgroupOf P ↦ c (x.out : Γ)).subset ?_
+  have hker : (c.toSemidirectHom.comp P.subtype).ker = (c.wildCutoff P).subgroupOf P := by
+    ext p
+    simp [Subgroup.mem_subgroupOf, SemidirectProduct.ext_iff]
+  have hfin := (c.toSemidirectHom.comp P.subtype).finite_range_of_isOpen_ker (hker ▸ h)
+  refine (hfin.image SemidirectProduct.left).subset ?_
   rintro _ ⟨γ, hγ, rfl⟩
-  obtain ⟨u, hu⟩ := QuotientGroup.mk_out_eq_mul ((c.wildCutoff P).subgroupOf P) ⟨γ, hγ⟩
-  refine ⟨((⟨γ, hγ⟩ : P) : P ⧸ (c.wildCutoff P).subgroupOf P), ?_⟩
-  simp [hu, c.apply_mul, apply_eq_one_of_mem_wildCutoff (Subgroup.mem_subgroupOf.mp u.property)]
+  exact ⟨_, ⟨⟨γ, hγ⟩, rfl⟩, by simp⟩
 
 /-- For compact `P` in a topological group, a cocycle continuous on `P`, and `η` continuous on `P`
 with values in the discrete group `Q`, the wild cutoff of `c` is open in `P` exactly when `c` has

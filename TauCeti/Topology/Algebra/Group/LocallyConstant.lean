@@ -18,10 +18,11 @@ import TauCeti.Topology.ContinuousMap.LocallyConstant
 A homomorphism from a group with separately continuous multiplication whose kernel is open is
 locally constant, even when its codomain is only a `MulOneClass`
 (`MonoidHom.isLocallyConstant_of_isOpen_ker`, with its additive form). Open kernels are preserved
-by taking integer multiples of additive homomorphisms into an additive commutative group. A
-continuous homomorphism to a `T₁` group with finite range has open kernel
-(`MonoidHom.isOpen_ker_of_finite_range`); on a compact group the converse holds, so the kernel is
-open exactly when the range is finite (`MonoidHom.isOpen_ker_iff_finite_range`).
+by taking integer multiples of additive homomorphisms into an additive commutative group. On a
+compact group a homomorphism with open kernel has finite range
+(`MonoidHom.finite_range_of_isOpen_ker`). Conversely, a continuous homomorphism to a `T₁` space
+with finite range has open kernel (`MonoidHom.isOpen_ker_of_finite_range`), so on a compact group
+the kernel is open exactly when the range is finite (`MonoidHom.isOpen_ker_iff_finite_range`).
 
 A locally constant function `f : G → A` on a topological group is constant near each point, but
 the neighbourhood on which it is constant depends on the point. On a *compact* group the
@@ -68,27 +69,27 @@ theorem isLocallyConstant_of_isOpen_ker [MulOneClass A] (χ : G →* A)
   filter_upwards [hopen.mem_nhds (by simp)] with y hy
   exact χ.eq_iff.mpr hy
 
-omit [SeparatelyContinuousMul G] in
-/-- A continuous homomorphism to a `T₁` group with finite range has open kernel. -/
-theorem isOpen_ker_of_finite_range {H : Type*} [Group H] [TopologicalSpace H] [T1Space H]
-    (f : G →* H) (hf : Continuous f) (hfin : (Set.range f).Finite) :
-    IsOpen (f.ker : Set G) :=
-  (IsLocallyConstant.of_continuous_of_finite_range hf hfin).isOpen_fiber 1
+/-- A homomorphism with open kernel on a compact group has finite range. -/
+theorem finite_range_of_isOpen_ker [CompactSpace G] [MulOneClass A] (χ : G →* A)
+    (hχ : IsOpen (χ.ker : Set G)) : (Set.range χ).Finite :=
+  (χ.isLocallyConstant_of_isOpen_ker hχ).range_finite
 
-/-- A continuous homomorphism from a compact group to a `T₁` group has open kernel exactly when
+omit [SeparatelyContinuousMul G] in
+/-- A continuous homomorphism to a `T₁` space with finite range has open kernel. -/
+theorem isOpen_ker_of_finite_range [MulOneClass A] [TopologicalSpace A] [T1Space A]
+    (χ : G →* A) (hχ : Continuous χ) (hfin : (Set.range χ).Finite) :
+    IsOpen (χ.ker : Set G) :=
+  (IsLocallyConstant.of_continuous_of_finite_range hχ hfin).isOpen_fiber 1
+
+/-- A continuous homomorphism from a compact group to a `T₁` space has open kernel exactly when
 its range is finite. Compactness is needed for the forward direction: the identity of `ℤ` with
 the discrete topology has open kernel and infinite range. The `T₁` condition is needed for the
 converse: the identity of a two-element group with the indiscrete topology has finite range and a
 kernel that is not open. -/
-theorem isOpen_ker_iff_finite_range [CompactSpace G] {H : Type*} [Group H] [TopologicalSpace H]
-    [T1Space H] (f : G →* H) (hf : Continuous f) :
-    IsOpen (f.ker : Set G) ↔ (Set.range f).Finite := by
-  refine ⟨fun h ↦ ?_, f.isOpen_ker_of_finite_range hf⟩
-  -- An open subgroup of a compact group has finite index, and `G ⧸ ker f ≃* range f`.
-  have := Subgroup.quotient_finite_of_isOpen f.ker h
-  have : Finite f.range := .of_equiv _ (QuotientGroup.quotientKerEquivRange f).toEquiv
-  rw [← f.coe_range]
-  exact Set.toFinite _
+theorem isOpen_ker_iff_finite_range [CompactSpace G] [MulOneClass A] [TopologicalSpace A]
+    [T1Space A] (χ : G →* A) (hχ : Continuous χ) :
+    IsOpen (χ.ker : Set G) ↔ (Set.range χ).Finite :=
+  ⟨χ.finite_range_of_isOpen_ker, χ.isOpen_ker_of_finite_range hχ⟩
 
 end MonoidHom
 
