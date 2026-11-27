@@ -20,7 +20,9 @@ import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 # The maximal function of the indicator of an interval
 
 Let `f = 1_{[a, b]}` on `ℝ`, with `a < b`, and let `M f` be its centred Hardy–Littlewood maximal
-function for Lebesgue measure (`TauCeti.maximalFunction`). This file computes `M f` exactly:
+function for Lebesgue measure (`TauCeti.maximalFunction`). The maximal function of the indicator
+of any measurable set is at most `1` (`TauCeti.maximalFunction_indicator_one_le_one`), and this
+file computes `M f` exactly:
 
 * `M f x = 1` for `a < x < b` (`TauCeti.maximalFunction_indicator_Icc_of_mem_Ioo`);
 * `M f x = (b - a) / (2 (x - a))` for `x ≥ b`
@@ -58,15 +60,32 @@ namespace TauCeti
 open MeasureTheory Metric Set
 open scoped ENNReal
 
+/-- The maximal function of the indicator of a measurable set is at most `1`: each of its
+averages is the proportion of a ball that the set covers. -/
+theorem maximalFunction_indicator_one_le_one {X G : Type*} [PseudoMetricSpace X]
+    [MeasurableSpace X] [SeminormedAddCommGroup G] [One G] [NormOneClass G] {μ : Measure X}
+    {s : Set X} (hs : MeasurableSet s) (x : X) :
+    maximalFunction μ (s.indicator (1 : X → G)) x ≤ 1 :=
+  maximalFunction_le fun _ _ => by
+    rw [setLAverage_enorm_indicator_one hs]
+    exact measure_inter_div_le_one _ _
+
 variable {a b : ℝ}
+
+/-- The part of `[a, b]` in the interval `ball y r = (y - r, y + r)` lies in
+`[max a (y - r), b]`, so its length is at most `b - max a (y - r)`. -/
+theorem volume_Icc_inter_ball_le {y r : ℝ} :
+    volume (Icc a b ∩ ball y r) ≤ ENNReal.ofReal (b - max a (y - r)) := by
+  rw [← Real.volume_Icc]
+  refine measure_mono fun z ⟨hz, hz'⟩ => ?_
+  rw [Real.ball_eq_Ioo] at hz'
+  exact ⟨max_le hz.1 hz'.1.le, hz.2⟩
 
 /-- Inside the interval, the maximal function of its indicator is `1`: small balls lie in the
 interval, and no average of the indicator exceeds `1`. -/
 theorem maximalFunction_indicator_Icc_of_mem_Ioo {x : ℝ} (hx : x ∈ Ioo a b) :
     maximalFunction volume ((Icc a b).indicator (1 : ℝ → ℝ)) x = 1 := by
-  refine le_antisymm (maximalFunction_le fun r _ => ?_) ?_
-  · rw [setLAverage_enorm_indicator_one measurableSet_Icc]
-    exact measure_inter_div_le_one _ _
+  refine le_antisymm (maximalFunction_indicator_one_le_one measurableSet_Icc x) ?_
   · set r := min (x - a) (b - x)
     have hr : 0 < r := lt_min (sub_pos.2 hx.1) (sub_pos.2 hx.2)
     have hsub : ball x r ⊆ Icc a b := by
@@ -99,13 +118,7 @@ theorem maximalFunction_indicator_Icc_of_right_le (hab : a ≤ b) {x : ℝ} (hx 
   · rw [setLAverage_enorm_indicator_one measurableSet_Icc, Real.volume_ball]
     refine ENNReal.div_le_of_le_mul ?_
     rw [← ENNReal.ofReal_mul (by positivity)]
-    have hsub : Icc a b ∩ ball x r ⊆ Icc (max a (x - r)) b := by
-      intro y ⟨hy, hy'⟩
-      rw [Real.ball_eq_Ioo] at hy'
-      exact ⟨max_le hy.1 hy'.1.le, hy.2⟩
-    refine (measure_mono hsub).trans ?_
-    rw [Real.volume_Icc]
-    refine ENNReal.ofReal_le_ofReal ?_
+    refine volume_Icc_inter_ball_le.trans (ENNReal.ofReal_le_ofReal ?_)
     rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
     rcases le_total (x - r) a with h | h
     · rw [max_eq_left h]

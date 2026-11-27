@@ -69,13 +69,7 @@ private theorem setLAverage_ball_indicator_Icc_le (hab : a < b) (hx : b ≤ x) {
   rw [mem_ball, Real.dist_eq, abs_lt] at hxr
   refine ENNReal.div_le_of_le_mul ?_
   rw [← ENNReal.ofReal_mul (by positivity)]
-  have hsub : Icc a b ∩ ball y r ⊆ Icc (max a (y - r)) b := by
-    intro z ⟨hz, hz'⟩
-    rw [Real.ball_eq_Ioo] at hz'
-    exact ⟨max_le hz.1 hz'.1.le, hz.2⟩
-  refine (measure_mono hsub).trans ?_
-  rw [Real.volume_Icc]
-  refine ENNReal.ofReal_le_ofReal ?_
+  refine volume_Icc_inter_ball_le.trans (ENNReal.ofReal_le_ofReal ?_)
   rw [div_mul_eq_mul_div, le_div_iff₀ hxa]
   rcases le_total (y - r) a with h | h
   · rw [max_eq_left h]
@@ -205,9 +199,7 @@ theorem two_pow_finrank_le_of_uncenteredMaximalFunction_le_mul_maximalFunction {
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In dimension `0`, both maximal functions equal `1` at the origin.
     have hM : maximalFunction μ ((ball (0 : E) 1).indicator (1 : E → ℝ)) 0 ≤ 1 :=
-      maximalFunction_le fun r _ => by
-        rw [setLAverage_enorm_indicator_one measurableSet_ball]
-        exact measure_inter_div_le_one _ _
+      maximalFunction_indicator_one_le_one measurableSet_ball 0
     have hcM : c * maximalFunction μ ((ball (0 : E) 1).indicator (1 : E → ℝ)) 0 ≤ c * 1 := by
       gcongr
     have h0 := (ofReal_inv_pow_le_uncenteredMaximalFunction_indicator_ball_zero_one μ 0).trans
