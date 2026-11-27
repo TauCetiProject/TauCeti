@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.MeasureTheory.Group.MeasurableEquiv
-public import Mathlib.Topology.Algebra.Group.Basic
+public import TauCeti.Topology.Algebra.Group.Conjugacy
 
 /-!
 # Partitions subordinate to a subgroup
@@ -89,6 +89,7 @@ variable (G) in
 to the subgroup `V`* for the measure `μ`: for `μ`-almost every `x`, the atom of `x` is contained
 in `K • x` for a compact `K ⊆ V` and contains `U • x` for an open identity neighbourhood `U` of
 `V`. -/
+@[ext]
 structure SubordinatePartition (μ : Measure X) (V : Subgroup G) (Y : Type*) [MeasurableSpace Y]
     [StandardBorelSpace Y] where
   /-- The label of the partition; its atoms are the fibres. -/
@@ -123,37 +124,21 @@ def ofAbsolutelyContinuous (η : SubordinatePartition G μ V Y) (h : ν ≪ μ) 
   measurable_label := η.measurable_label
   ae_isSubordinateAt := h.ae_le η.ae_isSubordinateAt
 
-/-- Conjugation by an element `g` of the normalizer of `V`, as a homeomorphism of `V`. -/
-@[expose]
-def conjHomeomorph [IsTopologicalGroup G] {g : G} (hg : g ∈ Subgroup.normalizer (V : Set G)) :
-    V ≃ₜ V where
-  toFun v := ⟨g * v * g⁻¹, (Subgroup.mem_normalizer_iff.1 hg v).1 v.property⟩
-  invFun v := ⟨g⁻¹ * v * g, (Subgroup.mem_normalizer_iff''.1 hg v).1 v.property⟩
-  left_inv v := by ext; simp [mul_assoc]
-  right_inv v := by ext; simp [mul_assoc]
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-theorem conjHomeomorph_apply [IsTopologicalGroup G] {g : G}
-    (hg : g ∈ Subgroup.normalizer (V : Set G)) (v : V) :
-    (conjHomeomorph hg v : G) = g * v * g⁻¹ :=
-  rfl
-
 omit [MeasurableSpace Y] [StandardBorelSpace Y] in
 /-- The translate of a label subordinate to `V` at `g⁻¹ • x` by an element `g` of the normalizer
 of `V` is subordinate to `V` at `x`. -/
-theorem _root_.TauCeti.IsSubordinateAt.translate [IsTopologicalGroup G] {a : X → Y} {g : G}
+theorem _root_.TauCeti.IsSubordinateAt.translate [SeparatelyContinuousMul G] {a : X → Y} {g : G}
     (hg : g ∈ Subgroup.normalizer (V : Set G)) {x : X} (h : IsSubordinateAt V a (g⁻¹ • x)) :
     IsSubordinateAt V (fun y ↦ a (g⁻¹ • y)) x := by
-  set c := conjHomeomorph hg
+  set c := V.normalizerConjHomeomorph ⟨g, hg⟩
   have himage (S : Set V) : (fun v : V ↦ (v : G) • x) '' (c '' S) =
       (g • ·) '' ((fun v : V ↦ (v : G) • g⁻¹ • x) '' S) := by
     rw [image_image, image_image]
     refine image_congr fun v _ ↦ ?_
-    simp [c, conjHomeomorph_apply, mul_smul]
+    simp [c, mul_smul]
   obtain ⟨⟨K, hK, hKa⟩, U, hU, hU1, hUa⟩ := h
   refine ⟨⟨c '' K, hK.image c.continuous, fun y hy ↦ ?_⟩,
-    c '' U, c.isOpenMap U hU, ⟨1, hU1, by ext; simp [c, conjHomeomorph_apply]⟩, ?_⟩
+    c '' U, c.isOpenMap U hU, ⟨1, hU1, by ext; simp [c]⟩, ?_⟩
   · rw [himage]
     exact ⟨g⁻¹ • y, hKa hy, by simp⟩
   · rw [himage]
@@ -166,7 +151,7 @@ variable [MeasurableConstSMul G X]
 `x ↦ η.label (g⁻¹ • x)` of a partition subordinate to `V` for `μ` is subordinate to `V` for the
 pushforward of `μ` under `g • ·`. -/
 @[expose, simps]
-def translate [IsTopologicalGroup G] (η : SubordinatePartition G μ V Y) {g : G}
+def translate [SeparatelyContinuousMul G] (η : SubordinatePartition G μ V Y) {g : G}
     (hg : g ∈ Subgroup.normalizer (V : Set G)) : SubordinatePartition G (μ.map (g • ·)) V Y where
   label x := η.label (g⁻¹ • x)
   measurable_label := η.measurable_label.comp (measurable_const_smul g⁻¹)

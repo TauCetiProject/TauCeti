@@ -11,12 +11,15 @@ public import Mathlib.Topology.Compactness.Compact
 public import TauCeti.GroupTheory.Subgroup.NormalizerOrbit
 
 /-!
-# Closedness of conjugacy in compact groups
+# Conjugacy in topological groups
 
 For a compact Hausdorff topological group, conjugacy is a closed relation on the product.
 The binary form allows both elements to vary, as needed when imposing conjugacy conditions
 on a family of group elements. It makes the conjugation orbit space Hausdorff, which is the target
 of the continuous map from the normalizer orbits on a subgroup.
+
+Conjugation by an element of the normalizer of a subgroup `H` is a homeomorphism of `H`
+(`Subgroup.normalizerConjHomeomorph`), for any group whose multiplication is separately continuous.
 -/
 
 public section
@@ -51,3 +54,32 @@ theorem Subgroup.continuous_normalizerOrbitMap {G : Type*} [Group G] [Topologica
       (Quotient.mk'' (t : G) : MulAction.orbitRel.Quotient (ConjAct G) G) :=
     continuous_quot_mk.comp continuous_subtypeVal
   exact h.congr fun t ↦ (H.normalizerOrbitMap_mk t).symm
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- Conjugation by an element of the normalizer of `H` is continuous on `H`. -/
+theorem continuous_normalizerMonoidHom (H : Subgroup G) (g : normalizer (H : Set G)) :
+    Continuous (H.normalizerMonoidHom g) :=
+  ((IsTopologicalGroup.continuous_conj (g : G)).comp continuous_subtypeVal).subtype_mk _
+
+/-- Conjugation `h ↦ g * h * g⁻¹` by an element `g` of the normalizer of `H`, as a homeomorphism of
+`H` with the subspace topology. Its underlying equivalence is `H.normalizerMonoidHom g`. -/
+def normalizerConjHomeomorph (H : Subgroup G) (g : normalizer (H : Set G)) : H ≃ₜ H where
+  toEquiv := (H.normalizerMonoidHom g).toEquiv
+  continuous_toFun := H.continuous_normalizerMonoidHom g
+  continuous_invFun := by
+    simpa [MulAut.inv_def] using H.continuous_normalizerMonoidHom g⁻¹
+
+@[simp]
+theorem coe_normalizerConjHomeomorph_apply (H : Subgroup G) (g : normalizer (H : Set G)) (h : H) :
+    (H.normalizerConjHomeomorph g h : G) = g * h * g⁻¹ :=
+  (rfl)
+
+@[simp]
+theorem coe_normalizerConjHomeomorph_symm_apply (H : Subgroup G) (g : normalizer (H : Set G))
+    (h : H) : ((H.normalizerConjHomeomorph g).symm h : G) = g⁻¹ * h * g := by
+  simp [normalizerConjHomeomorph]
+
+end Subgroup
