@@ -31,6 +31,8 @@ points.
   `centralMoment_id_two_mul_add_one_semicircleReal`: the odd moments about the centre vanish.
 * `integral_pow_two_mul_semicircleReal_zero`, `integral_pow_two_mul_add_one_semicircleReal_zero`:
   the moments of a centred semicircle law.
+* the results in `ProbabilityTheory.HasLaw` transfer the even and odd raw and central moment
+  formulas to random variables with semicircle laws.
 
 ## Implementation notes
 
@@ -147,3 +149,55 @@ theorem integral_pow_two_mul_add_one_semicircleReal_zero (v : ℝ≥0) (n : ℕ)
   simpa only [sub_zero] using integral_sub_pow_two_mul_add_one_semicircleReal 0 v n
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+
+/-- Every odd moment of a unit-radius semicircle random variable vanishes. -/
+theorem integral_pow_two_mul_add_one_semicircleMeasure
+    (hX : HasLaw X semicircleMeasure P) (n : ℕ) :
+    ∫ ω, X ω ^ (2 * n + 1) ∂P = 0 := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ (2 * n + 1)),
+    hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_pow_two_mul_add_one_semicircleMeasure]
+
+/-- The even moments of a unit-radius semicircle random variable are rescaled Catalan numbers. -/
+theorem integral_pow_two_mul_semicircleMeasure (hX : HasLaw X semicircleMeasure P) (n : ℕ) :
+    ∫ ω, X ω ^ (2 * n) ∂P = catalan n / 4 ^ n := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ (2 * n)), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_pow_two_mul_semicircleMeasure]
+
+/-- The even moments about the centre of a semicircle random variable are Catalan moments. -/
+theorem integral_sub_pow_two_mul_semicircleReal
+    (hX : HasLaw X (semicircleReal a v) P) (n : ℕ) :
+    ∫ ω, (X ω - a) ^ (2 * n) ∂P = (v : ℝ) ^ n * catalan n := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ (x - a) ^ (2 * n)),
+    hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_sub_pow_two_mul_semicircleReal]
+
+/-- Every odd moment about the centre of a semicircle random variable vanishes. -/
+theorem integral_sub_pow_two_mul_add_one_semicircleReal
+    (hX : HasLaw X (semicircleReal a v) P) (n : ℕ) :
+    ∫ ω, (X ω - a) ^ (2 * n + 1) ∂P = 0 := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ (x - a) ^ (2 * n + 1)),
+    hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_sub_pow_two_mul_add_one_semicircleReal]
+
+/-- The even central moments of a semicircle random variable are Catalan moments. -/
+theorem centralMoment_two_mul_semicircleReal
+    (hX : HasLaw X (semicircleReal a v) P) (n : ℕ) :
+    centralMoment X (2 * n) P = (v : ℝ) ^ n * catalan n :=
+  (centralMoment_eq_integral_sub_pow (X := X) (hX.integral_semicircleReal) _).trans
+    (hX.integral_sub_pow_two_mul_semicircleReal n)
+
+/-- Every odd central moment of a semicircle random variable vanishes. -/
+theorem centralMoment_two_mul_add_one_semicircleReal
+    (hX : HasLaw X (semicircleReal a v) P) (n : ℕ) :
+    centralMoment X (2 * n + 1) P = 0 :=
+  (centralMoment_eq_integral_sub_pow (X := X) (hX.integral_semicircleReal) _).trans
+    (hX.integral_sub_pow_two_mul_add_one_semicircleReal n)
+
+end ProbabilityTheory.HasLaw
