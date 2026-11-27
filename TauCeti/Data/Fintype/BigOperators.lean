@@ -59,7 +59,9 @@ on `Fin (n + 1)` splits as a sum over their first `n` values and their last valu
 sum over strictly increasing pairs `p.1 < p.2` splits into intra-cluster and inter-cluster pairs
 (`Fintype.sum_filter_lt_lex`). A sum over strictly increasing triples of a function of the clusters
 that vanishes when two consecutive clusters coincide counts each strictly increasing triple of
-clusters `(Fintype.card ι) ^ 3` times (`Fintype.sum_filter_lt_lex_triple`).
+clusters `(Fintype.card ι) ^ 3` times (`Fintype.sum_filter_lt_lex_triple`). A product or sum over
+the image of an injective `Sum.elim f g ∘ e` splits into the two summands
+(`Fintype.prod_image_sum_elim_comp`, `Fintype.sum_image_sum_elim_comp`).
 
 A triple sum `∑ i, ∑ k, ∑ l, c i k l • x i k l` of a coefficient invariant under cyclic
 permutations of its indices against a family whose cyclic sums `x i k l + x k l i + x l i k`
@@ -441,6 +443,21 @@ theorem prod_filter_lt_lex_triple {V ι M : Type*} [Fintype V] [PartialOrder V] 
     rcases hnot with h | h
     · rw [(Prod.Lex.monotone_fst _ _ hp.1.le).eq_of_not_lt h]; exact hg₁ _ _
     · rw [(Prod.Lex.monotone_fst _ _ hp.2.le).eq_of_not_lt h]; exact hg₂ _ _
+
+/-- The product over the image of an injective `Sum.elim f g ∘ e` splits into the products along
+`f` and `g`. -/
+@[to_additive /-- The sum over the image of an injective `Sum.elim f g ∘ e` splits into the sums
+along `f` and `g`. -/]
+theorem prod_image_sum_elim_comp {α θ ι κ M : Type*} [DecidableEq α]
+    [Fintype θ] [Fintype ι] [Fintype κ] [CommMonoid M]
+    (w : α → M) (e : θ ≃ ι ⊕ κ) (f : ι → α) (g : κ → α)
+    (hinj : Function.Injective (Sum.elim f g ∘ e)) :
+    ∏ x ∈ Finset.univ.image (Sum.elim f g ∘ e), w x =
+      (∏ x : ι, w (f x)) * ∏ y : κ, w (g y) := by
+  rw [Finset.prod_image fun _ _ _ _ h ↦ hinj h]
+  simp only [Function.comp_apply]
+  rw [Fintype.prod_equiv e _ (fun z ↦ w (Sum.elim f g z)) fun _ ↦ rfl, Fintype.prod_sum_type]
+  simp
 
 /-- **Cyclic sums.** If the coefficient `c` is invariant under the cyclic permutation of its three
 indices and the family `x` has vanishing cyclic sums, `x i k l + x k l i + x l i k = 0`, then

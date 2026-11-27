@@ -65,12 +65,14 @@ with `σ` off the pair (`Function.Involutive.swap_mul`,
 (`Function.Involutive.swap_mul_mul_swap`). An involutive permutation of an infinite type has
 infinitely many cycles (`Equiv.Perm.infinite_quotient_sameCycle_of_involutive`). A permutation of a
 finite type sends as many points into a set as out of it
-(`Equiv.Perm.card_filter_not_and_apply_eq`), the total decrease of a natural-number valued
-function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), a
-permutation fixing every point except possibly one is the identity
-(`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`), and a type admitting a transposition is
-nontrivial (`Equiv.Perm.IsSwap.nontrivial`, `Equiv.Perm.IsSwap.two_le_card`). A transposition is
-an involution (`Equiv.Perm.IsSwap.mul_self_eq_one`).
+(`Equiv.Perm.card_filter_not_and_apply_eq`), precomposing with a permutation of a sum type
+preserves the total product or sum across both summands
+(`Equiv.Perm.prod_comp_inl_mul_prod_comp_inr`, `Equiv.Perm.sum_comp_inl_add_sum_comp_inr`), the
+total decrease of a natural-number valued function along a permutation equals the total increase
+(`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), a permutation fixing every point except possibly one
+is the identity (`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`), and a type admitting a
+transposition is nontrivial (`Equiv.Perm.IsSwap.nontrivial`, `Equiv.Perm.IsSwap.two_le_card`). A
+transposition is an involution (`Equiv.Perm.IsSwap.mul_self_eq_one`).
 -/
 
 public section
@@ -383,6 +385,16 @@ theorem sum_tsub_comp_eq_sum_comp_tsub [Fintype α] (f : α → ℕ) :
     simp_rw [Nat.cast_sub_sub_cast_sub]
     rw [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun x ↦ (f x : ℤ)), sub_self]
   omega
+
+/-- Splitting a product over `κ₁ ⊕ κ₂` along a permutation `σ` preserves the total product across
+both summands. -/
+@[to_additive /-- Splitting a sum over `κ₁ ⊕ κ₂` along a permutation `σ` preserves the total sum
+across both summands. -/]
+theorem prod_comp_inl_mul_prod_comp_inr {κ₁ κ₂ M : Type*} [Fintype κ₁] [Fintype κ₂]
+    [CommMonoid M] (g : κ₁ ⊕ κ₂ → M) (σ : Perm (κ₁ ⊕ κ₂)) :
+    (∏ x : κ₁, g (σ (.inl x))) * ∏ y : κ₂, g (σ (.inr y)) =
+      (∏ x : κ₁, g (.inl x)) * ∏ y : κ₂, g (.inr y) := by
+  rw [← Fintype.prod_sum_type fun z ↦ g (σ z), Equiv.prod_comp σ g, Fintype.prod_sum_type]
 
 variable {σ} in
 /-- A permutation that fixes every point other than `x` also fixes `x`, and is therefore the

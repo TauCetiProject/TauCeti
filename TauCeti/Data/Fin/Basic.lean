@@ -67,6 +67,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
+* `Fin.card_lt_add_card_compl`: for `p₀ : Fin d₂`, `d₁` is strictly less than the sum of
+  `#{b : Fin d₁ // ¬ b.val < p₀.val}` and `#{a : Fin d₂ // ¬ p₀.val < a.val}`.
 * `Fin.sum_val_eq_choose_two`: the sum of the values of `Fin n` is `n.choose 2`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
@@ -231,6 +233,24 @@ theorem card_filter_val_lt_le {n : ℕ} (S : Finset (Fin n)) (j : ℕ) : #{s ∈
 end Finset
 
 namespace Fin
+
+/-- For any `p₀ : Fin d₂`, the cardinality of `Fin d₁` is strictly less than the sum of the
+cardinalities of `{b : Fin d₁ // ¬ b.val < p₀.val}` and `{a : Fin d₂ // ¬ p₀.val < a.val}`. -/
+theorem card_lt_add_card_compl {d₁ d₂ : ℕ} (p₀ : Fin d₂)
+    [DecidablePred fun b : Fin d₁ ↦ b.val < p₀.val]
+    [DecidablePred fun a : Fin d₂ ↦ p₀.val < a.val] :
+    Fintype.card (Fin d₁) <
+      Fintype.card {b : Fin d₁ // ¬ b.val < p₀.val} +
+        Fintype.card {a : Fin d₂ // ¬ p₀.val < a.val} := by
+  have h₁ : Fintype.card {b : Fin d₁ // b.val < p₀.val} = min d₁ p₀.val := by
+    rw [Fintype.card_subtype]; convert Fin.card_filter_val_lt (n := d₁) (m := p₀.val)
+  have h₂ : Fintype.card {a : Fin d₂ // ¬ p₀.val < a.val} = min d₂ (p₀.val + 1) := by
+    rw [Fintype.card_subtype, ← Fin.card_filter_val_lt (n := d₂) (m := p₀.val + 1)]
+    exact congrArg Finset.card (Finset.filter_congr fun a _ ↦ by simp)
+  have hsplit := Fintype.card_congr (Equiv.sumCompl fun b : Fin d₁ ↦ b.val < p₀.val)
+  rw [Fintype.card_sum, Fintype.card_fin] at hsplit
+  rw [Fintype.card_fin]
+  omega
 
 /-- Two consecutive indices `castSucc i < succ i` of `Fin (n + 1)` are the extreme pair `(0, n)`
 only when `n = 1`. -/

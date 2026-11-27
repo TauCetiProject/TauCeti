@@ -48,8 +48,6 @@ involution, and it lives downstream in
 
 ## Main definitions
 
-* `TauCeti.BoundedSSYT.weight`: the content of a bounded tableau, packaged as an exponent vector
-  on the alphabet.
 * `TauCeti.diagramSchurPoly`: the Schur polynomial of a Young diagram in the alphabet `Fin N`.
 * `TauCeti.rowLenWeight`: the exponent vector recording the row lengths of a shape, the exponent
   of the monomial contributed by the highest-weight tableau.
@@ -91,40 +89,6 @@ open Finset MvPolynomial
 namespace BoundedSSYT
 
 variable {N : ℕ} {μ : YoungDiagram}
-
-/-- The letters a bounded tableau uses all come from the alphabet, so its content is supported on
-the image of `Fin N`. -/
-private theorem support_content_subset_range (T : BoundedSSYT N μ) :
-    ↑(SemistandardYoungTableau.content T.val).support ⊆ Set.range (Fin.val : Fin N → ℕ) := by
-  intro x hx
-  simp only [Finset.mem_coe, SemistandardYoungTableau.support_content, Finset.mem_image] at hx
-  obtain ⟨c, hc, rfl⟩ := hx
-  exact ⟨⟨_, entry_lt T ((YoungDiagram.mem_cells _).mp hc)⟩, rfl⟩
-
-/-- The **weight** of a bounded tableau: its content, read as an exponent vector indexed by the
-alphabet `Fin N`. This is the exponent of the monomial the tableau contributes to
-`TauCeti.diagramSchurPoly`. -/
-noncomputable def weight (T : BoundedSSYT N μ) : Fin N →₀ ℕ :=
-  Finsupp.comapDomain Fin.val (SemistandardYoungTableau.content T.val) Fin.val_injective.injOn
-
-@[simp]
-theorem weight_apply (T : BoundedSSYT N μ) (i : Fin N) :
-    weight T i = SemistandardYoungTableau.content T.val i :=
-  Finsupp.comapDomain_apply _ _ _ _
-
-/-- Extending the weight of a bounded tableau by zero recovers its content: no letter outside the
-alphabet occurs. -/
-theorem mapDomain_weight (T : BoundedSSYT N μ) :
-    Finsupp.mapDomain Fin.val (weight T) = SemistandardYoungTableau.content T.val :=
-  Finsupp.mapDomain_comapDomain _ Fin.val_injective _ (support_content_subset_range T)
-
-/-- The sum of the weight of a bounded tableau of shape `μ` is the number of cells of `μ`: every
-cell carries exactly one letter. -/
-theorem sum_weight (T : BoundedSSYT N μ) : ∑ i, weight T i = μ.card := by
-  simp only [weight_apply]
-  rw [Fin.sum_univ_eq_sum_range fun i => SemistandardYoungTableau.content T.val i]
-  exact SemistandardYoungTableau.sum_content_eq_card fun c hc =>
-    entry_lt T ((YoungDiagram.mem_cells _).mp hc)
 
 /-- **Boundedness is not an extra condition on a content extended by zero**: a letter outside the
 alphabet would have to occur in the content, where the extension puts a zero. -/

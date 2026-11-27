@@ -52,6 +52,13 @@ the images of the generators of the Lazard ring in a polynomial ring.
   is at most its degree.
 * `MonomialOrder.withBotDegree_sub_lt`: if `q` has degree at most that of `f ≠ 0` and the same
   coefficient of `X^(deg f)`, then `f - q` has smaller degree than `f`.
+* `MonomialOrder.withBotDegree_sum_eq_and_leadingCoeff_sum_eq` and
+  `MonomialOrder.degree_sum_eq_and_leadingCoeff_sum_eq`: a sum with a unique strictly largest
+  summand inherits the degree and leading coefficient of that summand (wrapping
+  `AddMonoidAlgebra.supDegree_leadingCoeff_sum_eq`).
+* `MonomialOrder.Monic.degree_smul` and `MonomialOrder.Monic.leadingCoeff_smul`: scaling a monic
+  polynomial by a nonzero (or arbitrary, for the coefficient) scalar leaves its degree unchanged
+  and sets its leading coefficient to that scalar.
 * `MvPolynomial.monomial_mem_iff_monomial_one_mem`: a set closed under scalar multiplication
   contains `c X^a` for a unit `c` if and only if it contains `X^a`.
 * `MonomialOrder.leadingTerm_mem_iff`: a set closed under scalar multiplication contains the
@@ -210,6 +217,82 @@ theorem degree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hfq : f - q ≠ 0)
   rw [m.toSyn.injective heq, mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, hqf, leadingCoeff,
     sub_self] at hmem
   exact hmem rfl
+
+/-- `AddMonoidAlgebra.supDegree` along `WithBot.some ∘ m.toSyn` is `m.withBotDegree` read in
+`WithBot m.syn`. -/
+theorem supDegree_withBot_some_comp_toSyn_eq [CommSemiring R] (f : MvPolynomial σ R) :
+    AddMonoidAlgebra.supDegree (WithBot.some ∘ m.toSyn) f = m.toWithBotSyn (m.withBotDegree f) := by
+  classical
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp [withBotDegree_eq]
+  rw [m.withBotDegree_eq, ite_eq_right hf, toWithBotSyn_apply_coe]
+  refine AddMonoidAlgebra.supDegree_eq_of_isMaxOn (m.degree_mem_support hf) fun a ha ↦ ?_
+  exact WithBot.coe_le_coe.mpr (m.le_degree ha)
+
+/-- `AddMonoidAlgebra.leadingCoeff` along `WithBot.some ∘ m.toSyn` agrees with
+`MonomialOrder.leadingCoeff`. -/
+theorem addMonoidAlgebra_leadingCoeff_withBot_some_comp_toSyn [CommSemiring R]
+    (f : MvPolynomial σ R) :
+    AddMonoidAlgebra.leadingCoeff (WithBot.some ∘ m.toSyn) f = m.leadingCoeff f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  classical
+  rw [AddMonoidAlgebra.leadingCoeff, supDegree_withBot_some_comp_toSyn_eq, m.withBotDegree_eq,
+    ite_eq_right hf, toWithBotSyn_apply_coe,
+    ← Function.comp_apply (f := WithBot.some) (g := m.toSyn),
+    Function.leftInverse_invFun (WithBot.coe_injective.comp m.toSyn.injective), leadingCoeff]
+
+/-- If one summand has strictly larger `withBotDegree` than all other summands in `s`, then the
+sum inherits both its `withBotDegree` and its `leadingCoeff`. -/
+theorem withBotDegree_sum_eq_and_leadingCoeff_sum_eq [CommSemiring R] {ι : Type*}
+    {s : Finset ι} {f : ι → MvPolynomial σ R} {i : ι} (hi : i ∈ s)
+    (hmax : ∀ j ∈ s, j ≠ i → m.withBotDegree (f j) ≺'[m] m.withBotDegree (f i)) :
+    m.withBotDegree (∑ j ∈ s, f j) = m.withBotDegree (f i) ∧
+      m.leadingCoeff (∑ j ∈ s, f j) = m.leadingCoeff (f i) := by
+  have h := AddMonoidAlgebra.supDegree_leadingCoeff_sum_eq
+    (D := WithBot.some ∘ m.toSyn) (f := f) hi fun j hj hne ↦ by
+      simpa only [supDegree_withBot_some_comp_toSyn_eq] using hmax j hj hne
+  simpa only [supDegree_withBot_some_comp_toSyn_eq,
+    addMonoidAlgebra_leadingCoeff_withBot_some_comp_toSyn,
+    EmbeddingLike.apply_eq_iff_eq] using h
+
+/-- If a nonzero summand `f i` has strictly larger leading exponent than every other nonzero
+summand in `s`, then the sum is nonzero and inherits the leading exponent and leading coefficient
+of `f i`. -/
+theorem degree_sum_eq_and_leadingCoeff_sum_eq [CommSemiring R] {ι : Type*}
+    {s : Finset ι} {f : ι → MvPolynomial σ R} {i : ι} (hi : i ∈ s) (hi0 : f i ≠ 0)
+    (hmax : ∀ j ∈ s, j ≠ i → f j = 0 ∨ m.degree (f j) ≺[m] m.degree (f i)) :
+    ∑ j ∈ s, f j ≠ 0 ∧
+      m.degree (∑ j ∈ s, f j) = m.degree (f i) ∧
+      m.leadingCoeff (∑ j ∈ s, f j) = m.leadingCoeff (f i) := by
+  classical
+  have hw := m.withBotDegree_sum_eq_and_leadingCoeff_sum_eq (f := f) hi fun j hj hne ↦ by
+    rw [m.withBotDegree_lt_withBotDegree_iff]
+    rcases hmax j hj hne with hj0 | hlt
+    · exact Or.inr ⟨hj0, hi0⟩
+    · exact Or.inl hlt
+  have hne : ∑ j ∈ s, f j ≠ 0 := fun h0 ↦ by
+    have hbot := hw.1
+    rw [h0, withBotDegree_zero, m.withBotDegree_eq, ite_eq_right hi0] at hbot
+    exact WithBot.coe_ne_bot hbot.symm
+  have hdeg : m.degree (∑ j ∈ s, f j) = m.degree (f i) :=
+    ((m.withBotDegree_eq_withBotDegree_iff (R := R) _ _).mp hw.1).1
+  exact ⟨hne, hdeg, hw.2⟩
+
+/-- Scaling a monic polynomial by a nonzero scalar preserves its leading exponent. -/
+theorem Monic.degree_smul {m : MonomialOrder σ} [CommSemiring R] {c : R} {f : MvPolynomial σ R}
+    (hc : c ≠ 0) (hf : m.Monic f) : m.degree (c • f) = m.degree f :=
+  m.toSyn.injective <| le_antisymm m.degree_smul_le <| m.le_degree <| mem_support_iff.mpr <| by
+    rw [AddMonoidAlgebra.coeff_smul_apply, hf.coeff_degree, smul_eq_mul, mul_one]
+    exact hc
+
+/-- Scaling a monic polynomial by a scalar sets its leading coefficient to that scalar. -/
+theorem Monic.leadingCoeff_smul {m : MonomialOrder σ} [CommSemiring R] {c : R}
+    {f : MvPolynomial σ R} (hf : m.Monic f) : m.leadingCoeff (c • f) = c := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  · rw [leadingCoeff, hf.degree_smul hc, AddMonoidAlgebra.coeff_smul_apply, hf.coeff_degree,
+      smul_eq_mul, mul_one]
 
 /-- A monomial multiple `c X^a * b` has degree at most `a + deg b`. -/
 theorem toSyn_degree_monomial_mul_le [CommSemiring R] (a : σ →₀ ℕ) (c : R)

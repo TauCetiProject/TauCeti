@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Complement
 public import Mathlib.GroupTheory.Perm.Subgroup
 public import Mathlib.Order.Sum.Order
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.GroupTheory.Perm.Finite
 import TauCeti.Data.Fintype.Sort
 
@@ -26,9 +27,12 @@ for the order induced by an injective map `f : κ₁ ⊕ κ₂ → L` to a linea
 order (`Equiv.Perm.isComplement_setOf_strictMono_toLex_sumCongrHom_range`). Any non-identity shuffle
 must carry at least one element of the left summand into the right summand
 (`Equiv.Perm.exists_apply_inl_eq_inr_of_strictMono_of_ne_one`,
-`Equiv.Perm.exists_apply_inl_eq_inr_of_strictMono_toLex_of_ne_one`). The underlying fact is
-that exactly one permutation of a finite linear order sorts the values of an injective map
-(`Equiv.Perm.existsUnique_strictMono_comp`, from `TauCeti.Data.Fintype.Sort`).
+`Equiv.Perm.exists_apply_inl_eq_inr_of_strictMono_toLex_of_ne_one`), so it does not preserve the
+left summand (`Equiv.Perm.map_inl_ne_of_strictMono_of_ne_one`) and, when every value of an additive
+weight on `κ₂` lies strictly below every value on `κ₁`, strictly decreases the sum of that weight
+over `κ₁` (`Equiv.Perm.sum_comp_inl_lt_of_strictMono_of_ne_one`).
+The underlying fact is that exactly one permutation of a finite linear order sorts the values of
+an injective map (`Equiv.Perm.existsUnique_strictMono_comp`, from `TauCeti.Data.Fintype.Sort`).
 -/
 
 public section
@@ -158,5 +162,64 @@ theorem exists_apply_inl_eq_inr_of_strictMono_toLex_of_ne_one {κ₁ κ₂ : Typ
   exists_apply_inl_eq_inr_of_strictMono_of_ne_one
     (fun _ _ h ↦ Sum.Lex.inl_lt_inl_iff.2 h) (fun _ _ h ↦ Sum.Lex.inr_lt_inr_iff.2 h)
     hσl hσr hne
+
+/-- A non-identity shuffle with respect to `f` does not preserve the left summand as a finset. -/
+theorem map_inl_ne_of_strictMono_of_ne_one {κ₁ κ₂ L : Type*} [LinearOrder κ₁]
+    [Fintype κ₁] [LinearOrder κ₂] [Finite κ₂] [LinearOrder L] {f : κ₁ ⊕ κ₂ → L}
+    (hfl : StrictMono (f ∘ Sum.inl)) (hfr : StrictMono (f ∘ Sum.inr))
+    {σ : Perm (κ₁ ⊕ κ₂)} (hσl : StrictMono (f ∘ σ ∘ Sum.inl))
+    (hσr : StrictMono (f ∘ σ ∘ Sum.inr)) (hne : σ ≠ 1) :
+    (Finset.univ.map ⟨Sum.inl, Sum.inl_injective⟩).map σ.toEmbedding ≠
+      Finset.univ.map ⟨Sum.inl, Sum.inl_injective⟩ := by
+  obtain ⟨a, b, hab⟩ := exists_apply_inl_eq_inr_of_strictMono_of_ne_one hfl hfr hσl hσr hne
+  intro h
+  have hmem : Sum.inr b ∈ Finset.univ.map ⟨(Sum.inl : κ₁ → κ₁ ⊕ κ₂), Sum.inl_injective⟩ := by
+    rw [← h]
+    exact Finset.mem_map.mpr ⟨.inl a, Finset.mem_map_of_mem _ (Finset.mem_univ a), hab⟩
+  obtain ⟨x, _, hx⟩ := Finset.mem_map.mp hmem
+  exact Sum.inl_ne_inr hx
+
+/-- For a map `f : κ₁ ⊕ κ₂ → L` strictly increasing on each summand and an additive weight `g`
+whose values on `κ₂` are bounded above by `a₀ < b₀` while its values on `κ₁` are bounded below
+by `b₀`, any non-identity shuffle `σ ≠ 1` strictly decreases the sum of `g` on `κ₁`. -/
+theorem sum_comp_inl_lt_of_strictMono_of_ne_one {κ₁ κ₂ L M : Type*}
+    [LinearOrder κ₁] [Fintype κ₁] [LinearOrder κ₂] [Finite κ₂] [LinearOrder L]
+    [AddCommMonoid M] [LinearOrder M] [IsOrderedCancelAddMonoid M]
+    {f : κ₁ ⊕ κ₂ → L} (hfl : StrictMono (f ∘ Sum.inl)) (hfr : StrictMono (f ∘ Sum.inr))
+    {g : κ₁ ⊕ κ₂ → M} {a₀ b₀ : M} (hab : a₀ < b₀)
+    (hκ₁ : ∀ x : κ₁, b₀ ≤ g (.inl x)) (hκ₂ : ∀ y : κ₂, g (.inr y) ≤ a₀)
+    {σ : Perm (κ₁ ⊕ κ₂)} (hσl : StrictMono (f ∘ σ ∘ Sum.inl))
+    (hσr : StrictMono (f ∘ σ ∘ Sum.inr)) (hne : σ ≠ 1) :
+    ∑ x : κ₁, g (σ (.inl x)) < ∑ x : κ₁, g (.inl x) := by
+  classical
+  let L₁ : Finset (κ₁ ⊕ κ₂) := Finset.univ.map ⟨Sum.inl, Sum.inl_injective⟩
+  let S : Finset (κ₁ ⊕ κ₂) := L₁.map σ.toEmbedding
+  have hSL : S ≠ L₁ := map_inl_ne_of_strictMono_of_ne_one hfl hfr hσl hσr hne
+  have hsumS : ∑ x : κ₁, g (σ (.inl x)) = (∑ z ∈ S \ L₁, g z) + ∑ z ∈ S ∩ L₁, g z := by
+    rw [← Finset.sum_union (Finset.disjoint_sdiff_inter S L₁), Finset.sdiff_union_inter]
+    simp [S, L₁]
+  have hsumL : ∑ x : κ₁, g (.inl x) = (∑ z ∈ L₁ \ S, g z) + ∑ z ∈ S ∩ L₁, g z := by
+    rw [Finset.inter_comm S L₁, ← Finset.sum_union (Finset.disjoint_sdiff_inter L₁ S),
+      Finset.sdiff_union_inter]
+    simp [L₁]
+  have hcard : (S \ L₁).card = (L₁ \ S).card := by
+    have h1 := Finset.card_sdiff_add_card_inter S L₁
+    have h2 := Finset.card_sdiff_add_card_inter L₁ S
+    have h3 : S.card = L₁.card := Finset.card_map _
+    rw [Finset.inter_comm L₁ S] at h2
+    omega
+  have hpos : 0 < (S \ L₁).card := Finset.card_pos.mpr (Finset.sdiff_nonempty.mpr fun hsub ↦
+    hSL (Finset.eq_of_subset_of_card_le hsub (Finset.card_map _).ge))
+  have hle_S : ∑ z ∈ S \ L₁, g z ≤ (S \ L₁).card • a₀ := Finset.sum_le_card_nsmul _ _ _ fun z hz ↦
+    match z, hz with
+    | .inl x, hz => absurd (Finset.mem_map_of_mem _ (Finset.mem_univ x)) (Finset.mem_sdiff.mp hz).2
+    | .inr y, _ => hκ₂ y
+  have hle_L : (L₁ \ S).card • b₀ ≤ ∑ z ∈ L₁ \ S, g z := Finset.card_nsmul_le_sum _ _ _ fun z hz ↦
+    let ⟨x, _, hx⟩ := Finset.mem_map.mp (Finset.mem_sdiff.mp hz).1
+    hx ▸ hκ₁ x
+  have hnsmul : (S \ L₁).card • a₀ < (L₁ \ S).card • b₀ :=
+    hcard ▸ nsmul_lt_nsmul_right hpos.ne' hab
+  rw [hsumS, hsumL]
+  exact add_lt_add_left ((hle_S.trans_lt hnsmul).trans_le hle_L) _
 
 end Equiv.Perm

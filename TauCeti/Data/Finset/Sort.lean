@@ -31,7 +31,7 @@ Consecutive entries of the sorted list of `s` are the pairs of positions of `s` 
 pairs.
 
 The `m`-th element of a finset `s` in increasing order, `s.orderEmbOfFin h m`, has exactly `m`
-elements of `s` below it.
+elements of `s` below it, and equal finsets have equal enumerations (`Finset.orderEmbOfFin_congr`).
 
 Deleting the elements of a finset `S` of `Fin n` and renumbering the remaining ones in increasing
 order renumbers the positions `0, …, n` by `Finset.collapse S`, the number of remaining elements
@@ -346,6 +346,13 @@ theorem val_le_val_orderEmbOfFin {n : ℕ} (s : Finset (Fin n)) {k : ℕ} (h : #
   calc (m : ℕ) = #{x ∈ s | x < s.orderEmbOfFin h m} := (s.card_filter_lt_orderEmbOfFin h m).symm
     _ ≤ #(Iio (s.orderEmbOfFin h m)) := card_le_card fun _ hx ↦ mem_Iio.2 (mem_filter.1 hx).2
     _ = s.orderEmbOfFin h m := Fin.card_Iio _
+
+/-- Equal finsets have equal `orderEmbOfFin` enumerations. -/
+theorem orderEmbOfFin_congr {k : ℕ} {s₁ s₂ : Finset α} (hs : s₁ = s₂)
+    {h₁ : #s₁ = k} {h₂ : #s₂ = k} (i : Fin k) :
+    s₁.orderEmbOfFin h₁ i = s₂.orderEmbOfFin h₂ i := by
+  subst hs
+  rfl
 
 section Collapse
 

@@ -47,6 +47,7 @@ vectors indexed by `ι`.
 * `Module.Basis.ofSpanEq`: a linearly independent family spanning a submodule `U` is a basis of `U`.
 * `Module.Basis.eq_sum_repr_smul_of_mem`: an ambient vector in a submodule `U` expands as the
   coordinate sum of any finite basis of `U`.
+* `Module.Basis.sum_support_repr_smul`: any vector expands as the sum over its coordinate support.
 * `Module.Basis.repr_eq_zero_of_mem_of_notMem`: a vector of a submodule spanned by basis vectors has
   zero coordinate at every basis vector outside the submodule.
 * `Module.Basis.repr_inr_eq_zero_of_mem`: if the basis vectors at the indices `Sum.inl i` form a
@@ -95,6 +96,12 @@ theorem eq_smul_of_repr_support_subset_singleton (b : Module.Basis ι K V) {w : 
     _ = b.repr.symm (Finsupp.single i (b.repr w i)) :=
         congrArg _ (Finsupp.support_subset_singleton.1 h)
     _ = b.repr w i • b i := b.repr_symm_single i _
+
+/-- A vector expands as the sum over its coordinate support of its basis vectors scaled by its
+coordinates. -/
+theorem sum_support_repr_smul (b : Module.Basis ι K V) (x : V) :
+    ∑ i ∈ (b.repr x).support, b.repr x i • b i = x := by
+  simpa [Finsupp.linearCombination_apply, Finsupp.sum] using b.linearCombination_repr x
 
 /-- A linear map carrying one basis to another preserves the corresponding coordinates. -/
 theorem repr_map_eq_of_map_basis

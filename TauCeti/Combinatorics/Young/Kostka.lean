@@ -38,6 +38,8 @@ highest-weight tableau `SemistandardYoungTableau.highestWeight μ` is `μ.rowLen
   tableau, `content T i` being the number of cells filled with `i`.
 * `TauCeti.BoundedSSYT`: the semistandard Young tableaux of a given shape whose entries lie below
   a given bound, that is, those written in a finite alphabet.
+* `TauCeti.BoundedSSYT.weight`: the content of a bounded tableau, packaged as an exponent vector
+  on the alphabet.
 * `TauCeti.diagramKostkaNumber`: the number of semistandard Young tableaux of a given shape and
   content.
 * `TauCeti.kostkaNumber`: the Kostka number of two partitions of the same natural number, the
@@ -54,6 +56,8 @@ highest-weight tableau `SemistandardYoungTableau.highestWeight μ` is `μ.rowLen
 * `TauCeti.finite_boundedSSYT`: likewise the tableaux of a fixed shape written in a finite alphabet,
   `TauCeti.BoundedSSYT`, are finite.
 * `TauCeti.BoundedSSYT.content_eq_zero`: a tableau in a finite alphabet uses no other letter.
+* `TauCeti.BoundedSSYT.mapDomain_weight` and `TauCeti.BoundedSSYT.sum_weight`: extending `weight` by
+  zero recovers `content`, and its entries sum to `μ.card`.
 * `TauCeti.BoundedSSYT.isEmpty_of_lt_colLen`: a shape taller than its alphabet admits no tableau.
 * `TauCeti.kostkaNumber_self`: `K_{μ μ} = 1`.
 * `TauCeti.kostkaNumber_eq_zero_of_not_dominates`: `K_{μ ν} = 0` unless `μ` dominates `ν`.
@@ -226,6 +230,40 @@ instance (n : ℕ) : Unique (BoundedSSYT n (⊥ : YoungDiagram)) where
   uniq T := Subtype.ext <| _root_.SemistandardYoungTableau.ext fun _ _ => by
     rw [T.val.zeros (by simp), _root_.SemistandardYoungTableau.highestWeight_apply,
       ite_eq_right (by simp)]
+
+/-- The letters a bounded tableau uses all come from the alphabet, so its content is supported on
+the image of `Fin n`. -/
+private theorem support_content_subset_range (T : BoundedSSYT n μ) :
+    ↑(SemistandardYoungTableau.content T.val).support ⊆ Set.range (Fin.val : Fin n → ℕ) := by
+  intro x hx
+  simp only [Finset.mem_coe, SemistandardYoungTableau.support_content, Finset.mem_image] at hx
+  obtain ⟨c, hc, rfl⟩ := hx
+  exact ⟨⟨_, entry_lt T ((YoungDiagram.mem_cells _).mp hc)⟩, rfl⟩
+
+/-- The **weight** of a bounded tableau: its content, read as an exponent vector indexed by the
+alphabet `Fin n`. This is the exponent of the monomial the tableau contributes to
+`TauCeti.diagramSchurPoly`. -/
+noncomputable def weight (T : BoundedSSYT n μ) : Fin n →₀ ℕ :=
+  Finsupp.comapDomain Fin.val (SemistandardYoungTableau.content T.val) Fin.val_injective.injOn
+
+@[simp]
+theorem weight_apply (T : BoundedSSYT n μ) (i : Fin n) :
+    weight T i = SemistandardYoungTableau.content T.val i :=
+  Finsupp.comapDomain_apply _ _ _ _
+
+/-- Extending the weight of a bounded tableau by zero recovers its content: no letter outside the
+alphabet occurs. -/
+theorem mapDomain_weight (T : BoundedSSYT n μ) :
+    Finsupp.mapDomain Fin.val (weight T) = SemistandardYoungTableau.content T.val :=
+  Finsupp.mapDomain_comapDomain _ Fin.val_injective _ (support_content_subset_range T)
+
+/-- The sum of the weight of a bounded tableau of shape `μ` is the number of cells of `μ`: every
+cell carries exactly one letter. -/
+theorem sum_weight (T : BoundedSSYT n μ) : ∑ i, weight T i = μ.card := by
+  simp only [weight_apply]
+  rw [Fin.sum_univ_eq_sum_range fun i => SemistandardYoungTableau.content T.val i]
+  exact SemistandardYoungTableau.sum_content_eq_card fun c hc =>
+    entry_lt T ((YoungDiagram.mem_cells _).mp hc)
 
 end BoundedSSYT
 
