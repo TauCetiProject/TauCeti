@@ -348,22 +348,6 @@ private theorem exists_bounds_of_hasCompactSupport
     · rw [eq_zero_of_notMem_tsupport_of_eq_sum_fderiv hg hx hxK, norm_zero]
       exact le_max_right _ _
 
-omit [DecidableEq ι] in
-/-- The energy form only sees its second argument through its jet at the points of `Ω` where the
-coefficients do not all vanish. -/
-private theorem energyFormH1_eq_of_ae_jetField_eq {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
-    {s : Set (EuclideanSpace ℝ ι)} (hs : ∀ x ∈ Ω, x ∉ s → a x = 0 ∧ b x = 0 ∧ c x = 0)
-    {u v w : W1p mu Ω 2} (h : ∀ᵐ x ∂mu.restrict Ω, x ∈ s → jetField v x = jetField w x) :
-    energyFormH1 a b c u v = energyFormH1 a b c u w := by
-  rw [energyFormH1_def, energyFormH1_def]
-  refine integral_congr_ae ?_
-  filter_upwards [h, ae_restrict_mem Ω.isOpen.measurableSet] with x hx hxΩ
-  by_cases hxs : x ∈ s
-  · rw [hx hxs]
-  · obtain ⟨ha, hb, hc⟩ := hs x hxΩ hxs
-    simp [ha, hb, hc]
-
 /-- **A compactly supported antisymmetric part of the principal coefficient is a drift**, on all of
 `H¹(Ω)`. Let `K` be a matrix field with entries smooth on `Ω`, antisymmetric values and compact
 topological support inside `Ω`, and let `g` be its row divergence, `gᵢ = ∑ⱼ ∂ⱼ Kᵢⱼ` on `Ω`. Then

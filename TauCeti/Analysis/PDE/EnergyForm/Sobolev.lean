@@ -98,6 +98,8 @@ estimates do not see the boundary.
 * `TauCeti.PDE.energyFormH1`: the divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`.
 * `TauCeti.PDE.energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero`: the energy form only sees the
   principal coefficients where `∇u` does not vanish.
+* `TauCeti.PDE.energyFormH1_eq_of_ae_jetField_eq`: the energy form only sees its second argument
+  through its jet where the coefficients do not all vanish.
 * `TauCeti.PDE.aestronglyMeasurable_energyFormH1`: for coefficients jointly measurable in a
   parameter and in space, the energy form is a.e. strongly measurable in the parameter.
 * `TauCeti.PDE.energyFormH1_zero_zero_eq_setIntegral`: the energy form with no lower-order
@@ -546,6 +548,21 @@ theorem energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero {a a' : EuclideanSpace �
   by_cases hxs : x ∈ s
   · rw [ha hxs]
   · simp [hx hxs]
+
+/-- The energy form `a(u, v)` only sees its second argument through its jet where the coefficients
+do not all vanish: if `a, b, c` all vanish on `Ω \ s`, it is unchanged when `v` is replaced by a
+function `w` with the same jet almost everywhere on `s ∩ Ω`. -/
+theorem energyFormH1_eq_of_ae_jetField_eq {s : Set (EuclideanSpace ℝ ι)}
+    (hs : ∀ x ∈ Omega, x ∉ s → a x = 0 ∧ b x = 0 ∧ c x = 0) {u v w : W1p mu Omega 2}
+    (h : ∀ᵐ x ∂mu.restrict Omega, x ∈ s → jetField v x = jetField w x) :
+    energyFormH1 a b c u v = energyFormH1 a b c u w := by
+  rw [energyFormH1_def, energyFormH1_def]
+  refine integral_congr_ae ?_
+  filter_upwards [h, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
+  by_cases hxs : x ∈ s
+  · rw [hx hxs]
+  · obtain ⟨ha, hb, hc⟩ := hs x hxΩ hxs
+    simp [ha, hb, hc]
 
 /-- The energy form on `H¹(Ω)` is homogeneous in the coefficient triple `(a, b, c)`. -/
 theorem energyFormH1_smul_coefficients (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
