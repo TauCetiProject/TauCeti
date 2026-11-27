@@ -33,8 +33,8 @@ time `0` is the identity, of entropy `0`.
 
 ## Main results
 
-* `TauCeti.exists_mem_uniformity_forall_mem_Icc_flow_mem`: uniform equicontinuity of the time-`u`
-  maps for `u` in a compact interval `[0, s]`.
+* `TauCeti.exists_mem_uniformity_forall_mem_flow_mem_of_isCompact`: uniform equicontinuity of the
+  time-`u` maps for `u` in a compact set of times.
 * `TauCeti.dynEntourage_flow_subset`: the comparison of dynamical entourages of `ϕ s` and `ϕ t`.
 * `TauCeti.coverEntropy_flow_le`, `TauCeti.coverEntropyInf_flow_le`: for `0 < s` and `0 < t`, the
   entropy of `ϕ t` on any set is at most `t / s` times that of `ϕ s`.
@@ -43,6 +43,7 @@ time `0` is the identity, of entropy `0`.
   `t > 0`.
 * `TauCeti.coverEntropy_flow_univ`: `coverEntropy (ϕ t) univ = |t| * coverEntropy (ϕ 1) univ` for
   every real `t`, on a nonempty compact space.
+* `TauCeti.coverEntropyInf_flow_univ`: the same for the `liminf` entropy `coverEntropyInf`.
 
 ## References
 
@@ -146,17 +147,22 @@ section Compact
 
 variable [UniformSpace X] [CompactSpace X] (ϕ : Flow ℝ X)
 
-/-- On a compact uniform space, the time-`u` maps of a real flow for `u` in a compact interval
-`[0, s]` are uniformly equicontinuous: every entourage `U` has an entourage `V` whose pairs stay in
+/-- On a compact uniform space, the time-`u` maps of a real flow for `u` in a compact set `K` of
+times are uniformly equicontinuous: every entourage `U` has an entourage `V` whose pairs stay in
 `U` under all of them. -/
-theorem exists_mem_uniformity_forall_mem_Icc_flow_mem (s : ℝ)
+theorem exists_mem_uniformity_forall_mem_flow_mem_of_isCompact {K : Set ℝ} (hK : IsCompact K)
     {U : SetRel X X} (hU : U ∈ 𝓤 X) :
-    ∃ V ∈ 𝓤 X, ∀ x y, (x, y) ∈ V → ∀ u ∈ Icc 0 s, (ϕ u x, ϕ u y) ∈ U := by
-  have hK : IsCompact (Icc (0 : ℝ) s ×ˢ (univ : Set X)) := isCompact_Icc.prod isCompact_univ
-  have hc := hK.uniformContinuousOn_of_continuous ϕ.cont'.continuousOn
+    ∃ V ∈ 𝓤 X, ∀ x y, (x, y) ∈ V → ∀ u ∈ K, (ϕ u x, ϕ u y) ∈ U := by
+  -- `(u, x) ↦ ϕ u x` is uniformly continuous on the compact set `K ×ˢ univ`.
+  have hc := (hK.prod isCompact_univ).uniformContinuousOn_of_continuous ϕ.cont'.continuousOn
+  -- Unfolding `UniformContinuousOn`: the pairs of points of `K ×ˢ univ` with `U`-close images
+  -- contain the trace on `K ×ˢ univ` of an entourage of `ℝ × X`, and that entourage contains the
+  -- (coordinate-reordered) product of an entourage `A` of `ℝ` and an entourage `B` of `X`.
   have h := hc hU
   rw [mem_map, mem_inf_principal, uniformity_prod_eq_prod, mem_map, mem_prod_iff] at h
   obtain ⟨A, hA, B, hB, hAB⟩ := h
+  -- For `(x, y) ∈ B` and `u ∈ K`, the pair `((u, x), (u, y))` lies in that product,
+  -- because `(u, u) ∈ A`.
   refine ⟨B, hB, fun x y hxy u hu ↦ ?_⟩
   exact hAB (mk_mem_prod (refl_mem_uniformity hA) hxy) ⟨⟨hu, mem_univ x⟩, ⟨hu, mem_univ y⟩⟩
 
@@ -165,7 +171,8 @@ of `ϕ t` on any set is at most `t / s` times that of `ϕ s`. -/
 theorem coverEntropy_flow_le {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (F : Set X) :
     coverEntropy (ϕ t) F ≤ ((t / s : ℝ) : EReal) * coverEntropy (ϕ s) F := by
   refine iSup₂_le fun U hU ↦ ?_
-  obtain ⟨V, hV, hVU⟩ := exists_mem_uniformity_forall_mem_Icc_flow_mem ϕ s hU
+  obtain ⟨V, hV, hVU⟩ := exists_mem_uniformity_forall_mem_flow_mem_of_isCompact ϕ
+    (isCompact_Icc : IsCompact (Icc 0 s)) hU
   exact (coverEntropyEntourage_flow_le ϕ hs ht hVU F).trans <|
     mul_le_mul_of_nonneg_left (coverEntropyEntourage_le_coverEntropy _ F hV)
       (EReal.coe_nonneg.2 (div_pos ht hs).le)
@@ -175,7 +182,8 @@ topological entropy of `ϕ t` on any set is at most `t / s` times that of `ϕ s`
 theorem coverEntropyInf_flow_le {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (F : Set X) :
     coverEntropyInf (ϕ t) F ≤ ((t / s : ℝ) : EReal) * coverEntropyInf (ϕ s) F := by
   refine iSup₂_le fun U hU ↦ ?_
-  obtain ⟨V, hV, hVU⟩ := exists_mem_uniformity_forall_mem_Icc_flow_mem ϕ s hU
+  obtain ⟨V, hV, hVU⟩ := exists_mem_uniformity_forall_mem_flow_mem_of_isCompact ϕ
+    (isCompact_Icc : IsCompact (Icc 0 s)) hU
   exact (coverEntropyInfEntourage_flow_le ϕ hs ht hVU F).trans <|
     mul_le_mul_of_nonneg_left (coverEntropyInfEntourage_le_coverEntropyInf _ F hV)
       (EReal.coe_nonneg.2 (div_pos ht hs).le)
@@ -220,6 +228,21 @@ theorem coverEntropy_flow_univ [Nonempty X] (t : ℝ) :
     exact coverEntropy_id_eq_zero isCompact_univ.totallyBounded univ_nonempty
   · rw [abs_of_pos ht]
     exact coverEntropy_flow_of_pos ϕ ht univ
+
+/-- For a continuous flow on a nonempty compact uniform space, the `liminf` topological entropy of
+the time-`t` map is `|t|` times that of the time-`1` map, for every real `t`. -/
+theorem coverEntropyInf_flow_univ [Nonempty X] (t : ℝ) :
+    coverEntropyInf (ϕ t) univ = |t| * coverEntropyInf (ϕ 1) univ := by
+  rcases lt_trichotomy t 0 with ht | rfl | ht
+  · rw [abs_of_neg ht, ← coverEntropyInf_flow_of_pos ϕ (neg_pos.2 ht) univ,
+      show ϕ t = ⇑(ϕ.toHomeomorph (-t)).symm by rw [ϕ.coe_toHomeomorph_symm, neg_neg],
+      Homeomorph.coverEntropyInf_symm_univ, ϕ.coe_toHomeomorph]
+  · rw [Flow.map_zero, abs_zero, EReal.coe_zero, zero_mul]
+    refine le_antisymm ?_ (coverEntropyInf_nonneg id univ_nonempty)
+    exact (coverEntropyInf_le_coverEntropy id univ).trans
+      (coverEntropy_id_eq_zero isCompact_univ.totallyBounded univ_nonempty).le
+  · rw [abs_of_pos ht]
+    exact coverEntropyInf_flow_of_pos ϕ ht univ
 
 end Compact
 

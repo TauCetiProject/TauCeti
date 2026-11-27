@@ -34,6 +34,7 @@ flow pressure is the topological entropy of the time-`1` map.
 
 ## Main results
 
+* `TauCeti.intervalIntegrable_comp_flow`: `s ↦ F (ϕ s x)` is interval integrable.
 * `TauCeti.continuous_flowTimeOnePotential`: `F₁` is continuous.
 * `TauCeti.birkhoffSum_flowTimeOnePotential`: `birkhoffSum (ϕ 1) F₁ n x = ∫ s in 0..n, F (ϕ s x)`.
 * `TauCeti.flowTopologicalPressure_zero`: `flowTopologicalPressure ϕ 0 = coverEntropy (ϕ 1) univ`.
@@ -73,6 +74,12 @@ theorem continuous_flowTimeOnePotential : Continuous (flowTimeOnePotential ϕ F)
   continuous_parametric_intervalIntegral_of_continuous' (f := fun x s ↦ F (ϕ s x))
     (F.continuous.comp (ϕ.continuous continuous_snd continuous_fst)) 0 1
 
+/-- A continuous function composed with a flow line, `s ↦ F (ϕ s x)`, is interval integrable. -/
+theorem intervalIntegrable_comp_flow {E : Type*} [NormedAddCommGroup E] (F : C(X, E)) (x : X)
+    {μ : MeasureTheory.Measure ℝ} [MeasureTheory.IsLocallyFiniteMeasure μ] (a b : ℝ) :
+    IntervalIntegrable (fun s ↦ F (ϕ s x)) μ a b :=
+  (F.continuous.comp' (ϕ.continuous_eval_const x)).intervalIntegrable a b
+
 /-- The Birkhoff sums of `F₁` under the time-`1` map are the integrals of `F` along flow segments
 of integer length. -/
 theorem birkhoffSum_flowTimeOnePotential (n : ℕ) (x : X) :
@@ -85,9 +92,8 @@ theorem birkhoffSum_flowTimeOnePotential (n : ℕ) (x : X) :
       rw [flowTimeOnePotential_def, hit]
       simp_rw [← ϕ.map_add]
       rw [intervalIntegral.integral_comp_add_right (fun s ↦ F (ϕ s x)), zero_add, add_comm]
-    have hF := F.continuous.comp' (ϕ.continuous_eval_const x)
-    rw [birkhoffSum_succ_apply, ih, hseg, Nat.cast_succ,
-      integral_add_adjacent_intervals (hF.intervalIntegrable _ _) (hF.intervalIntegrable _ _)]
+    rw [birkhoffSum_succ_apply, ih, hseg, Nat.cast_succ, integral_add_adjacent_intervals
+      (intervalIntegrable_comp_flow ϕ F x _ _) (intervalIntegrable_comp_flow ϕ F x _ _)]
 
 end Potential
 
@@ -118,8 +124,8 @@ variable {F} in
 theorem flowTopologicalPressure_mono {G : C(X, ℝ)} (h : ∀ x, F x ≤ G x) :
     flowTopologicalPressure ϕ F ≤ flowTopologicalPressure ϕ G :=
   topologicalPressure_mono fun x ↦ integral_mono_on zero_le_one
-    ((F.continuous.comp' (ϕ.continuous_eval_const x)).intervalIntegrable _ _)
-    ((G.continuous.comp' (ϕ.continuous_eval_const x)).intervalIntegrable _ _) fun _ _ ↦ h _
+    (intervalIntegrable_comp_flow ϕ F x _ _) (intervalIntegrable_comp_flow ϕ G x _ _)
+    fun _ _ ↦ h _
 
 /-- Adding a constant `c` to the potential adds `c` to the pressure of a flow. -/
 theorem flowTopologicalPressure_add_const (c : ℝ) :
@@ -128,8 +134,7 @@ theorem flowTopologicalPressure_add_const (c : ℝ) :
       fun x ↦ flowTimeOnePotential ϕ F x + c := by
     funext x
     simp only [flowTimeOnePotential_def, ContinuousMap.add_apply, ContinuousMap.const_apply]
-    rw [integral_add ((F.continuous.comp' (ϕ.continuous_eval_const x)).intervalIntegrable _ _)
-      intervalIntegrable_const]
+    rw [integral_add (intervalIntegrable_comp_flow ϕ F x _ _) intervalIntegrable_const]
     simp
   rw [flowTopologicalPressure_def, this, topologicalPressure_add_const, flowTopologicalPressure_def]
 

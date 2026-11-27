@@ -142,10 +142,12 @@ theorem map_nsmul [AddMonoid τ] (ϕ : Flow τ α) (k : ℕ) (t : τ) : ϕ (k �
     rw [succ_nsmul', ϕ.map_add, ih, Function.iterate_succ_apply']
 
 /-- The homeomorphism `ϕ.toHomeomorph t` is the time-`t` map. -/
+@[simp]
 theorem coe_toHomeomorph [AddGroup τ] (ϕ : Flow τ α) (t : τ) : ⇑(ϕ.toHomeomorph t) = ϕ t :=
   (rfl)
 
 /-- The inverse of the homeomorphism `ϕ.toHomeomorph t` is the time-`(-t)` map. -/
+@[simp]
 theorem coe_toHomeomorph_symm [AddGroup τ] (ϕ : Flow τ α) (t : τ) :
     ⇑(ϕ.toHomeomorph t).symm = ϕ (-t) :=
   (rfl)
