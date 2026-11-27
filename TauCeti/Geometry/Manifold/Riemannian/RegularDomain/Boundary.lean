@@ -68,19 +68,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
 omit [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
     (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)] in
-/-- If `ρ ∘ j` is a boundary defining function near `q ∈ ∂M` for a local Riemannian isometry `j`,
-the differential of `ρ ∘ j` at `q` has the length of the gradient of `ρ` at `j q`. -/
-theorem IsLocalRiemannianIsometry.norm_mvfderiv_comp_eq_norm_mgradient
-    (hj : IsLocalRiemannianIsometry (𝓡∂ (n + 1)) J j)
-    (hρ : MDifferentiableAt J 𝓘(ℝ) ρ (j q)) :
-    ‖mvfderiv (𝓡∂ (n + 1)) (ρ ∘ j) q‖ = ‖Manifold.mgradient J ρ (j q)‖ := by
-  have : IsManifold (𝓡∂ (n + 1)) 1 M := IsManifold.of_le (n := 2) (by norm_num)
-  have : IsManifold J 1 N := IsManifold.of_le (n := 2) (by norm_num)
-  rw [← Manifold.norm_mgradient_eq_norm_mvfderiv, hj.norm_mgradient_comp hρ]
-
-omit [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
-    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-  [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)] in
 /-- **The inward unit normal through a defining function in the ambient manifold.** If `j` is a
 local Riemannian isometry and `ρ ∘ j` is a boundary defining function near `q ∈ ∂M`, then
 `dj(ν_in) = grad ρ / |grad ρ|` at `j q`. -/
@@ -97,8 +84,7 @@ theorem IsBoundaryDefiningFunctionOn.mfderiv_inwardUnitNormal_of_comp
   have h := congrArg (mfderiv (𝓡∂ (n + 1)) J j q)
     (hρU.mgradient_eq_norm_smul_inwardUnitNormal hqU)
   rw [hj.mfderiv_mgradient_comp hρ, map_smul, hj.norm_mvfderiv_comp_eq_norm_mgradient hρ] at h
-  set c := ‖Manifold.mgradient J ρ (j q)‖
-  rw [h, smul_smul, inv_mul_cancel₀ hpos.ne', one_smul]
+  exact (eq_inv_smul_iff₀ hpos.ne').2 h.symm
 
 /-- **The second fundamental form through a defining function in the ambient manifold.** If `j` is
 a local Riemannian isometry and `ρ ∘ j` is a boundary defining function near `q ∈ ∂M`, then
@@ -128,27 +114,6 @@ variable {n : ℕ} {E H N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [F
   [IsContMDiffRiemannianBundle I ∞ E (fun y : N ↦ TangentSpace I y)]
   {f : N → ℝ} {a : ℝ}
 
-omit [I.Boundaryless] [IsContMDiffRiemannianBundle I ∞ E (fun y : N ↦ TangentSpace I y)] in
-/-- The gradient of `a - f` is minus the gradient of `f`. -/
-private theorem mgradient_const_sub {x : N} (hfx : MDifferentiableAt I 𝓘(ℝ) f x) :
-    Manifold.mgradient I (fun y ↦ a - f y) x = -Manifold.mgradient I f x := by
-  apply ext_inner_right ℝ
-  intro v
-  rw [Manifold.inner_mgradient, inner_neg_left, Manifold.inner_mgradient,
-    mvfderiv_fun_sub mdifferentiableAt_const hfx, mvfderiv_const, zero_sub,
-    neg_apply]
-
-omit [I.Boundaryless] in
-/-- The Hessian of `a - f` is minus the Hessian of `f`. -/
-private theorem hessian_const_sub {x : N} (hfx : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (v w : TangentSpace I x) :
-    Manifold.hessian I (fun y ↦ a - f y) x v w = -Manifold.hessian I f x v w := by
-  have hd : deriv (fun t : ℝ ↦ a - t) = fun _ ↦ -1 := funext fun t ↦ by simp
-  have h := Manifold.hessian_comp (h := fun t : ℝ ↦ a - t)
-    (contDiffAt_const.sub contDiffAt_id) hfx v w
-  rw [hd, deriv_const, zero_mul, zero_mul, add_zero, neg_one_mul] at h
-  exact h
-
 variable (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hreg : IsRegularValue I 𝓘(ℝ) f a)
   (hn : finrank ℝ E = n + 1)
 
@@ -176,7 +141,7 @@ theorem mfderiv_inwardUnitNormal_scalarRegularSublevel
     (ρ := fun y ↦ a - f y) (isBoundaryDefiningFunctionOn_scalarRegularSublevel hf hreg hn)
     (isLocalRiemannianIsometry_subtypeVal_scalarRegularSublevel hf hreg hn) (mem_univ _)
     (mdifferentiableAt_const.sub hfx)
-  rw [h, mgradient_const_sub hfx, norm_neg, smul_neg]
+  rw [h, Manifold.mgradient_const_sub, norm_neg, smul_neg]
 
 /-- **The second fundamental form of a regular sublevel.** For the regular sublevel
 `D = {f ≤ a}` with the pulled-back metric, at a point `q` of the level `f⁻¹(a)`,
@@ -215,8 +180,8 @@ theorem boundarySecondFundamentalForm_scalarRegularSublevel_apply
   rw [IsBoundaryDefiningFunctionOn.boundarySecondFundamentalForm_apply_of_comp
     (ρ := fun y ↦ a - f y) (isBoundaryDefiningFunctionOn_scalarRegularSublevel hf hreg hn)
     (isLocalRiemannianIsometry_subtypeVal_scalarRegularSublevel hf hreg hn) (mem_univ _)
-    (contMDiffAt_const.sub hfx), hessian_const_sub hfx,
-    mgradient_const_sub (hfx.mdifferentiableAt (by simp)), norm_neg, neg_neg]
+    (contMDiffAt_const.sub hfx), Manifold.hessian_const_sub a hfx,
+    Manifold.mgradient_const_sub, norm_neg, neg_neg]
 
 end Sublevel
 
