@@ -7,12 +7,12 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Boundary.MeanOscillation
 public import TauCeti.Analysis.PDE.Regularity.Hessian.MeanOscillation
-import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.PDE.Ellipticity.Contraction
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.TangentialDerivative
 import TauCeti.MeasureTheory.Function.Lp.Restriction
-import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.Average.Oscillation
 
 /-!
 # Mean oscillation of the Hessian at a flat boundary
@@ -30,9 +30,10 @@ the Hessian, in the `TauCeti.PDE` namespace,
 `∫_{B_ρ⁺} ‖D²u - (D²u)_{B_ρ⁺}‖² ≤ C (ρ / r)^(n + 3) ∫_{B_r⁺} ‖D²u‖²`
 `  + C (∫_{B_r⁺} f² + ∫_{B_r⁺} θ² ‖D²u‖²)`.
 
-Only the average of `a` over `B_r⁺` need be close to `A` in mean, so for coefficients of vanishing
-mean oscillation this is the frozen-coefficient step of the sharp-function proof of the `W^{2,p}`
-estimate up to a flat boundary. Unlike the reflection arguments used for continuous coefficients,
+The constant matrix `A` is arbitrary and enters only through the weighted error
+`∫_{B_r⁺} θ² ‖D²u‖²`; taking `A` to be an average of `a` makes this the frozen-coefficient step of
+the sharp-function proof of the `W^{2,p}` estimate up to a flat boundary, once that term is
+controlled. Unlike the reflection arguments used for continuous coefficients,
 nothing requires the coefficients near the boundary to be close to a reflection-invariant matrix.
 
 ## The argument
@@ -47,7 +48,8 @@ nothing requires the coefficients near the boundary to be close to a reflection-
   the mean oscillation of `D²u τ`.
 * **The normal-normal entry.** With `w = ν / ‖ν‖` and `τⱼ = eⱼ - ⟪eⱼ, w⟫ w`, a symmetric
   endomorphism `S` is controlled by the `S τⱼ` up to its component `⟪S w, w⟫`, and since
-  `⟪A w, w⟫ ≥ λ` that component is recovered from the contraction `∑ᵢⱼ Aᵢⱼ ⟪S eᵢ, eⱼ⟫`. Applied to
+  `⟪A w, w⟫ ≥ λ` that component is recovered from the contraction `∑ᵢⱼ Aᵢⱼ ⟪S eᵢ, eⱼ⟫`
+  (`TauCeti.PDE.norm_sq_le_sum_norm_apply_sub_sq_add_contraction_sq`). Applied to
   `S = D²u - (D²u)_{B_ρ⁺}`, the contraction is `g - g_{B_ρ⁺}`, whose `L²` norm is bounded by that of
   `g = f + ∑ᵢⱼ (A - a)ᵢⱼ ∂ᵢ∂ⱼu` (`TauCeti.PDE.setIntegral_contraction_iteratedGradient_sq_le`).
 
@@ -69,204 +71,6 @@ namespace TauCeti
 namespace PDE
 
 variable {n : ℕ}
-
-/-- For a unit vector `w` and `τⱼ = eⱼ - ⟪eⱼ, w⟫ w`, if `S` is symmetric between `w` and each
-`τⱼ` then the coordinates of `S w - ⟪S w, w⟫ w` are the `⟪S τⱼ, w⟫`, so its norm is at most
-`∑ⱼ ‖S τⱼ‖`. -/
-private theorem norm_apply_sub_inner_smul_le_sum
-    {w : EuclideanSpace ℝ (Fin (n + 1))} (hw : ‖w‖ = 1)
-    (S : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
-    (hS : ∀ j, ⟪S w, EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w⟫_ℝ =
-      ⟪S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w), w⟫_ℝ) :
-    ‖S w - ⟪S w, w⟫_ℝ • w‖ ≤
-      ∑ j, ‖S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)‖ := by
-  set b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
-  set e : Fin (n + 1) → EuclideanSpace ℝ (Fin (n + 1)) := fun j => EuclideanSpace.single j 1
-    with he
-  have hb : ∀ j, b j = e j := fun j => EuclideanSpace.basisFun_apply (Fin (n + 1)) ℝ j
-  set τ : Fin (n + 1) → EuclideanSpace ℝ (Fin (n + 1)) := fun j => e j - ⟪e j, w⟫_ℝ • w
-  change ‖S w - ⟪S w, w⟫_ℝ • w‖ ≤ ∑ j, ‖S (τ j)‖
-  set Q := ∑ j, ‖S (τ j)‖
-  set σ := ⟪S w, w⟫_ℝ with hσ
-  have he1 : ∀ j, ‖e j‖ = 1 := fun j => by simp [he]
-  -- The coordinates of `S w - σ w` are `⟪S τⱼ, w⟫`.
-  have hSw : ‖S w - σ • w‖ ≤ Q := by
-    have hcoord : ∀ j, ⟪e j, S w - σ • w⟫_ℝ = ⟪S (τ j), w⟫_ℝ := by
-      intro j
-      rw [← hS j]
-      simp only [he, inner_sub_right, inner_smul_right, ← hσ]
-      rw [real_inner_comm (S w)]
-      ring
-    calc ‖S w - σ • w‖ = ‖∑ j, ⟪e j, S w - σ • w⟫_ℝ • e j‖ := by
-          conv_lhs => rw [← b.sum_repr' (S w - σ • w)]
-          simp only [hb]
-      _ ≤ ∑ j, ‖⟪e j, S w - σ • w⟫_ℝ • e j‖ := norm_sum_le _ _
-      _ ≤ Q := by
-          refine Finset.sum_le_sum fun j _ => ?_
-          rw [norm_smul, he1, mul_one, hcoord, Real.norm_eq_abs]
-          exact (abs_real_inner_le_norm _ _).trans (by rw [hw, mul_one])
-  exact hSw
-
-/-- With `w`, `τⱼ` and `S` as in `norm_apply_sub_inner_smul_le_sum`, removing the component
-`⟪S w, w⟫ w ⊗ w` from `S` leaves an operator of norm at most `2 ∑ⱼ ‖S τⱼ‖`, since every `h` is
-`∑ⱼ ⟪eⱼ, h⟫ τⱼ + ⟪w, h⟫ w`. -/
-private theorem norm_sub_smul_smulRight_le
-    {w : EuclideanSpace ℝ (Fin (n + 1))} (hw : ‖w‖ = 1)
-    (S : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
-    (hS : ∀ j, ⟪S w, EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w⟫_ℝ =
-      ⟪S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w), w⟫_ℝ) :
-    ‖S - ⟪S w, w⟫_ℝ • (innerSL ℝ w).smulRight w‖ ≤
-      2 * ∑ j, ‖S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)‖ := by
-  have hSw := norm_apply_sub_inner_smul_le_sum hw S hS
-  set b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
-  set e : Fin (n + 1) → EuclideanSpace ℝ (Fin (n + 1)) := fun j => EuclideanSpace.single j 1
-    with he
-  have hb : ∀ j, b j = e j := fun j => EuclideanSpace.basisFun_apply (Fin (n + 1)) ℝ j
-  set τ : Fin (n + 1) → EuclideanSpace ℝ (Fin (n + 1)) := fun j => e j - ⟪e j, w⟫_ℝ • w
-    with hτ
-  change ‖S w - ⟪S w, w⟫_ℝ • w‖ ≤ ∑ j, ‖S (τ j)‖ at hSw
-  change ‖S - ⟪S w, w⟫_ℝ • (innerSL ℝ w).smulRight w‖ ≤ 2 * ∑ j, ‖S (τ j)‖
-  set Q := ∑ j, ‖S (τ j)‖ with hQ
-  set σ := ⟪S w, w⟫_ℝ
-  have he1 : ∀ j, ‖e j‖ = 1 := fun j => by simp [he]
-  -- Every `h` is `∑ⱼ ⟪eⱼ, h⟫ τⱼ + ⟪w, h⟫ w`.
-  have hdec : ∀ h, ∑ j, ⟪e j, h⟫_ℝ • τ j + ⟪w, h⟫_ℝ • w = h := by
-    intro h
-    have h1 := b.sum_repr' h
-    have h2 := b.sum_inner_mul_inner h w
-    simp only [hb] at h1 h2
-    have h3 : ∑ j, ⟪e j, h⟫_ℝ * ⟪e j, w⟫_ℝ = ⟪w, h⟫_ℝ := by
-      rw [real_inner_comm h w, ← h2]
-      exact Finset.sum_congr rfl fun j _ => by rw [real_inner_comm (e j) h]
-    simp only [hτ, smul_sub, Finset.sum_sub_distrib, smul_smul, ← Finset.sum_smul, h1, h3,
-      sub_add_cancel]
-  -- Remove the `w ⊗ w` component.
-  set N : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
-    (innerSL ℝ w).smulRight w
-  have hNapply : ∀ h, N h = ⟪w, h⟫_ℝ • w := fun h => rfl
-  set S₁ := S - σ • N with hS₁
-  have hS₁norm : ‖S₁‖ ≤ 2 * Q := by
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun h => ?_
-    have hSh : S h = ∑ j, ⟪e j, h⟫_ℝ • S (τ j) + ⟪w, h⟫_ℝ • S w := by
-      conv_lhs => rw [← hdec h]
-      simp only [map_add, map_sum, map_smul]
-    have hS₁h : S₁ h = ∑ j, ⟪e j, h⟫_ℝ • S (τ j) + ⟪w, h⟫_ℝ • (S w - σ • w) := by
-      rw [hS₁, sub_apply, smul_apply, hNapply, hSh]
-      module
-    rw [hS₁h]
-    calc ‖∑ j, ⟪e j, h⟫_ℝ • S (τ j) + ⟪w, h⟫_ℝ • (S w - σ • w)‖
-        ≤ ∑ j, ‖⟪e j, h⟫_ℝ • S (τ j)‖ + ‖⟪w, h⟫_ℝ • (S w - σ • w)‖ :=
-          (norm_add_le _ _).trans (add_le_add_left (norm_sum_le _ _) _)
-      _ ≤ ∑ j, ‖h‖ * ‖S (τ j)‖ + ‖h‖ * Q := by
-          gcongr with j
-          · rw [norm_smul, Real.norm_eq_abs]
-            gcongr
-            exact (abs_real_inner_le_norm _ _).trans (by rw [he1, one_mul])
-          · rw [norm_smul, Real.norm_eq_abs]
-            refine mul_le_mul ((abs_real_inner_le_norm _ _).trans (by rw [hw, one_mul])) hSw
-              (norm_nonneg _) (norm_nonneg _)
-      _ = 2 * Q * ‖h‖ := by rw [← Finset.mul_sum, ← hQ]; ring
-  exact hS₁norm
-
-/-- **An endomorphism is controlled by its tangential values and one contraction.** Let `w` be a
-unit vector of `ℝ^{n+1}`, write `τⱼ = eⱼ - ⟪eⱼ, w⟫ w` for the parts of the coordinate vectors
-orthogonal to `w`, and let `A` be a matrix with `λ ≤ ⟪A w, w⟫`. If `S` is symmetric between `w` and
-each `τⱼ`, then `S` is bounded by its values `S τⱼ` and by its contraction `∑ᵢⱼ Aᵢⱼ ⟪S eᵢ, eⱼ⟫`
-with `A`: the component `⟪S w, w⟫`, which the `S τⱼ` do not see, is recovered from the
-contraction. -/
-private theorem norm_le_sum_norm_apply_sub_add_abs_contraction
-    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam : ℝ} (hlam : 0 < lam)
-    {w : EuclideanSpace ℝ (Fin (n + 1))} (hw : ‖w‖ = 1) (hAw : lam ≤ matrixBilinearForm A w w)
-    (S : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
-    (hS : ∀ j, ⟪S w, EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w⟫_ℝ =
-      ⟪S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w), w⟫_ℝ) :
-    ‖S‖ ≤ (2 + 2 * (n + 1) * ‖matrixBilinearForm A‖ / lam) *
-        ∑ j, ‖S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)‖ +
-      |Matrix.contraction A S| / lam := by
-  have hS₁norm := norm_sub_smul_smulRight_le hw S hS
-  set τ : Fin (n + 1) → EuclideanSpace ℝ (Fin (n + 1)) := fun j =>
-    EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w
-  change ‖S‖ ≤ (2 + 2 * (n + 1) * ‖matrixBilinearForm A‖ / lam) * ∑ j, ‖S (τ j)‖ +
-    |Matrix.contraction A S| / lam
-  set Q := ∑ j, ‖S (τ j)‖
-  set σ := ⟪S w, w⟫_ℝ
-  set N : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
-    (innerSL ℝ w).smulRight w with hN
-  have hNapply : ∀ h, N h = ⟪w, h⟫_ℝ • w := fun h => rfl
-  have hNnorm : ‖N‖ ≤ 1 := by
-    rw [hN, ContinuousLinearMap.norm_smulRight_apply, innerSL_apply_norm, hw, one_mul]
-  set S₁ := S - σ • N with hS₁
-  -- The contraction with `w ⊗ w` is `⟪A w, w⟫`.
-  have hcN : Matrix.contraction A N = matrixBilinearForm A w w := by
-    rw [Matrix.contraction_apply, matrixBilinearForm_apply_eq_sum]
-    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-    simp only [hNapply, EuclideanSpace.inner_single_right, one_mul, RCLike.conj_to_real,
-      PiLp.smul_apply, smul_eq_mul]
-    ring
-  have hc : Matrix.contraction A S = Matrix.contraction A S₁ + σ * matrixBilinearForm A w w := by
-    rw [← hcN, ← smul_eq_mul, ← map_smul, ← map_add, hS₁, sub_add_cancel]
-  have habs : |Matrix.contraction A S₁| ≤ (n + 1) * ‖matrixBilinearForm A‖ * ‖S₁‖ := by
-    simpa using Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm A S₁
-  have hmb : 0 < matrixBilinearForm A w w := hlam.trans_le hAw
-  have hσle :
-      lam * |σ| ≤ |Matrix.contraction A S| + (n + 1) * ‖matrixBilinearForm A‖ * (2 * Q) := by
-    have h1 : |σ| * matrixBilinearForm A w w =
-        |Matrix.contraction A S - Matrix.contraction A S₁| := by
-      rw [hc, add_sub_cancel_left, abs_mul, abs_of_pos hmb]
-    calc lam * |σ| ≤ |σ| * matrixBilinearForm A w w := by
-          rw [mul_comm]; exact mul_le_mul_of_nonneg_left hAw (abs_nonneg σ)
-      _ ≤ |Matrix.contraction A S| + |Matrix.contraction A S₁| := h1 ▸ abs_sub _ _
-      _ ≤ _ := by
-          gcongr
-          exact habs.trans (mul_le_mul_of_nonneg_left hS₁norm (by positivity))
-  have hSle : ‖S‖ ≤ 2 * Q + |σ| := by
-    have hSeq : S = S₁ + σ • N := by rw [hS₁, sub_add_cancel]
-    calc ‖S‖ = ‖S₁ + σ • N‖ := by rw [← hSeq]
-      _ ≤ ‖S₁‖ + ‖σ • N‖ := norm_add_le _ _
-      _ ≤ 2 * Q + |σ| * 1 := by
-          rw [norm_smul, Real.norm_eq_abs]
-          gcongr
-      _ = 2 * Q + |σ| := by rw [mul_one]
-  have hσ' :
-      |σ| ≤ (|Matrix.contraction A S| + (n + 1) * ‖matrixBilinearForm A‖ * (2 * Q)) / lam :=
-    (le_div_iff₀ hlam).2 (by rw [mul_comm]; exact hσle)
-  calc ‖S‖ ≤ 2 * Q + (|Matrix.contraction A S| +
-        (n + 1) * ‖matrixBilinearForm A‖ * (2 * Q)) / lam := hSle.trans (by gcongr)
-    _ = _ := by field_simp; ring
-
-/-- The squared form of `norm_le_sum_norm_apply_sub_add_abs_contraction`, with `‖A‖ ≤ Λ`. -/
-private theorem norm_sq_le_sum_norm_apply_sub_sq_add_contraction_sq
-    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ} (hlam : 0 < lam)
-    (hΛ : ‖matrixBilinearForm A‖ ≤ Lam)
-    {w : EuclideanSpace ℝ (Fin (n + 1))} (hw : ‖w‖ = 1) (hAw : lam ≤ matrixBilinearForm A w w)
-    (S : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
-    (hS : ∀ j, ⟪S w, EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w⟫_ℝ =
-      ⟪S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w), w⟫_ℝ) :
-    ‖S‖ ^ 2 ≤ 2 * (n + 1) * (2 + 2 * (n + 1) * Lam / lam) ^ 2 *
-        ∑ j, ‖S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)‖ ^ 2 +
-      2 / lam ^ 2 * Matrix.contraction A S ^ 2 := by
-  have h := norm_le_sum_norm_apply_sub_add_abs_contraction hlam hw hAw S hS
-  set Q := ∑ j, ‖S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)‖
-  have hQ2 : Q ^ 2 ≤ (n + 1) *
-      ∑ j, ‖S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)‖ ^ 2 := by
-    have := sq_sum_le_card_mul_sum_sq (s := Finset.univ)
-      (f := fun j => ‖S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)‖)
-    simp only [Finset.card_univ, Fintype.card_fin, Nat.cast_add, Nat.cast_one] at this
-    exact this
-  have h1 : ‖S‖ ≤ (2 + 2 * (n + 1) * Lam / lam) * Q + |Matrix.contraction A S| / lam :=
-    h.trans (by gcongr)
-  calc ‖S‖ ^ 2 ≤ ((2 + 2 * (n + 1) * Lam / lam) * Q + |Matrix.contraction A S| / lam) ^ 2 :=
-        pow_le_pow_left₀ (norm_nonneg _) h1 2
-    _ ≤ 2 * ((2 + 2 * (n + 1) * Lam / lam) * Q) ^ 2 + 2 * (|Matrix.contraction A S| / lam) ^ 2 := by
-        nlinarith [sq_nonneg ((2 + 2 * (n + 1) * Lam / lam) * Q - |Matrix.contraction A S| / lam)]
-    _ = 2 * (2 + 2 * (n + 1) * Lam / lam) ^ 2 * Q ^ 2 +
-          2 / lam ^ 2 * Matrix.contraction A S ^ 2 := by
-        rw [div_pow, sq_abs]
-        ring
-    _ ≤ 2 * (2 + 2 * (n + 1) * Lam / lam) ^ 2 * ((n + 1) *
-          ∑ j, ‖S (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)‖ ^ 2) +
-          2 / lam ^ 2 * Matrix.contraction A S ^ 2 := by gcongr
-    _ = _ := by ring
 
 /-- **Tangential derivatives at a flat boundary.** Let `H = {x | c₀ < ⟪x, ν⟫}` and let
 `u ∈ W^{2,2}(H)` have zero boundary values, `u ∈ W^{1,2}_0(H)`. For a tangential direction `τ`,
@@ -360,6 +164,8 @@ private theorem exists_setIntegral_ball_inter_norm_apply_sub_setAverage_sq_le {l
       ContinuousLinearMap.toSpanSingleton_apply] using
       (((ContinuousLinearMap.toSpanSingleton ℝ τ).comp (Matrix.contraction A)).comp_memLp'
         hT).mono_measure (Measure.restrict_mono hsH le_rfl)
+  -- `sub_self`, `norm_zero` and `simp` do not fire on bilinear forms directly (their subtraction
+  -- and norm are not the generic instances): pass through `matrixBilinearForm_sub`, `opNorm_zero`.
   have hθ : ‖matrixBilinearForm A - matrixBilinearForm A‖ = 0 := by
     rw [← matrixBilinearForm_sub, sub_self]
     simpa using ContinuousLinearMap.opNorm_zero
@@ -373,8 +179,6 @@ private theorem exists_setIntegral_ball_inter_norm_apply_sub_setAverage_sq_le {l
       (volume.restrict (ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))))) :=
     isFiniteMeasure_restrict.2 hht
   set p := (⟪⨍ y in ball z ρ ∩ H, W1p.gradient W y, ν⟫_ℝ / ‖ν‖ ^ 2) • ν
-  have hWt := hWg _ htH
-  have hWs := hWg _ hsH
   calc ∫ x in ball z ρ ∩ H, ‖Wkp.iteratedGradient 1 u x τ -
           ⨍ y in ball z ρ ∩ H, Wkp.iteratedGradient 1 u y τ‖ ^ 2
       ≤ ∫ x in ball z ρ ∩ H, ‖Wkp.iteratedGradient 1 u x τ - p‖ ^ 2 :=
@@ -382,11 +186,11 @@ private theorem exists_setIntegral_ball_inter_norm_apply_sub_setAverage_sq_le {l
           ((hTτ.mono_measure (Measure.restrict_mono htH le_rfl)).integrable one_le_two)
           (hTτ.integrableOn_norm_sub_sq_of_subset htH hht p)
     _ = ∫ x in ball z ρ ∩ H, ‖W1p.gradient W x - p‖ ^ 2 :=
-        integral_congr_ae (hWt.mono fun x hx => by simp only [hx])
+        integral_congr_ae ((hWg _ htH).mono fun x hx => by simp only [hx])
     _ ≤ _ := h
     _ = _ := by
         rw [integral_congr_ae (g := fun x => ‖Wkp.iteratedGradient 1 u x τ‖ ^ 2)
-          (hWs.mono fun x hx => by simp only [zero_smul, sub_zero, hx])]
+          ((hWg _ hsH).mono fun x hx => by simp only [zero_smul, sub_zero, hx])]
         have h0 : ∀ x, ‖matrixBilinearForm A - matrixBilinearForm A‖ ^ 2 *
             ‖W1p.gradient W x‖ ^ 2 = 0 := fun x => by
           rw [mul_eq_zero, pow_eq_zero_iff two_ne_zero]
@@ -404,14 +208,13 @@ private theorem ae_norm_iteratedGradient_sub_setAverage_sq_le
     {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ} (hlam : 0 < lam)
     (hΛ : ‖matrixBilinearForm A‖ ≤ Lam)
     {w : EuclideanSpace ℝ (Fin (n + 1))} (hw : ‖w‖ = 1) (hAw : lam ≤ matrixBilinearForm A w w)
+    {τ : Fin (n + 1) → EuclideanSpace ℝ (Fin (n + 1))}
+    (hτ : ∀ j, τ j = EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)
     {t : Set (EuclideanSpace ℝ (Fin (n + 1)))} (htΩ : t ⊆ Omega) (ht : volume t ≠ ⊤) :
     ∀ᵐ x ∂volume.restrict t, ‖Wkp.iteratedGradient 1 u x -
         ⨍ y in t, Wkp.iteratedGradient 1 u y‖ ^ 2 ≤
       2 * (n + 1) * (2 + 2 * (n + 1) * Lam / lam) ^ 2 *
-          ∑ j, ‖Wkp.iteratedGradient 1 u x
-              (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w) -
-            ⨍ y in t, Wkp.iteratedGradient 1 u y
-              (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)‖ ^ 2 +
+          ∑ j, ‖Wkp.iteratedGradient 1 u x (τ j) - ⨍ y in t, Wkp.iteratedGradient 1 u y (τ j)‖ ^ 2 +
         2 / lam ^ 2 * (Matrix.contraction A (Wkp.iteratedGradient 1 u x) -
           ⨍ y in t, Matrix.contraction A (Wkp.iteratedGradient 1 u y)) ^ 2 := by
   have : IsFiniteMeasure (volume.restrict t) := isFiniteMeasure_restrict.2 ht
@@ -424,33 +227,29 @@ private theorem ae_norm_iteratedGradient_sub_setAverage_sq_le
         ⨍ y in t, L (Wkp.iteratedGradient 1 u y) := fun L => by
     rw [setAverage_eq, setAverage_eq, map_smul, L.integral_comp_comm hT]
   have hsym := ae_restrict_of_ae_restrict_of_subset htΩ (ae_all_iff.2 fun j =>
-    Wkp.inner_iteratedGradient_one_apply_ae_eq u w
-      (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w))
+    Wkp.inner_iteratedGradient_one_apply_ae_eq u w (τ j))
   -- The average of the Hessian is symmetric between `w` and each `τⱼ`.
-  have hMsym : ∀ j, ⟪(⨍ y in t, Wkp.iteratedGradient 1 u y) w,
-      EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w⟫_ℝ =
-      ⟪(⨍ y in t, Wkp.iteratedGradient 1 u y)
-        (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w), w⟫_ℝ := fun j => by
-    set τ := EuclideanSpace.single j (1 : ℝ) - ⟪EuclideanSpace.single j (1 : ℝ), w⟫_ℝ • w
+  have hMsym : ∀ j, ⟪(⨍ y in t, Wkp.iteratedGradient 1 u y) w, τ j⟫_ℝ =
+      ⟪(⨍ y in t, Wkp.iteratedGradient 1 u y) (τ j), w⟫_ℝ := fun j => by
     set M := ⨍ y in t, Wkp.iteratedGradient 1 u y
-    have h1 := havg ((innerSL ℝ τ).comp
+    have h1 := havg ((innerSL ℝ (τ j)).comp
       (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1))) w))
     have h2 := havg ((innerSL ℝ w).comp
-      (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1))) τ))
+      (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1))) (τ j)))
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
       innerSL_apply_apply] at h1 h2
-    rw [← real_inner_comm (M w) τ, ← real_inner_comm (M τ) w, h1, h2]
+    rw [← real_inner_comm (M w) (τ j), ← real_inner_comm (M (τ j)) w, h1, h2]
     exact average_congr (hsym.mono fun y hy => by
       beta_reduce
-      rw [real_inner_comm (Wkp.iteratedGradient 1 u y w) τ]
+      rw [real_inner_comm (Wkp.iteratedGradient 1 u y w) (τ j)]
       exact (hy j).trans (real_inner_comm _ _))
   filter_upwards [hsym] with x hx
-  have key := norm_sq_le_sum_norm_apply_sub_sq_add_contraction_sq hlam hΛ hw hAw
+  have key := norm_sq_le_sum_norm_apply_sub_sq_add_contraction_sq hlam hΛ hw hAw hτ
     (Wkp.iteratedGradient 1 u x - ⨍ y in t, Wkp.iteratedGradient 1 u y) fun j => by
       rw [sub_apply, sub_apply, inner_sub_left, inner_sub_left, hx j, hMsym j]
   rw [map_sub, havg] at key
-  simp only [sub_apply, ContinuousLinearMap.average_apply hT] at key
-  exact key
+  simpa only [sub_apply, ContinuousLinearMap.average_apply hT, Nat.cast_add, Nat.cast_one]
+    using key
 
 /-- **The integrated pointwise bound.** With `w`, `A` and `t` as in
 `ae_norm_iteratedGradient_sub_setAverage_sq_le`, the square mean oscillation of the Hessian over
@@ -461,13 +260,12 @@ private theorem setIntegral_norm_iteratedGradient_sub_setAverage_sq_le
     {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ} (hlam : 0 < lam)
     (hΛ : ‖matrixBilinearForm A‖ ≤ Lam)
     {w : EuclideanSpace ℝ (Fin (n + 1))} (hw : ‖w‖ = 1) (hAw : lam ≤ matrixBilinearForm A w w)
+    {τ : Fin (n + 1) → EuclideanSpace ℝ (Fin (n + 1))}
+    (hτ : ∀ j, τ j = EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)
     {t : Set (EuclideanSpace ℝ (Fin (n + 1)))} (htΩ : t ⊆ Omega) (htf : volume t ≠ ⊤) :
     ∫ x in t, ‖Wkp.iteratedGradient 1 u x - ⨍ y in t, Wkp.iteratedGradient 1 u y‖ ^ 2 ≤
       2 * (n + 1) * (2 + 2 * (n + 1) * Lam / lam) ^ 2 * (∑ j, ∫ x in t,
-        ‖Wkp.iteratedGradient 1 u x
-          (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w) -
-        ⨍ y in t, Wkp.iteratedGradient 1 u y
-          (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)‖ ^ 2) +
+        ‖Wkp.iteratedGradient 1 u x (τ j) - ⨍ y in t, Wkp.iteratedGradient 1 u y (τ j)‖ ^ 2) +
       2 / lam ^ 2 * ∫ x in t, (Matrix.contraction A (Wkp.iteratedGradient 1 u x) -
         ⨍ y in t, Matrix.contraction A (Wkp.iteratedGradient 1 u y)) ^ 2 := by
   have hT : MemLp (fun x => Wkp.iteratedGradient 1 u x) 2
@@ -485,7 +283,7 @@ private theorem setIntegral_norm_iteratedGradient_sub_setAverage_sq_le
   have hint := integral_mono_ae (hT.integrableOn_norm_sub_sq_of_subset htΩ htf _)
     (((integrable_finsetSum _ fun j _ => (hTτ _).integrableOn_norm_sub_sq_of_subset htΩ htf
       _).const_mul _).add ((hgsq _).const_mul _))
-    (ae_norm_iteratedGradient_sub_setAverage_sq_le u hlam hΛ hw hAw htΩ htf)
+    (ae_norm_iteratedGradient_sub_setAverage_sq_le u hlam hΛ hw hAw hτ htΩ htf)
   refine hint.trans_eq ?_
   simp only [Pi.add_apply]
   rw [integral_add (((integrable_finsetSum _ fun j _ =>
@@ -550,24 +348,6 @@ private theorem setIntegral_norm_apply_sq_le_and_setIntegral_norm_smul_sq_le
   · rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, mul_comm]
     gcongr
     nlinarith [norm_nonneg τ]
-
-/-- The square oscillation of a real function about its average over `t` is at most its `L²` mass
-over any larger set `s`. -/
-private theorem setIntegral_sub_setAverage_sq_le_of_subset
-    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hg : MemLp g 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    {s t : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hts : t ⊆ s) (hsΩ : s ⊆ Omega)
-    (hsf : volume s ≠ ⊤) :
-    ∫ x in t, (g x - ⨍ y in t, g y) ^ 2 ≤ ∫ x in s, g x ^ 2 := by
-  have htf : volume t ≠ ⊤ := ((measure_mono hts).trans_lt hsf.lt_top).ne
-  have : IsFiniteMeasure (volume.restrict t) := isFiniteMeasure_restrict.2 htf
-  have hgs := hg.integrableOn_norm_sub_sq_of_subset hsΩ hsf 0
-  have h := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq htf
-    ((hg.mono_measure (Measure.restrict_mono (hts.trans hsΩ) le_rfl)).integrable one_le_two)
-    (hg.integrableOn_norm_sub_sq_of_subset (hts.trans hsΩ) htf 0)
-  simp only [sub_zero, Real.norm_eq_abs, sq_abs] at h hgs
-  exact h.trans (setIntegral_mono_set hgs (ae_of_all _ fun _ => sq_nonneg _)
-    (Filter.Eventually.of_forall hts))
 
 /-- The arithmetic that collects the constants in
 `exists_setIntegral_ball_inter_norm_iteratedGradient_sub_setAverage_sq_le_add`. -/
@@ -653,8 +433,10 @@ theorem exists_setIntegral_ball_inter_norm_iteratedGradient_sub_setAverage_sq_le
   have hAw : lam ≤ matrixBilinearForm A w w := by
     have := hA.lower_bound hz w
     rwa [← matrixBilinearForm_self, hw, one_pow, mul_one] at this
-  have hτν := inner_single_sub_inner_smul_eq_zero hν (n := n)
-  have hτ2 := norm_single_sub_inner_smul_le_two hw (n := n)
+  obtain ⟨τ, hτ⟩ : ∃ τ : Fin (n + 1) → EuclideanSpace ℝ (Fin (n + 1)), ∀ j,
+      τ j = EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w := ⟨_, fun _ => rfl⟩
+  have hτν : ∀ j, ⟪τ j, ν⟫_ℝ = 0 := fun j => hτ j ▸ inner_single_sub_inner_smul_eq_zero hν j
+  have hτ2 : ∀ j, ‖τ j‖ ≤ 2 := fun j => hτ j ▸ norm_single_sub_inner_smul_le_two hw j
   have hts : ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z r ∩ H :=
     inter_subset_inter_left _ (ball_subset_ball hρr)
   have hsm : MeasurableSet (ball z r ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
@@ -663,14 +445,12 @@ theorem exists_setIntegral_ball_inter_norm_iteratedGradient_sub_setAverage_sq_le
     ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne
   have htf : volume (ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≠ ⊤ :=
     ((measure_mono hts).trans_lt hsf.lt_top).ne
-  have hint' := setIntegral_norm_iteratedGradient_sub_setAverage_sq_le u hlam hΛ hw hAw
+  have hint' := setIntegral_norm_iteratedGradient_sub_setAverage_sq_le u hlam hΛ hw hAw hτ
     inter_subset_right htf
   have hq : 0 ≤ (ρ / r) ^ (n + 3) := pow_nonneg (div_nonneg hρ.le (hρ.trans_le hρr).le) _
   -- Each tangential column decays, up to the `L²` norm of `g = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu`.
-  have hcolj : ∀ j, ∫ x in ball z ρ ∩ H, ‖Wkp.iteratedGradient 1 u x
-        (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w) -
-      ⨍ y in ball z ρ ∩ H, Wkp.iteratedGradient 1 u y
-        (EuclideanSpace.single j 1 - ⟪EuclideanSpace.single j 1, w⟫_ℝ • w)‖ ^ 2 ≤
+  have hcolj : ∀ j, ∫ x in ball z ρ ∩ H, ‖Wkp.iteratedGradient 1 u x (τ j) -
+      ⨍ y in ball z ρ ∩ H, Wkp.iteratedGradient 1 u y (τ j)‖ ^ 2 ≤
       D * (ρ / r) ^ (n + 3) * (4 * ∫ x in ball z r ∩ H, ‖Wkp.iteratedGradient 1 u x‖ ^ 2) +
         D * (4 * ∫ x in ball z r ∩ H, Matrix.contraction A (Wkp.iteratedGradient 1 u x) ^ 2) :=
       fun j => by
@@ -679,13 +459,13 @@ theorem exists_setIntegral_ball_inter_norm_iteratedGradient_sub_setAverage_sq_le
     exact (hcol hA hν hH hzc hu0 (hτν j) hρ hρr).trans (add_le_add
       (mul_le_mul_of_nonneg_left h1 (mul_nonneg hD.le hq)) (mul_le_mul_of_nonneg_left h2 hD.le))
   -- The oscillation of `g` is at most its `L²` norm, which the equation controls.
-  have hGt := setIntegral_sub_setAverage_sq_le_of_subset
-    ((Matrix.contraction A).comp_memLp' (Lp.memLp (Wkp.iteratedGradient 1 u))) hts
-    inter_subset_right hsf
+  have hGt := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sq_of_subset
+    (((Matrix.contraction A).comp_memLp' (Lp.memLp (Wkp.iteratedGradient 1 u))).mono_measure
+      (Measure.restrict_mono inter_subset_right le_rfl)) hts hsf
+  simp only [Real.norm_eq_abs, sq_abs] at hGt
   have hG := setIntegral_contraction_iteratedGradient_sq_le hsm ha haK u inter_subset_right heq
   have hsum := Finset.sum_le_sum fun j (_ : j ∈ Finset.univ) => hcolj j
-  rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
-  push_cast at hsum
+  push_cast [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
   refine final_bound hC₁0 hD.le hq ?_ ?_ ?_ hint' hsum hGt hG <;>
     exact setIntegral_nonneg hsm fun _ _ => by positivity
 

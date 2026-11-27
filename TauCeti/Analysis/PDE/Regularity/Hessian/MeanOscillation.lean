@@ -170,50 +170,6 @@ private theorem setAverage_ball_iteratedGradient_apply
     ((memLp_iteratedGradient_one u).integrableOn_of_subset one_le_two ht
       measure_ball_lt_top.ne) v
 
-/-- The gradient of `∂ⱼu`, with `∂ⱼu` the weak line derivative of `u`, is the corresponding
-column of the Hessian, almost everywhere. -/
-private theorem ae_gradient_eq_iteratedGradient_apply
-    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
-    {D : Fin (n + 1) → W1p volume Omega 2}
-    (hDg : ∀ i j, (fun x => ⟪W1p.gradient (D j) x, EuclideanSpace.single i 1⟫_ℝ)
-      =ᵐ[volume.restrict Omega]
-        fun x => ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
-          EuclideanSpace.single j 1⟫_ℝ) (k : Fin (n + 1)) :
-    (W1p.gradient (D k) : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1))) =ᵐ[volume.restrict Omega]
-        fun x => Wkp.iteratedGradient 1 u x (EuclideanSpace.single k 1) := by
-  filter_upwards [ae_all_iff.2 fun i => hDg i k,
-    ae_all_iff.2 fun i => Wkp.inner_iteratedGradient_one_apply_ae_eq u
-      (EuclideanSpace.single i 1) (EuclideanSpace.single k 1)] with x h1 h2
-  refine ext_inner_right_basis (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis fun i => ?_
-  simp only [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply]
-  rw [h1 i, h2 i]
-
-/-- **The differentiated equation for constant coefficients.** Let `u ∈ W^{2,2}(Ω)`, `Ω ⊆ ℝ^{n+1}`
-open. Its weak first derivatives are elements `Dₖ = ∂ₖu` of `H¹(Ω)` whose gradients are the columns
-`D²u eₖ` of the weak Hessian almost everywhere, and which solve, for every constant matrix `A`, the
-equation `-div(A ∇Dₖ) = -div(g eₖ)` weakly in `Ω`, with `g = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu`: for every test
-function `φ`, `∫_Ω ⟨A ∇Dₖ, ∇φ⟩ = ∫_Ω g ∂ₖφ`. No equation for `u` is assumed. -/
-theorem exists_gradient_ae_eq_iteratedGradient_apply_and_energyFormH1_eq
-    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2) :
-    ∃ D : Fin (n + 1) → W1p volume Omega 2,
-      (∀ k, (W1p.gradient (D k) : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
-          =ᵐ[volume.restrict Omega]
-        fun x => Wkp.iteratedGradient 1 u x (EuclideanSpace.single k 1)) ∧
-      ∀ (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (k : Fin (n + 1)) (φ : 𝓓(Omega, ℝ)),
-        energyFormH1 (fun _ => A) 0 0 (D k) (W1p.ofTestFunctionₗ volume Omega 2 φ) =
-          ∫ x in Omega, ⟪(∑ i, ∑ j, A i j * ⟪Wkp.iteratedGradient 1 u x
-            (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ) • EuclideanSpace.single k 1,
-              ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
-  choose D hD₀ hDg using fun j : Fin (n + 1) =>
-    Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq u (EuclideanSpace.single j 1)
-  have hD : ∀ j, HasWeakLineDerivOn volume Omega (W1p.value (Wkp.lowerOrder 1 u))
-      (W1p.value (D j)) (EuclideanSpace.single j 1) := fun j => by
-    simpa only [Wkp.value_succ 1 u, Wkp.value_one] using hD₀ j
-  exact ⟨D, ae_gradient_eq_iteratedGradient_apply u fun i j => hDg j _, fun A k =>
-    energyFormH1_eq_setIntegral_inner_smul u (A := A) (ae_of_all _ fun _ => rfl) hD
-      (fun i j => hDg j _) (hD k)⟩
-
 /-- **The differentiated equation in a direction.** Let `u ∈ W^{2,2}(Ω)`, `Ω ⊆ ℝ^{n+1}` open,
 and let `v` be a vector. The weak directional derivative `∂ᵥu` is an element of `H¹(Ω)` whose
 gradient is `D²u v` almost everywhere, and which solves, for every constant matrix `A`, the equation
@@ -250,6 +206,26 @@ theorem exists_hasWeakLineDerivOn_and_gradient_ae_eq_and_energyFormH1_eq
   · rw [energyFormH1_eq_setIntegral_inner_smul u (A := A) (f := fun x =>
       Matrix.contraction A (Wkp.iteratedGradient 1 u x))
       (ae_of_all _ fun x => (Matrix.contraction_apply A _).symm) hD (fun i j => hDg j _) hd φ]
+
+/-- **The differentiated equation for constant coefficients.** Let `u ∈ W^{2,2}(Ω)`, `Ω ⊆ ℝ^{n+1}`
+open. Its weak first derivatives are elements `Dₖ = ∂ₖu` of `H¹(Ω)` whose gradients are the columns
+`D²u eₖ` of the weak Hessian almost everywhere, and which solve, for every constant matrix `A`, the
+equation `-div(A ∇Dₖ) = -div(g eₖ)` weakly in `Ω`, with `g = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu`: for every test
+function `φ`, `∫_Ω ⟨A ∇Dₖ, ∇φ⟩ = ∫_Ω g ∂ₖφ`. No equation for `u` is assumed. -/
+theorem exists_gradient_ae_eq_iteratedGradient_apply_and_energyFormH1_eq
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2) :
+    ∃ D : Fin (n + 1) → W1p volume Omega 2,
+      (∀ k, (W1p.gradient (D k) : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
+          =ᵐ[volume.restrict Omega]
+        fun x => Wkp.iteratedGradient 1 u x (EuclideanSpace.single k 1)) ∧
+      ∀ (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (k : Fin (n + 1)) (φ : 𝓓(Omega, ℝ)),
+        energyFormH1 (fun _ => A) 0 0 (D k) (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+          ∫ x in Omega, ⟪(∑ i, ∑ j, A i j * ⟪Wkp.iteratedGradient 1 u x
+            (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ) • EuclideanSpace.single k 1,
+              ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
+  choose D _ hD hDA using fun k : Fin (n + 1) =>
+    exists_hasWeakLineDerivOn_and_gradient_ae_eq_and_energyFormH1_eq u (EuclideanSpace.single k 1)
+  exact ⟨D, hD, fun A k φ => by simp only [hDA k A φ, Matrix.contraction_apply]⟩
 
 /-- The square mean oscillation over a ball in `Ω` of the gradient of `D ∈ H¹(Ω)`, when that
 gradient is the `k`-th column of the Hessian of `u`, is that of the column. -/
