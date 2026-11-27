@@ -50,6 +50,8 @@ of `TauCeti.AlgebraicTopology.Singular.Excision`.
 
 * `TopPair.cubicalHomology_exact_subspace`, `TopPair.cubicalHomology_exact_space`,
   `TopPair.cubicalHomology_exact_relative`: exactness of the long exact sequence.
+* `TopPair.injective_homologyMap_cokernel_π_of_isZero`: if the subspace has no homology in degree
+  `n`, the map `Hₙ(X) ⟶ Hₙ(X, A)` is injective.
 * `TopPair.singularCubicalHomologyIso_hom_cubicalHomologyδ`: compatibility of the connecting
   morphisms with the comparison.
 * `TopPair.exists_boundary_eq_of_cubicalHomologyδ_eq`,
@@ -134,6 +136,14 @@ theorem cubicalHomology_exact_space (n : ℕ) :
       (by rw [← HomologicalComplex.homologyMap_comp, cokernel.condition,
         HomologicalComplex.homologyMap_zero])).Exact :=
   (shortExact_cubicalChainComplexShortComplex k P).homology_exact₂ n
+
+/-- If the subspace has no cubical homology in degree `n`, the map `Hₙ(X) ⟶ Hₙ(X, A)` to relative
+homology is injective, by exactness at the cubical homology of the ambient space. -/
+theorem injective_homologyMap_cokernel_π_of_isZero (n : ℕ)
+    (h : IsZero (((normalizedCubicalChainComplex k).obj P.snd).homology n)) :
+    Function.Injective (HomologicalComplex.homologyMap
+      (cokernel.π ((normalizedCubicalChainComplex k).map P.map)) n).hom :=
+  (ModuleCat.mono_iff_injective _).1 ((P.cubicalHomology_exact_space k n).mono_g (h.eq_of_src _ _))
 
 /-- Exactness at the relative cubical homology. -/
 theorem cubicalHomology_exact_relative (n m : ℕ) (h : m + 1 = n := by lia) :
