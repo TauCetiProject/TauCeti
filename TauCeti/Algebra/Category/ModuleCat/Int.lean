@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Data.ZMod.QuotientRing
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
@@ -19,6 +20,9 @@ additive groups and `ModuleCat ℤ`.
 An endomorphism of `ℤ` in `ModuleCat ℤ` is multiplication by an integer `m`, and its cokernel is
 `ℤ/(m)`. So it is determined up to sign by its cokernel: if the cokernel is `ℤ/n`, it is
 multiplication by `n` or by `-n` (`ModuleCat.eq_smul_id_or_eq_neg_smul_id_of_cokernel_iso_zmod`).
+
+Two objects of `ModuleCat ℤ` with the same prime number of elements are isomorphic
+(`ModuleCat.nonempty_iso_of_card_eq_prime`).
 -/
 
 public section
@@ -65,5 +69,11 @@ theorem eq_smul_id_or_eq_neg_smul_id_of_cokernel_iso_zmod {n : ℕ}
   rcases Int.natAbs_eq m with h | h
   · exact .inl (hφ' n (by rw [h, hcard]))
   · exact .inr (hφ' (-n) (by rw [h, hcard]))
+
+/-- Two objects of `ModuleCat ℤ` with the same prime number of elements are isomorphic. -/
+theorem nonempty_iso_of_card_eq_prime {A B : ModuleCat ℤ} {q : ℕ} (hq : q.Prime)
+    (hA : Nat.card A = q) (hB : Nat.card B = q) : Nonempty (A ≅ B) :=
+  have := Fact.mk hq
+  ⟨(addEquivOfPrimeCardEq hA hB).toIntLinearEquiv.toModuleIso⟩
 
 end ModuleCat
