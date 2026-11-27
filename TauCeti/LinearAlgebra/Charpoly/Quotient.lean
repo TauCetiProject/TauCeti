@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.Algebra.Algebra.Bilinear
+public import TauCeti.LinearAlgebra.FiniteDimensional.ScalarTower
 
 /-!
 # The characteristic polynomial on an invariant submodule and its quotient
@@ -23,6 +26,10 @@ No complement of `W` is chosen, so `W` need not be a direct summand stable under
 this computes the characteristic polynomial of `f` on `W` from those of `f` on `V` and on `V ⧸ W`
 in every characteristic.
 
+The same statement for an endomorphism of a short exact sequence `0 → N → M → Q → 0` of finite
+free modules, with `N` identified with its image and `Q` with the quotient by it, is the
+multiplicative counterpart of the additivity of the trace `LinearMap.trace_eq_add_of_exact`.
+
 ## Main results
 
 * `LinearMap.charpoly_dvd_of_injective_of_comp_eq_comp`: the characteristic polynomial of an
@@ -31,6 +38,14 @@ in every characteristic.
 * `LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ`: the characteristic polynomial of
   `f` is the product of those of its restriction to `W` and of the endomorphism it induces on
   `V ⧸ W`.
+
+* `LinearMap.charpoly_eq_mul_of_exact`: the characteristic polynomial of the middle endomorphism
+  of a short exact sequence of finite free modules is the product of those of the outer ones.
+
+* `Submodule.charpoly_lsmul_eq_mul_quotient`: for an algebra `A` over a field `k` and an
+  `A`-submodule `P` of a finite-dimensional `A`-module `M`, the characteristic polynomial of
+  `a : A` on `M` is the product of those on `P` and on `M ⧸ P`.
+
 ## References
 
 * A. W. Knapp, *Lie Groups Beyond an Introduction*, first edition (1996), Chapter I, §5,
@@ -84,6 +99,48 @@ end LinearMap
 
 namespace LinearMap
 
+variable {R M N Q : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
+  [AddCommGroup N] [Module R N] [Module.Free R N] [Module.Finite R N]
+  [AddCommGroup Q] [Module R Q] [Module.Free R Q] [Module.Finite R Q]
+
+/-- **The characteristic polynomial is multiplicative along a short exact sequence.** If
+`0 → N --i--> M --π--> Q → 0` is exact and the endomorphisms `fN`, `f`, `fQ` commute with `i` and
+`π`, then the characteristic polynomial of `f` is the product of those of `fN` and `fQ`. -/
+theorem charpoly_eq_mul_of_exact {i : N →ₗ[R] M} {π : M →ₗ[R] Q}
+    (hi : Function.Injective i) (hπ : Function.Surjective π) (hex : Function.Exact i π)
+    {f : M →ₗ[R] M} {fN : N →ₗ[R] N} {fQ : Q →ₗ[R] Q}
+    (hN : f ∘ₗ i = i ∘ₗ fN) (hQ : π ∘ₗ f = fQ ∘ₗ π) :
+    f.charpoly = fN.charpoly * fQ.charpoly := by
+  have hW : range i ≤ (range i).comap f := by
+    rintro _ ⟨n, rfl⟩
+    exact ⟨fN n, congr($hN n).symm⟩
+  let eN : N ≃ₗ[R] range i := LinearEquiv.ofInjective i hi
+  let eQ : (M ⧸ range i) ≃ₗ[R] Q := hex.linearEquivOfSurjective hπ
+  have : Module.Free R (range i) := .of_equiv eN
+  have : Module.Finite R (range i) := .equiv eN
+  have : Module.Free R (M ⧸ range i) := .of_equiv eQ.symm
+  have : Module.Finite R (M ⧸ range i) := .equiv eQ.symm
+  have hN' : eN.conj fN = f.restrict hW := by
+    refine ext fun x ↦ ?_
+    obtain ⟨n, rfl⟩ := eN.surjective x
+    refine Subtype.ext ?_
+    simp only [eN, LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply, restrict_apply,
+      LinearEquiv.ofInjective_apply]
+    exact congr($hN n).symm
+  have hQ' : eQ.conj ((range i).mapQ (range i) f hW) = fQ := by
+    refine ext fun q ↦ ?_
+    obtain ⟨m, rfl⟩ := hπ q
+    rw [LinearEquiv.conj_apply_apply, hex.linearEquivOfSurjective_symm_apply hπ m,
+      Submodule.mapQ_apply, hex.linearEquivOfSurjective_apply hπ]
+    exact (Submodule.liftQ_apply _ _ _).trans congr($hQ m)
+  rw [charpoly_eq_charpoly_restrict_mul_charpoly_mapQ (range i) f hW, ← hN', ← hQ',
+    LinearEquiv.charpoly_conj, LinearEquiv.charpoly_conj]
+
+end LinearMap
+
+namespace LinearMap
+
 variable {K V U : Type*} [Field K]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   [AddCommGroup U] [Module K U] [FiniteDimensional K U]
@@ -110,3 +167,33 @@ theorem charpoly_dvd_of_injective_of_comp_eq_comp (f : V →ₗ[K] V) (g : U →
   rw [charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W g hW, ← he, e.charpoly_conj]
 
 end LinearMap
+
+namespace Submodule
+
+variable {k A M : Type*} [Field k] [Ring A] [Algebra k A] [AddCommGroup M] [Module A M]
+  [Module k M] [IsScalarTower k A M] [FiniteDimensional k M]
+
+/-- The characteristic polynomial of `a` on `M` is the product of those on an `A`-submodule `P`
+and on `M ⧸ P`. -/
+theorem charpoly_lsmul_eq_mul_quotient (P : Submodule A M) (a : A) :
+    (Algebra.lsmul k k M a).charpoly =
+      (Algebra.lsmul k k P a).charpoly * (Algebra.lsmul k k (M ⧸ P) a).charpoly := by
+  let W := P.restrictScalars k
+  have hW : W ≤ W.comap (Algebra.lsmul k k M a) := fun x hx ↦ by
+    simpa [W] using P.smul_mem a hx
+  let eW := (P.restrictScalarsEquiv k A M).restrictScalars k
+  let eQ := Submodule.Quotient.restrictScalarsEquiv k P
+  -- `Submodule.restrictScalarsEquiv` is the identity on elements, and Mathlib's
+  -- `Submodule.restrictScalarsEquiv_apply` is stated through this same definitional equality,
+  -- so `simp` cannot use it here: both sides send `x` to `a • x`.
+  have hP : eW.conj ((Algebra.lsmul k k M a).restrict hW) = Algebra.lsmul k k P a :=
+    LinearMap.ext fun _ ↦ rfl
+  have hQ : eQ.conj (W.mapQ W _ hW) = Algebra.lsmul k k (M ⧸ P) a := by
+    refine LinearMap.ext fun x ↦ ?_
+    obtain ⟨x, rfl⟩ := P.mkQ_surjective x
+    simp [eQ, LinearEquiv.conj_apply, Submodule.Quotient.restrictScalarsEquiv_symm_mk,
+      Submodule.Quotient.restrictScalarsEquiv_mk, Submodule.mapQ_apply]
+  rw [LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W _ hW, ← hP, ← hQ,
+    LinearEquiv.charpoly_conj, LinearEquiv.charpoly_conj]
+
+end Submodule

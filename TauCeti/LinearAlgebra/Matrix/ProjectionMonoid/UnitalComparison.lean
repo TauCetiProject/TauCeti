@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Prod
-public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization
+public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization.Basic
 
 /-!
 # `K₀` through the unitization agrees with `K₀` of a unital algebra
@@ -30,7 +30,8 @@ whose first factor is the kernel `K₀(A)` itself rather than `K₀ᵖ(A)`.
 ## Main definitions
 
 * `TauCeti.UnitizationKZero.unitalProdEquiv`: `K₀(A⁺) ≃+ K₀ᵖ(A) × K₀(R)` for unital `A`.
-* `TauCeti.UnitizationKZero.unitalEquiv`: `K₀(A) ≃+ K₀ᵖ(A)` for unital `A`.
+* `TauCeti.UnitizationKZero.unitalEquiv`: `K₀(A) ≃+ K₀ᵖ(A)` for unital `A`, induced by
+  `A⁺ → A`, `(r, a) ↦ r • 1 + a` (`TauCeti.UnitizationKZero.unitalEquiv_apply_eq_map`).
 
 ## References
 
@@ -105,6 +106,19 @@ noncomputable def unitalEquiv : UnitizationKZero R A ≃+ ProjectionKZero A wher
 theorem unitalEquiv_apply (x : UnitizationKZero R A) :
     unitalEquiv R A x = (unitalProdEquiv R A x).1 :=
   (rfl)
+
+/-- The isomorphism `K₀(A) ≃+ K₀ᵖ(A)` is induced by the star homomorphism `A⁺ → A`,
+`(r, a) ↦ r • 1 + a`, the unital lift `Unitization.starLift` of the identity of `A`. -/
+theorem unitalEquiv_apply_eq_map (x : UnitizationKZero R A) :
+    unitalEquiv R A x = ProjectionKZero.map
+      (NonUnitalStarRingHom.ofClass (Unitization.starLift (NonUnitalStarAlgHom.id R A))) x := by
+  have h : (NonUnitalStarRingHom.fst A R).comp
+      (Unitization.prodStarAlgEquiv R A).toStarRingEquiv =
+      NonUnitalStarRingHom.ofClass (Unitization.starLift (NonUnitalStarAlgHom.id R A)) :=
+    NonUnitalStarRingHom.ext fun y ↦ (NonUnitalStarRingHom.fst_apply _).trans <|
+      (congrArg Prod.fst (Unitization.prodStarAlgEquiv_apply R A y)).trans (by simp)
+  rw [← h, ProjectionKZero.map_comp, unitalEquiv_apply, unitalProdEquiv_apply,
+    ProjectionKZero.prodEquiv_apply, AddMonoidHom.comp_apply]
 
 /-- The inverse of `K₀(A) ≃+ K₀ᵖ(A)` sends `a` to the preimage of `(a, 0)` under
 `K₀(A⁺) ≃+ K₀ᵖ(A) × K₀(R)`. -/

@@ -8,6 +8,10 @@ module
 public import Mathlib.Basic.Sign.Basic
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.Basic.Real.Basic
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
+import Mathlib.Analysis.Polynomial.Order
+import Mathlib.LinearAlgebra.Eigenspace.Charpoly
+import Mathlib.LinearAlgebra.Eigenspace.Zero
 import TauCeti.Algebra.Ring.Parity
 import TauCeti.Analysis.Polynomial.RealRoots.Product
 import TauCeti.Data.Multiset.Filter
@@ -40,6 +44,16 @@ dynamical zeta function; that series identity is
 `TauCeti.NovikovSeries.orbitZeta_sign_det_one_sub_pow_eq_eulerProduct`, in
 `TauCeti.RingTheory.NovikovSeries.OrbitZeta.ReturnMap`.
 
+Without counting roots, the location of the real eigenvalues of an endomorphism `f` of a
+finite-dimensional real vector space `V` already fixes the sign of `det (1 - f)`. If `f` has no
+real eigenvalue `μ ≥ 1`, then `det (1 - f) > 0`, since the monic characteristic polynomial has no
+root at or beyond `1`. If `f` has no real eigenvalue in `[0, 1]`, then
+`sgn det (1 - f) = (-1) ^ (dim V) * sgn det f`, since `1 - f = (-f) (1 - f⁻¹)` and `f⁻¹` has no
+real eigenvalue `μ ≥ 1`. For a map `f × g` of `V × W` that expands along `V` and contracts along
+`W` in this sense, `sgn det (1 - f × g) = (-1) ^ (dim V) * sgn det f`. This is the sign
+`sgn det (1 - A)` of the fixed-point index of a linear map `A` at its nondegenerate fixed point
+`0`, at a fixed point expanding along one factor and contracting across it.
+
 ## Main results
 
 * `Matrix.exists_det_aeval_eq_mul_prod_roots`: `det (f(A)) = c ∏ f(x)` over the real
@@ -60,6 +74,13 @@ dynamical zeta function; that series identity is
   `LinearMap.neg_one_pow_card_filter_lt_neg_one_of_det_pos`: if `0 < det A` and `1 + A` is
   invertible, the numbers of real eigenvalues in `(-∞, -1)` and in `(-1, 0)` have the same parity.
   For a symplectic `A` this lets `i₋` be read off from the eigenvalues in `(-1, 0)`.
+* `LinearMap.det_one_sub_pos_of_not_hasEigenvalue`: no real eigenvalue `μ ≥ 1` gives
+  `0 < det (1 - f)`.
+* `LinearMap.sign_det_one_sub_of_not_hasEigenvalue`: no real eigenvalue in `[0, 1]` gives
+  `sgn det (1 - f) = (-1) ^ (dim V) * sgn det f`.
+* `LinearMap.sign_det_one_sub_prodMap_of_not_hasEigenvalue`,
+  `LinearMap.det_one_sub_prodMap_ne_zero_of_not_hasEigenvalue`: the sign, and the nonvanishing, of
+  `det (1 - f × g)` at an expanding-contracting splitting.
 * `LinearMap.det_one_add_ne_zero_of_det_one_sub_pow_ne_zero`: if `k` is even and `1 - f ^ k` has
   nonzero determinant, so does `1 + f`.
 
@@ -69,6 +90,8 @@ dynamical zeta function; that series identity is
   Geom. Topol. 3 (1999), 369–396 (the signs of closed orbits and their iterates in the product
   formula for the zeta function).
 * D. Fried, *Lefschetz formulas for flows*, Contemp. Math. 58, Part III (1987), 19–69.
+* A. Dold, *Lectures on Algebraic Topology*, Springer, 1972, Chapter VII, §5 (the fixed-point
+  index of a linear map).
 -/
 
 public section
@@ -300,5 +323,72 @@ theorem neg_one_pow_card_filter_lt_neg_one_of_det_pos (f : Module.End ℝ V) (hf
   rw [map_add, toMatrix_one] at h
   rw [← charpoly_toMatrix f b]
   exact (toMatrix b b f).neg_one_pow_card_filter_lt_neg_one_of_det_pos hf h
+
+section EigenvalueLocation
+
+open Set
+
+variable {W : Type*} [AddCommGroup W] [Module ℝ W] [FiniteDimensional ℝ W]
+
+/-- If `f` has no real eigenvalue `μ ≥ 1`, then `det (1 - f) > 0`: the characteristic polynomial
+`det (t - f)` is monic and has no root `t ≥ 1`. -/
+theorem det_one_sub_pos_of_not_hasEigenvalue {f : Module.End ℝ V}
+    (hf : ∀ μ : ℝ, 1 ≤ μ → ¬ f.HasEigenvalue μ) : 0 < (1 - f).det := by
+  have h := zero_lt_eval_of_roots_lt_of_leadingCoeff_nonneg (P := f.charpoly) (x := 1)
+    (fun y hy ↦ lt_of_not_ge fun h1 ↦
+      hf y h1 ((Module.End.hasEigenvalue_iff_isRoot_charpoly f y).mpr hy))
+    (f.charpoly_monic.leadingCoeff ▸ zero_le_one)
+  rwa [eval_charpoly, map_one] at h
+
+/-- If `f` has no real eigenvalue in `[0, 1]`, then `sign det (1 - f) = (-1)ⁿ sign det f`, where
+`n = dim V`: `f` is invertible, `1 - f = (-f) (1 - f⁻¹)`, and `det (1 - f⁻¹) > 0` because `f⁻¹`
+has no real eigenvalue `μ ≥ 1`. -/
+theorem sign_det_one_sub_of_not_hasEigenvalue {f : Module.End ℝ V}
+    (hf : ∀ μ ∈ Icc (0 : ℝ) 1, ¬ f.HasEigenvalue μ) :
+    SignType.sign (1 - f).det = (-1) ^ Module.finrank ℝ V * SignType.sign f.det := by
+  have hinj : Function.Injective f := by
+    rw [← ker_eq_bot]
+    exact ((not_hasEigenvalue_zero_tfae f).out 1 5).mp (hf 0 ⟨le_rfl, zero_le_one⟩)
+  set g : Module.End ℝ V := ((LinearEquiv.ofInjectiveEndo f hinj).symm : V →ₗ[ℝ] V)
+  have hfg : f * g = 1 := LinearEquiv.ofInjectiveEndo_right_inv f hinj
+  -- An eigenvector of `g` for `μ ≥ 1` is an eigenvector of `f` for `μ⁻¹ ∈ (0, 1]`.
+  have hg : ∀ μ : ℝ, 1 ≤ μ → ¬ g.HasEigenvalue μ := fun μ hμ h ↦ by
+    obtain ⟨v, hv⟩ := h.exists_hasEigenvector
+    have hgv : g v = μ • v := Module.End.mem_eigenspace_iff.mp hv.1
+    have h : μ • f v = v := by
+      simpa [hgv] using congr($hfg v)
+    have hfv : f v = μ⁻¹ • v := by
+      conv_rhs => rw [← h, smul_smul, inv_mul_cancel₀ (by positivity), one_smul]
+    exact hf μ⁻¹ ⟨by positivity, inv_le_one_of_one_le₀ hμ⟩
+      (Module.End.hasEigenvalue_of_hasEigenvector
+        ⟨Module.End.mem_eigenspace_iff.mpr hfv, hv.2⟩)
+  have hsplit : 1 - f = -f * (1 - g) := by
+    rw [neg_mul, mul_sub, mul_one, hfg]
+    abel
+  rw [hsplit, ← neg_one_smul ℝ f, smul_mul_assoc, det_smul]
+  simp [sign_mul, sign_pow, sign_pos (det_one_sub_pos_of_not_hasEigenvalue hg)]
+
+/-- **The sign of `det (1 - A)` at an expanding-contracting splitting.** If `f` has no real
+eigenvalue in `[0, 1]` and `g` has no real eigenvalue `μ ≥ 1`, then
+`sign det (1 - f × g) = (-1)^(dim V) sign det f`. -/
+theorem sign_det_one_sub_prodMap_of_not_hasEigenvalue {f : Module.End ℝ V} {g : Module.End ℝ W}
+    (hf : ∀ μ ∈ Icc (0 : ℝ) 1, ¬ f.HasEigenvalue μ) (hg : ∀ μ : ℝ, 1 ≤ μ → ¬ g.HasEigenvalue μ) :
+    SignType.sign (1 - f.prodMap g).det = (-1) ^ Module.finrank ℝ V * SignType.sign f.det := by
+  have h : (1 : Module.End ℝ (V × W)) - f.prodMap g = (1 - f).prodMap (1 - g) := by
+    ext <;> simp
+  rw [h, det_prodMap, sign_mul, sign_det_one_sub_of_not_hasEigenvalue hf,
+    sign_pos (det_one_sub_pos_of_not_hasEigenvalue hg), mul_one]
+
+/-- Under the hypotheses of `LinearMap.sign_det_one_sub_prodMap_of_not_hasEigenvalue`,
+`1 - f × g` is invertible: `f` has no eigenvalue `0`, so `det f ≠ 0`. -/
+theorem det_one_sub_prodMap_ne_zero_of_not_hasEigenvalue {f : Module.End ℝ V}
+    {g : Module.End ℝ W} (hf : ∀ μ ∈ Icc (0 : ℝ) 1, ¬ f.HasEigenvalue μ)
+    (hg : ∀ μ : ℝ, 1 ≤ μ → ¬ g.HasEigenvalue μ) : (1 - f.prodMap g).det ≠ 0 := by
+  have hdet : f.det ≠ 0 :=
+    ((not_hasEigenvalue_zero_tfae f).out 1 4).mp (hf 0 ⟨le_rfl, zero_le_one⟩)
+  rw [← sign_ne_zero, sign_det_one_sub_prodMap_of_not_hasEigenvalue hf hg]
+  simp [hdet]
+
+end EigenvalueLocation
 
 end LinearMap

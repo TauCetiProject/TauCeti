@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Star.TensorProduct
 public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.RingTheory.TensorProduct.Basic
-public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
+public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Star
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors

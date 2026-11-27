@@ -11,6 +11,7 @@ import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Complex.RealChart
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # The Sobolev space `W^{1,2}` of the pair of pants
@@ -56,9 +57,11 @@ of every end
 `TauCeti.Floer.inv_sqrt_cylindricalWeight_le_norm_sub_endCenter`), and on the end `q` it is at most
 `5 |w - c_q|⁻²` (`TauCeti.Floer.norm_sub_endCenter_sq_mul_cylindricalWeight_le`): the distance
 `|w - c_q|` to the center of the end is, up to the constant `2π`, the conformal factor of the end
-chart. Far from the punctures, at `|w| ≥ 4`, translating by `c ∈ [0, 1]` changes the weight by at
-most a factor `8` (`TauCeti.Floer.cylindricalWeight_add_le`), so energies measured in the end chart
-of the output end and in its translate by `c` are comparable.
+chart. In the positive end chart this distance is `|φ'_q(s, t) - c_q| = |b_q| exp (∓2πs)`
+(`TauCeti.Floer.norm_equivRealProdCLM_symm_positiveEndChart_sub_endCenter`). Far from the
+punctures, at `|w| ≥ 4`, translating by `c ∈ [0, 1]` changes the weight by at most a factor `8`
+(`TauCeti.Floer.cylindricalWeight_add_le`), so energies measured in the end chart of the output
+end and in its translate by `c` are comparable.
 
 ## References
 
@@ -95,6 +98,13 @@ theorem cylindricalWeight_apply (z : ℝ × ℝ) :
 /-- The cylindrical weight is nonnegative everywhere. -/
 theorem cylindricalWeight_nonneg (z : ℝ × ℝ) : 0 ≤ cylindricalWeight z :=
   add_nonneg (inv_nonneg.2 (Complex.normSq_nonneg _)) (inv_nonneg.2 (Complex.normSq_nonneg _))
+
+/-- The cylindrical weight is measurable on all of `ℝ × ℝ`, including the punctures, where it takes
+the junk value of the inverse at `0`. -/
+@[fun_prop]
+theorem measurable_cylindricalWeight : Measurable cylindricalWeight := by
+  rw [funext cylindricalWeight_apply]
+  fun_prop
 
 /-- The cylindrical weight is a conformal weight on the pair of pants: it is continuous and
 positive on `S`. -/
@@ -201,12 +211,9 @@ theorem inv_norm_sub_endCenter_sq_le_cylindricalWeight (q : Puncture) (z : ℝ �
 most the distance `|z - c_q|`. -/
 theorem inv_sqrt_cylindricalWeight_le_norm_sub_endCenter (q : Puncture) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
-    (√(cylindricalWeight z))⁻¹ ≤ ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ := by
-  have hd : 0 < ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ :=
-    norm_pos_iff.2 (sub_ne_zero.2 hz)
-  have h := Real.sqrt_le_sqrt (inv_norm_sub_endCenter_sq_le_cylindricalWeight q z)
-  rw [Real.sqrt_inv, Real.sqrt_sq hd.le] at h
-  simpa using inv_anti₀ (inv_pos.2 hd) h
+    (√(cylindricalWeight z))⁻¹ ≤ ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ :=
+  Real.inv_sqrt_le_of_inv_sq_le (norm_pos_iff.2 (sub_ne_zero.2 hz))
+    (inv_norm_sub_endCenter_sq_le_cylindricalWeight q z)
 
 /-- **The cylindrical weight under a horizontal translation.** Far from the punctures, at
 `|w| ≥ 4`, translating by `c ∈ [0, 1]` changes the cylindrical weight `ρ` of the pair of pants by
@@ -265,6 +272,14 @@ theorem norm_sub_endCenter_sq_mul_cylindricalWeight_le (q : Puncture) {z : ℝ �
   rw [det_fderiv_endChart, hφ] at h'
   have hπ : 0 < 4 * π ^ 2 := by positivity
   nlinarith
+
+/-- The distance from a point of the positive end chart of `q` to the center of the end:
+`|φ'_q(s, t) - c_q| = |b_q| exp (∓2πs)`, with the sign of the end. -/
+theorem norm_equivRealProdCLM_symm_positiveEndChart_sub_endCenter (q : Puncture) (ζ : ℝ × ℝ) :
+    ‖Complex.equivRealProdCLM.symm (positiveEndChart q ζ) - q.endCenter‖ =
+      ‖q.endScale‖ * exp (-(2 * π * (q.endSign * ζ.1))) := by
+  rw [positiveEndChart_apply, equivRealProdCLM_symm_endChart, norm_cylindricalEndLift_sub_endCenter]
+  simp
 
 /-- **The `W^{1,2}` density on the ends, from the weighted density.** On the part `±s ≥ 0` of the
 end `q`, the `W^{1,2}` density `‖∂s ζ‖² + ‖∂t ζ‖² + ‖ζ‖²` of `ζ = ξ ∘ φ_q` in the end coordinates

@@ -104,6 +104,12 @@ noncomputable def of [NeZero N] (χ : DirichletCharacter ℂ N) : PrimitiveDiric
 theorem level_of [NeZero N] (χ : DirichletCharacter ℂ N) : ((of χ).level : ℕ) = χ.conductor :=
   (rfl)
 
+/-- Evaluation of the bundled character on a natural number agrees with evaluation of the
+primitive character inducing the input character. -/
+@[simp] theorem character_of_apply_natCast [NeZero N] (χ : DirichletCharacter ℂ N) (n : ℕ) :
+    (of χ).character n = χ.primitiveCharacter (n : ZMod χ.conductor) :=
+  (rfl)
+
 /-- The level of the bundle of a character divides the level at which the character is
 presented. -/
 theorem level_of_dvd [NeZero N] (χ : DirichletCharacter ℂ N) : ((of χ).level : ℕ) ∣ N :=
@@ -153,10 +159,19 @@ theorem level_one : (1 : PrimitiveDirichletCharacter).level = 1 :=
 theorem character_one : (1 : PrimitiveDirichletCharacter).character = 1 :=
   (rfl)
 
+/-- The character of the trivial bundle takes the value `1` at every natural number. -/
+theorem character_one_apply (n : ℕ) : (1 : PrimitiveDirichletCharacter).character n = 1 := by
+  rw [character_one]
+  exact MulChar.one_apply (isUnit_of_subsingleton (n : ZMod 1))
+
 /-- The principal character of every nonzero level has the trivial bundle. -/
 @[simp]
 theorem of_one [NeZero N] : of (1 : DirichletCharacter ℂ N) = 1 :=
   of_eq_iff.2 ⟨one_dvd N, changeLevel_one _⟩
+
+/-- A bundle is trivial exactly when its character is the principal character of its level. -/
+theorem character_eq_one_iff (ψ : PrimitiveDirichletCharacter) : ψ.character = 1 ↔ ψ = 1 :=
+  ⟨fun h ↦ by rw [← of_character ψ, h, of_one], by rintro rfl; rfl⟩
 
 /-- The inverse of a bundle: the inverse character, primitive at the same level. -/
 noncomputable instance : Inv PrimitiveDirichletCharacter :=

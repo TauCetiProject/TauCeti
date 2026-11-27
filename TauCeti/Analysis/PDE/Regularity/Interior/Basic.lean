@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Sobolev.W1p.IntegrationByParts
 public import TauCeti.Analysis.PDE.Ellipticity.Extension
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Analysis.Normed.Operator.Holder
-import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
@@ -97,7 +97,8 @@ to `3 r / 2` has `N ≲ 1 / r` and `L ≲ 1 / r²`
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`: its case of a constant
   principal coefficient.
 * `TauCeti.PDE.exists_value_ae_eq_localizedForcing`: for smooth coefficients, a smooth compactly
-  supported cutoff, `f ∈ H¹(Ω)` and `u ∈ H²(Ω)`, the localized forcing lies in `H¹(Ω)`.
+  supported cutoff, `f ∈ W^{k,2}(Ω)` and `u ∈ W^{k+1,2}(Ω)`, the localized forcing lies in
+  `W^{k,2}(Ω)`.
 * `TauCeti.PDE.norm_divMatrixGradient_le`, `TauCeti.PDE.norm_localizedForcing_le` and
   `TauCeti.PDE.eLpNorm_localizedForcing_le`: quantitative bounds for `div(a ∇ψ)` and the
   localized forcing.
@@ -163,6 +164,16 @@ theorem divMatrixGradient_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
   Finset.sum_eq_zero fun _ _ =>
     lineDeriv_of_notMem_tsupport (fun h => hx (tsupport_matrixBilinearForm_gradient_subset ψ _ h))
       _
+
+/-- `div(a ∇ψ)` vanishes wherever `ψ` is locally constant. -/
+theorem divMatrixGradient_eq_zero_of_eventuallyEq_const {ψ : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} {c : ℝ} (hψ : ψ =ᶠ[𝓝 x] fun _ => c) :
+    divMatrixGradient a ψ x = 0 := by
+  have hgrad : ∀ᶠ y in 𝓝 x, ∇ ψ y = 0 := hψ.eventually_nhds.mono
+    fun y (hy : ψ =ᶠ[𝓝 y] fun _ => c) => hy.gradient_eq.trans (gradient_fun_const y c)
+  refine Finset.sum_eq_zero fun i _ => ?_
+  rw [EventuallyEq.lineDeriv_eq (f := fun _ => (0 : ℝ)) (hgrad.mono fun y hy => by simp [hy])]
+  simp [lineDeriv]
 
 /-- For a Lipschitz field `a` and a smooth compactly supported `ψ`, every conormal
 component `y ↦ ⟨η, a(y) ∇ψ(y)⟩` is Lipschitz. -/
@@ -490,6 +501,15 @@ theorem localizedForcing_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (�
         - W1p.value u x * divMatrixGradient a ψ x := by
   rw [localizedForcing]
 
+/-- Where the cutoff `ψ` is identically one near `x`, the localized forcing is `f` itself at `x`:
+its other terms carry `∇ψ` or `div(a ∇ψ)`, which vanish there. -/
+theorem localizedForcing_eq_of_eventuallyEq_one {ψ : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} (hψ : ψ =ᶠ[𝓝 x] fun _ => (1 : ℝ)) (f : Lp ℝ 2 (mu.restrict Omega))
+    (u : W1p mu Omega 2) : localizedForcing a ψ f u x = f x := by
+  rw [localizedForcing_def, hψ.eq_of_nhds, hψ.gradient_eq.trans (gradient_fun_const x 1),
+    divMatrixGradient_eq_zero_of_eventuallyEq_const hψ]
+  simp
+
 /-- The localized forcing term is square integrable, since each of its terms is an `L²(Ω)`
 function times a bounded one. -/
 theorem memLp_localizedForcing
@@ -539,18 +559,19 @@ theorem memLp_localizedForcing
         exact mul_le_mul_of_nonneg_right (hC x) (norm_nonneg _))
   exact ((h1.sub h2).sub h3).sub h4
 
-/-- **The localized forcing is `H¹` for smooth coefficients.** Let the entries of `a` be smooth,
-let `ψ` be smooth with compact support, let `F ∈ H¹(Ω)` and let `u ∈ H²(Ω)`. Then the forcing
-`ψ F - ⟨∇u, a ∇ψ⟩ - ⟨∇ψ, a ∇u⟩ - u div(a ∇ψ)` of the equation satisfied by `ψ u`, when `u` solves
-`-div(a ∇u) = F`, lies in `H¹(Ω)`. -/
-theorem exists_value_ae_eq_localizedForcing
+/-- **The localized forcing gains the regularity of the data for smooth coefficients.** Let the
+entries of `a` be smooth, let `ψ` be smooth with compact support, let `F ∈ W^{k,2}(Ω)` and let
+`u ∈ W^{k+1,2}(Ω)`. Then the forcing `ψ F - ⟨∇u, a ∇ψ⟩ - ⟨∇ψ, a ∇u⟩ - u div(a ∇ψ)` of the
+equation satisfied by `ψ u`, when `u` solves `-div(a ∇u) = F`, lies in `W^{k,2}(Ω)`: it combines
+`F`, the first derivatives of `u` and `u` itself with smooth compactly supported multipliers. -/
+theorem exists_value_ae_eq_localizedForcing (k : ℕ)
     (hsmooth : ∀ i j, ContDiff ℝ ∞ fun x => a x i j) {ψ : EuclideanSpace ℝ ι → ℝ}
-    (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (F : W1p mu Omega 2)
-    (U : Wkp mu Omega 2 2) :
-    ∃ h : W1p mu Omega 2, W1p.value h =ᵐ[mu.restrict Omega]
-      localizedForcing a ψ (W1p.value F) (Wkp.lowerOrder 1 U) := by
+    (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (F : Wkp mu Omega 2 k)
+    (U : Wkp mu Omega 2 (k + 1)) :
+    ∃ h : Wkp mu Omega 2 k, Wkp.value k h =ᵐ[mu.restrict Omega]
+      localizedForcing a ψ (Wkp.value k F) (Wkp.firstOrder k U) := by
   set b := EuclideanSpace.basisFun ι ℝ
-  set u : W1p mu Omega 2 := Wkp.lowerOrder 1 U
+  set u : W1p mu Omega 2 := Wkp.firstOrder k U
   have hgψ : ContDiff ℝ ∞ (∇ ψ) := hψ.gradient_right (m := ∞) (by simp)
   -- The multipliers of the first derivatives of `u` and of `u` itself.
   set c : ι → EuclideanSpace ℝ ι → ℝ := fun i x =>
@@ -564,25 +585,22 @@ theorem exists_value_ae_eq_localizedForcing
   have hc₀c : HasCompactSupport fun x => -divMatrixGradient a ψ x := hψc.mono' fun x hx => by
     by_contra hxψ
     exact hx (by simp [divMatrixGradient_eq_zero_of_notMem_tsupport hxψ])
-  -- The first derivatives of `u` lie in `H¹(Ω)`, since `u ∈ H²(Ω)`.
-  have hd : ∀ i, ∃ d : W1p mu Omega 2,
-      W1p.value d =ᵐ[mu.restrict Omega] fun x => ⟪W1p.gradient u x, b i⟫_ℝ := fun i => by
-    obtain ⟨d, hd, -⟩ := Wkp.exists_w1p_value_eq_inner_gradient U (b i)
-    exact ⟨d, by rwa [Wkp.iteratedGradient_zero] at hd⟩
-  choose d hdv using hd
-  -- Multiplying by a smooth compactly supported function preserves `H¹(Ω)`.
-  have hmul : ∀ φ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
-      ∀ w : W1p mu Omega 2, ∃ h : W1p mu Omega 2,
-        W1p.value h =ᵐ[mu.restrict Omega] fun x => φ x * W1p.value w x := fun φ hφ hφc w => by
-    obtain ⟨h, hh⟩ := Wkp.exists_value_ae_eq_mul_of_hasCompactSupport 1 hφ hφc w
-    exact ⟨h, by rwa [Wkp.value_one h, Wkp.value_one (p := 2) w] at hh⟩
-  obtain ⟨T, hT⟩ := hmul ψ hψ hψc F
-  choose S hS using fun i => hmul (c i) (hc i) (hcc i) (d i)
-  obtain ⟨Z, hZ⟩ := hmul _ (contDiff_divMatrixGradient (k := ∞)
-    (fun i j => (hsmooth i j).of_le (by simp)) (hψ.of_le (by simp))).neg hc₀c u
+  -- The first derivatives of `u` lie in `W^{k,2}(Ω)`, since `u ∈ W^{k+1,2}(Ω)`.
+  have hdv : ∀ i, Wkp.value k (Wkp.lineDerivL (b i) k U) =ᵐ[mu.restrict Omega]
+      fun x => ⟪W1p.gradient u x, b i⟫_ℝ := fun i => Wkp.value_lineDerivL_ae (b i) k U
+  have hu : Wkp.value k (Wkp.lowerOrder k U) = W1p.value u := by
+    rw [← Wkp.value_succ, Wkp.value_firstOrder]
+  -- Multiplying by a smooth compactly supported function preserves `W^{k,2}(Ω)`.
+  obtain ⟨T, hT⟩ := Wkp.exists_value_ae_eq_mul_of_hasCompactSupport k hψ hψc F
+  choose S hS using fun i =>
+    Wkp.exists_value_ae_eq_mul_of_hasCompactSupport k (hc i) (hcc i) (Wkp.lineDerivL (b i) k U)
+  obtain ⟨Z, hZ⟩ := Wkp.exists_value_ae_eq_mul_of_hasCompactSupport k
+    (contDiff_divMatrixGradient (k := ∞) (fun i j => (hsmooth i j).of_le (by simp))
+      (hψ.of_le (by simp))).neg hc₀c (Wkp.lowerOrder k U)
+  rw [hu] at hZ
   refine ⟨T + ∑ i, S i + Z, ?_⟩
-  filter_upwards [W1p.value_add_ae (T + ∑ i, S i) Z, W1p.value_add_ae T (∑ i, S i),
-    W1p.value_finsetSum_ae Finset.univ S, hT, hZ, ae_all_iff.2 hS, ae_all_iff.2 hdv]
+  filter_upwards [Wkp.value_add_ae k (T + ∑ i, S i) Z, Wkp.value_add_ae k T (∑ i, S i),
+    Wkp.value_finsetSum_ae k Finset.univ S, hT, hZ, ae_all_iff.2 hS, ae_all_iff.2 hdv]
     with x h1 h2 h3 h4 h5 h6 h7
   -- Expand both bilinear terms along the basis in the slot of `∇u`.
   have hB₁ : ∑ i, ⟪W1p.gradient u x, b i⟫_ℝ * matrixBilinearForm (a x) (b i) (∇ ψ x) =
@@ -1067,19 +1085,6 @@ theorem exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
   have hψ_S : ∀ x ∈ S, ψ x = 1 ∧ ∇ ψ x = 0 := fun x hx => by
     have hev : ψ =ᶠ[nhds x] fun _ => (1 : ℝ) := hψ_one x hx
     exact ⟨hev.eq_of_nhds, hev.gradient_eq.trans (gradient_fun_const x 1)⟩
-  -- Near `S` the conormal field of `ψ` vanishes, and with it its divergence.
-  have hdiv_S : ∀ x ∈ S, divMatrixGradient a ψ x = 0 := by
-    intro x hx
-    have hgrad_near : ∀ᶠ y in nhds x, ∇ ψ y = 0 := by
-      filter_upwards [(hψ_one x hx).eventually_nhds] with y hy
-      exact (EventuallyEq.gradient_eq hy).trans (gradient_fun_const y 1)
-    refine Finset.sum_eq_zero fun i _ => ?_
-    have hfield : (fun y => matrixBilinearForm (a y) (EuclideanSpace.basisFun ι ℝ i)
-        (∇ ψ y)) =ᶠ[nhds x] 0 := by
-      filter_upwards [hgrad_near] with y hy
-      simp [hy]
-    rw [hfield.lineDeriv_eq]
-    simp [lineDeriv]
   obtain ⟨w, g, hg, hforce, hval, hgrad⟩ :=
     exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul hM hK hu hψ hψc hts
   refine ⟨w, g, hg, ?_, ?_, ?_⟩
@@ -1089,8 +1094,7 @@ theorem exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
     rw [hx, indicator_of_mem (hSΩ hxS), (hψ_S x hxS).1, (hψ_S x hxS).2, one_smul, smul_zero,
       add_zero]
   · filter_upwards [hforce] with x hx hxS
-    rw [hx, indicator_of_mem (hSΩ hxS)]
-    simp [localizedForcing_def, (hψ_S x hxS).1, (hψ_S x hxS).2, hdiv_S x hxS]
+    rw [hx, indicator_of_mem (hSΩ hxS), localizedForcing_eq_of_eventuallyEq_one (hψ_one x hxS)]
 
 /-! ### Interior `H²` regularity -/
 

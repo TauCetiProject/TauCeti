@@ -9,7 +9,10 @@ public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Ball
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.InnerProductSpace.Gram.Perturbation
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
+import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
@@ -77,6 +80,9 @@ are those of the chart.
   measure `δ dμ`, with the derivative of the radial function `σ ↦ ∫_{B_σ} δ`.
 * `TauCeti.SeibergWitten.measure_closedBall_le_mul_one_add_mul_deriv_add`: the monotonicity
   inequality in a Darboux chart, for a complex structure and a metric that vary with the point.
+* `TauCeti.SeibergWitten.measure_closedBall_le_mul_one_add_mul_deriv_add_of_frame`: the
+  monotonicity inequality in a symplectic frame `S x`, for a two-form `F x = G x ∘ S x`, from
+  bounds on `G`.
 
 ## References
 
@@ -441,5 +447,86 @@ theorem measure_closedBall_le_mul_one_add_mul_deriv_add {J : AlmostComplexStruct
   refine (measure_closedBall_le_mul_deriv_add (μ := μ) h₀ h₂ hF hdF hδ hδ₀
     (fun x hx ↦ (hω x hx).trans (by linarith)) hB' hσ).trans_eq ?_
   ring
+
+/-- **Taubes's monotonicity inequality in a symplectic frame.** Let `J`, `e`, the closed two-form
+field `F` and the density `δ ≥ 0` be as in
+`measure_closedBall_le_mul_one_add_mul_deriv_add`, on the ball `ball c R`,
+with `δ ≤ F(e₀, e₁) + F(e₂, e₃) + K`. On the sphere of a radius `0 < σ < R`, let `F x = G x ∘ S x`
+for a coframe `S x` preserving `ω(u, v) = ⟪J u, v⟫` with `‖S x - 1‖ ≤ L ‖x - c‖`, and let `δ`
+bound the Hermitian part of `G x` for the constant structure `J`,
+`G x (u, J u) ≤ ((1 + κ) δ + K) ‖u‖²`, and its norm, `‖G x‖ ≤ A δ + K`. Then, with `M = L R`,
+
+`ν(B_σ) ≤ (σ / 2) (1 + (1 + A (1 + M)²) (2 + M) L σ) (1 + κ) d/dσ ν(B_σ) + K'' σ⁴`,
+
+`K'' = K (1 + M)² (1 + 2 (2 + M) L R) (|S³| / 2 + |B₁|)`, for the measure `ν = δ dμ`, where
+`|S³|` and `|B₁|` are the measures of the unit sphere and the unit ball. This is
+`measure_closedBall_le_mul_one_add_mul_deriv_add` for the complex structure
+`J' x = (S x)⁻¹ J S x = J S†S` and the metric `g x v = ‖S x v‖²` of the frame. -/
+theorem measure_closedBall_le_mul_one_add_mul_deriv_add_of_frame {J : AlmostComplexStructure E}
+    (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) {G : E → E [⋀^Fin 2]→L[ℝ] ℝ}
+    {S : E → E →L[ℝ] E} {δ : E → ℝ} {R κ K A L σ : ℝ} (hκ : 0 ≤ κ) (hK : 0 ≤ K) (hA : 0 ≤ A)
+    (hL : 0 ≤ L)
+    (hF : ∀ x ∈ ball c R, ContDiffAt ℝ 1 F x) (hdF : ∀ x ∈ ball c R, extDeriv F x = 0)
+    (hδ : ContinuousOn δ (ball c R)) (hδ₀ : ∀ x ∈ ball c R, 0 ≤ δ x)
+    (hω : ∀ x ∈ ball c R, δ x ≤ F x ![e 0, e 1] + F x ![e 2, e 3] + K)
+    (hFG : ∀ x ∈ sphere c σ, F x = (G x).compContinuousLinearMap (S x))
+    (hSω : ∀ x ∈ sphere c σ, ∀ u v, ⟪J (S x u), S x v⟫ = ⟪J u, v⟫)
+    (hS : ∀ x ∈ sphere c σ, ‖S x - 1‖ ≤ L * ‖x - c‖)
+    (hB : ∀ x ∈ sphere c σ, ∀ u, G x ![u, J u] ≤ ((1 + κ) * δ x + K) * ‖u‖ ^ 2)
+    (hGn : ∀ x ∈ sphere c σ, ‖G x‖ ≤ A * δ x + K) (hσ : σ ∈ Ioo 0 R) :
+    ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c σ)).toReal ≤
+      σ / 2 * (1 + (1 + A * (1 + L * R) ^ 2) * ((2 + L * R) * L) * σ) * (1 + κ) *
+        deriv (fun s ↦ ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c s)).toReal) σ +
+        K * (1 + L * R) ^ 2 * (1 + 2 * ((2 + L * R) * L) * R) *
+          (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)) * σ ^ 4 := by
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  have hσR : sphere c σ ⊆ ball c R := sphere_subset_closedBall.trans (closedBall_subset_ball hσ.2)
+  have hM : 0 ≤ L * R := mul_nonneg hL (hσ.1.trans hσ.2).le
+  have hK₁ : K ≤ K * (1 + L * R) ^ 2 := le_mul_of_one_le_right hK (one_le_pow₀ (by linarith))
+  -- On the sphere, `S x` is within `L σ ≤ L R` of the identity.
+  have hεM : ∀ x ∈ sphere c σ, L * ‖x - c‖ ≤ L * R := fun x hx ↦
+    mul_le_mul_of_nonneg_left ((mem_sphere_iff_norm.1 hx).le.trans hσ.2.le) hL
+  have hSn : ∀ x ∈ sphere c σ, ‖S x‖ ≤ 1 + L * ‖x - c‖ := fun x hx ↦
+    (norm_le_norm_add_norm_sub' (S x) 1).trans (add_le_add ContinuousLinearMap.norm_id_le (hS x hx))
+  refine measure_closedBall_le_mul_one_add_mul_deriv_add (μ := μ) h₀ h₂₃
+    (J' := fun x v ↦ J ((S x).adjoint (S x v))) (g := fun x v ↦ ‖S x v‖ ^ 2)
+    (K := K * (1 + L * R) ^ 2) (A := A * (1 + L * R) ^ 2) (L := (2 + L * R) * L) hκ
+    (by positivity) (by positivity) (by positivity) hF hdF hδ hδ₀
+    (fun x hx ↦ (hω x hx).trans (by linarith)) ?_ ?_ ?_ ?_ hσ
+  · -- The frame turns `J' x` into `J`: `S x (J' x v) = J (S x v)`.
+    intro x hx v
+    rw [hFG x hx, ContinuousAlternatingMap.compContinuousLinearMap_apply_vecCons_two,
+      AlmostComplexStructure.apply_apply_adjoint_apply (hSω x hx)]
+    exact (hB x hx (S x v)).trans (by gcongr)
+  · intro x hx v
+    calc ‖S x v‖ ^ 2 ≤ ((1 + L * ‖x - c‖) * ‖v‖) ^ 2 := by
+          gcongr
+          exact (S x).le_of_opNorm_le (hSn x hx) v
+      _ ≤ (1 + (2 + L * R) * L * ‖x - c‖) * ‖v‖ ^ 2 := by
+          rw [mul_pow]
+          gcongr
+          nlinarith [hεM x hx, mul_nonneg hL (norm_nonneg (x - c))]
+  · -- `J' x - J = J (S†S - 1†1)`, a Gram perturbation of size at most `(‖S‖ + 1) ‖S - 1‖`.
+    intro x hx v
+    have hG := (S x).norm_adjoint_comp_self_sub_adjoint_comp_self_le 1
+    rw [ContinuousLinearMap.adjoint_one, ← ContinuousLinearMap.mul_def 1 1, mul_one] at hG
+    rw [← J.apply_sub, AlmostComplexStructure.norm_apply hJ]
+    refine ((S x).adjoint ∘L S x - 1).le_of_opNorm_le (hG.trans ?_) v
+    calc (‖S x‖ + ‖(1 : E →L[ℝ] E)‖) * ‖S x - 1‖ ≤ (2 + L * R) * (L * ‖x - c‖) := by
+          gcongr ?_ * ?_
+          · have h1 : ‖(1 : E →L[ℝ] E)‖ ≤ 1 := ContinuousLinearMap.norm_id_le
+            linarith [hSn x hx, hεM x hx]
+          · exact hS x hx
+      _ = (2 + L * R) * L * ‖x - c‖ := by ring
+  · -- The norm of `F x = G x ∘ S x` is at most `‖G x‖ ‖S x‖²`.
+    intro x hx
+    rw [hFG x hx]
+    calc ‖(G x).compContinuousLinearMap (S x)‖ ≤ ‖G x‖ * ‖S x‖ ^ 2 := by
+          simpa using (G x).norm_compContinuousLinearMap_le (S x)
+      _ ≤ (A * δ x + K) * (1 + L * R) ^ 2 :=
+          mul_le_mul (hGn x hx) (pow_le_pow_left₀ (norm_nonneg _)
+            ((hSn x hx).trans (by linarith [hεM x hx])) 2) (by positivity)
+            (add_nonneg (mul_nonneg hA (hδ₀ x (hσR hx))) hK)
+      _ = A * (1 + L * R) ^ 2 * δ x + K * (1 + L * R) ^ 2 := by ring
 
 end TauCeti.SeibergWitten

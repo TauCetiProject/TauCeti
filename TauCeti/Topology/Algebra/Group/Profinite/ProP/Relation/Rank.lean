@@ -54,7 +54,8 @@ particular when there are finitely many relators, on any generating type `X`
 (`TauCeti.presentedProP.finite_H2_of_finite`).
 
 Since `H²(G, 𝔽_p)` is killed by `p` it is a vector space over `𝔽_p`
-(`TauCeti.ContCohomology.instModuleZModH2`), and its dimension is the relation rank `r(G)` of `G`.
+(`TauCeti.ContCohomology.H2.instModule` at `R = ZMod p`), and its dimension is the relation rank
+`r(G)` of `G`.
 Read as an identity of cardinals, `dim H²(G, 𝔽_p) = d(R ⧸ Rᵖ[R, F])` needs no finiteness
 hypothesis, exactly as Burnside's basis theorem
 (`TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual`) does not: a topologically

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Compactness
+import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Components
 import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
@@ -48,6 +50,8 @@ strict: at `q = p⋆` the inclusion is bounded but not compact.
   compactness of `W^{1,p}(Ω) → Lᵖ(Ω)`.
 * `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv`: the same
   on an affine-isometric copy of `Ω`.
+* `TauCeti.W1p.isCompactOperator_valueL_ball`: the same on a Euclidean ball, in any nontrivial
+  finite-dimensional inner product space.
 * `TauCeti.W1p.exists_eLpNorm_value_sub_setAverage_le_of_isLipschitzDomainWith`: the
   Poincaré–Wirtinger inequality on a bounded connected Lipschitz domain.
 * `TauCeti.W1p.exists_eqOn_setAverage_and_eLpNorm_value_sub_le_of_finite_isLipschitzDomain`:
@@ -189,6 +193,31 @@ theorem W1p.exists_isCompactOperator_of_isLipschitzDomainWith {q : ℝ≥0∞}
   obtain ⟨T, hT⟩ := W1p.exists_lpEmbeddingL_of_eLpNorm_value_le subset_rfl
     (W1p.exists_eLpNorm_value_le_of_subcritical_gain_of_isLipschitzDomainWith hs hps hΩ hb)
   exact hK.of_forall_ae_eq_of_interpolation T hθ0 hθ1 hrel hS₀ fun u => (hS u).trans (hT u).symm
+
+/-- **Rellich–Kondrachov on a Euclidean ball.** On an open ball of a nontrivial finite-dimensional
+real inner product space `F`, the value map `W^{1,p}(B) → Lᵖ(B)` is a compact operator for
+`1 ≤ p ≤ ∞`. -/
+theorem W1p.isCompactOperator_valueL_ball {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [Nontrivial F] [MeasurableSpace F]
+    [BorelSpace F] (c : F) (r : ℝ) :
+    IsCompactOperator (W1p.valueL (mu := volume) (Omega := ⟨Metric.ball c r, Metric.isOpen_ball⟩)
+      (p := p)) := by
+  rcases le_or_gt r 0 with hr | hr
+  · -- The ball is empty, so the target `Lᵖ` space is trivial.
+    have hzero : (volume : Measure F).restrict (Metric.ball c r) = 0 := by
+      rw [Metric.ball_eq_empty.2 hr, Measure.restrict_empty]
+    have : Subsingleton (Lp ℝ p ((volume : Measure F).restrict (Metric.ball c r))) :=
+      ⟨fun x y => Lp.ext (ae_iff.2 (by simp [hzero]))⟩
+    exact ⟨univ, isCompact_univ, by simp⟩
+  -- A linear isometry onto `ℝ × (ℝ ∙ ν)ᗮ` for a unit vector `ν` carries the ball onto a ball,
+  -- which is a bounded Lipschitz domain.
+  obtain ⟨ν, hν⟩ := exists_norm_eq F zero_le_one
+  let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × (ℝ ∙ ν)ᗮ) :=
+    (orthogonalLineIsometry ν hν).symm.trans (LinearIsometryEquiv.withLpProdComm 2 ℝ _ _)
+  exact W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv
+    (Ω := ⟨Metric.ball (e c) r, Metric.isOpen_ball⟩) (isLipschitzDomainWith_ball (e c) hr one_pos)
+    Metric.isBounded_ball e.toAffineIsometryEquiv
+    (e.symm.preimage_ball c r).symm
 
 end TauCeti
 

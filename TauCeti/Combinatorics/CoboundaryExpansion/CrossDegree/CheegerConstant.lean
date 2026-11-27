@@ -82,6 +82,15 @@ theorem costErr_complete {m : ℕ} (α : Cochain (complete V) (Perm (Fin n)))
     and_iff_left_iff_imp]
   exact LT.lt.ne
 
+/-- The cross-degree cost of an `ofLt` cochain on the complete complex reads the defining function
+on the increasing pairs. -/
+theorem costErr_ofLt_complete (f : V → V → Perm (Fin n)) {m : ℕ} (β : V → Perm (Fin m)) :
+    (ofLt (complete V) f).costErr β =
+      ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2), distErr (f p.1 p.2) (β p.1 * (β p.2)⁻¹) := by
+  rw [costErr_complete]
+  exact sum_congr rfl fun p hp => by
+    rw [ofLt_apply_of_lt _ ((adj_complete _ _).mpr (mem_filter.mp hp).2.ne) (mem_filter.mp hp).2]
+
 theorem costErr_nonneg {m : ℕ} (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) :
     0 ≤ α.costErr β :=
   sum_nonneg fun _ _ => distErr_nonneg _ _

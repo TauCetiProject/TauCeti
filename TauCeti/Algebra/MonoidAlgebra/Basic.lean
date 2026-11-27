@@ -23,6 +23,8 @@ none of the further theory built on it.
 
 * `TauCeti.single_sub_one_ne_zero_iff`: over a nontrivial ring, the difference `single g 1 - 1`
   between the basis element at `g` and the unit is nonzero exactly when `g ≠ 1`.
+* `TauCeti.one_add_single_ne_zero`: over a nontrivial semiring, `1 + single g r` is nonzero for
+  `g ≠ 1`.
 * This file tags Mathlib's `MonoidAlgebra.coeff_natCast_mul` and
   `AddMonoidAlgebra.coeff_natCast_mul` as `simp` lemmas: a natural-number constant scales every
   coefficient, `(↑n * x).coeff m = ↑n * x.coeff m`.
@@ -73,6 +75,8 @@ none of the further theory built on it.
   `∑ m, x_m • F m`.
 * `MonoidAlgebra.liftNC_eq_sum`: finite-sum expansion of `MonoidAlgebra.liftNC` over a finite
   indexing type.
+* `MonoidAlgebra.coeff_curryAlgEquiv_symm` and `AddMonoidAlgebra.coeff_curryAlgEquiv_symm`:
+  reading coefficients of an uncurried nested monoid algebra element.
 * `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
   group, as a convolution.
 
@@ -123,6 +127,14 @@ theorem _root_.MonoidAlgebra.exists_eq_smul_iff_dvd_coeff (x : MonoidAlgebra R M
 -- does for polynomials (`Polynomial.coeff_natCast_mul`) and power series
 -- (`PowerSeries.coeff_natCast_mul`).
 attribute [simp] MonoidAlgebra.coeff_natCast_mul AddMonoidAlgebra.coeff_natCast_mul
+
+/-- Over a nontrivial semiring, `1 + single g r` is nonzero for `g ≠ 1`: its coefficient at the
+identity is `1`. -/
+theorem one_add_single_ne_zero [Nontrivial R] [One M] {g : M} (hg : g ≠ 1) (r : R) :
+    (1 + MonoidAlgebra.single g r : MonoidAlgebra R M) ≠ 0 := by
+  intro h
+  have := congrArg (fun f => f.coeff 1) h
+  simp [MonoidAlgebra.one_def, MonoidAlgebra.coeff_single, hg.symm] at this
 
 end Semiring
 
@@ -471,6 +483,19 @@ theorem toRingHom_singleOneAlgHom {R A M : Type*} [CommSemiring R] [Semiring A] 
     ((singleOneAlgHom : A →ₐ[R] MonoidAlgebra A M) : A →+* MonoidAlgebra A M) =
       singleOneRingHom :=
   rfl
+
+/-- The `(m, n)`-coefficient of `(MonoidAlgebra.curryAlgEquiv R).symm x` is
+`(x.coeff m).coeff n`. -/
+@[to_additive (attr := simp) (dont_translate := R A)
+/-- The `(m, n)`-coefficient of `(AddMonoidAlgebra.curryAlgEquiv R).symm x` is
+`(x.coeff m).coeff n`. -/]
+theorem coeff_curryAlgEquiv_symm {R A M N : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [Monoid M] [Monoid N] (x : A[N][M]) (m : M) (n : N) :
+    ((curryAlgEquiv R).symm x).coeff (m, n) = (x.coeff m).coeff n := by
+  -- `(curryAlgEquiv R).symm` acts on the underlying carrier as `curryAddEquiv.symm`.
+  change (curryAddEquiv.symm x).coeff (m, n) = (x.coeff m).coeff n
+  rw [curryAddEquiv]
+  simp [Finsupp.curryAddEquiv_symm_apply, Finsupp.uncurry_apply_pair]
 
 end MonoidAlgebra
 
