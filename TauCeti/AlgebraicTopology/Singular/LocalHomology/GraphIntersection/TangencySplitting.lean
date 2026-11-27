@@ -151,6 +151,12 @@ theorem tangencySplitting_eventuallyEq_prod {z : ℂ} (hz : ‖z‖ < β.rIn) :
   filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hz)] with w hw
   exact tangencySplitting_eq_prod_of_norm_le (mem_ball_zero_iff.1 hw).le
 
+/-- Near a point outside the closed ball of radius `β.rOut` the perturbation is `z ^ k`. -/
+theorem tangencySplitting_eventuallyEq_pow {z : ℂ} (hz : β.rOut < ‖z‖) :
+    tangencySplitting β k ε =ᶠ[𝓝 z] (· ^ k) := by
+  filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
+  exact tangencySplitting_eq_pow_of_rOut_le hw.le
+
 variable (β k) in
 /-- For `ε = 0` the perturbation is `z ^ k` itself. -/
 @[simp]
@@ -325,11 +331,7 @@ theorem eventually_forall_prod_stdComplexSymplecticForm_fderiv_tangencySplitting
   by_cases hz : ‖z‖ ≤ β.rOut
   · simpa only [Φ, ← hpartial] using hε z (mem_closedBall_zero_iff.2 hz)
   · -- Outside the closed ball the perturbation is `z ^ k` near `z`.
-    have hpow : tangencySplitting β k ε =ᶠ[𝓝 z] (· ^ k) := by
-      filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds (not_le.1 hz)]
-        with w hw
-      exact tangencySplitting_eq_pow_of_rOut_le hw.le
-    rw [hpow.fderiv_eq]
+    rw [(tangencySplitting_eventuallyEq_pow (not_le.1 hz)).fderiv_eq]
     exact (differentiableAt_pow k).prod_stdComplexSymplecticForm_fderiv_pos
 
 /-! ### Local intersection numbers -/
@@ -369,9 +371,8 @@ theorem localIndex_eq_one_of_apply_eq_sub_graph_tangencySplitting {F : C(ℂ × 
   -- Near the intersection the perturbation is the polynomial `P`, whose graph is holomorphic.
   let G : C(ℂ × ℂ, ℂ × ℂ) := ⟨fun p ↦ (p.1, 0) - (p.2, P p.2), by fun_prop⟩
   have hFG : F =ᶠ[𝓝 (-(j * ε), -(j * ε))] G := by
-    filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
+    filter_upwards [continuous_snd.continuousAt.eventually
       (tangencySplitting_eventuallyEq_prod (k := k) (ε := ε) hjk)] with p hp
-    rw [Set.mem_preimage, Set.mem_ofPred_eq] at hp
     simp only [hF, G, ContinuousMap.coe_mk, hPdef, hp]
   have hP0 : P (-(j * ε)) = 0 := prod_eq_zero (mem_range.2 hj) (by ring)
   rw [o.localIndex_congr o hn hFG,
