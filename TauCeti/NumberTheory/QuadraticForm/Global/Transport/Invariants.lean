@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Transport
 public import TauCeti.NumberTheory.QuadraticForm.Global.FormInvariants
 public import TauCeti.NumberTheory.QuadraticForm.Global.LocalRealization
 public import TauCeti.NumberTheory.QuadraticForm.Global.Transport.Basic
+import TauCeti.LinearAlgebra.Basis.Semilinear
 
 /-!
 # Transporting systems of local invariants along isomorphisms of number fields
@@ -97,6 +98,7 @@ theorem discr_map : (I.map e).discr = (e : K →+* L).squareClassMap I.discr :=
 
 /-- The Hasse sign of the transported system at a finite place `w` of `L` is the Hasse sign of the
 system at the corresponding finite place of `K`. -/
+@[simp]
 theorem finiteHasse_map (w : HeightOneSpectrum (𝓞 L)) :
     (I.map e).finiteHasse w =
       I.finiteHasse ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).symm w) :=
@@ -113,27 +115,27 @@ theorem finiteHasse_map_equivOfRingEquiv (v : HeightOneSpectrum (𝓞 K)) :
 
 /-- The positive index of the transported system at a real place `w` of `L` is the positive index
 of the system at the corresponding real place of `K`. -/
+@[simp]
 theorem realPositiveIndex_map (w : {w : InfinitePlace L // w.IsReal}) :
     (I.map e).realPositiveIndex w = I.realPositiveIndex ((realEquivOfRingEquiv e).symm w) :=
   (rfl)
 
+-- Not `@[simp]`: `simp` proves it from `realPositiveIndex_map` and the functoriality of
+-- `realEquivOfRingEquiv`.
 /-- The positive index of the transported system at the real place corresponding to `w` is the
 positive index of the system at `w`. -/
-@[simp]
 theorem realPositiveIndex_map_realEquivOfRingEquiv (w : {w : InfinitePlace K // w.IsReal}) :
     (I.map e).realPositiveIndex (realEquivOfRingEquiv e w) = I.realPositiveIndex w := by
   rw [realPositiveIndex_map, Equiv.symm_apply_apply]
 
--- Not `@[simp]`: `simp` proves it from `realNegativeIndex_def` and
--- `realPositiveIndex_map_realEquivOfRingEquiv`.
+-- Not `@[simp]`: `simp` proves it from `realNegativeIndex_def` and `realPositiveIndex_map`.
 /-- The negative index of the transported system at the real place corresponding to `w` is the
 negative index of the system at `w`. -/
 theorem realNegativeIndex_map_realEquivOfRingEquiv (w : {w : InfinitePlace K // w.IsReal}) :
     (I.map e).realNegativeIndex (realEquivOfRingEquiv e w) = I.realNegativeIndex w := by
   simp
 
--- Not `@[simp]`: `simp` proves it from `realHasse_def` and
--- `realPositiveIndex_map_realEquivOfRingEquiv`.
+-- Not `@[simp]`: `simp` proves it from `realHasse_def` and `realPositiveIndex_map`.
 /-- The real Hasse sign of the transported system at the real place corresponding to `w` is the
 real Hasse sign of the system at `w`. -/
 theorem realHasse_map_realEquivOfRingEquiv (w : {w : InfinitePlace K // w.IsReal}) :
@@ -313,9 +315,7 @@ theorem globalInvariants_transport (e : K ≃+* L) (f : V ≃ₛₗ[(e : K →+*
     simpa only [Units.coe_map, MonoidHom.coe_ofClass] using ha'
   refine GlobalFormInvariants.ext ?_ ?_ (funext fun w ↦ ?_) (funext fun w ↦ ?_)
   · -- the rank: a semilinear equivalence over a ring isomorphism preserves the dimension
-    have h := congrArg Cardinal.toNat (lift_rank_eq_of_equiv_equiv (e : K → L) f.toAddEquiv
-      e.bijective fun r m ↦ f.map_smulₛₗ r m)
-    simpa [Module.finrank] using h.symm
+    simpa using f.finrank_eqₛₗ.symm
   · rw [globalInvariants_discr, GlobalFormInvariants.discr_map, globalInvariants_discr,
       discr_formClass_eq_squareClassMap_of_semilinearEquiv hQ _ f (transport_apply_apply f Q)]
   · obtain ⟨v, rfl⟩ :=
