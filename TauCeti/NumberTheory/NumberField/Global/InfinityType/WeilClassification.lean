@@ -182,9 +182,6 @@ private theorem exists_baseChange_or_constant_of_finiteIndex_ker_unitCharacter [
     (¬ IsCMField (maximalRealOrCMSubfield K) ∧ ∃ a : ℤ, ∀ σ, n σ = a) := by
   let ι : AlgebraicClosure ℚ →+* ℂ := (IsAlgClosed.lift (R := ℚ)).toRingHom
   let e : (K →+* AlgebraicClosure ℚ) ≃ (K →+* ℂ) := ι.complexEmbeddingsEquiv
-  have he (ρ : K →+* ℂ) (x : K) : ι (e.symm ρ x) = ρ x := by
-    rw [← RingHom.comp_apply, ← RingHom.complexEmbeddingsEquiv_apply]
-    exact DFunLike.congr_fun (e.apply_symm_apply ρ) x
   obtain ⟨w, hw⟩ := exists_weight_for_complexConjugations n h ι
   let E := maximalRealOrCMSubfield K
   by_cases hE : IsCMField E
@@ -199,11 +196,8 @@ private theorem exists_baseChange_or_constant_of_finiteIndex_ker_unitCharacter [
         (τ := e.symm τ) (τ' := e.symm σ) (fun x hx ↦ by
           apply ι.injective
           have hx' : algebraMap E K (⟨x, hx⟩ : E) = x := rfl
-          calc
-            ι (e.symm τ x) = τ x := he τ x
-            _ = σ x := by simpa only [RingHom.comp_apply, hx'] using
-              RingHom.congr_fun hτ (⟨x, hx⟩ : E)
-            _ = ι (e.symm σ x) := (he σ x).symm)
+          simpa only [e, RingHom.apply_complexEmbeddingsEquiv_symm_apply,
+            RingHom.comp_apply, hx'] using RingHom.congr_fun hτ (⟨x, hx⟩ : E))
       simpa only [Equiv.apply_symm_apply] using hval
     obtain ⟨m, hm⟩ := n.exists_weight_of_finiteIndex_ker_unitCharacter h
     refine ⟨n₀, ?_, m, fun τ ↦ ?_⟩

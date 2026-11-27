@@ -75,4 +75,17 @@ theorem complexEmbeddingsEquiv_apply (ι : AlgebraicClosure ℚ →+* ℂ)
     ι.complexEmbeddingsEquiv σ = ι.comp σ :=
   (rfl)
 
+/-- Postcomposing the inverse image of a complex embedding recovers that embedding. -/
+@[simp]
+theorem comp_complexEmbeddingsEquiv_symm (ι : AlgebraicClosure ℚ →+* ℂ) (ρ : K →+* ℂ) :
+    ι.comp (ι.complexEmbeddingsEquiv.symm ρ) = ρ := by
+  rw [← complexEmbeddingsEquiv_apply, Equiv.apply_symm_apply]
+
+/-- The inverse image of a complex embedding agrees with it after applying `ι`. -/
+@[simp]
+theorem apply_complexEmbeddingsEquiv_symm_apply (ι : AlgebraicClosure ℚ →+* ℂ)
+    (ρ : K →+* ℂ) (x : K) :
+    ι (ι.complexEmbeddingsEquiv.symm ρ x) = ρ x :=
+  RingHom.congr_fun (ι.comp_complexEmbeddingsEquiv_symm ρ) x
+
 end RingHom
