@@ -62,6 +62,8 @@ for the atlases `TauCeti.Vortex.SobolevFieldSpace.vortexModuliChartedSpace`
   diffeomorphism are the map induced by the inclusion.
 * `TauCeti.Vortex.SobolevFieldSpace.toHomeomorph_vortexModuliDiffeomorphOfLE`: the diffeomorphism
   has the homeomorphism as underlying homeomorphism.
+* `TauCeti.Vortex.SobolevFieldSpace.coe_vortexModuliDiffeomorphOfLE_symm`: the inverse of the
+  diffeomorphism is the inverse of the homeomorphism.
 
 ## References
 
@@ -270,6 +272,18 @@ theorem toHomeomorph_vortexModuliDiffeomorphOfLE (hk : 3 < k) (h : k ≤ k') :
   ext q
   rw [Diffeomorph.coe_toHomeomorph, coe_vortexModuliDiffeomorphOfLE,
     coe_vortexModuliHomeomorphOfLE]
+
+/-- The inverse of the diffeomorphism is the inverse of `vortexModuliHomeomorphOfLE`, so it keeps
+the zero divisor (`vortexModuliDivisor_vortexModuliHomeomorphOfLE_symm`). -/
+@[simp]
+theorem coe_vortexModuliDiffeomorphOfLE_symm (hk : 3 < k) (h : k ≤ k') :
+    letI := vortexModuliChartedSpace (f := f) (m := m) (hs := hs') (hk.trans_le h)
+    letI := vortexModuliChartedSpace (f := f) (m := m) (hs := hs) hk
+    ⇑(vortexModuliDiffeomorphOfLE (f := f) (m := m) hs hs' hk h).symm =
+      ⇑(vortexModuliHomeomorphOfLE hs hs' hk h).symm := by
+  let _ := vortexModuliChartedSpace (f := f) (m := m) (hs := hs') (hk.trans_le h)
+  let _ := vortexModuliChartedSpace (f := f) (m := m) (hs := hs) hk
+  rw [← toHomeomorph_vortexModuliDiffeomorphOfLE, Diffeomorph.coe_toHomeomorph_symm]
 
 end Diffeomorph
 
