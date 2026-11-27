@@ -56,7 +56,7 @@ the realization depends Lipschitz continuously on `a` in operator norm
 realization `TauCeti.Vortex.sobolevFirstOrderOperator F Z a` of any operator
 `y ↦ F(∇y₀, ∇y₁, ∇y₂, ∇y₃) + Z(x, y)` of this shape, of which `L_x` is the case
 `F = gaugeFixedFirstOrder`, `Z = gaugeFixedZerothOrder`; the formal adjoint `L_x*` is realized
-the same way in `TauCeti.Analysis.PDE.Vortex.Sobolev.Adjoint`.
+the same way in `TauCeti.Analysis.PDE.Vortex.Sobolev.Adjoint.Basic`.
 
 At a `C¹` vortex `x` with `|α| → 1` and `∇₁ α → 0` at infinity and with an `L∞` class `a`, so
 that its coordinates are bounded by `‖a‖`, the Gårding inequality
