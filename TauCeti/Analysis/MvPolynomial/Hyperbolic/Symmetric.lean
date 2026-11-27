@@ -19,12 +19,13 @@ If `p` is symmetric and `m ≥ 1`, then `Γ` lies in the half-space `σ_1 > 0`
 (`MvPolynomial.IsHyperbolic.sum_pos_of_mem_gardingCone`). The proof averages over permutations:
 for `x ∈ Γ`, the sum `∑_π x ∘ π` over all permutations `π` lies in the convex cone `Γ`, and all
 its coordinates are equal, to a multiple of `σ_1(x)` by a positive constant. If `σ_1(x) ≤ 0`, it
-is `-s • e` with `s ≥ 0`, which is not in `Γ` since `p(-s • e + s • e) = p(0) = 0`.
+is `-s • e` with `s ≥ 0`, which is not in `Γ` since `p(-s • e + s • e) = p(0) = 0`
+(`MvPolynomial.smul_notMem_gardingCone`).
 
 Without symmetry, `Γ` contains the positive orthant `Γ_n` exactly when every coordinate vector
 `eᵢ` lies in the closure of `Γ` (`MvPolynomial.IsHyperbolic.setOf_forall_pos_subset_iff`). This
 holds for every open nonempty convex cone (`ConvexCone.setOf_forall_pos_subset_iff`), and `Γ` is
-one by Gårding's theorem.
+one by Gårding's theorem (`MvPolynomial.IsHyperbolic.gardingConvexCone`).
 
 ## Main results
 
@@ -71,16 +72,14 @@ theorem sum_pos_of_mem_gardingCone (hp : IsHyperbolic p m 1) (hm : 1 ≤ m) (hsy
       (fun _ _ ha hb ↦ hp.add_mem_gardingCone ha hb) Finset.univ_nonempty
       fun π _ ↦ comp_mem_gardingCone (hsymm π) rfl hx
   have hyi (i : σ) : y i = ∑ π : Equiv.Perm σ, x (π i) := by simp [y, Finset.sum_apply]
-  -- A polynomial of positive degree vanishes at `0`, so the cone does not contain `-s • e`.
-  have h0 : eval (0 : σ → ℝ) p = 0 := by
-    simpa [zero_pow (by omega : m ≠ 0)] using hp.isHomogeneous.eval_smul (0 : ℝ) 1
   by_contra! hneg
-  -- `σ` is nonempty: otherwise `p` would be a homogeneous polynomial of positive degree in no
-  -- variables, so `p(e) = p(0) = 0`.
+  -- A polynomial of positive degree vanishes at `0`, so the cone contains no `s • e` with `s ≤ 0`.
+  -- Hence `σ` is nonempty: otherwise `y = 0 • e`.
   obtain ⟨i₀⟩ : Nonempty σ := by
     by_contra hσ
     rw [not_nonempty_iff] at hσ
-    exact hp.eval_pos.ne' (by rwa [Subsingleton.elim (1 : σ → ℝ) 0])
+    exact smul_notMem_gardingCone hp.isHomogeneous (by omega) le_rfl
+      (Subsingleton.elim y ((0 : ℝ) • 1) ▸ hy)
   -- All coordinates of `y` equal `y i₀`, which has the sign of `σ_1(x)`.
   have hyc : y = y i₀ • (1 : σ → ℝ) := by
     ext i
@@ -92,10 +91,7 @@ theorem sum_pos_of_mem_gardingCone (hp : IsHyperbolic p m 1) (hm : 1 ≤ m) (hsy
   have hy₀ : y i₀ ≤ 0 := by
     have hcard : (0 : ℝ) < Fintype.card σ := by exact_mod_cast Fintype.card_pos_iff.2 ⟨i₀⟩
     nlinarith [show (0 : ℝ) < Fintype.card (Equiv.Perm σ) by exact_mod_cast Fintype.card_pos]
-  have := (mem_gardingCone.1 hy) (-y i₀) (neg_nonneg.2 hy₀)
-  nth_rw 1 [hyc] at this
-  rw [← add_smul, add_neg_cancel, zero_smul] at this
-  exact this h0
+  exact smul_notMem_gardingCone hp.isHomogeneous (by omega) hy₀ (hyc ▸ hy)
 
 omit [Fintype σ] in
 /-- **The positive orthant and the Gårding cone.** For `p` hyperbolic in the direction
@@ -104,10 +100,8 @@ every coordinate vector `eᵢ` lies in its closure. -/
 theorem setOf_forall_pos_subset_iff [Finite σ] [DecidableEq σ] (hp : IsHyperbolic p m 1) :
     {x : σ → ℝ | ∀ i, 0 < x i} ⊆ gardingCone p 1 ↔
       ∀ i, (Pi.single i 1 : σ → ℝ) ∈ closure (gardingCone p 1) :=
-  ConvexCone.setOf_forall_pos_subset_iff (K := ⟨gardingCone p 1,
-      fun _ hc _ hx ↦ smul_mem_gardingCone hp.isHomogeneous hx hc,
-      fun _ hx _ hy ↦ hp.add_mem_gardingCone hx hy⟩)
-    (isOpen_gardingCone hp.isHomogeneous hp.eval_pos.ne')
-    ⟨1, self_mem_gardingCone hp.isHomogeneous hp.eval_pos.ne'⟩
+  hp.coe_gardingConvexCone ▸ ConvexCone.setOf_forall_pos_subset_iff
+    (hp.coe_gardingConvexCone ▸ isOpen_gardingCone hp.isHomogeneous hp.eval_pos.ne')
+    (hp.coe_gardingConvexCone ▸ ⟨1, self_mem_gardingCone hp.isHomogeneous hp.eval_pos.ne'⟩)
 
 end MvPolynomial.IsHyperbolic

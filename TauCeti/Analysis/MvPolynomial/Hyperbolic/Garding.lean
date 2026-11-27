@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.Convex.PathConnected
+public import Mathlib.Geometry.Convex.Cone.Basic
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic
 import TauCeti.Analysis.Polynomial.RootLocation
 
@@ -37,6 +38,7 @@ fully nonlinear elliptic equations such as the complex Hessian equations require
 * `MvPolynomial.IsHyperbolic.gardingCone_eq_of_mem`: `Γ(p, b) = Γ(p, a)` for `b ∈ Γ(p, a)`.
 * `MvPolynomial.IsHyperbolic.convex_gardingCone`, `MvPolynomial.IsHyperbolic.add_mem_gardingCone`:
   `Γ` is a convex cone.
+* `MvPolynomial.IsHyperbolic.gardingConvexCone`: `Γ` as a `ConvexCone`.
 * `MvPolynomial.IsHyperbolic.eval_sum_smul_pderiv_pos`: `D_b p > 0` on `Γ` for `b ∈ Γ`, `m ≥ 1`.
 
 ## Implementation notes
@@ -357,6 +359,18 @@ theorem add_mem_gardingCone (hp : IsHyperbolic p m a) {y : σ → ℝ} (hx : x �
       (by norm_num)) two_pos
   rwa [smul_add, smul_smul, smul_smul, show (2 : ℝ) * (1 / 2) = 1 by norm_num, one_smul,
     one_smul] at h
+
+/-- The Gårding cone `Γ(p, a)` of a hyperbolic polynomial, as a convex cone. -/
+@[expose] def gardingConvexCone (hp : IsHyperbolic p m a) : ConvexCone ℝ (σ → ℝ) where
+  carrier := gardingCone p a
+  smul_mem' _ hc _ hx := smul_mem_gardingCone hp.isHomogeneous hx hc
+  add_mem' _ hx _ hy := hp.add_mem_gardingCone hx hy
+
+/-- The underlying set of `IsHyperbolic.gardingConvexCone` is the Gårding cone. -/
+@[simp]
+theorem coe_gardingConvexCone (hp : IsHyperbolic p m a) :
+    (hp.gardingConvexCone : Set (σ → ℝ)) = gardingCone p a :=
+  rfl
 
 /-- **Gårding's theorem, positivity of the derivatives.** For `p` hyperbolic of degree `m ≥ 1` in
 the direction `a` and `b ∈ Γ(p, a)`, the directional derivative `D_b p = ∑ᵢ bᵢ ∂p/∂Xᵢ` is positive

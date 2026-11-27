@@ -56,6 +56,8 @@ logarithmic derivative `q'(t) / q(t) = ∑ⱼ 1 / (t - rⱼ)` is positive.
 
 * `MvPolynomial.isOpen_gardingCone`, `MvPolynomial.starConvex_gardingCone`,
   `MvPolynomial.smul_mem_gardingCone`: `Γ(p, a)` is an open cone, star-convex with respect to `a`.
+* `MvPolynomial.smul_notMem_gardingCone`: for `p` of positive degree, `Γ(p, a)` contains no
+  nonpositive multiple of `a`.
 * `MvPolynomial.comp_mem_gardingCone`: `Γ(p, a)` is invariant under the permutations of the
   variables that fix both `p` and `a`.
 * `MvPolynomial.eval_pos_of_mem_gardingCone`: `p > 0` on `Γ(p, a)`.
@@ -125,6 +127,12 @@ theorem add_smul_mem_gardingCone (hx : x ∈ gardingCone p a) {s : ℝ} (hs : 0 
 theorem smul_mem_gardingCone (hp : p.IsHomogeneous m) (hx : x ∈ gardingCone p a) {s : ℝ}
     (hs : 0 < s) : s • x ∈ gardingCone p a := fun t ht ↦
   (eval_smul_add_smul_ne_zero_iff hp hs.ne' t).2 (hx _ (div_nonneg ht hs.le))
+
+/-- The Gårding cone of a homogeneous polynomial of positive degree contains no nonpositive
+multiple `s • a` of the direction, since `p(s • a + (-s) • a) = p(0) = 0`. -/
+theorem smul_notMem_gardingCone (hp : p.IsHomogeneous m) (hm : m ≠ 0) {s : ℝ} (hs : s ≤ 0) :
+    s • a ∉ gardingCone p a := fun h ↦
+  h (-s) (neg_nonneg.2 hs) (by simpa [zero_pow hm] using hp.eval_smul (0 : ℝ) a)
 
 /-- The Gårding cone of a polynomial invariant under a permutation `e` of the variables, in a
 direction fixed by `e`, is invariant under `e`. -/

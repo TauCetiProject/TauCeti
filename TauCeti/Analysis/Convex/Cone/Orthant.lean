@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Cone.Closure
+public import Mathlib.Analysis.Convex.Cone.Basic
 public import Mathlib.Analysis.Convex.Topology
 
 /-!
@@ -44,11 +44,8 @@ theorem setOf_forall_pos_subset_iff {K : ConvexCone ℝ (ι → ℝ)} (hKo : IsO
     by_cases hj : j = i <;> simp [hj, hε, add_pos_of_nonneg_of_pos]
   · intro h x hx
     -- The closure of `K` is a convex cone containing `0`.
-    have hzero : (0 : ι → ℝ) ∈ K.closure := by
-      obtain ⟨y, hy⟩ := hKn
-      refine mem_closure_of_tendsto (hlim (v := 0) (w := y)) ?_
-      filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
-      simpa using K.smul_mem hε hy
+    have hzero : (0 : ι → ℝ) ∈ K.closure :=
+      Pointed.of_nonempty_of_isClosed (C := K.closure) (by simpa using hKn.closure) isClosed_closure
     -- Every point of the open orthant lies in the closure of `K`, hence in its interior.
     have horth : {x : ι → ℝ | ∀ i, 0 < x i} ⊆ closure K := fun y hy ↦ by
       rw [← Finset.univ_sum_single y]
