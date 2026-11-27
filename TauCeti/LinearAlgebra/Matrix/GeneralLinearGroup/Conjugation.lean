@@ -37,6 +37,8 @@ matrices can be decided on the linear maps, for instance through Jordan-chain ba
   `g⁻¹ *ᵥ (A *ᵥ v) = B *ᵥ (g⁻¹ *ᵥ v)`.
 * `Matrix.GeneralLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: `a ᵥ* g = y` exactly when
   `a = y ᵥ* g⁻¹`.
+* `Matrix.GeneralLinearGroup.map_mulVec`: base change `GLₙ(f)` commutes with the action of
+  `GL n R` on vectors.
 * `Matrix.GeneralLinearGroup.dotProduct_conj_sub_one_mulVec`: conjugation by `g` carries
   `u (h - 1) v` to `(u g) (h - 1) (g⁻¹ v)`.
 * `Matrix.GeneralLinearGroup.scalar_injective`: for nonempty `n`, the scalar embedding
@@ -98,6 +100,13 @@ theorem dotProduct_conj_sub_one_mulVec [Ring R] (g h : GL n R) (u v : n → R) :
   rw [hconj, ← mulVec_mulVec, ← mulVec_mulVec, dotProduct_mulVec]
 
 variable [CommRing R]
+
+/-- Base change along a ring homomorphism `f` commutes with the action of `g ∈ GL n R` on
+vectors: `GLₙ(f) g` applied to `f ∘ v` is `f` applied to `g *ᵥ v`. -/
+theorem map_mulVec {S : Type*} [CommRing S] (f : R →+* S) (g : GL n R) (v : n → R) :
+    (map f g : Matrix n n S) *ᵥ (f ∘ v) = f ∘ ((g : Matrix n n R) *ᵥ v) := by
+  ext i
+  rw [val_map_apply, Function.comp_apply, RingHom.map_mulVec]
 
 /-- Shifting a matrix by a scalar and taking its determinant is invariant under conjugation by an
 element of the general linear group. -/

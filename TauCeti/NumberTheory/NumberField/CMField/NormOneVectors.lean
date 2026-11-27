@@ -154,13 +154,8 @@ theorem mulVec_mem_normOneLatticeVectors_iff (g : GL ι 𝔸ᶠ[E]) (γ : GL ι 
       x ∈ g.normOneLatticeVectors := by
   have hmap : (fun i ↦ algebraMap E 𝔸ᶠ[E] (((γ : Matrix ι ι E) *ᵥ x) i)) =
       (map (algebraMap E 𝔸ᶠ[E]) γ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ
-        (fun i ↦ algebraMap E 𝔸ᶠ[E] (x i)) := by
-    have hcoe : (map (algebraMap E 𝔸ᶠ[E]) γ : Matrix ι ι 𝔸ᶠ[E]) =
-        (γ : Matrix ι ι E).map (algebraMap E 𝔸ᶠ[E]) := by
-      exact Matrix.ext fun j k ↦ GeneralLinearGroup.map_apply (algebraMap E 𝔸ᶠ[E]) j k γ
-    funext i
-    simpa only [hcoe, Function.comp_def] using
-      (algebraMap E 𝔸ᶠ[E]).map_mulVec (γ : Matrix ι ι E) x i
+        (fun i ↦ algebraMap E 𝔸ᶠ[E] (x i)) :=
+    (map_mulVec (algebraMap E 𝔸ᶠ[E]) γ x).symm
   rw [mem_normOneLatticeVectors_iff, mem_normOneLatticeVectors_iff,
     star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup hγ, hmap]
   simp only [_root_.mul_inv_rev, coe_mul, ← mulVec_mulVec, inv_mulVec_mulVec]
