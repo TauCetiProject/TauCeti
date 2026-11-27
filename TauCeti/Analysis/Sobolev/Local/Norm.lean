@@ -32,7 +32,8 @@ norm of a `W^{k,p}_loc` function on relatively compact subsets, the extraction o
 derivative from a finite successor-order norm, the almost-everywhere vanishing of a function of
 zero norm, monotonicity in the set and in the derivative order, invariance under
 almost-everywhere change and linear isometric equivalences of the codomain
-(`LinearIsometryEquiv.eLpNormWkp_comp`), the triangle inequality (also over finite sums) and the
+(`LinearIsometryEquiv.eLpNormWkp_comp`), the triangle inequality (also over finite sums and for
+pairs) and the
 operator-norm bound under a continuous linear map of the codomain. An upper bound of the form
 `a + c ‖f‖_{W^{k+1,p}(U)}` (for finite `c`, with `‖f‖_{W^{k+1,p}(U)}` finite when `c = 0`) may be
 checked through each weak derivative of `f` separately. A chain bound
@@ -457,6 +458,20 @@ theorem eLpNormWkp_clm_comp_le_of_norm_le_one [OpensMeasurableSpace E] [Complete
   A.eLpNormWkp_comp_le.trans (mul_le_of_le_one_left zero_le (by
     rw [← ofReal_norm]
     exact ENNReal.ofReal_le_one.2 hA))
+
+/-- The `W^{k,p}` norm of a pair of functions is at most the sum of the norms of its
+components. -/
+theorem eLpNormWkp_prodMk_le [OpensMeasurableSpace E] [CompleteSpace F] [CompleteSpace G]
+    (hp : 1 ≤ p) {v : E → G} :
+    eLpNormWkp p U k (fun z => (f z, v z)) ≤ eLpNormWkp p U k f + eLpNormWkp p U k v := by
+  have h : (fun z => (f z, v z)) = (fun z => ContinuousLinearMap.inl ℝ F G (f z)) +
+      fun z => ContinuousLinearMap.inr ℝ F G (v z) := by
+    ext1 z
+    simp
+  rw [h]
+  exact (eLpNormWkp_add_le hp).trans (add_le_add
+    (eLpNormWkp_clm_comp_le_of_norm_le_one _ (ContinuousLinearMap.norm_inl_le_one ℝ F G))
+    (eLpNormWkp_clm_comp_le_of_norm_le_one _ (ContinuousLinearMap.norm_inr_le_one ℝ F G)))
 
 /-- Evaluating a field of linear maps at a vector `v` with `‖v‖ ≤ 1` does not increase the
 `W^{k,p}` norm. -/

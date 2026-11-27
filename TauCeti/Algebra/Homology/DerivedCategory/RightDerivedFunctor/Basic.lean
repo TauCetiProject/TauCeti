@@ -26,12 +26,15 @@ Together with the transformation `F.rightDerivedFunctorUnith` induced by the rep
 `K ⟶ I(K)`, it is a right derived functor of `F.mapHomotopyCategory (.up ℤ) ⋙ DerivedCategory.Qh`
 with respect to the quasi-isomorphisms, in the sense of Mathlib's
 `CategoryTheory.Functor.IsRightDerivedFunctor`: a left Kan extension along `DerivedCategory.Qh`.
-It is triangulated, and its value on a K-injective complex `I` is `F(I)`
+It is an absolute right derived functor: for every functor `G`, `RF ⋙ G` is a right derived
+functor of `F.mapHomotopyCategory (.up ℤ) ⋙ DerivedCategory.Qh ⋙ G`
+(`CategoryTheory.Functor.isRightDerivedFunctor_rightDerivedFunctor_comp`). It is triangulated,
+and its value on a K-injective complex `I` is `F(I)`
 (`CategoryTheory.Functor.rightDerivedFunctorObjIso`), naturally in `I`
 (`CategoryTheory.Functor.rightDerivedFunctorObjIso_hom_naturality`). An exact functor is its own
 right derived functor: `F.rightDerivedFunctor ≅ F.mapDerivedCategory`
-(`CategoryTheory.Functor.rightDerivedFunctorIsoMapDerivedCategory`); in particular the right
-derived functor of the identity is the identity (`CategoryTheory.Functor.rightDerivedFunctorIdIso`).
+(`CategoryTheory.Functor.rightDerivedFunctorIsoMapDerivedCategory`); in particular the right derived
+functor of the identity is the identity (`CategoryTheory.Functor.rightDerivedFunctorIdIso`).
 Isomorphic functors have isomorphic right derived functors
 (`CategoryTheory.NatIso.rightDerivedFunctor`).
 
@@ -85,6 +88,25 @@ lemma rightDerivedFunctorUnith_app (K : HomotopyCategory C (.up ℤ)) :
 instance : F.rightDerivedFunctor.IsRightDerivedFunctor F.rightDerivedFunctorUnith
     (HomotopyCategory.quasiIso C (.up ℤ)) :=
   (kInjectiveReplacementAdjunction C).isRightDerivedFunctor_whiskerRightUnit _ _
+
+/-- The right derived functor is an absolute right derived functor: for every functor
+`G : D(D) ⥤ H`, the composite `RF ⋙ G` is a right derived functor of
+`F.mapHomotopyCategory (.up ℤ) ⋙ Qh ⋙ G` with respect to the quasi-isomorphisms, with the
+transformation induced by `F.rightDerivedFunctorUnith`. Natural transformations out of `RF ⋙ G`
+are therefore determined by their values on the images of all complexes. -/
+instance isRightDerivedFunctor_rightDerivedFunctor_comp {H : Type*} [Category* H]
+    (G : DerivedCategory D ⥤ H) :
+    (F.rightDerivedFunctor ⋙ G).IsRightDerivedFunctor
+      (whiskerRight F.rightDerivedFunctorUnith G ≫ (associator _ _ _).hom)
+      (HomotopyCategory.quasiIso C (.up ℤ)) := by
+  have h := (kInjectiveReplacementAdjunction C).isRightDerivedFunctor_whiskerRightUnit
+    ((F.mapHomotopyCategory (.up ℤ) ⋙ Qh) ⋙ G) (HomotopyCategory.quasiIso C (.up ℤ))
+  have e : whiskerRight F.rightDerivedFunctorUnith G ≫ (associator _ _ _).hom =
+      (kInjectiveReplacementAdjunction C).whiskerRightUnit _ := by
+    ext K
+    simp [rightDerivedFunctorUnith, rightDerivedFunctor]
+  rw [e]
+  exact h
 
 noncomputable instance : F.rightDerivedFunctor.CommShift ℤ :=
   inferInstanceAs ((kInjectiveReplacement C ⋙ F.mapHomotopyCategory (.up ℤ) ⋙ Qh).CommShift ℤ)

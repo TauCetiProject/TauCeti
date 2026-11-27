@@ -9,8 +9,8 @@ public import TauCeti.Analysis.Sobolev.Local.Compactness.Uniform
 public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
+import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
 import TauCeti.Analysis.Sobolev.WeakDeriv.Chain
-import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 import TauCeti.Topology.Algebra.IsUniformGroup.Basic
 
@@ -40,7 +40,8 @@ The proof identifies the iterated weak gradients of `u m` with the classical ite
 `f m` almost everywhere, through uniqueness of weak derivatives
 (`TauCeti.ae_eq_iteratedGradientChain_of_contDiffOn`). The classical iterated gradients have the
 same pointwise difference norms as the multilinear derivatives
-(`TauCeti.norm_iteratedGradientChain_sub`), so the derivatives `iteratedFDeriv ℝ i (f m)` are
+(`TauCeti.norm_iteratedGradientChain_sub_iteratedGradientChain_eq_norm_iteratedFDeriv_sub`), so
+the derivatives `iteratedFDeriv ℝ i (f m)` are
 uniformly Cauchy on compact subsets of `Ω` for every `i ≤ k`. Their locally uniform limits are the
 derivatives of one `Cᵏ` map by `IsOpen.exists_contDiffOn_tendstoLocallyUniformlyOn_iteratedFDeriv`,
 and that map is the precise representative of `v` on `Ω`.
@@ -131,10 +132,9 @@ private theorem uniformCauchySeqOn_iteratedFDeriv_of_tendsto_wkp [Fact (1 ≤ p)
   intro ε hε
   obtain ⟨N, hN⟩ := hC ε hε
   refine ⟨N, fun m hm n hn x hx => ?_⟩
-  have hxΩ := Ω.isOpen.mem_nhds (hKΩ hx)
-  rw [dist_eq_norm, ← norm_iteratedGradientChain_sub j
-    (((hf m).contDiffAt hxΩ).of_le (by exact_mod_cast hi))
-    (((hf n).contDiffAt hxΩ).of_le (by exact_mod_cast hi)), ← dist_eq_norm]
+  rw [dist_eq_norm,
+    ← norm_iteratedGradientChain_sub_iteratedGradientChain_eq_norm_iteratedFDeriv_sub j,
+    ← dist_eq_norm]
   exact hN m hm n hn x hx
 
 /-- The combined statement behind `TauCeti.contDiffOn_preciseRepresentative_of_tendsto_wkp` and

@@ -200,6 +200,15 @@ theorem MemLittleHolder.sub (hf : MemLittleHolder α f) (hg : MemLittleHolder α
     MemLittleHolder α (f - g) := by
   simpa only [sub_eq_add_neg] using hf.add hg.neg
 
+/-- A map has little `α`-Hölder zeroth iterated derivative if and only if it is little
+`α`-Hölder. -/
+theorem memLittleHolder_iteratedFDeriv_zero_iff {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {α : ℝ≥0} {f : E → F} :
+    MemLittleHolder α (iteratedFDeriv 𝕜 0 f) ↔ MemLittleHolder α f := by
+  simp only [memLittleHolder_iff, iteratedFDeriv_zero_eq_comp, Function.comp_apply,
+    LinearIsometryEquiv.dist_map]
+
 end Predicate
 
 /-! ### The cusp -/

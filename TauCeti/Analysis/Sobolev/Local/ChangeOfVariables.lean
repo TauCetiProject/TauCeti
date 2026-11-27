@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.Local.Haar
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
+public import TauCeti.MeasureTheory.Function.MemLpLoc.ChangeOfVariables
 
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
@@ -16,16 +17,15 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
 /-!
 # Change of variables in local Sobolev classes on planar sets
 
-Let `Φ` be a `C¹` map on an open set `Ω ⊆ ℂ`, injective with invertible derivative on a set
-`U ⊆ Ω` and mapping `U` into `V`. Precomposition with `Φ` maps `TauCeti.MemWkpLoc p V k` into
-`TauCeti.MemWkpLoc p U k` for `k ≤ 1`, for arbitrary sets `U` and `V` reaching their boundary;
-by the inverse function theorem `Φ` maps `interior U` into `interior V`
-(`Set.MapsTo.interior_of_contDiffOn`). On each compact subset of `U` the derivative of `Φ` is
-bounded and its Jacobian is bounded below
-(`MeasureTheory.exists_det_bounds_of_isCompact`), which controls the local `Lᵖ` norms of `u ∘ Φ`
-and of its weak derivative `Du(Φ z) ∘ DΦ(z)` (`MeasureTheory.MemLp.comp_restrict_of_isCompact`,
-`MeasureTheory.MemLp.comp_fderiv_restrict_of_isCompact`); the weak derivative itself comes from
-the chain rule `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo` on `interior U`.
+Let `Φ` be a `C¹` map on an open set `Ω ⊆ ℂ`, with invertible derivative on a set `U ⊆ Ω` and
+mapping `U` into `V`; `Φ` need not be injective. Precomposition with `Φ` maps
+`TauCeti.MemWkpLoc p V k` into `TauCeti.MemWkpLoc p U k` for `k ≤ 1`, for arbitrary sets `U` and
+`V` reaching their boundary; by the inverse function theorem `Φ` maps `interior U` into `interior V`
+(`Set.MapsTo.interior_of_contDiffOn`). The local `Lᵖ` conditions on `u ∘ Φ` and on its weak
+derivative `Du(Φ z) ∘ DΦ(z)` hold on every finite-dimensional source
+(`TauCeti.MemLpLoc.comp_contDiffOn_diffeo`, `TauCeti.MemLpLoc.comp_fderiv_contDiffOn_diffeo`),
+and the weak derivative itself comes from the chain rule
+`TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo` on `interior U`.
 
 In particular a `C¹` diffeomorphism of half-discs preserving the real axis and the upper
 half-plane preserves the half-disc classes. General real-affine invariance at every order is
@@ -43,8 +43,6 @@ coefficients and are not treated here.
 
 ## Main declarations
 
-* `TauCeti.MemLpLoc.comp_contDiffOn_diffeo`, `TauCeti.MemLpLoc.comp_fderiv_contDiffOn_diffeo`:
-  invariance of local `Lᵖ` membership.
 * `TauCeti.MemWkpLoc.comp_contDiffOn_diffeo`: invariance of the local classes of order at most one.
 * `TauCeti.MemWkpLoc.comp_contDiffOn_diffeo_halfPlane`: the half-disc version.
 
@@ -70,35 +68,13 @@ section Planar
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {p : ENNReal} {Φ : ℂ → ℂ} {Ω U V : Set ℂ} {k : ℕ}
 
-omit [NormedSpace ℝ F] in
-/-- Precomposition with a map that is `C¹` on an open set containing `U`, injective with invertible
-derivative on `U` and mapping `U` into `V`, preserves local `Lᵖ` membership. -/
-theorem MemLpLoc.comp_contDiffOn_diffeo {u : ℂ → F} (hu : MemLpLoc p V u) (hΩ : IsOpen Ω)
-    (hΦ : ContDiffOn ℝ 1 Φ Ω) (hinj : InjOn Φ U) (hdet : ∀ z ∈ U, (fderiv ℝ Φ z).det ≠ 0)
-    (hUΩ : U ⊆ Ω) (hmaps : MapsTo Φ U V) : MemLpLoc p U (fun z => u (Φ z)) :=
-  memLpLoc_iff.2 fun _ hKU hK =>
-    (memLpLoc_iff.1 hu _ ((image_mono hKU).trans hmaps.image_subset) (hK.image_of_continuousOn
-      (hΦ.continuousOn.mono (hKU.trans hUΩ)))).comp_restrict_of_isCompact hΩ hΦ (hinj.mono hKU)
-        (fun z hz => hdet z (hKU hz)) hK (hKU.trans hUΩ)
-
-/-- The transformed derivative `z ↦ D(Φ z) ∘ DΦ(z)` of a locally `Lᵖ` field `D` is locally `Lᵖ`,
-under the hypotheses of `TauCeti.MemLpLoc.comp_contDiffOn_diffeo`. -/
-theorem MemLpLoc.comp_fderiv_contDiffOn_diffeo {D : ℂ → ℂ →L[ℝ] F} (hD : MemLpLoc p V D)
-    (hΩ : IsOpen Ω) (hΦ : ContDiffOn ℝ 1 Φ Ω) (hinj : InjOn Φ U)
-    (hdet : ∀ z ∈ U, (fderiv ℝ Φ z).det ≠ 0) (hUΩ : U ⊆ Ω) (hmaps : MapsTo Φ U V) :
-    MemLpLoc p U (fun z => (D (Φ z)).comp (fderiv ℝ Φ z)) :=
-  memLpLoc_iff.2 fun _ hKU hK =>
-    (memLpLoc_iff.1 hD _ ((image_mono hKU).trans hmaps.image_subset) (hK.image_of_continuousOn
-      (hΦ.continuousOn.mono (hKU.trans hUΩ)))).comp_fderiv_restrict_of_isCompact hΩ hΦ
-        (hinj.mono hKU) (fun z hz => hdet z (hKU hz)) hK (hKU.trans hUΩ)
-
 /-- **Change of variables in local Sobolev classes of order at most one.** Let `Φ` be `C¹` on an
-open set `Ω ⊇ U`, injective with invertible derivative on `U` and mapping `U` into `V`. Then
-precomposition with `Φ` maps `MemWkpLoc p V k` into `MemWkpLoc p U k` for `k ≤ 1`. The sets `U`
-and `V` may reach their boundaries, as half-discs do. On `interior U` the weak derivative of
-`u ∘ Φ` is given by `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`. -/
+open set `Ω ⊇ U`, with invertible derivative on `U` and mapping `U` into `V`. Then precomposition
+with `Φ` maps `MemWkpLoc p V k` into `MemWkpLoc p U k` for `k ≤ 1`. The map `Φ` need not be
+injective, and the sets `U` and `V` may reach their boundaries, as half-discs do. On `interior U`
+the weak derivative of `u ∘ Φ` is given by `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`. -/
 theorem MemWkpLoc.comp_contDiffOn_diffeo {u : ℂ → F} (hk : k ≤ 1) (hu : MemWkpLoc p V k u)
-    (hΩ : IsOpen Ω) (hΦ : ContDiffOn ℝ 1 Φ Ω) (hinj : InjOn Φ U)
+    (hΩ : IsOpen Ω) (hΦ : ContDiffOn ℝ 1 Φ Ω)
     (hdet : ∀ z ∈ U, (fderiv ℝ Φ z).det ≠ 0) (hUΩ : U ⊆ Ω) (hmaps : MapsTo Φ U V) :
     MemWkpLoc p U k (fun z => u (Φ z)) := by
   have hint : MapsTo Φ (interior U) (interior V) :=
@@ -107,36 +83,35 @@ theorem MemWkpLoc.comp_contDiffOn_diffeo {u : ℂ → F} (hk : k ≤ 1) (hu : Me
         ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero _ _⟩
   rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hk with rfl | rfl
   · exact memWkpLoc_zero_iff.2
-      (MemLpLoc.comp_contDiffOn_diffeo (memWkpLoc_zero_iff.1 hu) hΩ hΦ hinj hdet hUΩ hmaps)
+      (MemLpLoc.comp_contDiffOn_diffeo (memWkpLoc_zero_iff.1 hu) hΩ hΦ hdet hUΩ hmaps)
   · obtain ⟨hLp, D, hD, hD0⟩ := memWkpLoc_succ_iff.1 hu
-    refine memWkpLoc_succ_iff.2 ⟨hLp.comp_contDiffOn_diffeo hΩ hΦ hinj hdet hUΩ hmaps, _, ?_,
+    refine memWkpLoc_succ_iff.2 ⟨hLp.comp_contDiffOn_diffeo hΩ hΦ hdet hUΩ hmaps, _, ?_,
       memWkpLoc_zero_iff.2 (MemLpLoc.comp_fderiv_contDiffOn_diffeo (memWkpLoc_zero_iff.1 hD0)
-        hΩ hΦ hinj hdet hUΩ hmaps)⟩
+        hΩ hΦ hdet hUΩ hmaps)⟩
     exact hD.comp_contDiffOn_diffeo (hΦ.mono (interior_subset.trans hUΩ))
-      (hinj.mono interior_subset) (fun z hz => hdet z (interior_subset hz)) (by simpa using hint)
+      (fun z hz => hdet z (interior_subset hz)) (by simpa using hint)
 
-/-- **Change of variables between open planar domains.** For open `U` and `V`, a `C¹` map
-injective with invertible derivative on `U` and mapping `U` into `V` preserves the local classes
-of order at most one. -/
+/-- **Change of variables between open planar domains.** For open `U` and `V`, a `C¹` map with
+invertible derivative on `U` and mapping `U` into `V` preserves the local classes of order at most
+one. -/
 theorem MemWkpLoc.comp_contDiffOn_diffeo_of_isOpen {U V : Opens ℂ} {u : ℂ → F} (hk : k ≤ 1)
-    (hu : MemWkpLoc p V k u) (hΦ : ContDiffOn ℝ 1 Φ U) (hinj : InjOn Φ U)
+    (hu : MemWkpLoc p V k u) (hΦ : ContDiffOn ℝ 1 Φ U)
     (hdet : ∀ z ∈ (U : Set ℂ), (fderiv ℝ Φ z).det ≠ 0) (hmaps : MapsTo Φ U V) :
     MemWkpLoc p U k (fun z => u (Φ z)) :=
-  hu.comp_contDiffOn_diffeo hk U.isOpen hΦ hinj hdet subset_rfl hmaps
+  hu.comp_contDiffOn_diffeo hk U.isOpen hΦ hdet subset_rfl hmaps
 
-/-- **Change of variables on half-discs.** Let `Φ` be `C¹` on an open set `U'`, injective with
-invertible derivative on the closed upper part `U' ∩ {0 ≤ im}`, mapping it into `V'`, mapping the
-real axis into itself and the upper half-plane into the closed upper half-plane. Then
+/-- **Change of variables on half-discs.** Let `Φ` be `C¹` on an open set `U'`, with invertible
+derivative on the closed upper part `U' ∩ {0 ≤ im}`, mapping it into `V'`, mapping the real axis
+into itself and the upper half-plane into the closed upper half-plane. Then
 precomposition with `Φ` maps the half-disc class `MemWkpLoc p (V' ∩ {0 ≤ im}) k` into
 `MemWkpLoc p (U' ∩ {0 ≤ im}) k` for `k ≤ 1`. -/
 theorem MemWkpLoc.comp_contDiffOn_diffeo_halfPlane {U' V' : Set ℂ} {u : ℂ → F} (hk : k ≤ 1)
     (hu : MemWkpLoc p (V' ∩ {z | 0 ≤ z.im}) k u) (hU' : IsOpen U') (hΦ : ContDiffOn ℝ 1 Φ U')
-    (hinj : InjOn Φ (U' ∩ {z | 0 ≤ z.im}))
     (hdet : ∀ z ∈ U' ∩ {z | 0 ≤ z.im}, (fderiv ℝ Φ z).det ≠ 0)
     (hmaps : MapsTo Φ (U' ∩ {z | 0 ≤ z.im}) V') (hreal : ∀ z ∈ U', z.im = 0 → (Φ z).im = 0)
     (hupper : ∀ z ∈ U', 0 < z.im → 0 ≤ (Φ z).im) :
     MemWkpLoc p (U' ∩ {z | 0 ≤ z.im}) k (fun z => u (Φ z)) := by
-  refine hu.comp_contDiffOn_diffeo hk hU' hΦ hinj hdet inter_subset_left fun z hz => ?_
+  refine hu.comp_contDiffOn_diffeo hk hU' hΦ hdet inter_subset_left fun z hz => ?_
   refine ⟨hmaps hz, ?_⟩
   rcases (show 0 ≤ z.im from hz.2).lt_or_eq with h | h
   · exact hupper z hz.1 h

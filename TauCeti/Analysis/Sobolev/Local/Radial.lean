@@ -67,7 +67,10 @@ theorem memWkpLoc_one_normalize (hd : 1 < Module.finrank ℝ E) (hp : p < Module
     · simp
     · rw [NormedSpace.norm_normalize hx]
   · rw [hfun]
-    exact hasWeakFDerivOn_norm_rpow_neg_one_smul_self hd (Opens.interior U)
+    have hd' : -max 1 (Module.finrank ℝ E : ℝ) < -1 :=
+      neg_lt_neg ((by exact_mod_cast hd : (1 : ℝ) < Module.finrank ℝ E).trans_le
+        (le_max_right _ _))
+    exact hasWeakFDerivOn_norm_rpow_smul_self hd' (Opens.interior U)
   · have hker : MemLp (fun x : E => ‖x‖⁻¹) p (volume.restrict K) :=
       hK.isBounded.memLp_norm_inv_restrict hp
     refine (hker.const_mul (1 + |(-1 : ℝ)|)).of_le

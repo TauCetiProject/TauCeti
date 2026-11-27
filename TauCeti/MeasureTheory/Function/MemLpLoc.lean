@@ -16,6 +16,7 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
@@ -561,10 +562,7 @@ theorem memLpLoc_iff_locally :
     MemLpLoc p U f μ ↔ ∀ x ∈ U, ∃ V ∈ 𝓝[U] x, MemLpLoc p V f μ := by
   refine ⟨fun hf _ _ => ⟨U, self_mem_nhdsWithin, hf⟩,
     fun h => memLpLoc_iff.2 fun K hKU hK => ?_⟩
-  refine hK.induction_on (p := fun s => MemLp f p (μ.restrict s)) (by simp)
-    (fun s t hst ht => ht.mono_measure (Measure.restrict_mono hst le_rfl))
-    (fun s t hs ht => (hs.add_measure ht).mono_measure (Measure.restrict_union_le s t))
-    fun x hx => ?_
+  refine hK.memLp_restrict_of_forall_nhdsWithin fun x hx => ?_
   obtain ⟨V, hV, hfV⟩ := h x (hKU hx)
   obtain ⟨O, hO, hOV⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hV
   obtain ⟨C, hC, hCc, hCO⟩ := exists_mem_nhds_isClosed_subset hO

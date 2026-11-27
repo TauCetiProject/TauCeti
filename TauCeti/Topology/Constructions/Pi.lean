@@ -32,6 +32,9 @@ product, such as the ordered triples of distinct points of the Riemann sphere.
 
 Repeating the first entry of a finite tuple, `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, is an embedding.
 
+Density in a product only has to be checked on finitely many coordinates at a time, which is how
+approximation theorems at finitely many places give density in a product of completions.
+
 ## Main results
 
 * `TauCeti.isOpen_setOf_forall_abs_lt_one`: the finite-dimensional open unit cube is open.
@@ -43,6 +46,8 @@ Repeating the first entry of a finite tuple, `(q₀, …, qₙ) ↦ (q₀, q₀,
 * `TauCeti.continuous_extend_subtypeVal`: extending functions on a subset along `Subtype.val`,
   with a fixed fallback, is continuous.
 * `TauCeti.isEmbedding_cons_apply_zero`: repeating the first entry of a tuple is an embedding.
+* `TauCeti.denseRange_pi_subtype_of_forall_finset`: a map into a product over a set `T` has dense
+  range if it hits finitely many nonempty open sets at finitely many coordinates in `T`.
 * `Finset.continuous_extendByZero₂`: extension by zero of dependent functions on a finite set
   `s` to a finite set `t` is continuous.
 -/
@@ -168,6 +173,28 @@ theorem not_discreteTopology_pi {ι : Type*} {Y : ι → Type*} [∀ i, Topologi
   have := congrFun (hsub hmem) j
   simp only [Function.update_self] at this
   exact hxy j this.symm
+
+/-- A map into the product of spaces `Y i` over the points of a set `T` has dense range if, for
+every finite subset `J` of `T` and all nonempty open sets `u i ⊆ Y i` for `i ∈ J`, some value of
+the map lies in `u i` at every coordinate `i ∈ J`. The sets `u i` for `i ∉ J` are unconstrained. -/
+theorem denseRange_pi_subtype_of_forall_finset {ι α : Type*} {Y : ι → Type*}
+    [∀ i, TopologicalSpace (Y i)] {T : Set ι} {f : α → ∀ i : T, Y i}
+    (h : ∀ (J : Finset ι), (J : Set ι) ⊆ T → ∀ u : ∀ i, Set (Y i),
+      (∀ i ∈ J, IsOpen (u i) ∧ (u i).Nonempty) → ∃ x, ∀ i : T, i.val ∈ J → f x i ∈ u i) :
+    DenseRange f := by
+  classical
+  rw [DenseRange, dense_iff_inter_open]
+  rintro U hU ⟨g, hg⟩
+  -- `U` contains a basic open set, a product of opens `u i` over a finite set `I ⊆ T`.
+  obtain ⟨I, u, hu, hIU⟩ := isOpen_pi_iff.1 hU g hg
+  have hI (i : ι) : i ∈ I.map (Embedding.subtype (· ∈ T)) ↔ ∃ h : i ∈ T, ⟨i, h⟩ ∈ I := by simp
+  obtain ⟨x, hx⟩ := h (I.map (Embedding.subtype (· ∈ T))) (fun i hi ↦ ((hI i).1 hi).1)
+    (fun i ↦ if h : i ∈ T then u ⟨i, h⟩ else univ) fun i hi ↦ by
+      obtain ⟨hiT, hiI⟩ := (hI i).1 hi
+      simp only [hiT, ↓reduceDIte]
+      exact ⟨(hu _ hiI).1, _, (hu _ hiI).2⟩
+  refine ⟨f x, hIU fun i hi ↦ ?_, x, rfl⟩
+  simpa only [i.property, ↓reduceDIte] using hx i ((hI i).2 ⟨i.property, hi⟩)
 
 end TauCeti
 

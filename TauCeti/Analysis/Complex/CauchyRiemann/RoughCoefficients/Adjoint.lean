@@ -404,14 +404,14 @@ theorem IsSobolevCRCoefficients.forall_integral_inner_eq_iff_isWeakCRSolution_cr
   constructor
   · intro h ψ
     refine ⟨(hc.crReflectedAdjoint hρ).integrable_inner_crFormalAdjoint hpq hηρ ψ, ?_⟩
-    have hψ : (ψ : ℂ → V) = fun z => (negConj.transportTestFunction hmaps ψ : ℂ → V) (-conj z) :=
+    have hψ : (ψ : ℂ → V) = fun z => (negConj.transportTestFunction ℝ hmaps ψ : ℂ → V) (-conj z) :=
       funext fun z => by simp [negConj_symm_apply]
     rw [hψ, integral_inner_crFormalAdjoint_crReflectedAdjoint, hrhs]
     exact h _
   · intro h φ
-    have hψ : (negConj.symm.transportTestFunction hmaps' φ : ℂ → V) = fun z => φ (-conj z) :=
+    have hψ : (negConj.symm.transportTestFunction ℝ hmaps' φ : ℂ → V) = fun z => φ (-conj z) :=
       funext fun z => by simp [negConj_apply]
-    have h' := (h (negConj.symm.transportTestFunction hmaps' φ)).2
+    have h' := (h (negConj.symm.transportTestFunction ℝ hmaps' φ)).2
     rwa [hψ, integral_inner_crFormalAdjoint_crReflectedAdjoint, hrhs] at h'
 
 /-- **The annihilator of the range.** Under the hypotheses of

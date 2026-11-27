@@ -44,6 +44,9 @@ splitting of a map `ξ` of period one in `t` into its slice average and the rest
   any map). So on the mean-zero part,
   `D (ξ - ξbar) = D ξ - (ξbar' - J dX_H(γ) ξbar)`
   (`TauCeti.SymplecticForm.floerLinearization_sub_intervalIntegral`).
+
+  These two statements hold more generally for Hamiltonians `H_s` depending on `s`, as for
+  continuation data `K = H_s dt`, with `dX_{H_s}(γ(s))` in place of `dX_H(γ(s))`.
 * **The kernel.** Let `H` be `C³` with `‖dX_H‖ ≤ a < 2π` and `‖d²X_H‖ ≤ c`, and let `γ` be `C¹`
   with `‖γ'‖ ≤ M`, where `c M < 2 (2π - a)²`. Let `ξ` be a `C²` map of period one in `t` whose
   mean-zero part `ξ - ξbar` is bounded; `ξ` itself may grow as `s → ±∞`, and a bound on `∂t ξ` or
@@ -90,27 +93,28 @@ namespace TauCeti.SymplecticForm
 section ZeroMode
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ}
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : ℝ → V → ℝ}
 
 /-- **The zero Fourier mode of the linearized operator is the Morse operator.** Along a
-time-independent cylinder `u(s, t) = γ(s)`, the slice average of the linearized Floer operator
-`D ξ = ∂s ξ + J (∂t ξ - dX_H(γ(s)) ξ)` applied to a `C¹` map `ξ` of period one in `t` is the
-operator `ζ ↦ ζ' - J dX_H(γ) ζ` applied to the slice average `ξbar(s) = ∫₀¹ ξ(s, t) dt`. -/
+time-independent cylinder `u(s, t) = γ(s)` and for Hamiltonians `H_s` depending on `s` alone, the
+slice average of the linearized Floer operator `D ξ = ∂s ξ + J (∂t ξ - dX_{H_s}(γ(s)) ξ)` applied
+to a `C¹` map `ξ` of period one in `t` is the operator `ζ ↦ ζ' - J dX_{H_s}(γ) ζ` applied to the
+slice average `ξbar(s) = ∫₀¹ ξ(s, t) dt`. -/
 theorem intervalIntegral_floerLinearization_comp_fst (γ : ℝ → V) {ξ : ℝ × ℝ → V}
     (hξ : ContDiff ℝ 1 ξ) (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (s : ℝ) :
     ∫ t in (0 : ℝ)..1, ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) ξ (s, t) =
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) ξ (s, t) =
       deriv (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)) s -
-        J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (∫ t in (0 : ℝ)..1, ξ (s, t))) := by
+        J (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s) (∫ t in (0 : ℝ)..1, ξ (s, t))) := by
   set Jc : V →L[ℝ] V := J.toLinearMap.toContinuousLinearMap
-  set L : V →L[ℝ] V := Jc ∘L fderiv ℝ (ω.hamiltonianVectorField H) (γ s)
+  set L : V →L[ℝ] V := Jc ∘L fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)
   have hξs : Continuous fun t ↦ fderiv ℝ ξ (s, t) (1, 0) :=
     continuous_fderiv_apply_slice_right hξ s (1, 0)
   have hξt : Continuous fun t ↦ fderiv ℝ ξ (s, t) (0, 1) :=
     continuous_fderiv_apply_slice_right hξ s (0, 1)
   have hξc : Continuous fun t ↦ ξ (s, t) := hξ.continuous.comp (.prodMk_right s)
   -- Pointwise, the integrand is `∂s ξ + J ∂t ξ - L ξ` for the constant operator `L = J dX_H(γ s)`.
-  have hpt : ∀ t, ω.floerLinearization (fun _ _ ↦ Jc) (fun _ _ ↦ 0) (fun _ ↦ H)
+  have hpt : ∀ t, ω.floerLinearization (fun _ _ ↦ Jc) (fun _ _ ↦ 0) (fun z ↦ H z.1)
       (fun z ↦ γ z.1) ξ (s, t) =
         fderiv ℝ ξ (s, t) (1, 0) + Jc (fderiv ℝ ξ (s, t) (0, 1)) - L (ξ (s, t)) := fun t ↦ by
     rw [floerLinearization_const_eq, map_sub]
@@ -138,20 +142,22 @@ theorem intervalIntegral_floerLinearization_comp_fst (γ : ℝ → V) {ξ : ℝ 
   simp only [L, Jc, coe_comp, Function.comp_apply, LinearMap.coe_toContinuousLinearMap']
 
 /-- **The linearized operator on the mean-zero part.** Along a time-independent cylinder
-`u(s, t) = γ(s)`, the linearized Floer operator `D` of the mean-zero part `ξ - ξbar` of a `C¹` map
-`ξ` is `D ξ` minus the Morse operator `ξbar' - J dX_H(γ) ξbar` of the slice average
-`ξbar(s) = ∫₀¹ ξ(s, t) dt`. -/
+`u(s, t) = γ(s)` and for Hamiltonians `H_s` depending on `s` alone, the linearized Floer operator
+`D` of the mean-zero part `ξ - ξbar` of a `C¹` map `ξ` is `D ξ` minus the Morse operator
+`ξbar' - J dX_{H_s}(γ) ξbar` of the slice average `ξbar(s) = ∫₀¹ ξ(s, t) dt`. -/
 theorem floerLinearization_sub_intervalIntegral (γ : ℝ → V) {ξ : ℝ × ℝ → V}
     (hξ : ContDiff ℝ 1 ξ) (z : ℝ × ℝ) :
     ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) (fun z ↦ γ z.1) (fun z ↦ ξ z - ∫ t in (0 : ℝ)..1, ξ (z.1, t)) z =
+        (fun z ↦ H z.1) (fun z ↦ γ z.1) (fun z ↦ ξ z - ∫ t in (0 : ℝ)..1, ξ (z.1, t)) z =
       ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-          (fun _ ↦ H) (fun z ↦ γ z.1) ξ z -
+          (fun z ↦ H z.1) (fun z ↦ γ z.1) ξ z -
         (deriv (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)) z.1 -
-          J (fderiv ℝ (ω.hamiltonianVectorField H) (γ z.1) (∫ t in (0 : ℝ)..1, ξ (z.1, t)))) := by
+          J (fderiv ℝ (ω.hamiltonianVectorField (H z.1)) (γ z.1)
+            (∫ t in (0 : ℝ)..1, ξ (z.1, t)))) := by
   have hbar : DifferentiableAt ℝ (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)) z.1 :=
     (hξ.parametric_intervalIntegral (μ := volume)).differentiable one_ne_zero z.1
-  rw [← floerLinearization_comp_fst ω J H (fun z ↦ γ z.1) (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t))]
+  rw [← floerLinearization_comp_fst ω J (fun z ↦ H z.1) (fun z ↦ γ z.1)
+    (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t))]
   exact floerLinearization_sub ω _ _ _ _ ξ _ z (hξ.differentiable one_ne_zero z)
     (hbar.comp z differentiableAt_fst)
 
@@ -238,7 +244,7 @@ theorem forall_floerLinearization_eq_zero_iff (hg : ∀ v w, ω v (J w) = ⟪v, 
       (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) (fun z ↦ ξ (z.1, 0)) z =
         deriv (fun s ↦ ξ (s, 0)) z.1 - hessianOperator H (γ z.1) (ξ (z.1, 0)) := by
     rw [← apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg]
-    exact floerLinearization_comp_fst ω J H _ (fun s ↦ ξ (s, 0)) z
+    exact floerLinearization_comp_fst ω J (fun _ ↦ H) _ (fun s ↦ ξ (s, 0)) z
   constructor
   · intro hD
     have ht := eq_comp_fst_of_floerLinearization_eq_zero hg hH ha hc ha2π hcM hγ hM hξ hper hD hB
