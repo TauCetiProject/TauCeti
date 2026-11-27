@@ -12,6 +12,9 @@ public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Rat.Floor
+import Mathlib.Data.Nat.Choose.Cast
+import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Ceilings and floors of quotients by a step
@@ -33,6 +36,10 @@ a positive cell count bounded by `t + 1` for `t ≥ 0`, and strictly below `t + 
 In an ordered ring, the integers `a ≤ k ≤ ⌊y⌋₊` number at most `(y + 1 − a)⁺`, which bounds a sum
 of terms at most `M ≥ 0` over them by `(y + 1 − a)⁺ M`. For `0 ≤ z ≤ y`, the natural numbers
 strictly between `⌊z⌋₊` and `⌈y⌉₊` number at most `y - z + 1`.
+In an ordered field, grouping `i < n` into blocks of length `H > 0` gives
+`∑ i < n, ⌊i / H⌋ = H (q choose 2) + ρ q` for `n = H q + ρ`, so a bound
+`c ∑ i < n, ⌊i / H⌋ ≤ n x` with `c > 0` forces `n < H (⌊2 x / c⌋₊ + 2)`. This counts the slopes
+lying under a line above a block lower polygon.
 
 ## Main results
 
@@ -57,6 +64,8 @@ strictly between `⌊z⌋₊` and `⌈y⌉₊` number at most `y - z + 1`.
   `a ≤ k ≤ y` is at most `(y + 1 − a)⁺ M`, for `y ≥ 0`.
 * `TauCeti.card_Ioo_floor_ceil_le`: the natural numbers strictly between `⌊z⌋₊` and `⌈y⌉₊`
   number at most `y - z + 1`, for `z ≤ y` with `0 ≤ y`.
+* `TauCeti.lt_mul_floor_add_two_of_mul_sum_range_div_le`: if `c > 0` and
+  `c ∑ i < n, ⌊i / H⌋ ≤ n x`, then `n < H (⌊2 x / c⌋₊ + 2)`.
 -/
 
 public section
@@ -249,5 +258,50 @@ theorem card_Ioo_floor_ceil_le {y z : R} (hy : 0 ≤ y) (hzy : z ≤ y) :
     exact (sub_lt_sub (Nat.ceil_lt_add_one hy) (Nat.lt_floor_add_one z)).le
 
 end Ring
+
+section Field
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [FloorSemiring K]
+
+open Finset in
+/-- **Counting bound for the block lower polygon.** Let `H > 0` and `c > 0`. If
+`c ∑ i < n, ⌊i / H⌋ ≤ n x`, then `n < H (⌊2 x / c⌋₊ + 2)`. Writing `n = H q + ρ` with `ρ < H`,
+the sum is `H q (q - 1) / 2 + ρ q`, and the inequality forces `q - 1 ≤ 2 x / c`. -/
+theorem lt_mul_floor_add_two_of_mul_sum_range_div_le {H n : ℕ} (hH : 0 < H) {c x : K}
+    (hc : 0 < c) (h : c * (∑ i ∈ range n, i / H : ℕ) ≤ n * x) :
+    n < H * (⌊2 * x / c⌋₊ + 2) := by
+  have hn := Nat.div_add_mod n H
+  have hρ := Nat.mod_lt n hH
+  rw [sum_range_div] at h
+  set q := n / H
+  set ρ := n % H
+  rcases q.eq_zero_or_pos with hq | hq
+  · rw [hq, Nat.mul_zero, Nat.zero_add] at hn
+    rw [← hn]
+    nlinarith
+  -- The number of complete blocks is at most `⌊2 x / c⌋₊ + 1`.
+  have key : ((q - 1 : ℕ) : K) ≤ 2 * x / c := by
+    rw [le_div_iff₀ hc]
+    by_contra hlt
+    rw [not_le] at hlt
+    have hnR : (n : K) = H * q + ρ := by exact_mod_cast hn.symm
+    push_cast [Nat.cast_sub hq, Nat.cast_choose_two] at h hlt
+    have hnpos : (0 : K) < n := by
+      rw [hnR]
+      have : (1 : K) ≤ H := by exact_mod_cast hH
+      positivity
+    -- `2 n x < n c (q - 1) ≤ 2 c (H q (q - 1) / 2 + ρ q) ≤ 2 n x`.
+    have h₁ := mul_lt_mul_of_pos_left hlt hnpos
+    have h₂ : 0 ≤ c * ρ * (q + 1) := by positivity
+    have h₃ : (n : K) * ((q - 1) * c) = c * H * q * (q - 1) + c * ρ * (q - 1) := by
+      rw [hnR]
+      ring
+    linarith
+  have hfl := Nat.le_floor key
+  calc n = H * q + ρ := hn.symm
+    _ < H * (q + 1) := by nlinarith
+    _ ≤ H * (⌊2 * x / c⌋₊ + 2) := Nat.mul_le_mul_left _ (by omega)
+
+end Field
 
 end TauCeti

@@ -288,6 +288,21 @@ theorem pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_sum_le
     pairOfPantsPerturbation_eq_smul_endAngularForm
       ((le_add_of_nonneg_right (Finset.sum_nonneg fun q _ ↦ abs_nonneg (L q))).trans hw)]
 
+/-- Beyond a height `R ≥ 2 + ∑_q |L_q|` on every end, past every neck and collar, the components of
+the pair-of-pants perturbation with continuation necks are those of the pair-of-pants
+perturbation of the outer Hamiltonians. -/
+theorem pairOfPantsContinuationPerturbation_components_eq {R : ℝ} (hR : 2 + ∑ r, |L r| ≤ R)
+    (q : Puncture) {z : ℝ × ℝ} (hz : R ≤ (positiveEndCoord q z).1) :
+    (fun x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1) =
+        (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+      (fun x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x
+          Complex.I) =
+        fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I := by
+  rw [fst_positiveEndCoord] at hz
+  have h (y : M) := pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_sum_le
+    (G := G) (H := H) (hR.trans hz) y
+  exact ⟨funext fun y ↦ congrArg (· 1) (h y), funext fun y ↦ congrArg (· Complex.I) (h y)⟩
+
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace F]
   {I : ModelWithCorners ℝ E F} [TopologicalSpace M] [ChartedSpace F M]
 
@@ -636,7 +651,7 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation
       (smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
     have hu' : ContinuousOn (fun w ↦ u (endChart q w)) C :=
       hu.comp (contDiff_endChart q 0).continuous.continuousOn
-        fun _ hw ↦ endChart_mem_thricePuncturedSphereReal (hCpos hw)
+        fun _ hw ↦ endChart_mem_thricePuncturedSphereReal (hCpos hw).le
     have hK (K : ℝ → M → ℝ) (hK : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry K)) :
         ContinuousOn (fun w : ℝ × ℝ ↦ K w.2 (u (endChart q w))) C :=
       hK.continuous.comp_continuousOn (continuousOn_snd.prodMk hu')

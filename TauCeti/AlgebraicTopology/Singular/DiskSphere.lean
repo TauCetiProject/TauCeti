@@ -182,6 +182,18 @@ lemma singularHomologyDiskBoundaryPairIso_zero_hom :
         (TopCat.disk.{w} 0).singularHomology₀ε R := by
   rfl
 
+/-- In dimension zero, the inverse of the identification `H₀(D⁰, ∅) ≅ R` is the class of the point
+of `D⁰`. -/
+lemma singularHomologyDiskBoundaryPairIso_zero_inv :
+    (singularHomologyDiskBoundaryPairIso R 0).inv =
+      singularHomology₀Section R (diskCenter.{w} 0) ≫
+        (diskBoundaryPair.{w} 0).singularHomologyπ R 0 := by
+  refine ((Iso.comp_hom_eq_id _).1 ?_).symm
+  rw [singularHomologyDiskBoundaryPairIso_zero_hom]
+  -- The relative and absolute homology of `D⁰` agree only up to unfolding.
+  erw [Category.assoc, IsIso.hom_inv_id_assoc]
+  exact singularHomology₀Section_singularHomology₀ε R _
+
 end HigherDegrees
 
 section CubePairHomology
@@ -195,6 +207,15 @@ def singularHomologyCubeBoundaryPairIso : (cubeBoundaryPair.{w} n).singularHomol
   (SSetPair.homologyFunctor R n).mapIso
       (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n)).symm ≪≫
     singularHomologyDiskBoundaryPairIso R n
+
+/-- `TauCeti.singularHomologyCubeBoundaryPairIso` is the map induced by the inverse of
+`TauCeti.diskBoundaryPairIsoCube`, followed by `TauCeti.singularHomologyDiskBoundaryPairIso`. -/
+lemma singularHomologyCubeBoundaryPairIso_hom :
+    (singularHomologyCubeBoundaryPairIso R n).hom =
+      TopPair.singularHomologyMap (diskBoundaryPairIsoCube.{w} n).inv R n ≫
+        (singularHomologyDiskBoundaryPairIso R n).hom :=
+  -- This is the composite defining `singularHomologyCubeBoundaryPairIso`.
+  (rfl)
 
 /-- The generator of `Hₙ(Iⁿ, ∂Iⁿ; R)` is the image of the generator of `Hₙ(Dⁿ, Sⁿ⁻¹; R)` under
 `TauCeti.diskBoundaryPairToCube`. -/

@@ -42,7 +42,6 @@ universe u
 namespace TauCeti.Topology
 
 variable {X : TopCat.{u}} {R : Type u} [CommRing R]
-  [(Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive]
 
 /-- Native derived global sections are computed by the global sections of the Godement
 resolution, naturally in the module sheaf. -/

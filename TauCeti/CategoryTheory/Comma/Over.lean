@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
+public import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.StrongEpi
 
@@ -40,6 +41,13 @@ to the source is a strong epimorphism. This uses Mathlib's `StrongEpi.llp` and `
   can be checked after base change if the projection to the source is a strong epimorphism.
 * `CategoryTheory.Over.pullbackRightPullbackFstIso_inv_comp_pullback_map`: the identification
   `T ×_S X ≅ T ×_{S'} (S' ×_S X)` is natural in `T` over `S'`.
+* `CategoryTheory.Over.mapSection`: a section of a presheaf on `Over S` over `T` restricts to a
+  section of its restriction along `Over.map T.hom`.
+* `CategoryTheory.isPullback_overPost_iff`: for `F : C ⥤ D` and `X : C`, a square in
+  `Over (F.obj X)` with a side `(Over.post F).map snd` is a pullback square exactly when the
+  underlying square in `D` is.
+* `CategoryTheory.Over.postHomMk`: for `F` full, a morphism `F.obj a ⟶ B.left` regarded as a
+  morphism of `Over (F.obj X)` out of the image under `Over.post F` of an object over `X`.
 -/
 
 public section
@@ -121,6 +129,64 @@ theorem exists_comp_pullback_map_eq_iff {C : Type u} [Category.{v} C]
   · rintro ⟨g, rfl⟩
     exact ⟨(Over.pullback p).map g, ((Over.pullback p).map_comp g i).symm⟩
 
+/-- A section `ξ` of a presheaf `F` on `Over S` over an object `T` restricts to every object
+`(Over.map T.hom).obj T'` for `T'` over `T.left`, along the morphism `T'` itself; these
+restrictions form a section of the presheaf `(Over.map T.hom).op ⋙ F` on `Over T.left`. -/
+def mapSection {C : Type u} [Category.{v} C] {S : C} (F : (Over S)ᵒᵖ ⥤ Type*) {T : Over S}
+    (ξ : F.obj (Opposite.op T)) : ((Over.map T.hom).op ⋙ F).sections where
+  val T' := F.map (Over.homMk T'.unop.hom : (Over.map T.hom).obj T'.unop ⟶ T).op ξ
+  property {T₁ T₂} f := by
+    dsimp
+    rw [← Functor.map_comp_apply, ← op_comp]
+    congr 3
+    ext
+    simp
+
+/-- The section `mapSection F ξ` over `T'` is the restriction of `ξ` along `T'`. -/
+@[simp]
+lemma mapSection_coe {C : Type u} [Category.{v} C] {S : C} (F : (Over S)ᵒᵖ ⥤ Type*) {T : Over S}
+    (ξ : F.obj (Opposite.op T)) (T' : (Over T.left)ᵒᵖ) :
+    (mapSection F ξ).val T' =
+      F.map (Over.homMk T'.unop.hom : (Over.map T.hom).obj T'.unop ⟶ T).op ξ :=
+  (rfl)
+
 end Over
+
+section OverPost
+
+variable {C : Type*} [Category* C] {D : Type*} [Category* D] (F : C ⥤ D) {X : C}
+
+/-- A square in `Over (F.obj X)` with a side `(Over.post F).map snd` is a pullback square exactly
+when the underlying square in `D` is. -/
+lemma isPullback_overPost_iff {A B : Over (F.obj X)} {f : A ⟶ B} {a b : Over X}
+    {g : (Over.post F).obj a ⟶ B} {fst : (Over.post F).obj b ⟶ A} {snd : b ⟶ a} :
+    IsPullback fst ((Over.post F).map snd) f g ↔
+      IsPullback fst.left (F.map snd.left) f.left g.left := by
+  refine ⟨fun h ↦ h.map (Over.forget _), fun h ↦ IsPullback.of_map (Over.forget _) ?_ h⟩
+  ext
+  exact h.w
+
+variable {F}
+
+/-- A pullback square in `D` with sides `F.map snd` and `g.left`, for `g : (Over.post F).obj a ⟶ B`
+in `Over (F.obj X)`, lifts to a pullback square in `Over (F.obj X)`, with `b` lying over `X`
+through `snd ≫ a.hom`. -/
+lemma IsPullback.overPost_homMk {A B : Over (F.obj X)} {f : A ⟶ B} {a : Over X} {b : C}
+    {g : (Over.post F).obj a ⟶ B} {fst : F.obj b ⟶ A.left} {snd : b ⟶ a.left}
+    (h : IsPullback fst (F.map snd) f.left g.left) :
+    IsPullback (Over.homMk (U := (Over.post F).obj (Over.mk (snd ≫ a.hom))) fst
+        (by rw [← Over.w f, reassoc_of% h.w, Over.w g]; exact (F.map_comp _ _).symm) : _ ⟶ A)
+      ((Over.post F).map (Over.homMk snd : Over.mk (snd ≫ a.hom) ⟶ a)) f g :=
+  (isPullback_overPost_iff F).2 h
+
+variable [F.Full]
+
+/-- A morphism `g : F.obj a ⟶ B.left` to the underlying object of `B : Over (F.obj X)`, regarded
+as a morphism of `Over (F.obj X)` out of the image under `Over.post F` of `a` over `X`. -/
+noncomputable abbrev Over.postHomMk {B : Over (F.obj X)} {a : C} (g : F.obj a ⟶ B.left) :
+    (Over.post F).obj (Over.mk (F.preimage (g ≫ B.hom))) ⟶ B :=
+  Over.homMk g (by simp)
+
+end OverPost
 
 end CategoryTheory

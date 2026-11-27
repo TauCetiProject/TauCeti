@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Bidirected
 public import TauCeti.Combinatorics.Network.Isomorphism.Connectivity
 public import TauCeti.Combinatorics.Network.Isomorphism.Walk
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Flow
+public import TauCeti.Combinatorics.SimpleGraph.Walk.MinimumWeight
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Connected
 import Mathlib.Algebra.Group.PUnit
 
@@ -57,6 +58,8 @@ undirected max-flow/min-cut theorem with additive-subgroup integrality directly 
 * `TauCeti.DoubledQuiver.mapPath_bidirectedNetworkIso_toBidirected`: transporting the multigraph
   bidirected walk of `p : G.Walk u v` along `bidirectedNetworkIso` recovers
   `DoubledQuiver.walkToPath G p`.
+* `TauCeti.DoubledQuiver.bottleneck_walkToPath`: the directed bottleneck of `walkToPath G p` is the
+  minimum edge weight of `p`.
 * `TauCeti.DoubledQuiver.isCycle_iff_isCycle_walkToPath_and_nodup_map_edge_arrows`: an undirected
   cycle of `G` is a directed cycle of `DoubledQuiver G` whose arrows have distinct underlying
   undirected edges.
@@ -442,6 +445,29 @@ theorem map_edge_arrows_walkToPath {u v : V} (p : G.Walk u v) :
   refine List.map_congr_left fun a _ ↦ ?_
   rcases a with ⟨i, j, e⟩
   rw [edge_def, Function.comp_apply, totalArrowEquivDart_apply, SimpleGraph.Dart.edge_mk]
+
+/-- The directed walk corresponding to a nonempty simple-graph walk has a nonempty arrow list. -/
+theorem arrows_walkToPath_ne_nil {u v : V} (p : G.Walk u v) (hp : ¬p.Nil) :
+    ArrowWalk.arrows (Q := Hom G) (walkToPath G p) ≠ [] := by
+  intro h
+  apply hp
+  apply p.edges_eq_nil.mp
+  rw [← map_edge_arrows_walkToPath G p, h]
+  simp
+
+/-- The bottleneck of the directed walk corresponding to a nonempty simple-graph walk is its
+minimum edge weight. -/
+@[simp]
+theorem bottleneck_walkToPath {K : Type w} [LinearOrder K] {u v : V} (p : G.Walk u v)
+    (wt : Sym2 V → K) (hp : ¬p.Nil) :
+    ArrowWalk.bottleneck (Q := Hom G) (capacity G wt) (walkToPath G p)
+      (arrows_walkToPath_ne_nil G p hp) = p.minEdgeWeight wt hp := by
+  apply eq_of_forall_le_iff
+  intro k
+  rw [ArrowWalk.le_bottleneck_iff, p.le_minEdgeWeight_iff]
+  simp only [capacity_apply]
+  rw [← map_edge_arrows_walkToPath]
+  simp only [List.forall_mem_map]
 
 /-- `DoubledQuiver.walkToPath` preserves and reflects simple paths. -/
 @[simp]

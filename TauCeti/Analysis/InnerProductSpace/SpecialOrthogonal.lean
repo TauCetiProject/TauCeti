@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.InnerProductSpace.NormDet
 import TauCeti.Analysis.InnerProductSpace.Reflection
@@ -16,11 +17,13 @@ import TauCeti.Analysis.InnerProductSpace.Reflection
 The orthogonal group of a real inner product space `V` is the unitary group
 `unitary (V →L[ℝ] V)` of its operator algebra, with the operator-norm topology. This file defines
 its subgroup of transformations of determinant `1`, the special orthogonal group
-`TauCeti.specialOrthogonalGroup V`. It is the structure group of the oriented orthonormal frame
-bundle of an oriented Riemannian vector bundle.
+`TauCeti.specialOrthogonalGroup V`, the kernel of the determinant `Unitary.detMonoidHom V`. It is
+the structure group of the oriented orthonormal frame bundle of an oriented Riemannian vector
+bundle.
 
 An orthogonal transformation of a real inner product space has determinant `1` or `-1`
-(`Unitary.det_eq_one_or_eq_neg_one`; in infinite dimension every determinant is `1`), so it is
+(`Unitary.det_eq_one_or_eq_neg_one`; in infinite dimension every determinant is `1`), the same as
+the determinant of its inverse (`Unitary.det_inv_eq_det`), so it is
 special orthogonal exactly when its determinant is positive
 (`TauCeti.mem_specialOrthogonalGroup_iff_det_pos`) and not special orthogonal exactly when its
 determinant is negative (`TauCeti.notMem_specialOrthogonalGroup_iff_det_neg`). Because the
@@ -28,7 +31,10 @@ determinant is continuous in the operator-norm topology, the special orthogonal 
 closed, and hence clopen in the orthogonal group (`TauCeti.isOpen_specialOrthogonalGroup`,
 `TauCeti.isClosed_specialOrthogonalGroup`, `TauCeti.isClopen_specialOrthogonalGroup`). In positive
 dimension the reflection in a hyperplane is an orthogonal transformation of determinant `-1`
-(`Unitary.exists_det_eq_neg_one`).
+(`Unitary.exists_det_eq_neg_one`). The reflection in the hyperplane orthogonal to a nonzero vector
+`v` is not special orthogonal
+(`TauCeti.reflection_orthogonal_singleton_notMem_specialOrthogonalGroup`), and it fixes every
+vector orthogonal to `v` (`TauCeti.reflection_orthogonal_singleton_mem_stabilizer`).
 -/
 
 public section
@@ -54,6 +60,25 @@ theorem det_eq_one_or_eq_neg_one (g : unitary (V →L[ℝ] V)) :
     (g : V →L[ℝ] V).det = 1 ∨ (g : V →L[ℝ] V).det = -1 :=
   abs_eq (zero_le_one' ℝ) |>.1 (abs_det_eq_one g)
 
+variable (V) in
+/-- The determinant of the orthogonal transformations of `V`, as a monoid homomorphism. -/
+def detMonoidHom : unitary (V →L[ℝ] V) →* ℝ :=
+  LinearMap.det.comp (ContinuousLinearMap.toLinearMapRingHom.toMonoidHom.comp (unitary _).subtype)
+
+/-- `Unitary.detMonoidHom V` sends an orthogonal transformation to its determinant. -/
+@[simp]
+theorem detMonoidHom_apply (g : unitary (V →L[ℝ] V)) :
+    detMonoidHom V g = (g : V →L[ℝ] V).det :=
+  (rfl)
+
+/-- An orthogonal transformation and its inverse have the same determinant `±1`. -/
+@[simp]
+theorem det_inv_eq_det (g : unitary (V →L[ℝ] V)) :
+    ((g⁻¹ : unitary (V →L[ℝ] V)) : V →L[ℝ] V).det = (g : V →L[ℝ] V).det := by
+  have h : ((g⁻¹ : unitary (V →L[ℝ] V)) : V →L[ℝ] V).det * (g : V →L[ℝ] V).det = 1 := by
+    rw [← detMonoidHom_apply, ← detMonoidHom_apply, ← map_mul, inv_mul_cancel, map_one]
+  rcases det_eq_one_or_eq_neg_one g with hg | hg <;> rw [hg] at h ⊢ <;> linarith
+
 /-- In positive dimension there is an orthogonal transformation of determinant `-1`: the
 reflection in a hyperplane. -/
 theorem exists_det_eq_neg_one (hV : 0 < Module.finrank ℝ V) :
@@ -73,8 +98,7 @@ variable (V) in
 /-- The special orthogonal group of a real inner product space `V`: the orthogonal
 transformations of `V`, as elements of the unitary group of `V →L[ℝ] V`, of determinant `1`. -/
 def specialOrthogonalGroup : Subgroup (unitary (V →L[ℝ] V)) :=
-  (LinearMap.det.comp
-    (ContinuousLinearMap.toLinearMapRingHom.toMonoidHom.comp (unitary (V →L[ℝ] V)).subtype)).ker
+  (Unitary.detMonoidHom V).ker
 
 /-- An orthogonal transformation is special orthogonal exactly when its determinant is `1`. -/
 @[simp]
@@ -120,5 +144,26 @@ theorem isClosed_specialOrthogonalGroup :
 theorem isClopen_specialOrthogonalGroup :
     IsClopen (specialOrthogonalGroup V : Set (unitary (V →L[ℝ] V))) :=
   ⟨isClosed_specialOrthogonalGroup, isOpen_specialOrthogonalGroup⟩
+
+/-- The reflection in the hyperplane orthogonal to a nonzero vector, as an orthogonal
+transformation, is not special orthogonal: its determinant is `-1`. -/
+theorem reflection_orthogonal_singleton_notMem_specialOrthogonalGroup [FiniteDimensional ℝ V]
+    {v : V} (hv : v ≠ 0) :
+    Unitary.linearIsometryEquiv.symm (ℝ ∙ v)ᗮ.reflection ∉ specialOrthogonalGroup V := by
+  rw [mem_specialOrthogonalGroup_iff, Unitary.coe_symm_linearIsometryEquiv_apply,
+    ContinuousLinearMap.det]
+  intro h
+  have hdet := linearEquiv_det_reflection_orthogonal_singleton hv
+  rw [LinearEquiv.coe_det] at hdet
+  -- The coercion of the reflection to a linear map is `toLinearMap` by definition.
+  have h₁ : (1 : ℝ) = -1 := h.symm.trans hdet
+  norm_num at h₁
+
+/-- The reflection in the hyperplane orthogonal to `v`, as an orthogonal transformation, fixes
+every vector `w` orthogonal to `v`. -/
+theorem reflection_orthogonal_singleton_mem_stabilizer {v w : V} (h : inner ℝ v w = 0) :
+    Unitary.linearIsometryEquiv.symm (ℝ ∙ v)ᗮ.reflection ∈
+      MulAction.stabilizer (unitary (V →L[ℝ] V)) w :=
+  MulAction.mem_stabilizer_iff.2 (reflection_orthogonal_singleton_eq_self_of_inner_eq_zero h)
 
 end TauCeti

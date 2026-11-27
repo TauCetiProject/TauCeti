@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.Triangular
 import Mathlib.Algebra.GCDMonoid.Nat
 import Mathlib.LinearAlgebra.Matrix.Notation
 import TauCeti.LinearAlgebra.Matrix.Rank
+import TauCeti.Logic.Function.Extend
 
 /-!
 # Maximal minors and their gcd
@@ -21,7 +22,9 @@ determinant `det (A.submatrix id e)` of the square submatrix on all the rows and
 picked out by an embedding `e : m ↪ n`. Over an integral domain the rows of `A` are linearly
 independent exactly when some maximal minor is nonzero, by the criterion in
 `TauCeti.LinearAlgebra.Matrix.Rank`. That module also proves invariance of row independence under
-scalar extension between domains.
+scalar extension between domains. Full-column row selections of `A.fromRows (a • 1)` are treated
+in `TauCeti.LinearAlgebra.Matrix.RowLattice`, with their valuation and kernel-length formula in
+`TauCeti.RingTheory.DiscreteValuationRing.KernelLength`.
 
 A matrix `A` whose maximal minor `A.submatrix id s` on the columns picked out by an injective `s`
 is invertible is surjective (`Matrix.mulVec_surjective_of_isUnit_det_submatrix`): the inverse of
@@ -180,13 +183,8 @@ theorem isCompl_ker_mulVecLin_ker_funLeft (A : Matrix σ ι K) {s : σ → ι}
   · rw [Submodule.disjoint_def]
     intro v hv hv'
     rw [hmem] at hv'
-    have hext : v = Function.extend s (v ∘ s) 0 := by
-      ext i
-      by_cases hi : i ∈ Set.range s
-      · obtain ⟨j, rfl⟩ := hi
-        rw [hs.extend_apply, Function.comp_apply]
-      · rw [Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi ⟨j, hj⟩]
-        exact hv' i hi
+    have hext : v = Function.extend s (v ∘ s) 0 :=
+      (Function.extend_comp_eq_of_forall_notMem_range hv').symm
     rw [LinearMap.mem_ker, Matrix.mulVecLin_apply, hext, Matrix.mulVec_extend_zero hs] at hv
     have h0 : v ∘ s = 0 := by
       simpa [Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul _ hA] using

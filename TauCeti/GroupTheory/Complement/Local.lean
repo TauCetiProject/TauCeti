@@ -137,6 +137,12 @@ theorem IsLocalComplement.conj_smul [N.Normal] (h : N.IsLocalComplement K H) (g 
   · rw [← hN, ← smul_inf, h.inf_eq_bot, smul_bot]
   · rw [← hN, ← smul_sup, h.sup_eq]
 
+/-- A conjugate `g K g⁻¹` of a local complement of the normal subgroup `N` in `H` by an element
+`g ∈ H` is again a local complement of `N` in `H`. -/
+theorem IsLocalComplement.conj_smul_of_mem [N.Normal] (h : N.IsLocalComplement K H) {g : G}
+    (hg : g ∈ H) : N.IsLocalComplement (MulAut.conj g • K) H := by
+  simpa only [conj_smul_eq_self_of_mem hg] using h.conj_smul g
+
 /-- A conjugate of a complement of the normal subgroup `N` is again a complement of `N`. -/
 theorem IsComplement'.conj_smul [N.Normal] {D : Subgroup G} (h : N.IsComplement' D) (g : G) :
     N.IsComplement' (MulAut.conj g • D) := by
