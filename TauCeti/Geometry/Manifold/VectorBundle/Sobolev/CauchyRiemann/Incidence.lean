@@ -142,6 +142,27 @@ theorem sobolevLIncidence_apply (hc : SobolevSection.HasContinuousRepresentative
       (hD.sobolevL A hDs volume p w, fun i ↦ SobolevSection.toSection w (x i)) := by
   simp [sobolevLIncidence_def]
 
+/-- As a linear map, the incidence operator is the `LinearMap.prod` of `D_p` and the point
+evaluation, the form taken by the determinant line API (`LinearMap.detLineEquivOfBijectiveProd`). -/
+theorem coe_sobolevLIncidence (hc : SobolevSection.HasContinuousRepresentatives A volume p 1)
+    {ι : Type*} (x : ι → M) :
+    (sobolevLIncidence A hD hDs hc x :
+        SobolevSection A volume p 1 →ₗ[ℝ] zeroOneSobolevSections A volume p 0 × Π i, V (x i)) =
+      (hD.sobolevL A hDs volume p :
+          SobolevSection A volume p 1 →ₗ[ℝ] zeroOneSobolevSections A volume p 0).prod
+        (ContinuousLinearMap.pi fun i ↦ SobolevSection.evalL hc (x i) :
+          SobolevSection A volume p 1 →ₗ[ℝ] Π i, V (x i)) := by
+  rw [sobolevLIncidence_def, ContinuousLinearMap.coe_prod]
+
+/-- The kernel of the incidence operator consists of the solutions of `D_p w = 0` vanishing at all
+the points. -/
+theorem mem_ker_sobolevLIncidence_iff
+    (hc : SobolevSection.HasContinuousRepresentatives A volume p 1) {ι : Type*} (x : ι → M)
+    {w : SobolevSection A volume p 1} :
+    w ∈ (sobolevLIncidence A hD hDs hc x).ker ↔
+      hD.sobolevL A hDs volume p w = 0 ∧ ∀ i, SobolevSection.toSection w (x i) = 0 := by
+  simp [Prod.ext_iff, funext_iff]
+
 /-- The evaluation of a kernel element at the points is the evaluation of its continuous
 representative. -/
 theorem kerSobolevLEval_apply_eq_toSection (hp : 1 < p) {ι : Type*} (x : ι → M)
@@ -184,14 +205,9 @@ smooth solution of `D ξ = 0`, vanishes at all the points. -/
 theorem sobolevLIncidence_injective_iff (hp : 1 < p)
     (hc : SobolevSection.HasContinuousRepresentatives A volume p 1) {ι : Type*} (x : ι → M) :
     Injective (sobolevLIncidence A hD hDs hc x) ↔ Injective (kerSobolevLEval A hD hDs hp x) := by
-  -- Both kernels are trivial together, since `ContinuousLinearMap.kerProdEquiv` identifies them.
-  rw [kerSobolevLEval_eq_domRestrict A hD hDs hp hc, sobolevLIncidence_def,
-    ← ContinuousLinearMap.coe_coe (ContinuousLinearMap.prod _ _),
-    ← ContinuousLinearMap.toLinearMap_domRestrict,
-    ← LinearMap.ker_eq_bot (M := SobolevSection A volume p 1),
-    ← LinearMap.ker_eq_bot (M := (hD.sobolevL A hDs volume p).ker),
-    ← Submodule.subsingleton_iff_eq_bot, ← Submodule.subsingleton_iff_eq_bot]
-  exact (ContinuousLinearMap.kerProdEquiv _ _).toEquiv.subsingleton_congr.symm
+  rw [sobolevLIncidence_def, ContinuousLinearMap.injective_prod_iff,
+    ← ContinuousLinearMap.coe_coe (ContinuousLinearMap.domRestrict _ _),
+    ContinuousLinearMap.toLinearMap_domRestrict, kerSobolevLEval_eq_domRestrict A hD hDs hp hc]
 
 /-- **The incidence operator is Fredholm.** For `1 < p < ∞` and finitely many points, the
 incidence operator differs from `D_p` by the finite-rank evaluation, so it is Fredholm. -/
@@ -339,8 +355,7 @@ def sobolevLDetLineEquivPi (hc : SobolevSection.HasContinuousRepresentatives A v
   LinearMap.detLineEquivOfBijectiveProd _
     (ContinuousLinearMap.pi fun i ↦ SobolevSection.evalL hc (x i) :
       SobolevSection A volume p 1 →ₗ[ℝ] Π i, V (x i))
-    (by rwa [sobolevLIncidence_def, ← ContinuousLinearMap.coe_coe,
-      ContinuousLinearMap.coe_prod] at h)
+    (by rwa [← coe_sobolevLIncidence, ContinuousLinearMap.coe_coe])
 
 /-- **The value of the incidence orientation map.** For a family `u` of `dim (ker D_p)` kernel
 elements, the exterior product of `u` tensored with `φ` goes to the exterior product of the values
@@ -366,9 +381,8 @@ theorem coe_sobolevLDetLineEquivPi_tmul (hp : 1 < p)
       φ (exteriorPower.ιMulti ℝ _ e) •
         ExteriorAlgebra.ιMulti ℝ _ (kerSobolevLEval A hD hDs hp x ∘ u) := by
   have := VectorBundle.finiteDimensional_pi ℝ F V x
-  rw [sobolevLIncidence_def, ← ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_prod] at h
-  rw [kerSobolevLEval_eq_domRestrict A hD hDs hp hc]
-  exact LinearMap.coe_detLineEquivOfBijectiveProd_tmul _ _ h u φ e
+  rw [sobolevLDetLineEquivPi, kerSobolevLEval_eq_domRestrict A hD hDs hp hc]
+  exact LinearMap.coe_detLineEquivOfBijectiveProd_tmul _ _ _ u φ e
 
 end DetLine
 
