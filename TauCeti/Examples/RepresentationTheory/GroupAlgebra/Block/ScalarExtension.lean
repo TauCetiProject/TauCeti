@@ -145,16 +145,6 @@ private theorem toCenter_one_add_r_add_r_sq [CharP K 2] :
     toCenter (1 + of K C₃ r + of K C₃ (r ^ 2)) = principalBlockIdempotent K C₃ :=
   Subtype.ext ((coe_toCenter _).trans (coe_principalBlockIdempotent_c₃ K).symm)
 
-/-- If every `r^i` acts on a central `b ∈ K[C₃]` by a scalar, so does every class sum. -/
-private theorem exists_mul_classSumCenter_of_mul_of {b : MonoidAlgebra K C₃} (c : C₃ → K)
-    (hb : ∀ g, b * of K C₃ g = c g • b) (C : ConjClasses C₃) :
-    ∃ c : K, toCenter b * classSumCenter C = c • toCenter b := by
-  obtain ⟨g, rfl⟩ := C.exists_rep
-  refine ⟨c g, Subtype.ext ?_⟩
-  rw [classSumCenter_mk_of_commGroup, Subalgebra.coe_mul, Subalgebra.coe_smul, coe_toCenter,
-    coe_toCenter]
-  exact hb g
-
 /-- **The blocks of `K[C₃]` stay blocks.** Over a field `K` of characteristic `2` containing a
 root `α` of `X² + X + 1`, for instance `𝔽₄`, the blocks `1 + r + r²`, `1 + α² r + α r²` and
 `1 + α r + α² r²` of `K[C₃]` map to blocks of `K'[C₃]` along every `f : K →+* K'`, for instance
@@ -169,9 +159,11 @@ theorem isBlockIdempotent_centerMapRingHom_blockC₃ [CharP K 2] (hα : α ^ 2 +
     exact (isBlockIdempotent_principalBlockIdempotent K C₃).centerMapRingHom f
       (centerAugmentation_principalBlockIdempotent K C₃),
     (isBlockIdempotent_eOne hα).centerMapRingHom_of_forall_exists_mul_classSumCenter f
-      (exists_mul_classSumCenter_of_mul_of _ (eOne_mul_of hα)),
+      (exists_mul_classSumCenter_of_mul_of_eq_smul _ fun g ↦ by
+        rw [coe_toCenter]; exact eOne_mul_of hα g),
     (isBlockIdempotent_eTwo hα).centerMapRingHom_of_forall_exists_mul_classSumCenter f
-      (exists_mul_classSumCenter_of_mul_of _ (eTwo_mul_of hα))⟩
+      (exists_mul_classSumCenter_of_mul_of_eq_smul _ fun g ↦ by
+        rw [coe_toCenter]; exact eTwo_mul_of hα g)⟩
 
 end C₃
 
