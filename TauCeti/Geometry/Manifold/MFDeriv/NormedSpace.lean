@@ -27,6 +27,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   `fderiv` applied to it.
 * `HasFDerivAt.mfderiv_apply`: on normed spaces, the manifold derivative of a map with Fréchet
   derivative `f'` applies `f'` through the tangent-space identifications.
+* `HasDerivAt.mfderiv_apply`: on normed spaces, the manifold derivative of a curve with derivative
+  `f'` sends a scalar `s` to `s • f'`.
 * `TauCeti.mvfderiv_apply_eval`: the derivative of evaluation `a ↦ a u` of continuous linear maps
   is evaluation at `u`.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
@@ -133,6 +135,14 @@ theorem _root_.HasFDerivAt.mfderiv_apply {f : F → F'} {f' : F →L[𝕜] F'} {
       (NormedSpace.fromTangentSpace (f x)).symm (f' (NormedSpace.fromTangentSpace x v)) := by
   rw [mfderiv_eq_fderiv, h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe]
+
+/-- For a curve in a normed space with derivative `f'` at `x`, the manifold derivative at `x` sends
+a tangent vector `s` of the scalar line to `s • f'`. -/
+theorem _root_.HasDerivAt.mfderiv_apply {f : 𝕜 → F} {f' : F} {x : 𝕜} (h : HasDerivAt f f' x)
+    (s : 𝕜) : (mfderiv 𝓘(𝕜, 𝕜) 𝓘(𝕜, F) f x s : F) = s • f' := by
+  refine (h.hasFDerivAt.mfderiv_apply s).trans ?_
+  rw [NormedSpace.fromTangentSpace_symm_apply, ContinuousLinearMap.toSpanSingleton_apply]
+  exact congrArg (· • f') (NormedSpace.fromTangentSpace_apply x s)
 
 /-- The derivative of the evaluation map `a ↦ a u` on continuous linear maps is evaluation
 at `u`. -/

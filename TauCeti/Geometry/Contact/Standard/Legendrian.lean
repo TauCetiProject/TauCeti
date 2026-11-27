@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Contact.Standard
 public import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Legendrian curves in the standard contact space `ℝ³`
@@ -25,14 +26,15 @@ differentiable exactly when `z' = p q'`
 `t ↦ (q t, z t)` to the `(q, z)`-plane. For a Legendrian curve the front is immersed at `t`
 exactly when `q' ≠ 0` (`TauCeti.deriv_prodMk_ne_zero_iff_of_deriv_eq_mul`), and there the curve is
 recovered from its front as the slope `p = z' / q'`. Where the front is the graph of `z = f(q)`,
-the curve is the one-jet `(q, f'(q), f(q))` of `f` (`TauCeti.eq_deriv_of_eventuallyEq_comp`).
+the curve is the one-jet `(q, f'(q), f(q))` of `f`
+(`TauCeti.eq_deriv_of_deriv_eq_mul_of_eventuallyEq_comp`).
 Hence two Legendrian curves with the same front and continuous momenta agree wherever the front is
 immersed on a dense set of times (`TauCeti.eqOn_of_deriv_eq_mul_of_subset_closure`), in particular
 when the front is immersed outside a set of isolated times
 (`TauCeti.eqOn_of_deriv_eq_mul_of_eventually_ne`). The hypothesis
 cannot be dropped: the lines `t ↦ (0, t, 0)` and `t ↦ (0, 2 t, 0)` are different Legendrian
 embeddings with the same front, a single point
-(`TauCeti.exists_isLegendrianEmbedding_ne_of_front_eq`).
+(`TauCeti.exists_isLegendrianEmbedding_ne_and_front_eq`).
 
 **The `y`-axis.** In `(ℝ³, dz - x dy)` the `y`-axis `{x = z = 0}` is a Legendrian embedding of
 `ℝ` (`TauCeti.isLegendrianEmbedding_standardContactForm_yAxis`). The coordinate swap
@@ -43,7 +45,8 @@ zero section onto the `y`-axis, but it pulls `dz - x dy` back to `dz + p dq`
 (`TauCeti.mpullback_standardContactForm_neg_swap_apply`), so it is not strict for these forms
 (`TauCeti.mpullback_standardContactForm_neg_swap_ne`). Likewise, for the contact form
 `eˣ (dz - x dy)`, which has the same kernel, the swap pulls the form back to `eᵖ (dz - p dq)`
-(`TauCeti.mpullback_swap_apply_of_eq_exp_smul_standardContactForm`), a contactomorphism of the
+(`TauCeti.mpullback_swap_apply_of_eq_smul_standardContactForm`, for any rescaling of
+`dz - x dy`), a contactomorphism of the
 kernels that is not strict (`TauCeti.mpullback_swap_ne_of_eq_exp_smul_standardContactForm`).
 Strictness is a property of the chosen contact forms, not of the contact structures.
 
@@ -72,14 +75,6 @@ namespace TauCeti
 
 /-! ### Horizontal curves for `dz - p dq` -/
 
-/-- The differential of a curve in `ℝ × ℝ × ℝ` with velocity `γ'` at `t` sends `s` to `s • γ'`. -/
-private theorem mfderiv_apply_of_hasDerivAt {γ : ℝ → ℝ × ℝ × ℝ} {γ' : ℝ × ℝ × ℝ} {t : ℝ}
-    (h : HasDerivAt γ γ' t) (s : ℝ) :
-    (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) γ t s : ℝ × ℝ × ℝ) = s • γ' := by
-  rw [mfderiv_eq_fderiv, h.hasFDerivAt.fderiv]
-  -- The identifications of the tangent spaces with the model spaces are the identity.
-  rfl
-
 /-- **Horizontal curves for `dz - p dq`.** At a point where it is differentiable, the curve
 `t ↦ (q t, p t, z t)` of `ℝ × ℝ × ℝ` has its tangent line in the kernel of the one-jet contact form
 `dz - p dq` exactly when `z' = p q'`. -/
@@ -94,7 +89,7 @@ theorem range_mfderiv_le_kerDistribution_innerProductContactForm_iff {q p z : �
   have hmem (s : ℝ) : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun s ↦ (q s, p s, z s)) t s ∈
       (innerProductContactForm ℝ).kerDistribution (q t, p t, z t) ↔
       s * deriv z t = p t * (s * deriv q t) := by
-    rw [mem_kerDistribution_innerProductContactForm, mfderiv_apply_of_hasDerivAt hd s,
+    rw [mem_kerDistribution_innerProductContactForm, hd.mfderiv_apply s,
       Real.inner_apply]
     simp
   rw [LinearMap.range_le_iff_comap, Submodule.eq_top_iff']
@@ -131,8 +126,8 @@ theorem deriv_prodMk_ne_zero_iff_of_deriv_eq_mul {q p z : ℝ → ℝ} {t : ℝ}
 `q' ≠ 0` there, and near `t` the front lies on the graph of a function `f` differentiable at
 `q t`, that is `z = f ∘ q` near `t`, then `p t = f'(q t)`: the point `(q t, p t, z t)` of the curve
 is the one-jet `(q t, f'(q t), f(q t))` of `f`. -/
-theorem eq_deriv_of_eventuallyEq_comp {q p z f : ℝ → ℝ} {t : ℝ} (hq : DifferentiableAt ℝ q t)
-    (hf : DifferentiableAt ℝ f (q t)) (hzf : z =ᶠ[𝓝 t] f ∘ q)
+theorem eq_deriv_of_deriv_eq_mul_of_eventuallyEq_comp {q p z f : ℝ → ℝ} {t : ℝ}
+    (hq : DifferentiableAt ℝ q t) (hf : DifferentiableAt ℝ f (q t)) (hzf : z =ᶠ[𝓝 t] f ∘ q)
     (h : deriv z t = p t * deriv q t) (hq0 : deriv q t ≠ 0) : p t = deriv f (q t) := by
   have hz : deriv z t = deriv f (q t) * deriv q t := by
     rw [hzf.deriv_eq, deriv_comp t hf hq]
@@ -179,7 +174,7 @@ private theorem isLegendrianEmbedding_smul {α : SmoothForm 𝓘(ℝ, ℝ × ℝ
     simpa using (hasDerivAt_id t).smul_const v
   have hdf (t s : ℝ) :
       (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun s : ℝ ↦ s • v) t s : ℝ × ℝ × ℝ) = s • v :=
-    mfderiv_apply_of_hasDerivAt (hd t) s
+    (hd t).mfderiv_apply s
   have hsmooth : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ (fun s : ℝ ↦ s • v) :=
     (contDiff_id.smul contDiff_const).contMDiff
   have himm : Manifold.IsImmersion 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ (fun s : ℝ ↦ s • v) :=
@@ -213,7 +208,7 @@ theorem isLegendrianEmbedding_innerProductContactForm_pAxis {c : ℝ} (hc : c �
 `t ↦ (0, t, 0)` and `t ↦ (0, 2 t, 0)` of `ℝ × ℝ × ℝ` are Legendrian embeddings of `ℝ` for the
 kernel of `dz - p dq`, with the same front `t ↦ (q, z) = (0, 0)`, a single point, but they are
 different curves. Their fronts are immersed at no time. -/
-theorem exists_isLegendrianEmbedding_ne_of_front_eq :
+theorem exists_isLegendrianEmbedding_ne_and_front_eq :
     ∃ γ₁ γ₂ : ℝ → ℝ × ℝ × ℝ,
       IsLegendrianEmbedding 𝓘(ℝ, ℝ) (innerProductContactForm ℝ).kerDistribution γ₁ ∧
       IsLegendrianEmbedding 𝓘(ℝ, ℝ) (innerProductContactForm ℝ).kerDistribution γ₂ ∧
@@ -266,11 +261,14 @@ theorem mpullback_standardContactForm_neg_swap_apply (x : ℝ × ℝ × ℝ)
     (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) x) :
     mpullback 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun x : ℝ × ℝ × ℝ ↦ (-x.2.1, x.1, x.2.2))
       standardContactForm.val x ![v] = v.2.2 + x.2.1 * v.1 := by
-  rw [mpullback_apply_one, standardContactForm_apply, ← coe_negSwapCLM, negSwapCLM.mfderiv_eq]
-  -- The tangent space of `ℝ × ℝ × ℝ` is `ℝ × ℝ × ℝ` by definition, and the coordinates of
-  -- `negSwapCLM v` are those of `v`, permuted, with the second coordinate negated.
-  simp only [neg_mul, sub_neg_eq_add]
-  rfl
+  have hd : (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ)
+      (fun x : ℝ × ℝ × ℝ ↦ (-x.2.1, x.1, x.2.2)) x v : ℝ × ℝ × ℝ) = (-v.2.1, v.1, v.2.2) := by
+    rw [← coe_negSwapCLM]
+    refine (negSwapCLM.hasFDerivAt.mfderiv_apply v).trans ?_
+    rw [NormedSpace.fromTangentSpace_symm_apply, NormedSpace.fromTangentSpace_apply]
+    exact congrFun coe_negSwapCLM v
+  rw [mpullback_apply_one, standardContactForm_apply, hd]
+  ring
 
 /-- The map `(q, p, z) ↦ (-p, q, z)` is not a strict contactomorphism from `dz - p dq` to
 `dz - x dy`: it pulls `dz - x dy` back to `dz + p dq`, not to `dz - p dq`. -/
@@ -288,15 +286,16 @@ theorem mpullback_standardContactForm_neg_swap_ne :
     Real.inner_apply, hv] at h'
   norm_num at h'
 
-/-- **Strictness depends on the contact form.** For the contact form `β = eˣ (dz - x dy)`, which has
-the same kernel as `dz - x dy`, the coordinate swap `(q, p, z) ↦ (p, q, z)` pulls `β` back to
+/-- **Strictness depends on the contact form.** For a rescaled form `β = g • (dz - x dy)`, such as
+the contact form `eˣ (dz - x dy)`, which has the same kernel as `dz - x dy`, the coordinate swap
+`(q, p, z) ↦ (p, q, z)` pulls `β` back to `(g ∘ swap) • (dz - p dq)`, so `eˣ (dz - x dy)` to
 `eᵖ (dz - p dq)`. Here `β` is given through its values. -/
-theorem mpullback_swap_apply_of_eq_exp_smul_standardContactForm
-    {β : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) ℝ 1}
-    (hβ : ∀ y : ℝ × ℝ × ℝ, β.val y = Real.exp y.1 • standardContactForm.val y)
+theorem mpullback_swap_apply_of_eq_smul_standardContactForm
+    {β : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) ℝ 1} {g : ℝ × ℝ × ℝ → ℝ}
+    (hβ : ∀ y : ℝ × ℝ × ℝ, β.val y = g y • standardContactForm.val y)
     (x : ℝ × ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) x) :
     mpullback 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun x : ℝ × ℝ × ℝ ↦ (x.2.1, x.1, x.2.2)) β.val x
-      ![v] = Real.exp x.2.1 * (innerProductContactForm ℝ).val x ![v] := by
+      ![v] = g (x.2.1, x.1, x.2.2) * (innerProductContactForm ℝ).val x ![v] := by
   have h : mpullback 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ)
       (fun x : ℝ × ℝ × ℝ ↦ (x.2.1, x.1, x.2.2)) standardContactForm.val x ![v] =
         (innerProductContactForm ℝ).val x ![v] := by
@@ -319,7 +318,7 @@ theorem mpullback_swap_ne_of_eq_exp_smul_standardContactForm
   have h' : mpullback 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun x : ℝ × ℝ × ℝ ↦ (x.2.1, x.1, x.2.2))
       β.val (0, 1, 0) ![v] = (innerProductContactForm ℝ).val (0, 1, 0) ![v] := by
     rw [h]
-  rw [mpullback_swap_apply_of_eq_exp_smul_standardContactForm hβ, innerProductContactForm_apply,
+  rw [mpullback_swap_apply_of_eq_smul_standardContactForm hβ, innerProductContactForm_apply,
     Real.inner_apply, hv] at h'
   norm_num at h'
 
