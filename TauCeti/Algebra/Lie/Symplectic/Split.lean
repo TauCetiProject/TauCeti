@@ -23,8 +23,7 @@ of the `-1`-eigenspace `𝔭` (the symmetric matrices). Since `𝔞` is self-nor
   `LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff`: `𝔞` is a Cartan subalgebra
   (`LieAlgebra.Symplectic.instIsCartanSubalgebraDiagonalSubalgebra`).
 
-These results hold over every commutative ring in which multiplication by `2` is injective, and
-`𝔪 = 0` over every commutative ring in which `2` is a unit.
+These results hold over every commutative ring in which multiplication by `2` is injective.
 
 ## Main results
 
@@ -75,16 +74,23 @@ theorem isMaximalAbelianInP_diagonalSubalgebra (h2 : IsRegular (2 : R)) :
   rw [← restrictedRootSpace_zero_diagonalSubalgebra h2, mem_restrictedRootSpace_zero]
   exact fun H ↦ h𝔟.2 _ (hle H.property) Y hY
 
-/-- **`𝔪 = 0`** for `𝔰𝔭(2n, R)` when `2` is a unit: no nonzero element of the fixed
-subalgebra `𝔨` (the skew-symmetric matrices) centralizes `𝔞`. By
+/-- **`𝔪 = 0`** for `𝔰𝔭(2n, R)` once multiplication by `2` is injective: no nonzero element of
+the fixed subalgebra `𝔨` (the skew-symmetric matrices) centralizes `𝔞`. By
 `LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff` this is the statement that `𝔰𝔭(2n, ℝ)` is
 split. -/
-theorem restrictedRootSpace_zero_inf_fixedSubalgebra_diagonalSubalgebra (h2 : IsUnit (2 : R)) :
+theorem restrictedRootSpace_zero_inf_fixedSubalgebra_diagonalSubalgebra (h2 : IsRegular (2 : R)) :
     (diagonalSubalgebra l R).toSubmodule.restrictedRootSpace 0 ⊓
       (cartanInvolution l R).toLieHom.fixedSubalgebra.toSubmodule = ⊥ := by
-  rw [restrictedRootSpace_zero_diagonalSubalgebra h2.isRegular, ← disjoint_iff]
-  exact ((cartanInvolution l R).isCompl_fixedSubalgebra_cartanP h2
-    cartanInvolution_cartanInvolution).disjoint.symm.mono_left
-      diagonalSubalgebra_le_cartanP
+  rw [restrictedRootSpace_zero_diagonalSubalgebra h2, eq_bot_iff]
+  rintro X ⟨hXa, hXk⟩
+  have hX : (X : Matrix (l ⊕ l) (l ⊕ l) R) = -X :=
+    ((cartanInvolution_eq_neg_iff X).mp (LieEquiv.mem_cartanP.mp
+      (diagonalSubalgebra_le_cartanP hXa))).symm.trans
+        ((cartanInvolution_eq_self_iff X).mp (LieHom.mem_fixedSubalgebra.mp hXk))
+  rw [Submodule.mem_bot, ← Subtype.coe_inj]
+  ext a b
+  refine h2.left (show (2 : R) * (X : Matrix (l ⊕ l) (l ⊕ l) R) a b = 2 * 0 from ?_)
+  rw [mul_zero, two_mul, ← eq_neg_iff_add_eq_zero]
+  exact congrFun (congrFun hX a) b
 
 end LieAlgebra.Symplectic
