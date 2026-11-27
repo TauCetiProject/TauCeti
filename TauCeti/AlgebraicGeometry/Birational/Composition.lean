@@ -26,6 +26,8 @@ isomorphisms from mutually inverse partial maps.
   `(f.comp g).compHom h = f.comp (g.compHom h)`.
 * `AlgebraicGeometry.Scheme.RationalMap.toRationalMap_representative_comp_representative`: the
   composite of the representatives of `f` and `g` represents `f.comp g`.
+* `AlgebraicGeometry.Scheme.Hom.toRationalMap_comp`: the rational map of a composite of morphisms,
+  the first dominant, is the composite of their rational maps.
 * `AlgebraicGeometry.Scheme.PartialMap.compDomainRestrict`: the restriction of `f` to the domain of
   `f.comp g`, as a morphism into the domain of `g`, with `compDomainRestrict_hom` and
   `compDomainRestrict_ι`.
@@ -63,6 +65,13 @@ theorem RationalMap.comp_compHom (f : X ⤏ Y) [f.IsDominant] (g : Y ⤏ Z) (h :
 theorem RationalMap.toRationalMap_representative_comp_representative (f : X ⤏ Y) [f.IsDominant]
     (g : Y ⤏ Z) : (f.representative.comp g.representative).toRationalMap = f.comp g := by
   rw [← RationalMap.comp_def, g.toRationalMap_representative]
+
+/-- The rational map of a composite `a ≫ b` of morphisms, with `a` dominant, is the composite of
+their rational maps. -/
+theorem Hom.toRationalMap_comp (a : X ⟶ Y) [IsDominant a] (b : Y ⟶ Z) :
+    (a ≫ b).toRationalMap = a.toRationalMap.comp b.toRationalMap := by
+  rw [RationalMap.comp_toRationalMap, Hom.toRationalMap, Hom.toRationalMap,
+    ← RationalMap.compHom_toRationalMap, Hom.toPartialMap_compHom]
 
 namespace PartialMap
 

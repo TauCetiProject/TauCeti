@@ -9,10 +9,9 @@ public import TauCeti.AlgebraicGeometry.Birational.Composition
 public import TauCeti.AlgebraicGeometry.Birational.Graph.Basic
 public import TauCeti.AlgebraicGeometry.Birational.TopologicalDegree.Birationality
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
-public import TauCeti.AlgebraicGeometry.Morphisms.Modification.FunctionField
 
 /-!
-# The generic degree of the second projection of a graph
+# The topological degree of the second projection of a graph
 
 Let `f : X ⤏ Y` be a rational map from a reduced scheme to a separated scheme, with graph
 `Γ_f ⊆ X × Y` and projections `π_1 : Γ_f → X`, `π_2 : Γ_f → Y`. Where `π_1` lands in the domain of
@@ -21,13 +20,11 @@ maps, `π_2 = f ∘ π_1`.
 
 For `X` and `Y` integral, `π_1` is an isomorphism over `U`, so it induces an isomorphism of
 function fields and has topological degree `1`. If `f` is dominant, so is `π_2`, and by
-multiplicativity of the topological degree `π_2` has generic degree `e(f)`: its function-field
+multiplicativity of the topological degree `π_2` has topological degree `e(f)`: its function-field
 map is `f^*` followed by the isomorphism `π_1^* : K(X) → K(Γ_f)`.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.IsModification.topologicalDegree_toRationalMap`: a modification of
-  integral schemes has topological degree `1`.
 * `AlgebraicGeometry.Scheme.RationalMap.comp_graphSnd_eq_of_comp_graphFst`: a morphism into
   `Γ_f` whose composite with `π_1` lands in the domain of definition of `f` has composite with
   `π_2` given by `f` on that domain.
@@ -41,16 +38,6 @@ map is `f^*` followed by the isomorphism `π_1^* : K(X) → K(Γ_f)`.
 public section
 
 open CategoryTheory Limits TauCeti.AlgebraicGeometry
-
-/-- **A modification has topological degree one**: a modification `f : X ⟶ Y` of integral schemes
-induces an isomorphism of function fields. -/
-theorem TauCeti.AlgebraicGeometry.IsModification.topologicalDegree_toRationalMap
-    {X Y : AlgebraicGeometry.Scheme} [AlgebraicGeometry.IsIntegral X]
-    [AlgebraicGeometry.IsIntegral Y] (f : X ⟶ Y) [IsModification f] :
-    f.toRationalMap.topologicalDegree = 1 := by
-  rw [AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_eq_one_iff_isIso,
-    AlgebraicGeometry.Scheme.Hom.functionFieldMap_toRationalMap]
-  infer_instance
 
 namespace AlgebraicGeometry.Scheme.RationalMap
 
@@ -152,13 +139,13 @@ instance isDominant_graphSnd : IsDominant (graphSnd f) := by
   have h : (graphSnd f).toRationalMap.IsDominant := by
     rw [toRationalMap_graphSnd]
     infer_instance
-  rw [Hom.toRationalMap, PartialMap.isDominant_toRationalMap_iff] at h
-  change IsDominant ((graph f).topIso.hom ≫ graphSnd f) at h
-  exact IsDominant.of_comp (graph f).topIso.hom (graphSnd f)
+  rw [Hom.toRationalMap, PartialMap.isDominant_toRationalMap_iff, Hom.toPartialMap_hom] at h
+  exact IsDominant.of_comp (H := h) _ _
 
-/-- **The generic degree of the second projection.** For a dominant rational map `f : X ⤏ Y` of
+/-- **The topological degree of the second projection.** For a dominant rational map `f : X ⤏ Y` of
 integral schemes, with `Γ_f` integral, `Y` separated and the inclusion of the domain of
 definition quasi-compact, the second projection `π_2 : Γ_f → Y` has topological degree `e(f)`. -/
+@[simp]
 theorem topologicalDegree_graphSnd :
     (graphSnd f).toRationalMap.topologicalDegree = f.topologicalDegree := by
   have : Nonempty X := IsIntegral.nonempty
