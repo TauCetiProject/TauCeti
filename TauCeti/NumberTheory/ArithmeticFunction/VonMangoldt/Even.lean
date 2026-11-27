@@ -76,6 +76,7 @@ theorem evenVonMangoldt_one : evenVonMangoldt 1 = 0 := by
   rw [evenVonMangoldt_def, Int.natAbs_one, vonMangoldt_apply_one]
 
 /-- The even von Mangoldt function is nonnegative. -/
+@[simp]
 theorem evenVonMangoldt_nonneg (n : ℤ) : 0 ≤ evenVonMangoldt n := by
   rw [evenVonMangoldt_def]
   exact vonMangoldt_nonneg
