@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.GroupTheory.Coxeter.CoxeterElement
-public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.CorootEval
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Bipartite
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle

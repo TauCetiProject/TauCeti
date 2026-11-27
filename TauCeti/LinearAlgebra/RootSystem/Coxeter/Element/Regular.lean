@@ -52,11 +52,14 @@ Weyl stabilizer.
 
 * `RootPairing.Base.exists_eigenvector_baseChange_weylGroupRootRep_wordProd` / `_of_isFiniteType`:
   regular `exp (2πi / h)`-eigenvector of any Coxeter element in `ℂ ⊗[R] M` with trivial stabilizer.
+* `RootPairing.Base.exists_isRegularWeight_eigenvector_wordProd_of_ringHom` and
+  `RootPairing.Base.exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType`:
+  regular `φ (exp (2πi / h))`-eigenvector of any Coxeter element in `M` along any ring homomorphism
+  `φ : ℂ →+* K`, with trivial Weyl stabilizer.
 * `RootPairing.Base.exists_isRegularWeight_eigenvector_wordProd` / `_of_isFiniteType`:
-  regular primitive `h`-th-root eigenvector of any Coxeter element in `M` over an algebraically
-  closed field `K` containing `ℝ`, with trivial stabilizer.
+  specialization to algebraically closed fields `K` containing `ℝ`.
 * `RootPairing.Base.exists_isRegularWeight_eigenvector_exp_two_pi_I_div_orderOf_wordProd` /
-  `_of_isFiniteType`: the `ℂ` specialization with explicit eigenvalue `exp (2πi / h)`.
+  `_of_isFiniteType`: specialization to `ℂ` with explicit eigenvalue `exp (2πi / h)`.
 * `RootPairing.exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveRoot`:
   the bipartite Coxeter element has a regular eigenvector whose eigenvalue is a primitive root of
   unity of order equal to the order of the element.
@@ -178,11 +181,11 @@ end BaseChangeWeightSpace
 
 section FieldRootSystem
 
-variable {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
+variable {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N] {P : RootPairing ι K M N} [Finite ι] [P.IsCrystallographic]
   [P.IsReduced]
 
-omit [CharZero K] [Finite ι] [P.IsReduced] in
+omit [Finite ι] [P.IsReduced] in
 private theorem sum_map_smul_root_injective_of_isFiniteType (b : P.Base)
     (hft : IsFiniteType b.cartanMatrix) (φ : ℂ →+* K) :
     Function.Injective (fun u : b.support → ℂ ↦ ∑ i : b.support, φ (u i) • P.root i) := by
@@ -193,14 +196,21 @@ private theorem sum_map_smul_root_injective_of_isFiniteType (b : P.Base)
       simp only [b.coroot'_sum_map_smul_root, corootEval_coe_support] at hk
       simpa [mulVec, dotProduct] using hk)
 
-private theorem exists_isRegularWeight_eigenvector_of_ringHom [Nonempty ι] (b : P.Base)
-    (hft : IsFiniteType b.cartanMatrix) (hconn : (diagramGraph b.cartanMatrix).Preconnected)
+/-- **Steinberg's regular primitive-root eigenvector in `M` along a ring homomorphism `ℂ →+* K`**
+(Cartan-matrix form): for a base `b` of a nonempty finite crystallographic reduced root pairing over
+a field `K` equipped with `φ : ℂ →+* K`, when `b.cartanMatrix` is of finite type with preconnected
+Dynkin diagram, every Coxeter element `c = wordProd P b l` of order `h = orderOf c` has a regular
+`φ (exp (2πi / h))`-eigenvector in `M` with trivial Weyl stabilizer. -/
+theorem exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType [Nonempty ι]
+    (b : P.Base) (hft : IsFiniteType b.cartanMatrix)
+    (hconn : (diagramGraph b.cartanMatrix).Preconnected)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (φ : ℂ →+* K) :
     let c := wordProd P b l
     let μ := φ (Complex.exp (2 * Real.pi * Complex.I / orderOf c))
     ∃ v : M, v ≠ 0 ∧ c • v = μ • v ∧ IsPrimitiveRoot μ (orderOf c) ∧
       P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
   classical
+  have : CharZero K := ⟨fun a b h ↦ Nat.cast_injective (R := ℂ) (φ.injective (by simpa using h))⟩
   dsimp only; set c := wordProd P b l; have hW := b.actsBy_wordProd l
   obtain ⟨y, -, hy_eig, hprim, hy_reg, hy_stab⟩ :=
     b.exists_eigenvector_exp_two_pi_I_div_orderOf_wordProd_of_isFiniteType hft hconn hnd hall hW
@@ -218,8 +228,8 @@ private theorem exists_isRegularWeight_eigenvector_of_ringHom [Nonempty ι] (b :
   rw [MulAction.mem_stabilizer_iff, hG.smul_sum_map_smul_root φ y] at hg
   exact hy_stab _ _ hG (b.sum_map_smul_root_injective_of_isFiniteType hft φ hg)
 
-private theorem exists_isRegularWeight_eigenvector_isEmpty [P.IsIrreducible] [IsEmpty ι]
-    (b : P.Base) (l : List b.support) :
+private theorem exists_isRegularWeight_eigenvector_isEmpty [CharZero K] [P.IsIrreducible]
+    [IsEmpty ι] (b : P.Base) (l : List b.support) :
     let c := wordProd P b l
     ∃ v : M, v ≠ 0 ∧ c • v = (1 : K) • v ∧ IsPrimitiveRoot (1 : K) (orderOf c) ∧
       P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
@@ -228,6 +238,24 @@ private theorem exists_isRegularWeight_eigenvector_isEmpty [P.IsIrreducible] [Is
   refine ⟨v, hv, by simp [hl_nil l], by simp [hl_nil l], (P.isRegularWeight_iff v).mpr
     fun j ↦ (IsEmpty.false j).elim, eq_bot_iff.mpr fun g _ ↦ by
       obtain ⟨lg, rfl⟩ := exists_wordProd_eq P b g; simp [hl_nil lg]⟩
+
+/-- **Steinberg's regular primitive-root eigenvector in `M` along a ring homomorphism `ℂ →+* K`**:
+every Coxeter element of an irreducible finite crystallographic reduced root pairing over a field
+`K` equipped with `φ : ℂ →+* K` has a regular `φ (exp (2πi / h))`-eigenvector with trivial Weyl
+stabilizer. -/
+theorem exists_isRegularWeight_eigenvector_wordProd_of_ringHom [P.IsIrreducible] (b : P.Base)
+    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (φ : ℂ →+* K) :
+    let c := wordProd P b l
+    let μ := φ (Complex.exp (2 * Real.pi * Complex.I / orderOf c))
+    ∃ v : M, v ≠ 0 ∧ c • v = μ • v ∧ IsPrimitiveRoot μ (orderOf c) ∧
+      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
+  have : CharZero K := ⟨fun a b h ↦ Nat.cast_injective (R := ℂ) (φ.injective (by simpa using h))⟩
+  by_cases hne : Nonempty ι
+  · exact b.exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType
+      (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall φ
+  · have : IsEmpty ι := not_nonempty_iff.mp hne
+    have hl_nil : l = [] := List.eq_nil_iff_forall_not_mem.mpr fun i _ ↦ IsEmpty.false i.val
+    simpa [hl_nil, Complex.exp_two_pi_mul_I] using exists_isRegularWeight_eigenvector_isEmpty b l
 
 section AlgClosed
 
@@ -246,7 +274,7 @@ theorem exists_isRegularWeight_eigenvector_wordProd_of_isFiniteType [Nonempty ι
       P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
   obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : K) two_pos
   obtain ⟨v, hv_ne, hv_eig, hprim, hv_reg, hv_stab⟩ :=
-    b.exists_isRegularWeight_eigenvector_of_ringHom hft hconn hnd hall
+    b.exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType hft hconn hnd hall
       (Complex.liftAux i (sq i ▸ hi)).toRingHom
   exact ⟨v, _, hv_ne, hv_eig, hprim, hv_reg, hv_stab⟩
 
@@ -258,12 +286,11 @@ theorem exists_isRegularWeight_eigenvector_wordProd [P.IsIrreducible] (b : P.Bas
     let c := wordProd P b l
     ∃ (v : M) (μ : K), v ≠ 0 ∧ c • v = μ • v ∧ IsPrimitiveRoot μ (orderOf c) ∧
       P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
-  by_cases hne : Nonempty ι
-  · exact b.exists_isRegularWeight_eigenvector_wordProd_of_isFiniteType
-      (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
-  · have : IsEmpty ι := not_nonempty_iff.mp hne
-    obtain ⟨v, hv⟩ := exists_isRegularWeight_eigenvector_isEmpty b l
-    exact ⟨v, 1, hv⟩
+  obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : K) two_pos
+  obtain ⟨v, hv_ne, hv_eig, hprim, hv_reg, hv_stab⟩ :=
+    b.exists_isRegularWeight_eigenvector_wordProd_of_ringHom hnd hall
+      (Complex.liftAux i (sq i ▸ hi)).toRingHom
+  exact ⟨v, _, hv_ne, hv_eig, hprim, hv_reg, hv_stab⟩
 
 end AlgClosed
 
@@ -284,7 +311,8 @@ theorem exists_isRegularWeight_eigenvector_exp_two_pi_I_div_orderOf_wordProd_of_
     let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
     ∃ v : M, v ≠ 0 ∧ c • v = ζ • v ∧ IsPrimitiveRoot ζ (orderOf c) ∧
       P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ :=
-  b.exists_isRegularWeight_eigenvector_of_ringHom hft hconn hnd hall (RingHom.id ℂ)
+  b.exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType hft hconn hnd hall
+    (RingHom.id ℂ)
 
 /-- **Every Coxeter element of an irreducible finite complex crystallographic reduced root pairing
 has a regular `exp (2πi / h)`-eigenvector with trivial Weyl stabilizer.** -/
@@ -293,13 +321,8 @@ theorem exists_isRegularWeight_eigenvector_exp_two_pi_I_div_orderOf_wordProd [P.
     let c := wordProd P b l
     let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
     ∃ v : M, v ≠ 0 ∧ c • v = ζ • v ∧ IsPrimitiveRoot ζ (orderOf c) ∧
-      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
-  by_cases hne : Nonempty ι
-  · exact b.exists_isRegularWeight_eigenvector_exp_two_pi_I_div_orderOf_wordProd_of_isFiniteType
-      (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
-  · have : IsEmpty ι := not_nonempty_iff.mp hne
-    have hl_nil : l = [] := List.eq_nil_iff_forall_not_mem.mpr fun i _ ↦ IsEmpty.false i.val
-    simpa [hl_nil, Complex.exp_two_pi_mul_I] using exists_isRegularWeight_eigenvector_isEmpty b l
+      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ :=
+  b.exists_isRegularWeight_eigenvector_wordProd_of_ringHom hnd hall (RingHom.id ℂ)
 
 end Complex
 
