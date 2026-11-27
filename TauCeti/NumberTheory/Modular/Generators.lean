@@ -25,8 +25,7 @@ We use Mathlib's quotient projection and coercion into `PSL(2, ℤ)` directly.
 The center is already described by
 `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`, and the
 projective relations for `S` come from `TauCeti.NumberTheory.Modular.Relations`.
-Projectively, `S * T = R`, `S * R = T`, the inverses of `R` and `U` are `R²` and
-`U²` (all of order three), and `U` is conjugate to `R⁻¹ = R²` via `S`.
+Projectively, `S * T = R` and `S * R = T`, and `S` and `R` have finite order.
 
 ## References
 
@@ -194,30 +193,6 @@ theorem coe_S_mul_coe_T : (S : PSL(2, ℤ)) * T = R := by
 theorem coe_S_mul_coe_R : (S : PSL(2, ℤ)) * R = T := by
   rw [← coe_S_mul_coe_T, ← mul_assoc, ← sq, coe_S_sq, one_mul]
 
-/-- In `PSL(2, ℤ)`, the inverse of `R²` is `R`. -/
-@[simp]
-theorem coe_R_sq_inv : ((R : PSL(2, ℤ)) ^ 2)⁻¹ = R := by
-  rw [coe_R_sq, inv_inv]
-
-/-- In `PSL(2, ℤ)`, the inverse of `U` is `U²`. -/
-theorem coe_U_inv : (U : PSL(2, ℤ))⁻¹ = (U : PSL(2, ℤ)) ^ 2 :=
-  inv_eq_of_mul_eq_one_right (by rw [← pow_succ', coe_U_pow_three])
-
-/-- In `PSL(2, ℤ)`, the inverse of `U²` is `U`. -/
-@[simp]
-theorem coe_U_sq_inv : ((U : PSL(2, ℤ)) ^ 2)⁻¹ = U := by
-  rw [← coe_U_inv, inv_inv]
-
-/-- The square of `R` in `PSL(2, ℤ)` has exact order `3`. -/
-@[simp]
-theorem orderOf_coe_R_sq : orderOf ((R : PSL(2, ℤ)) ^ 2) = 3 := by
-  rw [coe_R_sq, orderOf_inv, orderOf_coe_R]
-
-/-- The square of `U` in `PSL(2, ℤ)` has exact order `3`. -/
-@[simp]
-theorem orderOf_coe_U_sq : orderOf ((U : PSL(2, ℤ)) ^ 2) = 3 := by
-  rw [← coe_U_inv, orderOf_inv, orderOf_coe_U]
-
 /-- `S` has finite order in `PSL(2, ℤ)`. -/
 theorem isOfFinOrder_coe_S : IsOfFinOrder (S : PSL(2, ℤ)) :=
   orderOf_pos_iff.mp (by simp)
@@ -225,31 +200,6 @@ theorem isOfFinOrder_coe_S : IsOfFinOrder (S : PSL(2, ℤ)) :=
 /-- `R` has finite order in `PSL(2, ℤ)`. -/
 theorem isOfFinOrder_coe_R : IsOfFinOrder (R : PSL(2, ℤ)) :=
   orderOf_pos_iff.mp (by simp)
-
-/-- `R²` has finite order in `PSL(2, ℤ)`. -/
-theorem isOfFinOrder_coe_R_sq : IsOfFinOrder ((R : PSL(2, ℤ)) ^ 2) :=
-  orderOf_pos_iff.mp (by simp)
-
-/-- `U` has finite order in `PSL(2, ℤ)`. -/
-theorem isOfFinOrder_coe_U : IsOfFinOrder (U : PSL(2, ℤ)) :=
-  orderOf_pos_iff.mp (by simp)
-
-/-- `U²` has finite order in `PSL(2, ℤ)`. -/
-theorem isOfFinOrder_coe_U_sq : IsOfFinOrder ((U : PSL(2, ℤ)) ^ 2) :=
-  orderOf_pos_iff.mp (by simp)
-
-/-- Projectively, `U` and `R⁻¹` are conjugate via `S`. -/
-theorem isConj_coe_U_coe_R_inv : IsConj (U : PSL(2, ℤ)) (R : PSL(2, ℤ))⁻¹ :=
-  IsConj.symm <| isConj_iff.mpr ⟨(S : PSL(2, ℤ)), coe_S_mul_coe_R_inv_mul_coe_S_inv⟩
-
-/-- Projectively, `U` and `R²` are conjugate. -/
-theorem isConj_coe_U_coe_R_sq : IsConj (U : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) :=
-  coe_R_sq.symm ▸ isConj_coe_U_coe_R_inv
-
-/-- Projectively, `U²` and `R` are conjugate. -/
-theorem isConj_coe_U_sq_coe_R : IsConj ((U : PSL(2, ℤ)) ^ 2) (R : PSL(2, ℤ)) := by
-  have h := isConj_coe_U_coe_R_inv.pow 2
-  rwa [inv_pow, coe_R_sq_inv] at h
 
 /-- The modular triangle homomorphism with `x ↦ U`, `y ↦ S` and `z ↦ T`. -/
 def modularHom : TriangleGroup 3 2 0 →* PSL(2, ℤ) :=

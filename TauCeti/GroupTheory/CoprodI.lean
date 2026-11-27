@@ -116,6 +116,8 @@ def coprodICongrLeft {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)] (e
     (by ext i x; simp)
     (by ext k m; simp)
 
+/-- Evaluating `coprodICongrLeft M e` on `CoprodI.of (i := i) m` yields
+`CoprodI.of (i := e i) m`. -/
 @[simp]
 theorem coprodICongrLeft_apply_of {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)]
     (e : ι ≃ κ) {i : ι} (m : M (e i)) :

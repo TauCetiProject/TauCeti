@@ -43,6 +43,28 @@ noncomputable section
 
 namespace TauCeti.TriangleGroup
 
+/-- Local helper building `Multiplicative (ZMod n) →* G` for arbitrary `n : ℕ` (including `n = 0`)
+without modifying `TauCeti.Data.ZMod.MonoidHomEquiv`. -/
+private noncomputable def zmodLiftMul {n : ℕ} {G : Type*} [Group G] (g : G) (hg : g ^ n = 1) :
+    Multiplicative (ZMod n) →* G :=
+  (ZMod.lift n ⟨zmultiplesHom _ (.ofMul g), by
+    rw [zmultiplesHom_apply, natCast_zsmul, ← ofMul_pow, hg, ofMul_one]⟩).toMultiplicativeLeft
+
+@[simp]
+private theorem zmodLiftMul_ofAdd_one {n : ℕ} {G : Type*} [Group G] (g : G) (hg : g ^ n = 1) :
+    zmodLiftMul g hg (.ofAdd 1) = g := by
+  rw [zmodLiftMul, AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply,
+    Function.comp_apply, toAdd_ofAdd, ← Int.cast_one, ZMod.lift_coe]
+  simp
+
+private theorem zmodHom_ext {n : ℕ} {G : Type*} [Monoid G]
+    {φ ψ : Multiplicative (ZMod n) →* G} (h : φ (.ofAdd 1) = ψ (.ofAdd 1)) : φ = ψ :=
+  MonoidHom.eq_of_eqOn_dense
+    (by
+      rw [← Subgroup.zpowers_eq_closure, eq_top_iff]
+      exact fun z _ ↦ Multiplicative.mem_zpowers_ofAdd_one z)
+    (by rintro _ rfl; exact h)
+
 /-- **Free-product decomposition of `Δ(a, b, 0)`.** For all `a b : ℕ`, the triangle group
 `TriangleGroup a b 0` is isomorphic to `Multiplicative (ZMod a) ∗ Multiplicative (ZMod b)`,
 sending `x` to `inl (ofAdd 1)` and `y` to `inr (ofAdd 1)`. -/
@@ -50,17 +72,14 @@ def equivCoprod (a b : ℕ) :
     TriangleGroup a b 0 ≃* Monoid.Coprod (Multiplicative (ZMod a)) (Multiplicative (ZMod b)) :=
   MonoidHom.toMulEquiv
     (lift (.inl (.ofAdd 1)) (.inr (.ofAdd 1)) (.inr (.ofAdd 1) * .inl (.ofAdd 1))⁻¹
-      (by rw [← map_pow, ofAdd_one_pow_modulus_eq_one, map_one])
-      (by rw [← map_pow, ofAdd_one_pow_modulus_eq_one, map_one])
+      (by rw [← map_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero, map_one])
+      (by rw [← map_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero, map_one])
       (pow_zero _)
       (by rw [mul_assoc, inv_mul_cancel]))
-    (Monoid.Coprod.lift
-      ((zmodMonoidHomEquiv a _).symm ⟨x a b 0, x_pow a b 0⟩)
-      ((zmodMonoidHomEquiv b _).symm ⟨y a b 0, y_pow a b 0⟩))
+    (Monoid.Coprod.lift (zmodLiftMul (x a b 0) (x_pow a b 0))
+      (zmodLiftMul (y a b 0) (y_pow a b 0)))
     (by ext <;> simp)
-    (Monoid.Coprod.hom_ext
-      (TauCeti.zmodMonoidHom_ext (by simp))
-      (TauCeti.zmodMonoidHom_ext (by simp)))
+    (Monoid.Coprod.hom_ext (zmodHom_ext (by simp)) (zmodHom_ext (by simp)))
 
 /-- `equivCoprod` maps the first generator `x a b 0` to `inl (ofAdd 1)`. -/
 @[simp]
@@ -96,15 +115,13 @@ theorem equivCoprod_symm_inr_ofAdd_one (a b : ℕ) :
 @[simp]
 theorem equivCoprod_symm_inl_ofAdd_intCast (a b : ℕ) (k : ℤ) :
     (equivCoprod a b).symm (.inl (.ofAdd (k : ZMod a))) = x a b 0 ^ k := by
-  simpa using
-    zmodMonoidHom_map_ofAdd_intCast ((equivCoprod a b).symm.toMonoidHom.comp Monoid.Coprod.inl) k
+  rw [← zsmul_one k, ofAdd_zsmul, map_zpow, map_zpow, equivCoprod_symm_inl_ofAdd_one]
 
 /-- The inverse of `equivCoprod` sends `inr (ofAdd k)` to `y a b 0 ^ k`. -/
 @[simp]
 theorem equivCoprod_symm_inr_ofAdd_intCast (a b : ℕ) (k : ℤ) :
     (equivCoprod a b).symm (.inr (.ofAdd (k : ZMod b))) = y a b 0 ^ k := by
-  simpa using
-    zmodMonoidHom_map_ofAdd_intCast ((equivCoprod a b).symm.toMonoidHom.comp Monoid.Coprod.inr) k
+  rw [← zsmul_one k, ofAdd_zsmul, map_zpow, map_zpow, equivCoprod_symm_inr_ofAdd_one]
 
 /-- The first generator `x a b 0` of `Δ(a, b, 0)` has order `a` (for `a = 0`, infinite order). -/
 @[simp]
@@ -159,8 +176,12 @@ theorem not_isOfFinOrder_z_zero {a b : ℕ} (ha : a ≠ 1) (hb : b ≠ 1) :
     ULift.up (.ofAdd (-1))
   let y₀ : Monoid.Coprod.Factors (Multiplicative (ZMod a)) (Multiplicative (ZMod b)) true :=
     ULift.up (.ofAdd (-1))
-  have hx : x₀ ≠ 1 := fun h => ofAdd_neg_one_ne_one_of_ne_one ha (congrArg ULift.down h)
-  have hy : y₀ ≠ 1 := fun h => ofAdd_neg_one_ne_one_of_ne_one hb (congrArg ULift.down h)
+  have hx : x₀ ≠ 1 := fun h => by
+    have h' : Multiplicative.ofAdd (-1 : ZMod a) = 1 := congrArg ULift.down h
+    simp [ZMod.one_eq_zero_iff, ha] at h'
+  have hy : y₀ ≠ 1 := fun h => by
+    have h' : Multiplicative.ofAdd (-1 : ZMod b) = 1 := congrArg ULift.down h
+    simp [ZMod.one_eq_zero_iff, hb] at h'
   obtain ⟨w, hprod, hfst⟩ := alternatingWord x₀ y₀ hx hy k
   have hempty : w = Monoid.CoprodI.Word.empty :=
     Monoid.CoprodI.Word.prod_injective (by

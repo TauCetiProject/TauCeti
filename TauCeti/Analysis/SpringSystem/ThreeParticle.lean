@@ -202,7 +202,7 @@ noncomputable def threeParticleRep : Representation ℝ (Multiplicative (ZMod 2)
 @[simp]
 theorem threeParticleRep_ofAdd_one_apply (x : Fin 3 → ℝ) :
     threeParticleRep (.ofAdd 1) x = threeParticleReflection x := by
-  simp [threeParticleRep]
+  simp [threeParticleRep, ZMod.val_one]
 
 /-- **`H` is equivariant**: the linearized force commutes with the reflection symmetry. -/
 theorem threeParticleForceMatrix_mulVec_threeParticleRep (g : Multiplicative (ZMod 2))

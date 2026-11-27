@@ -630,20 +630,20 @@ noncomputable def symmetryRep :
 @[simp]
 theorem symmetryRep_ofAdd_one_one_apply (u : Fin 4 → ℝ) :
     symmetryRep (.ofAdd 1, 1) u = axisReflection u := by
-  simp [symmetryRep, MonoidHom.noncommCoprod_apply]
+  simp [symmetryRep, MonoidHom.noncommCoprod_apply, ZMod.val_one]
 
 /-- The second generator of `C₂ × C₂` acts by the bisector reflection. -/
 @[simp]
 theorem symmetryRep_one_ofAdd_one_apply (u : Fin 4 → ℝ) :
     symmetryRep (1, .ofAdd 1) u = bisectorReflection u := by
-  simp [symmetryRep, MonoidHom.noncommCoprod_apply]
+  simp [symmetryRep, MonoidHom.noncommCoprod_apply, ZMod.val_one]
 
 /-- The product of the two generators acts by the half-turn, the composite of the two
 reflections. -/
 @[simp]
 theorem symmetryRep_ofAdd_one_ofAdd_one_apply (u : Fin 4 → ℝ) :
     symmetryRep (.ofAdd 1, .ofAdd 1) u = axisReflection (bisectorReflection u) := by
-  simp [symmetryRep, MonoidHom.noncommCoprod_apply]
+  simp [symmetryRep, MonoidHom.noncommCoprod_apply, ZMod.val_one]
 
 /-- **`H` is equivariant**: the linearized force commutes with the symmetries of the spring. -/
 theorem forceMatrix_mulVec_symmetryRep (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2))

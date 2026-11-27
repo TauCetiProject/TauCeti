@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Abelianization.Defs
-public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -20,10 +19,8 @@ the commutator subgroup (`Group.Abelianization.of_eq_one_iff`), so the abelianiz
 commutative group is injective (`Group.Abelianization.of_injective`), and isomorphisms out of an
 abelianization are determined by their values on classes (`Group.Abelianization.mulEquiv_ext`).
 Every element of the additive abelianization is the class of a group element
-(`Group.Abelianization.exists_eq_ofMul_of`). The index of the commutator subgroup equals the
-cardinality of the abelianization (`Subgroup.index_commutator_eq_natCard_abelianization`), and the
-abelianization of a product of two groups is the product of their abelianizations
-(`Group.Abelianization.prodMulEquiv`).
+(`Group.Abelianization.exists_eq_ofMul_of`). The abelianization of a product of two groups is the
+product of their abelianizations (`Group.Abelianization.prodMulEquiv`).
 -/
 
 public section
@@ -63,13 +60,6 @@ theorem of_injective [IsMulCommutative G] : Function.Injective (of (G := G)) :=
 theorem mulEquiv_ext {M : Type*} [Monoid M] {e e' : Group.Abelianization G ≃* M}
     (h : ∀ x : G, e (of x) = e' (of x)) : e = e' :=
   MulEquiv.toMonoidHom_injective (hom_ext _ _ (MonoidHom.ext h))
-
-/-- The index of the commutator subgroup `[G, G]` equals the cardinality of the abelianization
-`Group.Abelianization G`. -/
-theorem _root_.Subgroup.index_commutator_eq_natCard_abelianization (G : Type*) [Group G] :
-    (commutator G).index = Nat.card (Group.Abelianization G) :=
-  -- `Group.Abelianization G` is defined as `G ⧸ commutator G`.
-  (commutator G).index_eq_card
 
 /-- **The abelianization of a product** of two groups is the product of their abelianizations:
 the class of `(g, h)` corresponds to the pair of the classes of `g` and `h`. -/

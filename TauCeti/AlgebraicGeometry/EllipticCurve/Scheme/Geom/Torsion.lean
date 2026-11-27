@@ -383,7 +383,6 @@ theorem torsionPointHom_ofAdd (a : ZMod N) :
     E.torsionPointHom N (.ofAdd a) = E.torsionι N ^ a.val :=
   zmodMonoidHomEquiv_symm_apply _ _
 
-omit [NeZero N] in
 /-- The universal point of `E[N]` sends `1` to the inclusion `P` of `E[N]` into `E`. -/
 theorem torsionPointHom_ofAdd_one : E.torsionPointHom N (.ofAdd 1) = E.torsionι N :=
   (coe_zmodMonoidHomEquiv_apply _).symm.trans <| by

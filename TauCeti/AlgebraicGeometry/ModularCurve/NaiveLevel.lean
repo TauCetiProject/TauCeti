@@ -536,7 +536,7 @@ theorem gammaNaiveAction_hom_comp_gammaNaiveToGammaOneNaive {g : GL (Fin 2) (ZMo
     (h₀₀ : g 0 0 = 1) (h₁₀ : g 1 0 = 0) :
     (gammaNaiveAction B N (.op g)).asIso.hom ≫ gammaNaiveToGammaOneNaive B N =
       gammaNaiveToGammaOneNaive B N := by
-  ext X α
+  ext X α z
   simp [h₀₀, h₁₀]
 
 variable [NeZero N]
