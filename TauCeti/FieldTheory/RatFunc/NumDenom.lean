@@ -14,8 +14,9 @@ A rational function has a unique relatively prime numerator and monic denominato
 an embedding of coefficient fields carries its normalized numerator and denominator to those of
 the image. These compatibility results allow invariance of a rational function to be checked on
 its polynomial coefficients. Subtracting a constant `c` from `P / Q` gives `(P - c Q) / Q`, again in
-lowest terms. Evaluating a rational function at a point of its coefficient field divides the values
-there of its normalized numerator and denominator.
+lowest terms, so `P - c Q` vanishes only when the rational function is `c`. Evaluating a rational
+function at a point of its coefficient field divides the values there of its normalized numerator
+and denominator.
 -/
 
 public section
@@ -63,6 +64,12 @@ denominator. -/
 theorem denom_sub_C (z : RatFunc K) (c : K) : (z - RatFunc.C c).denom = z.denom :=
   ((num_eq_and_denom_eq_iff_eq_div (IsCoprime.sub_mul_right_left_iff.2 z.isCoprime_num_denom)
     (monic_denom z)).2 (sub_C_eq_div z c)).2
+
+/-- For `z = P / Q` in lowest terms, `P - c Q` vanishes only when `z` is the constant `c`. -/
+theorem num_sub_C_mul_denom_ne_zero {z : RatFunc K} {c : K} (h : z ≠ RatFunc.C c) :
+    z.num - Polynomial.C c * z.denom ≠ 0 := by
+  rw [← num_sub_C]
+  exact num_ne_zero (sub_ne_zero.2 h)
 
 /-- Embedding the coefficient field commutes with taking the normalized numerator. -/
 @[simp]

@@ -107,12 +107,6 @@ private theorem sub_algebraMap_ne_zero (hr : r ∉ range (algebraMap ℂ (RatFun
     r - algebraMap ℂ (RatFunc ℂ) c ≠ 0 :=
   fun h ↦ hr ⟨c, (sub_eq_zero.1 h).symm⟩
 
-/-- `P - c Q` vanishes only when `r = P / Q` is the constant `c`. -/
-private theorem num_sub_C_mul_denom_ne_zero (hr : r ∉ range (algebraMap ℂ (RatFunc ℂ)))
-    (c : ℂ) : r.num - C c * r.denom ≠ 0 := by
-  rw [← RatFunc.num_sub_C, ← RatFunc.algebraMap_eq_C]
-  exact RatFunc.num_ne_zero (sub_algebraMap_ne_zero hr c)
-
 /-- **The order of a rational function at a finite point of the sphere** is the multiplicity of
 the point as a root of its numerator minus its multiplicity as a root of its denominator. -/
 theorem order_ratFuncEquiv_coe (a : ℂ) {s : RatFunc ℂ} (hs : s ≠ 0) :
@@ -127,6 +121,26 @@ theorem order_ratFuncEquiv_coe (a : ℂ) {s : RatFunc ℂ} (hs : s ≠ 0) :
 theorem order_ratFuncEquiv_infty {s : RatFunc ℂ} (hs : s ≠ 0) :
     order (∞ : OnePoint ℂ) (ratFuncEquiv s) = ((-s.intDegree : ℤ) : WithTop ℤ) := by
   rw [order_ratFuncEquiv_eq_ord _ hs, map_place_infty, Place.ord_infty]
+
+/-- The order of `r - c` at a finite point `a` of the sphere, for `r = P / Q` other than the
+constant `c`, is the multiplicity of `a` as a root of `P - c Q` minus its multiplicity as a root
+of `Q`. -/
+theorem order_ratFuncEquiv_sub_algebraMap_coe (a : ℂ) {c : ℂ}
+    (hrc : r - algebraMap ℂ (RatFunc ℂ) c ≠ 0) :
+    order (a : OnePoint ℂ) (ratFuncEquiv r - algebraMap ℂ _ c) =
+      ((((r.num - C c * r.denom).rootMultiplicity a : ℤ) - r.denom.rootMultiplicity a : ℤ) :
+        WithTop ℤ) := by
+  rw [← AlgEquiv.commutes ratFuncEquiv, ← map_sub, order_ratFuncEquiv_coe a hrc,
+    RatFunc.algebraMap_eq_C, RatFunc.num_sub_C, RatFunc.denom_sub_C]
+
+/-- The order of `r - c` at `∞`, for `r = P / Q` other than the constant `c`, is `deg Q` minus
+`deg (P - c Q)`. -/
+theorem order_ratFuncEquiv_sub_algebraMap_infty {c : ℂ}
+    (hrc : r - algebraMap ℂ (RatFunc ℂ) c ≠ 0) :
+    order (∞ : OnePoint ℂ) (ratFuncEquiv r - algebraMap ℂ _ c) =
+      (((r.denom.natDegree : ℤ) - (r.num - C c * r.denom).natDegree : ℤ) : WithTop ℤ) := by
+  rw [← AlgEquiv.commutes ratFuncEquiv, ← map_sub, order_ratFuncEquiv_infty hrc,
+    RatFunc.algebraMap_eq_C, RatFunc.intDegree, RatFunc.num_sub_C, RatFunc.denom_sub_C, neg_sub]
 
 /-- The meromorphic function of a nonconstant rational function takes two distinct values. -/
 theorem exists_ratFuncEquiv_apply_ne (hr : r ∉ range (algebraMap ℂ (RatFunc ℂ))) :
@@ -162,10 +176,8 @@ theorem localMultiplicity_ratFuncEquiv_coe {z : ℂ} (hz : ¬r.denom.IsRoot z) :
     simp [c, RatFunc.algebraMap_eq_C]
   have h := order_sub_algebraMap_eq_localMultiplicity (exists_ratFuncEquiv_apply_ne hr)
     (ratFuncEquiv_apply_coe r hz)
-  rw [← AlgEquiv.commutes ratFuncEquiv, ← map_sub,
-    order_ratFuncEquiv_coe z (sub_algebraMap_ne_zero hr c), RatFunc.algebraMap_eq_C,
-    RatFunc.num_sub_C, RatFunc.denom_sub_C, rootMultiplicity_eq_zero hz, Nat.cast_zero,
-    sub_zero] at h
+  rw [order_ratFuncEquiv_sub_algebraMap_coe z (sub_algebraMap_ne_zero hr c),
+    rootMultiplicity_eq_zero hz, Nat.cast_zero, sub_zero] at h
   exact_mod_cast h.symm
 
 /-- **Ramification at a finite point which is not a pole.** A nonconstant rational function
@@ -179,7 +191,8 @@ theorem one_lt_localMultiplicity_ratFuncEquiv_coe_iff
     rw [RatFunc.eval_id_eq_div, div_mul_cancel₀ _ hz]
   set c := r.eval (RingHom.id ℂ) z
   rw [localMultiplicity_ratFuncEquiv_coe hz,
-    one_lt_rootMultiplicity_iff_isRoot (num_sub_C_mul_denom_ne_zero hr c)]
+    one_lt_rootMultiplicity_iff_isRoot (RatFunc.num_sub_C_mul_denom_ne_zero
+      fun h ↦ hr ⟨c, by rw [RatFunc.algebraMap_eq_C, h]⟩)]
   simp only [IsRoot.def, eval_sub, eval_mul, eval_C, derivative_sub, derivative_mul,
     derivative_C, zero_mul, zero_add, wronskian]
   rw [hc, sub_self, eq_self_iff_true, true_and]
@@ -281,10 +294,8 @@ theorem localMultiplicity_ratFuncEquiv_infty_of_intDegree_eq_zero (h : r.intDegr
     simp [RatFunc.algebraMap_eq_C]
   have hm := order_sub_algebraMap_eq_localMultiplicity (exists_ratFuncEquiv_apply_ne hr)
     (ratFuncEquiv_apply_infty_of_intDegree_eq_zero h)
-  rw [← AlgEquiv.commutes ratFuncEquiv, ← map_sub,
-    order_ratFuncEquiv_infty (sub_algebraMap_ne_zero hr c), RatFunc.algebraMap_eq_C,
-    RatFunc.intDegree, RatFunc.num_sub_C, RatFunc.denom_sub_C] at hm
-  have hm' : -((r.num - C c * r.denom).natDegree - (r.denom.natDegree : ℤ)) =
+  rw [order_ratFuncEquiv_sub_algebraMap_infty (sub_algebraMap_ne_zero hr c)] at hm
+  have hm' : (r.denom.natDegree : ℤ) - (r.num - C c * r.denom).natDegree =
       (localMultiplicity (ratFuncEquiv r) ∞ : ℤ) := by exact_mod_cast hm
   omega
 
@@ -342,23 +353,10 @@ theorem mem_branchValues_sphereRatFunc_iff {y : OnePoint ℂ} :
         (localMultiplicity_ratFuncEquiv_coe_of_isRoot hroot).symm ▸ hz⟩
     · exact ⟨∞, rfl, h⟩
 
-/-- The reduced numerator of `1 / z²` is `1`. -/
-private theorem num_inv_X_sq : ((RatFunc.X : RatFunc ℂ) ^ 2)⁻¹.num = 1 := by
-  classical
-  have h : ((RatFunc.X : RatFunc ℂ) ^ 2)⁻¹ =
-      algebraMap ℂ[X] (RatFunc ℂ) 1 / algebraMap ℂ[X] (RatFunc ℂ) (X ^ 2) := by
-    simp
-  rw [h, RatFunc.num_div]
-  simp
-
-/-- The reduced denominator of `1 / z²` is `z²`. -/
-private theorem denom_inv_X_sq : ((RatFunc.X : RatFunc ℂ) ^ 2)⁻¹.denom = X ^ 2 := by
-  classical
-  have h : ((RatFunc.X : RatFunc ℂ) ^ 2)⁻¹ =
-      algebraMap ℂ[X] (RatFunc ℂ) 1 / algebraMap ℂ[X] (RatFunc ℂ) (X ^ 2) := by
-    simp
-  rw [h, RatFunc.denom_div _ (pow_ne_zero 2 X_ne_zero)]
-  simp
+/-- The reduced numerator and denominator of `1 / z²` are `1` and `z²`. -/
+private theorem num_denom_inv_X_sq :
+    ((RatFunc.X : RatFunc ℂ) ^ 2)⁻¹.num = 1 ∧ ((RatFunc.X : RatFunc ℂ) ^ 2)⁻¹.denom = X ^ 2 :=
+  (RatFunc.num_eq_and_denom_eq_iff_eq_div isCoprime_one_left (monic_X_pow 2)).2 (by simp)
 
 /-- **The branch values of `z ↦ 1 / z²`** are `0` and `∞`. The derivative `-2 / z³` has no finite
 zero; `∞` is a branch value because of the double pole at `0`, and `0` because the map reads
@@ -367,12 +365,12 @@ theorem branchValues_sphereRatFunc_inv_X_sq
     (hr : ((RatFunc.X : RatFunc ℂ) ^ 2)⁻¹ ∉ range (algebraMap ℂ (RatFunc ℂ))) :
     (sphereRatFunc hr).branchValues = {((0 : ℂ) : OnePoint ℂ), ∞} := by
   have hdeg : ((RatFunc.X : RatFunc ℂ) ^ 2)⁻¹.intDegree = -2 := by
-    simp [RatFunc.intDegree, num_inv_X_sq, denom_inv_X_sq]
+    simp [RatFunc.intDegree, num_denom_inv_X_sq]
   ext y
   rw [mem_branchValues_sphereRatFunc_iff,
     ratFuncEquiv_apply_infty_of_intDegree_neg (by rw [hdeg]; norm_num),
     localMultiplicity_ratFuncEquiv_infty_of_intDegree_ne_zero (by rw [hdeg]; norm_num), hdeg,
-    num_inv_X_sq, denom_inv_X_sq]
+    num_denom_inv_X_sq.1, num_denom_inv_X_sq.2]
   simp only [mem_insert_iff, mem_singleton_iff]
   constructor
   · rintro (⟨z, hz, hw, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩)
