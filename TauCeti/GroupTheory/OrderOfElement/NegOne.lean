@@ -8,7 +8,10 @@ module
 public import Mathlib.GroupTheory.OrderOfElement
 
 /-!
-# Powers equal to `-1` of an element of even order
+# Powers equal to `-1` and the order of an element
+
+If `-1 ≠ 1` in a monoid with distributive negation, no power of an element of odd order is `-1`,
+as recorded by `TauCeti.pow_ne_neg_one_of_odd_orderOf`.
 
 Let `u` be an element of order `2 * m`, with `m ≠ 0`, in a ring without zero divisors. Then
 `u ^ m` squares to `1` and is not `1`, so it is `-1`, the only other square root of `1`. Since
@@ -32,6 +35,15 @@ multiplicative order of `q`.
 public section
 
 namespace TauCeti
+
+/-- If `-1 ≠ 1`, no power of an element of odd order is `-1`. -/
+theorem pow_ne_neg_one_of_odd_orderOf {M : Type*} [Monoid M] [HasDistribNeg M] {a : M}
+    (h : (-1 : M) ≠ 1) (ha : Odd (orderOf a)) (i : ℕ) : a ^ i ≠ -1 := by
+  intro he
+  have hp : (a ^ i) ^ orderOf a = 1 := by
+    rw [pow_right_comm, pow_orderOf_eq_one, one_pow]
+  rw [he, ha.neg_one_pow] at hp
+  exact h hp
 
 variable {R : Type*} [Ring R] [NoZeroDivisors R] {u : R} {m : ℕ}
 
