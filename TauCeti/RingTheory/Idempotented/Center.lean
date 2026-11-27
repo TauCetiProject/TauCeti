@@ -26,13 +26,13 @@ regular module of the unitization, `φ` acts by `x ↦ φ(x)`
 
 ## Main definitions
 
-* `TauCeti.NondegMod.centroidEnd φ M`: the action of `φ` on a nondegenerate module `M`.
+* `CentroidHom.moduleEnd φ hM`: the action of `φ` on a nondegenerate module `M`.
 * `TauCeti.NondegMod.centroidToCatCenter A H`: the ring homomorphism from the bimodule
   endomorphisms of `H` to the centre of `NondegMod A H`.
 
 ## Main results
 
-* `TauCeti.NondegMod.centroidEnd_apply_of_smul_eq`,
+* `CentroidHom.moduleEnd_apply_of_smul_eq`,
   `TauCeti.NondegMod.centroidToCatCenter_app_apply`: `φ` acts on `m` by `φ(e)` for every
   `e ∈ H` with `e • m = m`.
 * `TauCeti.NondegMod.centroidToCatCenter_injective`: distinct bimodule endomorphisms act
@@ -40,21 +40,22 @@ regular module of the unitization, `φ` acts by `x ↦ φ(x)`
 
 ## References
 
-* J. N. Bernstein, *Le "centre" de Bernstein*, edited by P. Deligne, in *Représentations des groupes
-  réductifs sur un corps local*, Hermann, Paris (1984), §1.1.
+* J. Bernstein, *Second adjointness for representations of reductive p-adic groups*, 1987
+  manuscript, §1.1–1.2 and §1.8, pp. 3–4 and 8 (the centre of the category of nondegenerate
+  modules and the bimodule endomorphisms of `H`).
 -/
 
 public section
 
 universe v u₁ u₂
 
-open CategoryTheory
+open CategoryTheory TauCeti
 
-namespace TauCeti.NondegMod
+namespace CentroidHom
 
-variable {A : Type u₁} {H : Type u₂} [CommRing A] [NonUnitalRing H] [Module A H]
+variable {A H : Type*} [CommSemiring A] [NonUnitalSemiring H] [Module A H]
   [IsScalarTower A H H] [SMulCommClass A H H] [IsIdempotented H]
-  {M : Type*} [AddCommGroup M] [Module (Unitization A H) M]
+  {M : Type*} [AddCommMonoid M] [Module (Unitization A H) M]
 
 /-- A bimodule endomorphism `φ` of `H` gives the same action `φ(e) • m = φ(e') • m` through any
 two elements `e, e'` of `H` fixing `m`: both equal `φ(f) • m` for a local unit `f` of `e` and
@@ -69,11 +70,9 @@ theorem inr_apply_smul_eq_of_smul_eq (φ : CentroidHom H) {m : M} {e e' : H}
     rw [← hfe, map_mul_right, Unitization.inr_mul, mul_smul, he]
   rw [key (hf e (by simp)).1 he, key (hf e' (by simp)).1 he']
 
-variable (A H) in
 /-- The action `m ↦ φ(e) • m` of a bimodule endomorphism `φ` of `H` on a nondegenerate module
-`M`, where `e ∈ H` is any element with `e • m = m`
-(`TauCeti.NondegMod.centroidEnd_apply_of_smul_eq`). -/
-noncomputable def centroidEnd (φ : CentroidHom H) (hM : IsNondegenerate A H M) :
+`M`, where `e ∈ H` is any element with `e • m = m` (`CentroidHom.moduleEnd_apply_of_smul_eq`). -/
+noncomputable def moduleEnd (φ : CentroidHom H) (hM : IsNondegenerate A H M) :
     M →ₗ[Unitization A H] M := by
   classical
   let act : M →+ M :=
@@ -84,7 +83,7 @@ noncomputable def centroidEnd (φ : CentroidHom H) (hM : IsNondegenerate A H M) 
         have h (x : M) (hx : (f : Unitization A H) • x = x) :
             (φ (isNondegenerate_iff.1 hM x).choose : Unitization A H) • x =
               (φ f : Unitization A H) • x :=
-          inr_apply_smul_eq_of_smul_eq φ (isNondegenerate_iff.1 hM x).choose_spec.2 hx
+          φ.inr_apply_smul_eq_of_smul_eq (isNondegenerate_iff.1 hM x).choose_spec.2 hx
         rw [h _ (by rw [smul_add, hf m (by simp), hf m' (by simp)]), h m (hf m (by simp)),
           h m' (hf m' (by simp)), smul_add] }
   refine
@@ -95,33 +94,39 @@ noncomputable def centroidEnd (φ : CentroidHom H) (hM : IsNondegenerate A H M) 
   -- `h • m`, and both sides are `φ(h) • m`.
   obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 hM m
   obtain ⟨f, -, hf⟩ := IsIdempotented.exists_isIdempotentElem {h, e}
-  have hfm : (f : Unitization A H) • m = m := by
-    rw [← he, smul_smul, ← Unitization.inr_mul, (hf e (by simp)).1]
+  have hfm : (f : Unitization A H) • m = m := inr_smul_eq_of_mul_eq he (hf e (by simp)).1
   have hfhm : (f : Unitization A H) • (h : Unitization A H) • m = (h : Unitization A H) • m := by
     rw [smul_smul, ← Unitization.inr_mul, (hf h (by simp)).1]
   have hact (x : M) (hx : (f : Unitization A H) • x = x) :
       act x = (φ f : Unitization A H) • x :=
-    inr_apply_smul_eq_of_smul_eq φ (isNondegenerate_iff.1 hM x).choose_spec.2 hx
+    φ.inr_apply_smul_eq_of_smul_eq (isNondegenerate_iff.1 hM x).choose_spec.2 hx
   rw [hact _ hfhm, hact m hfm, smul_smul, smul_smul, ← Unitization.inr_mul,
     ← Unitization.inr_mul, ← map_mul_right, ← map_mul_left,
     (hf h (by simp)).1, (hf h (by simp)).2]
 
 /-- A bimodule endomorphism `φ` acts on `m` by `φ(e)`, for any `e ∈ H` with `e • m = m`. -/
-theorem centroidEnd_apply_of_smul_eq (φ : CentroidHom H) (hM : IsNondegenerate A H M) {m : M}
+theorem moduleEnd_apply_of_smul_eq (φ : CentroidHom H) (hM : IsNondegenerate A H M) {m : M}
     {e : H} (he : (e : Unitization A H) • m = m) :
-    centroidEnd A H φ hM m = (φ e : Unitization A H) • m :=
-  inr_apply_smul_eq_of_smul_eq φ (isNondegenerate_iff.1 hM m).choose_spec.2 he
+    φ.moduleEnd hM m = (φ e : Unitization A H) • m :=
+  φ.inr_apply_smul_eq_of_smul_eq (isNondegenerate_iff.1 hM m).choose_spec.2 he
 
 /-- A bimodule endomorphism commutes with homomorphisms of nondegenerate modules. -/
-theorem centroidEnd_comp {N : Type*} [AddCommGroup N] [Module (Unitization A H) N]
+theorem moduleEnd_comp {N : Type*} [AddCommMonoid N] [Module (Unitization A H) N]
     (φ : CentroidHom H) (hM : IsNondegenerate A H M) (hN : IsNondegenerate A H N)
     (g : M →ₗ[Unitization A H] N) :
-    centroidEnd A H φ hN ∘ₗ g = g ∘ₗ centroidEnd A H φ hM := by
+    φ.moduleEnd hN ∘ₗ g = g ∘ₗ φ.moduleEnd hM := by
   ext m
   obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 hM m
   have hge : (e : Unitization A H) • g m = g m := by rw [← map_smul, he]
   simp only [LinearMap.comp_apply]
-  rw [centroidEnd_apply_of_smul_eq φ hN hge, centroidEnd_apply_of_smul_eq φ hM he, map_smul]
+  rw [φ.moduleEnd_apply_of_smul_eq hN hge, φ.moduleEnd_apply_of_smul_eq hM he, map_smul]
+
+end CentroidHom
+
+namespace TauCeti.NondegMod
+
+variable {A : Type u₁} {H : Type u₂} [CommRing A] [NonUnitalRing H] [Module A H]
+  [IsScalarTower A H H] [SMulCommClass A H H] [IsIdempotented H]
 
 variable (A H)
 
@@ -131,12 +136,11 @@ private noncomputable def centroidToCatCenterAux (φ : CentroidHom H) :
     CatCenter (NondegMod.{v} A H) :=
   .of
     { app M := ObjectProperty.homMk
-        (ModuleCat.ofHom (centroidEnd A H φ ((nondegenerateModuleProperty_iff _).1 M.property)))
+        (ModuleCat.ofHom (φ.moduleEnd M.isNondegenerate))
       naturality M N g := by
         ext m
-        have := LinearMap.congr_fun (centroidEnd_comp φ
-          ((nondegenerateModuleProperty_iff _).1 M.property)
-          ((nondegenerateModuleProperty_iff _).1 N.property) g.hom.hom) m
+        have := LinearMap.congr_fun
+          (φ.moduleEnd_comp M.isNondegenerate N.isNondegenerate g.hom.hom) m
         simp only [LinearMap.comp_apply] at this
         simpa using this }
 
@@ -144,7 +148,7 @@ variable {A H} in
 private theorem centroidToCatCenterAux_app_apply (φ : CentroidHom H) (M : NondegMod.{v} A H)
     {m : M.obj} {e : H} (he : (e : Unitization A H) • m = m) :
     ((centroidToCatCenterAux.{v} A H φ).app M).hom.hom m = (φ e : Unitization A H) • m :=
-  centroidEnd_apply_of_smul_eq φ ((nondegenerateModuleProperty_iff _).1 M.property) he
+  φ.moduleEnd_apply_of_smul_eq M.isNondegenerate he
 
 /-- **Bimodule endomorphisms of `H` give central endomorphisms of nondegenerate modules.** The
 ring homomorphism from the centroid of `H` to the centre of `NondegMod A H`, sending `φ` to the
@@ -153,12 +157,13 @@ noncomputable def centroidToCatCenter : CentroidHom H →+* CatCenter (NondegMod
   toFun := centroidToCatCenterAux.{v} A H
   map_one' := by
     ext M m
-    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 ((nondegenerateModuleProperty_iff _).1 M.property) m
+    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 M.isNondegenerate m
     rw [centroidToCatCenterAux_app_apply _ M he, CentroidHom.one_apply, he]
-    rfl
+    rw [CatCenter.app_one, ObjectProperty.FullSubcategory.id_hom, ModuleCat.hom_id,
+      LinearMap.id_apply]
   map_mul' φ ψ := by
     ext M m
-    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 ((nondegenerateModuleProperty_iff _).1 M.property) m
+    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 M.isNondegenerate m
     -- A local unit `f` of `ψ(e)` fixes `ψ(e) • m`, and `φ(f) ψ(e) = φ(f ψ(e)) = φ(ψ(e))`.
     obtain ⟨f, -, hf⟩ := IsIdempotented.exists_isIdempotentElem {ψ e}
     have hfψ : f * ψ e = ψ e := (hf (ψ e) (by simp)).1
@@ -171,16 +176,15 @@ noncomputable def centroidToCatCenter : CentroidHom H →+* CatCenter (NondegMod
       smul_smul, ← Unitization.inr_mul, ← map_mul_right, hfψ, CentroidHom.mul_apply]
   map_zero' := by
     ext M m
-    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 ((nondegenerateModuleProperty_iff _).1 M.property) m
+    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 M.isNondegenerate m
     rw [centroidToCatCenterAux_app_apply _ M he, CentroidHom.zero_apply, Unitization.inr_zero,
       zero_smul]
-    rfl
+    rw [CatCenter.app_zero, ObjectProperty.zero_hom, ModuleCat.hom_zero, LinearMap.zero_apply]
   map_add' φ ψ := by
     ext M m
-    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 ((nondegenerateModuleProperty_iff _).1 M.property) m
-    rw [CatCenter.app_add]
-    change _ = ((centroidToCatCenterAux.{v} A H φ).app M).hom.hom m +
-      ((centroidToCatCenterAux.{v} A H ψ).app M).hom.hom m
+    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 M.isNondegenerate m
+    rw [CatCenter.app_add, ← ObjectProperty.ι_map (f := _ + _), Functor.map_add, ModuleCat.hom_add,
+      LinearMap.add_apply, ObjectProperty.ι_map, ObjectProperty.ι_map]
     rw [centroidToCatCenterAux_app_apply _ M he, centroidToCatCenterAux_app_apply _ M he,
       centroidToCatCenterAux_app_apply _ M he, CentroidHom.add_apply, Unitization.inr_add,
       add_smul]
@@ -204,17 +208,19 @@ theorem centroidToCatCenter_injective :
   obtain ⟨e, -, he⟩ := IsIdempotented.exists_isIdempotentElem {x}
   have hex : e * x = x := (he x (by simp)).1
   let X : NondegMod.{max u₁ u₂} A H :=
-    (nondegeneratePartFunctor A H).obj (ModuleCat.of (Unitization A H) (Unitization A H))
+    ⟨ModuleCat.of _ (nondegeneratePart A H (Unitization A H)),
+      (nondegenerateModuleProperty_iff _).2 isNondegenerate_nondegeneratePart⟩
   have hx : (x : Unitization A H) ∈ nondegeneratePart A H (Unitization A H) := by
     simpa [← Unitization.inr_mul, hex] using
       inr_smul_mem_nondegeneratePart (A := A) e (x : Unitization A H)
   let m : nondegeneratePart A H (Unitization A H) := ⟨x, hx⟩
-  have hm : (e : Unitization A H) • (m : X.obj) = m :=
-    Subtype.ext (show (e : Unitization A H) * x = x by rw [← Unitization.inr_mul, hex])
+  have hm : (e : Unitization A H) • (m : X.obj) = m := by
+    refine Subtype.ext ?_
+    rw [Submodule.coe_smul, smul_eq_mul, ← Unitization.inr_mul, hex]
   have := congrArg (fun z : CatCenter (NondegMod.{max u₁ u₂} A H) ↦
-    (show nondegeneratePart A H (Unitization A H) from (z.app X).hom.hom m).val) h
+    ((z.app X).hom.hom m).val) h
   simp only [centroidToCatCenter_app_apply _ X hm] at this
-  change (φ e : Unitization A H) * x = (ψ e : Unitization A H) * x at this
+  rw [Submodule.coe_smul, Submodule.coe_smul, smul_eq_mul, smul_eq_mul] at this
   rwa [← Unitization.inr_mul, ← Unitization.inr_mul, ← map_mul_right, ← map_mul_right, hex,
     Unitization.inr_injective.eq_iff] at this
 

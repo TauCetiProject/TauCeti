@@ -30,7 +30,7 @@ example (A H : Type) [CommRing A] [NonUnitalRing H] [Module A H] [IsScalarTower 
     [SMulCommClass A H H] [IsIdempotented H] (a : A) (M : NondegMod.{0} A H) (m : M.obj) :
     ((centroidToCatCenter.{0} A H (a • 1)).app M).hom.hom m =
       (Unitization.inl a : Unitization A H) • m := by
-  obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 ((nondegenerateModuleProperty_iff _).1 M.property) m
+  obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 M.isNondegenerate m
   rw [centroidToCatCenter_app_apply _ M he, CentroidHom.smul_apply, CentroidHom.one_apply,
     inl_smul_eq_inr_smul he]
 
