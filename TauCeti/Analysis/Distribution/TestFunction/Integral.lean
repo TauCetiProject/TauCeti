@@ -73,6 +73,9 @@ by these integrals.
 
 * `TestFunction.integral_smul_congr_of_eqOn`: `∫ φ • g₁ ∂μ = ∫ φ • g₂ ∂μ` whenever `g₁ = g₂` on `Ω`.
 
+* `TestFunction.integralAgainstBilinCLM_congr_ae`: Mathlib's pairing
+  `TestFunction.integralAgainstBilinCLM B μ g` only depends on `g` almost everywhere on `Ω`.
+
 * `TestFunction.integrable_inner_subtype`: the pairing `⟪φ x, v x⟫` of a test vector field with a
   locally integrable field is integrable.
 
@@ -210,6 +213,31 @@ theorem integral_smul_congr_of_eqOn (φ : 𝓓^{n}(Ω, ℝ)) {μ : Measure E} {g
   by_cases hx : x ∈ (Ω : Set E)
   · simp only [h hx]
   · simp [φ.zero_on_compl hx]
+
+section CongrAE
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Algebra ℝ 𝕜] [NormedSpace 𝕜 F]
+  [IsScalarTower ℝ 𝕜 F] {F₂ F₃ : Type*} [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] [NormedSpace ℝ F₃] [IsScalarTower ℝ 𝕜 F₃]
+
+/-- Integration against a function `g` through a continuous bilinear map `B` only depends on `g`
+almost everywhere on `Ω`. This is Mathlib's `Distribution.ofFun_congr_ae` for the general pairing
+`TestFunction.integralAgainstBilinCLM`. -/
+theorem integralAgainstBilinCLM_congr_ae [OpensMeasurableSpace E] (B : F →L[𝕜] F₂ →L[𝕜] F₃)
+    {μ : Measure E} {g₁ g₂ : E → F₂} (h : g₁ =ᵐ[μ.restrict Ω] g₂) :
+    (integralAgainstBilinCLM B μ g₁ : 𝓓^{n}(Ω, F) →L[𝕜] F₃) = integralAgainstBilinCLM B μ g₂ := by
+  by_cases hg : LocallyIntegrableOn g₁ Ω μ
+  · ext φ
+    rw [integralAgainstBilinCLM_eq_integral hg, integralAgainstBilinCLM_eq_integral (hg.congr h)]
+    refine integral_congr_ae ?_
+    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 h] with x hx
+    by_cases hxΩ : x ∈ (Ω : Set E)
+    · rw [hx hxΩ]
+    · simp [φ.zero_on_compl hxΩ]
+  · rw [integralAgainstBilinCLM_eq_zero hg,
+      integralAgainstBilinCLM_eq_zero fun h' ↦ hg (h'.congr h.symm)]
+
+end CongrAE
 
 section InnerPairing
 

@@ -48,6 +48,9 @@ compact topological groups, `G₁` and `G₁^ι` are the groups whose completed 
 * `TauCeti.isOpen_firstCongruenceSubgroup`, `TauCeti.isClosed_firstCongruenceSubgroup` and the
   instances `CompactSpace (firstCongruenceSubgroup n p)` and
   `(firstCongruenceSubgroup n p).Normal`: `G₁` is a compact open normal subgroup.
+* `TauCeti.exists_setOf_pow_dvd_sub_one_subset`: every neighbourhood of `1` in `SL_n(ℤ_p)`, for
+  instance an open subgroup, contains all matrices congruent to the identity modulo some power of
+  `p`.
 * `TauCeti.firstCongruenceSubgroupQuotientEquiv`: reduction gives `SL_n(ℤ_p) / G₁ ≃* SL_n(𝔽_p)`.
 * `TauCeti.index_firstCongruenceSubgroup`: `[SL_n(ℤ_p) : G₁] = |SL_n(𝔽_p)|`;
   `TauCeti.index_firstCongruenceSubgroup_fin_two`: `[SL₂(ℤ_p) : G₁] = p(p² - 1)`.
@@ -131,6 +134,31 @@ theorem isOpen_firstCongruenceSubgroup :
 instance isClosed_firstCongruenceSubgroup :
     IsClosed (firstCongruenceSubgroup n p : Set (SpecialLinearGroup n ℤ_[p])) :=
   Subgroup.isClosed_of_isOpen _ (isOpen_firstCongruenceSubgroup n p)
+
+open Filter Topology in
+variable {n p} in
+/-- Every neighbourhood of `1` in `SL_n(ℤ_p)`, for instance an open subgroup, contains every matrix
+congruent to the identity modulo a suitable power of `p`. -/
+theorem exists_setOf_pow_dvd_sub_one_subset {s : Set (SpecialLinearGroup n ℤ_[p])}
+    (hs : s ∈ 𝓝 1) :
+    ∃ m : ℕ, {g : SpecialLinearGroup n ℤ_[p] |
+      ∀ i j, (p : ℤ_[p]) ^ m ∣ ((g : Matrix n n ℤ_[p]) - 1) i j} ⊆ s := by
+  by_contra! h
+  choose g hg hgs using fun m ↦ Set.not_subset.mp (h m)
+  have hlim : Tendsto g atTop (𝓝 1) := by
+    rw [SpecialLinearGroup.tendsto_iff_tendsto_apply]
+    intro i j
+    rw [tendsto_iff_norm_sub_tendsto_zero]
+    have hp : ‖(p : ℤ_[p])‖ < 1 := by
+      rw [norm_p]
+      exact inv_lt_one_of_one_lt₀ (mod_cast (Fact.out : p.Prime).one_lt)
+    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun m ↦ ?_)
+      (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) hp)
+    obtain ⟨c, hc⟩ := hg m i j
+    rw [SpecialLinearGroup.coe_one, ← Matrix.sub_apply, hc, norm_mul, norm_pow]
+    exact mul_le_of_le_one_right (by positivity) (norm_le_one c)
+  obtain ⟨m, hm⟩ := (hlim.eventually hs).exists
+  exact hgs m hm
 
 /-- Reduction modulo `p` identifies the quotient by the first congruence subgroup with
 `SL_n(𝔽_p)`. -/

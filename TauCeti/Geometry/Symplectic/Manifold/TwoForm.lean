@@ -80,9 +80,10 @@ example.
   continuous bilinear form `B`, in any dimension, is nondegenerate exactly when `B` separates
   points on the left.
 * `TauCeti.SymplecticForm.constSmooth`: a symplectic form as a constant smooth two-form, which is
-  symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`), together with its `mvfderiv` and
-  partial-diffeomorphism pullback characterizations
+  symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`), together with its `mvfderiv`,
+  continuous linear map and partial-diffeomorphism pullback characterizations
   (`TauCeti.SymplecticForm.eval₂_constSmooth_mfderiv_eq`,
+  `TauCeti.SymplecticForm.eval₂_constSmooth_mfderiv_continuousLinearMap`,
   `TauCeti.SmoothTwoForm.mpullback_constSmooth_eq_mpullback_subtype_val_iff`).
 * `TauCeti.SymplecticForm.IsSymplectomorphism.mpullback_constSmooth`: a linear symplectomorphism
   pulls one constant symplectic form back to the other.
@@ -558,6 +559,16 @@ theorem eval₂_constSmooth_mfderiv_eq (omegaForm : SymplecticForm V) (f : M →
   rw [fromTangentSpace_constSmooth_apply, mvfderiv_apply_eq_mfderiv_apply,
     mvfderiv_apply_eq_mfderiv_apply, NormedSpace.fromTangentSpace_apply,
     NormedSpace.fromTangentSpace_apply]
+
+/-- Evaluating the constant smooth two-form `omegaForm.constSmooth` on `mfderiv` of a continuous
+linear map `L` evaluates `omegaForm` on the images under `L`. -/
+theorem eval₂_constSmooth_mfderiv_continuousLinearMap {U : Type*} [NormedAddCommGroup U]
+    [NormedSpace ℝ U] (omegaForm : SymplecticForm V) (L : U →L[ℝ] V) (x : U)
+    (v w : TangentSpace 𝓘(ℝ, U) x) :
+    omegaForm.constSmooth.eval₂ (L x) (mfderiv 𝓘(ℝ, U) 𝓘(ℝ, V) L x v)
+      (mfderiv 𝓘(ℝ, U) 𝓘(ℝ, V) L x w) = omegaForm (L v) (L w) := by
+  rw [L.mfderiv_eq]
+  exact constSmooth_apply _ _ _ _
 
 /-- A constant smooth symplectic form is fiberwise nondegenerate. -/
 @[simp]
