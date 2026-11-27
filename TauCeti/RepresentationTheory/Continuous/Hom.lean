@@ -91,15 +91,20 @@ section NormedSpace
 variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [Group G]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 
+/-- The operator norm on `V →L[𝕜] V` is homogeneous for integer multiples, since `𝕜` is a normed
+`ℝ`-algebra. -/
+private theorem normSMulClass_int : NormSMulClass ℤ (V →L[𝕜] V) :=
+  let _ : NormedSpace ℝ (V →L[𝕜] V) := NormedSpace.restrictScalars ℝ 𝕜 (V →L[𝕜] V)
+  ⟨fun n a ↦ by simpa only [Int.norm_cast_real] using norm_zsmul ℝ n a⟩
+
+attribute [local instance] normSMulClass_int
+
 /-- **Any group admitting an injective representation on a normed space, continuous at `1`, over a
 nontrivially normed field that is a normed `ℝ`-algebra has no small subgroups.** Neither continuity
 of multiplication nor continuity of inversion on `G` is needed. -/
 theorem hasNoSmallSubgroups_of_injective [TopologicalSpace G]
     (π : ContRepresentation 𝕜 G V) (hπ_cont : ContinuousAt π 1) (hπ_inj : Function.Injective π) :
     TauCeti.HasNoSmallSubgroups G := by
-  let _ : NormedSpace ℝ (V →L[𝕜] V) := NormedSpace.restrictScalars ℝ 𝕜 (V →L[𝕜] V)
-  have : NormSMulClass ℤ (V →L[𝕜] V) :=
-    ⟨fun n a ↦ by simpa only [Int.norm_cast_real] using norm_zsmul ℝ n a⟩
   refine TauCeti.HasNoSmallSubgroups.of_forall_pow_mem
     ⟨(fun g ↦ ‖π g - 1‖) ⁻¹' Set.Iio (1 / 2), ?_, fun g hg ↦ ?_⟩
   · have hcont : ContinuousAt (fun g ↦ ‖π g - 1‖) 1 :=
@@ -123,9 +128,6 @@ theorem continuous_iff_isOpen_ker [TopologicalSpace G] [IsTopologicalGroup G] [C
     [TotallyDisconnectedSpace G] (π : ContRepresentation 𝕜 G V) :
     Continuous π ↔ IsOpen (π.toMonoidHom.ker : Set G) := by
   refine ⟨fun hπ ↦ ?_, π.toMonoidHom.continuous_of_isOpen_ker⟩
-  let _ : NormedSpace ℝ (V →L[𝕜] V) := NormedSpace.restrictScalars ℝ 𝕜 (V →L[𝕜] V)
-  have : NormSMulClass ℤ (V →L[𝕜] V) :=
-    ⟨fun n a ↦ by simpa only [Int.norm_cast_real] using norm_zsmul ℝ n a⟩
   rw [← MonoidHom.ker_toHomUnits]
   exact (π.toUnitsContinuousMonoidHom hπ).isOpen_ker_of_compactSpace_of_totallyDisconnectedSpace
 

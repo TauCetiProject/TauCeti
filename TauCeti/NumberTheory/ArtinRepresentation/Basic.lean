@@ -13,8 +13,8 @@ public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import TauCeti.RepresentationTheory.Continuous.Character
 import TauCeti.RepresentationTheory.Continuous.Hom
-import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Artin representations of a field
@@ -39,7 +39,9 @@ jointly continuous representations `TauCeti.ContinuousRep G_F ℂ V`
 (`TauCeti.ArtinRep.toContinuousRep`, `TauCeti.ArtinRep.ofContinuousRep`). The character of an
 Artin representation is a continuous class function, constant on the cosets of the kernel.
 Isomorphisms of Artin representations are Mathlib's `Representation.Equiv` of the underlying
-representations; in finite dimension their linear equivalences are automatically continuous.
+representations; in finite dimension their linear equivalences are automatically continuous
+(`TauCeti.ArtinRep.contEquivOfEquiv`), and they preserve characters
+(`TauCeti.ArtinRep.character_eq_of_equiv`).
 
 ## Main definitions
 
@@ -47,8 +49,8 @@ representations; in finite dimension their linear equivalences are automatically
 * `TauCeti.ArtinRep.ker`, `TauCeti.ArtinRep.range`: the kernel, a subgroup of `G_F`, and the image,
   a subgroup of `(V →L[ℂ] V)ˣ`.
 * `TauCeti.ArtinRep.quotientKerEquivRange`: the first isomorphism theorem `G_F ⧸ ρ.ker ≃* ρ.range`.
-* `TauCeti.ArtinRep.trivial`, `TauCeti.ArtinRep.ofCharacter`: the trivial representation and the
-  one-dimensional representation of a continuous character `G_F →ₜ* ℂˣ`.
+* `TauCeti.ArtinRep.trivial`, `TauCeti.ArtinRep.ofLinearCharacter`: the trivial representation and
+  the one-dimensional representation of a continuous linear character `G_F →ₜ* ℂˣ`.
 * `TauCeti.ArtinRep.toContinuousRep`, `TauCeti.ArtinRep.ofContinuousRep`: the comparison with
   jointly continuous representations.
 * `TauCeti.ArtinRep.character`: the character of an Artin representation.
@@ -220,49 +222,6 @@ theorem natCard_range (ρ : ArtinRep F V) : Nat.card ρ.range = ρ.ker.index := 
 theorem ker_eq_top_of_subsingleton [Subsingleton V] (ρ : ArtinRep F V) : ρ.ker = ⊤ :=
   eq_top_iff.mpr fun _ _ ↦ mem_ker.mpr (Subsingleton.elim _ _)
 
-/-! ### Constructions -/
-
-/-- The trivial Artin representation of `F` on `V`, in which every element acts as the
-identity. -/
-def trivial (F V : Type*) [Field F] [NormedAddCommGroup V] [NormedSpace ℂ V]
-    [FiniteDimensional ℂ V] : ArtinRep F V where
-  toMonoidHom := 1
-  continuous_toFun := continuous_const
-
-@[simp]
-theorem trivial_apply (g : Field.absoluteGaloisGroup F) : trivial F V g = 1 :=
-  (rfl)
-
-@[simp]
-theorem ker_trivial : (trivial F V).ker = ⊤ :=
-  eq_top_iff.mpr fun _ _ ↦ mem_ker.mpr (trivial_apply _)
-
-@[simp]
-theorem range_trivial : (trivial F V).range = ⊥ :=
-  eq_bot_iff.mpr fun _ hu ↦ by
-    obtain ⟨g, hg⟩ := mem_range.mp hu
-    exact Subgroup.mem_bot.mpr (Units.ext (by rw [← hg, trivial_apply, Units.val_one]))
-
-/-- The one-dimensional Artin representation of a continuous character `χ : G_F →ₜ* ℂˣ`, in which
-`g` acts on `ℂ` as multiplication by `χ g`. -/
-def ofCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ) : ArtinRep F ℂ where
-  toMonoidHom := (algebraMap ℂ (ℂ →L[ℂ] ℂ) : ℂ →* ℂ →L[ℂ] ℂ).comp
-    ((Units.coeHom ℂ).comp χ.toMonoidHom)
-  continuous_toFun := (continuous_algebraMap ℂ (ℂ →L[ℂ] ℂ)).comp
-    (Units.continuous_val.comp χ.continuous)
-
-@[simp]
-theorem ofCharacter_apply (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ)
-    (g : Field.absoluteGaloisGroup F) (z : ℂ) : ofCharacter χ g z = χ g * z :=
-  (rfl)
-
-@[simp]
-theorem ker_ofCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ) :
-    (ofCharacter χ).ker = χ.ker := by
-  ext g
-  rw [mem_ker, MonoidHom.mem_ker, ContinuousLinearMap.ext_ring_iff, Units.ext_iff]
-  simp
-
 /-! ### Comparison with jointly continuous representations -/
 
 /-- An Artin representation as a jointly continuous representation: the action map
@@ -291,6 +250,11 @@ theorem ofContinuousRep_apply (σ : ContinuousRep (Field.absoluteGaloisGroup F) 
   σ.toContRepresentation_apply g v
 
 @[simp]
+theorem toRepresentation_ofContinuousRep (σ : ContinuousRep (Field.absoluteGaloisGroup F) ℂ V) :
+    (ofContinuousRep σ).toRepresentation = σ.toRepresentation :=
+  σ.toRepresentation_toContRepresentation
+
+@[simp]
 theorem ofContinuousRep_toContinuousRep (ρ : ArtinRep F V) :
     ofContinuousRep ρ.toContinuousRep = ρ :=
   ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
@@ -300,16 +264,80 @@ theorem toContinuousRep_ofContinuousRep (σ : ContinuousRep (Field.absoluteGaloi
     (ofContinuousRep σ).toContinuousRep = σ :=
   ContinuousRep.ext fun _ _ ↦ by simp
 
+/-! ### Constructions -/
+
+/-- The trivial Artin representation of `F` on `V`, in which every element acts as the
+identity. -/
+def trivial (F V : Type*) [Field F] [NormedAddCommGroup V] [NormedSpace ℂ V]
+    [FiniteDimensional ℂ V] : ArtinRep F V :=
+  ofContinuousRep (ContinuousRep.trivial _ ℂ V)
+
+@[simp]
+theorem trivial_apply (g : Field.absoluteGaloisGroup F) : trivial F V g = 1 :=
+  ContinuousLinearMap.ext fun v ↦
+    (ofContinuousRep_apply _ g v).trans (ContinuousRep.trivial_apply g v)
+
+@[simp]
+theorem ker_trivial : (trivial F V).ker = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ mem_ker.mpr (trivial_apply _)
+
+@[simp]
+theorem range_trivial : (trivial F V).range = ⊥ :=
+  eq_bot_iff.mpr fun _ hu ↦ by
+    obtain ⟨g, hg⟩ := mem_range.mp hu
+    exact Subgroup.mem_bot.mpr (Units.ext (by rw [← hg, trivial_apply, Units.val_one]))
+
+/-- The one-dimensional Artin representation of a continuous linear character
+`χ : G_F →ₜ* ℂˣ`, in which `g` acts on `ℂ` as multiplication by `χ g`. -/
+def ofLinearCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ) : ArtinRep F ℂ :=
+  ofContinuousRep (ContinuousRep.ofCharacter χ)
+
+@[simp]
+theorem ofLinearCharacter_apply (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ)
+    (g : Field.absoluteGaloisGroup F) (z : ℂ) : ofLinearCharacter χ g z = χ g * z :=
+  (ofContinuousRep_apply _ g z).trans (ContinuousRep.ofCharacter_apply χ g z)
+
+@[simp]
+theorem toRepresentation_ofLinearCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ) :
+    (ofLinearCharacter χ).toRepresentation =
+      Representation.ofLinearCharacter (χ : Field.absoluteGaloisGroup F →* ℂˣ) :=
+  (toRepresentation_ofContinuousRep _).trans (ContinuousRep.toRepresentation_ofCharacter χ)
+
+@[simp]
+theorem ker_ofLinearCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ) :
+    (ofLinearCharacter χ).ker = χ.ker := by
+  rw [← ker_toRepresentation, toRepresentation_ofLinearCharacter,
+    Representation.ker_ofLinearCharacter]
+  rfl
+
 /-! ### The character -/
 
 /-- The character of an Artin representation: `g ↦ trace (ρ g)`. -/
 abbrev character (ρ : ArtinRep F V) : Field.absoluteGaloisGroup F → ℂ :=
   ρ.toRepresentation.character
 
+theorem character_apply (ρ : ArtinRep F V) (g : Field.absoluteGaloisGroup F) :
+    ρ.character g = LinearMap.trace ℂ V (ρ g : V →ₗ[ℂ] V) :=
+  (rfl)
+
+/-- The character of an Artin representation at the identity is the dimension. -/
+theorem character_one (ρ : ArtinRep F V) : ρ.character 1 = Module.finrank ℂ V :=
+  Representation.char_one _
+
+/-- The character of an Artin representation is unchanged by transposing a product. -/
+theorem character_mul_comm (ρ : ArtinRep F V) (g h : Field.absoluteGaloisGroup F) :
+    ρ.character (h * g) = ρ.character (g * h) :=
+  Representation.char_mul_comm _ g h
+
+/-- The character of an Artin representation is a class function. -/
+theorem character_conj (ρ : ArtinRep F V) (g h : Field.absoluteGaloisGroup F) :
+    ρ.character (h * g * h⁻¹) = ρ.character g :=
+  Representation.char_conj _ g h
+
 /-- The character of an Artin representation is continuous for the Krull topology. -/
-theorem continuous_character (ρ : ArtinRep F V) : Continuous ρ.character :=
-  ((LinearMap.trace ℂ V).comp
-    (ContinuousLinearMap.coeLM ℂ)).continuous_of_finiteDimensional.comp ρ.continuous
+theorem continuous_character (ρ : ArtinRep F V) : Continuous ρ.character := by
+  have := (ContRepresentation.character ρ.toContRepresentation ρ.continuous).continuous
+  rwa [ContRepresentation.coe_character] at this
 
 /-- The character of an Artin representation is constant on the cosets of its kernel. -/
 theorem character_mul_of_mem_ker (ρ : ArtinRep F V) (g : Field.absoluteGaloisGroup F)
@@ -321,16 +349,42 @@ theorem character_mul_of_mem_ker (ρ : ArtinRep F V) (g : Field.absoluteGaloisGr
 theorem character_eq_zero_of_subsingleton [Subsingleton V] (ρ : ArtinRep F V) :
     ρ.character = 0 := by
   ext g
-  rw [character, Representation.character, Subsingleton.elim (ρ.toRepresentation g) 0, map_zero,
-    Pi.zero_apply]
+  simp [character_apply, Subsingleton.elim (ρ g : V →ₗ[ℂ] V) 0]
 
 @[simp]
-theorem character_ofCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ)
-    (g : Field.absoluteGaloisGroup F) : (ofCharacter χ).character g = χ g := by
-  have h : (ofCharacter χ).toRepresentation g = (χ g : ℂ) • LinearMap.id :=
-    LinearMap.ext_ring (by simp)
-  rw [character, Representation.character, h, map_smul, LinearMap.trace_id, Module.finrank_self,
-    Nat.cast_one, smul_eq_mul, mul_one]
+theorem character_ofLinearCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ)
+    (g : Field.absoluteGaloisGroup F) : (ofLinearCharacter χ).character g = χ g := by
+  rw [character, toRepresentation_ofLinearCharacter, Representation.char_ofLinearCharacter]
+  rfl
+
+/-! ### Isomorphisms -/
+
+section Equiv
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W]
+
+/-- An isomorphism of the underlying linear representations of two Artin representations is an
+isomorphism of continuous representations: in finite dimension the linear equivalence is
+automatically continuous. This is the explicit equivalence behind
+`ContRepresentation.nonempty_equiv_iff`. -/
+def contEquivOfEquiv {ρ : ArtinRep F V} {σ : ArtinRep F W}
+    (e : ρ.toRepresentation.Equiv σ.toRepresentation) :
+    ρ.toContRepresentation.Equiv σ.toContRepresentation :=
+  .mk e.toLinearEquiv.toContinuousLinearEquiv fun g ↦ ContinuousLinearMap.ext fun v ↦
+    Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap g v
+
+@[simp]
+theorem contEquivOfEquiv_apply {ρ : ArtinRep F V} {σ : ArtinRep F W}
+    (e : ρ.toRepresentation.Equiv σ.toRepresentation) (v : V) :
+    contEquivOfEquiv e v = e v := by
+  simp [contEquivOfEquiv]
+
+/-- Isomorphic Artin representations have the same character. -/
+theorem character_eq_of_equiv {ρ : ArtinRep F V} {σ : ArtinRep F W}
+    (e : ρ.toRepresentation.Equiv σ.toRepresentation) : ρ.character = σ.character :=
+  Representation.char_iso e
+
+end Equiv
 
 end ArtinRep
 
