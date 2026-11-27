@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.JInvariant
 import TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
-import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Values
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.ModularForms.LevelOne.Invariant
 
@@ -84,6 +83,13 @@ private theorem exp_pi_I_div_six_pow_four : cexp (π * I / 6) ^ 4 = cexp (2 * π
   push_cast
   ring
 
+/-- `e^{2π i / 3}³ = 1`. -/
+private theorem exp_two_pi_I_div_three_pow_three : cexp (2 * π * I / 3) ^ 3 = 1 := by
+  rw [← Complex.exp_natCast_mul, ← exp_two_pi_mul_I]
+  congr 1
+  push_cast
+  ring
+
 /-! ### Weber's identity -/
 
 /-- The function `g₀⁴ + g₁⁴ + g₂⁴`, which Weber's identity shows to vanish. -/
@@ -116,7 +122,7 @@ private theorem weberSum_pow_three_smul (γ : SL(2, ℤ)) (τ : ℍ) :
     weberSum ↑(γ • τ) ^ 3 = weberSum τ ^ 3 :=
   TauCeti.Matrix.SpecialLinearGroup.apply_smul_eq_of_S_smul_of_T_smul
     (f := fun τ : ℍ ↦ weberSum τ ^ 3) (fun τ ↦ by rw [weberSum_S_smul])
-    (fun τ ↦ by rw [weberSum_T_smul, mul_pow, exp_two_pi_mul_I_div_three_pow_three, one_mul]) γ τ
+    (fun τ ↦ by rw [weberSum_T_smul, mul_pow, exp_two_pi_I_div_three_pow_three, one_mul]) γ τ
 
 /-- `g₀⁴ + g₁⁴ + g₂⁴ → 0` at `i∞`. -/
 private theorem tendsto_weberSum_atImInfty :
@@ -243,7 +249,7 @@ theorem gammaTwo_S_smul (τ : ℍ) : gammaTwo (ModularGroup.S • τ) = gammaTwo
 theorem gammaTwo_T_smul (τ : ℍ) :
     gammaTwo (ModularGroup.T • τ) = cexp (-(2 * π * I / 3)) * gammaTwo τ := by
   have h₁₂ : cexp (π * I / 6) ^ 12 = 1 := (pow_mul _ 4 3).trans <| by
-    rw [exp_pi_I_div_six_pow_four, exp_two_pi_mul_I_div_three_pow_three]
+    rw [exp_pi_I_div_six_pow_four, exp_two_pi_I_div_three_pow_three]
   rw [gammaTwo_eq_siegelFunction_zero_half, gammaTwo_eq_siegelFunction_zero_half,
     ModularGroup.coe_T_smul, siegelFunction_zero_half_apply_add_one, mul_pow, mul_pow,
     exp_pi_I_div_six_pow_four, h₁₂, one_mul, Complex.exp_neg]

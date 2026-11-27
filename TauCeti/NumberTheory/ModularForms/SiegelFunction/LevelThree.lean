@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Basic
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
-import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Values
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
@@ -77,16 +76,25 @@ theorem siegelFunction_zero_third_eq_eta {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![0, 1 / 3] τ = √3 * I * (η (3 * τ) / η τ) := by
   have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero hτ
   have hq := norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩
-  have h3 : (√3 : ℂ) ^ 2 = 3 := ofReal_sqrt_ofNat_sq 3
+  have h3 : ((√3 : ℝ) : ℂ) ^ 2 = 3 := by
+    rw [← ofReal_pow, Real.sq_sqrt (by norm_num)]
+    norm_num
   -- `w = e^{2π i / 3} = -1/2 + (√3/2) i` and the phase `e^{-π i / 3} = 1/2 - (√3/2) i`.
   have hw : cexp (2 * π * I * (((0 : ℝ) : ℂ) * τ + ((1 / 3 : ℝ) : ℂ))) = -1 / 2 + √3 / 2 * I := by
-    rw [← exp_two_pi_mul_I_div_three]
-    congr 1
+    have harg : 2 * π * I * (((0 : ℝ) : ℂ) * τ + ((1 / 3 : ℝ) : ℂ)) =
+        ((π - π / 3 : ℝ) : ℂ) * I := by
+      push_cast
+      ring
+    rw [harg, exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_pi_sub, Real.sin_pi_sub,
+      Real.cos_pi_div_three, Real.sin_pi_div_three]
     push_cast
     ring
   have hph : cexp (π * I * ((1 / 3 : ℝ) : ℂ) * (((0 : ℝ) : ℂ) - 1)) = 1 / 2 - √3 / 2 * I := by
-    rw [← exp_neg_pi_mul_I_div_three]
-    congr 1
+    have harg : π * I * ((1 / 3 : ℝ) : ℂ) * (((0 : ℝ) : ℂ) - 1) = ((-(π / 3) : ℝ) : ℂ) * I := by
+      push_cast
+      ring
+    rw [harg, exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_neg, Real.sin_neg,
+      Real.cos_pi_div_three, Real.sin_pi_div_three]
     push_cast
     ring
   have hB : cexp (π * I * bernoulliFun 2 0 * τ) = cexp (π * I * τ / 6) := by
