@@ -14,8 +14,8 @@ public import TauCeti.MeasureTheory.Measure.Atom
 public import TauCeti.MeasureTheory.Measure.Dirac
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
+import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.Probability.Process.FiniteDimensionalLaws
-
 import TauCeti.MeasureTheory.Measure.AEMeasurable
 import TauCeti.MeasureTheory.Measure.Prod
 
@@ -60,6 +60,8 @@ measurable equivalences let these characterizations pass to other representation
   equivalence;
 * `ProbabilityTheory.HasLaw.ae` — almost-everywhere properties of a law transfer to any random
   variable with that law, without requiring the property to be measurable;
+* `ProbabilityTheory.HasLaw.integrable_comp_iff` — integrability of a measurable observable is
+  equivalent under a random variable and its law;
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
 * `ProbabilityTheory.HasLaw.cond_of_restrict`,
   `ProbabilityTheory.HasLaw.of_restrict_inter_of_ae_mem`, and
@@ -73,6 +75,10 @@ measurable equivalences let these characterizations pass to other representation
   null on singletons;
 * `ProbabilityTheory.HasLaw.prod_extension` — adjoining a coordinate with an s-finite measure to
   a random variable gives the pair the product measure;
+* `ProbabilityTheory.HasLaw.natFloor_of_map_natCast`,
+  `ProbabilityTheory.HasLaw.ae_exists_nat_eq_of_map_natCast` — real random variables whose law is
+  pushed forward from `ℕ` along `Nat.cast` recover that `ℕ`-law under `Nat.floor` and are almost
+  surely natural-valued;
 * `ProbabilityTheory.IndepFun.hasLaw_apply_bind` — applying an indexed family to an independent
   selector and noise variable gives a measure bind;
 * `ProbabilityTheory.HasLaw.eval_bind` — evaluating a countable family at an independent selector
@@ -153,6 +159,16 @@ protected theorem _root_.ProbabilityTheory.HasLaw.ae (hT : HasLaw T ν μ) {p : 
     (hp : ∀ᵐ y ∂ν, p y) : ∀ᵐ x ∂μ, p (T x) :=
   ae_of_ae_map hT.aemeasurable (hT.map_eq ▸ hp)
 
+/-- Integrability of a measurable observable under a random variable is equivalent to its
+integrability under the variable's law. -/
+theorem _root_.ProbabilityTheory.HasLaw.integrable_comp_iff
+    {Ω 𝒳 E : Type*} [MeasurableSpace Ω] [MeasurableSpace 𝒳]
+    [TopologicalSpace E] [ContinuousENorm E] {P : Measure Ω} {ν : Measure 𝒳}
+    {X : Ω → 𝒳} {f : 𝒳 → E} (hX : HasLaw X ν P) (hf : AEStronglyMeasurable f ν) :
+    Integrable (f ∘ X) P ↔ Integrable f ν := by
+  rw [← hX.map_eq] at hf ⊢
+  exact (integrable_map_measure hf hX.aemeasurable).symm
+
 /-- Conditioning a random variable on the preimage of a measurable event gives its law
 conditioned on that event. The statement includes events of zero or infinite mass, when both
 conditional measures vanish. -/
@@ -213,6 +229,32 @@ theorem _root_.ProbabilityTheory.HasLaw.identDistrib_nnreal
     (hY : HasLaw (fun ω ↦ (Y ω : ℝ)) μ Q) : IdentDistrib X Y P Q := by
   simpa only [Function.comp_def, Real.toNNReal_coe] using
     (hX.identDistrib hY).comp measurable_real_toNNReal
+
+/-- Taking the natural floor of a real random variable whose law is the pushforward of a measure `μ`
+on `ℕ` along `Nat.cast` recovers the law `μ` on `ℕ`. -/
+theorem _root_.ProbabilityTheory.HasLaw.natFloor_of_map_natCast
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {μ : Measure ℕ}
+    (hX : HasLaw X (μ.map (Nat.cast : ℕ → ℝ)) P) :
+    HasLaw (fun ω ↦ ⌊X ω⌋₊) μ P := by
+  have hc : Measurable (Nat.cast : ℕ → ℝ) := continuous_of_discreteTopology.measurable
+  have hmap : (μ.map (Nat.cast : ℕ → ℝ)).map Nat.floor = μ := by
+    rw [Measure.map_map Nat.measurable_floor hc]
+    simp [Function.comp_def]
+  simpa only [Function.comp_def, hmap] using
+    (hasLaw_map Nat.measurable_floor.aemeasurable).comp hX
+
+/-- A real random variable whose law is the pushforward of a measure on `ℕ` along `Nat.cast` almost
+surely takes natural-number values. -/
+theorem _root_.ProbabilityTheory.HasLaw.ae_exists_nat_eq_of_map_natCast
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {μ : Measure ℕ}
+    (hX : HasLaw X (μ.map (Nat.cast : ℕ → ℝ)) P) :
+    ∀ᵐ ω ∂P, ∃ n : ℕ, X ω = n := by
+  have hc : Measurable (Nat.cast : ℕ → ℝ) := continuous_of_discreteTopology.measurable
+  have hmem : ∀ᵐ x ∂P.map X, x ∈ Set.range (Nat.cast : ℕ → ℝ) := by
+    rw [hX.map_eq]
+    exact ae_map_mem_range (Set.countable_range _).measurableSet hc.aemeasurable
+  filter_upwards [ae_of_ae_map hX.aemeasurable hmem] with ω ⟨n, hn⟩
+  exact ⟨n, hn.symm⟩
 
 /-- Completing the source measure does not change a random variable's law. -/
 theorem _root_.ProbabilityTheory.HasLaw.completion (hT : HasLaw T ν μ) :

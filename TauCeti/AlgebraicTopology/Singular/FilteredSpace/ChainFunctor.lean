@@ -572,9 +572,9 @@ by `g` and `α` is the chain map induced by the restriction of `g` to `X q` and 
 lemma chainFiltrationMap_app_comp_filtrationFunctorObjIsoOfEqMk_hom (q : ℤ) :
     (chainFiltrationMap α hX hX' g hg).app q ≫
         (CochainComplex.filtrationFunctorObjIsoOfEqMk _ (monotone_chainFiltration G hX')
-          (chainFiltrationι G X') (chainFiltration_def G X') q).hom =
+          (chainFiltrationι G X' q) (chainFiltration_def G X' q)).hom =
       (CochainComplex.filtrationFunctorObjIsoOfEqMk _ (monotone_chainFiltration F hX)
-          (chainFiltrationι F X) (chainFiltration_def F X) q).hom ≫
+          (chainFiltrationι F X q) (chainFiltration_def F X q)).hom ≫
         extendMap (F.map (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg q))) ≫ α.app _)
           ComplexShape.embeddingDownNat := by
   refine (cancel_mono (chainFiltrationι G X' q)).1 ?_

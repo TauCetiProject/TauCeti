@@ -15,8 +15,8 @@ import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Flattening
+import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
-import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Schauder estimates near a curved boundary for divergence-form equations
@@ -225,9 +225,7 @@ private theorem norm_preciseRepresentative_le_of_holderOnWith {H B : Opens
     hAt ((Lp.memLp (W1p.gradient v)).mono_measure
       (Measure.restrict_mono (hAB'.trans inter_subset_left) le_rfl))
     (ae_restrict_of_ae_restrict_of_subset hAB'
-      (MeasureTheory.ae_eq_restrict_inter_preciseRepresentative_restrict B.isOpen
-        (((Lp.memLp (W1p.gradient v)).mono_measure
-          (Measure.restrict_mono inter_subset_left le_rfl)).locallyIntegrable (by norm_num))))
+      (W1p.gradient_ae_eq_preciseRepresentative_restrict v B.isOpen inter_subset_left))
     (y := y) (M := K * R ^ (β : ℝ)) (C := ‖W1p.gradient v‖ ^ 2)
     (fun z hz => by
       rw [← dist_eq_norm]
@@ -501,29 +499,6 @@ private theorem ae_value_w1pCompL_eq_zero (hΦ : Wkp.IsChangeOfVariables 1 U' U 
   have : y' = y := by rw [← hΨΦ hy'.2, hyy', hΨΦ (hrU' hyB)]
   exact (hH y).2 (this ▸ hy'.1)
 
-/-- **Integrability of Hölder data on a piece of finite measure.** On an open set `D` of finite
-measure inside `t`, a uniformly elliptic coefficient `a` that is Hölder on `t` defines an
-essentially bounded energy integrand, and a field `G` that is Hölder and bounded on `t` is
-square integrable. -/
-private theorem memLp_energyIntegrand_and_memLp_of_holderOnWith {α : ℝ≥0} (hα : 0 < α)
-    {D : Opens (EuclideanSpace ℝ (Fin (n + 1)))} [IsFiniteMeasure (volume.restrict
-      (D : Set (EuclideanSpace ℝ (Fin (n + 1)))))] {t : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    (hDt : (D : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ t)
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
-    {Ka : ℝ≥0} (hell : UniformlyEllipticOn t a lam Lam)
-    (hKa : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) t)
-    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {KG : ℝ≥0} {M : ℝ}
-    (hG : HolderOnWith KG α G t) (hGM : ∀ x ∈ t, ‖G x‖ ≤ M) :
-    MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (volume.restrict D) ∧
-      MemLp G 2 (volume.restrict D) :=
-  ⟨memLp_energyIntegrand_of_memLp_top (hell.pos.le.trans hell.le)
-      (((continuousOn_of_continuousOn_matrixBilinearForm (hKa.continuousOn hα)).mono
-        hDt).aestronglyMeasurable D.isOpen.measurableSet)
-      (fun _ hx => hell.upper_bound (hDt hx)) (memLp_top_const 0) (memLp_top_const 0),
-    MemLp.of_bound (((hG.continuousOn hα).mono hDt).aestronglyMeasurable
-      D.isOpen.measurableSet) _
-      ((ae_restrict_mem D.isOpen.measurableSet).mono fun x hx => hGM x (hDt hx))⟩
-
 /-- **The flat data are bounded by the curved data.** For the flattened function `v = u ∘ Φ`,
 the flattened datum `f' = pullbackDensity Φ f` and a constant `c_G`,
 `K_G c_G + ‖f'‖_{L^q(B ∩ H)} + ‖∇v‖_{L²(B)} ≤ max c_G (max 1 L) (K_G + ‖f‖_{L^q(S)} + ‖u‖_{H¹(W)})`
@@ -796,8 +771,8 @@ theorem exists_holderOnWith_gradient_of_isChangeOfVariables
   have hv0 := ae_value_w1pCompL_eq_zero hΦ hΨΦ himage hrU' hVW hΦB hu0 hH
   have hD'cl : (D' : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ t :=
     fun x hx => ⟨subset_closure (hD't hx).1, (hD't hx).2⟩
-  obtain ⟨ha, hGcD⟩ := memLp_energyIntegrand_and_memLp_of_holderOnWith (hβ.trans_le hβα) hD'cl
-    hell hKa hGc hGD
+  obtain ⟨ha, hGcD⟩ := memLp_energyIntegrand_and_memLp_of_holderOnWith (mu := volume)
+    (hβ.trans_le hβα) hD'cl hell hKa hGc hGD
   have hDWΩ : D' ≤ W ⊓ Ω := fun x hx => ⟨hVW (hDV hx), hDΩ hx⟩
   have hveq := energyFormH1_restrictL_w1pCompL_eq hVW hDWΩ hΦB hΦD hΨD
     hΨΦB hΦΨD hu ha hGcD (hfD.mono_exponent hq)
@@ -843,9 +818,7 @@ theorem exists_holderOnWith_gradient_of_isChangeOfVariables
     hsubD x ⟨hx.1, hρ'U hx.2⟩ (ball_subset_ball (by linarith : r / 4 ≤ r) (hΨball hx.2))
   exact ae_restrict_of_ae_restrict_of_subset hsub
     (ae_gradient_eq_adjoint_fderiv_apply hΦ hΨ hΨΦ hΦΨ hVW hD'U hΦB hΨD u
-      (MeasureTheory.ae_eq_restrict_inter_preciseRepresentative_restrict B.isOpen
-        (((Lp.memLp (W1p.gradient v)).mono_measure
-          (Measure.restrict_mono inter_subset_left le_rfl)).locallyIntegrable (by norm_num))))
+      (W1p.gradient_ae_eq_preciseRepresentative_restrict v B.isOpen inter_subset_left))
 
 /-- **Schauder estimate near a `C^{1,α}` boundary for divergence-form equations.** Suppose that in
 rigid coordinates `e` centred at `x₀ = e⁻¹ 0`, inside the normal cylinder of half-height `h₀` and

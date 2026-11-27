@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.Alternating.ModIdeal
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.QuadraticForm.Matrix
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # The orthogonal group scheme of a quadratic form
@@ -51,7 +52,9 @@ smaller: over `𝔽₂` with `q = x²` the polar form is zero while `O(q)` is `�
 * `TauCeti.QuadraticOrthogonal.pointsSubgroup` and `TauCeti.QuadraticOrthogonal.pointsMulEquiv`:
   the points of `O(q)` are the invertible matrices preserving `q_A`; by
   `TauCeti.QuadraticOrthogonal.hopfIdealPointsSubgroup_definingHopfIdeal` these are the matrices
-  cut out by the defining Hopf ideal. Transporting a point along an algebra morphism applies it to
+  cut out by the defining Hopf ideal, and by
+  `TauCeti.QuadraticOrthogonal.mem_definingPointsSubgroup_iff` an ambient quotient point lies in
+  `O(q)` exactly when its matrix does. Transporting a point along an algebra morphism applies it to
   the entries of the matrix (`TauCeti.QuadraticOrthogonal.coe_pointsMulEquiv_mapPoints`).
 * `TauCeti.QuadraticOrthogonal.pointsMulEquivOrthogonalGroup`: the points of `O(q)` are
   `TauCeti.QuadraticMap.orthogonalGroup (QuadraticForm.baseChangeForm q A)`, a point acting on
@@ -105,9 +108,12 @@ diagonal entries `N i i` and the symmetric sums `N i j + N j i` for `i < j` of t
 matrix `N`. The set also contains the symmetric sums for `i ≥ j`, which are redundant: for `i = j`
 the sum is `2 N i i`, and for `i > j` it repeats the pair `(j, i)`. -/
 noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
-  Set.range (fun i => relationMatrix R n q i i) ∪
-    Set.range fun ij : Fin n × Fin n =>
-      relationMatrix R n q ij.1 ij.2 + relationMatrix R n q ij.2 ij.1
+  (relationMatrix R n q).altRelationSet
+
+/-- The defining relations are the alternating relations of the relation matrix: its diagonal
+entries and its symmetric sums. -/
+theorem relationSet_def : relationSet R n q = (relationMatrix R n q).altRelationSet := by
+  rw [relationSet]
 
 /-- Mapping the relation matrix through an algebra morphism gives the relation of the image of
 the generic matrix. -/
@@ -118,43 +124,7 @@ theorem relationMatrix_map {T : Type*} [Ring T] [Algebra R T]
           (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) *
           (GeneralLinear.genericMatrix R n).map phi -
         (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) := by
-  have hC : ((coefficientMatrix q (Pi.basisFun R (Fin n))).map
-      (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))).map phi =
-      (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) := by
-    rw [Matrix.map_map]
-    exact congrArg _ (funext fun r => phi.commutes r)
-  rw [relationMatrix, Matrix.map_sub _ (map_sub phi), Matrix.map_mul, Matrix.map_mul, hC,
-    Matrix.transpose_map]
-
-/-- An ideal contains the defining relations exactly when it makes the relation matrix
-alternating. -/
-theorem span_relationSet_le_iff {I : Ideal (GeneralLinear.coordinateHopfAlgebra R n)} :
-    Ideal.span (relationSet R n q) ≤ I ↔ IsAltMod I (relationMatrix R n q) := by
-  rw [Ideal.span_le]
-  refine ⟨fun h => IsAltMod.of_mem (fun i => h (Or.inl ⟨i, rfl⟩))
-    fun i j => h (Or.inr ⟨(i, j), rfl⟩), ?_⟩
-  rintro h _ (⟨i, rfl⟩ | ⟨ij, rfl⟩)
-  · exact h.diag_mem i
-  · exact h.add_transpose_mem ij.1 ij.2
-
-/-- The relation matrix is alternating modulo the ideal its relations generate. -/
-theorem isAltMod_relationMatrix :
-    IsAltMod (Ideal.span (relationSet R n q)) (relationMatrix R n q) :=
-  (span_relationSet_le_iff R n q).mp le_rfl
-
-/-- If a ring morphism makes the image of the relation matrix alternating modulo `J`, it carries
-every defining relation into `J`. -/
-theorem apply_mem_of_isAltMod_map {T F : Type*} [CommRing T]
-    [FunLike F (GeneralLinear.coordinateHopfAlgebra R n) T]
-    [RingHomClass F (GeneralLinear.coordinateHopfAlgebra R n) T] {f : F} {J : Ideal T}
-    (h : IsAltMod J ((relationMatrix R n q).map f)) {x : GeneralLinear.coordinateHopfAlgebra R n}
-    (hx : x ∈ relationSet R n q) : f x ∈ J := by
-  -- The relation matrix is alternating modulo the preimage of `J`, which therefore contains
-  -- every relation.
-  have hcomap : IsAltMod (J.comap f) (relationMatrix R n q) :=
-    IsAltMod.of_mem (fun i => Ideal.mem_comap.mpr (h.diag_mem i)) fun i j => by
-      simpa only [Ideal.mem_comap, Matrix.map_apply, map_add] using h.add_transpose_mem i j
-  exact Ideal.mem_comap.mp ((span_relationSet_le_iff R n q).mpr hcomap (Ideal.subset_span hx))
+  rw [relationMatrix, Matrix.map_transpose_mul_mul_sub]
 
 /-! ### The three Hopf-ideal closure conditions -/
 
@@ -195,19 +165,20 @@ private theorem comul_relation_mem {x : GeneralLinear.coordinateHopfAlgebra R n}
     Ideal.rightTensorIdeal (R := R) (A := GeneralLinear.coordinateHopfAlgebra R n)
       (Ideal.span (relationSet R n q))
   -- The two tensor ideals are the images of the span along the two tensor inclusions.
-  have hL := (isAltMod_relationMatrix R n q).map (J := J)
+  have hL := (isAltMod_span_altRelationSet (relationMatrix R n q)).map (J := J)
     (Algebra.TensorProduct.includeLeft (R := R) (S := R)
       (B := GeneralLinear.coordinateHopfAlgebra R n))
     ((Ideal.leftTensorIdeal_def R (GeneralLinear.coordinateHopfAlgebra R n) _).ge.trans
       le_sup_left)
-  have hR := (isAltMod_relationMatrix R n q).map (J := J)
+  have hR := (isAltMod_span_altRelationSet (relationMatrix R n q)).map (J := J)
     (Algebra.TensorProduct.includeRight (R := R) (A := GeneralLinear.coordinateHopfAlgebra R n))
     ((Ideal.rightTensorIdeal_def R (GeneralLinear.coordinateHopfAlgebra R n) _).ge.trans
       le_sup_right)
   have hcomul := (hL.transpose_mul_mul ((GeneralLinear.genericMatrix R n).map
     (Algebra.TensorProduct.includeRight (R := R)))).add hR
   rw [← relationMatrix_map_comul] at hcomul
-  simpa only [Bialgebra.comulAlgHom_apply] using apply_mem_of_isAltMod_map R n q hcomul hx
+  rw [relationSet_def] at hx
+  simpa only [Bialgebra.comulAlgHom_apply] using hcomul.apply_mem_of_map hx
 
 /-- The antipode image of the relation matrix is the negative of the relation matrix framed by
 the inverse matrix: `X⁻ᵀ M X⁻¹ - M = -(X⁻ᵀ (Xᵀ M X - M) X⁻¹)`. -/
@@ -228,10 +199,11 @@ private theorem relationMatrix_map_antipode :
 private theorem antipode_relation_mem {x : GeneralLinear.coordinateHopfAlgebra R n}
     (hx : x ∈ relationSet R n q) :
     HopfAlgebra.antipode R x ∈ Ideal.span (relationSet R n q) := by
-  have hS := ((isAltMod_relationMatrix R n q).transpose_mul_mul
+  have hS := ((isAltMod_span_altRelationSet (relationMatrix R n q)).transpose_mul_mul
     (GeneralLinear.genericMatrix R n)⁻¹).neg
   rw [← relationMatrix_map_antipode] at hS
-  simpa only [HopfAlgebra.antipodeAlgHom_apply] using apply_mem_of_isAltMod_map R n q hS hx
+  rw [relationSet_def] at hx ⊢
+  simpa only [HopfAlgebra.antipodeAlgHom_apply] using hS.apply_mem_of_map hx
 
 /-! ### The defining Hopf ideal and the group scheme -/
 
@@ -241,12 +213,13 @@ noncomputable def definingHopfIdeal : HopfIdeal R (GeneralLinear.coordinateHopfA
   HopfIdeal.ofSpan (relationSet R n q)
     (fun _ hx => comul_relation_mem R n q hx)
     (fun _ hx => by
+      rw [relationSet_def] at hx
       have h0 : IsAltMod ⊥ ((relationMatrix R n q).map
           (Bialgebra.counitAlgHom R (GeneralLinear.coordinateHopfAlgebra R n))) := by
         rw [counit_relationMatrix]
         exact IsAltMod.zero
       simpa only [Bialgebra.counitAlgHom_apply, Ideal.mem_bot] using
-        apply_mem_of_isAltMod_map R n q h0 hx)
+        h0.apply_mem_of_map hx)
     (fun _ hx => antipode_relation_mem R n q hx)
 
 /-- The underlying ideal of the defining Hopf ideal is the span of the defining relations. -/
@@ -261,7 +234,7 @@ theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [CommRing T] [Algebra R
     (phi : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] T) :
     (definingHopfIdeal R n q).toIdeal ≤ RingHom.ker (phi : _ →+* T) ↔
       IsAltMod ⊥ ((relationMatrix R n q).map phi) := by
-  rw [definingHopfIdeal_toIdeal, span_relationSet_le_iff]
+  rw [definingHopfIdeal_toIdeal, relationSet_def, span_altRelationSet_le_iff]
   simp only [isAltMod_iff, Matrix.map_apply, RingHom.mem_ker, Ideal.mem_bot, AlgHom.coe_toRingHom,
     map_add]
 
@@ -337,6 +310,19 @@ theorem hopfIdealPointsSubgroup_definingHopfIdeal :
     AlgHom.toRingHom_eq_coe, definingHopfIdeal_toIdeal_le_ker_iff, mem_pointsSubgroup_iff_isAltMod]
   -- The matrix of the point `p` is the image of the generic matrix under `p`.
   rw [relationMatrix_map, GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
+
+/-- **Membership in the points cut out by the defining Hopf ideal**: an ambient point of `GLₙ`
+lies in the subgroup cut out by the Hopf ideal of `O(q)` exactly when its matrix lies in
+`O(q)(A)`. -/
+@[simp↓]
+theorem mem_definingPointsSubgroup_iff
+    (g : HopfAlgebra.points (R := R) (H := GeneralLinear.coordinateHopfAlgebra R n)
+      (CommAlgCat.of R A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (GeneralLinear.coordinateHopfAlgebra R n)
+        (definingHopfIdeal R n q) (CommAlgCat.of R A) ↔
+      GeneralLinear.pointsMulEquiv n g ∈ pointsSubgroup R n q A := by
+  rw [← hopfIdealPointsSubgroup_definingHopfIdeal, GeneralLinear.mem_hopfIdealPointsSubgroup_iff,
+    MulEquiv.symm_apply_apply, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
 
 /-- **The points identification**: the group of algebra-valued points of the coordinate Hopf
 algebra of `O(q)` is `O(q)(A)`. -/

@@ -47,6 +47,8 @@ covolume `1` for the coordinate Haar measure transported from `ℝ^d`.
 * `TauCeti.NumberField.finrank_tateEmbeddingSpace_of_even`,
   `TauCeti.NumberField.finrank_tateEmbeddingSpace_of_odd`: the dimension is `r₁ + r₂` in even and
   `r₂` in odd twist.
+* `TauCeti.NumberField.finrank_tateEmbeddingSpace_pred`: in twist `n - 1` for `1 ≤ n`, the
+  dimension is `r₂` for even `n` and `r₁ + r₂` for odd `n`.
 * `TauCeti.NumberField.tateEmbeddingSpace_ext_embedding`,
   `TauCeti.NumberField.mem_tateEmbeddingLattice_iff_tateEmbeddingCoordEquiv`: the selected
   coordinates already determine an element, and their integrality characterizes the lattice.
@@ -300,6 +302,22 @@ theorem finrank_tateEmbeddingSpace_of_odd (hk : Odd k) :
   rw [finrank_tateEmbeddingSpace, Fintype.card_eq_nat_card, nrComplexPlaces,
     Fintype.card_eq_nat_card]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ by simp [Nat.not_even_iff_odd.mpr hk])
+
+variable (F) in
+/-- In twist `n - 1` for `1 ≤ n`, the embedding Tate space has dimension `r₂` for even `n`
+and `r₁ + r₂` for odd `n`. -/
+theorem finrank_tateEmbeddingSpace_pred {n : ℕ} (hn : 1 ≤ n) :
+    finrank ℝ (tateEmbeddingSpace F (n - 1)) =
+      (if Even n then 0 else nrRealPlaces F) + nrComplexPlaces F := by
+  rcases Nat.even_or_odd n with he | ho
+  · have h : Odd (n - 1) := by
+      rw [Nat.odd_sub hn]
+      simp [he]
+    simp [he, finrank_tateEmbeddingSpace_of_odd (F := F) h]
+  · have h : Even (n - 1) := by
+      rw [Nat.even_sub hn]
+      simpa using ho
+    simp [Nat.not_even_iff_odd.mpr ho, finrank_tateEmbeddingSpace_of_even (F := F) h]
 
 variable (F k) in
 /-- The embedding Tate lattice: the elements of the embedding Tate space with values in the

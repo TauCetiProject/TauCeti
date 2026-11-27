@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Section
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Restrict.Section
+public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import Mathlib.Topology.VectorBundle.Riemannian
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Laplace-type operators between sections of a vector bundle
@@ -45,6 +47,11 @@ covector.
 * `TauCeti.IsSectionLaplaceType.restrictSectionDifferentialOperators`: the restriction of an
   operator of Laplace type to an open subset, with the inherited metric, is of Laplace type with the
   same constant.
+* `TauCeti.isSectionLaplaceType_of_smulCommutator_smulCommutator`: an operator whose double
+  commutators with multiplication by `f` and `g` are multiplication by `-2 ⟪grad f, grad g⟫` is of
+  Laplace type with constant `1`, of order at most two
+  (`TauCeti.mem_differentialOperators_two_of_smulCommutator_smulCommutator`) and with geometric
+  principal symbol `-‖ξ‖² Id` (`TauCeti.sectionPrincipalSymbol_of_smulCommutator_smulCommutator`).
 
 ## References
 
@@ -57,7 +64,7 @@ covector.
 public section
 
 open Bundle TopologicalSpace
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold RealInnerProductSpace
 
 noncomputable section
 
@@ -165,5 +172,54 @@ theorem IsSectionLaplaceType.restrictSectionDifferentialOperators (hP : IsSectio
     hP.sectionPrincipalSymbol_eq hx', Manifold.opNorm_comp_tangentSpaceOpenEquiv_symm]
   -- The identity of the fibre of `V` over `x` is that of the fibre of `V|_U`.
   rfl
+
+/-! ### Operators with the double commutators of a Laplacian -/
+
+section DoubleCommutator
+
+variable {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯}
+
+omit [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] in
+/-- An operator whose double commutators with multiplication by smooth functions `f` and `g` are
+multiplication by `-2 ⟪grad f, grad g⟫` is a differential operator of order at most two. -/
+theorem mem_differentialOperators_two_of_smulCommutator_smulCommutator
+    (hP : ∀ (f g : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) (x : M),
+      smulCommutator ℝ g (smulCommutator ℝ f P) s x =
+        -(2 * ⟪Manifold.mgradient I f x, Manifold.mgradient I g x⟫) • s x) :
+    P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 2 := by
+  refine mem_differentialOperators_succ_iff.2 fun f ↦ mem_differentialOperators_succ_iff.2
+    fun g ↦ mem_differentialOperators_zero_iff.2 fun a s ↦ ContMDiffSection.ext fun x ↦ ?_
+  simp only [hP, ContMDiffSection.smul_apply, smul_comm (a x)]
+
+/-- An operator whose double commutators with multiplication by smooth functions `f` and `g` are
+multiplication by `-2 ⟪grad f, grad g⟫` has geometric principal symbol `ξ ↦ -‖ξ‖² Id`, the norm
+being the one the metric induces on `T_x*M`. -/
+theorem sectionPrincipalSymbol_of_smulCommutator_smulCommutator
+    (hP : ∀ (f g : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) (x : M),
+      smulCommutator ℝ g (smulCommutator ℝ f P) s x =
+        -(2 * ⟪Manifold.mgradient I f x, Manifold.mgradient I g x⟫) • s x)
+    {x : M} (hx : I.IsInteriorPoint x) (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    sectionPrincipalSymbol I hx
+        ⟨P, mem_differentialOperators_two_of_smulCommutator_smulCommutator hP⟩ ξ =
+      -(‖ξ‖ ^ 2) • LinearMap.id := by
+  obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
+  refine LinearMap.ext fun v ↦ ?_
+  obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) (V := V) ∞ x v
+  rw [ContMDiffSection.evalLinearMap_apply, sectionPrincipalSymbol_mvfderiv, pow_two,
+    mul_apply_eq_comp, hP, real_inner_self_eq_norm_sq, Manifold.norm_mgradient_eq_norm_mvfderiv,
+    Nat.factorial_two, LinearMap.smul_apply, LinearMap.id_apply]
+  module
+
+/-- An operator whose double commutators with multiplication by smooth functions `f` and `g` are
+multiplication by `-2 ⟪grad f, grad g⟫` is of Laplace type with constant `1`. -/
+theorem isSectionLaplaceType_of_smulCommutator_smulCommutator
+    (hP : ∀ (f g : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) (x : M),
+      smulCommutator ℝ g (smulCommutator ℝ f P) s x =
+        -(2 * ⟪Manifold.mgradient I f x, Manifold.mgradient I g x⟫) • s x) :
+    IsSectionLaplaceType ⟨P, mem_differentialOperators_two_of_smulCommutator_smulCommutator hP⟩ 1 :=
+  isSectionLaplaceType_iff.2 ⟨one_pos, fun _ hx ξ ↦ by
+    rw [sectionPrincipalSymbol_of_smulCommutator_smulCommutator hP hx, one_mul]⟩
+
+end DoubleCommutator
 
 end TauCeti

@@ -38,6 +38,9 @@ one of `TauCeti.Algebra.Homology.DG.Twisted.Complex`.
 * `TauCeti.homotopyMap_mem_twistedTotalGrading`: the homotopy map lowers the total degree by one.
 * `TauCeti.homotopyMap_twistedDifferential`: the chain homotopy identity
   `Ψ¹ - Ψ⁰ = D⁻ ∘ 𝔥 + 𝔥 ∘ D⁺` for a differential graded right module.
+* `TauCeti.homotopyMap_mem_twistedIndexFiltration`,
+  `TauCeti.ParametrizedCocycle.h_eq_zero_of_add_one_lt_of_nonpos`: over an algebra concentrated in
+  degrees `≤ 0`, the homotopy map raises the index filtration by at most one.
 
 ## References
 
@@ -150,6 +153,27 @@ theorem homotopyMap_mem_twistedTotalGrading (hh : ∀ x y, h x y ∈ 𝒜 (indQ 
   ring
 
 end Homogeneity
+
+section Filtration
+
+variable [CommRing R] [Semiring A] [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M]
+  [SMulCommClass R Aᵐᵒᵖ M] {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+
+/-- The homotopy map of a matrix with no entries raising the index by more than `s` raises the
+index filtration by at most `s`: it sends families supported in indices `≤ p` to families
+supported in indices `≤ p + s`. -/
+theorem homotopyMap_mem_twistedIndexFiltration {s : ℤ} (hh : ∀ x y, ind x + s < indQ y → h x y = 0)
+    {p : ℤ} {f : P → M} (hf : f ∈ twistedIndexFiltration (R := R) ind p) :
+    homotopyMap h ℳ f ∈ twistedIndexFiltration (R := R) indQ (p + s) := by
+  rw [mem_twistedIndexFiltration_iff] at hf ⊢
+  intro y hy
+  rw [homotopyMap_apply]
+  refine Finset.sum_eq_zero fun x _ ↦ ?_
+  rcases le_or_gt (ind x) p with hx | hx
+  · rw [hh x y (by omega), MulOpposite.op_zero, zero_smul]
+  · rw [hf x hx, map_zero, smul_zero]
+
+end Filtration
 
 variable [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Fintype Q]
@@ -281,6 +305,14 @@ def ofEq (hν : ν₀ = ν₁) : ParametrizedCocycle ν₀ ν₁ where
 @[simp]
 theorem ofEq_h (hν : ν₀ = ν₁) : (ofEq hν).h = 0 :=
   (rfl)
+
+/-- Over an algebra concentrated in cohomological degrees `≤ 0`, a parametrized cocycle has no
+entries raising the index by more than one: `h x y` has degree `indQ y - ind x - 1`. -/
+theorem h_eq_zero_of_add_one_lt_of_nonpos (η : ParametrizedCocycle ν₀ ν₁)
+    (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥) {x : P} {y : Q} (hxy : ind x + 1 < indQ y) : η.h x y = 0 := by
+  have hη := η.mem_graded x y
+  rw [h𝒜 _ (by omega)] at hη
+  exact (Submodule.mem_bot R).1 hη
 
 variable [GradedAlgebra 𝒜]
 
