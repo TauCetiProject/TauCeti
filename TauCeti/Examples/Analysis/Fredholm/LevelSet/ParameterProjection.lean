@@ -18,8 +18,9 @@ projection into the local map `TauCeti.levelSetParameterMap`, whose derivative a
 is the linear parameter projection `ContinuousLinearMap.parameterProj D₁ D₂`
 (`TauCeti.fderiv_levelSetParameterMap`). A parameter is regular
 (`TauCeti.IsRegularParameter`) when the fixed-parameter derivative `D₁` is onto at every solution
-over it, and the regular parameters form a residual set when the total derivative is onto at every
-solution (`TauCeti.mem_residual_setOf_isRegularParameter`).
+over it, and the regular parameters form a residual set when `s` is sufficiently smooth, the
+fixed-parameter derivative is Fredholm, and the total derivative is onto at every solution
+(`TauCeti.mem_residual_setOf_isRegularParameter`).
 
 This file computes these objects for three equations `s : ℝ × ℝ → ℝ`.
 
@@ -38,8 +39,10 @@ This file computes these objects for three equations `s : ℝ × ℝ → ℝ`.
   be dropped from the parametric transversality theorem.
 
 The index of an operator between finite-dimensional spaces is the difference of their dimensions
-(`ContinuousLinearMap.index_eq_of_finiteDimensional`), so the index of the projection is `0` in all
-three cases; the cases differ in kernel and cokernel.
+(`ContinuousLinearMap.index_eq_of_finiteDimensional`), so for the two equations `x - p` and `p`,
+whose total derivative is onto, the derivative of the projection has index `0`; these two cases
+differ in kernel and cokernel. For `0`, the total derivative is not onto, so the regular-level-set
+chart and its projection are not available.
 
 ## References
 
@@ -153,7 +156,7 @@ noncomputable abbrev axisParameterMap (a : ℝ) : ((0 : ℝ →L[ℝ] ℝ).copro
     (Submodule.ClosedComplemented.of_finiteDimensional _) rfl
 
 /-- The zero map `ℝ → ℝ` is not onto. -/
-theorem not_surjective_zero : ¬ Surjective (0 : ℝ →L[ℝ] ℝ) := fun h ↦ by
+private theorem not_surjective_zero : ¬ Surjective (0 : ℝ →L[ℝ] ℝ) := fun h ↦ by
   obtain ⟨x, hx⟩ := h 1
   simp at hx
 
@@ -170,16 +173,16 @@ of the axis. -/
 theorem finrank_ker_fderiv_axisParameterMap (a : ℝ) :
     finrank ℝ (fderiv ℝ (axisParameterMap a) 0).ker = 1 := by
   rw [fderiv_levelSetParameterMap, finrank_ker_parameterProj, toLinearMap_zero,
-    LinearMap.ker_zero, finrank_top, finrank_self]
+    LinearMap.ker_zero]
+  simp
 
 /-- The derivative of the projection from the axis has a cokernel of dimension `1`. -/
 theorem finrank_quotient_range_fderiv_axisParameterMap (a : ℝ) :
     finrank ℝ (ℝ ⧸ (fderiv ℝ (axisParameterMap a) 0).range) = 1 := by
   rw [fderiv_levelSetParameterMap,
     finrank_quotient_range_parameterProj _ _ surjective_zero_coprod_one, toLinearMap_zero,
-    LinearMap.range_zero]
-  have h := Submodule.finrank_quotient_add_finrank (⊥ : Submodule ℝ ℝ)
-  rwa [finrank_bot, add_zero, finrank_self] at h
+    LinearMap.range_zero, (Submodule.quotEquivOfEqBot _ rfl).finrank_eq]
+  simp
 
 /-- The derivative of the projection from the axis has index `0`, although it is not onto. -/
 theorem index_fderiv_axisParameterMap (a : ℝ) :
@@ -228,8 +231,8 @@ theorem not_surjective_fderiv_zero (z : ℝ × ℝ) :
 space of the zero set, which is the whole plane. -/
 theorem finrank_ker_fderiv_zero (z : ℝ × ℝ) :
     finrank ℝ (fderiv ℝ (fun _ : ℝ × ℝ ↦ (0 : ℝ)) z).ker = 2 := by
-  rw [fderiv_const_apply, toLinearMap_zero, LinearMap.ker_zero, finrank_top, finrank_prod,
-    finrank_self]
+  rw [fderiv_const_apply, toLinearMap_zero, LinearMap.ker_zero]
+  simp
 
 /-- The index of the total derivative of `s (x, p) = 0`, the expected dimension of its zero set,
 is `1`, while the zero set has dimension `2` (`finrank_ker_fderiv_zero`). -/
