@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.MinTensor.CrossNorm
-public import TauCeti.Analysis.CStarAlgebra.MinTensorNorm
+public import TauCeti.Analysis.CStarAlgebra.MinTensor.Norm
 import Mathlib.Algebra.Central.TensorProduct
 import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Algebra.Group.Hom.Defs
