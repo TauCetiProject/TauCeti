@@ -9,12 +9,12 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Sobolev
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartCutoffs
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalOperator
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basis
-import TauCeti.Analysis.Distribution.SchwartzSpace.SupportedIn
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding.Schwartz
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartReading
 
 /-!
-# Pseudodifferential operators between bundles on bundle tests and distributions
+# Pseudodifferential operators between bundles on bundle tests and their duals
 
 Let `M` be a σ-compact manifold modelled on `ℝⁿ`, let `E`, `F` be smooth complex vector bundles
 over `M` with finite-dimensional model fibres `V` and `W`, and let `P : Γ(E) → Γ(F)` be a classical
@@ -22,12 +22,10 @@ pseudodifferential operator of order `m` (`TauCeti.sectionClassicalPseudodiffere
 Since `P` is properly supported, it sends compactly supported smooth sections of `E` to compactly
 supported smooth sections of `F`. This file proves that it does so continuously for the test
 topologies, so that `P` acts on the bundle tests `TauCeti.BundleTest` as a continuous linear map
-(`TauCeti.BundleTest.pseudodifferentialCLM`). Its transpose `T ↦ T ∘ P` then acts on continuous
-linear functionals on the bundle tests of `F` (`TauCeti.BundleTest.pseudodifferentialDualCLM`),
-for instance on the distributional sections of a bundle, paired with tests through densities. This
-is how a properly supported pseudodifferential operator acts on distributions on a manifold. For a
-differential operator, which is local, the same transpose is
-`TauCeti.BundleTest.localOperatorDualCLM`.
+(`TauCeti.BundleTest.pseudodifferentialCLM`). Its transpose, the precomposition `T ↦ T ∘ P`, then
+acts on continuous linear functionals on the bundle tests of `F`
+(`TauCeti.BundleTest.pseudodifferentialDualCLM`). For a differential operator, which is local, the
+same transpose is `TauCeti.BundleTest.localOperatorDualCLM`.
 
 ## The argument
 
@@ -115,96 +113,6 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
   [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)]
   {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯} {m : ℝ}
 
-section Readings
-
-variable {c : OpenPartialHomeomorph M (CoordinateSpace n)}
-  (hc : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-  (t : Trivialization V (π V E)) [MemTrivializationAtlas t] (hct : c.source ⊆ t.baseSet)
-  {L : Compacts (CoordinateSpace n)} (hL : (L : Set (CoordinateSpace n)) ⊆ c.target)
-  {ψ : 𝓓(⟨c.target, c.open_target⟩, ℝ)} (hψ : ∀ y ∈ (L : Set (CoordinateSpace n)), ψ y = 1)
-
-include hψ in
-omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [∀ x, IsScalarTower ℝ ℂ (E x)]
-  [FiniteDimensional ℂ V] in
-/-- Multiplying the extension through `c` and `t` of a test function supported in `L` by a cutoff
-in the chart equal to `1` on `L`, read on `M`, does not change it. -/
-private theorem ofReal_cutoffPullback_smul_chartTestSection (φ : 𝓓_{L}(CoordinateSpace n, V)) :
-    ContMDiffMap.ofReal (c.cutoffPullback hc ψ 1) •
-        (t.chartTestSection c (contMDiffOn_of_mem_maximalAtlas hc) hct
-          (TestFunction.ofSupportedIn (Ω := ⟨c.target, c.open_target⟩) hL φ)).val =
-      (t.chartTestSection c (contMDiffOn_of_mem_maximalAtlas hc) hct
-        (TestFunction.ofSupportedIn (Ω := ⟨c.target, c.open_target⟩) hL φ)).val := by
-  refine ContMDiffSection.ext fun x ↦ ?_
-  rw [ContMDiffSection.smul_apply_of_normedAlgebra]
-  by_cases hx : x ∈ c.source
-  · rw [ContMDiffMap.ofReal_apply, c.cutoffPullback_one_apply_of_mem hc ψ hx]
-    by_cases hφ : φ (c x) = 0
-    · simp [t.chartTestSection_apply_of_mem c _ hct _ hx, hφ]
-    · simp [hψ _ (φ.support_subset hφ)]
-  · simp [t.chartTestSection_apply_of_notMem c _ hct _ hx]
-
-include hψ in
-omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [∀ x, IsScalarTower ℝ ℂ (E x)]
-  [FiniteDimensional ℂ V] in
-/-- Read in the chart `c` through a cutoff equal to `1` on `L`, a cut-off frame coefficient
-`ρ ℓ(t ·)` of the extension of a test function `φ` supported in `L` is `ℓ ∘ φ`, when `ρ` is `1` on
-the chart preimage of the support of the cutoff. -/
-private theorem cutoffPushforwardSchwartz_cutoffFrameCoeff_chartTestSection
-    (ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hρ : tsupport ρ ⊆ t.baseSet)
-    (hρψ : ∀ y ∈ tsupport ψ, ρ (c.symm y) = 1) (ℓ : V →L[ℂ] ℂ)
-    (φ : 𝓓_{L}(CoordinateSpace n, V)) :
-    c.cutoffPushforwardSchwartz hc ψ (t.cutoffFrameCoeff ρ hρ ℓ
-        (t.chartTestSection c (contMDiffOn_of_mem_maximalAtlas hc) hct
-          (TestFunction.ofSupportedIn (Ω := ⟨c.target, c.open_target⟩) hL φ)).val) =
-      ContDiffMapSupportedIn.toSchwartzMapCLM ℂ (ContDiffMapSupportedIn.postcompCLM ℓ φ) := by
-  ext y
-  rw [c.cutoffPushforwardSchwartz_apply, ContDiffMapSupportedIn.toSchwartzMapCLM_apply,
-    ContDiffMapSupportedIn.postcompCLM_apply, Function.comp_apply,
-    Bundle.Trivialization.cutoffFrameCoeff_apply]
-  by_cases hy : y ∈ c.target
-  · have hxs : c.symm y ∈ c.source := c.map_target hy
-    have hb := hct hxs
-    rw [t.chartTestSection_apply_of_mem c _ hct _ hxs, c.right_inv hy,
-      t.continuousLinearMapAt_apply_of_mem (R := ℂ) hb, t.symmL_apply hb, t.apply_mk_symm hb]
-    by_cases hφ : φ y = 0
-    · simp [hφ]
-    · have hyL : y ∈ (L : Set (CoordinateSpace n)) := φ.support_subset hφ
-      simp [hψ y hyL, hρψ y (subset_tsupport _ (by simp [hψ y hyL]))]
-  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy (ψ.tsupport_subset h)]
-    simp [φ.zero_on_compl fun h ↦ hy (hL h)]
-
-end Readings
-
-omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [∀ x, IsScalarTower ℝ ℂ (F x)]
-  [FiniteDimensional ℂ W] in
-/-- Read in a chart `c'` through a cutoff `ψ`, the coordinate `ℓ` of the chart localization of a
-section `s` is the chart reading of its cut-off frame coefficient `χ ℓ(t' s)`, when `χ` is `1` on
-the support of `ψ`. -/
-private theorem apply_chartLocalization_eq_cutoffPushforwardSchwartz
-    {c' : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (hc' : c' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (t' : Trivialization W (π W F)) [MemTrivializationAtlas t'] (hct' : c'.source ⊆ t'.baseSet)
-    (ψ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (L' : Compacts (CoordinateSpace n))
-    (hL' : (L' : Set (CoordinateSpace n)) ⊆ c'.target) (hψ : MapsTo c' (tsupport ψ) L')
-    {ψ' : 𝓓(⟨c'.target, c'.open_target⟩, ℝ)} (hψ' : ∀ x ∈ c'.source, ψ' (c' x) = ψ x)
-    (χ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hχ : tsupport χ ⊆ t'.baseSet)
-    (hχψ : ∀ x ∈ tsupport ψ, χ x = 1) (ℓ : W →L[ℂ] ℂ) (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
-    (fun y ↦ ℓ (t'.chartLocalization c' (contMDiffOn_symm_of_mem_maximalAtlas hc') hct' ψ L' hL'
-        hψ s y)) =
-      ⇑(c'.cutoffPushforwardSchwartz hc' ψ' (t'.cutoffFrameCoeff χ hχ ℓ s)) := by
-  funext y
-  rw [c'.cutoffPushforwardSchwartz_apply hc', Bundle.Trivialization.cutoffFrameCoeff_apply]
-  by_cases hy : y ∈ c'.target
-  · have hxs : c'.symm y ∈ c'.source := c'.map_target hy
-    rw [t'.chartLocalization_apply_of_mem c' _ hct' ψ L' hL' hψ _ hy, ← c'.right_inv hy,
-      hψ' _ hxs, c'.left_inv hxs]
-    by_cases hψy : ψ (c'.symm y) = 0
-    · simp [hψy]
-    · rw [hχψ _ (subset_tsupport _ hψy), t'.continuousLinearMapAt_apply_of_mem (R := ℂ) (hct' hxs)]
-      simp
-  · rw [t'.chartLocalization_apply_of_notMem c' _ hct' ψ L' hL' hψ _ hy, map_zero,
-      image_eq_zero_of_notMem_tsupport fun h ↦ hy (ψ'.tsupport_subset h), zero_smul]
-
 omit [∀ x, IsScalarTower ℝ ℂ (E x)] [∀ x, IsScalarTower ℝ ℂ (F x)] in
 /-- **The core estimate.** Let `c` and `c'` be charts of the maximal atlas over which `E` and `F`
 are trivialized by `t` and `t'`. Extend a test function `φ` supported in a compact subset `L` of
@@ -268,11 +176,11 @@ private theorem exists_seminorm_chartLocalization_apply_chartTestSection_le
   refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
   have h := hC l (t.chartTestSection c (contMDiffOn_of_mem_maximalAtlas hc) hct
     (TestFunction.ofSupportedIn (Ω := ⟨c.target, c.open_target⟩) hL φ)).val
-  rw [ofReal_cutoffPullback_smul_chartTestSection hc t hct hL hψin1, add_sub_cancel_right] at h
-  simp_rw [cutoffPushforwardSchwartz_cutoffFrameCoeff_chartTestSection hc t hct hL hψin1 _ hρt
+  rw [t.ofReal_cutoffPullback_smul_chartTestSection hc hct hL hψin1, add_sub_cancel_right] at h
+  simp_rw [t.cutoffPushforwardSchwartz_cutoffFrameCoeff_chartTestSection hc hct hL hψin1 _ hρt
     hρψ] at h
   simp_rw [← LinearMap.coe_toContinuousLinearMap' ((Module.finBasis ℂ W).coord l),
-    apply_chartLocalization_eq_cutoffPushforwardSchwartz hc' t' hct' ψ L' hL' hψ hψ' ⟨χ, hχs⟩ hχt
+    t'.apply_chartLocalization_eq_cutoffPushforwardSchwartz hc' hct' ψ L' hL' hψ hψ' ⟨χ, hχs⟩ hχt
       (fun x hx ↦ hχ1.self_of_nhdsSet x hx)]
   refine (hCemb _ i le_rfl x).trans ?_
   rw [mul_assoc]
@@ -351,18 +259,8 @@ omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [FiniteDimensio
 private theorem val_symm_testLinearMap (hP : IsSectionProperlySupported P)
     (Φ : BundleTest 𝓘(ℝ, CoordinateSpace n) V E) :
     ((BundleTest.ofCompactlySupported _ W F).symm (testLinearMap hP Φ)).val =
-      P ((BundleTest.ofCompactlySupported _ V E).symm Φ).val :=
-  rfl
-
-omit [FiniteDimensional ℂ V] [∀ x, Module ℂ (E x)] [∀ x, IsScalarTower ℝ ℂ (E x)]
-  [VectorBundle ℂ V E] in
-private theorem val_symm_chartTestCLM (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
-    (c : OpenPartialHomeomorph M (CoordinateSpace n))
-    (hc : ContMDiffOn 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) ∞ c c.source)
-    (hct : c.source ⊆ t.baseSet) (φ : 𝓓(⟨c.target, c.open_target⟩, V)) :
-    ((BundleTest.ofCompactlySupported _ V E).symm (t.chartTestCLM c hc hct φ)).val =
-      (t.chartTestSection c hc hct φ).val :=
-  ContMDiffSection.ext fun x ↦ congrFun (Bundle.Trivialization.coe_chartTestCLM t c hc hct φ) x
+      P ((BundleTest.ofCompactlySupported _ V E).symm Φ).val := by
+  simp [testLinearMap]
 
 /-- Extending test functions supported in a compact subset `L` of the target of a chart `c` of the
 maximal atlas through `c` and a trivialization `t`, and then applying `P`, is continuous. -/
@@ -391,7 +289,7 @@ private theorem continuous_testLinearMap_chartTestCLM
       (TestFunction.ofSupportedIn (Ω := ⟨c.target, c.open_target⟩) hL φ)).val (by
         rw [Bundle.Trivialization.tsupport_chartTestSection]
         exact image_mono φ.tsupport_subset)
-    rwa [← ContMDiffSection.tsupport_def, val_symm_testLinearMap, val_symm_chartTestCLM]
+    rwa [← ContMDiffSection.tsupport_def, val_symm_testLinearMap, t.val_symm_chartTestCLM]
   -- Decompose the outputs along the chart cutoffs meeting `K'`.
   have heq := funext fun φ ↦ (A.sum_chartTestCLM_localize (fun y ↦ trivializationAt W F y) hAF
     hK' (hsupp φ)).symm
@@ -403,7 +301,7 @@ private theorem continuous_testLinearMap_chartTestCLM
       (A.chartSupport y) (A.chartSupport_subset_target y) (A.mapsTo_chartSupport y))).congr
     fun φ ↦ ?_
   rw [A.localize_apply, Function.comp_apply, TestFunction.coe_ofSupportedInCLM,
-    val_symm_testLinearMap, val_symm_chartTestCLM]
+    val_symm_testLinearMap, t.val_symm_chartTestCLM]
 
 variable [SigmaCompactSpace M]
 
@@ -477,8 +375,9 @@ theorem pseudodifferentialCLM_comp {U : Type*} [NormedAddCommGroup U] [NormedSpa
     (hRP : R ∘ₗ P ∈ sectionClassicalPseudodifferentialOperators (m' + m) :=
       comp_mem_sectionClassicalPseudodifferentialOperators (P := P) (R := R) hR hP) :
     pseudodifferentialCLM (R ∘ₗ P) hRP =
-      (pseudodifferentialCLM R hR).comp (pseudodifferentialCLM P hP) :=
-  ContinuousLinearMap.ext fun _ ↦ BundleTest.ext fun _ ↦ rfl
+      (pseudodifferentialCLM R hR).comp (pseudodifferentialCLM P hP) := by
+  ext
+  simp [pseudodifferentialCLM, val_symm_testLinearMap]
 
 section Dual
 
@@ -489,8 +388,7 @@ variable (P) in
 /-- **The transpose of a pseudodifferential operator** on functionals on bundle tests: a continuous
 linear functional `T` on the bundle tests of `F` is sent to `T ∘ P`, a functional on the bundle
 tests of `E`, as a continuous linear map for the topologies of uniform convergence on compact sets
-of tests. For a distributional section `u` of a bundle, paired with tests through densities, this
-is the action on `u` of the formal transpose of `P`. -/
+of tests. -/
 def pseudodifferentialDualCLM (hP : P ∈ sectionClassicalPseudodifferentialOperators m) :
     (BundleTest 𝓘(ℝ, CoordinateSpace n) W F →L_c[ℝ] G) →L[ℝ]
       BundleTest 𝓘(ℝ, CoordinateSpace n) V E →L_c[ℝ] G :=
