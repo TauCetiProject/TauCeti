@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.SMul
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Units
 public import TauCeti.LowDimTopology.Heegaard.HatDifferential
 
@@ -69,6 +69,8 @@ formalized here.
 * `TauCeti.HeegaardRegionSystem.augmentation_twistedHatCoefficient` and
   `TauCeti.HeegaardRegionSystem.mapRange_augmentation_twistedHatDifferential`: the augmentation
   of the twisted differential is the hat differential.
+* `TauCeti.HeegaardRegionSystem.sum_twistedHatCoefficient_mul_twistedHatCoefficient_eq_zero`: if
+  the twisted hat differential squares to zero, so does the matrix of its coefficients.
 * `TauCeti.HeegaardRegionSystem.twistedHatCoefficient_eq_single_mul`: the coefficients for two
   choices of reference domains differ by the monomials `t^{a(x) - a(y)}`.
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains.changeEquiv_twistedHatDifferential`: the diagonal
@@ -316,6 +318,26 @@ theorem twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty (h : H.hatDomains �
   have : IsEmpty (H.hatDomains χ x y) := by rw [h]; infer_instance
   exact finsum_of_isEmpty _
 
+/-- When exactly two distinct domains `D₁` and `D₂` are counted, the twisted coefficient is the
+sum of the two monomials of their labels. -/
+theorem twistedHatCoefficient_of_hatDomains_eq_pair {D₁ D₂ : Region → ℤ}
+    (h : H.hatDomains χ x y = {D₁, D₂}) (hne : D₁ ≠ D₂) :
+    H.twistedHatCoefficient r χ x y =
+      single (Multiplicative.ofAdd ⟨r.label x y D₁, r.label_mem_periodicDomains_of_mem_hatDomains
+        (h ▸ Set.mem_insert D₁ {D₂})⟩) 1 +
+      single (Multiplicative.ofAdd ⟨r.label x y D₂, r.label_mem_periodicDomains_of_mem_hatDomains
+        (h ▸ Set.mem_insert_of_mem D₁ rfl)⟩) 1 := by
+  classical
+  have := (show (H.hatDomains χ x y).Finite from h ▸ Set.toFinite _).fintype
+  have hD₁ : D₁ ∈ H.hatDomains χ x y := h ▸ Set.mem_insert D₁ {D₂}
+  have hD₂ : D₂ ∈ H.hatDomains χ x y := h ▸ Set.mem_insert_of_mem D₁ rfl
+  have huniv : (Finset.univ : Finset (H.hatDomains χ x y)) = {⟨D₁, hD₁⟩, ⟨D₂, hD₂⟩} := by
+    ext ⟨D, hD⟩
+    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, Subtype.mk.injEq,
+      true_iff]
+    rwa [h] at hD
+  rw [twistedHatCoefficient_eq_sum, huniv, Finset.sum_pair (by simpa using hne)]
+
 /-- In a weakly admissible diagram the twisted hat differential has no diagonal terms. -/
 @[simp]
 theorem WeaklyAdmissible.twistedHatCoefficient_self (hW : H.WeaklyAdmissible)
@@ -386,6 +408,23 @@ theorem twistedHatDifferential_apply
     (y : H.Generator) :
     H.twistedHatDifferential r χ c y = c.sum fun x a => a * H.twistedHatCoefficient r χ x y := by
   simp [twistedHatDifferential, Finsupp.linearCombination_apply, Finsupp.sum_apply]
+
+/-- The coefficient of `y` in the twisted hat differential of a chain `c`, as a sum over all
+generators. -/
+theorem twistedHatDifferential_apply_eq_sum
+    (c : H.Generator →₀ MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains))
+    (y : H.Generator) :
+    H.twistedHatDifferential r χ c y = ∑ x, c x * H.twistedHatCoefficient r χ x y := by
+  rw [twistedHatDifferential_apply, Finsupp.sum_fintype _ _ (by simp)]
+
+/-- If the twisted hat differential squares to zero, then so does the matrix of its coefficients:
+`∑_y c(x, y) c(y, z) = 0` for all generators `x` and `z`. -/
+theorem sum_twistedHatCoefficient_mul_twistedHatCoefficient_eq_zero
+    (hd : H.twistedHatDifferential r χ ∘ₗ H.twistedHatDifferential r χ = 0) (x z : H.Generator) :
+    ∑ y, H.twistedHatCoefficient r χ x y * H.twistedHatCoefficient r χ y z = 0 := by
+  have h := congr($hd (Finsupp.single x 1) z)
+  rw [LinearMap.comp_apply, twistedHatDifferential_apply_eq_sum] at h
+  simpa using h
 
 /-- **The augmentation of the twisted hat differential is the hat differential.** Applying the
 augmentation `t^P ↦ 1` to the coefficients of chains turns the twisted hat differential into the

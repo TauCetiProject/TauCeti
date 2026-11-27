@@ -45,7 +45,7 @@ The dualities of root data hold as follows:
 
 The bases of `GSpin_{2n+1}` and `GSp₂ₙ` come from the base `TauCeti.soOddBase` of `SO_{2n+1}`,
 the dual of `TauCeti.Symplectic.diagonalRootBase`, those of `GSpin_{2n}` and `GSO₂ₙ` from
-`TauCeti.DynkinType.typeDClassicalBase`, which needs `4 ≤ n`.
+`TauCeti.DynkinType.typeDClassicalBase`, for `2 ≤ n`.
 
 ## Main declarations
 
@@ -238,6 +238,12 @@ theorem gspRootDatum_root_positiveLong (i : Fin n) :
     (gspRootDatum.{u} n).root (.positiveLong i) = (Finsupp.single (ULift.up i) 2, -1) := by
   rw [← flip_gspinOddRootDatum, RootPairing.flip_root, gspinOddRootDatum_coroot_positiveLong]
 
+/-- For `i ≠ j`, the root `ε_{i+1} - ε_{j+1}` of `GSp₂ₙ`, with `ε₀`-coordinate zero. -/
+theorem gspRootDatum_root_difference {i j : Fin n} (hij : i ≠ j) :
+    (gspRootDatum.{u} n).root (.difference i j hij) =
+      (Finsupp.single (ULift.up i) 1 - Finsupp.single (ULift.up j) 1, 0) := by
+  rw [gspRootDatum_root, Symplectic.diagonalRootDatum_root_difference, multiplierCoordinate]
+
 /-- For `i < j`, the root `ε_{i+1} + ε_{j+1} - ε₀` of `GSp₂ₙ`. -/
 theorem gspRootDatum_root_positiveSum {i j : Fin n} (hij : i < j) :
     (gspRootDatum.{u} n).root (.positiveSum i j hij) =
@@ -288,6 +294,16 @@ theorem mem_gspBase_support (p : GLSymplecticFin.RootSubgroupIndex n) :
     p ∈ (gspBase.{u} n).support ↔ ∃ i, Symplectic.diagonalSimpleRootIndex n i = p := by
   rw [gspBase, RootPairing.Base.flip_support]
   exact mem_gspinOddBase_support n p
+
+/-- The nodes biject onto the simple roots of `GSp₂ₙ` via
+`TauCeti.Symplectic.diagonalSimpleRootIndex`. -/
+theorem bijOn_diagonalSimpleRootIndex_gspBase :
+    Set.BijOn (Symplectic.diagonalSimpleRootIndex n) Set.univ (gspBase.{u} n).support :=
+  ⟨fun i _ ↦ (mem_gspBase_support n _).mpr ⟨i, rfl⟩,
+    (Symplectic.diagonalSimpleRootIndex_injective n).injOn,
+    fun p hp ↦ by
+      obtain ⟨i, rfl⟩ := (mem_gspBase_support n p).mp hp
+      exact ⟨i, trivial, rfl⟩⟩
 
 end Odd
 
@@ -416,14 +432,14 @@ theorem gspinEvenRootDatum_toLinearMap_gspinEvenUpsilon_inr :
     (gspinEvenRootDatum n).toLinearMap (gspinEvenUpsilon n) (0, 1) = 2 :=
   RootPairing.extendCoroot_toLinearMap_inr _ _ _ _ _
 
-variable {n} (hn : 4 ≤ n)
+variable {n} (hn : 2 ≤ n)
 
-/-- **The base of `GSpin_{2n}`**, for `4 ≤ n`: simple roots `εᵢ - εᵢ₊₁` and `εₙ₋₁ + εₙ`, with
+/-- **The base of `GSpin_{2n}`**, for `2 ≤ n`: simple roots `εᵢ - εᵢ₊₁` and `εₙ₋₁ + εₙ`, with
 simple coroots `εᵢ∨ - εᵢ₊₁∨` and `εₙ₋₁∨ + εₙ∨ - ε₀∨`. -/
 noncomputable def gspinEvenBase : (gspinEvenRootDatum n).Base :=
   (typeDClassicalBase hn).extendCoroot _ _ _
 
-/-- **The base of `GSO₂ₙ`**, for `4 ≤ n`: simple roots `εᵢ - εᵢ₊₁` and `εₙ₋₁ + εₙ - ε₀`. -/
+/-- **The base of `GSO₂ₙ`**, for `2 ≤ n`: simple roots `εᵢ - εᵢ₊₁` and `εₙ₋₁ + εₙ - ε₀`. -/
 noncomputable def gsoBase : (gsoRootDatum n).Base :=
   (typeDClassicalBase hn).extendRoot _ _ _
 
@@ -459,6 +475,13 @@ example : IsEmpty (GLSymplecticFin.RootSubgroupIndex 0) := inferInstance
 
 /-- `GSpin₂` has no roots: there are no roots of type `D₁`. -/
 example : IsEmpty (DynkinType.TypeDRoot 1) := inferInstance
+
+/-- `GSpin₄` and `GSpin₆` have bases, of types `A₁ × A₁` and `A₃`, with two and three simple
+roots. -/
+example : (gspinEvenBase (n := 2) le_rfl).support.card = 2 ∧
+    (gspinEvenBase (n := 3) (by norm_num)).support.card = 3 := by
+  simp only [gspinEvenBase, RootPairing.Base.extendCoroot_support,
+    DynkinType.card_typeDClassicalBase_support, and_self]
 
 /-- In `GSp₄`, the coroot of the long root `2ε₁ - ε₀` is `ε₁∨`: it pairs to `0` with `ε₀` and to
 `2` with `2ε₁ - ε₀`. -/

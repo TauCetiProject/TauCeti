@@ -253,6 +253,35 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_mul_measure_rpow_of_convex [Nontrivi
     exact key
   exact hw
 
+/-- On a bounded convex open set, a first-order Sobolev value belongs to any finite target
+exponent whose reciprocal gain is strictly less than the reciprocal dimension. -/
+theorem W1p.memLp_value_of_subcritical_gain_of_convex [Nontrivial E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (w : W1p mu Omega p) (hc : Convex ℝ (Omega : Set E))
+    (hb : Bornology.IsBounded (Omega : Set E)) {q : ℝ≥0}
+    (hpq : p ≤ q) (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ < (finrank ℝ E : ℝ)⁻¹) :
+    MemLp (W1p.value w) q (mu.restrict (Omega : Set E)) := by
+  have hp : p ≠ ⊤ := ne_top_of_le_ne_top ENNReal.coe_ne_top hpq
+  let ν := mu.restrict (Omega : Set E)
+  have hfin : (mu : Measure E) Omega ≠ ⊤ := hb.measure_lt_top.ne
+  have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hfin
+  by_cases h0 : (mu : Measure E) Omega = 0
+  · have hzero (g : E → ℝ) : MemLp g q ν := by
+      simp [ν, Measure.restrict_eq_zero.2 h0]
+    exact hzero _
+  let m : ℝ := ⨍ x in Omega, W1p.value w x ∂mu
+  have hmem : MemLp (fun x ↦ W1p.value w x - m) q ν := by
+    apply memLp_iff.2
+    refine (W1p.eLpNorm_value_sub_setAverage_le_mul_measure_rpow_of_convex hp hc hb
+      subset_rfl h0 hpq rfl hδ w).trans_lt ?_
+    apply ENNReal.mul_lt_top
+    · apply ENNReal.mul_lt_top
+      · exact ENNReal.div_lt_top ENNReal.ofReal_ne_top h0
+      · exact ENNReal.rpow_lt_top_of_nonneg (sub_nonneg.2 hδ.le) hfin
+    · finiteness
+  convert hmem.add (memLp_const m) using 1
+  ext x
+  exact (sub_add_cancel (W1p.value w x) m).symm
+
 /-- The constant of `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_mul_measure_rpow_of_convex` on a
 ball of radius `r` and measure `m = rⁿ ω`, with `S` the whole ball: since `diam ≤ 2r`, it is at most
 `2ⁿ / n · K · r · m ^ (-δ)`, for `κ = 1/n`. -/

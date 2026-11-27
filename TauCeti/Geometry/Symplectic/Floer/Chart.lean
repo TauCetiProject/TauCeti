@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Family.Chart
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # The Floer equation in a chart of a manifold
@@ -38,11 +39,18 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   (`TauCeti.Floer.almostComplexInChartAt_eq_inChart`), which is `Cⁿ` on the chart target; for a
   family of smooth structures `J z`, such as a domain-independent one, it is
   `SmoothAlmostComplexStructure.inChart` of `J z`
-  (`TauCeti.Floer.almostComplexInChartAt_almostComplexStructureAt`).
+  (`TauCeti.Floer.almostComplexInChartAt_almostComplexStructureAt`). A family over a normed space
+  of parameters whose section of the tangent endomorphism bundle is only jointly `Cⁿ` over a set
+  `U` of parameters, as are the structures of families of punctured domains, is `Cⁿ` in the chart
+  over `U` (`TauCeti.Floer.contDiffOn_almostComplexInChartAt`, and
+  `TauCeti.Floer.contDiffOn_almostComplexInChartAt_almostComplexStructureAt` for families of
+  smooth structures).
 * For a nondegenerate `ω` and Hamiltonians `K(z)` which are jointly `C^(n+1)` in `z` and the
   target point, the Hamiltonian vector field in the chart is `C^n` on the chart target
   (`TauCeti.SmoothTwoForm.IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt`): it is
   the coordinate expression of the `C^n` section `(z, x) ↦ X_{K(z)}(x)` of the tangent bundle.
+  Here `z` ranges over any normed space, such as the domain `ℝ × ℝ` or a space of parameters times
+  it.
 * Both readings take a parameter of any type. For a family over a further parameter `p`, the
   uncurried family read in the chart at `((p, z), y)` is the member at `p` read in the chart at
   `(z, y)` (`TauCeti.Floer.almostComplexInChartAt_uncurry`,
@@ -51,7 +59,9 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   (`TauCeti.SmoothTwoForm.continuousOn_hamiltonianVectorFieldInChartAt_of_uncurry`), and a single
   datum, as a constant family, is as regular as the datum
   (`TauCeti.Floer.contDiffOn_almostComplexInChartAt_uncurry_const`,
-  `TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const`).
+  `TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const`). The
+  Hamiltonian vector field in the chart of the rescaled family `ε K(c + ε w)` is `ε` times that of
+  `K` at `c + ε w` (`TauCeti.SmoothTwoForm.hamiltonianVectorFieldInChartAt_rescale`).
 * `TauCeti.SmoothTwoForm.associatedBilinFormInChartAt ω α J` is the bilinear form
   `ω(·, J(z, x) ·)` read in the chart, at `x = (extChartAt I α).symm y` and on tangent coordinates
   (`TauCeti.SmoothTwoForm.associatedBilinFormInChartAt_extChartAt`), that is, the coordinate
@@ -68,7 +78,9 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   `isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub`). The
   two vector fields together form the Hamiltonian one-form `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}`
   read in the chart (`TauCeti.SmoothTwoForm.hamiltonianOneFormInChartAt`), the one-form of this
-  coordinate equation.
+  coordinate equation. A `Cⁿ` solution, `n ≠ 0`, on an open set with values in the chart source
+  has a `Cⁿ` coordinate expression solving this coordinate equation
+  (`TauCeti.SmoothTwoForm.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub`).
 
 Compactness of solutions with values in one chart, of either kind, is
 `TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`, and the mean-value inequality in a chart
@@ -238,11 +250,51 @@ theorem almostComplexInChartAt_almostComplexStructureAt (J : P → SmoothAlmostC
     (α : M) (p : P × E) :
     almostComplexInChartAt I α (fun z ↦ (J z).almostComplexStructureAt) p =
       (J p.1).inChart α p.2 := by
-  rw [almostComplexInChartAt, SmoothAlmostComplexStructure.inChart_def]
-  congr 1
-  ext v
-  rw [LinearMap.coe_toContinuousLinearMap']
-  exact (J p.1).almostComplexStructureAt_apply _ v
+  rw [almostComplexInChartAt, SmoothAlmostComplexStructure.inChart_def,
+    SmoothAlmostComplexStructure.toContinuousLinearMap_almostComplexStructureAt]
+
+/-- **A jointly regular family of structures is regular in a chart.** Let `J_q(x)` be structures
+on the tangent spaces of `M`, depending on a point `q` of a normed space `Q`, such as the domain
+`ℝ × ℝ` of the Floer equation or a space of parameters times it, and let the section
+`(q, x) ↦ J_q(x)` of the tangent endomorphism bundle be jointly `Cⁿ` at every point of `U × M` for
+a set `U ⊆ Q`. Then the family read in the chart at `α` is `Cⁿ` on `U × (extChartAt I α).target`.
+Unlike `ContMDiffAlmostComplexStructureFamily.contDiffOn_inChart`, the family need only be regular
+over `U`, as are the structures of families of punctured domains. -/
+theorem contDiffOn_almostComplexInChartAt {Q : Type*} [NormedAddCommGroup Q] [NormedSpace ℝ Q]
+    {U : Set Q} {J : Q → (x : M) → AlmostComplexStructure (TangentSpace I x)} {n : ℕ∞}
+    (hJ : ∀ q ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, Q).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun p : Q × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) p.2
+        (J p.1 p.2).toLinearMap.toContinuousLinearMap) (q, x))
+    (α : M) :
+    ContDiffOn ℝ n (almostComplexInChartAt I α J) (U ×ˢ (extChartAt I α).target) :=
+  -- In the trivialization at `α`, the section is the family in tangent coordinates.
+  (Manifold.contDiffOn_trivializationAt_extChartAt_symm_prod (V := fun x : M ↦
+      TangentSpace I x →L[ℝ] TangentSpace I x)
+    (σ := fun q x ↦ (J q x).toLinearMap.toContinuousLinearMap)
+    (fun _ hw ↦ by simpa using TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw)
+    hJ).congr fun _ _ ↦ by rw [almostComplexInChartAt, hom_trivializationAt_apply]
+
+/-- **A jointly regular family of smooth structures is regular in a chart.** For smooth almost
+complex structures `J q` depending on a point `q` of a normed space `Q`, whose endomorphism
+sections form a section `(q, x) ↦ J q x` of the tangent endomorphism bundle which is jointly `Cⁿ`
+at every point of `U × M` for a set `U ⊆ Q`, the family read in the chart at `α` is `Cⁿ` on
+`U × (extChartAt I α).target`. This is `TauCeti.Floer.contDiffOn_almostComplexInChartAt` for the
+pointwise structures of `J`. -/
+theorem contDiffOn_almostComplexInChartAt_almostComplexStructureAt {Q : Type*}
+    [NormedAddCommGroup Q] [NormedSpace ℝ Q] {U : Set Q} {J : Q → SmoothAlmostComplexStructure I M}
+    {n : ℕ∞}
+    (hJ : ∀ q ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, Q).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun p : Q × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) p.2
+        ((J p.1).toEndomorphism p.2)) (q, x))
+    (α : M) :
+    ContDiffOn ℝ n (almostComplexInChartAt I α fun q ↦ (J q).almostComplexStructureAt)
+      (U ×ˢ (extChartAt I α).target) :=
+  contDiffOn_almostComplexInChartAt (J := fun q ↦ (J q).almostComplexStructureAt)
+    (fun q hq x ↦ (hJ q hq x).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦
+      congrArg (TotalSpace.mk' _ p.2)
+        ((J p.1).toContinuousLinearMap_almostComplexStructureAt p.2))) α
 
 end Floer
 
@@ -339,39 +391,27 @@ theorem contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const {Q R : Type*}
     fun _ _ ↦ ω.hamiltonianVectorFieldInChartAt_uncurry α _ _ _ _
 
 /-- **The Hamiltonian vector field in a chart is smooth.** For a nondegenerate two-form `ω` and a
-family of Hamiltonians `K(z)` which is jointly `C^(n+1)` at every point of `U × M`, for an open set
-`U` of the domain, the Hamiltonian vector field of `K` read in the chart at `α` is `C^n` on
-`U × (extChartAt I α).target`. With `n = 2` this is the regularity of the data assumed by the
-compactness theorems for Floer solutions in a manifold. -/
+family of Hamiltonians `K(z)`, depending on a point `z` of a normed space `Q` such as the domain
+`ℝ × ℝ` of the Floer equation or a space of parameters times it, which is jointly `C^(n+1)` at
+every point of `U × M` for a set `U ⊆ Q`, the Hamiltonian vector field of `K` read in the chart at
+`α` is `C^n` on `U × (extChartAt I α).target`. With `n = 2` this is the regularity of the data
+assumed by the compactness theorems for Floer solutions in a manifold. -/
 theorem IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt (hω : ω.IsNondegenerate)
-    {U : Set (ℝ × ℝ)} {K : ℝ × ℝ → M → ℝ} {n : ℕ∞}
-    (hK : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (n + 1) (Function.uncurry K) (z, x))
+    {Q : Type*} [NormedAddCommGroup Q] [NormedSpace ℝ Q] {U : Set Q} {K : Q → M → ℝ} {n : ℕ∞}
+    (hK : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, Q).prod I) 𝓘(ℝ) (n + 1) (Function.uncurry K) (z, x))
     (α : M) :
     ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α K) (U ×ˢ (extChartAt I α).target) := by
-  set T := trivializationAt E (TangentSpace I) α
-  set φ := extChartAt I α
-  -- The map `(z, y) ↦ (z, φ⁻¹ y)` into `(ℝ × ℝ) × M`.
-  set ψ : (ℝ × ℝ) × E → (ℝ × ℝ) × M := fun p ↦ (p.1, φ.symm p.2)
-  rintro ⟨z, y⟩ ⟨hz, hy⟩
-  have hbase {w : E} (hw : w ∈ φ.target) : φ.symm w ∈ T.baseSet := by
-    simpa [T, φ] using (extChartAt I α).map_target hw
-  -- The Hamiltonian vector fields form a section of the tangent bundle which is `C^n` at
-  -- `(z, φ⁻¹ y)`, so its coordinates in the trivialization at `α` are `C^n` there.
-  have hX := hω.contMDiffAt_hamiltonianVectorField_uncurry (n := n) (by exact_mod_cast le_top)
-    (hK z hz (φ.symm y))
-  have hcoord := ((Bundle.Trivialization.contMDiffAt_iff (e := T)
-    (by simpa [T] using hbase hy)).1 hX).2
-  have hψ : ContMDiffWithinAt 𝓘(ℝ, (ℝ × ℝ) × E) (𝓘(ℝ, ℝ × ℝ).prod I) n ψ
-      (U ×ˢ φ.target) (z, y) :=
-    (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
-      (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (z, y)
-        (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))
-  refine (contMDiffWithinAt_iff_contDiffWithinAt.1 (hcoord.comp_contMDiffWithinAt (z, y) hψ)).congr
-    (fun p hp ↦ ?_) ?_
-  · rw [hamiltonianVectorFieldInChartAt_apply]
-    exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) T (hbase hp.2) _
-  · rw [hamiltonianVectorFieldInChartAt_apply]
-    exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) T (hbase hy) _
+  have hbase {w : E} (hw : w ∈ (extChartAt I α).target) :
+      (extChartAt I α).symm w ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+    simpa using (extChartAt I α).map_target hw
+  -- The Hamiltonian vector fields form a section of the tangent bundle which is `C^n` on `U × M`,
+  -- and in the trivialization at `α` it is the vector field in tangent coordinates.
+  refine (Manifold.contDiffOn_trivializationAt_extChartAt_symm_prod (V := TangentSpace I)
+    (σ := fun z ↦ ω.hamiltonianVectorField (K z)) (fun _ ↦ hbase) fun z hz x ↦
+      hω.contMDiffAt_hamiltonianVectorField_uncurry (n := n) (by exact_mod_cast le_top)
+        (hK z hz x)).congr fun p hp ↦ ?_
+  rw [hamiltonianVectorFieldInChartAt_apply]
+  exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ (hbase hp.2) _
 
 omit [FiniteDimensional ℝ E] in
 /-- The Hamiltonian vector field of the zero Hamiltonian, read in a chart, vanishes. -/
@@ -381,6 +421,16 @@ theorem hamiltonianVectorFieldInChartAt_zero (ω : SmoothTwoForm I M) (α : M) {
   funext ⟨z, y⟩
   rw [hamiltonianVectorFieldInChartAt_apply, hamiltonianVectorField_const]
   exact map_zero _
+
+omit [FiniteDimensional ℝ E] in
+/-- The Hamiltonian vector field of the rescaled Hamiltonian `ε K(c + ε w)`, read in a chart, is
+`ε` times that of `K` at `c + ε w`. -/
+theorem hamiltonianVectorFieldInChartAt_rescale (ω : SmoothTwoForm I M) (α : M)
+    (K : ℝ × ℝ → M → ℝ) (c : ℝ × ℝ) (ε : ℝ) (w : ℝ × ℝ) (y : E) :
+    ω.hamiltonianVectorFieldInChartAt α (fun w x ↦ ε * K (c + ε • w) x) (w, y) =
+      ε • ω.hamiltonianVectorFieldInChartAt α K (c + ε • w, y) := by
+  rw [hamiltonianVectorFieldInChartAt_apply, hamiltonianVectorFieldInChartAt_apply, ← map_smul]
+  exact congrArg _ (ω.hamiltonianVectorField_const_smul (f := K (c + ε • w)) ε _)
 
 /-- The bilinear forms `ω(·, J(z, x) ·)` of the structures `J(z, x)`, read in the chart at `α`: at
 `(z, y)`, the form at the point `x = (extChartAt I α).symm y` with both arguments in the tangent
@@ -559,6 +609,60 @@ theorem isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComple
   rwa [Trivialization.symmL_continuousLinearMapAt _ hb,
     Trivialization.symmL_continuousLinearMapAt _ hb] at h'
 
+/-- **Floer solutions in a chart solve the coordinate Floer equation.** Let `u` be `Cⁿ`, `n ≠ 0`,
+on an open set `U`, with values in the source of the chart at `α`, and solve the Floer equation for
+`J(z, u)` on `U`. Then its coordinate expression `v = extChartAt I α ∘ u` is `Cⁿ` on `U` and solves
+the coordinate Floer equation `∂ₜv - X(z, v) i = J(z, v) (∂ₛv - X(z, v) 1)` on `U`, for the
+structure `J` and the Hamiltonian one-form `X` of `K_s ds + K_t dt` read in the chart. -/
+theorem contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub (ω : SmoothTwoForm I M)
+    {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)} {n : WithTop ℕ∞}
+    [IsManifold I n M] {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u U)
+    (hn : n ≠ 0) (hus : MapsTo u U (extChartAt I α).source)
+    (hfl : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap) :
+    ContDiffOn ℝ n (extChartAt I α ∘ u) U ∧ ∀ z ∈ U,
+      fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag -
+          ω.hamiltonianOneFormInChartAt α Ks Kt (z, (extChartAt I α ∘ u) z) stdComplexLineImag =
+        Floer.almostComplexInChartAt I α J (z, (extChartAt I α ∘ u) z)
+          (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
+            ω.hamiltonianOneFormInChartAt α Ks Kt (z, (extChartAt I α ∘ u) z)
+              stdComplexLineReal) := by
+  refine ⟨contMDiffOn_iff_contDiffOn.1 <| (contMDiffOn_extChartAt (n := n)).comp hu
+    fun z hz ↦ by rw [mem_preimage, ← extChartAt_source I]; exact hus hz, fun z hz ↦ ?_⟩
+  simpa only [hamiltonianOneFormInChartAt_stdComplexLineReal,
+    hamiltonianOneFormInChartAt_stdComplexLineImag, Function.comp_apply] using
+    (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+      ((hu.mdifferentiableOn hn).mdifferentiableAt (hU.mem_nhds hz)) (hus hz)).1
+      (hfl z hz)
+
+omit [FiniteDimensional ℝ E] in
+/-- **Continuity of a Hamiltonian vector field at a point from its reading in one chart.** On a
+boundaryless manifold, let the Hamiltonian vector field of a family of Hamiltonians `K(z)`, read in
+the chart at `x₀`, be continuous on `U × (extChartAt I x₀).target` for an open set `U` of the
+domain. Then `(z, x) ↦ X_{K(z)}(x)` is continuous at `(z₀, x₀)` for `z₀ ∈ U`, as a map into the
+tangent bundle. -/
+theorem continuousAt_hamiltonianVectorField_of_continuousOn_inChartAt [I.Boundaryless]
+    (ω : SmoothTwoForm I M) {K : ℝ × ℝ → M → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U) {z₀ : ℝ × ℝ}
+    (hz₀ : z₀ ∈ U) {x₀ : M}
+    (hK : ContinuousOn (ω.hamiltonianVectorFieldInChartAt x₀ K) (U ×ˢ (extChartAt I x₀).target)) :
+    ContinuousAt (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩ : TangentBundle I M)) (z₀, x₀) := by
+  refine (FiberBundle.continuousAt_totalSpace E _).2 ⟨continuousAt_snd, ?_⟩
+  -- Near `(z₀, x₀)`, the fibre coordinate in the trivialization at `x₀` is the vector field read
+  -- in the chart at `x₀`.
+  have hev : (fun p : (ℝ × ℝ) × M ↦ ω.hamiltonianVectorFieldInChartAt x₀ K
+      (p.1, extChartAt I x₀ p.2)) =ᶠ[𝓝 (z₀, x₀)] fun p ↦
+      (trivializationAt E (TangentSpace I) x₀ ⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩).2 := by
+    filter_upwards [continuousAt_snd.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I) x₀)]
+      with p hp
+    rw [hamiltonianVectorFieldInChartAt_apply, (extChartAt I x₀).left_inv hp,
+      Trivialization.continuousLinearMapAt_apply_of_mem]
+    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  refine ContinuousAt.congr ?_ hev
+  exact (hK.continuousAt ((hU.prod (isOpen_extChartAt_target x₀)).mem_nhds
+    ⟨hz₀, mem_extChartAt_target x₀⟩)).comp
+    (continuousAt_fst.prodMk ((continuousAt_extChartAt (I := I) x₀).comp continuousAt_snd))
+
 omit [FiniteDimensional ℝ E] in
 /-- **Continuity of a Hamiltonian vector field from its chart readings.** On a boundaryless
 manifold, let the Hamiltonian vector field of a family of Hamiltonians `K(z)`, read in the chart at
@@ -571,22 +675,8 @@ theorem continuousOn_hamiltonianVectorField_of_continuousOn_inChartAt [I.Boundar
     ContinuousOn (fun p : (ℝ × ℝ) × M ↦
       (⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ) := by
   rintro ⟨z₀, x₀⟩ ⟨hz₀, -⟩
-  refine ContinuousAt.continuousWithinAt <|
-    (FiberBundle.continuousAt_totalSpace E _).2 ⟨continuousAt_snd, ?_⟩
-  -- Near `(z₀, x₀)`, the fibre coordinate in the trivialization at `x₀` is the vector field read
-  -- in the chart at `x₀`.
-  have hev : (fun p : (ℝ × ℝ) × M ↦ ω.hamiltonianVectorFieldInChartAt x₀ K
-      (p.1, extChartAt I x₀ p.2)) =ᶠ[𝓝 (z₀, x₀)] fun p ↦
-      (trivializationAt E (TangentSpace I) x₀ ⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩).2 := by
-    filter_upwards [continuousAt_snd.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I) x₀)]
-      with p hp
-    rw [hamiltonianVectorFieldInChartAt_apply, (extChartAt I x₀).left_inv hp,
-      Trivialization.continuousLinearMapAt_apply_of_mem]
-    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
-  refine ContinuousAt.congr ?_ hev
-  exact ((hK x₀).continuousAt ((hU.prod (isOpen_extChartAt_target x₀)).mem_nhds
-    ⟨hz₀, mem_extChartAt_target x₀⟩)).comp
-    (continuousAt_fst.prodMk ((continuousAt_extChartAt (I := I) x₀).comp continuousAt_snd))
+  exact (ω.continuousAt_hamiltonianVectorField_of_continuousOn_inChartAt hU hz₀
+    (hK x₀)).continuousWithinAt
 
 omit [FiniteDimensional ℝ E] in
 /-- **Continuity of the Floer energy density from chart readings.** On a boundaryless manifold, if

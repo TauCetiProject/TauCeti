@@ -43,6 +43,8 @@ neighbourhood of its origin, which is what smooth compatibility of charts needs.
   derivative's kernel.
 * `TauCeti.contDiffAt_coe_levelSetChart_symm_of_mem`: it is smooth at every point of the chart
   target that the coordinate map's invertibility neighbourhood covers.
+* `TauCeti.contDiffAt_coe_levelSetChartModel_symm_of_mem`: the same for the chart read in the
+  model space `Fin n → K`.
 -/
 
 public section
@@ -130,6 +132,24 @@ theorem contDiffAt_coe_levelSetChart_symm_of_mem {n : ℕ∞ω} (hf : HasStrictF
   apply hslice.congr_of_eventuallyEq
   filter_upwards [(levelSetChart hf hf' hker rfl).open_target.mem_nhds hk] with k' hk'
   exact levelSetChart_symm_apply hf hf' hker rfl hk'
+
+/-- **The inverse model chart is smooth away from its centre as well**: the statement of
+`TauCeti.contDiffAt_coe_levelSetChart_symm_of_mem` for the chart `TauCeti.levelSetChartModel`
+read in the model space `Fin n → K`. -/
+theorem contDiffAt_coe_levelSetChartModel_symm_of_mem [CompleteSpace K] {N : ℕ} {n : ℕ∞ω}
+    (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤) (hker : f'.ker.ClosedComplemented)
+    (hfin : FiniteDimensional K ↥f'.ker) (hN : Module.finrank K ↥f'.ker = N) (ha : f a = c)
+    {v : Fin N → K} (hv : v ∈ (levelSetChartModel hf hf' hker hfin hN ha).target)
+    (hmem : (((levelSetChartModel hf hf' hker hfin hN ha).symm v : ↥{x | f x = c}) : E) ∈
+      hf.implicitCoordSource hf' hker)
+    (hcont : ContDiffAt K n f
+      (((levelSetChartModel hf hf' hker hfin hN ha).symm v : ↥{x | f x = c}) : E)) :
+    ContDiffAt K n
+      (fun v ↦ (((levelSetChartModel hf hf' hker hfin hN ha).symm v : ↥{x | f x = c}) : E)) v := by
+  simp only [levelSetChartModel_symm_apply] at hmem hcont ⊢
+  rw [levelSetChartModel_target, Set.mem_preimage] at hv
+  exact (contDiffAt_coe_levelSetChart_symm_of_mem hf hf' hker ha hv hmem hcont).comp v
+    (((f'.kerModelEquiv hfin hN).symm : (Fin N → K) →L[K] ↥f'.ker).contDiff.contDiffAt)
 
 end TauCeti
 

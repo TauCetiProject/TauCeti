@@ -45,11 +45,19 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
 * `AdjoinRoot.algHomEquiv`: over any commutative ring, the algebra maps out of `AdjoinRoot f`
   into any algebra, commutative or not, are the roots of `f`. Mathlib's `AdjoinRoot.equiv` is the
   version over a field with values in a domain.
+* `Irreducible.orderOf_eq_orderOf_root`: over a field, every root of an irreducible polynomial `p`
+  in a nontrivial commutative algebra has the multiplicative order of `AdjoinRoot.root p`.
 * `AdjoinRoot.root_X_pow_sub_one_pow`: the class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of
   unity.
 * `AdjoinRoot.root_X_pow_sub_C_pow`: the class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root
   of `a`, over any commutative ring. Mathlib states this only over a field.
 * `AdjoinRoot.isUnit_root_X_pow_sub_C`: that root is a unit when `a` is a unit and `n ≠ 0`.
+* `AdjoinRoot.basisXPowSubC`: for `n ≠ 0`, the basis `1, root, …, root ^ (n - 1)` of
+  `R[X]/(X ^ n - C a)` indexed by `Fin n`, over any nontrivial commutative ring. It is Mathlib's
+  `AdjoinRoot.powerBasis'` reindexed along `natDegree (X ^ n - C a) = n`.
+  `AdjoinRoot.basisXPowSubC_repr_root_pow`, `AdjoinRoot.basisXPowSubC_repr_algebraMap_mul_root_pow`
+  and `AdjoinRoot.basisXPowSubC_repr_root_pow_self` give the coordinates of `c root ^ k` and of
+  `root ^ n = a` in this basis.
 * `AdjoinRoot.isUnit_mk_iff_isCoprime`: the class of `g` is a unit of `AdjoinRoot f` exactly when
   `f` and `g` are coprime.
 * `AdjoinRoot.exists_of_pow_mul_eq_of_C_mul_X_sub_C`: for any `a, g ∈ R`, a power of `a` carries
@@ -94,6 +102,7 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
   these equivalences isolate that identification cleanly.
 
 Stated over arbitrary commutative rings.
+The exception is `Irreducible.orderOf_eq_orderOf_root`, which is stated over a field.
 
 ## Provenance
 
@@ -254,6 +263,50 @@ protected theorem root_X_pow_sub_C_pow (n : ℕ) (a : R) : root (X ^ n - C a) ^ 
 theorem isUnit_root_X_pow_sub_C {n : ℕ} {a : R} (ha : IsUnit a) (hn : n ≠ 0) :
     IsUnit (root (X ^ n - C a)) :=
   (isUnit_pow_iff hn).mp (by rw [AdjoinRoot.root_X_pow_sub_C_pow]; exact ha.map _)
+
+/-- The basis `1, root, …, root ^ (n - 1)` of `R[X]/(X ^ n - C a)` over a nontrivial commutative
+ring, indexed by `Fin n`: Mathlib's power basis `AdjoinRoot.powerBasis'`, reindexed along
+`natDegree (X ^ n - C a) = n`. -/
+noncomputable def basisXPowSubC [Nontrivial R] (n : ℕ) [NeZero n] (a : R) :
+    Module.Basis (Fin n) R (AdjoinRoot (X ^ n - C a)) :=
+  (powerBasis' (monic_X_pow_sub_C a (NeZero.ne n))).basis.reindex
+    (finCongr ((powerBasis'_dim _).trans (natDegree_X_pow_sub_C a)))
+
+/-- The `i`-th vector of `AdjoinRoot.basisXPowSubC` is the `i`-th power of the root. -/
+@[simp]
+theorem basisXPowSubC_apply [Nontrivial R] (n : ℕ) [NeZero n] (a : R) (i : Fin n) :
+    basisXPowSubC n a i = root (X ^ n - C a) ^ (i : ℕ) := by
+  simp [basisXPowSubC]
+
+/-- The power `root ^ k` with `k < n` has the single coordinate `1` at `k` in
+`AdjoinRoot.basisXPowSubC`. -/
+@[simp]
+theorem basisXPowSubC_repr_root_pow [Nontrivial R] (n : ℕ) [NeZero n] (a : R) (k : Fin n) :
+    (basisXPowSubC n a).repr (root (X ^ n - C a) ^ (k : ℕ)) = Finsupp.single k 1 := by
+  rw [← basisXPowSubC_apply, Module.Basis.repr_self]
+
+/-- A scalar multiple `c root ^ k` with `k < n` has the single coordinate `c` at `k` in
+`AdjoinRoot.basisXPowSubC`. Not `@[simp]`: `algebraMap` is not in simp normal form here
+(`AdjoinRoot.algebraMap_eq`). -/
+theorem basisXPowSubC_repr_algebraMap_mul_root_pow [Nontrivial R] (n : ℕ) [NeZero n] (a c : R)
+    (k : Fin n) :
+    (basisXPowSubC n a).repr (algebraMap R _ c * root (X ^ n - C a) ^ (k : ℕ)) =
+      Finsupp.single k c := by
+  rw [← Algebra.smul_def, map_smul, basisXPowSubC_repr_root_pow, Finsupp.smul_single_one]
+
+/-- The power `root ^ n = a` has the single coordinate `a` at `0` in `AdjoinRoot.basisXPowSubC`.
+Not `@[simp]`: simp rewrites `root ^ n` to `of _ a` (`AdjoinRoot.root_X_pow_sub_C_pow`). -/
+theorem basisXPowSubC_repr_root_pow_self [Nontrivial R] (n : ℕ) [NeZero n] (a : R) :
+    (basisXPowSubC n a).repr (root (X ^ n - C a) ^ n) = Finsupp.single 0 a := by
+  simpa using basisXPowSubC_repr_algebraMap_mul_root_pow n a a 0
+
+/-- `R[X]/(X ^ n - C a)` is nontrivial over a nontrivial commutative ring when `n ≠ 0`, since
+`X ^ n - C a` is monic of positive degree. -/
+instance nontrivial_X_pow_sub_C [Nontrivial R] (n : ℕ) [NeZero n] (a : R) :
+    Nontrivial (AdjoinRoot (X ^ n - C a)) :=
+  (nontrivial_iff_of_monic (monic_X_pow_sub_C a (NeZero.ne n))).2 <| by
+    rw [degree_X_pow_sub_C (NeZero.pos n)]
+    exact_mod_cast NeZero.pos n
 
 /-- **The units of `AdjoinRoot f`.** The class of `g` is a unit of `AdjoinRoot f` exactly when
 `f` and `g` are coprime, that is, when `g` is invertible modulo `f`. -/
@@ -522,6 +575,19 @@ theorem tensorXPowAlgEquiv_comp_map {S : Type*} [CommRing S] [Algebra k S] (φ :
 end TensorProduct
 
 end AdjoinRoot
+
+/-- All roots of an irreducible polynomial `p` over a field, in any nontrivial commutative
+`K`-algebra, have the multiplicative order of the root `AdjoinRoot.root p` of `p` in
+`AdjoinRoot p`: the `K`-algebra map `AdjoinRoot p → L` sending `AdjoinRoot.root p` to the root is
+injective, as `AdjoinRoot p` is a field. -/
+theorem Irreducible.orderOf_eq_orderOf_root {K : Type*} [Field K] {p : K[X]} (hp : Irreducible p)
+    {L : Type*} [CommRing L] [Nontrivial L] [Algebra K L] {x : L} (hx : aeval x p = 0) :
+    orderOf x = orderOf (AdjoinRoot.root p) := by
+  have := Fact.mk hp
+  have hx' : p.eval₂ (algebraMap K L) x = 0 := by rwa [← aeval_def]
+  let f := AdjoinRoot.lift (algebraMap K L) x hx'
+  rw [← orderOf_injective f.toMonoidHom f.injective (AdjoinRoot.root p)]
+  simp [f]
 
 namespace Polynomial
 

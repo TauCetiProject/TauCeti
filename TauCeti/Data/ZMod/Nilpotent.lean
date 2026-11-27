@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Data.ZMod.Basic
+public import Mathlib.RingTheory.Ideal.Span
 public import Mathlib.RingTheory.Nilpotent.Defs
+import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.Nilpotent.Basic
 
 /-!
@@ -20,6 +23,7 @@ is needed. For `p = 2` these say that the units of `ℤ/2^{k+1}` are exactly the
 ## Main results
 
 * `ZMod.isNilpotent_natCast_self_pow`: `p` is nilpotent in `ℤ/p^n`.
+* `ZMod.span_natCast_pow_eq_zero`: the ideal `(p)` in `ℤ/p^n` satisfies `(p) ^ n = 0`.
 * `ZMod.isUnit_natCast_mul_add`: `p c + u` is a unit in `ℤ/p^n` when `u` is.
 * `ZMod.not_isUnit_natCast_mul`: `p c` is not a unit in a nontrivial `ℤ/p^n`.
 * `ZMod.natCast_self_pow_ne_zero`: `p ≠ 0` in `ℤ/p^n` for `1 < p` and `1 < n`.
@@ -34,6 +38,11 @@ variable {p n : ℕ}
 /-- **`p` is nilpotent modulo a power of `p`**: `p ^ n = 0` in `ℤ/p^n`. -/
 theorem isNilpotent_natCast_self_pow : IsNilpotent (p : ZMod (p ^ n)) :=
   ⟨n, by exact_mod_cast ZMod.natCast_self (p ^ n)⟩
+
+/-- The ideal `(p)` in `ℤ/p^n` satisfies `(p) ^ n = 0`. -/
+theorem span_natCast_pow_eq_zero : (Ideal.span {(p : ZMod (p ^ n))}) ^ n = 0 := by
+  rw [Ideal.span_singleton_pow, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
+  exact_mod_cast ZMod.natCast_self (p ^ n)
 
 /-- A multiple of `p` plus a unit is a unit in `ℤ/p^n`. -/
 theorem isUnit_natCast_mul_add {c u : ZMod (p ^ n)} (hu : IsUnit u) : IsUnit (p * c + u) :=

@@ -127,36 +127,36 @@ theorem typeDRootEquiv_typeDGraphIndexEquiv_apply (hn : 4 ≤ n)
     typeDClassicalGraphEquiv_involutive]
 
 private lemma typeDLastSign_typeDSimpleRoot (hn : 4 ≤ n) (i : Fin n) :
-    typeDLastSign n (typeDSimpleRoot n hn i) =
-      typeDSimpleRoot n hn (graphPermD n (by omega) i) := by
+    typeDLastSign n (typeDSimpleRoot n (by omega) i) =
+      typeDSimpleRoot n (by omega) (graphPermD n (by omega) i) := by
   ext j
   by_cases hi₁ : (i : ℕ) = n - 1
   · have hieq : i = (⟨n - 1, by omega⟩ : Fin n) := Fin.ext hi₁
     rw [hieq]
     have hi : ¬((⟨n - 1, by omega⟩ : Fin n) : ℕ) + 1 < n := by omega
-    rw [typeDSimpleRoot_of_not_add_one_lt hn hi, graphPermD_apply_right]
+    rw [typeDSimpleRoot_of_not_add_one_lt (by omega) hi, graphPermD_apply_right]
     have hperm : (⟨n - 2, by omega⟩ : Fin n).val + 1 < n := by
       -- Expose the value hidden by the proof-carrying `Fin` literal.
       change n - 2 + 1 < n
       omega
-    rw [typeDSimpleRoot_of_add_one_lt hn hperm]
+    rw [typeDSimpleRoot_of_add_one_lt (by omega) hperm]
     simp [typeDLastSign, Pi.single_apply, Fin.ext_iff]
     split_ifs <;> omega
   · by_cases hi₂ : (i : ℕ) = n - 2
     · have hieq : i = (⟨n - 2, by omega⟩ : Fin n) := Fin.ext hi₂
       rw [hieq]
       have hi : ((⟨n - 2, by omega⟩ : Fin n) : ℕ) + 1 < n := by omega
-      rw [typeDSimpleRoot_of_add_one_lt hn hi, graphPermD_apply_left]
+      rw [typeDSimpleRoot_of_add_one_lt (by omega) hi, graphPermD_apply_left]
       have hperm : ¬(⟨n - 1, by omega⟩ : Fin n).val + 1 < n := by
         -- Expose the value hidden by the proof-carrying `Fin` literal.
         change ¬(n - 1 + 1 < n)
         omega
-      rw [typeDSimpleRoot_of_not_add_one_lt hn hperm]
+      rw [typeDSimpleRoot_of_not_add_one_lt (by omega) hperm]
       simp [typeDLastSign, Pi.single_apply, Fin.ext_iff]
       split_ifs <;> omega
     · rw [graphPermD_apply_of_ne_of_ne n (by omega) i hi₂ hi₁]
       have hi : (i : ℕ) + 1 < n := by omega
-      rw [typeDSimpleRoot_of_add_one_lt hn hi]
+      rw [typeDSimpleRoot_of_add_one_lt (by omega) hi]
       simp [typeDLastSign, Pi.single_apply, Fin.ext_iff]
       split_ifs <;> omega
 
@@ -204,36 +204,36 @@ private lemma typeDGraphLatticeEquiv_root (hn : 4 ≤ n)
     root_typeDSimplyConnectedRootDatum, typeDRootEquiv_typeDGraphIndexEquiv,
     typeDClassicalGraphEquiv_val]
   rw [← typeDLastSign_dotProduct (typeDRootEquiv n hn i).val
-    (typeDSimpleRoot n hn (graphPermD n (by omega) j)),
-    typeDLastSign_typeDSimpleRoot]
+    (typeDSimpleRoot n (by omega) (graphPermD n (by omega) j)),
+    typeDLastSign_typeDSimpleRoot hn]
   rw [graphPermD_apply_apply n (by omega)]
 
 private lemma typeDGraphLatticeEquiv_coordinates (hn : 4 ≤ n) (x : TypeDRoot n) :
-    typeDGraphLatticeEquiv n hn (typeDSimpleRootCoordinates n hn x) =
-      typeDSimpleRootCoordinates n hn (typeDClassicalGraphEquiv n x) := by
-  let c : Fin n → ℤ := typeDGraphLatticeEquiv n hn (typeDSimpleRootCoordinates n hn x)
+    typeDGraphLatticeEquiv n hn (typeDSimpleRootCoordinates n (by omega) x) =
+      typeDSimpleRootCoordinates n (by omega) (typeDClassicalGraphEquiv n x) := by
+  let c : Fin n → ℤ := typeDGraphLatticeEquiv n hn (typeDSimpleRootCoordinates n (by omega) x)
   have hdistrib (a : Fin n → ℤ) (v : Fin n → Fin n → ℤ) :
       typeDLastSign n (∑ i, a i • v i) = ∑ i, a i • typeDLastSign n (v i) := by
     funext j
     by_cases hj : (j : ℕ) = n - 1 <;>
       simp [typeDLastSign, hj]
   have hreindex :
-      (∑ i : Fin n, typeDSimpleRootCoordinates n hn x i •
-          typeDSimpleRoot n hn (graphPermD n (by omega) i)) =
-        ∑ i : Fin n, c i • typeDSimpleRoot n hn i := by
+      (∑ i : Fin n, typeDSimpleRootCoordinates n (by omega) x i •
+          typeDSimpleRoot n (by omega) (graphPermD n (by omega) i)) =
+        ∑ i : Fin n, c i • typeDSimpleRoot n (by omega) i := by
     apply Fintype.sum_equiv (graphPermD n (by omega))
     intro i
     -- Unfold the local coefficient family only at the reindexed summand.
-    change _ = typeDGraphLatticeEquiv n hn (typeDSimpleRootCoordinates n hn x)
-      (graphPermD n (by omega) i) • typeDSimpleRoot n hn (graphPermD n (by omega) i)
+    change _ = typeDGraphLatticeEquiv n hn (typeDSimpleRootCoordinates n (by omega) x)
+      (graphPermD n (by omega) i) • typeDSimpleRoot n (by omega) (graphPermD n (by omega) i)
     rw [typeDGraphLatticeEquiv_apply, graphPermD_apply_apply n (by omega)]
-  have hsum : ∑ i : Fin n, c i • typeDSimpleRoot n hn i =
+  have hsum : ∑ i : Fin n, c i • typeDSimpleRoot n (by omega) i =
       (typeDClassicalGraphEquiv n x).val := by
     rw [typeDClassicalGraphEquiv_val]
     rw [← hreindex]
     simp_rw [← typeDLastSign_typeDSimpleRoot hn]
-    rw [← hdistrib, sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x)]
-  exact (typeDSimpleRootCoordinates_eq_of_sum_smul_eq hn hsum).symm
+    rw [← hdistrib, sum_smul_typeDSimpleRootCoordinates (by omega) (even_sum_typeDRoot x)]
+  exact (typeDSimpleRootCoordinates_eq_of_sum_smul_eq (by omega) hsum).symm
 
 private lemma typeDGraphLatticeEquiv_coroot (hn : 4 ≤ n)
     (i : Fin (2 * n * (n - 1))) :

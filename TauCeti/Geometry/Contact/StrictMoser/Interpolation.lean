@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.StrictMoser
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Topology.LocalAtTarget
 import TauCeti.Geometry.Contact.Interpolation
 import TauCeti.Geometry.Contact.Pullback
@@ -52,14 +52,15 @@ along `K`, provided the hypersurface is tangent to these hyperplanes there, witn
 `β` which vanishes on the tangent images of `ι` and equals `α₀` at the points of `K`. The
 interpolations then need not share the Reeb vector of `α₀` along `K`, but `β(R_(α_t)) = 1` there,
 and positivity of `β` on the Reeb vectors is an open condition which excludes tangency of the Reeb
-fields to the hypersurface.
+fields to the hypersurface. With such a `β`, agreement of the exterior derivatives may be replaced
+altogether by the hypothesis that every interpolation is contact at the points of `K`.
 
 This is the Moser step of the neighbourhood theorem for Legendrian submanifolds in the form of
-Kriegl and Michor: once a first-order identification of a neighbourhood of a closed Legendrian
+Kriegl and Michor: once a first-order identification of a neighbourhood of a Legendrian
 submanifold `Λ` with a neighbourhood of the zero section of `J¹Λ = T^* Λ × ℝ` makes the model form
-`dz - λ_Λ` and the pulled-back contact form agree with their exterior derivatives along the zero
-section, the hypersurface `T^* Λ × {0}`, transverse to the Reeb field `∂_z` of the model form, is
-the slice of this file.
+`dz - λ_Λ` and the pulled-back contact form agree along the zero section, with every interpolation
+contact there, the hypersurface `T^* Λ × {0}` and the one-form `β = dz` satisfy these hypotheses
+(`TauCeti.Geometry.Contact.Legendrian.Neighborhood`).
 
 ## Main results
 
@@ -69,9 +70,10 @@ the slice of this file.
 * `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_of_apply_eq`: strict relative Moser
   stability for contact forms agreeing to first order along a set `K` contained in a closed
   hypersurface transverse to the Reeb field of `α₀` at the points of `K`.
-* `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_of_apply_eq_of_apply_mfderiv_eq_zero`:
-  the same for forms whose exterior derivatives agree only on `ker α₀` along `K`, when `K` lies in a
-  closed hypersurface tangent to `ker α₀` along `K`.
+* `exists_partialDiffeomorph_mpullback_eq_of_isContactFormAt_of_apply_mfderiv_eq_zero`
+  (in `TauCeti.SmoothForm`): strict relative Moser stability for a segment of forms
+  which are contact along `K`, when `K` lies in a closed hypersurface tangent to `ker α₀` along
+  `K`.
 
 ## References
 
@@ -333,7 +335,7 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq [SigmaCompactSpace M]
   exact exists_partialDiffeomorph_mpullback_eq_of_isOpen hι himm hind hclosed hdim (hN.inter hV)
     (fun x hx ↦ hcN x hx.1) (fun s hs ↦ htrV s hs.1 hs.2) (fun x hx ↦ ⟨hKN hx, hKV hx⟩) hKι hval
 
-/-! ### Forms agreeing to first order on the contact hyperplanes along a tangent slice -/
+/-! ### A segment of forms contact along a tangent slice -/
 
 omit [I.Boundaryless] [T2Space M] in
 /-- At the points of an open set `N` on which all interpolations `α₀ + u (α₁ - α₀)`,
@@ -369,28 +371,23 @@ private theorem isOpen_setOf_forall_pos_apply_reebVectorField {β : SmoothForm I
   filter_upwards [hN.mem_nhds hxN, hev] with y hyN hy
   exact ⟨hyN, fun t ht ↦ by simpa only [g, A, mpullback_prodMk_lineMapFamily] using hy t ht⟩
 
-/-- **Strict relative Moser stability for contact forms agreeing on the contact hyperplanes along
-a tangent slice.** Let `α₀` be a contact form at the points of a set `K`, and let `α₁` agree with
-`α₀` at the points of `K`, with `dα₁` agreeing with `dα₀` only on the hyperplanes `ker α₀` there.
-Let `K` lie in a closed embedded hypersurface `ι : S → M` of a boundaryless σ-compact manifold `M`
-which is tangent to the hyperplanes `ker α₀` along `K` in the following sense: some one-form `β`
-vanishes on the tangent images of `ι` and agrees with `α₀` at the points of `K`. Then there is a
-smooth partial diffeomorphism `φ` of `M`, whose source and target are open neighbourhoods of `K`,
-which fixes every point of `K` and pulls `α₁` back to `α₀` exactly on its source. Neither `K` nor
-`M` need be compact.
+/-- **Strict relative Moser stability for a segment of forms contact along a tangent slice.**
+Let every interpolation `α₀ + u (α₁ - α₀)`, `u ∈ [0, 1]`, be contact at the points of a set `K`,
+and let `α₁` agree with `α₀` at the points of `K`. Let `K` lie in a closed embedded hypersurface
+`ι : S → M` of a boundaryless σ-compact manifold `M` which is tangent to the hyperplanes `ker α₀`
+along `K` in the following sense: some one-form `β` vanishes on the tangent images of `ι` and agrees
+with `α₀` at the points of `K`. Then there is a smooth partial diffeomorphism `φ` of `M`, whose
+source and target are open neighbourhoods of `K`, which fixes every point of `K` and pulls `α₁` back
+to `α₀` exactly on its source. Neither `K` nor `M` need be compact.
 
-Unlike `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_of_apply_eq`, the exterior
-derivatives need only agree on `ker α₀`, as in the relative Gray theorem
-`TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq`, so the interpolations
-need not share the Reeb vector of `α₀` along `K`. The one-form `β` keeps their Reeb vectors
-transverse to the hypersurface: at the points of `K`, `β(R_(α_t)) = α_t(R_(α_t)) = 1`. For
-instance, along the zero section of the one-jet bundle `T^* L × ℝ` with its contact form `dz - λ`,
-the slice `z = 0` and `β = dz` satisfy these hypotheses. -/
-theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq_of_apply_mfderiv_eq_zero
+The one-form `β` keeps the Reeb vectors of the interpolations transverse to the hypersurface: at
+the points of `K`, `β(R_(α_t)) = α_t(R_(α_t)) = 1`. For instance, along the zero section of the
+one-jet bundle `T^* L × ℝ` with its contact form `dz - λ`, the slice `z = 0` and `β = dz` satisfy
+these hypotheses. -/
+theorem exists_partialDiffeomorph_mpullback_eq_of_isContactFormAt_of_apply_mfderiv_eq_zero
     [SigmaCompactSpace M] {β : SmoothForm I M ℝ 1} {K : Set M}
-    (hc : ∀ x ∈ K, IsContactFormAt α₀.val x) (hval : ∀ x ∈ K, α₁.val x = α₀.val x)
-    (hd : ∀ x ∈ K, ∀ v ∈ RoughForm.ker α₀.val x, ∀ w ∈ RoughForm.ker α₀.val x,
-      mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w])
+    (hcK : ∀ x ∈ K, ∀ u ∈ Icc (0 : ℝ) 1, IsContactFormAt (α₀ + u • (α₁ - α₀)).val x)
+    (hval : ∀ x ∈ K, α₁.val x = α₀.val x)
     (hι : ContMDiff J I ∞ ι) (himm : ∀ s, Function.Injective (mfderiv J I ι s))
     (hind : Topology.IsInducing ι) (hclosed : _root_.IsClosed (range ι))
     (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hKι : K ⊆ range ι)
@@ -399,7 +396,8 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq_of_apply_mfderiv_eq_z
       ∀ x ∈ φ.source, TauCeti.mpullback I I φ α₁.val x = α₀.val x := by
   -- The interpolations are contact on an open neighbourhood `N` of `K`, and `β` is positive on
   -- their Reeb vectors on a smaller one, `V`: at the points of `K`, `β = α₀ = α_t` there.
-  obtain ⟨N, hN, hKN, hcN⟩ := exists_isOpen_forall_isContactFormAt_add_smul_sub hc hval hd
+  obtain ⟨N, hN, hKN, hcN⟩ :=
+    exists_isOpen_forall_isContactFormAt_add_smul_sub_of_isContactFormAt hcK
   have hKV (x : M) (hx : x ∈ K) (t : ℝ) :
       0 < β.val x ![(α₀ + Real.smoothTransition t • (α₁ - α₀)).reebVectorField x] := by
     have h1 := apply_reebVectorField_of_isContactFormAt (hcN x (hKN hx) _
@@ -412,9 +410,7 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq_of_apply_mfderiv_eq_z
     (isOpen_setOf_forall_pos_apply_reebVectorField (β := β) hN hcN) (fun x hx ↦ hcN x hx.1)
     (fun s hs u hu ⟨w, hw⟩ ↦ ?_) (fun x hx ↦ ⟨hKN hx, fun t _ ↦ hKV x hx t⟩) hKι hval
   -- `β` kills the tangent images of the slice but not the Reeb vectors.
-  obtain ⟨t, ht, rfl⟩ : u ∈ Real.smoothTransition '' Icc (0 : ℝ) 1 :=
-    intermediate_value_Icc zero_le_one Real.smoothTransition.continuous.continuousOn
-      (by simpa [Real.smoothTransition.zero, Real.smoothTransition.one] using hu)
+  obtain ⟨t, ht, rfl⟩ := Real.smoothTransition.surjOn_Icc hu
   have h0 := hβι s w
   rw [ContinuousLinearMap.coe_coe] at hw
   rw [hw] at h0

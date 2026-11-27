@@ -59,6 +59,8 @@ function.
 
 ## Main results
 
+* `ContinuousAt.leviForm_apply`: the Levi form on fixed vectors is continuous wherever the second
+  derivative is.
 * `TauCeti.leviForm_apply_self`: the diagonal of the Levi form is one quarter of
   `Hess f(v, v) + Hess f(I • v, I • v)`.
 * `TauCeti.re_leviForm_nonpos_of_isLocalMax`: at a local maximum, the Levi form is nonpositive
@@ -68,6 +70,7 @@ function.
   `TauCeti.leviForm_smul`: the Levi form is real linear in the function.
 * `TauCeti.imLeviFormCLM_add`, `TauCeti.imLeviFormCLM_neg`, `TauCeti.imLeviFormCLM_smul`: so is
   its imaginary part.
+* `TauCeti.leviForm_const`: the Levi form vanishes on constants.
 * `TauCeti.leviForm_I_smul_I_smul`: the Levi form is invariant under `I • ·` in both arguments.
 * `TauCeti.leviForm_mul_apply`: the product rule
   `L(f g) = f L g + g L f + (conj (∂f) ⊗ ∂g + conj (∂g) ⊗ ∂f)`.
@@ -143,6 +146,22 @@ theorem im_leviForm_apply (f : V → ℝ) (x v w : V) :
     (leviForm f x v w).im =
       (fderiv ℝ (fderiv ℝ f) x (I • v) w - fderiv ℝ (fderiv ℝ f) x v (I • w)) / 4 := by
   simp [leviForm_def]
+
+/-- The Levi form of `f`, evaluated on fixed vectors, is continuous at a point where the second
+derivative of `f` is continuous. -/
+theorem _root_.ContinuousAt.leviForm_apply (h : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x)
+    (v w : V) : ContinuousAt (fun y ↦ leviForm f y v w) x := by
+  have hD (v' w' : V) : ContinuousAt (fun y ↦ fderiv ℝ (fderiv ℝ f) y v' w') x :=
+    (h.clm_apply continuousAt_const).clm_apply continuousAt_const
+  have hre : ContinuousAt (fun y ↦ (leviForm f y v w).re) x := by
+    simp only [re_leviForm_apply]
+    exact ((hD _ _).add (hD _ _)).div_const _
+  have him : ContinuousAt (fun y ↦ (leviForm f y v w).im) x := by
+    simp only [im_leviForm_apply]
+    exact ((hD _ _).sub (hD _ _)).div_const _
+  simpa only [Function.comp_def, Pi.add_def, re_add_im] using
+    (continuous_ofReal.continuousAt.comp hre).add
+      ((continuous_ofReal.continuousAt.comp him).mul_const I)
 
 /-- The imaginary part `(v, w) ↦ Im L_f(x)(v, w)` of the Levi form of `f : V → ℝ` at `x`, as a
 continuous real bilinear form: `(D²f(I • v, w) - D²f(v, I • w)) / 4`. -/
@@ -222,6 +241,12 @@ theorem leviForm_neg (f : V → ℝ) (x : V) : leviForm (-f) x = -leviForm f x :
     rw [hfd, fderiv_neg]
   ext v w
   apply Complex.ext <;> simp [h2] <;> ring
+
+/-- The Levi form of a constant function vanishes. -/
+@[simp]
+theorem leviForm_const (c : ℝ) (x : V) : leviForm (fun _ : V ↦ c) x = 0 := by
+  ext v w
+  apply Complex.ext <;> simp
 
 /-- The Levi form is real homogeneous in the function. -/
 @[simp]

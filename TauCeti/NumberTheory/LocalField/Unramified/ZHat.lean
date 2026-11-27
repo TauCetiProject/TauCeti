@@ -92,6 +92,9 @@ private def maximalUnramifiedLevelEquiv (f : ℕ) :
 private instance (f : ℕ) : IsGalois K (maximalUnramifiedLevel K Ω f) :=
   IsGalois.of_algEquiv (maximalUnramifiedLevelEquiv K Ω f).symm
 
+private instance (f : ℕ+) : FiniteDimensional K (maximalUnramifiedLevel K Ω f) :=
+  Module.Finite.equiv (maximalUnramifiedLevelEquiv K Ω f).toLinearEquiv.symm
+
 /-- Restriction of arithmetic Frobenius to the degree-`f` level has order `f`. -/
 private theorem orderOf_restrict_maximalUnramifiedFrobenius (f : ℕ) (hf : f ≠ 0) :
     orderOf (AlgEquiv.restrictNormalHom (maximalUnramifiedLevel K Ω f)
@@ -123,104 +126,44 @@ private theorem orderOf_restrict_maximalUnramifiedFrobenius (f : ℕ) (hf : f �
   rw [← (AlgEquiv.autCongr e).orderOf_eq, heq, orderOf_frobeniusAlgEquiv,
     IsUnramified.inertiaDegree_eq_finrank, finrank_unramifiedExtension hf]
 
-/-- The canonical generator generates every finite quotient of the defining copy of `ℤ`. -/
-private theorem mem_zpowers_quotientGenerator
-    (H : FiniteIndexNormalSubgroup (ULift.{w} (Multiplicative ℤ))) :
-    ∀ x : ULift.{w} (Multiplicative ℤ) ⧸ H.toSubgroup,
-      x ∈ Subgroup.zpowers
-        (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1))) := by
-  have hf : zpowersHom _ (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1)) :
-      ULift.{w} (Multiplicative ℤ) ⧸ H.toSubgroup) =
-      (QuotientGroup.mk' H.toSubgroup).comp MulEquiv.ulift.symm.toMonoidHom :=
-    MonoidHom.ext_mint rfl
-  rw [← Subgroup.eq_top_iff', ← Subgroup.range_zpowersHom, hf, MonoidHom.range_eq_top]
-  exact (QuotientGroup.mk'_surjective _).comp MulEquiv.ulift.symm.surjective
-
-/-- Every finite coordinate of `ℤ̂` is detected by restriction to a finite unramified level. -/
-private theorem exists_finiteQuotient_maximalUnramifiedFrobenius :
-    ∀ H : FiniteIndexNormalSubgroup (ULift.{max u v} (Multiplicative ℤ)),
-      letI : TopologicalSpace
-        (ULift.{max u v} (Multiplicative ℤ) ⧸ H.toSubgroup) := ⊥
-      ∃ q : Gal(maximalUnramifiedExtension K Ω/K) →ₜ*
-          (ULift.{max u v} (Multiplicative ℤ) ⧸ H.toSubgroup),
-        q (maximalUnramifiedFrobenius K Ω) =
-          QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1)) := by
-  intro H
-  let Q := ULift.{max u v} (Multiplicative ℤ) ⧸ H.toSubgroup
-  let _ : TopologicalSpace Q := ⊥
-  let _ : DiscreteTopology Q := ⟨rfl⟩
-  let gQ : Q := QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1))
-  let n := Nat.card Q
-  have hn : n ≠ 0 := Nat.ne_zero_of_lt Nat.card_pos
-  let E := maximalUnramifiedLevel K Ω n
-  have := Module.Finite.equiv (maximalUnramifiedLevelEquiv K Ω n).toLinearEquiv.symm
-  let r : Gal(maximalUnramifiedExtension K Ω/K) →ₜ* Gal(E/K) :=
-    ⟨AlgEquiv.restrictNormalHom E, InfiniteGalois.restrictNormalHom_continuous E⟩
-  have hcardE : Nat.card Gal(E/K) = n := by
-    rw [IsGalois.card_aut_eq_finrank]
-    exact (maximalUnramifiedLevelEquiv K Ω n).toLinearEquiv.finrank_eq.trans
-      (finrank_unramifiedExtension hn)
-  have hgenE :
-      ∀ x : Gal(E/K), x ∈ Subgroup.zpowers (r (maximalUnramifiedFrobenius K Ω)) := by
-    rw [← (Subgroup.zpowers (r (maximalUnramifiedFrobenius K Ω))).eq_top_iff']
-    rw [← Subgroup.card_eq_iff_eq_top, Nat.card_zpowers]
-    -- Expose the restriction map hidden behind the local abbreviation `r`.
-    change orderOf (AlgEquiv.restrictNormalHom (maximalUnramifiedLevel K Ω n)
-      (maximalUnramifiedFrobenius K Ω)) = Nat.card Gal(E/K)
-    rw [orderOf_restrict_maximalUnramifiedFrobenius K Ω n hn, hcardE]
-  have hgenQ : ∀ x : Q, x ∈ Subgroup.zpowers gQ :=
-    mem_zpowers_quotientGenerator H
-  let eE : Multiplicative (ZMod n) ≃* Gal(E/K) :=
-    zmodMulEquivOfGenerator hgenE hcardE
-  let eQ : Multiplicative (ZMod n) ≃* Q :=
-    zmodMulEquivOfGenerator hgenQ rfl
-  let e : Gal(E/K) ≃* Q := eE.symm.trans eQ
-  let ec : Gal(E/K) →ₜ* Q := ⟨e.toMonoidHom, continuous_of_discreteTopology⟩
-  refine ⟨ec.comp r, ?_⟩
-  -- Unfold the named equivalences only for this generator computation.
-  change e (r (maximalUnramifiedFrobenius K Ω)) = gQ
-  change eQ (eE.symm (r (maximalUnramifiedFrobenius K Ω))) = gQ
-  rw [zmodMulEquivOfGenerator_symm_apply_generator hgenE hcardE,
-    zmodMulEquivOfGenerator_apply_ofAdd_one hgenQ rfl]
-
 /-- The canonical lift from the profinite integers to the Galois group of the maximal unramified
 extension is bijective. -/
 private theorem maximalUnramifiedFrobeniusLift_bijective :
     Function.Bijective (zHat.lift (maximalUnramifiedFrobenius K Ω) :
       zHat.{max u v} →ₜ* Gal(maximalUnramifiedExtension K Ω/K)) :=
-  ⟨zHat.lift_injective_of_finite_quotients _
-      (exists_finiteQuotient_maximalUnramifiedFrobenius K Ω),
+  ⟨zHat.lift_injective_of_forall_orderOf _ (fun f ↦ Gal(maximalUnramifiedLevel K Ω f/K))
+      (fun f ↦ ⟨AlgEquiv.restrictNormalHom _, InfiniteGalois.restrictNormalHom_continuous _⟩)
+      (fun f ↦ by
+        rw [IsGalois.card_aut_eq_finrank]
+        exact (maximalUnramifiedLevelEquiv K Ω f).toLinearEquiv.finrank_eq.trans
+          (finrank_unramifiedExtension f.ne_zero))
+      (fun f ↦ orderOf_restrict_maximalUnramifiedFrobenius K Ω f f.ne_zero),
     zHat.lift_surjective _ topologicalClosure_zpowers_maximalUnramifiedFrobenius⟩
 
 /-- **The Galois group of the maximal unramified extension is the profinite integers.** This
 continuous multiplicative equivalence sends arithmetic Frobenius to `zHat.gen`. -/
 noncomputable def maximalUnramifiedGaloisGroupEquivZHat :
-    Gal(maximalUnramifiedExtension K Ω/K) ≃ₜ* zHat.{max u v} := by
-  let f : zHat.{max u v} →ₜ* Gal(maximalUnramifiedExtension K Ω/K) :=
-    zHat.lift (maximalUnramifiedFrobenius K Ω)
-  have hf := maximalUnramifiedFrobeniusLift_bijective K Ω
-  have : T2Space Gal(maximalUnramifiedExtension K Ω/K) := krullTopology_t2
-  let e : zHat.{max u v} ≃ₜ* Gal(maximalUnramifiedExtension K Ω/K) :=
-    ContinuousMulEquiv.mk (MulEquiv.ofBijective f.toMonoidHom hf) f.continuous
-      (f.continuous.continuous_symm_of_equiv_compact_to_t2
-        (f := (MulEquiv.ofBijective f.toMonoidHom hf).toEquiv))
-  exact e.symm
+    Gal(maximalUnramifiedExtension K Ω/K) ≃ₜ* zHat.{max u v} :=
+  zHat.liftContinuousMulEquiv _ (maximalUnramifiedFrobeniusLift_bijective K Ω)
+
+/-- The inverse isomorphism is the lift of arithmetic Frobenius to `ℤ̂`. -/
+@[simp]
+theorem maximalUnramifiedGaloisGroupEquivZHat_symm_apply (x : zHat.{max u v}) :
+    (maximalUnramifiedGaloisGroupEquivZHat K Ω).symm x =
+      zHat.lift (maximalUnramifiedFrobenius K Ω) x :=
+  zHat.liftContinuousMulEquiv_symm_apply _ _ x
 
 /-- The inverse isomorphism sends the canonical generator of `ℤ̂` to arithmetic Frobenius. -/
-@[simp]
 theorem maximalUnramifiedGaloisGroupEquivZHat_symm_apply_gen :
     (maximalUnramifiedGaloisGroupEquivZHat K Ω).symm zHat.gen =
       maximalUnramifiedFrobenius K Ω := by
-  rw [maximalUnramifiedGaloisGroupEquivZHat, ContinuousMulEquiv.symm_symm]
-  exact zHat.lift_gen _
+  rw [maximalUnramifiedGaloisGroupEquivZHat_symm_apply, zHat.lift_gen]
 
 /-- The isomorphism sends arithmetic Frobenius to the canonical generator of `ℤ̂`. -/
 @[simp]
 theorem maximalUnramifiedGaloisGroupEquivZHat_apply_frobenius :
     maximalUnramifiedGaloisGroupEquivZHat K Ω (maximalUnramifiedFrobenius K Ω) = zHat.gen := by
-  apply (maximalUnramifiedGaloisGroupEquivZHat K Ω).symm.injective
-  rw [ContinuousMulEquiv.symm_apply_apply,
-    maximalUnramifiedGaloisGroupEquivZHat_symm_apply_gen]
+  rw [← ContinuousMulEquiv.eq_symm_apply, maximalUnramifiedGaloisGroupEquivZHat_symm_apply_gen]
 
 /-- Integral powers of the canonical generator correspond to the same powers of arithmetic
 Frobenius. -/

@@ -9,14 +9,18 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 import TauCeti.LinearAlgebra.Prod
 
 /-!
-# Surjectivity of coproducts of continuous linear maps
+# Coproducts of continuous linear maps and their surjectivity
 
 For continuous linear maps `f₁ : M₁ →L[R] M` and `f₂ : M₂ →L[R] M`, the coproduct
 `f₁.coprod f₂ : M₁ × M₂ →L[R] M`, `(x, y) ↦ f₁ x + f₂ y`, is surjective if and only if the ranges
 of `f₁` and `f₂` span `M` (`f₁.range ⊔ f₂.range = ⊤`). Over a ring, when `M₂` is an additive
 commutative group and `M` is a topological additive group, the same subspace-sum condition
 characterizes surjectivity of `f₁.coprod (-f₂)`, `(x, y) ↦ f₁ x - f₂ y`, which is the linear
-transversality condition for two maps with a common target.
+transversality condition for two maps with a common target. Extending a map by the zero map on a
+second factor only sees the first component (`ContinuousLinearMap.coprod_zero_right`), so a right
+inverse `g` of `f` pads to the right inverse `x ↦ (g x, 0)` of the extended map
+(`ContinuousLinearMap.coprod_zero_comp_prod_zero`). Since the first projection is surjective, the
+extended map vanishes only when `f` does (`ContinuousLinearMap.comp_fst_eq_zero_iff`).
 
 ## Main results
 
@@ -24,6 +28,10 @@ transversality condition for two maps with a common target.
   to `f₁.range ⊔ f₂.range = ⊤`.
 * `ContinuousLinearMap.surjective_coprod_neg_iff`: `Function.Surjective (f₁.coprod (-f₂))` is
   equivalent to `f₁.range ⊔ f₂.range = ⊤`.
+* `ContinuousLinearMap.coprod_zero_right`: `f.coprod 0 = f.comp (fst R M₁ M₂)`.
+* `ContinuousLinearMap.coprod_zero_comp_prod_zero`: `(f.coprod 0).comp (g.prod 0) = f.comp g`.
+* `ContinuousLinearMap.comp_fst_eq_zero_iff`: a map vanishes once its pullback along the first
+  projection does, `f.comp (fst R M₁ M₂) = 0 ↔ f = 0`.
 -/
 
 public section
@@ -44,7 +52,35 @@ theorem surjective_coprod_iff (f₁ : M₁ →L[R] M) (f₂ : M₂ →L[R] M) :
   rw [← coe_coe, coe_coprod]
   exact LinearMap.surjective_coprod_iff _ _
 
+/-- The coproduct of `f` with the zero map on a second factor is `f` composed with the first
+projection. -/
+theorem coprod_zero_right (f : M₁ →L[R] M) :
+    f.coprod (0 : M₂ →L[R] M) = f.comp (fst R M₁ M₂) := by
+  ext <;> simp
+
+/-- Precomposing the coproduct of `f` with the zero map by `x ↦ (g x, 0)` gives `f ∘ g`. In
+particular a right inverse `g` of `f` gives the right inverse `x ↦ (g x, 0)` of `f.coprod 0`. -/
+theorem coprod_zero_comp_prod_zero {N : Type*} [TopologicalSpace N] [AddCommMonoid N]
+    [Module R N] (f : M₁ →L[R] M) (g : N →L[R] M₁) :
+    (f.coprod (0 : M₂ →L[R] M)).comp (g.prod 0) = f.comp g := by
+  rw [coprod_zero_right, comp_assoc, fst_comp_prod]
+
 end Semiring
+
+section Fst
+
+variable {R M M₁ M₂ : Type*} [Semiring R]
+  [TopologicalSpace M] [TopologicalSpace M₁] [TopologicalSpace M₂]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+
+/-- A continuous linear map vanishes exactly when its pullback along the first projection
+`M₁ × M₂ → M₁` does. -/
+@[simp]
+theorem comp_fst_eq_zero_iff {f : M₁ →L[R] M} : f.comp (fst R M₁ M₂) = 0 ↔ f = 0 := by
+  refine ⟨fun hf ↦ ?_, fun hf ↦ by rw [hf, zero_comp]⟩
+  rw [← f.comp_id, ← fst_comp_inl (R := R) (M₂ := M₂), ← comp_assoc, hf, zero_comp]
+
+end Fst
 
 section Ring
 

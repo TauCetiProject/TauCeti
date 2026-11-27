@@ -67,6 +67,10 @@ the structure sheaf.
 ## References
 
 * The Stacks Project, Section 27.11, Functoriality of Proj.
+
+The restricted-composite section formula is adapted from the
+[relative Proj base-change formalization](https://github.com/roed-math/TauCeti-w2-fresh/tree/8bf602f6c2bed52e7e390df1ba2c2de30f8a6dfb)
+by `roed-math`.
 -/
 
 public section
@@ -389,6 +393,23 @@ theorem twistingSheafMap_app_apply_of_eq_comp (g : ℬ →+*ᵍ 𝒞) (hg : 𝒞
   -- the remaining composites are of maps whose sources and targets agree with those in the goal
   -- only definitionally, so `simp` cannot split them; they unfold to the goal
   exact this
+
+/-- **The morphisms of twisting sheaves are compatible with composition, on restricted sections**:
+for a graded ring homomorphism `h` equal to `g.comp f`, the image of a section under the morphism
+induced by `h`, restricted to an open `W` of `Proj 𝒞`, is its image under the morphism induced by
+`f`, restricted to an open `V'` of `Proj ℬ` equal to the preimage of `V`, followed by the morphism
+induced by `g` and restricted to `W`. -/
+theorem twistingSheafMap_app_apply_res_of_eq_comp (g : ℬ →+*ᵍ 𝒞) (hg : 𝒞₊ ≤ ℬ₊.map g)
+    (h : 𝒜 →+*ᵍ 𝒞) (hh : 𝒞₊ ≤ 𝒜₊.map h) (hgf : h = g.comp f) (n : ℤ) {V : (Proj 𝒜).Opens}
+    {V' : (Proj ℬ).Opens} {W : (Proj 𝒞).Opens} (hW : W = map h hh ⁻¹ᵁ V)
+    (hW' : W = map g hg ⁻¹ᵁ V') (hV' : V' = map f hf ⁻¹ᵁ V) (s : Γ(twistingSheaf 𝒜 n, V)) :
+    (twistingSheaf 𝒞 n).presheaf.map (eqToHom hW).op ((twistingSheafMap h hh n).app V s) =
+      (twistingSheaf 𝒞 n).presheaf.map (eqToHom hW').op ((twistingSheafMap g hg n).app V'
+        ((twistingSheaf ℬ n).presheaf.map (eqToHom hV').op
+          ((twistingSheafMap f hf n).app V s))) := by
+  -- This restricted-composite form keeps pushforward coherence maps out of chart comparisons.
+  subst hgf hV'
+  exact twistingSheaf.ext fun z ↦ DFunLike.congr_fun (localizationsMap_comp f hf g hg z.val) _
 
 /-- **The morphism of twisting sheaves induced by the identity is the identity, on sections**: for
 a graded ring homomorphism `g` equal to the identity, the image of a section under the morphism

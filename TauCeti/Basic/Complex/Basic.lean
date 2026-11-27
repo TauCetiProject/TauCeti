@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.SelfAdjoint
 public import Mathlib.Basic.Complex.Basic
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
@@ -18,6 +19,14 @@ estimates at division points to real inequalities.
 
 For real `t`, the complex number `1 + t ^ 2` is nonzero (`Complex.one_add_ofReal_sq_ne_zero`), as
 needed to clear the denominator of kernels such as `t / (1 + t ^ 2)`.
+
+Even natural powers of `I` simplify via `Complex.I_pow_two_mul`: `I ^ (2 * k) = (-1 : ℂ) ^ k`, and
+the imaginary part of `I ^ n * w` is given by `Complex.im_I_pow_two_mul_mul` (even `n`) and
+`Complex.im_I_pow_two_mul_add_one_mul` (odd `n`).
+
+Every real number cast to `ℂ` is self-adjoint, registered as the instance
+`TauCeti.instFactIsSelfAdjointComplexOfReal : Fact (IsSelfAdjoint (r : ℂ))`. It supplies the
+self-adjointness hypotheses of star structures with a real parameter.
 -/
 
 public section
@@ -34,4 +43,32 @@ lemma im_ofReal_mul_add_ofReal_div_sub_ofReal_mul (a b d c : ℝ) (z : ℂ) :
 theorem one_add_ofReal_sq_ne_zero (t : ℝ) : 1 + (t : ℂ) ^ 2 ≠ 0 := by
   exact_mod_cast (by positivity : (1 + t ^ 2 : ℝ) ≠ 0)
 
+/-- Even natural powers of `I` satisfy `I ^ (2 * k) = (-1 : ℂ) ^ k`. -/
+@[simp]
+theorem I_pow_two_mul (k : ℕ) : I ^ (2 * k) = (-1 : ℂ) ^ k := by
+  rw [pow_mul, I_sq]
+
+/-- The imaginary part of `I ^ (2 * k) * w` is `(-1 : ℝ) ^ k * w.im`. -/
+@[simp↓]
+theorem im_I_pow_two_mul_mul (k : ℕ) (w : ℂ) :
+    (I ^ (2 * k) * w).im = (-1 : ℝ) ^ k * w.im := by
+  rw [I_pow_two_mul, ← ofReal_one, ← ofReal_neg, ← ofReal_pow, im_ofReal_mul]
+
+/-- The imaginary part of `I ^ (2 * k + 1) * w` is `(-1 : ℝ) ^ k * w.re`. -/
+@[simp↓]
+theorem im_I_pow_two_mul_add_one_mul (k : ℕ) (w : ℂ) :
+    (I ^ (2 * k + 1) * w).im = (-1 : ℝ) ^ k * w.re := by
+  rw [pow_succ, mul_assoc, I_pow_two_mul, ← ofReal_one, ← ofReal_neg, ← ofReal_pow,
+    im_ofReal_mul, I_mul_im]
+
 end Complex
+
+namespace TauCeti
+
+/-- A real number cast to `ℂ` is self-adjoint. This supplies the `Fact (IsSelfAdjoint _)`
+hypothesis of star structures with a parameter, such as the analytic adjoint on Temperley–Lieb
+algebras with a real loop value. -/
+instance instFactIsSelfAdjointComplexOfReal (r : ℝ) : Fact (IsSelfAdjoint (r : ℂ)) :=
+  ⟨Complex.conj_ofReal r⟩
+
+end TauCeti

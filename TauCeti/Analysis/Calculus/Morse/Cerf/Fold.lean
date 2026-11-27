@@ -7,12 +7,11 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Cerf.Isolated
 -- Private: used only inside proofs.
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
-import TauCeti.Analysis.Matrix.HermitianSignature.Crossing
-import TauCeti.Analysis.Calculus.Bifurcation
+import TauCeti.Analysis.Calculus.Bifurcation.Fold
+import TauCeti.Analysis.Calculus.Morse.Cerf.Index
 import TauCeti.Analysis.Calculus.ContDiff.Prod
-import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Topology.MetricSpace.Pseudo.Prod
 
 /-!
 # Birth–death points are folds of the critical locus
@@ -46,34 +45,26 @@ of the differential is `-1`, so the product is `-2`: the two critical points `±
 are what the cancellation of the two born or dying critical points against each other in the Morse
 complex requires.
 
-The proof follows the critical locus. Choose a functional `ℓ` with `ℓ v = 1`. The map
-`Φ (t, x) = (d(f t)_x, ℓ x)` from `ℝ × E` to `E* × ℝ` has an invertible derivative at
-`(t₀, x₀)`, by transversality and because the kernel of the Hessian is the line through `v`. By
-the inverse function theorem, the critical points of the family near `(t₀, x₀)` form the `C²`
-curve `c(s) = Φ⁻¹ (0, ℓ x₀ + s)`, with `c(0) = (t₀, x₀)` and `c'(0) = (0, v)`, and the
-critical points of `f t` near `x₀` are the points `c(s)` with `τ(s) = t`, where `τ(s)` is the
-parameter component of `c(s)`. Differentiating `d(f τ(s))_{ξ(s)} = 0`, with `ξ(s)` the space
-component, and pairing with `ξ'(s)` gives
-
-`τ'(s) · ∂ₜ (d(f t)_{ξ(s)}) ξ'(s) + Hess(f τ(s))_{ξ(s)} (ξ'(s), ξ'(s)) = 0`.
-
-The second term vanishes at `s = 0` and has derivative `D³(f t₀)_{x₀} (v, v, v)` there, by the
-symmetry of the Hessian, while `τ'(0) = 0`. Dividing by `s` and letting `s → 0` gives
-
-`τ''(0) = -D³(f t₀)_{x₀} (v, v, v) / ∂ₜ (d(f t)_{x₀}) v`,
-
-which is positive when the product above is negative. So `τ` has a fold at `0`, and the fold
-theorem `TauCeti.eventually_fold` for `τ(s) - t` shows that `τ` takes each value slightly above
-`t₀` exactly twice near `0`, once on each side, and no value below `t₀`. That the two critical
-points are nondegenerate is `TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero`.
+The proof follows the critical locus, which is the zero locus of the family of differentials
+`d(f s) : E → E*`. A birth–death point is a fold point of that family in the sense of
+`TauCeti.Analysis.Calculus.Bifurcation.Fold`, with the functional `φ` on `E*` given by evaluation
+at `v`, which vanishes on the range of the Hessian by its symmetry. Choose a functional `ℓ` with
+`ℓ v = 1`. By `TauCeti.exists_curve_apply_eq_zero`, the critical points of the family near
+`(t₀, x₀)` form a `C²` curve `c(s)` with `c(0) = (t₀, x₀)` and `c'(0) = (0, v)`, and the critical
+points of `f t` near `x₀` are the points `c(s)` with `τ(s) = t`, where `τ(s)` is the parameter
+component of `c(s)`. Since the fold coefficient is `D³(f t₀)_{x₀} (v, v, v) · ∂ₜ (d(f t)_{x₀}) v`,
+`TauCeti.eventually_fold_curve_fst` shows that, when the product above is negative, `τ` takes
+each value slightly above `t₀` exactly twice near `0`, once on each side, and no value below `t₀`.
+That the two critical points are nondegenerate is
+`TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero`.
 
 Their Morse indices come from the Hessians along the curve. The path
 `s ↦ Hess(f τ(s))_{ξ(s)}` of symmetric forms has derivative `D³(f t₀)_{x₀} (v, ·, ·)` at `0`,
 since `τ'(0) = 0` and `ξ'(0) = v`, so `0` is a crossing whose kernel is the line through `v` and
 whose crossing form is `D³(f t₀)_{x₀} (v, v, v) ≠ 0` there. Its negative index is therefore `k + 1`
-on one side of `0` and `k` on the other
-(`ContinuousLinearMap.eventually_sigNeg_eq_of_ker_eq_span`), and the two critical points of
-`f t` lie on the curve on opposite sides of `0`.
+on one side of `0` and `k` on the other (`TauCeti.eventually_nhdsGT_morseIndex_eq` and
+`TauCeti.eventually_nhdsLT_morseIndex_eq` in `TauCeti.Analysis.Calculus.Morse.Cerf.Index`), and the
+two critical points of `f t` lie on the curve on opposite sides of `0`.
 
 ## Main results
 
@@ -105,140 +96,41 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E → ℝ} {t : ℝ} {x : E}
 
-/-! ### The parameter along a curve of critical points -/
+/-! ### The family of differentials -/
 
-/-- **Differentiating the critical equation along a curve of critical points.** If `c` is a curve
-of critical points of the family, `C²` at `0` and through a point where the family is jointly
-`C²`, then near `0`, with `c' = (τ', ξ')` the velocity of `c`,
+/-- **Evaluation at a kernel vector of the Hessian vanishes on its range**, by the symmetry of the
+Hessian: `Hess(f t)_x (y, v) = Hess(f t)_x (v, y) = 0`. -/
+private theorem apply_fderiv_fderiv_apply_eq_zero (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
+    {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0) (y : E) :
+    ContinuousLinearMap.apply ℝ ℝ v (fderiv ℝ (fderiv ℝ (f t)) x y) = 0 := by
+  rw [ContinuousLinearMap.apply_apply, fderiv_fderiv_apply_comm_of_uncurry hf, hv,
+    zero_apply]
 
-`τ' · ∂ₜ (d(f t)_{ξ}) ξ' + Hess(f τ)_{ξ} (ξ', ξ') = 0`,
-
-where the parameter derivative of the differential is written as the derivative of
-`(t, x) ↦ d(f t)_x` in the direction `(1, 0)`. -/
-private theorem eventually_deriv_fst_mul_add_eq_zero {c : ℝ → ℝ × E}
-    (hf : ContDiffAt ℝ 2 (uncurry f) (c 0)) (hcd : ContDiffAt ℝ 2 c 0)
-    (hcrit : ∀ᶠ s in 𝓝 0, fderiv ℝ (f (c s).1) (c s).2 = 0) :
-    ∀ᶠ s in 𝓝 0, (deriv c s).1 * fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (c s) (1, 0)
-      (deriv c s).2 + fderiv ℝ (fderiv ℝ (f (c s).1)) (c s).2 (deriv c s).2 (deriv c s).2 = 0 := by
-  set G : ℝ × E → StrongDual ℝ E := fun w ↦ fderiv ℝ (f w.1) w.2
-  have hfc : ∀ᶠ s in 𝓝 0, ContDiffAt ℝ 2 (uncurry f) ((c s).1, (c s).2) :=
-    hcd.continuousAt.tendsto.eventually (hf.eventually (by simp))
-  filter_upwards [hcrit.eventually_nhds, hcd.eventually (by simp), hfc] with s hs hsd hsf
-  have hGc : G ∘ c =ᶠ[𝓝 s] fun _ ↦ 0 := hs.mono fun _ h ↦ by simpa [G] using h
-  have hGd : DifferentiableAt ℝ G (c s) :=
-    (hsf.fderiv_slice (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  -- The derivative of `s ↦ d(f τ(s))_{ξ(s)}`, which vanishes identically near `s`, is zero.
-  have h0 : fderiv ℝ G (c s) (deriv c s) = 0 := by
-    rw [← (hGd.hasFDerivAt.comp_hasDerivAt s
-      (hsd.differentiableAt two_ne_zero).hasDerivAt).deriv]
-    exact hGc.deriv_eq.trans (deriv_const _ _)
-  have hHw : fderiv ℝ G (c s) (0, (deriv c s).2) =
-      fderiv ℝ (fderiv ℝ (f (c s).1)) (c s).2 (deriv c s).2 := by
-    simpa using fderiv_fderiv_apply hsf (0, (deriv c s).2)
-  have hsplit : deriv c s = (deriv c s).1 • ((1 : ℝ), (0 : E)) + ((0 : ℝ), (deriv c s).2) := by
-    ext <;> simp
-  rw [hsplit, map_add, map_smul, hHw] at h0
-  simpa using congrArg (· (deriv c s).2) h0
-
-/-- **The parameter has a fold along the critical curve.** Let `c` be a `C²` curve of critical
+/-- **The critical curve folds back over the parameter.** Let `c` be a `C²` curve of critical
 points of the family through `(t, x)`, with velocity `(0, v)` for a kernel vector `v` of the
-Hessian of `f t` at `x`. If `D³(f t)_x (v, v, v) · ∂ₜ (d(f t)_x) v < 0`, then the second
-derivative at `0` of the parameter component of `c` is positive. -/
-private theorem deriv_deriv_fst_pos (hf : ContDiffAt ℝ 3 (uncurry f) (t, x)) {v : E}
-    (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
+Hessian of `f t` at `x`, and let `D³(f t)_x (v, v, v) · ∂ₜ (d(f t)_x) v < 0`. Then for every small
+`δ > 0` and every `s` near `t`, the parameter component of `c` on `(-δ, δ)` avoids `s` when
+`s < t`, takes the value `t` only at `0`, and takes the value `s` exactly twice, once on each side
+of `0`, when `s > t`. This is `TauCeti.eventually_fold_curve_fst` for the family of differentials
+`s ↦ d(f s)`, with `φ` the evaluation at `v`. -/
+private theorem eventually_fold_curve_fst_of_mul_neg (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
+    {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
     (hsign : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v *
       deriv (fun s ↦ fderiv ℝ (f s) x) t v < 0)
     {c : ℝ → ℝ × E} (hc0 : c 0 = (t, x)) (hcd : ContDiffAt ℝ 2 c 0)
     (hc' : HasDerivAt c (0, v) 0) (hcrit : ∀ᶠ s in 𝓝 0, fderiv ℝ (f (c s).1) (c s).2 = 0) :
-    0 < deriv (fun s ↦ (deriv c s).1) 0 := by
-  have hf2 : ContDiffAt ℝ 2 (uncurry f) (t, x) := hf.of_le (by norm_num)
-  have hid := eventually_deriv_fst_mul_add_eq_zero (hc0 ▸ hf2) hcd hcrit
-  set G : ℝ × E → StrongDual ℝ E := fun w ↦ fderiv ℝ (f w.1) w.2
-  set H : ℝ × E → E →L[ℝ] StrongDual ℝ E := fun w ↦ fderiv ℝ (fderiv ℝ (f w.1)) w.2
-  set κ := fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v
-  set a := deriv (fun s ↦ fderiv ℝ (f s) x) t v
-  have hG : ContDiffAt ℝ 2 G (t, x) := hf.fderiv_slice (m := 2) le_rfl
-  have hH : ContDiffAt ℝ 1 H (t, x) := hG.fderiv_slice (m := 1) le_rfl
-  -- The velocity `c' = (τ', w)` is differentiable at `0`, with `τ' 0 = 0` and `w 0 = v`.
-  have hc'd : HasDerivAt (deriv c) (deriv (deriv c) 0) 0 :=
-    (((hcd.fderiv_right (m := 1) le_rfl).clm_apply contDiffAt_const).differentiableAt
-      one_ne_zero).hasDerivAt
-  set w : ℝ → E := fun s ↦ (deriv c s).2
-  have hw : HasDerivAt w (deriv (deriv c) 0).2 0 :=
-    (ContinuousLinearMap.snd ℝ ℝ E).hasFDerivAt.comp_hasDerivAt _ hc'd
-  have hw0 : w 0 = v := by simp [w, hc'.deriv]
-  have hHv : H (t, x) v = 0 := hv
-  -- `q s = Hess (w s, w s)` vanishes at `0` with derivative `κ` there, by the symmetry of the
-  -- Hessian.
-  have hq : HasDerivAt (fun s ↦ H (c s) (w s) (w s)) κ 0 := by
-    have hH' : HasFDerivAt H (fderiv ℝ H (t, x)) (c 0) :=
-      hc0 ▸ (hH.differentiableAt one_ne_zero).hasFDerivAt
-    have hκ : fderiv ℝ H (t, x) (0, v) v v = κ := by
-      rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right
-        (hH.differentiableAt one_ne_zero)]
-      simp [H, κ]
-    have hHc : HasDerivAt (H ∘ c) (fderiv ℝ H (t, x) (0, v)) 0 := by
-      simpa using (hH'.comp 0 hc'.hasFDerivAt).hasDerivAt
-    have hsymm : H (t, x) (deriv (deriv c) 0).2 v = H (t, x) v (deriv (deriv c) 0).2 :=
-      fderiv_fderiv_apply_comm_of_uncurry hf2 _ v
-    simpa [hw0, hc0, hκ, hsymm, hHv] using (hHc.clm_apply hw).clm_apply hw
-  -- `d s = ∂ₜ (d(f t)_{ξ(s)}) (w s)` tends to `a`.
-  have hd : Tendsto (fun s ↦ fderiv ℝ G (c s) (1, 0) (w s)) (𝓝 0) (𝓝 a) := by
-    have hd0 : fderiv ℝ G (c 0) (1, 0) (w 0) = a := by
-      rw [hw0, hc0]
-      simpa using congrArg (· v) (fderiv_fderiv_apply hf2 ((1 : ℝ), (0 : E)))
-    rw [← hd0]
-    have hGc : ContinuousAt (fun s ↦ fderiv ℝ G (c s)) 0 :=
-      (hc0 ▸ (hG.fderiv_right (m := 1) (by norm_num)).continuousAt).comp hcd.continuousAt
-    exact ((hGc.clm_apply continuousAt_const).clm_apply hw.continuousAt).tendsto
-  have ha : a ≠ 0 := fun h ↦ by simp [h] at hsign
-  rw [(hasDerivAt_neg_div_of_mul_add_eq_zero hid (by simp [hc'.deriv]) hq hd ha).deriv]
-  have := div_pos (neg_pos.2 hsign) (by positivity : 0 < a ^ 2)
-  rwa [show -(κ * a) / a ^ 2 = -κ / a by field_simp] at this
-
-/-- **The critical curve folds back over the parameter.** Under the hypotheses of
-`deriv_deriv_fst_pos`, for every small `δ > 0` and every `s` near `t`, the parameter component of
-`c` on `(-δ, δ)` stays above `s` when `s < t`, takes the value `t` only at `0`, and takes the
-value `s` exactly twice, once on each side of `0`, when `s > t`. This is `eventually_fold` for
-`F (σ, u) = (c σ).1 - t - u`. -/
-private theorem eventually_fold_curve_fst (hf : ContDiffAt ℝ 3 (uncurry f) (t, x)) {v : E}
-    (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
-    (hsign : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v *
-      deriv (fun s ↦ fderiv ℝ (f s) x) t v < 0)
-    {c : ℝ → ℝ × E} (hc0 : c 0 = (t, x)) (hcd : ContDiffAt ℝ 2 c 0)
-    (hc' : HasDerivAt c (0, v) 0) (hcrit : ∀ᶠ s in 𝓝 0, fderiv ℝ (f (c s).1) (c s).2 = 0) :
-    ∀ᶠ δ in 𝓝[>] 0, ∀ᶠ s in 𝓝 t, (s < t → ∀ σ ∈ Ioo (-δ) δ, s < (c σ).1) ∧
+    ∀ᶠ δ in 𝓝[>] 0, ∀ᶠ s in 𝓝 t, (s < t → ∀ σ ∈ Ioo (-δ) δ, (c σ).1 ≠ s) ∧
       (s = t → {σ ∈ Ioo (-δ) δ | (c σ).1 = s} = {0}) ∧
       (t < s → ∃ x₁ ∈ Ioo (-δ) 0, ∃ x₂ ∈ Ioo 0 δ, {σ ∈ Ioo (-δ) δ | (c σ).1 = s} = {x₁, x₂}) := by
-  set F : ℝ × ℝ → ℝ := fun p ↦ (c p.1).1 - t - p.2
-  have hF : ContDiffAt ℝ 2 F 0 :=
-    ((hcd.comp (0 : ℝ × ℝ) contDiffAt_fst).fst.sub contDiffAt_const).sub contDiffAt_snd
-  have hd : ∀ᶠ σ in 𝓝 0, HasDerivAt (fun σ ↦ F (σ, 0)) (deriv c σ).1 σ := by
-    filter_upwards [hcd.eventually (by simp)] with σ hσ
-    simpa [F] using ((ContinuousLinearMap.fst ℝ ℝ E).hasFDerivAt.comp_hasDerivAt σ
-      (hσ.differentiableAt two_ne_zero).hasDerivAt).sub_const t
-  have hev : deriv (fun σ ↦ F (σ, 0)) =ᶠ[𝓝 0] fun σ ↦ (deriv c σ).1 :=
-    hd.mono fun _ h ↦ h.deriv
-  have hb : deriv (fun u ↦ F (0, u)) 0 = -1 := by
-    simp [F]
-  have hfold := eventually_fold hF (by simp [F, hc0]) (by simp [hev.self_of_nhds, hc'.deriv])
-    (by rw [iteratedDeriv_succ, iteratedDeriv_one, hev.deriv_eq]
-        exact deriv_deriv_fst_pos hf hv hsign hc0 hcd hc' hcrit) (by rw [hb]; norm_num)
-  have hst : Tendsto (fun s ↦ s - t) (𝓝 t) (𝓝 0) := by
-    simpa using (continuous_sub_right t).tendsto t
+  have hfold := eventually_fold_curve_fst (f := fun s ↦ fderiv ℝ (f s))
+    (φ := ContinuousLinearMap.apply ℝ ℝ v) (hf.fderiv_slice (m := 2) le_rfl)
+    (apply_fderiv_fderiv_apply_eq_zero (hf.of_le (by norm_num)) hv) hsign.ne hc0 hcd hc' hcrit
+  simp only [ContinuousLinearMap.apply_apply] at hfold
   filter_upwards [hfold] with δ hδ
-  filter_upwards [hst.eventually hδ] with s ⟨hlt, heq, hgt⟩
-  rw [hb] at hlt hgt
-  have hFs : ∀ σ, F (σ, s - t) = (c σ).1 - s := fun σ ↦ by simp only [F]; ring
-  have hset : {σ ∈ Ioo (-δ) δ | F (σ, s - t) = 0} = {σ ∈ Ioo (-δ) δ | (c σ).1 = s} := by
-    ext σ
-    simp [hFs, sub_eq_zero]
-  refine ⟨fun h σ hσ ↦ ?_, fun h ↦ hset ▸ heq (by rw [h, sub_self]), fun h ↦ ?_⟩
-  · have := hlt (by linarith) σ hσ
-    rw [hFs] at this
-    linarith
-  · obtain ⟨x₁, hx₁, x₂, hx₂, hs, -⟩ := hgt (by linarith)
-    exact ⟨x₁, hx₁, x₂, hx₂, hset ▸ hs⟩
+  filter_upwards [hδ] with s ⟨hlt, heq, hgt⟩
+  refine ⟨fun h ↦ hlt (mul_pos_of_neg_of_neg hsign (sub_neg.2 h)), heq, fun h ↦ ?_⟩
+  obtain ⟨x₁, hx₁, x₂, hx₂, hset, -⟩ := hgt (mul_neg_of_neg_of_pos hsign (sub_pos.2 h))
+  exact ⟨x₁, hx₁, x₂, hx₂, hset⟩
 
 /-! ### Critical points near a curve of critical points -/
 
@@ -247,7 +139,7 @@ the family in a neighbourhood `N` of `(t, x)` is the point `c (ℓ z.2 - ℓ x)`
 the critical points near `(t, x)` other than `(t, x)` are nondegenerate, then for some `r > 0`
 every critical point `y` of `f s` with `|s - t| < r` and `y ∈ ball x r` is `c σ` for
 `σ = ℓ y - ℓ x ∈ (-δ, δ)`, and is nondegenerate unless `(s, y) = (t, x)`. -/
-private theorem exists_pos_forall_mem_ball {c : ℝ → ℝ × E} {ℓ : StrongDual ℝ E}
+private theorem exists_pos_forall_mem_ball_fderiv_eq_zero {c : ℝ → ℝ × E} {ℓ : StrongDual ℝ E}
     {N : Set (ℝ × E)} (hN : N ∈ 𝓝 (t, x))
     (hcN : ∀ z ∈ N, fderiv ℝ (f z.1) z.2 = 0 → c (ℓ z.2 - ℓ x) = z)
     (hnd : ∀ᶠ z in 𝓝[≠] (t, x), fderiv ℝ (f z.1) z.2 = 0 →
@@ -255,47 +147,15 @@ private theorem exists_pos_forall_mem_ball {c : ℝ → ℝ × E} {ℓ : StrongD
     ∃ r > 0, ∀ s y, dist s t < r → y ∈ ball x r → fderiv ℝ (f s) y = 0 →
       ℓ y - ℓ x ∈ Ioo (-δ) δ ∧ c (ℓ y - ℓ x) = (s, y) ∧
         ((s, y) ≠ (t, x) → IsNondegenerateCriticalPoint (f s) y) := by
-  obtain ⟨r₁, hr₁, hr₁N⟩ := Metric.eventually_nhds_iff.1
-    ((eventually_mem_set.2 hN).and (eventually_nhdsWithin_iff.1 hnd))
-  obtain ⟨r₂, hr₂, hr₂ℓ⟩ := Metric.eventually_nhds_iff.1
-    (Metric.tendsto_nhds.1 (ℓ.continuous.tendsto x) δ hδ)
-  refine ⟨min r₁ r₂, lt_min hr₁ hr₂, fun s y hs hy hy0 ↦ ?_⟩
-  have hz : dist (s, y) (t, x) < r₁ := by
-    rw [Prod.dist_eq, max_lt_iff]
-    exact ⟨hs.trans_le (min_le_left _ _), (mem_ball.1 hy).trans_le (min_le_left _ _)⟩
-  have hℓy := hr₂ℓ ((mem_ball.1 hy).trans_le (min_le_right _ _))
-  rw [Real.dist_eq] at hℓy
-  exact ⟨mem_Ioo.2 (abs_lt.1 hℓy), hcN _ (hr₁N hz).1 hy0,
-    fun hne ↦ (hr₁N hz).2 hne hy0⟩
+  obtain ⟨r, hr, hrN⟩ := exists_pos_forall_mem_of_mem_nhds
+    (Filter.eventually_iff.1 ((eventually_mem_set.2 hN).and (eventually_nhdsWithin_iff.1 hnd)))
+    ℓ.continuous.continuousAt hδ
+  refine ⟨r, hr, fun s y hs hy hy0 ↦ ?_⟩
+  obtain ⟨⟨hsN, hsnd⟩, hℓ⟩ := hrN s y hs hy
+  exact ⟨hℓ, hcN _ hsN hy0, fun hne ↦ hsnd hne hy0⟩
 
-/-- **Two parameter values on the critical curve give two critical points.** Let `c` be a curve of
-critical points on `(-δ, δ)`. Suppose that every critical point `y ∈ U` of `f s` is the point
-`c σ` for `σ = ℓ y - ℓ x ∈ (-δ, δ)`, and that the parameter component of `c` takes the value `s`
-on `(-δ, δ)` exactly at `x₁` and `x₂`, over `U`. Then the critical points of `f s` in `U` are the
-space components of `c x₁` and `c x₂`. -/
-private theorem setOf_fderiv_eq_zero_eq_pair {c : ℝ → ℝ × E} {ℓ : StrongDual ℝ E}
-    {U : Set E} {δ s x₁ x₂ : ℝ}
-    (hcrit : ∀ σ ∈ Ioo (-δ) δ, fderiv ℝ (f (c σ).1) (c σ).2 = 0)
-    (hcurve : ∀ y ∈ U, fderiv ℝ (f s) y = 0 → ℓ y - ℓ x ∈ Ioo (-δ) δ ∧ c (ℓ y - ℓ x) = (s, y))
-    (hset : {σ ∈ Ioo (-δ) δ | (c σ).1 = s} = {x₁, x₂}) (h₁ : (c x₁).2 ∈ U)
-    (h₂ : (c x₂).2 ∈ U) :
-    {y ∈ U | fderiv ℝ (f s) y = 0} = {(c x₁).2, (c x₂).2} := by
-  have hmem : ∀ σ ∈ ({x₁, x₂} : Set ℝ), σ ∈ Ioo (-δ) δ ∧ (c σ).1 = s := fun σ hσ ↦ by
-    rw [← hset] at hσ
-    exact hσ
-  refine Eq.trans ?_ (Set.image_pair (fun σ ↦ (c σ).2) x₁ x₂)
-  ext y
-  refine ⟨fun ⟨hy, hy0⟩ ↦ ?_, ?_⟩
-  · obtain ⟨hσ, hcσ⟩ := hcurve y hy hy0
-    exact ⟨ℓ y - ℓ x, hset ▸ ⟨hσ, by simp [hcσ]⟩, by simp [hcσ]⟩
-  · rintro ⟨σ, hσ, rfl⟩
-    obtain ⟨hσI, hτσ⟩ := hmem σ hσ
-    refine ⟨?_, hτσ ▸ hcrit σ hσI⟩
-    rcases hσ with rfl | rfl
-    exacts [h₁, h₂]
-
-/-- **Two critical points after the fold.** In the situation of `setOf_fderiv_eq_zero_eq_pair`,
-suppose that for `s > t` close to `t` the parameter component of `c` takes the value `s` exactly
+/-- **Two critical points after the fold.** Let `c` be a curve of critical points on `(-δ₀, δ₀)`.
+Suppose that for `s > t` close to `t` the parameter component of `c` takes the value `s` exactly
 twice on `(-δ₀, δ₀)` and exactly twice on `(-δ₁, δ₁)`, once on each side of `0`, where
 `δ₁ ≤ δ₀` and the curve stays over `ball x r` on `(-δ₁, δ₁)`. If the critical points in
 `ball x r` of `f s`, for `|s - t| < r`, are points `c σ` with `σ ∈ (-δ₀, δ₀)`, nondegenerate away
@@ -323,22 +183,13 @@ private theorem eventually_setOf_fderiv_eq_zero_eq_pair {c : ℝ → ℝ × E}
     exact Ioo_subset_Ioo_left (by linarith) hs
   obtain ⟨x₁, hx₁, x₂, hx₂, hset₀⟩ := h₀ hs.1
   obtain ⟨y₁, hy₁, y₂, hy₂, hset₁⟩ := h₁ hs.1
-  -- The two solutions in `(-δ₁, δ₁)` are the two solutions in `(-δ₀, δ₀)`.
-  have hsub : ∀ σ ∈ ({y₁, y₂} : Set ℝ), σ ∈ ({x₁, x₂} : Set ℝ) := fun σ hσ ↦ by
-    rw [← hset₁] at hσ
-    rw [← hset₀]
-    exact ⟨⟨by linarith [hσ.1.1], by linarith [hσ.1.2]⟩, hσ.2⟩
-  have he₁ : y₁ = x₁ := (hsub y₁ (by simp)).resolve_right fun h ↦ by
-    linarith [hy₁.2, hx₂.1, mem_singleton_iff.1 h]
-  have he₂ : y₂ = x₂ := mem_singleton_iff.1 <| (hsub y₂ (by simp)).resolve_left fun h ↦ by
-    linarith [hy₂.1, hx₁.2]
-  subst he₁ he₂
   have hval : ∀ σ ∈ ({y₁, y₂} : Set ℝ), (c σ).1 = s := fun σ hσ ↦ by
     rw [← hset₁] at hσ
     exact hσ.2
   refine ⟨y₁, hy₁, y₂, hy₂, hval y₁ (by simp), hval y₂ (by simp),
-    setOf_fderiv_eq_zero_eq_pair hcrit (fun y hy hy0 ↦ (hcurve s y hst hy hy0).imp_right And.left)
-      hset₀ (hU _ ⟨hy₁.1, by linarith [hy₁.1, hy₁.2]⟩) (hU _ ⟨by linarith [hy₂.1, hy₂.2], hy₂.2⟩),
+    setOf_eq_pair_of_forall_eq_curve (Z := fun s y ↦ fderiv ℝ (f s) y = 0) hδ hcrit
+      (fun y hy hy0 ↦ (hcurve s y hst hy hy0).imp_right And.left) hU hx₁.2 hx₂.1 hset₀ hy₁ hy₂
+      hset₁,
     fun y hy hy0 ↦ (hcurve s y hst hy hy0).2.2 fun h ↦ ?_⟩
   linarith [congrArg Prod.fst h, hs.1]
 
@@ -348,46 +199,13 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
 
-/-- **The derivative of the augmented differential is invertible at a birth–death point.** At a
-transverse point where the Hessian of `f t` at `x` has a nonzero kernel vector `v` and `ℓ v = 1`,
-the derivative of `(t, x) ↦ (d(f t)_x, ℓ x)`, which sends `(τ, ξ)` to
-`(τ ∂ₜ (d(f t)_x) + Hess(f t)_x ξ, ℓ ξ)`, is a linear isomorphism carrying `(0, v)` to `(0, 1)`. -/
-private theorem exists_continuousLinearEquiv_fderiv_prod (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
-    (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x))) {v : E}
-    (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0) {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) :
-    ∃ e : (ℝ × E) ≃L[ℝ] StrongDual ℝ E × ℝ, (e : ℝ × E →L[ℝ] StrongDual ℝ E × ℝ) =
-      (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)).prod
-        (ℓ.comp (ContinuousLinearMap.snd ℝ ℝ E)) ∧ e (0, v) = (0, ℓ v) := by
-  set D : ℝ × E →L[ℝ] StrongDual ℝ E × ℝ :=
-    (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)).prod
-      (ℓ.comp (ContinuousLinearMap.snd ℝ ℝ E))
-  have hv0 : v ≠ 0 := by rintro rfl; simp at hℓ
-  have hD : ∀ w, D w = (w.1 • deriv (fun s ↦ fderiv ℝ (f s) x) t +
-      fderiv ℝ (fderiv ℝ (f t)) x w.2, ℓ w.2) := fun w ↦ by
-    simp [D, fderiv_fderiv_apply hf]
-  have ha : deriv (fun s ↦ fderiv ℝ (f s) x) t v ≠ 0 :=
-    fun h ↦ hv0 ((surjective_fderiv_fderiv_iff hf).1 hs v hv h)
-  -- Pairing the first component with `v` kills the parameter component, and then the space
-  -- component is a multiple of `v` on which `ℓ` vanishes.
-  have hinj : Injective D := (injective_iff_map_eq_zero _).2 fun ⟨τ, ξ⟩ h ↦ by
-    rw [hD, Prod.mk_eq_zero] at h
-    have hτ : τ = 0 := by
-      simpa [fderiv_fderiv_apply_comm_of_uncurry hf ξ v, hv, ha] using congrArg (· v) h.1
-    subst hτ
-    obtain ⟨c, rfl⟩ :=
-      exists_eq_smul_of_fderiv_fderiv_apply_eq_zero hf hs hv0 hv (by simpa using h.1)
-    simp_all
-  have hdim : finrank ℝ (ℝ × E) = finrank ℝ (StrongDual ℝ E × ℝ) := by
-    simp [ContinuousLinearMap.dual_finrank_eq, add_comm]
-  exact ⟨(LinearMap.linearEquivOfInjective D.toLinearMap hinj hdim).toContinuousLinearEquiv, rfl,
-    (hD (0, v)).trans (by simp [hv])⟩
-
 /-- **The critical curve through a birth–death point.** At a critical point `x` of `f t` where
 the family is transverse and the Hessian has a nonzero kernel vector `v`, with `ℓ v = 1`, there is
 a `C²` curve `c` through `(t, x)` with velocity `(0, v)`, made of critical points of the family,
 along which `ℓ` restricted to the space component increases at unit rate, and which passes
-through every critical point of the family near `(t, x)`. It is the image of the line
-`{0} × ℝ` under the local inverse of `(t, x) ↦ (d(f t)_x, ℓ x)`. -/
+through every critical point of the family near `(t, x)`. This is
+`TauCeti.exists_curve_apply_eq_zero` for the family of differentials `s ↦ d(f s)`, with `φ` the
+evaluation at `v`: the critical points of the family are the zeros of that family. -/
 theorem exists_curve_fderiv_eq_zero (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
     (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)))
     (hc : fderiv ℝ (f t) x = 0) {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
@@ -396,42 +214,16 @@ theorem exists_curve_fderiv_eq_zero (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
       HasDerivAt c (0, v) 0 ∧ (∀ᶠ s in 𝓝 0, fderiv ℝ (f (c s).1) (c s).2 = 0 ∧
         ℓ (c s).2 = ℓ x + s) ∧
       ∀ z ∈ N, fderiv ℝ (f z.1) z.2 = 0 → c (ℓ z.2 - ℓ x) = z := by
-  set G : ℝ × E → StrongDual ℝ E := fun w ↦ fderiv ℝ (f w.1) w.2
-  have hG : ContDiffAt ℝ 2 G (t, x) := hf.fderiv_slice (m := 2) le_rfl
-  set Φ : ℝ × E → StrongDual ℝ E × ℝ := fun w ↦ (G w, ℓ w.2)
-  have hΦ : ContDiffAt ℝ 2 Φ (t, x) :=
-    hG.prodMk (ℓ.contDiff.contDiffAt.comp _ contDiffAt_snd)
-  obtain ⟨e, he, hev⟩ := exists_continuousLinearEquiv_fderiv_prod (hf.of_le (by norm_num)) hs hv
-    hℓ
-  have hΦ' : HasFDerivAt Φ (e : ℝ × E →L[ℝ] StrongDual ℝ E × ℝ) (t, x) := by
-    rw [he]
-    exact ((hG.differentiableAt two_ne_zero).hasFDerivAt).prodMk
-      (ℓ.hasFDerivAt.comp _ hasFDerivAt_snd)
-  set P := hΦ.toOpenPartialHomeomorph Φ hΦ' two_ne_zero
-  have hΦp : Φ (t, x) = (0, ℓ x) := by simp [Φ, G, hc]
-  replace hev : (0, v) = e.symm (0, 1) := e.eq_symm_apply.2 (hev.trans (by rw [hℓ]))
-  -- The curve `c s = Φ⁻¹ (0, ℓ x + s)`.
-  set L : ℝ → StrongDual ℝ E × ℝ := fun s ↦ (0, ℓ x + s)
-  have hL : HasDerivAt L (0, 1) 0 :=
-    (hasDerivAt_const (0 : ℝ) (0 : StrongDual ℝ E)).prodMk ((hasDerivAt_id (0 : ℝ)).const_add _)
-  have hL0 : L 0 = Φ (t, x) := by simp [L, hΦp]
-  have hinv : ContDiffAt ℝ 2 P.symm (L 0) := hL0 ▸ hΦ.to_localInverse hΦ' two_ne_zero
-  have hinv' : HasFDerivAt P.symm (e.symm : StrongDual ℝ E × ℝ →L[ℝ] ℝ × E) (L 0) :=
-    hL0 ▸ ((hΦ.hasStrictFDerivAt hΦ' two_ne_zero).to_localInverse).hasFDerivAt
-  have htarget : L 0 ∈ P.target := hL0 ▸ hΦ.image_mem_toOpenPartialHomeomorph_target hΦ' _
-  refine ⟨P.symm ∘ L, P.source, P.open_source.mem_nhds
-    (hΦ.mem_toOpenPartialHomeomorph_source hΦ' _), ?_, hinv.comp 0 (contDiff_const.prodMk
-      (contDiff_const.add contDiff_id)).contDiffAt, ?_, ?_, fun z hz hz₀ ↦ ?_⟩
-  · rw [comp_apply, hL0]
-    exact P.left_inv (hΦ.mem_toOpenPartialHomeomorph_source hΦ' _)
-  · simpa [hev] using hinv'.comp_hasDerivAt (0 : ℝ) hL
-  · have hLc : ContinuousAt L 0 := hL.continuousAt
-    filter_upwards [hLc.preimage_mem_nhds (P.open_target.mem_nhds htarget)] with s hs
-    have h := P.right_inv hs
-    exact ⟨congrArg Prod.fst h, congrArg Prod.snd h⟩
-  · have hΦz : L (ℓ z.2 - ℓ x) = Φ z := by simp [L, Φ, G, hz₀]
-    rw [comp_apply, hΦz]
-    exact P.left_inv hz
+  have hf2 : ContDiffAt ℝ 2 (uncurry f) (t, x) := hf.of_le (by norm_num)
+  have hv0 : v ≠ 0 := by rintro rfl; simp at hℓ
+  -- Transversality: `∂ₜ (d(f t)_x) v ≠ 0`.
+  have ha : ContinuousLinearMap.apply ℝ ℝ v (deriv (fun s ↦ fderiv ℝ (f s) x) t) ≠ 0 :=
+    fun h ↦ hv0 ((surjective_fderiv_fderiv_iff hf2).1 hs v hv h)
+  exact exists_curve_apply_eq_zero (f := fun s ↦ fderiv ℝ (f s))
+    (by simp [ContinuousLinearMap.dual_finrank_eq]) (hf.fderiv_slice (m := 2) le_rfl) hc
+    (ker_fderiv_fderiv_eq_span_singleton hf2 hs hv0 hv)
+    (apply_fderiv_fderiv_apply_eq_zero hf2 hv) ha hℓ
+
 
 /-! ### The Morse index along the critical curve -/
 
@@ -452,52 +244,19 @@ private theorem exists_pos_morseIndex_curve (hf : ContDiffAt ℝ 3 (uncurry f) (
       if fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v < 0 then 1 else 0) ∧
     ∀ σ ∈ Ioo (-ε) 0, morseIndex (f (c σ).1) (c σ).2 = morseIndex (f t) x +
       if fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v < 0 then 0 else 1 := by
-  have hf2 : ContDiffAt ℝ 2 (uncurry f) (t, x) := hf.of_le (by norm_num)
   have hv0 : v ≠ 0 := by rintro rfl; simp at hκ
-  -- The Hessian `H (s, y)` of `f s` at `y`.
-  obtain ⟨H, hHdef⟩ : ∃ H : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ,
-      H = fun w ↦ fderiv ℝ (fderiv ℝ (f w.1)) w.2 := ⟨_, rfl⟩
-  have hG : ContDiffAt ℝ 2 (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x) :=
-    hf.fderiv_slice (m := 2) le_rfl
-  have hH : ContDiffAt ℝ 1 H (t, x) := by
-    subst hHdef
-    exact hG.fderiv_slice (m := 1) le_rfl
-  -- The path of Hessians `σ ↦ H (c σ)` and its derivative `D³(f t)_x (v, ·, ·)` at `0`.
-  have hV : HasDerivAt (H ∘ c) (fderiv ℝ H (t, x) (0, v)) 0 := by
-    have hH' : HasFDerivAt H (fderiv ℝ H (t, x)) (c 0) :=
-      hc0 ▸ (hH.differentiableAt one_ne_zero).hasFDerivAt
-    simpa using (hH'.comp 0 hc'.hasFDerivAt).hasDerivAt
-  have hκ' : fderiv ℝ H (t, x) (0, v) v v = fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v := by
-    rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right
-      (hH.differentiableAt one_ne_zero)]
-    simp [hHdef]
-  have hV0 : (H ∘ c) 0 = fderiv ℝ (fderiv ℝ (f t)) x := by simp [hHdef, hc0]
-  have hmorse : ∀ σ, morseIndex (f (c σ).1) (c σ).2 =
-      sigNeg ((H ∘ c) σ).toBilinForm.toQuadraticMap := fun σ ↦ by
-    rw [morseIndex_def, hessianQuadraticForm_def, hHdef]
-    rfl
-  have hk : morseIndex (f t) x = sigNeg ((H ∘ c) 0).toBilinForm.toQuadraticMap := by
-    rw [hV0, morseIndex_def, hessianQuadraticForm_def]
-  -- At `0` the Hessian is symmetric, with kernel the line through `v`.
-  have hsymm : ((H ∘ c) 0).toBilinForm.IsSymm := by
-    rw [hV0]
-    exact ⟨fun u w ↦ fderiv_fderiv_apply_comm_of_uncurry hf2 u w⟩
-  have hker : ((H ∘ c) 0).ker = ℝ ∙ v := by
-    rw [hV0]
-    refine le_antisymm (fun w hw ↦ ?_)
-      ((Submodule.span_singleton_le_iff_mem _ _).2 (by simpa using hv))
-    obtain ⟨a, rfl⟩ :=
-      exists_eq_smul_of_fderiv_fderiv_apply_eq_zero hf2 hs hv0 hv (by simpa using hw)
-    exact Submodule.smul_mem _ a (Submodule.mem_span_singleton_self v)
-  -- The negative index jumps across this crossing by one, on the side given by the sign of `κ`.
-  obtain ⟨hR, hL⟩ := ContinuousLinearMap.eventually_sigNeg_eq_of_ker_eq_span hsymm hV hker
-    (by rwa [hκ'])
-  rw [hκ', ← hk] at hR hL
-  obtain ⟨ε₁, hε₁, hR⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 hR
-  obtain ⟨ε₂, hε₂, hL⟩ := mem_nhdsLT_iff_exists_Ioo_subset.1 hL
-  refine ⟨min ε₁ (-ε₂), lt_min hε₁ (neg_pos.2 hε₂), fun σ hσ ↦ (hmorse σ).trans
-    (hR ⟨hσ.1, hσ.2.trans_le (min_le_left _ _)⟩), fun σ hσ ↦ (hmorse σ).trans (hL ⟨?_, hσ.2⟩)⟩
-  linarith [hσ.1, min_le_right ε₁ (-ε₂)]
+  have hker := ker_fderiv_fderiv_eq_span_singleton (hf.of_le (by norm_num)) hs hv0 hv
+  obtain ⟨ε₁, hε₁, hR⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1
+    (eventually_nhdsGT_morseIndex_eq hf hker hκ hc0 hc')
+  obtain ⟨ε₂, hε₂, hL⟩ := mem_nhdsLT_iff_exists_Ioo_subset.1
+    (eventually_nhdsLT_morseIndex_eq hf hker hκ hc0 hc')
+  refine ⟨min ε₁ (-ε₂), lt_min hε₁ (neg_pos.2 hε₂),
+    fun σ hσ ↦ hR ⟨hσ.1, hσ.2.trans_le (min_le_left _ _)⟩, fun σ hσ ↦ ?_⟩
+  have hσL : morseIndex (f (c σ).1) (c σ).2 = morseIndex (f t) x +
+      if 0 < fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v then 1 else 0 :=
+    hL ⟨by linarith [hσ.1, min_le_right ε₁ (-ε₂)], hσ.2⟩
+  rw [hσL]
+  rcases hκ.lt_or_gt with h | h <;> simp [h, h.not_gt]
 
 /-! ### Births and deaths -/
 
@@ -545,13 +304,14 @@ theorem exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg
   obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hv0
   obtain ⟨c, N, hN, hc0, hcd, hc', hcrit, hcN⟩ := exists_curve_fderiv_eq_zero hf hs hc hv hℓ
   -- The parameter along the curve folds back at `0`.
-  have hfold := eventually_fold_curve_fst hf hv hsign hc0 hcd hc' (hcrit.mono fun _ h ↦ h.1)
+  have hfold := eventually_fold_curve_fst_of_mul_neg hf hv hsign hc0 hcd hc'
+    (hcrit.mono fun _ h ↦ h.1)
   obtain ⟨ε, hε, hεc⟩ := Metric.eventually_nhds_iff.1 hcrit
   obtain ⟨δ₀, hfold₀, hδ₀⟩ := (hfold.and (Ioo_mem_nhdsGT hε)).exists
   have hcritI : ∀ σ ∈ Ioo (-δ₀) δ₀, fderiv ℝ (f (c σ).1) (c σ).2 = 0 := fun σ hσ ↦
     (hεc ((Real.dist_0_eq_abs σ).trans_lt ((abs_lt.2 hσ).trans hδ₀.2))).1
   -- The critical points in a small ball lie on the curve.
-  obtain ⟨r, hr, hcurve⟩ := exists_pos_forall_mem_ball hN hcN
+  obtain ⟨r, hr, hcurve⟩ := exists_pos_forall_mem_ball_fderiv_eq_zero hN hcN
     (eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero hf hs
       fun u hu hu3 ↦ eq_zero_of_fderiv_fderiv_fderiv_apply_eq_zero (hf.of_le (by norm_num)) hs
         hv hκ hu hu3) hδ₀.1

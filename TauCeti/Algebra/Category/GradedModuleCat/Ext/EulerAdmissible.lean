@@ -35,7 +35,13 @@ hypothesis.
 
 ## Main results
 
-* `TauCeti.GradedProjectiveResolution.IsMinimal.subsingleton_gradedExt_of_lt` and
+* `TauCeti.GradedProjectiveResolution.IsMinimal.isGradedExtInternallyFinite`: bigraded Ext out of a
+  minimally resolved module with finitely generated `A`-module terms into a finite-dimensional
+  degree-zero target has finite internal support in each cohomological degree, without assuming `A`
+  is finite-dimensional over `k`.
+* `TauCeti.GradedProjectiveResolution.IsMinimal.subsingleton_gradedExt_of_lt_of_bddBelow`,
+  `TauCeti.GradedProjectiveResolution.IsMinimal.subsingleton_gradedExt_of_lt`,
+  `IsMinimal.hasEulerPowerSeries_bigradedExtPoincarePowerSeries_of_bddBelow`, and
   `TauCeti.GradedProjectiveResolution.IsMinimal.hasEulerPowerSeries_bigradedExtPoincarePowerSeries`:
   Ext and the full Poincaré formal power series of a minimally resolved module vanish below a
   shifted diagonal `j = c + n`, yielding `Bigraded.HasEulerPowerSeries` when `c = 0`.
@@ -70,7 +76,25 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
   {M : GradedModuleCat.{v} 𝒜}
   {r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
-  [HasExt.{w} (GradedModuleCat.{v} 𝒜)] [∀ n, Module.Finite k (r.X n)]
+  [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
+
+/-- **Bigraded Ext out of a bounded-below minimally resolved module vanishes below a shifted
+diagonal.** If `M` vanishes in internal degrees below `c`, each resolution term's grading is
+bounded below, and `N` is concentrated in degree zero, then `GradedExt (shift 𝒜) M N n j` is a
+subsingleton whenever `j < c + n`, with no finite-dimensionality or nonnegative algebra grading
+assumption. -/
+theorem IsMinimal.subsingleton_gradedExt_of_lt_of_bddBelow (hr : r.IsMinimal) {c : ℤ}
+    (hM : ∀ p < c, M.grading.piece p = ⊥)
+    (hb : ∀ m, ∃ b : ℤ, ∀ p < b, (r.grading m).piece p = ⊥)
+    {N : GradedModuleCat.{v} 𝒜}
+    (hN : ∀ q, q ≠ 0 → N.grading.piece q = ⊥) {n : ℕ} {j : ℤ} (hjn : j < c + n) :
+    Subsingleton (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j) := by
+  choose lb hlb using hb
+  exact GradedModuleCat.subsingleton_gradedExt_iff_subsingleton_ext_shiftObj.mpr <|
+    hr.subsingleton_ext_of_lt hM lb hlb (p := j) hjn _ <| by
+      simpa using GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated hN j
+
+variable [∀ n, Module.Finite k (r.X n)]
 
 /-- **Bigraded Ext out of a minimally resolved module vanishes below a shifted diagonal.** Here
 `r.IsMinimal` requires differentials to land in the strictly positive-degree action `A₊` (`0 < i`),
@@ -81,17 +105,12 @@ grading or field hypothesis (cf. `IsMinimal.subsingleton_ext_of_lt`). -/
 theorem IsMinimal.subsingleton_gradedExt_of_lt (hr : r.IsMinimal) {c : ℤ}
     (hM : ∀ p < c, M.grading.piece p = ⊥) {N : GradedModuleCat.{v} 𝒜}
     (hN : ∀ q, q ≠ 0 → N.grading.piece q = ⊥) {n : ℕ} {j : ℤ} (hjn : j < c + n) :
-    Subsingleton (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j) := by
-  classical
-  choose lb hlb using fun m ↦ (r.grading m).finite_piece_ne_bot.bddBelow
-  exact GradedModuleCat.subsingleton_gradedExt_iff_subsingleton_ext_shiftObj.2 <|
-    hr.subsingleton_ext_of_lt hM lb
-      (fun m p hp ↦ by
-        by_contra hne
-        have := hlb m hne
-        omega)
-      (p := j) hjn _ <| by
-        simpa using GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated hN j
+    Subsingleton (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j) :=
+  hr.subsingleton_gradedExt_of_lt_of_bddBelow hM
+    (fun m ↦
+      let ⟨b, hb⟩ := (r.grading m).finite_piece_ne_bot.bddBelow
+      ⟨b, fun _ hp ↦ by by_contra hne; exact absurd (hb hne) (not_le.mpr hp)⟩)
+    hN hjn
 
 /-- Each fixed internal shift `N{j}` of a degree-zero target is Ext-bounded against `M` by the
 explicit cutoff `(j - c + 1).toNat`. -/
@@ -122,9 +141,57 @@ section Field
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
-  {M : GradedModuleCat.{v} 𝒜}
+
+/-- For a minimal resolution `r` with finitely generated `A`-module terms and a finite-dimensional
+target `N` concentrated in degree zero, bigraded Ext `(M, N)` has finite internal support in each
+cohomological degree, without assuming `A` is left Noetherian or finite-dimensional over `k`. -/
+theorem IsMinimal.isGradedExtInternallyFinite
+    {M N : GradedModuleCat.{max uA v} 𝒜}
+    {r : GradedProjectiveResolution.{uk, uA, max uA v, max uA v} 𝒜 M.grading}
+    [HasExt.{w} (GradedModuleCat.{max uA v} 𝒜)] [∀ n, Module.Finite A (r.X n)]
+    [Module.Finite k N] (hr : r.IsMinimal)
+    (hN : ∀ q, q ≠ 0 → N.grading.piece q = ⊥) :
+    IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N :=
+  ⟨fun n ↦ (GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj (r.termObj n) N).of_equiv fun p ↦
+    (hr.extLinearEquiv ((N.shiftObj p).positive_smul_top_eq_bot_of_concentrated p
+      (by simpa using GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated hN p)) n).trans <| by
+        rw [← GradedModuleCat.shiftFunctor_obj]
+        exact extLinearEquivOfIso k (Iso.refl M)
+          ((GradedModuleCat.shiftPowIso 𝒜 p).app N).symm n⟩
+
+variable {M : GradedModuleCat.{v} 𝒜}
   {r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
-  [HasExt.{w} (GradedModuleCat.{v} 𝒜)] [∀ n, Module.Finite k (r.X n)]
+  [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
+
+/-- **The unbounded bigraded Ext Poincaré power series of a bounded-below minimally resolved module
+vanishes below a shifted diagonal**, without assuming resolution terms are finite-dimensional over
+`k`. -/
+theorem IsMinimal.coeff_coeff_bigradedExtPoincarePowerSeries_eq_zero_of_lt_of_bddBelow
+    (hr : r.IsMinimal) {c : ℤ} (hM : ∀ p < c, M.grading.piece p = ⊥)
+    (hb : ∀ m, ∃ b : ℤ, ∀ p < b, (r.grading m).piece p = ⊥)
+    {N : GradedModuleCat.{v} 𝒜} (hN : ∀ q, q ≠ 0 → N.grading.piece q = ⊥)
+    (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N)
+    {n : ℕ} {j : ℤ} (hjn : j < c + n) :
+    (PowerSeries.coeff n
+      (bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h)).coeff j = 0 := by
+  let _ := hr.subsingleton_gradedExt_of_lt_of_bddBelow hM hb hN hjn
+  rw [coeff_coeff_bigradedExtPoincarePowerSeries, Module.finrank_zero_of_subsingleton,
+    Nat.cast_zero]
+
+/-- For a bounded-below minimally resolved module supported in nonnegative degrees and a target
+concentrated in degree zero, the unbounded Ext Poincaré power series satisfies
+`Bigraded.HasEulerPowerSeries`. -/
+theorem IsMinimal.hasEulerPowerSeries_bigradedExtPoincarePowerSeries_of_bddBelow (hr : r.IsMinimal)
+    (hM : ∀ p < 0, M.grading.piece p = ⊥)
+    (hb : ∀ m, ∃ b : ℤ, ∀ p < b, (r.grading m).piece p = ⊥)
+    {N : GradedModuleCat.{v} 𝒜} (hN : ∀ q, q ≠ 0 → N.grading.piece q = ⊥)
+    (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N) :
+    Bigraded.HasEulerPowerSeries
+      (bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h) :=
+  Bigraded.HasEulerPowerSeries.of_lowerTriangular fun _ _ han ↦
+    hr.coeff_coeff_bigradedExtPoincarePowerSeries_eq_zero_of_lt_of_bddBelow hM hb hN h (by omega)
+
+variable [∀ n, Module.Finite k (r.X n)]
 
 /-- **The unbounded bigraded Ext Poincaré power series of a minimally resolved module vanishes
 below a shifted diagonal.** For `c = 0`, all coefficients strictly below `j = n` vanish. -/
@@ -134,10 +201,12 @@ theorem IsMinimal.coeff_coeff_bigradedExtPoincarePowerSeries_eq_zero_of_lt (hr :
     (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N)
     {n : ℕ} {j : ℤ} (hjn : j < c + n) :
     (PowerSeries.coeff n
-      (bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h)).coeff j = 0 := by
-  let _ := hr.subsingleton_gradedExt_of_lt hM hN hjn
-  rw [coeff_coeff_bigradedExtPoincarePowerSeries, Module.finrank_zero_of_subsingleton,
-    Nat.cast_zero]
+      (bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h)).coeff j = 0 :=
+  hr.coeff_coeff_bigradedExtPoincarePowerSeries_eq_zero_of_lt_of_bddBelow hM
+    (fun m ↦
+      let ⟨b, hb⟩ := (r.grading m).finite_piece_ne_bot.bddBelow
+      ⟨b, fun _ hp ↦ by by_contra hne; exact absurd (hb hne) (not_le.mpr hp)⟩)
+    hN h hjn
 
 /-- For a minimally resolved module supported in nonnegative degrees and a target concentrated in
 degree zero, the unbounded Ext Poincaré power series satisfies `Bigraded.HasEulerPowerSeries`. -/
@@ -147,7 +216,7 @@ theorem IsMinimal.hasEulerPowerSeries_bigradedExtPoincarePowerSeries (hr : r.IsM
     (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N) :
     Bigraded.HasEulerPowerSeries
       (bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h) :=
-  Bigraded.HasEulerPowerSeries.of_lowerTriangular fun n a han ↦
+  Bigraded.HasEulerPowerSeries.of_lowerTriangular fun _ _ han ↦
     hr.coeff_coeff_bigradedExtPoincarePowerSeries_eq_zero_of_lt hM hN h (by omega)
 
 /-- For an internally finite pair `(M, N)` with `M` minimally resolved by finite-dimensional terms

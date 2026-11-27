@@ -40,7 +40,9 @@ density preserves it, and, when the reference measure is positive on nonempty op
 positive on an open set and zero off its closure gives that closure as support. A measure is
 absolutely continuous with respect to itself weighted by an almost-everywhere positive density, and
 continuous nonnegative real densities presenting the same weighted measure against a sigma-finite
-measure that is positive on nonempty open sets are equal.
+measure that is positive on nonempty open sets are equal. Two densities presenting the same
+sigma-finite weighted measure agree almost everywhere against the reference measure, without
+requiring the reference measure itself to be sigma-finite.
 
 ## Main statements
 
@@ -75,11 +77,20 @@ measure that is positive on nonempty open sets are equal.
   does not change the mass of that set.
 * `MeasureTheory.absolutelyContinuous_withDensity_ofReal`: a measure is absolutely continuous with
   respect to itself weighted by an almost-everywhere positive real density.
+* `MeasureTheory.ae_of_forall_lintegral_ne_top_ae_restrict`: weighted σ-finite localization
+  principle reducing a global a.e. goal to restrictions of finite weighted mass.
+* `MeasureTheory.withDensity_eq_iff_of_sigmaFinite_withDensity`: two a.e. measurable densities
+  presenting the same sigma-finite weighted measure agree almost everywhere against the reference
+  measure.
 * `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
   presenting the same weighted measure against a sigma-finite measure positive on nonempty open
   sets are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
+* `MeasureTheory.eq_withDensity_div_of_eq_withDensity_mul`: if `P ≪ L` where `L` is σ-finite, and
+  `P`, `L` have `ℝ≥0∞`-densities `g * h` and `G * h` against `μ`, then `P = L.withDensity (g / G)`.
+* `MeasureTheory.Measure.restrict_withDensity_restrict`: restricting a weighted restriction
+  to the same set leaves it unchanged.
 * `MeasureTheory.withDensity_restrict_apply_compl`: a measure restricted to a measurable set and
   then weighted gives no mass to the complement of the set.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
@@ -356,6 +367,38 @@ theorem absolutelyContinuous_withDensity_ofReal {α : Type*} [MeasurableSpace α
     μ ≪ μ.withDensity fun x => ENNReal.ofReal (w x) :=
   withDensity_absolutelyContinuous' hwm.ennreal_ofReal (by simpa using hwpos)
 
+/-- **Weighted σ-finite localization principle.** To prove a property `p` holds `μ`-almost
+everywhere, it suffices to prove it on every measurable set `s` on which `w` has finite Lebesgue
+integral (`∫⁻ x, w x ∂μ.restrict s ≠ ∞`), provided `μ.withDensity w` is σ-finite. -/
+theorem ae_of_forall_lintegral_ne_top_ae_restrict {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {w : α → ℝ≥0∞} [SigmaFinite (μ.withDensity w)] {p : α → Prop}
+    (hp : ∀ s : Set α, MeasurableSet s → ∫⁻ x, w x ∂μ.restrict s ≠ ∞ → ∀ᵐ x ∂μ.restrict s, p x) :
+    ∀ᵐ x ∂μ, p x := by
+  have hae_n : ∀ n, ∀ᵐ x ∂μ.restrict (spanningSets (μ.withDensity w) n), p x := fun n ↦ by
+    have hs := measurableSet_spanningSets (μ.withDensity w) n
+    refine hp _ hs ?_
+    rw [← withDensity_apply w hs]
+    exact (measure_spanningSets_lt_top (μ.withDensity w) n).ne
+  rw [← Measure.restrict_univ (μ := μ), ← iUnion_spanningSets (μ.withDensity w)]
+  exact (ae_restrict_iUnion_iff _ _).2 hae_n
+
+/-- Two a.e. measurable `ℝ≥0∞`-valued densities define the same σ-finite weighted measure if and
+only if they agree almost everywhere with respect to the reference measure `μ`.
+
+Unlike Mathlib's `MeasureTheory.withDensity_eq_iff_of_sigmaFinite`, this requires σ-finiteness of
+the weighted measure `μ.withDensity f` rather than of the reference measure `μ` (for example, when
+`μ` is only s-finite and `μ.withDensity f` is finite). -/
+theorem withDensity_eq_iff_of_sigmaFinite_withDensity {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {f g : α → ℝ≥0∞} [SigmaFinite (μ.withDensity f)]
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :
+    μ.withDensity f = μ.withDensity g ↔ f =ᵐ[μ] g := by
+  refine ⟨fun hfg ↦ ae_of_forall_lintegral_ne_top_ae_restrict (w := f) fun s hs hfin ↦ ?_,
+    withDensity_congr_ae⟩
+  have heq : (μ.restrict s).withDensity f = (μ.restrict s).withDensity g := by
+    rw [← restrict_withDensity hs, ← restrict_withDensity hs]
+    exact congrArg (·.restrict s) hfg
+  exact (withDensity_eq_iff hf.restrict hg.restrict hfin).mp heq
+
 /-- Continuous nonnegative real densities that present the same measure are equal pointwise, with
 respect to a σ-finite reference measure that is positive on nonempty open sets. -/
 theorem continuous_eq_of_withDensity_ofReal_eq {X : Type*} [TopologicalSpace X]
@@ -384,6 +427,58 @@ theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α]
     (hgM.mono fun x hx ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 hx))) ?_
   rw [lintegral_const]
   exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top _ _)
+
+/-- If `P ≪ L` where `L` is σ-finite, and `P`, `L` have `ℝ≥0∞`-valued densities `g * h` and
+`G * h` with respect to `μ`, then `P` has `L`-density `g / G`. -/
+theorem eq_withDensity_div_of_eq_withDensity_mul {α : Type*} [MeasurableSpace α]
+    {P L μ : Measure α} [SigmaFinite L] {g G h : α → ℝ≥0∞}
+    (hg : AEMeasurable g μ) (hG : AEMeasurable G μ) (hh : AEMeasurable h μ) (hPL : P ≪ L)
+    (hP : P = μ.withDensity fun x ↦ g x * h x)
+    (hL : L = μ.withDensity fun x ↦ G x * h x) :
+    P = L.withDensity fun x ↦ g x / G x := by
+  have hLm : AEMeasurable (fun x ↦ G x * h x) μ := hG.mul hh
+  have hPm : AEMeasurable (fun x ↦ g x * h x) μ := hg.mul hh
+  -- σ-finiteness of `L` ensures `G x * h x < ∞` `μ`-almost everywhere.
+  have : SigmaFinite (μ.withDensity fun x ↦ G x * h x) := hL ▸ inferInstance
+  have hLlt : ∀ᵐ x ∂μ, G x * h x < ∞ :=
+    ae_of_forall_lintegral_ne_top_ae_restrict (w := fun x ↦ G x * h x) fun _ _ hfin ↦
+      ae_lt_top' hLm.restrict hfin
+  -- `G` is nonzero `L`-a.e., hence `P`-a.e., so `G x = 0` forces `g x * h x = 0` `μ`-a.e.
+  have hZ : ∀ᵐ x ∂μ, G x = 0 → g x * h x = 0 := by
+    have hLG : ∀ᵐ x ∂L, G x ≠ 0 := by
+      rw [hL, ae_withDensity_iff' hLm]
+      exact ae_of_all _ fun _ hx ↦ left_ne_zero_of_mul hx
+    have hPG : ∀ᵐ x ∂P, G x ≠ 0 := hPL.ae_le hLG
+    rw [hP, ae_withDensity_iff' hPm] at hPG
+    exact hPG.mono fun _ hx hG0 ↦ not_not.mp fun hne ↦ hx hne hG0
+  rw [hP, hL, ← withDensity_mul₀ (g := fun x ↦ g x / G x) hLm (hg.div hG)]
+  refine withDensity_congr_ae ?_
+  filter_upwards [hLlt, hZ] with x hxlt hxZ
+  simp only [Pi.mul_apply]
+  by_cases hh0 : h x = 0
+  · simp [hh0]
+  · by_cases hG0 : G x = 0
+    · rw [hxZ hG0, hG0, zero_mul, zero_mul]
+    · have hGtop : G x ≠ ∞ := by
+        intro htop
+        rw [htop, ENNReal.top_mul hh0] at hxlt
+        exact lt_irrefl _ hxlt
+      calc g x * h x
+        _ = (g x / G x) * G x * h x := by rw [ENNReal.div_mul_cancel hG0 hGtop]
+        _ = G x * h x * (g x / G x) := by ac_rfl
+
+/-- Weighting a measure restricted to `s` and restricting it again to `s` leaves the weighted
+measure unchanged. -/
+@[simp]
+theorem Measure.restrict_withDensity_restrict {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    (s : Set α) (f : α → ℝ≥0∞) :
+    ((μ.restrict s).withDensity f).restrict s = (μ.restrict s).withDensity f := by
+  refine le_antisymm Measure.restrict_le_self (Measure.le_iff.2 fun t ht ↦ ?_)
+  rw [Measure.restrict_apply ht, withDensity_apply _ ht]
+  calc
+    (∫⁻ x in t, f x ∂μ.restrict s) = ∫⁻ x in t ∩ s, f x ∂μ.restrict s := by
+      rw [Measure.restrict_restrict ht, Measure.restrict_restrict_of_subset Set.inter_subset_right]
+    _ ≤ (μ.restrict s).withDensity f (t ∩ s) := withDensity_apply_le _ _
 
 /-- A measure restricted to a measurable set `s` and then weighted gives no mass to the complement
 of `s`. The weight `f` is arbitrary; no measurability of it is required. -/
