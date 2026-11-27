@@ -131,7 +131,9 @@ theorem exists_domRestrict_ker_eq_iff_zmod_two {ι : G →+ ZMod 2} {g₀ : G} (
       have key : (((ι g).val + (ι g').val) % 2) • g₀ =
           (ι g).val • g₀ + (ι g').val • g₀ - (((ι g).val + (ι g').val) / 2) • (g₀ + g₀) := by
         rw [← add_nsmul]
-        nth_rw 2 [← Nat.mod_add_div' ((ι g).val + (ι g').val) 2]
+        generalize (ι g).val + (ι g').val = n
+        have hn : n • g₀ = (n % 2 + n / 2 * 2) • g₀ := by rw [Nat.mod_add_div']
+        rw [hn]
         module
       rw [key]
       abel

@@ -490,11 +490,11 @@ theorem even_finrank_of_mul_self_eq_neg_one {K V : Type*} [Field K] [AddCommGrou
     Even (finrank K V) := by
   by_cases hV : FiniteDimensional K V
   · by_contra hodd
-    refine hK ⟨LinearMap.det J, ?_⟩
-    have h := congrArg LinearMap.det hJ
-    rw [map_mul, ← neg_one_smul K (1 : Module.End K V), LinearMap.det_smul, map_one, mul_one,
-      (Nat.not_even_iff_odd.1 hodd).neg_one_pow] at h
-    exact h.symm
+    have hdet : LinearMap.det (-1 : Module.End K V) = (-1) ^ finrank K V := by
+      simpa using LinearMap.det_smul (-1 : K) (1 : Module.End K V)
+    have h : LinearMap.det J * LinearMap.det J = (-1) ^ finrank K V := by
+      rw [← map_mul, hJ, hdet]
+    exact hK ⟨LinearMap.det J, by rw [h, (Nat.not_even_iff_odd.1 hodd).neg_one_pow]⟩
   · rw [finrank_of_not_finite hV]
     exact Even.zero
 
