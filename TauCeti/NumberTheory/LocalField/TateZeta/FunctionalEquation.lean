@@ -76,8 +76,8 @@ so `γ(s, ω, ψ) = L(1 - s, ω⁻¹) / L(s, ω)` with `L(s, ω) = (1 - ω(ϖ) q
 * `TauCeti.TateZeta.fourierIntegral_indicator_integer`,
   `TauCeti.TateZeta.gammaFactor_of_unramified`: the unramified computation.
 
-The meromorphic continuation of both sides is in
-`TauCeti.NumberTheory.LocalField.TateZeta.Continuation`.
+Entire functions agreeing with the zeta integrals and with `γ` on their half-planes, the input to
+the meromorphic continuation, are in `TauCeti.NumberTheory.LocalField.TateZeta.Continuation`.
 
 ## References
 

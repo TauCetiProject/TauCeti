@@ -25,16 +25,19 @@ finitely many valuation shells `{v_K(x) = n}`, so its zeta integral is the Laure
 
 `z(s, ω; g) = ∑_{a ≤ n < b} (∫_{v_K(x) = n} g ω dν) (q ^ (-s)) ^ n`,
 
-an entire function of `s`. Hence `z(s, ω; f) = P(s) + f(0) z(s, ω; 1_𝒪)` with `P` entire, and
-the explicit values of `z(s, ω; 1_𝒪)` (`TauCeti.NumberTheory.LocalField.TateZeta.Nonarchimedean`)
-give the meromorphic continuation of `z(s, ω; f)`:
+an entire function of `s`. Hence `z(s, ω; f) = P(s) + f(0) z(s, ω; 1_𝒪)` on the half-plane of
+convergence, with `P` entire, and the explicit values of `z(s, ω; 1_𝒪)`
+(`TauCeti.NumberTheory.LocalField.TateZeta.Nonarchimedean`) give, on that half-plane:
 
-* for `ω` ramified, `z(s, ω; 1_𝒪) = 0`, so `z(s, ω; f)` is entire (`L(s, ω) = 1`);
-* for `ω` unramified, `(1 - ω(ϖ) q ^ (-s)) z(s, ω; f) = L(s, ω)⁻¹ z(s, ω; f)` is entire.
+* for `ω` ramified, `z(s, ω; 1_𝒪) = 0`, so `z(s, ω; f)` agrees with an entire function
+  (`L(s, ω) = 1`);
+* for `ω` unramified, `(1 - ω(ϖ) q ^ (-s)) z(s, ω; f) = L(s, ω)⁻¹ z(s, ω; f)` agrees with an
+  entire function.
 
 Applied to the gamma factor `γ(s, ω, ψ) = z(1 - s, ω⁻¹; 𝓕f₀) / ν(U(K, c(ω)))` of
-`TauCeti.NumberTheory.LocalField.TateZeta.FunctionalEquation`, this shows that `γ` is entire for
-ramified `ω`, and that `L(1 - s, ω⁻¹)⁻¹ γ(s, ω, ψ)` is entire for unramified `ω`. These entire
+`TauCeti.NumberTheory.LocalField.TateZeta.FunctionalEquation`, this shows that on
+`re s + r < 1`, `γ` agrees with an entire function for ramified `ω`, and
+`L(1 - s, ω⁻¹)⁻¹ γ(s, ω, ψ)` agrees with an entire function for unramified `ω`. These entire
 functions are the input for continuing both sides of the local functional equation
 `z(1 - s, ω⁻¹; 𝓕f) = γ(s, ω, ψ) z(s, ω; f)` meromorphically; that packaged meromorphic statement
 is not formalized here.
@@ -171,9 +174,9 @@ theorem exists_differentiable_localZetaIntegral_eq_add (ν : Measure Kˣ) [ν.Is
       (continuous_const.mul (continuous_indicator_integer K)) h1c hs),
     localZetaIntegral_const_mul]
 
-/-- **Ramified local theory: the zeta integral is entire.** For `ω` nontrivial on `𝒪[K]ˣ` and a
-locally constant compactly supported `f`, `s ↦ z(s, ω; f)` agrees on its half-plane of
-convergence with an entire function: the local `L`-factor is `1`. -/
+/-- **Ramified local theory: continuation of the zeta integral.** For `ω` nontrivial on
+`𝒪[K]ˣ` and a locally constant compactly supported `f`, `s ↦ z(s, ω; f)` agrees on its
+half-plane of convergence with an entire function: the local `L`-factor is `1`. -/
 theorem exists_differentiable_eqOn_localZetaIntegral_of_ramified (ν : Measure Kˣ)
     [ν.IsHaarMeasure] {ω : Kˣ →ₜ* ℂˣ} (hω : ¬ unitFiltration K 0 ≤ ω.ker) {f : K → ℂ}
     (hf : IsLocallyConstant f) (hfc : HasCompactSupport f) :
@@ -183,8 +186,8 @@ theorem exists_differentiable_eqOn_localZetaIntegral_of_ramified (ν : Measure K
   refine ⟨P, hP, fun s hs ↦ ?_⟩
   rw [hfP s hs, localZetaIntegral_indicator_integer_of_ramified ν hω, mul_zero, add_zero]
 
-/-- **Unramified local theory: `z = L z₀` with `z₀` entire.** For `ω` trivial on `𝒪[K]ˣ`, a
-uniformizer `ϖ` and a locally constant compactly supported `f`, the product
+/-- **Unramified local theory: continuation of `L(s, ω)⁻¹ z(s, ω; f)`.** For `ω` trivial on
+`𝒪[K]ˣ`, a uniformizer `ϖ` and a locally constant compactly supported `f`, the product
 `(1 - ω(ϖ) q ^ (-s)) z(s, ω; f) = L(s, ω)⁻¹ z(s, ω; f)` agrees on the half-plane of convergence
 with an entire function. -/
 theorem exists_differentiable_eqOn_mul_localZetaIntegral_of_unramified (ν : Measure Kˣ)
@@ -209,7 +212,7 @@ theorem exists_differentiable_eqOn_mul_localZetaIntegral_of_unramified (ν : Mea
 
 variable (μ : Measure K) [μ.IsAddHaarMeasure] {ψ : AddChar K Circle}
 
-/-- **The gamma factor of a ramified character is entire.** For `ω` nontrivial on `𝒪[K]ˣ`,
+/-- **Continuation of the ramified gamma factor.** For `ω` nontrivial on `𝒪[K]ˣ`,
 `s ↦ γ(s, ω, ψ)` agrees on the half-plane `re s + r < 1` with an entire function. -/
 theorem exists_differentiable_eqOn_gammaFactor_of_ramified (hψ : Continuous ψ) (h1 : ψ ≠ 1)
     {ω : Kˣ →ₜ* ℂˣ} (hω : ¬ unitFiltration K 0 ≤ ω.ker) :
@@ -226,9 +229,9 @@ theorem exists_differentiable_eqOn_gammaFactor_of_ramified (hψ : Continuous ψ)
   dsimp only
   rw [gammaFactor_eq ω μ ψ (unitsHaar K), hzP (one_sub_re_add_characterExponent_inv_pos hs)]
 
-/-- **The gamma factor of an unramified character is meromorphic.** For `ω` trivial on
-`𝒪[K]ˣ` and a uniformizer `ϖ`, `s ↦ (1 - ω(ϖ)⁻¹ q ^ (-(1 - s))) γ(s, ω, ψ)` agrees on the
-half-plane `re s + r < 1` with an entire function: `γ(s, ω, ψ) L(1 - s, ω⁻¹)⁻¹` is entire. -/
+/-- **Continuation of the unramified gamma factor.** For `ω` trivial on `𝒪[K]ˣ` and a
+uniformizer `ϖ`, `L(1 - s, ω⁻¹)⁻¹ γ(s, ω, ψ) = (1 - ω(ϖ)⁻¹ q ^ (-(1 - s))) γ(s, ω, ψ)` agrees on
+the half-plane `re s + r < 1` with an entire function. -/
 theorem exists_differentiable_eqOn_mul_gammaFactor_of_unramified (hψ : Continuous ψ)
     (h1 : ψ ≠ 1) {ω : Kˣ →ₜ* ℂˣ} (hω : unitFiltration K 0 ≤ ω.ker) {ϖ : Kˣ}
     (hϖ : IsUniformizer K ϖ) :
