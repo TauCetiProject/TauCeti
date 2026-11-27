@@ -113,11 +113,13 @@ private theorem top_character_comparison {α ι Q : Type*} [Group Q] [Fintype Q]
   exact (mul_le_mul_of_nonneg_left (by linarith only [hvar, hcounts]) (Nat.cast_nonneg _)).trans h
 
 open scoped Classical in
-/-- The projected thick sum bounds from below the cyclic-family sum with the `4 : 3` weights,
-scaled by the number of tops, after charging the norms at the common scale of indices in
-`I \ K` and an error of `4 x^(1/2+ε)`, where `ε` is the precision exponent. The natural
-number `o` bounds the size of the quotient, and `p` assigns each top in `S` to its coset. The
-cutoff depends only on `o`, the logarithmic budget `C`, and the precision exponent. -/
+/-- The projected thick sum bounds from below the kept cyclic-family sum, scaled by the number of
+tops, after charging the norms at the common scale of indices in `I \ K` and an error of
+`4 x^(1/2+ε)`, where `ε` is the precision exponent. The kept sum is weighted by the Fourier
+coefficients `1` (trivial character) and `1 / (3 |Q| + 1)` (nontrivial character) of the `4 : 3`
+coset profile that the top counts approximate. The natural number `o` bounds the size of the
+quotient, and `p` assigns each top in `S` to its coset. The cutoff depends only on `o`, the
+logarithmic budget `C`, and the precision exponent. -/
 theorem exists_forall_ge_card_mul_le_sum_re_weighted_characters (o : ℕ) (C : ℝ) {ε : ℝ}
     (hε : -(1 / 2) < ε) :
     ∃ x₀ : ℝ, 3 ≤ x₀ ∧ ∀ x ≥ x₀,
