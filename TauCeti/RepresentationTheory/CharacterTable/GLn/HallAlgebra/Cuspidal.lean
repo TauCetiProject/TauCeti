@@ -16,6 +16,7 @@ import TauCeti.LinearAlgebra.Charpoly.Aeval.Comp
 import TauCeti.LinearAlgebra.Charpoly.Degree
 import TauCeti.LinearAlgebra.Charpoly.Quotient
 import TauCeti.Order.ModularLattice.Crapo
+import TauCeti.Order.Sublattice
 
 /-!
 # The inverse `μ` of `𝟙` and Green's cuspidal functions
@@ -137,9 +138,6 @@ private theorem isSemisimple_of_moebius_ofEnd_ne_zero {g : Module.End k V}
   -- modular lattice of `g`-invariant subspaces, so by Crapo's complementation theorem this
   -- lattice is complemented when `μ(g) ≠ 0`.
   have := Fintype.ofFinite g.invtSubmodule
-  -- The `g`-invariant subspaces form a modular lattice, as a sublattice of `Submodule k V`.
-  have : IsModularLattice g.invtSubmodule :=
-    ⟨fun {_} y {_} hxz ↦ IsModularLattice.sup_inf_le_assoc_of_le (y : Submodule k V) hxz⟩
   have h_top : ofEnd (g.invtRestrict (⊤ : g.invtSubmodule).prop) = ofEnd g :=
     ofEnd_invtRestrict_eq_of_injective (g := g) (g' := g) LinearMap.id (fun _ ↦ rfl)
       (⊤ : g.invtSubmodule).prop Function.injective_id LinearMap.range_id
@@ -370,8 +368,10 @@ theorem greenCuspidal_ofEnd_eq_mul {η η' : K → ℂ} {a : ℂ} {g : Module.En
   -- Every eigenvalue `z` of `g` has the property of `h`.
   have h_root (z : K) (hz : aeval z g.charpoly = 0) : η' z = a * η z := by
     rw [hg, map_pow] at hz
-    obtain ⟨h₁, h₂⟩ :=
-      TauCeti.FiniteField.aroots_pow_eq_map_pow_card_pow hP (eq_zero_of_pow_eq_zero hz) j
+    have hz := eq_zero_of_pow_eq_zero hz
+    have h₁ := TauCeti.FiniteField.aroots_pow_eq_map_pow_card_pow hP hz j
+    have h₂ := (TauCeti.FiniteField.pow_card_pow_eq_self_iff hP hz).2
+      (natDegree_pow P j ▸ dvd_mul_left P.natDegree j)
     have h_deg : (P ^ j).natDegree = Module.finrank k V := by
       rw [← hg, LinearMap.charpoly_natDegree]
     rw [h_deg, ← hg] at h₁

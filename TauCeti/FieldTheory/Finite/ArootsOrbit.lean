@@ -21,7 +21,7 @@ Frobenius conjugates `x, x ^ q, …, x ^ q ^ (d - 1)`, and those of `P ^ j` are
 * `TauCeti.FiniteField.pow_card_pow_eq_self_iff`: `x ^ q ^ n = x` if and only if `d ∣ n`.
 * `TauCeti.FiniteField.aroots_eq_map_pow_card_pow`: the roots of `P` are `x ^ q ^ i`, `i < d`.
 * `TauCeti.FiniteField.aroots_pow_eq_map_pow_card_pow`: the roots of `P ^ j` are `x ^ q ^ i`,
-  `i < deg (P ^ j)`, and `x ^ q ^ deg (P ^ j) = x`.
+  `i < deg (P ^ j)`.
 
 ## References
 
@@ -80,17 +80,14 @@ theorem aroots_eq_map_pow_card_pow :
   exact (Multiset.eq_of_le_of_card_le h_le
     (by simpa using card_roots' (P.map (algebraMap k K)))).symm
 
-/-- The roots of `P ^ j` in `K`, with multiplicity, are `x ^ q ^ i` for `i < deg (P ^ j)`, and
-`x ^ q ^ deg (P ^ j) = x`. -/
+/-- The roots of `P ^ j` in `K`, with multiplicity, are `x ^ q ^ i` for `i < deg (P ^ j)`. -/
 theorem aroots_pow_eq_map_pow_card_pow (j : ℕ) :
     (P ^ j).aroots K =
-        (Multiset.range (P ^ j).natDegree).map (fun i ↦ x ^ Fintype.card k ^ i) ∧
-      x ^ Fintype.card k ^ (P ^ j).natDegree = x := by
+      (Multiset.range (P ^ j).natDegree).map (fun i ↦ x ^ Fintype.card k ^ i) := by
   -- The roots of `P` form one Frobenius orbit, which each further factor `P` repeats.
   have h_fixed (j : ℕ) : x ^ Fintype.card k ^ (j * P.natDegree) = x :=
     (pow_card_pow_eq_self_iff hP hx).2 (dvd_mul_left P.natDegree j)
   rw [natDegree_pow]
-  refine ⟨?_, h_fixed j⟩
   induction j with
   | zero => simp
   | succ j ih =>
