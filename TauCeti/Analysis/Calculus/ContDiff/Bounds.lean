@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
@@ -14,6 +15,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
+import TauCeti.Data.Nat.Choose.Bounds
 
 /-!
 # Uniform derivative bounds on compact sets
@@ -45,8 +47,12 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   most `n` of a `C^n` map are bounded by one constant.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
   map that is `C^n` on an open set, with a nonnegative constant.
+* `ContDiff.exists_norm_iteratedDeriv_le_of_isCompact`: the same for the iterated derivatives of
+  order at most `n` of a `C^n` function of one variable on a compact set.
 * `IsCompact.exists_norm_fderiv_le`: the derivative of a map that is `C^1` at every point of a
   compact set is bounded on that set.
+* `IsCompact.exists_forall_norm_fderiv_le`: one constant bounds on a compact set the derivatives of
+  finitely many maps `β e` that are `C^1` there and of any `g` with `D g = -∑_e D β_e`.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen`: for a family `f p` that is
   `C^n` jointly in `(p, x)`, the derivatives of order at most `n` of the partial maps `f p` are
   bounded on a compact set by one constant, uniformly for `p` in a compact set.
@@ -85,6 +91,7 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.norm_iteratedFDeriv_mul_le_two_pow`: the same for a product `f * g` in a normed
   algebra, with one bound for all orders at most `N`.
 * `ContDiff.norm_iteratedFDeriv_pow_le_two_pow`: the resulting bound for a power `f ^ j`.
+* `ContDiff.norm_iteratedFDeriv_sq_sub_self_le_two_pow`: the resulting bound for `f ^ 2 - f`.
 * `ContDiffAt.norm_iteratedFDeriv_smul_const_le`: the order-`k` derivative of `y ↦ f y • v` is at
   most that of `f` times `‖v‖`.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
@@ -99,13 +106,21 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   up to order `N` give bounded derivatives of `L ∘ f`, with the bound multiplied by `‖L‖`.
 * `ContinuousLinearMap.exists_bound_iteratedFDeriv_comp_left`: the same with a separate bound for
   each order, in existential form.
+* `ContDiff.continuousLinearMap_comp_fderiv_and_exists_bound_iteratedFDeriv`: a continuous linear
+  map applied to the derivative of a `C^{n+1}` map with bounded derivatives through order `n + 1`
+  is a `C^n` map with bounded derivatives through order `n`.
 * `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
   point of an open set on which both factors are smooth.
+* `ContDiff.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul`: a function
+  `h^n • Q (p, h)` with `Q` of class `C^k` has derivatives in `p` through order `k` bounded by
+  `C |h|^n`, uniformly for `p` in a compact set and `h` in a bounded interval.
 * `ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_left`,
   `ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_right`: the Leibniz rule in scaled units. If
   one factor of `g • f` has `hⁱ ‖Dⁱ ·‖ ≤ B` for `i ≤ k`, then
   `hⁿ ‖Dⁿ (g • f)‖ ≤ 2ᵏ B ∑_{j ≤ k} hʲ ‖Dʲ ·‖` of the other factor, for `n ≤ k`;
   `TauCeti.nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le` records that such a bound has `0 ≤ B`.
+* `ContDiff.pow_mul_norm_iteratedFDeriv_clm_apply_le_of_le_left`: the same for
+  `y ↦ A y (f y)` with an operator-valued factor `A` obeying the bounds.
 -/
 
 public section
@@ -141,6 +156,23 @@ theorem IsCompact.exists_norm_fderiv_le {f : E → F} {K : Set E} {n : WithTop �
     ((hf x hx).fderiv_right (m := 0) (by simpa using hn)).continuousAt.continuousWithinAt
   exact ⟨M.toNNReal, fun x hx ↦ (hM x hx).trans (Real.le_coe_toNNReal M)⟩
 
+/-- For a finite family of functions `β e`, `C¹` at the points of a compact set `K`, and a function
+`g` with `D g = -∑_e D β_e` on `K` (such as the cutoff `1 - ∑_e β_e` complementary to a partition
+by cutoffs `β e`), one constant `M` bounds `‖D β_e‖` for every `e` and `‖D g‖` on `K`. -/
+theorem IsCompact.exists_forall_norm_fderiv_le {ι : Type*} [Fintype ι] {K : Set E}
+    (hK : IsCompact K) {β : ι → E → F} (hβ : ∀ e, ∀ z ∈ K, ContDiffAt 𝕜 1 (β e) z) {g : E → F}
+    (hg : ∀ z ∈ K, fderiv 𝕜 g z = -∑ e, fderiv 𝕜 (β e) z) :
+    ∃ M, (∀ e, ∀ z ∈ K, ‖fderiv 𝕜 (β e) z‖ ≤ M) ∧ ∀ z ∈ K, ‖fderiv 𝕜 g z‖ ≤ M := by
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ ∑ e, ‖fderiv 𝕜 (β e) z‖) <|
+    continuousOn_finsetSum _ fun e _ z hz ↦
+      ((hβ e z hz).continuousAt_fderiv one_ne_zero).norm.continuousWithinAt
+  have hMs (z : E) (hz : z ∈ K) : ∑ e, ‖fderiv 𝕜 (β e) z‖ ≤ M :=
+    (Real.le_norm_self _).trans (hM z hz)
+  refine ⟨M, fun e z hz ↦ (Finset.single_le_sum (fun e' _ ↦ norm_nonneg (fderiv 𝕜 (β e') z))
+    (Finset.mem_univ e)).trans (hMs z hz), fun z hz ↦ ?_⟩
+  rw [hg z hz, norm_neg]
+  exact (norm_sum_le _ _).trans (hMs z hz)
+
 /-- On a compact subset `K` of an open set `s`, the derivatives of order at most `n` of a map that
 is `C^n` on `s` are bounded by a single nonnegative constant. -/
 theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen {u : E → F} {s K : Set E} {n : ℕ}
@@ -150,6 +182,17 @@ theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen {u : E → F} {s
   refine ⟨max A 0, le_max_right _ _, fun i hi z hz ↦ ?_⟩
   rw [← iteratedFDerivWithin_of_isOpen i hs (hKs hz)]
   exact (hA i hi z hz).trans (le_max_left _ _)
+
+/-- On a compact set `K`, the iterated derivatives of order at most `n` of a `C^n` function of one
+variable are bounded by a single constant. -/
+theorem ContDiff.exists_norm_iteratedDeriv_le_of_isCompact {f : 𝕜 → F} {K : Set 𝕜} {n : ℕ}
+    (hf : ContDiff 𝕜 n f) (hK : IsCompact K) :
+    ∃ M : ℝ≥0, ∀ i ≤ n, ∀ x ∈ K, ‖iteratedDeriv i f x‖ ≤ M := by
+  obtain ⟨A, -, hA⟩ :=
+    hf.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ hK (subset_univ K)
+  refine ⟨A.toNNReal, fun i hi x hx ↦ ?_⟩
+  rw [← norm_iteratedFDeriv_eq_norm_iteratedDeriv]
+  exact (hA i hi x hx).trans (Real.le_coe_toNNReal A)
 
 /-- The derivatives of order at most `n` of a compactly supported `C^n` map are bounded by a
 single constant. Mathlib's `HasCompactSupport.exists_bound_iteratedFDeriv` assumes the map
@@ -436,6 +479,20 @@ theorem ContDiff.norm_iteratedFDeriv_pow_le_two_pow {A : Type*} [NormedRing A]
     rw [pow_succ, pow_succ]
     exact (hfj.norm_iteratedFDeriv_mul_le_two_pow hf ih hfC p hp).trans_eq (by ring)
 
+/-- **Leibniz bound for `f ^ 2 - f` at a point.** If the derivatives of order at most `N` of `f`
+at `x` are bounded by `C`, those of `y ↦ f y ^ 2 - f y` at `x` of order at most `N` are bounded by
+`2 ^ N * (C * C) + C`. -/
+theorem ContDiff.norm_iteratedFDeriv_sq_sub_self_le_two_pow {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] {N : ℕ} {f : E → A} (hf : ContDiff 𝕜 N f) {x : E} {C : ℝ}
+    (hfC : ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p f x‖ ≤ C) :
+    ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p (fun y ↦ f y ^ 2 - f y) x‖ ≤ 2 ^ N * (C * C) + C := by
+  intro p hp
+  have hp' : (p : WithTop ℕ∞) ≤ N := by exact_mod_cast hp
+  simp_rw [sq]
+  rw [fun_iteratedFDeriv_sub_apply ((hf.mul hf).of_le hp').contDiffAt (hf.of_le hp').contDiffAt]
+  exact (norm_sub_le _ _).trans
+    (add_le_add (hf.norm_iteratedFDeriv_mul_le_two_pow hf hfC hfC p hp) (hfC p hp))
+
 /-- Rescaling the variable by `c` with `1 ≤ ‖c‖` multiplies uniform bounds for the derivatives
 of order at most `N` by at most `‖c‖ ^ N`. -/
 theorem ContDiff.norm_iteratedFDeriv_comp_const_smul_le {N : ℕ} {f : E → F}
@@ -523,6 +580,17 @@ theorem ContinuousLinearMap.exists_bound_iteratedFDeriv_comp_left
   exact ⟨‖L‖ * C, fun x ↦
     ((L.restrictScalars 𝕜).norm_iteratedFDeriv_comp_left hf.contDiffAt (mod_cast hn)).trans
       (mul_le_mul_of_nonneg_left (hC x) (norm_nonneg _))⟩
+
+/-- A continuous linear map `L` applied to the derivative of a `C^{n+1}` map with bounded
+derivatives through order `n + 1` gives a `C^n` map with bounded derivatives through order `n`. -/
+theorem ContDiff.continuousLinearMap_comp_fderiv_and_exists_bound_iteratedFDeriv {n : ℕ}
+    {f : E → F} (hf : ContDiff 𝕜 (n + 1 : ℕ) f)
+    (hbdd : ∀ i ≤ n + 1, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C) (L : (E →L[𝕜] F) →L[𝕜] G) :
+    ContDiff 𝕜 n (L ∘ fderiv 𝕜 f) ∧
+      ∀ i ≤ n, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i (L ∘ fderiv 𝕜 f) x‖ ≤ C := by
+  have hd : ContDiff 𝕜 n (fderiv 𝕜 f) := hf.fderiv_right (by push_cast; exact le_rfl)
+  exact ⟨L.contDiff.comp hd, L.exists_bound_iteratedFDeriv_comp_left hd fun i hi ↦
+    (hbdd (i + 1) (by omega)).imp fun C hC x ↦ by rw [norm_iteratedFDeriv_fderiv]; exact hC x⟩
 
 namespace TauCeti
 
@@ -647,6 +715,30 @@ theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen {P : Typ
   exact ⟨hfpx.comp x (contDiffAt_const.prodMk contDiffAt_id), fun i hi ↦
     (hfpx.norm_iteratedFDeriv_prod_right_le i (mod_cast hi)).trans (hA i hi _ hpx)⟩
 
+/-- **Uniform estimates from a residual identity.** If `f (p, h) = h^n • Q (p, h)` for a `C^k`
+function `Q`, then on every compact set `K` of parameters and for `|h| ≤ h₀`, the derivatives in
+`p` through order `k` of `f (·, h)` are at most `C |h|^n`, with `C` depending only on the order,
+`K` and `h₀`. -/
+theorem ContDiff.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul {P G : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup G] [NormedSpace ℝ G] {k : ℕ∞}
+    {n : ℕ} {f Q : P × ℝ → G} (hQ : ContDiff ℝ k Q) (hfQ : ∀ p h, f (p, h) = h ^ n • Q (p, h))
+    {j : ℕ} (hj : (j : ℕ∞) ≤ k) {K : Set P} (hK : IsCompact K) (h₀ : ℝ) :
+    ∃ C, ∀ p ∈ K, ∀ h : ℝ, |h| ≤ h₀ →
+      ‖iteratedFDeriv ℝ j (fun q ↦ f (q, h)) p‖ ≤ C * |h| ^ n := by
+  have hj' : (j : WithTop ℕ∞) ≤ k := by exact_mod_cast hj
+  -- The full `j`-th derivative of the quotient is bounded on the compact set `K × [-h₀, h₀]`.
+  obtain ⟨C, hC⟩ := (hK.prod isCompact_Icc).exists_bound_of_continuousOn
+    (hQ.continuous_iteratedFDeriv hj').continuousOn (f := fun q ↦ iteratedFDeriv ℝ j Q q)
+      (s := K ×ˢ Set.Icc (-h₀) h₀)
+  refine ⟨C, fun p hp h hh ↦ ?_⟩
+  have hQh : ContDiffAt ℝ j (fun q ↦ Q (q, h)) p :=
+    ((hQ.of_le hj').comp (by fun_prop : ContDiff ℝ j fun q : P ↦ (q, h))).contDiffAt
+  simp_rw [hfQ, iteratedFDeriv_const_smul_apply' hQh, norm_smul, norm_pow, Real.norm_eq_abs]
+  rw [mul_comm]
+  gcongr
+  exact (((hQ.of_le hj').contDiffAt).norm_iteratedFDeriv_prod_left_le j le_rfl).trans
+    (hC (p, h) ⟨hp, abs_le.1 hh⟩)
+
 /-! ### The Leibniz rule in scaled units -/
 
 section ScaledLeibniz
@@ -661,14 +753,10 @@ theorem ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_sum (hg : ContDiff 𝕜 k g
     (hf : ContDiff 𝕜 k f) (hh : 0 ≤ h) {n : ℕ} (hn : n ≤ k) (x : E) :
     h ^ n * ‖iteratedFDeriv 𝕜 n (fun y ↦ g y • f y) x‖ ≤
       ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * (h ^ i * ‖iteratedFDeriv 𝕜 i g x‖) *
-        (h ^ (n - i) * ‖iteratedFDeriv 𝕜 (n - i) f x‖) := by
-  refine (mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_smul_le hg hf x (by exact_mod_cast hn))
-    (pow_nonneg hh n)).trans_eq ?_
-  rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [← Nat.add_sub_cancel' (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)), pow_add,
-    Nat.add_sub_cancel_left]
-  ring
+        (h ^ (n - i) * ‖iteratedFDeriv 𝕜 (n - i) f x‖) :=
+  (mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_smul_le hg hf x (by exact_mod_cast hn))
+    (pow_nonneg hh n)).trans_eq (Nat.pow_mul_sum_range_choose_mul_mul h n
+      (fun i ↦ ‖iteratedFDeriv 𝕜 i g x‖) fun j ↦ ‖iteratedFDeriv 𝕜 j f x‖)
 
 /-- **The Leibniz rule in scaled units, with a bounded scalar factor.** If
 `hⁱ ‖Dⁱ g‖ ≤ B` everywhere for `i ≤ k`, then for `n ≤ k`, at every point,
@@ -677,25 +765,26 @@ theorem ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_left (hg : ContDiff �
     (hf : ContDiff 𝕜 k f) (hh : 0 ≤ h) (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv 𝕜 i g x‖ ≤ B)
     {n : ℕ} (hn : n ≤ k) (x : E) :
     h ^ n * ‖iteratedFDeriv 𝕜 n (fun y ↦ g y • f y) x‖ ≤
-      2 ^ k * B * ∑ j ∈ Finset.range (k + 1), h ^ j * ‖iteratedFDeriv 𝕜 j f x‖ := by
-  have hB0 : 0 ≤ B := TauCeti.nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB x
-  refine (hg.pow_mul_norm_iteratedFDeriv_smul_le_sum hf hh hn x).trans ?_
-  calc ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * (h ^ i * ‖iteratedFDeriv 𝕜 i g x‖) *
-        (h ^ (n - i) * ‖iteratedFDeriv 𝕜 (n - i) f x‖)
-      ≤ ∑ i ∈ Finset.range (n + 1),
-          2 ^ k * B * (h ^ (n - i) * ‖iteratedFDeriv 𝕜 (n - i) f x‖) := by
-        refine Finset.sum_le_sum fun i hi ↦ mul_le_mul_of_nonneg_right ?_ (by positivity)
-        exact mul_le_mul
-          (by exact_mod_cast (Nat.choose_le_two_pow n i).trans (Nat.pow_le_pow_right two_pos hn))
-          (hB i ((Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)).trans hn) x) (by positivity)
-          (by positivity)
-    _ = 2 ^ k * B * ∑ j ∈ Finset.range (n + 1), h ^ j * ‖iteratedFDeriv 𝕜 j f x‖ := by
-        -- Reflect the index, `i ↦ n - i`; here `n + 1 - 1 - i` reduces to `n - i`.
-        rw [Finset.mul_sum]
-        exact Finset.sum_range_reflect (fun j ↦ 2 ^ k * B * (h ^ j * ‖iteratedFDeriv 𝕜 j f x‖))
-          (n + 1)
-    _ ≤ _ := mul_le_mul_of_nonneg_left (Finset.sum_le_sum_of_subset_of_nonneg
-        (Finset.range_subset_range.2 (by omega)) fun j _ _ ↦ by positivity) (by positivity)
+      2 ^ k * B * ∑ j ∈ Finset.range (k + 1), h ^ j * ‖iteratedFDeriv 𝕜 j f x‖ :=
+  (hg.pow_mul_norm_iteratedFDeriv_smul_le_sum hf hh hn x).trans
+    (Nat.sum_range_choose_mul_mul_le_two_pow_mul_sum (a := fun i ↦ h ^ i * ‖iteratedFDeriv 𝕜 i g x‖)
+      (b := fun j ↦ h ^ j * ‖iteratedFDeriv 𝕜 j f x‖) hn (fun _ _ ↦ by positivity)
+      (fun i hi ↦ hB i hi x) fun _ _ ↦ by positivity)
+
+/-- **The Leibniz rule in scaled units, with a bounded operator-valued factor.** If
+`A : E → F →L[𝕜] G` satisfies `hⁱ ‖Dⁱ A‖ ≤ B` everywhere for `i ≤ k`, then for `n ≤ k`, at every
+point, `hⁿ ‖Dⁿ (A f)‖ ≤ 2ᵏ B ∑_{j ≤ k} hʲ ‖Dʲ f‖`, where `A f` is `y ↦ A y (f y)`. -/
+theorem ContDiff.pow_mul_norm_iteratedFDeriv_clm_apply_le_of_le_left {A : E → F →L[𝕜] G}
+    (hA : ContDiff 𝕜 k A) (hf : ContDiff 𝕜 k f) (hh : 0 ≤ h)
+    (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv 𝕜 i A x‖ ≤ B) {n : ℕ} (hn : n ≤ k) (x : E) :
+    h ^ n * ‖iteratedFDeriv 𝕜 n (fun y ↦ A y (f y)) x‖ ≤
+      2 ^ k * B * ∑ j ∈ Finset.range (k + 1), h ^ j * ‖iteratedFDeriv 𝕜 j f x‖ :=
+  ((mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_clm_apply hA hf x (by exact_mod_cast hn))
+    (pow_nonneg hh n)).trans_eq (Nat.pow_mul_sum_range_choose_mul_mul h n
+      (fun i ↦ ‖iteratedFDeriv 𝕜 i A x‖) fun j ↦ ‖iteratedFDeriv 𝕜 j f x‖)).trans
+    (Nat.sum_range_choose_mul_mul_le_two_pow_mul_sum (a := fun i ↦ h ^ i * ‖iteratedFDeriv 𝕜 i A x‖)
+      (b := fun j ↦ h ^ j * ‖iteratedFDeriv 𝕜 j f x‖) hn (fun _ _ ↦ by positivity)
+      (fun i hi ↦ hB i hi x) fun _ _ ↦ by positivity)
 
 /-- **The Leibniz rule in scaled units, with a bounded vector factor.** If
 `hⁱ ‖Dⁱ f‖ ≤ B` everywhere for `i ≤ k`, then for `n ≤ k`, at every point,

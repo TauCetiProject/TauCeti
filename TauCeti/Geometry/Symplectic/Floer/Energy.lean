@@ -97,6 +97,13 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   component. Its local form along a line near which the perturbation is cylindrical is
   `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`, the constant-form case of the
   manifold statement in `TauCeti.Geometry.Symplectic.Floer.Manifold`.
+* `SymplecticForm.hamiltonianCurvature_autonomous`,
+  `SymplecticForm.floerEnergyDensity_fun_const`,
+  `SymplecticForm.floerEnergyDensity_fun_const_add_hamiltonianCurvature`: for a perturbation
+  `F ds + G dt` that does not depend on the domain point (as opposed to the target-independent
+  case `SymplecticForm.hamiltonianCurvature_const`), the curvature is `-{F, G}`; a constant map
+  has energy density `{K_s, K_t}`, so at constant maps the energy identity holds with no
+  regularity assumption.
 * `SymplecticForm.perturbedFDeriv_add_const`, `SymplecticForm.floerEnergyDensity_add_const`,
   `SymplecticForm.hamiltonianCurvature_add_const`: adding a target-independent one-form
   `k = k_s ds + k_t dt` to `K` changes neither the perturbed derivative nor the energy density,
@@ -287,6 +294,14 @@ theorem hamiltonianCurvature_add_of_eq_zero_on (ω : SymplecticForm V)
       (hs.mono fun w hw ↦ by simp [hw]) (ht.mono fun w hw ↦ by simp [hw]),
       ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero hs ht x, add_zero]
 
+/-- A perturbation `K = F ds + G dt` that does not depend on the domain point has curvature
+`R_K = -{F, G}`: only the Poisson bracket term remains. -/
+@[simp]
+theorem hamiltonianCurvature_autonomous (ω : SymplecticForm V) (F G : V → ℝ)
+    (z : ℝ × ℝ) (x : V) :
+    ω.hamiltonianCurvature (fun _ ↦ F) (fun _ ↦ G) z x = -ω.poissonBracket F G x := by
+  simp [hamiltonianCurvature_def]
+
 /-- Curvature commutes with translations of the domain. -/
 theorem hamiltonianCurvature_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
     (v z : ℝ × ℝ) (x : V) :
@@ -368,6 +383,13 @@ theorem perturbedFDeriv_eq_sub (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V
     (z : ℝ × ℝ) :
     ω.perturbedFDeriv Ks Kt u z = fderiv ℝ u z - ω.hamiltonianOneForm Ks Kt z (u z) := by
   ext <;> simp [perturbedFDeriv_apply]
+
+/-- The perturbed derivative of a constant map is `-X_K` at its value. -/
+@[simp]
+theorem perturbedFDeriv_fun_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (x : V)
+    (z : ℝ × ℝ) :
+    ω.perturbedFDeriv Ks Kt (fun _ ↦ x) z = -ω.hamiltonianOneForm Ks Kt z x := by
+  simp [perturbedFDeriv_eq_sub]
 
 /-- The `∂_s` component of the perturbed derivative is `∂_s u - X_{K_s}(u)`. -/
 @[simp]
@@ -452,6 +474,27 @@ theorem floerEnergyDensity_zero (ω : SymplecticForm V) (u : ℝ × ℝ → V) (
       ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag]
+
+/-- The Floer energy density of a constant map is the Poisson bracket `{K_s, K_t}` at its value:
+`ω(-X_{K_s}, -X_{K_t}) = ω(X_{K_s}, X_{K_t})`. -/
+@[simp]
+theorem floerEnergyDensity_fun_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (x : V)
+    (z : ℝ × ℝ) :
+    ω.floerEnergyDensity Ks Kt (fun _ ↦ x) z = ω.poissonBracket (Ks z) (Kt z) x := by
+  simp [floerEnergyDensity_def, poissonBracket_def]
+
+/-- **The energy identity at a constant map.** The Floer energy density of a constant map plus the
+curvature is the exterior derivative `∂_s K_t - ∂_t K_s` of the perturbation at its value, with no
+regularity assumption. This is the constant-map case of the pointwise energy identity
+`floerEnergyDensity_eq`, where `∂_s u = ∂_t u = 0`, holding without its differentiability
+hypotheses. -/
+theorem floerEnergyDensity_fun_const_add_hamiltonianCurvature (ω : SymplecticForm V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (x : V) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity Ks Kt (fun _ ↦ x) z + ω.hamiltonianCurvature Ks Kt z x =
+      fderiv ℝ (fun w ↦ Kt w x) z stdComplexLineReal -
+        fderiv ℝ (fun w ↦ Ks w x) z stdComplexLineImag := by
+  rw [floerEnergyDensity_fun_const, hamiltonianCurvature_def]
+  ring
 
 /-- The Floer energy density commutes with translations of the domain. -/
 theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)

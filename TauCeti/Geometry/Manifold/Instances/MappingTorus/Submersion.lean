@@ -85,16 +85,8 @@ of rank one, with global frame `T`. Together with
 tangent bundle of the mapping torus as `T Y_φ = ℝ T ⊕ V` into smooth subbundles. -/
 theorem isContMDiffDistribution_span_timeVectorField :
     IsContMDiffDistribution (𝓘(ℝ).prod I) ∞ 1
-      (fun y : SmoothMappingTorus ψ ↦ ℝ ∙ timeVectorField ψ y) := by
-  refine isContMDiffDistribution_iff.2 fun _ ↦ ⟨univ, isOpen_univ, mem_univ _,
-    fun _ ↦ timeVectorField ψ,
-    ⟨fun _ ↦ (contMDiff_timeVectorField ψ).contMDiffOn, fun {y} _ ↦ ?_, fun {y} _ ↦ ?_⟩⟩
-  · -- `T` does not vanish, since `dp(T) = 1`.
-    refine linearIndependent_unique_iff.2 fun hT ↦ one_ne_zero (α := ℝ) ?_
-    rw [← mfderiv_proj_timeVectorField ψ y, hT, map_zero]
-    -- The zero of the tangent line `TangentSpace 𝓘(ℝ) _` is the real number `0`.
-    rfl
-  · rw [range_const]
+      (fun y : SmoothMappingTorus ψ ↦ ℝ ∙ timeVectorField ψ y) :=
+  isContMDiffDistribution_span_singleton (contMDiff_timeVectorField ψ) (timeVectorField_ne_zero ψ)
 
 end Vertical
 

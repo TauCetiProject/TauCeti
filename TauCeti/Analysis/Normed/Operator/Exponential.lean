@@ -30,8 +30,12 @@ space. The norm bounds for exponentials in a general normed algebra live in
 
 ## Main results
 
+* `ContinuousLinearMap.restrictScalars_exp`: scalar restriction commutes with the exponential.
+
 * `ContinuousLinearMap.exp_add_smul`, `ContinuousLinearMap.exp_add_smul_apply`: exponentials of
   scalar multiples of a bounded operator compose additively.
+* `ContinuousLinearMap.hasDerivAt_exp_smul_apply`, `ContinuousLinearMap.apply_exp_smul_apply`: the
+  orbit `t ↦ exp (t • A) z` has derivative `exp (t • A) (A z)`, and `A` commutes with `exp (t • A)`.
 * `ContinuousLinearMap.expEquiv`: the exponential of a bounded operator as a continuous linear
   automorphism with inverse `exp (-B)`, with `ContinuousLinearMap.coe_expEquiv` and
   `ContinuousLinearMap.coe_expEquiv_symm` identifying it and its inverse with `exp B` and
@@ -64,6 +68,29 @@ section Operator
 variable {𝕜 : Type*} [RCLike 𝕜] {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
   [CompleteSpace X]
 
+/-- Restricting a bounded operator to real scalars commutes with the exponential. -/
+theorem restrictScalars_exp [NormedSpace ℝ X] [IsScalarTower ℝ 𝕜 X] (A : X →L[𝕜] X) :
+    (exp A).restrictScalars ℝ = exp (A.restrictScalars ℝ) := by
+  let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
+  let +nondep : NormedAlgebra ℚ (X →L[ℝ] X) := .restrictScalars ℚ ℝ _
+  let φ : (X →L[𝕜] X) →+* (X →L[ℝ] X) :=
+    { toFun := restrictScalars ℝ
+      map_one' := by
+        ext x
+        simp only [coe_restrictScalars', one_apply_eq_self]
+      map_mul' := by
+        intro B C
+        ext x
+        simp only [coe_restrictScalars', mul_apply_eq_comp]
+      map_zero' := restrictScalars_zero
+      map_add' := restrictScalars_add }
+  have hφ : Continuous φ := by
+    -- The local rational normed algebras carry the operator norm topologies. Expose the
+    -- underlying restriction map in those topologies to apply the restriction isometry.
+    change Continuous (fun B : X →L[𝕜] X => B.restrictScalars ℝ)
+    exact (restrictScalarsIsometry 𝕜 X X ℝ ℝ).continuous
+  exact NormedSpace.map_exp φ hφ A
+
 /-- Exponentials of scalar multiples of the same bounded operator split over addition. -/
 theorem exp_add_smul (A : X →L[𝕜] X) (s t : 𝕜) :
     exp ((s + t) • A) = (exp (s • A)).comp (exp (t • A)) := by
@@ -74,6 +101,19 @@ theorem exp_add_smul (A : X →L[𝕜] X) (s t : 𝕜) :
 theorem exp_add_smul_apply (A : X →L[𝕜] X) (s t : 𝕜) (x : X) :
     exp ((s + t) • A) x = exp (s • A) (exp (t • A) x) := by
   rw [ContinuousLinearMap.exp_add_smul, ContinuousLinearMap.comp_apply]
+
+/-- The orbit `t ↦ exp (t • A) z` of a bounded operator has derivative `exp (t • A) (A z)`. -/
+theorem hasDerivAt_exp_smul_apply (A : X →L[𝕜] X) (t : 𝕜) (z : X) :
+    HasDerivAt (fun s : 𝕜 ↦ exp (s • A) z) (exp (t • A) (A z)) t := by
+  simpa [mul_apply_eq_comp] using
+    (hasDerivAt_exp_smul_const A t).clm_apply (hasDerivAt_const t z)
+
+omit [CompleteSpace X] in
+/-- A bounded operator commutes with the exponentials of its scalar multiples:
+`A (exp (t • A) z) = exp (t • A) (A z)`. -/
+theorem apply_exp_smul_apply (A : X →L[𝕜] X) (t : 𝕜) (z : X) :
+    A (exp (t • A) z) = exp (t • A) (A z) := by
+  simpa [mul_apply_eq_comp] using congr($(((Commute.refl A).smul_right t).exp_right) z)
 
 /-- The exponential `exp B` of a continuous endomorphism of a Banach space, as a continuous linear
 automorphism with inverse `exp (-B)`. -/
