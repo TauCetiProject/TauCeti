@@ -43,9 +43,15 @@ sphere, read on the sphere itself rather than on the ambient Euclidean space
 ## Main definitions
 
 * `TauCeti.TopCat.sphereRelCWComplex`: the CW structure of the sphere on the sphere itself, with
-  its skeleta `TauCeti.TopCat.skeletonLT_sphereRelCWComplex`,
-  `TauCeti.TopCat.skeletonLT_succ_sphereRelCWComplex` and its single top cell
-  `TauCeti.TopCat.uniqueCellSphereRelCWComplex`.
+  its skeleta `TauCeti.TopCat.skeletonLT_zero_sphereRelCWComplex`,
+  `TauCeti.TopCat.skeletonLT_sphereRelCWComplex`,
+  `TauCeti.TopCat.skeletonLT_succ_sphereRelCWComplex`,
+  `TauCeti.TopCat.skeletonLT_sphereRelCWComplex_of_lt` and its single top cell
+  `TauCeti.TopCat.uniqueCellSphereRelCWComplex`; the stages of the skeletal filtration of a map to
+  the sphere are empty, the fibre over the pole, or everything
+  (`TauCeti.TopCat.preimageSkeleton_sphereRelCWComplex_of_neg`,
+  `TauCeti.TopCat.preimageSkeleton_sphereRelCWComplex_of_lt`,
+  `TauCeti.TopCat.preimageSkeleton_sphereRelCWComplex_of_le`).
 * `TauCeti.TopCat.spherePreimageSkeletonPairIso`: the pair of the two stages of the skeletal
   filtration of `E` is the pair `(E, F)`.
 
@@ -163,7 +169,56 @@ private lemma map_sphereRelCWComplex_zero (hn : n ≠ 0)
     (map_sphereCWComplex_of_ne_zero h hn (sphereRelCWComplexCellEquiv h n i)))).trans
     (coe_sphereTopCellCenter h).symm
 
+/-- `skeletonLT 0` of the CW structure on the sphere itself, its base, is empty. -/
+lemma skeletonLT_zero_sphereRelCWComplex :
+    letI := sphereRelCWComplex h
+    (skeletonLT (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) 0 :
+      Set (sphere (0 : EuclideanSpace ℝ ι) 1)) = ∅ := by
+  let _ := sphereRelCWComplex h
+  let _ := sphereCWComplex h
+  rw [skeletonLT_zero_eq_base]
+  simp
+
+/-- For `k > n`, `skeletonLT k` of the CW structure on `Sⁿ` is the whole sphere. -/
+lemma skeletonLT_sphereRelCWComplex_of_lt {k : ℕ} (hk : n < k) :
+    letI := sphereRelCWComplex h
+    (skeletonLT (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) k :
+      Set (sphere (0 : EuclideanSpace ℝ ι) 1)) = univ := by
+  let _ := sphereRelCWComplex h
+  exact eq_univ_of_univ_subset ((skeletonLT_succ_sphereRelCWComplex h).symm.subset.trans
+    (skeletonLT_mono (by exact_mod_cast hk)))
+
 end Skeleton
+
+section Filtration
+
+variable {E : Type*} (f : E → sphere (0 : EuclideanSpace ℝ ι) 1)
+
+/-- The stages `E_b`, `0 ≤ b < n`, of the skeletal filtration of a map to `Sⁿ` are the fibre over
+the pole. -/
+lemma preimageSkeleton_sphereRelCWComplex_of_lt {b : ℤ} (hb : 0 ≤ b) (hbn : b < n) :
+    letI := sphereRelCWComplex h
+    preimageSkeleton (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) f b =
+      f ⁻¹' {spherePolePoint h} := by
+  let _ := sphereRelCWComplex h
+  rw [preimageSkeleton_def, skeletonLT_sphereRelCWComplex h (by lia) (by lia)]
+
+/-- The stages `E_b`, `b ≥ n`, of the skeletal filtration of a map to `Sⁿ` are the whole space. -/
+lemma preimageSkeleton_sphereRelCWComplex_of_le {b : ℤ} (hb : n ≤ b) :
+    letI := sphereRelCWComplex h
+    preimageSkeleton (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) f b = univ := by
+  let _ := sphereRelCWComplex h
+  rw [preimageSkeleton_def, skeletonLT_sphereRelCWComplex_of_lt h (by lia), preimage_univ]
+
+/-- The stages `E_b`, `b < 0`, of the skeletal filtration of a map to `Sⁿ` are empty. -/
+lemma preimageSkeleton_sphereRelCWComplex_of_neg {b : ℤ} (hb : b < 0) :
+    letI := sphereRelCWComplex h
+    preimageSkeleton (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) f b = ∅ := by
+  let _ := sphereRelCWComplex h
+  rw [preimageSkeleton_def, show (b + 1).toNat = 0 by lia, Nat.cast_zero,
+    skeletonLT_zero_sphereRelCWComplex h, preimage_empty]
+
+end Filtration
 
 section Fibre
 
