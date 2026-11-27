@@ -82,9 +82,10 @@ The area formula is proved in polar coordinates about `1/2`: by Fubini's theorem
 outermost (`Complex.integral_comp_polarCoord_symm`), the integral over `S₀` is an iterated
 integral over the angle and over the segment of radii of `S₀` on each ray, and rescaling the radius
 and the angle of each half to `[0, 1]` turns it into the integral over the core chart
-(`TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg`). The module-valued
-basis-determinant identity `AlternatingMap.eq_basis_det_smulRight`, at the standard basis of
-`ℝ × ℝ`, reads the pulled-back form along the chart as its Jacobian times the area density of `u`.
+(`TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg`). The pulled-back
+form along the chart is read as its Jacobian determinant times the area density of `u` through
+`TauCeti.mpullback_comp_apply_eq_det_smul`, with the determinant computed by
+`LinearMap.det_finTwoProd`.
 
 ## References
 
@@ -164,7 +165,9 @@ theorem norm_circleMap_half_pairOfPantsOuterRadius (θ : ℝ) :
   rw [add_assoc, mul_comm, add_comm (Real.cos θ * _), pairOfPantsOuterRadius_sq_add] at h
   nlinarith [norm_nonneg (circleMap (1 / 2 : ℂ) (pairOfPantsOuterRadius θ) θ)]
 
-private theorem mem_truncation_zero_iff {w : ℂ} :
+/-- **Membership in the truncation `S₀`.** A point lies in `S₀` exactly when it is at distance at
+least `1/2` from both inputs `0` and `1` and at distance at most `2` from `0`. -/
+theorem mem_truncation_zero_iff {w : ℂ} :
     w ∈ truncation 0 ↔ 1 / 2 ≤ ‖w‖ ∧ 1 / 2 ≤ ‖w - 1‖ ∧ ‖w‖ ≤ 2 := by
   rw [truncation_eq]
   simp [and_assoc]

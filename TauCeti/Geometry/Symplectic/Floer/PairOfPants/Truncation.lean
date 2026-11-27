@@ -752,27 +752,20 @@ private theorem setIntegral_truncation_eq_add {g : ℂ → F} {R : ℝ} (hR : 0 
       (hint.mono_set (subset_union_right.trans (subset_union_left.trans subset_union_left)))]
   · abel
   · refine measure_mono_null (fun w ⟨hw₁, hw₂, _⟩ ↦ ?_) (Measure.addHaar_sphere volume (0 : ℂ) 2)
-    rw [truncation_eq] at hw₁
-    simp only [mem_inter_iff, mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right, mul_zero,
-      Real.exp_zero, mul_one] at hw₁
     simp only [mem_sphere_zero_iff_norm]
-    linarith [hw₁.2]
+    linarith [(mem_truncation_zero_iff.1 hw₁).2.2]
   · refine measure_mono_null (fun w ⟨hw₁, _, hw₂⟩ ↦ ?_)
       (Measure.addHaar_sphere volume (0 : ℂ) (1 / 2))
     simp only [mem_sphere_zero_iff_norm]
     rcases hw₁ with hw₁ | hw₁
-    · rw [truncation_eq] at hw₁
-      simp only [mem_inter_iff, mem_ofPred_eq, mul_zero, neg_zero, Real.exp_zero] at hw₁
-      linarith [hw₁.1.1]
+    · linarith [(mem_truncation_zero_iff.1 hw₁).1]
     · linarith [hw₁.1]
   · refine measure_mono_null (fun w ⟨hw₁, _, hw₂⟩ ↦ ?_)
       (Measure.addHaar_sphere volume (1 : ℂ) (1 / 2))
     rw [mem_sphere_iff_norm]
     obtain ⟨h₁, h₂⟩ := le_norm_sub_one w
     rcases hw₁ with (hw₁ | hw₁) | hw₁
-    · rw [truncation_eq] at hw₁
-      simp only [mem_inter_iff, mem_ofPred_eq, mul_zero, neg_zero, Real.exp_zero] at hw₁
-      linarith [hw₁.1.2]
+    · linarith [(mem_truncation_zero_iff.1 hw₁).2.1]
     · linarith [hw₁.1]
     · linarith [hw₁.2]
 
