@@ -6,21 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
+public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequence
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # The homology sequence of a restricted short exact sequence
 
 Let `e : c.Embedding c'` be an embedding of complex shapes and `S` a short exact sequence of
-complexes of shape `c'`. Restricting `S` along `e` gives a short exact sequence of complexes of
-shape `c` (`CategoryTheory.ShortComplex.ShortExact.restriction`), since in each degree it is the
-short complex of `S` in the corresponding degree. Mathlib identifies the homology of a restricted
-complex in degree `j` with the homology of the original complex in degree `e.f j`
-(`HomologicalComplex.restrictionHomologyIso`). For complexes of modules, this file shows that the
-connecting maps of the two homology sequences correspond under these identifications
-(`CategoryTheory.ShortComplex.ShortExact.moduleCat_restrictionHomologyIso_inv_δ_hom`).
+complexes of shape `c'` in an abelian category. Restricting `S` along `e` gives a short exact
+sequence of complexes of shape `c` (`CategoryTheory.ShortComplex.ShortExact.restriction`), since in
+each degree it is the short complex of `S` in the corresponding degree. Mathlib identifies the
+homology of a restricted complex in degree `j` with the homology of the original complex in degree
+`e.f j` (`HomologicalComplex.restrictionHomologyIso`). This file shows that the connecting maps of
+the two homology sequences correspond under these identifications
+(`CategoryTheory.ShortComplex.ShortExact.restriction_δ_comp_restrictionHomologyIso_hom`).
 
 This is what allows a connecting map computed on a complex reindexed along an embedding, such as
 a chain complex regraded as a cochain complex along `n ↦ -n`, to be compared with the connecting
@@ -31,93 +30,146 @@ map of the original complex. It is the restriction counterpart of
 
 * `CategoryTheory.ShortComplex.ShortExact.restriction`: restricting a short exact sequence of
   complexes along an embedding of complex shapes gives a short exact sequence.
-* `CategoryTheory.ShortComplex.ShortExact.moduleCat_restrictionHomologyIso_inv_δ_hom`: for
-  complexes of modules, the connecting maps of a short exact sequence and of its restriction
-  correspond under `HomologicalComplex.restrictionHomologyIso`.
+* `CategoryTheory.ShortComplex.ShortExact.restriction_δ_comp_restrictionHomologyIso_hom`: the
+  connecting maps of a short exact sequence and of its restriction correspond under
+  `HomologicalComplex.restrictionHomologyIso`.
 -/
 
 public section
 
-open CategoryTheory Limits HomologicalComplex
+open CategoryTheory Category Limits HomologicalComplex
+
+namespace HomologicalComplex
+
+variable {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
+  {C : Type*} [Category* C] [Abelian C] {K L : HomologicalComplex C c'} (φ : K ⟶ L)
+  (e : c.Embedding c') [e.IsRelIff]
+
+/-- The identification of the cycles of a restricted complex is natural. -/
+@[reassoc]
+private lemma restrictionCyclesIso_hom_naturality (j k : ι) (hk : c.next j = k) {j' k' : ι'}
+    (hj' : e.f j = j') (hk' : e.f k = k') (hk'' : c'.next j' = k') :
+    cyclesMap (restrictionMap φ e) j ≫ (L.restrictionCyclesIso e j k hk hj' hk' hk'').hom =
+      (K.restrictionCyclesIso e j k hk hj' hk' hk'').hom ≫ cyclesMap φ j' := by
+  subst hj'
+  simp [← cancel_mono (L.iCycles _), restrictionXIso]
+
+/-- The identification of the opcycles of a restricted complex is natural. -/
+@[reassoc]
+private lemma restrictionOpcyclesIso_hom_naturality (i j : ι) (hi : c.prev j = i) {i' j' : ι'}
+    (hi' : e.f i = i') (hj' : e.f j = j') (hi'' : c'.prev j' = i') :
+    opcyclesMap (restrictionMap φ e) j ≫ (L.restrictionOpcyclesIso e i j hi hi' hj' hi'').hom =
+      (K.restrictionOpcyclesIso e i j hi hi' hj' hi'').hom ≫ opcyclesMap φ j' := by
+  subst hj'
+  simp [← cancel_epi ((K.restriction e).pOpcycles j), restrictionXIso]
+
+/-- The identification of the homology of a restricted complex is natural. -/
+@[reassoc]
+private lemma restrictionHomologyIso_hom_naturality (i j k : ι) (hi : c.prev j = i)
+    (hk : c.next j = k) {i' j' k' : ι'} (hi' : e.f i = i') (hj' : e.f j = j') (hk' : e.f k = k')
+    (hi'' : c'.prev j' = i') (hk'' : c'.next j' = k') :
+    homologyMap (restrictionMap φ e) j ≫
+        (L.restrictionHomologyIso e i j k hi hk hi' hj' hk' hi'' hk'').hom =
+      (K.restrictionHomologyIso e i j k hi hk hi' hj' hk' hi'' hk'').hom ≫ homologyMap φ j' := by
+  simp [← cancel_epi ((K.restriction e).homologyπ j),
+    restrictionCyclesIso_hom_naturality_assoc φ e j k hk hj' hk' hk'']
+
+/-- The identifications of the opcycles and cycles of a restricted complex are compatible with the
+maps `opcyclesToCycles`. -/
+@[reassoc]
+private lemma restrictionOpcyclesIso_hom_opcyclesToCycles (i₀ i j k : ι) (h₀ : c.prev i = i₀)
+    (hk : c.next j = k) {i₀' i' j' k' : ι'} (h₀' : e.f i₀ = i₀') (hi' : e.f i = i')
+    (hj' : e.f j = j') (hk' : e.f k = k') (h₀'' : c'.prev i' = i₀') (hk'' : c'.next j' = k') :
+    (K.restrictionOpcyclesIso e i₀ i h₀ h₀' hi' h₀'').hom ≫ K.opcyclesToCycles i' j' =
+      (K.restriction e).opcyclesToCycles i j ≫
+        (K.restrictionCyclesIso e j k hk hj' hk' hk'').hom := by
+  subst hi' hj'
+  simp [← cancel_epi ((K.restriction e).pOpcycles i), ← cancel_mono (K.iCycles _), restrictionXIso]
+
+end HomologicalComplex
 
 namespace CategoryTheory.ShortComplex.ShortExact
 
+open HomologySequence
+
 variable {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
+  {C : Type*} [Category* C] [Abelian C] {S : ShortComplex (HomologicalComplex C c')}
 
 /-- Restricting a short exact sequence of complexes along an embedding of complex shapes gives a
 short exact sequence: in each degree it is the short complex of the original sequence in the
 corresponding degree. -/
-lemma restriction {C : Type*} [Category* C] [Abelian C] {S : ShortComplex (HomologicalComplex C c')}
-    (hS : S.ShortExact) (e : c.Embedding c') [e.IsRelIff] :
+lemma restriction (hS : S.ShortExact) (e : c.Embedding c') [e.IsRelIff] :
     (S.map (e.restrictionFunctor C)).ShortExact :=
   shortExact_of_degreewise_shortExact _ fun i ↦
     (shortExact_iff_degreewise_shortExact S).1 hS (e.f i)
 
-variable {R : Type*} [Ring R] {S : ShortComplex (HomologicalComplex (ModuleCat R) c')}
-  (hS : S.ShortExact) (e : c.Embedding c') [e.IsRelIff]
 
-/-- **The connecting maps of a restricted short exact sequence of complexes of modules.** Under
-the identifications `HomologicalComplex.restrictionHomologyIso` of the homology of the restricted
-complexes with the homology of the original ones, the connecting map of the restriction of `S`
-along `e` in degrees `i ⟶ j` is the connecting map of `S` in degrees `e.f i ⟶ e.f j`. The
-neighbouring indices of `i` and `j` used by the identifications are given by equations, for
-flexibility. -/
-theorem moduleCat_restrictionHomologyIso_inv_δ_hom (i₀ i j₃ i₁ j k : ι) (hij : c.Rel i j)
+variable (hS : S.ShortExact) (e : c.Embedding c') [e.IsRelIff]
+
+/-- The morphism from the snake-lemma input of the restriction of `S` to that of `S`, given by the
+identifications of the homology, opcycles and cycles of a restricted complex. -/
+private noncomputable def restrictionSnakeInputHom (i₀ i j k : ι) (hij : c.Rel i j)
+    (h₀ : c.prev i = i₀) (hk : c.next j = k) {i₀' i' j' k' : ι'} (h₀' : e.f i₀ = i₀')
+    (hi' : e.f i = i') (hj' : e.f j = j') (hk' : e.f k = k') (h₀'' : c'.prev i' = i₀')
+    (hk'' : c'.next j' = k') :
+    snakeInput (hS.restriction e) i j hij ⟶
+      snakeInput hS i' j' (hi' ▸ hj' ▸ e.rel hij) where
+  f₀ :=
+    { τ₁ := (S.X₁.restrictionHomologyIso e i₀ i j h₀ (c.next_eq' hij) h₀' hi' hj' h₀''
+        (c'.next_eq' (hi' ▸ hj' ▸ e.rel hij))).hom
+      τ₂ := (S.X₂.restrictionHomologyIso e i₀ i j h₀ (c.next_eq' hij) h₀' hi' hj' h₀''
+        (c'.next_eq' (hi' ▸ hj' ▸ e.rel hij))).hom
+      τ₃ := (S.X₃.restrictionHomologyIso e i₀ i j h₀ (c.next_eq' hij) h₀' hi' hj' h₀''
+        (c'.next_eq' (hi' ▸ hj' ▸ e.rel hij))).hom
+      comm₁₂ := (restrictionHomologyIso_hom_naturality S.f e ..).symm
+      comm₂₃ := (restrictionHomologyIso_hom_naturality S.g e ..).symm }
+  f₁ :=
+    { τ₁ := (S.X₁.restrictionOpcyclesIso e i₀ i h₀ h₀' hi' h₀'').hom
+      τ₂ := (S.X₂.restrictionOpcyclesIso e i₀ i h₀ h₀' hi' h₀'').hom
+      τ₃ := (S.X₃.restrictionOpcyclesIso e i₀ i h₀ h₀' hi' h₀'').hom
+      comm₁₂ := (restrictionOpcyclesIso_hom_naturality S.f e ..).symm
+      comm₂₃ := (restrictionOpcyclesIso_hom_naturality S.g e ..).symm }
+  f₂ :=
+    { τ₁ := (S.X₁.restrictionCyclesIso e j k hk hj' hk' hk'').hom
+      τ₂ := (S.X₂.restrictionCyclesIso e j k hk hj' hk' hk'').hom
+      τ₃ := (S.X₃.restrictionCyclesIso e j k hk hj' hk' hk'').hom
+      comm₁₂ := (restrictionCyclesIso_hom_naturality S.f e ..).symm
+      comm₂₃ := (restrictionCyclesIso_hom_naturality S.g e ..).symm }
+  f₃ :=
+    { τ₁ := (S.X₁.restrictionHomologyIso e i j k (c.prev_eq' hij) hk hi' hj' hk'
+        (c'.prev_eq' (hi' ▸ hj' ▸ e.rel hij)) hk'').hom
+      τ₂ := (S.X₂.restrictionHomologyIso e i j k (c.prev_eq' hij) hk hi' hj' hk'
+        (c'.prev_eq' (hi' ▸ hj' ▸ e.rel hij)) hk'').hom
+      τ₃ := (S.X₃.restrictionHomologyIso e i j k (c.prev_eq' hij) hk hi' hj' hk'
+        (c'.prev_eq' (hi' ▸ hj' ▸ e.rel hij)) hk'').hom
+      comm₁₂ := (restrictionHomologyIso_hom_naturality S.f e ..).symm
+      comm₂₃ := (restrictionHomologyIso_hom_naturality S.g e ..).symm }
+  comm₀₁ := by ext <;> exact restrictionHomologyIso_hom_homologyι ..
+  comm₁₂ := by
+    ext <;>
+      exact restrictionOpcyclesIso_hom_opcyclesToCycles e i₀ i j k h₀ hk h₀' hi' hj' hk' h₀'' hk''
+  comm₂₃ := by ext <;> exact (homologyπ_restrictionHomologyIso_hom ..).symm
+
+/-- **The connecting maps of a restricted short exact sequence.** Under the identifications
+`HomologicalComplex.restrictionHomologyIso` of the homology of the restricted complexes with the
+homology of the original ones, the connecting map of the restriction of `S` along `e` in degrees
+`i ⟶ j` is the connecting map of `S` in degrees `e.f i ⟶ e.f j`. The neighbouring indices used by
+the identifications are given by equations, for flexibility: the successor `j₃` of `i` and the
+predecessor `i₁` of `j` need not be syntactically `j` and `i`. -/
+@[reassoc]
+lemma restriction_δ_comp_restrictionHomologyIso_hom (i₀ i j₃ i₁ j k : ι) (hij : c.Rel i j)
     (h₀ : c.prev i = i₀) (h₃ : c.next i = j₃) (h₁ : c.prev j = i₁) (hk : c.next j = k)
     {i₀' i' j₃' i₁' j' k' : ι'} (h₀' : e.f i₀ = i₀') (hi' : e.f i = i') (h₃' : e.f j₃ = j₃')
     (h₁' : e.f i₁ = i₁') (hj' : e.f j = j') (hk' : e.f k = k') (h₀'' : c'.prev i' = i₀')
-    (h₃'' : c'.next i' = j₃') (h₁'' : c'.prev j' = i₁') (hk'' : c'.next j' = k')
-    (hij' : c'.Rel i' j') :
-    (S.X₃.restrictionHomologyIso e i₀ i j₃ h₀ h₃ h₀' hi' h₃' h₀'' h₃'').inv ≫
-        (hS.restriction e).δ i j hij ≫
-          (S.X₁.restrictionHomologyIso e i₁ j k h₁ hk h₁' hj' hk' h₁'' hk'').hom =
-      hS.δ i' j' hij' := by
-  have hj₃ : j = j₃ := (c.next_eq' hij).symm.trans h₃
-  have hi₁ : i = i₁ := (c.prev_eq' hij).symm.trans h₁
-  subst hj₃ hi₁
-  subst h₀' hi' h₃' hj' h₁' hk'
-  ext x
-  -- Represent `x` by a cycle `z₃`, lift it to `x₂`, and read off the cycle `z₁` of `S.X₁` whose
-  -- class is the connecting map of `x`.
-  obtain ⟨z₁, hz₁⟩ := S.X₁.moduleCat_homologyπ_surjective _ ((hS.δ _ _ hij').hom x)
-  obtain ⟨x₂, z₃, hx₂, hgx₂, rfl⟩ :=
-    hS.moduleCat_exists_d_eq_of_δ_eq _ _ hij' x z₁ hz₁.symm
-  rw [← hz₁]
-  -- The cycles `z₃` and `z₁` seen as cycles of the restricted complexes keep their underlying
-  -- elements, and their classes correspond under `restrictionHomologyIso`.
-  have hc₃ (w : S.X₃.cycles (e.f i)) : ((S.X₃.restriction e).iCycles i).hom
-      ((S.X₃.restrictionCyclesIso e i j h₃ rfl rfl h₃'').inv.hom w) = (S.X₃.iCycles _).hom w := by
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-      S.X₃.restrictionCyclesIso_inv_iCycles e i j h₃ rfl rfl h₃'']
-    simp [restrictionXIso]
-  have hc₁ (w : S.X₁.cycles (e.f j)) : ((S.X₁.restriction e).iCycles j).hom
-      ((S.X₁.restrictionCyclesIso e j k hk rfl rfl hk'').inv.hom w) = (S.X₁.iCycles _).hom w := by
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-      S.X₁.restrictionCyclesIso_inv_iCycles e j k hk rfl rfl hk'']
-    simp [restrictionXIso]
-  have hπ₃ (w : S.X₃.cycles (e.f i)) :
-      (S.X₃.restrictionHomologyIso e i₀ i j h₀ h₃ rfl rfl rfl h₀'' h₃'').inv.hom
-          ((S.X₃.homologyπ _).hom w) =
-        ((S.X₃.restriction e).homologyπ i).hom
-          ((S.X₃.restrictionCyclesIso e i j h₃ rfl rfl h₃'').inv.hom w) :=
-    congrArg (fun φ ↦ φ.hom w) (S.X₃.homologyπ_restrictionHomologyIso_inv e i₀ i j h₀ h₃ rfl rfl
-      rfl h₀'' h₃'')
-  have hπ₁ (w : (S.X₁.restriction e).cycles j) :
-      (S.X₁.restrictionHomologyIso e i j k h₁ hk rfl rfl rfl h₁'' hk'').hom.hom
-          (((S.X₁.restriction e).homologyπ j).hom w) =
-        (S.X₁.homologyπ _).hom ((S.X₁.restrictionCyclesIso e j k hk rfl rfl hk'').hom.hom w) :=
-    congrArg (fun φ ↦ φ.hom w) (S.X₁.homologyπ_restrictionHomologyIso_hom e i j k h₁ hk rfl rfl
-      rfl h₁'' hk'')
-  -- The connecting map of the restricted sequence, computed from the same lift `x₂`.
-  have key : ((hS.restriction e).δ i j hij).hom (((S.X₃.restriction e).homologyπ i).hom
-      ((S.X₃.restrictionCyclesIso e i j h₃ rfl rfl h₃'').inv.hom z₃)) =
-        ((S.X₁.restriction e).homologyπ j).hom
-          ((S.X₁.restrictionCyclesIso e j k hk rfl rfl hk'').inv.hom z₁) :=
-    (hS.restriction e).moduleCat_δ_homologyπ i j hij _ x₂ (hgx₂.trans (hc₃ z₃).symm) _
-      ((hc₁ z₁).symm ▸ hx₂.symm)
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
-  rw [hπ₃, key, hπ₁]
-  exact congrArg (S.X₁.homologyπ _).hom
-    (congrArg (fun φ ↦ φ.hom z₁) (S.X₁.restrictionCyclesIso e j k hk rfl rfl hk'').inv_hom_id)
+    (h₃'' : c'.next i' = j₃') (h₁'' : c'.prev j' = i₁') (hk'' : c'.next j' = k') :
+    (hS.restriction e).δ i j hij ≫
+        (S.X₁.restrictionHomologyIso e i₁ j k h₁ hk h₁' hj' hk' h₁'' hk'').hom =
+      (S.X₃.restrictionHomologyIso e i₀ i j₃ h₀ h₃ h₀' hi' h₃' h₀'' h₃'').hom ≫
+        hS.δ i' j' (hi' ▸ hj' ▸ e.rel hij) := by
+  obtain rfl : j = j₃ := (c.next_eq' hij).symm.trans h₃
+  obtain rfl : i = i₁ := (c.prev_eq' hij).symm.trans h₁
+  subst h₀' hi' h₃' h₁' hj' hk'
+  exact SnakeInput.naturality_δ
+    (restrictionSnakeInputHom hS e i₀ i j k hij h₀ hk rfl rfl rfl rfl h₀'' hk'')
 
 end CategoryTheory.ShortComplex.ShortExact

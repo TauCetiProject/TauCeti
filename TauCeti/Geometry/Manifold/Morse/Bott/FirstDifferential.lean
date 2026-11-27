@@ -34,13 +34,8 @@ the trajectories between the components of adjacent bands. When the bands are th
 negative-normal rank, so that adjacent bands differ in rank by one, these are the correspondences
 `F_CD` with `λ_C - λ_D = 1`, which preserve the chain degree.
 
-## Main definitions
-
-* `TauCeti.BottChainData.adjacentBandSequence`: the short exact sequence of two adjacent bands.
-
 ## Main results
 
-* `TauCeti.BottChainData.adjacentBandSequence_shortExact`: it is short exact.
 * `TauCeti.BottChainData.spectralSequence_first_page_d_eq_δ`: the first differential of the
   critical-value spectral sequence is the connecting map of adjacent bands.
 * `TauCeti.BottChainData.spectralSequence_first_page_d_homologyπ`: the first differential sends the
@@ -206,17 +201,15 @@ theorem spectralSequence_first_page_d_eq_δ (p q k : ℤ) (hn : p + (q + 1) = -(
     (TauCeti.cokernelCompSequence_shortExact _ _)
     ((B.adjacentBandSequence_shortExact v hv hboundary hpushforward _ _).restriction _)
     (p + (q + 1)) (p + 2 + q) (by simp; lia)
-  rw [spectralSequenceFirstPageXIso_eq, spectralSequenceFirstPageXIso_eq]
+  rw [spectralSequenceFirstPageXIso_def, spectralSequenceFirstPageXIso_def]
   simp only [Iso.trans_inv, Iso.trans_hom, Category.assoc, Functor.mapIso_inv, Functor.mapIso_hom]
   rw [hd]
   simp only [Category.assoc, Iso.inv_hom_id_assoc, homologyFunctor_map]
   dsimp only at hnat
   rw [reassoc_of% hnat, ← homologyMap_comp_assoc, Iso.inv_hom_id, homologyMap_id,
     Category.id_comp]
-  exact (B.adjacentBandSequence_shortExact v hv hboundary hpushforward _ _
-    ).moduleCat_restrictionHomologyIso_inv_δ_hom ComplexShape.embeddingUpIntDownInt
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-
+  exact (Iso.inv_comp_eq _).2 ((B.adjacentBandSequence_shortExact v hv hboundary hpushforward _ _
+    ).restriction_δ_comp_restrictionHomologyIso_hom ComplexShape.embeddingUpIntDownInt ..)
 
 /-- **The first differential of the critical-value spectral sequence on classes.** The
 differential of the first page from `(p, q + 1)` to `(p + 2, q)`, where `p + q + 1 = -(k + 1)`,

@@ -15,6 +15,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Ulift
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Order.Interval.Set.OrdConnected
+import TauCeti.Algebra.Homology.Embedding.Restriction.Sequence
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
@@ -974,14 +975,6 @@ theorem filtration_eq_top {q : ℤ} (hq : ∀ C, v C ≤ a q) :
 
 variable (ha : Monotone a)
 
-/-- The sublevel–band sequence of `a q ≤ a (q + 1)`, regraded as cochain complexes along
-`n ↦ -n`, is short exact. -/
-theorem bandSequence_map_shortExact (q : ℤ) :
-    ((B.bandSequence v hv hboundary hpushforward (ha (Int.le_add_one le_rfl : q ≤ q + 1))).map
-      (ComplexShape.embeddingUpIntDownInt.restrictionFunctor (ModuleCat R))).ShortExact :=
-  shortExact_of_degreewise_shortExact _ fun k ↦ (shortExact_iff_degreewise_shortExact _).1
-    (B.bandSequence_shortExact v hv hboundary hpushforward (ha (Int.le_add_one le_rfl))) (-k)
-
 /-- **The graded pieces of the critical-value filtration are the band complexes.** The quotient of
 the stage `a (q + 1)` of the filtration by the stage `a q`, as the cokernel of a transition map of
 the functor `CochainComplex.filtrationFunctor` of the filtration, is the regraded Bott complex of
@@ -998,7 +991,8 @@ noncomputable def filtrationCokernelIso (q : ℤ) :
     (B.filtration_eq_mk v hv hboundary hpushforward a) q _
     (B.restrictionMap_sublevelInclusion_comp_filtrationι v hv hboundary hpushforward
       (ha (Int.le_add_one le_rfl))) _ _
-    (B.bandSequence_map_shortExact v hv hboundary hpushforward ha q).gIsCokernel
+    ((B.bandSequence_shortExact v hv hboundary hpushforward
+      (ha (Int.le_add_one le_rfl))).restriction ComplexShape.embeddingUpIntDownInt).gIsCokernel
 
 /-- The identification of the graded piece of the critical-value filtration with the band complex
 restricts chains to the band: under the identification of the stage `a (q + 1)` with the sublevel
@@ -1040,7 +1034,7 @@ of a band is that of the first page of a filtered complex with the homology of i
 (`CochainComplex.spectralSequenceFirstPageXIsoCokernel`), followed by the identification of the
 graded piece with the band complex (`TauCeti.BottChainData.filtrationCokernelIso`) and the
 regrading along `n ↦ -n`. -/
-theorem spectralSequenceFirstPageXIso_eq (pq : ℤ × ℤ) (n : ℤ) (hn : pq.1 + pq.2 = -n) :
+theorem spectralSequenceFirstPageXIso_def (pq : ℤ × ℤ) (n : ℤ) (hn : pq.1 + pq.2 = -n) :
     B.spectralSequenceFirstPageXIso v hv hboundary hpushforward ha pq n hn =
       CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl _ rfl ≪≫
         (homologyFunctor _ _ _).mapIso
@@ -1358,6 +1352,21 @@ noncomputable def spectralSequenceFirstPageXIsoBiproduct [DecidableEq ι] (pq : 
   B.spectralSequenceFirstPageXIso v hv hboundary hpushforward ha pq n hn ≪≫
     B.homologyComplexOnIsoBiproduct v hv hboundary hpushforward _ hband n ≪≫
     biproduct.mapIso fun C ↦ B.componentComplexHomologyIso v hv hboundary hpushforward C.val n
+
+/-- The identification of the first page with a direct sum of homologies of components is the
+identification with the homology of the band
+(`TauCeti.BottChainData.spectralSequenceFirstPageXIso`) followed by the splitting of the band into
+its components (`TauCeti.BottChainData.homologyComplexOnIsoBiproduct`). -/
+theorem spectralSequenceFirstPageXIsoBiproduct_def [DecidableEq ι] (pq : ℤ × ℤ) (n : ℤ)
+    (hn : pq.1 + pq.2 = -n)
+    (hband : ∀ C D, v C ∈ Ioc (a pq.2) (a (pq.2 + 1)) → v D ∈ Ioc (a pq.2) (a (pq.2 + 1)) →
+      v C = v D) :
+    B.spectralSequenceFirstPageXIsoBiproduct v hv hboundary hpushforward ha pq n hn hband =
+      B.spectralSequenceFirstPageXIso v hv hboundary hpushforward ha pq n hn ≪≫
+        B.homologyComplexOnIsoBiproduct v hv hboundary hpushforward _ hband n ≪≫
+        biproduct.mapIso fun C ↦
+          B.componentComplexHomologyIso v hv hboundary hpushforward C.val n :=
+  (rfl)
 
 end Value
 

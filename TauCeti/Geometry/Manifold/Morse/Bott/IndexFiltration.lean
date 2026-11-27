@@ -97,6 +97,28 @@ noncomputable def indexSpectralSequenceFirstPageXIso [DecidableEq ι] (pq : ℤ 
       (Equiv.subtypeEquivRight fun C ↦ natCast_mem_Ioc_intCast_iff (B.rank C) pq.2)
       fun _ ↦ Iso.refl _
 
+/-- The identification of the first page of the index spectral sequence is that of the
+critical-value spectral sequence for a single value per band
+(`TauCeti.BottChainData.spectralSequenceFirstPageXIsoBiproduct`), followed by the reindexing of
+the components of rank `q + 1` as those with value in `Ioc q (q + 1)`. -/
+theorem indexSpectralSequenceFirstPageXIso_def [DecidableEq ι] (pq : ℤ × ℤ) (n : ℤ)
+    (hn : pq.1 + pq.2 = -n) :
+    B.indexSpectralSequenceFirstPageXIso hboundary hpushforward hrank pq n hn =
+      B.spectralSequenceFirstPageXIsoBiproduct _ _ hboundary hpushforward Int.cast_mono pq n hn
+          (fun C D hC hD ↦ by
+            simp only [mem_Ioc] at hC hD
+            norm_cast at hC hD ⊢
+            lia) ≪≫
+        biproduct.whiskerEquiv
+          (g := fun C : {C // (B.rank C : ℤ) = pq.2 + 1} ↦ (ModuleCat.uliftFunctor R).obj
+            ((B.componentChains hboundary C.val).homology (n - B.rank C.val)))
+          (Equiv.subtypeEquivRight fun C ↦ by
+            rw [mem_Ioc]
+            norm_cast
+            lia)
+          fun _ ↦ Iso.refl _ :=
+  (rfl)
+
 end BottChainData
 
 end TauCeti
