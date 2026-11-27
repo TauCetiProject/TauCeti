@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Gluing
-public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
+public import TauCeti.AlgebraicGeometry.Cover.Open
 public import TauCeti.AlgebraicGeometry.Neron.BaseChange
 
 /-!
@@ -53,41 +52,6 @@ universe v u
 
 variable {η S : Scheme.{u}} {j : η ⟶ S} {𝒰 : S.OpenCover.{v}} {η' : 𝒰.I₀ → Scheme.{u}}
   {j' : ∀ i, η' i ⟶ 𝒰.X i} {g' : ∀ i, η' i ⟶ η}
-
-/-- Two `S`-morphisms out of an `S`-scheme `Y` agree once they agree on the restrictions
-`Y ×_S 𝒰.X i ⟶ Y` of `Y` to the members of an open cover of `S`. -/
-private theorem hom_ext_of_counit (𝒰 : S.OpenCover.{v}) {Y T : Over S} {f₁ f₂ : Y ⟶ T}
-    (h : ∀ i, (Over.mapPullbackAdj (𝒰.f i)).counit.app Y ≫ f₁ =
-      (Over.mapPullbackAdj (𝒰.f i)).counit.app Y ≫ f₂) : f₁ = f₂ := by
-  ext1
-  refine Scheme.Cover.hom_ext (𝒰.pullback₁ Y.hom) _ _ fun (i : 𝒰.I₀) ↦ ?_
-  change pullback.fst Y.hom (𝒰.f i) ≫ f₁.left = pullback.fst Y.hom (𝒰.f i) ≫ f₂.left
-  simpa using congr($(h i).left)
-
-/-- Two `η`-morphisms out of the base change `Y ×_S η` of an `S`-scheme `Y` along `j` agree once
-they agree on the base changes along `j` of the restrictions of `Y` to the members of an open
-cover of `S`. -/
-private theorem pullback_hom_ext_of_counit (𝒰 : S.OpenCover.{v}) (j : η ⟶ S) {Y : Over S}
-    {T : Over η} {φ₁ φ₂ : (Over.pullback j).obj Y ⟶ T}
-    (h : ∀ i, (Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y) ≫ φ₁ =
-      (Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y) ≫ φ₂) : φ₁ = φ₂ := by
-  ext1
-  refine Scheme.Cover.hom_ext ((𝒰.pullback₁ Y.hom).pullback₁ (pullback.fst Y.hom j)) _ _
-    fun (i : 𝒰.I₀) ↦ ?_
-  change pullback.fst (pullback.fst Y.hom j) (pullback.fst Y.hom (𝒰.f i)) ≫ φ₁.left =
-      pullback.fst (pullback.fst Y.hom j) (pullback.fst Y.hom (𝒰.f i)) ≫ φ₂.left
-  -- The `i`-th member of the cover factors through the base change of the `i`-th restriction
-  -- of `Y`.
-  obtain ⟨m, hm⟩ : ∃ m, m ≫
-      ((Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y)).left =
-        pullback.fst (pullback.fst Y.hom j) (pullback.fst Y.hom (𝒰.f i)) :=
-    ⟨pullback.lift (pullback.snd _ _) (pullback.fst _ _ ≫ pullback.snd Y.hom j) (by
-      dsimp
-      rw [Category.assoc, ← pullback.condition, ← pullback.condition]
-      exact (pullback.condition_assoc (f := pullback.fst Y.hom j)
-        (g := pullback.fst Y.hom (𝒰.f i)) Y.hom).symm), by
-      apply pullback.hom_ext <;> simp [pullback.condition]⟩
-  rw [← hm, Category.assoc, Category.assoc, ← Over.comp_left, ← Over.comp_left, h i]
 
 namespace MappingProperty
 
@@ -144,9 +108,9 @@ theorem of_openCover (sq : ∀ i, IsPullback (j' i) (g' i) (𝒰.f i) j) {X : Ov
   bijective Y hY := by
     -- Restriction along `j` is bijective for every test object over a member of the cover.
     have hloc (i : 𝒰.I₀) (Z : Over (𝒰.X i)) (hZ : P Z.hom) :=
-      (bijective_pullback_map_iff_of_isPullback (sq i) X Z).1 ((h i).bijective Z hZ)
+      (Over.bijective_pullback_map_iff_of_isPullback (sq i) X Z).1 ((h i).bijective Z hZ)
     have hY' (i : 𝒰.I₀) : P ((Over.pullback (𝒰.f i)).obj Y).hom := P.pullback_snd _ _ hY
-    refine ⟨fun f₁ f₂ hf ↦ hom_ext_of_counit 𝒰 fun i ↦ (hloc i _ (hY' i)).1 ?_, fun φ ↦ ?_⟩
+    refine ⟨fun f₁ f₂ hf ↦ 𝒰.hom_ext_of_counit fun i ↦ (hloc i _ (hY' i)).1 ?_, fun φ ↦ ?_⟩
     · simp only [Functor.map_comp, hf]
     -- Extend `φ` on each restriction of `Y`, and glue the extensions.
     choose ψ hψ using fun i ↦ (hloc i _ (hY' i)).2
@@ -162,7 +126,7 @@ theorem of_openCover (sq : ∀ i, IsPullback (j' i) (g' i) (𝒰.f i) j) {X : Ov
       ext1
       simp only [Over.comp_left, Over.mapPullbackAdj_counit_app, Over.homMk_left, G]
       exact Scheme.Cover.ι_glueMorphisms 𝒱 _ compat i
-    exact ⟨G, pullback_hom_ext_of_counit 𝒰 j fun i ↦ by rw [← Functor.map_comp, hG, hψ i]⟩
+    exact ⟨G, 𝒰.pullback_hom_ext_of_counit j fun i ↦ by rw [← Functor.map_comp, hG, hψ i]⟩
 
 end MappingProperty
 

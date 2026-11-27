@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Neron.Model
-public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # Smooth base change of Néron models
@@ -26,8 +25,6 @@ the smoothness of `g` cannot be dropped.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.Neron.bijective_pullback_map_iff_of_isPullback`: restriction to a
-  test object over `S'` is restriction to the same object viewed over `S`.
 * `TauCeti.AlgebraicGeometry.Neron.NeronMappingProperty.pullback`: the Néron mapping property
   is stable under smooth base change.
 * `TauCeti.AlgebraicGeometry.Neron.NeronModel.baseChange`: the base change of a Néron model of
@@ -53,45 +50,6 @@ universe u
 
 variable {η S η' S' : Scheme.{u}} {j : η ⟶ S} {g : S' ⟶ S} {j' : η' ⟶ S'} {g' : η' ⟶ η}
 
-/-- Restriction to a test object over `S'` is restriction to the same object viewed over `S`:
-if `j' : η' ⟶ S'`, `g' : η' ⟶ η` exhibit `η'` as the pullback of `j : η ⟶ S` along
-`g : S' ⟶ S`, then for an `S'`-scheme `Y` and an `S`-scheme `X`, base change along `j'` is
-bijective on `S'`-morphisms `Y ⟶ X ×_S S'` exactly when base change along `j` is bijective on
-`S`-morphisms from `Y`, viewed as an `S`-scheme, to `X`. -/
-theorem bijective_pullback_map_iff_of_isPullback (sq : IsPullback j' g' g j) (X : Over S)
-    (Y : Over S') :
-    Function.Bijective ((Over.pullback j').map : (Y ⟶ (Over.pullback g).obj X) → _) ↔
-      Function.Bijective ((Over.pullback j).map : ((Over.map g).obj Y ⟶ X) → _) := by
-  rw [bijective_pullback_map_iff_bijective_counit_comp,
-    bijective_pullback_map_iff_bijective_counit_comp]
-  -- Pushed forward along `g`, the counit for `j'` at `Y` is the counit for `j` at `Y` viewed
-  -- over `S`, up to the Beck–Chevalley isomorphism of the square.
-  obtain ⟨e, he⟩ : ∃ e : (Over.map g).obj ((Over.map j').obj ((Over.pullback j').obj Y)) ≅
-      (Over.map j).obj ((Over.pullback j).obj ((Over.map g).obj Y)),
-      e.hom ≫ (Over.mapPullbackAdj j).counit.app ((Over.map g).obj Y) =
-        (Over.map g).map ((Over.mapPullbackAdj j').counit.app Y) :=
-    ⟨Over.isoMk ((Over.forget _).mapIso (sq.overPullbackCompMapIso.app Y))
-      (by simp [sq.w]), by ext1; simp⟩
-  -- Under the adjunction `Over.map g ⊣ Over.pullback g`, precomposition with the counit for `j'`
-  -- becomes precomposition with `e.hom` and the counit for `j`.
-  have key : ((Over.mapPullbackAdj g).homEquiv _ _).symm ∘
-      (fun f : Y ⟶ (Over.pullback g).obj X ↦ (Over.mapPullbackAdj j').counit.app Y ≫ f) =
-      (fun f ↦ e.hom ≫ f) ∘
-        ((fun f ↦ (Over.mapPullbackAdj j).counit.app ((Over.map g).obj Y) ≫ f) ∘
-          ((Over.mapPullbackAdj g).homEquiv _ _).symm) := by
-    ext1 f
-    rw [Function.comp_apply, Adjunction.homEquiv_naturality_left_symm, ← he, Category.assoc]
-    -- The two sides differ only by `(𝟭 (Over S')).obj Y = Y` in an implicit argument of
-    -- `homEquiv`, which `rw` cannot reach.
-    rfl
-  have he' : Function.Bijective fun f : (Over.map j).obj ((Over.pullback j).obj
-      ((Over.map g).obj Y)) ⟶ X ↦ e.hom ≫ f :=
-    ⟨fun a b hab ↦ (cancel_epi _).1 hab, fun b ↦ ⟨e.inv ≫ b, by simp⟩⟩
-  rw [← (Equiv.bijective ((Over.mapPullbackAdj g).homEquiv _ _).symm).of_comp_iff', key,
-    he'.of_comp_iff', (Equiv.bijective _).of_comp_iff]
-  -- As in `key`, the two sides differ only by an identity functor in an implicit argument.
-  exact Iff.rfl
-
 /-- The Néron mapping property is stable under smooth base change: if `X` has the property
 relative to `j : η ⟶ S`, `g : S' ⟶ S` is smooth and `j' : η' ⟶ S'`, `g' : η' ⟶ η` exhibit `η'`
 as the pullback of `j` along `g`, then `X ×_S S'` has the property relative to `j'`
@@ -100,7 +58,7 @@ theorem NeronMappingProperty.pullback [Smooth g] (sq : IsPullback j' g' g j) {X 
     (h : NeronMappingProperty j X) : NeronMappingProperty j' ((Over.pullback g).obj X) where
   bijective Y (_ : Smooth Y.hom) := by
     have : Smooth ((Over.map g).obj Y).hom := by dsimp; infer_instance
-    exact (bijective_pullback_map_iff_of_isPullback sq X Y).2 (h.bijective _ this)
+    exact (Over.bijective_pullback_map_iff_of_isPullback sq X Y).2 (h.bijective _ this)
 
 namespace NeronModel
 

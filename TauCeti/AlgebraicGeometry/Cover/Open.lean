@@ -21,7 +21,9 @@ of `Spec R`, stated with the localization maps `R → R[1/a]`. For a morphism fr
 to any scheme, the elements whose basic opens map into affine opens generate the unit ideal.
 
 A morphism into a binary coproduct `A ⨿ B` factors through `A` or through `B` on the members of an
-open cover of its source. Lifts along a jointly monic pair glue along an open cover.
+open cover of its source. Lifts along a jointly monic pair glue along an open cover. Morphisms of
+`S`-schemes, and of their base changes, are determined by their restrictions to an open cover of
+`S`.
 
 ## Main results
 
@@ -33,13 +35,17 @@ open cover of its source. Lifts along a jointly monic pair glue along an open co
   through `A` or through `B` on each member of an open cover of `T`.
 * `AlgebraicGeometry.Scheme.OpenCover.exists_lift_of_jointlyMono₂`: for a jointly monic pair
   `t, s : R ⟶ U`, a pair of morphisms `T ⟶ U` lifts to `R` once it lifts on an open cover of `T`.
+* `AlgebraicGeometry.Scheme.OpenCover.hom_ext_of_counit`: two `S`-morphisms out of an `S`-scheme
+  `Y` agree once they agree on the restrictions `Y ×_S 𝒰.X i ⟶ Y` to an open cover `𝒰` of `S`.
+* `AlgebraicGeometry.Scheme.OpenCover.pullback_hom_ext_of_counit`: the same for morphisms out of
+  a base change `Y ×_S η`, tested on the base changes of the restrictions of `Y`.
 -/
 
 public section
 
 open CategoryTheory Limits AlgebraicGeometry
 
-universe u
+universe v u
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -96,6 +102,47 @@ theorem exists_lift_of_jointlyMono₂ {T R U : Scheme.{u}} {t s : R ⟶ U} [Join
       (by simp [hs, pullback.condition_assoc])
   exact ⟨𝒰.glueMorphisms r hr, 𝒰.hom_ext _ _ fun i ↦ by simp [ht],
     𝒰.hom_ext _ _ fun i ↦ by simp [hs]⟩
+
+/-- Two `S`-morphisms out of an `S`-scheme `Y` agree once they agree on the restrictions
+`Y ×_S 𝒰.X i ⟶ Y` of `Y` to the members of an open cover `𝒰` of `S`. -/
+theorem hom_ext_of_counit {S : Scheme.{u}} (𝒰 : S.OpenCover.{v}) {Y T : Over S} {f₁ f₂ : Y ⟶ T}
+    (h : ∀ i, (Over.mapPullbackAdj (𝒰.f i)).counit.app Y ≫ f₁ =
+      (Over.mapPullbackAdj (𝒰.f i)).counit.app Y ≫ f₂) : f₁ = f₂ := by
+  ext1
+  refine Scheme.Cover.hom_ext (𝒰.pullback₁ Y.hom) _ _ fun (i : 𝒰.I₀) ↦ ?_
+  -- The `i`-th member of `𝒰.pullback₁ Y.hom` is `pullback.fst Y.hom (𝒰.f i)` by definition. The
+  -- simp lemma `Precoverage.ZeroHypercover.pullback₁_toPreZeroHypercover` cannot rewrite it,
+  -- since the index `i` has the type `(𝒰.pullback₁ Y.hom).I₀` of the cover being rewritten (the
+  -- motive is not type correct), so the goal is restated with `change`.
+  change pullback.fst Y.hom (𝒰.f i) ≫ f₁.left = pullback.fst Y.hom (𝒰.f i) ≫ f₂.left
+  simpa using congr($(h i).left)
+
+/-- Two `η`-morphisms out of the base change `Y ×_S η` of an `S`-scheme `Y` along `j : η ⟶ S`
+agree once they agree on the base changes along `j` of the restrictions of `Y` to the members of
+an open cover `𝒰` of `S`. -/
+theorem pullback_hom_ext_of_counit {η S : Scheme.{u}} (𝒰 : S.OpenCover.{v}) (j : η ⟶ S)
+    {Y : Over S} {T : Over η} {φ₁ φ₂ : (Over.pullback j).obj Y ⟶ T}
+    (h : ∀ i, (Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y) ≫ φ₁ =
+      (Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y) ≫ φ₂) : φ₁ = φ₂ := by
+  ext1
+  refine Scheme.Cover.hom_ext ((𝒰.pullback₁ Y.hom).pullback₁ (pullback.fst Y.hom j)) _ _
+    fun (i : 𝒰.I₀) ↦ ?_
+  -- As in `hom_ext_of_counit`, the `i`-th member of the doubly pulled back cover is restated by
+  -- its definition, since rewriting the cover would also change the type of the index `i`.
+  change pullback.fst (pullback.fst Y.hom j) (pullback.fst Y.hom (𝒰.f i)) ≫ φ₁.left =
+      pullback.fst (pullback.fst Y.hom j) (pullback.fst Y.hom (𝒰.f i)) ≫ φ₂.left
+  -- The `i`-th member of the cover factors through the base change of the `i`-th restriction
+  -- of `Y`.
+  obtain ⟨m, hm⟩ : ∃ m, m ≫
+      ((Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y)).left =
+        pullback.fst (pullback.fst Y.hom j) (pullback.fst Y.hom (𝒰.f i)) :=
+    ⟨pullback.lift (pullback.snd _ _) (pullback.fst _ _ ≫ pullback.snd Y.hom j) (by
+      dsimp
+      rw [Category.assoc, ← pullback.condition, ← pullback.condition]
+      exact (pullback.condition_assoc (f := pullback.fst Y.hom j)
+        (g := pullback.fst Y.hom (𝒰.f i)) Y.hom).symm), by
+      apply pullback.hom_ext <;> simp [pullback.condition]⟩
+  rw [← hm, Category.assoc, Category.assoc, ← Over.comp_left, ← Over.comp_left, h i]
 
 end AlgebraicGeometry.Scheme.OpenCover
 
