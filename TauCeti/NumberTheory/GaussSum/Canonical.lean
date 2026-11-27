@@ -18,7 +18,7 @@ Over a prime field this is the Gauss sum of the Dirichlet character against `ZMo
 
 The trivial multiplicative character has canonical Gauss sum `-1`. An additive shift by
 `a ≠ 0` multiplies the sum by `χ⁻¹ a`. The shift by zero gives the sum of the multiplicative
-character alone (`MulChar.gaussSum_mulShift_eq_ite`). The shifted sums add to zero even for
+character alone (`MulChar.gaussSum_mulShift_stdAddChar`). The shifted sums add to zero even for
 the trivial multiplicative character. Switching the sign of the phase multiplies the sum by
 `χ (-1)` (`gaussSum_inv_right`).
 
@@ -46,11 +46,19 @@ theorem gauss_def [inst : Fintype F] (χ : MulChar F ℂ) :
   unfold gauss
   rw [Subsingleton.elim (Fintype.ofFinite F) inst]
 
+open scoped Classical in
+/-- A shift by `a` gives `χ⁻¹ a * χ.gauss`, except at zero for the trivial multiplicative
+character, where it counts the nonzero field elements. -/
+theorem gaussSum_mulShift_stdAddChar [Fintype F] (χ : MulChar F ℂ) (a : F) :
+    gaussSum χ ((stdAddChar F).mulShift a) =
+      if a = 0 ∧ χ = 1 then ↑(Nat.card F - 1) else χ⁻¹ a * χ.gauss := by
+  rw [gauss_def, gaussSum_mulShift_eq_ite]
+
 /-- The Gauss sums over all shifts of the canonical additive character add to zero,
 including when the multiplicative character is trivial. -/
 @[simp] theorem sum_gaussSum_mulShift_stdAddChar [Fintype F] (χ : MulChar F ℂ) :
-    ∑ a : F, gaussSum χ ((stdAddChar F).mulShift a) = 0 := by
-  rw [χ.sum_gaussSum_mulShift, AddChar.sum_eq_zero_of_ne_one (stdAddChar_ne_one F), mul_zero]
+    ∑ a : F, gaussSum χ ((stdAddChar F).mulShift a) = 0 :=
+  χ.sum_gaussSum_mulShift_eq_zero_of_ne_one_right (stdAddChar_ne_one F)
 
 /-- The trivial multiplicative character has canonical Gauss sum `-1`. -/
 @[simp] theorem gauss_one [Finite F] : (1 : MulChar F ℂ).gauss = -1 := by
@@ -59,7 +67,7 @@ including when the multiplicative character is trivial. -/
 
 /-- Over a prime field the canonical Gauss sum uses the standard additive character
 of the residue ring. -/
-@[simp] theorem gauss_zmod {p : ℕ} [Fact p.Prime] (χ : MulChar (ZMod p) ℂ) :
+theorem gauss_zmod {p : ℕ} [Fact p.Prime] (χ : MulChar (ZMod p) ℂ) :
     χ.gauss = gaussSum χ ZMod.stdAddChar := by
   rw [gauss_def, stdAddChar_zmod]
 

@@ -245,8 +245,8 @@ end TauCeti
 namespace MulChar
 
 /-- Summing a Gauss sum over all shifts of its additive character gives the product of
-the two character sums. In particular the result vanishes over a domain as soon as either
-character is nontrivial. -/
+the two character sums. In particular the result vanishes when the coefficient ring `S`
+is a domain and either character is nontrivial. -/
 theorem sum_gaussSum_mulShift {R S : Type*} [CommRing R] [Fintype R] [CommRing S]
     (χ : MulChar R S) (ψ : AddChar R S) :
     ∑ a : R, gaussSum χ (ψ.mulShift a) = (∑ x, χ x) * ∑ a, ψ a := by
@@ -257,6 +257,13 @@ theorem sum_gaussSum_mulShift {R S : Type*} [CommRing R] [Fintype R] [CommRing S
   by_cases hx : IsUnit x
   · rw [(IsUnit.isUnit_iff_mulRight_bijective.mp hx).sum_comp ψ]
   · simp [χ.map_nonunit hx]
+
+/-- Over a domain of coefficients, the sum over all shifts of a nontrivial additive
+character vanishes for any multiplicative character. -/
+theorem sum_gaussSum_mulShift_eq_zero_of_ne_one_right {R S : Type*} [CommRing R] [Fintype R]
+    [CommRing S] [IsDomain S] (χ : MulChar R S) {ψ : AddChar R S} (hψ : ψ ≠ 1) :
+    ∑ a : R, gaussSum χ (ψ.mulShift a) = 0 := by
+  rw [χ.sum_gaussSum_mulShift, AddChar.sum_eq_zero_of_ne_one hψ, mul_zero]
 
 /-- **A Gauss sum against a degenerate shift vanishes.** Let `u` be a unit of the finite ring `R`
 and `b` an element with `b * (u - 1) = 0`, so that the shifted additive character
