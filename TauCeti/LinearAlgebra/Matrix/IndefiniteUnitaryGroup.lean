@@ -151,12 +151,27 @@ theorem mem_unitaryGroupOf_iff {g : GL n R} :
   Iff.rfl
 
 omit [DecidableEq n] in
-/-- An isometry `x` of the form `A`, that is `star x * A * x = A`, does not change the Gram
-matrix of a family of vectors: `(x F)ᴴ A (x F) = Fᴴ A F`. -/
-theorem conjTranspose_mul_mul_mul_of_star_mul_mul_eq {m : Type*} {x : Matrix n n R}
-    (hx : star x * A * x = A) (F : Matrix n m R) : (x * F)ᴴ * A * (x * F) = Fᴴ * A * F := by
+/-- An isometry `x` of the form `A`, that is `star x * A * x = A`, does not change the pairing
+of two families of vectors: `(x F)ᴴ A (x F') = Fᴴ A F'`. -/
+theorem conjTranspose_mul_mul_mul_of_star_mul_mul_eq {m m' : Type*} {x : Matrix n n R}
+    (hx : star x * A * x = A) (F : Matrix n m R) (F' : Matrix n m' R) :
+    (x * F)ᴴ * A * (x * F') = Fᴴ * A * F' := by
   conv_rhs => rw [← hx]
   simp only [conjTranspose_mul, star_eq_conjTranspose, Matrix.mul_assoc]
+
+/-- An element `g` of `unitaryGroupOf A` satisfies `gᴴ (A g) = A`, the right-associated form of
+`star g * A * g = A`. -/
+theorem unitaryGroupOf.conjTranspose_mul_mul_cancel (g : unitaryGroupOf A) :
+    ((g : GL n R) : Matrix n n R)ᴴ * (A * ((g : GL n R) : Matrix n n R)) = A := by
+  rw [← Matrix.mul_assoc, ← star_eq_conjTranspose, mem_unitaryGroupOf_iff.mp g.property]
+
+/-- An element `g` of `unitaryGroupOf A` cancels against its conjugate transpose around `A`:
+`gᴴ (A (g X)) = A X`. -/
+theorem unitaryGroupOf.conjTranspose_mul_mul_mul_cancel (g : unitaryGroupOf A) {m : Type*}
+    (X : Matrix n m R) :
+    ((g : GL n R) : Matrix n n R)ᴴ * (A * (((g : GL n R) : Matrix n n R) * X)) = A * X := by
+  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, Matrix.mul_assoc _ A,
+    unitaryGroupOf.conjTranspose_mul_mul_cancel]
 
 /-- Two elements of `unitaryGroupOf A` are equal when their matrices are. -/
 @[ext]
