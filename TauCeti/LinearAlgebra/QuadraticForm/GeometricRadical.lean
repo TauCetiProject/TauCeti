@@ -7,7 +7,10 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+public import Mathlib.RingTheory.Spectrum.Prime.RingHom
+public import TauCeti.LinearAlgebra.QuadraticForm.ExtendScalars
 public import TauCeti.LinearAlgebra.QuadraticForm.FreeBaseChange
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 import TauCeti.LinearAlgebra.TensorProduct.Range
 
 /-!
@@ -143,5 +146,34 @@ theorem nondegenerate_iff_radical_freeBaseChange_eq_bot [PerfectField L] (Q : Qu
     Q.Nondegenerate ↔ (Q.freeBaseChange L).radical = ⊥ :=
   (Q.nondegenerate_freeBaseChange_iff L).symm.trans
     (nondegenerate_iff_radical_eq_bot_of_perfectField _)
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- Nondegeneracy in coordinates is preserved and reflected by scalar extension
+from a field to a nonzero reduced algebra. -/
+@[simp]
+theorem nondegenerate_extendScalars_iff (A : Type*) [CommRing A] [Algebra K A]
+    [Nontrivial A] [IsReduced A] (Q : QuadraticForm K (ι → K)) :
+    (Q.extendScalars A).Nondegenerate ↔ Q.Nondegenerate := by
+  let e := TensorProduct.piScalarRight K A A ι
+  have he : (Q.extendScalars A).comp e.toLinearMap = Q.freeBaseChange A :=
+    eq_freeBaseChange_iff.mpr fun v ↦ by
+      rw [QuadraticMap.comp_apply, LinearEquiv.coe_toLinearMap,
+        TensorProduct.piScalarRight_one_tmul, extendScalars_apply_algebraMap_comp]
+  have hnd := ((Q.extendScalars A).isometryEquivOfCompLinearEquiv e).nondegenerate_iff
+  simpa only [he, nondegenerate_freeBaseChange_iff] using hnd
+
+variable {R : Type*} [CommRing R]
+
+/-- After an arbitrary base change, the fibre at a prime is nondegenerate exactly
+when the original fibre at the contracted prime is nondegenerate. -/
+theorem nondegenerate_extendScalars_residueField_iff_comap (Q : QuadraticForm R (ι → R))
+    (S : Type*) [CommRing S] [Algebra R S] (q : PrimeSpectrum S) :
+    ((Q.extendScalars S).extendScalars q.asIdeal.ResidueField).Nondegenerate ↔
+      (Q.extendScalars (q.comap (algebraMap R S)).asIdeal.ResidueField).Nondegenerate := by
+  let p := q.comap (algebraMap R S)
+  let := Localization.AtPrime.algebraOfLiesOver p.asIdeal q.asIdeal
+  simpa only [extendScalars_extendScalars] using
+    (Q.extendScalars p.asIdeal.ResidueField).nondegenerate_extendScalars_iff q.asIdeal.ResidueField
 
 end QuadraticForm
