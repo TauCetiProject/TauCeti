@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroOneForm
+import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroOne.Basic
 import TauCeti.Geometry.Manifold.Instances.OnePoint.LineBundle
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Tactic.Ring
