@@ -183,8 +183,7 @@ theorem of_tendsto_mul_right_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
     I.IsQuasicentralApproximateUnit l :=
   of_tendsto_mul_right hmem hnonneg hnorm
     (fun _ hx => TauCeti.tendsto_of_mem_closure_of_lipschitzWith
-      (hnorm.mono fun e (he : ‖e‖₊ ≤ 1) =>
-        (TauCeti.lipschitzWith_mul_left e).weaken he)
+      (TauCeti.eventually_lipschitzWith_mul_left hnorm)
       continuousWithinAt_id hmul (hsI hx))
     (TauCeti.tendsto_commutator_of_dense hnorm hsA hcomm)
 
@@ -200,10 +199,13 @@ theorem of_tendsto_mul_left_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
     I.IsQuasicentralApproximateUnit l :=
   of_tendsto_mul_left hmem hnonneg hnorm
     (fun _ hx => TauCeti.tendsto_of_mem_closure_of_lipschitzWith
-      (hnorm.mono fun e (he : ‖e‖₊ ≤ 1) =>
-        (TauCeti.lipschitzWith_mul_right e).weaken he)
+      (TauCeti.eventually_lipschitzWith_mul_right hnorm)
       continuousWithinAt_id hmul (hsI hx))
     (TauCeti.tendsto_commutator_of_dense hnorm hsA hcomm)
+
+/-- Elements along a quasicentral approximate unit are eventually contractions in `nnNorm`. -/
+theorem eventually_nnNorm (hl : I.IsQuasicentralApproximateUnit l) : ∀ᶠ e in l, ‖e‖₊ ≤ 1 :=
+  hl.eventually_norm.mono fun _ he => by exact_mod_cast he
 
 /-- The closed unit ball belongs to any quasicentral approximate unit. -/
 theorem closedBall_mem (hl : I.IsQuasicentralApproximateUnit l) : Metric.closedBall 0 1 ∈ l :=
@@ -241,8 +243,7 @@ theorem topologicalClosure (hl : I.IsQuasicentralApproximateUnit l) :
 theorem tendstoUniformlyOn_mul_right (hl : I.IsQuasicentralApproximateUnit l) {K : Set A}
     (hK : IsCompact K) (hKI : K ⊆ I) : TendstoUniformlyOn (fun e x => e * x) id l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
-    (hl.eventually_norm.mono fun e (he : ‖e‖₊ ≤ 1) =>
-      (TauCeti.lipschitzWith_mul_left e).weaken he)
+    (hl.eventually_nnNorm.mono fun e he => (TauCeti.lipschitzWith_mul_left e).weaken he)
     hK fun _ hx => hl.tendsto_mul_right (hKI hx)
 
 /-- Along a quasicentral approximate unit, commutators `e * a - a * e` tend to `0` uniformly on
