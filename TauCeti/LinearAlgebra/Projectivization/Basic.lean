@@ -223,6 +223,14 @@ lemma exists_rep_apply_eq_one (x : Projectivization K (ι → K)) :
   obtain ⟨v, hv, h1, hratio, hmk⟩ := exists_rep_apply_eq_one_of_ne_zero x hi
   exact ⟨v, hv, i, h1, hratio, hmk⟩
 
+/-- The ratio of two coordinates of the chosen representative of `[v]` is the ratio of the same
+coordinates of `v`, including the value `0` when the denominator vanishes. -/
+@[simp]
+theorem rep_div_rep_mk (v : ι → K) (hv : v ≠ 0) (i j : ι) :
+    (mk K v hv).rep j / (mk K v hv).rep i = v j / v i := by
+  obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep K v hv
+  simp [← ha, Units.smul_def, mul_div_mul_left _ _ a.ne_zero]
+
 /-- The line of the image of a projective point under an injective semilinear map is the image
 of its line. -/
 @[simp]
