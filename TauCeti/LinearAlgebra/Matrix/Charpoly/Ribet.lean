@@ -91,8 +91,8 @@ private theorem exists_polynomial_of_mulVec_sub_mem (ρ : Λ →ₐ[R] Matrix σ
       ext ⟨i, s⟩ ⟨j, t⟩
       simp [φX, BX, ρX, ← coeff_zero_eq_eval_zero, coeff_polyToMatrix_apply, -map_sub,
         -map_mul]
-    rw [← h0, ← RingHom.map_det, hdet, Polynomial.algebraMap_def, coe_mapRingHom, coe_evalRingHom,
-      eval_zero_map]
+    rw [← h0, ← RingHom.map_det, hdet]
+    simp [Polynomial.algebraMap_def, ← coeff_zero_eq_eval_zero, coeff_zero_eq_aeval_zero']
   · -- `V * BX` differs from the scalar `F` by a matrix whose coefficients lie in `ker ρ ⊆ 𝔞`.
     let K := V * BX - algebraMap R[X] (Matrix N N Λ[X]) F
     have hK : ∀ i j k, (K i j).coeff k ∈ 𝔞 := by
@@ -112,9 +112,9 @@ private theorem exists_polynomial_of_mulVec_sub_mem (ρ : Λ →ₐ[R] Matrix σ
       rw [matrixPolynomialMulRightAction_apply]
       exact sum_mem fun j _ ↦ 𝔞.polynomialMulRightAction_mem_of_coeff_mem ρ₀ (hK i j) _
     have hsub : V * BX - K = algebraMap R[X] (Matrix N N Λ[X]) F := sub_sub_cancel _ _
-    have h := 𝔞.sub_mem hVBX hKy
-    rwa [← Pi.sub_apply, ← LinearMap.sub_apply, ← map_sub, hsub,
-      matrixPolynomialMulRightAction_algebraMap] at h
+    have h : matrixPolynomialMulRightAction R ρ₀ (V * BX - K) y i ∈ 𝔞 := by
+      simpa only [map_sub, LinearMap.sub_apply, Pi.sub_apply] using 𝔞.sub_mem hVBX hKy
+    simpa only [hsub, matrixPolynomialMulRightAction_algebraMap] using h
 
 /-- **Ribet's polynomial.** Let `ρ : Λ →ₐ[R] Matrix σ σ L` be an `R`-algebra homomorphism such
 that `Λ` is spanned over `R` by elements `w` for which the characteristic polynomial of `ρ w` has
