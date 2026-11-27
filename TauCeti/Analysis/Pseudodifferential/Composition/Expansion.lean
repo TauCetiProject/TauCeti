@@ -648,6 +648,11 @@ interpolating family. -/
 private def remainderAt (N : ℕ) (t : ℝ) (x ξ : CoordinateSpace n) : V →L[ℂ] U :=
   scaledSharp a b t x ξ - ∑ k ∈ range N, t ^ k • (a.sharpTerm b k).coefficient (x, ξ)
 
+/-- With no terms subtracted, the remainder is the shifted composition integral. -/
+private theorem remainderAt_zero_eq_integral (t : ℝ) (x ξ : CoordinateSpace n) :
+    remainderAt a b 0 t x ξ = ∫ η, sharpIntegrand a b (t * (2 * π)) (x, ξ) η := by
+  simp [remainderAt, scaledSharp]
+
 /-- The derivative of the polynomial part `∑_{k < N + 1} t^k sharpTerm a b k` is given by the
 recursion defining `sharpTerm`. -/
 private theorem hasDerivAt_sum_pow_smul_sharpTerm (N : ℕ) (a : Symbol n W U m')
@@ -686,6 +691,30 @@ private theorem remainderAt_zero [CompleteSpace W] [CompleteSpace U]
   rw [remainderAt, scaledSharp_zero hb, Finset.sum_range_succ']
   simp
 
+/-- The inductive step of the remainder estimates: a bound `D j` for the remainders with `N` terms
+of `(∂_{ξⱼ} a, ∂_{xⱼ} b)` along `t ∈ [0, 1]` gives the bound `∑ⱼ D j` for the remainder with
+`N + 1` terms, by the mean value inequality, since it vanishes at `t = 0`. -/
+private theorem norm_remainderAt_succ_le [CompleteSpace W] [CompleteSpace U]
+    (hb : b.HasCompactSpatialSupport) {N : ℕ} {x ξ : CoordinateSpace n} {D : Fin n → ℝ}
+    (hD : ∀ j, ∀ σ ∈ Set.Icc (0 : ℝ) 1,
+      ‖remainderAt (frequencyDeriv j a) (spatialDeriv j b) N σ x ξ‖ ≤ D j)
+    {τ : ℝ} (hτ : τ ∈ Set.Icc (0 : ℝ) 1) :
+    ‖remainderAt a b (N + 1) τ x ξ‖ ≤ ∑ j, D j := by
+  have hbound : ∀ σ ∈ Set.Ico (0 : ℝ) 1,
+      ‖(-Complex.I) • ∑ j, remainderAt (frequencyDeriv j a) (spatialDeriv j b) N σ x ξ‖ ≤
+        ∑ j, D j := by
+    intro σ hσ
+    rw [norm_smul, norm_neg, Complex.norm_I, one_mul]
+    exact (norm_sum_le _ _).trans
+      (Finset.sum_le_sum fun j _ ↦ hD j σ (Set.Ico_subset_Icc_self hσ))
+  have hmv := norm_image_sub_le_of_norm_deriv_le_segment'
+    (fun σ hσ ↦ (hasDerivAt_remainderAt hb N
+      (abs_le.2 ⟨by linarith [hσ.1], hσ.2⟩) x ξ).hasDerivWithinAt) hbound τ hτ
+  rw [remainderAt_zero hb, sub_zero, sub_zero] at hmv
+  have hD0 : 0 ≤ ∑ j, D j :=
+    Finset.sum_nonneg fun j _ ↦ (norm_nonneg _).trans (hD j 0 ⟨le_rfl, zero_le_one⟩)
+  exact hmv.trans (mul_le_of_le_one_right hD0 hτ.2)
+
 /-- **The remainder estimate.** `‖a #_t b - ∑_{k < N} t^k sharpTerm a b k‖ ≤ C ⟨ξ⟩ ^ (m' + m - N)`,
 uniformly for `t ∈ [0, 1]`, positions in a set `K` and the members `b i` of a family of symbols
 with compact spatial support, provided `‖∫ sharpIntegrand a (b i) s (x, ξ) η dη‖ ≤ C ⟨ξ⟩ ^ (m' + m)`
@@ -713,7 +742,8 @@ private theorem exists_norm_remainderAt_le [CompleteSpace W] [CompleteSpace U] {
     obtain ⟨C, hC0, hC⟩ := hPQ ha hb
     refine ⟨C, hC0, fun i t ht x hx ξ ↦ ?_⟩
     have ht2 : |t| ≤ 2 := abs_le.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩
-    simpa [remainderAt, scaledSharp] using hC i _ (abs_mul_two_pi_le ht2) x hx ξ
+    rw [remainderAt_zero_eq_integral, Nat.cast_zero, sub_zero]
+    exact hC i _ (abs_mul_two_pi_le ht2) x hx ξ
   | succ N ih =>
     intro m m' a ha b hb
     choose C hC0 hC using fun j ↦ ih (hPfrequency ha j) (hQspatial hb j)
@@ -723,21 +753,9 @@ private theorem exists_norm_remainderAt_le [CompleteSpace W] [CompleteSpace U] {
       congr 1
       push_cast
       ring
-    have hbound : ∀ s ∈ Set.Ico (0 : ℝ) 1,
-        ‖(-Complex.I) • ∑ j, remainderAt (frequencyDeriv j a) (spatialDeriv j (b i)) N s x ξ‖ ≤
-          (∑ j, C j) * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - ((N + 1 : ℕ) : ℝ)) / 2) := by
-      intro s hs
-      rw [norm_smul, norm_neg, Complex.norm_I, one_mul, Finset.sum_mul]
-      refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
-      rw [← hw]
-      exact hC j i s (Set.Ico_subset_Icc_self hs) x hx ξ
-    have hmv := norm_image_sub_le_of_norm_deriv_le_segment'
-      (fun s hs ↦ (hasDerivAt_remainderAt (hQ hb i) N
-        (abs_le.2 ⟨by linarith [hs.1], hs.2⟩) x ξ).hasDerivWithinAt) hbound t ht
-    rw [remainderAt_zero (hQ hb i), sub_zero, sub_zero] at hmv
-    have hB : 0 ≤ (∑ j, C j) * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - ((N + 1 : ℕ) : ℝ)) / 2) :=
-      mul_nonneg (Finset.sum_nonneg fun j _ ↦ hC0 j) (by positivity)
-    exact hmv.trans (mul_le_of_le_one_right hB ht.2)
+    rw [Finset.sum_mul]
+    exact norm_remainderAt_succ_le (hQ hb i)
+      (fun j σ hσ ↦ (hC j i σ hσ x hx ξ).trans_eq (congrArg _ hw)) ht
 
 /-- If every frequency derivative of `a` along a word of length `N` vanishes, the remainder after
 `N` terms vanishes along the whole family `a #_t b`, `t ∈ [0, 1]`: its derivative in `t` is a
@@ -751,7 +769,7 @@ private theorem remainderAt_eq_zero [CompleteSpace W] [CompleteSpace U] (N : ℕ
   | zero =>
     intro m m' a ha b _ t _ x ξ
     have h0 (η : CoordinateSpace n) : a.coefficient (x, η) = 0 := by simpa using ha [] rfl x η
-    simp [remainderAt, scaledSharp, sharpIntegrand_apply, h0]
+    simp [remainderAt_zero_eq_integral, sharpIntegrand_apply, h0]
   | succ N ih =>
     intro m m' a ha b hb t ht x ξ
     have hderiv (s : ℝ) (hs : s ∈ Set.Icc (0 : ℝ) 1) :
@@ -995,18 +1013,17 @@ private theorem exists_norm_remainderAt_zero_le_seminorm (K L : Compacts (Coordi
           ‖remainderAt a b 0 τ x ξ‖ ≤ C * (∑ i ∈ s, Symbol.seminorm L i.1 i.2 a) *
             (∑ i ∈ t, Symbol.seminorm K i.1 i.2 b) * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - (0 : ℕ)) / 2) := by
   obtain ⟨t, C, hC0, hC⟩ := exists_norm_integral_sharpIntegrand_le_seminorm (U := U) (V := V)
-    (W := W) (m := m) (m' := m') K L (R := 2 * π) (by linarith [Real.two_le_pi])
+    (W := W) (m := m) (m' := m') K L (R := 4 * π) (by linarith [Real.two_le_pi])
   refine ⟨{([], [])}, t.image fun γ ↦ (γ, []), C, hC0, fun a b hbK τ hτ x hx ξ ↦ ?_⟩
-  have hτ' : |τ * (2 * π)| ≤ 2 * π := by
-    rw [abs_mul, abs_of_nonneg hτ.1, abs_of_pos Real.two_pi_pos]
-    exact mul_le_of_le_one_left Real.two_pi_pos.le hτ.2
-  rw [Finset.sum_singleton, Finset.sum_image fun _ _ _ _ h ↦ congrArg Prod.fst h]
-  simpa [remainderAt, scaledSharp] using hC a b hbK _ hτ' x hx ξ
+  rw [Finset.sum_singleton, Finset.sum_image fun _ _ _ _ h ↦ congrArg Prod.fst h,
+    remainderAt_zero_eq_integral, Nat.cast_zero, sub_zero]
+  exact hC a b hbK _ (abs_mul_two_pi_le (abs_le.2 ⟨by linarith [hτ.1], by linarith [hτ.2]⟩))
+    x hx ξ
 
 /-- The inductive step of `exists_norm_remainderAt_le_seminorm`: the derivative in `t` of the
 remainder with `N + 1` terms is `-i ∑ⱼ` the remainders with `N` terms of `(∂_{ξⱼ} a, ∂_{xⱼ} b)`, so
 a bound for those, with the seminorms of the derivatives rewritten as seminorms of `a` and `b`,
-gives one for it by the mean value inequality, since it vanishes at `t = 0`. -/
+gives one for it by the mean value inequality (`norm_remainderAt_succ_le`). -/
 private theorem exists_norm_remainderAt_succ_le_seminorm {K L : Compacts (CoordinateSpace n)}
     {N : ℕ} (ih : ∃ (s t : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
       ∀ (a : Symbol n W U (m' - 1)) (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport),
@@ -1052,21 +1069,9 @@ private theorem exists_norm_remainderAt_succ_le_seminorm {K L : Compacts (Coordi
     exact mul_le_mul_of_nonneg_right (mul_le_mul (mul_le_mul_of_nonneg_left hPj hC0) hQj
       (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _)
       (mul_nonneg hC0 (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _))) (by positivity)
-  -- the mean value inequality on `[0, τ]`, from the vanishing of the remainder at `0`
-  have hbound : ∀ σ ∈ Set.Ico (0 : ℝ) 1,
-      ‖(-Complex.I) • ∑ j, remainderAt (frequencyDeriv j a) (spatialDeriv j b) N σ x ξ‖ ≤
-        n * C * P * Q * w := by
-    intro σ hσ
-    rw [norm_smul, norm_neg, Complex.norm_I, one_mul]
-    refine (norm_sum_le _ _).trans ((Finset.sum_le_sum fun j _ ↦
-      hj j σ (Set.Ico_subset_Icc_self hσ)).trans_eq ?_)
-    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-    ring
-  have hmv := norm_image_sub_le_of_norm_deriv_le_segment'
-    (fun σ hσ ↦ (hasDerivAt_remainderAt hb N
-      (abs_le.2 ⟨by linarith [hσ.1], hσ.2⟩) x ξ).hasDerivWithinAt) hbound τ hτ
-  rw [remainderAt_zero hb, sub_zero, sub_zero] at hmv
-  exact hmv.trans (mul_le_of_le_one_right (by positivity) hτ.2)
+  refine (norm_remainderAt_succ_le hb hj hτ).trans_eq ?_
+  rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  ring
 
 /-- **The remainder estimate, bounded by seminorms.** For compact sets `K` and `L` of positions
 and every `N` there are finitely many seminorms and a constant `C` such that
