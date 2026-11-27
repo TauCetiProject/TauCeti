@@ -16,7 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Topology.MetricSpace.Annulus
 
 /-!
-# Polar-coordinate derivatives and integration over a closed annulus
+# Polar integration over a closed annulus
 
 The polar-coordinate change of variables for a translated closed annulus is the integral on
 `[a, b] × [-π, π]` with radial Jacobian `r`, when `a ≥ 0`; for its closed upper half
@@ -33,9 +33,10 @@ integrable on the polar chart exactly when the planar function is integrable
 `TauCeti.integral_fun_norm_complex` reduces the integral over `ℂ` to `2π` times its radial
 integral against `r`.
 
-The derivative formulas describe the radial and angular vectors of the inverse complex polar
-map. Evaluating the alternating part of a bilinear pairing on those vectors gives its value on
-`1` and `Complex.I`, multiplied by the radial Jacobian.
+The identity `LinearMap.apply_exp_circleMap_sub_swap` evaluates the alternating part of a
+bilinear pairing on the radial and angular vectors as its value on `1` and `Complex.I`,
+multiplied by the radial Jacobian. The vector formulas live in
+`TauCeti.Analysis.SpecialFunctions.Complex.PolarCoord`.
 -/
 
 public section

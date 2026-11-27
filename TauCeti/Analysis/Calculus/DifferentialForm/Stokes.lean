@@ -302,8 +302,9 @@ theorem extDeriv_pullback_polarCoord_symm_apply
       (![(1, 0), (0, 1)] i)) = ![exp (p.2 * I), circleMap 0 p.1 p.2 * I] := by
     funext i
     rw [(hasFDerivAt_add_polarCoord_symm p z₀).fderiv]
-    fin_cases i <;> simp [equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero,
-      equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one]
+    fin_cases i
+    · exact fderivComplexPolarCoordSymm_apply_one_zero p
+    · exact fderivComplexPolarCoordSymm_apply_zero_one p
   simp only [Function.comp_def, hvec]
   -- Convert the derivative of the one-form to a bilinear map for the polar Jacobian identity.
   let C : (ℂ [⋀^Fin 1]→L[ℝ] F) →L[ℝ] ℂ →L[ℝ] F :=
@@ -328,8 +329,8 @@ private noncomputable def polarPullback (ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F
 private theorem polarPullback_apply_radial (ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F) (z₀ : ℂ) (r θ : ℝ) :
     polarPullback ω z₀ (r, θ) (fun _ ↦ (1, 0)) = ω (circleMap z₀ r θ) (fun _ ↦ exp (θ * I)) := by
   have hd : fderiv ℝ (fun q ↦ z₀ + Complex.polarCoord.symm q) (r, θ) (1, 0) = exp (θ * I) := by
-    simp only [(hasFDerivAt_add_polarCoord_symm (r, θ) z₀).fderiv, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero]
+    simp only [(hasFDerivAt_add_polarCoord_symm (r, θ) z₀).fderiv,
+      fderivComplexPolarCoordSymm_apply_one_zero]
   simp only [polarPullback, ContinuousAlternatingMap.compContinuousLinearMap_apply,
     Function.comp_def, hd]
   rw [add_polarCoord_symm_eq_circleMap]
@@ -340,8 +341,8 @@ private theorem polarPullback_apply_angular (ω : ℂ → ℂ [⋀^Fin 1]→L[�
       ω (circleMap z₀ r θ) (fun _ ↦ circleMap 0 r θ * I) := by
   have hd : fderiv ℝ (fun q ↦ z₀ + Complex.polarCoord.symm q) (r, θ) (0, 1) =
       circleMap 0 r θ * I := by
-    simp only [(hasFDerivAt_add_polarCoord_symm (r, θ) z₀).fderiv, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one]
+    simp only [(hasFDerivAt_add_polarCoord_symm (r, θ) z₀).fderiv,
+      fderivComplexPolarCoordSymm_apply_zero_one]
   simp only [polarPullback, ContinuousAlternatingMap.compContinuousLinearMap_apply,
     Function.comp_def, hd]
   rw [add_polarCoord_symm_eq_circleMap]

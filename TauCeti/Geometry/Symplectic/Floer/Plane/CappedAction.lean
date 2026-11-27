@@ -203,12 +203,14 @@ private theorem mpullback_comp_endDisc_apply (φ : RoughForm I M F 2) {u : ℝ �
   have key' := smul_right_injective F (two_ne_zero' ℝ) key
   have h₁ : fderivPolarCoordSymm q (1, 0) =
       Complex.equivRealProdCLM (Complex.exp (q.2 * Complex.I)) := by
-    rw [← equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero,
-      ContinuousLinearEquiv.apply_symm_apply]
+    simpa only [fderivComplexPolarCoordSymm_def, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using
+      congrArg Complex.equivRealProdCLM (fderivComplexPolarCoordSymm_apply_one_zero q)
   have h₂ : fderivPolarCoordSymm q (0, 1) =
       Complex.equivRealProdCLM (circleMap 0 q.1 q.2 * Complex.I) := by
-    rw [← equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one,
-      ContinuousLinearEquiv.apply_symm_apply]
+    simpa only [fderivComplexPolarCoordSymm_def, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using
+      congrArg Complex.equivRealProdCLM (fderivComplexPolarCoordSymm_apply_zero_one q)
   have he₁ : Complex.equivRealProdCLM 1 = ((1 : ℝ), (0 : ℝ)) := by simp
   have he₂ : Complex.equivRealProdCLM Complex.I = ((0 : ℝ), (1 : ℝ)) := by simp
   have hq : B (fderivPolarCoordSymm q (1, 0)) (fderivPolarCoordSymm q (0, 1)) =

@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 The Cartesian polar parametrization is a `C^n` local diffeomorphism at every nonzero radius,
 for every regularity `n ≥ 1`, including analytic regularity. This follows from the injectivity
-of its differential `TauCeti.polarCoordSymmDeriv` and the inverse function theorem.
+of its differential `TauCeti.fderivComplexPolarCoordSymm` and the inverse function theorem.
 -/
 
 public noncomputable section
@@ -32,7 +32,7 @@ theorem isLocalDiffeomorphAt_polarCoord_symm (x : ℝ × ℝ) (hx : x.1 ≠ 0)
   refine TauCeti.isLocalDiffeomorphAt_of_injective_mfderiv hs.contMDiff.contMDiffOn
     isOpen_univ (Set.mem_univ x) BoundarylessManifold.isInteriorPoint hn ?_
     Complex.equivRealProdCLM.symm.toLinearEquiv.finrank_eq
-  rw [mfderiv_eq_fderiv, fderiv_polarCoord_symm]
-  exact polarCoordSymmDeriv_injective x hx
+  rw [mfderiv_eq_fderiv, fderiv_complexPolarCoord_symm]
+  exact fderivComplexPolarCoordSymm_injective x hx
 
 end TauCeti

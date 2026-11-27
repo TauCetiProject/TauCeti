@@ -27,10 +27,11 @@ theorem polarCoord_symm_eq_projection (p : PolarPoint) :
   apply Complex.ext <;> simp [-Complex.ofReal_cos, -Complex.ofReal_sin, radius_def, angle_def]
 
 /-- All deck translations preserve the pullback inner product. -/
-theorem inner_polarCoordSymmDeriv_deckShift (k : ℤ) (p : PolarPoint) (v w : ℝ × ℝ) :
-    ⟪polarCoordSymmDeriv (deckShift k p).val v, polarCoordSymmDeriv (deckShift k p).val w⟫ =
-      ⟪polarCoordSymmDeriv p.val v, polarCoordSymmDeriv p.val w⟫ := by
+theorem inner_fderivComplexPolarCoordSymm_deckShift (k : ℤ) (p : PolarPoint) (v w : ℝ × ℝ) :
+    ⟪fderivComplexPolarCoordSymm (deckShift k p).val v,
+      fderivComplexPolarCoordSymm (deckShift k p).val w⟫ =
+      ⟪fderivComplexPolarCoordSymm p.val v, fderivComplexPolarCoordSymm p.val w⟫ := by
   simpa only [deckShift_val] using
-    inner_polarCoordSymmDeriv_add_angle p.val v w ((k : ℝ) * (2 * Real.pi))
+    inner_fderivComplexPolarCoordSymm_add_angle p.val v w ((k : ℝ) * (2 * Real.pi))
 
 end TauCeti.PolarGraph
