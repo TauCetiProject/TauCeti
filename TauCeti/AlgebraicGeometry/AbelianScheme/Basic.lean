@@ -308,6 +308,21 @@ lemma toOverHom_homEquivIsMonHom_symm_apply {A B : AbelianScheme S}
     toOverHom ((homEquivIsMonHom A B).symm g) = g.val :=
   (rfl)
 
+/-- Construct an isomorphism of abelian schemes from an isomorphism of the underlying schemes over
+`S` that preserves the group law. -/
+def isoMk {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] : A ≅ B :=
+  InducedCategory.isoMk (Grp.mkIso' e)
+
+@[simp]
+lemma toOverHom_isoMk_hom {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] :
+    toOverHom (isoMk e).hom = e.hom :=
+  (rfl)
+
+@[simp]
+lemma toOverHom_isoMk_inv {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] :
+    toOverHom (isoMk e).inv = e.inv :=
+  (rfl)
+
 /-- The base-change functor along `f : T ⟶ S`, sending an abelian scheme `A` to `A.baseChange f`
 and a homomorphism to its pullback. -/
 @[expose] def baseChangeFunctor (f : T ⟶ S) : AbelianScheme S ⥤ AbelianScheme T where

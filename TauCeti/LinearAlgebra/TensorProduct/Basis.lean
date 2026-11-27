@@ -32,6 +32,10 @@ consists of pure tensors.
   `Module.Basis.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft`: coordinates in a basis of
   the left factor commute with maps of the right factor, so such a map kills an element exactly
   when it kills every coordinate.
+* `Module.Basis.mem_range_lTensor_subtype_iff`: an element of `M ⊗ N` lies in `M ⊗ W` exactly
+  when its coordinates in a basis of `M` lie in `W`.
+* `TensorProduct.forall_lTensor_eq_zero_iff_mem_range`: for free `M`, the common kernel of the
+  maps `1 ⊗ f_j` is `M ⊗ ⋂ ker f_j`.
 * `Module.Basis.baseChange_reindex`: scalar extension of a basis commutes with reindexing it.
 * `Module.Basis.baseChange_repr_tmul_basis`, `Module.Basis.baseChange_repr_tmul_eq_smul_mapRange`,
   `Module.Basis.baseChange_repr_one_tmul`, and `Module.Basis.baseChange_repr_symm_single`:
@@ -154,9 +158,42 @@ theorem lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft (g : N →ₗ[R] P) (
   rw [← (equivFinsuppOfBasisLeft ℬ).map_eq_zero_iff, Finsupp.ext_iff]
   simp
 
+/-- **An element of `M ⊗ N` lies in `M ⊗ W` exactly when its coordinates lie in `W`**, for a
+basis of `M`. -/
+theorem mem_range_lTensor_subtype_iff (W : Submodule R N) (x : M ⊗[R] N) :
+    x ∈ LinearMap.range (W.subtype.lTensor M) ↔ ∀ i, equivFinsuppOfBasisLeft ℬ x i ∈ W := by
+  constructor
+  · rintro ⟨y, rfl⟩ i
+    rw [equivFinsuppOfBasisLeft_lTensor_apply]
+    exact (equivFinsuppOfBasisLeft ℬ y i).property
+  · intro h
+    -- Rebuild `x` from its coordinates: `x = ∑ ℬ i ⊗ xᵢ`, with every `xᵢ ∈ W`.
+    refine ⟨∑ i ∈ (equivFinsuppOfBasisLeft ℬ x).support, ℬ i ⊗ₜ ⟨_, h i⟩, ?_⟩
+    conv_rhs => rw [← (equivFinsuppOfBasisLeft ℬ).symm_apply_apply x,
+      equivFinsuppOfBasisLeft_symm_apply, Finsupp.sum]
+    simp only [map_sum, LinearMap.lTensor_tmul, Submodule.subtype_apply]
+
 end EquivFinsuppOfBasisLeft
 
 end Module.Basis
+
+namespace TensorProduct
+
+variable {R M N P ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Module.Free R M]
+  [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
+
+/-- **The common kernel of the maps `1 ⊗ f_j` on `M ⊗ N` is `M ⊗ ⋂ ker f_j`**, for a free
+module `M`. -/
+theorem forall_lTensor_eq_zero_iff_mem_range (f : ι → N →ₗ[R] P) (x : M ⊗[R] N) :
+    (∀ j, (f j).lTensor M x = 0) ↔
+      x ∈ LinearMap.range ((⨅ j, LinearMap.ker (f j)).subtype.lTensor M) := by
+  classical
+  let b := Module.Free.chooseBasis R M
+  simp_rw [b.mem_range_lTensor_subtype_iff, b.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft,
+    Submodule.mem_iInf, LinearMap.mem_ker]
+  exact forall_comm
+
+end TensorProduct
 
 namespace Module.Basis
 

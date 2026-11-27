@@ -31,9 +31,6 @@ asserting the excluded `p`-primary equal-characteristic existence theorem.
   subgroups and finite abelian layers in characteristic zero.
 * `TauCeti.ClassFieldTheory.localClassFieldCorrespondencePrimeToResidueCharacteristic`: the
   corresponding order isomorphism in the prime-to-residue-characteristic range.
-* `TauCeti.ClassFieldTheory.LayerPrimeTo` and
-  `TauCeti.ClassFieldTheory.localNormOpenSubgroupPrimeTo`: finite layers of degree prime to `p`,
-  abelian or not, and their norm subgroups as subgroups of index prime to `p`.
 
 ## References
 
@@ -99,14 +96,6 @@ theorem localNormOpenSubgroup_toSubgroup
     (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
     (localNormOpenSubgroup K V).val.toSubgroup = localNormSubgroup K V :=
   (rfl)
-
-/-- The norm subgroup of a finite layer, bundled by `localNormOpenSubgroup`, lies in an open
-finite-index subgroup `N` exactly when the underlying norm subgroup lies in the underlying subgroup
-of `N`. -/
-theorem localNormOpenSubgroup_le_iff_localNormSubgroup_le
-    {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)} {N : LocalNormSubgroups K} :
-    localNormOpenSubgroup K V ≤ N ↔ localNormSubgroup K V ≤ N.val.toSubgroup := by
-  rw [← localNormOpenSubgroup_toSubgroup, Subtype.coe_le_coe.symm, OpenSubgroup.toSubgroup_le]
 
 /-- In characteristic zero, an open finite-index subgroup of `Kˣ` is the norm subgroup of a
 finite abelian layer. This is the bundled form used to define its class field. -/
@@ -175,13 +164,6 @@ theorem localClassFieldCorrespondence_symm_apply [CharZero K]
   unfold localClassFieldCorrespondence
   rfl
 
-/-- The norm subgroup of the class field of `N` is `N`, as an open finite-index subgroup. -/
-@[simp]
-theorem localNormOpenSubgroup_localClassField [CharZero K] (N : LocalNormSubgroups K) :
-    localNormOpenSubgroup K (localClassField N).val = N := by
-  rw [← localClassFieldCorrespondence_symm_apply, ← localClassFieldCorrespondence_apply,
-    OrderIso.symm_apply_apply]
-
 /-- The Galois group of the class field attached to `N` is canonically `Kˣ/N`. -/
 def localClassFieldGaloisEquiv [CharZero K] (N : LocalNormSubgroups K) :
     Kˣ ⧸ N.val.toSubgroup ≃* (ofOpenNormal (localClassField N).val).Gal :=
@@ -214,27 +196,6 @@ abbrev AbelianLayerPrimeTo
     (K : Type) [Field K] (p : ℕ) : Type :=
   {V : AbelianLayer (AbsoluteGaloisGroup K) // (ofOpenNormal V.val).degree.Coprime p}
 
-/-- Finite layers, abelian or not, whose degree is prime to `p`. -/
-abbrev LayerPrimeTo (K : Type) [Field K] (p : ℕ) : Type :=
-  {V : OpenNormalSubgroup (AbsoluteGaloisGroup K) // (ofOpenNormal V).degree.Coprime p}
-
-/-- The norm subgroup of a finite layer of degree prime to `p`, as an open subgroup of `Kˣ` of
-index prime to `p`; the index divides the degree
-(`OpenNormalSubgroup.index_localNormSubgroup_dvd_degree`). -/
-def localNormOpenSubgroupPrimeTo (p : ℕ) (V : LayerPrimeTo K p) :
-    LocalNormSubgroupsPrimeTo K p :=
-  ⟨localNormOpenSubgroup K V.val,
-    V.property.coprime_dvd_left <| by
-      rw [localNormOpenSubgroup_toSubgroup]
-      exact V.val.index_localNormSubgroup_dvd_degree⟩
-
-/-- Forgetting the prime-to-`p` index condition on `localNormOpenSubgroupPrimeTo p V` recovers the
-open finite-index norm subgroup `localNormOpenSubgroup K V.val` of the underlying layer. -/
-@[simp]
-theorem localNormOpenSubgroupPrimeTo_coe (p : ℕ) (V : LayerPrimeTo K p) :
-    (localNormOpenSubgroupPrimeTo p V).val = localNormOpenSubgroup K V.val :=
-  (rfl)
-
 /-- Prime-to-residue-characteristic local existence on the bundled carriers. -/
 theorem exists_localClassField_primeToResidueCharacteristic
     (p : ℕ) [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
@@ -260,22 +221,6 @@ theorem localClassFieldPrimeToResidueCharacteristic_normSubgroup
       N.val.val.toSubgroup :=
   (exists_localClassField_primeToResidueCharacteristic p N).choose_spec
 
-/-- The layer of the prime-to-`p` local class field of `N`, forgetting abelianity: a layer of
-degree prime to `p`. -/
-def localClassFieldPrimeToResidueCharacteristicLayer
-    (p : ℕ) [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) : LayerPrimeTo K p :=
-  ⟨(localClassFieldPrimeToResidueCharacteristic p N).val.val,
-    (localClassFieldPrimeToResidueCharacteristic p N).property⟩
-
-/-- The open normal subgroup underlying `localClassFieldPrimeToResidueCharacteristicLayer p N` is
-that of the prime-to-`p` local class field of `N`. -/
-@[simp]
-theorem localClassFieldPrimeToResidueCharacteristicLayer_coe
-    (p : ℕ) [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
-    (localClassFieldPrimeToResidueCharacteristicLayer p N).val =
-      (localClassFieldPrimeToResidueCharacteristic p N).val.val :=
-  (rfl)
-
 /-- The prime-to-`p` local class-field assignment preserves the subgroup order. -/
 theorem localClassFieldPrimeToResidueCharacteristic_le_iff
     (p : ℕ) [CharP 𝓀[K] p]
@@ -295,7 +240,9 @@ def localClassFieldCorrespondencePrimeToResidueCharacteristic
     (p : ℕ) [CharP 𝓀[K] p] :
     LocalNormSubgroupsPrimeTo K p ≃o AbelianLayerPrimeTo K p where
   toFun := localClassFieldPrimeToResidueCharacteristic p
-  invFun V := localNormOpenSubgroupPrimeTo p ⟨V.val.val, V.property⟩
+  invFun V := ⟨localNormOpenSubgroup K V.val.val, by
+    rw [localNormOpenSubgroup_toSubgroup, index_localNormSubgroup (K := K) V.val.property]
+    exact V.property⟩
   left_inv N := by
     apply Subtype.ext
     apply Subtype.ext
@@ -305,8 +252,9 @@ def localClassFieldCorrespondencePrimeToResidueCharacteristic
     apply Subtype.ext
     apply Subtype.ext
     exact localClassField_unique
-      (localClassFieldPrimeToResidueCharacteristic p
-        (localNormOpenSubgroupPrimeTo p ⟨V.val.val, V.property⟩)).val.property
+      (localClassFieldPrimeToResidueCharacteristic p ⟨localNormOpenSubgroup K V.val.val, by
+        rw [localNormOpenSubgroup_toSubgroup, index_localNormSubgroup (K := K) V.val.property]
+        exact V.property⟩).val.property
       V.val.property
       (localClassFieldPrimeToResidueCharacteristic_normSubgroup p _)
   map_rel_iff' := fun {N₁ N₂} ↦
@@ -330,16 +278,6 @@ theorem localClassFieldCorrespondencePrimeToResidueCharacteristic_symm_apply_coe
       localNormOpenSubgroup K V.val.val := by
   unfold localClassFieldCorrespondencePrimeToResidueCharacteristic
   rfl
-
-/-- The norm subgroup of the class field of a subgroup `N` of index prime to `p` is `N`. -/
-@[simp]
-theorem localNormOpenSubgroupPrimeTo_localClassFieldPrimeToResidueCharacteristicLayer
-    (p : ℕ) [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
-    localNormOpenSubgroupPrimeTo p (localClassFieldPrimeToResidueCharacteristicLayer p N) = N :=
-  Subtype.ext <| by
-    rw [localNormOpenSubgroupPrimeTo_coe, localClassFieldPrimeToResidueCharacteristicLayer_coe,
-      ← localClassFieldCorrespondencePrimeToResidueCharacteristic_symm_apply_coe,
-      ← localClassFieldCorrespondencePrimeToResidueCharacteristic_apply, OrderIso.symm_apply_apply]
 
 /-- On fixed fields, the prime-to-residue-characteristic correspondence reverses inclusions. -/
 theorem localClassFieldPrimeToResidueCharacteristic_orderReversing

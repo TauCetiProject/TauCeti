@@ -192,13 +192,6 @@ theorem mem_localGroundOrderIso {H : Subgroup Kˣ} {a : (unitsFormation K).level
         (fixedField_toSubgroup_top_eq_fieldRange K)).symm a).toMul ∈ H :=
   Iff.rfl
 
-/-- `localGroundOrderIso` preserves the index of a subgroup of `Kˣ`. -/
-@[simp]
-theorem index_localGroundOrderIso (H : Subgroup Kˣ) :
-    (localGroundOrderIso K H).toAddSubgroup.index = H.index := by
-  change (H.toAddSubgroup.comap _).index = _
-  rw [AddSubgroup.index_comap_of_surjective _ (AddEquiv.surjective _), Subgroup.index_toAddSubgroup]
-
 /-- `localGroundOrderIso` carries the local norm subgroup of `V` to the norm subgroup of the layer
 `V ◁ G_K` of the units formation. -/
 @[simp]
