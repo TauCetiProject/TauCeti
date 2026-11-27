@@ -8,9 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Kostant
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Symplectic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Comoment
-public import TauCeti.LinearAlgebra.Projectivization.HermitianProjector
-public import TauCeti.Topology.ComplexProjectiveSpace.Homogeneous
-public import TauCeti.Topology.ComplexProjectiveSpace.Projectivization
+public import TauCeti.Topology.ComplexProjectiveSpace.HermitianProjector
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 import TauCeti.Analysis.Matrix.EuclideanLin
@@ -24,8 +22,9 @@ import TauCeti.Geometry.Manifold.Submersion.Basic
 
 Complex projective space `CPⁿ` (`TauCeti.ComplexProjectiveSpace n`) is the space of complex lines
 `L` in `ℂⁿ⁺¹`. Identify each line with the orthogonal projector `Π_L` onto it, a Hermitian matrix
-(`TauCeti.ComplexProjectiveSpace.hermitianProjector`), and the dual of the unitary Lie algebra
-`𝔲(n + 1)` of skew-Hermitian matrices with the Hermitian matrices by the trace pairing
+(`TauCeti.ComplexProjectiveSpace.hermitianProjector`, from
+`TauCeti.Topology.ComplexProjectiveSpace.HermitianProjector`), and the dual of the unitary Lie
+algebra `𝔲(n + 1)` of skew-Hermitian matrices with the Hermitian matrices by the trace pairing
 `⟨H, X⟩ = -i tr(H X)` (`TauCeti.unitaryTracePairing`). This file proves that the inclusion
 
 `μ(L) = ⟨Π_L, ·⟩` (`TauCeti.ComplexProjectiveSpace.unitaryMomentMap`)
@@ -61,7 +60,6 @@ the Riemann sphere model of `CP¹` (`OnePoint.isMomentMap_fubiniStudyMoment`).
 
 ## Main definitions
 
-* `TauCeti.ComplexProjectiveSpace.hermitianProjector`: the orthogonal projector `Π_L` of a line.
 * `TauCeti.ComplexProjectiveSpace.unitaryMomentMap`: the covector `⟨Π_L, ·⟩ ∈ 𝔲(n + 1)*`.
 * `TauCeti.ComplexProjectiveSpace.unitaryAction`: the infinitesimal action of `𝔲(n + 1)` generated
   by the components of `μ`.
@@ -93,54 +91,6 @@ open scoped ContDiff Manifold InnerProductSpace
 namespace TauCeti.ComplexProjectiveSpace
 
 variable {n : ℕ}
-
-/-! ### The orthogonal projector of a line -/
-
-variable (n) in
-/-- The **orthogonal projector** `Π_L` onto a line `L` of `ℂⁿ⁺¹`, as a Hermitian matrix: the
-Hermitian projector `y y* / (y* y)` of any vector `y` spanning `L`
-(`Projectivization.hermitianProjector`). -/
-def hermitianProjector (x : ComplexProjectiveSpace n) :
-    selfAdjoint.submodule ℝ (Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ) :=
-  ⟨(homeomorphProjectivization n x).hermitianProjector,
-    (mem_hermitianProjectorLocus.mp
-      (Projectivization.hermitianProjector_mem_hermitianProjectorLocus _)).1.isSelfAdjoint⟩
-
-theorem coe_hermitianProjector (x : ComplexProjectiveSpace n) :
-    (hermitianProjector n x : Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ) =
-      (homeomorphProjectivization n x).hermitianProjector :=
-  (rfl)
-
-/-- Distinct lines have distinct projectors. -/
-theorem hermitianProjector_injective : Injective (hermitianProjector n) := fun _ _ h ↦
-  (homeomorphProjectivization n).injective
-    (Projectivization.hermitianProjector_injective (congrArg Subtype.val h))
-
-/-- Two lines are equal exactly when their projectors are. -/
-@[simp]
-theorem hermitianProjector_inj {x y : ComplexProjectiveSpace n} :
-    hermitianProjector n x = hermitianProjector n y ↔ x = y :=
-  hermitianProjector_injective.eq_iff
-
-/-- The projector onto the line spanned by a unit vector `y` is the Hermitian projector of `y`,
-the matrix `y y*`. -/
-@[simp]
-theorem coe_hermitianProjector_mk (y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
-    (hermitianProjector n (mk n y) : Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ) =
-      rankOneHermitianProjector (ofLp (y : EuclideanSpace ℂ (Fin (n + 1)))) := by
-  rw [coe_hermitianProjector, homeomorphProjectivization_mk, Projectivization.hermitianProjector_mk]
-
-/-- **The projector is unitarily equivariant**: moving a line by a unitary matrix `A` conjugates
-its projector by `A`, `Π_(A L) = A Π_L A*`. -/
-theorem coe_hermitianProjector_smul (A : unitaryGroup (Fin (n + 1)) ℂ)
-    (x : ComplexProjectiveSpace n) :
-    (hermitianProjector n (A • x) : Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ) =
-      A * hermitianProjector n x * star (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ) := by
-  induction x using ComplexProjectiveSpace.inductionOn with
-  | h y =>
-    rw [smul_mk, coe_hermitianProjector_mk, coe_hermitianProjector_mk,
-      LinearIsometryEquiv.coe_smul_unitSphere, UnitaryGroup.toLinearIsometryEquiv_apply, ofLp_toLp,
-      rankOneHermitianProjector_unitary_mulVec A.property]
 
 /-! ### The moment map -/
 
