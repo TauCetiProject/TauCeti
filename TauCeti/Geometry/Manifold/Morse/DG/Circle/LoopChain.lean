@@ -45,10 +45,11 @@ critical points, this would give the case `n = 1` of the computation
 hypotheses are not yet instantiated for `Y = S¹`).
 
 The proof reads the complex in the group ring `R[π₁(Y, y₀)]`. The image of `x` there is
-`r g - r t g = g r (1 - t)`, where `g` is the class of the loop traced along the upper half-circle
-(`TauCeti.fundamentalGroupHom_circleCosHalfLoop_neg_one`); `g` commutes with `t`, which generates
-(`IsAdaptedPseudoGradient.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos_eq_single_mul`).
-So `x` is a cycle whose image is the unit `-g r` times `t - 1`. Relabelling the maximum as a cell
+`r g - r t g = (1 - t) g r`, where `g` is the class of the loop traced along the upper half-circle
+(`TauCeti.fundamentalGroupHom_circleCosHalfLoop_neg_one`,
+`IsAdaptedPseudoGradient.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos_eq_one_sub_mul`).
+Since `t` generates `π₁(Y, y₀)`, it commutes with `g`, so `x` is a cycle whose image is the unit
+`-g r` times `t - 1`. Relabelling the maximum as a cell
 attached along `x` to the minimum, the complex is the module of `TauCeti.cycleCellCocycle`, as for
 any twisting cocycle on two generators
 (`TauCeti.exists_twistedDifferential_eq_of_cycleCellCocycle`), and that module resolves the ground
@@ -248,14 +249,20 @@ theorem exists_twistedDifferential_eq_circleCos (hr : IsUnit r)
     (circleCosHalfLoop θ (hθ circleCosMaxCrit) (hθ circleCosMinCrit) 1)
   have ha : IsUnit (-single g r) :=
     (IsUnit.map MonoidAlgebra.singleHom (x := (r, g)) (Prod.isUnit_iff.2 ⟨hr, Group.isUnit g⟩)).neg
+  -- Since `t` generates `π₁(Y, y₀)`, it commutes with `g`.
+  have hgt : Commute (single (FundamentalGroup.mapOfEq θ (hθ circleCosMaxCrit)
+      (MooreLoopSpace.fundamentalGroupHom 0 circleCosLoop)) 1 - 1) (single g r) := by
+    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.1 (hgen ▸ Subgroup.mem_top g)
+    exact (MonoidAlgebra.single_commute_single (hk ▸ (Commute.refl _).zpow_right k)
+      (Commute.one_left r)).sub_left (Commute.one_left _)
   -- Relabelling the maximum as a cell attached along `x` to the minimum, the complex is that of
   -- `TauCeti.cycleCellCocycle`, which resolves the ground ring.
   exact exists_twistedDifferential_eq_of_cycleCellCocycle _
     eq_circleCosMaxCrit_or_eq_circleCosMinCrit hind hx
     (fun _ hv hεv ↦ exists_cycleCellCocycle_differential_eq_of_loopChainToGroupAlgebra_eq_mul hB hx
       _ hgen hinf ha (by
-        rw [hX.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos_eq_single_mul hdense hθ hc
-          S hS₁ hS₂ hgen, neg_mul_comm, neg_sub]) hv hεv) hu hε
+        rw [hX.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos_eq_one_sub_mul hdense hθ hc
+          S hS₁ hS₂, ← neg_sub, neg_mul, hgt.eq, neg_mul]) hv hεv) hu hε
 
 end Homology
 
