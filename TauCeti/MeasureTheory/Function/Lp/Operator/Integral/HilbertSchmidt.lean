@@ -44,13 +44,14 @@ linear embedding of `L²(μ ⊗ ν)` into the Hilbert–Schmidt operators.
 * `TauCeti.hilbertSchmidtEnergy_integralOperatorL2`,
   `TauCeti.hilbertSchmidtNorm_integralOperatorL2`: the Hilbert–Schmidt energy and norm of `T_K`
   are `‖K‖₂²` and `‖K‖₂`.
-* `TauCeti.integralOperatorL2_mem_hilbertSchmidt`: `T_K` lies in the Hilbert–Schmidt ideal.
+* `TauCeti.integralOperatorL2_mem_finiteSubmodule_hilbertSchmidt`: `T_K` lies in the
+  Hilbert–Schmidt ideal.
 * `TauCeti.integralOperatorL2_injective`: equal operators have equal kernel classes.
 * `TauCeti.integralOperatorL2HS`: the kernel-to-operator map as a linear isometry into the
   normed Hilbert–Schmidt ideal.
 * `TauCeti.integralOperatorL2_prodMul_star`: the kernel `w ⊗ star u` gives the rank-one operator
-  `f ↦ ⟪u, f⟫ w`, whose Hilbert–Schmidt norm `‖u‖₂ ‖w‖₂` is
-  `ContinuousLinearMap.hilbertSchmidtNorm_smulRight_innerSL`.
+  `InnerProductSpace.rankOne 𝕜 w u = ⟪u, ·⟫ • w`, whose Hilbert–Schmidt norm `‖w‖₂ ‖u‖₂` is
+  `ContinuousLinearMap.hilbertSchmidtNorm_rankOne`.
 
 ## Implementation notes
 
@@ -229,13 +230,14 @@ theorem inner_integralOperatorL2 [SFinite μ] (K : Lp 𝕜 2 (μ.prod ν)) (h : 
         ring
 
 /-- **Rank-one kernels.** The kernel `(x, y) ↦ w x * conj (u y)` gives the rank-one operator
-`f ↦ ⟪u, f⟫ w`. -/
+`rankOne 𝕜 w u = ⟪u, ·⟫ • w`. -/
+@[simp]
 theorem integralOperatorL2_prodMul_star [SFinite μ] (w : Lp 𝕜 2 μ) (u : Lp 𝕜 2 ν) :
-    integralOperatorL2 μ ν (prodMul w (star u)) = (innerSL 𝕜 u).smulRight w := by
+    integralOperatorL2 μ ν (prodMul w (star u)) = InnerProductSpace.rankOne 𝕜 w u := by
   ext1 f
   refine ext_inner_left 𝕜 fun h ↦ ?_
-  rw [inner_integralOperatorL2, inner_prodMul, ContinuousLinearMap.smulRight_apply,
-    innerSL_apply_apply, inner_smul_right, inner_star_star, mul_comm]
+  rw [inner_integralOperatorL2, inner_prodMul, InnerProductSpace.rankOne_apply, inner_smul_right,
+    inner_star_star, mul_comm]
 
 /-! ### The Hilbert–Schmidt norm -/
 
@@ -266,7 +268,7 @@ theorem hilbertSchmidtNorm_integralOperatorL2 (K : Lp 𝕜 2 (μ.prod ν)) :
   norm_num
 
 /-- The integral operator of a square-integrable kernel lies in the Hilbert–Schmidt ideal. -/
-theorem integralOperatorL2_mem_hilbertSchmidt (K : Lp 𝕜 2 (μ.prod ν)) :
+theorem integralOperatorL2_mem_finiteSubmodule_hilbertSchmidt (K : Lp 𝕜 2 (μ.prod ν)) :
     integralOperatorL2 μ ν K ∈ ((OperatorIdealFamily.hilbertSchmidt 𝕜).operatorGauge
       (Lp 𝕜 2 ν) (Lp 𝕜 2 μ)).finiteSubmodule := by
   obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 (Lp 𝕜 2 ν)
@@ -287,7 +289,7 @@ variable (μ ν) in
 ideal `𝓛₂(L²(ν), L²(μ))`, normed by the Hilbert–Schmidt norm. -/
 def integralOperatorL2HS : Lp 𝕜 2 (μ.prod ν) →ₗᵢ[𝕜]
     ((OperatorIdealFamily.hilbertSchmidt 𝕜).operatorGauge (Lp 𝕜 2 ν) (Lp 𝕜 2 μ)).Carrier where
-  toFun K := ⟨integralOperatorL2 μ ν K, integralOperatorL2_mem_hilbertSchmidt K⟩
+  toFun K := ⟨integralOperatorL2 μ ν K, integralOperatorL2_mem_finiteSubmodule_hilbertSchmidt K⟩
   map_add' K L := by ext1; simp
   map_smul' c K := by ext1; simp
   norm_map' K := by

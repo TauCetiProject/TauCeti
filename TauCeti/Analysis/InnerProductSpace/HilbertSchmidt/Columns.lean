@@ -49,9 +49,10 @@ energy is compact**.
   exactly when its columns lie in `ℓ²`.
 * `ContinuousLinearMap.isCompactOperator_of_hilbertSchmidtEnergy_ne_top`: **Hilbert–Schmidt
   operators are compact**.
-* `ContinuousLinearMap.hilbertSchmidtEnergy_smulRight_innerSL` and
-  `ContinuousLinearMap.hilbertSchmidtNorm_smulRight_innerSL`: the rank-one operator
-  `x ↦ ⟪u, x⟫ w` has energy `‖u‖ₑ² ‖w‖ₑ²` and Hilbert–Schmidt norm `‖u‖ ‖w‖`.
+* `ContinuousLinearMap.hilbertSchmidtEnergy_rankOne` and
+  `ContinuousLinearMap.hilbertSchmidtNorm_rankOne`: the rank-one operator
+  `InnerProductSpace.rankOne 𝕜 x y = ⟪y, ·⟫ • x` has energy `‖x‖ₑ² ‖y‖ₑ²` and Hilbert–Schmidt
+  norm `‖x‖ ‖y‖`.
 
 ## References
 
@@ -268,24 +269,27 @@ end HilbertBasis
 
 namespace ContinuousLinearMap
 
+open InnerProductSpace
+
 variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
-/-- **Rank-one operators.** The Hilbert–Schmidt energy of `x ↦ ⟪u, x⟫ w` is `‖u‖ₑ² ‖w‖ₑ²` in
-every Hilbert basis of the source. -/
+/-- **Rank-one operators.** The Hilbert–Schmidt energy of `rankOne 𝕜 x y = ⟪y, ·⟫ • x` is
+`‖x‖ₑ² ‖y‖ₑ²` in every Hilbert basis of the source. -/
 @[simp]
-theorem hilbertSchmidtEnergy_smulRight_innerSL (u : E) (w : F) (b : HilbertBasis ι 𝕜 E) :
-    ((innerSL 𝕜 u).smulRight w).hilbertSchmidtEnergy b = ‖u‖ₑ ^ 2 * ‖w‖ₑ ^ 2 := by
-  rw [hilbertSchmidtEnergy_def, ← b.tsum_eNorm_inner_sq u, ← ENNReal.tsum_mul_right]
+theorem hilbertSchmidtEnergy_rankOne (x : F) (y : E) (b : HilbertBasis ι 𝕜 E) :
+    (rankOne 𝕜 x y).hilbertSchmidtEnergy b = ‖x‖ₑ ^ 2 * ‖y‖ₑ ^ 2 := by
+  rw [hilbertSchmidtEnergy_def, ← b.tsum_eNorm_inner_sq y, ← ENNReal.tsum_mul_left]
   refine tsum_congr fun i ↦ ?_
-  rw [smulRight_apply, innerSL_apply_apply, eNorm_smul, mul_pow, ← ofReal_norm ⟪u, b i⟫_𝕜,
-    norm_inner_symm, ofReal_norm]
+  rw [rankOne_apply, eNorm_smul, mul_pow, mul_comm, ← ofReal_norm ⟪y, b i⟫_𝕜, norm_inner_symm,
+    ofReal_norm]
 
-/-- **Rank-one operators.** The Hilbert–Schmidt norm of `x ↦ ⟪u, x⟫ w` is `‖u‖ ‖w‖`. -/
+/-- **Rank-one operators.** The Hilbert–Schmidt norm of `rankOne 𝕜 x y = ⟪y, ·⟫ • x` is
+`‖x‖ ‖y‖`. -/
 @[simp]
-theorem hilbertSchmidtNorm_smulRight_innerSL [CompleteSpace E] (u : E) (w : F) :
-    ((innerSL 𝕜 u).smulRight w).hilbertSchmidtNorm = ‖u‖ * ‖w‖ := by
+theorem hilbertSchmidtNorm_rankOne [CompleteSpace E] (x : F) (y : E) :
+    (rankOne 𝕜 x y).hilbertSchmidtNorm = ‖x‖ * ‖y‖ := by
   obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
-  rw [hilbertSchmidtNorm_eq_sqrt _ b, hilbertSchmidtEnergy_smulRight_innerSL, ← mul_pow,
+  rw [hilbertSchmidtNorm_eq_sqrt _ b, hilbertSchmidtEnergy_rankOne, ← mul_pow,
     ENNReal.toReal_pow, ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm,
     Real.sqrt_sq (by positivity)]
 
