@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactness.Paracompact
+public import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Paracompactness of regular Lindelöf spaces
@@ -18,6 +19,9 @@ The refinement uses a countable cover by open sets whose closures lie in members
 cover. Remove the closures of all preceding small sets from each corresponding cover member.
 The resulting open sets cover, and near a point in the m-th small set only the first m+1 sets
 can occur.
+
+The file also records that a universe lift of a paracompact space is paracompact
+(`TauCeti.paracompactSpace_ulift`).
 
 ## References
 
@@ -71,5 +75,10 @@ instance (priority := 100) paracompactSpace_of_regularSpace_lindelofSpace {X : T
     exact iUnion_eq_univ_iff.mpr fun x ↦
       let ⟨n, hn⟩ := iUnion_eq_univ_iff.mp hWcover x
       ⟨⟨n⟩, hn⟩
+
+/-- A universe lift of a paracompact space is paracompact. -/
+instance paracompactSpace_ulift {X : Type*} [TopologicalSpace X] [ParacompactSpace X] :
+    ParacompactSpace (ULift X) :=
+  (Homeomorph.ulift (X := X)).isClosedEmbedding.paracompactSpace
 
 end TauCeti

@@ -24,7 +24,7 @@ multiplication by `n * c` in degree `n`, a twisted form of Euler's identity.
 
 Specialising `f` to the endomorphisms `⁅x, -⁆` of a Lie module gives the action of a Lie algebra
 on its symmetric algebra, including the adjoint action; see
-`TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule`.
+`TauCeti.LinearAlgebra.SymmetricAlgebra.Lie.Module`.
 
 ## Main definitions and results
 

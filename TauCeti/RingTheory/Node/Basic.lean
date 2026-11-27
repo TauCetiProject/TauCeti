@@ -44,8 +44,13 @@ variable {R : Type*} [CommRing R] (a : R)
 instance : CommRing (NodeAlgebra R a) :=
   inferInstanceAs (CommRing (MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 * X 1 - C a}))
 
-instance : Algebra R (NodeAlgebra R a) :=
-  inferInstanceAs (Algebra R (MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 * X 1 - C a}))
+instance {S : Type*} [CommSemiring S] [Algebra S R] : Algebra S (NodeAlgebra R a) :=
+  inferInstanceAs (Algebra S (MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 * X 1 - C a}))
+
+instance {S T : Type*} [SMul S T] [CommSemiring S] [CommSemiring T]
+    [Algebra S R] [Algebra T R] [IsScalarTower S T R] :
+    IsScalarTower S T (NodeAlgebra R a) :=
+  inferInstanceAs (IsScalarTower S T (MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 * X 1 - C a}))
 
 /-- The quotient algebra map from polynomials to the nodal algebra. -/
 def mk : MvPolynomial (Fin 2) R →ₐ[R] NodeAlgebra R a :=
@@ -140,6 +145,157 @@ lemma hom_ext {A : Type*} [Semiring A] [Algebra R A]
   fin_cases i
   · exact h₀
   · exact h₁
+
+/-- Equivalence between `R`-algebra homomorphisms `NodeAlgebra R a →ₐ[R] A` and pairs `(x, y)`
+in `A` with `x * y = algebraMap R A a`. -/
+def liftEquiv (A : Type*) [CommSemiring A] [Algebra R A] :
+    (NodeAlgebra R a →ₐ[R] A) ≃ { p : A × A // p.1 * p.2 = algebraMap R A a } where
+  toFun f := ⟨(f (coord a 0), f (coord a 1)), by
+    rw [← map_mul, coord_zero_mul_coord_one, AlgHom.commutes]⟩
+  invFun p := lift a p.val.1 p.val.2 p.property
+  left_inv f := hom_ext a (lift_coord_zero a _ _ _) (lift_coord_one a _ _ _)
+  right_inv p := Subtype.ext (Prod.ext (lift_coord_zero a _ _ _) (lift_coord_one a _ _ _))
+
+@[simp] lemma liftEquiv_apply_fst {A : Type*} [CommSemiring A] [Algebra R A]
+    (f : NodeAlgebra R a →ₐ[R] A) : ((liftEquiv a A f : A × A).1) = f (coord a 0) := (rfl)
+
+@[simp] lemma liftEquiv_apply_snd {A : Type*} [CommSemiring A] [Algebra R A]
+    (f : NodeAlgebra R a →ₐ[R] A) : ((liftEquiv a A f : A × A).2) = f (coord a 1) := (rfl)
+
+@[simp] lemma liftEquiv_symm_apply {A : Type*} [CommSemiring A] [Algebra R A]
+    (p : { p : A × A // p.1 * p.2 = algebraMap R A a }) :
+    (liftEquiv a A).symm p = lift a p.val.1 p.val.2 p.property := (rfl)
+
+/-- Ring homomorphisms out of the nodal algebra are determined by `R` and the two coordinates. -/
+lemma ringHom_ext {A : Type*} [Semiring A] {q : R} {f g : NodeAlgebra R q →+* A}
+    (hR : ∀ r : R, f (algebraMap R (NodeAlgebra R q) r) = g (algebraMap R (NodeAlgebra R q) r))
+    (h₀ : f (coord q 0) = g (coord q 0)) (h₁ : f (coord q 1) = g (coord q 1)) : f = g := by
+  refine Ideal.Quotient.ringHom_ext (MvPolynomial.ringHom_ext (fun r ↦ ?_) (fun i ↦ ?_))
+  · have h := hR r; rwa [← (mk q).commutes r, MvPolynomial.algebraMap_eq] at h
+  · fin_cases i <;> [exact h₀; exact h₁]
+
+/-- Two `k`-algebra homomorphisms out of `NodeAlgebra B q` agree when they agree on `B`,
+`coord q 0`, and `coord q 1`. -/
+lemma algHom_ext_of_algebra {k B C : Type*} [CommSemiring k] [CommRing B] [Semiring C]
+    [Algebra k B] [Algebra k C] {q : B} {f g : NodeAlgebra B q →ₐ[k] C}
+    (hB : ∀ b : B, f (algebraMap B (NodeAlgebra B q) b) = g (algebraMap B (NodeAlgebra B q) b))
+    (h0 : f (coord q 0) = g (coord q 0)) (h1 : f (coord q 1) = g (coord q 1)) : f = g :=
+  AlgHom.toRingHom_injective (ringHom_ext hB h0 h1)
+
+/-- Universal property of `NodeAlgebra R q` for ring homomorphisms: a ring map `φ : R →+* C` and
+elements `x, y : C` satisfying `x * y = φ q` determine a unique ring homomorphism
+`NodeAlgebra R q →+* C`. -/
+def liftRingHom {C : Type*} [CommSemiring C] {q : R} (φ : R →+* C) (x y : C)
+    (hxy : x * y = φ q) : NodeAlgebra R q →+* C :=
+  letI : Algebra R C := φ.toAlgebra; (lift q x y hxy).toRingHom
+
+/-- `liftRingHom` restricts on scalars to the given coefficient ring homomorphism. -/
+@[simp] lemma liftRingHom_algebraMap {C : Type*} [CommSemiring C] {q : R} (φ : R →+* C)
+    (x y : C) (hxy : x * y = φ q) (r : R) :
+    liftRingHom φ x y hxy (algebraMap R (NodeAlgebra R q) r) = φ r := by
+  let _ : Algebra R C := φ.toAlgebra; exact (lift q x y hxy).commutes r
+
+/-- `liftRingHom` sends each coordinate to the corresponding chosen element. -/
+@[simp] lemma liftRingHom_coord {C : Type*} [CommSemiring C] {q : R} (φ : R →+* C) (x y : C)
+    (hxy : x * y = φ q) (i : Fin 2) : liftRingHom φ x y hxy (coord q i) = ![x, y] i := by
+  let _ : Algebra R C := φ.toAlgebra; exact lift_coord q x y hxy i
+
+/-- Functorial ring homomorphism `NodeAlgebra R q →+* NodeAlgebra S q'` along a ring homomorphism
+`φ : R →+* S` sending `q` to `q'`. -/
+def mapRingHom {S : Type*} [CommRing S] (φ : R →+* S) {q : R} {q' : S} (hq : φ q = q') :
+    NodeAlgebra R q →+* NodeAlgebra S q' :=
+  liftRingHom ((algebraMap S (NodeAlgebra S q')).comp φ) (coord q' 0) (coord q' 1) (by simp [hq])
+
+/-- `mapRingHom` acts on constants via the underlying coefficient ring homomorphism. -/
+@[simp] lemma mapRingHom_algebraMap {S : Type*} [CommRing S] (φ : R →+* S) {q : R} {q' : S}
+    (hq : φ q = q') (r : R) :
+    mapRingHom φ hq (algebraMap R (NodeAlgebra R q) r) = algebraMap S (NodeAlgebra S q') (φ r) :=
+  liftRingHom_algebraMap _ _ _ _ r
+
+/-- `mapRingHom` preserves each nodal coordinate. -/
+@[simp] lemma mapRingHom_coord {S : Type*} [CommRing S] (φ : R →+* S) {q : R} {q' : S}
+    (hq : φ q = q') (i : Fin 2) : mapRingHom φ hq (coord q i) = coord q' i := by
+  fin_cases i <;> simp [mapRingHom]
+
+/-- `mapRingHom` along the identity ring homomorphism is the identity. -/
+@[simp] lemma mapRingHom_id (q : R) :
+    mapRingHom (RingHom.id R) (rfl : RingHom.id R q = q) = RingHom.id _ :=
+  ringHom_ext (fun _ ↦ by simp) (by simp) (by simp)
+
+/-- Composition of `mapRingHom` along composable coefficient ring homomorphisms. -/
+lemma mapRingHom_comp {S T : Type*} [CommRing S] [CommRing T] (ψ : S →+* T) (φ : R →+* S)
+    {q : R} {q' : S} {q'' : T} (hq : φ q = q') (hq' : ψ q' = q'') :
+    (mapRingHom ψ hq').comp (mapRingHom φ hq) =
+      mapRingHom (ψ.comp φ) (by rw [RingHom.comp_apply, hq, hq']) :=
+  ringHom_ext (fun _ ↦ by simp) (by simp) (by simp)
+
+section MapAlg
+
+variable {k B B' : Type*} [CommSemiring k] [CommRing B] [CommRing B'] [Algebra k B] [Algebra k B']
+
+/-- Functorial `k`-algebra homomorphism `NodeAlgebra B q →ₐ[k] NodeAlgebra B' q'` along a
+`k`-algebra homomorphism `φ : B →ₐ[k] B'` sending `q` to `q'`. -/
+def mapAlgHom (φ : B →ₐ[k] B') {q : B} {q' : B'} (hq : φ q = q') :
+    NodeAlgebra B q →ₐ[k] NodeAlgebra B' q' where
+  toRingHom := mapRingHom φ.toRingHom hq
+  commutes' r := by
+    simp [IsScalarTower.algebraMap_apply k B (NodeAlgebra B q),
+      IsScalarTower.algebraMap_apply k B' (NodeAlgebra B' q')]
+
+@[simp] lemma toRingHom_mapAlgHom (φ : B →ₐ[k] B') {q : B} {q' : B'} (hq : φ q = q') :
+    (mapAlgHom φ hq : NodeAlgebra B q →+* NodeAlgebra B' q') =
+      mapRingHom φ.toRingHom hq := (rfl)
+
+@[simp] lemma mapAlgHom_algebraMap (φ : B →ₐ[k] B') {q : B} {q' : B'} (hq : φ q = q')
+    (b : B) :
+    mapAlgHom φ hq (algebraMap B (NodeAlgebra B q) b) =
+      algebraMap B' (NodeAlgebra B' q') (φ b) := mapRingHom_algebraMap φ.toRingHom hq b
+
+@[simp] lemma mapAlgHom_coord (φ : B →ₐ[k] B') {q : B} {q' : B'} (hq : φ q = q') (i : Fin 2) :
+    mapAlgHom φ hq (coord q i) = coord q' i := mapRingHom_coord φ.toRingHom hq i
+
+@[simp] lemma mapAlgHom_id (q : B) :
+    mapAlgHom (AlgHom.id k B) (rfl : AlgHom.id k B q = q) = AlgHom.id k (NodeAlgebra B q) :=
+  AlgHom.toRingHom_injective (mapRingHom_id q)
+
+lemma mapAlgHom_comp {B'' : Type*} [CommRing B''] [Algebra k B''] (ψ : B' →ₐ[k] B'')
+    (φ : B →ₐ[k] B') {q : B} {q' : B'} {q'' : B''} (hq : φ q = q') (hq' : ψ q' = q'') :
+    (mapAlgHom ψ hq').comp (mapAlgHom φ hq) =
+      mapAlgHom (ψ.comp φ) (by rw [AlgHom.comp_apply, hq, hq']) :=
+  AlgHom.toRingHom_injective (mapRingHom_comp ψ.toRingHom φ.toRingHom hq hq')
+
+/-- Functorial `k`-algebra equivalence `NodeAlgebra B q ≃ₐ[k] NodeAlgebra B' q'` along a
+`k`-algebra equivalence `φ : B ≃ₐ[k] B'` sending `q` to `q'`. -/
+def mapAlgEquiv (φ : B ≃ₐ[k] B') {q : B} {q' : B'} (hq : φ q = q') :
+    NodeAlgebra B q ≃ₐ[k] NodeAlgebra B' q' :=
+  AlgEquiv.ofAlgHom (mapAlgHom (φ : B →ₐ[k] B') (by simpa using hq))
+    (mapAlgHom (φ.symm : B' →ₐ[k] B) (by simpa using φ.symm_apply_eq.mpr hq.symm))
+    (algHom_ext_of_algebra (fun _ ↦ by simp) (by simp) (by simp))
+    (algHom_ext_of_algebra (fun _ ↦ by simp) (by simp) (by simp))
+
+@[simp] lemma mapAlgEquiv_apply (φ : B ≃ₐ[k] B') {q : B} {q' : B'} (hq : φ q = q')
+    (u : NodeAlgebra B q) : mapAlgEquiv φ hq u = mapRingHom φ.toRingHom (by simpa using hq) u :=
+  AlgEquiv.ofAlgHom_apply _ _ _ _ u
+
+@[simp] lemma mapAlgEquiv_symm (φ : B ≃ₐ[k] B') {q : B} {q' : B'} (hq : φ q = q') :
+    (mapAlgEquiv φ hq).symm = mapAlgEquiv φ.symm (φ.symm_apply_eq.mpr hq.symm) :=
+  AlgEquiv.ext fun u ↦ AlgEquiv.ofAlgHom_symm_apply _ _ _ _ u
+
+@[simp] lemma mapAlgEquiv_refl (q : B) :
+    mapAlgEquiv (AlgEquiv.refl : B ≃ₐ[k] B) (rfl : (AlgEquiv.refl : B ≃ₐ[k] B) q = q) =
+      AlgEquiv.refl :=
+  AlgEquiv.ext fun u ↦ (mapAlgEquiv_apply _ _ u).trans <| (RingHom.congr_fun
+    (ringHom_ext (g := RingHom.id _) (fun _ ↦ by simp) (by simp) (by simp)) u).trans
+    (congrFun AlgEquiv.coe_refl u).symm
+
+lemma mapAlgEquiv_trans {B'' : Type*} [CommRing B''] [Algebra k B''] (φ : B ≃ₐ[k] B')
+    (ψ : B' ≃ₐ[k] B'') {q : B} {q' : B'} {q'' : B''} (hq : φ q = q') (hq' : ψ q' = q'') :
+    (mapAlgEquiv φ hq).trans (mapAlgEquiv ψ hq') =
+      mapAlgEquiv (φ.trans ψ) (by rw [AlgEquiv.trans_apply, hq, hq']) :=
+  AlgEquiv.ext fun u ↦ by
+    simp [AlgEquiv.trans_apply, mapAlgEquiv_apply, ← RingHom.comp_apply, mapRingHom_comp]
+
+end MapAlg
 
 /-- The two coordinates generate the nodal algebra as an `R`-algebra. -/
 lemma adjoin_range_coord : Algebra.adjoin R (Set.range (coord a)) = ⊤ := by
