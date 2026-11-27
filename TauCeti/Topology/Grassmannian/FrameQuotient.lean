@@ -269,6 +269,20 @@ theorem fromBlocksOne_specialUnitaryStabilizerHomeomorph_symm_apply (m : ℕ)
       A := by
   rw [← coe_specialUnitaryStabilizerHomeomorph_apply, Homeomorph.apply_symm_apply]
 
+/-- The element of `SU(m)` corresponding to an element `A` of the stabilizer is the lower right
+`m × m` block of `A`. -/
+theorem coe_specialUnitaryStabilizerHomeomorph_symm_apply (m : ℕ)
+    (A : specialUnitaryStabilizer 𝕜 (Nat.le_add_right r m)) :
+    (((specialUnitaryStabilizerHomeomorph 𝕜 r m).symm A : specialUnitaryGroup (Fin m) 𝕜) :
+      Matrix (Fin m) (Fin m) 𝕜) =
+      ((A : specialUnitaryGroup (Fin (r + m)) 𝕜) : Matrix (Fin (r + m)) (Fin (r + m)) 𝕜).submatrix
+        (Fin.natAdd r) (Fin.natAdd r) := by
+  ext k l
+  have h := congrArg (fun B : specialUnitaryGroup (Fin (r + m)) 𝕜 ↦
+    (B : Matrix (Fin (r + m)) (Fin (r + m)) 𝕜) (Fin.natAdd r k) (Fin.natAdd r l))
+    (fromBlocksOne_specialUnitaryStabilizerHomeomorph_symm_apply m A)
+  simpa only [specialUnitaryGroup.fromBlocksOne_apply_natAdd_natAdd, submatrix_apply] using h
+
 /-- The identity of `SU(m)` corresponds to the identity of the stabilizer. -/
 @[simp]
 theorem specialUnitaryStabilizerHomeomorph_one (m : ℕ) :

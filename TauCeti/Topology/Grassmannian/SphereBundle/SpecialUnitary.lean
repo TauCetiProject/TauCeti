@@ -35,6 +35,8 @@ surjective: `SU(1)` is trivial, while the unit sphere of `𝕜` is not a point.
 
 ## Main results
 
+* `TauCeti.specialUnitarySphereMap_eq_specialUnitarySphereMap_iff`: the fibres are the left cosets
+  of the stabilizer of `e₀`.
 * `TauCeti.specialUnitarySphereMap_eq_specialUnitarySphereMap_one_iff`: the fibre over `e₀` is the
   image of `SU(n)`.
 * `TauCeti.exists_trivialization_specialUnitarySphereMap`: a chart with fibre `SU(n)` around each
@@ -101,6 +103,15 @@ theorem ofLp_specialUnitarySphereMap_mul (A B : specialUnitaryGroup (Fin (1 + n)
   rw [coe_specialUnitarySphereMap, coe_specialUnitarySphereMap, WithLp.ofLp_toLp,
     WithLp.ofLp_toLp, ← mulVec_single_one, ← mulVec_single_one, Submonoid.coe_mul,
     mulVec_mulVec]
+
+/-- The fibres of `A ↦ A e₀` are the left cosets of the stabilizer of `e₀`. -/
+theorem specialUnitarySphereMap_eq_specialUnitarySphereMap_iff
+    {A B : specialUnitaryGroup (Fin (1 + n)) 𝕜} :
+    specialUnitarySphereMap n A = specialUnitarySphereMap n B ↔
+      A⁻¹ * B ∈ finiteOrthonormalFrame.specialUnitaryStabilizer 𝕜 (Nat.le_add_right 1 n) := by
+  rw [specialUnitarySphereMap, specialUnitarySphereMap,
+    (finiteOrthonormalFrame.sphereHomeomorph 𝕜 (1 + n)).injective.eq_iff,
+    specialUnitaryFrameMap_eq_specialUnitaryFrameMap_iff]
 
 /-- The fibre of `A ↦ A e₀` over `e₀` is the block subgroup `diag(1, SU(n))`. -/
 theorem specialUnitarySphereMap_eq_specialUnitarySphereMap_one_iff
