@@ -30,9 +30,7 @@ namespace MeasureTheory
 theorem integrable_star_iff {X F : Type*} [MeasurableSpace X] [NormedAddCommGroup F]
     [StarAddMonoid F] [NormedStarGroup F] {μ : Measure X} {f : X → F} :
     Integrable (star f) μ ↔ Integrable f μ := by
-  have key (g : X → F) (hg : Integrable g μ) : Integrable (star g) μ :=
-    hg.congr' (continuous_star.comp_aestronglyMeasurable hg.1)
-      (.of_forall fun x ↦ (norm_star (g x)).symm)
-  exact ⟨fun h ↦ star_star f ▸ key _ h, key f⟩
+  simp only [← memLp_one_iff_integrable]
+  exact ⟨fun h ↦ star_star f ▸ h.star, MemLp.star⟩
 
 end MeasureTheory
