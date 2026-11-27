@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convolution
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
@@ -30,7 +31,7 @@ support:
 * `u` solves **Poisson's equation** `-Δu = f` on all of `ℂ`;
 * `u` is harmonic off the support of `f`;
 * `u` grows like `G` times the total mass of `f`: `u z - G z • ∫ f → 0` as `z → ∞` (already for
-  any `f` with compact support);
+  any `f` with compact support), while its derivative tends to zero (for `f` of class `C¹`);
 * `u` is the **unique** `C²` solution `v` of `-Δv = f` with `v z - G z • ∫ f → 0` at infinity.
 
 Unlike in dimension `n ≥ 3` (`TauCeti.laplacian_newtonianKernel_convolution`), the potential does
@@ -51,6 +52,8 @@ holds because a harmonic function on `ℂ` that vanishes at infinity is zero
   `tsupport f`.
 * `TauCeti.tendsto_planarNewtonianKernel_convolution_sub_cocompact`:
   `(G ⋆ f) z - G z • ∫ f → 0` at infinity.
+* `TauCeti.tendsto_fderiv_planarNewtonianKernel_convolution_cocompact`: `D(G ⋆ f) z → 0` at
+  infinity.
 * `TauCeti.eq_planarNewtonianKernel_convolution_of_laplacian_eq_neg`: uniqueness among solutions
   with this behaviour at infinity.
 
@@ -171,6 +174,26 @@ theorem tendsto_planarNewtonianKernel_convolution_sub_cocompact
   refine squeeze_zero_norm' ?_ hlim
   filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop (2 * R')] with z hz
   exact hbound z hz
+
+/-- **The derivative of the planar Newtonian potential vanishes at infinity.** For `f` of class
+`C¹` with compact support on `ℂ`, `D(G ⋆ f) z → 0` as `z → ∞`: the derivative is the potential
+`G ⋆ Df` of `Df`, which has integral zero, so the logarithmic term of
+`TauCeti.tendsto_planarNewtonianKernel_convolution_sub_cocompact` drops out. -/
+theorem tendsto_fderiv_planarNewtonianKernel_convolution_cocompact (hf : ContDiff ℝ 1 f)
+    (hc : HasCompactSupport f) :
+    Tendsto (fderiv ℝ (planarNewtonianKernel ⋆ f)) (cocompact ℂ) (𝓝 0) := by
+  -- `D(G ⋆ f) = G ⋆ Df`, where the convolution of the operator-valued `Df` is along scalar
+  -- multiplication.
+  have hL : ((lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).precompR ℂ) = lsmul ℝ ℝ := by
+    ext
+    simp
+  have hD : fderiv ℝ (planarNewtonianKernel ⋆ f) = planarNewtonianKernel ⋆ fderiv ℝ f := by
+    funext z
+    rw [(hc.hasFDerivAt_convolution_right (lsmul ℝ ℝ) locallyIntegrable_planarNewtonianKernel
+      hf z).fderiv, hL]
+  have h := tendsto_planarNewtonianKernel_convolution_sub_cocompact (hc.fderiv (𝕜 := ℝ))
+  rw [integral_fderiv_eq_zero_of_hasCompactSupport hf hc] at h
+  simpa [hD] using h
 
 /-- **Uniqueness for Poisson's equation in the plane.** For `f` of class `C²` with compact
 support on `ℂ`, the Newtonian potential `G ⋆ f` is the only `C²` solution `v` of `-Δv = f` with

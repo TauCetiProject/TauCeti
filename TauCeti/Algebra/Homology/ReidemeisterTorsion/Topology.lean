@@ -17,7 +17,10 @@ each degree. If their differential matrices converge and a fixed square-minor sp
 invertible in the limit, the same splitting is eventually invertible. Consequently the
 complexes are eventually acyclic and their torsions converge to the limiting torsion.
 The bases and the underlying vector spaces may vary: only their coordinate matrices enter
-the convergence hypotheses.
+the convergence hypotheses. The convergence of a single square minor and of its determinant
+(`HomologicalComplex.tendsto_squareMinor`, `HomologicalComplex.tendsto_det_squareMinor`) holds for
+complexes of any shape, and is shared with the two-periodic case in
+`TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic.Topology`.
 
 This is a local statement on a nonvanishing minor chart, not continuity of zero-extended
 torsion across a loss of acyclicity. It applies to nonarchimedean fields as well as to real
@@ -40,35 +43,44 @@ namespace HomologicalComplex
 
 universe u
 
-variable {F α : Type*} [Field F] [TopologicalSpace F]
-  {n q p : ℤ → ℕ}
+variable {F α : Type*} [Field F] [TopologicalSpace F] {l : Filter α}
+
+section General
+
+variable {ι : Type*} {cs : ComplexShape ι} {n q p : ι → ℕ}
+  {C : α → HomologicalComplex (ModuleCat.{u} F) cs} {C₀ : HomologicalComplex (ModuleCat.{u} F) cs}
+  {c : ∀ a i, Basis (Fin (n i)) F ((C a).X i)} {c₀ : ∀ i, Basis (Fin (n i)) F (C₀.X i)}
+  {hn : ∀ i, n i = q i + p i} {i j : ι}
+
+/-- Entrywise convergence of the differential `Cⱼ → Cᵢ` implies convergence of its square minor.
+No topology on the chain modules or on their varying bases is required. -/
+theorem tendsto_squareMinor
+    (hd : ∀ r k, Tendsto (fun a ↦ LinearMap.toMatrix (c a j) (c a i) ((C a).d j i).hom r k)
+      l (𝓝 (LinearMap.toMatrix (c₀ j) (c₀ i) (C₀.d j i).hom r k)))
+    (h : p j = q i) : Tendsto (fun a ↦ squareMinor (c a) hn i j h) l
+      (𝓝 (squareMinor c₀ hn i j h)) := by
+  refine tendsto_pi_nhds.2 fun r ↦ tendsto_pi_nhds.2 fun k ↦ ?_
+  simp only [squareMinor_apply, LinearMap.toMatrix_apply] at hd ⊢
+  exact hd _ _
+
+/-- The determinant of the square minor of the differential `Cⱼ → Cᵢ` converges with the matrices
+of the differential. -/
+theorem tendsto_det_squareMinor [IsTopologicalRing F]
+    (hd : ∀ r k, Tendsto (fun a ↦ LinearMap.toMatrix (c a j) (c a i) ((C a).d j i).hom r k)
+      l (𝓝 (LinearMap.toMatrix (c₀ j) (c₀ i) (C₀.d j i).hom r k)))
+    (h : p j = q i) : Tendsto (fun a ↦ (squareMinor (c a) hn i j h).det) l
+      (𝓝 (squareMinor c₀ hn i j h).det) :=
+  (continuous_id.matrix_det.tendsto _).comp (tendsto_squareMinor hd h)
+
+end General
+
+variable {n q p : ℤ → ℕ}
   {C : α → ChainComplex (ModuleCat.{u} F) ℤ} {C₀ : ChainComplex (ModuleCat.{u} F) ℤ}
   {c : ∀ a i, Basis (Fin (n i)) F ((C a).X i)}
   {c₀ : ∀ i, Basis (Fin (n i)) F (C₀.X i)}
-  {hn : ∀ i, n i = q i + p i} {hpq : ∀ j, p (j + 1) = q j} {l : Filter α}
-
-/-- Entrywise convergence of the differentials implies convergence of each square minor.
-No topology on the chain modules or on their varying bases is required. -/
-theorem tendsto_torsionMinor
-    (hd : ∀ j r k, Tendsto
-      (fun a ↦ LinearMap.toMatrix (c a (j + 1)) (c a j) ((C a).d (j + 1) j).hom r k)
-      l (𝓝 (LinearMap.toMatrix (c₀ (j + 1)) (c₀ j) (C₀.d (j + 1) j).hom r k)))
-    (j : ℤ) : Tendsto (fun a ↦ torsionMinor (c a) hn hpq j) l
-      (𝓝 (torsionMinor c₀ hn hpq j)) := by
-  refine tendsto_pi_nhds.2 fun r ↦ tendsto_pi_nhds.2 fun k ↦ ?_
-  simp only [torsionMinor_apply, LinearMap.toMatrix_apply] at hd ⊢
-  exact hd j _ _
+  {hn : ∀ i, n i = q i + p i} {hpq : ∀ j, p (j + 1) = q j}
 
 variable [IsTopologicalRing F]
-
-/-- The determinant of each square minor converges with the differential matrices. -/
-theorem tendsto_det_torsionMinor
-    (hd : ∀ j r k, Tendsto
-      (fun a ↦ LinearMap.toMatrix (c a (j + 1)) (c a j) ((C a).d (j + 1) j).hom r k)
-      l (𝓝 (LinearMap.toMatrix (c₀ (j + 1)) (c₀ j) (C₀.d (j + 1) j).hom r k)))
-    (j : ℤ) : Tendsto (fun a ↦ (torsionMinor (c a) hn hpq j).det) l
-      (𝓝 (torsionMinor c₀ hn hpq j).det) :=
-  (continuous_id.matrix_det.tendsto _).comp (tendsto_torsionMinor (hn := hn) (hpq := hpq) hd j)
 
 variable [T1Space F]
 
@@ -82,8 +94,9 @@ theorem eventually_det_torsionMinor_ne_zero
     (hA : ∀ j, (torsionMinor c₀ hn hpq j).det ≠ 0) :
     ∀ᶠ a in l, ∀ j, (torsionMinor (c a) hn hpq j).det ≠ 0 := by
   classical
+  simp only [torsionMinor_eq_squareMinor] at hA ⊢
   have he := hfin.eventually_all.2 fun j _ ↦
-    (tendsto_det_torsionMinor hd j).eventually_ne (hA j)
+    (tendsto_det_squareMinor (hd j) (hpq j)).eventually_ne (hA j)
   filter_upwards [he] with a ha j
   by_cases hj : n j = 0
   · have hq : q j = 0 := by have := hn j; omega
@@ -129,8 +142,11 @@ theorem tendsto_reidemeisterTorsion_of_det_torsionMinor_ne_zero
     have : IsEmpty (Fin (q j)) := by rw [hq]; infer_instance
     exact hj (by simp)
   rw [reidemeisterTorsion_eq_finprod_det_torsionMinor hA hfin, hprod]
+  have hdet (j : ℤ) : Tendsto (fun a ↦ (torsionMinor (c a) hn hpq j).det) l
+      (𝓝 (torsionMinor c₀ hn hpq j).det) := by
+    simpa only [torsionMinor_eq_squareMinor] using tendsto_det_squareMinor (hd j) (hpq j)
   have ht := tendsto_finsetProd hfin.toFinset fun j _ ↦
-    (tendsto_det_torsionMinor hd j).zpow₀ ((j + 1).negOnePow : ℤ) (Or.inl (hA j))
+    (hdet j).zpow₀ ((j + 1).negOnePow : ℤ) (Or.inl (hA j))
   apply ht.congr'
   filter_upwards [eventually_det_torsionMinor_ne_zero hfin hd hA] with a ha
   rw [reidemeisterTorsion_eq_finprod_det_torsionMinor ha hfin, hprod (C a) (c a)]

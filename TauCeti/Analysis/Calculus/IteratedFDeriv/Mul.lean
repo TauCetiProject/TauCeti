@@ -20,6 +20,9 @@ The same holds for the application `f y (g y)` of a family of continuous linear 
 of vectors. Applied repeatedly through currying, it shows that a smooth family of multilinear maps
 evaluated on `k` copies of the increment `y - x` vanishes to order `k` at `x`, the form in which
 the remainder of Taylor's formula enters the coefficients of a local operator.
+
+In particular a product `f₁ ⋯ fᵣ • u` of `r` functions vanishing at `x` with a map `u` vanishes to
+order `r` at `x` (`TauCeti.iteratedFDeriv_prod_smul_eq_zero_of_lt`).
 -/
 
 public section
@@ -118,5 +121,34 @@ theorem iteratedFDeriv_apply_sub_eq_zero_of_lt_add {N : WithTop ℕ∞} {x : E} 
       exact congrArg (S y) (funext fun i ↦ by cases i using Fin.cases <;> rfl)
     rw [h]
     exact iteratedFDeriv_apply_sub_eq_zero_of_lt_add (hLS.clm_apply hsub) hS'x (by omega) hnN
+
+/-- **Orders of vanishing of a product.** A product `f₁ ⋯ fᵣ • u` of `r` functions vanishing at `x`
+with a map `u`, all `C^r` at `x`, has vanishing derivatives of every order below `r` at `x`. -/
+theorem iteratedFDeriv_prod_smul_eq_zero_of_lt {r : ℕ} {f : Fin r → E → 𝕜} {u : E → F} {x : E}
+    (hf : ∀ i, ContDiffAt 𝕜 r (f i) x) (hu : ContDiffAt 𝕜 r u x) (hfx : ∀ i, f i x = 0) {k : ℕ}
+    (hk : k < r) :
+    iteratedFDeriv 𝕜 k (fun y ↦ (∏ i, f i y) • u y) x = 0 := by
+  induction r generalizing k with
+  | zero => exact absurd hk (Nat.not_lt_zero k)
+  | succ r ih =>
+    -- Split off the first factor, which vanishes to order `1`, from the rest, which vanishes to
+    -- order `r` by induction.
+    have hle : (r : WithTop ℕ∞) ≤ ((r + 1 : ℕ) : WithTop ℕ∞) := by exact_mod_cast Nat.le_succ r
+    have hfun : (fun y ↦ (∏ i, f i y) • u y) =
+        fun y ↦ (ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] F →L[𝕜] F) (f 0 y)
+          ((∏ i : Fin r, f i.succ y) • u y) := by
+      funext y
+      rw [Fin.prod_univ_succ, mul_smul, ContinuousLinearMap.lsmul_apply]
+    have hrest : ContDiffAt 𝕜 r (fun y ↦ (∏ i : Fin r, f i.succ y) • u y) x :=
+      (contDiffAt_prod fun i _ ↦ (hf i.succ).of_le hle).smul (hu.of_le hle)
+    rw [hfun]
+    refine iteratedFDeriv_clm_apply_eq_zero_of_lt_add (m := 1) (n := r)
+      (((ContinuousLinearMap.lsmul 𝕜 𝕜).contDiff.contDiffAt.comp x (hf 0)).of_le hle)
+      hrest (fun i hi ↦ ?_)
+      (fun i hi ↦ ih (fun j ↦ (hf j.succ).of_le hle) (hu.of_le hle) (fun j ↦ hfx j.succ) hi)
+      (show k < 1 + r by omega) (by exact_mod_cast Nat.lt_succ_iff.mp hk)
+    obtain rfl : i = 0 := by omega
+    ext
+    simp [hfx]
 
 end TauCeti

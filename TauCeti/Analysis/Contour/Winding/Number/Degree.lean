@@ -96,9 +96,8 @@ theorem windingNumber_eq_degree_of_eq_div_norm {x w : ℂ} {u : Circle}
   have hc' : ContinuousOn γ.extend (uIcc 0 1) := hγ.continuousOn
   have hn' : ∀ t ∈ uIcc (0 : ℝ) 1, γ.extend t ≠ w := by simpa using hn
   have hi := intervalIntegrable_inv_sub_mul_deriv hc' hn' hγ.intervalIntegrable_deriv
-  obtain ⟨P, hP, hd⟩ := hγ.exists_countable_differentiableAt
-  have hsum := integral_inv_sub_mul_deriv_eq_log_norm_add_I_mul_sum_log_im
-    hP hs0 hs1 hsmono hc (by simpa using hd) hslit hi
+  have hac := hγ.absolutelyContinuousOnInterval
+  have hsum := hac.integral_inv_sub_mul_deriv_eq_log_norm_add_I_mul_sum_log_im hs0 hs1 hsmono hslit
   rw [windingNumber_eq_integral_of_avoidance hc' hn' hi, hsum, hdeg]
   simp only [Path.extend_zero, Path.extend_one, sub_self, Complex.ofReal_zero, zero_add,
     Complex.ofReal_mul, Complex.ofReal_intCast, Complex.ofReal_ofNat]
