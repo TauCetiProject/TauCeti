@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Density
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
+import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Trace
 
@@ -43,7 +44,10 @@ operator norm, so that `⟪D²u(x) eᵢ, eⱼ⟫` is the weak second derivative 
 
 On an open set `Ω ⊆ V`, a non-divergence-form operator `u ↦ tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u` with
 bounded measurable coefficients is a bounded operator `W^{2,p}(Ω) → Lᵖ(Ω)`
-(`TauCeti.exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul`).
+(`TauCeti.exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul`). For constant coefficients
+`A` these operators depend continuously on `A`, so an a priori estimate
+`‖x‖ ≤ C ‖tr (A ∘ D x)‖_{Lᵖ}` that holds for each `A` of a compact set holds with one constant for
+all of them (`IsCompact.exists_forall_norm_le_mul_eLpNorm_of_traceCLM_comp`).
 
 ## The argument
 
@@ -302,5 +306,47 @@ theorem exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul {μ : Measure
   rw [innerSL_apply_apply]
 
 end InnerProductSpace
+
+section UniformInCoefficients
+
+variable {V X α : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [NormedAddCommGroup X] [NormedSpace ℝ X] [MeasurableSpace α] {μ : Measure α}
+
+/-- **A priori estimates for trace operators are uniform on compact sets of coefficients.** Let
+`D : X → Lᵖ(α; V →L V)` be a bounded operator, such as the weak Hessian on a Sobolev space, and let
+`K` be a compact set of endomorphisms of `V`. If for each `A ∈ K` there is a constant `C` with
+`‖x‖ ≤ C ‖tr (A ∘ D x)‖_{Lᵖ}` for every `x`, then one constant serves for every `A ∈ K`. In the
+conclusion the datum enters as any function `g` equal to `tr (A ∘ D x)` almost everywhere. The
+operators `x ↦ tr (A ∘ D x)` depend linearly, hence continuously, on `A`, so this is
+`IsCompact.exists_forall_norm_le_mul_norm_apply`. -/
+theorem _root_.IsCompact.exists_forall_norm_le_mul_eLpNorm_of_traceCLM_comp
+    {K : Set (V →L[ℝ] V)} (hK : IsCompact K) (D : X →L[ℝ] Lp (IteratedGradient V 1) p μ)
+    (hC : ∀ A ∈ K, ∃ C : ℝ, ∀ (x : X) (f : Lp ℝ p μ),
+      (∀ᵐ y ∂μ, traceCLM ℝ V (A ∘L D x y) = f y) → ‖x‖ ≤ C * ‖f‖) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ A ∈ K, ∀ (x : X) (g : α → ℝ),
+      (∀ᵐ y ∂μ, traceCLM ℝ V (A ∘L D x y) = g y) → ‖x‖ ≤ C * (eLpNorm g p μ).toReal := by
+  -- The pairing `(A, G) ↦ tr (A ∘ G)` and the operators `T A x = tr (A ∘ D x)`, linear in `A`.
+  let B : (V →L[ℝ] V) →L[ℝ] IteratedGradient V 1 →L[ℝ] ℝ :=
+    (ContinuousLinearMap.compL ℝ (V →L[ℝ] V) (V →L[ℝ] V) ℝ (traceCLM ℝ V)).comp
+      (ContinuousLinearMap.compL ℝ V V V)
+  let T : (V →L[ℝ] V) → X →L[ℝ] Lp ℝ p μ := fun A => (B.compLpL₂ p μ A).comp D
+  have hT : ∀ A x, T A x =ᵐ[μ] fun y => traceCLM ℝ V (A ∘L D x y) := fun A x => by
+    filter_upwards [(B A).coeFn_compLp (D x)] with y hy
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.compLpL₂_apply_apply, hy]
+    rfl
+  have hTc : Continuous T := (B.compLpL₂ p μ).continuous.clm_comp continuous_const
+  have hnorm : ∀ A x g, (∀ᵐ y ∂μ, traceCLM ℝ V (A ∘L D x y) = g y) →
+      ‖T A x‖ = (eLpNorm g p μ).toReal := fun A x g hg => by
+    rw [Lp.norm_def, eLpNorm_congr_ae ((hT A x).trans hg)]
+  obtain ⟨C, hC⟩ := hK.exists_forall_norm_le_mul_norm_apply hTc.continuousOn fun A hA => by
+    obtain ⟨C, hC⟩ := hC A hA
+    exact ⟨C, fun x => hC x (T A x) (hT A x).symm⟩
+  refine ⟨max C 0, le_max_right _ _, fun A hA x g hg => ?_⟩
+  refine (hC A hA x).trans ?_
+  rw [hnorm A x g hg]
+  gcongr
+  exact le_max_left _ _
+
+end UniformInCoefficients
 
 end TauCeti
