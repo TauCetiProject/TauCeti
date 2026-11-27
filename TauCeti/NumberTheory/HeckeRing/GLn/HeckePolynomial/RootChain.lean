@@ -16,7 +16,6 @@ import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.Positivity
-import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.LinearAlgebra.SesquilinearForm.Complex
 import TauCeti.LinearAlgebra.SesquilinearForm.Polynomial
 
@@ -412,47 +411,6 @@ namespace TauCeti
 
 section RootSymmetry
 
-/-- Term-by-term reflection identity behind `isRoot_of_glnHeckePolynomial_star_mul_eq`. -/
-private lemma glnHeckePolynomial_term_star_mul_eq {N : ℕ} {q : ℝ} {t : Fin (N + 1) → ℂ}
-    {b₀ z y y' : ℂ} (hqC : (q : ℂ) ≠ 0) (h_dual : ∀ d : Fin (N + 1), star (t d) * b₀ = t d.rev * z)
-    (hy : star y * y' * (q : ℂ) = (q : ℂ) ^ N) (d : Fin (N + 1)) :
-    star (eval y (C ((-1) ^ (d : ℕ) * (q : ℂ) ^ (d : ℕ).choose 2 * t d) * X ^ (N - (d : ℕ)))) *
-        (b₀ * (q : ℂ) ^ N.choose 2) =
-      (-star y) ^ N * z *
-        eval y' (C ((-1) ^ (d.rev : ℕ) * (q : ℂ) ^ (d.rev : ℕ).choose 2 * t d.rev) *
-          X ^ (N - (d.rev : ℕ))) := by
-  refine mul_right_cancel₀ (pow_ne_zero d.val hqC) ?_
-  have hN : N = d.val + d.rev.val := by simp [Fin.val_rev]; omega
-  have h_aux (a b : ℕ) (h : N = a + b) :
-      (N.choose 2 + a.choose 2 + a = b.choose 2 + N * a) ∧
-      ((-1 : ℂ) ^ a = (-1) ^ N * (-1) ^ b) ∧
-      ((-star y) ^ N = (-1) ^ N * (star y ^ a * star y ^ b)) := by
-    subst h
-    refine ⟨?_, ?_, ?_⟩
-    · have h1 := Nat.add_choose_two_add_choose_two b a
-      have h2 : (b + a - 1) * a + a = (b + a) * a := by
-        cases a with
-        | zero => simp
-        | succ k => rw [Nat.add_succ_sub_one]; ring
-      rw [add_comm a b]; omega
-    · rw [pow_add, mul_assoc, ← mul_pow]; simp
-    · rw [neg_pow, pow_add (star y)]
-  obtain ⟨h_exp, h_sign, hneg⟩ := h_aux d.val d.rev.val hN
-  have hsub1 : N - d.val = d.rev.val := by omega
-  have hsub2 : N - d.rev.val = d.val := by omega
-  calc
-    _ = (-1) ^ d.val * star y ^ d.rev.val * (star (t d) * b₀) *
-          (q : ℂ) ^ (N.choose 2 + d.val.choose 2 + d.val) := by
-      simp only [eval_mul, eval_C, eval_pow, eval_X, star_mul', star_pow, Complex.star_def,
-        Complex.conj_ofReal, map_neg, map_one, hsub1]
-      rw [pow_add, pow_add]; ring
-    _ = (-1) ^ d.val * star y ^ d.rev.val * (t d.rev * z) *
-          ((q : ℂ) ^ d.rev.val.choose 2 * (star y * y' * (q : ℂ)) ^ d.val) := by
-      rw [h_dual d, h_exp, hy, pow_add, pow_mul]
-    _ = _ := by
-      simp only [eval_mul, eval_C, eval_pow, eval_X, hsub2]
-      rw [h_sign, hneg]; ring
-
 /-- Root symmetry of a `GL_N` Hecke polynomial under Hermitian coefficient duality:
 if `star (t d) * b₀ = t d.rev * z` with `b₀ ≠ 0` and `q ≠ 0`, then `P(y') = 0` and
 `star y * y' * q = q ^ N` imply `P(y) = 0`. -/
@@ -463,13 +421,48 @@ theorem isRoot_of_glnHeckePolynomial_star_mul_eq {N : ℕ} {q : ℝ} {t : Fin (N
     (hy' : (glnHeckePolynomial N (q : ℂ) t).IsRoot y') :
     (glnHeckePolynomial N (q : ℂ) t).IsRoot y := by
   have hqC : (q : ℂ) ≠ 0 := by exact_mod_cast hq
-  set P := glnHeckePolynomial N (q : ℂ) t
-  have h_star_eval :
-      star (P.eval y) * (b₀ * (q : ℂ) ^ N.choose 2) = (-star y) ^ N * z * P.eval y' := by
-    simp only [P, glnHeckePolynomial_def, eval_finsetSum, mul_sum, star_sum, sum_mul]
-    conv_rhs => rw [← Equiv.sum_comp Fin.revPerm]
-    exact sum_congr rfl fun d _ ↦ glnHeckePolynomial_term_star_mul_eq hqC h_dual hy d
-  simpa [hy'.eq_zero, hqC, hb₀] using h_star_eval
+  cases N with
+  | zero =>
+    have ht0 : t 0 = 0 := by simpa [glnHeckePolynomial_zero] using hy'
+    simpa [glnHeckePolynomial_zero] using ht0
+  | succ n =>
+    set P := glnHeckePolynomial (n + 1) (q : ℂ) t
+    set P_rev := glnHeckePolynomial (n + 1) (q : ℂ) (fun d ↦ t d.rev)
+    have hy_prod : star y * y' = (q : ℂ) ^ n :=
+      mul_right_cancel₀ hqC (by simpa [pow_succ] using hy)
+    have hy'_ne : y' ≠ 0 := fun h0 ↦ pow_ne_zero n hqC (by simpa [h0] using hy_prod.symm)
+    have h_arg : (q : ℂ) ^ n * y'⁻¹ = star y := by
+      rw [← hy_prod, mul_inv_cancel_right₀ hy'_ne]
+    have h_refl := congrArg (eval y'⁻¹) (C_mul_glnHeckePolynomial_rev_comp (q : ℂ) t)
+    have h_eval_refl : eval y'⁻¹ (reflect (n + 1) P) = 0 := by
+      have : Invertible y' := invertibleOfNonzero hy'_ne
+      have h := (eval₂_reflect_eq_zero_iff (RingHom.id ℂ) y' (n + 1) P
+        (natDegree_glnHeckePolynomial_le _ _)).mpr hy'.eq_zero
+      rw [invOf_eq_inv] at h
+      exact h
+    have hP_rev_zero : P_rev.eval (star y) = 0 := by
+      dsimp only [P, P_rev] at h_eval_refl ⊢
+      simp only [eval_mul, eval_C, eval_comp, eval_X, Nat.add_sub_cancel, h_arg, h_eval_refl,
+        mul_zero] at h_refl
+      have hc_ne : (-1 : ℂ) ^ (n + 1) * (q : ℂ) ^ (n + 1).choose 2 ≠ 0 :=
+        mul_ne_zero (pow_ne_zero _ (by norm_num)) (pow_ne_zero _ hqC)
+      exact (mul_eq_zero.mp h_refl).resolve_left hc_ne
+    have h_conj_eq : C b₀ * P.map (starRingEnd ℂ) = C z * P_rev := by
+      simp only [P, P_rev, glnHeckePolynomial_def, Polynomial.map_sum, Polynomial.map_mul,
+        Polynomial.map_pow, Polynomial.map_C, Polynomial.map_X, Polynomial.map_neg,
+        Polynomial.map_one, map_mul, map_pow, map_neg, map_one, Complex.conj_ofReal,
+        Finset.mul_sum]
+      refine Finset.sum_congr rfl fun d _ ↦ ?_
+      have hd : C (starRingEnd ℂ (t d)) * C b₀ = C (t d.rev) * C z := by
+        simpa [← map_mul, Complex.star_def] using congrArg C (h_dual d)
+      linear_combination (-1) ^ (d : ℕ) * C (q : ℂ) ^ (d : ℕ).choose 2 *
+        X ^ (n + 1 - (d : ℕ)) * hd
+    have h_eval_conj : b₀ * star (P.eval y) = 0 := by
+      have h := congrArg (eval (star y)) h_conj_eq
+      rw [eval_mul, eval_C, eval_mul, eval_C, hP_rev_zero, mul_zero, eval_map] at h
+      have hstar : star (P.eval y) = P.eval₂ (starRingEnd ℂ) (star y) := by simp
+      rwa [← hstar] at h
+    exact star_eq_zero.mp ((mul_eq_zero.mp h_eval_conj).resolve_left hb₀)
 
 /-- Root-chain propagation for a `GL_N` Hecke polynomial: combining the top-root lower bound with
 Hermitian coefficient duality, any root `c` satisfying `‖c‖ ^ 2 * q ^ k = q ^ N` generates the
