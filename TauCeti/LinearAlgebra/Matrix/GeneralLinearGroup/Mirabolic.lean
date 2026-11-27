@@ -45,6 +45,8 @@ generation of `GL₂` over a field.
   `g 1 1 = 1`.
 * `TauCeti.GL2Mirabolic.mem_iff_exists_mk`: the elements of `P` are exactly the matrices
   `!![a, b; 0, 1]` with `a` a unit.
+* `TauCeti.GL2Mirabolic.neg_one_mem_iff`: `-1 ∈ P` only when `-1 = 1`.
+* `TauCeti.GL2Mirabolic.map_det`: over a commutative ring the determinant maps `P` onto the units.
 * `TauCeti.GL2Mirabolic.le_gl2Borel`: `P` lies in the Borel subgroup.
 * `TauCeti.GL2Mirabolic.inf_center_eq_bot`: `P ∩ Z = 1`.
 * `TauCeti.GL2Mirabolic.center_sup_eq_gl2Borel`: `Z ⊔ P = B`.
@@ -131,7 +133,7 @@ def affineGroupMulEquiv : AffineGroup R ≃* GL2Mirabolic R where
   map_mul' g h := by
     refine Subtype.ext (Units.ext (Matrix.ext fun i j ↦ ?_))
     fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, add_comm]
+      simp [add_comm]
 
 @[simp]
 theorem coe_affineGroupMulEquiv_apply (g : AffineGroup R) :
@@ -178,6 +180,10 @@ theorem scalar_mem_iff (u : Rˣ) :
   simp only [mem_iff, GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
   simp [Units.val_eq_one]
 
+/-- `-1` lies in the mirabolic subgroup exactly when `-1 = 1` in `R`. -/
+theorem neg_one_mem_iff : (-1 : GL (Fin 2) R) ∈ GL2Mirabolic R ↔ (-1 : R) = 1 := by
+  simp [mem_iff]
+
 end GL2Mirabolic
 
 end Ring
@@ -194,6 +200,11 @@ variable {R}
 theorem det_eq {g : GL (Fin 2) R} (hg : g ∈ GL2Mirabolic R) :
     (g : Matrix (Fin 2) (Fin 2) R).det = (g : Matrix (Fin 2) (Fin 2) R) 0 0 := by
   rw [Matrix.det_fin_two, (mem_iff.mp hg).1, (mem_iff.mp hg).2, mul_one, mul_zero, sub_zero]
+
+/-- The determinant maps the mirabolic subgroup onto the units: `!![u, 0; 0, 1]` has determinant
+`u`. -/
+theorem map_det : (GL2Mirabolic R).map Matrix.GeneralLinearGroup.det = ⊤ :=
+  eq_top_iff.mpr fun u _ ↦ ⟨GL2Borel.mk u 1 0, (mk_mem_iff _ _ _).mpr rfl, by simp⟩
 
 variable (R) in
 /-- The mirabolic subgroup lies in the Borel subgroup. -/

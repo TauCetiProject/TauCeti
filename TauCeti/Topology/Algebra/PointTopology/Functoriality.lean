@@ -17,7 +17,10 @@ public import Mathlib.RingTheory.Nilpotent.Lemmas
 Precomposition and continuous change of coefficients are continuous for the evaluation topology.
 A surjection of coordinate rings gives a closed embedding of points over a T1 ring. Change of
 coefficients preserves embeddings and closed embeddings, and preserves open embeddings when the
-coordinate algebra is of finite type. Over a reduced ring, passing to the quotient by the
+coordinate algebra is of finite type. Along an injective map of coefficients `R → S`, with no
+topology on `R`, the points with values in `R` form a closed subset of those with values in `S`
+when the image of `R` is closed, and a discrete subset when it is discrete and the coordinate
+algebra is commutative of finite type. Over a reduced ring, passing to the quotient by the
 nilradical does not change the point space. Tensor products give products of point spaces, and base
 change does not alter the point topology.
 
@@ -69,16 +72,22 @@ theorem isEmbedding_map_codomain (ψ : R →ₐ[k] S) (hψ : IsEmbedding ψ) :
     isEmbedding_coeFn.continuous ?_
   exact (IsEmbedding.piMap (fun _ : A ↦ hψ)).comp isEmbedding_coeFn
 
+omit [TopologicalSpace R] in
+/-- If an injective coefficient map `ψ : R → S` has closed image, then the points with values in
+`R` form a closed subset of the points with values in `S`. No topology on `R` and no finiteness
+or separation assumption on the coordinate algebra or on `S` is needed. -/
+theorem isClosed_range_map_codomain (ψ : R →ₐ[k] S) (hψ : Function.Injective ψ)
+    (hc : IsClosed (Set.range ψ)) :
+    IsClosed (Set.range fun x : A →ₐ[k] R ↦ ψ.comp x) := by
+  rw [AlgHom.range_comp_left_of_injective ψ hψ, Set.ofPred_forall]
+  exact isClosed_iInter fun a ↦ hc.preimage (continuous_eval a)
+
 /-- A closed embedding of coefficient rings induces a closed embedding on points, with no
 finiteness or separation assumption on the coordinate algebra or the coefficient rings. -/
 theorem isClosedEmbedding_map_codomain (ψ : R →ₐ[k] S) (hψ : IsClosedEmbedding ψ) :
-    IsClosedEmbedding fun x : A →ₐ[k] R ↦ ψ.comp x := by
-  refine ⟨isEmbedding_map_codomain ψ hψ.isEmbedding, ?_⟩
-  rw [AlgHom.range_comp_left_of_injective ψ hψ.injective]
-  convert isClosed_iInter (fun a : A ↦
-    hψ.isClosed_range.preimage (continuous_eval (k := k) (A := A) a)) using 1
-  ext x
-  simp
+    IsClosedEmbedding fun x : A →ₐ[k] R ↦ ψ.comp x :=
+  ⟨isEmbedding_map_codomain ψ hψ.isEmbedding,
+    isClosed_range_map_codomain ψ hψ.injective hψ.isClosed_range⟩
 
 end Semiring
 
@@ -103,6 +112,29 @@ theorem isOpenEmbedding_map_codomain [Algebra.FiniteType k A]
   simp
 
 end FiniteType
+
+section Discrete
+
+variable {k A R S : Type*} [CommSemiring k] [CommSemiring A] [Algebra k A]
+  [CommSemiring R] [Algebra k R] [Semiring S] [Algebra k S] [TopologicalSpace S]
+
+/-- If an injective coefficient map `ψ : R → S` has discrete image, then the points with values in
+`R` of a finite type algebra form a discrete subset of the points with values in `S`. Finite type
+is needed: for a polynomial ring in infinitely many variables the points over a discrete ring are
+not discrete (`TauCeti.PointTopology.not_discreteTopology_mvPolynomial`). -/
+theorem isDiscrete_range_map_codomain [Algebra.FiniteType k A] (ψ : R →ₐ[k] S)
+    (hψ : Function.Injective ψ) (hd : IsDiscrete (Set.range ψ)) :
+    IsDiscrete (Set.range fun x : A →ₐ[k] R ↦ ψ.comp x) := by
+  -- With the topology induced from `S`, the ring `R` is discrete and `ψ` is an embedding, so the
+  -- points with values in `R` are discrete and embed in the points with values in `S`.
+  let : TopologicalSpace R := .induced ψ ‹_›
+  have hψe : IsEmbedding ψ := ⟨⟨rfl⟩, hψ⟩
+  have := isDiscrete_iff_discreteTopology.1 hd
+  have : DiscreteTopology R := hψe.toHomeomorph.isEmbedding.discreteTopology
+  have := discreteTopology_of_finiteType (k := k) (A := A) (R := R)
+  exact (isEmbedding_map_codomain ψ hψe).isInducing.isDiscrete_range
+
+end Discrete
 
 section Ring
 
@@ -206,16 +238,18 @@ noncomputable def tensorProductHomeomorph :
       ((continuous_eval a).comp continuous_fst).fun_mul
         ((continuous_eval b).comp continuous_snd)
 
-/-- The tensor-product comparison restricts a point to the left factor. -/
+/-- The tensor-product comparison restricts a point to the left factor, by precomposing with the
+left inclusion `a ↦ a ⊗ₜ 1`. -/
 @[simp]
-theorem tensorProductHomeomorph_apply_fst (x : A ⊗[k] B →ₐ[k] R) (a : A) :
-    (tensorProductHomeomorph k A B R x).1 a = x (a ⊗ₜ[k] 1) :=
+theorem tensorProductHomeomorph_apply_fst (x : A ⊗[k] B →ₐ[k] R) :
+    (tensorProductHomeomorph k A B R x).1 = x.comp Algebra.TensorProduct.includeLeft :=
   (rfl)
 
-/-- The tensor-product comparison restricts a point to the right factor. -/
+/-- The tensor-product comparison restricts a point to the right factor, by precomposing with the
+right inclusion `b ↦ 1 ⊗ₜ b`. -/
 @[simp]
-theorem tensorProductHomeomorph_apply_snd (x : A ⊗[k] B →ₐ[k] R) (b : B) :
-    (tensorProductHomeomorph k A B R x).2 b = x (1 ⊗ₜ[k] b) :=
+theorem tensorProductHomeomorph_apply_snd (x : A ⊗[k] B →ₐ[k] R) :
+    (tensorProductHomeomorph k A B R x).2 = x.comp Algebra.TensorProduct.includeRight :=
   (rfl)
 
 /-- The inverse tensor-product comparison multiplies the two coordinate values. -/
@@ -260,6 +294,29 @@ theorem baseChangeHomeomorph_apply (x : K ⊗[k] A →ₐ[K] R) (a : A) :
 theorem baseChangeHomeomorph_symm_apply_tmul (x : A →ₐ[k] R) (c : K) (a : A) :
     (baseChangeHomeomorph k K A R).symm x (c ⊗ₜ[k] a) = c • x a :=
   AlgHom.liftEquiv_tmul x c a
+
+variable (k K A R) in
+/-- The base-change adjunction `baseChangeHomeomorph` on the convolution types of points. -/
+noncomputable def baseChangeConvHomeomorph :
+    WithConv (K ⊗[k] A →ₐ[K] R) ≃ₜ WithConv (A →ₐ[k] R) where
+  toEquiv := WithConv.congr (baseChangeHomeomorph k K A R).toEquiv
+  continuous_toFun := isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
+    (baseChangeHomeomorph k K A R).continuous.comp isHomeomorph_ofConv.continuous
+  continuous_invFun := isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
+    (baseChangeHomeomorph k K A R).symm.continuous.comp isHomeomorph_ofConv.continuous
+
+/-- Restriction along base change of convolution points evaluates at `1 ⊗ a`. -/
+@[simp]
+theorem baseChangeConvHomeomorph_apply (x : WithConv (K ⊗[k] A →ₐ[K] R)) (a : A) :
+    (baseChangeConvHomeomorph k K A R x).ofConv a = x.ofConv (1 ⊗ₜ[k] a) :=
+  baseChangeHomeomorph_apply x.ofConv a
+
+/-- Extending a convolution point across base change uses the prescribed coefficient algebra
+structure. -/
+@[simp]
+theorem baseChangeConvHomeomorph_symm_apply_tmul (x : WithConv (A →ₐ[k] R)) (c : K) (a : A) :
+    ((baseChangeConvHomeomorph k K A R).symm x).ofConv (c ⊗ₜ[k] a) = c • x.ofConv a :=
+  baseChangeHomeomorph_symm_apply_tmul x.ofConv c a
 
 end BaseChange
 

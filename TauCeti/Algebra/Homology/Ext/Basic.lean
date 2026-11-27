@@ -22,11 +22,18 @@ This file collects general `Ext` API that Mathlib does not state in this form:
 * `CategoryTheory.Abelian.Ext.mk₀_sub` and `CategoryTheory.Abelian.Ext.sub_comp`: `Ext.mk₀` and
   composition of `Ext` classes respect differences, complementing Mathlib's `mk₀_add`, `mk₀_neg`,
   `add_comp` and `neg_comp`;
+* `CategoryTheory.Abelian.Ext.comp_assoc_of_first_deg_zero`: associativity of composition when the
+  first class has degree zero, complementing Mathlib's `comp_assoc_of_second_deg_zero` and
+  `comp_assoc_of_third_deg_zero`, and `CategoryTheory.Abelian.Ext.precomp_mk₀_comp`: precomposition
+  with the class of a composite is the composite of the precompositions;
 * in degree zero, composition with `CategoryTheory.Abelian.Ext.mk₀ f` corresponds under
   `CategoryTheory.Abelian.Ext.addEquiv₀` to composition with `f`
   (`TauCeti.ext_addEquiv₀_mk₀_comp` and `TauCeti.ext_addEquiv₀_comp_mk₀`);
 * the vanishing of `Extⁿ(X, Y)` when either of the two objects is a zero object, and its transport
   along an isomorphism of the first argument (`TauCeti.ext_eq_zero_of_iso`);
+* precomposition with a morphism that factors through a projective object kills `Extⁿ⁺¹`
+  (`TauCeti.ext_mk₀_comp_eq_zero_of_projective`), so `r` annihilates `Extⁿ⁺¹(X, Z)` when
+  `r • 𝟙 X` factors through a projective object (`TauCeti.ext_smul_eq_zero_of_projective`);
 * short exact cokernel sequences, the cokernel sequence of the chosen embedding into an injective
   object with the morphisms of such sequences extending a given morphism
   (`TauCeti.injectiveCokernelSequenceMap`), and a dimension-shift criterion for vanishing of the
@@ -45,10 +52,15 @@ This file collects general `Ext` API that Mathlib does not state in this form:
 * dimension shifting: the connecting map `Extⁿ⁺¹(P, S.X₃) ⟶ Extⁿ⁺²(P, S.X₁)` of a short exact
   sequence `S` is bijective when `Extⁿ⁺¹(P, S.X₂)` and `Extⁿ⁺²(P, S.X₂)` vanish
   (`CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`);
+* restriction along `S.f` is a bijection `Extⁿ⁺¹(S.X₂, Y) ⟶ Extⁿ⁺¹(S.X₁, Y)` when the cokernel
+  `S.X₃` is projective
+  (`CategoryTheory.ShortComplex.ShortExact.precomp_mk₀_f_bijective_of_projective`);
 * the right-exact case of the five lemma for covariant `Ext` along a morphism of short exact
   sequences: when `Ext^{j + 1}(P, S₁.X₂)` and `Ext^{j + 1}(P, S₂.X₂)` vanish, surjectivity on the
   second and bijectivity on the third terms in degree `j` give bijectivity on the first terms in
   degree `j + 1` (`CategoryTheory.ShortComplex.ShortExact.postcomp_mk₀_τ₁_bijective`);
+* precomposition with `S.g` is injective on `Extⁿ(-, Y)` when precomposition with `S.f` is onto
+  `Extⁿ⁻¹(S.X₁, Y)` (`CategoryTheory.ShortComplex.ShortExact.precomp_mk₀_g_injective`);
 * extension of morphisms along a short exact sequence `S` whose cokernel `S.X₃` has
   `Ext¹(S.X₃, Y) = 0` (`CategoryTheory.ShortComplex.ShortExact.exists_f_comp_eq_of_ext_eq_zero`),
   and conversely when `S.X₂` is projective
@@ -148,6 +160,26 @@ theorem subsingleton_ext_of_isZero_right (X : C) (hY : IsZero Y) (n : ℕ) :
     Subsingleton (Ext.{w} X Y n) := by
   refine subsingleton_of_forall_eq 0 fun x ↦ ?_
   rw [← Ext.comp_mk₀_id x, hY.eq_of_src (𝟙 Y) 0, Ext.mk₀_zero, Ext.comp_zero]
+
+/-! ### Morphisms factoring through a projective object -/
+
+/-- Precomposition with a morphism `f ≫ g` that factors through a projective object `P` kills
+`Ext` in positive degree, since `Extⁿ⁺¹(P, Z) = 0`. -/
+theorem ext_mk₀_comp_eq_zero_of_projective {P Z : C} [Projective P] (f : X ⟶ P) (g : P ⟶ Y)
+    {n : ℕ} (x : Ext.{w} Y Z (n + 1)) :
+    (Ext.mk₀ (f ≫ g)).comp x (zero_add _) = 0 := by
+  rw [← Ext.mk₀_comp_mk₀_assoc, Ext.eq_zero_of_projective ((Ext.mk₀ g).comp x _), Ext.comp_zero]
+
+/-- If `r • 𝟙 X` factors through a projective object, then `r` annihilates `Extⁿ⁺¹(X, Z)`. For
+modules over a ring this applies when a submodule annihilated by `r` has projective quotient,
+for instance to an abelian group whose torsion has exponent `r` and whose torsion-free quotient
+is free. -/
+theorem ext_smul_eq_zero_of_projective (R : Type t) [Ring R] [Linear R C] {P Z : C}
+    [Projective P] {r : R} (f : X ⟶ P) (g : P ⟶ X) (hfg : f ≫ g = r • 𝟙 X) {n : ℕ}
+    (x : Ext.{w} X Z (n + 1)) :
+    r • x = 0 := by
+  rw [← ext_mk₀_comp_eq_zero_of_projective f g x, hfg, Ext.mk₀_smul, Ext.smul_comp,
+    Ext.mk₀_id_comp]
 
 /-! ### Dimension shifting along an injective embedding -/
 
@@ -372,6 +404,20 @@ theorem sub_comp {X Y Z : C} {n : ℕ} (α β : Ext.{w} X Y n) {m : ℕ} (γ : E
     (h : n + m = p) : (α - β).comp γ h = α.comp γ h - β.comp γ h := by
   rw [sub_eq_add_neg, add_comp, neg_comp, ← sub_eq_add_neg]
 
+/-- Composition of `Ext` classes is associative when the first class has degree zero. -/
+theorem comp_assoc_of_first_deg_zero {X Y Z T : C} {a₂ a₃ a₂₃ : ℕ} (α : Ext.{w} X Y 0)
+    (β : Ext.{w} Y Z a₂) (γ : Ext.{w} Z T a₃) (h₂₃ : a₂ + a₃ = a₂₃) :
+    (α.comp β (zero_add a₂)).comp γ h₂₃ = α.comp (β.comp γ h₂₃) (zero_add a₂₃) :=
+  comp_assoc _ _ _ (zero_add a₂) h₂₃ (by lia)
+
+/-- Precomposition with the class of a composite `α' ≫ α` is precomposition with the class of `α`
+followed by precomposition with the class of `α'`. -/
+theorem precomp_mk₀_comp {X X' X'' : C} (Y : C) (α' : X'' ⟶ X') (α : X' ⟶ X) (n : ℕ) :
+    ⇑((mk₀ (α' ≫ α)).precomp Y (zero_add n)) =
+      (mk₀ α').precomp Y (zero_add n) ∘ (mk₀ α).precomp Y (zero_add n) := by
+  ext x
+  simp [mk₀_comp_mk₀_assoc]
+
 end CategoryTheory.Abelian.Ext
 
 namespace CategoryTheory.ShortComplex.ShortExact
@@ -392,6 +438,34 @@ theorem extClass_postcomp_bijective (P : C) {n m : ℕ} (h : n + 1 + 1 = m)
   · obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₃ P hS x h hx
     rw [Subsingleton.elim z 0, Ext.zero_comp]
   · exact Ext.covariant_sequence_exact₁ P hS x (Subsingleton.elim _ _) h
+
+/-- **Restriction to a subobject with projective quotient**: if `0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` is
+short exact and `S.X₃` is projective, precomposition with `S.f` is a bijection
+`Extⁿ⁺¹(S.X₂, Y) ⟶ Extⁿ⁺¹(S.X₁, Y)`, since `Extⁿ⁺¹(S.X₃, Y)` and `Extⁿ⁺²(S.X₃, Y)` vanish. -/
+theorem precomp_mk₀_f_bijective_of_projective [Projective S.X₃] (Y : C) (n : ℕ) :
+    Function.Bijective (Ext.precomp (Ext.mk₀ S.f) Y (zero_add (n + 1))) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
+  · obtain ⟨z, rfl⟩ := Ext.contravariant_sequence_exact₂ hS Y x hx
+    rw [Ext.eq_zero_of_projective z, Ext.comp_zero]
+  · exact Ext.contravariant_sequence_exact₁ hS Y x (n₁ := n + 2) (by lia)
+      (Ext.eq_zero_of_projective _)
+
+/-- **Injectivity of restriction along the quotient map**: if `S` is short exact, precomposition
+with `S.g` is injective on `Extⁿ(-, Y)` as soon as precomposition with `S.f` is onto
+`Extⁿ⁻¹(S.X₁, Y)`: in degree zero because `S.g` is an epimorphism, and in positive degree because
+the connecting map then vanishes. -/
+theorem precomp_mk₀_g_injective (Y : C) {n : ℕ}
+    (h : ∀ m, m + 1 = n → Function.Surjective ((Ext.mk₀ S.f).precomp Y (zero_add m))) :
+    Function.Injective ((Ext.mk₀ S.g).precomp Y (zero_add n)) := by
+  cases n with
+  | zero =>
+    have := hS.epi_g
+    exact Ext.precomp_mk₀_injective_of_epi Y S.g
+  | succ n =>
+    refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+    obtain ⟨y, rfl⟩ := Ext.contravariant_sequence_exact₃ hS Y x hx (add_comm 1 n)
+    obtain ⟨z, rfl⟩ := h n rfl y
+    simp
 
 /-- **Extension along a monomorphism with orthogonal cokernel**: if `S` is short exact and
 `Ext¹(S.X₃, Y) = 0`, every morphism `S.X₁ ⟶ Y` extends along `S.f`. -/

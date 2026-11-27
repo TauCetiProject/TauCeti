@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Binomial
+public import Mathlib.Data.Nat.Choose.Central
 public import TauCeti.Algebra.Ring.Subgroup
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 import TauCeti.RingTheory.Polynomial.Pochhammer
 -- Proof-only: modules over `ℚ` are torsion-free.
 import Mathlib.Algebra.Module.Torsion.Field
+-- Proof-only: `ℕ`-scalars associate with multiplication in a nonassociative semiring.
+import Mathlib.GroupTheory.GroupAction.Ring
 
 /-!
 # Products of generalized binomial coefficients
@@ -78,6 +81,8 @@ span. This gives independence of integral toral constructions from a choice of l
   in the integer span of a commuting set.
 * `TauCeti.exists_forall_sum_mul_choose_eq`: prescribed integer values on an initial segment are
   attained by an integral combination of binomial coefficients.
+* `TauCeti.Ring.multichoose_inv_two`: the multiset coefficients of one half are the normalized
+  central binomial coefficients `(2n choose n) / 4 ^ n`, the coefficients of `(1 - y) ^ (-1/2)`.
 
 ## References
 
@@ -509,6 +514,7 @@ The identity combines them without division, which is the integral step needed i
 
 ## Main results
 
+* `TauCeti.Ring.choose_one_of_two_le`: `(1 choose n) = 0` for `n ≥ 2`.
 * `TauCeti.Ring.choose_neg_one` and `TauCeti.Ring.choose_neg_natCast_sub_one`: upper negation at
   `-1` (`(-1 choose n) = (-1) ^ n`) and at `-k - 1`
   (`(-k - 1 choose i) = (-1) ^ i * (k + i choose i)`), together with the signed cancellation
@@ -520,11 +526,18 @@ The identity combines them without division, which is the integral step needed i
   degree `n` contains the degree-`n` coefficient of `-r`.
 * `TauCeti.ringChooseSpan_neg`: negation leaves the integral span unchanged.
 * `TauCeti.Ring.mul_weighted_choose_add_mul_choose`: a scalar-weighted Pascal identity.
-* `TauCeti.Ring.add_one_nsmul_multichoose_add_one`: the product recursion
+* `TauCeti.Ring.choose_mul_add_one_eq`: the analogue `(r choose k) (r + 1) =
+  (r + 1 choose k) (r + 1 - k)` of `Nat.choose_mul_succ_eq`.
+* `TauCeti.Ring.add_one_nsmul_choose_add_one` and `TauCeti.Ring.add_one_nsmul_multichoose_add_one`:
+  the product recursions `(k + 1) (r choose (k + 1)) = (r choose k) (r - k)` and
   `(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k)`.
+* `TauCeti.Ring.add_one_nsmul_choose_add_one_add_one`: the absorption identity
+  `(k + 1) (r + 1 choose (k + 1)) = (r + 1) (r choose k)`.
 * `TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer`: expression of
   `Ring.multichoose x n` as `(n!)⁻¹ * (ascPochhammer R n).eval x` over a characteristic-zero
-  division semiring.
+  division semiring, and its analogue
+  `TauCeti.Ring.choose_eq_inv_factorial_mul_eval_descPochhammer` for `Ring.choose x n` over a
+  characteristic-zero field.
 
 ## References
 
@@ -571,6 +584,45 @@ theorem mul_weighted_choose_add_mul_choose (r c : R) (k : ℕ) :
   rw [mul_add]
   abel
 
+/-- The analogue of `Nat.choose_mul_succ_eq` for generalized binomial coefficients:
+`(r choose k) (r + 1) = (r + 1 choose k) (r + 1 - k)`. -/
+theorem choose_mul_add_one_eq (r : R) (k : ℕ) :
+    _root_.Ring.choose r k * (r + 1) = _root_.Ring.choose (r + 1) k * (r + 1 - k) := by
+  -- A binomial ring has no additive torsion, so multiplying by `k!` is injective.
+  have := BinomialRing.toHasUniqueDiv (R := R)
+  rw [← nsmul_right_inj (Nat.factorial_ne_zero k), ← smul_mul_assoc, ← smul_mul_assoc,
+    ← _root_.Ring.descPochhammer_eq_factorial_smul_choose,
+    ← _root_.Ring.descPochhammer_eq_factorial_smul_choose]
+  -- Both sides are the Pochhammer evaluation `(r + 1) r ⋯ (r + 1 - k)`, peeled at either end.
+  have h := congrArg (Polynomial.smeval · (r + 1)) <| (descPochhammer_succ_right ℤ k).symm.trans
+    ((descPochhammer_succ_left ℤ k).trans (mul_comm _ _))
+  simp only [Polynomial.smeval_mul, Polynomial.smeval_comp, Polynomial.smeval_sub,
+    Polynomial.smeval_X, Polynomial.smeval_one, npow_one, npow_zero, ← Polynomial.C_eq_natCast,
+    Polynomial.smeval_C] at h
+  simpa using h.symm
+
+/-- The product recursion for binomial coefficients:
+
+```text
+(k + 1) (r choose (k + 1)) = (r choose k) (r - k).
+```
+-/
+theorem add_one_nsmul_choose_add_one (r : R) (k : ℕ) :
+    (k + 1) • _root_.Ring.choose r (k + 1) = _root_.Ring.choose r k * (r - k) := by
+  simpa [Nat.choose_succ_self_right] using
+    _root_.Ring.choose_smul_choose r (n := k + 1) (k := k) (Nat.le_succ k)
+
+/-- The absorption identity for generalized binomial coefficients:
+
+```text
+(k + 1) (r + 1 choose (k + 1)) = (r + 1) (r choose k).
+```
+-/
+theorem add_one_nsmul_choose_add_one_add_one (r : R) (k : ℕ) :
+    (k + 1) • _root_.Ring.choose (r + 1) (k + 1) = (r + 1) * _root_.Ring.choose r k := by
+  simpa [Nat.choose_one_right] using
+    _root_.Ring.choose_smul_choose (r + 1) (n := k + 1) (k := 1) (by omega)
+
 end WeightedPascal
 
 /-! ## The product recursion for multiset coefficients -/
@@ -600,6 +652,43 @@ theorem multichoose_eq_inv_factorial_mul_eval_ascPochhammer {R : Type*} [Divisio
   have h := _root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer x n
   rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
   rw [← h, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
+
+/-- Over a field of characteristic zero, `Ring.choose x n` equals
+`(n!)⁻¹ * (descPochhammer R n).eval x`. -/
+theorem choose_eq_inv_factorial_mul_eval_descPochhammer {R : Type*} [Field R] [CharZero R]
+    (x : R) (n : ℕ) :
+    _root_.Ring.choose x n = (n.factorial : R)⁻¹ * (descPochhammer R n).eval x := by
+  rw [_root_.Ring.choose_eq_smul, smul_eq_mul, ← Polynomial.aeval_eq_smeval,
+    ← descPochhammer_map (algebraMap ℤ R), Polynomial.aeval_def, Polynomial.eval_map]
+
+/-- The multiset coefficients of one half are the normalized central binomial coefficients:
+`(1/2 multichoose n) = (2n choose n) / 4 ^ n`, because
+`(1/2) (3/2) ⋯ ((2n - 1)/2) / n! = (2n)! / (4 ^ n (n!) ^ 2)`. -/
+theorem multichoose_inv_two {R : Type*} [DivisionRing R] [CharZero R] (n : ℕ) :
+    _root_.Ring.multichoose (2⁻¹ : R) n = n.centralBinom / 4 ^ n := by
+  have hℚ : _root_.Ring.multichoose (2⁻¹ : ℚ) n = n.centralBinom / 4 ^ n := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have h := add_one_nsmul_multichoose_add_one (2⁻¹ : ℚ) n
+      have hc : ((n + 1 : ℕ) : ℚ) * (n + 1).centralBinom =
+          2 * (2 * n + 1) * n.centralBinom := by
+        exact_mod_cast Nat.succ_mul_centralBinom_succ n
+      rw [nsmul_eq_mul, ih] at h
+      apply mul_left_cancel₀ (Nat.cast_ne_zero.mpr n.succ_ne_zero : ((n + 1 : ℕ) : ℚ) ≠ 0)
+      rw [h, ← mul_div_assoc, hc, pow_succ]
+      field_simp
+      ring
+  rw [show (2⁻¹ : R) = Rat.castHom R 2⁻¹ by simp, ← _root_.Ring.map_multichoose, hℚ, map_div₀,
+    map_pow, map_natCast, map_ofNat]
+
+/-! ## The coefficients of one -/
+
+/-- `(1 choose n) = 0` for `n ≥ 2`, the analogue of `Ring.choose_zero_pos` for `1`. -/
+theorem choose_one_of_two_le (R : Type*) [NonAssocRing R] [Pow R ℕ] [NatPowAssoc R]
+    [BinomialRing R] {n : ℕ} (hn : 2 ≤ n) : _root_.Ring.choose (1 : R) n = 0 := by
+  rw [← Nat.cast_one, _root_.Ring.choose_natCast, Nat.choose_eq_zero_of_lt (by omega),
+    Nat.cast_zero]
 
 /-! ## Negating the argument -/
 

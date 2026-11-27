@@ -6,9 +6,11 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.WrappedCauchy.Density
+public import TauCeti.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.Quantile
 public import TauCeti.Probability.Distributions.Dirac
 import TauCeti.MeasureTheory.Measure.AddCircle
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The wrapped Cauchy law in the fixed angle chart
@@ -17,7 +19,8 @@ import TauCeti.MeasureTheory.Measure.AddCircle
 scale its real density is the Haar Poisson kernel divided by `2π`. Its cdf is the integral
 of that density from `-π`, with zero and one extensions outside the chart. Interior quantiles
 are the unique roots of this integral, vary continuously and strictly increasingly with the
-probability level, and tend to the chart endpoints.
+probability level, and tend to the chart endpoints. Since the chart is bounded, every exponential
+moment of its real coordinate exists.
 
 At scale zero the angle law is the Dirac mass at the chosen representative of the location.
 The location parameter remains a circle point, so the formulas are independent of its real
@@ -96,6 +99,15 @@ theorem ae_mem_Ico_wrappedCauchyAngleMeasure (m : AddCircle (2 * π)) (γ : ℝ�
     have hπ : -π + 2 * π = π := by ring
     simpa only [mem_Ico, hπ] using (AddCircle.equivIco (2 * π) (-π) θ).property
 
+/-- Every exponential moment of the fixed-chart wrapped Cauchy angle exists. -/
+@[simp]
+theorem integrableExpSet_id_wrappedCauchyAngleMeasure
+    (m : AddCircle (2 * π)) (γ : ℝ≥0) :
+    integrableExpSet id (wrappedCauchyAngleMeasure m γ) = univ := by
+  apply TauCeti.integrableExpSet_eq_univ_of_mem_Icc measurable_id.aemeasurable
+  exact (ae_mem_Ico_wrappedCauchyAngleMeasure m γ).mono
+    fun _ hx ↦ Set.Ico_subset_Icc_self hx
+
 /-- At positive scale the angle law has no atoms. -/
 theorem nullSingletonClass_wrappedCauchyAngleMeasure (hγ : 0 < γ) :
     NullSingletonClass (wrappedCauchyAngleMeasure m γ) := by
@@ -139,9 +151,9 @@ theorem cdf_wrappedCauchyAngleMeasure_eq_integral (hγ : 0 < γ) (hx : x ∈ Icc
     ((continuous_wrappedCauchyPDFReal m γ).comp (AddCircle.continuous_mk' _)).div_const _
   rw [cdf_eq_real, wrappedCauchyAngleMeasure_eq_withDensity hγ,
     Measure.restrict_congr_set Ico_ae_eq_Ioc,
-    measureReal_withDensity_ofReal
+    MeasureTheory.measureReal_withDensity_ofReal
       (ae_of_all _ fun t ↦ (div_pos (wrappedCauchyPDFReal_pos _ hγ _) two_pi_pos).le)
-      measurableSet_Iic hf.aemeasurable,
+      nullMeasurableSet_Iic hf.aemeasurable,
     Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ioc_of_le hx.2,
     ← intervalIntegral.integral_of_le hx.1, intervalIntegral.integral_div]
 

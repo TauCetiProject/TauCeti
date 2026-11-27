@@ -72,6 +72,9 @@ of a completed group algebra attached to two topological generators.
 * `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
   continuous families whose inner series have zero constant coefficient.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
+* `PowerSeries.HasSubst.sub_one`: `f - 1` can be substituted when `constantCoeff f = 1`.
+* `PowerSeries.constantCoeff_subst_of_constantCoeff_zero'`: univariate `PowerSeries.constantCoeff`
+  form of `constantCoeff_subst_of_constantCoeff_zero`.
 * `PowerSeries.subst_one`: substitution preserves the constant series one.
 * `PowerSeries.subst_X_add_C_mul_X_pow`: substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`.
 * `PowerSeries.subst_eq_aeval_trunc_of_pow_eq_zero`: substitution at a series with a vanishing
@@ -96,6 +99,9 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
   degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
   `f` and `φ₁` the linear part of `φ`.
+* `PowerSeries.hasSubst_subst_X` and `PowerSeries.coeff_subst_subst_X_of_le_order`: the family
+  `i ↦ g(Xᵢ)` can be substituted, and for `g = c X + ⋯` the coefficient of `D(g(X₁), g(X₂), …)` in
+  a degree `m` at most the order of `D` is `cᵐ` times that of `D`.
 * `PowerSeries.coeff_subst_eq_sum_range_degree`: the coefficient of `X^d` in `f (a)`, for `a` of
   zero constant coefficient, is the finite sum `∑_{n ≤ |d|} fₙ [X^d] aⁿ`.
 * `PowerSeries.coeff_subst_mem`: if `f` and `a` have coefficients in a subring, so does `f (a)`.
@@ -109,6 +115,8 @@ of a completed group algebra attached to two topological generators.
   through the linear term `Xₛ` of the multivariate series.
 * `PowerSeries.exists_subst_add_X_pow_mul`: perturbing a zero-constant input by `X ^ m * r`
   gives a difference `X ^ m * s` with `s(0) = f₁ r(0)`.
+* `PowerSeries.coe_inv_eq_subst_of_coe_eq_subst`: if a unit `u` is `f (a)` for a unit `f`, then
+  `u⁻¹ = f⁻¹ (a)`.
 * `PowerSeries.algHom_eq_substAlgHom`: an algebra map `R⟦X⟧ → S⟦X⟧` sending `X` to a
   substitutable series is a substitution.
 * `PowerSeries.subst_add_of_sq_eq_zero`: `f (a + h) = f (a) + h f' (a)` when `h ^ 2 = 0`, and
@@ -157,6 +165,12 @@ theorem coeff_trunc_comp_trunc {R : Type*} [CommRing R] (f : R⟦X⟧) {g : R⟦
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
     HasSubst (C x) := by
   simpa only [HasSubst, ← constantCoeff_eq, constantCoeff_C] using hx
+
+/-- If `f` has constant coefficient `1`, then `f - 1` has zero constant coefficient and can be
+substituted into any power series. -/
+theorem HasSubst.sub_one {R : Type*} [CommRing R] {f : R⟦X⟧} (hf : constantCoeff f = 1) :
+    HasSubst (f - 1) :=
+  .of_constantCoeff_zero' (by simp [hf])
 
 /-- Substituting into the zero series gives zero, even without a substitutability hypothesis. -/
 @[simp]
@@ -291,6 +305,12 @@ section Algebra
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
+/-- A variant of `constantCoeff_subst_of_constantCoeff_zero` using `PowerSeries.constantCoeff`
+instead of `MvPowerSeries.constantCoeff`. -/
+theorem constantCoeff_subst_of_constantCoeff_zero' {a : S⟦X⟧} (ha : constantCoeff a = 0)
+    (f : R⟦X⟧) : constantCoeff (f.subst a) = algebraMap R S (constantCoeff f) := by
+  rw [constantCoeff_eq, constantCoeff_subst_of_constantCoeff_zero (by rwa [← constantCoeff_eq])]
+
 /-- The linear coefficient of `f (a)`, for `a` of zero constant coefficient, is the product of
 the linear coefficients of `f` and `a`. -/
 theorem coeff_one_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) (f : R⟦X⟧) :
@@ -335,6 +355,14 @@ theorem coeff_subst_eq_mul {a : S⟦X⟧} (ha : constantCoeff a = 0) {f : R⟦X�
       refine (mul_dvd_mul (X_pow_dvd_iff.mpr fun m hm ↦ coeff_of_lt_order m
         ((Nat.cast_lt.mpr hm).trans_le hn)) (X_dvd_iff.mpr ha)).trans ⟨a ^ d, by ring⟩
     rw [X_pow_dvd_iff.mp hdvd n (Nat.lt_succ_self n), smul_zero]
+
+/-- If a unit `u` is the substitution `f (a)` of a unit `f`, then its inverse is the substitution
+`f⁻¹ (a)` of the inverse. -/
+theorem coe_inv_eq_subst_of_coe_eq_subst {a : S⟦X⟧} (ha : HasSubst a) {f : R⟦X⟧ˣ} {u : S⟦X⟧ˣ}
+    (hu : (u : S⟦X⟧) = (f : R⟦X⟧).subst a) :
+    ((u⁻¹ : S⟦X⟧ˣ) : S⟦X⟧) = ((f⁻¹ : R⟦X⟧ˣ) : R⟦X⟧).subst a := by
+  refine Units.inv_eq_of_mul_eq_one_right ?_
+  rw [hu, ← coe_substAlgHom ha, ← map_mul, Units.mul_inv, map_one]
 
 /-- An `R`-algebra map `σ : R⟦X⟧ → S⟦X⟧` such that `σ X` can be substituted is the
 substitution `f ↦ f (σ X)`. No continuity hypothesis is needed. -/
@@ -437,6 +465,40 @@ theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries 
   simp only [add_zero, mul_one] at hmul hpow
   rw [subst_mul hφ', subst_pow hφ', subst_X hφ', hmul, hpow]
   simp [mul_comm, constantCoeff_subst_of_constantCoeff_zero hφ, coeff_mul_X_pow']
+
+/-- The family `i ↦ g(Xᵢ)` of a series `g` of zero constant coefficient can be substituted into
+series in finitely many variables. -/
+theorem hasSubst_subst_X {σ : Type*} [Finite σ] {g : R⟦X⟧} (hg : constantCoeff g = 0) :
+    MvPowerSeries.HasSubst fun i : σ ↦ g.subst (MvPowerSeries.X i : MvPowerSeries σ S) :=
+  MvPowerSeries.hasSubst_of_constantCoeff_zero fun i ↦
+    constantCoeff_subst_eq_zero (MvPowerSeries.constantCoeff_X (R := S) i) g hg
+
+/-- **Low-degree coefficients of `D(g(X₁), g(X₂), …)`.** Let `g = c X + ⋯` have zero constant
+coefficient. In every degree `m` at most the order of `D`, the coefficient of
+`D(g(X₁), g(X₂), …)` is `cᵐ` times that of `D`. -/
+theorem coeff_subst_subst_X_of_le_order {σ : Type*} [Finite σ] {g : R⟦X⟧}
+    (hg : constantCoeff g = 0) {D : MvPowerSeries σ S} {e : σ →₀ ℕ}
+    (he : (e.degree : ℕ∞) ≤ D.order) :
+    MvPowerSeries.coeff e (D.subst fun i ↦ g.subst (MvPowerSeries.X i : MvPowerSeries σ S)) =
+      algebraMap R S (coeff 1 g) ^ e.degree * MvPowerSeries.coeff e D := by
+  -- the linear part of `g(Xᵢ)` is `c Xᵢ`, and the degree-`m` part of the substitution only sees
+  -- the degree-`m` part of `D` and these linear parts
+  have hlin : (fun i ↦ MvPowerSeries.homogeneousComponent 1
+      (g.subst (MvPowerSeries.X i : MvPowerSeries σ S))) =
+      Function.const σ (algebraMap R S (coeff 1 g)) • MvPowerSeries.X := by
+    funext i
+    rw [homogeneousComponent_subst_of_le_order (MvPowerSeries.constantCoeff_X i)
+      (order_ne_zero_iff_constCoeff_eq_zero.mpr hg |> Order.one_le_iff_ne_zero.mpr),
+      MvPowerSeries.homogeneousComponent_one_X, pow_one, Pi.smul_apply', Function.const_apply,
+      MvPowerSeries.smul_eq_C_mul]
+  have h := congrArg (MvPowerSeries.coeff e)
+    (MvPowerSeries.homogeneousComponent_subst_of_le_order he (hasSubst_subst_X hg)
+      fun i ↦ constantCoeff_subst_eq_zero (MvPowerSeries.constantCoeff_X (R := S) i) g hg)
+  rw [MvPowerSeries.coeff_homogeneousComponent, ite_eq_left rfl, hlin,
+    ← MvPowerSeries.rescale_eq_subst, MvPowerSeries.coeff_rescale,
+    MvPowerSeries.coeff_homogeneousComponent, ite_eq_left rfl] at h
+  simp only [h, Finsupp.prod, Function.const_apply, Finset.prod_pow_eq_pow_sum,
+    Finsupp.degree_apply]
 
 /-- The coefficient of `X^d` in `f (a)`, for `a` of zero constant coefficient, is the finite sum
 `∑_{n ≤ |d|} fₙ [X^d] aⁿ`: the powers `aⁿ` with `n > |d|` have order greater than `|d|`. This is the

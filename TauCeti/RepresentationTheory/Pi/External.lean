@@ -18,7 +18,9 @@ For representations `ρ i` of monoids `G i` on modules `V i`, the **external pro
 `∀ i, V i` in which `g` acts on the `i`-th coordinate by `ρ i (g i)`. Restricted along the
 diagonal of a single group it is the product `Representation.pi` of representations of that group
 (`Representation.externalPi_comp_diag`), and a single factor `G i` acts on the `i`-th coordinate
-alone (`Representation.externalPi_mulSingle`).
+alone (`Representation.externalPi_mulSingle`). On finite products of finite free modules the
+determinant of the action of `g` is the product of the determinants of its components
+(`Representation.det_externalPi`).
 
 For a finite set `I` of indices this is the representation of `Γ_I = ∏_(α ∈ I) Γ_α` on
 `E_I = ⊕_(α ∈ I) E_α` that carries the obstruction spaces of an implicit atlas, in the sense of
@@ -87,6 +89,20 @@ theorem externalPi_mulSingle [DecidableEq ι] (i : ι) (g : G i) (x : ∀ i, V i
   · subst h
     simp
   · simp [h]
+
+/-- `g` acts by the coordinatewise endomorphism with components `ρ i (g i)`. -/
+theorem externalPi_eq_piMap (g : ∀ i, G i) :
+    externalPi ρ g = LinearMap.piMap fun i ↦ ρ i (g i) := by
+  ext
+  simp
+
+/-- The determinant of the action of `g` on a finite product of finite free modules is the product
+of the determinants of its components. -/
+theorem det_externalPi {k : Type*} [CommRing k] [Fintype ι] {V : ι → Type*}
+    [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)] [∀ i, Module.Free k (V i)]
+    [∀ i, Module.Finite k (V i)] (ρ : ∀ i, Representation k (G i) (V i)) (g : ∀ i, G i) :
+    LinearMap.det (externalPi ρ g) = ∏ i, LinearMap.det (ρ i (g i)) := by
+  rw [externalPi_eq_piMap, LinearMap.det_piMap]
 
 /-- **The coordinate projection** `(∀ i, V i) → V i`, equivariant for `∀ i, G i` acting on `V i`
 through its factor `G i`. -/

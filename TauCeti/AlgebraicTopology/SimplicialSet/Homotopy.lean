@@ -18,7 +18,10 @@ simplicial homotopies `SSet.Homotopy`, and defines homotopies of morphisms of pa
 ## The cylinder
 
 * `SSet.whiskerLeft_stdSimplex_δ_one`, `SSet.whiskerLeft_stdSimplex_δ_zero`: the two faces
-  `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` are the ends `ι₀` and `ι₁` of the cylinder, after the projection to `X`.
+  `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` are the ends `ι₀` and `ι₁` of the cylinder, after the projection to `X`;
+  `SSet.fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_one` and `_zero` state the same after
+  the inverse isomorphism `X ≅ X ⊗ Δ[0]`.
+* `SSet.whiskerLeft_horn_one_zero_ι`: the inclusion `X ⊗ Λ[1, 0] ⟶ X ⊗ Δ[1]` is the end `ι₀`.
 * `SSet.range_ι₀_inf_range_ι₁`: the two ends of the cylinder are disjoint.
 * `SSet.verticalEdge`: the edge `{v} × Δ[1]` of the cylinder over a vertex `v`, along which a
   homotopy moves the image of `v`; its endpoints are `(v, 0)` and `(v, 1)`
@@ -30,6 +33,7 @@ simplicial homotopies `SSet.Homotopy`, and defines homotopies of morphisms of pa
 * `SSet.Homotopy.precomp`, `SSet.Homotopy.postcomp`: composition of a homotopy with a map.
 * `SSet.Homotopy.curry`, `SSet.Homotopy.uncurry`: homotopies correspond under the tensor-hom
   adjunction.
+* `SSet.Homotopy.op`: opposite reverses a simplicial homotopy.
 * `SSet.Homotopy.ulift`, `SSet.Homotopy.ofUlift`, `SSet.Homotopy.uliftEquiv`: homotopies
   transport bijectively along `SSet.uliftFunctor`.
 * `SSet.ihomEdgeEquiv`: the vertices of the simplicial set `Fun(X, Z) = (ihom X).obj Z` are the
@@ -82,6 +86,25 @@ after the projection `X ⊗ Δ[0] ⟶ X`. -/
 lemma whiskerLeft_stdSimplex_δ_zero (X : SSet.{w}) :
     X ◁ stdSimplex.δ (0 : Fin 2) = fst X Δ[0] ≫ ι₁ := by
   ext : 1 <;> simp [ι₁, stdSimplex.δ_zero_eq_const]
+
+/-- The end `X ⊗ {0}` of the cylinder is the face `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` omitting the vertex `1`,
+after the isomorphism `X ≅ X ⊗ Δ[0]`. -/
+@[reassoc]
+lemma fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_one (X : SSet.{w}) :
+    (fstStdSimplexZeroIso X).inv ≫ X ◁ stdSimplex.δ (1 : Fin 2) = ι₀ := by
+  rw [whiskerLeft_stdSimplex_δ_one, ← fstStdSimplexZeroIso_hom, Iso.inv_hom_id_assoc]
+
+/-- The end `X ⊗ {1}` of the cylinder is the face `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` omitting the vertex `0`,
+after the isomorphism `X ≅ X ⊗ Δ[0]`. -/
+@[reassoc]
+lemma fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero (X : SSet.{w}) :
+    (fstStdSimplexZeroIso X).inv ≫ X ◁ stdSimplex.δ (0 : Fin 2) = ι₁ := by
+  rw [whiskerLeft_stdSimplex_δ_zero, ← fstStdSimplexZeroIso_hom, Iso.inv_hom_id_assoc]
+
+/-- The inclusion `X ⊗ Λ[1, 0] ⟶ X ⊗ Δ[1]` is the end `X ⊗ {0}` of the cylinder, after the
+projection `X ⊗ Λ[1, 0] ⟶ X`. -/
+lemma whiskerLeft_horn_one_zero_ι (X : SSet.{w}) : X ◁ Λ[1, 0].ι = fst X _ ≫ ι₀ :=
+  CartesianMonoidalCategory.hom_ext _ _ (by simp) (by simp [horn_one_ι_eq_const, comp_const])
 
 /-- The associator identifies the cylinder `A ⊗ (X ⊗ Δ[1])` with `(A ⊗ X) ⊗ Δ[1]`, carrying the
 inclusion of `A ⊗ (X ⊗ {0})` to that of `(A ⊗ X) ⊗ {0}`. -/
@@ -385,6 +408,37 @@ lemma map_mkOfLe_toSimplicialObjectHomotopy_h_zero (H : SSet.Homotopy f g) {n : 
     fin_cases k <;> rfl
   · ext k : 1
     fin_cases k <;> rfl
+
+/-- Opposite reverses the direction of a simplicial homotopy. -/
+noncomputable def op (H : SSet.Homotopy f g) :
+    SSet.Homotopy (SSet.opFunctor.map g) (SSet.opFunctor.map f) := by
+  -- Tensor products are pointwise, so opposite commutes definitionally with the cylinder product.
+  have he (i : Fin 2) : lift (𝟙 X.op) (SSet.const (SSet.stdSimplex.obj₀Equiv.symm i)) ≫
+      X.op ◁ (SSet.stdSimplex.opIso ⦋1⦌).inv =
+      SSet.opFunctor.map (lift (𝟙 X) (SSet.const (SSet.stdSimplex.obj₀Equiv.symm i.rev))) := by
+    apply NatTrans.ext
+    funext ⟨m⟩
+    apply ConcreteCategory.hom_ext
+    intro x
+    induction m using SimplexCategory.rec with | _ m
+    apply Prod.ext
+    · rfl
+    · apply SSet.opObjEquiv.injective
+      ext j
+      fin_cases i <;> rfl
+  refine mk' (X.op ◁ (SSet.stdSimplex.opIso ⦋1⦌).inv ≫ SSet.opFunctor.map H.h) ?_ ?_
+  · exact (Category.assoc _ _ _).symm.trans
+      ((congrArg (· ≫ SSet.opFunctor.map H.h) (he 0)).trans
+        ((SSet.opFunctor.map_comp _ _).symm.trans (congrArg _ H.h₁)))
+  · exact (Category.assoc _ _ _).symm.trans
+      ((congrArg (· ≫ SSet.opFunctor.map H.h) (he 1)).trans
+        ((SSet.opFunctor.map_comp _ _).symm.trans (congrArg _ H.h₀)))
+
+/-- The opposite homotopy is obtained by reversing the interval in the opposite cylinder. -/
+@[simp]
+lemma op_h (H : SSet.Homotopy f g) :
+    H.op.h = X.op ◁ (SSet.stdSimplex.opIso ⦋1⦌).inv ≫ SSet.opFunctor.map H.h :=
+  (rfl)
 
 end SSet.Homotopy
 

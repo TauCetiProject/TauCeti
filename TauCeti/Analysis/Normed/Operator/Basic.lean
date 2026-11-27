@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
-import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.NNNorm
-import Mathlib.LinearAlgebra.Pi
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Basic facts about bounded operators
@@ -25,28 +25,39 @@ seminormed spaces. Every right scalar-multiplication map `toSpanSingleton R e` u
 scalar action of a seminormed ring (`ContinuousLinearMap.exists_norm_toSpanSingleton_apply_le`)
 admits a uniform linear norm bound.
 
-This file also records a shared uniform-bound lemma for continuous linear maps between seminormed
-spaces. It lets an evaluation `T i (g i)` pass to the limit when the operators `T i` are eventually
-uniformly bounded, their values at the limiting argument converge, and the arguments `g i` converge.
+This file also records a shared uniform-bound lemma for continuous semilinear maps between
+seminormed spaces, with respect to an isometric scalar homomorphism. It lets an evaluation
+`T i (g i)` pass to the limit when the operators `T i` are eventually uniformly bounded, their
+values at the limiting argument converge, and the arguments `g i` converge.
 In particular, it supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
 `StronglyContinuousGroup.tendsto_apply`. It holds more generally for additive maps with a
 uniform pointwise bound `‖T i x‖ ≤ C * ‖x‖` (`AddMonoidHomClass.tendsto_apply_of_eventually_bound`).
 Consequently a strongly continuous family of such maps `T a` sends a continuous function `f` to
 the continuous function `a ↦ T a (f a)` (`AddMonoidHomClass.continuousOn_apply_of_bound`,
-`AddMonoidHomClass.continuous_apply_of_bound`). Operators whose norms tend to zero eventually map
-any ball about `0` into any neighbourhood of `0`
-(`ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm`).
+`AddMonoidHomClass.continuous_apply_of_bound`). Continuous semilinear maps over an isometric scalar
+homomorphism whose operator norms tend to zero eventually map any bounded set into any
+neighbourhood of `0` (`Filter.Tendsto.eventually_clm_mapsTo_of_opNorm_tendsto_zero`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
-(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). The difference of two
+(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). For a real endomorphism
+`T` with `‖T‖ ≤ M`, `‖a v + b T v‖² ≤ (1 + M²) (a² + b²) ‖v‖²`
+(`ContinuousLinearMap.norm_smul_add_smul_apply_sq_le`), and over `ℝ` or `ℂ` an endomorphism `B`
+with `‖B‖ ≤ 1` satisfies `‖v • B f + conj v • f‖ ≤ 2 ‖v‖ ‖f‖`
+(`ContinuousLinearMap.norm_smul_apply_add_conj_smul_le`). The difference of two
 compositions obeys the three-term estimate
 `‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
-(`ContinuousLinearMap.enorm_comp_sub_comp_le`). The conjugates `G ∘ K ∘ M` and `G' ∘ K' ∘ M'`,
-with `G` a left inverse of `M` and `G'` a right inverse of `M'`, differ by at most a combination of
-`‖K - K'‖` and `‖M - M'‖` (`ContinuousLinearMap.norm_comp_comp_sub_comp_comp_le`), using the
-triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`.
+(`ContinuousLinearMap.enorm_comp_sub_comp_le` in extended norms,
+`ContinuousLinearMap.norm_comp_sub_comp_le` in operator norms). The conjugates `G ∘ K ∘ M` and
+`G' ∘ K' ∘ M'`, with `G` a left inverse of `M` and `G'` a right inverse of `M'`, differ by at most a
+combination of `‖K - K'‖` and `‖M - M'‖` (`ContinuousLinearMap.norm_comp_comp_sub_comp_comp_le`),
+using the triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`, which also bounds
+the difference of two inverses through the resolvent identity,
+`‖f⁻¹ - g⁻¹‖ ≤ ‖f⁻¹‖ ‖g - f‖ ‖g⁻¹‖`
+(`ContinuousLinearMap.IsInvertible.norm_inverse_sub_inverse_le`). Precomposition by an
+operator `T`, as a map between spaces of operators, has norm at most `‖T‖`
+(`ContinuousLinearMap.norm_precomp_le`).
 
 Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`), so a lower bound `α ‖x‖ ≤ ‖f x‖` with
@@ -57,10 +68,11 @@ it stays nonzero under a sufficiently small perturbation
 (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and it is invertible if it is also
 surjective
 (`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
-same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
+same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`). Conversely, an
+invertible operator `A : E →L F` satisfies `‖x‖ ≤ ‖A.inverse‖ ‖A x‖`
+(`ContinuousLinearMap.IsInvertible.norm_le_norm_inverse_mul_norm`); an invertible
 operator `A` on a normed space cancels against its inverse
-(`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`)
-and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`),
+(`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`),
 and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). An operator bounded below
 is invertible if a sufficiently nearby operator is invertible
@@ -68,32 +80,39 @@ is invertible if a sufficiently nearby operator is invertible
 `‖A‖ < 1` the Neumann series solves `v + A x = x` with `‖x‖ ≤ ‖v‖ / (1 - ‖A‖)`
 (`ContinuousLinearMap.exists_add_apply_eq_of_norm_lt_one`).
 A family of operators continuous at a point and invertible there changes the size of a
-function near that point only up to constant factors (`TauCeti.isTheta_clm_apply_of_isUnit`).
+function near that point only up to constant factors (`TauCeti.isTheta_clm_apply_of_isUnit`),
+and a family continuous and invertible on a compact set does so uniformly there
+(`TauCeti.exists_norm_clm_apply_le_and_norm_le_of_isUnit`).
 
-The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
-most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
-(`ContinuousLinearMap.norm_sum_apply_apply_le`). For a sequence `A` of continuous semilinear maps
-and a sequence `v` of vectors, the weighted norm of the finite Cauchy product
+For a sequence `A` of continuous semilinear maps over a common isometric scalar homomorphism and a
+sequence `v` of vectors, the weighted norm of the finite Cauchy product
 `∑ k ∈ Finset.range (n + 1), A (n - k) (v k)` is bounded termwise by the Cauchy product of the
 weighted norms `‖A m‖ * r ^ m` and `‖v k‖ * r ^ k` for `0 ≤ r`
 (`TauCeti.norm_sum_range_clm_apply_mul_pow_le`).
 
+The sum `a • L v + b • M w` is bounded using separate bounds on both coefficients,
+both operators and both vectors (`ContinuousLinearMap.norm_smul_apply_add_smul_apply_le`).
+
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
-(`ContinuousLinearMap.norm_apply_bounds_of_net`).
+(`ContinuousLinearMap.norm_apply_bounds_of_net`). Over a normed `ℝ`-algebra, an operator sending
+the ball `ball 0 r`, `r > 0`, into `ball 0 s` has operator norm at most `s / r`
+(`ContinuousLinearMap.opNorm_le_of_mapsTo_ball`), so at most one when it maps `ball 0 r` into
+itself (`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`).
 
 If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
 (`TauCeti.prodMap_mul_self_eq_neg_one`), and `a + J b = y` holds exactly when `b - J a = -J y`
 (`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`).
 
+A first-order estimate for continuous semilinear maps `B B' : F →SL[σ] E` over the same isometric
+scalar homomorphism `σ`: if `B` sends `y` to `v`, with `‖B‖ ≤ K`, and `u` is within `ε' ‖v‖` of
+`y`, where `0 ≤ ε'` and `K ε' ≤ 1 / 2`, then any `B'` close to `B` sends `u` close to `v`
+(`ContinuousLinearMap.norm_sub_apply_le_of_apply_eq`).
+
 If `a₀ ‖w‖² ≤ g w` and `‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖²` is bounded by
 `(2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, comparing an energy density with a perturbed middle
 term to the squared norms (`TauCeti.norm_sq_add_norm_sq_add_norm_sq_le`).
-
-A continuous bilinear map satisfies a Young-type bound
-`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
-(`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
 
 For a continuous linear map `c` valued in a normed algebra `𝕜'` over the scalars and a vector `f`
 of a normed `𝕜'`-space, the rank-one map `c.smulRight f : x ↦ c x • f` has norm at most `‖c‖ ‖f‖`
@@ -103,14 +122,13 @@ is the equality for scalar-valued `c`; the inequality applies for instance to th
 
 A **metric quotient map**, an operator `q` with `‖q‖ ≤ 1` lifting every vector of norm less than
 `r` to a vector of norm less than `r`, maps each open ball about `0` onto the open ball of the same
-radius (`ContinuousLinearMap.image_ball_eq_ball`).
+radius (`ContinuousLinearMap.image_ball_eq_ball`). On a function supported in `closedBall 0 t`,
+scalar multiplication by the values of a continuous semilinear map `L` costs at most `t * ‖L‖`
+(`ContinuousLinearMap.norm_apply_smul_le_of_support_subset_closedBall`).
 
-Finite real products also admit coordinate-basis estimates and continuous linear equivalences
-obtained by replacing one coordinate. The coordinate arguments are adapted from
-[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
-`65810c73f9dd7945fc646ab484cb19d673f5291d`,
-`formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
-`Sard/CoordinateChange.lean`; the coordinate bound comes from `Sard/Disk.lean`.
+The identity operator `1` has operator norm at most one on every seminormed space
+(`ContinuousLinearMap.norm_one_le`), and the affine map `z ↦ A z + v` given by a continuous
+semilinear map `A` is `‖A‖₊`-Lipschitz (`ContinuousLinearMap.lipschitzWith_add_const`).
 Bounded linear endomorphisms of a seminormed space act continuously on it
 (`ContinuousLinearMap.instContinuousSMul`).
 -/
@@ -223,6 +241,14 @@ noncomputable abbrev normedAddCommGroup : NormedAddCommGroup (E →SL[σ] F) :=
 
 end Semilinear
 
+/-- The affine map `z ↦ A z + v` given by a continuous semilinear map `A` between seminormed spaces
+is Lipschitz with constant `‖A‖₊`. -/
+theorem lipschitzWith_add_const {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
+    (A : E →SL[σ] F) (v : F) : LipschitzWith ‖A‖₊ fun z ↦ A z + v := by
+  simpa using A.lipschitzWith.add (LipschitzWith.const v)
+
 /-- Right scalar multiplication `r ↦ r • e` by `e : E` under a bounded scalar action of a
 seminormed ring `R` is uniformly bounded. -/
 theorem exists_norm_toSpanSingleton_apply_le (R : Type*) {E : Type*} [SeminormedRing R]
@@ -230,26 +256,77 @@ theorem exists_norm_toSpanSingleton_apply_le (R : Type*) {E : Type*} [Seminormed
     ∃ C, ∀ r : R, ‖toSpanSingleton R e r‖ ≤ C * ‖r‖ :=
   ⟨‖e‖, fun r ↦ by simpa only [toSpanSingleton_apply, mul_comm ‖e‖] using norm_smul_le r e⟩
 
-variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
-variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
-variable [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+/-- Applying `a + b T`, for a real endomorphism `T` with `‖T‖ ≤ M`, scales the norm squared by at
+most `(1 + M²) (a² + b²)`. -/
+theorem norm_smul_add_smul_apply_sq_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    (T : E →L[ℝ] E) {M : ℝ} (hM : ‖T‖ ≤ M) (a b : ℝ) (v : E) :
+    ‖a • v + b • T v‖ ^ 2 ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by
+  have hTv : ‖T v‖ ≤ M * ‖v‖ := T.le_of_opNorm_le hM v
+  calc ‖a • v + b • T v‖ ^ 2 ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + ‖T v‖ ^ 2) :=
+        TauCeti.norm_smul_add_smul_sq_le a b v (T v)
+    _ ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + (M * ‖v‖) ^ 2) := by gcongr
+    _ = (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by ring
 
-/-- If `T i` is eventually uniformly bounded, `T i z` tends to `w`, and `g i` tends to `z`, then
-the moving evaluations `T i (g i)` tend to `w`. -/
-theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
-    {T : ι → X →L[𝕜] Y} {C : ℝ} {g : ι → X} {z : X} {w : Y}
+/-- For an endomorphism `B` of norm at most one over `ℝ` or `ℂ`, `‖v • B f + conj v • f‖` is at
+most `2 ‖v‖ ‖f‖`. -/
+theorem norm_smul_apply_add_conj_smul_le {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {B : E →L[𝕜] E} (hB : ‖B‖ ≤ 1) (v : 𝕜) (f : E) :
+    ‖v • B f + (starRingEnd 𝕜) v • f‖ ≤ 2 * ‖v‖ * ‖f‖ := by
+  have hB' : ‖B f‖ ≤ ‖f‖ := (B.le_of_opNorm_le hB f).trans (one_mul _).le
+  calc ‖v • B f + (starRingEnd 𝕜) v • f‖ ≤ ‖v‖ * ‖B f‖ + ‖v‖ * ‖f‖ := by
+        refine (norm_add_le _ _).trans_eq ?_
+        rw [norm_smul, norm_smul, RCLike.norm_conj]
+    _ ≤ 2 * ‖v‖ * ‖f‖ := by nlinarith [norm_nonneg v]
+
+section SemilinearFamily
+
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+  {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] {ι : Type*} {l : Filter ι} {T : ι → E →SL[σ] F}
+
+/-- For a family of continuous semilinear maps `T i : E →SL[σ] F` over an isometric scalar
+homomorphism `σ`, if `T i` is eventually uniformly bounded, `T i z` tends to `w`, and `g i` tends
+to `z`, then the moving evaluations `T i (g i)` tend to `w`. -/
+theorem tendsto_apply_of_eventually_norm_le {C : ℝ} {g : ι → E} {z : E} {w : F}
     (hT : ∀ᶠ i in l, ‖T i‖ ≤ C) (hz : Tendsto (fun i => T i z) l (𝓝 w))
     (hg : Tendsto g l (𝓝 z)) : Tendsto (fun i => T i (g i)) l (𝓝 w) :=
   AddMonoidHomClass.tendsto_apply_of_eventually_bound
     (hT.mono fun i hi => (T i).le_of_opNorm_le hi) hz hg
 
-/-- If the operator norms `‖T i‖` tend to zero, then eventually `T i` maps the ball of radius `R`
-about `0` into any prescribed neighbourhood of `0`. -/
-theorem eventually_mapsTo_ball_of_tendsto_opNorm {ι : Type*} {l : Filter ι} {T : ι → X →L[𝕜] Y}
-    (hT : Tendsto (fun i ↦ ‖T i‖) l (𝓝 0)) {V : Set Y} (hV : V ∈ 𝓝 0) (R : ℝ) :
-    ∀ᶠ i in l, Set.MapsTo (T i) (Metric.ball 0 R) V :=
+/-- For a family of continuous semilinear maps `T i : E →SL[σ] F` over an isometric scalar
+homomorphism `σ`, if the operator norms `‖T i‖` tend to zero, then eventually `T i` maps the
+bounded set `s` into any prescribed neighbourhood of `0`. -/
+theorem _root_.Filter.Tendsto.eventually_clm_mapsTo_of_opNorm_tendsto_zero
+    (hT : Tendsto (fun i ↦ ‖T i‖) l (𝓝 0)) {s : Set E} (hs : Bornology.IsBounded s) {V : Set F}
+    (hV : V ∈ 𝓝 0) : ∀ᶠ i in l, Set.MapsTo (T i) s V :=
   (tendsto_zero_iff_norm_tendsto_zero.mpr hT).eventually
-    (eventually_nhds_zero_mapsTo (NormedSpace.isVonNBounded_ball 𝕜 X R) hV)
+    (eventually_nhds_zero_mapsTo ((NormedSpace.isVonNBounded_iff 𝕜).2 hs) hV)
+
+end SemilinearFamily
+
+variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
+variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+variable [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+
+/-- Bound a sum of two scaled operator evaluations using separate bounds for both coefficients,
+both operators and their arguments. -/
+theorem norm_smul_apply_add_smul_apply_le {Z : Type*} [SeminormedAddCommGroup Z]
+    [NormedSpace 𝕜 Z] (L : X →L[𝕜] Z) (M : Y →L[𝕜] Z) {a b : 𝕜} {v : X} {w : Y}
+    {A B C D R S : ℝ} (ha : ‖a‖ ≤ A) (hb : ‖b‖ ≤ B) (hL : ‖L‖ ≤ C) (hM : ‖M‖ ≤ D)
+    (hv : ‖v‖ ≤ R) (hw : ‖w‖ ≤ S) : ‖a • L v + b • M w‖ ≤ A * C * R + B * D * S := by
+  refine norm_add_le_of_le ?_ ?_
+  · rw [norm_smul, mul_assoc]
+    exact mul_le_mul ha (L.le_of_opNorm_le_of_le hL hv) (norm_nonneg _)
+      ((norm_nonneg _).trans ha)
+  · rw [norm_smul, mul_assoc]
+    exact mul_le_mul hb (M.le_of_opNorm_le_of_le hM hw) (norm_nonneg _)
+      ((norm_nonneg _).trans hb)
+
+/-- The identity operator `1 : X →L[𝕜] X` has norm at most one, also on the trivial space, where
+Mathlib's `norm_one` does not apply. -/
+theorem norm_one_le : ‖(1 : X →L[𝕜] X)‖ ≤ 1 := by
+  rw [one_def]
+  exact norm_id_le
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
@@ -278,6 +355,16 @@ theorem enorm_comp_sub_comp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpa
         (eNorm_add_le _ _).trans (add_le_add_left (eNorm_add_le _ _) _)
     _ ≤ _ := by gcongr <;> exact opENorm_comp_le _ _
 
+/-- The three-term estimate for the difference of two compositions:
+`‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`. This is the version of
+`ContinuousLinearMap.enorm_comp_sub_comp_le` for operator norms. -/
+theorem norm_comp_sub_comp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (A' A : Y →L[𝕜] Z) (B' B : X →L[𝕜] Y) :
+    ‖A'.comp B' - A.comp B‖ ≤ ‖A' - A‖ * ‖B' - B‖ + ‖A' - A‖ * ‖B‖ + ‖A‖ * ‖B' - B‖ := by
+  have h := enorm_comp_sub_comp_le A' A B' B
+  simp only [eNorm_eq_nnNorm] at h
+  exact_mod_cast h
+
 /-- The operator norm of a triple composition is at most the product of the operator norms. -/
 theorem opNorm_comp_comp_le {Z U : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
     [SeminormedAddCommGroup U] [NormedSpace 𝕜 U] (f : Z →L[𝕜] U) (g : Y →L[𝕜] Z)
@@ -286,6 +373,21 @@ theorem opNorm_comp_comp_le {Z U : Type*} [SeminormedAddCommGroup Z] [NormedSpac
     rw [mul_assoc]
     gcongr
     exact opNorm_comp_le _ _
+
+/-- The inverses of two invertible operators differ in operator norm by at most
+`‖f⁻¹‖ ‖g - f‖ ‖g⁻¹‖`, by the resolvent identity
+`ContinuousLinearMap.IsInvertible.inverse_sub_inverse`. With uniform bounds on the inverses,
+inversion is thus Lipschitz on a family of invertible operators. -/
+theorem IsInvertible.norm_inverse_sub_inverse_le {f g : X →L[𝕜] Y} (hf : f.IsInvertible)
+    (hg : g.IsInvertible) : ‖f.inverse - g.inverse‖ ≤ ‖f.inverse‖ * ‖g - f‖ * ‖g.inverse‖ := by
+  rw [hf.inverse_sub_inverse hg]
+  exact opNorm_comp_comp_le _ _ _
+
+/-- Precomposition by `T` has operator norm at most `‖T‖`. -/
+theorem norm_precomp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (T : X →L[𝕜] Y) : ‖(precomp Z T : (Y →L[𝕜] Z) →L[𝕜] X →L[𝕜] Z)‖ ≤ ‖T‖ :=
+  opNorm_le_bound _ (norm_nonneg T) fun f ↦ by
+    simpa only [precomp_apply, mul_comm] using opNorm_comp_le f T
 
 /-- The conjugates `G ∘ K ∘ M` and `G' ∘ K' ∘ M'`, with `G` a left inverse of `M` and `G'` a
 right inverse of `M'`, differ by at most the differences of `K, K'` and of `M, M'`. -/
@@ -375,6 +477,13 @@ theorem norm_inverse_apply_le_of_forall_norm_le {F : Type*} [NormedAddCommGroup 
   simpa [(isInvertible_of_surjective_of_forall_norm_le hL hC).self_apply_inverse]
     using hC (L.inverse y)
 
+/-- An invertible operator is bounded below by the reciprocal of the norm of its inverse,
+`‖x‖ ≤ ‖A⁻¹‖ ‖A x‖`. -/
+theorem IsInvertible.norm_le_norm_inverse_mul_norm {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {A : E →L[𝕜] F} (hA : A.IsInvertible) (x : E) :
+    ‖x‖ ≤ ‖A.inverse‖ * ‖A x‖ := by
+  simpa [hA.inverse_apply_self] using A.inverse.le_opNorm (A x)
+
 /-- The inverse of an invertible operator undoes the operator. -/
 @[simp]
 theorem ringInverse_apply_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
@@ -386,13 +495,6 @@ theorem ringInverse_apply_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
 theorem apply_ringInverse_apply {A : E →L[𝕜] E} (hA : IsUnit A) (y : E) :
     A (Ring.inverse A y) = y := by
   rw [← mul_apply_eq_comp, Ring.mul_inverse_cancel A hA, one_apply_eq_self]
-
-/-- An invertible operator is bounded below by the reciprocal of the norm of its inverse. -/
-theorem norm_le_norm_ringInverse_mul_norm_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
-    ‖x‖ ≤ ‖Ring.inverse A‖ * ‖A x‖ := by
-  calc
-    ‖x‖ = ‖Ring.inverse A (A x)‖ := by rw [ringInverse_apply_apply hA]
-    _ ≤ ‖Ring.inverse A‖ * ‖A x‖ := le_opNorm _ _
 
 /-- An operator bounded below by `M⁻¹` has an inverse of norm at most `M`. If `A` is not a unit,
 `Ring.inverse A = 0` and the bound is trivial. -/
@@ -411,39 +513,21 @@ theorem isUnit_of_forall_mul_norm_le_of_norm_sub_lt [CompleteSpace E]
     (hbound : ∀ x : E, c * ‖x‖ ≤ ‖A x‖) (hB : IsUnit B) (hAB : ‖A - B‖ < c / 2) :
     IsUnit A := by
   have hc : 0 < c := by linarith [norm_nonneg (A - B)]
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · have hA : A = 1 := Subsingleton.elim _ _
-    rw [hA]
-    exact isUnit_one
+  nontriviality E →L[𝕜] E
   obtain ⟨u, rfl⟩ := hB
-  -- The nearby invertible operator retains at least half the lower bound.
-  have hlow (x : E) : c / 2 * ‖x‖ ≤ ‖(u : E →L[𝕜] E) x‖ := by
-    have h := norm_add_le ((A - (u : E →L[𝕜] E)) x) ((u : E →L[𝕜] E) x)
-    simp only [sub_apply, sub_add_cancel] at h
-    have hdist := mul_le_mul_of_nonneg_right hAB.le (norm_nonneg x)
-    have hn := (A - (u : E →L[𝕜] E)).le_opNorm x
-    rw [sub_apply] at hn
-    have hb := hbound x
-    nlinarith
+  -- The nearby invertible operator is bounded below by `c / 2`, so its inverse has norm at most
+  -- `2 / c`.
   have hinv : ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤ 2 / c := by
     rw [← Ring.inverse_unit]
-    apply norm_ringInverse_le_of_forall_norm_le (by positivity)
-    intro x
-    rw [div_mul_eq_mul_div]
-    apply (le_div_iff₀ hc).mpr
-    have h := hlow x
-    nlinarith
+    refine norm_ringInverse_le_of_forall_norm_le (by positivity) fun x ↦ ?_
+    have hAx : ‖A x‖ ≤ ‖A - u‖ * ‖x‖ + ‖(u : E →L[𝕜] E) x‖ := by
+      simpa only [sub_apply, sub_add_cancel] using
+        norm_add_le_of_le ((A - u).le_opNorm x) (le_refl ‖(u : E →L[𝕜] E) x‖)
+    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+    linarith [hbound x, mul_le_mul_of_nonneg_right hAB.le (norm_nonneg x)]
   -- The inverse bound places `A` within Mathlib's nearby-unit radius.
-  have hnear : ‖A - (u : E →L[𝕜] E)‖ < ‖(↑u⁻¹ : E →L[𝕜] E)‖⁻¹ := by
-    rw [← one_div, lt_div_iff₀ (Units.norm_pos u⁻¹)]
-    calc ‖A - (u : E →L[𝕜] E)‖ * ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤
-          ‖A - (u : E →L[𝕜] E)‖ * (2 / c) :=
-            mul_le_mul_of_nonneg_left hinv (norm_nonneg _)
-      _ < 1 := by
-        have hpos : 0 < 2 / c := by positivity
-        have h := mul_lt_mul_of_pos_right hAB hpos
-        have heq : (c / 2) * (2 / c) = 1 := by field_simp
-        rwa [heq] at h
+  have hnear : ‖A - u‖ < ‖(↑u⁻¹ : E →L[𝕜] E)‖⁻¹ :=
+    hAB.trans_le ((inv_div 2 c).symm.trans_le (inv_anti₀ (Units.norm_pos u⁻¹) hinv))
   exact (u.ofNearby A hnear).isUnit
 
 /-- **The Neumann series solves `v + A x = x`.** On a Banach space, if `‖A‖ < 1` then the
@@ -463,37 +547,6 @@ theorem exists_add_apply_eq_of_norm_lt_one [CompleteSpace E] (v : E) {A : E →L
     _ ≤ ‖x - A x‖ := norm_sub_norm_le _ _
 
 end Inverse
-
-/-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm
-at most one is bounded by `#s * ‖A‖`. Along an orthonormal basis this bounds the trace of `A` by
-the dimension times its norm. -/
-theorem norm_sum_apply_apply_le {ι : Type*} (s : Finset ι) (A : X →L[𝕜] X →L[𝕜] Y)
-    {v : ι → X} (hv : ∀ i ∈ s, ‖v i‖ ≤ 1) : ‖∑ i ∈ s, A (v i) (v i)‖ ≤ s.card * ‖A‖ := by
-  refine (norm_sum_le _ _).trans ((Finset.sum_le_sum (g := fun _ ↦ ‖A‖) fun i hi ↦ ?_).trans_eq
-    (by simp))
-  calc ‖A (v i) (v i)‖ ≤ ‖A‖ * ‖v i‖ * ‖v i‖ := ((A (v i)).le_opNorm _).trans <|
-        mul_le_mul_of_nonneg_right (A.le_opNorm _) (norm_nonneg _)
-    _ ≤ ‖A‖ * 1 * 1 := by gcongr <;> exact hv i hi
-    _ = ‖A‖ := by ring
-
-section Young
-
-variable {𝕜 X Y Z : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup X]
-  [NormedSpace 𝕜 X] [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y] [SeminormedAddCommGroup Z]
-  [NormedSpace 𝕜 Z]
-
-/-- A Young-type bound for a continuous bilinear map: for every `c > 0`,
-`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)`. -/
-theorem norm_apply_apply_le_mul_add_sq (B : X →L[𝕜] Y →L[𝕜] Z) {c : ℝ} (hc : 0 < c) (u : X)
-    (v : Y) : ‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2) := by
-  refine (B.le_opNorm₂ _ _).trans ?_
-  rw [mul_assoc]
-  gcongr
-  have h := two_mul_le_add_mul_sq (a := ‖u‖) (b := ‖v‖) (inv_pos.2 hc)
-  rw [inv_inv] at h
-  linarith
-
-end Young
 
 section SmulRight
 
@@ -561,6 +614,40 @@ theorem norm_apply_bounds_of_net (T : V →L[𝕜] F) {t : Set V} {δ : ℝ}
 
 end Net
 
+section MapsToBall
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A continuous linear map sending `ball 0 r`, `r > 0`, into `ball 0 s` has operator norm at most
+`s / r`. -/
+theorem opNorm_le_of_mapsTo_ball {L : E →L[𝕜] F} {r s : ℝ} (hr : 0 < r)
+    (hL : Set.MapsTo L (Metric.ball 0 r) (Metric.ball 0 s)) : ‖L‖ ≤ s / r := by
+  have hs : 0 < s := by simpa using hL (Metric.mem_ball_self hr)
+  -- Rescale `x` to a point of norm just below `r`.
+  refine L.opNorm_le_bound (by positivity) fun x => le_of_forall_pos_lt_add fun ε hε => ?_
+  set c : ℝ := r / (‖x‖ + ε * r / s)
+  have hc : 0 < c := by positivity
+  have hcr : c * (‖x‖ + ε * r / s) = r := div_mul_cancel₀ r (by positivity)
+  have hx : algebraMap ℝ 𝕜 c • x ∈ Metric.ball (0 : E) r := by
+    rw [mem_ball_zero_iff, norm_smul, norm_algebraMap', Real.norm_of_nonneg hc.le, ← hcr]
+    exact mul_lt_mul_of_pos_left (lt_add_of_pos_right ‖x‖ (by positivity)) hc
+  have hLx : c * ‖L x‖ < s := by
+    simpa only [map_smul, mem_ball_zero_iff, norm_smul, norm_algebraMap',
+      Real.norm_of_nonneg hc.le] using hL hx
+  calc ‖L x‖ < s / c := (lt_div_iff₀ hc).2 (by linarith)
+    _ = s / r * ‖x‖ + ε := by
+      simp only [c]
+      field_simp
+
+/-- A continuous linear map sending `ball 0 r`, `r > 0`, into `ball 0 r` has operator norm at most
+one. -/
+theorem opNorm_le_one_of_mapsTo_ball {L : E →L[𝕜] F} {r : ℝ} (hr : 0 < r)
+    (hL : Set.MapsTo L (Metric.ball 0 r) (Metric.ball 0 r)) : ‖L‖ ≤ 1 :=
+  (L.opNorm_le_of_mapsTo_ball hr hL).trans_eq (div_self hr.ne')
+
+end MapsToBall
+
 section MetricQuotient
 
 variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
@@ -579,101 +666,38 @@ theorem image_ball_eq_ball {q : E →SL[σ₁₂] F} (h₁ : ‖q‖ ≤ 1)
 
 end MetricQuotient
 
-end ContinuousLinearMap
+section Support
 
-end
+variable {𝕜 𝕜₂ E F G : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] [SeminormedAddGroup G] [SMulZeroClass F G]
+  [IsBoundedSMul F G]
 
-namespace ContinuousLinearMap
+/-- On a function supported in `Metric.closedBall 0 t`, scalar multiplication by the values of a
+continuous semilinear map `L` costs at most the factor `t * ‖L‖`. -/
+theorem norm_apply_smul_le_of_support_subset_closedBall (L : E →SL[σ] F) {g : E → G} {t : ℝ}
+    (hg : Function.support g ⊆ Metric.closedBall 0 t) (x : E) :
+    ‖L x • g x‖ ≤ t * ‖L‖ * ‖g x‖ := by
+  by_cases hx : x ∈ Function.support g
+  · refine (norm_smul_le _ _).trans ?_
+    gcongr
+    refine (L.le_opNorm x).trans ?_
+    rw [mul_comm]
+    gcongr
+    simpa using hg hx
+  · simp [Function.notMem_support.mp hx]
+
+end Support
 
 /-- A pointwise squared-norm bound gives the square-root bound on the operator norm. -/
-public theorem opNorm_le_sqrt_of_forall_sq_norm_le
-    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-    (T : E →L[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
-    (h : ∀ x, ‖T x‖ ^ 2 ≤ c * ‖x‖ ^ 2) : ‖T‖ ≤ Real.sqrt c := by
-  refine T.opNorm_le_bound (Real.sqrt_nonneg _) fun x => ?_
-  apply (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg _))).mp
-  simpa only [mul_pow, Real.sq_sqrt hc] using h x
+theorem opNorm_le_sqrt_of_forall_sq_norm_le {𝕜₂ Z : Type*} [NontriviallyNormedField 𝕜₂]
+    [SeminormedAddCommGroup Z] [NormedSpace 𝕜₂ Z] {σ : 𝕜 →+* 𝕜₂} (T : X →SL[σ] Z) {c : ℝ}
+    (h : ∀ x, ‖T x‖ ^ 2 ≤ c * ‖x‖ ^ 2) : ‖T‖ ≤ Real.sqrt c :=
+  T.opNorm_le_bound (Real.sqrt_nonneg _) fun x ↦ by
+    simpa only [Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg _)] using
+      Real.le_sqrt_of_sq_le (h x)
 
 end ContinuousLinearMap
-
-public section
-
-/-- A nonzero functional on a finite real product is nonzero on some coordinate vector. -/
-theorem ContinuousLinearMap.exists_apply_single_ne_zero {ι : Type*} [Finite ι] [DecidableEq ι]
-    (α : (ι → ℝ) →L[ℝ] ℝ) (hα : α ≠ 0) : ∃ i : ι, α (Pi.single i (1 : ℝ)) ≠ 0 := by
-  let := Fintype.ofFinite ι
-  by_contra h
-  push Not at h
-  refine hα (ContinuousLinearMap.ext fun v => ?_)
-  have hv : v = ∑ i : ι, v i • Pi.single i (1 : ℝ) := by
-    funext k
-    simp [Finset.sum_apply, Pi.single_apply]
-  rw [hv]
-  simp [map_sum, h]
-
-/-- A coordinate bound for a functional on a finite real product bounds its value on every
-vector, using the cardinality of the index set and the product norm. -/
-theorem ContinuousLinearMap.abs_apply_le_card_mul_norm {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (L : (ι → ℝ) →L[ℝ] ℝ) (v : ι → ℝ) {M : ℝ}
-    (h : ∀ j, |L (Pi.single j (1 : ℝ))| ≤ M) :
-    |L v| ≤ Fintype.card ι * ‖v‖ * M := by
-  have hv : v = ∑ j : ι, v j • Pi.single j (1 : ℝ) := by
-    funext m
-    simp [Finset.sum_apply, Pi.single_apply]
-  calc |L v| = |∑ j : ι, v j * L (Pi.single j (1 : ℝ))| := by
-        conv_lhs => rw [hv]
-        simp [map_sum, smul_eq_mul]
-    _ ≤ ∑ j : ι, |v j * L (Pi.single j (1 : ℝ))| := Finset.abs_sum_le_sum_abs _ _
-    _ ≤ ∑ _j : ι, ‖v‖ * M := by
-        refine Finset.sum_le_sum fun j _ => ?_
-        rw [abs_mul]
-        exact mul_le_mul (by simpa [Real.norm_eq_abs] using norm_le_pi_norm v j) (h j)
-          (abs_nonneg _) (norm_nonneg _)
-    _ = Fintype.card ι * ‖v‖ * M := by simp [Finset.sum_const, mul_assoc]
-
-/-- Replacing one coordinate by a linear functional is injective when its coefficient at
-that coordinate is nonzero. -/
-theorem ContinuousLinearMap.pi_update_injective {ι : Type*} [DecidableEq ι]
-    (α : (ι → ℝ) →L[ℝ] ℝ) (i : ι) (hα : α (Pi.single i (1 : ℝ)) ≠ 0) :
-    Function.Injective (ContinuousLinearMap.pi fun m : ι ↦
-      if m = i then α else ContinuousLinearMap.proj m) := by
-  intro v₁ v₂ hv
-  rw [← sub_eq_zero]
-  set v : ι → ℝ := v₁ - v₂ with hvdef
-  have h0 : (ContinuousLinearMap.pi fun m : ι =>
-      if m = i then α else ContinuousLinearMap.proj m) v = 0 := by
-    rw [hvdef, map_sub, hv, sub_self]
-  have hoff : ∀ m, m ≠ i → v m = 0 := by
-    intro m hm
-    have := congrFun h0 m
-    simpa [ContinuousLinearMap.pi_apply, hm] using this
-  have hsingle : v = v i • Pi.single i (1 : ℝ) := by
-    funext m
-    rcases eq_or_ne m i with rfl | hm
-    · simp
-    · simp [hoff m hm, hm]
-  have hαv : α v = 0 := by
-    have := congrFun h0 i
-    simpa [ContinuousLinearMap.pi_apply] using this
-  rw [hsingle, map_smul, smul_eq_mul] at hαv
-  have hvi : v i = 0 := by
-    rcases mul_eq_zero.mp hαv with h | h
-    · exact h
-    · exact absurd h hα
-  rw [hsingle, hvi, zero_smul]
-
-/-- Replacing one coordinate by a functional with a nonzero coefficient at that coordinate
-is a continuous linear equivalence. -/
-theorem ContinuousLinearMap.exists_pi_update_equiv {ι : Type*} [Finite ι] [DecidableEq ι]
-    (α : (ι → ℝ) →L[ℝ] ℝ) (i : ι) (hα : α (Pi.single i (1 : ℝ)) ≠ 0) :
-    ∃ e : (ι → ℝ) ≃L[ℝ] (ι → ℝ),
-      (e : (ι → ℝ) →L[ℝ] (ι → ℝ)) =
-        ContinuousLinearMap.pi fun m : ι ↦ if m = i then α else ContinuousLinearMap.proj m := by
-  refine ⟨(LinearEquiv.ofInjectiveEndo _ (α.pi_update_injective i hα)).toContinuousLinearEquiv, ?_⟩
-  ext v m
-  rfl
 
 namespace TauCeti
 
@@ -714,10 +738,33 @@ theorem isTheta_clm_apply_of_isUnit (hΦ : ContinuousAt Φ a) (hΦa : IsUnit (Φ
   filter_upwards [hΦ.eventually (Units.isOpen.mem_nhds hΦa)] with x hx
   exact ContinuousLinearMap.ringInverse_apply_apply hx (σ x)
 
+/-- A family of linear maps continuous on a compact set `S` and invertible there changes norms only
+up to a constant factor, uniformly on `S`: `‖Φ x v‖ ≤ c ‖v‖` and `‖v‖ ≤ c ‖Φ x v‖`. -/
+theorem exists_norm_clm_apply_le_and_norm_le_of_isUnit {S : Set α} (hS : IsCompact S)
+    (hΦ : ContinuousOn Φ S) (hΦS : ∀ x ∈ S, IsUnit (Φ x)) :
+    ∃ c, 1 ≤ c ∧ ∀ x ∈ S, ∀ v, ‖Φ x v‖ ≤ c * ‖v‖ ∧ ‖v‖ ≤ c * ‖Φ x v‖ := by
+  obtain ⟨A, hA⟩ := hS.exists_bound_of_continuousOn hΦ
+  have hinv : ContinuousOn (fun x ↦ Ring.inverse (Φ x)) S := fun x hx ↦
+    (NormedRing.inverse_continuousAt (hΦS x hx).unit).comp_continuousWithinAt_of_eq (hΦ x hx)
+      (hΦS x hx).unit_spec.symm
+  obtain ⟨B, hB⟩ := hS.exists_bound_of_continuousOn hinv
+  refine ⟨max 1 (max A B), le_max_left _ _, fun x hx v ↦ ⟨?_, ?_⟩⟩
+  · calc ‖Φ x v‖ ≤ ‖Φ x‖ * ‖v‖ := (Φ x).le_opNorm v
+      _ ≤ max 1 (max A B) * ‖v‖ := by
+        gcongr
+        exact (hA x hx).trans ((le_max_left _ _).trans (le_max_right _ _))
+  · have hΦx := ContinuousLinearMap.isInvertible_iff_isUnit.mpr (hΦS x hx)
+    calc ‖v‖ ≤ ‖Ring.inverse (Φ x)‖ * ‖Φ x v‖ := by
+          simpa only [ContinuousLinearMap.ringInverse_eq_inverse] using
+            hΦx.norm_le_norm_inverse_mul_norm v
+      _ ≤ max 1 (max A B) * ‖Φ x v‖ := by
+        gcongr
+        exact (hB x hx).trans ((le_max_right _ _).trans (le_max_right _ _))
+
 end
 
 /-- Weighted norm bound for the Cauchy product `∑_{k=0}^n A_{n-k}(v_k)` of a sequence of continuous
-semilinear maps and a sequence of vectors. -/
+semilinear maps over a common isometric scalar homomorphism and a sequence of vectors. -/
 theorem norm_sum_range_clm_apply_mul_pow_le
     {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
     [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -798,6 +845,44 @@ theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[𝕜] V} (hA : A * A
 instance instContinuousSMul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
     [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] : ContinuousSMul (E →L[𝕜] E) E where
   continuous_smul := continuous_fst.clm_apply continuous_snd
+
+section FirstOrder
+
+variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [NormedSpace 𝕜₁ E] [NormedSpace 𝕜₂ F]
+  {σ : 𝕜₂ →+* 𝕜₁} [RingHomIsometric σ]
+
+/-- Let `B B' : F →SL[σ] E` be continuous semilinear maps over the same isometric scalar
+homomorphism `σ`. Let `B` send `y` to `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `y`, where
+`0 ≤ ε'` and `K ε' ≤ 1 / 2`, and let `B'` be within `η` of `B`. Then `v` is within
+`(2 K² ε' + η) ‖u‖` of `B' u`. Typically `B` inverts an operator `T` on `v` and `y = T v`. -/
+theorem norm_sub_apply_le_of_apply_eq (B : F →SL[σ] E) {B' : F →SL[σ] E} {y u : F} {v : E}
+    {K ε' η : ℝ} (hBy : B y = v) (hB : ‖B‖ ≤ K) (hKε : K * ε' ≤ 1 / 2) (hε' : 0 ≤ ε')
+    (hu : ‖u - y‖ ≤ ε' * ‖v‖) (hη : ‖B' - B‖ ≤ η) :
+    ‖v - B' u‖ ≤ (2 * K ^ 2 * ε' + η) * ‖u‖ := by
+  have hK : 0 ≤ K := (norm_nonneg _).trans hB
+  have hy : ‖y‖ ≤ ‖u‖ + ε' * ‖v‖ :=
+    (norm_le_insert' y u).trans (by rw [norm_sub_rev]; gcongr)
+  -- First, `‖v‖ ≤ 2 K ‖u‖`.
+  have hv : ‖v‖ ≤ 2 * K * ‖u‖ := by
+    have : ‖v‖ ≤ K * (‖u‖ + ε' * ‖v‖) :=
+      calc ‖v‖ = ‖B y‖ := by rw [hBy]
+        _ ≤ ‖B‖ * ‖y‖ := B.le_opNorm _
+        _ ≤ K * (‖u‖ + ε' * ‖v‖) := mul_le_mul hB hy (norm_nonneg _) hK
+    nlinarith [norm_nonneg v, norm_nonneg u]
+  have key : v - B' u = B (y - u) + (B - B') u := by
+    rw [map_sub, hBy, sub_apply]
+    abel
+  calc ‖v - B' u‖ ≤ ‖B‖ * ‖y - u‖ + ‖B - B'‖ * ‖u‖ := by
+        rw [key]
+        exact norm_add_le_of_le (B.le_opNorm _) ((B - B').le_opNorm _)
+    _ ≤ K * (ε' * (2 * K * ‖u‖)) + η * ‖u‖ := by
+        rw [norm_sub_rev, norm_sub_rev B]
+        gcongr
+        exact hu.trans (by gcongr)
+    _ = (2 * K ^ 2 * ε' + η) * ‖u‖ := by ring
+
+end FirstOrder
 
 end ContinuousLinearMap
 

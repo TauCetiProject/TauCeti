@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Algebra.Ring.CayleyChart
 import Mathlib.Tactic.NoncommRing
 
@@ -38,16 +39,24 @@ parametrize local holomorphic slices of the space of complex structures; the sta
 the pointwise and Banach-algebraic content of that construction, for any normed algebra in which
 the relevant fields live.
 
+The Cayley coordinate `cayleyCoord j` has derivative `T ↦ -(1 + cayleyCoord j J) T (j + J)⁻¹` at
+every `J` with `j + J` invertible (`TauCeti.hasFDerivAt_cayleyCoord`); at the base point `1` this is
+`T ↦ -2 (1 + x)⁻¹ T (1 + x)⁻¹` (`TauCeti.hasFDerivAt_cayleyCoord_one`), which applies in particular
+to the matrix algebra used to construct unitary-group charts.
+
 ## Main statements
 
 * `TauCeti.analyticOnNhd_cayleyParam`, `TauCeti.analyticOnNhd_cayleyCoord`: analyticity of the two
-  maps, and `TauCeti.analyticOnNhd_cayleyCoord_comp_cayleyParam`: analyticity of the transition
-  maps.
+  maps; `TauCeti.analyticAt_uncurry_cayleyParam`, `TauCeti.analyticAt_uncurry_cayleyCoord`: joint
+  analyticity in the base point; and `TauCeti.analyticOnNhd_cayleyCoord_comp_cayleyParam`:
+  analyticity of the transition maps.
 * `TauCeti.cayleyHomeomorph`: the Cayley chart as a homeomorphism.
 * `TauCeti.hasFDerivAt_cayleyParam`, `TauCeti.fderiv_cayleyParam_apply`: the derivative of the
   parametrization, and `TauCeti.fderiv_cayleyParam_zero_apply`: its value `2 * (j * ζ)` at `0`.
 * `TauCeti.fderiv_cayleyParam_apply_mul_add_mul`: the derivative is tangent to the square roots of
   `-1`.
+* `ContinuousLinearMap.coe_cayleyParam`, `ContinuousLinearMap.coe_cayleyCoord`: on a
+  finite-dimensional space both maps commute with forgetting continuity of endomorphisms.
 * `TauCeti.fderiv_cayleyParam_apply_mul_left`: the derivative intertwines `ζ ↦ j * ζ` and
   `X ↦ cayleyParam j η * X`; for a real normed algebra, it is complex linear for these complex
   structures.
@@ -148,6 +157,31 @@ theorem analyticAt_cayleyCoord (hJ : IsUnit (j + J)) : AnalyticAt 𝕜 (cayleyCo
 theorem analyticOnNhd_cayleyCoord : AnalyticOnNhd 𝕜 (cayleyCoord j) {J : A | IsUnit (j + J)} :=
   fun _ hJ ↦ analyticAt_cayleyCoord hJ
 
+/-- The Cayley parametrization is analytic jointly in the base point `j` and the coordinate `η`,
+at every `(j, η)` with `1 + η` invertible. This is what makes the Cayley chart of a family of base
+points, such as the values of an almost complex structure along a manifold, regular. -/
+theorem analyticAt_uncurry_cayleyParam (hη : IsUnit (1 + η)) :
+    AnalyticAt 𝕜 (Function.uncurry (cayleyParam (A := A))) (j, η) := by
+  have h : Function.uncurry (cayleyParam (A := A)) =
+      fun p : A × A ↦ Ring.inverse (1 + p.2) * p.1 * (1 + p.2) :=
+    funext fun p ↦ cayleyParam_def p.1 p.2
+  have h1 : AnalyticAt 𝕜 (fun p : A × A ↦ 1 + p.2) (j, η) := analyticAt_const.add analyticAt_snd
+  rw [h]
+  exact ((AnalyticAt.comp (g := Ring.inverse) (f := fun p : A × A ↦ 1 + p.2) (x := (j, η))
+    (analyticOnNhd_inverse _ hη) h1).mul analyticAt_fst).mul h1
+
+/-- The Cayley coordinate is analytic jointly in the base point `j` and the point `J`, at every
+`(j, J)` with `j + J` invertible. -/
+theorem analyticAt_uncurry_cayleyCoord (hJ : IsUnit (j + J)) :
+    AnalyticAt 𝕜 (Function.uncurry (cayleyCoord (A := A))) (j, J) := by
+  have h : Function.uncurry (cayleyCoord (A := A)) =
+      fun p : A × A ↦ (p.1 - p.2) * Ring.inverse (p.1 + p.2) :=
+    funext fun p ↦ cayleyCoord_def p.1 p.2
+  rw [h]
+  exact (analyticAt_fst.sub analyticAt_snd).mul (AnalyticAt.comp (g := Ring.inverse)
+    (f := fun p : A × A ↦ p.1 + p.2) (x := (j, J)) (analyticOnNhd_inverse _ hJ)
+    (analyticAt_fst.add analyticAt_snd))
+
 /-- **Analytic transition maps.** The transition from the Cayley chart at `j₀` to the Cayley
 chart at `j₁` is analytic on its (open) domain of definition. -/
 theorem analyticOnNhd_cayleyCoord_comp_cayleyParam (j₀ j₁ : A) :
@@ -155,7 +189,39 @@ theorem analyticOnNhd_cayleyCoord_comp_cayleyParam (j₀ j₁ : A) :
       {η : A | IsUnit (1 + η) ∧ IsUnit (j₁ + cayleyParam j₀ η)} :=
   fun _ hη ↦ (analyticAt_cayleyCoord hη.2).comp (analyticAt_cayleyParam hη.1)
 
-/-! ### The derivative of the Cayley parametrization -/
+/-! ### Derivatives -/
+
+/-- The derivative of the Cayley coordinate `cayleyCoord j` at `J` with `j + J` a unit is
+`T ↦ -(1 + cayleyCoord j J) T (j + J)⁻¹`. -/
+theorem hasFDerivAt_cayleyCoord (hJ : IsUnit (j + J)) :
+    HasFDerivAt (cayleyCoord j)
+      (-ContinuousLinearMap.mulLeftRight 𝕜 A (1 + cayleyCoord j J) (Ring.inverse (j + J))) J := by
+  have hinv : HasFDerivAt (fun y : A ↦ Ring.inverse (j + y))
+      (-ContinuousLinearMap.mulLeftRight 𝕜 A
+        (Ring.inverse (j + J)) (Ring.inverse (j + J))) J := by
+    have h := hasFDerivAt_ringInverse (𝕜 := 𝕜) hJ.unit
+    rw [← Ring.inverse_unit, hJ.unit_spec] at h
+    exact (h.comp J ((hasFDerivAt_id J).const_add j)).congr_fderiv
+      (ContinuousLinearMap.comp_id _)
+  rw [cayleyCoord_eq_fun]
+  refine (((hasFDerivAt_id J).const_sub j).mul' hinv).congr_fderiv ?_
+  ext t
+  simp only [add_apply, neg_apply, ContinuousLinearMap.id_apply,
+    ContinuousLinearMap.mulLeftRight_apply, smul_apply, id_eq, smul_eq_mul, op_smul_eq_mul]
+  noncomm_ring
+
+/-- The derivative of the Cayley transform `cayleyCoord 1` in a normed algebra is
+`T ↦ -2 (1 + x)⁻¹ T (1 + x)⁻¹` where `1 + x` is a unit: the case `j = 1` of
+`TauCeti.hasFDerivAt_cayleyCoord`. -/
+theorem hasFDerivAt_cayleyCoord_one {x : A} (hx : IsUnit (1 + x)) :
+    HasFDerivAt (cayleyCoord 1)
+      (-(2 : 𝕜) • ContinuousLinearMap.mulLeftRight 𝕜 A
+        (Ring.inverse (1 + x)) (Ring.inverse (1 + x))) x := by
+  refine (hasFDerivAt_cayleyCoord hx).congr_fderiv ?_
+  rw [one_add_cayleyCoord hx, mul_one]
+  ext t
+  simp only [neg_smul, two_smul, neg_apply, add_apply, ContinuousLinearMap.mulLeftRight_apply,
+    two_mul, add_mul]
 
 /-- The derivative of `cayleyParam j` at `η` with `1 + η` invertible: the continuous linear map
 `ζ ↦ (1 + η)⁻¹ * (j * ζ - ζ * cayleyParam j η)`. -/
@@ -225,3 +291,28 @@ theorem fderiv_cayleyParam_apply_mul_left (hη : IsUnit (1 + η)) (ζ : A) :
   noncomm_ring
 
 end TauCeti
+
+/-! ### Forgetting continuity in finite dimension -/
+
+namespace ContinuousLinearMap
+
+open TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {V : Type*}
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+
+/-- On a finite-dimensional space, forgetting continuity of endomorphisms commutes with the Cayley
+parametrization. -/
+theorem coe_cayleyParam (j η : V →L[𝕜] V) :
+    ((cayleyParam j η : V →L[𝕜] V) : V →ₗ[𝕜] V) = cayleyParam (j : V →ₗ[𝕜] V) η :=
+  -- The inverse of `Module.End.toContinuousLinearMap V` is the coercion to linear maps.
+  map_cayleyParam (Module.End.toContinuousLinearMap V).symm j η
+
+/-- On a finite-dimensional space, forgetting continuity of endomorphisms commutes with the Cayley
+coordinate. -/
+theorem coe_cayleyCoord (j J : V →L[𝕜] V) :
+    ((cayleyCoord j J : V →L[𝕜] V) : V →ₗ[𝕜] V) = cayleyCoord (j : V →ₗ[𝕜] V) J :=
+  -- The inverse of `Module.End.toContinuousLinearMap V` is the coercion to linear maps.
+  map_cayleyCoord (Module.End.toContinuousLinearMap V).symm j J
+
+end ContinuousLinearMap

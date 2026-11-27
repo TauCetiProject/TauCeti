@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Graded
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
+public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 import TauCeti.Algebra.Ring.NegOnePow
+import TauCeti.Order.WellFounded.Basic
 
 /-!
 # The DG algebra of normalized cubical chains of a topological monoid
@@ -30,10 +32,19 @@ are also those of the DG right modules of chains of a space with a right action 
 
 ## Main results
 
+* `TauCeti.cubicalChainPoint_mem`, `TauCeti.cubicalChainDifferential_cubicalChainPoint`: the point
+  chain `[g]` is a cycle of degree `0`.
+* `TauCeti.cubicalChainPoint_sub_one_mem`,
+  `TauCeti.cubicalChainDifferential_cubicalChainPoint_sub_one`: for a topological monoid, `[g] - 1`
+  is a cycle of degree `0`.
 * `TauCeti.cubicalChainSumMap_id`, `TauCeti.cubicalChainSumMap_comp`,
   `TauCeti.cubicalChainDifferential_cubicalChainSumMap`: the push-forward is a functorial chain map.
+* `TauCeti.cubicalChainSumMap_injective`: the push-forward along an injective map is injective.
+* `TauCeti.cubicalChainSumMap_cubicalChainPoint`: the push-forward sends `[x]` to `[f x]`.
 * `TauCeti.cubicalChain_isDGAlgebra`: `normalizedCubicalChainAlgebra G R` with this grading and
   differential is a differential graded algebra.
+* `TauCeti.exists_forall_mem_cubicalChainGrading_of_forall_exists`: families of chains of
+  prescribed degrees are built one degree at a time, downwards from the largest.
 
 ## References
 
@@ -45,6 +56,8 @@ public section
 noncomputable section
 
 open DirectSum
+
+universe u
 
 namespace TauCeti
 
@@ -98,6 +111,21 @@ theorem cubicalChainLof_mem {n : ℕ} (y : NormalizedCubicalChain G R n) :
     cubicalChainLof G R n y ∈ cubicalChainGrading G R (-(n : ℤ)) :=
   (mem_cubicalChainGrading_iff G R).2 (Or.inr ⟨n, y, by simp, rfl⟩)
 
+variable {G R} in
+/-- The point chain `[g]` lies in degree `0`. -/
+theorem cubicalChainPoint_mem (g : G) : cubicalChainPoint G R g ∈ cubicalChainGrading G R 0 :=
+  (mem_cubicalChainGrading_iff G R).2 (Or.inr ⟨0, _, by simp, (cubicalChainPoint_def g).symm⟩)
+
+variable {G R} in
+/-- A chain of cohomological degree `-n` is a chain of dimension `n`. -/
+theorem exists_cubicalChainLof_eq {i : ℤ} {x : normalizedCubicalChainAlgebra G R}
+    (hx : x ∈ cubicalChainGrading G R i) (n : ℕ) (hn : (n : ℤ) = -i) :
+    ∃ y, cubicalChainLof G R n y = x := by
+  rcases (mem_cubicalChainGrading_iff G R).1 hx with rfl | ⟨k, y, hk, rfl⟩
+  · exact ⟨0, map_zero _⟩
+  · obtain rfl : k = n := by omega
+    exact ⟨y, rfl⟩
+
 /-- The decomposition of the algebra of cubical chains along its `ℤ`-grading. -/
 def cubicalChainDecompose :
     normalizedCubicalChainAlgebra G R →+ ⨁ i : ℤ, cubicalChainGrading G R i :=
@@ -149,7 +177,54 @@ instance :
     GradedAlgebra (R := R) (A := normalizedCubicalChainAlgebra G R) (cubicalChainGrading G R) :=
   { }
 
+variable {G R} in
+/-- The difference `[g] - 1` of a point chain and the unit lies in degree `0`. -/
+theorem cubicalChainPoint_sub_one_mem (g : G) :
+    cubicalChainPoint G R g - 1 ∈ cubicalChainGrading G R 0 :=
+  sub_mem (cubicalChainPoint_mem g) (SetLike.one_mem_graded (cubicalChainGrading G R))
+
 end Grading
+
+/-! ### Families of chains built by recursion on the degree -/
+
+section Recursion
+
+variable {P Q : Type*} [Finite P] [Finite Q] {N : P → Q → Type*} [∀ x y, TopologicalSpace (N x y)]
+  {k : Type*} [CommRing k] {deg : P → Q → ℤ}
+
+/-- **Families of chains built one degree at a time.** Let `deg x y` be the cohomological degree
+of the chain of the pair `(x, y)`, and let `V s x y c` be a condition on the chain `c` of `(x, y)`
+which only depends on the chains of the family `s` at the pairs of larger degree. If it can be met
+at `(x, y)` as soon as it holds at all the pairs of larger degree, some family of chains of these
+degrees meets it everywhere. -/
+theorem exists_forall_mem_cubicalChainGrading_of_forall_exists
+    (V : (∀ x y, normalizedCubicalChainAlgebra (N x y) k) → ∀ x y,
+      normalizedCubicalChainAlgebra (N x y) k → Prop)
+    (hV : ∀ (s s' : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y c,
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x y, s' x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x' y', deg x y < deg x' y' → s x' y' = s' x' y') → V s x y c → V s' x y c)
+    (hex : ∀ (s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y,
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x' y', deg x y < deg x' y' → V s x' y' (s x' y')) →
+      ∃ c ∈ cubicalChainGrading (N x y) k (deg x y), V s x y c) :
+    ∃ s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k,
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) ∧ ∀ x y, V s x y (s x y) := by
+  -- Recursion along the relation `q` precedes `p` when `q` has the larger degree, which is
+  -- well-founded on the finite type of pairs; the chains are taken in the graded pieces.
+  let r : P × Q → P × Q → Prop := fun q p ↦ deg p.1 p.2 < deg q.1 q.2
+  have : IsTrans (P × Q) r := ⟨fun _ _ _ h₁ h₂ ↦ h₂.trans h₁⟩
+  have : Std.Irrefl r := ⟨fun _ ↦ lt_irrefl _⟩
+  obtain ⟨G, hG⟩ := (Finite.wellFounded_of_trans_of_irrefl r).exists_forall_of_forall_exists
+    (X := fun p ↦ cubicalChainGrading (N p.1 p.2) k (deg p.1 p.2))
+    (fun G p c ↦ V (fun x y ↦ G (x, y)) p.1 p.2 c)
+    (fun p _ G G' hGG' ↦ hV _ _ p.1 p.2 _ (fun x y ↦ (G (x, y)).property)
+      (fun x y ↦ (G' (x, y)).property) fun x' y' h ↦ congrArg Subtype.val (hGG' (x', y') h))
+    fun p G hG ↦ (hex _ p.1 p.2 (fun x y ↦ (G (x, y)).property) fun x' y' h ↦ hG (x', y') h).elim
+      fun c hc ↦ ⟨⟨c, hc.1⟩, hc.2⟩
+  exact ⟨fun x y ↦ G (x, y), fun x y ↦ (G (x, y)).property, fun x y ↦ hG (x, y)⟩
+
+end Recursion
 
 section Differential
 
@@ -182,6 +257,13 @@ theorem cubicalChainDifferential_lof_zero (y : NormalizedCubicalChain G R 0) :
   rw [cubicalChainDifferential_lof]
   rfl
 
+variable {G R} in
+/-- The point chain `[g]` is a cycle. -/
+@[simp]
+theorem cubicalChainDifferential_cubicalChainPoint (g : G) :
+    cubicalChainDifferential G R (cubicalChainPoint G R g) = 0 := by
+  rw [cubicalChainPoint_def, cubicalChainDifferential_lof_zero]
+
 /-- The differential on `(k + 1)`-chains is the boundary. -/
 @[simp]
 theorem cubicalChainDifferential_lof_succ (k : ℕ) (y : NormalizedCubicalChain G R (k + 1)) :
@@ -189,6 +271,41 @@ theorem cubicalChainDifferential_lof_succ (k : ℕ) (y : NormalizedCubicalChain 
       cubicalChainLof G R k (boundary G R k y) := by
   rw [cubicalChainDifferential_lof]
   rfl
+
+variable {G R} in
+/-- The component of dimension `j` of the differential of an element of the algebra of cubical
+chains is the boundary of its component of dimension `j + 1`. -/
+@[simp]
+theorem cubicalChainDifferential_apply (z : normalizedCubicalChainAlgebra G R) (j : ℕ) :
+    cubicalChainDifferential G R z j = NormalizedCubicalChain.boundary G R j (z (j + 1)) := by
+  induction z using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    cases n with
+    | zero =>
+      have h0 := cubicalChainDifferential_lof_zero G R y
+      simp only [DirectSum.lof_eq_of] at h0
+      rw [h0, DirectSum.of_eq_of_ne _ _ _ (Nat.succ_ne_zero j), map_zero, DirectSum.zero_apply]
+    | succ i =>
+      have h1 := cubicalChainDifferential_lof_succ G R i y
+      simp only [DirectSum.lof_eq_of] at h1
+      rw [h1]
+      rcases eq_or_ne j i with rfl | hji
+      · rw [DirectSum.of_eq_same, DirectSum.of_eq_same]
+      · rw [DirectSum.of_eq_of_ne _ _ _ hji, DirectSum.of_eq_of_ne _ _ _ (by omega : j + 1 ≠ i + 1),
+          map_zero]
+  | add z z' hz hz' => simp [hz, hz']
+
+variable {G R} in
+/-- The homogeneous components of a cycle of the algebra of cubical chains are cycles. -/
+theorem cubicalChainDifferential_lof_apply_eq_zero {z : normalizedCubicalChainAlgebra G R}
+    (hz : cubicalChainDifferential G R z = 0) (j : ℕ) :
+    cubicalChainDifferential G R (cubicalChainLof G R j (z j)) = 0 := by
+  cases j with
+  | zero => exact cubicalChainDifferential_lof_zero _ _ _
+  | succ i =>
+    rw [cubicalChainDifferential_lof_succ, ← cubicalChainDifferential_apply, hz]
+    simp
 
 /-- The sign `(-1) ^ (-n)` acts on the graded algebra as `(-1) ^ n ∈ R`. -/
 theorem negOnePow_neg_natCast_smul (n : ℕ) (x : normalizedCubicalChainAlgebra G R) :
@@ -260,6 +377,11 @@ theorem cubicalChainSumMap_apply (f : C(X, Y)) (x : normalizedCubicalChainAlgebr
     cubicalChainSumMap R f x n = map R f n (x n) :=
   DirectSum.lmap_apply _ x n
 
+/-- The push-forward along an injective map is injective. -/
+theorem cubicalChainSumMap_injective {f : C(X, Y)} (hf : Function.Injective f) :
+    Function.Injective (cubicalChainSumMap R f) :=
+  (DirectSum.lmap_injective _).2 fun n ↦ NormalizedCubicalChain.map_injective R f hf n
+
 /-- The push-forward along the identity is the identity. -/
 @[simp]
 theorem cubicalChainSumMap_id : cubicalChainSumMap R (ContinuousMap.id X) = LinearMap.id :=
@@ -274,6 +396,13 @@ theorem cubicalChainSumMap_comp (g : C(Y, Z)) (f : C(X, Y)) :
     rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, cubicalChainSumMap_lof,
       cubicalChainSumMap_lof, cubicalChainSumMap_lof, NormalizedCubicalChain.map_comp,
       LinearMap.comp_apply]
+
+/-- The push-forward sends the point chain `[x]` to `[f x]`. -/
+@[simp]
+theorem cubicalChainSumMap_cubicalChainPoint (f : C(X, Y)) (x : X) :
+    cubicalChainSumMap R f (cubicalChainPoint X R x) = cubicalChainPoint Y R (f x) := by
+  rw [cubicalChainPoint_def, cubicalChainPoint_def, cubicalChainSumMap_lof, map_ofCube,
+    SingularCube.comp_point]
 
 /-- The push-forward preserves the cohomological degree. -/
 theorem cubicalChainSumMap_mem (f : C(X, Y)) {i : ℤ} {a : normalizedCubicalChainAlgebra X R}
@@ -370,7 +499,33 @@ theorem cubicalChain_isDGAlgebra :
       rw [mul_add, map_add, hb, hb', map_add, mul_add, mul_add, smul_add]
       abel
 
+variable {G R} in
+/-- The difference `[g] - 1` of a point chain and the unit is a cycle. -/
+theorem cubicalChainDifferential_cubicalChainPoint_sub_one (g : G) :
+    cubicalChainDifferential G R (cubicalChainPoint G R g - 1) = 0 := by
+  simp [(cubicalChain_isDGAlgebra G R).map_one_eq_zero]
+
 end Differential
+
+section ChainComplex
+
+variable {G R : Type u} [TopologicalSpace G] [CommRing R]
+
+/-- A chain is a cycle of the normalized cubical chain complex exactly when its image in the
+direct sum has zero differential. -/
+theorem normalizedCubicalChainComplex_d_eq_zero_iff {n : ℕ} (a : NormalizedCubicalChain G R n) :
+    ((normalizedCubicalChainComplex R).obj (TopCat.of G)).d n (n - 1) a = 0 ↔
+      cubicalChainDifferential G R (cubicalChainLof G R n a) = 0 := by
+  rcases n with _ | n
+  · rw [HomologicalComplex.shape _ 0 (0 - 1) (by simp), cubicalChainDifferential_lof_zero]
+    exact ⟨fun _ ↦ rfl, fun _ ↦ rfl⟩
+  · rw [Nat.add_sub_cancel, normalizedCubicalChainComplex_obj_d_apply,
+      cubicalChainDifferential_lof_succ]
+    refine ⟨fun h ↦ by rw [h]; exact map_zero _, fun h ↦ ?_⟩
+    exact DirectSum.of_injective (β := fun n ↦ NormalizedCubicalChain G R n) n
+      (h.trans (map_zero _).symm)
+
+end ChainComplex
 
 end TauCeti
 

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
 public import Mathlib.Algebra.Homology.DerivedCategory.KInjective
+public import Mathlib.CategoryTheory.Triangulated.Adjunction
+public import TauCeti.Algebra.Homology.EssentiallySmall
 
 /-!
 # K-injective replacements in the derived category
@@ -22,9 +24,15 @@ When every complex, bounded or not, has a K-injective replacement
 adjoint to the localization functor `DerivedCategory.Qh`
 (`TauCeti.kInjectiveReplacementAdjunction`) and fully faithful, its values are K-injective, its
 essential image consists exactly of the K-injective complexes, and the unit `K ⟶ I(K)` of the
-adjunction is a quasi-isomorphism, natural in `K` up to homotopy. Thus morphisms into an object
-of the derived category are computed as homotopy classes of chain maps into its replacement,
-which is how unbounded right derived functors and derived `Hom` are constructed.
+adjunction is a quasi-isomorphism, natural in `K` up to homotopy. As a right adjoint of the
+triangulated functor `DerivedCategory.Qh`, it commutes with shifts and is triangulated. Thus
+morphisms into an object of the derived category are computed as homotopy classes of chain maps
+into its replacement, which is how unbounded right derived functors and derived `Hom` are
+constructed.
+
+Since K-injective replacement is faithful, local smallness of `C` implies local smallness of
+any choice of its derived category (`DerivedCategory.locallySmall_of_hasKInjectiveResolutions`).
+The smallness universe can be smaller than the morphism universe of that choice.
 
 The adjunction is built from Mathlib's `CochainComplex.IsKInjective.Qh_map_bijective`: maps in
 the homotopy category into a K-injective complex are the maps in the derived category. In terms of
@@ -251,4 +259,36 @@ theorem mem_essImage_kInjectiveReplacement_iff (K : HomotopyCategory C (.up ℤ)
   rw [← hf]
   exact (HomotopyCategory.isoOfHomotopyEquiv e).isIso_hom
 
+/-- The unit `K ⟶ I(K)` of the adjunction is an isomorphism when `K` is already K-injective. -/
+instance (K : HomotopyCategory C (.up ℤ)) [CochainComplex.IsKInjective K.as] :
+    IsIso ((kInjectiveReplacementAdjunction C).unit.app K) :=
+  (kInjectiveReplacementAdjunction C).isIso_unit_app_iff_mem_essImage.2
+    ((mem_essImage_kInjectiveReplacement_iff K).2 inferInstance)
+
+/-- The K-injective replacement functor commutes with shifts: this is the structure induced by
+the adjunction `DerivedCategory.Qh ⊣ kInjectiveReplacement C` from that of `DerivedCategory.Qh`. -/
+noncomputable instance : (kInjectiveReplacement C).CommShift ℤ :=
+  (kInjectiveReplacementAdjunction C).rightAdjointCommShift ℤ
+
+instance : (kInjectiveReplacementAdjunction C).CommShift ℤ :=
+  (kInjectiveReplacementAdjunction C).commShift_of_leftAdjoint ℤ
+
+/-- The K-injective replacement functor is triangulated. -/
+instance : (kInjectiveReplacement C).IsTriangulated :=
+  (kInjectiveReplacementAdjunction C).isTriangulated_rightAdjoint
+
 end TauCeti
+
+namespace DerivedCategory
+
+universe w'
+
+/-- An abelian category with K-injective resolutions has a locally small unbounded derived
+category whenever the original category is locally small. This applies to any choice of
+the localization, including a choice with morphism types in a larger universe. -/
+instance locallySmall_of_hasKInjectiveResolutions [LocallySmall.{w} C]
+    [TauCeti.HasKInjectiveResolutions C] [HasDerivedCategory.{w'} C] :
+    LocallySmall.{w} (DerivedCategory C) :=
+  locallySmall_of_faithful (TauCeti.kInjectiveReplacement C)
+
+end DerivedCategory

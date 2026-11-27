@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Geometry.Symplectic.Manifold.Energy
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -73,6 +74,24 @@ rewrites the right-hand side as a difference of actions of the two loops, in fiv
   Choosing one reference loop in each free homotopy class, this is the energy identity on the
   whole free loop space, not only on contractible loops.
 
+**Seamed strips.** The Floer theory of a symplectomorphism `f` replaces loops by `f`-seamed
+paths, `γ 1 = f (γ 0)`, and Floer cylinders by strips through them, `u (s, 1) = f (u (s, 0))`.
+The energy identity over `[a, b] × [0, 1]` needs no periodicity, so it applies to these strips
+as it stands. For a form vanishing on `f`-seamed tori (`TauCeti.VanishesOnSeamedTori`) and a strip
+whose path `γ_b` is joined to a reference path `γ₀` by a smooth `f`-seamed cylinder, the energy is
+`𝒜_H(γ_a) - 𝒜_H(γ_b)` for the action of seamed paths relative to `γ₀`
+(`TauCeti.SmoothTwoForm.seamedReferenceAction`,
+`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_seamedReferenceAction_sub`);
+for an `s`-dependent family `G_z` the integral of `∂_s G` along `u` is subtracted
+(`IsNondegenerate.integral_floerEnergyDensity_eq_seamedReferenceAction_sub_sub_integral`). The
+action relative to a reference loop is the case `f = id`. As for loops, the action relative to
+`γ₀` decreases along seamed Floer strips
+(`TauCeti.SmoothTwoForm.IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction`), monotone
+homotopies preserve this filtration
+(`SmoothTwoForm.IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction_of_monotone`), and
+a seamed continuation strip from `H₀` to `H₁` shifts it by at most `∫₀¹ h` when `H₀ - H₁ ≤ h`
+(`IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction_add_of_continuationHomotopy`).
+
 For a solution of the Floer equation and almost complex structures tamed by `ω`, the energy
 density is nonnegative
 (`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`), so the capped
@@ -119,24 +138,28 @@ compactness and counting of continuation cylinders are not treated here.
 
 **The whole cylinder.** All of the above concern a rectangle `[a, b] × [0, 1]`. Letting
 `a → -∞` and `b → ∞` gives the identity for a solution asymptotic to loops `x₀` at `s = -∞` and
-`x₁` at `s = ∞`. For a perturbation `K = K_s ds + K_t dt` with `K_s(s, 1) = K_s(s, 0)`, equal to
-`H₀(t) dt` for `s ≤ -c` and `H₁(t) dt` for `s ≥ c`, bounded for `t ∈ [0, 1]`, and a `C¹` map `u`,
-`1`-periodic in `t`, whose energy, area and curvature densities are integrable over the strip
-`ℝ × [0, 1]`,
+`x₁` at `s = ∞`. For a perturbation `K = K_s ds + K_t dt` equal to `H₀(t) dt` for `s ≤ -c` and
+`H₁(t) dt` for `s ≥ c`, bounded for `t ∈ [0, 1]`, and a `C¹` map `u` along whose two edges the
+`ds` components agree, `K_s(s, 1)(u(s, 1)) = K_s(s, 0)(u(s, 0))`, as for a loop of loops with
+`K_s(s, 1) = K_s(s, 0)` or for a strip through `f`-seamed paths with `K_s(s, 1) ∘ f = K_s(s, 0)`,
+and whose energy, area and curvature densities are integrable over the strip `ℝ × [0, 1]`,
 
 `∫ E = ∫ u^*ω + ∫₀¹ H₁(t, x₁(t)) dt - ∫₀¹ H₀(t, x₀(t)) dt - ∫ R_K(u)`
 
 (`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_univ_prod`), as soon as the
 loops `u(a i, ·)` and `u(b i, ·)` converge pointwise to `x₀` and `x₁` along some `a i → -∞` and
 `b i → ∞`, for instance along sequences. For a Floer cylinder, `K = H_t dt`, the curvature term
-vanishes (`IsNondegenerate.integral_floerEnergyDensity_cylindrical_univ_prod`), and
-nonnegativity of the energy gives `∫₀¹ H(t, x₀(t)) dt ≤ ∫ u^*ω + ∫₀¹ H(t, x₁(t)) dt`
+vanishes and no condition relates `u(s, 1)` to `u(s, 0)`
+(`IsNondegenerate.integral_floerEnergyDensity_cylindrical_univ_prod`), and nonnegativity of the
+energy gives `∫₀¹ H(t, x₀(t)) dt ≤ ∫ u^*ω + ∫₀¹ H(t, x₁(t)) dt`
 (`IsNondegenerate.intervalIntegral_le_integral_add_intervalIntegral_of_cylindrical`): the capped
 action increases from the negative to the positive asymptotic orbit, with the cap glued along
 the whole cylinder.
 
 ## Main results
 
+* `TauCeti.Floer.neg_setIntegral_fderiv_le_setIntegral`: the integrated curvature of a homotopy
+  along a map is bounded below by `-∫_a^b c` for `-∂_s G ≤ c(s)`.
 * `TauCeti.Floer.neg_setIntegral_fderiv_linearHomotopy_le`: the integrated curvature of a linear
   homotopy with a monotone profile along a map is bounded below by `-(β(b) - β(a)) ∫₀¹ B` for
   `H₀ - H₁ ≤ B`.
@@ -166,6 +189,18 @@ the whole cylinder.
   contractible action decreases along Floer cylinders.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.cappedLoopAction_le_cappedLoopAction`: the capped action
   increases along Floer cylinders.
+* `IsNondegenerate.integral_floerEnergyDensity_eq_seamedReferenceAction_sub_sub_integral`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_seamedReferenceAction_sub`:
+  for a form vanishing on `f`-seamed tori, the energy of a strip through `f`-seamed paths is the
+  drop of the action relative to a reference path, corrected by the curvature for an
+  `s`-dependent perturbation.
+* `SmoothTwoForm.IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction_sub_integral`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction`,
+  `SmoothTwoForm.IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction_of_monotone`: the
+  action relative to a reference path along seamed Floer strips, and its monotone case.
+* `IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction_add_of_linearHomotopy`,
+  `IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction_add_of_continuationHomotopy`:
+  the action shift along seamed strips of a linear homotopy and of the continuation homotopy.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_referenceAction_sub`: for a
   form vanishing on tori, the energy of a cylinder is the drop of the action relative to a
   reference loop.
@@ -190,6 +225,10 @@ the whole cylinder.
   orbits.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
   Applications to cotangent bundles*, arXiv:2404.07953, §3.2 and Corollaries 3.24 and 3.25.
+* A. Floer, *Symplectic fixed points and holomorphic spheres*, Comm. Math. Phys. 120 (1989),
+  575–611, on the action and energy of strips through paths seamed by a symplectomorphism.
+* Y.-J. Lee, *Reidemeister torsion in Floer–Novikov theory and counting pseudo-holomorphic tori,
+  I*, J. Symplectic Geom. 3 (2005), 221–311, §3.1.
 -/
 
 public noncomputable section
@@ -219,6 +258,43 @@ theorem contMDiff_uncurry_linearHomotopy {n : ℕ∞} {H₀ H₁ : ℝ → M →
     (hβ.comp contDiff_fst).contMDiff.comp contMDiff_fst
   exact ((contMDiff_uncurry_comp_snd hH₀).add (hs.smul ((contMDiff_uncurry_comp_snd hH₁).sub
     (contMDiff_uncurry_comp_snd hH₀)))).congr fun p ↦ linearHomotopy_def β p.1 p.2
+
+/-- The reparametrization `(s, t) ↦ K_{(β(s), t)}` of a `Cⁿ` family of Hamiltonians on a manifold by
+a `Cⁿ` function `β` is a `Cⁿ` family of Hamiltonians. -/
+theorem contMDiff_uncurry_reparam {n : ℕ∞} {K : ℝ × ℝ → M → ℝ} {β : ℝ → ℝ}
+    (hβ : ContDiff ℝ n β) (hK : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry K)) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry fun w : ℝ × ℝ ↦ K (β w.1, w.2)) :=
+  hK.comp ((((hβ.comp contDiff_fst).prodMk contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
+    contMDiff_snd)
+
+/-- **The integrated curvature of a homotopy along a map.** Let `G_z`, `z = (s, t)`, be a `C¹`
+family of Hamiltonians on a manifold and `u` a `C¹` map. If `-∂_s G(s, t, u(s, t)) ≤ c(s)` on
+`[a, b] × [0, 1]` for a function `c` integrable on `[a, b]`, then minus the integral of the
+curvature `∂_s G` along `u` over the rectangle is at most `∫_a^b c`. -/
+theorem neg_setIntegral_fderiv_le_setIntegral {G : ℝ × ℝ → M → ℝ}
+    (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ} {c : ℝ → ℝ} (hc : IntegrableOn c (Icc a b))
+    (hGc : ∀ z ∈ Icc a b ×ˢ Icc 0 1, -deriv (fun s ↦ G (s, z.2) (u z)) z.1 ≤ c z.1) :
+    -∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal ≤
+      ∫ s in Icc a b, c s := by
+  have hcurv : Continuous fun z ↦ fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal :=
+    (continuous_fderiv_of_contMDiff hu hG).clm_apply continuous_const
+  -- On the rectangle, the restricted Lebesgue measure is the product of the restrictions.
+  have hci : IntegrableOn (fun z : ℝ × ℝ ↦ c z.1) (Icc a b ×ˢ Icc 0 1) := by
+    rw [IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict]
+    exact Integrable.comp_fst hc _
+  have hle : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
+      -fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, c z.1 :=
+    setIntegral_mono_on hcurv.neg.integrableOn_Icc_prod_Icc hci
+      (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦ by
+        have hd : ContDiff ℝ 1 fun w ↦ G w (u z) :=
+          contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk contMDiff_const))
+        rw [stdComplexLineReal_eq,
+          fderiv_apply_mk_one_zero (hd.differentiable one_ne_zero z)]
+        exact hGc z hz
+  have hrhs : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, c z.1 = ∫ s in Icc a b, c s := by
+    simpa using setIntegral_Icc_prod_comp_fst c zero_le_one
+  rwa [integral_neg, hrhs] at hle
 
 /-- **The integrated curvature of a linear homotopy along a map.** Let `H₀` and `H₁` be `C¹`
 time-dependent Hamiltonians on a manifold, `β` a monotone `C¹` profile and `u` a continuous map.
@@ -259,6 +335,7 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   [IsManifold I (⊤ : ℕ∞) M]
 
 variable {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {G : ℝ × ℝ → M → ℝ} {u : ℝ × ℝ → M}
+  {f : M → M}
 
 /-! ### The energy identity for perturbations without `ds` component -/
 
@@ -286,9 +363,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_zero_left (hω : ω.IsNondeg
   -- The symplectic area density is the integrand of the rectangle integral.
   let area : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
     (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
-  have harea_cont : Continuous area :=
-    (hω₀.continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
-      simp [area, SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  have harea_cont : Continuous area := continuous_eval₂_mfderiv ω hu
   -- The derivative term `d(K(u))` is continuous, since `K_t(u)` is `C¹`.
   have hf : ContDiff ℝ 1 fun w ↦ G w (u w) :=
     contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk hu))
@@ -576,46 +651,232 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction
       (hfloer z hz)
   linarith
 
+/-! ### The action of seamed paths relative to a reference path -/
+
+/-- **The energy of a seamed Floer strip for an `s`-dependent perturbation.** Let `ω` be a
+nondegenerate two-form vanishing on `f`-seamed tori on a finite-dimensional manifold, `G_z`,
+`z = (s, t)`, a `C¹` family of Hamiltonians, and `u` a smooth map through `f`-seamed paths,
+`u (s, 1) = f (u (s, 0))`. If the path `γ_b = u(b, ·)` is joined to the reference path `γ₀` by a
+smooth `f`-seamed cylinder, the Floer energy of `u` over `[a, b] × [0, 1]` for the perturbation
+`K = G_z dt` is `𝒜_{G(a, ·)}(γ_a) - 𝒜_{G(b, ·)}(γ_b)` minus the integral of the curvature `∂_s G`
+along `u`, where `γ_a = u(a, ·)` and `𝒜` is the action
+`TauCeti.SmoothTwoForm.seamedReferenceAction` relative to `γ₀`. The path `γ_a` is joined to `γ₀`
+by gluing `u` to the seamed cylinder from `γ_b`. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_eq_seamedReferenceAction_sub_sub_integral
+    (hω : ω.IsNondegenerate) (hωf : VanishesOnSeamedTori f ω.val)
+    (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hseam : ∀ s, u (s, 1) = f (u (s, 0)))
+    {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
+    (hv : IsSmoothSeamedCylinder I f (fun t ↦ u (b, t)) γ₀ v) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) G u z =
+      ω.seamedReferenceAction f (fun t ↦ G (a, t)) γ₀ (fun t ↦ u (a, t)) -
+        ω.seamedReferenceAction f (fun t ↦ G (b, t)) γ₀ (fun t ↦ u (b, t)) -
+        ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal := by
+  -- Rescale `[a, b]` to `[0, 1]` and glue the result to `v`: a seamed cylinder from `γ_a` to `γ₀`.
+  have hw := (isSmoothSeamedCylinder_comp_prodMap_affine hu hseam a b).trans hv
+    fun t ↦ by simp [hv.apply_zero]
+  rw [hω.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_integral hG (hu.of_le (by simp))
+    hab (hv.contMDiff.of_le (by simp)) hv.apply_zero, seamedReferenceAction_eq hωf hw,
+    seamedReferenceAction_eq hωf hv]
+
+/-- **The energy of a seamed Floer strip is the drop of the action relative to a reference
+path.** Let `ω` be a nondegenerate two-form vanishing on `f`-seamed tori on a finite-dimensional
+manifold, `H` a `C¹` time-dependent Hamiltonian, and `u` a smooth map through `f`-seamed paths,
+`u (s, 1) = f (u (s, 0))`. If the path `γ_b = u(b, ·)` is joined to the reference path `γ₀` by a
+smooth `f`-seamed cylinder, the Floer energy of `u` over `[a, b] × [0, 1]` for the cylindrical
+perturbation `K = H_t dt` is `𝒜_H(γ_a) - 𝒜_H(γ_b)`, where `γ_a = u(a, ·)` and `𝒜_H` is the action
+`TauCeti.SmoothTwoForm.seamedReferenceAction` relative to `γ₀`. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_eq_seamedReferenceAction_sub
+    (hω : ω.IsNondegenerate) (hωf : VanishesOnSeamedTori f ω.val)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hseam : ∀ s, u (s, 1) = f (u (s, 0)))
+    {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
+    (hv : IsSmoothSeamedCylinder I f (fun t ↦ u (b, t)) γ₀ v) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
+      ω.seamedReferenceAction f H γ₀ (fun t ↦ u (a, t)) -
+        ω.seamedReferenceAction f H γ₀ (fun t ↦ u (b, t)) := by
+  rw [hω.integral_floerEnergyDensity_eq_seamedReferenceAction_sub_sub_integral hωf
+    (Floer.contMDiff_uncurry_comp_snd hH) hu hseam hab hv]
+  simp [fderiv_cylindrical_apply_stdComplexLineReal]
+
+/-- **The action estimate along a seamed Floer strip for an `s`-dependent perturbation.** Under
+the hypotheses of
+`IsNondegenerate.integral_floerEnergyDensity_eq_seamedReferenceAction_sub_sub_integral`, if `u`
+solves the Floer equation `∂_s u + J (∂_t u - X_{G_z}(u)) = 0` on `[a, b] × [0, 1]` for almost
+complex structures `J z` on `T_{u z} M` tamed by `ω`, then the action of the path at `s = b` for
+`G(b, ·)` relative to `γ₀` is at most that of the path at `s = a` for `G(a, ·)` minus the integral
+of `∂_s G` along `u`. -/
+theorem IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction_sub_integral
+    (hω : ω.IsNondegenerate) (hωf : VanishesOnSeamedTori f ω.val)
+    (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hseam : ∀ s, u (s, 1) = f (u (s, 0)))
+    {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
+    (hv : IsSmoothSeamedCylinder I f (fun t ↦ u (b, t)) γ₀ v)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
+    (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (G z) (u z)) = 0) :
+    ω.seamedReferenceAction f (fun t ↦ G (b, t)) γ₀ (fun t ↦ u (b, t)) ≤
+      ω.seamedReferenceAction f (fun t ↦ G (a, t)) γ₀ (fun t ↦ u (a, t)) -
+        ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal := by
+  have h := hω.integral_floerEnergyDensity_eq_seamedReferenceAction_sub_sub_integral hωf hG hu
+    hseam hab hv
+  have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
+    fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (hJ z hz) (hfloer z hz)
+  linarith
+
+/-- **The action relative to a reference path decreases along seamed Floer strips.** Under the
+hypotheses of
+`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_seamedReferenceAction_sub`,
+if `u` solves the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on `[a, b] × [0, 1]` for
+almost complex structures `J z` on `T_{u z} M` tamed by `ω`, then the action of the path at
+`s = b` relative to `γ₀` is at most that of the path at `s = a`. -/
+theorem IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction
+    (hω : ω.IsNondegenerate) (hωf : VanishesOnSeamedTori f ω.val)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hseam : ∀ s, u (s, 1) = f (u (s, 0)))
+    {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
+    (hv : IsSmoothSeamedCylinder I f (fun t ↦ u (b, t)) γ₀ v)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
+    (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
+    ω.seamedReferenceAction f H γ₀ (fun t ↦ u (b, t)) ≤
+      ω.seamedReferenceAction f H γ₀ (fun t ↦ u (a, t)) := by
+  have h := hω.seamedReferenceAction_le_seamedReferenceAction_sub_integral hωf
+    (Floer.contMDiff_uncurry_comp_snd hH) hu hseam hab hv J hJ hfloer
+  simpa [fderiv_cylindrical_apply_stdComplexLineReal] using h
+
+/-- **Monotone homotopies preserve the action filtration of seamed paths.** Under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction_sub_integral`, if
+every `s ↦ G_{(s, t)}(x)` is monotone, then the action of the path at `s = b` for `G(b, ·)`
+relative to `γ₀` is at most that of the path at `s = a` for `G(a, ·)`. -/
+theorem IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction_of_monotone
+    (hω : ω.IsNondegenerate) (hωf : VanishesOnSeamedTori f ω.val)
+    (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G))
+    (hmono : ∀ t x, Monotone fun s ↦ G (s, t) x)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hseam : ∀ s, u (s, 1) = f (u (s, 0)))
+    {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
+    (hv : IsSmoothSeamedCylinder I f (fun t ↦ u (b, t)) γ₀ v)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
+    (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (G z) (u z)) = 0) :
+    ω.seamedReferenceAction f (fun t ↦ G (b, t)) γ₀ (fun t ↦ u (b, t)) ≤
+      ω.seamedReferenceAction f (fun t ↦ G (a, t)) γ₀ (fun t ↦ u (a, t)) := by
+  have h := hω.seamedReferenceAction_le_seamedReferenceAction_sub_integral hωf hG hu hseam hab
+    hv J hJ hfloer
+  have hc := Floer.neg_setIntegral_fderiv_le_setIntegral (a := a) (b := b) hG
+    (hu.of_le (by simp)) integrableOn_zero fun z _ ↦
+      neg_nonpos.mpr (hmono z.2 (u z)).deriv_nonneg
+  simp only [integral_zero] at hc
+  linarith
+
+/-- **The action shift of a linear homotopy along a seamed Floer strip.** Let `ω` be a
+nondegenerate two-form vanishing on `f`-seamed tori on a finite-dimensional manifold, `H₀` and
+`H₁` `C¹` time-dependent Hamiltonians, `β` a monotone `C¹` profile and
+`G = H₀ + β(s) (H₁ - H₀)` the linear homotopy. Let `u` be a smooth map through `f`-seamed paths
+whose path at `s = b` is joined to the reference path `γ₀` by a smooth `f`-seamed cylinder,
+solving the Floer equation `∂_s u + J (∂_t u - X_{G_z}(u)) = 0` on `[a, b] × [0, 1]` for almost
+complex structures tamed by `ω`. If `H₀ - H₁ ≤ B` along `u` for a function `B` integrable on
+`[0, 1]`, then the action of the path at `s = b` for `G(b, ·)` relative to `γ₀` is at most that of
+the path at `s = a` for `G(a, ·)` plus `(β(b) - β(a)) ∫₀¹ B`. -/
+theorem IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction_add_of_linearHomotopy
+    (hω : ω.IsNondegenerate) (hωf : VanishesOnSeamedTori f ω.val) {H₀ H₁ : ℝ → M → ℝ}
+    (hH₀ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H₀))
+    (hH₁ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H₁)) {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β)
+    (hβm : Monotone β) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u)
+    (hseam : ∀ s, u (s, 1) = f (u (s, 0))) {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M}
+    {v : ℝ × ℝ → M} (hv : IsSmoothSeamedCylinder I f (fun t ↦ u (b, t)) γ₀ v)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
+    (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (Floer.linearHomotopy β H₀ H₁ z) (u z)) = 0)
+    {B : ℝ → ℝ} (hB : IntegrableOn B (Icc 0 1))
+    (hHB : ∀ z ∈ Icc a b ×ˢ Icc 0 1, H₀ z.2 (u z) - H₁ z.2 (u z) ≤ B z.2) :
+    ω.seamedReferenceAction f (fun t ↦ Floer.linearHomotopy β H₀ H₁ (b, t)) γ₀
+        (fun t ↦ u (b, t)) ≤
+      ω.seamedReferenceAction f (fun t ↦ Floer.linearHomotopy β H₀ H₁ (a, t)) γ₀
+          (fun t ↦ u (a, t)) +
+        (β b - β a) * ∫ t in Icc 0 1, B t := by
+  have h := hω.seamedReferenceAction_le_seamedReferenceAction_sub_integral hωf
+    (Floer.contMDiff_uncurry_linearHomotopy hβ hH₀ hH₁) hu hseam hab hv J hJ hfloer
+  linarith [Floer.neg_setIntegral_fderiv_linearHomotopy_le hH₀ hH₁ hβ hβm hu.continuous hab hB hHB]
+
+/-- **The action shift of a seamed continuation strip.** Let `ω` be a nondegenerate two-form
+vanishing on `f`-seamed tori on a finite-dimensional manifold, and `H₀` and `H₁` `C¹`
+time-dependent Hamiltonians with `H₀ - H₁ ≤ h` on `[0, 1]`, uniformly on the manifold, for a
+function `h` integrable on `[0, 1]`. Let `u` be a smooth map through `f`-seamed paths whose path at
+`s = b` is joined to the reference path `γ₀` by a smooth `f`-seamed cylinder, solving the Floer
+equation `∂_s u + J (∂_t u - X_{G_z}(u)) = 0` on `[a, b] × [0, 1]`, with `a ≤ 0` and `1 ≤ b`, for
+the continuation homotopy `G` from `H₀` to `H₁` and almost complex structures tamed by `ω`. Then
+`𝒜_{H₁}(u(b, ·)) ≤ 𝒜_{H₀}(u(a, ·)) + ∫₀¹ h` for the actions relative to `γ₀`. When `H₀ ≤ H₁`,
+taking `h = 0` shows that seamed continuation strips preserve the action filtration. -/
+theorem
+    IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction_add_of_continuationHomotopy
+    (hω : ω.IsNondegenerate) (hωf : VanishesOnSeamedTori f ω.val) {H₀ H₁ : ℝ → M → ℝ}
+    (hH₀ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H₀))
+    (hH₁ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H₁))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hseam : ∀ s, u (s, 1) = f (u (s, 0)))
+    {a b : ℝ} (ha : a ≤ 0) (hb : 1 ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
+    (hv : IsSmoothSeamedCylinder I f (fun t ↦ u (b, t)) γ₀ v)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
+    (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (Floer.continuationHomotopy H₀ H₁ z) (u z)) = 0)
+    {h : ℝ → ℝ} (hh : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, H₀ t x - H₁ t x ≤ h t)
+    (hhi : IntegrableOn h (Icc 0 1)) :
+    ω.seamedReferenceAction f H₁ γ₀ (fun t ↦ u (b, t)) ≤
+      ω.seamedReferenceAction f H₀ γ₀ (fun t ↦ u (a, t)) + ∫ t in Icc 0 1, h t := by
+  rw [Floer.continuationHomotopy_eq_linearHomotopy] at hfloer
+  have h := hω.seamedReferenceAction_le_seamedReferenceAction_add_of_linearHomotopy hωf hH₀ hH₁
+    (smoothTransition.contDiff (n := 1)) smoothTransition.monotone hu hseam
+    (ha.trans (zero_le_one.trans hb)) hv J hJ hfloer hhi fun z hz ↦ hh z.2 hz.2 (u z)
+  simpa [← Floer.continuationHomotopy_eq_linearHomotopy,
+    Floer.continuationHomotopy_eq_left_of_nonpos ha,
+    Floer.continuationHomotopy_eq_right_of_one_le hb,
+    smoothTransition.zero_of_nonpos ha, smoothTransition.one_of_one_le hb] using h
+
 /-! ### The action relative to a reference loop -/
 
 /-- **The energy of a Floer cylinder is the drop of the action relative to a reference loop.**
 Let `ω` be a nondegenerate two-form vanishing on tori on a finite-dimensional manifold, `H` a
-`C¹` time-dependent Hamiltonian, and `u` a smooth map, `1`-periodic in its second coordinate.
-If the loop `γ_b = u(b, ·)` is joined to the reference loop `γ₀` by a smooth cylinder, the Floer
-energy of `u` over `[a, b] × [0, 1]` for the cylindrical perturbation `K = H_t dt` is
-`𝒜_H(γ_a) - 𝒜_H(γ_b)`, where `γ_a = u(a, ·)` and `𝒜_H` is the action
-`TauCeti.SmoothTwoForm.referenceAction` relative to `γ₀`. The loop `γ_a` is joined to `γ₀` by
-gluing `u` to the cylinder from `γ_b`, so both actions are computed with genuine cylinders. -/
+`C¹` time-dependent Hamiltonian, and `u` a smooth map whose loops `u (s, ·)` close up,
+`u (s, 1) = u (s, 0)`. If the loop `γ_b = u(b, ·)` is joined to the reference loop `γ₀` by a
+smooth cylinder, the Floer energy of `u` over `[a, b] × [0, 1]` for the cylindrical perturbation
+`K = H_t dt` is `𝒜_H(γ_a) - 𝒜_H(γ_b)`, where `γ_a = u(a, ·)` and `𝒜_H` is the action
+`TauCeti.SmoothTwoForm.referenceAction` relative to `γ₀`. This is the case `f = id` of
+`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_seamedReferenceAction_sub`.
+-/
 theorem IsNondegenerate.integral_floerEnergyDensity_eq_referenceAction_sub
     (hω : ω.IsNondegenerate) (hωt : VanishesOnTori ω.val)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
-    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hper : ∀ s, u (s, 1) = u (s, 0))
     {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
     (hv : IsSmoothCylinder I (fun t ↦ u (b, t)) γ₀ v) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
       ω.referenceAction H γ₀ (fun t ↦ u (a, t)) - ω.referenceAction H γ₀ (fun t ↦ u (b, t)) := by
-  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
-  -- Rescale `[a, b]` to `[0, 1]` and glue the result to `v`: a cylinder from `γ_a` to `γ₀`.
-  have hc := isSmoothCylinder_comp_prodMap_affine hu hper a b
-  have hw := hc.trans hv fun t ↦ by simp [hv.apply_zero]
-  rw [hω.integral_floerEnergyDensity_cylindrical hH (hu.of_le (by simp)) hab,
-    referenceAction_eq hωt hw, referenceAction_eq hωt hv, cylinderAction_eq_of_isSmoothCylinder hw,
-    cylinderAction_eq_of_isSmoothCylinder hv,
-    rectangleIntegral_rectangleTrans hω₀ (hc.contMDiff.of_le (by simp))
-      (hv.contMDiff.of_le (by simp)) (fun t ↦ by simp [hv.apply_zero]),
-    rectangleIntegral_comp_prodMap_affine hω₀ (hu.of_le (by simp)) a b 0 1]
-  ring
+  simpa only [seamedReferenceAction_id] using
+    hω.integral_floerEnergyDensity_eq_seamedReferenceAction_sub
+      ((vanishesOnSeamedTori_id_iff _).mpr hωt) hH hu hper hab
+      (isSmoothSeamedCylinder_id_iff.mpr hv)
 
 /-- **The action relative to a reference loop decreases along Floer cylinders.** Under the
 hypotheses of
 `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_referenceAction_sub`, if
 `u` solves the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on `[a, b] × [0, 1]` for
 almost complex structures `J z` on `T_{u z} M` tamed by `ω`, then the action of the loop at
-`s = b` relative to `γ₀` is at most that of the loop at `s = a`. -/
+`s = b` relative to `γ₀` is at most that of the loop at `s = a`. This is the case `f = id` of
+`TauCeti.SmoothTwoForm.IsNondegenerate.seamedReferenceAction_le_seamedReferenceAction`. -/
 theorem IsNondegenerate.referenceAction_le_referenceAction
     (hω : ω.IsNondegenerate) (hωt : VanishesOnTori ω.val)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
-    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hper : ∀ s, u (s, 1) = u (s, 0))
     {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
     (hv : IsSmoothCylinder I (fun t ↦ u (b, t)) γ₀ v)
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
@@ -624,11 +885,9 @@ theorem IsNondegenerate.referenceAction_le_referenceAction
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
         ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
     ω.referenceAction H γ₀ (fun t ↦ u (b, t)) ≤ ω.referenceAction H γ₀ (fun t ↦ u (a, t)) := by
-  have h := hω.integral_floerEnergyDensity_eq_referenceAction_sub hωt hH hu hper hab hv
-  have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
-    fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2) (hJ z hz)
-      (hfloer z hz)
-  linarith
+  simpa only [seamedReferenceAction_id] using
+    hω.seamedReferenceAction_le_seamedReferenceAction ((vanishesOnSeamedTori_id_iff _).mpr hωt) hH
+      hu hper hab (isSmoothSeamedCylinder_id_iff.mpr hv) J hJ hfloer
 
 /-! ### Continuation cylinders and the action filtration -/
 
@@ -675,14 +934,10 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_of_mono
       contractibleLoopAction ω.val (fun t ↦ G (a, t)) (fun t ↦ u (a, t)) := by
   have h := hω.contractibleLoopAction_le_contractibleLoopAction_sub_integral hωe hG hu hper hab hv
     J hJ hfloer
-  -- `∂_s G` is the derivative of the monotone functions `s ↦ G_{(s, t)}(x)`.
-  have hnonneg : 0 ≤ ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal :=
-    setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ by
-      have hd : ContDiff ℝ 1 fun w ↦ G w (u z) :=
-        contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk contMDiff_const))
-      rw [stdComplexLineReal_eq, fderiv_apply_mk_one_zero (u := fun w ↦ G w (u z))
-        (hd.differentiable one_ne_zero z)]
-      exact (hmono z.2 (u z)).deriv_nonneg
+  have hc := Floer.neg_setIntegral_fderiv_le_setIntegral (a := a) (b := b) hG
+    (hu.of_le one_le_two) integrableOn_zero fun z _ ↦
+      neg_nonpos.mpr (hmono z.2 (u z)).deriv_nonneg
+  simp only [integral_zero] at hc
   linarith
 
 /-- **The action shift of a linear homotopy.** Let `ω` be a nondegenerate weakly exact two-form on
@@ -760,26 +1015,29 @@ variable {ι : Type*} {Ks Kt : ℝ × ℝ → M → ℝ}
 
 /-- **The energy identity over the whole cylinder.** Let `ω` be a nondegenerate two-form on a
 finite-dimensional manifold, such as a closed symplectic manifold, and let `K = K_s ds + K_t dt` be
-a `C¹` perturbation with `K_s(s, 1) = K_s(s, 0)` which is cylindrical on the two ends: `K_t = H₀`
-for `s ≤ -c` and `K_t = H₁` for `s ≥ c`, with `H₀` and `H₁` bounded for `t ∈ [0, 1]`. Let `u` be
-a `C¹` map with `u(s, 1) = u(s, 0)`, whose energy density, symplectic area density and curvature
-are integrable over the strip `ℝ × [0, 1]`. If along a countably generated filter `a i → -∞` and
-`b i → ∞`, and the loops `u(a i, ·)` and `u(b i, ·)` converge pointwise to loops `x₀` and `x₁`, then
+a `C¹` perturbation which is cylindrical on the two ends: `K_t = H₀` for `s ≤ -c` and `K_t = H₁`
+for `s ≥ c`, with `H₀` and `H₁` bounded for `t ∈ [0, 1]`. Let `u` be a `C¹` map whose energy
+density, symplectic area density and curvature are integrable over the strip `ℝ × [0, 1]`, and
+along whose two edges the `ds` components agree, `K_s(s, 1)(u(s, 1)) = K_s(s, 0)(u(s, 0))`. This
+holds for a loop of loops, `u(s, 1) = u(s, 0)`, when `K_s(s, 1) = K_s(s, 0)`, and for a strip
+through `f`-seamed paths, `u(s, 1) = f(u(s, 0))`, when `K_s(s, 1) ∘ f = K_s(s, 0)`. If along a
+countably generated filter `a i → -∞` and `b i → ∞`, and the paths `u(a i, ·)` and `u(b i, ·)`
+converge pointwise to paths `x₀` and `x₁`, then
 
 `∫ E = ∫ u^*ω + ∫₀¹ H₁(t, x₁(t)) dt - ∫₀¹ H₀(t, x₀(t)) dt - ∫ R_K(u)`
 
-over the strip. This is the energy identity of a Floer cylinder asymptotic to `x₀` and `x₁`:
-the boundary term `∫_∂ K(u)` is evaluated at the two asymptotic loops. The loops need only
-converge along sequences, as they do at the ends of a finite-energy Floer cylinder before
-nondegeneracy is used. -/
+over the strip. This is the energy identity of a Floer cylinder, or of a seamed Floer strip,
+asymptotic to `x₀` and `x₁`: the boundary term `∫_∂ K(u)` is evaluated at the two asymptotic
+paths. The paths need only converge along sequences, as they do at the ends of a finite-energy
+Floer cylinder before nondegeneracy is used. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_univ_prod (hω : ω.IsNondegenerate)
     (hKs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks))
     (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt))
-    (hKs₁ : ∀ s, Ks (s, 1) = Ks (s, 0)) {H₀ H₁ : ℝ → M → ℝ} {c : ℝ}
+    {H₀ H₁ : ℝ → M → ℝ} {c : ℝ}
     (hK₀ : ∀ z : ℝ × ℝ, z.1 ≤ -c → Kt z = H₀ z.2) (hK₁ : ∀ z : ℝ × ℝ, c ≤ z.1 → Kt z = H₁ z.2)
     {B₀ B₁ : ℝ} (hB₀ : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H₀ t x| ≤ B₀)
     (hB₁ : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H₁ t x| ≤ B₁)
-    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (hper : ∀ s, u (s, 1) = u (s, 0))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (hKsu : ∀ s, Ks (s, 1) (u (s, 1)) = Ks (s, 0) (u (s, 0)))
     {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated] {a b : ι → ℝ} (ha : Tendsto a l atBot)
     (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
     (hx₀ : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x₀ t)))
@@ -830,10 +1088,10 @@ theorem IsNondegenerate.integral_floerEnergyDensity_univ_prod (hω : ω.IsNondeg
       (subset_univ _) (hR' ▸ hE.mono_set hsub) (hR' ▸ hR.mono_set hsub)
     rw [← hR'] at h
     rw [h]
-    -- The `ds` terms along the circles `t = 0` and `t = 1` cancel by periodicity, and the `dt`
-    -- terms along `s = b i` and `s = a i` are those of `H₁` and `H₀`.
+    -- The `ds` terms along the edges `t = 0` and `t = 1` cancel, and the `dt` terms along
+    -- `s = b i` and `s = a i` are those of `H₁` and `H₀`.
     have hs : ∫ s in a i..b i, Ks (s, 1) (u (s, 1)) = ∫ s in a i..b i, Ks (s, 0) (u (s, 0)) := by
-      simp only [hKs₁, hper]
+      simp only [hKsu]
     have hbt : ∫ t in (0 : ℝ)..1, Kt (b i, t) (u (b i, t)) = ∫ t in (0 : ℝ)..1, H₁ t (u (b i, t)) :=
       intervalIntegral.integral_congr fun t _ ↦ by simp only [hK₁ (b i, t) hbi']
     have hat : ∫ t in (0 : ℝ)..1, Kt (a i, t) (u (a i, t)) = ∫ t in (0 : ℝ)..1, H₀ t (u (a i, t)) :=
@@ -854,11 +1112,14 @@ perturbation `K = H_t dt` of a `C¹` Hamiltonian bounded for `t ∈ [0, 1]`, und
 the energy of `u` over the strip `ℝ × [0, 1]` is its symplectic area plus the Hamiltonian terms of
 the asymptotic loops:
 
-`∫ E = ∫ u^*ω + ∫₀¹ H(t, x₁(t)) dt - ∫₀¹ H(t, x₀(t)) dt`. -/
+`∫ E = ∫ u^*ω + ∫₀¹ H(t, x₁(t)) dt - ∫₀¹ H(t, x₀(t)) dt`.
+
+The perturbation has no `ds` component, so nothing relates `u(s, 1)` to `u(s, 0)`: this is also
+the energy identity of a strip through `f`-seamed paths asymptotic to the paths `x₀` and `x₁`. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical_univ_prod
     (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) {B : ℝ}
     (hB : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H t x| ≤ B) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
-    (hper : ∀ s, u (s, 1) = u (s, 0)) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
+    {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
     {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
     (hx₀ : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x₀ t)))
     (hx₁ : ∀ t, Tendsto (fun i ↦ u (b i, t)) l (𝓝 (x₁ t)))
@@ -872,8 +1133,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical_univ_prod
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
         (∫ t in 0..1, H t (x₁ t)) - ∫ t in 0..1, H t (x₀ t) := by
   have h := hω.integral_floerEnergyDensity_univ_prod (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2)
-    (c := 0) contMDiff_const (Floer.contMDiff_uncurry_comp_snd hH) (fun _ ↦ rfl)
-    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hB hB hu hper ha hb hx₀ hx₁ hE hA
+    (c := 0) contMDiff_const (Floer.contMDiff_uncurry_comp_snd hH) (fun _ _ ↦ rfl)
+    (fun _ _ ↦ rfl) hB hB hu (fun _ ↦ rfl) ha hb hx₀ hx₁ hE hA
     (by simp only [hamiltonianCurvature_cylindrical]; exact integrableOn_zero)
   simpa only [hamiltonianCurvature_cylindrical, integral_zero, sub_zero] using h
 
@@ -890,7 +1151,7 @@ cylinders, from the negative end to the positive end. -/
 theorem IsNondegenerate.intervalIntegral_le_integral_add_intervalIntegral_of_cylindrical
     (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) {B : ℝ}
     (hB : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H t x| ≤ B) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
-    (hper : ∀ s, u (s, 1) = u (s, 0)) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
+    {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
     {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
     (hx₀ : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x₀ t)))
     (hx₁ : ∀ t, Tendsto (fun i ↦ u (b i, t)) l (𝓝 (x₁ t)))
@@ -910,7 +1171,7 @@ theorem IsNondegenerate.intervalIntegral_le_integral_add_intervalIntegral_of_cyl
         ∫ t in 0..1, H t (x₁ t) := by
   have hpos := setIntegral_nonneg (μ := volume) (MeasurableSet.univ.prod measurableSet_Icc)
     fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
-  rw [hω.integral_floerEnergyDensity_cylindrical_univ_prod hH hB hu hper ha hb hx₀ hx₁ hE hA]
+  rw [hω.integral_floerEnergyDensity_cylindrical_univ_prod hH hB hu ha hb hx₀ hx₁ hE hA]
     at hpos
   linarith
 

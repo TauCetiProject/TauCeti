@@ -6,6 +6,11 @@ Authors: Arend Mellendijk, The PrimeNumberTheoremAnd contributors, The Tau Ceti 
 module
 
 public import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
+public import TauCeti.NumberTheory.LSeries.Moebius
+import Mathlib.NumberTheory.LSeries.Convolution
+import Mathlib.NumberTheory.LSeries.Dirichlet
+import TauCeti.NumberTheory.ArithmeticFunction.Moebius
+import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.EulerProduct
 
 /-!
@@ -15,7 +20,12 @@ The raw coefficients `2 ^ cardDistinctFactors n` have value one at zero, which t
 series ignores. The series converges absolutely exactly on `Re s > 1`, has local Euler factor
 `(1 + p ^ (-s)) / (1 - p ^ (-s))`, and equals `ζ(s)² / ζ(2s)` on that half-plane.
 
-The argument is adapted from the distinct-prime-factor series in
+Off index zero the coefficients count the squarefree divisors, `2 ^ ω = μ² ⍟ 1`, so the series is
+the product of `ζ(s)` with the series `ζ(s) / ζ(2s)` of `μ²`; this gives convergence and the sum.
+Since `2 ^ ω(n) ≥ 1`, the series dominates that of the constant sequence `1`, which fixes its
+abscissa of absolute convergence at `1`.
+
+The Euler product argument is adapted from the distinct-prime-factor series in
 [Arend Mellendijk and the PNT+ contributors, Prime Number Theorem and More][PNT].
 
 [PNT]: https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/05076dfe4e396e6dbdea50fde395a5154341f59e/PrimeNumberTheoremAnd/IwaniecKowalskiCh1.lean#L1084-L1337
@@ -29,59 +39,30 @@ open scoped LSeries.notation
 
 namespace TauCeti
 
+/-- Off index zero, the coefficients `2 ^ ω(n)` are the Dirichlet convolution of `μ²` with the
+constant sequence `1`. -/
+private theorem moebius_sq_convolution_one_apply {n : ℕ} (hn : n ≠ 0) :
+    ((fun n ↦ (moebius n : ℂ) ^ 2) ⍟ 1) n = (2 : ℂ) ^ ω n := by
+  simp only [_root_.LSeries.convolution_def, Pi.one_apply, mul_one]
+  rw [Nat.sum_divisorsAntidiagonal (fun a _ ↦ (moebius a : ℂ) ^ 2), sum_divisors_moebius_sq hn]
+
 /-- The `2^ω` series converges absolutely exactly on the half-plane `Re s > 1`. -/
 theorem LSeriesSummable_two_pow_cardDistinctFactors_iff {s : ℂ} :
     LSeriesSummable (fun n ↦ (2 : ℂ) ^ ω n) s ↔ 1 < s.re := by
   constructor
-  · intro h
-    by_contra hs
-    have h1 : LSeriesSummable (fun n ↦ (2 : ℂ) ^ ω n) 1 :=
-      h.of_re_le_re (by simpa using le_of_not_gt hs)
-    have hone : LSeriesSummable (fun _ ↦ (1 : ℂ)) 1 := by
-      apply Summable.of_norm_bounded h1.norm
-      intro n
-      apply _root_.LSeries.norm_term_le
-      simpa using (one_le_pow₀ (by norm_num : (1 : ℝ) ≤ 2) :
-        (1 : ℝ) ≤ 2 ^ ω n)
-    exact (not_lt_of_ge (by norm_num : (1 : ℝ) ≤ 1)) (LSeriesSummable_one_iff.mp hone)
+  · intro hf
+    refine LSeriesSummable_one_iff.mp (Summable.of_norm_bounded hf.norm fun n ↦ ?_)
+    refine _root_.LSeries.norm_term_le s ?_
+    simpa using one_le_pow₀ (M₀ := ℝ) (n := ω n) one_le_two
   · intro hs
-    have hz : LSeriesSummable (↗(ζ : ArithmeticFunction ℂ)) s :=
-      LSeriesSummable_zeta_iff.mpr hs
-    have heq : (ζ : ArithmeticFunction ℕ) * ζ = σ 0 := by
-      simpa only [pow_zero_eq_zeta] using (zeta_mul_pow_eq_sigma (k := 0))
-    have ht : LSeriesSummable (fun n ↦ ((σ 0 n : ℕ) : ℂ)) s := by
-      convert LSeriesSummable_mul hz hz using 1
-      funext n
-      rw [← natCoe_mul, heq]
-      simp only [natCoe_apply]
-    apply Summable.of_norm_bounded ht.norm
-    intro n
-    by_cases hn : n = 0
-    · simp [hn]
-    apply _root_.LSeries.norm_term_le
-    simp only [norm_pow, norm_ofNat, Complex.norm_natCast]
-    have hNat : 2 ^ ω n ≤ σ 0 n := by
-      rw [cardDistinctFactors_eq_card_primeFactors, sigma_zero_apply,
-        Nat.card_divisors hn, ← Finset.prod_const]
-      apply Finset.prod_le_prod
-      intro p hp
-      exact Nat.succ_le_succ
-        ((Nat.Prime.dvd_iff_one_le_factorization (prime_of_mem_primeFactors hp) hn).mp
-          (dvd_of_mem_primeFactors hp))
-    exact_mod_cast hNat
+    refine (LSeriesSummable_congr s fun hn ↦ moebius_sq_convolution_one_apply hn).mp ?_
+    exact (LSeriesSummable_moebius_sq_iff.mpr hs).convolution (LSeriesSummable_one_iff.mpr hs)
 
 /-- The abscissa of absolute convergence of the `2^ω` series is one. -/
 theorem abscissaOfAbsConv_two_pow_cardDistinctFactors :
-    _root_.LSeries.abscissaOfAbsConv (fun n ↦ (2 : ℂ) ^ ω n) = 1 := by
-  apply le_antisymm
-  · apply _root_.LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable
-    intro x hx
-    exact LSeriesSummable_two_pow_cardDistinctFactors_iff.mpr hx
-  · by_contra h
-    have hs := LSeriesSummable_of_abscissaOfAbsConv_lt_re (s := (1 : ℂ))
-      (by simpa using lt_of_not_ge h)
-    exact (not_lt_of_ge (by norm_num : (1 : ℝ) ≤ 1))
-      (LSeriesSummable_two_pow_cardDistinctFactors_iff.mp hs)
+    _root_.LSeries.abscissaOfAbsConv (fun n ↦ (2 : ℂ) ^ ω n) = 1 :=
+  (LSeries.abscissaOfAbsConv_eq_of_LSeriesSummable_iff fun _ ↦
+    LSeriesSummable_two_pow_cardDistinctFactors_iff).trans EReal.coe_one
 
 /-- The prime-power sum has local factor `(1 + p^(-s))/(1 - p^(-s))` for `Re s > 0`. -/
 theorem tsum_term_prime_pow_two_pow_cardDistinctFactors {s : ℂ} {p : Nat.Primes}
@@ -131,9 +112,7 @@ theorem LSeries_two_pow_cardDistinctFactors_eulerProduct_hasProd {s : ℂ} (hs :
 theorem riemannZeta_sq_eq_mul_LSeries_two_pow_cardDistinctFactors {s : ℂ} (hs : 1 < s.re) :
     riemannZeta s ^ 2 = riemannZeta (2 * s) *
       _root_.LSeries (fun n ↦ (2 : ℂ) ^ ω n) s := by
-  have hs2 : 1 < (2 * s).re := by
-    simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
-    linarith
+  have hs2 := one_lt_re_two_mul hs
   have hfactor (p : Nat.Primes) :
       (1 - (p : ℂ) ^ (-(2 * s)))⁻¹ *
           ((1 + (p : ℂ) ^ (-s)) / (1 - (p : ℂ) ^ (-s))) =
@@ -155,16 +134,16 @@ theorem riemannZeta_sq_eq_mul_LSeries_two_pow_cardDistinctFactors {s : ℂ} (hs 
   simpa only [pow_two] using
     ((riemannZeta_eulerProduct_hasProd hs).mul (riemannZeta_eulerProduct_hasProd hs)).unique H'
 
-/-- The `2^ω` Dirichlet terms have sum `ζ(s)² / ζ(2s)` on `Re s > 1`. -/
+/-- The `2^ω` Dirichlet terms have sum `ζ(s)² / ζ(2s)` on `Re s > 1`: the series is the
+product of the series `ζ(s) / ζ(2s)` of `μ²` with `ζ(s)`. -/
 theorem LSeriesHasSum_two_pow_cardDistinctFactors {s : ℂ} (hs : 1 < s.re) :
     LSeriesHasSum (fun n ↦ (2 : ℂ) ^ ω n) s (riemannZeta s ^ 2 / riemannZeta (2 * s)) := by
-  have hs2 : 1 < (2 * s).re := by
-    simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
-    linarith
-  have heq : _root_.LSeries (fun n ↦ (2 : ℂ) ^ ω n) s =
-      riemannZeta s ^ 2 / riemannZeta (2 * s) := by
-    apply (eq_div_iff (riemannZeta_ne_zero_of_one_lt_re hs2)).mpr
-    simpa only [mul_comm] using (riemannZeta_sq_eq_mul_LSeries_two_pow_cardDistinctFactors hs).symm
-  exact heq ▸ (LSeriesSummable_two_pow_cardDistinctFactors_iff.mpr hs).LSeriesHasSum
+  have hs2 := one_lt_re_two_mul hs
+  have hconv := ((LSeriesSummable_moebius_sq_iff.mpr hs).LSeriesHasSum).convolution
+    (LSeriesHasSum_one hs)
+  rw [LSeriesHasSum_congr s _ fun hn ↦ (moebius_sq_convolution_one_apply hn).symm]
+  convert hconv using 1
+  rw [div_eq_iff (riemannZeta_ne_zero_of_one_lt_re hs2), sq, mul_comm _ (riemannZeta (2 * s)),
+    ← mul_assoc, ← riemannZeta_eq_mul_LSeries_moebius_sq hs]
 
 end TauCeti

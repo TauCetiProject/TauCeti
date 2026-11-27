@@ -51,6 +51,14 @@ theorem rootLE_iff_exists_nat {x y : M} :
     P.rootLE b x y ↔ ∃ n : ι → ℕ, y - x = ∑ i ∈ b.support, n i • P.root i :=
   mem_posRootCone P b
 
+/-- Comparable weights in the integral root order differ by an element of the root span. -/
+theorem sub_mem_rootSpan_of_rootLE {x y : M} (h : P.rootLE b x y) :
+    y - x ∈ P.rootSpan R := by
+  obtain ⟨n, hn⟩ := (P.rootLE_iff_exists_nat b).mp h
+  rw [hn]
+  exact sum_mem fun i _ ↦
+    nsmul_mem (Submodule.subset_span (Set.mem_range_self i)) (n i)
+
 /-- Every weight is below itself in integral root dominance. -/
 @[simp]
 theorem rootLE_refl (x : M) : P.rootLE b x x := by

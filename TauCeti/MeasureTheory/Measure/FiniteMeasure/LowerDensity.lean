@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Hausdorff
 public import Mathlib.Topology.MetricSpace.Closeds
 import Mathlib.MeasureTheory.Measure.Portmanteau
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
+import TauCeti.MeasureTheory.Measure.LowerDensity
 import TauCeti.Topology.MetricSpace.Closeds
 
 /-!
@@ -23,7 +24,11 @@ at every point of `Z₀` and every radius `ρ ∈ (0, ρ₀]`
 (`MeasureTheory.FiniteMeasure.le_measure_closedBall_of_tendsto`). Indeed, a point `x ∈ Z₀` is
 eventually within `ρ - ρ'` of some point `y ∈ Z i`, so `closedBall y ρ' ⊆ closedBall x ρ`, and the
 portmanteau theorem bounds the limit superior of the masses of the closed set `closedBall x ρ` by
-its mass for `ν`; finally `ρ' → ρ`.
+its mass for `ν`; finally `ρ' → ρ`. This argument, with the limit superior bound on the ball as a
+hypothesis and only the points of `Z i` near `x` used, is
+`MeasureTheory.Measure.le_measure_closedBall_of_limsup_le` in
+`TauCeti.MeasureTheory.Measure.LowerDensity`; it also serves for vague limits of locally finite
+measures.
 
 Combined with the density comparison for Hausdorff measure
 (`MeasureTheory.Measure.mul_hausdorffMeasure_le_measure_of_isOpen`), this bounds the
@@ -65,23 +70,11 @@ theorem le_measure_closedBall_of_tendsto [l.NeBot] (hμ : Tendsto μ l (𝓝 ν)
     (hdens : ∀ᶠ i in l, ∀ y ∈ Z i, ∀ ρ, h i ≤ ρ → ρ ≤ ρ₀ →
       ENNReal.ofReal (c * ρ ^ d) ≤ (μ i : Measure X) (closedBall y ρ))
     {x : X} (hx : x ∈ Z₀) {ρ : ℝ} (hρ : 0 < ρ) (hρρ₀ : ρ ≤ ρ₀) :
-    ENNReal.ofReal (c * ρ ^ d) ≤ (ν : Measure X) (closedBall x ρ) := by
-  -- It suffices to prove the bound with `c ρ' ^ d` for every `ρ' ∈ (0, ρ)`, and let `ρ' → ρ`.
-  have hcont : Tendsto (fun ρ' : ℝ ↦ ENNReal.ofReal (c * ρ' ^ d)) (𝓝[<] ρ)
-      (𝓝 (ENNReal.ofReal (c * ρ ^ d))) :=
-    ((ENNReal.continuous_ofReal.comp (continuous_const.mul (continuous_pow d))).tendsto ρ).mono_left
-      nhdsWithin_le_nhds
-  refine le_of_tendsto hcont ?_
-  filter_upwards [Ioo_mem_nhdsLT hρ] with ρ' hρ'
-  -- Eventually some `y ∈ Z i` has `closedBall y ρ' ⊆ closedBall x ρ`, and `h i ≤ ρ'`.
-  have hev : ∀ᶠ i in l, ENNReal.ofReal (c * ρ' ^ d) ≤ (μ i : Measure X) (closedBall x ρ) := by
-    filter_upwards [hdens, hZ.eventually_exists_dist_lt hx (sub_pos.2 hρ'.2),
-      hh.eventually (gt_mem_nhds hρ'.1)] with i hi ⟨y, hy, hxy⟩ hhi
-    refine (hi y hy ρ' hhi.le (hρ'.2.le.trans hρρ₀)).trans (measure_mono fun z hz ↦ ?_)
-    rw [mem_closedBall] at hz ⊢
-    linarith [dist_triangle z y x, dist_comm x y]
+    ENNReal.ofReal (c * ρ ^ d) ≤ (ν : Measure X) (closedBall x ρ) :=
   -- The portmanteau theorem bounds the limit superior on the closed ball by its `ν`-mass.
-  exact (le_limsup_of_frequently_le hev.frequently).trans
+  Measure.le_measure_closedBall_of_limsup_le
+    (fun _ hε ↦ hZ.isKuratowskiLimit.eventually_exists_dist_lt hx hε)
+    hh univ_mem (hdens.mono fun _ hi y hy ↦ hi y hy.1) hρ hρρ₀
     (limsup_measure_closed_le_of_tendsto hμ isClosed_closedBall)
 
 variable [BorelSpace X]
@@ -95,17 +88,11 @@ theorem mul_hausdorffMeasure_le_measure_of_tendsto [l.NeBot] (hμ : Tendsto μ l
     (hdens : ∀ᶠ i in l, ∀ y ∈ Z i, ∀ ρ, h i ≤ ρ → ρ ≤ ρ₀ →
       ENNReal.ofReal (c * ρ ^ d) ≤ (μ i : Measure X) (closedBall y ρ))
     {U : Set X} (hU : IsOpen U) (hZU : (Z₀ : Set X) ⊆ U) :
-    ENNReal.ofReal (c / 2 ^ d) * μH[d] (Z₀ : Set X) ≤ (ν : Measure X) U := by
-  refine Measure.mul_hausdorffMeasure_le_measure_of_isOpen _ hU hZU
-    fun x hx ↦ Eventually.frequently ?_
-  filter_upwards [Ioc_mem_nhdsGT hρ₀] with ρ hρ
-  have h2ρ : 0 ≤ 2 * ρ := by linarith [hρ.1]
-  have hscale : c / 2 ^ d * (2 * ρ) ^ d = c * ρ ^ d := by
-    rw [mul_pow]
-    field_simp
-  rw [ENNReal.rpow_natCast, ← ENNReal.ofReal_pow h2ρ, ← ENNReal.ofReal_mul' (pow_nonneg h2ρ d),
-    hscale]
-  exact le_measure_closedBall_of_tendsto hμ hZ hh hdens hx hρ.1 hρ.2
+    ENNReal.ofReal (c / 2 ^ d) * μH[d] (Z₀ : Set X) ≤ (ν : Measure X) U :=
+  Measure.mul_hausdorffMeasure_le_measure_of_isOpen _ hU hZU fun _ hx ↦
+    Measure.frequently_ofReal_div_mul_rpow_le_measure_closedBall <| Eventually.frequently <|
+      eventually_of_mem (Ioc_mem_nhdsGT hρ₀) fun _ hρ ↦
+        le_measure_closedBall_of_tendsto hμ hZ hh hdens hx hρ.1 hρ.2
 
 /-- **The limit set has finite Hausdorff measure.** Under the hypotheses of
 `MeasureTheory.FiniteMeasure.le_measure_closedBall_of_tendsto`, with `c > 0` and `ρ₀ > 0`, the

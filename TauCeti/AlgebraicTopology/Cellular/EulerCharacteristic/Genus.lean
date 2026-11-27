@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.RealProjective
-public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Surface
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Surface.Basic
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Torus
 public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 
@@ -30,8 +30,9 @@ connected homologically oriented surface `M`, the native computation `χ(M) = 2 
 (`TauCeti.HomologicalOrientation.genus_eq_surfaceGenus`); so `χ(M) = 2 - 2 · genus M` holds if and
 only if `b₁(M)` is even
 (`TauCeti.HomologicalOrientation.eulerChar_eq_two_sub_two_mul_genus_iff_even_finrank`). Evenness
-of `b₁` itself needs the nondegenerate alternating intersection pairing from Poincaré duality, and
-is not asserted here.
+of `b₁` is not asserted here; for compact connected Riemann surfaces it is
+`TauCeti.RiemannSurface.even_finrank_singularHomology_one`, proved from
+`χ = 2 - 2 · genus`.
 
 ## Main definitions
 
@@ -42,6 +43,8 @@ is not asserted here.
 * `TauCeti.RiemannSurface.eulerChar_eq_two_sub_two_mul_genus_iff`: `χ = 2 - 2 · genus` holds if
   and only if `χ ≤ 2` and `χ` is even.
 * `TauCeti.RiemannSurface.genus_eq_of_eulerChar_eq`: a space with `χ = 2 - 2g` has genus `g`.
+* `TauCeti.RiemannSurface.two_mul_genus_eq_sub_emod`: for `χ ≤ 2`, the identity with its
+  parity correction, `2g = 2 - χ - χ % 2`.
 * `ContinuousMap.HomotopyEquiv.genus_eq`: the genus is a homotopy invariant.
 * `TauCeti.HomologicalOrientation.genus_eq_surfaceGenus`: on a closed connected homologically
   oriented surface, `genus` agrees with `TauCeti.surfaceGenus`, half the first Betti number.
@@ -115,6 +118,13 @@ theorem genus_eq_of_eulerChar_eq {g : ℕ} (h : eulerChar X = 2 - 2 * g) : genus
   rw [genus_def, h]
   omega
 
+/-- If `χ(X) ≤ 2`, the Euler–genus identity has precisely the parity correction `χ(X) % 2`.
+This formula also applies when the Euler characteristic is odd. -/
+theorem two_mul_genus_eq_sub_emod (h : eulerChar X ≤ 2) :
+    2 * (genus X : ℤ) = 2 - eulerChar X - eulerChar X % 2 := by
+  rw [genus_def]
+  omega
+
 /-- **Homotopy invariance of the genus.** Homotopy equivalent spaces of finite CW type have the
 same genus. -/
 theorem _root_.ContinuousMap.HomotopyEquiv.genus_eq {Y : Type u} [TopologicalSpace Y]
@@ -178,8 +188,8 @@ theorem genus_eq_surfaceGenus : genus M = surfaceGenus M := by
 
 /-- **The Euler number of a closed oriented surface.** On a compact connected homologically
 oriented surface of finite CW type, `χ(M) = 2 - 2 · genus M` holds if and only if the first
-rational Betti number is even. Evenness itself follows from Poincaré duality and is not asserted
-here. -/
+rational Betti number is even. Evenness itself is not asserted here; for compact connected Riemann
+surfaces it is `TauCeti.RiemannSurface.even_finrank_singularHomology_one`. -/
 theorem eulerChar_eq_two_sub_two_mul_genus_iff_even_finrank :
     eulerChar M = 2 - 2 * genus M ↔ Even (finrank ℚ
       (((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj

@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Applying a continuous linear map to the values of Bessel-potential functions
@@ -24,9 +27,22 @@ Hilbert-space values with Plancherel's theorem transfer to any finite-dimensiona
 ## Main declarations
 
 * `BesselPotentialSpace.postcomp`: the operator `H^{s,p}(E, F) →L[ℂ] H^{s,p}(E, G)` induced by
-  `L : F →L[ℂ] G`.
+  `L : F →L[ℂ] G`, of norm at most `‖L‖` (`BesselPotentialSpace.norm_postcomp_le`); the identity
+  induces the identity (`BesselPotentialSpace.postcomp_id`).
 * `SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM`: on Schwartz functions it is
-  `u ↦ L ∘ u`.
+  `u ↦ L ∘ u`, and `BesselPotentialSpace.toDistr_postcomp`: on tempered distributions it applies
+  `L` to the values.
+* `BesselPotentialSpace.toDistribution_toDistr_postcomp`: as a distribution on an open set, `L u`
+  is `L` applied to the values of `u`.
+* `BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord`: for a basis `(e_j)` of a
+  finite-dimensional `F` with coordinate functionals `(c_j)`, every `u ∈ H^{s,p}(E, F)` is
+  `∑ⱼ e_j (c_j u)`.
+* `TemperedDistribution.MemSobolev.postcomp`: applying `L` to the values of a tempered
+  distribution in `H^{s,p}(E, F)` gives one in `H^{s,p}(E, G)`.
+* `TemperedDistribution.memSobolev_iff_forall_postcomp_coord`: for finite-dimensional `F`,
+  membership in `H^{s,p}(E, F)` is tested on the coordinates in a basis.
+* `TemperedDistribution.MemSobolev.compLp`: applying `L` to the values of an `Lᵖ` function in
+  `H^{s,p}` gives an `Lᵖ` function in `H^{s,p}`.
 -/
 
 public section
@@ -70,12 +86,82 @@ theorem toDistr_postcomp_apply (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) (φ : �
     (postcomp E s p L f).toDistr φ = L (f.toDistr φ) :=
   (rfl)
 
+/-- As a tempered distribution, `L f` is `L` applied to the values of `f`. -/
+theorem toDistr_postcomp (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) :
+    (postcomp E s p L f).toDistr = PointwiseConvergenceCLM.postcomp _ L f.toDistr := by
+  ext φ
+  rw [toDistr_postcomp_apply, PointwiseConvergenceCLM.postcomp_apply_apply]
+
+/-- Restricting `L ∘ f` to a distribution on `Ω` applies `L` to the values of the restriction
+of `f`. -/
+theorem toDistribution_toDistr_postcomp {Ω : TopologicalSpace.Opens E} (L : F →L[ℂ] G)
+    (f : H^{s, p}(E, F)) :
+    toDistribution Ω (postcomp E s p L f).toDistr =
+      Distribution.mapCLM (L.restrictScalars ℝ) (toDistribution Ω f.toDistr) := by
+  ext φ
+  simp [Distribution.mapCLM_apply]
+
 @[simp]
 theorem toLp_postcomp (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) :
     (postcomp E s p L f).toLp = L.compLp f.toLp :=
   (rfl)
 
+/-- The identity of the values induces the identity of `H^{s,p}`. -/
+@[simp]
+theorem postcomp_id : postcomp E s p (ContinuousLinearMap.id ℂ F) = ContinuousLinearMap.id ℂ _ :=
+  ContinuousLinearMap.ext fun f ↦ ext <| by ext φ; simp
+
+/-- The operator induced by `L` on `H^{s,p}` has norm at most `‖L‖`. -/
+theorem norm_postcomp_le (L : F →L[ℂ] G) : ‖postcomp E s p L‖ ≤ ‖L‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg L) _
+
+/-- **Expansion in a basis of the values.** For a basis `(e_j)` of a finite-dimensional `F` with
+coordinate functionals `(c_j)`, every `u ∈ H^{s,p}(E, F)` is the sum `∑ⱼ e_j (c_j u)` of its
+scalar coordinates `c_j u ∈ H^{s,p}(E, ℂ)` times the basis vectors. -/
+theorem sum_postcomp_toSpanSingleton_coord [FiniteDimensional ℂ F] {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι ℂ F) (u : H^{s, p}(E, F)) :
+    ∑ j, postcomp E s p (ContinuousLinearMap.toSpanSingleton ℂ (b j))
+      (postcomp E s p (b.coord j).toContinuousLinearMap u) = u := by
+  refine ext ?_
+  ext φ
+  rw [← toDistrCLM_apply, map_sum, _root_.sum_apply]
+  simp only [toDistrCLM_apply, toDistr_postcomp_apply, ContinuousLinearMap.toSpanSingleton_apply,
+    LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
+  exact b.sum_repr _
+
 end BesselPotentialSpace
+
+/-- **Applying a continuous linear map to the values preserves `H^{s,p}`.** If the tempered
+distribution `f` lies in `H^{s,p}(E, F)`, then `φ ↦ L (f φ)` lies in `H^{s,p}(E, G)`. -/
+theorem TemperedDistribution.MemSobolev.postcomp {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) (L : F →L[ℂ] G) :
+    MemSobolev s p (PointwiseConvergenceCLM.postcomp _ L f) := by
+  have h := BesselPotentialSpace.toDistr_postcomp L hf.toBesselPotentialSpace
+  rw [MemSobolev.toBesselPotentialSpace_toDistr] at h
+  exact h ▸ BesselPotentialSpace.memSobolev_toDistr _
+
+/-- **`H^{s,p}` is tested on coordinates.** For a basis `(e_j)` of a finite-dimensional `F` with
+coordinate functionals `(c_j)`, a tempered distribution `f` with values in `F` lies in
+`H^{s,p}(E, F)` exactly when each coordinate `φ ↦ c_j (f φ)` lies in `H^{s,p}(E, ℂ)`. -/
+theorem TemperedDistribution.memSobolev_iff_forall_postcomp_coord [FiniteDimensional ℂ F]
+    {ι : Type*}
+    (b : Module.Basis ι ℂ F) {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : 𝓢'(E, F)} :
+    MemSobolev s p f ↔
+      ∀ j, MemSobolev s p
+        (PointwiseConvergenceCLM.postcomp _ (b.coord j).toContinuousLinearMap f) := by
+  refine ⟨fun hf j ↦ hf.postcomp _, fun h ↦ ?_⟩
+  have := FiniteDimensional.fintypeBasisIndex b
+  -- `f` is the sum of its coordinates times the basis vectors.
+  have hf : f = ∑ j, PointwiseConvergenceCLM.postcomp _
+      (ContinuousLinearMap.toSpanSingleton ℂ (b j))
+        (PointwiseConvergenceCLM.postcomp _ (b.coord j).toContinuousLinearMap f) := by
+    ext φ
+    simp only [_root_.sum_apply, PointwiseConvergenceCLM.postcomp_apply_apply,
+      ContinuousLinearMap.toSpanSingleton_apply]
+    exact (b.sum_repr (f φ)).symm
+  rw [hf]
+  exact Finset.sum_induction _ (MemSobolev s p) (fun _ _ ↦ MemSobolev.add)
+    (memSobolev_fun_zero E _ s p) fun j _ ↦ (h j).postcomp _
 
 /-- On Schwartz functions, the operator induced by `L` on `H^{s,p}` is `u ↦ L ∘ u`. -/
 theorem SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -85,3 +171,17 @@ theorem SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM {s : ℝ} {p : ℝ≥0
   ext φ
   rw [toDistr_toBesselPotentialSpaceCLM, BesselPotentialSpace.toDistr_postcomp_apply,
     toDistr_toBesselPotentialSpaceCLM, toTemperedDistributionCLM_postcompCLM_apply]
+
+namespace TemperedDistribution
+
+/-- Applying a complex-linear map to the values of an `Lᵖ` function preserves `H^{s,p}`. -/
+theorem MemSobolev.compLp {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : Lp F p (volume : Measure E)}
+    (hu : MemSobolev s p (u : 𝓢'(E, F))) (L : F →L[ℂ] G) :
+    MemSobolev s p ((L.compLp u : Lp G p volume) : 𝓢'(E, G)) := by
+  have h := (BesselPotentialSpace.postcomp E s p L hu.toBesselPotentialSpace).memSobolev_toDistr
+  convert h using 1
+  ext φ
+  rw [BesselPotentialSpace.toDistr_postcomp_apply, MemSobolev.toBesselPotentialSpace_toDistr,
+    Lp.toTemperedDistribution_compLp_apply]
+
+end TemperedDistribution

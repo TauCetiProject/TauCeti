@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.NumberTheory.ModularForms.LevelOne.FundamentalDomainBoundary.Basic
 
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.LogDerivFTC
-import TauCeti.NumberTheory.ModularForms.LevelOne.FundamentalDomainBoundary.Deriv
+import TauCeti.Analysis.Contour.Winding.Number.AbsolutelyContinuous
 
 /-!
 # The winding number of each boundary piece is a principal logarithm
@@ -50,30 +50,22 @@ namespace ModularForm
 
 variable {H t : ℝ} {w : ℂ}
 
-/-- The shared piece-evaluation skeleton: on a subinterval where the boundary path avoids
-`w` and its chord ratios stay in the slit plane, the winding number is the principal
-logarithm of the endpoint ratio. -/
+/-- The shared piece-evaluation skeleton: on a subinterval where the chord ratios of the
+boundary path stay in the slit plane, the winding number is the principal logarithm of the
+endpoint ratio. -/
 private lemma windingNumber_fdBoundary_eq_log_of_slit {a b : ℝ} (hab : a ≤ b)
     (hsub : Icc a b ⊆ Icc (0 : ℝ) 5)
-    (h_diff : ∀ s ∈ Ioo a b, DifferentiableAt ℝ (fdBoundary H) s)
-    (h_avoid : ∀ t ∈ uIcc a b, fdBoundary H t ≠ w)
     (h_slit : ∀ t ∈ uIcc a b,
       (fdBoundary H t - w) / (fdBoundary H a - w) ∈ Complex.slitPlane) :
     windingNumber (fdBoundary H) a b w =
       (2 * (Real.pi : ℂ) * Complex.I)⁻¹ *
         Complex.log ((fdBoundary H b - w) / (fdBoundary H a - w)) := by
-  have h_int := intervalIntegrable_inv_sub_mul_deriv (continuous_fdBoundary H).continuousOn
-    h_avoid ((isPiecewiseC1On_fdBoundary H).intervalIntegrable_deriv.mono_set
-      (by rw [uIcc_of_le hab, uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)]; exact hsub))
-  have h_diff' : ∀ s ∈ Ioo (min a b) (max a b) \ (∅ : Set ℝ),
-      DifferentiableAt ℝ (fdBoundary H) s := by
-    intro s hs
-    rw [sdiff_empty, min_eq_left hab, max_eq_right hab] at hs
-    exact h_diff s hs
-  rw [windingNumber_eq_integral_of_avoidance (continuous_fdBoundary H).continuousOn
-      h_avoid h_int,
-    integral_inv_sub_mul_deriv_eq_log countable_empty (continuous_fdBoundary H).continuousOn
-      h_diff' h_slit h_int]
+  have hac := (isPiecewiseC1On_fdBoundary H).absolutelyContinuousOnInterval.mono (by
+    rw [uIcc_of_le hab, uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)]; exact hsub)
+  -- The slit condition keeps every chord numerator `fdBoundary H t - w` nonzero.
+  rw [hac.windingNumber_eq_integral fun ⟨t, ht, h_eq⟩ ↦ (div_ne_zero_iff.mp
+      (Complex.slitPlane_ne_zero (h_slit t ht))).1 (sub_eq_zero.mpr h_eq),
+    hac.integral_inv_sub_mul_deriv_eq_log h_slit]
 
 /-- The winding number of the right vertical about a point strictly to its left is the
 principal logarithm of the endpoint ratio. -/
@@ -83,12 +75,10 @@ theorem windingNumber_fdBoundarySegment1_eq_log (hw : w.re < 1 / 2) :
         Complex.log (((ρ : ℂ) + 1 - w) / (1 / 2 + H * Complex.I - w)) := by
   have h01 : uIcc (0 : ℝ) 1 = Icc 0 1 := uIcc_of_le (by norm_num)
   have hre : ∀ t ∈ uIcc (0 : ℝ) 1, 0 < (fdBoundary H t - w).re := fun t ht => by
-    rw [Complex.sub_re, re_fdBoundarySegment1 H (h01 ▸ ht)]
+    rw [Complex.sub_re, re_fdBoundary_of_le_one (H := H) (h01 ▸ ht : t ∈ Icc (0 : ℝ) 1).2]
     linarith
   rw [windingNumber_fdBoundary_eq_log_of_slit (by norm_num)
       (by rw [← h01]; exact h01 ▸ Icc_subset_Icc le_rfl (by norm_num))
-      (fun s hs => (hasDerivAt_fdBoundary_of_lt_one hs.2).differentiableAt)
-      (fun t ht h_eq => absurd (hre t ht) (by simp [h_eq]))
       (fun t ht => div_mem_slitPlane_of_re_pos (hre 0 left_mem_uIcc) (hre t ht)),
     fdBoundary_apply_one, fdBoundary_apply_zero]
 
@@ -105,8 +95,6 @@ theorem windingNumber_fdBoundary_arc_eq_log (hw : 1 < w.im) :
     linarith
   rw [windingNumber_fdBoundary_eq_log_of_slit (by norm_num)
       (Icc_subset_Icc (by norm_num) (by norm_num))
-      (fun s hs => (hasDerivAt_fdBoundary_of_mem_Ioo_one_three hs).differentiableAt)
-      (fun t ht h_eq => absurd (him t ht) (by simp [h_eq]))
       (fun t ht => div_mem_slitPlane_of_im_neg (him 1 left_mem_uIcc) (him t ht)),
     fdBoundary_apply_three, fdBoundary_apply_one]
 
@@ -122,8 +110,6 @@ theorem windingNumber_fdBoundarySegment4_eq_log (hw : -(1 / 2) < w.re) :
     linarith
   rw [windingNumber_fdBoundary_eq_log_of_slit (by norm_num)
       (Icc_subset_Icc (by norm_num) (by norm_num))
-      (fun s hs => (hasDerivAt_fdBoundary_of_mem_Ioo_three_four hs).differentiableAt)
-      (fun t ht h_eq => absurd (hre t ht) (by simp [h_eq]))
       (fun t ht => div_mem_slitPlane_of_re_neg (hre 3 left_mem_uIcc) (hre t ht)),
     fdBoundary_apply_four, fdBoundary_apply_three]
 
@@ -135,12 +121,10 @@ theorem windingNumber_fdBoundarySegment5_eq_log (hw : w.im < H) :
         Complex.log ((1 / 2 + H * Complex.I - w) / (-1 / 2 + H * Complex.I - w)) := by
   have h45 : uIcc (4 : ℝ) 5 = Icc 4 5 := uIcc_of_le (by norm_num)
   have him : ∀ t ∈ uIcc (4 : ℝ) 5, 0 < (fdBoundary H t - w).im := fun t ht => by
-    rw [Complex.sub_im, im_fdBoundarySegment5 H (h45 ▸ ht)]
+    rw [Complex.sub_im, im_fdBoundary_of_four_le (H := H) (h45 ▸ ht : t ∈ Icc (4 : ℝ) 5).1]
     linarith
   rw [windingNumber_fdBoundary_eq_log_of_slit (by norm_num)
       (Icc_subset_Icc (by norm_num) le_rfl)
-      (fun s hs => (hasDerivAt_fdBoundary_of_gt_four hs.1).differentiableAt)
-      (fun t ht h_eq => absurd (him t ht) (by simp [h_eq]))
       (fun t ht => div_mem_slitPlane_of_im_pos (him 4 left_mem_uIcc) (him t ht)),
     fdBoundary_apply_five, fdBoundary_apply_four]
 

@@ -22,6 +22,9 @@ It is compatible with scaling either factor by a unit and with recasting the ind
 factors (`Orientation.prod_units_smul_left`, `Orientation.prod_reindex_finCongr`, and their
 one-sided versions).
 
+Lower triangular shears preserve every orientation of a finite-dimensional product over an
+ordered field (`Orientation.map_skewProd_refl`).
+
 Exchanging factors of dimensions `m` and `n` multiplies a product orientation by `(-1) ^ (m * n)`
 (`Orientation.map_prodComm_prod`): the exchange moves each of the `m` basis vectors of the first
 factor past each of the `n` basis vectors of the second.
@@ -152,6 +155,22 @@ theorem prod_neg_right (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n
   simp only [signBasis_neg, Units.val_neg, Int.cast_neg, mul_neg, neg_rayOfNeZero]
   congr 1
   module
+
+/-- Reversing the first factor of a product orientation negates its transport along any linear
+equivalence. -/
+theorem map_prod_neg_left {N : Type*} [AddCommGroup N] [Module R N]
+    (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
+    (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) (e : (E × F) ≃ₗ[R] N) :
+    (prod (-o) p hm hn).map (Fin (m + n)) e = -((prod o p hm hn).map (Fin (m + n)) e) := by
+  rw [prod_neg_left, Orientation.map_neg]
+
+/-- Reversing the second factor of a product orientation negates its transport along any linear
+equivalence. -/
+theorem map_prod_neg_right {N : Type*} [AddCommGroup N] [Module R N]
+    (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
+    (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) (e : (E × F) ≃ₗ[R] N) :
+    (prod o (-p) hm hn).map (Fin (m + n)) e = -((prod o p hm hn).map (Fin (m + n)) e) := by
+  rw [prod_neg_right, Orientation.map_neg]
 
 /-- Simultaneous reversal of both factors preserves the product orientation. -/
 theorem prod_neg_neg (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
@@ -339,5 +358,21 @@ theorem map_prodAssoc_symm_prod (o : Orientation R E (Fin m)) (o' : Orientation 
   rw [← (Orientation.map _ (LinearEquiv.prodAssoc R E F G)).injective.eq_iff, ← map_symm,
     Equiv.apply_symm_apply, map_reindex, map_prodAssoc_prod, reindex_finCongr_reindex_finCongr,
     finCongr_refl, reindex_refl, Equiv.refl_apply]
+
+section Field
+
+/-- A lower triangular shear preserves every orientation of the product, including empty factors.
+-/
+theorem map_skewProd_refl {K V W : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    [AddCommGroup W] [Module K W] [FiniteDimensional K W] {ι : Type*} [Fintype ι]
+    (f : V →ₗ[K] W) (o : Orientation K (V × W) ι)
+    (h : Fintype.card ι = finrank K (V × W)) :
+    Orientation.map ι ((LinearEquiv.refl K V).skewProd (LinearEquiv.refl K W) f) o = o :=
+  (Orientation.map_eq_iff_det_pos _ _ h).2 (by
+    rw [← LinearEquiv.coe_det, LinearEquiv.det_skewProd]
+    simp)
+
+end Field
 
 end Orientation

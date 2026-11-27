@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Complex
-public import TauCeti.RingTheory.Valuation.IdempotentMaximalIdeal
+
+import TauCeti.NumberTheory.Padics.Complex.Basic
 
 /-!
 # The maximal ideal of the integers of `ℂ_p`
 
-The maximal ideal of `𝓞_ℂ_[p]` is not finitely generated. Algebraic closedness makes the
-ideal idempotent, while `p` is a nonzero element of it. Thus the valuation ring of `ℂ_p`
-satisfies the non-finite-generation condition used in almost mathematics.
+The maximal ideal of `𝓞_ℂ_[p]` is not finitely generated. This is the case `K = ℂ_[p]` of
+`TauCeti.not_fg_maximalIdeal_integer`, since `ℂ_[p]` is densely normed. That theorem concerns
+the closed unit ball of the norm, while `𝓞_ℂ_[p]` is cut out by the valuation of `ℂ_[p]`; the
+two are the same subring. Thus the valuation ring of `ℂ_p` satisfies the non-finite-generation
+condition used in almost mathematics.
 
 ## References
 
@@ -39,12 +42,12 @@ theorem natCast_mem_maximalIdeal : (p : 𝓞_ℂ_[p]) ∈ maximalIdeal 𝓞_ℂ_
 
 /-- The maximal ideal of the ring of integers of `ℂ_p` is not finitely generated. -/
 theorem not_fg_maximalIdeal : ¬ (maximalIdeal 𝓞_ℂ_[p]).FG := by
-  have hne : maximalIdeal 𝓞_ℂ_[p] ≠ ⊥ := by
-    intro h
-    have hx0 : (p : 𝓞_ℂ_[p]) = 0 := by simpa [h] using natCast_mem_maximalIdeal p
-    have : (p : ℂ_[p]) = 0 := by simpa using congrArg Subtype.val hx0
-    exact (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) this
-  exact (ValuationRing.isIdempotentElem_maximalIdeal_iff hne).mp
-    (Valuation.isIdempotentElem_maximalIdeal_of_isAlgClosed (PadicComplex.valued p).v)
+  intro hfg
+  refine TauCeti.not_fg_maximalIdeal_integer (K := ℂ_[p]) ?_
+  -- `𝓞_ℂ_[p]` is the closed unit ball of the norm, so it is the subring `Valued.integer ℂ_[p]`.
+  have h : 𝓞_ℂ_[p].toSubring = _ := Subring.ext fun x ↦
+    PadicComplexInt.mem_iff_norm_le_one.trans Valued.integer.mem_iff.symm
+  let e : 𝓞_ℂ_[p] ≃+* _ := RingEquiv.subringCongr h
+  exact map_ringEquiv_maximalIdeal e ▸ hfg.map e.toRingHom
 
 end TauCeti.PadicComplexInt

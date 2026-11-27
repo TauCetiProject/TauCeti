@@ -242,12 +242,9 @@ private theorem single_one_smul_derivative_smul (f : R⸨X⸩) (x : HahnModule �
 theorem derivative_smul (f : R⸨X⸩) (x : HahnModule ℤ R V) :
     derivative R (f • x) = LaurentSeries.derivative R f • x + f • derivative R x := by
   -- `t ^ (-1)` commutes with `f`, so it can be moved past `f` to cancel `t` in `f • t D x`.
-  have hc : single (-1 : ℤ) (1 : R) * f = f * single (-1) 1 := by
-    ext n
-    rw [coeff_single_mul, coeff_mul_single, one_mul, mul_one]
   rw [← single_neg_smul_single_smul 1 (derivative R (f • x)), single_one_smul_derivative_smul,
     smul_add, ← mul_smul, ← mul_assoc, single_mul_single, neg_add_cancel, one_mul, single_zero_one,
-    one_mul, ← mul_smul, hc, mul_smul, single_neg_smul_single_smul]
+    one_mul, ← mul_smul, (f.commute_single_one (-1)).symm.eq, mul_smul, single_neg_smul_single_smul]
 
 end Leibniz
 

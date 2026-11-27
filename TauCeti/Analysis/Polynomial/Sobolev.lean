@@ -24,19 +24,21 @@ and `n : ℕ`, the function
 
 `z ↦ φ(z) ^ n conj (A z) B z`
 
-decays at infinity like `‖z‖ ^ (deg A + deg B - 2 m n)`. Its directional derivatives are again of
-this form, with the decay improved by one power: differentiating `φ ^ n` gives
-`-n φ ^ (n + 1) (conj P P' v + P conj P' conj v)`, and differentiating `A` or `B` lowers its
+(`Polynomial.conjMulDivOneAddNormSqPow P n A B`, that is `conj A B / (1 + ‖P‖²) ^ n`, smooth by
+`Polynomial.contDiff_conjMulDivOneAddNormSqPow`) decays at infinity like
+`‖z‖ ^ (deg A + deg B - 2 m n)`. Its directional derivatives are again of this form, with the decay
+improved by one power (`Polynomial.hasDerivAt_conjMulDivOneAddNormSqPow`): differentiating `φ ^ n`
+gives `-n φ ^ (n + 1) (conj P P' v + P conj P' conj v)`, and differentiating `A` or `B` lowers its
 degree. So if `deg A + deg B + 2 ≤ 2 m n`, so that the function is square integrable on the plane
-(`Polynomial.memLp_norm_eval_mul_norm_eval_div_one_add_norm_eval_sq_pow`), every derivative is
-square integrable as well, and the real part of the function lies in the Bessel-potential space
-`H^k(ℂ)` for every `k` (`Polynomial.re_mem_realSobolevFunctions_of_add_two_le`).
+(`Polynomial.memLp_conjMulDivOneAddNormSqPow`), every derivative is square integrable as well, and
+the real part of the function lies in the Bessel-potential space `H^k(ℂ)` for every `k`
+(`Polynomial.re_mem_realSobolevFunctions_of_add_two_le`).
 
 In particular, for a nonconstant `P`, the defect `(1 + ‖P‖²)⁻¹` of the squared modulus
 `‖P‖² / (1 + ‖P‖²)` from `1` (`Polynomial.inv_one_add_norm_eval_sq_mem_realSobolevFunctions`) and,
 for every `P`, the density `‖P'‖² / (1 + ‖P‖²)²` of the pullback by `P` of the Fubini–Study area
 form (`Polynomial.norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_mem_realSobolevFunctions`)
-lie in every `H^k(ℂ)`. These are the coefficients of Taubes's reduced vortex equation for the zero
+lie in every `H^s(ℂ)`. These are the coefficients of Taubes's reduced vortex equation for the zero
 divisor of `P`.
 
 ## References
@@ -56,12 +58,19 @@ open scoped ContDiff
 
 variable {P : ℂ[X]}
 
-/-- The function `φ ^ n conj A B`, with `φ = (1 + ‖P‖²)⁻¹`. -/
-private def weightTerm (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) (z : ℂ) : ℂ :=
+/-- The function `z ↦ conj (A z) B z / (1 + ‖P z‖²) ^ n`, written `φ(z) ^ n conj (A z) B z` with
+`φ = (1 + ‖P‖²)⁻¹`. -/
+def conjMulDivOneAddNormSqPow (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) (z : ℂ) : ℂ :=
   (((1 + ‖P.eval z‖ ^ 2)⁻¹ ^ n : ℝ) : ℂ) * (conj (A.eval z) * B.eval z)
 
-private theorem contDiff_weightTerm (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) :
-    ContDiff ℝ ∞ (weightTerm P n A B) := by
+theorem conjMulDivOneAddNormSqPow_apply (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) (z : ℂ) :
+    conjMulDivOneAddNormSqPow P n A B z =
+      (((1 + ‖P.eval z‖ ^ 2)⁻¹ ^ n : ℝ) : ℂ) * (conj (A.eval z) * B.eval z) :=
+  (rfl)
+
+/-- The function `φ ^ n conj A B` is smooth. -/
+theorem contDiff_conjMulDivOneAddNormSqPow (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) :
+    ContDiff ℝ ∞ (conjMulDivOneAddNormSqPow P n A B) := by
   have heval (A : ℂ[X]) : ContDiff ℝ ∞ fun z ↦ A.eval z := by
     simpa using (A.contDiff_aeval (𝕜 := ℂ) ∞).restrict_scalars ℝ
   have hN : ContDiff ℝ ∞ fun z ↦ ((1 + ‖P.eval z‖ ^ 2)⁻¹ ^ n : ℝ) :=
@@ -72,11 +81,12 @@ private theorem contDiff_weightTerm (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) :
 
 /-- The derivative of `φ ^ n conj A B` along the line `t ↦ z + t v` is again a sum of four
 functions of the same form. -/
-private theorem hasDerivAt_weightTerm (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) (z v : ℂ) :
-    HasDerivAt (fun t : ℝ ↦ weightTerm P n A B (z + t • v))
-      (weightTerm P (n + 1) (P * A) (C (-(n : ℂ) * v) * (derivative P * B)) z +
-        weightTerm P (n + 1) (C (-(n : ℂ) * v) * (derivative P * A)) (P * B) z +
-        weightTerm P n (C v * derivative A) B z + weightTerm P n A (C v * derivative B) z) 0 := by
+theorem hasDerivAt_conjMulDivOneAddNormSqPow (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) (z v : ℂ) :
+    HasDerivAt (fun t : ℝ ↦ conjMulDivOneAddNormSqPow P n A B (z + t • v))
+      (conjMulDivOneAddNormSqPow P (n + 1) (P * A) (C (-(n : ℂ) * v) * (derivative P * B)) z +
+        conjMulDivOneAddNormSqPow P (n + 1) (C (-(n : ℂ) * v) * (derivative P * A)) (P * B) z +
+        conjMulDivOneAddNormSqPow P n (C v * derivative A) B z +
+        conjMulDivOneAddNormSqPow P n A (C v * derivative B) z) 0 := by
   have hγ : HasDerivAt (fun t : ℝ ↦ z + t • v) v 0 := by
     simpa using ((hasDerivAt_id (0 : ℝ)).smul_const v).const_add z
   have h0 : z + (0 : ℝ) • v = z := by simp
@@ -97,12 +107,12 @@ private theorem hasDerivAt_weightTerm (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) (z v
   simp only [h0] at h
   convert h using 1
   · ext t
-    simp [weightTerm]
+    simp [conjMulDivOneAddNormSqPow]
   -- The product rule, with `2 ⟪p, p' v⟫ = conj p p' v + p conj (p' v)` and
   -- `n φ ^ (n - 1) / N ^ 2 = n φ ^ (n + 1)` for `φ = N⁻¹`.
-  simp only [Pi.mul_apply, Pi.inv_apply, Pi.pow_apply, zero_smul, add_zero, weightTerm, eval_mul,
-    eval_C, eval_neg, eval_natCast, map_mul, map_neg, map_natCast, Complex.inner,
-    Complex.star_def]
+  simp only [Pi.mul_apply, Pi.inv_apply, Pi.pow_apply, zero_smul, add_zero,
+    conjMulDivOneAddNormSqPow, eval_mul, eval_C, eval_neg, eval_natCast, map_mul, map_neg,
+    map_natCast, Complex.inner, Complex.star_def]
   push_cast
   rw [Complex.re_eq_add_conj]
   simp only [map_mul, Complex.conj_conj]
@@ -113,31 +123,31 @@ private theorem hasDerivAt_weightTerm (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) (z v
     ring
 
 /-- The directional derivatives of the real part of `φ ^ n conj A B`. -/
-private theorem fderiv_re_weightTerm (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) (z v : ℂ) :
-    fderiv ℝ (fun z ↦ (weightTerm P n A B z).re) z v =
-      (weightTerm P (n + 1) (P * A) (C (-(n : ℂ) * v) * (derivative P * B)) z).re +
-        (weightTerm P (n + 1) (C (-(n : ℂ) * v) * (derivative P * A)) (P * B) z).re +
-        (weightTerm P n (C v * derivative A) B z).re +
-        (weightTerm P n A (C v * derivative B) z).re := by
-  have hD : DifferentiableAt ℝ (weightTerm P n A B) z :=
-    (contDiff_weightTerm P n A B).differentiable (by simp) z
+private theorem fderiv_re_conjMulDivOneAddNormSqPow (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) (z v : ℂ) :
+    fderiv ℝ (fun z ↦ (conjMulDivOneAddNormSqPow P n A B z).re) z v =
+      (conjMulDivOneAddNormSqPow P (n + 1) (P * A) (C (-(n : ℂ) * v) * (derivative P * B)) z).re +
+        (conjMulDivOneAddNormSqPow P (n + 1) (C (-(n : ℂ) * v) * (derivative P * A)) (P * B) z).re +
+        (conjMulDivOneAddNormSqPow P n (C v * derivative A) B z).re +
+        (conjMulDivOneAddNormSqPow P n A (C v * derivative B) z).re := by
+  have hD : DifferentiableAt ℝ (conjMulDivOneAddNormSqPow P n A B) z :=
+    (contDiff_conjMulDivOneAddNormSqPow P n A B).differentiable (by simp) z
   have hre := (Complex.reCLM.hasFDerivAt.comp z hD.hasFDerivAt).fderiv
-  have hline := (hD.hasFDerivAt.hasLineDerivAt v).unique (hasDerivAt_weightTerm P n A B z v)
+  have hline := (hD.hasFDerivAt.hasLineDerivAt v).unique
+    (hasDerivAt_conjMulDivOneAddNormSqPow P n A B z v)
   simp only [Function.comp_def, Complex.reCLM_apply] at hre
   rw [hre, ContinuousLinearMap.comp_apply, Complex.reCLM_apply, hline]
   simp only [Complex.add_re]
 
-/-- The real part of `φ ^ n conj A B` is square integrable when `deg A + deg B + 2 ≤ 2 m n`, since
-its absolute value is at most `‖A‖ ‖B‖ / (1 + ‖P‖²) ^ n`. -/
-private theorem memLp_re_weightTerm {n : ℕ} {A B : ℂ[X]}
+/-- The function `φ ^ n conj A B` is square integrable when `deg A + deg B + 2 ≤ 2 m n`, since
+its norm is `‖A‖ ‖B‖ / (1 + ‖P‖²) ^ n`. -/
+theorem memLp_conjMulDivOneAddNormSqPow {n : ℕ} {A B : ℂ[X]}
     (h : A.natDegree + B.natDegree + 2 ≤ 2 * P.natDegree * n) :
-    MemLp (fun z ↦ (weightTerm P n A B z).re) 2 := by
+    MemLp (conjMulDivOneAddNormSqPow P n A B) 2 := by
   refine (memLp_norm_eval_mul_norm_eval_div_one_add_norm_eval_sq_pow h).of_le
-    (Complex.continuous_re.comp (contDiff_weightTerm P n A B).continuous).aestronglyMeasurable
-    (.of_forall fun z ↦ ?_)
+    (contDiff_conjMulDivOneAddNormSqPow P n A B).continuous.aestronglyMeasurable
+    (.of_forall fun z ↦ le_of_eq ?_)
   have hN : |1 + ‖P.eval z‖ ^ 2| = 1 + ‖P.eval z‖ ^ 2 := abs_of_pos (by positivity)
-  refine (Complex.abs_re_le_norm _).trans (le_of_eq ?_)
-  simp only [weightTerm, norm_mul, Complex.norm_real, Complex.norm_conj, norm_pow,
+  simp only [conjMulDivOneAddNormSqPow, norm_mul, Complex.norm_real, Complex.norm_conj, norm_pow,
     Real.norm_eq_abs, abs_inv, abs_pow, hN, abs_div, abs_mul, abs_norm]
   rw [inv_pow, div_eq_inv_mul]
 
@@ -148,11 +158,11 @@ theorem re_mem_realSobolevFunctions_of_add_two_le {n : ℕ} {A B : ℂ[X]}
     (h : A.natDegree + B.natDegree + 2 ≤ 2 * P.natDegree * n) (k : ℕ) :
     (fun z ↦ ((((1 + ‖P.eval z‖ ^ 2)⁻¹ ^ n : ℝ) : ℂ) * (conj (A.eval z) * B.eval z)).re) ∈
       realSobolevFunctions ℂ k 2 := by
-  simp only [← weightTerm.eq_1]
+  simp only [← conjMulDivOneAddNormSqPow.eq_1]
   induction k generalizing n A B with
   | zero =>
     rw [Nat.cast_zero, mem_realSobolevFunctions_zero_iff]
-    exact memLp_re_weightTerm h
+    exact (memLp_conjMulDivOneAddNormSqPow h).re
   | succ k ih =>
     have hm : 0 < P.natDegree := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at h
     have hdP := natDegree_derivative_le P
@@ -160,9 +170,10 @@ theorem re_mem_realSobolevFunctions_of_add_two_le {n : ℕ} {A B : ℂ[X]}
     have hdB := natDegree_derivative_le B
     rw [Nat.cast_succ]
     refine mem_realSobolevFunctions_add_one_of_fderiv_apply (by norm_num) (by norm_num)
-      ((Complex.reCLM.contDiff.comp (contDiff_weightTerm P n A B)).of_le (by simp)) (ih h)
+      ((Complex.reCLM.contDiff.comp (contDiff_conjMulDivOneAddNormSqPow P n A B)).of_le (by simp))
+      (ih h)
       fun v ↦ ?_
-    simp_rw [fderiv_re_weightTerm]
+    simp_rw [fderiv_re_conjMulDivOneAddNormSqPow]
     refine add_mem (add_mem (add_mem (ih ?_) (ih ?_)) (ih ?_)) (ih ?_)
     · have := natDegree_mul_le (p := P) (q := A)
       have := natDegree_C_mul_le (-(n : ℂ) * v) (derivative P * B)
@@ -181,28 +192,30 @@ theorem re_mem_realSobolevFunctions_of_add_two_le {n : ℕ} {A B : ℂ[X]}
     · have := natDegree_C_mul_le v (derivative B)
       omega
 
-/-- For a nonconstant complex polynomial `P`, the function `(1 + ‖P‖²)⁻¹` lies in `H^k(ℂ)` for
-every `k : ℕ`. -/
-theorem inv_one_add_norm_eval_sq_mem_realSobolevFunctions (hm : 0 < P.natDegree) (k : ℕ) :
-    (fun z ↦ (1 + ‖P.eval z‖ ^ 2)⁻¹) ∈ realSobolevFunctions ℂ k 2 := by
+/-- For a nonconstant complex polynomial `P`, the function `(1 + ‖P‖²)⁻¹` lies in `H^s(ℂ)` for
+every real `s`. -/
+theorem inv_one_add_norm_eval_sq_mem_realSobolevFunctions (hm : 0 < P.natDegree) (s : ℝ) :
+    (fun z ↦ (1 + ‖P.eval z‖ ^ 2)⁻¹) ∈ realSobolevFunctions ℂ s 2 := by
   have h := re_mem_realSobolevFunctions_of_add_two_le (P := P) (n := 1) (A := 1) (B := 1)
-    (by simp; omega) k
+    (by simp; omega) ⌈s⌉₊
+  refine realSobolevFunctions_mono (by norm_num) ENNReal.ofNat_ne_top (Nat.le_ceil s) ?_
   convert h using 2 with z
   simp only [eval_one, map_one, mul_one, pow_one, Complex.ofReal_re]
 
-/-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²` lies in `H^k(ℂ)` for
-every `k : ℕ`. -/
+/-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²` lies in `H^s(ℂ)` for
+every real `s`. -/
 theorem norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_mem_realSobolevFunctions (P : ℂ[X])
-    (k : ℕ) :
+    (s : ℝ) :
     (fun z ↦ ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2) ∈
-      realSobolevFunctions ℂ k 2 := by
+      realSobolevFunctions ℂ s 2 := by
   rcases Nat.eq_zero_or_pos P.natDegree with h0 | hm
-  · convert (realSobolevFunctions ℂ k 2).zero_mem using 1
+  · convert (realSobolevFunctions ℂ s 2).zero_mem using 1
     ext z
     simp [derivative_of_natDegree_zero h0]
   have hdP := natDegree_derivative_le P
   have h := re_mem_realSobolevFunctions_of_add_two_le (P := P) (n := 2) (A := derivative P)
-    (B := derivative P) (by omega) k
+    (B := derivative P) (by omega) ⌈s⌉₊
+  refine realSobolevFunctions_mono (by norm_num) ENNReal.ofNat_ne_top (Nat.le_ceil s) ?_
   convert h using 2 with z
   simp only [Complex.conj_mul', ← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.ofReal_re]
   rw [div_eq_inv_mul, inv_pow]

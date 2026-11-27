@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Relative
+public import TauCeti.CategoryTheory.Monoidal.Preadditive
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 
@@ -44,6 +45,12 @@ pairing `μ : M ⊗ S ⟶ N` in an abelian monoidal category.
   `x ⌢ j^*α = j_*x ⌢ α` for `j^* : Hᵖ(X, A) ⟶ Hᵖ(X)` and `j_* : Hₙ(X) ⟶ Hₙ(X, A)`.
 * `TopPair.singularCap_naturality`: naturality in maps of pairs, the projection formula
   `f_*(x ⌢ f^*α) = f_*x ⌢ α`.
+* `TopPair.singularCap_coefficient_naturality`: the native relative cap product commutes with
+  compatible changes of every coefficient object.
+* `TopPair.singularCap_coefficient_naturality_map`: the same square combined with a map of pairs.
+* `TopPair.singularCapWith`: for abelian groups, capping with a fixed class `γ ∈ Hₙ(X, A; ℤ)` as
+  a morphism `Hᵖ(X, A; L) ⟶ H_q(X; L)` of abelian groups; the local instance
+  `CategoryTheory.MonoidalPreadditive.monoidalLinearInt` supplies the `ℤ`-linear structure.
 * `TopPair.singularCap_singularCohomologyδ`: compatibility with the connecting morphisms of the
   pair, `x ⌢ δβ = i_*(∂x ⌢ β)` for `β ∈ Hᵖ(A)`, `x ∈ Hₙ(X, A)` and `i : A ⟶ X` the inclusion.
 
@@ -63,7 +70,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits MonoidalCategory Simplicial
+open CategoryTheory Limits MonoidalCategory Simplicial HomologicalComplex
 
 universe w v u
 
@@ -77,6 +84,22 @@ section Chain
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [MonoidalCategory C]
   [MonoidalPreadditive C] {R S T M N : C}
   [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
+
+/-- Relative cap chains commute with maps of pairs and the induced ambient chain maps. -/
+lemma capChain_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (k : Type*)
+    [Semiring k] [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N)
+    (p q n : ℕ) (h : p + q = n) (φ : (P'.singularChainComplex R).X p ⟶ M) :
+    (TopPair.singularChainComplexMap f T).f n ≫
+        TauCeti.ChainComplex.capChain k (P'.alexanderWhitneyDiagonal u)
+          ((TopCat.toSSet.obj P'.fst).chainComplexPairing μ) p q n h φ =
+      TauCeti.ChainComplex.capChain k (P.alexanderWhitneyDiagonal u)
+          ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) p q n h
+          ((TopPair.singularChainComplexMap f R).f p ≫ φ) ≫
+        (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.Hom.fst f)) N).f q :=
+  (TauCeti.ChainComplex.capChain_naturality _ _ _ _ _ _ _ _
+    (TopPair.alexanderWhitneyDiagonal_naturality f u)
+    (SSet.chainComplexPairing_naturality (TopCat.toSSet.map (TopPair.Hom.fst f)) μ).symm
+    p q n h φ).symm
 
 /-- Capping the image of a singular chain of `X` in the relative chains of `(X, A)` with a
 relative cochain is capping the chain with the cochain of `X` it restricts to. -/
@@ -191,6 +214,72 @@ lemma singularCap_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (k : Type*) [Ri
   TauCeti.ChainComplex.cap_naturality _ _ _ _ _ _ _ _
     (alexanderWhitneyDiagonal_naturality f u)
     (SSet.chainComplexPairing_naturality (TopCat.toSSet.map (Hom.fst f)) μ).symm p q n h α
+
+section Coefficients
+
+variable {R' S' T' M' N' : C}
+  [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M')]
+
+/-- If `c ≫ u = u' ≫ (a ⊗ b)` and `(v ▷ S') ≫ μ' = (M ◁ b) ≫ μ ≫ e`, then cap with the
+cochain pulled back by `a` and postcomposed by `v` equals cap between the homology maps
+of `c` and `e`. -/
+theorem singularCap_coefficient_naturality (P : TopPair.{w}) (k : Type*) [Ring k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (u' : T' ⟶ R' ⊗ S')
+    (μ : M ⊗ S ⟶ N) (μ' : M' ⊗ S' ⟶ N')
+    (a : R' ⟶ R) (b : S' ⟶ S) (c : T' ⟶ T) (v : M ⟶ M') (e : N ⟶ N')
+    (hu : c ≫ u = u' ≫ (a ⊗ₘ b)) (hμ : (v ▷ S') ≫ μ' = (M ◁ b) ≫ μ ≫ e)
+    (p q n : ℕ) (h : p + q = n) (α : P.singularCohomology R k M p) :
+    P.singularCap k u' μ' p q n h
+        (homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+          (((SSetPair.chainComplexFunctor C).map a).app (toSSetPair.obj P)).op ≫
+            (P.singularChainComplex R').linearYonedaObjMap k v) p α) =
+      homologyMap (((SSetPair.chainComplexFunctor C).map c).app (toSSetPair.obj P)) n ≫
+        P.singularCap k u μ p q n h α ≫
+          ((AlgebraicTopology.singularHomologyFunctor C q).map e).app P.fst := by
+  rw [singularCap_def, singularCap_def]
+  have ha :
+      (NatTrans.mapHomologicalComplex ((tensoringLeft C).map v) _).app
+          ((TopCat.toSSet.obj P.fst).chainComplex S') ≫
+        (TopCat.toSSet.obj P.fst).chainComplexPairing μ' =
+        ((tensorLeft M).mapHomologicalComplex _).map
+            (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst)) ≫
+          (TopCat.toSSet.obj P.fst).chainComplexPairing μ ≫
+            ((SSet.chainComplexFunctor C).map e).app (TopCat.toSSet.obj P.fst) := by
+    rw [SSet.whiskerRight_comp_chainComplexPairing,
+      SSet.chainComplexPairing_comp_chainComplexFunctor_map_app,
+      SSet.whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing]
+    exact congrArg ((TopCat.toSSet.obj P.fst).chainComplexPairing) hμ
+  exact TauCeti.ChainComplex.cap_coefficient_naturality
+    (P.alexanderWhitneyDiagonal u) ((TopCat.toSSet.obj P.fst).chainComplexPairing μ)
+    (P.alexanderWhitneyDiagonal u') ((TopCat.toSSet.obj P.fst).chainComplexPairing μ')
+    (((SSetPair.chainComplexFunctor C).map c).app (toSSetPair.obj P))
+    (((SSetPair.chainComplexFunctor C).map a).app (toSSetPair.obj P))
+    (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst)) v
+    (((SSet.chainComplexFunctor C).map e).app (TopCat.toSSet.obj P.fst))
+    (alexanderWhitneyDiagonal_coefficient_naturality P u u' a b c hu)
+    (fun j ↦ congrArg (fun f ↦ f.f j) ha) p q n h α
+
+/-- Coefficient transport commutes with the projection formula for a map of pairs. -/
+theorem singularCap_coefficient_naturality_map {P Q : TopPair.{w}} (f : P ⟶ Q)
+    (k : Type*) [Ring k] [Linear k C] [MonoidalLinear k C]
+    (u : T ⟶ R ⊗ S) (u' : T' ⟶ R' ⊗ S') (μ : M ⊗ S ⟶ N) (μ' : M' ⊗ S' ⟶ N')
+    (a : R' ⟶ R) (b : S' ⟶ S) (c : T' ⟶ T) (v : M ⟶ M') (e : N ⟶ N')
+    (hu : c ≫ u = u' ≫ (a ⊗ₘ b)) (hμ : (v ▷ S') ≫ μ' = (M ◁ b) ≫ μ ≫ e)
+    (p q n : ℕ) (h : p + q = n) (α : Q.singularCohomology R k M p) :
+    P.singularCap k u' μ' p q n h
+        (TopPair.singularCohomologyMap f p
+          (homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+            (((SSetPair.chainComplexFunctor C).map a).app (toSSetPair.obj Q)).op ≫
+              (Q.singularChainComplex R').linearYonedaObjMap k v) p α)) ≫
+        ((AlgebraicTopology.singularHomologyFunctor C q).obj N').map (Hom.fst f) =
+      TopPair.singularHomologyMap f T' n ≫
+        homologyMap (((SSetPair.chainComplexFunctor C).map c).app (toSSetPair.obj Q)) n ≫
+          Q.singularCap k u μ p q n h α ≫
+            ((AlgebraicTopology.singularHomologyFunctor C q).map e).app Q.fst := by
+  rw [singularCap_naturality,
+    singularCap_coefficient_naturality Q k u u' μ μ' a b c v e hu hμ p q n h]
+
+end Coefficients
 
 end Homology
 
@@ -338,5 +427,35 @@ theorem singularCap_singularCohomologyδ (P : TopPair.{w}) (k : Type*) [Ring k] 
   rfl
 
 end Connecting
+
+section FixedClass
+
+/-! ### Capping with a fixed integral class -/
+
+attribute [local instance] MonoidalPreadditive.monoidalLinearInt
+
+/-- **Capping with a fixed homology class** `γ ∈ Hₙ(X, A; ℤ)` of a pair `P = (X, A)`: the map
+`Hᵖ(X, A; L) ⟶ H_q(X; L)`, `α ↦ γ ⌢ α`, for `p + q = n`. -/
+def singularCapWith (P : TopPair.{0}) (L : ModuleCat.{0} ℤ) {n : ℕ}
+    (γ : P.singularHomology (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n) (p q : ℕ)
+    (h : p + q = n) :
+    P.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ⟶
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj P.fst :=
+  -- `AddMonoidHom.toIntLinearMap` would use the `ℤ`-module structures of the underlying additive
+  -- groups rather than those of the objects of `ModuleCat ℤ`.
+  let f := (LinearMap.applyₗ (R := ℤ) γ).toAddMonoidHom.comp <|
+    ModuleCat.homAddEquiv.toAddMonoidHom.comp
+      (P.singularCap ℤ (ρ_ _).inv (ρ_ L).hom p q n h).toAddMonoidHom
+  ModuleCat.ofHom { f with map_smul' := map_intCast_smul f ℤ ℤ }
+
+/-- Capping with a fixed class `γ` evaluates the relative cap product at `γ`. -/
+lemma singularCapWith_apply (P : TopPair.{0}) (L : ModuleCat.{0} ℤ) {n : ℕ}
+    (γ : P.singularHomology (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n) (p q : ℕ)
+    (h : p + q = n)
+    (α : P.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    P.singularCapWith L γ p q h α = (P.singularCap ℤ (ρ_ _).inv (ρ_ L).hom p q n h α).hom γ :=
+  (rfl)
+
+end FixedClass
 
 end TopPair

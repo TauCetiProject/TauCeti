@@ -23,7 +23,7 @@ as transporting it along the bottom and right edges
 when `H` is a homotopy of paths `t ↦ H (s₀, t)` and `t ↦ H (s₁, t)` relative to their endpoints,
 the transports along the two paths agree (`TauCeti.detLineOrientationTransport_eq_of_homotopy`);
 here the determinant lines of equal operators are identified by
-`LinearMap.detLineCongr` with identity maps, and transport along a path constant on the interval
+`LinearMap.detLineCongrOfEq`, and transport along a path constant on the interval
 of transport is this identification (`TauCeti.detLineOrientationTransport_eq_map_of_forall_eq`).
 
 The proof is local. If a single kernel chart `ContinuousLinearMap.detLineChartEquiv` is valid
@@ -43,9 +43,12 @@ Small rectangles are combined by the concatenation and reversal laws of transpor
   fixes the reading in the chart.
 * `TauCeti.detLineOrientationTransport_eq_map_of_forall_eq`: transport along a path which is
   constant on the interval of transport is the identification of the determinant lines.
+* `TauCeti.detLineOrientationTransport_map_detLineCongrOfEq`: transport along pointwise equal paths
+  commutes with the identifications of the determinant lines of equal operators.
 * `TauCeti.detLineOrientationTransport_comm`: transport around a rectangle commutes.
-* `TauCeti.detLineOrientationTransport_eq_of_homotopy`: transport is invariant under homotopies
-  relative to the endpoints.
+* `TauCeti.detLineOrientationTransport_eq_of_homotopy`,
+  `TauCeti.detLineOrientationTransport_eq_of_homotopy_of_eq`: transport is invariant under
+  homotopies relative to the endpoints.
 
 ## References
 
@@ -102,18 +105,15 @@ section Constant
 omit [CompleteSpace E] [CompleteSpace F] in
 /-- A kernel chart reads an element of the determinant line of `A` and its image in the
 determinant line of an equal operator `A'` alike. -/
-private theorem detLineChartEquiv_detLineCongr_of_eq {Λ G : Type*} [NormedAddCommGroup Λ]
+private theorem detLineChartEquiv_detLineCongrOfEq {Λ G : Type*} [NormedAddCommGroup Λ]
     [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ] [NormedAddCommGroup G] [NormedSpace ℝ G]
     [FiniteDimensional ℝ G] {D₂ : Λ →L[ℝ] F} {q : E × Λ →L[ℝ] G} {A A' : E →L[ℝ] F}
-    (hAA' : A' = A)
-    (hc : (A' : E →ₗ[ℝ] F) ∘ₗ (LinearEquiv.refl ℝ E).toLinearMap =
-      (LinearEquiv.refl ℝ F).toLinearMap ∘ₗ (A : E →ₗ[ℝ] F))
-    (h : ((A.coprod D₂).prod q).IsInvertible) (h' : ((A'.coprod D₂).prod q).IsInvertible)
-    (v : (A : E →ₗ[ℝ] F).detLine) :
-    detLineChartEquiv A' D₂ q h' ((A : E →ₗ[ℝ] F).detLineCongr (LinearEquiv.refl ℝ E)
-      (LinearEquiv.refl ℝ F) hc v) = detLineChartEquiv A D₂ q h v := by
+    (hAA' : A = A') (h : ((A.coprod D₂).prod q).IsInvertible)
+    (h' : ((A'.coprod D₂).prod q).IsInvertible) (v : (A : E →ₗ[ℝ] F).detLine) :
+    detLineChartEquiv A' D₂ q h' (LinearMap.detLineCongrOfEq (congrArg _ hAA') v) =
+      detLineChartEquiv A D₂ q h v := by
   subst hAA'
-  rw [LinearMap.detLineCongr_refl, LinearEquiv.refl_apply]
+  rw [LinearMap.detLineCongrOfEq_rfl, LinearEquiv.refl_apply]
 
 /-- **Transport along a constant path.** If the path `T` is constant on the interval of
 transport, transport from `a` to `b` is the identification of the determinant lines of the equal
@@ -122,16 +122,14 @@ theorem detLineOrientationTransport_eq_map_of_forall_eq {T : ℝ → E →L[ℝ]
     (hT : ContinuousOn T (uIcc a b)) (hF : ∀ t ∈ uIcc a b, IsFredholm (T t))
     (hTa : ∀ t ∈ uIcc a b, T t = T a) (o : Module.Ray ℝ (T a : E →ₗ[ℝ] F).detLine) :
     detLineOrientationTransport a b hT hF o =
-      Module.Ray.map ((T a : E →ₗ[ℝ] F).detLineCongr (LinearEquiv.refl ℝ E)
-        (LinearEquiv.refl ℝ F) (by rw [hTa b right_mem_uIcc]; rfl)) o := by
+      Module.Ray.map (LinearMap.detLineCongrOfEq (congrArg _ (hTa b right_mem_uIcc).symm)) o := by
   classical
   induction o using Module.Ray.ind with | h v₀ hv₀ => ?_
   -- The family of images of `v₀` in the determinant lines of the equal operators `T t`.
   let v : ∀ t, (T t : E →ₗ[ℝ] F).detLine := fun t ↦
-    if ht : T t = T a then (T a : E →ₗ[ℝ] F).detLineCongr (LinearEquiv.refl ℝ E)
-      (LinearEquiv.refl ℝ F) (by rw [ht]; rfl) v₀ else 0
-  have hv (t : ℝ) (ht : t ∈ uIcc a b) : v t = (T a : E →ₗ[ℝ] F).detLineCongr
-      (LinearEquiv.refl ℝ E) (LinearEquiv.refl ℝ F) (by rw [hTa t ht]; rfl) v₀ :=
+    if ht : T t = T a then LinearMap.detLineCongrOfEq (congrArg _ ht.symm) v₀ else 0
+  have hv (t : ℝ) (ht : t ∈ uIcc a b) :
+      v t = LinearMap.detLineCongrOfEq (congrArg _ (hTa t ht).symm) v₀ :=
     dite_eq_left (hTa t ht)
   -- A kernel chart at `T a` is valid along the path and reads every member of the family as the
   -- reading of `v₀`.
@@ -142,11 +140,25 @@ theorem detLineOrientationTransport_eq_map_of_forall_eq {T : ℝ → E →L[ℝ]
       ((LinearEquiv.map_ne_zero_iff (detLineChartEquiv (T a) S.subtypeL q hq)).2 hv₀)
       fun t ht ↦ ⟨by rw [hTa t ht]; exact hq, by
         rw [hv t ht]
-        exact detLineChartEquiv_detLineCongr_of_eq (hTa t ht) _ _ _ _⟩)
+        exact detLineChartEquiv_detLineCongrOfEq (hTa t ht).symm _ _ _⟩)
   have ha : v a = v₀ := by
-    rw [hv a left_mem_uIcc, LinearMap.detLineCongr_refl, LinearEquiv.refl_apply]
+    rw [hv a left_mem_uIcc, LinearMap.detLineCongrOfEq_rfl, LinearEquiv.refl_apply]
   simp only [ha, hv b right_mem_uIcc] at key
   rw [Module.Ray.map_apply, key]
+
+/-- **Transport along pointwise equal paths.** Transport along two pointwise equal paths agrees,
+once the determinant lines of the equal operators at the endpoints are identified by
+`LinearMap.detLineCongrOfEq`. -/
+theorem detLineOrientationTransport_map_detLineCongrOfEq {T₁ T₂ : ℝ → E →L[ℝ] F}
+    (h : ∀ t, T₁ t = T₂ t) {a b : ℝ} (hT₁ : ContinuousOn T₁ (uIcc a b))
+    (hF₁ : ∀ t ∈ uIcc a b, IsFredholm (T₁ t)) (hT₂ : ContinuousOn T₂ (uIcc a b))
+    (hF₂ : ∀ t ∈ uIcc a b, IsFredholm (T₂ t)) (o : Module.Ray ℝ (T₁ a : E →ₗ[ℝ] F).detLine) :
+    detLineOrientationTransport a b hT₂ hF₂
+        (Module.Ray.map (LinearMap.detLineCongrOfEq (congrArg _ (h a))) o) =
+      Module.Ray.map (LinearMap.detLineCongrOfEq (congrArg _ (h b)))
+        (detLineOrientationTransport a b hT₁ hF₁ o) := by
+  obtain rfl : T₁ = T₂ := funext h
+  simp only [LinearMap.detLineCongrOfEq_rfl, Module.Ray.map_refl, Equiv.refl_apply]
 
 end Constant
 
@@ -374,7 +386,7 @@ theorem detLineOrientationTransport_comm (hH : ContinuousOn H (uIcc s₀ s₁ ×
 rectangle `[[s₀, s₁]] ×ˢ [[a, b]]`, and constant along its bottom and top edges: a homotopy from
 the path `t ↦ H (s₀, t)` to the path `t ↦ H (s₁, t)` relative to the endpoints. Then transport
 from `a` to `b` along the two paths agree, once the determinant lines of the equal operators at
-their endpoints are identified by `LinearMap.detLineCongr`. -/
+their endpoints are identified by `LinearMap.detLineCongrOfEq`. -/
 theorem detLineOrientationTransport_eq_of_homotopy (hH : ContinuousOn H (uIcc s₀ s₁ ×ˢ uIcc a b))
     (hF : ∀ x ∈ uIcc s₀ s₁ ×ˢ uIcc a b, IsFredholm (H x))
     (ha : ∀ s ∈ uIcc s₀ s₁, H (s, a) = H (s₀, a)) (hb : ∀ s ∈ uIcc s₀ s₁, H (s, b) = H (s₀, b))
@@ -382,10 +394,8 @@ theorem detLineOrientationTransport_eq_of_homotopy (hH : ContinuousOn H (uIcc s�
     detLineOrientationTransport (T := fun t ↦ H (s₁, t)) a b
         (hH.comp (Continuous.prodMk_right s₁).continuousOn fun _ ht ↦ ⟨right_mem_uIcc, ht⟩)
         (fun _ ht ↦ hF _ ⟨right_mem_uIcc, ht⟩)
-        (Module.Ray.map ((H (s₀, a) : E →ₗ[ℝ] F).detLineCongr (LinearEquiv.refl ℝ E)
-          (LinearEquiv.refl ℝ F) (by rw [ha s₁ right_mem_uIcc]; rfl)) o) =
-      Module.Ray.map ((H (s₀, b) : E →ₗ[ℝ] F).detLineCongr (LinearEquiv.refl ℝ E)
-          (LinearEquiv.refl ℝ F) (by rw [hb s₁ right_mem_uIcc]; rfl))
+        (Module.Ray.map (LinearMap.detLineCongrOfEq (congrArg _ (ha s₁ right_mem_uIcc).symm)) o) =
+      Module.Ray.map (LinearMap.detLineCongrOfEq (congrArg _ (hb s₁ right_mem_uIcc).symm))
         (detLineOrientationTransport (T := fun t ↦ H (s₀, t)) a b
           (hH.comp (Continuous.prodMk_right s₀).continuousOn fun _ ht ↦ ⟨left_mem_uIcc, ht⟩)
           (fun _ ht ↦ hF _ ⟨left_mem_uIcc, ht⟩) o) := by
@@ -397,6 +407,27 @@ theorem detLineOrientationTransport_eq_of_homotopy (hH : ContinuousOn H (uIcc s�
     (fun _ hs ↦ hF _ ⟨hs, right_mem_uIcc⟩) hb
   rw [← hbot, ← htop]
   exact (detLineOrientationTransport_comm hH hF o).symm
+
+/-- **Homotopy invariance of orientation transport, for given paths.** Let `T₁` and `T₂` be paths
+of operators, continuous and Fredholm between `a` and `b`, and let `H` be continuous and Fredholm
+on the rectangle `[[s₀, s₁]] ×ˢ [[a, b]]`, equal to `T₁` along the edge `s = s₀` and to `T₂` along
+the edge `s = s₁`, and constant along its bottom and top edges. Then transport from `a` to `b`
+along `T₁` and along `T₂` agree, once the determinant lines of the equal operators at the
+endpoints are identified by `LinearMap.detLineCongrOfEq`. -/
+theorem detLineOrientationTransport_eq_of_homotopy_of_eq {T₁ T₂ : ℝ → E →L[ℝ] F}
+    (hH : ContinuousOn H (uIcc s₀ s₁ ×ˢ uIcc a b))
+    (hF : ∀ x ∈ uIcc s₀ s₁ ×ˢ uIcc a b, IsFredholm (H x)) (h₁ : ∀ t, H (s₀, t) = T₁ t)
+    (h₂ : ∀ t, H (s₁, t) = T₂ t) (ha : ∀ s ∈ uIcc s₀ s₁, H (s, a) = H (s₀, a))
+    (hb : ∀ s ∈ uIcc s₀ s₁, H (s, b) = H (s₀, b)) (hT₁ : ContinuousOn T₁ (uIcc a b))
+    (hF₁ : ∀ t ∈ uIcc a b, IsFredholm (T₁ t)) (hT₂ : ContinuousOn T₂ (uIcc a b))
+    (hF₂ : ∀ t ∈ uIcc a b, IsFredholm (T₂ t)) (hTa : (T₁ a : E →ₗ[ℝ] F) = T₂ a)
+    (hTb : (T₁ b : E →ₗ[ℝ] F) = T₂ b) (o : Module.Ray ℝ (T₁ a : E →ₗ[ℝ] F).detLine) :
+    detLineOrientationTransport a b hT₂ hF₂ (Module.Ray.map (LinearMap.detLineCongrOfEq hTa) o) =
+      Module.Ray.map (LinearMap.detLineCongrOfEq hTb)
+        (detLineOrientationTransport a b hT₁ hF₁ o) := by
+  obtain rfl : T₁ = fun t ↦ H (s₀, t) := funext fun t ↦ (h₁ t).symm
+  obtain rfl : T₂ = fun t ↦ H (s₁, t) := funext fun t ↦ (h₂ t).symm
+  exact detLineOrientationTransport_eq_of_homotopy hH hF ha hb o
 
 end Square
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
-import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.SchurTest
@@ -73,48 +72,28 @@ private theorem measurable_uncurry_hardyKernel_swap (θ : ℝ) :
 
 private theorem lintegral_hardyKernel_row {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < t) :
     ∫⁻ s, hardyKernel θ t s ∂multHaar = ENNReal.ofReal θ⁻¹ := by
-  have hcongr : hardyKernel θ t = (Ioc 0 t).indicator fun s ↦ ENNReal.ofReal ((s / t) ^ θ) := by
-    ext s; simp [hardyKernel, ht, indicator_apply]
-  rw [hcongr, lintegral_indicator measurableSet_Ioc,
-    setLIntegral_multHaar_eq_setLIntegral measurableSet_Ioc,
-    inter_eq_self_of_subset_left Ioc_subset_Ioi_self, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
-  have hpt : ∀ s ∈ Ioo 0 t, ENNReal.ofReal s⁻¹ * ENNReal.ofReal ((s / t) ^ θ) =
-      ENNReal.ofReal (t ^ (-θ)) * ENNReal.ofReal (s ^ (θ - 1)) := fun s hs ↦ by
-    rw [← ENNReal.ofReal_mul (inv_nonneg.2 hs.1.le),
-      ← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _)]
-    congr 1
-    rw [Real.div_rpow hs.1.le ht.le, Real.rpow_neg ht.le, Real.rpow_sub hs.1, Real.rpow_one]
-    simp only [div_eq_mul_inv]; ring
-  rw [setLIntegral_congr_fun measurableSet_Ioo hpt, lintegral_const_mul _ (by fun_prop),
-    lintegral_ofReal_rpow_Ioo (by linarith) ht.le, ← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _)]
-  congr 1
-  have htθ : t ^ θ ≠ 0 := (Real.rpow_pos_of_pos ht θ).ne'
-  rw [sub_add_cancel, Real.rpow_neg ht.le]; field_simp
+  have hae : hardyKernel θ t =ᵐ[multHaar]
+      (Iic t).indicator fun s ↦ ENNReal.ofReal (t ^ (-θ)) * ENNReal.ofReal (s ^ θ) := by
+    filter_upwards [ae_pos_multHaar] with s hs
+    by_cases hst : s ≤ t
+    · simp only [hardyKernel, ht, hs, hst, and_self, ↓reduceIte, indicator_of_mem (mem_Iic.2 hst)]
+      rw [Real.div_rpow hs.le ht.le, div_eq_mul_inv, mul_comm, ← Real.rpow_neg ht.le,
+        ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _)]
+    · simp [hardyKernel, hst]
+  rw [lintegral_congr_ae hae, lintegral_indicator measurableSet_Iic,
+    lintegral_const_mul _ (by fun_prop), lintegral_Iic_multHaar_rpow hθ ht,
+    ← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _), Real.rpow_neg ht.le, ← mul_assoc,
+    inv_mul_cancel₀ (Real.rpow_pos_of_pos ht θ).ne', one_mul]
 
 private theorem lintegral_hardyKernel_col {θ s : ℝ} (hθ : 0 < θ) (hs : 0 < s) :
     ∫⁻ t, hardyKernel θ t s ∂multHaar = ENNReal.ofReal θ⁻¹ := by
-  have hcongr : (fun t ↦ hardyKernel θ t s) =
-      (Ici s).indicator fun t ↦ ENNReal.ofReal ((s / t) ^ θ) := by
-    ext t; by_cases hst : s ≤ t
-    · simp [hardyKernel, hs, hst, hs.trans_le hst]
-    · simp [hardyKernel, hst]
-  rw [hcongr, lintegral_indicator measurableSet_Ici,
-    setLIntegral_multHaar_eq_setLIntegral measurableSet_Ici,
-    inter_eq_self_of_subset_left (Ici_subset_Ioi.2 hs), ← Measure.restrict_congr_set Ioi_ae_eq_Ici]
-  have hpt : ∀ t ∈ Ioi s, ENNReal.ofReal t⁻¹ * ENNReal.ofReal ((s / t) ^ θ) =
-      ENNReal.ofReal (s ^ θ) * ENNReal.ofReal (t ^ (-θ - 1)) := fun t ht ↦ by
-    have ht0 : 0 < t := hs.trans ht
-    rw [← ENNReal.ofReal_mul (inv_nonneg.2 ht0.le),
-      ← ENNReal.ofReal_mul (Real.rpow_nonneg hs.le _)]
-    congr 1
-    rw [Real.div_rpow hs.le ht0.le, Real.rpow_sub_one ht0.ne', Real.rpow_neg ht0.le]
-    simp only [div_eq_mul_inv]; ring
-  rw [setLIntegral_congr_fun measurableSet_Ioi hpt, lintegral_const_mul _ (by fun_prop),
-    lintegral_ofReal_rpow_Ioi_of_lt (by linarith) hs,
-    ← ENNReal.ofReal_mul (Real.rpow_nonneg hs.le _)]
-  congr 1
-  have hsθ : s ^ θ ≠ 0 := (Real.rpow_pos_of_pos hs θ).ne'
-  rw [sub_add_cancel, neg_div_neg_eq, Real.rpow_neg hs.le]; field_simp
+  have hae : (fun t ↦ hardyKernel θ t s) =ᵐ[multHaar] fun t ↦ hardyKernel θ 1 (s / t) := by
+    filter_upwards [ae_pos_multHaar] with t ht
+    simp only [hardyKernel, ht, hs, zero_lt_one, div_pos hs ht, true_and, div_one, div_le_one ht]
+  have hm : Measurable (hardyKernel θ 1) :=
+    (measurable_uncurry_hardyKernel θ).comp (measurable_const.prodMk measurable_id)
+  rw [lintegral_congr_ae hae, (measurePreserving_div_left_multHaar hs).lintegral_comp hm,
+    lintegral_hardyKernel_row hθ one_pos]
 
 /-- **Prefix Hardy inequality** in multiplicative Haar form: for `θ > 0` and `1 ≤ q ≤ ∞`,
 `‖t ↦ t ^ (-θ) ∫₀ᵗ ψ(s) ds / s‖_{L^q(dt / t)} ≤ θ⁻¹ ‖s ↦ s ^ (-θ) ψ(s)‖_{L^q(ds / s)}`. -/
@@ -152,7 +131,7 @@ theorem eLpNorm_rpow_neg_mul_setLIntegral_Ioc_le {θ : ℝ} (hθ : 0 < θ) {q : 
     eLpNorm (fun t ↦ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Ioc 0 t, φ s) q multHaar ≤
       ENNReal.ofReal θ⁻¹ * eLpNorm (fun s ↦ ENNReal.ofReal (s ^ (1 - θ)) * φ s) q multHaar := by
   have hφ_mh : AEMeasurable φ multHaar :=
-    multHaar_def ▸ hφ.mono_ac (withDensity_absolutelyContinuous _ _)
+    hφ.mono_ac multHaar_absolutelyContinuous_volume_Ioi
   simp_rw [setLIntegral_eq_setLIntegral_multHaar measurableSet_Ioc Ioc_subset_Ioi_self]
   refine (eLpNorm_rpow_neg_mul_setLIntegral_Ioc_multHaar_le hθ hq
     (measurable_id.ennreal_ofReal.aemeasurable.mul hφ_mh)).trans_eq ?_
@@ -197,7 +176,7 @@ theorem eLpNorm_rpow_mul_setLIntegral_Ici_le {θ : ℝ} (hθ : 0 < θ) {q : ℝ�
     eLpNorm (fun t ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, φ s) q multHaar ≤
       ENNReal.ofReal θ⁻¹ * eLpNorm (fun s ↦ ENNReal.ofReal (s ^ (1 + θ)) * φ s) q multHaar := by
   have hφ_mh : AEMeasurable φ multHaar :=
-    multHaar_def ▸ hφ.mono_ac (withDensity_absolutelyContinuous _ _)
+    hφ.mono_ac multHaar_absolutelyContinuous_volume_Ioi
   have hlhs : (fun t ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, φ s) =ᵐ[multHaar]
       fun t ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, ENNReal.ofReal s * φ s ∂multHaar :=
     ae_pos_multHaar.mono fun t ht ↦ by

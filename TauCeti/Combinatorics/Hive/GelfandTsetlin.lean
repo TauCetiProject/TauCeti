@@ -52,6 +52,8 @@ onto the full weight-`(γ - λ)` fibre over `μ` (`fixedIntegerHiveEquivGTPatter
   completion, the remaining rhombus predicate, and hive reconstruction from `(lam, P)`.
 * `TauCeti.Hive.integerHiveEquivGTPattern`, `TauCeti.Hive.fixedIntegerHiveEquivGTPattern`:
   global and fixed-boundary hive–pattern equivalences.
+* `TauCeti.Hive.fixedIntegerHiveShiftEquiv`: determinant shifts of the boundary weights, which
+  shift the pattern by a constant and add an affine hive.
 * `TauCeti.Hive.toCyclicGTPattern`, `TauCeti.Hive.toCyclicGTPatternAddMonoidHom`,
   `TauCeti.Hive.cyclicFixedIntegerHiveEquivGTPattern`: cyclic `(λ, μ, ν)` difference map and
   quasi-hive equivalence.
@@ -67,6 +69,8 @@ onto the full weight-`(γ - λ)` fibre over `μ` (`fixedIntegerHiveEquivGTPatter
   inversion, and injectivity for `toGTPattern` and `toCyclicGTPattern`.
 * `TauCeti.Hive.isGTCompletable_iff_sum_sub_le`, `TauCeti.Hive.gt_reconstruction_iff`: explicit
   difference-sum form of `IsGTCompletable` and fixed-boundary reconstruction criterion.
+* `TauCeti.Hive.hiveCount_productBoundary_shift`: shifting the inputs by `a, b` and the output by
+  `a + b` preserves hive counts.
 * `TauCeti.Hive.isGTCompletable_of_uniform_input_gap`,
   `TauCeti.Hive.gt_completion_of_uniform_input_gap`, `TauCeti.Hive.exists_stable_gt_equiv`:
   automatic completion and full fibre equivalence in the stable range.
@@ -206,6 +210,15 @@ theorem rowWeight_toGTPattern_of_productBoundary {lam μ γ : DominantWeight n} 
     (hb : h.boundary = productBoundary lam μ γ) : h.toGTPattern.rowWeight = γ.val - lam.val := by
   have hb2 : h.boundaryWeight 2 = γ.dual := Subtype.ext (by simp [coe_boundaryWeight, hb])
   rw [h.rowWeight_toGTPattern, hb2, DominantWeight.dual_dual, hb, productBoundary_zero]
+
+/-- If an integer hive has boundary `(λ, μ, γ*)`, then every entry of `γ - λ` lies between the last
+entry `μₙ` and the first entry `μ₁` of `μ`. -/
+theorem sub_mem_Icc_of_productBoundary {lam μ γ : DominantWeight n} {h : IntegerHive n}
+    (hb : h.boundary = productBoundary lam μ γ) (k : Fin n) :
+    γ.val k - lam.val k ∈
+      Set.Icc (μ.val ⟨n - 1, by have := k.isLt; omega⟩) (μ.val ⟨0, by have := k.isLt; omega⟩) := by
+  have hk := h.toGTPattern.rowWeight_mem_Icc k
+  rwa [topRow_toGTPattern_of_productBoundary hb, rowWeight_toGTPattern_of_productBoundary hb] at hk
 
 /-- Inverse chart formula `TauCeti.prefixSum j lam.1 + ∑ k ∈ Finset.range i, P k j` reconstructing
 the hive value at `(i, j)` (`0 ≤ i ≤ j ≤ n`) from the side-`0` dominant weight `lam` and a
@@ -607,6 +620,73 @@ theorem hiveCount_productBoundary_eq_card_gtPattern (lam μ γ : DominantWeight 
         P.topRow = μ.val ∧ P.rowWeight = γ.val - lam.val ∧ IsGTCompletable lam P} := by
   rw [← natCard_fixedIntegerHive]; exact Nat.card_congr (fixedIntegerHiveEquivGTPattern lam μ γ)
 
+/-- **Determinant-shift covariance of hive fibres**: shifting the inputs `lam, μ` by `a, b` and
+the output `γ` by `a + b` identifies the integer hives of boundary `productBoundary lam μ γ` with
+those of the shifted boundary, by adding the affine hive `affine n a (a + b)`
+(`fixedIntegerHiveShiftEquiv_apply_coe`). -/
+def fixedIntegerHiveShiftEquiv (lam μ γ : DominantWeight n) (a b : ℤ) :
+    FixedIntegerHive (productBoundary lam μ γ) ≃
+      FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))) :=
+  ((fixedIntegerHiveEquivGTPattern lam μ γ).trans
+    (Equiv.subtypeEquiv (GTPattern.shiftEquiv n b) fun P => by
+      simp only [GTPattern.shiftEquiv_apply, GTPattern.topRow_shift, GTPattern.rowWeight_shift,
+        isGTCompletable_shift_left_iff, isGTCompletable_shift_right_iff, funext_iff,
+        Pi.sub_apply, DominantWeight.shift_apply]
+      refine and_congr (forall_congr' fun i => add_left_inj b).symm
+        (and_congr_left' (forall_congr' fun i => ?_))
+      constructor <;> intro h <;> linarith)).trans
+    (fixedIntegerHiveEquivGTPattern _ _ _).symm
+
+@[simp] theorem fixedIntegerHiveShiftEquiv_apply_coe (lam μ γ : DominantWeight n) (a b : ℤ)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) :
+    (fixedIntegerHiveShiftEquiv lam μ γ a b h).val = h.val + affine n a (a + b) := by
+  have hb0 : h.val.boundaryWeight 0 = lam := Subtype.ext (by simp [coe_boundaryWeight, h.property])
+  -- `h` is the hive reconstructed from its own pattern over its side-`0` weight `lam`.
+  have hrec : ∀ (l : DominantWeight n) (_ : h.val.boundaryWeight 0 = l)
+      (hP : IsGTCompletable l h.val.toGTPattern), ofGTPattern l h.val.toGTPattern hP = h.val := by
+    rintro l rfl _; exact ofGTPattern_toGTPattern h.val
+  have hP : IsGTCompletable lam h.val.toGTPattern := (fixedIntegerHiveEquivGTPattern lam μ γ
+      h).property.2.2
+  simp only [fixedIntegerHiveShiftEquiv, Equiv.trans_apply,
+    fixedIntegerHiveEquivGTPattern_symm_apply_coe, Equiv.subtypeEquiv_apply,
+    GTPattern.shiftEquiv_apply, fixedIntegerHiveEquivGTPattern_apply_coe]
+  rw [ofGTPattern_shift a b hP, hrec lam hb0 hP]
+
+@[simp] theorem fixedIntegerHiveShiftEquiv_symm_apply_coe (lam μ γ : DominantWeight n) (a b : ℤ)
+    (h : FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b)))) :
+    ⇑((fixedIntegerHiveShiftEquiv lam μ γ a b).symm h).val = ⇑h.val - ⇑(affine n a (a + b)) := by
+  rw [eq_sub_iff_add_eq, ← coe_add, ← fixedIntegerHiveShiftEquiv_apply_coe, Equiv.apply_symm_apply]
+
+/-- Determinant shifts of the inputs by `a, b` and of the output by `a + b` preserve hive
+counts. -/
+theorem hiveCount_productBoundary_shift (lam μ γ : DominantWeight n) (a b : ℤ) :
+    hiveCount (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))) =
+      hiveCount (productBoundary lam μ γ) := by
+  simp only [← natCard_fixedIntegerHive]
+  exact (Nat.card_congr (fixedIntegerHiveShiftEquiv lam μ γ a b)).symm
+
+/-- Signed rank-`2` check: `λ = (1, 0), μ = (0, -1), γ = (0, 0)` has `hiveCount = 1`
+(the trivial invariant in `V ⊗ V*`), whereas truncating negative entries to `0` would give
+`((1, 0), (0, 0), (0, 0))` with `hiveCount = 0`. -/
+theorem hiveCount_two_std_dual_triv :
+    hiveCount (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) = 1
+      ∧ hiveCount
+        (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, 0], by decide⟩ ⟨![0, 0], by decide⟩) = 0 := by
+  let lam : DominantWeight 2 := ⟨![1, 0], by decide⟩
+  let μ : DominantWeight 2 := ⟨![0, -1], by decide⟩
+  let γ : DominantWeight 2 := ⟨![0, 0], by decide⟩
+  constructor
+  · have hsh : productBoundary (lam.shift 0) (μ.shift 1) (γ.shift (0 + 1)) =
+        productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![1, 1], by decide⟩ := by
+      ext s i
+      fin_cases s <;> fin_cases i <;>
+        simp [productBoundary_zero, productBoundary_one, productBoundary_two, lam, μ, γ]
+    rw [← hiveCount_productBoundary_shift lam μ γ 0 1, hsh]
+    exact hiveCount_two_std_std_det
+  · refine hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => ?_⟩
+    have hsum := sum_eq_of_productBoundary hb
+    simp [Fin.sum_univ_two] at hsum
+
 /-- **Gelfand–Tsetlin reconstruction criterion**: a pattern `P` with top row `μ` and weight
 `γ - λ` is the difference pattern of a hive with boundary `productBoundary lam μ γ` (realized via
 `gtCompletion lam P`) if and only if the remaining rhombus family holds on `gtCompletion lam P`. -/
@@ -954,6 +1034,23 @@ theorem hiveCount_two_productBoundary (lam μ γ : DominantWeight 2) :
       simp only [Pi.sub_apply] at hw0; omega
   rw [heq, GTPattern.card_topRow_rowWeight_two μ.val (γ.val - lam.val)]
   simp only [Pi.sub_apply, max_le_iff]; split_ifs <;> omega
+
+/-- Rank-`2` hive classification for `λ = μ = (1, 0)`: `hiveCount (productBoundary λ μ γ)` is `1`
+for `γ = (2, 0)` and `γ = (1, 1)`, and `0` for every other dominant weight `γ`. -/
+theorem hiveCount_two_std_std_eq (γ : DominantWeight 2) :
+    hiveCount (productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ γ) =
+      if γ = ⟨![2, 0], by decide⟩ ∨ γ = ⟨![1, 1], by decide⟩ then 1 else 0 := by
+  rw [hiveCount_two_productBoundary]
+  refine if_congr ?_ rfl rfl
+  have hanti : γ.val 1 ≤ γ.val 0 := γ.antitone (by decide)
+  simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one]
+  constructor
+  · rintro ⟨_, _, _⟩
+    rcases (by omega : (γ.val 0 = 2 ∧ γ.val 1 = 0) ∨ (γ.val 0 = 1 ∧ γ.val 1 = 1)) with
+      ⟨h0, h1⟩ | ⟨h0, h1⟩
+    · exact Or.inl (Subtype.ext (funext fun i => by fin_cases i <;> assumption))
+    · exact Or.inr (Subtype.ext (funext fun i => by fin_cases i <;> assumption))
+  · rintro (rfl | rfl) <;> simp
 
 /-- Rank-`2` exclusion outside the stable range: although the weight-`(1, 1)` Gelfand–Tsetlin fibre
 over `μ = (2, 0)` has cardinality `1` (`GTPattern.card_topRow_rowWeight_two_two_zero_one_one`), the

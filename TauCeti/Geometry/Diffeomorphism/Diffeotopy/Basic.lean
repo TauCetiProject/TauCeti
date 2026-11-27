@@ -52,10 +52,20 @@ specialization to bundled smooth embeddings, used for geometric knot presentatio
 * `TauCeti.Diffeotopy.timeSlice_transDiffeomorph_eq_mul_mul_inv` and
   `final_transDiffeomorph_eq_mul_mul_inv`: conjugating a diffeotopy by a self-diffeomorphism `f`
   conjugates its time slices by `f` in the self-diffeomorphism group.
+* `TauCeti.Diffeotopy.comp_cylinderMap_of_semiconj`: a map intertwining two diffeotopies at every
+  time intertwines their motions on the cylinders; `semiconj_symm_timeSlice_transDiffeomorph`
+  is the instance `f⁻¹` for a conjugated diffeotopy.
+* `TauCeti.Diffeotopy.eqOn_id_trans`, `eqOn_id_symm` and `eqOn_id_transDiffeomorph`: being the
+  identity outside a set at every time passes to composites, inverses and conjugates.
 * `TauCeti.Diffeotopy.toAmbientIsotopy_final_apply`: forgetting smoothness preserves the final
   action.
 * `TauCeti.Diffeotopy.final_eq_of_homotopy`: diffeotopies whose motions are joined by a homotopy
   stationary at the final time have the same final diffeomorphism.
+* `TauCeti.Diffeotopy.mfderiv_cylinderMap_inl`: the spatial derivative of the motion is the
+  differential of the time slice.
+* `TauCeti.Diffeotopy.mfderiv_cylinderMap_mfderiv_cylinderMap_symm`: the derivative of
+  `φ_t (φ_t⁻¹ x) = x` on the cylinder.
+* `TauCeti.Diffeotopy.mfderiv_timeSlice_mfderiv_cylinderMap_symm_inl`: `dφ_t ∘ d(φ_t⁻¹) = id`.
 
 ## References
 
@@ -262,6 +272,23 @@ theorem cylinderMap_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) :
     (Φ.transDiffeomorph f).cylinderMap = f ∘ Φ.cylinderMap ∘ Prod.map f.symm id :=
   funext fun p ↦ by simp
 
+/-- The inverse `f⁻¹` intertwines the conjugated diffeotopy `f ∘ φ_t ∘ f⁻¹` with `φ_t`. -/
+theorem semiconj_symm_timeSlice_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) (t : I) :
+    Function.Semiconj f.symm ((Φ.transDiffeomorph f).timeSlice t) (Φ.timeSlice t) :=
+  fun _ ↦ by
+    simp only [timeSlice_apply, transDiffeomorph_apply, _root_.Diffeomorph.symm_apply_apply]
+
+/-- If a map `g` intertwines two diffeotopies at every time, `g ∘ φ'_t = φ_t ∘ g`, then it
+intertwines their motions on the cylinders: `g ∘ Φ' = Φ ∘ (g × id)`. -/
+theorem comp_cylinderMap_of_semiconj {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {Φ' : Diffeotopy J' n M'} {g : M' → M}
+    (h : ∀ t, Function.Semiconj g (Φ'.timeSlice t) (Φ.timeSlice t)) :
+    g ∘ Φ'.cylinderMap = Φ.cylinderMap ∘ Prod.map g id :=
+  funext fun p ↦ by
+    simpa only [Function.comp_apply, cylinderMap_apply, Prod.map_fst, Prod.map_snd, id_eq,
+      timeSlice_apply] using h p.2 p.1
+
 /-- If the motion of `Φ` is joined to the motion of `Ψ` by a homotopy `G` that is stationary at the
 final time, then `Φ` and `Ψ` have the same final diffeomorphism. -/
 theorem final_eq_of_homotopy {Ψ : Diffeotopy J n M} {G : (M × I) × I → M}
@@ -400,16 +427,44 @@ theorem apply_symm_apply (p : I × M) :
     Prod.ext (Φ.fst_symm_apply p).symm rfl
   rw [hp, Φ.toDiffeomorph.apply_symm_apply]
 
+/-- The inverse diffeotopy at time `t` undoes the diffeotopy at time `t`. -/
+theorem symm_apply_mk_apply (t : I) (x : M) : Φ.symm (t, Φ (t, x)) = x := by
+  rw [← Φ.timeSlice_apply, ← Φ.symm_timeSlice_apply]
+  exact (Φ.timeSlice t).symm_apply_apply x
+
+/-- The diffeotopy at time `t` undoes the inverse diffeotopy at time `t`. -/
+theorem apply_mk_symm_apply (t : I) (x : M) : Φ (t, Φ.symm (t, x)) = x := by
+  rw [← Φ.symm_timeSlice_apply, ← Φ.timeSlice_apply]
+  exact (Φ.timeSlice t).apply_symm_apply x
+
 /-- The final diffeomorphism of the inverse diffeotopy is the inverse final diffeomorphism. -/
 @[simp]
 theorem final_symm : Φ.symm.final = Φ.final.symm := by
   simpa only [final_def] using Φ.timeSlice_symm 1
+
+/-- If `ψ ∘ Φ₁ = φ`, then the inverse diffeotopy satisfies `φ ∘ (Φ⁻¹)₁ = ψ`. -/
+theorem mul_final_symm_eq_of_mul_final_eq {φ ψ : M ≃ₘ^n⟮J, J⟯ M} (h : ψ * Φ.final = φ) :
+    φ * Φ.symm.final = ψ := by
+  rw [final_symm]
+  exact mul_inv_eq_of_eq_mul h.symm
 
 /-- Following the inverse of `ψ_t` by `φ_t` ends at `φ₁ * ψ₁⁻¹` in the self-diffeomorphism
 group. -/
 theorem final_symm_trans (Ψ : Diffeotopy J n M) :
     (Ψ.symm.trans Φ).final = Φ.final * Ψ.final⁻¹ := by
   rw [final_trans, final_symm, _root_.Diffeomorph.mul_def, _root_.Diffeomorph.inv_def]
+
+/-- Applying the inverse diffeotopy at time `t` after the diffeotopy at time `t` returns the
+starting point. -/
+theorem symm_apply_apply_mk (t : I) (x : M) : Φ.symm (t, Φ (t, x)) = x := by
+  have h := (Φ.timeSlice t).symm_apply_apply x
+  rwa [timeSlice_apply, symm_timeSlice_apply] at h
+
+/-- Applying the diffeotopy at time `t` after the inverse diffeotopy at time `t` returns the
+starting point. -/
+theorem apply_symm_apply_mk (t : I) (x : M) : Φ (t, Φ.symm (t, x)) = x := by
+  have h := (Φ.timeSlice t).apply_symm_apply x
+  rwa [symm_timeSlice_apply, timeSlice_apply] at h
 
 /-- A point is fixed by the inverse diffeotopy at time `t` exactly when it is fixed by the
 diffeotopy at time `t`. -/
@@ -422,6 +477,28 @@ theorem symm_apply_eq_self_iff {t : I} {x : M} : Φ.symm (t, x) = x ↔ Φ (t, x
   · intro h
     conv_lhs => rw [← h]
     exact (Φ.timeSlice t).symm_apply_apply x
+
+/-- If two diffeotopies are the identity outside `K` and outside `L` at every time, their
+pointwise composite is the identity outside `K ∪ L` at every time. -/
+theorem eqOn_id_trans {Φ Ψ : Diffeotopy J n M} {K L : Set M}
+    (hΦ : ∀ t, Set.EqOn (fun x ↦ Φ (t, x)) id Kᶜ) (hΨ : ∀ t, Set.EqOn (fun x ↦ Ψ (t, x)) id Lᶜ)
+    (t : I) : Set.EqOn (fun x ↦ Φ.trans Ψ (t, x)) id (K ∪ L)ᶜ := fun x hx ↦ by
+  rw [Set.compl_union] at hx
+  simp only [trans_apply, hΦ t hx.1, id_eq]
+  exact hΨ t hx.2
+
+/-- If a diffeotopy is the identity outside `K` at every time, so is its pointwise inverse. -/
+theorem eqOn_id_symm {Φ : Diffeotopy J n M} {K : Set M}
+    (hΦ : ∀ t, Set.EqOn (fun x ↦ Φ (t, x)) id Kᶜ) (t : I) :
+    Set.EqOn (fun x ↦ Φ.symm (t, x)) id Kᶜ := fun _ hx ↦ Φ.symm_apply_eq_self_iff.2 (hΦ t hx)
+
+/-- If a diffeotopy is the identity outside `K` at every time, its conjugate `f ∘ φ_t ∘ f⁻¹` by
+a diffeomorphism `f` is the identity outside `f '' K` at every time. -/
+theorem eqOn_id_transDiffeomorph {Φ : Diffeotopy J n M} {K : Set M} (f : M ≃ₘ^n⟮J, J⟯ P)
+    (hΦ : ∀ t, Set.EqOn (fun x ↦ Φ (t, x)) id Kᶜ) (t : I) :
+    Set.EqOn (fun x ↦ Φ.transDiffeomorph f (t, x)) id (f '' K)ᶜ := fun x hx ↦ by
+  have hx' : f.symm x ∉ K := fun h ↦ hx ⟨_, h, f.apply_symm_apply x⟩
+  simp only [transDiffeomorph_apply, hΦ t hx', id_eq, Diffeomorph.apply_symm_apply]
 
 /-- Forgetting smoothness turns a diffeotopy into a continuous ambient isotopy. -/
 def toAmbientIsotopy : AmbientIsotopy M where
@@ -526,6 +603,48 @@ theorem symm_trans_self : Φ.symm.trans Φ = refl J n M := by
   apply ext
   intro p
   simp
+
+/-! ### Derivatives of the motion and its inverse -/
+
+/-- **The spatial derivative of the motion.** The motion `(x, t) ↦ φ_t x` of a diffeotopy of
+positive order acts on spatial tangent vectors at `(x, t)` by the differential of the time slice
+`φ_t`. -/
+theorem mfderiv_cylinderMap_inl (hn : 1 ≤ n) (p : M × I) (v : E) :
+    mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p (v, (0 : TangentSpace (𝓡∂ 1) p.2)) =
+      mfderiv J J (Φ.timeSlice p.2) p.1 v := by
+  refine (mfderiv_prod_eq_add_apply (Φ.contMDiff_cylinderMap.mdifferentiableAt
+    (zero_lt_one.trans_le (by exact_mod_cast hn)).ne')).trans ?_
+  have hslice : (fun z ↦ Φ.cylinderMap (z, p.2)) = Φ.timeSlice p.2 :=
+    funext fun z ↦ by rw [cylinderMap_apply, timeSlice_apply]
+  rw [hslice]
+  exact add_eq_left.2 (map_zero _)
+
+/-- **The motion followed by its inverse.** Differentiating `φ_t (φ_t⁻¹ x) = x` on the cylinder: for
+a tangent vector `w = (u, s)` at `(x, t)`, the differential of the motion at `(φ_t⁻¹ x, t)` sends
+the image `(d(φ⁻¹) w, s)` of `w` under the level-preserving inverse motion to `u`. -/
+theorem mfderiv_cylinderMap_mfderiv_cylinderMap_symm (hn : 1 ≤ n) (p : M × I)
+    (w : TangentSpace (J.prod (𝓡∂ 1)) p) :
+    mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (Φ.symm.cylinderMap p, p.2)
+      (mfderiv (J.prod (𝓡∂ 1)) J Φ.symm.cylinderMap p w, w.2) = w.1 := by
+  have hn₀ : n ≠ 0 := (zero_lt_one.trans_le (by exact_mod_cast hn)).ne'
+  -- The motion of `φ_t ∘ φ_t⁻¹`, the constant diffeotopy, is the projection to `M`.
+  have hcomp : Φ.cylinderMap ∘ (fun q ↦ (Φ.symm.cylinderMap q, q.2)) = Prod.fst := by
+    rw [← cylinderMap_trans, symm_trans_self]
+    exact funext fun q ↦ by simp
+  have h := mfderiv_comp_apply p (Φ.contMDiff_cylinderMap.mdifferentiableAt hn₀)
+    (Φ.symm.contMDiff_cylinderMap_prodMk_snd.mdifferentiableAt hn₀) w
+  rw [hcomp, mfderiv_fst] at h
+  exact (congrArg _ (Φ.symm.mfderiv_cylinderMap_prodMk_snd hn p w)).symm.trans h.symm
+
+/-- **The spatial derivative of the inverse diffeotopy.** The differential of `φ_t` undoes the
+spatial derivative `d(φ_t⁻¹)` of the inverse diffeotopy at `(x, t)`. -/
+theorem mfderiv_timeSlice_mfderiv_cylinderMap_symm_inl (hn : 1 ≤ n) (t : I) (x : M) (u : E) :
+    mfderiv J J (Φ.timeSlice t) (Φ.symm (t, x))
+        (mfderiv (J.prod (𝓡∂ 1)) J Φ.symm.cylinderMap (x, t)
+          (u, (0 : TangentSpace (𝓡∂ 1) t))) = u := by
+  rw [← Φ.symm.cylinderMap_apply (x, t)]
+  exact (Φ.mfderiv_cylinderMap_inl hn (Φ.symm.cylinderMap (x, t), t) _).symm.trans
+    (Φ.mfderiv_cylinderMap_mfderiv_cylinderMap_symm hn (x, t) (u, 0))
 
 end Diffeotopy
 

@@ -53,11 +53,22 @@ compatibility with composition characterizes the transport
   the identity, and is compatible with restriction on both sides. Restricted to a point of `T`
   outside the range of `j` it is zero
   (`TauCeti.localHomologyMap_comp_localHomologyRestriction_eq_zero_of_notMem_range`).
+* `TauCeti.homologyMap_comp_singularHomologyπ_ofSubset`: passing from `Hₖ(M)` to `Hₖ(M, M ∖ S)`
+  is natural in continuous maps.
+* `TauCeti.singularHomologyπ_univ_singularHomologyMap`: its element-level form for
+  `Hₖ(M, M ∖ M)`.
+* `TauCeti.singularHomologyToLocalHomology_singularHomologyMap`: passing to local homology is
+  natural in maps `j` for which `x` is the only preimage of `j x`.
+* `TauCeti.localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom`: the
+  local homology isomorphism of a chart is the map induced by the chart on its source.
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
 * `TauCeti.isIso_singularHomologyδ_ofSubset_compl`: the connecting morphism of the triple
   `(M, M ∖ T, M ∖ S)` is an isomorphism when the local homology along `S` vanishes.
 * `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
   chart, star-convex about one of its points, to that point is an isomorphism.
+* `TauCeti.exists_isCompact_subset_mem_nhds_isIso_localHomologyRestriction`: inside every
+  neighbourhood of a point there is a compact neighbourhood `B` from which the restriction to each
+  of its points is an isomorphism.
 * `TauCeti.localHomologyTransport`: the transport of local homology along a path class.
 * `TauCeti.localHomologySystem`: the local homology groups as a functor out of the fundamental
   groupoid, with these transport maps.
@@ -103,6 +114,39 @@ variable {M : Type w} [TopologicalSpace M]
 `S = {x}` it is the local homology of `M` at `x`. -/
 abbrev localHomology (S : Set M) (k : ℕ) : A :=
   (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomology R k
+
+/-- The degree-zero relative class of a point, as the coefficient morphism into local homology
+along a set. This is the actual point section followed by the quotient map. -/
+def localHomologyPointClass (S : Set M) (x : M) : R ⟶ localHomology R S 0 :=
+  singularHomology₀Section R (X := TopCat.of M) x ≫
+    (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R 0
+
+/-- The point class is the image of the absolute point section under the relative quotient. -/
+@[elementwise]
+lemma localHomologyPointClass_def (S : Set M) (x : M) :
+    localHomologyPointClass R S x = singularHomology₀Section R (X := TopCat.of M) x ≫
+      (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R 0 := by rfl
+
+/-- The inverse of a rank-zero chart's homology coordinate is the actual relative point class. -/
+@[elementwise nosimp]
+lemma singularHomologyComplSingletonIsoOfFinrankEqZero_inv_eq_localHomologyPointClass
+    {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [T1Space M] (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source)
+    (h : Module.finrank ℝ E = 0) :
+    (singularHomologyComplSingletonIsoOfFinrankEqZero R φ hx h).inv =
+      localHomologyPointClass R {x} x := by
+  rw [localHomologyPointClass_def]
+  apply (cancel_mono (singularHomologyComplSingletonIsoOfChart R φ hx 0).hom).1
+  calc
+    _ = singularHomology₀Section R (φ x) ≫
+        (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).singularHomologyπ R 0 := by
+      rw [singularHomologyComplSingletonIsoOfFinrankEqZero_inv]
+      -- The point section uses the singular functor's object, whereas the projection uses
+      -- simplicial homology; `erw` unfolds these equal presentations before reassociating.
+      erw [Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+      rfl
+    _ = _ := (singularHomology₀Section_comp_singularHomologyComplSingletonIsoOfChart_hom
+      R φ hx).symm
 
 /-- The subspace `M ∖ M` of the pair `(M, M ∖ M)` is empty, so `Hₖ(M, M ∖ M)` is the singular
 homology of `M`. -/
@@ -150,6 +194,15 @@ lemma singularHomologyπ_localHomologyRestriction {S T : Set M} (h : S ⊆ T) (k
   rw [localHomologyRestriction_def]
   exact TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id R
     (compl_subset_compl.2 h) k
+
+/-- Restricting the relative point class is the point class in the smaller pair. -/
+@[reassoc, elementwise]
+lemma localHomologyPointClass_restriction {S T : Set M} (h : S ⊆ T) (x : M) :
+    localHomologyPointClass R T x ≫ localHomologyRestriction R h 0 =
+      localHomologyPointClass R S x := by
+  rw [localHomologyPointClass_def, localHomologyPointClass_def]
+  exact (Category.assoc _ _ _).trans
+    (singularHomology₀Section R x ≫= singularHomologyπ_localHomologyRestriction R h 0)
 
 /-- **Local homology along the empty set vanishes**: `Hₖ(M, M) = 0`. -/
 theorem isZero_localHomology_empty (k : ℕ) : IsZero (localHomology R (∅ : Set M) k) := by
@@ -309,6 +362,20 @@ lemma localHomologyMap_def {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (k : �
           (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) R k :=
   (rfl)
 
+/-- A map of local homology carries the actual relative point class to its image point. -/
+@[reassoc, elementwise]
+lemma localHomologyPointClass_map {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (x : M) :
+    localHomologyPointClass R S x ≫ localHomologyMap R j h 0 =
+      localHomologyPointClass R T (j x) := by
+  let hf : Set.MapsTo (TopCat.ofHom j) Sᶜ Tᶜ :=
+    (mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h)
+  let f := TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of N)
+    (B := Sᶜ) (B' := Tᶜ) (TopCat.ofHom j) hf
+  rw [localHomologyPointClass_def, localHomologyPointClass_def, localHomologyMap_def]
+  exact TopPair.singularHomology₀Section_singularHomologyMap _ R f x (j x)
+    (TopPair.ofSubsetMap_fst_apply (X := TopCat.of M) (Y := TopCat.of N)
+      (TopCat.ofHom j) hf x)
+
 /-- Equal continuous maps induce equal maps of local homology, with the preimage hypothesis
 transported along the equality. -/
 lemma localHomologyMap_congr {j₁ j₂ : C(M, N)} (hj : j₁ = j₂) {S : Set M} {T : Set N}
@@ -323,6 +390,14 @@ lemma localHomologyMap_id {S T : Set M} (h : ContinuousMap.id M ⁻¹' T ⊆ S) 
     localHomologyMap R (ContinuousMap.id M) h k = localHomologyRestriction R h k := by
   rw [localHomologyMap, localHomologyRestriction_def]
   exact congrArg (TopPair.singularHomologyMap · R k) (TopPair.hom_ext_of_fst _ (rfl))
+
+/-- A continuous self-map equal to the identity induces the identity on the local homology at any
+set whose preimage it keeps inside the set. -/
+lemma localHomologyMap_eq_id {j : C(M, M)} (hj : j = ContinuousMap.id M) {S : Set M}
+    (h : j ⁻¹' S ⊆ S) (k : ℕ) : localHomologyMap R j h k = 𝟙 _ := by
+  subst hj
+  rw [localHomologyMap_id]
+  exact localHomologyRestriction_refl R S k
 
 /-- The maps of local homology are functorial. -/
 @[reassoc (attr := simp)]
@@ -378,7 +453,117 @@ theorem localHomologyMap_eq_of_homotopy {j₀ j₁ : C(M, N)} (F : j₀.Homotopy
     (B := (Sᶜ : Set (TopCat.of M))) (B' := (Tᶜ : Set (TopCat.of N))) F
     fun τ y hy ↦ hF τ y hy).congr_singularHomologyMap R k
 
+/-- **Naturality of the passage to relative homology.** For `j : M → N` with `j ⁻¹' T ⊆ S`,
+mapping `Hₖ(M) ⟶ Hₖ(N)` by `j` and then passing to `Hₖ(N, N ∖ T)` is passing to
+`Hₖ(M, M ∖ S)` followed by the map of local homology induced by `j`. -/
+@[reassoc]
+theorem homologyMap_comp_singularHomologyπ_ofSubset {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S)
+    (k : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom j)) R k ≫
+        (TopPair.ofSubset (Tᶜ : Set (TopCat.of N))).singularHomologyπ R k =
+      (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R k ≫
+        localHomologyMap R j h k := by
+  have h' := TopPair.singularHomologyπ_naturality
+    (TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of N) (B := Sᶜ) (B' := Tᶜ)
+      (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) R k
+  simp only [TopPair.ofSubsetMap_fst] at h'
+  rw [localHomologyMap_def]
+  exact h'
+
 end Map
+
+section SingularHomologyMap
+
+variable {M N : Type w} [TopologicalSpace M] [TopologicalSpace N] {Λ : Type*} [Ring Λ]
+  (L : ModuleCat.{w} Λ)
+
+/-- The image of `j_* μ ∈ Hₖ(N; L)` in `Hₖ(N, N ∖ N; L)` is the image of `μ` in `Hₖ(M, M ∖ M; L)`
+under the map of local homology induced by `j`, the map of pairs `j : (M, M ∖ M) → (N, N ∖ N)`. -/
+theorem singularHomologyπ_univ_singularHomologyMap (j : C(M, N)) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology L k : ModuleCat.{w} Λ)) :
+    ((TopPair.ofSubset ((univ : Set (TopCat.of N))ᶜ)).singularHomologyπ
+        (C := ModuleCat.{w} Λ) L k).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom j)) L k).hom μ) =
+      localHomologyMap L j (subset_univ _) k
+        (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+          (C := ModuleCat.{w} Λ) L k).hom μ) :=
+  congrArg (fun φ ↦ φ.hom μ)
+    (homologyMap_comp_singularHomologyπ_ofSubset L j (T := univ) (subset_univ _) k)
+
+/-- **Naturality of the passage to local homology.** If `x` is the only preimage of `j x` under
+`j : M → N`, the image in the local homology at `j x` of `j_* μ ∈ Hₖ(N; L)` is the image of the
+local class of `μ` at `x` under the map of local homology `Hₖ(M, M ∖ {x}) ⟶ Hₖ(N, N ∖ {j x})`
+induced by `j`. -/
+theorem singularHomologyToLocalHomology_singularHomologyMap (j : C(M, N)) {x : M}
+    (hx : j ⁻¹' {j x} ⊆ {x}) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology L k : ModuleCat.{w} Λ)) :
+    singularHomologyToLocalHomology L (j x) k
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom j)) L k).hom μ) =
+      localHomologyMap L j hx k (singularHomologyToLocalHomology L x k μ) := by
+  -- On local homology, `j` followed by restriction to `{j x}` is restriction to `{x}` followed by
+  -- `j`: both are the map of pairs `(M, ∅) ⟶ (N, N ∖ {j x})`.
+  have key : localHomologyMap L j (S := univ) (T := univ) (subset_univ _) k ≫
+      localHomologyRestriction L (subset_univ {j x}) k =
+        localHomologyRestriction L (subset_univ {x}) k ≫ localHomologyMap L j hx k := by
+    rw [localHomologyMap_comp_localHomologyRestriction,
+      localHomologyRestriction_comp_localHomologyMap]
+  have h' := congrArg (fun φ ↦ φ.hom
+    (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+      (C := ModuleCat.{w} Λ) L k).hom μ)) key
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h'
+  rw [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply,
+    singularHomologyπ_univ_singularHomologyMap]
+  exact h'
+
+end SingularHomologyMap
+
+section ChartIso
+
+variable {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w} [TopologicalSpace E]
+  [T1Space E] (φ : OpenPartialHomeomorph M E)
+
+/-- **The chart isomorphism through the source.** The local homology isomorphism of a chart `φ`
+at `a` (`TauCeti.singularHomologyComplSingletonIsoOfChart`) is the inverse of the excision
+isomorphism of the source of `φ`, followed by the map induced by its canonical source
+restriction `φ.sourceRestrict`. -/
+theorem localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom
+    {a : M} (ha : a ∈ φ.source)
+    (h : φ.sourceRestrict ⁻¹' {φ a} ⊆ ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (k : ℕ) :
+    localHomologyMap R (ContinuousMap.subtypeVal φ.source)
+        (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k ≫
+          (singularHomologyComplSingletonIsoOfChart R φ ha k).hom =
+      localHomologyMap R φ.sourceRestrict h k := by
+  have h₁ : localHomologyMap R (ContinuousMap.subtypeVal φ.source)
+      (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k =
+        TopPair.singularHomologyMap
+        (TopPair.excisionMap (X := TopCat.of M) φ.source {a}ᶜ) R k := by
+    -- The pairs agree only after unfolding the preimages of complements.
+    erw [localHomologyMap_def]
+    congr 1
+    apply TopPair.hom_ext_of_fst
+    ext z
+    erw [TopPair.excisionMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
+    rfl
+  have h₂ : localHomologyMap R φ.sourceRestrict h k =
+      TopPair.singularHomologyMap ((TopPair.ofSubsetIso (X := TopCat.of φ.source)
+          (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
+          (B := Subtype.val ⁻¹' {a}ᶜ) (B' := Subtype.val ⁻¹' {φ a}ᶜ)
+          fun z ↦ (φ.injOn.eq_iff z.property ha).not.symm).hom ≫
+        TopPair.excisionMap (X := TopCat.of E) φ.target {φ a}ᶜ) R k := by
+    -- The pairs agree only after unfolding the preimages of complements.
+    erw [localHomologyMap_def]
+    congr 1
+    apply TopPair.hom_ext_of_fst
+    ext z
+    rw [TopPair.Hom.fst_comp]
+    erw [ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply, TopPair.ofSubsetIso_hom,
+      TopPair.ofSubsetMap_fst_apply,
+      TopPair.ofSubsetMap_fst_apply]
+    exact φ.sourceRestrict_apply z
+  rw [h₁, h₂, TopPair.singularHomologyMap_comp]
+  exact singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom R φ ha k
+
+end ChartIso
 
 section Chart
 
@@ -395,6 +580,37 @@ theorem isIso_localHomologyRestriction_symm_image [T2Space M] (φ : OpenPartialH
   isIso_singularHomologyMap_compl_of_chart R φ hx hK hxK hKc.isBounded
     hKc.isClosed (φ.isClosed_image_symm_of_isCompact hKc hKφ) hKφ k
 
+/-- **Every neighbourhood of a point of a manifold contains a compact neighbourhood along which
+local homology is constant.** If `M` is a Hausdorff space modelled on a finite-dimensional real
+normed space and `U` is a neighbourhood of `x ∈ M`, there is a compact neighbourhood `B ⊆ U` of
+`x`, the image under a chart of a closed ball, such that the restriction
+`Hₖ(M, M ∖ B) ⟶ Hₖ(M, M ∖ {y})` is an isomorphism for every `y ∈ B`. -/
+theorem exists_isCompact_subset_mem_nhds_isIso_localHomologyRestriction [T2Space M]
+    [ChartedSpace E M] [FiniteDimensional ℝ E] {x : M} {U : Set M} (hU : U ∈ 𝓝 x) (k : ℕ) :
+    ∃ B ∈ 𝓝 x, IsCompact B ∧ B ⊆ U ∧
+      ∀ y (hy : y ∈ B), IsIso (localHomologyRestriction R (singleton_subset_iff.2 hy) k) := by
+  let φ := chartAt E x
+  have hx := mem_chart_source E x
+  -- A ball about `φ x` inside the target whose image under `φ.symm` lies in `U`.
+  have hV : φ.target ∩ φ.symm ⁻¹' U ∈ 𝓝 (φ x) := by
+    refine Filter.inter_mem (φ.open_target.mem_nhds (φ.map_source hx)) ?_
+    exact φ.continuousAt_symm (φ.map_source hx) (by rwa [φ.left_inv hx])
+  obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
+  have hKV : closedBall (φ x) (ε / 2) ⊆ φ.target ∩ φ.symm ⁻¹' U :=
+    (closedBall_subset_ball (half_lt_self hε)).trans hεV
+  have hKφ : closedBall (φ x) (ε / 2) ⊆ φ.target := hKV.trans inter_subset_left
+  have hKc : IsCompact (closedBall (φ x) (ε / 2)) := isCompact_closedBall _ _
+  refine ⟨φ.symm '' closedBall (φ x) (ε / 2), ?_,
+    hKc.image_of_continuousOn (φ.continuousOn_symm.mono hKφ),
+    image_subset_iff.2 (hKV.trans inter_subset_right), ?_⟩
+  · have h := φ.symm.image_mem_nhds (φ.map_source hx) (closedBall_mem_nhds (φ x) (half_pos hε))
+    rwa [φ.left_inv hx] at h
+  · rintro y ⟨w, hw, rfl⟩
+    have hw' : w ∈ φ.target := hKφ hw
+    have hw'' : φ (φ.symm w) ∈ closedBall (φ x) (ε / 2) := by rwa [φ.right_inv hw']
+    exact isIso_localHomologyRestriction_symm_image R φ ((convex_closedBall _ _).starConvex hw'')
+      hKc hKφ (φ.map_target hw') hw'' k
+
 /-- **Every point of a manifold has a compact neighbourhood along which local homology is
 constant.** If `M` is a Hausdorff space modelled on a finite-dimensional real normed space, every
 `x ∈ M` has a compact neighbourhood `B`, the image under a chart of a closed ball, such that the
@@ -403,21 +619,10 @@ theorem exists_isCompact_mem_nhds_isIso_localHomologyRestriction [T2Space M] [Ch
     [FiniteDimensional ℝ E] (x : M) (k : ℕ) :
     ∃ B ∈ 𝓝 x, IsCompact B ∧
       ∀ y (hy : y ∈ B), IsIso (localHomologyRestriction R (singleton_subset_iff.2 hy) k) := by
-  let φ := chartAt E x
-  obtain ⟨ε, hε, hεφ⟩ := isOpen_iff.1 φ.open_target (φ x) (mem_chart_target E x)
-  have hKφ : closedBall (φ x) (ε / 2) ⊆ φ.target :=
-    (closedBall_subset_ball (half_lt_self hε)).trans hεφ
-  have hKc : IsCompact (closedBall (φ x) (ε / 2)) := isCompact_closedBall _ _
-  refine ⟨φ.symm '' closedBall (φ x) (ε / 2), ?_,
-    hKc.image_of_continuousOn (φ.continuousOn_symm.mono hKφ), ?_⟩
-  · have h := φ.symm.image_mem_nhds (mem_chart_target E x)
-      (closedBall_mem_nhds (φ x) (half_pos hε))
-    rwa [φ.left_inv (mem_chart_source E x)] at h
-  · rintro y ⟨w, hw, rfl⟩
-    have hw' : w ∈ φ.target := hKφ hw
-    have hw'' : φ (φ.symm w) ∈ closedBall (φ x) (ε / 2) := by rwa [φ.right_inv hw']
-    exact isIso_localHomologyRestriction_symm_image R φ ((convex_closedBall _ _).starConvex hw'')
-      hKc hKφ (φ.map_target hw') hw'' k
+  obtain ⟨B, hB, hBc, -, hiso⟩ :=
+    exists_isCompact_subset_mem_nhds_isIso_localHomologyRestriction (E := E) R
+      (Filter.univ_mem : univ ∈ 𝓝 x) k
+  exact ⟨B, hB, hBc, hiso⟩
 
 /-- An open, bounded, convex subset of the target of a chart whose closure also lies in the
 target. These patches index the cover over which the local homology system is glued. -/

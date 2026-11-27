@@ -74,6 +74,8 @@ criterion adds is the production of the pointwise limits that theorem asks for.
   some point of `closure U` — at a point of `frontier U`, if the value is not attained and `f` is
   continuous — so `closure (f '' U)` is the union of the cluster sets, and — for continuous `f` —
   is the image together with the *boundary* cluster values.
+* `ContinuousOn.continuousOn_extendFrom_closure` — a continuous map on `U` with a limit at every
+  point of `frontier U` extends continuously to `closure U` by Mathlib's `extendFrom`.
 * `TauCeti.exists_continuousOn_closure_eqOn` — **the extension criterion**: a continuous map into a
   compact set, with subsingleton boundary cluster sets, extends continuously to `closure U`;
   `TauCeti.exists_continuousOn_closure_eqOn_of_isBounded` is the proper-metric form, where the
@@ -429,6 +431,25 @@ end CompleteSpace
 
 /-! ## The extension criterion -/
 
+section RegularExtension
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [RegularSpace Y] {U : Set X}
+  {f : X → Y}
+
+/-- A function continuous on `U` with a limit along `𝓝[U] w` at every point `w` of `frontier U`
+extends continuously to `closure U`: `extendFrom U f` is continuous on `closure U`. `U` need not
+be open: a point of `closure U` outside `U` lies in `frontier U`, and at a point of `U` continuity
+supplies the limit that Mathlib's `continuousOn_extendFrom` asks for. -/
+theorem _root_.ContinuousOn.continuousOn_extendFrom_closure (hfc : ContinuousOn f U)
+    (hlim : ∀ w ∈ frontier U, ∃ v, Tendsto f (𝓝[U] w) (𝓝 v)) :
+    ContinuousOn (extendFrom U f) (closure U) := by
+  refine continuousOn_extendFrom subset_rfl fun w hw => ?_
+  by_cases hwU : w ∈ U
+  · exact ⟨f w, hfc w hwU⟩
+  · exact hlim w ⟨hw, fun hwi => hwU (interior_subset hwi)⟩
+
+end RegularExtension
+
 section Extension
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [T3Space Y] {U : Set X}
@@ -439,9 +460,9 @@ whose cluster set at each boundary point has at most one element, extends contin
 `closure U`. `U` need not be open: a point of `closure U` outside `U` lies in `frontier U`.
 
 The compactness is what `TauCeti.exists_tendsto_of_clusterSetOn_subsingleton` consumes to turn each
-subsingleton boundary cluster set into a limit; at a point of `U` continuity already supplies the
-limit. Having a limit at every point of `closure U`, the map extends by Mathlib's `extendFrom`,
-which is continuous on `closure U` by `continuousOn_extendFrom` and agrees with `f` on `U` by
+subsingleton boundary cluster set into a limit. Having a limit at every point of `frontier U`, the
+map extends by Mathlib's `extendFrom`, which is continuous on `closure U` by
+`ContinuousOn.continuousOn_extendFrom_closure` and agrees with `f` on `U` by
 `extendFrom_extends`. `TauCeti.exists_continuousOn_closure_eqOn_of_isBounded` is the common special
 case of a bounded-image map into a proper metric space.
 
@@ -458,13 +479,9 @@ theorem exists_continuousOn_closure_eqOn (hfc : ContinuousOn f U)
     (hK : IsCompact K) (hfK : MapsTo f U K)
     (hsub : ∀ w ∈ frontier U, (clusterSetOn f U w).Subsingleton) :
     ∃ F : X → Y, ContinuousOn F (closure U) ∧ EqOn F f U := by
-  have hall : ∀ w ∈ closure U, ∃ v, Tendsto f (𝓝[U] w) (𝓝 v) := by
-    intro w hw
-    by_cases hwU : w ∈ U
-    · exact ⟨f w, hfc w hwU⟩
-    · exact exists_tendsto_of_clusterSetOn_subsingleton hK hfK hw
-        (hsub w ⟨hw, fun hwi => hwU (interior_subset hwi)⟩)
-  exact ⟨extendFrom U f, continuousOn_extendFrom subset_rfl hall, extendFrom_extends hfc⟩
+  exact ⟨extendFrom U f, hfc.continuousOn_extendFrom_closure fun w hw =>
+    exists_tendsto_of_clusterSetOn_subsingleton hK hfK (frontier_subset_closure hw) (hsub w hw),
+    extendFrom_extends hfc⟩
 
 end Extension
 
@@ -499,12 +516,9 @@ no compact set containing the values of `f` is needed. Neither theorem assumes `
 theorem exists_continuousOn_closure_eqOn_of_forall_exists (hfc : ContinuousOn f U)
     (h : ∀ w ∈ frontier U, ∀ ε > 0, ∃ δ > 0, ∀ x ∈ U ∩ Metric.ball w δ,
       ∀ y ∈ U ∩ Metric.ball w δ, dist (f x) (f y) ≤ ε) :
-    ∃ F : X → Y, ContinuousOn F (closure U) ∧ EqOn F f U := by
-  refine ⟨extendFrom U f, continuousOn_extendFrom subset_rfl fun w hw => ?_,
-    extendFrom_extends hfc⟩
-  by_cases hwU : w ∈ U
-  · exact ⟨f w, hfc w hwU⟩
-  · exact exists_tendsto_of_forall_exists (h w ⟨hw, fun hwi => hwU (interior_subset hwi)⟩)
+    ∃ F : X → Y, ContinuousOn F (closure U) ∧ EqOn F f U :=
+  ⟨extendFrom U f, hfc.continuousOn_extendFrom_closure fun w hw =>
+    exists_tendsto_of_forall_exists (h w hw), extendFrom_extends hfc⟩
 
 end CompleteExtension
 

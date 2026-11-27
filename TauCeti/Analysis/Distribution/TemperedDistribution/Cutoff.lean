@@ -7,11 +7,16 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.SmulLeft
+public import TauCeti.Analysis.Distribution.TemperedDistribution.Conjugation
 public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Cut-off distributions as tempered distributions
@@ -44,17 +49,41 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
 * `Distribution.cutoffTempered_def`, `Distribution.cutoffTempered_apply`: its value `T (φ ψ)` on
   a Schwartz function `ψ`.
 * `Distribution.eq_cutoffTempered_of_forall`: uniqueness of the extension.
+* `Distribution.cutoffTempered_apply_congr`: `φ T` only sees the values of a Schwartz function on
+  `tsupport φ`.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
-* `Distribution.cutoffTempered_add`, `Distribution.cutoffTempered_smul`,
-  `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
+* `Distribution.cutoffTempered_zero`, `Distribution.cutoffTempered_add`,
+  `Distribution.cutoffTempered_smul`, `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
+* `Distribution.cutoffTempered_mapCLM_conjCLE`: cutting off the complex conjugate of `T` by `φ`
+  is conjugating the cut-off of `T` by `conj ∘ φ`.
+* `Distribution.cutoffTempered_eq_zero_of_disjoint`: `φ T = 0` when `φ` vanishes near the support
+  of `T`.
+* `Distribution.cutoffTempered_induction`: a property of tempered distributions that holds for `0`
+  and is preserved by sums passes from the cut-off distributions `ψ T` with `ψ` supported near
+  each point of the support of `χ` to `χ T`.
 * `Distribution.cutoffTempered_smulLeftCLM`: `φ (g T) = (g φ) T` for a smooth real `g`.
+* `Distribution.cutoffTempered_restrictCLM`: cutting off the restriction of `T` to an open
+  `Ω' ≤ Ω` by `φ` is cutting off `T` by `φ` extended by zero.
 * `Distribution.lineDerivOp_cutoffTempered`: the Leibniz rule for `φ T`.
 * `Distribution.smulLeftCLM_cutoffTempered`,
   `Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`: if `χ = 1` on the support of
   `φ`, then `φ (χ T) = φ T` and `φ ∂^m (χ T) = φ ∂^m T`.
+* `Distribution.smulLeftCLM_cutoffTempered_of_eqOn_one`: if `g = 1` on the support of `φ`, then
+  `g (φ T) = φ T`.
+* `Distribution.smulLeftCLM_cutoffTempered_of_mul_eq`: if `g φ = χ`, then `g (φ T) = χ T`.
 * `Distribution.cutoffTempered_toDistribution`: for a tempered distribution `u`, restricted to `Ω`
   by `TemperedDistribution.toDistribution`, the tempered distribution `φ u` is the product of `u`
   with `φ`.
+* `Distribution.isVanishingOn_sub_toDistribution_cutoffTempered`: `χ T` agrees with `T` where
+  `χ = 1`.
+* `Distribution.exists_mem_nhds_forall_cutoffTempered_restrictCLM_iff`,
+  `Distribution.exists_mem_nhds_forall_cutoffTempered_iff_exists_ne_zero` and their companions:
+  the basic properties of the local predicate "`P (ψ T)` for every test function `ψ` supported
+  near `x`", for a property `P` of tempered distributions, from which local regularity on a scale
+  of function spaces is built.
+* `Distribution.cutoffTempered_ofFun_apply`, `Distribution.cutoffTempered_ofFun_eq`,
+  `Distribution.ae_eq_of_cutoffTempered_ofFun_eq`: for the distribution `T` of a locally
+  integrable function `f`, `φ T` is the tempered distribution of the function `φ f`.
 
 ## References
 
@@ -144,6 +173,18 @@ theorem cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {ψ : �
   ext x
   simp [hχ]
 
+/-- **Locality of the cut-off.** The tempered distribution `φ T` only depends on the values of a
+Schwartz function on `tsupport φ`. -/
+theorem cutoffTempered_apply_congr (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {ψ ψ' : 𝓢(E, ℂ)}
+    (h : EqOn ψ ψ' (tsupport φ)) : T.cutoffTempered φ ψ = T.cutoffTempered φ ψ' := by
+  rw [cutoffTempered_def, cutoffTempered_def]
+  congr 1
+  ext x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+  by_cases hx : x ∈ tsupport φ
+  · rw [h hx]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
 /-- **Uniqueness of the extension.** A tempered distribution which takes the value `T (φ ψ)` on
 every real compactly supported Schwartz function `ψ` is `φ T`. -/
 theorem eq_cutoffTempered_of_forall [FiniteDimensional ℝ E] (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ))
@@ -164,6 +205,17 @@ theorem cutoffTempered_congr (T : 𝓓'(Ω, ℂ)) {φ φ' : 𝓓(Ω, ℂ)}
   exact T.complexPairing_eq_of_eventuallyEq (h.mono fun x hx ↦ by
     simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', hx])
 
+/-- **Cutting off a restriction.** For an open set `Ω'` and a test function `φ` on `Ω'`, the
+cut-off `φ T|_{Ω'}` of the restriction of `T` is the cut-off of `T` by `TestFunction.monoCLM φ`,
+which is `φ` extended by zero to `Ω` when `Ω' ≤ Ω`. -/
+theorem cutoffTempered_restrictCLM {Ω' : Opens E} (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω', ℂ)) :
+    (restrictCLM T : 𝓓'(Ω', ℂ)).cutoffTempered φ = T.cutoffTempered (monoCLM ℝ φ) := by
+  ext ψ
+  rw [cutoffTempered_def, cutoffTempered_def, complexPairing_restrictCLM]
+  congr 1
+  ext x
+  by_cases h : Ω' ≤ Ω <;> simp [h, bilinLeftCLM_apply]
+
 /-- The tempered distribution `φ T` is additive in `T`. -/
 @[simp]
 theorem cutoffTempered_add (T S : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
@@ -177,6 +229,12 @@ theorem cutoffTempered_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) 
     (c • T).cutoffTempered φ = c • T.cutoffTempered φ := by
   ext ψ
   simp only [smul_apply, cutoffTempered_def, complexPairing_smul, smul_eq_mul]
+
+/-- The cutoff of the zero distribution is zero. -/
+@[simp]
+theorem cutoffTempered_zero (φ : 𝓓(Ω, ℂ)) : (0 : 𝓓'(Ω, ℂ)).cutoffTempered φ = 0 := by
+  ext ψ
+  simp [cutoffTempered_def, complexPairing_apply]
 
 /-- The tempered distribution `φ T` is additive in `T` over finite sums. -/
 @[simp]
@@ -204,6 +262,50 @@ theorem cutoffTempered_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω,
     T.cutoffTempered (c • φ) = c • T.cutoffTempered φ := by
   ext ψ
   simp only [smul_apply, cutoffTempered_def, map_smul, smul_eq_mul]
+
+/-- **Conjugating a cut-off distribution.** Cutting off the complex conjugate of `T` by `φ` gives
+the complex conjugate `ψ ↦ conj (u (conj ψ))` of the tempered distribution `u` obtained by cutting
+off `T` by the conjugate test function `conj ∘ φ`. -/
+theorem cutoffTempered_mapCLM_conjCLE (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    (mapCLM conjCLE.toContinuousLinearMap T).cutoffTempered φ =
+      TemperedDistribution.conjPostcompCLM (starL ℂ : ℂ ≃L⋆[ℂ] ℂ).toContinuousLinearMap
+        (T.cutoffTempered (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ)) := by
+  ext ψ
+  rw [cutoffTempered_def, complexPairing_mapCLM_conjCLE,
+    TemperedDistribution.conjPostcompCLM_apply_apply, cutoffTempered_def]
+  simp only [ContinuousLinearEquiv.coe_coe, starL_apply, RCLike.star_def]
+  congr 2
+  ext x
+  simp [bilinLeftCLM_apply]
+
+/-- The cut-off `φ T` vanishes when `φ` vanishes near the support of `T`. -/
+theorem cutoffTempered_eq_zero_of_disjoint (T : 𝓓'(Ω, ℂ)) {φ : 𝓓(Ω, ℂ)}
+    (h : Disjoint (tsupport φ) (dsupport T)) : T.cutoffTempered φ = 0 := by
+  -- `φ` vanishes on the open set `(tsupport φ)ᶜ`, a neighbourhood of the support of `T`.
+  have h0 : (φ : E → ℂ) =ᶠ[𝓝ˢ (dsupport T)] ((0 : 𝓓(Ω, ℂ)) : E → ℂ) :=
+    eventually_nhdsSet_iff_forall.2 fun y hy ↦ by
+      filter_upwards [(isClosed_tsupport φ).isOpen_compl.mem_nhds
+        (h.subset_compl_left hy)] with z hz
+      simp [image_eq_zero_of_notMem_tsupport hz]
+  rw [cutoffTempered_congr T h0]
+  ext ψ
+  simp [cutoffTempered_def]
+
+/-- **From local to global properties of cut-off distributions.** Let `P` be a property of
+tempered distributions that holds for `0` and is preserved by sums. If every point of the support
+of `χ` has a neighbourhood `U` such that `P (ψ T)` holds for every test function `ψ` supported in
+`U`, then `P (χ T)` holds: `χ` is a finite sum of test functions supported in such
+neighbourhoods. -/
+theorem cutoffTempered_induction (P : 𝓢'(E, ℂ) → Prop) (zero : P 0)
+    (add : ∀ u v, P u → P v → P (u + v)) {T : 𝓓'(Ω, ℂ)} {χ : 𝓓(Ω, ℂ)}
+    (h : ∀ x ∈ tsupport χ, ∃ U ∈ 𝓝 x, ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ)) :
+    P (T.cutoffTempered χ) := by
+  choose U hU hUP using fun x : tsupport χ ↦ h x x.property
+  obtain ⟨t, ψ, hψU, hψχ, -⟩ := χ.exists_sum_subordinate (fun x ↦ interior (U x))
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
+  rw [← hψχ, cutoffTempered_sum_cutoff]
+  exact Finset.sum_induction _ P add zero fun i _ ↦ hUP i _ ((hψU i).trans interior_subset)
 
 end Cutoff
 
@@ -248,22 +350,39 @@ theorem lineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (v 
     map_neg]
   ring
 
-/-- **Cutting off a cut-off distribution.** If `χ = 1` on the support of `φ`, then
-`φ (χ T) = φ T`. -/
-theorem smulLeftCLM_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ φ : 𝓓(Ω, ℂ)}
-    (h : ∀ x ∈ tsupport φ, χ x = 1) :
-    TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (T.cutoffTempered χ) = T.cutoffTempered φ := by
+/-- **Changing the cutoff by a multiplier.** If a function `g` of temperate growth satisfies
+`g φ = χ`, then `g (φ T) = χ T`. -/
+theorem smulLeftCLM_cutoffTempered_of_mul_eq (T : 𝓓'(Ω, ℂ)) {φ χ : 𝓓(Ω, ℂ)} {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (h : ∀ x, g x * φ x = χ x) :
+    TemperedDistribution.smulLeftCLM ℂ g (T.cutoffTempered φ) = T.cutoffTempered χ := by
   ext ψ
   rw [TemperedDistribution.smulLeftCLM_apply_apply, cutoffTempered_def, cutoffTempered_def]
   congr 1
   ext x
   simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
-    SchwartzMap.smulLeftCLM_apply (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff),
-    smul_eq_mul]
-  by_cases hx : x ∈ tsupport φ
-  · rw [h x hx]
-    ring
-  · simp [image_eq_zero_of_notMem_tsupport hx]
+    SchwartzMap.smulLeftCLM_apply_apply hg, smul_eq_mul, ← h x]
+  ring
+
+/-- **Cutting off a cut-off distribution.** If `χ = 1` on the support of `φ`, then
+`φ (χ T) = φ T`. -/
+theorem smulLeftCLM_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ φ : 𝓓(Ω, ℂ)}
+    (h : ∀ x ∈ tsupport φ, χ x = 1) :
+    TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (T.cutoffTempered χ) = T.cutoffTempered φ :=
+  smulLeftCLM_cutoffTempered_of_mul_eq T (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff)
+    fun x ↦ by
+      by_cases hx : x ∈ tsupport φ
+      · rw [h x hx, mul_one]
+      · simp [image_eq_zero_of_notMem_tsupport hx]
+
+/-- **Multiplying a cut-off distribution by a function equal to one on the cutoff.** If a function
+`g` of temperate growth equals `1` on the support of `φ`, then `g (φ T) = φ T`. -/
+theorem smulLeftCLM_cutoffTempered_of_eqOn_one (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (h : EqOn g 1 (tsupport φ)) :
+    TemperedDistribution.smulLeftCLM ℂ g (T.cutoffTempered φ) = T.cutoffTempered φ := by
+  ext ψ
+  rw [TemperedDistribution.smulLeftCLM_apply_apply]
+  exact T.cutoffTempered_apply_congr φ fun x hx ↦ by
+    rw [SchwartzMap.smulLeftCLM_apply_apply hg, h hx, Pi.one_apply, one_smul]
 
 /-- **Derivatives of a cut-off distribution where the cutoff is one.** If `χ = 1` on the support
 of `φ`, then cutting the derivative `∂^m (χ T)` off by `φ` gives `φ ∂^m T`. -/
@@ -279,7 +398,7 @@ theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ 
     set v := m 0
     set R := ∂^{Fin.tail m} (T.cutoffTempered χ)
     have hfd : (fun x ↦ fderiv ℝ φ x v) = ⇑(∂_{v} φ : 𝓓(Ω, ℂ)) :=
-      funext fun x ↦ (TestFunction.lineDerivOp_apply_eq_fderiv φ v x).symm
+      (TestFunction.coe_lineDerivOp_eq_fderiv φ v).symm
     have hL : TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (∂_{v} R) =
         ∂_{v} (TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) R) -
           TemperedDistribution.smulLeftCLM ℂ ⇑(∂_{v} φ : 𝓓(Ω, ℂ)) R := by
@@ -323,6 +442,236 @@ theorem cutoffTempered_toDistribution (u : 𝓢'(E, ℂ)) (φ : 𝓓(Ω, ℂ)) :
   ext x
   simp [SchwartzMap.smulLeftCLM_apply_apply (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff)]
 
+/-- **A distribution agrees with its cut-off where the cutoff is one.** If `χ = 1` on a set `V`,
+then `T` and the restriction to `Ω` of the tempered distribution `χ T` agree on the test functions
+supported in `V`. -/
+theorem isVanishingOn_sub_toDistribution_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ : 𝓓(Ω, ℂ)} {V : Set E}
+    (hχ : ∀ x ∈ V, χ x = 1) :
+    IsVanishingOn ⇑(T - TemperedDistribution.toDistribution Ω (T.cutoffTempered χ)) V := by
+  intro φ hφ
+  rw [sub_apply, TemperedDistribution.toDistribution_apply, sub_eq_zero,
+    ← complexPairing_postcompCLM_ofRealCLM T φ, cutoffTempered_apply T χ fun x ↦ ?_]
+  by_cases hx : x ∈ tsupport φ
+  · simp [hχ x (hφ hx)]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
 end ToDistribution
+
+/-! ### Local properties of cut-off distributions
+
+A property `P` of tempered distributions gives a local property of a distribution `T` on `Ω` at a
+point `x`: some neighbourhood `U ⊆ Ω` of `x` has `P (ψ T)` for every test function `ψ` supported
+in `U`. Local regularity on a scale of function spaces, such as `Distribution.IsLocallyMemBesovAt`,
+is of this form; the lemmas below state its basic properties once, under the closure properties of
+`P` that each of them needs. -/
+
+section LocalProperty
+
+variable (P : 𝓢'(E, ℂ) → Prop) {T : 𝓓'(Ω, ℂ)} {x : E}
+
+/-- The points near which every cut-off distribution `ψ T` satisfies `P` form an open set. -/
+theorem isOpen_setOf_exists_mem_nhds_forall_cutoffTempered (T : 𝓓'(Ω, ℂ)) :
+    IsOpen {x : E | ∃ U ∈ 𝓝 x, U ⊆ Ω ∧
+      ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ)} := by
+  refine isOpen_iff_mem_nhds.2 fun x ⟨U, hU, hUΩ, hT⟩ ↦ ?_
+  filter_upwards [eventually_mem_nhds_iff.2 hU] with y hy using ⟨U, hy, hUΩ, hT⟩
+
+variable {P}
+
+/-- Near `x`, the cut-off distributions `ψ T` satisfy any consequence `Q` of `P` they satisfy. -/
+theorem exists_mem_nhds_forall_cutoffTempered_mono {Q : 𝓢'(E, ℂ) → Prop}
+    (h : ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ))
+    (hPQ : ∀ u, P u → Q u) :
+    ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → Q (T.cutoffTempered ψ) :=
+  let ⟨U, hU, hUΩ, hT⟩ := h
+  ⟨U, hU, hUΩ, fun ψ hψ ↦ hPQ _ (hT ψ hψ)⟩
+
+/-- If `P 0` holds, every cut-off of the zero distribution satisfies `P` near each point of
+`Ω`. -/
+theorem exists_mem_nhds_forall_cutoffTempered_zero (hP : P 0) (hx : x ∈ Ω) :
+    ∃ U ∈ 𝓝 x, U ⊆ Ω ∧
+      ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P ((0 : 𝓓'(Ω, ℂ)).cutoffTempered ψ) :=
+  ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun ψ _ ↦ by rwa [cutoffTempered_zero]⟩
+
+/-- If `P` is preserved by complex scalar multiplication, then so is the property that the
+cut-off distributions near `x` satisfy `P`. -/
+theorem exists_mem_nhds_forall_cutoffTempered_smul (hP : ∀ (c : ℂ) u, P u → P (c • u))
+    (h : ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ)) (c : ℂ) :
+    ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P ((c • T).cutoffTempered ψ) :=
+  let ⟨U, hU, hUΩ, hT⟩ := h
+  ⟨U, hU, hUΩ, fun ψ hψ ↦ by rw [cutoffTempered_smul]; exact hP c _ (hT ψ hψ)⟩
+
+/-- If `P` is preserved by sums, then so is the property that the cut-off distributions near `x`
+satisfy `P`. -/
+theorem exists_mem_nhds_forall_cutoffTempered_add (hP : ∀ u v, P u → P v → P (u + v))
+    {S : 𝓓'(Ω, ℂ)}
+    (hS : ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (S.cutoffTempered ψ))
+    (hT : ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ)) :
+    ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P ((S + T).cutoffTempered ψ) :=
+  let ⟨U, hU, hUΩ, hSU⟩ := hS
+  let ⟨V, hV, _, hTV⟩ := hT
+  ⟨U ∩ V, inter_mem hU hV, inter_subset_left.trans hUΩ, fun ψ hψ ↦ by
+    rw [cutoffTempered_add]
+    exact hP _ _ (hSU ψ (hψ.trans inter_subset_left)) (hTV ψ (hψ.trans inter_subset_right))⟩
+
+/-- At a point of an open subset `Ω' ≤ Ω`, the cut-off distributions of the restriction `T|_{Ω'}`
+satisfy `P` near `x` exactly when those of `T` do. -/
+theorem exists_mem_nhds_forall_cutoffTempered_restrictCLM_iff {Ω' : Opens E} (h : Ω' ≤ Ω)
+    (hx : x ∈ Ω') :
+    (∃ U ∈ 𝓝 x, U ⊆ Ω' ∧ ∀ ψ : 𝓓(Ω', ℂ), tsupport ψ ⊆ U →
+        P ((restrictCLM T : 𝓓'(Ω', ℂ)).cutoffTempered ψ)) ↔
+      ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ) := by
+  constructor
+  · rintro ⟨U, hU, hUΩ', hT⟩
+    refine ⟨U, hU, hUΩ'.trans h, fun ψ hψ ↦ ?_⟩
+    obtain ⟨ψ', rfl⟩ := TestFunction.exists_monoCLM_eq_of_tsupport_subset h (hψ.trans hUΩ')
+    rw [← cutoffTempered_restrictCLM]
+    exact hT ψ' (by rwa [TestFunction.coe_monoCLM_of_le le_rfl h] at hψ)
+  · rintro ⟨U, hU, -, hT⟩
+    refine ⟨U ∩ Ω', inter_mem hU (Ω'.isOpen.mem_nhds hx), inter_subset_right, fun ψ hψ ↦ ?_⟩
+    rw [cutoffTempered_restrictCLM]
+    exact hT _ (by rw [TestFunction.coe_monoCLM_of_le le_rfl h]; exact hψ.trans inter_subset_left)
+
+/-- If the cut-off distributions of `T` near `x` satisfy `P`, so do those of a smooth multiple
+`g T`. -/
+theorem exists_mem_nhds_forall_cutoffTempered_smulLeftCLM
+    (h : ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ))
+    {g : E → ℝ} (hg : ContDiff ℝ ∞ g) :
+    ∃ U ∈ 𝓝 x, U ⊆ Ω ∧
+      ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P ((smulLeftCLM hg T).cutoffTempered ψ) :=
+  let ⟨U, hU, hUΩ, hT⟩ := h
+  ⟨U, hU, hUΩ, fun ψ hψ ↦ by
+    rw [cutoffTempered_smulLeftCLM]
+    exact hT _ ((TestFunction.tsupport_smulLeftCLM_subset hg ψ).trans
+      (inter_subset_right.trans hψ))⟩
+
+/-- **Testing with one cutoff.** If `P` is preserved by multiplication with test functions, the
+cut-off distributions of `T` near `x` satisfy `P` exactly when `χ T` does for some test function
+`χ` equal to one near `x`. -/
+theorem exists_mem_nhds_forall_cutoffTempered_iff_exists_eventually_eq_one
+    [FiniteDimensional ℝ E]
+    (hP : ∀ u (ψ : 𝓓(Ω, ℂ)), P u → P (TemperedDistribution.smulLeftCLM ℂ (ψ : E → ℂ) u)) :
+    (∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ)) ↔
+      ∃ χ : 𝓓(Ω, ℂ), (∀ᶠ y in 𝓝 x, χ y = 1) ∧ P (T.cutoffTempered χ) := by
+  refine ⟨fun ⟨U, hU, hUΩ, hT⟩ ↦ ?_, fun ⟨χ, hχ, hT⟩ ↦ ?_⟩
+  · obtain ⟨χ, hχ1, hχU⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+      isCompact_singleton isOpen_interior
+      (singleton_subset_iff.2 (mem_interior_iff_mem_nhds.2 hU)) (interior_subset.trans hUΩ)
+    exact ⟨χ, by rwa [nhdsSet_singleton] at hχ1, hT χ (hχU.trans interior_subset)⟩
+  · -- On the set where `χ = 1`, every cut-off distribution `ψ T` is the smooth multiple `ψ (χ T)`.
+    have hxΩ : x ∈ Ω := χ.tsupport_subset (subset_tsupport _ (by simp [hχ.self_of_nhds]))
+    refine ⟨{y | χ y = 1} ∩ Ω, inter_mem hχ (Ω.isOpen.mem_nhds hxΩ), inter_subset_right,
+      fun ψ hψ ↦ ?_⟩
+    rw [← smulLeftCLM_cutoffTempered T fun y hy ↦ (hψ hy).1]
+    exact hP _ ψ hT
+
+/-- **Testing with one nonvanishing cutoff.** If `P` is preserved by multiplication with test
+functions, the cut-off distributions of `T` near `x` satisfy `P` exactly when `χ T` does for some
+test function `χ` with `χ x ≠ 0`. -/
+theorem exists_mem_nhds_forall_cutoffTempered_iff_exists_ne_zero
+    [FiniteDimensional ℝ E]
+    (hP : ∀ u (ψ : 𝓓(Ω, ℂ)), P u → P (TemperedDistribution.smulLeftCLM ℂ (ψ : E → ℂ) u)) :
+    (∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ)) ↔
+      ∃ χ : 𝓓(Ω, ℂ), χ x ≠ 0 ∧ P (T.cutoffTempered χ) := by
+  rw [exists_mem_nhds_forall_cutoffTempered_iff_exists_eventually_eq_one hP]
+  refine ⟨fun ⟨χ, hχ, hT⟩ ↦ ⟨χ, by simp [hχ.self_of_nhds], hT⟩, fun ⟨χ, hχx, hT⟩ ↦ ?_⟩
+  -- A cutoff `ρ` equal to one near `x` is a test-function multiple `h χ`, so `ρ T = h (χ T)`.
+  obtain ⟨ρ, h, hρ1, hhχ⟩ := TestFunction.exists_eventually_eq_one_and_mul_eq hχx
+  refine ⟨ρ, hρ1, ?_⟩
+  rw [← smulLeftCLM_cutoffTempered_of_mul_eq T
+    (h.hasCompactSupport.hasTemperateGrowth h.contDiff) hhχ]
+  exact hP _ h hT
+
+/-- If `P` holds for a tempered distribution `u` and is preserved by multiplication with test
+functions, then the cut-off distributions of `u`, as a distribution on `Ω`, satisfy `P` near every
+point of `Ω`. -/
+theorem exists_mem_nhds_forall_cutoffTempered_toDistribution
+    (hP : ∀ u (ψ : 𝓓(Ω, ℂ)), P u → P (TemperedDistribution.smulLeftCLM ℂ (ψ : E → ℂ) u))
+    {u : 𝓢'(E, ℂ)} (hu : P u) (hx : x ∈ Ω) :
+    ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U →
+      P ((TemperedDistribution.toDistribution Ω u).cutoffTempered ψ) :=
+  ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun ψ _ ↦ by
+    rw [cutoffTempered_toDistribution]
+    exact hP u ψ hu⟩
+
+/-- If `P 0` holds, the cut-off distributions of `T` satisfy `P` near every point of `Ω` outside
+the support of `T`, since they vanish there. -/
+theorem exists_mem_nhds_forall_cutoffTempered_of_notMem_dsupport (hP : P 0) (hx : x ∈ Ω)
+    (hxT : x ∉ dsupport T) :
+    ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ) :=
+  ⟨Ω ∩ (dsupport T)ᶜ, (Ω.isOpen.inter isClosed_dsupport.isOpen_compl).mem_nhds ⟨hx, hxT⟩,
+    inter_subset_left, fun ψ hψ ↦ by
+      rwa [cutoffTempered_eq_zero_of_disjoint T
+        (Set.subset_compl_iff_disjoint_right.1 (hψ.trans inter_subset_right))]⟩
+
+/-- If `P` is preserved by complex conjugation of tempered distributions, then so is the property
+that the cut-off distributions near `x` satisfy `P`. -/
+theorem exists_mem_nhds_forall_cutoffTempered_mapCLM_conjCLE
+    (hP : ∀ u, P u →
+      P (TemperedDistribution.conjPostcompCLM (starL ℂ : ℂ ≃L⋆[ℂ] ℂ).toContinuousLinearMap u))
+    (h : ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ)) :
+    ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U →
+      P ((mapCLM conjCLE.toContinuousLinearMap T).cutoffTempered ψ) :=
+  let ⟨U, hU, hUΩ, hT⟩ := h
+  ⟨U, hU, hUΩ, fun ψ hψ ↦ by
+    rw [cutoffTempered_mapCLM_conjCLE]
+    exact hP _ (hT _ ((tsupport_comp_subset (map_zero conjCLE) ψ).trans hψ))⟩
+
+end LocalProperty
+
+end Distribution
+
+/-! ### Cut-offs of functions -/
+
+open scoped ENNReal
+
+namespace Distribution
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {Ω : Opens E}
+
+variable {f : E → ℂ}
+
+/-- The cut-off `φ T` of the distribution `T` of a locally integrable function `f`, evaluated on a
+Schwartz function `ψ`, is the integral of `ψ φ f`. -/
+theorem cutoffTempered_ofFun_apply (hf : LocallyIntegrableOn f Ω) (φ : 𝓓(Ω, ℂ)) (ψ : 𝓢(E, ℂ)) :
+    (ofFun Ω f volume ⊤).cutoffTempered φ ψ = ∫ x, ψ x * (φ x * f x) := by
+  rw [cutoffTempered_def, complexPairing_ofFun hf]
+  congr 1
+  ext x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+  ring
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- The cut-off `φ T` of the distribution `T` of a locally integrable function `f` is the tempered
+distribution of any `Lᵖ` function agreeing almost everywhere with `φ f`. -/
+theorem cutoffTempered_ofFun_eq (hf : LocallyIntegrableOn f Ω) (φ : 𝓓(Ω, ℂ))
+    {g : Lp ℂ p (volume : Measure E)} (hg : g =ᵐ[volume] fun x ↦ φ x * f x) :
+    (ofFun Ω f volume ⊤).cutoffTempered φ = (g : 𝓢'(E, ℂ)) := by
+  ext ψ
+  rw [cutoffTempered_ofFun_apply hf, Lp.toTemperedDistribution_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [hg] with x hx
+  rw [hx, smul_eq_mul]
+
+/-- An `Lᵖ` function whose tempered distribution is the cut-off `φ T` of the distribution `T` of a
+locally integrable function `f` agrees almost everywhere with `φ f`. -/
+theorem ae_eq_of_cutoffTempered_ofFun_eq (hf : LocallyIntegrableOn f Ω) (φ : 𝓓(Ω, ℂ))
+    {g : Lp ℂ p (volume : Measure E)}
+    (hg : (ofFun Ω f volume ⊤).cutoffTempered φ = (g : 𝓢'(E, ℂ))) :
+    g =ᵐ[volume] fun x ↦ φ x * f x := by
+  have hφf : Integrable (fun x ↦ φ x * f x) volume :=
+    hf.integrable_smul_left_of_hasCompactSupport φ.continuous.continuousOn φ.hasCompactSupport
+      φ.tsupport_subset
+  refine ae_eq_of_integral_contDiff_smul_eq ((Lp.memLp g).locallyIntegrable Fact.out)
+    hφf.locallyIntegrable fun χ hχ hχc ↦ ?_
+  -- Test both sides against the complexification of `χ`, a Schwartz function.
+  have hχ' : ContDiff ℝ ∞ fun x ↦ (χ x : ℂ) := ofRealCLM.contDiff.comp hχ
+  have h := congrArg (fun T : 𝓢'(E, ℂ) ↦ T ((hχc.comp_left ofReal_zero).toSchwartzMap hχ')) hg
+  simp only [cutoffTempered_ofFun_apply hf, Lp.toTemperedDistribution_apply,
+    HasCompactSupport.toSchwartzMap_toFun] at h
+  simp only [real_smul]
+  exact h.symm
 
 end Distribution

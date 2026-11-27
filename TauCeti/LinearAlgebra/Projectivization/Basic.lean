@@ -41,9 +41,16 @@ sends every other vector into a single line
 (`Projectivization.exists_mk_eq_and_mk_mulVec_eq_of_det_eq_zero`).
 
 The file also records `Projectivization.submodule_map`: the line of the image of a projective
-point under an injective semilinear map is the image of its line, and
-`Projectivization.mk_eq_mk_iff_forall_mul_eq`: over a field, two nonzero coordinate vectors span
-the same line iff all their `2 × 2` homogeneous minors vanish.
+point under an injective semilinear map is the image of its line. A semilinear equivalence induces
+a bijection of projective spaces (`LinearEquiv.mapProjectivization`), and a vector lies on the line
+of a point exactly when it is zero or spans that point (`Projectivization.mem_submodule_iff`).
+Rescaling an injective semilinear map by a nonzero scalar does not change the map it induces on
+projective spaces (`Projectivization.map_smul_eq_map`), and a point lies in the projectivization
+of a submodule exactly when its representative lies in the submodule
+(`Submodule.mem_projectivization_iff_rep_mem`).
+Over a field, `Projectivization.mk_eq_mk_iff_forall_mul_eq` characterizes equality of projective
+points by vanishing of all their `2 × 2` homogeneous minors; on the projective line this is the
+vanishing of a single determinant (`Projectivization.mk_eq_mk_iff_det_eq_zero`).
 
 The normalization lemmas are adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
@@ -187,6 +194,16 @@ theorem mk_eq_mk_iff_forall_mul_eq {x y : ι → K} (hx : x ≠ 0) (hy : y ≠ 0
     simp only [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, div_eq_iff hj₀]
     exact (h i j₀).symm
 
+/-- Two nonzero vectors of `K²` span the same line if and only if the `2 × 2` matrix with rows
+these vectors has determinant zero. -/
+theorem mk_eq_mk_iff_det_eq_zero {x y : Fin 2 → K} (hx : x ≠ 0) (hy : y ≠ 0) :
+    mk K x hx = mk K y hy ↔ (Matrix.of ![x, y]).det = 0 := by
+  rw [mk_eq_mk_iff_forall_mul_eq, Matrix.det_fin_two]
+  simp only [Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one, sub_eq_zero]
+  refine ⟨fun h ↦ h 0 1, fun h i j ↦ ?_⟩
+  fin_cases i <;> fin_cases j
+  exacts [rfl, h, h.symm, rfl]
+
 /-- At any nonzero coordinate of a projective point, there is a representative normalized
 to `1` whose coordinates are the ratios of the chosen representative's coordinates. -/
 lemma exists_rep_apply_eq_one_of_ne_zero (x : Projectivization K (ι → K)) {i : ι}
@@ -217,3 +234,114 @@ theorem submodule_map {D E V W : Type*} [DivisionRing D] [DivisionRing E] [AddCo
   | h v hv => simp [map_mk, submodule_mk, Submodule.map_span]
 
 end Projectivization
+
+namespace LinearEquiv
+
+open Projectivization
+
+variable {K L M V W U : Type*} [DivisionRing K] [DivisionRing L] [DivisionRing M]
+  [AddCommGroup V] [Module K V] [AddCommGroup W] [Module L W] [AddCommGroup U] [Module M U]
+  {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+
+/-- A semilinear equivalence `f : V ≃ₛₗ[σ] W` induces a bijection of projective spaces, sending
+the line of `v` to the line of `f v`. -/
+def mapProjectivization (f : V ≃ₛₗ[σ] W) : Projectivization K V ≃ Projectivization L W where
+  toFun := map (f : V →ₛₗ[σ] W) f.injective
+  invFun := map (f.symm : W →ₛₗ[σ'] V) f.symm.injective
+  left_inv x := by
+    induction x using ind with | h v hv => simp [map_mk]
+  right_inv x := by
+    induction x using ind with | h v hv => simp [map_mk]
+
+/-- `mapProjectivization f` is `Projectivization.map f`. -/
+theorem mapProjectivization_apply (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
+    mapProjectivization f x = map (f : V →ₛₗ[σ] W) f.injective x :=
+  (rfl)
+
+/-- `mapProjectivization f` sends the line of `v` to the line of `f v`. -/
+@[simp]
+theorem mapProjectivization_mk (f : V ≃ₛₗ[σ] W) (v : V) (hv : v ≠ 0) :
+    mapProjectivization f (Projectivization.mk K v hv) =
+      Projectivization.mk L (f v) (by simpa using hv) :=
+  (rfl)
+
+/-- The inverse of `mapProjectivization f` is induced by the inverse of `f`. -/
+@[simp]
+theorem mapProjectivization_symm (f : V ≃ₛₗ[σ] W) :
+    (mapProjectivization f).symm = mapProjectivization f.symm :=
+  (rfl)
+
+/-- The identity induces the identity of projective space. -/
+@[simp]
+theorem mapProjectivization_refl :
+    mapProjectivization (LinearEquiv.refl K V) = Equiv.refl (Projectivization K V) := by
+  ext x
+  induction x using ind with | h v hv => rfl
+
+section Trans
+
+variable {τ : L →+* M} {τ' : M →+* L} [RingHomInvPair τ τ'] [RingHomInvPair τ' τ]
+  {ρ : K →+* M} {ρ' : M →+* K} [RingHomCompTriple σ τ ρ] [RingHomCompTriple τ' σ' ρ']
+  [RingHomInvPair ρ ρ'] [RingHomInvPair ρ' ρ]
+
+/-- Applying the projective maps of `f` and `g` successively is applying the projective map
+of their composite `f.trans g`. -/
+@[simp]
+theorem mapProjectivization_mapProjectivization (f : V ≃ₛₗ[σ] W) (g : W ≃ₛₗ[τ] U)
+    (x : Projectivization K V) :
+    mapProjectivization g (mapProjectivization f x) = mapProjectivization (f.trans g) x := by
+  induction x using ind with | h v hv => rfl
+
+/-- The bijection induced by a composite of semilinear equivalences is the composite of the
+induced bijections. -/
+@[simp]
+theorem mapProjectivization_trans (f : V ≃ₛₗ[σ] W) (g : W ≃ₛₗ[τ] U) :
+    (mapProjectivization f).trans (mapProjectivization g) = mapProjectivization (f.trans g) :=
+  Equiv.ext (mapProjectivization_mapProjectivization f g)
+
+end Trans
+
+/-- The line of the image of a point under `mapProjectivization f` is the image of its line. -/
+@[simp]
+theorem submodule_mapProjectivization (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
+    (mapProjectivization f x).submodule = x.submodule.map (f : V →ₛₗ[σ] W) :=
+  submodule_map _ f.injective x
+
+end LinearEquiv
+
+namespace Projectivization
+
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
+
+/-- A vector lies on the line of a point exactly when it is zero or spans that point. -/
+theorem mem_submodule_iff {x : Projectivization K V} {v : V} :
+    v ∈ x.submodule ↔ ∀ hv : v ≠ 0, mk K v hv = x := by
+  induction x using ind with | h w hw =>
+  by_cases hv : v = 0
+  · simp [hv]
+  · simp [hv, submodule_mk, mk_eq_mk_iff_mem_span hv hw]
+
+/-- Rescaling an injective semilinear map by a nonzero scalar does not change the induced map of
+projective spaces. -/
+theorem map_smul_eq_map {K L V W : Type*} [DivisionRing K] [Field L] [AddCommGroup V]
+    [Module K V] [AddCommGroup W] [Module L W] {σ : K →+* L} {f : V →ₛₗ[σ] W}
+    (hf : Function.Injective f) {c : L} (hcf : Function.Injective (c • f)) :
+    map (c • f) hcf = map f hf := by
+  funext x
+  induction x using ind with | h v hv =>
+  rw [map_mk, map_mk, mk_eq_mk_iff']
+  exact ⟨c, by simp⟩
+
+end Projectivization
+
+namespace Submodule
+
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
+
+/-- A projective point lies in the projectivization of a submodule exactly when its representative
+lies in the submodule. -/
+theorem mem_projectivization_iff_rep_mem (s : Submodule K V) (x : Projectivization K V) :
+    x ∈ s.projectivization ↔ x.rep ∈ s := by
+  rw [← mk_mem_projectivization_iff s x.rep_ne_zero, Projectivization.mk_rep]
+
+end Submodule

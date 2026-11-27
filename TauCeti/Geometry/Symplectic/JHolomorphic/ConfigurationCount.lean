@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.Geometry.Symplectic.JHolomorphic.TorusWeight
+public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.RingTheory.NovikovSeries.PowerSeries
 
 /-!
@@ -122,8 +122,9 @@ intersections are inputs here; the geometric theorems supplying them are separat
   `TauCeti.apply_self_sub_apply_canonical_eq_sum_filter_of_mem_compatibleConfigurations`,
   `TauCeti.apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations`: intersection
   numbers and virtual dimension of the class of a configuration.
-* `TauCeti.configurationCount_eq_zero_of_apply_lt_neg_one`: vanishing in a class that is not
-  good.
+* `TauCeti.prod_eq_zero_of_mem_compatibleConfigurations_of_apply_lt_neg_one`,
+  `TauCeti.configurationCount_eq_zero_of_apply_lt_neg_one`: vanishing of the weights and of the
+  count in a class that is not good.
 * `TauCeti.configurationCount_eq_zero_of_apply_self_sub_apply_canonical_neg`: vanishing in negative
   virtual dimension.
 * `TauCeti.configurationCount_eq_of_area_lt`: candidates of area larger than `ω A` do not
@@ -207,7 +208,12 @@ multiplicity, indexed by the support. -/
 theorem sum_support_smul_eq_of_mem_compatibleConfigurations
     (hl : l ∈ compatibleConfigurations r cls s A) :
     ∑ c : l.support, l c • cls c = A := by
-  rw [← hl.2.2, Finsupp.linearCombination_apply, Finsupp.sum, ← Finset.sum_coe_sort l.support]
+  rw [← hl.2.2, Finsupp.linearCombination_eq_sum_coe_of_support_subset subset_rfl]
+
+/-- A configuration has only one class: the configurations in distinct classes are disjoint. -/
+theorem pairwise_disjoint_compatibleConfigurations :
+    Pairwise (Function.onFun Disjoint (compatibleConfigurations r cls s)) := fun _ _ hAB ↦
+  Set.disjoint_left.2 fun _ hA hB ↦ hAB (hA.2.2.symm.trans hB.2.2)
 
 section Area
 
@@ -543,6 +549,20 @@ theorem apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations
 
 variable [CommSemiring R] {w : ι → ℕ → R}
 
+/-- **Configurations in a bad class have weight zero.** Let `S` be a candidate of
+self-intersection at least `-1`, such as an exceptional sphere, which every other candidate meets
+nonnegatively, and which is counted only with multiplicity one: `w S k = 0` for `k ≥ 2`. If
+`A · S < -1`, that is, if `A` is not good, then every configuration in class `A` contains `S`
+at least twice, so its weight vanishes. -/
+theorem prod_eq_zero_of_mem_compatibleConfigurations_of_apply_lt_neg_one {S : ι}
+    (hpos : ∀ c ∈ s, c ≠ S → 0 ≤ B (cls c) (cls S)) (hS : -1 ≤ B (cls S) (cls S))
+    (hw : ∀ k, 2 ≤ k → w S k = 0) (hA : B A (cls S) < -1)
+    (hl : l ∈ compatibleConfigurations r cls s A) : l.prod w = 0 := by
+  have hlS : 2 ≤ l S := not_lt.1 fun h ↦
+    hA.not_ge (neg_one_le_apply_of_mem_compatibleConfigurations hpos hS hl (by omega))
+  rw [Finsupp.prod]
+  exact Finset.prod_eq_zero (Finsupp.mem_support_iff.2 (by omega)) (hw _ hlS)
+
 /-- **Vanishing in a bad class.** Let `S` be a candidate of self-intersection at least `-1`, such
 as an exceptional sphere, which every other candidate meets nonnegatively, and which is counted
 only with multiplicity one: `w S k = 0` for `k ≥ 2`. If `A · S < -1`, that is, if `A` is not
@@ -552,11 +572,8 @@ theorem configurationCount_eq_zero_of_apply_lt_neg_one {S : ι}
     (hw : ∀ k, 2 ≤ k → w S k = 0) (hA : B A (cls S) < -1) :
     configurationCount r cls w s A = 0 := by
   rw [configurationCount_def]
-  refine finsum_mem_eq_zero_of_forall_eq_zero fun l hl ↦ ?_
-  have hlS : 2 ≤ l S := not_lt.1 fun h ↦
-    hA.not_ge (neg_one_le_apply_of_mem_compatibleConfigurations hpos hS hl (by omega))
-  rw [Finsupp.prod]
-  exact Finset.prod_eq_zero (Finsupp.mem_support_iff.2 (by omega)) (hw _ hlS)
+  exact finsum_mem_eq_zero_of_forall_eq_zero fun _ hl ↦
+    prod_eq_zero_of_mem_compatibleConfigurations_of_apply_lt_neg_one hpos hS hw hA hl
 
 /-- **Vanishing in negative virtual dimension.** Suppose compatible candidates have intersection
 number zero, as for disjoint images, every candidate has nonnegative virtual dimension
@@ -786,10 +803,7 @@ private theorem coeff_ofPowerSeries_mul_eq_configurationCount_insert {c : ι} {t
       configurationCount r cls w (insert c t) A := by
   classical
   have hγ := hpos c (Set.mem_insert c t)
-  have hinj : Function.Injective fun k : ℕ ↦ k • cls c := fun k k' h ↦ by
-    have h' := congrArg N h
-    simp only [map_nsmul, nsmul_eq_mul] at h'
-    exact_mod_cast mul_right_cancel₀ hγ.ne' h'
+  have hinj := N.nsmul_left_injective_of_map_ne_zero hγ.ne'
   have hfin (u : Set ι) (hu : u ⊆ insert c t) (B : H) :=
     finite_compatibleConfigurations (r := r) (A := B) (fun d hd ↦ hpos d (hu hd))
       (((htfin.insert c).subset hu).subset fun d hd ↦ hd.1)

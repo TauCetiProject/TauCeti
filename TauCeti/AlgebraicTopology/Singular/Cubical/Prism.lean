@@ -24,6 +24,10 @@ the right after those of the swept cube, and placing time last keeps the coordin
 acting on the left before them; the module operators built from them are in
 `TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Prism`.
 
+A map along which the homotopy does not depend on time pushes the prism to zero
+(`TauCeti.NormalizedCubicalChain.map_prism_eq_zero`): every swept cube becomes degenerate in its
+time coordinate.
+
 In particular, a contraction supplies explicit fillings of cycles. These fillings give the
 acyclicity of the standard cubes needed by the acyclic-models comparison of cubical and
 simplicial chains.
@@ -124,20 +128,21 @@ theorem prism_mem_degenerate (H : ContinuousMap.Homotopy f g) {n : ℕ}
 
 /-- The prism identity in positive degrees. -/
 theorem boundary_prism_add_prism_boundary (H : ContinuousMap.Homotopy f g) (n : ℕ) :
-    boundary Y R (n + 1) ∘ₗ prism R H (n + 1) +
-        prism R H n ∘ₗ boundary X R n = map R g (n + 1) - map R f (n + 1) := by
+    boundary Y R R (n + 1) ∘ₗ prism R H (n + 1) +
+        prism R H n ∘ₗ boundary X R R n = map R g (n + 1) - map R f (n + 1) := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply, lsingle_apply,
-    prism_single, map_neg, boundary_single, map_sum, map_smul, map_sub, map_single]
+    prism_single, map_neg, boundary_single, map_sum, map_zsmul, map_sub, map_single]
   rw [Fin.sum_univ_succ]
   simp only [SingularCube.face_zero_prism, SingularCube.face_one_prism, Fin.val_zero,
     pow_zero, one_smul, SingularCube.face_succ_prism, Fin.val_succ, pow_succ,
-    mul_neg_one, neg_smul, smul_neg, smul_sub]
+    mul_neg_one, neg_smul, smul_sub]
+  simp only [smul_neg]
   abel
 
 /-- In degree zero the prism has just its two endpoint faces. -/
 theorem boundary_prism_zero (H : ContinuousMap.Homotopy f g) :
-    boundary Y R 0 ∘ₗ prism R H 0 = map R g 0 - map R f 0 := by
+    boundary Y R R 0 ∘ₗ prism R H 0 = map R g 0 - map R f 0 := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp [boundary_single]
 
@@ -189,6 +194,23 @@ theorem boundary_prism_zero (H : ContinuousMap.Homotopy f g)
     simpa only [← Submodule.mkQ_apply, map_sub, LinearMap.comp_apply,
       LinearMap.sub_apply] using
       congrArg (Submodule.mkQ (CubicalChain.degenerate Y R 0)) h
+
+/-- **Forgetting time kills the prism**: if `φ (H (t, x))` does not depend on the time `t`, the
+push-forward along `φ` of the prism of `H` vanishes, since every swept cube becomes degenerate in
+its time coordinate. -/
+theorem map_prism_eq_zero {Z : Type*} [TopologicalSpace Z] (H : ContinuousMap.Homotopy f g)
+    {φ : C(Y, Z)} (hφ : ∀ t x, φ (H (t, x)) = φ (H (0, x))) {n : ℕ}
+    (c : NormalizedCubicalChain X R n) : map R φ (n + 1) (prism R H n c) = 0 := by
+  induction c using induction_on with
+  | zero => simp
+  | add a b ha hb => rw [map_add, map_add, ha, hb, add_zero]
+  | smul r a ha => rw [map_smul, map_smul, ha, smul_zero]
+  | ofCube c =>
+    rw [prism_ofCube, map_neg, map_ofCube, ofCube_eq_zero, neg_zero]
+    refine SingularCube.isDegenerate_iff.2 ⟨0, SingularCube.isDegenerateAt_iff.2 fun x t ↦ ?_⟩
+    simp only [ContinuousMap.comp_apply, SingularCube.prism_apply, Function.update_self,
+      Fin.tail_update_zero]
+    rw [hφ t, hφ (x 0)]
 
 end NormalizedCubicalChain
 
@@ -287,19 +309,16 @@ theorem prismLast_mem_degenerate (H : ContinuousMap.Homotopy f g) {n : ℕ}
 
 /-- The prism identity with time last, in positive degrees. -/
 theorem boundary_prismLast_add_prismLast_boundary (H : ContinuousMap.Homotopy f g) (n : ℕ) :
-    boundary Y R (n + 1) ∘ₗ prismLast R H (n + 1) +
-        prismLast R H n ∘ₗ boundary X R n = map R g (n + 1) - map R f (n + 1) := by
+    boundary Y R R (n + 1) ∘ₗ prismLast R H (n + 1) +
+        prismLast R H n ∘ₗ boundary X R R n = map R g (n + 1) - map R f (n + 1) := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply, lsingle_apply,
-    prismLast_single, map_zsmul, boundary_single, map_sum, map_sub, map_smul, map_single]
+    prismLast_single, map_zsmul, boundary_single, map_sum, map_sub, map_single]
   rw [Fin.sum_univ_castSucc]
   simp only [SingularCube.face_last_zero_prismLast, SingularCube.face_last_one_prismLast,
     SingularCube.face_castSucc_prismLast, Fin.val_last, Fin.val_castSucc, smul_sub,
     Finset.smul_sum, smul_add]
-  -- Convert the signs of the boundary into integer signs, which commute with everything.
-  have hz : ∀ (k : ℕ) (z : CubicalChain Y R (n + 1)), (-1 : R) ^ k • z = ((-1 : ℤ) ^ k) • z :=
-    fun k z ↦ by rw [← Int.cast_smul_eq_zsmul R]; simp
-  simp only [hz, pow_succ (-1 : ℤ) (n + 1), mul_neg_one, smul_smul]
+  simp only [pow_succ (-1 : ℤ) (n + 1), mul_neg_one, smul_smul]
   -- The swept faces cancel in pairs, and the time faces carry the sign `-((-1) ^ (n + 1)) ^ 2`.
   have hs : ((-1 : ℤ) ^ (n + 1)) * (-1) ^ (n + 1) = 1 := by
     rw [← pow_add, ← two_mul, pow_mul]
@@ -313,7 +332,7 @@ theorem boundary_prismLast_add_prismLast_boundary (H : ContinuousMap.Homotopy f 
 
 /-- In degree zero the prism with time last has just its two endpoint faces. -/
 theorem boundary_prismLast_zero (H : ContinuousMap.Homotopy f g) :
-    boundary Y R 0 ∘ₗ prismLast R H 0 = map R g 0 - map R f 0 := by
+    boundary Y R R 0 ∘ₗ prismLast R H 0 = map R g 0 - map R f 0 := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   have h₀ := SingularCube.face_last_zero_prismLast H c
   have h₁ := SingularCube.face_last_one_prismLast H c

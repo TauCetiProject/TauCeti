@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Associativity
+public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 
 /-!
@@ -70,6 +71,10 @@ microlocally there.
   `TauCeti.Symbol.isUniformAsymptoticSum_sharpTerm_right_iff`: the uniform left and right
   parametrix symbols are exactly the uniform symbols differing from a two-sided one by a uniformly
   smoothing symbol.
+* `TauCeti.Symbol.IsUniformlyEllipticAbove.exists_quantizeUniformCLM_comp_eq_id_add`: **the
+  uniform parametrix as an operator.** For a uniformly elliptic uniform symbol `a` there is a
+  uniform symbol `b` of order `-m` with `Op(b) ∘ Op(a) = 1 + Op(r)` and `Op(a) ∘ Op(b) = 1 + Op(r')`
+  on Schwartz space, `r` and `r'` uniformly smoothing, with no compact spatial support assumed.
 * `TauCeti.ClassicalSymbol.IsElliptic.exists_isAsymptoticSum_sharpTerm_left`: **an elliptic
   classical symbol has a left parametrix symbol**, with no radius of invertibility uniform in the
   position.
@@ -77,6 +82,9 @@ microlocally there.
   symbols.** For a smooth function `ψ` of the position, `q(x, ξ) = ψ(x) b(x, ξ)` with `b` a left
   parametrix symbol of `a`, and a symbol `p` with compact spatial support which agrees with `a`
   near the support of `ψ`, the composition symbol `q # p` is `ψ(x)` up to a smoothing symbol.
+  `TauCeti.Symbol.isSmoothing_sharp_sub_of_isAsymptoticSum` is the same for a symbol `b` whose
+  formal composition with `a` is a symbol `c` of order `0`: then `q # p` is `ψ(x) c(x, ξ)` up to a
+  smoothing symbol.
 * `TauCeti.Symbol.IsEllipticOn.exists_isAsymptoticSum_sharpTerm_left`,
   `TauCeti.Symbol.IsEllipticOn.exists_isAsymptoticSum_sharpTerm_right`: **microlocal left and
   right parametrix symbols** of a symbol elliptic on a set `S`, for a target symbol of order `0`
@@ -537,6 +545,35 @@ section Parametrix
 
 variable [CompleteSpace V] [CompleteSpace W]
 
+/-- **The local parametrix modulo smoothing symbols, for a target symbol.** Let `b` be a symbol of
+order `-m` whose formal composition with the symbol `a` of order `m` is a symbol `c` of order `0`,
+`c ∼ ∑ₖ sharpTerm b a k`. Let `ψ` be a smooth function of the position, `q(x, ξ) = ψ(x) b(x, ξ)`,
+`e(x, ξ) = ψ(x) c(x, ξ)`, and `p` a symbol with compact spatial support which agrees with `a` at
+all positions near the support of `ψ`. Then the composition symbol `q # p` is `e` up to a
+smoothing symbol. -/
+theorem isSmoothing_sharp_sub_of_isAsymptoticSum {a : Symbol n V W m} {b : Symbol n W V (-m)}
+    {c : Symbol n V V 0}
+    (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) c) (b.sharpTerm a))
+    {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ) {q : Symbol n W V (-m)}
+    (hq : ∀ x ξ, q.coefficient (x, ξ) = ψ x • b.coefficient (x, ξ)) {p : Symbol n V W m}
+    (hp : p.HasCompactSpatialSupport)
+    (hpa : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, p.coefficient (x, ξ) = a.coefficient (x, ξ))
+    {e : Symbol n V V 0} (he : ∀ x ξ, e.coefficient (x, ξ) = ψ x • c.coefficient (x, ξ)) :
+    (q.sharp p hp - inclusion (neg_add_cancel m).ge e).IsSmoothing := by
+  refine isSmoothing_iff.2 fun μ ↦ ?_
+  obtain ⟨N, hN⟩ := exists_nat_ge (-μ)
+  obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hab N
+  -- `q # p - e = (q # p - ∑_{k < N} sharpTerm q p k) - ψ (c - ∑_{k < N} sharpTerm b a k)`.
+  refine ⟨inclusion (m := -m + m - N) (by linarith) (q.sharpRemainder p hp N) -
+    inclusion (by linarith) (smulLeft hψ r), ?_⟩
+  funext ⟨x, ξ⟩
+  have hr' := congrFun hr (x, ξ)
+  simp only [Pi.sub_apply, Finset.sum_apply, coefficient_inclusion] at hr'
+  simp only [coefficient_sub, coefficient_inclusion, coefficient_sharpRemainder,
+    coefficient_smulLeft, Pi.sub_apply, Finset.sum_apply, he,
+    coefficient_sharpTerm_of_eq_smul_of_eventuallyEq hq hpa, ← hr', smul_sub, Finset.smul_sum]
+  abel
+
 /-- **The local parametrix modulo smoothing symbols.** Let `b` be a left parametrix symbol of the
 symbol `a` of order `m`, `1 ∼ ∑ₖ sharpTerm b a k`. Let `ψ` be a smooth function of the position,
 `q(x, ξ) = ψ(x) b(x, ξ)`, and `p` a symbol with compact spatial support which agrees with `a` at
@@ -551,25 +588,74 @@ theorem isSmoothing_sharp_sub_ofSpatial {a : Symbol n V W m} {b : Symbol n W V (
     (hpa : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, p.coefficient (x, ξ) = a.coefficient (x, ξ)) :
     (q.sharp p hp - inclusion (neg_add_cancel m).ge
       (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V)
-        (hψ.smul contDiff_const))).IsSmoothing := by
-  refine isSmoothing_iff.2 fun μ ↦ ?_
-  obtain ⟨N, hN⟩ := exists_nat_ge (-μ)
-  obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hab N
-  -- `q # p - ψ = (q # p - ∑_{k < N} sharpTerm q p k) - ψ (1 - ∑_{k < N} sharpTerm b a k)`.
-  refine ⟨inclusion (m := -m + m - N) (by linarith) (q.sharpRemainder p hp N) -
-    inclusion (m := 0 + (-m + m - N)) (by linarith)
-      ((ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const)).comp r),
-    ?_⟩
-  funext ⟨x, ξ⟩
-  have hr' := congrFun hr (x, ξ)
-  simp only [Pi.sub_apply, Finset.sum_apply, coefficient_inclusion, coefficient_const] at hr'
-  simp only [coefficient_sub, coefficient_inclusion, coefficient_sharpRemainder, coefficient_comp,
-    coefficient_ofSpatial, Pi.sub_apply, Finset.sum_apply,
-    coefficient_sharpTerm_of_eq_smul_of_eventuallyEq hq hpa, ← hr',
-    ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp, smul_sub, Finset.smul_sum]
-  abel
+        (hψ.smul contDiff_const))).IsSmoothing :=
+  isSmoothing_sharp_sub_of_isAsymptoticSum hab hψ hq hp hpa fun x ξ ↦ by simp
 
 end Parametrix
+
+/-! ### The uniform parametrix as an operator -/
+
+section UniformOperator
+
+variable [CompleteSpace V] [CompleteSpace W]
+
+/-- If the terms `sharpTerm p q k` of a composition of uniform symbols are a uniform asymptotic sum
+for `1`, then `Op(p) ∘ Op(q)` is the identity plus the quantization of a uniformly smoothing
+symbol. -/
+private theorem exists_quantizeUniformCLM_comp_eq_id_add_of_isUniformAsymptoticSum {μ μ' : ℝ}
+    (hμ : μ' + μ = 0)
+    {p : Symbol n W V μ'} (hp : p.IsUniform) {q : Symbol n V W μ} (hq : q.IsUniform)
+    (hpq : IsUniformAsymptoticSum (m := fun k : ℕ ↦ μ' + μ - k)
+      (inclusion (by simp [hμ]) (const (.id ℂ V))) (p.sharpTerm q)) :
+    ∃ (r : Symbol n V V 0) (hr : r.IsUniformlySmoothing),
+      quantizeUniformCLM p hp ∘L quantizeUniformCLM q hq =
+        ContinuousLinearMap.id ℂ _ + quantizeUniformCLM r hr.isUniform := by
+  obtain ⟨c, hc, hcomp⟩ := hp.exists_quantizeUniformCLM_comp hq
+  have hm' : Tendsto (fun k : ℕ ↦ μ' + μ - k) atTop atBot :=
+    tendsto_atBot_add_const_left atTop _ <|
+      tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
+  -- The symbol `c` of the composition and `1` are both asymptotic sums of the same terms.
+  have hs := (hpq.isUniformAsymptoticSum_iff_isUniformlySmoothing_sub hm').1
+    (hp.isUniformAsymptoticSum_sharpTerm_of_comp_eq hq hc hcomp)
+  obtain ⟨r, hr, hrc⟩ := isUniformlySmoothing_iff.1 hs 0
+  refine ⟨r, isUniformlySmoothing_iff.2 fun m'' ↦ (isUniformlySmoothing_iff.1 hs m'').imp
+    fun _ h ↦ ⟨h.1, h.2.trans hrc.symm⟩, ?_⟩
+  have hcr : c.coefficient = (const (.id ℂ V) + r).coefficient := by
+    rw [coefficient_add, hrc, coefficient_sub, coefficient_inclusion, coefficient_inclusion]
+    abel
+  rw [hcomp, quantizeUniformCLM_congr hc ((isUniform_const _).add hr) hcr,
+    quantizeUniformCLM_add (isUniform_const _) hr, quantizeUniformCLM_const]
+  ext u x
+  simp
+
+/-- **The uniform parametrix as an operator.** Let `a` be a symbol of order `m` whose estimates hold
+uniformly in the position and which is uniformly elliptic above some radius. Then there is a symbol
+`b` of order `-m` whose estimates hold uniformly in the position with
+
+`Op(b) ∘ Op(a) = 1 + Op(r)` and `Op(a) ∘ Op(b) = 1 + Op(r')`
+
+on Schwartz space, for uniformly smoothing symbols `r` and `r'`. No compact spatial support is
+assumed: the composition is that of the uniform calculus
+(`TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`), whose symbol has the expansion
+`TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq`, and `b` is the two-sided
+uniform parametrix symbol
+`TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm`. -/
+theorem IsUniformlyEllipticAbove.exists_quantizeUniformCLM_comp_eq_id_add {a : Symbol n V W m}
+    {R : ℝ} (ha : a.IsUniformlyEllipticAbove R) (hau : a.IsUniform) :
+    ∃ (b : Symbol n W V (-m)) (hb : b.IsUniform),
+      (∃ (r : Symbol n V V 0) (hr : r.IsUniformlySmoothing),
+        quantizeUniformCLM b hb ∘L quantizeUniformCLM a hau =
+          ContinuousLinearMap.id ℂ _ + quantizeUniformCLM r hr.isUniform) ∧
+      ∃ (r : Symbol n W W 0) (hr : r.IsUniformlySmoothing),
+        quantizeUniformCLM a hau ∘L quantizeUniformCLM b hb =
+          ContinuousLinearMap.id ℂ _ + quantizeUniformCLM r hr.isUniform := by
+  obtain ⟨b, hb, hL, hR⟩ := ha.exists_isUniformAsymptoticSum_sharpTerm hau
+  exact ⟨b, hb,
+    exists_quantizeUniformCLM_comp_eq_id_add_of_isUniformAsymptoticSum (neg_add_cancel m) hb hau hL,
+    exists_quantizeUniformCLM_comp_eq_id_add_of_isUniformAsymptoticSum (add_neg_cancel m) hau hb
+      hR⟩
+
+end UniformOperator
 
 /-! ### Microlocal parametrix symbols
 

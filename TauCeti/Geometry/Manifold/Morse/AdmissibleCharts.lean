@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.NormalizedChart
+import Mathlib.Analysis.Calculus.Deriv.Pow
 
 /-!
 # Disjoint Morse charts at a critical level
@@ -31,10 +32,16 @@ This file proves that such choices exist when the band `f⁻¹[c - δ, c + δ]` 
 prescribed neighbourhoods of their centres; the disjoint charts themselves come from
 `TauCeti.exists_pairwise_disjoint_normalized_morseCharts`.
 
+A critical point lying in the source of a normal-form chart is on the level `f⁻¹(c)`
+(`PartialDiffeomorph.eq_of_mem_criticalPoints_of_mem_source`), so a band whose critical points lie
+in such charts has no critical value other than `c`.
+
 ## Main results
 
 * `TauCeti.IsMorse.exists_admissible_morseCharts`: the compatible choice of the width `ε` and of
   disjoint normalized Morse charts at all critical points on the level `f⁻¹(c)`.
+* `PartialDiffeomorph.eq_of_mem_criticalPoints_of_mem_source`: a critical point in a normal-form
+  chart lies on the critical level.
 
 ## References
 
@@ -78,8 +85,7 @@ theorem IsMorse.exists_admissible_morseCharts [T2Space M] (hf : IsMorse I f) {c 
           closedBall 0 √(2 * ε) ⊆ (ψ p).target ∧ ∀ y ∈ (ψ p).source,
             f y = c + ∑ i, (if i.val < manifoldMorseIndex I f p then -1 else 1) * ψ p y i ^ 2 := by
   set S := criticalPoints I f ∩ f ⁻¹' {c}
-  have hS : S.Finite := (hf.finite_criticalPoints_inter hcompact).subset
-    (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))
+  have hS : S.Finite := hf.finite_criticalPoints_inter_level hδ.le hcompact
   have : Finite S := hS.to_subtype
   obtain ⟨ε₁, hε₁, hε₁δ, hband⟩ := hf.exists_criticalPoints_inter_preimage_Icc_subset hδ hcompact
   obtain ⟨ψ, hdisj, hψ⟩ := exists_pairwise_disjoint_normalized_morseCharts hS
@@ -97,5 +103,58 @@ theorem IsMorse.exists_admissible_morseCharts [T2Space M] (hf : IsMorse I f) {c 
   · linarith [min_le_left ε₁ (r ^ 2 / 2)]
   · rw [Real.sqrt_le_left hr.le]
     linarith [min_le_right ε₁ (r ^ 2 / 2)]
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] in
+/-- **A critical point in a normal-form chart lies on the critical level.** If
+`f = c + Σ_{j < k} -yⱼ² + Σ_{j ≥ k} yⱼ²` on the source of a smooth chart `ψ`, then every critical
+point of `f` in that source has value `c`. -/
+theorem _root_.PartialDiffeomorph.eq_of_mem_criticalPoints_of_mem_source {c : ℝ} {n k : ℕ}
+    (ψ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
+    (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
+    (hx : x ∈ ψ.source) (hcrit : x ∈ criticalPoints I f) : f x = c := by
+  -- Along the curve `γ t = ψ⁻¹(t • ψ x)` the function is `c + t² (f x - c)`, whose derivative
+  -- `2 (f x - c)` at `t = 1` vanishes since `x` is a critical point.
+  set φ := ψ.toOpenPartialHomeomorph
+  set Q : ℝ := ∑ j, (if j.val < k then -1 else 1) * ψ x j ^ 2
+  set γ : ℝ → M := fun t ↦ φ.symm (t • ψ x)
+  have hγ1 : γ 1 = x := by simp only [γ, one_smul]; exact φ.left_inv hx
+  have ht : ψ x ∈ ψ.target := φ.map_source hx
+  -- Near `x`, `f` is a polynomial in the smooth coordinates of `ψ`, so it is differentiable at `x`.
+  have hfd : MDifferentiableAt I 𝓘(ℝ) f x := by
+    have hq : Differentiable ℝ fun v : EuclideanSpace ℝ (Fin n) ↦
+        c + ∑ j, (if j.val < k then -1 else 1) * v j ^ 2 := by
+      have hj (j : Fin n) : Differentiable ℝ fun v : EuclideanSpace ℝ (Fin n) ↦ v j :=
+        (EuclideanSpace.proj (𝕜 := ℝ) j).differentiable
+      fun_prop
+    refine ((hq (ψ x)).comp_mdifferentiableAt (((ψ.contMDiffOn_toFun.contMDiffAt
+      (ψ.open_source.mem_nhds hx)).mdifferentiableAt (by simp)))).congr_of_eventuallyEq ?_
+    filter_upwards [ψ.open_source.mem_nhds hx] with y hy using hf y hy
+  -- `f ∘ γ` has derivative `0` at `1`, since `γ 1 = x` is a critical point of `f`.
+  have hd : HasFDerivAt (f ∘ γ) (0 : ℝ →L[ℝ] ℝ) 1 := by
+    have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 :=
+      ((ψ.contMDiffOn_invFun.contMDiffAt
+        (ψ.open_target.mem_nhds (by simpa using ht))).mdifferentiableAt (by simp)).comp 1
+          (mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.smul_const _))
+    have h0 : mfderiv I 𝓘(ℝ) f (γ 1) = 0 := by
+      rw [hγ1]
+      exact mem_criticalPoints_iff_mfderiv_eq_zero.1 hcrit
+    have h := (hγ1 ▸ hfd).hasMFDerivAt.comp 1 hγ.hasMFDerivAt
+    rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
+  -- Explicitly, `f (γ t) = c + t² Q` near `t = 1`.
+  have heq : f ∘ γ =ᶠ[𝓝 1] fun t ↦ c + t ^ 2 * Q := by
+    filter_upwards [(continuous_id.smul continuous_const).continuousAt.preimage_mem_nhds
+      (ψ.open_target.mem_nhds (by simpa using ht))] with t htt
+    have hmem : γ t ∈ ψ.source := φ.map_target htt
+    have hγt : ψ (γ t) = t • ψ x := φ.right_inv htt
+    rw [Function.comp_apply, hf _ hmem, hγt, Finset.mul_sum]
+    congr 1
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    simp only [PiLp.smul_apply, smul_eq_mul]
+    ring
+  have hg := ((hasDerivAt_pow 2 (1 : ℝ)).mul_const Q).const_add c
+  have hval := (hg.congr_of_eventuallyEq heq).unique (by simpa using hd.hasDerivAt)
+  have hQ : Q = 0 := by simpa using hval
+  rw [hf x hx]
+  exact add_eq_left.2 hQ
 
 end TauCeti

@@ -50,7 +50,7 @@ theorem auslanderReitenStableHomEquiv_presentation_naturality
     (N : ModuleCat.{max u v w} A)
     (h : (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N ⟶
       (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
-        (ModuleCat.of A (AuslanderReitenTranslate k p))) :
+        (ModuleCat.of A (AuslanderReitenTranslate k k p))) :
     auslanderReitenStableHomEquiv q N
         (h ≫ (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map
           (ModuleCat.ofHom (auslanderReitenTranslateMap f₀ f₁ hf))) =
@@ -70,7 +70,7 @@ theorem auslanderReitenExtEquiv_presentation_naturality
     (N : ModuleCat.{max u v w} A)
     (h : (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N ⟶
       (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
-        (ModuleCat.of A (AuslanderReitenTranslate k p)))
+        (ModuleCat.of A (AuslanderReitenTranslate k k p)))
     (α : Abelian.Ext (ModuleCat.of A (Q₀ ⧸ range q)) N 1) :
     auslanderReitenExtEquiv q N
         (h ≫ (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map

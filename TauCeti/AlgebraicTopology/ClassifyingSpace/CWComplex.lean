@@ -441,6 +441,16 @@ theorem cellFrontier_classifyingSpaceCellEquiv_symm_mk
   rw [← c.image_characteristicMap_sphere, image_image]
   exact image_congr fun x _ => map_classifyingSpaceCellEquiv_symm_mk c x
 
+variable (G) in
+/-- The base point of the classifying space is a `0`-cell, the orbit of the vertex over index zero
+labelled by the unit. -/
+theorem classifyingSpaceBasepoint_mem_skeletonLT_one :
+    classifyingSpaceBasepoint G ∈ skeletonLT (univ : Set (classifyingSpace G)) 1 := by
+  refine openCell_subset_skeletonLT 0 ((classifyingSpaceCellEquiv G 0).symm
+    (Quotient.mk'' (RealizationCell.vertex _ ⟨0, 1⟩))) ?_
+  rw [openCell_classifyingSpaceCellEquiv_symm_mk]
+  exact ⟨universalGSpaceBasepoint G, by simp, classifyingSpaceProj_universalGSpaceBasepoint G⟩
+
 end ClassifyingSpace
 
 end TauCeti

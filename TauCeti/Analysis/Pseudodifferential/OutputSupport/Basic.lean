@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Topology.Algebra.Support
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
@@ -43,7 +44,8 @@ input but has output support in no closed proper subset
   equivalent to vanishing of the coefficient outside `K`.
 * `TauCeti.Symbol.quantizeSchwartzValue_injective` and
   `TauCeti.Symbol.coefficient_eq_of_forall_quantizeSchwartzValue_eq`: a symbol is determined by
-  its quantization, even across different orders.
+  its quantization, even across different orders, and already by its quantization on test
+  functions (`TauCeti.Symbol.coefficient_eq_of_forall_testFunction_quantizeSchwartzValue_eq`).
 * `TauCeti.Symbol.hasCompactSpatialSupport_iff_exists_tsupport_quantizeSchwartzValue_subset`: a
   symbol has compact spatial support exactly when its quantization has output support in a
   compact set.
@@ -58,7 +60,7 @@ input but has output support in no closed proper subset
 
 public section
 
-open scoped FourierTransform SchwartzMap RealInnerProductSpace
+open scoped FourierTransform SchwartzMap RealInnerProductSpace Distributions
 open MeasureTheory Real FourierTransform
 
 namespace TauCeti
@@ -171,6 +173,27 @@ theorem coefficient_eq_of_forall_quantizeSchwartzValue_eq {a : Symbol n V W m}
   obtain ⟨C', hC'⟩ := b.exists_norm_coefficient_le {x} isCompact_singleton
   exact eq_of_forall_quantizeSchwartzValue_eq (a.continuous_coefficient_slice x)
     (b.continuous_coefficient_slice x) (hC x rfl) (hC' x rfl) (fun u hu ↦ congrFun (h u hu) x) ξ
+
+/-- **Smoothing symbols via quantization.** A symbol is smoothing exactly when, for every real
+order `m'`, some symbol of order `m'` has the same quantization on compactly supported Schwartz
+functions. -/
+theorem isSmoothing_iff_forall_exists_quantizeSchwartzValue_eq {a : Symbol n V W m} :
+    a.IsSmoothing ↔ ∀ m' : ℝ, ∃ b : Symbol n V W m', ∀ u : 𝓢(CoordinateSpace n, V),
+      HasCompactSupport u →
+        quantizeSchwartzValue b.coefficient u = quantizeSchwartzValue a.coefficient u :=
+  isSmoothing_iff.trans <| forall_congr' fun _ ↦ exists_congr fun _ ↦
+    ⟨fun hb _ _ ↦ by rw [hb], coefficient_eq_of_forall_quantizeSchwartzValue_eq⟩
+
+/-- **A symbol is determined by its quantization on test functions.** If two symbols, possibly of
+different orders, have the same quantization on test functions, their coefficients are equal. -/
+theorem coefficient_eq_of_forall_testFunction_quantizeSchwartzValue_eq {a : Symbol n V W m}
+    {b : Symbol n V W m'}
+    (h : ∀ φ : 𝓓((⊤ : TopologicalSpace.Opens (CoordinateSpace n)), V),
+      quantizeSchwartzValue a.coefficient (φ.hasCompactSupport.toSchwartzMap φ.contDiff) =
+        quantizeSchwartzValue b.coefficient (φ.hasCompactSupport.toSchwartzMap φ.contDiff)) :
+    a.coefficient = b.coefficient :=
+  coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u hu ↦
+    h ⟨u, u.smooth ⊤, hu, Set.subset_univ _⟩
 
 /-- Full quantization on Schwartz input is injective on symbols of a fixed order. -/
 theorem quantizeSchwartzValue_injective :

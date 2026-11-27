@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Cylinder
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
+public import TauCeti.AlgebraicTopology.SimplicialSet.Op
 public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
 
 /-!
@@ -25,7 +27,10 @@ it is a Kan fibration which is shrinkable:
 * a trivial fibration is a split epimorphism, any two maps into its source which agree after
   composing with it are homotopic over its target, and hence every section of it extends to a
   shrinking;
-* conversely, a shrinkable left fibration is a trivial fibration.
+* conversely, a shrinkable left fibration is a trivial fibration;
+* for a Kan fibration, a section `s` such that `p ≫ s` is homotopic to `𝟙 X`, by a homotopy which
+  need not lie over `Y`, already extends to a shrinking: correcting the homotopy is a lifting
+  problem against the anodyne inclusion `X ⊗ Λ[2, 0] ⟶ X ⊗ Δ[2]`.
 
 In particular a trivial fibration is a simplicial homotopy equivalence, compatibly with the
 projection to `Y`, and so induces a bijection on connected components. This is the combinatorial
@@ -40,7 +45,12 @@ structure.
   agree after composing with it are homotopic over its target.
 * `SSet.Shrinking.ofRLP`: every section of a trivial fibration extends to a shrinking.
 * `SSet.Shrinking.rlp_monomorphisms`: a shrinkable left fibration is a trivial fibration.
+* `SSet.Homotopy.exists_lift_horn₂₀`: filling a horn `Λ[2, 0]` of homotopies relative to a Kan
+  fibration.
+* `SSet.Shrinking.ofHomotopy`: a section of a Kan fibration which is a homotopy inverse extends to
+  a shrinking.
 * `SSet.rlp_monomorphisms_iff`: the resulting characterization of trivial fibrations.
+* `SSet.rlp_monomorphisms_opFunctor_map_iff`: opposite preserves and reflects trivial fibrations.
 * `SSet.bijective_mapπ₀_of_rlp_monomorphisms`: a trivial fibration induces a bijection on
   connected components.
 
@@ -138,6 +148,91 @@ theorem ofRLP_section_ (hp : (monomorphisms SSet.{u}).rlp p) (s : Y ⟶ X) (hs :
   -- A tactic proof keeps the body of `ofRLP` private: an exported `dsimp` lemma would need it.
   rfl
 
+/-- Filling the horn `Λ[2, 0]` of homotopies relative to a Kan fibration `p`: given homotopies
+`H₀₁` from `f₀` to `f₁` and `H₀₂` from `f₀` to `f₂`, and a map `ω : Z ⊗ Δ[2] ⟶ Y` whose faces
+`0 → 1` and `0 → 2` are the composites of `H₀₁` and `H₀₂` with `p`, there is a homotopy from `f₁`
+to `f₂` whose composite with `p` is the face `1 → 2` of `ω`. -/
+lemma Homotopy.exists_lift_horn₂₀ [Fibration p] {Z : SSet.{u}} {f₀ f₁ f₂ : Z ⟶ X}
+    (H₀₁ : Homotopy f₀ f₁) (H₀₂ : Homotopy f₀ f₂) (ω : Z ⊗ Δ[2] ⟶ Y)
+    (h₀₁ : Z ◁ stdSimplex.δ 2 ≫ ω = H₀₁.h ≫ p) (h₀₂ : Z ◁ stdSimplex.δ 1 ≫ ω = H₀₂.h ≫ p) :
+    ∃ K : Homotopy f₁ f₂, K.h ≫ p = Z ◁ stdSimplex.δ 0 ≫ ω := by
+  -- The two cylinders glue to a map on `Z ⊗ Λ[2, 0]`, along their common end `f₀`, which extends
+  -- to `Z ⊗ Δ[2]` over `ω` since `Z ⊗ Λ[2, 0] ⟶ Z ⊗ Δ[2]` is anodyne. The face `1 → 2` of the
+  -- extension is the required homotopy.
+  have hpo : IsPushout (Z ◁ stdSimplex.δ 1) (Z ◁ stdSimplex.δ 1) (Z ◁ horn₂₀.ι₀₁)
+      (Z ◁ horn₂₀.ι₀₂) :=
+    horn₂₀.isPushout.{u}.map (tensorLeft Z)
+  have e₁ : horn₂₀.ι₀₁ ≫ Λ[2, 0].ι = stdSimplex.{u}.δ 2 := horn.ι_ι _ _ _
+  have e₂ : horn₂₀.ι₀₂ ≫ Λ[2, 0].ι = stdSimplex.{u}.δ 1 := horn.ι_ι _ _ _
+  have d₁ : Z ◁ stdSimplex.{u}.δ (1 : Fin 2) ≫ Z ◁ stdSimplex.δ (0 : Fin 3) =
+      Z ◁ stdSimplex.δ 0 ≫ Z ◁ stdSimplex.δ 2 := by
+    simp only [← MonoidalCategory.whiskerLeft_comp]
+    exact congrArg _ (CosimplicialObject.δ_comp_δ stdSimplex (i := 0) (j := 1) (by decide)).symm
+  have d₂ : Z ◁ stdSimplex.{u}.δ (0 : Fin 2) ≫ Z ◁ stdSimplex.δ (0 : Fin 3) =
+      Z ◁ stdSimplex.δ 0 ≫ Z ◁ stdSimplex.δ 1 := by
+    simp only [← MonoidalCategory.whiskerLeft_comp]
+    exact congrArg _ (CosimplicialObject.δ_comp_δ stdSimplex (i := 0) (j := 0) (by decide)).symm
+  have h₀ : ι₀ ≫ H₀₁.h = ι₀ ≫ H₀₂.h := by rw [H₀₁.h₀, H₀₂.h₀]
+  let φ : Z ⊗ (Λ[2, 0] : SSet.{u}) ⟶ X := hpo.desc H₀₁.h H₀₂.h (by
+    rw [whiskerLeft_stdSimplex_δ_one, Category.assoc, Category.assoc, h₀])
+  have sq : CommSq φ (Z ◁ Λ[2, 0].ι) p ω := ⟨hpo.hom_ext
+    (by rw [hpo.inl_desc_assoc, ← whiskerLeft_comp_assoc, e₁, h₀₁])
+    (by rw [hpo.inr_desc_assoc, ← whiskerLeft_comp_assoc, e₂, h₀₂])⟩
+  have := (anodyneExtensions.horn_ι (n := 2) 0).whiskerLeft Z p (mem_fibrations p)
+  -- The faces `0 → 1` and `0 → 2` of the extension are `H₀₁` and `H₀₂`.
+  have l₀₁ : Z ◁ stdSimplex.δ 2 ≫ sq.lift = H₀₁.h := by
+    rw [← e₁, MonoidalCategory.whiskerLeft_comp_assoc, sq.fac_left, hpo.inl_desc]
+  have l₀₂ : Z ◁ stdSimplex.δ 1 ≫ sq.lift = H₀₂.h := by
+    rw [← e₂, MonoidalCategory.whiskerLeft_comp_assoc, sq.fac_left, hpo.inr_desc]
+  -- The ends of the face `1 → 2` are the ends `1` and `2` of these faces.
+  refine ⟨.mk' (Z ◁ stdSimplex.δ 0 ≫ sq.lift) ?_ ?_, ?_⟩
+  · rw [← fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_one_assoc, reassoc_of% d₁, l₀₁,
+      fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero_assoc, H₀₁.h₁]
+  · rw [← fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero_assoc, reassoc_of% d₂, l₀₂,
+      fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero_assoc, H₀₂.h₁]
+  · rw [Homotopy.mk'_h, Category.assoc, sq.fac_right]
+
+/-- Let `p` be a Kan fibration with a section `s` such that `p ≫ s` is homotopic to `𝟙 X`. Then
+there is also such a homotopy over `Y`. -/
+private lemma exists_homotopy_over_of_homotopy [Fibration p] (s : Y ⟶ X) (hs : s ≫ p = 𝟙 Y)
+    (H : Homotopy (p ≫ s) (𝟙 X)) :
+    ∃ K : Homotopy (p ≫ s) (𝟙 X), K.h ≫ p = fst X Δ[1] ≫ p := by
+  -- `σ = H ≫ p ≫ s` is a homotopy from `p ≫ s` to itself with the same image `H ≫ p` in `Y` as
+  -- `H`. Fill the horn `Λ[2, 0]` formed by `σ` and `H` over the degenerate triangle of `H ≫ p`
+  -- collapsing the edge `1 → 2`: its face `1 → 2` lies over the constant edge.
+  let σ : Homotopy (p ≫ s) (p ≫ s) := .mk' (H.h ≫ p ≫ s) (by simp [reassoc_of% hs])
+    (by simp)
+  have d₁ : stdSimplex.{u}.δ (2 : Fin 3) ≫ stdSimplex.σ 1 = 𝟙 _ :=
+    CosimplicialObject.δ_comp_σ_succ _ (i := 1)
+  have d₂ : stdSimplex.{u}.δ (1 : Fin 3) ≫ stdSimplex.σ 1 = 𝟙 _ :=
+    CosimplicialObject.δ_comp_σ_self _ (i := 1)
+  have d₀ : (stdSimplex.{u}.δ (0 : Fin 3) : Δ[1] ⟶ Δ[2]) ≫ stdSimplex.σ 1 =
+      stdSimplex.σ 0 ≫ stdSimplex.δ 0 :=
+    CosimplicialObject.δ_comp_σ_of_le _ (i := 0) (j := 0) (by decide)
+  obtain ⟨K, hK⟩ := Homotopy.exists_lift_horn₂₀ (p := p) σ H (X ◁ stdSimplex.σ 1 ≫ H.h ≫ p)
+    (by rw [← whiskerLeft_comp_assoc, d₁]; simp [σ, hs])
+    (by rw [← whiskerLeft_comp_assoc, d₂]; simp)
+  refine ⟨K, ?_⟩
+  rw [hK, ← whiskerLeft_comp_assoc, d₀]
+  simp [whiskerLeft_stdSimplex_δ_zero]
+
+/-- A section `s` of a Kan fibration `p` such that `p ≫ s` is homotopic to `𝟙 X`, through a
+homotopy which need not lie over `Y`, extends to a shrinking of `p`. -/
+noncomputable def ofHomotopy [Fibration p] (s : Y ⟶ X) (hs : s ≫ p = 𝟙 Y)
+    (H : Homotopy (p ≫ s) (𝟙 X)) : Shrinking p where
+  section_ := s
+  section_comp := hs
+  homotopy := (exists_homotopy_over_of_homotopy s hs H).choose
+  homotopy_h_comp := (exists_homotopy_over_of_homotopy s hs H).choose_spec
+
+/-- The section of `ofHomotopy s hs H` is `s`. -/
+@[simp]
+theorem ofHomotopy_section_ [Fibration p] (s : Y ⟶ X) (hs : s ≫ p = 𝟙 Y)
+    (H : Homotopy (p ≫ s) (𝟙 X)) : (ofHomotopy s hs H).section_ = s := by
+  -- A tactic proof keeps the body of `ofHomotopy` private: an exported `dsimp` lemma would need
+  -- it.
+  rfl
+
 /-- A left fibration admitting a shrinking has the right lifting property with respect to all
 monomorphisms. -/
 theorem rlp_monomorphisms [LeftFibration p] (h : Shrinking p) : (monomorphisms SSet.{u}).rlp p := by
@@ -171,5 +266,20 @@ lemma bijective_mapπ₀_of_rlp_monomorphisms {p : X ⟶ Y} (hp : (monomorphisms
   refine Function.bijective_iff_has_inverse.2 ⟨mapπ₀ h.section_, fun c ↦ ?_, fun c ↦ ?_⟩
   · rw [← mapπ₀_comp_apply, h.homotopy.mapπ₀_eq, mapπ₀_id_apply]
   · rw [← mapπ₀_comp_apply, h.section_comp, mapπ₀_id_apply]
+
+/-- The opposite of a map `p` has the right lifting property with respect to `∂Δ[n] ⟶ Δ[n]`
+exactly when `p` has it. -/
+theorem hasLiftingProperty_boundary_ι_opFunctor_map_iff (p : X ⟶ Y) (n : ℕ) :
+    HasLiftingProperty ∂Δ[n].ι (opFunctor.map p) ↔ HasLiftingProperty ∂Δ[n].ι p :=
+  (opEquivalence.toAdjunction.hasLiftingProperty_iff ∂Δ[n].ι p).symm.trans
+    (HasLiftingProperty.iff_of_arrow_iso_left
+      (Arrow.isoMk (boundary.opIso n) (stdSimplex.opIso ⦋n⦌) (boundary.opIso_hom_ι n)) p)
+
+/-- The opposite functor preserves and reflects trivial fibrations. -/
+theorem rlp_monomorphisms_opFunctor_map_iff (p : X ⟶ Y) :
+    (monomorphisms SSet.{u}).rlp (opFunctor.map p) ↔ (monomorphisms SSet.{u}).rlp p := by
+  rw [SSet.rlp_monomorphisms]
+  exact ⟨fun h _ _ _ ⟨n⟩ ↦ (hasLiftingProperty_boundary_ι_opFunctor_map_iff p n).1 (h _ ⟨n⟩),
+    fun h _ _ _ ⟨n⟩ ↦ (hasLiftingProperty_boundary_ι_opFunctor_map_iff p n).2 (h _ ⟨n⟩)⟩
 
 end SSet

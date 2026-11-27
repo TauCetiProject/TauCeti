@@ -14,7 +14,6 @@ public import TauCeti.CategoryTheory.FiniteBijection.Shuffle
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Braided
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Closed
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Colimits
-public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Unit
 
 /-!
 # Symmetric sequences of pointed simplicial sets
@@ -153,6 +152,8 @@ noncomputable example : MonoidalClosed SymmetricSequence.{u} := inferInstance
 bijection reaches `Fin (n + 1)` from `Fin 0`. -/
 noncomputable def SymmetricSequence.isInitialUnitObj (n : ℕ) :
     Limits.IsInitial ((𝟙_ SymmetricSequence.{u}).functor.obj (FiniteBijection.mk (n + 1))) :=
-  DayFunctor.isInitialUnitObj
+  letI := LawfulDayConvolutionMonoidalCategoryStruct.convolutionUnit
+    FiniteBijection PointedSSet.{u} SymmetricSequence.{u}
+  DayFunctor.ι_obj (𝟙_ SymmetricSequence.{u}) ▸ Functor.isInitialDayConvolutionUnitObj _
 
 end TauCeti

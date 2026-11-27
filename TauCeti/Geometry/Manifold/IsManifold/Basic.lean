@@ -23,13 +23,18 @@ by `tangentSpaceCast`.
 ## Main results
 
 * `ENat.LEInfty.ne_top`: an exponent at most `∞` is not `ω`.
+* `ENat.LEInfty.add`: a sum of exponents at most `∞` is at most `∞`.
 * `IsManifold.minSmoothness_of_isRCLikeNormedField`: a `Cⁿ` manifold over an `IsRCLikeNormedField`
   is a `C^(minSmoothness 𝕜 n)` manifold (opt-in local instance).
+* `TauCeti.isManifold_natCast_zero`: every charted space is a `C⁰` manifold for the order `0`
+  written as the cast of the natural number `0`.
 * `TauCeti.finrank_tangentSpace`: the tangent space at any point has the dimension of the model
   vector space.
 * `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
   the identity.
 * `TauCeti.tangentSpaceCast_self`: identifying a tangent space with itself is the identity.
+* `TauCeti.apply_eq_of_tangentSpaceCast`: evaluating a basepoint-dependent expression at equal
+  base points and `tangentSpaceCast`-related tangent vectors gives equal values.
 * `TauCeti.tangentSpaceCast_trans`: composing two `tangentSpaceCast` identifications across equal
   base points gives the direct identification.
 * `TauCeti.eq_tangentSpaceCast_iff_tangentSpaceCast_eq`: tangent vectors over base points equal to
@@ -45,6 +50,14 @@ open scoped ContDiff
 hypothesis needed to `lift` such an exponent to `ℕ∞`. -/
 theorem ENat.LEInfty.ne_top (n : ℕ∞ω) [ENat.LEInfty n] : n ≠ ⊤ :=
   ne_top_of_le_ne_top WithTop.coe_ne_top ENat.LEInfty.out
+
+/-- A sum of smoothness exponents which are at most `∞` is at most `∞`. For instance, Mathlib's
+instances then give a `C^(∞ + 1)` or `C^(1 + 1)` manifold structure from a `C^∞` one. -/
+instance ENat.LEInfty.add (m n : ℕ∞ω) [ENat.LEInfty m] [ENat.LEInfty n] :
+    ENat.LEInfty (m + n) := by
+  lift m to ℕ∞ using ENat.LEInfty.ne_top m
+  lift n to ℕ∞ using ENat.LEInfty.ne_top n
+  exact ⟨mod_cast le_top⟩
 
 section Regularity
 
@@ -70,6 +83,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
+/-- A charted space is a `C⁰` manifold for the order `0` written as the cast of the natural number
+`0`, the form in which `TauCeti.CompactChartAtlas.CkHolderSpace 0` asks for it. -/
+instance isManifold_natCast_zero (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
+    [ChartedSpace H M] : IsManifold I ((0 : ℕ) : WithTop ℕ∞) M := by
+  rw [Nat.cast_zero]
+  infer_instance
+
 /-- The tangent space at any point of a manifold has the dimension of the model vector space. -/
 @[simp]
 theorem finrank_tangentSpace (x : M) : Module.finrank 𝕜 (TangentSpace I x) = Module.finrank 𝕜 E :=
@@ -88,6 +108,16 @@ theorem heq_tangentSpaceCast {x y : M} (hxy : x = y) (w : TangentSpace I x) :
 theorem tangentSpaceCast_self {x : M} (w : TangentSpace I x) :
     tangentSpaceCast I x x w = w :=
   (rfl)
+
+/-- Evaluating a basepoint-dependent expression at equal base points and `tangentSpaceCast`-related
+tangent vectors gives equal values. -/
+theorem apply_eq_of_tangentSpaceCast {β : Sort*} (P : ∀ y : M, TangentSpace I y → β)
+    {y₁ y₂ : M} (hy : y₁ = y₂) {v₁ : TangentSpace I y₁} {v₂ : TangentSpace I y₂}
+    (hv : tangentSpaceCast I y₁ y₂ v₁ = v₂) : P y₁ v₁ = P y₂ v₂ := by
+  subst hy
+  rw [tangentSpaceCast_self] at hv
+  subst hv
+  rfl
 
 /-- Composing two `tangentSpaceCast` identifications across equal base points gives the direct
 identification. -/

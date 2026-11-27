@@ -10,14 +10,17 @@ public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.Data.Fintype.Pigeonhole
-import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
+import TauCeti.GroupTheory.GroupAction.Orbit.Card
 
 /-!
 # Elementary facts about permutations
+
+`TauCeti.sum_sign_smul_eq_zero_of_mul_swap` cancels a signed sum invariant under a fixed
+transposition, for arbitrary additive commutative groups.
 
 This file records general-purpose facts about permutations: a map intertwining two permutations
 intertwines their integer powers (`Function.Semiconj.perm_zpow_right`), a transposition
@@ -42,7 +45,9 @@ correction by a power of a cycle for a permutation commuting with it. The set of
 cycle through `x` has `Function.minimalPeriod σ x` elements, counted by `Set.ncard`
 (`Equiv.Perm.ncard_setOf_sameCycle`, and `Equiv.Perm.minimalPeriod_eq_natCard_of_forall_sameCycle`
 for a single cycle through every point). Points over distinct classes of the cycle quotient are
-distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
+distinct (`Equiv.Perm.ne_of_sameCycle_out`), the representatives `Quotient.out` of the
+`⟨σ⟩`-orbits pick exactly one point on every cycle
+(`Equiv.Perm.existsUnique_sameCycle_orbitRel_out`), every such class is nonempty
 (`Equiv.Perm.card_sameCycle_out_pos`), and precomposing with `σ` does not change a sum over a
 `σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
 permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally, right
@@ -61,9 +66,11 @@ with `σ` off the pair (`Function.Involutive.swap_mul`,
 infinitely many cycles (`Equiv.Perm.infinite_quotient_sameCycle_of_involutive`). A permutation of a
 finite type sends as many points into a set as out of it
 (`Equiv.Perm.card_filter_not_and_apply_eq`), the total decrease of a natural-number valued
-function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), and a
+function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), a
 permutation fixing every point except possibly one is the identity
-(`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`).
+(`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`), and a type admitting a transposition is
+nontrivial (`Equiv.Perm.IsSwap.nontrivial`, `Equiv.Perm.IsSwap.two_le_card`). A transposition is
+an involution (`Equiv.Perm.IsSwap.mul_self_eq_one`).
 -/
 
 public section
@@ -210,13 +217,28 @@ theorem sameCycle_iff_mem_orbit_zpowers {x y : α} :
     obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.property
     exact ⟨i, by rw [hi]; exact hg⟩
 
+/-- A point lies in the `⟨σ⟩`-orbit `ω` exactly when it lies on the cycle of `ω.out`. -/
+theorem sameCycle_orbitRel_out_iff {x : α}
+    {ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α} :
+    σ.SameCycle ω.out x ↔
+      (Quotient.mk'' x : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α) = ω := by
+  rw [σ.sameCycle_iff_mem_orbit_zpowers, ← MulAction.orbitRel_apply, ← Quotient.eq'',
+    Quotient.out_eq']
+
+/-- The representatives `Quotient.out` of the `⟨σ⟩`-orbits pick exactly one point on every
+cycle of `σ`. -/
+theorem existsUnique_sameCycle_orbitRel_out (x : α) :
+    ∃! ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α, σ.SameCycle ω.out x :=
+  ⟨Quotient.mk'' x, σ.sameCycle_orbitRel_out_iff.mpr rfl,
+    fun _ h ↦ (σ.sameCycle_orbitRel_out_iff.mp h).symm⟩
+
 /-- The number `Set.ncard {y | σ.SameCycle x y}` of points on the cycle of `σ` through `x` is
 `Function.minimalPeriod σ x`; a fixed point is a cycle of length one. If the cycle is infinite, then
 both sides are `0`. -/
 theorem ncard_setOf_sameCycle (x : α) :
     {y | σ.SameCycle x y}.ncard = Function.minimalPeriod σ x := by
   simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq]
-  exact (Nat.card_congr (MulAction.orbitZPowersEquiv σ x)).trans (Nat.card_zmod _)
+  exact MulAction.natCard_orbit_zpowers σ x
 
 /-- If a single cycle of `σ` passes through every point, then every point has minimal period
 `Nat.card α`. If `α` is infinite, then both sides are `0`. -/
@@ -373,6 +395,12 @@ theorem eq_one_of_forall_ne_apply_eq_self (x : α) (h : ∀ y ≠ x, σ y = y) :
     by_contra hne
     exact hne (σ.injective (h (σ y) hne))
   · exact h y hy
+
+variable {σ} in
+/-- A transposition is an involution. -/
+theorem IsSwap.mul_self_eq_one [DecidableEq α] (hσ : σ.IsSwap) : σ * σ = 1 := by
+  obtain ⟨a, b, -, rfl⟩ := hσ
+  exact swap_mul_self a b
 
 end Equiv.Perm
 
@@ -661,6 +689,18 @@ theorem exists_perm_apply_eq_of_eq_iff {ι β γ : Type*} [Finite ι] (c : β �
   refine ⟨Equiv.ofFiberEquiv τ, Equiv.ofFiberEquiv_map τ, fun i => ?_⟩
   exact (hτ (c (a i)) ⟨⟨a i, i, rfl⟩, rfl⟩).trans (hg i)
 
+/-- A signed permutation sum vanishes if its summand is invariant under a fixed transposition.
+This pairs each ordering with its translate by that odd involution. -/
+theorem sum_sign_smul_eq_zero_of_mul_swap {M : Type*} [AddCommGroup M]
+    (F : Perm α → M) (i j : α) (hij : i ≠ j)
+    (hF : ∀ σ, F (σ * swap i j) = F σ) : ∑ σ : Perm α, σ.sign • F σ = 0 := by
+  refine Finset.sum_involution (fun σ _ ↦ σ * swap i j) (fun σ _ ↦ ?_)
+    (fun σ _ _ ↦ ?_) (fun _ _ ↦ Finset.mem_univ _) (fun σ _ ↦ by simp [mul_assoc])
+  · rw [hF, Perm.sign_mul, Perm.sign_swap hij]
+    simp [Units.smul_def]
+  · rw [Ne, mul_eq_left, swap_eq_one_iff]
+    exact hij
+
 /-- Alternating a signed sum over the permutations of `α` a second time, along any
 sign-preserving map `ext` from the permutations of `β`, only multiplies it by the number of
 permutations of `β`. With `ext` the
@@ -807,3 +847,19 @@ theorem swap_mul_mul_swap (hσ : Function.Involutive σ) (a : α) :
   rw [mul_assoc, Equiv.mul_swap_eq_swap_mul, hσ a, Equiv.swap_comm, Equiv.swap_mul_self_mul]
 
 end Function.Involutive
+
+namespace Equiv.Perm
+
+/-- If a type admits a transposition, it has at least two distinct elements. -/
+theorem IsSwap.nontrivial {α : Type*} [DecidableEq α] {τ : Perm α} (hτ : τ.IsSwap) :
+    Nontrivial α := by
+  obtain ⟨x, y, hxy, -⟩ := hτ
+  exact ⟨⟨x, y, hxy⟩⟩
+
+/-- On a finite type admitting a transposition, the cardinality is at least `2`. -/
+theorem IsSwap.two_le_card {α : Type*} [Fintype α] [DecidableEq α] {τ : Perm α} (hτ : τ.IsSwap) :
+    2 ≤ Fintype.card α := by
+  have := hτ.nontrivial
+  exact Fintype.one_lt_card
+
+end Equiv.Perm

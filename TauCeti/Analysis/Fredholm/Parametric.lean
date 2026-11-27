@@ -110,15 +110,23 @@ spaces or of the scalar field is required.
 * `ContinuousLinearMap.index_coprod`: finite-dimensional domain extension increases the index
   by the dimension of the added variables.
 * `ContinuousLinearMap.kerEquivKerParameterProj`: the kernel of the projection is `ker D₁`.
+* `ContinuousLinearMap.kerCoprodEquivOfRightInverse`: when `D₂` has a continuous linear right
+  inverse, the kernel of the total linearization is `E × ker D₂`.
 * `ContinuousLinearMap.range_parameterProj`: its range is the preimage of `range D₁` under `D₂`.
 * `ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective`: the total linearization
   is onto exactly when the parameter directions span the cokernel of `D₁`.
+* `ContinuousLinearMap.exact_of_linearEquiv_ker_coprod`: for a surjective total linearization,
+  the exact sequence `0 → ker D₁ → X → Λ → F ⧸ range D₁ → 0` read through an identification
+  `X ≃ ker (D₁.coprod D₂)`, and its splitting when the middle map vanishes.
 * `ContinuousLinearMap.quotientRangeParameterProjEquiv`: for a surjective total linearization, the
   cokernel of the projection is the cokernel of `D₁`.
 * `ContinuousLinearMap.parameterProj_surjective_iff`: for a surjective total linearization, the
   projection is surjective exactly when `D₁` is.
 * `ContinuousLinearMap.index_parameterProj`: for a surjective total linearization, the
   projection has the same index as `D₁`.
+* `ContinuousLinearMap.finrank_ker_add_finrank_range_parameterProj` and
+  `ContinuousLinearMap.finrank_range_parameterProj_add_finrank_quotient_range`: the dimension
+  counts of the kernel of the total linearization and, when it is onto, of the parameters.
 * `ContinuousLinearMap.isOpenMap_rangeFactorization_parameterProj`: the projection is open onto
   its range when `D₁` is.
 * `ContinuousLinearMap.isFredholm_parameterProj`: when `E` has continuous addition and `Λ`
@@ -127,6 +135,10 @@ spaces or of the scalar field is required.
   `ContinuousLinearMap.surjective_mkQ_comp_parameterProj`: for `ι : Λ → Λ'` with `D₂' ∘ ι = D₂`,
   the short exact sequence `0 → ker (D₁.coprod D₂) → ker (D₁.coprod D₂') → Λ' ⧸ range ι → 0`
   when `ι` is injective and `D₁.coprod D₂` is onto.
+* `ContinuousLinearMap.surjective_coprod_prodMap` and
+  `ContinuousLinearMap.kerCoprodProdMapEquiv`: the direct sum of two stabilized operators is the
+  stabilization of the direct sum by the direct sum of the stabilizers, onto when both are, and
+  its kernel is the product of the two stabilized kernels.
 
 ## References
 
@@ -315,6 +327,40 @@ theorem parameterToCoker_surjective_iff_coprod_surjective :
     (LinearMap.range_eq_top (f := (D₁.coprod D₂ : E × Λ →ₗ[𝕜] F))).symm
   rw [hcoprod, ← LinearMap.range_eq_top, parameterToCoker, LinearMap.range_comp,
     Submodule.map_mkQ_eq_top, range_coprod]
+
+/-- **The exact sequence of a surjective total linearization, read through an identification of
+its kernel.** Let `e : X ≃ₗ[𝕜] ker (D₁.coprod D₂)` identify a module `X` with the kernel of a
+surjective total linearization. Then the sequence `0 → ker D₁ → X → Λ → F ⧸ range D₁ → 0`, with
+maps `x ↦ e⁻¹ (x, 0)`, the parameter projection of `e` and
+`ContinuousLinearMap.parameterToCoker`, is exact. When the middle map vanishes, the first map is an
+isomorphism `ker D₁ ≃ X` and the last one an isomorphism `Λ ≃ F ⧸ range D₁`. -/
+theorem exact_of_linearEquiv_ker_coprod {X : Type*} [AddCommMonoid X] [Module 𝕜 X]
+    (e : X ≃ₗ[𝕜] (D₁.coprod D₂).ker) (hD : Function.Surjective (D₁.coprod D₂)) :
+    Function.Injective (e.symm.toLinearMap ∘ₗ (kerCoprodHom D₁ D₂).toLinearMap) ∧
+      Function.Exact (e.symm.toLinearMap ∘ₗ (kerCoprodHom D₁ D₂).toLinearMap)
+        ((parameterProj D₁ D₂).toLinearMap ∘ₗ e.toLinearMap) ∧
+      Function.Exact ((parameterProj D₁ D₂).toLinearMap ∘ₗ e.toLinearMap)
+        (parameterToCoker D₁ D₂) ∧
+      Function.Surjective (parameterToCoker D₁ D₂) ∧
+      ((parameterProj D₁ D₂).toLinearMap ∘ₗ e.toLinearMap = 0 →
+        Function.Bijective (e.symm.toLinearMap ∘ₗ (kerCoprodHom D₁ D₂).toLinearMap) ∧
+          Function.Bijective (parameterToCoker D₁ D₂)) := by
+  have ha := (LinearEquiv.conj_symm_exact_iff_exact _ _ e).2
+    (exact_kerCoprodHom_parameterProj D₁ D₂)
+  have hb := (LinearEquiv.precomp_exact_iff_exact (e := e)).2
+    (exact_parameterProj_parameterToCoker D₁ D₂)
+  have hc := (parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 hD
+  have hi := e.symm.injective.comp (kerCoprodHom_injective D₁ D₂)
+  refine ⟨hi, ha, hb, hc, fun h ↦ ?_⟩
+  -- The middle map vanishes exactly when the parameter projection does, and then exactness at
+  -- `ker (D₁.coprod D₂)` and at `Λ` gives the two isomorphisms.
+  have h0 : (parameterProj D₁ D₂ : (D₁.coprod D₂).ker →ₗ[𝕜] Λ) = 0 :=
+    (LinearMap.cancel_right e.surjective).1 (h.trans (LinearMap.zero_comp _).symm)
+  exact ⟨e.symm.bijective.comp ⟨kerCoprodHom_injective D₁ D₂,
+    (LinearMap.surjective_iff_eq_zero_of_exact (f := (kerCoprodHom D₁ D₂ : D₁.ker →ₗ[𝕜] _))
+      (exact_kerCoprodHom_parameterProj D₁ D₂)).2 h0⟩,
+    (LinearMap.injective_iff_eq_zero_of_exact (g := parameterToCoker D₁ D₂)
+      (exact_parameterProj_parameterToCoker D₁ D₂)).2 h0, hc⟩
 
 /-! ### Exactness at the original cokernel -/
 
@@ -534,6 +580,127 @@ theorem surjective_mkQ_comp_parameterProj (hι : ∀ l, D₂' (ι l) = D₂ l)
 
 end ChangeOfParameters
 
+section DirectSum
+
+/-! ### Direct sums of stabilized operators -/
+
+variable {𝕜 : Type*} [Ring 𝕜]
+variable {E Λ F E' Λ' F' : Type*}
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+variable [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ]
+variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+variable [AddCommGroup E'] [Module 𝕜 E'] [TopologicalSpace E']
+variable [AddCommGroup Λ'] [Module 𝕜 Λ'] [TopologicalSpace Λ']
+variable [AddCommGroup F'] [Module 𝕜 F'] [TopologicalSpace F'] [ContinuousAdd F']
+variable {D₁ : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {D₁' : E' →L[𝕜] F'} {D₂' : Λ' →L[𝕜] F'}
+
+/-- The direct sum of two stabilized operators is the stabilization of the direct sum by the
+direct sum of the stabilizers: it is onto when both are. -/
+theorem surjective_coprod_prodMap (h : Function.Surjective (D₁.coprod D₂))
+    (h' : Function.Surjective (D₁'.coprod D₂')) :
+    Function.Surjective ((D₁.prodMap D₁').coprod (D₂.prodMap D₂')) := by
+  rintro ⟨y, y'⟩
+  obtain ⟨⟨x, l⟩, hx⟩ := h y
+  obtain ⟨⟨x', l'⟩, hx'⟩ := h' y'
+  exact ⟨((x, x'), (l, l')), by simp_all⟩
+
+variable (D₁ D₂ D₁' D₂') in
+/-- **The stabilized kernel of a direct sum.** The kernel of the direct sum
+`(D₁.prodMap D₁').coprod (D₂.prodMap D₂')` of two stabilized operators is the product of the
+stabilized kernels, through `((x, l), (x', l')) ↦ ((x, x'), (l, l'))`. -/
+noncomputable def kerCoprodProdMapEquiv :
+    ((D₁.coprod D₂).ker × (D₁'.coprod D₂').ker) ≃ₗ[𝕜]
+      ((D₁.prodMap D₁').coprod (D₂.prodMap D₂')).ker :=
+  (Submodule.prodEquiv _ _).symm.trans
+    ((LinearEquiv.prodProdProdComm 𝕜 E Λ E' Λ').ofSubmodules _ _ (by
+      ext ⟨⟨x, x'⟩, ⟨l, l'⟩⟩
+      simp [Submodule.mem_map_equiv, Prod.ext_iff]))
+
+/-- `ContinuousLinearMap.kerCoprodProdMapEquiv` sends `((x, l), (x', l'))` to
+`((x, x'), (l, l'))`. -/
+@[simp]
+theorem coe_kerCoprodProdMapEquiv_apply
+    (v : (D₁.coprod D₂).ker × (D₁'.coprod D₂').ker) :
+    (kerCoprodProdMapEquiv D₁ D₂ D₁' D₂' v : (E × E') × (Λ × Λ')) =
+      (((v.1 : E × Λ).1, (v.2 : E' × Λ').1), ((v.1 : E × Λ).2, (v.2 : E' × Λ').2)) :=
+  (rfl)
+
+/-- The first component of the inverse of `ContinuousLinearMap.kerCoprodProdMapEquiv`: it sends
+`((x, x'), (l, l'))` to `((x, l), (x', l'))`. -/
+@[simp]
+theorem coe_kerCoprodProdMapEquiv_symm_apply_fst
+    (w : ((D₁.prodMap D₁').coprod (D₂.prodMap D₂')).ker) :
+    (((kerCoprodProdMapEquiv D₁ D₂ D₁' D₂').symm w).1 : E × Λ) =
+      ((w : (E × E') × (Λ × Λ')).1.1, (w : (E × E') × (Λ × Λ')).2.1) :=
+  (rfl)
+
+/-- The second component of the inverse of `ContinuousLinearMap.kerCoprodProdMapEquiv`: it sends
+`((x, x'), (l, l'))` to `((x, l), (x', l'))`. -/
+@[simp]
+theorem coe_kerCoprodProdMapEquiv_symm_apply_snd
+    (w : ((D₁.prodMap D₁').coprod (D₂.prodMap D₂')).ker) :
+    (((kerCoprodProdMapEquiv D₁ D₂ D₁' D₂').symm w).2 : E' × Λ') =
+      ((w : (E × E') × (Λ × Λ')).1.2, (w : (E × E') × (Λ × Λ')).2.2) :=
+  (rfl)
+
+end DirectSum
+
+section SplitParameters
+
+/-! ### Split parameter directions -/
+
+variable {𝕜 : Type*} [Ring 𝕜]
+variable {E Λ F : Type*}
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+variable [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [IsTopologicalAddGroup Λ]
+variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+variable (D₁ : E →L[𝕜] F) (D₂ : Λ →L[𝕜] F) {σ : F →L[𝕜] Λ}
+
+/-- When the parameter directions `D₂` have a continuous linear right inverse `σ`, the kernel of
+the total linearization `D₁.coprod D₂` is `E × ker D₂`: the pair `(x, l)` corresponds to
+`(x, l + σ (D₁ x))`. Since `D₂` is then onto, the total linearization is onto whatever `D₁` is,
+and this identifies its kernel with one model however `D₁` varies. -/
+def kerCoprodEquivOfRightInverse (hσ : Function.RightInverse σ D₂) :
+    (D₁.coprod D₂).ker ≃L[𝕜] E × D₂.ker :=
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    ((fst 𝕜 E Λ ∘L (D₁.coprod D₂).ker.subtypeL).prod
+      (codRestrict ((snd 𝕜 E Λ + σ ∘L D₁ ∘L fst 𝕜 E Λ) ∘L (D₁.coprod D₂).ker.subtypeL) D₂.ker
+        fun v ↦ by
+          have h := v.property
+          rw [LinearMap.mem_ker] at h
+          simp only [coe_coe, coprod_apply] at h
+          simp [LinearMap.mem_ker, hσ _, add_comm, h]))
+    (codRestrict ((fst 𝕜 E D₂.ker).prod
+        (D₂.ker.subtypeL ∘L snd 𝕜 E D₂.ker - σ ∘L D₁ ∘L fst 𝕜 E D₂.ker))
+      (D₁.coprod D₂).ker fun p ↦ by simp [LinearMap.mem_ker, hσ _])
+    (ContinuousLinearMap.ext fun p ↦ by ext <;> simp)
+    (ContinuousLinearMap.ext fun v ↦ by ext <;> simp)
+
+/-- The identification of `ker (D₁.coprod D₂)` with `E × ker D₂` keeps the first component. -/
+@[simp]
+theorem kerCoprodEquivOfRightInverse_apply_fst (hσ : Function.RightInverse σ D₂)
+    (v : (D₁.coprod D₂).ker) :
+    (kerCoprodEquivOfRightInverse D₁ D₂ hσ v).1 = (v : E × Λ).1 :=
+  (rfl)
+
+/-- The identification of `ker (D₁.coprod D₂)` with `E × ker D₂` sends `(x, l)` to
+`l + σ (D₁ x)` in the second component. -/
+@[simp]
+theorem coe_kerCoprodEquivOfRightInverse_apply_snd (hσ : Function.RightInverse σ D₂)
+    (v : (D₁.coprod D₂).ker) :
+    ((kerCoprodEquivOfRightInverse D₁ D₂ hσ v).2 : Λ) = (v : E × Λ).2 + σ (D₁ (v : E × Λ).1) :=
+  (rfl)
+
+/-- The inverse identification sends `(x, l)` with `l ∈ ker D₂` to `(x, l - σ (D₁ x))`. -/
+@[simp]
+theorem coe_kerCoprodEquivOfRightInverse_symm_apply (hσ : Function.RightInverse σ D₂)
+    (p : E × D₂.ker) :
+    (((kerCoprodEquivOfRightInverse D₁ D₂ hσ).symm p : (D₁.coprod D₂).ker) : E × Λ) =
+      (p.1, (p.2 : Λ) - σ (D₁ p.1)) :=
+  (rfl)
+
+end SplitParameters
+
 section Dimension
 
 variable {𝕜 : Type*} [DivisionRing 𝕜]
@@ -564,6 +731,12 @@ theorem finiteDimensional_quotient_range_parameterProj
     FiniteDimensional 𝕜 (Λ ⧸ (parameterProj D₁ D₂).range) :=
   (quotientRangeParameterProjEquivRange D₁ D₂).symm.finiteDimensional
 
+/-- The cokernel of `D₁.coprod D₂` is finite dimensional as soon as that of `D₁` is, since the
+cokernel of `D₁` maps onto it (`ContinuousLinearMap.cokerCoprodHom_surjective`). -/
+theorem finiteDimensional_quotient_range_coprod [FiniteDimensional 𝕜 (F ⧸ D₁.range)] :
+    FiniteDimensional 𝕜 (F ⧸ (D₁.coprod D₂).range) :=
+  Module.Finite.of_surjective _ (cokerCoprodHom_surjective D₁ D₂)
+
 /-- Kernel growth is the dimension of the extra variables minus the
 number of independent old obstructions they remove. -/
 theorem finrank_ker_coprod_add_finrank_range_parameterToCoker
@@ -575,6 +748,22 @@ theorem finrank_ker_coprod_add_finrank_range_parameterToCoker
   rw [finrank_ker_parameterProj] at hproj
   rw [ker_parameterToCoker] at hparam
   omega
+
+/-- The kernel of the total linearization splits into a copy of the kernel of `D₁` and the range
+of the parameter projection. -/
+theorem finrank_ker_add_finrank_range_parameterProj [FiniteDimensional 𝕜 (D₁.coprod D₂).ker] :
+    finrank 𝕜 D₁.ker + finrank 𝕜 (parameterProj D₁ D₂).range =
+      finrank 𝕜 (D₁.coprod D₂).ker := by
+  rw [← finrank_ker_parameterProj D₁ D₂, add_comm]
+  exact (parameterProj D₁ D₂).toLinearMap.finrank_range_add_finrank_ker
+
+/-- For a surjective total linearization, the parameters split into the range of the parameter
+projection and a copy of the cokernel of `D₁`. -/
+theorem finrank_range_parameterProj_add_finrank_quotient_range [FiniteDimensional 𝕜 Λ]
+    (hD : Function.Surjective (D₁.coprod D₂)) :
+    finrank 𝕜 (parameterProj D₁ D₂).range + finrank 𝕜 (F ⧸ D₁.range) = finrank 𝕜 Λ := by
+  rw [← finrank_quotient_range_parameterProj D₁ D₂ hD, add_comm]
+  exact Submodule.finrank_quotient_add_finrank _
 
 /-- The extended cokernel is smaller by the rank of the parameter map
 into the old cokernel. No finiteness of the parameter space is needed. -/
@@ -597,6 +786,19 @@ theorem index_coprod [FiniteDimensional 𝕜 D₁.ker]
   have hker := finrank_ker_coprod_add_finrank_range_parameterToCoker D₁ D₂
   have hcoker := finrank_quotient_range_coprod_add_finrank_range_parameterToCoker D₁ D₂
   rw [index_eq_finrank_sub, index_eq_finrank_sub]
+  omega
+
+/-- **The index from a surjective stabilization.** If adjoining finitely many domain variables
+makes `D₁` surjective, the index of `D₁` is the dimension of the kernel of the extension minus the
+number of variables, provided the kernel of `D₁` is finite dimensional. The cokernel of `D₁` is
+then finite dimensional too, spanned by the parameter directions. -/
+theorem index_eq_finrank_ker_coprod_sub_of_surjective [FiniteDimensional 𝕜 D₁.ker]
+    [FiniteDimensional 𝕜 Λ] (h : Function.Surjective (D₁.coprod D₂)) :
+    D₁.index = finrank 𝕜 (D₁.coprod D₂).ker - finrank 𝕜 Λ := by
+  have : FiniteDimensional 𝕜 (F ⧸ D₁.range) := Module.Finite.of_surjective _
+    ((parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 h)
+  have hi := index_coprod D₁ D₂
+  rw [index_of_surjective _ h] at hi
   omega
 
 end Dimension

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
--- Private: the ordered-product, square and even-relation formulas are used only inside proofs.
+-- Private: the Clifford multiplication and ordered-product formulas are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
@@ -37,10 +37,22 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   vectors.
 * `OrthonormalBasis.map_ι_apply_map_ι_apply`, `OrthonormalBasis.map_ι_apply_map_ι_apply_comm`: in
   a Clifford module, `c(bᵢ)² = -1`, and `c(bᵢ)` and `c(bⱼ)` anticommute for `i ≠ j`.
+* `OrthonormalBasis.map_ι_eq_sum`, `OrthonormalBasis.map_ι_apply_eq_sum`: `c(v) = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ)`,
+  in any real algebra receiving the Clifford algebra and applied in a Clifford module.
+* `OrthonormalBasis.sum_smul_map_ι_apply_eq_add`: for a complex-valued covector `L` whose real and
+  imaginary parts are represented by `g₁` and `p`, `∑ᵢ L(bᵢ) c(bᵢ) ψ = c(g₁) ψ + i c(p) ψ`.
 * `QuadraticMap.polar_eq_neg_two_inner`: the polar form of `Q` is `-2 ⟪u, v⟫`.
 * `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
   `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
+* `LinearMap.apply_apply_add_swap_eq_neg_two_inner`: the same polarized relation for a
+  linear map `c : W → End U` satisfying the Clifford relation `c(v)² = -⟪v, v⟫`, and
+  `ContinuousLinearMap.apply_apply_add_swap_eq_neg_two_inner` for a continuous bilinear map.
+* `CliffordAlgebra.sum_sum_smul_ι_mul_ι_of_symm`: for a symmetric family of scalars `mᵢⱼ`,
+  `∑ᵢⱼ mᵢⱼ c(eᵢ) c(eⱼ) = -∑ᵢ mᵢᵢ`.
+* `TauCeti.two_nsmul_sum_sum_apply_apply_eq`: for additive maps `γᵢ` satisfying the Clifford
+  relations `γᵢ γⱼ + γⱼ γᵢ = -2 δᵢⱼ`, the contraction `∑ᵢⱼ γᵢ γⱼ B i j` of a doubly indexed family
+  splits into its trace and its antisymmetrization.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
 ## References
@@ -51,6 +63,33 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 public section
 
 open scoped RealInnerProductSpace
+
+namespace TauCeti
+
+/-- **Clifford contraction of a doubly indexed family.** Let `γᵢ` be additive maps satisfying the
+Clifford relations `γᵢ γⱼ + γⱼ γᵢ = -2 δᵢⱼ`, such as Clifford multiplication by the vectors of an
+orthonormal basis. Then for every family `B i j`,
+
+`2 ∑ᵢ ∑ⱼ γᵢ γⱼ B i j = -2 ∑ᵢ B i i + ∑ᵢ ∑ⱼ γᵢ γⱼ (B i j - B j i)`.
+
+For `B i j = ∇²σ(eᵢ, eⱼ)` the first term is twice the rough Laplacian and the second is a
+curvature term. -/
+theorem two_nsmul_sum_sum_apply_apply_eq {ι V G : Type*} [Fintype ι] [DecidableEq ι]
+    [AddCommGroup V] [FunLike G V V] [AddMonoidHomClass G V V] (γ : ι → G)
+    (hγ : ∀ i j s, γ i (γ j s) + γ j (γ i s) = if i = j then -(2 • s) else 0)
+    (B : ι → ι → V) :
+    2 • ∑ i, ∑ j, γ i (γ j (B i j)) =
+      -(2 • ∑ i, B i i) + ∑ i, ∑ j, γ i (γ j (B i j - B j i)) := by
+  -- Exchanging the indices and applying the Clifford relation gives
+  -- `∑ᵢ ∑ⱼ γᵢ γⱼ B j i + ∑ᵢ ∑ⱼ γᵢ γⱼ B i j = -2 ∑ᵢ B i i`.
+  have hswap : ∑ i, ∑ j, γ i (γ j (B j i)) + ∑ i, ∑ j, γ i (γ j (B i j)) = -(2 • ∑ i, B i i) := by
+    rw [Finset.sum_comm (f := fun i j ↦ γ i (γ j (B j i))), ← Finset.sum_add_distrib]
+    simp only [← Finset.sum_add_distrib, hγ, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
+      Finset.sum_neg_distrib, Finset.smul_sum]
+  simp only [map_sub, Finset.sum_sub_distrib, eq_sub_of_add_eq hswap]
+  abel
+
+end TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
   (hQ : ∀ v, Q v = -‖v‖ ^ 2)
@@ -91,15 +130,52 @@ theorem prod_map_map_eq_neg_one_pow (l : List ι) : ((l.map b).map Q).prod = (-1
   obtain ⟨i, -, rfl⟩ := hx
   simp [hQ, b.orthonormal.1 i]
 
+omit hQ in
+/-- Clifford multiplication expanded in an orthonormal basis, in any real algebra receiving the
+Clifford algebra: `ρ (c(v)) = ∑ᵢ ⟪bᵢ, v⟫ ρ (c(bᵢ))`. -/
+theorem map_ι_eq_sum {A : Type*} [Semiring A] [Algebra ℝ A] (ρ : CliffordAlgebra Q →ₐ[ℝ] A)
+    (v : V) : ρ (CliffordAlgebra.ι Q v) = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) := by
+  conv_lhs => rw [← b.sum_repr' v]
+  simp only [map_sum, map_smul]
+
+omit hQ in
+/-- Clifford multiplication expanded in an orthonormal basis, applied to a vector of a Clifford
+module over any scalars `S` compatible with the real scalars:
+`c(v) ψ = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ) ψ` (`OrthonormalBasis.map_ι_eq_sum` evaluated at `ψ`). -/
+theorem map_ι_apply_eq_sum {S W : Type*} [Semiring S] [SMul ℝ S] [AddCommGroup W] [Module S W]
+    [Module ℝ W] [SMulCommClass S ℝ W] [IsScalarTower ℝ S W]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End S W) (v : V) (ψ : W) :
+    ρ (CliffordAlgebra.ι Q v) ψ = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) ψ := by
+  rw [b.map_ι_eq_sum ρ v, LinearMap.sum_apply]
+  simp only [LinearMap.smul_apply]
+
+omit hQ in
+/-- Clifford multiplication by a complex-valued covector, expanded in an orthonormal basis: if `g₁`
+and `p` represent the real and imaginary parts of `L : V → ℂ`, then
+`∑ᵢ L(bᵢ) c(bᵢ) ψ = c(g₁) ψ + i c(p) ψ`. In particular the sum does not depend on the basis. -/
+theorem sum_smul_map_ι_apply_eq_add {W : Type*} [AddCommGroup W] [Module ℂ W] [Module ℝ W]
+    [IsScalarTower ℝ ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) {L : V → ℂ} {g₁ p : V}
+    (h₁ : ∀ v, ⟪g₁, v⟫ = (L v).re) (h₂ : ∀ v, ⟪p, v⟫ = (L v).im) (ψ : W) :
+    ∑ i, L (b i) • ρ (CliffordAlgebra.ι Q (b i)) ψ =
+      ρ (CliffordAlgebra.ι Q g₁) ψ + Complex.I • ρ (CliffordAlgebra.ι Q p) ψ := by
+  rw [b.map_ι_apply_eq_sum ρ g₁, b.map_ι_apply_eq_sum ρ p, Finset.smul_sum,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [real_inner_comm, h₁, real_inner_comm, h₂, RCLike.real_smul_eq_coe_smul (K := ℂ),
+    RCLike.real_smul_eq_coe_smul (K := ℂ), smul_smul]
+  conv_lhs => rw [← Complex.re_add_im (L (b i))]
+  simp [add_smul, mul_comm]
+
 section Module
 
-variable {W : Type*} [AddCommGroup W] [Module ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
+variable {K W : Type*} [Semiring K] [AddCommGroup W] [Module K W] [Algebra ℝ (Module.End K W)]
+  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W)
 
 /-- For `Q v = -‖v‖²`, Clifford multiplication by an orthonormal basis vector squares to `-1`:
 `c(bᵢ) (c(bᵢ) ψ) = -ψ`. -/
 theorem map_ι_apply_map_ι_apply (i : ι) (ψ : W) :
     ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b i)) ψ) = -ψ := by
-  rw [CliffordAlgebra.map_ι_apply_map_ι_apply ρ, hQ, b.orthonormal.1 i]
+  rw [← mul_apply_eq_comp, ← map_mul, CliffordAlgebra.ι_sq_scalar, hQ, b.orthonormal.1 i]
   simp
 
 /-- For `Q v = -‖v‖²`, Clifford multiplications by distinct orthonormal basis vectors
@@ -111,6 +187,14 @@ theorem map_ι_apply_map_ι_apply_comm {i j : ι} (hij : i ≠ j) (ψ : W) :
     congrArg (fun x ↦ ρ x ψ) (CliffordAlgebra.ι_mul_ι_comm_of_isOrtho (b.isOrtho_apply hQ hij))
 
 end Module
+
+/-- Clifford multiplication by two orthonormal frame vectors preserves nonvanishing. -/
+theorem map_ι_apply_map_ι_apply_ne_zero {W : Type*} [AddCommGroup W] [Module ℂ W]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (i j : ι) {ψ : W} (hψ : ψ ≠ 0) :
+    ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b j)) ψ) ≠ 0 := by
+  have hinj (k : ι) := CliffordAlgebra.map_ι_injective ρ (v := b k)
+    (by simp [hQ, b.orthonormal.1 k])
+  exact fun heq ↦ hψ <| ((hinj i).comp (hinj j)) (by simpa using heq)
 
 end OrthonormalBasis
 
@@ -127,6 +211,30 @@ theorem _root_.QuadraticMap.polar_eq_neg_two_inner (u v : V) :
 theorem ι_mul_ι_add_swap_eq_neg_two_inner (u v : V) :
     ι Q u * ι Q v + ι Q v * ι Q u = algebraMap ℝ (CliffordAlgebra Q) (-2 * ⟪u, v⟫) := by
   rw [ι_mul_ι_add_swap, QuadraticMap.polar_eq_neg_two_inner hQ]
+
+/-- **The Clifford contraction of a symmetric matrix**: for `Q v = -‖v‖²`, an orthonormal basis
+`(eᵢ)` and a symmetric family of scalars `mᵢⱼ`, the contraction `∑ᵢⱼ mᵢⱼ c(eᵢ) c(eⱼ)` is the
+scalar `-∑ᵢ mᵢᵢ`: the antisymmetric parts of the products `c(eᵢ) c(eⱼ)` cancel in pairs. -/
+theorem sum_sum_smul_ι_mul_ι_of_symm {I : Type*} [Fintype I] (b : OrthonormalBasis I ℝ V)
+    {m : I → I → ℝ} (hm : ∀ i j, m i j = m j i) :
+    ∑ i, ∑ j, m i j • (ι Q (b i) * ι Q (b j)) = algebraMap ℝ (CliffordAlgebra Q) (-∑ i, m i i) := by
+  classical
+  have h2 : (2 : ℝ) • ∑ i, ∑ j, m i j • (ι Q (b i) * ι Q (b j)) =
+      (2 : ℝ) • algebraMap ℝ (CliffordAlgebra Q) (-∑ i, m i i) := by
+    calc (2 : ℝ) • ∑ i, ∑ j, m i j • (ι Q (b i) * ι Q (b j))
+        = ∑ i, ∑ j, m i j • (ι Q (b i) * ι Q (b j)) +
+            ∑ i, ∑ j, m i j • (ι Q (b j) * ι Q (b i)) := by
+          rw [two_smul]
+          congr 1
+          rw [Finset.sum_comm]
+          simp_rw [hm]
+      _ = ∑ i, ∑ j, m i j • algebraMap ℝ (CliffordAlgebra Q) (-2 * ⟪b i, b j⟫) := by
+          simp_rw [← Finset.sum_add_distrib, ← smul_add, ι_mul_ι_add_swap_eq_neg_two_inner hQ]
+      _ = (2 : ℝ) • algebraMap ℝ (CliffordAlgebra Q) (-∑ i, m i i) := by
+          simp_rw [b.inner_eq_ite, Algebra.smul_def, ← map_mul, ← map_sum]
+          congr 1
+          simp [Finset.mul_sum, mul_comm]
+  exact smul_right_injective _ two_ne_zero h2
 
 /-- For `Q v = -‖v‖²`, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
 theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :
@@ -146,3 +254,30 @@ theorem basis_mul_self_of_orthonormal {ι : Type*} [Fintype ι] [LinearOrder ι]
   simp [Nat.choose_succ_succ', add_comm]
 
 end CliffordAlgebra
+
+omit hQ in
+/-- **The polarized Clifford relation.** If a linear map `c : W → End U` from a real inner product
+space satisfies the Clifford relation `c(v)² = -⟪v, v⟫`, then
+`c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem LinearMap.apply_apply_add_swap_eq_neg_two_inner {W U : Type*}
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [AddCommGroup U] [Module ℝ U]
+    (c : W →ₗ[ℝ] Module.End ℝ U) (hc : ∀ (v : W) (s : U), c v (c v s) = -⟪v, v⟫ • s)
+    (u v : W) (s : U) :
+    c u (c v s) + c v (c u s) = -(2 * ⟪u, v⟫) • s := by
+  have h := hc (u + v) s
+  simp only [map_add, LinearMap.add_apply, hc, inner_add_left, inner_add_right,
+    real_inner_comm u v] at h
+  linear_combination (norm := module) h
+
+omit hQ in
+/-- **The polarized Clifford relation** for a continuous bilinear map. If
+`c : W →L[ℝ] U →L[ℝ] U` satisfies the Clifford relation `c(v)² = -⟪v, v⟫`, then
+`c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem ContinuousLinearMap.apply_apply_add_swap_eq_neg_two_inner {W U : Type*}
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [AddCommGroup U] [Module ℝ U]
+    [TopologicalSpace U] [IsTopologicalAddGroup U] [ContinuousConstSMul ℝ U]
+    (c : W →L[ℝ] U →L[ℝ] U) (hc : ∀ (v : W) (s : U), c v (c v s) = -⟪v, v⟫ • s)
+    (u v : W) (s : U) :
+    c u (c v s) + c v (c u s) = -(2 * ⟪u, v⟫) • s := by
+  simpa using LinearMap.apply_apply_add_swap_eq_neg_two_inner
+    ((ContinuousLinearMap.coeLM ℝ).comp c.toLinearMap) (by simpa using hc) u v s

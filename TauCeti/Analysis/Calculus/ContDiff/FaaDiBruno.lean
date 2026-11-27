@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Data.Fin.Tuple.Sort
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
@@ -57,7 +58,21 @@ The same expansion bounds the norm of the `m`-th coefficient
 `m` have norm at most `B`, it is at most `max 1 B ^ m` times the sum, over the ordered partitions
 `c` of `m`, of `‖q c.length‖`. For a composite `g ∘ f` this bounds the `m`-th derivative by the
 derivatives of `g` of order at most `m` (`ContDiffAt.norm_iteratedFDeriv_comp_le_sum`), keeping
-track of each order separately, as needed for changes of variables in Sobolev spaces.
+track of each order separately, as needed for changes of variables in Sobolev spaces. In
+particular, a `Cᵐ` function on a proper space composed with a `Cᵐ` map that is bounded together
+with its derivatives of order at most `m` has a bounded `m`-th derivative
+(`ContDiff.exists_norm_iteratedFDeriv_comp_le`).
+
+Both bounds hold with derivatives measured in units of a length scale `h ≥ 0`: if
+`h ^ (k - 1) * ‖p k‖ ≤ B` for `1 ≤ k ≤ m`, then `h ^ m * ‖q.taylorComp p m‖` is at most
+`max 1 B ^ m` times the sum of `h ^ c.length * ‖q c.length‖`
+(`FormalMultilinearSeries.pow_mul_norm_taylorComp_le`,
+`ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le_sum`), because the parts of an ordered partition
+of `m` have sizes adding up to `m`. This is the form needed for changes of charts in semiclassical
+Sobolev norms, where a chart at scale `h` has `h ^ (k - 1) * ‖Dᵏ f‖` bounded rather than `‖Dᵏ f‖`.
+In particular, if `h ^ k * ‖Dᵏ g‖ ≤ A` for `k ≤ m`, then
+`h ^ m * ‖Dᵐ (g ∘ f)‖ ≤ max 1 B ^ m * #{ordered partitions of m} * A`
+(`ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le`).
 -/
 
 public section
@@ -762,6 +777,46 @@ theorem taylorComp_assoc (r : FormalMultilinearSeries 𝕜 G H)
       _ = curryLeftSeries (r.taylorComp (q.taylorComp p)) e m := by
           rw [curryLeftSeries_taylorComp r (q.taylorComp p) e, hp1, add_apply]
 
+/-- **A weighted norm bound for the Faà di Bruno composition.** Let `h ≥ 0`. If the coefficients
+of `p` of orders `1` through `m` satisfy `h ^ (k - 1) * ‖p k‖ ≤ B`, then
+`h ^ m * ‖q.taylorComp p m‖` is at most `max 1 B ^ m` times the sum, over the ordered partitions
+`c` of `m`, of `h ^ c.length * ‖q c.length‖`. The weights balance because the parts of `c` have
+sizes adding up to `m`: `h ^ m = h ^ c.length * ∏ᵢ h ^ (c.partSize i - 1)`. For a composite
+`g ∘ f` this is the chain rule in units of a length scale `h`, and at `h = 1` it is
+`FormalMultilinearSeries.norm_taylorComp_le`. -/
+theorem pow_mul_norm_taylorComp_le (q : FormalMultilinearSeries 𝕜 F G)
+    (p : FormalMultilinearSeries 𝕜 E F) {m : ℕ} {h B : ℝ} (hh : 0 ≤ h)
+    (hp : ∀ k, 1 ≤ k → k ≤ m → h ^ (k - 1) * ‖p k‖ ≤ B) :
+    h ^ m * ‖q.taylorComp p m‖ ≤
+      max 1 B ^ m * ∑ c : OrderedFinpartition m, h ^ c.length * ‖q c.length‖ := by
+  rw [Finset.mul_sum]
+  refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (pow_nonneg hh m)).trans ?_
+  rw [Finset.mul_sum]
+  refine Finset.sum_le_sum fun c _ ↦ ?_
+  have hm : h ^ m = h ^ c.length * ∏ i, h ^ (c.partSize i - 1) := by
+    rw [Finset.prod_pow_eq_pow_sum, ← pow_add]
+    congr 1
+    have hs := c.sum_partSize
+    have hle : ∀ i, 1 ≤ c.partSize i := fun i ↦ c.partSize_pos i
+    zify [hle] at hs ⊢
+    rw [Finset.sum_sub_distrib]
+    simp [hs]
+  have hB : ∏ i, (h ^ (c.partSize i - 1) * ‖p (c.partSize i)‖) ≤ max 1 B ^ c.length := by
+    calc ∏ i, (h ^ (c.partSize i - 1) * ‖p (c.partSize i)‖) ≤ ∏ _i : Fin c.length, max 1 B := by
+          gcongr with i
+          exact (hp _ (c.partSize_pos i) (c.partSize_le i)).trans (le_max_right _ _)
+      _ = max 1 B ^ c.length := by simp
+  calc h ^ m * ‖q.compAlongOrderedFinpartition p c‖
+      ≤ h ^ m * (‖q c.length‖ * ∏ i, ‖p (c.partSize i)‖) :=
+        mul_le_mul_of_nonneg_left (c.norm_compAlongOrderedFinpartition_le _ _) (pow_nonneg hh m)
+    _ = h ^ c.length * ‖q c.length‖ * ∏ i, (h ^ (c.partSize i - 1) * ‖p (c.partSize i)‖) := by
+        rw [hm, Finset.prod_mul_distrib]
+        ring
+    _ ≤ h ^ c.length * ‖q c.length‖ * max 1 B ^ m := by
+        gcongr
+        exact hB.trans (pow_le_pow_right₀ (le_max_left _ _) c.length_le)
+    _ = max 1 B ^ m * (h ^ c.length * ‖q c.length‖) := mul_comm _ _
+
 /-- **A norm bound for the Faà di Bruno composition.** If the coefficients of `p` of orders `1`
 through `m` have norm at most `B`, then the `m`-th coefficient of `q.taylorComp p` has norm at
 most `max 1 B ^ m` times the sum, over the ordered partitions `c` of `m`, of `‖q c.length‖`. -/
@@ -769,16 +824,7 @@ theorem norm_taylorComp_le (q : FormalMultilinearSeries 𝕜 F G)
     (p : FormalMultilinearSeries 𝕜 E F) {m : ℕ} {B : ℝ}
     (hp : ∀ k, 1 ≤ k → k ≤ m → ‖p k‖ ≤ B) :
     ‖q.taylorComp p m‖ ≤ max 1 B ^ m * ∑ c : OrderedFinpartition m, ‖q c.length‖ := by
-  rw [Finset.mul_sum]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun c _ ↦ ?_)
-  refine (c.norm_compAlongOrderedFinpartition_le _ _).trans ?_
-  rw [mul_comm (max 1 B ^ m)]
-  gcongr
-  calc ∏ i, ‖p (c.partSize i)‖ ≤ ∏ _i : Fin c.length, max 1 B := by
-        gcongr with i
-        exact (hp _ (c.partSize_pos i) (c.partSize_le i)).trans (le_max_right _ _)
-    _ = max 1 B ^ c.length := by simp
-    _ ≤ max 1 B ^ m := pow_le_pow_right₀ (le_max_left _ _) c.length_le
+  simpa using q.pow_mul_norm_taylorComp_le p zero_le_one (by simpa using hp)
 
 end FormalMultilinearSeries
 
@@ -808,6 +854,40 @@ theorem ContDiffAt.ftaylorSeries_prodMk_taylorComp {M : Type*} [NormedAddCommGro
     (fun k hk ↦ iteratedFDeriv_prodMk hf hg ((Nat.cast_le.mpr hk).trans hm))
     (fun _ _ _ ↦ rfl)
 
+/-- **A weighted norm bound for the derivatives of a composite.** Let `h ≥ 0`. If `g` is `Cᵐ` at
+`f x`, `f` is `Cᵐ` at `x`, and the derivatives of `f` at `x` of orders `1` through `m` satisfy
+`h ^ (k - 1) * ‖Dᵏ f x‖ ≤ B`, then `h ^ m * ‖Dᵐ (g ∘ f) x‖` is at most `max 1 B ^ m` times the sum,
+over the ordered partitions `c` of `m`, of `h ^ c.length * ‖D^(c.length) g (f x)‖`. Read with
+derivatives measured in units of the length scale `h`, this says that a map whose derivatives
+are bounded at that scale changes the scaled derivatives of `g` by a factor depending only on `m`
+and `B`. -/
+theorem ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le_sum {g : F → G} {f : E → F} {x : E}
+    {m : ℕ} (hg : ContDiffAt 𝕜 m g (f x)) (hf : ContDiffAt 𝕜 m f x) {h B : ℝ} (hh : 0 ≤ h)
+    (hB : ∀ k, 1 ≤ k → k ≤ m → h ^ (k - 1) * ‖iteratedFDeriv 𝕜 k f x‖ ≤ B) :
+    h ^ m * ‖iteratedFDeriv 𝕜 m (g ∘ f) x‖ ≤
+      max 1 B ^ m *
+        ∑ c : OrderedFinpartition m, h ^ c.length * ‖iteratedFDeriv 𝕜 c.length g (f x)‖ := by
+  rw [iteratedFDeriv_comp hg hf le_rfl]
+  exact FormalMultilinearSeries.pow_mul_norm_taylorComp_le _ _ hh hB
+
+/-- **A uniform weighted norm bound for the derivatives of a composite.** Let `h ≥ 0`. If `g` is
+`Cᵐ` at `f x`, `f` is `Cᵐ` at `x`, the derivatives of `f` at `x` of orders `1` through `m` satisfy
+`h ^ (k - 1) * ‖Dᵏ f x‖ ≤ B`, and the derivatives of `g` at `f x` of orders at most `m` satisfy
+`h ^ k * ‖Dᵏ g (f x)‖ ≤ A`, then
+`h ^ m * ‖Dᵐ (g ∘ f) x‖ ≤ max 1 B ^ m * #{ordered partitions of m} * A`. So scaled derivative
+bounds on `g` are carried through a map with derivatives bounded at the same scale, with a factor
+depending only on `m` and `B`. -/
+theorem ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le {g : F → G} {f : E → F} {x : E}
+    {m : ℕ} (hg : ContDiffAt 𝕜 m g (f x)) (hf : ContDiffAt 𝕜 m f x) {h A B : ℝ} (hh : 0 ≤ h)
+    (hB : ∀ k, 1 ≤ k → k ≤ m → h ^ (k - 1) * ‖iteratedFDeriv 𝕜 k f x‖ ≤ B)
+    (hA : ∀ k ≤ m, h ^ k * ‖iteratedFDeriv 𝕜 k g (f x)‖ ≤ A) :
+    h ^ m * ‖iteratedFDeriv 𝕜 m (g ∘ f) x‖ ≤
+      max 1 B ^ m * Fintype.card (OrderedFinpartition m) * A := by
+  refine (hg.pow_mul_norm_iteratedFDeriv_comp_le_sum hf hh hB).trans ?_
+  rw [mul_assoc, ← nsmul_eq_mul, ← Finset.card_univ, ← Finset.sum_const]
+  exact mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun c _ ↦ hA _ c.length_le)
+    (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _)
+
 /-- **A norm bound for the derivatives of a composite.** If `g` is `Cᵐ` at `f x`, `f` is `Cᵐ` at
 `x`, and the derivatives of `f` at `x` of orders `1` through `m` have norm at most `B`, then the
 `m`-th derivative of `g ∘ f` at `x` has norm at most `max 1 B ^ m` times the sum, over the ordered
@@ -819,3 +899,28 @@ theorem ContDiffAt.norm_iteratedFDeriv_comp_le_sum {g : F → G} {f : E → F} {
       max 1 B ^ m * ∑ c : OrderedFinpartition m, ‖iteratedFDeriv 𝕜 c.length g (f x)‖ := by
   rw [iteratedFDeriv_comp hg hf le_rfl]
   exact FormalMultilinearSeries.norm_taylorComp_le _ _ hB
+
+/-- **Composites with bounded derivatives.** Let `f` be `Cᵐ`, bounded, with bounded derivatives
+of order at most `m`, and let `g` be `Cᵐ` on a proper space. Then the `m`-th derivative of `g ∘ f`
+is bounded: the derivatives of `g` are bounded on the compact ball containing the range of `f`. -/
+theorem ContDiff.exists_norm_iteratedFDeriv_comp_le [ProperSpace F] {g : F → G} {f : E → F}
+    {m : ℕ} (hg : ContDiff 𝕜 m g) (hf : ContDiff 𝕜 m f)
+    (hb : ∀ n ≤ m, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
+    ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 m (g ∘ f) x‖ ≤ C := by
+  obtain ⟨R, hR⟩ := hb 0 (Nat.zero_le _)
+  obtain ⟨A, -, hA⟩ := hg.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ
+    (isCompact_closedBall (0 : F) R) (Set.subset_univ _)
+  have hB (k : ℕ) : ∃ B, ∀ x, k ≤ m → ‖iteratedFDeriv 𝕜 k f x‖ ≤ B := by
+    by_cases hk : k ≤ m
+    · exact (hb k hk).imp fun B hB x _ ↦ hB x
+    · exact ⟨0, fun _ hk' ↦ absurd hk' hk⟩
+  choose B hB using hB
+  set B' := ∑ k ∈ Finset.range (m + 1), |B k|
+  refine ⟨max 1 B' ^ m * ∑ _c : OrderedFinpartition m, A, fun x ↦ ?_⟩
+  have hx : f x ∈ Metric.closedBall (0 : F) R := by simpa using hR x
+  refine (hg.contDiffAt.norm_iteratedFDeriv_comp_le_sum hf.contDiffAt (B := B')
+    fun k _ hkm ↦ ?_).trans ?_
+  · exact (hB k x hkm).trans ((le_abs_self _).trans (Finset.single_le_sum (f := fun k ↦ |B k|)
+      (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (by omega))))
+  · gcongr with c
+    exact hA _ c.length_le _ hx

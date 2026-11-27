@@ -324,6 +324,29 @@ theorem productSeminorm_comm (u : V ⊗[A] W) :
   (productSeminorm_comm_le u).antisymm <| by
     simpa using productSeminorm_comm_le (TensorProduct.comm A V W u)
 
+/-- Under a commuting scalar-action bound `‖s • v‖ ≤ C * ‖s‖ * ‖v‖` on `V`, `productSeminorm`
+satisfies `productSeminorm A V W (s • u) ≤ C * ‖s‖ * productSeminorm A V W u`. -/
+theorem productSeminorm_smul_le_of_norm_smul_le {S : Type*} [SeminormedRing S]
+    [Module S V] [SMulCommClass A S V] {C : ℝ≥0}
+    (hV : ∀ (s : S) (v : V), ‖s • v‖ ≤ C * ‖s‖ * ‖v‖) (s : S) (u : V ⊗[A] W) :
+    productSeminorm A V W (s • u) ≤ C * ‖s‖ * productSeminorm A V W u :=
+  apply_le_mul_productSeminorm isNonarchimedean_productSeminorm
+    (f := AddMonoidHom.mk' (s • ·) (smul_add s)) (mul_nonneg C.coe_nonneg (norm_nonneg s))
+    (fun v w ↦ by
+      rw [AddMonoidHom.mk'_apply, smul_tmul']
+      refine (productSeminorm_tmul_le (s • v) w).trans ?_
+      calc ‖s • v‖ * ‖w‖ ≤ (C * ‖s‖ * ‖v‖) * ‖w‖ :=
+            mul_le_mul_of_nonneg_right (hV s v) (norm_nonneg w)
+        _ = C * ‖s‖ * (‖v‖ * ‖w‖) := by ring) u
+
+/-- Under a commuting contractive scalar action on `V`, `productSeminorm` is submultiplicative for
+scalar multiplication. -/
+theorem productSeminorm_smul_le {S : Type*} [SeminormedRing S]
+    [Module S V] [SMulCommClass A S V] [IsBoundedSMul S V] (s : S) (u : V ⊗[A] W) :
+    productSeminorm A V W (s • u) ≤ ‖s‖ * productSeminorm A V W u := by
+  simpa using productSeminorm_smul_le_of_norm_smul_le (C := 1)
+    (fun r v ↦ by simpa using norm_smul_le r v) s u
+
 end Algebraic
 
 section SeminormedRing
@@ -331,27 +354,6 @@ section SeminormedRing
 variable {A V W : Type*} [SeminormedCommRing A]
   [SeminormedAddCommGroup V] [Module A V]
   [SeminormedAddCommGroup W] [Module A W]
-
-/-- Under a scalar-action bound `‖a • v‖ ≤ C * ‖a‖ * ‖v‖` on `V`, `productSeminorm` satisfies
-`productSeminorm A V W (a • u) ≤ C * ‖a‖ * productSeminorm A V W u`. -/
-theorem productSeminorm_smul_le_of_norm_smul_le {C : ℝ≥0}
-    (hV : ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖) (a : A) (u : V ⊗[A] W) :
-    productSeminorm A V W (a • u) ≤ C * ‖a‖ * productSeminorm A V W u :=
-  apply_le_mul_productSeminorm isNonarchimedean_productSeminorm
-    (f := AddMonoidHom.mk' (a • ·) (smul_add a)) (mul_nonneg C.coe_nonneg (norm_nonneg a))
-    (fun v w ↦ by
-      rw [AddMonoidHom.mk'_apply, smul_tmul']
-      refine (productSeminorm_tmul_le (a • v) w).trans ?_
-      calc ‖a • v‖ * ‖w‖ ≤ (C * ‖a‖ * ‖v‖) * ‖w‖ :=
-            mul_le_mul_of_nonneg_right (hV a v) (norm_nonneg w)
-        _ = C * ‖a‖ * (‖v‖ * ‖w‖) := by ring) u
-
-/-- Under a contractive scalar action on `V`, `productSeminorm` is submultiplicative for scalar
-multiplication. -/
-theorem productSeminorm_smul_le [IsBoundedSMul A V] (a : A) (u : V ⊗[A] W) :
-    productSeminorm A V W (a • u) ≤ ‖a‖ * productSeminorm A V W u := by
-  simpa using productSeminorm_smul_le_of_norm_smul_le (C := 1)
-    (fun r v ↦ by simpa using norm_smul_le r v) a u
 
 /-- On `A ⊗[A] W` with `‖1‖ = 1` and ultrametric `W` with contractive `A`-action, the product
 seminorm is the norm of the image under `TensorProduct.lid A W`. -/

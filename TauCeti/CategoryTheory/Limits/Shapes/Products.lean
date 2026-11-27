@@ -23,6 +23,12 @@ type of any size, is a split epimorphism, with section the product of the sectio
 (`TauCeti.isSplitEpi_piMap`). Unlike `CategoryTheory.Limits.Pi.map_epi`, this needs no finiteness
 and no biproducts; it is how products of skyscraper presheaves are shown to be flasque.
 
+## Naturality of the coproduct comparison
+
+For a functor `G`, the comparison map `sigmaComparison G f : ∐ (G ∘ f) ⟶ G (∐ f)` is natural with
+respect to maps of families: it commutes with `Sigma.map p` on both sides
+(`TauCeti.sigmaComparison_map_sigmaMap`). Mathlib states the analogous fact for `Sigma.desc`.
+
 ## Reindexing a coproduct along an injection is split
 
 Let `X : I → C` be a family of objects of a category with zero morphisms, and let `f : J → I` be
@@ -85,12 +91,17 @@ arbitrary type has a coproduct as soon as only finitely many of its objects are 
 coproduct of the whole family. This is how a bounded complex has coproducts over the infinitely
 many degrees in a residue class, as used by its periodic compression.
 
-## Coproducts with a single non-initial summand
+## Coproducts with a single non-initial summand, reindexing, and iterated decompositions
 
 If every summand of a coproduct other than the one indexed by `i` is an initial object, the
 inclusion of the summand `i` is an isomorphism (`Cofan.IsColimit.isIso_inj_of_isInitial`). This
 computes a Day convolution of symmetric sequences with a symmetric sequence concentrated in level
 zero, whose wedge decomposition has a single summand that is not the point.
+
+Reindexing a colimit cofan along an equivalence of index types and summand isomorphisms yields a
+colimit cofan (`Cofan.isColimitOfEquiv`), and a cofan whose summands each decompose as coproducts
+is a colimit whenever the resulting sigma-indexed cofan is a colimit
+(`Cofan.isColimitOfIsColimitSigma`, converse to `Cofan.isColimitTrans`).
 -/
 
 public section
@@ -110,6 +121,23 @@ instance isSplitEpi_piMap (p : ∀ b, f b ⟶ g b) [∀ b, IsSplitEpi (p b)] :
   IsSplitEpi.mk' { section_ := Limits.Pi.map fun b ↦ section_ (p b), id := by ext; simp }
 
 end PiMap
+
+section SigmaComparison
+
+variable {C D : Type*} [Category* C] [Category* D] (G : C ⥤ D) {β : Type*} {f g : β → C}
+  [HasCoproduct f] [HasCoproduct g] [HasCoproduct fun b ↦ G.obj (f b)]
+  [HasCoproduct fun b ↦ G.obj (g b)]
+
+/-- The comparison map `∐ (G ∘ f) ⟶ G (∐ f)` is natural with respect to maps of families. -/
+@[reassoc]
+theorem sigmaComparison_map_sigmaMap (p : ∀ b, f b ⟶ g b) :
+    sigmaComparison G f ≫ G.map (Limits.Sigma.map p) =
+      Limits.Sigma.map (fun b ↦ G.map (p b)) ≫ sigmaComparison G g :=
+  Sigma.hom_ext _ _ fun b ↦ by
+    rw [ι_comp_sigmaComparison_assoc, ← G.map_comp, Sigma.ι_map, Sigma.ι_map_assoc, G.map_comp,
+      ι_comp_sigmaComparison]
+
+end SigmaComparison
 
 section Reindex
 
@@ -360,7 +388,36 @@ end FiniteSupport
 
 end TauCeti
 
-namespace CategoryTheory.Limits.Cofan.IsColimit
+namespace CategoryTheory.Limits.Cofan
+
+/-- Reindexing a colimit cofan along an equivalence of index types and summand isomorphisms yields
+a colimit cofan. -/
+def isColimitOfEquiv {C : Type*} [Category* C] {S J : Type*} {Q : S → C} {P : J → C}
+    (c : Cofan P) (hc : IsColimit c) (e : S ≃ J) (iso : ∀ s, Q s ≅ P (e s)) :
+    IsColimit (Cofan.mk c.pt fun s ↦ (iso s).hom ≫ c.inj (e s)) :=
+  IsColimit.ofIsoColimit
+    ((IsColimit.precomposeHomEquiv (Discrete.natIso fun ⟨s⟩ ↦ iso s) _).symm
+      ((Cofan.isColimitEquivOfEquiv e c) hc))
+    (Cofan.ext (Iso.refl _) fun _ ↦ Category.comp_id _)
+
+/-- Converse to `Cofan.isColimitTrans`: if each `X a` is a coproduct of `Y a` via `π a` and the
+composite family `p ↦ π p.1 p.2 ≫ c.inj p.1` exhibits `c.pt` as a coproduct over `Σ a, β a`, then
+`c` is a colimit cofan. -/
+def isColimitOfIsColimitSigma {C : Type*} [Category* C] {α : Type*} {β : α → Type*} {X : α → C}
+    (c : Cofan X) {Y : ∀ a, β a → C} (π : ∀ a b, Y a b ⟶ X a)
+    (hs : ∀ a, IsColimit (Cofan.mk (X a) (π a)))
+    (htot : IsColimit (Cofan.mk (f := fun p : Σ a, β a ↦ Y p.1 p.2) c.pt
+      (fun p ↦ π p.1 p.2 ≫ c.inj p.1))) : IsColimit c :=
+  Cofan.IsColimit.mk _
+    (fun t ↦ Cofan.IsColimit.desc htot fun p : Σ a, β a ↦ π p.1 p.2 ≫ t.inj p.1)
+    (fun t a ↦ Cofan.IsColimit.hom_ext (hs a) _ _ fun b ↦ by
+      dsimp only [cofan_mk_inj]; rw [← Category.assoc]
+      exact Cofan.IsColimit.fac htot (fun p : Σ a, β a ↦ π p.1 p.2 ≫ t.inj p.1) ⟨a, b⟩)
+    (fun t m hm ↦ Cofan.IsColimit.hom_ext htot _ _ fun ⟨a, b⟩ ↦ by
+      dsimp only [mk_pt, cofan_mk_inj]; rw [Category.assoc, hm]
+      exact (Cofan.IsColimit.fac htot (fun p : Σ a, β a ↦ π p.1 p.2 ≫ t.inj p.1) ⟨a, b⟩).symm)
+
+namespace IsColimit
 
 /-- If every summand of a coproduct other than the one indexed by `i` is initial, then the
 inclusion of the summand `i` is an isomorphism. -/
@@ -374,4 +431,6 @@ lemma isIso_inj_of_isInitial {C : Type*} [Category* C] {ι : Type*} {X : ι → 
     simp [fac_assoc]
   · exact (h j hj).hom_ext _ _
 
-end CategoryTheory.Limits.Cofan.IsColimit
+end IsColimit
+
+end CategoryTheory.Limits.Cofan

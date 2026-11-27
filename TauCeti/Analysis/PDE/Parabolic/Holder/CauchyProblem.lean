@@ -88,53 +88,6 @@ section Path
 
 variable {T : ℝ≥0} {hT : (0 : ℝ) < T}
 
-/-- The coefficients of the heat operator: the identity matrix. -/
-private abbrev heatCoeff : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ :=
-  fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)
-
-/-- Along the segment from the identity to `a`, the matrix of coefficients at `p` is
-`(1 - s) 1 + s a(p)`. -/
-private theorem of_lineMap_heatCoeff_apply
-    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) (s : ℝ)
-    (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
-    (Matrix.of fun i j ↦ AffineMap.lineMap heatCoeff a s i j p) =
-      (1 - s) • (1 : Matrix ι ι ℝ) + s • Matrix.of fun i j ↦ a i j p := by
-  ext i j
-  simp [AffineMap.lineMap_apply_module]
-
-/-- Ellipticity along the segment from the identity: if `lam ‖ξ‖² ≤ ξᵀ a ξ ≤ Lam ‖ξ‖²`, then every
-convex combination of `1` and `a` satisfies the bounds with `min 1 lam` and `max 1 Lam`. -/
-private theorem lineMap_heatCoeff_ellipticity
-    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ} {lam Lam : ℝ}
-    (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    (ha' : ∀ p (ξ : EuclideanSpace ℝ ι),
-      (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2)
-    {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) (p : slab (E := EuclideanSpace ℝ ι) 0 T)
-    (ξ : EuclideanSpace ℝ ι) :
-    min 1 lam * ‖ξ‖ ^ 2 ≤
-        (Matrix.of fun i j ↦ AffineMap.lineMap heatCoeff a s i j p).toQuadraticForm' ξ ∧
-      (Matrix.of fun i j ↦ AffineMap.lineMap heatCoeff a s i j p).toQuadraticForm' ξ ≤
-        max 1 Lam * ‖ξ‖ ^ 2 := by
-  simp only [of_lineMap_heatCoeff_apply, Matrix.toQuadraticForm'_add,
-    Matrix.toQuadraticForm'_smul, _root_.add_apply, _root_.smul_apply,
-    PDE.toQuadraticForm'_one, smul_eq_mul]
-  have h₁ := ha p ξ
-  have h₂ := ha' p ξ
-  have hξ := sq_nonneg ‖ξ‖
-  have hs₀ : 0 ≤ 1 - s := sub_nonneg.2 hs.2
-  constructor
-  · have hm₁ : min 1 lam * ‖ξ‖ ^ 2 ≤ ‖ξ‖ ^ 2 :=
-      mul_le_of_le_one_left hξ (min_le_left _ _)
-    have hm₂ : min 1 lam * ‖ξ‖ ^ 2 ≤ lam * ‖ξ‖ ^ 2 :=
-      mul_le_mul_of_nonneg_right (min_le_right _ _) hξ
-    nlinarith [mul_le_mul_of_nonneg_left hm₁ hs₀, mul_le_mul_of_nonneg_left (hm₂.trans h₁) hs.1]
-  · have hM₁ : ‖ξ‖ ^ 2 ≤ max 1 Lam * ‖ξ‖ ^ 2 :=
-      le_mul_of_one_le_left hξ (le_max_left _ _)
-    have hM₂ : Lam * ‖ξ‖ ^ 2 ≤ max 1 Lam * ‖ξ‖ ^ 2 :=
-      mul_le_mul_of_nonneg_right (le_max_right _ _) hξ
-    nlinarith [mul_le_mul_of_nonneg_left hM₁ hs₀, mul_le_mul_of_nonneg_left (h₂.trans hM₂) hs.1]
-
 /-- The segment of initial-data operators from the heat operator to `P` is the initial-data
 operator of the segment of coefficients. -/
 private theorem lineMap_prod_spatialTraceL (hα : α ≤ 1)
@@ -142,11 +95,13 @@ private theorem lineMap_prod_spatialTraceL (hα : α ≤ 1)
     (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
     (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) (s : ℝ) :
     AffineMap.lineMap
-        ((euclideanParabolicOperatorL hα heatCoeff 0 0).prod
+        ((euclideanParabolicOperatorL hα
+            (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0).prod
           (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩))
         ((euclideanParabolicOperatorL hα a b c).prod
           (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩)) s =
-      (euclideanParabolicOperatorL hα (AffineMap.lineMap heatCoeff a s)
+      (euclideanParabolicOperatorL hα
+          (AffineMap.lineMap (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) a s)
           (AffineMap.lineMap 0 b s) (AffineMap.lineMap 0 c s)).prod
         (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩) := by
   rw [euclideanParabolicOperatorL_lineMap]
@@ -170,7 +125,8 @@ private theorem exists_norm_le_lineMap (hα₀ : 0 < α) (hα₁ : α < 1) {lam 
         (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
         ∀ s ∈ Icc (0 : ℝ) 1, ∀ u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT,
           ‖u‖ ≤ C * ‖AffineMap.lineMap
-            ((euclideanParabolicOperatorL hα₁.le heatCoeff 0 0).prod
+            ((euclideanParabolicOperatorL hα₁.le
+                (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0).prod
               (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩))
             ((euclideanParabolicOperatorL hα₁.le a b c).prod
               (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩)) s u‖ := by
@@ -179,19 +135,23 @@ private theorem exists_norm_le_lineMap (hα₀ : 0 < α) (hα₁ : α < 1) {lam 
   obtain ⟨C, hC₀, hC⟩ := exists_norm_le_euclideanParabolicOperatorL (ι := ι) hα₀ hα₁
     (lt_min one_pos hlam) (Lam := max 1 Lam) (1 + K) T₀
   refine ⟨2 * C, by positivity, fun T hT hTT₀ a b c ha hak hbk hck s hs u ↦ ?_⟩
-  have ha' : ∀ p (ξ : EuclideanSpace ℝ ι),
-      (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 := fun p ↦
-    Matrix.toQuadraticForm'_le_of_forall_abs_le fun i j ↦
-      ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans (hak i j)
+  have ha' := toQuadraticForm'_le_of_norm_coeff_le hak
   -- The closed ball of radius `1 + K` is convex, so it contains the segments of coefficients.
   have hball {x y : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
       (hx : ‖x‖ ≤ 1 + K) (hy : ‖y‖ ≤ 1 + K) : ‖AffineMap.lineMap x y s‖ ≤ 1 + K :=
     mem_closedBall_zero_iff.1 ((convex_closedBall 0 _).lineMap_mem
       (mem_closedBall_zero_iff.2 hx) (mem_closedBall_zero_iff.2 hy) hs)
   have hK : (K : ℝ) ≤ 1 + K := le_add_of_nonneg_left zero_le_one
-  have h := hC T hT hTT₀ (AffineMap.lineMap heatCoeff a s) (AffineMap.lineMap 0 b s)
-    (AffineMap.lineMap 0 c s) (fun p ξ ↦ (lineMap_heatCoeff_ellipticity ha ha' hs p ξ).1)
-    (fun p ξ ↦ (lineMap_heatCoeff_ellipticity ha ha' hs p ξ).2)
+  -- Along the segment from the identity the ellipticity bounds are `min 1 lam` and `max 1 Lam`.
+  have h := hC T hT hTT₀
+    (AffineMap.lineMap (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) a s)
+    (AffineMap.lineMap 0 b s) (AffineMap.lineMap 0 c s)
+    (fun p ξ ↦ by
+      rw [HolderSpace.of_lineMap_const_apply]
+      exact Matrix.min_one_mul_norm_sq_le_toQuadraticForm'_lineMap hs (ha p ξ))
+    (fun p ξ ↦ by
+      rw [HolderSpace.of_lineMap_const_apply]
+      exact Matrix.toQuadraticForm'_lineMap_le_max_one_mul_norm_sq hs (ha' p ξ))
     (fun i j ↦ by
       push_cast
       exact hball ((HolderSpace.norm_const_le _).trans (by
@@ -204,7 +164,8 @@ private theorem exists_norm_le_lineMap (hα₀ : 0 < α) (hα₁ : α < 1) {lam 
       exact hball (by simpa using K.property.trans hK) (hck.trans hK)) u
   rw [lineMap_prod_spatialTraceL, ContinuousLinearMap.prod_apply, Prod.norm_mk,
     spatialTraceL_apply]
-  set P := ‖euclideanParabolicOperatorL hα₁.le (AffineMap.lineMap heatCoeff a s)
+  set P := ‖euclideanParabolicOperatorL hα₁.le
+    (AffineMap.lineMap (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) a s)
     (AffineMap.lineMap 0 b s) (AffineMap.lineMap 0 c s) u‖
   set G := ‖u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩‖
   refine h.trans ?_
@@ -234,19 +195,7 @@ theorem isInvertible_euclideanParabolicOperatorL_prod_spatialTraceL (hα₀ : 0 
     ((euclideanParabolicOperatorL hα₁.le a b c).prod
       (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩)).IsInvertible := by
   -- One bound `K` for all the coefficient norms.
-  set K : ℝ≥0 := ∑ i, ∑ j, ‖a i j‖₊ + ∑ i, ‖b i‖₊ + ‖c‖₊
-  have hak (i j : ι) : ‖a i j‖ ≤ K := by
-    have h : ‖a i j‖₊ ≤ ∑ i, ∑ j, ‖a i j‖₊ :=
-      (Finset.single_le_sum (f := fun j ↦ ‖a i j‖₊) (fun _ _ ↦ zero_le)
-        (Finset.mem_univ j)).trans (Finset.single_le_sum (f := fun i ↦ ∑ j, ‖a i j‖₊)
-          (fun _ _ ↦ zero_le) (Finset.mem_univ i))
-    exact_mod_cast h.trans (le_add_right (le_add_right le_rfl))
-  have hbk (i : ι) : ‖b i‖ ≤ K := by
-    have h : ‖b i‖₊ ≤ ∑ i, ‖b i‖₊ :=
-      Finset.single_le_sum (f := fun i ↦ ‖b i‖₊) (fun _ _ ↦ zero_le) (Finset.mem_univ i)
-    exact_mod_cast h.trans (le_add_right (le_add_left le_rfl))
-  have hck : ‖c‖ ≤ K := by
-    exact_mod_cast (le_add_left le_rfl : ‖c‖₊ ≤ K)
+  obtain ⟨K, hak, hbk, hck⟩ := exists_norm_coeff_le a b c
   obtain ⟨C, -, hC⟩ := exists_norm_le_lineMap (ι := ι) hα₀ hα₁ hlam K T
   -- The heat operator is surjective, by the constant-coefficient theory.
   have h₀ := (bijective_euclideanParabolicOperatorL_const_prod_spatialTraceL hα₀ hα₁ one_pos

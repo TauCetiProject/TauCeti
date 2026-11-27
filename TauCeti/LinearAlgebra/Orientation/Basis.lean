@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Orientation.Basic
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The sign of a basis relative to an orientation
@@ -15,7 +16,10 @@ basis. It is unchanged when the orientation and the basis are transported along 
 equivalence (`Orientation.signBasis_map`). Empty index types are included, so both
 zero-dimensional orientations retain their sign. Two orientations are equal exactly when they
 agree on whether they are the orientation of a fixed basis
-(`Module.Basis.eq_iff_eq_orientation_iff`).
+(`Module.Basis.eq_iff_eq_orientation_iff`). In a line, the basis `(-v)` gives the orientation
+opposite to that of `(v)` (`TauCeti.orientation_basisSingleton_neg`), and two one-vector bases
+define the same orientation exactly when their vectors lie on the same ray
+(`Module.Basis.orientation_eq_iff_sameRay`).
 -/
 
 public section
@@ -44,6 +48,20 @@ theorem eq_iff_eq_orientation_iff (e : Basis ι R E) (x y : Orientation R E ι) 
   · rcases e.orientation_eq_or_eq_neg y with hy | hy
     · exact absurd (h.2 hy) (hx ▸ (Module.Ray.ne_neg_self _).symm)
     · rw [hx, hy]
+
+section Unique
+
+variable [Unique ι]
+
+/-- **Orientations of a line.** For an index type with a single element, two bases define the same
+orientation exactly when their vectors lie on the same ray. -/
+theorem orientation_eq_iff_sameRay (b b' : Basis ι R E) :
+    b.orientation = b'.orientation ↔ SameRay R (b default) (b' default) := by
+  have := b.isTorsionFree
+  rw [b.orientation_eq_iff_det_pos, ← b.det_unique_smul b',
+    sameRay_smul_right_iff_of_ne (b.ne_zero default) (b.isUnit_det b').ne_zero]
+
+end Unique
 
 end Module.Basis
 
@@ -200,3 +218,34 @@ theorem Orientation.signBasis_mul_units_mul_det_pos
   -- Units.map along the integer cast has the same underlying scalar as the integer-unit cast.
   change 0 < (u : R) * (signBasis o b : R) * A.toLinearMap.det at hp
   simpa only [mul_comm] using hp
+
+/-- In a line, the basis `(-v)` gives the orientation opposite to that of the basis `(v)`. -/
+@[simp]
+theorem TauCeti.orientation_basisSingleton_neg {R V ι : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup V] [Module R V] [Unique ι] [Fintype ι] [DecidableEq ι]
+    (hV : Module.finrank R V = 1) {v : V} (hv : -v ≠ 0) :
+    (FiniteDimensional.basisSingleton ι hV (-v) hv).orientation =
+      -(FiniteDimensional.basisSingleton ι hV v (neg_ne_zero.1 hv)).orientation := by
+  -- The basis `(-v)` is the basis `(v)` with its vector multiplied by the unit `-1`.
+  convert Module.Basis.orientation_neg_single
+    (FiniteDimensional.basisSingleton ι hV v (neg_ne_zero.1 hv)) default using 2
+  refine Module.Basis.eq_of_apply_eq fun i ↦ ?_
+  rw [Module.Basis.unitsSMul_apply, Unique.eq_default i, Function.update_self]
+  simp [FiniteDimensional.basisSingleton_apply]
+
+/-- In a line, the basis `(c • v)` for a positive scalar `c` gives the same orientation as the
+basis `(v)`. -/
+@[simp]
+theorem TauCeti.orientation_basisSingleton_smul_of_pos {R V ι : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup V] [Module R V] [Unique ι] [Fintype ι] [DecidableEq ι]
+    (hV : Module.finrank R V = 1) {c : R} (hc : 0 < c) {v : V} (hv : c • v ≠ 0) :
+    (FiniteDimensional.basisSingleton ι hV (c • v) hv).orientation =
+      (FiniteDimensional.basisSingleton ι hV v (right_ne_zero_of_smul hv)).orientation := by
+  -- The basis `(c • v)` is the basis `(v)` rescaled by the positive unit `c`.
+  have hβ : FiniteDimensional.basisSingleton ι hV (c • v) hv =
+      (FiniteDimensional.basisSingleton ι hV v (right_ne_zero_of_smul hv)).isUnitSMul
+        (w := fun _ ↦ c) fun _ ↦ hc.ne'.isUnit :=
+    Module.Basis.eq_of_apply_eq fun i ↦ by
+      simp only [FiniteDimensional.basisSingleton_apply, Module.Basis.isUnitSMul_apply]
+  rw [hβ, Module.Basis.isUnitSMul, Module.Basis.orientation_unitsSMul, Fintype.prod_unique]
+  exact Module.Ray.units_smul_of_pos _ (by simpa using hc) _

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Module.Basic
 
 /-!
-# Algebraic laws of the coefficient action on C⋆-modules
+# Algebraic and continuity laws of the coefficient action on C⋆-modules
 
 The inner-product axioms force the given coefficient action to be additive, associative,
 and compatible with complex scalars. For a right Hilbert `B`-module, take `A = Bᵐᵒᵖ`:
@@ -21,6 +21,11 @@ to use the ordinary module laws. For nonunital coefficients, use `distribSMul`,
 and `sum_smul`. Keeping these structures explicit avoids a typeclass-search cycle through
 the action required by `CStarModule` itself.
 Neither completeness nor the analytic C⋆-algebra axioms are needed for these algebraic laws.
+
+Over a (possibly nonunital) C⋆-algebra `A`, combining the algebraic laws with the norm bound
+`CStarModule.norm_smul_le` packages scalar multiplication by `a : A` as a bounded `ℂ`-linear
+operator `CStarModule.smulCLM` of operator norm at most `‖a‖` (`CStarModule.norm_smulCLM_le`),
+giving continuity of the coefficient action (`CStarModule.continuousConstSMul`).
 
 ## References
 
@@ -35,7 +40,7 @@ namespace CStarModule
 
 section NonUnital
 
-variable (A E : Type*) [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+variable (A E : Type*) [NonUnitalRing A] [StarRing A] [Module ℂ A]
   [PartialOrder A] [Norm A] [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E]
   [CStarModule A E]
 
@@ -116,7 +121,7 @@ end NonUnital
 
 /-- Over a unital coefficient ring, the given action is an ordinary module structure.
 This reducible non-instance retains the caller's scalar multiplication. -/
-abbrev module (A E : Type*) [Ring A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+abbrev module (A E : Type*) [Ring A] [StarRing A] [Module ℂ A]
     [PartialOrder A] [Norm A] [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E]
     [CStarModule A E] : Module A E where
   toSMul := inferInstance
@@ -129,5 +134,33 @@ abbrev module (A E : Type*) [Ring A] [StarRing A] [Module ℂ A] [StarModule ℂ
   smul_add := (distribSMul A E).smul_add
   add_smul := CStarModule.add_smul
   zero_smul := (smulWithZero A E).zero_smul
+
+section SmulCLM
+
+variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+
+/-- Scalar multiplication by `a : A` on a Hilbert `A`-module `E` as a continuous `ℂ`-linear map,
+with operator norm at most `‖a‖`. -/
+noncomputable def smulCLM (a : A) : E →L[ℂ] E :=
+  LinearMap.mkContinuous
+    { toFun := (a • ·)
+      map_add' := (distribSMul A E).smul_add a
+      map_smul' := fun c x => ((smulCommClass A E).smul_comm c a x).symm }
+    ‖a‖ fun x => CStarModule.norm_smul_le a x
+
+@[simp]
+theorem smulCLM_apply (a : A) (x : E) : smulCLM a x = a • x :=
+  (rfl)
+
+theorem norm_smulCLM_le (a : A) : ‖smulCLM (E := E) a‖ ≤ ‖a‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg a) _
+
+variable (A E) in
+/-- Coefficient multiplication on a Hilbert `A`-module is continuous in the module variable. -/
+theorem continuousConstSMul : ContinuousConstSMul A E where
+  continuous_const_smul a := (smulCLM (E := E) a).continuous
+
+end SmulCLM
 
 end CStarModule

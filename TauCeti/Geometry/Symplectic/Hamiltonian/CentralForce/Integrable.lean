@@ -29,8 +29,11 @@ radial momentum vanishes, `⟪q, p⟫ = 0`, and `U'(‖q‖) = L² / (m ‖q‖�
 and `U_ℓ'(‖q‖) = 0` for `ℓ = L(q, p)`: the points of the circular orbits. At such a point the
 Hamiltonian vector field of `H` is `L / (m ‖q‖²)` times that of `L`
 (`TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_eq_smul`), so circular
-orbits are relative equilibria of the rotational symmetry. The critical values of `F` are the pairs
-`(U_ℓ(r), ℓ)` with `r > 0` a critical point of `U_ℓ`
+orbits are relative equilibria of the rotational symmetry; equivalently `dH = (L / (m ‖q‖²)) dL`
+there (`TauCeti.fderiv_centralForceHamiltonian_eq_smul`), so the differential of `F` has rank one,
+with image the line spanned by `(L / (m ‖q‖²), 1)`
+(`TauCeti.range_fderiv_centralForceEnergyMomentum`). The critical values of `F` are the
+pairs `(U_ℓ(r), ℓ)` with `r > 0` a critical point of `U_ℓ`
 (`TauCeti.image_centralForceEnergyMomentum_setOf_not_isRegularPoint`).
 
 On the punctured phase space `{(q, p) | q ≠ 0}` (`TauCeti.puncturedPhaseSpace`), the cotangent
@@ -45,10 +48,17 @@ completely integrable system there (`TauCeti.isIntegrableSystem_centralForceEner
   `(q, p)` with `q ≠ 0` unless `⟪q, p⟫ = 0` and `U'(‖q‖) = L² / (m ‖q‖³)`.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_eq_smul`: on circular
   orbits `X_H = (L / (m ‖q‖²)) X_L`.
+* `TauCeti.fderiv_centralForceHamiltonian_eq_smul`: on circular orbits `dH = (L / (m ‖q‖²)) dL`.
+* `TauCeti.range_fderiv_centralForceEnergyMomentum`: at the critical points off the collision set
+  the differential of `(H, L)` has image the line spanned by `(L / (m ‖q‖²), 1)`.
 * `TauCeti.image_centralForceEnergyMomentum_setOf_not_isRegularPoint`: the critical values.
 * `TauCeti.puncturedPhaseSpace`: the open set `{(q, p) | q ≠ 0}`.
+* `TauCeti.contMDiff_centralForceHamiltonian_comp_subtypeVal`: a central-force Hamiltonian is as
+  smooth on the punctured phase space as its potential is on `r > 0`.
 * `TauCeti.coe_smul_puncturedPhaseSpace`: a group acting linearly on `V` acts on the punctured
   phase space by acting on positions and momenta alike, smoothly if it acts smoothly on `V`.
+* `TauCeti.stdSymplecticForm_poissonBracket_comp_centralForceEnergyMomentum`: the functions
+  `ℓ ∘ (H, L)` pairwise Poisson-commute.
 * `TauCeti.poissonBracket_centralForceEnergyMomentum_comp_subtypeVal`: `H` and `L` Poisson-commute
   on every open set avoiding the collision set.
 * `TauCeti.isIntegrableSystem_centralForceEnergyMomentum`: `(H, L)` is a completely integrable
@@ -101,6 +111,11 @@ instance : MulAction G (puncturedPhaseSpace V) where
 theorem coe_smul_puncturedPhaseSpace (g : G) (x : puncturedPhaseSpace V) :
     ((g • x : puncturedPhaseSpace V) : V × V) = g • (x : V × V) :=
   (rfl)
+
+/-- A group acting continuously and linearly on `V` acts continuously on the punctured phase
+space. -/
+instance [TopologicalSpace G] [ContinuousSMul G V] : ContinuousSMul G (puncturedPhaseSpace V) :=
+  ⟨(continuous_fst.smul (continuous_subtypeVal.comp continuous_snd)).subtype_mk _⟩
 
 variable [NormedSpace ℝ V] {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace G] [ChartedSpace H G]
@@ -317,6 +332,73 @@ theorem stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_eq_smul
   dsimp only
   rw [hvq, hvp, Prod.smul_mk, ← smul_neg, neg_sub]
 
+/-- **On circular orbits the energy is critical along the rotation.** At a point `(q, p)` with
+`⟪q, p⟫ = 0` and `U'(‖q‖) = L² / (m ‖q‖³)`, the differential of the energy is the angular velocity
+`Ω = L / (m ‖q‖²)` times the differential of the angular momentum, `dH = Ω dL`. -/
+theorem fderiv_centralForceHamiltonian_eq_smul [FiniteDimensional ℝ V] {m : ℝ} {U : ℝ → ℝ}
+    {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hU' : U' = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3)) :
+    fderiv ℝ (centralForceHamiltonian m U) x =
+      (angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2)) •
+        fderiv ℝ (angularMomentum (b 0) (b 1)) x := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  rw [smul_apply, ← SymplecticForm.apply_hamiltonianVectorField (stdSymplecticForm (V := V)),
+    ← SymplecticForm.apply_hamiltonianVectorField (stdSymplecticForm (V := V)),
+    stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_eq_smul b hU hq h0 hU']
+  simp
+
+/-- Away from the collision set, the differential of the energy–momentum map has the components
+`dH` and `dL`. -/
+theorem fderiv_centralForceEnergyMomentum_apply {m : ℝ} {U : ℝ → ℝ} {U' : ℝ} {x : V × V}
+    (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) (v : V × V) :
+    fderiv ℝ (centralForceEnergyMomentum b m U) x v =
+      ![fderiv ℝ (centralForceHamiltonian m U) x v,
+        fderiv ℝ (angularMomentum (b 0) (b 1)) x v] := by
+  rw [(hasFDerivAt_centralForceEnergyMomentum b hU hq).fderiv,
+    (hasFDerivAt_centralForceHamiltonian hU hq).fderiv, (hasFDerivAt_angularMomentum _ _ x).fderiv]
+  ext i
+  fin_cases i <;> simp
+
+/-- On a circular orbit, the differential of the energy–momentum map sends `v` to
+`dL(v) (Ω, 1)`, for the angular velocity `Ω = L / (m ‖q‖²)`. -/
+theorem fderiv_centralForceEnergyMomentum_apply_eq_smul [FiniteDimensional ℝ V] {m : ℝ}
+    {U : ℝ → ℝ} {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0)
+    (h0 : ⟪x.1, x.2⟫_ℝ = 0) (hU' : U' = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3))
+    (v : V × V) :
+    fderiv ℝ (centralForceEnergyMomentum b m U) x v = fderiv ℝ (angularMomentum (b 0) (b 1)) x v •
+      ![angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2), 1] := by
+  rw [fderiv_centralForceEnergyMomentum_apply b hU hq,
+    fderiv_centralForceHamiltonian_eq_smul b hU hq h0 hU']
+  ext i
+  fin_cases i <;> simp [mul_comm]
+
+/-- The angular momentum changes at the rate `‖q‖²` when the momentum moves along the rotated
+position `⟪q, b₀⟫ b₁ - ⟪q, b₁⟫ b₀`. -/
+private theorem fderiv_angularMomentum_apply_rotation (x : V × V) :
+    fderiv ℝ (angularMomentum (b 0) (b 1)) x
+        (0, ⟪x.1, b 0⟫_ℝ • b 1 - ⟪x.1, b 1⟫_ℝ • b 0) = ‖x.1‖ ^ 2 := by
+  have hb : ∀ i j, ⟪b i, b j⟫_ℝ = if i = j then 1 else 0 := orthonormal_iff_ite.1 b.orthonormal
+  rw [← real_inner_self_eq_norm_sq, b.real_inner_fin_two x.1 x.1]
+  simp [fderiv_angularMomentum_apply, angularMomentum_apply, inner_sub_right, inner_smul_right, hb,
+    real_inner_comm]
+
+/-- **The image of the differential on a circular orbit.** At a point `(q, p)` with
+`⟪q, p⟫ = 0` and `U'(‖q‖) = L² / (m ‖q‖³)`, the differential of the energy–momentum map has image
+the line spanned by `(Ω, 1)`, for the angular velocity `Ω = L / (m ‖q‖²)`. -/
+theorem range_fderiv_centralForceEnergyMomentum [FiniteDimensional ℝ V] {m : ℝ} {U : ℝ → ℝ}
+    {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hU' : U' = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3)) :
+    (fderiv ℝ (centralForceEnergyMomentum b m U) x).range =
+      Submodule.span ℝ {![angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2), 1]} := by
+  have hT := fderiv_centralForceEnergyMomentum_apply_eq_smul b hU hq h0 hU'
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨v, rfl⟩
+    exact Submodule.mem_span_singleton.2 ⟨_, (hT v).symm⟩
+  · rw [Submodule.span_le, Set.singleton_subset_iff]
+    refine ⟨(‖x.1‖ ^ 2)⁻¹ • (0, ⟪x.1, b 0⟫_ℝ • b 1 - ⟪x.1, b 1⟫_ℝ • b 0), ?_⟩
+    rw [ContinuousLinearMap.coe_coe, hT, map_smul, fderiv_angularMomentum_apply_rotation,
+      smul_eq_mul, inv_mul_cancel₀ (pow_ne_zero 2 (norm_ne_zero_iff.2 hq)), one_smul]
+
 /-- **The critical values of a planar central force.** The images under the energy–momentum map
 of the critical points off the collision set are the pairs `(U_ℓ(r), ℓ)` of an effective energy
 `U_ℓ(r) = ℓ² / (2 m r²) + U(r)` and an angular momentum `ℓ` such that `r > 0` is a critical point
@@ -373,19 +455,24 @@ theorem contDiffAt_centralForceEnergyMomentum {m : ℝ} {U : ℝ → ℝ} {n : W
     ContDiffAt ℝ n (centralForceEnergyMomentum b m U) x := by
   refine contDiffAt_pi.2 fun i ↦ ?_
   fin_cases i
-  · have hn : ContDiffAt ℝ n (fun y : V × V ↦ U ‖y.1‖) x :=
-      hU.comp x ((contDiffAt_norm ℝ hq).comp x contDiffAt_fst)
-    have h : (fun y : V × V ↦ centralForceEnergyMomentum b m U y 0) =
-        fun y ↦ ‖y.2‖ ^ 2 / (2 * m) + U ‖y.1‖ :=
-      funext fun y ↦ centralForceHamiltonian_apply m U y.1 y.2
-    rw [Fin.zero_eta, h]
-    exact ((contDiff_norm_sq ℝ).comp contDiff_snd).contDiffAt.div_const _ |>.add hn
+  · simp only [Fin.zero_eta, centralForceEnergyMomentum_zero]
+    exact contDiffAt_centralForceHamiltonian hU hq
   · have h : (fun y : V × V ↦ centralForceEnergyMomentum b m U y 1) =
         fun y ↦ ⟪y.1, b 0⟫_ℝ * ⟪y.2, b 1⟫_ℝ - ⟪y.1, b 1⟫_ℝ * ⟪y.2, b 0⟫_ℝ :=
       funext fun y ↦ angularMomentum_apply (b 0) (b 1) y.1 y.2
     rw [Fin.mk_one, h]
     exact (((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const)).sub
       ((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const))).contDiffAt
+
+/-- A central-force Hamiltonian `‖p‖² / (2m) + U(‖q‖)` is `C^n` on the punctured phase space when
+the potential `U` is `C^n` on `r > 0`. -/
+theorem contMDiff_centralForceHamiltonian_comp_subtypeVal {m : ℝ} {U : ℝ → ℝ} {n : WithTop ℕ∞}
+    (hU : ∀ r, 0 < r → ContDiffAt ℝ n U r) :
+    ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ) n
+      (centralForceHamiltonian m U ∘ (Subtype.val : puncturedPhaseSpace V → V × V)) := fun x ↦
+  have hq := mem_puncturedPhaseSpace.1 x.property
+  (contDiffAt_centralForceHamiltonian (hU _ (norm_pos_iff.2 hq)) hq).contMDiffAt.comp x
+    (contMDiff_subtypeVal x)
 
 /-- The points of the punctured phase space with nonzero radial momentum, `⟪q, p⟫ ≠ 0`, are
 dense. -/
@@ -404,6 +491,27 @@ theorem dense_setOf_inner_ne_zero :
   refine mem_closure_of_tendsto hg ?_
   filter_upwards [self_mem_nhdsWithin] with ε hε
   simpa [g, inner_add_right, inner_smul_right, h, hq'] using hε
+
+/-- The function `ℓ ∘ (H, L)` is the combination `ℓ(e₀) H + ℓ(e₁) L`. -/
+theorem comp_centralForceEnergyMomentum (m : ℝ) (U : ℝ → ℝ) (ℓ : (Fin 2 → ℝ) →L[ℝ] ℝ) :
+    ℓ ∘ centralForceEnergyMomentum b m U = fun y ↦ ℓ (Pi.single 0 1) *
+      centralForceHamiltonian m U y + ℓ (Pi.single 1 1) * angularMomentum (b 0) (b 1) y := by
+  funext y
+  have hv : centralForceEnergyMomentum b m U y = centralForceHamiltonian m U y • Pi.single 0 1 +
+      angularMomentum (b 0) (b 1) y • Pi.single 1 1 := by
+    ext i
+    fin_cases i <;> simp
+  simp [hv, mul_comm]
+
+/-- **The energy–momentum map is involutive.** For any two linear functionals `ℓ, ℓ'` on `ℝ²`,
+the functions `ℓ ∘ (H, L)` and `ℓ' ∘ (H, L)` Poisson-commute at every point, since `{H, L} = 0`. -/
+theorem stdSymplecticForm_poissonBracket_comp_centralForceEnergyMomentum
+    [FiniteDimensional ℝ V] (m : ℝ) (U : ℝ → ℝ) (ℓ ℓ' : (Fin 2 → ℝ) →L[ℝ] ℝ) (x : V × V) :
+    (stdSymplecticForm (V := V)).poissonBracket (ℓ ∘ centralForceEnergyMomentum b m U)
+      (ℓ' ∘ centralForceEnergyMomentum b m U) x = 0 := by
+  rw [comp_centralForceEnergyMomentum, comp_centralForceEnergyMomentum,
+    SymplecticForm.poissonBracket_comb,
+    stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum, mul_zero]
 
 /-- **The energy and the angular momentum Poisson-commute on open sets.** On every open set of
 `V × V`, with the restriction of the standard symplectic form, the components of the
