@@ -56,7 +56,7 @@ inverse of this isomorphism identifies `W⁻_x` with `Λ^(0,1)_x`, sending `c(v)
 the factor `‖u‖² / 2`: in every orthonormal basis `f` of `E x`,
 `2 ⟪c(v) u₀, c(w) u₀⟫ = (∑ᵢ conj (v♭ fᵢ) w♭ fᵢ) ‖u‖²`
 (`TauCeti.OrthonormalFrameBundle.two_mul_inner_cliffordMul_canonicalSpinor`), so for a unit `u` it
-is `1 / √2` times an isometry for the Hilbert–Schmidt norm of covectors. Under this identification
+is `√2` times an isometry for the Hilbert–Schmidt norm of covectors. Under this identification
 the Dirac symbol on `α u₀` is `2 ∂bar_a α`
 (`TauCeti.SeibergWitten.sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq`), which is Taubes's
 `√2 ∂bar_a α` for the isometric normalization.
@@ -371,11 +371,8 @@ def canonicalNegativeHalfSpinorZeroOneEquiv (hrank : finrank ℂ (positiveHalfSp
     (hu₀ : u ≠ 0) (x : X) :
     (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorBundle o hQ b ρ hρ (-1) x ≃ₗ[ℂ]
       AlmostComplexStructure.zeroOneCovectors (Jc.almostComplexStructureAt x) :=
-  -- The fibre `E x` is finite-dimensional, as the model fibre `F` is, so it is complete.
-  have : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
-  have : FiniteDimensional ℝ (E x) :=
-    ((trivializationAt F E x).linearEquivAt ℝ x (mem_baseSet_trivializationAt F E x)).symm
-      |>.finiteDimensional
+  -- The fibre `E x` is finite-dimensional, so it is complete.
+  have := (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).finiteDimensional_fiber x
   have := FiniteDimensional.completeSpace ℝ (E x)
   (canonicalNegativeHalfSpinorEquiv hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hJc hrank hu₀
     x).symm.trans (AlmostComplexStructure.zeroOneFlatEquiv (V := E x)
@@ -396,17 +393,18 @@ theorem coe_canonicalNegativeHalfSpinorZeroOneEquiv_cliffordMul
       (Jc.fiberEquiv x).symm v := by
     rw [LinearEquiv.symm_apply_eq, canonicalNegativeHalfSpinorEquiv_apply,
       ContinuousLinearEquiv.apply_symm_apply]
-  -- The fibre `E x` is finite-dimensional, as the model fibre `F` is, so it is complete.
-  have : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
-  have : FiniteDimensional ℝ (E x) :=
-    ((trivializationAt F E x).linearEquivAt ℝ x (mem_baseSet_trivializationAt F E x)).symm
-      |>.finiteDimensional
+  -- The fibre `E x` is finite-dimensional, so it is complete.
+  have := (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).finiteDimensional_fiber x
   have := FiniteDimensional.completeSpace ℝ (E x)
-  exact (congrArg (fun y ↦ (AlmostComplexStructure.zeroOneFlatEquiv (V := E x)
-    (inner_almostComplexStructureAt_apply hJc x) y : E x →L[ℝ] ℂ))
-      (h.trans (Jc.fiberEquiv_symm_apply x v))).trans
-    (AlmostComplexStructure.coe_zeroOneFlatEquiv_apply
-      (inner_almostComplexStructureAt_apply hJc x) v)
+  -- The isomorphism is `canonicalNegativeHalfSpinorEquiv⁻¹` followed by `v ↦ v♭`. Its domain
+  -- `Jc.Fiber x` is a type synonym of `E x`, so `LinearEquiv.trans_apply` does not rewrite the
+  -- composite, which `rfl` unfolds instead.
+  calc _ = (AlmostComplexStructure.zeroOneFlatEquiv (inner_almostComplexStructureAt_apply hJc x)
+        ((Jc.fiberEquiv x).symm v) : E x →L[ℝ] ℂ) := by
+        rw [← h]
+        rfl
+    _ = _ := by
+      rw [Jc.fiberEquiv_symm_apply, AlmostComplexStructure.coe_zeroOneFlatEquiv_apply]
 
 include hJV hu hJc in
 /-- **The isomorphism `W⁻ ≃ Λ^(0,1)` is Hermitian up to the factor `‖u‖² / 2`**: in every

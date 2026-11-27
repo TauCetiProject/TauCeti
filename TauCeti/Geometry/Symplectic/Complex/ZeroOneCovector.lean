@@ -42,7 +42,7 @@ covectors is twice the Hermitian form of `(V, J)`,
 
 `∑ᵢ conj (v♭ bᵢ) w♭ bᵢ = 2 (⟪v, w⟫ - i ⟪v, J w⟫)`
 
-(`TauCeti.AlmostComplexStructure.sum_conj_zeroOneFlat_mul_zeroOneFlat`), so
+(`TauCeti.AlmostComplexStructure.sum_conj_zeroOneFlat_mul_zeroOneFlat`), so taking `w = v`,
 `∑ᵢ |v♭ bᵢ|² = 2 ‖v‖²` (`TauCeti.AlmostComplexStructure.sum_norm_sq_zeroOneFlat`).
 
 Through Clifford multiplication on the canonical spinor these identify the negative half-spinors
@@ -88,35 +88,35 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] (J : Almos
 `D : V → ℂ` that are complex antilinear, `D (J w) = -i D w`. They form a complex subspace of the
 real-linear functionals. -/
 def zeroOneCovectors : Submodule ℂ (V →L[ℝ] ℂ) where
-  carrier := {D | ∀ w, D (J w) = -(I * D w)}
-  add_mem' {D D'} hD hD' w := by
-    simp only [add_apply, hD w, hD' w]
-    ring
-  zero_mem' w := by simp
-  smul_mem' z D hD w := by
-    simp only [smul_apply, smul_eq_mul, hD w]
+  carrier :=
+    {D | IsComplexAntilinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ I) (D : V →ₗ[ℝ] ℂ)}
+  add_mem' hD hD' := hD.add hD'
+  zero_mem' := isComplexAntilinear_zero
+  smul_mem' z D hD := isComplexAntilinear_of_apply fun w ↦ by
+    simp only [ContinuousLinearMap.toLinearMap_smul, LinearMap.smul_apply,
+      ContinuousLinearMap.coe_coe, DistribSMul.toLinearMap_apply, smul_eq_mul, hD.apply w]
     ring
 
 variable {J}
 
-@[simp]
-theorem mem_zeroOneCovectors {D : V →L[ℝ] ℂ} :
-    D ∈ zeroOneCovectors J ↔ ∀ w, D (J w) = -(I * D w) :=
-  Iff.rfl
-
 /-- A `(0,1)`-covector is complex antilinear, for `J` on `V` and multiplication by `i` on `ℂ`. -/
 theorem mem_zeroOneCovectors_iff_isComplexAntilinear {D : V →L[ℝ] ℂ} :
     D ∈ zeroOneCovectors J ↔
-      IsComplexAntilinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ I) (D : V →ₗ[ℝ] ℂ) := by
-  rw [isComplexAntilinear_iff, mem_zeroOneCovectors, LinearMap.ext_iff]
-  simp
+      IsComplexAntilinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ I) (D : V →ₗ[ℝ] ℂ) :=
+  Iff.rfl
+
+/-- The pointwise form of membership: `D (J w) = -i D w` for every `w`. -/
+@[simp]
+theorem mem_zeroOneCovectors {D : V →L[ℝ] ℂ} :
+    D ∈ zeroOneCovectors J ↔ ∀ w, D (J w) = -(I * D w) :=
+  ⟨fun hD w ↦ hD.apply w, fun hD ↦ isComplexAntilinear_of_apply hD⟩
 
 /-! ### The metric isomorphism -/
 
 variable (J) in
 /-- **The `(0,1)`-part of the metric dual**, doubled: `v♭ w = ⟪v, w⟫ - i ⟪J v, w⟫`. For an
-orthogonal `J` it is a complex linear isomorphism from `(V, J)` onto the `(0,1)`-covectors
-(`TauCeti.AlmostComplexStructure.zeroOneFlatEquiv`). -/
+orthogonal `J` on a complete space it is a complex linear isomorphism from `(V, J)` onto the
+`(0,1)`-covectors (`TauCeti.AlmostComplexStructure.zeroOneFlatEquiv`). -/
 def zeroOneFlat : V →ₗ[ℝ] V →L[ℝ] ℂ where
   toFun v := ofRealCLM.comp (innerSL ℝ v) - I • ofRealCLM.comp (innerSL ℝ (J v))
   map_add' v w := by
@@ -148,9 +148,7 @@ theorem zeroOneFlat_apply_left (v : V) : zeroOneFlat J (J v) = I • zeroOneFlat
   ext w
   simp only [zeroOneFlat_apply_apply, apply_apply, inner_neg_left, ofReal_neg,
     smul_apply, smul_eq_mul]
-  ring_nf
-  rw [I_sq]
-  ring
+  linear_combination (⟪J v, w⟫ : ℂ) * I_sq
 
 /-- The metric dual of `v` is the real part of `v♭`, so `v ↦ v♭` is injective. -/
 theorem zeroOneFlat_injective : Function.Injective (zeroOneFlat J) := by
@@ -174,13 +172,11 @@ include hJ
 
 /-- **`v♭` is a `(0,1)`-covector** when `J` is orthogonal: `v♭ (J w) = -i v♭ w`. -/
 theorem zeroOneFlat_mem_zeroOneCovectors (v : V) : zeroOneFlat J v ∈ zeroOneCovectors J := by
-  intro w
+  refine mem_zeroOneCovectors.2 fun w ↦ ?_
   have h : ⟪v, J w⟫ = -⟪J v, w⟫ := by
     rw [real_inner_comm, inner_apply_left_eq_neg_swap hJ]
   simp only [zeroOneFlat_apply_apply, hJ, h, ofReal_neg]
-  ring_nf
-  rw [I_sq]
-  ring
+  linear_combination -(⟪J v, w⟫ : ℂ) * I_sq
 
 /-- **Every `(0,1)`-covector is `v♭`**, on a complete space, for the vector `v` metrically dual to
 its real part. -/
@@ -196,7 +192,7 @@ theorem exists_zeroOneFlat_eq [CompleteSpace V] {D : V →L[ℝ] ℂ} (hD : D �
   · rw [re_zeroOneFlat_apply_apply, hv]
   · -- The imaginary part of `D w` is the real part of `D (J w) = -i D w`.
     rw [im_zeroOneFlat_apply_apply, inner_apply_left_eq_neg_swap hJ, neg_neg, real_inner_comm,
-      hv, hD w]
+      hv, mem_zeroOneCovectors.1 hD w]
     simp
 
 /-- **`(V, J)` is isomorphic to its `(0,1)`-covectors** through the metric, for an orthogonal `J`
@@ -210,7 +206,7 @@ def zeroOneFlatEquiv [CompleteSpace V] :
     { toFun v := ⟨zeroOneFlat J v, zeroOneFlat_mem_zeroOneCovectors hJ v⟩
       map_add' v w := Subtype.ext (map_add _ v w)
       map_smul' z v := Subtype.ext <| by
-        change zeroOneFlat J (z • v) = (z • zeroOneFlat J v : V →L[ℝ] ℂ)
+        simp only [Submodule.coe_smul]
         ext w
         rw [complexModule_smul_def, map_add, map_smul, map_smul, zeroOneFlat_apply_left]
         simp only [add_apply, smul_apply, real_smul, smul_eq_mul]
@@ -275,21 +271,25 @@ theorem sum_conj_zeroOneFlat_mul_zeroOneFlat {ι : Type*} [Fintype ι] (b : Orth
       im_zeroOneFlat_apply_apply]
     simp only [mul_neg, neg_neg, sub_neg_eq_add]
     rw [Finset.sum_add_distrib, hsum, hsum, hJ]
-    simp
+    simp only [re_ofNat, sub_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one,
+      sub_self, sub_zero, im_ofNat, sub_im, mul_im, add_zero, zero_sub, mul_neg, zero_mul, neg_zero]
     ring
   · simp only [im_sum, mul_im, conj_re, conj_im, re_zeroOneFlat_apply_apply,
       im_zeroOneFlat_apply_apply]
     simp only [mul_neg, neg_neg, Finset.sum_add_distrib, Finset.sum_neg_distrib, hsum]
-    simp [h]
+    simp only [h, neg_neg, re_ofNat, ofReal_neg, neg_mul, sub_neg_eq_add, add_im, ofReal_im,
+      mul_im, ofReal_re, I_im, mul_one, I_re, mul_zero, add_zero, zero_add, im_ofNat, add_re,
+      mul_re, sub_self, zero_mul]
     ring
 
 /-- **The Hilbert–Schmidt norm of `v♭`** is `√2 ‖v‖`: in every orthonormal basis,
 `∑ᵢ |v♭ bᵢ|² = 2 ‖v‖²`. -/
 theorem sum_norm_sq_zeroOneFlat {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V) (v : V) :
     ∑ i, ‖zeroOneFlat J v (b i)‖ ^ 2 = 2 * ‖v‖ ^ 2 := by
-  simp only [Complex.sq_norm, normSq_apply, re_zeroOneFlat_apply_apply,
-    im_zeroOneFlat_apply_apply, Finset.sum_add_distrib, ← sq, neg_sq]
-  rw [b.sum_sq_inner_left, b.sum_sq_inner_left, norm_apply hJ]
-  ring
+  -- The real part of the Hilbert–Schmidt pairing of `v♭` with itself.
+  have h := congrArg re (sum_conj_zeroOneFlat_mul_zeroOneFlat hJ b v v)
+  simp only [re_sum, conj_mul', ← ofReal_pow, ofReal_re] at h
+  rw [h, inner_self_apply hJ, real_inner_self_eq_norm_sq]
+  simp [-ofReal_pow]
 
 end TauCeti.AlmostComplexStructure
