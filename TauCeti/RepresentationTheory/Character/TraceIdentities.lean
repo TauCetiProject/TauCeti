@@ -27,6 +27,12 @@ Evaluation minors bound the dimension of this quotient. Integral Newton polynomi
 square-zero elements and give natural multiplicities on idempotents. A Wedderburn decomposition
 then realizes the trace, and semisimplification supplies native representation semisimplicity.
 
+## Main results
+
+* `TauCeti.exists_isSemisimpleRepresentation_character_eq_of_trace_identities` gives a native
+  semisimple representation with the prescribed character.
+* `TauCeti.exists_gl_trace_eq_of_trace_identities` gives the corresponding homomorphism to `GL`.
+
 ## Provenance
 
 The reconstruction adapts `New.exists_rep_of_trace_identities`, `New.linearExtension`,
@@ -55,7 +61,11 @@ open scoped MonoidAlgebra
 
 namespace TauCeti
 
-variable {k G n : Type*} [Field k] [Group G] [Fintype n] [DecidableEq n]
+variable {k G n : Type*}
+
+section
+
+variable [CommSemiring k] [Group G] [Fintype n] [DecidableEq n]
 
 /-- The linear form on `k[G]` that extends `T : G → k`. -/
 private noncomputable def linearExtension (T : G → k) : k[G] →ₗ[k] k :=
@@ -82,6 +92,10 @@ private lemma eval_linearExtension_eq_zero {T : G → k}
     (h_identities _ fun ρ ↦ (comp_aeval_apply _ (aeval fun g : G ↦ (ρ g).val.trace) B).trans ?_)
   simpa [Finsupp.sum, lift_apply] using
     hB (MonoidAlgebra.lift k (Matrix n n k) G ((Units.coeHom (Matrix n n k)).comp ρ))
+
+end
+
+variable [Field k] [Group G] [Fintype n] [DecidableEq n]
 
 private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
     (h_identities : ∀ B : MvPolynomial G k,
@@ -117,7 +131,7 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
     simpa [sub_eq_zero] using h
   obtain ⟨m, d, _, ⟨e⟩⟩ := IsSemisimpleRing.exists_algEquiv_pi_matrix_of_isAlgClosed k (k[G] ⧸ I)
   obtain ⟨φ, hφ⟩ := (τ.comp e.symm.toLinearMap).exists_algHom_trace_eq_pi_matrix
-    (fun x y ↦ by simpa using t.quotientTrace_mul_comm t_comm (e.symm x) (e.symm y))
+    (fun x y ↦ by simpa using t.quotientTrace_mul_comm t_comm (e.symm x) (e.symm y)) (fun _ ↦ 0)
     (fun i ↦ by
       have hi : IsIdempotentElem (Pi.single i
           (Matrix.single (0 : Fin (d i)) (0 : Fin (d i)) (1 : k)) :

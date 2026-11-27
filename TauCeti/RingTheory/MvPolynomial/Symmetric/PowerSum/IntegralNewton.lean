@@ -21,6 +21,15 @@ apply to linear forms on idempotents and square-zero elements. This family recov
 scaled elementary symmetric functions from power sums, whereas `newtonMvPolynomial` expresses
 power sums in elementary symmetric functions.
 
+## Main declarations
+
+* `TauCeti.integralNewtonPolynomial`, `TauCeti.integralNewtonPolynomial_zero` and
+  `TauCeti.integralNewtonPolynomial_succ` define and characterize the recurrence.
+* `TauCeti.map_integralNewtonPolynomial` changes its coefficient ring.
+* `Multiset.eval_integralNewtonPolynomial` evaluates it at power sums.
+* `LinearMap.eval_integralNewtonPolynomial_of_geometric` evaluates geometric power sequences;
+  `LinearMap.exists_nat_mul_of_integralNewtonPolynomial_eq_zero` extracts natural multiplicities.
+
 ## Provenance
 
 `TauCeti.integralNewtonPolynomial` and its evaluation lemmas adapt `New.newtonPoly`,
