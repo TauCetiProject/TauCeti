@@ -205,7 +205,7 @@ theorem eq_shiftedSingularValueResolventIm_iff (r : ℝ) {η v : ℝ}
 
 /-- A nonnegative family with vanishing residual at a fixed positive height tends to
 the imaginary part of the shifted singular-value resolvent. -/
-theorem tendsto_of_tendsto_shiftedSingularValueResolventIm_residual (r : ℝ) {η : ℝ}
+theorem tendsto_nhds_shiftedSingularValueResolventIm_of_tendsto_mul_sub (r : ℝ) {η : ℝ}
     (hη : 0 < η) {ι : Type*} {l : Filter ι} {v : ι → ℝ} (hv : ∀ᶠ i in l, 0 ≤ v i)
     (h : Tendsto (fun i ↦ v i * ((η + v i) ^ 2 + r ^ 2) - (η + v i)) l (𝓝 0)) :
     Tendsto v l (𝓝 (shiftedSingularValueResolventIm r η)) := by
@@ -245,7 +245,7 @@ theorem tendsto_mul_shiftedSingularValueResolventIm (r : ℝ) :
 /-- Probability laws whose resolvent transforms on the positive imaginary axis converge to
 purely imaginary values obeying the shifted equation have a weak limit. The hypothesis is
 given in residual form, and the normalized solution at infinity supplies tightness. -/
-theorem exists_tendsto_of_shiftedSingularValueResolventIm_residual (r : ℝ)
+theorem exists_tendsto_of_tendsto_resolventTransform_im_mul_sub (r : ℝ)
     (μs : ℕ → ProbabilityMeasure ℝ)
     (hre : ∀ η : ℝ, 0 < η →
       Tendsto (fun i ↦ (resolventTransform (μs i : Measure ℝ) (η * Complex.I)).re)
@@ -262,7 +262,7 @@ theorem exists_tendsto_of_shiftedSingularValueResolventIm_residual (r : ℝ)
         (𝓝 ((shiftedSingularValueResolventIm r η : ℂ) * Complex.I)) := by
     have hpos i : 0 ≤ (resolventTransform (μs i : Measure ℝ) (η * Complex.I)).im :=
       (im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) (by simpa using hη)).le
-    have him := tendsto_of_tendsto_shiftedSingularValueResolventIm_residual r hη
+    have him := tendsto_nhds_shiftedSingularValueResolventIm_of_tendsto_mul_sub r hη
       (.of_forall hpos) (hres η hη)
     have hre' := Complex.continuous_ofReal.continuousAt.tendsto.comp (hre η hη)
     have him' := Complex.continuous_ofReal.continuousAt.tendsto.comp him
