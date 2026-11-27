@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Normed.Group.Continuity
+import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.Analysis.RCLike.Lemmas
 import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
@@ -28,13 +32,15 @@ a ring homomorphism into a normed field `L` such that `a ↦ φ (ℓ a v)` is co
 `z : Module.Basis (Fin (finrank K U)) K U` such that `ℓ (a i) (z j) = δ_{ij}` and
 `‖φ (ℓ x (z k))‖ ≤ 1` for all `x : 𝒜` and all `k`.
 
-For `K = L = ℝ` or `ℂ` and the unit sphere of the dual of a normed space, this recovers the
+For `K = L = ℝ` or `ℂ` and the closed unit ball of the dual of a normed space, this recovers the
 classical Auerbach basis.
 
 ## Main statements
 
 * `RingHom.exists_auerbachBasis`: existence of an Auerbach basis for a compact separating family
   of linear forms measured through a ring homomorphism into a normed field.
+* `TauCeti.exists_basis_norm_eq_one_and_norm_coord_eq_one`: Auerbach's lemma for a
+  finite-dimensional normed space over `ℝ` or `ℂ`.
 
 ## References
 
@@ -173,5 +179,52 @@ theorem _root_.RingHom.exists_auerbachBasis {L : Type*} [FiniteDimensional K U] 
   refine ⟨a, z, fun i j => by rw [hz_apply]; exact hdual i j, fun x k => ?_⟩
   rw [hz_apply]
   exact φ.norm_eval_le_one_of_isMaxOn ℓ b a (fun f => ha_max (Set.mem_univ f)) x k
+
+/-- **Auerbach's lemma.** A finite-dimensional normed space over `ℝ` or `ℂ` has a basis of unit
+vectors whose coordinate functionals have operator norm one. -/
+theorem exists_basis_norm_eq_one_and_norm_coord_eq_one {ι 𝕜 E : Type*} [Fintype ι] [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+    (hι : Fintype.card ι = Module.finrank 𝕜 E) :
+    ∃ z : Module.Basis ι 𝕜 E,
+      ∀ k, ‖z k‖ = 1 ∧ ‖LinearMap.toContinuousLinearMap (z.coord k)‖ = 1 := by
+  classical
+  -- Apply `RingHom.exists_auerbachBasis` to the closed unit ball of the dual space.
+  have := FiniteDimensional.proper_rclike 𝕜 (StrongDual 𝕜 E)
+  have : CompactSpace (Metric.closedBall (0 : StrongDual 𝕜 E) 1) :=
+    isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
+  have hball (f : Metric.closedBall (0 : StrongDual 𝕜 E) 1) : ‖(f : StrongDual 𝕜 E)‖ ≤ 1 :=
+    mem_closedBall_zero_iff.1 f.property
+  obtain ⟨a₀, z₀, hdual₀, hle₀⟩ := (RingHom.id 𝕜).exists_auerbachBasis
+    (fun f : Metric.closedBall (0 : StrongDual 𝕜 E) 1 => (f : StrongDual 𝕜 E).toLinearMap)
+    (fun v => (ContinuousLinearMap.apply 𝕜 𝕜 v).continuous.comp continuous_subtypeVal)
+    (fun v hv => by
+      obtain ⟨g, hg, hgv⟩ := exists_dual_vector'' 𝕜 v
+      simpa [hgv] using hv ⟨g, by simpa using hg⟩)
+  -- Reindex the basis and the chosen forms by `ι`.
+  let e := Fintype.equivFinOfCardEq hι
+  set z : Module.Basis ι 𝕜 E := z₀.reindex e.symm
+  set a : ι → Metric.closedBall (0 : StrongDual 𝕜 E) 1 := a₀ ∘ e
+  have hdual (i j : ι) : (a i : StrongDual 𝕜 E) (z j) = if i = j then 1 else 0 := by
+    simpa [z, a, e.injective.eq_iff] using hdual₀ (e i) (e j)
+  have hle (x : Metric.closedBall (0 : StrongDual 𝕜 E) 1) (k : ι) :
+      ‖(x : StrongDual 𝕜 E) (z k)‖ ≤ 1 := by
+    simpa [z] using hle₀ x (e k)
+  -- The coordinate functional `z.coord k` is the form `a k` of the unit ball.
+  have hak : ∀ k, LinearMap.toContinuousLinearMap (z.coord k) = a k := fun k =>
+    ContinuousLinearMap.coe_injective <| z.ext fun j => by
+      rw [LinearMap.coe_toContinuousLinearMap, Module.Basis.coord_apply, Module.Basis.repr_self,
+        ContinuousLinearMap.coe_coe, hdual, Finsupp.single_apply]
+      exact if_congr eq_comm rfl rfl
+  have hone : ∀ k, (a k : StrongDual 𝕜 E) (z k) = 1 := fun k => by simp [hdual]
+  -- `1 = ‖(a k) (z k)‖ ≤ ‖a k‖ * ‖z k‖`, and both factors are at most `1`.
+  have hz : ∀ k, ‖z k‖ ≤ 1 := fun k => by
+    obtain ⟨g, hg, hgv⟩ := exists_dual_vector'' 𝕜 (z k)
+    simpa [hgv] using hle ⟨g, by simpa using hg⟩ k
+  have hmul : ∀ k, 1 ≤ ‖(a k : StrongDual 𝕜 E)‖ * ‖z k‖ := fun k => by
+    simpa [hone] using (a k : StrongDual 𝕜 E).le_opNorm (z k)
+  refine ⟨z, fun k => ⟨le_antisymm (hz k) ?_, ?_⟩⟩
+  · nlinarith [hmul k, hball (a k), norm_nonneg (z k)]
+  · rw [hak k]
+    exact le_antisymm (hball _) (by nlinarith [hmul k, hz k, norm_nonneg (a k : StrongDual 𝕜 E)])
 
 end TauCeti
