@@ -471,13 +471,29 @@ theorem transition_ofBaseSet (i i' : Fin A.n) :
   funext y
   rfl
 
-/-- The charts of `A.ofBaseSet h`, taken back as an atlas of the original bundle, are `A`. -/
+/-- The charts of `A` taken as an atlas of the same bundle are `A`. -/
 @[simp]
-theorem ofBaseSet_ofBaseSet
-    (h' : ∀ i, closure ((A.ofBaseSet h).dom i) ⊆
-      (trivializationAt F V ((A.ofBaseSet h).center i)).baseSet) :
-    (A.ofBaseSet h).ofBaseSet h' = A :=
+theorem ofBaseSet_self
+    (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F V (A.center i)).baseSet) :
+    A.ofBaseSet h = A :=
   (rfl)
+
+/-- The charts of `A.ofBaseSet h`, taken as an atlas of a third bundle `V''`, are the charts of
+`A` taken as an atlas of `V''`. -/
+@[simp]
+theorem ofBaseSet_ofBaseSet {F'' : Type*} [TopologicalSpace F''] {V'' : M → Type*}
+    [TopologicalSpace (TotalSpace F'' V'')] [∀ x, TopologicalSpace (V'' x)] [FiberBundle F'' V'']
+    (h' : ∀ i, closure ((A.ofBaseSet h).dom i) ⊆
+      (trivializationAt F'' V'' ((A.ofBaseSet h).center i)).baseSet) :
+    (A.ofBaseSet h).ofBaseSet h' = A.ofBaseSet h' :=
+  (rfl)
+
+variable (A) in
+/-- The chart domains of a finite bundle atlas lie in the base sets of the trivial bundle with any
+fibre, so its charts are also an atlas of that bundle (`TauCeti.FiniteBundleAtlas.ofBaseSet`). -/
+theorem closure_dom_subset_baseSet_trivial (G : Type*) [TopologicalSpace G] (i : Fin A.n) :
+    closure (A.dom i) ⊆ (trivializationAt G (Bundle.Trivial M G) (A.center i)).baseSet := by
+  simp [Bundle.Trivial.fiberBundle_trivializationAt']
 
 end OfBaseSet
 
