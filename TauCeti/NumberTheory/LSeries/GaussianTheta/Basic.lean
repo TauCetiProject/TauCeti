@@ -18,6 +18,7 @@ import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Moments
 import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.LSeries.Dilation
 
 /-!
@@ -31,8 +32,8 @@ gives absolute convergence and the bound `3 * exp (-u) / √u` for positive scal
 The Mellin transform of the Gaussian weight is evaluated using the Gamma function.
 Both weights are differentiable and tend to zero at positive infinity. Their derivative
 formulas give integrable derivatives on the positive half-line, with the integral of the
-absolute derivative at most `1`. These estimates are used in Abel summation for character
-theta sums.
+absolute derivative at most `1`. Abel summation then bounds the norm of the theta sum
+by a uniform bound on the coefficient partial sums.
 
 ## Dirichlet coefficients
 
@@ -193,6 +194,83 @@ theorem gaussianTheta_def (j : Fin 2) (c : ℕ → ℂ) (u : ℝ) :
     gaussianTheta j c u = ∑' n : ℕ+, c n * gaussianMonomial j (n * u) := by
   unfold gaussianTheta
   rfl
+
+open Finset in
+/-- At a positive scale, the weighted partial sums converge to a limit of norm at most `B`. -/
+private theorem exists_tendsto_gaussianTheta_partialSum_and_norm_le {c : ℕ → ℂ} {B : ℝ}
+    (hc : ∀ n, ‖∑ k ∈ Finset.Icc 1 n, c k‖ ≤ B) (j : Fin 2) {u : ℝ} (hu : 0 < u) :
+    ∃ L, Tendsto (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 1 n, c k * gaussianMonomial j (k * u)) atTop
+      (𝓝 L) ∧ ‖L‖ ≤ B := by
+  let c₀ (k : ℕ) : ℂ := if k = 0 then 0 else c k
+  have hcut (g : ℕ → ℂ) (n : ℕ) : ∑ k ∈ Icc 0 n, c₀ k * g k = ∑ k ∈ Icc 1 n, c k * g k := by
+    rw [Icc_eq_cons_Ioc n.zero_le, sum_cons, ← Icc_add_one_left_eq_Ioc]
+    simp only [zero_add, c₀, ↓reduceIte, zero_mul]
+    exact sum_congr rfl fun k hk ↦ by rw [ite_eq_right (Nat.ne_zero_of_lt (mem_Icc.mp hk).1)]
+  have hpartial (n : ℕ) : ‖∑ k ∈ Icc 0 n, c₀ k‖ ≤ B := by
+    have heq := hcut (fun _ ↦ 1) n
+    simp only [mul_one] at heq
+    simpa only [heq] using hc n
+  let f (t : ℝ) : ℂ := gaussianMonomial j (t * u)
+  have hderiv (t : ℝ) : HasDerivAt f ((deriv (gaussianMonomial j) (t * u) * u : ℝ) : ℂ) t := by
+    have hm : HasDerivAt (fun t ↦ t * u) u t := by simpa using (hasDerivAt_id t).mul_const u
+    exact ((differentiable_gaussianMonomial j (t * u)).hasDerivAt.comp t hm).ofReal_comp
+  have hdf : deriv f = fun t ↦ ((deriv (gaussianMonomial j) (t * u) * u : ℝ) : ℂ) :=
+    funext fun t ↦ (hderiv t).deriv
+  have hi : IntegrableOn (deriv f) (Set.Ici 0) := by
+    have hs := (integrableOn_Ioi_comp_mul_right_iff (deriv (gaussianMonomial j)) 0 hu).2
+      (by simpa only [zero_mul] using integrableOn_deriv_gaussianMonomial j)
+    rw [integrableOn_Ici_iff_integrableOn_Ioi, hdf]
+    exact (hs.mul_const u).ofReal
+  have ht : Tendsto f atTop (𝓝 0) := by
+    simpa only [Function.comp_def, id_eq, Complex.ofReal_zero, f] using
+      Complex.continuous_ofReal.continuousAt.tendsto.comp
+        ((tendsto_gaussianMonomial_atTop_zero j).comp (tendsto_id.atTop_mul_const hu))
+  have hnormDeriv (t : ℝ) : ‖deriv f t‖ = u * ‖deriv (gaussianMonomial j) (t * u)‖ := by
+    simp only [hdf, Complex.norm_real, norm_mul, norm_of_nonneg hu.le]
+    exact mul_comm _ _
+  -- The factor `u` from the chain rule cancels the Jacobian of the rescaling.
+  have hb : (∫ t in Set.Ioi 0, ‖deriv f t‖) ≤ 1 := by
+    simp_rw [hnormDeriv]
+    rw [integral_const_mul, ← smul_eq_mul,
+      integral_comp_mul_right_Ioi' (fun t ↦ ‖deriv (gaussianMonomial j) t‖) 0 hu, zero_mul]
+    exact integral_norm_deriv_gaussianMonomial_le j
+  obtain ⟨L, hL, hnorm⟩ := exists_tendsto_sum_mul_and_norm_le
+    (f := f) hpartial (fun t _ ↦ (hderiv t).differentiableAt) hi ht
+  simp_rw [hcut] at hL
+  exact ⟨L, hL, hnorm.trans (mul_le_of_le_one_right ((norm_nonneg _).trans (hc 0)) hb)⟩
+
+/-- If the sums of `c` from `1` to `n` have norm at most `B`, then so does the Gaussian theta
+sum at every real scale. The value of `c 0` is irrelevant. -/
+theorem norm_gaussianTheta_le_of_norm_sum_le {c : ℕ → ℂ} {B : ℝ}
+    (hc : ∀ n, ‖∑ k ∈ Finset.Icc 1 n, c k‖ ≤ B) (j : Fin 2) (u : ℝ) :
+    ‖gaussianTheta j c u‖ ≤ B := by
+  wlog hu : 0 ≤ u
+  · have hw (x : ℝ) : gaussianMonomial j (-x) = (-1) ^ j.val * gaussianMonomial j x := by
+      have hp : (-x) ^ j.val = (-1) ^ j.val * x ^ j.val := by
+        rw [← mul_pow, neg_one_mul]
+      rw [gaussianMonomial_def, gaussianMonomial_def, neg_sq, hp, mul_assoc]
+    have hneg (v : ℝ) : gaussianTheta j c (-v) = (-1 : ℂ) ^ j.val * gaussianTheta j c v := by
+      simp only [gaussianTheta_def, mul_neg, hw, Complex.ofReal_mul, Complex.ofReal_pow,
+        Complex.ofReal_neg, Complex.ofReal_one, mul_left_comm (c _), tsum_mul_left]
+    have heq : gaussianTheta j c u = (-1 : ℂ) ^ j.val * gaussianTheta j c (-u) := by
+      simpa only [neg_neg] using hneg (-u)
+    simpa only [heq, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul] using
+      this hc j (-u) (neg_nonneg.mpr (le_of_not_ge hu))
+  rw [gaussianTheta_def, tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ c n * gaussianMonomial j (n * u))]
+  by_cases hs : Summable (fun n : ℕ ↦ c (n + 1) * gaussianMonomial j ((n + 1 : ℕ) * u))
+  · have htheta : Tendsto (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 1 n, c k * gaussianMonomial j (k * u))
+        atTop (𝓝 (∑' n : ℕ, c (n + 1) * gaussianMonomial j ((n + 1 : ℕ) * u))) := by
+      simpa only [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range,
+        Nat.add_sub_cancel, Nat.add_comm 1] using hs.hasSum.tendsto_sum_nat
+    rcases hu.eq_or_lt with rfl | hu
+    · refine le_of_tendsto htheta.norm (Eventually.of_forall fun n ↦ ?_)
+      fin_cases j
+      · simpa using hc n
+      · simpa using (norm_nonneg _).trans (hc n)
+    · obtain ⟨L, hL, hb⟩ := exists_tendsto_gaussianTheta_partialSum_and_norm_le hc j hu
+      rwa [tendsto_nhds_unique htheta hL]
+  · rw [tsum_eq_zero_of_not_summable hs, norm_zero]
+    exact (norm_nonneg _).trans (hc 0)
 
 /-- The Gaussian theta series with square-root normalization. -/
 def gaussianThetaSeries (j : Fin 2) (c : ℕ → ℂ) (u : ℝ) : ℂ :=
