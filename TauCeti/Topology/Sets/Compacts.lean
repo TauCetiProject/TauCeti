@@ -22,9 +22,12 @@ contravariant in proper maps. When the target is locally compact, the preimages 
 neighbourhoods of `K` are cofinal among the compact neighbourhoods of `f⁻¹(K)`
 (`TopologicalSpace.Compacts.exists_comap_le_of_mem_compactNhds`). It also
 records that Mathlib's image `TopologicalSpace.Compacts.map` is monotone, which makes cohomology
-with compact supports covariant in open embeddings. A compact set lies in one member of a
-directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). A compact set
-whose interior contains `K` is a compact neighbourhood of `K`
+with compact supports covariant in open embeddings, that it preserves `⊥` and `⊔`, and `⊓` for
+injective maps, and that for a continuous map `f` out of a locally compact space every compact
+neighbourhood of `f(K)` is a neighbourhood of `f(K')` for some compact neighbourhood `K'` of `K`
+(`TopologicalSpace.Compacts.exists_mem_compactNhds_mem_compactNhds_map`). A compact set lies in
+one member of a directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`).
+A compact set whose interior contains `K` is a compact neighbourhood of `K`
 (`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`); in a weakly locally compact space every
 compact set has one. Open sets containing two compact sets
 together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). In an R₁
@@ -112,6 +115,35 @@ lemma exists_comap_le_of_mem_compactNhds [LocallyCompactSpace β] (f : α → β
 /-- The image of compact sets under a continuous map is monotone. -/
 lemma map_mono (f : α → β) (hf : Continuous f) : Monotone (Compacts.map f hf) :=
   fun _ _ h ↦ image_mono h
+
+@[simp]
+lemma map_bot (f : α → β) (hf : Continuous f) : Compacts.map f hf ⊥ = ⊥ :=
+  Compacts.ext (image_empty f)
+
+@[simp]
+lemma map_sup (f : α → β) (hf : Continuous f) (K L : Compacts α) :
+    Compacts.map f hf (K ⊔ L) = Compacts.map f hf K ⊔ Compacts.map f hf L :=
+  Compacts.ext (image_union f K L)
+
+/-- The image of compact sets under an injective continuous map preserves intersections. -/
+@[simp]
+lemma map_inf [T2Space α] [T2Space β] (f : α → β) (hf : Continuous f) (hinj : f.Injective)
+    (K L : Compacts α) :
+    Compacts.map f hf (K ⊓ L) = Compacts.map f hf K ⊓ Compacts.map f hf L :=
+  Compacts.ext (image_inter hinj)
+
+/-- For a continuous map `f` out of a locally compact space, every compact neighbourhood `L` of
+the image `f(K)` of a compact set `K` is a neighbourhood of the image `f(K')` of some compact
+neighbourhood `K'` of `K`. -/
+lemma exists_mem_compactNhds_mem_compactNhds_map [LocallyCompactSpace α] {f : α → β}
+    (hf : Continuous f) {K : Compacts α} {L : Compacts β}
+    (hL : L ∈ (Compacts.map f hf K).compactNhds) :
+    ∃ K' ∈ K.compactNhds, L ∈ (Compacts.map f hf K').compactNhds := by
+  obtain ⟨U, hKU, hUL⟩ := exists_open_set_nhds_of_mem_compactsNhds hL
+  obtain ⟨K', hK', hKK', hK'U⟩ := exists_compact_between K.isCompact (U.isOpen.preimage hf)
+    (image_subset_iff.mp hKU)
+  exact ⟨⟨K', hK'⟩, fun x ↦ mem_interior_iff_mem_nhds.mp (hKK' x.property),
+    fun y ↦ Filter.mem_of_superset (U.isOpen.mem_nhds (image_subset_iff.mpr hK'U y.property)) hUL⟩
 
 /-- A compact set lies in one member of a directed family of open sets covering the space. -/
 lemma exists_subset_of_iSup_eq_top {ι : Type*} [Nonempty ι] {U : ι → Opens α}
