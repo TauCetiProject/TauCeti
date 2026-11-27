@@ -50,10 +50,9 @@ boundary, the weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem for
 (`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_contDiff_graph`), with the global
 estimate `‖u‖_{H³(Ω)} ≤ C (‖u‖_{L²(Ω)} + ‖F‖_{H¹(Ω)})`
 (`TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_norm_value_of_value_eq_value_of_contDiff_graph`).
-This is Evans, §6.3.2, Theorem 5, for `m = 1`. Smoothness, rather than finitely many derivatives,
-of the boundary and of `a` is what the flat model
-`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace` asks of the
-transformed coefficient.
+This is Evans, §6.3.2, Theorem 5, for `m = 1`, with a smooth boundary and smooth `a`; the flat
+model `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace` itself asks
+only for `C²` entries of the transformed coefficient.
 
 ## The argument
 
@@ -583,7 +582,8 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables
       (hΨs.of_le (by simp)).contDiffOn hsmooth i j
   -- `H³` regularity near the flat boundary, since `u ∘ Φ` solves `-∂ᵢ(a'ⁱʲ ∂ⱼ(u ∘ Φ)) = F ∘ Φ`.
   exact UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace (H := H)
-    (U := ⟨ball y₀ r, isOpen_ball⟩) hν hH hΩU hellip hsm' 1 (fun v => by
+    (U := ⟨ball y₀ r, isOpen_ball⟩) hν hH hΩU hellip 1
+    (fun i j => (hsm' i j).of_le (by simp)) (fun v => by
       simpa only [Wkp.value_one] using energyFormH1_w1pCompL_restrictL_eq_setIntegral hD hΦ' hΨ'
         (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) hu v) hu0' hV hVU
 
