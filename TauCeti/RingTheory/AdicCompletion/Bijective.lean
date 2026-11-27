@@ -73,6 +73,14 @@ private theorem exists_mem_pow_smul_top_map_eq_of (hf : Function.Surjective (map
     obtain ⟨w₂, hw₂, h₂⟩ := ih₂
     exact ⟨w₁ + w₂, add_mem hw₁ hw₂, by rw [map_add, map_add, h₁, h₂]⟩
 
+/-- If `of I M x` lies in `Iⁿ` times the completion, then `x ∈ Iⁿ M`: the `n`-th coordinate of
+`of I M x` is the class of `x` modulo `Iⁿ M`, and it vanishes on `Iⁿ` times the completion. -/
+private theorem mem_pow_smul_top_of_of_mem {n : ℕ} {x : M}
+    (hx : of I M x ∈ (I ^ n • ⊤ : Submodule R (AdicCompletion I M))) :
+    x ∈ (I ^ n • ⊤ : Submodule R M) := by
+  have := pow_smul_top_le_ker_eval I n hx
+  rwa [LinearMap.mem_ker, eval_of, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at this
+
 /-- **Bijectivity on completions, tested before completing.** The map of `I`-adic completions
 induced by `f : M →ₗ[R] N` is bijective if and only if `f` is onto modulo `I` and `f x ∈ Iⁿ N`
 implies `x ∈ Iⁿ M` for every `n`. For `I = (p)`: `f` is onto modulo `p`, and `pⁿ ∣ f x` implies
@@ -95,8 +103,7 @@ theorem map_bijective_iff :
     obtain ⟨w, hw, hwx⟩ := exists_mem_pow_smul_top_map_eq_of hf.2 hx
     rw [← map_of] at hwx
     obtain rfl := hf.1 hwx
-    have := pow_smul_top_le_ker_eval I n hw
-    rwa [LinearMap.mem_ker, eval_of, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at this
+    exact mem_pow_smul_top_of_of_mem hw
 
 /-- **Linear maps into a complete module extend uniquely along a map bijective on completions.**
 If `f : M →ₗ[R] N` induces a bijection of `I`-adic completions and `P` is `I`-adically complete,
@@ -158,7 +165,6 @@ theorem map_of_bijective (hI : I.FG) : Function.Bijective (map I (of I M)) := by
         Submodule.mkQ_apply, sub_self]
     rw [pow_one] at hmem
     simpa only [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.Quotient.eq] using hmem
-  · have := pow_smul_top_le_ker_eval I n hx
-    rwa [LinearMap.mem_ker, eval_of, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at this
+  · exact mem_pow_smul_top_of_of_mem hx
 
 end AdicCompletion
