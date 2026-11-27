@@ -18,14 +18,18 @@ with `x a = b x`. Then `x` intertwines every real continuous function of `a` and
 `x g(a) = g(b) x` (`SemiconjBy.mul_cfcₙ_real`). For real functions no condition on adjoints is
 needed. The symbols on the union of the two quasispectra that are intertwined contain the
 identity and are closed under sums, products, scalar multiples and limits, so by the nonunital
-Stone–Weierstrass theorem they are all symbols vanishing at `0`.
+Stone–Weierstrass theorem they are all symbols vanishing at `0`. This proof adapts that of
+`ContinuousLinearMap.comp_cfc_eq_cfc_comp`
+(`TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Intertwining`), which follows
+Mathlib's `Commute.cfcHom` and `Commute.cfcₙHom`.
 
 The main case is `a = x⋆x`, `b = xx⋆`: for every real function `g`,
-`x g(x⋆x) = g(xx⋆) x` (`mul_cfcₙ_star_mul_self`); the two quasispectra coincide
+`x g(x⋆x) = g(xx⋆) x` (`TauCeti.mul_cfcₙ_star_mul_self`); the two quasispectra coincide
 (`quasispectrum.mul_comm`), so this holds with no hypothesis on `g`.
 
 As a consequence, for `h` continuous on the quasispectrum of `x⋆x` with `h(0) = 0` there is `y`
-with `y⋆y = h(x⋆x)²` and `yy⋆ = h(xx⋆)²` (`exists_star_mul_self_eq_and_mul_star_self_eq`). With
+with `y⋆y = h(x⋆x)²` and `yy⋆ = h(xx⋆)²` (`TauCeti.exists_star_mul_self_eq_and_mul_star_self_eq`).
+With
 `k_n(t) = h(t) / √(max t εₙ)` and `y_n = x k_n(x⋆x)`, the intertwining gives `y_n⋆ y_n = H_n(x⋆x)²`
 and `y_n y_n⋆ = H_n(xx⋆)²` for `H_n(t) = √t k_n(t)`, and `‖y_m - y_n‖ = ‖H_m(x⋆x) - H_n(x⋆x)‖`.
 As `εₙ → 0`, `H_n → h` uniformly on the quasispectrum, so `y_n` converges to the required `y`.
@@ -33,8 +37,8 @@ As `εₙ → 0`, `H_n → h` uniformly on the quasispectrum, so `y_n` converges
 ## Main statements
 
 * `SemiconjBy.mul_cfcₙ_real`: `x a = b x` gives `x g(a) = g(b) x`.
-* `mul_cfcₙ_star_mul_self`: `x g(x⋆x) = g(xx⋆) x`.
-* `exists_star_mul_self_eq_and_mul_star_self_eq`: `h(x⋆x)² = y⋆y` and `h(xx⋆)² = yy⋆`.
+* `TauCeti.mul_cfcₙ_star_mul_self`: `x g(x⋆x) = g(xx⋆) x`.
+* `TauCeti.exists_star_mul_self_eq_and_mul_star_self_eq`: `h(x⋆x)² = y⋆y` and `h(xx⋆)² = yy⋆`.
 
 ## References
 
@@ -46,7 +50,11 @@ public section
 
 open scoped ContinuousMapZero
 
-variable {A : Type*} [NonUnitalCStarAlgebra A]
+section CFC
+
+variable {A : Type*} [NonUnitalRing A] [StarRing A] [Module ℝ A] [IsScalarTower ℝ A A]
+variable [SMulCommClass ℝ A A] [TopologicalSpace A]
+variable [NonUnitalContinuousFunctionalCalculus ℝ A IsSelfAdjoint] [IsTopologicalRing A] [T2Space A]
 
 /-- **Intertwining through the real functional calculus.** If `x a = b x` for self-adjoint `a`
 and `b`, then `x g(a) = g(b) x` for every real function `g` continuous on both quasispectra. -/
@@ -105,6 +113,8 @@ theorem SemiconjBy.mul_cfcₙ_real {x a b : A} (h : SemiconjBy x a b) (g : ℝ �
     exact congrArg (cfcₙHom hb) (ContinuousMapZero.ext fun _ ↦ rfl)
   rw [hGa, hGb, key]
 
+namespace TauCeti
+
 /-- **`x` intertwines `x⋆x` and `xx⋆` through the real functional calculus**:
 `x g(x⋆x) = g(xx⋆) x` for every real function `g`. -/
 theorem mul_cfcₙ_star_mul_self (x : A) (g : ℝ → ℝ) :
@@ -116,70 +126,64 @@ theorem mul_cfcₙ_star_mul_self (x : A) (g : ℝ → ℝ) :
   · rw [cfcₙ_apply_of_not_continuousOn _ hg,
       cfcₙ_apply_of_not_continuousOn _ (hσ ▸ hg : ¬ ContinuousOn g _), mul_zero, zero_mul]
 
-section Order
+omit [IsTopologicalRing A] [T2Space A] in
+/-- For `c` with nonnegative quasispectrum, `k(c)² c = H(c)²` with `H(t) = √t k(t)`. -/
+private theorem cfcₙ_mul_self_mul_eq {c : A} (hnn : ∀ t ∈ quasispectrum ℝ c, 0 ≤ t) {k : ℝ → ℝ}
+    (hk : ContinuousOn k (quasispectrum ℝ c)) (hk0 : k 0 = 0) (hc : IsSelfAdjoint c := by cfc_tac) :
+    cfcₙ (fun t ↦ k t * k t) c * c = cfcₙ (fun t ↦ √t * k t) c * cfcₙ (fun t ↦ √t * k t) c := by
+  have hsk : ContinuousOn (fun t ↦ √t * k t) (quasispectrum ℝ c) :=
+    Real.continuous_sqrt.continuousOn.mul hk
+  calc cfcₙ (fun t ↦ k t * k t) c * c = cfcₙ (fun t ↦ k t * k t * t) c := by
+        rw [cfcₙ_mul (fun t ↦ k t * k t) (fun t ↦ t) c (hf := hk.mul hk) (hf0 := by simp [hk0]),
+          cfcₙ_id' ℝ c]
+    _ = cfcₙ (fun t ↦ (√t * k t) * (√t * k t)) c := cfcₙ_congr fun t ht ↦ by
+        linear_combination (k t * k t) * (Real.mul_self_sqrt (hnn t ht)).symm
+    _ = _ := cfcₙ_mul _ _ (hf := hsk) (hf0 := by simp [hk0]) (hg := hsk) (hg0 := by simp [hk0])
 
-variable [PartialOrder A] [StarOrderedRing A]
-
-open Filter Topology
-
+omit [IsTopologicalRing A] [T2Space A] in
 /-- For `a = x⋆x` and `y = x k(a)`, `y⋆y = H(a)²` with `H(t) = √t k(t)`. -/
-private theorem star_mul_self_mul_cfcₙ (x : A) (k : ℝ → ℝ)
-    (hk : ContinuousOn k (quasispectrum ℝ (star x * x))) (hk0 : k 0 = 0) :
+private theorem star_mul_self_mul_cfcₙ {x : A} (hnn : ∀ t ∈ quasispectrum ℝ (star x * x), 0 ≤ t)
+    {k : ℝ → ℝ} (hk : ContinuousOn k (quasispectrum ℝ (star x * x))) (hk0 : k 0 = 0) :
     star (x * cfcₙ k (star x * x)) * (x * cfcₙ k (star x * x)) =
       cfcₙ (fun t ↦ √t * k t) (star x * x) * cfcₙ (fun t ↦ √t * k t) (star x * x) := by
-  have hnn := quasispectrum_nonneg_of_nonneg (𝕜 := ℝ) _ (star_mul_self_nonneg x)
-  have hs : ContinuousOn (fun t : ℝ ↦ √t) (quasispectrum ℝ (star x * x)) :=
-    Real.continuous_sqrt.continuousOn
-  have hsk : ContinuousOn (fun t ↦ √t * k t) (quasispectrum ℝ (star x * x)) := hs.mul hk
-  have ha : IsSelfAdjoint (star x * x) := .star_mul_self x
-  have hkid : ContinuousOn (fun t ↦ k t * t) (quasispectrum ℝ (star x * x)) :=
-    hk.mul continuousOn_id
   calc star (x * cfcₙ k (star x * x)) * (x * cfcₙ k (star x * x))
-      = cfcₙ k (star x * x) * (star x * x) * cfcₙ k (star x * x) := by
+      = cfcₙ k (star x * x) * ((star x * x) * cfcₙ k (star x * x)) := by
         rw [star_mul, (cfcₙ_predicate k (star x * x)).star_eq]; noncomm_ring
-    _ = cfcₙ (fun t ↦ k t * t * k t) (star x * x) := by
-        rw [cfcₙ_mul (fun t ↦ k t * t) k (star x * x) (hf := hkid) (hf0 := by simp [hk0])
-          (hg := hk) (hg0 := hk0), cfcₙ_mul k (fun t ↦ t) (star x * x) (hf := hk) (hf0 := hk0),
-          cfcₙ_id' ℝ (star x * x)]
-    _ = cfcₙ (fun t ↦ (√t * k t) * (√t * k t)) (star x * x) := by
-        refine cfcₙ_congr fun t ht ↦ ?_
-        have := Real.mul_self_sqrt (hnn t ht)
-        linear_combination (k t * k t) * this.symm
-    _ = _ := cfcₙ_mul _ _ (hf := hsk) (hf0 := by simp [hk0]) (hg := hsk)
-        (hg0 := by simp [hk0])
+    _ = cfcₙ (fun t ↦ k t * k t) (star x * x) * (star x * x) := by
+        have hc := cfcₙ_commute_cfcₙ k (fun t ↦ t) (star x * x)
+        rw [cfcₙ_id' ℝ (star x * x)] at hc
+        rw [← hc.eq, ← mul_assoc,
+          cfcₙ_mul k k (star x * x) (hf := hk) (hf0 := hk0) (hg := hk) (hg0 := hk0)]
+    _ = _ := cfcₙ_mul_self_mul_eq hnn hk hk0
 
 /-- For `b = xx⋆` and `y = x k(x⋆x)`, `yy⋆ = H(b)²` with `H(t) = √t k(t)`. -/
-private theorem mul_star_self_mul_cfcₙ (x : A) (k : ℝ → ℝ)
-    (hk : ContinuousOn k (quasispectrum ℝ (star x * x))) (hk0 : k 0 = 0) :
+private theorem mul_star_self_mul_cfcₙ {x : A} (hnn : ∀ t ∈ quasispectrum ℝ (star x * x), 0 ≤ t)
+    {k : ℝ → ℝ} (hk : ContinuousOn k (quasispectrum ℝ (star x * x))) (hk0 : k 0 = 0) :
     (x * cfcₙ k (star x * x)) * star (x * cfcₙ k (star x * x)) =
       cfcₙ (fun t ↦ √t * k t) (x * star x) * cfcₙ (fun t ↦ √t * k t) (x * star x) := by
   have hσ : quasispectrum ℝ (star x * x) = quasispectrum ℝ (x * star x) :=
     quasispectrum.mul_comm _ _
-  have hnn := quasispectrum_nonneg_of_nonneg (𝕜 := ℝ) _ (mul_star_self_nonneg x)
-  have hk' : ContinuousOn k (quasispectrum ℝ (x * star x)) := hσ ▸ hk
-  have hs : ContinuousOn (fun t : ℝ ↦ √t) (quasispectrum ℝ (x * star x)) :=
-    Real.continuous_sqrt.continuousOn
-  have hsk : ContinuousOn (fun t ↦ √t * k t) (quasispectrum ℝ (x * star x)) := hs.mul hk'
-  have hb : IsSelfAdjoint (x * star x) := .mul_star_self x
-  have hkk : ContinuousOn (fun t ↦ k t * k t) (quasispectrum ℝ (x * star x)) := hk'.mul hk'
   calc (x * cfcₙ k (star x * x)) * star (x * cfcₙ k (star x * x))
       = x * (cfcₙ k (star x * x) * cfcₙ k (star x * x)) * star x := by
         rw [star_mul, (cfcₙ_predicate k (star x * x)).star_eq]; noncomm_ring
     _ = cfcₙ (fun t ↦ k t * k t) (x * star x) * (x * star x) := by
         rw [← cfcₙ_mul k k (star x * x) (hf := hk) (hf0 := hk0) (hg := hk) (hg0 := hk0),
           mul_cfcₙ_star_mul_self, mul_assoc]
-    _ = cfcₙ (fun t ↦ k t * k t * t) (x * star x) := by
-        rw [cfcₙ_mul (fun t ↦ k t * k t) (fun t ↦ t) (x * star x) (hf := hkk)
-          (hf0 := by simp [hk0]), cfcₙ_id' ℝ (x * star x)]
-    _ = cfcₙ (fun t ↦ (√t * k t) * (√t * k t)) (x * star x) := by
-        refine cfcₙ_congr fun t ht ↦ ?_
-        have := Real.mul_self_sqrt (hnn t ht)
-        linear_combination (k t * k t) * this.symm
-    _ = _ := cfcₙ_mul _ _ (hf := hsk) (hf0 := by simp [hk0]) (hg := hsk)
-        (hg0 := by simp [hk0])
+    _ = _ := cfcₙ_mul_self_mul_eq (hσ ▸ hnn) (hσ ▸ hk) hk0
+
+end TauCeti
+
+end CFC
+
+namespace TauCeti
+
+variable {A : Type*} [NonUnitalCStarAlgebra A]
+
+open Filter Topology
 
 /-- For `y_i = x k_i(x⋆x)`, `‖y_1 - y_2‖ = ‖H_1(x⋆x) - H_2(x⋆x)‖` with `H_i(t) = √t k_i(t)`. -/
-private theorem dist_mul_cfcₙ (x : A) {k₁ k₂ : ℝ → ℝ}
+private theorem dist_mul_cfcₙ {x : A} (hnn : ∀ t ∈ quasispectrum ℝ (star x * x), 0 ≤ t)
+    {k₁ k₂ : ℝ → ℝ}
     (hk₁ : ContinuousOn k₁ (quasispectrum ℝ (star x * x))) (hk₁0 : k₁ 0 = 0)
     (hk₂ : ContinuousOn k₂ (quasispectrum ℝ (star x * x))) (hk₂0 : k₂ 0 = 0) :
     dist (x * cfcₙ k₁ (star x * x)) (x * cfcₙ k₂ (star x * x)) =
@@ -194,17 +198,15 @@ private theorem dist_mul_cfcₙ (x : A) {k₁ k₂ : ℝ → ℝ}
     rw [← cfcₙ_sub (fun t ↦ √t * k₁ t) (fun t ↦ √t * k₂ t) a (hf := hs.mul hk₁)
       (hf0 := by simp [hk₁0]) (hg := hs.mul hk₂) (hg0 := by simp [hk₂0])]
     exact cfcₙ_congr fun t _ ↦ by ring
-  have key := star_mul_self_mul_cfcₙ x (fun t ↦ k₁ t - k₂ t) (hk₁.sub hk₂) (by simp [hk₁0, hk₂0])
+  have key := star_mul_self_mul_cfcₙ hnn (k := fun t ↦ k₁ t - k₂ t) (hk₁.sub hk₂)
+    (by simp [hk₁0, hk₂0])
   rw [← hsub, ← hHsub] at key
   rw [dist_eq_norm, dist_eq_norm]
   have hsa : IsSelfAdjoint (cfcₙ (fun t ↦ √t * k₁ t) a - cfcₙ (fun t ↦ √t * k₂ t) a) :=
     IsSelfAdjoint.sub (cfcₙ_predicate _ a) (cfcₙ_predicate _ a)
   have h1 := congrArg norm key
-  nth_rewrite 1 [← hsa.star_eq] at h1
-  rw [CStarRing.norm_star_mul_self, CStarRing.norm_star_mul_self] at h1
-  nlinarith [norm_nonneg (x * cfcₙ k₁ a - x * cfcₙ k₂ a),
-    norm_nonneg (cfcₙ (fun t ↦ √t * k₁ t) a - cfcₙ (fun t ↦ √t * k₂ t) a),
-    mul_self_eq_mul_self_iff.1 h1]
+  rw [CStarRing.norm_star_mul_self, hsa.norm_mul_self, ← sq] at h1
+  exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 h1
 
 /-- The functions `H ε t = √t h(t) / √(max t ε)` converge to `h` uniformly on a set of
 nonnegative reals as `ε → 0`, for `h` continuous at `0` with `h 0 = 0`. -/
@@ -235,13 +237,16 @@ private theorem tendstoUniformlyOn_sqrt_mul_div {s : Set ℝ} (hs : ∀ t ∈ s,
     calc |h t| * (1 - √t / √(max t (ε n))) ≤ |h t| * 1 := by gcongr; linarith
       _ < δ := by rwa [mul_one]
 
-/-- **`f(x⋆x)` and `f(xx⋆)` are `y⋆y` and `yy⋆`.** For every real function `h` continuous on the
-quasispectrum of `x⋆x` with `h 0 = 0`, there is `y` with `y⋆y = h(x⋆x)²` and `yy⋆ = h(xx⋆)²`.
-The element `y` is the limit of `x k_n(x⋆x)` with `k_n(t) = h(t) / √(max t εₙ)`, `εₙ → 0`. -/
+/-- **`h(x⋆x)²` and `h(xx⋆)²` are `y⋆y` and `yy⋆`.** For every real function `h` continuous on
+the quasispectrum of `x⋆x` with `h 0 = 0`, there is `y` with `y⋆y = h(x⋆x)²` and
+`yy⋆ = h(xx⋆)²`. -/
 theorem exists_star_mul_self_eq_and_mul_star_self_eq (x : A) (h : ℝ → ℝ)
     (hh : ContinuousOn h (quasispectrum ℝ (star x * x))) (hh0 : h 0 = 0) :
     ∃ y : A, star y * y = cfcₙ (fun t ↦ h t * h t) (star x * x) ∧
       y * star y = cfcₙ (fun t ↦ h t * h t) (x * star x) := by
+  let _ := CStarAlgebra.spectralOrder A
+  let _ := CStarAlgebra.spectralOrderedRing A
+  -- `y` is the limit of `x k_n(x⋆x)` with `k_n(t) = h(t) / √(max t εₙ)`, `εₙ → 0`.
   set a := star x * x
   set b := x * star x
   have hσ : quasispectrum ℝ a = quasispectrum ℝ b := quasispectrum.mul_comm _ _
@@ -270,7 +275,7 @@ theorem exists_star_mul_self_eq_and_mul_star_self_eq (x : A) (h : ℝ → ℝ)
   set u : ℕ → A := fun n ↦ x * cfcₙ (k n) a
   -- `‖u m - u n‖ = ‖H_m(a) - H_n(a)‖`, so `u` is Cauchy.
   have hdist : ∀ m n, dist (u m) (u n) = dist (cfcₙ (H m) a) (cfcₙ (H n) a) := fun m n ↦
-    dist_mul_cfcₙ x (hk m) (hk0 m) (hk n) (hk0 n)
+    dist_mul_cfcₙ hnna (hk m) (hk0 m) (hk n) (hk0 n)
   have hu : CauchySeq u := Metric.cauchySeq_iff.2 fun δ hδ ↦
     (Metric.cauchySeq_iff.1 hwa.cauchySeq δ hδ).imp fun N hN m hm n hn ↦
       (hdist m n) ▸ hN m hm n hn
@@ -278,13 +283,13 @@ theorem exists_star_mul_self_eq_and_mul_star_self_eq (x : A) (h : ℝ → ℝ)
   refine ⟨y, ?_, ?_⟩
   · have h1 : Tendsto (fun n ↦ star (u n) * u n) atTop (𝓝 (star y * y)) := hy.star.mul hy
     have h2 : Tendsto (fun n ↦ star (u n) * u n) atTop (𝓝 (cfcₙ h a * cfcₙ h a)) :=
-      (hwa.mul hwa).congr fun n ↦ (star_mul_self_mul_cfcₙ x (k n) (hk n) (hk0 n)).symm
+      (hwa.mul hwa).congr fun n ↦ (star_mul_self_mul_cfcₙ hnna (hk n) (hk0 n)).symm
     rw [tendsto_nhds_unique h1 h2, ← cfcₙ_mul h h a (hf := hh) (hf0 := hh0) (hg := hh)
       (hg0 := hh0)]
   · have h1 : Tendsto (fun n ↦ u n * star (u n)) atTop (𝓝 (y * star y)) := hy.mul hy.star
     have h2 : Tendsto (fun n ↦ u n * star (u n)) atTop (𝓝 (cfcₙ h b * cfcₙ h b)) :=
-      (hwb.mul hwb).congr fun n ↦ (mul_star_self_mul_cfcₙ x (k n) (hk n) (hk0 n)).symm
+      (hwb.mul hwb).congr fun n ↦ (mul_star_self_mul_cfcₙ hnna (hk n) (hk0 n)).symm
     rw [tendsto_nhds_unique h1 h2, ← cfcₙ_mul h h b (hf := hhb) (hf0 := hh0) (hg := hhb)
       (hg0 := hh0)]
 
-end Order
+end TauCeti
