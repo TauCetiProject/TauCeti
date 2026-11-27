@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LocalField.AddChar.DualLattice
 public import TauCeti.NumberTheory.LocalField.Lattice
 public import TauCeti.Topology.LocallyConstant.CompactSupport
 import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Fourier.FinsetSum
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.Topology.Algebra.AddChar
@@ -63,6 +64,13 @@ formula and the double duality `Submodule.characterAnnihilator_characterAnnihila
   `S(V)`, in both orders, for measures with `μ(L) ν(L^∨) = 1` for every lattice `L`.
 * `LocallyConstant.compactlySupportedFourier_bijective`: for such a measure `μ = ν`, the transform
   is a bijection of `C_c^∞(V, E)`.
+* `VectorFourier.fourierIntegral_neg_mul_apply`,
+  `VectorFourier.integral_mul_fourierIntegral_mul_comm`: on `V = K` with the form `-(x y)`, the
+  transform has the positive kernel `ψ(x y)`, and `∫ f 𝓕g(· t) = ∫ g 𝓕f(· t)`.
+* `VectorFourier.isLocallyConstant_hasCompactSupport_fourierIntegral_neg_mul`,
+  `VectorFourier.fourierIntegral_neg_mul_indicator_integer`: on `V = K`, the transform with the
+  positive kernel maps `S(K)` to itself, and fixes `1_𝒪` when `ψ` has conductor exponent `0` and
+  `μ(𝒪[K]) = 1`.
 
 ## References
 
@@ -75,6 +83,56 @@ public section
 
 open Filter Topology ValuativeRel MeasureTheory Function Set
 open scoped Pointwise
+
+/-! ### The transform with the positive kernel `ψ(x y)` on a field -/
+
+section NegMul
+
+variable {K : Type*} [Field K]
+
+/-- The form `-(x y)` on a field is nondegenerate; it is the form for which Mathlib's
+`VectorFourier.fourierIntegral` has the positive kernel `ψ(x y)`. -/
+theorem LinearMap.BilinForm.nondegenerate_neg_mul :
+    (-LinearMap.mul K K : LinearMap.BilinForm K K).Nondegenerate :=
+  ⟨fun x hx ↦ by simpa using hx 1, fun y hy ↦ by simpa using hy 1⟩
+
+namespace VectorFourier
+
+/-- With the form `-(x y)`, the Fourier transform has the positive kernel:
+`𝓕 f (y) = ∫ ψ(x y) f(x) dμ(x)`. -/
+theorem fourierIntegral_neg_mul_apply [MeasurableSpace K] (ψ : AddChar K Circle) (μ : Measure K)
+    (f : K → ℂ) (y : K) :
+    fourierIntegral ψ μ (-LinearMap.mul K K) f y = ∫ x, (ψ (x * y) : ℂ) * f x ∂μ := by
+  simp [fourierIntegral, Circle.smul_def]
+
+/-- **Symmetry of the Fourier pairing.** For the transform with kernel `ψ(x y)`, integrable `f`,
+`g` and every `t`, `∫ f(x) 𝓕g(x t) dμ(x) = ∫ g(x) 𝓕f(x t) dμ(x)`: both are
+`∫∫ f(x) g(y) ψ(x y t)`. -/
+theorem integral_mul_fourierIntegral_mul_comm [TopologicalSpace K] [IsTopologicalRing K]
+    [SecondCountableTopology K] [MeasurableSpace K] [BorelSpace K] {ψ : AddChar K Circle}
+    (hψ : Continuous ψ) (μ : Measure K) [SFinite μ] {f g : K → ℂ} (hf : Integrable f μ)
+    (hg : Integrable g μ) (t : K) :
+    ∫ x, f x * fourierIntegral ψ μ (-LinearMap.mul K K) g (x * t) ∂μ =
+      ∫ x, g x * fourierIntegral ψ μ (-LinearMap.mul K K) f (x * t) ∂μ := by
+  simp_rw [fourierIntegral_neg_mul_apply, ← integral_const_mul]
+  have hk : Continuous fun z : K × K ↦ (ψ (z.2 * (z.1 * t)) : ℂ) :=
+    continuous_subtypeVal.comp
+      (hψ.comp (continuous_snd.mul (continuous_fst.mul continuous_const)))
+  have hm : AEStronglyMeasurable (fun z : K × K ↦ f z.1 * ((ψ (z.2 * (z.1 * t)) : ℂ) * g z.2))
+      (μ.prod μ) :=
+    hf.1.comp_fst.mul (hk.aestronglyMeasurable.mul hg.1.comp_snd)
+  have hint : Integrable (fun z : K × K ↦ f z.1 * ((ψ (z.2 * (z.1 * t)) : ℂ) * g z.2))
+      (μ.prod μ) :=
+    (hf.norm.mul_prod hg.norm).mono' hm (ae_of_all _ fun z ↦ by simp)
+  rw [integral_integral_swap hint]
+  refine integral_congr_ae (ae_of_all _ fun y ↦ integral_congr_ae (ae_of_all _ fun x ↦ ?_))
+  simp only
+  rw [show y * (x * t) = x * (y * t) by ring]
+  ring
+
+end VectorFourier
+
+end NegMul
 
 variable {K V : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
@@ -234,6 +292,57 @@ theorem fourierIntegral_flip_fourierIntegral_of_isLocallyConstant (hψ : Continu
   rw [mul_comm, ← hvol _ hL', hdd]
 
 end Inversion
+
+end VectorFourier
+
+/-! ### The positive kernel on a local field -/
+
+namespace VectorFourier
+
+variable [MeasurableSpace K] [BorelSpace K] {ψ : AddChar K Circle} (μ : Measure K)
+  [μ.IsAddRightInvariant]
+
+/-- For a continuous nontrivial `ψ`, the transform `f ↦ ∫ ψ(x y) f(x) dμ(x)` maps a locally
+constant compactly supported function on `K` to another one. -/
+theorem isLocallyConstant_hasCompactSupport_fourierIntegral_neg_mul (hψ : Continuous ψ)
+    (h1 : ψ ≠ 1) {g : K → ℂ} (hg : IsLocallyConstant g) (hgc : HasCompactSupport g) :
+    IsLocallyConstant (fourierIntegral ψ μ (-LinearMap.mul K K) g) ∧
+      HasCompactSupport (fourierIntegral ψ μ (-LinearMap.mul K K) g) :=
+  ⟨isLocallyConstant_fourierIntegral_of_hasCompactSupport hψ μ _ hgc,
+    hasCompactSupport_fourierIntegral_of_isLocallyConstant hψ h1
+      LinearMap.BilinForm.nondegenerate_neg_mul μ hg hgc⟩
+
+/-- For `ψ` of conductor exponent `0` and `μ(𝒪[K]) = 1`, the transform
+`f ↦ ∫ ψ(x y) f(x) dμ(x)` of `1_𝒪` is `1_𝒪`: the annihilator of `𝒪[K]` for `ψ(x y)` is
+`𝒪[K]`. -/
+theorem fourierIntegral_neg_mul_indicator_integer (hψ : Continuous ψ) (h1 : ψ ≠ 1)
+    (hψ0 : ψ.conductorExponent = 0) (hμ : μ 𝒪[K] = 1) :
+    fourierIntegral ψ μ (-LinearMap.mul K K) ((𝒪[K] : Set K).indicator (1 : K → ℂ)) =
+      (𝒪[K] : Set K).indicator 1 := by
+  have h0 := AddChar.setOf_eq_one_mem_nhds_zero hψ
+  have hO : MeasurableSet ((𝒪[K]).toAddSubgroup : Set K) :=
+    (Valuation.isClopen_integer (v := valuation K)).isClosed.measurableSet
+  have hann : (((𝒪[K]).toAddSubgroup.characterAnnihilator ψ (-LinearMap.mul K K)) : Set K) =
+      𝒪[K] := by
+    ext y
+    have key := AddChar.forall_mul_eq_one_iff_valuation_le h0 h1 0 y
+    rw [hψ0, neg_zero, sub_zero, zpow_zero] at key
+    rw [SetLike.mem_coe, AddSubgroup.mem_characterAnnihilator, SetLike.mem_coe,
+      Valuation.mem_integer_iff, ← key]
+    -- `𝒪[K]` is stable under negation, and `ψ (-(x y))` is `ψ ((-x) y)`.
+    refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
+    · have hx' : -x ∈ (𝒪[K]).toAddSubgroup := neg_mem (show x ∈ 𝒪[K] from
+        (Valuation.mem_integer_iff _ _).2 hx)
+      simpa using h _ hx'
+    · have hx' : valuation K (-x) ≤ uniformizer K ^ (0 : ℤ) := by
+        rw [Valuation.map_neg, zpow_zero]
+        exact (Valuation.mem_integer_iff _ _).1 hx
+      simpa using h _ hx'
+  have h := fourierIntegral_indicator_addSubgroup ψ μ (-LinearMap.mul K K) hO
+    (1 : ℂ)
+  rw [hann, measureReal_def] at h
+  simp only [Pi.one_def]
+  simpa [hμ] using h
 
 end VectorFourier
 

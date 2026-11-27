@@ -482,6 +482,12 @@ theorem natCard_residueField_pos {R : Type*} [AddMonoidWithOne R] [PartialOrder 
     (0 : R) < Nat.card 𝓀[K] :=
   zero_le_one.trans_lt one_lt_natCard_residueField
 
+/-- The cardinality `q` of the residue field of a nonarchimedean local field is nonzero in every
+additive monoid with one of characteristic zero (for instance `ℂ`). -/
+theorem natCard_residueField_ne_zero {R : Type*} [AddMonoidWithOne R] [CharZero R] :
+    (Nat.card 𝓀[K] : R) ≠ 0 :=
+  Nat.cast_ne_zero.2 Nat.card_pos.ne'
+
 /-- The inverse `q⁻¹` of the residue-field cardinality is less than one, so `1 - q⁻¹` is
 positive. -/
 theorem one_sub_inv_natCard_residueField_pos {R : Type*} [Field R] [LinearOrder R]

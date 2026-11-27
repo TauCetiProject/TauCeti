@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Algebra.Group.Subgroup.Ker
 public import TauCeti.Topology.Algebra.Group.Units
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
 public import TauCeti.GroupTheory.OrderOfElement.Basic
@@ -238,6 +239,15 @@ theorem _root_.ContinuousMonoidHom.inv_apply {A E : Type*} [Monoid A] [Topologic
     [CommGroup E] [TopologicalSpace E] [IsTopologicalGroup E] (f : A →ₜ* E) (a : A) :
     f⁻¹ a = (f a)⁻¹ :=
   (rfl)
+
+/-- The pointwise inverse of a continuous homomorphism into a commutative topological group has
+the same kernel. -/
+@[to_additive /-- The pointwise negation of a continuous additive homomorphism
+into a commutative additive topological group has the same kernel. -/]
+theorem _root_.ContinuousMonoidHom.ker_inv {A E : Type*} [Group A] [TopologicalSpace A]
+    [CommGroup E] [TopologicalSpace E] [IsTopologicalGroup E] (f : A →ₜ* E) :
+    (f⁻¹).ker = f.ker :=
+  MonoidHom.ker_inv f.toMonoidHom
 
 /-- Integer powers of continuous homomorphisms into a commutative topological group are computed
 pointwise. -/

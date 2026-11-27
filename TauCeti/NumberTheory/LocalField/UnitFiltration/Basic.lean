@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 import Mathlib.Topology.Algebra.Group.Pointwise
+import Mathlib.Topology.Algebra.IsOpenUnits
 
 /-!
 # The unit filtration of a nonarchimedean local field
@@ -64,6 +65,7 @@ action on a finite extension, and its behaviour under a field embedding.
 * `TauCeti.isOpen_unitFiltration`, `TauCeti.isCompact_unitFiltration` and
   `TauCeti.hasBasis_nhds_one_unitFiltration`: every `U(K,i)` is an open compact subgroup of
   `Kˣ`, and the family is a neighbourhood basis of `1`; in particular `Kˣ` is Hausdorff.
+* `TauCeti.isClopen_image_val_unitFiltration`: the image of every `U(K,i)` in `K` is clopen.
 * `TauCeti.unitFiltration_le_of_isClosed_of_le_sup`: successive one-step approximations by a
   closed subgroup imply containment of the entire filtration step.
 
@@ -492,6 +494,12 @@ theorem isCompact_unitFiltration (i : ℕ) : IsCompact (unitFiltration K i : Set
   exact hzero.of_isClosed_subset
     ((unitFiltration K i).isClosed_of_isOpen (isOpen_unitFiltration i))
     (unitFiltration_antitone (Nat.zero_le i))
+
+/-- The image of each step `U(K,i)` of the unit filtration in `K` is open and closed. -/
+theorem isClopen_image_val_unitFiltration (i : ℕ) :
+    IsClopen (Units.val '' (unitFiltration K i : Set Kˣ)) := by
+  exact ⟨((isCompact_unitFiltration i).image Units.continuous_val).isClosed,
+    IsOpenUnits.isOpenEmbedding_unitsVal.isOpenMap _ (isOpen_unitFiltration i)⟩
 
 /-- The unit filtration is a neighbourhood basis of `1` in `Kˣ`. -/
 theorem hasBasis_nhds_one_unitFiltration :

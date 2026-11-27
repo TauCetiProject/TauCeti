@@ -7,6 +7,10 @@ module
 
 public import TauCeti.NumberTheory.LocalField.ConvergenceFactor
 public import TauCeti.NumberTheory.LocalField.Units.Haar
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.NumberTheory.LocalField.NormedField
 import TauCeti.NumberTheory.LocalField.Topology
 
 /-!
@@ -32,6 +36,9 @@ and open. It is thus a Haar measure on `Kˣ`, and by uniqueness of Haar measure 
 * `TauCeti.unitsFormMeasure_eq_smul_unitsHaar`: `|dx/x|_K = (1 - q⁻¹) μ(𝒪[K]) d^×x`.
 * `TauCeti.unitsHaar_eq_smul_unitsFormMeasure`: `d^×x = (1 - q⁻¹)⁻¹ |dx/x|_K` when
   `μ 𝒪[K] = 1`.
+* `TauCeti.integral_unitsFormMeasure`: `∫_{Kˣ} h(u) |u|_K d|dx/x|_K(u) = ∫_K h dμ`.
+* `TauCeti.exists_pos_forall_integral_eq_smul_integral_units`: for every Haar measure `ν` on
+  `Kˣ`, `∫_K h dμ = c ∫_{Kˣ} h(u) |u|_K dν(u)` for a constant `c > 0`.
 -/
 
 public section
@@ -130,5 +137,40 @@ theorem unitsHaar_eq_smul_unitsFormMeasure (hμ : μ 𝒪[K] = 1) :
   rw [unitsFormMeasure_eq_smul_unitsHaar, hμ, mul_one, smul_smul,
     ENNReal.inv_mul_cancel (one_sub_inv_natCard_residueField_ne_zero K)
       (ENNReal.sub_ne_top ENNReal.one_ne_top), one_smul]
+
+/-- Integrating `h(u) |u|_K` against the form measure `|dx/x|_K` on `Kˣ` gives the additive
+integral of `h`. -/
+theorem integral_unitsFormMeasure (h : K → ℂ) :
+    ∫ u : Kˣ, h u * ((normalizedAbsoluteValue K (u : K) : ℝ) : ℂ) ∂unitsFormMeasure K μ =
+      ∫ x, h x ∂μ := by
+  have : NullSingletonClass μ := IsAddHaarMeasure.nullSingletonClass μ
+  have hm : Measurable fun x : K ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ :=
+    (continuous_normalizedAbsoluteValue.subtype_mk fun _ ↦ NNRat.cast_nonneg _ :
+      Continuous fun x ↦ (normalizedAbsoluteValue K x : ℝ≥0)).measurable.coe_nnreal_ennreal.inv
+  rw [← Units.measurableEmbedding_val₀.integral_map
+      (g := fun x ↦ h x * ((normalizedAbsoluteValue K x : ℝ) : ℂ)),
+    map_val_unitsFormMeasure, integral_withDensity_eq_integral_toReal_smul hm ?_]
+  · refine integral_congr_ae ?_
+    filter_upwards [μ.ae_ne 0] with x hx
+    have hx' : ((normalizedAbsoluteValue K x : ℝ) : ℂ) ≠ 0 := by
+      exact_mod_cast (normalizedAbsoluteValue K).ne_zero hx
+    have hc : ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ) = normalizedAbsoluteValue K x := by
+      rw [← NNReal.coe_toRealHom, map_nnratCast]
+    simp only [ENNReal.toReal_inv, ENNReal.coe_toReal, hc, Complex.real_smul, Complex.ofReal_inv]
+    field_simp
+  · filter_upwards [μ.ae_ne 0] with x hx
+    simpa using (normalizedAbsoluteValue K).ne_zero hx
+
+/-- **Additive and multiplicative Haar measures.** For an additive Haar measure `μ` on `K` and a
+Haar measure `ν` on `Kˣ` there is a constant `c > 0` with `∫ h dμ = c ∫_{Kˣ} h(u) |u|_K dν(u)`
+for every `h : K → ℂ`: the form measure `|dx/x|_K` is a multiple of `ν`. -/
+theorem exists_pos_forall_integral_eq_smul_integral_units (ν : Measure Kˣ) [ν.IsHaarMeasure] :
+    ∃ c : ℝ, 0 < c ∧ ∀ h : K → ℂ,
+      ∫ x, h x ∂μ = c • ∫ u : Kˣ, h u * ((normalizedAbsoluteValue K (u : K) : ℝ) : ℂ) ∂ν := by
+  have := (Units.isEmbedding_val₀ (G₀ := K)).secondCountableTopology
+  have hρ := isMulLeftInvariant_eq_smul (unitsFormMeasure K μ) ν
+  set c := haarScalarFactor (unitsFormMeasure K μ) ν
+  refine ⟨c, NNReal.coe_pos.2 (haarScalarFactor_pos_of_isHaarMeasure _ _), fun h ↦ ?_⟩
+  rw [← integral_unitsFormMeasure μ h, hρ, integral_smul_nnreal_measure, NNReal.smul_def]
 
 end TauCeti
