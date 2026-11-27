@@ -18,6 +18,12 @@ within `s` at) `x` with `1 ≤ n` is differentiable near `x`. Lowering to order 
 `n ≠ ∞` restriction of `ContDiffAt.eventually`, so both `n = ∞` and `n = ω` are covered. On an
 open set, the iterated derivatives of order `m < n` of a `C^n` map are differentiable.
 
+Conversely, strict differentiability everywhere gives `C¹`: if `f` has strict derivative `f' x₀`
+at `x₀`, then `f - f' x₀` is `ε`-Lipschitz near `x₀` for every `ε > 0`, so its derivative
+`f' x - f' x₀` at every nearby point `x` has norm at most `ε`. Over `ℝ` or `ℂ`, a `C¹` map is
+strictly differentiable everywhere (`ContDiffAt.hasStrictFDerivAt`), so for these fields the two
+notions agree.
+
 ## Main declarations
 
 * `ContDiffWithinAt.eventually_differentiableWithinAt`: `C^n` within `s` at `x` (`1 ≤ n`) implies
@@ -32,6 +38,10 @@ open set, the iterated derivatives of order `m < n` of a `C^n` map are different
   differentiability `s` of a `C¹` map on `s ∩ O`, for `O` open, is continuous on `s ∩ O`.
 * `ContDiffOn.exists_eventually_norm_fderiv_le`: a `C¹` map on a set of unique differentiability
   `s` has a locally bounded derivative at the interior points of `s`.
+* `HasStrictFDerivAt.continuousAt_of_eventually_hasFDerivAt`: a derivative field that is the
+  strict derivative at `x` is continuous at `x`.
+* `contDiff_one_of_forall_hasStrictFDerivAt`: a map that is strictly differentiable at every point
+  is `C¹`.
 -/
 
 public section
@@ -89,5 +99,26 @@ theorem ContDiffOn.exists_eventually_norm_fderiv_le (hf : ContDiffOn 𝕜 n f s)
   refine ⟨((hf.contDiffAt hsy).of_le hn).differentiableAt_one, ?_⟩
   rw [← fderivWithin_of_mem_nhds hsy]
   exact hy.le
+
+/-- **A strict derivative is continuous at its point.** If `f` has derivative `f' x` at every `x`
+near `x₀`, and `f' x₀` is its strict derivative at `x₀`, then `f'` is continuous at `x₀`. -/
+theorem HasStrictFDerivAt.continuousAt_of_eventually_hasFDerivAt {f' : E → E →L[𝕜] F}
+    (hf : HasStrictFDerivAt f (f' x) x) (hf' : ∀ᶠ y in 𝓝 x, HasFDerivAt f (f' y) y) :
+    ContinuousAt f' x := by
+  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
+  -- `f - f' x` has strict derivative `0` at `x`, so it is `ε / 2`-Lipschitz near `x`
+  obtain ⟨s, hs, hlip⟩ := (hf.sub (f' x).hasStrictFDerivAt).exists_lipschitzOnWith_of_nnNorm_lt
+    ⟨ε / 2, by positivity⟩ (by rw [sub_self, nnNorm_zero]; exact NNReal.coe_pos.1 (half_pos hε))
+  filter_upwards [hf', eventually_mem_nhds_iff.2 hs] with y hy hsy
+  rw [dist_eq_norm]
+  exact ((hy.sub (f' x).hasFDerivAt).le_of_lipschitzOn hsy hlip).trans_lt (half_lt_self hε)
+
+/-- **Strict differentiability everywhere gives `C¹`.** A map with strict derivative `f' x` at
+every point `x` is `C¹`. -/
+theorem contDiff_one_of_forall_hasStrictFDerivAt {f' : E → E →L[𝕜] F}
+    (hf : ∀ x, HasStrictFDerivAt f (f' x) x) : ContDiff 𝕜 1 f :=
+  contDiff_one_iff_hasFDerivAt.2 ⟨f', continuous_iff_continuousAt.2 fun x ↦
+    (hf x).continuousAt_of_eventually_hasFDerivAt
+      (Filter.Eventually.of_forall fun y ↦ (hf y).hasFDerivAt), fun x ↦ (hf x).hasFDerivAt⟩
 
 end

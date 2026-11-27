@@ -59,7 +59,10 @@ set containing the direction's support); the integration step is shared with the
 other operators satisfying the same pointwise bound on a set `S`
 (`TauCeti.integral_mul_norm_fun_smul_sq_le`).
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
-(`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
+(`floerLinearization_eq_add`), which is `η ↦ (dJ(z, u) η) ∂t u + dG(z, u) η`, the derivative in the
+target point of the coefficients of the quasilinear form, with `∂t u` held fixed
+(`hasFDerivAt_floerZerothOrder`, `floerLinearizationCoeff_eq_flip_add_fderiv_floerZerothOrder`).
+This coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`), and `Cⁿ` where
 `J` and `u` are `Cⁿ⁺¹` and the Hamiltonians `Cⁿ⁺²` (`contDiffAt_floerLinearizationCoeff`); so two
 linearized operators differ pointwise by the differences of their coefficients
@@ -479,6 +482,41 @@ theorem floerLinearization_eq_add (ω : SymplecticForm V)
       fderiv ℝ ξ z stdComplexLineReal + J z (u z) (fderiv ℝ ξ z stdComplexLineImag) +
         ω.floerLinearizationCoeff J Ks Kt u z (ξ z) := by
   simp only [floerLinearization_def, floerLinearizationCoeff_apply, map_sub]
+  abel
+
+/-- **The derivative of the zeroth-order term.** If `J(z, ·)`, `X_{K_s(z)}` and `X_{K_t(z)}` have
+derivatives `J'`, `S'` and `T'` at `y`, the zeroth-order term
+`G(z, ·) = -X_{K_s(z)} - J(z, ·) X_{K_t(z)}` of the Floer operator has derivative
+`η ↦ -S' η - (J(z, y) (T' η) + (J' η) X_{K_t(z)}(y))` at `y`. -/
+theorem hasFDerivAt_floerZerothOrder (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ} {y : V} {J' : V →L[ℝ] V →L[ℝ] V} {S' T' : V →L[ℝ] V}
+    (hJ : HasFDerivAt (J z) J' y) (hS : HasFDerivAt (ω.hamiltonianVectorField (Ks z)) S' y)
+    (hT : HasFDerivAt (ω.hamiltonianVectorField (Kt z)) T' y) :
+    HasFDerivAt (ω.floerZerothOrder J Ks Kt z)
+      (-S' - ((J z y).comp T' + J'.flip (ω.hamiltonianVectorField (Kt z) y))) y := by
+  rw [show ω.floerZerothOrder J Ks Kt z = fun y ↦
+      -ω.hamiltonianVectorField (Ks z) y - J z y (ω.hamiltonianVectorField (Kt z) y) from
+    funext (ω.floerZerothOrder_def J Ks Kt z)]
+  exact hS.neg.sub (hJ.clm_apply hT)
+
+/-- **The zeroth-order part of the linearization in quasilinear form.** Where `J(z, ·)`,
+`X_{K_s(z)}` and `X_{K_t(z)}` are differentiable at `u z`, the zeroth-order part of the linearized
+Floer operator at `z` is `η ↦ (dJ(z, u z) η) ∂t u + dG(z, u z) η`: the derivative in the target
+point of the coefficients `J(z, y) ∂t u + G(z, y)` of the quasilinear form
+`∂s u + J(z, u) ∂t u + G(z, u)` of the Floer operator (`floerOperator_eq_add_floerZerothOrder`),
+with `∂t u` held fixed. -/
+theorem floerLinearizationCoeff_eq_flip_add_fderiv_floerZerothOrder (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (hJ : DifferentiableAt ℝ (J z) (u z))
+    (hS : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks z)) (u z))
+    (hT : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt z)) (u z)) :
+    ω.floerLinearizationCoeff J Ks Kt u z =
+      (fderiv ℝ (J z) (u z)).flip (fderiv ℝ u z (0, 1)) +
+        fderiv ℝ (ω.floerZerothOrder J Ks Kt z) (u z) := by
+  rw [(ω.hasFDerivAt_floerZerothOrder hJ.hasFDerivAt hS.hasFDerivAt hT.hasFDerivAt).fderiv]
+  ext v
+  simp only [floerLinearizationCoeff_apply, stdComplexLineImag_eq, add_apply, sub_apply,
+    neg_apply, comp_apply, flip_apply, map_sub]
   abel
 
 /-- **Comparing two linearized operators at a point.** The linearized Floer operators
