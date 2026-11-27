@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.SSetPair
-public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
+public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom.Basic
 
 /-!
 # Homotopies of simplicial sets and of pairs of simplicial sets
