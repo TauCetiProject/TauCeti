@@ -56,11 +56,11 @@ three-cycle. The file also records its inverse and its conjugation action on the
 transvections; this is the normalizer half of the data pinning the elementary matrices against
 the torus.
 
-Conjugating a transvection by an invertible diagonal matrix sends its parameter `c` to
-`tᵢ c tⱼ⁻¹` (over a commutative ring, rescaling by the value `tᵢ tⱼ⁻¹` of the corresponding root):
-`TauCeti.diagGL_mul_transvectionUnit_mul_inv` says that `t xᵢⱼ(c) t⁻¹` is `xᵢⱼ(tᵢ c tⱼ⁻¹)`.
-Together with the two relations above these are the equations that pin the elementary matrices
-against the diagonal torus.
+Over any ring, `TauCeti.diagGL_mul_transvectionUnit_mul_inv` says that conjugating a transvection
+by an invertible diagonal matrix multiplies its parameter on both sides: `t xᵢⱼ(c) t⁻¹` is
+`xᵢⱼ(tᵢ c tⱼ⁻¹)`. When `A` is commutative this rescales the parameter by `tᵢ tⱼ⁻¹`, the value at
+`t` of the root `εᵢ - εⱼ`. Together with the two relations above these are the equations that pin
+the elementary matrices against the diagonal torus.
 
 ## Main definitions
 
@@ -444,21 +444,26 @@ theorem transvectionWeylElement_fin_two_mul_self :
   ext a b
   fin_cases a <;> fin_cases b <;> simp
 
-/-! ## Conjugation by the diagonal torus -/
+/-! ## Conjugation by invertible diagonal matrices -/
 
-/-- Conjugating the root subgroup element `xᵢⱼ(c)` by the diagonal matrix with entries `t`
-sends the parameter `c` to `tᵢ c tⱼ⁻¹` (reducing over a commutative ring to rescaling `c` by
-`tᵢ tⱼ⁻¹`, the value at `t` of the root `εᵢ - εⱼ`). This is the equation pinning the root
-subgroup against the diagonal torus. -/
+/-- Conjugating the root subgroup element `xᵢⱼ(c)` by the diagonal matrix with entries `t` gives
+`xᵢⱼ(tᵢ c tⱼ⁻¹)`, over any ring. When `A` is commutative this rescales the parameter by `tᵢ tⱼ⁻¹`,
+the value at `t` of the root `εᵢ - εⱼ`. This is the equation pinning the root subgroup against the
+diagonal torus. -/
 theorem diagGL_mul_transvectionUnit_mul_inv (hij : i ≠ j) (t : n → Aˣ) (c : A) :
     diagGL t * transvectionUnit hij c * (diagGL t)⁻¹ =
       transvectionUnit hij ((t i : A) * c * ((t j)⁻¹ : Aˣ)) := by
-  have hd : diagonal (fun a ↦ (t a : A)) * diagonal (fun a ↦ (((t a)⁻¹ : Aˣ) : A)) = 1 := by
-    rw [Matrix.diagonal_mul_diagonal]
-    exact Matrix.diagonal_eq_one.2 (by ext a; exact (t a).mul_inv)
-  rw [← map_inv diagGL t]
+  have hval : ((((diagGL t)⁻¹ : GL n A)) : Matrix n n A) =
+      diagonal fun a => (((t a)⁻¹ : Aˣ) : A) := by
+    rw [← map_inv diagGL t, diagGL_coe]
+    simp
+  have hd : diagonal (fun a => (t a : A)) * diagonal (fun a => (((t a)⁻¹ : Aˣ) : A)) = 1 := by
+    rw [diagonal_mul_diagonal]
+    exact diagonal_eq_one.2 (funext fun a => (t a).mul_inv)
   refine Units.ext ?_
-  simp [-map_inv, coe_transvectionUnit_eq_one_add_single, mul_add, add_mul, hd]
+  -- `t (1 + c Eᵢⱼ) t⁻¹ = t t⁻¹ + tᵢ c tⱼ⁻¹ Eᵢⱼ`
+  simp only [Units.val_mul, coe_transvectionUnit_eq_one_add_single, diagGL_coe, hval,
+    Matrix.mul_add, Matrix.add_mul, Matrix.mul_one, hd, diagonal_mul_single_mul_diagonal]
 
 end Ring
 

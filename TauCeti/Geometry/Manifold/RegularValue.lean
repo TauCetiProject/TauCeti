@@ -43,6 +43,8 @@ to manifolds, including manifolds with boundary or corners.
   of the set of non-regular points.
 * `TauCeti.IsRegularValue.restrict`: restricting the source to an open subset preserves regular
   values.
+* `TauCeti.isRegularValue_restrict_of_forall_isRegularPoint`: every value of the restriction of a
+  map to an open set of regular points is a regular value.
 * `TauCeti.IsRegularValue.comp`: precomposing with a map regular on the fibre preserves regular
   values.
 * `TauCeti.exists_isRegularValue_forall_mem_Ioc`: a continuous real function on a compact
@@ -69,6 +71,8 @@ to manifolds, including manifolds with boundary or corners.
   `Diffeomorph.isRegularPoint_comp_iff`, `Diffeomorph.isRegularValue_comp_iff`: precomposing
   with a `C^n` local diffeomorphism (surjective, for regular values) or diffeomorphism (`n ≠ 0`)
   preserves regular points and regular values.
+* `IsLocalDiffeomorph.isRegularValue_comp`: a regular value stays regular after precomposing with
+  a `C^n` local diffeomorphism (`n ≠ 0`), surjective or not.
 * `TauCeti.isRegularPoint_transContinuousLinearEquiv_left_iff`,
   `TauCeti.isRegularValue_transContinuousLinearEquiv_left_iff`: continuous linear changes of
   source model coordinates preserve regular points and regular values.
@@ -385,6 +389,11 @@ theorem IsRegularValue.restrict (hreg : IsRegularValue I J f y) (U : Topological
   intro x hx
   exact (hreg.isRegularPoint hx).comp (isRegularPoint_subtype_val x)
 
+/-- Every value of the restriction of a map to an open set of regular points is a regular value. -/
+theorem isRegularValue_restrict_of_forall_isRegularPoint {U : TopologicalSpace.Opens M}
+    (hU : ∀ x : U, IsRegularPoint I J f x) (y : N) : IsRegularValue I J (fun x : U ↦ f x) y :=
+  isRegularValue_iff.2 fun x _ ↦ (hU x).comp (isRegularPoint_subtype_val x)
+
 section Level
 
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
@@ -534,15 +543,21 @@ theorem _root_.IsLocalDiffeomorphAt.isRegularPoint_comp_iff {φ : M' → M} {f :
     simp [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hf,
       mfderiv_zero_of_not_mdifferentiableAt hcomp, Function.Surjective]
 
+/-- A regular value of a map stays regular after precomposing with a `C^n` local diffeomorphism
+(`n ≠ 0`). No surjectivity is needed for this direction. -/
+theorem _root_.IsLocalDiffeomorph.isRegularValue_comp {φ : M' → M} {f : M → N} {y : N}
+    (hφ : IsLocalDiffeomorph I' I n φ) (hn : n ≠ 0) (hy : IsRegularValue I J f y) :
+    IsRegularValue I' J (f ∘ φ) y :=
+  isRegularValue_iff.2 fun x hx ↦ ((hφ x).isRegularPoint_comp_iff hn).2 (hy.isRegularPoint hx)
+
 /-- Precomposing a map with a surjective `C^n` local diffeomorphism (`n ≠ 0`) preserves regular
 values. -/
 theorem _root_.IsLocalDiffeomorph.isRegularValue_comp_iff {φ : M' → M} {f : M → N} {y : N}
     (hφ : IsLocalDiffeomorph I' I n φ) (hsurj : Surjective φ) (hn : n ≠ 0) :
     IsRegularValue I' J (f ∘ φ) y ↔ IsRegularValue I J f y := by
-  rw [isRegularValue_iff, isRegularValue_iff]
-  refine ⟨fun h z hz ↦ ?_, fun h x hx ↦ ((hφ x).isRegularPoint_comp_iff hn).2 (h (φ x) hx)⟩
+  refine ⟨fun h ↦ isRegularValue_iff.2 fun z hz ↦ ?_, hφ.isRegularValue_comp hn⟩
   obtain ⟨x, rfl⟩ := hsurj z
-  exact ((hφ x).isRegularPoint_comp_iff hn).1 (h x hz)
+  exact ((hφ x).isRegularPoint_comp_iff hn).1 (h.isRegularPoint hz)
 
 /-- Precomposing a map with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular points. No manifold
 smoothness or finite-dimensionality assumption is needed. -/

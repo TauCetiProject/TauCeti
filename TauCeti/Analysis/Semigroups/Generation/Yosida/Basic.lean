@@ -281,53 +281,22 @@ theorem exp_yosidaApproximation_uniformCauchySeqOn_compact_of_mem {A : X →ₗ.
     UniformCauchySeqOn
       (fun lambda t : ℝ => exp (t • yosidaApproximation A lambda) (x : X))
       Filter.atTop (Set.Icc 0 T) := by
-  rw [Metric.uniformCauchySeqOn_iff]
-  intro epsilon hepsilon
-  let C : ℝ := M * M * (max T 0 + 1) + 1
-  have hC : 0 < C := by
-    have : 0 ≤ M * M * (max T 0 + 1) :=
-      mul_nonneg (mul_self_nonneg M) (by linarith [le_max_right T 0])
-    dsimp only [C]
-    linarith
-  let delta : ℝ := epsilon / (2 * C)
-  have hdelta : 0 < delta := div_pos hepsilon (mul_pos zero_lt_two hC)
-  have hconv := tendsto_yosidaApproximation_apply_atTop hres hbound hdense x
-  rw [Metric.tendsto_atTop] at hconv
-  obtain ⟨N, hN⟩ := hconv delta hdelta
-  refine ⟨max N 1, fun lambda hlambda mu hmu t ht => ?_⟩
-  rw [dist_eq_norm]
-  have hlambda_pos : 0 < lambda :=
-    lt_of_lt_of_le zero_lt_one (le_trans (le_max_right _ _) hlambda)
-  have hmu_pos : 0 < mu :=
-    lt_of_lt_of_le zero_lt_one (le_trans (le_max_right _ _) hmu)
-  have hlambda_close := hN lambda (le_trans (le_max_left _ _) hlambda)
-  have hmu_close := hN mu (le_trans (le_max_left _ _) hmu)
-  have hdiff :
-      ‖(yosidaApproximation A lambda - yosidaApproximation A mu) (x : X)‖ < 2 * delta := by
-    rw [sub_apply, ← dist_eq_norm]
-    exact (dist_triangle_right
-      (yosidaApproximation A lambda (x : X))
-      (yosidaApproximation A mu (x : X)) (A x)).trans_lt (by linarith)
-  have hcompare := norm_exp_smul_sub_exp_smul_apply_le_of_commute
-    (yosidaApproximation A lambda) (yosidaApproximation A mu)
-    (LinearPMap.yosidaApproximation_comm (hres lambda hlambda_pos) (hres mu hmu_pos))
-    (fun s hs => hexp lambda hlambda_pos s hs) (fun s hs => hexp mu hmu_pos s hs)
-    ht.1 (x : X)
-  calc
-    ‖exp (t • yosidaApproximation A lambda) (x : X) -
-        exp (t • yosidaApproximation A mu) (x : X)‖
-        ≤ M * M * t * ‖(yosidaApproximation A lambda - yosidaApproximation A mu) (x : X)‖ :=
-      hcompare
-    _ ≤ C * ‖(yosidaApproximation A lambda - yosidaApproximation A mu) (x : X)‖ := by
-      refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
-      have hmono : M * M * t ≤ M * M * (max T 0 + 1) :=
-        mul_le_mul_of_nonneg_left (by linarith [ht.2, le_max_left T 0]) (mul_self_nonneg M)
-      dsimp only [C]
-      linarith
-    _ < C * (2 * delta) := mul_lt_mul_of_pos_left hdiff hC
-    _ = epsilon := by
-      dsimp only [delta]
-      field_simp
+  simpa only [RCLike.ofReal_real_eq_id, id_eq] using
+    uniformCauchySeqOn_exp_smul_apply_of_tendsto
+      (𝕜 := ℝ) (S := Set.Icc 0 T) (M := M) (R := max T 0)
+      (by
+        filter_upwards [(Filter.eventually_gt_atTop (0 : ℝ)).prod_mk
+            (Filter.eventually_gt_atTop (0 : ℝ))] with p hp
+        exact LinearPMap.yosidaApproximation_comm (hres p.1 hp.1) (hres p.2 hp.2))
+      (tendsto_yosidaApproximation_apply_atTop hres hbound hdense x)
+      (by
+        filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with lambda hlambda t ht s hs
+        simpa only [RCLike.ofReal_real_eq_id, id_eq] using
+          hexp lambda hlambda (s * t) (mul_nonneg hs.1 ht.1))
+      (by
+        intro t ht
+        rw [abs_of_nonneg ht.1]
+        exact ht.2.trans (le_max_left T 0))
 
 /-- The bounded Yosida semigroups are Cauchy uniformly on every compact time interval, on every
 vector of the Banach space.

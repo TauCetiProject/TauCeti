@@ -60,13 +60,14 @@ fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
   (`TauCeti.StripSobolev.integrable_inner_apply_jet`). The jet also
   bounds the whole derivative (`TauCeti.StripSobolev.norm_fderiv_le_two_mul_norm_jet`), so a `C¹`
   cutoff supported in a set `P` multiplies a section into a map whose derivative is bounded in
-  `Lᵖ(ℝ²)` by the jet on `P` (`TauCeti.StripSobolev.eLpNorm_fderiv_smul_le`).
+  `Lᵖ(ℝ²)` by the jet on `P` (`TauCeti.eLpNorm_fderiv_smul_le_of_tsupport_subset`).
 * The **restricted value** `TauCeti.StripSobolev.restrictValue T` takes an `L²` jet on the strip
   to its value on the compact piece `[-T, T] × [0, 1]`, the operator whose compactness is
   Rellich's theorem on the cylinder and on the strip.
 * **Multiplication by a function `β(s)`** acts on jets through the coefficient field
-  `TauCeti.StripSobolev.cutoffCoeff`, `(ξ, ξ_s, ξ_t) ↦ (β ξ, β ξ_s + β' ξ, β ξ_t)`
-  (`TauCeti.StripSobolev.jet_smul_fst_eq_cutoffCoeff`), which is multiplicative and additive in
+  `TauCeti.StripSobolev.cutoffCoeff`, `(ξ, ξ_s, ξ_t) ↦ (β ξ, β ξ_s + β' ξ, β ξ_t)`, the change of
+  frame by `β(s) • id` (`TauCeti.StripSobolev.cutoffCoeff_eq_frameJetCoeff` and
+  `TauCeti.StripSobolev.jet_frame_eq_frameJetCoeff`), which is multiplicative and additive in
   `β` and essentially bounded on the strip when `β` is `C¹` with `β` and `β'` bounded
   (`TauCeti.StripSobolev.memLp_cutoffCoeff`).
 * **Translation in the `s` direction** preserves the strip measure
@@ -75,11 +76,14 @@ fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
   equivalences (`TauCeti.StripSobolev.translateLp`), an action of the additive group `ℝ`
   (`TauCeti.StripSobolev.translateLp_zero`, `TauCeti.StripSobolev.translateLp_translateLp`,
   `TauCeti.StripSobolev.translateLp_symm`).
-* For a space `S` of sections with square integrable jets (`TauCeti.StripSobolev.HasL2Jets`),
-  `TauCeti.StripSobolev.jetLp S` is the `L²` jet and `TauCeti.StripSobolev.jetClosure S` the
-  closure of the `L²` jets, the Sobolev space `W^{1,2}` shared by the strip and the cylinder. When
-  `S` is translation invariant (`TauCeti.StripSobolev.IsTranslationInvariant`), translation is a
-  linear isometric equivalence of `jetClosure S` (`TauCeti.StripSobolev.translate`).
+* For a space `S` of sections with jets in `Lᵖ` (`TauCeti.StripSobolev.HasLpJets`),
+  `TauCeti.StripSobolev.jetLp p S` is the `Lᵖ` jet and `TauCeti.StripSobolev.jetClosure p S` the
+  closure of the `Lᵖ` jets. For `1 ≤ p < ∞` it is the Sobolev space `W^{1,p}` shared by the strip
+  and the cylinder; for `p = ∞` it is only the closure of the jets of `S`, not `W^{1,∞}`. The jets
+  of the elements of `S` are dense in it (`TauCeti.StripSobolev.toJetClosure`,
+  `TauCeti.StripSobolev.denseRange_toJetClosure`). When `S` is translation invariant
+  (`TauCeti.StripSobolev.IsTranslationInvariant`), translation is a linear isometric equivalence
+  of `jetClosure p S` (`TauCeti.StripSobolev.translate`).
 -/
 
 public section
@@ -87,7 +91,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter Topology
-open scoped ENNReal
+open scoped ENNReal BoundedContinuousFunction
 
 namespace TauCeti.StripSobolev
 
@@ -300,41 +304,6 @@ theorem integral_strip_eq_setIntegral_of_jet_eq_zero {E : Type*} [NormedAddCommG
     ∫ z, F z ∂stripMeasure = ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1, F z :=
   integral_strip_eq_setIntegral_Icc_of_jet_eq_zero (eq_zero_of_notMem_Ioo_neg hR) hF
 
-/-- Multiplying a `C¹` map by a `C¹` cutoff `χ` with `|χ| ≤ 1` and `‖Dχ‖ ≤ C`, whose topological
-support lies in a measurable set `P`, gives a map whose derivative is bounded in `Lᵖ(ℝ × ℝ)` by
-`C + 2` times the jet in `Lᵖ(P)`. -/
-theorem eLpNorm_fderiv_smul_le {χ : ℝ × ℝ → ℝ} {C : ℝ} (hχ : ContDiff ℝ 1 χ)
-    (hχ1 : ∀ z, |χ z| ≤ 1) (hC : ∀ z, ‖fderiv ℝ χ z‖ ≤ C) {P : Set (ℝ × ℝ)}
-    (hP : MeasurableSet P) (hχP : tsupport χ ⊆ P) (hξ : ContDiff ℝ 1 ξ) {p : ℝ≥0∞} :
-    eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) p volume ≤
-      ENNReal.ofReal (C + 2) * eLpNorm (jet ξ) p (volume.restrict P) := by
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
-  have hpt : ∀ z, ‖fderiv ℝ (fun z ↦ χ z • ξ z) z‖ ≤ (C + 2) * ‖P.indicator (jet ξ) z‖ := by
-    intro z
-    by_cases hz : z ∈ P
-    · rw [indicator_of_mem hz,
-        fderiv_fun_smul (hχ.differentiable one_ne_zero z) (hξ.differentiable one_ne_zero z)]
-      calc _ ≤ ‖χ z‖ * ‖fderiv ℝ ξ z‖ + ‖fderiv ℝ χ z‖ * ‖ξ z‖ := by
-            refine (norm_add_le _ _).trans ?_
-            rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply]
-        _ ≤ 1 * (2 * ‖jet ξ z‖) + C * ‖jet ξ z‖ := by
-            gcongr
-            exacts [(Real.norm_eq_abs _).trans_le (hχ1 z), norm_fderiv_le_two_mul_norm_jet ξ z,
-              hC z, norm_le_norm_jet ξ z]
-        _ = (C + 2) * ‖jet ξ z‖ := by ring
-    · have h0 : (fun z ↦ χ z • ξ z) =ᶠ[𝓝 z] 0 := by
-        filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz (hχP h)] with w hw
-        simp [hw]
-      rw [h0.fderiv_eq, indicator_of_notMem hz]
-      simp
-  calc eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) p volume
-      ≤ ENNReal.ofReal (C + 2) * eLpNorm (P.indicator (jet ξ)) p volume :=
-        eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-          ((hχ.smul hξ).continuous_fderiv one_ne_zero).aestronglyMeasurable
-          (Eventually.of_forall hpt) p
-    _ = ENNReal.ofReal (C + 2) * eLpNorm (jet ξ) p (volume.restrict P) := by
-        rw [eLpNorm_indicator_eq_eLpNorm_restrict hP.nullMeasurableSet]
-
 /-! ### The restricted value -/
 
 /-- The value of an `L²` jet on the strip, restricted to the compact piece `[-T, T] × [0, 1]`. -/
@@ -368,7 +337,9 @@ theorem sSlot_apply (v : V × V × V) : sSlot V v = (0, v.1, 0) := by
 variable (V) in
 /-- The coefficient field of multiplication by a function `β(s)` of the first variable, acting
 on jets: `(ξ, ξ_s, ξ_t) ↦ (β ξ, β ξ_s + β' ξ, β ξ_t)`. On the jet of a section `ξ` it is the jet
-of `β(s) ξ` (`TauCeti.StripSobolev.jet_smul_fst_eq_cutoffCoeff`). -/
+of `β(s) ξ`: it is the change of frame by `β(s) • id`
+(`TauCeti.StripSobolev.cutoffCoeff_eq_frameJetCoeff`), so
+`TauCeti.StripSobolev.jet_frame_eq_frameJetCoeff` applies. -/
 def cutoffCoeff (β : ℝ → ℝ) (z : ℝ × ℝ) : V × V × V →L[ℝ] V × V × V :=
   β z.1 • ContinuousLinearMap.id ℝ (V × V × V) + deriv β z.1 • sSlot V
 
@@ -383,6 +354,12 @@ theorem cutoffCoeff_apply (β : ℝ → ℝ) (z : ℝ × ℝ) (v : V × V × V) 
     cutoffCoeff V β z v = (β z.1 • v.1, β z.1 • v.2.1 + deriv β z.1 • v.1, β z.1 • v.2.2) := by
   obtain ⟨a, b, c⟩ := v
   simp [cutoffCoeff]
+
+/-- Where `β` is locally constant, equal to `b`, multiplication by `β(s)` is multiplication by `b`:
+the derivative term vanishes. -/
+theorem cutoffCoeff_of_eventuallyEq {β : ℝ → ℝ} {b : ℝ} {z : ℝ × ℝ}
+    (h : β =ᶠ[𝓝 z.1] fun _ ↦ b) : cutoffCoeff V β z = b • ContinuousLinearMap.id ℝ (V × V × V) := by
+  rw [cutoffCoeff_def, h.eq_of_nhds, h.deriv_eq, deriv_const, zero_smul, add_zero]
 
 /-- Multiplication by `β(s)` followed by multiplication by `γ(s)` is multiplication by
 `β(s) γ(s)`. -/
@@ -411,21 +388,6 @@ theorem cutoffCoeff_one (z : ℝ × ℝ) :
     cutoffCoeff V 1 z = ContinuousLinearMap.id ℝ (V × V × V) := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
   simp [cutoffCoeff, Pi.one_def]
-
-/-- The jet of `β(s) ξ` is `cutoffCoeff V β` applied to the jet of `ξ`. -/
-theorem jet_smul_fst_eq_cutoffCoeff {β : ℝ → ℝ} {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
-    (hβ : DifferentiableAt ℝ β z.1) (hξ : DifferentiableAt ℝ ξ z) :
-    jet (fun w ↦ β w.1 • ξ w) z = cutoffCoeff V β z (jet ξ z) := by
-  have hβ' : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (deriv β z.1)).comp
-        (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-    hβ.hasDerivAt.hasFDerivAt.comp z hasFDerivAt_fst
-  have h : fderiv ℝ (fun w ↦ β w.1 • ξ w) z = β z.1 • fderiv ℝ ξ z +
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (deriv β z.1)).comp
-        (ContinuousLinearMap.fst ℝ ℝ ℝ)).smulRight (ξ z) :=
-    (hβ'.smul hξ.hasFDerivAt).fderiv
-  simp only [jet_apply, cutoffCoeff_apply, h]
-  simp [add_comm]
 
 /-- The coefficient of multiplication by `β(s)` has norm at most `|β(s)| + |β'(s)|`. -/
 theorem norm_cutoffCoeff_le (β : ℝ → ℝ) (z : ℝ × ℝ) :
@@ -604,85 +566,65 @@ theorem eLpNorm_fderiv_le_two_mul_eLpNorm_jet {μ : Measure (ℝ × ℝ)}
   (eLpNorm_le_mul_eLpNorm_of_ae_le_mul hξ
     (.of_forall (norm_fderiv_le_two_mul_norm_jet ξ)) p).trans_eq (by simp)
 
-/-! ### The `L²` jets of a space of sections and their closure -/
+/-! ### The `Lᵖ` jets of a space of sections and their closure -/
 
-/-- A space `S` of maps `ξ : ℝ × ℝ → V` whose elements are differentiable with square integrable
-jet on the strip. The closure of their `L²` jets (`TauCeti.StripSobolev.jetClosure`) is a
-Sobolev space `W^{1,2}` of sections over the strip, such as the space
-`TauCeti.CylinderSobolev.H1` of the cylinder and the space `TauCeti.StripSobolev.H1` of the strip
-with boundary conditions. -/
-class HasL2Jets (S : Submodule ℝ (ℝ × ℝ → V)) : Prop where
+/-- A space `S` of maps `ξ : ℝ × ℝ → V` whose elements are differentiable with jet in `Lᵖ` of the
+strip. For `1 ≤ p < ∞` the closure of their `Lᵖ` jets (`TauCeti.StripSobolev.jetClosure`) is a
+Sobolev space `W^{1,p}` of sections over the strip, such as the space
+`TauCeti.CylinderSobolev.W1p` of the cylinder and, for `p = 2`, the space
+`TauCeti.StripSobolev.H1` of the strip with boundary conditions. For `p = ∞` it is only the
+closure of the jets of `S`, a proper subspace of `W^{1,∞}` in general. -/
+class HasLpJets (p : ℝ≥0∞) (S : Submodule ℝ (ℝ × ℝ → V)) : Prop where
   /-- The elements of `S` are differentiable. -/
   differentiable : ∀ ξ ∈ S, Differentiable ℝ ξ
-  /-- The elements of `S` have square integrable jet on the strip. -/
-  memLp_jet : ∀ ξ ∈ S, MemLp (jet ξ) 2 stripMeasure
+  /-- The elements of `S` have jet in `Lᵖ` of the strip. -/
+  memLp_jet : ∀ ξ ∈ S, MemLp (jet ξ) p stripMeasure
 
 section JetLp
 
-variable (S : Submodule ℝ (ℝ × ℝ → V)) [HasL2Jets S]
+variable (p : ℝ≥0∞) (S : Submodule ℝ (ℝ × ℝ → V)) [HasLpJets p S]
 
-/-- The `L²` jet `(ξ, ∂s ξ, ∂t ξ)` of the elements of a space `S` of sections with square
-integrable jets, as a linear map into `L²(ℝ × [0, 1], V × V × V)`. -/
-def jetLp : S →ₗ[ℝ] Lp (V × V × V) 2 stripMeasure where
-  toFun ξ := (HasL2Jets.memLp_jet _ ξ.property).toLp (jet (ξ : ℝ × ℝ → V))
+/-- The `Lᵖ` jet `(ξ, ∂s ξ, ∂t ξ)` of the elements of a space `S` of sections with jets in `Lᵖ`,
+as a linear map into `Lᵖ(ℝ × [0, 1], V × V × V)`. -/
+def jetLp : S →ₗ[ℝ] Lp (V × V × V) p stripMeasure where
+  toFun ξ := (HasLpJets.memLp_jet _ ξ.property).toLp (jet (ξ : ℝ × ℝ → V))
   map_add' ξ η := by
     simp only [Submodule.coe_add, ← MemLp.toLp_add]
     exact MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ by
-      rw [jet_add (HasL2Jets.differentiable _ ξ.property) (HasL2Jets.differentiable _ η.property)])
+      rw [jet_add (HasLpJets.differentiable p _ ξ.property)
+        (HasLpJets.differentiable p _ η.property)])
   map_smul' c ξ := by
     simp only [SetLike.val_smul, RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ by rw [jet_smul])
 
-/-- The closure in `L²(ℝ × [0, 1], V × V × V)` of the jets of the elements of `S`, that is, the
-completion of `S` in the `W^{1,2}` norm. -/
-def jetClosure : Submodule ℝ (Lp (V × V × V) 2 stripMeasure) :=
-  (LinearMap.range (jetLp S)).topologicalClosure
-
-/-- The definition of `jetClosure`: the closure of the span of the jets of the elements of `S`. -/
-theorem jetClosure_def : jetClosure S = (LinearMap.range (jetLp S)).topologicalClosure :=
-  (rfl)
-
-/-- `jetClosure S` is the closure of the set of jets of the elements of `S`. -/
-theorem coe_jetClosure :
-    (jetClosure S : Set (Lp (V × V × V) 2 stripMeasure)) = closure (Set.range (jetLp S)) := by
-  rw [jetClosure_def, Submodule.topologicalClosure_coe, LinearMap.coe_range]
-
-/-- `jetClosure S` is a closed subspace of `L²`. -/
-theorem isClosed_jetClosure : IsClosed (jetClosure S : Set (Lp (V × V × V) 2 stripMeasure)) :=
-  Submodule.isClosed_topologicalClosure _
-
-/-- `jetClosure S` is complete: it is a closed subspace of the complete space `L²`. -/
-instance [CompleteSpace V] : CompleteSpace (jetClosure S) :=
-  Submodule.topologicalClosure.completeSpace _
-
 variable {S}
 
-/-- The `L²` jet of an element of `S` is represented by its jet. -/
-theorem coeFn_jetLp (ξ : S) : jetLp S ξ =ᵐ[stripMeasure] jet (ξ : ℝ × ℝ → V) :=
-  MemLp.coeFn_toLp (HasL2Jets.memLp_jet _ ξ.property)
+/-- The `Lᵖ` jet of an element of `S` is represented by its jet. -/
+theorem coeFn_jetLp (ξ : S) : jetLp p S ξ =ᵐ[stripMeasure] jet (ξ : ℝ × ℝ → V) :=
+  MemLp.coeFn_toLp (HasLpJets.memLp_jet _ ξ.property)
 
-/-- The `L²` jet of an element of `S` is the class of its jet. -/
+/-- The `Lᵖ` jet of an element of `S` is the class of its jet. -/
 theorem jetLp_apply (ξ : S) :
-    jetLp S ξ = (HasL2Jets.memLp_jet _ ξ.property).toLp (jet (ξ : ℝ × ℝ → V)) :=
+    jetLp p S ξ = (HasLpJets.memLp_jet _ ξ.property).toLp (jet (ξ : ℝ × ℝ → V)) :=
   (rfl)
 
-/-- The norm of the `L²` jet of an element of `S` is the `L²` norm of its jet on the strip. -/
+/-- The norm of the `Lᵖ` jet of an element of `S` is the `Lᵖ` norm of its jet on the strip. -/
 theorem norm_jetLp (ξ : S) :
-    ‖jetLp S ξ‖ = (eLpNorm (jet (ξ : ℝ × ℝ → V)) 2 stripMeasure).toReal := by
+    ‖jetLp p S ξ‖ = (eLpNorm (jet (ξ : ℝ × ℝ → V)) p stripMeasure).toReal := by
   rw [jetLp_apply, Lp.norm_toLp]
 
 /-- The squared norm of the `L²` jet of an element of `S` is the integral of the squared norm of
 its jet over the strip. -/
-theorem sq_norm_jetLp (ξ : S) :
-    ‖jetLp S ξ‖ ^ 2 = ∫ z, ‖jet (ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure := by
+theorem sq_norm_jetLp [HasLpJets 2 S] (ξ : S) :
+    ‖jetLp 2 S ξ‖ ^ 2 = ∫ z, ‖jet (ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure := by
   rw [jetLp_apply, MemLp.norm_toLp_sq]
 
 /-- The squared norm of the `L²` jet of a `C¹` element of `S` is at most its `W^{1,2}` energy
 `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²)` over the strip. -/
-theorem sq_norm_jetLp_le_integral (ξ : S) (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V)) :
-    ‖jetLp S ξ‖ ^ 2 ≤ ∫ z, (‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 +
+theorem sq_norm_jetLp_le_integral [HasLpJets 2 S] (ξ : S) (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V)) :
+    ‖jetLp 2 S ξ‖ ^ 2 ≤ ∫ z, (‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 +
       ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 + ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) ∂stripMeasure := by
-  have hjm := HasL2Jets.memLp_jet _ ξ.property
+  have hjm := HasLpJets.memLp_jet (p := 2) _ ξ.property
   rw [sq_norm_jetLp]
   refine integral_mono_of_nonneg (Eventually.of_forall fun z ↦ by positivity) ?_
     (Eventually.of_forall fun z ↦ sq_norm_jet_le _ z)
@@ -698,8 +640,8 @@ theorem sq_norm_jetLp_le_integral (ξ : S) (hξ : ContDiff ℝ 1 (ξ : ℝ × �
 
 /-- The squared norm of the restricted value of the jet of an element `ξ` of `S` is the integral
 of `‖ξ‖²` over `[-T, T] × [0, 1]`. -/
-theorem sq_norm_restrictValue_jetLp (T : ℝ) (ξ : S) :
-    ‖restrictValue T (jetLp S ξ)‖ ^ 2 =
+theorem sq_norm_restrictValue_jetLp [HasLpJets 2 S] (T : ℝ) (ξ : S) :
+    ‖restrictValue T (jetLp 2 S ξ)‖ ^ 2 =
       ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 := by
   -- On subsets of the strip, the strip measure is Lebesgue measure.
   have hμ : stripMeasure.restrict (Icc (-T) T ×ˢ Icc (0 : ℝ) 1) =
@@ -708,34 +650,145 @@ theorem sq_norm_restrictValue_jetLp (T : ℝ) (ξ : S) :
       inter_eq_left.2 (prod_mono (subset_univ _) subset_rfl)]
   rw [← Lp.integral_norm_sq_eq_norm_sq, ← hμ]
   refine integral_congr_ae ?_
-  filter_upwards [coeFn_restrictValue T (jetLp S ξ), ae_restrict_of_ae (coeFn_jetLp ξ)]
+  filter_upwards [coeFn_restrictValue T (jetLp 2 S ξ), ae_restrict_of_ae (coeFn_jetLp 2 ξ)]
     with z h₁ h₂
   rw [h₁, h₂, jet_apply]
 
-/-- A closed set containing the jets of all elements of `S` contains `jetClosure S`. -/
-theorem jetClosure_subset_of_isClosed {s : Set (Lp (V × V × V) 2 stripMeasure)}
-    (hs : IsClosed s) (h : Set.range (jetLp S) ⊆ s) :
-    (jetClosure S : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ s := by
+variable [Fact (1 ≤ p)]
+
+variable (S) in
+/-- The closure in `Lᵖ(ℝ × [0, 1], V × V × V)` of the jets of the elements of `S`, that is, the
+completion of `S` in the `W^{1,p}` norm. -/
+def jetClosure : Submodule ℝ (Lp (V × V × V) p stripMeasure) :=
+  (LinearMap.range (jetLp p S)).topologicalClosure
+
+variable (S) in
+/-- The definition of `jetClosure`: the closure of the span of the jets of the elements of `S`. -/
+theorem jetClosure_def : jetClosure p S = (LinearMap.range (jetLp p S)).topologicalClosure :=
+  (rfl)
+
+variable (S) in
+/-- `jetClosure p S` is the closure of the set of jets of the elements of `S`. -/
+theorem coe_jetClosure :
+    (jetClosure p S : Set (Lp (V × V × V) p stripMeasure)) = closure (Set.range (jetLp p S)) := by
+  rw [jetClosure_def, Submodule.topologicalClosure_coe, LinearMap.coe_range]
+
+variable (S) in
+/-- `jetClosure p S` is a closed subspace of `Lᵖ`. -/
+theorem isClosed_jetClosure :
+    IsClosed (jetClosure p S : Set (Lp (V × V × V) p stripMeasure)) :=
+  Submodule.isClosed_topologicalClosure _
+
+variable (S) in
+/-- `jetClosure p S` is complete: it is a closed subspace of the complete space `Lᵖ`. -/
+instance [CompleteSpace V] : CompleteSpace (jetClosure p S) :=
+  Submodule.topologicalClosure.completeSpace _
+
+variable {p}
+
+/-- A closed set containing the jets of all elements of `S` contains `jetClosure p S`. -/
+theorem jetClosure_subset_of_isClosed {s : Set (Lp (V × V × V) p stripMeasure)}
+    (hs : IsClosed s) (h : Set.range (jetLp p S) ⊆ s) :
+    (jetClosure p S : Set (Lp (V × V × V) p stripMeasure)) ⊆ s := by
   rw [coe_jetClosure]
   exact closure_minimal h hs
 
-/-- The jet of an element of `S` lies in `jetClosure S`. -/
-theorem jetLp_mem_jetClosure (ξ : S) : jetLp S ξ ∈ jetClosure S :=
+/-- The jet of an element of `S` lies in `jetClosure p S`. -/
+theorem jetLp_mem_jetClosure (ξ : S) : jetLp p S ξ ∈ jetClosure p S :=
   Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ ξ)
 
-variable (S) in
-/-- The jets of the elements of `S` are dense in `jetClosure S`. -/
-theorem denseRange_codRestrict_jetLp :
-    DenseRange ((jetLp S).codRestrict (jetClosure S) jetLp_mem_jetClosure) := by
+variable (p S) in
+/-- The jet of an element of `S`, as an element of `jetClosure p S`. -/
+def toJetClosure : S →ₗ[ℝ] jetClosure p S :=
+  (jetLp p S).codRestrict (jetClosure p S) jetLp_mem_jetClosure
+
+/-- The jet of an element of `S` in `jetClosure p S` is its `Lᵖ` jet. -/
+@[simp]
+theorem coe_toJetClosure (ξ : S) :
+    (toJetClosure p S ξ : Lp (V × V × V) p stripMeasure) = jetLp p S ξ :=
+  (rfl)
+
+/-- The jet of an element of `S` in `jetClosure p S` is its `Lᵖ` jet, with the proof that it lies
+in `jetClosure p S`. -/
+theorem toJetClosure_apply (ξ : S) :
+    toJetClosure p S ξ = ⟨jetLp p S ξ, jetLp_mem_jetClosure ξ⟩ :=
+  (rfl)
+
+/-- The norm of the jet of an element of `S` in `jetClosure p S` is the `Lᵖ` norm of its jet on
+the strip. -/
+theorem norm_toJetClosure (ξ : S) :
+    ‖toJetClosure p S ξ‖ = (eLpNorm (jet (ξ : ℝ × ℝ → V)) p stripMeasure).toReal := by
+  rw [← Submodule.norm_coe, coe_toJetClosure, norm_jetLp]
+
+variable (p S) in
+/-- The jets of the elements of `S` are dense in `jetClosure p S`. -/
+theorem denseRange_toJetClosure : DenseRange (toJetClosure p S) := by
   rw [DenseRange, Subtype.dense_iff, ← range_comp]
-  exact (coe_jetClosure S).subset
+  exact (coe_jetClosure p S).subset
+
+/-- A closed subset of `jetClosure p S` containing the jets of all elements of `S` is
+everything. -/
+@[elab_as_elim]
+theorem jetClosure_induction {P : jetClosure p S → Prop} (hP : IsClosed {x | P x})
+    (h : ∀ ξ : S, P (toJetClosure p S ξ)) (x : jetClosure p S) : P x :=
+  (denseRange_toJetClosure p S).induction_on x hP h
+
+/-- A closed relation on `jetClosure p S` holding for the jets of all pairs of elements of `S`
+holds for all pairs. -/
+theorem jetClosure_induction₂ {P : jetClosure p S → jetClosure p S → Prop}
+    (hP : IsClosed {x : jetClosure p S × jetClosure p S | P x.1 x.2})
+    (h : ∀ ξ η : S, P (toJetClosure p S ξ) (toJetClosure p S η)) (x y : jetClosure p S) :
+    P x y :=
+  (denseRange_toJetClosure p S).induction_on₂ hP h x y
+
+/-- Every element of `jetClosure p S` is the limit of the jets of a sequence of elements of
+`S`. -/
+theorem exists_seq_tendsto_toJetClosure (x : jetClosure p S) :
+    ∃ ξ : ℕ → S, Tendsto (fun n ↦ toJetClosure p S (ξ n)) atTop (𝓝 x) := by
+  obtain ⟨y, hy, hlim⟩ := mem_closure_iff_seq_limit.1 (denseRange_toJetClosure p S x)
+  choose ξ hξ using hy
+  exact ⟨ξ, by simpa only [hξ] using hlim⟩
+
+/-- Limits of bounded continuous functions depending continuously on `x : jetClosure p S` pass
+from the jets of the elements of `S` to all of `jetClosure p S`: if `T x` tends to `w` along `l`
+whenever `x` is the jet of an element of `S`, then it does so for every `x`, since `T x` is a
+uniform limit of such functions. -/
+theorem tendsto_of_forall_tendsto_toJetClosure {X W : Type*} [TopologicalSpace X]
+    [PseudoMetricSpace W] {T : jetClosure p S → X →ᵇ W} (hT : Continuous T) {l : Filter X}
+    {w : W} (h : ∀ ξ : S, Tendsto (T (toJetClosure p S ξ)) l (𝓝 w)) (x : jetClosure p S) :
+    Tendsto (T x) l (𝓝 w) := by
+  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toJetClosure x
+  exact (BoundedContinuousFunction.tendsto_iff_tendstoUniformly.1
+    ((hT.tendsto x).comp hξ)).tendsto_of_eventually_tendsto (L := fun _ ↦ w)
+    (Eventually.of_forall fun n ↦ h (ξ n)) tendsto_const_nhds
+
+/-- Continuous representatives pass from the jets of the elements of `S` to all of
+`jetClosure p S`: if `T x`, read through `φ`, agrees almost everywhere on the strip with the value
+of `x`, the first component of its `Lᵖ` jet, whenever `x` is the jet of an element of `S`, then it
+does so for every `x`. -/
+theorem fst_ae_eq_of_forall_toJetClosure {X : Type*} [TopologicalSpace X]
+    {T : jetClosure p S → X →ᵇ V} (hT : Continuous T) {φ : ℝ × ℝ → X}
+    (h : ∀ ξ : S, (fun z ↦ ((toJetClosure p S ξ : Lp (V × V × V) p stripMeasure) z).1)
+      =ᵐ[stripMeasure] fun z ↦ T (toJetClosure p S ξ) (φ z))
+    (x : jetClosure p S) :
+    (fun z ↦ ((x : Lp (V × V × V) p stripMeasure) z).1) =ᵐ[stripMeasure] fun z ↦ T x (φ z) := by
+  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toJetClosure x
+  -- The jets converge in `Lᵖ`, so a subsequence converges almost everywhere.
+  obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp
+    ((continuous_subtypeVal.tendsto x).comp hξ)).exists_seq_tendsto_ae
+  -- The functions `T` of the jets converge uniformly, so pointwise.
+  have hT' := ((hT.tendsto x).comp hξ).comp hmono.tendsto_atTop
+  filter_upwards [hns, ae_all_iff.2 fun n ↦ h (ξ (ns n))] with z hz hzn
+  refine tendsto_nhds_unique ((continuous_fst.tendsto _).comp hz) ?_
+  exact (((continuous_eval_const (φ z)).tendsto _).comp hT').congr
+    fun n ↦ (hzn n).symm
 
 end JetLp
 
 /-! ### Spaces of sections invariant under translation -/
 
 /-- A space `S` of maps `ξ : ℝ × ℝ → V` that is invariant under translation in the `s` direction,
-`ξ ↦ ξ (· + a, ·)`. Translation then acts on `jetClosure S` as a linear isometric equivalence
+`ξ ↦ ξ (· + a, ·)`. Translation then acts on `jetClosure p S` as a linear isometric equivalence
 (`TauCeti.StripSobolev.translate`). -/
 class IsTranslationInvariant (S : Submodule ℝ (ℝ × ℝ → V)) : Prop where
   /-- The translate `ξ (· + a, ·)` of an element of `S` lies in `S`. -/
@@ -743,64 +796,76 @@ class IsTranslationInvariant (S : Submodule ℝ (ℝ × ℝ → V)) : Prop where
 
 section Translate
 
-variable {S : Submodule ℝ (ℝ × ℝ → V)} [HasL2Jets S] [IsTranslationInvariant S]
+variable {p : ℝ≥0∞} {S : Submodule ℝ (ℝ × ℝ → V)} [HasLpJets p S] [IsTranslationInvariant S]
 
-/-- The translate of the `L²` jet of an element of `S` is the `L²` jet of its translate. -/
-theorem translateLp_jetLp (a : ℝ) (ξ : S) :
-    translateLp a (jetLp S ξ) =
-      jetLp S ⟨_, IsTranslationInvariant.comp_add_right_mem _ ξ.property a⟩ := by
+variable (p) in
+/-- The translate of the `Lᵖ` jet of an element of `S` is the `Lᵖ` jet of its translate. -/
+theorem translateLp_jetLp [Fact (1 ≤ p)] (a : ℝ) (ξ : S) :
+    translateLp a (jetLp p S ξ) =
+      jetLp p S ⟨_, IsTranslationInvariant.comp_add_right_mem _ ξ.property a⟩ := by
   refine Lp.ext_iff.2 ?_
-  filter_upwards [coeFn_translateLp a (jetLp S ξ),
-    (measurePreserving_add_strip a).quasiMeasurePreserving.ae_eq_comp (coeFn_jetLp ξ),
-    coeFn_jetLp ⟨_, IsTranslationInvariant.comp_add_right_mem _ ξ.property a⟩] with z h₁ h₂ h₃
+  filter_upwards [coeFn_translateLp a (jetLp p S ξ),
+    (measurePreserving_add_strip a).quasiMeasurePreserving.ae_eq_comp (coeFn_jetLp p ξ),
+    coeFn_jetLp p ⟨_, IsTranslationInvariant.comp_add_right_mem _ ξ.property a⟩] with z h₁ h₂ h₃
   rw [h₁, h₃, jet_comp_add_right]
   exact h₂
 
-/-- Translation maps `jetClosure S` into itself. -/
-theorem translateLp_mem_jetClosure (a : ℝ) {f : Lp (V × V × V) 2 stripMeasure}
-    (hf : f ∈ jetClosure S) : translateLp a f ∈ jetClosure S := by
-  have h : (jetClosure S : Set (Lp (V × V × V) 2 stripMeasure)) ⊆
-      translateLp a ⁻¹' jetClosure S :=
+variable [Fact (1 ≤ p)]
+
+/-- Translation maps `jetClosure p S` into itself. -/
+theorem translateLp_mem_jetClosure (a : ℝ) {f : Lp (V × V × V) p stripMeasure}
+    (hf : f ∈ jetClosure p S) : translateLp a f ∈ jetClosure p S := by
+  have h : (jetClosure p S : Set (Lp (V × V × V) p stripMeasure)) ⊆
+      translateLp a ⁻¹' jetClosure p S :=
     jetClosure_subset_of_isClosed
-      ((isClosed_jetClosure S).preimage (translateLp a).continuous) <| by
+      ((isClosed_jetClosure p S).preimage (translateLp a).continuous) <| by
       rintro _ ⟨ξ, rfl⟩
       rw [mem_preimage, translateLp_jetLp]
       exact jetLp_mem_jetClosure _
   exact h hf
 
-/-- An `L²` jet lies in `jetClosure S` exactly when its translate does: translation maps
-`jetClosure S` onto itself. -/
+/-- An `Lᵖ` jet lies in `jetClosure p S` exactly when its translate does: translation maps
+`jetClosure p S` onto itself. -/
 @[simp]
-theorem translateLp_mem_jetClosure_iff (a : ℝ) {f : Lp (V × V × V) 2 stripMeasure} :
-    translateLp a f ∈ jetClosure S ↔ f ∈ jetClosure S := by
+theorem translateLp_mem_jetClosure_iff (a : ℝ) {f : Lp (V × V × V) p stripMeasure} :
+    translateLp a f ∈ jetClosure p S ↔ f ∈ jetClosure p S := by
   refine ⟨fun h ↦ ?_, translateLp_mem_jetClosure a⟩
   simpa using translateLp_mem_jetClosure (-a) h
 
-variable (S) in
+variable (p S) in
 /-- Translation by `a` in the `s` direction, `x ↦ x (· + a, ·)`, as a linear isometric
-equivalence of `jetClosure S`. Its inverse is translation by `-a`
+equivalence of `jetClosure p S`. Its inverse is translation by `-a`
 (`TauCeti.StripSobolev.translate_symm`). -/
-def translate (a : ℝ) : jetClosure S ≃ₗᵢ[ℝ] jetClosure S :=
-  ((translateLp a).submoduleMap (jetClosure S)).trans <|
+def translate (a : ℝ) : jetClosure p S ≃ₗᵢ[ℝ] jetClosure p S :=
+  ((translateLp a).submoduleMap (jetClosure p S)).trans <|
     LinearIsometryEquiv.ofEq _ _ <| le_antisymm
       (Submodule.map_le_iff_le_comap.2 fun _ ↦ translateLp_mem_jetClosure a)
       fun f hf ↦ ⟨_, translateLp_mem_jetClosure (-a) hf, by simp⟩
 
-/-- Translation on `jetClosure S` is translation of `L²` jets. -/
+/-- Translation on `jetClosure p S` is translation of `Lᵖ` jets. -/
 @[simp]
-theorem coe_translate (a : ℝ) (x : jetClosure S) :
-    (translate S a x : Lp (V × V × V) 2 stripMeasure) = translateLp a x :=
+theorem coe_translate (a : ℝ) (x : jetClosure p S) :
+    (translate p S a x : Lp (V × V × V) p stripMeasure) = translateLp a x :=
   (rfl)
 
-/-- The inverse of translation by `a` on `jetClosure S` is translation by `-a`. -/
+/-- Translation of the jet of an element of `S` is the jet of its translate. -/
 @[simp]
-theorem translate_symm (a : ℝ) : (translate S a).symm = translate S (-a) :=
-  LinearIsometryEquiv.ext fun x ↦ (translate S a).symm_apply_eq.2 <| Subtype.ext <| by simp
+theorem translate_toJetClosure (a : ℝ) (ξ : S) :
+    translate p S a (toJetClosure p S ξ) =
+      toJetClosure p S ⟨_, IsTranslationInvariant.comp_add_right_mem _ ξ.property a⟩ :=
+  Subtype.ext <| by rw [coe_translate, coe_toJetClosure, coe_toJetClosure, translateLp_jetLp]
 
-/-- **The `W^{1,2}` norm is translation invariant**: an element of `S` and its translate in the
-`s` direction have `L²` jets of the same norm. -/
+/-- The inverse of translation by `a` on `jetClosure p S` is translation by `-a`. -/
+@[simp]
+theorem translate_symm (a : ℝ) : (translate p S a).symm = translate p S (-a) :=
+  LinearIsometryEquiv.ext fun x ↦ (translate p S a).symm_apply_eq.2 <| Subtype.ext <| by simp
+
+variable (p) in
+/-- **The `W^{1,p}` norm is translation invariant**: an element of `S` and its translate in the
+`s` direction have `Lᵖ` jets of the same norm. -/
 theorem norm_jetLp_comp_add_right (a : ℝ) (ξ : S) :
-    ‖jetLp S ⟨_, IsTranslationInvariant.comp_add_right_mem _ ξ.property a⟩‖ = ‖jetLp S ξ‖ := by
+    ‖jetLp p S ⟨_, IsTranslationInvariant.comp_add_right_mem _ ξ.property a⟩‖ =
+      ‖jetLp p S ξ‖ := by
   rw [← translateLp_jetLp, LinearIsometryEquiv.norm_map]
 
 end Translate

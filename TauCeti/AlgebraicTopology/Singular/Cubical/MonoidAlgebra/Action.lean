@@ -83,6 +83,12 @@ theorem actMap_apply (x : Y × G) : actMap Y G x = op x.2 • x.1 :=
 
 end ActMap
 
+/-- For a topological magma acting on itself by right multiplication, the action map is the
+multiplication map. -/
+theorem actMap_self {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] :
+    actMap G G = mulMap G :=
+  ContinuousMap.ext fun x ↦ by rw [actMap_apply, mulMap_apply, op_smul_eq_mul]
+
 namespace NormalizedCubicalChain
 
 section Act
@@ -214,9 +220,7 @@ variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} 
 Pontryagin product. -/
 theorem act_eq_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
     (b : NormalizedCubicalChain G R q) : act G G R p q a b = mul G R p q a b := by
-  have h : actMap G G = mulMap G :=
-    ContinuousMap.ext fun x ↦ by rw [actMap_apply, mulMap_apply, op_smul_eq_mul]
-  rw [act_def, mul_def, h]
+  rw [act_def, mul_def, actMap_self]
 
 end Self
 
@@ -738,6 +742,23 @@ theorem cubicalChainModuleLinearMap_linearMap (f : C(Y, Y')) (g : C(Y', Y''))
     cubicalChainModuleLinearMap (G := G') (G' := G'') R g (cubicalChainModuleLinearMap R f x) =
       cubicalChainModuleLinearMap R (g.comp f) x :=
   (LinearMap.congr_fun (cubicalChainModuleLinearMap_comp f g) x).symm
+
+/-- A left inverse `g` of `f` induces a left inverse of the induced map, whatever the phantom
+monoid of the middle module. -/
+theorem cubicalChainModuleLinearMap_linearMap_of_comp_eq_id {f : C(Y, Y')} {g : C(Y', Y)}
+    (h : g.comp f = .id Y) (x : cubicalChainModule Y G R) :
+    cubicalChainModuleLinearMap (G := G') R g (cubicalChainModuleLinearMap R f x) = x := by
+  rw [cubicalChainModuleLinearMap_linearMap, h, cubicalChainModuleLinearMap_id, LinearMap.id_apply]
+
+/-- A left inverse `g` of `f` induces a left inverse of the induced map on finitely supported
+vectors of chains, whatever the phantom monoid of the middle module. -/
+theorem mapRange_cubicalChainModuleLinearMap_mapRange_of_comp_eq_id {P : Type*} {f : C(Y, Y')}
+    {g : C(Y', Y)} (h : g.comp f = .id Y) (u : P →₀ cubicalChainModule Y G R) :
+    Finsupp.mapRange.linearMap (cubicalChainModuleLinearMap (G := G') R g)
+      (Finsupp.mapRange.linearMap (cubicalChainModuleLinearMap R f) u) = u :=
+  Finsupp.ext fun x ↦ by
+    simp only [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply,
+      cubicalChainModuleLinearMap_linearMap_of_comp_eq_id h]
 
 variable (Y G G' R) in
 /-- The change of phantom monoid: the map induced by the identity of `Y` is a linear equivalence

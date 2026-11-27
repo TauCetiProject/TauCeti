@@ -49,11 +49,14 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
   reassociation.
 * `LinearMap.tensorComponent_mul`: contracting a product in an algebra tensor product against a
   functional which splits on products splits the contraction accordingly.
-* `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
+* `LinearMap.lid_lTensor_apply` and `LinearMap.rid_rTensor_apply`: naturality of the left and
+  right tensor unitors.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
 * `TensorProduct.tmul_multiset_sum`, `TensorProduct.multiset_sum_tmul`: a pure tensor with a
   multiset sum in one factor is the sum of the pure tensors.
+* `TensorProduct.map_neg_left` and `TensorProduct.map_neg_right`: negating either argument of
+  `TensorProduct.map` negates the tensor-product map.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
@@ -69,6 +72,11 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
   the first two factors.
 * `TensorProduct.CompatibleSMul.tensorProduct`: `K`-balanced and `R`-balanced tensors agreeing in
   `M ⊗[R] N` agree in `M ⊗[R] (N ⊗[K] P)`.
+* `TensorProduct.map_sum_left` and `TensorProduct.map_sum_right`: the tensor product of linear maps
+  is additive in each factor over finite sums.
+* `TensorProduct.map_sub_left` and `TensorProduct.map_sub_right`, with their applied forms
+  `TensorProduct.map_sub_left_apply` and `TensorProduct.map_sub_right_apply`: the tensor product of
+  linear maps is subtractive in each factor.
 
 ## References
 
@@ -297,6 +305,14 @@ theorem tensorComponent_mul {A C : Type*} [Semiring A] [Algebra R A] [Semiring C
 
 end
 
+/-- The left tensor unitor is natural with respect to a linear map in its right factor. -/
+@[simp]
+theorem lid_lTensor_apply (f : M →ₗ[R] N) (t : R ⊗[R] M) :
+    TensorProduct.lid R N (lTensor R f t) = f (TensorProduct.lid R M t) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul r m => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 /-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
 @[simp]
 theorem rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
@@ -435,6 +451,25 @@ theorem map_sub_sub_add_eq {R : Type*} [CommSemiring R] {P : Type*} [AddCommGrou
     LinearMap.lTensor_def]
   abel
 
+/-- Negating the left map of `TensorProduct.map` negates the tensor-product map. -/
+@[simp]
+theorem map_neg_left {R₁ R₂ M N M₂ N₂ : Type*} [CommSemiring R₁] [CommSemiring R₂]
+    {σ₁₂ : R₁ →+* R₂} [AddCommMonoid M] [Module R₁ M] [AddCommMonoid N] [Module R₁ N]
+    [AddCommGroup M₂] [Module R₂ M₂] [AddCommMonoid N₂] [Module R₂ N₂]
+    (f : M →ₛₗ[σ₁₂] M₂) (g : N →ₛₗ[σ₁₂] N₂) :
+    map (-f) g = -map f g := by
+  simpa only [LinearMap.flip_apply, mapBilinear_apply] using
+    map_neg ((mapBilinear σ₁₂ M N M₂ N₂).flip g) f
+
+/-- Negating the right map of `TensorProduct.map` negates the tensor-product map. -/
+@[simp]
+theorem map_neg_right {R₁ R₂ M N M₂ N₂ : Type*} [CommSemiring R₁] [CommSemiring R₂]
+    {σ₁₂ : R₁ →+* R₂} [AddCommMonoid M] [Module R₁ M] [AddCommMonoid N] [Module R₁ N]
+    [AddCommGroup M₂] [Module R₂ M₂] [AddCommGroup N₂] [Module R₂ N₂]
+    (f : M →ₛₗ[σ₁₂] M₂) (g : N →ₛₗ[σ₁₂] N₂) :
+    map f (-g) = -map f g := by
+  simpa only [mapBilinear_apply] using map_neg (mapBilinear σ₁₂ M N M₂ N₂ f) g
+
 variable {P Q : Type*} [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
 
 /-- Exchanging the factors of both arguments of `tensorTensorTensorComm` exchanges the factors of
@@ -552,5 +587,47 @@ instance CompatibleSMul.tensorProduct [CompatibleSMul R K M N] :
         (TensorProduct.smul_tmul (R := R) k m n)
 
 end CompatibleSMul
+
+/-- The tensor product of linear maps is additive in its left factor, over a finite sum. -/
+theorem map_sum_left {ι : Type*} (s : Finset ι) (f : ι → M →ₗ[R] P) (g : N →ₗ[R] Q) :
+    map (∑ i ∈ s, f i) g = ∑ i ∈ s, map (f i) g := by
+  simp only [← mapBilinear_apply, map_sum, LinearMap.sum_apply]
+
+/-- The tensor product of linear maps is additive in its right factor, over a finite sum. -/
+theorem map_sum_right {ι : Type*} (s : Finset ι) (f : M →ₗ[R] P) (g : ι → N →ₗ[R] Q) :
+    map f (∑ i ∈ s, g i) = ∑ i ∈ s, map f (g i) := by
+  simp only [← mapBilinear_apply, map_sum]
+
+end TensorProduct
+
+namespace TensorProduct
+
+variable {R M N P Q : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N]
+
+/-- The tensor product of linear maps is subtractive in its left factor. -/
+theorem map_sub_left [AddCommGroup P] [Module R P] [AddCommMonoid Q] [Module R Q]
+    (f₁ f₂ : M →ₗ[R] P) (g : N →ₗ[R] Q) : map (f₁ - f₂) g = map f₁ g - map f₂ g := by
+  simp only [← mapBilinear_apply, map_sub, LinearMap.sub_apply]
+
+/-- `TensorProduct.map_sub_left`, applied to an element.  This form only uses subtraction in
+`P ⊗[R] Q`, so it also applies where the linear endomorphisms of a tensor product have no
+synthesizable subtraction, as for the tensor square of a direct sum. -/
+theorem map_sub_left_apply [AddCommGroup P] [Module R P] [AddCommMonoid Q] [Module R Q]
+    (f₁ f₂ : M →ₗ[R] P) (g : N →ₗ[R] Q) (z : M ⊗[R] N) :
+    map (f₁ - f₂) g z = map f₁ g z - map f₂ g z := by
+  rw [map_sub_left, LinearMap.sub_apply]
+
+/-- The tensor product of linear maps is subtractive in its right factor.  The left target is an
+additive group too, since Mathlib's negation on `P ⊗[R] Q` comes from the left factor. -/
+theorem map_sub_right [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q]
+    (f : M →ₗ[R] P) (g₁ g₂ : N →ₗ[R] Q) : map f (g₁ - g₂) = map f g₁ - map f g₂ := by
+  simp only [← mapBilinear_apply, map_sub]
+
+/-- `TensorProduct.map_sub_right`, applied to an element. -/
+theorem map_sub_right_apply [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q]
+    (f : M →ₗ[R] P) (g₁ g₂ : N →ₗ[R] Q) (z : M ⊗[R] N) :
+    map f (g₁ - g₂) z = map f g₁ z - map f g₂ z := by
+  rw [map_sub_right, LinearMap.sub_apply]
 
 end TensorProduct

@@ -23,8 +23,13 @@ describes left multiplication of an arbitrary matrix by `1 + c Eᵢⱼ`.
 and `Matrix.submodule_eq_top_of_single_one_mem` shows that the matrix units span all matrices.
 
 `Matrix.singleNonUnitalAlgHom` bundles the diagonal corner `x ↦ Matrix.single r r x` as a nonunital
-algebra homomorphism, accompanied by column, row, and entry matrix-unit identities valid without
-associativity.
+algebra homomorphism, and `Matrix.singleNonUnitalStarRingHom` bundles the same corner as a
+nonunital star ring homomorphism. They are accompanied by column, row, and entry matrix-unit
+identities valid without associativity.
+
+`Matrix.single_mul_apply` and `Matrix.mul_single_apply` give the entries of a product with a
+matrix unit on either side as one formula, combining Mathlib's matching-index and unequal-index
+cases.
 
 Two off-diagonal matrix units witness that transposition does not preserve all products.
 
@@ -130,6 +135,21 @@ def singleNonUnitalAlgHom [Monoid R] [DistribMulAction R A] (r : n) : A →ₙ�
     (singleNonUnitalAlgHom R (A := A) r : A →ₗ[R] Matrix n n A) = singleLinearMap R r r := (rfl)
 end SingleCorner
 
+section SingleStarCorner
+variable (A : Type*) {n : Type*} [NonUnitalNonAssocSemiring A] [StarRing A] [Fintype n]
+  [DecidableEq n]
+
+/-- The diagonal corner embedding `x ↦ Matrix.single r r x` as a nonunital star ring
+homomorphism. -/
+def singleNonUnitalStarRingHom (r : n) : A →⋆ₙ+* Matrix n n A where
+  __ := (singleAddMonoidHom r r : A →+ Matrix n n A)
+  map_mul' x y := (single_mul_single_same x r r r y).symm
+  map_star' x := (conjTranspose_single r r x).symm
+/-- Evaluating `Matrix.singleNonUnitalStarRingHom` places its input in the `(r, r)` entry. -/
+@[simp] theorem singleNonUnitalStarRingHom_apply (r : n) (x : A) :
+    singleNonUnitalStarRingHom A r x = single r r x := (rfl)
+end SingleStarCorner
+
 section NonAssoc
 variable {l m n o p A : Type*} [NonAssocSemiring A]
 
@@ -186,6 +206,24 @@ theorem sum_single_mul_single {l m n o p q A : Type*} [NonUnitalNonAssocSemiring
     (Y : Matrix m n A) (i : l) (j : n) (r : o) (s : p) (t : q) :
     ∑ u : m, single r s (X i u) * single s t (Y u j) = single r t ((X * Y) i j) := by
   simp_rw [single_mul_single_same]; ext u v; simp [Matrix.sum_apply, Matrix.mul_apply, single]
+
+section SingleMulApply
+variable {l m n α : Type*} [Fintype m] [NonUnitalNonAssocSemiring α] (c : α)
+
+/-- Left multiplication by `single i j c` moves row `j` to row `i`, scaled by `c`. -/
+theorem single_mul_apply [DecidableEq l] [DecidableEq m] (i : l) (j : m) (M : Matrix m n α)
+    (a : l) (b : n) : (single i j c * M) a b = if a = i then c * M j b else 0 := by
+  split_ifs with h
+  · rw [h, single_mul_apply_same]
+  · exact single_mul_apply_of_ne c i j a b h M
+
+/-- Right multiplication by `single i j c` moves column `i` to column `j`, scaled by `c`. -/
+theorem mul_single_apply [DecidableEq m] [DecidableEq n] (i : m) (j : n) (M : Matrix l m α)
+    (a : l) (b : n) : (M * single i j c) a b = if b = j then M a i * c else 0 := by
+  split_ifs with h
+  · rw [h, mul_single_apply_same]
+  · exact mul_single_apply_of_ne c i j a b h M
+end SingleMulApply
 
 /-- A matrix with one nonzero entry `c` is `c` times the corresponding matrix unit. -/
 theorem single_eq_smul_single_one {m n R : Type*} [DecidableEq m] [DecidableEq n]
