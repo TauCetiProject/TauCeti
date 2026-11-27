@@ -15,7 +15,6 @@ import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 import TauCeti.Algebra.Category.Grp.Pushout
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
-import TauCeti.AlgebraicTopology.FundamentalGroup.CoverGeneration
 import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 import TauCeti.Topology.Homotopy.DeformationRetract
@@ -45,20 +44,20 @@ the presentation of `π₁(M)` by a Heegaard diagram, in which the two kernels a
 by the `α` and the `β` curves (an identification not made here), and the form from which the first
 homology of `M` is computed by abelianization.
 
-Both results are applications of the Seifert–van Kampen theorem
-(`TauCeti.FundamentalGroup.range_map_subtypeVal_sup_eq_top`, `TauCeti.isPushout_fundamentalGroup`).
-The generation half is applied to the cover of `M` by `H₂` and a thickening `N` of `H₁`: the union
-of `H₁` with an open neighbourhood `W₂` of the boundary surface in `H₂` that deformation retracts
-onto it (`TauCeti.exists_deformation_frontier_handlebody`). The interiors of `N` and `H₂` cover
-`M`, because by invariance of domain the frontier of `H₂` is the boundary surface
-(`TauCeti.HeegaardSplitting.coe_mem_left_iff`). Since `N` deformation retracts onto `H₁`, loops in
-`N` come from `H₁`; since the boundary surface carries the fundamental group of `H₂`
-(`TauCeti.fundamentalGroup_map_frontier_handlebody_surjective`), loops in `H₂` are homotopic in
-`H₂` to loops on the boundary surface, which lies in `H₁`. For the amalgamated product, `H₂` is
-thickened in the same way by a neighbourhood `W₁` of the boundary surface in `H₁`; the two
-thickenings deformation retract onto `H₁` and `H₂`, and their intersection `W₁ ∪ W₂` onto the
-Heegaard surface. A pushout of groups along surjections is a quotient of the corner
-(`CategoryTheory.IsPushout.ker_comp_eq_sup_of_surjective`), which gives the presentation.
+Both results come from the Seifert–van Kampen theorem (`TauCeti.isPushout_fundamentalGroup`),
+applied to thickenings of the two handlebodies. The first handlebody `H₁` is thickened to the
+union `H₁ ∪ W₂` with an open neighbourhood `W₂` of the boundary surface in `H₂` that deformation
+retracts onto it (`TauCeti.exists_deformation_frontier_handlebody`), and `H₂` is thickened in the
+same way by a neighbourhood `W₁` of the boundary surface in `H₁`. The interiors of the two
+thickenings cover `M`, because by invariance of domain the frontier of each handlebody is the
+boundary surface (`TauCeti.HeegaardSplitting.coe_mem_left_iff`). The two thickenings deformation
+retract onto `H₁` and `H₂`, and their intersection `W₁ ∪ W₂` onto the Heegaard surface, which gives
+the amalgamated product. The boundary surface carries the fundamental group of each handlebody
+(`TauCeti.fundamentalGroup_map_frontier_handlebody_surjective`), and a pushout of groups along
+surjections is a quotient of the corner (`CategoryTheory.IsPushout.surjective_comp_of_surjective`,
+`CategoryTheory.IsPushout.ker_comp_eq_sup_of_surjective`), which gives the presentation. Since
+loops in `M` come from the Heegaard surface, they come from either handlebody, which gives the
+surjectivity from `π₁(Hᵢ)`.
 
 ## Main results
 
@@ -158,29 +157,6 @@ theorem fundamentalGroup_map_inclusion_inter_right_surjective (hE : finrank ℝ 
   exact fundamentalGroup_map_inclusion_frontier_surjective inter_subset_right eR
     (fun p ↦ (and_iff_left p.property).trans (s.coe_mem_left_iff hE eR p)) x
 
-/-- **Loops in the second handlebody come from the first.** At a point of the Heegaard surface,
-every loop in the second handlebody is homotopic in it to a loop on the boundary surface, which
-lies in the first handlebody. -/
-private theorem range_map_right_le_range_map_left (hE : finrank ℝ E = 3)
-    (e : s.right ≃ₜ handlebody s.genus)
-    (y : {y : handlebody s.genus | (y : ℂ × ℝ) ∈ frontier (handlebody s.genus)})
-    (hy : ((e.symm y : s.right) : M) ∈ s.left) :
-    (FundamentalGroup.map (ContinuousMap.subtypeVal s.right) (e.symm y)).range ≤
-      (FundamentalGroup.map (ContinuousMap.subtypeVal s.left) ⟨_, hy⟩).range := by
-  rintro _ ⟨γ, rfl⟩
-  -- The loop `γ` is homotopic in the second handlebody to a loop `δ` on the Heegaard surface.
-  obtain ⟨δ, rfl⟩ := s.fundamentalGroup_map_inclusion_inter_right_surjective hE
-    (⟨_, hy, (e.symm y).property⟩ : ↥(s.left ∩ s.right)) γ
-  refine ⟨FundamentalGroup.map (ContinuousMap.inclusion inter_subset_left) _ δ, ?_⟩
-  -- Both sides are the image of `δ` under the inclusion of the Heegaard surface, read through
-  -- either handlebody; the composites of inclusions agree by definition, and as the base point
-  -- of the target group depends on the map, the chain closes by unfolding.
-  have h₁ := DFunLike.congr_fun (_root_.FundamentalGroup.map_comp
-    (ContinuousMap.subtypeVal s.left) (ContinuousMap.inclusion inter_subset_left) _) δ
-  have h₂ := DFunLike.congr_fun (_root_.FundamentalGroup.map_comp
-    (ContinuousMap.subtypeVal s.right) (ContinuousMap.inclusion inter_subset_right) _) δ
-  rw [MonoidHom.comp_apply] at h₁ h₂
-  exact h₁.symm.trans h₂
 
 /-! ### Deforming collars of the Heegaard surface -/
 
@@ -314,106 +290,13 @@ private theorem exists_homotopyEquiv_union {L R : Set M} (hL : IsClosed L) (hR :
     · exact hHR (1, a) ha ▸ collarDeform_one_mem e F hV hmem hF₁ a ha
     · exact hHL (1, a) ((hLR a).resolve_right ha) ▸ (hLR a).resolve_right ha
 
-/-- **The van Kampen argument.** At some point of the Heegaard surface, the fundamental group of
-the first handlebody surjects onto that of the manifold. The space is covered by the second
-handlebody and the union `N` of the first with a neighbourhood `W` of the Heegaard surface in the
-second; loops in `N` come from the first handlebody since `N` deformation retracts onto it, and
-so do loops in the second handlebody. -/
-private theorem exists_fundamentalGroup_map_left_surjective (hE : finrank ℝ E = 3) :
-    ∃ x : s.left, Function.Surjective
-      (FundamentalGroup.map (ContinuousMap.subtypeVal s.left) x) := by
-  obtain ⟨e⟩ := s.nonempty_homeomorph_right
-  obtain ⟨V, hVo, hVc, hSV, F, hF₀, hF₁, hFfix⟩ := exists_deformation_frontier_handlebody s.genus
-  obtain ⟨eN, heN⟩ := exists_homotopyEquiv_union s.isClosed_left s.isClosed_right
-    s.union_eq_univ e (s.coe_mem_left_iff hE e) hSV F hF₀ hF₁ hFfix
-  have hWc := isPathConnected_image_preimage e hVc
-  let W : Set M := (↑) '' (e ⁻¹' V)
-  have hmemW (p : s.right) : (p : M) ∈ W ↔ e p ∈ V := Subtype.val_injective.mem_set_image
-  have hLRW {p : M} (hpL : p ∈ s.left) (hpR : p ∈ s.right) : p ∈ W :=
-    (hmemW ⟨p, hpR⟩).2 (hSV ((s.coe_mem_left_iff hE e ⟨p, hpR⟩).1 hpL))
-  have hNR : (s.left ∪ W) ∩ s.right = W := by
-    refine Subset.antisymm ?_ fun p hp ↦ ⟨.inr hp, Subtype.coe_image_subset _ _ hp⟩
-    rintro p ⟨hpL | hpW, hpR⟩
-    exacts [hLRW hpL hpR, hpW]
-  have hcover : interior (s.left ∪ W) ∪ interior s.right = univ :=
-    s.interior_union_interior_right_eq_univ
-      (by rw [Subtype.val_injective.preimage_image]; exact hVo.preimage e.continuous)
-      fun p hp ↦ hLRW hp.1 hp.2
-  -- The base point: the point of the Heegaard surface over a point of the boundary surface.
-  obtain ⟨y₀, hy₀, -⟩ := isPathConnected_frontier_handlebody s.genus
-  let y : {y : handlebody s.genus | (y : ℂ × ℝ) ∈ frontier (handlebody s.genus)} :=
-    ⟨⟨y₀, (isClosed_handlebody s.genus).frontier_subset hy₀⟩, hy₀⟩
-  have hyL : ((e.symm y : s.right) : M) ∈ s.left := by
-    rw [s.coe_mem_left_iff hE e, Homeomorph.apply_symm_apply]
-    exact y.property
-  refine ⟨⟨_, hyL⟩, MonoidHom.range_eq_top.1 (eq_top_iff.2 ?_)⟩
-  have : PathConnectedSpace s.left :=
-    s.nonempty_homeomorph_left.some.symm.toHomotopyEquiv.pathConnectedSpace
-  have : PathConnectedSpace s.right := e.symm.toHomotopyEquiv.pathConnectedSpace
-  refine (FundamentalGroup.range_map_subtypeVal_sup_eq_top hcover
-    (isPathConnected_iff_pathConnectedSpace.2 eN.pathConnectedSpace)
-    (isPathConnected_iff_pathConnectedSpace.2 inferInstance) (by rw [hNR]; exact hWc) (.inl hyL)
-    (e.symm y).property).ge.trans (sup_le ?_ (s.range_map_right_le_range_map_left hE e y hyL))
-  -- Loops in `N` come from the first handlebody.
-  have hbij := eN.fundamentalGroup_map_bijective ⟨_, hyL⟩
-  rw [heN] at hbij
-  rintro _ ⟨γ, rfl⟩
-  obtain ⟨δ, rfl⟩ := hbij.2 γ
-  have h := DFunLike.congr_fun (_root_.FundamentalGroup.map_comp
-    (ContinuousMap.subtypeVal (s.left ∪ W)) (ContinuousMap.inclusion subset_union_left)
-    ⟨_, hyL⟩) δ
-  rw [MonoidHom.comp_apply] at h
-  -- The composite `(subtypeVal (s.left ∪ W)).comp (inclusion subset_union_left)` in `h` is
-  -- `subtypeVal s.left` by definition; as the base point of the target group depends on the map,
-  -- `h` is used up to this unfolding rather than rewritten.
-  exact ⟨δ, h⟩
 
-/-- **The fundamental group of the first handlebody of a Heegaard splitting surjects onto that of
-the manifold.** For a Heegaard splitting of a manifold without boundary charted on a
-three-dimensional real normed space, the inclusion of the first handlebody induces a surjection
-of fundamental groups at every base point in it. -/
-theorem fundamentalGroup_map_left_surjective (hE : finrank ℝ E = 3) (x : s.left) :
-    Function.Surjective (FundamentalGroup.map (ContinuousMap.subtypeVal s.left) x) := by
-  obtain ⟨x₀, hx₀⟩ := s.exists_fundamentalGroup_map_left_surjective hE
-  have : PathConnectedSpace s.left :=
-    s.nonempty_homeomorph_left.some.symm.toHomotopyEquiv.pathConnectedSpace
-  exact FundamentalGroup.map_surjective_of_path _ (PathConnectedSpace.somePath x₀ x) hx₀
-
-/-- **The fundamental group of the second handlebody of a Heegaard splitting surjects onto that of
-the manifold.** For a Heegaard splitting of a manifold without boundary charted on a
-three-dimensional real normed space, the inclusion of the second handlebody induces a surjection
-of fundamental groups at every base point in it. -/
-theorem fundamentalGroup_map_right_surjective (hE : finrank ℝ E = 3) (x : s.right) :
-    Function.Surjective (FundamentalGroup.map (ContinuousMap.subtypeVal s.right) x) := by
-  have h := s.symm.fundamentalGroup_map_left_surjective hE
-  rw [symm_left] at h
-  exact h x
-
-include s in
-/-- **The fundamental group of a manifold with a Heegaard splitting is finitely generated.** This
-holds for a manifold without boundary charted on a three-dimensional real normed space, at every
-base point. -/
-theorem fg_fundamentalGroup (hE : finrank ℝ E = 3) (x : M) : Group.FG (FundamentalGroup M x) := by
-  rcases (s.union_eq_univ ▸ mem_univ x : x ∈ s.left ∪ s.right) with hx | hx
-  · obtain ⟨_, -⟩ := s.exists_fg_rank_le s.nonempty_homeomorph_left.some ⟨x, hx⟩
-    exact Group.fg_of_surjective (s.fundamentalGroup_map_left_surjective hE ⟨x, hx⟩)
-  · obtain ⟨_, -⟩ := s.exists_fg_rank_le s.nonempty_homeomorph_right.some ⟨x, hx⟩
-    exact Group.fg_of_surjective (s.fundamentalGroup_map_right_surjective hE ⟨x, hx⟩)
-
-/-- **The rank of the fundamental group is at most the genus of a Heegaard splitting.** For a
-manifold without boundary charted on a three-dimensional real normed space, the fundamental group
-is generated by as many elements as the genus of any Heegaard splitting, at every base point. -/
-theorem rank_fundamentalGroup_le_genus (hE : finrank ℝ E = 3) (x : M)
-    [Group.FG (FundamentalGroup M x)] : Group.rank (FundamentalGroup M x) ≤ s.genus := by
-  rcases (s.union_eq_univ ▸ mem_univ x : x ∈ s.left ∪ s.right) with hx | hx
-  · obtain ⟨_, hrank⟩ :=
-      s.exists_fg_rank_le s.nonempty_homeomorph_left.some ⟨x, hx⟩
-    exact (Group.rank_le_of_surjective (H := FundamentalGroup M x) _
-      (s.fundamentalGroup_map_left_surjective hE ⟨x, hx⟩)).trans hrank
-  · obtain ⟨_, hrank⟩ :=
-      s.exists_fg_rank_le s.nonempty_homeomorph_right.some ⟨x, hx⟩
-    exact (Group.rank_le_of_surjective (H := FundamentalGroup M x) _
-      (s.fundamentalGroup_map_right_surjective hE ⟨x, hx⟩)).trans hrank
+/-- An inclusion of subsets that underlies a homotopy equivalence induces a bijection of
+fundamental groups at every base point. -/
+private theorem fundamentalGroup_map_inclusion_bijective_of_homotopyEquiv {S T : Set M}
+    (hST : S ⊆ T) (e : S ≃ₕ T) (he : e.toFun = ContinuousMap.inclusion hST) (y : S) :
+    Function.Bijective (FundamentalGroup.map (ContinuousMap.inclusion hST) y) :=
+  he ▸ e.fundamentalGroup_map_bijective y
 
 /-! ### The fundamental group as an amalgamated product -/
 
@@ -546,13 +429,14 @@ theorem isPushout_fundamentalGroup (hE : finrank ℝ E = 3) {x : M} (hxL : x ∈
     (Or.inl hxL : x ∈ s.left ∪ (↑) '' (eR ⁻¹' V)) (Or.inl hxR : x ∈ s.right ∪ (↑) '' (eL ⁻¹' V))
   -- Transport the square along the isomorphisms induced by the three retractions; all the maps
   -- are induced by inclusions, so the four compatibility squares commute on representatives.
-  have hbij {S T : Set M} (hST : S ⊆ T) (e : S ≃ₕ T) (he : e.toFun = ContinuousMap.inclusion hST)
-      (y : S) : Function.Bijective (FundamentalGroup.map (ContinuousMap.inclusion hST) y) := by
-    have h := e.fundamentalGroup_map_bijective y
-    rwa [he] at h
-  refine hvk.of_iso' (MulEquiv.ofBijective _ (hbij _ eAB heAB ⟨x, hxL, hxR⟩)).toGrpIso
-    (MulEquiv.ofBijective _ (hbij _ eA heA ⟨x, hxL⟩)).toGrpIso
-    (MulEquiv.ofBijective _ (hbij _ eB heB ⟨x, hxR⟩)).toGrpIso (Iso.refl _) ?_ ?_ ?_ ?_ <;>
+  refine hvk.of_iso'
+    (MulEquiv.ofBijective _
+      (fundamentalGroup_map_inclusion_bijective_of_homotopyEquiv _ eAB heAB ⟨x, hxL, hxR⟩)).toGrpIso
+    (MulEquiv.ofBijective _
+      (fundamentalGroup_map_inclusion_bijective_of_homotopyEquiv _ eA heA ⟨x, hxL⟩)).toGrpIso
+    (MulEquiv.ofBijective _
+      (fundamentalGroup_map_inclusion_bijective_of_homotopyEquiv _ eB heB ⟨x, hxR⟩)).toGrpIso
+    (Iso.refl _) ?_ ?_ ?_ ?_ <;>
   · ext ⟨γ⟩
     induction γ using Path.Homotopic.Quotient.ind
     rfl
@@ -601,6 +485,65 @@ theorem ker_fundamentalGroup_map_inter (hE : finrank ℝ E = 3) {x : M} (hxL : x
     (s.fundamentalGroup_map_inclusion_inter_right_surjective hE _)
   rw [← s.fundamentalGroup_map_subtypeVal_comp_inclusion_inter_left hxL hxR]
   exact h
+
+/-! ### Surjectivity from the handlebodies and the rank -/
+
+/-- **The fundamental group of the first handlebody of a Heegaard splitting surjects onto that of
+the manifold.** For a Heegaard splitting of a manifold without boundary charted on a
+three-dimensional real normed space, the inclusion of the first handlebody induces a surjection
+of fundamental groups at every base point in it. -/
+theorem fundamentalGroup_map_left_surjective (hE : finrank ℝ E = 3) (x : s.left) :
+    Function.Surjective (FundamentalGroup.map (ContinuousMap.subtypeVal s.left) x) := by
+  -- A point of the Heegaard surface: the point over a point of the boundary surface.
+  obtain ⟨eR⟩ := s.nonempty_homeomorph_right
+  obtain ⟨y₀, hy₀, -⟩ := isPathConnected_frontier_handlebody s.genus
+  let y : handlebody s.genus := ⟨y₀, (isClosed_handlebody s.genus).frontier_subset hy₀⟩
+  have hyL : ((eR.symm y : s.right) : M) ∈ s.left := by
+    rw [s.coe_mem_left_iff hE eR, Homeomorph.apply_symm_apply]
+    exact hy₀
+  -- There, loops in the manifold come from the Heegaard surface, hence from the first handlebody.
+  have h := s.fundamentalGroup_map_inter_surjective hE hyL (eR.symm y).property
+  rw [← s.fundamentalGroup_map_subtypeVal_comp_inclusion_inter_left hyL (eR.symm y).property] at h
+  have : PathConnectedSpace s.left :=
+    s.nonempty_homeomorph_left.some.symm.toHomotopyEquiv.pathConnectedSpace
+  exact FundamentalGroup.map_surjective_of_path _ (PathConnectedSpace.somePath ⟨_, hyL⟩ x)
+    (Function.Surjective.of_comp h)
+
+/-- **The fundamental group of the second handlebody of a Heegaard splitting surjects onto that of
+the manifold.** For a Heegaard splitting of a manifold without boundary charted on a
+three-dimensional real normed space, the inclusion of the second handlebody induces a surjection
+of fundamental groups at every base point in it. -/
+theorem fundamentalGroup_map_right_surjective (hE : finrank ℝ E = 3) (x : s.right) :
+    Function.Surjective (FundamentalGroup.map (ContinuousMap.subtypeVal s.right) x) := by
+  have h := s.symm.fundamentalGroup_map_left_surjective hE
+  rw [symm_left] at h
+  exact h x
+
+include s in
+/-- **The fundamental group of a manifold with a Heegaard splitting is finitely generated.** This
+holds for a manifold without boundary charted on a three-dimensional real normed space, at every
+base point. -/
+theorem fg_fundamentalGroup (hE : finrank ℝ E = 3) (x : M) : Group.FG (FundamentalGroup M x) := by
+  rcases (s.union_eq_univ ▸ mem_univ x : x ∈ s.left ∪ s.right) with hx | hx
+  · obtain ⟨_, -⟩ := s.exists_fg_rank_le s.nonempty_homeomorph_left.some ⟨x, hx⟩
+    exact Group.fg_of_surjective (s.fundamentalGroup_map_left_surjective hE ⟨x, hx⟩)
+  · obtain ⟨_, -⟩ := s.exists_fg_rank_le s.nonempty_homeomorph_right.some ⟨x, hx⟩
+    exact Group.fg_of_surjective (s.fundamentalGroup_map_right_surjective hE ⟨x, hx⟩)
+
+/-- **The rank of the fundamental group is at most the genus of a Heegaard splitting.** For a
+manifold without boundary charted on a three-dimensional real normed space, the fundamental group
+is generated by as many elements as the genus of any Heegaard splitting, at every base point. -/
+theorem rank_fundamentalGroup_le_genus (hE : finrank ℝ E = 3) (x : M)
+    [Group.FG (FundamentalGroup M x)] : Group.rank (FundamentalGroup M x) ≤ s.genus := by
+  rcases (s.union_eq_univ ▸ mem_univ x : x ∈ s.left ∪ s.right) with hx | hx
+  · obtain ⟨_, hrank⟩ :=
+      s.exists_fg_rank_le s.nonempty_homeomorph_left.some ⟨x, hx⟩
+    exact (Group.rank_le_of_surjective (H := FundamentalGroup M x) _
+      (s.fundamentalGroup_map_left_surjective hE ⟨x, hx⟩)).trans hrank
+  · obtain ⟨_, hrank⟩ :=
+      s.exists_fg_rank_le s.nonempty_homeomorph_right.some ⟨x, hx⟩
+    exact (Group.rank_le_of_surjective (H := FundamentalGroup M x) _
+      (s.fundamentalGroup_map_right_surjective hE ⟨x, hx⟩)).trans hrank
 
 end HeegaardSplitting
 
