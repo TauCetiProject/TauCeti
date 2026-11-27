@@ -67,6 +67,8 @@ Such families of cutoffs exist on every compact manifold
 ## Main results
 
 * `TauCeti.denseRange_toChartSobolevSpace`: smooth functions are dense in `H^s(M)`.
+* `TauCeti.toChartSobolevSpace_injective`: for a chart partition, a smooth function is determined
+  by its element of `H^s(M)`.
 * `TauCeti.chartSobolevExtension_toChartSobolevSpace`, `TauCeti.chartSobolevExtension_eq`: the
   extension of an operator satisfying an a priori estimate agrees with it on smooth functions, and
   is the only continuous map that does; `TauCeti.chartSobolevExtension_comp`: extensions compose.
@@ -396,6 +398,18 @@ theorem chartSobolevExtension_comp {ν : Type*} [Fintype ν]
 
 variable (he ψ he' φ) [T2Space M]
 
+/-- **A smooth function is determined by its element of `H^s(M)`** when the readings `ψᵢ ∘ eᵢ` of
+the cutoffs on `M`, extended by `0`, add up to `1`: its readings `ψᵢ · (u ∘ eᵢ⁻¹)` are then its
+components, and they determine `u`. -/
+theorem toChartSobolevSpace_injective
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) (s : ℝ) :
+    Function.Injective (toChartSobolevSpace he ψ s) := by
+  refine (injective_iff_map_eq_zero _).2 fun u hu ↦
+    eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero he ψ hψ fun i ↦ ?_
+  refine SchwartzMap.toBesselPotentialSpaceCLM_injective s 2 ?_
+  rw [map_zero, ← chartReading_apply, ← coe_toChartSobolevSpace, hu, ZeroMemClass.coe_zero,
+    PiLp.zero_apply]
+
 /-- **Chart readings are controlled by those in a chart partition.** If the readings `ψᵢ ∘ eᵢ` of
 the cutoffs `ψᵢ` on `M`, extended by `0`, add up to `1`, then for any finitely many cutoffs `φⱼ` in
 charts `e'ⱼ` there is a constant `C` such that every smooth `u` on `M` satisfies
@@ -406,7 +420,7 @@ theorem exists_norm_chartReading_le
     ∃ C, ∀ u, ‖chartReading he' φ s u‖ ≤ C * ‖chartReading he ψ s u‖ := by
   choose C hC using fun j i ↦
     exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le (he' j) (he i)
-      (φ j) (ψ i) s
+      (φ j) (ψ i) ENNReal.one_lt_two ENNReal.ofNat_ne_top s
   refine ⟨∑ j, ∑ i, |C j i|, fun u ↦ ?_⟩
   -- `u = ∑ᵢ Ψᵢ u`, and each piece is read again in every chart `e'ⱼ`.
   have hu : u = ∑ i, LinearMap.mulLeft ℂ (ContMDiffMap.ofReal ((e i).cutoffPullback (he i) (ψ i) 1))

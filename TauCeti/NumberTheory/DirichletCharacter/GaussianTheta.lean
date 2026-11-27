@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-public import TauCeti.NumberTheory.LSeries.GaussianTheta
+public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 import TauCeti.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 

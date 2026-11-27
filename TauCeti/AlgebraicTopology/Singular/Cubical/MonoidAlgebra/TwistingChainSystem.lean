@@ -46,6 +46,13 @@ the system is a representing chain system, `G` is the Moore loops of a space `B`
 trajectories into loops, this is the **Barraud–Cornea cocycle**, the input of the Morse complex
 with coefficients in a DG local system.
 
+A twisting chain system can be pushed forward along maps `g x y : M x y → M' x y` compatible with
+the composition maps (`TauCeti.TwistingChainSystem.map`), and its twisting cocycle is then that of
+the system itself evaluated by the composites `q ∘ g`
+(`TauCeti.TwistingChainSystem.twistingCocycle_map`). This is how a homeomorphism of the
+compactified trajectory spaces compatible with breaking, such as a change of the levels on which
+broken trajectories are recorded, carries chain systems and their cocycles.
+
 ## Main definitions
 
 * `TauCeti.twistingChainSum`: the twisting sum `Σ_z (-1) ^ (ind x - ind z) • ι_* (s x z × s z y)`.
@@ -69,6 +76,8 @@ with coefficients in a DG local system.
   the composition maps.
 * `TauCeti.TwistingChainSystem.map_id`, `TauCeti.TwistingChainSystem.map_map`: push-forwards of
   twisting chain systems are functorial.
+* `TauCeti.TwistingChainSystem.twistingCocycle_map`: the twisting cocycle of a push-forward is the
+  twisting cocycle of the system for the composite evaluations.
 
 ## References
 
@@ -380,6 +389,19 @@ theorem map_map {L : P → P → Type*} [∀ x y, TopologicalSpace (L x y)]
         simp only [ContinuousMap.comp_apply, hφ, hψ] :=
   ext fun x y ↦ by
     rw [map_chain, map_chain, map_chain, cubicalChainSumMap_comp, LinearMap.comp_apply]
+
+variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] {q : ∀ x y, C(N x y, G)}
+
+/-- **The twisting cocycle of a push-forward** along `φ`, evaluated by `q`, is the twisting cocycle
+of the system itself evaluated by the composites `q x y ∘ φ x y`. -/
+theorem twistingCocycle_map (S : TwistingChainSystem ind ι R)
+    (hq : ∀ x z y (u : N x z) (v : N z y), q x y (κ x z y (u, v)) = q x z u * q z y v) :
+    (S.map φ hφ).twistingCocycle q hq =
+      S.twistingCocycle (fun x y ↦ (q x y).comp (φ x y))
+        fun x z y u v ↦ by simp only [ContinuousMap.comp_apply, hφ, hq] := by
+  ext x y
+  rw [twistingCocycle_m, twistingCocycle_m, map_chain, cubicalChainSumMap_comp,
+    LinearMap.comp_apply]
 
 end TwistingChainSystem
 

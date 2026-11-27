@@ -29,7 +29,13 @@ transformations.
 
 When the components of `η` are fully faithful, so is `η.mapDescentData f`, and a descent datum for
 `G` whose objects are isomorphic to images under `η` lifts to a descent datum for `F`
-(`Pseudofunctor.StrongTrans.liftDescentData`). When the components of `η` are equivalences of
+(`Pseudofunctor.StrongTrans.liftDescentData`). Its gluing isomorphisms are the unique lifts of the
+*target overlaps* `η (F(a) (M i)) ≅ η (F(b) (M j))`: the gluing isomorphisms of `D` conjugated by
+the isomorphisms `η (M i) ≅ D.obj i` and the naturality isomorphisms of `η`
+(`Pseudofunctor.StrongTrans.targetOverlapIso`,
+`Pseudofunctor.StrongTrans.mapIso_liftDescentData_iso`), which satisfy the identity and cocycle
+laws (`Pseudofunctor.StrongTrans.targetOverlapIso_self`,
+`Pseudofunctor.StrongTrans.targetOverlapIso_trans`). When the components of `η` are equivalences of
 categories, `η.mapDescentData f` is an equivalence. Comparing the descent functors of `F` and `G`
 through it shows that the descent of morphisms and effective descent along a presieve transfer
 along `η`, so that `F` is a prestack, respectively a stack, if and only if `G` is
@@ -504,6 +510,99 @@ inverses of the isomorphisms `e`. -/
 lemma mapDescentDataLiftDescentDataIso_inv_hom (i : ι) :
     (η.mapDescentDataLiftDescentDataIso f hη D e).inv.hom i = (e i).inv :=
   (rfl)
+
+/-- The **target overlap** of isomorphisms `e i : η (M i) ≅ D.obj i` on a common refinement
+`q = a ≫ f i = b ≫ f j`: the isomorphism `η_Y (F(a) (M i)) ≅ η_Y (F(b) (M j))` through
+`c_a(M i)`, `G(a)(e i)`, the gluing isomorphism `G(a) (D.obj i) ≅ G(b) (D.obj j)` of `D`
+(`DescentData.iso`), `G(b)(e j)⁻¹` and `c_b(M j)⁻¹`. -/
+noncomputable def targetOverlapIso ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.app (.mk (op Y))).toFunctor.obj ((F.map a.op.toLoc).toFunctor.obj (M i)) ≅
+      (η.app (.mk (op Y))).toFunctor.obj ((F.map b.op.toLoc).toFunctor.obj (M j)) :=
+  η.naturalityObjIso a.op.toLoc (M i) ≪≫ (G.map a.op.toLoc).toFunctor.mapIso (e i) ≪≫
+    D.iso q a b ha hb ≪≫
+      ((G.map b.op.toLoc).toFunctor.mapIso (e j)).symm ≪≫ (η.naturalityObjIso b.op.toLoc (M j)).symm
+
+/-- The forward arrow of the target overlap, as the composite of its five factors. -/
+lemma targetOverlapIso_hom ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.targetOverlapIso f D e q a b ha hb).hom =
+      (η.naturalityObjIso a.op.toLoc (M i)).hom ≫ (G.map a.op.toLoc).toFunctor.map (e i).hom ≫
+        D.hom q a b ha hb ≫
+          (G.map b.op.toLoc).toFunctor.map (e j).inv ≫ (η.naturalityObjIso b.op.toLoc (M j)).inv :=
+  (rfl)
+
+/-- On the diagonal, the target overlap is the identity. -/
+@[simp]
+lemma targetOverlapIso_self ⦃Y : C⦄ (q : Y ⟶ S) ⦃i : ι⦄ (a : Y ⟶ X i) (ha : a ≫ f i = q) :
+    η.targetOverlapIso f D e q a a ha ha = Iso.refl _ := by
+  ext
+  simp [targetOverlapIso_hom, D.hom_self q a ha]
+
+/-- **The cocycle condition** for the forward arrows of target overlaps on a common
+refinement. -/
+@[reassoc (attr := simp)]
+lemma targetOverlapIso_hom_comp_hom ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j k : ι⦄ (a : Y ⟶ X i)
+    (b : Y ⟶ X j) (c : Y ⟶ X k) (ha : a ≫ f i = q) (hb : b ≫ f j = q) (hc : c ≫ f k = q) :
+    (η.targetOverlapIso f D e q a b ha hb).hom ≫ (η.targetOverlapIso f D e q b c hb hc).hom =
+      (η.targetOverlapIso f D e q a c ha hc).hom := by
+  simp [targetOverlapIso_hom]
+
+/-- **The cocycle condition** for target overlaps on a common refinement. -/
+@[simp]
+lemma targetOverlapIso_trans ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j k : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (c : Y ⟶ X k) (ha : a ≫ f i = q) (hb : b ≫ f j = q) (hc : c ≫ f k = q) :
+    η.targetOverlapIso f D e q a b ha hb ≪≫ η.targetOverlapIso f D e q b c hb hc =
+      η.targetOverlapIso f D e q a c ha hc :=
+  Iso.ext (η.targetOverlapIso_hom_comp_hom f D e q a b c ha hb hc)
+
+/-- The inverse arrow of the target overlap is the forward arrow of the target overlap with the
+two maps interchanged. -/
+@[simp]
+lemma targetOverlapIso_inv ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.targetOverlapIso f D e q a b ha hb).inv = (η.targetOverlapIso f D e q b a hb ha).hom :=
+  Iso.inv_ext (by simp)
+
+/-- Interchanging the two maps inverts the target overlap. -/
+@[simp]
+lemma targetOverlapIso_symm ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.targetOverlapIso f D e q a b ha hb).symm = η.targetOverlapIso f D e q b a hb ha :=
+  Iso.ext (η.targetOverlapIso_inv f D e q a b ha hb)
+
+/-- The image under `η_Y` of the gluing morphism of the lift of `D` along `e` is the forward
+arrow of the target overlap. The objects of the lift are the `M i` only by definition, so the
+statement names the domain `F(a) (M i)` and codomain `F(b) (M j)` of the arrow. -/
+@[simp, reassoc]
+lemma map_liftDescentData_hom ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.app (.mk (op Y))).toFunctor.map (X := (F.map a.op.toLoc).toFunctor.obj (M i))
+        (Y := (F.map b.op.toLoc).toFunctor.obj (M j))
+        ((η.liftDescentData f hη D e).hom q a b ha hb) =
+      (η.targetOverlapIso f D e q a b ha hb).hom := by
+  -- `mapPullHom_liftDescentData_hom`, with the naturality isomorphisms at the `M i` rather than
+  -- at the objects of the lift, which are only definitionally equal to them.
+  have h : (η.naturality a.op.toLoc).inv.toNatTrans.app (M i) ≫
+      (η.app (.mk (op Y))).toFunctor.map (X := (F.map a.op.toLoc).toFunctor.obj (M i))
+        (Y := (F.map b.op.toLoc).toFunctor.obj (M j))
+        ((η.liftDescentData f hη D e).hom q a b ha hb) ≫
+        (η.naturality b.op.toLoc).hom.toNatTrans.app (M j) =
+      η.liftDescentDataHom f D e q a b ha hb :=
+    (η.mapPullHom_def _).symm.trans (η.mapPullHom_liftDescentData_hom f hη D e q a b ha hb)
+  rw [targetOverlapIso_hom, ← η.liftDescentDataHom_comp_assoc f D e q a b ha hb, ← h]
+  simp
+
+/-- The image under `η_Y` of the gluing isomorphism of the lift of `D` along `e` is the target
+overlap. -/
+@[simp]
+lemma mapIso_liftDescentData_iso ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.app (.mk (op Y))).toFunctor.mapIso (X := (F.map a.op.toLoc).toFunctor.obj (M i))
+        (Y := (F.map b.op.toLoc).toFunctor.obj (M j))
+        ((η.liftDescentData f hη D e).iso q a b ha hb) =
+      η.targetOverlapIso f D e q a b ha hb :=
+  Iso.ext (η.map_liftDescentData_hom f hη D e q a b ha hb)
 
 end lift
 
