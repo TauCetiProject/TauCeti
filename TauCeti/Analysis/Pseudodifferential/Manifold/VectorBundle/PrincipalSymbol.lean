@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 import TauCeti.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 import TauCeti.Topology.FiberBundle.Trivialization
@@ -711,8 +712,8 @@ theorem isSectionClassicalElliptic_add_iff
 theorem isSectionClassicalEllipticAt_smul_iff {c : ℂ} (hc : c ≠ 0) {x : M} :
     IsSectionClassicalEllipticAt m (c • P) x ↔ IsSectionClassicalEllipticAt m P x := by
   refine forall₂_congr fun ξ _ ↦ ?_
-  rw [sectionClassicalPrincipalSymbol_smul_of_ne_zero hc, LinearMap.coe_smul]
-  exact (MulAction.bijective (Units.mk0 c hc)).of_comp_iff' _
+  rw [sectionClassicalPrincipalSymbol_smul_of_ne_zero hc, LinearMap.coe_smul,
+    bijective_smul_iff₀ hc]
 
 /-- Multiplying by a nonzero complex number does not change ellipticity. -/
 @[simp]

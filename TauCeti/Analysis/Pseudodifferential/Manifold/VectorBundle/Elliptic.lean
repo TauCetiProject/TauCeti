@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.PrincipalSymbol
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
@@ -205,17 +206,15 @@ theorem isInvertible_coefficient_principal_iff_bijective_sectionClassicalPrincip
   have hc : ((φ (e x) * ψ (e x) : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hφψ
   set T := t'.continuousLinearEquivAt ℂ x (hF hx)
   set S := (t.continuousLinearEquivAt ℂ x (hE hx)).symm
-  have hcb : Function.Bijective fun w : W ↦ ((φ (e x) * ψ (e x) : ℝ) : ℂ) • w :=
-    ⟨smul_right_injective W hc, fun w ↦ ⟨_, smul_inv_smul₀ hc w⟩⟩
   -- The principal symbol of `a` at `(e x, η)` is `σ_m(P)(x, ξ)` between the frame isomorphisms.
   have key : (a.principal.coefficient (e x, η) : V → W) =
-      (fun w ↦ ((φ (e x) * ψ (e x) : ℝ) : ℂ) • w) ∘ T ∘ sectionClassicalPrincipalSymbol m P x
-        ((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x)) ∘ S := by
+      ((φ (e x) * ψ (e x) : ℝ) : ℂ) • (T ∘ sectionClassicalPrincipalSymbol m P x
+        ((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x)) ∘ S) := by
     rw [t'.coe_continuousLinearEquivAt_eq, t.symm_continuousLinearEquivAt_eq]
     funext v
     rw [coefficient_principal_apply_eq_sectionClassicalPrincipalSymbol hP hF ha hx]
     simp [t.symmL_apply (hE hx)]
-  rw [ContinuousLinearMap.isInvertible_iff_bijective, key, hcb.of_comp_iff',
+  rw [ContinuousLinearMap.isInvertible_iff_bijective, key, bijective_smul_iff₀ hc,
     T.bijective.of_comp_iff', Function.Bijective.of_comp_iff _ S.bijective]
 
 /-- **Ellipticity in a chart.** Let `a` be the symbol of the chart compression

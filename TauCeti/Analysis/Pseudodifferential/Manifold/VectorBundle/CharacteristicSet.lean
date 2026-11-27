@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.CharacteristicSet
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Elliptic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -138,8 +139,7 @@ theorem mk_smul_mem_sectionClassicalCharacteristicSet_iff {x : M}
   have hc : ((t ^ m : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (Real.rpow_pos_of_pos ht m).ne'
   simp only [mem_sectionClassicalCharacteristicSet_iff,
     sectionClassicalPrincipalSymbol_smul_covector x ξ ht, ne_eq, smul_eq_zero, ht.ne', false_or,
-    LinearMap.coe_smul]
-  exact and_congr_right fun _ ↦ not_congr ((MulAction.bijective (Units.mk0 _ hc)).of_comp_iff' _)
+    LinearMap.coe_smul, bijective_smul_iff₀ hc]
 
 /-- **Ellipticity and the characteristic set.** `P` is elliptic at `x` exactly when no covector at
 `x` is characteristic. -/
@@ -170,9 +170,8 @@ theorem sectionClassicalCharacteristicSet_add_of_mem_sub_one
 theorem sectionClassicalCharacteristicSet_smul {c : ℂ} (hc : c ≠ 0) :
     sectionClassicalCharacteristicSet m (c • P) = sectionClassicalCharacteristicSet m P := by
   ext p
-  refine and_congr_right fun _ ↦ not_congr ?_
-  rw [sectionClassicalPrincipalSymbol_smul_of_ne_zero hc, LinearMap.coe_smul]
-  exact (MulAction.bijective (Units.mk0 c hc)).of_comp_iff' _
+  simp only [mem_sectionClassicalCharacteristicSet_iff,
+    sectionClassicalPrincipalSymbol_smul_of_ne_zero hc, LinearMap.coe_smul, bijective_smul_iff₀ hc]
 
 /-- The identity of `Γ(E)` has no characteristic covectors in order `0`. -/
 @[simp]
