@@ -193,9 +193,9 @@ theorem existsUnique_gluing (hU : ⨆ i, U i = ⊤)
   exact ⟨S, hglue, fun S' hS' ↦
     eq_of_forall_tsupport_subset hU fun i s hs ↦ (hS' i s hs).trans (hglue i s hs).symm⟩
 
-/-- The continuous linear map on bundle tests glued from compatible continuous linear maps `T i`
-given on the members `U i` of an open cover (`TauCeti.BundleTest.existsUnique_gluing`): it agrees
-with `T i` on the tests supported in `U i`. -/
+/-- The continuous linear map on bundle tests glued from continuous linear maps `T i` on all bundle
+tests that agree on the tests supported in each overlap `U i ∩ U j` of an open cover `U`
+(`TauCeti.BundleTest.existsUnique_gluing`): it agrees with `T i` on the tests supported in `U i`. -/
 def glue (hU : ⨆ i, U i = ⊤)
     (hT : ∀ i j (s : BundleTest I F V), closure {x | s x ≠ 0} ⊆ U i ∩ U j → T i s = T j s) :
     BundleTest I F V →L_c[ℝ] W :=
