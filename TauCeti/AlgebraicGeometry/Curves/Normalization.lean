@@ -48,7 +48,10 @@ Combining those general results with Čech comparison along the affine morphism 
   long exact sequence shows that `Hⁿ(X, 𝒪_X) = 0` for `n ≥ 2` and `dim_k Hⁿ(X, 𝒪_X) < ∞` for all
   `n` on every proper integral curve `X` over `k` (with no smoothness, regularity, perfect-field,
   or rational-point assumption). Registering `FiniteDimensional k Hⁿ(X, 𝒪_X)` as an instance makes
-  `X.genus k` available on every `X.IsCurveOver k`.
+  `X.genus k` available on every `X.IsCurveOver k`. Both statements extend to proper integral
+  schemes of dimension at most one, which are curves or points finite over `k`
+  (`Scheme.Modules.finiteDimensional_cohomology_trivial_of_topologicalKrullDim_le_one` and
+  `Scheme.Modules.subsingleton_cohomology_trivial_of_topologicalKrullDim_le_one`).
 * **Genus comparison and the `δ`-invariant regularity criterion**: for any finite modification
   `f : Y ⟶ X` of curves over `k`, `H¹(X, 𝒪_X)` surjects onto `H¹(Y, 𝒪_Y)`, giving
   `Y.genus k ≤ X.genus k` (`AlgebraicGeometry.Scheme.genus_le_of_isModification`), and
@@ -212,31 +215,53 @@ instance finiteDimensional_cohomology_trivial_of_isCurveOver [X.IsCurveOver k] (
         infer_instance
   exact Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X n).symm
 
+/-- A proper integral scheme over a field `k` of Krull dimension at most one is either a curve
+over `k` or, being a point, finite over `k`. -/
+private lemma isCurveOver_or_isFinite_of_topologicalKrullDim_le_one [IsIntegral X]
+    [IsProper (X ↘ Spec (.of k))] (hX : topologicalKrullDim X ≤ 1) :
+    X.IsCurveOver k ∨ IsFinite (X ↘ Spec (.of k)) := by
+  have h0 : (0 : WithBot ℕ∞) ≤ topologicalKrullDim X :=
+    (WithBot.coe_le_coe.mpr (zero_le : (0 : ℕ∞) ≤ _)).trans
+      (coheight_le_topologicalKrullDim (Classical.arbitrary X))
+  rcases hX.eq_or_lt with hdim1 | hlt
+  · exact .inl (isCurveOver_iff.mpr ⟨inferInstance, inferInstance, hdim1⟩)
+  · have hdim0 : topologicalKrullDim X = 0 :=
+      le_antisymm (ENat.WithBot.lt_add_one_iff (m := 0).mp (by simpa using hlt)) h0
+    have hsub : Subsingleton X := topologicalKrullDim_eq_zero_iff_subsingleton.mp hdim0
+    have : LocallyQuasiFinite (X ↘ Spec (.of k)) :=
+      LocallyQuasiFinite.of_finite_preimage_singleton (X ↘ Spec (.of k)) fun _ ↦ Set.toFinite _
+    exact .inr (.of_locallyQuasiFinite _)
+
 /-- On any proper integral scheme `X` over a field `k` of Krull dimension at most one (covering
 both reduced points of finite residue degree and possibly-singular curves), `Hⁿ(X, 𝒪_X)` is
 finite-dimensional over `k` in every degree `n`. -/
 theorem finiteDimensional_cohomology_trivial_of_topologicalKrullDim_le_one
     [IsIntegral X] [IsProper (X ↘ Spec (.of k))] (hX : topologicalKrullDim X ≤ 1) (n : ℕ) :
     FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n) := by
-  have h0 : (0 : WithBot ℕ∞) ≤ topologicalKrullDim X :=
-    (WithBot.coe_le_coe.mpr (zero_le : (0 : ℕ∞) ≤ _)).trans
-      (coheight_le_topologicalKrullDim (Classical.arbitrary X))
-  rcases hX.eq_or_lt with hdim1 | hlt
-  · have : X.IsCurveOver k := isCurveOver_iff.mpr ⟨inferInstance, inferInstance, hdim1⟩
-    infer_instance
-  · have hdim0 : topologicalKrullDim X = 0 :=
-      le_antisymm (ENat.WithBot.lt_add_one_iff (m := 0).mp (by simpa using hlt)) h0
-    have hsub : Subsingleton X := topologicalKrullDim_eq_zero_iff_subsingleton.mp hdim0
-    have : LocallyQuasiFinite (X ↘ Spec (.of k)) :=
-      LocallyQuasiFinite.of_finite_preimage_singleton (X ↘ Spec (.of k)) fun _ ↦ Set.toFinite _
-    have : IsFinite (X ↘ Spec (.of k)) := .of_locallyQuasiFinite _
-    let OX : X.Modules := SheafOfModules.unit X.ringCatSheaf
+  rcases isCurveOver_or_isFinite_of_topologicalKrullDim_le_one k hX with _ | _
+  · infer_instance
+  · let OX : X.Modules := SheafOfModules.unit X.ringCatSheaf
     let _ : Module k (Cohomology OX n) := cohomologyBaseModule k X OX n
     have : OX.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf X
     have : OX.IsFiniteType := inferInstance
     have : FiniteDimensional k (Cohomology OX n) :=
       moduleFinite_cohomology_of_isFinite_over_spec k OX n
     exact Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X n).symm
+
+/-- **Grothendieck vanishing for the structure sheaf in dimension at most one.** On any proper
+integral scheme `X` over a field `k` of Krull dimension at most one (covering both reduced points
+of finite residue degree and possibly-singular curves), `Hⁿ(X, 𝒪_X) = 0` for all `n ≥ 2`. -/
+theorem subsingleton_cohomology_trivial_of_topologicalKrullDim_le_one
+    [IsIntegral X] [IsProper (X ↘ Spec (.of k))] (hX : topologicalKrullDim X ≤ 1) (n : ℕ)
+    (hn : 2 ≤ n) : Subsingleton (Cohomology (InvertibleSheaf.trivial X).obj n) := by
+  rcases isCurveOver_or_isFinite_of_topologicalKrullDim_le_one k hX with _ | _
+  · exact subsingleton_cohomology_trivial_of_two_le_of_isCurveOver k n hn
+  · -- A scheme finite over `k` is affine, so its quasi-coherent sheaves have no higher cohomology.
+    obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    let OX : X.Modules := SheafOfModules.unit X.ringCatSheaf
+    have : OX.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf X
+    have := subsingleton_cohomology_succ_of_isAffineHom (X ↘ Spec (.of k)) OX m
+    exact (trivialCohomologyBaseLinearEquiv k X (m + 1)).toEquiv.subsingleton
 
 end CurveCohomology
 

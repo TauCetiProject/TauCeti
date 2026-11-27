@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
 public import Mathlib.MeasureTheory.Measure.Prod
 
+import TauCeti.Geometry.Manifold.ExtChartAt.Prod
+import TauCeti.Geometry.Manifold.Measure.Prod
 import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.MeasureTheory.Integral.Lebesgue.Alternating
 
@@ -33,8 +35,8 @@ of `TauCeti.RoughForm.measure` does not depend on the basis used to normalize it
 measure of a product basis is the product of the Haar measures, the two measures agree on products
 of measurable subsets of chart sources (`Module.Basis.setLIntegral_ofReal_abs_apply_prod`).
 Continuity of `φ₁` and `φ₂` and second countability of `M` and `N` make the factor measures
-`|φ₁|` and `|φ₂|` `σ`-finite, so `|φ|` and `|φ₁| ⊗ |φ₂|` agree on each product chart source by
-`MeasureTheory.Measure.prod_eq`, and these sources cover `M × N`.
+`|φ₁|` and `|φ₂|` `σ`-finite, so `|φ|` and `|φ₁| ⊗ |φ₂|` agree everywhere
+(`TauCeti.eq_prod_of_apply_prod_chart_source`).
 
 ## Main results
 
@@ -87,15 +89,12 @@ private theorem measure_prod_of_subset (hp : k + l = p) (hφ₁ : IsSmoothForm I
   have hsub : s ×ˢ t ⊆ (extChartAt (I.prod J) (α, β)).source := by
     rw [extChartAt_prod, PartialEquiv.prod_source]
     exact prod_mono hsα htβ
-  have himage : extChartAt (I.prod J) (α, β) '' (s ×ˢ t) =
-      (extChartAt I α '' s) ×ˢ (extChartAt J β '' t) := by
-    rw [extChartAt_prod, PartialEquiv.prod_coe, prod_image_image_eq]
   have hA₁ : extChartAt I α '' s ⊆ (extChartAt I α).target :=
     (image_mono hsα).trans (extChartAt I α).image_source_eq_target.subset
   have hA₂ : extChartAt J β '' t ⊆ (extChartAt J β).target :=
     (image_mono htβ).trans (extChartAt J β).image_source_eq_target.subset
   rw [φ.measure_apply_of_subset (hs.prod ht) hsub, φ₁.measure_apply_of_subset hs hsα,
-    φ₂.measure_apply_of_subset ht htβ, himage]
+    φ₂.measure_apply_of_subset ht htβ, extChartAt_prod_image_prod]
   -- The chart measurable structure on `E × F` is supplied explicitly: elaborating it by instance
   -- search would find the product structure and force an expensive unification.
   refine Basis.setLIntegral_ofReal_abs_apply_prod (mEF := TauCeti.extChartAtMeasurableSpaceE)
@@ -120,18 +119,9 @@ theorem measure_eq_prod (hp : k + l = p) (hφ₁ : IsSmoothForm I 0 φ₁) (hφ�
     φ.measure = φ₁.measure.prod φ₂.measure := by
   have := isLocallyFiniteMeasure_measure hφ₁
   have := isLocallyFiniteMeasure_measure hφ₂
-  -- Both measures are determined by their restrictions to countably many product chart sources.
-  obtain ⟨T, hT, hcover⟩ := LindelofSpace.elim_nhds_subcover
-    (fun q : M × N ↦ (extChartAt (I.prod J) q).source) fun q ↦ extChartAt_source_mem_nhds q
-  refine Measure.ext_of_biUnion_eq_univ hT hcover fun q _ ↦ ?_
-  have hU := (isOpen_extChartAt_source (I := I) q.1).measurableSet
-  have hV := (isOpen_extChartAt_source (I := J) q.2).measurableSet
-  rw [extChartAt_prod, PartialEquiv.prod_source, ← Measure.prod_restrict]
-  refine (Measure.prod_eq fun s t hs ht ↦ ?_).symm
-  rw [Measure.restrict_apply (hs.prod ht), prod_inter_prod, Measure.restrict_apply hs,
-    Measure.restrict_apply ht]
-  exact measure_prod_of_subset hp hφ₁ hφ₂ h (hs.inter hU) (ht.inter hV) inter_subset_right
-    inter_subset_right
+  exact eq_prod_of_apply_prod_chart_source fun α β s t hs ht hsα htβ ↦
+    measure_prod_of_subset hp hφ₁ hφ₂ h hs ht (by rwa [extChartAt_source])
+      (by rwa [extChartAt_source])
 
 end RoughForm
 

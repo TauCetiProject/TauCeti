@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.CongruenceSubgroup.Basic
 public import TauCeti.Algebra.HopfAlgebra.WeilRestriction
 public import TauCeti.RingTheory.PowerSeries.Basic
 public import TauCeti.RingTheory.PowerSeries.Jet
+public import TauCeti.Algebra.HopfAlgebra.DirectLimit
 import TauCeti.Algebra.Coalgebra.Convolution
 import TauCeti.RingTheory.PowerSeries.Ideal
 
@@ -29,6 +30,12 @@ algebra map `jetTruncation k H N`, and taking jets of coefficients gives the pro
 compatible sequences of jets (`positiveLoopJetLimitMulEquiv`), naturally in `R`, and the kernel of
 the `N`-th projection is the congruence subgroup `K_N(R)` of level `(X ^ N)`.
 
+As an affine group, `L⁺G` is represented by the directed colimit `positiveLoopHopfAlgebra k H` of
+the jet Hopf algebras along the truncations, a commutative Hopf `k`-algebra
+(`DirectLimit.instHopfAlgebra`): its points over `R` are `L⁺G(R)`
+(`positiveLoopPointsMulEquiv`), naturally in `R` and compatibly with the projections to the jet
+groups. For the trivial group it is `k` (`positiveLoopHopfAlgebraSelfAlgEquiv`).
+
 Everything holds for every commutative `k`-algebra `R`, nonreduced ones included, and over any
 commutative ring `k`. When `H` is of finite type or smooth over `k`, so is each
 `jetHopfAlgebra k H N`, by the instances `WeilRestriction.instFiniteType` and
@@ -47,6 +54,10 @@ this is the presentation of `L⁺G` as a proalgebraic group.
   truncations.
 * `TauCeti.HopfAlgebra.positiveLoopJetLimitMulEquiv`: the isomorphism of `L⁺G(R)` with that
   inverse limit.
+* `TauCeti.HopfAlgebra.positiveLoopHopfAlgebra`: the coordinate Hopf algebra of `L⁺G`, the
+  directed colimit of the jet Hopf algebras.
+* `TauCeti.HopfAlgebra.positiveLoopPointsMulEquiv`: its points are the positive loops.
+* `TauCeti.HopfAlgebra.positiveLoopHopfAlgebraSelfAlgEquiv`: for the trivial group it is `k`.
 * `TauCeti.HopfAlgebra.positiveLoopEvalZero` and `TauCeti.HopfAlgebra.constantPositiveLoop`:
   evaluation `L⁺G(R) → G(R)` at `X = 0` and the constant loops, a section of it.
 
@@ -59,6 +70,10 @@ this is the presentation of `L⁺G` as a proalgebraic group.
 * `TauCeti.HopfAlgebra.positiveLoopJetLimitMulEquiv_naturality`: the isomorphism with the inverse
   limit is natural in `R`.
 * `TauCeti.HopfAlgebra.ker_positiveLoopEvalZero`: the kernel of evaluation at `X = 0` is `K_1(R)`.
+* `TauCeti.HopfAlgebra.jetProjection_positiveLoopPointsMulEquiv` and
+  `TauCeti.HopfAlgebra.positiveLoopPointsMulEquiv_naturality`: the points of
+  `positiveLoopHopfAlgebra k H` are compatible with the projections to the jet groups and natural
+  in `R`.
 
 ## References
 
@@ -399,5 +414,93 @@ theorem ker_positiveLoopEvalZero :
   rw [RingHom.mem_ker, RingHom.mem_ker, PowerSeries.constantCoeffAlgHom_apply]
 
 end EvalZero
+
+section Colimit
+
+/-- **The coordinate Hopf algebra of the positive loop group.** The directed colimit of the jet
+Hopf algebras `jetHopfAlgebra k H N` along the truncations `jetTruncation k H N`, the coordinate
+ring of the inverse limit `L⁺G = lim_N J_N G` of the jet groups. Its points over `R` are
+`L⁺G(R) = G(R⟦X⟧)` (`positiveLoopPointsMulEquiv`). -/
+abbrev positiveLoopHopfAlgebra : Type _ :=
+  DirectLimit (jetHopfAlgebra k H) (BialgHom.natLERec (jetTruncation k H))
+
+variable (R : Type*) [CommRing R] [Algebra k R]
+
+-- The compatible families of points of the jet groups form the inverse limit `jetLimit`.
+private theorem pointsLimit_eq_jetLimit :
+    DirectLimit.pointsLimit (BialgHom.natLERec (jetTruncation k H)) R =
+      (jetLimit k H R).toSubmonoid := by
+  ext x
+  exact BialgHom.mem_pointsLimit_natLERec_iff _
+
+/-- **The points of `positiveLoopHopfAlgebra k H` are the positive loops.** The group
+isomorphism `Hom(positiveLoopHopfAlgebra k H, R) ≃* L⁺G(R) = G(R⟦X⟧)`: a point of the colimit is a
+compatible sequence of points of the jet groups (`DirectLimit.pointsMulEquiv`), which is the
+sequence of jets of a unique positive loop (`positiveLoopJetLimitMulEquiv`). It is natural in `R`
+(`positiveLoopPointsMulEquiv_naturality`) and compatible with the projections to the jet groups
+(`jetProjection_positiveLoopPointsMulEquiv`). -/
+noncomputable def positiveLoopPointsMulEquiv :
+    WithConv (positiveLoopHopfAlgebra k H →ₐ[k] R) ≃* WithConv (H →ₐ[k] R⟦X⟧) :=
+  (DirectLimit.pointsMulEquiv _ R).trans <|
+    (MulEquiv.submonoidCongr (pointsLimit_eq_jetLimit k H R)).trans
+      (positiveLoopJetLimitMulEquiv k H R).symm
+
+variable {k H R}
+
+/-- **Compatibility with the projections to the jet groups.** The `N`-jet of the loop attached to
+a point of `positiveLoopHopfAlgebra k H` is the restriction of the point to the `N`-th stage. -/
+@[simp]
+theorem jetProjection_positiveLoopPointsMulEquiv
+    (x : WithConv (positiveLoopHopfAlgebra k H →ₐ[k] R)) (N : ℕ) :
+    jetProjection k H R N (positiveLoopPointsMulEquiv k H R x) =
+      BialgHom.mapDomain (DirectLimit.Bialgebra.of _ _ N) x := by
+  rw [← positiveLoopJetLimitMulEquiv_apply, positiveLoopPointsMulEquiv, MulEquiv.trans_apply,
+    MulEquiv.trans_apply, MulEquiv.apply_symm_apply]
+  exact DirectLimit.pointsMulEquiv_apply x N
+
+/-- The restriction to the `N`-th stage of the point of `positiveLoopHopfAlgebra k H` attached to
+a positive loop is the `N`-jet of the loop. -/
+theorem mapDomain_of_positiveLoopPointsMulEquiv_symm (g : WithConv (H →ₐ[k] R⟦X⟧)) (N : ℕ) :
+    BialgHom.mapDomain (DirectLimit.Bialgebra.of _ _ N)
+        ((positiveLoopPointsMulEquiv k H R).symm g) =
+      jetProjection k H R N g := by
+  rw [← jetProjection_positiveLoopPointsMulEquiv, MulEquiv.apply_symm_apply]
+
+/-- **Naturality of `positiveLoopPointsMulEquiv` in `R`.** For `φ : R →ₐ[k] S`, the loop attached
+to the image of a point under `φ` is the coefficientwise image under `φ` of its loop. -/
+theorem positiveLoopPointsMulEquiv_naturality {S : Type*} [CommRing S] [Algebra k S]
+    (φ : R →ₐ[k] S) (x : WithConv (positiveLoopHopfAlgebra k H →ₐ[k] R)) :
+    positiveLoopPointsMulEquiv k H S (AlgHom.mapValue φ x) =
+      AlgHom.mapValue (PowerSeries.mapAlgHom φ) (positiveLoopPointsMulEquiv k H R x) := by
+  refine (positiveLoopJetLimitMulEquiv k H S).injective (Subtype.ext (funext fun N ↦ ?_))
+  rw [positiveLoopJetLimitMulEquiv_naturality, positiveLoopJetLimitMulEquiv_apply,
+    positiveLoopJetLimitMulEquiv_apply, jetProjection_positiveLoopPointsMulEquiv,
+    jetProjection_positiveLoopPointsMulEquiv, ← DirectLimit.pointsMulEquiv_apply,
+    DirectLimit.pointsMulEquiv_mapValue, DirectLimit.pointsMulEquiv_apply]
+
+end Colimit
+
+section Trivial
+
+variable (R : Type*) [CommRing R] [Algebra k R]
+
+-- The positive loop group of the trivial group has a single point over every `R`.
+private theorem subsingleton_positiveLoopHopfAlgebra_self_algHom :
+    Subsingleton (positiveLoopHopfAlgebra k k →ₐ[k] R) :=
+  ⟨fun _ _ ↦ WithConv.toConv_injective <| (positiveLoopPointsMulEquiv k k R).injective <|
+    WithConv.ofConv_injective (Subsingleton.elim _ _)⟩
+
+/-- **The positive loop group of the trivial group.** For the trivial group `G = Spec k`, the
+coordinate Hopf algebra `positiveLoopHopfAlgebra k k` of `L⁺G` is `k`, through its counit. -/
+noncomputable def positiveLoopHopfAlgebraSelfAlgEquiv : positiveLoopHopfAlgebra k k ≃ₐ[k] k :=
+  have := subsingleton_positiveLoopHopfAlgebra_self_algHom k (positiveLoopHopfAlgebra k k)
+  AlgEquiv.ofAlgHom (Bialgebra.counitAlgHom k _) (Algebra.ofId k _) (Subsingleton.elim _ _)
+    (Subsingleton.elim _ _)
+
+@[simp]
+theorem positiveLoopHopfAlgebraSelfAlgEquiv_apply (x : positiveLoopHopfAlgebra k k) :
+    positiveLoopHopfAlgebraSelfAlgEquiv k x = Coalgebra.counit x := (rfl)
+
+end Trivial
 
 end TauCeti.HopfAlgebra

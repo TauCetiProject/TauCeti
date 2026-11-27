@@ -105,6 +105,10 @@ instance : ChartedSpace (WithLp 2 (E × ℝ)) (UpperHalfSpace E) :=
 instance : T3Space (UpperHalfSpace E) :=
   inferInstanceAs (T3Space (upperHalfSpaceOpens E))
 
+/-- The upper half-space over a second-countable space is second countable. -/
+instance [SecondCountableTopology E] : SecondCountableTopology (UpperHalfSpace E) :=
+  inferInstanceAs (SecondCountableTopology (upperHalfSpaceOpens E))
+
 variable {E}
 
 /-- The point of `E × ℝ` represented by a point of the upper half-space. -/
@@ -170,6 +174,29 @@ theorem chartAt_apply (x y : UpperHalfSpace E) :
     chartAt (WithLp 2 (E × ℝ)) x y = (y : WithLp 2 (E × ℝ)) :=
   (rfl)
 
+/-- The charts of the upper half-space do not depend on the base point: each is the restriction
+of the identity chart of the model space. -/
+theorem chartAt_eq (α x : UpperHalfSpace E) :
+    chartAt (WithLp 2 (E × ℝ)) α = chartAt (WithLp 2 (E × ℝ)) x :=
+  (rfl)
+
+/-- Every chart of the upper half-space is defined on the whole space. -/
+@[simp]
+theorem chartAt_source (x : UpperHalfSpace E) :
+    (chartAt (WithLp 2 (E × ℝ)) x).source = Set.univ :=
+  Set.eq_univ_of_forall fun y ↦ chartAt_eq y x ▸ mem_chart_source (WithLp 2 (E × ℝ)) y
+
+/-- The inclusion of the upper half-space into `E × ℝ` is an open embedding. -/
+theorem isOpenEmbedding_coe :
+    Topology.IsOpenEmbedding (coe : UpperHalfSpace E → WithLp 2 (E × ℝ)) :=
+  (upperHalfSpaceOpens E).isOpen.isOpenEmbedding_subtypeVal
+
+/-- The points of `E × ℝ` coming from the upper half-space are those of positive last
+coordinate. -/
+@[simp]
+theorem range_coe : Set.range (coe : UpperHalfSpace E → WithLp 2 (E × ℝ)) = {p | 0 < p.snd} :=
+  Subtype.range_coe
+
 section NormedSpace
 
 variable (E) [NormedSpace ℝ E]
@@ -232,6 +259,31 @@ theorem contMDiff_coe_comp_iff
       ContMDiff I 𝓘(ℝ, WithLp 2 (E × ℝ)) n f :=
   TauCeti.ContMDiff.subtypeVal_comp_iff (upperHalfSpaceOpens E)
     (f : M → upperHalfSpaceOpens E)
+
+/-- The tangent trivializations of the upper half-space do not depend on the base point. -/
+theorem trivializationAt_eq (α x : UpperHalfSpace E) :
+    trivializationAt (WithLp 2 (E × ℝ)) (TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ))) α =
+      trivializationAt (WithLp 2 (E × ℝ)) (TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ))) x := by
+  rw [TangentBundle.trivializationAt_eq_localTriv, TangentBundle.trivializationAt_eq_localTriv,
+    show achart (WithLp 2 (E × ℝ)) α = achart (WithLp 2 (E × ℝ)) x from
+      Subtype.ext (chartAt_eq α x)]
+
+/-- In every chart of the upper half-space, the inverse tangent trivialization is the identity
+of `E × ℝ`, read through `tangentSpaceCastModel`. -/
+@[simp]
+theorem tangentSpaceCastModel_symm_trivializationAt (α x : UpperHalfSpace E)
+    (v : WithLp 2 (E × ℝ)) :
+    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x
+        ((trivializationAt (WithLp 2 (E × ℝ))
+          (TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ))) α).symm x v) = v := by
+  rw [trivializationAt_eq α x]
+  -- `h` is stated for the open subset `upperHalfSpaceOpens E`, of which `UpperHalfSpace E` is a
+  -- type synonym.
+  have h := (TauCeti.Manifold.eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq
+    (I := 𝓘(ℝ, WithLp 2 (E × ℝ))) (𝕜 := ℝ) (show upperHalfSpaceOpens E from x)).self_of_nhds v
+  rw [TauCeti.Manifold.tangentSpaceOpenEquiv_apply, TangentBundle.symmL_model_space,
+    Bundle.Trivialization.symmL_apply _ (FiberBundle.mem_baseSet_trivializationAt' _)] at h
+  exact h
 
 /-- If a self-map `f` of the upper half-space is the restriction of a map `A` of `E × ℝ` with
 derivative `L` at `x`, then the differential of `f` at `x` is `L`. -/

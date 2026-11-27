@@ -23,7 +23,11 @@ statements about smooth functions with few critical points.
   poles (`TauCeti.criticalPoints_cubic_comp_sphereHeight`) and `f` has two critical points
   (`TauCeti.totalCriticalCount_cubic_comp_sphereHeight`). Both critical Hessians vanish
   (`TauCeti.criticalHessian_cubic_comp_sphereHeight_self` and
-  `TauCeti.criticalHessian_cubic_comp_sphereHeight_neg`), so in positive dimension `f` is not a
+  `TauCeti.criticalHessian_cubic_comp_sphereHeight_neg`). In fact, in the stereographic chart
+  centred at the north pole, with radial coordinate `r`, `f = 2 / 3 - r⁴ / 4 + O(r⁶)`
+  (`TauCeti.cubic_comp_sphereHeight_chartAt_symm_sub_mem_Icc`), and at the south pole
+  `f = -2 / 3 + r⁴ / 4 + O(r⁶)` (`TauCeti.cubic_comp_sphereHeight_chartAt_neg_symm_sub_mem_Icc`),
+  with the error bounded by `r⁶ / 6` on the whole chart. So in positive dimension `f` is not a
   Morse function (`TauCeti.not_isMorse_cubic_comp_sphereHeight`). So `f` has exactly two critical
   points but lies outside the scope of Reeb's theorem for Morse functions
   (`TauCeti.IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two`) and of any argument
@@ -33,8 +37,9 @@ statements about smooth functions with few critical points.
   together with the whole equator `h = 0` (`TauCeti.criticalPoints_sq_comp_sphereHeight`). On `Sⁿ`
   with `n ≥ 2` the equator is infinite, so `f` has infinitely many critical points
   (`TauCeti.totalCriticalCount_sq_comp_sphereHeight_of_two_le`), and on the circle it has four
-  (`TauCeti.totalCriticalCount_sq_comp_sphereHeight_of_eq_one`). So `f` has two critical values
-  but never exactly two critical points in positive dimension: a count of critical values cannot
+  (`TauCeti.totalCriticalCount_sq_comp_sphereHeight_of_eq_one`). Yet in positive dimension `f`
+  has exactly two critical values, `0` on the equator and `1` at the poles
+  (`TauCeti.image_criticalPoints_sq_comp_sphereHeight`). So a count of critical values cannot
   replace the count of critical points in such a theorem.
 * **A constant function.** Every point is a critical point of a constant function, so in positive
   dimension it has infinitely many critical points
@@ -122,6 +127,53 @@ theorem not_isMorse_cubic_comp_sphereHeight (hn : n ≠ 0) (v : sphere (0 : E) 1
   rw [criticalPoints_cubic_comp_sphereHeight]
   exact mem_insert v _
 
+/-- In the stereographic chart, with radial coordinate `r = ‖w‖`, the function `h - h³ / 3` is
+`2 / 3 - r⁴ / 4` up to an error between `0` and `r⁶ / 6`. The error is
+`r⁶ (128 + 36 r² + 3 r⁴) / (12 (r² + 4)³)`. -/
+private theorem cubic_stereographicHeight_sub_mem_Icc {F : Type*} [NormedAddCommGroup F] (w : F) :
+    stereographicHeight w - stereographicHeight w ^ 3 / 3 - (2 / 3 - ‖w‖ ^ 4 / 4) ∈
+      Icc 0 (‖w‖ ^ 6 / 6) := by
+  have he : stereographicHeight w - stereographicHeight w ^ 3 / 3 - (2 / 3 - ‖w‖ ^ 4 / 4) =
+      ‖w‖ ^ 6 * (128 + 36 * ‖w‖ ^ 2 + 3 * ‖w‖ ^ 4) / (12 * (‖w‖ ^ 2 + 4) ^ 3) := by
+    rw [stereographicHeight_apply]
+    field_simp
+    ring
+  rw [he]
+  refine ⟨by positivity, (div_le_iff₀ (by positivity)).2 ?_⟩
+  nlinarith [pow_nonneg (norm_nonneg w) 6, pow_nonneg (norm_nonneg w) 8,
+    pow_nonneg (norm_nonneg w) 10, pow_nonneg (norm_nonneg w) 12]
+
+/-- **`h - h³ / 3` is quartic at the north pole.** In the stereographic chart centred at the north
+pole `v`, with radial coordinate `r = ‖w‖`, the function `f = h - h³ / 3` is
+`f = 2 / 3 - r⁴ / 4 + O(r⁶)`: the error lies between `0` and `r⁶ / 6` on the whole chart. So `f`
+has no quadratic term at `v`, which is why its critical Hessian vanishes there
+(`TauCeti.criticalHessian_cubic_comp_sphereHeight_self`). -/
+theorem cubic_comp_sphereHeight_chartAt_symm_sub_mem_Icc (v : sphere (0 : E) 1)
+    (w : EuclideanSpace ℝ (Fin n)) :
+    ((fun t : ℝ ↦ t - t ^ 3 / 3) ∘ sphereHeight v) ((chartAt (EuclideanSpace ℝ (Fin n)) v).symm w) -
+        (2 / 3 - ‖w‖ ^ 4 / 4) ∈ Icc 0 (‖w‖ ^ 6 / 6) := by
+  rw [Function.comp_apply, ← Function.comp_apply (f := sphereHeight v),
+    sphereHeight_comp_chartAt_symm]
+  exact cubic_stereographicHeight_sub_mem_Icc w
+
+/-- **`h - h³ / 3` is quartic at the south pole.** In the stereographic chart centred at the south
+pole `-v`, with radial coordinate `r = ‖w‖`, the function `f = h - h³ / 3` is
+`f = -2 / 3 + r⁴ / 4 + O(r⁶)`: the error lies between `-r⁶ / 6` and `0` on the whole chart. So `f`
+has no quadratic term at `-v`, which is why its critical Hessian vanishes there
+(`TauCeti.criticalHessian_cubic_comp_sphereHeight_neg`). -/
+theorem cubic_comp_sphereHeight_chartAt_neg_symm_sub_mem_Icc (v : sphere (0 : E) 1)
+    (w : EuclideanSpace ℝ (Fin n)) :
+    ((fun t : ℝ ↦ t - t ^ 3 / 3) ∘ sphereHeight v)
+        ((chartAt (EuclideanSpace ℝ (Fin n)) (-v)).symm w) - (-2 / 3 + ‖w‖ ^ 4 / 4) ∈
+      Icc (-(‖w‖ ^ 6 / 6)) 0 := by
+  -- The function is odd in the height, and the height in the direction `-v` is `-h`.
+  have h := cubic_comp_sphereHeight_chartAt_symm_sub_mem_Icc (-v) w
+  rw [Function.comp_apply, sphereHeight_neg, Pi.neg_apply] at h
+  set a := sphereHeight v ((chartAt (EuclideanSpace ℝ (Fin n)) (-v)).symm w)
+  rw [show -a - (-a) ^ 3 / 3 = -(a - a ^ 3 / 3) by ring, mem_Icc] at h
+  rw [Function.comp_apply, mem_Icc]
+  constructor <;> linarith [h.1, h.2]
+
 /-! ### The function `h²` -/
 
 /-- **The critical points of `h²` are the two poles and the equator.** -/
@@ -132,6 +184,27 @@ theorem criticalPoints_sq_comp_sphereHeight (v : sphere (0 : E) 1) :
   congr 1
   ext x
   simp
+
+/-- **`h²` has exactly two critical values** on a sphere of positive dimension: `0`, its value on
+the equator, and `1`, its value at the two poles. Positive dimension is needed: the sphere `S⁰`
+consists of the two poles, whose equator is empty. -/
+theorem image_criticalPoints_sq_comp_sphereHeight (hn : n ≠ 0) (v : sphere (0 : E) 1) :
+    ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) ''
+      criticalPoints (𝓡 n) ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) = {0, 1} := by
+  -- In positive dimension the height takes every value in `[-1, 1]`, so the equator is nonempty.
+  have hne : {x | sphereHeight v x = 0}.Nonempty := by
+    obtain ⟨x, hx⟩ : (0 : ℝ) ∈ range (sphereHeight v) := by
+      rw [range_sphereHeight (Nat.pos_of_ne_zero hn)]
+      norm_num
+    exact ⟨x, hx⟩
+  have heq : ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) '' {x | sphereHeight v x = 0} = {0} := by
+    rw [← hne.image_const 0]
+    exact EqOn.image_eq fun x (hx : sphereHeight v x = 0) ↦ by
+      simp only [Function.comp_apply, hx]
+      norm_num
+  rw [criticalPoints_sq_comp_sphereHeight, image_union, image_pair, heq]
+  simp only [Function.comp_apply, sphereHeight_self, sphereHeight_neg_self]
+  norm_num [pair_comm]
 
 /-- **On a sphere of dimension at least two, `h²` has infinitely many critical points.** -/
 theorem totalCriticalCount_sq_comp_sphereHeight_of_two_le (hn : 2 ≤ n) (v : sphere (0 : E) 1) :

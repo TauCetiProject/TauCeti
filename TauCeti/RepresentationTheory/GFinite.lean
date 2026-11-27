@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.LinearAlgebra.Span.FiniteRange
+public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # `G`-finite vectors of a representation
@@ -28,6 +29,7 @@ representation of a compact group, this is the space of `K`-finite vectors of ha
 * `Representation.IsGFinite ρ v`: the orbit of `v` spans a finite-dimensional subspace.
 * `Representation.gFiniteSubmodule ρ`: the submodule of `G`-finite vectors, the case of the family
   `ρ` of `TauCeti.finiteSpanRangeSubmodule` from `TauCeti/LinearAlgebra/Span/FiniteRange.lean`.
+* `Representation.gFiniteSubrepresentation ρ`: the same vectors, as a subrepresentation of `ρ`.
 
 ## Main statements
 
@@ -43,8 +45,13 @@ representation of a compact group, this is the space of `K`-finite vectors of ha
   vectors are invariant under the representation.
 * `Representation.IsGFinite.map` and `Representation.map_gFiniteSubmodule_le`: intertwining maps
   preserve `G`-finiteness.
+* `Representation.IsGFinite.of_injective`: injective intertwining maps reflect `G`-finiteness.
+* `Subrepresentation.isGFinite_toRepresentation_iff`: a vector of a subrepresentation is
+  `G`-finite for the restriction exactly when it is `G`-finite in the ambient representation.
 * `Representation.gFiniteSubmodule_eq_top`: every vector of a finite-dimensional representation is
   `G`-finite.
+* `Representation.isGFinite_gFiniteSubrepresentation`: every vector of the `G`-finite
+  subrepresentation is `G`-finite for the restricted representation.
 
 ## References
 
@@ -80,14 +87,6 @@ def gFiniteSubmodule : Submodule k V :=
 theorem mem_gFiniteSubmodule {v : V} : v ∈ ρ.gFiniteSubmodule ↔ ρ.IsGFinite v :=
   mem_finiteSpanRangeSubmodule.trans (ρ.isGFinite_iff v).symm
 
-/-- The span of the orbit of a vector is invariant under the representation. -/
-theorem apply_mem_span_range_apply (v : V) (g : G) {w : V}
-    (hw : w ∈ Submodule.span k (Set.range fun h : G => ρ h v)) :
-    ρ g w ∈ Submodule.span k (Set.range fun h : G => ρ h v) := by
-  refine (Submodule.map_span_le (ρ g) _ _).2 ?_ (Submodule.mem_map_of_mem hw)
-  rintro _ ⟨h, rfl⟩
-  exact Submodule.subset_span ⟨g * h, by simp⟩
-
 variable {ρ} in
 /-- A vector whose whole orbit lies in a finite-dimensional submodule is `G`-finite. -/
 theorem IsGFinite.of_forall_apply_mem {W : Submodule k V} [FiniteDimensional k W] {v : V}
@@ -98,8 +97,8 @@ theorem IsGFinite.of_forall_apply_mem {W : Submodule k V} [FiniteDimensional k W
 span of its orbit is one. -/
 theorem isGFinite_iff_exists_subrepresentation (v : V) :
     ρ.IsGFinite v ↔ ∃ W : Subrepresentation ρ, FiniteDimensional k W.toSubmodule ∧ v ∈ W := by
-  refine ⟨fun hv => ⟨⟨Submodule.span k (Set.range fun g : G => ρ g v),
-    fun g _ hw => ρ.apply_mem_span_range_apply v g hw⟩, hv, Submodule.subset_span ⟨1, by simp⟩⟩,
+  refine ⟨fun hv => ⟨cyclicSubrepresentation ρ v, by rwa [toSubmodule_cyclicSubrepresentation],
+    mem_cyclicSubrepresentation_self v⟩,
     fun ⟨W, _, hvW⟩ => IsGFinite.of_forall_apply_mem fun g => W.apply_mem_toSubmodule g hvW⟩
 
 variable {ρ σ}
@@ -151,6 +150,25 @@ theorem IsGFinite.map (f : IntertwiningMap ρ σ) {v : V} (hv : ρ.IsGFinite v) 
   exact IsGFinite.of_apply_eq f.toLinearMap fun g =>
     (IntertwiningMap.isIntertwining _ _ f g v).symm
 
+/-- An injective intertwining map reflects `G`-finiteness: a vector whose image is `G`-finite is
+`G`-finite. -/
+theorem IsGFinite.of_injective (f : IntertwiningMap ρ σ) (hf : Function.Injective f) {v : V}
+    (hv : σ.IsGFinite (f v)) : ρ.IsGFinite v := by
+  rw [isGFinite_iff] at hv ⊢
+  have : FiniteDimensional k
+      ((Submodule.span k (Set.range fun g : G => ρ g v)).map f.toLinearMap) := by
+    rwa [Submodule.map_span, ← Set.range_comp,
+      show ⇑f.toLinearMap ∘ (fun g : G => ρ g v) = fun g => σ g (f v) from
+        funext fun g => IntertwiningMap.isIntertwining _ _ f g v]
+  exact LinearEquiv.finiteDimensional (Submodule.equivMapOfInjective _ hf _).symm
+
+/-- A vector of a subrepresentation is `G`-finite for the restricted representation exactly when
+it is `G`-finite in the ambient representation. -/
+theorem _root_.Subrepresentation.isGFinite_toRepresentation_iff (S : Subrepresentation ρ)
+    (v : S.toSubmodule) : S.toRepresentation.IsGFinite v ↔ ρ.IsGFinite v :=
+  ⟨fun h => by simpa using h.map S.subtype,
+    fun h => IsGFinite.of_injective S.subtype S.subtype_injective (by simpa using h)⟩
+
 variable (ρ)
 
 /-- The `G`-finite vectors are invariant under the representation. -/
@@ -169,5 +187,27 @@ theorem map_gFiniteSubmodule_le (f : IntertwiningMap ρ σ) :
 @[simp]
 theorem gFiniteSubmodule_eq_top [FiniteDimensional k V] : ρ.gFiniteSubmodule = ⊤ :=
   eq_top_iff.2 fun v _ => ρ.mem_gFiniteSubmodule.2 (IsGFinite.of_finiteDimensional v)
+
+/-- The **`G`-finite vectors** of a representation, as a subrepresentation. -/
+def gFiniteSubrepresentation : Subrepresentation ρ where
+  toSubmodule := ρ.gFiniteSubmodule
+  apply_mem_toSubmodule g _ hv := ρ.apply_mem_gFiniteSubmodule hv g
+
+@[simp]
+theorem toSubmodule_gFiniteSubrepresentation :
+    ρ.gFiniteSubrepresentation.toSubmodule = ρ.gFiniteSubmodule :=
+  (rfl)
+
+/-- Membership in the `G`-finite subrepresentation is `G`-finiteness. -/
+@[simp]
+theorem mem_gFiniteSubrepresentation {v : V} :
+    v ∈ ρ.gFiniteSubrepresentation ↔ ρ.IsGFinite v :=
+  ρ.mem_gFiniteSubmodule
+
+/-- Every vector of the `G`-finite subrepresentation is `G`-finite for the restricted
+representation. -/
+theorem isGFinite_gFiniteSubrepresentation (v : ρ.gFiniteSubrepresentation.toSubmodule) :
+    ρ.gFiniteSubrepresentation.toRepresentation.IsGFinite v :=
+  (ρ.gFiniteSubrepresentation.isGFinite_toRepresentation_iff v).2 (ρ.mem_gFiniteSubmodule.1 v.prop)
 
 end Representation

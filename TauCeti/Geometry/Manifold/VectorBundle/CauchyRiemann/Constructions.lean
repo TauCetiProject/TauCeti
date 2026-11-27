@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 import Mathlib.Geometry.Manifold.Notation
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Prod
 
 /-!
@@ -34,7 +36,8 @@ statements.
   part are the direct sums of those of the summands
   (`TauCeti.sectionComplexLinearPart_sectionProdMap`,
   `TauCeti.IsRealCauchyRiemannOperator.difference_prod`,
-  `TauCeti.IsRealCauchyRiemannOperator.antilinearPart_prod`).
+  `TauCeti.IsRealCauchyRiemannOperator.antilinearPart_prod`), and it is `Cⁿ` when both summands
+  are (`ContMDiffCovariantDerivativeOn.sectionProdMap`).
 * `TauCeti.IsRealCauchyRiemannOperator.transport`: the transport of a real Cauchy–Riemann operator
   along a fibrewise complex linear isomorphism `Φ` whose inverse preserves differentiability of
   sections is a real Cauchy–Riemann operator. When both `Φ` and `Φ⁻¹` preserve differentiability
@@ -211,6 +214,30 @@ theorem sectionProdMap_add {x : M}
   ext v <;> simp
 
 end Add
+
+section Smooth
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] [VectorBundle ℝ F V]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {W : M → Type*} [TopologicalSpace (TotalSpace G W)] [∀ x, TopologicalSpace (W x)]
+  [FiberBundle G W] [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] [VectorBundle ℝ G W]
+  [IsManifold I 1 M] {D₁ : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+  {D₂ : (Π x : M, W x) → Π x : M, TangentSpace I x →L[ℝ] W x} {n : ℕ∞ω} {u : Set M}
+
+/-- A direct sum of `Cⁿ` operators is a `Cⁿ` operator: it sends `C^(n+1)` sections of `V ×ᵇ W`
+to `Cⁿ` one-forms. -/
+theorem _root_.ContMDiffCovariantDerivativeOn.sectionProdMap
+    (h₁ : ContMDiffCovariantDerivativeOn F n D₁ u) (h₂ : ContMDiffCovariantDerivativeOn G n D₂ u) :
+    ContMDiffCovariantDerivativeOn (F × G) (V := V ×ᵇ W) n (sectionProdMap D₁ D₂) u where
+  contMDiff hσ :=
+    (h₁.contMDiff fun x hx ↦ (contMDiffWithinAt_section_prod_iff.1 (hσ x hx)).1).clm_bundle_prod
+      (h₂.contMDiff fun x hx ↦ (contMDiffWithinAt_section_prod_iff.1 (hσ x hx)).2)
+
+end Smooth
 
 section ComplexLinearPart
 

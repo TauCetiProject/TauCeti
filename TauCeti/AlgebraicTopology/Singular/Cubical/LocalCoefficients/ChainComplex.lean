@@ -30,6 +30,8 @@ here the spaces live in a common universe; the underlying linear maps of
 * `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexCoefficientMap η`,
   `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexMap f L`: the induced chain
   maps.
+* `TauCeti.LocalCoefficientSystem.subsetNormalizedTwistedCubicalChainComplexMap L h`: the chain
+  map induced by an inclusion `A ⊆ B` of subsets, with `L` restricted to `A` and to `B`.
 
 ## Main results
 
@@ -37,6 +39,8 @@ here the spaces live in a common universe; the underlying linear maps of
   `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexMap_comp`,
   `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexMap_naturality`:
   functoriality.
+* `TauCeti.LocalCoefficientSystem.mono_normalizedTwistedCubicalChainComplexMap`: an injective
+  continuous map induces a monomorphism of chain complexes.
 
 ## References
 
@@ -129,6 +133,15 @@ theorem normalizedTwistedCubicalChainComplexMap_f (f : C(X, Y))
   unfold normalizedTwistedCubicalChainComplexMap
   rfl
 
+/-- An injective continuous map, such as the inclusion of a subspace, induces a monomorphism of
+normalized cubical chain complexes with local coefficients. -/
+theorem mono_normalizedTwistedCubicalChainComplexMap {f : C(X, Y)} (hf : Function.Injective f)
+    (L : LocalCoefficientSystem.{u, v, w} R Y) :
+    Mono (normalizedTwistedCubicalChainComplexMap f L) :=
+  HomologicalComplex.mono_of_mono_f _ fun n ↦ (ModuleCat.mono_iff_injective _).2 <| by
+    rw [normalizedTwistedCubicalChainComplexMap_f]
+    exact NormalizedTwistedCubicalChain.map_injective hf n
+
 /-- The identity of a local system induces the identity chain map. -/
 @[simp]
 theorem normalizedTwistedCubicalChainComplexCoefficientMap_id
@@ -189,6 +202,93 @@ theorem normalizedTwistedCubicalChainComplexMap_naturality (f : C(X, Y))
     normalizedTwistedCubicalChainComplexCoefficientMap_f,
     HomologicalComplex.comp_f]
   exact congrArg ModuleCat.ofHom (NormalizedTwistedCubicalChain.coefficientMap_map η n)
+
+section Subspace
+
+variable (L : LocalCoefficientSystem.{u, v, w} R X) {A B : Set X}
+
+/-- The inclusion of a subset induces a monomorphism of normalized cubical chain complexes with
+local coefficients. -/
+instance mono_normalizedTwistedCubicalChainComplexMap_subtypeVal (A : Set X) :
+    Mono (normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥A)
+      (ContinuousMap.subtypeVal A) L) :=
+  mono_normalizedTwistedCubicalChainComplexMap Subtype.val_injective L
+
+/-- The map of normalized cubical chains induced by an inclusion `A ⊆ B` of subsets of `X`, with
+`L` restricted to `A` and to `B`. -/
+-- The source of the coefficient comparison is the pullback along
+-- `(subtypeVal B).comp (inclusion h)`, which is `subtypeVal A` by definition
+-- (`ContinuousMap.subtypeVal_comp_inclusion` is proved by `rfl`).
+def subsetNormalizedTwistedCubicalChainComplexMap (h : A ⊆ B) :
+    ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj
+        L).normalizedTwistedCubicalChainComplex ⟶
+      ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj
+        L).normalizedTwistedCubicalChainComplex :=
+  normalizedTwistedCubicalChainComplexCoefficientMap
+      ((pullbackCompIso (X := TopCat.of ↥A) (Y := TopCat.of ↥B) (ContinuousMap.inclusion h)
+        (ContinuousMap.subtypeVal B)).hom.app L) ≫
+    normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥A) (Y := TopCat.of ↥B)
+      (ContinuousMap.inclusion h)
+      ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)
+
+/-- The map induced by `A ⊆ B` is the change of coefficients identifying the two restrictions of
+`L` to `A`, followed by the map induced by the inclusion of `A` into `B`. -/
+lemma subsetNormalizedTwistedCubicalChainComplexMap_def (h : A ⊆ B) :
+    subsetNormalizedTwistedCubicalChainComplexMap L h =
+      normalizedTwistedCubicalChainComplexCoefficientMap
+          ((pullbackCompIso (X := TopCat.of ↥A) (Y := TopCat.of ↥B) (ContinuousMap.inclusion h)
+            (ContinuousMap.subtypeVal B)).hom.app L) ≫
+        normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥A) (Y := TopCat.of ↥B)
+          (ContinuousMap.inclusion h)
+          ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L) :=
+  (rfl)
+
+/-- The map induced by `A ⊆ B` followed by the map induced by `B ⊆ X` is the map induced by
+`A ⊆ X`. -/
+@[reassoc (attr := simp)]
+lemma subsetNormalizedTwistedCubicalChainComplexMap_normalizedTwistedCubicalChainComplexMap
+    (h : A ⊆ B) :
+    subsetNormalizedTwistedCubicalChainComplexMap L h ≫
+        normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥B)
+          (ContinuousMap.subtypeVal B) L =
+      normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥A)
+        (ContinuousMap.subtypeVal A) L := by
+  rw [subsetNormalizedTwistedCubicalChainComplexMap, Category.assoc]
+  -- The composite of the two inclusions is the inclusion of `A` by definition, as above.
+  exact (normalizedTwistedCubicalChainComplexMap_comp (X := TopCat.of ↥A)
+    (Y := TopCat.of ↥B) (ContinuousMap.inclusion h) (ContinuousMap.subtypeVal B) L).symm
+
+/-- The map of normalized cubical chains induced by an inclusion of subsets is a monomorphism. -/
+instance mono_subsetNormalizedTwistedCubicalChainComplexMap (h : A ⊆ B) :
+    Mono (subsetNormalizedTwistedCubicalChainComplexMap L h) :=
+  mono_of_mono_fac
+    (subsetNormalizedTwistedCubicalChainComplexMap_normalizedTwistedCubicalChainComplexMap L h)
+
+/-- The map of normalized cubical chains induced by the identity inclusion `A ⊆ A` is the
+identity. -/
+@[simp]
+lemma subsetNormalizedTwistedCubicalChainComplexMap_self (A : Set X) :
+    subsetNormalizedTwistedCubicalChainComplexMap L (subset_refl A) = 𝟙 _ := by
+  rw [← cancel_mono (normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥A)
+      (ContinuousMap.subtypeVal A) L),
+    subsetNormalizedTwistedCubicalChainComplexMap_normalizedTwistedCubicalChainComplexMap,
+    Category.id_comp]
+
+/-- The maps of normalized cubical chains induced by `A ⊆ B` and `B ⊆ C` compose to the map
+induced by `A ⊆ C`. -/
+@[reassoc (attr := simp)]
+lemma
+    subsetNormalizedTwistedCubicalChainComplexMap_comp_subsetNormalizedTwistedCubicalChainComplexMap
+    {C : Set X} (hAB : A ⊆ B) (hBC : B ⊆ C) :
+    subsetNormalizedTwistedCubicalChainComplexMap L hAB ≫
+        subsetNormalizedTwistedCubicalChainComplexMap L hBC =
+      subsetNormalizedTwistedCubicalChainComplexMap L (hAB.trans hBC) := by
+  rw [← cancel_mono (normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥C)
+    (ContinuousMap.subtypeVal C) L)]
+  simp only [Category.assoc,
+    subsetNormalizedTwistedCubicalChainComplexMap_normalizedTwistedCubicalChainComplexMap]
+
+end Subspace
 
 end LocalCoefficientSystem
 

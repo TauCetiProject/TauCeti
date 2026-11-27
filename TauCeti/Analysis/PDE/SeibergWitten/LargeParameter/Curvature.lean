@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.PositiveCone
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Pointwise curvature bounds for the large-parameter Seiberg–Witten equations
@@ -51,7 +52,9 @@ are:
 * **The full curvature.** Adding the two bounds, `F = F⁺ + F⁻` satisfies
   `|F| ≤ (r / (2 √2)) w₊ + (2 K + 1) / (2 √2) + |η| + √2 C` (`norm_le_of_add_hodgeStar_eq`), so
   `F` is bounded independently of `r` where `w₊ = O(1 / r)`, provided `K`, `C` and `η` are
-  bounded.
+  bounded. Under the coarse anti-self-dual bound instead, the curvature is bounded by the defect
+  density `δ = (r / 4) |1 - |α|² - |β|²|`: `|F| ≤ (2 + C) δ + (2 + C) (K + 1) + |η|`
+  (`norm_le_of_add_hodgeStar_eq_of_norm_smul_sub_hodgeStar_le`).
 * **The anti-`J`-invariant part.** The anti-self-dual part of `F` and `ω` are `J`-invariant, so
   the anti-`J`-invariant part of `F` comes from the cross term `q'(φ, β)` and from `η`:
   `D_J² F = 2 r q'(φ, β) - D_J² η / 2`, where `-D_J² / 4` is the projection onto the
@@ -133,6 +136,18 @@ private theorem div_sqrt_two_le_of_le_mul_add {x r C w : ℝ} (hr : 0 < r)
     clear h
     grind
   exact hexp ▸ h
+
+/-- With `s = |φ|²` and `t = |β|²`, the vacuum defect is controlled by the spinor defect:
+`(r / 4) max (1 - s) 0 ≤ (r / 4) |1 - s - t| + r t / 4`. -/
+private theorem div_mul_max_le_div_mul_abs_add {s t r : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t) :
+    r / 4 * max (1 - s) 0 ≤ r / 4 * |1 - s - t| + r * t / 4 := by
+  have h1 := le_abs_self (1 - s - t)
+  have h0 := abs_nonneg (1 - s - t)
+  rcases le_total (1 - s) 0 with h | h
+  · rw [max_eq_right h, mul_zero]
+    nlinarith [mul_nonneg hr ht, mul_nonneg hr h0]
+  · rw [max_eq_left h]
+    nlinarith [mul_le_mul_of_nonneg_left h1 hr]
 
 /-- A vector `ω` with `‖ω‖² = 2`, such as a Kähler two-vector, pairs with `η` to at most
 `√2 ‖η‖`: `|⟪ω, η⟫| ≤ √2 ‖η‖`. -/
@@ -231,7 +246,7 @@ theorem norm_add_hodgeStar_add_sq_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v
     rw [hF, ← coe_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω hρ h₂ hφ hβ hr]
     abel
   have hXle : ‖r • X‖ ^ 2 ≤ r ^ 2 * (‖φ‖ ^ 2 * ‖β‖ ^ 2 / 2) := by
-    have h := norm_quadraticTwoFormPolar_le o hQ hkl hρ h₂ φ β
+    have h := norm_quadraticTwoFormPolar_le o hQ hkl hρ φ β
     rw [norm_smul, Real.norm_of_nonneg hr, mul_pow]
     gcongr
     calc ‖X‖ ^ 2 ≤ (‖φ‖ * ‖β‖ / √2) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) h 2
@@ -452,14 +467,8 @@ theorem hermitianForm_apply_self_le_of_add_hodgeStar_eq (hr : 1 ≤ r) {K : ℝ}
     gcongr
     exact le_max_left _ _
   have hw : r / 4 * max (1 - ‖φ‖ ^ 2) 0 ≤
-      r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2| + r * ‖β‖ ^ 2 / 4 := by
-    have h1 := le_abs_self (1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2)
-    have h0 := abs_nonneg (1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2)
-    rcases le_total (1 - ‖φ‖ ^ 2) 0 with h | h
-    · rw [max_eq_right h]
-      nlinarith [sq_nonneg ‖β‖]
-    · rw [max_eq_left h]
-      nlinarith
+      r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2| + r * ‖β‖ ^ 2 / 4 :=
+    div_mul_max_le_div_mul_abs_add hr0.le (sq_nonneg _)
   -- The excess `C √r w₊ / 8 = (C / √r) (r w₊ / 4) / 2` of the coarse bound is `O(C / √r) δ`.
   have hCr : 0 ≤ C / √r := by positivity
   have hCr1 : C / √r ≤ C := div_le_self hC (Real.one_le_sqrt.2 hr)
@@ -493,26 +502,72 @@ theorem norm_le_of_add_hodgeStar_eq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)
       (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η)
     {C : ℝ} (hC : ∀ v, -C * ‖v‖ ^ 2 ≤ J.hermitianForm F v v) :
     ‖F‖ ≤ r / (2 * √2) * max (1 - ‖φ‖ ^ 2) 0 + (2 * K + 1) / (2 * √2) + ‖η‖ + √2 * C := by
-  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := by
-    rw [AlmostComplexStructure.norm_kahlerForm_sq
-      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃),
-      Fact.out (p := finrank ℝ V = 4)]
-    norm_num
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+    (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)
   have hplus := norm_smul_add_hodgeStar_le hQ hkl
     (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) hω₂ hφ hβ hρ h₂ hr hβK hφβ hF
   have hminus := norm_smul_sub_hodgeStar_le h₀ h₂₃ hQ hkl he hφ hβ hr hβK hF hC
-  have hsplit : F = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) + (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) := by
-    rw [← smul_add, add_add_sub_cancel, ← two_smul ℝ F, smul_smul]
-    norm_num
-  calc ‖F‖ ≤ ‖(2⁻¹ : ℝ) • (F + o.hodgeStar hkl F)‖ + ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ := by
-        nth_rewrite 1 [hsplit]
-        exact norm_add_le _ _
+  calc ‖F‖ ≤ ‖(2⁻¹ : ℝ) • (F + o.hodgeStar hkl F)‖ + ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ :=
+        norm_le_norm_inv_two_smul_add_add_norm_inv_two_smul_sub (R := ℝ) F (o.hodgeStar hkl F)
     _ ≤ (r / (4 * √2) * max (1 - ‖φ‖ ^ 2) 0 + (K + 1) / (2 * √2) + ‖η‖ / 2) +
           (r / (4 * √2) * max (1 - ‖φ‖ ^ 2) 0 + K / (2 * √2) + ‖η‖ / 2 + √2 * C) :=
         add_le_add hplus hminus
     _ = _ := by
         field_simp
         ring
+
+/-- **The full curvature bound by the defect density**: if
+`F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` for the Kähler two-vector `ω` of `J`, with `r ≥ 1`,
+`‖φ‖² + ‖β‖² ≤ 1 + K / r` and `‖β‖² ≤ (K / r) w₊ + K / r²`, where `w₊ = max (1 - ‖φ‖²) 0`, and
+Taubes's coarse anti-self-dual bound `‖F⁻‖ ≤ (r / (4 √2)) (1 + C / √r) w₊ + C` holds with
+`C ≥ 0`, where `F⁻ = (F - ⋆F) / 2`, then
+
+`‖F‖ ≤ (2 + C) δ + (2 + C) (K + 1) + ‖η‖`,  `δ = (r / 4) |1 - ‖φ‖² - ‖β‖²|`.
+
+So the whole curvature, not only its Hermitian part, is bounded by a fixed multiple of the defect
+density up to a constant. This is the form in which the curvature enters when the almost complex
+structure of a Darboux chart is replaced by its value at a point. -/
+theorem norm_le_of_add_hodgeStar_eq_of_norm_smul_sub_hodgeStar_le
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (hr : 1 ≤ r) {K : ℝ}
+    (hβK : ‖β‖ ^ 2 ≤ K / r * max (1 - ‖φ‖ ^ 2) 0 + K / r ^ 2)
+    (hφβ : ‖φ‖ ^ 2 + ‖β‖ ^ 2 ≤ 1 + K / r)
+    (hF : F + o.hodgeStar hkl F = (r / 4) • J.kahlerForm -
+      (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η)
+    {C : ℝ} (hC : 0 ≤ C)
+    (hFm : ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ ≤
+      r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ‖ ^ 2) 0 + C) :
+    ‖F‖ ≤ (2 + C) * (r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2|) + (2 + C) * (K + 1) + ‖η‖ := by
+  have hr0 : 0 < r := by linarith
+  have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) hr0 (le_max_right _ _) hβK
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+    (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)
+  have hplus := norm_smul_add_hodgeStar_le hQ hkl
+    (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) hω₂ hφ hβ hρ h₂ hr hβK hφβ hF
+  have htri :=
+    norm_le_norm_inv_two_smul_add_add_norm_inv_two_smul_sub (R := ℝ) F (o.hodgeStar hkl F)
+  -- Both parts are at most a multiple of `r w₊ / 4`, and `r w₊ / 4 ≤ δ + K / 2`.
+  have hw₀ := div_mul_max_le_div_mul_abs_add (s := ‖φ‖ ^ 2) hr0.le (sq_nonneg ‖β‖)
+  set m := max (1 - ‖φ‖ ^ 2) 0
+  set δ := r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2|
+  have hm : 0 ≤ m := le_max_right _ _
+  have hrb : r * ‖β‖ ^ 2 ≤ 2 * K :=
+    mul_le_two_mul_of_le_div_mul_add_div (sq_nonneg _) (sq_nonneg _) hr hβK
+  have hw : r / 4 * m ≤ δ + K / 2 := by linarith
+  have hs2 : 1 ≤ √2 := Real.one_le_sqrt.2 one_le_two
+  have hrm : r / (4 * √2) * m ≤ r / 4 * m :=
+    mul_le_mul_of_nonneg_right (div_le_div_of_nonneg_left hr0.le (by norm_num) (by linarith)) hm
+  have hCr : C / √r ≤ C := div_le_self hC (Real.one_le_sqrt.2 hr)
+  have hrmC : r / (4 * √2) * (1 + C / √r) * m ≤ (1 + C) * (r / 4 * m) := by
+    calc r / (4 * √2) * (1 + C / √r) * m = (1 + C / √r) * (r / (4 * √2) * m) := by ring
+      _ ≤ (1 + C) * (r / 4 * m) := by
+        exact mul_le_mul (by linarith) hrm (mul_nonneg (div_nonneg hr0.le (by positivity)) hm)
+          (by linarith)
+  have hK1 : (K + 1) / (2 * √2) ≤ (K + 1) / 2 := by
+    gcongr
+    linarith
+  have hδ : 0 ≤ δ := mul_nonneg (by linarith) (abs_nonneg _)
+  nlinarith [mul_le_mul_of_nonneg_left hw hC, norm_nonneg η, hδ]
 
 /-- **The anti-`J`-invariant part of the curvature is the cross term.** If
 `F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` for the Kähler two-vector `ω` of `J`, then
@@ -650,7 +705,7 @@ theorem infDist_positiveCone_le_of_add_hodgeStar_eq
     rw [norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
       Real.norm_of_nonneg (by norm_num)]
     have h1 : ‖(quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V)‖ ≤ ‖φ‖ * ‖β‖ / √2 :=
-      norm_quadraticTwoFormPolar_le o hQ hkl hρ h₂ φ β
+      norm_quadraticTwoFormPolar_le o hQ hkl hρ φ β
     have h2 := AlmostComplexStructure.norm_lieMap_lieMap_le hJ η
     have := mul_le_mul_of_nonneg_left h1 (by positivity : (0 : ℝ) ≤ 2 * r)
     linarith
