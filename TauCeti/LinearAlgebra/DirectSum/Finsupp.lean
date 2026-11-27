@@ -26,6 +26,9 @@ which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
   index types.
 * `finsuppTensorFinsupp'_rTensor_apply`, `finsuppTensorFinsupp'_lTensor_apply`: the coefficients
   of `(φ ⊗ 1) t` and `(1 ⊗ ψ) t` are those of `t` multiplied by the matrix of `φ` or `ψ`.
+* `finsuppTensorFinsupp'_lid_rTensor_apply`, `finsuppTensorFinsupp'_rid_lTensor_apply`: the
+  coefficients of `(g ⊗ 1) t` and `(1 ⊗ g) t` for a linear form `g`, read in `β →₀ R` and in
+  `α →₀ R`.
 * `finsuppTensorFinsupp'_map_signReversal_apply`: the coefficients of the tensor product of two
   sign reversals.
 * `LinearMap.mul'_map_lapply_lapply`, `LinearMap.mul'_map_apply_eq_sum`: the product of two linear
@@ -117,6 +120,42 @@ theorem finsuppTensorFinsupp'_lTensor_apply [Fintype β] (ψ : (β →₀ R) →
       Finset.sum_apply, Finset.mul_sum]
     refine Finset.sum_congr rfl fun b _ ↦ ?_
     rw [finsuppTensorFinsupp'_apply_apply, Finsupp.smul_apply, smul_eq_mul]
+    ring
+  | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
+
+/-- **The coefficients of `(g ⊗ 1) t` for a linear form `g`.** Under the identification of
+`R ⊗ (β →₀ R)` with `β →₀ R`, the coefficient of `b` in the image of `t` under `g ⊗ 1` is the sum
+over `a` of the coefficient of `(a, b)` in `t` times the value of `g` on the basis vector `a`. -/
+theorem finsuppTensorFinsupp'_lid_rTensor_apply [Fintype α] (g : (α →₀ R) →ₗ[R] R)
+    (t : (α →₀ R) ⊗[R] (β →₀ R)) (b : β) :
+    TensorProduct.lid R (β →₀ R) (g.rTensor (β →₀ R) t) b =
+      ∑ a, finsuppTensorFinsupp' R α β t (a, b) * g (Finsupp.single a 1) := by
+  induction t with
+  | tmul x y =>
+    -- Expand `x` in the standard basis.
+    rw [LinearMap.rTensor_tmul, TensorProduct.lid_tmul, Finsupp.smul_apply, smul_eq_mul]
+    conv_lhs => rw [← Finsupp.univ_sum_single x]
+    simp_rw [← Finsupp.smul_single_one _ (x _), map_sum, map_smul, smul_eq_mul, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun a _ ↦ ?_
+    rw [finsuppTensorFinsupp'_apply_apply]
+    ring
+  | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
+
+/-- **The coefficients of `(1 ⊗ g) t` for a linear form `g`.** Under the identification of
+`(α →₀ R) ⊗ R` with `α →₀ R`, the coefficient of `a` in the image of `t` under `1 ⊗ g` is the sum
+over `b` of the coefficient of `(a, b)` in `t` times the value of `g` on the basis vector `b`. -/
+theorem finsuppTensorFinsupp'_rid_lTensor_apply [Fintype β] (g : (β →₀ R) →ₗ[R] R)
+    (t : (α →₀ R) ⊗[R] (β →₀ R)) (a : α) :
+    TensorProduct.rid R (α →₀ R) (g.lTensor (α →₀ R) t) a =
+      ∑ b, finsuppTensorFinsupp' R α β t (a, b) * g (Finsupp.single b 1) := by
+  induction t with
+  | tmul x y =>
+    -- Expand `y` in the standard basis.
+    rw [LinearMap.lTensor_tmul, TensorProduct.rid_tmul, Finsupp.smul_apply, smul_eq_mul]
+    conv_lhs => rw [← Finsupp.univ_sum_single y]
+    simp_rw [← Finsupp.smul_single_one _ (y _), map_sum, map_smul, smul_eq_mul, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun b _ ↦ ?_
+    rw [finsuppTensorFinsupp'_apply_apply]
     ring
   | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
 

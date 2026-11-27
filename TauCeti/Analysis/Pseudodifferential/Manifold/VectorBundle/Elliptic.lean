@@ -5,79 +5,86 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.AsymptoticSum
-public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Composition
-public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.SymbolQuantization
+public import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Elliptic
+public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.PrincipalSymbol
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
-# Parametrices of elliptic operators between vector bundles
+# Elliptic pseudodifferential operators between vector bundles in charts
 
 Let `M` be a manifold modelled on `ℝⁿ` and `E`, `F` smooth complex vector bundles over `M` with
 finite-dimensional model fibres `V` and `W`. A classical pseudodifferential operator
-`P : Γ(E) → Γ(F)` of order `m` (`TauCeti.sectionClassicalPseudodifferentialOperators`) is
-elliptic (`TauCeti.IsSectionClassicalElliptic`) when its principal symbol
-`σ_m(P)(x, ξ) : E_x → F_x` is bijective at every nonzero covector `ξ ∈ T*ₓM`. This file constructs
-parametrices of elliptic operators between bundles on a compact manifold: operators
-`Q : Γ(F) → Γ(E)` of order `-m` inverting `P` on both sides modulo operators of order `-∞`. They
-are the bundle counterpart of the scalar parametrices of `Manifold/Parametrix.lean`, and the input
-of the elliptic estimates and of the Fredholm theory of `P` between Sobolev spaces of sections.
+`P : Γ(E) → Γ(F)` of order `m` (`TauCeti.sectionClassicalPseudodifferentialOperators`) has a
+principal symbol `σ_m(P)(x, ξ) : E_x → F_x` (`TauCeti.sectionClassicalPrincipalSymbol`), and it is
+elliptic at `x` (`TauCeti.IsSectionClassicalEllipticAt`) when `σ_m(P)(x, ξ)` is bijective at every
+nonzero covector `ξ`. This file reads the principal symbol and ellipticity off the local
+description of `P`.
 
-**The inverse principal symbol is a symbol.** The fibrewise inverses `σ_m(P)(x, ξ)⁻¹ : F_x → E_x`
-form a smooth positively homogeneous `Hom(F, E)`-valued symbol of degree `-m`
-(`TauCeti.IsSectionClassicalElliptic.exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id`), in
-the sense of `TauCeti.sectionHomogeneousCotangentSymbols`. This is the general fact that the
-fibrewise inverse of a smooth homogeneous symbol bijective at nonzero covectors is again one
-(`TauCeti.exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id`), applied to `σ_m(P)`. The
-scalar statement is
-`TauCeti.IsClassicalElliptic.inv_classicalPrincipalSymbol_mem_homogeneousCotangentSymbols`.
+In a chart `e` whose source lies in the base sets of trivializations `t` of `E` and `t'` of `F`,
+the compression `u ↦ φ · t' (P (t⁻¹ ((ψ u) ∘ e))) ∘ e⁻¹` of `P` by cutoffs `φ`, `ψ` is the
+quantization of a classical symbol `a` with values in `V →L[ℂ] W`
+(`TauCeti.exists_quantizeSchwartzValue_eq_apply_chartCutoffSection`). Its principal symbol is the
+principal symbol of `P` read in the frames, multiplied by the cutoffs: for `x` in the chart source
+and every frequency `η`,
 
-**Parametrices.** On a compact manifold every smooth homogeneous `Hom(F, E)`-valued symbol is a
-principal symbol (`TauCeti.sectionClassicalPrincipalSymbolLinearMap_surjective`), so there is an
-operator `Q₀` of order `-m` with principal symbol `σ_m(P)⁻¹`
-(`TauCeti.IsSectionClassicalElliptic.exists_sectionClassicalPrincipalSymbol_comp_eq_id`). The
-principal symbols of `P Q₀` and `Q₀ P` are those of the identities, so `P Q₀ = 1 - R` and
-`Q₀ P = 1 - L` with `R` and `L` of order `-1`. The Neumann series on a bundle
-(`exists_forall_one_sub_mul_sub_one_mem_sectionClassicalPseudodifferentialOperators`) inverts
-`1 - R` and `1 - L` modulo operators of every order `-N`, by operators `S` and `S'`. Then
-`Q = Q₀ S` is a right parametrix and `Q' = S' Q₀` a left parametrix, and they agree modulo order
-`-∞`, since `Q' - Q = Q' (1 - P Q) + (Q' P - 1) Q`. So `Q` is a two-sided parametrix:
-`P Q - 1` and `Q P - 1` have every order `-N`
-(`IsSectionClassicalElliptic.exists_comp_sub_id_mem_sectionClassicalPseudodifferentialOperators`).
-Conversely an operator with such a parametrix is elliptic
-(`TauCeti.IsSectionClassicalEllipticAt.of_comp_sub_id_mem`), so on a compact manifold the elliptic
-operators between bundles are exactly those invertible modulo operators of order `-∞`
-(`TauCeti.isSectionClassicalElliptic_iff_exists_comp_sub_id_mem`).
+`a_m(e x, η) v = φ(e x) ψ(e x) t'ₓ (σ_m(P)(x, ⟪η, ·⟫ ∘ de_x) (t⁻¹ₓ v))`
+
+(`TauCeti.coefficient_principal_apply_eq_sectionClassicalPrincipalSymbol`). This is the
+transformation law of the principal symbol under changes of charts and frames
+(Hörmander III, §18.1; Taylor, Lecture I, §8): the chart principal symbols of `P` are the
+readings in charts and frames of one function on the cotangent bundle with values in
+`Hom(E, F)`. The proof reads `a` entry by entry. Its scalar entry `ℓ ∘ a ∘ v` is the symbol of
+the scalar chart compression of the matrix entry `f ↦ ρ ℓ(t' (P (f ρ t⁻¹ v)))` of `P`, for a
+cutoff `ρ` equal to `1` over the supports of `φ` and `ψ`
+(`Bundle.Trivialization.chartCutoffSection_postcompCLM_toSpanSingleton`). So the scalar
+description `TauCeti.coefficient_principal_eq_classicalPrincipalSymbol` of chart principal
+symbols and the transformation law `TauCeti.classicalPrincipalSymbol_sectionEntry` of the entries
+apply.
+
+Consequently, where `φ ψ` does not vanish, `P` is elliptic at `x` exactly when the matrix
+`a_m(e x, η)` is invertible at every nonzero frequency
+(`TauCeti.isSectionClassicalEllipticAt_iff_forall_isInvertible`), and on an open set `U` where
+`φ ψ ≠ 0` the restriction of `a` to `U` is an elliptic classical symbol exactly when `P` is
+elliptic over `U` (`TauCeti.isElliptic_restrict_iff_forall_isSectionClassicalEllipticAt`).
+Ellipticity is an open condition (`TauCeti.IsSectionClassicalEllipticAt.eventually`). On a compact
+set over which `P` is elliptic and `φ ψ ≠ 0`, the chart symbol is elliptic at large frequencies
+with the inverse bound of order `-m`, and a symbol of order `-m` with values in `W →L[ℂ] V`
+inverts it on both sides at large frequencies near that set
+(`TauCeti.exists_isEllipticOn_of_forall_isSectionClassicalEllipticAt`,
+`TauCeti.exists_comp_eq_id_of_forall_isSectionClassicalEllipticAt`). These are the local inverse
+symbols from which a parametrix of an elliptic operator between bundles is assembled chart by
+chart, and through which the Euclidean elliptic theory of matrix-valued symbols applies to `P`.
+The scalar forms of these statements are in
+`TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic`.
 
 ## Main results
 
-* `TauCeti.IsSectionClassicalElliptic.exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id`:
-  the inverse principal symbol of an elliptic operator between bundles is a smooth positively
-  homogeneous `Hom(F, E)`-valued symbol of degree `-m`.
-* `TauCeti.IsSectionClassicalElliptic.exists_sectionClassicalPrincipalSymbol_comp_eq_id`: on a
-  compact manifold, it is the principal symbol of an operator of order `-m`.
-* `IsSectionClassicalElliptic.exists_comp_sub_id_mem_sectionClassicalPseudodifferentialOperators`:
-  on a compact manifold, an elliptic operator between bundles has a two-sided parametrix of order
-  `-m` modulo operators of every order `-N`.
-* `TauCeti.isSectionClassicalElliptic_iff_exists_comp_sub_id_mem`: on a compact manifold,
-  ellipticity is invertibility modulo operators of order `-∞`.
+* `TauCeti.coefficient_principal_apply_eq_sectionClassicalPrincipalSymbol`: the principal symbol
+  of a chart symbol of `P` is the principal symbol of `P` read in the chart and the frames.
+* `TauCeti.isSectionClassicalEllipticAt_iff_forall_isInvertible`: ellipticity in a chart.
+* `TauCeti.isElliptic_restrict_iff_forall_isSectionClassicalEllipticAt`: the chart symbol is
+  elliptic over an open set exactly when `P` is.
+* `TauCeti.IsSectionClassicalEllipticAt.eventually`,
+  `TauCeti.isOpen_setOf_isSectionClassicalEllipticAt`: ellipticity is an open condition.
+* `TauCeti.exists_isEllipticOn_of_forall_isSectionClassicalEllipticAt`,
+  `TauCeti.exists_comp_eq_id_of_forall_isSectionClassicalEllipticAt`: local inverse symbols.
 
 ## References
 
-* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1 (parametrices
-  of elliptic operators, and operators between vector bundles after Definition 18.1.20).
-* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §4,
-  (4.1)–(4.6), and §8.
-* R. Melrose, *Introduction to Microlocal Analysis*, §5.3.
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1
+  (pseudodifferential operators between sections of vector bundles and their principal symbols).
+* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §4 and §8.
 -/
 
 public section
 
 noncomputable section
 
-open Bundle Filter Module Set
-open scoped ContDiff Manifold Topology
-
-namespace TauCeti
+open Bundle Filter Set TauCeti Module
+open scoped ContDiff Distributions Manifold SchwartzMap Topology
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
   [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
@@ -92,141 +99,256 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   {m : ℝ}
   {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
 
-/-! ### The inverse principal symbol -/
+namespace TauCeti
 
-/-- **The inverse principal symbol.** If `P : Γ(E) → Γ(F)` is elliptic of order `m`, the fibrewise
-inverses `σ_m(P)(x, ξ)⁻¹ : F_x → E_x` at nonzero covectors form a smooth positively homogeneous
-`Hom(F, E)`-valued symbol of degree `-m`: there is `s` in
-`TauCeti.sectionHomogeneousCotangentSymbols n W F V E (-m)` with `s(x, ξ) ∘ σ_m(P)(x, ξ) = 1` and
-`σ_m(P)(x, ξ) ∘ s(x, ξ) = 1` for every nonzero covector `ξ ∈ T*ₓM`. -/
-theorem IsSectionClassicalElliptic.exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id
-    (hPe : IsSectionClassicalElliptic m P) :
-    ∃ s ∈ sectionHomogeneousCotangentSymbols n W F V E (-m), ∀ x ξ, ξ ≠ 0 →
-      s x ξ ∘ₗ sectionClassicalPrincipalSymbol m P x ξ = LinearMap.id ∧
-        sectionClassicalPrincipalSymbol m P x ξ ∘ₗ s x ξ = LinearMap.id :=
-  TauCeti.exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id
-    sectionClassicalPrincipalSymbol_mem_sectionHomogeneousCotangentSymbols fun x ξ hξ ↦
-      isSectionClassicalEllipticAt_iff.1 (isSectionClassicalElliptic_iff.1 hPe x) ξ hξ
+/-! ### The principal symbol in a chart -/
 
-/-- **Quantizing the inverse principal symbol.** On a compact manifold, an elliptic operator
-`P : Γ(E) → Γ(F)` of order `m` has an operator `Q : Γ(F) → Γ(E)` of order `-m` whose principal
-symbol is the fibrewise inverse of that of `P`: `σ_{-m}(Q)(x, ξ) ∘ σ_m(P)(x, ξ) = 1` and
-`σ_m(P)(x, ξ) ∘ σ_{-m}(Q)(x, ξ) = 1` at every nonzero covector `ξ ∈ T*ₓM`. -/
-theorem IsSectionClassicalElliptic.exists_sectionClassicalPrincipalSymbol_comp_eq_id
-    [CompactSpace M] (hPe : IsSectionClassicalElliptic m P) :
-    ∃ Q ∈ sectionClassicalPseudodifferentialOperators (V := W) (E := F) (W := V) (F := E) (-m),
-      ∀ x ξ, ξ ≠ 0 →
-        sectionClassicalPrincipalSymbol (-m) Q x ξ ∘ₗ sectionClassicalPrincipalSymbol m P x ξ =
-          LinearMap.id ∧
-        sectionClassicalPrincipalSymbol m P x ξ ∘ₗ sectionClassicalPrincipalSymbol (-m) Q x ξ =
-          LinearMap.id := by
-  obtain ⟨s, hs, hsP⟩ := hPe.exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id
-  obtain ⟨⟨Q, hQ⟩, hQs⟩ := sectionClassicalPrincipalSymbolLinearMap_surjective
-    (n := n) (V := W) (E := F) (W := V) (F := E) (m := -m) ⟨s, hs⟩
-  have hσ : sectionClassicalPrincipalSymbol (-m) Q = s := by
-    simpa using congrArg Subtype.val hQs
-  exact ⟨Q, hQ, fun x ξ hξ ↦ hσ ▸ hsP x ξ hξ⟩
+section Chart
 
-/-! ### Parametrices -/
+variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+  {he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
+  {t : Trivialization V (π V E)} [MemTrivializationAtlas t] {hE : e.source ⊆ t.baseSet}
+  {t' : Trivialization W (π W F)} [MemTrivializationAtlas t']
+  {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {a : ClassicalSymbol n V W m}
 
-/-- **Inverting the principal symbol.** On a compact manifold, an elliptic operator `P` of order
-`m` between bundles has an inverse modulo operators of order `-1`: an operator `Q` of order `-m`
-whose principal symbol is the inverse of that of `P`. -/
-private theorem IsSectionClassicalElliptic.exists_comp_sub_id_mem_neg_one [CompactSpace M]
-    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
-    (hPe : IsSectionClassicalElliptic m P) :
-    ∃ Q ∈ sectionClassicalPseudodifferentialOperators (V := W) (E := F) (W := V) (F := E) (-m),
-      P ∘ₗ Q - LinearMap.id ∈ sectionClassicalPseudodifferentialOperators (-1) ∧
-        Q ∘ₗ P - LinearMap.id ∈ sectionClassicalPseudodifferentialOperators (-1) := by
-  obtain ⟨Q, hQ, hσ⟩ := hPe.exists_sectionClassicalPrincipalSymbol_comp_eq_id
-  have hPQ : P ∘ₗ Q ∈ sectionClassicalPseudodifferentialOperators 0 := by
-    simpa using comp_mem_sectionClassicalPseudodifferentialOperators hP hQ
-  have hQP : Q ∘ₗ P ∈ sectionClassicalPseudodifferentialOperators 0 := by
-    simpa using comp_mem_sectionClassicalPseudodifferentialOperators hQ hP
-  -- Both products have the principal symbol of the identity.
-  rw [show (-1 : ℝ) = 0 - 1 by norm_num]
-  refine ⟨Q, hQ,
-    sub_mem_sectionClassicalPseudodifferentialOperators_of_sectionClassicalPrincipalSymbol_eq hPQ
-      id_mem_sectionClassicalPseudodifferentialOperators fun x ξ ↦ ?_,
-    sub_mem_sectionClassicalPseudodifferentialOperators_of_sectionClassicalPrincipalSymbol_eq hQP
-      id_mem_sectionClassicalPseudodifferentialOperators fun x ξ ↦ ?_⟩
-  · rcases eq_or_ne ξ 0 with rfl | hξ
-    · simp
-    · have h := sectionClassicalPrincipalSymbol_comp hP hQ x ξ
-      rw [add_neg_cancel] at h
-      rw [h, (hσ x ξ hξ).2, sectionClassicalPrincipalSymbol_id x hξ]
-  · rcases eq_or_ne ξ 0 with rfl | hξ
-    · simp
-    · have h := sectionClassicalPrincipalSymbol_comp hQ hP x ξ
-      rw [neg_add_cancel] at h
-      rw [h, (hσ x ξ hξ).1, sectionClassicalPrincipalSymbol_id x hξ]
+omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- The scalar entry `ℓ ∘ a ∘ v` of the chart symbol `a` of `P` is the symbol of the scalar chart
+compression of the matrix entry `f ↦ ρ ℓ(t' (P (f ρ t⁻¹ v)))` of `P`, for a cutoff `ρ` equal to
+`1` over the supports of `φ` and `ψ`. -/
+private theorem quantizeSchwartzValue_map_entryMap_eq_complexChartCompression
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, V)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        φ y • t'.continuousLinearMapAt ℂ (e.symm y)
+          (P (t.chartCutoffSection he hE ψ u) (e.symm y)))
+    (ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hρE : tsupport ρ ⊆ t.baseSet)
+    (hρF : tsupport ρ ⊆ t'.baseSet) (hρ : ∀ y ∈ tsupport φ ∪ tsupport ψ, ρ (e.symm y) = 1)
+    (ℓ : W →L[ℂ] ℂ) (v : V) (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n) :
+    quantizeSchwartzValue (a.map (Symbol.entryMap ℓ v)).toSymbol.coefficient u y =
+      e.complexChartCompression he φ ψ (sectionEntry t ρ hρE v t' ρ hρF ℓ P)
+        (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y := by
+  rw [ClassicalSymbol.toSymbol_map, Symbol.quantizeSchwartzValue_map_entryMap, ha,
+    OpenPartialHomeomorph.complexChartCompression_apply, sectionEntry_apply,
+    t.chartCutoffSection_postcompCLM_toSpanSingleton he hE ψ u v ρ hρE
+      fun y hy ↦ hρ y (Or.inr hy)]
+  by_cases hφ : φ y = 0
+  · simp [hφ]
+  rw [hρ y (Or.inl (subset_tsupport _ hφ)), one_smul, ContinuousLinearMap.map_smul_of_tower]
 
-/-- **Parametrices of elliptic operators between bundles.** On a compact manifold, let
-`P : Γ(E) → Γ(F)` be an elliptic classical pseudodifferential operator of order `m` between
-bundles with finite-dimensional fibres. Then there is a classical pseudodifferential operator
-`Q : Γ(F) → Γ(E)` of order `-m` that inverts `P` on both sides modulo operators of order `-∞`:
-`P ∘ Q - 1` and `Q ∘ P - 1` have every order `-N`. -/
-theorem
-    IsSectionClassicalElliptic.exists_comp_sub_id_mem_sectionClassicalPseudodifferentialOperators
-    [CompactSpace M] (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
-    (hPe : IsSectionClassicalElliptic m P) :
-    ∃ Q ∈ sectionClassicalPseudodifferentialOperators (V := W) (E := F) (W := V) (F := E) (-m),
-      ∀ N : ℕ, P ∘ₗ Q - LinearMap.id ∈ sectionClassicalPseudodifferentialOperators (-N) ∧
-        Q ∘ₗ P - LinearMap.id ∈ sectionClassicalPseudodifferentialOperators (-N) := by
-  obtain ⟨Q₀, hQ₀, hPQ₀, hQ₀P⟩ := hPe.exists_comp_sub_id_mem_neg_one hP
-  -- With `P Q₀ = 1 - R` and `Q₀ P = 1 - L`, both `R` and `L` of order `-1`, the Neumann series
-  -- inverts `1 - R` and `1 - L` modulo order `-∞`; so `Q = Q₀ S` is a right parametrix and
-  -- `Q' = S' Q₀` a left parametrix.
-  obtain ⟨S, hS, hSN⟩ :=
-    exists_forall_one_sub_mul_sub_one_mem_sectionClassicalPseudodifferentialOperators
-      (R := LinearMap.id - P ∘ₗ Q₀) (by simpa using neg_mem hPQ₀)
-  obtain ⟨S', hS', hS'N⟩ :=
-    exists_forall_one_sub_mul_sub_one_mem_sectionClassicalPseudodifferentialOperators
-      (R := LinearMap.id - Q₀ ∘ₗ P) (by simpa using neg_mem hQ₀P)
-  have hQ : Q₀ ∘ₗ S ∈ sectionClassicalPseudodifferentialOperators (-m) := by
-    simpa using comp_mem_sectionClassicalPseudodifferentialOperators hQ₀ hS
-  have hQ' : S' ∘ₗ Q₀ ∈ sectionClassicalPseudodifferentialOperators (-m) := by
-    simpa using comp_mem_sectionClassicalPseudodifferentialOperators hS' hQ₀
-  have hPQ (N : ℕ) :
-      P ∘ₗ (Q₀ ∘ₗ S) - LinearMap.id ∈ sectionClassicalPseudodifferentialOperators (-N) := by
-    simpa [Module.End.mul_eq_comp, Module.End.one_eq_id, LinearMap.comp_assoc] using (hSN N).1
-  have hQ'P (N : ℕ) :
-      (S' ∘ₗ Q₀) ∘ₗ P - LinearMap.id ∈ sectionClassicalPseudodifferentialOperators (-N) := by
-    simpa [Module.End.mul_eq_comp, Module.End.one_eq_id, LinearMap.comp_assoc] using (hS'N N).2
-  -- The left and right parametrices agree modulo order `-∞`:
-  -- `Q' - Q = Q' (1 - P Q) + (Q' P - 1) Q`, so `(Q' - Q) P` has every order `-N`.
-  have hdiff (N : ℕ) : (S' ∘ₗ Q₀ - Q₀ ∘ₗ S) ∘ₗ P ∈
-      sectionClassicalPseudodifferentialOperators (-N) := by
-    have h₁ := comp_mem_sectionClassicalPseudodifferentialOperators hQ' (neg_mem (hPQ N))
-    have h₂ := comp_mem_sectionClassicalPseudodifferentialOperators (hQ'P N) hQ
-    rw [add_comm] at h₂
-    have h := comp_mem_sectionClassicalPseudodifferentialOperators (add_mem h₁ h₂) hP
-    rw [show -m + -(N : ℝ) + m = -N by ring] at h
-    convert h using 1
-    ext u : 1
-    simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.neg_apply,
-      LinearMap.id_apply, map_neg, map_sub]
-    abel
-  refine ⟨Q₀ ∘ₗ S, hQ, fun N ↦ ⟨hPQ N, ?_⟩⟩
-  rw [show (Q₀ ∘ₗ S) ∘ₗ P - LinearMap.id =
-      ((S' ∘ₗ Q₀) ∘ₗ P - LinearMap.id) - (S' ∘ₗ Q₀ - Q₀ ∘ₗ S) ∘ₗ P by
-    ext u : 1
-    simp]
-  exact sub_mem (hQ'P N) (hdiff N)
+/-- **The principal symbol in a chart.** Let `a` be the symbol of the compression
+`u ↦ φ · t' (P (t⁻¹ ((ψ u) ∘ e))) ∘ e⁻¹` of a classical pseudodifferential operator `P` of order
+`m` between bundles, in a chart `e` whose source lies in the base sets of the trivializations `t`
+and `t'`. At a point `x` of the chart source, the principal symbol of `a` at the frequency `η` is
+the principal symbol of `P` at the covector `⟪η, ·⟫ ∘ de_x`, read in the frames `t` and `t'`, times
+`φ(e x) ψ(e x)`. -/
+theorem coefficient_principal_apply_eq_sectionClassicalPrincipalSymbol
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hF : e.source ⊆ t'.baseSet)
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, V)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        φ y • t'.continuousLinearMapAt ℂ (e.symm y)
+          (P (t.chartCutoffSection he hE ψ u) (e.symm y)))
+    {x : M} (hx : x ∈ e.source) (η : CoordinateSpace n) (v : V) :
+    a.principal.coefficient (e x, η) v =
+      ((φ (e x) * ψ (e x) : ℝ) : ℂ) • t'.continuousLinearMapAt ℂ x
+        (sectionClassicalPrincipalSymbol m P x
+          ((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x)) (t.symm x v)) := by
+  -- A function `ρ` on `M`, supported in the chart source, equal to `1` over the supports of `φ`
+  -- and `ψ`, cuts off the frames of `E` and `F`.
+  obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
+  obtain ⟨ρ, hρs, hρχ⟩ := e.exists_tsupport_subset_eq_one he χ e.open_source
+    (image_subset_iff.2 fun y hy ↦ e.map_target (χ.tsupport_subset hy))
+  have hρ (y : CoordinateSpace n) (hy : y ∈ tsupport φ ∪ tsupport ψ) : ρ (e.symm y) = 1 :=
+    hρχ y (subset_tsupport _ (by simp [hχ.self_of_nhdsSet y hy]))
+  set ξ := (innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x)
+  -- It suffices to compare the scalar entries `ℓ ∘ a_m ∘ v`.
+  suffices h : ∀ ℓ : W →L[ℂ] ℂ, ℓ (a.principal.coefficient (e x, η) v) =
+      ℓ (((φ (e x) * ψ (e x) : ℝ) : ℂ) •
+        t'.continuousLinearMapAt ℂ x (sectionClassicalPrincipalSymbol m P x ξ (t.symm x v))) by
+    refine (finBasis ℂ W).ext_elem fun j ↦ ?_
+    simpa using h ((finBasis ℂ W).coord j).toContinuousLinearMap
+  intro ℓ
+  have hA := (mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2 t ρ (hρs.trans hE) v
+    t' ρ (hρs.trans hF) ℓ
+  have hentry := coefficient_principal_eq_classicalPrincipalSymbol hA he φ ψ
+    (quantizeSchwartzValue_map_entryMap_eq_complexChartCompression ha ρ (hρs.trans hE)
+      (hρs.trans hF) hρ ℓ v) hx η
+  rw [ClassicalSymbol.principal_map] at hentry
+  have hℓ := DFunLike.congr_fun hentry 1
+  simp only [HomogeneousSymbol.coefficient_map, Symbol.entryMap_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.toSpanSingleton_apply, one_smul,
+    smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul, mul_one] at hℓ
+  rw [hℓ, classicalPrincipalSymbol_sectionEntry hP, map_smul, smul_eq_mul]
+  by_cases hφψ : φ (e x) * ψ (e x) = 0
+  · simp [hφψ]
+  have hρx : ρ x = 1 := by
+    simpa [e.left_inv hx] using hρ (e x) (Or.inl (subset_tsupport _ (left_ne_zero_of_mul hφψ)))
+  rw [hρx, mul_one, Complex.ofReal_one, one_mul]
 
-/-- **Ellipticity is invertibility modulo order `-∞`.** On a compact manifold, a classical
-pseudodifferential operator `P : Γ(E) → Γ(F)` of order `m` between bundles with
-finite-dimensional fibres is elliptic exactly when it has a two-sided parametrix of order `-m`: an
-operator `Q : Γ(F) → Γ(E)` of order `-m` with `P ∘ Q - 1` and `Q ∘ P - 1` of every order `-N`. -/
-theorem isSectionClassicalElliptic_iff_exists_comp_sub_id_mem
-    [CompactSpace M] (hP : P ∈ sectionClassicalPseudodifferentialOperators m) :
-    IsSectionClassicalElliptic m P ↔
-      ∃ Q ∈ sectionClassicalPseudodifferentialOperators (V := W) (E := F) (W := V) (F := E) (-m),
-        ∀ N : ℕ, P ∘ₗ Q - LinearMap.id ∈ sectionClassicalPseudodifferentialOperators (-N) ∧
-          Q ∘ₗ P - LinearMap.id ∈ sectionClassicalPseudodifferentialOperators (-N) :=
-  ⟨fun hPe ↦ hPe.exists_comp_sub_id_mem_sectionClassicalPseudodifferentialOperators hP,
-    fun ⟨Q, hQ, hN⟩ ↦ isSectionClassicalElliptic_iff.2 fun x ↦
-      IsSectionClassicalEllipticAt.of_comp_sub_id_mem hQ hP (neg_add_cancel m)
-        (by simpa using (hN 1).2) (by simpa using (hN 1).1) x⟩
+/-- **Ellipticity in a chart.** Let `a` be the symbol of the chart compression
+`u ↦ φ · t' (P (t⁻¹ ((ψ u) ∘ e))) ∘ e⁻¹` of a classical pseudodifferential operator `P` of order
+`m` between bundles. At a point `x` of the chart source where `φ ψ` does not vanish, `P` is elliptic
+exactly when the principal symbol of `a` is invertible at `e x` at every nonzero frequency. -/
+theorem isSectionClassicalEllipticAt_iff_forall_isInvertible
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hF : e.source ⊆ t'.baseSet)
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, V)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        φ y • t'.continuousLinearMapAt ℂ (e.symm y)
+          (P (t.chartCutoffSection he hE ψ u) (e.symm y)))
+    {x : M} (hx : x ∈ e.source) (hφψ : φ (e x) * ψ (e x) ≠ 0) :
+    IsSectionClassicalEllipticAt m P x ↔
+      ∀ η : CoordinateSpace n, η ≠ 0 → (a.principal.coefficient (e x, η)).IsInvertible := by
+  have he₁ : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (by simp) he
+  have hc : ((φ (e x) * ψ (e x) : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hφψ
+  set T := t'.continuousLinearEquivAt ℂ x (hF hx)
+  set S := (t.continuousLinearEquivAt ℂ x (hE hx)).symm
+  have hcb : Function.Bijective fun w : W ↦ ((φ (e x) * ψ (e x) : ℝ) : ℂ) • w :=
+    ⟨smul_right_injective W hc, fun w ↦ ⟨_, smul_inv_smul₀ hc w⟩⟩
+  -- The principal symbol of `a` at `(e x, η)` is `σ_m(P)(x, ξ)` between the frame isomorphisms.
+  have key (η : CoordinateSpace n) : (a.principal.coefficient (e x, η) : V → W) =
+      (fun w ↦ ((φ (e x) * ψ (e x) : ℝ) : ℂ) • w) ∘ T ∘ sectionClassicalPrincipalSymbol m P x
+        ((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x)) ∘ S := by
+    rw [t'.coe_continuousLinearEquivAt_eq, t.symm_continuousLinearEquivAt_eq]
+    funext v
+    rw [coefficient_principal_apply_eq_sectionClassicalPrincipalSymbol hP hF ha hx]
+    simp [t.symmL_apply (hE hx)]
+  have hbij (η : CoordinateSpace n) : (a.principal.coefficient (e x, η)).IsInvertible ↔
+      Function.Bijective (sectionClassicalPrincipalSymbol m P x
+        ((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x))) := by
+    rw [ContinuousLinearMap.isInvertible_iff_bijective, key, hcb.of_comp_iff',
+      T.bijective.of_comp_iff', Function.Bijective.of_comp_iff _ S.bijective]
+  rw [isSectionClassicalEllipticAt_iff]
+  simp_rw [hbij]
+  refine ⟨fun h η hη ↦ h _ ((innerSL_comp_mvfderiv_eq_zero_iff he₁ hx).not.2 hη),
+    fun h ξ hξ ↦ ?_⟩
+  -- The covector `ξ` is `⟪η, ·⟫ ∘ de_x` for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`.
+  have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv he₁ hx ξ
+  exact hηξ ▸ h _ (toDual_symm_comp_inverse_mvfderiv_ne_zero he₁ hx hξ)
+
+/-- **The chart symbol of an elliptic operator.** Let `a` be the symbol of the chart compression of
+`P` by `φ`, `ψ` in a chart `e` and frames `t`, `t'`, and let `U` be an open set on which `φ ψ` does
+not vanish (so `U` lies in the chart target). The restriction of `a` to `U` is an elliptic
+classical symbol on `U` exactly when `P` is elliptic at `e⁻¹ y` for every `y ∈ U`. -/
+theorem isElliptic_restrict_iff_forall_isSectionClassicalEllipticAt
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hF : e.source ⊆ t'.baseSet)
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, V)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        φ y • t'.continuousLinearMapAt ℂ (e.symm y)
+          (P (t.chartCutoffSection he hE ψ u) (e.symm y)))
+    {U : TopologicalSpace.Opens (CoordinateSpace n)} (hφψ : ∀ y ∈ U, φ y * ψ y ≠ 0) :
+    (ClassicalSymbol.restrict U a).IsElliptic ↔
+      ∀ y ∈ U, IsSectionClassicalEllipticAt m P (e.symm y) := by
+  rw [ClassicalSymbol.isElliptic_restrict_iff]
+  refine forall₂_congr fun y hy ↦ ?_
+  have hU := OpenPartialHomeomorph.mem_target_of_mul_ne_zero (hφψ y hy)
+  have hy' := e.right_inv hU
+  rw [isSectionClassicalEllipticAt_iff_forall_isInvertible hP hF ha (e.map_target hU)
+    (hy'.symm ▸ hφψ y hy), hy']
+
+end Chart
+
+/-! ### Openness -/
+
+/-- **Ellipticity is an open condition.** An operator between bundles elliptic at `x` is elliptic
+at every point near `x`. -/
+theorem IsSectionClassicalEllipticAt.eventually {x : M}
+    (hPx : IsSectionClassicalEllipticAt m P x) :
+    ∀ᶠ y in 𝓝 x, IsSectionClassicalEllipticAt m P y := by
+  -- In dimension zero, or between trivial fibres, all operators are elliptic; else `P` has
+  -- order `m`.
+  rcases subsingleton_or_nontrivial (CoordinateSpace n) with hn | hn
+  · exact .of_forall isSectionClassicalEllipticAt_of_subsingleton
+  refine hPx.mem_or_subsingleton.elim (fun hP ↦ ?_)
+    fun ⟨_, _⟩ ↦ .of_forall isSectionClassicalEllipticAt_of_subsingleton_fiber
+  -- A chart `e` of the maximal atlas at `x` over which both bundles are trivial.
+  obtain ⟨e, he, hx, hE, hF⟩ :=
+    exists_mem_maximalAtlas_source_subset_baseSet 𝓘(ℝ, CoordinateSpace n) ∞ V E W F x
+  -- A cutoff `χ` equal to `1` near `e x`, and the symbol `a` of the compression by `χ`, `χ`.
+  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (Ω := ⟨e.target, e.open_target⟩)
+    isCompact_singleton (singleton_subset_iff.2 (e.map_source hx))
+  rw [nhdsSet_singleton] at hχ
+  obtain ⟨a, ha⟩ := exists_quantizeSchwartzValue_eq_apply_chartCutoffSection he _ hE hP _ hF χ χ
+  have hinv := (isSectionClassicalEllipticAt_iff_forall_isInvertible hP hF ha hx
+    (by simp [hχ.self_of_nhds])).1 hPx
+  -- The principal symbol of `a` is invertible near `e x` at every nonzero frequency.
+  have hall := hχ.and (a.principal.eventually_forall_isInvertible_coefficient hinv)
+  filter_upwards [e.open_source.mem_nhds hx, (e.continuousAt hx).eventually hall] with y hy hy'
+  exact (isSectionClassicalEllipticAt_iff_forall_isInvertible hP hF ha hy (by simp [hy'.1])).2
+    hy'.2
+
+variable (m P) in
+/-- **Ellipticity is an open condition.** The points at which an operator between bundles is
+elliptic form an open set. -/
+theorem isOpen_setOf_isSectionClassicalEllipticAt :
+    IsOpen {x : M | IsSectionClassicalEllipticAt m P x} :=
+  isOpen_iff_mem_nhds.2 fun _ hx ↦ hx.eventually
+
+/-! ### Local inverse symbols -/
+
+section Chart
+
+variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+  {he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
+  {t : Trivialization V (π V E)} [MemTrivializationAtlas t] {hE : e.source ⊆ t.baseSet}
+  {t' : Trivialization W (π W F)} [MemTrivializationAtlas t']
+  {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {a : ClassicalSymbol n V W m}
+
+/-- The chart symbol of `P` is elliptic on an open set containing a set `K` at whose points `φ ψ`
+does not vanish and over which `P` is elliptic. -/
+private theorem exists_isElliptic_restrict_of_forall_isSectionClassicalEllipticAt
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hF : e.source ⊆ t'.baseSet)
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, V)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        φ y • t'.continuousLinearMapAt ℂ (e.symm y)
+          (P (t.chartCutoffSection he hE ψ u) (e.symm y)))
+    {K : Set (CoordinateSpace n)} (hKφψ : ∀ y ∈ K, φ y * ψ y ≠ 0)
+    (hKP : ∀ y ∈ K, IsSectionClassicalEllipticAt m P (e.symm y)) :
+    ∃ U : TopologicalSpace.Opens (CoordinateSpace n), K ⊆ U ∧
+      (ClassicalSymbol.restrict U a).IsElliptic := by
+  set U : TopologicalSpace.Opens (CoordinateSpace n) :=
+    ⟨{y | φ y * ψ y ≠ 0 ∧ IsSectionClassicalEllipticAt m P (e.symm y)},
+      e.isOpen_setOf_mul_ne_zero_and_symm_mem φ ψ (isOpen_setOf_isSectionClassicalEllipticAt m P)⟩
+  exact ⟨U, fun y hy ↦ ⟨hKφψ y hy, hKP y hy⟩,
+    (isElliptic_restrict_iff_forall_isSectionClassicalEllipticAt (U := U) hP hF ha
+      fun _ hy ↦ hy.1).2 fun _ hy ↦ hy.2⟩
+
+/-- **Ellipticity of a chart symbol over a compact set.** Let `a` be the symbol of the chart
+compression of `P` by `φ`, `ψ` in a chart `e` and frames `t`, `t'`, and `K` a compact set at whose
+points `φ ψ` does not vanish (so `K` lies in the chart target) and over which `P` is elliptic. Then
+`a` is elliptic over `K` at all frequencies of norm at least some radius `R`: its value is
+invertible there, with `‖a(y, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. -/
+theorem exists_isEllipticOn_of_forall_isSectionClassicalEllipticAt
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hF : e.source ⊆ t'.baseSet)
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, V)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        φ y • t'.continuousLinearMapAt ℂ (e.symm y)
+          (P (t.chartCutoffSection he hE ψ u) (e.symm y)))
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (hKφψ : ∀ y ∈ K, φ y * ψ y ≠ 0) (hKP : ∀ y ∈ K, IsSectionClassicalEllipticAt m P (e.symm y)) :
+    ∃ R, a.toSymbol.IsEllipticOn {p | p.1 ∈ K ∧ R ≤ ‖p.2‖} := by
+  obtain ⟨U, hKU, hUa⟩ :=
+    exists_isElliptic_restrict_of_forall_isSectionClassicalEllipticAt hP hF ha hKφψ hKP
+  exact ClassicalSymbol.exists_isEllipticOn_of_isElliptic_restrict hUa hKU hK
+
+/-- **Local inverse symbols of an elliptic operator between bundles.** Let `a` be the symbol of
+the chart compression of `P` by `φ`, `ψ` in a chart `e` and frames `t`, `t'`, and `K` a compact set
+at whose points `φ ψ` does not vanish (so `K` lies in the chart target) and over which `P` is
+elliptic. Then a symbol `b` of order `-m` with values in `W →L[ℂ] V` inverts `a` on both sides at
+all large frequencies and all positions near `K`. -/
+theorem exists_comp_eq_id_of_forall_isSectionClassicalEllipticAt
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hF : e.source ⊆ t'.baseSet)
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, V)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        φ y • t'.continuousLinearMapAt ℂ (e.symm y)
+          (P (t.chartCutoffSection he hE ψ u) (e.symm y)))
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (hKφψ : ∀ y ∈ K, φ y * ψ y ≠ 0) (hKP : ∀ y ∈ K, IsSectionClassicalEllipticAt m P (e.symm y)) :
+    ∃ (b : Symbol n W V (-m)) (R : ℝ), ∀ᶠ y in 𝓝ˢ K, ∀ ξ, R ≤ ‖ξ‖ →
+      b.coefficient (y, ξ) ∘L a.toSymbol.coefficient (y, ξ) = .id ℂ V ∧
+        a.toSymbol.coefficient (y, ξ) ∘L b.coefficient (y, ξ) = .id ℂ W := by
+  obtain ⟨U, hKU, hUa⟩ :=
+    exists_isElliptic_restrict_of_forall_isSectionClassicalEllipticAt hP hF ha hKφψ hKP
+  exact ClassicalSymbol.exists_comp_eq_id_of_isElliptic_restrict hUa hKU hK
+
+end Chart
 
 end TauCeti
