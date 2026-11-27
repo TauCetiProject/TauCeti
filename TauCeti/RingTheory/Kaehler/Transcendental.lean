@@ -7,8 +7,10 @@ module
 
 public import Mathlib.RingTheory.Kaehler.Basic
 public import Mathlib.RingTheory.Algebraic.Defs
-import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
+import TauCeti.FieldTheory.RatFunc.Kaehler
+import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.RingTheory.Kaehler.BaseChange
+import TauCeti.RingTheory.Kaehler.Separable
 import TauCeti.RingTheory.Smooth.Field
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
