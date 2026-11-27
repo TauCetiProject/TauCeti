@@ -461,6 +461,23 @@ theorem sphereTreeDimension_nonneg_iff {n : ℤ} (c : G →+ ℤ) {ind : G → �
     simp only [not_isEmpty_of_nonempty, false_and, iff_false, not_le]
     exact this
 
+/-- **The strata over a core of given expected dimension.** On a target where every simple sphere
+has nonnegative first Chern number, consider a stratum whose core has expected dimension `I₀`,
+with a tree of simple spheres attached whose bubbles have total class `∑ v, B v`. If the unbubbled
+problem in the total class, of expected dimension `I₀ + 2 c₁(∑ v, B v)`, has expected dimension at
+most one, the stratum has nonnegative expected dimension exactly when it has no nonconstant sphere
+bubble and the unbubbled problem has nonnegative expected dimension. This is
+`TauCeti.Floer.sphereTreeDimension_nonneg_iff` for an index affine in the class. -/
+theorem sphereTreeDimension_nonneg_iff_of_add_two_mul_le_one {n I₀ : ℤ} (c : G →+ ℤ)
+    {B : ι → G} {B' : κ → G} {m : ι → ℕ} {ρ : ι → κ} (hB : ∀ v, B v = m v • B' (ρ v))
+    (hm : ∀ v, 0 < m v) (hρ : Function.Surjective ρ) (hc : ∀ w, 0 ≤ c (B' w))
+    (hA : I₀ + 2 * c (∑ v, B v) ≤ 1) (parent : κ → Option κ) (node root : κ → P) :
+    0 ≤ sphereTreeDimension n I₀ (fun w => c (B' w)) parent node root ↔
+      IsEmpty κ ∧ 0 ≤ I₀ + 2 * c (∑ v, B v) := by
+  simpa only [map_zero, mul_zero, add_zero, zero_add] using sphereTreeDimension_nonneg_iff c
+    (ind := fun A' => I₀ + 2 * c A') (fun _ _ => by rw [map_add]; ring) 0 hB hm hρ hc
+    (by simpa only [zero_add] using hA) parent node root
+
 end Reduction
 
 section Broken
@@ -803,11 +820,11 @@ theorem sphereTreeDimension_brokenPantsDimension_add_nonneg_iff (n p : ℤ) (c :
         (fun w => c (B' w)) parent node root ↔
       IsEmpty κ ∧ (k₁ + k₂ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n +
         2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j + ∑ v, B v) + p := by
-  rw [brokenPantsDimension_eq]
-  refine (sphereTreeDimension_nonneg_iff c
-    (ind := fun A' => g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n + 2 * c A' - (k₁ + k₂ + k₀) + p)
-    (fun _ _ => by rw [map_add]; ring) _ hB hm hρ hc hA parent node root).trans ?_
-  exact and_congr_right fun _ => by constructor <;> intro h <;> linarith
+  rw [brokenPantsDimension_eq, map_add c _ (∑ v, B v)]
+  rw [map_add c _ (∑ v, B v)] at hA
+  refine (sphereTreeDimension_nonneg_iff_of_add_two_mul_le_one c hB hm hρ hc (by linarith) parent
+    node root).trans (and_congr_right fun _ => ?_)
+  constructor <;> intro hle <;> linarith
 
 /-- **The strata of the product's rigid and one-dimensional problems.** On a target where every
 simple sphere has nonnegative first Chern number, consider the limits of pairs of pants between
@@ -912,12 +929,11 @@ theorem sphereTreeDimension_brokenFourHoledSphereDimension_add_nonneg_iff (n p :
         (fun w => c (B' w)) parent node root ↔
       IsEmpty κ ∧ (k₁ + k₂ + k₃ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
         2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, C₀ j + ∑ v, B v) + p := by
-  rw [brokenFourHoledSphereDimension_eq]
-  refine (sphereTreeDimension_nonneg_iff c
-    (ind := fun A' => g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n + 2 * c A' -
-      (k₁ + k₂ + k₃ + k₀) + p)
-    (fun _ _ => by rw [map_add]; ring) _ hB hm hρ hc hA parent node root).trans ?_
-  exact and_congr_right fun _ => by constructor <;> intro h <;> linarith
+  rw [brokenFourHoledSphereDimension_eq, map_add c _ (∑ v, B v)]
+  rw [map_add c _ (∑ v, B v)] at hA
+  refine (sphereTreeDimension_nonneg_iff_of_add_two_mul_le_one c hB hm hρ hc (by linarith) parent
+    node root).trans (and_congr_right fun _ => ?_)
+  constructor <;> intro hle <;> linarith
 
 /-- **The long-neck end of the associativity family composing the first two inputs.** At this
 end the four-holed sphere breaks into a broken pair of pants `P` with inputs `x₁`, `x₂` and a
@@ -972,8 +988,9 @@ attached. The end point is a face of dimension zero of the parameter space, so t
 dimension of the core is the sum of those of `P` and `Q`. If this is at most one, the stratum has
 nonnegative expected dimension exactly when it has no nonconstant sphere bubble and at most
 `μ₁ + μ₂ + μ₃ - μ₀ - 2n + 2 c₁(A')` cylinders have broken off. In the one-dimensional problem, of
-index `0`, the only such strata are two unbroken pairs of pants meeting at a capped generator:
-the composite product. -/
+index `0`, the only such strata are two unbroken pairs of pants meeting at a capped generator,
+whose expected dimensions add up to zero. They form the composite of the rigid products once every
+piece of negative expected dimension is empty, a genericity statement not proved here. -/
 theorem sphereTreeDimension_brokenPantsDimension_add_brokenPantsDimension_fst_nonneg_iff
     (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k k' k₃ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ)
     (h : Fin (k + 1) → ℤ) (h' : Fin (k' + 1) → ℤ) (g₃ : Fin (k₃ + 1) → ℤ)
@@ -994,12 +1011,11 @@ theorem sphereTreeDimension_brokenPantsDimension_add_brokenPantsDimension_fst_no
         2 * c (A₁ + A₂ + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, D j + ∑ j, D' j + ∑ j, C₃ j +
           ∑ j, C₀ j + ∑ v, B v) := by
   rw [brokenPantsDimension_add_brokenPantsDimension_fst n c g₁ g₂ h h' g₃ g₀ C₁ C₂ D D' C₃ C₀
-    A₁ A₂ hh]
-  refine (sphereTreeDimension_nonneg_iff c
-    (ind := fun A' => g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n + 2 * c A' -
-      (k₁ + k₂ + k + k' + k₃ + k₀))
-    (fun _ _ => by rw [map_add]; ring) _ hB hm hρ hc hA parent node root).trans ?_
-  exact and_congr_right fun _ => sub_nonneg
+    A₁ A₂ hh, map_add c _ (∑ v, B v)]
+  rw [map_add c _ (∑ v, B v)] at hA
+  refine (sphereTreeDimension_nonneg_iff_of_add_two_mul_le_one c hB hm hρ hc (by linarith) parent
+    node root).trans (and_congr_right fun _ => ?_)
+  constructor <;> intro hle <;> linarith
 
 /-- **The strata at the long-neck end composing the last two inputs.** On a target where every
 simple sphere has nonnegative first Chern number, consider the limits of the associativity family
@@ -1009,8 +1025,9 @@ a broken pair of pants `Q`, as in
 attached. If the expected dimension of the core is at most one, the stratum has nonnegative
 expected dimension exactly when it has no nonconstant sphere bubble and at most
 `μ₁ + μ₂ + μ₃ - μ₀ - 2n + 2 c₁(A')` cylinders have broken off. In the one-dimensional problem, of
-index `0`, the only such strata are two unbroken pairs of pants meeting at a capped generator:
-the composite product. -/
+index `0`, the only such strata are two unbroken pairs of pants meeting at a capped generator,
+whose expected dimensions add up to zero. They form the composite of the rigid products once every
+piece of negative expected dimension is empty, a genericity statement not proved here. -/
 theorem sphereTreeDimension_brokenPantsDimension_add_brokenPantsDimension_snd_nonneg_iff
     (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k k' k₃ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ)
     (g₃ : Fin (k₃ + 1) → ℤ) (h : Fin (k + 1) → ℤ) (h' : Fin (k' + 1) → ℤ)
@@ -1031,12 +1048,11 @@ theorem sphereTreeDimension_brokenPantsDimension_add_brokenPantsDimension_snd_no
         2 * c (A₁ + A₂ + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, D j + ∑ j, D' j +
           ∑ j, C₀ j + ∑ v, B v) := by
   rw [brokenPantsDimension_add_brokenPantsDimension_snd n c g₁ g₂ g₃ h h' g₀ C₁ C₂ C₃ D D' C₀
-    A₁ A₂ hh]
-  refine (sphereTreeDimension_nonneg_iff c
-    (ind := fun A' => g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n + 2 * c A' -
-      (k₁ + k₂ + k₃ + k + k' + k₀))
-    (fun _ _ => by rw [map_add]; ring) _ hB hm hρ hc hA parent node root).trans ?_
-  exact and_congr_right fun _ => sub_nonneg
+    A₁ A₂ hh, map_add c _ (∑ v, B v)]
+  rw [map_add c _ (∑ v, B v)] at hA
+  refine (sphereTreeDimension_nonneg_iff_of_add_two_mul_le_one c hB hm hρ hc (by linarith) parent
+    node root).trans (and_congr_right fun _ => ?_)
+  constructor <;> intro hle <;> linarith
 
 end Associativity
 
