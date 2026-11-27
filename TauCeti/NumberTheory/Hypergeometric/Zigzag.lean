@@ -40,8 +40,9 @@ representatives by `-Z(1 - rep μ)`.
 * `TauCeti.Hypergeometric.Parameters.sortedReps`: the increasing list of representatives,
   characterized by `sortedReps_eq_iff`.
 * `TauCeti.Hypergeometric.Parameters.height`: the height of the walk after `i` steps, with
-  `height_zero`, `height_succ`, `height_two_mul_degree` and
-  `height_succ_eq_add_one_or_sub_one`.
+  `height_zero`, `height_succ`, `height_two_mul_degree`,
+  `height_succ_eq_add_one_or_sub_one` and the discrete intermediate-value property
+  `exists_height_eq_of_le_of_lt`.
 * `TauCeti.Hypergeometric.Parameters.countingFunction`: the counting function `Z`, with
   `height_card_filter_rep_le`, `height_succ_eq_countingFunction` and its behaviour
   `countingFunction_vadd_rep_add` under shifts.
@@ -144,6 +145,21 @@ theorem height_succ_eq_add_one_or_sub_one (hi : i < 2 * P.degree) :
     P.height (i + 1) = P.height i + 1 ∨ P.height (i + 1) = P.height i - 1 := by
   rw [P.height_succ (by simpa using hi), sub_eq_add_neg]
   exact (P.step_eq_one_or_eq_neg_one _).imp (congrArg _) (congrArg _)
+
+/-- A discrete intermediate-value property: a walk with unit steps that passes from at most `h`
+to above `h` takes an up-step from height `h` in between. -/
+theorem exists_height_eq_of_le_of_lt {h : ℤ} {b c : ℕ} (hbc : b ≤ c) (hc : c ≤ 2 * P.degree)
+    (hb : P.height b ≤ h) (hc' : h < P.height c) :
+    ∃ k, b ≤ k ∧ k < c ∧ P.height k = h ∧ P.height (k + 1) = h + 1 := by
+  induction c, hbc using Nat.le_induction with
+  | base => omega
+  | succ c hbc ih =>
+    by_cases hlt : h < P.height c
+    · obtain ⟨k, h₁, h₂, h₃⟩ := ih (by omega) hlt
+      exact ⟨k, h₁, by omega, h₃⟩
+    · rcases P.height_succ_eq_add_one_or_sub_one (i := c) (by omega) with h' | h'
+      · exact ⟨c, hbc, by omega, by omega, by omega⟩
+      · omega
 
 theorem countingFunction_of_nonpos (hx : x ≤ 0) : P.countingFunction x = 0 := by
   have h (s : Multiset (AddCircle (1 : ℚ))) : s.filter (fun a ↦ rep a ≤ x) = 0 :=

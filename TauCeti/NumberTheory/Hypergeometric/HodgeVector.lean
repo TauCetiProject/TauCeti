@@ -39,8 +39,8 @@ For the pair of degree `0` nothing is recorded; then `m = w = 0` and the Hodge v
 ## Main declarations
 
 * `TauCeti.Hypergeometric.Parameters.recordedHeights`: the recorded heights, with
-  `mem_recordedHeights`, `card_recordedHeights` and the walk form
-  `mem_recordedHeights_iff_exists_height`.
+  `mem_recordedHeights`, `card_recordedHeights` and the walk forms
+  `mem_recordedHeights_iff_exists_height` and `mem_recordedHeights_iff_exists_height_succ`.
 * `TauCeti.Hypergeometric.Parameters.minHeight`, `maxHeight`, with `isLeast_minHeight`,
   `isGreatest_maxHeight` and `toFinset_recordedHeights` (the recorded heights fill the interval).
 * `TauCeti.Hypergeometric.Parameters.weight`, `hodgeNumber` and `hodgeVector`, with
@@ -127,29 +127,21 @@ theorem mem_recordedHeights_iff_exists_height : h ∈ P.recordedHeights ↔
       P.α.count a)]
     ring
 
-/-- A walk with unit steps that passes from at most `h` to above `h` takes an up-step from
-height `h` in between. -/
-private theorem exists_height_eq_of_le_of_lt {b c : ℕ} (hbc : b ≤ c) (hc : c ≤ 2 * P.degree)
-    (hb : P.height b ≤ h) (hc' : h < P.height c) :
-    ∃ k, b ≤ k ∧ k < c ∧ P.height k = h ∧ P.height (k + 1) = h + 1 := by
-  induction c, hbc using Nat.le_induction with
-  | base => omega
-  | succ c hbc ih =>
-    by_cases hlt : h < P.height c
-    · obtain ⟨k, h₁, h₂, h₃⟩ := ih (by omega) hlt
-      exact ⟨k, h₁, by omega, h₃⟩
-    · rcases P.height_succ_eq_add_one_or_sub_one (i := c) (by omega) with h' | h'
-      · exact ⟨c, hbc, by omega, by omega, by omega⟩
-      · omega
-
-/-- Every height from which the walk takes an up-step is recorded. -/
-private theorem mem_recordedHeights_of_height_succ (hi : i < 2 * P.degree)
-    (h' : P.height (i + 1) = P.height i + 1) : P.height i ∈ P.recordedHeights := by
-  have hi' : i < P.sortedReps.length := by simpa using hi
-  refine P.mem_recordedHeights_iff_exists_height.2 ⟨i, hi', by_contra fun hα ↦ ?_, rfl⟩
-  have := P.height_succ hi'
-  rw [P.step_of_notMem hα] at this
-  omega
+/-- The recorded heights in up-step form: they are the heights from which the walk takes an
+up-step. -/
+theorem mem_recordedHeights_iff_exists_height_succ : h ∈ P.recordedHeights ↔
+    ∃ i < 2 * P.degree, P.height i = h ∧ P.height (i + 1) = h + 1 := by
+  rw [mem_recordedHeights_iff_exists_height]
+  constructor
+  · rintro ⟨i, hi, hα, rfl⟩
+    refine ⟨i, by simpa using hi, rfl, ?_⟩
+    rw [P.height_succ hi, P.step_of_mem hα]
+  · rintro ⟨i, hi, rfl, h'⟩
+    have hi' : i < P.sortedReps.length := by simpa using hi
+    refine ⟨i, hi', by_contra fun hα ↦ ?_, rfl⟩
+    have := P.height_succ hi'
+    rw [P.step_of_notMem hα] at this
+    omega
 
 /-! ### The extreme heights -/
 
@@ -221,7 +213,7 @@ theorem toFinset_recordedHeights (hd : 0 < P.degree) :
     · obtain ⟨k, -, hk, hk'⟩ := P.exists_height_eq_of_le_of_lt (h := h) hi.le
         (le_refl (2 * P.degree)) (by omega) (by rwa [height_two_mul_degree])
       exact ⟨k, hk, hk'⟩
-  exact P.mem_recordedHeights_of_height_succ hk hk'
+  exact P.mem_recordedHeights_iff_exists_height_succ.2 ⟨k, hk, rfl, hk'⟩
 
 /-- For positive degree, a height is recorded exactly when it lies between the extremes. -/
 theorem mem_recordedHeights_iff_mem_Icc (hd : 0 < P.degree) :
@@ -236,7 +228,6 @@ noncomputable def weight : ℕ := (P.maxHeight - P.minHeight).toNat
 
 theorem weight_def : P.weight = (P.maxHeight - P.minHeight).toNat := (rfl)
 
-@[simp]
 theorem natCast_weight : (P.weight : ℤ) = P.maxHeight - P.minHeight :=
   Int.toNat_of_nonneg (sub_nonneg.2 P.minHeight_le_maxHeight)
 
