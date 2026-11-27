@@ -51,6 +51,12 @@ regular projective curves.
   `TauCeti.AlgebraicGeometry.twoChartModel.homOfAlgHom_comp`: functoriality.
 * `TauCeti.AlgebraicGeometry.twoChartModel.map_eq_homOfAlgHom`: the morphism glued from the chart
   maps is `homOfAlgHom` of the algebra map.
+* `TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv_algebraMap_eq`,
+  `TauCeti.AlgebraicGeometry.twoChartModel.isSeparable_functionFieldMap_of_eq`,
+  `TauCeti.AlgebraicGeometry.twoChartModel.isScalarTower_functionFieldMap_of_eq`, and
+  `TauCeti.AlgebraicGeometry.twoChartModel.finiteDimensional_functionFieldMap_of_eq`: transporting
+  algebraic, scalar-tower, finiteness, and separability structures along a morphism realizing
+  `F → F'`.
 
 ## References
 
@@ -218,5 +224,94 @@ theorem map_eq_homOfAlgHom [Algebra F F'] [IsScalarTower k F F'] [Algebra.IsInte
     map hF hF' hx hx' h = homOfAlgHom hF hF' hx hx' hxt hx't (IsScalarTower.toAlgHom k F F') :=
   (eq_homOfAlgHom_iff hF hF' hx hx' _ _).mpr fun z ↦
     functionFieldEquiv_functionFieldMap_map hF hF' hx hx' h hxt z
+
+section Extension
+
+variable [Algebra F F']
+
+/-- Compatibility of `f.functionFieldMap` with `algebraMap F F'` via `functionFieldEquiv`. -/
+theorem functionFieldEquiv_algebraMap_eq
+    (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx) [IsDominant f]
+    (hfmap : ∀ z : F,
+      functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
+        algebraMap F F' z)
+    (a : (twoChartModel hF hx).functionField) :
+    functionFieldEquiv hx't (f.functionFieldMap a) =
+      algebraMap F F' (functionFieldEquiv hxt a) := by
+  have h := hfmap (functionFieldEquiv hxt a)
+  rw [AlgEquiv.symm_apply_apply] at h
+  exact h
+
+private theorem functionFieldMap_comp_symm
+    (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx) [IsDominant f]
+    (hfmap : ∀ z : F,
+      functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
+        algebraMap F F' z) :
+    f.functionFieldMap.hom.comp (functionFieldEquiv hxt).symm.toRingHom =
+      (functionFieldEquiv hx't).symm.toRingHom.comp (algebraMap F F') :=
+  RingHom.ext fun z ↦ (functionFieldEquiv hx't).injective <| by
+    simp [hfmap]
+
+/-- When `F' / F` is separable and a dominant morphism `f : X' ⟶ X` realizes `algebraMap F F'` on
+function fields, `f.functionFieldMap` induces a separable field extension
+`k(X') / k(X)`. -/
+theorem isSeparable_functionFieldMap_of_eq [Algebra.IsSeparable F F']
+    (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx) [IsDominant f]
+    (hfmap : ∀ z : F,
+      functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
+        algebraMap F F' z) :
+    letI : Algebra (twoChartModel hF hx).functionField
+        (twoChartModel hF' hx').functionField :=
+      f.functionFieldMap.hom.toAlgebra
+    Algebra.IsSeparable (twoChartModel hF hx).functionField
+      (twoChartModel hF' hx').functionField :=
+  letI : Algebra (twoChartModel hF hx).functionField (twoChartModel hF' hx').functionField :=
+    f.functionFieldMap.hom.toAlgebra
+  Algebra.IsSeparable.of_equiv_equiv (functionFieldEquiv hxt).symm.toRingEquiv
+    (functionFieldEquiv hx't).symm.toRingEquiv
+    (functionFieldMap_comp_symm hF hF' hx hx' f hfmap)
+
+/-- When `F' / F` is an extension over `k` and a dominant morphism `f : X' ⟶ X` realizes
+`algebraMap F F'` on function fields, `k(X') / k(X)` forms a scalar tower over `k`. -/
+theorem isScalarTower_functionFieldMap_of_eq [IsScalarTower k F F']
+    (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx) [IsDominant f]
+    (hfmap : ∀ z : F,
+      functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
+        algebraMap F F' z) :
+    letI : Algebra (twoChartModel hF hx).functionField
+        (twoChartModel hF' hx').functionField :=
+      f.functionFieldMap.hom.toAlgebra
+    IsScalarTower k (twoChartModel hF hx).functionField
+      (twoChartModel hF' hx').functionField := by
+  let _ : Algebra (twoChartModel hF hx).functionField (twoChartModel hF' hx').functionField :=
+    f.functionFieldMap.hom.toAlgebra
+  refine .of_algebraMap_eq fun c ↦ (functionFieldEquiv hx't).injective ?_
+  calc
+    functionFieldEquiv hx't (algebraMap k _ c)
+      = algebraMap k F' c := (functionFieldEquiv hx't).commutes c
+    _ = algebraMap F F' (algebraMap k F c) := IsScalarTower.algebraMap_apply k F F' c
+    _ = algebraMap F F' (functionFieldEquiv hxt (algebraMap k _ c)) := by rw [AlgEquiv.commutes]
+    _ = functionFieldEquiv hx't (f.functionFieldMap (algebraMap k _ c)) :=
+      (functionFieldEquiv_algebraMap_eq hF hF' hx hx' f hfmap _).symm
+
+/-- When `F' / F` is finite-dimensional and a dominant morphism `f : X' ⟶ X` realizes
+`algebraMap F F'` on function fields, `k(X') / k(X)` is finite-dimensional. -/
+theorem finiteDimensional_functionFieldMap_of_eq [FiniteDimensional F F']
+    (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx) [IsDominant f]
+    (hfmap : ∀ z : F,
+      functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
+        algebraMap F F' z) :
+    letI : Algebra (twoChartModel hF hx).functionField
+        (twoChartModel hF' hx').functionField :=
+      f.functionFieldMap.hom.toAlgebra
+    FiniteDimensional (twoChartModel hF hx).functionField
+      (twoChartModel hF' hx').functionField :=
+  letI : Algebra (twoChartModel hF hx).functionField (twoChartModel hF' hx').functionField :=
+    f.functionFieldMap.hom.toAlgebra
+  Module.Finite.of_equiv_equiv (functionFieldEquiv hxt).symm.toRingEquiv
+    (functionFieldEquiv hx't).symm.toRingEquiv
+    (functionFieldMap_comp_symm hF hF' hx hx' f hfmap)
+
+end Extension
 
 end TauCeti.AlgebraicGeometry.twoChartModel

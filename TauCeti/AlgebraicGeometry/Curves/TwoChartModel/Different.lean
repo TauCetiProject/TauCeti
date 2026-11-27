@@ -21,9 +21,8 @@ Let `F' / F` be a finite separable extension of algebraic function fields over a
 `X = twoChartModel hF hx` and `X' = twoChartModel hF' hx'` be regular proper models of `F` and
 `F'` built from arbitrary nonzero transcendental functions `x ∈ F` and `x' ∈ F'`. The inclusion
 `F →ₐ[k] F'` induces a finite dominant `k`-morphism
-`homOfAlgHom hF hF' hx hx' hxt hx't (IsScalarTower.toAlgHom k F F') : X' ⟶ X`
-(`isFinite_homOfAlgHom`), which agrees with the glued chart morphism `twoChartModel.map` whenever
-`algebraMap F F' x = x'`.
+`homOfAlgHom hF hF' hx hx' hxt hx't (IsScalarTower.toAlgHom k F F') : X' ⟶ X`, which agrees with the
+glued chart morphism `twoChartModel.map` whenever `algebraMap F F' x = x'`.
 
 Transporting `Place.differentExponent` across the function-field identifications
 `twoChartModel.functionFieldEquiv` shows that for any dominant `k`-morphism `f : X' ⟶ X`
@@ -36,7 +35,6 @@ and the subscheme rank `dim_k Γ(R_f, 𝒪_{R_f})` of its ramification locus equ
 
 ## Main results
 
-* `twoChartModel.isFinite_homOfAlgHom`: `homOfAlgHom` of `F →ₐ[k] F'` is a finite morphism.
 * `twoChartModel.equivDivisor_toWeilDivisor_ramificationCartierDivisor_of_functionFieldMap`:
   `twoChartModel.equivDivisor hx't (ramificationCartierDivisor k f).toWeilDivisor =
     Divisor.different k F' hF` on models with invertible differentials and separable residue
@@ -63,139 +61,84 @@ variable {k F F' : Type u} [Field k] [Field F] [Field F'] [Algebra k F] [Algebra
   (hF : IsFunctionField k F) (hF' : IsFunctionField k F') {x : F} (hx : x ≠ 0) {x' : F'}
   (hx' : x' ≠ 0)
 
-/-- The morphism of two-chart models induced by an integral extension `F' / F` of function fields
-over `k` is finite, for arbitrary choices of transcendental parameters `x ∈ F` and `x' ∈ F'`. -/
-theorem isFinite_homOfAlgHom (hxt : Transcendental k x) (hx't : Transcendental k x')
-    [Algebra F F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] :
-    IsFinite (homOfAlgHom hF hF' hx hx' hxt hx't (IsScalarTower.toAlgHom k F F')) := by
-  let y' : F' := algebraMap F F' x
-  have hy' : y' ≠ 0 := (map_ne_zero _).mpr hx
-  have hy't : Transcendental k y' :=
-    (transcendental_algebraMap_iff (algebraMap F F').injective).mpr hxt
-  have hcomp :
-      (isoOfAlgEquiv hF' hF' hy' hx' (1 : F' ≃ₐ[k] F')
-          (hxt := hy't) (hx't := hx't)).hom ≫
-        map hF hF' hx hy' (rfl : algebraMap F F' x = y') =
-      homOfAlgHom hF hF' hx hx' hxt hx't (IsScalarTower.toAlgHom k F F') := by
-    rw [isoOfAlgEquiv_hom, map_eq_homOfAlgHom (hxt := hxt) (hx't := hy't), homOfAlgHom_comp]
-    rfl
-  have : IsFinite (map hF hF' hx hy' (rfl : algebraMap F F' x = y')) :=
-    isFinite_map hF hF' hx hy' rfl hxt
-  rw [← hcomp]
-  infer_instance
-
-private theorem isSeparable_residueField_of_perfectField [PerfectField k]
-    [Algebra F F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F']
-    (hF : IsFunctionField k F) (hF' : IsFunctionField k F') (P' : Place k F') :
-    Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField := by
-  let _ := Place.integersAlgebraBase k P'
-  have := Place.isScalarTower_integersAlgebraBase k P'
-  have := Place.isScalarTower_integers_restrict k F P'
-  have _ : PerfectField (P'.restrict k F).ResidueField :=
-    (P'.restrict k F).perfectField_residueField hF
-  have _ : FiniteDimensional k P'.ResidueField := P'.finiteDimensional_residueField hF'
-  have _ : FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField :=
-    Module.Finite.of_restrictScalars_finite k _ _
-  infer_instance
-
 section Extension
 
 variable [Algebra F F']
 
-private theorem functionFieldEquiv_algebraMap_eq {hxt : Transcendental k x}
-    {hx't : Transcendental k x'}
+private noncomputable def integersEquivRestrict
+    [IsScalarTower k F F'] [FiniteDimensional F F']
+    {hxt : Transcendental k x} {hx't : Transcendental k x'}
     (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx) [IsDominant f]
     (hfmap : ∀ z : F,
       functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
         algebraMap F F' z)
-    (a : (twoChartModel hF hx).functionField) :
-    functionFieldEquiv hx't (f.functionFieldMap a) =
-      algebraMap F F' (functionFieldEquiv hxt a) := by
-  have h := hfmap (functionFieldEquiv hxt a)
-  rw [AlgEquiv.symm_apply_apply] at h
-  exact h
+    (P' : Place k (twoChartModel hF' hx').functionField) :
+    letI : Algebra (twoChartModel hF hx).functionField
+        (twoChartModel hF' hx').functionField :=
+      f.functionFieldMap.hom.toAlgebra
+    letI := isScalarTower_functionFieldMap_of_eq hF hF' hx hx' f hfmap
+    letI := finiteDimensional_functionFieldMap_of_eq hF hF' hx hx' f hfmap
+    (P'.restrict k (twoChartModel hF hx).functionField).integers ≃+*
+      ((P'.map (functionFieldEquiv hx't)).restrict k F).integers := by
+  let _ : Algebra (twoChartModel hF hx).functionField (twoChartModel hF' hx').functionField :=
+    f.functionFieldMap.hom.toAlgebra
+  have := isScalarTower_functionFieldMap_of_eq hF hF' hx hx' f hfmap
+  have := finiteDimensional_functionFieldMap_of_eq hF hF' hx hx' f hfmap
+  have hmem : ∀ z : (twoChartModel hF hx).functionField,
+      z ∈ (P'.restrict k (twoChartModel hF hx).functionField).integers ↔
+        functionFieldEquiv hxt z ∈ ((P'.map (functionFieldEquiv hx't)).restrict k F).integers := by
+    intro z
+    rw [Place.mem_integers_restrict_iff, Place.mem_integers_restrict_iff,
+      Place.mem_integers_map_iff, ← functionFieldEquiv_algebraMap_eq hF hF' hx hx' f hfmap z,
+      AlgEquiv.symm_apply_apply]
+    rfl
+  exact
+    { toFun := fun z ↦ ⟨functionFieldEquiv hxt z, (hmem z).mp z.property⟩
+      invFun := fun w ↦ ⟨(functionFieldEquiv hxt).symm w,
+        (hmem _).mpr (by simpa only [AlgEquiv.apply_symm_apply] using w.property)⟩
+      left_inv := fun z ↦ Subtype.ext ((functionFieldEquiv hxt).symm_apply_apply z)
+      right_inv := fun w ↦ Subtype.ext ((functionFieldEquiv hxt).apply_symm_apply w)
+      map_mul' := fun a b ↦ Subtype.ext (map_mul _ _ _)
+      map_add' := fun a b ↦ Subtype.ext (map_add _ _ _) }
 
-/-- When `F' / F` is separable and a dominant morphism `f : X' ⟶ X` realizes `algebraMap F F'` on
-function fields, `f.functionFieldMap` induces a separable field extension
-`k(X') / k(X)`. -/
-theorem isSeparable_functionFieldMap_of_eq [Algebra.IsSeparable F F']
+private theorem residueField_comm_of_functionFieldMap
+    [IsScalarTower k F F'] [FiniteDimensional F F']
     {hxt : Transcendental k x} {hx't : Transcendental k x'}
     (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx) [IsDominant f]
     (hfmap : ∀ z : F,
       functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
-        algebraMap F F' z) :
+        algebraMap F F' z)
+    (P' : Place k (twoChartModel hF' hx').functionField) :
     letI : Algebra (twoChartModel hF hx).functionField
         (twoChartModel hF' hx').functionField :=
       f.functionFieldMap.hom.toAlgebra
-    Algebra.IsSeparable (twoChartModel hF hx).functionField
-      (twoChartModel hF' hx').functionField := by
+    letI := isScalarTower_functionFieldMap_of_eq hF hF' hx hx' f hfmap
+    letI := finiteDimensional_functionFieldMap_of_eq hF hF' hx hx' f hfmap
+    (algebraMap ((P'.map (functionFieldEquiv hx't)).restrict k F).ResidueField
+        (P'.map (functionFieldEquiv hx't)).ResidueField).comp
+      (IsLocalRing.ResidueField.mapEquiv
+        (integersEquivRestrict hF hF' hx hx' f hfmap P')).toRingHom =
+      (Place.residueFieldEquivMap (functionFieldEquiv hx't) P').toRingEquiv.toRingHom.comp
+        (algebraMap (P'.restrict k (twoChartModel hF hx).functionField).ResidueField
+          P'.ResidueField) := by
   let _ : Algebra (twoChartModel hF hx).functionField (twoChartModel hF' hx').functionField :=
     f.functionFieldMap.hom.toAlgebra
-  exact Algebra.IsSeparable.of_equiv_equiv (functionFieldEquiv hxt).symm.toRingEquiv
-    (functionFieldEquiv hx't).symm.toRingEquiv <| RingHom.ext fun z ↦ by
-      apply (functionFieldEquiv hx't).injective
-      change functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
-        functionFieldEquiv hx't ((functionFieldEquiv hx't).symm (algebraMap F F' z))
-      rw [hfmap, AlgEquiv.apply_symm_apply]
-
-private theorem isScalarTower_functionFieldMap_of_eq [IsScalarTower k F F']
-    {hxt : Transcendental k x} {hx't : Transcendental k x'}
-    (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx) [IsDominant f]
-    (hfmap : ∀ z : F,
-      functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
-        algebraMap F F' z) :
-    letI : Algebra (twoChartModel hF hx).functionField
-        (twoChartModel hF' hx').functionField :=
-      f.functionFieldMap.hom.toAlgebra
-    IsScalarTower k (twoChartModel hF hx).functionField
-      (twoChartModel hF' hx').functionField := by
-  let _ : Algebra (twoChartModel hF hx).functionField (twoChartModel hF' hx').functionField :=
-    f.functionFieldMap.hom.toAlgebra
-  refine .of_algebraMap_eq fun c ↦ (functionFieldEquiv hx't).injective ?_
-  change functionFieldEquiv hx't (algebraMap k _ c) =
-    functionFieldEquiv hx't (f.functionFieldMap (algebraMap k _ c))
-  rw [AlgEquiv.commutes,
-    functionFieldEquiv_algebraMap_eq hF hF' hx hx' f hfmap, AlgEquiv.commutes,
-    ← IsScalarTower.algebraMap_apply]
-
-private theorem finiteDimensional_functionFieldMap_of_eq [FiniteDimensional F F']
-    {hxt : Transcendental k x} {hx't : Transcendental k x'}
-    (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx) [IsDominant f]
-    (hfmap : ∀ z : F,
-      functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
-        algebraMap F F' z) :
-    letI : Algebra (twoChartModel hF hx).functionField
-        (twoChartModel hF' hx').functionField :=
-      f.functionFieldMap.hom.toAlgebra
-    FiniteDimensional (twoChartModel hF hx).functionField
-      (twoChartModel hF' hx').functionField := by
-  let _ : Algebra (twoChartModel hF hx).functionField (twoChartModel hF' hx').functionField :=
-    f.functionFieldMap.hom.toAlgebra
-  let e : (twoChartModel hF hx).functionField ≃+* F := (functionFieldEquiv hxt).toRingEquiv
-  let e' : (twoChartModel hF' hx').functionField ≃+* F' := (functionFieldEquiv hx't).toRingEquiv
-  let _ : Algebra (twoChartModel hF hx).functionField F' :=
-    ((algebraMap F F').comp (e : _ →+* F)).toAlgebra
-  let eL : F' ≃ₗ[(twoChartModel hF hx).functionField] (twoChartModel hF' hx').functionField :=
-    { toFun := e'.symm
-      invFun := e'
-      left_inv := e'.apply_symm_apply
-      right_inv := e'.symm_apply_apply
-      map_add' := map_add e'.symm
-      map_smul' := fun r b ↦ by
-        apply e'.injective
-        change e' (e'.symm (algebraMap F F' (e r) * b)) = e' (f.functionFieldMap r * e'.symm b)
-        rw [e'.apply_symm_apply, map_mul, e'.apply_symm_apply]
-        congr 1
-        exact (functionFieldEquiv_algebraMap_eq hF hF' hx hx' f hfmap r).symm }
-  let _ : Algebra (twoChartModel hF hx).functionField F := e.toRingHom.toAlgebra
-  have : IsScalarTower (twoChartModel hF hx).functionField F F' :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  have : Module.Finite (twoChartModel hF hx).functionField F :=
-    Module.Finite.of_surjective (Algebra.linearMap (twoChartModel hF hx).functionField F)
-      e.surjective
-  have : Module.Finite (twoChartModel hF hx).functionField F' :=
-    Module.Finite.trans F F'
-  exact Module.Finite.equiv eL
+  have := isScalarTower_functionFieldMap_of_eq hF hF' hx hx' f hfmap
+  have := finiteDimensional_functionFieldMap_of_eq hF hF' hx hx' f hfmap
+  let _ := Place.algebraIntegersExtension (F' := (twoChartModel hF' hx').functionField)
+    (P'.restrict k (twoChartModel hF hx).functionField)
+  let _ := Place.algebraIntegersExtension (F' := F')
+    ((P'.map (functionFieldEquiv hx't)).restrict k F)
+  ext r
+  obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+    IsLocalRing.ResidueField.mapEquiv_apply, IsLocalRing.ResidueField.map_residue,
+    AlgEquiv.coe_toRingEquiv, IsLocalRing.ResidueField.algebraMap_residue,
+    Place.residueFieldEquivMap_residue]
+  refine congrArg (IsLocalRing.residue (P'.map (functionFieldEquiv hx't)).integers) ?_
+  refine Subtype.ext ?_
+  rw [Place.coe_integersEquivMap, Place.coe_algebraMap_integers, Place.coe_algebraMap_integers]
+  exact (functionFieldEquiv_algebraMap_eq hF hF' hx hx' f hfmap (a : _)).symm
 
 private theorem isSeparable_residueField_toPlace_of_functionFieldMap
     [IsScalarTower k F F'] [FiniteDimensional F F']
@@ -218,67 +161,17 @@ private theorem isSeparable_residueField_toPlace_of_functionFieldMap
       ((twoChartModel hF' hx').toPlace (k := k) (p : _)).ResidueField := by
   let _ : Algebra (twoChartModel hF hx).functionField (twoChartModel hF' hx').functionField :=
     f.functionFieldMap.hom.toAlgebra
-  have : IsScalarTower k (twoChartModel hF hx).functionField
-      (twoChartModel hF' hx').functionField :=
-    isScalarTower_functionFieldMap_of_eq hF hF' hx hx' f hfmap
-  have : FiniteDimensional (twoChartModel hF hx).functionField
-      (twoChartModel hF' hx').functionField :=
-    finiteDimensional_functionFieldMap_of_eq hF hF' hx hx' f hfmap
+  have := isScalarTower_functionFieldMap_of_eq hF hF' hx hx' f hfmap
+  have := finiteDimensional_functionFieldMap_of_eq hF hF' hx hx' f hfmap
   let P' := (twoChartModel hF' hx').toPlace (k := k) (p : _)
-  let Q' := equivPlace (hF := hF') (hx := hx') hx't p
-  have hQ' : Q' = P'.map (functionFieldEquiv hx't) := equivPlace_apply hx't p
-  have hresMem : ∀ z : (twoChartModel hF hx).functionField,
-      z ∈ (P'.restrict k (twoChartModel hF hx).functionField).integers ↔
-        functionFieldEquiv hxt z ∈ (Q'.restrict k F).integers := by
-    intro z
-    rw [Place.mem_integers_restrict_iff, Place.mem_integers_restrict_iff, hQ',
-      Place.mem_integers_map_iff,
-      ← functionFieldEquiv_algebraMap_eq hF hF' hx hx' f hfmap z,
-      AlgEquiv.symm_apply_apply]
-    rfl
-  let σ₀ : (P'.restrict k (twoChartModel hF hx).functionField).integers ≃+*
-      (Q'.restrict k F).integers :=
-    { toFun := fun z ↦ ⟨functionFieldEquiv hxt z, (hresMem z).mp z.property⟩
-      invFun := fun w ↦ ⟨(functionFieldEquiv hxt).symm w,
-        (hresMem _).mpr (by simpa only [AlgEquiv.apply_symm_apply] using w.property)⟩
-      left_inv := fun z ↦ Subtype.ext ((functionFieldEquiv hxt).symm_apply_apply z)
-      right_inv := fun w ↦ Subtype.ext ((functionFieldEquiv hxt).apply_symm_apply w)
-      map_mul' := fun a b ↦ Subtype.ext (map_mul _ _ _)
-      map_add' := fun a b ↦ Subtype.ext (map_add _ _ _) }
-  have hP'Mem : ∀ z : (twoChartModel hF' hx').functionField,
-      z ∈ P'.integers ↔ functionFieldEquiv hx't z ∈ Q'.integers := fun z ↦ by
-    rw [hQ', Place.mem_integers_map_iff, AlgEquiv.symm_apply_apply]
-  let σ : P'.integers ≃+* Q'.integers :=
-    { toFun := fun z ↦ ⟨functionFieldEquiv hx't z, (hP'Mem z).mp z.property⟩
-      invFun := fun w ↦ ⟨(functionFieldEquiv hx't).symm w,
-        (hP'Mem _).mpr (by simpa only [AlgEquiv.apply_symm_apply] using w.property)⟩
-      left_inv := fun z ↦ Subtype.ext ((functionFieldEquiv hx't).symm_apply_apply z)
-      right_inv := fun w ↦ Subtype.ext ((functionFieldEquiv hx't).apply_symm_apply w)
-      map_mul' := fun a b ↦ Subtype.ext (map_mul _ _ _)
-      map_add' := fun a b ↦ Subtype.ext (map_add _ _ _) }
-  let _ := Place.algebraIntegersExtension (F' := (twoChartModel hF' hx').functionField)
-    (P'.restrict k (twoChartModel hF hx).functionField)
-  let _ := Place.algebraIntegersExtension (F' := F') (Q'.restrict k F)
-  have hcommInt : ∀ a : (P'.restrict k (twoChartModel hF hx).functionField).integers,
-      algebraMap (Q'.restrict k F).integers Q'.integers (σ₀ a) =
-        σ (algebraMap (P'.restrict k (twoChartModel hF hx).functionField).integers
-          P'.integers a) :=
-    fun a ↦ Subtype.ext
-      (functionFieldEquiv_algebraMap_eq hF hF' hx hx' f hfmap (a : _)).symm
-  let e₀ := IsLocalRing.ResidueField.mapEquiv σ₀
-  let e := IsLocalRing.ResidueField.mapEquiv σ
-  have he : RingHom.comp (algebraMap (Q'.restrict k F).ResidueField Q'.ResidueField) e₀.toRingHom =
-      RingHom.comp e.toRingHom
-        (algebraMap (P'.restrict k (twoChartModel hF hx).functionField).ResidueField
-          P'.ResidueField) := by
-    ext r
-    obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
-    exact congrArg (IsLocalRing.residue Q'.integers) (hcommInt a)
-  exact Algebra.IsSeparable.of_equiv_equiv e₀.symm e.symm <| by
-    ext r
-    obtain ⟨w, rfl⟩ := IsLocalRing.residue_surjective r
-    simpa [RingEquiv.eq_symm_apply] using
-      (congrArg (fun φ : _ →+* Q'.ResidueField ↦ φ (e₀.symm (IsLocalRing.residue _ w))) he).symm
+  have hsep : Algebra.IsSeparable ((P'.map (functionFieldEquiv hx't)).restrict k F).ResidueField
+      (P'.map (functionFieldEquiv hx't)).ResidueField := by
+    rw [← equivPlace_apply hx't p]
+    infer_instance
+  exact (Algebra.IsSeparable.iff_of_equiv_equiv
+    (IsLocalRing.ResidueField.mapEquiv (integersEquivRestrict hF hF' hx hx' f hfmap P'))
+    (Place.residueFieldEquivMap (functionFieldEquiv hx't) P').toRingEquiv
+    (residueField_comm_of_functionFieldMap hF hF' hx hx' f hfmap P')).mpr hsep
 
 variable [IsScalarTower k F F'] [FiniteDimensional F F'] [Algebra.IsSeparable F F']
 
@@ -573,7 +466,7 @@ theorem equivDivisor_toWeilDivisor_ramificationCartierDivisor_homOfAlgHom_of_per
   equivDivisor_toWeilDivisor_ramificationCartierDivisor_of_functionFieldMap hF hF' hx hx' hxt hx't _
     (fun z ↦ functionFieldEquiv_functionFieldMap_homOfAlgHom hF hF' hx hx'
       (IsScalarTower.toAlgHom k F F') z)
-    (isSeparable_residueField_of_perfectField hF hF')
+    (Place.isSeparable_residueField_restrict_of_perfectField hF)
 
 /-- Over a perfect field `k`, the Weil divisor of `ramificationCartierDivisor k (map ...)`
 matches `Divisor.different k F' hF`. -/
@@ -602,7 +495,7 @@ theorem equivDivisor_toWeilDivisor_ramificationCartierDivisor_map_of_perfectFiel
     (X := twoChartModel hF' hx') k
   equivDivisor_toWeilDivisor_ramificationCartierDivisor_of_functionFieldMap hF hF' hx hx' hxt hx't _
     (fun z ↦ functionFieldEquiv_functionFieldMap_map hF hF' hx hx' h hxt z)
-    (isSeparable_residueField_of_perfectField hF hF')
+    (Place.isSeparable_residueField_restrict_of_perfectField hF)
 
 /-- Over a perfect field `k`, `dim_k Γ(R_f, 𝒪_{R_f}) = deg Diff(F'/F)` for `f = homOfAlgHom`. -/
 theorem finrank_ramificationIdealSheaf_homOfAlgHom_eq_degree_different_of_perfectField
@@ -624,7 +517,7 @@ theorem finrank_ramificationIdealSheaf_homOfAlgHom_eq_degree_different_of_perfec
   finrank_ramificationIdealSheaf_of_functionFieldMap_eq_degree_different hF hF' hx hx' hxt hx't _
     (fun z ↦ functionFieldEquiv_functionFieldMap_homOfAlgHom hF hF' hx hx'
       (IsScalarTower.toAlgHom k F F') z)
-    (isSeparable_residueField_of_perfectField hF hF')
+    (Place.isSeparable_residueField_restrict_of_perfectField hF)
 
 /-- Over a perfect field `k`, `dim_k Γ(R_f, 𝒪_{R_f}) = deg Diff(F'/F)` for `f = map`. -/
 theorem finrank_ramificationIdealSheaf_map_eq_degree_different_of_perfectField
@@ -643,7 +536,7 @@ theorem finrank_ramificationIdealSheaf_map_eq_degree_different_of_perfectField
     (X := twoChartModel hF' hx') k
   finrank_ramificationIdealSheaf_of_functionFieldMap_eq_degree_different hF hF' hx hx' hxt hx't _
     (fun z ↦ functionFieldEquiv_functionFieldMap_map hF hF' hx hx' h hxt z)
-    (isSeparable_residueField_of_perfectField hF hF')
+    (Place.isSeparable_residueField_restrict_of_perfectField hF)
 
 end PerfectField
 

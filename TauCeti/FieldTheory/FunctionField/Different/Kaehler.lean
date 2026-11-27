@@ -54,64 +54,53 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
-/-- **Finiteness of relative differentials of valuation rings**: for a finite separable extension
-`F' / F` of function fields and a place `P'` over `P = P'.restrict k F`, `Ω[𝒪_{P'}⁄𝒪_P]` is a
-finitely generated `𝒪_{P'}`-module, because `𝒪_{P'}` is a localization of the module-finite local
-model `𝒪'_P`. -/
-theorem moduleFinite_kaehlerDifferential_integers (P' : Place k' F') :
-    Module.Finite P'.integers Ω[P'.integers⁄(P'.restrict k F).integers] := by
-  let O := (P'.restrict k F).integers
-  let B := integralClosure O F'
-  let q := centerIntegralClosure k F P'
-  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  let _ : Algebra B P'.integers := ((algebraMap B F').codRestrict P'.integers hB).toAlgebra
-  have : IsScalarTower O B P'.integers := .of_algebraMap_eq fun _ ↦ rfl
-  let eB : IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime F' q ≃ₐ[B] P'.integers :=
-    AlgEquiv.ofRingEquiv
-      (f := RingEquiv.subringCongr
-        (congrArg ValuationSubring.toSubring (by
-          dsimp only [q]
-          rw [centerIntegralClosure_def]
-          exact P'.valuationSubringAtPrime_eq_integers hB)))
-      fun _ ↦ rfl
-  have : IsLocalization q.asIdeal.primeCompl P'.integers :=
-    IsLocalization.isLocalization_of_algEquiv q.asIdeal.primeCompl eB
-  have : Algebra.FormallyEtale B P'.integers := .of_isLocalization q.asIdeal.primeCompl
-  have : Module.Finite O B := IsIntegralClosure.finite O F F' B
-  exact Module.Finite.equiv
-    (KaehlerDifferential.isBaseChange_of_formallyEtale O B P'.integers).equiv
+private noncomputable abbrev algebraIntegralClosureIntegers (P' : Place k' F') :
+    Algebra (integralClosure (P'.restrict k F).integers F') P'.integers :=
+  ((algebraMap (integralClosure (P'.restrict k F).integers F') F').codRestrict
+    P'.integers (algebraMap_mem_integers_of_mem_integralClosure k F P')).toAlgebra
 
-/-- **The Kähler different at a place with separable residue field**: if `F' / F` is finite and
-separable and the residue extension `F'_{P'} / F_P` at `P'` over `P = P'.restrict k F` is
-separable, then `Fitt₀(Ω[𝒪_{P'}⁄𝒪_P]) = 𝔪_{P'} ^ d(P' ∣ P)`, the trace-dual different at `P'`. -/
-theorem fittingIdeal_kaehlerDifferential_integers_eq_maximalIdeal_pow (P' : Place k' F')
-    [Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField] :
-    haveI := moduleFinite_kaehlerDifferential_integers (k := k) (F := F) P'
-    fittingIdeal P'.integers Ω[P'.integers⁄(P'.restrict k F).integers] 0 =
-      maximalIdeal P'.integers ^ differentExponent k F P' := by
-  let O := (P'.restrict k F).integers
-  let B := integralClosure O F'
+omit [FiniteDimensional F F'] in
+private theorem isScalarTower_integers_integralClosure_integers (P' : Place k' F') :
+    letI := algebraIntegralClosureIntegers (k := k) (F := F) P'
+    IsScalarTower (P'.restrict k F).integers (integralClosure (P'.restrict k F).integers F')
+      P'.integers :=
+  letI := algebraIntegralClosureIntegers (k := k) (F := F) P'
+  .of_algebraMap_eq fun _ ↦ rfl
+
+private theorem isLocalization_centerIntegralClosure_integers (P' : Place k' F') :
+    letI := algebraIntegralClosureIntegers (k := k) (F := F) P'
+    IsLocalization (centerIntegralClosure k F P').asIdeal.primeCompl P'.integers := by
+  let _ := algebraIntegralClosureIntegers (k := k) (F := F) P'
   let q := centerIntegralClosure k F P'
-  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  let _ : Algebra B P'.integers := ((algebraMap B F').codRestrict P'.integers hB).toAlgebra
-  have : IsScalarTower O B P'.integers := .of_algebraMap_eq fun _ ↦ rfl
-  let eB : IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime F' q ≃ₐ[B] P'.integers :=
+  let eB : IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime F' q ≃ₐ[
+      integralClosure (P'.restrict k F).integers F'] P'.integers :=
     AlgEquiv.ofRingEquiv
       (f := RingEquiv.subringCongr
         (congrArg ValuationSubring.toSubring (by
           dsimp only [q]
           rw [centerIntegralClosure_def]
-          exact P'.valuationSubringAtPrime_eq_integers hB)))
+          exact P'.valuationSubringAtPrime_eq_integers
+            (algebraMap_mem_integers_of_mem_integralClosure k F P'))))
       fun _ ↦ rfl
-  have : IsLocalization q.asIdeal.primeCompl P'.integers :=
-    IsLocalization.isLocalization_of_algEquiv q.asIdeal.primeCompl eB
-  have : IsLocalization.AtPrime P'.integers q.asIdeal := ‹_›
-  have : Algebra.FormallyEtale B P'.integers := .of_isLocalization q.asIdeal.primeCompl
-  have : Module.Finite O B := IsIntegralClosure.finite O F F' B
-  have hbc : (haveI := moduleFinite_kaehlerDifferential_integers (k := k) (F := F) P'
-      fittingIdeal P'.integers Ω[P'.integers⁄O] 0) =
-      (fittingIdeal B Ω[B⁄O] 0).map (algebraMap B P'.integers) :=
-    (KaehlerDifferential.isBaseChange_of_formallyEtale O B P'.integers).fittingIdeal_eq_map 0
+  exact IsLocalization.isLocalization_of_algEquiv q.asIdeal.primeCompl eB
+
+private theorem isSeparable_quotient_centerIntegralClosure (P' : Place k' F')
+    [Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField] :
+    letI : (centerIntegralClosure k F P').asIdeal.IsMaximal :=
+      (centerIntegralClosure k F P').isPrime.isMaximal (centerIntegralClosure k F P').ne_bot
+    letI : Field ((P'.restrict k F).integers ⧸ maximalIdeal (P'.restrict k F).integers) :=
+      Ideal.Quotient.field _
+    letI : Field (integralClosure (P'.restrict k F).integers F' ⧸
+        (centerIntegralClosure k F P').asIdeal) :=
+      Ideal.Quotient.field _
+    Algebra.IsSeparable
+      ((P'.restrict k F).integers ⧸ maximalIdeal (P'.restrict k F).integers)
+      (integralClosure (P'.restrict k F).integers F' ⧸
+        (centerIntegralClosure k F P').asIdeal) := by
+  let O := (P'.restrict k F).integers
+  let B := integralClosure O F'
+  let q := centerIntegralClosure k F P'
+  have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
   have : q.asIdeal.IsMaximal := q.isPrime.isMaximal q.ne_bot
   let _ : Field (O ⧸ maximalIdeal O) := Ideal.Quotient.field _
   let _ : Field (B ⧸ q.asIdeal) := Ideal.Quotient.field _
@@ -133,10 +122,22 @@ theorem fittingIdeal_kaehlerDifferential_integers_eq_maximalIdeal_pow (P' : Plac
       (algebraMap (integralClosure O F') F') ((algebraMap O B) r)
     rw [← IsScalarTower.algebraMap_apply O B F', IsScalarTower.algebraMap_apply O F F']
     rfl
-  have : Algebra.IsSeparable (O ⧸ maximalIdeal O) (B ⧸ q.asIdeal) :=
-    (Algebra.IsSeparable.iff_of_equiv_equiv e₀ e he).mpr ‹_›
-  rw [hbc, TauCeti.fittingIdeal_kaehlerDifferential_map_eq_differentIdeal_map
-    F F' (p := maximalIdeal O) q.asIdeal P'.integers]
+  exact (Algebra.IsSeparable.iff_of_equiv_equiv e₀ e he).mpr ‹_›
+
+private theorem differentIdeal_map_integers_eq_maximalIdeal_pow (P' : Place k' F') :
+    letI := algebraIntegralClosureIntegers (k := k) (F := F) P'
+    (differentIdeal (P'.restrict k F).integers
+        (integralClosure (P'.restrict k F).integers F')).map
+      (algebraMap (integralClosure (P'.restrict k F).integers F') P'.integers) =
+      maximalIdeal P'.integers ^ differentExponent k F P' := by
+  let O := (P'.restrict k F).integers
+  let B := integralClosure O F'
+  let q := centerIntegralClosure k F P'
+  let _ := algebraIntegralClosureIntegers (k := k) (F := F) P'
+  have : IsScalarTower O B P'.integers := isScalarTower_integers_integralClosure_integers P'
+  have : IsLocalization q.asIdeal.primeCompl P'.integers :=
+    isLocalization_centerIntegralClosure_integers P'
+  have : IsLocalization.AtPrime P'.integers q.asIdeal := ‹_›
   have hB0 : differentIdeal O B ≠ ⊥ := differentIdeal_ne_bot_of_isSeparable (K := F) (L := F')
   have hInj : Function.Injective (algebraMap B P'.integers) := fun a b hab ↦
     IsIntegralClosure.algebraMap_injective B O F' (congrArg (fun x : P'.integers ↦ (x : F')) hab)
@@ -173,6 +174,55 @@ theorem fittingIdeal_kaehlerDifferential_integers_eq_maximalIdeal_pow (P' : Plac
     rw [differentExponent_def]
     exact_mod_cast hmul
   rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, heq]
+
+/-- **Finiteness of relative differentials of valuation rings**: for a finite separable extension
+`F' / F` of function fields and a place `P'` over `P = P'.restrict k F`, `Ω[𝒪_{P'}⁄𝒪_P]` is a
+finitely generated `𝒪_{P'}`-module, because `𝒪_{P'}` is a localization of the module-finite local
+model `𝒪'_P`. -/
+theorem moduleFinite_kaehlerDifferential_integers (P' : Place k' F') :
+    Module.Finite P'.integers Ω[P'.integers⁄(P'.restrict k F).integers] := by
+  let O := (P'.restrict k F).integers
+  let B := integralClosure O F'
+  let _ := algebraIntegralClosureIntegers (k := k) (F := F) P'
+  have : IsScalarTower O B P'.integers := isScalarTower_integers_integralClosure_integers P'
+  have : IsLocalization (centerIntegralClosure k F P').asIdeal.primeCompl P'.integers :=
+    isLocalization_centerIntegralClosure_integers P'
+  have : Algebra.FormallyEtale B P'.integers :=
+    .of_isLocalization (centerIntegralClosure k F P').asIdeal.primeCompl
+  have : Module.Finite O B := IsIntegralClosure.finite O F F' B
+  exact Module.Finite.equiv
+    (KaehlerDifferential.isBaseChange_of_formallyEtale O B P'.integers).equiv
+
+/-- **The Kähler different at a place with separable residue field**: if `F' / F` is finite and
+separable and the residue extension `F'_{P'} / F_P` at `P'` over `P = P'.restrict k F` is
+separable, then `Fitt₀(Ω[𝒪_{P'}⁄𝒪_P]) = 𝔪_{P'} ^ d(P' ∣ P)`, the trace-dual different at `P'`. -/
+theorem fittingIdeal_kaehlerDifferential_integers_eq_maximalIdeal_pow (P' : Place k' F')
+    [Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField] :
+    haveI := moduleFinite_kaehlerDifferential_integers (k := k) (F := F) P'
+    fittingIdeal P'.integers Ω[P'.integers⁄(P'.restrict k F).integers] 0 =
+      maximalIdeal P'.integers ^ differentExponent k F P' := by
+  let O := (P'.restrict k F).integers
+  let B := integralClosure O F'
+  let q := centerIntegralClosure k F P'
+  let _ := algebraIntegralClosureIntegers (k := k) (F := F) P'
+  have : IsScalarTower O B P'.integers := isScalarTower_integers_integralClosure_integers P'
+  have : IsLocalization q.asIdeal.primeCompl P'.integers :=
+    isLocalization_centerIntegralClosure_integers P'
+  have : IsLocalization.AtPrime P'.integers q.asIdeal := ‹_›
+  have : Algebra.FormallyEtale B P'.integers := .of_isLocalization q.asIdeal.primeCompl
+  have : Module.Finite O B := IsIntegralClosure.finite O F F' B
+  have hbc : (haveI := moduleFinite_kaehlerDifferential_integers (k := k) (F := F) P'
+      fittingIdeal P'.integers Ω[P'.integers⁄O] 0) =
+      (fittingIdeal B Ω[B⁄O] 0).map (algebraMap B P'.integers) :=
+    (KaehlerDifferential.isBaseChange_of_formallyEtale O B P'.integers).fittingIdeal_eq_map 0
+  have : q.asIdeal.IsMaximal := q.isPrime.isMaximal q.ne_bot
+  let _ : Field (O ⧸ maximalIdeal O) := Ideal.Quotient.field _
+  let _ : Field (B ⧸ q.asIdeal) := Ideal.Quotient.field _
+  have : Algebra.IsSeparable (O ⧸ maximalIdeal O) (B ⧸ q.asIdeal) :=
+    isSeparable_quotient_centerIntegralClosure P'
+  rw [hbc, TauCeti.fittingIdeal_kaehlerDifferential_map_eq_differentIdeal_map
+      F F' (p := maximalIdeal O) q.asIdeal P'.integers,
+    differentIdeal_map_integers_eq_maximalIdeal_pow P']
 
 /-- **The Kähler different at a place with separable residue field.** If the residue extension at
 `P'` over `P = P'.restrict k F` is separable, the zeroth Fitting ideal of the differentials of the

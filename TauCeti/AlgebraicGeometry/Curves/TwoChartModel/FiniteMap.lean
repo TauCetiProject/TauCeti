@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.AlgHom
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.FiniteExtension
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Proper
 import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
@@ -17,9 +18,10 @@ normalization maps on both affine charts are finite. The model over the larger f
 over the constant field, while the target model is separated. Thus the induced morphism is
 proper. It is locally quasi-finite on the two source charts, and therefore finite.
 
-This is the global finiteness assertion for the normalization morphism. It applies to inseparable
-extensions as well. The chart finiteness comes from finite normalization of polynomial rings;
-the passage from proper and locally quasi-finite to finite is Mathlib's Zariski main theorem.
+This is the global finiteness assertion for the normalization morphism (`isFinite_map`, and
+`isFinite_homOfAlgHom` for arbitrary choices of transcendental parameters). It applies to
+inseparable extensions as well. The chart finiteness comes from finite normalization of polynomial
+rings; the passage from proper and locally quasi-finite to finite is Mathlib's Zariski main theorem.
 
 See Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Section III.2 and
 Appendix B.
@@ -65,5 +67,27 @@ theorem isFinite_map (hF : IsFunctionField k F) (hF' : IsFunctionField k F')
         isFinite_specMap_infinityChartMap hF' hxt h
       infer_instance
   exact IsFinite.of_isProper_of_locallyQuasiFinite f
+
+/-- The morphism of two-chart models induced by an integral extension `F' / F` of function fields
+over `k` is finite, for arbitrary choices of transcendental parameters `x ∈ F` and `x' ∈ F'`. -/
+theorem isFinite_homOfAlgHom (hF : IsFunctionField k F) (hF' : IsFunctionField k F')
+    {x : F} (hx : x ≠ 0) {x' : F'} (hx' : x' ≠ 0)
+    (hxt : Transcendental k x) (hx't : Transcendental k x') :
+    IsFinite (homOfAlgHom hF hF' hx hx' hxt hx't (IsScalarTower.toAlgHom k F F')) := by
+  let y' : F' := algebraMap F F' x
+  have hy' : y' ≠ 0 := (map_ne_zero _).mpr hx
+  have hy't : Transcendental k y' :=
+    (transcendental_algebraMap_iff (algebraMap F F').injective).mpr hxt
+  have hcomp :
+      (isoOfAlgEquiv hF' hF' hy' hx' (1 : F' ≃ₐ[k] F')
+          (hxt := hy't) (hx't := hx't)).hom ≫
+        map hF hF' hx hy' (rfl : algebraMap F F' x = y') =
+      homOfAlgHom hF hF' hx hx' hxt hx't (IsScalarTower.toAlgHom k F F') := by
+    rw [isoOfAlgEquiv_hom, map_eq_homOfAlgHom (hxt := hxt) (hx't := hy't), homOfAlgHom_comp]
+    rfl
+  have : IsFinite (map hF hF' hx hy' (rfl : algebraMap F F' x = y')) :=
+    isFinite_map hF hF' hx hy' rfl hxt
+  rw [← hcomp]
+  infer_instance
 
 end TauCeti.AlgebraicGeometry.twoChartModel

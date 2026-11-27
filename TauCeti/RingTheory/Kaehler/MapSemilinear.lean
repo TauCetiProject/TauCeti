@@ -223,8 +223,17 @@ theorem mapSemilinear_toAlgHom_apply [Algebra A B] [IsScalarTower R A B] (ω : �
 
 section RingEquiv
 
+-- Instance-isolation wrapper for `Ω[A'⁄R']`: when `A = A'` or `R = R'`, equipping `Ω[A'⁄R']`
+-- directly with the pulled-back `A`- and `R`-module structures along `eA` would clash with the
+-- ambient `A'`- and `R'`-module instances.
 private structure SemilinearTarget (M : Type*) where
   val : M
+
+private def semilinearTargetEquiv (M : Type*) : SemilinearTarget M ≃ M where
+  toFun := SemilinearTarget.val
+  invFun := SemilinearTarget.mk
+  left_inv _ := rfl
+  right_inv _ := rfl
 
 variable {R' A' : Type*} [CommRing R'] [CommRing A'] [Algebra R' A']
 
@@ -232,71 +241,41 @@ private noncomputable def mapSemilinearOfRingEquivAux (eR : R ≃+* R') (eA : A 
     (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r)) :
     { f : Ω[A⁄R] →ₛₗ[(eA : A →+* A')] Ω[A'⁄R'] //
       ∀ x : A, f (D R A x) = D R' A' (eA x) } :=
-  letI : AddCommGroup (SemilinearTarget Ω[A'⁄R']) :=
-    { add a b := ⟨a.val + b.val⟩
-      zero := ⟨0⟩
-      neg a := ⟨-a.val⟩
-      sub a b := ⟨a.val - b.val⟩
-      nsmul n a := ⟨n • a.val⟩
-      zsmul z a := ⟨z • a.val⟩
-      add_assoc a b c := congrArg SemilinearTarget.mk (add_assoc a.val b.val c.val)
-      zero_add a := congrArg SemilinearTarget.mk (zero_add a.val)
-      add_zero a := congrArg SemilinearTarget.mk (add_zero a.val)
-      sub_eq_add_neg a b := congrArg SemilinearTarget.mk (sub_eq_add_neg a.val b.val)
-      nsmul_zero a := congrArg SemilinearTarget.mk (zero_nsmul a.val)
-      nsmul_succ n a := congrArg SemilinearTarget.mk (succ_nsmul a.val n)
-      zsmul_zero' a := congrArg SemilinearTarget.mk (zero_zsmul a.val)
-      zsmul_succ' n a := congrArg SemilinearTarget.mk (SubNegMonoid.zsmul_succ' n a.val)
-      zsmul_neg' n a := congrArg SemilinearTarget.mk (SubNegMonoid.zsmul_neg' n a.val)
-      neg_add_cancel a := congrArg SemilinearTarget.mk (neg_add_cancel a.val)
-      add_comm a b := congrArg SemilinearTarget.mk (add_comm a.val b.val) }
+  let eVal : SemilinearTarget Ω[A'⁄R'] ≃ Ω[A'⁄R'] := semilinearTargetEquiv Ω[A'⁄R']
+  letI : AddCommGroup (SemilinearTarget Ω[A'⁄R']) := eVal.addCommGroup
+  let eAdd : SemilinearTarget Ω[A'⁄R'] ≃+ Ω[A'⁄R'] := eVal.addEquiv
   letI : Module A (SemilinearTarget Ω[A'⁄R']) :=
-    { smul t a := ⟨eA t • a.val⟩
-      one_smul a := congrArg SemilinearTarget.mk (by simp)
-      mul_smul t₁ t₂ a := congrArg SemilinearTarget.mk (by
-        change eA (t₁ * t₂) • a.val = eA t₁ • eA t₂ • a.val
-        rw [map_mul, mul_smul])
-      smul_zero t := congrArg SemilinearTarget.mk (smul_zero _)
-      smul_add t a b := congrArg SemilinearTarget.mk (smul_add _ _ _)
-      add_smul t₁ t₂ a := congrArg SemilinearTarget.mk (by
-        change eA (t₁ + t₂) • a.val = eA t₁ • a.val + eA t₂ • a.val
-        rw [map_add, add_smul])
-      zero_smul a := congrArg SemilinearTarget.mk (by simp) }
+    @AddEquiv.module A _ _ _ _ _ (Module.compHom Ω[A'⁄R'] (eA : A →+* A')) eAdd
   letI : Module R (SemilinearTarget Ω[A'⁄R']) :=
-    { smul r a := ⟨eA (algebraMap R A r) • a.val⟩
-      one_smul a := congrArg SemilinearTarget.mk (by simp)
-      mul_smul r₁ r₂ a := congrArg SemilinearTarget.mk (by
-        change eA (algebraMap R A (r₁ * r₂)) • a.val =
-          eA (algebraMap R A r₁) • eA (algebraMap R A r₂) • a.val
-        rw [map_mul, map_mul, mul_smul])
-      smul_zero r := congrArg SemilinearTarget.mk (smul_zero _)
-      smul_add r a b := congrArg SemilinearTarget.mk (smul_add _ _ _)
-      add_smul r₁ r₂ a := congrArg SemilinearTarget.mk (by
-        change eA (algebraMap R A (r₁ + r₂)) • a.val =
-          eA (algebraMap R A r₁) • a.val + eA (algebraMap R A r₂) • a.val
-        rw [map_add, map_add, add_smul])
-      zero_smul a := congrArg SemilinearTarget.mk (by simp) }
+    @AddEquiv.module R _ _ _ _ _
+      (Module.compHom Ω[A'⁄R'] ((eA : A →+* A').comp (algebraMap R A))) eAdd
+  -- Both scalar actions on `SemilinearTarget Ω[A'⁄R']` are transferred along `eAdd` from
+  -- `Module.compHom`, so `eAdd` intertwines them with `eA` and `eA ∘ algebraMap R A`.
+  have hsmulA : ∀ (a : A) (y : SemilinearTarget Ω[A'⁄R']), eAdd (a • y) = eA a • eAdd y :=
+    fun _ _ ↦ rfl
+  have hsmulR : ∀ (r : R) (y : SemilinearTarget Ω[A'⁄R']),
+      eAdd (r • y) = eA (algebraMap R A r) • eAdd y :=
+    fun _ _ ↦ rfl
   haveI : IsScalarTower R A (SemilinearTarget Ω[A'⁄R']) :=
     .of_algebraMap_smul fun _ _ ↦ rfl
   let d : Derivation R A (SemilinearTarget Ω[A'⁄R']) :=
-    { toFun := fun a ↦ ⟨D R' A' (eA a)⟩
-      map_add' := fun a b ↦ congrArg SemilinearTarget.mk (by simp)
-      map_smul' := fun r a ↦ congrArg SemilinearTarget.mk <| by
-        change D R' A' (eA (r • a)) = (eA (algebraMap R A r)) • D R' A' (eA a)
-        rw [Algebra.smul_def, map_mul, ← h r, ← Algebra.smul_def, Derivation.map_smul,
-          IsScalarTower.algebraMap_smul]
-      map_one_eq_zero' := congrArg SemilinearTarget.mk (by simp)
-      leibniz' := fun a b ↦ congrArg SemilinearTarget.mk <| by
-        change D R' A' (eA (a * b)) = eA a • D R' A' (eA b) + eA b • D R' A' (eA a)
-        simp }
-  ⟨{ toFun := fun ω ↦ (d.liftKaehlerDifferential ω).val
-     map_add' := fun ω₁ ω₂ ↦ by rw [map_add]; rfl
-     map_smul' := fun a ω ↦ by
-       change (d.liftKaehlerDifferential (a • ω)).val =
-         eA a • (d.liftKaehlerDifferential ω).val
-       rw [LinearMap.map_smul]
-       rfl },
-   fun x ↦ congrArg SemilinearTarget.val (d.liftKaehlerDifferential_comp_D x)⟩
+    { toFun := fun a ↦ eAdd.symm (D R' A' (eA a))
+      map_add' := fun a b ↦ eAdd.injective <| by
+        simp only [map_add, eAdd.apply_symm_apply]
+      map_smul' := fun r a ↦ eAdd.injective <| by
+        rw [hsmulR, eAdd.apply_symm_apply, eAdd.apply_symm_apply, Algebra.smul_def, map_mul, ← h r,
+          ← Algebra.smul_def, Derivation.map_smul, ← IsScalarTower.algebraMap_smul A' (eR r),
+          h r, RingHom.id_apply]
+      map_one_eq_zero' := eAdd.injective <| by
+        simp only [LinearMap.coe_mk, AddHom.coe_mk, map_one, Derivation.map_one_eq_zero,
+          map_zero]
+      leibniz' := fun a b ↦ eAdd.injective <| by
+        simp only [LinearMap.coe_mk, AddHom.coe_mk, map_add, hsmulA, eAdd.apply_symm_apply,
+          map_mul, Derivation.leibniz] }
+  ⟨{ toFun := fun ω ↦ eAdd (d.liftKaehlerDifferential ω)
+     map_add' := fun ω₁ ω₂ ↦ by rw [map_add, map_add]
+     map_smul' := fun a ω ↦ by rw [LinearMap.map_smul, hsmulA, RingHom.coe_coe] },
+   fun x ↦ congrArg eAdd (d.liftKaehlerDifferential_comp_D x)⟩
 
 /-- **The semilinear map on Kähler differentials along commuting ring isomorphisms**
 `eR : R ≃+* R'` and `eA : A ≃+* A'`, characterised by sending `D R A x` to `D R' A' (eA x)`. -/

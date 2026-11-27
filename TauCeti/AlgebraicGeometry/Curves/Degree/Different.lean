@@ -84,17 +84,6 @@ variable (k : Type u) [Field k] {X Y : Scheme.{u}}
   [X.Over (Spec (.of k))] [Y.Over (Spec (.of k))]
   (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [IsDominant f]
 
-/-- Transport separability from a typeclass `Algebra Y.functionField X.functionField` to the
-algebra structure induced by `f.functionFieldMap` when the two maps agree pointwise. -/
-theorem isSeparable_functionFieldMap [IsIntegral X] [IsIntegral Y]
-    [Algebra Y.functionField X.functionField] [Algebra.IsSeparable Y.functionField X.functionField]
-    (hmap : ∀ z : Y.functionField,
-      algebraMap Y.functionField X.functionField z = f.functionFieldMap z) :
-    @Algebra.IsSeparable Y.functionField X.functionField _ _ f.functionFieldMap.hom.toAlgebra :=
-  @Algebra.IsSeparable.of_equiv_equiv Y.functionField X.functionField Y.functionField
-    X.functionField _ _ _ _ _ f.functionFieldMap.hom.toAlgebra
-    (RingEquiv.refl _) (RingEquiv.refl _) (RingHom.ext fun z ↦ (hmap z).symm) ‹_›
-
 /-- **Local coincidence of the ramification ideal sheaf and the trace-dual different.** Let
 `f : X ⟶ Y` be a dominant morphism of integral schemes over `Spec k` with finite separable
 function-field extension along `f^*`, and let `x : X` be a point where `𝒪_{X,x}` and
@@ -266,7 +255,7 @@ theorem finrank_ramificationIdealSheaf_eq_degree_different
         (Scheme.IsCurveOver.isFunctionField (k := k) (X := Y))) := by
   have hmono : Mono (cotangentMap k f) :=
     mono_cotangentMap_of_ne_zero k f (cotangentMap_ne_zero_of_isDominant_of_isSeparable k f
-      (isSeparable_functionFieldMap f hmap))
+      (f.isSeparable_functionFieldMap hmap))
   have hI := isEffectiveCartier_ramificationIdealSheaf k f
   have hdimX : RelativeDimensionLE 1 (X ↘ Spec (.of k)) :=
     (relativeDimensionLE_iff_of_field (X ↘ Spec (.of k))).mpr
@@ -314,7 +303,7 @@ theorem eulerDegree_relativeDifferentials_eq_finrank_mul_add_degree_different
     [∀ y : CodimensionOnePoint Y, IsDiscreteValuationRing (Y.presheaf.stalk (y : Y))]
     [SheafOfModules.isInvertible X (X.relativeDifferentials k)]
     [SheafOfModules.isInvertible Y (Y.relativeDifferentials k)]
-    [IsFinite f] [Flat f]
+    [IsFinite f]
     [Algebra Y.functionField X.functionField]
     [IsScalarTower k Y.functionField X.functionField]
     [FiniteDimensional Y.functionField X.functionField]
@@ -329,8 +318,11 @@ theorem eulerDegree_relativeDifferentials_eq_finrank_mul_add_degree_different
         InvertibleSheaf.eulerDegree k ⟨Y.relativeDifferentials k, inferInstance⟩ +
         Divisor.degree (Divisor.different k X.functionField
           (Scheme.IsCurveOver.isFunctionField (k := k) (X := Y))) := by
+  have : ∀ y : Y, ValuationRing (Y.presheaf.stalk y) :=
+    Scheme.IsCurveOver.valuationRing_stalk k Y
+  have : Flat f := f.flat_of_isDominant_of_valuationRing
   have hne : cotangentMap k f ≠ 0 :=
-    cotangentMap_ne_zero_of_isDominant_of_isSeparable k f (isSeparable_functionFieldMap f hmap)
+    cotangentMap_ne_zero_of_isDominant_of_isSeparable k f (f.isSeparable_functionFieldMap hmap)
   have : IsNoetherian X := Scheme.IsCurveOver.isNoetherian k X
   have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
   have hcohomX0 : FiniteDimensional k
@@ -352,25 +344,11 @@ theorem eulerDegree_relativeDifferentials_eq_finrank_mul_add_degree_different
   have hdimY : RelativeDimensionLE 1 (Y ↘ Spec (.of k)) :=
     (relativeDimensionLE_iff_of_field (Y ↘ Spec (.of k))).mpr
       (Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := Y) k).le
-  let eRange : Y.functionField ≃+* f.functionFieldMap.hom.fieldRange :=
-    RingEquiv.ofBijective
-      ({ toFun := fun z ↦ ⟨f.functionFieldMap z, z, rfl⟩
-         map_one' := Subtype.ext (map_one f.functionFieldMap.hom)
-         map_mul' := fun a b ↦ Subtype.ext (map_mul f.functionFieldMap.hom a b)
-         map_zero' := Subtype.ext (map_zero f.functionFieldMap.hom)
-         map_add' := fun a b ↦ Subtype.ext (map_add f.functionFieldMap.hom a b) } :
-        Y.functionField →+* f.functionFieldMap.hom.fieldRange)
-      ⟨fun a b h ↦ f.functionFieldMap.hom.injective (congrArg Subtype.val h),
-        fun ⟨_, z, hz⟩ ↦ ⟨z, Subtype.ext hz⟩⟩
   have hdeg : Module.finrank f.functionFieldMap.hom.fieldRange X.functionField =
-      Module.finrank Y.functionField X.functionField := by
-    have hsq : (algebraMap f.functionFieldMap.hom.fieldRange X.functionField).comp
-          eRange.toRingHom =
-        (RingEquiv.refl X.functionField).toRingHom.comp
-          (algebraMap Y.functionField X.functionField) := by
-      ext z
-      exact (hmap z).symm
-    exact (Algebra.finrank_eq_of_equiv_equiv eRange (RingEquiv.refl X.functionField) hsq).symm
+      Module.finrank Y.functionField X.functionField :=
+    (Algebra.finrank_eq_of_equiv_equiv f.functionFieldMap.hom.rangeRestrictFieldEquiv
+      (RingEquiv.refl X.functionField) (RingHom.ext fun z ↦ by
+        simp [Subfield.algebraMap_ofSubfield, hmap])).symm
   rw [eulerDegree_relativeDifferentials_eq_finrank_mul_add_ramification k f hne,
     hdeg, finrank_ramificationIdealSheaf_eq_degree_different k f hmap hsep]
 
@@ -378,26 +356,6 @@ section PerfectField
 
 variable [PerfectField k] [X.IsCurveOver k] [Y.IsCurveOver k]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
-
-private theorem isSeparable_residueField_toPlace_of_perfectField
-    [Algebra Y.functionField X.functionField]
-    [IsScalarTower k Y.functionField X.functionField]
-    [Algebra.IsAlgebraic Y.functionField X.functionField]
-    (x : CodimensionOnePoint X) :
-    Algebra.IsSeparable ((X.toPlace (k := k) (x : X)).restrict k Y.functionField).ResidueField
-      (X.toPlace (k := k) (x : X)).ResidueField := by
-  have hX : IsFunctionField k X.functionField := Scheme.IsCurveOver.isFunctionField
-  have hY : IsFunctionField k Y.functionField := Scheme.IsCurveOver.isFunctionField
-  let P' := X.toPlace (k := k) (x : X)
-  let _ := Place.integersAlgebraBase k P'
-  have := Place.isScalarTower_integersAlgebraBase k P'
-  have := Place.isScalarTower_integers_restrict k Y.functionField P'
-  have _ : PerfectField (P'.restrict k Y.functionField).ResidueField :=
-    (P'.restrict k Y.functionField).perfectField_residueField hY
-  have _ : FiniteDimensional k P'.ResidueField := P'.finiteDimensional_residueField hX
-  have _ : FiniteDimensional (P'.restrict k Y.functionField).ResidueField P'.ResidueField :=
-    Module.Finite.of_restrictScalars_finite k _ _
-  infer_instance
 
 variable [∀ y : CodimensionOnePoint Y, IsDiscreteValuationRing (Y.presheaf.stalk (y : Y))]
 
@@ -419,7 +377,7 @@ theorem equivFunctionFieldDivisor_toWeilDivisor_ramificationCartierDivisor_of_pe
     haveI := isInvertible_relativeDifferentials (X := Y) k
     haveI : Mono (cotangentMap k f) :=
       mono_cotangentMap_of_ne_zero k f (cotangentMap_ne_zero_of_isDominant_of_isSeparable k f
-        (isSeparable_functionFieldMap f hmap))
+        (f.isSeparable_functionFieldMap hmap))
     SchemeWeilDivisor.equivFunctionFieldDivisor
         (Scheme.IsCurveOver.valuativeCriterion_existence k X)
         (Scheme.IsCurveOver.coheight_le_one (k := k))
@@ -434,9 +392,12 @@ theorem equivFunctionFieldDivisor_toWeilDivisor_ramificationCartierDivisor_of_pe
   have := isInvertible_relativeDifferentials (X := Y) k
   have : Mono (cotangentMap k f) :=
     mono_cotangentMap_of_ne_zero k f (cotangentMap_ne_zero_of_isDominant_of_isSeparable k f
-      (isSeparable_functionFieldMap f hmap))
+      (f.isSeparable_functionFieldMap hmap))
+  have : Algebra.IsIntegral Y.functionField X.functionField :=
+    Algebra.IsIntegral.of_finite Y.functionField X.functionField
   exact equivFunctionFieldDivisor_toWeilDivisor_ramificationCartierDivisor k f hmap
-    (isSeparable_residueField_toPlace_of_perfectField k)
+    fun _ ↦
+      Place.isSeparable_residueField_restrict_of_perfectField Scheme.IsCurveOver.isFunctionField _
 
 /-- Over a perfect field `k`, `dim_k Γ(R_f, 𝒪_{R_f}) = deg Diff(k(X) / k(Y))`. -/
 theorem finrank_ramificationIdealSheaf_eq_degree_different_of_perfectField
@@ -454,8 +415,11 @@ theorem finrank_ramificationIdealSheaf_eq_degree_different_of_perfectField
   have := Scheme.IsCurveOver.smoothOfRelativeDimension_one_of_perfectField k Y
   have := isInvertible_relativeDifferentials (X := X) k
   have := isInvertible_relativeDifferentials (X := Y) k
+  have : Algebra.IsIntegral Y.functionField X.functionField :=
+    Algebra.IsIntegral.of_finite Y.functionField X.functionField
   exact finrank_ramificationIdealSheaf_eq_degree_different k f hmap
-    (isSeparable_residueField_toPlace_of_perfectField k)
+    fun _ ↦
+      Place.isSeparable_residueField_restrict_of_perfectField Scheme.IsCurveOver.isFunctionField _
 
 /-- **Scheme-theoretic Riemann–Hurwitz formula with the trace-dual different over a perfect
 field**: for any finite dominant morphism `f : X ⟶ Y` of regular integral proper curves over a
@@ -482,11 +446,11 @@ theorem eulerDegree_relativeDifferentials_eq_finrank_mul_add_degree_different_of
   have := Scheme.IsCurveOver.smoothOfRelativeDimension_one_of_perfectField k Y
   have := isInvertible_relativeDifferentials (X := X) k
   have := isInvertible_relativeDifferentials (X := Y) k
-  have : ∀ y : Y, ValuationRing (Y.presheaf.stalk y) :=
-    Scheme.IsCurveOver.valuationRing_stalk k Y
-  have : Flat f := f.flat_of_isDominant_of_valuationRing
+  have : Algebra.IsIntegral Y.functionField X.functionField :=
+    Algebra.IsIntegral.of_finite Y.functionField X.functionField
   exact eulerDegree_relativeDifferentials_eq_finrank_mul_add_degree_different k f hmap
-    (isSeparable_residueField_toPlace_of_perfectField k)
+    fun _ ↦
+      Place.isSeparable_residueField_restrict_of_perfectField Scheme.IsCurveOver.isFunctionField _
 
 end PerfectField
 
