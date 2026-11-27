@@ -52,7 +52,9 @@ second derivative `-4 δ cos (2 (y - r))`. So the critical points are the angles
   by `-2 δ sin (2 (t - r))`.
 * `TauCeti.isMorse_circleCosTwo`: for `δ ≠ 0` it is a Morse function.
 * `TauCeti.mem_criticalPoints_circleCosTwo_iff_exists`: for `δ ≠ 0` its critical points are the
-  two maxima and the two minima.
+  two maxima and the two minima;
+  `TauCeti.exists_eq_circleCosTwoMaxCrit_or_eq_circleCosTwoMinCrit` states this for the critical
+  points.
 * `TauCeti.manifoldMorseIndex_circleCosTwoMax`, `TauCeti.manifoldMorseIndex_circleCosTwoMin`: for
   `δ > 0` the maxima have index `1` and the minima index `0`; likewise
   `TauCeti.manifoldMorseIndex_circleCosTwoMaxCrit` and
@@ -448,6 +450,15 @@ theorem mem_criticalPoints_circleCosTwo_iff_exists {δ : ℝ} (hδ : δ ≠ 0) (
   · rintro ⟨j, rfl | rfl⟩
     · exact circleCosTwoMax_mem_criticalPoints δ r j
     · exact circleCosTwoMin_mem_criticalPoints δ r j
+
+/-- For `δ ≠ 0`, every critical point of `θ ↦ δ cos (2 (θ - r))` is one of the labelled maxima
+`circleCosTwoMaxCrit δ r j` or minima `circleCosTwoMinCrit δ r j`. -/
+theorem exists_eq_circleCosTwoMaxCrit_or_eq_circleCosTwoMinCrit {δ : ℝ} (hδ : δ ≠ 0) (r : ℝ)
+    (p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r)) :
+    ∃ j, p = circleCosTwoMaxCrit δ r j ∨ p = circleCosTwoMinCrit δ r j := by
+  obtain ⟨j, h | h⟩ := (mem_criticalPoints_circleCosTwo_iff_exists hδ r).1 p.property
+  · exact ⟨j, Or.inl (Subtype.ext h)⟩
+  · exact ⟨j, Or.inr (Subtype.ext h)⟩
 
 /-- **The maxima have Morse index `1`.** -/
 theorem manifoldMorseIndex_circleCosTwoMax {δ : ℝ} (hδ : 0 < δ) (r : ℝ) (j : Fin 2) :

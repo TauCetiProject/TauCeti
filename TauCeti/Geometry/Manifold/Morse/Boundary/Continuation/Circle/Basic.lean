@@ -73,9 +73,13 @@ satisfy `2 δ ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt < π / 12`.
   `TauCeti.morseContinuationMap_single_circleCosTwoMinCrit_add_two_mul_pi_div_three`). So
   `Φ_{Γ₁} = Φ_{Γ₂} = I` but `Φ_{Γ₂ * Γ₁} = S`: continuation maps do not compose strictly.
 
-The maps here are the mod-two continuation maps; the integral continuation maps, with their signs,
-are not treated. On the integral Morse complex with differential `I - S`, the exchange `S` is chain
-homotopic to the identity through `K = -I`
+The maps here are the mod-two continuation maps of the field `W`. The integral continuation maps
+for pseudo-gradients adapted to the end functions, along a diffeomorphism close to a rotation at
+the critical points, are computed in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Circle.Signed`
+(`TauCeti.IsAdaptedPseudoGradient.signedContinuationCoeff_circleCosTwo`). On the integral Morse
+complex with differential `I - S`, the exchange `S` is chain homotopic to the identity through
+`K = -I`
 (`TauCeti.IsAdaptedPseudoGradient.circleCosTwoExchangeHomotopy`).
 
 ## References
