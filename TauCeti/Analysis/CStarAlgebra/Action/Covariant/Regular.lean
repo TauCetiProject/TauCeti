@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
+public import TauCeti.Analysis.CStarAlgebra.Action.Multiplier
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Multiplication
 public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Basic
@@ -76,6 +77,7 @@ noncomputable section
 
 open Filter MeasureTheory Topology
 open scoped BoundedContinuousFunction CStarAlgebra CompactlySupported ENNReal InnerProductSpace
+  MultiplierAlgebra
 
 namespace TauCeti.CStarAction
 
@@ -294,6 +296,57 @@ theorem isNondegenerate_regular_coefficient_iff [μ.IsOpenPosMeasure] :
   exact norm_eq_zero.1 <| this.resolve_right (by positivity)
 
 end Nondegenerate
+
+section Multiplier
+
+variable (hρ : ρ.IsNondegenerate)
+
+omit [MeasurableSpace G] [BorelSpace G] in
+private theorem continuous_regularMultiplier_apply (m : 𝓜(ℂ, A)) (v : H) :
+    Continuous fun r : G => ρ.multiplierExtension hρ (α.multiplier r⁻¹ m) v :=
+  ρ.continuous_multiplierExtension_apply hρ
+    (fun a => (α.continuous_multiplier_apply_fst m a).comp continuous_inv)
+    (fun r => (StarAlgEquiv.norm_map (α.multiplier r⁻¹) m).le) v
+
+private def regularMultiplier (m : 𝓜(ℂ, A)) : Lp H 2 μ →L[ℂ] Lp H 2 μ :=
+  Lp.strongOperatorMultiplication μ ENNReal.ofNat_ne_top
+    (fun r => ρ.multiplierExtension hρ (α.multiplier r⁻¹ m))
+    (continuous_regularMultiplier_apply α ρ hρ m)
+    ⟨‖m‖, fun r => (NonUnitalStarAlgHom.norm_apply_le
+      (ρ.multiplierExtension hρ).toNonUnitalStarAlgHom _).trans
+      (StarAlgEquiv.norm_map (α.multiplier r⁻¹) m).le⟩
+
+omit [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] in
+private theorem coeFn_regularMultiplier (m : 𝓜(ℂ, A)) (ξ : Lp H 2 μ) :
+    regularMultiplier α ρ μ hρ m ξ =ᵐ[μ]
+      fun r => ρ.multiplierExtension hρ (α.multiplier r⁻¹ m) (ξ r) :=
+  Lp.strongOperatorMultiplication_ae μ ENNReal.ofNat_ne_top _ _ _ ξ
+
+private theorem regularMultiplier_eq (m : 𝓜(ℂ, A)) :
+    regularMultiplier α ρ μ hρ m =
+      (regular α ρ μ).coefficient.multiplierExtension
+        (isNondegenerate_regular_coefficient hρ) m := by
+  apply (NonUnitalStarAlgHom.eq_multiplierExtension_iff _).2
+  intro a
+  ext ξ
+  simp only [mul_apply_eq_comp]
+  filter_upwards [coeFn_regularMultiplier α ρ μ hρ m
+      ((regular α ρ μ).coefficient a ξ),
+    coeFn_regular_coefficient α ρ μ a ξ,
+    coeFn_regular_coefficient α ρ μ (m.fst a) ξ] with r h₁ h₂ h₃
+  rw [h₁, h₂, h₃, ρ.multiplierExtension_apply_apply]
+  simp only [multiplier_apply_fst, inv_inv, apply_inv_apply]
+
+/-- The multiplier extension of the regular coefficient representation acts pointwise by
+`ρ'(α.multiplier r⁻¹ m)`. This formula applies to every multiplier. -/
+theorem coeFn_regular_multiplierExtension (m : 𝓜(ℂ, A)) (ξ : Lp H 2 μ) :
+    (regular α ρ μ).coefficient.multiplierExtension
+        (isNondegenerate_regular_coefficient hρ) m ξ =ᵐ[μ]
+      fun r => ρ.multiplierExtension hρ (α.multiplier r⁻¹ m) (ξ r) := by
+  rw [← regularMultiplier_eq α ρ μ hρ m]
+  exact coeFn_regularMultiplier α ρ μ hρ m ξ
+
+end Multiplier
 
 section Integrated
 

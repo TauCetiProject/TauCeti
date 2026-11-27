@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
+import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # The subgroup scheme of `GLₙ` preserving a constant matrix
@@ -138,11 +139,8 @@ the matrix maps entrywise, and the constant form maps to the constant form. -/
 @[simp] theorem formRelation_map {T : Type*} [Ring T] [Algebra R T]
     (X : Matrix (Fin n) (Fin n) A) (phi : A →ₐ[R] T) :
     (formRelation C X).map phi = formRelation C (X.map phi) := by
-  have hC : (C.map (algebraMap R A)).map phi = C.map (algebraMap R T) := by
-    rw [Matrix.map_map]
-    exact congrArg _ (funext fun r => phi.commutes r)
-  rw [formRelation, formRelation, Matrix.map_sub, Matrix.map_mul, Matrix.map_mul, hC,
-    Matrix.transpose_map]
+  rw [formRelation, formRelation, Matrix.map_sub, Matrix.map_mul, Matrix.map_mul,
+    Matrix.map_map_algebraMap, Matrix.transpose_map]
   exact fun a b => map_sub phi a b
 
 /-- An algebra morphism kills the entries of the form relation of `X` exactly when the image of

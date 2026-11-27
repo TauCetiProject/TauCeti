@@ -123,10 +123,8 @@ theorem wedge_kahlerPowerForm_ofComplexModule {m : ℕ} (hm : finrank ℂ E = m 
   have hm' : finrank ℝ E = 2 * (m + 1) := by rw [finrank_real_of_complex, hm]
   rw [ContinuousAlternatingMap.sum_relEigenvalues_hermitianSesqForm hα hm b,
     wedge_kahlerPowerForm real_inner_ofComplexModule_ofComplexModule hm' hbR
-      (fun i j ↦ ?_) α]
-  · simp only [ofComplexModule_apply]
-  · rw [ofComplexModule_apply]
-    exact (hbR.complex_iff_forall_real_inner_I_smul_eq_zero).1 b.orthonormal i j
+      b.orthonormal.real_inner_ofComplexModule_eq_zero α]
+  simp only [ofComplexModule_apply]
 
 /-- **The trace identity through eigenvalues** `n α ∧ ω ^ (n - 1) = (∑ⱼ λⱼ[α]) ω ^ n` on a
 complex inner product space of dimension `n = m + 1`, for `ω` the Kähler form of multiplication by

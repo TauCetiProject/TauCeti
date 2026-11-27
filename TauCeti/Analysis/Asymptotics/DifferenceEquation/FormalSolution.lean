@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.Binomial
 import TauCeti.Analysis.Asymptotics.TruncatedPowerSeries
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
@@ -37,7 +39,8 @@ this is DLMF's case of distinct characteristic roots under its assumption `g₀ 
 and `f₀ + 2ρ ≠ 0` says that `ρ` differs from the other root `-f₀ - ρ`. The actual
 solutions with the expansions `w(n) ∼ ρⁿ n^α ∑ aₛ n⁻ˢ` (DLMF 2.9.8) are obtained from these
 truncated formal solutions by solving a Volterra summation equation for the error, whose forcing
-term is the residual estimated here (Wong and Li).
+term is the residual estimated here (Wong and Li); for the root of smaller modulus this is done in
+`TauCeti.Analysis.Asymptotics.DifferenceEquation.Recessive`.
 
 ## Main definitions
 
@@ -52,6 +55,10 @@ term is the residual estimated here (Wong and Li).
 
 ## Main results
 
+* `TauCeti.isBigO_formalDifferenceSolution_sub`: for `N ≤ M`, the truncations after `M` and after
+  `N` terms differ by `O(|ρ|ⁿ n^{Re α - N})`.
+* `TauCeti.isEquivalent_formalDifferenceSolution`: for `M ≥ 1` and `a₀ = 1`, the truncation
+  after `M` terms is asymptotic to `ρⁿ n^α`.
 * `TauCeti.isBigO_formalDifferenceSolution_residual_sub`: for arbitrary coefficients `a`, the
   residual of the truncation after `N + 1` terms is
   `ρⁿ n^α ∑_{t ≤ N} (differenceResidualCoeff fs gs ρ α a t) n⁻ᵗ + O(|ρ|ⁿ n^{Re α - N - 1})`.
@@ -276,11 +283,37 @@ private lemma isBigO_sub_eval_trunc_kernelSeries {f g fs gs : ℕ → ℂ} (ρ c
       (hB 0))).congr_left fun n ↦ ?_
   simp only [Polynomial.coe_C, Polynomial.eval_C, kernelSeries]
 
-private lemma norm_pow_mul_cpow_mul_inv_pow (ρ α : ℂ) (M : ℕ) {n : ℕ} (hn : n ≠ 0) :
-    ‖ρ ^ n * (n : ℂ) ^ α * (n : ℂ)⁻¹ ^ M‖ = ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - M) := by
-  have hn' : (0 : ℝ) < n := by positivity
-  simp [Complex.norm_natCast_cpow_of_pos (Nat.pos_of_ne_zero hn), Real.rpow_sub hn',
-    Real.rpow_natCast, div_eq_mul_inv, mul_assoc]
+/-- For `N ≤ M`, the truncations of `ρⁿ n^α ∑ aₛ n⁻ˢ` after `M` and after `N` terms differ by
+`O(|ρ|ⁿ n^{Re α - N})`. -/
+theorem isBigO_formalDifferenceSolution_sub (a : ℕ → ℂ) (ρ α : ℂ) {N M : ℕ} (h : N ≤ M) :
+    (fun n ↦ formalDifferenceSolution a ρ α M n - formalDifferenceSolution a ρ α N n) =O[atTop]
+      fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - N) := by
+  refine IsBigO.of_bound (∑ s ∈ Ico N M, ‖a s‖) ?_
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
+  rw [formalDifferenceSolution_def, formalDifferenceSolution_def, ← mul_sub, ← sum_Ico_eq_sub _ h,
+    mul_sum, Real.norm_of_nonneg (by positivity), sum_mul]
+  refine (norm_sum_le _ _).trans (sum_le_sum fun s hs ↦ ?_)
+  rw [show ρ ^ n * (n : ℂ) ^ α * (a s * (n : ℂ)⁻¹ ^ s) =
+      a s * (ρ ^ n * (n : ℂ) ^ α * (n : ℂ)⁻¹ ^ s) by ring, norm_mul,
+    norm_pow_mul_cpow_mul_inv_pow ρ α s (by omega)]
+  refine mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left
+    (Real.rpow_le_rpow_of_exponent_le hn' ?_) (by positivity)) (norm_nonneg _)
+  have := (mem_Ico.1 hs).1
+  have : (N : ℝ) ≤ s := by exact_mod_cast this
+  linarith
+
+/-- For `M ≥ 1` and `a₀ = 1`, the truncation `ρⁿ n^α ∑_{s < M} aₛ n⁻ˢ` is asymptotic to its
+leading term `ρⁿ n^α`. -/
+theorem isEquivalent_formalDifferenceSolution {a : ℕ → ℂ} (ha : a 0 = 1) (ρ α : ℂ) {M : ℕ}
+    (hM : 1 ≤ M) :
+    formalDifferenceSolution a ρ α M ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α := by
+  have hu₁ : formalDifferenceSolution a ρ α 1 = fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α := by
+    ext n
+    simp [formalDifferenceSolution_def, ha]
+  have h := isBigO_formalDifferenceSolution_sub a ρ α hM
+  rw [hu₁, Nat.cast_one] at h
+  exact h.trans_isLittleO (isLittleO_norm_pow_mul_rpow_pow_mul_cpow ρ (sub_one_lt α.re))
 
 /-- **Residual of a truncated formal solution.** Let `f` and `g` have the expansions
 `f n = ∑_{q ≤ N} f_q n^{-q} + O(n^{-N-1})` and `g n = ∑_{q ≤ N} g_q n^{-q} + O(n^{-N-1})`. For

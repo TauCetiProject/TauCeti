@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Flat
-public import TauCeti.Algebra.Homology.DerivedCategory.InternalHom
-public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Resolution
-public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+public import TauCeti.AlgebraicGeometry.Modules.Derived.InternalHom
 
 /-!
 # The derived internal Hom of `𝒪_X`-modules
@@ -24,7 +21,7 @@ apply to `𝒪_X`-modules:
   K-injective replacements `I` of `K` and `J` of `L`, and its identification with `R𝓗om(K, L)`
   below;
 * the internal Hom complex out of the structure sheaf in degree `0` is the target,
-  `𝓗om^•(𝒪_X[0], L) ≅ L`;
+  `𝓗om^•(𝒪_X[0], L) ≅ L`, and so is the derived internal Hom, `R𝓗om(𝒪_X[0], L) ≅ L`;
 * the global sections `Hom(𝒪_X, -)` of the internal Hom complex representing `R𝓗om(K, L)` have
   cohomology `Hom_{D(𝒪_X)}(K, L[n])` in degree `n`.
 
@@ -32,9 +29,9 @@ The internal Hom complex `𝓗om^•(K, J)` from `K` itself into `J` is `R𝓗om
 [Stacks, Section 20.42 (08DH)]. `TauCeti.derivedInternalHomQObjObjIso` identifies it with the
 bifunctor above, given a separating family of objects `G` for which `- ⊗ G` preserves acyclic
 complexes. For `𝒪_X`-modules the extensions by zero `j_! 𝒪_U` of the structure sheaf form such a
-family: they separate (`SheafOfModules.isSeparating_freeYonedaFunctor`) and are flat
-(`SheafOfModules.preservesFiniteLimits_tensorLeft_freeYonedaFunctor_obj`), so tensoring with them
-is exact.
+family: they separate (`SheafOfModules.isSeparating_freeYonedaFunctor`) and are flat, so tensoring
+with them preserves acyclic complexes
+(`TauCeti.AlgebraicGeometry.Coherent.acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj`).
 
 ## References
 
@@ -66,23 +63,20 @@ example (K : CochainComplex X.Modules ℤ) (L : DerivedCategory X.Modules) :
   derivedInternalHomQObjObjIso (C := X.Modules)
     (P := (ObjectProperty.ofObj (SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj :
       ObjectProperty X.Modules))
-    (SheafOfModules.isSeparating_freeYonedaFunctor _) (by
-      rintro _ ⟨U⟩ E hE i
-      let G : X.Modules := (SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj U
-      have : PreservesFiniteLimits (tensorLeft G) :=
-        SheafOfModules.preservesFiniteLimits_tensorLeft_freeYonedaFunctor_obj (R := X.sheaf) U
-      have : PreservesFiniteLimits (tensorRight G) :=
-        preservesFiniteLimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight G)
-      have : PreservesFiniteColimits (tensorRight G) :=
-        preservesFiniteColimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight G)
-      have := hE i
-      rw [HomologicalComplex.exactAt_iff] at this ⊢
-      exact this.map (tensorRight G)) K L
+    (SheafOfModules.isSeparating_freeYonedaFunctor _)
+    (AlgebraicGeometry.Coherent.acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj X)
+    K L
 
 /-- The internal Hom complex out of `𝒪_X` placed in degree `0` is the target complex. -/
 example (L : CochainComplex X.Modules ℤ) :
     internalHomComplex ((singleFunctor X.Modules 0).obj (𝟙_ X.Modules)) L ≅ L :=
   internalHomComplexSingleUnitIso L
+
+/-- The derived internal Hom out of `𝒪_X` placed in degree `0` is the identity. -/
+example (L : DerivedCategory X.Modules) :
+    ((derivedInternalHom X.Modules).obj
+      (op ((DerivedCategory.singleFunctor X.Modules 0).obj (𝟙_ X.Modules)))).obj L ≅ L :=
+  (AlgebraicGeometry.Coherent.derivedInternalHomStructureSheafIso X).app L
 
 /-- The `n`-th cohomology of the global sections `Hom(𝒪_X, -)` of the internal Hom complex
 representing `R𝓗om(K, L)` is `Hom_{D(𝒪_X)}(K, L[n])`. -/

@@ -145,6 +145,11 @@ theorem orbitLinearizedFlow_apply (x : contractiblePeriodicSolutions X 1) (t : u
     orbitLinearizedFlow hX x t v = mfderiv I I (timeDependentFlowOf X 0 t) (x.val 0) v :=
   linearizedFlowAlong_apply hX _ t v
 
+/-- The linearized flow along the loop of an orbit starts at the identity. -/
+theorem orbitLinearizedFlow_zero (x : contractiblePeriodicSolutions X 1)
+    (v : TangentSpace I (orbitLoop x 0)) : orbitLinearizedFlow hX x 0 v = v :=
+  linearizedFlowAlong_zero hX _ v
+
 /-- **The linearized flow is continuous along the loop of an orbit.** The tangent vector `Φ(t) v`
 at the point `t` of the loop of `x` is a continuous function of `t ∈ [0, 1]` and of `v`. -/
 theorem continuous_orbitLinearizedFlow (x : contractiblePeriodicSolutions X 1) :

@@ -30,6 +30,8 @@ numerator instead.
 * `TauCeti.jacobiChar_eq_ringHomComp_quadraticChar`: at a prime modulus it is the quadratic
   character of `ZMod p`.
 * `TauCeti.jacobiChar_mul`: it is multiplicative in the modulus.
+* `TauCeti.jacobiChar_sq_mul`: multiplying the modulus by a square lifts the character to the
+  new modulus.
 * `TauCeti.changeLevel_jacobiChar_apply_units`: the same evaluation after lifting to a multiple
   `m` of `b`, at a unit of `ZMod m`.
 * `TauCeti.jacobiChar_isQuadratic`: it takes only the values `0`, `1` and `-1`.
@@ -98,6 +100,18 @@ theorem jacobiChar_mul (a b : ℕ) [NeZero a] [NeZero b] :
   refine MulChar.ext fun u ↦ ?_
   rw [MulChar.mul_apply, changeLevel_jacobiChar_apply_units, changeLevel_jacobiChar_apply_units,
     jacobiChar_apply, jacobiSym.mul_right, Int.cast_mul]
+
+variable (R) in
+/-- Multiplying the denominator by a square induces the Jacobi character to the new level. -/
+theorem jacobiChar_sq_mul (a b : ℕ) [NeZero a] [NeZero b] :
+    jacobiChar R (a ^ 2 * b) = (jacobiChar R b).changeLevel (dvd_mul_left b (a ^ 2)) := by
+  refine MulChar.ext fun u ↦ ?_
+  have hc : ((u : ZMod (a ^ 2 * b)).val : ℤ).gcd a = 1 := by
+    rw [Int.gcd_natCast_natCast]
+    exact (ZMod.val_coe_unit_coprime u).coprime_dvd_right
+      ((dvd_pow_self a two_ne_zero).trans (dvd_mul_right (a ^ 2) b))
+  rw [jacobiChar_apply, changeLevel_jacobiChar_apply_units, jacobiSym.mul_right,
+    jacobiSym.pow_right, jacobiSym.sq_one hc, one_mul]
 
 /-- The Jacobi character is quadratic: it takes only the values `0`, `1` and `-1`. -/
 theorem jacobiChar_isQuadratic : (jacobiChar R b).IsQuadratic := by
