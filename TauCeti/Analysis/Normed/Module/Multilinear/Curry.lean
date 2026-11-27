@@ -46,6 +46,8 @@ derivative of a map into the `m`-th derivative of its directional derivative in 
   continuous linear map; `ContinuousMultilinearMap.norm_applyLastL_le` bounds its operator norm
   by `‖h‖`, so it is `‖h‖`-Lipschitz (`ContinuousMultilinearMap.lipschitzWith_applyLastL`), and
   `ContinuousMultilinearMap.applyLastL_comp_curryLeft` says it commutes with `curryLeft`.
+* `ContinuousMultilinearMap.apply_const_eq_curryLeft`: on the diagonal `(h, …, h)`, a map agrees
+  with its left currying at `h`.
 -/
 
 public section
@@ -175,6 +177,15 @@ theorem applyLastL_comp_curryLeft (m : ℕ) (h : E) (M : E [×(m + 2)]→L[𝕜]
     (applyLastL 𝕜 F m h).comp M.curryLeft = (applyLastL 𝕜 F (m + 1) h M).curryLeft := by
   ext v w
   simp [Fin.cons_snoc_eq_snoc_cons]
+
+/-- On the diagonal `(h, …, h)`, an `(n + 1)`-linear map agrees with its left currying at `h`
+evaluated on the diagonal. -/
+theorem apply_const_eq_curryLeft {n : ℕ} (L : E [×(n + 1)]→L[𝕜] F) (h : E) :
+    L (fun _ ↦ h) = L.curryLeft h fun _ ↦ h := by
+  rw [curryLeft_apply]
+  congr 1
+  ext i
+  cases i using Fin.cases <;> simp
 
 end ContinuousMultilinearMap
 

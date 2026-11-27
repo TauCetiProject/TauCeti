@@ -39,6 +39,7 @@ the translations by `ℤ²` and the rotation `ρ(x, y) = (-y, x - y)` of order t
   `TriFace.edges` and its edge of direction `k`, `TriFace.edge`.
 * `TauCeti.TriEdge.whiteFace`, `TauCeti.TriEdge.blackFace`, `TauCeti.TriEdge.faces`: the two faces
   containing an edge.
+* `TauCeti.TriFace.across`: the face across the edge of direction `k` of a face.
 * `TauCeti.vertexFaces`: the six faces containing a vertex.
 * `TauCeti.TriEdge.endpoints`: the unordered pair of endpoints of an edge, which determines it
   (`TauCeti.TriEdge.endpoints_injective`).
@@ -46,6 +47,10 @@ the translations by `ℤ²` and the rotation `ρ(x, y) = (-y, x - y)` of order t
   `TriEdge → Bool` (the last one Mathlib's `arrowAddAction`).
 * `TauCeti.latticeRot`, `TauCeti.TriEdge.rot`, `TauCeti.TriFace.rot`: the rotation `ρ` on vertices,
   edges and faces.
+* `TauCeti.edgesOfDir k`: the set of all edges of direction `k`; `ρ` maps it onto
+  `edgesOfDir (k + 1)` (`TauCeti.image_rot_edgesOfDir`).
+* `TauCeti.TriFace.diagIndex`: the diagonal index `k` of a face, with `k ≤ x − y ≤ k + 1` on its
+  vertices (`TauCeti.TriFace.mem_vertices_iff`).
 
 ## Main statements
 
@@ -54,6 +59,8 @@ the translations by `ℤ²` and the rotation `ρ(x, y) = (-y, x - y)` of order t
   each direction.
 * `TauCeti.TriFace.eq_of_mem_edges_of_mem_edges`, `TauCeti.TriFace.isWhite_ne_of_mem_edges`: two
   distinct faces share at most one edge, and faces sharing an edge have opposite colours.
+* `TauCeti.TriFace.edge_mem_edges_iff`, `TauCeti.TriFace.across_across`: the faces containing the
+  edge `f.edge k` are `f` and `f.across k`, and crossing the same edge twice returns to `f`.
 * `TauCeti.mem_vertexFaces`, `TauCeti.card_vertexFaces`: exactly six faces contain a vertex.
 * `TauCeti.TriEdge.vadd_eq_self_iff`, `TauCeti.TriFace.vadd_eq_self_iff`: translations act freely.
 * `TauCeti.setOf_vadd_eq_true`: the edge set of a translated configuration is the translated edge
@@ -346,6 +353,66 @@ theorem TriFace.exists_ne_mem_edges {e : TriEdge} {f : TriFace} (he : e ∈ f.ed
   exacts [⟨_, e.whiteFace_ne_blackFace.symm, e.mem_blackFace_edges⟩,
     ⟨_, e.whiteFace_ne_blackFace, e.mem_whiteFace_edges⟩]
 
+/-! ### The face across an edge -/
+
+namespace TriFace
+
+/-- The face across the edge of direction `k` of `f`. -/
+def across (f : TriFace) (k : Fin 3) : TriFace :=
+  if f.isWhite then (f.edge k).blackFace else (f.edge k).whiteFace
+
+theorem across_def (f : TriFace) (k : Fin 3) :
+    f.across k = if f.isWhite then (f.edge k).blackFace else (f.edge k).whiteFace := (rfl)
+
+/-- The faces across the edges of `W(v)` are `B(v − e₂)`, `B(v + e₁)` and `B(v)`. -/
+@[simp] theorem across_mk_true (v : ℤ × ℤ) (k : Fin 3) :
+    (⟨v, true⟩ : TriFace).across k =
+      ⟨if k = 0 then v - (0, 1) else if k = 1 then v + (1, 0) else v, false⟩ := by
+  fin_cases k <;> rfl
+
+/-- The faces across the edges of `B(v)` are `W(v + e₂)`, `W(v − e₁)` and `W(v)`. -/
+@[simp] theorem across_mk_false (v : ℤ × ℤ) (k : Fin 3) :
+    (⟨v, false⟩ : TriFace).across k =
+      ⟨if k = 0 then v + (0, 1) else if k = 1 then v - (1, 0) else v, true⟩ := by
+  fin_cases k <;> rfl
+
+@[simp] theorem isWhite_across (f : TriFace) (k : Fin 3) : (f.across k).isWhite = !f.isWhite := by
+  rw [across_def]
+  cases f.isWhite <;> simp
+
+@[simp] theorem edge_mem_edges_across (f : TriFace) (k : Fin 3) :
+    f.edge k ∈ (f.across k).edges := by
+  rw [across_def]
+  split_ifs
+  · exact (f.edge k).mem_blackFace_edges
+  · exact (f.edge k).mem_whiteFace_edges
+
+@[simp] theorem edge_across (f : TriFace) (k : Fin 3) : (f.across k).edge k = f.edge k := by
+  have := mem_edges_iff_edge_eq.1 (f.edge_mem_edges_across k)
+  rwa [edge_k] at this
+
+theorem across_ne (f : TriFace) (k : Fin 3) : f.across k ≠ f := fun h => by
+  have := congrArg isWhite h
+  cases hf : f.isWhite <;> simp [hf] at this
+
+/-- A face other than `f` containing the edge `f.edge k` is the face across it. -/
+theorem eq_across_of_mem_edges {f g : TriFace} {k : Fin 3} (hg : f.edge k ∈ g.edges)
+    (hne : g ≠ f) : g = f.across k :=
+  (eq_or_eq_of_mem_edges (across_ne f k).symm (f.edge_mem_edges k) (f.edge_mem_edges_across k)
+    hg).resolve_left hne
+
+/-- The two faces containing the edge `f.edge k` are `f` and the face across it. -/
+theorem edge_mem_edges_iff {f g : TriFace} {k : Fin 3} :
+    f.edge k ∈ g.edges ↔ g = f ∨ g = f.across k := by
+  refine ⟨fun hg => or_iff_not_imp_left.2 (eq_across_of_mem_edges hg), ?_⟩
+  rintro (rfl | rfl)
+  exacts [g.edge_mem_edges k, f.edge_mem_edges_across k]
+
+@[simp] theorem across_across (f : TriFace) (k : Fin 3) : (f.across k).across k = f :=
+  (eq_across_of_mem_edges ((edge_across f k).symm ▸ f.edge_mem_edges k) (across_ne f k).symm).symm
+
+end TriFace
+
 /-! ### The six faces at a vertex -/
 
 /-- The six faces containing the vertex `v`: `W(v)`, `W(v - e₁)`, `W(v - e₃)`, `B(v)`,
@@ -444,6 +511,11 @@ namespace TriEdge
   simp [faces, Finset.vadd_finset_insert]
 
 end TriEdge
+
+@[simp] theorem TriFace.across_vadd (w : ℤ × ℤ) (f : TriFace) (k : Fin 3) :
+    (w +ᵥ f).across k = w +ᵥ f.across k := by
+  rw [across_def, across_def, vadd_isWhite, edge_vadd]
+  split_ifs <;> simp
 
 @[simp] theorem vertexFaces_add (w v : ℤ × ℤ) : vertexFaces (w + v) = w +ᵥ vertexFaces v := by
   simp [vertexFaces, Finset.vadd_finset_insert, add_sub_assoc]
@@ -560,6 +632,20 @@ theorem orderOf_rot : orderOf rot = 3 := by
   ext <;> simp [rot_apply] <;> split_ifs <;> simp <;> abel
 
 end TriEdge
+
+/-- The set of all edges of direction `k`. -/
+def edgesOfDir (k : Fin 3) : Set TriEdge :=
+  {e | e.k = k}
+
+@[simp] theorem mem_edgesOfDir {k : Fin 3} {e : TriEdge} : e ∈ edgesOfDir k ↔ e.k = k :=
+  Iff.rfl
+
+/-- `ρ` maps the edges of direction `k` onto the edges of direction `k + 1`. -/
+@[simp] theorem image_rot_edgesOfDir (k : Fin 3) :
+    TriEdge.rot '' edgesOfDir k = edgesOfDir (k + 1) := by
+  ext e
+  obtain ⟨e, rfl⟩ := TriEdge.rot.surjective e
+  simp
 
 namespace TriFace
 
@@ -720,6 +806,28 @@ theorem mem_vertices_iff_of_ne {f : TriFace} {i j : Fin 3} (hij : i ≠ j) {u : 
     (mem_vertices_of_mem_endpoints (f.edge_mem_edges j))⟩
   obtain ⟨⟨x, y⟩, _ | _⟩ := f <;> fin_cases i <;> fin_cases j <;>
     simp_all [Prod.ext_iff] <;> omega
+
+/-- The diagonal index `k` of a face: `x − y` lies between `k` and `k + 1` on its vertices. -/
+def diagIndex (f : TriFace) : ℤ :=
+  if f.isWhite then f.v.1 - f.v.2 else f.v.1 - f.v.2 - 1
+
+@[simp] theorem diagIndex_mk_true (v : ℤ × ℤ) : (⟨v, true⟩ : TriFace).diagIndex = v.1 - v.2 :=
+  (rfl)
+
+@[simp] theorem diagIndex_mk_false (v : ℤ × ℤ) :
+    (⟨v, false⟩ : TriFace).diagIndex = v.1 - v.2 - 1 :=
+  (rfl)
+
+/-- The vertices of a face with base vertex `(m, n)` and diagonal index `k` are the lattice
+points `(x, y)` with `m ≤ x ≤ m + 1`, `n ≤ y ≤ n + 1` and `k ≤ x − y ≤ k + 1`. -/
+theorem mem_vertices_iff (f : TriFace) (u : ℤ × ℤ) :
+    u ∈ f.vertices ↔ (f.v.1 ≤ u.1 ∧ u.1 ≤ f.v.1 + 1) ∧ (f.v.2 ≤ u.2 ∧ u.2 ≤ f.v.2 + 1) ∧
+      (f.diagIndex ≤ u.1 - u.2 ∧ u.1 - u.2 ≤ f.diagIndex + 1) := by
+  obtain ⟨⟨a, b⟩, c⟩ := f
+  obtain ⟨x, y⟩ := u
+  cases c <;> simp only [vertices_mk_true, vertices_mk_false, diagIndex_mk_true,
+    diagIndex_mk_false, Finset.mem_insert, Finset.mem_singleton, Prod.ext_iff,
+    Prod.mk_add_mk, add_zero] <;> omega
 
 /-- A face has only one vertex off each of its edges. -/
 theorem eq_of_notMem_endpoints {f : TriFace} {i : Fin 3} {u u' : ℤ × ℤ}

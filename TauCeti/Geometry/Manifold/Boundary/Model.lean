@@ -257,6 +257,23 @@ theorem euclideanHalfSpaceBoundary_eq_frontier (n : ℕ) :
   ext x
   simp [eq_comm]
 
+/-- Inserting `0` at coordinate `0` of `Fin n → ℝ` corresponds under
+`(EuclideanSpace.equiv _ ℝ).symm` to `euclideanHalfSpaceBoundaryParam n`. -/
+theorem euclideanSpace_equiv_symm_finCons_zero (n : ℕ) (y : Fin n → ℝ) :
+    (EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm (Fin.cons 0 y) =
+      euclideanHalfSpaceBoundaryParam n ((EuclideanSpace.equiv (Fin n) ℝ).symm y) := by
+  ext k
+  refine Fin.cases ?_ (fun j ↦ ?_) k <;>
+    simp [euclideanHalfSpaceBoundaryParam_apply_zero, euclideanHalfSpaceBoundaryParam_apply_succ]
+
+/-- The preimage of `range (𝓡∂ (n + 1))` under `(EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm` is
+the coordinate half-space `{x | 0 ≤ x 0}`. -/
+theorem preimage_euclideanSpace_equiv_symm_range_modelWithCornersEuclideanHalfSpace (n : ℕ) :
+    (EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm ⁻¹' range (𝓡∂ (n + 1)) =
+      {x : Fin (n + 1) → ℝ | 0 ≤ x 0} := by
+  ext x
+  simp [range_modelWithCornersEuclideanHalfSpace]
+
 /-- The half-space model `𝓡∂ (n + 1)` sends a point to the frontier of its range exactly when the
 zeroth coordinate of the point vanishes. -/
 theorem modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff {n : ℕ}

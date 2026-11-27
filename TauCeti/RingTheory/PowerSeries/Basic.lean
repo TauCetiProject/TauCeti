@@ -37,6 +37,8 @@ coefficients `map f` acts on the constant coefficient.
   `f₀ * gₙ₊₁ + Σ_{j ≤ n} fₙ₊₁₋ⱼ * gⱼ`.
 * `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
   power series, has zero coefficients from `s` on.
+* `Polynomial.coe_sum`, `Polynomial.smul_eq_coe_mul`: viewing polynomials as power series
+  commutes with finite sums, and a polynomial acts on power series by multiplication.
 -/
 
 public section
@@ -189,5 +191,20 @@ theorem coeff_coe_eq_zero_of_degree_lt {s : ℕ} {p : Polynomial R} {m : ℕ} (h
     (hm : s ≤ m) : (p : PowerSeries R).coeff m = 0 := by
   rw [coeff_coe]
   exact coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))
+
+/-- A finite sum of polynomials, viewed as a power series, is the sum of the polynomials viewed as
+power series. -/
+@[simp, norm_cast]
+theorem coe_sum {ι : Type*} (s : Finset ι) (f : ι → R[X]) :
+    ((∑ i ∈ s, f i : R[X]) : R⟦X⟧) = ∑ i ∈ s, (f i : R⟦X⟧) :=
+  map_sum coeToPowerSeries.ringHom f s
+
+/-- A polynomial acts on a power series by multiplication with the polynomial viewed as a power
+series. -/
+@[simp]
+theorem smul_eq_coe_mul {R : Type*} [CommSemiring R] (p : R[X]) (φ : R⟦X⟧) :
+    p • φ = (p : R⟦X⟧) * φ := by
+  rw [Algebra.smul_def, PowerSeries.algebraMap_apply', Algebra.algebraMap_self, PowerSeries.map_id,
+    id_eq]
 
 end Polynomial
