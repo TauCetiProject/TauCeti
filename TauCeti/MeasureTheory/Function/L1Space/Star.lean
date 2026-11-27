@@ -26,6 +26,7 @@ namespace MeasureTheory
 
 /-- A function into a normed star group is integrable exactly when its pointwise `star` is, since
 `star` preserves norms. -/
+@[simp]
 theorem integrable_star_iff {X F : Type*} [MeasurableSpace X] [NormedAddCommGroup F]
     [StarAddMonoid F] [NormedStarGroup F] {μ : Measure X} {f : X → F} :
     Integrable (star f) μ ↔ Integrable f μ := by

@@ -126,12 +126,14 @@ theorem quantize_zero_right (b : E → ℂ) : π.quantize χ b 0 = 0 := by
   simp [quantize_def]
 
 /-- The quantization is homogeneous in the symbol. -/
+@[simp]
 theorem quantize_smul_left (c : ℂ) (b : E → ℂ) (v : V) :
     π.quantize χ (c • b) v = c • π.quantize χ b v := by
   simp only [quantize_def, Real.fourier_const_smul, Pi.smul_apply, smul_eq_mul, ← integral_smul,
     mul_left_comm _ c, mul_smul]
 
 /-- The quantization is homogeneous in the vector. -/
+@[simp]
 theorem quantize_smul_right (b : E → ℂ) (c : ℂ) (v : V) :
     π.quantize χ b (c • v) = c • π.quantize χ b v := by
   simp only [quantize_def, map_smul, ← integral_smul, smul_comm c]
