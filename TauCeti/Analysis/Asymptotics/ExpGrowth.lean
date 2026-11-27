@@ -25,6 +25,8 @@ equality when `exp (c * n) * u n` is monotone for some real `c`. This extends Ma
   `a` real, then `expGrowthSup (u * v) = a + expGrowthSup v`.
 * `ExpGrowth.expGrowthSup_exp_mul` — `expGrowthSup (fun n ↦ exp (a * n) * v n) = a +
   expGrowthSup v` for real `a`.
+* `ExpGrowth.expGrowthSup_const_mul` — `expGrowthSup (fun n ↦ b * v n) = expGrowthSup v` for a
+  constant `b ≠ 0, ∞`.
 * `ExpGrowth.expGrowthSup_comp_mul_le` — `expGrowthSup (fun n ↦ u (k * n)) ≤ k * expGrowthSup u`
   for `k ≠ 0`.
 * `ExpGrowth.expGrowthSup_comp_mul_of_monotone_exp_mul` — if `exp (c * n) * u n` is monotone
@@ -58,6 +60,13 @@ theorem expGrowthSup_mul_of_expGrowthInf_eq {a : ℝ} (hinf : expGrowthInf u = a
 theorem expGrowthSup_exp_mul (a : ℝ) (v : ℕ → ℝ≥0∞) :
     expGrowthSup (fun n ↦ exp (a * n) * v n) = a + expGrowthSup v :=
   expGrowthSup_mul_of_expGrowthInf_eq (u := fun n ↦ exp (a * n)) expGrowthInf_exp expGrowthSup_exp
+
+/-- Multiplying by a constant `b ≠ 0, ∞` does not change the upper exponential growth. -/
+theorem expGrowthSup_const_mul {b : ℝ≥0∞} (h : b ≠ 0) (h' : b ≠ ∞) (v : ℕ → ℝ≥0∞) :
+    expGrowthSup (fun n ↦ b * v n) = expGrowthSup v := by
+  rw [← Pi.mul_def (fun _ ↦ b) v, expGrowthSup_mul_of_expGrowthInf_eq (a := 0)
+    (by rw [expGrowthInf_const h h', EReal.coe_zero])
+    (by rw [expGrowthSup_const h h', EReal.coe_zero]), EReal.coe_zero, zero_add]
 
 /-- The upper exponential growth rate of `u` along the times `k * n` is at most `k` times that of
 `u`, for `k ≠ 0`. -/
