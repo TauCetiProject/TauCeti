@@ -239,20 +239,6 @@ private theorem signed_changeChart [FiniteDimensional ℝ E] [IsManifold I 1 M]
   simpa only [Manifold.OrientationLift.signAt_of_mem _ hα,
     Manifold.OrientationLift.signAt_of_mem _ hβ] using l.sign_mul_det α β x hα hβ
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The signed coefficient of a top form vanishes at the coordinates of a chart-source point
-outside the support of the form. -/
-private theorem signedInChartAt_eq_zero_of_notMem_tsupport
-    [FiniteDimensional ℝ E] (l : Manifold.OrientationLift I M (Fin k)) (φ : RoughForm I M ℝ k)
-    (b : Module.Basis (Fin k) ℝ E) (α : M) {x : M}
-    (hx : x ∈ (extChartAt I α).source)
-    (hφ : x ∉ _root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) :
-    φ.signedInChartAt b α (fun x ↦ l.signAt α x) (extChartAt I α x) = 0 := by
-  have h0 : φ x = 0 := _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) hφ
-  rw [RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ hx, RoughForm.inChartAt_apply,
-    (extChartAt I α).left_inv hx, h0]
-  simp
-
 private theorem integral_chart_piece_refine [FiniteDimensional ℝ E]
     (l : Manifold.OrientationLift I M (Fin k)) (φ : RoughForm I M ℝ k)
     (hi : IntegrableTopForm φ) (b : Module.Basis (Fin k) ℝ E) (α : M)
@@ -264,7 +250,8 @@ private theorem integral_chart_piece_refine [FiniteDimensional ℝ E]
   simpa only [ChartCover.piece_def] using setIntegral_image_extChartAt_eq_sum_disjointed α
     (signed_coefficient_integrable l hi b α).integrableOn hu hus
     (fun j ↦ (c.isOpen_domain j).isChartMeasurable) fun _ hx hn ↦
-      signedInChartAt_eq_zero_of_notMem_tsupport l φ b α (hus hx) fun ht ↦ hn (c.covers (hc ht))
+      φ.signedInChartAt_eq_zero_of_notMem_tsupport b α (fun x ↦ l.signAt α x) (hus hx)
+        fun ht ↦ hn (c.covers (hc ht))
 
 private theorem coverIntegral_eq [FiniteDimensional ℝ E] [IsManifold I 1 M]
     (l : Manifold.OrientationLift I M (Fin k)) (φ : RoughForm I M ℝ k)
@@ -278,7 +265,8 @@ private theorem coverIntegral_eq [FiniteDimensional ℝ E] [IsManifold I 1 M]
   apply congrArg (fun r : ℝ ↦ (Orientation.signBasis l.modelOrientation b : ℝ) * r)
   exact sum_setIntegral_image_extChartAt_disjointed_eq
     (f := fun γ ↦ φ.signedInChartAt b γ (fun x ↦ l.signAt γ x))
-    (signedInChartAt_eq_zero_of_notMem_tsupport l φ b)
+    (fun γ _ hx hφ ↦
+      φ.signedInChartAt_eq_zero_of_notMem_tsupport b γ (fun x ↦ l.signAt γ x) hx hφ)
     (fun γ δ _ hsub hs ↦ signed_changeChart l φ b γ δ hsub hs)
     c.center c.domain (fun i ↦ (c.isOpen_domain i).isChartMeasurable) c.domain_subset
     (hc.trans c.covers) (fun i ↦ (signed_coefficient_integrable l hi b _).integrableOn)
