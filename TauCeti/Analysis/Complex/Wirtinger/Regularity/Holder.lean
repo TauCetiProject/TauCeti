@@ -1,0 +1,212 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Topology.MetricSpace.Holder
+public import TauCeti.Analysis.Complex.Pompeiu.Weak
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Complex.Pompeiu.Holder.Higher
+import TauCeti.Analysis.Holder.Jet.Bounds
+import TauCeti.Analysis.Holder.Localization
+import TauCeti.MeasureTheory.Function.Gluing
+import TauCeti.Topology.MetricSpace.Holder
+
+/-!
+# Interior Hölder regularity for the distributional `\bar∂` equation
+
+Let `F` be a finite-dimensional complex normed space, `Ω ⊆ ℂ` open, `k : ℕ` and `0 < α < 1`.
+If `u : ℂ → F` solves `\bar∂u = g` in the sense of distributions on `Ω`
+(`TauCeti.HasWeakConjWirtingerDerivOn`), and `g` is `Cᵏ` on `Ω` with `k`-th derivative
+`α`-Hölder on every compact subset of `Ω`, then `u` agrees almost everywhere on `Ω` with a map
+`v` that is `C^{k+1}` on `Ω`, solves `\bar∂v = g` pointwise on `Ω`, and whose `(k + 1)`-th
+derivative is `α`-Hölder on every compact subset of `Ω`
+(`TauCeti.HasWeakConjWirtingerDerivOn.exists_contDiffOn_ae_eq_of_holderOnWith`). A continuous
+solution is itself such a map (`TauCeti.HasWeakConjWirtingerDerivOn.contDiffOn_of_holderOnWith`).
+This is the interior Schauder estimate for `\bar∂` in qualitative form: the equation gains one
+Hölder derivative, `g ∈ C^{k,α}_loc` gives `u ∈ C^{k+1,α}_loc`. The case `k = 0`, with the
+hypothesis and conclusion stated for `g` and `Du` directly, is
+`TauCeti.HasWeakConjWirtingerDerivOn.contDiffOn_one_of_holderOnWith`: a continuous weak solution
+with locally Hölder right-hand side is a classical `C¹` solution with locally Hölder derivative.
+This is the regularity that upgrades distributional solutions with Hölder coefficients, such as
+limits of solutions obtained by compactness, to classical ones.
+
+Near each point the data are cut off to compactly supported `C^{k,α}` data `f` with `f = g` on a
+smaller disc. The Cauchy transform of `f` is `C^{k+1,α}` near the point
+(`TauCeti.exists_contDiffOn_holderOnWith_iteratedFDeriv_cauchyTransform`) and solves
+`\bar∂ (T f) = f` distributionally (`TauCeti.hasWeakConjWirtingerDerivOn_cauchyTransform`), so
+`u - T f` is a distributional solution of `\bar∂ = 0` on the smaller disc, holomorphic up to a
+null set by Weyl's lemma (`TauCeti.HasWeakConjWirtingerDerivOn.exists_differentiableOn_ae_eq`).
+The local representatives are continuous and agree almost everywhere on overlaps, hence agree, and
+glue to one representative on `Ω`.
+
+## Main results
+
+* `TauCeti.HasWeakConjWirtingerDerivOn.exists_contDiffOn_ae_eq_of_holderOnWith`: a distributional
+  solution with `C^{k,α}_loc` right-hand side has a `C^{k+1,α}_loc` representative solving the
+  equation classically.
+* `TauCeti.HasWeakConjWirtingerDerivOn.contDiffOn_of_holderOnWith`: the same for a continuous
+  solution itself.
+* `TauCeti.HasWeakConjWirtingerDerivOn.contDiffOn_one_of_holderOnWith`: the case `k = 0`.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications **52**, 2012, Appendix B.
+* D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+  Lemma 4.4 and Theorem 4.6 (interior Hölder estimates for the Newtonian potential and for
+  Poisson's equation).
+-/
+
+public section
+
+open Complex Metric MeasureTheory Set Filter TopologicalSpace
+open scoped NNReal Topology ContDiff
+
+namespace TauCeti
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
+  {Ω : Opens ℂ} {u g : ℂ → F} {k : ℕ} {α : ℝ≥0}
+
+/-- **Local regularity.** Near each point of `Ω`, a distributional solution of `\bar∂u = g` with
+`g ∈ C^{k,α}_loc(Ω)` agrees almost everywhere with a map that is `C^{k+1}` with `α`-Hölder
+`(k + 1)`-th derivative on a ball about the point: the Cauchy transform of a cutoff of `g` plus a
+holomorphic map. -/
+private theorem exists_ball_contDiffOn_ae_eq (hα : 0 < α) (hα1 : α < 1)
+    (h : HasWeakConjWirtingerDerivOn volume Ω u g) (hg : ContDiffOn ℝ k g Ω)
+    (hgH : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k g) K)
+    {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) :
+    ∃ r > 0, ball z₀ r ⊆ Ω ∧ ∃ v : ℂ → F, ContDiffOn ℝ (k + 1 : ℕ) v (ball z₀ r) ∧
+      u =ᵐ[volume.restrict (ball z₀ r)] v ∧
+      ∃ C, HolderOnWith C α (iteratedFDeriv ℝ (k + 1) v) (ball z₀ r) := by
+  have := FiniteDimensional.completeSpace ℂ F
+  obtain ⟨ε, hε, hεΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
+  have hε2 : ball z₀ (ε / 2) ⊆ Ω := (ball_subset_ball (half_le_self hε.le)).trans hεΩ
+  obtain ⟨C, hC⟩ := hgH (closedBall z₀ (ε / 2))
+    ((closedBall_subset_ball (half_lt_self hε)).trans hεΩ) (isCompact_closedBall _ _)
+  -- Common bounds and a Hölder bound for the data on a ball `B(z₀, r)`.
+  obtain ⟨r, hr, hrε, M, H, hM, hH⟩ :=
+    (hg.mono hε2).exists_ball_bounds_and_holderOnWith_iteratedFDeriv
+      (ball_mem_nhds z₀ (half_pos hε)) hα1.le (hC.mono ball_subset_closedBall)
+  have hrΩ : ball z₀ r ⊆ Ω := hrε.trans hε2
+  -- Cut the data off to `f = χ • g`, equal to `g` on `B(z₀, r / 3)`.
+  let χ : ContDiffBump z₀ := ⟨r / 3, 2 * r / 3, by positivity, by linarith⟩
+  have hχ : ContDiff ℝ (k + 1) χ := χ.contDiff.of_le (by exact_mod_cast le_top)
+  obtain ⟨N, hN0, hN⟩ := χ.hasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff hχ
+  have hts : tsupport χ ⊆ ball z₀ r :=
+    χ.tsupport_eq.trans_subset (closedBall_subset_ball (by linarith : 2 * r / 3 < r))
+  let f := CkHolderSpace.cutoff (hg.mono hrΩ) hχ isOpen_ball (convex_ball z₀ r) hts hα1.le hM
+    (N := ⟨N, hN0⟩) (fun i hi x ↦ hN i hi x) (hH k le_rfl)
+  have hfs : Function.support f ⊆ closedBall z₀ (2 * r / 3) :=
+    subset_tsupport _ |>.trans <| (CkHolderSpace.tsupport_cutoff_subset ..).trans χ.tsupport_eq.le
+  have hfg : EqOn f g (ball z₀ (r / 3)) := fun x hx ↦ (CkHolderSpace.cutoff_apply ..).trans <| by
+    rw [χ.one_of_mem_closedBall (ball_subset_closedBall hx), one_smul]
+  obtain ⟨Hf, hHf⟩ := f.memHolder_iteratedFDeriv
+  obtain ⟨A, hA⟩ := exists_contDiffOn_holderOnWith_iteratedFDeriv_cauchyTransform (F := F) k hα
+    hα1 z₀ (r := 2 * r / 3) (R := r / 3) (by positivity) (by positivity)
+  obtain ⟨hTcd, hTH, -⟩ := hA f.contDiff hfs hHf (M := ‖f‖₊) fun _ ↦ f.norm_iteratedFDeriv_apply_le
+  -- On `B(z₀, r / 3)`, `u` is the Cauchy transform of `f` plus a holomorphic map.
+  let B : Opens ℂ := ⟨ball z₀ (r / 3), isOpen_ball⟩
+  have hBΩ : B ≤ Ω := (ball_subset_ball (by linarith)).trans hrΩ
+  have hfi : Integrable f := f.contDiff.continuous.integrable_of_hasCompactSupport
+    (HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall _ _) hfs)
+  have hgf : g =ᵐ[volume.restrict (B : Set ℂ)] f :=
+    (ae_restrict_mem isOpen_ball.measurableSet).mono fun x hx ↦ (hfg hx).symm
+  obtain ⟨w, hwd, hwu⟩ :=
+    ((h.mono hBΩ).congr_ae_deriv hgf).exists_differentiableOn_ae_eq_cauchyTransform_add hfi
+  have hw' : ContDiffOn ℝ (k + 1 + 1 : ℕ) w (ball z₀ (r / 3)) :=
+    (hwd.contDiffOn isOpen_ball).restrict_scalars ℝ
+  have hsub : ball z₀ (r / 6) ⊆ ball z₀ (r / 3) := ball_subset_ball (by linarith)
+  have hsub' : ball z₀ (r / 6) ⊆ ball z₀ (r / 3 + 1) := ball_subset_ball (by linarith)
+  obtain ⟨Cw, hCw⟩ := hw'.exists_holderOnWith_iteratedFDeriv isOpen_ball hα1.le
+    (isCompact_closedBall z₀ (r / 6)) (closedBall_subset_ball (by linarith))
+  refine ⟨r / 6, by positivity, hsub.trans hBΩ, cauchyTransform f + w,
+    (hTcd.mono hsub').add ((hw'.of_le (by exact_mod_cast Nat.le_succ _)).mono hsub),
+    ae_restrict_of_ae_restrict_of_subset hsub hwu, ?_⟩
+  · refine ⟨_, ((hTH.mono (hsub.trans ball_subset_closedBall)).add
+      (hCw.mono ball_subset_closedBall)).congr fun x hx ↦ ?_⟩
+    exact (iteratedFDeriv_add_apply (hTcd.contDiffAt (isOpen_ball.mem_nhds (hsub' hx)))
+      ((hw'.of_le (by exact_mod_cast Nat.le_succ _)).contDiffAt
+        (isOpen_ball.mem_nhds (hsub hx)))).symm
+
+/-- **Interior Hölder regularity for `\bar∂`.** For `0 < α < 1`, a distributional solution of
+`\bar∂u = g` on `Ω`, with `g` of class `Cᵏ` on `Ω` and `k`-th derivative `α`-Hölder on every
+compact subset of `Ω`, agrees almost everywhere on `Ω` with a map `v` of class `C^{k+1}` on `Ω`
+that solves `\bar∂v = g` at every point of `Ω` and whose `(k + 1)`-th derivative is `α`-Hölder on
+every compact subset of `Ω`. -/
+theorem HasWeakConjWirtingerDerivOn.exists_contDiffOn_ae_eq_of_holderOnWith (hα : 0 < α)
+    (hα1 : α < 1) (h : HasWeakConjWirtingerDerivOn volume Ω u g) (hg : ContDiffOn ℝ k g Ω)
+    (hgH : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k g) K) :
+    ∃ v : ℂ → F, ContDiffOn ℝ (k + 1 : ℕ) v Ω ∧ u =ᵐ[volume.restrict Ω] v ∧
+      (∀ z ∈ Ω, conjWirtingerDeriv v z 1 = g z) ∧
+      ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C, HolderOnWith C α (iteratedFDeriv ℝ (k + 1) v) K := by
+  have := FiniteDimensional.completeSpace ℂ F
+  choose! r hr hrΩ v hv hvu hvH using fun z (hz : z ∈ (Ω : Set ℂ)) ↦
+    exists_ball_contDiffOn_ae_eq hα hα1 h hg hgH hz
+  -- The local representatives are continuous and agree almost everywhere on overlaps, so they
+  -- glue to one representative `V` on `Ω`, agreeing with `v z` on the whole ball about `z`.
+  obtain ⟨V, hVu, hV⟩ := IsLindelof.exists_ae_eq_and_eqOn_of_forall_ae_eq_continuousOn
+    (HereditarilyLindelofSpace.isLindelof (Ω : Set ℂ)) (U := fun z ↦ ball z (r z))
+    (fun _ _ ↦ isOpen_ball) (fun z hz ↦ mem_ball_self (hr z hz))
+    (fun z hz ↦ (hv z hz).continuousOn) hvu
+  replace hVu : u =ᵐ[volume.restrict Ω] V := ae_restrict_of_ae hVu
+  replace hV : ∀ z ∈ Ω, EqOn V (v z) (ball z (r z)) := fun z hz y hy ↦ hV z hz ⟨hy, hrΩ z hz hy⟩
+  have hVcd : ContDiffOn ℝ (k + 1 : ℕ) V Ω := contDiffOn_of_locally_contDiffOn fun z hz ↦
+    ⟨ball z (r z), isOpen_ball, mem_ball_self (hr z hz),
+      ((hv z hz).congr (hV z hz)).mono inter_subset_right⟩
+  have hV1 : ContDiffOn ℝ 1 V Ω := hVcd.of_le (by exact_mod_cast Nat.le_add_left 1 k)
+  refine ⟨V, hVcd, hVu, fun z hz ↦ ?_, fun K hKΩ hK ↦ ?_⟩
+  · -- The classical and distributional derivatives agree almost everywhere, and are continuous.
+    have he := (h.congr_ae hVu).ae_eq (hasWeakConjWirtingerDerivOn_of_contDiffOn hV1)
+    exact (Measure.eqOn_open_of_ae_eq he Ω.isOpen hg.continuousOn
+      (hV1.conjWirtingerDeriv_apply_of_isOpen Ω.isOpen (m := 0) (by simp) 1).continuousOn hz).symm
+  · obtain ⟨δ, hδ, L, -, hL, -⟩ := hK.exists_holderOnWith_thickening_and_norm_le
+      (f := iteratedFDeriv ℝ (k + 1) V) fun z hz ↦ by
+        obtain ⟨C, hC⟩ := hvH z (hKΩ hz)
+        refine ⟨r z, hr z (hKΩ hz), C, hC.congr fun x hx ↦ ?_⟩
+        exact (((hV z (hKΩ hz)).eventuallyEq_of_mem (isOpen_ball.mem_nhds hx)).iteratedFDeriv ℝ
+          (k + 1)).eq_of_nhds.symm
+    exact ⟨L, hL.mono (self_subset_thickening hδ K)⟩
+
+/-- **Interior Hölder regularity for continuous solutions of `\bar∂`.** For `0 < α < 1`, a
+continuous distributional solution of `\bar∂u = g` on `Ω`, with `g` of class `Cᵏ` on `Ω` and
+`k`-th derivative `α`-Hölder on every compact subset of `Ω`, is of class `C^{k+1}` on `Ω`, solves
+`\bar∂u = g` at every point of `Ω`, and its `(k + 1)`-th derivative is `α`-Hölder on every compact
+subset of `Ω`. -/
+theorem HasWeakConjWirtingerDerivOn.contDiffOn_of_holderOnWith (hα : 0 < α) (hα1 : α < 1)
+    (h : HasWeakConjWirtingerDerivOn volume Ω u g) (hu : ContinuousOn u Ω)
+    (hg : ContDiffOn ℝ k g Ω)
+    (hgH : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k g) K) :
+    ContDiffOn ℝ (k + 1 : ℕ) u Ω ∧ (∀ z ∈ Ω, conjWirtingerDeriv u z 1 = g z) ∧
+      ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C, HolderOnWith C α (iteratedFDeriv ℝ (k + 1) u) K := by
+  obtain ⟨v, hv, huv, hD, hH⟩ := h.exists_contDiffOn_ae_eq_of_holderOnWith hα hα1 hg hgH
+  have he : EqOn u v Ω := Measure.eqOn_open_of_ae_eq huv Ω.isOpen hu hv.continuousOn
+  have hn : ∀ z ∈ (Ω : Set ℂ), u =ᶠ[𝓝 z] v := fun z hz ↦
+    he.eventuallyEq_of_mem (Ω.isOpen.mem_nhds hz)
+  refine ⟨hv.congr he, fun z hz ↦ ?_, fun K hKΩ hK ↦ ?_⟩
+  · rw [(hn z hz).conjWirtingerDeriv_eq]
+    exact hD z hz
+  · obtain ⟨C, hC⟩ := hH K hKΩ hK
+    exact ⟨C, hC.congr fun x hx ↦ ((hn x (hKΩ hx)).iteratedFDeriv ℝ (k + 1)).eq_of_nhds.symm⟩
+
+/-- **Hölder data give classical solutions of `\bar∂`.** For `0 < α < 1`, a continuous
+distributional solution of `\bar∂u = g` on `Ω`, with `g` `α`-Hölder on every compact subset of
+`Ω`, is of class `C¹` on `Ω`, solves `\bar∂u = g` at every point of `Ω`, and its derivative is
+`α`-Hölder on every compact subset of `Ω`. -/
+theorem HasWeakConjWirtingerDerivOn.contDiffOn_one_of_holderOnWith (hα : 0 < α) (hα1 : α < 1)
+    (h : HasWeakConjWirtingerDerivOn volume Ω u g) (hu : ContinuousOn u Ω)
+    (hgH : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C, HolderOnWith C α g K) :
+    ContDiffOn ℝ 1 u Ω ∧ (∀ z ∈ Ω, conjWirtingerDeriv u z 1 = g z) ∧
+      ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ C, HolderOnWith C α (fderiv ℝ u) K := by
+  have hg : ContinuousOn g Ω := continuousOn_of_forall_isCompact_holderOnWith Ω.isOpen hα hgH
+  obtain ⟨h1, h2, h3⟩ := h.contDiffOn_of_holderOnWith (k := 0) hα hα1 hu
+    (contDiffOn_zero.2 hg) fun K hKΩ hK ↦
+      (hgH K hKΩ hK).imp fun _ hC ↦ holderOnWith_iteratedFDeriv_zero_iff.2 hC
+  refine ⟨by simpa using h1, h2, fun K hKΩ hK ↦ (h3 K hKΩ hK).imp fun _ hC ↦ ?_⟩
+  exact holderOnWith_iteratedFDeriv_one_iff.1 hC
+
+end TauCeti

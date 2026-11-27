@@ -216,6 +216,10 @@ theorem bot_div (n : ℕ) : (⊥ : TruncationSet) / n = ⊥ := by
 theorem div_le_div (h : S ≤ T) (n : ℕ) : S / n ≤ T / n :=
   fun _ he ↦ h (mem_div.1 he)
 
+/-- If `n` divides an element `m` of `S`, then `m / n` lies in `S / n`. -/
+theorem div_mem_div (hm : m ∈ S) (h : n ∣ m) : m / n ∈ S / n := by
+  rwa [mem_div, Nat.mul_div_cancel' h]
+
 /-- `S / n` is nonempty exactly when `n ∈ S`. -/
 theorem one_mem_div_iff : 1 ∈ S / n ↔ n ∈ S := by
   simp

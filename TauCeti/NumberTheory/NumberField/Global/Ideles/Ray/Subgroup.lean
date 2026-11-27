@@ -43,6 +43,8 @@ idele classes to ray classes.
 * `TauCeti.GlobalNumberFields.isOpen_raySubgroup`: every ray subgroup is open.
 * `TauCeti.GlobalNumberFields.ofCompletion_mem_raySubgroup`: an idele class concentrated at an
   infinite place where the modulus imposes no sign condition is a ray class.
+* `TauCeti.GlobalNumberFields.raySubgroup_erase_le_sup_range_ofCompletion`: removing a real place
+  from the modulus enlarges the ray subgroup at most by the idele classes concentrated there.
 
 ## References
 
@@ -117,6 +119,38 @@ theorem ofCompletion_mem_raySubgroup {𝔪 : Modulus K} {w : InfinitePlace K}
   refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ by simp, fun v _ ↦ by simp, fun w' hw' ↦ ?_⟩
   rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne _ (hw w' hw'), Units.val_one, map_one]
   exact one_pos
+
+open scoped Classical in
+/-- **Removing a real place from the modulus.** Every ray class of the modulus with the same finite
+part as `𝔪` and with the real place `w` removed is a ray class of `𝔪` times an idele class
+concentrated at `w`: dividing a congruence idele by its own component at `w` makes it congruent to
+one modulo `𝔪`. -/
+theorem raySubgroup_erase_le_sup_range_ofCompletion (𝔪 : Modulus K)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    raySubgroup ⟨𝔪.finitePart, 𝔪.finitePart_ne_bot, 𝔪.infinitePart.erase w⟩ ≤
+      raySubgroup 𝔪 ⊔ (IdeleClassGroup.ofCompletion (𝓞 K) K w.val).range := by
+  intro c hc
+  obtain ⟨x, hx, rfl⟩ := mem_raySubgroup_iff.mp hc
+  obtain ⟨h₁, h₂, h₃⟩ := mem_ideleCongruenceSubgroup_iff.mp hx
+  -- Dividing `x` by its own component at `w` gives an idele congruent to one modulo `𝔪`.
+  let u : w.val.Completionˣ := w.val.ideleInfiniteCoord x
+  have hy : x * (IdeleGroup.ofCompletion (𝓞 K) K w.val u)⁻¹ ∈ ideleCongruenceSubgroup 𝔪 := by
+    refine mem_ideleCongruenceSubgroup_iff.mpr
+      ⟨fun v hv ↦ by simpa using h₁ v hv, fun v hv ↦ by simpa [Modulus.exponent_def] using h₂ v hv,
+        fun w' hw' ↦ ?_⟩
+    by_cases hww' : w' = w
+    · subst hww'
+      simp [u]
+    · have hne : w'.val ≠ w.val := fun h ↦ hww' (Subtype.ext h)
+      simpa [hne] using h₃ w' (Finset.mem_erase.mpr ⟨hww', hw'⟩)
+  have hsplit : QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K) x =
+      QuotientGroup.mk' _ (x * (IdeleGroup.ofCompletion (𝓞 K) K w.val u)⁻¹) *
+        IdeleClassGroup.ofCompletion (𝓞 K) K w.val u := by
+    rw [IdeleClassGroup.ofCompletion_apply, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
+      ← QuotientGroup.mk_mul, inv_mul_cancel_right]
+  rw [hsplit]
+  exact mul_mem (Subgroup.mem_sup_left (mem_raySubgroup_iff.mpr ⟨_, hy, rfl⟩))
+    (Subgroup.mem_sup_right ⟨u, rfl⟩)
 
 /-- **Every ray subgroup is open in the idele class group.** -/
 theorem isOpen_raySubgroup (𝔪 : Modulus K) :

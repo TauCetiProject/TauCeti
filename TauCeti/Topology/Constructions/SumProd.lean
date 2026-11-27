@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Constructions.SumProd
 public import Mathlib.Topology.ClusterPt
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import Mathlib.Topology.Order.OrderClosed
 
 /-!
 # Interiors and fibres in product spaces
@@ -27,7 +28,10 @@ a discrete space, with a product (`Homeomorph.sigmaEquivProd`).
 
 Finally, a function on a product that is eventually constant near a point has eventually constant
 slices through that point (`Filter.EventuallyEq.prodMk_right_nhds`,
-`Filter.EventuallyEq.prodMk_left_nhds`), and a function on a product that is continuous at every
+`Filter.EventuallyEq.prodMk_left_nhds`). A map on `α × β`, with `α` linearly ordered, that is
+equal to `(s, t) ↦ g t` on a closed half-space `s ≤ a` or `s ≥ a` agrees with it near every point
+of the open half-space (`TauCeti.eventuallyEq_comp_snd_of_lt`,
+`TauCeti.eventuallyEq_comp_snd_of_gt`). A function on a product that is continuous at every
 point of the graph of a map over a set, where the map is continuous, restricts to a continuous map
 on that graph (`TauCeti.continuousOn_comp_prodMk_of_continuousAt`,
 `TauCeti.continuous_comp_prodMk_of_continuousAt`). A map of `X × Y` continuous on `univ ×ˢ S`
@@ -113,6 +117,24 @@ theorem continuous_comp_prodMk_of_continuousAt {Z : Type*} [TopologicalSpace Z] 
     Continuous fun x ↦ F (x, u x) :=
   continuousOn_univ.1 <|
     continuousOn_comp_prodMk_of_continuousAt (fun x _ ↦ hF x) hu.continuousOn
+
+/-- If `f (s, t) = g t` for `s ≤ a`, then `f` agrees with `(s, t) ↦ g t` near every point with
+`s < a`. -/
+theorem eventuallyEq_comp_snd_of_lt {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [OrderClosedTopology α] {f : α × Y → E} {g : Y → E} {a : α}
+    (h : ∀ s ≤ a, ∀ t, f (s, t) = g t) {z : α × Y} (hz : z.1 < a) :
+    f =ᶠ[𝓝 z] fun w ↦ g w.2 :=
+  Filter.eventually_of_mem ((isOpen_lt continuous_fst continuous_const).mem_nhds
+    (show z ∈ {w : α × Y | w.1 < a} from hz)) fun w hw ↦ h w.1 (le_of_lt hw) w.2
+
+/-- If `f (s, t) = g t` for `s ≥ a`, then `f` agrees with `(s, t) ↦ g t` near every point with
+`s > a`. -/
+theorem eventuallyEq_comp_snd_of_gt {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [OrderClosedTopology α] {f : α × Y → E} {g : Y → E} {a : α}
+    (h : ∀ s, a ≤ s → ∀ t, f (s, t) = g t) {z : α × Y} (hz : a < z.1) :
+    f =ᶠ[𝓝 z] fun w ↦ g w.2 :=
+  Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_fst).mem_nhds
+    (show z ∈ {w : α × Y | a < w.1} from hz)) fun w hw ↦ h w.1 (le_of_lt hw) w.2
 
 /-- A subset of a product has empty interior if its vertical fibres over a dense set of base
 points have empty interior. -/

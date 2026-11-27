@@ -32,9 +32,15 @@ homology of `|K|` (`TauCeti.orderedSimplicialHomologyIsoSingularHomology`).
 
 * `TauCeti.realizationChainScale`: the units `sₙ`, with `s₀ = 1` and `sₙ₊₁ = εₙ * sₙ`.
 * `TauCeti.cellularChainComplexRealizationIso`: the cellular chain complex of `|K|` is the
-  ordered simplicial chain complex of `K`.
+  ordered simplicial chain complex of `K`; in each degree it is
+  `TauCeti.cellularChainRealizationLinearEquiv`, which carries the cellular differential to the
+  ordered boundary (`TauCeti.boundary_cellularChainRealizationLinearEquiv`).
 * `TauCeti.orderedSimplicialHomologyIsoSingularHomology`: ordered simplicial homology is
-  singular homology of the realization.
+  singular homology of the realization, characterized by
+  `TauCeti.orderedSimplicialHomologyIsoSingularHomology_hom`. It is natural in simplicial maps
+  (`PreAbstractSimplicialComplex.SimplicialMap.`
+  `orderedSimplicialHomologyIsoSingularHomology_hom_naturality`, in
+  `TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.Naturality`).
 
 ## References
 
@@ -179,6 +185,29 @@ theorem cellularChainComplexRealizationIso_inv_f (n : ℕ) :
           eqToHom (cellularChainComplex_X _ _ n).symm :=
   (rfl)
 
+variable {K R} in
+/-- The comparison of cellular and ordered simplicial chains carries the cellular differential to
+the ordered simplicial boundary. -/
+theorem boundary_cellularChainRealizationLinearEquiv (n : ℕ)
+    (x : letI := realizationCWComplex K
+      (cellularChainGroup (univ : Set (Realization K)) (ModuleCat.of R R) (n + 1) : ModuleCat R)) :
+    letI := realizationCWComplex K
+    OrderedSimplicialChain.boundary R n (cellularChainRealizationLinearEquiv K R (n + 1) x) =
+      cellularChainRealizationLinearEquiv K R n
+        (cellularDifferential (univ : Set (Realization K)) (ModuleCat.of R R) n x) := by
+  let := realizationCWComplex K
+  have h := (cellularChainComplexRealizationIso K R).hom.comm (n + 1) n
+  -- The chain groups agree with the cellular chain groups only through `eqToHom`; cancel the
+  -- transports before applying both sides to `x`.
+  simp only [cellularChainComplexRealizationIso_hom_f, cellularChainComplex_d,
+    orderedSimplicialChainComplex_d, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp] at h
+  rw [cancel_epi, ← Category.assoc, ← Category.assoc, cancel_mono] at h
+  have hx := congrArg (fun φ ↦ φ.hom x) h
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, LinearEquiv.toModuleIso_hom,
+    ModuleCat.hom_ofHom, LinearEquiv.coe_coe] at hx
+  exact hx
+
 /-- **Simplicial homology is singular homology.** The homology of the ordered simplicial chain
 complex of `K` is the singular homology of its realization `|K|`, through the cellular chain
 complex of `|K|`. -/
@@ -189,6 +218,15 @@ def orderedSimplicialHomologyIsoSingularHomology (n : ℕ) :
   letI := realizationCWComplex K
   (HomologicalComplex.homologyFunctor _ _ n).mapIso (cellularChainComplexRealizationIso K R).symm ≪≫
     cellularSingularHomologyIsoUniv (ModuleCat.of R R) n
+
+/-- The identification of ordered simplicial homology with singular homology is the homology map
+of the inverse comparison of chain complexes, followed by the cellular–singular comparison. -/
+theorem orderedSimplicialHomologyIsoSingularHomology_hom (n : ℕ) :
+    letI := realizationCWComplex K
+    (orderedSimplicialHomologyIsoSingularHomology K R n).hom =
+      HomologicalComplex.homologyMap (cellularChainComplexRealizationIso K R).inv n ≫
+        (cellularSingularHomologyIsoUniv (ModuleCat.of R R) n).hom :=
+  (rfl)
 
 end ChainComplex
 

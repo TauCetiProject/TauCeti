@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Chains
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 public import TauCeti.Topology.Category.TopCat.Subspace
+import Mathlib.Topology.Sets.Compacts
 import TauCeti.Topology.CWComplex.Classical.CompactSupport
 
 /-!
@@ -187,6 +188,32 @@ theorem exists_homologyMap_subsetTwistedChainComplexMap_eq_zero [Preorder ι] [I
       obtain ⟨j, hij, hj₀j⟩ := exists_ge_ge i j₀
       obtain ⟨y, hy⟩ := (hc (U j)).1 (hj₀.trans (hU hj₀j))
       exact ⟨j, hij, y, hy⟩) y hy
+
+/-! ### Compact subsets -/
+
+/-- **Every twisted homology class comes from a compact subset.** Every class of `Hₖ(X; L)` is the
+image of a class of `Hₖ(K; L)` for some compact subset `K` of `X`, with `L` restricted to `K`. -/
+theorem exists_isCompact_twistedHomologyMap_subtypeVal_eq {k : ℕ} (x : L.twistedHomology k) :
+    ∃ (K : Set X) (_ : IsCompact K)
+      (y : ((pullback (X := TopCat.of ↥K) (ContinuousMap.subtypeVal K)).obj L).twistedHomology k),
+      twistedHomologyMap (TopCat.ofHom (ContinuousMap.subtypeVal K)) L k y = x := by
+  obtain ⟨K, y, hy⟩ := exists_twistedHomologyMap_subtypeVal_eq L
+    (U := fun K : TopologicalSpace.Compacts X ↦ (K : Set X)) (fun K hK ↦ ⟨⟨K, hK⟩, le_rfl⟩) x
+  exact ⟨K, K.isCompact, y, hy⟩
+
+/-- **A twisted class on a compact subset that vanishes in `X` vanishes in a compact superset.**
+If `K ⊆ X` is compact and a class of `Hₖ(K; L)` maps to zero in `Hₖ(X; L)`, then it already maps
+to zero in `Hₖ(K'; L)` for some compact `K'` containing `K`. -/
+theorem exists_isCompact_homologyMap_subsetTwistedChainComplexMap_eq_zero {K : Set X}
+    (hK : IsCompact K) {k : ℕ}
+    (y : ((pullback (X := TopCat.of ↥K) (ContinuousMap.subtypeVal K)).obj L).twistedHomology k)
+    (hy : twistedHomologyMap (TopCat.ofHom (ContinuousMap.subtypeVal K)) L k y = 0) :
+    ∃ (K' : Set X) (_ : IsCompact K') (hKK' : K ⊆ K'),
+      HomologicalComplex.homologyMap (subsetTwistedChainComplexMap L hKK') k y = 0 := by
+  obtain ⟨K', hK', hy'⟩ := exists_homologyMap_subsetTwistedChainComplexMap_eq_zero L
+    (U := fun K : TopologicalSpace.Compacts X ↦ (K : Set X)) (fun _ _ h ↦ h)
+    (fun K hK ↦ ⟨⟨K, hK⟩, le_rfl⟩) (i := ⟨K, hK⟩) y hy
+  exact ⟨K', K'.isCompact, hK', hy'⟩
 
 /-! ### The colimit over a directed family -/
 

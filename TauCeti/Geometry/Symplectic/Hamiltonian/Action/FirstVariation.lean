@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
-public import TauCeti.Geometry.Symplectic.Hamiltonian.LoopVariation
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Seamed
 
 /-!
 # The first variation of the action relative to a reference loop and its critical loops
@@ -32,7 +31,11 @@ this gives the **first variation formula**
 
 (`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_referenceAction`), for Hamiltonian vector
 fields `ι_{X_{H_t}} σ = dH_t`. It has the same form as for the action of contractible loops
-(`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction`), and it is the case
+`f = id` of the first variation formula of the action of `f`-seamed paths
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_seamedReferenceAction`), through
+`TauCeti.SmoothTwoForm.seamedReferenceAction_id`; so is the criticality of the `1`-periodic
+orbits.
 
 A loop `γ` is a **critical point of the action** relative to `γ₀`
 (`TauCeti.SmoothTwoForm.IsReferenceActionCritical`) when it is a smooth loop joined to `γ₀` by a
@@ -94,28 +97,9 @@ theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_referenceAction (h : σ.IsNonde
       (∫ t in 0..1, σ.val (w (s₀, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (s₀, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)]) s₀ := by
-  obtain ⟨u, hu⟩ := hcyl
-  have hσ : IsSmoothForm I 0 σ.val := σ.isSmoothForm.of_le (by simp)
-  have hw1 : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w := hwc.of_le (by simp)
-  -- the area term of the action of `w (s, ·)` is the area swept from `s` to `s₀` plus the area
-  -- of `u`
-  have heq : (fun s ↦ σ.referenceAction H γ₀ fun t ↦ w (s, t)) = fun s ↦
-      (rectangleIntegral σ.val (w ∘ Prod.map (fun r ↦ s + (s₀ - s) * r) id) (0, 0) (1, 1) +
-        rectangleIntegral σ.val u (0, 0) (1, 1)) - ∫ t in 0..1, H t (w (s, t)) := by
-    funext s
-    -- the loop `w (s, ·)` is joined to `γ₀` through the variation from `s` to `s₀`, then `u`
-    have hcyl : IsSmoothCylinder I (fun t ↦ w (s, t)) γ₀
-        (rectangleTrans (w ∘ Prod.map (fun r ↦ s + (s₀ - s) * r) id) u) :=
-      (isSmoothCylinder_comp_prodMap_affine hwc hper s s₀).trans hu fun t ↦ by
-        simp [hu.apply_zero]
-    rw [referenceAction_eq hT hcyl,
-      cylinderAction_rectangleTrans hσ H (hw1.comp (contMDiff_prodMap_affine s s₀))
-        (hu.contMDiff.of_le (by simp)) fun t ↦ by simp [hu.apply_zero], cylinderAction_def]
-    simp only [comp_apply, Prod.map_apply, mul_zero, add_zero, id_eq]
-    ring
-  rw [heq]
-  exact h.hasDerivAt_sub_intervalIntegral hH hw1
-    ((hasDerivAt_rectangleIntegral_comp_prodMap_affine hσ hw1 s₀ 0 1).add_const _)
+  simp only [← seamedReferenceAction_id]
+  exact h.hasDerivAt_seamedReferenceAction ((vanishesOnSeamedTori_id_iff _).mpr hT) hH hwc
+    (fun s ↦ by simpa using hper (s, 0)) (by simpa only [isSmoothSeamedCylinder_id_iff] using hcyl)
 
 /-! ### Critical loops of the action -/
 
@@ -163,9 +147,11 @@ theorem SmoothTwoForm.IsNondegenerate.isReferenceActionCritical (h : σ.IsNondeg
   apply_add_one := (mem_periodicSolutions.mp horbit).2
   exists_isSmoothCylinder := hcyl
   hasDerivAt w hwc hper h0 := by
-    convert h.hasDerivAt_referenceAction_zero hT hH hcyl hwc hper h0 using 1
-    exact (σ.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero horbit
-      (fun t ↦ (hwc (0, t)).mdifferentiableAt (by simp)) h0 0 1).symm
+    simp only [← seamedReferenceAction_id]
+    exact (h.isSeamedReferenceActionCritical ((vanishesOnSeamedTori_id_iff _).mpr hT) hH hγ
+      (by simpa only [isSmoothSeamedCylinder_id_iff] using hcyl)
+      fun t _ ↦ (mem_periodicSolutions.mp horbit).1 t).hasDerivAt hwc
+      (fun s ↦ by simpa using hper (s, 0)) h0
 
 /-- **Critical points of the action are `1`-periodic orbits.** Let `σ` be a nondegenerate two-form
 vanishing on tori on a manifold without boundary modelled on a finite-dimensional space, and `H` a

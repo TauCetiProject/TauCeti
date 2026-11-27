@@ -17,8 +17,9 @@ import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 
 The formal spectrum of `ℤ_[p]`, with its `p`-adic topology, has a single point, the maximal
 ideal `(p)`. Its underlying space therefore has Krull dimension `0`, while the formal scheme has
-dimension `1`, the dimension of its local ring `ℤ_[p]`. It is regular, as `ℤ_[p]` is a discrete
-valuation ring, and its unique point is closed.
+dimension `1`, the dimension of its local ring `ℤ_[p]`, and it has pure dimension `1` but not
+pure dimension `0`. It is regular, as `ℤ_[p]` is a discrete valuation ring, and its unique point
+is closed.
 -/
 
 public section
@@ -38,6 +39,21 @@ variable (p : ℕ) [Fact p.Prime]
 -- The one-point formal spectrum `Spf ℤ_[p]` has dimension `1`, not `0`.
 example : (ofSpf ℤ_[p]).dim = 1 := by
   rw [dim_ofSpf, IsDiscreteValuationRing.ringKrullDim_eq_one]
+
+-- `Spf ℤ_[p]` has pure dimension `1`: its local ring at its closed point has dimension `1`.
+example : (ofSpf ℤ_[p]).HasPureDim 1 :=
+  hasPureDim_ofSpf_iff_of_isLocalRing.mpr (IsDiscreteValuationRing.ringKrullDim_eq_one ℤ_[p])
+
+-- Purity recovers the dimension of the nonempty noetherian formal scheme `Spf ℤ_[p]`.
+example : (ofSpf ℤ_[p]).dim = 1 :=
+  have : Nonempty (ofSpf ℤ_[p]) := ⟨Spf.pointOfIsMaximal (maximalIdeal ℤ_[p])⟩
+  (hasPureDim_ofSpf_iff_of_isLocalRing.mpr
+    (IsDiscreteValuationRing.ringKrullDim_eq_one ℤ_[p])).dim_eq
+
+-- `Spf ℤ_[p]` does not have pure dimension `0`, although its underlying space is a point.
+example : ¬ (ofSpf ℤ_[p]).HasPureDim 0 := by
+  rw [hasPureDim_ofSpf_iff_of_isLocalRing, IsDiscreteValuationRing.ringKrullDim_eq_one]
+  decide
 
 -- `Spf ℤ_[p]` is regular and hence Cohen–Macaulay.
 example : (ofSpf ℤ_[p]).IsRegular := inferInstance

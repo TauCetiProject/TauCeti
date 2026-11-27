@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Congruence.Basic
 public import Mathlib.RingTheory.Congruence.Hom
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Ring.Parity
 
 /-!
 # Milnor K-theory
@@ -29,7 +30,8 @@ symbols and their multilinearity and Steinberg relations, the universal property
 rings, functoriality in the ring, the grading submodules, and the identifications of degree zero
 with `ℤ` and of degree one with `Rˣ`. Over a field, the degree-one classes anticommute, so swapping
 two adjacent entries negates a symbol, and `{a, a} = {a, -1}`. These classes need not vanish, so
-the Milnor ring is not an exterior algebra.
+the Milnor ring is not an exterior algebra. The grade involution `σ`, which is `(-1) ^ n` in degree
+`n`, records the resulting graded commutativity `x y = (-1) ^ (m n) y x`.
 
 ## Main definitions
 
@@ -47,13 +49,15 @@ the Milnor ring is not an exterior algebra.
 * `TauCeti.MilnorK.map`: the ring homomorphism induced by a ring homomorphism `R →+* S`.
 * `TauCeti.MilnorK.degreeZeroEquiv`, `TauCeti.MilnorK.degreeOneEquiv`: `ℤ ≃ K_0ᴹ(R)` and
   `Additive Rˣ ≃ K_1ᴹ(R)`.
+* `TauCeti.MilnorK.involute`: the grade involution `σ`, sending `{a}` to `-{a}`.
 
 ## Main results
 
 * `TauCeti.MilnorK.ofUnit_mul_ofUnit_of_add_eq_one`: the Steinberg relation `{a} {b} = 0` for
   `a + b = 1`, and `TauCeti.MilnorK.symbol_append_cons_cons_of_add_eq_one` for two neighbouring
   entries of any symbol.
-* `TauCeti.MilnorK.symbol_append_cons_mul`: symbols are additive in every entry.
+* `TauCeti.MilnorK.symbol_append_cons_mul`, `TauCeti.MilnorK.symbol_append_cons_pow`: symbols
+  are additive in every entry.
 * `TauCeti.MilnorK.ringHom_ext`: ring homomorphisms out of `MilnorK R` agreeing on degree-one
   classes are equal.
 * `TauCeti.MilnorK.lift_mem_of_mem_degree`: `lift` sends `degree R n` into the `n`-th piece of a
@@ -62,12 +66,19 @@ the Milnor ring is not an exterior algebra.
   spanned by the symbols of length `n`, and is the image of the degree-`n` tensors.
 * `TauCeti.MilnorK.iSup_degree_eq_top`, `TauCeti.MilnorK.span_range_symbol`: the degree
   submodules exhaust `MilnorK R`, and the symbols span it.
+* `TauCeti.MilnorK.surjective_of_symbol_mem_range`,
+  `TauCeti.MilnorK.surjOn_degree_of_symbol_mem_image`: an additive map into `MilnorK R` is onto,
+  or onto degree `n`, as soon as it hits every symbol, or every symbol of length `n`.
 * `TauCeti.MilnorK.instGradedMonoidDegree`: the degree submodules make `MilnorK R` a graded monoid.
 * `TauCeti.MilnorK.instCharZero`, `TauCeti.MilnorK.ofUnit_injective`: `ℤ` and `Rˣ` embed.
 * `TauCeti.MilnorK.ofUnit_mul_ofUnit_neg_self`, `TauCeti.MilnorK.ofUnit_mul_ofUnit_comm`,
   `TauCeti.MilnorK.ofUnit_mul_ofUnit_self`, `TauCeti.MilnorK.symbol_append_cons_cons_swap`: over a
   field, `{a, -a} = 0`, `{a, b} = -{b, a}`, `{a, a} = {a, -1}`, and swapping adjacent entries
   negates a symbol.
+* `TauCeti.MilnorK.symbol_append_cons_cons_self`: over a field, `{…, a, a, …} = {…, a, -1, …}`.
+* `TauCeti.MilnorK.involute_of_mem_degree`: `σ` is multiplication by `(-1) ^ n` on `K_nᴹ(R)`.
+* `TauCeti.MilnorK.ofUnit_mul_involute`, `TauCeti.MilnorK.mul_comm_of_mem_degree`: over a field,
+  `{a} σ(x) = x {a}`, and the Milnor K-ring is graded-commutative.
 
 ## References
 
@@ -187,6 +198,35 @@ theorem ofUnit_pow (a : Rˣ) (n : ℕ) : ofUnit (a ^ n) = n • ofUnit a :=
 theorem ofUnit_zpow (a : Rˣ) (n : ℤ) : ofUnit (a ^ n) = n • ofUnit a :=
   map_zsmul (ofUnitHom (R := R)) n (Additive.ofMul a)
 
+/-- `{-1}` is its own negative, `-{-1} = {-1}`, since `(-1)⁻¹ = -1`. -/
+@[simp]
+theorem neg_ofUnit_neg_one : -ofUnit (-1 : Rˣ) = ofUnit (-1) := by
+  rw [← ofUnit_inv, inv_neg_one]
+
+/-- `{a} = {-1} + {-a}`, since `a = (-1) * (-a)`. -/
+theorem ofUnit_neg_one_add_ofUnit_neg (a : Rˣ) : ofUnit (-1) + ofUnit (-a) = ofUnit a := by
+  rw [← ofUnit_mul, neg_one_mul, neg_neg]
+
+/-- `{-1}` is killed by `2`, since `(-1) ^ 2 = 1`. -/
+theorem two_nsmul_ofUnit_neg_one : 2 • ofUnit (-1 : Rˣ) = 0 := by
+  rw [← ofUnit_pow, neg_one_sq, ofUnit_one]
+
+/-- The symbol `{-1, …, -1}` with `n ≠ 0` entries is killed by `2`. -/
+theorem two_nsmul_ofUnit_neg_one_pow {n : ℕ} (hn : n ≠ 0) : 2 • ofUnit (-1 : Rˣ) ^ n = 0 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  rw [pow_succ, ← mul_smul_comm, two_nsmul_ofUnit_neg_one, mul_zero]
+
+/-- `{a, -1}` is its own negative, `-{a, -1} = {a, -1}`, so it has order dividing two. -/
+@[simp]
+theorem neg_ofUnit_mul_ofUnit_neg_one (a : Rˣ) :
+    -(ofUnit a * ofUnit (-1)) = ofUnit a * ofUnit (-1) := by
+  rw [← mul_neg, neg_ofUnit_neg_one]
+
+/-- `{-1}` has order dividing two, so `m {-1}` depends only on the parity of `m`. -/
+theorem zsmul_ofUnit_neg_one_eq_of_even_sub {m n : ℤ} (h : Even (m - n)) :
+    m • ofUnit (-1 : Rˣ) = n • ofUnit (-1) := by
+  rw [← ofUnit_zpow, ← ofUnit_zpow, ← sub_add_cancel m n, zpow_add, h.neg_one_zpow, one_mul]
+
 /-- The **Steinberg relation**: `{a} {b} = 0` whenever the units `a` and `b` add up to one. -/
 theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
     ofUnit a * ofUnit b = 0 := by
@@ -208,15 +248,29 @@ theorem symbol_cons (a : Rˣ) (l : List Rˣ) : symbol (a :: l) = ofUnit a * symb
 theorem symbol_singleton (a : Rˣ) : symbol [a] = ofUnit a := by
   simp
 
+/-- A Milnor symbol is the ordered product of the degree-one classes of its entries. -/
+theorem symbol_def (l : List Rˣ) : symbol l = (l.map ofUnit).prod :=
+  (rfl)
+
 /-- The product of two symbols is the symbol of the concatenated list, in that order. -/
 @[simp]
 theorem symbol_append (l₁ l₂ : List Rˣ) : symbol (l₁ ++ l₂) = symbol l₁ * symbol l₂ := by
+  simp [symbol]
+
+/-- The symbol `{a, …, a}` with `n` entries is the `n`-th power of `{a}`. -/
+@[simp]
+theorem symbol_replicate (n : ℕ) (a : Rˣ) : symbol (List.replicate n a) = ofUnit a ^ n := by
   simp [symbol]
 
 /-- Milnor symbols are additive in every entry. -/
 theorem symbol_append_cons_mul (l₁ l₂ : List Rˣ) (a b : Rˣ) :
     symbol (l₁ ++ (a * b) :: l₂) = symbol (l₁ ++ a :: l₂) + symbol (l₁ ++ b :: l₂) := by
   simp [add_mul, mul_add]
+
+/-- Milnor symbols turn an `m`-th power in any entry into an `m`-th multiple. -/
+theorem symbol_append_cons_pow (l₁ l₂ : List Rˣ) (a : Rˣ) (m : ℕ) :
+    symbol (l₁ ++ a ^ m :: l₂) = m • symbol (l₁ ++ a :: l₂) := by
+  simp only [symbol_append, symbol_cons, ofUnit_pow, smul_mul_assoc, mul_smul_comm]
 
 /-- A Milnor symbol with an entry equal to `1` vanishes. -/
 theorem symbol_append_cons_one (l₁ l₂ : List Rˣ) : symbol (l₁ ++ 1 :: l₂) = 0 := by
@@ -228,6 +282,20 @@ theorem symbol_append_cons_cons_of_add_eq_one (l₁ l₂ : List Rˣ) {a b : Rˣ}
   simp [← mul_assoc, ofUnit_mul_ofUnit_of_add_eq_one h]
 
 /-! ### The universal property -/
+
+/-- Ring homomorphisms out of the Milnor K-ring are determined by their values on the degree-one
+classes. -/
+@[ext]
+theorem ringHom_ext {A : Type*} [Semiring A] {f g : MilnorK R →+* A}
+    (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) : f = g := by
+  refine ringHom_ext_mk (RingHom.ext fun t ↦ ?_)
+  induction t using TensorAlgebra.induction with
+  | algebraMap r =>
+    exact RingHom.congr_fun (RingHom.ext_int ((f.comp mk).comp (algebraMap ℤ _))
+      ((g.comp mk).comp (algebraMap ℤ _))) r
+  | ι x => simpa using h x.toMul
+  | mul a b ha hb => simp only [RingHom.comp_apply, map_mul] at *; rw [ha, hb]
+  | add a b ha hb => simp only [RingHom.comp_apply, map_add] at *; rw [ha, hb]
 
 section Lift
 
@@ -262,18 +330,6 @@ theorem lift_symbol (f : Additive Rˣ →+ A)
   induction l with
   | nil => simp
   | cons a l ih => simp [ih]
-
-/-- Ring homomorphisms out of the Milnor K-ring are determined by their values on the degree-one
-classes. -/
-@[ext]
-theorem ringHom_ext {f g : MilnorK R →+* A} (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) :
-    f = g := by
-  refine ringHom_ext_mk (RingHom.ext fun t ↦ ?_)
-  induction t using TensorAlgebra.induction with
-  | algebraMap r => simp [eq_intCast (algebraMap ℤ (TensorAlgebra ℤ (Additive Rˣ))) r]
-  | ι x => simpa using h x.toMul
-  | mul a b ha hb => simp only [RingHom.comp_apply, map_mul] at *; rw [ha, hb]
-  | add a b ha hb => simp only [RingHom.comp_apply, map_add] at *; rw [ha, hb]
 
 /-- `lift f hf` is the unique ring homomorphism sending each `{a}` to `f a`. -/
 theorem eq_lift_iff (f : Additive Rˣ →+ A)
@@ -342,6 +398,9 @@ theorem symbol_mem_degree (l : List Rˣ) : symbol l ∈ degree R l.length :=
 
 theorem ofUnit_mem_degree_one (a : Rˣ) : ofUnit a ∈ degree R 1 := by
   simpa using symbol_mem_degree [a]
+
+theorem ofUnit_pow_mem_degree (a : Rˣ) (n : ℕ) : ofUnit a ^ n ∈ degree R n := by
+  simpa using symbol_mem_degree (List.replicate n a)
 
 private theorem mul_mem_degree {i j : ℕ} {x y : MilnorK R} (hx : x ∈ degree R i)
     (hy : y ∈ degree R j) : x * y ∈ degree R (i + j) := by
@@ -418,6 +477,56 @@ theorem span_range_symbol : Submodule.span ℤ (Set.range (symbol (R := R))) = �
   ext x
   simp [eq_comm]
 
+/-- An additive map into the Milnor K-ring whose image contains every symbol is onto. -/
+theorem surjective_of_symbol_mem_range {M : Type*} [AddCommGroup M] (φ : M →+ MilnorK R)
+    (h : ∀ l : List Rˣ, symbol l ∈ Set.range φ) : Function.Surjective φ := by
+  rw [← AddMonoidHom.coe_toIntLinearMap, ← LinearMap.range_eq_top, eq_top_iff,
+    ← span_range_symbol, Submodule.span_le]
+  rintro _ ⟨l, rfl⟩
+  exact h l
+
+/-- An additive map into the Milnor K-ring whose image of a subgroup `A` contains every symbol of
+length `n` maps `A` onto `K_nᴹ(R)`. -/
+theorem surjOn_degree_of_symbol_mem_image {M : Type*} [AddCommGroup M] (φ : M →+ MilnorK R)
+    {A : Submodule ℤ M} {n : ℕ} (h : ∀ l : List Rˣ, l.length = n → symbol l ∈ φ '' A) :
+    Set.SurjOn φ A (degree R n) := by
+  have hle : degree R n ≤ A.map φ.toIntLinearMap := by
+    rw [degree_eq_span, Submodule.span_le]
+    rintro _ ⟨l, hl, rfl⟩
+    exact h l hl
+  intro y hy
+  simpa [Submodule.mem_map] using hle hy
+
+/-- The span of the symbols of length `n` whose entries all lie in a set `A` of units is the `n`-th
+power of the span of the degree-one classes `{a}`, `a ∈ A`. -/
+theorem span_symbol_eq_pow (A : Set Rˣ) (n : ℕ) :
+    Submodule.span ℤ (symbol '' {l : List Rˣ | l.length = n ∧ ∀ a ∈ l, a ∈ A}) =
+      Submodule.span ℤ (ofUnit '' A) ^ n := by
+  induction n with
+  | zero =>
+    rw [pow_zero, Submodule.one_eq_span]
+    congr 1
+    ext x
+    simp [eq_comm]
+  | succ n ih =>
+    rw [pow_succ', ← ih, Submodule.span_mul_span]
+    congr 1
+    ext x
+    simp only [Set.mem_image, Set.mem_ofPred_eq, Set.mem_mul]
+    constructor
+    · rintro ⟨_ | ⟨a, l⟩, ⟨hl, hA⟩, rfl⟩
+      · simp at hl
+      · exact ⟨ofUnit a, ⟨a, hA a List.mem_cons_self, rfl⟩, symbol l,
+          ⟨l, ⟨by simpa using hl, fun b hb ↦ hA b (List.mem_cons_of_mem a hb)⟩, rfl⟩, rfl⟩
+    · rintro ⟨_, ⟨a, ha, rfl⟩, _, ⟨l, ⟨hl, hA⟩, rfl⟩, rfl⟩
+      exact ⟨a :: l, ⟨by simp [hl], by simpa [ha] using hA⟩, rfl⟩
+
+/-- The degree-`n` Milnor K-group is the `n`-th power of the span of the degree-one classes. -/
+theorem degree_eq_span_pow (n : ℕ) :
+    degree R n = Submodule.span ℤ (Set.range (ofUnit (R := R))) ^ n := by
+  rw [← Set.image_univ, ← span_symbol_eq_pow, degree]
+  simp
+
 /-! ### Graded maps -/
 
 /-- `lift f hf` maps degree `n` into the `n`-th piece of a graded target whenever `f` takes values
@@ -439,6 +548,59 @@ theorem lift_mem_of_mem_degree {A σ : Type*} [Ring A] [SetLike σ A] [AddSubgro
 theorem map_mem_degree {S : Type*} [CommRing S] (f : R →+* S) {n : ℕ} {x : MilnorK R}
     (hx : x ∈ degree R n) : map f x ∈ degree S n :=
   lift_mem_of_mem_degree _ _ (fun _ ↦ ofUnit_mem_degree_one _) hx
+
+/-! ### The grade involution -/
+
+section Involute
+
+/-- The **grade involution** of the Milnor K-ring: the ring endomorphism sending each degree-one
+class `{a}` to `-{a}`. It acts on `K_nᴹ(R)` as multiplication by `(-1) ^ n`
+(`TauCeti.MilnorK.involute_of_mem_degree`) and is its own inverse. -/
+def involute : MilnorK R →+* MilnorK R :=
+  lift (-ofUnitHom) fun a b h ↦ by
+    simp [ofUnitHom_apply, ofUnit_mul_ofUnit_of_add_eq_one h]
+
+@[simp]
+theorem involute_ofUnit (a : Rˣ) : involute (ofUnit a) = -ofUnit a := by
+  simp [involute, ofUnitHom_apply]
+
+@[simp]
+theorem involute_involute (x : MilnorK R) : involute (involute x) = x := by
+  have : involute.comp involute = RingHom.id (MilnorK R) := ringHom_ext fun a ↦ by simp
+  exact RingHom.congr_fun this x
+
+theorem involute_involutive : Function.Involutive (involute (R := R)) :=
+  involute_involute
+
+theorem involute_symbol (l : List Rˣ) : involute (symbol l) = (-1) ^ l.length * symbol l := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    simp only [symbol_cons, map_mul, ih, involute_ofUnit, List.length_cons, pow_succ', neg_mul,
+      one_mul, mul_neg_one_pow_mul, mul_neg]
+
+/-- The grade involution is multiplication by `(-1) ^ n` on `K_nᴹ(R)`. -/
+theorem involute_of_mem_degree {n : ℕ} {x : MilnorK R} (hx : x ∈ degree R n) :
+    involute x = (-1) ^ n * x := by
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨l, rfl, rfl⟩ := hx
+    exact involute_symbol l
+  | zero => simp
+  | add x y _ _ hx hy => rw [map_add, hx, hy, mul_add]
+  | smul r x _ hx => rw [map_zsmul, hx, mul_smul_comm]
+
+theorem involute_mem_degree {n : ℕ} {x : MilnorK R} (hx : x ∈ degree R n) :
+    involute x ∈ degree R n :=
+  lift_mem_of_mem_degree _ _ (fun a ↦ by simpa [ofUnitHom_apply] using ofUnit_mem_degree_one a) hx
+
+/-- The grade involution commutes with the maps induced by ring homomorphisms. -/
+theorem map_involute {S : Type*} [CommRing S] (f : R →+* S) (x : MilnorK R) :
+    map f (involute x) = involute (map f x) := by
+  have : (map f).comp involute = involute.comp (map f) := ringHom_ext fun a ↦ by simp
+  exact RingHom.congr_fun this x
+
+end Involute
 
 /-! ### Degrees zero and one -/
 
@@ -583,17 +745,99 @@ theorem ofUnit_mul_ofUnit_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * 
 /-- Over a field, `{a, a} = {a, -1}`. Unlike in an exterior algebra, this class need not vanish:
 `{-1, -1} ≠ 0` over `ℝ` (Weibel, Example III.7.2(c)). -/
 theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) := by
-  have h₁ : ofUnit a * ofUnit (-1) + ofUnit a * ofUnit (-1) = 0 := by
+  have h := ofUnit_mul_ofUnit_neg_self a
+  rw [← neg_one_mul a, ofUnit_mul, mul_add] at h
+  rw [eq_neg_of_add_eq_zero_right h, neg_ofUnit_mul_ofUnit_neg_one]
+
+/-- Over a field, for units `a, b` with difference `h = a - b`,
+`{a, b} = {h, b} - {h, a} + {a, -1}`. Applied to two distinct monic polynomials of the same degree
+`d`, it rewrites their symbol through symbols having an entry of degree less than `d`
+(Weibel, proof of Lemma III.7.4.2). -/
+theorem ofUnit_mul_ofUnit_eq_of_sub_eq {a b h : Fˣ} (hab : (a : F) - b = h) :
+    ofUnit a * ofUnit b =
+      ofUnit h * ofUnit b - ofUnit h * ofUnit a + ofUnit a * ofUnit (-1) := by
+  -- The Steinberg relation for `a / h + (-1) * b / h = 1`, expanded bilinearly.
+  have hsum : ((a / h : Fˣ) : F) + ((-1 * b / h : Fˣ) : F) = 1 := by
+    have hh : (a : F) - b ≠ 0 := hab ▸ h.ne_zero
+    simp only [Units.val_div_eq_div_val, Units.val_mul, Units.val_neg, Units.val_one, ← hab]
+    field_simp
+    ring
+  have key := ofUnit_mul_ofUnit_of_add_eq_one hsum
+  rw [ofUnit_div, ofUnit_div, ofUnit_mul] at key
+  have h₂ : ofUnit a * ofUnit (-1) + ofUnit a * ofUnit (-1) = 0 := by
     rw [← mul_add, ← ofUnit_mul, neg_one_mul, neg_neg, ofUnit_one, mul_zero]
-  have h₂ := ofUnit_mul_ofUnit_neg_self a
-  rw [← neg_one_mul a, ofUnit_mul, mul_add] at h₂
-  rw [eq_neg_of_add_eq_zero_right h₂, neg_eq_of_add_eq_zero_left h₁]
+  simp only [sub_mul, mul_sub, mul_add, ofUnit_mul_ofUnit_self h,
+    ofUnit_mul_ofUnit_comm a h] at key
+  rw [← sub_eq_zero, ← sub_eq_zero.2 (key.trans h₂.symm)]
+  abel
 
 /-- Over a field, interchanging two neighbouring entries negates a Milnor symbol. -/
 theorem symbol_append_cons_cons_swap (l₁ l₂ : List Fˣ) (a b : Fˣ) :
     symbol (l₁ ++ b :: a :: l₂) = -symbol (l₁ ++ a :: b :: l₂) := by
   simp only [symbol_append, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_comm b a, neg_mul,
     mul_neg]
+
+/-- Over a field, a consecutive repeated pair of entries `a, a` of a Milnor symbol may be replaced
+by `a, -1`. -/
+theorem symbol_append_cons_cons_self (l₁ l₂ : List Fˣ) (a : Fˣ) :
+    symbol (l₁ ++ a :: a :: l₂) = symbol (l₁ ++ a :: (-1) :: l₂) := by
+  simp only [symbol_append, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_self]
+
+/-- Over a field, a degree-one class `{a}` moves past any element `x` at the cost of the grade
+involution: `{a} σ(x) = x {a}`. -/
+theorem ofUnit_mul_involute (a : Fˣ) (x : MilnorK F) : ofUnit a * involute x = x * ofUnit a := by
+  have hx : x ∈ Submodule.span ℤ (Set.range (symbol (R := F))) := by
+    simp [span_range_symbol]
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨l, rfl⟩ := hx
+    induction l with
+    | nil => simp
+    | cons b l ih =>
+      -- Swap `{a}` past `{b}`, which cancels the sign from `σ {b} = -{b}`, then apply `ih`.
+      calc ofUnit a * involute (symbol (b :: l))
+          = -(ofUnit a * ofUnit b) * involute (symbol l) := by simp [symbol_cons, mul_assoc]
+        _ = ofUnit b * (ofUnit a * involute (symbol l)) := by
+          rw [ofUnit_mul_ofUnit_comm, neg_neg, mul_assoc]
+        _ = symbol (b :: l) * ofUnit a := by rw [ih, symbol_cons, mul_assoc]
+  | zero => simp
+  | add x y _ _ hx hy => rw [map_add, mul_add, hx, hy, add_mul]
+  | smul r x _ hx => rw [map_zsmul, mul_smul_comm, hx, smul_mul_assoc]
+
+/-- Over a field, `{a} x = σ(x) {a}` for every element `x`, where `σ` is the grade involution. -/
+theorem ofUnit_mul_eq_involute_mul (a : Fˣ) (x : MilnorK F) :
+    ofUnit a * x = involute x * ofUnit a := by
+  simpa using ofUnit_mul_involute a (involute x)
+
+/-- Over a field, a degree-one class anticommutes with each element of odd degree and commutes
+with each element of even degree. -/
+theorem ofUnit_mul_of_mem_degree (a : Fˣ) {n : ℕ} {x : MilnorK F} (hx : x ∈ degree F n) :
+    ofUnit a * x = (-1) ^ n * (x * ofUnit a) := by
+  have h := ofUnit_mul_involute a x
+  rw [involute_of_mem_degree hx, mul_neg_one_pow_mul] at h
+  rw [← h, neg_one_pow_mul_neg_one_pow_mul]
+
+/-- **Graded commutativity** of Milnor K-theory: for `x ∈ K_mᴹ(F)` and `y ∈ K_nᴹ(F)`,
+`x y = (-1) ^ (m n) y x`. -/
+theorem mul_comm_of_mem_degree {m n : ℕ} {x y : MilnorK F} (hx : x ∈ degree F m)
+    (hy : y ∈ degree F n) : x * y = (-1) ^ (m * n) * (y * x) := by
+  have key (l : List Fˣ) : symbol l * y = (-1) ^ (l.length * n) * (y * symbol l) := by
+    induction l with
+    | nil => simp
+    | cons a l ih =>
+      -- Move `y` past `symbol l` using `ih`, then past `{a}` using `ofUnit_mul_of_mem_degree`.
+      calc symbol (a :: l) * y = (-1) ^ (l.length * n) * (ofUnit a * y * symbol l) := by
+            rw [symbol_cons, mul_assoc, ih, mul_neg_one_pow_mul, mul_assoc]
+        _ = (-1) ^ ((a :: l).length * n) * (y * symbol (a :: l)) := by
+            rw [ofUnit_mul_of_mem_degree a hy]
+            simp only [symbol_cons, List.length_cons, add_one_mul, pow_add, mul_assoc]
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨l, rfl, rfl⟩ := hx
+    exact key l
+  | zero => simp
+  | add x x' _ _ hx hx' => rw [add_mul, hx, hx', mul_add, mul_add]
+  | smul r x _ hx => rw [smul_mul_assoc, hx, mul_smul_comm, mul_smul_comm]
 
 end Field
 

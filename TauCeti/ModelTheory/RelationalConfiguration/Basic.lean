@@ -8,6 +8,7 @@ module
 public import Mathlib.ModelTheory.LanguageMap
 public import Mathlib.MeasureTheory.Group.Arithmetic
 public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
+public import Mathlib.SetTheory.Cardinal.Continuum
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 
 /-!
@@ -37,6 +38,8 @@ configuration by deciding its relations (`ofStructure`).
 
 * `TauCeti.RelationalConfiguration.Atom L V` — a relation symbol of `L` with a tuple of vertices;
 * `TauCeti.RelationalConfiguration L V` — a truth value for every atom;
+* `TauCeti.RelationalConfiguration.equivFun` — a configuration is its truth-value function on
+  atoms;
 * `TauCeti.RelationalConfiguration.restrict` — pulling a configuration back along a vertex map;
 * `FirstOrder.Language.LHom.onAtom` — renaming the relation symbol of an atom along a language
   map;
@@ -50,6 +53,12 @@ configuration by deciding its relations (`ofStructure`).
 
 * `TauCeti.RelationalConfiguration.measurable_iff` — a map into configurations is measurable
   exactly when each atom coordinate is;
+* `TauCeti.RelationalConfiguration.mk_eq_two_power` — there are `2 ^ #(Atom L V)`
+  configurations;
+* `TauCeti.RelationalConfiguration.mk_le_continuum` and
+  `TauCeti.RelationalConfiguration.mk_eq_continuum` — there are at most continuum many
+  configurations on a countable carrier in a countable relational vocabulary, and exactly
+  continuum many when the carrier is infinite and some relation symbol has positive arity;
 * `TauCeti.RelationalConfiguration.measurable_restrict` — restriction is measurable;
 * `TauCeti.RelationalConfiguration.restrict_id` and
   `TauCeti.RelationalConfiguration.restrict_comp` — restriction is functorial;
@@ -119,12 +128,25 @@ theorem Atom.induction_atom {motive : Atom L V → Prop}
 theorem Atom.eta (p : Atom L V) : atom p.2.1 p.2.2 = p :=
   (rfl)
 
+/-- Over an empty vertex type, every atom is nullary. -/
+theorem Atom.exists_eq_atom_of_isEmpty [IsEmpty V] (a : Atom L V) :
+    ∃ R : L.Relations 0, a = atom R Fin.elim0 := by
+  obtain ⟨n, R, x⟩ := a
+  cases n with
+  | zero => exact ⟨R, by rw [Subsingleton.elim x Fin.elim0]; exact (Atom.eta _).symm⟩
+  | succ n => exact isEmptyElim (x 0)
+
 /-- Relabel the arguments of an atom along a vertex map. -/
 def Atom.map (f : V → W) (a : Atom L V) : Atom L W := ⟨a.1, a.2.1, f ∘ a.2.2⟩
 
 @[simp]
 theorem Atom.map_atom (f : V → W) {n : ℕ} (R : L.Relations n) (x : Fin n → V) :
     (atom R x).map f = atom R (f ∘ x) := (rfl)
+
+/-- Relabelling a unary atom `R(v)` along `f` gives `R(f v)`. -/
+theorem Atom.map_atom_unary (f : V → W) (R : L.Relations 1) (v : V) :
+    (atom R ![v]).map f = atom R ![f v] := by
+  rw [Atom.map_atom, Matrix.vec_single_eq_const, Matrix.vec_single_eq_const, Function.comp_def]
 
 @[simp]
 theorem Atom.map_id (a : Atom L V) : a.map id = a := (rfl)
@@ -209,10 +231,55 @@ theorem eval_mk (c : Atom L V → Bool) (a : Atom L V) : (mk c).eval a = c a := 
 theorem ext {c d : RelationalConfiguration L V} (h : ∀ a, c.eval a = d.eval a) : c = d :=
   funext h
 
+/-- A configuration is its truth-value function on atoms, through `eval` and `mk`. -/
+def equivFun : RelationalConfiguration L V ≃ (Atom L V → Bool) where
+  toFun c := c.eval
+  invFun := mk
+  left_inv _ := ext fun a => eval_mk _ a
+  right_inv f := funext (eval_mk f)
+
+@[simp]
+theorem equivFun_apply (c : RelationalConfiguration L V) : equivFun c = c.eval := (rfl)
+
+@[simp]
+theorem equivFun_symm_apply (f : Atom L V → Bool) : equivFun.symm f = mk f := (rfl)
+
 /-- A language with countably many relation symbols of each arity has countably many atoms over a
 countable vertex type. -/
 instance [∀ n, Countable (L.Relations n)] [Countable V] : Countable (Atom L V) :=
   inferInstanceAs (Countable (Σ n, L.Relations n × (Fin n → V)))
+
+/-- On an infinite carrier, a relation symbol of positive arity gives infinitely many atoms. -/
+theorem Atom.infinite_of_relations [Infinite V] {n : ℕ} (hn : n ≠ 0) (R : L.Relations n) :
+    Infinite (Atom L V) :=
+  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
+  have : Nonempty (L.Relations n) := ⟨R⟩
+  have := Infinite.sigma_of_right (β := fun n => L.Relations n × (Fin n → V)) (a := n)
+  inferInstanceAs (Infinite (Σ n, L.Relations n × (Fin n → V)))
+
+/-- A configuration is a truth value for every atom, so there are `2 ^ #(Atom L V)` of them. -/
+theorem mk_eq_two_power (L : Language) (V : Type*) :
+    Cardinal.mk (RelationalConfiguration L V) = 2 ^ Cardinal.mk (Atom L V) := by
+  rw [RelationalConfiguration, Cardinal.mk_arrow, Cardinal.mk_bool, Cardinal.lift_ofNat,
+    Cardinal.lift_uzero]
+
+/-- There are at most continuum many configurations on a countable carrier in a countable
+relational vocabulary. Function symbols play no role. -/
+theorem mk_le_continuum (L : Language) (V : Type*)
+    [∀ n, Countable (L.Relations n)] [Countable V] :
+    Cardinal.mk (RelationalConfiguration L V) ≤ Cardinal.continuum :=
+  (mk_eq_two_power L V).trans_le <|
+    (Cardinal.power_le_power_left two_ne_zero Cardinal.mk_le_aleph0).trans_eq
+      Cardinal.two_power_aleph0
+
+/-- **There are continuum many configurations** on a countably infinite carrier in a language
+with countably many relation symbols of each arity, one of them of positive arity. -/
+theorem mk_eq_continuum (L : Language) (V : Type*)
+    [∀ n, Countable (L.Relations n)] [Countable V] [Infinite V] {n : ℕ} (hn : n ≠ 0)
+    (R : L.Relations n) :
+    Cardinal.mk (RelationalConfiguration L V) = Cardinal.continuum := by
+  have := Atom.infinite_of_relations (V := V) hn R
+  rw [mk_eq_two_power, Cardinal.mk_eq_aleph0, Cardinal.two_power_aleph0]
 
 /-- Configurations carry the product σ-algebra, one Boolean coordinate per atom. -/
 instance : MeasurableSpace (RelationalConfiguration L V) :=
@@ -345,6 +412,11 @@ theorem perm_smul_def (σ : Equiv.Perm V) (c : RelationalConfiguration L V) :
 theorem eval_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguration L V) (a : Atom L V) :
     (σ • c).eval a = c.eval (a.map σ.symm) := by
   rw [perm_smul_def, eval_restrict, Equiv.Perm.coe_inv]
+
+/-- Relabelling by `σ` reads the atom `R (σ ∘ v)` as the original configuration reads `R v`. -/
+theorem eval_perm_smul_atom_comp (σ : Equiv.Perm V) (c : RelationalConfiguration L V) {n : ℕ}
+    (R : L.Relations n) (v : Fin n → V) : (σ • c).eval (atom R (σ ∘ v)) = c.eval (atom R v) := by
+  simp [Function.comp_def]
 
 /-- Relabelling by permutations is a left action on configurations. -/
 instance instMulActionPerm : MulAction (Equiv.Perm V) (RelationalConfiguration L V) where
