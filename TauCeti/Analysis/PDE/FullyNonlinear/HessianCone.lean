@@ -109,9 +109,10 @@ theorem convex_hessianCone (n k : ℕ) : Convex ℝ (hessianCone n k) := by
       exact Multiset.esymm_of_card_lt (by simp)
     simp [hzero] at h
 
-/-- **Symmetric Gårding cones are admissible.** For a symmetric polynomial `p` of degree
-`m ≥ 1`, hyperbolic in the direction `e = (1, …, 1)`, whose Gårding cone `Γ(p, e)` has every
-coordinate vector in its closure, `Γ(p, e)` is an admissible cone. -/
+/-- **Symmetric Gårding cones whose closure contains the coordinate vectors are admissible.**
+For a symmetric polynomial `p` of degree `m ≥ 1`, hyperbolic in the direction `e = (1, …, 1)`,
+whose Gårding cone `Γ(p, e)` has every coordinate vector in its closure, `Γ(p, e)` is an
+admissible cone. -/
 theorem isAdmissibleCone_gardingCone {ι : Type*} [Fintype ι] [DecidableEq ι]
     {p : MvPolynomial ι ℝ} {m : ℕ} (hp : p.IsHyperbolic m 1) (hm : 1 ≤ m)
     (hsymm : p.IsSymmetric) (he : ∀ i, (Pi.single i 1 : ι → ℝ) ∈ closure (gardingCone p 1)) :
