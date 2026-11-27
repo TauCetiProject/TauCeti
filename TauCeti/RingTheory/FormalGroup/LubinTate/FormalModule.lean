@@ -186,8 +186,9 @@ theorem formalModule_act_eq_iff (a : O) (u : PowerSeries O) :
       u.constantCoeff = 0 ∧ u.coeff 1 = a ∧ f.subst u = u.subst f := by
   have hu : Solution f (fun _ : Unit ↦ a) ((hf.formalModule hπ).act a).toPowerSeries :=
     solution_endomorphism hf hπ a
-  have hx (i : Unit) : f.toMvPowerSeries i = f :=
-    (PowerSeries.toMvPowerSeries_eq_subst (i := i)).trans (PowerSeries.X_subst f)
+  have hx (i : Unit) : f.toMvPowerSeries i = f := by
+    cases i
+    rw [PowerSeries.toMvPowerSeries_eq_subst, ← PowerSeries.X_apply, PowerSeries.X_subst]
   constructor
   · rintro rfl
     exact ⟨hu.const, hu.linear (), by simpa only [hx, ← PowerSeries.subst_def] using hu.intertwine⟩
