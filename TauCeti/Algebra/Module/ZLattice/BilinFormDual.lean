@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
 import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
+import TauCeti.Algebra.Module.Lattice
 
 /-!
 # Dual lattices for a nondegenerate real bilinear form
@@ -34,22 +35,6 @@ These are used for the Riemann form of an Appell–Humbert datum in
 public section
 
 open Module Set
-
-/-- An element of `N` lies in `L ∩ N`, seen as an additive subgroup of `N`, iff it lies in `L`. -/
-theorem Submodule.mem_submoduleOf_toAddSubgroup {R M : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] {L N : Submodule R M} (x : N) :
-    x ∈ (L.submoduleOf N).toAddSubgroup ↔ (x : M) ∈ L := by
-  rw [Submodule.mem_toAddSubgroup, Submodule.submoduleOf, Submodule.mem_comap,
-    Submodule.subtype_apply]
-
-/-- The order of the quotient `N / (L ∩ N)` is the relative index `[N : L]`. -/
-theorem Submodule.natCard_quotient_submoduleOf {R M : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] (L N : Submodule R M) :
-    Nat.card (N ⧸ (L.submoduleOf N).toAddSubgroup) = L.toAddSubgroup.relIndex N.toAddSubgroup :=
-  -- `relIndex` is by definition the index of `L.toAddSubgroup.addSubgroupOf N.toAddSubgroup`,
-  -- whose underlying subgroup of `N` is by definition that of `L.submoduleOf N`, the preimage of
-  -- `L` under the inclusion of `N`.
-  rfl
 
 namespace LinearMap.BilinForm
 

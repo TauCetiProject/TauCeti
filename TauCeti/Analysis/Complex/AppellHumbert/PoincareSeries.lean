@@ -11,8 +11,8 @@ public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Complex.UniformLimit
+import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
-import TauCeti.Analysis.Fourier.Torus.Periodic
 
 /-!
 # Positive Appell–Humbert data have nonzero theta functions

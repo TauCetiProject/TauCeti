@@ -16,6 +16,7 @@ import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.MulLeftRight
 import TauCeti.LinearAlgebra.LinearIndependent.SpanEq
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
+import TauCeti.Algebra.Module.Lattice
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.Periodic

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 import Mathlib.MeasureTheory.Group.Integral
-import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.UnitCube
 import TauCeti.Analysis.Fourier.Torus.Uniqueness
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
@@ -21,7 +20,8 @@ mean over the torus. This file records the two facts about these means that are 
 function is given in the coordinates of a lattice basis rather than on the torus itself.
 In such coordinates, a character `exp (2πi f)` of a real linear form `f` with integer values `n` on
 the basis is the Fourier monomial `mFourier n`
-(`TauCeti.UnitAddTorus.exp_two_pi_I_mul_equivFun_symm_eq_mFourier`). For the means:
+(`TauCeti.UnitAddTorus.exp_two_pi_I_mul_equivFun_symm_eq_mFourier`, in
+`TauCeti.Analysis.Fourier.Monomial`). For the means:
 
 * the mean is invariant under translation
   (`TauCeti.UnitAddTorus.setIntegral_unitCube_comp_add_right`), as the Haar measure of the torus
@@ -50,19 +50,6 @@ variable {d : Type*} {E : Type*}
 attribute [local instance 2000] instMeasureSpaceUnitAddCircle
 
 variable [Fintype d]
-
-/-- In the coordinates `φ` of a real basis `b` of `V`, the character `exp (2πi f)` of a real linear
-form `f` with integer values `f (b i) = n i` on the basis vectors is the Fourier monomial
-`mFourier n` of the torus, at the image of `φ`. -/
-theorem exp_two_pi_I_mul_equivFun_symm_eq_mFourier {V : Type*} [AddCommGroup V] [Module ℝ V]
-    (b : Module.Basis d ℝ V) (f : V →ₗ[ℝ] ℝ) {n : d → ℤ} (hn : ∀ i, f (b i) = n i) (φ : d → ℝ) :
-    Complex.exp (2 * π * Complex.I * f (b.equivFun.symm φ)) =
-      mFourier n (fun i ↦ (φ i : UnitAddCircle)) := by
-  rw [TauCeti.UnitAddTorus.mFourier_coe_apply, Module.Basis.equivFun_symm_apply, map_sum]
-  simp only [map_smul, smul_eq_mul, hn]
-  push_cast
-  exact congrArg (fun t ↦ Complex.exp (2 * π * Complex.I * t))
-    (Finset.sum_congr rfl fun i _ ↦ mul_comm _ _)
 
 variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 
