@@ -116,6 +116,17 @@ def latticeToReal (u : ℤ × ℤ) : ℝ × ℝ :=
 
 @[simp] theorem latticeToReal_snd (u : ℤ × ℤ) : (latticeToReal u).2 = u.2 := (rfl)
 
+@[simp] theorem latticeToReal_mk (a b : ℤ) : latticeToReal (a, b) = ((a : ℝ), (b : ℝ)) := (rfl)
+
+@[simp] theorem latticeToReal_add (u v : ℤ × ℤ) :
+    latticeToReal (u + v) = latticeToReal u + latticeToReal v := by
+  ext <;> simp
+
+/-- `latticeToReal` intertwines `latticeRot` with the linear map `(x, y) ↦ (-y, x - y)`. -/
+theorem latticeToReal_latticeRot (u : ℤ × ℤ) :
+    latticeToReal (latticeRot u) = (-(u.2 : ℝ), (u.1 : ℝ) - u.2) := by
+  simp
+
 namespace TriFace
 
 /-- The closed triangle of a face: the convex hull of its three vertices in `ℝ²`. -/
@@ -765,9 +776,14 @@ theorem boundaryGraph_adj_vadd {R : Set TriFace} {p p' : boundaryVertices R}
     regionUnion (w +ᵥ R) = latticeToReal w +ᵥ regionUnion R := by
   refine (regionUnion_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_vertices_vadd w)
     (AffineEquiv.constVAdd ℝ (ℝ × ℝ) (latticeToReal w)).toAffineMap
-    (fun u => by ext <;> simp [vadd_eq_add])).trans ?_
+    (fun u => by simp [vadd_eq_add])).trans ?_
   rw [← Set.image_vadd]
   exact congrArg (· '' _) (funext fun p => by simp)
+
+/-- Translating a face by `w` translates its triangle by `w ∈ ℤ² ⊆ ℝ²`. -/
+@[simp] theorem TriFace.triangle_vadd (f : TriFace) :
+    (w +ᵥ f).triangle = latticeToReal w +ᵥ f.triangle := by
+  simpa [regionUnion_def] using regionUnion_vadd w {f}
 
 end Translation
 
@@ -828,7 +844,12 @@ theorem facesOf_rot (V : Set (ℤ × ℤ)) : facesOf (latticeRot '' V) = TriFace
     regionUnion (TriFace.rot '' R) = (fun p : ℝ × ℝ => (-p.2, p.1 - p.2)) '' regionUnion R :=
   (regionUnion_image (χ := latticeRot.toEquiv) _ latticeRot_mem_vertices_rot
     ((-LinearMap.snd ℝ ℝ ℝ).prod (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ)).toAffineMap
-    (fun u => by ext <;> simp)).trans (congrArg (· '' _) (funext fun p => by simp))
+    (fun u => by simp)).trans (congrArg (· '' _) (funext fun p => by simp))
+
+/-- The rotation `ρ` acts on the triangle of a face by the linear map `(x, y) ↦ (-y, x - y)`. -/
+@[simp] theorem TriFace.triangle_rot (f : TriFace) :
+    (TriFace.rot f).triangle = (fun p : ℝ × ℝ => (-p.2, p.1 - p.2)) '' f.triangle := by
+  simpa [regionUnion_def] using regionUnion_rot {f}
 
 end Rotation
 
