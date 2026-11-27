@@ -46,9 +46,35 @@ theorem mumfordClass_apply (G : Over S) [MonObj G] (L : LineBundleClass G.left) 
         pullback (toUnit (G ⊗ G) ≫ η[G]).left L := by
   simp only [mumfordClass, MonoidHom.mul_apply, MonoidHom.div_apply, pullbackHom_apply]
 
+/-- The Mumford class restricts to the trivial class along `x ↦ (x, 1)`. -/
+@[simp]
+theorem pullback_lift_id_unit_mumfordClass (G : Over S) [MonObj G] (L : LineBundleClass G.left) :
+    pullback (Limits.pullback.lift (𝟙 G.left) (G.hom ≫ η[G].left) (by simp))
+      (mumfordClass G L) = 1 := by
+  have h := Over.lift_left (𝟙 G) (toUnit G ≫ η[G])
+  simp only [Over.comp_left, Over.toUnit_left, Over.id_left] at h
+  rw [← h]
+  simp only [mumfordClass_apply, div_eq_mul_inv, pullback_mul, pullback_inv, pullback_comp,
+    ← Over.comp_left, MonObj.lift_comp_one_right, lift_fst, lift_snd, comp_toUnit_assoc,
+    Over.id_left, pullback_id]
+  rw [← div_eq_mul_inv, div_mul_eq_mul_div, div_self']
+
+/-- The Mumford class restricts to the trivial class along `x ↦ (1, x)`. -/
+@[simp]
+theorem pullback_lift_unit_id_mumfordClass (G : Over S) [MonObj G] (L : LineBundleClass G.left) :
+    pullback (Limits.pullback.lift (G.hom ≫ η[G].left) (𝟙 G.left) (by simp))
+      (mumfordClass G L) = 1 := by
+  have h := Over.lift_left (toUnit G ≫ η[G]) (𝟙 G)
+  simp only [Over.comp_left, Over.toUnit_left, Over.id_left] at h
+  rw [← h]
+  simp only [mumfordClass_apply, div_eq_mul_inv, pullback_mul, pullback_inv, pullback_comp,
+    ← Over.comp_left, MonObj.lift_comp_one_left, lift_fst, lift_snd, comp_toUnit_assoc,
+    Over.id_left, pullback_id]
+  rw [← div_eq_mul_inv, div_mul_eq_mul_div, mul_comm L, div_self']
+
 /-- On a commutative monoid scheme, swapping the two factors preserves the Mumford class. -/
 @[simp]
-theorem pullback_braiding_mumfordClass (G : Over S) [MonObj G] [IsCommMonObj G]
+theorem pullback_pullbackSymmetry_hom_mumfordClass (G : Over S) [MonObj G] [IsCommMonObj G]
     (L : LineBundleClass G.left) :
     pullback (Limits.pullbackSymmetry G.hom G.hom).hom (mumfordClass G L) =
       mumfordClass G L := by

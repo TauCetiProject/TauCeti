@@ -13,7 +13,7 @@ import TauCeti.AlgebraicGeometry.LineBundle.Endomorphisms
 # The normalized Mumford line bundle
 
 For a monoid scheme `G` over `S` with unit section `e` and a line bundle `L` on `G`, the normalized
-Mumford line bundle on `G ×_S G` is `m^*L ⊗ p₁^*L⁻¹ ⊗ p₂^*L⁻¹ ⊗ π^*e^*L`. Here `m` is
+Mumford line bundle on `G ×_S G` is `(m^*L ⊗ π^*e^*L) ⊗ (p₁^*L⁻¹ ⊗ p₂^*L⁻¹)`. Here `m` is
 multiplication, `p₁` and `p₂` are the projections, and `π` is the structure morphism of the
 product. The base correction gives evaluation trivializations along both embeddings of `G`
 obtained by inserting the unit. Normalize the second by a scalar from the base so that they agree
@@ -42,8 +42,8 @@ noncomputable section
 
 variable {S : Scheme.{u}} (G : Over S) [MonObj G]
 
-/-- The normalized Mumford line bundle `m^*L ⊗ p₁^*L⁻¹ ⊗ p₂^*L⁻¹ ⊗ π^*e^*L` on the product of
-`G` with itself over the base. The last factor is the pullback of the fibre of `L` at the unit. -/
+/-- The normalized Mumford line bundle `(m^*L ⊗ π^*e^*L) ⊗ (p₁^*L⁻¹ ⊗ p₂^*L⁻¹)` on the product of
+`G` with itself over the base. The second factor is the pullback of the fibre of `L` at the unit. -/
 def mumfordLineBundle (L : InvertibleSheaf G.left) : InvertibleSheaf (G ⊗ G).left :=
   (((pullback μ[G].left).obj L) ⊗ ((pullback (toUnit (G ⊗ G) ≫ η[G]).left).obj L)) ⊗
     (((pullback (fst G G).left).obj L.dual) ⊗ ((pullback (snd G G).left).obj L.dual))
@@ -124,13 +124,17 @@ private def mumfordLineBundleSndEval (L : InvertibleSheaf G.left) :
   (eqToIso (InvertibleSheaf.pullback_obj_obj (lift (toUnit G ≫ η[G]) (𝟙 G)).left _)).symm ≪≫
     (SheafOfModules.isInvertible G.left).ι.mapIso (mumfordLineBundleSndEvaluation G L)
 
+private lemma unit_comp_mumfordAxes :
+    η[G].left ≫ (lift (toUnit G ≫ η[G]) (𝟙 G)).left =
+      η[G].left ≫ (lift (𝟙 G) (toUnit G ≫ η[G])).left := by
+  simp only [← Over.comp_left, comp_lift, Category.comp_id, comp_toUnit_assoc, toUnit_unit,
+    Category.id_comp]
+
 private def mumfordFstAtUnit (L : InvertibleSheaf G.left) :
     (Scheme.Modules.pullback η[G].left).obj
       ((Scheme.Modules.pullback (lift (toUnit G ≫ η[G]) (𝟙 G)).left).obj
         (mumfordLineBundle G L).obj) ≅ 𝟙_ S.Modules :=
-  RigidifiedLineBundle.pullbackRigidification (g := η[G].left)
-    (by simp only [← Over.comp_left, comp_lift, Category.comp_id, comp_toUnit_assoc, toUnit_unit,
-      Category.id_comp])
+  RigidifiedLineBundle.pullbackRigidification (unit_comp_mumfordAxes G)
     (mumfordLineBundle G L).obj (mumfordLineBundleFstRigidification G L)
 
 private def mumfordSndEvalAtUnit (L : InvertibleSheaf G.left) :
@@ -153,29 +157,27 @@ def mumfordLineBundleSndRigidification (L : InvertibleSheaf G.left) :
   mumfordLineBundleSndEval G L ≪≫ asIso (globalSectionsSmul (𝟙_ G.left.Modules) ↑u)
 
 /-- The two axis rigidifications agree at the common unit of the factors. -/
-theorem mumfordLineBundle_rigidification_at_unit (L : InvertibleSheaf G.left) :
+theorem mapIso_mumfordLineBundleSndRigidification_trans_pullbackObjUnitIso
+    (L : InvertibleSheaf G.left) :
     (Scheme.Modules.pullback η[G].left).mapIso (mumfordLineBundleSndRigidification G L) ≪≫
       pullbackObjUnitIso η[G].left =
       RigidifiedLineBundle.pullbackRigidification (g := η[G].left)
-        (by simp only [← Over.comp_left, comp_lift, Category.comp_id, comp_toUnit_assoc,
-          toUnit_unit, Category.id_comp])
+        (by exact unit_comp_mumfordAxes G)
         (mumfordLineBundle G L).obj (mumfordLineBundleFstRigidification G L) := by
   have h : η[G].left.appTop (G.hom.appTop (mumfordAxisCorrection G L : Γ(S, ⊤))) =
       (mumfordAxisCorrection G L : Γ(S, ⊤)) := by
     rw [← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, Over.w η[G], Over.tensorUnit_hom,
       Scheme.Hom.id_appTop, CommRingCat.id_apply]
-  -- The comparison at the unit uses the same transport as the definition of the scalar.
-  change _ = mumfordFstAtUnit G L
+  rw [← mumfordFstAtUnit]
   ext1
   simp only [mumfordLineBundleSndRigidification, Functor.mapIso_hom, Iso.trans_hom, asIso_hom,
     Functor.map_comp, Units.coe_map, MonoidHom.coe_ofClass, Category.assoc,
     pullback_map_globalSectionsSmul, h]
   rw [globalSectionsSmul_naturality, ← Category.assoc]
-  -- The two composed maps are the uncorrected evaluation at the unit.
-  change (mumfordSndEvalAtUnit G L).hom ≫ globalSectionsSmul (𝟙_ S.Modules)
-    (mumfordAxisCorrection G L) = _
-  rw [mumfordAxisCorrection, globalSectionsSmul_unitsGlobalSectionsMulEquivAut_symm]
-  simp only [Iso.trans_hom, Iso.symm_hom, Iso.hom_inv_id_assoc]
+  rw [← Functor.mapIso_hom, ← Iso.trans_hom, ← mumfordSndEvalAtUnit]
+  simp only [Over.tensorUnit_left, mumfordAxisCorrection,
+    globalSectionsSmul_unitsGlobalSectionsMulEquivAut_symm, Iso.trans_hom, Iso.symm_hom,
+    Iso.hom_inv_id_assoc]
 
 end
 

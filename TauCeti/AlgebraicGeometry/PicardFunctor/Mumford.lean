@@ -38,18 +38,25 @@ noncomputable section
 
 variable {S : Scheme.{u}} {G : Over S} [MonObj G]
 
-private lemma baseChangeSection_unit_self :
-    baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) G =
-      (lift (𝟙 G) (toUnit G ≫ η[G])).left := by
-  apply pullback.hom_ext <;> simp [Over.lift_left, Over.toUnit_left]
-
-private def mumfordRigidifiedLineBundle (L : InvertibleSheaf G.left) :
+/-- The normalized Mumford bundle on `G ×_S G`, rigidified along the unit of the second factor
+for the projection onto the first factor. -/
+def mumfordRigidifiedLineBundle (L : InvertibleSheaf G.left) :
     RigidifiedLineBundle
       (baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) G) where
   lineBundle := mumfordLineBundle G L
-  rigidification := by
-    rw [baseChangeSection_unit_self]
-    exact mumfordLineBundleFstRigidification G L
+  rigidification :=
+    (Scheme.Modules.pullbackCongr (baseChangeSection_eq_lift_left η[G] G)).app _ ≪≫
+      mumfordLineBundleFstRigidification G L
+
+/-- The rigidified Mumford bundle uses the first-axis trivialization, transported along the
+identification of the base-changed unit section with `x ↦ (x, 1)`. -/
+theorem mumfordRigidifiedLineBundle_eq (L : InvertibleSheaf G.left) :
+    mumfordRigidifiedLineBundle L =
+      { lineBundle := mumfordLineBundle G L
+        rigidification :=
+          (Scheme.Modules.pullbackCongr (baseChangeSection_eq_lift_left η[G] G)).app _ ≪≫
+            mumfordLineBundleFstRigidification G L } :=
+  (rfl)
 
 /-- The family of translated line bundles associated to `L`, rigidified along the unit.
 The value on the identity morphism of `G` is the normalized Mumford bundle on `G ×_S G`. -/
@@ -57,6 +64,15 @@ def mumfordPicardMap (L : InvertibleSheaf G.left) :
     uliftYoneda.{u + 1}.obj G ⟶ rigidifiedPicardFunctor G.hom η[G].left
       (η[G].w.trans Over.tensorUnit_hom) ⋙ forget CommGrpCat :=
   uliftYonedaEquiv.symm (RigidifiedLineBundleClass.mk (mumfordRigidifiedLineBundle L))
+
+/-- Under the lifted Yoneda equivalence, the Mumford family corresponds to the class of the
+normalized Mumford bundle with its rigidification. -/
+-- Rewrite before simplifying the object type of the composed functor.
+@[simp↓]
+theorem uliftYonedaEquiv_mumfordPicardMap (L : InvertibleSheaf G.left) :
+    uliftYonedaEquiv (mumfordPicardMap L) =
+      RigidifiedLineBundleClass.mk (mumfordRigidifiedLineBundle L) :=
+  uliftYonedaEquiv.apply_symm_apply _
 
 /-- The underlying line-bundle class of the Mumford family at a point `a : T ⟶ G` is the
 pullback of the normalized Mumford class along `a × id`. -/
@@ -69,7 +85,11 @@ theorem toLineBundleClass_mumfordPicardMap_app_eq_pullback (L : InvertibleSheaf 
   -- The lifted Yoneda map evaluates by restricting the universal rigidified class along `a`.
   have happ : (mumfordPicardMap L).app (op T) ⟨a⟩ =
       (rigidifiedPicardFunctor G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom)).map a.op
-        (RigidifiedLineBundleClass.mk (mumfordRigidifiedLineBundle L)) := rfl
+        (RigidifiedLineBundleClass.mk (mumfordRigidifiedLineBundle L)) := by
+    have h := uliftYonedaEquiv_symm_apply_app.{u + 1}
+      (F := rigidifiedPicardFunctor G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) ⋙
+        forget CommGrpCat) (RigidifiedLineBundleClass.mk (mumfordRigidifiedLineBundle L)) (op T)
+    exact congrArg (fun f ↦ f ⟨a⟩) h
   rw [happ, rigidifiedPicardFunctor_map_apply, RigidifiedLineBundleClass.toLineBundleClass_pullback,
     RigidifiedLineBundleClass.toLineBundleClass_mk, hmap]
   exact congrArg (LineBundleClass.pullback (a ▷ G).left) (mk_mumfordLineBundle G L)
