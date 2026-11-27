@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Reflection
 public import TauCeti.Analysis.Complex.LaplaceReflection
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!

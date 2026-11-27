@@ -241,7 +241,7 @@ theorem MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub {G : Type uG} [NormedAddCommG
     huc hunif hlim K hKΩ hK
   have heq (n : ι) : eLpNormWkp p K (k + 1) ((fun x => e (g x)) ∘ u n - (fun x => e (g x)) ∘ u₀) =
       eLpNormWkp p K (k + 1) (g ∘ u n - g ∘ u₀) := by
-    rw [← eLpNormWkp_linearIsometryEquiv_comp e]
+    rw [← e.eLpNormWkp_comp]
     refine congrArg _ (funext fun z => ?_)
     simp
   simpa only [heq] using h

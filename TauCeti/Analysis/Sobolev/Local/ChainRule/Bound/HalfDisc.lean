@@ -127,7 +127,7 @@ theorem exists_eLpNormWkp_succ_comp_le_halfPlane (hp : 2 < p) (k : ℕ) {g : F �
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_comp_le_halfPlane_aux hp k (g := fun x => e (g x)) hW
     (e.toContinuousLinearEquiv.contDiff.comp_contDiffOn hg) hL hLW hU hUΩ
   refine ⟨C, fun u huc huL => ?_⟩
-  rw [← eLpNormWkp_linearIsometryEquiv_comp e]
+  rw [← e.eLpNormWkp_comp]
   exact hC u huc huL
 
 /-- **Local bound for composition on half-discs for `kp > 2`.** Let `1 < p` and `k p > 2`, let

@@ -11,14 +11,14 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 /-!
 # Locality of the local Sobolev classes
 
-The planar local Sobolev classes `TauCeti.MemWkpLoc p U k` have the sheaf property:
-membership can be checked near each point, and membership on every member of an open cover
-gives membership on the union (the corresponding locality results for `TauCeti.MemLpLoc` live in
-`TauCeti.MeasureTheory.Function.MemLpLoc`). Concretely, for an arbitrary set `U ⊆ ℂ`, a
-function lies in the class on `U` exactly when every point of `U` has a neighbourhood within `U` on
-which it lies in the class. The set `U` need not be open: for a set reaching the real axis, such as
-a relatively open subset of the closed upper half-plane, the neighbourhoods are relative ones and
-the `Lᵖ` bounds reach the boundary, as in the definition.
+The classes `TauCeti.MemWkpLoc p U k` have the sheaf property: membership can be checked near each
+point, and membership on every member of an open cover gives membership on the union (the
+corresponding locality results for `TauCeti.MemLpLoc` live in
+`TauCeti.MeasureTheory.Function.MemLpLoc`). Concretely, for an arbitrary set `U ⊆ E`, a function
+lies in the class on `U` exactly when every point of `U` has a neighbourhood within `U` on which it
+lies in the class. The set `U` need not be open: for a set reaching part of its boundary, such as a
+relatively open subset of a closed half-space, the neighbourhoods are relative ones and the `Lᵖ`
+bounds reach the boundary, as in the definition.
 
 This is what lets regularity statements be proved one point at a time, for instance in
 elliptic bootstrapping, and lets membership in coordinates be assembled from charts.
@@ -38,11 +38,11 @@ derivative to supply the completeness that the weak-derivative predicate demands
 
 Order-zero locality (`TauCeti.memLpLoc_iff_forall_inter`, in
 `TauCeti.MeasureTheory.Function.MemLpLoc`) handles the base case. At positive order the local
-weak derivatives are glued by `TauCeti.exists_hasWeakFDerivOn_iSup` on the interior of `U`, which
-is covered by the interiors of the sets `U ∩ O i`. The glued field is only determined almost
+weak derivatives are glued by `TauCeti.exists_hasWeakFDerivOn_iSup` on the interior of `U`,
+which is covered by the interiors of the sets `U ∩ O i`. The glued field is only determined almost
 everywhere on that interior, and the class on `U` also bounds it on the part of `U` outside its
-interior, which may have positive measure. The glued field is therefore set to zero off the interior
-of `U`; each local field may be replaced in the same way without leaving its class.
+interior, which may have positive measure. The glued field is therefore set to zero off the
+interior of `U`; each local field may be replaced in the same way without leaving its class.
 
 ## References
 
@@ -57,12 +57,17 @@ open scoped Topology
 
 namespace TauCeti
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ENNReal} {U : Set ℂ} {f : ℂ → F}
+section MemWkpLoc
+
+universe u v
+
+variable {E : Type u} {F : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasureSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ENNReal} {U : Set E} {f : E → F}
 
 /-- Zeroing a function off the interior of `U` keeps it in its local Sobolev class: the weak
 derivatives only see the interior, and the `Lᵖ` bounds only improve. -/
-private theorem MemWkpLoc.indicator_interior {k : ℕ} (hf : MemWkpLoc p U k f) :
-    MemWkpLoc p U k ((interior U).indicator f) := by
+private theorem MemWkpLoc.indicator_interior [OpensMeasurableSpace E] {k : ℕ}
+    (hf : MemWkpLoc p U k f) : MemWkpLoc p U k ((interior U).indicator f) := by
   have hLp : MemLpLoc p U ((interior U).indicator f) := memLpLoc_iff.2 fun K hK hc =>
     (memLpLoc_iff.1 hf.memLpLoc K hK hc).indicator measurableSet_interior.nullMeasurableSet
   cases k with
@@ -72,56 +77,62 @@ private theorem MemWkpLoc.indicator_interior {k : ℕ} (hf : MemWkpLoc p U k f) 
     exact memWkpLoc_succ_iff.2 ⟨hLp, D, hD.congr_ae (indicator_ae_eq_restrict
       measurableSet_interior.nullMeasurableSet).symm, hk⟩
 
+variable [FiniteDimensional ℝ E] [BorelSpace E]
+
 /-- Positive-order local Sobolev membership on `U` can be checked on the traces `U ∩ O i` of an
 open cover. The local weak derivatives need not agree; they are glued on the interior of `U`.
 Completeness of the codomain is needed for an empty cover. -/
-theorem memWkpLoc_iff_forall_inter [CompleteSpace F] {ι : Type*} (O : ι → Opens ℂ)
-    (hU : U ⊆ ⋃ i, (O i : Set ℂ)) {k : ℕ} :
+theorem memWkpLoc_iff_forall_inter [CompleteSpace F] {ι : Type*} (O : ι → Opens E)
+    (hU : U ⊆ ⋃ i, (O i : Set E)) {k : ℕ} :
     MemWkpLoc p U k f ↔ ∀ i, MemWkpLoc p (U ∩ O i) k f := by
   refine ⟨fun hf i => hf.mono inter_subset_left, fun h => ?_⟩
-  induction k generalizing F with
-  | zero =>
-    exact memWkpLoc_zero_iff.2 <| (memLpLoc_iff_forall_inter O hU).2 fun i => (h i).memLpLoc
-  | succ k ih =>
-    choose D hD hDk using fun i => (h i).exists_weakFDeriv
-    obtain ⟨G, hG, hGD⟩ := exists_hasWeakFDerivOn_iSup _ D hD
-    have hint : ∀ i, interior (U ∩ O i) = interior U ∩ O i := fun i => by
-      rw [interior_inter, (O i).isOpen.interior_eq]
-    have hsup : (⨆ i, Opens.interior (U ∩ O i)) = Opens.interior U := by
-      ext z
-      simp only [Opens.coe_iSup, Opens.coe_interior, hint, ← inter_iUnion]
-      exact ⟨fun hz => hz.1, fun hz => ⟨hz, hU (interior_subset hz)⟩⟩
-    refine memWkpLoc_succ_iff.2 ⟨(memLpLoc_iff_forall_inter O hU).2 fun i => (h i).memLpLoc,
-      (interior U).indicator G, ?_, ih fun i => ?_⟩
-    · rw [hsup] at hG
-      exact hG.congr_ae_deriv
-        (indicator_ae_eq_restrict measurableSet_interior.nullMeasurableSet).symm
-    · refine (hDk i).indicator_interior.congr_ae ?_
-      have hGDi := (ae_restrict_iff' measurableSet_interior).1 (hGD i)
-      filter_upwards [ae_restrict_of_ae hGDi, ae_restrict_of_ae_restrict_of_subset
-        inter_subset_right (ae_restrict_mem (O i).isOpen.measurableSet)] with z hz hzO
-      by_cases hzU : z ∈ interior U
-      · have hzi : z ∈ interior (U ∩ O i) := (hint i).symm ▸ ⟨hzU, hzO⟩
-        simp only [indicator_of_mem hzi, indicator_of_mem hzU, hz hzi]
-      · have hzi : z ∉ interior (U ∩ O i) := fun hzi => hzU ((hint i ▸ hzi).1)
-        simp only [indicator_of_notMem hzi, indicator_of_notMem hzU]
+  refine memWkpLoc_ulift_induction
+    (fun k G _ _ g => CompleteSpace G ∧ ∀ i, MemWkpLoc p (U ∩ O i) k g)
+    (fun _ _ _ _ ⟨_, hg⟩ => (memLpLoc_iff_forall_inter O hU).2 fun i => (hg i).memLpLoc)
+    (fun _ _ _ _ _ ⟨_, hg⟩ => by
+      have hint : ∀ i, interior (U ∩ O i) = interior U ∩ O i := fun i => by
+        rw [interior_inter, (O i).isOpen.interior_eq]
+      have hsup : (⨆ i, Opens.interior (U ∩ O i)) = Opens.interior U := by
+        ext z
+        simp only [Opens.coe_iSup, Opens.coe_interior, hint, ← inter_iUnion]
+        exact ⟨fun hz => hz.1, fun hz => ⟨hz, hU (interior_subset hz)⟩⟩
+      choose D hD hDk using fun i => (hg i).exists_weakFDeriv
+      obtain ⟨G', hG, hGD⟩ := exists_hasWeakFDerivOn_iSup _ D hD
+      refine ⟨(memLpLoc_iff_forall_inter O hU).2 fun i => (hg i).memLpLoc,
+        (interior U).indicator G', ?_, inferInstance, fun i => ?_⟩
+      · rw [hsup] at hG
+        exact hG.congr_ae_deriv
+          (indicator_ae_eq_restrict measurableSet_interior.nullMeasurableSet).symm
+      · refine (hDk i).indicator_interior.congr_ae ?_
+        have hGDi := (ae_restrict_iff' measurableSet_interior).1 (hGD i)
+        filter_upwards [ae_restrict_of_ae hGDi, ae_restrict_of_ae_restrict_of_subset
+          inter_subset_right (ae_restrict_mem (O i).isOpen.measurableSet)] with z hz hzO
+        by_cases hzU : z ∈ interior U
+        · have hzi : z ∈ interior (U ∩ O i) := (hint i).symm ▸ ⟨hzU, hzO⟩
+          simp only [indicator_of_mem hzi, indicator_of_mem hzU, hz hzi]
+        · have hzi : z ∉ interior (U ∩ O i) := fun hzi => hzU ((hint i ▸ hzi).1)
+          simp only [indicator_of_notMem hzi, indicator_of_notMem hzU])
+    ⟨completeSpace_ulift_iff.2 inferInstance,
+      fun i => ContinuousLinearEquiv.ulift.symm.comp_memWkpLoc_iff.2 (h i)⟩
 
 /-- Local Sobolev membership on the union of open sets is membership on each of them. -/
-theorem memWkpLoc_iSup_iff [CompleteSpace F] {ι : Type*} (V : ι → Opens ℂ) {k : ℕ} :
-    MemWkpLoc p (⨆ i, V i : Opens ℂ) k f ↔ ∀ i, MemWkpLoc p (V i) k f := by
+theorem memWkpLoc_iSup_iff [CompleteSpace F] {ι : Type*} (V : ι → Opens E) {k : ℕ} :
+    MemWkpLoc p (⨆ i, V i : Opens E) k f ↔ ∀ i, MemWkpLoc p (V i) k f := by
   rw [memWkpLoc_iff_forall_inter V (by simp)]
-  simp only [Opens.coe_iSup, inter_eq_right.2 (subset_iUnion (fun i => (V i : Set ℂ)) _)]
+  simp only [Opens.coe_iSup, inter_eq_right.2 (subset_iUnion (fun i => (V i : Set E)) _)]
 
 /-- Local Sobolev membership is a local property: it holds on `U` exactly when every point of
 `U` has a neighbourhood within `U` on which it holds. -/
 theorem memWkpLoc_iff_locally [CompleteSpace F] {k : ℕ} :
     MemWkpLoc p U k f ↔ ∀ x ∈ U, ∃ V ∈ 𝓝[U] x, MemWkpLoc p V k f := by
   refine ⟨fun hf _ _ => ⟨U, self_mem_nhdsWithin, hf⟩, fun h => ?_⟩
-  have hO : ∀ x : U, ∃ O : Opens ℂ, (x : ℂ) ∈ O ∧ MemWkpLoc p (U ∩ O) k f := fun x => by
+  have hO : ∀ x : U, ∃ O : Opens E, (x : E) ∈ O ∧ MemWkpLoc p (U ∩ O) k f := fun x => by
     obtain ⟨V, hV, hfV⟩ := h x x.property
     obtain ⟨O, hO, hxO, hOV⟩ := mem_nhdsWithin.1 hV
     exact ⟨⟨O, hO⟩, hxO, hfV.mono fun z hz => hOV ⟨hz.2, hz.1⟩⟩
   choose O hxO hfO using hO
   exact (memWkpLoc_iff_forall_inter O fun x hx => mem_iUnion.2 ⟨⟨x, hx⟩, hxO ⟨x, hx⟩⟩).2 hfO
+
+end MemWkpLoc
 
 end TauCeti

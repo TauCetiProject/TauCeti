@@ -7,10 +7,12 @@ module
 
 public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.Analysis.Sobolev.Local.Haar
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.MeasureTheory.Function.MemLpLoc.ChangeOfVariables
 
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
 
 /-!
 # Change of variables in local Sobolev classes on planar sets
@@ -26,10 +28,11 @@ and the weak derivative itself comes from the chain rule
 `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo` on `interior U`.
 
 In particular a `C¹` diffeomorphism of half-discs preserving the real axis and the upper
-half-plane preserves the half-disc classes. For real-affine maps `z ↦ A z + b` every order is
-preserved, by induction on the order from the first-order formula `Du (A z + b) ∘ A`
-(`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`). The dilation `z ↦ 2 z` scales the
-weak derivative of order `i` by `2 ^ i`, read on the iterated weak gradients
+half-plane preserves the half-disc classes. General real-affine invariance at every order is
+established in `TauCeti.Analysis.Sobolev.Local.Haar`
+(`TauCeti.MemLpLoc.comp_continuousLinearEquiv_add`,
+`TauCeti.MemWkpLoc.comp_continuousLinearEquiv_add`), and specialized below: the dilation
+`z ↦ 2 z` scales the weak derivative of order `i` by `2 ^ i`, read on the iterated weak gradients
 (`TauCeti.HasWeakFDerivOn.iteratedGradient_comp_two_mul`), and the reflection `z ↦ -conj z`
 preserves the half-disc classes. The rotation `z ↦ i z` does not preserve the real axis
 (`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`), and does not preserve the half-disc classes; the
@@ -42,9 +45,6 @@ coefficients and are not treated here.
 
 * `TauCeti.MemWkpLoc.comp_contDiffOn_diffeo`: invariance of the local classes of order at most one.
 * `TauCeti.MemWkpLoc.comp_contDiffOn_diffeo_halfPlane`: the half-disc version.
-* `TauCeti.MemLpLoc.comp_continuousLinearEquiv_add`,
-  `TauCeti.MemWkpLoc.comp_continuousLinearEquiv_add`: invariance of local `Lᵖ` membership and of
-  every order under real-affine maps.
 
 ## References
 
@@ -117,44 +117,6 @@ theorem MemWkpLoc.comp_contDiffOn_diffeo_halfPlane {U' V' : Set ℂ} {u : ℂ �
   · exact hupper z hz.1 h
   · exact (hreal z hz.1 h.symm).ge
 
-omit [NormedSpace ℝ F] in
-/-- Real-affine changes of variables preserve local `Lᵖ` membership: for `A : ℂ ≃L[ℝ] ℂ`, `b : ℂ`
-and `z ↦ A z + b` mapping `U` into `V`, precomposition maps `MemLpLoc p V` into `MemLpLoc p U`. -/
-theorem MemLpLoc.comp_continuousLinearEquiv_add {u : ℂ → F} (hu : MemLpLoc p V u)
-    (A : ℂ ≃L[ℝ] ℂ) (b : ℂ) (hmaps : MapsTo (fun z => A z + b) U V) :
-    MemLpLoc p U (fun z => u (A z + b)) :=
-  hu.comp_contDiffOn_diffeo isOpen_univ (A.contDiff.add contDiff_const).contDiffOn
-    (fun z _ => by
-      rw [fderiv_add_const, A.fderiv]
-      exact A.toLinearEquiv.isUnit_det'.ne_zero)
-    (subset_univ _) hmaps
-
-/-- **Real-affine changes of variables preserve every order.** For `A : ℂ ≃L[ℝ] ℂ`, `b : ℂ` and
-`z ↦ A z + b` mapping `U` into `V`, precomposition maps `MemWkpLoc p V k` into
-`MemWkpLoc p U k`. The first weak derivative is given by
-`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`. -/
-theorem MemWkpLoc.comp_continuousLinearEquiv_add {u : ℂ → F} (hu : MemWkpLoc p V k u)
-    (A : ℂ ≃L[ℝ] ℂ) (b : ℂ) (hmaps : MapsTo (fun z => A z + b) U V) :
-    MemWkpLoc p U k (fun z => u (A z + b)) := by
-  set Φ : ℂ → ℂ := fun z => A z + b
-  have hΦ : ContDiffOn ℝ 1 Φ univ := (A.contDiff.add contDiff_const).contDiffOn
-  have hfd : ∀ z, fderiv ℝ Φ z = (A : ℂ →L[ℝ] ℂ) := fun z => by
-    simp only [Φ, fderiv_add_const, A.fderiv]
-  have hint : MapsTo Φ (interior U) (interior V) :=
-    hmaps.interior_of_contDiffOn (hΦ.mono (subset_univ U)) le_rfl fun z _ => ⟨A, (hfd z).symm⟩
-  induction k generalizing F with
-  | zero =>
-    exact memWkpLoc_zero_iff.2 ((memWkpLoc_zero_iff.1 hu).comp_continuousLinearEquiv_add A b hmaps)
-  | succ k ih =>
-    obtain ⟨hLp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hu
-    have := hD.completeSpace
-    refine memWkpLoc_succ_iff.2
-      ⟨hLp.comp_continuousLinearEquiv_add A b hmaps,
-      fun z => ((ContinuousLinearMap.compL ℝ ℂ ℂ F).flip (A : ℂ →L[ℝ] ℂ)) (D (Φ z)), ?_,
-      (ih hk).clm_comp _⟩
-    simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply, Φ] using
-      hD.comp_continuousLinearEquiv_add (U := Opens.interior U) A b (by simpa using hint)
-
 /-! ### Checks -/
 
 /-- The dilation `z ↦ 2 z` carries `MemWkpLoc p (ball 0 2) k` to `MemWkpLoc p (ball 0 1) k`. -/
@@ -177,7 +139,7 @@ theorem HasWeakFDerivOn.comp_two_mul {u : ℂ → F} {Du : ℂ → ℂ →L[ℝ]
     HasWeakFDerivOn volume U (fun z => u (2 * z)) (fun z => (2 : ℝ) • Du (2 * z)) := by
   set A : ℂ ≃L[ℝ] ℂ := (LinearEquiv.smulOfNeZero ℝ ℂ 2 two_ne_zero).toContinuousLinearEquiv
   have hA : ∀ z, A z = 2 * z := fun z => by simp [A, Complex.real_smul]
-  have h := hu.comp_continuousLinearEquiv_add (U := U) A 0 fun z hz => by
+  have h := hu.comp_continuousLinearEquiv_add (μ := volume) (U := U) A 0 fun z hz => by
     simpa [hA] using hUV hz
   convert h using 2 with z
   · simp [hA]

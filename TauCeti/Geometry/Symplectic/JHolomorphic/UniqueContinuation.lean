@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.TotallyReal.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.RealBoundary.DifferentialInequality
+import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 

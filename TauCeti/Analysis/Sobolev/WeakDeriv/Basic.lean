@@ -171,9 +171,11 @@ weaken them for no gain.
   `TauCeti.HasWeakFDerivOn` counterparts: linearity in the function.
 * `TauCeti.HasWeakFDerivOn.prodMk`: the pair of two weakly differentiable maps is weakly
   differentiable, with the paired derivative.
-* `TauCeti.HasWeakLineDerivOn.clm_comp` and `TauCeti.HasWeakFDerivOn.clm_comp`: a continuous
-  linear map on the codomain passes through the weak derivative, which is how a vector-valued weak
-  derivative is read off its scalar components.
+* `TauCeti.HasWeakLineDerivOn.clm_comp`, `TauCeti.HasWeakFDerivOn.clm_comp`,
+  `ContinuousLinearEquiv.comp_hasWeakFDerivOn`, and `TauCeti.HasWeakFDerivOn.smul_const`: a
+  continuous linear map or equivalence on the codomain (and scaling a scalar weak derivative by a
+  fixed vector) passes through the weak derivative, which is how a vector-valued weak derivative
+  is read off its scalar components.
 * `TauCeti.HasWeakFDerivOn.compLp`: the same for `Lᵖ` classes, with `ContinuousLinearMap.compLp`.
 * `TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg`: the defining identity tested
   against a test function valued in a finite-dimensional real inner product space,
@@ -633,6 +635,39 @@ theorem HasWeakFDerivOn.clm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace
     [CompleteSpace G] {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) (L : F →L[ℝ] G) :
     HasWeakFDerivOn μ Ω (fun x => L (u x)) (fun x => L.comp (U x)) := fun v =>
   (h v).clm_comp L
+
+omit [OpensMeasurableSpace E] in
+/-- Postcomposing with a continuous linear equivalence preserves weak Fréchet differentiability
+without requiring `[OpensMeasurableSpace E]`. -/
+theorem _root_.ContinuousLinearEquiv.comp_hasWeakFDerivOn {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {f : E → F} {D : E → E →L[ℝ] F} (e : F ≃L[ℝ] G)
+    (h : HasWeakFDerivOn μ Ω f D) :
+    HasWeakFDerivOn μ Ω (fun x => e (f x)) (fun x => (e : F →L[ℝ] G).comp (D x)) := by
+  refine hasWeakFDerivOn_iff.2 fun v => ?_
+  have hv := h.hasWeakLineDerivOn v
+  have := hv.completeSpace
+  have : CompleteSpace G :=
+    (e.isUniformEmbedding.isUniformInducing.completeSpace_congr e.surjective).mp inferInstance
+  refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance,
+    e.toContinuousLinearMap.locallyIntegrableOn_comp hv.locallyIntegrableOn,
+    e.toContinuousLinearMap.locallyIntegrableOn_comp hv.locallyIntegrableOn_deriv, fun φ => ?_⟩
+  calc ∫ x, lineDeriv ℝ (φ : E → ℝ) x v • e (f x) ∂μ
+      = ∫ x, e (lineDeriv ℝ (φ : E → ℝ) x v • f x) ∂μ := by simp
+    _ = e (∫ x, lineDeriv ℝ (φ : E → ℝ) x v • f x ∂μ) := e.integral_comp_comm _
+    _ = e (-∫ x, (φ : E → ℝ) x • D x v ∂μ) := by
+      rw [hv.integral_lineDeriv_smul_eq_neg_integral_smul φ]
+    _ = -∫ x, (φ : E → ℝ) x • e (D x v) ∂μ := by
+      rw [map_neg, ← e.integral_comp_comm]
+      simp
+
+/-- Multiplying a scalar weak Fréchet differentiable function by a fixed vector preserves weak
+Fréchet differentiability. -/
+theorem HasWeakFDerivOn.smul_const [CompleteSpace F] {a : E → ℝ} {Da : E → E →L[ℝ] ℝ}
+    (ha : HasWeakFDerivOn μ Ω a Da) (v : F) :
+    HasWeakFDerivOn μ Ω (fun x => a x • v) (fun x => (Da x).smulRight v) := by
+  rw [show (fun x => (Da x).smulRight v) =
+    fun x => ((ContinuousLinearMap.id ℝ ℝ).smulRight v).comp (Da x) by ext x w; simp]
+  exact ha.clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight v)
 
 /-- **Weak derivatives commute with continuous linear maps, for `Lᵖ` classes.** If `D` is a weak
 derivative of `f` on `Ω`, then `M ∘ D` is a weak derivative of `M ∘ f`. -/

@@ -13,6 +13,7 @@ import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.W1p
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
 import TauCeti.MeasureTheory.Function.LpSeminorm.Const
+import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!

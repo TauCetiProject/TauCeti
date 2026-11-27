@@ -225,7 +225,7 @@ theorem exists_eLpNormWkp_le_of_chartValueL_ae_eq (k : ℕ) :
     _ ≤ ∑ j, eLpNormWkp p U k (fun y ↦ L j (coordL j (f y))) :=
         eLpNormWkp_sum_le (Fact.out : 1 ≤ p)
     _ ≤ ∑ j, ‖L j‖ₑ * ((k + 1 : ℝ≥0∞) * ENNReal.ofReal ‖w i‖) :=
-        Finset.sum_le_sum fun j _ ↦ (eLpNormWkp_clm_comp_le (L j)).trans (by gcongr; exact hj j)
+        Finset.sum_le_sum fun j _ ↦ (L j).eLpNormWkp_comp_le.trans (by gcongr; exact hj j)
     _ ≤ ∑ j, (‖finBasis ℝ F j‖₊ : ℝ≥0∞) * ((k + 1 : ℝ≥0∞) * ENNReal.ofReal ‖w i‖) := by
         gcongr with j
         rw [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
@@ -250,7 +250,7 @@ theorem exists_ofReal_norm_le_eLpNormWkp_of_chartValueL_ae_eq (k : ℕ) :
     have hg : ContDiffOn ℝ k (fun y ↦ coordL j (f y)) U :=
       (coordL j).contDiff.comp_contDiffOn hf
     have hv := C.value_ae_eq_coordL hw j
-    refine le_trans ?_ (eLpNormWkp_clm_comp_le (coordL j))
+    refine le_trans ?_ (coordL j).eLpNormWkp_comp_le
     rw [eLpNormWkp_eq_sum_eLpNorm_iteratedFDeriv U.isOpen k hg]
     refine (ENNReal.ofReal_le_ofReal
       (Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k (w i j) hg hv)).trans ?_

@@ -116,7 +116,7 @@ private theorem exists_eLpNormWkp_one_closedBall_half_re_cauchyTransform_le (hr 
     ext w
     simp [A]
   rw [hA, mul_assoc]
-  exact (eLpNormWkp_clm_comp_le A).trans (by gcongr; exact hTw.trans (by gcongr))
+  exact A.eLpNormWkp_comp_le.trans (by gcongr; exact hTw.trans (by gcongr))
 
 /-- The harmonic part on one disc: if `u - w` is weakly harmonic on `B(c, R)`, its `W^{1,r}` norm
 on the smaller disc `B(c, ρ)` is bounded by a multiple of `‖u‖_{L^q} + ‖w‖_{Lʳ}` on
@@ -276,7 +276,7 @@ private theorem exists_eLpNormWkp_one_ball_le {V : Type*} [NormedAddCommGroup V]
         exact eLpNormWkp_sum_le hr.le
     _ ≤ ∑ i, ‖S i‖ₑ * (C * (‖L i‖ₑ * X)) := by
         gcongr with i
-        exact (eLpNormWkp_clm_comp_le (S i)).trans (by gcongr; exact hcoord i)
+        exact (S i).eLpNormWkp_comp_le.trans (by gcongr; exact hcoord i)
     _ = (∑ i, ‖S i‖ₑ * ‖L i‖ₑ) * C * X := by
         rw [Finset.sum_mul, Finset.sum_mul]
         exact Finset.sum_congr rfl fun i _ ↦ by ring

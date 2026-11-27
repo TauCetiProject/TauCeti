@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
+public import TauCeti.Topology.Sets.Opens
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
@@ -29,11 +30,13 @@ defaulting to `volume`, as for `MeasureTheory.MemLp`. Strong measurability is pa
 since `MeasureTheory.MemLp` includes it, so for a Banach-valued `f` the class is the Bochner one.
 
 This file supplies the basic API for every source with a measure: restriction to smaller sets,
-a.e. strong measurability on locally closed sets, almost-everywhere and setwise
-congruence, linearity, finite-basis coordinate testing (`Module.Basis.memLpLoc_iff`),
-continuous-linear composition, multiplication by continuous
-factors (with extension by zero for factors supported in `U`, and global `Lᵖ` membership for
-compactly supported ones), composition of local `Lᵖ` operator families with continuous ones,
+a.e. strong measurability on locally closed or σ-compact sets, pointwise norm and strong
+measurability characterization (`TauCeti.memLpLoc_iff_aestronglyMeasurable_and_norm`),
+almost-everywhere and setwise congruence, linearity, finite-basis coordinate testing
+(`Module.Basis.memLpLoc_iff`), continuous-linear composition and scalar-function times fixed-vector
+scaling (`TauCeti.MemLpLoc.smul_const`), multiplication by continuous factors (with extension by
+zero for factors supported in `U`, and global `Lᵖ` membership for compactly supported ones),
+composition of local `Lᵖ` operator families with continuous ones,
 Hölder's inequality on compact sets (`TauCeti.MemLpLoc.clm_apply`), decreasing the integrability
 exponent, and comparison with local integrability. A locally `Lᵖ` function vanishing off a compact
 subset of `U` is globally `Lᵖ`. Continuous functions, open half-space indicators
@@ -56,7 +59,8 @@ homeomorphism, which carries the class for `μ` to the class for the image measu
 (`Homeomorph.memLpLoc_comp_iff`). Since the image of an additive Haar measure under a continuous
 linear equivalence is an additive Haar measure, a continuous linear equivalence `E ≃L[ℝ] E₁` onto
 a finite-dimensional space carries the class of `E₁` to that of `E` for any choice of Haar
-measures (`ContinuousLinearEquiv.memLpLoc_comp_right_iff`). Thus the class on a finite-dimensional
+measures (`ContinuousLinearEquiv.memLpLoc_comp_right_iff`). Translation and real-affine invariance
+live in `TauCeti.MeasureTheory.Function.MemLpLoc.Haar`. Thus the class on a finite-dimensional
 space needs no inner product or preferred basis.
 -/
 
@@ -175,6 +179,45 @@ theorem MemLpLoc.neg (hf : MemLpLoc p U f μ) : MemLpLoc p U (-f) μ :=
 /-- Local `Lᵖ` membership is closed under subtraction. -/
 theorem MemLpLoc.sub (hf : MemLpLoc p U f μ) (hg : MemLpLoc p U g μ) :
     MemLpLoc p U (f - g) μ := fun K hK hc => (hf K hK hc).sub (hg K hK hc)
+
+/-- Local `Lᵖ` membership passes to the pointwise norm. -/
+theorem MemLpLoc.norm (hf : MemLpLoc p U f μ) : MemLpLoc p U (fun x => ‖f x‖) μ :=
+  fun K hK hc => (hf K hK hc).norm
+
+/-- A locally `Lᵖ` function on a σ-compact set is a.e. strongly measurable there, for every
+exponent `p`. -/
+theorem MemLpLoc.aestronglyMeasurable (hf : MemLpLoc p U f μ) (hU : IsSigmaCompact U) :
+    AEStronglyMeasurable f (μ.restrict U) := by
+  obtain ⟨K, hKc, rfl⟩ := hU
+  exact aestronglyMeasurable_iUnion_iff.2 fun n =>
+    (hf (K n) (Set.subset_iUnion K n) (hKc n)).aestronglyMeasurable
+
+/-- A locally `Lᵖ` function on an open subset of a locally compact second-countable space is a.e.
+strongly measurable there, for every exponent `p`. -/
+theorem MemLpLoc.aestronglyMeasurable_of_isOpen [LocallyCompactSpace X] [SecondCountableTopology X]
+    {Ω : Opens X} (hf : MemLpLoc p Ω f μ) : AEStronglyMeasurable f (μ.restrict Ω) := by
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  exact hf.aestronglyMeasurable (isSigmaCompact_iff_sigmaCompactSpace.2 inferInstance)
+
+/-- **Strong measurability and norm integrability characterize local `Lᵖ`.** On a σ-compact set,
+a function lies in `MemLpLoc p U` exactly when it is a.e. strongly measurable on `U` and its
+pointwise norm lies in `MemLpLoc p U`. In a non-separable Banach codomain, strong measurability
+cannot be omitted. -/
+theorem memLpLoc_iff_aestronglyMeasurable_and_norm (hU : IsSigmaCompact U) :
+    MemLpLoc p U f μ ↔
+      AEStronglyMeasurable f (μ.restrict U) ∧ MemLpLoc p U (fun x => ‖f x‖) μ := by
+  refine ⟨fun hf => ⟨hf.aestronglyMeasurable hU, hf.norm⟩, fun ⟨hm, hn⟩ K hK hc => ?_⟩
+  exact (memLp_norm_iff (hm.mono_measure (Measure.restrict_mono hK le_rfl))).1 (hn K hK hc)
+
+/-- On an open subset of a locally compact second-countable space, local `Lᵖ` membership is
+equivalent to a.e. strong measurability together with local `Lᵖ` membership of the norm. -/
+theorem memLpLoc_iff_aestronglyMeasurable_and_norm_of_isOpen [LocallyCompactSpace X]
+    [SecondCountableTopology X] {Ω : Opens X} :
+    MemLpLoc p Ω f μ ↔
+      AEStronglyMeasurable f (μ.restrict Ω) ∧ MemLpLoc p Ω (fun x => ‖f x‖) μ := by
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  exact memLpLoc_iff_aestronglyMeasurable_and_norm
+    (isSigmaCompact_iff_sigmaCompactSpace.2 inferInstance)
 
 /-- A finite sum of locally `Lᵖ` functions is locally `Lᵖ`, without a completeness assumption. -/
 theorem MemLpLoc.sum {ι : Type*} (s : Finset ι) {f : ι → X → F}
@@ -311,6 +354,12 @@ theorem MemLpLoc.const_smul (hf : MemLpLoc p U f μ) (c : ℝ) : MemLpLoc p U (c
 theorem MemLpLoc.clm_comp (hf : MemLpLoc p U f μ) (A : F →L[ℝ] G) :
     MemLpLoc p U (fun z => A (f z)) μ :=
   fun K hK hc => A.comp_memLp' (hf K hK hc)
+
+/-- Multiplying a scalar locally `Lᵖ` function by a fixed vector preserves local `Lᵖ`
+membership. -/
+theorem MemLpLoc.smul_const {a : X → ℝ} (ha : MemLpLoc p U a μ) (v : F) :
+    MemLpLoc p U (fun x => a x • v) μ := by
+  simpa using ha.clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight v)
 
 /-- A continuous linear change of codomain preserves and reflects local `Lᵖ` membership. -/
 @[simp]

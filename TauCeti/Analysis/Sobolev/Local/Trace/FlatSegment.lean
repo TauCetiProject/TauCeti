@@ -452,7 +452,7 @@ theorem HasRealAxisTraceIn.of_tendsto {us : ℕ → ℂ → V}
   have : ((fun z => ℓ (us n z)) - fun z => ℓ (u z)) = fun z => ℓ ((us n - u) z) :=
     funext fun z => by simp
   rw [this]
-  exact eLpNormWkp_clm_comp_le ℓ
+  exact ℓ.eLpNormWkp_comp_le
 
 end Subspace
 

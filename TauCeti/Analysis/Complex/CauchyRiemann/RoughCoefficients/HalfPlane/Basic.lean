@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.Wirtinger.HalfPlaneAdjoint.Basic
 import TauCeti.Analysis.Complex.Wirtinger.HalfPlaneAdjoint.Dual
 import TauCeti.Analysis.Distribution.TestFunction.Inner
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!

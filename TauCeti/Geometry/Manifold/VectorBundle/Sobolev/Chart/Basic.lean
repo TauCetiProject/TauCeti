@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.Sobolev.ChartTransition
-import TauCeti.Analysis.Sobolev.Local.Examples
+import TauCeti.Analysis.Sobolev.Local.Jump
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Analysis.Sobolev.Local.SmoothCoefficients
 
@@ -234,7 +234,8 @@ theorem not_ae_eq_indicator_re_pos (w : SobolevSection A volume p 1) {s : ∀ x,
     (hz₀ : z₀ ∈ φ.target ∩ φ.symm ⁻¹' e.baseSet) (hre : z₀.re = 0) :
     ¬ (fun y ↦ ℓ (e ⟨φ.symm y, s (φ.symm y)⟩).2) =ᵐ[volume.restrict
         (φ.target ∩ φ.symm ⁻¹' e.baseSet)] {z : ℂ | 0 < z.re}.indicator fun _ ↦ (1 : ℝ) := fun h ↦
-  not_memWkpLoc_indicator_re_pos (k := 0)
+  not_memWkpLoc_indicator_pos (ℓ := Complex.reCLM)
+    (fun h ↦ one_ne_zero (α := ℝ) (by simpa using congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L 1) h))
     ((φ.isOpen_inter_preimage_symm e.open_baseSet).interior_eq.symm ▸ hz₀) hre
     (((memWkpLoc_trivialization_comp_chart_symm w hs hφ e hn
       (by exact_mod_cast ENat.one_le_iff_ne_zero_withTop.2 hn)).clm_comp ℓ).congr_ae h)

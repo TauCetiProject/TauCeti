@@ -348,7 +348,7 @@ theorem exists_eLpNormWkp_comp_le_of_two_lt_mul_of_shape (T : Set ℂ → Set �
   calc
     _ ≤ ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ *
         eLpNormWkp p (T U) k (fun z => B (e (g (u z))) (c.symm 1)) := by
-      convert eLpNormWkp_clm_comp_le (e.symm : ULift.{uF} G →L[ℝ] G) using 2
+      convert (e.symm : ULift.{uF} G →L[ℝ] G).eLpNormWkp_comp_le (E := ℂ) using 2
       ext z
       simp [B]
     _ ≤ ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ * (C * (1 + eLpNormWkp p (T Ω) k u) ^ k * Y) := by

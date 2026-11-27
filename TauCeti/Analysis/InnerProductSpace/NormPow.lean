@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormPow
+public import Mathlib.Analysis.Normed.Module.Normalize
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 public import Mathlib.LinearAlgebra.Trace
@@ -70,6 +71,9 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
 * `inv_norm_le_norm_fderiv_fderiv_norm`: the second derivative of the norm is at least `‖x‖⁻¹`
   in operator norm when a nonzero direction is orthogonal to `x`.
+* `inv_norm_le_norm_fderiv_normalize`, `inv_norm_le_norm_fderiv_normalize_of_one_lt_finrank`:
+  the derivative of `NormedSpace.normalize` has operator norm at least `‖x‖⁻¹` when a nonzero
+  direction is orthogonal to `x`, and in particular whenever `1 < dim E`.
 * `norm_iteratedFDeriv_two_norm_rpow_sub_le`: for `p ≤ 3`, the Hessian changes by
   `O(‖a - b‖ ‖b‖ ^ (p - 3))` between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
 * `iteratedFDeriv_two_norm_rpow_zero`, `norm_iteratedFDeriv_two_norm_rpow_le_of_two_lt`: for
@@ -544,6 +548,43 @@ theorem inv_norm_le_norm_fderiv_fderiv_norm {x v : E} (hx : x ≠ 0) (hv : v ≠
   rw [hvv, Real.norm_of_nonneg (by positivity), div_le_iff₀ hx0] at hle
   rw [inv_le_iff_one_le_mul₀ hx0]
   nlinarith [mul_pos hv0 hv0]
+
+/-- Away from the origin, the derivative of `NormedSpace.normalize` has operator norm at least
+`‖x‖⁻¹` when some nonzero direction `v` is orthogonal to `x`: on `v` it scales by `‖x‖⁻¹`. -/
+theorem inv_norm_le_norm_fderiv_normalize {x v : E} (hx : x ≠ 0) (hv : v ≠ 0)
+    (hxv : ⟪x, v⟫_ℝ = 0) : ‖x‖⁻¹ ≤ ‖fderiv ℝ (NormedSpace.normalize : E → E) x‖ := by
+  have hnorm : (NormedSpace.normalize : E → E) = fun y : E ↦ ‖y‖ ^ (-1 : ℝ) • y :=
+    funext fun y ↦ by simp [NormedSpace.normalize, Real.rpow_neg_one]
+  have hu : HasFDerivAt (NormedSpace.normalize : E → E)
+      (‖x‖⁻¹ • ContinuousLinearMap.id ℝ E +
+        ((-1 * ‖x‖ ^ (-1 - 2 : ℝ)) • innerSL ℝ x).smulRight x) x := by
+    rw [hnorm]
+    simpa only [Real.rpow_neg_one] using hasFDerivAt_norm_rpow_smul_self_of_ne (-1) hx
+  have hv0 : 0 < ‖v‖ := norm_pos_iff.2 hv
+  have happ : fderiv ℝ (NormedSpace.normalize : E → E) x v = ‖x‖⁻¹ • v := by
+    rw [hu.fderiv]
+    simp [hxv]
+  have hbound : ‖x‖⁻¹ * ‖v‖ ≤ ‖fderiv ℝ (NormedSpace.normalize : E → E) x‖ * ‖v‖ := by
+    calc ‖x‖⁻¹ * ‖v‖ = ‖‖x‖⁻¹ • v‖ := by rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+      _ = ‖fderiv ℝ (NormedSpace.normalize : E → E) x v‖ := by rw [happ]
+      _ ≤ ‖fderiv ℝ (NormedSpace.normalize : E → E) x‖ * ‖v‖ := ContinuousLinearMap.le_opNorm _ _
+  exact le_of_mul_le_mul_right hbound hv0
+
+/-- Away from the origin on a finite-dimensional real inner product space of dimension at least
+two, the derivative of `NormedSpace.normalize` has operator norm at least `‖x‖⁻¹`. -/
+theorem inv_norm_le_norm_fderiv_normalize_of_one_lt_finrank [FiniteDimensional ℝ E]
+    (hd : 1 < Module.finrank ℝ E) {x : E} (hx : x ≠ 0) :
+    ‖x‖⁻¹ ≤ ‖fderiv ℝ (NormedSpace.normalize : E → E) x‖ := by
+  have horth : (Submodule.span ℝ ({x} : Set E))ᗮ ≠ ⊥ := by
+    intro hbot
+    have hsum := Submodule.finrank_add_finrank_orthogonal (Submodule.span ℝ ({x} : Set E))
+    rw [hbot, finrank_bot, add_zero] at hsum
+    have hle : Module.finrank ℝ (Submodule.span ℝ ({x} : Set E)) ≤ 1 :=
+      (finrank_span_singleton hx).le
+    omega
+  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot horth
+  exact inv_norm_le_norm_fderiv_normalize hx hv0
+    (by rw [real_inner_comm]; exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 hv)
 
 /-- Along the line `s ↦ b + s • d`, the Hessian formula of `x ↦ ‖x‖ ^ p`
 (`TauCeti.iteratedFDeriv_two_norm_rpow_apply`) evaluated on two fixed directions `v`, `w` is

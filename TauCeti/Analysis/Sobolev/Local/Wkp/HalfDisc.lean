@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.Local.Coordinates
 public import TauCeti.Analysis.Sobolev.Local.Wkp
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.Analysis.Sobolev.WeakDeriv.Chain
 import TauCeti.Analysis.Sobolev.Wkp.Chain
+import TauCeti.MeasureTheory.Function.MemLpLoc.HalfPlane
 
 /-!
 # Local Sobolev classes on half-discs and the scalar spaces `W^{k,p}`
@@ -24,14 +27,16 @@ The relatively compact pieces of `U` are the upper halves `W⁺ = W ∩ {0 < im}
 (`TopologicalSpace.Opens.upperHalf W`) of the open sets `W` whose closure is compact and contained
 in `Ω`; such a `W` may meet the real axis. Because the real axis is a null set, `Lᵖ` membership on
 the compact sets of `U` is the same as `Lᵖ` membership on all those upper halves
-(`TauCeti.memLpLoc_inter_setOf_im_nonneg_iff`). The comparison theorem
-`TauCeti.memWkpLoc_inter_setOf_im_nonneg_iff_forall_wkp` then says that a real function lies in
-`MemWkpLoc p U k` exactly when its restriction to every such `W⁺` is represented by an element of
-`Wkp volume W⁺ p k`, and `TauCeti.MemWkpLoc.exists_wkp_upperHalf_iteratedGradient_ae_eq`
-matches the highest recorded derivative with the iterated weak gradients of `u` on
-`Ω ∩ {0 < im}`. The converse direction first obtains the iterated weak gradients on the interior
-from the open-set comparison, then identifies them on each `W⁺` with the derivatives of the given
-Sobolev representative, by uniqueness of weak derivatives, to get the `Lᵖ` bounds up to the axis.
+(`TauCeti.memLpLoc_inter_setOf_im_nonneg_iff` in
+`TauCeti.MeasureTheory.Function.MemLpLoc.HalfPlane`).
+The comparison theorem `TauCeti.memWkpLoc_inter_setOf_im_nonneg_iff_forall_wkp` then says that a
+real function lies in `MemWkpLoc p U k` exactly when its restriction to every such `W⁺` is
+represented by an element of `Wkp volume W⁺ p k`, and
+`TauCeti.MemWkpLoc.exists_wkp_upperHalf_iteratedGradient_ae_eq` matches the highest recorded
+derivative with the iterated weak gradients of `u` on `Ω ∩ {0 < im}`. The converse direction first
+obtains the iterated weak gradients on the interior from the open-set comparison, then identifies
+them on each `W⁺` with the derivatives of the given Sobolev representative, by uniqueness of weak
+derivatives, to get the `Lᵖ` bounds up to the axis.
 
 For the half-disc `D_r(c) ∩ {0 ≤ im}` the comparison runs over the smaller half-discs
 `D_s(c) ∩ {0 < im}`, `s < r` (`TauCeti.memWkpLoc_ball_inter_setOf_im_nonneg_iff`); in particular a
@@ -56,9 +61,7 @@ coordinatewise (`Module.Basis.memWkpLoc_inter_setOf_im_nonneg_iff_forall_wkp`).
 * L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.2.
 -/
 
-public section
-
-noncomputable section
+public noncomputable section
 
 open Metric Set MeasureTheory TopologicalSpace Filter
 open scoped ENNReal

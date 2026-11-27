@@ -146,7 +146,7 @@ theorem exists_eLpNormWkp_succ_le_of_isWeakCauchyRiemannOn {p : ℝ≥0} (hp : 2
   have hcA (z : ℂ) : c (A z) = (e : V →L[ℝ] E) ∘L A z ∘L (e.symm : E →L[ℝ] V) := by
     simp [c, ← ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
   have hA' : eLpNormWkp p Ω (max k 1) (fun z => c (A z)) ≤ ↑(‖c‖₊ * M) :=
-    (eLpNormWkp_clm_comp_le c).trans (by rw [eNorm_eq_nnNorm, ENNReal.coe_mul]; gcongr)
+    c.eLpNormWkp_comp_le.trans (by rw [eNorm_eq_nnNorm, ENNReal.coe_mul]; gcongr)
   have hA1 : MemWkpLoc p Ω 1 (fun z => c (A z)) :=
     (memWkpLoc_of_eLpNormWkp_ne_top (ne_top_of_le_ne_top ENNReal.coe_ne_top hA')).of_le
       (le_max_right k 1)
@@ -165,13 +165,13 @@ theorem exists_eLpNormWkp_succ_le_of_isWeakCauchyRiemannOn {p : ℝ≥0} (hp : 2
     hc hA2' hA' (by simp [eLpNormWkp_zero_fun])
     (hf.clm_comp (e : V →L[ℝ] E))
   -- Transport the estimate back to `V`.
-  have hf' := eLpNormWkp_clm_comp_le (p := p) (U := Ω) (k := k) (e : V →L[ℝ] E) (f := f)
-  have hu' := eLpNormWkp_clm_comp_le (p := p) (U := Ω) (k := 0) (e : V →L[ℝ] E) (f := u)
+  have hf' := (e : V →L[ℝ] E).eLpNormWkp_comp_le (p := p) (U := Ω) (k := k) (f := f)
+  have hu' := (e : V →L[ℝ] E).eLpNormWkp_comp_le (p := p) (U := Ω) (k := 0) (f := u)
   rw [eLpNormWkp_zero, eLpNormWkp_zero] at hu'
   calc
     _ = eLpNormWkp p U (k + 1) (fun z => (e.symm : E →L[ℝ] V) (e (u z))) := by simp
     _ ≤ ‖(e.symm : E →L[ℝ] V)‖ₑ * eLpNormWkp p U (k + 1) (fun z => e (u z)) :=
-      eLpNormWkp_clm_comp_le _
+      ContinuousLinearMap.eLpNormWkp_comp_le _
     _ ≤ ‖(e.symm : E →L[ℝ] V)‖ₑ * (C * (‖(e : V →L[ℝ] E)‖ₑ * eLpNormWkp p Ω k f +
         ‖(e : V →L[ℝ] E)‖ₑ * eLpNorm u p (volume.restrict Ω))) := by
       gcongr
@@ -372,7 +372,7 @@ private theorem exists_forall_wkp_repr_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {k :
   have hcR : ‖c‖ₑ * (R : ℝ≥0∞) ≠ ∞ := ENNReal.mul_ne_top eNorm_ne_top ENNReal.coe_ne_top
   refine ⟨(‖c‖ₑ * R).toReal, fun n => ?_⟩
   have hcn : eLpNormWkp p W k (fun z => c (u n z)) ≤ ‖c‖ₑ * R :=
-    (eLpNormWkp_clm_comp_le c).trans (by gcongr; exact hR n)
+    c.eLpNormWkp_comp_le.trans (by gcongr; exact hR n)
   obtain ⟨y, hy, hyn⟩ := exists_wkp_norm_le_eLpNormWkp (ne_top_of_le_ne_top hcR hcn)
   exact ⟨y, (ENNReal.ofReal_le_iff_le_toReal hcR).1 (hyn.trans hcn), by simpa [c] using hy⟩
 

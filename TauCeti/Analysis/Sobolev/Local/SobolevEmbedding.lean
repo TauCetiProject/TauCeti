@@ -143,7 +143,7 @@ private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_of_w1p [Fact (1 ≤ (q : �
         exact (A i).eLpNorm_comp_le
     _ ≤ ∑ i, ‖A i‖ₑ * (C * (‖ℓ i‖ₑ * eLpNormWkp q W 1 u)) := by
         gcongr with i
-        exact (hC _).trans (by gcongr; exact eLpNormWkp_clm_comp_le (ℓ i))
+        exact (hC _).trans (by gcongr; exact (ℓ i).eLpNormWkp_comp_le)
     _ = (∑ i, ‖A i‖₊ * C * ‖ℓ i‖₊ : ℝ≥0) * eLpNormWkp q W 1 u := by
         push_cast
         rw [Finset.sum_mul]

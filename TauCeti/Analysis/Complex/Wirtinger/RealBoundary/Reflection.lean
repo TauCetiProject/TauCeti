@@ -26,6 +26,7 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Green.HalfPlane
 import TauCeti.Analysis.Calculus.TangentCone.Basic
+import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Complex.Wirtinger.Similarity.Examples
 
 

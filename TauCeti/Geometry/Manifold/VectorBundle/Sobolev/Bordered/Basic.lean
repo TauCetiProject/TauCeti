@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Sobolev.Local.Wkp
 import TauCeti.Analysis.Sobolev.Wkp.Classical
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Sobolev spaces of sections over surfaces with boundary

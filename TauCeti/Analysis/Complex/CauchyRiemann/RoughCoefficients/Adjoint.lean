@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
+import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The formal adjoint of a real Cauchy–Riemann operator as a Cauchy–Riemann operator
@@ -278,7 +280,7 @@ theorem HasWeakFDerivOn.crReflectedAdjoint (hJ : HasWeakFDerivOn volume Ω J DJ)
     (hΩ : MapsTo (fun z : ℂ => -conj z) Ω' Ω) :
     HasWeakFDerivOn volume Ω' (crReflectedAdjointCoeff J) (crReflectedAdjointDeriv DJ) := by
   rw [crReflectedAdjointCoeff_eq_comp, crReflectedAdjointDeriv_eq_comp]
-  simpa using (hJ.comp_continuousLinearEquiv_add negConj 0
+  simpa using (hJ.comp_continuousLinearEquiv_add (μ := volume) negConj 0
     (by simpa [negConj_apply] using hΩ)).clm_comp
     (-(adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V))
 

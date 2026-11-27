@@ -96,16 +96,16 @@ theorem exists_eLpNormWkp_succ_le_of_contDiffOn (hp : 1 < p) (hp_top : p ≠ ⊤
     (hasWeakConjWirtingerDerivOn_of_contDiffOn
       (hue.of_le (by exact_mod_cast Nat.le_add_left 1 k)))
   rw [hdbu] at h₁
-  have h₂ := eLpNormWkp_clm_comp_le (p := p) (U := Ω') (k := 0) (f := u) eℝ
+  have h₂ := eℝ.eLpNormWkp_comp_le (p := p) (U := Ω') (k := 0) (f := u)
   rw [eLpNormWkp_zero, eLpNormWkp_zero] at h₂
   have hu' : eLpNormWkp p W (k + 1) u = eLpNormWkp p W (k + 1) (fun z ↦ sℝ (ue z)) :=
     congrArg _ (funext fun z ↦ by simp [sℝ, ue, eℝ])
-  refine hu'.trans_le ((eLpNormWkp_clm_comp_le sℝ).trans ?_)
+  refine hu'.trans_le (sℝ.eLpNormWkp_comp_le.trans ?_)
   calc ‖sℝ‖ₑ * eLpNormWkp p W (k + 1) ue
       ≤ ‖sℝ‖ₑ * (C₀ * (‖eℝ‖ₑ * eLpNormWkp p Ω' k (fun z ↦ complexAntilinearPartL
           (fderiv ℝ u z) 1) + ‖eℝ‖ₑ * eLpNorm u p (volume.restrict Ω'))) := by
         gcongr
-        exact h₁.trans (by gcongr _ * ?_; exact add_le_add (eLpNormWkp_clm_comp_le eℝ) h₂)
+        exact h₁.trans (by gcongr _ * ?_; exact add_le_add eℝ.eLpNormWkp_comp_le h₂)
     _ = _ := by
         simp only [eNorm_eq_nnNorm]
         push_cast
@@ -140,7 +140,7 @@ theorem exists_eLpNormWkp_le_of_eqOn_complexAntilinearPartL_add (hp : 1 < p) (hp
       =ᵐ[volume.restrict Ω'] fun z ↦ e₁ (g z + (-Z z) (u z)) from
         (ae_restrict_mem Ω'.isOpen.measurableSet).mono fun z hz ↦ by
           simp [e₁, hg z (hΩ'U hz)])]
-    refine (eLpNormWkp_clm_comp_le e₁).trans ?_
+    refine e₁.eLpNormWkp_comp_le.trans ?_
     gcongr
     refine (eLpNormWkp_add_le hp.le (f := g) (g := fun z ↦ (-Z z) (u z))).trans
       (add_le_add (eLpNormWkp_mono_set hΩ'U) ?_)

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Local.Reflection.Odd
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Leibniz
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.MemLpLoc.Inner
 
 /-!

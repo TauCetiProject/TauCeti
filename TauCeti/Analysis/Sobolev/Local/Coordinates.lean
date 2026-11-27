@@ -29,10 +29,6 @@ For maps on `ℂ`, a weak derivative `D` is likewise tested through its two part
 `W^{k+1,q}_loc(U)` by local `L^q` membership and these two partial derivatives lying in
 `W^{k,q}_loc(U)`, for an arbitrary codomain.
 
-On an open set, the precise representative of a locally `Lᵖ` map is reconstructed from the
-precise representatives of its coordinates wherever these are continuous
-(`Module.Basis.eqOn_preciseRepresentative_sum_repr`).
-
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -45,16 +41,14 @@ open TauCeti MeasureTheory
 
 namespace Module.Basis
 
-variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [NormedAddCommGroup G] [NormedSpace ℝ G]
-  {p : ENNReal} {U : Set ℂ} {k : ℕ} {f : ℂ → F}
-
-variable {ι : Type*} [Finite ι]
+variable {E F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Finite ι]
+  {p : ENNReal}
 
 /-- Local Sobolev membership of every order can be tested in any finite basis.
 Scalar coordinate witnesses may be chosen independently; finite sums reconstruct the map
 in the same Sobolev class. -/
-theorem memWkpLoc_iff (b : Module.Basis ι ℝ F) :
+theorem memWkpLoc_iff [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasureSpace E]
+    [OpensMeasurableSpace E] {U : Set E} {k : ℕ} {f : E → F} (b : Module.Basis ι ℝ F) :
     MemWkpLoc p U k f ↔ ∀ i, MemWkpLoc p U k (fun z => b.repr (f z) i) := by
   classical
   let : Fintype ι := Fintype.ofFinite ι
@@ -70,42 +64,15 @@ theorem memWkpLoc_iff (b : Module.Basis ι ℝ F) :
     simpa only [b.sum_repr] using hs
 
 /-- Real functions `v i` in `MemWkpLoc p U k`, one for each vector of a finite basis `b` of `F`,
-are the coordinates in `b` of a single function `ℂ → F` in `MemWkpLoc p U k`. -/
-theorem exists_memWkpLoc_repr_eq (b : Module.Basis ι ℝ F) {v : ι → ℂ → ℝ}
+are the coordinates in `b` of a single function `E → F` in `MemWkpLoc p U k`. -/
+theorem exists_memWkpLoc_repr_eq [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasureSpace E]
+    [OpensMeasurableSpace E] {U : Set E} {k : ℕ} (b : Module.Basis ι ℝ F) {v : ι → E → ℝ}
     (hv : ∀ i, MemWkpLoc p U k (v i)) :
-    ∃ V : ℂ → F, MemWkpLoc p U k V ∧ ∀ i, (fun z => b.repr (V z) i) = v i := by
+    ∃ V : E → F, MemWkpLoc p U k V ∧ ∀ i, (fun z => b.repr (V z) i) = v i := by
   have := Fintype.ofFinite ι
   have hrepr : ∀ i, (fun z => b.repr (b.equivFun.symm fun j => v j z) i) = v i := fun i =>
     funext fun z => by rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
   exact ⟨_, b.memWkpLoc_iff.2 fun i => (hrepr i).symm ▸ hv i, hrepr⟩
-
-end Module.Basis
-
-namespace Module.Basis
-
-open TopologicalSpace TauCeti.MeasureTheory
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Fintype ι]
-  {p : ENNReal} {Ω : Opens ℂ} {f : ℂ → F}
-
-/-- On an open set `Ω`, the precise representative of a locally `Lᵖ` map, `1 ≤ p`, whose
-coordinates in a finite basis `b` have precise representatives continuous on `Ω`, is the
-combination of those precise representatives with the vectors of `b`. -/
-theorem eqOn_preciseRepresentative_sum_repr (b : Module.Basis ι ℝ F) (hp : 1 ≤ p)
-    (hf : MemLpLoc p Ω f)
-    (hc : ∀ i, ContinuousOn (preciseRepresentative volume fun z => b.repr (f z) i) Ω) :
-    Set.EqOn (preciseRepresentative volume f)
-      (fun z => ∑ i, preciseRepresentative volume (fun w => b.repr (f w) i) z • b i) Ω := by
-  have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
-  refine eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
-    (hf.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed) ?_
-    (continuousOn_finsetSum _ fun i _ => (hc i).smul continuousOn_const)
-  have hcoord : ∀ i, (fun z => b.repr (f z) i) =ᵐ[volume.restrict Ω]
-      preciseRepresentative volume fun z => b.repr (f z) i := fun i =>
-    (b.memLpLoc_iff.1 hf i).ae_eq_preciseRepresentative hp
-  filter_upwards [ae_all_iff.2 hcoord] with z hz
-  conv_lhs => rw [← b.sum_repr (f z)]
-  exact Finset.sum_congr rfl fun i _ => by rw [← hz i]
 
 end Module.Basis
 

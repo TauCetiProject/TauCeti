@@ -241,7 +241,7 @@ theorem exists_eLpNormWkp_succ_comp_le_of_norm_le (hp : 2 < p) (k : ℕ) (B : �
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_comp_le_of_norm_le_aux.{uF, uG} (F := F)
     (G := ULift.{uF} G) hp k B hU hUΩ
   refine ⟨C, fun g W u hW hg huc huW hB => ?_⟩
-  rw [← eLpNormWkp_linearIsometryEquiv_comp e]
+  rw [← e.eLpNormWkp_comp]
   refine hC (fun x => e (g x)) W u hW (e.toContinuousLinearEquiv.contDiff.comp_contDiffOn hg) huc
     huW fun z hz i hi => ?_
   rw [← Function.comp_def e g, e.norm_iteratedFDeriv_comp_left]
