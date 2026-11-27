@@ -569,7 +569,7 @@ private theorem exists_nhds_homeomorph_of_mem_yRecords {w : M × M × M × M}
       (continuousOn_id.prodMk
         (((hX₁.continuousOn_lowerLevelPoint hf₁ hc₁).mono fun x hx ↦ (hS x hx).2.1).prodMk
           ((hX₂.continuousOn_lowerLevelPoint hf₂ hc₂).mono fun x hx ↦ (hS x hx).2.2))))
-    (continuous_fst.comp continuous_snd) (fun _ _ ↦ rfl)
+    (continuous_fst.comp continuous_snd).continuousOn (fun _ _ ↦ rfl)
     (isLocallyClosed_iff_isOpen_coborder.2 (h.finite_closure_diff_yRecords h₀ h₁ h₂ hf₀ hf₁ hf₂
       hind hc₀ hgap₀ hc₁ hgap₁ hc₂ hgap₂).isClosed.isOpen_compl).isOpen_preimage_val_closure
     hw (mem_image_of_mem _ hx₀)

@@ -333,7 +333,7 @@ private theorem exists_nhds_homeomorph_of_mem_pairRecords {q : M × M × M}
   exact exists_nhds_homeomorph_of_leftInvOn (F := L) (by omega)
     (((hX₀.continuousOn_upperLevelPoint hc₀).mono inter_subset_left).prodMk
       (continuousOn_id.prodMk ((hX₁.continuousOn_lowerLevelPoint hf₁ hc₁).mono inter_subset_right)))
-    (continuous_fst.comp continuous_snd) (fun _ _ ↦ rfl)
+    (continuous_fst.comp continuous_snd).continuousOn (fun _ _ ↦ rfl)
     (isLocallyClosed_iff_isOpen_coborder.2 (h.finite_closure_diff_pairRecords h₀ h₁ hf₀ hf₁ hind
       hc₀ hgap₀ hc₁ hgap₁).isClosed.isOpen_compl).isOpen_preimage_val_closure
     hq (mem_image_of_mem _ hx₀)

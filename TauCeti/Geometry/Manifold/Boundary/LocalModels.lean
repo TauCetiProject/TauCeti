@@ -40,7 +40,7 @@ on `[0, δ)` of `TauCeti.Topology.Instances.Real.IcoScale`.
 When a set `P` is open in its closure and is a copy of a one-dimensional manifold, its closure is
 locally homeomorphic to open subsets of `ℝ` at the points of `P`
 (`TauCeti.exists_nhds_homeomorph_of_isOpen_preimage_val`), in particular when `P` records the
-points of such a manifold along a map with a continuous left inverse
+points of such a manifold along a map with a left inverse continuous on the records
 (`TauCeti.exists_nhds_homeomorph_of_leftInvOn`).
 
 ## References
@@ -206,12 +206,12 @@ theorem exists_nhds_homeomorph_of_isOpen_preimage_val {P : Set X}
 
 /-- **A one-dimensional set recorded in another space.** Let `S` be a set in a space `Y`, charted
 on a one-dimensional space `F`, and record its points by a map `ρ : Y → X` continuous on `S`, with a
-continuous left inverse `π` on `S`. If the records `ρ '' S` are open in their closure, every record
-has a neighbourhood in that closure homeomorphic to an open subset of `ℝ`. This is
-`TauCeti.exists_nhds_homeomorph_of_isOpen_preimage_val` for the copy `ρ '' S` of `S`. -/
+left inverse `π` on `S` that is continuous on the records `ρ '' S`. If the records are open in their
+closure, every record has a neighbourhood in that closure homeomorphic to an open subset of `ℝ`.
+This is `TauCeti.exists_nhds_homeomorph_of_isOpen_preimage_val` for the copy `ρ '' S` of `S`. -/
 theorem exists_nhds_homeomorph_of_leftInvOn {Y : Type*} [TopologicalSpace Y] {S : Set Y}
     [ChartedSpace F S] (hF : Module.finrank ℝ F = 1) {ρ : Y → X} {π : X → Y}
-    (hρ : ContinuousOn ρ S) (hπ : Continuous π) (hπρ : LeftInvOn π ρ S)
+    (hρ : ContinuousOn ρ S) (hπ : ContinuousOn π (ρ '' S)) (hπρ : LeftInvOn π ρ S)
     (hP : IsOpen ((↑) ⁻¹' (ρ '' S) : Set (closure (ρ '' S)))) {w : X}
     (hw : w ∈ closure (ρ '' S)) (hwP : w ∈ ρ '' S) :
     ∃ N ∈ 𝓝 (⟨w, hw⟩ : closure (ρ '' S)), ∃ V : Set ℝ, IsOpen V ∧ Nonempty (V ≃ₜ N) := by
@@ -223,7 +223,8 @@ theorem exists_nhds_homeomorph_of_leftInvOn {Y : Type*} [TopologicalSpace Y] {S 
       invFun y := ⟨ρ y, mem_image_of_mem ρ y.property⟩
       left_inv := by rintro ⟨_, y, hy, rfl⟩; exact Subtype.ext (congrArg ρ (hπρ hy))
       right_inv y := Subtype.ext (hπρ y.property)
-      continuous_toFun := (hπ.comp continuous_subtypeVal).subtype_mk hmem
+      continuous_toFun :=
+        (hπ.comp_continuous continuous_subtypeVal fun v ↦ v.property).subtype_mk hmem
       continuous_invFun :=
         (hρ.comp_continuous continuous_subtypeVal fun y ↦ y.property).subtype_mk _ } hw hwP
 
