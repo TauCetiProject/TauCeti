@@ -51,9 +51,10 @@ namespace Algebra.EssFiniteType
 variable (R S : Type*) [CommRing R] [Field S] [Algebra R S] [EssFiniteType R S]
 
 /-- A field `S` essentially of finite type over `R` is the fraction field of its finite type
-subalgebra `Algebra.EssFiniteType.subalgebra R S`: it is the localization at a submonoid of
-nonzero elements, and every nonzero element is a unit of `S`. -/
+subalgebra `Algebra.EssFiniteType.subalgebra R S`. -/
 theorem isFractionRing_subalgebra : IsFractionRing (subalgebra R S) S :=
+  -- `S` is the localization at a submonoid of nonzero elements, and every nonzero element of the
+  -- subalgebra is a unit of the field `S`.
   IsLocalization.of_le (submonoid R S) _
     (fun a ha ↦ mem_nonZeroDivisors_of_ne_zero fun h0 ↦ by
       simpa [h0] using IsUnit.mem_submonoid_iff _ |>.mp (Submonoid.mem_comap.mp ha))
