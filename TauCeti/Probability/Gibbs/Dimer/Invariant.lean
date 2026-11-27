@@ -55,7 +55,8 @@ almost invariant event of positive measure gives an invariant dimer Gibbs measur
 (`SimpleGraph.isCompact_setOf_isDimerGibbs`): they are the push-forwards along the inclusion of
 `𝔛(G)` of the Gibbs measures of the quasilocal specification `γ^w`, a compact set. So do the
 invariant ones (`SimpleGraph.isCompact_setOf_mem_dimerGibbsInvariant`), the invariant probability
-measures being weakly closed.
+measures being weakly closed, as `Γ` acts on configurations by continuous maps
+(`TauCeti.continuousConstSMul_of_smul_apply`).
 
 ## References
 
@@ -202,64 +203,49 @@ theorem mem_extremePoints_dimerGibbsInvariant_iff_measure_eq_zero_or_one [Counta
 
 /-- **Conditioning on an invariant event.** If every finite set of edges can be moved off every
 finite set of edges by `Γ`, then for a positive weight an invariant dimer Gibbs measure
-conditioned on a measurable, almost invariant event of positive measure is an invariant dimer
-Gibbs measure. -/
+conditioned on a null measurable, almost invariant event of positive measure is an invariant
+dimer Gibbs measure. -/
 theorem cond_mem_dimerGibbsInvariant
     (hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e) [SMul Γ (G.edgeSet → Bool)]
     (hσ : ∀ (g : Γ) (ω : G.edgeSet → Bool) e, (g • ω) e = ω (g⁻¹ • e)) {w : G.edgeSet → ℝ}
     (hw : ∀ e, 0 < w e) (hmove : ∀ F Λ : Finset G.edgeSet, ∃ g : Γ, ∀ e ∈ F, g • e ∉ Λ)
     {μ : Measure (G.edgeSet → Bool)} (hμ : μ ∈ G.dimerGibbsInvariant Γ w)
-    {t : Set (G.edgeSet → Bool)} (ht : MeasurableSet t)
+    {t : Set (G.edgeSet → Bool)} (ht : NullMeasurableSet t μ)
     (htg : ∀ g : Γ, (fun ω => g • ω) ⁻¹' t =ᵐ[μ] t) (ht₀ : μ t ≠ 0) :
     μ[|t] ∈ G.dimerGibbsInvariant Γ w := by
   have := hμ.2.isProbabilityMeasure
   have := (mem_invariantMeasuresOfMeasureUnivEq_iff.1 hμ.1).1
+  have := TauCeti.measurableConstSMul_of_smul_apply hσ
+  -- replace `t` by a measurable version; the conditioned measure does not change
+  obtain ⟨t', -, ht', htt'⟩ := ht.exists_measurable_subset_ae_eq
+  have hcond : μ[|t] = μ[|t'] := by
+    simp only [ProbabilityTheory.cond, measure_congr htt', Measure.restrict_congr_set htt']
+  rw [hcond]
+  rw [← measure_congr htt'] at ht₀
+  have htg' : ∀ g : Γ, (fun ω => g • ω) ⁻¹' t' =ᵐ[μ] t' := fun g =>
+    preimage_smul_ae_eq_self_of_ae_eq htt' (htg g)
   have hmem {u : Set (G.edgeSet → Bool)} (hu : MeasurableSet u)
       (hug : ∀ g : Γ, (fun ω => g • ω) ⁻¹' u =ᵐ[μ] u) (hu₀ : μ u ≠ 0) :
       μ[|u] ∈ invariantMeasuresOfMeasureUnivEq Γ (G.edgeSet → Bool) 1 :=
     mem_invariantMeasuresOfMeasureUnivEq_iff.2
       ⟨SMulInvariantMeasure.cond hu hug,
         (ProbabilityTheory.cond_isProbabilityMeasure hu₀).measure_univ⟩
-  rcases eq_or_ne (μ tᶜ) 0 with hc | hc
-  · -- `t` has full measure, so conditioning on it does not change `μ`
-    have h1 : μ t = 1 := (prob_compl_eq_zero_iff ht).1 hc
+  rcases eq_or_ne (μ t'ᶜ) 0 with hc | hc
+  · -- `t'` has full measure, so conditioning on it does not change `μ`
+    have h1 : μ t' = 1 := (prob_compl_eq_zero_iff ht').1 hc
     rwa [ProbabilityTheory.cond, Measure.restrict_eq_self_of_ae_mem (ae_iff.2 hc), h1, inv_one,
       one_smul]
-  · -- otherwise `μ = μ(t) μ[|t] + μ(tᶜ) μ[|tᶜ]` is a proper convex combination
-    have htc : ∀ g : Γ, (fun ω => g • ω) ⁻¹' tᶜ =ᵐ[μ] tᶜ := fun g => by
+  · -- otherwise `μ = μ(t') μ[|t'] + μ(t'ᶜ) μ[|t'ᶜ]` is a proper convex combination
+    have htc : ∀ g : Γ, (fun ω => g • ω) ⁻¹' t'ᶜ =ᵐ[μ] t'ᶜ := fun g => by
       rw [preimage_compl]
-      exact (htg g).compl
+      exact (htg' g).compl
     refine (isExtreme_dimerGibbsInvariant hΓ hσ hw hmove).left_mem_of_mem_openSegment
-      (hmem ht htg ht₀) (hmem ht.compl htc hc) hμ
-      ⟨μ t, μ tᶜ, pos_iff_ne_zero.2 ht₀, pos_iff_ne_zero.2 hc, prob_add_prob_compl ht, ?_⟩
+      (hmem ht' htg' ht₀) (hmem ht'.compl htc hc) hμ
+      ⟨μ t', μ t'ᶜ, pos_iff_ne_zero.2 ht₀, pos_iff_ne_zero.2 hc, prob_add_prob_compl ht', ?_⟩
     ext u -
     simp only [add_apply, smul_apply, smul_eq_mul]
-    rw [mul_comm (μ t), mul_comm (μ tᶜ)]
-    exact ProbabilityTheory.cond_add_cond_compl_eq ht μ
-
-omit [Group Γ] [MulAction Γ G.edgeSet] in
-/-- **Dimer Gibbs measures form a weakly compact set.** For a positive weight, the dimer Gibbs
-probability measures on configurations form a weakly compact set: they are the push-forwards along
-the inclusion of the dimer configurations of the Gibbs measures of the quasilocal specification
-`γ^w`, taken here for the action of the automorphism group of `G`. -/
-theorem isCompact_setOf_isDimerGibbs {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e) :
-    IsCompact {μ : ProbabilityMeasure (G.edgeSet → Bool) | G.IsDimerGibbs w μ} := by
-  have hΓ := Iso.exists_smul_eq_mapEdgeSet (G := G)
-  have key : {μ : ProbabilityMeasure (G.edgeSet → Bool) | G.IsDimerGibbs w μ} =
-      (fun ν : ProbabilityMeasure (G.dimerSubshift (G ≃g G) hΓ) =>
-        ν.map Subtype.val) ''
-        {ν | (dimerSpecification (G ≃g G) hΓ hw).IsGibbs (ν : Measure _)} := by
-    ext μ
-    simp only [mem_ofPred_eq, mem_image]
-    rw [isDimerGibbs_iff_exists_isGibbs (G ≃g G) hΓ hw]
-    constructor
-    · rintro ⟨ν, hν, hG, hmap⟩
-      exact ⟨⟨ν, hν⟩, hG, Subtype.ext hmap⟩
-    · rintro ⟨ν, hG, rfl⟩
-      exact ⟨ν, inferInstance, hG, rfl⟩
-  rw [key]
-  exact (isCompact_setOf_isGibbs_dimerSpecification _ hΓ hw).image
-    (ProbabilityMeasure.continuous_map continuous_subtypeVal)
+    rw [mul_comm (μ t'), mul_comm (μ t'ᶜ)]
+    exact ProbabilityTheory.cond_add_cond_compl_eq ht' μ
 
 /-- **Invariant dimer Gibbs measures form a weakly compact set.** For a positive weight, the
 invariant dimer Gibbs measures `𝒢_inv` form a weakly compact set of probability measures on
@@ -269,10 +255,7 @@ theorem isCompact_setOf_mem_dimerGibbsInvariant [SMul Γ (G.edgeSet → Bool)]
     (hw : ∀ e, 0 < w e) :
     IsCompact {μ : ProbabilityMeasure (G.edgeSet → Bool) |
       (μ : Measure (G.edgeSet → Bool)) ∈ G.dimerGibbsInvariant Γ w} := by
-  have : ContinuousConstSMul Γ (G.edgeSet → Bool) := ⟨fun g => by
-    rw [show (fun ω : G.edgeSet → Bool => g • ω) = fun ω e => ω (g⁻¹ • e) from
-      funext fun ω => funext (hσ g ω)]
-    exact continuous_pi fun e => continuous_apply _⟩
+  have := TauCeti.continuousConstSMul_of_smul_apply hσ
   have key : {μ : ProbabilityMeasure (G.edgeSet → Bool) |
       (μ : Measure (G.edgeSet → Bool)) ∈ G.dimerGibbsInvariant Γ w} =
       {μ : ProbabilityMeasure (G.edgeSet → Bool) |
