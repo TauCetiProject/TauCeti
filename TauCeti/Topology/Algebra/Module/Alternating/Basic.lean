@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
+import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.Data.Fin.VecNotation
 
 /-!
@@ -44,8 +45,9 @@ form a complex vector space, and these operations are complex-linear or conjugat
 * `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr`,
   `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_fin_four`: a two-form in the coordinates of
   a basis, and its six-term form on a four-dimensional space.
-* `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_right`: a two-form in the coordinates of
-  its second argument.
+* `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_right`,
+  `ContinuousAlternatingMap.apply_vecCons_eq_sum_single_right`: a two-form in the coordinates of
+  its second argument, in a basis and in the standard basis of `ι → R`.
 * `ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap`: pulling back along
   `A` and then along `B` is pulling back along `A.comp B`.
 * `ContinuousAlternatingMap.compContinuousLinearMap_fst_add_snd_apply`: the two-form
@@ -159,6 +161,13 @@ theorem apply_vecCons_eq_sum_repr_right {ι : Type*} [Fintype ι] (b : Module.Ba
   simpa [b.sum_repr, h] using
     _root_.map_sum (ω.toMultilinearMap.toLinearMap ![u, v] 1) (fun j ↦ b.repr v j • b j)
       Finset.univ
+
+/-- **A two-form on `ι → R` in the coordinates of its second argument.** In the standard basis
+`eⱼ = Pi.single j 1`, a two-form `ω` is `ω(u, v) = ∑ⱼ vⱼ ω(u, eⱼ)`. -/
+theorem apply_vecCons_eq_sum_single_right {ι : Type*} [Fintype ι] [DecidableEq ι]
+    [TopologicalSpace R] (ω : (ι → R) [⋀^Fin 2]→L[R] N) (u v : ι → R) :
+    ω ![u, v] = ∑ j, v j • ω ![u, Pi.single j 1] := by
+  simpa using apply_vecCons_eq_sum_repr_right (Pi.basisFun R ι) ω u v
 
 /-- **A two-form in coordinates.** In the coordinates of a basis `b`, a two-form `ω` is
 `ω(u, v) = ∑ᵢ ∑ⱼ uᵢ vⱼ ω(bᵢ, bⱼ)`. -/

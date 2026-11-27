@@ -117,9 +117,7 @@ theorem interiorₗ_torusConstVectorField [DecidableEq ι] :
   rw [SmoothTwoForm.degreeOneEquiv_interiorₗ, SmoothForm.degreeOneEquiv_apply_apply,
     SmoothTwoForm.flat_apply, eval₂_torusConstVectorField hσ, sum_smul_torusTimeForm_apply]
   -- Both sides are `∑ j, β(v, e_j) w j`, with `w` read in `ι → ℝ`.
-  have h (u : ι → ℝ) : β ![v, u] = ∑ j, β ![v, Pi.single j 1] * u j :=
-    (β.apply_vecCons_eq_sum_repr_right (Pi.basisFun ℝ ι) v u).trans (by simp [mul_comm])
-  exact h w
+  exact (β.apply_vecCons_eq_sum_single_right v (w : ι → ℝ)).trans (by simp [mul_comm])
 
 /-- **The contraction with a constant vector field is the flux form of its translations.** For a
 two-form `σ` on the torus with constant coefficients, the contraction `ι_v σ` of the constant
@@ -167,7 +165,7 @@ theorem interiorClass_torusConstVectorField_eq_zero_iff :
   rw [SmoothTwoForm.interiorClass_apply, deRhamCohomology.mk_eq_zero_iff]
   rw [Subtype.coe_mk, interiorₗ_torusConstVectorField hσ, sum_smul_torusTimeForm_mem_exactForms_iff]
   refine ⟨fun h w ↦ ?_, fun h ↦ funext fun j ↦ h _⟩
-  rw [β.apply_vecCons_eq_sum_repr_right (Pi.basisFun ℝ ι)]
+  rw [β.apply_vecCons_eq_sum_single_right]
   simp [show ∀ j, β ![v, Pi.single j 1] = 0 from congrFun h]
 
 /-- **Constant vector fields are not Hamiltonian.** For a two-form `σ` on the torus with constant
@@ -183,7 +181,7 @@ theorem exists_isHamiltonianVectorField_torusConstVectorField_iff :
     ⟨0, SmoothTwoForm.isHamiltonianVectorField_iff.2 fun x w ↦ ?_⟩⟩
   · -- It suffices that `β(v, e_j) = 0` for every coordinate direction `j`.
     suffices hj : ∀ j, β ![v, Pi.single j 1] = 0 from
-      fun w ↦ by rw [β.apply_vecCons_eq_sum_repr_right (Pi.basisFun ℝ ι)]; simp [hj]
+      fun w ↦ by rw [β.apply_vecCons_eq_sum_single_right]; simp [hj]
     intro j
     by_contra hj
     -- Along the `j`-th coordinate circle `γ s = 0 + [s e_j]`, `f` has derivative `β(v, e_j)`.
