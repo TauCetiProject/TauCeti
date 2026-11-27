@@ -21,8 +21,6 @@ module `M` (Mathlib's `IsAdicComplete`), the decreasing filtration `F^p = J^p �
 
 ## Main results
 
-* `CategoryTheory.FilteredObject.cokernel_π_stepι_ofSubmodules_apply_eq_iff`: two elements of
-  `M` agree in the quotient `M / F_i` exactly when their difference lies in `F i`.
 * `CategoryTheory.FilteredObject.isComplete_ofSubmodules`: the element-wise criterion.
 * `CategoryTheory.FilteredObject.isComplete_adicFiltration`: the `J`-adic filtration of a
   `J`-adically complete module is complete.
@@ -37,25 +35,7 @@ universe v u
 namespace CategoryTheory.FilteredObject
 
 variable {R : Type u} [Ring R] {M : Type v} [AddCommGroup M] [Module R M]
-  {I : Type*} [Category* I] (F : I → Submodule R M) (hF : ∀ ⦃i j⦄, (i ⟶ j) → F i ≤ F j)
-
-/-- Two elements of `M` have the same image in the quotient `M / F_i`, the cokernel of the
-inclusion of the step `F_i`, exactly when their difference lies in `F i`. -/
-theorem cokernel_π_stepι_ofSubmodules_apply_eq_iff (i : I) (x y : M) :
-    (cokernel.π ((ofSubmodules F hF).stepι i)).hom x =
-      (cokernel.π ((ofSubmodules F hF).stepι i)).hom y ↔ x - y ∈ F i := by
-  -- Mathlib identifies the cokernel projection with `M ⟶ M ⧸ F i`.
-  let e := ModuleCat.cokernelIsoRangeQuotient ((ofSubmodules F hF).stepι i)
-  have h (z : M) : e.hom.hom ((cokernel.π ((ofSubmodules F hF).stepι i)).hom z) =
-      (LinearMap.range ((ofSubmodules F hF).stepι i).hom).mkQ z := by
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-      ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom]
-    rfl
-  rw [← (ModuleCat.mono_iff_injective e.hom).1 inferInstance |>.eq_iff, h, h,
-    Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq, hom_stepι_ofSubmodules]
-  exact ⟨fun ⟨z, hz⟩ ↦ hz ▸ z.property, fun h ↦ ⟨⟨x - y, h⟩, rfl⟩⟩
-
-variable {F hF}
+  {I : Type*} [Category* I] {F : I → Submodule R M} {hF : ∀ ⦃i j⦄, (i ⟶ j) → F i ≤ F j}
 
 /-- **Element-wise criterion for completeness.** The filtration `ofSubmodules F hF` is complete
 when only `0` lies in every `F i`, and every family `y : I → M` that is compatible, with
@@ -79,12 +59,12 @@ theorem isComplete_ofSubmodules (hsep : ∀ x, (∀ i, x ∈ F i) → x = 0)
       have h₁ := LinearMap.congr_fun
         (congrArg ModuleCat.Hom.hom (cokernel_π_quotientDiagram_map (ofSubmodules F hF) f)) (y i)
       have h₂ := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (s.w f)) a
-      change ((ofSubmodules F hF).quotientDiagram.map f).hom
-        ((cokernel.π ((ofSubmodules F hF).stepι i)).hom (y i)) = _ at h₁
-      change ((ofSubmodules F hF).quotientDiagram.map f).hom ((s.π.app i).hom a) = _ at h₂
+      simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂
       exact (hπ j _ _).1 <| h₁.symm.trans <| (congrArg _ (hy i)).trans <| h₂.trans (hy j).symm
     exact ⟨x, fun i ↦ (hπ i x (y i)).2 (hx i) |>.trans (hy i)⟩
   choose g hg using hlim
+  -- In `map_add'` and `map_smul'`, the final `rfl` identifies the operations on
+  -- `quotientDiagram.obj i` with those on `cokernel (stepι i)`, its definition.
   refine IsComplete.mk
     { lift s := ModuleCat.ofHom
         { toFun := g s
