@@ -11,6 +11,8 @@ public import Mathlib.GroupTheory.PushoutI
 public import TauCeti.NumberTheory.Modular.Generators
 import Mathlib.Data.ZMod.Basic
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
+import TauCeti.Data.ZMod.MonoidHomEquiv
+import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
@@ -263,69 +265,76 @@ end Lift
 
 /-! ### The amalgamated free product `ℤ/4 ∗_{ℤ/2} ℤ/6` -/
 
-/-- The homomorphism from `ℤ/n`, written multiplicatively, sending `1` to an element `g` with
-`gⁿ = 1`. -/
-private def zmodLift {G : Type*} [Group G] (n : ℕ) (g : G) (hg : g ^ n = 1) :
-    Multiplicative (ZMod n) →* G :=
-  AddMonoidHom.toMultiplicativeLeft <| ZMod.lift n
-    ⟨zmultiplesHom (Additive G) (Additive.ofMul g), by simp [← ofMul_pow, hg]⟩
-
-private theorem zmodLift_ofAdd_one {G : Type*} [Group G] (n : ℕ) (g : G) (hg : g ^ n = 1) :
-    zmodLift n g hg (Multiplicative.ofAdd 1) = g := by
-  simp [zmodLift, ← Int.cast_one (R := ZMod n), -Int.cast_one]
-
-/-- Homomorphisms out of `ℤ/n` agreeing on `1` are equal. -/
-private theorem zmodLift_ext {G : Type*} [Group G] {n : ℕ}
-    {f g : Multiplicative (ZMod n) →* G}
-    (h : f (Multiplicative.ofAdd 1) = g (Multiplicative.ofAdd 1)) : f = g := by
-  refine MonoidHom.ext fun x ↦ ?_
-  obtain ⟨k, hk⟩ := ZMod.intCast_surjective (Multiplicative.toAdd x)
-  have hx : x = Multiplicative.ofAdd 1 ^ k := by
-    rw [← ofAdd_zsmul, zsmul_one, hk, ofAdd_toAdd]
-  rw [hx, map_zpow, map_zpow, h]
-
 /-- The orders `4` and `6` of the two cyclic factors of the amalgam `ℤ/4 ∗_{ℤ/2} ℤ/6`. -/
 def slAmalgamOrder : Fin 2 → ℕ := ![4, 6]
+
+/-- The orders `4` and `6` of the factors of the amalgam are nonzero. -/
+instance (i : Fin 2) : NeZero (slAmalgamOrder i) :=
+  ⟨by fin_cases i <;> decide⟩
 
 /-- The factors `ℤ/4` (for `i = 0`) and `ℤ/6` (for `i = 1`) of the amalgam
 `ℤ/4 ∗_{ℤ/2} ℤ/6`, written multiplicatively. -/
 abbrev slAmalgamFactor (i : Fin 2) : Type := Multiplicative (ZMod (slAmalgamOrder i))
 
-/-- The embeddings of `ℤ/2` into `ℤ/4` and `ℤ/6` along which `SL(2, ℤ)` is amalgamated: the
-generator `1` goes to `2 ∈ ℤ/4` and to `3 ∈ ℤ/6`. -/
-noncomputable def slAmalgamEmbedding (i : Fin 2) :
-    Multiplicative (ZMod 2) →* slAmalgamFactor i :=
-  zmodLift 2 (Multiplicative.ofAdd 1 ^ ![2, 3] i) (by fin_cases i <;> decide)
+/-- The embeddings of `ℤ/2` into `ℤ/4` and `ℤ/6` along which `SL(2, ℤ)` is amalgamated:
+multiplication by `2` and by `3` (`ZMod.mulCastHom`), so that the generator `1` goes to
+`2 ∈ ℤ/4` and to `3 ∈ ℤ/6`. -/
+def slAmalgamEmbedding (i : Fin 2) : Multiplicative (ZMod 2) →* slAmalgamFactor i :=
+  (ZMod.mulCastHom (![2, 3] i) (by fin_cases i <;> decide)).toMultiplicative
+
+/-- The embedding `slAmalgamEmbedding i` sends the generator of `ℤ/2` to the square of the
+generator of `ℤ/4` (for `i = 0`) or the cube of the generator of `ℤ/6` (for `i = 1`). -/
+theorem slAmalgamEmbedding_ofAdd_one (i : Fin 2) :
+    slAmalgamEmbedding i (Multiplicative.ofAdd 1) = Multiplicative.ofAdd 1 ^ ![2, 3] i := by
+  rw [slAmalgamEmbedding, AddMonoidHom.coe_toMultiplicative, Function.comp_apply,
+    Function.comp_apply, toAdd_ofAdd, ← Int.cast_one, ZMod.mulCastHom_intCast, Int.cast_one,
+    one_mul, ← ofAdd_nsmul, nsmul_one]
+
+/-- The embedding of `ℤ/2` into `ℤ/4` sends the generator to the square of the generator. -/
+@[simp]
+theorem slAmalgamEmbedding_zero_ofAdd_one :
+    slAmalgamEmbedding 0 (Multiplicative.ofAdd 1) = Multiplicative.ofAdd 1 ^ 2 :=
+  slAmalgamEmbedding_ofAdd_one 0
+
+/-- The embedding of `ℤ/2` into `ℤ/6` sends the generator to the cube of the generator. -/
+@[simp]
+theorem slAmalgamEmbedding_one_ofAdd_one :
+    slAmalgamEmbedding 1 (Multiplicative.ofAdd 1) = Multiplicative.ofAdd 1 ^ 3 :=
+  slAmalgamEmbedding_ofAdd_one 1
 
 /-- The generator `1` of the factor `ℤ/4` or `ℤ/6` in the amalgam. -/
-private noncomputable def amalgamGen (i : Fin 2) : Monoid.PushoutI slAmalgamEmbedding :=
+private def amalgamGen (i : Fin 2) : Monoid.PushoutI slAmalgamEmbedding :=
   Monoid.PushoutI.of (φ := slAmalgamEmbedding) i (Multiplicative.ofAdd 1)
 
 /-- The squared generator of `ℤ/4` and the cubed generator of `ℤ/6` are both the image of the
 generator of `ℤ/2`. -/
 private theorem amalgamGen_pow (i : Fin 2) :
     amalgamGen i ^ ![2, 3] i = Monoid.PushoutI.base _ (Multiplicative.ofAdd 1) := by
-  rw [amalgamGen, ← map_pow, ← Monoid.PushoutI.of_apply_eq_base _ i, slAmalgamEmbedding,
-    zmodLift_ofAdd_one]
+  rw [amalgamGen, ← map_pow, ← slAmalgamEmbedding_ofAdd_one, Monoid.PushoutI.of_apply_eq_base]
 
-/-- The homomorphism from the amalgam to `SL(2, ℤ)` sending the generators to `S` and `R`. -/
+/-- The homomorphism from the amalgam to `SL(2, ℤ)` sending the generators to `S` and `R`; the
+homomorphisms out of the cyclic factors are given by `TauCeti.zmodMonoidHomEquiv`. -/
 private noncomputable def amalgamToSL : Monoid.PushoutI slAmalgamEmbedding →* SL(2, ℤ) :=
   Monoid.PushoutI.lift
-    (fun i ↦ zmodLift _ (![S, R] i) (by fin_cases i; exacts [S_pow_four, R_pow_six]))
-    (zmodLift 2 (-1) (by decide)) fun i ↦ zmodLift_ext <| by
-      rw [MonoidHom.comp_apply, slAmalgamEmbedding, zmodLift_ofAdd_one, map_pow,
-        zmodLift_ofAdd_one, zmodLift_ofAdd_one]
-      fin_cases i
-      exacts [S_sq, R_pow_three]
+    (fun i ↦ (zmodMonoidHomEquiv _ _).symm
+      ⟨![S, R] i, by fin_cases i; exacts [S_pow_four, R_pow_six]⟩)
+    ((zmodMonoidHomEquiv 2 _).symm ⟨-1, by decide⟩) fun i ↦
+      (zmodMonoidHomEquiv 2 _).injective <| Subtype.ext <| by
+        rw [coe_zmodMonoidHomEquiv_apply, coe_zmodMonoidHomEquiv_apply, MonoidHom.comp_apply,
+          slAmalgamEmbedding_ofAdd_one, map_pow, zmodMonoidHomEquiv_symm_apply_ofAdd_one,
+          zmodMonoidHomEquiv_symm_apply_ofAdd_one]
+        fin_cases i
+        exacts [S_sq, R_pow_three]
 
-private theorem amalgamToSL_amalgamGen (i : Fin 2) : amalgamToSL (amalgamGen i) = ![S, R] i := by
-  simp [amalgamToSL, amalgamGen, zmodLift_ofAdd_one]
+private theorem amalgamToSL_of_ofAdd_one (i : Fin 2) :
+    amalgamToSL (Monoid.PushoutI.of i (Multiplicative.ofAdd 1)) = ![S, R] i := by
+  rw [amalgamToSL, Monoid.PushoutI.lift_of, zmodMonoidHomEquiv_symm_apply_ofAdd_one]
 
 /-- The homomorphism from `SL(2, ℤ)` to the amalgam sending `S` and `R` to the generators. -/
 private noncomputable def slToAmalgam : SL(2, ℤ) →* Monoid.PushoutI slAmalgamEmbedding :=
   slLift (amalgamGen 0) (amalgamGen 1)
     (by rw [amalgamGen, ← map_pow,
-      show Multiplicative.ofAdd (1 : ZMod (slAmalgamOrder 0)) ^ 4 = 1 by decide, map_one])
+      (by decide : Multiplicative.ofAdd (1 : ZMod (slAmalgamOrder 0)) ^ 4 = 1), map_one])
     ((amalgamGen_pow 0).trans (amalgamGen_pow 1).symm)
 
 /-- **`SL(2, ℤ)` is the amalgamated free product `ℤ/4 ∗_{ℤ/2} ℤ/6`.** The pushout of
@@ -333,33 +342,33 @@ private noncomputable def slToAmalgam : SL(2, ℤ) →* Monoid.PushoutI slAmalga
 of `ℤ/4` and `ℤ/6` sent to `S` and `R = S T`, and the generator of `ℤ/2` to `-1`. -/
 noncomputable def slAmalgamEquiv : Monoid.PushoutI slAmalgamEmbedding ≃* SL(2, ℤ) :=
   MonoidHom.toMulEquiv amalgamToSL slToAmalgam
-    (Monoid.PushoutI.hom_ext_nonempty fun i ↦ zmodLift_ext <| by
-      change slToAmalgam (amalgamToSL (amalgamGen i)) = amalgamGen i
-      rw [amalgamToSL_amalgamGen]
-      fin_cases i
-      exacts [slLift_S .., slLift_R ..])
+    (Monoid.PushoutI.hom_ext_nonempty fun i ↦
+      (zmodMonoidHomEquiv _ _).injective <| Subtype.ext <| by
+        rw [coe_zmodMonoidHomEquiv_apply, coe_zmodMonoidHomEquiv_apply]
+        simp only [MonoidHom.comp_apply, MonoidHom.id_apply]
+        rw [amalgamToSL_of_ofAdd_one]
+        fin_cases i
+        exacts [slLift_S .., slLift_R ..])
     ((MonoidHom.cancel_right slPresentation.surjective).1 <|
       PresentedGroup.ext <| Fin.forall_fin_two.2 ⟨by
-        change amalgamToSL (slToAmalgam (slPresentation (PresentedGroup.of 0))) = slPresentation _
-        rw [slPresentation_of_zero]
-        exact (congrArg amalgamToSL (slLift_S ..)).trans (amalgamToSL_amalgamGen 0), by
-        change amalgamToSL (slToAmalgam (slPresentation (PresentedGroup.of 1))) = slPresentation _
-        rw [slPresentation_of_one]
-        exact (congrArg amalgamToSL (slLift_R ..)).trans (amalgamToSL_amalgamGen 1)⟩)
+        simp only [MonoidHom.comp_apply, MonoidHom.id_apply, slPresentationHom_of_zero]
+        exact (congrArg amalgamToSL (slLift_S ..)).trans (amalgamToSL_of_ofAdd_one 0), by
+        simp only [MonoidHom.comp_apply, MonoidHom.id_apply, slPresentationHom_of_one]
+        exact (congrArg amalgamToSL (slLift_R ..)).trans (amalgamToSL_of_ofAdd_one 1)⟩)
 
 /-- The isomorphism `ℤ/4 ∗_{ℤ/2} ℤ/6 ≃* SL(2, ℤ)` sends the generator of `ℤ/4` to `S`. -/
 @[simp]
 theorem slAmalgamEquiv_of_zero :
     slAmalgamEquiv (Monoid.PushoutI.of (φ := slAmalgamEmbedding) 0 (Multiplicative.ofAdd 1)) =
       S :=
-  amalgamToSL_amalgamGen 0
+  amalgamToSL_of_ofAdd_one 0
 
 /-- The isomorphism `ℤ/4 ∗_{ℤ/2} ℤ/6 ≃* SL(2, ℤ)` sends the generator of `ℤ/6` to `R = S T`. -/
 @[simp]
 theorem slAmalgamEquiv_of_one :
     slAmalgamEquiv (Monoid.PushoutI.of (φ := slAmalgamEmbedding) 1 (Multiplicative.ofAdd 1)) =
       R :=
-  amalgamToSL_amalgamGen 1
+  amalgamToSL_of_ofAdd_one 1
 
 /-- The isomorphism `ℤ/4 ∗_{ℤ/2} ℤ/6 ≃* SL(2, ℤ)` sends the generator of `ℤ/2` to `-1`. -/
 @[simp]
@@ -367,7 +376,7 @@ theorem slAmalgamEquiv_base :
     slAmalgamEquiv (Monoid.PushoutI.base slAmalgamEmbedding (Multiplicative.ofAdd 1)) =
       -1 := by
   rw [← amalgamGen_pow 0, map_pow]
-  exact (congrArg (· ^ 2) (amalgamToSL_amalgamGen 0)).trans S_sq
+  exact (congrArg (· ^ 2) (amalgamToSL_of_ofAdd_one 0)).trans S_sq
 
 /-! ### The abelianization -/
 
