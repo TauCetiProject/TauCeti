@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Operator
 public import TauCeti.MeasureTheory.Function.Lp.Multiplication
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Local
+import TauCeti.MeasureTheory.Function.Lp.Multiplication.Commutant
 
 /-!
 # What the kernel of a Calderón–Zygmund operator determines
@@ -35,7 +36,11 @@ this description cannot see.
   (`ContinuousLinearMap.exists_forall_ae_eq_add_of_ae_eq_integral`). For
   scalar functions, `F = ℂ`, the operators with the standard kernel `K` are exactly the
   `T + M_a`, `a ∈ L^∞(V)`
-  (`TauCeti.HasStandardKernel.hasStandardKernel_iff_exists_eq_add_multiplicationOperator`).
+  (`TauCeti.HasStandardKernel.hasStandardKernel_iff_exists_eq_add_multiplicationOperator`), and
+  two scalar operators with the same kernel, for possibly different constants, differ by such an
+  `M_a` (`TauCeti.HasStandardKernel.exists_sub_eq_multiplicationOperator`), since their difference
+  does not enlarge compact supports
+  (`MeasureTheory.Lp.exists_eq_multiplicationOperator_of_isCompact`).
 
 So the operator, not the kernel, is the primitive datum of a Calderón–Zygmund operator: for
 instance, the identity has the kernel `0` (`TauCeti.hasStandardKernel_id`), and hence so has
@@ -185,6 +190,18 @@ theorem add_multiplicationOperator (h : HasStandardKernel T K C δ)
       Lp.multiplicationOperator_ae a f, hf] with x h₁ h₂ h₃ hx
     rw [add_apply, h₁, Pi.add_apply, h₂, h₃ hx]
     simp
+
+/-- **Two scalar Calderón–Zygmund operators with the same kernel differ by a multiplication
+operator** `M_a`, `a ∈ L^∞(V)`, even when their constants differ; the norm of `a` is then
+`‖T₁ - T₂‖` (`MeasureTheory.Lp.norm_multiplicationOperator`). -/
+theorem exists_sub_eq_multiplicationOperator
+    {T₁ T₂ : Lp ℂ 2 (volume : Measure V) →L[ℂ] Lp ℂ 2 (volume : Measure V)}
+    (h₁ : HasStandardKernel T₁ K C δ) (h₂ : HasStandardKernel T₂ K C' δ') :
+    ∃ a : Lp ℂ ∞ (volume : Measure V), T₁ - T₂ = Lp.multiplicationOperator a :=
+  Lp.exists_eq_multiplicationOperator_of_isCompact ENNReal.ofNat_ne_top fun f s hs hf ↦ by
+    filter_upwards [h₁.ae_apply_eq_integral f s hs hf, h₂.ae_apply_eq_integral f s hs hf,
+      Lp.coeFn_sub (T₁ f) (T₂ f)] with x h₁x h₂x hsub hxs
+    rw [sub_apply, hsub, Pi.sub_apply, h₁x hxs, h₂x hxs, sub_self]
 
 /-- **Operators with the same kernel differ by a multiplication operator.** Let `T` be a
 Calderón–Zygmund operator with standard kernel `K` on `L²(V, F)` for finite-dimensional `F`.

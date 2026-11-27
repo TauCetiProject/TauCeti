@@ -27,7 +27,7 @@ The three basic properties of this operator are proved here.
 
 * It is closed, for every `1 ≤ p ≤ ∞`: if `uₙ → u` and `∇uₙ → g` in `Lᵖ`, then `u ∈ W^{1,p}(Ω)`
   with `∇u = g`. The operator is the common-domain operator
-  `ContinuousLinearMap.domainOperator` of the value and gradient maps, whose graph is the range
+  `LinearMap.domainOperator` of the value and gradient maps, whose graph is the range
   of the value-gradient map from the complete space `W^{1,p}(Ω)`; it is closed since the Sobolev
   norm is at most the sum of the two component norms.
 * At `p = 2` it is densely defined, since its domain contains the test functions.
@@ -73,10 +73,10 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 variable (mu Omega p) in
 /-- **The weak gradient as an unbounded operator** `Lᵖ(Ω) →ₗ.[ℝ] Lᵖ(Ω; E)`. Its domain consists of
 the `Lᵖ` classes of the elements of `W^{1,p}(Ω)`, and it sends such a class to its weak
-gradient. It is the partial operator `ContinuousLinearMap.domainOperator` of the pair
+gradient. It is the partial operator `LinearMap.domainOperator` of the pair
 `(W1p.valueL, W1p.gradientL)`, whose first component is injective by `W1p.valueL_injective`. -/
 def weakGradientPMap : Lp ℝ p (mu.restrict Omega) →ₗ.[ℝ] Lp E p (mu.restrict Omega) :=
-  W1p.valueL.domainOperator W1p.gradientL W1p.valueL_injective
+  W1p.valueL.toLinearMap.domainOperator W1p.gradientL.toLinearMap W1p.valueL_injective
 
 /-- The graph of the weak gradient consists of the value-gradient pairs of the elements of
 `W^{1,p}(Ω)`. -/
@@ -84,14 +84,14 @@ theorem mem_graph_weakGradientPMap_iff
     {x : Lp ℝ p (mu.restrict Omega) × Lp E p (mu.restrict Omega)} :
     x ∈ (weakGradientPMap mu Omega p).graph ↔
       ∃ u : W1p mu Omega p, W1p.value u = x.1 ∧ W1p.gradient u = x.2 := by
-  rw [weakGradientPMap, ContinuousLinearMap.mem_graph_domainOperator_iff]
-  simp only [W1p.valueL_apply, W1p.gradientL_apply]
+  rw [weakGradientPMap, LinearMap.mem_graph_domainOperator_iff]
+  simp only [ContinuousLinearMap.coe_coe, W1p.valueL_apply, W1p.gradientL_apply]
 
 /-- The domain of the weak gradient is the value range of `W^{1,p}(Ω)`. -/
 theorem mem_domain_weakGradientPMap_iff {f : Lp ℝ p (mu.restrict Omega)} :
     f ∈ (weakGradientPMap mu Omega p).domain ↔ ∃ u : W1p mu Omega p, W1p.value u = f := by
-  rw [weakGradientPMap, ContinuousLinearMap.mem_domain_domainOperator_iff]
-  simp only [W1p.valueL_apply]
+  rw [weakGradientPMap, LinearMap.mem_domain_domainOperator_iff]
+  simp only [ContinuousLinearMap.coe_coe, W1p.valueL_apply]
 
 /-- The value of a Sobolev function lies in the domain of the weak gradient. -/
 @[simp]
@@ -104,7 +104,7 @@ the weak gradient of `u`. -/
 theorem weakGradientPMap_apply {f : (weakGradientPMap mu Omega p).domain} {u : W1p mu Omega p}
     (h : W1p.value u = f) : weakGradientPMap mu Omega p f = W1p.gradient u := by
   rw [← W1p.gradientL_apply]
-  exact ContinuousLinearMap.domainOperator_apply _ _ _ ((W1p.valueL_apply u).trans h)
+  exact LinearMap.domainOperator_apply _ _ _ ((W1p.valueL_apply u).trans h)
 
 /-- The weak gradient operator sends the value of a Sobolev function to its weak gradient. -/
 @[simp]
