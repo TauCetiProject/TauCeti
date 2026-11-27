@@ -132,8 +132,56 @@ end ConformalLaplacian
 
 section StereographicCovariance
 
+/-- On a finite-dimensional real inner product space `F` carrying the `∞`-smooth standard metric,
+the conformal Laplacian of a `C²` function `w` equals `aₙ (-Δ f)` whenever `w` agrees with `f`
+near `x`. -/
+private theorem conformalLaplacian_ofLE_eq_conformalCoefficient_mul_neg_laplacian_of_eventuallyEq
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    {w f : F → ℝ} {x : F} (hw : ContDiff ℝ 2 w) (heq : w =ᶠ[𝓝 x] f) :
+    (letI : RiemannianBundle (fun y : F ↦ TangentSpace (modelWithCornersSelf ℝ F) y) :=
+       ⟨((riemannianMetricVectorSpace F).ofLE (m := ∞) le_top).toRiemannianMetric⟩;
+     conformalLaplacian (modelWithCornersSelf ℝ F) w x) =
+      conformalCoefficient (finrank ℝ F) * -Δ f x := by
+  have hgrad : DifferentiableAt ℝ (∇ w) x :=
+    ((hw.gradient_right (m := 1) (by norm_num)).differentiable one_ne_zero) x
+  rw [((riemannianMetricVectorSpace F).ofLE (m := ∞)
+      le_top).conformalLaplacian_eq_of_riemannianBundle_eq
+      (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm,
+    conformalLaplacian_eq_conformalCoefficient_mul_neg_laplacian hgrad,
+    (laplacian_congr_nhds heq).eq_of_nhds]
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
+
+/-- Pulling back the conformal Laplacian along
+`isLocalRiemannianIsometry_stereographic'_symm_smul_sub` identifies `L_{bubbleMetric} w` at `x`
+with `L u (Φ x)` for any `C²` function `w` agreeing with `u ∘ Φ` near `x`. -/
+private theorem conformalLaplacian_bubbleMetric_eq_stereographic'
+    (hn : n ≠ 2) (v : sphere (0 : E) 1) {t : ℝ} (ht : 0 < t)
+    (b x : EuclideanSpace ℝ (Fin n)) {u : sphere (0 : E) 1 → ℝ}
+    (hu : ContMDiffAt (𝓡 n) 𝓘(ℝ) 2 u ((stereographic' n v).symm ((2 / t) • (x - b))))
+    {w : EuclideanSpace ℝ (Fin n) → ℝ} (hw : ContDiff ℝ 2 w)
+    (hw_eq : w =ᶠ[𝓝 x] fun y ↦ u ((stereographic' n v).symm ((2 / t) • (y - b)))) :
+    (letI : RiemannianBundle (fun y : EuclideanSpace ℝ (Fin n) ↦ TangentSpace (𝓡 n) y) :=
+       ⟨(bubbleMetric ht b).toRiemannianMetric⟩;
+     conformalLaplacian (𝓡 n) w x) =
+      conformalLaplacian (𝓡 n) u ((stereographic' n v).symm ((2 / t) • (x - b))) := by
+  let Φ : EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1 :=
+    (stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)
+  have hiso := isLocalRiemannianIsometry_stereographic'_symm_smul_sub hn v ht b
+  have hev_wm :
+      (w ∘ WithMetric.ofWithMetric : WithMetric (bubbleMetric ht b) → ℝ) =ᶠ[
+        𝓝 (WithMetric.toWithMetric (bubbleMetric ht b) x)]
+        u ∘ (Φ ∘ WithMetric.ofWithMetric) :=
+    WithMetric.continuous_ofWithMetric.continuousAt.eventually hw_eq
+  rw [← WithMetric.conformalLaplacian_comp_ofWithMetric (bubbleMetric ht b)
+      hw.contMDiff.contMDiffAt,
+    conformalLaplacian_congr_of_eventuallyEq
+      (hw.contMDiff.comp WithMetric.contMDiff_ofWithMetric).contMDiffAt hev_wm,
+    hiso.conformalLaplacian_comp (x := WithMetric.toWithMetric (bubbleMetric ht b) x)
+      (by simpa only [Function.comp_apply, WithMetric.ofWithMetric_toWithMetric] using hu),
+    Function.comp_apply, WithMetric.ofWithMetric_toWithMetric]
+  rfl
 
 /-- **Stereographic conformal covariance of the conformal Laplacian.** In dimension `n ≠ 2`, let
 `t ≥ 0` and `Φ(y) = σ⁻¹((2 / t) (y - b))`. For any `u : Sⁿ → ℝ` that is `C²` at `Φ(x)`,
@@ -150,45 +198,20 @@ theorem conformalCoefficient_mul_neg_laplacian_bubble_mul_comp_stereographic'_sy
   rcases ht.eq_or_lt with rfl | ht
   · rw [bubble_zero_left, finrank_euclideanSpace_fin, Real.zero_rpow (div_ne_zero hn' two_ne_zero)]
     simp [Real.zero_rpow (div_ne_zero (by positivity : (n : ℝ) + 2 ≠ 0) hn')]
+  -- Extend the local `C²` germ `u ∘ Φ` near `x` to a global `C²` function `w` on `ℝⁿ`.
   let Φ : EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1 :=
     (stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)
   have huΦ : ContMDiffAt (𝓡 n) 𝓘(ℝ) 2 (u ∘ Φ) x :=
     hu.comp x (contMDiff_stereographic'_symm_smul_sub v t b).contMDiffAt
   obtain ⟨w, hw, -, hw_eq⟩ := huΦ.contDiffAt.exists_contDiff_eventuallyEq_of_finiteDimensional 2
-  have hiso := isLocalRiemannianIsometry_stereographic'_symm_smul_sub hn v ht b
-  have hiso_L :
-      (letI : RiemannianBundle (fun y : EuclideanSpace ℝ (Fin n) ↦ TangentSpace (𝓡 n) y) :=
-         ⟨(bubbleMetric ht b).toRiemannianMetric⟩;
-       conformalLaplacian (𝓡 n) w x) = conformalLaplacian (𝓡 n) u (Φ x) := by
-    have hev_wm :
-        (w ∘ WithMetric.ofWithMetric : WithMetric (bubbleMetric ht b) → ℝ) =ᶠ[
-          𝓝 (WithMetric.toWithMetric (bubbleMetric ht b) x)]
-          u ∘ (Φ ∘ WithMetric.ofWithMetric) :=
-      WithMetric.continuous_ofWithMetric.continuousAt.eventually hw_eq
-    rw [← WithMetric.conformalLaplacian_comp_ofWithMetric (bubbleMetric ht b)
-        hw.contMDiff.contMDiffAt,
-      conformalLaplacian_congr_of_eventuallyEq
-        (hw.contMDiff.comp WithMetric.contMDiff_ofWithMetric).contMDiffAt hev_wm,
-      hiso.conformalLaplacian_comp (x := WithMetric.toWithMetric (bubbleMetric ht b) x)
-        (by simpa only [Function.comp_apply, WithMetric.ofWithMetric_toWithMetric] using hu),
-      Function.comp_apply, WithMetric.ofWithMetric_toWithMetric]
-  have hflat :
-      (letI : RiemannianBundle (fun y : EuclideanSpace ℝ (Fin n) ↦ TangentSpace (𝓡 n) y) :=
-         ⟨((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE
-           (m := ∞) le_top).toRiemannianMetric⟩;
-       conformalLaplacian (𝓡 n) (bubble t b * w) x) =
-        conformalCoefficient n * -Δ (fun y ↦ bubble t b y * u (Φ y)) x := by
-    have heq_prod : (bubble t b * w : EuclideanSpace ℝ (Fin n) → ℝ) =ᶠ[𝓝 x]
-        fun y ↦ bubble t b y * u (Φ y) :=
-      Filter.EventuallyEq.rfl.mul hw_eq
-    have hgrad : DifferentiableAt ℝ (∇ (bubble t b * w)) x :=
-      ((((contDiff_bubble t b (m := 2)).mul hw).gradient_right (m := 1)
-        (by norm_num)).differentiable one_ne_zero) x
-    rw [((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := ∞)
-        le_top).conformalLaplacian_eq_of_riemannianBundle_eq
-        (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm,
-      conformalLaplacian_eq_conformalCoefficient_mul_neg_laplacian hgrad,
-      (laplacian_congr_nhds heq_prod).eq_of_nhds, finrank_euclideanSpace_fin]
+  -- Relate `L_{bubbleMetric} w` to `L_{Sⁿ} u (Φ x)` via the local isometry and to
+  -- `-Δ (U * (u ∘ Φ))` via conformal rescaling on flat Euclidean space.
+  have hiso_L := conformalLaplacian_bubbleMetric_eq_stereographic' hn v ht b x hu hw hw_eq
+  have hflat :=
+    conformalLaplacian_ofLE_eq_conformalCoefficient_mul_neg_laplacian_of_eventuallyEq
+      (w := bubble t b * w) (f := fun y ↦ bubble t b y * u (Φ y))
+      ((contDiff_bubble t b (m := 2)).mul hw) (Filter.EventuallyEq.rfl.mul hw_eq)
+  rw [finrank_euclideanSpace_fin] at hflat
   have hresc := conformalLaplacian_bubbleMetric hn ht b hw.contMDiff x
   rw [hiso_L, hflat] at hresc
   have hU : 0 < bubble t b x := bubble_pos ht b x
@@ -201,6 +224,7 @@ theorem conformalCoefficient_mul_neg_laplacian_bubble_mul_comp_stereographic'_sy
             Real.rpow_zero, one_mul]
     _ = bubble t b x ^ (((n : ℝ) + 2) / (n - 2)) * conformalLaplacian (𝓡 n) u (Φ x) := by
           rw [← hresc]
+          rfl
 
 end StereographicCovariance
 
