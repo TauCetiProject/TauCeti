@@ -33,6 +33,11 @@ hyperbolic scale in the matrix representations of triangle groups.
 A circle of positive perimeter `2πR` has positive radius `R`
 (`Real.pos_of_fact_two_pi_mul_pos`), under the instance `Fact (0 < 2 * Real.pi * R)` that makes
 `AddCircle (2 * Real.pi * R)` usable.
+
+For `|x| ≤ 1` the Taylor polynomials of degree `6` of the cosine and of degree `7` of the sine
+approximate them within `|x| ^ 8 / 35840` and `|x| ^ 9 / 326592` (`TauCeti.cos_bound_six`,
+`TauCeti.sin_bound_seven`); these refine Mathlib's `Real.cos_bound` and `Real.sin_bound` enough to
+locate the roots of trigonometric equations to three decimal places.
 -/
 
 public section
@@ -45,6 +50,38 @@ theorem Real.pos_of_fact_two_pi_mul_pos {R : ℝ} [Fact (0 < 2 * Real.pi * R)] :
   pos_of_mul_pos_right (Fact.out : 0 < 2 * Real.pi * R) Real.two_pi_pos.le
 
 namespace TauCeti
+
+/-- The Taylor polynomial of degree `6` approximates the cosine within `|x| ^ 8 / 35840` for
+`|x| ≤ 1`. -/
+theorem cos_bound_six {x : ℝ} (hx : |x| ≤ 1) :
+    |cos x - (1 - x ^ 2 / 2 + x ^ 4 / 24 - x ^ 6 / 720)| ≤ |x| ^ 8 / 35840 := by
+  have h := Complex.exp_bound (x := x * Complex.I) (by simpa using hx) (n := 8) (by norm_num)
+  have hre : (Complex.exp (x * Complex.I) -
+      ∑ m ∈ Finset.range 8, (x * Complex.I) ^ m / m.factorial).re =
+      cos x - (1 - x ^ 2 / 2 + x ^ 4 / 24 - x ^ 6 / 720) := by
+    simp [Finset.sum_range_succ, Nat.factorial, pow_succ, Complex.mul_re, Complex.mul_im]
+    ring
+  rw [← hre]
+  refine (Complex.abs_re_le_norm _).trans (h.trans_eq ?_)
+  simp only [Complex.norm_mul, Complex.norm_real, Complex.norm_I, mul_one, Real.norm_eq_abs]
+  norm_num [Nat.factorial]
+  ring
+
+/-- The Taylor polynomial of degree `7` approximates the sine within `|x| ^ 9 / 326592` for
+`|x| ≤ 1`. -/
+theorem sin_bound_seven {x : ℝ} (hx : |x| ≤ 1) :
+    |sin x - (x - x ^ 3 / 6 + x ^ 5 / 120 - x ^ 7 / 5040)| ≤ |x| ^ 9 / 326592 := by
+  have h := Complex.exp_bound (x := x * Complex.I) (by simpa using hx) (n := 9) (by norm_num)
+  have him : (Complex.exp (x * Complex.I) -
+      ∑ m ∈ Finset.range 9, (x * Complex.I) ^ m / m.factorial).im =
+      sin x - (x - x ^ 3 / 6 + x ^ 5 / 120 - x ^ 7 / 5040) := by
+    simp [Finset.sum_range_succ, Nat.factorial, pow_succ, Complex.mul_re, Complex.mul_im]
+    ring
+  rw [← him]
+  refine (Complex.abs_im_le_norm _).trans (h.trans_eq ?_)
+  simp only [Complex.norm_mul, Complex.norm_real, Complex.norm_I, mul_one, Real.norm_eq_abs]
+  norm_num [Nat.factorial]
+  ring
 
 /-- The point `(a + b) / 2 + (b - a) / 2 · sin θ` of the substitution lies in `[a, b]`. -/
 theorem mem_Icc_add_mul_sin {a b : ℝ} (hab : a ≤ b) (θ : ℝ) :
