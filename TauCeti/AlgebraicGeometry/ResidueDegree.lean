@@ -21,7 +21,8 @@ infinite.
 The main result is the tower law `residueDegree_comp`. It identifies the residue degree of a
 composite with the product of the two successive residue degrees. We also characterize when a
 residue degree is positive and when it is one, and show that a morphism surjective on stalks, such
-as a closed immersion, has residue degree one everywhere. The comparison
+as a closed immersion, has residue degree one everywhere, and that a morphism has residue degree
+one over any open of its target over which it is an isomorphism. The comparison
 `finrank_residueField_stalk` computes this degree from the residue field of the local ring with
 any compatible base-field algebra structure. These facts supply the residue-field weights used in
 degree and pushforward constructions.
@@ -93,6 +94,16 @@ theorem residueDegree_eq_one_of_surjectiveOnStalks (f : X ⟶ Y) [SurjectiveOnSt
   obtain ⟨t, rfl⟩ := f.stalkMap_surjective x s
   refine ⟨Y.residue (f x) t, ?_⟩
   rw [← CategoryTheory.comp_apply, Scheme.residue_residueFieldMap, CategoryTheory.comp_apply]
+
+/-- A morphism which is an isomorphism over an open `U` of its target has residue degree one at
+every point lying over `U`. -/
+theorem residueDegree_eq_one_of_isIso_morphismRestrict (f : X ⟶ Y) {U : Y.Opens}
+    [IsIso (f ∣_ U)] {x : X} (hx : f x ∈ U) : f.residueDegree x = 1 := by
+  obtain ⟨x, rfl⟩ : ∃ x' : (f ⁻¹ᵁ U).toScheme, (f ⁻¹ᵁ U).ι x' = x := ⟨⟨x, hx⟩, rfl⟩
+  have h := residueDegree_comp (f ⁻¹ᵁ U).ι f x
+  rw [← morphismRestrict_ι, residueDegree_comp] at h
+  simp only [residueDegree_eq_one_of_surjectiveOnStalks, mul_one] at h
+  exact h.symm
 
 /-- For a morphism to the spectrum of a field, the residue degree at a point is the
 base-field dimension of the residue field of its local ring, with the compatible algebra
