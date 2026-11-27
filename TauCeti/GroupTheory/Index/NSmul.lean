@@ -70,10 +70,9 @@ here rather than in the copyright header.
 rather than a finite ambient group, so the counting lemma that derived it is unnecessary),
 `ker_nsmulAddMonoidHom` (`AddSubgroup.nsmulAddMonoidHom_injective_of_isTorsionFree` through
 `AddMonoidHom.ker_eq_bot_iff`), its `nsmulAddMonoidHom_range_prod` and `nsmulAddMonoidHom_ker_prod`
-(`AddMonoidHom.range_prodMap` and `AddMonoidHom.ker_prodMap`, which apply once multiplication by
-`n` on a product is identified with the componentwise `AddMonoidHom.prodMap`, a step the proof
-below takes directly), and its `Subgroup.fg_of_commGroup_fg` and
-`Group.fg_of_fg_ker_of_fg_range` (both in `TauCeti/GroupTheory/Finiteness.lean`). Its
+(`AddMonoidHom.range_prodMap` and `AddMonoidHom.ker_prodMap`, which apply via
+`nsmulAddMonoidHom_prod` from `TauCeti.Algebra.Group.Prod`), and its `Subgroup.fg_of_commGroup_fg`
+and `Group.fg_of_fg_ker_of_fg_range` (both in `TauCeti/GroupTheory/Finiteness.lean`). Its
 `Module.rank_eq_zero_of_finite` is replaced by Mathlib's `Module.IsTorsion.rank_eq_zero` applied
 to `isAddTorsion_of_finite`.
 -/
