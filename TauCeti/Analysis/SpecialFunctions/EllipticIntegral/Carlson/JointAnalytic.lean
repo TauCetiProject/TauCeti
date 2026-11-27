@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.Deriv
+import Mathlib.Analysis.Calculus.Deriv.Pi
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
@@ -17,7 +19,9 @@ import TauCeti.Analysis.Complex.SlitPlane
 Carlson's `R_F` is jointly analytic when its three nodes lie in the complex slit plane.
 Consequently, analytic node functions may be substituted simultaneously. This allows the
 identity principle to be applied to transformations whose three output nodes vary together,
-such as Carlson duplication.
+such as Carlson duplication. For differentiable nodes, `y ↦ R_F(f y, g y, h y)` has the
+derivative given by the chain rule `HasDerivAt.carlsonRF`, the sum of the three partial
+derivatives `-R_D / 6` (DLMF 19.18.1).
 
 Local uniform bounds for the three inverse square roots give continuity by dominated
 convergence. Osgood's lemma then combines continuity with the existing partial derivatives.
@@ -126,3 +130,62 @@ theorem AnalyticAt.carlsonRF {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ
     · exact hfp
     · exact hgp
     · exact hhp)).comp (f := fun q => ![f q, g q, h q]) ha
+
+/-- **Chain rule for Carlson's first integral.** If three functions have derivatives `f'`, `g'`,
+`h'` at `x` and take values in the slit plane there, then `y ↦ R_F(f y, g y, h y)` has
+derivative `-(f' R_D(g, h, f) + g' R_D(f, h, g) + h' R_D(f, g, h)) / 6` at `x`, the sum of the
+three partial derivatives of `R_F` (DLMF 19.18.1). -/
+theorem HasDerivAt.carlsonRF {f g h : ℂ → ℂ} {f' g' h' x : ℂ} (hf : HasDerivAt f f' x)
+    (hg : HasDerivAt g g' x) (hh : HasDerivAt h h' x) (hfx : f x ∈ Complex.slitPlane)
+    (hgx : g x ∈ Complex.slitPlane) (hhx : h x ∈ Complex.slitPlane) :
+    HasDerivAt (fun y => Complex.carlsonRF (f y) (g y) (h y))
+      (-(f' * Complex.carlsonRD (g x) (h x) (f x) + g' * Complex.carlsonRD (f x) (h x) (g x) +
+        h' * Complex.carlsonRD (f x) (g x) (h x)) / 6) x := by
+  set v : Fin 3 → ℂ := ![f x, g x, h x]
+  let G : (Fin 3 → ℂ) → ℂ := fun w => Complex.carlsonRF (w 0) (w 1) (w 2)
+  have hv : ∀ i, v i ∈ Complex.slitPlane := by
+    intro i
+    fin_cases i
+    · exact hfx
+    · exact hgx
+    · exact hhx
+  have hG : HasFDerivAt G (fderiv ℂ G v) v :=
+    (Complex.analyticAt_carlsonRF hv).differentiableAt.hasFDerivAt
+  set L := fderiv ℂ G v
+  -- Each partial derivative of `R_F` is the value of `L` on a coordinate vector.
+  have hpart (i : Fin 3) {d : ℂ}
+      (hd : HasDerivAt (fun s => G (Function.update v i s)) d (v i)) :
+      L (Pi.single i 1) = d := by
+    have hG' : HasFDerivAt G L (Function.update v i (v i)) := by
+      rwa [Function.update_eq_self]
+    exact (hG'.comp_hasDerivAt (v i) (hasDerivAt_update v i (v i))).unique hd
+  have h₀ : L (Pi.single 0 1) = -Complex.carlsonRD (g x) (h x) (f x) / 6 := hpart 0 <| by
+    convert Complex.hasDerivAt_carlsonRF_left hfx (Or.inl hgx) hhx using 1
+    · funext s
+      simp [G, v]
+    · rfl
+  have h₁ : L (Pi.single 1 1) = -Complex.carlsonRD (f x) (h x) (g x) / 6 := hpart 1 <| by
+    convert Complex.hasDerivAt_carlsonRF_middle (Or.inl hfx) hgx hhx using 1
+    · funext s
+      simp [G, v]
+    · rfl
+  have h₂ : L (Pi.single 2 1) = -Complex.carlsonRD (f x) (g x) (h x) / 6 := hpart 2 <| by
+    convert Complex.hasDerivAt_carlsonRF_right (Or.inl hfx) hgx hhx using 1
+    · funext s
+      simp [G, v]
+    · rfl
+  have hγ : HasDerivAt (fun y => ![f y, g y, h y]) ![f', g', h'] x := by
+    rw [hasDerivAt_pi]
+    intro i
+    fin_cases i
+    · simpa using hf
+    · simpa using hg
+    · simpa using hh
+  have hvec : (![f', g', h'] : Fin 3 → ℂ) =
+      f' • Pi.single 0 1 + g' • Pi.single 1 1 + h' • Pi.single 2 1 := by
+    funext i
+    fin_cases i <;> simp
+  refine (hG.comp_hasDerivAt x hγ).congr_deriv ?_
+  rw [hvec, map_add, map_add, map_smul, map_smul, map_smul, h₀, h₁, h₂, smul_eq_mul, smul_eq_mul,
+    smul_eq_mul]
+  ring
