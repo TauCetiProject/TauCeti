@@ -59,6 +59,8 @@ fundamental group of either handlebody of a Heegaard splitting surjects onto tha
   of an open, path connected neighbourhood of it in the handlebody.
 * `TauCeti.fundamentalGroup_map_frontier_handlebody_surjective`: the inclusion of the boundary
   surface induces a surjection of fundamental groups.
+* `TauCeti.fundamentalGroup_map_inclusion_frontier_surjective`: the same for a handlebody embedded
+  in any space, through a homeomorphism with the standard handlebody.
 
 ## References
 
@@ -876,5 +878,38 @@ theorem fundamentalGroup_map_frontier_handlebody_surjective
     (ContinuousMap.subtypeVal _).comp φ from rfl, _root_.FundamentalGroup.map_comp,
     MonoidHom.coe_comp] at h
   exact h.of_comp
+
+/-- **A boundary surface carries the fundamental group of its handlebody.** If `T` is a subset
+of a handlebody `A ≃ₜ handlebody g` in a space `X` corresponding to the boundary surface of the
+standard handlebody, then the inclusion of `T` into `A` induces a surjection of fundamental groups
+at every point of `T`. This is `TauCeti.fundamentalGroup_map_frontier_handlebody_surjective`,
+transported along the homeomorphism. -/
+theorem fundamentalGroup_map_inclusion_frontier_surjective {X : Type*} [TopologicalSpace X]
+    {A T : Set X} (hTA : T ⊆ A) (e : A ≃ₜ handlebody g)
+    (hmem : ∀ p : A, (p : X) ∈ T ↔ (e p : ℂ × ℝ) ∈ frontier (handlebody g)) (x : T) :
+    Function.Surjective (FundamentalGroup.map (ContinuousMap.inclusion hTA) x) := by
+  -- `T` is homeomorphic to the boundary surface through `e`.
+  let ι : T ≃ₜ {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)} :=
+    { toFun p := ⟨e ⟨p, hTA p.property⟩, (hmem ⟨p, hTA p.property⟩).1 p.property⟩
+      invFun y := ⟨e.symm y, (hmem _).2 (by rw [Homeomorph.apply_symm_apply]; exact y.property)⟩
+      left_inv p := by simp
+      right_inv y := by simp
+      continuous_toFun := by fun_prop
+      continuous_invFun := by fun_prop }
+  intro z
+  have hbij := e.toHomotopyEquiv.fundamentalGroup_map_bijective (ContinuousMap.inclusion hTA x)
+  obtain ⟨w, hw⟩ := fundamentalGroup_map_frontier_handlebody_surjective (ι x)
+    (FundamentalGroup.map e.toHomotopyEquiv.toFun _ z)
+  obtain ⟨v, rfl⟩ := (ι.toHomotopyEquiv.fundamentalGroup_map_bijective x).2 w
+  refine ⟨v, hbij.1 ?_⟩
+  -- Both sides are induced by the map `p ↦ e p` from `T` to the standard handlebody, read as
+  -- `e ∘ inclusion` and as `subtypeVal ∘ ι`. These agree by definition; as the base point of the
+  -- target group depends on the map, the chain closes by unfolding.
+  have h₁ := DFunLike.congr_fun (_root_.FundamentalGroup.map_comp e.toHomotopyEquiv.toFun
+    (ContinuousMap.inclusion hTA) x) v
+  have h₂ := DFunLike.congr_fun (_root_.FundamentalGroup.map_comp
+    (ContinuousMap.subtypeVal _) ι.toHomotopyEquiv.toFun x) v
+  rw [MonoidHom.comp_apply] at h₁ h₂
+  exact h₁.symm.trans (h₂.trans hw)
 
 end TauCeti

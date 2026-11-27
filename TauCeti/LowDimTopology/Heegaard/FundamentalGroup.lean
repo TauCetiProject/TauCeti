@@ -137,36 +137,21 @@ private theorem interior_union_interior_right_eq_univ {W : Set M}
       exact ⟨hpR, fun h ↦ hpL h.1⟩
   · exact .inl (hint (.inr hpR))
 
-/-- **A boundary surface carries the fundamental group of its handlebody.** If `T` is a subset
-of a handlebody `A ≃ₜ handlebody g` in `M` corresponding to the boundary surface of the standard
-handlebody, then the inclusion of `T` into `A` induces a surjection of fundamental groups. -/
-private theorem fundamentalGroup_map_inclusion_surjective {A T : Set M} (hTA : T ⊆ A) {g : ℕ}
-    (e : A ≃ₜ handlebody g)
-    (hmem : ∀ p : A, (p : M) ∈ T ↔ (e p : ℂ × ℝ) ∈ frontier (handlebody g)) (x : T) :
-    Function.Surjective (FundamentalGroup.map (ContinuousMap.inclusion hTA) x) := by
-  -- `T` is homeomorphic to the boundary surface through `e`.
-  let ι : T ≃ₜ {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)} :=
-    { toFun p := ⟨e ⟨p, hTA p.property⟩, (hmem ⟨p, hTA p.property⟩).1 p.property⟩
-      invFun y := ⟨e.symm y, (hmem _).2 (by rw [Homeomorph.apply_symm_apply]; exact y.property)⟩
-      left_inv p := by simp
-      right_inv y := by simp
-      continuous_toFun := by fun_prop
-      continuous_invFun := by fun_prop }
-  intro z
-  have hbij := e.toHomotopyEquiv.fundamentalGroup_map_bijective (ContinuousMap.inclusion hTA x)
-  obtain ⟨w, hw⟩ := fundamentalGroup_map_frontier_handlebody_surjective (ι x)
-    (FundamentalGroup.map e.toHomotopyEquiv.toFun _ z)
-  obtain ⟨v, rfl⟩ := (ι.toHomotopyEquiv.fundamentalGroup_map_bijective x).2 w
-  refine ⟨v, hbij.1 ?_⟩
-  -- Both sides are induced by the map `p ↦ e p` from `T` to the standard handlebody, read as
-  -- `e ∘ inclusion` and as `subtypeVal ∘ ι`. These agree by definition; as the base point of the
-  -- target group depends on the map, the chain closes by unfolding.
-  have h₁ := DFunLike.congr_fun (_root_.FundamentalGroup.map_comp e.toHomotopyEquiv.toFun
-    (ContinuousMap.inclusion hTA) x) v
-  have h₂ := DFunLike.congr_fun (_root_.FundamentalGroup.map_comp
-    (ContinuousMap.subtypeVal _) ι.toHomotopyEquiv.toFun x) v
-  rw [MonoidHom.comp_apply] at h₁ h₂
-  exact h₁.symm.trans (h₂.trans hw)
+/-- The Heegaard surface carries the fundamental group of the first handlebody. -/
+private theorem fundamentalGroup_map_inclusion_inter_left_surjective (hE : finrank ℝ E = 3)
+    (x : ↥(s.left ∩ s.right)) :
+    Function.Surjective (FundamentalGroup.map (ContinuousMap.inclusion inter_subset_left) x) := by
+  obtain ⟨eL⟩ := s.nonempty_homeomorph_left
+  exact fundamentalGroup_map_inclusion_frontier_surjective inter_subset_left eL
+    (fun p ↦ (and_iff_right p.property).trans (s.coe_mem_right_iff hE eL p)) x
+
+/-- The Heegaard surface carries the fundamental group of the second handlebody. -/
+private theorem fundamentalGroup_map_inclusion_inter_right_surjective (hE : finrank ℝ E = 3)
+    (x : ↥(s.left ∩ s.right)) :
+    Function.Surjective (FundamentalGroup.map (ContinuousMap.inclusion inter_subset_right) x) := by
+  obtain ⟨eR⟩ := s.nonempty_homeomorph_right
+  exact fundamentalGroup_map_inclusion_frontier_surjective inter_subset_right eR
+    (fun p ↦ (and_iff_left p.property).trans (s.coe_mem_left_iff hE eR p)) x
 
 /-- **Loops in the second handlebody come from the first.** At a point of the Heegaard surface,
 every loop in the second handlebody is homotopic in it to a loop on the boundary surface, which
@@ -179,8 +164,7 @@ private theorem range_map_right_le_range_map_left (hE : finrank ℝ E = 3)
       (FundamentalGroup.map (ContinuousMap.subtypeVal s.left) ⟨_, hy⟩).range := by
   rintro _ ⟨γ, rfl⟩
   -- The loop `γ` is homotopic in the second handlebody to a loop `δ` on the Heegaard surface.
-  obtain ⟨δ, rfl⟩ := fundamentalGroup_map_inclusion_surjective inter_subset_right e
-    (fun p ↦ (and_iff_left p.property).trans (s.coe_mem_left_iff hE e p))
+  obtain ⟨δ, rfl⟩ := s.fundamentalGroup_map_inclusion_inter_right_surjective hE
     (⟨_, hy, (e.symm y).property⟩ : ↥(s.left ∩ s.right)) γ
   refine ⟨FundamentalGroup.map (ContinuousMap.inclusion inter_subset_left) _ δ, ?_⟩
   -- Both sides are the image of `δ` under the inclusion of the Heegaard surface, read through
@@ -235,6 +219,26 @@ private theorem collarDeform_mem_image (q : unitInterval × T) (hq : (q.2 : M) �
     collarDeform e F hTV q hq ∈ ((↑) '' (e ⁻¹' V) : Set M) :=
   ⟨_, by simp, rfl⟩
 
+/-- The subset of `M` corresponding to a path-connected subset `V` of the standard handlebody
+through a handlebody `e : P ≃ₜ handlebody g` of `M` is path connected. -/
+private theorem isPathConnected_image_preimage (hVc : IsPathConnected V) :
+    IsPathConnected ((↑) '' (e ⁻¹' V) : Set M) := by
+  rw [← e.image_symm]
+  exact (hVc.image e.symm.continuous).image continuous_subtypeVal
+
+/-- A map on `unitInterval × T` is continuous if it is continuous on the points over each of two
+closed sets `L` and `R` covering `M`. -/
+private theorem continuous_of_continuous_domRestrict {X : Type*} [TopologicalSpace X]
+    {L R : Set M} (hL : IsClosed L) (hR : IsClosed R) (hLRu : L ∪ R = univ)
+    {H : unitInterval × T → X}
+    (hHL : Continuous ({q | (q.2 : M) ∈ L}.domRestrict H))
+    (hHR : Continuous ({q | (q.2 : M) ∈ R}.domRestrict H)) : Continuous H := by
+  rw [← continuousOn_univ, ← (eq_univ_of_forall fun q ↦ (hLRu ▸ mem_univ _ : (q.2 : M) ∈ L ∪ R) :
+    {q : unitInterval × T | (q.2 : M) ∈ L} ∪ {q | (q.2 : M) ∈ R} = univ)]
+  exact .union_of_isClosed (continuousOn_iff_continuous_domRestrict.2 hHL)
+    (continuousOn_iff_continuous_domRestrict.2 hHR) (hL.preimage (by fun_prop))
+    (hR.preimage (by fun_prop))
+
 /-- A point of a handlebody `e : P ≃ₜ handlebody g` of `M` that lies in `Q ∪ W`, where `Q ∩ P`
 corresponds to the boundary surface and `W` to a neighbourhood `V` of it, corresponds to a point
 of `V`. -/
@@ -287,15 +291,10 @@ private theorem exists_homotopyEquiv_union {L R : Set M} (hL : IsClosed L) (hR :
   have hHR (q : unitInterval × ↥(L ∪ (↑) '' (e ⁻¹' V))) (hq : (q.2 : M) ∈ R) :
       H q = collarDeform e F hV q hq :=
     dite_eq_left_of_eq_true (eq_true hq)
-  have hHc : Continuous H := by
-    rw [← continuousOn_univ, ← (eq_univ_of_forall fun q ↦ hLR q.2 :
-      {q | (q.2 : M) ∈ L} ∪ {q | (q.2 : M) ∈ R} = univ)]
-    refine .union_of_isClosed (continuousOn_iff_continuous_domRestrict.2 ?_)
-      (continuousOn_iff_continuous_domRestrict.2 ?_) (hL.preimage (by fun_prop))
-      (hR.preimage (by fun_prop))
-    exacts [(continuous_subtypeVal.comp continuous_snd).comp continuous_subtypeVal |>.congr
-      fun q ↦ (hHL q.val q.property).symm,
-      (continuous_collarDeform e F hV).congr fun q ↦ (hHR q.val q.property).symm]
+  have hHc : Continuous H := continuous_of_continuous_domRestrict hL hR hLRu
+    ((continuous_subtypeVal.comp continuous_snd).comp continuous_subtypeVal |>.congr
+      fun q ↦ (hHL q.val q.property).symm)
+    ((continuous_collarDeform e F hV).congr fun q ↦ (hHR q.val q.property).symm)
   refine ⟨ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction subset_union_left H hHc
     (fun q ↦ ?_) (fun a ↦ ?_) (fun a ↦ ?_) (fun t a ha ↦ (hHL (t, a) ha).symm ▸ ha),
     ContinuousMap.ext fun a ↦ Subtype.ext
@@ -322,9 +321,7 @@ private theorem exists_fundamentalGroup_map_left_surjective (hE : finrank ℝ E 
   obtain ⟨V, hVo, hVc, hSV, F, hF₀, hF₁, hFfix⟩ := exists_deformation_frontier_handlebody s.genus
   obtain ⟨eN, heN⟩ := exists_homotopyEquiv_union s.isClosed_left s.isClosed_right
     s.union_eq_univ e (s.coe_mem_left_iff hE e) hSV F hF₀ hF₁ hFfix
-  have hWc : IsPathConnected ((↑) '' (e ⁻¹' V) : Set M) := by
-    rw [← e.image_symm]
-    exact (hVc.image e.symm.continuous).image continuous_subtypeVal
+  have hWc := isPathConnected_image_preimage e hVc
   let W : Set M := (↑) '' (e ⁻¹' V)
   have hmemW (p : s.right) : (p : M) ∈ W ↔ e p ∈ V := Subtype.val_injective.mem_set_image
   have hLRW {p : M} (hpL : p ∈ s.left) (hpR : p ∈ s.right) : p ∈ W :=
@@ -457,14 +454,10 @@ private theorem exists_homotopyEquiv_inter (hE : finrank ℝ E = 3)
   have hHR (q : unitInterval × ↥((s.left ∪ (↑) '' (eR ⁻¹' V)) ∩ (s.right ∪ (↑) '' (eL ⁻¹' V))))
       (hq : (q.2 : M) ∈ s.right) : H q = collarDeform eR F hVR q hq :=
     dite_eq_left_of_eq_true (eq_true hq)
-  have hHc : Continuous H := by
-    rw [← continuousOn_univ, ← (eq_univ_of_forall fun q ↦ hLR q.2 :
-      {q | (q.2 : M) ∈ s.left} ∪ {q | (q.2 : M) ∈ s.right} = univ)]
-    refine .union_of_isClosed (continuousOn_iff_continuous_domRestrict.2 ?_)
-      (continuousOn_iff_continuous_domRestrict.2 ?_) (s.isClosed_left.preimage (by fun_prop))
-      (s.isClosed_right.preimage (by fun_prop))
-    exacts [(continuous_collarDeform eL F hVL).congr fun q ↦ (hHL q.val q.property).symm,
-      (continuous_collarDeform eR F hVR).congr fun q ↦ (hHR q.val q.property).symm]
+  have hHc : Continuous H := continuous_of_continuous_domRestrict s.isClosed_left s.isClosed_right
+    s.union_eq_univ
+    ((continuous_collarDeform eL F hVL).congr fun q ↦ (hHL q.val q.property).symm)
+    ((continuous_collarDeform eR F hVR).congr fun q ↦ (hHR q.val q.property).symm)
   refine ⟨ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction
     (inter_subset_inter subset_union_left subset_union_left) H hHc
     (fun q ↦ ?_) (fun a ↦ ?_) (fun a ↦ ?_) (fun t a ha ↦ (hHL (t, a) ha.1).symm ▸
@@ -496,10 +489,6 @@ private theorem isPathConnected_inter (hE : finrank ℝ E = 3) (eL : s.left ≃�
   have hSWL := inter_subset_image eL (s.coe_mem_right_iff hE eL) hSV
   have hSWR := (inter_comm s.left s.right).subset.trans
     (inter_subset_image eR (s.coe_mem_left_iff hE eR) hSV)
-  have hW {T : Set M} (eT : T ≃ₜ handlebody s.genus) :
-      IsPathConnected ((↑) '' (eT ⁻¹' V) : Set M) := by
-    rw [← eT.image_symm]
-    exact (hVc.image eT.symm.continuous).image continuous_subtypeVal
   have hAB : (s.left ∪ (↑) '' (eR ⁻¹' V)) ∩ (s.right ∪ (↑) '' (eL ⁻¹' V)) =
       (↑) '' (eL ⁻¹' V) ∪ (↑) '' (eR ⁻¹' V) := by
     refine Subset.antisymm ?_ (union_subset (subset_inter
@@ -507,7 +496,8 @@ private theorem isPathConnected_inter (hE : finrank ℝ E = 3) (eL : s.left ≃�
       (subset_inter subset_union_right ((Subtype.coe_image_subset _ _).trans subset_union_left)))
     rintro p ⟨hpL | hpWR, hpR | hpWL⟩
     exacts [.inr (hSWR ⟨hpL, hpR⟩), .inl hpWL, .inr hpWR, .inr hpWR]
-  exact hAB ▸ (hW eL).union (hW eR) ⟨x, hSWL ⟨hxL, hxR⟩, hSWR ⟨hxL, hxR⟩⟩
+  exact hAB ▸ (isPathConnected_image_preimage eL hVc).union (isPathConnected_image_preimage eR hVc)
+    ⟨x, hSWL ⟨hxL, hxR⟩, hSWR ⟨hxL, hxR⟩⟩
 
 /-- **The Seifert–van Kampen theorem for a Heegaard splitting.** For a Heegaard splitting of a
 manifold without boundary charted on a three-dimensional real normed space, and a point `x` of
@@ -581,13 +571,9 @@ theorem fundamentalGroup_map_inter_surjective (hE : finrank ℝ E = 3) {x : M} (
     (hxR : x ∈ s.right) :
     Function.Surjective
       (FundamentalGroup.map (ContinuousMap.subtypeVal (s.left ∩ s.right)) ⟨x, hxL, hxR⟩) := by
-  obtain ⟨eL⟩ := s.nonempty_homeomorph_left
-  obtain ⟨eR⟩ := s.nonempty_homeomorph_right
   have h := (s.isPushout_fundamentalGroup hE hxL hxR).surjective_comp_of_surjective
-    (fundamentalGroup_map_inclusion_surjective inter_subset_left eL
-      (fun p ↦ (and_iff_right p.property).trans (s.coe_mem_right_iff hE eL p)) _)
-    (fundamentalGroup_map_inclusion_surjective inter_subset_right eR
-      (fun p ↦ (and_iff_left p.property).trans (s.coe_mem_left_iff hE eR p)) _)
+    (s.fundamentalGroup_map_inclusion_inter_left_surjective hE _)
+    (s.fundamentalGroup_map_inclusion_inter_right_surjective hE _)
   rw [← s.fundamentalGroup_map_subtypeVal_comp_inclusion_inter_left hxL hxR]
   exact h
 
@@ -605,13 +591,9 @@ theorem ker_fundamentalGroup_map_inter (hE : finrank ℝ E = 3) {x : M} (hxL : x
           (⟨x, hxL, hxR⟩ : ↥(s.left ∩ s.right))).ker ⊔
         (FundamentalGroup.map (ContinuousMap.inclusion inter_subset_right)
           (⟨x, hxL, hxR⟩ : ↥(s.left ∩ s.right))).ker := by
-  obtain ⟨eL⟩ := s.nonempty_homeomorph_left
-  obtain ⟨eR⟩ := s.nonempty_homeomorph_right
   have h := (s.isPushout_fundamentalGroup hE hxL hxR).ker_comp_eq_sup_of_surjective
-    (fundamentalGroup_map_inclusion_surjective inter_subset_left eL
-      (fun p ↦ (and_iff_right p.property).trans (s.coe_mem_right_iff hE eL p)) _)
-    (fundamentalGroup_map_inclusion_surjective inter_subset_right eR
-      (fun p ↦ (and_iff_left p.property).trans (s.coe_mem_left_iff hE eR p)) _)
+    (s.fundamentalGroup_map_inclusion_inter_left_surjective hE _)
+    (s.fundamentalGroup_map_inclusion_inter_right_surjective hE _)
   rw [← s.fundamentalGroup_map_subtypeVal_comp_inclusion_inter_left hxL hxR]
   exact h
 

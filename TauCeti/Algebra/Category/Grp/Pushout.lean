@@ -108,8 +108,8 @@ private noncomputable def ofKerSupQuotient (h : IsPushout f g i j) : kerSupQuoti
   GrpCat.ofHom <| QuotientGroup.lift _ (i.hom.comp f.hom) h.sup_ker_le
 
 private theorem ofKerSupQuotient_apply (h : IsPushout f g i j) (k : K) :
-    h.ofKerSupQuotient (k : K ⧸ (f.hom.ker ⊔ g.hom.ker)) = i (f k) :=
-  rfl
+    h.ofKerSupQuotient (k : K ⧸ (f.hom.ker ⊔ g.hom.ker)) = i (f k) := by
+  simp [ofKerSupQuotient, QuotientGroup.lift_mk]
 
 /-- The comparison `P → K ⧸ (ker f ⊔ ker g) → P` is the identity. -/
 private theorem ofKerSupQuotient_toKerSupQuotient (h : IsPushout f g i j) (hf : Surjective f)
