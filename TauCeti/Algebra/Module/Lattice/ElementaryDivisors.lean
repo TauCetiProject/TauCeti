@@ -42,15 +42,6 @@ variable {R K V ι : Type*} [CommRing R] [CommRing K] [Algebra R K]
   [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
   {L M : Submodule R V} [L.IsFullLattice K] [M.IsFullLattice K]
 
-/-- Extending two bases of the same full lattice applies the coefficient map to their
-change-of-basis matrix. -/
-@[simp]
-theorem toMatrix_extendOfIsFullLattice (b c : Basis ι R L) :
-    (b.extendOfIsFullLattice K).toMatrix (c.extendOfIsFullLattice K) =
-      (b.toMatrix c).map (algebraMap R K) := by
-  ext i j
-  simp [Basis.toMatrix_apply]
-
 variable [Fintype ι] [DecidableEq ι]
 
 /-- The transition matrix between full lattice bases lies in the integral double coset of
@@ -85,8 +76,8 @@ theorem mem_doubleCoset_diagGL_iff (b : Basis ι R L) (c : Basis ι R M)
         _ = (φ p : GL ι K) * (diagGL d : Matrix ι ι K) := congrArg Units.val hmul
         _ = (b.extendOfIsFullLattice K).toMatrix ((b'.extendOfIsFullLattice K).unitsSMul d) := by
           rw [← hb', ← toMatrix_mul_toMatrix _ (b'.extendOfIsFullLattice K)
-            ((b'.extendOfIsFullLattice K).unitsSMul d), toMatrix_unitsSMul, diagGL_coe]
-          rfl
+            ((b'.extendOfIsFullLattice K).unitsSMul d), toMatrix_unitsSMul, diagGL_coe,
+            Function.comp_def]
     exact ⟨b', c', fun i ↦ by simpa [unitsSMul_apply] using congrFun heq i⟩
   · rintro ⟨b', c', hd⟩
     let := b.invertibleToMatrix b'
@@ -142,12 +133,14 @@ private theorem exists_monotone_basis_zpow_smul_forall_irreducible :
   obtain ⟨a, ha, b, c, h⟩ := (existsUnique_monotone_basis_zpow_smul (K := K) L M ht).exists
   refine ⟨a, ha, fun s hs ↦ ?_⟩
   obtain ⟨u, hu⟩ := IsDiscreteValuationRing.associated_of_irreducible R ht hs
-  have hv (m : ℤ) : algebraMap R K ↑(u ^ m) = (algebraMap R K u) ^ m :=
-    ((algebraMap R K).toMonoidHom.comp (Units.coeHom R)).map_zpow u m
+  have hsK : algebraMap R K s = algebraMap R K u * algebraMap R K t := by
+    rw [mul_comm, ← map_mul, hu]
   -- A unit change in the uniformizer can be absorbed into the second integral basis.
   refine ⟨b, c.unitsSMul (fun i ↦ u ^ a i), fun i ↦ ?_⟩
-  rw [Basis.unitsSMul_apply, Units.smul_def, Submodule.coe_smul,
-    ← algebraMap_smul K, hv, h, smul_smul, ← mul_zpow, mul_comm, ← hu, map_mul]
+  simp only [Basis.unitsSMul_apply, Units.smul_def, Submodule.coe_smul, h]
+  rw [← algebraMap_smul K, hsK, ← MonoidHom.coe_ofClass (algebraMap R K), ← Units.coe_map]
+  simp only [map_zpow, Units.val_zpow_eq_zpow_val, Units.coe_map, MonoidHom.coe_ofClass,
+    mul_zpow, mul_smul]
 
 variable (K) in
 /-- The multiset of integers `aᵢ` for which the second lattice has basis `t ^ aᵢ • bᵢ`,
@@ -290,19 +283,20 @@ theorem latticeElementaryDivisors_span_image (L M : Submodule R V)
       algebraMap S F (u : S) * algebraMap S F s ^ e := by
     rw [← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply R S F, hu,
       map_mul, map_pow]
-  have hv (m : ℤ) : algebraMap S F ↑(u ^ m) = (algebraMap S F u) ^ m :=
-    ((algebraMap S F).toMonoidHom.comp (Units.coeHom S)).map_zpow u m
   -- The unit in the image of the old uniformizer acts on the first extended lattice basis.
   have hpow (n : ℤ) : algebraMap K F (algebraMap R K t ^ n) =
       algebraMap S F s ^ ((e : ℤ) * n) * algebraMap S F ↑(u ^ n) := by
-    rw [map_zpow₀, hF, mul_zpow, hv, _root_.zpow_mul, zpow_natCast, mul_comm]
+    rw [← MonoidHom.coe_ofClass (algebraMap S F), ← Units.coe_map]
+    simp only [map_zpow₀, hF, mul_zpow, map_zpow, Units.val_zpow_eq_zpow_val, Units.coe_map,
+      MonoidHom.coe_ofClass, _root_.zpow_mul, zpow_natCast]
+    rw [mul_comm]
   rw [hD, Multiset.map_map]
   apply (span S (f '' (L : Set V))).latticeElementaryDivisors_eq_of_basis _ hs
     ((b.baseChangeOfIsFullLattice hf).unitsSMul (fun i ↦ u ^ a i))
     (c.baseChangeOfIsFullLattice hf)
   intro i
-  rw [Function.comp_apply, Basis.unitsSMul_apply, Units.smul_def, Submodule.coe_smul,
-    Basis.baseChangeOfIsFullLattice_apply, Basis.baseChangeOfIsFullLattice_apply, h, map_smul,
-    ← algebraMap_smul F, hpow, mul_smul, algebraMap_smul]
+  simp only [Function.comp_apply, Basis.unitsSMul_apply, Units.smul_def, Submodule.coe_smul,
+    Basis.baseChangeOfIsFullLattice_apply, h, map_smul]
+  rw [← algebraMap_smul F (R := K), hpow, mul_smul, algebraMap_smul]
 
 end Submodule
