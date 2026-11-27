@@ -66,6 +66,10 @@ def IsLabel (f : R[X]) : Prop :=
 theorem isLabel_iff {f : R[X]} : IsLabel f ↔ f.Monic ∧ Squarefree f ∧ f.coeff 0 ≠ 0 :=
   Iff.rfl
 
+/-- Every label is monic. -/
+theorem IsLabel.monic {f : R[X]} (hf : IsLabel f) : f.Monic :=
+  (isLabel_iff.mp hf).1
+
 /-- A label is *allowed* for `M : ℕ` if it has no root `x` with `x ^ M = 1`. -/
 def IsAllowedLabel (M : ℕ) (f : R[X]) : Prop :=
   IsLabel f ∧ ∀ x : R, x ^ M = 1 → ¬f.IsRoot x
@@ -73,6 +77,10 @@ def IsAllowedLabel (M : ℕ) (f : R[X]) : Prop :=
 theorem isAllowedLabel_iff {M : ℕ} {f : R[X]} :
     IsAllowedLabel M f ↔ IsLabel f ∧ ∀ x : R, x ^ M = 1 → ¬f.IsRoot x :=
   Iff.rfl
+
+/-- Every allowed label is monic. -/
+theorem IsAllowedLabel.monic {M : ℕ} {f : R[X]} (hf : IsAllowedLabel M f) : f.Monic :=
+  (isAllowedLabel_iff.mp hf).1.monic
 
 /-- The polynomial `1` is a label. -/
 @[simp]
@@ -162,24 +170,6 @@ private lemma ncard_monic_not_isAllowedLabel_mul_le [Finite K] {M : ℕ} (hM : M
       _ = (1 + M + r) * Nat.card K ^ r := by
           rw [mul_assoc, ← pow_succ, Nat.sub_add_cancel hr]
 
-/-- The monic polynomials of degree `r` are the allowed labels of degree `r` and the others. -/
-private lemma ncard_isAllowedLabel_add [Finite K] (M r : ℕ) :
-    {f : K[X] | f.natDegree = r ∧ IsAllowedLabel M f}.ncard +
-      {f : K[X] | f.Monic ∧ f.natDegree = r ∧ ¬IsAllowedLabel M f}.ncard = Nat.card K ^ r := by
-  have hdisj : Disjoint {f : K[X] | f.natDegree = r ∧ IsAllowedLabel M f}
-      {f : K[X] | f.Monic ∧ f.natDegree = r ∧ ¬IsAllowedLabel M f} :=
-    Set.disjoint_left.mpr fun _ hf hf' ↦ hf'.2.2 hf.2
-  have hA : {f : K[X] | f.natDegree = r ∧ IsAllowedLabel M f}.Finite :=
-    (finite_setOf_monic_natDegree_eq K r).subset fun _ hf ↦ ⟨hf.2.1.1, hf.1⟩
-  have hB : {f : K[X] | f.Monic ∧ f.natDegree = r ∧ ¬IsAllowedLabel M f}.Finite :=
-    (finite_setOf_monic_natDegree_eq K r).subset fun _ hf ↦ ⟨hf.1, hf.2.1⟩
-  rw [← ncard_setOf_monic_natDegree_eq K r, ← Set.ncard_union_eq hdisj hA hB]
-  congr 1
-  ext f
-  by_cases h : IsAllowedLabel M f
-  · simp [h, h.1.1]
-  · simp [h]
-
 /-- **The allowed labels carry almost all the weight.** Over a finite field with `q` elements,
 let each polynomial of degree `r` have weight `(1 - r / q) / q ^ r`. If `M ≠ 0` and
 `(1 + M + 2 * r) / q ≤ ε`, then the allowed labels of degree `r` have total weight at least
@@ -192,7 +182,8 @@ theorem one_sub_le_ncard_isAllowedLabel_mul [Finite K] {M r : ℕ} (hM : M ≠ 0
   set A := {f : K[X] | f.natDegree = r ∧ IsAllowedLabel M f}.ncard
   set B := {f : K[X] | f.Monic ∧ f.natDegree = r ∧ ¬IsAllowedLabel M f}.ncard
   have hAB : (A : ℝ) + B = (Nat.card K : ℝ) ^ r := by
-    exact_mod_cast ncard_isAllowedLabel_add (K := K) M r
+    exact_mod_cast ncard_monic_pred_add_ncard_monic_not_pred K r (IsAllowedLabel M)
+      (fun _ hf ↦ hf.monic)
   have hB : (B : ℝ) * Nat.card K ≤ (1 + M + r) * (Nat.card K : ℝ) ^ r := by
     exact_mod_cast ncard_monic_not_isAllowedLabel_mul_le (K := K) hM r
   set q : ℝ := (Nat.card K : ℝ)
