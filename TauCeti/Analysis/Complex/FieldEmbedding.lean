@@ -31,7 +31,8 @@ absolute values.
 
 ## Main results
 
-* `TauCeti.Complex.trdeg_eq_continuum`: `ℂ` has transcendence degree `𝔠` over a countable field.
+* `TauCeti.Complex.trdeg_eq_continuum`: `ℂ` has transcendence degree `𝔠` over a countable
+  commutative ring acting faithfully.
 * `TauCeti.Complex.nonempty_algHom`, `TauCeti.Complex.nonempty_algEquiv`: extension of a complex
   embedding of a countable field to a homomorphism, respectively an isomorphism.
 * `TauCeti.Complex.exists_algHom_apply_eq`, `TauCeti.Complex.exists_algEquiv_apply_eq`: the same,
@@ -51,14 +52,23 @@ open Cardinal Algebra
 
 namespace TauCeti.Complex
 
-variable {k : Type*} {E : Type u} [Field k] [Countable k] [Algebra k ℂ]
-
-/-- `ℂ` has transcendence degree `𝔠` over every countable field `k`, for every `k`-algebra
-structure on `ℂ`. -/
+/-- `ℂ` has transcendence degree `𝔠` over every countable commutative ring `k` acting faithfully
+on `ℂ`. -/
 @[simp]
-theorem trdeg_eq_continuum : trdeg k ℂ = 𝔠 := by
+theorem trdeg_eq_continuum {k : Type*} [CommRing k] [Countable k] [Algebra k ℂ]
+    [FaithfulSMul k ℂ] : trdeg k ℂ = 𝔠 := by
   rw [trdeg_eq_cardinalMk (by rw [mk_complex]; exact aleph0_lt_continuum),
     mk_complex]
+
+/-- A domain of cardinality `𝔠` has the same transcendence degree as `ℂ` over a
+countable commutative ring acting faithfully on both. -/
+private theorem lift_trdeg_eq {k : Type*} {E : Type u} [CommRing k] [Countable k]
+    [Algebra k ℂ] [FaithfulSMul k ℂ] [CommRing E] [IsDomain E] [Algebra k E]
+    [FaithfulSMul k E] (hE : #E = 𝔠) :
+    Cardinal.lift.{0} (trdeg k E) = Cardinal.lift.{u} (trdeg k ℂ) := by
+  simp [trdeg_eq_continuum, trdeg_eq_cardinalMk (hE ▸ aleph0_lt_continuum), hE]
+
+variable {k : Type*} {E : Type u} [Field k] [Countable k] [Algebra k ℂ]
 
 /-- A domain of cardinality at most `𝔠` has transcendence degree at most that of `ℂ` over a
 countable field. -/
@@ -67,11 +77,6 @@ private theorem lift_trdeg_le [CommRing E] [IsDomain E] [Algebra k E] (hE : #E �
   obtain ⟨s, hs⟩ := exists_isTranscendenceBasis k E
   rw [trdeg_eq_continuum, lift_continuum, lift_le_continuum, ← hs.cardinalMk_eq_trdeg]
   exact (mk_set_le s).trans hE
-
-/-- A domain of cardinality `𝔠` has the same transcendence degree as `ℂ` over a countable field. -/
-private theorem lift_trdeg_eq [CommRing E] [IsDomain E] [Algebra k E] (hE : #E = 𝔠) :
-    Cardinal.lift.{0} (trdeg k E) = Cardinal.lift.{u} (trdeg k ℂ) := by
-  simp [trdeg_eq_continuum, trdeg_eq_cardinalMk (hE ▸ aleph0_lt_continuum), hE]
 
 /-- Every complex embedding of a countable field `k`, given as a `k`-algebra structure on `ℂ`,
 extends to every field extension `E` of `k`, or domain containing `k`, with `#E ≤ 𝔠`. -/
@@ -91,7 +96,7 @@ theorem nonempty_algEquiv [Field E] [IsAlgClosed E] [Algebra k E] (hE : #E = �
 over `k`, some `k`-algebra homomorphism `E →ₐ[k] ℂ` sends `α` to `z`. -/
 theorem exists_algHom_apply_eq [CommRing E] [IsDomain E] [Algebra k E] (hE : #E ≤ 𝔠) {α : E}
     {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E →ₐ[k] ℂ, φ α = z :=
-  hα.exists_algHom_apply_eq hz (lift_trdeg_le hE)
+  let ⟨φ, _, hφ⟩ := hα.exists_algHom_apply_eq hz (lift_trdeg_le hE); ⟨φ, hφ⟩
 
 /-- For an algebraically closed extension `E` of a countable field `k` with `#E = 𝔠`, an element
 `α ∈ E` transcendental over `k` and a complex number `z` transcendental over `k`, some

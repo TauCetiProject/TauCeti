@@ -12,27 +12,30 @@ public import TauCeti.FieldTheory.IsAlgClosed.Automorphism
 
 Let `E` be a domain containing `R`, with transcendence basis `v`, and let `Ω` be an
 algebraically closed `R`-algebra. Any algebraically independent family `w` in `Ω`, indexed like
-`v`, is the image of `v` under an `R`-algebra homomorphism `E →ₐ[R] Ω`: first send the polynomial
-ring on `v` to the polynomial ring on `w`, then extend along the algebraic extension
+`v`, is the image of `v` under an injective `R`-algebra homomorphism `E →ₐ[R] Ω`: first send the
+polynomial ring on `v` to the polynomial ring on `w`, then extend along the algebraic extension
 `E / R[v]` to the algebraically closed field `Ω`.
 
-Over a base field `k`, comparing transcendence degrees gives the existence results:
+Over a commutative ring `R` acting faithfully on `E` and `Ω`, comparing transcendence degrees
+gives the existence results:
 
-* a domain `E` containing `k` maps to `Ω` over `k` as soon as `trdeg k E ≤ trdeg k Ω`; when `E`
-  is a field such a map is a field embedding;
-* two algebraically closed fields of the same transcendence degree over `k` are isomorphic over
-  `k`;
-* in either situation, a prescribed element `α ∈ E` transcendental over `k` may be sent to any
-  prescribed element `z ∈ Ω` transcendental over `k`.
+* a domain `E` containing `R` embeds into `Ω` over `R` as soon as `trdeg R E ≤ trdeg R Ω`;
+* two algebraically closed fields of the same transcendence degree over `R` are isomorphic over
+  `R`.
 
-Over a countable field `k`, an uncountable integral domain over `k` has transcendence degree equal
-to its cardinality. Applied to `Ω = ℂ`, these statements extend a given embedding of a countable
-field into `ℂ` to a field of cardinality at most the continuum.
+Over a base field `k`, either construction can send a prescribed element `α ∈ E` transcendental
+over `k` to any prescribed element `z ∈ Ω` transcendental over `k`.
+
+The cardinality result imported from
+`TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis` says that over a countable
+commutative ring acting faithfully, an uncountable integral domain has transcendence degree
+equal to its cardinality. Applied to `Ω = ℂ`, these statements extend a given embedding of a
+countable field into `ℂ` to a field of cardinality at most the continuum.
 
 ## Main results
 
-* `IsTranscendenceBasis.exists_algHom_apply_eq`: an algebra homomorphism sending a transcendence
-  basis to a given algebraically independent family.
+* `IsTranscendenceBasis.exists_algHom_apply_eq`: an injective algebra homomorphism sending a
+  transcendence basis to a given algebraically independent family.
 * `IsTranscendenceBasis.exists_algEquiv_apply_eq`: between algebraically closed fields, an
   isomorphism realising a bijection of transcendence bases.
 * `TauCeti.IsAlgClosed.exists_algHom_injective_of_lift_trdeg_le`,
@@ -77,10 +80,10 @@ variable {R Ω : Type*} [CommRing R] [Field Ω] [Algebra R Ω] [IsAlgClosed Ω]
 
 /-- If `v` is a transcendence basis of a domain `E` over `R` and `w` is an algebraically
 independent family, indexed like `v`, in an algebraically closed `R`-algebra `Ω`, then some
-`R`-algebra homomorphism `E →ₐ[R] Ω` sends each `v i` to `w i`. -/
+injective `R`-algebra homomorphism `E →ₐ[R] Ω` sends each `v i` to `w i`. -/
 theorem exists_algHom_apply_eq {E : Type*} [CommRing E] [IsDomain E] [Algebra R E] {ι : Type*}
     {v : ι → E} {w : ι → Ω} (hv : IsTranscendenceBasis R v) (hw : AlgebraicIndependent R w) :
-    ∃ φ : E →ₐ[R] Ω, ∀ i, φ (v i) = w i := by
+    ∃ φ : E →ₐ[R] Ω, Function.Injective φ ∧ ∀ i, φ (v i) = w i := by
   have : Nontrivial R := RingHom.domain_nontrivial (algebraMap R E)
   -- Evaluation at `w` on the subalgebra `R[v]`, identified with the polynomial ring on `v`.
   let ψ : Algebra.adjoin R (Set.range v) →ₐ[R] Ω := (aeval w).comp hv.1.repr
@@ -92,9 +95,11 @@ theorem exists_algHom_apply_eq {E : Type*} [CommRing E] [IsDomain E] [Algebra R 
   have := hv.isAlgebraic
   -- `E` is algebraic over `R[v]`, so `ψ` extends to `E`.
   let f : E →ₐ[Algebra.adjoin R (Set.range v)] Ω := IsAlgClosed.lift
+  let : Algebra E Ω := f.toRingHom.toAlgebra
+  have hf_inj : Function.Injective f := Algebra.IsAlgebraic.injective_tower_top E hψ
   have hf (a : Algebra.adjoin R (Set.range v)) : f a = ψ a := f.commutes a
   refine ⟨{ f.toRingHom with commutes' := fun r ↦ (hf (algebraMap R _ r)).trans (ψ.commutes r) },
-    fun i ↦ ?_⟩
+    hf_inj, fun i ↦ ?_⟩
   have hvi : v i ∈ Algebra.adjoin R (Set.range v) := Algebra.subset_adjoin (Set.mem_range_self i)
   have hrepr : hv.1.repr ⟨v i, hvi⟩ = X i :=
     algebraicIndependent_iff_injective_aeval.1 hv.1 (by simp)
@@ -128,24 +133,8 @@ theorem exists_algHom_injective_of_lift_trdeg_le {R : Type*} {E : Type u} {Ω : 
   obtain ⟨t, ht⟩ := exists_isTranscendenceBasis R Ω
   obtain ⟨f⟩ := hs.nonempty_embedding_of_lift_trdeg_le ht h
   have hw : AlgebraicIndependent R (((↑) : t → Ω) ∘ f) := ht.1.comp f f.injective
-  obtain ⟨φ, hφ⟩ := hs.exists_algHom_apply_eq hw
-  let A := Algebra.adjoin R (Set.range ((↑) : s → E))
-  have hφA : (φ.comp A.val).comp hs.1.aevalEquiv.toAlgHom = aeval (((↑) : t → Ω) ∘ f) :=
-    MvPolynomial.algHom_ext fun i ↦ by simpa using hφ i
-  have hA_inj : Function.Injective (φ.comp A.val) := by
-    have hcomp : Function.Injective ((φ.comp A.val) ∘ hs.1.aevalEquiv) := by
-      have heq : ((φ.comp A.val) ∘ hs.1.aevalEquiv : MvPolynomial s R → Ω) =
-          aeval (((↑) : t → Ω) ∘ f) := congrArg DFunLike.coe hφA
-      rw [heq]
-      exact algebraicIndependent_iff_injective_aeval.1 hw
-    exact (Function.Injective.of_comp_iff' _ hs.1.aevalEquiv.bijective).1 hcomp
-  algebraize [φ.toRingHom]
-  have := hs.isAlgebraic
-  have hinj : Function.Injective (algebraMap E Ω) :=
-    Algebra.IsAlgebraic.injective_tower_top E (R := ↥A) fun a b hab ↦ hA_inj <| by
-      simpa [IsScalarTower.algebraMap_apply (↥A) E Ω, RingHom.algebraMap_toAlgebra] using hab
-  exact ⟨φ, by
-    simpa only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using hinj⟩
+  obtain ⟨φ, hφ, -⟩ := hs.exists_algHom_apply_eq hw
+  exact ⟨φ, hφ⟩
 
 /-- A domain `E` over a commutative ring `R` acting faithfully on `E` and an algebraically closed
 field `Ω` maps over `R` to `Ω` whenever `trdeg R E ≤ trdeg R Ω`. -/
@@ -218,19 +207,20 @@ end TauCeti.IsAlgClosed
 namespace Transcendental
 
 /-- If `trdeg k E ≤ trdeg k Ω` for a domain `E` containing `k`, then for elements `α ∈ E` and
-`z ∈ Ω` transcendental over `k`, some `k`-algebra homomorphism `E →ₐ[k] Ω` sends `α` to `z`. -/
+`z ∈ Ω` transcendental over `k`, some injective `k`-algebra homomorphism `E →ₐ[k] Ω` sends `α` to
+`z`. -/
 theorem exists_algHom_apply_eq {E : Type u} [CommRing E] [IsDomain E] [Algebra k E] {α : E}
     {z : Ω} (hα : Transcendental k α) (hz : Transcendental k z)
     (h : Cardinal.lift.{v} (trdeg k E) ≤ Cardinal.lift.{u} (trdeg k Ω)) :
-    ∃ φ : E →ₐ[k] Ω, φ α = z := by
+    ∃ φ : E →ₐ[k] Ω, Function.Injective φ ∧ φ α = z := by
   classical
   obtain ⟨s, hαs, hs⟩ := hα.exists_isTranscendenceBasis_mem
   obtain ⟨t, hzt, ht⟩ := hz.exists_isTranscendenceBasis_mem
   obtain ⟨f⟩ := hs.nonempty_embedding_of_lift_trdeg_le ht h
   -- Redefine the embedding of bases at `α` so that it sends `α` to `z`.
   let g : s ↪ t := f.setValue ⟨α, hαs⟩ ⟨z, hzt⟩
-  obtain ⟨φ, hφ⟩ := hs.exists_algHom_apply_eq (ht.1.comp g g.injective)
-  exact ⟨φ, (hφ ⟨α, hαs⟩).trans (congrArg Subtype.val (f.setValue_eq _ _))⟩
+  obtain ⟨φ, hφ_inj, hφ⟩ := hs.exists_algHom_apply_eq (ht.1.comp g g.injective)
+  exact ⟨φ, hφ_inj, (hφ ⟨α, hαs⟩).trans (congrArg Subtype.val (f.setValue_eq _ _))⟩
 
 /-- If the algebraically closed extensions `E` and `Ω` of `k` have the same transcendence degree
 over `k`, then for elements `α ∈ E` and `z ∈ Ω` transcendental over `k`, some isomorphism

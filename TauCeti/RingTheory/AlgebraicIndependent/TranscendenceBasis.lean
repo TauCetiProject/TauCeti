@@ -16,7 +16,8 @@ import Mathlib.RingTheory.AlgebraicIndependent.RankAndCardinality
 
 This file records consequences of algebraic independence and Mathlib's transcendence-degree
 tower inequality `lift_trdeg_add_le` for towers of commutative rings, and compares transcendence
-bases of two domains with comparable transcendence degrees.
+bases of two domains with comparable transcendence degrees. Over a countable commutative ring
+acting faithfully, the transcendence degree of an uncountable domain equals its cardinality.
 
 ## Main results
 
@@ -31,10 +32,10 @@ bases of two domains with comparable transcendence degrees.
 * `IsTranscendenceBasis.nonempty_embedding_of_lift_trdeg_le`,
   `IsTranscendenceBasis.nonempty_equiv_of_lift_trdeg_eq`: comparing transcendence degrees of two
   domains compares the index types of their transcendence bases.
-* `IsTranscendenceBasis.cardinalMk_eq_of_aleph0_lt`: a transcendence basis of an uncountable
+* `IsTranscendenceBasis.lift_cardinalMk_eq_of_aleph0_lt`: a transcendence basis of an uncountable
   integral domain over a countable commutative ring has the domain's cardinality.
 * `TauCeti.trdeg_eq_cardinalMk`: the transcendence degree of an uncountable integral domain over a
-  countable field is its cardinality.
+  countable commutative ring acting faithfully is its cardinality.
 -/
 
 public section
@@ -137,7 +138,7 @@ theorem nonempty_equiv_of_lift_trdeg_eq (hv : IsTranscendenceBasis R v)
 `R` has the same cardinality as `E`. This generalizes Mathlib's
 `IsAlgClosed.cardinal_eq_cardinal_transcendence_basis_of_aleph0_lt` from algebraically closed
 fields to arbitrary integral domains. -/
-theorem cardinalMk_eq_of_aleph0_lt {R : Type u} {E : Type v} {ι : Type w} [CommRing R]
+theorem lift_cardinalMk_eq_of_aleph0_lt {R : Type u} {E : Type v} {ι : Type w} [CommRing R]
     [Countable R] [CommRing E] [IsDomain E] [Algebra R E] {x : ι → E}
     (hx : IsTranscendenceBasis R x) (hE : ℵ₀ < #E) :
     Cardinal.lift.{v} #ι = Cardinal.lift.{w} #E := by
@@ -148,9 +149,7 @@ theorem cardinalMk_eq_of_aleph0_lt {R : Type u} {E : Type v} {ι : Type w} [Comm
     by_contra hne
     rw [not_nonempty_iff] at hne
     have : Algebra.IsAlgebraic R E := hx.isEmpty_iff_isAlgebraic.1 hne
-    have hinj : Function.Injective (algebraMap R E) := fun a b hab ↦
-      MvPolynomial.C_injective ι R (algebraicIndependent_iff_injective_aeval.1 hx.1
-        (by simpa using hab))
+    have hinj := hx.1.algebraMap_injective
     have : IsDomain R := hinj.isDomain (algebraMap R E)
     have : Module.IsTorsionFree R E := Module.isTorsionFree_iff_algebraMap_injective.2 hinj
     have hle : lift.{u} #E ≤ ℵ₀ :=
@@ -176,4 +175,4 @@ theorem TauCeti.trdeg_eq_cardinalMk {k : Type*} {E : Type u} [CommRing k] [Count
   have : Nontrivial k := RingHom.domain_nontrivial (algebraMap k E)
   obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k E
   rw [← ht.cardinalMk_eq_trdeg]
-  exact Cardinal.lift_inj.1 (ht.cardinalMk_eq_of_aleph0_lt hE)
+  exact Cardinal.lift_inj.1 (ht.lift_cardinalMk_eq_of_aleph0_lt hE)
