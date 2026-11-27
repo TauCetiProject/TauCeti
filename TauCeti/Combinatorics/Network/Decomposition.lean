@@ -27,7 +27,8 @@ each arrow at most once.
 There is such a decomposition with at most as many components as arrows of positive value, and
 with all weights in any additive subgroup containing the values of `f`. For an ordinary `s`–`t`
 flow every path of a decomposition runs from `s` to `t`, and the path weights add up to the value
-of the flow; for a circulation there are no paths at all.
+of the flow. A bounded `s`–`t` assignment of negative value instead decomposes into paths from
+`t` to `s`, after terminal exchange. For a circulation there are no paths at all.
 
 ## Main definitions
 
@@ -57,6 +58,10 @@ of the flow; for a circulation there are no paths at all.
   `s`–`t` flow, whose paths run from `s` to `t` with total weight the value of the flow.
 * `TauCeti.PathCycleDecomposition.pathAssignment_apply_le_val`: the path components of a
   decomposition of an ordinary flow carry at most its value on every arrow.
+* `TauCeti.PathCycleDecomposition.paths_ne_nil_of_val_pos`: every decomposition of a positive-value
+  ordinary flow has a path component.
+* `TauCeti.BoundedFlow.exists_pathCycleDecomposition_of_val_neg`: a nonnegative bounded assignment
+  of negative value decomposes into paths in the reverse terminal direction and cycles.
 * `TauCeti.PathCycleDecomposition.weight_eq_one_of_mem_paths` and
   `TauCeti.PathCycleDecomposition.pairwise_disjoint_arrows`: for an integer assignment carrying at
   most one unit on every arrow, every path component has weight one and different path components
@@ -415,6 +420,14 @@ theorem sum_weight_paths_eq_val [Preorder K] {f : Flow cap s t}
   rw [f.val_def]
   simpa [hs, ht] using (D.excessAt_eq_sum_sub_sum t).symm
 
+/-- Every path–cycle decomposition of a positive-value ordinary flow has a path component. -/
+theorem paths_ne_nil_of_val_pos [Preorder K] {f : Flow cap s t}
+    (D : PathCycleDecomposition f.toFun) (hf : 0 < f.val) : D.paths ≠ [] := by
+  intro hpaths
+  have hval : f.val = 0 := by
+    simpa [hpaths] using D.sum_weight_paths_eq_val.symm
+  exact hf.ne' hval
+
 /-- The path components of a decomposition of an ordinary `s`–`t` flow carry at most the value of
 the flow on every arrow. -/
 theorem pathAssignment_apply_le_val [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
@@ -605,6 +618,26 @@ theorem nonempty_pathCycleDecomposition (hf : 0 ≤ f) : Nonempty (PathCycleDeco
   ⟨D⟩
 
 end Existence
+
+/-! ### Decompositions after terminal exchange -/
+
+/-- A nonnegative bounded `s`–`t` assignment of negative value decomposes into positively weighted
+paths from `t` to `s` and cycles. The path family is nonempty, and its total weight is the opposite
+of the original value. -/
+theorem BoundedFlow.exists_pathCycleDecomposition_of_val_neg [LinearOrder K]
+    [IsOrderedAddMonoid K] {cap : Assignment Q K} {s t : V} (f : BoundedFlow 0 cap s t)
+    (hf : f.val < 0) :
+    ∃ D : PathCycleDecomposition f.toFun,
+      D.paths ≠ [] ∧ (∀ p ∈ D.paths, p.source = t ∧ p.target = s) ∧
+        (D.paths.map WeightedWalk.weight).sum = -f.val := by
+  let g := f.swapFlow hf.le
+  have hfun : g.toFun = f.toFun := by simp [g]
+  rw [← hfun]
+  obtain ⟨D⟩ := nonempty_pathCycleDecomposition (f := g.toFun) fun _ _ e ↦ g.nonneg e
+  have hval : 0 < g.val := by simp [g, hf]
+  refine ⟨D, D.paths_ne_nil_of_val_pos hval,
+    fun p hp ↦ ⟨D.source_eq_of_mem_paths hp, D.target_eq_of_mem_paths hp⟩, ?_⟩
+  simpa [g] using D.sum_weight_paths_eq_val
 
 /-! ### Decompositions of assignments carrying at most one unit on every arrow -/
 

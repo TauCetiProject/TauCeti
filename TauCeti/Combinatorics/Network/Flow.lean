@@ -468,6 +468,22 @@ theorem BoundedFlow.toBoundedFlow_swapFlow {cap : Assignment Q K} {s t : V}
     (f : BoundedFlow 0 cap s t) (hf : f.val ≤ 0) : (f.swapFlow hf).toBoundedFlow = f.swap :=
   (rfl)
 
+/-- Terminal exchange keeps every arrow value of a bounded assignment. -/
+theorem BoundedFlow.toFun_swapFlow {cap : Assignment Q K} {s t : V}
+    (f : BoundedFlow 0 cap s t) (hf : f.val ≤ 0) : (f.swapFlow hf).toFun = f.toFun := by
+  calc
+    (f.swapFlow hf).toFun = (f.swapFlow hf).toBoundedFlow.toFun := rfl
+    _ = f.swap.toFun := congrArg BoundedFlow.toFun (f.toBoundedFlow_swapFlow hf)
+    _ = f.toFun := f.swap_toFun
+
+/-- Terminal exchange negates the value of a bounded assignment. -/
+theorem BoundedFlow.val_swapFlow {cap : Assignment Q K} {s t : V}
+    (f : BoundedFlow 0 cap s t) (hf : f.val ≤ 0) : (f.swapFlow hf).val = -f.val := by
+  calc
+    (f.swapFlow hf).val = (f.swapFlow hf).toBoundedFlow.val := rfl
+    _ = f.swap.val := congrArg BoundedFlow.val (f.toBoundedFlow_swapFlow hf)
+    _ = -f.val := f.val_swap
+
 namespace Flow
 
 variable {cap : Assignment Q K} {s t : V}
