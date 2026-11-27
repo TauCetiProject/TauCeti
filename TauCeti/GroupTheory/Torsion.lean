@@ -8,6 +8,8 @@ module
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Algebra.Group.Equiv.TypeTags
+import Mathlib.GroupTheory.FiniteAbelian.Basic
+import Mathlib.GroupTheory.Perm.Cycle.Type
 
 /-!
 # The torsion subgroup under a product decomposition
@@ -68,6 +70,10 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
   the `p`-primary components.
 * `IsAddPGroup.primaryComponent_eq_bot`: a `p`-primary torsion group has trivial `q`-primary
   component for every prime `q ≠ p`.
+* `TauCeti.AddCommGroup.finite_torsion`: the torsion subgroup of a finitely generated abelian
+  group is finite.
+* `TauCeti.AddCommGroup.prime_dvd_natCard_torsion_iff`: a prime `p` divides the order of a finite
+  torsion subgroup exactly when some nonzero element is killed by `p`.
 -/
 
 public section
@@ -306,6 +312,34 @@ theorem _root_.IsAddPGroup.primaryComponent_eq_bot {M : Type*} [AddCommGroup M]
   rw [← AddMonoid.addOrderOf_eq_one_iff]
   exact Nat.eq_one_of_dvd_coprimes (Nat.coprime_pow_primes k l hp hq hpq)
     (addOrderOf_dvd_of_nsmul_eq_zero hk) (addOrderOf_dvd_of_nsmul_eq_zero hl)
+
+/-- The torsion subgroup of a finitely generated abelian group is finite. -/
+instance AddCommGroup.finite_torsion [AddGroup.FG M] : Finite (AddCommGroup.torsion M) := by
+  have := Module.Finite.iff_addGroup_fg.mpr ‹AddGroup.FG M›
+  have : AddGroup.FG (AddCommGroup.torsion M) :=
+    Module.Finite.iff_addGroup_fg.mp <| Module.Finite.of_injective
+      (AddCommGroup.torsion M).subtype.toIntLinearMap Subtype.val_injective
+  exact _root_.AddCommGroup.finite_of_fg_isAddTorsion _ fun x ↦
+    AddSubmonoid.isOfFinAddOrder_coe.mp x.property
+
+/-- **Cauchy's theorem for the torsion subgroup.** For a prime `p` and an abelian group whose
+torsion subgroup is finite, `p` divides the order of the torsion subgroup exactly when some
+nonzero element is killed by `p`. -/
+theorem AddCommGroup.prime_dvd_natCard_torsion_iff [Finite (AddCommGroup.torsion M)]
+    (hp : p.Prime) : p ∣ Nat.card (AddCommGroup.torsion M) ↔ ∃ g : M, g ≠ 0 ∧ p • g = 0 := by
+  have := Fact.mk hp
+  refine ⟨fun hdvd ↦ ?_, fun ⟨g, hg0, hg⟩ ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := exists_prime_addOrderOf_dvd_card' p hdvd
+    rw [← AddSubgroup.addOrderOf_coe] at hx
+    refine ⟨x, fun hx0 ↦ ?_, hx ▸ addOrderOf_nsmul_eq_zero _⟩
+    rw [hx0, addOrderOf_zero] at hx
+    exact hp.one_lt.ne hx
+  · let x : AddCommGroup.torsion M := ⟨g, (AddCommGroup.mem_torsion g).mpr
+      (isOfFinAddOrder_iff_nsmul_eq_zero.mpr ⟨p, hp.pos, hg⟩)⟩
+    have hx : addOrderOf x = p := by
+      rw [AddSubgroup.addOrderOf_mk]
+      exact addOrderOf_eq_prime hg hg0
+    exact hx ▸ addOrderOf_dvd_natCard x
 
 end TauCeti
 
