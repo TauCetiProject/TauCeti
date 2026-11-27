@@ -29,16 +29,18 @@ import TauCeti.Topology.VectorBundle.Riemannian.Basic
 Let `F : ℝ → ℝ → M` be a two-parameter family of curves in a Riemannian manifold, with central
 curve `γ = F 0`, variation field `V(t) = ∂_s F (0, t)` and *transverse acceleration*
 `A(t) = D_s ∂_s F (0, t)`, the covariant acceleration at `s = 0` of the transverse curve
-`s ↦ F s t`. This file computes the second derivative at `s = 0` of the energy
-`E(s) = ½ ∫_a^b ‖∂_t F (s, t)‖² dt` (`TauCeti.Manifold.energy`) of the curves `F s`:
+`s ↦ F s t`. This file computes the second derivative at `s = 0` of the oriented energy
+integral `E(s) = ½ ∫_a^b ‖∂_t F (s, t)‖² dt` (`TauCeti.Manifold.energy`) of the curves `F s`:
 
 `E''(0) = I(V, V) + ⟪A(b), γ'(b)⟫ - ⟪A(a), γ'(a)⟫ - ∫_a^b ⟪A(t), D_t γ'(t)⟫ dt`,
 
-where `I(V, V) = ∫_a^b ‖D_t V‖² - ⟪R(V, γ') γ', V⟫ dt` is the index form
-(`TauCeti.Manifold.indexForm`), for any family which is `C³` near `{0} × [a, b]`. When `γ` is a
-geodesic the last integral vanishes, and only the endpoint terms `⟪A, γ'⟫` remain besides the
-index form: this is the second variation with free endpoints. When moreover the endpoints are
-fixed, `A` vanishes at `a` and `b`, and the second variation is the index form `I(V, V)`.
+where `I(V, V) = ∫_a^b ‖D_t V‖² - ⟪R(V, γ') γ', V⟫ dt` is the oriented index form
+(`TauCeti.Manifold.indexForm`), for any family which is `C³` at every point of `{0} × uIcc a b`
+(both integrals are oriented from `a` to `b`, so `uIcc a b` handles `a ≤ b` and `b < a` uniformly).
+When `γ` is a geodesic on `uIoo a b` the last integral vanishes, and only the endpoint terms
+`⟪A, γ'⟫` remain besides the index form: this is the second variation with free endpoints. When
+moreover the endpoints are fixed, `A` vanishes at `a` and `b`, and the second variation is the
+index form `I(V, V)`.
 
 The integrand is computed pointwise. Twice differentiating `‖∂_t F‖²` in `s` along the
 transverse curve, the symmetry lemma `D_s ∂_t F = D_t ∂_s F` and the commutation of the two
@@ -225,9 +227,9 @@ private theorem continuousAt_inner_acceleration_fst_acceleration {t : ℝ}
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- **Differentiating the energy twice under the integral sign.** For a family which is `C³` at
-every point of `{0} × [a, b]`, the second transverse derivatives `∂_s² ‖∂_t F (0, t)‖²` of the
-squared speed are integrable on `[a, b]`, and the derivative of the energy of `F s` has at `s = 0`
-the derivative half their integral. -/
+every point of `{0} × uIcc a b`, the second transverse derivatives `∂_s² ‖∂_t F (0, t)‖²` of the
+squared speed are integrable on `uIcc a b`, and the derivative of the oriented energy of `F s`
+from `a` to `b` has at `s = 0` the derivative half their oriented integral. -/
 theorem hasDerivAt_deriv_energy_integral {a b : ℝ}
     (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
     IntervalIntegrable (fun t ↦ deriv (deriv fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2) 0)
@@ -243,15 +245,15 @@ theorem hasDerivAt_deriv_energy_integral {a b : ℝ}
   simp only [energy_def, deriv_div_const]
 
 /-- **The second variation of energy.** Let `F` be a two-parameter family which is `C³` at every
-point of `{0} × [a, b]`, with central curve `γ = F 0`, variation field `V` and transverse
+point of `{0} × uIcc a b`, with central curve `γ = F 0`, variation field `V` and transverse
 acceleration `A(t) = D_s ∂_s F (0, t)`, the covariant acceleration at `s = 0` of `s ↦ F s t`.
-Then the derivative of the energy of `F s` between `a` and `b` is differentiable at `s = 0`, with
-derivative
+Then the derivative of the oriented energy of `F s` from `a` to `b` is differentiable at `s = 0`,
+with derivative
 
 `I(V, V) + ⟪A(b), γ'(b)⟫ - ⟪A(a), γ'(a)⟫ - ∫_a^b ⟪A(t), D_t γ'(t)⟫ dt`,
 
-where `I` is the index form of `γ` on `[a, b]` and `D_t γ'` is the covariant acceleration of
-`γ`. -/
+where `I` is the oriented index form of `γ` from `a` to `b` and `D_t γ'` is the covariant
+acceleration of `γ`. -/
 theorem hasDerivAt_deriv_energy {a b : ℝ}
     (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
     HasDerivAt (deriv fun s ↦ energy I (F s) a b)
@@ -300,11 +302,11 @@ theorem hasDerivAt_deriv_energy {a b : ℝ}
         linarith
 
 /-- **The second variation of energy along a geodesic.** If the central curve `γ = F 0` of a
-family which is `C³` at every point of `{0} × [a, b]` has vanishing covariant acceleration on the
-open interval between `a` and `b`, that is, it is a geodesic there, then the derivative of the
-energy of `F s` is differentiable at `s = 0`, with derivative `I(V, V) + ⟪A(b), γ'(b)⟫ -
-⟪A(a), γ'(a)⟫`, where `I` is the index form, `V` the variation field and
-`A(t) = D_s ∂_s F (0, t)` the transverse acceleration. -/
+family which is `C³` at every point of `{0} × uIcc a b` has vanishing covariant acceleration on
+the open interval between `a` and `b`, that is, it is a geodesic there, then the derivative of the
+oriented energy of `F s` from `a` to `b` is differentiable at `s = 0`, with derivative
+`I(V, V) + ⟪A(b), γ'(b)⟫ - ⟪A(a), γ'(a)⟫`, where `I` is the oriented index form, `V` the variation
+field and `A(t) = D_s ∂_s F (0, t)` the transverse acceleration. -/
 theorem hasDerivAt_deriv_energy_of_acceleration_eq_zero {a b : ℝ}
     (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
     (hγ : ∀ t ∈ uIoo a b, acceleration (leviCivitaConnection I M) (F 0) t = 0) :
@@ -369,7 +371,7 @@ theorem inner_acceleration_fst_curveVelocity_eq_of_curveVelocityLift_eq {a b : �
     (Filter.EventuallyEq.totalSpaceMk_acceleration_eq (leviCivitaConnection I M) hper)
     (by simpa only [curveVelocityLift_apply] using hvel)
 
-/-- **The second variation of energy of a geodesic.** If `F` is `C³` along `{0} × [a, b]` and its
+/-- **The second variation of energy of a geodesic.** If `F` is `C³` along `{0} × uIcc a b` and its
 central curve `γ = F 0` is a geodesic on the open segment `uIoo a b`, then
 
 `d²/ds² E(F s) |₀ = I(V, V) + ⟪A(b), γ'(b)⟫ - ⟪A(a), γ'(a)⟫`,
@@ -419,7 +421,7 @@ theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_isGeodesicCurveOn {a
     hF.hasDerivAt_deriv_energy
 
 /-- **Second variation of energy of a smoothly closed geodesic.** If `F` is `C³` along
-`{0} × [a, b]`, its nearby curves are closed (`F s a = F s b` for `s` near `0`), and its central
+`{0} × uIcc a b`, its nearby curves are closed (`F s a = F s b` for `s` near `0`), and its central
 curve `γ = F 0` is a geodesic on `uIoo a b` with matching endpoint velocity lifts
 `curveVelocityLift I γ a = curveVelocityLift I γ b`, then the boundary transverse-acceleration
 pairings cancel and `d²/ds² E(F s) |₀ = I(V, V)`. -/

@@ -35,6 +35,10 @@ orthogonal to every differentiable normal field `W` (`⟪W t, γ'(t)⟫ = 0`).
   tangential part of its covariant derivative.
 * `TauCeti.Manifold.IsGeodesicCurveOn.indexForm_sub_starProjection_singleton`: integrated bilinear
   normal-projection formula `I(V^⊥, W^⊥) = I(V, W) - ∫ ⟪D_t V, γ'⟫ ⟪D_t W, γ'⟫ / ‖γ'‖²`.
+* `TauCeti.Manifold.indexForm_sub_starProjection_eq_of_norm_curveVelocity_eq_one`: rewrite
+  `I(V^⊥, W^⊥)` along a unit-speed curve using `V - ⟪V, γ'⟫ γ'`.
+* `TauCeti.Manifold.indexForm_sub_starProjection_congr_of_totalSpaceMk_eq`: normal index forms
+  depend only on the tangent-bundle lifts of the fields on `uIoo a b`.
 * `TauCeti.Manifold.IsGeodesicCurveOn.indexForm_eq_zero_of_mem_span_curveVelocity_of_orthogonal`:
   any differentiable tangential field along a geodesic is `indexForm`-orthogonal to any
   differentiable normal field.
@@ -240,6 +244,53 @@ theorem IsGeodesicCurveOn.indexForm_sub_starProjection_singleton
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   exact indexFormIntegrand_sub_starProjection_singleton_bilinear
     hγ hmemIoo (hdiff V hV) (hdiff W hW)
+
+/-- Along a unit-speed curve on `uIoo a b`, the normal-projection index form `I(V^⊥, W^⊥)` equals
+the index form of `V - ⟪V, γ'⟫ • γ'` and `W - ⟪W, γ'⟫ • γ'`. -/
+theorem indexForm_sub_starProjection_eq_of_norm_curveVelocity_eq_one
+    {a b : ℝ} {γ : ℝ → M} (hspeed : ∀ t ∈ uIoo a b, ‖curveVelocity I γ t‖ = 1)
+    (V W : ∀ t, TangentSpace I (γ t)) :
+    indexForm I γ
+        (fun t ↦ V t - (ℝ ∙ curveVelocity I γ t).starProjection (V t))
+        (fun t ↦ W t - (ℝ ∙ curveVelocity I γ t).starProjection (W t)) a b =
+      indexForm I γ
+        (fun t ↦ V t - ⟪V t, curveVelocity I γ t⟫_ℝ • curveVelocity I γ t)
+        (fun t ↦ W t - ⟪W t, curveVelocity I γ t⟫_ℝ • curveVelocity I γ t) a b := by
+  have hproj (U : ∀ t, TangentSpace I (γ t)) (t : ℝ) (ht : t ∈ uIoo a b) :
+      HEq (U t - (ℝ ∙ curveVelocity I γ t).starProjection (U t))
+        (U t - ⟪U t, curveVelocity I γ t⟫_ℝ • curveVelocity I γ t) := by
+    rw [heq_eq_eq, Submodule.starProjection_unit_singleton ℝ (hspeed t ht), real_inner_comm]
+  exact indexForm_congr (fun _ _ ↦ rfl) (hproj V) (hproj W)
+
+/-- The normal-projection index form depends only on the tangent-bundle lifts of the curves and
+fields on the open parameter interval `uIoo a b`. -/
+theorem indexForm_sub_starProjection_congr_of_totalSpaceMk_eq {γ₁ γ₂ : ℝ → M}
+    {V₁ : ∀ t, TangentSpace I (γ₁ t)} {V₂ : ∀ t, TangentSpace I (γ₂ t)}
+    {W₁ : ∀ t, TangentSpace I (γ₁ t)} {W₂ : ∀ t, TangentSpace I (γ₂ t)}
+    {a b : ℝ}
+    (hV : ∀ t ∈ uIoo a b, TotalSpace.mk' E (γ₁ t) (V₁ t) = TotalSpace.mk' E (γ₂ t) (V₂ t))
+    (hW : ∀ t ∈ uIoo a b, TotalSpace.mk' E (γ₁ t) (W₁ t) = TotalSpace.mk' E (γ₂ t) (W₂ t)) :
+    indexForm I γ₁
+        (fun t ↦ V₁ t - (ℝ ∙ curveVelocity I γ₁ t).starProjection (V₁ t))
+        (fun t ↦ W₁ t - (ℝ ∙ curveVelocity I γ₁ t).starProjection (W₁ t)) a b =
+      indexForm I γ₂
+        (fun t ↦ V₂ t - (ℝ ∙ curveVelocity I γ₂ t).starProjection (V₂ t))
+        (fun t ↦ W₂ t - (ℝ ∙ curveVelocity I γ₂ t).starProjection (W₂ t)) a b := by
+  have hsub {x y : M} {u v : TangentSpace I x} {u' v' : TangentSpace I y}
+      (hu : TotalSpace.mk' E x u = TotalSpace.mk' E y u')
+      (hv : TotalSpace.mk' E x v = TotalSpace.mk' E y v') :
+      HEq (u - (ℝ ∙ v).starProjection u) (u' - (ℝ ∙ v').starProjection u') := by
+    cases hu; cases hv; rfl
+  have hγEq : EqOn γ₁ γ₂ (uIoo a b) := fun t ht ↦ congrArg TotalSpace.proj (hV t ht)
+  have hvel (t : ℝ) (ht : t ∈ uIoo a b) :
+      TotalSpace.mk' E (γ₁ t) (curveVelocity I γ₁ t) =
+        TotalSpace.mk' E (γ₂ t) (curveVelocity I γ₂ t) := by
+    have hnear : γ₁ =ᶠ[𝓝 t] γ₂ := eventuallyEq_of_mem (isOpen_Ioo.mem_nhds ht) hγEq
+    exact Bundle.TotalSpace.ext hnear.self_of_nhds
+      (heq_of_eq (Filter.EventuallyEq.curveVelocity_eq hnear))
+  exact indexForm_congr hγEq
+    (fun t ht ↦ hsub (hV t ht) (hvel t ht))
+    (fun t ht ↦ hsub (hW t ht) (hvel t ht))
 
 /-- **Tangential fields are `indexForm`-orthogonal to normal fields along a geodesic.** If `γ` is a
 geodesic on `uIoo a b`, `V` and `W` have differentiable coordinates on `uIoo a b`, `V t ∈ ℝ ∙ γ'(t)`

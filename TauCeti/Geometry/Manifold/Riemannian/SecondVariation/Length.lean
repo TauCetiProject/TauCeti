@@ -15,7 +15,6 @@ import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Exponential
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation
-import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!
 # The second variation of length
@@ -441,21 +440,6 @@ theorem hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn {a b : ℝ} (ha
     exact hγ.accelerationWithin_eq_zero t ht
   exact hasDerivAt_deriv_toReal_pathELength_of_acceleration_eq_zero hab hF hacc hC hspeed
 
-private theorem indexForm_sub_starProjection_eq_of_norm_curveVelocity_eq_one
-    {a b : ℝ} {γ : ℝ → M} (hspeed : ∀ t ∈ uIoo a b, ‖curveVelocity I γ t‖ = 1)
-    (V : ∀ t, TangentSpace I (γ t)) :
-    indexForm I γ
-        (fun t ↦ V t - (ℝ ∙ curveVelocity I γ t).starProjection (V t))
-        (fun t ↦ V t - (ℝ ∙ curveVelocity I γ t).starProjection (V t)) a b =
-      indexForm I γ
-        (fun t ↦ V t - ⟪V t, curveVelocity I γ t⟫_ℝ • curveVelocity I γ t)
-        (fun t ↦ V t - ⟪V t, curveVelocity I γ t⟫_ℝ • curveVelocity I γ t) a b := by
-  have hproj (t : ℝ) (ht : t ∈ uIoo a b) :
-      HEq (V t - (ℝ ∙ curveVelocity I γ t).starProjection (V t))
-        (V t - ⟪V t, curveVelocity I γ t⟫_ℝ • curveVelocity I γ t) := by
-    rw [heq_eq_eq, Submodule.starProjection_unit_singleton ℝ (hspeed t ht), real_inner_comm]
-  exact indexForm_congr (fun _ _ ↦ rfl) hproj hproj
-
 /-- **Second variation of length for a fixed-endpoint variation of a constant-speed geodesic.** For
 a `C³` fixed-endpoint variation `F` on `[a, b]` (`a ≤ b`) whose central curve `γ = F 0` is a
 geodesic on `(a, b)` of constant speed `C > 0` on `[a, b]`, the second derivative of length at
@@ -497,9 +481,11 @@ theorem hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn_of_curveVelocit
   rw [inner_acceleration_fst_curveVelocity_eq_of_curveVelocityLift_eq hper hvel,
     add_sub_cancel_right]
 
-/-- **Tangential variations do not affect the second variation of length.** Along a constant-speed
-geodesic (`C > 0`) on `(a, b)` (`a ≤ b`), if the variation field `V` is tangential on `(a, b)`,
-then `I(V^⊥, V^⊥) = 0`, leaving only the boundary term `(⟪A(b), γ'(b)⟫ - ⟪A(a), γ'(a)⟫) / C`. -/
+/-- **Tangential fields contribute no normal index term to the second variation of length.** Along
+a constant-speed geodesic (`C > 0`) on `(a, b)` (`a ≤ b`), if the variation field `V` is tangential
+on `(a, b)`, then `I(V^⊥, V^⊥) = 0`, leaving only the boundary term
+`(⟪A(b), γ'(b)⟫ - ⟪A(a), γ'(a)⟫) / C` (so the second variation vanishes when the endpoint pairings
+cancel). -/
 theorem hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn_of_mem_span_curveVelocity
     {a b : ℝ} (hab : a ≤ b)
     (hF : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
@@ -598,17 +584,6 @@ variable [I.Boundaryless] {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)}
 
 namespace IsGeodesicCurveOn
 
-private theorem totalSpaceMk_sub_starProjection_singleton_eq {𝕜 B F : Type*} {V : B → Type*}
-    [RCLike 𝕜] [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace 𝕜 (V x)]
-    {x y : B} {u v : V x} {u' v' : V y}
-    (hu : TotalSpace.mk' F x u = TotalSpace.mk' F y u')
-    (hv : TotalSpace.mk' F x v = TotalSpace.mk' F y v') :
-    TotalSpace.mk' F x (u - (𝕜 ∙ v).starProjection u) =
-      TotalSpace.mk' F y (u' - (𝕜 ∙ v').starProjection u') := by
-  cases hu
-  cases hv
-  rfl
-
 /-- **Second variation of length along an exponential variation of a constant-speed geodesic.** For
 a geodesic `γ` on `(a, b)` of constant speed `C > 0` on `(a, b)` (`a ≤ b`) and any field `V` along
 `γ` whose lift to the tangent bundle is `C³` on `[a, b]` (even with moving endpoints),
@@ -644,19 +619,10 @@ theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation
       hC (fun t ht ↦ by rw [exponentialVariation_zero]; exact hspeed' t ht)
     simp only [acceleration_exponentialVariation_zero, inner_zero_left, add_zero, sub_zero] at h
     rwa [variationField_exponentialVariation_eq, exponentialVariation_zero] at h
-  have hVperp (t : ℝ) (ht : t ∈ uIoo a b) :
-      TotalSpace.mk' E (γ' t) (V' t - (ℝ ∙ curveVelocity I γ' t).starProjection (V' t)) =
-        TotalSpace.mk' E (γ t) (V t - (ℝ ∙ curveVelocity I γ t).starProjection (V t)) := by
-    have hti : t ∈ Ioo a b := by rwa [uIoo_of_le hab] at ht
-    have hnear : γ' =ᶠ[𝓝 t] γ := eventuallyEq_of_mem (Icc_mem_nhds hti.1 hti.2) hγEq
-    have hvel : TotalSpace.mk' E (γ' t) (curveVelocity I γ' t) =
-        TotalSpace.mk' E (γ t) (curveVelocity I γ t) :=
-      Bundle.TotalSpace.ext hnear.self_of_nhds
-        (heq_of_eq (Filter.EventuallyEq.curveVelocity_eq hnear))
-    exact totalSpaceMk_sub_starProjection_singleton_eq
-      (hEq t (uIoo_subset_uIcc_self ht)) hvel
   rw [congrArg (fun f s ↦ (f s).toReal) (pathELength_exponentialVariation_eq_of_eqOn hExp)]
-  exact hd'.congr_deriv (congrArg (· / C) (indexForm_congr_of_totalSpaceMk_eq hVperp hVperp))
+  exact hd'.congr_deriv (congrArg (· / C) (indexForm_sub_starProjection_congr_of_totalSpaceMk_eq
+    (fun t ht ↦ hEq t (uIoo_subset_uIcc_self ht))
+    (fun t ht ↦ hEq t (uIoo_subset_uIcc_self ht))))
 
 /-- **Second variation of length along an exponential variation of a unit-speed geodesic.** For a
 geodesic `γ` on `(a, b)` of unit speed on `(a, b)` (`a ≤ b`) and any field `V` along `γ` whose lift
@@ -673,7 +639,7 @@ theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation_of_norm_curveVe
         (fun t ↦ V t - ⟪V t, curveVelocity I γ t⟫_ℝ • curveVelocity I γ t) a b) 0 := by
   refine (hγ.hasDerivAt_deriv_toReal_pathELength_exponentialVariation hab hV
     zero_lt_one hspeed).congr_deriv ?_
-  rw [indexForm_sub_starProjection_eq_of_norm_curveVelocity_eq_one (by rwa [uIoo_of_le hab]) V,
+  rw [indexForm_sub_starProjection_eq_of_norm_curveVelocity_eq_one (by rwa [uIoo_of_le hab]) V V,
     div_one]
 
 /-- **Second variation of length along a normal exponential variation.** For a geodesic `γ` on

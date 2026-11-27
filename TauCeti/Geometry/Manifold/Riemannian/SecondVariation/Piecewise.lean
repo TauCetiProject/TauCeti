@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Piecewise
 public import TauCeti.Geometry.Manifold.Riemannian.SecondVariation.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Piecewise
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Exponential
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation
@@ -94,17 +95,6 @@ variable
 
 /-! ### Piecewise smooth two-parameter families -/
 
-private theorem hasDerivAt_deriv_sum_of_eventuallyEq {ι : Type*} [Fintype ι]
-    {f : ℝ → ℝ} {g : ι → ℝ → ℝ} {d : ι → ℝ} {u : ℝ}
-    (heq : f =ᶠ[𝓝 u] fun s ↦ ∑ i, g i s)
-    (hd₁ : ∀ i, ∀ᶠ s in 𝓝 u, DifferentiableAt ℝ (g i) s)
-    (hd₂ : ∀ i, HasDerivAt (deriv (g i)) (d i) u) :
-    HasDerivAt (deriv f) (∑ i, d i) u := by
-  have hdeq : deriv f =ᶠ[𝓝 u] fun s ↦ ∑ i, deriv (g i) s := by
-    filter_upwards [heq.deriv, Filter.eventually_all.mpr hd₁] with s hs hds
-    rw [hs, deriv_fun_sum (fun i _ ↦ hds i)]
-  exact (HasDerivAt.fun_sum (u := Finset.univ) fun i _ ↦ hd₂ i).congr_of_eventuallyEq hdeq
-
 /-- **Second variation of energy for a continuous piecewise `C³` family.** At each interior vertex
 `τ_{j+1}` the corner contribution is the pairing of the incoming extension's transverse acceleration
 with its incoming velocity minus the corresponding outgoing pairing; since adjacent extensions agree
@@ -136,10 +126,10 @@ theorem hasDerivAt_deriv_energy_piecewise {n : ℕ} (τ : Fin (n + 2) → ℝ)
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
   have heq := eventually_energy_eq_sum_of_piecewise τ hτ
     (fun i t ht ↦ (hG i t ht).of_le (by norm_num)) hFG
-  refine (hasDerivAt_deriv_sum_of_eventuallyEq heq
-    (fun i ↦ eventually_differentiableAt_energy (u := 0) fun t ht ↦
+  refine (TauCeti.hasDerivAt_deriv_sum_of_eventuallyEq heq
+    (fun i _ ↦ eventually_differentiableAt_energy (u := 0) fun t ht ↦
       (hGu i t ht).of_le (by norm_num))
-    (fun i ↦ hasDerivAt_deriv_energy (I := I) (F := G i) (a := τ i.castSucc) (b := τ i.succ)
+    (fun i _ ↦ hasDerivAt_deriv_energy (I := I) (F := G i) (a := τ i.castSucc) (b := τ i.succ)
       (hGu i))).congr_deriv ?_
   have hboundary := Fin.sum_univ_sub_eq_boundary_add_sum_jump (fun i j ↦ A i (τ j))
   dsimp only [A] at hboundary ⊢
@@ -252,9 +242,10 @@ theorem hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn {
   have heq := eventually_energy_exponentialVariation_eq_sum τ
     (Fin.strictMono_iff_lt_succ.mpr hτ).monotone fun i ↦ (hpieces i).of_le (by norm_num)
   rw [hτa, hτb] at heq
-  refine (hasDerivAt_deriv_sum_of_eventuallyEq heq
-    (fun i ↦ eventually_differentiableAt_energy_exponentialVariation ((hpi i).of_le (by norm_num)))
-    (fun i ↦ hasDerivAt_deriv_energy_exponentialVariation (hpi i))).congr_deriv ?_
+  refine (TauCeti.hasDerivAt_deriv_sum_of_eventuallyEq heq
+    (fun i _ ↦
+      eventually_differentiableAt_energy_exponentialVariation ((hpi i).of_le (by norm_num)))
+    (fun i _ ↦ hasDerivAt_deriv_energy_exponentialVariation (hpi i))).congr_deriv ?_
   rw [sum_indexForm_adjacent_intervals τ fun i ↦ intervalIntegrable_indexFormIntegrand
     ((hpi i).of_le (by norm_num)) ((hpi i).of_le (by norm_num)), hτa, hτb]
 

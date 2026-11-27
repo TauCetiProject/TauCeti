@@ -24,9 +24,12 @@ the variation field of a family of curves whose energy can be differentiated at 
 at `s = 0` for any field with a `C²` lift on `[a, b]`. Because
 `TauCeti.Manifold.exists_contMDiffAt_exponentialVariation_eqOn` extends any closed-interval
 `C^k` section lift to a two-sided `C^k` lift having the same exponential variation on `uIcc a b`,
-all statements below require only closed-interval (`ContMDiffOn`) or piecewise
-(`IsPiecewiseContMDiffOn` / `PiecewiseContMDiffSectionAlong`) regularity, with endpoint velocities
-read within the closed interval via `curveVelocityWithin`.
+the smooth formulas require only closed-interval (`ContMDiffOn`) regularity, and piecewise
+regularity (`IsPiecewiseContMDiffOn` / `PiecewiseContMDiffSectionAlong`) suffices to decompose the
+energy near `s = 0` into piece energies. Obtaining the corner-free piecewise first variation of
+energy additionally requires `γ` to be differentiable at every interior point of `(a, b)` so that
+the corner pairings cancel, with outer endpoint velocities read within the closed interval via
+`curveVelocityWithin`.
 
 ## Main results
 
@@ -209,35 +212,6 @@ theorem eventually_energy_exponentialVariation_eq_sum {n : ℕ} (τ : Fin (n + 1
   exact hs.trans (Finset.sum_congr rfl fun i _ ↦
     energy_congr ((hExpi i s).mono uIoo_subset_uIcc_self))
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M]
-  [IsManifold I ∞ M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- On a subinterval `[c, d] ⊆ [a, b]`, the one-sided velocity at either endpoint of `[c, d]` agrees
-with the velocity read within `[a, b]`, provided `γ` is differentiable at all interior points of
-`(a, b)`. -/
-private theorem curveVelocityWithin_Icc_eq_of_subset {a b c d x : ℝ}
-    (hcd : c < d) (hac : a ≤ c) (hdb : d ≤ b) (hx : x = c ∨ x = d)
-    (hγ : ∀ t ∈ Ioo a b, MDifferentiableAt 𝓘(ℝ, ℝ) I γ t) :
-    curveVelocityWithin I γ (Icc c d) x = curveVelocityWithin I γ (Icc a b) x := by
-  have hxcd : x ∈ Icc c d := by rcases hx with rfl | rfl <;> simp [hcd.le]
-  have hxab : x ∈ Icc a b := ⟨hac.trans hxcd.1, hxcd.2.trans hdb⟩
-  by_cases hxo : x ∈ Ioo a b
-  · rw [curveVelocityWithin_subset (subset_univ _) (uniqueDiffOn_Icc hcd _ hxcd)
-        (hγ _ hxo).mdifferentiableWithinAt,
-      curveVelocityWithin_univ, curveVelocityWithin_of_mem_nhds (Icc_mem_nhds hxo.1 hxo.2)]
-  · have hset : Icc c d =ᶠ[𝓝 x] Icc a b := by
-      rcases hxab.1.eq_or_lt with hax | hax
-      · have hca : c = a := le_antisymm (hax ▸ hxcd.1) hac
-        rw [← hax, hca]
-        filter_upwards [Iio_mem_nhds (hca ▸ hcd)] with t ht
-        exact ⟨fun h ↦ ⟨h.1, ht.le.trans hdb⟩, fun h ↦ ⟨h.1, ht.le⟩⟩
-      · have hxb : x = b := hxab.2.eq_or_lt.resolve_right fun hlt ↦ hxo ⟨hax, hlt⟩
-        have hdb' : d = b := le_antisymm hdb (hxb ▸ hxcd.2)
-        rw [hxb, hdb']
-        filter_upwards [Ioi_mem_nhds (hdb' ▸ hcd)] with t ht
-        exact ⟨fun h ↦ ⟨hac.trans ht.le, h.2⟩, fun h ↦ ⟨ht.le, h.2⟩⟩
-    simp only [curveVelocityWithin_apply, mfderivWithin_congr_set hset]
-
 /-- **First variation of energy along a piecewise `C²` exponential variation of an unbroken curve.**
 Let `V` be a continuous piecewise `C²` field along `γ` on `[a, b]` (`IsPiecewiseContMDiffOn`), and
 assume `γ` is differentiable at every interior point of `(a, b)` so that adjacent piece velocities
@@ -267,7 +241,7 @@ theorem hasDerivAt_energy_exponentialVariation_of_isPiecewiseContMDiffOn {a b : 
         curveVelocityWithin I γ (Icc a b) x := by
     rw [uIcc_of_le (hτ i).le]
     exact curveVelocityWithin_Icc_eq_of_subset (hτ i) (hτa ▸ hτ_mono (Fin.zero_le _))
-      (hτb ▸ hτ_mono (Fin.le_last _)) hx hγ
+      (hτb ▸ hτ_mono (Fin.le_last _)) (by rcases hx with rfl | rfl <;> simp [(hτ i).le]) hγ
   choose γi Vi hVi hEqi _ using
     fun i : Fin (n + 1) ↦ exists_contMDiffAt_exponentialVariation_eqOn γ V (hpi i)
   have hint (i : Fin (n + 1)) : IntervalIntegrable
