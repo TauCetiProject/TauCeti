@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Cap.Kronecker
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.AbsoluteRelative
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
@@ -72,7 +73,12 @@ a pair `(X, A)` the same identities hold for the relative cap product of a relat
 `α ⌣ β ∈ Hⁿ(X, A; T, N')` along the relative Alexander–Whitney diagonal
 (`TopPair.singularCap_comp_singularKronecker`, for `α` with values in the tensor unit,
 `TopPair.singularCap_comp_singularKronecker_of_homologyMap_eq` and
-`TopPair.singularCap_comp_singularKronecker_of_isIso`).
+`TopPair.singularCap_comp_singularKronecker_of_isIso`).  The cap product `x ⌢ α ∈ H_q(X, A; S)`
+of an absolute class `α ∈ Hᵖ(X; R, 𝟙)` with a relative class `x` (`TopPair.absoluteSingularCap`)
+pairs with relative classes `β ∈ H^q(X, A; S, N)` in the same way, `⟨β, x ⌢ α⟩ = ⟨α ⌣ β, x⟩` for
+the cup product `TopPair.singularCup` of absolute and relative cohomology
+(`TopPair.absoluteSingularCap_comp_singularKronecker`); the chain-level input is the relative form
+`SSetPair.chainComplexPairing_leftUnitor_hom_f` of the action of the tensor unit.
 
 ## References
 
@@ -435,5 +441,26 @@ theorem singularKronecker_singularCohomologyδ (P : TopPair.{w}) (k : Type*) [Ri
         (congrArg (P.snd.singularCap k (ρ_ R).inv (ρ_ M).hom n 0 n rfl σ ≫ ·)
           (SSet.homologyMap_homology₀ε M (TopCat.toSSet.map P.map))).trans
         (TopCat.singularCap_comp_singularHomology₀ε P.snd k n rfl σ)
+
+/-- **The Kronecker pairing of the cap product of absolute cohomology with relative homology**,
+`⟨β, x ⌢ α⟩ = ⟨α ⌣ β, x⟩`: for a pair `(X, A)`, an absolute class `α ∈ Hᵖ(X; R, 𝟙)` with values in
+the tensor unit, capped along `u` and the left unitor with a relative class `x ∈ Hₙ(X, A; T)`
+(`TopPair.absoluteSingularCap`), and a relative class `β ∈ H^q(X, A; S, N)`, evaluating `β` on
+`x ⌢ α` is evaluating on `x` the cup product `α ⌣ β ∈ Hⁿ(X, A; T, N)` of absolute and relative
+cohomology along the right relative Alexander–Whitney diagonal `P.rightAlexanderWhitneyDiagonal u`
+and the left unitor of `N` (the product `TopPair.singularCup`). -/
+theorem absoluteSingularCap_comp_singularKronecker (P : TopPair.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (p q n : ℕ) (h : p + q = n)
+    (α : P.fst.singularCohomology R k (𝟙_ C) p) (β : P.singularCohomology S k N q) :
+    P.absoluteSingularCap k u (λ_ S).hom p q n h α ≫ P.singularKronecker k q β =
+      P.singularKronecker k n
+        (TauCeti.ChainComplex.cup k (P.rightAlexanderWhitneyDiagonal u) (λ_ N).hom p q n h α
+          β) := by
+  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p α
+  obtain ⟨ψ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q β
+  rw [absoluteSingularCap_def, singularKronecker_def, singularKronecker_def]
+  refine TauCeti.ChainComplex.cap_comp_kronecker _ _ _ p q n h φ ψ ψ ?_
+  rw [SSetPair.chainComplexPairing_leftUnitor_hom_f]
+  exact (leftUnitor_naturality _).symm
 
 end TopPair

@@ -36,6 +36,8 @@ For `g = y` this is the convention of exact symplectic twist maps of the annulus
   `F*λ − λ` over a period of a horizontal line vanishes.
 * `TauCeti.IsExactForPrimitive.eq_zero_of_flux`: in particular, a constant flux along a
   horizontal line is zero.
+* `TauCeti.IsExactForPrimitive.comp_fiber`: exactness is invariant under fibre-preserving changes
+  of coordinates `(x, y) ↦ (x, φ(x, y))` that transport the primitive.
 
 ## References
 
@@ -102,5 +104,46 @@ theorem IsExactForPrimitive.eq_zero_of_flux {ℓ : ℝ} {J : Set ℝ} {F : ℝ �
   have h := hF.integral_flux_eq_zero hy₀ 0
   rw [hfun, intervalIntegral.integral_const, smul_eq_mul] at h
   simpa [hℓ] using h
+
+/-- **Exactness is invariant under fibre-preserving changes of coordinates.** Let
+`Φ(x, y) = (x, φ(x, y))` and `Ψ(x, y) = (x, ψ(x, y))`, where `Ψ` maps `ℝ × J'` into `ℝ × J` and is
+a right inverse of `Φ` there (`ψ(x, y) ∈ J` and `φ(x, ψ(x, y)) = y` for `y ∈ J'`), `ψ` is `C¹`,
+differentiable and `ℓ`-periodic in `x` on `ℝ × J'`, and `φ` is differentiable on `ℝ × J`. Let `Φ`
+transport the primitive `λ' = g' dx` to `λ = g dx`, that is `g' ∘ Φ = g` on `ℝ × J` (`Φ*λ' = λ`
+because `Φ` preserves `x`). If `F` maps `ℝ × J` to itself, is differentiable there and is exact
+for `λ`, then `Φ ∘ F ∘ Ψ` is exact for `λ'`. -/
+theorem IsExactForPrimitive.comp_fiber {ℓ : ℝ} {J J' : Set ℝ} {F : ℝ × ℝ → ℝ × ℝ}
+    {g g' φ ψ : ℝ × ℝ → ℝ} (hF : IsExactForPrimitive ℓ J F g)
+    (hFJ : MapsTo F (univ ×ˢ J) (univ ×ˢ J)) (hFd : ∀ p ∈ univ ×ˢ J, DifferentiableAt ℝ F p)
+    (hφd : ∀ p ∈ univ ×ˢ J, DifferentiableAt ℝ φ p) (hψ : ContDiffOn ℝ 1 ψ (univ ×ˢ J'))
+    (hψd : ∀ q ∈ univ ×ˢ J', DifferentiableAt ℝ ψ q) (hψJ : ∀ x, ∀ y ∈ J', ψ (x, y) ∈ J)
+    (hφψ : ∀ x, ∀ y ∈ J', φ (x, ψ (x, y)) = y) (hψper : ∀ x, ∀ y ∈ J', ψ (x + ℓ, y) = ψ (x, y))
+    (hg : ∀ p ∈ univ ×ˢ J, g' (p.1, φ p) = g p) :
+    IsExactForPrimitive ℓ J' ((fun p => (p.1, φ p)) ∘ F ∘ fun q => (q.1, ψ q)) g' := by
+  obtain ⟨S, hC, hper, hS⟩ := hF
+  set Φ : ℝ × ℝ → ℝ × ℝ := fun p => (p.1, φ p)
+  set Ψ : ℝ × ℝ → ℝ × ℝ := fun q => (q.1, ψ q)
+  have hΨJ : MapsTo Ψ (univ ×ˢ J') (univ ×ˢ J) := fun q hq =>
+    ⟨mem_univ _, hψJ q.1 q.2 hq.2⟩
+  -- The derivatives of `Φ` and `Ψ` preserve the first coordinate.
+  have hΦ' (p : ℝ × ℝ) (hp : p ∈ univ ×ˢ J) :
+      HasFDerivAt Φ ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod (fderiv ℝ φ p)) p :=
+    hasFDerivAt_fst.prodMk (hφd p hp).hasFDerivAt
+  have hΨ' (q : ℝ × ℝ) (hq : q ∈ univ ×ˢ J') :
+      HasFDerivAt Ψ ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod (fderiv ℝ ψ q)) q :=
+    hasFDerivAt_fst.prodMk (hψd q hq).hasFDerivAt
+  refine ⟨S ∘ Ψ, hC.comp (contDiffOn_fst.prodMk hψ) hΨJ, fun x y hy => ?_, fun q hq => ?_⟩
+  · simp only [Function.comp_apply, Ψ, hψper x y hy]
+    exact hper x _ (hψJ x y hy)
+  set p := Ψ q
+  have hp : p ∈ univ ×ˢ J := hΨJ hq
+  have hFp := (hFd p hp).hasFDerivAt
+  have hcomp := ((hΦ' (F p) (hFJ hp)).comp q (hFp.comp q (hΨ' q hq)))
+  have hgq : g' q = g p := by
+    rw [← hg p hp]
+    simp only [p, Ψ, hφψ q.1 q.2 hq.2]
+  convert (hS p hp).comp q (hΨ' q hq) using 1
+  rw [hcomp.fderiv, Function.comp_apply, Function.comp_apply, hg (F p) (hFJ hp), hgq]
+  ext <;> simp
 
 end TauCeti

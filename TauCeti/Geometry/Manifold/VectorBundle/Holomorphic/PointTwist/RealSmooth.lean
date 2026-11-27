@@ -24,7 +24,9 @@ of `E`, multiplied by the scalar transition function of the twist, which is holo
 real `C^n`.
 
 Consequently multiplication by the canonical section of `𝒪(x)` sends real-`C^n` sections of `E`
-to real-`C^n` sections of `E(x)` (`TauCeti.contMDiff_pointTwistMul_section_real`).
+to real-`C^n` sections of `E(x)` (`TauCeti.contMDiff_pointTwistMul_section_real`), and away from `x`
+a section of `E(±x)` is real `C^n` exactly when its image in `E` under `pointTwistDiv` is
+(`TauCeti.contMDiffAt_signedPointTwist_section_iff_of_ne_real`).
 
 This is the setting of the reduction of a smooth complex line bundle `L` over a compact Riemann
 surface to a twist of the trivial bundle, in the proof of the Riemann–Roch formula for real
@@ -37,6 +39,8 @@ generic smooth section, and only the real smooth structure of `L` is available.
   complex vector bundle are real-`C^n` vector bundles.
 * `TauCeti.contMDiff_pointTwistMul_section_real`: multiplication by the canonical section of
   `𝒪(x)` preserves real-`C^n` sections.
+* `TauCeti.contMDiffAt_signedPointTwist_section_iff_of_ne_real`: away from `x`, the real-`C^n`
+  sections of `E(±x)` are those of `E`.
 
 ## References
 
@@ -150,5 +154,22 @@ theorem contMDiff_pointTwistMul_section_real {x : X} {σ : ∀ z, E z}
       (fun z ↦ TotalSpace.mk' F (E := (pointTwistCore F E x).Fiber) z
         (pointTwistMul F E x z (σ z))) :=
   fun z₀ ↦ contMDiffAt_pointTwistMul_section_real (hσ z₀)
+
+/-- Away from `x`, a section of the signed point twist `E(±x)` is real `C^n` at `z₀` exactly when
+its image under `pointTwistDiv`, a section of `E`, is. -/
+theorem contMDiffAt_signedPointTwist_section_iff_of_ne_real {x z₀ : X} {s : Bool} (h : z₀ ≠ x)
+    {τ : ∀ z, (signedPointTwistCore F E x s).Fiber z} :
+    ContMDiffAt 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) n (fun z ↦ TotalSpace.mk' F z (τ z)) z₀ ↔
+      ContMDiffAt 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) n
+        (fun z ↦ TotalSpace.mk' F z (pointTwistDiv F E x z (τ z))) z₀ := by
+  have hz₀ : z₀ ∈ (signedPointTwistCore F E x s).baseSet (z₀, false) :=
+    mem_signedPointTwistCore_baseSet.2 ⟨mem_baseSet_trivializationAt F E z₀, by simpa using h⟩
+  rw [(trivializationAt F (signedPointTwistCore F E x s).Fiber z₀).contMDiffAt_section_iff
+      (mem_baseSet_trivializationAt F _ z₀),
+    (trivializationAt F E z₀).contMDiffAt_section_iff (mem_baseSet_trivializationAt F E z₀),
+    signedPointTwistCore_trivializationAt_of_ne h]
+  refine Filter.EventuallyEq.contMDiffAt_iff ?_
+  filter_upwards [((signedPointTwistCore F E x s).isOpen_baseSet _).mem_nhds hz₀] with z hz
+  exact (trivializationAt_pointTwistDiv hz (τ z)).symm
 
 end TauCeti

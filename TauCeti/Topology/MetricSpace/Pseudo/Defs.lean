@@ -34,6 +34,9 @@ On the real line, the extended distance from `b` to `a ≤ b` is `b - a`
 In a Hausdorff pseudometric space, if `f → a` and `g → b` along a nontrivial filter `l` with
 `dist (g z) (f z) ≤ dist (f z) a` eventually, then `a = b`
 (`Filter.Tendsto.eq_of_eventually_dist_le`).
+
+The metric entourages `{p | dist p.1 p.2 < ε}` and `{p | dist p.1 p.2 ≤ ε}` grow with `ε`
+(`Metric.monotone_ofPred_dist_lt`, `Metric.monotone_ofPred_dist_le`).
 -/
 
 public section
@@ -111,3 +114,13 @@ theorem Filter.Tendsto.eq_of_eventually_dist_le {α β : Type*} [PseudoMetricSpa
     (hf.congr_dist (squeeze_zero' (.of_forall fun _ ↦ dist_nonneg)
       (h.mono fun z hz ↦ dist_comm (g z) (f z) ▸ hz) (tendsto_iff_dist_tendsto_zero.1 hf)))
     hg
+
+/-- The metric entourages `{p | dist p.1 p.2 < ε}` grow with `ε`. -/
+theorem Metric.monotone_ofPred_dist_lt {X : Type*} [PseudoMetricSpace X] :
+    Monotone fun ε : ℝ ↦ {p : X × X | dist p.1 p.2 < ε} :=
+  fun _ _ h _ hp ↦ lt_of_lt_of_le hp h
+
+/-- The metric entourages `{p | dist p.1 p.2 ≤ ε}` grow with `ε`. -/
+theorem Metric.monotone_ofPred_dist_le {X : Type*} [PseudoMetricSpace X] :
+    Monotone fun ε : ℝ ↦ {p : X × X | dist p.1 p.2 ≤ ε} :=
+  fun _ _ h _ hp ↦ le_trans hp h

@@ -79,15 +79,6 @@ private theorem ae_isSymm_one :
       ((fun _ ↦ (1 : Matrix (Fin 1) (Fin 1) ℝ)) x).IsSymm :=
   ae_of_all _ fun _ ↦ Matrix.isSymm_one
 
-/-- The energy form of `-u'' - κ u` is the energy form of `-u''` minus `κ` times the `L²` inner
-product. -/
-private theorem energyFormH1_one_zero_neg (κ : ℝ) (u v : W1p volume (intervalDomain a b) 2) :
-    energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -κ) u v =
-      energyFormH1 (fun _ ↦ 1) 0 0 u v - κ * ⟪W1p.value u, W1p.value v⟫_ℝ := by
-  simpa only [Pi.zero_apply, zero_sub] using
-    energyFormH1_mass_sub_const (c := 0)
-      (memLp_energyIntegrand_const_zero_zero (1 : Matrix (Fin 1) (Fin 1) ℝ)) κ u v
-
 /-- The sine modes are weak Dirichlet eigenfunctions
 (`TauCeti.PDE.exists_value_ae_eq_sin_and_energyFormH1_eq`). Restating this here fixes the
 instances of `W1p0` to those of this file once, so that rewriting with the eigenfunction identity
@@ -162,7 +153,7 @@ private theorem value_eq_smul_of_inner_eq (hab : a < b) {k : ℕ}
     W1p.value (u : W1p volume (intervalDomain a b) 2) =
       t • W1p.value (s : W1p volume (intervalDomain a b) 2) := by
   rw [← sub_eq_zero]
-  refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero hab _ fun j _ ↦ ?_
+  refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero _ fun j _ ↦ ?_
   obtain ⟨sj, hsj, hsjeq⟩ := exists_value_ae_eq_sin hab j
   rw [setIntegral_mul_sin_eq_inner _ hsj, inner_sub_left, real_inner_smul_left]
   by_cases hjk : j = k
@@ -225,7 +216,7 @@ theorem forall_energyFormH1_eq_zero_iff_exists_value_ae_eq_intervalDomain (hab :
         =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
           fun x ↦ t * Real.sin (k * π * (x 0 - a) / (b - a)) := by
   obtain ⟨s, hs, hseq⟩ := exists_value_ae_eq_sin hab k
-  simp only [energyFormH1_one_zero_neg, sub_eq_zero]
+  simp only [energyFormH1_one_zero_const, neg_mul, ← sub_eq_add_neg, sub_eq_zero]
   refine ⟨fun hu ↦ ?_, fun ⟨t, ht⟩ ↦ energyFormH1_eq_of_value_ae_eq_mul_sin hs hseq ht⟩
   obtain ⟨t, ht⟩ := exists_inner_eq_mul_inner_self
     (W1p.value (u : W1p volume (intervalDomain a b) 2))
@@ -335,7 +326,7 @@ private theorem exists_ne_zero_forall_energyFormH1_eq_zero (hab : a < b) {k : �
       energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -(k * π / (b - a)) ^ 2)
         (s : W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) = 0 := by
   obtain ⟨s, hs0, hs⟩ := exists_ne_zero_energyFormH1_eq hab hk
-  exact ⟨s, hs0, fun v ↦ by rw [energyFormH1_one_zero_neg, hs v, sub_self]⟩
+  exact ⟨s, hs0, fun v ↦ by rw [energyFormH1_one_zero_const, hs v, neg_mul, add_neg_cancel]⟩
 
 /-- At an eigenvalue, both `0` and an eigenfunction solve the homogeneous problem. -/
 private theorem not_forall_existsUnique_forall_energyFormH1_eq (hab : a < b) {k : ℕ}
@@ -365,8 +356,8 @@ private theorem isDirichletEigenvalue_of_ne_zero (κ : ℝ) {u : W1p0 volume (in
           (v : W1p volume (intervalDomain a b) 2) =
         κ * ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
           W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ := fun v ↦ by
-    rw [← sub_eq_zero, ← energyFormH1_one_zero_neg]
-    exact hu v
+    have h := hu v
+    rwa [energyFormH1_one_zero_const, neg_mul, ← sub_eq_add_neg, sub_eq_zero] at h
   exact (isDirichletEigenvalue_iff κ).2 ⟨u, hu0, h⟩
 
 /-- **The Fredholm alternative for `-u'' - κ u` on an interval.** The Dirichlet problem
@@ -406,7 +397,8 @@ theorem not_isCoercive_energyFormH1L0_intervalDomain_of_le (hab : a < b) {κ : �
   have heig : IsDirichletEigenvalue volume (intervalDomain a b) (fun _ ↦ 1) 0 (fun _ ↦ -κ)
       ((π / (b - a)) ^ 2 - κ) :=
     (isDirichletEigenvalue_iff _).2 ⟨s, hs0, fun v ↦ by
-      rw [energyFormH1_one_zero_neg, hs v, Nat.cast_one, one_mul, sub_mul]⟩
+      rw [energyFormH1_one_zero_const, hs v, Nat.cast_one, one_mul, sub_mul, neg_mul,
+        ← sub_eq_add_neg]⟩
   linarith [pos_of_isDirichletEigenvalue hcoeff hcoercive heig]
 
 /-! ### Resonant forcing by another sine mode -/
@@ -445,7 +437,7 @@ private theorem forall_energyFormH1_eq_iff_forall_sub_eq_zero (κ : ℝ)
           W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) = 0 := by
   refine forall_congr' fun v ↦ ?_
   rw [← hu₀ v, Submodule.coe_sub]
-  simp only [energyFormH1_one_zero_neg, energyFormH1_sub_left
+  simp only [energyFormH1_one_zero_const, energyFormH1_sub_left
     (memLp_energyIntegrand_const_zero_zero (1 : Matrix (Fin 1) (Fin 1) ℝ)), W1p.value_sub,
     inner_sub_left]
   constructor <;> intro h <;> linarith
@@ -465,7 +457,7 @@ private theorem isWeakSolutionDirichlet_of_coe_eq (hab : a < b) {k m : ℕ} (hmk
         (u : W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) =
       ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
         W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ := by
-  simp only [hus, energyFormH1_smul_left, energyFormH1_one_zero_neg, hsmeq v]
+  simp only [hus, energyFormH1_smul_left, energyFormH1_one_zero_const, hsmeq v]
   linear_combination ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
       W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ *
     inv_mul_cancel₀ (sub_ne_zero.2 (sq_natCast_mul_pi_div_ne hab hmk))

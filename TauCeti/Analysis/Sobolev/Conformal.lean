@@ -46,7 +46,9 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
 * The **jet** of a section is `jet ρ ξ = (√ρ ξ, ∂s ξ, ∂t ξ)`, whose squared `L²` norm on `U` is at
   most the squared `W^{1,2}` norm above (`TauCeti.ConformalSobolev.sq_norm_le_integral`). The jets
   of test sections are square integrable (`TauCeti.ConformalSobolev.memLp_jet`), and their classes
-  form the subspace `TauCeti.ConformalSobolev.jetSubmodule` of `L²(U, V × V × V)`.
+  form the subspace `TauCeti.ConformalSobolev.jetSubmodule` of `L²(U, V × V × V)`; the class of
+  the jet of a difference is the difference of the classes
+  (`TauCeti.ConformalSobolev.toLp_jet_sub_ae_eq`).
 * `TauCeti.ConformalSobolev.H1` is its closure, the completion of the test sections in a norm
   equivalent to the `W^{1,2}` norm, that is, the Sobolev space `W^{1,2}_0(U, V)`; it is a
   closed subspace of `L²` and hence complete. An element is an `L²` jet `(η, ξ_s, ξ_t)` whose
@@ -65,7 +67,7 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
   below on a compact set `K ⊆ U`, it controls the `L²` norm of `ξ` over `K`
   (`TauCeti.ConformalSobolev.exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq`).
 * **First-order operators.** A coefficient field `M : U → L(V × V × V, W)`, essentially bounded on
-  `U`, acts on `L²` jets by `f ↦ M f` (`TauCeti.jetOperator (volume.restrict U) M`). On the jet
+  `U`, acts on `L²` jets by `f ↦ M f` (`TauCeti.jetOperator 2 (volume.restrict U) M`). On the jet
   of a test section `ξ` this is the first-order operator `ξ ↦ M (√ρ ξ, ∂s ξ, ∂t ξ)`
   (`TauCeti.ConformalSobolev.jetOperator_toLp_jet_ae_eq`), and its restriction to `H1` is the
   realization of that operator from `W^{1,2}_0(U, V)` to `L²(U, W)`.
@@ -224,6 +226,20 @@ theorem mem_jetSubmodule_iff {f : Lp (V × V × V) 2 (volume.restrict U)} :
 theorem toLp_jet_mem_jetSubmodule (hρ : IsWeight U ρ) (hξ : ξ ∈ testSection V U) :
     (memLp_jet hρ hξ).toLp (jet ρ ξ) ∈ jetSubmodule V U ρ :=
   ⟨ξ, hξ, MemLp.coeFn_toLp _⟩
+
+/-- The difference of the classes of the jets of two test sections is represented by the jet of
+their difference. -/
+theorem toLp_jet_sub_ae_eq (hρ : IsWeight U ρ) (hξ : ξ ∈ testSection V U)
+    (hη : η ∈ testSection V U) :
+    ⇑((memLp_jet hρ hξ).toLp (jet ρ ξ) - (memLp_jet hρ hη).toLp (jet ρ η))
+      =ᵐ[volume.restrict U] jet ρ (ξ - η) := by
+  have hdξ := (mem_testSection_iff.1 hξ).1.differentiable (by norm_num)
+  have hdη := (mem_testSection_iff.1 hη).1.differentiable (by norm_num)
+  filter_upwards [Lp.coeFn_sub ((memLp_jet hρ hξ).toLp (jet ρ ξ))
+    ((memLp_jet hρ hη).toLp (jet ρ η)), (memLp_jet hρ hξ).coeFn_toLp,
+    (memLp_jet hρ hη).coeFn_toLp] with z hz h1 h2
+  rw [hz, Pi.sub_apply, h1, h2, jet_apply, jet_apply, jet_apply, fderiv_sub (hdξ z) (hdη z)]
+  simp [smul_sub]
 
 variable (V U ρ) in
 /-- The Sobolev space `W^{1,2}_0(U, V)` of the conformal metric `ρ (ds² + dt²)`: the closure in
@@ -669,7 +685,7 @@ variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 field `M` is `z ↦ M z (√ρ ξ z, ∂s ξ z, ∂t ξ z)`. -/
 theorem jetOperator_toLp_jet_ae_eq (hρ : IsWeight U ρ) {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : MemLp M ∞ (volume.restrict U)) (hξ : ξ ∈ testSection V U) :
-    jetOperator (volume.restrict U) M ((memLp_jet hρ hξ).toLp (jet ρ ξ)) =ᵐ[volume.restrict U]
+    jetOperator 2 (volume.restrict U) M ((memLp_jet hρ hξ).toLp (jet ρ ξ)) =ᵐ[volume.restrict U]
       fun z ↦ M z (jet ρ ξ z) := by
   filter_upwards [coeFn_jetOperator hM ((memLp_jet hρ hξ).toLp (jet ρ ξ)),
     (memLp_jet hρ hξ).coeFn_toLp] with z h₁ h₂

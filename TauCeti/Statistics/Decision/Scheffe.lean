@@ -57,7 +57,8 @@ private theorem scheffe_event_iff {f : ℝ} (hf : 0 ≤ f) (hSL : S ≤ L) (hm :
   have hres : y - L.starProjection y = Lᗮ.starProjection (y - m) := by
     rw [map_sub, Submodule.starProjection_orthogonal_apply_eq_zero hm, sub_zero,
       Submodule.starProjection_orthogonal_val]
-  rw [hres, S.forall_abs_inner_starProjection_sub_le_iff hSL y m (by positivity),
+  simp only [← Real.norm_eq_abs]
+  rw [hres, S.forall_norm_inner_starProjection_sub_le_iff hSL y m (by positivity),
     ← sq_le_sq₀ (norm_nonneg _) (by positivity), mul_pow, Real.sq_sqrt (by positivity),
     Real.sq_sqrt (by positivity), div_le_iff₀ (div_pos hy hd'), div_le_iff₀ hr']
   rw [mul_comm _ (Module.finrank ℝ S : ℝ), ← mul_assoc]

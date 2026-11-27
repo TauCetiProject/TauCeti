@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.ENorm
 
 /-!
@@ -21,6 +22,9 @@ pointwise compositions of operator families: if `Aᵢ → A` uniformly on `s` wi
 and `Bᵢ → B` in `L¹(s)`, then `Aᵢ ∘L Bᵢ → A ∘L B` in `L¹(s)`
 (`TendstoUniformlyOn.tendsto_setLIntegral_enorm_clm_comp_sub`). This is how the weak chain rule
 passes from smooth approximations to the limit.
+Uniform convergence also controls `L¹` convergence by comparison: a family dominated pointwise by
+an `L¹`-null family plus a uniformly convergent one converges in `L¹(s)`
+(`TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub_of_le`).
 -/
 
 public section
@@ -70,5 +74,25 @@ theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_clm_comp_sub
     _ = (e i + C) * ∫⁻ x in s, ‖B' i x - B x‖ₑ ∂μ + e i * ∫⁻ x in s, ‖B x‖ₑ ∂μ := by
         rw [lintegral_add_left' (hmeas.const_mul _), lintegral_const_mul'' _ hmeas,
           lintegral_const_mul'' _ hBm.eNorm]
+
+/-- **`L¹` convergence by comparison with a uniformly convergent family.** Let `s` be a measurable
+set of finite measure. If `‖Fᵢ x - f x‖ₑ ≤ ‖rᵢ x‖ₑ + ‖Gᵢ x - g x‖ₑ` on `s`, where `Gᵢ → g`
+uniformly on `s` and `rᵢ → 0` in `L¹(s)`, then `Fᵢ → f` in `L¹(s)`. No measurability of the
+functions is needed: the uniform part is bounded by a constant. -/
+theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub_of_le {X Y Z : Type*}
+    [SeminormedAddCommGroup X] [SeminormedAddCommGroup Y] [ENorm Z]
+    {F : ι → α → X} {f : α → X} {G : ι → α → Y} {g : α → Y} {r : ι → α → Z}
+    (hG : TendstoUniformlyOn G g l s) (hs : MeasurableSet s) (hμs : μ s ≠ ∞)
+    (hr : Tendsto (fun i => ∫⁻ x in s, ‖r i x‖ₑ ∂μ) l (𝓝 0))
+    (hle : ∀ i, ∀ x ∈ s, ‖F i x - f x‖ₑ ≤ ‖r i x‖ₑ + ‖G i x - g x‖ₑ) :
+    Tendsto (fun i => ∫⁻ x in s, ‖F i x - f x‖ₑ ∂μ) l (𝓝 0) := by
+  refine tendsto_lintegral_zero_of_le_add (μ := μ.restrict s)
+    (g := fun i _ => ⨆ x ∈ s, ‖G i x - g x‖ₑ) (h := fun i x => ‖r i x‖ₑ)
+    (.of_forall fun i => ae_restrict_of_forall_mem hs fun x hx => (hle i x hx).trans_eq
+      (add_comm _ _) |>.trans (add_le_add_left
+        (le_iSup₂ (f := fun x (_ : x ∈ s) => ‖G i x - g x‖ₑ) x hx) _))
+    (.of_forall fun _ => aemeasurable_const) ?_ hr
+  simpa [setLIntegral_const] using
+    ENNReal.Tendsto.mul_const hG.tendsto_iSup_enorm_sub (Or.inr hμs)
 
 end TauCeti

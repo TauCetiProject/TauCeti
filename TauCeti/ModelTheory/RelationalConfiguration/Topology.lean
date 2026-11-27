@@ -7,7 +7,6 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
-public import Mathlib.SetTheory.Cardinal.Continuum
 public import TauCeti.Topology.Algebra.Group.Perm
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Perm
 
@@ -17,7 +16,15 @@ public import TauCeti.MeasureTheory.Constructions.BorelSpace.Perm
 The product topology on relational configurations is compact Hausdorff, and relabelling by a
 permutation of the carrier is continuous. Restriction along a vertex map is continuous, and
 jointly continuous in the vertex map when the target carrier is discrete. Specifying an atom's
-truth value gives a clopen, measurable cylinder. On countable carriers in countable relational
+truth value gives a clopen, measurable cylinder (`isClopen_setOf_eval`,
+`measurableSet_setOf_eval`). Specifying the truth values of a finite set of atoms gives Mathlib's
+finite cylinder `SymbolicDynamics.FullShift.cylinder`, whose results live in modules this one does
+not import: it is clopen by `SymbolicDynamics.FullShift.isOpen_cylinder` and
+`SymbolicDynamics.FullShift.isClosed_cylinder` in `Mathlib.Dynamics.SymbolicDynamics.Basic`,
+measurable by `SymbolicDynamics.FullShift.measurableSet_cylinder` in
+`TauCeti.MeasureTheory.Constructions.Cylinder.FullShift`, and these cylinders form a basis of the
+topology by `SymbolicDynamics.FullShift.isTopologicalBasis_cylinders` in
+`TauCeti.Dynamics.SymbolicDynamics.Basic`. On countable carriers in countable relational
 vocabularies the topology is Polish and its Borel σ-algebra is the existing product σ-algebra.
 The same construction handles finite and empty carriers.
 
@@ -129,14 +136,5 @@ instance [∀ n, Countable (L.Relations n)] [Countable V] :
 instance [∀ n, Countable (L.Relations n)] [Countable V] :
     BorelSpace (RelationalConfiguration L V) :=
   inferInstanceAs (BorelSpace (Atom L V → Bool))
-
-/-- There are at most continuum many configurations on a countable carrier in a countable
-relational vocabulary. Function symbols play no role. -/
-theorem mk_le_continuum (L : FirstOrder.Language) (V : Type*)
-    [∀ n, Countable (L.Relations n)] [Countable V] :
-    Cardinal.mk (RelationalConfiguration L V) ≤ Cardinal.continuum := by
-  rw [RelationalConfiguration, Cardinal.mk_arrow, Cardinal.mk_bool, Cardinal.lift_ofNat]
-  exact (Cardinal.power_le_power_left (by norm_num) Cardinal.mk_le_aleph0).trans_eq
-    Cardinal.two_power_aleph0
 
 end TauCeti.RelationalConfiguration

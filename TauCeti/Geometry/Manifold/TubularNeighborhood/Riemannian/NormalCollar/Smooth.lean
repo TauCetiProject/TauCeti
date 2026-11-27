@@ -62,7 +62,7 @@ theorem exists_partialDiffeomorph_normalCollar
     (hP : Module.finrank ℝ P = 1) :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
-    let ν : M → Type _ := fun x ↦ f.NormalSpace x hn
+    let ν : M → Type _ := fun x ↦ f.isImmersion.NormalSpace x hn
     letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
     ∀ u : (x : M) → ν x,
       ContMDiff I (I.prod 𝓘(ℝ, P)) ∞ (fun x ↦ TotalSpace.mk' P x (u x)) → (∀ x, ‖u x‖ = 1) →

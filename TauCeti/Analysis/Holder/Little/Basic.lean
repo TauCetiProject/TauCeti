@@ -142,6 +142,25 @@ theorem _root_.LipschitzWith.comp_memLittleHolder [PseudoMetricSpace Y] {Z : Typ
     _ = K / (K + 1) * (ε * dist x y ^ (α : ℝ)) := by ring
     _ ≤ ε * dist x y ^ (α : ℝ) := mul_le_of_le_one_left (by positivity) hK
 
+/-- Precomposition with a Lipschitz map preserves little Hölder continuity. -/
+theorem MemLittleHolder.comp_lipschitzWith [PseudoMetricSpace Y] {W : Type*}
+    [PseudoMetricSpace W] {K α : ℝ≥0} {f : X → Y} (hf : MemLittleHolder α f) {e : W → X}
+    (he : LipschitzWith K e) : MemLittleHolder α (f ∘ e) := by
+  intro ε hε
+  obtain ⟨δ, hδ, h⟩ := hf (ε / (K + 1) ^ (α : ℝ)) (by positivity)
+  refine ⟨δ / (K + 1), by positivity, fun x y hxy ↦ ?_⟩
+  -- `e` moves points by at most `(K + 1)` times their distance.
+  have hexy : dist (e x) (e y) ≤ (K + 1) * dist x y :=
+    (he.dist_le_mul x y).trans (by gcongr; linarith)
+  have hδ' : dist (e x) (e y) < δ :=
+    hexy.trans_lt (by rwa [lt_div_iff₀' (by positivity)] at hxy)
+  calc dist (f (e x)) (f (e y)) ≤ ε / (K + 1) ^ (α : ℝ) * dist (e x) (e y) ^ (α : ℝ) :=
+        h _ _ hδ'
+    _ ≤ ε / (K + 1) ^ (α : ℝ) * ((K + 1) * dist x y) ^ (α : ℝ) := by gcongr
+    _ = ε * dist x y ^ (α : ℝ) := by
+      rw [Real.mul_rpow (by positivity) dist_nonneg]
+      field_simp
+
 /-- Constant functions are little Hölder. -/
 theorem memLittleHolder_const [PseudoMetricSpace Y] {α : ℝ≥0} (c : Y) :
     MemLittleHolder α (fun _ : X ↦ c) :=
@@ -180,6 +199,15 @@ theorem MemLittleHolder.const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpac
 theorem MemLittleHolder.sub (hf : MemLittleHolder α f) (hg : MemLittleHolder α g) :
     MemLittleHolder α (f - g) := by
   simpa only [sub_eq_add_neg] using hf.add hg.neg
+
+/-- A map has little `α`-Hölder zeroth iterated derivative if and only if it is little
+`α`-Hölder. -/
+theorem memLittleHolder_iteratedFDeriv_zero_iff {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {α : ℝ≥0} {f : E → F} :
+    MemLittleHolder α (iteratedFDeriv 𝕜 0 f) ↔ MemLittleHolder α f := by
+  simp only [memLittleHolder_iff, iteratedFDeriv_zero_eq_comp, Function.comp_apply,
+    LinearIsometryEquiv.dist_map]
 
 end Predicate
 
@@ -302,7 +330,7 @@ theorem exists_contDiff_lipschitzWith_norm_sub_lt (f : HolderSpace α E Y)
     have hcoe : (g₁ : E → Y) = g₀ := by ext x; simp [g₁]
     rw [hcoe]
     refine ⟨‖f‖₊, holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun x _ y _ ↦
-      ρ.dist_normed_convolution_le_of_dist_sub_le f.continuous fun t ↦ ?_⟩
+      ρ.dist_normed_convolution_le_of_dist_sub_le f.continuous fun t _ ↦ ?_⟩
     simpa only [dist_sub_right] using f.holderWith_nnnorm.dist_le (x - t) (y - t)
   let g : HolderSpace α E Y := ofBoundedContinuousFunction g₁ hg₁
   have hg : (g : E → Y) = g₀ := funext fun x ↦ by simp [g, g₁]
@@ -467,7 +495,7 @@ private theorem exists_contDiff_iteratedFDeriv_sub_eq [MeasurableSpace E] [Borel
     rw [hD k le_rfl]
     refine ⟨C, holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun x _ y _ ↦
       ρ.dist_normed_convolution_le_of_dist_sub_le
-        (f.contDiff.continuous_iteratedFDeriv le_rfl) fun t ↦ ?_⟩
+        (f.contDiff.continuous_iteratedFDeriv le_rfl) fun t _ ↦ ?_⟩
     simpa only [dist_sub_right] using hC.dist_le (x - t) (y - t)
   let g : CkHolderSpace k α E F :=
     ofContDiff g₀ (hg₀.of_le (by exact_mod_cast le_top)) (fun i _ ↦ hg₀b i) hg₀h
