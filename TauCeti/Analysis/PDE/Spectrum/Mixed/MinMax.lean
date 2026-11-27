@@ -50,8 +50,8 @@ part**. Let the form be symmetric on `H¹_Γ(Ω)` and coercive there after a shi
 let `Γ'` miss `Ω`. Then `H¹_{Γ'}(Ω)` is a subspace of `H¹_Γ(Ω)`, so every subspace admissible in the
 min–max for `Γ'` is admissible for `Γ`, and since both infima are attained, `λₖ(Γ) ≤ λₖ(Γ')`
 (`TauCeti.PDE.mixedEigenvalue_mono`). For `-Δ`, again under the Rellich property on a nonempty
-domain, the Neumann, mixed and Dirichlet eigenvalues are therefore ordered: `0 = λ₀(∅)` when `Ω`
-is moreover bounded (`TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero`), and
+domain, the eigenvalues for `Γ = ∅`, for `Γ` and for `∂Ω` are therefore ordered: `0 = λ₀(∅)`
+when `Ω` is moreover bounded (`TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero`), and
 `λₖ(Γ) ≤ λₖ(∂Ω)` for every `Γ ⊆ ∂Ω`
 (`TauCeti.PDE.mixedEigenvalue_laplacian_le_dirichletEigenvalue`). For instance, on `(0, 1)` with
 `Γ = {0}` the least Neumann, mixed and Dirichlet eigenvalues are `0`, `π² / 4` and `π²`.
@@ -522,8 +522,9 @@ theorem mixedEigenvalue_laplacian_le_dirichletEigenvalue [Nonempty ι]
   (mixedEigenvalue_laplacian_mono hΓ (disjoint_frontier_iff_isOpen.2 Omega.isOpen) hK hOmega
     k).trans_eq (mixedEigenvalue_frontier k)
 
-/-- **The least Neumann eigenvalue of `-Δ` is `0`.** On a nonempty bounded domain with the
-Rellich property, `λ₀(∅) = 0`, with the constants as eigenfunctions. -/
+/-- **The least mixed eigenvalue of `-Δ` with `Γ = ∅` is `0`** (the Neumann eigenvalue where
+`H¹_∅(Ω) = H¹(Ω)`). On a nonempty bounded domain with the Rellich property, `λ₀(∅) = 0`, with the
+constants as eigenfunctions. -/
 theorem mixedEigenvalue_laplacian_empty_zero [Nonempty ι]
     (hb : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
