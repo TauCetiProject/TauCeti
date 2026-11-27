@@ -63,6 +63,6 @@ example : ¬ (TauCeti.Determinant.algHomDet
   rw [isFaithful_iff, ← ne_eq, Submodule.ne_bot_iff]
   refine ⟨⟨_, hN⟩, TauCeti.Determinant.mem_ker_algHomDet_of_isUpperTriangular _
     (fun x ↦ (Matrix.mem_blockTriangularSubalgebra ..).1 x.property) fun i ↦ ?_, fun h ↦ ?_⟩
-  · fin_cases i <;> rfl
+  · fin_cases i <;> simp
   · simpa using congrArg (fun M : Matrix.blockTriangularSubalgebra ℚ ℚ (id : Fin 2 → Fin 2) ↦
       (M : Matrix (Fin 2) (Fin 2) ℚ) 0 1) h
