@@ -15,7 +15,8 @@ import TauCeti.Algebra.Group.Idempotent
 
 Star projections in a product are characterized coordinatewise. The square has only zero, one,
 and the two coordinate projections exactly when the scalar star projections are zero and one.
-In particular, this holds in semirings with cancellation by nonzero left factors.
+In particular, this holds for a multiplication with zero and one, an involutive star that
+reverses multiplication, and cancellation by nonzero left factors.
 
 The absence of zero divisors alone is insufficient. On the chain `0 < m < 1`, take addition
 to be maximum, multiplication to be minimum, and star to be the identity. This gives a semiring
@@ -57,10 +58,11 @@ theorem TauCeti.forall_isStarProjection_prod_iff_eq_zero_or_one {R : Type*}
     simp only [Prod.ext_iff, Prod.fst_zero, Prod.snd_zero, Prod.fst_one, Prod.snd_one]
     tauto
 
-/-- The star projections in the square of a semiring with cancellation by nonzero left factors
-are zero, one, and the two coordinate projections. -/
-theorem Prod.isStarProjection_iff_eq_zero_or_one {R : Type*} [NonAssocSemiring R]
-    [IsLeftCancelMulZero R] [StarRing R] (x : R × R) :
+/-- For a multiplication with zero and one and an involutive star that reverses multiplication,
+cancellation by nonzero left factors gives precisely zero, one, and the two coordinate
+projections in the square. -/
+theorem Prod.isStarProjection_iff_eq_zero_or_one {R : Type*} [MulZeroOneClass R] [StarMul R]
+    [IsLeftCancelMulZero R] (x : R × R) :
     IsStarProjection x ↔ x = 0 ∨ x = (1, 0) ∨ x = (0, 1) ∨ x = 1 := by
   apply TauCeti.forall_isStarProjection_prod_iff_eq_zero_or_one.mpr _ x
   intro p
@@ -68,7 +70,10 @@ theorem Prod.isStarProjection_iff_eq_zero_or_one {R : Type*} [NonAssocSemiring R
   · intro hp
     exact or_iff_not_imp_left.mpr fun h ↦
       mul_left_cancel₀ h (hp.isIdempotentElem.eq.trans (mul_one p).symm)
-  · rintro (rfl | rfl) <;> simp
+  · rintro (rfl | rfl)
+    · refine ⟨mul_zero _, isSelfAdjoint_iff.mpr ?_⟩
+      simpa only [mul_zero] using star_star_mul (0 : R) 0
+    · exact IsStarProjection.one R
 
 namespace StarAlgEquiv
 
