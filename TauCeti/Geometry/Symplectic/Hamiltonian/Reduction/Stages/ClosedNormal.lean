@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.NormalQuotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Stages.Residual
 
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.ReducedForm
+import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # The first stage of reduction by a closed normal subgroup
@@ -51,6 +52,12 @@ for arbitrary presentations of the reduced spaces) takes as input.
   (`IsEquivariantMomentMap.existsUnique_comp_groupLieAlgebraMap_mk'_eq_and_isEquivariantMomentMap`,
   from the abstract residual moment map
   `IsEquivariantMomentMap.existsUnique_comp_groupLieAlgebraMap_eq_and_isEquivariantMomentMap`).
+* **Freeness in stages.** Let `N` act freely on `Z₁`, and let `μ₁` satisfy `μ₁ [z] ∘ dπ = μ z`.
+  Then `G` acts freely on the level `μ⁻¹(0)` exactly when `G ⧸ N` acts freely on the level
+  `μ₁⁻¹(0)` (`IsEquivariantMomentMap.stabilizer_eq_bot_of_stabilizer_quotient_eq_bot`,
+  `IsEquivariantMomentMap.stabilizer_quotient_eq_bot_of_stabilizer_eq_bot`; the second direction
+  does not use the freeness of `N`). These are the freeness hypotheses of the second-stage and of
+  the direct Marsden–Weinstein–Meyer reduced spaces at `0`.
 
 All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`.
 
@@ -572,5 +579,98 @@ theorem existsUnique_comp_groupLieAlgebraMap_mk'_eq_and_isEquivariantMomentMap [
     (hμ.quotientMk_eq_smul_quotientMk_subtypeLevel hN)
     (Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed (I := I) (I' := 𝓘(ℝ, Fin n₁ → ℝ))
       (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN) hη₁
+
+/-! ### Freeness in stages -/
+
+omit [I'.Boundaryless] in
+/-- **Freeness in stages gives freeness at zero.** Let `N` act freely at the points of the level
+`μ_N⁻¹(0)` of the restricted moment map, and let `μ₁` be a map on `μ_N⁻¹(0) ⧸ N` with
+`μ₁ [z] ∘ dπ = μ z`, such as the residual moment map, where `dπ` is the differential at the
+identity of `π : G → G ⧸ N`. If `G ⧸ N` acts freely at the points of `μ₁⁻¹(0)`, then `G` acts
+freely at the points of `μ⁻¹(0)`. -/
+theorem stabilizer_eq_bot_of_stabilizer_quotient_eq_bot (hμ : σ.IsEquivariantMomentMap μ) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
+      (I'' := I') (M := M)
+    letI := Subgroup.quotientChartedSpaceOfIsClosed I hN
+    haveI := Subgroup.lieGroup_quotientOfIsClosed (I := I) hN
+    letI := hμ.subtypeLevelMulAction hN
+    ∀ (_ : ∀ x, (μ x).comp (N.subtype.groupLieAlgebraMap 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup
+        (I := I) N).toSubmodule) I).toLinearMap = 0 → MulAction.stabilizer N x = ⊥)
+      {μ₁ : MulAction.orbitRel.Quotient N ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) →
+        Module.Dual ℝ (GroupLieAlgebra 𝓘(ℝ, Subgroup.QuotientModelSpace I N) (G ⧸ N))},
+      (∀ z, (μ₁ (Quotient.mk _ z)).comp ((QuotientGroup.mk' N).groupLieAlgebraMap I
+          𝓘(ℝ, Subgroup.QuotientModelSpace I N)).toLinearMap = μ z) →
+      (∀ y, μ₁ y = 0 → MulAction.stabilizer (G ⧸ N) y = ⊥) →
+      ∀ x, μ x = 0 → MulAction.stabilizer G x = ⊥ := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  let _ := Subgroup.quotientChartedSpaceOfIsClosed I hN
+  have := Subgroup.lieGroup_quotientOfIsClosed (I := I) hN
+  let _ := hμ.subtypeLevelMulAction hN
+  intro hfree μ₁ hμ₁ hfree₂ x hx
+  -- `x` lies in the first-stage level, where its class has `μ₁ [x] = 0`, as `dπ` is onto.
+  let z : (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0 :=
+    ⟨x, (hμ.comp_subtype_ofIsClosed hN).mem_levelSubMulAction.2 (by rw [hx, LinearMap.zero_comp])⟩
+  have hz : μ₁ (Quotient.mk _ z) = 0 := by
+    refine LinearMap.ext fun ζ ↦ ?_
+    obtain ⟨ξ, rfl⟩ := Subgroup.surjective_groupLieAlgebraMap_mk' (I := I) hN ζ
+    have := LinearMap.congr_fun (hμ₁ z) ξ
+    rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at this
+    rw [this, hx, LinearMap.zero_apply, LinearMap.zero_apply]
+  -- `N` acts freely at `z`, so `G` does by freeness in stages.
+  have hNz : MulAction.stabilizer N z = ⊥ := by
+    refine eq_bot_iff.2 fun k hk ↦ ?_
+    rw [← hfree x ((hμ.comp_subtype_ofIsClosed hN).mem_levelSubMulAction.1 z.property),
+      MulAction.mem_stabilizer_iff, Subgroup.smul_def]
+    rw [MulAction.mem_stabilizer_iff, Subgroup.smul_def] at hk
+    exact (hμ.coe_smul_subtypeLevelMulAction hN k z).symm.trans (congrArg Subtype.val hk)
+  have hGz := MulAction.orbitRel.Quotient.stabilizer_eq_bot_of_stabilizer_mk_eq_bot hNz
+    (hfree₂ _ hz)
+  refine eq_bot_iff.2 fun g hg ↦ ?_
+  rw [← hGz, MulAction.mem_stabilizer_iff]
+  exact Subtype.ext ((hμ.coe_smul_subtypeLevelMulAction hN g z).trans hg)
+
+omit [I'.Boundaryless] in
+/-- **Freeness at zero gives freeness of the residual action.** Let `μ₁` be a map on
+`μ_N⁻¹(0) ⧸ N` with `μ₁ [z] ∘ dπ = μ z`, such as the residual moment map, where `dπ` is the
+differential at the identity of `π : G → G ⧸ N`. If `G` acts freely at the points of `μ⁻¹(0)`,
+then `G ⧸ N` acts freely at the points of `μ₁⁻¹(0)`. The freeness of `N` is not needed. -/
+theorem stabilizer_quotient_eq_bot_of_stabilizer_eq_bot (hμ : σ.IsEquivariantMomentMap μ) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
+      (I'' := I') (M := M)
+    letI := Subgroup.quotientChartedSpaceOfIsClosed I hN
+    haveI := Subgroup.lieGroup_quotientOfIsClosed (I := I) hN
+    letI := hμ.subtypeLevelMulAction hN
+    ∀ {μ₁ : MulAction.orbitRel.Quotient N ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) →
+        Module.Dual ℝ (GroupLieAlgebra 𝓘(ℝ, Subgroup.QuotientModelSpace I N) (G ⧸ N))},
+      (∀ z, (μ₁ (Quotient.mk _ z)).comp ((QuotientGroup.mk' N).groupLieAlgebraMap I
+          𝓘(ℝ, Subgroup.QuotientModelSpace I N)).toLinearMap = μ z) →
+      (∀ x, μ x = 0 → MulAction.stabilizer G x = ⊥) →
+      ∀ y, μ₁ y = 0 → MulAction.stabilizer (G ⧸ N) y = ⊥ := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  let _ := Subgroup.quotientChartedSpaceOfIsClosed I hN
+  have := Subgroup.lieGroup_quotientOfIsClosed (I := I) hN
+  let _ := hμ.subtypeLevelMulAction hN
+  intro μ₁ hμ₁ hfree y hy
+  obtain ⟨z, rfl⟩ := Quotient.mk_surjective y
+  have hz : μ z = 0 := by rw [← hμ₁ z, hy, LinearMap.zero_comp]
+  -- `G` acts freely at `z`, so `G ⧸ N` acts freely at its orbit.
+  refine MulAction.orbitRel.Quotient.stabilizer_mk_eq_bot_of_stabilizer_eq_bot
+    (eq_bot_iff.2 fun g hg ↦ ?_)
+  rw [← hfree z hz, MulAction.mem_stabilizer_iff, ← hμ.coe_smul_subtypeLevelMulAction hN,
+    MulAction.mem_stabilizer_iff.1 hg]
 
 end TauCeti.SmoothTwoForm.IsEquivariantMomentMap
