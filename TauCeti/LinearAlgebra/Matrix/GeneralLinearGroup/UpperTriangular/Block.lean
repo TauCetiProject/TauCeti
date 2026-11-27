@@ -43,6 +43,8 @@ theta lifts.
 * `TauCeti.BlockTriangularGroup.kerDiagBlocksEquiv`: its kernel is in bijection with the families
   of entries `(i, j)` with `b i < b j`, through the unit diagonal matrices
   `TauCeti.BlockTriangularGroup.blockUnipotentGL`.
+* `TauCeti.sumIsRightLeviEquiv`: for the two blocks of `m ⊕ n` ranked by `Sum.isRight`, the Levi
+  factor is `GL m R × GL n R`.
 * `TauCeti.natCard_blockTriangularGroup`: the order of the group.
 * `TauCeti.exists_natCard_blockTriangularGroup_sum_eq`: the order for the blocks `N, T, …, T`.
 
@@ -222,6 +224,69 @@ theorem coe_kerDiagBlocksEquiv_symm_apply (N : {p : m × m // b p.1 < b p.2} →
   rfl
 
 end BlockTriangularGroup
+
+section SumIsRight
+
+variable {m n S : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n] [CommRing S]
+
+variable (m n S) in
+/-- The Levi factor of the ranking `Sum.isRight` of `m ⊕ n` is `GL_m × GL_n`: the diagonal block of
+`false` is indexed by the left summand and that of `true` by the right summand. -/
+def sumIsRightLeviEquiv :
+    ((a : Bool) → GL {i : m ⊕ n // i.isRight = a} S) ≃* GL m S × GL n S where
+  toFun h :=
+    (GeneralLinearGroup.reindex S
+        ((Equiv.subtypeEquivRight fun _ ↦ Sum.isRight_eq_false).trans Equiv.sumIsLeft) (h false),
+      GeneralLinearGroup.reindex S Equiv.sumIsRight (h true))
+  invFun p
+    | false => (GeneralLinearGroup.reindex S
+        ((Equiv.subtypeEquivRight fun _ ↦ Sum.isRight_eq_false).trans Equiv.sumIsLeft)).symm p.1
+    | true => (GeneralLinearGroup.reindex S Equiv.sumIsRight).symm p.2
+  left_inv _ := funext fun
+    | false => MulEquiv.symm_apply_apply _ _
+    | true => MulEquiv.symm_apply_apply _ _
+  right_inv _ := Prod.ext (MulEquiv.apply_symm_apply _ _) (MulEquiv.apply_symm_apply _ _)
+  map_mul' _ _ := Prod.ext (map_mul _ _ _) (map_mul _ _ _)
+
+/-- The first component of `sumIsRightLeviEquiv` is the block of `false`, indexed by `m`. -/
+@[simp]
+theorem coe_sumIsRightLeviEquiv_apply_fst (h : (a : Bool) → GL {i : m ⊕ n // i.isRight = a} S)
+    (i j : m) :
+    ((sumIsRightLeviEquiv m n S h).1 : Matrix m m S) i j =
+      ((h false : GL {i : m ⊕ n // i.isRight = false} S) :
+        Matrix {i : m ⊕ n // i.isRight = false} {i : m ⊕ n // i.isRight = false} S)
+        ⟨Sum.inl i, rfl⟩ ⟨Sum.inl j, rfl⟩ :=
+  (rfl)
+
+/-- The second component of `sumIsRightLeviEquiv` is the block of `true`, indexed by `n`. -/
+@[simp]
+theorem coe_sumIsRightLeviEquiv_apply_snd (h : (a : Bool) → GL {i : m ⊕ n // i.isRight = a} S)
+    (i j : n) :
+    ((sumIsRightLeviEquiv m n S h).2 : Matrix n n S) i j =
+      ((h true : GL {i : m ⊕ n // i.isRight = true} S) :
+        Matrix {i : m ⊕ n // i.isRight = true} {i : m ⊕ n // i.isRight = true} S)
+        ⟨Sum.inr i, rfl⟩ ⟨Sum.inr j, rfl⟩ :=
+  (rfl)
+
+/-- The inverse of `sumIsRightLeviEquiv` puts the first component in the block of `false`. -/
+@[simp]
+theorem coe_sumIsRightLeviEquiv_symm_apply_false (p : GL m S × GL n S) (i j : m) :
+    (((sumIsRightLeviEquiv m n S).symm p false : GL {i : m ⊕ n // i.isRight = false} S) :
+        Matrix {i : m ⊕ n // i.isRight = false} {i : m ⊕ n // i.isRight = false} S)
+        ⟨Sum.inl i, rfl⟩ ⟨Sum.inl j, rfl⟩ =
+      (p.1 : Matrix m m S) i j :=
+  (rfl)
+
+/-- The inverse of `sumIsRightLeviEquiv` puts the second component in the block of `true`. -/
+@[simp]
+theorem coe_sumIsRightLeviEquiv_symm_apply_true (p : GL m S × GL n S) (i j : n) :
+    (((sumIsRightLeviEquiv m n S).symm p true : GL {i : m ⊕ n // i.isRight = true} S) :
+        Matrix {i : m ⊕ n // i.isRight = true} {i : m ⊕ n // i.isRight = true} S)
+        ⟨Sum.inr i, rfl⟩ ⟨Sum.inr j, rfl⟩ =
+      (p.2 : Matrix n n S) i j :=
+  (rfl)
+
+end SumIsRight
 
 open BlockTriangularGroup
 

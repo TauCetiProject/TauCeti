@@ -9,8 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Analysis.Calculus.Morse.OneDimensional
 public import TauCeti.Analysis.Calculus.Morse.Prod
 public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
-import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 
 /-!
@@ -100,7 +99,7 @@ disappear, and they are joined by a single trajectory.
 public section
 
 open Filter Set
-open scoped Gradient Manifold Topology
+open scoped Gradient Topology
 
 namespace TauCeti
 
@@ -388,17 +387,11 @@ theorem exists_eq_birthDeathOrbit_comp_add (hs : 0 < s) {γ : ℝ → ℝ}
   have hδ : IsIntegralCurve (fun t ↦ birthDeathOrbit s (t + -t₀))
       (fun _ x ↦ -∇ (birthDeathPotential s) x) := fun t ↦
     (isIntegralCurve_birthDeathOrbit hs.le (t + -t₀)).comp_add_const t (-t₀)
-  -- Integral curves of the smooth field `s - x²` agreeing at one time agree everywhere: read the
-  -- line as a manifold modelled on itself and use the uniqueness of its integral curves.
-  let V : (x : ℝ) → TangentSpace 𝓘(ℝ, ℝ) x := fun x ↦ -∇ (birthDeathPotential s) x
-  have hV : ContDiff ℝ 1 V := by
-    simp only [V, gradient_birthDeathPotential]
+  -- Integral curves of the smooth field `s - x²` agreeing at one time agree everywhere.
+  have hV : ContDiff ℝ 1 fun x ↦ -∇ (birthDeathPotential s) x := by
+    simp only [gradient_birthDeathPotential]
     fun_prop
-  have hM : ∀ c : ℝ → ℝ, IsIntegralCurve c (fun _ x ↦ -∇ (birthDeathPotential s) x) →
-      IsMIntegralCurve c V := fun c hc ↦ isMIntegralCurve_iff_isMIntegralCurveOn.2
-    (isMIntegralCurveOn_iff_isIntegralCurveOn.2 (hc.isIntegralCurveOn _))
-  exact isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := t₀)
-    (contMDiff_vectorSpace_iff_contDiff.2 hV) (hM γ hγ) (hM _ hδ) (by simp [ht₀])
+  exact hγ.eq_of_contDiff hV hδ (t₀ := t₀) (by simp [ht₀])
 
 /-! ### The model with transverse directions -/
 
@@ -435,20 +428,9 @@ theorem exists_eq_birthDeathOrbit_separatedSum [CompleteSpace F] (hs : 0 < s)
     (hz : IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w))
     (hbot : Tendsto z atBot (𝓝 (WithLp.toLp 2 (-√s, y))))
     (htop : Tendsto z atTop (𝓝 (WithLp.toLp 2 (√s, y)))) :
-    ∃ τ, z = fun t ↦ WithLp.toLp 2 (birthDeathOrbit s (t + τ), y) := by
-  obtain ⟨h₁, h₂⟩ := (isIntegralCurve_separatedSum_iff
-    (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg _).1 hz
-  have hfst := (WithLp.fstL 2 ℝ ℝ F).continuous.tendsto
-  have hsnd := (WithLp.sndL 2 ℝ ℝ F).continuous.tendsto
-  have hy := h₂.eq_const_of_tendsto (fun _ ↦ hg _) (hg y).continuousAt
-    (by simpa [Function.comp_def] using (hsnd _).comp hbot)
-    (by simpa [Function.comp_def] using (hsnd _).comp htop)
-  obtain ⟨τ, hτ⟩ := exists_eq_birthDeathOrbit_comp_add hs h₁
-    (by simpa [Function.comp_def] using (hfst _).comp hbot)
-    (by simpa [Function.comp_def] using (hfst _).comp htop)
-  refine ⟨τ, funext fun t ↦ WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)⟩
-  · simpa using congrFun hτ t
-  · simpa using congrFun hy t
+    ∃ τ, z = fun t ↦ WithLp.toLp 2 (birthDeathOrbit s (t + τ), y) :=
+  hz.exists_eq_toLp_comp_add_of_separatedSum hg (fun _ ↦ differentiable_birthDeathPotential s _)
+    (fun _ hδ hδbot hδtop ↦ exists_eq_birthDeathOrbit_comp_add hs hδ hδbot hδtop) hbot htop
 
 /-- Conversely, above a critical point `y` of a transverse function `g` differentiable at `y`, the
 curve `t ↦ (√s tanh (√s t), y)` is a negative gradient trajectory of the birth–death model. -/

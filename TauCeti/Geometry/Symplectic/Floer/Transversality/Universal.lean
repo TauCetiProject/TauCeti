@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel
+import TauCeti.Analysis.Fredholm.Stabilization
 import TauCeti.Analysis.Sobolev.Cylinder.Periodization
-import TauCeti.LinearAlgebra.Submodule.Quotient
-import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.UniformSpace.UniformConvergence.Periodic
 
 /-!
@@ -40,8 +39,8 @@ almost complex structures for which every Floer trajectory is regular.
   of finite codimension. Hence finitely many variations `Y₁, …, Y_N` already make
   `(ξ, c) ↦ D_u ξ + ∑ cᵢ Yᵢ(u) (∂t u - X_H(u))` onto
   (`TauCeti.SymplecticForm.exists_surjective_floerSobolevOperator_coprod`), by
-  `Submodule.sup_eq_top_of_dense` and `Submodule.exists_finset_subset_sup_span_eq_top`. This is
-  the universal operator of the family `J + ∑ cᵢ Yᵢ`, in the form taken by the parametric
+  `ContinuousLinearMap.IsFredholm.exists_surjective_coprod_fintypeLinearCombination_of_dense`.
+  This is the universal operator of the family `J + ∑ cᵢ Yᵢ`, in the form taken by the parametric
   transversality theorem of `TauCeti.Analysis.Fredholm.Parametric`.
 
 ## References
@@ -233,7 +232,6 @@ theorem exists_surjective_floerSobolevOperator_coprod (ω : SymplecticForm F)
   have hD : D.IsFredholm := ω.isFredholm_floerSobolevOperator_of_compatible hω
     (hJ.of_le (WithTop.coe_le_coe.2 (le_trans (by norm_num) hn))) hJc hX hH hHper hxm hxmper hndm
     hxp hxpper hndp (hu.of_le one_le_two) huxm hδm huxp hδp
-  have := hD.finite_coker
   -- The range of `D_u` and the variations span a dense subspace: its orthogonal is trivial.
   have hdense : Dense ((D.range ⊔ Submodule.span ℝ S : Submodule ℝ (Lp F 2 stripMeasure)) :
       Set (Lp F 2 stripMeasure)) := by
@@ -257,17 +255,10 @@ theorem exists_surjective_floerSobolevOperator_coprod (ω : SymplecticForm F)
     filter_upwards [hm.coeFn_toLp] with z hz
     rw [hz]
   -- Finitely many variations already span a complement of the closed range of `D_u`.
-  obtain ⟨t, hts, htop⟩ := Submodule.exists_finset_subset_sup_span_eq_top (by
-    simpa only [← sup_assoc, sup_idem] using Submodule.sup_eq_top_of_dense hD.isClosed_range hdense)
-  choose! Y hY using fun y (hy : y ∈ t) ↦ hts hy
-  set e := t.equivFin
-  refine ⟨t.card, fun i ↦ Y (e.symm i), fun i ↦ e.symm i, fun i ↦ hY _ (e.symm i).property, ?_⟩
-  have hrange : Set.range (fun i ↦ ((e.symm i : t) : Lp F 2 stripMeasure)) = t := by
-    ext y
-    exact ⟨fun ⟨i, hi⟩ ↦ hi ▸ (e.symm i).property, fun hy ↦ ⟨e ⟨y, hy⟩, by simp⟩⟩
-  refine LinearMap.range_eq_top.1 ?_
-  rw [ContinuousLinearMap.range_coprod, ← htop, ← hrange, ← Fintype.range_linearCombination]
-  rw [LinearMap.coe_toContinuousLinearMap]
+  obtain ⟨N, y, hyS, hsurj⟩ :=
+    hD.exists_surjective_coprod_fintypeLinearCombination_of_dense hdense
+  choose Y hY using hyS
+  exact ⟨N, Y, y, hY, hsurj⟩
 
 end Surjective
 
