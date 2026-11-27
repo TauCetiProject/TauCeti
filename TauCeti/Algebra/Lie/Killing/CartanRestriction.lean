@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Killing.SymmetricAlgebra
 public import TauCeti.Algebra.Lie.Weights.Borel
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 public import TauCeti.Algebra.Lie.Weights.Projection
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
@@ -68,6 +69,8 @@ functions on the weights `H*`, the restriction evaluates a polynomial on `L*` at
 * `TauCeti.lift_eval_killingSymmetricEquiv_coe`: evaluating `killingSymmetricEquiv K L r` at a
   Cartan element `z : H` agrees with evaluating `lieCartanRestriction H r` at `cartanEquivDual H z`.
 * `TauCeti.lieCartanRestriction_mem_homogeneousSubmodule`: the restriction preserves degrees.
+* `TauCeti.lieCartanRestriction_decompose`: the restriction commutes with taking homogeneous
+  components.
 * `TauCeti.lieCartanRestriction_surjective`: the restriction is onto, split by the map induced by
   the inclusion `H → L`.
 
@@ -248,6 +251,15 @@ theorem lieCartanRestriction_mem_homogeneousSubmodule {n : ℕ} {p : SymmetricAl
     (hp : p ∈ SymmetricAlgebra.homogeneousSubmodule K L n) :
     lieCartanRestriction H p ∈ SymmetricAlgebra.homogeneousSubmodule K H n :=
   SymmetricAlgebra.map_mem_homogeneousSubmodule _ hp
+
+/-- The restriction commutes with taking homogeneous components: it maps the component of degree
+`n` of `p` to the component of degree `n` of the restriction of `p`. -/
+theorem lieCartanRestriction_decompose (p : SymmetricAlgebra K L) (n : ℕ) :
+    lieCartanRestriction H (DirectSum.decompose (SymmetricAlgebra.homogeneousSubmodule K L) p n :
+        SymmetricAlgebra K L) =
+      (DirectSum.decompose (SymmetricAlgebra.homogeneousSubmodule K H)
+        (lieCartanRestriction H p) n : SymmetricAlgebra K H) :=
+  SymmetricAlgebra.map_decompose _ p n
 
 /-- **The restriction square.** Restricting a polynomial function on `L`, an element of
 `S(L*)`, along the inclusion `H → L` commutes with the Killing identifications: transporting
