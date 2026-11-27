@@ -49,11 +49,28 @@ theorem isBfzInclinedPair_iff (w : List (Fin r × Bool)) (k l : Fin (r + w.lengt
             (bfzLetter w l).2 ≠ (bfzLetter w j).2)) :=
   Iff.rfl
 
-/-- Decide the inclined-edge condition by searching the finite set of genuine successor
-positions. -/
+/-- Inclined-edge pairs are decidable. -/
 instance (w : List (Fin r × Bool)) (k l : Fin (r + w.length)) :
     Decidable (IsBfzInclinedPair w k l) :=
   decidable_of_iff _ (isBfzInclinedPair_iff w k l).symm
+
+/-- The first position of an inclined pair precedes the second. -/
+theorem IsBfzInclinedPair.lt {w : List (Fin r × Bool)} {k l : Fin (r + w.length)}
+    (h : IsBfzInclinedPair w k l) : k < l :=
+  ((isBfzInclinedPair_iff w k l).mp h).1
+
+/-- The second position of an inclined pair is strictly before the first one's successor. -/
+theorem IsBfzInclinedPair.lt_bfzSuccessor {w : List (Fin r × Bool)}
+    {k l : Fin (r + w.length)} (h : IsBfzInclinedPair w k l) : l < bfzSuccessor w k := by
+  obtain ⟨j, hj, hLeft | hRight⟩ := ((isBfzInclinedPair_iff w k l).mp h).2
+  · rw [hLeft.1]
+    exact WithTop.coe_lt_coe.mpr hj
+  · exact (WithTop.coe_lt_coe.mpr hj).trans hRight.2.1
+
+/-- An inclined pair cannot also be a horizontal successor pair. -/
+theorem IsBfzInclinedPair.bfzSuccessor_ne {w : List (Fin r × Bool)}
+    {k l : Fin (r + w.length)} (h : IsBfzInclinedPair w k l) : bfzSuccessor w k ≠ l :=
+  h.lt_bfzSuccessor.ne.symm
 
 /-- The signed contribution for an edge in increasing position order. -/
 private def bfzOrderedEntry (w : List (Fin r × Bool)) (a : ℤ) (k l : Fin (r + w.length)) : ℤ :=
@@ -90,6 +107,24 @@ theorem bfzExchangeMatrix_apply_of_gt (w : List (Fin r × Bool)) (A : Matrix (Fi
         else if IsBfzInclinedPair w l k then A (bfzLetter w l).1 (bfzLetter w k).1 else 0)) := by
   simp only [bfzExchangeMatrix, ite_eq_right h.not_gt, ite_eq_left h, bfzOrderedEntry]
 
+/-- An inclined pair from the row to the column contributes the column letter's sign
+times the Cartan entry. -/
+theorem bfzExchangeMatrix_apply_of_isBfzInclinedPair (w : List (Fin r × Bool))
+    (A : Matrix (Fin r) (Fin r) ℤ) (k : Fin (r + w.length))
+    (l : {l : Fin (r + w.length) // IsBfzExchangeable w l}) (h : IsBfzInclinedPair w k l) :
+    bfzExchangeMatrix w A k l =
+      (if (bfzLetter w l).2 then 1 else -1) * A (bfzLetter w l).1 (bfzLetter w k).1 := by
+  rw [bfzExchangeMatrix_apply_of_lt w A k l h.lt, ite_eq_right h.bfzSuccessor_ne, ite_eq_left h]
+
+/-- An inclined pair from the column to the row contributes the negative of the row letter's
+sign times the Cartan entry. The Cartan indices are still column then row. -/
+theorem bfzExchangeMatrix_apply_of_isBfzInclinedPair_swap (w : List (Fin r × Bool))
+    (A : Matrix (Fin r) (Fin r) ℤ) (k : Fin (r + w.length))
+    (l : {l : Fin (r + w.length) // IsBfzExchangeable w l}) (h : IsBfzInclinedPair w l k) :
+    bfzExchangeMatrix w A k l =
+      -((if (bfzLetter w k).2 then 1 else -1) * A (bfzLetter w l).1 (bfzLetter w k).1) := by
+  rw [bfzExchangeMatrix_apply_of_gt w A k l h.lt, ite_eq_right h.bfzSuccessor_ne, ite_eq_left h]
+
 /-- The exchangeable row and column at the same position have zero entry. -/
 @[simp]
 theorem bfzExchangeMatrix_apply_self (w : List (Fin r × Bool)) (A : Matrix (Fin r) (Fin r) ℤ)
@@ -117,11 +152,7 @@ theorem bfzExchangeMatrix_apply_of_bfzSuccessor_lt (w : List (Fin r × Bool))
   obtain ⟨j, hj, hjl⟩ := WithTop.lt_iff_exists_coe.mp h
   have hkl := (lt_and_bfzLetter_fst_eq_of_bfzSuccessor_eq w hj).1.trans
     (WithTop.coe_lt_coe.mp hjl)
-  have hInclined : ¬ IsBfzInclinedPair w k l := by
-    intro hi
-    obtain ⟨_, p, hp, hLeft | hRight⟩ := (isBfzInclinedPair_iff w k l).mp hi
-    · exact (not_lt_of_ge (WithTop.coe_le_coe.mpr hp.le)) (hLeft.1 ▸ h)
-    · exact (not_lt_of_ge (WithTop.coe_le_coe.mpr hp.le)) (hRight.2.1.trans h)
+  have hInclined : ¬ IsBfzInclinedPair w k l := fun hi ↦ lt_asymm h hi.lt_bfzSuccessor
   rw [bfzExchangeMatrix_apply_of_lt w A k l hkl, ite_eq_right h.ne,
     ite_eq_right hInclined, mul_zero]
 
