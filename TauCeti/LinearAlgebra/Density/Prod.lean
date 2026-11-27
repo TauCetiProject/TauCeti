@@ -31,9 +31,12 @@ tensor product of the density lines of `V` and `W` with the density line of `V �
 density bundle of a product manifold with the external tensor product of the density bundles of
 its factors.
 
-Densities are transported along linear equivalences by `TauCeti.Density.map`, the analogue of
-`Orientation.map`, and the product is natural for this transport
+The product is natural for the transport of densities along linear equivalences
 (`TauCeti.Density.map_prod_map`).
+
+The construction of the product through one choice of factor bases, and the proof that it does
+not depend on this choice, follow `Orientation.prod` in
+`TauCeti/LinearAlgebra/Orientation/Prod.lean`.
 
 Following `LinearMap.det`, the product is defined to be `0` when `V` or `W` has no basis of the
 prescribed size or the degrees do not add up; then there is no top-dimensional density to
@@ -56,49 +59,6 @@ namespace TauCeti.Density
 
 variable {V V' W W' : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup V'] [Module ℝ V']
   [AddCommGroup W] [Module ℝ W] [AddCommGroup W'] [Module ℝ W'] {m n k : ℕ}
-
-/-! ### Transport along linear equivalences -/
-
-/-- The density `v ↦ μ (e⁻¹ ∘ v)` on `V'`, the underlying function of `TauCeti.Density.map`. -/
-private def mapAux (e : V ≃ₗ[ℝ] V') (μ : Density V m) : Density V' m :=
-  ⟨fun v ↦ μ (e.symm ∘ v), fun T v ↦ by
-    -- `e⁻¹ ∘ T = (e⁻¹ T e) ∘ e⁻¹`, and conjugation does not change the determinant.
-    have h : ⇑e.symm ∘ (⇑T ∘ v) =
-        ⇑((e.symm : V' →ₗ[ℝ] V) ∘ₗ T ∘ₗ (e : V →ₗ[ℝ] V')) ∘ (⇑e.symm ∘ v) := by
-      funext i
-      simp
-    rw [h, comp_apply, ← LinearMap.det_conj T e.symm, LinearEquiv.symm_symm]⟩
-
-/-- The transport `e_* μ` of a density along a linear equivalence `e : V ≃ V'`, a density on `V'`
-with `(e_* μ) v = μ (e⁻¹ ∘ v)`. -/
-def map (e : V ≃ₗ[ℝ] V') : Density V m ≃ₗ[ℝ] Density V' m where
-  toFun := mapAux e
-  invFun := mapAux e.symm
-  left_inv μ := by
-    ext v
-    simp [mapAux, Function.comp_def]
-  right_inv μ := by
-    ext v
-    simp [mapAux, Function.comp_def]
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-@[simp]
-theorem map_apply (e : V ≃ₗ[ℝ] V') (μ : Density V m) (v : Fin m → V') :
-    map e μ v = μ (e.symm ∘ v) :=
-  (rfl)
-
-@[simp]
-theorem map_symm (e : V ≃ₗ[ℝ] V') : (map e).symm = (map e.symm : Density V' m ≃ₗ[ℝ] _) :=
-  (rfl)
-
-/-- Transport along a linear equivalence evaluates a density on the transported basis. -/
-theorem map_apply_basis_map (e : V ≃ₗ[ℝ] V') (μ : Density V m) (b : Basis (Fin m) ℝ V) :
-    map e μ (b.map e) = μ b := by
-  rw [map_apply]
-  congr 1
-  funext i
-  simp
 
 /-! ### The product of two densities -/
 
@@ -142,7 +102,7 @@ theorem prod_eq_density (μ : Density V m) (ν : Density W n) (b : Basis (Fin m)
 
 /-- Without bases of the prescribed sizes, or when the degrees do not add up, the product is
 `0`. -/
-theorem prod_of_not (μ : Density V m) (ν : Density W n)
+theorem prod_eq_zero_of_not (μ : Density V m) (ν : Density W n)
     (h : ¬(Nonempty (Basis (Fin m) ℝ V) ∧ Nonempty (Basis (Fin n) ℝ W) ∧ m + n = k)) :
     (μ.prod ν : Density (V × W) k) = 0 := by
   rw [prod, dite_eq_right h]
@@ -186,63 +146,69 @@ theorem prod_apply_append [FiniteDimensional ℝ V] [FiniteDimensional ℝ W] (�
   have hw : w = ⇑(c.constr ℝ w) ∘ ⇑c := by
     funext j
     simp
-  rw [hT, comp_apply, prod_apply_reindex_prod, LinearMap.det_prodMap, abs_mul, hv, hw,
-    comp_apply, comp_apply, ← hv, ← hw]
+  rw [hT, comp_apply, prod_apply_reindex_prod, LinearMap.det_prodMap, abs_mul]
+  conv_rhs => rw [hv, hw, comp_apply, comp_apply]
   ring
+
+/-- Two densities on `V × W` agree if they agree on every ordered product of bases of `V` and `W`
+and, when there are no such bases or `m + n ≠ k`, agree outright. This reduces identities between
+products of densities to their values on product bases. -/
+private theorem ext_prod (m n : ℕ) {ρ ρ' : Density (V × W) k}
+    (h₀ : ¬(Nonempty (Basis (Fin m) ℝ V) ∧ Nonempty (Basis (Fin n) ℝ W) ∧ m + n = k) → ρ = ρ')
+    (h₁ : ∀ (b : Basis (Fin m) ℝ V) (c : Basis (Fin n) ℝ W) (h : m + n = k),
+      ρ ((b.prod c).reindex (finSumFinEquiv.trans (finCongr h))) =
+        ρ' ((b.prod c).reindex (finSumFinEquiv.trans (finCongr h)))) :
+    ρ = ρ' := by
+  by_cases h : Nonempty (Basis (Fin m) ℝ V) ∧ Nonempty (Basis (Fin n) ℝ W) ∧ m + n = k
+  · obtain ⟨⟨b⟩, ⟨c⟩, h⟩ := h
+    exact ((b.prod c).reindex (finSumFinEquiv.trans (finCongr h))).density_ext (h₁ b c h)
+  · exact h₀ h
 
 /-- The product of densities is natural for transport along linear equivalences of the two
 factors. -/
 theorem map_prod_map (e : V ≃ₗ[ℝ] V') (f : W ≃ₗ[ℝ] W') (μ : Density V m) (ν : Density W n) :
     (map e μ).prod (map f ν) = (map (e.prodCongr f) (μ.prod ν) : Density (V' × W') k) := by
-  by_cases h : Nonempty (Basis (Fin m) ℝ V) ∧ Nonempty (Basis (Fin n) ℝ W) ∧ m + n = k
-  · obtain ⟨⟨b⟩, ⟨c⟩, h⟩ := h
-    let g := finSumFinEquiv.trans (finCongr h)
-    apply (((b.map e).prod (c.map f)).reindex g).density_ext
-    have hb : ⇑(e.prodCongr f).symm ∘ ⇑(((b.map e).prod (c.map f)).reindex g) =
-        ⇑((b.prod c).reindex g) := by
-      funext r
-      obtain ⟨i, rfl⟩ := g.surjective r
-      cases i <;> simp
-    rw [prod_apply_reindex_prod, map_apply_basis_map, map_apply_basis_map, map_apply, hb,
-      prod_apply_reindex_prod]
-  · rw [prod_of_not _ _ h, map_zero, prod_of_not]
+  refine ext_prod m n (fun h ↦ ?_) fun b c h ↦ ?_
+  · rw [prod_eq_zero_of_not _ _ h, prod_eq_zero_of_not, map_zero]
     rintro ⟨⟨b⟩, ⟨c⟩, hk⟩
-    exact h ⟨⟨b.map e.symm⟩, ⟨c.map f.symm⟩, hk⟩
+    exact h ⟨⟨b.map e⟩, ⟨c.map f⟩, hk⟩
+  · have hb : ⇑(e.prodCongr f).symm ∘ ⇑((b.prod c).reindex (finSumFinEquiv.trans (finCongr h))) =
+        ⇑(((b.map e.symm).prod (c.map f.symm)).reindex (finSumFinEquiv.trans (finCongr h))) := by
+      funext r
+      obtain ⟨i, rfl⟩ := (finSumFinEquiv.trans (finCongr h)).surjective r
+      cases i <;> simp
+    rw [prod_apply_reindex_prod, map_apply (e.prodCongr f), hb, prod_apply_reindex_prod]
+    simp only [map_apply, Basis.coe_map]
+
+/-- A product density evaluated on the image of a tuple under a product of linear equivalences is
+the product of the transported densities evaluated on that tuple. -/
+theorem prod_apply_prodCongr_comp (e : V' ≃ₗ[ℝ] V) (f : W' ≃ₗ[ℝ] W) (μ : Density V m)
+    (ν : Density W n) (u : Fin k → V' × W') :
+    μ.prod ν (e.prodCongr f ∘ u) = (map e.symm μ).prod (map f.symm ν) u := by
+  rw [map_prod_map, map_apply, LinearEquiv.prodCongr_symm, LinearEquiv.symm_symm,
+    LinearEquiv.symm_symm]
 
 /-! ### Bilinearity and the tensor product of density lines -/
 
 theorem add_prod (μ μ' : Density V m) (ν : Density W n) :
-    ((μ + μ').prod ν : Density (V × W) k) = μ.prod ν + μ'.prod ν := by
-  by_cases h : Nonempty (Basis (Fin m) ℝ V) ∧ Nonempty (Basis (Fin n) ℝ W) ∧ m + n = k
-  · obtain ⟨⟨b⟩, ⟨c⟩, h⟩ := h
-    apply ((b.prod c).reindex (finSumFinEquiv.trans (finCongr h))).density_ext
+    ((μ + μ').prod ν : Density (V × W) k) = μ.prod ν + μ'.prod ν :=
+  ext_prod m n (fun h ↦ by simp [prod_eq_zero_of_not _ _ h]) fun b c h ↦ by
     simp only [add_apply, prod_apply_reindex_prod, add_mul]
-  · simp [prod_of_not _ _ h]
 
 theorem prod_add (μ : Density V m) (ν ν' : Density W n) :
-    (μ.prod (ν + ν') : Density (V × W) k) = μ.prod ν + μ.prod ν' := by
-  by_cases h : Nonempty (Basis (Fin m) ℝ V) ∧ Nonempty (Basis (Fin n) ℝ W) ∧ m + n = k
-  · obtain ⟨⟨b⟩, ⟨c⟩, h⟩ := h
-    apply ((b.prod c).reindex (finSumFinEquiv.trans (finCongr h))).density_ext
+    (μ.prod (ν + ν') : Density (V × W) k) = μ.prod ν + μ.prod ν' :=
+  ext_prod m n (fun h ↦ by simp [prod_eq_zero_of_not _ _ h]) fun b c h ↦ by
     simp only [add_apply, prod_apply_reindex_prod, mul_add]
-  · simp [prod_of_not _ _ h]
 
 theorem smul_prod (a : ℝ) (μ : Density V m) (ν : Density W n) :
-    ((a • μ).prod ν : Density (V × W) k) = a • μ.prod ν := by
-  by_cases h : Nonempty (Basis (Fin m) ℝ V) ∧ Nonempty (Basis (Fin n) ℝ W) ∧ m + n = k
-  · obtain ⟨⟨b⟩, ⟨c⟩, h⟩ := h
-    apply ((b.prod c).reindex (finSumFinEquiv.trans (finCongr h))).density_ext
+    ((a • μ).prod ν : Density (V × W) k) = a • μ.prod ν :=
+  ext_prod m n (fun h ↦ by simp [prod_eq_zero_of_not _ _ h]) fun b c h ↦ by
     simp only [smul_apply, prod_apply_reindex_prod, smul_eq_mul, mul_assoc]
-  · simp [prod_of_not _ _ h]
 
 theorem prod_smul (a : ℝ) (μ : Density V m) (ν : Density W n) :
-    (μ.prod (a • ν) : Density (V × W) k) = a • μ.prod ν := by
-  by_cases h : Nonempty (Basis (Fin m) ℝ V) ∧ Nonempty (Basis (Fin n) ℝ W) ∧ m + n = k
-  · obtain ⟨⟨b⟩, ⟨c⟩, h⟩ := h
-    apply ((b.prod c).reindex (finSumFinEquiv.trans (finCongr h))).density_ext
-    simp only [smul_apply, prod_apply_reindex_prod, smul_eq_mul]
-    ring
-  · simp [prod_of_not _ _ h]
+    (μ.prod (a • ν) : Density (V × W) k) = a • μ.prod ν :=
+  ext_prod m n (fun h ↦ by simp [prod_eq_zero_of_not _ _ h]) fun b c h ↦ by
+    simp only [smul_apply, prod_apply_reindex_prod, smul_eq_mul, mul_left_comm]
 
 variable (V W m n k) in
 /-- The product of densities as a bilinear map. -/

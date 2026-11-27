@@ -29,9 +29,10 @@ trivialization of a product is the product of the inverse trivializations of the
 
 On each fibre, the product of densities identifies the external tensor product
 `|Λ|_M ⊠ |Λ|_N` of the density bundles of the factors with the density bundle `|Λ|_{M × N}` of
-the product (`TauCeti.DensityBundle.externalTensorEquiv`). Through this identification, kernels on
-`M × N` of operators between bundles over `M` and `N` carry the density factor of either
-manifold, as in Hörmander's form of the Schwartz kernel theorem.
+the product (`TauCeti.DensityBundle.externalTensorEquiv`). Only this fibrewise linear
+identification is provided here. Carrying kernels on `M × N` of operators between bundles over `M`
+and `N` across it, as in Hörmander's form of the Schwartz kernel theorem, needs a smooth bundle
+isomorphism built from `externalTensorEquiv`, which is not yet formalized.
 
 ## References
 
@@ -121,6 +122,14 @@ theorem externalTensorEquiv_tmul (p : M × N) (μ : DensityBundle I M p.1)
     (Density.map (Manifold.tangentSpaceProdEquiv (I := I) (J := J) p).symm.toLinearEquiv)
     (Density.prodTensorEquiv_tmul rfl rfl finrank_prod.symm μ ν)
 
+/-- The inverse of `TauCeti.DensityBundle.externalTensorEquiv` on a product of densities. -/
+@[simp]
+theorem externalTensorEquiv_symm_prod (p : M × N) (μ : DensityBundle I M p.1)
+    (ν : DensityBundle J N p.2) :
+    (externalTensorEquiv p).symm (prod μ ν) =
+      (μ ⊗ₜ ν : ExternalTensor ℝ (DensityBundle I M) (DensityBundle J N) p) := by
+  rw [LinearEquiv.symm_apply_eq, externalTensorEquiv_tmul]
+
 variable [IsManifold I 1 M] [IsManifold J 1 N]
 
 /-- **The product density in the preferred frames.** Near `p₀`, the product of densities at
@@ -162,24 +171,25 @@ theorem prod_apply_trivializationAt_symm {p₀ p : M × N}
     simp [A, B, Trivialization.symm_continuousLinearEquivAt_eq (R := ℝ) _ h₁,
       Trivialization.symm_continuousLinearEquivAt_eq (R := ℝ) _ h₂]
   have hA : (fun i ↦ (trivializationAt E (TangentSpace I) p₀.1).symm p.1 (finBasis ℝ E i)) =
-      A.toLinearEquiv.symm.symm ∘ finBasis ℝ E := by
+      A ∘ finBasis ℝ E := by
     funext i
     simp [A, Trivialization.symm_continuousLinearEquivAt_eq (R := ℝ) _ h₁,
       Trivialization.symmL_apply (R := ℝ) _ h₁]
   have hB : (fun j ↦ (trivializationAt E' (TangentSpace J) p₀.2).symm p.2 (finBasis ℝ E' j)) =
-      B.toLinearEquiv.symm.symm ∘ finBasis ℝ E' := by
+      B ∘ finBasis ℝ E' := by
     funext j
     simp [B, Trivialization.symm_continuousLinearEquivAt_eq (R := ℝ) _ h₂,
       Trivialization.symmL_apply (R := ℝ) _ h₂]
-  rw [prod_apply, hframe, ← LinearEquiv.symm_symm (A.toLinearEquiv.prodCongr B.toLinearEquiv),
-    ← Density.map_apply, LinearEquiv.prodCongr_symm, ← Density.map_prod_map,
-    Density.prod_apply_eq_abs_det_mul _ _ (finBasis ℝ E) (finBasis ℝ E') finrank_prod.symm, hA, hB,
-    ← Density.map_apply, ← Density.map_apply]
+  -- Pull the inverse trivializations of the factors out of the product, then evaluate the product
+  -- through the standard bases of `E` and `E'`.
+  rw [prod_apply, hframe, Density.prod_apply_prodCongr_comp,
+    Density.prod_apply_eq_abs_det_mul _ _ (finBasis ℝ E) (finBasis ℝ E') finrank_prod.symm, hA, hB]
+  simp only [Density.map_apply, LinearEquiv.symm_symm, ContinuousLinearEquiv.coe_toLinearEquiv]
 
 variable {n : WithTop ℕ∞}
 
 /-- **Products of smooth densities are smooth.** If `μ` and `ν` are `C^n` density sections on `M`
-and on `N`, then `(x, y) ↦ μ x ⊠ ν y` is a `C^n` density section on `M × N`. -/
+and on `N`, then `(x, y) ↦ prod (μ x) (ν y)` is a `C^n` density section on `M × N`. -/
 theorem contMDiff_prod {μ : ∀ x, DensityBundle I M x} {ν : ∀ y, DensityBundle J N y}
     (hμ : ContMDiff I (I.prod 𝓘(ℝ)) n (fun x ↦ TotalSpace.mk' ℝ x (μ x)))
     (hν : ContMDiff J (J.prod 𝓘(ℝ)) n (fun y ↦ TotalSpace.mk' ℝ y (ν y))) :

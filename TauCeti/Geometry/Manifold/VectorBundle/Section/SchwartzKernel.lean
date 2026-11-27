@@ -51,9 +51,11 @@ for all bundle tests `s` of `V` and `t` of `W`, where `(s ⊠ t)(x, y) = s x ⊗
 choice of bundles: an operator from the sections of `W` to the distributional sections of a bundle
 `E` over `M` (`TauCeti.BundleDistribution`) is a map into the functionals on the tests of the bundle
 `Hom(E, |Λ|)` of `E`-dual densities, and its kernel is a functional on the tests of
-`Hom(E, |Λ|) ⊠ W`. Through the identification `|Λ_{M×N}| ≅ |Λ_M| ⊠ |Λ_N|` of density lines, given
-on each fibre by the product of densities (`TauCeti.DensityBundle.externalTensorEquiv`), this
-corresponds to the kernel with coefficients in `E ⊠ (W* ⊗ |Λ_N|)` of Hörmander, §6.3.
+`Hom(E, |Λ|) ⊠ W`. Through `|Λ_{M×N}| ≅ |Λ_M| ⊠ |Λ_N|` this corresponds to the kernel with
+coefficients in `E ⊠ (W* ⊗ |Λ_N|)` of Hörmander, §6.3. That correspondence is not formalized here:
+only the fibrewise identification of density lines by the product of densities is available
+(`TauCeti.DensityBundle.externalTensorEquiv`), and carrying kernels across it needs a smooth bundle
+isomorphism built from it.
 
 ## Proof
 
