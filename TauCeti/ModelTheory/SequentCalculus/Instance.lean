@@ -36,6 +36,7 @@ instance, and shows that instances commute with substitution of terms for free v
 
 * `FirstOrder.Language.BoundedFormula.realize_inst`: an instance holds under an assignment exactly
   when the formula holds with the values of the terms at the bound positions.
+* `FirstOrder.Language.BoundedFormula.realize_inst₁`: the same for an instance at a single term.
 * `FirstOrder.Language.BoundedFormula.subst_inst`: substituting terms for the free variables of
   an instance gives the instance of the substituted formula at the substituted terms.
 * `FirstOrder.Language.BoundedFormula.mem_freeVarFinset_inst`: the free variables of an instance
@@ -78,6 +79,15 @@ theorem realize_inst {M : Type*} [L.Structure M] (φ : L.BoundedFormula α k)
     (φ.inst ts).Realize v ↔ φ.Realize v fun i => (ts i).realize v := by
   rw [inst_def, Formula.Realize, realize_subst, ← Formula.Realize, realize_toFormula]
   congr! with x
+
+/-- An instance at a single term holds exactly when the formula holds with the value of the term at
+its bound position. -/
+theorem realize_inst₁ {M : Type*} [L.Structure M] (φ : L.BoundedFormula α 1) (t : L.Term α)
+    (v : α → M) : (φ.inst ![t]).Realize v ↔ φ.Realize v ![t.realize v] := by
+  rw [realize_inst]
+  congr! with i
+  rw [Subsingleton.elim i 0]
+  simp
 
 @[simp]
 theorem inst_falsum (ts : Fin k → L.Term α) : (falsum : L.BoundedFormula α k).inst ts = falsum :=

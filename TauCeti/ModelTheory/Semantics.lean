@@ -13,7 +13,16 @@ public import Mathlib.ModelTheory.Semantics
 `FirstOrder.Language.Term.realize_congr_varFinsetLeft` says that a term over `α ⊕ β` has the same
 realization under two valuations of `α` that agree on the variables `Term.varFinsetLeft` it
 mentions. It is derived from Mathlib's `Term.realize_restrictVarLeft'`, since Mathlib has no
-direct congruence lemma of this form.
+direct congruence lemma of this form. In the same way,
+`FirstOrder.Language.BoundedFormula.realize_congr_freeVarFinset` says that a bounded formula has
+the same realization under two valuations that agree on its free variables
+`BoundedFormula.freeVarFinset`; it is derived from Mathlib's
+`BoundedFormula.realize_restrictFreeVar'`. In particular, changing a valuation at a variable that
+is not free does not change the realization
+(`FirstOrder.Language.BoundedFormula.realize_update_of_notMem_freeVarFinset`).
+
+`FirstOrder.Language.Formula.realize_all` characterizes realization of a formula `∀'φ`, with `φ`
+in one bound variable, as realization of `φ` at every value of the bound variable.
 
 `FirstOrder.Language.Sentence.realize_alls` characterizes satisfaction of the universal closure
 of a bounded formula with no free variables as realization at every tuple of bound variables, and
@@ -44,6 +53,37 @@ theorem realize_congr_varFinsetLeft [DecidableEq α] {t : L.Term (α ⊕ β)} {v
     Set.domRestrict_eq_domRestrict_iff.2 h]
 
 end Term
+
+namespace BoundedFormula
+
+variable {L : Language} {α M : Type*} [L.Structure M]
+
+/-- A bounded formula has the same realization under two valuations that agree on its free
+variables `BoundedFormula.freeVarFinset`. -/
+theorem realize_congr_freeVarFinset [DecidableEq α] {n : ℕ} {φ : L.BoundedFormula α n}
+    {v v' : α → M} (h : Set.EqOn v v' φ.freeVarFinset) (xs : Fin n → M) :
+    φ.Realize v xs ↔ φ.Realize v' xs := by
+  rw [← realize_restrictFreeVar' subset_rfl (v := v),
+    ← realize_restrictFreeVar' subset_rfl (v := v')]
+  rw [show v ∘ Subtype.val = v' ∘ Subtype.val from funext fun x => h x.property]
+
+/-- Changing a valuation at a variable that does not occur free in a bounded formula does not
+change its realization. -/
+theorem realize_update_of_notMem_freeVarFinset [DecidableEq α] {n : ℕ}
+    {φ : L.BoundedFormula α n} {a : α} (ha : a ∉ φ.freeVarFinset) (v : α → M) (m : M)
+    (xs : Fin n → M) : φ.Realize (Function.update v a m) xs ↔ φ.Realize v xs :=
+  realize_congr_freeVarFinset (fun x hx => Function.update_of_ne
+    (fun hxa : x = a => ha (hxa ▸ hx)) m v) xs
+
+end BoundedFormula
+
+/-- A formula `∀'φ`, with `φ` in one bound variable, holds exactly when `φ` holds at every value
+of the bound variable. -/
+@[simp]
+theorem Formula.realize_all {L : Language} {α M : Type*} [L.Structure M]
+    {φ : L.BoundedFormula α 1} {v : α → M} : Formula.Realize φ.all v ↔ ∀ a, φ.Realize v ![a] := by
+  rw [Formula.Realize, BoundedFormula.realize_all, Subsingleton.elim default ![] ]
+  simp
 
 /-- A universally closed sentence holds iff its body holds at every tuple. -/
 @[simp]
