@@ -89,9 +89,8 @@ theorem surjective_frobenius_sub_mul [TauCeti.IsAbsolutelyIntegrallyClosed k]
     (s : WittVector p k) :
     Function.Surjective fun y : WittVector p k ↦ frobenius y - s * y := by
   classical
-  -- over the zero ring every Witt vector is zero
-  cases subsingleton_or_nontrivial k
-  · exact fun a ↦ ⟨a, WittVector.ext fun _ ↦ Subsingleton.elim _ _⟩
+  -- the instance needed by `Polynomial.isMonicOfDegree_X_pow` below
+  have := CharP.nontrivial_of_char_ne_one (R := k) (Fact.out : p.Prime).ne_one
   rw [frobenius_eq_map_frobenius]
   apply surjective_map_sub_mul_map s (_root_.frobenius k p) (RingHom.id k)
   intro a

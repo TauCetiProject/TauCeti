@@ -41,9 +41,8 @@ map sends `τ` to `ζ - 1`, where `ζ` is the sharp of `ε^(1/p)`; this is nonze
 * `TauCeti.Perfectoid.map_xi`: base change of `ξ` between perfect rings.
 * `PreTilt.fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero`,
   `PreTilt.fontaineTheta_iterate_frobeniusEquiv_succ_xi`: values of `θ ∘ φ^j` on `μ` and `ξ`.
-* `PreTilt.fontaineTheta_frobeniusEquiv_symm_mu`,
-  `PreTilt.fontaineTheta_frobeniusEquiv_symm_mu_ne_zero`: `θ(φ^(-1)(μ)) = ζ - 1`, where `ζ` is the
-  sharp of `ε^(1/p)`, so `θ(φ^(-1)(μ)) ≠ 0` when `ζ ≠ 1`.
+* `PreTilt.fontaineTheta_frobeniusEquiv_symm_mu_ne_zero`: `θ(φ^(-1)(μ)) ≠ 0` when the sharp `ζ`
+  of `ε^(1/p)` is not `1`, since `θ(φ^(-1)(μ)) = ζ - 1` by `PreTilt.fontaineThetaShifted_mu`.
 * `PreTilt.ker_fontaineTheta_eq_span_xi`: `ξ` generates Fontaine's kernel on the valuation ring
   of a complete perfectoid field.
 
@@ -267,20 +266,13 @@ theorem fontaineThetaShifted_xiTilde_eq_zero [IsDomain A] (ε : PreTilt A p)
     fontaineThetaShifted A p (xiTilde p ε) = 0 := by
   rw [fontaineThetaShifted_xiTilde, fontaineTheta_xi_eq_zero ε hε]
 
--- Not `@[simp]`: simp first rewrites `(frobeniusEquiv p _).symm` to
--- `map (_root_.frobeniusEquiv _ p).symm` by `WittVector.frobeniusEquiv_symm_apply`.
-/-- Fontaine's map sends `τ = φ^(-1)(μ)` to `ζ - 1`, where `ζ` is the sharp of `ε ^ (1 / p)`. -/
-theorem fontaineTheta_frobeniusEquiv_symm_mu (ε : PreTilt A p) :
-    fontaineTheta A p ((frobeniusEquiv p (PreTilt A p)).symm (mu p ε)) =
-      PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε) - 1 := by
-  rw [← fontaineThetaShifted_apply, fontaineThetaShifted_mu]
-
 /-- If the sharp `ζ` of `ε ^ (1 / p)` is not `1`, for instance if it is a primitive `p`-th root
-of unity, then Fontaine's map does not kill `τ = φ^(-1)(μ)`. -/
+of unity, then Fontaine's map does not kill `τ = φ^(-1)(μ)`. The value `θ(τ) = ζ - 1` itself is
+`fontaineThetaShifted_mu`, read through the definitional `fontaineThetaShifted_apply`. -/
 theorem fontaineTheta_frobeniusEquiv_symm_mu_ne_zero (ε : PreTilt A p)
     (hε : PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε) ≠ 1) :
     fontaineTheta A p ((frobeniusEquiv p (PreTilt A p)).symm (mu p ε)) ≠ 0 := by
-  rwa [fontaineTheta_frobeniusEquiv_symm_mu, sub_ne_zero]
+  rwa [← fontaineThetaShifted_apply, fontaineThetaShifted_mu, sub_ne_zero]
 
 /-- If `ε♯ = 1`, then Fontaine's map kills every Frobenius iterate of `μ`. -/
 theorem fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero (ε : PreTilt A p) (hε : ε.untilt = 1)
