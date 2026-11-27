@@ -437,14 +437,6 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-/-- The diffeomorphism `(q, p, z) ↦ (q, c p, c z)` pulls the standard contact form back to `c`
-times itself, pointwise. -/
-private theorem mpullback_innerProductContactForm_apply_of_coe_eq {c : ℝ}
-    {e : (V × V × ℝ) ≃ₘ[ℝ] (V × V × ℝ)} (he : ⇑e = fun x ↦ (x.1, c • x.2)) (x : V × V × ℝ) :
-    (SmoothForm.mpullback e e.contMDiff (innerProductContactForm V)).val x =
-      c • (innerProductContactForm V).val x := by
-  rw [mpullback_innerProductContactForm_of_coe_eq he, SmoothForm.smul_toRoughForm, Pi.smul_apply]
-
 /-- **The scalings of the standard contact space and the symplectization.** Let `e` be the
 diffeomorphism `(q, p, z) ↦ (q, c p, c z)` of `V × V × ℝ`, which pulls the standard contact form
 `α = dz - ⟪p, dq⟫` back to `c α`. A map `(t, x) ↦ (φ(t, x), e x)` covering `e` pulls the

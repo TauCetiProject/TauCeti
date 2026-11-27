@@ -252,8 +252,7 @@ theorem mfderiv_reebVectorField_innerProductContactForm_of_coe_eq {c : ℝ} (hc 
         ((innerProductContactForm V).reebVectorField x) =
       c • (innerProductContactForm V).reebVectorField (e x) :=
   (isContactForm_innerProductContactForm V).mfderiv_reebVectorField_of_mpullback_eq_const_smul
-    e.contMDiff (fun _ ↦ (e.isInvertible_mfderiv (by simp)).bijective) hc (fun y ↦ by
-      rw [mpullback_innerProductContactForm_of_coe_eq he, SmoothForm.smul_toRoughForm,
-        Pi.smul_apply]) x
+    e.contMDiff (fun _ ↦ (e.isInvertible_mfderiv (by simp)).bijective) hc
+    (mpullback_innerProductContactForm_apply_of_coe_eq he) x
 
 end TauCeti
