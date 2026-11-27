@@ -19,7 +19,8 @@ basis `e₁, e₂, e₃` of `𝔰𝔲(2)` with `⁅e₂, e₃⁆ = e₁`, the pu
 `α = ε₁ - ε₂`, where the rank-one representative is the block inclusion of `SU(2)` onto the
 upper-left `2 × 2` block. The Checks are stated for the Lie algebra block inclusion
 `df = TauCeti.specialUnitaryBlockInclusion` and the Lie algebras only: the group homomorphism
-`SU(2) → SU(3)` and the identification of its differential with `df` are not formalized here.
+`SU(2) → SU(3)` and the identification of its differential with `df` are checked in
+`TauCeti.Examples.Geometry.Lie.SpecialUnitaryBlock`.
 
 * The differential sends `diag(i, -i)` to the coroot `α^∨ = diag(i, -i, 0)`, and `α(α^∨) = 2`.
 * With `B(X, Y) = 6 Re tr(X Y)` on `𝔰𝔲(3)` and `e₁ = ½ diag(i, -i)`,
