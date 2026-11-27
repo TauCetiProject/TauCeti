@@ -42,9 +42,9 @@ unit vector of a finite-dimensional real inner product space `E`.
   locally uniformly on no nonempty set
   (`TauCeti.Examples.HarnackAffine.not_exists_tendstoLocallyUniformlyOn_natCast`), so the
   divergent case cannot be omitted. The functions `⟪e, x⟫ - 1 / (m + 1)` increase
-  (`TauCeti.Examples.HarnackAffine.monotone_inner_sub_inv`) to their supremum `⟪e, x⟫`
-  (`TauCeti.Examples.HarnackAffine.iSup_inner_sub_inv`), uniformly on `E`
-  (`TauCeti.Examples.HarnackAffine.tendstoUniformly_inner_sub_inv`), and the limit is harmonic.
+  (`TauCeti.Examples.HarnackAffine.monotone_inner_sub_one_div`) to their supremum `⟪e, x⟫`
+  (`TauCeti.Examples.HarnackAffine.iSup_inner_sub_one_div`), uniformly on `E`
+  (`TauCeti.Examples.HarnackAffine.tendstoUniformly_inner_sub_one_div`), and the limit is harmonic.
 
 ## References
 
@@ -150,14 +150,14 @@ theorem not_exists_tendstoLocallyUniformlyOn_natCast {X : Type*} [TopologicalSpa
   exact not_tendsto_nhds_of_tendsto_atTop tendsto_natCast_atTop_atTop _ (hv.tendsto_at hx)
 
 /-- The functions `⟪e, x⟫ - 1 / (m + 1)` increase with `m` at every point. -/
-theorem monotone_inner_sub_inv (e x : E) :
+theorem monotone_inner_sub_one_div (e x : E) :
     Monotone fun m : ℕ ↦ ⟪e, x⟫_ℝ - 1 / ((m : ℝ) + 1) := fun m k hmk ↦ by
   have : (m : ℝ) + 1 ≤ k + 1 := by exact_mod_cast Nat.add_le_add_right hmk 1
   dsimp only
   gcongr
 
 /-- The functions `⟪e, x⟫ - 1 / (m + 1)` converge to `⟪e, x⟫` uniformly on `E`. -/
-theorem tendstoUniformly_inner_sub_inv (e : E) :
+theorem tendstoUniformly_inner_sub_one_div (e : E) :
     TendstoUniformly (fun (m : ℕ) (x : E) ↦ ⟪e, x⟫_ℝ - 1 / ((m : ℝ) + 1)) (fun x ↦ ⟪e, x⟫_ℝ)
       atTop := by
   refine Metric.tendstoUniformly_iff.2 fun ε hε ↦ ?_
@@ -167,10 +167,10 @@ theorem tendstoUniformly_inner_sub_inv (e : E) :
   exact hm
 
 /-- The supremum of the functions `⟪e, x⟫ - 1 / (m + 1)` is the harmonic function `⟪e, x⟫`. -/
-theorem iSup_inner_sub_inv (e x : E) :
+theorem iSup_inner_sub_one_div (e x : E) :
     ⨆ m : ℕ, (⟪e, x⟫_ℝ - 1 / ((m : ℝ) + 1)) = ⟪e, x⟫_ℝ :=
-  tendsto_nhds_unique (tendsto_atTop_ciSup (monotone_inner_sub_inv e x)
+  tendsto_nhds_unique (tendsto_atTop_ciSup (monotone_inner_sub_one_div e x)
     ⟨⟪e, x⟫_ℝ, by rintro _ ⟨m, rfl⟩; simp only [sub_le_self_iff]; positivity⟩)
-    ((tendstoUniformly_inner_sub_inv e).tendsto_at x)
+    ((tendstoUniformly_inner_sub_one_div e).tendsto_at x)
 
 end TauCeti.Examples.HarnackAffine

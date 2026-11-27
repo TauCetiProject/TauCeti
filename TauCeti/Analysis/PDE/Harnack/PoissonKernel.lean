@@ -116,12 +116,12 @@ theorem ballPoissonKernel_smul_eq_mul_ballPoissonKernel_neg_smul {n : ℕ}
     {ξ : EuclideanSpace ℝ (Fin n)} (hξ : ‖ξ‖ = 1) {r : ℝ} (hr : 0 ≤ r) (hr1 : r < 1) :
     ballPoissonKernel n (r • ξ) ξ = ((1 + r) / (1 - r)) ^ n * ballPoissonKernel n (-(r • ξ)) ξ := by
   have h₁ : ‖r • ξ - ξ‖ = 1 - r := by
-    rw [show r • ξ - ξ = (r - 1) • ξ by rw [sub_smul, one_smul], norm_smul, hξ, mul_one,
-      Real.norm_of_nonpos (by linarith), neg_sub]
+    rw [show r • ξ - ξ = -((1 - r) • ξ) by module]
+    simp [norm_smul, hξ, abs_of_nonneg (by linarith : 0 ≤ 1 - r)]
   have h₂ : ‖-(r • ξ) - ξ‖ = 1 + r := by
-    rw [show -(r • ξ) - ξ = -((1 + r) • ξ) by rw [add_smul, one_smul]; abel, norm_neg,
-      norm_smul, hξ, mul_one, Real.norm_of_nonneg (by linarith)]
-  have h₃ : ‖r • ξ‖ = r := by rw [norm_smul, hξ, mul_one, Real.norm_of_nonneg hr]
+    rw [show -(r • ξ) - ξ = -((1 + r) • ξ) by module]
+    simp [norm_smul, hξ, abs_of_nonneg (by linarith : 0 ≤ 1 + r)]
+  have h₃ : ‖r • ξ‖ = r := by simp [norm_smul, hξ, abs_of_nonneg hr]
   have hsub : (1 - r) ^ n ≠ 0 := pow_ne_zero _ (by linarith)
   have hadd : (1 + r) ^ n ≠ 0 := pow_ne_zero _ (by linarith)
   rw [ballPoissonKernel_def, ballPoissonKernel_def, h₁, h₂, norm_neg, h₃, div_pow]
@@ -129,6 +129,27 @@ theorem ballPoissonKernel_smul_eq_mul_ballPoissonKernel_neg_smul {n : ℕ}
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {u : E → ℝ} {c x y : E} {r R : ℝ}
+
+omit [FiniteDimensional ℝ E] in
+/-- The point `ρ⁻¹ • (w - c)`, carried along a linear isometry, has norm `dist w c / ρ`. -/
+private theorem norm_inv_smul_sub {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (e : E ≃ₗᵢ[ℝ] F) {ρ : ℝ} (hρ : 0 ≤ ρ) (w c : E) :
+    ‖e (ρ⁻¹ • (w - c))‖ = dist w c / ρ := by
+  simp [norm_smul, abs_of_nonneg hρ, dist_eq_norm, div_eq_inv_mul, -map_sub]
+
+/-- Harmonicity on the ball `B(0, s)` of `F` transports to the ball `B(c, ρ s)` of `E` along a
+linear isometry `e : E → F` and the homothety `w ↦ ρ⁻¹ • (w - c)`, and back. -/
+private theorem harmonicOnNhd_comp_inv_smul_sub_ball_iff {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (e : E ≃ₗᵢ[ℝ] F) (c : E) {ρ : ℝ} (hρ : 0 < ρ)
+    (s : ℝ) {v : F → ℝ} :
+    HarmonicOnNhd (fun w ↦ v (e (ρ⁻¹ • (w - c)))) (ball c (ρ * s)) ↔
+      HarmonicOnNhd v (ball 0 s) := by
+  have h := harmonicOnNhd_comp_const_add_smul_ball_radius_iff c hρ.ne' s
+    (f := fun w ↦ v (e (ρ⁻¹ • (w - c))))
+  rw [Real.norm_of_nonneg hρ.le] at h
+  rw [← h, ← harmonicOnNhd_comp_linearIsometryEquiv_right_iff e,
+    LinearIsometryEquiv.preimage_ball, map_zero]
+  simp [Function.comp_def, smul_smul, inv_mul_cancel₀ hρ.ne']
 
 /-- Harnack's comparison with the centre on a closed ball `closedBall c ρ` inside the ball
 `B(c, R)` on which `u` is harmonic and nonnegative, in the normalized form with
@@ -141,32 +162,23 @@ private theorem le_mul_and_mul_le_of_lt_of_lt (hn : finrank ℝ E ≠ 0)
       (1 - dist x c / ρ) / (1 + dist x c / ρ) ^ (finrank ℝ E - 1) * u c ≤ u x := by
   have hρ : 0 < ρ := dist_nonneg.trans_lt hxρ
   let e := (stdOrthonormalBasis ℝ E).repr
-  let v : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ := (fun z ↦ u (c + ρ • z)) ∘ e.symm
+  let v : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ := fun z ↦ u (c + ρ • e.symm z)
+  have hvu : (fun w ↦ v (e (ρ⁻¹ • (w - c)))) = u := by
+    funext w
+    simp [v, smul_smul, mul_inv_cancel₀ hρ.ne']
   -- `v` is harmonic on the ball of radius `R / ρ > 1`, which contains the closed unit ball.
   have hv : HarmonicOnNhd v (ball 0 (R / ρ)) := by
-    have h₁ : HarmonicOnNhd (fun z ↦ u (c + ρ • z)) (ball 0 (R / ρ)) := by
-      rw [harmonicOnNhd_comp_const_add_smul_ball_radius_iff c hρ.ne',
-        Real.norm_of_nonneg hρ.le, mul_div_cancel₀ _ hρ.ne']
-      exact hu
-    have h₂ := (harmonicOnNhd_comp_linearIsometryEquiv_right_iff e.symm).2 h₁
-    rwa [LinearIsometryEquiv.preimage_ball, LinearIsometryEquiv.symm_symm, map_zero] at h₂
+    rwa [← harmonicOnNhd_comp_inv_smul_sub_ball_iff e c hρ, hvu, mul_div_cancel₀ _ hρ.ne']
   have hsub : closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1 ⊆ ball 0 (R / ρ) :=
     closedBall_subset_ball ((one_lt_div hρ).2 hρR)
   have hvc : ContinuousOn v (closedBall 0 1) := fun z hz ↦
     (hv z (hsub hz)).1.continuousAt.continuousWithinAt
-  have hvn : ∀ z ∈ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1, 0 ≤ v z := by
-    intro z hz
-    refine hnonneg _ ?_
-    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hρ.le,
-      LinearIsometryEquiv.norm_map, norm_eq_of_mem_sphere ⟨z, hz⟩, mul_one]
-    exact hρR
+  have hvn : ∀ z ∈ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1, 0 ≤ v z := fun z hz ↦
+    hnonneg _ (by simpa [norm_smul, abs_of_nonneg hρ.le, norm_eq_of_mem_sphere ⟨z, hz⟩] using hρR)
   -- The point of the unit ball corresponding to `x`.
-  set z := e (ρ⁻¹ • (x - c)) with hz
-  have hzn : ‖z‖ = dist x c / ρ := by
-    rw [hz, LinearIsometryEquiv.norm_map, norm_smul, norm_inv, Real.norm_of_nonneg hρ.le,
-      dist_eq_norm, inv_mul_eq_div]
-  have hvz : v z = u x := by
-    simp [v, hz, smul_smul, mul_inv_cancel₀ hρ.ne']
+  set z := e (ρ⁻¹ • (x - c))
+  have hzn : ‖z‖ = dist x c / ρ := norm_inv_smul_sub e hρ.le x c
+  have hvz : v z = u x := congrFun hvu x
   have hv0 : v 0 = u c := by simp [v]
   have h := le_mul_and_mul_le_of_harmonicOnNhd_ball_one hn hvc (hv.mono (ball_subset_ball
     ((one_lt_div hρ).2 hρR).le)) hvn (hzn ▸ (div_lt_one hρ).2 hxρ)
@@ -304,32 +316,22 @@ theorem exists_harmonicOnNhd_ball_eq_add_div_sub_pow_mul (hn : finrank ℝ E ≠
     EuclideanSpace.single ⟨0, Nat.pos_of_ne_zero hn⟩ 1
   have hξ : ‖ξ‖ = 1 := by simp [ξ]
   let K : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ := fun w ↦ ballPoissonKernel _ w ξ
-  -- `K ∘ e` is harmonic on the unit ball of `E`, and `u z = K (e ((z - c) / R))`.
-  have hK : HarmonicOnNhd (K ∘ e) (ball 0 1) := by
-    have h := (harmonicOnNhd_comp_linearIsometryEquiv_right_iff e).2
-      ((harmonicOnNhd_ballPoissonKernel_left hξ).mono fun w hw (h : w = ξ) ↦ by
-        rw [mem_ball_zero_iff, h, hξ] at hw
-        exact lt_irrefl _ hw)
-    rwa [LinearIsometryEquiv.preimage_ball, map_zero] at h
+  have hK : HarmonicOnNhd K (ball 0 1) :=
+    (harmonicOnNhd_ballPoissonKernel_left hξ).mono fun w hw (h : w = ξ) ↦ by
+      rw [mem_ball_zero_iff, h, hξ] at hw
+      exact lt_irrefl _ hw
+  -- `u z = K (e ((z - c) / R))`.
   let u : E → ℝ := fun z ↦ K (e (R⁻¹ • (z - c)))
-  have hu : ∀ w, u (c + R • w) = (K ∘ e) w := fun w ↦ by
-    simp [u, smul_smul, inv_mul_cancel₀ hR.ne']
   refine ⟨u, ?_, fun z hz ↦ ?_, c + r • e.symm ξ, ?_, c - r • e.symm ξ, ?_, ?_⟩
-  · have h := (harmonicOnNhd_comp_const_add_smul_ball_radius_iff c hR.ne' 1 (f := u)).1
-      (by simp only [hu]; exact hK)
-    rwa [Real.norm_of_nonneg hR.le, mul_one] at h
-  · refine ballPoissonKernel_pos ?_ fun h ↦ ?_
-    · rw [LinearIsometryEquiv.norm_map, norm_smul, norm_inv, Real.norm_of_nonneg hR.le,
-        inv_mul_lt_one₀ hR, ← dist_eq_norm]
-      exact hz
-    · have h' := congrArg norm h
-      rw [LinearIsometryEquiv.norm_map, norm_smul, norm_inv, Real.norm_of_nonneg hR.le, hξ,
-        inv_mul_eq_one₀ hR.ne', ← dist_eq_norm] at h'
-      exact (mem_ball.1 hz).ne h'.symm
-  · rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hr,
-      LinearIsometryEquiv.norm_map, hξ, mul_one]
-  · rw [mem_closedBall, dist_eq_norm, sub_sub_cancel_left, norm_neg, norm_smul,
-      Real.norm_of_nonneg hr, LinearIsometryEquiv.norm_map, hξ, mul_one]
+  · have h := (harmonicOnNhd_comp_inv_smul_sub_ball_iff e c hR 1).2 hK
+    rwa [mul_one] at h
+  · have hzn := norm_inv_smul_sub e hR.le z c
+    have hlt : dist z c / R < 1 := (div_lt_one hR).2 (mem_ball.1 hz)
+    refine ballPoissonKernel_pos (hzn ▸ hlt) fun h ↦ ?_
+    rw [h, hξ] at hzn
+    exact hlt.ne hzn.symm
+  · simp [dist_eq_norm, norm_smul, hξ, abs_of_nonneg hr]
+  · simp [norm_smul, hξ, abs_of_nonneg hr]
   · -- At these points `u` is the Poisson kernel at `(r / R) ξ` and `-(r / R) ξ`.
     have hx : u (c + r • e.symm ξ) = K ((r / R) • ξ) := by
       simp [u, smul_smul, div_eq_inv_mul]
