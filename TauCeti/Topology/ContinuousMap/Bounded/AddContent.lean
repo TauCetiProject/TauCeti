@@ -44,6 +44,13 @@ that also applies without discreteness. The finite sums are
 
 * `PositiveLinearMap.addContentEquiv_symm_apply_indicator`: the functional associated to a content
   `ν` takes the value `ν s` at the characteristic function of `s`.
+* `LinearMap.toAddContent_comp_compContinuousCLM` and
+  `PositiveLinearMap.addContentEquiv_symm_mapNonneg` (pointwise:
+  `PositiveLinearMap.addContentEquiv_symm_mapNonneg_apply`): the correspondence is natural,
+  precomposition with a map `r` of discrete spaces matching the pushforward of contents along `r`.
+* `PositiveLinearMap.forall_apply_compContinuous_smul_iff_toAddContent_smul`: for a group action,
+  a positive functional is invariant under translation of functions exactly when its content is
+  invariant under translation of sets.
 
 ## References
 
@@ -246,3 +253,82 @@ theorem addContentEquiv_symm_apply_one
   simpa using addContentEquiv_symm_apply_indicator ν univ
 
 end PositiveLinearMap
+
+/-! ### Naturality and equivariance
+
+Precomposition with a map `r : X → Y` of discrete spaces corresponds to pushing contents forward
+along `r`. In particular, for an action of a group `Γ` on `X`, a positive functional is invariant
+under `f ↦ f (γ⁻¹ • ·)` exactly when its content is invariant under translation of sets. -/
+
+section Naturality
+
+open scoped Pointwise
+
+variable {X Y : Type*} [TopologicalSpace X] [DiscreteTopology X] [TopologicalSpace Y]
+  [DiscreteTopology Y]
+
+/-- Precomposing a functional with a map `r` of discrete spaces pushes its content forward
+along `r`. -/
+@[simp]
+theorem LinearMap.toAddContent_comp_compContinuousCLM (m : (X →ᵇ ℝ) →ₗ[ℝ] ℝ) (r : X → Y) :
+    (m ∘ₗ (BoundedContinuousFunction.compContinuousCLM ℝ ℝ
+        ⟨r, continuous_of_discreteTopology⟩).toLinearMap).toAddContent =
+      m.toAddContent.map r fun _ _ => mem_univ _ := by
+  ext s
+  simp
+
+namespace PositiveLinearMap
+
+/-- **Naturality of the correspondence between functionals and contents.** The functional
+associated to the pushforward of a content `ν` along a map `r` of discrete spaces is the
+functional associated to `ν` composed with precomposition by `r`. -/
+theorem addContentEquiv_symm_mapNonneg
+    (ν : {ν : AddContent ℝ (univ : Set (Set X)) // ∀ s, 0 ≤ ν s}) (r : X → Y) :
+    (addContentEquiv Y).symm (AddContent.mapNonneg r ν) =
+      ((addContentEquiv X).symm ν).comp (BoundedContinuousFunction.compContinuousPositiveLinearMap
+        ℝ ℝ ⟨r, continuous_of_discreteTopology⟩) := by
+  refine (addContentEquiv Y).symm_apply_eq.2 (Subtype.ext ?_)
+  -- The content of `(addContentEquiv X).symm ν` is `ν`; the remaining steps are `simp` lemmas.
+  have hν := congrArg Subtype.val ((addContentEquiv X).apply_symm_apply ν)
+  rw [coe_addContentEquiv_apply] at hν
+  simp [hν]
+
+/-- The functional associated to the pushforward of a content `ν` along a map `r` of discrete
+spaces integrates `f` as the functional associated to `ν` integrates `f ∘ r`. -/
+@[simp]
+theorem addContentEquiv_symm_mapNonneg_apply
+    (ν : {ν : AddContent ℝ (univ : Set (Set X)) // ∀ s, 0 ≤ ν s}) (r : X → Y) (f : Y →ᵇ ℝ) :
+    (addContentEquiv Y).symm (AddContent.mapNonneg r ν) f =
+      (addContentEquiv X).symm ν (f.compContinuous ⟨r, continuous_of_discreteTopology⟩) := by
+  simp [addContentEquiv_symm_mapNonneg]
+
+variable {Γ : Type*} [Group Γ] [MulAction Γ X]
+
+/-- **Equivariance of the correspondence between functionals and contents.** For an action of a
+group `Γ` on a discrete space `X`, a positive functional on `X →ᵇ ℝ` is invariant under
+`f ↦ f (γ⁻¹ • ·)` for every `γ` exactly when its content is invariant under translation of sets
+by every `γ`. -/
+theorem forall_apply_compContinuous_smul_iff_toAddContent_smul
+    (m : (X →ᵇ ℝ) →ₚ[ℝ] ℝ) :
+    (∀ (γ : Γ) (f : X →ᵇ ℝ),
+        m (f.compContinuous ⟨(γ⁻¹ • ·), continuous_of_discreteTopology⟩) = m f) ↔
+      ∀ (γ : Γ) (s : Set X),
+        m.toLinearMap.toAddContent (γ • s) = m.toLinearMap.toAddContent s := by
+  rw [← AddContent.forall_map_smul_eq_iff]
+  refine ⟨fun h γ => ?_, fun h γ f => ?_⟩
+  · -- The content of `f ↦ m (f (γ • ·))` is the pushforward along `γ • ·`.
+    rw [← LinearMap.toAddContent_comp_compContinuousCLM]
+    congr 1
+    ext f
+    simpa using h γ⁻¹ f
+  · -- `m` is the functional of its content, which is fixed by pushforward along `γ⁻¹ • ·`.
+    have hm := (addContentEquiv X).symm_apply_apply m
+    rw [← hm, ← addContentEquiv_symm_mapNonneg_apply]
+    congr 2
+    refine Subtype.ext ?_
+    rw [AddContent.coe_mapNonneg, coe_addContentEquiv_apply]
+    exact h γ⁻¹
+
+end PositiveLinearMap
+
+end Naturality
