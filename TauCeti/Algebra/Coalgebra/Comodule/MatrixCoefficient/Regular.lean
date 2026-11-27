@@ -18,8 +18,8 @@ This file records that the regular right comodule has enough matrix coefficients
 the whole coalgebra, and likewise that the coefficients of its restriction to a subcoalgebra
 recover that subcoalgebra. The key coefficient is the counit: for the regular comodule, the
 matrix coefficient attached to `Coalgebra.counit` and a vector `c` is exactly `c`.
-Over a field, tensors of finite-comodule matrix coefficients determine linear maps on the
-tensor product of two coalgebras.
+Over a commutative semiring, tensors of finite-comodule matrix coefficients determine linear
+maps on the tensor product of two projective coalgebras.
 
 This is a small prerequisite for the faithful-representation criterion, where faithfulness is
 detected by whether the matrix coefficients, together with their antipode images, generate the
@@ -130,25 +130,25 @@ theorem regularObj_matrixCoefficientSubmodule_eq_top :
 
 end Coalgebra
 
-section Field
+section TensorProduct
 
-variable {k : Type u} [Field k]
+variable {k : Type u} [CommSemiring k]
 
 -- Bundling the induced subcomodule preserves its coaction, so the regular counit formula applies.
 private theorem matrixCoefficient_fgRegular_counit {A : Type*}
-    [AddCommGroup A] [Module k A] [Coalgebra k A]
+    [AddCommMonoid A] [Module k A] [Coalgebra k A] [Module.Flat k A]
     (S : Subcomodule k A A) [Module.Finite k S] (s : S) :
     matrixCoefficient (C := A) (M := FGComoduleCat.of (R := k) (C := A) S)
       ((Coalgebra.counit (R := k) (A := A)).comp (SMulMemClass.subtype S)) s = s := by
   simpa only [matrixCoefficient_def, FGComoduleCat.of_coact] using
     (matrixCoefficient_counit_comp_subtype S s)
 
-/-- Linear maps on a tensor product of coalgebras are determined by their values on tensors
-of matrix coefficients of finite comodules. -/
+/-- Linear maps on a tensor product of projective coalgebras over a commutative semiring are
+determined by their values on tensors of matrix coefficients of finitely generated comodules. -/
 theorem tensorProduct_linearMap_ext_matrixCoefficient
     {B : Type v} {C : Type w}
-    [AddCommGroup B] [Module k B] [Coalgebra k B]
-    [AddCommGroup C] [Module k C] [Coalgebra k C]
+    [AddCommMonoid B] [Module k B] [Coalgebra k B] [Module.Projective k B]
+    [AddCommMonoid C] [Module k C] [Coalgebra k C] [Module.Projective k C]
     {P : Type*} [AddCommMonoid P] [Module k P]
     {F G : B ⊗[k] C →ₗ[k] P}
     (hFG : ∀ (M : FGComoduleCat.{u, v, v} k B) (N : FGComoduleCat.{u, w, w} k C)
@@ -167,7 +167,7 @@ theorem tensorProduct_linearMap_ext_matrixCoefficient
   simpa only [matrixCoefficient_fgRegular_counit, AlgebraTensorModule.curry_apply,
     TensorProduct.curry_apply, LinearMap.restrictScalars_apply] using h
 
-end Field
+end TensorProduct
 
 section Algebra
 
