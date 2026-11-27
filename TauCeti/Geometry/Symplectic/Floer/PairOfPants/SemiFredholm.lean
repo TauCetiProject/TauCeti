@@ -83,8 +83,8 @@ the `L²` norm of `D_u^* η` carries the inverse of the cylindrical weight `ρ`
   parts of the domain
   (`exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add`).
   The end estimates may read each end in any `C²` chart reaching at least as far out on the end as
-  the positive end chart, such as a chart recentred at another point; the estimate then measures
-  the energy on that end in this chart.
+  the positive end chart, such as a recentred chart shifted far enough along the end (for example
+  `ζ ↦ c + φ'_∞(ζ + 1)`); the estimate then measures the energy on that end in this chart.
   The cutoffs are those of `D_u`, which the adjoint differentiates through
   `-(∂s f) η - (∂t f) η ∘ J` (`floerLinearizationAdjoint_fun_smul`), and on the compact core `w`
   is bounded above and below.
@@ -95,7 +95,9 @@ the `L²` norm of `D_u^* η` carries the inverse of the cylindrical weight `ρ`
   `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`, which
   carries the weight `|z - c_q|²` for the center `c_q` of the end. On the part `±s ≥ 0` of
   the end `q` this weight is at most `5 ρ⁻¹`
-  (`TauCeti.Floer.norm_sub_endCenter_sq_mul_cylindricalWeight_le`).
+  (`TauCeti.Floer.norm_sub_endCenter_sq_le_mul_inv_cylindricalWeight`), and an end estimate against
+  a weight `g ≤ k ρ⁻¹` gives one against `ρ⁻¹`
+  (`exists_forall_le_mul_integral_inv_cylindricalWeight_of_le`).
 
 The Sobolev completion, the finiteness of the cokernel and the Fredholm index are not treated
 here.
@@ -916,8 +918,8 @@ satisfies
 where `η'_q` is `η` read in the chart `φ_q` and `S_T` is the truncation of `S` at height `T`. On
 the compact core the weight is bounded above and below. The pair-of-pants estimate takes the
 positive end charts `φ_q = φ'_q` and `w = ρ⁻¹` for the cylindrical weight `ρ`
-(`TauCeti.Floer.cylindricalWeight`); data whose output end is recentred take a recentred chart
-there. -/
+(`TauCeti.Floer.cylindricalWeight`); data whose output end is recentred at `c` take there the
+recentred chart shifted one unit along the end, `ζ ↦ c + φ'_∞(ζ + 1)`. -/
 theorem
   exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends
     (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
@@ -954,6 +956,56 @@ theorem
       ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint_aux hJ hKs hKt hu hc
         hw hwc hwS hφ hφq hend hR₀ hR
   exact ⟨C', hC', T, by linarith, h⟩
+
+/-- **Comparing end estimates of the formal adjoint with the weight `ρ⁻¹`.** An end estimate of the
+formal adjoint `D_u^*` against a weight `g ≥ 0` with `g ≤ k ρ⁻¹` on the part `±s > 0` of the end `q`
+gives the same estimate against the inverse `ρ⁻¹` of the cylindrical weight
+(`TauCeti.Floer.cylindricalWeight`), up to the factor `k`: both integrands vanish off the support
+of the covector field. Here `E η` is any quantity the end estimate controls, such as the energy of
+`η` read in an end chart. -/
+theorem exists_forall_le_mul_integral_inv_cylindricalWeight_of_le (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {q : Puncture}
+    {E : (ℝ × ℝ → V →L[ℝ] ℝ) → ℝ} {g : ℝ × ℝ → ℝ} {k : ℝ} (hg₀ : ∀ z, 0 ≤ g z)
+    (hg : ∀ z ∈ thricePuncturedSphereReal, 0 < (positiveEndCoord q z).1 →
+      g z ≤ k * (cylindricalWeight z)⁻¹)
+    (hend : ∃ C R : ℝ, ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord q z).1} →
+      E η ≤ C * ∫ z, g z * ‖ω.floerLinearizationAdjoint
+        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) :
+    ∃ C R : ℝ, ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord q z).1} →
+      E η ≤ C * ∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 := by
+  obtain ⟨C, R, hest⟩ := hend
+  refine ⟨max C 0 * k, max R 0, fun η hη hηc hηR ↦ ?_⟩
+  set D := ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
+  have hηS : tsupport η ⊆ thricePuncturedSphereReal := fun z hz ↦ (hηR hz).1
+  -- Off the support of `η` both integrands vanish; on it `g ≤ k ρ⁻¹`.
+  have hcmp : ∫ z, g z * ‖D η z‖ ^ 2 ≤ k * ∫ z, (cylindricalWeight z)⁻¹ * ‖D η z‖ ^ 2 := by
+    rw [← integral_const_mul]
+    refine integral_mono_of_nonneg (.of_forall fun z ↦ mul_nonneg (hg₀ z) (sq_nonneg _))
+      ((ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal
+        (fun z hz ↦ by simpa only [Function.uncurry_def] using hJ z hz) hKs hKt hu
+        continuousOn_inv_cylindricalWeight (hη.of_le one_le_two) subset_rfl hηc hηS).const_mul k)
+      (.of_forall fun z ↦ ?_)
+    dsimp only
+    by_cases hz : z ∈ tsupport η
+    · rw [← mul_assoc]
+      exact mul_le_mul_of_nonneg_right
+        (hg z (hηR hz).1 ((le_max_right _ _).trans_lt (hηR hz).2)) (sq_nonneg _)
+    · simp [D, floerLinearizationAdjoint_of_notMem_tsupport hz]
+  calc E η ≤ C * ∫ z, g z * ‖D η z‖ ^ 2 :=
+        hest hη hηc fun z hz ↦ ⟨(hηR hz).1, (le_max_left _ _).trans_lt (hηR hz).2⟩
+    _ ≤ max C 0 * (k * ∫ z, (cylindricalWeight z)⁻¹ * ‖D η z‖ ^ 2) :=
+        (mul_le_mul_of_nonneg_right (le_max_left _ _)
+          (integral_nonneg fun z ↦ mul_nonneg (hg₀ z) (sq_nonneg _))).trans
+          (mul_le_mul_of_nonneg_left hcmp (le_max_right _ _))
+    _ = _ := by ring
 
 /-- **The semi-Fredholm estimate of the formal adjoint along a Floer pair of pants.** Let `H_q` be
 jointly `C²` period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, whose positive end
@@ -1019,40 +1071,18 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
         C * ((∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖η z‖ ^ 2) := by
-  choose C R hend using fun q ↦
-    ω.exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint hH hHs
-      q (hX q) (hx q) (hnd q) (hJe q) (hJex q) (hJeq q) (hK q) hJ hu (hu₂ q) hc (hF q) (hux q)
-      (hδ q)
   -- On the part `±s > 0` of the end `q`, the weight `|z - c_q|²` is at most `5 ρ⁻¹`.
-  refine
+  choose C R hend using fun q ↦ ω.exists_forall_le_mul_integral_inv_cylindricalWeight_of_le hJ hKs
+    hKt hu (fun z ↦ sq_nonneg _)
+    (fun z hzS hz ↦ norm_sub_endCenter_sq_le_mul_inv_cylindricalWeight q hzS hz.le)
+    (ω.exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint hH hHs
+      q (hX q) (hx q) (hnd q) (hJe q) (hJex q) (hJeq q) (hK q) hJ hu (hu₂ q) hc (hF q) (hux q)
+      (hδ q))
+  exact
     exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends
     ω hJ hKs hKt hu hc (fun z ↦ inv_nonneg.2 (cylindricalWeight_nonneg z))
     continuousOn_inv_cylindricalWeight (fun z hz ↦ inv_pos.2 (isWeight_cylindricalWeight.pos z hz))
     (fun q ↦ contDiff_positiveEndChart q 2)
-    (fun q ζ _ ↦ (fst_positiveEndCoord_positiveEndChart q ζ).ge) (C := fun q ↦ max (C q) 0 * 5)
-    (R := fun q ↦ max (R q) 0) fun q η hη hηc hηR ↦ ?_
-  have hηS : tsupport η ⊆ thricePuncturedSphereReal := fun z hz ↦ (hηR hz).1
-  refine (hend q hη hηc fun z hz ↦ ⟨(hηR hz).1, (le_max_left _ _).trans_lt (hηR hz).2⟩).trans ?_
-  rw [mul_assoc]
-  refine (mul_le_mul_of_nonneg_right (le_max_left _ _)
-    (integral_nonneg fun z ↦ by positivity)).trans (mul_le_mul_of_nonneg_left ?_ (le_max_right _ _))
-  rw [← integral_const_mul]
-  refine integral_mono_of_nonneg (.of_forall fun z ↦ by positivity)
-    ((ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal
-      (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
-      continuousOn_inv_cylindricalWeight (hη.of_le one_le_two) subset_rfl hηc hηS).const_mul 5)
-    (.of_forall fun z ↦ ?_)
-  beta_reduce
-  by_cases hz : z ∈ tsupport η
-  · obtain ⟨hzS, hzR⟩ := hηR hz
-    have hρ := isWeight_cylindricalWeight.pos z hzS
-    have h : ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 ≤
-        5 * (cylindricalWeight z)⁻¹ := by
-      rw [← div_eq_mul_inv, le_div_iff₀ hρ]
-      exact norm_sub_endCenter_sq_mul_cylindricalWeight_le q hzS
-        ((le_max_right _ _).trans hzR.le)
-    rw [← mul_assoc]
-    gcongr
-  · simp [floerLinearizationAdjoint_of_notMem_tsupport hz]
+    (fun q ζ _ ↦ (fst_positiveEndCoord_positiveEndChart q ζ).ge) hend
 
 end TauCeti.SymplecticForm
