@@ -25,23 +25,24 @@ invertible by the skew-Hermitian matrices `S` with `D(S) = 1 - A⁻¹ S / 2` inv
 measure `μ` on the skew-Hermitian matrices, the **Cayley measure** `μ^c` on `U(A)`
 (`Matrix.unitaryGroupOf.cayleyMeasure`) is the image under `φ` of the measure of density
 `|det D(S)|^(-2 n)` (`Matrix.unitaryGroupOf.cayleyDensity`) with respect to `μ`. When `μ` is an
-additive Haar measure, `μ^c` is a left and right Haar measure on `U(A)`. Taking for `μ` the
-Lebesgue measure in the coordinates `Im S_aa`, `Re S_ab`, `Im S_ab` (`a < b`) divided by the
-volume `∏_{i ≤ n} 2 π^i / (i - 1)!` of `U(n)` gives the compact-dual normalization of Haar measure
-on `U(p, q)`, whose density at the identity in Cayley coordinates does not depend on the
-signature.
+additive Haar measure, `μ^c` is a left and right Haar measure on `U(A)`. For
+`A = J = diag(±1)`, taking for `μ` the Lebesgue measure in the coordinates `Im S_aa`, `Re S_ab`,
+`Im S_ab` (`a < b`) divided by the volume `∏_{1 ≤ i ≤ n} 2 π^i / (i - 1)!` of `U(n)` gives the
+compact-dual normalization of Haar measure on `U(p, q)`, whose density at the identity in Cayley
+coordinates does not depend on the signature.
 
 The density is the determinant of the logarithmic derivative `S ↦ φ(S)ᴴ A dφ_S` of the chart
 (`Matrix.unitaryGroupOf.det_codRestrict_mulLeft_comp_fderiv_cayleyChart`). This pull-back of the
 Maurer–Cartan form is invariant under left multiplication by `a ∈ U(A)`, so the transition map
 `τ = φ⁻¹ ∘ (a ·) ∘ φ` has Jacobian `|det dτ_S| = |det D(S)|^(-2 n) / |det D(τ(S))|^(-2 n)`, and
-the change of variables formula gives left invariance. The chart does not cover `U(A)`, and `τ`
-is only defined where `1 + a φ(S)` is invertible; the remaining points are the zeros of the
-polynomial `S ↦ det ((1 + a) + (a - 1) A⁻¹ S / 2)`, which does not vanish identically, so they
-form a null set (`MeasureTheory.Measure.addHaar_setOf_det_add_eq_zero`). In Cayley coordinates
-inversion is `S ↦ -S`, which preserves the density, so `μ^c` is invariant under inversion and
-hence right invariant. A compact neighbourhood of the identity inside the image of the chart has
-positive finite measure, so `μ^c` is a Haar measure.
+the change of variables formula gives left invariance. The total map `τ` represents the chart
+transition on `transitionSource a`, where `S ∈ cayleyChartSource A` and `1 + a φ(S)` is invertible.
+Within `cayleyChartSource A`, the excluded points are precisely the zeros of the polynomial
+`S ↦ det ((1 + a) + (a - 1) A⁻¹ S / 2)`, which does not vanish identically, so they form a null
+set (`MeasureTheory.Measure.addHaar_setOf_det_add_eq_zero`). In Cayley coordinates inversion is
+`S ↦ -S`, which preserves the density, so `μ^c` is invariant under inversion and hence right
+invariant. A compact neighbourhood of the identity inside the image of the chart has positive
+finite measure, so `μ^c` is a Haar measure.
 
 Derivatives are taken for the Frobenius norm on matrices, whose topology is the topology of
 entries; measures and statements use the topology of entries.
@@ -72,8 +73,9 @@ involution and the normalized Lebesgue measure; there the Jacobian of a translat
 through a congruence of skew-Hermitian matrices, and the points outside a chart are moved into it
 by rotating with a generic scalar. Here the measure is built from any additive Haar measure on the
 skew-Hermitian matrices and for every invertible Hermitian `A`, the Jacobian comes from the
-invariance of the logarithmic derivative, the points outside the chart are a polynomial zero set,
-and right invariance is deduced from invariance under inversion.
+invariance of the logarithmic derivative, the points of `cayleyChartSource A` excluded from the
+translated chart are a polynomial zero set within that source, and right invariance is deduced
+from invariance under inversion.
 
 ## References
 
@@ -96,7 +98,7 @@ variable {A : Matrix n n ℂ} {S : skewAdjoint.submodule ℝ (Matrix n n ℂ)}
 
 /-- The Cayley chart with values in the unitary group is measurable. -/
 theorem measurable_cayleyChartUnitary [MeasurableSpace (unitaryGroupOf A)]
-    [BorelSpace (unitaryGroupOf A)] (hA : A.IsHermitian) (hA' : IsUnit A) :
+    [BorelSpace (unitaryGroupOf A)] (hA : A.IsHermitian) :
     Measurable (cayleyChartUnitary A) := by
   classical
   have h : cayleyChartUnitary A = (cayleyChartSource A).piecewise (cayleyChartUnitary A) 1 := by
@@ -105,7 +107,7 @@ theorem measurable_cayleyChartUnitary [MeasurableSpace (unitaryGroupOf A)]
     · simp [hS]
     · simp [hS]
   rw [h]
-  exact (continuousOn_cayleyChartUnitary hA hA').measurable_piecewise continuousOn_const
+  exact (continuousOn_cayleyChartUnitary hA).measurable_piecewise continuousOn_const
     isOpen_cayleyChartSource.measurableSet
 
 /-- The **Cayley density** `|det (1 - A⁻¹ S / 2)|^(-2 n)` of the skew-Hermitian `S`, where
@@ -178,10 +180,11 @@ private theorem isOpen_transitionSource : IsOpen (transitionSource a) := by
     (continuousOn_const.add (continuousOn_const.mul continuousOn_cayleyChart))
     isOpen_cayleyChartSource IsOpenUnits.isOpenEmbedding_unitsVal.isOpen_range
 
+omit hA' in
 /-- On `transitionSource a`, the product `a φ(S)` lies in the image of the chart. -/
 private theorem isUnit_one_add_mul_cayleyChartUnitary {S} (hS : S ∈ transitionSource a) :
     IsUnit (1 + (((a * cayleyChartUnitary A S : unitaryGroupOf A) : GL n ℂ) : Matrix n n ℂ)) := by
-  simpa [coe_cayleyChartUnitary hA hA' hS.1] using hS.2
+  simpa [coe_cayleyChartUnitary hA hS.1] using hS.2
 
 omit hA hA' in
 /-- The **transition map** `S ↦ φ⁻¹(a φ(S))` of the Cayley chart `φ` under left multiplication
@@ -193,10 +196,10 @@ private noncomputable def cayleyTransition (a : unitaryGroupOf A)
 /-- On `transitionSource a`, the transition map is the inverse of the chart at `a φ(S)`. -/
 private theorem cayleyTransition_eq {S} (hS : S ∈ transitionSource a) :
     cayleyTransition a S = ((cayleyChartEquiv hA hA').symm
-      ⟨a * cayleyChartUnitary A S, isUnit_one_add_mul_cayleyChartUnitary hA hA' a hS⟩).val := by
+      ⟨a * cayleyChartUnitary A S, isUnit_one_add_mul_cayleyChartUnitary hA a hS⟩).val := by
   rw [← cayleyChartInv_eq_cayleyChartEquiv_symm hA hA', cayleyTransition,
     Subgroup.coe_mul, Units.val_mul,
-    coe_cayleyChartUnitary hA hA' hS.1]
+    coe_cayleyChartUnitary hA hS.1]
 
 private theorem cayleyTransition_mem {S} (hS : S ∈ transitionSource a) :
     cayleyTransition a S ∈ cayleyChartSource A := by
@@ -213,8 +216,8 @@ private theorem cayleyChart_cayleyTransition {S} (hS : S ∈ transitionSource a)
     cayleyChart A (cayleyTransition a S) = ((a : GL n ℂ) : Matrix n n ℂ) * cayleyChart A S := by
   have := congrArg (fun g : unitaryGroupOf A ↦ ((g : GL n ℂ) : Matrix n n ℂ))
     (cayleyChartUnitary_cayleyTransition hA hA' a hS)
-  simpa [coe_cayleyChartUnitary hA hA' hS.1,
-    coe_cayleyChartUnitary hA hA' (cayleyTransition_mem hA hA' a hS)] using this
+  simpa [coe_cayleyChartUnitary hA hS.1,
+    coe_cayleyChartUnitary hA (cayleyTransition_mem hA hA' a hS)] using this
 
 /-- The transition map is injective on `transitionSource a`. -/
 private theorem injOn_cayleyTransition : InjOn (cayleyTransition a) (transitionSource a) :=
@@ -234,8 +237,8 @@ private theorem transitionSource_inv_subset_image :
   have hT' : cayleyTransition a⁻¹ S' ∈ transitionSource a := by
     refine ⟨hT, ?_⟩
     have h := isUnit_one_add_cayleyChart A S'
-    rwa [← coe_cayleyChartUnitary hA hA' hS'.1, ← mul_inv_cancel_left a (cayleyChartUnitary A S'),
-      ← hfT, Subgroup.coe_mul, Units.val_mul, coe_cayleyChartUnitary hA hA' hT] at h
+    rwa [← coe_cayleyChartUnitary hA hS'.1, ← mul_inv_cancel_left a (cayleyChartUnitary A S'),
+      ← hfT, Subgroup.coe_mul, Units.val_mul, coe_cayleyChartUnitary hA hT] at h
   refine ⟨_, hT', ?_⟩
   apply injOn_cayleyChartUnitary hA hA' (cayleyTransition_mem hA hA' a hT') hS'.1
   rw [cayleyChartUnitary_cayleyTransition hA hA' a hT', hfT, mul_inv_cancel_left]
@@ -330,12 +333,12 @@ theorem cayleyMeasure_def :
 
 /-- **Integrals for the Cayley measure** in Cayley coordinates:
 `∫ F dμ^c = ∫ |det (1 - A⁻¹ S / 2)|^(-2 n) F (φ(S)) dμ(S)`. -/
-theorem lintegral_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A)
+theorem lintegral_cayleyMeasure (hA : A.IsHermitian)
     {F : unitaryGroupOf A → ℝ≥0∞} (hF : Measurable F) :
     ∫⁻ g, F g ∂cayleyMeasure A μ = ∫⁻ S, cayleyDensity A S * F (cayleyChartUnitary A S) ∂μ := by
-  rw [cayleyMeasure_def, lintegral_map hF (measurable_cayleyChartUnitary hA hA')]
+  rw [cayleyMeasure_def, lintegral_map hF (measurable_cayleyChartUnitary hA)]
   exact lintegral_withDensity_eq_lintegral_mul _ measurable_cayleyDensity
-    (hF.comp (measurable_cayleyChartUnitary hA hA'))
+    (hF.comp (measurable_cayleyChartUnitary hA))
 
 section Invariance
 
@@ -400,8 +403,8 @@ additive Haar measure `μ` and `a` in the unitary group of `A`,
 private theorem lintegral_mul_left_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A)
     (a : unitaryGroupOf A) {F : unitaryGroupOf A → ℝ≥0∞} (hF : Measurable F) :
     ∫⁻ g, F (a * g) ∂cayleyMeasure A μ = ∫⁻ g, F g ∂cayleyMeasure A μ := by
-  rw [lintegral_cayleyMeasure μ hA hA' (F := fun g ↦ F (a * g)) (hF.comp (measurable_const_mul a)),
-    lintegral_cayleyMeasure μ hA hA' hF]
+  rw [lintegral_cayleyMeasure μ hA (F := fun g ↦ F (a * g)) (hF.comp (measurable_const_mul a)),
+    lintegral_cayleyMeasure μ hA hF]
   -- The transition map `τ = φ⁻¹ ∘ (a ·) ∘ φ` is a diffeomorphism from `transitionSource a`
   -- onto a set containing `transitionSource a⁻¹`, and both sets have null complements in the
   -- source of the chart, off which the density vanishes.
@@ -438,25 +441,25 @@ theorem isMulLeftInvariant_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
 
 /-- Inversion invariance of integrals for the Cayley measure: `∫ F(g⁻¹) dμ^c = ∫ F dμ^c`.
 In Cayley coordinates inversion is `S ↦ -S`, which preserves the density and `μ`. -/
-private theorem lintegral_inv_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A)
+private theorem lintegral_inv_cayleyMeasure (hA : A.IsHermitian)
     {F : unitaryGroupOf A → ℝ≥0∞} (hF : Measurable F) :
     ∫⁻ g, F g⁻¹ ∂cayleyMeasure A μ = ∫⁻ g, F g ∂cayleyMeasure A μ := by
-  rw [lintegral_cayleyMeasure μ hA hA' (F := fun g ↦ F g⁻¹) (hF.comp measurable_inv),
-    lintegral_cayleyMeasure μ hA hA' hF,
+  rw [lintegral_cayleyMeasure μ hA (F := fun g ↦ F g⁻¹) (hF.comp measurable_inv),
+    lintegral_cayleyMeasure μ hA hF,
     ← lintegral_neg_eq_self (μ := μ) (fun S ↦ cayleyDensity A S * F (cayleyChartUnitary A S))]
   simp only [cayleyDensity_neg hA, cayleyChartUnitary_neg hA]
 
 /-- **The Cayley measure is invariant under inversion.** -/
-theorem isInvInvariant_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
+theorem isInvInvariant_cayleyMeasure (hA : A.IsHermitian) :
     (cayleyMeasure A μ).IsInvInvariant :=
   ⟨Measure.ext_of_lintegral _ fun F hF ↦ by
-    rw [Measure.inv, lintegral_map hF measurable_inv, lintegral_inv_cayleyMeasure μ hA hA' hF]⟩
+    rw [Measure.inv, lintegral_map hF measurable_inv, lintegral_inv_cayleyMeasure μ hA hF]⟩
 
 /-- **The Cayley measure is right invariant.** -/
 theorem isMulRightInvariant_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
     (cayleyMeasure A μ).IsMulRightInvariant := by
   have := isMulLeftInvariant_cayleyMeasure μ hA hA'
-  have := isInvInvariant_cayleyMeasure μ hA hA'
+  have := isInvInvariant_cayleyMeasure μ hA
   rw [← Measure.inv_eq_self (cayleyMeasure A μ)]
   infer_instance
 
@@ -469,8 +472,8 @@ theorem isHaarMeasure_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
   have := isMulLeftInvariant_cayleyMeasure μ hA hA'
   obtain ⟨K₀, hK₀, h0, hK₀s⟩ :=
     exists_compact_subset isOpen_cayleyChartSource (zero_mem_cayleyChartSource (A := A))
-  have hf := continuousOn_cayleyChartUnitary hA hA'
-  have hfm := measurable_cayleyChartUnitary hA hA'
+  have hf := continuousOn_cayleyChartUnitary hA
+  have hfm := measurable_cayleyChartUnitary hA
   set K := cayleyChartUnitary A '' K₀
   have hK : IsCompact K := hK₀.image_of_continuousOn (hf.mono hK₀s)
   have hopen := isOpen_image_cayleyChartUnitary hA hA' isOpen_interior (interior_subset.trans hK₀s)

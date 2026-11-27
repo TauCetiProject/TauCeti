@@ -180,6 +180,13 @@ theorem cayleyChart_of_not_isUnit
 theorem cayleyChart_zero (A : Matrix n n ℂ) : cayleyChart A 0 = 1 := by
   simp [cayleyChart]
 
+/-- For singular `A`, the Cayley chart is constantly the identity. -/
+@[simp]
+theorem cayleyChart_eq_one_of_not_isUnit (hA : ¬IsUnit A)
+    (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) : cayleyChart A S = 1 := by
+  rw [cayleyChart_def, nonsing_inv_apply_not_isUnit A (mt (isUnit_iff_isUnit_det A).2 hA)]
+  simp
+
 /-- For Hermitian `A` and skew-Hermitian `S`, the matrix `-A⁻¹ S / 2` lies in the Lie algebra of
 the unitary group of `A`: it is skew-adjoint for the form of `A`. -/
 theorem star_neg_smul_inv_mul_mul_add (hA : A.IsHermitian)
@@ -395,9 +402,13 @@ theorem isUnit_one_add_cayleyChart (A : Matrix n n ℂ)
       (algebraMap ℂ (Matrix n n ℂ))) _
 
 /-- The Cayley chart at a point of its source is invertible. -/
-theorem isUnit_cayleyChart (hA : A.IsHermitian) (hA' : IsUnit A) (hS : S ∈ cayleyChartSource A) :
-    IsUnit (cayleyChart A S) :=
-  ⟨((cayleyChartEquiv hA hA' ⟨S, hS⟩).val : GL n ℂ), coe_cayleyChartEquiv_apply hA hA' ⟨S, hS⟩⟩
+theorem isUnit_cayleyChart (hA : A.IsHermitian) (hS : S ∈ cayleyChartSource A) :
+    IsUnit (cayleyChart A S) := by
+  by_cases hA' : IsUnit A
+  · exact ⟨((cayleyChartEquiv hA hA' ⟨S, hS⟩).val : GL n ℂ),
+      coe_cayleyChartEquiv_apply hA hA' ⟨S, hS⟩⟩
+  · rw [cayleyChart_eq_one_of_not_isUnit hA']
+    exact isUnit_one
 
 end Source
 
@@ -411,6 +422,22 @@ noncomputable def cayleyChartUnitary (A : Matrix n n ℂ)
     ⟨h.1.unit, mem_unitaryGroupOf_iff.2 (by rw [IsUnit.unit_spec]; exact h.2)⟩
   else 1
 
+open Classical in
+/-- The underlying matrix of the group-valued Cayley chart is the matrix chart when it is
+invertible and preserves the form of `A`, and is the identity otherwise. -/
+theorem cayleyChartUnitary_def (A : Matrix n n ℂ)
+    (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+    (((cayleyChartUnitary A S : unitaryGroupOf A) : GL n ℂ) : Matrix n n ℂ) =
+      if IsUnit (cayleyChart A S) ∧ star (cayleyChart A S) * A * cayleyChart A S = A then
+        cayleyChart A S else 1 := by
+  split_ifs <;> simp_all [cayleyChartUnitary]
+
+/-- For singular `A`, the group-valued Cayley chart is constantly the identity. -/
+@[simp]
+theorem cayleyChartUnitary_eq_one_of_not_isUnit (hA : ¬IsUnit A)
+    (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) : cayleyChartUnitary A S = 1 := by
+  exact unitaryGroupOf.ext (by simp [cayleyChartUnitary_def, cayleyChart_eq_one_of_not_isUnit hA])
+
 /-- The Cayley chart with values in the unitary group sends zero to the identity. -/
 @[simp]
 theorem cayleyChartUnitary_zero (A : Matrix n n ℂ) : cayleyChartUnitary A 0 = 1 := by
@@ -420,20 +447,20 @@ theorem cayleyChartUnitary_zero (A : Matrix n n ℂ) : cayleyChartUnitary A 0 = 
 
 /-- On the source of the chart, `Matrix.unitaryGroupOf.cayleyChartUnitary` is the Cayley chart. -/
 @[simp]
-theorem coe_cayleyChartUnitary (hA : A.IsHermitian) (hA' : IsUnit A)
+theorem coe_cayleyChartUnitary (hA : A.IsHermitian)
     (hS : S ∈ cayleyChartSource A) :
     (((cayleyChartUnitary A S : unitaryGroupOf A) : GL n ℂ) : Matrix n n ℂ) = cayleyChart A S := by
   have h : IsUnit (cayleyChart A S) ∧ star (cayleyChart A S) * A * cayleyChart A S = A :=
-    ⟨isUnit_cayleyChart hA hA' hS,
+    ⟨isUnit_cayleyChart hA hS,
       star_cayleyChart_mul_mul_cayleyChart hA (mem_cayleyChartSource.1 hS)⟩
-  simp [cayleyChartUnitary, h]
+  simp [cayleyChartUnitary_def, h]
 
 /-- On the source of the chart, `Matrix.unitaryGroupOf.cayleyChartUnitary` is the chart
 bijection `Matrix.unitaryGroupOf.cayleyChartEquiv`. -/
 theorem cayleyChartUnitary_eq_cayleyChartEquiv (hA : A.IsHermitian) (hA' : IsUnit A)
     (hS : S ∈ cayleyChartSource A) :
     cayleyChartUnitary A S = (cayleyChartEquiv hA hA' ⟨S, hS⟩).val :=
-  unitaryGroupOf.ext <| by rw [coe_cayleyChartUnitary hA hA' hS, coe_cayleyChartEquiv_apply]
+  unitaryGroupOf.ext <| by rw [coe_cayleyChartUnitary hA hS, coe_cayleyChartEquiv_apply]
 
 /-- Off the source of the chart, `Matrix.unitaryGroupOf.cayleyChartUnitary` is `1`. -/
 @[simp]
@@ -455,21 +482,11 @@ theorem injOn_cayleyChartUnitary (hA : A.IsHermitian) (hA' : IsUnit A) :
 theorem cayleyChartUnitary_neg (hA : A.IsHermitian)
     (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
     cayleyChartUnitary A (-S) = (cayleyChartUnitary A S)⁻¹ := by
-  by_cases hA' : ¬IsUnit A
-  · -- For singular `A`, `A⁻¹ = 0`, so the chart is constantly `1`.
-    have h (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) : cayleyChartUnitary A S = 1 := by
-      have : cayleyChart A S = 1 := by
-        rw [cayleyChart_def, nonsing_inv_apply_not_isUnit A (mt (isUnit_iff_isUnit_det A).2 hA')]
-        simp
-      classical
-      exact unitaryGroupOf.ext (by simp [cayleyChartUnitary, this])
-    rw [h, h, inv_one]
-  rw [not_not] at hA'
   by_cases hS : S ∈ cayleyChartSource A
   · have hS' := (neg_mem_cayleyChartSource hA).2 hS
     refine eq_inv_of_mul_eq_one_left (unitaryGroupOf.ext ?_)
-    rw [Subgroup.coe_mul, Units.val_mul, coe_cayleyChartUnitary hA hA' hS,
-      coe_cayleyChartUnitary hA hA' hS', cayleyChart_eq, cayleyChart_eq]
+    rw [Subgroup.coe_mul, Units.val_mul, coe_cayleyChartUnitary hA hS,
+      coe_cayleyChartUnitary hA hS', cayleyChart_eq, cayleyChart_eq]
     have h1 := isUnit_iff_ne_zero.2 (mem_cayleyChartSource_iff_det_ne_zero.1 hS')
     have h2 := isUnit_iff_ne_zero.2 (mem_cayleyChartSource_iff_det_ne_zero.1 hS)
     simp only [NegMemClass.coe_neg, Matrix.mul_neg, smul_neg, sub_neg_eq_add] at h1 ⊢
@@ -482,19 +499,23 @@ theorem cayleyChartUnitary_neg (hA : A.IsHermitian)
 
 /-- The Cayley chart with values in the unitary group is continuous on the source of the
 chart. -/
-theorem continuousOn_cayleyChartUnitary (hA : A.IsHermitian) (hA' : IsUnit A) :
+theorem continuousOn_cayleyChartUnitary (hA : A.IsHermitian) :
     ContinuousOn (cayleyChartUnitary A) (cayleyChartSource A) := by
+  by_cases hA' : IsUnit A
+  swap
+  · exact continuousOn_const.congr fun S _ ↦
+      cayleyChartUnitary_eq_one_of_not_isUnit hA' S
   rw [continuousOn_iff_continuous_domRestrict, Topology.IsInducing.subtypeVal.continuous_iff,
     Units.continuous_iff]
   constructor
   · refine (continuousOn_iff_continuous_domRestrict.1 continuousOn_cayleyChart).congr fun S ↦ ?_
-    exact (coe_cayleyChartUnitary hA hA' S.property).symm
+    exact (coe_cayleyChartUnitary hA S.property).symm
   · -- The inverse of `g` in the unitary group of `A` is `A⁻¹ gᴴ A`.
     refine (((continuous_const (y := A⁻¹)).mul ((continuousOn_iff_continuous_domRestrict.1
       continuousOn_cayleyChart).star)).mul (continuous_const (y := A))).congr fun S ↦ ?_
     simp only [Function.comp_apply, domRestrict_apply]
     rw [val_inv_of_mem_unitaryGroupOf hA' (cayleyChartUnitary A S).property,
-      coe_cayleyChartUnitary hA hA' S.property, Pi.mul_apply, Pi.mul_apply, Pi.star_apply,
+      coe_cayleyChartUnitary hA S.property, Pi.mul_apply, Pi.mul_apply, Pi.star_apply,
       domRestrict_apply]
 
 /-- The inverse `g ↦ -2 A c(g)` of the Cayley chart, extended to all matrices `g` by taking the
@@ -579,7 +600,7 @@ theorem cayleyChart_cayleyChartInv (hA : A.IsHermitian) (hA' : IsUnit A)
     (g : unitaryGroupOf A) (hg : IsUnit (1 + ((g : GL n ℂ) : Matrix n n ℂ))) :
     cayleyChart A (cayleyChartInv A ((g : GL n ℂ) : Matrix n n ℂ)) =
       ((g : GL n ℂ) : Matrix n n ℂ) := by
-  rw [← coe_cayleyChartUnitary hA hA' (cayleyChartInv_mem_cayleyChartSource hA g hg),
+  rw [← coe_cayleyChartUnitary hA (cayleyChartInv_mem_cayleyChartSource hA g hg),
     cayleyChartUnitary_cayleyChartInv hA hA' g hg]
 
 /-- The Cayley chart is injective on its source. -/
@@ -607,7 +628,7 @@ theorem isOpen_image_cayleyChartUnitary (hA : A.IsHermitian) (hA' : IsUnit A)
     ext g
     constructor
     · rintro ⟨S, hS, rfl⟩
-      rw [mem_inter_iff, mem_ofPred_eq, mem_preimage, coe_cayleyChartUnitary hA hA' (hVs hS),
+      rw [mem_inter_iff, mem_ofPred_eq, mem_preimage, coe_cayleyChartUnitary hA (hVs hS),
         cayleyChartInv_cayleyChart hA' (hVs hS)]
       exact ⟨isUnit_one_add_cayleyChart A S, hS⟩
     · rintro ⟨hg, hg'⟩
