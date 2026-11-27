@@ -133,12 +133,11 @@ theorem deFinettiBarycenter_smul (c : ℝ≥0∞) (π : Measure (ProbabilityMeas
   Measure.bind_smul c π TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable
 
 /-- **The barycenter is measurable in the mixing law**, for the Giry measurable spaces: it is the
-join of the pushforward along the measurable power map `P ↦ P^{⊗ℕ}`. -/
+Giry bind with the measurable power kernel `P ↦ P^{⊗ℕ}`. -/
 @[fun_prop]
 theorem measurable_deFinettiBarycenter :
     Measurable (deFinettiBarycenter : Measure (ProbabilityMeasure α) → Measure (ℕ → α)) :=
-  Measure.measurable_join.comp
-    (Measure.measurable_map _ TauCeti.MeasureTheory.measurable_infinitePi_const)
+  Measure.measurable_bind' TauCeti.MeasureTheory.measurable_infinitePi_const
 
 /-- **The barycenter is natural in the state space.** Pushing every coordinate of a barycenter
 forward by a measurable `f : α → β` gives the barycenter of the mixing law pushed forward by
