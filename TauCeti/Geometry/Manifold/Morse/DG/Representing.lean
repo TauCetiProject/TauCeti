@@ -26,8 +26,9 @@ are associative and land in the boundaries, and the maps
 `H_n(L(x, y)) → H_n(L(x, y), ∂L(x, y))`, `n = ind x - ind y - 1`, are injective whenever
 `ind y < ind x`. The first two conditions hold for the trajectory spaces in every index difference.
 This file checks the third when no two critical points have Morse indices differing by more than
-two, the range in which representing chain systems are known to exist
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_isRepresenting_of_subsingleton_units`). By
+two, where the boundary of every trajectory space is empty or discrete (existence of representing
+chain systems in this range is
+`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_isRepresenting_of_subsingleton_units`). By
 the long exact sequence of the pair it suffices that `H_n(∂L(x, y))` vanishes:
 
 * if `ind x = ind y + 1`, then `n = 0` and the boundary is empty
@@ -38,12 +39,13 @@ the long exact sequence of the pair it suffices that `H_n(∂L(x, y))` vanishes:
 
 Hence any two representing twisting chain systems of the same classes are homotopic
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.nonempty_homotopy_of_isRepresenting`), and the DG
-Morse complexes that they define, with coefficients in any DG local system, are isomorphic through
-the continuation isomorphism of such a homotopy
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.nonempty_dgMorseComplex_iso_of_isRepresenting`). So
-in this range the DG Morse complex of a representing chain system does not depend on the chain
-system, up to an isomorphism specified by a homotopy. This is the uniqueness half of Barraud and
-Cornea's representing chain systems, whose existence half is
+Morse complexes that they define, with coefficients in any DG local system, are isomorphic
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.nonempty_dgMorseComplex_iso_of_isRepresenting`). A
+specified isomorphism is obtained by applying
+`TauCeti.IsAdaptedPseudoGradient.dgMorseComplexIsoOfHomotopy` to a homotopy given by
+`nonempty_homotopy_of_isRepresenting`. So in this range the DG Morse complex of a representing chain
+system does not depend on the chain system, up to isomorphism. This is the uniqueness half of
+Barraud and Cornea's representing chain systems, whose existence half is
 `IsMorseSmale.exists_isRepresenting_of_subsingleton_units`.
 
 ## Main results
@@ -176,9 +178,9 @@ theorem nonempty_homotopy_of_isRepresenting [Fintype (criticalPoints 𝓘(ℝ, E
 /-- **The DG Morse complex does not depend on the representing chain system** in index
 differences at most two. If no two critical points have Morse indices differing by more than two,
 then two twisting chain systems on the trajectory spaces representing the same classes give
-isomorphic DG Morse complexes, with coefficients in any DG local system: the continuation
-isomorphism of a homotopy between them
-(`TauCeti.IsAdaptedPseudoGradient.dgMorseComplexIsoOfHomotopy`). -/
+isomorphic DG Morse complexes, with coefficients in any DG local system. A specified isomorphism is
+obtained by applying `TauCeti.IsAdaptedPseudoGradient.dgMorseComplexIsoOfHomotopy` to a homotopy
+given by `nonempty_homotopy_of_isRepresenting`. -/
 theorem nonempty_dgMorseComplex_iso_of_isRepresenting [Fintype (criticalPoints 𝓘(ℝ, E) f)]
     {k : Type (max u v)} [CommRing k]
     (hind : ∀ x y : criticalPoints 𝓘(ℝ, E) f,
