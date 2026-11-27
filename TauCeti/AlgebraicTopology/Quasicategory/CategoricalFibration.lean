@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.StrictSegal
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.NerveCodiscrete
-public import TauCeti.AlgebraicTopology.Quasicategory.Core
 public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 
@@ -43,6 +42,7 @@ object has no lift.
 
 * `SSet.exists_isEquivalence_lift_of_section`: a section through a vertex lifts the equivalences
   out of its image.
+* `SSet.CategoricalFibration.of_rlp_monomorphisms`: a trivial fibration is a categorical fibration.
 * `SSet.CategoricalFibration.of_isIso`, `SSet.CategoricalFibration.comp`: isomorphisms are
   categorical fibrations, and categorical fibrations compose.
 * `SSet.CategoricalFibration.surjective_app_zero_of_essSurj`: an essentially surjective categorical
@@ -64,7 +64,7 @@ object has no lift.
 
 public section
 
-open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory Simplicial
+open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory MorphismProperty Simplicial
 
 universe u v
 
@@ -95,6 +95,23 @@ lemma exists_isEquivalence_lift_of_section {p : X ⟶ Y} (s : Y ⟶ X) (hs : s �
     _ = e.edge := by rw [hs, NatTrans.id_app, ConcreteCategory.id_apply]
 
 namespace CategoricalFibration
+
+/-- **A trivial fibration is a categorical fibration.** -/
+theorem of_rlp_monomorphisms {p : X ⟶ Y} (hp : (monomorphisms SSet.{u}).rlp p) :
+    CategoricalFibration p := by
+  -- It is an inner fibration, and through each vertex `x₀` of its source it has a section, which
+  -- lifts the equivalences out of `p x₀`.
+  refine { mem := antitone_rlp innerHornInclusions_le_monomorphisms _ hp
+           exists_isEquivalence_lift := fun x₀ _ e he ↦ ?_ }
+  -- Lift the identity of `Y` against the inclusion of the vertex `p x₀`, sending it to `x₀`.
+  let y : Δ[0] ⟶ Y := yonedaEquiv.symm (p.app _ x₀)
+  have := stdSimplex.isTerminalObj₀.mono_from y
+  have := hp y (monomorphisms.infer_property y)
+  have sq : CommSq (yonedaEquiv.symm x₀) y p (𝟙 Y) :=
+    ⟨by rw [yonedaEquiv_symm_comp, Category.comp_id]⟩
+  refine exists_isEquivalence_lift_of_section sq.lift sq.fac_right ?_ e he
+  have h := congrArg yonedaEquiv sq.fac_left
+  rwa [yonedaEquiv_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply] at h
 
 /-- Isomorphisms of simplicial sets are categorical fibrations. -/
 instance of_isIso (p : X ⟶ Y) [IsIso p] : CategoricalFibration p where

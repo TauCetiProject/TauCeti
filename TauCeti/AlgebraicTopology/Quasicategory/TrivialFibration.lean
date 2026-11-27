@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Quasicategory.CategoricalEquivalence
 public import TauCeti.AlgebraicTopology.Quasicategory.CategoricalFibration
 public import TauCeti.AlgebraicTopology.Quasicategory.PointwiseEquivalence
-public import TauCeti.AlgebraicTopology.Quasicategory.RightFibration.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
 
 /-!
@@ -20,8 +19,8 @@ fibrations with the categorical notions of maps of quasicategories: categorical 
 essential surjectivity and categorical equivalences.
 
 A trivial fibration is a categorical fibration (`SSet.CategoricalFibration.of_rlp_monomorphisms`):
-it is a Kan fibration, hence an inner fibration, and through every vertex `x₀` of `X` it has a
-section `s`, obtained by lifting the identity of `Y` against the inclusion of the vertex `p x₀`.
+it lifts inner horns, and through every vertex `x₀` of `X` it has a section `s`, obtained by
+lifting the identity of `Y` against the inclusion of the vertex `p x₀`.
 The section carries the equivalences out of `p x₀` to equivalences out of `x₀` lifting them.
 
 **A trivial fibration between quasicategories is a categorical equivalence**
@@ -46,7 +45,6 @@ proved here.
 
 ## Main results
 
-* `SSet.CategoricalFibration.of_rlp_monomorphisms`: a trivial fibration is a categorical fibration.
 * `SSet.QCat.IsCategoricalEquivalence.of_rlp_monomorphisms`: a trivial fibration between
   quasicategories is a categorical equivalence.
 
@@ -65,29 +63,6 @@ open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonoidalClosed Li
   MorphismProperty Opposite Simplicial
 
 namespace SSet
-
-variable {X Y : SSet.{u}}
-
-namespace CategoricalFibration
-
-/-- **A trivial fibration is a categorical fibration.** -/
-theorem of_rlp_monomorphisms {p : X ⟶ Y} (hp : (monomorphisms SSet.{u}).rlp p) :
-    CategoricalFibration p := by
-  -- It is an inner fibration, and through each vertex `x₀` of its source it has a section, which
-  -- lifts the equivalences out of `p x₀`.
-  have := (rlp_monomorphisms_iff.1 hp).1
-  refine { mem := mem_innerFibrations p, exists_isEquivalence_lift := fun x₀ _ e he ↦ ?_ }
-  -- Lift the identity of `Y` against the inclusion of the vertex `p x₀`, sending it to `x₀`.
-  let y : Δ[0] ⟶ Y := yonedaEquiv.symm (p.app _ x₀)
-  have := stdSimplex.isTerminalObj₀.mono_from y
-  have := hp y (monomorphisms.infer_property y)
-  have sq : CommSq (yonedaEquiv.symm x₀) y p (𝟙 Y) :=
-    ⟨by rw [yonedaEquiv_symm_comp, Category.comp_id]⟩
-  refine exists_isEquivalence_lift_of_section sq.lift sq.fac_right ?_ e he
-  have h := congrArg yonedaEquiv sq.fac_left
-  rwa [yonedaEquiv_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply] at h
-
-end CategoricalFibration
 
 namespace QCat
 
