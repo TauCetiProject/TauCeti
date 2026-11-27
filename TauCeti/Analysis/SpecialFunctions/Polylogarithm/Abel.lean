@@ -30,6 +30,8 @@ analytically continued branches and for the pentagon relation of the Rogers dilo
 
 ## Main results
 
+* `Complex.norm_mul_div_one_sub_mul_one_sub_lt_one`: on `‖x‖ + ‖y‖ < 1`, the argument
+  `x y / ((1 - x)(1 - y))` of the left side lies in the open unit disc.
 * `TauCeti.Polylog.polylog_abel`: Abel's five-term identity for `polylog 2` on
   `‖x‖ + ‖y‖ < 1`.
 
@@ -50,6 +52,19 @@ logarithmic identities above; this derivative vanishes, and the defect vanishes 
 public section
 
 open Metric Set
+
+namespace Complex
+
+/-- If `‖x‖ + ‖y‖ < 1`, then `x y / ((1 - x)(1 - y))` lies in the open unit disc. -/
+theorem norm_mul_div_one_sub_mul_one_sub_lt_one {x y : ℂ} (hxy : ‖x‖ + ‖y‖ < 1) :
+    ‖x * y / ((1 - x) * (1 - y))‖ < 1 := by
+  rw [mul_comm (1 - x), ← div_mul_div_comm, norm_mul]
+  exact (mul_le_of_le_one_right (norm_nonneg _)
+    (norm_div_one_sub_lt_one (x := y) (y := x) (by linarith)).le).trans_lt
+    (norm_div_one_sub_lt_one hxy)
+
+end Complex
+
 open Complex (norm_div_one_sub_lt_one norm_mul_div_one_sub_mul_one_sub_lt_one
   one_sub_mem_slitPlane_of_norm_lt_one slitPlane_ne_zero)
 
