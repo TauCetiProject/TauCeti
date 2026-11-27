@@ -65,6 +65,8 @@ This file constructs them, for coefficients in a commutative ring `k`.
   the partial virtual complexes form an interval diagram on the subsets of `B`
   (`TauCeti.ImplicitAtlas.partialVirtualDiagram`), the input of the flag total
   `TauCeti.IntervalDiagram.total`.
+* **The empty set.** The support of `∅` is empty, so the partial virtual complexes of `∅` are zero
+  (`TauCeti.ImplicitAtlas.isZero_partialVirtualComplex_obj_of_coe_eq_empty`).
 
 The atlases here have no boundary, so the relative and absolute partial complexes of Pardon
 coincide.
@@ -364,6 +366,29 @@ theorem partialVirtualComplexMap_comp_partialVirtualComplexMap (hII' : I ⊆ I')
   refine NatTrans.ext (funext fun K ↦ ?_)
   refine ((invariantChainsFunctor ρ k B _).map_comp _ _).symm.trans ?_
   rw [deformationPairArrow_comp_deformationPairArrow, partialVirtualComplexMap_app]
+
+/-- **The partial virtual complex of the empty set is zero.** The support `Z_∅` is empty, so the
+deformation pair of `∅` is `(D_(I,J,B), D_(I,J,B))`, whose relative chains vanish. -/
+theorem isZero_partialVirtualComplex_obj_of_coe_eq_empty (hJB : J ⊆ B)
+    {K : (Compacts (TopCat.of X))ᵒᵖ} (hK : (K.unop : Set X) = ∅) :
+    IsZero ((𝒜.partialVirtualComplex k I hJB).obj K) := by
+  have hZ : 𝒜.deformationSupport I hJB K.unop = ∅ :=
+    Set.eq_empty_of_forall_notMem fun _ hp ↦ by
+      obtain ⟨_, _, h⟩ := mem_deformationSupport.1 hp
+      rwa [hK] at h
+  have hP : Function.Surjective (TopPair.ofSubset
+      (X := TopCat.of (𝒜.deformationSpace I hJB)) (𝒜.deformationSupport I hJB K.unop)ᶜ).map := by
+    rw [← Set.range_eq_univ, TopPair.range_ofSubset_map, hZ, Set.compl_empty]
+    rfl
+  have hlim : IsZero (limit (TopPair.diagonalChainAction
+      ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k)
+      (𝒜.deformationPairFunctor I hJB K.unop))) :=
+    (IsZero.iff_id_eq_zero _).2 <| limit.hom_ext fun _ ↦ IsZero.eq_of_tgt (by
+      rw [TopPair.diagonalChainAction_obj, deformationPairFunctor_obj,
+        TopPair.singularChainComplexFunctor_obj_obj]
+      exact TopPair.isZero_singularChainComplex_of_surjective_map _ _ hP) _ _
+  rw [partialVirtualComplex_obj]
+  exact (ComplexShape.embeddingUpIntLE _).extendFunctor _ |>.map_isZero hlim
 
 end Complexes
 
