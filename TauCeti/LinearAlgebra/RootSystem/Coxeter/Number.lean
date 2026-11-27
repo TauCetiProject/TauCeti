@@ -8,8 +8,8 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Classical
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Eigen
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots
+import TauCeti.LinearAlgebra.RootSystem.Coxeter.DynkinType
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Orbit
-import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
@@ -323,19 +323,8 @@ theorem HasCartanType.natCard_eq_card_support_mul_orderOf_wordProd [Finite ι] [
   have : Nonempty ι := ⟨i₀⟩
   obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp h
   have hmat : b.cartanMatrix = t.cartanMatrix.submatrix e e := Matrix.ext he
-  have hft_t : IsFiniteType t.cartanMatrix := by
-    cases t with
-    | A n => simpa using isFiniteType_cartanMatrix_A n
-    | B n => simpa using isFiniteType_cartanMatrix_B n
-    | C n => simpa using isFiniteType_cartanMatrix_C n
-    | D n => simpa using isFiniteType_cartanMatrix_D n
-    | E6 => exact DynkinType.isFiniteType_cartanMatrix_E6
-    | E7 => exact DynkinType.isFiniteType_cartanMatrix_E7
-    | E8 => exact DynkinType.isFiniteType_cartanMatrix_E8
-    | F4 => exact DynkinType.isFiniteType_cartanMatrix_F4
-    | G2 => exact DynkinType.isFiniteType_cartanMatrix_G2
   exact b.natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType
-    (hmat ▸ hft_t.submatrix e.injective)
+    (hmat ▸ t.isFiniteType_cartanMatrix.submatrix e.injective)
     (h.connected_diagramGraph_cartanMatrix ht).preconnected hnd hall
 
 /-- **The order of any Coxeter element of a base of valid Cartan type `t` equals `|Φ| / r`.** -/

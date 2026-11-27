@@ -37,6 +37,8 @@ of `Dₙ` degenerates, and `TauCeti.DynkinType.coxeterMatrix_D_apply` describes 
 
 ## Main results
 
+* `TauCeti.DynkinType.isFiniteType_cartanMatrix`: every standard Cartan matrix in
+  `TauCeti.DynkinType` is of finite type.
 * `TauCeti.DynkinType.cartanMatrix_mul_cartanMatrix_mem_of_ne`: the Cartan product of two distinct
   nodes of a standard Cartan matrix lies in `{0, 1, 2, 3}`, each standard matrix being of finite
   type. This is what makes the Coxeter matrix above well defined.
@@ -73,32 +75,27 @@ namespace DynkinType
 
 /-! ## The Cartan products of a standard Cartan matrix -/
 
+/-- **Every standard Cartan matrix in `TauCeti.DynkinType` is of finite type.** Validity of the
+type is not needed: the degenerate members of the classical families are of finite type as well. -/
+theorem isFiniteType_cartanMatrix (t : DynkinType) : IsFiniteType t.cartanMatrix := by
+  cases t with
+  | A n => simpa using isFiniteType_cartanMatrix_A n
+  | B n => simpa using isFiniteType_cartanMatrix_B n
+  | C n => simpa using isFiniteType_cartanMatrix_C n
+  | D n => simpa using isFiniteType_cartanMatrix_D n
+  | E6 => exact isFiniteType_cartanMatrix_E6
+  | E7 => exact isFiniteType_cartanMatrix_E7
+  | E8 => exact isFiniteType_cartanMatrix_E8
+  | F4 => exact isFiniteType_cartanMatrix_F4
+  | G2 => exact isFiniteType_cartanMatrix_G2
+
 /-- **The Cartan product of two distinct nodes of a Dynkin type lies in `{0, 1, 2, 3}`**, the four
 values that name the orders `2, 3, 4, 6` of a product of two simple reflections. Validity of the
 type is not needed: the degenerate members of the families are of finite type as well, and the
 bound is the finite-type bound `TauCeti.IsFiniteType.apply_mul_apply_mem_of_ne`. -/
 lemma cartanMatrix_mul_cartanMatrix_mem_of_ne (t : DynkinType) {i j : Fin t.rank} (hij : i ≠ j) :
-    t.cartanMatrix i j * t.cartanMatrix j i ∈ ({0, 1, 2, 3} : Set ℤ) := by
-  cases t
-  -- The classical families are of finite type as Mathlib's matrices; expose the reduction of the
-  -- dependent index `Fin t.rank` to `Fin n` before rewriting to them.
-  case A n =>
-    change Fin n at i j
-    simpa using (isFiniteType_cartanMatrix_A n).apply_mul_apply_mem_of_ne hij
-  case B n =>
-    change Fin n at i j
-    simpa using (isFiniteType_cartanMatrix_B n).apply_mul_apply_mem_of_ne hij
-  case C n =>
-    change Fin n at i j
-    simpa using (isFiniteType_cartanMatrix_C n).apply_mul_apply_mem_of_ne hij
-  case D n =>
-    change Fin n at i j
-    simpa using (isFiniteType_cartanMatrix_D n).apply_mul_apply_mem_of_ne hij
-  case E6 => exact isFiniteType_cartanMatrix_E6.apply_mul_apply_mem_of_ne hij
-  case E7 => exact isFiniteType_cartanMatrix_E7.apply_mul_apply_mem_of_ne hij
-  case E8 => exact isFiniteType_cartanMatrix_E8.apply_mul_apply_mem_of_ne hij
-  case F4 => exact isFiniteType_cartanMatrix_F4.apply_mul_apply_mem_of_ne hij
-  case G2 => exact isFiniteType_cartanMatrix_G2.apply_mul_apply_mem_of_ne hij
+    t.cartanMatrix i j * t.cartanMatrix j i ∈ ({0, 1, 2, 3} : Set ℤ) :=
+  t.isFiniteType_cartanMatrix.apply_mul_apply_mem_of_ne hij
 
 /-! ## The Coxeter matrix of a type -/
 

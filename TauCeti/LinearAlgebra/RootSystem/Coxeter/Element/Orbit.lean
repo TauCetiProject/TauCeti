@@ -21,15 +21,15 @@ import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Plane
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Length
-import TauCeti.LinearAlgebra.RootSystem.LongestElement
-import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
+import TauCeti.LinearAlgebra.RootSystem.Height
 
 /-!
 # Orbits of a Coxeter element on the roots and `|Φ| = r · h`
 
-1. **General fixed-point-free orbit bounds (`TauCeti`)**: if `w` fixes no nonzero vector, every
-   root reaches an inversion within `orderOf w` steps
-   (`TauCeti.exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions`), giving
+1. **General fixed-point-free orbit bounds (`TauCeti`)**: if `w` fixes no nonzero vector in the
+   integral root span, every root reaches an inversion within `orderOf w` steps
+   (`TauCeti.exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions_of_finite_weylGroup` /
+   `TauCeti.exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions`), giving
    `|Φ| ≤ orderOf w * #inversions(w)` (`TauCeti.natCard_le_orderOf_mul_ncard_inversions`) and
    `|Φ| ≤ orderOf c * l.length` (`TauCeti.natCard_le_orderOf_wordProd_mul_length`).
 
@@ -56,6 +56,143 @@ import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 
 public section
 
+namespace TauCeti
+
+open RootPairing
+
+variable {ι R M N : Type*} [CommRing R] [CharZero R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [Finite ι] (b : P.Base)
+
+section FiniteWeylGroup
+
+variable [Finite P.weylGroup]
+
+/-- Along the orbit of a root under a Weyl-group element fixing no nonzero vector in the integral
+root span, the heights over a period add up to zero: the sum of the roots over a period is a fixed
+vector in the root span. -/
+private theorem sum_range_height_weylGroupToPerm_pow_eq_zero {w : P.weylGroup}
+    (hw : ∀ y ∈ Submodule.span ℤ (Set.range P.root), w • y = y → y = 0) (j : ι) :
+    ∑ k ∈ Finset.range (orderOf w), b.height (P.weylGroupToPerm (w ^ k) j) = 0 := by
+  obtain ⟨n, hn⟩ := Nat.exists_eq_add_one_of_ne_zero (orderOf_pos w).ne'
+  have hmem : ∑ k ∈ Finset.range (orderOf w), (w ^ k) • P.root j ∈
+      Submodule.span ℤ (Set.range P.root) :=
+    Submodule.sum_mem _ fun k _ ↦ by
+      rw [P.weylGroup_apply_root]; exact Submodule.subset_span ⟨_, rfl⟩
+  -- The sum of the roots over a period is fixed by `w`, hence zero.
+  have hfix : ∑ k ∈ Finset.range (orderOf w), (w ^ k) • P.root j = 0 := by
+    refine hw _ hmem ?_
+    rw [Finset.smul_sum, hn, Finset.sum_range_succ, Finset.sum_range_succ']
+    simp only [← mul_smul, ← pow_succ', ← hn, pow_orderOf_eq_one, pow_zero]
+  let _ := Fintype.ofFinite ι; classical
+  let a : ℕ → ι := fun k ↦ P.weylGroupToPerm (w ^ k) j
+  let e : ι → ℤ := fun i ↦ ((Finset.range (orderOf w)).filter fun k ↦ a k = i).card
+  have hsum_root : ∑ i : ι, e i • P.root i = 0 := by
+    rw [← hfix, ← Finset.sum_fiberwise_of_maps_to (t := Finset.univ) (g := a)
+      (fun _ _ ↦ Finset.mem_univ _)]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hcongr : ∑ k ∈ (Finset.range (orderOf w)).filter (a · = i), (w ^ k) • P.root j =
+        ∑ _ ∈ (Finset.range (orderOf w)).filter (a · = i), P.root i :=
+      Finset.sum_congr rfl fun k hk ↦ by
+        rw [P.weylGroup_apply_root]; exact congrArg P.root (Finset.mem_filter.mp hk).2
+    simpa [e, Finset.sum_const, natCast_zsmul] using hcongr.symm
+  have hsum_eq : ∑ i : ι, e i * b.height i = ∑ k ∈ Finset.range (orderOf w), b.height (a k) := by
+    rw [← Finset.sum_fiberwise_of_maps_to (t := Finset.univ) (g := a)
+      (fun _ _ ↦ Finset.mem_univ _)]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hcongr : ∑ k ∈ (Finset.range (orderOf w)).filter (a · = i), b.height (a k) =
+        ∑ _ ∈ (Finset.range (orderOf w)).filter (a · = i), b.height i :=
+      Finset.sum_congr rfl fun k hk ↦ congrArg b.height (Finset.mem_filter.mp hk).2
+    simpa [e, Finset.sum_const, smul_eq_mul] using hcongr.symm
+  exact hsum_eq ▸ sum_mul_height_eq_zero_of_sum_zsmul_root_eq_zero P b hsum_root
+
+/-- **Every orbit of a Weyl-group element with no nonzero fixed vector in the root span meets its
+inversion set.** If `w` fixes no nonzero vector in `Submodule.span ℤ (Set.range P.root)`, then for
+every root `j` some `w ^ k j` with `k < orderOf w` is a positive root that `w` sends to a negative
+root. -/
+theorem exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions_of_finite_weylGroup {w : P.weylGroup}
+    (hw : ∀ y ∈ Submodule.span ℤ (Set.range P.root), w • y = y → y = 0) (j : ι) :
+    ∃ k < orderOf w, P.weylGroupToPerm (w ^ k) j ∈ inversions P b w := by
+  have hpos := orderOf_pos w
+  set a : ℕ → ι := fun k ↦ P.weylGroupToPerm (w ^ k) j with ha
+  have hmod (k : ℕ) : a (k % orderOf w) = a k := by simp only [ha, pow_mod_orderOf]
+  have hsucc (k : ℕ) : a (k + 1) = P.weylGroupToPerm w (a k) := by
+    simp only [ha, pow_succ', map_mul, Equiv.Perm.mul_apply]
+  have hper (k : ℕ) : a (k + orderOf w) = a k := by
+    simp only [ha, pow_add, pow_orderOf_eq_one, mul_one]
+  by_contra! hno
+  replace hno : ∀ k < orderOf w, a k ∉ inversions P b w := hno
+  -- Positivity propagates along the orbit, since no step goes from positive to negative.
+  have hstep (k : ℕ) (hk : b.IsPos (a k)) : b.IsPos (a (k + 1)) := by
+    have := hno (k % orderOf w) (Nat.mod_lt _ hpos)
+    rw [mem_inversions, hmod] at this
+    rw [hsucc]
+    by_contra h
+    exact this ⟨hk, h⟩
+  have hsum := sum_range_height_weylGroupToPerm_pow_eq_zero b hw j
+  by_cases hex : ∃ p, b.IsPos (a p)
+  · -- Then every root of the orbit is positive, and the heights add up to a positive number.
+    obtain ⟨p, hp⟩ := hex
+    have hall (t : ℕ) : b.IsPos (a (p % orderOf w + t)) := by
+      induction t with
+      | zero => rwa [add_zero, hmod]
+      | succ t ih => exact hstep _ ih
+    refine (Finset.sum_pos (fun k _ ↦ ?_) (Finset.nonempty_range_iff.mpr hpos.ne')).ne' hsum
+    have hidx : p % orderOf w + (k + orderOf w - p % orderOf w) = k + orderOf w := by
+      have := Nat.mod_lt p hpos
+      omega
+    have hk := hall (k + orderOf w - p % orderOf w)
+    rw [hidx, hper] at hk
+    exact one_le_height_of_mem_posRoots P b ((mem_posRoots P b _).2 hk)
+  · -- Otherwise every root of the orbit is negative, and the heights add up to a negative number.
+    push Not at hex
+    exact (Finset.sum_neg
+      (fun k _ ↦ height_neg_of_mem_negRoots P b ((mem_negRoots P b _).2 (hex k)))
+      (Finset.nonempty_range_iff.mpr hpos.ne')).ne hsum
+
+end FiniteWeylGroup
+
+variable [P.IsRootSystem]
+
+/-- **Every orbit of a fixed-point-free Weyl-group element meets its inversion set.** If `w` fixes
+no nonzero vector, then for every root `j` some `w ^ k j` with `k < orderOf w` is a positive root
+that `w` sends to a negative root. -/
+theorem exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions {w : P.weylGroup}
+    (hw : ∀ y : M, w • y = y → y = 0) (j : ι) :
+    ∃ k < orderOf w, P.weylGroupToPerm (w ^ k) j ∈ inversions P b w :=
+  letI := RootPairing.finite_weylGroup P
+  exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions_of_finite_weylGroup b
+    (fun y _ hy ↦ hw y hy) j
+
+/-- **A fixed-point-free Weyl-group element has at most `orderOf w` roots per inversion.** If `w`
+fixes no nonzero vector, then the number of roots is at most `orderOf w` times the number of
+positive roots that `w` sends to negative roots. -/
+theorem natCard_le_orderOf_mul_ncard_inversions {w : P.weylGroup}
+    (hw : ∀ y : M, w • y = y → y = 0) :
+    Nat.card ι ≤ orderOf w * (inversions P b w).ncard := by
+  choose k hk hkinv using exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions b hw
+  let F : ι → Fin (orderOf w) × inversions P b w := fun j ↦ (⟨k j, hk j⟩, ⟨_, hkinv j⟩)
+  have hF : Function.Injective F := fun j j' hjj' ↦ by
+    simp only [F, Prod.mk.injEq, Fin.mk.injEq, Subtype.mk.injEq] at hjj'
+    rw [← hjj'.1] at hjj'
+    exact (P.weylGroupToPerm (w ^ k j)).injective hjj'.2
+  rw [← Nat.card_coe_set_eq, ← Nat.card_fin (orderOf w), ← Nat.card_prod]
+  exact Nat.card_le_card_of_injective F hF
+
+variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
+
+/-- **A root system has at most `r * orderOf c` roots, for a Coxeter element `c`.** For a base of
+a finite reduced crystallographic root system, a word using every simple reflection exactly once
+spells an element `c` such that the number of roots is at most `orderOf c` times the length of the
+word. -/
+theorem natCard_le_orderOf_wordProd_mul_length {l : List b.support} (hl : l.Nodup)
+    (hl' : ∀ i, i ∈ l) :
+    Nat.card ι ≤ orderOf (wordProd P b l) * l.length :=
+  (natCard_le_orderOf_mul_ncard_inversions b fun _ hy ↦
+    (wordProd_smul_eq_self_iff_eq_zero b hl hl').mp hy).trans
+    (Nat.mul_le_mul_left _ (ncard_inversions_wordProd_le_length P b l))
+
+end TauCeti
+
 namespace RootPairing.Base
 
 section Orbits
@@ -65,35 +202,6 @@ open Matrix RootPairing TauCeti
 variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced]
-
-private theorem exists_sameCycle_mem_inversions_wordProd (b : P.Base)
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (j : ι) :
-    ∃ k : ι, Equiv.Perm.SameCycle (P.weylGroupToPerm (wordProd P b l)) j k ∧
-      k ∈ inversions P b (wordProd P b l) := by
-  set c := wordProd P b l; set σ := P.weylGroupToPerm c
-  obtain ⟨⟨y₁, hy₁O, hy₁_pos⟩, ⟨y₂, hy₂O, hy₂_neg⟩⟩ :=
-    exists_isPos_and_not_isPos_of_longestElement_smul_sum_eq_self
-      (P.orbitIndices_nonempty (c : P.Aut) j)
-      ((wordProd_smul_eq_self_iff_forall_smul_eq_self b hnd hall).mp
-        (P.orbitSum_def (c : P.Aut) j ▸ P.weightMap_orbitSum_self (c : P.Aut) j) _)
-  have hσ : (c : P.Aut).indexEquiv = σ :=
-    _root_.Equiv.ext fun i ↦ (P.weylGroupToPerm_apply c i).symm
-  have hsc₁ : Equiv.Perm.SameCycle σ j y₁ := hσ ▸ P.mem_orbitIndices.mp hy₁O
-  obtain ⟨n, hn⟩ := (hsc₁.symm.trans (hσ ▸ P.mem_orbitIndices.mp hy₂O)).exists_nat_pow_eq
-  clear hy₂O; induction n generalizing y₂ with
-  | zero => rw [pow_zero, Equiv.Perm.coe_one, id_eq] at hn; exact (hy₂_neg (hn ▸ hy₁_pos)).elim
-  | succ n ih =>
-    by_cases hmid : b.IsPos ((σ ^ n) y₁)
-    · exact ⟨(σ ^ n) y₁, hsc₁.trans ⟨n, by simp⟩, (mem_inversions P b c _).mpr
-        ⟨hmid, by rwa [← Equiv.Perm.mul_apply, ← pow_succ', hn]⟩⟩
-    · exact ih ((σ ^ n) y₁) hmid rfl
-
-private theorem surjective_quotientMk_inversions_wordProd (b : P.Base)
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    Function.Surjective fun k : inversions P b (wordProd P b l) ↦
-      Quotient.mk (Equiv.Perm.SameCycle.setoid (P.weylGroupToPerm (wordProd P b l))) k.val :=
-  Quotient.ind fun j ↦ let ⟨k, hsc, hinv⟩ := b.exists_sameCycle_mem_inversions_wordProd hnd hall j
-    ⟨⟨k, hinv⟩, Quotient.sound hsc.symm⟩
 
 omit [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
 private theorem exists_fin_pow_eq_of_sameCycle {c : P.weylGroup} {j k : ι}
@@ -107,6 +215,51 @@ section FiniteType
 variable (b : P.Base) (hft : IsFiniteType b.cartanMatrix)
   (hconn : (diagramGraph b.cartanMatrix).Preconnected)
 include hft hconn
+
+omit [IsDomain R] [Finite ι] [P.IsReduced] hconn in
+private theorem eq_zero_of_mem_span_root_of_wordProd_smul_eq_self
+    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {y : M}
+    (hy : y ∈ Submodule.span ℤ (Set.range P.root)) (hfix : wordProd P b l • y = y) :
+    y = 0 := by
+  classical
+  have hsub : Submodule.span ℤ (Set.range P.root) ≤
+      Submodule.span ℤ (Set.range fun i : b.support ↦ P.root i) := by
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨j, rfl⟩
+    obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int j
+    rw [hf, ← Finset.sum_coe_sort b.support]
+    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℤ).mp (hsub hy)
+  have hcor : ∀ k : b.support, P.coroot' (k : ι) y = 0 := fun k ↦
+    (wordProd_smul_eq_self_iff_forall_coroot'_eq_zero b hnd hall).mp hfix k
+  have hker : (b.cartanMatrix.map (Int.castRingHom ℚ))ᵀ *ᵥ (fun i ↦ (c i : ℚ)) = 0 := by
+    ext k
+    have hk := hcor k
+    rw [← hc] at hk
+    simp_rw [← Int.cast_smul_eq_zsmul R, ← Int.coe_castRingHom] at hk
+    rw [b.coroot'_sum_map_smul_root (Int.castRingHom R) (k : ι) c, corootEval_coe_support] at hk
+    have hkZ : ∑ i : b.support, b.cartanMatrix i k * c i = 0 :=
+      Int.cast_injective (α := R) (by simpa using hk)
+    simpa [Matrix.mulVec, dotProduct] using congrArg (Int.cast : ℤ → ℚ) hkZ
+  have hc0 := Matrix.mulVec_injective_of_isUnit (hft.transpose.isUnit_map ℚ)
+    (hker.trans (Matrix.mulVec_zero _).symm)
+  rw [← hc]
+  exact Finset.sum_eq_zero fun i _ ↦ by
+    have hi : c i = 0 := Int.cast_injective (α := ℚ) (congrFun hc0 i)
+    simp [hi]
+
+omit hconn in
+private theorem surjective_quotientMk_inversions_wordProd
+    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
+    Function.Surjective fun k : inversions P b (wordProd P b l) ↦
+      Quotient.mk (Equiv.Perm.SameCycle.setoid (P.weylGroupToPerm (wordProd P b l))) k.val :=
+  letI := P.finite_weylGroup_of_base b
+  Quotient.ind fun j ↦
+    let ⟨k, _, hinv⟩ := exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions_of_finite_weylGroup b
+      (fun _ hy hfix ↦ b.eq_zero_of_mem_span_root_of_wordProd_smul_eq_self hft hnd hall hy hfix) j
+    ⟨⟨P.weylGroupToPerm (wordProd P b l ^ k) j, hinv⟩,
+      Quotient.sound (Equiv.Perm.SameCycle.symm
+        ⟨(k : ℤ), by dsimp only; rw [zpow_natCast, map_pow]⟩)⟩
 
 private theorem subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType
     [Nontrivial b.support] (col : (coxeterMatrixOfBase P b).graph.Coloring Bool) (j : ι)
@@ -163,7 +316,7 @@ private theorem card_quotient_sameCycle_bipartite_of_isFiniteType
         (b.subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType hft hconn col k₁.val
           (m₁ := ⟨0, orderOf_pos c₀⟩) (m₂ := m) (by simp) (hm ▸ k₂.property)).symm
       rwa [hm0, Fin.val_mk, pow_zero, map_one, Equiv.Perm.one_apply] at hm,
-      hword₀ ▸ b.surjective_quotientMk_inversions_wordProd hnd₀ hall₀⟩,
+      hword₀ ▸ b.surjective_quotientMk_inversions_wordProd hft hnd₀ hall₀⟩,
     Nat.card_coe_set_eq, ncard_inversions_bipartiteCoxeterElement]
 
 variable {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
@@ -303,7 +456,8 @@ theorem existsUnique_sameCycle_mem_inversions_wordProd_of_isFiniteType (j : ι) 
   have hbij : Function.Bijective (fun k : inversions P b (wordProd P b l) ↦
       Quotient.mk (Equiv.Perm.SameCycle.setoid (P.weylGroupToPerm (wordProd P b l))) k.val) :=
     (Nat.bijective_iff_surjective_and_card _).mpr ⟨b.surjective_quotientMk_inversions_wordProd
-      hnd hall, by rw [Nat.card_coe_set_eq, ncard_inversions_wordProd_eq_card_support P b hnd hall,
+      hft hnd hall, by rw [Nat.card_coe_set_eq,
+        ncard_inversions_wordProd_eq_card_support P b hnd hall,
         b.card_quotient_sameCycle_weylGroupToPerm_wordProd_of_isFiniteType hft hconn hnd hall]⟩
   obtain ⟨⟨k, hk_inv⟩, hk_eq⟩ := hbij.surjective ⟦j⟧
   exact ⟨k, ⟨(Quotient.exact hk_eq).symm, hk_inv⟩, fun y ⟨hy_sc, hy_inv⟩ ↦ congrArg Subtype.val <|
@@ -426,103 +580,5 @@ end Irreducible
 end Orbits
 
 end RootPairing.Base
-
-namespace TauCeti
-
-open RootPairing
-
-variable {ι R M N : Type*} [CommRing R] [CharZero R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [Finite ι] [P.IsRootSystem]
-  (b : P.Base)
-
-/-- Along the orbit of a root under a Weyl-group element fixing no nonzero vector, the heights over
-a period add up to zero: the sum of the roots over a period is a fixed vector. -/
-private theorem sum_range_height_weylGroupToPerm_pow_eq_zero {w : P.weylGroup}
-    (hw : ∀ y : M, w • y = y → y = 0) (j : ι) :
-    ∑ k ∈ Finset.range (orderOf w), b.height (P.weylGroupToPerm (w ^ k) j) = 0 := by
-  have := P.finite_weylGroup
-  obtain ⟨n, hn⟩ := Nat.exists_eq_add_one_of_ne_zero (orderOf_pos w).ne'
-  -- The sum of the roots over a period is fixed by `w`, hence zero.
-  have hfix : ∑ k ∈ Finset.range (orderOf w), (w ^ k) • P.root j = 0 := by
-    refine hw _ ?_
-    rw [Finset.smul_sum, hn, Finset.sum_range_succ, Finset.sum_range_succ']
-    simp only [← mul_smul, ← pow_succ', ← hn, pow_orderOf_eq_one, pow_zero]
-  have hheight := congrArg (heightLinearMap P b) hfix
-  simp only [map_sum, P.weylGroup_apply_root, heightLinearMap_root, map_zero] at hheight
-  exact_mod_cast hheight
-
-/-- **Every orbit of a fixed-point-free Weyl-group element meets its inversion set.** If `w` fixes
-no nonzero vector, then for every root `j` some `w ^ k j` with `k < orderOf w` is a positive root
-that `w` sends to a negative root. -/
-theorem exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions {w : P.weylGroup}
-    (hw : ∀ y : M, w • y = y → y = 0) (j : ι) :
-    ∃ k < orderOf w, P.weylGroupToPerm (w ^ k) j ∈ inversions P b w := by
-  have := P.finite_weylGroup
-  have hpos := orderOf_pos w
-  set a : ℕ → ι := fun k ↦ P.weylGroupToPerm (w ^ k) j with ha
-  have hmod (k : ℕ) : a (k % orderOf w) = a k := by simp only [ha, pow_mod_orderOf]
-  have hsucc (k : ℕ) : a (k + 1) = P.weylGroupToPerm w (a k) := by
-    simp only [ha, pow_succ', map_mul, Equiv.Perm.mul_apply]
-  have hper (k : ℕ) : a (k + orderOf w) = a k := by
-    simp only [ha, pow_add, pow_orderOf_eq_one, mul_one]
-  by_contra! hno
-  replace hno : ∀ k < orderOf w, a k ∉ inversions P b w := hno
-  -- Positivity propagates along the orbit, since no step goes from positive to negative.
-  have hstep (k : ℕ) (hk : b.IsPos (a k)) : b.IsPos (a (k + 1)) := by
-    have := hno (k % orderOf w) (Nat.mod_lt _ hpos)
-    rw [mem_inversions, hmod] at this
-    rw [hsucc]
-    by_contra h
-    exact this ⟨hk, h⟩
-  have hsum := sum_range_height_weylGroupToPerm_pow_eq_zero b hw j
-  by_cases hex : ∃ p, b.IsPos (a p)
-  · -- Then every root of the orbit is positive, and the heights add up to a positive number.
-    obtain ⟨p, hp⟩ := hex
-    have hall (t : ℕ) : b.IsPos (a (p % orderOf w + t)) := by
-      induction t with
-      | zero => rwa [add_zero, hmod]
-      | succ t ih => exact hstep _ ih
-    refine (Finset.sum_pos (fun k _ ↦ ?_) (Finset.nonempty_range_iff.mpr hpos.ne')).ne' hsum
-    have hidx : p % orderOf w + (k + orderOf w - p % orderOf w) = k + orderOf w := by
-      have := Nat.mod_lt p hpos
-      omega
-    have hk := hall (k + orderOf w - p % orderOf w)
-    rw [hidx, hper] at hk
-    exact one_le_height_of_mem_posRoots P b ((mem_posRoots P b _).2 hk)
-  · -- Otherwise every root of the orbit is negative, and the heights add up to a negative number.
-    push Not at hex
-    exact (Finset.sum_neg
-      (fun k _ ↦ height_neg_of_mem_negRoots P b ((mem_negRoots P b _).2 (hex k)))
-      (Finset.nonempty_range_iff.mpr hpos.ne')).ne hsum
-
-/-- **A fixed-point-free Weyl-group element has at most `orderOf w` roots per inversion.** If `w`
-fixes no nonzero vector, then the number of roots is at most `orderOf w` times the number of
-positive roots that `w` sends to negative roots. -/
-theorem natCard_le_orderOf_mul_ncard_inversions {w : P.weylGroup}
-    (hw : ∀ y : M, w • y = y → y = 0) :
-    Nat.card ι ≤ orderOf w * (inversions P b w).ncard := by
-  choose k hk hkinv using exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions b hw
-  let F : ι → Fin (orderOf w) × inversions P b w := fun j ↦ (⟨k j, hk j⟩, ⟨_, hkinv j⟩)
-  have hF : Function.Injective F := fun j j' hjj' ↦ by
-    simp only [F, Prod.mk.injEq, Fin.mk.injEq, Subtype.mk.injEq] at hjj'
-    rw [← hjj'.1] at hjj'
-    exact (P.weylGroupToPerm (w ^ k j)).injective hjj'.2
-  rw [← Nat.card_coe_set_eq, ← Nat.card_fin (orderOf w), ← Nat.card_prod]
-  exact Nat.card_le_card_of_injective F hF
-
-variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
-
-/-- **A root system has at most `r * orderOf c` roots, for a Coxeter element `c`.** For a base of
-a finite reduced crystallographic root system, a word using every simple reflection exactly once
-spells an element `c` such that the number of roots is at most `orderOf c` times the length of the
-word. -/
-theorem natCard_le_orderOf_wordProd_mul_length {l : List b.support} (hl : l.Nodup)
-    (hl' : ∀ i, i ∈ l) :
-    Nat.card ι ≤ orderOf (wordProd P b l) * l.length :=
-  (natCard_le_orderOf_mul_ncard_inversions b fun _ hy ↦
-    (wordProd_smul_eq_self_iff_eq_zero b hl hl').mp hy).trans
-    (Nat.mul_le_mul_left _ (ncard_inversions_wordProd_le_length P b l))
-
-end TauCeti
 
 end

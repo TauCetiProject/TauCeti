@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Bipartite
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.RepresentationTheory.BaseChange
+import Mathlib.Algebra.CharP.Algebra
 import Mathlib.LinearAlgebra.Complex.Module
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Plane
 
@@ -209,7 +210,7 @@ theorem exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType [
     ∃ v : M, v ≠ 0 ∧ c • v = μ • v ∧ IsPrimitiveRoot μ (orderOf c) ∧
       P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
   classical
-  have : CharZero K := ⟨fun a b h ↦ Nat.cast_injective (R := ℂ) (φ.injective (by simpa using h))⟩
+  have := charZero_of_injective_ringHom φ.injective
   dsimp only; set c := wordProd P b l; have hW := b.actsBy_wordProd l
   obtain ⟨y, -, hy_eig, hprim, hy_reg, hy_stab⟩ :=
     b.exists_eigenvector_exp_two_pi_I_div_orderOf_wordProd_of_isFiniteType hft hconn hnd hall hW
@@ -248,7 +249,7 @@ theorem exists_isRegularWeight_eigenvector_wordProd_of_ringHom [P.IsIrreducible]
     let μ := φ (Complex.exp (2 * Real.pi * Complex.I / orderOf c))
     ∃ v : M, v ≠ 0 ∧ c • v = μ • v ∧ IsPrimitiveRoot μ (orderOf c) ∧
       P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
-  have : CharZero K := ⟨fun a b h ↦ Nat.cast_injective (R := ℂ) (φ.injective (by simpa using h))⟩
+  have := charZero_of_injective_ringHom φ.injective
   by_cases hne : Nonempty ι
   · exact b.exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType
       (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall φ
