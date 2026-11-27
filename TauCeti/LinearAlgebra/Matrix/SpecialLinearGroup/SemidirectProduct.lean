@@ -26,12 +26,12 @@ this property is proved in `TauCeti.GroupTheory.SemidirectProduct.SpecialLinear`
 
 ## Main statements
 
-* `TauCeti.infinite_setOf_isConj_inl_iff`: the conjugacy class of a translation `v` is infinite
-  exactly when its `G`-orbit is.
-* `TauCeti.infinite_setOf_isConj_of_right_ne_one`: elements with nontrivial linear part have
-  infinite conjugacy classes.
-* `TauCeti.forall_infinite_setOf_isConj_iff_of_injective`: for injective `ι`, the group
-  `ℤ² ⋊ G` is ICC exactly when every nonzero vector has an infinite orbit.
+* `TauCeti.infinite_setOf_isConj_inl_semidirectProduct_slTwo_iff`: the conjugacy class of a
+  translation `v` is infinite exactly when its `G`-orbit is.
+* `TauCeti.infinite_setOf_isConj_semidirectProduct_slTwo_of_map_right_ne_one`: elements whose
+  linear part maps to a nontrivial element of `SL(2, ℤ)` have infinite conjugacy classes.
+* `TauCeti.forall_infinite_setOf_isConj_semidirectProduct_slTwo_iff_of_injective`: for injective
+  `ι`, the group `ℤ² ⋊ G` is ICC exactly when every nonzero vector has an infinite orbit.
 
 ## References
 
@@ -52,7 +52,7 @@ variable {G : Type*} [Group G] {ι : G →* SL(2, ℤ)}
 
 /-- The conjugacy class of the translation by `v` in `ℤ² ⋊ G` is infinite exactly when the orbit
 of `v` under `G` is infinite. -/
-theorem infinite_setOf_isConj_inl_iff (v : Fin 2 → ℤ) :
+theorem infinite_setOf_isConj_inl_semidirectProduct_slTwo_iff (v : Fin 2 → ℤ) :
     {y : Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp ι] G |
         IsConj (inl (ofAdd v)) y}.Infinite ↔
       (Set.range fun g => ι g • v).Infinite := by
@@ -74,7 +74,7 @@ theorem infinite_setOf_isConj_inl_iff (v : Fin 2 → ℤ) :
 
 /-- An element of `ℤ² ⋊ G` whose linear part acts nontrivially on `ℤ²` has an infinite conjugacy
 class: conjugating by translations already produces infinitely many conjugates. -/
-theorem infinite_setOf_isConj_of_right_ne_one
+theorem infinite_setOf_isConj_semidirectProduct_slTwo_of_map_right_ne_one
     {x : Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp ι] G} (hx : ι x.right ≠ 1) :
     {y | IsConj x y}.Infinite := by
   obtain ⟨u, hu⟩ : ∃ u : Fin 2 → ℤ, ι x.right • u ≠ u := by
@@ -95,18 +95,21 @@ theorem infinite_setOf_isConj_of_right_ne_one
 
 /-- For injective `ι`, every nontrivial conjugacy class of `ℤ² ⋊ G` is infinite exactly when every
 nonzero vector of `ℤ²` has an infinite `G`-orbit. -/
-theorem forall_infinite_setOf_isConj_iff_of_injective (hι : Function.Injective ι) :
+theorem forall_infinite_setOf_isConj_semidirectProduct_slTwo_iff_of_injective
+    (hι : Function.Injective ι) :
     (∀ x : Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp ι] G, x ≠ 1 →
         {y | IsConj x y}.Infinite) ↔
       ∀ v : Fin 2 → ℤ, v ≠ 0 → (Set.range fun g => ι g • v).Infinite := by
-  refine ⟨fun h v hv => (infinite_setOf_isConj_inl_iff v).1 (h _ ?_), fun h x hx => ?_⟩
+  refine ⟨fun h v hv => (infinite_setOf_isConj_inl_semidirectProduct_slTwo_iff v).1 (h _ ?_),
+    fun h x hx => ?_⟩
   · rwa [ne_eq, map_eq_one_iff _ inl_injective, ← toAdd_eq_zero, toAdd_ofAdd]
   · by_cases hr : x.right = 1
     · rw [← inl_left_mul_inr_right x, hr, map_one, mul_one] at hx ⊢
       rw [← ofAdd_toAdd x.left] at hx ⊢
-      refine (infinite_setOf_isConj_inl_iff _).2 (h _ fun h0 => hx ?_)
+      refine (infinite_setOf_isConj_inl_semidirectProduct_slTwo_iff _).2 (h _ fun h0 => hx ?_)
       rw [h0, ofAdd_zero, map_one]
-    · exact infinite_setOf_isConj_of_right_ne_one fun h1 => hr (hι (h1.trans (map_one ι).symm))
+    · exact infinite_setOf_isConj_semidirectProduct_slTwo_of_map_right_ne_one fun h1 =>
+        hr (hι (h1.trans (map_one ι).symm))
 
 end Conjugacy
 
