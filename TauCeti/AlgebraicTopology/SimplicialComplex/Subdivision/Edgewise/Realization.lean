@@ -43,6 +43,8 @@ and the resulting homeomorphism, are proved in
 * `AbstractSimplicialComplex.edgewiseSubdivisionFaceMap`: the map from the closed simplex on a
   face of the edgewise subdivision to the closed simplex on a set `σ` containing the entries of
   its vertices, sending each vertex `u` to `edgewisePoint u`.
+* `AbstractSimplicialComplex.edgewiseVertexPoint`: a vertex `a` of a face of the edgewise
+  subdivision, placed at `edgewisePoint a` in the closed simplex on such a set `σ`.
 * `AbstractSimplicialComplex.edgewiseSubdivisionRealizationMap`: the canonical continuous map
   from the realization of the edgewise subdivision to the realization of `K`.
 
@@ -124,6 +126,31 @@ theorem continuous_edgewiseSubdivisionFaceMap {ρ : Finset (K.EdgewiseVertex k)}
   have hcoe : Continuous fun x : StandardSimplex ρ => (x.val : K.EdgewiseVertex k → ℝ) :=
     continuous_induced_dom
   exact continuous_finsetSum _ fun u _ => ((continuous_apply u).comp hcoe).mul continuous_const
+
+/-- The vertex `a` of a simplex `ρ` of the edgewise subdivision, placed at `edgewisePoint a` in
+the closed simplex on a set `σ` containing the entries of all vertices of `ρ`. -/
+def edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
+    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (a : ρ) : StandardSimplex σ :=
+  ⟨edgewisePoint a.val.val, by
+    simpa only [coe_image] using edgewisePoint_mem_convexHull a.val.ne_zero (hρσ a.val a.property)⟩
+
+/-- The placed vertex `edgewiseVertexPoint hρσ a` has coordinates `edgewisePoint a`. -/
+@[simp]
+theorem coe_edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
+    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (a : ρ) :
+    (edgewiseVertexPoint hρσ a : ι →₀ ℝ) = edgewisePoint a.val.val :=
+  (rfl)
+
+/-- The coordinates of the edgewise face map are the combinations of the coordinates of the placed
+vertices `edgewiseVertexPoint hρσ a`, weighted by the barycentric coordinates. -/
+theorem edgewiseSubdivisionFaceMap_apply_eq_sum_edgewiseVertexPoint
+    {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι} (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ)
+    (x : StandardSimplex ρ) (i : ι) :
+    (edgewiseSubdivisionFaceMap hρσ x : ι →₀ ℝ) i =
+      ∑ a : ρ, x.val a • (edgewiseVertexPoint hρσ a : ι →₀ ℝ) i := by
+  rw [edgewiseSubdivisionFaceMap_apply]
+  simp only [coe_edgewiseVertexPoint, smul_eq_mul]
+  exact (Finset.sum_coe_sort ρ fun a => x.val a * edgewisePoint a.val i).symm
 
 /-! ### The realization map -/
 

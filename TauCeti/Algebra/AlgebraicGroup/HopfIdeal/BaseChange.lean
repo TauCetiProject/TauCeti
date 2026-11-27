@@ -56,6 +56,8 @@ along `h ↦ 1 ⊗ h`.
   equality of Hopf ideals.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_comapOfIso`: base change commutes with pulling a
   Hopf ideal back along an ambient isomorphism.
+* `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_comapOfSurjective_baseChangeSelfIso_inv`: base
+  change along the identity of the base ring recovers the original Hopf ideal.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le`: the subgroup generated
   by a base-changed family sits inside the base change of the subgroup it generates.
 * `Module.Basis.coefficientHopfIdeal`: the smallest Hopf ideal whose scalar extension contains
@@ -239,6 +241,21 @@ theorem baseChangeHopfIdeal_comapOfIso (J : HopfIdeal k L) (e : H ≅ L) :
   · intro hx
     apply (ConcreteCategory.bijective_of_isIso qIsoK.hom).1
     rw [map_zero, hpoint, hx]
+
+/-- **Base change along the identity is trivial on closed subgroups**: pulling the base change
+`k ⊗[k] J` back along `H ≅ k ⊗[k] H` recovers `J`. -/
+@[simp]
+theorem baseChangeHopfIdeal_comapOfSurjective_baseChangeSelfIso_inv
+    {H : _root_.CommHopfAlgCat.{u} k} (J : HopfIdeal k H) :
+    (baseChangeHopfIdeal (K := k) J).comapOfSurjective H.baseChangeSelfIso.inv.hom
+        (ConcreteCategory.bijective_of_isIso H.baseChangeSelfIso.inv).2 = J := by
+  ext h
+  rw [HopfIdeal.mem_comapOfSurjective, _root_.CommHopfAlgCat.baseChangeSelfIso_inv_apply]
+  refine ⟨fun hh ↦ ?_, one_tmul_mem_baseChangeHopfIdeal⟩
+  rw [mem_baseChangeHopfIdeal_iff, baseChangeMap_apply_tmul] at hh
+  rw [← mkQuotient_eq_zero_iff H J h]
+  simpa only [_root_.Bialgebra.TensorProduct.lid_tmul, one_smul, map_zero] using
+    congrArg (_root_.Bialgebra.TensorProduct.lid k (CommHopfAlgCat.quotient H J)) hh
 
 /-- Along an injective scalar map, base change reflects containment of Hopf ideals when the
 quotient by the larger ideal is flat over the base. In particular, this applies to every field

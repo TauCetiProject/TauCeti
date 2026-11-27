@@ -21,6 +21,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
@@ -100,6 +101,12 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.conjWirtingerDeriv_finsetProd`, `TauCeti.norm_conjWirtingerDeriv_finsetProd_le`: the
   Leibniz rule for a finite product, and the consequence that bounds
   `‖\bar∂ (f i)(x)‖ ≤ K |f i (x)|` on the factors give `‖\bar∂ (∏ f i)(x)‖ ≤ #s K |∏ f i (x)|`.
+* `TauCeti.smul_conjWirtingerDeriv_apply_one_eq_sub`,
+  `TauCeti.smul_wirtingerDeriv_apply_one_eq_sub`: in one variable, for all `ω₁`, `ω₂`,
+  `2 i Im (conj ω₁ ω₂) \bar∂f = ω₂ Df ω₁ - ω₁ Df ω₂` and
+  `2 i Im (conj ω₁ ω₂) ∂f = conj ω₁ Df ω₂ - conj ω₂ Df ω₁`.
+* `TauCeti.conjWirtingerDeriv_apply_one_eq_inv_smul_sub`: hence `\bar∂f` is determined by
+  `Df ω₁` and `Df ω₂` for `ℝ`-linearly independent `ω₁`, `ω₂`.
 * `TauCeti.conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line`: `\bar∂g(x) v` is the
   one-variable conjugate Wirtinger derivative of the restriction of `g` to the complex line
   `t ↦ x + t • v`.
@@ -108,6 +115,9 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   `exp (a z - conj a conj z)` has `∂ = a ·` and `\bar∂ = -conj a ·`.
   Translation by `w` multiplies it by `exp (2πiθ)` when `Im (a w) = π (k + θ)` for an integer `k`
   (`TauCeti.cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq`).
+* `TauCeti.exists_eq_wirtingerPartsCLM`: every real-linear map `ℂ →L[ℝ] W` is
+  `v ↦ v • a + conj v • b`; `TauCeti.smulRight_id_eq_wirtingerPartsCLM` and
+  `TauCeti.smulRight_conjCLE_eq_wirtingerPartsCLM` give `v ↦ v • c` and `v ↦ conj v • c`.
 * `TauCeti.fderiv_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`: in one variable the
   real derivative is `wirtingerPartsCLM` of its two Wirtinger parts, which it determines; the
   Wirtinger parts of `wirtingerPartsCLM a b` are `a` and `b`
@@ -306,6 +316,12 @@ theorem conjWirtingerDeriv_fun_sub {g₁ g₂ : V → W} {x : V} (h₁ : Differe
 theorem conjWirtingerDeriv_add_const (g : V → W) (c : W) (x : V) :
     conjWirtingerDeriv (fun y ↦ g y + c) x = conjWirtingerDeriv g x := by
   rw [conjWirtingerDeriv_eq_complexAntilinearPart, fderiv_add_const,
+    conjWirtingerDeriv_eq_complexAntilinearPart]
+
+/-- The conjugate Wirtinger derivative commutes with translations of the source. -/
+theorem conjWirtingerDeriv_comp_add_right (g : V → W) (a x : V) :
+    conjWirtingerDeriv (fun y ↦ g (y + a)) x = conjWirtingerDeriv g (x + a) := by
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, fderiv_comp_add_right,
     conjWirtingerDeriv_eq_complexAntilinearPart]
 
 /-- The conjugate Wirtinger derivative commutes with multiplication by a complex constant. -/
@@ -573,7 +589,7 @@ theorem _root_.ContinuousLinearEquiv.conjWirtingerDeriv_comp_left_apply {X : Typ
   rw [ContinuousLinearEquiv.coe_restrictScalars', Function.comp_def] at h
   rw [conjWirtingerDeriv_apply, h, ContinuousLinearMap.complexAntilinearPartL_apply_apply,
     RCLike.real_smul_eq_coe_smul (K := ℂ) (E := X), e.map_smul, e.map_add, e.map_smul]
-  simp [ContinuousLinearEquiv.coe_restrictScalars']
+  simp
 
 section Mul
 
@@ -645,6 +661,35 @@ theorem fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv {f : ℂ
       v • wirtingerDeriv f x 1 + conj v • conjWirtingerDeriv f x 1 := by
   rw [← wirtingerDeriv_add_conjWirtingerDeriv f x v,
     wirtingerDeriv_apply_eq_smul_apply_one, conjWirtingerDeriv_apply_eq_conj_smul_apply_one]
+
+/-- In one variable, for any two directions `ω₁`, `ω₂`,
+`2 i Im (conj ω₁ ω₂) \bar∂f(x) = ω₂ Df(x) ω₁ - ω₁ Df(x) ω₂`. -/
+theorem smul_conjWirtingerDeriv_apply_one_eq_sub (f : ℂ → W) (ω₁ ω₂ x : ℂ) :
+    (2 * I * (conj ω₁ * ω₂).im : ℂ) • conjWirtingerDeriv f x 1 =
+      ω₂ • fderiv ℝ f x ω₁ - ω₁ • fderiv ℝ f x ω₂ := by
+  rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
+    fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, two_mul_I_mul_im_conj_mul]
+  module
+
+/-- In one variable, for any two directions `ω₁`, `ω₂`,
+`2 i Im (conj ω₁ ω₂) ∂f(x) = conj ω₁ Df(x) ω₂ - conj ω₂ Df(x) ω₁`. -/
+theorem smul_wirtingerDeriv_apply_one_eq_sub (f : ℂ → W) (ω₁ ω₂ x : ℂ) :
+    (2 * I * (conj ω₁ * ω₂).im : ℂ) • wirtingerDeriv f x 1 =
+      conj ω₁ • fderiv ℝ f x ω₂ - conj ω₂ • fderiv ℝ f x ω₁ := by
+  rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
+    fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, two_mul_I_mul_im_conj_mul]
+  module
+
+/-- In one variable, `\bar∂f` is determined by the real derivatives along two `ℝ`-linearly
+independent directions `ω₁`, `ω₂`:
+`\bar∂f(x) = (2 i Im (conj ω₁ ω₂))⁻¹ (ω₂ Df(x) ω₁ - ω₁ Df(x) ω₂)`. -/
+theorem conjWirtingerDeriv_apply_one_eq_inv_smul_sub {f : ℂ → W} {ω₁ ω₂ : ℂ}
+    (hω : (conj ω₁ * ω₂).im ≠ 0) (x : ℂ) :
+    conjWirtingerDeriv f x 1 = (2 * I * (conj ω₁ * ω₂).im : ℂ)⁻¹ •
+      (ω₂ • fderiv ℝ f x ω₁ - ω₁ • fderiv ℝ f x ω₂) := by
+  have hne : (2 * I * (conj ω₁ * ω₂).im : ℂ) ≠ 0 :=
+    mul_ne_zero (mul_ne_zero two_ne_zero I_ne_zero) (mod_cast hω)
+  rw [eq_inv_smul_iff₀ hne, smul_conjWirtingerDeriv_apply_one_eq_sub]
 
 /-- In one variable the conjugate Wirtinger derivative vanishes exactly when its value
 at `1` vanishes, since it is complex-antilinear. -/
@@ -871,6 +916,22 @@ theorem fderiv_eq_wirtingerPartsCLM (f : ℂ → W) (x : ℂ) :
     fderiv ℝ f x = wirtingerPartsCLM (wirtingerDeriv f x 1) (conjWirtingerDeriv f x 1) := by
   ext v
   rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, wirtingerPartsCLM_apply]
+
+/-- Every real-linear map `D : ℂ →L[ℝ] W` is `v ↦ v • a + conj v • b` for some `a b : W`. -/
+theorem exists_eq_wirtingerPartsCLM (D : ℂ →L[ℝ] W) : ∃ a b : W, D = wirtingerPartsCLM a b :=
+  ⟨_, _, by simpa only [ContinuousLinearMap.fderiv] using fderiv_eq_wirtingerPartsCLM D 0⟩
+
+/-- The map `v ↦ v • c` is the real-linear map with Wirtinger parts `c` and `0`. -/
+theorem smulRight_id_eq_wirtingerPartsCLM (c : W) :
+    (ContinuousLinearMap.id ℝ ℂ).smulRight c = wirtingerPartsCLM c 0 := by
+  ext v
+  simp
+
+/-- The map `v ↦ conj v • c` is the real-linear map with Wirtinger parts `0` and `c`. -/
+theorem smulRight_conjCLE_eq_wirtingerPartsCLM (c : W) :
+    conjCLE.toContinuousLinearMap.smulRight c = wirtingerPartsCLM 0 c := by
+  ext v
+  simp
 
 /-- In one variable the real derivative is controlled by its two Wirtinger parts:
 `‖Df(x)‖ ≤ ‖∂f(x)‖ + ‖bar∂f(x)‖`. -/

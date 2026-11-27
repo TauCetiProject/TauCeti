@@ -28,6 +28,10 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
 
 * `TauCeti.ValuationSpectrum.spaComap`: the pullback map `spa Bplus → spa Aplus`.
 * `TauCeti.ValuationSpectrum.spaComapTopHom`: the same map as a morphism of `TopCat`.
+* `TauCeti.ValuationSpectrum.spaComapHomeomorph`: homeomorphism `spa Bplus ≃ₜ spa Aplus`
+  induced by mutually inverse continuous ring homomorphisms.
+* `TauCeti.ValuationSpectrum.spaHomeomorphOfRingEquiv`: homeomorphism `spa Aplus ≃ₜ spa Bplus`
+  induced by a topological ring equivalence carrying `Aplus` onto `Bplus`.
 
 ## Main results
 
@@ -41,11 +45,21 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
   `spaComapTopHom_comp`: contravariant functoriality.
 * `TauCeti.ValuationSpectrum.spaComap_spaComap`, `mem_of_spaComap_mem_map`: pulling back along a
   left inverse of `φ` and then along `φ` is the identity.
+* `TauCeti.ValuationSpectrum.coe_spaComapHomeomorph`,
+  `coe_spaComapHomeomorph_symm`, `spaComapHomeomorph_val`,
+  `spaComapHomeomorph_symm_val`: coercion and valuation pullback formulas for
+  `spaComapHomeomorph`.
+* `TauCeti.ValuationSpectrum.coe_spaHomeomorphOfRingEquiv`,
+  `coe_spaHomeomorphOfRingEquiv_symm`, `spaHomeomorphOfRingEquiv_val`,
+  `spaHomeomorphOfRingEquiv_symm_val`: coercion and valuation pullback formulas for
+  `spaHomeomorphOfRingEquiv`.
 * `TauCeti.ValuationSpectrum.comap_preimage_rationalSubset_inter_spa`,
   `spaComap_preimage_rationalSubset`, `map_spaComapTopHom_obj_spaBasicOpen`: preimages of
   rational subsets.
 * `TauCeti.ValuationSpectrum.comap_mem_rationalSubset`,
-  `rationalSubset_image_eq_spa`: elementwise criteria for rational subsets under pullback.
+  `TauCeti.ValuationSpectrum.vle_one_of_comap_mem_rationalSubset`,
+  `TauCeti.ValuationSpectrum.rationalSubset_image_eq_spa`: elementwise criteria for rational
+  subsets under pullback.
 * `TauCeti.ValuationSpectrum.isEmbedding_spaComap`: an embedding of valuation spectra restricts
   to an embedding of sub-unit loci.
 * `TauCeti.ValuationSpectrum.isOpen_supp_comap_quotientMk_iff`,
@@ -147,6 +161,86 @@ theorem spaComap_spaComap (φ : A →+* B) (hφ : Continuous φ) {Aplus : Subrin
   rw [spaComap_val, spaComap_val, ← Function.comp_apply (f := comap φ), ← comap_comp, hcomp,
     comap_id, id]
 
+/-- **Homeomorphism of adic spectra induced by mutually inverse continuous ring homomorphisms.**
+Given continuous ring homomorphisms `φ : A →+* B` and `ψ : B →+* A` that are mutually inverse
+and carry `A⁺` into `B⁺` and `B⁺` into `A⁺`, pulling valuations back along `φ` and `ψ` identifies
+`Spa(B, B⁺)` homeomorphically with `Spa(A, A⁺)`. -/
+@[expose] noncomputable def spaComapHomeomorph (φ : A →+* B) (hφ : Continuous φ)
+    {Aplus : Subring A} {Bplus : Subring B} (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (ψ : B →+* A) (hψ : Continuous ψ) (hψφ : ∀ a, ψ (φ a) = a) (hφψ : ∀ b, φ (ψ b) = b)
+    (hplus' : ∀ b ∈ Bplus, ψ b ∈ Aplus) : spa Bplus ≃ₜ spa Aplus where
+  toFun := spaComap φ hφ Aplus Bplus hplus
+  invFun := spaComap ψ hψ Bplus Aplus hplus'
+  left_inv := spaComap_spaComap ψ hψ hplus' φ hφ hφψ hplus
+  right_inv := spaComap_spaComap φ hφ hplus ψ hψ hψφ hplus'
+  continuous_toFun := continuous_spaComap _ hφ _ _ _
+  continuous_invFun := continuous_spaComap _ hψ _ _ _
+
+/-- `spaComapHomeomorph` coerces to `spaComap` along `φ`. -/
+theorem coe_spaComapHomeomorph (φ : A →+* B) (hφ : Continuous φ)
+    {Aplus : Subring A} {Bplus : Subring B} (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (ψ : B →+* A) (hψ : Continuous ψ) (hψφ : ∀ a, ψ (φ a) = a) (hφψ : ∀ b, φ (ψ b) = b)
+    (hplus' : ∀ b ∈ Bplus, ψ b ∈ Aplus) :
+    (spaComapHomeomorph φ hφ hplus ψ hψ hψφ hφψ hplus' : spa Bplus → spa Aplus) =
+      spaComap φ hφ Aplus Bplus hplus := (rfl)
+
+/-- The inverse of `spaComapHomeomorph` coerces to `spaComap` along `ψ`. -/
+theorem coe_spaComapHomeomorph_symm (φ : A →+* B) (hφ : Continuous φ)
+    {Aplus : Subring A} {Bplus : Subring B} (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (ψ : B →+* A) (hψ : Continuous ψ) (hψφ : ∀ a, ψ (φ a) = a) (hφψ : ∀ b, φ (ψ b) = b)
+    (hplus' : ∀ b ∈ Bplus, ψ b ∈ Aplus) :
+    ((spaComapHomeomorph φ hφ hplus ψ hψ hψφ hφψ hplus').symm : spa Aplus → spa Bplus) =
+      spaComap ψ hψ Bplus Aplus hplus' := (rfl)
+
+/-- `spaComapHomeomorph` pulls valuations back along `φ`. -/
+@[simp] theorem spaComapHomeomorph_val (φ : A →+* B) (hφ : Continuous φ)
+    {Aplus : Subring A} {Bplus : Subring B} (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (ψ : B →+* A) (hψ : Continuous ψ) (hψφ : ∀ a, ψ (φ a) = a) (hφψ : ∀ b, φ (ψ b) = b)
+    (hplus' : ∀ b ∈ Bplus, ψ b ∈ Aplus) (v : spa Bplus) :
+    (spaComapHomeomorph φ hφ hplus ψ hψ hψφ hφψ hplus' v : Spv A) = comap φ v.val := (rfl)
+
+/-- The inverse of `spaComapHomeomorph` pulls valuations back along `ψ`. -/
+@[simp] theorem spaComapHomeomorph_symm_val (φ : A →+* B) (hφ : Continuous φ)
+    {Aplus : Subring A} {Bplus : Subring B} (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (ψ : B →+* A) (hψ : Continuous ψ) (hψφ : ∀ a, ψ (φ a) = a) (hφψ : ∀ b, φ (ψ b) = b)
+    (hplus' : ∀ b ∈ Bplus, ψ b ∈ Aplus) (w : spa Aplus) :
+    ((spaComapHomeomorph φ hφ hplus ψ hψ hψφ hφψ hplus').symm w : Spv B) =
+      comap ψ w.val := (rfl)
+
+section RingEquiv
+
+variable {Aplus : Subring A} {Bplus : Subring B}
+  (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
+  (hplus : Aplus.map (e : A →+* B) = Bplus)
+
+/-- **Homeomorphism of adic spectra induced by a topological ring equivalence.** Given a ring
+isomorphism `e : A ≃+* B` continuous in both directions with `A⁺.map e = B⁺`, pulling valuations
+back along `e.symm` identifies `Spa(A, A⁺)` homeomorphically with `Spa(B, B⁺)`. -/
+noncomputable def spaHomeomorphOfRingEquiv : spa Aplus ≃ₜ spa Bplus :=
+  spaComapHomeomorph (e.symm : B →+* A) he' (fun _ hb ↦ Subring.mem_map_equiv.mp (hplus ▸ hb))
+    (e : A →+* B) he e.apply_symm_apply e.symm_apply_apply fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩
+
+/-- `spaHomeomorphOfRingEquiv` coerces to `spaComap` along `e.symm`. -/
+theorem coe_spaHomeomorphOfRingEquiv :
+    (spaHomeomorphOfRingEquiv e he he' hplus : spa Aplus → spa Bplus) =
+      spaComap (e.symm : B →+* A) he' Bplus Aplus
+        fun _ hb ↦ Subring.mem_map_equiv.mp (hplus ▸ hb) := (rfl)
+
+/-- The inverse of `spaHomeomorphOfRingEquiv` coerces to `spaComap` along `e`. -/
+theorem coe_spaHomeomorphOfRingEquiv_symm :
+    ((spaHomeomorphOfRingEquiv e he he' hplus).symm : spa Bplus → spa Aplus) =
+      spaComap (e : A →+* B) he Aplus Bplus fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩ := (rfl)
+
+/-- `spaHomeomorphOfRingEquiv` pulls valuations back along `e.symm`. -/
+@[simp] theorem spaHomeomorphOfRingEquiv_val (v : spa Aplus) :
+    (spaHomeomorphOfRingEquiv e he he' hplus v : Spv B) = comap (e.symm : B →+* A) v.val := (rfl)
+
+/-- The inverse of `spaHomeomorphOfRingEquiv` pulls valuations back along `e`. -/
+@[simp] theorem spaHomeomorphOfRingEquiv_symm_val (w : spa Bplus) :
+    ((spaHomeomorphOfRingEquiv e he he' hplus).symm w : Spv A) = comap (e : A →+* B) w.val := (rfl)
+
+end RingEquiv
+
 open scoped Classical in
 /-- Preimage of a rational subset under `comap φ`, after intersecting with `spa Bplus`:
 `(comap φ) ⁻¹' R(T/s) ∩ spa Bplus = R(φ(T)/φ(s))`. -/
@@ -188,6 +282,21 @@ theorem comap_mem_rationalSubset {φ : A →+* B} (hφ : Continuous φ) {Aplus :
   · have hunit : IsUnit (φ s) := ⟨⟨φ s, c, hc, by rw [mul_comm]; exact hc⟩, rfl⟩
     rw [comap_vle, map_zero]
     exact @TauCeti.ValuativeRel.not_vle_zero_of_isUnit B _ v.toValuativeRel _ hunit
+
+/-- **The fractions are sub-unit.** At a point of `Spv B` whose pullback lies in `R(T/s)`, the
+fraction `φ t / φ s` has value at most `1`.
+
+For Huber pairs, the unit hypothesis on `φ s` is supplied by
+`TauCeti.ValuationSpectrum.isUnit_of_forall_comap_mem_rationalSubset`. -/
+theorem vle_one_of_comap_mem_rationalSubset {B : Type*} [CommRing B] {φ : A →+* B}
+    {Aplus : Subring A} {T : Finset A} {s : A} (hs : IsUnit (φ s)) {w : Spv B}
+    (hmem : comap φ w ∈ rationalSubset Aplus T s) {t : A} (ht : t ∈ T) :
+    w.toValuativeRel.vle (φ t * ↑hs.unit⁻¹) 1 := by
+  have hvle : w.toValuativeRel.vle (φ t) (φ s) := by
+    have h := ((mem_rationalSubset_iff Aplus T s _).mp hmem).2.1 t ht
+    rwa [comap_vle] at h
+  have h := w.toValuativeRel.mul_vle_mul_left hvle (↑hs.unit⁻¹ : B)
+  rwa [hs.mul_val_inv] at h
 
 open scoped Classical in
 omit [TopologicalSpace A] in

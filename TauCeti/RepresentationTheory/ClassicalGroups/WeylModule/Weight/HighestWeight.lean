@@ -55,6 +55,8 @@ of irreducible representations, `TauCeti.SimpleFDRepClasses k (GL n k)`
 * `TauCeti.rationalWeylFDRepClass` and `TauCeti.rationalWeylFDRepClass_injective`: the
   isomorphism class of `V_λ` as a simple object, and **`λ ↦ V_λ` is injective on the isomorphism
   classes of irreducible representations.**
+* `TauCeti.finrank_hom_rationalWeylFDRep`: over an algebraically closed field of characteristic
+  zero, `Hom(V_γ, V_σ)` has dimension `1` when `γ = σ` and `0` otherwise.
 * `TauCeti.nonempty_equiv_weylRepOfShape_iff` and `TauCeti.nonempty_iso_weylFDRepOfShape_iff`:
   a Young diagram with at most `n` rows is recovered from its Weyl module.
 
@@ -206,6 +208,14 @@ theorem rationalWeylFDRepClass_injective :
   rw [rationalWeylFDRepClass_def, rationalWeylFDRepClass_def,
     SimpleFDRepClasses.mk_eq_mk_iff] at hl
   exact (nonempty_iso_rationalWeylFDRep_iff k).mp hl
+
+/-- **Schur's lemma on rational Weyl modules**: over an algebraically closed characteristic-zero
+field, `Hom(V_γ, V_σ)` in `FDRep k (GL n k)` has dimension `1` if `γ = σ` and `0` otherwise. -/
+theorem finrank_hom_rationalWeylFDRep [IsAlgClosed k] (γ σ : DominantWeight n) :
+    Module.finrank k (rationalWeylFDRep k n γ ⟶ rationalWeylFDRep k n σ) =
+      if γ = σ then 1 else 0 := by
+  classical
+  rw [FDRep.finrank_hom_simple_simple, if_congr (nonempty_iso_rationalWeylFDRep_iff k) rfl rfl]
 
 end Classes
 

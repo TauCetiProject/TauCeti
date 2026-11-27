@@ -21,7 +21,8 @@ Let `J` be an orthogonal complex structure on a finite-dimensional real inner pr
 multiplication by `i` on `ℂ`) has Hilbert–Schmidt norm `|∂bar L|² = ∑ᵢ |∂bar L eᵢ|²`. Writing the
 real and imaginary parts of `L` as `⟪g₁, ·⟫` and `⟪p, ·⟫`, the vector `d = g₁ + J p` represents
 the real part of `2 ∂bar L`, and `|∂bar L|² = ‖d‖² / 2`
-(`TauCeti.AlmostComplexStructure.sum_norm_sq_complexAntilinearPart`).
+(`TauCeti.AlmostComplexStructure.sum_norm_sq_complexAntilinearPart`), while its operator norm is
+`‖g₁ + J p‖ / 2` (`TauCeti.AlmostComplexStructure.norm_eq_norm_add_apply_div_two`).
 
 For `a ∈ ℂ`, the real functional `v ↦ 2 Re (conj a · L v)` is the differential of `|α|²` when
 `L = ∇α` and `a = α`. When `L` is complex-linear, its squared norm is `2 |a|² |L|²`. In general,
@@ -36,6 +37,8 @@ for every `ε > 0`,
 ## Main results
 
 * `TauCeti.AlmostComplexStructure.sum_norm_sq_complexAntilinearPart`: `|∂bar L|² = ‖g₁ + J p‖² / 2`.
+* `TauCeti.AlmostComplexStructure.norm_eq_norm_add_apply_div_two`: the operator norm of `∂bar L` is
+  `‖g₁ + J p‖ / 2`.
 * `TauCeti.AlmostComplexStructure.two_mul_norm_sq_mul_sub_le_sum_sq_re`: the lower bound on
   `∑ᵢ (2 Re (conj a · L eᵢ))²` in terms of `|L|²` and `|∂bar L|²`.
 -/
@@ -136,6 +139,45 @@ theorem sum_norm_sq_complexAntilinearPart {ι : Type*} [Fintype ι] {J : AlmostC
     ring
   rw [hsum, e.sum_sq_inner_left, e.sum_sq_inner_left, hd', norm_neg, norm_apply hJ]
   ring
+
+/-- **The operator norm of the antilinear part.** If `g₁` and `p` represent the real and imaginary
+parts of `L : E → ℂ`, then a continuous real-linear map `D` with
+`D v = (L v + i L (J v)) / 2`, the complex-antilinear part of `L`, has operator norm
+`‖D‖ = ‖g₁ + J p‖ / 2`. By `TauCeti.AlmostComplexStructure.sum_norm_sq_complexAntilinearPart`, its
+Hilbert–Schmidt norm is therefore `√2` times its operator norm. -/
+theorem norm_eq_norm_add_apply_div_two {J : AlmostComplexStructure E}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {L : E → ℂ} {g₁ p : E} (h₁ : ∀ v, ⟪g₁, v⟫ = (L v).re)
+    (h₂ : ∀ v, ⟪p, v⟫ = (L v).im) {D : E →L[ℝ] ℂ} (hD : ∀ v, D v = (L v + I * L (J v)) / 2) :
+    ‖D‖ = ‖g₁ + J p‖ / 2 := by
+  set d := g₁ + J p
+  -- In terms of `d`, the real and imaginary parts of `D v` are `⟪d, v⟫ / 2` and `⟪d, J v⟫ / 2`.
+  have hsq (v : E) : ‖D v‖ ^ 2 = (⟪d, J v⟫ ^ 2 + ⟪d, v⟫ ^ 2) / 4 := by
+    have hre : (D v).re = ⟪d, v⟫ / 2 := by
+      rw [hD, div_ofNat_re, add_re, mul_re, I_re, I_im, inner_add_left,
+        inner_apply_left_eq_neg_swap hJ, real_inner_comm p (J v), h₁, h₂]
+      ring
+    have him : (D v).im = ⟪d, J v⟫ / 2 := by
+      rw [hD, div_ofNat_im, add_im, mul_im, I_re, I_im, inner_add_left, hJ, h₁, h₂]
+      ring
+    rw [Complex.sq_norm, Complex.normSq_apply, hre, him]
+    ring
+  refine le_antisymm (D.opNorm_le_bound (by positivity) fun v ↦ ?_) ?_
+  · -- Cauchy–Schwarz for the Hermitian metric of `J` bounds `‖D v‖` by `‖d‖ ‖v‖ / 2`.
+    refine (sq_le_sq₀ (norm_nonneg _) (by positivity)).1 ?_
+    rw [hsq, mul_pow, div_pow]
+    linarith [inner_sq_add_inner_sq_le hJ d v]
+  · -- The bound is attained at `v = d`, where `D d = ‖d‖² / 2`.
+    have hd : ‖D d‖ = ‖d‖ ^ 2 / 2 := by
+      refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
+      rw [hsq, inner_self_apply hJ, real_inner_self_eq_norm_sq]
+      ring
+    rcases (norm_nonneg d).eq_or_lt with h | h
+    · rw [← h, zero_div]
+      exact norm_nonneg D
+    · have := D.le_opNorm d
+      rw [hd] at this
+      rw [div_le_iff₀ two_pos]
+      nlinarith
 
 variable [FiniteDimensional ℝ E]
 

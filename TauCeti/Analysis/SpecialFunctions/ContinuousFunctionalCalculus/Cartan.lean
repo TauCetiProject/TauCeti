@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpo
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Basic
 public import TauCeti.Geometry.Lie.Exponential.Units.Basic
 import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Continuity
+import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
 # The Cartan decomposition of the group of units
@@ -30,8 +31,8 @@ For `A = Matrix n n ℝ` this is the global Cartan decomposition `GL(n, ℝ) = O
 general linear group, where `𝔭` is the space of symmetric matrices, the `-1` eigenspace of the
 Cartan involution `X ↦ -Xᵀ` of `𝔤𝔩(n, ℝ)`; over `ℂ` it is `GL(n, ℂ) = U(n) · exp 𝔭` with `𝔭` the
 Hermitian matrices. The matrix statement is `Matrix.GeneralLinearGroup.cartanHomeomorph`, in
-`TauCeti/Analysis/Matrix/Cartan.lean`. Topologically, the homeomorphism identifies `Aˣ` with the
-product of the unitary group and the real vector space `selfAdjoint A`.
+`TauCeti/Analysis/Matrix/Cartan/Basic.lean`. Topologically, the homeomorphism identifies `Aˣ` with
+the product of the unitary group and the real vector space `selfAdjoint A`.
 
 The decomposition restricts to a subgroup `G` of `Aˣ` that is closed under `a ↦ a⋆` and such that,
 for self-adjoint `x`, the line `t ↦ exp (t x)` lies in `G` as soon as `exp x` does. For `a ∈ G`,
@@ -42,7 +43,10 @@ and of the self-adjoint elements of its Lie algebra `{x | ∀ t, exp (t x) ∈ G
 and `𝔭` the Hermitian part of the Lie algebra of `G`. The hypotheses hold for the special linear
 groups (`Matrix.SpecialLinearGroup.cartanHomeomorph`) and, more generally, for real algebraic groups
 stable under conjugate transpose; they fail for a discrete subgroup such as the powers of a
-positive diagonal matrix, which is not a product of this form.
+positive diagonal matrix, which is not a product of this form. For a closed subgroup of
+`GL(n, ℝ)` or `GL(n, ℂ)` with finitely many connected components, the line hypothesis is
+discharged in `TauCeti/Analysis/Matrix/Cartan/Closed.lean`
+(`Subgroup.cartanHomeomorphOfIsClosed`).
 
 ## Main declarations
 
@@ -53,7 +57,10 @@ positive diagonal matrix, which is not a product of this form.
 * `Units.mul_exp_eq_iff_polarUnitary_eq_and_log_sqrt_star_mul_eq`: its uniqueness.
 * `Units.coe_polarUnitary_eq_mul_exp_neg_log_sqrt_star_mul`: the unitary factor is
   `a * exp (-log √(a⋆ a))`.
-* `Units.continuous_log_sqrt_star_mul`: the self-adjoint factor depends continuously on the unit.
+* `Units.continuous_log_sqrt_star_mul`: the self-adjoint factor depends continuously on the unit
+  (for `Units.continuous_polarUnitary`, see `Polar/Continuity.lean`).
+* `Unitary.joined_of_joined_toUnits`, `Unitary.joined_toUnits_iff`: two unitaries are joined by a
+  path of unitaries exactly when they are joined by a path of units.
 * `TauCeti.cartanHomeomorph`: the homeomorphism `unitary A × selfAdjoint A ≃ₜ Aˣ`,
   `(u, x) ↦ u * exp x`, with `TauCeti.val_cartanHomeomorph_apply`,
   `TauCeti.cartanHomeomorph_symm_apply_fst` and `TauCeti.coe_cartanHomeomorph_symm_apply_snd`
@@ -63,7 +70,8 @@ positive diagonal matrix, which is not a product of this form.
 * `Subgroup.cartanHomeomorph`: the Cartan decomposition of such a subgroup, the
   homeomorphism `{u ∈ unitary A | u ∈ G} × {x ∈ selfAdjoint A | ∀ t, exp (t x) ∈ G} ≃ₜ G`, with
   `Subgroup.val_cartanHomeomorph_apply`, `Subgroup.coe_cartanHomeomorph_symm_apply_fst` and
-  `Subgroup.coe_cartanHomeomorph_symm_apply_snd` computing it and its inverse.
+  `Subgroup.coe_cartanHomeomorph_symm_apply_snd` computing it and its inverse, and
+  `Subgroup.existsUnique_unitary_mul_exp`, the uniqueness of the factorization.
 
 ## References
 
@@ -151,6 +159,22 @@ theorem continuous_log_sqrt_star_mul :
   exact ⟨ha.isSelfAdjoint, ha.isUnit⟩
 
 end Units
+
+namespace Unitary
+
+/-- Two unitaries joined by a path of units are joined by a path of unitaries: the unitary factor
+of the polar decomposition retracts the units onto the unitaries. -/
+theorem joined_of_joined_toUnits {u v : unitary A}
+    (h : Joined (Unitary.toUnits u) (Unitary.toUnits v)) : Joined u v := by
+  simpa only [Units.polarUnitary_toUnits] using h.map Units.continuous_polarUnitary
+
+/-- Two unitaries are joined by a path of unitaries exactly when they are joined by a path of
+units. -/
+theorem joined_toUnits_iff {u v : unitary A} :
+    Joined (Unitary.toUnits u) (Unitary.toUnits v) ↔ Joined u v :=
+  ⟨joined_of_joined_toUnits, fun h ↦ h.map continuous_toUnits⟩
+
+end Unitary
 
 end Continuity
 
@@ -296,6 +320,19 @@ theorem _root_.Subgroup.coe_cartanHomeomorph_symm_apply_snd (hstar : ∀ a ∈ G
     ((((G.cartanHomeomorph hstar hexp).symm a).2 : selfAdjoint A) : A) =
       CFC.log (CFC.sqrt (star ((a : Aˣ) : A) * (a : Aˣ))) :=
   (rfl)
+
+/-- **Uniqueness of the Cartan factorization in a subgroup**: under the hypotheses of
+`Subgroup.cartanHomeomorph`, every `a ∈ G` is `u * exp x` for exactly one unitary `u ∈ G` and one
+self-adjoint `x` in the Lie algebra of `G`. -/
+theorem _root_.Subgroup.existsUnique_unitary_mul_exp (hstar : ∀ a ∈ G, star a ∈ G)
+    (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G) {a : Aˣ}
+    (ha : a ∈ G) :
+    ∃! p : {u : unitary A // Unitary.toUnits u ∈ G} ×
+        {x : selfAdjoint A // ∀ t : ℝ, expUnit (t • (x : A)) ∈ G},
+      (a : A) = (p.1 : A) * exp ((p.2 : selfAdjoint A) : A) := by
+  refine (existsUnique_congr fun p ↦ ?_).1
+    ((G.cartanHomeomorph hstar hexp).bijective.existsUnique ⟨a, ha⟩)
+  rw [Subtype.ext_iff, Units.ext_iff, Subgroup.val_cartanHomeomorph_apply, eq_comm]
 
 end Subgroup
 

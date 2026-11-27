@@ -171,7 +171,7 @@ theorem exists_pentagonPair_of_mem_crossingChangeUnpairedHexagonComposites
   have hst : C.turnRow ≠ t := by
     rcases F with D | D
     exacts [D.hexagon.ne, D.hexagon.ne]
-  exact exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff G C (C.withTurnRow t) rfl rfl
+  exact exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff G C
     (X_column_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX)
     (X_next_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX)
     (mem_crossingChangeCommutationHexagons_iff_XSet_inter_eq hX)

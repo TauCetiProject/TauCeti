@@ -57,6 +57,8 @@ The estimate is assembled from local estimates by a covering argument.
 
 * `TauCeti.PDE.exists_holderOnWith_gradient_closure_of_isBounded`: the global `C^{1,β}` estimate
   on a bounded domain with `C^{1,α}` boundary.
+* `TauCeti.PDE.exists_holderOnWith_gradient_ball_inter_closure_of_graph`: the estimate near a
+  single boundary point, which needs a boundary chart there only.
 
 ## References
 
@@ -151,14 +153,18 @@ private theorem exists_interior_piece {α β : ℝ≥0} (hβ : 0 < β) (hβ1 : �
           (h.trans (mul_le_mul_of_nonneg_left hQi hC)) (by positivity) hm
       _ = _ := by ring
 
-/-- **Boundary pieces.** Let `x` be a frontier point of a bounded open set `Ω`, near which `Ω` is,
-in rigid coordinates centred at `x`, the region above the graph of a `C¹` function with `α`-Hölder
-derivative. Then there is a ball `B(x, ρ)` and a constant `κ`, depending on the chart, `n`, `α`,
-`β`, `q`, `λ`, `Λ` and `M`, such that for every weak solution `u ∈ H¹₀(Ω)` of
+/-- **The `C^{1,β}` estimate near a boundary point for zero boundary values.** Let `x` be a
+frontier point of a bounded open set `Ω`, near which `Ω` is, in rigid coordinates centred at `x`,
+the region above the graph of a `C¹` function with `α`-Hölder derivative. Then there is a ball
+`B(x, ρ)` and a constant `κ`, depending on the chart, `n`, `α`, `β`, `q`, `λ`, `Λ` and `M`, with
+the following property. Let the coefficients `a` be uniformly elliptic on `closure Ω` with
+constants `λ, Λ` and `α`-Hölder there with constant `Ka ≤ M`, and let `G` be `α`-Hölder on
+`closure Ω` with constant `K_G`. Then for every weak solution `u ∈ H¹₀(Ω)` of
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` in `Ω` the gradient `∇u` agrees almost everywhere on `Ω ∩ B(x, ρ)`
 with a function that is `β`-Hölder with constant `κ Q` and bounded by `κ Q` on
 `B(x, ρ) ∩ closure Ω`, where `Q = K_G + ‖f‖_{L^q(Ω)} + ‖u‖_{H¹(Ω)}`. -/
-private theorem exists_boundary_piece {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+theorem exists_holderOnWith_gradient_ball_inter_closure_of_graph {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     {α β : ℝ≥0} (hβ : 0 < β) (hβ1 : β < 1) (hβα : β ≤ α) {q : ℝ≥0∞} (hq : 2 ≤ q)
     (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
     (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))
@@ -282,7 +288,8 @@ private theorem exists_piece {E : Type*} [NormedAddCommGroup E] [InnerProductSpa
   · have hfr : x ∈ frontier (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) :=
       ⟨hx, by rwa [Ω.isOpen.interior_eq]⟩
     obtain ⟨e, γ, h₀, r₀, Kγ, hex, hh₀, hr₀, hγ0, hγ, hγK, hgraph⟩ := hchart x hfr
-    exact exists_boundary_piece hβ hβ1 hβα hq hβq hΩ hex hh₀ hr₀ hγ0 hγ hγK hgraph lam Lam M
+    exact exists_holderOnWith_gradient_ball_inter_closure_of_graph hβ hβ1 hβα hq hβq hΩ hex hh₀
+      hr₀ hγ0 hγ hγK hgraph lam Lam M
 
 /-- **The global Schauder estimate for divergence-form equations.** Let `Ω ⊆ ℝ^{n+1}` be a bounded
 open set with `C^{1,α}` boundary: for every frontier point `x` there are rigid coordinates `e`

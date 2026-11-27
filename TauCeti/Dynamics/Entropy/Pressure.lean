@@ -40,6 +40,12 @@ n x)` are all `1` for `φ = 0`.
 * `TauCeti.topologicalPressure_zero` — `P(T, 0)` is the topological entropy `coverEntropy T univ`.
 * `TauCeti.topologicalPressure_mono` — pressure is monotone in the potential.
 * `TauCeti.topologicalPressure_add_const` — `P(T, φ + c) = P(T, φ) + c`.
+* `TauCeti.pressureNetSum_monotone_time` — for a nonnegative potential the pressure sums are
+  monotone in time.
+* `TauCeti.topologicalPressure_id` — for the identity of a nonempty finite space,
+  `P(id, φ) = max_x φ x`.
+* `TauCeti.topologicalPressure_eq_iSup_basis` — the supremum may be taken over any basis of the
+  uniformity.
 
 The net-based definitions and their antitonicity lemmas are modelled on `netMaxcard` and
 `netEntropyEntourage` in Mathlib's `Mathlib/Dynamics/TopologicalEntropy/NetEntropy.lean`
@@ -130,6 +136,18 @@ theorem topologicalPressure_le_iff [UniformSpace X] {a : EReal} :
     topologicalPressure T φ ≤ a ↔ ∀ U ∈ 𝓤 X, netPressureEntourage T φ U ≤ a :=
   iSup₂_le_iff
 
+/-- The topological pressure is the supremum of the pressure at the entourages of any basis of
+the uniformity. The statement and proof follow Mathlib's `Dynamics.coverEntropy_eq_iSup_basis`
+and its net-entropy variant `Dynamics.coverEntropy_eq_iSup_basis_netEntropyEntourage`. -/
+theorem topologicalPressure_eq_iSup_basis [UniformSpace X] {ι : Sort*} {p : ι → Prop}
+    {s : ι → SetRel X X} (h : (𝓤 X).HasBasis p s) (T : X → X) (φ : X → ℝ) :
+    topologicalPressure T φ = ⨆ (i : ι) (_ : p i), netPressureEntourage T φ (s i) := by
+  refine (topologicalPressure_le_iff.2 fun U hU ↦ ?_).antisymm
+    (iSup₂_le fun i hi ↦ netPressureEntourage_le_topologicalPressure (h.mem_of_mem hi))
+  obtain ⟨i, hi, hsU⟩ := h.mem_iff.1 hU
+  exact (netPressureEntourage_antitone T φ hsU).trans
+    (le_iSup₂ (f := fun (i : ι) (_ : p i) ↦ netPressureEntourage T φ (s i)) i hi)
+
 /-- For the zero potential the pressure sum is the maximal cardinality `netMaxcard T univ U n` of a
 `(U, n)`-dynamical net. -/
 @[simp]
@@ -158,6 +176,18 @@ theorem pressureNetSum_mono (h : φ ≤ ψ) (U : SetRel X X) (n : ℕ) :
   refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr ?_)
   exact Finset.sum_le_sum fun k _ ↦ h _
 
+/-- For a nonnegative potential the pressure sums are monotone in time: nets at time `m` are nets
+at every later time, and the Birkhoff sums increase. -/
+theorem pressureNetSum_monotone_time (hφ : 0 ≤ φ) (T : X → X) (U : SetRel X X) :
+    Monotone (pressureNetSum T φ U) := by
+  intro m n hmn
+  rw [pressureNetSum_le_iff]
+  intro s hs
+  refine le_trans ?_ (hs.of_le hmn).sum_le_pressureNetSum
+  refine Finset.sum_le_sum fun x _ ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr ?_)
+  exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_subset_range.mpr hmn)
+    fun _ _ _ ↦ hφ _
+
 /-- Pressure is monotone in the potential. -/
 theorem topologicalPressure_mono [UniformSpace X] (h : φ ≤ ψ) :
     topologicalPressure T φ ≤ topologicalPressure T ψ :=
@@ -174,18 +204,61 @@ theorem pressureNetSum_add_const (T : X → X) (φ : X → ℝ) (c : ℝ) (U : S
   refine iSup_congr fun s ↦ iSup_congr fun _ ↦ Finset.sum_congr rfl fun x _ ↦ ?_
   rw [mul_comm, ENNReal.ofReal_mul (Real.exp_pos _).le]
 
+/-- Adding a constant `c` to the potential multiplies the pressure sum at time `n` by
+`EReal.exp (c * n)`: the form of `pressureNetSum_add_const` used with growth rates. -/
+theorem pressureNetSum_add_const_eq_exp_mul (T : X → X) (φ : X → ℝ) (c : ℝ) (U : SetRel X X)
+    (n : ℕ) :
+    pressureNetSum T (fun x ↦ φ x + c) U n = EReal.exp (c * n) * pressureNetSum T φ U n := by
+  simp [pressureNetSum_add_const, ← EReal.exp_coe, mul_comm]
+
 /-- Adding a constant `c` to the potential adds `c` to the pressure at every entourage. -/
 theorem netPressureEntourage_add_const (T : X → X) (φ : X → ℝ) (c : ℝ) (U : SetRel X X) :
     netPressureEntourage T (fun x ↦ φ x + c) U = netPressureEntourage T φ U + c := by
-  have hfun : pressureNetSum T (fun x ↦ φ x + c) U =
-      fun n : ℕ ↦ EReal.exp (c * n) * pressureNetSum T φ U n := funext fun n ↦ by
-    simp [pressureNetSum_add_const, ← EReal.exp_coe, mul_comm]
-  rw [netPressureEntourage_def, netPressureEntourage_def, hfun, expGrowthSup_exp_mul, add_comm]
+  rw [netPressureEntourage_def, netPressureEntourage_def,
+    funext (pressureNetSum_add_const_eq_exp_mul T φ c U), expGrowthSup_exp_mul, add_comm]
 
 /-- Adding a constant `c` to the potential adds `c` to the pressure. -/
 theorem topologicalPressure_add_const [UniformSpace X] (T : X → X) (φ : X → ℝ) (c : ℝ) :
     topologicalPressure T (fun x ↦ φ x + c) = topologicalPressure T φ + c := by
   simp only [topologicalPressure, netPressureEntourage_add_const, iSup_subtype',
     AddQuantale.iSup_add_distrib]
+
+/-- The pressure of the identity of a nonempty finite uniform space is the maximum of the
+potential: `P(id, φ) = max_x φ x`. -/
+@[simp]
+theorem topologicalPressure_id [UniformSpace X] [Fintype X] [Nonempty X] (φ : X → ℝ) :
+    topologicalPressure id φ = (Finset.univ.sup' Finset.univ_nonempty φ : ℝ) := by
+  set M := Finset.univ.sup' Finset.univ_nonempty φ with hM
+  have hexp : ∀ n x, ENNReal.ofReal (Real.exp (birkhoffSum id φ n x)) = EReal.exp (φ x * n) :=
+    fun n x ↦ by
+      rw [birkhoffSum_apply_of_comp_eq (f := id) (φ := φ) rfl, nsmul_eq_mul, mul_comm]
+      simp [← EReal.exp_coe]
+  apply le_antisymm
+  · -- Every net has at most `card X` points, each of weight at most `exp (n * M)`.
+    rw [topologicalPressure_le_iff]
+    intro U _
+    rw [netPressureEntourage_def]
+    refine (expGrowthSup_le_of_eventually_le (b := Fintype.card X) (ENNReal.natCast_ne_top _)
+      (v := fun n : ℕ ↦ EReal.exp (M * n)) (Eventually.of_forall fun n ↦ ?_)).trans_eq
+      (expGrowthSup_exp (a := M))
+    rw [pressureNetSum_le_iff]
+    intro s _
+    calc ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum id φ n x))
+        ≤ ∑ _x ∈ s, EReal.exp (M * n) := Finset.sum_le_sum fun x _ ↦ by
+          rw [hexp]
+          exact EReal.exp_monotone (by gcongr; exact Finset.le_sup' φ (Finset.mem_univ x))
+      _ = s.card * EReal.exp (M * n) := by rw [Finset.sum_const, nsmul_eq_mul]
+      _ ≤ Fintype.card X * EReal.exp (M * n) := by
+          gcongr
+          exact_mod_cast s.card_le_univ
+  · -- A singleton net at a maximizer gives the lower bound.
+    obtain ⟨x₀, -, hx₀⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty φ
+    refine le_trans ?_ (netPressureEntourage_le_topologicalPressure (U := univ)
+      Filter.univ_mem)
+    rw [netPressureEntourage_def, hM, hx₀]
+    refine Frequently.le_expGrowthSup (Eventually.of_forall fun n ↦ ?_).frequently
+    have hnet : IsDynNetIn (id : X → X) univ univ n ({x₀} : Finset X) :=
+      ⟨subset_univ _, by simp⟩
+    simpa only [Finset.sum_singleton, hexp] using hnet.sum_le_pressureNetSum (φ := φ)
 
 end TauCeti

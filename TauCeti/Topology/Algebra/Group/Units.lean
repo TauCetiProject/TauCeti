@@ -30,6 +30,8 @@ file records consequences of that definition.
   set of units.
 * Whenever `Units.val : Mˣ → M` is a topological embedding onto `{m : M | IsUnit m}`, the set of
   units is path-connected if and only if the topological group `Mˣ` is.
+* A homomorphism from a group with continuous inversion into `Mˣ` is continuous exactly when its
+  values in `M` are, since its inverses are its values at inverses.
 
 ## Main results
 
@@ -44,6 +46,7 @@ file records consequences of that definition.
   preconnected sets of units.
 * `Topology.IsEmbedding.isPathConnected_isUnit_iff`: when `Units.val : Mˣ → M` is an embedding,
   `{m : M | IsUnit m}` is path-connected if and only if `Mˣ` is.
+* `MonoidHom.continuous_iff_continuous_val`: continuity of a homomorphism into the units.
 -/
 
 public section
@@ -110,6 +113,18 @@ instance instPolishSpace [ContinuousMul M] [PolishSpace M] : PolishSpace Mˣ :=
     isClosedEmbedding_embedProduct |>.polishSpace
 
 end Units
+
+/-- **Continuity into the units of a topological monoid**: a homomorphism from a group with
+continuous inversion into `Mˣ` is continuous for the units topology exactly when its values in `M`
+are continuous, since `ρ(g)⁻¹ = ρ(g⁻¹)`. -/
+@[to_additive /-- **Continuity into the additive units of a topological additive monoid**: a
+homomorphism from an additive group with continuous negation into `AddUnits M` is continuous
+exactly when its values in `M` are continuous, since `-ρ(g) = ρ(-g)`. -/]
+theorem MonoidHom.continuous_iff_continuous_val {G M : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousInv G] [Monoid M] [TopologicalSpace M] (ρ : G →* Mˣ) :
+    Continuous ρ ↔ Continuous fun g => (ρ g : M) := by
+  refine ⟨fun h => Units.continuous_val.comp h, fun h => Units.continuous_iff.2 ⟨h, ?_⟩⟩
+  exact (h.comp continuous_inv).congr fun g => by rw [Function.comp_apply, map_inv]
 
 /-- **Preconnected sets of nonzero elements pull back to preconnected sets of units.**  In a group
 with zero whose inversion is continuous away from zero, the coercion from the units is a

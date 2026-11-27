@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Exponential.Matrix.Symplectic
+public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Lie.Subgroup.Units
 public import TauCeti.Topology.Algebra.SymplecticGroup
 
@@ -48,6 +49,8 @@ The exponential of an element `X` of `sp l 𝕜` is symplectic, so it is an elem
   algebra of the symplectic group is `sp`.**
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_mem_sp_of_mem_lieSubalgebraOfSubgroup`: the same statement
   read from an element of the Lie algebra of the symplectic group.
+* `TauCeti.Lie.isEmbeddedLieSubgroup_GLSymplectic`: the symplectic group is an embedded Lie
+  subgroup of the general linear group, so a Lie group in its own right.
 * `TauCeti.GLSymplectic.continuous_expOfMemSp`: the exponential of a continuous family of
   elements of `sp` is continuous in the symplectic group.
 -/
@@ -108,6 +111,14 @@ theorem unitsLieAlgebraLieEquiv_mem_sp_of_mem_lieSubalgebraOfSubgroup
     unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) 𝕜) X ∈ LieAlgebra.Symplectic.sp l 𝕜 := by
   rwa [← unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_sp,
     LieEquiv.symm_apply_apply]
+
+/-- **The symplectic group is an embedded Lie subgroup of the general linear group.** Being a
+closed subgroup of the Lie group of units, the closed-subgroup theorem makes it a Lie group for its
+subspace topology. Over `𝕜 = ℝ` this is `Sp(2n, ℝ)`. -/
+theorem isEmbeddedLieSubgroup_GLSymplectic :
+    IsEmbeddedLieSubgroup (I := 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜))
+      (GLSymplectic l 𝕜 : Subgroup (Matrix (l ⊕ l) (l ⊕ l) 𝕜)ˣ) :=
+  isEmbeddedLieSubgroup_of_isClosed (isClosed_GLSymplectic l 𝕜)
 
 end TauCeti.Lie
 

@@ -33,8 +33,9 @@ real-valued proof of Pietsch domination this gives the sign of the functional pr
 separating the uniformly positive functions from a cone: it is nonpositive on the nonnegative
 functions, so its negation is a positive functional.
 
-A continuous map from a compact space into a metric space (or normed additive group) stays at a
-uniform positive distance from every point outside its range.
+The union of the ranges of two continuous maps out of compact spaces is a compact space. A
+continuous map from a compact space into a metric space (or normed additive group) stays at
+a uniform positive distance from every point outside its range.
 
 ## Main results
 
@@ -42,6 +43,8 @@ uniform positive distance from every point outside its range.
 * `ContinuousMap.isOpen_uniformlyPositive`: for a linear order `𝕜` with a zero whose lower rays
   `Set.Iic a` are closed, the uniformly positive functions on a compact space form an open set for
   the compact-open topology.
+* `ContinuousMap.compactSpace_range_union`: the union of the ranges of two continuous maps out of
+  compact spaces is compact.
 * `ContinuousMap.exists_pos_le_dist_of_notMem_range`: a continuous map from a compact space into a
   metric space has `dist (f x) y` bounded below by a positive constant when `y ∉ Set.range f`.
 * `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
@@ -91,6 +94,12 @@ theorem isOpen_uniformlyPositive {𝕜 : Type*} [Zero 𝕜] [LinearOrder 𝕜] [
   · exact ⟨δ, hδ, isEmptyElim⟩
   · obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty g.continuous.continuousOn
     exact ⟨g x₀, hg (Set.mem_univ x₀), fun x ↦ hx₀ (Set.mem_univ x)⟩
+
+/-- The union of the ranges of two continuous maps out of compact spaces is a compact space. -/
+theorem compactSpace_range_union {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    [CompactSpace X] [CompactSpace Y] (f : C(X, Z)) (g : C(Y, Z)) :
+    CompactSpace ↥(Set.range f ∪ Set.range g) :=
+  isCompact_iff_compactSpace.1 ((isCompact_range f.continuous).union (isCompact_range g.continuous))
 
 /-- A continuous map from a compact space into a metric space stays at a uniform positive distance
 from every point outside its range. -/
