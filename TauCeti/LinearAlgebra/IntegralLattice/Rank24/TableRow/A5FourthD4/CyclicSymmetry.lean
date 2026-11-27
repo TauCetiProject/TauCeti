@@ -38,9 +38,8 @@ of `TauCeti.niemeierA5FourthD4`.  This yields a faithful action
 * `TauCeti.RootfulNiemeierType.mem_symmetries_cyclic_a5FourthD4_iff`,
   `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom`,
   `TauCeti.RootfulNiemeierType.exists_a5FourthD4CyclicSymmetryHom_eq_pow`,
-  `TauCeti.RootfulNiemeierType.det_a5FourthD4CyclicSymmetryHom`,
   `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom_injective`: membership characterization
-  and faithful determinant-one action of `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries` on
+  and faithful action of `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries` on
   `niemeierA5FourthD4`.
 
 ## References
@@ -199,15 +198,6 @@ theorem exists_a5FourthD4CyclicSymmetryHom_eq_pow
   rw [show g = ⟨(a5FourthD4BlockRotation : Equiv.Perm (Fin 5)),
       a5FourthD4BlockRotation_mem_symmetries⟩ ^ k from Subtype.ext hgk.symm,
     map_pow, a5FourthD4CyclicSymmetryHom_blockRot]
-
-/-- Every symmetry of the cyclic pattern `[2(024)0]` acts on `niemeierA5FourthD4` with
-determinant `1`. -/
-@[simp]
-theorem det_a5FourthD4CyclicSymmetryHom
-    (g : (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries) :
-    Isometry.det niemeierA5FourthD4 (a5FourthD4CyclicSymmetryHom g) = 1 := by
-  obtain ⟨k, -, -, hg⟩ := exists_a5FourthD4CyclicSymmetryHom_eq_pow g
-  rw [hg, map_pow, det_a5FourthD4TrialityIsometry, one_pow]
 
 /-- **The cyclic pattern `[2(024)0]` acts faithfully on `niemeierA5FourthD4`.** -/
 theorem a5FourthD4CyclicSymmetryHom_injective :
