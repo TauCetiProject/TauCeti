@@ -16,7 +16,8 @@ Let `f : α → α` and let `x i` be points of least periods `d i > 0`, one on e
 `(d i * (k + 1), f^[j] (x i))` with `k : ℕ` and `j < d i`, each exactly once
 (`Function.periodicPairEquiv`). Indeed the least period of a point `y` on the orbit of `x i` is
 `d i`, which divides every period of `y`, and the points `f^[j] (x i)`, `j < d i`, are distinct.
-Such a choice of representatives is automatically injective
+Such a choice of representatives always exists, indexed by the periodic orbits of `f`
+(`Function.exists_forall_mem_periodicPts_existsUnique_iterate_eq`), and is automatically injective
 (`Function.injective_of_existsUnique_iterate`).
 
 This is the reindexing by which a sum over the fixed points of the iterates of `f`, such as the
@@ -85,5 +86,25 @@ theorem coe_periodicPairEquiv_apply (hmin : ∀ i, minimalPeriod f (x i) = d i)
     (q : (p : ι × ℕ) × Fin (d p.1)) :
     (periodicPairEquiv hmin hd hrep q : ℕ × α) = (d q.1.1 * (q.1.2 + 1), f^[q.2] (x q.1.1)) :=
   (rfl)
+
+variable (f) in
+/-- **One point on each periodic orbit.** Every map `f` has points `x o`, indexed by the periodic
+orbits `o` of `f` (`Function.periodicOrbit`), each a periodic point of `f`, such that every periodic
+point of `f` lies on the orbit of exactly one `x o`. With `d o = minimalPeriod f (x o)`, these are
+the representatives taken by `Function.periodicPairEquiv`. -/
+theorem exists_forall_mem_periodicPts_existsUnique_iterate_eq :
+    ∃ x : Set.range (fun y : periodicPts f ↦ periodicOrbit f y) → α,
+      (∀ o, x o ∈ periodicPts f) ∧ ∀ y ∈ periodicPts f, ∃! o, ∃ j, f^[j] (x o) = y := by
+  -- Each orbit `o` is the orbit of a periodic point `x o`.
+  choose x hx using fun o : Set.range (fun y : periodicPts f ↦ periodicOrbit f y) ↦
+    Set.mem_range.1 o.property
+  refine ⟨fun o ↦ x o, fun o ↦ (x o).property, fun y hy ↦
+    ⟨⟨periodicOrbit f y, Set.mem_range_self (f := fun y : periodicPts f ↦ periodicOrbit f y)
+      ⟨y, hy⟩⟩, ?_, ?_⟩⟩
+  · beta_reduce
+    rw [← mem_periodicOrbit_iff (x _).property, hx]
+    exact self_mem_periodicOrbit hy
+  · rintro o ⟨j, rfl⟩
+    exact Subtype.ext ((periodicOrbit_apply_iterate_eq (x o).property j).trans (hx o)).symm
 
 end Function
