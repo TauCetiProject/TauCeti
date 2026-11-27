@@ -44,9 +44,9 @@ such generators.
   sign.
 * **Products.** Over a commutative ring `k`, the Künneth cross product of the generators of
   `ℝᵃ⁺¹` and `ℝᵇ⁺¹`, carried to `ℝᵃ⁺¹⁺ᵇ⁺¹` by the concatenation of coordinates
-  (`TauCeti.euclideanULiftAppend`), is `(-1) ^ ((a + 1) (b + 1))` times the generator of
+  (`TauCeti.euclideanULiftAppendEquiv`), is `(-1) ^ ((a + 1) (b + 1))` times the generator of
   `ℝᵃ⁺¹⁺ᵇ⁺¹`
-  (`singularHomologyMap_euclideanULiftAppend_singularHomologyKunnethPair_stdULiftGenerator`).
+  (`singularHomologyMap_euclideanULiftAppendEquiv_singularHomologyKunnethPair_stdULiftGenerator`).
   The standard orientation of `ℝᵃ⁺¹⁺ᵇ⁺¹` lists the coordinates of the first factor before those of
   the second, so the homological cross product of local orientations differs from the ordered
   product of orientations by the Koszul sign of the dimensions. The proof passes through cubes,
@@ -358,25 +358,12 @@ lemma euclideanULiftAppendEquiv_apply_ofLp (p q : ℕ)
   obtain ⟨i⟩ := i
   induction i using Fin.addCases <;> simp [euclideanULiftAppendEquiv]
 
-/-- The concatenation of coordinates `TauCeti.euclideanULiftAppendEquiv` as a continuous map. -/
-def euclideanULiftAppend (p q : ℕ) :
-    C(EuclideanSpace ℝ (ULift.{w} (Fin p)) × EuclideanSpace ℝ (ULift.{w} (Fin q)),
-      EuclideanSpace ℝ (ULift.{w} (Fin (p + q)))) :=
-  ⟨euclideanULiftAppendEquiv p q, (euclideanULiftAppendEquiv p q).continuous⟩
-
-/-- `TauCeti.euclideanULiftAppend` is the underlying function of
-`TauCeti.euclideanULiftAppendEquiv`. -/
-@[simp]
-lemma coe_euclideanULiftAppend (p q : ℕ) :
-    ⇑(euclideanULiftAppend.{w} p q) = euclideanULiftAppendEquiv p q :=
-  funext fun _ ↦ rfl
-
 /-- The concatenation of coordinates vanishes only at the origin, so it is a map of pairs
 `(ℝᵖ × ℝ^q, (ℝᵖ ∖ {0}) × ℝ^q ∪ ℝᵖ × (ℝ^q ∖ {0})) ⟶ (ℝᵖ⁺q, ℝᵖ⁺q ∖ {0})`. -/
-lemma euclideanULiftAppend_mapsTo (p q : ℕ) :
+lemma euclideanULiftAppendEquiv_mapsTo (p q : ℕ) :
     Set.MapsTo (TopCat.ofHom (X := ↑(TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin p))) ⊗
         TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin q)))))
-        (euclideanULiftAppend.{w} p q))
+        (ContinuousMap.ofClass (euclideanULiftAppendEquiv.{w} p q)))
       (fst (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin p))))
           (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin q)))) ⁻¹' {0}ᶜ ∪
         snd (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin p))))
@@ -397,8 +384,8 @@ private abbrev euclideanULiftAppendPairHom (p q : ℕ) :=
     (TopCat.ofHom (X := ↑((TopPair.ofSubset
         ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin p)))))).fst ⊗
       (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin q)))))).fst))
-      (euclideanULiftAppend.{w} p q))
-    ((euclideanULiftAppend_mapsTo p q).mono_left
+      (ContinuousMap.ofClass (euclideanULiftAppendEquiv.{w} p q)))
+    ((euclideanULiftAppendEquiv_mapsTo p q).mono_left
       (Set.union_subset_union (Set.preimage_mono TopPair.range_ofSubset_map.subset)
         (Set.preimage_mono TopPair.range_ofSubset_map.subset)))
 
@@ -419,8 +406,8 @@ private lemma singularCubicalHomologyIso_inv_cubeClass (m : ℕ) :
 
 /-- On cubes, the cross product of the affine cubes of `ℝᵖ` and `ℝ^q`, followed by the concatenation
 of coordinates, is the affine cube of `ℝᵖ⁺q`. -/
-private lemma euclideanULiftAppend_comp_crossProduct (p q : ℕ) :
-    (euclideanULiftAppend.{w} p q).comp (SingularCube.crossProduct
+private lemma euclideanULiftAppendEquiv_comp_crossProduct (p q : ℕ) :
+    (ContinuousMap.ofClass (euclideanULiftAppendEquiv.{w} p q)).comp (SingularCube.crossProduct
         ((cubeAffineMap.{w} p).comp ⟨ULift.up, continuous_uliftUp⟩)
         ((cubeAffineMap.{w} q).comp ⟨ULift.up, continuous_uliftUp⟩)) =
       (cubeAffineMap.{w} (p + q)).comp ⟨ULift.up, continuous_uliftUp⟩ := by
@@ -482,22 +469,22 @@ private lemma homologyMap_cubicalChainComplexMap_cubeClass_cross (a b : ℕ) :
   -- As above: the cast cube lives on `(ofSubset A).fst ⊗ (ofSubset B).fst`, and rewriting it is
   -- type-correct for the append map only after unfolding `TopPair.ofSubset`.
   erw [SingularCube.cast_rfl]
-  exact euclideanULiftAppend_comp_crossProduct (a + 1) (b + 1)
+  exact euclideanULiftAppendEquiv_comp_crossProduct (a + 1) (b + 1)
 
 /-- **The cross product of standard local generators.** Over a commutative ring `k`, the Künneth
 cross product of the generators of `Hₐ₊₁(ℝᵃ⁺¹, ℝᵃ⁺¹ ∖ {0}; k)` and `H_{b+1}(ℝᵇ⁺¹, ℝᵇ⁺¹ ∖ {0}; k)`
 selected by the standard orientations, carried to `ℝᵃ⁺¹⁺ᵇ⁺¹` by the concatenation of coordinates,
 is `(-1) ^ ((a + 1) (b + 1))` times the generator selected by the standard orientation of
 `ℝᵃ⁺¹⁺ᵇ⁺¹`, whose basis lists the coordinates of the first factor first. -/
-theorem singularHomologyMap_euclideanULiftAppend_singularHomologyKunnethPair_stdULiftGenerator
+theorem singularHomologyMap_euclideanULiftAppendEquiv_singularHomologyKunnethPair_stdULiftGenerator
     (a b : ℕ) :
     TopPair.singularHomologyMap
         (TopPair.ofSubsetMap (X := TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (a + 1)))) ⊗
             TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (b + 1)))))
           (TopCat.ofHom (X := ↑(TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (a + 1)))) ⊗
             TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (b + 1))))))
-            (euclideanULiftAppend.{w} (a + 1) (b + 1)))
-          (euclideanULiftAppend_mapsTo (a + 1) (b + 1)))
+            (ContinuousMap.ofClass (euclideanULiftAppendEquiv.{w} (a + 1) (b + 1))))
+          (euclideanULiftAppendEquiv_mapsTo (a + 1) (b + 1)))
         (ModuleCat.of k k) (a + 1 + (b + 1))
       ((GradedObject.Monoidal.ιTensorObj _ _ (a + 1) (b + 1) (a + 1 + (b + 1)) rfl ≫
           singularHomologyKunnethPair k
@@ -522,7 +509,8 @@ theorem singularHomologyMap_euclideanULiftAppend_singularHomologyKunnethPair_std
     (cubicalChainComplexProdComparison_comp_cubicalToSingularRel k
       (A := ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (a + 1)))))))
       (B := ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (b + 1)))))))
-      (euclideanULiftAppend.{w} (a + 1) (b + 1)) (euclideanULiftAppend_mapsTo (a + 1) (b + 1)))
+      (ContinuousMap.ofClass (euclideanULiftAppendEquiv.{w} (a + 1) (b + 1)))
+      (euclideanULiftAppendEquiv_mapsTo (a + 1) (b + 1)))
   simp only [HomologicalComplex.homologyMap_comp] at hK
   have hB := homologyMap_cubicalChainComplexMap_cubeClass_cross k a b
   rw [ι_cubicalHomologyKunnethPair] at hB
