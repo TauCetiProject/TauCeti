@@ -85,10 +85,10 @@ chambers.
   a product of wall reflections fixing `y` carries `z` into the closed fundamental alcove (no
   archimedean hypothesis needed).
 * `RootPairing.exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove` and
-  `Base.exists_mem_closure_range_affineSimpleReflection_apply_mem_closedFundamentalAlcove`:
-  **over an archimedean ring, every point of the coweight space is carried into the closed
-  fundamental alcove by the affine simple reflections**, and in particular by the affine Weyl
-  group.
+  `Base.exists_mem_closure_range_affineSimpleReflection_apply_mem_closedFundamentalAlcove`
+  (in `RootPairing.Base`): **over an archimedean ring, every point of the coweight space is
+  carried into the closed fundamental alcove by the affine simple reflections**, and in particular
+  by the affine Weyl group.
 * `RootPairing.iUnion_image_closedFundamentalAlcove_eq_univ`: over an archimedean ring, the
   translates of the closed fundamental alcove under the affine Weyl group cover the coweight space.
 * `RootPairing.exists_mem_affineWeylGroup_apply_mem_fundamentalAlcove`: over an archimedean ring, a
