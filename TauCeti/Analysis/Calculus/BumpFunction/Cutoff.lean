@@ -49,8 +49,10 @@ agrees, at positions near a compact subset of `U`, with a function `C^k` on the 
 which keeps its periods in the second coordinate
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
-(`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
-functions are smooth (`Finset.contDiffAt_tsum_of_eventually_eq_zero`). In particular the
+(`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`), and a `C¹` cutoff supported in `P`
+multiplies a map dominated with its derivative by a jet `J` into a map whose derivative is bounded
+in `Lᵖ` by `J` on `P` (`TauCeti.eLpNorm_fderiv_smul_le_of_tsupport_subset`). Locally finite sums
+of smooth functions are smooth (`Finset.contDiffAt_tsum_of_eventually_eq_zero`). In particular the
 integer translates `(x, t) ↦ f (x, t + n)` of a compactly supported map are locally finite
 (`TauCeti.exists_finset_eventually_eq_zero_add_intCast`), so its periodization `Σₙ f (x, t + n)`
 is `C^k` when `f` is (`TauCeti.contDiff_tsum_add_intCast`); it has period one in `t`
@@ -82,7 +84,9 @@ support (`TauCeti.exists_forall_contDiff_cutoff_ball`). With such a cutoff of sm
 angle `θ` rising from `0` to `π / 2` across an annulus gives the IMS-type partition
 `cos² θ + sin² θ = 1` with gradients at most a prescribed `ε`
 (`TauCeti.exists_contDiff_angle_cutoff`). On the line, a smooth cutoff of the identity equals `s` on
-`[-r, r]` and vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`). On an inner product
+`[-r, r]` and vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`); in any normed space
+with smooth bumps, a smooth map into `ball x ε` is the identity on `closedBall x r` and constant
+outside `ball x ε` (`TauCeti.exists_contDiff_cutoff_self`). On an inner product
 space, a smooth, even, compactly supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and
 vanishes on the ball of radius `r / 2` (`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus
 supported in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
@@ -368,6 +372,42 @@ theorem eLpNorm_fderiv_restrict_le_of_subset_interior [NormedSpace ℝ E] [Measu
     simp [hy1]
   rw [MeasureTheory.eLpNorm_congr_ae heq]
   exact MeasureTheory.eLpNorm_mono_measure _ MeasureTheory.Measure.restrict_le_self
+
+open MeasureTheory in
+/-- **The derivative of a cut-off map in `Lᵖ`.** Let `χ` be a `C¹` cutoff with `|χ| ≤ 1` and
+`‖Dχ‖ ≤ C` whose topological support lies in a measurable set `P`, and let `u` be a `C¹` map
+dominated by a jet `J`, in the sense that `‖u‖ ≤ ‖J‖` and `‖Du‖ ≤ c ‖J‖`. Then the derivative of
+`χ u` is bounded in `Lᵖ(μ)` by `C + c` times the `Lᵖ(P)` norm of `J`. -/
+theorem eLpNorm_fderiv_smul_le_of_tsupport_subset [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [OpensMeasurableSpace E] {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] {μ : Measure E} {χ : E → ℝ} {C c : ℝ}
+    (hχ : ContDiff ℝ 1 χ) (hχ1 : ∀ x, |χ x| ≤ 1) (hC : ∀ x, ‖fderiv ℝ χ x‖ ≤ C) {P : Set E}
+    (hP : MeasurableSet P) (hχP : tsupport χ ⊆ P) {u : E → F} (hu : ContDiff ℝ 1 u) {J : E → G}
+    (hJ : ∀ x, ‖u x‖ ≤ ‖J x‖) (hdJ : ∀ x, ‖fderiv ℝ u x‖ ≤ c * ‖J x‖) (p : ENNReal) :
+    eLpNorm (fderiv ℝ fun x ↦ χ x • u x) p μ ≤
+      ENNReal.ofReal (C + c) * eLpNorm J p (μ.restrict P) := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  have hpt : ∀ x, ‖fderiv ℝ (fun x ↦ χ x • u x) x‖ ≤ (C + c) * ‖P.indicator J x‖ := by
+    intro x
+    by_cases hx : x ∈ P
+    · rw [indicator_of_mem hx,
+        fderiv_fun_smul (hχ.differentiable one_ne_zero x) (hu.differentiable one_ne_zero x)]
+      calc _ ≤ ‖χ x‖ * ‖fderiv ℝ u x‖ + ‖fderiv ℝ χ x‖ * ‖u x‖ := by
+            refine (norm_add_le _ _).trans ?_
+            rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply]
+        _ ≤ 1 * (c * ‖J x‖) + C * ‖J x‖ := by
+            gcongr
+            exacts [(Real.norm_eq_abs _).trans_le (hχ1 x), hdJ x, hC x, hJ x]
+        _ = (C + c) * ‖J x‖ := by ring
+    · have h0 : (fun x ↦ χ x • u x) =ᶠ[𝓝 x] 0 := by
+        filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hx (hχP h)] with y hy
+        simp [hy]
+      rw [h0.fderiv_eq, indicator_of_notMem hx]
+      simp
+  rw [← eLpNorm_indicator_eq_eLpNorm_restrict hP.nullMeasurableSet]
+  exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul
+    ((hχ.smul hu).continuous_fderiv one_ne_zero).aestronglyMeasurable
+    (Filter.Eventually.of_forall hpt) p
 
 /-- A compactly supported `C¹` function is bounded, and Hölder continuous with every exponent
 `α ≤ 1`, with one constant `C` for both: it is Lipschitz and of bounded oscillation. -/
@@ -688,19 +728,28 @@ private theorem smoothTransition_radial_cutoff [InnerProductSpace ℝ E] {r R : 
       tsupport (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) ⊆
         Metric.closedBall x₀ R := by
   have hD0 : 0 < R ^ 2 - r ^ 2 := by nlinarith
-  refine ⟨Real.smoothTransition.contDiff.comp ((contDiff_const.sub
-    ((contDiff_id.sub contDiff_const).norm_sq ℝ)).div_const _), ?_, fun x hx => ?_, ?_⟩
+  -- The profile is the radial cutoff `ψ(a + b ‖x - x₀‖²)` with `a = R² / D`, `b = -1 / D`.
+  have hf : (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) =
+      fun x => Real.smoothTransition
+        (R ^ 2 / (R ^ 2 - r ^ 2) + -1 / (R ^ 2 - r ^ 2) * ‖x - x₀‖ ^ 2) := by
+    funext x
+    congr 1
+    ring
+  refine ⟨hf ▸ Real.smoothTransition.contDiff_add_mul_norm_sub_sq x₀ _ _, ?_, fun x hx => ?_,
+    (hf ▸ Real.smoothTransition.tsupport_add_mul_norm_sub_sq_subset x₀ _ _).trans
+      fun x hx => ?_⟩
   · rintro _ ⟨x, rfl⟩
     exact ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
   · rw [Metric.mem_closedBall, dist_eq_norm] at hx
     refine Real.smoothTransition.one_of_one_le ?_
     rw [le_div_iff₀ hD0]
     nlinarith [norm_nonneg (x - x₀)]
-  · refine closure_minimal (fun x hx => ?_) Metric.isClosed_closedBall
+  · have hx' : 0 ≤ (R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2) := by
+      rw [Set.mem_ofPred_eq] at hx
+      convert hx using 1
+      ring
     rw [Metric.mem_closedBall, dist_eq_norm]
-    by_contra h
-    exact hx (Real.smoothTransition.zero_of_nonpos
-      (div_nonpos_of_nonpos_of_nonneg (by nlinarith [norm_nonneg (x - x₀)]) hD0.le))
+    nlinarith [norm_nonneg (x - x₀), (le_div_iff₀ hD0).1 hx']
 
 /-- **Radial cutoffs with quantitative derivative bounds.** There is a universal constant `c`
 such that for every centre `x₀` and radii `0 ≤ r < R`, some smooth `ψ` with values in `[0, 1]`
@@ -842,6 +891,25 @@ theorem exists_contDiff_angle_cutoff [InnerProductSpace ℝ E] [CompleteSpace E]
       _ = π * C / (2 * K) := div_mul_div_comm _ _ _ _
       _ ≤ ε := by rw [div_le_iff₀ (by positivity)]; linarith
 
+open Real in
+/-- An angle cutoff `θ₀` with gradient at most `ε` that equals `π / 2` near every `t` with
+`R₂ < |t|`, composed with `Φ - s₀` for a differentiable `Φ` with gradient at most one, has
+gradient at most `ε` and equals `π / 2` near every `z` with `R₂ < Φ z - s₀`. -/
+theorem norm_fderiv_comp_sub_le_and_eventuallyEq [NormedSpace ℝ E] {θ₀ : ℝ → ℝ} {Φ : E → ℝ}
+    {ε R₂ : ℝ} (s₀ : ℝ) (hθ₀ : Differentiable ℝ θ₀) (hΦ : Differentiable ℝ Φ)
+    (hθ₀out : ∀ t, R₂ < ‖t‖ → θ₀ =ᶠ[𝓝 t] fun _ ↦ π / 2)
+    (hθ₀d : ∀ t, ‖fderiv ℝ θ₀ t‖ ≤ ε) (hΦd : ∀ z, ‖fderiv ℝ Φ z‖ ≤ 1) :
+    (∀ z, ‖fderiv ℝ (fun t ↦ θ₀ (Φ t - s₀)) z‖ ≤ ε) ∧
+      ∀ z, R₂ < Φ z - s₀ → (fun t ↦ θ₀ (Φ t - s₀)) =ᶠ[𝓝 z] fun _ ↦ π / 2 := by
+  refine ⟨fun z ↦ ?_, fun z hz ↦ ?_⟩
+  · have hd : HasFDerivAt (fun t ↦ θ₀ (Φ t - s₀))
+        ((fderiv ℝ θ₀ (Φ z - s₀)).comp (fderiv ℝ Φ z)) z :=
+      (hθ₀ _).hasFDerivAt.comp z ((hΦ z).hasFDerivAt.sub_const s₀)
+    rw [hd.fderiv]
+    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+    simpa using mul_le_mul (hθ₀d _) (hΦd z) (norm_nonneg _) ((norm_nonneg _).trans (hθ₀d 0))
+  · exact ((hΦ z).sub_const s₀).continuousAt.eventually (hθ₀out _ (hz.trans_le (le_abs_self _)))
+
 /-- **A smooth cutoff of the identity on the line.** For `r < R`, some smooth `k : ℝ → ℝ`
 equals the identity on `[-r, r]`, vanishes for `|s| ≥ R`, and has derivative `1` on `(-r, r)`.
 For `0 < r` it is `s ↦ χ s * s` for a smooth bump `χ` equal to one on `[-r, r]` and supported in
@@ -866,6 +934,25 @@ theorem exists_contDiff_cutoff_id {r R : ℝ} (hrR : r < R) :
   · refine (hasDerivAt_id s).congr_of_eventuallyEq ?_
     filter_upwards [(isOpen_lt continuous_abs continuous_const).mem_nhds hs] with x hx
     exact hsmall x hx.le
+
+open Metric in
+/-- **A smooth cutoff of the identity into a ball.** For `0 < r < ε`, some smooth `c : E → E` maps
+`E` into `ball x ε`, is the identity on `closedBall x r`, and equals `x` outside `ball x ε`. It is
+`y ↦ x + χ y • (y - x)` for a smooth bump `χ` equal to one on `closedBall x r` and supported in
+`closedBall x ε`. -/
+theorem exists_contDiff_cutoff_self [NormedSpace ℝ E] [HasContDiffBump E] (x : E) {r ε : ℝ}
+    (hr : 0 < r) (hrε : r < ε) :
+    ∃ c : E → E, ContDiff ℝ ∞ c ∧ (∀ y, c y ∈ ball x ε) ∧ (∀ y ∈ closedBall x r, c y = y) ∧
+      ∀ y ∉ ball x ε, c y = x := by
+  let χ : ContDiffBump x := ⟨r, ε, hr, hrε⟩
+  have hout (y : E) (hy : y ∉ ball x ε) : χ y = 0 := χ.zero_of_le_dist (not_lt.1 hy)
+  refine ⟨fun y ↦ x + χ y • (y - x),
+    contDiff_const.add (χ.contDiff.smul (contDiff_id.sub contDiff_const)), fun y ↦ ?_,
+    fun y hy ↦ by simp [χ.one_of_mem_closedBall hy], fun y hy ↦ by simp [hout y hy]⟩
+  by_cases hy : y ∈ ball x ε
+  · rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg χ.nonneg]
+    exact (mul_le_of_le_one_left (norm_nonneg _) χ.le_one).trans_lt (mem_ball_iff_norm.1 hy)
+  · simpa [hout y hy] using mem_ball_self (x := x) (hr.trans hrε)
 
 open Metric in
 /-- **A smooth cutoff of an annulus.** For `0 < r` and any `R`, some smooth, even, compactly

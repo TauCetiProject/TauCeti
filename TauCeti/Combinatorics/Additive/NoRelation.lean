@@ -30,6 +30,12 @@ least `D ^ n / (n D ^ 2)` points (`Behrend.exists_large_sphere`) gives the bound
 `TauCeti.exists_noRelation`, with the constant `C = 14`; when `4 L (4 L) ^ n > M` the single point
 `{0}` suffices.
 
+The same construction excludes the *mean relations* `(α + α') e₂ ≡ α e₁ + α' e₃ (mod o)` with
+`α, α' > 0` and `α + α' ≤ L`, at the smaller base `B = L D` (the weights have equal signs, so the
+digits of each side stay below `L D`): if moreover `B ^ n ≤ o`, both sides lie in `[0, o)`, so the
+congruence is an equality of base-`B` readings, which holds digit by digit and makes the middle
+point a strict mean of the outer two.
+
 ## Main definitions
 
 * `TauCeti.NoRelation L T`: the set `T ⊆ ℤ` has no relation of length `L`.
@@ -46,6 +52,14 @@ least `D ^ n / (n D ^ 2)` points (`Behrend.exists_large_sphere`) gives the bound
   `Behrend.sphere n D R` under `Behrend.map B` has no relation of length `L`.
 * `TauCeti.exists_noRelation_of_two_mul_lt`: for `2 L (D - 1) < B` and `D ≤ B` there is
   `T ⊆ [0, B ^ n)` with no relation of length `L` and `D ^ n / (n D ^ 2) ≤ |T| ≤ D ^ n`.
+* `TauCeti.eq_and_eq_of_add_mul_map_eq`: for `x₁, x₂, x₃` on `Behrend.sphere n D R`, `0 < α, α'`
+  and `(α + α') (D - 1) < B`, the equation
+  `(α + α') map B x₂ = α map B x₁ + α' map B x₃` forces `x₁ = x₂ = x₃`.
+* `TauCeti.exists_eq_and_eq_of_add_mul_modEq_of_mul_lt`: for `L (D - 1) < B`, `D ≤ B` and
+  `B ^ n ≤ o`, some `S ⊆ [0, o)` with `|S| ≥ D ^ n / (n D ^ 2)` has no mean relation of length `L`
+  modulo `o` among three of its elements other than `e₁ = e₂ = e₃`.
+* `TauCeti.exists_eq_and_eq_of_add_mul_modEq`: the case `B = L H`, `D = H`: for `0 < L` and
+  `(L H) ^ n ≤ o`, such a set of at least `H ^ n / (n H ^ 2)` elements.
 * `TauCeti.exists_noRelation`: there is a constant `C` such that for all `M ≥ 1` and `L ≥ 2` some
   nonempty `T ⊆ [0, M / (4 L))` has no relation of length `L` and
   `|T| ≥ M exp (-C (log M log L) ^ (1/2)) / L`, and `|T| ≤ M / (4 L)` when `4 L ≤ M`.
@@ -61,6 +75,10 @@ least `D ^ n / (n D ^ 2)` points (`Behrend.exists_large_sphere`) gives the bound
   `Formalism.FrobeniusOrbits.NoRel` and the existence theorem
   `Formalism.FrobeniusOrbits.HostThickExists` (proved as
   `Formalism.FrobeniusOrbits.hostThickExists`). They are the source of the statements here.
+* The folder `grh` of https://github.com/lsernau/grh-lean at commit
+  72fead102f663d5c7a407964a13dc0cf9d977207, file `New/Reduction/Data/Existence`
+  (`New.exists_three_term_free`, `New.eq_of_add_mul_eq_of_sum_sq_eq`): the source of the
+  statements on mean relations modulo `o`.
 -/
 
 public section
@@ -208,6 +226,94 @@ theorem exists_noRelation_of_two_mul_lt {L B n D : ℕ} (hB : 2 * L * (D - 1) < 
   · rwa [card_image_of_injOn hinj]
   · rw [card_image_of_injOn hinj, ← Behrend.card_box]
     exact card_le_card Behrend.sphere_subset_box
+
+/-- The digit bound for mean relations: for coordinates below `D` and `(α + α') (D - 1) < B`, the
+digits of `(α + α') x₂` and of `α x₁ + α' x₃` are below `B`. -/
+private lemma add_mul_digit_lt {B D α α' : ℕ} {n : ℕ} {x₁ x₂ x₃ : Fin n → ℕ}
+    (hB : (α + α') * (D - 1) < B) (h₁ : ∀ k, x₁ k < D) (h₂ : ∀ k, x₂ k < D)
+    (h₃ : ∀ k, x₃ k < D) :
+    (∀ k, ((α + α') • x₂) k < B) ∧ ∀ k, (α • x₁ + α' • x₃) k < B := by
+  have hle (k : Fin n) (x : Fin n → ℕ) (hx : ∀ k, x k < D) : x k ≤ D - 1 :=
+    Nat.le_sub_one_of_lt (hx k)
+  refine ⟨fun k => (Nat.mul_le_mul_left _ (hle k x₂ h₂)).trans_lt hB, fun k => ?_⟩
+  refine lt_of_le_of_lt ?_ hB
+  simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, add_mul]
+  gcongr <;> exact hle k _ ‹_›
+
+/-- **Behrend's construction for mean relations.** Let `x₁, x₂, x₃` lie on the sphere
+`Behrend.sphere n D R`, and let `0 < α, α'` with `(α + α') (D - 1) < B`. If their base-`B`
+readings `eᵢ = Behrend.map B xᵢ` satisfy `(α + α') e₂ = α e₁ + α' e₃`, then `x₁ = x₂` and
+`x₂ = x₃`. -/
+theorem eq_and_eq_of_add_mul_map_eq {B n D R α α' : ℕ} {x₁ x₂ x₃ : Fin n → ℕ}
+    (hx₁ : x₁ ∈ Behrend.sphere n D R) (hx₂ : x₂ ∈ Behrend.sphere n D R)
+    (hx₃ : x₃ ∈ Behrend.sphere n D R) (hα : 0 < α) (hα' : 0 < α')
+    (hB : (α + α') * (D - 1) < B)
+    (h : (α + α') * Behrend.map B x₂ = α * Behrend.map B x₁ + α' * Behrend.map B x₃) :
+    x₁ = x₂ ∧ x₂ = x₃ := by
+  simp only [Behrend.sphere, mem_filter, Behrend.mem_box] at hx₁ hx₂ hx₃
+  obtain ⟨hu, hv⟩ := add_mul_digit_lt hB hx₁.1 hx₂.1 hx₃.1
+  have hk (k : Fin n) : (α + α') * x₂ k = α * x₁ k + α' * x₃ k := by
+    have huv := Behrend.map_injOn hu hv (by
+      simpa only [map_add, map_nsmul, smul_eq_mul] using h)
+    simpa only [Pi.add_apply, Pi.smul_apply, smul_eq_mul] using congrFun huv k
+  -- the sphere step `eq_of_mul_sub_eq` with `j = α`, `i = -α'`, centred at `x₂`
+  have h₂₁ := eq_of_mul_sub_eq (x₁ := fun k => (x₂ k : ℤ)) (x₂ := fun k => (x₁ k : ℤ))
+    (x₃ := fun k => (x₃ k : ℤ)) (j := α) (i := -α') (by exact_mod_cast hα.ne') (by omega)
+    (by exact_mod_cast hx₁.2.trans hx₂.2.symm) (by exact_mod_cast hx₃.2.trans hx₂.2.symm)
+    fun k => by
+      have hkz : (((α + α') * x₂ k : ℕ) : ℤ) = ((α * x₁ k + α' * x₃ k : ℕ) : ℤ) :=
+        congrArg _ (hk k)
+      push_cast at hkz
+      linear_combination -hkz
+  have h₁₂ : x₁ = x₂ := (funext fun k => by exact_mod_cast congrFun h₂₁ k).symm
+  refine ⟨h₁₂, funext fun k => Nat.eq_of_mul_eq_mul_left hα' ?_⟩
+  have := hk k
+  rw [h₁₂, add_mul] at this
+  omega
+
+/-- **Behrend sets with no mean relation modulo `o`.** If `L (D - 1) < B`, `D ≤ B` and
+`B ^ n ≤ o`, some `S ⊆ [0, o)` with `|S| ≥ D ^ n / (n D ^ 2)` has the following property: for
+`e₁, e₂, e₃ ∈ S` and `α, α' > 0` with `α + α' ≤ L`, the congruence
+`(α + α') e₂ ≡ α e₁ + α' e₃ (mod o)` forces `e₁ = e₂ = e₃`. -/
+theorem exists_eq_and_eq_of_add_mul_modEq_of_mul_lt {L B n D o : ℕ} (hB : L * (D - 1) < B)
+    (hD : D ≤ B) (ho : B ^ n ≤ o) :
+    ∃ S : Finset ℕ, (∀ e ∈ S, e < o) ∧ ((D ^ n : ℕ) / (n * D ^ 2 : ℕ) : ℝ) ≤ #S ∧
+      ∀ e₁ ∈ S, ∀ e₂ ∈ S, ∀ e₃ ∈ S, ∀ α α' : ℕ, 0 < α → 0 < α' → α + α' ≤ L →
+        (α + α') * e₂ ≡ α * e₁ + α' * e₃ [MOD o] → e₁ = e₂ ∧ e₂ = e₃ := by
+  obtain ⟨R, hR⟩ := Behrend.exists_large_sphere n D
+  have hbox (x) (hx : x ∈ Behrend.sphere n D R) : ∀ k, x k < D :=
+    Behrend.mem_box.1 (Behrend.sphere_subset_box hx)
+  have hlt (x) (hx : x ∈ Behrend.sphere n D R) : ∀ k, x k < B := fun k => (hbox x hx k).trans_le hD
+  have hinj : Set.InjOn (Behrend.map B) (Behrend.sphere n D R) :=
+    Behrend.map_injOn.mono fun x hx => hlt x hx
+  refine ⟨(Behrend.sphere n D R).image (Behrend.map B), ?_, by rwa [card_image_of_injOn hinj], ?_⟩
+  · simp only [mem_image, forall_exists_index, and_imp]
+    rintro _ x hx rfl
+    exact (Behrend.map_lt_pow (hlt x hx)).trans_le ho
+  simp only [mem_image, forall_exists_index, and_imp]
+  rintro _ x₁ hx₁ rfl _ x₂ hx₂ rfl _ x₃ hx₃ rfl α α' hα hα' hαL hmod
+  have hB' : (α + α') * (D - 1) < B := (Nat.mul_le_mul_right _ hαL).trans_lt hB
+  obtain ⟨hu, hv⟩ := add_mul_digit_lt hB' (hbox x₁ hx₁) (hbox x₂ hx₂) (hbox x₃ hx₃)
+  -- both sides of the congruence are base-`B` readings of digit vectors, hence below `B ^ n ≤ o`
+  have hu' := (Behrend.map_lt_pow hu).trans_le ho
+  have hv' := (Behrend.map_lt_pow hv).trans_le ho
+  simp only [map_add, map_nsmul, smul_eq_mul] at hu' hv'
+  have := eq_and_eq_of_add_mul_map_eq hx₁ hx₂ hx₃ hα hα' hB' (hmod.eq_of_lt_of_lt hu' hv')
+  exact ⟨congrArg _ this.1, congrArg _ this.2⟩
+
+/-- **Sets with no relation of bounded length modulo `o` (Behrend, Ruzsa).** Let `L > 0` and
+`(L H) ^ n ≤ o`. There is a set `S ⊆ [0, o)` of at least `H ^ n / (n H ^ 2)` natural numbers such
+that for `e₁, e₂, e₃ ∈ S` and `α, α' > 0` with `α + α' ≤ L`, the congruence
+`(α + α') e₂ ≡ α e₁ + α' e₃ (mod o)` forces `e₁ = e₂ = e₃`. This is
+`exists_eq_and_eq_of_add_mul_modEq_of_mul_lt` with the base `B = L H` and `D = H`. -/
+theorem exists_eq_and_eq_of_add_mul_modEq {n H L o : ℕ} (hL : 0 < L) (ho : (L * H) ^ n ≤ o) :
+    ∃ S : Finset ℕ, (∀ e ∈ S, e < o) ∧ ((H ^ n : ℕ) / (n * H ^ 2 : ℕ) : ℝ) ≤ #S ∧
+      ∀ e₁ ∈ S, ∀ e₂ ∈ S, ∀ e₃ ∈ S, ∀ α α' : ℕ, 0 < α → 0 < α' → α + α' ≤ L →
+        (α + α') * e₂ ≡ α * e₁ + α' * e₃ [MOD o] → e₁ = e₂ ∧ e₂ = e₃ := by
+  rcases H.eq_zero_or_pos with rfl | hH
+  · exact ⟨∅, by simp, by simp, by simp⟩
+  exact exists_eq_and_eq_of_add_mul_modEq_of_mul_lt
+    (Nat.mul_lt_mul_of_pos_left (Nat.sub_lt hH one_pos) hL) (Nat.le_mul_of_pos_left H hL) ho
 
 /-- The real numbers of the parameter choice: with `l = log L`, `m = log M` and
 `t = (m / l) ^ (1/2)`, one has `log 2 ≤ l`, `m = t ^ 2 l` and `(m l) ^ (1/2) = t l`. -/

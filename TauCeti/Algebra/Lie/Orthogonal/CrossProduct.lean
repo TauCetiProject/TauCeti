@@ -176,6 +176,40 @@ theorem lie_soThreeEquiv (u v : Fin 3 → R) :
     ⁅soThreeEquiv R u, soThreeEquiv R v⁆ = soThreeEquiv R (u ⨯₃ v) :=
   Subtype.ext (crossProductMatrix_cross u v).symm
 
+/-- The basis `ê₀, ê₁, ê₂` of `so(3)` satisfies `⁅ê₀, ê₁⁆ = ê₂`. -/
+theorem lie_soThreeEquiv_single_zero_one :
+    ⁅soThreeEquiv R (Pi.single 0 1), soThreeEquiv R (Pi.single 1 1)⁆ =
+      soThreeEquiv R (Pi.single 2 1) := by
+  rw [lie_soThreeEquiv]
+  congr 1
+  ext i
+  fin_cases i <;> simp [cross_apply]
+
+/-- The basis `ê₀, ê₁, ê₂` of `so(3)` satisfies `⁅ê₁, ê₂⁆ = ê₀`. -/
+theorem lie_soThreeEquiv_single_one_two :
+    ⁅soThreeEquiv R (Pi.single 1 1), soThreeEquiv R (Pi.single 2 1)⁆ =
+      soThreeEquiv R (Pi.single 0 1) := by
+  rw [lie_soThreeEquiv]
+  congr 1
+  ext i
+  fin_cases i <;> simp [cross_apply]
+
+/-- The basis `ê₀, ê₁, ê₂` of `so(3)` satisfies `⁅ê₂, ê₀⁆ = ê₁`. -/
+theorem lie_soThreeEquiv_single_two_zero :
+    ⁅soThreeEquiv R (Pi.single 2 1), soThreeEquiv R (Pi.single 0 1)⁆ =
+      soThreeEquiv R (Pi.single 1 1) := by
+  rw [lie_soThreeEquiv]
+  congr 1
+  ext i
+  fin_cases i <;> simp [cross_apply]
+
+/-- **`so(3)` is not abelian**: `⁅ê₁, ê₂⁆ = ê₀ ≠ 0`. -/
+theorem not_isLieAbelian_so_three : ¬IsLieAbelian (so (Fin 3) R) := fun _ ↦ by
+  have : Nontrivial R := nontrivial_of_ne 2 0 two_ne_zero
+  have h := lie_soThreeEquiv_single_one_two (R := R)
+  rw [trivial_lie_zero, eq_comm, (soThreeEquiv R).map_eq_zero_iff] at h
+  simpa using congrFun h 0
+
 /-- The orthogonal Lie algebra `so(3)` has dimension `3`. -/
 theorem finrank_so_three : finrank R (so (Fin 3) R) = 3 := by
   have : Nontrivial R := nontrivial_of_ne 2 0 two_ne_zero

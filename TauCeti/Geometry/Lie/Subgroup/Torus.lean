@@ -62,6 +62,8 @@ finite-dimensional real Lie group `G`:
 * `TauCeti.Lie.IsMaximalTorus.eq_lieSubalgebraOfSubgroup_of_isLieAbelian`: `Lie(T)` is a maximal
   abelian Lie subalgebra of `𝔤`.
 * `TauCeti.Lie.IsMaximalTorus.iInf_ker_ad_eq`: the centralizer of `Lie(T)` in `𝔤` is `Lie(T)`.
+* `TauCeti.Lie.IsMaximalTorus.center_le_lieSubalgebraOfSubgroup`: the centre of `𝔤` lies in
+  `Lie(T)`.
 
 ## References
 
@@ -414,5 +416,15 @@ theorem IsMaximalTorus.iInf_ker_ad_eq {T : Subgroup G} (hT : IsMaximalTorus T) :
   exact ⟨fun h ↦ hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero fun X hX ↦ by
       rw [← lie_skew, h X hX, neg_zero],
     fun hY X hX ↦ lie_eq_zero_of_mem_lieSubalgebraOfSubgroup hX hY⟩
+
+/-- **The centre of `𝔤` lies in the Lie algebra of every maximal torus.** A central left-invariant
+derivation commutes with `𝔱`, so it lies in `𝔱`. -/
+theorem IsMaximalTorus.center_le_lieSubalgebraOfSubgroup {T : Subgroup G} (hT : IsMaximalTorus T) :
+    (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule ≤
+      (lieSubalgebraOfSubgroup (I := I) T).toSubmodule := fun X hX ↦
+  hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero fun Y _ ↦ by
+    rw [LieSubmodule.mem_toSubmodule, ← LieAlgebra.self_module_ker_eq_center,
+      LieModule.mem_ker] at hX
+    exact hX Y
 
 end TauCeti.Lie

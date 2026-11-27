@@ -90,18 +90,24 @@ open Complex Real Filter Set Asymptotics
 
 namespace TauCeti
 
-/-- The modulus term: `0 ≤ log ‖σ + i t‖ - log t ≤ |σ| / t` for `t > 0`, since
-`t ≤ ‖σ + i t‖ ≤ t + |σ|`. -/
-private theorem abs_log_norm_sub_log_im_le {σ t : ℝ} (ht : 0 < t) :
+/-- The modulus term: `0 ≤ log ‖σ + i t‖ - log t ≤ (σ / t) ^ 2 / 2 ≤ |σ| / t` for
+`0 < t` and `|σ| ≤ t`. -/
+private theorem abs_log_norm_sub_log_im_le {σ t : ℝ} (ht : 0 < t) (hσt : |σ| ≤ t) :
     |Real.log ‖(σ : ℂ) + t * I‖ - Real.log t| ≤ |σ| / t := by
   set s : ℂ := σ + t * I
-  have hts : t ≤ ‖s‖ := by simpa [s, abs_of_pos ht] using abs_im_le_norm s
-  have hst : ‖s‖ ≤ |σ| + t := by simpa [s, abs_of_pos ht] using norm_le_abs_re_add_abs_im s
-  rw [abs_of_nonneg (sub_nonneg.2 (Real.log_le_log ht hts)),
-    ← Real.log_div (ht.trans_le hts).ne' ht.ne']
-  refine (Real.log_le_sub_one_of_pos (div_pos (ht.trans_le hts) ht)).trans ?_
-  rw [div_sub_one ht.ne']
-  exact div_le_div_of_nonneg_right (by linarith) ht.le
+  have hre : s.re = σ := by simp [s]
+  have him : s.im = t := by simp [s]
+  have h0 := Real.log_le_log (him ▸ ht) (im_le_norm s)
+  have h1 := (le_abs_self _).trans (Complex.abs_log_norm_sub_log_abs_im_le (z := s) (him ▸ ht.ne'))
+  rw [hre, him, abs_of_pos ht] at h1
+  rw [him] at h0
+  have hx : |σ / t| ≤ 1 := by
+    rw [abs_div, abs_of_pos ht]
+    exact div_le_one_of_le₀ hσt ht.le
+  rw [abs_of_nonneg (sub_nonneg.2 h0)]
+  calc Real.log ‖s‖ - Real.log t ≤ (σ / t) ^ 2 / 2 := h1
+    _ ≤ |σ / t| := by nlinarith [sq_abs (σ / t), abs_nonneg (σ / t)]
+    _ = |σ| / t := by rw [abs_div, abs_of_pos ht]
 
 /-- The angle term: `|t (arctan (σ / t) - σ / t)| ≤ σ ^ 2 / t` for `|σ| ≤ t`, from the cubic
 bound `|arctan x - x| ≤ |x| ^ 3` at `|x| ≤ 1`. -/
@@ -152,7 +158,7 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_pos {σ t : ℝ} (ht : 0 <
   -- the modulus term
   have hA : |(σ - 1 / 2) * (Real.log ‖s‖ - Real.log t)| ≤ |σ - 1 / 2| * |σ| / t := by
     rw [abs_mul, mul_div_assoc]
-    exact mul_le_mul_of_nonneg_left (abs_log_norm_sub_log_im_le ht) (abs_nonneg _)
+    exact mul_le_mul_of_nonneg_left (abs_log_norm_sub_log_im_le ht hσt) (abs_nonneg _)
   have hsplit : Real.log ‖Complex.Gamma s‖ -
       ((σ - 1 / 2) * Real.log t - π * t / 2 + Real.log (2 * π) / 2) =
       (Real.log ‖Complex.Gamma s‖ - ((σ - 1 / 2) * Real.log ‖s‖ - t * s.arg - σ +

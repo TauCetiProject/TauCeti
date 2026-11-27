@@ -58,11 +58,19 @@ the range of the Betti numbers.
 For instance, the Delzant quotient of the standard `n`-simplex, which is `ℂPⁿ`
 (`TauCeti.Toric.DelzantQuotient.simplexHomeomorph`), has total Betti number `n + 1`
 (`TauCeti.Toric.sum_bettiNumber_delzantQuotient_simplex`), and that of a Hirzebruch trapezoid,
-four (`TauCeti.Toric.sum_bettiNumber_delzantQuotient_hirzebruch`).
+four (`TauCeti.Toric.sum_bettiNumber_delzantQuotient_hirzebruch`). Chopping a vertex `v` off `Δ` at
+a small depth, the polytope operation of the toric symplectic blowup at the fixed point over `v`,
+replaces `v` by `n` vertices
+(`TauCeti.Toric.IsSmoothVertex.ncard_extremePoints_facetPolyhedron_cornerChop`), so
+the blowup raises the total Betti number by `n - 1`
+(`TauCeti.Toric.IsDelzant.eventually_sum_bettiNumber_delzantQuotient_cornerChop`); for instance
+`ℂPⁿ` blown up at a point has total Betti number `2 n`
+(`TauCeti.Toric.sum_bettiNumber_delzantQuotient_simplex_cornerChop`).
 
 The homology here is singular homology with coefficients in a division ring. The individual even
 Betti numbers, counted at each vertex by the edges along which a generic linear function
-increases, and the freeness and ring structure of the integral cohomology, are not proved here.
+decreases, are computed in `TauCeti.Geometry.Toric.Delzant.Quotient.Betti`; the freeness and ring
+structure of the integral cohomology are not proved here.
 
 ## Main results
 
@@ -76,9 +84,12 @@ increases, and the freeness and ring structure of the integral cohomology, are n
 * `TauCeti.Toric.IsDelzant.bettiNumber_delzantQuotient_eq_zero_of_odd`,
   `TauCeti.Toric.IsDelzant.sum_bettiNumber_delzantQuotient`: its odd Betti numbers vanish, and
   its Betti numbers add up to the number of vertices of `Δ`.
+* `TauCeti.Toric.IsDelzant.eventually_sum_bettiNumber_delzantQuotient_cornerChop`: a small toric
+  blowup at a fixed point raises the total Betti number by `n - 1`.
 * `TauCeti.Toric.sum_bettiNumber_delzantQuotient_simplex`,
-  `TauCeti.Toric.sum_bettiNumber_delzantQuotient_hirzebruch`: the total Betti numbers of `ℂPⁿ`
-  and of the Hirzebruch surfaces.
+  `TauCeti.Toric.sum_bettiNumber_delzantQuotient_hirzebruch`,
+  `TauCeti.Toric.sum_bettiNumber_delzantQuotient_simplex_cornerChop`: the total Betti numbers of
+  `ℂPⁿ`, of the Hirzebruch surfaces and of `ℂPⁿ` blown up at a point.
 
 ## References
 
@@ -292,6 +303,24 @@ theorem sum_bettiNumber_delzantQuotient :
       ((facetPolyhedron i u c).extremePoints ℝ).ncard :=
   ((simplyConnectedSpace_and_bettiNumber_delzantQuotient hΔ hi).2 k).2
 
+/-- **A toric blowup raises the total Betti number by `n - 1`.** Let `v` be a vertex of a Delzant
+polytope `Δ ⊆ V*` of dimension `n = dim V ≥ 2`, at which the facets indexed by `s` meet. For every
+sufficiently small depth `ε > 0`, the Delzant quotient of the corner chop of `Δ` at `v`, the toric
+symplectic blowup of `M_Δ` at the fixed point over `v`, has total Betti number that of `M_Δ` plus
+`n - 1`, for every division ring of coefficients. -/
+theorem eventually_sum_bettiNumber_delzantQuotient_cornerChop {v : StrongDual ℝ V}
+    (hv : v ∈ (facetPolyhedron i u c).extremePoints ℝ) {s : Finset ι}
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) (hV : 2 ≤ finrank ℝ V) :
+    ∀ᶠ ε in 𝓝[>] 0,
+      ∑ j ∈ Finset.range (2 * finrank ℝ V + 1), bettiNumber k
+          (DelzantQuotient i (cornerChopNormal u s) (cornerChopSupport c s ε)) j + 1 =
+        ∑ j ∈ Finset.range (2 * finrank ℝ V + 1), bettiNumber k (DelzantQuotient i u c) j +
+          finrank ℝ V := by
+  filter_upwards [hΔ.eventually_isDelzant_cornerChop hi hv hs hV,
+    (hΔ.isSmoothVertex v hv).eventually_ncard_extremePoints_facetPolyhedron_cornerChop hi hv hs]
+    with ε hε hcard
+  rw [hε.sum_bettiNumber_delzantQuotient hi k, hΔ.sum_bettiNumber_delzantQuotient hi k, hcard]
+
 end IsDelzant
 
 /-! ### Examples -/
@@ -319,5 +348,20 @@ theorem sum_bettiNumber_delzantQuotient_hirzebruch {m : ℤ} {a b : ℝ} (hb : 0
       4 := by
   simpa [ncard_extremePoints_facetPolyhedron_hirzebruch hb ha hab] using
     (isDelzant_hirzebruch hb ha hab).sum_bettiNumber_delzantQuotient (isIntegralLattice_intCast 2) k
+
+/-- **The total Betti number of `ℂPⁿ` blown up at a point is `2 n`.** For `n ≥ 2` and
+`0 < ε < a`, the Delzant quotient of the standard `n`-simplex of size `a` with the corner `0`
+chopped at depth `ε` has total Betti number `2 n`, the number of vertices of the chopped simplex:
+the blowup adds `n - 1` to the total Betti number `n + 1` of `ℂPⁿ`. -/
+theorem sum_bettiNumber_delzantQuotient_simplex_cornerChop {n : ℕ} (hn : 2 ≤ n) {a ε : ℝ}
+    (hε : 0 < ε) (hεa : ε < a) (k : Type) [DivisionRing k] :
+    ∑ j ∈ Finset.range (2 * n + 1), bettiNumber k (DelzantQuotient
+      ((Int.castAddHom ℝ).compLeft (Fin n))
+      (cornerChopNormal (simplexNormal (Fin n)) (Finset.univ.map .some))
+      (cornerChopSupport (simplexSupport a) (Finset.univ.map .some) ε)) j = 2 * n := by
+  have : NeZero n := ⟨by omega⟩
+  simpa [ncard_extremePoints_facetPolyhedron_simplex_cornerChop hε hεa] using
+    (isDelzant_simplex_cornerChop hn hε hεa).sum_bettiNumber_delzantQuotient
+      (isIntegralLattice_intCast n) k
 
 end TauCeti.Toric

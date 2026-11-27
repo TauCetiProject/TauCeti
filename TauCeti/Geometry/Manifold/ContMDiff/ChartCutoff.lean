@@ -27,6 +27,8 @@ space to a manifold.
 
 ## Main results
 
+* `ContDiff.mul_comp_extChartAt_symm`: a `C^n` function supported in the chart target, times the
+  coordinate expression of a `C^n` function, is `C^n`.
 * `ContDiffBump.contDiff_mul_comp_extChartAt_symm`: the cut-off coordinate expression is `C¹`.
 * `ContDiffBump.norm_fderiv_mul_comp_extChartAt_symm_le`: in the chart target its derivative is
   bounded by the derivative of the coordinate expression plus `G |u|`, where `G` bounds the
@@ -36,9 +38,13 @@ space to a manifold.
 * `OpenPartialHomeomorph.contMDiff_indicator_comp_extend`: for a chart `e` of the maximal atlas,
   a `C^n` function on the model space with compact support in the target of the extended chart,
   read in the chart and extended by zero outside the chart source, is `C^n`.
+* `OpenPartialHomeomorph.exists_contMDiff_eq_comp_prodMap`: the same through the product of two
+  charts, giving a compactly supported `C^n` function on a product of manifolds.
 * `TauCeti.Manifold.exists_contMDiff_comp_extChartAt_symm_eq`: a `C^n` function on the model
   space with compact support in the chart target is the coordinate expression of a compactly
-  supported `C^n` function on the manifold.
+  supported `C^n` function on the manifold, and
+  `TauCeti.Manifold.exists_contMDiff_comp_extChartAt_symm_comp_symm_eq`, the same for a function
+  read through a continuous linear equivalence with the model space.
 * `TauCeti.Manifold.exists_contMDiff_transplant`: a `C^n` nonnegative function on the model space
   supported in a compact subset of a coordinate ball transplants to a `C^n` nonnegative compactly
   supported function on the manifold supported in any prescribed set containing the chart
@@ -53,6 +59,29 @@ public section
 open Function Metric Set
 open scoped Manifold
 
+namespace ContDiff
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : WithTop ℕ∞} {c : M} {u : M → ℝ}
+
+/-- A `C^n` function on the model space supported in the chart target, times the coordinate
+expression of a `C^n` function, is a `C^n` function on the model space. -/
+theorem mul_comp_extChartAt_symm [I.Boundaryless] [IsManifold I n M] {ψ : E → ℝ}
+    (hψ : ContDiff ℝ n ψ) (hψt : tsupport ψ ⊆ (extChartAt I c).target)
+    (hu : ContMDiff I 𝓘(ℝ) n u) :
+    ContDiff ℝ n fun y ↦ ψ y * u ((extChartAt I c).symm y) := by
+  refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
+  by_cases hy : y ∈ (extChartAt I c).target
+  · exact hψ.contDiffAt.mul ((hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn
+      |>.contDiffAt ((isOpen_extChartAt_target c).mem_nhds hy))
+  · -- Off the chart target, `ψ` vanishes near `y`.
+    refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
+    filter_upwards [(isClosed_tsupport ψ).isOpen_compl.mem_nhds fun h ↦ hy (hψt h)] with z hz
+    rw [image_eq_zero_of_notMem_tsupport hz, zero_mul]
+
+end ContDiff
+
 namespace ContDiffBump
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
@@ -65,18 +94,8 @@ expression of a `C¹` function, is a `C¹` function on the model space. -/
 theorem contDiff_mul_comp_extChartAt_symm [I.Boundaryless] [IsManifold I 1 M]
     (hb : closedBall (extChartAt I c c) b.rOut ⊆ (extChartAt I c).target)
     (hu : ContMDiff I 𝓘(ℝ) 1 u) :
-    ContDiff ℝ 1 fun y ↦ b y * u ((extChartAt I c).symm y) := by
-  refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
-  by_cases hy : y ∈ (extChartAt I c).target
-  · exact b.contDiffAt.mul ((hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn
-      |>.contDiffAt ((isOpen_extChartAt_target c).mem_nhds hy))
-  · -- Off the chart target, the bump vanishes near `y`.
-    have hy' : y ∉ tsupport b := by
-      rw [b.tsupport_eq]
-      exact fun h ↦ hy (hb h)
-    refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
-    filter_upwards [(isClosed_tsupport b).isOpen_compl.mem_nhds hy'] with z hz
-    rw [image_eq_zero_of_notMem_tsupport hz, zero_mul]
+    ContDiff ℝ 1 fun y ↦ b y * u ((extChartAt I c).symm y) :=
+  b.contDiff.mul_comp_extChartAt_symm (b.tsupport_eq.trans_subset hb) hu
 
 /-- The derivative of the cut-off coordinate expression at a point of the chart target is bounded
 by the derivative of the coordinate expression plus `G |u|`, where `G` bounds the derivative of
@@ -145,6 +164,32 @@ theorem contMDiff_indicator_comp_extend (he : e ∈ IsManifold.maximalAtlas I n 
     (Filter.eventually_of_mem (e.open_source.mem_nhds hys) fun z hz ↦ indicator_of_mem hz _)
   exact hw.contMDiff.contMDiffAt.comp _ (e.contMDiffAt_extend he hys)
 
+omit [NormedSpace 𝕜 F] in
+/-- **Transplanting a function through a product chart.** For charts `e` of `M` and `e'` of `M'`
+in the maximal `C^n` atlases, and a `C^n` function `v` on the product of the model spaces with
+compact support in the product of the targets of the extended charts, there is a compactly
+supported `C^n` function `K` on `M × M'` equal to `v` read through `e` and `e'` on the product of
+the chart sources, and to `0` elsewhere. -/
+theorem exists_contMDiff_eq_comp_prodMap [NormedSpace 𝕜 F] {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] [T2Space M'] [IsManifold I n M]
+    [IsManifold I' n M'] {e' : OpenPartialHomeomorph M' H'}
+    (he : e ∈ IsManifold.maximalAtlas I n M) (he' : e' ∈ IsManifold.maximalAtlas I' n M')
+    {v : E × E' → F} (hv : ContDiff 𝕜 n v) (hvc : HasCompactSupport v)
+    (hvt : tsupport v ⊆ (e.extend I).target ×ˢ (e'.extend I').target) :
+    ∃ K : M × M' → F, ContMDiff (I.prod I') 𝓘(𝕜, F) n K ∧ HasCompactSupport K ∧
+      (∀ p ∈ e.source ×ˢ e'.source, K p = v (e.extend I p.1, e'.extend I' p.2)) ∧
+        ∀ p ∉ e.source ×ˢ e'.source, K p = 0 := by
+  -- `K` is `v` read through the product chart `e × e'` of the maximal atlas of `M × M'`.
+  have hEt : tsupport v ⊆ ((e.prod e').extend (I.prod I')).target := by
+    simpa [extend_prod] using hvt
+  refine ⟨(e.prod e').source.indicator (v ∘ (e.prod e').extend (I.prod I')),
+    contMDiff_indicator_comp_extend (IsManifold.mem_maximalAtlas_prod he he') hv hvc hEt,
+    (hvc.isCompact.image_of_continuousOn
+      ((e.prod e').continuousOn_extend_symm.mono hEt)).of_isClosed_subset (isClosed_tsupport _)
+      (tsupport_indicator_comp_extend_subset hvc hEt),
+    fun p hp ↦ by simp [hp], fun p hp ↦ indicator_of_notMem (by simpa using hp) _⟩
+
 end OpenPartialHomeomorph
 
 namespace TauCeti.Manifold
@@ -177,6 +222,28 @@ theorem exists_contMDiff_comp_extChartAt_symm_eq {n : WithTop ℕ∞} [IsManifol
   rw [indicator_of_mem (by
     simpa only [(chartAt H c).extend_source] using ((chartAt H c).extend I).map_target hy)]
   exact congrArg w (((chartAt H c).extend I).right_inv hy)
+
+/-- **Transplanting a function from a chart through a linear equivalence.** For a continuous
+linear equivalence `L` from the model space to `E'`, a `C^n` function `w` on `E'` with compact
+support which `L⁻¹` maps into the target of the extended chart at `c` is, read through `L⁻¹` and
+the inverse chart, the coordinate expression of a compactly supported `C^n` function `u` on `M`
+whose support lies in the chart preimage of the image of the support of `w` under `L⁻¹`. -/
+theorem exists_contMDiff_comp_extChartAt_symm_comp_symm_eq {n : WithTop ℕ∞} [IsManifold I n M]
+    {c : M} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] (L : E ≃L[𝕜] E')
+    {w : E' → F} (hw : ContDiff 𝕜 n w) (hwc : HasCompactSupport w)
+    (hwt : MapsTo L.symm (tsupport w) (extChartAt I c).target) :
+    ∃ u : M → F, ContMDiff I 𝓘(𝕜, F) n u ∧ HasCompactSupport u ∧
+      tsupport u ⊆ (extChartAt I c).symm '' (L.symm '' tsupport w) ∧
+      ∀ y, L.symm y ∈ (extChartAt I c).target → u ((extChartAt I c).symm (L.symm y)) = w y := by
+  -- Apply `exists_contMDiff_comp_extChartAt_symm_eq` to `w ∘ L`, supported in `L⁻¹ (tsupport w)`.
+  have hts : tsupport (w ∘ L) = L.symm '' tsupport w := by
+    rw [L.image_symm_eq_preimage]
+    exact tsupport_comp_eq_preimage w L.toHomeomorph
+  obtain ⟨u, hu, huc, hut, hu_eq⟩ := exists_contMDiff_comp_extChartAt_symm_eq (c := c)
+    (hw.comp L.contDiff) (hwc.comp_homeomorph L.toHomeomorph)
+    (hts ▸ mapsTo_iff_image_subset.1 hwt)
+  refine ⟨u, hu, huc, hts ▸ hut, fun y hy ↦ ?_⟩
+  rw [hu_eq _ hy, Function.comp_apply, L.apply_symm_apply]
 
 end TauCeti.Manifold
 
