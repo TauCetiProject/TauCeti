@@ -58,6 +58,8 @@ lengths of `μ` (`TauCeti.DualWeylModule.bideterminant_mem_dualWeylModule`).
 * `TauCeti.DualWeylModule.mvPolynomialMinor_mem_dualWeylModule`: minors on initial columns are
   members.
 * `TauCeti.DualWeylModule.bideterminant_mem_dualWeylModule`: bideterminants are members.
+* `TauCeti.DualWeylModule.rename_bideterminant`: bideterminants do not depend on the number of
+  columns of the matrix of variables.
 
 ## References
 
@@ -434,6 +436,20 @@ theorem map_bideterminant {S : Type*} [CommRing S] (φ : R →+* S) (μ : YoungD
     map φ (bideterminant R μ hμ T) = bideterminant S μ hμ T := by
   simp only [bideterminant_eq_prod_range _ μ hμ T le_rfl, map_prod, columnMinor_def,
     Matrix.map_mvPolynomialMinor]
+
+/-- **Bideterminants do not depend on the number of columns of the matrix of variables.** The
+bideterminant of a filling in the `N × k` matrix of variables, renamed along the first `k` columns
+of the `N × n` matrix, is the bideterminant in the `N × n` matrix. -/
+@[simp]
+theorem rename_bideterminant (μ : YoungDiagram) {k : ℕ} (hμ : μ.colLen 0 ≤ k) (hk : k ≤ n)
+    (T : ∀ i j : ℕ, (i, j) ∈ μ → Fin N) :
+    rename (Prod.map id (Fin.castLE hk)) (bideterminant R μ hμ T) =
+      bideterminant R μ (hμ.trans hk) T := by
+  simp only [bideterminant, map_prod, columnMinor_def, Matrix.mvPolynomialMinor_eq_det_submatrix,
+    AlgHom.map_det]
+  refine Finset.prod_congr rfl fun j _ => congrArg Matrix.det ?_
+  ext a b
+  simp [Matrix.mvPolynomialX_apply]
 
 end Minor
 
