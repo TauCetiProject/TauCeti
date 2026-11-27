@@ -8,8 +8,8 @@ module
 public import TauCeti.Probability.Distributions.Gaussian.IsoperimetricProfile
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 import TauCeti.Analysis.SpecialFunctions.Gaussian.DecimalBounds
-import TauCeti.Examples.Probability.Distributions.Gaussian.IntervalShift
 import TauCeti.Probability.Distributions.Gaussian.Basic
+import TauCeti.Probability.Distributions.Gaussian.DecimalBounds
 import TauCeti.Probability.Distributions.Gaussian.Quantile
 
 /-!
@@ -24,13 +24,15 @@ With `φ = gaussianPDFReal 0 1`, `Φ = cdf (gaussianReal 0 1)`, `Φ⁻¹` its qu
 
 Each value `v` is checked as `|x − v| < 5 · 10⁻⁷`, or `< 10⁻⁶` where stated. Quantiles are
 located by evaluating `Φ` at two decimal points around them, through partial sums of the
-alternating error-function series (`TauCeti.Examples.GaussianIntervalShift.cdf_bounds`); values of
-`φ` at an unknown point come from its values at decimal points of larger and smaller modulus
-(`TauCeti.Examples.GaussianIntervalShift.gaussianPDFReal_bounds`), `φ` being even and decreasing
-in `|x|`.
+alternating error-function series
+(`TauCeti.Probability.mul_sum_range_two_mul_le_cdf_gaussianReal_sub_half`,
+`TauCeti.Probability.cdf_gaussianReal_sub_half_le_mul_sum_range_two_mul_add_one`); values of `φ`
+at an unknown point come from its values at decimal points of larger and smaller modulus
+(`TauCeti.Probability.gaussianPDFReal_le_of_sq_le`,
+`TauCeti.Probability.gaussianPDFReal_zero_one_bounds`).
 -/
 
-open Finset ProbabilityTheory Real Set TauCeti.Probability TauCeti.Examples.GaussianIntervalShift
+open Finset ProbabilityTheory Real Set TauCeti.Probability
 
 public noncomputable section
 
@@ -42,7 +44,7 @@ private theorem le_cdf {r c : ℝ} (hr : 0 ≤ r) (hr6 : r ^ 2 ≤ 6)
     (hc : c ≤ 1 / 2 + r * 0.39894228 *
       ∑ i ∈ range (2 * 5), (-1) ^ i * (r ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1))) :
     c ≤ cdf (gaussianReal 0 1) r := by
-  have hlo := (cdf_bounds hr hr6).1
+  have hlo := mul_sum_range_two_mul_le_cdf_gaussianReal_sub_half hr hr6 5
   have h1 := inv_sqrt_two_mul_pi_gt_d8
   rw [div_eq_mul_inv _ √(2 * π)] at hlo
   generalize (√(2 * π))⁻¹ = s at hlo h1
@@ -55,17 +57,11 @@ private theorem cdf_le {r c : ℝ} (hr : 0 ≤ r) (hr6 : r ^ 2 ≤ 6)
     (hc : 1 / 2 + r * 0.39894229 * ∑ i ∈ range (2 * 5 + 1),
       (-1) ^ i * (r ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) ≤ c) :
     cdf (gaussianReal 0 1) r ≤ c := by
-  have hhi := (cdf_bounds hr hr6).2
+  have hhi := cdf_gaussianReal_sub_half_le_mul_sum_range_two_mul_add_one hr hr6 5
   have h2 := inv_sqrt_two_mul_pi_lt_d8
   rw [div_eq_mul_inv _ √(2 * π)] at hhi
   generalize (√(2 * π))⁻¹ = s at hhi h2
   nlinarith [mul_le_mul_of_nonneg_left h2.le (mul_nonneg hr hsum)]
-
-/-- `φ` is decreasing in `x²`. -/
-private theorem gaussianPDFReal_le_of_sq_le {x y : ℝ} (h : x ^ 2 ≤ y ^ 2) :
-    gaussianPDFReal 0 1 y ≤ gaussianPDFReal 0 1 x := by
-  rw [gaussianPDFReal_zero_one, gaussianPDFReal_zero_one]
-  gcongr
 
 /-- A quantile lies strictly between two points where `Φ` is below and above the level. -/
 private theorem quantile_mem_Ioo {u a b : ℝ} (hu : u ∈ Set.Ioo 0 1)
@@ -100,10 +96,12 @@ theorem abs_gaussianIsoperimetricProfile_one_third_sub_lt :
   rw [gaussianIsoperimetricProfile_of_mem_Ioo (by norm_num)]
   obtain ⟨h₁, h₂⟩ := quantile_one_third_mem
   set x := (gaussianReal 0 1).quantile (1 / 3)
-  have hlo := gaussianPDFReal_le_of_sq_le (x := x) (y := 0.4307275) (by nlinarith)
-  have hhi := gaussianPDFReal_le_of_sq_le (x := 0.4307265) (y := x) (by nlinarith)
-  have b₁ := (gaussianPDFReal_bounds (x := 0.4307275) (by norm_num)).1
-  have b₂ := (gaussianPDFReal_bounds (x := 0.4307265) (by norm_num)).2
+  have hlo := gaussianPDFReal_le_of_sq_le (μ := 0) (v := 1) (x := x) (y := 0.4307275)
+    (by simp only [sub_zero]; nlinarith)
+  have hhi := gaussianPDFReal_le_of_sq_le (μ := 0) (v := 1) (x := 0.4307265) (y := x)
+    (by simp only [sub_zero]; nlinarith)
+  have b₁ := (gaussianPDFReal_zero_one_bounds (x := 0.4307275) (by norm_num)).1
+  have b₂ := (gaussianPDFReal_zero_one_bounds (x := 0.4307265) (by norm_num)).2
   norm_num [sum_range_succ, Nat.factorial] at b₁ b₂
   rw [abs_sub_lt_iff]
   constructor <;> linarith
@@ -137,10 +135,12 @@ private theorem gaussianIsoperimetricProfile_three_tenths_mem :
   rw [gaussianIsoperimetricProfile_of_mem_Ioo (by norm_num)]
   obtain ⟨h₁, h₂⟩ := quantile_three_tenths_mem
   set x := (gaussianReal 0 1).quantile 0.3
-  have hlo := gaussianPDFReal_le_of_sq_le (x := x) (y := 0.5244006) (by nlinarith)
-  have hhi := gaussianPDFReal_le_of_sq_le (x := 0.5244004) (y := x) (by nlinarith)
-  have b₁ := (gaussianPDFReal_bounds (x := 0.5244006) (by norm_num)).1
-  have b₂ := (gaussianPDFReal_bounds (x := 0.5244004) (by norm_num)).2
+  have hlo := gaussianPDFReal_le_of_sq_le (μ := 0) (v := 1) (x := x) (y := 0.5244006)
+    (by simp only [sub_zero]; nlinarith)
+  have hhi := gaussianPDFReal_le_of_sq_le (μ := 0) (v := 1) (x := 0.5244004) (y := x)
+    (by simp only [sub_zero]; nlinarith)
+  have b₁ := (gaussianPDFReal_zero_one_bounds (x := 0.5244006) (by norm_num)).1
+  have b₂ := (gaussianPDFReal_zero_one_bounds (x := 0.5244004) (by norm_num)).2
   norm_num [sum_range_succ, Nat.factorial] at b₁ b₂
   constructor <;> linarith
 
