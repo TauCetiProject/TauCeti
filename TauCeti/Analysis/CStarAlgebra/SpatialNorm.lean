@@ -74,15 +74,17 @@ smallest C*-norm on `A ⊗[𝕜] B`; the subscript `min` is only the conventiona
   `NonUnitalStarSubalgebra.spatialNorm_eq_zero_iff`, `NonUnitalStarSubalgebra.spatialNorm_add_le`,
   `NonUnitalStarSubalgebra.spatialNorm_smul`, `NonUnitalStarSubalgebra.spatialNorm_star`,
   `NonUnitalStarSubalgebra.spatialNorm_mul_le`,
-  `NonUnitalStarSubalgebra.spatialNorm_star_mul_self` and
-  `NonUnitalStarSubalgebra.spatialNorm_tmul`.
+  `NonUnitalStarSubalgebra.spatialNorm_star_mul_self`,
+  `NonUnitalStarSubalgebra.spatialNorm_tmul` and the flip invariance
+  `NonUnitalStarSubalgebra.spatialNorm_comm`.
 * `NonUnitalStarSubalgebra.minTensor A B`: the spatial tensor product `A ⊗_min B`, with
   `NonUnitalStarSubalgebra.mem_minTensor_iff`, `NonUnitalStarSubalgebra.isClosed_minTensor`,
   `NonUnitalStarSubalgebra.minTensor_le` and `NonUnitalStarSubalgebra.mapLCompletion_mem_minTensor`.
 * `NonUnitalStarSubalgebra.toMinTensor A B`: the star homomorphism `A ⊗[𝕜] B → A ⊗_min B`, with
   `NonUnitalStarSubalgebra.norm_toMinTensor` and `NonUnitalStarSubalgebra.denseRange_toMinTensor`;
-  continuous linear maps out of `A ⊗_min B` are determined on pure tensors `a ⊗ₜ b`
-  (`NonUnitalStarSubalgebra.minTensor_continuousLinearMap_ext`).
+  continuous maps out of `A ⊗_min B` are determined on the algebraic tensor product
+  (`NonUnitalStarSubalgebra.minTensor_funext`), and continuous linear maps on pure tensors
+  `a ⊗ₜ b` (`NonUnitalStarSubalgebra.minTensor_continuousLinearMap_ext`).
 * `NonUnitalStarSubalgebra.tensorInclusion`, `NonUnitalStarSubalgebra.spatialNorm_tensorInclusion`,
   `NonUnitalStarSubalgebra.minTensor_mono`: functoriality for inclusions.
 
@@ -372,6 +374,14 @@ theorem spatialNorm_tmul (a : A) (b : B) : spatialNorm A B (a ⊗ₜ b) = ‖a�
   rw [spatialNorm_def, spatialTensorHom_tmul, norm_mapLCompletion, AddSubgroupClass.coe_norm,
     AddSubgroupClass.coe_norm]
 
+/-- **Flip invariance of the spatial norm**: `‖τ(x)‖_min = ‖x‖_min` for the flip
+`τ : A ⊗[𝕜] B ≃ B ⊗[𝕜] A`. -/
+@[simp]
+theorem spatialNorm_comm (x : A ⊗[𝕜] B) :
+    spatialNorm B A (TensorProduct.comm 𝕜 A B x) = spatialNorm A B x := by
+  rw [spatialNorm_def, spatialNorm_def, spatialTensorHom_apply, spatialTensorHom_apply,
+    TensorProduct.map_comm, norm_spatialTensorLinearMap_comm]
+
 /-! ### The spatial tensor product -/
 
 /-- The **spatial tensor product** `A ⊗_min B`: the norm closure in `B(E ⊗₂ F)` of the image of the
@@ -442,6 +452,14 @@ theorem norm_toMinTensor (x : A ⊗[𝕜] B) : ‖toMinTensor A B x‖ = spatial
 theorem denseRange_toMinTensor : DenseRange (toMinTensor A B) := by
   rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
   exact (coe_minTensor A B).subset
+
+variable {A B} in
+/-- Two continuous maps out of the spatial tensor product `A ⊗_min B` that agree on the dense
+algebraic tensor product agree. -/
+theorem minTensor_funext {G : Type*} [TopologicalSpace G] [T2Space G]
+    {f g : minTensor A B → G} (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ x, f (toMinTensor A B x) = g (toMinTensor A B x)) : f = g :=
+  (denseRange_toMinTensor A B).equalizer hf hg (funext h)
 
 variable {A B} in
 /-- Two continuous linear maps out of the spatial tensor product agree when they agree on pure

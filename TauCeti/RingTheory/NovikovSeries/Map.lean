@@ -83,6 +83,8 @@ coefficients in `V` with families of scalar Novikov series (`TauCeti.NovikovSeri
   group-ring pushforward.
 * `TauCeti.NovikovSeries.map_single`: the pushforward of the monomial `r e^g` is the monomial
   `ρ r e^(φ g)`.
+* `TauCeti.NovikovSeries.map_geometric`: the pushforward of the geometric series
+  `∑ₖ r e^(k h)` is the geometric series `∑ₖ ρ r e^(k φ h)`.
 * `TauCeti.NovikovSeries.coeff_map_eq_zero_of_lt` and
   `TauCeti.NovikovSeries.coeff_comap_eq_zero_of_lt`: the pushforward moves the period cutoff `C`
   to `c * C`, and the restriction moves `c * C` back to `C`.
@@ -163,6 +165,14 @@ theorem exists_period_rescale_comp {φ : H →+ H'} {φ' : H' →+ H''}
   obtain ⟨c, hc, hφ⟩ := hφ
   obtain ⟨c', hc', hφ'⟩ := hφ'
   exact ⟨c' * c, mul_pos hc' hc, fun h => by rw [AddMonoidHom.comp_apply, hφ', hφ, mul_assoc]⟩
+
+/-- A homomorphism that rescales periods by a positive factor sends elements of positive period to
+elements of positive period. -/
+theorem period_pos_of_rescale {φ : H →+ H'} (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) {h : H}
+    (hh : 0 < N h) : 0 < N' (φ h) := by
+  obtain ⟨c, hc, hcφ⟩ := hφ
+  rw [hcφ]
+  exact mul_pos hc hh
 
 /-- If an additive equivalence rescales periods by a positive factor `c`, its inverse rescales
 them by `c⁻¹`. -/
@@ -404,6 +414,41 @@ theorem map_single (g : H) (r : R) : map ρ φ hφ (single g r) = single (φ g) 
     ofFinsupp_single]
 
 end Map
+
+section Geometric
+
+variable [AddGroup H] [AddGroup H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddMonoid R] [AddCommMonoid S]
+  (ρ : R →+ S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+
+/-- **The pushforward of a geometric series is a geometric series.** Pushing `∑ₖ r e^(k h)` forward
+along `φ` gives `∑ₖ ρ r e^(k φ h)`: the period of `φ h` is positive, so the multiples of `h` lie
+in distinct fibres of `φ`. -/
+@[simp]
+theorem map_geometric {h : H} (hh : 0 < N h) (r : R) :
+    map ρ φ hφ (geometric N hh r) =
+      geometric N' (period_pos_of_rescale hφ hh) (ρ r) := by
+  have hh' := period_pos_of_rescale hφ hh
+  ext g'
+  rw [coeff_geometric]
+  by_cases hg' : g' ∈ range fun k : ℕ => k • φ h
+  · obtain ⟨k, rfl⟩ := hg'
+    rw [indicator_of_mem (mem_range_self k)]
+    dsimp only
+    rw [← map_nsmul, coeff_map_of_support_inter_subset_singleton ρ φ hφ _ ?_, coeff_geometric,
+      indicator_of_mem (mem_range_self k)]
+    rintro g ⟨hg, hφg⟩
+    rw [mem_support, coeff_geometric] at hg
+    obtain ⟨j, rfl⟩ := mem_of_indicator_ne_zero hg
+    simp only [mem_preimage, mem_singleton_iff, map_nsmul] at hφg
+    rw [mem_singleton_iff, (N'.nsmul_left_injective_of_map_ne_zero hh'.ne' hφg : j = k)]
+  · rw [indicator_of_notMem hg']
+    by_contra hne
+    obtain ⟨g, hg, rfl⟩ := support_map_subset ρ φ hφ _ (mem_support.2 hne)
+    rw [mem_support, coeff_geometric] at hg
+    obtain ⟨j, rfl⟩ := mem_of_indicator_ne_zero hg
+    exact hg' ⟨j, (map_nsmul φ j h).symm⟩
+
+end Geometric
 
 section Comap
 

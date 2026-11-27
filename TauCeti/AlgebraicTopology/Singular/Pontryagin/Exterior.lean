@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.AlgebraicTopology.Singular.Pontryagin.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+public import Mathlib.LinearAlgebra.Trace
 
 /-!
 # Exterior powers of the first homology of a commutative topological monoid
@@ -57,6 +58,9 @@ isomorphisms in every degree, the description of the homology of a torus as an e
 * `TopCat.surjective_pontryaginExteriorPower_of_comp_eq_id`,
   `TopCat.map_mem_range_pontryaginExteriorPower`: surjectivity of the exterior power map passes to
   retracts, and the image of a morphism of monoid objects lies in its range.
+* `TopCat.trace_singularHomologyFunctor_map_eq_trace_exteriorPower_map`: where the exterior power
+  map is bijective, an endomorphism acts on `Hₙ` with the trace of the exterior power of its action
+  on `H₁`.
 * `TopCat.bijective_pontryaginExteriorPower_of_isIso`: bijectivity of the exterior power map is
   invariant under isomorphisms of commutative monoid objects.
 * `TopCat.pontryaginMul_mem_range_pontryaginExteriorPower`: the range of the exterior power map is
@@ -451,6 +455,23 @@ theorem bijective_pontryaginExteriorPower_of_isIso {G' : TopCat.{u}} [MonObj G']
     LinearMap.coe_comp]
   -- `f` induces an isomorphism on first homology, hence on its exterior powers
   exact h.comp (exteriorPower.map_bijective (hf 1))
+
+/-- **Traces on the homology of an exterior algebra.** If the exterior power map
+`⋀ⁿ H₁(G; k) → Hₙ(G; k)` of a commutative monoid object `G` is bijective, an endomorphism `f` of
+`G` acts on `Hₙ(G; k)` with the trace of the `n`-th exterior power of its action on `H₁(G; k)`. -/
+theorem trace_singularHomologyFunctor_map_eq_trace_exteriorPower_map (f : G ⟶ G) [IsMonHom f]
+    {n : ℕ} (h : Function.Bijective (pontryaginExteriorPower k G n)) :
+    LinearMap.trace k _ (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).map f).hom =
+      LinearMap.trace k _ (exteriorPower.map n
+        (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).map f).hom) := by
+  let e := LinearEquiv.ofBijective _ h
+  -- by naturality, `f_*` on `Hₙ` is `⋀ⁿ f_*` conjugated by the exterior power map
+  have hf : (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).map f).hom =
+      e.conj (exteriorPower.map n
+        (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).map f).hom) := by
+    rw [LinearEquiv.conj_apply, ← LinearEquiv.comp_toLinearMap_symm_eq]
+    exact pontryaginExteriorPower_naturality f n
+  rw [hf, LinearMap.trace_conj']
 
 /-- The image of a class under a morphism of commutative monoid objects whose source has a
 surjective exterior power map `⋀ⁿ H₁ → Hₙ` lies in the image of the exterior power map of the

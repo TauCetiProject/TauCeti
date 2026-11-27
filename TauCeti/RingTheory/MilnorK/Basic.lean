@@ -222,6 +222,11 @@ theorem neg_ofUnit_mul_ofUnit_neg_one (a : Rˣ) :
     -(ofUnit a * ofUnit (-1)) = ofUnit a * ofUnit (-1) := by
   rw [← mul_neg, neg_ofUnit_neg_one]
 
+/-- `{-1}` has order dividing two, so `m {-1}` depends only on the parity of `m`. -/
+theorem zsmul_ofUnit_neg_one_eq_of_even_sub {m n : ℤ} (h : Even (m - n)) :
+    m • ofUnit (-1 : Rˣ) = n • ofUnit (-1) := by
+  rw [← ofUnit_zpow, ← ofUnit_zpow, ← sub_add_cancel m n, zpow_add, h.neg_one_zpow, one_mul]
+
 /-- The **Steinberg relation**: `{a} {b} = 0` whenever the units `a` and `b` add up to one. -/
 theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
     ofUnit a * ofUnit b = 0 := by
