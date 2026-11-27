@@ -29,6 +29,9 @@ hypotheses `a • m = σ a • m` rather than by `Module.compHom`, so these also
 * `LinearMap.map_eq_zero_of_mem_ker_smul_top`: a map semilinear along `σ` kills `ker σ • P`.
 * `LinearMap.CompatibleSMul.of_compHom`: `S`-linear maps between modules on which `R` acts through
   `σ` commute with the action of `R`.
+* `DistribSMul.toLinearMap_compHom`: under the module structure `Module.compHom M ρ` given by a
+  representation `ρ : R →+* End_S(M)`, whose action commutes with that of `S`
+  (`SMul.comp.smulCommClass`), `a ∈ R` acts as `ρ a`.
 -/
 
 public section
@@ -67,3 +70,18 @@ theorem CompatibleSMul.of_compHom (hM : ∀ (a : R) (m : M), a • m = σ a • 
   ⟨fun g a m ↦ by rw [hM, hN, g.map_smul]⟩
 
 end LinearMap
+
+namespace DistribSMul
+
+variable {R S M : Type*} [Semiring R] [Semiring S] [AddCommMonoid M] [Module S M]
+
+/-- Under the `R`-module structure `Module.compHom M ρ` given by a representation
+`ρ : R →+* End_S(M)`, `a ∈ R` acts on `M` as `ρ a`. -/
+theorem toLinearMap_compHom (ρ : R →+* Module.End S M) (a : R) :
+    letI := Module.compHom M ρ
+    haveI := SMul.comp.smulCommClass (α := M) (β := S) ρ
+    DistribSMul.toLinearMap S M a = ρ a :=
+  -- `Module.compHom` defines `a • m` as `ρ a m`.
+  rfl
+
+end DistribSMul

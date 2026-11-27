@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Unramified.Field
+public import TauCeti.Algebra.Module.LinearMap.CompHom
 public import TauCeti.LinearAlgebra.Determinant.SMul
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Representation
 
@@ -20,8 +21,9 @@ unique up to isomorphism (`TauCeti.CMType.exists_trace_eq_typeTrace`,
 `TauCeti.CMType.exists_linearEquiv_of_trace_eq_typeTrace`). The actions of `E` and `k` on `V`
 commute, so `k` acts on `V` by `E`-linear maps, and the **reflex norm**
 `N_{k,Φ}(a) = det_E(a | V)` is a multiplicative map `k → E` (Milne, *Complex Multiplication*,
-p.16). Milne defines `N_{k,Φ} : (k ⊗_ℚ R)ˣ → (E ⊗_ℚ R)ˣ` for every `ℚ`-algebra `R`; this file
-treats `R = ℚ`.
+p.16). Milne defines `N_{k,Φ} : (k ⊗_ℚ R)ˣ → (E ⊗_ℚ R)ˣ` for a number field `k` and every
+`ℚ`-algebra `R`; this file treats `R = ℚ`. The definition accepts any `k`, but if `[k : ℚ]` is
+infinite then `V` is not finitely generated over `E` and the determinant is the junk value `1`.
 
 * `TauCeti.CMType.smulDet_eq_smulDet_of_trace_eq`: any two finite-dimensional representations
   with the type trace have the same determinant of the scalar action `TauCeti.smulDet`.
@@ -64,7 +66,11 @@ theorem smulDet_eq_smulDet_of_trace_eq (Φ : CMType E)
 /-- **The reflex norm** `N_{k,Φ} : k → E` of a CM type `Φ` on `E`, for a subfield `k ⊆ ℂ`
 containing the reflex field: `a ↦ det_E(a | V)` on the representation `V` of `E` over `k`
 with the type trace chosen by `TauCeti.CMType.exists_trace_eq_typeTrace`. It is the determinant
-on every such representation (`TauCeti.CMType.reflexNorm_eq_smulDet`). -/
+on every such representation (`TauCeti.CMType.reflexNorm_eq_smulDet`).
+
+Milne defines `N_{k,Φ}` for a number field `k`. If `k` has infinite degree over `ℚ`, then `V` is not
+finitely generated over `E`, so `LinearMap.det` and hence `reflexNorm Φ hk` take the junk value
+`1`. -/
 noncomputable def reflexNorm (Φ : CMType E) (hk : Φ.reflexField ≤ k) : k →* E :=
   let n := (Φ.exists_trace_eq_typeTrace hk).choose
   let ρ : E →+* Module.End k (Fin n → k) := (Φ.exists_trace_eq_typeTrace hk).choose_spec.choose
@@ -88,7 +94,7 @@ theorem reflexNorm_eq_smulDet (Φ : CMType E) (hk : Φ.reflexField ≤ k)
   let := Module.compHom (Fin n → k) ρ
   have := SMul.comp.smulCommClass (α := Fin n → k) (β := k) ρ
   refine smulDet_eq_smulDet_of_trace_eq Φ (fun c ↦ ?_) hV
-  rw [TauCeti.toLinearMap_compHom]
+  rw [DistribSMul.toLinearMap_compHom]
   exact hρ c
 
 end FormallyUnramified
@@ -107,8 +113,9 @@ representation with the type trace is `E*` itself, on which `E` acts through `φ
 theorem reflexNorm_apply_of_coe_eq_singleton {Φ : CMType E} {φ : E →+* ℂ}
     (hΦ : (Φ : Set (E →+* ℂ)) = {φ}) {a : Φ.reflexField} {c : E} (ha : (a : ℂ) = φ c) :
     Φ.reflexNorm le_rfl a = c := by
-  have hmem (c : E) : φ c ∈ Φ.reflexField :=
-    typeTrace_eq_of_coe_eq_singleton hΦ c ▸ Φ.typeTrace_mem_reflexField c
+  -- `E* = φ(E)`.
+  have hrange := reflexField_eq_fieldRange_of_coe_eq_singleton hΦ
+  have hmem (c : E) : φ c ∈ Φ.reflexField := hrange ▸ ⟨c, rfl⟩
   -- `E` acts on `E*` through `φ`.
   let ψ : E →+* Φ.reflexField := φ.codRestrict Φ.reflexField.toSubalgebra hmem
   let := Module.compHom Φ.reflexField ψ
@@ -116,13 +123,10 @@ theorem reflexNorm_apply_of_coe_eq_singleton {Φ : CMType E} {φ : E →+* ℂ}
   have hψ (c : E) (v : Φ.reflexField) : c • v = ψ c * v := rfl
   have : SMulCommClass E Φ.reflexField Φ.reflexField :=
     ⟨fun c a v ↦ by simp only [hψ, smul_eq_mul, mul_left_comm (ψ c) a v]⟩
-  -- `E* = φ(E)`, so `E*` is one-dimensional over `E`.
-  have hrange : Φ.reflexField ≤ φ.toRatAlgHom.fieldRange := reflexField_le_iff.mpr fun c ↦ by
-    rw [typeTrace_eq_of_coe_eq_singleton hΦ c]
-    exact ⟨c, rfl⟩
+  -- Since `E* = φ(E)`, `E*` is one-dimensional over `E`.
   have hdim : Module.finrank E Φ.reflexField = 1 := by
     refine (finrank_eq_one_iff_of_ne_zero' (1 : Φ.reflexField) one_ne_zero).mpr fun w ↦ ?_
-    obtain ⟨c', hc'⟩ := hrange w.prop
+    obtain ⟨c', hc'⟩ := hrange.le w.prop
     refine ⟨c', Subtype.ext ?_⟩
     rw [hψ, mul_one]
     exact hc'

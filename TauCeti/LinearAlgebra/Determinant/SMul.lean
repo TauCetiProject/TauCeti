@@ -23,29 +23,11 @@ Let `V` be a module over a commutative ring `E` with a commuting action of a sem
 * `TauCeti.smulDet_congr`: it depends only on the isomorphism class of `V`.
 * `TauCeti.smulDet_eq_pow_of_smul_eq`: if `a` acts on a free module as `c ∈ E`, then
   `det_E(a | V) = c ^ dim_E V`.
-* `TauCeti.toLinearMap_compHom`: a representation `ρ : E →+* End_k(M)` makes `M` an `E`-module
-  (`Module.compHom M ρ`), whose action commutes with that of `k` (`SMul.comp.smulCommClass`) and
-  on which `c ∈ E` acts as `ρ c`. This is the form `smulDet` consumes.
 -/
 
 public section
 
 namespace TauCeti
-
-section CompHom
-
-variable {E k M : Type*} [Semiring E] [Semiring k] [AddCommMonoid M] [Module k M]
-
-/-- Under the `E`-module structure `Module.compHom M ρ` given by a representation
-`ρ : E →+* End_k(M)`, `c ∈ E` acts on `M` as `ρ c`. -/
-theorem toLinearMap_compHom (ρ : E →+* Module.End k M) (c : E) :
-    letI := Module.compHom M ρ
-    haveI := SMul.comp.smulCommClass (α := M) (β := k) ρ
-    DistribSMul.toLinearMap k M c = ρ c :=
-  -- `Module.compHom` defines `c • v` as `ρ c v`.
-  rfl
-
-end CompHom
 
 variable (E : Type*) [CommRing E] (k : Type*) [Semiring k] (V : Type*) [AddCommGroup V]
   [Module E V] [Module k V] [SMulCommClass E k V]
