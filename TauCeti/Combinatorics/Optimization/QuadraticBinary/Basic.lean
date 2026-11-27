@@ -345,9 +345,10 @@ private theorem qubo_indicator_pair [DecidableEq ι] (Q : Matrix ι ι ℝ) {i j
       simp [h1, h2]
   simp_rw [hbit]
   have hsum (f : ι → ℝ) : (∑ k, if k = i ∨ k = j then f k else 0) = f i + f j := by
-    rw [← Finset.sum_filter,
-      show Finset.univ.filter (fun k ↦ k = i ∨ k = j) = {i, j} by ext k; simp]
-    exact Finset.sum_pair hij
+    have hfilt : Finset.univ.filter (fun k ↦ k = i ∨ k = j) = {i, j} := by
+      ext k
+      simp
+    rw [← Finset.sum_filter, hfilt, Finset.sum_pair hij]
   have hinner (a : ι) :
       (∑ b, Q a b * (if a = i ∨ a = j then (1 : ℝ) else 0) * if b = i ∨ b = j then 1 else 0) =
         if a = i ∨ a = j then Q a i + Q a j else 0 := by
@@ -548,8 +549,7 @@ model with coupling `(1 / 4 : ℝ) • Q` and external field `fun i ↦ -(∑ j,
 theorem isMinOn_qubo_iff_isMinOn_ising (Q : Matrix ι ι ℝ) (x : ι → Bool) :
     IsMinOn (qubo Q) Set.univ x ↔
       IsMinOn (ising ((1 / 4 : ℝ) • Q) fun i ↦ -(∑ j, (Q i j + Q j i)) / 4) Set.univ x := by
-  rw [show qubo Q = fun y ↦ ising ((1 / 4 : ℝ) • Q) (fun i ↦ -(∑ j, (Q i j + Q j i)) / 4) y +
-      (∑ i, ∑ j, Q i j) / 4 from funext (qubo_eq_ising Q), isMinOn_add_const]
+  rw [funext (qubo_eq_ising Q), isMinOn_add_const]
 
 /-- Global minimizers of `ising J h` are the same as global minimizers of its equivalent QUBO
 objective `(4 : ℝ) • J - Matrix.diagonal fun i ↦ 2 * (∑ j, (J i j + J j i) + h i)`. -/
@@ -558,9 +558,7 @@ theorem isMinOn_ising_iff_isMinOn_qubo [DecidableEq ι] (J : Matrix ι ι ℝ) (
     IsMinOn (ising J h) Set.univ x ↔
       IsMinOn (qubo ((4 : ℝ) • J - Matrix.diagonal fun i ↦ 2 * (∑ j, (J i j + J j i) + h i)))
         Set.univ x := by
-  rw [show ising J h = fun y ↦
-      qubo ((4 : ℝ) • J - Matrix.diagonal fun i ↦ 2 * (∑ j, (J i j + J j i) + h i)) y +
-        (∑ i, ∑ j, J i j + ∑ i, h i) from funext (ising_eq_qubo J h), isMinOn_add_const]
+  rw [funext (ising_eq_qubo J h), isMinOn_add_const]
 
 /-- The global infimum of `qubo Q` equals the global infimum of its equivalent Ising model plus
 the additive constant `(∑ i, ∑ j, Q i j) / 4`. -/
@@ -595,6 +593,49 @@ theorem pseudoBoolCoeff_def [DecidableEq ι] (f : (ι → Bool) → ℝ) (S : Fi
     pseudoBoolCoeff f S =
       ∑ T ∈ S.powerset, (-1 : ℝ) ^ (S.card - T.card) * f fun i ↦ decide (i ∈ T) :=
   (rfl)
+
+@[simp]
+theorem pseudoBoolCoeff_empty [DecidableEq ι] (f : (ι → Bool) → ℝ) :
+    pseudoBoolCoeff f ∅ = f fun _ ↦ false := by
+  simp [pseudoBoolCoeff_def]
+
+@[simp]
+theorem pseudoBoolCoeff_singleton [DecidableEq ι] (f : (ι → Bool) → ℝ) (i : ι) :
+    pseudoBoolCoeff f {i} = f (fun j ↦ decide (j = i)) - f fun _ ↦ false := by
+  have hpow : ({i} : Finset ι).powerset = {∅, {i}} := by
+    ext T
+    simp [Finset.subset_singleton_iff]
+  rw [pseudoBoolCoeff_def, hpow, Finset.sum_pair (Finset.singleton_nonempty i).ne_empty.symm]
+  simp only [Finset.card_empty, Finset.card_singleton, tsub_zero, pow_one, neg_one_mul,
+    tsub_self, pow_zero, one_mul, Finset.notMem_empty, decide_false, Finset.mem_singleton]
+  ring
+
+@[simp]
+theorem pseudoBoolCoeff_zero [DecidableEq ι] (S : Finset ι) :
+    pseudoBoolCoeff (0 : (ι → Bool) → ℝ) S = 0 := by
+  simp [pseudoBoolCoeff_def]
+
+@[simp]
+theorem pseudoBoolCoeff_add [DecidableEq ι] (f g : (ι → Bool) → ℝ) (S : Finset ι) :
+    pseudoBoolCoeff (f + g) S = pseudoBoolCoeff f S + pseudoBoolCoeff g S := by
+  simp only [pseudoBoolCoeff_def, Pi.add_apply, mul_add, Finset.sum_add_distrib]
+
+@[simp]
+theorem pseudoBoolCoeff_sub [DecidableEq ι] (f g : (ι → Bool) → ℝ) (S : Finset ι) :
+    pseudoBoolCoeff (f - g) S = pseudoBoolCoeff f S - pseudoBoolCoeff g S := by
+  simp only [pseudoBoolCoeff_def, Pi.sub_apply, mul_sub, Finset.sum_sub_distrib]
+
+@[simp]
+theorem pseudoBoolCoeff_neg [DecidableEq ι] (f : (ι → Bool) → ℝ) (S : Finset ι) :
+    pseudoBoolCoeff (-f) S = -pseudoBoolCoeff f S := by
+  simp only [pseudoBoolCoeff_def, Pi.neg_apply, mul_neg, Finset.sum_neg_distrib]
+
+@[simp]
+theorem pseudoBoolCoeff_smul [DecidableEq ι] (c : ℝ) (f : (ι → Bool) → ℝ) (S : Finset ι) :
+    pseudoBoolCoeff (c • f) S = c * pseudoBoolCoeff f S := by
+  simp only [pseudoBoolCoeff_def, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun T _ ↦ ?_
+  ring
 
 /-- A product of `{0, 1}` bits over a finset `S` equals `1` if every variable in `S` is `true`,
 and `0` otherwise. -/

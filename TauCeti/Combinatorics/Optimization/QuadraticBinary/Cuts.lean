@@ -30,8 +30,8 @@ combinatorial reductions:
 * **Cut weights and QUBO-to-Max-Cut** (`TauCeti.cutWeight`): defines the cut weight
   `∑ i, ∑ j, w i j * bit x i * (1 - bit x j)` of a real weight matrix `w`, shows that for a simple
   graph `G`, `cutWeight (G.adjMatrix ℝ) x` counts the edges between `{i | x i = true}` and its
-  complement (`TauCeti.cutWeight_adjMatrix_eq_card_between`), relates symmetric cuts to field-free
-  Ising energies (`TauCeti.cutWeight_eq_ising`), relates arbitrary cuts to QUBOs
+  complement (`SimpleGraph.cutWeight_adjMatrix_eq_card_between`), relates symmetric cuts to
+  field-free Ising energies (`TauCeti.cutWeight_eq_ising`), relates arbitrary cuts to QUBOs
   (`TauCeti.cutWeight_eq_neg_qubo`), and reduces every QUBO on `ι` to the negative of a symmetric
   cut weight on `Option ι` with no additive constant (`TauCeti.qubo_eq_neg_cutWeight`).
 
@@ -45,7 +45,7 @@ combinatorial reductions:
 
 * `TauCeti.ising_ancilla`, `TauCeti.xor_option_surjective`, `TauCeti.card_filter_xor_option_eq`,
   `TauCeti.isMinOn_ising_ancilla_iff`: ancilla elimination of external fields.
-* `TauCeti.cutWeight_adjMatrix_eq_card_between`, `TauCeti.cutWeight_eq_ising`,
+* `SimpleGraph.cutWeight_adjMatrix_eq_card_between`, `TauCeti.cutWeight_eq_ising`,
   `TauCeti.cutWeight_eq_neg_qubo`: graph cut counting and cut–Ising–QUBO identities.
 * `TauCeti.qubo_eq_neg_cutWeight`, `TauCeti.iInf_qubo_eq_neg_iSup_cutWeight`,
   `TauCeti.isMinOn_qubo_iff_isMaxOn_cutWeight`: reduction from QUBO minimization to Max-Cut.
@@ -205,8 +205,7 @@ theorem iInf_ising_ancilla [Fintype ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) 
 theorem isMinOn_ising_ancilla_iff [Fintype ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) (y : Option ι → Bool) :
     IsMinOn (ising (isingAncillaMatrix J h) 0) Set.univ y ↔
       IsMinOn (ising J h) Set.univ fun i ↦ xor (y (some i)) (y none) := by
-  rw [show ising (isingAncillaMatrix J h) 0 =
-      ising J h ∘ fun z i ↦ xor (z (some i)) (z none) from funext (ising_ancilla J h)]
+  rw [funext (ising_ancilla J h)]
   exact (xor_option_surjective ι).isMinOn_univ_comp_iff (ising J h) y
 
 end Ancilla
@@ -274,21 +273,33 @@ theorem cutWeight_not_of_isSymm {w : Matrix ι ι ℝ} (hw : w.IsSymm) (x : ι �
     cutWeight w (fun i ↦ !x i) = cutWeight w x := by
   rw [cutWeight_not, hw.eq]
 
+end Cuts
+
+end TauCeti
+
+namespace SimpleGraph
+
+section
+
+variable {ι : Type*} [Fintype ι]
+
 private theorem cutWeight_adjMatrix_eq_sum_card_filter (G : SimpleGraph ι) [DecidableRel G.Adj]
     [DecidableEq ι] (x : ι → Bool) :
-    cutWeight (G.adjMatrix ℝ) x =
+    TauCeti.cutWeight (G.adjMatrix ℝ) x =
       ∑ v ∈ Finset.univ.filter (fun i ↦ x i = true),
         ((#{w ∈ (Finset.univ.filter fun i ↦ x i = true)ᶜ | G.Adj v w} : ℕ) : ℝ) := by
   set s : Finset ι := Finset.univ.filter fun i ↦ x i = true
-  simp only [cutWeight_def, SimpleGraph.adjMatrix_apply, Finset.card_filter]
+  simp only [TauCeti.cutWeight_def, adjMatrix_apply, Finset.card_filter]
   have houter (v : ι) :
-      (∑ j : ι, (if G.Adj v j then (1 : ℝ) else 0) * bit x v * (1 - bit x j)) =
+      (∑ j : ι, (if G.Adj v j then (1 : ℝ) else 0) * TauCeti.bit x v * (1 - TauCeti.bit x j)) =
         if v ∈ s then ∑ w ∈ sᶜ, if G.Adj v w then (1 : ℝ) else 0 else 0 := by
     by_cases hv : x v = true
     · have hvs : v ∈ s := Finset.mem_filter.mpr ⟨Finset.mem_univ _, hv⟩
       simp only [hvs, ↓reduceIte]
       rw [← Finset.sum_add_sum_compl s]
-      have hs0 : ∑ j ∈ s, (if G.Adj v j then (1 : ℝ) else 0) * bit x v * (1 - bit x j) = 0 :=
+      have hs0 :
+          ∑ j ∈ s, (if G.Adj v j then (1 : ℝ) else 0) * TauCeti.bit x v * (1 - TauCeti.bit x j) =
+            0 :=
         Finset.sum_eq_zero fun j hj ↦ by
           have hjtrue : x j = true := (Finset.mem_filter.mp hj).2
           simp [hjtrue]
@@ -306,24 +317,34 @@ private theorem cutWeight_adjMatrix_eq_sum_card_filter (G : SimpleGraph ι) [Dec
   refine Finset.sum_congr rfl fun v _ ↦ ?_
   simp only [Nat.cast_sum, Nat.cast_one]
 
-/-- For a simple graph `G`, `cutWeight (G.adjMatrix ℝ) x` counts the edges of `G` with one endpoint
-where `x` is `true` and one endpoint where `x` is `false`. -/
+/-- For a simple graph `G`, `TauCeti.cutWeight (G.adjMatrix ℝ) x` counts the edges of `G` with one
+endpoint where `x` is `true` and one endpoint where `x` is `false`. -/
 theorem cutWeight_adjMatrix_eq_card_between (G : SimpleGraph ι) [DecidableRel G.Adj]
     (x : ι → Bool) :
-    cutWeight (G.adjMatrix ℝ) x =
+    TauCeti.cutWeight (G.adjMatrix ℝ) x =
       ((G.between {i | x i = true} {i | x i = true}ᶜ).edgeFinset.card : ℝ) := by
   classical
   let s : Finset ι := Finset.univ.filter fun i ↦ x i = true
   have hs : (s : Set ι) = {i | x i = true} := by ext i; simp [s]
   have hcard :
       #(G.between (s : Set ι) (s : Set ι)ᶜ).edgeFinset = ∑ v ∈ s, #{w ∈ sᶜ | G.Adj v w} :=
-    SimpleGraph.card_edgeFinset_between_compl G s
+    G.card_edgeFinset_between_compl s
   have hB :
       (G.between (s : Set ι) (s : Set ι)ᶜ).edgeFinset =
         (G.between {i | x i = true} {i | x i = true}ᶜ).edgeFinset := by
     ext e
     simp [hs]
   rw [cutWeight_adjMatrix_eq_sum_card_filter, ← Nat.cast_sum, ← hcard, hB]
+
+end
+
+end SimpleGraph
+
+namespace TauCeti
+
+section Cuts
+
+variable {ι : Type*} [Fintype ι]
 
 /-- For symmetric weights `w`, the cut weight is an explicit affine shift of the field-free Ising
 energy with coupling matrix `(1 / 4) • w`. -/
@@ -464,10 +485,9 @@ theorem iInf_qubo_eq_neg_iSup_cutWeight (Q : Matrix ι ι ℝ) :
 theorem isMinOn_qubo_iff_isMaxOn_cutWeight (Q : Matrix ι ι ℝ) (y : Option ι → Bool) :
     IsMinOn (qubo Q) Set.univ (fun i ↦ xor (y (some i)) (y none)) ↔
       IsMaxOn (cutWeight (quboCutMatrix Q)) Set.univ y := by
-  rw [← (xor_option_surjective ι).isMinOn_univ_comp_iff (qubo Q) y,
-    show qubo Q ∘ (fun z i ↦ xor (z (some i)) (z none)) =
-      fun z ↦ -cutWeight (quboCutMatrix Q) z from funext (qubo_eq_neg_cutWeight Q)]
-  exact ⟨fun h ↦ by simpa using h.neg, IsMaxOn.neg⟩
+  rw [← (xor_option_surjective ι).isMinOn_univ_comp_iff (qubo Q) y]
+  simp only [isMinOn_univ_iff, isMaxOn_univ_iff, Function.comp_apply,
+    qubo_eq_neg_cutWeight, neg_le_neg_iff]
 
 end Cuts
 
