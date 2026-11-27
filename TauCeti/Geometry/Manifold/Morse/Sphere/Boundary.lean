@@ -63,7 +63,7 @@ integral homology of `Sⁿ`.
 public section
 
 open Metric Module Set
-open scoped ContDiff Manifold RealInnerProductSpace
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
@@ -88,12 +88,12 @@ theorem isMorseSmale_sphereHeight (hX : IsAdaptedPseudoGradient (sphereHeight v)
 slice of the trajectories from `v` to `-v` is the set of points of height zero. -/
 theorem morseTrajectorySlice_sphereHeight (hX : IsAdaptedPseudoGradient (sphereHeight v) X) :
     hX.morseTrajectorySlice v (-v) = {x | sphereHeight v x = 0} := by
-  have hv : ⟪(v : E), (v : E)⟫ = 1 := by simp
+  have h := hX.unstableSet_inter_stableSet_inter_setOf_sphereHeight_eq
+    (a := 0) (by norm_num)
   ext x
-  simp only [mem_morseTrajectorySlice, unstableSet_sphereHeight_self, stableSet_sphereHeight_neg,
-    mem_compl_iff, mem_singleton_iff, mem_ofPred_eq, sphereHeight_apply, coe_neg_sphere,
-    inner_neg_left, hv, add_neg_cancel, zero_div]
-  refine ⟨fun h ↦ h.2.2, fun h ↦ ⟨?_, ?_, h⟩⟩ <;> rintro rfl <;> simp_all
+  rw [← h, mem_morseTrajectorySlice, sphereHeight_self, sphereHeight_neg_self, add_neg_cancel,
+    zero_div]
+  simp only [mem_inter_iff, mem_ofPred_eq, and_assoc]
 
 namespace IsMorseSmale
 

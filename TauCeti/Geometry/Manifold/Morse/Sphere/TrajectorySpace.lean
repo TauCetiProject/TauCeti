@@ -72,16 +72,6 @@ variable [FiniteDimensional ℝ E] {v : sphere (0 : E) 1}
   {X : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x}
   (hX : IsAdaptedPseudoGradient (sphereHeight v) X) {ι : Type*} (c : ι → ℝ)
 
-/-- **Every point off the poles lies on a trajectory from the north pole to the south pole.** For
-`a ∈ (-1, 1)`, the level slice `W^u(v) ∩ W^s(-v) ∩ {h = a}` is the whole parallel `{h = a}`. -/
-theorem unstableSet_inter_stableSet_inter_setOf_sphereHeight_eq {a : ℝ} (ha : a ∈ Ioo (-1 : ℝ) 1) :
-    hX.flow.unstableSet v ∩ hX.flow.stableSet (-v) ∩ {x | sphereHeight v x = a} =
-      {x | sphereHeight v x = a} := by
-  refine inter_eq_right.2 fun x (hx : sphereHeight v x = a) ↦ ?_
-  obtain ⟨hxv, hxnv⟩ := sphereHeight_mem_Ioo_iff.1 (hx ▸ ha)
-  rw [unstableSet_sphereHeight_self, stableSet_sphereHeight_neg]
-  exact ⟨hxnv, hxv⟩
-
 omit [FiniteDimensional ℝ E] in
 /-- The heights of the critical points of the height function are not strictly between the heights
 of the south and north poles. -/
