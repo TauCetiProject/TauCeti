@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
+public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
+
+import TauCeti.CategoryTheory.MorphismProperty.Limits
 
 /-!
 # Separated morphisms: a criterion from an open cover, and rigidity
@@ -29,6 +32,13 @@ charts, such as the two-chart model of an algebraic function field, is separated
 
 Separated morphisms compose, so a scheme separated over a separated scheme is itself separated;
 in particular a scheme proper over a separated base, such as a field, is a separated scheme.
+Likewise the canonical map `X ×_S Y ⟶ X ×_T Y` over a separated `S ⟶ T` is a closed immersion, so
+`X ×_S Y` is a closed subscheme of `X × Y` (through `AlgebraicGeometry.pullbackToProd`) when `S` is
+a separated scheme.
+A section of a separated morphism is a closed immersion, so a section with dense range is
+surjective. Separatedness descends along universally closed surjections: if `f ≫ g` is separated
+and `f` is universally closed and surjective, then `g` is separated, as the diagonal of `g` then
+has closed range.
 
 Morphisms from a reduced scheme to a separated one are determined by their values on a dense
 set of points. Mathlib states this for a single dominant test morphism
@@ -49,6 +59,12 @@ pointwise with members of a finite group on a dense set of rational points.
   products over the target.
 * `AlgebraicGeometry.Scheme.IsSeparated.of_isSeparated`: the source of a separated morphism to a
   separated scheme is a separated scheme.
+* `AlgebraicGeometry.isClosedImmersion_pullbackMap_id`: the canonical map `X ×_S Y ⟶ X ×_T Y` over
+  a separated `S ⟶ T` is a closed immersion.
+* `AlgebraicGeometry.surjective_of_isDominant_of_comp_eq_id`: a section of a separated morphism
+  with dense range is surjective.
+* `AlgebraicGeometry.IsSeparated.of_comp_surjective`: separatedness descends along universally
+  closed surjections; the instance of `MorphismProperty.HasOfPrecompProperty` records this.
 * `AlgebraicGeometry.isAffineHom_hasOfPostcompProperty`: since affine morphisms are separated,
   `f` is affine whenever `f ≫ g` and `g` are; this gives finite limits of affine schemes over a
   base, computed in schemes.
@@ -105,6 +121,53 @@ separated morphism `S ⟶ ⊤_ Scheme`. For instance, a scheme proper over a fie
 theorem Scheme.IsSeparated.of_isSeparated (f : X ⟶ S) [IsSeparated f] [S.IsSeparated] :
     X.IsSeparated :=
   ⟨by rw [← terminal.comp_from f]; infer_instance⟩
+
+/-- **Separatedness descends along universally closed surjections**: if `f ≫ g` is separated and
+`f : Y ⟶ X` is universally closed and surjective, then `g : X ⟶ S` is separated. Indeed `f ≫ Δ_g`
+is the diagonal of `f ≫ g` followed by the universally closed map `f ×_S f`, so the diagonal `Δ_g`
+of `g` has closed range; being an immersion, it is a closed immersion. -/
+theorem IsSeparated.of_comp_surjective {Y : Scheme.{u}} (f : Y ⟶ X) (g : X ⟶ S)
+    [IsSeparated (f ≫ g)] [UniversallyClosed f] [Surjective f] : IsSeparated g := by
+  have : UniversallyClosed (f ≫ pullback.diagonal g) :=
+    MorphismProperty.comp_diagonal f g ‹_› inferInstance
+  have := UniversallyClosed.of_comp_surjective f (pullback.diagonal g)
+  exact ⟨.of_isPreimmersion _ (pullback.diagonal g).isClosedMap.isClosed_range⟩
+
+/-- Separatedness descends along universally closed surjections
+(`IsSeparated.of_comp_surjective`). -/
+instance : MorphismProperty.HasOfPrecompProperty @IsSeparated
+    (@UniversallyClosed.{u} ⊓ @Surjective) where
+  of_precomp f g hf (_ : IsSeparated (f ≫ g)) :=
+    have : UniversallyClosed f := hf.1
+    have : Surjective f := hf.2
+    .of_comp_surjective f g
+
+/-- **The canonical map `X ×_S Y ⟶ X ×_T Y` over a separated morphism is a closed immersion.**
+Here `i : S ⟶ T` is separated and `f' : X ⟶ T`, `g' : Y ⟶ T` factor as `f ≫ i` and `g ≫ i`.
+Mathlib's instance for `pullback.mapDesc` is the case where `f'` and `g'` are literally `f ≫ i` and
+`g ≫ i`. For instance, `X ×_S Y ⟶ X × Y` is a closed immersion when `S` is a separated scheme. -/
+instance isClosedImmersion_pullbackMap_id {Y T : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S)
+    (f' : X ⟶ T) (g' : Y ⟶ T) (i : S ⟶ T) [IsSeparated i] (h₁ : f ≫ i = 𝟙 X ≫ f')
+    (h₂ : g ≫ i = 𝟙 Y ≫ g') :
+    IsClosedImmersion (pullback.map f g f' g' (𝟙 X) (𝟙 Y) i h₁ h₂) := by
+  obtain rfl : f' = f ≫ i := by simpa using h₁.symm
+  obtain rfl : g' = g ≫ i := by simpa using h₂.symm
+  exact inferInstanceAs (IsClosedImmersion (pullback.mapDesc f g i))
+
+/-- The canonical map `X ×_S Y ⟶ X × Y` from the fibre product over `S` to the product, that is,
+the fibre product over the terminal scheme. It is a closed immersion when `S` is a separated
+scheme, by `isClosedImmersion_pullbackMap_id`. -/
+noncomputable abbrev pullbackToProd {Y : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S) :
+    pullback f g ⟶ pullback (terminal.from X) (terminal.from Y) :=
+  pullback.map f g _ _ (𝟙 X) (𝟙 Y) (terminal.from S) (terminal.hom_ext _ _) (terminal.hom_ext _ _)
+
+/-- A section of a separated morphism with dense range is surjective: it is a closed immersion,
+so its range is closed as well as dense. -/
+theorem surjective_of_isDominant_of_comp_eq_id {Y : Scheme.{u}} {s : X ⟶ Y} {r : Y ⟶ X}
+    [IsSeparated r] [IsDominant s] (hsr : s ≫ r = 𝟙 X) : Surjective s := by
+  have : IsClosedImmersion (s ≫ r) := hsr ▸ inferInstance
+  have : IsClosedImmersion s := IsClosedImmersion.of_comp s r
+  exact surjective_of_isDominant_of_isClosed_range s s.isClosedEmbedding.isClosed_range
 
 /-- If `f ≫ g` and `g` are affine, then so is `f`, because affine morphisms are separated. -/
 instance isAffineHom_hasOfPostcompProperty :

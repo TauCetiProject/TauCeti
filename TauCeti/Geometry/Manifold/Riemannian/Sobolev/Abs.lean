@@ -10,10 +10,11 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 import Mathlib.Analysis.InnerProductSpace.Convex
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.SmoothAbs
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.MeasureTheory.Integral.ContinuousMap
-import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 
 /-!
 # Absolute values in the Sobolev space `H¹`
@@ -102,7 +103,7 @@ private theorem dirichletForm_ofSmooth_smoothAbsComp_le (u : C^∞⟮I, M; ℝ�
   simp only [dirichletForm_ofSmooth, real_inner_self_eq_norm_sq]
   refine integral_mono (continuous_norm_sq_mgradient hv).integrable_of_compactSpace
     (continuous_norm_sq_mgradient hu).integrable_of_compactSpace fun x ↦ ?_
-  have hg := mgradient_comp_hasDerivAt (TauCeti.hasDerivAt_smoothAbs hη (u x))
+  have hg := mgradient_comp_hasDerivAt (TauCeti.hasDerivAt_smoothAbs η (u x) (by positivity))
     (hu.mdifferentiableAt one_ne_zero)
   simp only [Function.comp_def] at hg
   rw [coe_smoothAbsComp, hg, norm_smul, Real.norm_eq_abs]

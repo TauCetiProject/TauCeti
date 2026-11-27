@@ -30,6 +30,8 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 * `IsIdempotentElem.compress`: the compression `x ↦ e * x * e` of `A` onto the corner ring `eAe`.
 * `IsIdempotentElem.Corner.instAlgebra`: the corner `eAe` of an idempotent of a nonunital
   `R`-algebra is a unital `R`-algebra.
+* `IsIdempotentElem.compressAlgHom`: for a central idempotent `e` of an `R`-algebra `A`, the
+  compression `x ↦ e * x` is a surjective `R`-algebra map `A →ₐ[R] eAe`.
 * `IsIdempotentElem.cornerFunctional`: the compression `x ↦ φ x / φ e` of a linear functional `φ`
   to the corner `eAe`, normalised at its unit `e`.
 * `IsIdempotentElem.cornerLinearEquivCornerSubmodule`: the corner ring `eAe`, as an `R`-module,
@@ -41,10 +43,14 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
   product of the corners of its components.
 * `IsIdempotentElem.isNoetherian_corner`: the corner of a Noetherian algebra is Noetherian, so the
   corner of a finite-dimensional algebra is finite-dimensional.
+* `CompleteOrthogonalIdempotents.algEquivOfIsMulCentral`: a complete family of orthogonal central
+  idempotents `eᵢ` of an `R`-algebra `A` splits it as `A ≃ₐ[R] ∏ᵢ eᵢ A eᵢ`, by `x ↦ (eᵢ x eᵢ)ᵢ`;
+  this is Mathlib's `CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral`, which is `R`-linear.
 
 ## Main results
 
 * `TauCeti.mem_cornerSubmodule_iff`: the fixed-point characterization of an idempotent corner.
+* `TauCeti.mul_mem_cornerSubmodule`: the Peirce multiplication rule `(eAf)(fAg) ⊆ eAg`.
 * `TauCeti.mem_span_singleton_of_mem_cornerSubmodule`: the corner `eAf` lies in the left ideal
   `Af` without idempotency assumptions.
 * `IsIdempotentElem.mul_corner_val` and `IsIdempotentElem.corner_val_mul`: an element of the
@@ -53,6 +59,11 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
   `e (x₁ e) ⋯ (xₙ e)` in `A`.
 * `Pi.isIdempotentElem_iff`: an element of a product is idempotent exactly when each component
   is.
+* `IsIdempotentElem.Corner.nontrivial`: the corner of a nonzero idempotent is nontrivial.
+* `CompleteOrthogonalIdempotents.val_algEquivOfIsMulCentral_apply`: the component of `x` in the
+  corner `eᵢ A eᵢ` is `eᵢ x`.
+* `CompleteOrthogonalIdempotents.val_center`: a complete orthogonal family of idempotents of the
+  centre of an algebra is one of the algebra.
 
 ## References
 
@@ -82,6 +93,18 @@ theorem cornerSubmodule_def (e f : A) :
 /-- Cutting an element down by `e` on the left and `f` on the right lands in the corner `eAf`. -/
 theorem mul_mul_mem_cornerSubmodule (e f x : A) : e * x * f ∈ cornerSubmodule k e f :=
   ⟨x, by simp only [LinearMap.mulLeftRight_apply]⟩
+
+variable {k} in
+/-- **The Peirce multiplication rule** `(eAf)(fAg) ⊆ eAg`. No idempotency is needed. -/
+theorem mul_mem_cornerSubmodule {e f g x y : A} (hx : x ∈ cornerSubmodule k e f)
+    (hy : y ∈ cornerSubmodule k f g) : x * y ∈ cornerSubmodule k e g := by
+  rw [cornerSubmodule_def, LinearMap.mem_range] at hx hy
+  obtain ⟨a, rfl⟩ := hx
+  obtain ⟨b, rfl⟩ := hy
+  simp only [LinearMap.mulLeftRight_apply]
+  have h : e * a * f * (f * b * g) = e * (a * f * (f * b)) * g := by simp only [mul_assoc]
+  rw [h]
+  exact mul_mul_mem_cornerSubmodule k e g _
 
 /-- For idempotents `e` and `f`, an element belongs to the corner `eAf` exactly when multiplying it
 by `e` on the left and by `f` on the right fixes it. -/
@@ -163,6 +186,10 @@ theorem val_compress (x : A) : (he.compress x).val = e * x * e := (rfl)
 theorem compress_val (b : he.Corner) : he.compress b.val = b :=
   Subtype.ext <| by rw [val_compress, he.mul_corner_val, he.corner_val_mul]
 
+/-- The compression of an element commuting with `e` is `e * x`. -/
+theorem val_compress_of_commute {x : A} (hx : Commute e x) : (he.compress x).val = e * x := by
+  rw [val_compress, mul_assoc, ← hx.eq, ← mul_assoc, he.eq]
+
 namespace Corner
 
 variable {he} {R : Type v} [SMul R A] [SMulCommClass R A A] [IsScalarTower R A A]
@@ -202,6 +229,10 @@ theorem val_zero : (0 : he.Corner).val = 0 := (rfl)
 
 @[simp]
 theorem val_add (b c : he.Corner) : (b + c).val = b.val + c.val := (rfl)
+
+/-- The corner `eAe` of a nonzero idempotent `e` is nontrivial, since its unit `e` is nonzero. -/
+theorem nontrivial (he : IsIdempotentElem e) (hne : e ≠ 0) : Nontrivial he.Corner :=
+  ⟨1, 0, fun h ↦ hne <| by simpa only [val_one, val_zero] using congrArg Subtype.val h⟩
 
 variable {R : Type v} [Semiring R] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
 
@@ -286,6 +317,47 @@ theorem val_list_prod_map_compress (l : List A) :
   induction l with
   | nil => simp
   | cons x l ih => simp [ih, mul_assoc, he.mul_self_mul]
+
+section AlgHom
+
+variable (R : Type v) [CommSemiring R] [Algebra R A] (hc : IsMulCentral e)
+
+/-- The compression `x ↦ e * x` of `A` onto the corner `eAe` of a central idempotent `e`, as a
+homomorphism of `R`-algebras. -/
+def compressAlgHom : A →ₐ[R] he.Corner where
+  toFun := he.compress
+  map_one' := he.compress_one
+  map_mul' x y := Subtype.ext <| by
+    rw [Corner.val_mul, he.val_compress_of_commute (hc.comm _),
+      he.val_compress_of_commute (hc.comm x), he.val_compress_of_commute (hc.comm y),
+      ← (hc.comm x).mul_mul_mul_comm, he.eq]
+  map_zero' := he.compress_zero
+  map_add' := he.compress_add
+  commutes' := he.compress_algebraMap
+
+/-- The compression algebra map is the compression `x ↦ e * x * e`. -/
+theorem compressAlgHom_apply (x : A) : he.compressAlgHom R hc x = he.compress x := (rfl)
+
+/-- The compression of `x` to the corner of a central idempotent `e` is `e * x`. -/
+@[simp]
+theorem val_compressAlgHom (x : A) : (he.compressAlgHom R hc x).val = e * x :=
+  he.val_compress_of_commute (hc.comm x)
+
+/-- The compression algebra map fixes the elements of the corner. -/
+@[simp]
+theorem compressAlgHom_val (y : he.Corner) : he.compressAlgHom R hc y.val = y :=
+  he.compress_val y
+
+/-- The compression algebra map sends `e` to the unit of the corner. -/
+@[simp]
+theorem compressAlgHom_self : he.compressAlgHom R hc e = 1 :=
+  Subtype.ext <| by rw [val_compressAlgHom, he.eq, Corner.val_one]
+
+/-- The compression onto the corner of a central idempotent is surjective. -/
+theorem compressAlgHom_surjective : Function.Surjective (he.compressAlgHom R hc) :=
+  fun y ↦ ⟨y.val, he.compressAlgHom_val R hc y⟩
+
+end AlgHom
 
 end Semiring
 
@@ -440,3 +512,80 @@ instance isNoetherian_corner [IsNoetherian R A] : IsNoetherian R he.Corner :=
   isNoetherian_of_linearEquiv (he.cornerLinearEquivCornerSubmodule (R := R)).symm
 
 end IsIdempotentElem
+
+namespace CompleteOrthogonalIdempotents
+
+variable {R A ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Fintype ι] {e : ι → A}
+
+/-- The component of `x` in the corner `eᵢ A eᵢ` under Mathlib's
+`CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral` is the compression `eᵢ x eᵢ`. This holds
+by unfolding the definition, whose forward map is `x ↦ (eᵢ x eᵢ)ᵢ`. -/
+theorem ringEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
+    he.ringEquivOfIsMulCentral hc x i = (he.idem i).compress x :=
+  (rfl)
+
+/-- The inverse of Mathlib's `CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral` sends a
+family of corner elements to their sum. This holds by unfolding the definition, whose inverse is
+`(yᵢ)ᵢ ↦ ∑ᵢ yᵢ`. -/
+@[simp]
+theorem ringEquivOfIsMulCentral_symm_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (y : ∀ i, (he.idem i).Corner) :
+    (he.ringEquivOfIsMulCentral hc).symm y = ∑ i, (y i).val :=
+  (rfl)
+
+/-- The component of `x` in the corner `eᵢ A eᵢ` under Mathlib's
+`CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral` is `eᵢ x`, since `eᵢ` is central. -/
+@[simp]
+theorem val_ringEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
+    (he.ringEquivOfIsMulCentral hc x i).val = e i * x := by
+  rw [ringEquivOfIsMulCentral_apply, (he.idem i).val_compress_of_commute ((hc i).comm x)]
+
+/-- **The product decomposition along central idempotents, as algebras.** A complete family of
+orthogonal central idempotents `eᵢ` of an `R`-algebra `A` splits it as the product
+`A ≃ₐ[R] ∏ᵢ eᵢ A eᵢ` of its corner algebras, by `x ↦ (eᵢ x eᵢ)ᵢ`. This is Mathlib's
+`CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral`, which is `R`-linear. -/
+def algEquivOfIsMulCentral (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) : A ≃ₐ[R] ∀ i, (he.idem i).Corner :=
+  AlgEquiv.ofRingEquiv (f := he.ringEquivOfIsMulCentral hc) fun r ↦ funext fun i ↦ by
+    rw [ringEquivOfIsMulCentral_apply, IsIdempotentElem.compress_algebraMap,
+      Pi.algebraMap_apply]
+
+/-- The underlying ring isomorphism of `algEquivOfIsMulCentral` is Mathlib's
+`CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral`. -/
+@[simp]
+theorem toRingEquiv_algEquivOfIsMulCentral (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) :
+    (he.algEquivOfIsMulCentral (R := R) hc).toRingEquiv = he.ringEquivOfIsMulCentral hc :=
+  RingEquiv.ext fun x ↦ by
+    rw [AlgEquiv.coe_toRingEquiv (e := he.algEquivOfIsMulCentral (R := R) hc),
+      algEquivOfIsMulCentral, AlgEquiv.ofRingEquiv_apply]
+
+/-- The component of `x` in the corner `eᵢ A eᵢ` is the compression `eᵢ x eᵢ`. -/
+theorem algEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
+    he.algEquivOfIsMulCentral (R := R) hc x i = (he.idem i).compress x := by
+  rw [algEquivOfIsMulCentral, AlgEquiv.ofRingEquiv_apply, ringEquivOfIsMulCentral_apply]
+
+/-- The component of `x` in the corner `eᵢ A eᵢ` is `eᵢ x`, since `eᵢ` is central. -/
+@[simp]
+theorem val_algEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
+    (he.algEquivOfIsMulCentral (R := R) hc x i).val = e i * x := by
+  rw [algEquivOfIsMulCentral_apply, (he.idem i).val_compress_of_commute ((hc i).comm x)]
+
+/-- A family of corner elements corresponds to their sum in `A`. -/
+@[simp]
+theorem algEquivOfIsMulCentral_symm_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (y : ∀ i, (he.idem i).Corner) :
+    (he.algEquivOfIsMulCentral (R := R) hc).symm y = ∑ i, (y i).val := by
+  rw [algEquivOfIsMulCentral, AlgEquiv.ofRingEquiv_symm_apply, ringEquivOfIsMulCentral_symm_apply]
+
+/-- A complete orthogonal family of idempotents of the centre of an `R`-algebra `A` is a complete
+orthogonal family of idempotents of `A`. -/
+theorem val_center {b : ι → Subalgebra.center R A} (hb : CompleteOrthogonalIdempotents b) :
+    CompleteOrthogonalIdempotents fun i ↦ (b i : A) :=
+  hb.map (Subalgebra.center R A).val.toRingHom
+
+end CompleteOrthogonalIdempotents

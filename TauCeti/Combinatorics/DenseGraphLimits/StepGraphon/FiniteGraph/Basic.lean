@@ -11,6 +11,8 @@ public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Average
 public import TauCeti.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.Probability.UniformOn
+import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Pullback
+import TauCeti.Probability.Distributions.Uniform.Finite.Basic
 
 /-!
 # A finite graph as a graphon
@@ -64,7 +66,13 @@ and measurability is a composition through the countable discrete space `ℕ × 
   graph is a `stepGraphon` on the partition of the unit interval into its `m` cells, and
   `TauCeti.DenseGraphLimits.stepGraphonAvg_finiteGraphGraphon` — it is its own block average
   over those cells;
-* `TauCeti.DenseGraphLimits.homDensity_finiteGraphGraphon` — finite-graph compatibility.
+* `TauCeti.DenseGraphLimits.homDensity_eq_homDensityFin_of_apply_eq_ite` — finite-graph
+  compatibility for a graphon that is the adjacency indicator of a graph on a nonempty finite
+  carrier with its uniform measure; the carrier's σ-algebra need not be discrete, but the
+  indicator must then be measurable for it;
+* `TauCeti.DenseGraphLimits.homDensity_finiteGraphGraphonOnFin`,
+  `TauCeti.DenseGraphLimits.homDensity_finiteGraphGraphon` — finite-graph compatibility, on the
+  uniform finite carrier `Fin m` and on the unit interval.
 
 ## References
 
@@ -219,40 +227,52 @@ theorem stepGraphonAvg_finiteGraphGraphon [NeZero m] (G : SimpleGraph (Fin m)) :
 
 variable {V : Type*} [Fintype V]
 
-open scoped Classical in
-/-- **The edge product is an adjacency-preservation indicator.** For the graphon of a finite graph
-`G`, the product of `edgeFactor` over the edges of `F` is `1` exactly when every edge of `F` is
-carried to an edge of `G` by the cell index, and `0` otherwise.
+/-- **Finite-graph compatibility on a uniform finite carrier.** If the graphon `W` on a nonempty
+finite carrier with its uniform measure is the adjacency indicator of a graph `G` on the carrier,
+the graphon homomorphism density of `F` in `W` is the finite homomorphism density of `F` in `G`.
 
-This is the pointwise identity that makes `homDensity_finiteGraphGraphon` a counting argument: it
-replaces the integrand of the graphon homomorphism density by an indicator, whose integral is then
-the proportion of cell-index tuples that are graph homomorphisms. Use it whenever the edge product
-of a finite-graph graphon has to be evaluated at a fixed tuple. -/
-theorem prod_edgeFactor_finiteGraphGraphon (F : SimpleGraph V) [DecidableRel F.Adj]
-    (G : SimpleGraph (Fin m)) (x : V → I) :
-    ∏ e ∈ F.edgeFinset, edgeFactor (finiteGraphGraphon G) x e
-      = if ∀ a b, F.Adj a b → (G.map Fin.valEmbedding).Adj (cellIdx m (x a)) (cellIdx m (x b))
-          then (1 : ℝ) else 0 := by
-  let p : Sym2 V → Prop := Sym2.lift
-    ⟨fun a b => (G.map Fin.valEmbedding).Adj (cellIdx m (x a)) (cellIdx m (x b)),
-      fun a b => propext (SimpleGraph.adj_comm (G.map Fin.valEmbedding) _ _)⟩
-  have hfac : ∀ e : Sym2 V,
-      edgeFactor (finiteGraphGraphon G) x e = if p e then 1 else 0 := by
-    intro e
-    induction e using Sym2.ind with
-    | _ a b =>
-      rw [edgeFactor_mk, finiteGraphGraphon_apply]
-      exact if_congr (by simp only [p, Sym2.lift_mk]) rfl rfl
-  have hp_iff : (∀ e ∈ F.edgeFinset, p e) ↔
-      ∀ a b, F.Adj a b →
-        (G.map Fin.valEmbedding).Adj (cellIdx m (x a)) (cellIdx m (x b)) := by
-    simp only [SimpleGraph.mem_edgeFinset, SimpleGraph.mem_edgeSet, Sym2.forall, p,
-      Sym2.lift_mk]
-  rw [Finset.prod_congr rfl fun e _ => hfac e, Finset.prod_boole]
-  by_cases h : ∀ a b, F.Adj a b →
-      (G.map Fin.valEmbedding).Adj (cellIdx m (x a)) (cellIdx m (x b))
-  · rw [ite_eq_left h, ite_eq_left (hp_iff.2 h)]
-  · rw [ite_eq_right h, ite_eq_right fun hp => h (hp_iff.1 hp)]
+The carrier's σ-algebra need not be discrete. Since `W` is a graphon, `hW` can hold only if the
+adjacency indicator of `G` is measurable for that σ-algebra on `Ω × Ω`; for a discrete carrier
+such as `Fin m` this is automatic. -/
+theorem homDensity_eq_homDensityFin_of_apply_eq_ite {Ω : Type*} [Fintype Ω] [Nonempty Ω]
+    [MeasurableSpace Ω] (F : SimpleGraph V) [DecidableRel F.Adj] {G : SimpleGraph Ω}
+    [DecidableRel G.Adj] {W : Graphon Ω (uniformOn Set.univ)}
+    (hW : ∀ a b, W a b = if G.Adj a b then 1 else 0) :
+    homDensity F W = homDensityFin F G := by
+  classical
+  -- pull `W` back along a bijection from `Fin (Fintype.card Ω)` so every subset is measurable
+  have : NeZero (Fintype.card Ω) := ⟨Fintype.card_ne_zero⟩
+  let e : Fin (Fintype.card Ω) ≃ Ω := (Fintype.equivFin Ω).symm
+  have he : MeasurePreserving e (uniformOn Set.univ) (uniformOn Set.univ) :=
+    e.measurePreserving_uniformOn_univ .of_discrete
+  have hcomap : ∀ i j, W.comap e he.measurable (uniformOn Set.univ) i j =
+      if (G.comap e).Adj i j then 1 else 0 := fun i j => by
+    simpa only [Graphon.comap_apply, SimpleGraph.comap_adj] using hW (e i) (e j)
+  calc homDensity F W
+      = homDensity F (W.comap e he.measurable (uniformOn Set.univ)) :=
+        (homDensity_comap F W he).symm
+    _ = ∫ ψ : V → Fin (Fintype.card Ω), ((Finset.univ.filter fun ψ : V → Fin (Fintype.card Ω) =>
+            ∀ a b, F.Adj a b → (G.comap e).Adj (ψ a) (ψ b)) :
+          Set (V → Fin (Fintype.card Ω))).indicator 1 ψ ∂uniformOn Set.univ := by
+        rw [homDensity_def, ← uniformOn_pi, Set.pi_univ]
+        congr 1 with ψ
+        rw [prod_edgeFactor_eq_ite_of_apply_eq_ite F hcomap, Finset.coe_filter, Set.indicator_apply]
+        simp
+    _ = homDensityFin F G := by
+        rw [integral_indicator_one (Finset.measurableSet _), Finset.uniformOn_univ_real_finset,
+          ← F.card_hom_eq_card_filter_adjPreserving (G.comap e),
+          Nat.card_congr (SimpleGraph.Iso.refl.homCongr (SimpleGraph.Iso.comap e G)),
+          homDensityFin_def, Fintype.card_fun, Fintype.card_fin, Nat.cast_pow]
+
+/-- **Finite-graph compatibility on the uniform finite carrier `Fin m`.** The graphon
+homomorphism density of `F` in the graphon of `G` on `Fin m` is the finite homomorphism density of
+`F` in `G`. -/
+@[simp]
+theorem homDensity_finiteGraphGraphonOnFin [NeZero m] (F : SimpleGraph V) [DecidableRel F.Adj]
+    (G : SimpleGraph (Fin m)) :
+    homDensity F (finiteGraphGraphonOnFin G) = homDensityFin F G := by
+  classical
+  exact homDensity_eq_homDensityFin_of_apply_eq_ite F (finiteGraphGraphonOnFin_apply G)
 
 /-- **Finite-graph compatibility.** The graphon homomorphism density of `F` in the graphon of a
 finite graph `G` on `Fin m` is the finite homomorphism density of `F` in `G`:
@@ -265,28 +285,9 @@ left-hand side is `1`, while the right-hand side is `0 / 0 = 0`. -/
 theorem homDensity_finiteGraphGraphon (F : SimpleGraph V) [DecidableRel F.Adj] (hm : 0 < m)
     (G : SimpleGraph (Fin m)) :
     homDensity F (finiteGraphGraphon G) = homDensityFin F G := by
-  classical
-  -- the resulting finite sum counts the homomorphisms
-  have hsum : (∑ ψ : V → Fin m, if ∀ a b, F.Adj a b →
-        (G.map Fin.valEmbedding).Adj ((ψ a : ℕ)) ((ψ b : ℕ)) then (1 : ℝ) else 0)
-      = (Nat.card (F →g G) : ℝ) := by
-    simp_rw [map_valEmbedding_adj_iff G]
-    rw [Finset.sum_boole, SimpleGraph.card_hom_eq_card_adjPreservingMaps,
-      Nat.card_eq_fintype_card, Fintype.card_subtype]
-  have hpi : (∫ x : V → I,
-        (if ∀ a b, F.Adj a b →
-          (G.map Fin.valEmbedding).Adj (cellIdx m (x a)) (cellIdx m (x b)) then (1 : ℝ) else 0)
-        ∂(Measure.pi fun _ : V => (volume : Measure I)))
-      = (∑ ψ : V → Fin m, if ∀ a b, F.Adj a b →
-          (G.map Fin.valEmbedding).Adj (ψ a : ℕ) (ψ b : ℕ) then (1 : ℝ) else 0)
-          / (m : ℝ) ^ Fintype.card V := by
-    simpa [smul_eq_mul, div_eq_inv_mul] using
-      (integral_pi_comp_cellIdx_eq_inv_smul_sum (V := V) hm
-        (fun ν : V → ℕ => if ∀ a b, F.Adj a b → (G.map Fin.valEmbedding).Adj (ν a) (ν b)
-          then (1 : ℝ) else 0))
-  rw [homDensity_def,
-    integral_congr_ae (Filter.Eventually.of_forall (prod_edgeFactor_finiteGraphGraphon F G)),
-    hpi, hsum, homDensityFin_def, Fintype.card_fin]
+  have : NeZero m := ⟨hm.ne'⟩
+  rw [finiteGraphGraphon_eq_comap, homDensity_comap F _ measurePreserving_cellFin,
+    homDensity_finiteGraphGraphonOnFin]
 
 end DenseGraphLimits
 

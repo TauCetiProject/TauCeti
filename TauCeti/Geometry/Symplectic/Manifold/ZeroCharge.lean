@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Order
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Disc
 public import TauCeti.Geometry.Manifold.Complex.FundamentalClass
 public import TauCeti.Geometry.Symplectic.Manifold.PositiveCohomologyAssignment
+import Mathlib.Analysis.Complex.Convex
+import Mathlib.Topology.Homotopy.Contractible
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
+import TauCeti.Analysis.Complex.UnitDisc.Basic
 import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Complex.Conformal.LocalIndex
 
@@ -23,8 +27,14 @@ topological multiplicities. It is defined with the canonical orientation of `ℂ
 its restriction to `𝔻` on the source, and does not depend on that choice
 (`ContinuousMap.zeroCharge_eq_localDegree`). On open subsets of `ℂ`, local degrees at `0` are
 winding numbers along circles enclosing the zeros
-(`TauCeti.HomologicalOrientation.localDegree_comap_eq_degree_toBasedLoop`), so when `f` is the
-framing section of a trivialized line, the zero charge is the framed charge of `σ`.
+(`TauCeti.HomologicalOrientation.localDegree_comap_eq_degree_toBasedLoop`). So the zero charge is
+the winding number of `f ∘ σ` along any circle in `𝔻` enclosing its zeros
+(`ContinuousMap.zeroCharge_eq_degree_toBasedLoop`), and when `f` is the framing section of a
+trivialized line it is the framed charge of `σ`. It only depends on `σ` near the zeros of `f ∘ σ`
+(`ContinuousMap.zeroCharge_congr`), and it does not change when `f` is multiplied by a function
+vanishing nowhere along `σ` (`ContinuousMap.zeroCharge_mul_left`), since on the contractible disc
+such a function is homotopic to `1` through nonvanishing functions. So the framed charge does not
+depend on the trivialization of the line.
 
 When `σ⁻¹(Z)` is compact, the zero charge obeys the laws of a positive cohomology assignment
 (`TauCeti.PositiveCohomologyAssignment`) other than positivity, for every continuous `f`:
@@ -67,6 +77,11 @@ hypothesis that `σ` is nonconstant is needed.
 
 * `ContinuousMap.zeroCharge_comp`, `ContinuousMap.zeroCharge_eq_of_homotopy`,
   `ContinuousMap.zeroCharge_eq_sum`: the degree, homotopy and additivity laws.
+* `ContinuousMap.zeroCharge_congr`: discs agreeing near the zeros of both have the same zero
+  charge.
+* `ContinuousMap.zeroCharge_mul_left`: gauge invariance under nonvanishing multipliers.
+* `ContinuousMap.zeroCharge_eq_degree_toBasedLoop`: the zero charge is the winding number along a
+  circle enclosing the zeros.
 * `TauCeti.finite_preimage_preimage_zero`: if `f ∘ σ` extends holomorphically, a compact
   `σ⁻¹(Z)` is finite.
 * `ContinuousMap.zeroCharge_eq_sum_analyticOrderNatAt`: if `f ∘ σ` extends holomorphically, the
@@ -160,7 +175,8 @@ theorem zeroCharge_eq_sum {ι : Type} [Fintype ι] {f : C(Y, ℂ)} {σ : C(𝔻,
     ⟨((↑) : 𝔻 → ℂ) ⁻¹' ball (c i) (r i), isOpen_ball.preimage Complex.UnitDisc.continuous_coe⟩
   have hU : Pairwise fun i j ↦ Disjoint (U i : Set 𝔻) (U j) := fun i j hij ↦
     (hdisj hij).preimage _
-  rw [zeroCharge, O.localDegree_eq_sum o _ Complex.finrank_real_complex (f.comp σ) h (U := U) hU
+  rw [zeroCharge, O.localDegree_eq_sum o _ Complex.finrank_real_complex (f.comp σ) h (U := U)
+    (fun i j hij ↦ (hU hij).mono inter_subset_right inter_subset_right)
     fun z hz ↦ mem_iUnion.2 (hcov z hz)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   -- The subdisc map, read as a map onto the open subset `U i`.
@@ -181,6 +197,95 @@ theorem zeroCharge_eq_sum {ι : Type} [Fintype ι] {f : C(Y, ℂ)} {σ : C(𝔻,
     fun z _ ↦ hsurj z, hO, zeroCharge]
   -- `Subtype.val ∘ e` is `s` by the construction of `e`.
   congr 1
+
+/-- **The zero charge only depends on the disc near its zeros.** If two discs `σ` and `σ'` agree
+on an open set `W ⊆ 𝔻` containing the zeros of both `f ∘ σ` and `f ∘ σ'`, they have the same
+zero charge. -/
+theorem zeroCharge_congr {f : C(Y, ℂ)} {σ σ' : C(𝔻, Y)} {W : Set 𝔻} (hW : IsOpen W)
+    (hσσ' : ∀ z ∈ W, σ z = σ' z) (hσ : ∀ z, f (σ z) = 0 → z ∈ W)
+    (hσ' : ∀ z, f (σ' z) = 0 → z ∈ W) :
+    zeroCharge f σ = zeroCharge f σ' := by
+  refine HomologicalOrientation.localDegree_congr _ _ _ Complex.finrank_real_complex
+    (eventually_nhdsSet_iff_exists.2 ⟨W, hW, fun z hz ↦ hσ z hz, fun z hz ↦ ?_⟩) fun z hz ↦ ?_
+  · simp [hσσ' z hz]
+  · simp only [Set.mem_preimage, ContinuousMap.comp_apply, Set.mem_singleton_iff] at hz ⊢
+    rwa [hσσ' z (hσ' z hz)]
+
+/-- The zero charge of `σ` for `f` is the zero charge of the disc `f ∘ σ` in `ℂ` for the
+identity of `ℂ`. -/
+@[simp]
+theorem id_zeroCharge_comp (f : C(Y, ℂ)) (σ : C(𝔻, Y)) :
+    (ContinuousMap.id ℂ).zeroCharge (f.comp σ) = f.zeroCharge σ := by
+  rw [zeroCharge, zeroCharge, ContinuousMap.id_comp]
+
+/-- **Gauge invariance.** Multiplying `f` by a function `u` that vanishes nowhere along `σ` does
+not change the zero charge of `σ`. In particular the framed charge of a disc does not depend on the
+trivialization of the line in which the framing section is read. -/
+theorem zeroCharge_mul_left {u : C(Y, ℂ)} (f : C(Y, ℂ)) {σ : C(𝔻, Y)} (hu : ∀ z, u (σ z) ≠ 0) :
+    zeroCharge (u * f) σ = zeroCharge f σ := by
+  -- On the contractible disc, `u ∘ σ` is homotopic to the constant `1` through nonvanishing
+  -- functions, and multiplying `f ∘ σ` by such a homotopy does not move its zeros.
+  have hfib : σ ⁻¹' ((u * f) ⁻¹' {0}) = σ ⁻¹' (f ⁻¹' {0}) := by
+    ext z
+    simp [hu z]
+  by_cases hc : IsCompact (σ ⁻¹' (f ⁻¹' {0}))
+  swap
+  · rw [zeroCharge_of_not_isCompact hc, zeroCharge_of_not_isCompact (hfib ▸ hc)]
+  -- The unit `u ∘ σ` is null-homotopic, since `𝔻` is contractible and `ℂˣ` is path connected.
+  let v : C(𝔻, ℂˣ) := ⟨fun z ↦ Units.mk0 (u (σ z)) (hu z),
+    Units.isEmbedding_val₀.continuous_iff.2 <| by
+      simpa [Function.comp_def] using (u.comp σ).continuous⟩
+  obtain ⟨w, hw⟩ := (id_nullhomotopic 𝔻).comp_right v
+  obtain ⟨G⟩ := hw.trans (ContinuousMap.homotopic_const_iff.2 (PathConnectedSpace.joined w 1))
+  -- Multiplying `f ∘ σ` by `G` moves `(u * f) ∘ σ` to `f ∘ σ` and keeps the zeros in place.
+  let H : ((u * f).comp σ).Homotopy (f.comp σ) :=
+    { toFun := fun p ↦ (G p : ℂ) * f (σ p.2)
+      continuous_toFun := by fun_prop
+      map_zero_left := fun z ↦ by simp [v]
+      map_one_left := fun z ↦ by simp }
+  have hHp (p : unitInterval × 𝔻) : H p = (G p : ℂ) * f (σ p.2) := rfl
+  have hH : (H : unitInterval × 𝔻 → ℂ) ⁻¹' {0} = univ ×ˢ (σ ⁻¹' (f ⁻¹' {0})) := by
+    ext p
+    simp [hHp]
+  exact HomologicalOrientation.localDegree_eq_of_homotopy_of_isCompact _ _ _
+    Complex.finrank_real_complex H (hH ▸ isCompact_univ.prod hc)
+
+/-- **Gauge invariance for discs in `ℂ`.** Multiplying a disc `c : 𝔻 → ℂ` by a function `u` that
+vanishes nowhere does not change its zero charge for the identity of `ℂ`. -/
+theorem id_zeroCharge_mul_left {u : C(𝔻, ℂ)} (c : C(𝔻, ℂ)) (hu : ∀ z, u z ≠ 0) :
+    (ContinuousMap.id ℂ).zeroCharge (u * c) = (ContinuousMap.id ℂ).zeroCharge c := by
+  have h := zeroCharge_mul_left c (σ := ContinuousMap.id 𝔻) hu
+  rwa [← id_zeroCharge_comp (u * c) (ContinuousMap.id 𝔻), ← id_zeroCharge_comp c,
+    ContinuousMap.comp_id, ContinuousMap.comp_id] at h
+
+/-- **The zero charge is a winding number.** If every zero of `f ∘ σ` lies in the open disc of
+radius `r > 0` about `z₀`, whose closure lies in `𝔻`, then the zero charge of `σ` is the degree
+of the boundary direction map `ζ ↦ f(σ(z₀ + r ζ)) / ‖f(σ(z₀ + r ζ))‖`: the number of times `f`
+winds around `0` along the image of the circle. -/
+theorem zeroCharge_eq_degree_toBasedLoop {f : C(Y, ℂ)} {σ : C(𝔻, Y)} {z₀ : ℂ} {r : ℝ}
+    (hr : 0 < r) (hz₀ : closedBall z₀ r ⊆ ball 0 1)
+    (hzero : ∀ z : 𝔻, f (σ z) = 0 → (z : ℂ) ∈ ball z₀ r) {u : C(Circle, Circle)}
+    (hu : ∀ (ζ : Circle) (hζ : ‖z₀ + r * ζ‖ < 1),
+      (u ζ : ℂ) = f (σ (Complex.UnitDisc.mk _ hζ)) / ‖f (σ (Complex.UnitDisc.mk _ hζ))‖) :
+    zeroCharge f σ = Circle.degree u.toBasedLoop := by
+  set o := complexHomologicalOrientation ℂ
+  -- The unit disc, as an open subset of `ℂ`, and the identification of `𝔻` with it.
+  let U : TopologicalSpace.Opens ℂ := ⟨ball 0 1, isOpen_ball⟩
+  let e : C(𝔻, U) := ⟨fun z ↦ ⟨z, mem_ball_zero_iff.2 z.norm_lt_one⟩,
+    Complex.UnitDisc.continuous_coe.subtype_mk _⟩
+  let e' : C(U, 𝔻) := ⟨fun w ↦ Complex.UnitDisc.mk w (mem_ball_zero_iff.1 w.property),
+    Complex.UnitDisc.isEmbedding_coe.continuous_iff.2 continuous_subtypeVal⟩
+  have he : IsOpenEmbedding e := (IsOpenEmbedding.of_comp_iff _ U.isOpenEmbedding').1
+    Complex.UnitDisc.isOpenEmbedding_coe
+  have hcomp : f.comp σ = ((f.comp σ).comp e').comp e := ContinuousMap.ext fun z ↦ by
+    simp [e, e', Complex.UnitDisc.mk_coe]
+  rw [zeroCharge, hcomp, ← o.comap_comap_of_comp_eq U.isOpenEmbedding' he
+      Complex.UnitDisc.isOpenEmbedding_coe rfl,
+    (o.comap U.isOpenEmbedding').localDegree_comap o _ Complex.finrank_real_complex he _
+      fun w _ ↦ ⟨e' w, rfl⟩]
+  refine o.localDegree_comap_eq_degree_toBasedLoop hr hz₀ (fun w hw ↦ ?_) fun ζ hζ ↦ ?_
+  · exact hzero (e' w) hw
+  · exact hu ζ (mem_ball_zero_iff.1 hζ)
 
 end ContinuousMap
 

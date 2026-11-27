@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
@@ -192,6 +193,16 @@ theorem iteratedGradient_restrictL_ae (hU : U ≤ Omega) (k : ℕ)
     (u : Wkp mu Omega p (k + 1)) :
     iteratedGradient k (restrictL hU (k + 1) u) =ᵐ[mu.restrict U] iteratedGradient k u :=
   (exists_restrict_succ hU k u).choose_spec.2.1
+
+/-- **Restriction across exponents.** If the value of `v ∈ W^{k+1,q}(V)` agrees almost everywhere
+on an open set `U ≤ V`, `U ≤ Ω` with the value of `u ∈ W^{k+1,p}(Ω)`, then the restriction of `v`
+to `U` has the highest weak derivative of `u` there. -/
+theorem iteratedGradient_restrictL_ae_eq_of_value_ae_eq {q : ENNReal} [Fact (1 ≤ q)]
+    (hUV : U ≤ V) (hU : U ≤ Omega) (k : ℕ) {u : Wkp mu Omega p (k + 1)}
+    {v : Wkp mu V q (k + 1)} (h : value (k + 1) v =ᵐ[mu.restrict U] value (k + 1) u) :
+    iteratedGradient k (restrictL hUV (k + 1) v) =ᵐ[mu.restrict U] iteratedGradient k u :=
+  (iteratedGradient_ae_eq_of_value_ae_eq k ((value_restrictL_ae hUV (k + 1) v).trans
+    (h.trans (value_restrictL_ae hU (k + 1) u).symm))).trans (iteratedGradient_restrictL_ae hU k u)
 
 /-- Restriction commutes with the highest weak derivative projection.
 Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/

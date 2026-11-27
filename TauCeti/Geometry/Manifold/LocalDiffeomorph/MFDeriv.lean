@@ -46,11 +46,14 @@ at `f x`.
   `OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply`: where an open partial homeomorphism
   and its inverse are differentiable, their differentials are mutually inverse.
 * `OpenPartialHomeomorph.mvfderiv_eq_fderiv_symm_trans_comp`: for open partial homeomorphisms
-  `ψ₁`, `ψ₂` into a normed space, the differential of `ψ₂` is that of `ψ₁` followed by the
+  `ψ₁`, `ψ₂` into normed spaces, the differential of `ψ₂` is that of `ψ₁` followed by the
   derivative of the transition `ψ₂ ∘ ψ₁⁻¹`.
 * `OpenPartialHomeomorph.mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans`: dually, the
   differential of `ψ₁⁻¹` is the derivative of the transition `ψ₂ ∘ ψ₁⁻¹` followed by the
   differential of `ψ₂⁻¹`.
+* `OpenPartialHomeomorph.mfderiv_symm_comp_fderiv_comp_comp_symm`: the chain rule for a map read
+  in charts `ψ` and `φ`: the derivative of `φ ∘ f ∘ ψ⁻¹` followed by the differential of `φ⁻¹` is
+  the differential of `ψ⁻¹` followed by that of `f`.
 * `PartialDiffeomorph.mfderivWithin_source`: the differential within the source is the differential.
 * `PartialDiffeomorph.mfderiv_symm_apply_mfderiv_apply`: the differential of the inverse undoes the
   differential.
@@ -73,6 +76,8 @@ at `f x`.
   `ψ₀ ∘ ψ₂⁻¹ = (ψ₀ ∘ ψ₁⁻¹) ∘ (ψ₁ ∘ ψ₂⁻¹)` of open partial homeomorphisms into normed spaces.
 * `OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn`: the transition `ψ₂ ∘ ψ₁⁻¹` is
   `C^n` on its source when `ψ₂` and `ψ₁⁻¹` are.
+* `OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn`: the transition
+  `ψ₂ ∘ ψ₁⁻¹` and its inverse are `C^n` when `ψ₁`, `ψ₂` and their inverses are.
 * `PartialDiffeomorph.differentiableAt_comp_symm`: for partial diffeomorphisms into normed spaces,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
@@ -178,24 +183,39 @@ theorem contDiffOn_symm_trans_of_contMDiffOn {ψ₁ : OpenPartialHomeomorph M V�
   rw [trans_source, coe_trans]
   exact contMDiffOn_iff_contDiffOn.1 (hψ₂.comp (hψ₁.mono Set.inter_subset_left) fun _ hy ↦ hy.2)
 
+/-- The transition `ψ₂ ∘ ψ₁⁻¹` between open partial homeomorphisms from `M` into normed spaces is
+`C^n` on its source, and its inverse `ψ₁ ∘ ψ₂⁻¹` is `C^n` on its target, when `ψ₁`, `ψ₂` and their
+inverses are `C^n`. -/
+theorem contDiffOn_symm_trans_and_symm_of_contMDiffOn {ψ₁ : OpenPartialHomeomorph M V₁}
+    {ψ₂ : OpenPartialHomeomorph M V₂} (hψ₁ : ContMDiffOn I 𝓘(𝕜, V₁) n ψ₁ ψ₁.source)
+    (hψ₁s : ContMDiffOn 𝓘(𝕜, V₁) I n ψ₁.symm ψ₁.target)
+    (hψ₂ : ContMDiffOn I 𝓘(𝕜, V₂) n ψ₂ ψ₂.source)
+    (hψ₂s : ContMDiffOn 𝓘(𝕜, V₂) I n ψ₂.symm ψ₂.target) :
+    ContDiffOn 𝕜 n (ψ₁.symm.trans ψ₂) (ψ₁.symm.trans ψ₂).source ∧
+      ContDiffOn 𝕜 n (ψ₁.symm.trans ψ₂).symm (ψ₁.symm.trans ψ₂).target := by
+  refine ⟨contDiffOn_symm_trans_of_contMDiffOn hψ₂ hψ₁s, ?_⟩
+  rw [trans_symm_eq_symm_trans_symm, symm_symm]
+  exact contDiffOn_symm_trans_of_contMDiffOn hψ₁ hψ₂s
+
 end Transition
 
 /-- **The chain rule for a change of chart into a normed space.** Let `ψ₁` and `ψ₂` be open
-partial homeomorphisms from `M` into a normed space `F`, and let `w` lie in the source of the
-transition `ψ₂ ∘ ψ₁⁻¹`. If `ψ₁` is differentiable at `ψ₁⁻¹ w` and the transition at `w`, then the
-differential of `ψ₂` at `ψ₁⁻¹ w`, read in `F`, is that of `ψ₁` followed by the derivative of the
-transition at `w`. -/
-theorem mvfderiv_eq_fderiv_symm_trans_comp {ψ₁ ψ₂ : OpenPartialHomeomorph M F} {w : F}
+partial homeomorphisms from `M` into normed spaces `F` and `F'`, and let `w` lie in the source of
+the transition `ψ₂ ∘ ψ₁⁻¹`. If `ψ₁` is differentiable at `ψ₁⁻¹ w` and the transition at `w`, then
+the differential of `ψ₂` at `ψ₁⁻¹ w`, read in `F'`, is that of `ψ₁` followed by the derivative of
+the transition at `w`. -/
+theorem mvfderiv_eq_fderiv_symm_trans_comp {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace 𝕜 F'] {ψ₁ : OpenPartialHomeomorph M F} {ψ₂ : OpenPartialHomeomorph M F'} {w : F}
     (hw : w ∈ (ψ₁.symm.trans ψ₂).source) (hψ₁ : MDifferentiableAt I 𝓘(𝕜, F) ψ₁ (ψ₁.symm w))
     (hΘ : DifferentiableAt 𝕜 (ψ₁.symm.trans ψ₂) w) :
     mvfderiv I ψ₂ (ψ₁.symm w) =
       (fderiv 𝕜 (ψ₁.symm.trans ψ₂) w).comp (mvfderiv I ψ₁ (ψ₁.symm w)) := by
   have hw' : w ∈ ψ₁.target ∧ ψ₁.symm w ∈ ψ₂.source := by simpa using hw
   -- Near `ψ₁⁻¹ w`, the chart `ψ₂` is the transition after `ψ₁`.
-  have hev : (ψ₂ : M → F) =ᶠ[𝓝 (ψ₁.symm w)] (ψ₁.symm.trans ψ₂) ∘ ψ₁ := by
+  have hev : (ψ₂ : M → F') =ᶠ[𝓝 (ψ₁.symm w)] (ψ₁.symm.trans ψ₂) ∘ ψ₁ := by
     filter_upwards [ψ₁.open_source.mem_nhds (ψ₁.map_target hw'.1)] with y hy
     simp [ψ₁.left_inv hy]
-  have hΘ' : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, F) (ψ₁.symm.trans ψ₂) (ψ₁ (ψ₁.symm w)) := by
+  have hΘ' : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, F') (ψ₁.symm.trans ψ₂) (ψ₁ (ψ₁.symm w)) := by
     rw [ψ₁.right_inv hw'.1]
     exact hΘ.mdifferentiableAt
   ext v
@@ -207,16 +227,17 @@ theorem mvfderiv_eq_fderiv_symm_trans_comp {ψ₁ ψ₂ : OpenPartialHomeomorph 
   rfl
 
 /-- **The chain rule for the inverse of a change of chart.** Let `ψ₁` and `ψ₂` be open partial
-homeomorphisms from `M` into a normed space `F`, and let `w` lie in the source of the transition
-`ψ₂ ∘ ψ₁⁻¹`. If `ψ₂⁻¹` is differentiable at the image of `w` under the transition and the
+homeomorphisms from `M` into normed spaces `F` and `F'`, and let `w` lie in the source of the
+transition `ψ₂ ∘ ψ₁⁻¹`. If `ψ₂⁻¹` is differentiable at the image of `w` under the transition and the
 transition at `w`, then the differential of `ψ₁⁻¹` at `w` is the derivative of the transition at
 `w` followed by the differential of `ψ₂⁻¹`. -/
-theorem mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans {ψ₁ ψ₂ : OpenPartialHomeomorph M F}
+theorem mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace 𝕜 F'] {ψ₁ : OpenPartialHomeomorph M F} {ψ₂ : OpenPartialHomeomorph M F'}
     {w : F} (hw : w ∈ (ψ₁.symm.trans ψ₂).source)
-    (hψ₂s : MDifferentiableAt 𝓘(𝕜, F) I ψ₂.symm (ψ₁.symm.trans ψ₂ w))
+    (hψ₂s : MDifferentiableAt 𝓘(𝕜, F') I ψ₂.symm (ψ₁.symm.trans ψ₂ w))
     (hΘ : DifferentiableAt 𝕜 (ψ₁.symm.trans ψ₂) w) :
     mfderiv 𝓘(𝕜, F) I ψ₁.symm w =
-      (mfderiv 𝓘(𝕜, F) I ψ₂.symm (ψ₁.symm.trans ψ₂ w)).comp (fderiv 𝕜 (ψ₁.symm.trans ψ₂) w) := by
+      (mfderiv 𝓘(𝕜, F') I ψ₂.symm (ψ₁.symm.trans ψ₂ w)).comp (fderiv 𝕜 (ψ₁.symm.trans ψ₂) w) := by
   -- Near `w`, the inverse of `ψ₁` is the inverse of `ψ₂` after the transition.
   have hev : (ψ₁.symm : F → M) =ᶠ[𝓝 w] ψ₂.symm ∘ (ψ₁.symm.trans ψ₂) := by
     filter_upwards [(ψ₁.symm.trans ψ₂).open_source.mem_nhds hw] with q hq
@@ -226,6 +247,41 @@ theorem mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans {ψ₁ ψ₂ : OpenP
   -- The casts `tangentSpaceCast` and `NormedSpace.fromTangentSpace` inserted by the chain rule
   -- and by `mfderiv_eq_fderiv` act as the identity by definition.
   rfl
+
+/-- **The chain rule in charts.** Let `ψ` and `φ` be open partial homeomorphisms from `M` and `N`
+into normed spaces `E` and `F`, and let `f : M → N` with `x ∈ ψ.source` and `f x ∈ φ.source`. If
+`f`, `ψ⁻¹`, `φ` and `φ⁻¹` are differentiable at the corresponding points, then the derivative of
+the reading `φ ∘ f ∘ ψ⁻¹` of `f` at `ψ x`, followed by the differential of `φ⁻¹`, is the
+differential of `ψ⁻¹` followed by that of `f`. -/
+theorem mfderiv_symm_comp_fderiv_comp_comp_symm {ψ : OpenPartialHomeomorph M E}
+    {φ : OpenPartialHomeomorph N F} {f : M → N} {x : M} (hx : x ∈ ψ.source)
+    (hfx : f x ∈ φ.source) (hf : MDifferentiableAt I J f x)
+    (hψs : MDifferentiableAt 𝓘(𝕜, E) I ψ.symm (ψ x)) (hφ : MDifferentiableAt J 𝓘(𝕜, F) φ (f x))
+    (hφs : MDifferentiableAt 𝓘(𝕜, F) J φ.symm (φ (f x))) :
+    (mfderiv 𝓘(𝕜, F) J φ.symm (φ (f x))).comp (fderiv 𝕜 (φ ∘ f ∘ ψ.symm) (ψ x)) =
+      (mfderiv I J f x).comp (mfderiv 𝓘(𝕜, E) I ψ.symm (ψ x)) := by
+  have hf' : MDifferentiableAt I J f (ψ.symm (ψ x)) := by rwa [ψ.left_inv hx]
+  have hφ' : MDifferentiableAt J 𝓘(𝕜, F) φ (f (ψ.symm (ψ x))) := by rwa [ψ.left_inv hx]
+  have hΦ : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) (φ ∘ f ∘ ψ.symm) (ψ x) :=
+    MDifferentiableAt.comp (f := f ∘ ψ.symm) _ hφ' (hf'.comp _ hψs)
+  have hφs' : MDifferentiableAt 𝓘(𝕜, F) J φ.symm ((φ ∘ f ∘ ψ.symm) (ψ x)) := by
+    simpa [ψ.left_inv hx] using hφs
+  -- Near `ψ x`, `φ⁻¹ ∘ (φ ∘ f ∘ ψ⁻¹) = f ∘ ψ⁻¹`, since `f ∘ ψ⁻¹` is continuous at `ψ x`.
+  have hev : (φ.symm ∘ (φ ∘ f ∘ ψ.symm) : E → N) =ᶠ[𝓝 (ψ x)] f ∘ ψ.symm := by
+    have hc : ContinuousAt (f ∘ ψ.symm) (ψ x) := hf'.continuousAt.comp hψs.continuousAt
+    filter_upwards [hc.preimage_mem_nhds (φ.open_source.mem_nhds (by simpa [ψ.left_inv hx]))]
+      with w hw
+    exact φ.left_inv hw
+  have hD := hev.mfderiv_eq (I := 𝓘(𝕜, E)) (I' := J)
+  rw [mfderiv_comp _ hφs' hΦ, mfderiv_comp _ hf' hψs, mfderiv_eq_fderiv] at hD
+  ext v
+  -- The casts `tangentSpaceCast` and `NormedSpace.fromTangentSpace` inserted by the chain rule
+  -- and by `mfderiv_eq_fderiv` act as the identity by definition.
+  have hv : mfderiv 𝓘(𝕜, F) J φ.symm (φ (f (ψ.symm (ψ x)))) (fderiv 𝕜 (φ ∘ f ∘ ψ.symm) (ψ x) v) =
+      mfderiv I J f (ψ.symm (ψ x)) (mfderiv 𝓘(𝕜, E) I ψ.symm (ψ x) v) :=
+    congr($hD v)
+  rw [ψ.left_inv hx] at hv
+  exact hv
 
 end OpenPartialHomeomorph
 

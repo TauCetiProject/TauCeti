@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Realization
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 import Mathlib.Analysis.Complex.Isometry
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.RigidMotion
 import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
-import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.CompLp
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.AffineIsometry
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -43,9 +43,8 @@ each composing with the motion and rotating the values by `fieldRotation u` or `
 moved variation are rotated by `u⁻¹` as well (`TauCeti.Vortex.gradient_variationMotion_ae`).
 Taking `L²` values intertwines the motions of variations and of fields
 (`TauCeti.Vortex.sobolevFieldValues_variationMotion`), so the motion of variations preserves the
-`L²` pairing. The isometries are built from the
-measure-preserving pullback `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv` and the pointwise
-isometry `LinearIsometryEquiv.compLpₗᵢ`. Each action is trivial at the identity, composes as
+`L²` pairing. The isometries of `L∞` and `L²` are instances of the rigid motion
+`MeasureTheory.Lp.rigidMotionₗᵢ` of `Lᵖ`. Each action is trivial at the identity, composes as
 the motions do, and has as inverse the motion by the inverse isometry `z ↦ u⁻¹ z - u⁻¹ a`.
 
 The realization at the moved coefficient is the conjugate of the realization at `c`:
@@ -112,52 +111,6 @@ local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens 
 
 private theorem measurePreserving_top (g : ℂ ≃ᵃⁱ[ℝ] ℂ) : MeasurePreserving g μ⊤ μ⊤ := by
   simpa using g.measurePreserving
-
-private theorem comp_symm_ae_eq_id (g : ℂ ≃ᵃⁱ[ℝ] ℂ) : g ∘ g.symm =ᵐ[μ⊤] id :=
-  Filter.Eventually.of_forall g.apply_symm_apply
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- Precomposition with an affine isometry `g` followed by the pointwise isometry `R`, on `Lᵖ`
-for the measure `μ⊤` that `sobolevGaugeFixedOperator` uses. Its laws below are instances of the
-identity, composition, inverse and commutation laws of `Lp.compMeasurePreservingₗᵢEquiv` and
-`LinearIsometryEquiv.compLpₗᵢ`. -/
-private def lpMotion (p : ℝ≥0∞) [Fact (1 ≤ p)] (R : E ≃ₗᵢ[ℝ] E) (g : ℂ ≃ᵃⁱ[ℝ] ℂ) :
-    Lp E p μ⊤ ≃ₗᵢ[ℝ] Lp E p μ⊤ :=
-  (Lp.compMeasurePreservingₗᵢEquiv ℝ (measurePreserving_top g) (measurePreserving_top g.symm)
-    (comp_symm_ae_eq_id g)).trans (R.compLpₗᵢ p μ⊤)
-
-private theorem coeFn_lpMotion (R : E ≃ₗᵢ[ℝ] E) (g : ℂ ≃ᵃⁱ[ℝ] ℂ) (f : Lp E p μ⊤) :
-    ⇑(lpMotion p R g f) =ᵐ[μ⊤] fun z ↦ R (f (g z)) := by
-  filter_upwards [R.coeFn_compLpₗᵢ (Lp.compMeasurePreservingₗᵢEquiv ℝ
-      (measurePreserving_top g) (measurePreserving_top g.symm) (comp_symm_ae_eq_id g) f),
-    Lp.coeFn_compMeasurePreservingₗᵢEquiv ℝ (measurePreserving_top g)
-      (measurePreserving_top g.symm) (comp_symm_ae_eq_id g) f] with z h₁ h₂
-  rw [lpMotion, LinearIsometryEquiv.trans_apply, h₁, h₂, Function.comp_apply]
-
-private theorem lpMotion_refl :
-    lpMotion (E := E) p (.refl ℝ E) (.refl ℝ ℂ) = .refl ℝ _ := by
-  rw [lpMotion, LinearIsometryEquiv.compLpₗᵢ_refl, LinearIsometryEquiv.trans_refl,
-    Lp.compMeasurePreservingₗᵢEquiv_eq_refl ℝ _ _ _ (.of_eq AffineIsometryEquiv.coe_refl)]
-
-/-- Successive motions compose. -/
-private theorem lpMotion_lpMotion (R R' : E ≃ₗᵢ[ℝ] E) (g g' : ℂ ≃ᵃⁱ[ℝ] ℂ) :
-    (lpMotion p R' g').trans (lpMotion p R g) = lpMotion p (R'.trans R) (g.trans g') := by
-  rw [lpMotion, lpMotion, lpMotion, ← LinearIsometryEquiv.trans_assoc _ (R'.compLpₗᵢ p μ⊤),
-    LinearIsometryEquiv.trans_assoc (R'.compLpₗᵢ p μ⊤),
-    ← Lp.compMeasurePreservingₗᵢEquiv_trans_compLpₗᵢ,
-    ← LinearIsometryEquiv.trans_assoc _ (R'.compLpₗᵢ p μ⊤), LinearIsometryEquiv.trans_assoc,
-    Lp.compMeasurePreservingₗᵢEquiv_trans ℝ _ _ _ _ _ _ (measurePreserving_top (g.trans g'))
-      (measurePreserving_top (g.trans g').symm) (comp_symm_ae_eq_id (g.trans g'))
-      (.of_eq (AffineIsometryEquiv.coe_trans g g')),
-    ← LinearIsometryEquiv.compLpₗᵢ_trans]
-
-private theorem lpMotion_symm (R : E ≃ₗᵢ[ℝ] E) (g : ℂ ≃ᵃⁱ[ℝ] ℂ) :
-    (lpMotion p R g).symm = lpMotion p R.symm g.symm := by
-  rw [lpMotion, lpMotion, LinearIsometryEquiv.symm_trans, LinearIsometryEquiv.compLpₗᵢ_symm,
-    Lp.compMeasurePreservingₗᵢEquiv_symm ℝ _ _ _ (measurePreserving_top g.symm)
-      (measurePreserving_top g.symm.symm) (comp_symm_ae_eq_id g.symm) .rfl,
-    Lp.compMeasurePreservingₗᵢEquiv_trans_compLpₗᵢ]
 
 /-- Precomposition of the four coordinates with an affine isometry `g` followed by the pointwise
 isometry `R`, on `H¹(ℂ)⁴`. -/
@@ -268,14 +221,14 @@ field `x` to the class of `rotateField u (translateField a x)`, the pullback of 
 (`coeFn_coefficientMotion`). These are the coefficients of `sobolevGaugeFixedOperator`. -/
 def coefficientMotion (u : Circle) (a : ℂ) :
     Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤ ≃ₗᵢ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤ :=
-  lpMotion ∞ (fieldRotation u) (u.rigidMotion a)
+  Lp.rigidMotionₗᵢ μ⊤ ∞ (fieldRotation u) (u.rigidMotion a)
 
 /-- **The rigid motion `z ↦ u z + a` on the `L²` targets of `sobolevGaugeFixedOperator`.** It
 sends the class of `η` to the class of `rotateTarget u (translateField a η)`
 (`coeFn_targetMotion`). -/
 def targetMotion (u : Circle) (a : ℂ) :
     Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ ≃ₗᵢ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
-  lpMotion 2 (targetRotation u) (u.rigidMotion a)
+  Lp.rigidMotionₗᵢ μ⊤ 2 (targetRotation u) (u.rigidMotion a)
 
 /-- **The rigid motion `z ↦ u z + a` on the `L²` classes of fields.** It sends the class of `v`
 to the class of `rotateField u (translateField a v)` (`coeFn_fieldMotion`). It is the motion of
@@ -283,7 +236,7 @@ the `L²` values of `H¹` variations (`sobolevFieldValues_variationMotion`), who
 defines the orthogonal complement of the kernel of `sobolevGaugeFixedOperator`. -/
 def fieldMotion (u : Circle) (a : ℂ) :
     Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ ≃ₗᵢ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
-  lpMotion 2 (fieldRotation u) (u.rigidMotion a)
+  Lp.rigidMotionₗᵢ μ⊤ 2 (fieldRotation u) (u.rigidMotion a)
 
 /-- **The rigid motion `z ↦ u z + a` on `H¹` variations.** It acts on the four coordinates in
 `H¹(ℂ) = W^{1,2}(ℂ)` as `rotateField u ∘ translateField a` acts on their values
@@ -296,7 +249,7 @@ def variationMotion (u : Circle) (a : ℂ) :
 /-- The coefficient moved by `z ↦ u z + a` is the rotated translate of the coefficient. -/
 theorem coeFn_coefficientMotion (u : Circle) (a : ℂ) (c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
     ⇑(coefficientMotion u a c) =ᵐ[μ⊤] rotateField u (translateField a c) := by
-  filter_upwards [coeFn_lpMotion (fieldRotation u) (u.rigidMotion a) c] with z hz
+  filter_upwards [Lp.coeFn_rigidMotionₗᵢ (fieldRotation u) (u.rigidMotion a) c] with z hz
   rw [coefficientMotion, hz, rotateField_apply_eq_fieldRotation, translateField_apply,
     Circle.rigidMotion_apply]
 
@@ -313,14 +266,14 @@ theorem coeFn_coefficientMotion_of_ae_eq {c : Lp (EuclideanSpace ℝ (Fin 4)) �
 /-- The target moved by `z ↦ u z + a` is the rotated translate of the target. -/
 theorem coeFn_targetMotion (u : Circle) (a : ℂ) (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     ⇑(targetMotion u a f) =ᵐ[μ⊤] rotateTarget u (translateField a f) := by
-  filter_upwards [coeFn_lpMotion (targetRotation u) (u.rigidMotion a) f] with z hz
+  filter_upwards [Lp.coeFn_rigidMotionₗᵢ (targetRotation u) (u.rigidMotion a) f] with z hz
   rw [targetMotion, hz, rotateTarget_apply_eq_targetRotation, translateField_apply,
     Circle.rigidMotion_apply]
 
 /-- The field moved by `z ↦ u z + a` is the rotated translate of the field. -/
 theorem coeFn_fieldMotion (u : Circle) (a : ℂ) (v : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     ⇑(fieldMotion u a v) =ᵐ[μ⊤] rotateField u (translateField a v) := by
-  filter_upwards [coeFn_lpMotion (fieldRotation u) (u.rigidMotion a) v] with z hz
+  filter_upwards [Lp.coeFn_rigidMotionₗᵢ (fieldRotation u) (u.rigidMotion a) v] with z hz
   rw [fieldMotion, hz, rotateField_apply_eq_fieldRotation, translateField_apply,
     Circle.rigidMotion_apply]
 
@@ -347,15 +300,16 @@ theorem gradient_variationMotion_ae (u : Circle) (a : ℂ)
 
 @[simp]
 theorem coefficientMotion_one_zero : coefficientMotion 1 0 = LinearIsometryEquiv.refl ℝ _ :=
-  by rw [coefficientMotion, fieldRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl]
+  by rw [coefficientMotion, fieldRotation_one, Circle.rigidMotion_one_zero,
+    Lp.rigidMotionₗᵢ_refl]
 
 @[simp]
 theorem targetMotion_one_zero : targetMotion 1 0 = LinearIsometryEquiv.refl ℝ _ :=
-  by rw [targetMotion, targetRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl]
+  by rw [targetMotion, targetRotation_one, Circle.rigidMotion_one_zero, Lp.rigidMotionₗᵢ_refl]
 
 @[simp]
 theorem fieldMotion_one_zero : fieldMotion 1 0 = LinearIsometryEquiv.refl ℝ _ :=
-  by rw [fieldMotion, fieldRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl]
+  by rw [fieldMotion, fieldRotation_one, Circle.rigidMotion_one_zero, Lp.rigidMotionₗᵢ_refl]
 
 @[simp]
 theorem variationMotion_one_zero : variationMotion 1 0 = ContinuousLinearEquiv.refl ℝ _ :=
@@ -370,7 +324,8 @@ theorem coefficientMotion_coefficientMotion (u v : Circle) (a b : ℂ)
     (c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
     coefficientMotion u a (coefficientMotion v b c) = coefficientMotion (u * v) (v * a + b) c := by
   rw [coefficientMotion, coefficientMotion, coefficientMotion, ← LinearIsometryEquiv.trans_apply,
-    lpMotion_lpMotion, Circle.rigidMotion_trans_rigidMotion, fieldRotation_trans_fieldRotation]
+    Lp.rigidMotionₗᵢ_trans_rigidMotionₗᵢ, Circle.rigidMotion_trans_rigidMotion,
+    fieldRotation_trans_fieldRotation]
 
 /-- Moving by `z ↦ v z + b` and then by `z ↦ u z + a` is moving by the composite
 `z ↦ v (u z + a) + b`. Not a simp lemma: the type of the classes mentions the measure
@@ -379,7 +334,8 @@ theorem targetMotion_targetMotion (u v : Circle) (a b : ℂ)
     (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     targetMotion u a (targetMotion v b f) = targetMotion (u * v) (v * a + b) f := by
   rw [targetMotion, targetMotion, targetMotion, ← LinearIsometryEquiv.trans_apply,
-    lpMotion_lpMotion, Circle.rigidMotion_trans_rigidMotion, targetRotation_trans_targetRotation]
+    Lp.rigidMotionₗᵢ_trans_rigidMotionₗᵢ, Circle.rigidMotion_trans_rigidMotion,
+    targetRotation_trans_targetRotation]
 
 /-- Moving by `z ↦ v z + b` and then by `z ↦ u z + a` is moving by the composite
 `z ↦ v (u z + a) + b`. Not a simp lemma: the type of the classes mentions the measure
@@ -388,7 +344,8 @@ theorem fieldMotion_fieldMotion (u v : Circle) (a b : ℂ)
     (w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     fieldMotion u a (fieldMotion v b w) = fieldMotion (u * v) (v * a + b) w := by
   rw [fieldMotion, fieldMotion, fieldMotion, ← LinearIsometryEquiv.trans_apply,
-    lpMotion_lpMotion, Circle.rigidMotion_trans_rigidMotion, fieldRotation_trans_fieldRotation]
+    Lp.rigidMotionₗᵢ_trans_rigidMotionₗᵢ, Circle.rigidMotion_trans_rigidMotion,
+    fieldRotation_trans_fieldRotation]
 
 /-- Moving by `z ↦ v z + b` and then by `z ↦ u z + a` is moving by the composite
 `z ↦ v (u z + a) + b`. -/
@@ -412,7 +369,7 @@ isometry `z ↦ u⁻¹ z - u⁻¹ a`. -/
 @[simp]
 theorem coefficientMotion_symm (u : Circle) (a : ℂ) :
     (coefficientMotion u a).symm = coefficientMotion u⁻¹ (-((u : ℂ)⁻¹ * a)) := by
-  rw [coefficientMotion, coefficientMotion, lpMotion_symm, fieldRotation_symm,
+  rw [coefficientMotion, coefficientMotion, Lp.rigidMotionₗᵢ_symm, fieldRotation_symm,
     Circle.rigidMotion_symm]
 
 /-- The inverse of the motion `z ↦ u z + a` on targets is the motion by the inverse isometry
@@ -420,14 +377,16 @@ theorem coefficientMotion_symm (u : Circle) (a : ℂ) :
 @[simp]
 theorem targetMotion_symm (u : Circle) (a : ℂ) :
     (targetMotion u a).symm = targetMotion u⁻¹ (-((u : ℂ)⁻¹ * a)) := by
-  rw [targetMotion, targetMotion, lpMotion_symm, targetRotation_symm, Circle.rigidMotion_symm]
+  rw [targetMotion, targetMotion, Lp.rigidMotionₗᵢ_symm, targetRotation_symm,
+    Circle.rigidMotion_symm]
 
 /-- The inverse of the motion `z ↦ u z + a` on fields is the motion by the inverse isometry
 `z ↦ u⁻¹ z - u⁻¹ a`. -/
 @[simp]
 theorem fieldMotion_symm (u : Circle) (a : ℂ) :
     (fieldMotion u a).symm = fieldMotion u⁻¹ (-((u : ℂ)⁻¹ * a)) := by
-  rw [fieldMotion, fieldMotion, lpMotion_symm, fieldRotation_symm, Circle.rigidMotion_symm]
+  rw [fieldMotion, fieldMotion, Lp.rigidMotionₗᵢ_symm, fieldRotation_symm,
+    Circle.rigidMotion_symm]
 
 /-- The inverse of the motion `z ↦ u z + a` on variations is the motion by the inverse isometry
 `z ↦ u⁻¹ z - u⁻¹ a`. -/
@@ -448,10 +407,10 @@ theorem sobolevGaugeFixedOperator_coefficientMotion_apply (u : Circle) (a : ℂ)
   refine Lp.ext ?_
   rw [coefficientMotion, variationMotion, targetMotion, w1pMotionEquiv_apply]
   filter_upwards [sobolevGaugeFixedOperator_apply_ae
-      (lpMotion ∞ (fieldRotation u) (u.rigidMotion a) c)
+      (Lp.rigidMotionₗᵢ μ⊤ ∞ (fieldRotation u) (u.rigidMotion a) c)
       (w1pMotion (fieldRotation u) (u.rigidMotion a) y),
-    coeFn_lpMotion (fieldRotation u) (u.rigidMotion a) c,
-    coeFn_lpMotion (targetRotation u) (u.rigidMotion a) (sobolevGaugeFixedOperator c y),
+    Lp.coeFn_rigidMotionₗᵢ (fieldRotation u) (u.rigidMotion a) c,
+    Lp.coeFn_rigidMotionₗᵢ (targetRotation u) (u.rigidMotion a) (sobolevGaugeFixedOperator c y),
     (measurePreserving_top (u.rigidMotion a)).quasiMeasurePreserving.ae
       (sobolevGaugeFixedOperator_apply_ae c y),
     value_w1pMotion_ae (fieldRotation u) (u.rigidMotion a) y,

@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Geometry.Lie.Exponential.Classification
+public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import Mathlib.Geometry.Manifold.Instances.Sphere
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
 /-!
 # Compatibility with the circle exponential
@@ -26,6 +28,8 @@ generator to `1`; under that identification, the abstract Lie-group exponential 
 * `circleLieAlgebraEquiv_smul_circleExpGenerator`: the Lie algebra of the circle is the real line
   spanned by that generator.
 * `lieExp_circle`: under this identification, the abstract exponential is `Circle.exp`.
+* `TauCeti.two_pi_smul_circleExpGenerator_mem_lieExpLattice`: the period `2π` of the circle
+  exponential lies in the exponential lattice.
 -/
 
 public section
@@ -55,6 +59,11 @@ theorem lieExp_circleExpGenerator (t : ℝ) :
     (Multiplicative.ofAdd t)
   simpa only [oneParameterSubgroup_apply, Circle.expContinuousMonoidHom_apply, toAdd_ofAdd]
     using h
+
+/-- The period `2π` of the circle exponential lies in the exponential lattice. -/
+theorem TauCeti.two_pi_smul_circleExpGenerator_mem_lieExpLattice :
+    (2 * Real.pi) • circleExpGenerator ∈ TauCeti.lieExpLattice (I := 𝓡 1) (G := Circle) := by
+  rw [TauCeti.mem_lieExpLattice, lieExp_circleExpGenerator, Circle.exp_two_pi]
 
 /-- The generator of `Circle.exp` is nonzero. -/
 theorem circleExpGenerator_ne_zero : circleExpGenerator ≠ 0 := by

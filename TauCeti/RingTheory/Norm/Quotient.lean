@@ -27,6 +27,8 @@ particular `Algebra.norm R b = 0` when `T = R` and `Algebra.norm R b ∈ I` when
 
 * `TauCeti.Algebra.norm_quotient_mk`: the norm of `S ⧸ IS` over `R ⧸ I` of the class of `x` is
   the class of the norm of `x`.
+* `TauCeti.Algebra.norm_mk_map_mkₐ_eq_norm`: for ideals `J ≤ I`, the norm of a class in
+  `(V ⧸ J) ⧸ I (V ⧸ J)` is its norm in any quotient of `V` by `I`, over any quotient of the base.
 * `AlgHom.algebraMap_norm_eq_zero_of_map_eq_zero`, `AlgHom.norm_eq_zero_of_map_eq_zero`, and
   `AlgHom.norm_mem_of_map_eq_zero`: vanishing of `Algebra.norm R b` under `R`-algebra maps killing
   `b`.
@@ -50,6 +52,27 @@ theorem Algebra.norm_quotient_mk (I : Ideal R) (x : S) :
   rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.quotIdealMapEquivQuotTensor S I),
     Algebra.TensorProduct.quotIdealMapEquivQuotTensor_mk, Algebra.norm_baseChange_tmul,
     Ideal.Quotient.algebraMap_eq]
+
+/-- **The norm in a double quotient.** Let `J ≤ I` be ideals of an `R`-algebra `V`, let `k` be a
+quotient of `R` acting compatibly on `V ⧸ J` and on `B`, and let `f : V → B` be a surjective
+`R`-algebra map with kernel `I`. Then the norm over `k` of the class of `v` in
+`(V ⧸ J) ⧸ I (V ⧸ J)` is the norm of `f v`. -/
+theorem Algebra.norm_mk_map_mkₐ_eq_norm {R k V B : Type*} [CommRing R] [CommRing k] [CommRing V]
+    [CommRing B] [Algebra R k] [Algebra R V] [Algebra R B] [Algebra k B] [IsScalarTower R k B]
+    {J I : Ideal V} [Algebra k (V ⧸ J)] [IsScalarTower R k (V ⧸ J)]
+    (hk : Function.Surjective (algebraMap R k)) (f : V →ₐ[R] B) (hf : Function.Surjective f)
+    (hker : RingHom.ker f = I) (hJI : J ≤ I) (v : V) :
+    Algebra.norm k (Ideal.Quotient.mk (I.map (Ideal.Quotient.mkₐ R J)) (Ideal.Quotient.mk J v)) =
+      Algebra.norm k (f v) := by
+  subst hker
+  let φ := (DoubleQuot.quotQuotEquivQuotOfLEₐ R hJI).trans
+    (Ideal.quotientKerAlgEquivOfSurjective hf)
+  rw [← Algebra.norm_eq_of_algEquiv (φ.extendScalarsOfSurjective hk),
+    AlgEquiv.coe_extendScalarsOfSurjective, AlgEquiv.trans_apply,
+    DoubleQuot.coe_quotQuotEquivQuotOfLEₐ]
+  -- The class of `mk J v` is `DoubleQuot.quotQuotMk J I v`, which is `mk J` followed by `mk`.
+  exact congrArg _ ((congrArg _ (DoubleQuot.quotQuotEquivQuotOfLE_quotQuotMk v hJI)).trans
+    (Ideal.quotientKerAlgEquivOfSurjective_mk hf v))
 
 end TauCeti
 

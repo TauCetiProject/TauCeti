@@ -8,6 +8,8 @@ module
 import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import Mathlib.RingTheory.PowerSeries.Inverse
 import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Affine
+import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveLine.Pushforward
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine.ClosedImmersion
 import TauCeti.AlgebraicGeometry.Cohomology.Spec
 import TauCeti.AlgebraicGeometry.Modules.Tilde.Pushforward
 import TauCeti.AlgebraicGeometry.Morphisms.Proper
@@ -18,7 +20,7 @@ import TauCeti.RingTheory.Flat.NonZeroDivisors
 
 The coherence of the higher direct images `R^q f_* F` of a coherent sheaf `F` along a proper
 morphism `f` to a locally Noetherian scheme needs no flatness of `f` or of `F`, but it does need
-properness. These examples test both boundaries on affine schemes.
+properness. These examples test both boundaries, on affine schemes and on the projective line.
 
 * **Properness is used.** For a nonzero ring `R`, the affine line `Spec R[t] ⟶ Spec R` is not
   proper, and the zeroth cohomology `H⁰(Spec R[t], 𝒪) = R[t]` of its structure sheaf is not a
@@ -30,6 +32,12 @@ properness. These examples test both boundaries on affine schemes.
   `H⁰(Spec (A ⧸ (t)), 𝒪) = A ⧸ (t)` is a finite `A`-module killed by `t`. When `t` is a
   nonzerodivisor and not a unit, as `t` is in the power series ring `k⟦t⟧` over a field, neither
   `i` nor `H⁰` is flat over `A`.
+* **A flat proper morphism can carry non-flat cohomology.** For `A = k⟦t⟧`, the projective line
+  `ℙ¹_A` is proper and flat over `A`, and the special fibre `ℙ¹_{A/(t)}` is a closed subscheme.
+  The direct image `F` of its structure sheaf to `ℙ¹_A` has `H⁰(ℙ¹_A, F) = A ⧸ (t)`, which is not
+  flat over `A`, and `Hⁿ(ℙ¹_A, F) = 0` for `n ≥ 1`. The sheaf `F` is nonzero and killed by `t`, so
+  it is not flat over the discrete valuation ring `A` either; the examples check only the
+  statements about its cohomology.
 -/
 
 open CategoryTheory Limits AlgebraicGeometry PowerSeries
@@ -149,10 +157,51 @@ variable (k : Type u) [Field k]
 nonzerodivisor of `k⟦t⟧` and not a unit. -/
 example : ¬ Flat (Spec (.of (k⟦X⟧ ⧸ Ideal.span {(X : k⟦X⟧)})) ↘ Spec (.of k⟦X⟧)) := by
   rw [specOverSpec_over, Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff]
-  refine Module.Flat.not_quotient_of_mem_nonZeroDivisors ?_
+  exact Module.Flat.not_quotient_of_mem_nonZeroDivisors
+    (maximalIdeal_eq_span_X (k := k) ▸ (IsLocalRing.maximalIdeal.isMaximal _).ne_top)
     (mem_nonZeroDivisors_of_ne_zero X_ne_zero) (Ideal.mem_span_singleton_self _)
-  rw [ne_eq, Ideal.span_singleton_eq_top, isUnit_iff_constantCoeff, constantCoeff_X]
-  exact not_isUnit_zero
+
+/-- The projective line over `k⟦t⟧` is proper over `k⟦t⟧`. -/
+example : IsProper (projectiveLine k⟦X⟧ ↘ Spec (.of k⟦X⟧)) :=
+  inferInstance
+
+/-- The projective line over `k⟦t⟧` is flat over `k⟦t⟧`. -/
+example : Flat (projectiveLine k⟦X⟧ ↘ Spec (.of k⟦X⟧)) :=
+  have := SmoothOfRelativeDimension.smooth 1 (projectiveLine k⟦X⟧ ↘ Spec (.of k⟦X⟧))
+  inferInstance
+
+/-- The special fibre `ℙ¹_{k⟦t⟧/(t)}` is a closed subscheme of `ℙ¹_{k⟦t⟧}`. -/
+example : IsClosedImmersion
+    (projectiveLine.baseChangeProjection k⟦X⟧ (k⟦X⟧ ⧸ Ideal.span {(X : k⟦X⟧)})) :=
+  inferInstance
+
+/-- The zeroth cohomology on `ℙ¹_{k⟦t⟧}` of the structure sheaf of the special fibre is
+`k⟦t⟧ ⧸ (t)`. -/
+noncomputable example :
+    Cohomology ((pushforward (projectiveLine.baseChangeProjection k⟦X⟧
+      (k⟦X⟧ ⧸ Ideal.span {(X : k⟦X⟧)}))).obj
+        (InvertibleSheaf.trivial (projectiveLine (k⟦X⟧ ⧸ Ideal.span {(X : k⟦X⟧)}))).obj) 0 ≃ₗ[k⟦X⟧]
+      k⟦X⟧ ⧸ Ideal.span {(X : k⟦X⟧)} :=
+  projectiveLine.cohomologyZeroPushforwardLinearEquiv _ _
+
+/-- The first cohomology on `ℙ¹_{k⟦t⟧}` of the structure sheaf of the special fibre vanishes. -/
+example :
+    Subsingleton (Cohomology ((pushforward (projectiveLine.baseChangeProjection k⟦X⟧
+      (k⟦X⟧ ⧸ Ideal.span {(X : k⟦X⟧)}))).obj
+        (InvertibleSheaf.trivial (projectiveLine (k⟦X⟧ ⧸ Ideal.span {(X : k⟦X⟧)}))).obj) 1) :=
+  inferInstance
+
+/-- The zeroth cohomology on `ℙ¹_{k⟦t⟧}` of the structure sheaf of the special fibre is not flat
+over `k⟦t⟧`. -/
+example :
+    ¬ Module.Flat k⟦X⟧ (Cohomology ((pushforward (projectiveLine.baseChangeProjection k⟦X⟧
+      (k⟦X⟧ ⧸ Ideal.span {(X : k⟦X⟧)}))).obj
+        (InvertibleSheaf.trivial (projectiveLine (k⟦X⟧ ⧸ Ideal.span {(X : k⟦X⟧)}))).obj) 0) :=
+  fun _ ↦ Module.Flat.not_quotient_of_mem_nonZeroDivisors
+    (maximalIdeal_eq_span_X (k := k) ▸ (IsLocalRing.maximalIdeal.isMaximal _).ne_top)
+    (mem_nonZeroDivisors_of_ne_zero X_ne_zero) (Ideal.mem_span_singleton_self _)
+    (.of_linearEquiv (projectiveLine.cohomologyZeroPushforwardLinearEquiv k⟦X⟧
+      (k⟦X⟧ ⧸ Ideal.span {(X : k⟦X⟧)})).symm)
 
 end PowerSeries
 

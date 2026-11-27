@@ -7,8 +7,13 @@ module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.LinearAlgebra.Pi
+public import Mathlib.LinearAlgebra.Span.Basic
 import Mathlib.Algebra.BigOperators.Fin
+import TauCeti.Algebra.Algebra.Basic
 import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Matrix-vector multiplication
@@ -29,7 +34,9 @@ sees coordinate `i` of that vector. In particular such a matrix maps the coordin
 Subtracting a matrix from a constant diagonal matrix turns its eigenvector equation into a
 homogeneous linear system, with no multiplicative identity needed. An eigenvector of a matrix is an
 eigenvector of each of its powers, with the eigenvalue in any monoid of scalars whose action
-commutes with multiplication of the entries.
+commutes with multiplication of the entries. So when `X ^ m` is a scalar matrix `c • 1`, every
+eigenvalue `ν` of `X` satisfies `ν ^ m = c`. If `A B = ζ • (B A)`, then `B` maps eigenvectors of
+`A` to eigenvectors, multiplying the eigenvalue by `ζ`.
 
 For a matrix `Q` and a multiplicative map `σ`, the pairing `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by
 `σ c * c` along a line. When `σ` is also additive, such as a ring endomorphism, this pairing is
@@ -44,6 +51,13 @@ permutation to vectors invariant under the row map.
 A right null vector whose last coordinate is a unit lets the submatrix omitting the last column
 reproduce every product `A *ᵥ x`.
 
+A `2 × 2` matrix acts linearly on pairs `K × K` by `Matrix.toLinProd` via
+`LinearEquiv.finTwoArrow`.
+
+## Main definitions
+
+* `Matrix.toLinProd`: the linear action of a `2 × 2` matrix on `K × K`.
+
 ## Main results
 
 * `Matrix.mulVec_mulVec_eq_zero_of_sq_eq_zero`: a square-zero matrix annihilates every
@@ -55,6 +69,10 @@ reproduce every product `A *ᵥ x`.
 * `Matrix.diagonal_const_sub_mulVec_eq_zero_iff`: `(a - A) v = 0` for a constant diagonal `a`
   is the eigenvector equation `A v = a • v`.
 * `Matrix.pow_mulVec_eq_pow_smul`: if `A v = μ • v`, then `A ^ k v = μ ^ k • v`.
+* `Matrix.mulVec_pow_mulVec_of_mul_eq_smul_mul`: if `A B = ζ • (B A)` and `A v = μ • v`, then
+  `A (B ^ m v) = (μ ζ ^ m) • B ^ m v`.
+* `Matrix.pow_eq_of_pow_eq_smul_one_of_mulVec_eq_smul`: if `X ^ m = c • 1` and `X v = ν • v`
+  with `v ≠ 0`, then `ν ^ m = c`.
 * `Matrix.mulVec_mono` and `Matrix.mulVec_nonneg`: multiplication by an entrywise nonnegative
   matrix is monotone and preserves nonnegativity.
 * `Matrix.le_dotProduct_of_one_le`: a coordinate of a nonnegative vector is at most its dot
@@ -64,8 +82,13 @@ reproduce every product `A *ᵥ x`.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
+* `Matrix.forall_mem_sup_span_singleton_mulVec_eq_self`: if `A` fixes `S` and `x`, then `A` fixes
+  `S ⊔ (R ∙ x)`.
 * `Matrix.map_intCast_mulVec` and `Matrix.map_intCast_vecMul`: casting integer entries commutes
   with matrix-vector and vector-matrix multiplication.
+* `Matrix.toLinProd_apply`: explicit coordinate formula for `Matrix.toLinProd M q`.
+* `Matrix.toLinProd_finTwoArrowEquiv`: transport of `Matrix.toLinProd` along
+  `finTwoArrowEquiv`.
 -/
 
 public section
@@ -128,6 +151,23 @@ theorem pow_mulVec_eq_pow_smul [DecidableEq n] {R S : Type*} [Semiring R] [Monoi
   | zero => simp
   | succ k ih => rw [pow_succ, ← mulVec_mulVec, h, mulVec_smul, ih, smul_smul, ← pow_succ']
 
+/-- **Twisted commutation shifts eigenvalues.** If `A B = ζ • (B A)` and `v` is an eigenvector of
+`A` with eigenvalue `μ`, then `B ^ m v` is an eigenvector of `A` with eigenvalue `μ ζ ^ m`. -/
+theorem mulVec_pow_mulVec_of_mul_eq_smul_mul [DecidableEq n] {R : Type*} [CommSemiring R]
+    {A B : Matrix n n R} {ζ μ : R} (h : A * B = ζ • (B * A)) {v : n → R} (hv : A *ᵥ v = μ • v)
+    (m : ℕ) : A *ᵥ (B ^ m *ᵥ v) = (μ * ζ ^ m) • (B ^ m *ᵥ v) := by
+  rw [mulVec_mulVec, TauCeti.mul_pow_of_mul_eq_smul_mul h m, smul_mulVec, ← mulVec_mulVec, hv,
+    mulVec_smul, smul_smul, mul_comm]
+
+/-- If a power `X ^ m` of a square matrix is the scalar matrix `c • 1`, every eigenvalue `ν` of
+`X` satisfies `ν ^ m = c`. -/
+theorem pow_eq_of_pow_eq_smul_one_of_mulVec_eq_smul {R : Type*} [CommRing R] [NoZeroDivisors R]
+    [DecidableEq n] {X : Matrix n n R} {m : ℕ} {c ν : R} {x : n → R} (hX : X ^ m = c • 1)
+    (hx : X *ᵥ x = ν • x) (hx0 : x ≠ 0) : ν ^ m = c := by
+  have h := pow_mulVec_eq_pow_smul hx m
+  rw [hX, smul_mulVec, one_mulVec] at h
+  exact smul_left_injective R hx0 h.symm
+
 /-- For a multiplicative map `σ`, the pairing `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`
 along a line: `h(c v, c v) = σ c * c * h(v, v)`. When `σ` is also additive, such as a ring
 endomorphism, `h` is the `σ`-sesquilinear form of `Q`. The left multiplications of `R` must
@@ -137,6 +177,13 @@ theorem comp_smul_dotProduct_mulVec_smul {R F : Type*} [NonUnitalSemiring R]
     (v : n → R) : (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
   rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
     smul_eq_mul, mul_assoc]
+
+/-- If `A` fixes every vector of `S` and fixes `x`, then `A` fixes every vector of
+`S ⊔ (R ∙ x)`. -/
+theorem forall_mem_sup_span_singleton_mulVec_eq_self {R : Type*} [CommSemiring R]
+    {S : Submodule R (n → R)} {A : Matrix n n R} {x : n → R} (hS : ∀ s ∈ S, A *ᵥ s = s)
+    (hx : A *ᵥ x = x) : ∀ s ∈ S ⊔ (R ∙ x), A *ᵥ s = s :=
+  S.forall_mem_sup_span_singleton hS hx fun _ _ _ h₁ h₂ ↦ by simp [mulVec_add, mulVec_smul, h₁, h₂]
 
 section IntCast
 
@@ -223,5 +270,31 @@ theorem submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero {m : Type*}
   exact Finset.sum_congr rfl fun _ _ => by simp only [mul_assoc]
 
 end Ring
+
+section ToLinProd
+
+/-- The linear action of a `2 × 2` matrix `M` on `K × K`, defined by conjugating
+`Matrix.toLin' M` along `LinearEquiv.finTwoArrow`. -/
+def toLinProd {K : Type*} [CommSemiring K] (M : Matrix (Fin 2) (Fin 2) K) :
+    K × K →ₗ[K] K × K :=
+  (LinearEquiv.finTwoArrow K K).conj (Matrix.toLin' M)
+
+/-- Applying `toLinProd M` to a pair `q : K × K` computes the `2 × 2` matrix-vector product
+coordinatewise. -/
+@[simp]
+theorem toLinProd_apply {K : Type*} [CommSemiring K] (M : Matrix (Fin 2) (Fin 2) K)
+    (q : K × K) :
+    toLinProd M q = (M 0 0 * q.1 + M 0 1 * q.2, M 1 0 * q.1 + M 1 1 * q.2) := by
+  simp [toLinProd, LinearEquiv.conj_apply_apply, Matrix.toLin'_apply, Matrix.mulVec,
+    dotProduct, Fin.sum_univ_two]
+
+/-- Applying `toLinProd M` commutes with `finTwoArrowEquiv K` and `M.mulVec`. -/
+theorem toLinProd_finTwoArrowEquiv {K : Type*} [CommSemiring K]
+    (M : Matrix (Fin 2) (Fin 2) K) (v : Fin 2 → K) :
+    toLinProd M (finTwoArrowEquiv K v) = finTwoArrowEquiv K (M *ᵥ v) := by
+  have hv : ![v 0, v 1] = v := by ext i; fin_cases i <;> rfl
+  simp [toLinProd, LinearEquiv.conj_apply_apply, hv]
+
+end ToLinProd
 
 end Matrix

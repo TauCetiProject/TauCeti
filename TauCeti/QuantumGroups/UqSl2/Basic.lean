@@ -185,6 +185,16 @@ theorem k_mul_kInv_mul (x : UqSl2 q) : k q * (kInv q * x) = x :=
 theorem kInv_mul_k_mul (x : UqSl2 q) : kInv q * (k q * x) = x :=
   Units.inv_mul_cancel_left (kUnit q) x
 
+/-- Right multiplication by `K` cancels right multiplication by `K⁻¹`. -/
+@[simp]
+theorem mul_k_mul_kInv (x : UqSl2 q) : x * k q * kInv q = x :=
+  Units.mul_inv_cancel_right x (kUnit q)
+
+/-- Right multiplication by `K⁻¹` cancels right multiplication by `K`. -/
+@[simp]
+theorem mul_kInv_mul_k (x : UqSl2 q) : x * kInv q * k q = x :=
+  Units.inv_mul_cancel_right x (kUnit q)
+
 /-- Multiplying an integer power of `K` by `K` on the left raises the exponent by one. -/
 theorem k_mul_kUnit_zpow (b : ℤ) :
     k q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =

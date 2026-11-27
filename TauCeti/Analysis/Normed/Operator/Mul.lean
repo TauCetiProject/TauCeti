@@ -15,10 +15,22 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 This file identifies the underlying linear maps of bounded left and right multiplication,
 and evaluates their powers. These identities connect the bounded-operator API with the
 algebraic multiplication maps and allow power-series calculations on multiplication operators.
+Writing `L_x = mul 𝕜 R x` and `R_x = (mul 𝕜 R).flip x`, it records the composition rules
+`L_{xy} = L_x ∘ L_y` (`ContinuousLinearMap.mul_apply_mul`) and `R_{xy} = R_y ∘ R_x`
+(`ContinuousLinearMap.flip_mul_apply_mul`), the commutation of `L_x` with `R_y`
+(`ContinuousLinearMap.commute_mul_apply_flip_mul_apply`), and the operator norm of `R_x`, which is
+at most `‖x‖` (`ContinuousLinearMap.opNorm_mul_flip_apply_le`) and equals `‖x‖` when `‖1‖ = 1`
+(`ContinuousLinearMap.opNorm_mul_flip_apply_of_normOneClass`). Mathlib's
+`ContinuousLinearMap.opNorm_mul_apply` is the corresponding statement for `L_x`, and Mathlib's
+`ContinuousLinearMap.opNorm_mul_flip_apply` gives the same equality for C⋆-rings instead.
 It also records the norm of a difference of scalar-to-vector maps, notes that every subsingleton
 seminormed algebra is regular, and shows that left multiplication in a regular normed algebra is
 faithful (`RegularNormedAlgebra.faithfulSMul`). On the field itself, `c • mul 𝕜 𝕜` is invertible
-exactly when `c ≠ 0` (`ContinuousLinearMap.isInvertible_smul_mul_iff`).
+exactly when `c ≠ 0` (`ContinuousLinearMap.isInvertible_smul_mul_iff`), and in a normed division
+algebra multiplication by `z ≠ 0` has inverse multiplication by `z⁻¹`
+(`ContinuousLinearMap.isInvertible_mul_apply`, `ContinuousLinearMap.inverse_mul_apply`), and
+likewise for right multiplication (`ContinuousLinearMap.isInvertible_flip_mul_apply`,
+`ContinuousLinearMap.inverse_flip_mul_apply`).
 For unital algebras we also specialize bounded two-sided multiplication `mulLeftRight` when one
 factor is `1`, bundle the left regular representation as a unital algebra homomorphism, and give its
 inverse norm bound without assuming that the identity has norm one.
@@ -60,6 +72,33 @@ theorem toLinearMap_flip_mul_eq_mulRight (x : R) :
     ((mul 𝕜 R).flip x).toLinearMap = LinearMap.mulRight 𝕜 x := by
   ext y
   simp
+
+/-- Bounded left multiplication by a product is the composite of the left multiplications by the
+factors, in the same order: `L_{xy} = L_x ∘ L_y`. This is the bounded form of
+`LinearMap.mulLeft_mul`, and `map_mul` of `NonUnitalAlgHom.Lmul` stated as a composite. -/
+theorem mul_apply_mul (x y : R) :
+    mul 𝕜 R (x * y) = (mul 𝕜 R x).comp (mul 𝕜 R y) :=
+  map_mul (NonUnitalAlgHom.Lmul 𝕜 R) x y
+
+/-- Bounded right multiplication by a product is the composite of the right multiplications by the
+factors, in the reverse order: `R_{xy} = R_y ∘ R_x`. This is the bounded form of
+`LinearMap.mulRight_mul`. -/
+theorem flip_mul_apply_mul (x y : R) :
+    (mul 𝕜 R).flip (x * y) = ((mul 𝕜 R).flip y).comp ((mul 𝕜 R).flip x) := by
+  ext z
+  simp [mul_assoc]
+
+/-- Bounded left and right multiplications commute, by associativity. This is the bounded form of
+`LinearMap.commute_mulLeft_right`. -/
+theorem commute_mul_apply_flip_mul_apply (x y : R) :
+    Commute (mul 𝕜 R x) ((mul 𝕜 R).flip y) :=
+  ContinuousLinearMap.ext fun z ↦ by simp [mul_assoc]
+
+/-- The operator norm of bounded right multiplication by `x` is at most `‖x‖`. This is the
+right-multiplication counterpart of Mathlib's `ContinuousLinearMap.opNorm_mul_apply_le`. -/
+@[simp]
+theorem opNorm_mul_flip_apply_le (x : R) : ‖(mul 𝕜 R).flip x‖ ≤ ‖x‖ :=
+  opNorm_le_bound _ (norm_nonneg x) fun y ↦ by simpa [mul_comm ‖x‖] using norm_mul_le y x
 
 /-- Every subsingleton seminormed algebra is trivially regular, since both the algebra and its
 bounded endomorphism ring are subsingletons. -/
@@ -120,6 +159,15 @@ theorem norm_le_opNorm_mul_apply_mul_norm_one (x : R) :
     ‖x‖ ≤ ‖mul 𝕜 R x‖ * ‖(1 : R)‖ := by
   simpa only [mul_apply', mul_one] using (mul 𝕜 R x).le_opNorm (1 : R)
 
+/-- In a seminormed algebra whose identity has norm one, the operator norm of bounded right
+multiplication by `x` is `‖x‖`. Mathlib's `ContinuousLinearMap.opNorm_mul_flip_apply` proves the
+same equality for C⋆-rings, which need not be unital. -/
+@[simp]
+theorem opNorm_mul_flip_apply_of_normOneClass [NormOneClass R] (x : R) :
+    ‖(mul 𝕜 R).flip x‖ = ‖x‖ :=
+  (opNorm_mul_flip_apply_le x).antisymm <| by
+    simpa using ((mul 𝕜 R).flip x).le_opNorm (1 : R)
+
 end Unital
 
 section ScalarSMul
@@ -157,6 +205,38 @@ theorem isInvertible_smul_mul_iff {c : 𝕜} : (c • mul 𝕜 𝕜).IsInvertibl
   refine ⟨fun h hc ↦ ?_, fun hc ↦ .of_inverse (g := c⁻¹ • apply 𝕜 𝕜 (1 : 𝕜)) ?_ ?_⟩
   · exact one_ne_zero (h.injective (a₁ := 1) (a₂ := 0) (by simp [hc]))
   all_goals ext; simp [hc]
+
+section DivisionRing
+
+variable {R : Type*} [NormedDivisionRing R] [NormedAlgebra 𝕜 R]
+
+/-- Multiplication by a nonzero element of a normed division algebra is an invertible operator. -/
+theorem isInvertible_mul_apply {z : R} (hz : z ≠ 0) : (mul 𝕜 R z).IsInvertible :=
+  .of_inverse (g := mul 𝕜 R z⁻¹) (by ext; simp [hz]) (by ext; simp [hz])
+
+/-- The inverse of multiplication by `z` is multiplication by `z⁻¹`. This also holds for `z = 0`,
+where both sides vanish. -/
+@[simp]
+theorem inverse_mul_apply (z : R) : (mul 𝕜 R z).inverse = mul 𝕜 R z⁻¹ := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  · exact inverse_eq (by ext; simp [hz]) (by ext; simp [hz])
+
+/-- Right multiplication by a nonzero element of a normed division algebra is an invertible
+operator. -/
+theorem isInvertible_flip_mul_apply {z : R} (hz : z ≠ 0) : ((mul 𝕜 R).flip z).IsInvertible :=
+  .of_inverse (g := (mul 𝕜 R).flip z⁻¹) (by ext; simp [hz])
+    (by ext; simp [hz])
+
+/-- The inverse of right multiplication by `z` is right multiplication by `z⁻¹`. This also holds
+for `z = 0`, where both sides vanish. -/
+@[simp]
+theorem inverse_flip_mul_apply (z : R) : ((mul 𝕜 R).flip z).inverse = (mul 𝕜 R).flip z⁻¹ := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  · exact inverse_eq (by ext; simp [hz]) (by ext; simp [hz])
+
+end DivisionRing
 
 end ContinuousLinearMap
 

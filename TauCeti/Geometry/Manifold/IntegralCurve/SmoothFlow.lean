@@ -13,7 +13,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 /-!
 # Smooth dependence of integral curves on their initial point
 
-A smooth vector field on a finite-dimensional boundaryless manifold admits, near every point, a
+A smooth vector field on a finite-dimensional manifold admits, near every interior point, a
 family of local integral curves that depends smoothly on both the initial point and time.  This is
 the manifold form of smooth dependence for ordinary differential equations: express the field in
 one extended chart, apply the model-space local-flow theorem, and return through the inverse chart.
@@ -27,8 +27,10 @@ the maximal flow.
 
 ## Main result
 
-* `TauCeti.Manifold.exists_contMDiffAt_localFlow`: a smooth vector field has a jointly smooth
-  family of local integral curves through all nearby initial points, satisfying the flow law.
+* `TauCeti.Manifold.exists_contMDiffAt_localFlow`: near an interior point, a smooth vector field
+  has a jointly smooth family of local integral curves through all nearby initial points,
+  satisfying the flow law. On a boundaryless manifold every point is interior
+  (`BoundarylessManifold.isInteriorPoint`).
 
 ## References
 
@@ -51,15 +53,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- **Smooth dependence of integral curves on their initial point.**
 
-If a tangent vector field is smooth on a neighbourhood of `a`, then there is a family `Φ x t`
-which is jointly smooth at `(a, 0)`, starts at `x` for every `x` in a neighbourhood of `a`, and is
-an integral curve of the field on one common open time neighbourhood.  Its values outside that
-common domain provide only a total extension of the local flow.
+If a tangent vector field is smooth on a neighbourhood of an interior point `a`, then there is a
+family `Φ x t` which is jointly smooth at `(a, 0)`, starts at `x` for every `x` in a neighbourhood
+of `a`, and is an integral curve of the field on one common open time neighbourhood.  Its values
+outside that common domain provide only a total extension of the local flow.
 -/
-theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
+theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E]
     [IsManifold I ∞ M] (v : (x : M) → TangentSpace I x) (a : M) {V : Set M}
     (hv : ContMDiffOn I I.tangent ∞ (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) V)
-    (hV : V ∈ nhds a) :
+    (hV : V ∈ nhds a) (ha : I.IsInteriorPoint a) :
     ∃ U ∈ nhds a, ∃ s ∈ nhds (0 : ℝ), IsOpen s ∧ ∃ Φ : M → ℝ → M,
       CMDiffAt ∞ (fun p : M × ℝ ↦ Φ p.1 p.2) (a, 0) ∧
         ∀ x ∈ U, Φ x 0 = x ∧ IsMIntegralCurveOn (Φ x) v s ∧
@@ -76,8 +78,7 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
     apply (continuousAt_extChartAt_symm'' haTarget).preimage_mem_nhds
     simpa only [(extChartAt I a).left_inv (mem_extChartAt_source a)] using hV
   have hatarget : W ∈ nhds (extChartAt I a a) := inter_mem
-    (isOpen_interior.mem_nhds
-      (I.isInteriorPoint_iff.mp (BoundarylessManifold.isInteriorPoint (I := I)))) hsymmV
+    (isOpen_interior.mem_nhds (I.isInteriorPoint_iff.mp ha)) hsymmV
   have hws' : ContDiffOn ℝ (((⊤ : ℕ∞) : WithTop ℕ∞) + 1) w
       W := by simpa using hws
   obtain ⟨φ, A, hA, hbase, hflow, hφ0, hφadd, hφderiv⟩ :=
@@ -86,8 +87,7 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
   have hφ' : ContDiffAt ℝ ∞ (fun p : E × ℝ ↦ φ p.1 p.2) (extChartAt I a a, 0) := by simpa using hφ
   have htarget : ∀ᶠ p in nhds ((extChartAt I a a, 0) : E × ℝ),
       φ p.1 p.2 ∈ interior (extChartAt I a).target := by
-    have hmem : extChartAt I a a ∈ interior (extChartAt I a).target :=
-      I.isInteriorPoint_iff.mp (BoundarylessManifold.isInteriorPoint (I := I))
+    have hmem : extChartAt I a a ∈ interior (extChartAt I a).target := I.isInteriorPoint_iff.mp ha
     apply hφ.continuousAt.eventually
     apply isOpen_interior.mem_nhds
     simpa only [hφ0] using hmem
@@ -101,19 +101,19 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
   obtain ⟨s, hst, hsopen, hs0⟩ := mem_nhds_iff.mp (inter_mem ht₁ ht₂)
   refine ⟨U, hU, s, hsopen.mem_nhds hs0, hsopen,
     fun x t ↦ (extChartAt I a).symm (φ (extChartAt I a x) t),
-    contMDiffAt_extChartAt_symm_comp_extChartAt_prod a hφ' (hφ0 _), ?_⟩
+    contMDiffAt_extChartAt_symm_comp_extChartAt_prod a ha hφ' (hφ0 _), ?_⟩
   intro x hx
   have hxcoord : u₁ (extChartAt I a x) ∧ u₂ (extChartAt I a x) := hx.1
   refine ⟨?_, ?_, ?_⟩
   · simp only [hφ0]
     exact (extChartAt I a).left_inv hx.2
-  · exact isMIntegralCurveOn_extChartAt_symm_comp v a hsopen
-      (fun t ht ↦ hmem hxcoord.2 (hst ht).2) fun t ht ↦ hderiv hxcoord.1 (hst ht).1
+  · refine IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt (fun t ht ↦ ?_)
+      fun t ht ↦ interior_subset (hmem hxcoord.2 (hst ht).2)
+    rw [← TangentBundle.trivializationAt_snd_eq_tangentCoordChange]
+    exact (hderiv hxcoord.1 (hst ht).1).hasDerivWithinAt
   · intro t ht u
-    have hφtarget : φ (extChartAt I a x) t ∈ (extChartAt I a).target :=
-      interior_subset (hmem hxcoord.2 (hst ht).2)
     simp only
-    rw [(extChartAt I a).right_inv hφtarget, hφadd]
+    rw [(extChartAt I a).right_inv (interior_subset (hmem hxcoord.2 (hst ht).2)), hφadd]
 
 end TauCeti.Manifold
 

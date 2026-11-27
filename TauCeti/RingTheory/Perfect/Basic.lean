@@ -19,6 +19,10 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 
 ## Main results
 
+* `MulEquiv.perfectRing`: a multiplicative equivalence preserves bijectivity of the
+  `p`-th power map.
+* `TauCeti.iterateFrobeniusEquiv_symm_pow`: the `p ^ n`-th power of the `p ^ n`-th root of `x`
+  is `x`.
 * `TauCeti.iterateFrobeniusEquiv_symm_add_pow`: the `p ^ n`-th power of the `p ^ (m + n)`-th root
   of `x` is its `p ^ m`-th root.
 * `TauCeti.iterateFrobeniusEquiv_symm_succ_pow`: the `p`-th power of the `p ^ (n + 1)`-th root
@@ -32,6 +36,8 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
   along the `p`-th root of the scalars.
 * `TauCeti.isRadical_iff_frobeniusEquiv_symm_mem`: an ideal is radical exactly when it contains
   the `p`-th roots of its elements.
+* `TauCeti.frobeniusEquiv_symm_sub_one_pow`: in exponential characteristic `p`, `x ^ (1 / p) - 1`
+  is a `p`-th root of `x - 1`.
 * `Ideal.IsRadical.sup`, `Ideal.IsRadical.map`, `Ideal.IsRadical.map_inf`: sums of radical ideals
   are radical, and extension along a homomorphism of perfect rings preserves radical ideals and
   their intersections. The first fails for general rings: in `ℚ[x, y]` the sum of the radical
@@ -43,9 +49,24 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 
 public section
 
+/-- A multiplicative equivalence transports bijectivity of the `p`-th power map. -/
+theorem MulEquiv.perfectRing {M N : Type*} [Monoid M] [Monoid N] (e : M ≃* N)
+    (p : ℕ) [PerfectRing M p] : PerfectRing N p := by
+  refine ⟨(Function.Bijective.of_comp_iff (fun x : N ↦ x ^ p) e.bijective).mp ?_⟩
+  have hcomm : (fun x : N ↦ x ^ p) ∘ e = e ∘ (fun x : M ↦ x ^ p) :=
+    funext fun x ↦ (map_pow e x p).symm
+  rw [hcomm]
+  exact e.bijective.comp PerfectRing.bijective_frobenius
+
 namespace TauCeti
 
 variable {R : Type*} [CommSemiring R] {p : ℕ} [ExpChar R p] [PerfectRing R p]
+
+/-- The `p ^ n`-th power of the `p ^ n`-th root of `x` is `x`. -/
+@[simp]
+theorem iterateFrobeniusEquiv_symm_pow (x : R) (n : ℕ) :
+    (iterateFrobeniusEquiv R p n).symm x ^ p ^ n = x := by
+  rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]
 
 /-- The `p ^ n`-th power of the `p ^ (m + n)`-th root of `x` is its `p ^ m`-th root. -/
 @[simp]
@@ -112,6 +133,12 @@ theorem frobeniusEquiv_symm_smul {A : Type*} [CommSemiring A] [ExpChar A p] [Per
     (frobeniusEquiv R p).symm (a • x) =
       (frobeniusEquiv A p).symm a • (frobeniusEquiv R p).symm x := by
   rw [Algebra.smul_def, Algebra.smul_def, map_mul, RingHom.map_frobeniusEquiv_symm]
+
+/-- In a perfect ring of exponential characteristic `p`, `x ^ (1 / p) - 1` is a `p`-th root of
+`x - 1`. -/
+theorem frobeniusEquiv_symm_sub_one_pow {A : Type*} [CommRing A] [ExpChar A p] [PerfectRing A p]
+    (x : A) : ((frobeniusEquiv A p).symm x - 1) ^ p = x - 1 := by
+  rw [sub_pow_expChar_of_commute _ (Commute.one_right _), one_pow, frobeniusEquiv_symm_pow_p]
 
 variable (p) [Fact p.Prime]
 

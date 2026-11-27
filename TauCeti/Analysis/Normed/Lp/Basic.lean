@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.Analysis.Normed.Lp.lpHolder
+import Mathlib.Analysis.Real.Cardinality
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import TauCeti.Analysis.Normed.Operator.Dense
 
@@ -43,10 +44,18 @@ with the strong rank condition, for instance a field, `lp` over an infinite inde
 not a finite module (`lp.not_finite`). Finite sums of single-coordinate vectors over a finset `s`
 along a map `g` evaluate to the corresponding entry at `g j` (`j ∈ s`) when `g` is injective on `s`
 (`lp.sum_single_apply_of_injOn_of_mem`) and vanish at coordinates not equal to any `g i` (`i ∈ s`)
-(`lp.sum_single_apply_eq_zero_of_forall_ne`). Subtracting a finite sum of coordinate vectors
+(`lp.sum_single_apply_eq_zero_of_forall_ne`). For distinct indices `i ≠ j`, the norm of a difference
+of two single-coordinate vectors equals `(‖x‖ ^ p + ‖y‖ ^ p) ^ (1 / p)` for `0 < p < ∞`
+(`lp.norm_single_sub_single_of_ne`), and the distance between them equals
+`(‖x‖ ^ p + ‖y‖ ^ p) ^ (1 / p)` for `1 ≤ p < ∞` (`lp.dist_single_single_of_ne`), so distinct unit
+coordinate vectors in `ℓ²` sit at pairwise distance `√2` (`lp.dist_single_one_eq_sqrt_two`).
+Subtracting a finite sum of coordinate vectors
 zeroes out those coordinates (`lp.sub_sum_single_apply`) and does not increase the `ℓᵖ` norm, for
-any `p` (`lp.norm_sub_sum_single_le`). In `ℓ²`, the squared norm of a finite sum of
-single-coordinate vectors is the sum of the squared norms of its coordinates
+any `p` (`lp.norm_sub_sum_single_le`); in `ℓ∞`, a family vanishing at infinity is the sum of
+its coordinate vectors (`lp.hasSum_single_of_tendsto_cofinite`). Coordinate vectors commute with
+`star` (`lp.single_star`) and, in `ℓ∞`, with multiplication (`lp.single_mul`). In `ℓ²`, the
+squared norm of a finite sum of single-coordinate vectors is the sum of the squared norms of its
+coordinates
 (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
 operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
 many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`,
@@ -56,22 +65,39 @@ A uniformly bounded family of operators with a common domain assembles into an `
 operator (`ContinuousLinearMap.piLpInfty`), with the same norm bound.
 
 For `p ≠ ∞`, every sequence in `ℓᵖ` has countable support (`Memℓp.countable_dsupport`,
-`lp.countable_dsupport`). For a finite exponent `p` and a countable index type, `lp E p` is
-separable as soon as every `E i` is (`lp.separableSpace`): the finite sums of coordinate vectors
-with entries in countable dense subsets are dense. Conversely, for `1 ≤ p`, if every fibre `E i` is
-nontrivial, separability of `lp E p` forces `ι` to be countable because the open balls of radius
-`‖v i‖ / 2` around `lp.single p i (v i)` (`v i ≠ 0`) are pairwise disjoint
-(`lp.countable_of_separableSpace`, `lp.separableSpace_iff_countable`).
+`lp.countable_dsupport`). For `1 ≤ p ≤ ∞`, if `lp E p` is separable then every fibre `E i` is
+separable (`lp.separableSpace_apply_of_separableSpace`) and `{i | Nontrivial (E i)}` is countable
+because the open balls of radius `‖v i‖ / 2` around `lp.single p i (v i)` (`v i ≠ 0`) are pairwise
+disjoint (`lp.countable_nontrivial_of_separableSpace`, `lp.countable_of_separableSpace`,
+`lp.not_separableSpace_of_not_countable`); for instance `lp E p` over `[a, b]` (`a < b`) with
+nontrivial fibres is nonseparable (`lp.not_separableSpace_Icc`). Conversely, for `1 ≤ p < ∞`,
+separable fibres and countably many nontrivial fibres suffice for separability
+(`lp.separableSpace_of_countable_nontrivial`, `lp.separableSpace`), yielding the full
+characterization `lp.separableSpace_iff` (and `lp.separableSpace_iff_countable` when every fibre is
+nontrivial and separable).
+
+The single-coordinate embedding `lp.single p i` is injective at every exponent
+(`lp.single_injective`), so `lp E p` is nontrivial whenever at least one summand is
+(`lp.nontrivial_at`, `lp.nontrivial_iff`, `lp.instNontrivial`, `lp.instNontrivialOfNonempty`).
 
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
-(`lp.tendsto_apply_of_tendsto_apply_single`). In the scalar case such an operator `T` is given by
-its coordinate series `T x = ∑ i, xᵢ • T eᵢ` (`ContinuousLinearMap.hasSum_smul_lp_single`), so for
-`q ≠ ∞` an operator out of `ℓ^q` into a Hausdorff space is determined by its values on the unit
-coordinate vectors (`ContinuousLinearMap.ext_lp_of_ne_top`). On ℓ¹, a uniform bound `C` on the
-norms `‖T eᵢ‖` bounds `‖T‖` (`ContinuousLinearMap.opNorm_lpOne_le`), so the norm of `T` is the
-supremum of the norms `‖T eᵢ‖` (`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`,
-`ContinuousLinearMap.nnnorm_eq_ciSup_nnnorm_lp_single`).
+(`lp.tendsto_apply_of_tendsto_apply_single`). For `q ≠ ∞`, a continuous linear map `T` out of
+scalar `ℓ^q` is given by its coordinate series `T x = ∑ i, xᵢ • T eᵢ`
+(`ContinuousLinearMap.hasSum_smul_lp_single`), so an operator out of `ℓ^q` into a Hausdorff space is
+determined by its values on the unit coordinate vectors (`ContinuousLinearMap.ext_lp_of_ne_top`).
+On ℓ¹, a uniform bound `C` on the norms `‖T eᵢ‖` bounds `‖T‖`
+(`ContinuousLinearMap.opNorm_lpOne_le`), so the norm of `T` is the supremum of the norms `‖T eᵢ‖`
+(`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`,
+`ContinuousLinearMap.nnnorm_eq_ciSup_nnnorm_lp_single`). For iterated `ℓᵖ` spaces (`1 ≤ p`), the
+uncurried sequence lies in `ℓᵖ` on the product index type (`lp.memℓp_prod`), and for `1 ≤ p < ∞`
+the `p`-th powers of the doubly indexed coordinate norms are summable
+(`lp.summable_norm_rpow_prod`).
+
+## References
+
+* F. Albiac and N. J. Kalton, *Topics in Banach Space Theory*, Chapter 1.
+* J. B. Conway, *A Course in Functional Analysis*, 2nd ed., §I.4.
 -/
 
 public section
@@ -135,11 +161,12 @@ theorem hasSum_norm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖) ‖y‖ := b
   simpa using lp.hasSum_norm (p := 1) (by simp) y
 
 /-- **The `ℓᵖ` norms decrease in the exponent.** For `0 < p ≤ q`, a sequence `f ∈ ℓᵖ` lies in
-`ℓ^q` (`Memℓp.of_exponent_ge`), and its `ℓ^q` norm is at most its `ℓᵖ` norm. -/
+`ℓ^q` (`Memℓp.of_exponent_ge`), and its `ℓ^q` norm is at most its `ℓᵖ` norm. More generally, the
+`ℓ^q` norm of any `g` dominated coordinatewise by `f` is at most the `ℓᵖ` norm of `f`. -/
 theorem norm_le_norm_of_exponent_le {q : ℝ≥0∞} (hp : p ≠ 0) (hpq : p ≤ q) {f : lp E p}
-    {g : lp E q} (hfg : ∀ i, g i = f i) : ‖g‖ ≤ ‖f‖ := by
+    {g : lp E q} (hfg : ∀ i, ‖g i‖ ≤ ‖f i‖) : ‖g‖ ≤ ‖f‖ := by
   rcases eq_or_ne q ∞ with rfl | hq
-  · exact norm_le_of_forall_le (norm_nonneg' f) fun i ↦ (hfg i).symm ▸ norm_apply_le_norm hp f i
+  · exact norm_le_of_forall_le (norm_nonneg' f) fun i ↦ (hfg i).trans (norm_apply_le_norm hp f i)
   have hpr : 0 < p.toReal := ENNReal.toReal_pos hp (ne_top_of_le_ne_top hq hpq)
   have hpq' : p.toReal ≤ q.toReal := ENNReal.toReal_mono hq hpq
   have hqr : 0 < q.toReal := hpr.trans_le hpq'
@@ -150,7 +177,8 @@ theorem norm_le_norm_of_exponent_le {q : ℝ≥0∞} (hp : p ≠ 0) (hpq : p ≤
   calc ∑ i ∈ s, ‖g i‖ ^ q.toReal
       ≤ ∑ i ∈ s, ‖f‖ ^ (q.toReal - p.toReal) * ‖f i‖ ^ p.toReal := by
         gcongr with i
-        rw [hfg i, hsplit _ (norm_nonneg _)]
+        grw [hfg i]
+        rw [hsplit _ (norm_nonneg _)]
         gcongr
         exact norm_apply_le_norm hp f i
     _ = ‖f‖ ^ (q.toReal - p.toReal) * ∑ i ∈ s, ‖f i‖ ^ p.toReal := (Finset.mul_sum ..).symm
@@ -164,7 +192,7 @@ theorem norm_le_tsum_norm [Fact (1 ≤ p)] (f : lp E p)
     (hf : Summable fun i ↦ ‖f i‖) : ‖f‖ ≤ ∑' i, ‖f i‖ := by
   -- The same sequence, viewed in `ℓ¹`, where its norm is the sum of the norms of its coordinates.
   let g : lp E 1 := ⟨f, memℓp_gen (by simpa using hf)⟩
-  calc ‖f‖ ≤ ‖g‖ := norm_le_norm_of_exponent_le one_ne_zero Fact.out fun _ ↦ rfl
+  calc ‖f‖ ≤ ‖g‖ := norm_le_norm_of_exponent_le one_ne_zero Fact.out fun _ ↦ le_rfl
     _ = ∑' i, ‖f i‖ := (hasSum_norm_one g).tsum_eq.symm
 
 /-- The extended ℓ¹ norm is the sum of the extended norms of the coordinates. -/
@@ -227,21 +255,6 @@ theorem sum_norm_mul_norm_le {F : ι → Type*} [∀ i, NormedAddCommGroup (F i)
         exact norm_holderL_le 1 _ hB
     _ = ‖f‖ * ‖g‖ := by rw [one_mul]
 
-/-- For a finite exponent and a countable index type, `lp E p` is separable when every `E i` is.
--/
-theorem separableSpace [Countable ι] [∀ i, TopologicalSpace.SeparableSpace (E i)]
-    [Fact (1 ≤ p)] (hp : p ≠ ⊤) : TopologicalSpace.SeparableSpace (lp E p) := by
-  classical
-  set S : Set (lp E p) := ⋃ i, Set.range (lp.single p i)
-  have hS : TopologicalSpace.IsSeparable S :=
-    .iUnion fun i ↦ TopologicalSpace.isSeparable_range (lp.isometry_single i).continuous
-  rw [← TopologicalSpace.isSeparable_univ_iff]
-  -- Every element is the limit of the finite sums of its coordinate vectors, which lie in the
-  -- additive span of `S`.
-  refine (hS.span (R := ℕ)).closure.mono fun f _ ↦
-    mem_closure_of_tendsto (lp.hasSum_single hp f) (Filter.Eventually.of_forall fun s ↦ ?_)
-  exact Submodule.sum_mem _ fun i _ ↦ Submodule.subset_span (Set.mem_iUnion.2 ⟨i, f i, rfl⟩)
-
 section Single
 
 variable [DecidableEq ι]
@@ -286,6 +299,36 @@ theorem sum_single_apply_eq_zero_of_forall_ne {κ : Type*} {s : Finset κ} {g : 
     (∑ i ∈ s, lp.single p (g i) (v i)) k = 0 := by
   rw [lp.coeFn_sum, Finset.sum_apply]
   exact Finset.sum_eq_zero fun i hi ↦ lp.single_apply_ne p (g i) (v i) (hk i hi)
+
+/-- For `0 < p < ∞` and distinct indices `i ≠ j`, the `ℓᵖ` norm of the difference of two
+single-coordinate vectors is `(‖x‖ ^ p + ‖y‖ ^ p) ^ (1 / p)`. -/
+theorem norm_single_sub_single_of_ne (hp : 0 < p.toReal) {i j : ι} (hij : i ≠ j)
+    (x : E i) (y : E j) :
+    ‖lp.single p i x - lp.single p j y‖ = (‖x‖ ^ p.toReal + ‖y‖ ^ p.toReal) ^ (1 / p.toReal) := by
+  let f : ∀ k, E k := Pi.single i x + Pi.single j (-y)
+  have hsum : ∑ k ∈ ({i, j} : Finset ι), lp.single p k (f k) =
+      lp.single p i x - lp.single p j y := by
+    rw [Finset.sum_pair hij, sub_eq_add_neg, ← lp.single_neg]
+    simp [f, hij, hij.symm]
+  rw [one_div, Real.eq_rpow_inv (lp.norm_nonneg' _) (by positivity) hp.ne', ← hsum,
+    lp.norm_sum_single hp, Finset.sum_pair hij]
+  simp [f, hij, hij.symm]
+
+/-- For `1 ≤ p < ∞` and distinct indices `i ≠ j`, the distance between `lp.single p i x` and
+`lp.single p j y` is `(‖x‖ ^ p + ‖y‖ ^ p) ^ (1 / p)`. -/
+theorem dist_single_single_of_ne [Fact (1 ≤ p)] (hp : p ≠ ∞) {i j : ι}
+    (hij : i ≠ j) (x : E i) (y : E j) :
+    dist (lp.single p i x) (lp.single p j y) =
+      (‖x‖ ^ p.toReal + ‖y‖ ^ p.toReal) ^ (1 / p.toReal) := by
+  have hp₀ : 0 < p.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hp
+  rw [dist_eq_norm, norm_single_sub_single_of_ne hp₀ hij]
+
+/-- Distinct unit coordinate vectors in `ℓ²(ι, G)` sit at pairwise distance `√2`. -/
+theorem dist_single_one_eq_sqrt_two {G : Type*} [NormedAddCommGroup G] [One G] [NormOneClass G]
+    {i j : ι} (hij : i ≠ j) :
+    dist (lp.single (E := fun _ : ι ↦ G) 2 i 1) (lp.single 2 j 1) = √2 := by
+  rw [dist_single_single_of_ne (by simp) hij, Real.sqrt_eq_rpow]
+  norm_num
 
 omit [DecidableEq ι] in
 /-- For an infinite index type, the scalar sequence space `lp` is not a finite module. -/
@@ -358,6 +401,38 @@ theorem norm_sub_sum_single_le [DecidableEq ι] (v : lp E p) (s : Finset ι) :
     rw [sub_sum_single_apply]
     split_ifs <;> simp
 
+/-- A bounded family whose coordinate norms tend to `0` along the cofinite filter is the sum in
+`lp E ∞` of its coordinates, each placed at its index. -/
+theorem hasSum_single_of_tendsto_cofinite [DecidableEq ι] {a : lp E ∞}
+    (ha : Tendsto (fun i ↦ ‖a i‖) cofinite (𝓝 0)) :
+    HasSum (fun i ↦ lp.single ∞ i (a i)) a := by
+  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
+  have hfin := ha.eventually (gt_mem_nhds (half_pos hε))
+  refine ⟨(eventually_cofinite.1 hfin).toFinset, fun s hs ↦ ?_⟩
+  rw [dist_comm, dist_eq_norm]
+  refine (lp.norm_le_of_forall_le (half_pos hε).le fun j ↦ ?_).trans_lt (half_lt_self hε)
+  rw [sub_sum_single_apply]
+  split_ifs with hj
+  · simpa using (half_pos hε).le
+  · have hj' : ‖a j‖ < ε / 2 := by
+      by_contra h
+      exact hj (hs (by simpa using h))
+    exact hj'.le
+
+variable (p) in
+/-- The family supported at `i` with value `star a` is the adjoint of the one with value `a`. -/
+@[simp]
+theorem single_star [DecidableEq ι] [∀ i, StarAddMonoid (E i)] [∀ i, NormedStarGroup (E i)]
+    (i : ι) (a : E i) : lp.single p i (star a) = star (lp.single p i a) :=
+  lp.ext <| funext fun j ↦ by simp [Pi.single_star]
+
+/-- The family supported at `i` with value `a * b` is the product of those with values `a` and
+`b`. -/
+@[simp]
+theorem single_mul [DecidableEq ι] {A : ι → Type*} [∀ i, NonUnitalNormedRing (A i)] (i : ι)
+    (a b : A i) : lp.single ∞ i (a * b) = lp.single ∞ i a * lp.single ∞ i b :=
+  lp.ext <| by simp [lp.coeFn_single, Pi.single_mul]
+
 section Operator
 
 open ContinuousLinearMap
@@ -423,31 +498,119 @@ theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*}
 
 end Density
 
+section Nontrivial
+
+variable {ι : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] {p : ℝ≥0∞}
+
+/-- The single-coordinate embedding `lp.single p i` is injective at every exponent. -/
+theorem single_injective [DecidableEq ι] (p : ℝ≥0∞) (i : ι) :
+    Function.Injective (lp.single (E := E) p i) :=
+  fun _ _ hab => by simpa only [lp.single_apply_self] using congr($hab i)
+
+/-- `lp E p` is nontrivial whenever at least one summand `E i` is nontrivial. -/
+theorem nontrivial_at (i : ι) [Nontrivial (E i)] : Nontrivial (lp E p) := by
+  classical
+  exact (single_injective p i).nontrivial
+
+/-- `lp E p` is nontrivial if and only if at least one summand `E i` is nontrivial. -/
+theorem nontrivial_iff : Nontrivial (lp E p) ↔ ∃ i, Nontrivial (E i) := by
+  refine ⟨fun ⟨x, y, hxy⟩ => ?_, fun ⟨i, _⟩ => nontrivial_at i⟩
+  by_contra! h
+  exact hxy (lp.ext (funext fun i => (h i).elim (x i) (y i)))
+
+/-- `lp E p` is nontrivial when `ι` is inhabited and `E default` is nontrivial. -/
+instance instNontrivial [Inhabited ι] [Nontrivial (E default)] : Nontrivial (lp E p) :=
+  nontrivial_at default
+
+/-- `lp E p` is nontrivial when `ι` is nonempty and every summand `E i` is nontrivial. -/
+instance instNontrivialOfNonempty [Nonempty ι] [∀ i, Nontrivial (E i)] : Nontrivial (lp E p) :=
+  ‹Nonempty ι›.elim fun i => nontrivial_at i
+
+end Nontrivial
+
 /-- For `p ≠ ∞`, every vector of `lp E p` vanishes outside a countable set of indices. -/
 theorem countable_dsupport (hp : p ≠ ∞) (f : lp E p) : {i | f i ≠ 0}.Countable :=
   (lp.memℓp f).countable_dsupport hp
+
+section Separability
+
+/-- Each coordinate fibre of a separable `lp E p` space (`1 ≤ p ≤ ∞`) is separable, since it embeds
+isometrically via `lp.single p i`. -/
+theorem separableSpace_apply_of_separableSpace [Fact (1 ≤ p)]
+    [TopologicalSpace.SeparableSpace (lp E p)] (i : ι) :
+    TopologicalSpace.SeparableSpace (E i) := by
+  classical
+  have := UniformSpace.secondCountable_of_separable (lp E p)
+  have := (lp.isometry_single (E := E) (p := p) i).isEmbedding.secondCountableTopology
+  infer_instance
+
+/-- If `lp E p` (`1 ≤ p ≤ ∞`) is separable, at most countably many fibres `E i` are nontrivial. -/
+theorem countable_nontrivial_of_separableSpace [Fact (1 ≤ p)]
+    [TopologicalSpace.SeparableSpace (lp E p)] :
+    {i | Nontrivial (E i)}.Countable := by
+  classical
+  let v : ∀ i, E i := fun i ↦ if h : ∃ x : E i, x ≠ 0 then h.choose else 0
+  have hv {i : ι} (hi : Nontrivial (E i)) : v i ≠ 0 := by
+    have hex : ∃ x : E i, x ≠ 0 := exists_ne 0
+    simpa only [v, dite_eq_left hex] using hex.choose_spec
+  have hd : {i | Nontrivial (E i)}.PairwiseDisjoint
+      fun i : ι ↦ Metric.ball (lp.single p i (v i)) (‖v i‖ / 2) := by
+    intro i _ j _ hij
+    refine Metric.ball_disjoint_ball ?_
+    have hi' := (lp.lipschitzWith_one_eval p i).dist_le_mul
+      (lp.single p i (v i)) (lp.single p j (v j))
+    have hj' := (lp.lipschitzWith_one_eval p j).dist_le_mul
+      (lp.single p i (v i)) (lp.single p j (v j))
+    simp only [NNReal.coe_one, one_mul, lp.single_apply, Pi.single_eq_same,
+      Pi.single_eq_of_ne hij, Pi.single_eq_of_ne' hij, dist_zero_right, dist_zero_left] at hi' hj'
+    linarith
+  exact hd.countable_of_isOpen (fun _ _ ↦ Metric.isOpen_ball)
+    fun i hi ↦ ⟨_, Metric.mem_ball_self (half_pos (norm_pos_iff.2 (hv hi)))⟩
 
 variable (E p) in
 /-- If `lp E p` (`1 ≤ p`) is separable and every fibre `E i` is nontrivial, then the index type `ι`
 is countable. -/
 theorem countable_of_separableSpace [∀ i, Nontrivial (E i)] [Fact (1 ≤ p)]
-    [TopologicalSpace.SeparableSpace (lp E p)] : Countable ι := by
+    [TopologicalSpace.SeparableSpace (lp E p)] : Countable ι :=
+  Set.countable_univ_iff.mp <|
+    (countable_nontrivial_of_separableSpace (E := E) (p := p)).mono
+      fun i _ ↦ (inferInstance : Nontrivial (E i))
+
+/-- For a finite exponent `1 ≤ p < ∞`, `lp E p` is separable when every fibre `E i` is separable
+and at most countably many fibres are nontrivial. -/
+theorem separableSpace_of_countable_nontrivial [∀ i, TopologicalSpace.SeparableSpace (E i)]
+    [Fact (1 ≤ p)] (hc : {i | Nontrivial (E i)}.Countable) (hp : p ≠ ∞) :
+    TopologicalSpace.SeparableSpace (lp E p) := by
   classical
-  let v : ∀ i, E i := fun i ↦ (exists_ne (0 : E i)).choose
-  have hv (i : ι) : v i ≠ 0 := (exists_ne (0 : E i)).choose_spec
-  have hd : Pairwise (Function.onFun Disjoint
-      fun i : ι ↦ Metric.ball (lp.single p i (v i)) (‖v i‖ / 2)) := by
-    intro i j hij
-    refine Metric.ball_disjoint_ball ?_
-    have hi := (lp.lipschitzWith_one_eval p i).dist_le_mul
-      (lp.single p i (v i)) (lp.single p j (v j))
-    have hj := (lp.lipschitzWith_one_eval p j).dist_le_mul
-      (lp.single p i (v i)) (lp.single p j (v j))
-    simp only [NNReal.coe_one, one_mul, lp.single_apply, Pi.single_eq_same,
-      Pi.single_eq_of_ne hij, Pi.single_eq_of_ne' hij, dist_zero_right, dist_zero_left] at hi hj
-    linarith
-  exact hd.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
-    (fun i ↦ ⟨_, Metric.mem_ball_self (half_pos (norm_pos_iff.2 (hv i)))⟩)
+  have := hc.to_subtype
+  set S : Set (lp E p) := ⋃ i : {i // Nontrivial (E i)}, Set.range (lp.single p i.val)
+  have hS : TopologicalSpace.IsSeparable S :=
+    .iUnion fun i ↦ TopologicalSpace.isSeparable_range (lp.isometry_single i.val).continuous
+  rw [← TopologicalSpace.isSeparable_univ_iff]
+  -- Every element is the limit of the finite sums of its coordinate vectors, whose nonzero terms
+  -- lie in the additive span of `S`.
+  refine (hS.span (R := ℕ)).closure.mono fun f _ ↦
+    mem_closure_of_tendsto (lp.hasSum_single hp f) (Filter.Eventually.of_forall fun s ↦ ?_)
+  refine Submodule.sum_mem _ fun i _ ↦ ?_
+  by_cases hfi : f i = 0
+  · simp [hfi]
+  · exact Submodule.subset_span (Set.mem_iUnion.2 ⟨⟨i, ⟨⟨f i, 0, hfi⟩⟩⟩, f i, rfl⟩)
+
+/-- For a finite exponent and a countable index type, `lp E p` is separable when every `E i` is.
+-/
+theorem separableSpace [Countable ι] [∀ i, TopologicalSpace.SeparableSpace (E i)]
+    [Fact (1 ≤ p)] (hp : p ≠ ⊤) : TopologicalSpace.SeparableSpace (lp E p) :=
+  separableSpace_of_countable_nontrivial (Set.to_countable _) hp
+
+/-- **Separability of `lp E p` (`1 ≤ p < ∞`).** For a finite exponent `1 ≤ p < ∞`, `lp E p` is
+separable if and only if every coordinate fibre `E i` is separable and `{i | Nontrivial (E i)}` is
+countable. -/
+theorem separableSpace_iff [Fact (1 ≤ p)] (hp : p ≠ ∞) :
+    TopologicalSpace.SeparableSpace (lp E p) ↔
+      (∀ i, TopologicalSpace.SeparableSpace (E i)) ∧ {i | Nontrivial (E i)}.Countable :=
+  ⟨fun _ ↦ ⟨separableSpace_apply_of_separableSpace (p := p),
+      countable_nontrivial_of_separableSpace (p := p)⟩,
+    fun ⟨_, hc⟩ ↦ separableSpace_of_countable_nontrivial hc hp⟩
 
 /-- For `1 ≤ p < ∞` and nontrivial separable fibres `E i`, `lp E p` is separable if and only if the
 index type `ι` is countable. -/
@@ -455,6 +618,44 @@ theorem separableSpace_iff_countable [∀ i, Nontrivial (E i)]
     [∀ i, TopologicalSpace.SeparableSpace (E i)] [Fact (1 ≤ p)] (hp : p ≠ ∞) :
     TopologicalSpace.SeparableSpace (lp E p) ↔ Countable ι :=
   ⟨fun _ ↦ countable_of_separableSpace E p, fun _ ↦ separableSpace hp⟩
+
+/-- Over an uncountable index type with nontrivial fibres `E i`, `lp E p` (`1 ≤ p ≤ ∞`) is not
+separable. -/
+theorem not_separableSpace_of_not_countable [∀ i, Nontrivial (E i)] [Fact (1 ≤ p)]
+    (hι : ¬ Countable ι) : ¬ TopologicalSpace.SeparableSpace (lp E p) :=
+  fun _ ↦ hι (countable_of_separableSpace E p)
+
+/-- Over a nondegenerate closed real interval `[a, b]` (`a < b`) with nontrivial fibres `E i`,
+`lp E p` (`1 ≤ p ≤ ∞`) is not separable; in particular `ℓ²([0, 1], 𝕜)` is not separable. -/
+theorem not_separableSpace_Icc {a b : ℝ} {E : Set.Icc a b → Type*}
+    [∀ i, NormedAddCommGroup (E i)] [∀ i, Nontrivial (E i)] [Fact (1 ≤ p)] (hab : a < b) :
+    ¬ TopologicalSpace.SeparableSpace (lp E p) :=
+  not_separableSpace_of_not_countable fun hc ↦
+    hab.not_ge (Cardinal.Real.Icc_countable_iff.mp (Set.countable_coe_iff.mp hc))
+
+end Separability
+
+/-- For an element `ζ` of an iterated `ℓᵖ` space (`1 ≤ p` and `0 < p.toReal`), the `p`-th powers of
+the coordinate norms `‖ζ x.1 x.2‖ ^ p.toReal` are summable over `ι₁ × ι₂`. -/
+theorem summable_norm_rpow_prod {ι₁ ι₂ : Type*} {G : ι₁ → ι₂ → Type*}
+    [∀ i j, NormedAddCommGroup (G i j)] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 0 < p.toReal)
+    (ζ : lp (fun i ↦ lp (G i) p) p) :
+    Summable fun x : ι₁ × ι₂ ↦ ‖ζ x.1 x.2‖ ^ p.toReal :=
+  (summable_prod_of_nonneg fun _ ↦ by positivity).2
+    ⟨fun i ↦ (lp.memℓp (ζ i)).summable hp, ((lp.memℓp ζ).summable hp).congr fun i ↦ by
+      simpa using (lp.hasSum_norm hp (ζ i)).tsum_eq.symm⟩
+
+/-- An element `ζ` of an iterated `ℓᵖ` space (`1 ≤ p`) lies in `ℓᵖ` on `ι₁ × ι₂`. -/
+theorem memℓp_prod {ι₁ ι₂ : Type*} {G : ι₁ → ι₂ → Type*} [∀ i j, NormedAddCommGroup (G i j)]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (ζ : lp (fun i ↦ lp (G i) p) p) :
+    Memℓp (fun x : ι₁ × ι₂ ↦ ζ x.1 x.2) p := by
+  rcases eq_or_ne p ∞ with rfl | hp
+  · refine memℓp_infty ⟨‖ζ‖, ?_⟩
+    rintro _ ⟨⟨i, j⟩, rfl⟩
+    exact (lp.norm_apply_le_norm ENNReal.top_ne_zero (ζ i) j).trans
+      (lp.norm_apply_le_norm ENNReal.top_ne_zero ζ i)
+  · exact memℓp_gen <| lp.summable_norm_rpow_prod
+      (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hp) ζ
 
 end lp
 

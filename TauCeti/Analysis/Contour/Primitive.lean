@@ -6,20 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.HasPrimitives
-public import Mathlib.Analysis.Calculus.LogDeriv
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Topology.FilledHull
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.MeasureTheory.Integral.CurveIntegral.Segment
 import TauCeti.Analysis.Calculus.ContDiff.Approximation
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Curve.Concat
+import TauCeti.Analysis.Contour.Curve.FTC
 import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.Analysis.Contour.HomologyCauchy
-import TauCeti.Analysis.Contour.Winding.StarConvex
-import TauCeti.Analysis.Contour.Winding.UnboundedComponent
+import TauCeti.Order.Interval.Set.Piecewise
 import TauCeti.Order.Interval.Set.UnorderedInterval
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.UnboundedComponent
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
 
 /-!
 # Primitives from vanishing contour integrals, and logarithms on sets without holes
@@ -57,6 +58,9 @@ set without holes has holomorphic square roots.
   open set without holes.
 * `TauCeti.Contour.isExactOn_of_starConvex` — a holomorphic function has a primitive on an open
   star-shaped set.
+* `TauCeti.Contour.curveIntegral_segment_add_segment_eq_intervalIntegral_deriv_smul`: on an open
+  set star-shaped about `c`, the contour integral of a holomorphic function along a curve equals the
+  sum of its curve integrals along the two segments through `c`.
 * `TauCeti.Contour.exists_differentiableOn_eqOn_exp_comp_of_isExactOn` — a nowhere-zero
   holomorphic function whose logarithmic derivative has a primitive has a holomorphic logarithm.
 * `TauCeti.Contour.exists_differentiableOn_eqOn_exp_comp_of_filledHull_subset`,
@@ -90,21 +94,17 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
     ∫ t in a..b, deriv γ t • f (γ t) = ∫ t in c..d, deriv δ t • f (δ t) := by
   -- A reversed parameter interval is reduced to the oriented case by reflecting the curve.
   wlog hab : a ≤ b generalizing γ a b with H
-  · have hba : b ≤ a := (not_le.mp hab).le
-    have := H (γ := fun t => γ (a + b - t)) (a := b) (b := a)
-      (by simpa using hγ.comp_const_sub (a + b))
-      hγU.comp_const_sub_uIcc
-      (by simpa using hstart) (by simpa using hend) hba
-    rwa [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
-      add_sub_cancel_left] at this
+  · have := H (γ := fun t => γ (a + b - t)) (a := b) (b := a)
+      (by simpa using hγ.comp_const_sub (a + b)) hγU.comp_const_sub_uIcc
+      (by simpa using hstart) (by simpa using hend) (not_le.mp hab).le
+    simpa only [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
+      add_sub_cancel_left] using this
   wlog hcd : c ≤ d generalizing δ c d with H
-  · have hdc : d ≤ c := (not_le.mp hcd).le
-    have := H (δ := fun t => δ (c + d - t)) (c := d) (d := c)
-      (by simpa using hδ.comp_const_sub (c + d))
-      hδU.comp_const_sub_uIcc
-      (by simpa using hstart) (by simpa using hend) hdc
-    rwa [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
-      add_sub_cancel_left] at this
+  · have := H (δ := fun t => δ (c + d - t)) (c := d) (d := c)
+      (by simpa using hδ.comp_const_sub (c + d)) hδU.comp_const_sub_uIcc
+      (by simpa using hstart) (by simpa using hend) (not_le.mp hcd).le
+    simpa only [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
+      add_sub_cancel_left] using this
   -- The closed curve: `γ` on `[a, b]`, then `δ` backwards on `[b, b + d - c]`.
   have hbe : b ≤ b + d - c := by linarith
   have hρ : IsPiecewiseC1On (fun t => δ (b + d - t)) b (b + d - c) := by
@@ -114,32 +114,27 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
     rw [uIcc_of_le hcd]
     exact ⟨by linarith [ht.2], by linarith [ht.1]⟩
   set σ : ℝ → ℂ := fun t => if t ≤ b then γ t else δ (b + d - t)
-  have hσγ : EqOn σ γ (Icc a b) := fun t ht => ite_eq_left ht.2
-  have hσρ : EqOn σ (fun t => δ (b + d - t)) (Icc b (b + d - c)) := fun t ht => by
-    rcases ht.1.eq_or_lt with rfl | hlt
-    · simp [σ, hend]
-    · exact ite_eq_right (not_le.2 hlt)
-  have hσpc : IsPiecewiseC1On σ a (b + d - c) := hγ.if_le hρ hab hbe (by simpa using hend)
+  have hσρ : EqOn σ (fun t => δ (b + d - t)) (Icc b (b + d - c)) :=
+    (eqOn_ite_le_Ici (by simpa using hend)).mono Icc_subset_Ici_self
   have hσU : MapsTo σ (uIcc a (b + d - c)) U := by
-    intro t ht
-    rw [uIcc_of_le (hab.trans hbe)] at ht
-    rcases le_total t b with htb | hbt
-    · rw [hσγ ⟨ht.1, htb⟩]
-      exact hγU (by rw [uIcc_of_le hab]; exact ⟨ht.1, htb⟩)
-    · rw [hσρ ⟨hbt, ht.2⟩]
-      exact hρU (by rw [uIcc_of_le hbe]; exact ⟨hbt, ht.2⟩)
+    rw [uIcc_of_le (hab.trans hbe)]
+    exact (uIcc_of_le hab ▸ hγU).ite_le_Icc (uIcc_of_le hbe ▸ hρU)
+  have hσpc : IsPiecewiseC1On σ a (b + d - c) := hγ.if_le hρ hab hbe (by simpa using hend)
   have hσclosed : σ a = σ (b + d - c) := by
-    rw [hσγ ⟨le_rfl, hab⟩, hσρ ⟨hbe, le_rfl⟩]
-    simpa using hstart
+    rw [hσρ ⟨hbe, le_rfl⟩]
+    simpa [σ, hab] using hstart
+  -- Its integral splits at `b` into the integrals along `γ` and along the reversed leg.
+  have hsplit := intervalIntegral_deriv_smul_ite_le_eq_add (f := f) hab hbe
+    (hγ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
+    (hρ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hρU)
+  -- The reversed leg integrates to minus the integral along `δ`.
+  have hrev : ∫ t in b..b + d - c, deriv (fun t => δ (b + d - t)) t • f (δ (b + d - t)) =
+      -∫ t in c..d, deriv δ t • f (δ t) := by
+    rw [intervalIntegral_deriv_smul_comp_const_sub, ← intervalIntegral.integral_symm]
+    simp
   have hzero := h σ a (b + d - c) hσpc hσU hσclosed
-  rw [intervalIntegral_deriv_smul_eq_add_of_eqOn (b := b) (δ := fun t => δ (b + d - t))
-      (fun t ht => hσγ (Ioo_subset_Icc_self (by rwa [uIoo_of_le hab] at ht)))
-      (fun t ht => hσρ (Ioo_subset_Icc_self (by rwa [uIoo_of_le hbe] at ht)))
-      (hγ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
-      (hρ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hρU),
-    intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_left, sub_sub_cancel,
-    intervalIntegral.integral_symm c d, ← sub_eq_add_neg, sub_eq_zero] at hzero
-  exact hzero
+  rw [hsplit, hrev, ← sub_eq_add_neg] at hzero
+  exact sub_eq_zero.mp hzero
 
 /-- **Segments as contour integrals.** The contour integral along the segment from `z` to `w`,
 parametrized affinely on `[s, s + 1]`, is Mathlib's curve integral of the `1`-form `v ↦ v • f x`
@@ -170,30 +165,19 @@ private theorem exists_intervalIntegral_deriv_smul_eq_add_curveIntegral_segment
     rw [segment_eq_image_lineMap]
     exact ⟨t - 1, ⟨by linarith [ht.1], by linarith [ht.2]⟩, AffineMap.lineMap_apply_module' _ _ _⟩
   set η : ℝ → ℂ := fun t => if t ≤ 1 then γ t else σ t
-  have hηγ : EqOn η γ (Icc 0 1) := fun t ht => ite_eq_left ht.2
-  have hησ : EqOn η σ (Icc 1 2) := fun t ht => by
-    rcases ht.1.eq_or_lt with rfl | hlt
-    · simp [η, σ, hz]
-    · exact ite_eq_right (not_le.2 hlt)
+  have hηU : MapsTo η (uIcc 0 2) U := by
+    rw [uIcc_of_le zero_le_one] at hγU
+    rw [uIcc_of_le one_le_two] at hσU
+    rw [uIcc_of_le zero_le_two]
+    exact hγU.ite_le_Icc hσU
   have hσpc : IsPiecewiseC1On σ 1 2 := .of_contDiffOn (by fun_prop)
   have hηpc : IsPiecewiseC1On η 0 2 := hγ.if_le hσpc zero_le_one one_le_two (by simp [σ, hz])
-  have hηU : MapsTo η (uIcc 0 2) U := by
-    intro t ht
-    rw [uIcc_of_le zero_le_two] at ht
-    rcases le_total t 1 with ht1 | ht1
-    · rw [hηγ ⟨ht.1, ht1⟩]
-      exact hγU (by rw [uIcc_of_le zero_le_one]; exact ⟨ht.1, ht1⟩)
-    · rw [hησ ⟨ht1, ht.2⟩]
-      exact hσU (by rw [uIcc_of_le one_le_two]; exact ⟨ht1, ht.2⟩)
-  refine ⟨η, hηpc, hηU, hηγ ⟨le_rfl, zero_le_one⟩, by rw [hησ ⟨one_le_two, le_rfl⟩]; norm_num [σ],
-    ?_⟩
+  refine ⟨η, hηpc, hηU, by norm_num [η], by norm_num [η, σ], ?_⟩
   have hseg' := intervalIntegral_deriv_smul_segment_eq_curveIntegral f z w 1
   rw [one_add_one_eq_two] at hseg'
-  rw [intervalIntegral_deriv_smul_eq_add_of_eqOn (b := 1) (δ := σ)
-      (fun t ht => hηγ (Ioo_subset_Icc_self (by rwa [uIoo_of_le zero_le_one] at ht)))
-      (fun t ht => hησ (Ioo_subset_Icc_self (by rwa [uIoo_of_le one_le_two] at ht)))
-      (hγ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
-      (hσpc.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hσU),
+  rw [intervalIntegral_deriv_smul_ite_le_eq_add zero_le_one one_le_two
+      (hγ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
+      (hσpc.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hσU),
     hσ, hseg']
 
 /-- **The converse of Cauchy's theorem.** A continuous function on an open set `U` whose contour
@@ -258,7 +242,8 @@ theorem isExactOn_of_forall_isNullHomologous {f : ℂ → ℂ} (hU : IsOpen U)
       IsNullHomologous γ a b U) :
     Complex.IsExactOn f U :=
   isExactOn_of_forall_closed_integral_eq_zero hU hf.continuousOn fun γ a b hγ hγU hclosed =>
-    homologyCauchyTheorem hU γ a b hγ (fun _ ht => hγU ht) hclosed hf (h γ a b hγ hγU hclosed)
+    homologyCauchyTheorem hU γ a b hγ.absolutelyContinuousOnInterval (fun _ ht => hγU ht) hclosed
+      hf (h γ a b hγ hγU hclosed)
 
 /-- **Holomorphic functions have primitives on a set without holes.** If `U` is open and every
 connected component of `ℂ \ U` is unbounded (`filledHull U ⊆ U`), then every function holomorphic
@@ -266,14 +251,15 @@ on `U` has a primitive on `U`. -/
 theorem isExactOn_of_filledHull_subset {f : ℂ → ℂ} (hU : IsOpen U) (hUf : filledHull U ⊆ U)
     (hf : DifferentiableOn ℂ f U) : Complex.IsExactOn f U :=
   isExactOn_of_forall_isNullHomologous hU hf fun _ _ _ hγ hγU hclosed =>
-    hγ.isNullHomologous_of_filledHull_subset hclosed hγU hUf
+    hγ.absolutelyContinuousOnInterval.isNullHomologous_of_filledHull_subset hclosed hγU hUf
 
 /-- **Holomorphic functions have primitives on a star-shaped set.** If `U` is open and
 star-shaped about some point, then every function holomorphic on `U` has a primitive on `U`. -/
 theorem isExactOn_of_starConvex {f : ℂ → ℂ} {x : ℂ} (hU : IsOpen U) (hstar : StarConvex ℝ x U)
     (hf : DifferentiableOn ℂ f U) : Complex.IsExactOn f U :=
   isExactOn_of_forall_isNullHomologous hU hf fun _ _ _ hγ hγU hclosed =>
-    isNullHomologous_of_starConvex hstar hγ hclosed fun _ ht => hγU ht
+    hγ.absolutelyContinuousOnInterval.isNullHomologous_of_starConvex hstar hclosed
+      fun _ ht => hγU ht
 
 /-- **A holomorphic logarithm from a primitive of the logarithmic derivative.** If `g` is
 holomorphic and nowhere zero on an open set `U` and `g' / g` has a primitive `h` on `U`, then `g`
@@ -332,5 +318,20 @@ theorem exists_differentiableOn_pow_eq_of_filledHull_subset {g : ℂ → ℂ} (h
   dsimp only
   rw [← Complex.exp_natCast_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn)]
   exact hLeq hz
+
+/-- **Path independence through a star centre.** If `g` is holomorphic on an open set `U` that is
+star-shaped about `c`, then for every piecewise-`C¹` curve `γ` in `U` the contour integral
+`∫ t in a..b, γ' t • g (γ t)` equals the sum of the curve integrals of `g(z) dz` along
+`Path.segment (γ a) c` and `Path.segment c (γ b)`. -/
+theorem curveIntegral_segment_add_segment_eq_intervalIntegral_deriv_smul {c : ℂ} {g : ℂ → ℂ}
+    {γ : ℝ → ℂ} {a b : ℝ} (hU : IsOpen U) (hstar : StarConvex ℝ c U)
+    (hg : DifferentiableOn ℂ g U) (hγ : IsPiecewiseC1On γ a b) (hγU : MapsTo γ (uIcc a b) U) :
+    (∫ᶜ z in Path.segment (γ a) c, ContinuousLinearMap.toSpanSingleton ℂ (g z)) +
+        ∫ᶜ z in Path.segment c (γ b), ContinuousLinearMap.toSpanSingleton ℂ (g z) =
+      ∫ t in a..b, deriv γ t • g (γ t) := by
+  obtain ⟨F, hF⟩ := isExactOn_of_starConvex hU hstar hg
+  rw [curveIntegral_segment_add_segment_toSpanSingleton_eq_sub hstar (hγU left_mem_uIcc)
+    (hγU right_mem_uIcc) hF hg.continuousOn,
+    intervalIntegral_deriv_smul_eq_sub_of_hasDerivAt hγ hγU hg.continuousOn hF]
 
 end TauCeti.Contour

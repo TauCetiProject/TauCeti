@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation.Basic
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Matrix.RowCol
 
@@ -247,15 +247,16 @@ theorem rank_matrixMutation [Finite I] {R : Type*} [CommRing R] (hkk : B (row k)
 omit [Fintype I] [Fintype K] in
 /-- Mutation preserves independence of the columns after scalar change. This applies in
 particular to rational independence, with no full-rank assumption on the mutable block. -/
-theorem linearIndependent_col_matrixMutation_iff [Finite I] [Finite K] {R : Type*}
-    [CommRing R] [Nontrivial R]
+theorem linearIndependent_col_matrixMutation_iff [Finite I] {R : Type*} [CommRing R]
     (hkk : B (row k) k = 0) :
     LinearIndependent R ((matrixMutation row B k).map (Int.castRingHom R)).col ↔
       LinearIndependent R (B.map (Int.castRingHom R)).col := by
-  let := Fintype.ofFinite I
-  let := Fintype.ofFinite K
-  rw [linearIndependent_iff_card_eq_finrank_span, linearIndependent_iff_card_eq_finrank_span]
-  exact Iff.of_eq (congrArg (Fintype.card K = ·) (rank_matrixMutation row B k hkk))
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact iff_of_true linearIndependent_of_subsingleton linearIndependent_of_subsingleton
+  · have : Finite K := Finite.of_injective row row.injective
+    let := Fintype.ofFinite K
+    simp only [linearIndependent_iff_card_eq_finrank_span, Set.finrank,
+      Matrix.finrank_span_range_col, rank_matrixMutation row B k hkk]
 
 end Products
 

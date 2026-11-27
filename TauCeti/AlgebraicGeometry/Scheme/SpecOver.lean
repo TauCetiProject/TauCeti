@@ -47,6 +47,10 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
 * `AlgebraicGeometry.Scheme.Hom.commSq_specMap_algebraMap_self`: a morphism over `Spec R` forms a
   commutative square with the structure morphisms and
   `Spec.map (CommRingCat.ofHom (algebraMap R R))`.
+* `AlgebraicGeometry.Scheme.Hom.isOver_left`: the underlying morphism of a morphism
+  `Over.mk (X ↘ S) ⟶ Over.mk (Y ↘ S)` is a morphism over `S`.
+* `AlgebraicGeometry.Scheme.isOver_spec`: the structure morphism `X ↘ Spec R` is a morphism over
+  `Spec R` (where `Spec R` lies over itself via `AlgebraicGeometry.specOverSpec`).
 * `TauCeti.AlgebraicGeometry.specOverHomEquivAlgHom`: morphisms `Spec B ⟶ Spec A` over `Spec R`
   are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset`: a morphism over
@@ -135,7 +139,25 @@ theorem commSq_specMap_algebraMap_self {X Y : Scheme.{u}} (f : X ⟶ Y) (R : Typ
   rw [Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id, Category.comp_id]
   exact hf.comp_over
 
+/-- The underlying morphism of a morphism `Over.mk (X ↘ S) ⟶ Over.mk (Y ↘ S)` of schemes over `S`
+is a morphism over `S`, for the given structure morphisms of `X` and `Y`. Mathlib's instance for
+`g.left` uses the structure morphisms `OverClass.fromOver`, which instance search does not
+identify with the given `X.Over S` and `Y.Over S`. -/
+instance isOver_left {S X Y : Scheme.{u}} [X.Over S] [Y.Over S]
+    (g : Over.mk (X ↘ S) ⟶ Over.mk (Y ↘ S)) : Scheme.Hom.IsOver (X := X) (Y := Y) g.left S :=
+  ⟨Over.w g⟩
+
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme
+
+/-- The structure morphism `X ↘ Spec R` of a scheme `X` over `Spec R` is a morphism over `Spec R`,
+where `Spec R` lies over itself via `AlgebraicGeometry.specOverSpec`. -/
+instance isOver_spec (X : Scheme.{u}) (R : Type u) [CommRing R] [X.Over (Spec (.of R))] :
+    (X ↘ Spec (.of R)).IsOver (Spec (.of R)) where
+  comp_over := by simp [specOverSpec_over]
+
+end AlgebraicGeometry.Scheme
 
 namespace TauCeti.AlgebraicGeometry
 

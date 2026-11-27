@@ -49,8 +49,12 @@ coordinates of the parameter and the point
 * `TauCeti.IsSmoothForm.contDiffOn_inChartAt_mpullback_prodMk`: the coordinate expressions of the
   slices of a `C^m` form on `N × M` are jointly `C^m` in the chart coordinates of the parameter and
   the point, on the product chart target.
+* `TauCeti.SmoothForm.mpullback_prodMk_mpullback_prodMap_id`: reparametrizing a family along
+  `g × id` replaces the slice at `u` by the slice at `g u`.
 * `TauCeti.SmoothForm.lineMapFamily`, `TauCeti.SmoothForm.mpullback_prodMk_lineMapFamily`: the
   family `t ↦ α₀ + c(t) (α₁ - α₀)` interpolating two forms, as a form on `ℝ × M`.
+* `TauCeti.mpullback_prodMk_mpullback_prodMap`: the slices of the pullback of a family along
+  `id × g` are the pullbacks along `g` of the slices.
 -/
 
 public section
@@ -238,6 +242,31 @@ def SmoothForm.lineMapFamily (α₀ α₁ : SmoothForm I M F k) {c : ℝ → ℝ
     funSMulₗ ⟨fun p ↦ c p.1, by exact hc.contMDiff.comp contMDiff_fst⟩
       (mpullback Prod.snd contMDiff_snd (α₁ - α₀))
 
+/-- The slices of the pullback of a form `τ` on `M` along the projection `N × M → M` are `τ`:
+`ι_t^* pr₂^* τ = τ`, since `Prod.snd ∘ Prod.mk t` is the identity of `M`. -/
+@[simp]
+theorem SmoothForm.mpullback_prodMk_mpullback_snd [IsManifold J 1 N] (τ : SmoothForm I M F k)
+    (t : N) :
+    mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
+      (mpullback Prod.snd contMDiff_snd τ : SmoothForm (J.prod I) (N × M) F k) = τ :=
+  (mpullback_mpullback (Prod.mk t) Prod.snd (I' := J.prod I)
+    (contMDiff_const.prodMk contMDiff_id) contMDiff_snd τ).trans
+      (LinearMap.congr_fun mpullback_id τ)
+
+/-- **Reparametrizing a family.** The slices of the pullback of a form `β` on `N' × M` along
+`g × id` are slices of `β`: `ι_u^* (g × id)^* β = ι_(g u)^* β`, since
+`Prod.map g id ∘ Prod.mk u = Prod.mk (g u)`. -/
+theorem SmoothForm.mpullback_prodMk_mpullback_prodMap_id {EN' HN' N' : Type*}
+    [NormedAddCommGroup EN'] [NormedSpace ℝ EN'] [TopologicalSpace HN'] [TopologicalSpace N']
+    [ChartedSpace HN' N'] {J' : ModelWithCorners ℝ EN' HN'} [IsManifold J 1 N] [IsManifold J' 1 N']
+    (β : SmoothForm (J'.prod I) (N' × M) F k) {g : N → N'} (hg : ContMDiff J J' ∞ g) (u : N) :
+    mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id)
+        (mpullback (Prod.map g id) (hg.prodMap contMDiff_id) β :
+          SmoothForm (J.prod I) (N × M) F k) =
+      mpullback (Prod.mk (g u)) (contMDiff_const.prodMk contMDiff_id) β :=
+  mpullback_mpullback (Prod.mk u) (Prod.map g id) (I' := J.prod I)
+    (contMDiff_const.prodMk contMDiff_id) (hg.prodMap contMDiff_id) β
+
 /-- The slices of `TauCeti.SmoothForm.lineMapFamily α₀ α₁ hc` are the forms
 `α₀ + c(t) (α₁ - α₀)`. -/
 @[simp]
@@ -245,21 +274,30 @@ theorem SmoothForm.mpullback_prodMk_lineMapFamily (α₀ α₁ : SmoothForm I M 
     (hc : ContDiff ℝ ∞ c) (t : ℝ) :
     mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (lineMapFamily α₀ α₁ hc) =
       α₀ + c t • (α₁ - α₀) := by
-  -- `Prod.snd ∘ Prod.mk t` is the identity of `M`.
-  have hcomp (τ : SmoothForm I M F k) : mpullback (Prod.mk t)
-      (contMDiff_const.prodMk contMDiff_id) (mpullback Prod.snd contMDiff_snd τ) = τ :=
-    (mpullback_mpullback (Prod.mk t) Prod.snd (I' := 𝓘(ℝ, ℝ).prod I)
-      (contMDiff_const.prodMk contMDiff_id) contMDiff_snd τ).trans
-        (LinearMap.congr_fun mpullback_id τ)
-  rw [lineMapFamily, map_add, hcomp]
+  rw [lineMapFamily, map_add, mpullback_prodMk_mpullback_snd]
   congr 1
   apply Subtype.ext
   -- `erw`: the coercion of `funSMulₗ` carries the `IsManifold _ 1` instance derived from the
   -- product, which differs syntactically from the one in the goal.
   erw [coe_mpullback, coe_funSMulₗ, mpullback_fun_smul,
-    ← coe_mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id), hcomp]
+    ← coe_mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id),
+    mpullback_prodMk_mpullback_snd]
   -- The bundled function evaluates at `(t, x)` to `c t` by definition, and the scalar multiple of
   -- a smooth form is computed pointwise.
   rfl
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- The slices of the pullback of a family of forms along `id × g` are the pullbacks along `g` of
+the slices: `ι_p^* (id × g)^* η = g^* ι_p^* η`, for a differentiable map `g`. -/
+theorem mpullback_prodMk_mpullback_prodMap {g : M → M'} (hg : MDifferentiable I I' g)
+    (η : RoughForm (J.prod I') (N × M') F k) (p : N) :
+    mpullback I (J.prod I) (Prod.mk p) (mpullback (J.prod I) (J.prod I') (Prod.map id g) η) =
+      mpullback I I' g (mpullback I' (J.prod I') (Prod.mk p) η) := by
+  have hι : MDifferentiable I (J.prod I) (Prod.mk p : M → N × M) :=
+    mdifferentiable_const.prodMk mdifferentiable_id
+  have hι' : MDifferentiable I' (J.prod I') (Prod.mk p : M' → N × M') :=
+    mdifferentiable_const.prodMk mdifferentiable_id
+  have hcomp : Prod.map id g ∘ (Prod.mk p : M → N × M) = Prod.mk p ∘ g := (rfl)
+  rw [← mpullback_comp hι (mdifferentiable_id.prodMap hg), hcomp, mpullback_comp hg hι']
 
 end TauCeti

@@ -17,8 +17,9 @@ exponent `k`, because `b ^ 0 = 1`. Moreover, any natural number `n` that is not 
 a prime divisor distinct from `b`; for a prime `p`, this makes the powers of `p` exactly the
 natural numbers with no prime divisor other than `p`.
 
-For positive bases `b < a` and `n ≥ 3`, we also bound differences of powers below by
-`(a + b) * a ^ (n - 2)`.
+A difference `q ^ n - q ^ i` of two powers of one base `q` with `i ≤ n` factors as
+`q ^ i * (q ^ (n - i) - 1)`. For positive bases `b < a` and `n ≥ 3`, we also bound differences
+`a ^ n - b ^ n` of powers of two bases below by `(a + b) * a ^ (n - 2)`.
 
 ## Main results
 
@@ -30,6 +31,8 @@ For positive bases `b < a` and `n ≥ 3`, we also bound differences of powers be
   `q ≠ b`.
 * `Nat.Prime.forall_prime_ne_not_dvd_iff_exists_pow_eq`: for a prime `p`, a natural number has no
   prime divisor distinct from `p` if and only if it is a power of `p`.
+* `Nat.pow_sub_pow_eq_pow_mul_pow_sub_one`: `q ^ n - q ^ i = q ^ i * (q ^ (n - i) - 1)` for
+  `i ≤ n`.
 * `Nat.add_mul_pow_sub_two_lt_pow_sub_pow`: the strict lower bound above.
 -/
 
@@ -65,6 +68,12 @@ theorem Prime.forall_prime_ne_not_dvd_iff_exists_pow_eq {p k : ℕ} (hp : p.Prim
   obtain ⟨q, hq, hqk, hqp⟩ := exists_prime_dvd_ne_of_forall_ne_pow fun n h ↦ hpow n h.symm
   exact hno q hq hqp hqk
 
+/-- For `i ≤ n`, the difference `q ^ n - q ^ i` of two powers of `q` is `q ^ i` times the
+decremented power `q ^ (n - i) - 1`. -/
+theorem pow_sub_pow_eq_pow_mul_pow_sub_one {q i n : ℕ} (hi : i ≤ n) :
+    q ^ n - q ^ i = q ^ i * (q ^ (n - i) - 1) := by
+  rw [← pow_sub_mul_pow q hi, Nat.mul_sub, Nat.mul_one, mul_comm (q ^ (n - i))]
+
 /-- For positive bases `b < a` and `n ≥ 3`, `a ^ n - b ^ n` strictly exceeds
 `(a + b) * a ^ (n - 2) = a ^ (n - 1) + b * a ^ (n - 2)`. -/
 theorem add_mul_pow_sub_two_lt_pow_sub_pow {a b n : ℕ} (hb : 0 < b) (hba : b < a)
@@ -84,5 +93,14 @@ theorem add_mul_pow_sub_two_lt_pow_sub_pow {a b n : ℕ} (hb : 0 < b) (hba : b <
     rw [mul_comm (a ^ (n - 2)) (b ^ 2), ← add_mul,
       Nat.sub_add_cancel (Nat.pow_le_pow_left hba.le 2), ha, mul_comm]
   omega
+
+/-- If `1 < p` and either `D < e` or `D < j`, then `D < (p ^ e + 1) * p ^ j`. -/
+theorem lt_add_one_mul_pow_of_lt {p D e j : ℕ} (hp : 1 < p) (h : D < e ∨ D < j) :
+    D < (p ^ e + 1) * p ^ j := by
+  rcases h with he | hj
+  · exact lt_of_lt_of_le (he.trans ((Nat.lt_pow_self hp).trans (Nat.lt_succ_self _)))
+      (Nat.le_mul_of_pos_right _ (Nat.pow_pos (zero_lt_one.trans hp)))
+  · exact lt_of_lt_of_le (hj.trans (Nat.lt_pow_self hp))
+      (Nat.le_mul_of_pos_left _ (Nat.succ_pos _))
 
 end Nat

@@ -9,15 +9,16 @@ public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.CategoryTheory.Limits.HasExactLimitsOfShape
 public import Mathlib.CategoryTheory.Limits.Shapes.Countable
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
+public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
+public import TauCeti.Geometry.Manifold.SmoothSingular.MayerVietoris
 
-import Mathlib.Algebra.Homology.DerivedCategory.KProjective
+import TauCeti.Algebra.Homology.DerivedCategory.KProjective
+import TauCeti.Algebra.Homology.Homotopy
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Contraction
 import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
-import TauCeti.Geometry.Manifold.SmoothSingular.Diffeomorph
 import TauCeti.Geometry.Manifold.SmoothSingular.Homotopy
-import TauCeti.Geometry.Manifold.SmoothSingular.MayerVietoris
 import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Topology.MayerVietoris
 
@@ -69,7 +70,8 @@ to a chosen chain homotopy (`TauCeti.smoothSingularChainHomotopyEquivInvNaturali
   `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι`: the smoothing quasi-isomorphism on
   open subsets of `M` and on `M`.
 * `TauCeti.smoothSingularHomologyIso`: the induced natural isomorphism between smooth singular
-  homology and singular homology.
+  homology and singular homology. It sends the class of the smooth `0`-simplex at a point to the
+  class of that point (`TauCeti.ιHomology₀_smoothSingularHomologyIso_hom`).
 * `TauCeti.smoothSingularChainHomotopyEquiv`,
   `TauCeti.homologyMap_smoothSingularChainHomotopyEquiv_inv`, and
   `TauCeti.smoothSingularChainHomotopyEquivInvNaturality`: the smoothing chain homotopy equivalence
@@ -77,10 +79,12 @@ to a chosen chain homotopy (`TauCeti.smoothSingularChainHomotopyEquivInvNaturali
   the chain homotopy witnessing naturality of its inverse.
 * `TauCeti.smoothSingularCochainHomotopyEquiv`,
   `TauCeti.quasiIso_cochainComplexMap_smoothSingularSubcomplex_ι`,
+  `TauCeti.quasiIso_cochainComplexMap_smallSmoothSingularSubcomplex_ι`,
   `TauCeti.smoothSingularCohomologyIso`, and
   `TauCeti.homologyMap_smoothSingularCochainHomotopyEquiv_inv`: the induced cochain homotopy
-  equivalence, cochain quasi-isomorphism, cohomology isomorphism, and compatibility of the cochain
-  inverse with `smoothSingularCohomologyIso`.
+  equivalence, cochain quasi-isomorphisms (also onto the smooth singular simplices subordinate to
+  an open cover), cohomology isomorphism, and compatibility of the cochain inverse with
+  `smoothSingularCohomologyIso`.
 
 ## References
 
@@ -141,9 +145,9 @@ private lemma quasiIso_iff_of_opens_subset {S U : Opens M} (hU : (U : Set M) ⊆
     rw [← ContMDiff.subtypeVal_comp_iff]
     exact (contMDiff_subtypeVal (I := I) (U := S)).comp
       (contMDiff_subtypeVal (I := I) (U := V))
-  exact ⟨quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R hf hg
+  exact ⟨quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy R hf hg contMDiff_snd
       (fun _ ↦ rfl) (fun _ ↦ rfl),
-    quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R hg hf
+    quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy R hg hf contMDiff_snd
       (fun _ ↦ rfl) (fun _ ↦ rfl)⟩
 
 omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M]
@@ -242,8 +246,8 @@ instance quasiIso_chainComplexMap_smoothSingularSubcomplex_ι (R : C) :
   have hf : ContMDiff I I ∞ f := by
     rw [← ContMDiff.subtypeVal_comp_iff]
     exact contMDiff_id (I := I)
-  exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R
-    hf (contMDiff_subtypeVal (I := I) (U := ⊤))
+  exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy R
+    hf (contMDiff_subtypeVal (I := I) (U := ⊤)) contMDiff_snd
     (fun _ ↦ rfl) (fun _ ↦ rfl)
     (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_opens R ⊤)
 
@@ -303,6 +307,16 @@ theorem smoothSingularHomologyIso_inv_naturality {f : M → N}
   rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv,
     smoothSingularHomologyIso_hom_naturality R hf]
 
+/-- The smoothing isomorphism sends the class in `H₀^∞(M; R)` of the smooth `0`-simplex at `x` to
+the class in `H₀(M; R)` of the point `x`. -/
+@[reassoc]
+theorem ιHomology₀_smoothSingularHomologyIso_hom (x : M) :
+    SSet.ιHomology₀ R ((SmoothSimplex.equiv₀ I M).symm x) ≫
+        (smoothSingularHomologyIso I M R 0).hom =
+      singularHomology₀Section R (X := TopCat.of M) x := by
+  rw [smoothSingularHomologyIso_hom, SSet.ιHomology₀_homologyMap, singularHomology₀Section_def]
+  exact congrArg (SSet.ιHomology₀ R) (SmoothSimplex.coe_equiv₀_symm x)
+
 section Projective
 
 variable [Projective R]
@@ -314,9 +328,7 @@ smooth singular chains into singular chains is a chain homotopy equivalence. -/
 def smoothSingularChainHomotopyEquiv :
     HomotopyEquiv ((smoothSingularSubcomplex I M : SSet).chainComplex R)
       ((TopCat.toSSet.obj (TopCat.of M)).chainComplex R) :=
-  let h := (ChainComplex.quasiIso_iff_of_projective
-    (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)).1 inferInstance
-  h.choose.copy (Homotopy.ofEq h.choose_spec)
+  .ofQuasiIsoOfProjective (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
 
 /-- The forward map of `smoothSingularChainHomotopyEquiv` is the chain map induced by the inclusion
 of smooth singular simplices. -/
@@ -324,7 +336,7 @@ of smooth singular simplices. -/
 theorem smoothSingularChainHomotopyEquiv_hom :
     (smoothSingularChainHomotopyEquiv I M R).hom =
       SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R := by
-  rw [smoothSingularChainHomotopyEquiv, HomotopyEquiv.copy_hom]
+  rw [smoothSingularChainHomotopyEquiv, HomotopyEquiv.ofQuasiIsoOfProjective_hom]
 
 /-- The map induced on homology by the inverse of `smoothSingularChainHomotopyEquiv` is the inverse
 of `smoothSingularHomologyIso`. -/
@@ -332,11 +344,8 @@ of `smoothSingularHomologyIso`. -/
 theorem homologyMap_smoothSingularChainHomotopyEquiv_inv (n : ℕ) :
     HomologicalComplex.homologyMap (smoothSingularChainHomotopyEquiv I M R).inv n =
       (smoothSingularHomologyIso I M R n).inv := by
-  rw [← cancel_mono (smoothSingularHomologyIso I M R n).hom, Iso.inv_hom_id,
-    smoothSingularHomologyIso_hom, SSet.homologyMap, ← smoothSingularChainHomotopyEquiv_hom,
-    ← HomologicalComplex.homologyMap_comp,
-    (smoothSingularChainHomotopyEquiv I M R).homotopyInvHomId.homologyMap_eq,
-    HomologicalComplex.homologyMap_id]
+  rw [smoothSingularChainHomotopyEquiv, HomotopyEquiv.homologyMap_ofQuasiIsoOfProjective_inv,
+    smoothSingularHomologyIso]
 
 variable {I M J N} in
 /-- The forward map of `smoothSingularChainHomotopyEquiv` commutes strictly with the chain maps
@@ -363,19 +372,8 @@ def smoothSingularChainHomotopyEquivInvNaturality {f : M → N}
         SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) R)
       (SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R ≫
         (smoothSingularChainHomotopyEquiv J N R).inv) :=
-  let eM := smoothSingularChainHomotopyEquiv I M R
-  let eN := smoothSingularChainHomotopyEquiv J N R
-  let fS := SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) R
-  let fT := SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R
-  (Homotopy.ofEq (Category.comp_id (eM.inv ≫ fS)).symm).trans <|
-    (eN.homotopyHomInvId.symm.compLeft (eM.inv ≫ fS)).trans <|
-      (Homotopy.ofEq (by
-        dsimp only [eM, eN, fS, fT]
-        rw [Category.assoc, ← Category.assoc _ (smoothSingularChainHomotopyEquiv J N R).hom,
-          ← smoothSingularChainHomotopyEquiv_hom_naturality R hf,
-          Category.assoc, ← Category.assoc (smoothSingularChainHomotopyEquiv I M R).inv])).trans <|
-        (eM.homotopyInvHomId.compRight (fT ≫ eN.inv)).trans <|
-          Homotopy.ofEq (Category.id_comp (fT ≫ eN.inv))
+  (smoothSingularChainHomotopyEquiv I M R).invNaturality (smoothSingularChainHomotopyEquiv J N R)
+    (smoothSingularChainHomotopyEquiv_hom_naturality R hf)
 
 /-! ### Cochain homotopy equivalence and singular cohomology comparison -/
 
@@ -414,6 +412,26 @@ instance quasiIso_cochainComplexMap_smoothSingularSubcomplex_ι :
   rw [← smoothSingularCochainHomotopyEquiv_hom I M R k Y]
   exact (smoothSingularCochainHomotopyEquiv I M R k Y).quasiIso_hom
 
+/-- Restriction from singular cochains to the cochains of the smooth singular simplices
+subordinate to an open cover `U` of `M` is a quasi-isomorphism when the chain coefficient object
+`R` is projective. It is restriction to smooth singular chains, a quasi-isomorphism by the smoothing
+theorem, followed by restriction from smooth to small smooth singular chains, a cochain homotopy
+equivalence by the small-chain theorem (`TauCeti.subcomplexSmallChainHomotopyEquiv`). -/
+theorem quasiIso_cochainComplexMap_smallSmoothSingularSubcomplex_ι {ι : Type*} (U : ι → Set M)
+    (hU : ∀ i, IsOpen (U i)) (hcov : ⋃ i, U i = Set.univ) :
+    QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := Y)
+      (smallSmoothSingularSubcomplex I U).ι) := by
+  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := Y)
+      (SSet.Subcomplex.homOfLE (inf_le_left :
+        smoothSingularSubcomplex I M ⊓ (TopCat.of M).smallSingularSubcomplex U ≤ _))) := by
+    have := ((subcomplexSmallChainHomotopyEquiv R (smoothSingularSubcomplex I M) U hU
+      hcov).linearYonedaFunctorMap k Y).quasiIso_hom
+    rwa [HomotopyEquiv.linearYonedaFunctorMap_hom, subcomplexSmallChainHomotopyEquiv_hom] at this
+  rw [smallSmoothSingularSubcomplex_eq, ← SSet.Subcomplex.homOfLE_ι (inf_le_left :
+    smoothSingularSubcomplex I M ⊓ (TopCat.of M).smallSingularSubcomplex U ≤ _),
+    SSet.cochainComplexMap_comp]
+  exact quasiIso_comp _ _
+
 variable {I M J N} in
 /-- **Naturality up to cochain homotopy of the dual smoothing inverse.** For any smooth map
 `f : M → N`, pulling back smooth cochains along `f` and extending to singular cochains on `M` is
@@ -426,12 +444,18 @@ def smoothSingularCochainHomotopyEquivInvNaturality {f : M → N}
       ((smoothSingularCochainHomotopyEquiv J N R k Y).inv ≫
         TopCat.singularCochainComplexMap (TopCat.ofHom ⟨f, hf.continuous⟩)) :=
   (Homotopy.ofEq (by
-    rw [smoothSingularCochainHomotopyEquiv_inv]
-    exact ((ChainComplex.linearYonedaFunctor k Y).map_comp _ _).symm)).trans <|
+    rw [smoothSingularCochainHomotopyEquiv_inv, op_comp, Functor.map_comp,
+      SSet.cochainComplexMap]
+    -- The sides differ only in how the implicit cochain complexes are written: as objects of
+    -- `ChainComplex.linearYonedaFunctor k Y`, or as `linearYonedaObj` (for instance
+    -- `(TopCat.of M).singularCochainComplex R k Y`); these agree by definition.
+    rfl)).trans <|
     ((smoothSingularChainHomotopyEquivInvNaturality R hf).linearYonedaFunctorMap k Y).trans <|
       Homotopy.ofEq (by
-        rw [smoothSingularCochainHomotopyEquiv_inv]
-        exact (ChainComplex.linearYonedaFunctor k Y).map_comp _ _)
+        rw [smoothSingularCochainHomotopyEquiv_inv, op_comp, Functor.map_comp,
+          TopCat.singularCochainComplexMap, SSet.cochainComplexMap]
+        -- As above, the sides differ only in how the implicit cochain complexes are written.
+        rfl)
 
 /-- **The smoothing isomorphism on cohomology.** Restriction to smooth singular chains induces an
 isomorphism in every degree `n` between the singular cohomology of `M` and the cohomology of the
@@ -467,11 +491,8 @@ inverse of `smoothSingularCohomologyIso`. -/
 theorem homologyMap_smoothSingularCochainHomotopyEquiv_inv (n : ℕ) :
     HomologicalComplex.homologyMap (smoothSingularCochainHomotopyEquiv I M R k Y).inv n =
       (smoothSingularCohomologyIso I M R k Y n).inv := by
-  rw [← cancel_mono (smoothSingularCohomologyIso I M R k Y n).hom, Iso.inv_hom_id,
-    smoothSingularCohomologyIso_hom, ← smoothSingularCochainHomotopyEquiv_hom,
-    ← HomologicalComplex.homologyMap_comp,
-    (smoothSingularCochainHomotopyEquiv I M R k Y).homotopyInvHomId.homologyMap_eq,
-    HomologicalComplex.homologyMap_id]
+  simp only [HomotopyEquiv.homologyMap_inv, smoothSingularCochainHomotopyEquiv_hom,
+    smoothSingularCohomologyIso, asIso_inv]
 
 variable {I M J N} in
 /-- `smoothSingularCohomologyIso` is contravariantly natural with respect to smooth maps. -/

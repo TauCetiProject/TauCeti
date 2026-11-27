@@ -48,6 +48,8 @@ is drawn in `TauCeti/RepresentationTheory/SU2/Character.lean`.
   `TauCeti.SU2.eq_of_mem_Icc_of_isConj_torusExp`: every element of `SU(2)` is conjugate to
   `diag (e^{iθ}, e^{-iθ})` for exactly one `θ ∈ [0, π]`, so the Weyl chamber `[0, π]` is a set of
   representatives for the conjugacy classes.
+* `TauCeti.SU2.conjugacyAngle` gives the angle of the representative in the Weyl chamber, and
+  `TauCeti.SU2.conjugacyAngle_eq_iff_isConj` classifies conjugacy by equality of these angles.
 * `TauCeti.SU2.eq_of_conjInvariant_of_trace_eq`,
   `TauCeti.SU2.exists_mem_Icc_eq_torusExp_of_conjInvariant` and
   `TauCeti.SU2.eq_of_conjInvariant_of_eqOn_torusExp_Icc`: a class function on `SU(2)` is a
@@ -147,6 +149,50 @@ fundamental domain for the Weyl reflection `θ ↦ -θ` acting on the angles rea
 theorem eq_of_mem_Icc_of_isConj_torusExp {θ φ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) Real.pi)
     (hφ : φ ∈ Set.Icc (0 : ℝ) Real.pi) (h : IsConj (torusExp θ) (torusExp φ)) : θ = φ :=
   Real.injOn_cos hθ hφ (isConj_torusExp_iff_cos_eq.mp h).symm
+
+/-- The angle in `[0, π]` of the conjugacy class of an element of `SU(2)`. -/
+noncomputable def conjugacyAngle (g : SU2) : ℝ :=
+  Real.arccos ((Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re / 2)
+
+/-- The angle is the inverse cosine of half the trace. -/
+theorem conjugacyAngle_def (g : SU2) :
+    conjugacyAngle g = Real.arccos ((Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re / 2) :=
+  (rfl)
+
+/-- The conjugacy angle belongs to the closed Weyl chamber. -/
+theorem conjugacyAngle_mem_Icc (g : SU2) : conjugacyAngle g ∈ Set.Icc (0 : ℝ) Real.pi :=
+  ⟨Real.arccos_nonneg _, Real.arccos_le_pi _⟩
+
+/-- The angle is continuous as a function of the group element. -/
+@[fun_prop]
+theorem continuous_conjugacyAngle : Continuous conjugacyAngle := by
+  have ht : Continuous fun g : SU2 ↦ Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) :=
+    Continuous.matrix_trace continuous_subtypeVal
+  exact Real.continuous_arccos.comp ((Complex.continuous_re.comp ht).div_const 2)
+
+/-- Conjugate elements have the same angle. -/
+theorem conjugacyAngle_eq_of_isConj {g h : SU2} (hgh : IsConj g h) :
+    conjugacyAngle g = conjugacyAngle h := by
+  simp only [conjugacyAngle_def, trace_eq_of_isConj hgh]
+
+/-- In the Weyl chamber, the angle of the diagonal representative is its parameter. -/
+@[simp]
+theorem conjugacyAngle_torusExp {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) Real.pi) :
+    conjugacyAngle (torusExp θ) = θ := by
+  rw [conjugacyAngle_def, trace_torusExp]
+  simpa [Complex.mul_re, Complex.cos_ofReal_re] using Real.arccos_cos hθ.1 hθ.2
+
+/-- A group element is conjugate to the diagonal representative at its angle. -/
+theorem isConj_torusExp_conjugacyAngle (g : SU2) : IsConj g (torusExp (conjugacyAngle g)) := by
+  obtain ⟨θ, hθ, hg⟩ := exists_isConj_torusExp_mem_Icc g
+  rwa [conjugacyAngle_eq_of_isConj hg, conjugacyAngle_torusExp hθ]
+
+/-- The angle is a complete conjugacy invariant. -/
+theorem conjugacyAngle_eq_iff_isConj {g h : SU2} :
+    conjugacyAngle g = conjugacyAngle h ↔ IsConj g h := by
+  refine ⟨fun he ↦ (isConj_torusExp_conjugacyAngle g).trans ?_, conjugacyAngle_eq_of_isConj⟩
+  rw [he]
+  exact (isConj_torusExp_conjugacyAngle h).symm
 
 /-! ### Class functions are functions of the trace -/
 

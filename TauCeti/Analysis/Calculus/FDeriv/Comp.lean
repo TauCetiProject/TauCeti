@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Congr
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
+import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Tactic.Abel
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
@@ -23,8 +24,12 @@ other does, so criticality does not depend on the coordinates. When `φ` is `C¹
 is locally bounded, so near a point the differential of `f ∘ φ` is at most a fixed multiple of that
 of `f`, and estimates bounding a function by its differential survive changes of coordinates.
 
-At a fixed point of a map preserving the germ of `f`, the derivative of `f` is unchanged by
-precomposition with the derivative of that map.
+If a map `φ` fixes a point `x` and `f ∘ φ = ψ ∘ f` near `x`, then the chain rule applied to both
+sides shows that the derivatives intertwine as well: `f' ∘ φ' = ψ' ∘ f'`, where `f'`, `φ'` and `ψ'`
+are the derivatives of `f` at `x`, of `φ` at `x` and of `ψ` at `f x`. For instance, the
+linearization of a map commuting with a symmetry at a symmetric point commutes with the linearized
+symmetry, so the symmetry preserves its kernel and its range. In the case `ψ = id`, where `φ`
+preserves the germ of `f`, the derivative of `f` is unchanged by precomposition with that of `φ`.
 
 For precomposition with an affine change of variables `w ↦ c + a • w`, or with the
 multiplication `w ↦ c • w` by a fixed scalar `c` of a division semiring `𝕜'` over which the domain
@@ -37,6 +42,8 @@ scalars `𝕜`; for instance, for `f` on `ℂ`,
 
 ## Main results
 
+* `HasFDerivAt.comp_eq_comp_of_eventuallyEq`: the derivative of an equivariant map at a fixed point
+  intertwines the derivatives of the symmetries.
 * `HasFDerivAt.comp_eq_of_eventuallyEq`: invariance of a germ at a fixed point implies invariance
   of its derivative.
 * `HasFDerivAt.injective_of_eventuallyEq_id`: a map with a differentiable local left inverse has
@@ -51,6 +58,10 @@ scalars `𝕜`; for instance, for `f` on `ℂ`,
   `ContinuousLinearMap.fderiv_comp_left_of_leftInverse`: the chain rule for precomposition with a
   split surjection and postcomposition with a split injection, with no differentiability
   assumption.
+* `ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding`,
+  `ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left`: postcomposition with an embedding
+  `Φ` turns the derivatives of `k` into those of `Φ ∘ k`, and every derivative of `Φ ∘ k` arises
+  this way when `Φ` is a split injection.
 * `TauCeti.fderiv_comp_add_smul`: `fderiv 𝕜` of `w ↦ f (c + a • w)` at `w` is `a` times
   `fderiv 𝕜 f (c + a • w)`, for every `f`.
 * `TauCeti.fderiv_comp_smul_apply`: `fderiv 𝕜 (fun w ↦ f (c • w)) x v` equals
@@ -65,14 +76,23 @@ namespace TauCeti
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
+/-- **Derivatives of equivariant maps.** If `φ` fixes `x` and `f ∘ φ = ψ ∘ f` near `x`, then the
+derivative `f'` of `f` at `x` intertwines the derivative `φ'` of `φ` at `x` with the derivative
+`ψ'` of `ψ` at `f x`: `f' ∘ φ' = ψ' ∘ f'`. -/
+theorem _root_.HasFDerivAt.comp_eq_comp_of_eventuallyEq {f : E → F} {f' : E →L[𝕜] F}
+    {φ : E → E} {φ' : E →L[𝕜] E} {ψ : F → F} {ψ' : F →L[𝕜] F} {x : E} (hf : HasFDerivAt f f' x)
+    (hφ : HasFDerivAt φ φ' x) (hψ : HasFDerivAt ψ ψ' (f x)) (hfix : φ x = x)
+    (h : f ∘ φ =ᶠ[nhds x] ψ ∘ f) : f'.comp φ' = ψ'.comp f' := by
+  have hfφ : HasFDerivAt f f' (φ x) := by rwa [hfix]
+  exact (hfφ.comp x hφ).unique ((hψ.comp x hf).congr_of_eventuallyEq h)
+
 /-- If a map fixes `x` and preserves the germ of `f` there, its derivative preserves the
 derivative of `f` by precomposition. -/
 theorem _root_.HasFDerivAt.comp_eq_of_eventuallyEq {f : E → F} {f' : E →L[𝕜] F}
     {φ : E → E} {φ' : E →L[𝕜] E} {x : E} (hf : HasFDerivAt f f' x)
     (hφ : HasFDerivAt φ φ' x) (hfix : φ x = x)
-    (hinv : f ∘ φ =ᶠ[nhds x] f) : f'.comp φ' = f' := by
-  have hfφ : HasFDerivAt f f' (φ x) := by simpa only [hfix] using hf
-  exact (hfφ.comp x hφ).unique (hf.congr_of_eventuallyEq hinv)
+    (hinv : f ∘ φ =ᶠ[nhds x] f) : f'.comp φ' = f' :=
+  (hf.comp_eq_comp_of_eventuallyEq hφ (hasFDerivAt_id _) hfix hinv).trans f'.id_comp
 
 /-- If `g ∘ f` is the identity near `x` and `g` is differentiable at `f x`, the derivative of `f`
 at `x` is injective. -/
@@ -192,6 +212,26 @@ theorem _root_.ContinuousLinearMap.fderiv_comp_left_of_leftInverse {X : Type*}
       exact Ψ.differentiableAt.comp y hd')
     rw [fderiv_zero_of_not_differentiableAt hnd, fderiv_zero_of_not_differentiableAt hd]
     simp
+
+/-- For a continuous linear map `Φ` that is an embedding, `Φ ∘ k` has derivative `Φ ∘ k'` at `y`
+exactly when `k` has derivative `k'` at `y`. -/
+theorem _root_.ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding {X : Type*}
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] (Φ : E →L[𝕜] F) (hΦ : Topology.IsEmbedding Φ)
+    {k : X → E} {k' : X →L[𝕜] E} {y : X} :
+    HasFDerivAt (Φ ∘ k) (Φ.comp k') y ↔ HasFDerivAt k k' y :=
+  ⟨fun h ↦ HasFDerivAt.of_comp_of_isEmbedding (hΦ.isInducing.continuousAt_iff.mpr h.continuousAt)
+    Φ.hasFDerivAt hΦ h .rfl, fun h ↦ Φ.hasFDerivAt.comp y h⟩
+
+/-- For a continuous linear map `Φ` with a continuous linear left inverse `Ψ`, every derivative
+`D` of `Φ ∘ k` takes values in the range of `Φ`: it is `Φ` composed with the derivative `Ψ ∘ D`
+of `k`. -/
+theorem _root_.ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left {X : Type*}
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    (Φ : E →L[𝕜] F) (Ψ : F →L[𝕜] E) (hΨΦ : Function.LeftInverse Ψ Φ) {k : X → E}
+    {D : X →L[𝕜] F} {y : X} (hD : HasFDerivAt (Φ ∘ k) D y) : Φ.comp (Ψ.comp D) = D := by
+  rw [← hD.fderiv, Φ.fderiv_comp_left_of_leftInverse Ψ hΨΦ k y]
+  ext v
+  simp [hΨΦ _]
 
 end TauCeti
 

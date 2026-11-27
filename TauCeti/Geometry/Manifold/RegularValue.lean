@@ -59,7 +59,8 @@ to manifolds, including manifolds with boundary or corners.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
   the derivative of the outer map sends the tangent image of the inner map onto the target; in
   particular the outer map is then regular (`TauCeti.IsRegularPoint.of_comp`).
-* `IsLocalDiffeomorphAt.isRegularPoint`: a local diffeomorphism at a point is regular there.
+* `IsLocalDiffeomorphAt.isRegularPoint`, `IsLocalDiffeomorph.isRegularValue`: a local
+  diffeomorphism is regular at every point, so every value of a local diffeomorphism is regular.
 * `TauCeti.isRegularPoint_snd`: the second projection of a product is regular everywhere.
 * `ContinuousLinearEquiv.comp_isRegularPoint_iff`, `ContinuousLinearEquiv.comp_isRegularValue_iff`:
   postcomposing a map into a normed space with a continuous linear equivalence preserves regular
@@ -68,6 +69,8 @@ to manifolds, including manifolds with boundary or corners.
   `Diffeomorph.isRegularPoint_comp_iff`, `Diffeomorph.isRegularValue_comp_iff`: precomposing
   with a `C^n` local diffeomorphism (surjective, for regular values) or diffeomorphism (`n ≠ 0`)
   preserves regular points and regular values.
+* `IsLocalDiffeomorph.isRegularValue_comp`: a regular value stays regular after precomposing with
+  a `C^n` local diffeomorphism (`n ≠ 0`), surjective or not.
 * `TauCeti.isRegularPoint_transContinuousLinearEquiv_left_iff`,
   `TauCeti.isRegularValue_transContinuousLinearEquiv_left_iff`: continuous linear changes of
   source model coordinates preserve regular points and regular values.
@@ -358,6 +361,12 @@ theorem _root_.IsLocalDiffeomorphAt.isRegularPoint {n : ℕ∞ω}
     (h : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) : IsRegularPoint I J f x :=
   (h.isInvertible_mfderiv hn).surjective
 
+/-- Every value of a local diffeomorphism is a regular value: its manifold derivative is invertible
+at every point. -/
+theorem _root_.IsLocalDiffeomorph.isRegularValue {n : ℕ∞ω}
+    (hf : IsLocalDiffeomorph I J n f) (hn : n ≠ 0) (y : N) : IsRegularValue I J f y :=
+  isRegularValue_iff.2 fun x _ ↦ (hf x).isRegularPoint hn
+
 /-- Every point of a product is a regular point of the second projection. -/
 theorem isRegularPoint_snd (p : M × N) : IsRegularPoint (I.prod J) J (Prod.snd : M × N → N) p := by
   rw [isRegularPoint_iff, mfderiv_snd]
@@ -527,15 +536,21 @@ theorem _root_.IsLocalDiffeomorphAt.isRegularPoint_comp_iff {φ : M' → M} {f :
     simp [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hf,
       mfderiv_zero_of_not_mdifferentiableAt hcomp, Function.Surjective]
 
+/-- A regular value of a map stays regular after precomposing with a `C^n` local diffeomorphism
+(`n ≠ 0`). No surjectivity is needed for this direction. -/
+theorem _root_.IsLocalDiffeomorph.isRegularValue_comp {φ : M' → M} {f : M → N} {y : N}
+    (hφ : IsLocalDiffeomorph I' I n φ) (hn : n ≠ 0) (hy : IsRegularValue I J f y) :
+    IsRegularValue I' J (f ∘ φ) y :=
+  isRegularValue_iff.2 fun x hx ↦ ((hφ x).isRegularPoint_comp_iff hn).2 (hy.isRegularPoint hx)
+
 /-- Precomposing a map with a surjective `C^n` local diffeomorphism (`n ≠ 0`) preserves regular
 values. -/
 theorem _root_.IsLocalDiffeomorph.isRegularValue_comp_iff {φ : M' → M} {f : M → N} {y : N}
     (hφ : IsLocalDiffeomorph I' I n φ) (hsurj : Surjective φ) (hn : n ≠ 0) :
     IsRegularValue I' J (f ∘ φ) y ↔ IsRegularValue I J f y := by
-  rw [isRegularValue_iff, isRegularValue_iff]
-  refine ⟨fun h z hz ↦ ?_, fun h x hx ↦ ((hφ x).isRegularPoint_comp_iff hn).2 (h (φ x) hx)⟩
+  refine ⟨fun h ↦ isRegularValue_iff.2 fun z hz ↦ ?_, hφ.isRegularValue_comp hn⟩
   obtain ⟨x, rfl⟩ := hsurj z
-  exact ((hφ x).isRegularPoint_comp_iff hn).1 (h x hz)
+  exact ((hφ x).isRegularPoint_comp_iff hn).1 (h.isRegularPoint hz)
 
 /-- Precomposing a map with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular points. No manifold
 smoothness or finite-dimensionality assumption is needed. -/

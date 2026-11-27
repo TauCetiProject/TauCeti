@@ -16,6 +16,7 @@ public import TauCeti.Analysis.Calculus.Morse.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Matrix.Hermitian
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -48,6 +49,8 @@ results that identify the operator as the derivative of the gradient and prove s
 * `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
 * `OrthonormalBasis.toMatrix_hessianOperator_apply` and `OrthonormalBasis.det_hessianOperator`:
   its entries and its determinant in an orthonormal basis.
+* `OrthonormalBasis.isSymm_toMatrix_hessianOperator`: for a `C²` function its matrix in an
+  orthonormal basis is symmetric.
 * `TauCeti.hessianOperator_single_apply`: for a `C²` function on `ℝⁿ`, its entries in the
   standard basis are the second partial derivatives.
 * `ContDiffAt.contDiffAt_hessianOperator`: pointwise regularity of the Hessian field.
@@ -55,6 +58,7 @@ results that identify the operator as the derivative of the gradient and prove s
   directional derivative of the function.
 * `TauCeti.hessianOperator_congr_of_eventuallyEq`: the operator depends only on the germ of the
   function at the point.
+* `TauCeti.hessianOperator_neg`: the Hessian operator of `-f` is the negative of that of `f`.
 * `ContDiff.contDiff_hessianOperator`: the Hessian operator of a `C^{m+2}` function is `Cᵐ`.
 * `ContDiffAt.isSelfAdjoint_hessianOperator`: symmetry of the second derivative becomes
   self-adjointness of the Hessian operator.
@@ -171,6 +175,16 @@ theorem hessianOperator_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
   rw [hessianOperator_eq_continuousLinearMapOfBilin, hessianOperator_eq_continuousLinearMapOfBilin,
     hfg.fderiv.fderiv_eq]
 
+/-- The Hessian operator of `-f` is the negative of the Hessian operator of `f`, with no regularity
+assumption: both sides use Mathlib's totalized derivatives. -/
+@[simp]
+theorem hessianOperator_neg (f : E → ℝ) (x : E) :
+    hessianOperator (-f) x = -hessianOperator f x := by
+  have h : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
+  ext v
+  refine ext_inner_right ℝ fun w ↦ ?_
+  simp [h, fderiv_neg]
+
 end TauCeti
 
 namespace ContDiffAt
@@ -228,6 +242,14 @@ theorem isSelfAdjoint_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
     _ = ⟪(hessianOperator f x : E → E) w, v⟫_ℝ :=
       (inner_hessianOperator_left f x w v).symm
     _ = ⟪v, (hessianOperator f x : E → E) w⟫_ℝ := real_inner_comm _ _
+
+/-- In an orthonormal basis, the matrix of the Hessian operator of a function `C²` at `x` is
+symmetric, since the Hessian operator is self-adjoint. -/
+theorem _root_.OrthonormalBasis.isSymm_toMatrix_hessianOperator {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (b : OrthonormalBasis ι ℝ E) (hf : ContDiffAt ℝ 2 f x) :
+    (LinearMap.toMatrix b.toBasis b.toBasis (hessianOperator f x).toLinearMap).IsSymm :=
+  Matrix.isHermitian_iff_isSymm.1
+    ((LinearMap.isHermitian_toMatrix_iff b).2 hf.isSelfAdjoint_hessianOperator.isSymmetric)
 
 /-- The gradient is differentiable at a twice continuously differentiable point, with derivative
 the Hessian operator. -/
