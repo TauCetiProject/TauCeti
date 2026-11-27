@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.Subsemiring
 public import TauCeti.NumberTheory.NumberField.CMField.FinitePlace
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.MulIndicator
 
 /-!
 # Complex conjugation as a star structure on the adeles of a CM field
@@ -59,6 +60,9 @@ infinite adeles only needs `E` to be an algebraic CM field.
   involutions.
 * `IsDedekindDomain.FiniteAdeleRing.star_apply_conjPlace`: the components of the conjugate of a
   finite adele.
+* `IsDedekindDomain.FiniteAdeleRing.star_indicatorOne`: the conjugate of the indicator of a set
+  of finite places is the indicator of the set of their conjugates, so the indicator of a set
+  stable under conjugation is self-adjoint.
 * `NumberField.InfiniteAdeleRing.extensionEmbedding_star_apply`: the components of the conjugate
   of an infinite adele.
 
@@ -199,6 +203,21 @@ lemma joining them. -/
 theorem algebraMap_complexConj (x : E) :
     algebraMap E 𝔸ᶠ[E] (complexConj E x) = star (algebraMap E 𝔸ᶠ[E] x) := by
   rw [← finiteAdeleConj_apply, finiteAdeleConj_algebraMap]
+
+/-- **Conjugating the indicator of a set of places.** The conjugate of the indicator of a set `S`
+of finite places is the indicator of the set of places whose conjugate lies in `S`; in particular
+the indicator of a set stable under conjugation is self-adjoint. -/
+theorem star_indicatorOne (S : Set (HeightOneSpectrum (𝓞 E))) :
+    star (indicatorOne (K := E) S) = indicatorOne (HeightOneSpectrum.conjPlace ⁻¹' S) := by
+  classical
+  refine ext E fun w ↦ ?_
+  -- Write `w` as the conjugate of `u = conj w`, the place at which `star_apply_conjPlace` reads
+  -- the component of a conjugate.
+  obtain ⟨u, rfl⟩ : ∃ u : HeightOneSpectrum (𝓞 E), u.conjPlace = w :=
+    ⟨w.conjPlace, HeightOneSpectrum.conjPlace_conjPlace w⟩
+  rw [star_apply_conjPlace, indicatorOne_apply, indicatorOne_apply, Set.mem_preimage,
+    HeightOneSpectrum.conjPlace_conjPlace]
+  split_ifs <;> simp
 
 end IsDedekindDomain.FiniteAdeleRing
 

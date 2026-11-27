@@ -26,6 +26,8 @@ places `w` with `conj w ≠ w` lie above the places of the maximal real subfield
   place with this property.
 * `IsDedekindDomain.HeightOneSpectrum.conjPlace_conjPlace`: conjugation of finite places is an
   involution.
+* `IsDedekindDomain.HeightOneSpectrum.preimage_conjPlace_union_preimage`: a set of finite places
+  together with the places conjugate to its elements is stable under conjugation.
 -/
 
 public section
@@ -60,5 +62,11 @@ theorem eq_conjPlace_iff {w w' : HeightOneSpectrum (𝓞 E)} :
 theorem conjPlace_conjPlace (w : HeightOneSpectrum (𝓞 E)) : w.conjPlace.conjPlace = w :=
   (eq_conjPlace_iff.2 fun x ↦ by
     rw [← valuation_conjPlace w (complexConj E x), complexConj_apply_apply]).symm
+
+/-- The union of a set `S` of finite places with the set of places whose conjugate lies in `S` is
+stable under conjugation: it is the smallest such set containing `S`. -/
+theorem preimage_conjPlace_union_preimage (S : Set (HeightOneSpectrum (𝓞 E))) :
+    conjPlace ⁻¹' (S ∪ conjPlace ⁻¹' S) = S ∪ conjPlace ⁻¹' S := by
+  rw [Set.preimage_union, Function.Involutive.preimage conjPlace_conjPlace S, Set.union_comm]
 
 end IsDedekindDomain.HeightOneSpectrum

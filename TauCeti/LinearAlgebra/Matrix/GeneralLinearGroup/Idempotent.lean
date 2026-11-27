@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Idempotent
+public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 
 /-!
@@ -24,6 +25,11 @@ endomorphism of `Matrix n n A`, hence induces a group endomorphism `IsIdempotent
   `e • d + (1 - e) • c`.
 * `IsIdempotentElem.val_map_mul_cutGL_inv_mul`: the same patch mapped along a ring hom `f` is
   `f e • map f d + (1 - f e) • map f c`.
+* `IsIdempotentElem.cutGL_mul_cutGL_one_sub`: `g` is the product of its cuts along `e` and
+  `1 - e`.
+* `IsIdempotentElem.cutGL_cutGL`: cutting along `f` and then along `e` is cutting along `e * f`.
+* `IsIdempotentElem.map_cutGL`, `IsIdempotentElem.star_cutGL`: cutting commutes with ring homs,
+  and with conjugate transposition along a self-adjoint idempotent.
 
 ## References
 
@@ -70,5 +76,34 @@ theorem val_map_mul_cutGL_inv_mul {B : Type*} [CommRing B] (f : A →+* B)
   ext k l
   rw [GeneralLinearGroup.map_apply, he.val_mul_cutGL_inv_mul]
   simp
+
+/-- An invertible matrix is the product of its cuts along the complementary idempotents `e` and
+`1 - e`. -/
+theorem cutGL_mul_cutGL_one_sub (he : IsIdempotentElem e) (g : GL n A) :
+    he.cutGL g * he.one_sub.cutGL g = g := by
+  ext : 1
+  simp only [Units.val_mul, val_cutGL, sub_sub_cancel, add_mul, mul_add, smul_mul_smul_comm,
+    mul_one, one_mul]
+  rw [he.mul_one_sub_self, he.eq, he.one_sub.eq, he.one_sub_mul_self, zero_smul]
+  module
+
+/-- Cutting along `f` and then along `e` is cutting along `e * f`. -/
+theorem cutGL_cutGL (he : IsIdempotentElem e) {f : A} (hf : IsIdempotentElem f) (g : GL n A) :
+    he.cutGL (hf.cutGL g) = (he.mul hf).cutGL g := by
+  ext : 1
+  simp only [val_cutGL, smul_add, smul_smul]
+  module
+
+/-- Cutting along `e` commutes with a ring hom `φ`, which carries `e` to the idempotent `φ e`. -/
+theorem map_cutGL {B : Type*} [CommRing B] (φ : A →+* B) (he : IsIdempotentElem e) (g : GL n A) :
+    GeneralLinearGroup.map φ (he.cutGL g) = (he.map φ).cutGL (GeneralLinearGroup.map φ g) := by
+  ext k l
+  simp [GeneralLinearGroup.map_apply, Matrix.one_apply, apply_ite φ]
+
+/-- Cutting along a self-adjoint idempotent `e` commutes with conjugate transposition. -/
+theorem star_cutGL [StarRing A] (he : IsIdempotentElem e) (hstar : Star.star e = e) (g : GL n A) :
+    Star.star (he.cutGL g) = he.cutGL (Star.star g) := by
+  ext : 1
+  simp [Matrix.star_eq_conjTranspose, hstar]
 
 end IsIdempotentElem
