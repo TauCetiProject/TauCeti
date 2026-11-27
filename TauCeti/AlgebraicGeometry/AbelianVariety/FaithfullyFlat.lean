@@ -70,13 +70,7 @@ varieties is an isogeny, finite and surjective, exactly when the underlying homo
 schemes over `Spec K` is finite, flat and surjective. -/
 theorem isIsogeny_iff_groupScheme_isIsogeny (f : A ⟶ B) :
     IsIsogeny f ↔ GroupScheme.IsIsogeny ((CommGrp.forget₂Grp _).map f.hom) := by
-  rw [GroupScheme.isIsogeny_iff, isIsogeny_iff]
-  -- `Hom.toSchemeHom f` is by definition the underlying scheme morphism of `f` through the
-  -- forgetful functors to `Over (Spec K)` and to schemes, which is
-  -- `((CommGrp.forget₂Grp _).map f.hom).hom.hom.left`; the bridging lemma
-  -- `Hom.toOverHom_def` is private, so the identification is made by `change`.
-  change _ ↔ IsFinite (Hom.toSchemeHom f) ∧ Flat (Hom.toSchemeHom f) ∧
-    Surjective (Hom.toSchemeHom f)
+  rw [GroupScheme.isIsogeny_iff, isIsogeny_iff, ← toOverHom_eq_forget₂Grp_map]
   exact ⟨fun ⟨h₁, h₂⟩ ↦ ⟨h₁, IsIsogeny.flat ((isIsogeny_iff f).mpr ⟨h₁, h₂⟩), h₂⟩,
     fun ⟨h₁, _, h₃⟩ ↦ ⟨h₁, h₃⟩⟩
 

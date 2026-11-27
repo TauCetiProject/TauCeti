@@ -37,8 +37,8 @@ theorem orbitMap_one_comapRegular (f : G ⟶ H) [IsMonHom f] :
     letI : ModObj G H := (Mod.comapRegular f).mod
     orbitMap G (1 : 𝟙_ C ⟶ H) = f := by
   let : ModObj G H := (Mod.comapRegular f).mod
-  rw [← Category.id_comp (orbitMap G _), comp_orbitMap, Hom.smul_def,
-    Mod.comapRegular_smul f, lift_whiskerRight_assoc, Category.id_comp, ← Hom.mul_def,
-    MonObj.comp_one, _root_.mul_one]
+  -- Evaluate the orbit morphism on the generic point `𝟙 G`, where `comp_orbitMap` applies.
+  calc orbitMap G 1 = 𝟙 G ≫ orbitMap G 1 := (Category.id_comp _).symm
+    _ = f := by simp [Hom.smul_def, ← Hom.mul_def]
 
 end TauCeti
