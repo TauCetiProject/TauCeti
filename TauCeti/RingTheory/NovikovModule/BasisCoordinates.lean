@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.Grading
 public import TauCeti.RingTheory.NovikovModule.Topology
+public import TauCeti.RingTheory.NovikovSeries.BaseChange
 public import TauCeti.RingTheory.NovikovSeries.Map
 public import TauCeti.RingTheory.NovikovSeries.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.Basis
@@ -55,6 +56,14 @@ results on completed combinations apply to vector-valued series:
   the change-of-basis matrix `c.toMatrix b` with constant entries
   (`TauCeti.NovikovSeries.toMatrix_changeOfBasis`): the Novikov module structure transported
   along `κ_b` does not depend on `b`.
+* **Linearity over the Novikov ring.** The Novikov ring acts on vector-valued series by
+  convolution (`TauCeti.NovikovSeries.module`, from `TauCeti.RingTheory.NovikovSeries.BaseChange`),
+  and `κ_b` is linear for this action and `TauCeti.NovikovModule.module`
+  (`TauCeti.NovikovSeries.basisCoordinates_smul`). It sends the basis of constant series
+  `single 0 (b i)` to the basis of the lifts `⟨i, 0⟩`
+  (`TauCeti.NovikovSeries.basisCoordinates_basis`), the image of the basis `1 ⊗ b i` of the base
+  change of `V` to the Novikov ring under the canonical isomorphism
+  `TauCeti.NovikovSeries.ofTensorProductEquiv`.
 * **The Cauchy product.** The Cauchy product of series with coefficients in `V` and `W`
   (`TauCeti.NovikovSeries.cauchyProduct`, from `TauCeti.RingTheory.NovikovSeries.TensorProduct`)
   takes values in series with coefficients in `V ⊗[R] W`. In the coordinates of the bases
@@ -357,6 +366,34 @@ theorem coordinates_basisCoordinates (v : NovikovSeries V H N) :
       basisCoords b v := by
   ext i A
   simp
+
+/-- **The basis coordinates are linear over the Novikov ring**, for the convolution action
+`TauCeti.NovikovSeries.module` on vector-valued series and the Novikov module structure
+`TauCeti.NovikovModule.module` on completed combinations. So the Novikov module structure
+transported along `κ_b` is the convolution action, for every basis `b`. -/
+theorem basisCoordinates_smul (a : NovikovSeries R H N) (v : NovikovSeries V H N) :
+    letI := module R V N
+    letI := NovikovModule.module (R := R) (negPeriod_vadd (ι := ι) (N := N))
+    basisCoordinates b (a • v) = a • basisCoordinates b v := by
+  let := module R V N
+  let := NovikovModule.module (R := R) (negPeriod_vadd (ι := ι) (N := N))
+  apply (NovikovModule.coordinates negPeriod_vadd (fun _ => 0)).injective
+  rw [NovikovModule.coordinates_smul, coordinates_basisCoordinates, coordinates_basisCoordinates,
+    basisCoords_smul]
+
+/-- The basis coordinates `κ_b` send the basis of constant series `single 0 (b i)` over the Novikov
+ring to the basis `TauCeti.NovikovModule.basis` of the lifts `⟨i, 0⟩`. -/
+theorem basisCoordinates_basis (i : ι) :
+    letI := module R V N
+    basisCoordinates b (basis (N := N) b i) =
+      NovikovModule.basis negPeriod_vadd (fun _ => 0) i := by
+  classical
+  let := module R V N
+  apply (NovikovModule.coordinates negPeriod_vadd (fun _ => 0)).injective
+  rw [NovikovModule.coordinates_basis, coordinates_basisCoordinates]
+  ext j : 1
+  rw [← basis_repr_apply, Module.Basis.repr_self, Finsupp.single_apply, Pi.single_apply]
+  simp [eq_comm]
 
 /-- **The scalar case.** For `V = R` with the basis `{1}`, the coordinate of `κ(v)` at the lift
 `⟨i, 0⟩` is the series `v` itself. -/

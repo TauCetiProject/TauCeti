@@ -55,7 +55,17 @@ and a cutoff `ψ` with compact support in the chart target give the **chart cut-
 `x ↦ t⁻¹ₓ (ψ(e x) u(e x))` (`Bundle.Trivialization.chartCutoffSection`), on which chart
 compressions of operators between bundles are evaluated. In terms of cut-off frames, it is the sum
 of the cut-off frame sections `ρ t⁻¹ bᵢ` with the pulled back coefficients `(ψ bᵢ*(u)) ∘ e`
-(`Bundle.Trivialization.chartCutoffSection_eq_sum`).
+(`Bundle.Trivialization.chartCutoffSection_eq_sum`). Likewise, a section `u` multiplied by a
+function `Ψ` is the sum of the cut-off frame sections `ρ t⁻¹ bᵢ` with the coefficients
+`Ψ · ρ bᵢ*(t u)`, when `ρ = 1` wherever `Ψ ≠ 0`
+(`Bundle.Trivialization.smul_eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection`).
+
+On a compact manifold, finitely many chart cutoffs `ψᵢ` whose pullbacks add up to `1` can be
+chosen with each `(chartAt cᵢ)⁻¹(supp ψᵢ)` inside the base set of the trivialization at `cᵢ`,
+together with smooth functions `ρᵢ` supported in these base sets and equal to `1` on
+`(chartAt cᵢ)⁻¹(supp ψᵢ)` (`TauCeti.exists_sum_cutoffPullback_eq_one_and_baseSet_cutoff`). These
+are the data through which sections of a bundle are read in charts and frames, as in Sobolev
+norms of sections on a compact manifold.
 -/
 
 public section
@@ -152,6 +162,18 @@ theorem cutoffFrameCoeff_apply (χ : C^n⟮I, M; ℝ⟯) (hχ : tsupport χ ⊆ 
     (h : Cₛ^n⟮I; W, F⟯) (x : M) :
     t.cutoffFrameCoeff χ hχ ℓ h x = χ x • ℓ (t.continuousLinearMapAt ℂ x (h x)) :=
   (rfl)
+
+/-- Cut-off frame coefficients are linear over the complex-valued `C^n` functions: the coefficient
+of `g h` is `g` times the coefficient of `h`. -/
+@[simp]
+theorem cutoffFrameCoeff_smul_of_normedAlgebra (χ : C^n⟮I, M; ℝ⟯) (hχ : tsupport χ ⊆ t.baseSet)
+    (ℓ : W →L[ℂ] ℂ) (g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (h : Cₛ^n⟮I; W, F⟯) :
+    t.cutoffFrameCoeff χ hχ ℓ (g • h) = g * t.cutoffFrameCoeff χ hχ ℓ h := by
+  ext x
+  simp only [cutoffFrameCoeff_apply, ContMDiffSection.smul_apply_of_normedAlgebra, map_smul,
+    smul_eq_mul, ContMDiffMap.coe_mul, Pi.mul_apply]
+  rw [Complex.real_smul, Complex.real_smul]
+  ring
 
 /-- On the base set of `t`, a real cut-off frame section `g t⁻¹ v` is the complex-linear inverse
 `t⁻¹ₓ` applied to `(g x : ℂ) • v`. -/
@@ -409,4 +431,79 @@ theorem chartCutoffSection_eq_sum [FiniteDimensional ℂ F]
 
 end ChartCutoff
 
+section Decomposition
+
+variable {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] {HM : Type*} [TopologicalSpace HM]
+  {I : ModelWithCorners ℝ EM HM} {M : Type*} [TopologicalSpace M] [ChartedSpace HM M] {n : ℕ∞ω}
+  {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W]
+  {F : M → Type*} [TopologicalSpace (TotalSpace W F)] [∀ x, AddCommGroup (F x)]
+  [∀ x, Module ℝ (F x)] [∀ x, Module ℂ (F x)] [∀ x, TopologicalSpace (F x)] [FiberBundle W F]
+  [VectorBundle ℝ W F] [VectorBundle ℂ W F] [ContMDiffVectorBundle n W F I]
+  (t : Trivialization W (π W F)) [MemTrivializationAtlas t]
+
+/-- **A cut-off section in a frame.** Let `ρ` be a real `C^n` function on `M`, supported in the
+base set of `t`, and `Ψ` a real `C^n` function with `ρ = 1` wherever `Ψ ≠ 0`. For a basis `(b_k)`
+of the model fibre with coordinate functionals `b_k*`, the section `Ψ u` is the sum over `k` of the
+cut-off frame sections `ρ t⁻¹ b_k` multiplied by the coefficients `Ψ · ρ b_k*(t u)`. -/
+theorem smul_eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection (ρ : C^n⟮I, M; ℝ⟯)
+    (hρ : tsupport ρ ⊆ t.baseSet) (Ψ : C^n⟮I, M; ℝ⟯) (hΨρ : ∀ x, Ψ x ≠ 0 → ρ x = 1)
+    {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ W) (u : Cₛ^n⟮I; W, F⟯) :
+    ContMDiffMap.ofReal Ψ • u = ∑ k, LinearMap.mulLeft ℂ (ContMDiffMap.ofReal Ψ)
+      (t.cutoffFrameCoeff ρ hρ (b.coord k).toContinuousLinearMap u) •
+        t.cutoffFrameSection ρ hρ (b k) := by
+  ext x
+  rw [ContMDiffSection.coe_sum, Finset.sum_apply]
+  by_cases hx : Ψ x = 0
+  · simp [hx]
+  have hρx := hΨρ x hx
+  have hxt : x ∈ t.baseSet := hρ (subset_tsupport _ (by simp [Function.mem_support, hρx]))
+  conv_lhs => rw [ContMDiffSection.smul_apply_of_normedAlgebra,
+    ← t.symmL_continuousLinearMapAt (R := ℂ) hxt (u x),
+    ← b.sum_repr (t.continuousLinearMapAt ℂ x (u x)), map_sum, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  simp [hρx, ← t.symmL_apply (R := ℂ) hxt, mul_smul]
+
+end Decomposition
+
 end Bundle.Trivialization
+
+namespace TauCeti
+
+section Partition
+
+variable {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [FiniteDimensional ℝ EM]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace EM M] [T2Space M] [CompactSpace M]
+  [IsManifold 𝓘(ℝ, EM) ∞ M] {F : Type*} [TopologicalSpace F] {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+
+/-- **Chart cutoffs adapted to a vector bundle.** On a compact Hausdorff manifold, a fibre bundle
+`V` has finitely many points `cᵢ` and cutoffs `ψᵢ` with compact supports in the targets of the
+preferred charts at the `cᵢ`, whose pullbacks `ψᵢ ∘ chartAt cᵢ`, extended by `0`, add up to `1`,
+together with smooth functions `ρᵢ` supported in the base set of the trivialization of `V` at `cᵢ`
+and equal to `1` on `(chartAt cᵢ)⁻¹(supp ψᵢ)`. So `ρᵢ` cuts off frame sections and frame
+coefficients of `V` in that trivialization (`Bundle.Trivialization.cutoffFrameSection`,
+`Bundle.Trivialization.cutoffFrameCoeff`) without changing them over the support of the `i`-th
+cutoff. -/
+theorem exists_sum_cutoffPullback_eq_one_and_baseSet_cutoff :
+    ∃ (N : ℕ) (c : Fin N → M)
+      (ψ : ∀ i, 𝓓(⟨(chartAt EM (c i)).target, (chartAt EM (c i)).open_target⟩, ℝ))
+      (ρ : Fin N → C^∞⟮𝓘(ℝ, EM), M; ℝ⟯),
+      (∀ x, ∑ i, (chartAt EM (c i)).cutoffPullback (IsManifold.chart_mem_maximalAtlas (c i))
+        (ψ i) 1 x = 1) ∧ (∀ i, tsupport (ρ i) ⊆ (trivializationAt F V (c i)).baseSet) ∧
+        ∀ i, ∀ y ∈ tsupport (ψ i), ρ i ((chartAt EM (c i)).symm y) = 1 := by
+  obtain ⟨N, c, ψ, hψU, hψ⟩ := isCompact_univ.exists_sum_cutoffPullback_eq_one_of_mem_nhds
+    (E := EM) (M := M) (U := fun x ↦ (trivializationAt F V x).baseSet)
+    fun x _ ↦ (trivializationAt F V x).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x)
+  -- For each `i`, a smooth `ρᵢ` equal to `1` near the compact set `Kᵢ = (chartAt cᵢ)⁻¹(supp ψᵢ)`
+  -- and supported in the base set.
+  have hK (i : Fin N) : IsCompact ((chartAt EM (c i)).symm '' tsupport (ψ i)) :=
+    (ψ i).hasCompactSupport.isCompact.image_of_continuousOn
+      ((chartAt EM (c i)).continuousOn_symm.mono (ψ i).tsupport_subset)
+  choose σ hσ hσ1 _ hσt _ using fun i ↦ (hK i).exists_contMDiff_one_nhds_tsupport_subset
+    𝓘(ℝ, EM) (trivializationAt F V (c i)).open_baseSet (hψU i).2
+  exact ⟨N, c, ψ, fun i ↦ ⟨σ i, hσ i⟩, fun x ↦ hψ x (mem_univ x), hσt, fun i y hy ↦
+    (hσ1 i).self_of_nhdsSet _ (mem_image_of_mem _ hy)⟩
+
+end Partition
+
+end TauCeti

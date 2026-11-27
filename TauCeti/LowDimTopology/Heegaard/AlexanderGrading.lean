@@ -71,12 +71,12 @@ component gradings to such a generator is an Alexander function
 (`TauCeti.HeegaardRegionSystem.isAlexanderFunction_sum_relativeComponentAlexanderGrading`).
 For the multipointed diagram of a grid, with the `O`-markings as `w`'s and the `X`-markings as
 `z`'s, the requirement is the relation `A(x) - A(y) = n_X(D) - n_O(D)` of Manolescu, Ozsváth and
-Sarkar on these domains; that diagram is not constructed here. The hat differential of the diagram
-pointed at the `w`'s then maps the chains supported in Alexander gradings at most `k` to chains
-supported there, and the map it induces on the quotient by the chains in gradings below `k` is the
-hat differential of `H`, which counts only the domains with `n_z = 0`. This distinguishes the
-filtered differential, which counts the domains avoiding the `w`'s with any multiplicity at the
-`z`'s, from its associated graded differential.
+Sarkar on these domains (`TauCeti.OddComponentGridDiagram.isAlexanderFunction_alexanderℤ`). The
+hat differential of the diagram pointed at the `w`'s then maps the chains supported in Alexander
+gradings at most `k` to chains supported there, and the map it induces on the quotient by the
+chains in gradings below `k` is the hat differential of `H`, which counts only the domains with
+`n_z = 0`. This distinguishes the filtered differential, which counts the domains avoiding the
+`w`'s with any multiplicity at the `z`'s, from its associated graded differential.
 
 ## Main definitions
 

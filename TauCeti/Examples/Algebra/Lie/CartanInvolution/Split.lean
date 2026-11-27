@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Split
 public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Basic
-public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Complex
+public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Complex.Basic
 
 /-!
 # Checks: the diagonal of `𝔰𝔩_n(ℝ)` is a Cartan subalgebra and the real diagonal of `𝔰𝔩_n(ℂ)` is not

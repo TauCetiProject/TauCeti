@@ -37,6 +37,8 @@ almost everywhere the trigonometric polynomial `∑ n ∈ s, mFourier n • mFou
 * `MeasureTheory.Integrable.ae_eq_sum_mFourier_smul_mFourierCoeff`: an integrable function with
   finitely many nonzero Fourier coefficients agrees almost everywhere with a trigonometric
   polynomial.
+* `Continuous.eq_of_mFourierCoeff_eq`: continuous functions with the same Fourier coefficients
+  are equal.
 * `TauCeti.UnitAddTorus.coeFn_ae_eq_sum_mFourier_smul_mFourierCoeff`: the same for elements of
   `L²(𝕋ᵈ)` taken for the product of the Haar probability measures, the space of Mathlib's
   `UnitAddTorus.mFourierBasis`.
@@ -87,6 +89,25 @@ theorem Integrable.ae_eq_sum_mFourier_smul_mFourierCoeff (hf : Integrable f)
     · exact hs m hm
 
 end MeasureTheory
+
+namespace Continuous
+
+open UnitAddTorus
+
+/-- Continuous functions on the torus with the same Fourier coefficients are equal. -/
+theorem eq_of_mFourierCoeff_eq (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ n, mFourierCoeff f n = mFourierCoeff g n) : f = g :=
+  MeasureTheory.Measure.eq_of_ae_eq
+    ((hf.integrable_of_hasCompactSupport (.of_compactSpace _)).ae_eq_of_forall_mFourierCoeff_eq
+      (hg.integrable_of_hasCompactSupport (.of_compactSpace _)) h) hf hg
+
+/-- A nonzero continuous function on the torus has a nonzero Fourier coefficient. -/
+theorem exists_mFourierCoeff_ne_zero
+    (hf : Continuous f) (hne : f ≠ 0) : ∃ n, mFourierCoeff f n ≠ 0 := by
+  by_contra! hall
+  exact hne (hf.eq_of_mFourierCoeff_eq continuous_zero fun n ↦ by simp [hall n])
+
+end Continuous
 
 namespace TauCeti.UnitAddTorus
 
