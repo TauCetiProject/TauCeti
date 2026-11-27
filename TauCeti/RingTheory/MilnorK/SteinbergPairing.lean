@@ -119,19 +119,39 @@ theorem comp_ringHom {S : Type w} [Semiring S] {c : Sˣ → Sˣ → A}
   map_one_right a := by rw [map_one, hc.map_one_right]
   map_add_eq_one a b h := hc.map_add_eq_one _ _ (by simp [← map_add, h])
 
+/-- Fixing the second argument of a Steinberg pairing gives an additive homomorphism out of
+`Additive Rˣ`. -/
+private def addHomLeft {c : Rˣ → Rˣ → A} (hc : IsSteinbergPairing c) (b : Rˣ) :
+    Additive Rˣ →+ A where
+  toFun a := c a.toMul b
+  map_zero' := hc.map_one_left b
+  map_add' _ _ := hc.map_mul_left _ _ b
+
+/-- Fixing the first argument of a Steinberg pairing gives an additive homomorphism out of
+`Additive Rˣ`. -/
+private def addHomRight {c : Rˣ → Rˣ → A} (hc : IsSteinbergPairing c) (a : Rˣ) :
+    Additive Rˣ →+ A where
+  toFun b := c a b.toMul
+  map_zero' := hc.map_one_right a
+  map_add' _ _ := hc.map_mul_right a _ _
+
+private theorem addHomLeft_ofMul {c : Rˣ → Rˣ → A} (hc : IsSteinbergPairing c) (b a : Rˣ) :
+    hc.addHomLeft b (Additive.ofMul a) = c a b :=
+  rfl
+
+private theorem addHomRight_ofMul {c : Rˣ → Rˣ → A} (hc : IsSteinbergPairing c) (a b : Rˣ) :
+    hc.addHomRight a (Additive.ofMul b) = c a b :=
+  rfl
+
 /-- Raising the first argument to a natural power scales the pairing. -/
 theorem map_pow_left {c : Rˣ → Rˣ → A} (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℕ) :
     c (a ^ n) b = n • c a b := by
-  induction n with
-  | zero => simp [hc.map_one_left]
-  | succ n ih => rw [pow_succ, hc.map_mul_left, ih, succ_nsmul]
+  rw [← hc.addHomLeft_ofMul b (a ^ n), ofMul_pow, map_nsmul, hc.addHomLeft_ofMul]
 
 /-- Raising the second argument to a natural power scales the pairing. -/
 theorem map_pow_right {c : Rˣ → Rˣ → A} (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℕ) :
     c a (b ^ n) = n • c a b := by
-  induction n with
-  | zero => simp [hc.map_one_right]
-  | succ n ih => rw [pow_succ, hc.map_mul_right, ih, succ_nsmul]
+  rw [← hc.addHomRight_ofMul a (b ^ n), ofMul_pow, map_nsmul, hc.addHomRight_ofMul]
 
 end Semiring
 
@@ -151,26 +171,22 @@ section AddGroup
 variable {R : Type u} [Semiring R] {A : Type v} [AddGroup A] {c : Rˣ → Rˣ → A}
 
 /-- Inverting the first argument of a Steinberg pairing negates its value. -/
-theorem map_inv_left (hc : IsSteinbergPairing c) (a b : Rˣ) : c a⁻¹ b = -c a b :=
-  eq_neg_of_add_eq_zero_left (by rw [← hc.map_mul_left, inv_mul_cancel, hc.map_one_left])
+theorem map_inv_left (hc : IsSteinbergPairing c) (a b : Rˣ) : c a⁻¹ b = -c a b := by
+  rw [← hc.addHomLeft_ofMul b a⁻¹, ofMul_inv, map_neg, hc.addHomLeft_ofMul]
 
 /-- Inverting the second argument of a Steinberg pairing negates its value. -/
-theorem map_inv_right (hc : IsSteinbergPairing c) (a b : Rˣ) : c a b⁻¹ = -c a b :=
-  eq_neg_of_add_eq_zero_left (by rw [← hc.map_mul_right, inv_mul_cancel, hc.map_one_right])
+theorem map_inv_right (hc : IsSteinbergPairing c) (a b : Rˣ) : c a b⁻¹ = -c a b := by
+  rw [← hc.addHomRight_ofMul a b⁻¹, ofMul_inv, map_neg, hc.addHomRight_ofMul]
 
 /-- Raising the first argument to an integer power scales the pairing. -/
 theorem map_zpow_left (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℤ) :
     c (a ^ n) b = n • c a b := by
-  cases n with
-  | ofNat n => simpa using hc.map_pow_left a b n
-  | negSucc n => rw [zpow_negSucc, hc.map_inv_left, hc.map_pow_left, negSucc_zsmul]
+  rw [← hc.addHomLeft_ofMul b (a ^ n), ofMul_zpow, map_zsmul, hc.addHomLeft_ofMul]
 
 /-- Raising the second argument to an integer power scales the pairing. -/
 theorem map_zpow_right (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℤ) :
     c a (b ^ n) = n • c a b := by
-  cases n with
-  | ofNat n => simpa using hc.map_pow_right a b n
-  | negSucc n => rw [zpow_negSucc, hc.map_inv_right, hc.map_pow_right, negSucc_zsmul]
+  rw [← hc.addHomRight_ofMul a (b ^ n), ofMul_zpow, map_zsmul, hc.addHomRight_ofMul]
 
 end AddGroup
 
@@ -418,10 +434,15 @@ theorem induction_on {P : SymbolGroup R → Prop} (x : SymbolGroup R)
 @[ext]
 theorem linearMap_ext {A : Type v} [AddCommMonoid A] [Module ℤ A] {f g : SymbolGroup R →ₗ[ℤ] A}
     (h : ∀ a b : Rˣ, f (symbol a b) = g (symbol a b)) : f = g := by
-  refine LinearMap.ext fun x ↦ ?_
-  induction x using SymbolGroup.induction_on with
-  | symbol a b => exact h a b
-  | add x y hx hy => simp [hx, hy]
+  have hq : f.comp (relations R).mkQ = g.comp (relations R).mkQ :=
+    TensorProduct.ext' fun x y ↦ by
+      obtain ⟨a, rfl⟩ := Additive.ofMul.surjective x
+      obtain ⟨b, rfl⟩ := Additive.ofMul.surjective y
+      -- `(relations R).mkQ` and `f` resolve `Module ℤ` via `AddCommGroup.toIntModule` while
+      -- `TensorProduct.ext'` uses `TensorProduct.instModule`, so `exact` bridges `mk_tmul`.
+      exact h a b
+  -- `Submodule.quot_hom_ext` requires `[AddCommGroup A]`, whereas `A` is only `[AddCommMonoid A]`.
+  exact LinearMap.ext fun x ↦ Submodule.Quotient.induction_on _ x (LinearMap.congr_fun hq ·)
 
 /-- Two additive homomorphisms out of `SymbolGroup R` agree if they agree on all symbols. -/
 @[ext]
@@ -436,12 +457,17 @@ theorem addMonoidHom_ext {A : Type v} [AddMonoid A] {f g : SymbolGroup R →+ A}
 private def pairingBilin {A : Type v} [AddCommGroup A] (c : Rˣ → Rˣ → A)
     (hc : IsSteinbergPairing c) : Additive Rˣ →ₗ[ℤ] Additive Rˣ →ₗ[ℤ] A :=
   AddMonoidHom.toIntLinearMap
-    { toFun := fun a ↦ AddMonoidHom.toIntLinearMap
-        { toFun := fun b ↦ c (Additive.toMul a) (Additive.toMul b)
-          map_zero' := hc.map_one_right _
-          map_add' := fun _ _ ↦ hc.map_mul_right _ _ _ }
-      map_zero' := LinearMap.ext fun _ ↦ hc.map_one_left _
-      map_add' := fun _ _ ↦ LinearMap.ext fun _ ↦ hc.map_mul_left _ _ _ }
+    { toFun := fun a ↦ (hc.addHomRight a.toMul).toIntLinearMap
+      map_zero' := LinearMap.ext fun b ↦ hc.map_one_left b.toMul
+      map_add' := fun a₁ a₂ ↦ LinearMap.ext fun b ↦ hc.map_mul_left a₁.toMul a₂.toMul b.toMul }
+
+/-- Evaluating the lifted bilinear map on a pure tensor of units recovers `c a b`. -/
+private theorem lift_pairingBilin_tmul {A : Type v} [AddCommGroup A] (c : Rˣ → Rˣ → A)
+    (hc : IsSteinbergPairing c) (a b : Rˣ) :
+    TensorProduct.lift (pairingBilin c hc) (Additive.ofMul a ⊗ₜ Additive.ofMul b) = c a b := by
+  rw [TensorProduct.lift.tmul, pairingBilin, AddMonoidHom.coe_toIntLinearMap,
+    AddMonoidHom.coe_mk, ZeroHom.coe_mk, AddMonoidHom.coe_toIntLinearMap, toMul_ofMul,
+    IsSteinbergPairing.addHomRight_ofMul]
 
 /-- **Universal property of `SymbolGroup R`.** Any Steinberg pairing `c : Rˣ → Rˣ → A` into an
 abelian group factors uniquely through a `ℤ`-linear map `SymbolGroup R →ₗ[ℤ] A`. -/
@@ -450,7 +476,8 @@ noncomputable def lift {A : Type v} [AddCommGroup A] (c : Rˣ → Rˣ → A)
   Submodule.liftQ (relations R) (TensorProduct.lift (pairingBilin c hc)) (by
     rw [relations, Submodule.span_le]
     rintro _ ⟨a, b, hab, rfl⟩
-    exact hc.map_add_eq_one a b hab)
+    refine LinearMap.mem_ker.mpr ?_
+    exact (lift_pairingBilin_tmul c hc a b).trans (hc.map_add_eq_one a b hab))
 
 /-- Evaluating `SymbolGroup.lift c hc` on `symbol a b` recovers `c a b`. -/
 @[simp]
@@ -459,8 +486,7 @@ theorem lift_symbol {A : Type v} [AddCommGroup A] (c : Rˣ → Rˣ → A)
     lift c hc (symbol a b) = c a b := by
   rw [symbol_def]
   exact (Submodule.liftQ_apply (relations R) (TensorProduct.lift (pairingBilin c hc))
-    (Additive.ofMul a ⊗ₜ Additive.ofMul b)).trans
-    (TensorProduct.lift.tmul (f' := pairingBilin c hc) (Additive.ofMul a) (Additive.ofMul b))
+    (Additive.ofMul a ⊗ₜ Additive.ofMul b)).trans (lift_pairingBilin_tmul c hc a b)
 
 /-- Additive homomorphisms `SymbolGroup R →+ A` are in canonical bijection with Steinberg pairings
 `Rˣ → Rˣ → A`. -/

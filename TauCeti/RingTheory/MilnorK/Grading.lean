@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.MilnorK.Homogeneous
 public import TauCeti.RingTheory.MilnorK.SteinbergPairing
 
 import Mathlib.LinearAlgebra.Quotient.Basic
-import Mathlib.Tactic.FinCases
+import TauCeti.Algebra.Group.TypeTags.Hom
 import TauCeti.Algebra.Module.LinearMap.Defs
 import TauCeti.Algebra.Ring.Hom
 
@@ -24,8 +24,9 @@ Building on the homogeneous tensor-power presentation `TauCeti.MilnorK.degreeEqu
 `ℕ`-grading `TauCeti.MilnorK.instGradedRingDegree` in `TauCeti.RingTheory.MilnorK.Homogeneous`,
 this file provides:
 
-* the graded universal property `MilnorK.gradedLift` and graded functoriality
-  `MilnorK.gradedMap` (with extensionality `MilnorK.gradedRingHom_ext`);
+* the graded universal property `MilnorK.gradedLift`, graded functoriality `MilnorK.gradedMap`
+  (with extensionality `MilnorK.gradedRingHom_ext`), and the degree-`n` restriction
+  `MilnorK.degreeMap`;
 * the canonical identification `MilnorK.degreeTwoEquiv : MilnorK.degree R 2 ≃ₗ[ℤ] SymbolGroup R`,
   complementing `MilnorK.degreeZeroEquiv` and `MilnorK.degreeOneEquiv` in
   `TauCeti.RingTheory.MilnorK.Basic`, together with its naturality `MilnorK.degreeTwoEquiv_map`;
@@ -37,6 +38,7 @@ this file provides:
 
 * `TauCeti.MilnorK.gradedLift`: graded universal property for maps into any `ℕ`-graded ring.
 * `TauCeti.MilnorK.gradedMap`: graded ring homomorphism induced by a ring homomorphism `R →+* S`.
+* `TauCeti.MilnorK.degreeMap`: `ℤ`-linear map `degree R n →ₗ[ℤ] degree S n` induced by `R →+* S`.
 * `TauCeti.MilnorK.degreeTwoEquiv`: identification of degree `2` with `SymbolGroup R`.
 * `TauCeti.MilnorK.quotTensorPowerMap`: functoriality on degree-`n` tensor-power quotients.
 
@@ -143,17 +145,50 @@ theorem gradedMap_symbol {S : Type w} [CommRing S] (f : R →+* S) (l : List Rˣ
 @[simp]
 theorem gradedMap_id (R : Type u) [CommRing R] :
     gradedMap (RingHom.id R) = GradedRingHom.id (degree R) :=
-  gradedRingHom_ext fun a ↦ by simp
+  GradedRingHom.toRingHom_injective (by simp [map_id])
 
 /-- `MilnorK.gradedMap` respects composition of ring homomorphisms. -/
 theorem gradedMap_comp {S : Type v} {T : Type w} [CommRing S] [CommRing T]
     (g : S →+* T) (f : R →+* S) :
-    gradedMap (g.comp f) = (gradedMap g).comp (gradedMap f) :=
-  gradedRingHom_ext fun a ↦ by
-    simp only [gradedMap_ofUnit, GradedRingHom.comp_apply, RingHom.toMonoidHom_comp,
-      Units.map_comp, MonoidHom.comp_apply]
+    gradedMap (g.comp f) = (gradedMap g).comp (gradedMap f) := by
+  refine GradedRingHom.toRingHom_injective ?_
+  calc (gradedMap (g.comp f) : MilnorK R →+* MilnorK T)
+      = map (g.comp f) := toRingHom_gradedMap (g.comp f)
+    _ = (map g).comp (map f) := map_comp g f
+    _ = ((gradedMap g).comp (gradedMap f) : MilnorK R →+* MilnorK T) := by
+      ext a
+      simp
+
+/-- The `ℤ`-linear map `degree R n →ₗ[ℤ] degree S n` obtained by restricting `MilnorK.map f` to
+degree `n`. -/
+def degreeMap {S : Type w} [CommRing S] (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n :=
+  (map f).toIntAlgHom.toLinearMap.restrict fun _ hx ↦ map_mem_degree f hx
+
+/-- Coercing `MilnorK.degreeMap f n x` to `MilnorK S` gives `MilnorK.map f x`. -/
+@[simp]
+theorem coe_degreeMap {S : Type w} [CommRing S] (f : R →+* S) (n : ℕ) (x : degree R n) :
+    (degreeMap f n x : MilnorK S) = map f x :=
+  LinearMap.coe_restrict_apply _ x
+
+/-- The identity ring homomorphism induces the identity on each degree `MilnorK.degree R n`. -/
+@[simp]
+theorem degreeMap_id (R : Type u) [CommRing R] (n : ℕ) :
+    degreeMap (RingHom.id R) n = LinearMap.id :=
+  LinearMap.ext fun x ↦ Subtype.ext (by simp)
+
+/-- `MilnorK.degreeMap` respects composition of ring homomorphisms. -/
+theorem degreeMap_comp {S : Type v} {T : Type w} [CommRing S] [CommRing T]
+    (g : S →+* T) (f : R →+* S) (n : ℕ) :
+    degreeMap (g.comp f) n = (degreeMap g n).comp (degreeMap f n) :=
+  LinearMap.ext fun x ↦ Subtype.ext (by simp)
 
 /-! ### Degree-two identification `K₂ᴹ ≃ SymbolGroup R` -/
+
+/-- Normalizing `Additive.ofMul` on a two-entry vector of units inside a tensor square. -/
+private theorem tprod_ofMul_fin_two (a b : Rˣ) :
+    PiTensorProduct.tprod ℤ (fun k : Fin 2 ↦ Additive.ofMul (![a, b] k)) =
+      PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b] := by
+  simpa using TauCeti.tprod_fin_two (R := ℤ) (fun k : Fin 2 ↦ Additive.ofMul (![a, b] k))
 
 /-- Under `TauCeti.tensorProductEquivTensorSquare`, the binary Steinberg relation submodule
 `TauCeti.SymbolGroup.relations R` corresponds to `TauCeti.MilnorK.steinbergRelations R 2`. -/
@@ -162,31 +197,17 @@ theorem map_symbolGroupRelations_eq (R : Type u) [CommRing R] :
       (TauCeti.tensorProductEquivTensorSquare ℤ (Additive Rˣ)).toLinearMap =
       steinbergRelations R 2 := by
   refine le_antisymm ?_ ?_
-  · rintro _ ⟨t, ht, rfl⟩
-    rw [SymbolGroup.relations_eq_span] at ht
-    refine Submodule.span_induction
-      (p := fun t _ ↦
-        (TauCeti.tensorProductEquivTensorSquare ℤ (Additive Rˣ)) t ∈ steinbergRelations R 2)
-      ?_ (by simp) (fun _ _ _ _ hx hy ↦ by rw [map_add]; exact add_mem hx hy)
-      (fun r _ _ hx ↦ by rw [map_zsmul]; exact zsmul_mem hx r) ht
+  · rw [SymbolGroup.relations_eq_span]
+    refine (Submodule.map_span_le _ _ _).mpr ?_
     rintro _ ⟨a, b, hab, rfl⟩
-    rw [TauCeti.tensorProductEquivTensorSquare_tmul]
-    have hfun : ![Additive.ofMul a, Additive.ofMul b] =
-        fun k : Fin 2 ↦ Additive.ofMul (![a, b] k) :=
-      funext fun k ↦ by fin_cases k <;> rfl
-    rw [hfun]
+    rw [LinearEquiv.coe_coe, TauCeti.tensorProductEquivTensorSquare_tmul, ← tprod_ofMul_fin_two]
     exact tprod_mem_steinbergRelations ![a, b] 0 (by decide) (by simpa using hab)
   · rw [steinbergRelations_eq_span, Submodule.span_le]
     rintro _ ⟨f, i, hi, hab, rfl⟩
     have hi0 : i = 0 := by omega
     subst hi0
-    have hfun : (fun k : Fin 2 ↦ Additive.ofMul (f k)) =
-        ![Additive.ofMul (f 0), Additive.ofMul (f 1)] :=
-      funext fun k ↦ by fin_cases k <;> rfl
-    rw [hfun]
-    refine ⟨Additive.ofMul (f 0) ⊗ₜ Additive.ofMul (f 1), ?_,
-      TauCeti.tensorProductEquivTensorSquare_tmul ℤ (Additive Rˣ) _ _⟩
-    rw [SymbolGroup.relations_eq_span]
+    refine (Submodule.mem_map_equiv _).mpr ?_
+    rw [TauCeti.tensorProductEquivTensorSquare_symm_tprod, SymbolGroup.relations_eq_span]
     exact Submodule.subset_span ⟨f 0, f 1, hab, rfl⟩
 
 /-- Canonical identification `MilnorK.degree R 2 ≃ₗ[ℤ] SymbolGroup R`. -/
@@ -217,11 +238,8 @@ theorem degreeTwoEquiv_ofUnit_mul (a b : Rˣ) :
       degree R 2) =
       ⟨symbol (List.ofFn ![a, b]), by simpa using symbol_mem_degree (List.ofFn ![a, b])⟩ :=
     Subtype.ext (by simp [mul_one])
-  rw [degreeTwoEquiv, LinearEquiv.trans_apply, hsym, degreeEquiv_symm_symbol]
-  have hfun : (fun k : Fin 2 ↦ Additive.ofMul (![a, b] k)) =
-      ![Additive.ofMul a, Additive.ofMul b] :=
-    funext fun k ↦ by fin_cases k <;> rfl
-  simp [hfun, AddEquiv.coe_symm_toIntLinearEquiv]
+  rw [degreeTwoEquiv, LinearEquiv.trans_apply, hsym, degreeEquiv_symm_symbol, tprod_ofMul_fin_two]
+  simp [AddEquiv.coe_symm_toIntLinearEquiv]
 
 /-- The inverse of `degreeTwoEquiv` sends `SymbolGroup.symbol a b` to `ofUnit a * ofUnit b`. -/
 @[simp]
@@ -232,18 +250,22 @@ theorem coe_degreeTwoEquiv_symm_symbol (a b : Rˣ) :
       ⟨ofUnit a * ofUnit b,
         SetLike.GradedMul.mul_mem (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩)
 
-/-- Naturality of `degreeTwoEquiv`: for any ring homomorphism `f : R →+* S`, the degree-`2`
-restriction of `MilnorK.map f` corresponds to `SymbolGroup.map f`. -/
+/-- Naturality of `degreeTwoEquiv`: for any ring homomorphism `f : R →+* S`, `degreeMap f 2`
+corresponds to `SymbolGroup.map f`. -/
 theorem degreeTwoEquiv_map {S : Type w} [CommRing S] (f : R →+* S) (x : degree R 2) :
-    degreeTwoEquiv S ⟨map f x, map_mem_degree f x.property⟩ =
-      SymbolGroup.map f (degreeTwoEquiv R x) := by
-  obtain ⟨y, rfl⟩ := (degreeTwoEquiv R).symm.surjective x
-  refine (degreeTwoEquiv S).symm.injective (Subtype.ext ?_)
-  rw [LinearEquiv.symm_apply_apply, LinearEquiv.apply_symm_apply]
-  dsimp only
-  induction y using SymbolGroup.induction_on with
-  | symbol a b => simp
-  | add y₁ y₂ hy₁ hy₂ => simp only [map_add, Submodule.coe_add, hy₁, hy₂]
+    degreeTwoEquiv S (degreeMap f 2 x) = SymbolGroup.map f (degreeTwoEquiv R x) := by
+  have h :
+      (degreeTwoEquiv S).toLinearMap ∘ₗ degreeMap f 2 ∘ₗ (degreeTwoEquiv R).symm.toLinearMap =
+        SymbolGroup.map f := by
+    refine SymbolGroup.linearMap_ext fun a b ↦ ?_
+    have hval :
+        degreeMap f 2 ((degreeTwoEquiv R).symm (SymbolGroup.symbol a b)) =
+          ⟨ofUnit (Units.map f.toMonoidHom a) * ofUnit (Units.map f.toMonoidHom b),
+            SetLike.GradedMul.mul_mem (ofUnit_mem_degree_one _) (ofUnit_mem_degree_one _)⟩ :=
+      Subtype.ext (by simp)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hval, degreeTwoEquiv_ofUnit_mul,
+      SymbolGroup.map_symbol]
+  simpa using LinearMap.congr_fun h (degreeTwoEquiv R x)
 
 end Ring
 
@@ -304,49 +326,43 @@ theorem quotTensorPowerMap_mk_tprod {R : Type u} [CommRing R] {S : Type w} [Comm
 @[simp]
 theorem quotTensorPowerMap_id (R : Type u) [CommRing R] (n : ℕ) :
     quotTensorPowerMap (RingHom.id R) n = LinearMap.id := by
-  refine LinearMap.ext fun x ↦ Submodule.Quotient.induction_on _ x fun w ↦ ?_
-  simp only [quotTensorPowerMap_mk, RingHom.toMonoidHom_eq_coe, RingHom.toMonoidHom_id,
-    Units.map_id, MonoidHom.toAdditive_id, AddMonoidHom.toIntLinearMap_id,
-    PiTensorProduct.map_id, LinearMap.id_apply]
+  unfold quotTensorPowerMap
+  simp_rw [RingHom.toMonoidHom_eq_coe, RingHom.toMonoidHom_id, Units.map_id,
+    MonoidHom.toAdditive_id, AddMonoidHom.toIntLinearMap_id, PiTensorProduct.map_id]
+  apply Submodule.mapQ_id
 
 /-- `quotTensorPowerMap` respects composition of ring homomorphisms. -/
 theorem quotTensorPowerMap_comp {R : Type u} [CommRing R] {S : Type v} {T : Type w}
     [CommRing S] [CommRing T] (g : S →+* T) (f : R →+* S) (n : ℕ) :
     quotTensorPowerMap (g.comp f) n = (quotTensorPowerMap g n).comp (quotTensorPowerMap f n) := by
-  refine LinearMap.ext fun x ↦ Submodule.Quotient.induction_on _ x fun w ↦ ?_
-  have hcomp : (Units.map (g.comp f).toMonoidHom).toAdditive =
-      (Units.map g.toMonoidHom).toAdditive.comp (Units.map f.toMonoidHom).toAdditive := by
-    rw [RingHom.toMonoidHom_comp, Units.map_comp]
-    exact AddMonoidHom.ext fun _ ↦ by simp
-  simp only [quotTensorPowerMap_mk, LinearMap.comp_apply, hcomp, AddMonoidHom.toIntLinearMap_comp,
-    PiTensorProduct.map_comp]
+  unfold quotTensorPowerMap
+  simp_rw [RingHom.toMonoidHom_comp, Units.map_comp, MonoidHom.toAdditive_comp,
+    AddMonoidHom.toIntLinearMap_comp, PiTensorProduct.map_comp]
+  apply Submodule.mapQ_comp
 
 /-- Naturality of `degreeEquiv` in arbitrary degree `n`: for any ring homomorphism `f : R →+* S`,
-the degree-`n` restriction of `MilnorK.map f` corresponds to `quotTensorPowerMap f n`. -/
+`degreeMap f n` corresponds to `quotTensorPowerMap f n`. -/
 theorem degreeEquiv_map {R : Type u} [CommRing R] {S : Type w} [CommRing S]
     (f : R →+* S) (n : ℕ) (x : (⨂[ℤ]^n (Additive Rˣ)) ⧸ steinbergRelations R n) :
-    ⟨map f (degreeEquiv R n x), map_mem_degree f (degreeEquiv R n x).property⟩ =
-      degreeEquiv S n (quotTensorPowerMap f n x) := by
-  induction x using Submodule.Quotient.induction_on with | _ w =>
-  refine Subtype.ext ?_
-  induction w using PiTensorProduct.induction_on with
-  | smul_tprod r a =>
-    have ha : (fun k : Fin n ↦ Additive.ofMul (a k).toMul) = a :=
-      funext fun k ↦ ofMul_toMul (a k)
-    have hmap : (fun i : Fin n ↦ (Units.map f.toMonoidHom).toAdditive.toIntLinearMap (a i)) =
-        fun k ↦ Additive.ofMul (Units.map f.toMonoidHom (a k).toMul) := by
-      funext k
-      simp only [AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive, Function.comp_apply]
-    simp only [Submodule.Quotient.mk_smul, map_zsmul, SetLike.val_smul, coe_degreeEquiv_mk,
-      quotTensorPowerMap_mk, PiTensorProduct.map_tprod]
-    conv_lhs => rw [← ha, ofTensorPower_tprod, map_symbol, List.map_ofFn]
-    rw [hmap, ofTensorPower_tprod]
-    simp only [Function.comp_def]
-    -- Both sides now have syntactically identical arguments up to definitional equality of `•` on
-    -- `MilnorK S` (`map_zsmul` vs. `SetLike.val_smul`).
-    rfl
-  | add w₁ w₂ hw₁ hw₂ =>
-    simp only [Submodule.Quotient.mk_add, map_add, Submodule.coe_add] at hw₁ hw₂ ⊢
-    rw [hw₁, hw₂]
+    degreeMap f n (degreeEquiv R n x) = degreeEquiv S n (quotTensorPowerMap f n x) := by
+  have h :
+      degreeMap f n ∘ₗ (degreeEquiv R n).toLinearMap =
+        (degreeEquiv S n).toLinearMap ∘ₗ quotTensorPowerMap f n := by
+    apply Submodule.quot_hom_ext
+    refine LinearMap.congr_fun (?_ :
+      (degreeMap f n ∘ₗ (degreeEquiv R n).toLinearMap).comp (steinbergRelations R n).mkQ =
+        ((degreeEquiv S n).toLinearMap ∘ₗ quotTensorPowerMap f n).comp
+          (steinbergRelations R n).mkQ)
+    refine PiTensorProduct.ext (MultilinearMap.ext fun a ↦ Subtype.ext ?_)
+    have ha : a = Additive.ofMul ∘ fun k ↦ (a k).toMul :=
+      funext fun k ↦ (ofMul_toMul (a k)).symm
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Submodule.mkQ_apply,
+      LinearMap.compMultilinearMap_apply, coe_degreeMap, coe_degreeEquiv_mk]
+    conv_lhs => rw [ha, Function.comp_def, ofTensorPower_tprod, map_symbol, List.map_ofFn]
+    conv_rhs =>
+      rw [ha, quotTensorPowerMap_mk_tprod, coe_degreeEquiv_mk, Function.comp_def,
+        ofTensorPower_tprod]
+    simp only [Function.comp_def, RingHom.toMonoidHom_eq_coe]
+  exact LinearMap.congr_fun h x
 
 end TauCeti.MilnorK
