@@ -48,8 +48,8 @@ kernel at distance `d`, cut into dyadic pieces, are bounded by `d^δ`.
 
 If `2^{s tₖ} aₖ ≤ M` and `‖gₖ‖ ≤ C 2^{(s - 1) tₖ} aₖ` with exponents `tₖ ≥ k`, the terms
 `gₖ` are at most `C M 2^{-k}`, so in a complete group `∑ₖ gₖ` converges with norm at most
-`2 C M`. This is how the blocks of a Besov element are summed after a Bessel potential of
-order `-1`.
+`2 C M`. This is how the blocks of a Besov element of regularity `s` are summed after the
+Bessel potential `J^{s-1}`, which gains a factor `2^{-tₖ}` over the weights `2^{s tₖ}`.
 
 For `Q ≥ 1`, at most `2Q + 1` dyadic scales `2^k` are comparable to a given `2^j` up to the factor
 `Q`, that is, satisfy `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, and for these `2^{σ (j - k)} ≤ Q ^ |σ|`.
@@ -388,8 +388,8 @@ theorem exists_norm_le_of_hasSum_of_le_of_le {s δ : ℝ} {N : ℕ} (hsδ : 0 < 
 /-- **Summing blocks with a dyadic gain.** In a complete seminormed group, let `C ≥ 0` and let
 the exponents satisfy `tₖ ≥ k`. If `2^{s tₖ} aₖ ≤ M` and `‖gₖ‖ ≤ C 2^{(s - 1) tₖ} aₖ` for all
 `k`, then each `‖gₖ‖` is at most `C M 2^{-k}`, so `∑ₖ gₖ` converges to some `w` with
-`‖w‖ ≤ 2 C M`. This sums the Littlewood–Paley blocks of a Besov element after a Bessel potential
-of order `-1`. -/
+`‖w‖ ≤ 2 C M`. This sums the Littlewood–Paley blocks of a Besov element of regularity `s` after
+the Bessel potential `J^{s-1}`, which gains a factor `2^{-tₖ}` over the weights `2^{s tₖ}`. -/
 theorem exists_hasSum_and_norm_le_of_two_rpow_mul_le {X : Type*} [SeminormedAddCommGroup X]
     [CompleteSpace X] {g : ℕ → X} {a t : ℕ → ℝ} {s C M : ℝ} (hC : 0 ≤ C)
     (ht : ∀ k : ℕ, (k : ℝ) ≤ t k) (ha : ∀ k, 2 ^ (s * t k) * a k ≤ M)

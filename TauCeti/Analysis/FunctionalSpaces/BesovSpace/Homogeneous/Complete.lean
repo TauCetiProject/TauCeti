@@ -23,8 +23,8 @@ Let `n` be the dimension of `E` and let `s < n / p`, or `s = n / p` and `q = 1`
 (`TauCeti.HomogeneousBesovSpace.RealizationCondition`, with `1 ≤ q`). Then the homogeneous Besov
 space `\dot B^s_{p,q}` is complete
 (`TauCeti.HomogeneousBesovSpace.completeSpace`). Its separation quotient, the normed space of
-tempered distributions modulo those with spectrum at the origin, is then a Banach space by
-`SeparationQuotient.instCompleteSpace`.
+distributions in `\dot B^s_{p,q}` modulo those with spectrum at the origin, is then a Banach space
+by `SeparationQuotient.instCompleteSpace`.
 
 The proof shows that the realisation `u ↦ ∑_{j ∈ ℤ} Pⱼ u`
 (`TauCeti.HomogeneousBesovSpace.realization`) depends continuously on `u`
@@ -232,9 +232,9 @@ theorem continuous_realization (hs : RealizationCondition E s p q) :
 
 /-- **Homogeneous Besov spaces are complete below the critical regularity.** For `1 ≤ q` and
 `s < n / p`, or `s = n / p` and `q = 1`, where `n` is the dimension of `E`, the homogeneous Besov
-space `\dot B^s_{p,q}` is complete. So is its separation quotient, the normed space of tempered
-distributions modulo those with spectrum at the origin, by `SeparationQuotient.instCompleteSpace`.
--/
+space `\dot B^s_{p,q}` is complete. So is its separation quotient, the normed space of
+distributions in `\dot B^s_{p,q}` modulo those with spectrum at the origin, by
+`SeparationQuotient.instCompleteSpace`. -/
 theorem completeSpace (hs : RealizationCondition E s p q) :
     CompleteSpace (HomogeneousBesovSpace F φ s p q) := by
   refine Metric.complete_of_cauchySeq_tendsto fun u hu ↦ ?_

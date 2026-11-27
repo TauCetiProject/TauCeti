@@ -206,7 +206,12 @@ def ofWeightedBlocksCLM :
         lp.evalCLM ℂ (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q j) :
         lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q →ₗ[ℂ] 𝓢'(E, F)))
     fun b ↦ ((exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose_spec.2
-      b).imp fun _ hv ↦ ⟨by rw [toDistrCLM_apply]; exact hv.1.congr fun t ↦ by simp, hv.2⟩
+      b).imp fun _ hv ↦ ⟨by
+        -- An unconditional sum is the `atTop` limit of the partial sums over finsets.
+        have h := hv.1
+        rw [HasSum, SummationFilter.unconditional_filter] at h
+        rw [toDistrCLM_apply]
+        exact h.congr fun t ↦ by simp, hv.2⟩
 
 /-- **Series characterization of `ofWeightedBlocksCLM`.** For every `b ∈ ℓ^q(ℕ, Lᵖ)`, the tempered
 distribution of `ofWeightedBlocksCLM F φ s p q b` is the sum in `𝓢'(E, F)` of the enlarged
@@ -218,7 +223,8 @@ theorem hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM
     HasSum (fun j ↦ enlargedLittlewoodPaleyBlock F φ (φ.littlewoodPaleyOverlap φ) j
       (((((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • b j : Lp F p (volume : Measure E)) : 𝓢'(E, F)))
       (ofWeightedBlocksCLM F φ s p q b).toDistr := by
-  rw [← toDistrCLM_apply]
+  -- An unconditional sum is the `atTop` limit of the partial sums over finsets.
+  rw [← toDistrCLM_apply, HasSum, SummationFilter.unconditional_filter]
   exact (ContinuousLinearMap.tendsto_ofTendstoOfInjective _ _ _ _ b).congr fun t ↦ by simp
 
 /-- The Littlewood–Paley blocks of `u` sum to the synthesis of its weighted blocks. -/
