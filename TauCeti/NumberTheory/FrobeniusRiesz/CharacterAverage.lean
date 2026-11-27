@@ -154,8 +154,9 @@ theorem two_mul_frobeniusRieszSum_sub_frobeniusRieszMainTerm [Fintype G]
   have hmem (g : G) : g ∈ S ↔ q (c * g) = 1 := by
     simpa [S] using q.apply_ne_one_iff_apply_mul_eq_one hq hc g
   have hnorm : 2 * (Nat.card G : ℂ)⁻¹ = (S.card : ℂ)⁻¹ := by
-    rw [Nat.card_eq_fintype_card, ← q.two_mul_card_filter_apply_ne_one hq hq₁, Nat.cast_mul,
-      Nat.cast_ofNat, mul_inv, ← mul_assoc, mul_inv_cancel₀ two_ne_zero, one_mul]
+    rw [Nat.card_eq_fintype_card, ← q.two_mul_card_filter_apply_ne_one hq hq₁]
+    push_cast [S]
+    field_simp
   -- The factor of two changes the full-group normalization to a mean over the coset.
   rw [f.ofReal_frobeniusRieszSum_eq_sum_rieszSum S _ a (fun g hg ↦
     hw _ (MonoidHom.mem_ker.mpr ((hmem g).mp hg))), ← mul_assoc, hnorm, ← div_eq_inv_mul,
