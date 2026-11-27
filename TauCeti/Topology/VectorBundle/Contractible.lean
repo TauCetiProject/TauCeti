@@ -70,8 +70,8 @@ needed.
   source, for instance the model fibre.
 * `TauCeti.exists_continuous_transition_of_continuous_frame`: continuous frames along two
   pointwise equal maps differ by a continuous family of automorphisms of the model fibre.
-* `TauCeti.continuous_of_mk_eq_mk`: every family of automorphisms of the model fibre by which
-  two continuous frames differ is continuous.
+* `TauCeti.continuous_transition_of_totalSpaceMk'_eq`: every family of automorphisms of the model
+  fibre by which two continuous frames differ is continuous.
 * `TauCeti.frame_trans_symm_eq_of_totalSpaceMk'_eq`,
   `TauCeti.eq_of_frame_comp_totalSpaceMk'_eq`: frames that agree as maps to the total space have
   the same transitions, and determine the automorphisms they are composed with.
@@ -313,7 +313,8 @@ theorem exists_continuous_transition_of_continuous_frame [CompleteSpace 𝕜]
 /-- **Changes of frame are continuous.** Let `φ` and `ψ` be continuous frames of a finite-rank
 vector bundle along maps `f` and `g`, and `k y` automorphisms of `F` with `φ y = ψ y ∘ k y` as maps
 to the total space. Then `k` is continuous. -/
-theorem continuous_of_mk_eq_mk [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [VectorBundle 𝕜 F E]
+theorem continuous_transition_of_totalSpaceMk'_eq [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    [VectorBundle 𝕜 F E]
     {g : B → X} {φ : ∀ y, F ≃L[𝕜] E (f y)} {ψ : ∀ y, F ≃L[𝕜] E (g y)}
     (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
     (hψ : Continuous fun q : B × F ↦ TotalSpace.mk' F (g q.1) (ψ q.1 q.2)) {k : B → F ≃L[𝕜] F}

@@ -168,7 +168,7 @@ theorem clutchingNumber_mul_two_pi_eq_of_rectangleTrans {x : X} {u u' : ℝ × �
     (hθk : ∀ t, Circle.exp (θ t) = (k t).normalizedDet) :
     (clutchingNumber F E p : ℝ) * (2 * Real.pi) = θ 0 - θ 1 := by
   have hγ : Continuous fun q : unitInterval × F ↦ (((0 : ℝ), (q.1 : ℝ)), q.2) := by fun_prop
-  have hk := continuous_of_mk_eq_mk (f := fun t : unitInterval ↦ u (0, t))
+  have hk := continuous_transition_of_totalSpaceMk'_eq (f := fun t : unitInterval ↦ u (0, t))
     (g := fun t : unitInterval ↦ u' (0, t)) (φ := fun t ↦ φ (0, t)) (ψ := fun t ↦ φ' (0, t))
     (hφ.comp hγ) (hφ'.comp hγ) hφk
   obtain ⟨ψ, hψc, hψ⟩ := exists_frame_rectangleTrans hseam hp hφ hφ' hk hφk

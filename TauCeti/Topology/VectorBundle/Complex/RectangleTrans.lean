@@ -155,7 +155,7 @@ theorem torusClutchingNumber_mul_two_pi_eq_of_rectangleTrans {u u' : ℝ × ℝ 
     (torusClutchingNumber F E w : ℝ) * (2 * Real.pi) = θ 0 - θ 1 := by
   -- `k` is the change of frame along the common edge `s = 0`, so it is continuous.
   have hγ : Continuous fun q : unitInterval × F ↦ (((0 : ℝ), (q.1 : ℝ)), q.2) := by fun_prop
-  have hk := continuous_of_mk_eq_mk (f := fun t : unitInterval ↦ u (0, t))
+  have hk := continuous_transition_of_totalSpaceMk'_eq (f := fun t : unitInterval ↦ u (0, t))
     (g := fun t : unitInterval ↦ u' (0, t)) (φ := fun t ↦ φ (0, t)) (ψ := fun t ↦ φ' (0, t))
     (hφ.comp hγ) (hφ'.comp hγ) hφk
   -- The frame `Ψ` over the square of `w`: `φ` on the left half and `φ' ∘ k` on the right half.

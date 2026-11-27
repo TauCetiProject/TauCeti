@@ -386,8 +386,8 @@ theorem torusClutchingNumber_mul_two_pi_eq_of_frame {w : C(Fin 2 → I, X)}
   -- Automorphisms `ψ` along the boundary, twisted by `k⁻¹` across the vertical edges.
   obtain ⟨ψb, hψbc, hψbR, hψbT⟩ := exists_twisted_boundary
     (A := fun q : I × I ↦ (k q.2).symm) (B := fun _ ↦ ContinuousLinearEquiv.refl ℂ F)
-    ((continuous_of_mk_eq_mk (f := fun t ↦ w ![0, t]) (g := fun t ↦ w ![1, t])
-      (k := fun t ↦ (k t).symm)
+    ((continuous_transition_of_totalSpaceMk'_eq (f := fun t ↦ w ![0, t])
+      (g := fun t ↦ w ![1, t]) (k := fun t ↦ (k t).symm)
       (hΨ.comp (by fun_prop : Continuous fun q : I × F ↦ (![0, q.1], q.2)))
       (hΨ.comp (by fun_prop : Continuous fun q : I × F ↦ (![1, q.1], q.2))) fun t v ↦ by
         rw [hR, ContinuousLinearEquiv.apply_symm_apply]).comp continuous_snd) continuous_const
