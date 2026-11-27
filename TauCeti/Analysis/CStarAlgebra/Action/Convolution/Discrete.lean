@@ -99,8 +99,8 @@ theorem single_add (g : G) (a b : A) :
   ext1
   ext s
   classical
-  simp only [ofConv_single_apply, ofConv_add, CompactlySupportedContinuousMap.coe_add,
-    Pi.add_apply]
+  simp only [ofConv_single_apply, CompactlySupportedL1.toFun_add,
+    CompactlySupportedContinuousMap.coe_add, Pi.add_apply]
   split_ifs <;> simp
 
 theorem single_smul (g : G) (c : ℂ) (a : A) :
@@ -108,8 +108,8 @@ theorem single_smul (g : G) (c : ℂ) (a : A) :
   ext1
   ext s
   classical
-  simp only [ofConv_single_apply, ofConv_smul, CompactlySupportedContinuousMap.coe_smul,
-    Pi.smul_apply]
+  simp only [ofConv_single_apply, CompactlySupportedL1.toFun_smul,
+    CompactlySupportedContinuousMap.coe_smul, Pi.smul_apply]
   split_ifs <;> simp
 
 /-- An element of the convolution algebra of a discrete group has finite support. -/
@@ -124,9 +124,9 @@ theorem sum_single (f : ConvolutionAlgebra α Measure.count) {s : Finset G}
   classical
   ext1
   ext r
-  rw [← addEquiv_apply, map_sum]
-  simp only [addEquiv_apply, CompactlySupportedContinuousMap.coe_sum, Finset.sum_apply,
-    ofConv_single_apply, Finset.sum_ite_eq]
+  rw [← CompactlySupportedL1.addEquiv_apply, map_sum]
+  simp only [CompactlySupportedL1.addEquiv_apply, CompactlySupportedContinuousMap.coe_sum,
+    Finset.sum_apply, ofConv_single_apply, Finset.sum_ite_eq]
   split_ifs with hr
   · rfl
   · exact (Function.notMem_support.1 fun h => hr (hs h)).symm
@@ -171,6 +171,8 @@ theorem star_single (g : G) (a : A) :
   classical
   ext1
   ext s
+  change (star (single g a : ConvolutionAlgebra α Measure.count)).ofConv s =
+    (single g⁻¹ (α g⁻¹ (star a)) : ConvolutionAlgebra α Measure.count).ofConv s
   rw [ofConv_star, twistedInvolution_apply, modularCharacter_eq_one_of_discreteTopology,
     ofConv_single_apply, ofConv_single_apply]
   simp only [inv_eq_iff_eq_inv]

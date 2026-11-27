@@ -168,11 +168,12 @@ private def integralUnitary (u : G →* unitary B) :
     ConvolutionAlgebra (trivial : CStarAction G ℂ) Measure.count →ₗ[ℂ] B where
   toFun f := ∫ g, f.ofConv g • (u g : B) ∂Measure.count
   map_add' f h := by
-    simp only [ofConv_add, CompactlySupportedContinuousMap.coe_add, Pi.add_apply, add_smul]
+    simp only [CompactlySupportedL1.toFun_add, CompactlySupportedContinuousMap.coe_add,
+      Pi.add_apply, add_smul]
     exact integral_add (integrable_smul_unitary u _) (integrable_smul_unitary u _)
   map_smul' c f := by
-    simp only [ofConv_smul, CompactlySupportedContinuousMap.coe_smul, Pi.smul_apply, smul_eq_mul,
-      mul_smul, RingHom.id_apply]
+    simp only [CompactlySupportedL1.toFun_smul, CompactlySupportedContinuousMap.coe_smul,
+      Pi.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply]
     exact integral_smul c _
 
 private theorem integralUnitary_apply (u : G →* unitary B)
