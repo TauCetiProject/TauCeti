@@ -150,6 +150,16 @@ theorem _root_.IntermediateField.finrank_sup_adjoin_simple_eq_mul_two
         rw [Module.finrank_mul_finrank]
     _ = Module.finrank K F * 2 := by rw [hfinL]
 
+/-- If `x² ∈ F`, adjoining `x` increases the `K`-finrank of `F` by at most a factor of two. -/
+theorem _root_.IntermediateField.finrank_sup_adjoin_simple_le_mul_two
+    (F : IntermediateField K L) {x : L} (hx2 : x ^ 2 ∈ F) :
+    Module.finrank K ((F ⊔ IntermediateField.adjoin K {x}) : IntermediateField K L)
+      ≤ Module.finrank K F * 2 := by
+  by_cases hxF : x ∈ F
+  · rw [sup_eq_left.mpr (adjoin_simple_le_iff.mpr hxF)]
+    omega
+  · exact (F.finrank_sup_adjoin_simple_eq_mul_two hx2 hxF).le
+
 /-- **A square root of a nonsquare radicand generates a quadratic extension.** If `x ^ 2 = a` for
 some `a ∈ K` that is not a square in `K`, then `[K(x) : K] = 2`: the square already lies in the
 base field, and nonsquareness of `a` is exactly what keeps `x` out of it.
