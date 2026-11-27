@@ -97,7 +97,7 @@ theorem RamseyProp.exists_isNClique_subset {V : Type*} (h : RamseyProp f m)
   obtain ⟨k, s, hs⟩ := h (C.pullback e)
   refine ⟨k, s.map e, fun x hx ↦ ?_, ?_⟩
   · obtain ⟨a, -, rfl⟩ := mem_map.1 hx
-    exact (A.equivFin.symm _).property
+    simp [e]
   · rw [TopEdgeLabeling.labelGraph_pullback] at hs
     exact hs.map.mono (map_comap_le _ _)
 
