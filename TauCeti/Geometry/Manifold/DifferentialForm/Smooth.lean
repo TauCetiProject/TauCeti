@@ -681,6 +681,33 @@ theorem sub_toContMDiffSection {k : ℕ} (φ ψ : SmoothForm I M F k) :
     (φ - ψ).toContMDiffSection = φ.toContMDiffSection - ψ.toContMDiffSection :=
   SmoothBundleForm.sub_toContMDiffSection φ ψ
 
+/-- Fixed-coefficient smooth `k`-forms identify `ℝ`-linearly with smooth sections of the
+alternating tangent bundle. -/
+def contMDiffSectionEquiv {k : ℕ} :
+    SmoothForm I M F k ≃ₗ[ℝ]
+      ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+        (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) where
+  toFun := toContMDiffSection
+  invFun := ofContMDiffSection
+  left_inv := ofContMDiffSection_toContMDiffSection
+  right_inv := toContMDiffSection_ofContMDiffSection
+  map_add' := add_toContMDiffSection
+  map_smul' := smul_toContMDiffSection
+
+@[simp]
+theorem contMDiffSectionEquiv_apply {k : ℕ} (φ : SmoothForm I M F k) (x : M) :
+    contMDiffSectionEquiv φ x = φ.val x := by
+  simp only [contMDiffSectionEquiv]
+  exact toContMDiffSection_apply φ x
+
+@[simp]
+theorem contMDiffSectionEquiv_symm_apply {k : ℕ}
+    (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)) (x : M) :
+    (contMDiffSectionEquiv.symm s).val x = s x := by
+  simp only [contMDiffSectionEquiv]
+  rw [LinearEquiv.coe_symm_mk, ← toContMDiffSection_apply, toContMDiffSection_ofContMDiffSection]
+
 /-- The rough form underlying a sum of smooth forms is the sum of their rough forms. -/
 theorem add_toRoughForm {k : ℕ} (φ ψ : SmoothForm I M F k) :
     (φ + ψ).val = φ.val + ψ.val :=

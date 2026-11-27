@@ -37,8 +37,6 @@ For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees with the de Rham exterior de
 * `TauCeti.LieAlgebroid.lieDeriv`, `extDeriv`, `cochainComplex`, `cochainComplexXIso`,
   `cohomology`: Lie derivative, Chevalley–Eilenberg differential, cochain complex in `ModuleCat ℝ`,
   canonical degreewise carrier isomorphism, and cohomology `H^k(A)`.
-* `TauCeti.LieAlgebroid.tangentCochainEquivSmoothForm`: `(tangent I M).Cochain k ≃ₗ[ℝ]` smooth
-  differential `k`-forms on `M`.
 
 ## Main results
 
@@ -46,9 +44,10 @@ For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees with the de Rham exterior de
   formula on sections and `d_A ∘ d_A = 0`.
 * `TauCeti.LieAlgebroid.curryLeft_extDeriv_succ`, `lieDeriv_wedge`, `extDeriv_wedge`: Cartan's
   homotopy formula and graded Leibniz rules for `ContMDiffSection.wedge`.
-* `TauCeti.LieAlgebroid.tangent_extDeriv_apply`, `tangentCochainEquivSmoothForm_extDeriv`,
-  `tangentCochainEquivSmoothForm_wedge`: comparison of `(tangent I M).extDeriv` and
-  `ContMDiffSection.wedge` with `mextDeriv` and `SmoothForm.wedge`.
+* `TauCeti.LieAlgebroid.tangent_extDeriv_apply`, `contMDiffSectionEquiv_symm_tangent_extDeriv`,
+  `contMDiffSectionEquiv_symm_wedge`: comparison of `(tangent I M).extDeriv` and
+  `ContMDiffSection.wedge` with `mextDeriv` and `SmoothForm.wedge` via
+  `TauCeti.SmoothForm.contMDiffSectionEquiv`.
 
 ## References
 
@@ -228,6 +227,22 @@ theorem evalSection_lieDeriv {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cocha
   rw [A.evalSection_eq_cochainSectionsEquiv, Function.comp_update, Function.comp_apply,
     sectionsEquiv_symm_bracket]
 
+/-- Scalar multiplication in the section argument of `A.lieDeriv` evaluated on smooth sections:
+`(L_{f • a} φ)(s₀, …, sₖ) = f * (L_a φ)(s₀, …, sₖ) +`
+`  ∑ i, (-1)^i * ρ(sᵢ)(f) * (ι_a φ)(…, ŝᵢ, …)`. -/
+theorem evalSection_lieDeriv_smul_left {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (a : Cₛ^∞⟮I; F, V⟯)
+    (φ : A.Cochain (k + 1)) (s : Fin (k + 1) → Cₛ^∞⟮I; F, V⟯) :
+    (A.lieDeriv (f • a) φ).evalSection s = f * (A.lieDeriv a φ).evalSection s +
+      ∑ i : Fin (k + 1), (-1 : ℤ) ^ (i : ℕ) •
+        (A.anchorDeriv (s i) f * (φ.curryLeft a).evalSection (i.removeNth s)) := by
+  rw [A.evalSection_eq_cochainSectionsEquiv, cochainSectionsEquiv_lieDeriv,
+    map_smul, LieRinehartAlgebra.lieDeriv_smul_left_apply,
+    ← cochainSectionsEquiv_lieDeriv, ← A.evalSection_eq_cochainSectionsEquiv]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg ((-1 : ℤ) ^ (i : ℕ) • ·) ?_
+  rw [Function.comp_apply, lie_sectionsEquiv_symm, ← cochainSectionsEquiv_curryLeft,
+    cochainSectionsEquiv_removeNth]
+
 /-- In degree zero, `(d_A φ)(s₀) = ρ(s₀)(φ)`. -/
 @[simp] theorem evalSection_extDeriv_zero (φ : A.Cochain 0) (s : Fin 1 → Cₛ^∞⟮I; F, V⟯) :
     (A.extDeriv 0 φ).evalSection s = A.anchorDeriv (s 0) (A.cochainZeroEquiv φ) := by
@@ -342,6 +357,13 @@ abbrev cohomology (k : ℕ) : ModuleCat ℝ := A.cochainComplex.homology k
     rw [cochainSectionsEquiv_lieDeriv, LinearMapClass.map_smul_of_tower A.sectionsEquiv.symm c,
       LieRinehartAlgebra.lieDeriv_const_smul_left,
       LinearMapClass.map_smul_of_tower (A.cochainSectionsEquiv k) c, cochainSectionsEquiv_lieDeriv]
+
+/-- In degree zero, the Lie derivative is `C^∞(M)`-linear in the section argument:
+`L_{f • a} φ = f • L_a φ`. -/
+@[simp] theorem lieDeriv_smul_left_zero (f : C^∞⟮I, M; ℝ⟯) (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain 0) :
+    A.lieDeriv (f • a) φ = f • A.lieDeriv a φ :=
+  ContMDiffSection.ext_evalSection fun s ↦ by
+    simp [evalSection_lieDeriv]
 
 /-- Scalar Leibniz rule for the Lie derivative: `L_a (f • φ) = f • L_a φ + (ρ(a) f) • φ`. -/
 theorem lieDeriv_smul_right {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) (φ : A.Cochain k) :
@@ -561,37 +583,16 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M]
 
-variable (I M) in
-/-- Smooth `k`-cochains of `LieAlgebroid.tangent I M` identify `ℝ`-linearly with smooth real-valued
-differential `k`-forms `SmoothForm I M ℝ k`. -/
-def tangentCochainEquivSmoothForm (k : ℕ) :
-    (tangent I M).Cochain k ≃ₗ[ℝ] SmoothForm I M ℝ k where
-  toFun := SmoothForm.ofContMDiffSection
-  invFun := SmoothForm.toContMDiffSection
-  left_inv := SmoothForm.toContMDiffSection_ofContMDiffSection
-  right_inv := SmoothForm.ofContMDiffSection_toContMDiffSection
-  map_add' _ _ := SmoothForm.toContMDiffSection_injective (by simp)
-  map_smul' _ _ := SmoothForm.toContMDiffSection_injective (by simp)
-
-@[simp] theorem tangentCochainEquivSmoothForm_apply {k : ℕ}
-    (φ : (tangent I M).Cochain k) (x : M) :
-    (tangentCochainEquivSmoothForm I M k φ).val x = φ x := by
-  rw [← SmoothForm.toContMDiffSection_apply]
-  exact congrArg (· x) (SmoothForm.toContMDiffSection_ofContMDiffSection φ)
-
-@[simp] theorem tangentCochainEquivSmoothForm_symm_apply {k : ℕ}
-    (ψ : SmoothForm I M ℝ k) (x : M) : (tangentCochainEquivSmoothForm I M k).symm ψ x = ψ.val x :=
-  SmoothForm.toContMDiffSection_apply ψ x
-
-/-- `tangentCochainEquivSmoothForm` intertwines `ContMDiffSection.wedge` with `SmoothForm.wedge`. -/
-@[simp] theorem tangentCochainEquivSmoothForm_wedge {k l : ℕ}
+/-- `SmoothForm.contMDiffSectionEquiv.symm` intertwines `ContMDiffSection.wedge` with
+`SmoothForm.wedge`. -/
+@[simp] theorem contMDiffSectionEquiv_symm_wedge {k l : ℕ}
     (φ : (tangent I M).Cochain k) (ψ : (tangent I M).Cochain l) :
-    tangentCochainEquivSmoothForm I M (k + l) (φ.wedge ψ) =
-      SmoothForm.wedge (tangentCochainEquivSmoothForm I M k φ)
-        (tangentCochainEquivSmoothForm I M l ψ) := by
+    SmoothForm.contMDiffSectionEquiv.symm (φ.wedge ψ) =
+      SmoothForm.wedge (SmoothForm.contMDiffSectionEquiv.symm φ)
+        (SmoothForm.contMDiffSectionEquiv.symm ψ) := by
   refine SmoothForm.toContMDiffSection_injective ?_
   ext x v
-  simp only [SmoothForm.toContMDiffSection_apply, tangentCochainEquivSmoothForm_apply,
+  simp only [SmoothForm.toContMDiffSection_apply, SmoothForm.contMDiffSectionEquiv_symm_apply,
     ContMDiffSection.wedge_apply, SmoothForm.coe_wedge, RoughForm.wedge_def,
     RoughForm.wedgeWith_apply']
 
@@ -664,16 +665,17 @@ theorem tangent_extDeriv_apply (k : ℕ) (φ : (tangent I M).Cochain k) (x : M) 
   | succ m =>
     rw [tangent_extDeriv_succ_evalSection_apply, mextDeriv_apply_vectorField hφ hs_diff]
 
-/-- `tangentCochainEquivSmoothForm` intertwines the Chevalley–Eilenberg differential of
+/-- `SmoothForm.contMDiffSectionEquiv.symm` intertwines the Chevalley–Eilenberg differential of
 `LieAlgebroid.tangent I M` with the bundled de Rham exterior derivative `mextDerivₗ`. -/
-@[simp] theorem tangentCochainEquivSmoothForm_extDeriv (k : ℕ) (φ : (tangent I M).Cochain k) :
-    tangentCochainEquivSmoothForm I M (k + 1) ((tangent I M).extDeriv k φ) =
-      mextDerivₗ I k (tangentCochainEquivSmoothForm I M k φ) := by
+@[simp] theorem contMDiffSectionEquiv_symm_tangent_extDeriv (k : ℕ)
+    (φ : (tangent I M).Cochain k) :
+    SmoothForm.contMDiffSectionEquiv.symm ((tangent I M).extDeriv k φ) =
+      mextDerivₗ I k (SmoothForm.contMDiffSectionEquiv.symm φ) := by
   refine SmoothForm.toContMDiffSection_injective ?_
   ext x w
-  have hη : (tangentCochainEquivSmoothForm I M k φ).val = fun y ↦ φ y :=
-    funext (tangentCochainEquivSmoothForm_apply φ)
-  simp only [SmoothForm.toContMDiffSection_apply, tangentCochainEquivSmoothForm_apply,
+  have hη : (SmoothForm.contMDiffSectionEquiv.symm φ).val = fun y ↦ φ y :=
+    funext (SmoothForm.contMDiffSectionEquiv_symm_apply φ)
+  simp only [SmoothForm.toContMDiffSection_apply, SmoothForm.contMDiffSectionEquiv_symm_apply,
     mextDerivₗ_apply, hη]
   exact DFunLike.congr_fun (tangent_extDeriv_apply k φ x) w
 
