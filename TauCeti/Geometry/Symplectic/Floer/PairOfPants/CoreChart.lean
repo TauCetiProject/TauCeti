@@ -149,9 +149,8 @@ private def outputRayPoint (k θ : ℝ) : ℝ × ℝ :=
 private theorem outputRayPoint_one (θ : ℝ) :
     outputRayPoint 1 θ = Complex.equivRealProdCLM (circleMap (1 / 2) (coreOuterRadius θ) θ) := by
   rw [outputRayPoint, outputRayRadius, coreOuterRadius, one_mul, one_pow,
-    show Real.cos θ ^ 2 + 16 - 1 = Real.cos θ ^ 2 + 15 by ring]
-  push_cast
-  rfl
+    show Real.cos θ ^ 2 + 16 - 1 = Real.cos θ ^ 2 + 15 by ring, Complex.ofReal_div,
+    Complex.ofReal_one, Complex.ofReal_ofNat]
 
 private theorem outputRayPoint_add_two_pi (k θ : ℝ) :
     outputRayPoint k (θ + 2 * π) = outputRayPoint k θ := by
@@ -703,8 +702,7 @@ private theorem pairOfPantsCoreChart_mk_one_eq_loopwiseTrans (t : ℝ) :
     pairOfPantsCoreChart (1, t) = loopwiseTrans (outputRayPoint 1 ∘ fun z ↦ lobeAngle (1 / 4) z.2)
       (outputRayPoint 1 ∘ fun z ↦ lobeAngle (3 / 4) z.2) (1, t) := by
   refine loopwiseTrans_congr (fun r hr ↦ ?_) (fun r hr ↦ ?_) <;>
-    rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
-      add_sub_cancel, Function.comp_apply, outputRayPoint_one]
+    (rw [coreLobe_of_mem hr]; simp [lobeChart, lobePoint, lobeRadius, outputRayPoint_one])
 
 /-! ### The Jacobian of a lobe -/
 

@@ -319,10 +319,14 @@ theorem mpullback_comp_apply_eq_det_smul (φ : RoughForm I M F 2) {u : ℝ × �
     mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ v) φ z ![(1, 0), (0, 1)] =
       A.det • mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (v z) ![(1, 0), (0, 1)] := by
   rw [mpullback_comp_apply_of_hasFDerivAt hv hu]
-  -- Read the pullback along `u` as a form on the plane, whose tangent spaces are `ℝ × ℝ`.
+  -- Read the pullback along `u` as a form on the plane: the tangent space of the plane at `v z`
+  -- is `ℝ × ℝ` by definition.
   let ψ : (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (v z)
-  exact congr($(ψ.toAlternatingMap.compLinearMap_eq_det_smul (Module.Basis.finTwoProd ℝ)
+  change ψ.compContinuousLinearMap A ![(1, 0), (0, 1)] = A.det • ψ ![(1, 0), (0, 1)]
+  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, ContinuousLinearMap.det]
+  have h := congr($(ψ.toAlternatingMap.compLinearMap_eq_det_smul (Module.Basis.finTwoProd ℝ)
     (A : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ)) ![(1, 0), (0, 1)])
+  rwa [AlternatingMap.compLinearMap_apply, smul_apply] at h
 
 /-- The integral of a two-form over `u ∘ v` vanishes when the Jacobian determinant of the map `v`
 of the plane vanishes everywhere, and `u` is differentiable along it. -/
@@ -385,16 +389,9 @@ theorem mpullback_comp_prodMap_apply (φ : RoughForm I M F 2) {u : ℝ × ℝ �
     (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) σ').prodMap
       (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) τ')
   have hL : HasFDerivAt (Prod.map σ τ) A (s, t) := hσ.hasFDerivAt.prodMap (s, t) hτ.hasFDerivAt
-  have hv : (A ∘ ![(1, 0), (0, 1)]) = fun i ↦ ![σ', τ'] i • ![((1 : ℝ), (0 : ℝ)), (0, 1)] i := by
-    funext i
-    fin_cases i <;> simp [A]
-  rw [mpullback_comp_apply_of_hasFDerivAt hL hu]
-  -- Read the pullback as a flat form on the plane, whose tangent spaces are `ℝ × ℝ` itself.
-  let ψ : ℝ × ℝ → (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ
-  refine (((ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans
-    (congrArg _ hv)).trans ((ψ (σ s, τ t)).map_smul_univ _ _)).trans ?_
-  simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
-  rfl
+  rw [mpullback_comp_apply_eq_det_smul φ hL hu, ContinuousLinearMap.det, LinearMap.det_finTwoProd,
+    ContinuousLinearMap.coe_coe]
+  simp [A]
 
 /-- **Translation invariance.** For a differentiable map `u` of the plane, the integral over the
 translate `z ↦ u (z + c)` on the rectangle with corners `a` and `b` is the integral over `u` on the
