@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Covering.DensityTheorem
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.MeasureTheory.Covering.Besicovitch
 import Mathlib.Analysis.Convex.Integral
+import TauCeti.Topology.LimUnder
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -112,8 +113,8 @@ small `r > 0`. -/
 theorem preciseRepresentative_eq_of_eventuallyEq {ν : Measure X}
     (h : (fun r => ⨍ y in closedBall x r, f y ∂μ) =ᶠ[𝓝[>] 0]
       fun r => ⨍ y in closedBall x r, g y ∂ν) :
-    preciseRepresentative μ f x = preciseRepresentative ν g x := by
-  simp only [preciseRepresentative, limUnder, map_congr h]
+    preciseRepresentative μ f x = preciseRepresentative ν g x :=
+  Filter.limUnder_congr h
 
 /-- The precise representative at `x` only depends on the almost-everywhere class of `f` on a
 neighbourhood of `x`. -/

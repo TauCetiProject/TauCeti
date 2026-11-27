@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Chain
+public import TauCeti.LinearAlgebra.RootSystem.Basic
 
 import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
 
@@ -34,6 +35,11 @@ weight-space vectors.
 
 * `RootPairing.Hom.weightMap_mem_range_root_iff`: the weight map carries roots to roots and
   nothing else to a root.
+* `RootPairing.Hom.weightMap_mem_rootSpan` and `RootPairing.Hom.coweightMap_mem_corootSpan`:
+  the weight map carries the `S`-span of roots into that of the target, and the coweight map
+  carries the `S`-span of target coroots into that of the source.
+* `RootPairing.Equiv.weightMap_mem_corootKer_iff` and `RootPairing.Equiv.map_corootKer`:
+  an equivalence of root pairings maps the central kernel onto the target central kernel.
 * `RootPairing.Hom.isValuedIn`: the target root pairing takes values in any coefficient ring in
   which the source root pairing takes values.
 * `RootPairing.Hom.pairingIn_indexEquiv`: the index bijection preserves pairings valued in a
@@ -53,6 +59,8 @@ weight-space vectors.
   preserves coroot values and intertwines the reflection at a root with the reflection at its
   image. These generalise Mathlib's `RootPairing.Equiv.coroot'_weightEquiv` and
   `RootPairing.Equiv.weightEquiv_reflection` from equivalences to morphisms.
+* `RootPairing.smul_eq_self_of_mem_ker_indexHom`: an automorphism fixing every root index fixes
+  the root span pointwise.
 
 These invariance facts show that an automorphism of a root system permutes the matrices of Geck's
 construction, as developed in `TauCeti.LinearAlgebra.RootSystem.GeckConstruction.Symmetry`.
@@ -94,6 +102,25 @@ theorem pairingIn_indexEquiv (f : P.Hom P₂) (S : Type*) [CommRing S] [Algebra 
     letI := f.isValuedIn S
     P₂.pairingIn S (f.indexEquiv i) (f.indexEquiv j) = P.pairingIn S i j := by
   simp only [pairingIn, f.pairing]
+
+/-- The weight map of a root-pairing homomorphism carries the `S`-span of the roots into the
+`S`-span of the target roots, for any scalar ring `S` compatible with `R`. -/
+theorem weightMap_mem_rootSpan {S : Type*} [CommRing S] [Module S M] [Module S M₂]
+    [LinearMap.CompatibleSMul M M₂ S R] (f : P.Hom P₂) {x : M} (hx : x ∈ P.rootSpan S) :
+    f.weightMap x ∈ P₂.rootSpan S :=
+  Submodule.mapsTo_span (f := f.weightMap.restrictScalars S) (by
+    rintro _ ⟨i, rfl⟩
+    exact ⟨f.indexEquiv i, (f.root_weightMap_apply P P₂ i).symm⟩) hx
+
+/-- The contravariant coweight map of a root-pairing homomorphism carries the `S`-span of the
+target coroots into the `S`-span of the source coroots, for any scalar ring `S` compatible with
+`R`. -/
+theorem coweightMap_mem_corootSpan {S : Type*} [CommRing S] [Module S N] [Module S N₂]
+    [LinearMap.CompatibleSMul N₂ N S R] (f : P.Hom P₂) {y : N₂} (hy : y ∈ P₂.corootSpan S) :
+    f.coweightMap y ∈ P.corootSpan S :=
+  Submodule.mapsTo_span (f := f.coweightMap.restrictScalars S) (by
+    rintro _ ⟨j, rfl⟩
+    exact ⟨f.indexEquiv.symm j, (f.coroot_coweightMap_apply P P₂ j).symm⟩) hy
 
 /-- The index bijection of a homomorphism of root pairings commutes with root reflections. -/
 @[simp]
@@ -203,5 +230,44 @@ end Hom
 /-- An equivalence of root pairings transports reducedness from the source to the target. -/
 theorem Equiv.isReduced (e : P.Equiv P₂) [P.IsReduced] : P₂.IsReduced :=
   e.toHom.isReduced e.bijective_weightMap.injective
+
+section Equiv
+
+/-- An equivalence of root pairings preserves and reflects membership in the central kernel. -/
+theorem Equiv.weightMap_mem_corootKer_iff (e : P.Equiv P₂) {x : M} :
+    e.weightMap x ∈ P₂.corootKer ↔ x ∈ P.corootKer := by
+  simp only [mem_corootKer, ← e.weightEquiv_apply]
+  refine ⟨fun h i ↦ ?_, fun h j ↦ ?_⟩
+  · rw [← e.coroot'_weightEquiv i x]
+    exact h (e.indexEquiv i)
+  · obtain ⟨i, rfl⟩ := e.indexEquiv.surjective j
+    rw [e.coroot'_weightEquiv i x]
+    exact h i
+
+/-- An equivalence of root pairings maps the source central kernel onto the target central
+kernel. -/
+theorem Equiv.map_corootKer (e : P.Equiv P₂) :
+    P.corootKer.map e.weightMap = P₂.corootKer := by
+  ext y
+  simp only [Submodule.mem_map]
+  refine ⟨?_, fun hy ↦ ⟨e.weightEquiv.symm y, ?_, e.weightMap_weightEquiv_symm y⟩⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact e.weightMap_mem_corootKer_iff.mpr hx
+  · rw [← e.weightMap_mem_corootKer_iff, e.weightMap_weightEquiv_symm]
+    exact hy
+
+end Equiv
+
+/-- An automorphism in the kernel of `RootPairing.Equiv.indexHom` fixes every element of the root
+span `P.rootSpan R`. -/
+theorem smul_eq_self_of_mem_ker_indexHom (P : RootPairing ι R M N) {g : P.Aut}
+    (hg : g ∈ (Equiv.indexHom P).ker) {x : M} (hx : x ∈ P.rootSpan R) :
+    g • x = x :=
+  LinearMap.eqOn_span (f := g.weightMap) (g := LinearMap.id)
+    (by
+      rintro _ ⟨i, rfl⟩
+      rw [LinearMap.id_apply, Hom.root_weightMap_apply, ← Equiv.indexHom_apply,
+        MonoidHom.mem_ker.mp hg, _root_.Equiv.Perm.one_apply])
+    hx
 
 end RootPairing

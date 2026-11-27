@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
@@ -51,6 +52,7 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
 
 ## Main results
 
+* `Complex.analyticAt_Gamma` — Gamma is analytic away from the nonpositive integers.
 * `Real.measurable_Gamma` — `Real.Gamma` is measurable.
 * `Real.continuous_inv_Gamma` — `s ↦ (Real.Gamma s)⁻¹` is continuous.
 * `TauCeti.continuous_Gamma_sum_div_prod` — the finite Gamma quotient is jointly continuous on
@@ -627,5 +629,15 @@ theorem isEquivalent_factorial_div_ascPochhammer_eval_succ {s : ℂ} (hs : ∀ m
   have hn' : (n : ℂ) ^ s ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr hn))
   simp only [Pi.mul_apply, GammaSeq, ← TauCeti.ascPochhammer_eval_eq_prod_range]
   field_simp
+
+end Complex
+
+namespace Complex
+
+/-- Gamma is analytic away from the nonpositive integers. -/
+@[fun_prop]
+theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
+  have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
+  simpa only [Pi.inv_def, inv_inv] using h
 
 end Complex
