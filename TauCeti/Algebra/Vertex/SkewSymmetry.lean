@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Vertex.Axioms
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.RingTheory.Binomial.PascalSum
 
 /-!
 # Skew symmetry in formal vertex algebras
@@ -37,8 +38,8 @@ stated in this division-free form over a torsion-free module, as well as in the 
   over `ℚ`.
 * `TauCeti.FormalVertexAxioms.ncoeff_zero_field_apply_add_mem_range_translation`:
   `a₍₀₎ b + b₍₀₎ a ∈ LinearMap.range A.translation`.
-* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_skewSymmetry_vacuum`: division-free `finsum` skew
-  symmetry.
+* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_finsum_ncoeff_field_apply_vacuum`:
+  division-free `finsum` skew symmetry.
 
 ## Implementation notes
 
@@ -182,13 +183,13 @@ private theorem sum_antidiagonal_ncoeff_field_apply_ncoeff_field_apply_vacuum [H
     -- Pascal's rule for `Ring.choose (q + 1)`, with the boundary term `W K = 0`.
     have hkey : ∑ l ∈ range K, Ring.choose (q + 1) l • W l =
         ∑ l ∈ range K, Ring.choose q l • W l + ∑ l ∈ range K, Ring.choose q l • W (l + 1) := by
-      have hWK : W K = 0 := by
-        rw [hW]
-        exact A.ncoeff_field_apply_vacuum_of_nonneg _ _ (by omega)
-      rw [sum_range_eq_add_sum_range_succ (fun l ↦ Ring.choose (q + 1) l • W l) (by simp [hWK]),
-        sum_range_eq_add_sum_range_succ (fun l ↦ Ring.choose q l • W l) (by simp [hWK])]
-      simp only [Ring.choose_succ_succ, Ring.choose_zero_right, add_smul, sum_add_distrib]
-      abel
+      rcases K with _ | K'
+      · simp
+      · have hWK : W (K' + 1) = 0 := by
+          rw [hW]
+          exact A.ncoeff_field_apply_vacuum_of_nonneg _ _ (by omega)
+        rw [TauCeti.Ring.sum_range_choose_add_one_smul (R := ℤ) K' q W,
+          sum_range_succ (fun l ↦ Ring.choose q l • W (l + 1)) K', hWK, smul_zero, add_zero]
     rw [hkey, pow_succ]
     module
 
@@ -257,7 +258,7 @@ theorem ncoeff_zero_field_apply_add_mem_range_translation [Module ℚ V] (a b : 
 
 /-- **Skew symmetry (division-free `finsum` form):**
 `a₍ₙ₎ b = ∑ᶠ i : ℕ, -(-1)ⁿ⁺ⁱ (b₍ₙ₊ᵢ₎ a)₍₋ᵢ₋₁₎|0⟩`. -/
-theorem ncoeff_field_apply_skewSymmetry_vacuum [HasUniqueDiv V] (a b : V) (n : ℤ) :
+theorem ncoeff_field_apply_eq_finsum_ncoeff_field_apply_vacuum [HasUniqueDiv V] (a b : V) (n : ℤ) :
     ((A.field a)[[n]]) b =
       ∑ᶠ i : ℕ, (-((n + i).negOnePow : ℤ)) •
         ((A.field (((A.field b)[[n + i]]) a))[[-(i : ℤ) - 1]]) A.vacuum := by

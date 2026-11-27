@@ -19,10 +19,10 @@ For any two mutually local vertex operators `A` and `B` over an arbitrary commut
 `∑ᶠ i : ℕ, (m choose i) • ((A_{(n+i)} B)_{(m+r-i)}) v =`
 `∑ᶠ i : ℕ, (-1)ⁱ (n choose i) • (A_{(m+n-i)} (B_{(r+i)} v) - (-1)ⁿ B_{(n+r-i)} (A_{(m+i)} v))`.
 
-The proof proceeds by two-way Pascal recurrence on `m` starting from the `m = 0` iterate formula
-(`VertexOperator.ncoeff_nthProduct_apply`), together with the `n = 0` commutator formula
-(`VertexOperator.IsLocalOfOrder.lie_ncoeff_eq_sum_nthProduct`) and diagonal shifting for negative
-`m, n`.
+The proof follows from the Pascal recurrence on `(m, n, r)` via
+`TauCeti.eq_zero_of_pascal_recurrence`, with the `m = 0` iterate formula
+(`VertexOperator.ncoeff_nthProduct_apply`) and the `n = 0` commutator formula
+(`VertexOperator.IsLocalOfOrder.lie_ncoeff_eq_sum_nthProduct`) as base cases.
 
 ## Main results
 

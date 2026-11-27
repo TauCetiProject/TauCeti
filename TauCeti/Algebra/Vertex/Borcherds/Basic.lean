@@ -23,13 +23,13 @@ commutator and iterate formulas and the state-level Borcherds identity.
 ## Main results
 
 * `TauCeti.FormalVertexAxioms.lie_ncoeff_field_eq_sum` and
-  `TauCeti.FormalVertexAxioms.lie_ncoeff_field_finsum`: the Borcherds commutator formula
+  `TauCeti.FormalVertexAxioms.lie_ncoeff_field_eq_finsum`: the Borcherds commutator formula
   `⁅a₍ₘ₎, b₍ₙ₎⁆ = ∑_{j < N} (m choose j) (a₍ⱼ₎ b)₍ₘ₊ₙ₋ⱼ₎`, its `m = 0` specialization
   `TauCeti.FormalVertexAxioms.lie_ncoeff_zero_field` (`⁅a₍₀₎, b₍ₙ₎⁆ = (a₍₀₎ b)₍ₙ₎`), and the
   derivation identity `TauCeti.FormalVertexAxioms.ncoeff_zero_field_ncoeff_apply`.
 * `TauCeti.FormalVertexAxioms.ncoeff_field_ncoeff_apply_apply_eq_sum` and
-  `TauCeti.FormalVertexAxioms.ncoeff_field_ncoeff_apply`: the Borcherds iterate formula
-  for `((a₍ₙ₎ b)₍q₎) c`.
+  `TauCeti.FormalVertexAxioms.ncoeff_field_ncoeff_apply_apply_eq_finsum`: the Borcherds iterate
+  formula for `((a₍ₙ₎ b)₍q₎) c`.
 * `TauCeti.FormalVertexAxioms.borcherds_finsum`, `TauCeti.FormalVertexAxioms.borcherds`, and
   `TauCeti.FormalVertexAxioms.exists_borcherds`: the full three-parameter Borcherds identity for
   all `m, n, q : ℤ` under `[HasUniqueDiv V]`, deduced from the field-level identity
@@ -76,7 +76,7 @@ theorem lie_ncoeff_field_eq_sum [HasUniqueDiv V] (a b : V) (m n : ℤ) {N : ℕ}
   simp [hN j (by simp only [mem_range] at hj; omega)]
 
 /-- **Borcherds commutator formula** in `finsum` form, independent of a chosen locality bound. -/
-theorem lie_ncoeff_field_finsum [HasUniqueDiv V] (a b : V) (m n : ℤ) :
+theorem lie_ncoeff_field_eq_finsum [HasUniqueDiv V] (a b : V) (m n : ℤ) :
     ⁅(A.field a)[[m]], (A.field b)[[n]]⁆ =
       ∑ᶠ i : ℕ, Ring.choose m i • (A.field (((A.field a)[[(i : ℤ)]]) b))[[m + n - i]] := by
   obtain ⟨N, h⟩ := A.exists_isLocalOfOrder a b
@@ -117,7 +117,7 @@ theorem ncoeff_field_ncoeff_apply_apply_eq_sum [HasUniqueDiv V] (a b c : V) (n q
 /-- **Mode iterate / associativity formula** (`m = 0` case of the Borcherds identity) in `finsum`
 form: `((a₍ₙ₎ b)₍ᵣ₎) c = ∑ᶠ i : ℕ, (-1)ⁱ (n choose i) (a₍ₙ₋ᵢ₎ (b₍ᵣ₊ᵢ₎ c) - (-1)ⁿ b₍ₙ₊ᵣ₋ᵢ₎ (a₍ᵢ₎ c))`
 for all `a, b, c : V` and all integers `n, r : ℤ`. -/
-theorem ncoeff_field_ncoeff_apply [HasUniqueDiv V] (a b c : V) (n r : ℤ) :
+theorem ncoeff_field_ncoeff_apply_apply_eq_finsum [HasUniqueDiv V] (a b c : V) (n r : ℤ) :
     ((A.field (((A.field a)[[n]]) b))[[r]]) c =
       ∑ᶠ i : ℕ, ((-1 : ℤ) ^ i * Ring.choose n i) •
         (((A.field a)[[n - i]]) (((A.field b)[[r + i]]) c) -
