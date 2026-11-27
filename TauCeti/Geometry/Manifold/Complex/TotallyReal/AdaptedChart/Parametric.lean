@@ -103,6 +103,55 @@ private noncomputable def slice (e : OpenPartialHomeomorph ((P × V) × V) (P ×
 
 end Slice
 
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+/-- **One slice.** For a partial homeomorphism `e` whose underlying map is the parametric adapted
+extension of `ι` and `J` read in the extended charts `φ` at `x₀` and `χ` at `ι x₀`, with `C^ℓ`
+inverse and source over the domain of `ι` read in `φ`, and an open `O ∋ ι x₀` such that the
+points `z` with `ι z ∈ O` have `((s, φ z), 0)` in the source of `e`, the slice of `e` at `s`
+gives an adapted chart for `ι (N)` and `J s`. -/
+private theorem exists_isAdaptedChart_slice [IsManifold I' k N]
+    {J : P → ContMDiffAlmostComplexStructure I ℓ M} {x₀ : N} {s : P}
+    (hι : ContMDiff I' I k ι) (hℓ : 1 ≤ ℓ) (hk : (ℓ : ℕ∞ω) + 1 ≤ k)
+    {e : OpenPartialHomeomorph ((P × F) × F) (P × E)}
+    (he : ⇑e = parametricAdaptedNormalExtension (writtenInExtChartAt I' I x₀ ι)
+      (fun q ↦ (J q.1).inChart (ι x₀) q.2))
+    (hesc : ContDiffOn ℝ ℓ e.symm e.target)
+    (heU : ∀ p ∈ e.source, p.1.2 ∈ (extChartAt I' x₀).target ∩
+      (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source))
+    {O : Set M} (hO : IsOpen O) (hx₀O : ι x₀ ∈ O)
+    (hOe : ∀ z, ι z ∈ O → z ∈ (extChartAt I' x₀).source ∧
+      ((s, extChartAt I' x₀ z), 0) ∈ e.source) :
+    ∃ ψ : OpenPartialHomeomorph M (F × F), IsAdaptedChart (J s) (range ι) ψ ∧
+      (∀ x, ψ x = ((e.symm (s, extChartAt I (ι x₀) x)).1.2,
+        (e.symm (s, extChartAt I (ι x₀) x)).2)) ∧
+      (∀ x, x ∈ ψ.source ↔ x ∈ (extChartAt I (ι x₀)).source ∧
+        (s, extChartAt I (ι x₀) x) ∈ e.target ∧ x ∈ O) ∧
+      ∀ p ∈ ψ.target, ((s, p.1), p.2) ∈ e.source ∧
+        ψ.symm p = (extChartAt I (ι x₀)).symm (e ((s, p.1), p.2)).2 := by
+  have hfst (p : (P × F) × F) : (e p).1 = p.1.1 := by
+    rw [he, parametricAdaptedNormalExtension_apply]
+  set es := slice e hfst (fun q hq ↦ e.fst_fst_symm_of_coe_eq_parametricAdaptedNormalExtension
+    he hq) s
+  -- The slice, its inverse, source and target, by the defining formulas of `slice`.
+  have hes (p : F × F) : es p = (e ((s, p.1), p.2)).2 := rfl
+  have hess (w : E) : es.symm w = ((e.symm (s, w)).1.2, (e.symm (s, w)).2) := rfl
+  have hessrc (p : F × F) : p ∈ es.source ↔ ((s, p.1), p.2) ∈ e.source := Iff.rfl
+  have hestgt (w : E) : w ∈ es.target ↔ (s, w) ∈ e.target := Iff.rfl
+  have hesΦ : ⇑es = adaptedNormalExtension (writtenInExtChartAt I' I x₀ ι)
+      ((J s).inChart (ι x₀)) := by
+    funext p
+    rw [hes, he, parametricAdaptedNormalExtension_apply]
+  have hessc : ContDiffOn ℝ ℓ es.symm es.target := by
+    have hc := hesc.comp (contDiffOn_const.prodMk contDiffOn_id) fun w hw ↦ (hestgt w).1 hw
+    exact (((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).comp_contDiffOn hc).congr
+      fun w _ ↦ hess w
+  obtain ⟨ψ, hψcoe, hψsymm, hψsrc, hψtgt, -, -, hψ⟩ :=
+    exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension hι hℓ hk hesΦ hessc
+      (fun p hp ↦ ⟨heU _ ((hessrc p).1 hp), mem_univ _⟩) hO hx₀O fun z hz ↦
+        ⟨(hOe z hz).1, (hessrc _).2 (hOe z hz).2⟩
+  exact ⟨ψ, hψ, fun x ↦ by rw [hψcoe, hess], fun x ↦ by rw [hψsrc, hestgt],
+    fun p hp ↦ ⟨((hψtgt p).1 hp).1, by rw [hψsymm, hes]⟩⟩
+
 /-- **Adapted charts depending on a parameter.** Let `J s`, for `s` in an open set `S` of a
 complete normed space `P`, be `C^ℓ` almost complex structures on `M` which, read in the extended
 chart `χ` at `ι x₀`, are jointly `C^ℓ` in `(s, v)`, and let `ι` be a `C^k` totally real embedding
@@ -146,10 +195,6 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_parametric [CompleteSpace P]
       ((J s₀).inChart_inChart (ι x₀) (hγΩ hx₀U))
       (h.isMaximalTotallyRealMap.fderiv_writtenInExtChartAt_injective h.two_mul_finrank hιd)
       (h.isMaximalTotallyRealMap.isMaximalTotallyReal_range_fderiv_writtenInExtChartAt hιd)
-  have hfst (p : (P × F) × F) : (e p).1 = p.1.1 := by
-    rw [he, parametricAdaptedNormalExtension_apply]
-  have hfsts : ∀ q ∈ e.target, (e.symm q).1.1 = q.1 := fun q hq ↦
-    e.fst_fst_symm_of_coe_eq_parametricAdaptedNormalExtension he hq
   have hγx₀ : γ (φ x₀) = χ (ι x₀) :=
     writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x₀)
   have he₀t : e ((s₀, φ x₀), 0) = (s₀, χ (ι x₀)) := by
@@ -173,29 +218,10 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_parametric [CompleteSpace P]
       IsAdaptedChart (J s) (range ι) ψ ∧
       (∀ x, ψ x = ((e.symm (s, χ x)).1.2, (e.symm (s, χ x)).2)) ∧
       (∀ x, x ∈ ψ.source ↔ x ∈ χ.source ∧ (s, χ x) ∈ e.target ∧ x ∈ O₁) ∧
-      ∀ p ∈ ψ.target, ((s, p.1), p.2) ∈ e.source ∧ ψ.symm p = χ.symm (e ((s, p.1), p.2)).2 := by
-    intro s hs
-    set es := slice e hfst hfsts s
-    -- The slice, its inverse, source and target, by the defining formulas of `slice`.
-    have hes (p : F × F) : es p = (e ((s, p.1), p.2)).2 := rfl
-    have hess (w : E) : es.symm w = ((e.symm (s, w)).1.2, (e.symm (s, w)).2) := rfl
-    have hessrc (p : F × F) : p ∈ es.source ↔ ((s, p.1), p.2) ∈ e.source := Iff.rfl
-    have hestgt (w : E) : w ∈ es.target ↔ (s, w) ∈ e.target := Iff.rfl
-    have hesΦ : ⇑es = adaptedNormalExtension γ ((J s).inChart (ι x₀)) := by
-      funext p
-      rw [hes, he, parametricAdaptedNormalExtension_apply]
-    have hessc : ContDiffOn ℝ ℓ es.symm es.target := by
-      have hc := hesc.comp (contDiffOn_const.prodMk contDiffOn_id) fun w hw ↦ (hestgt w).1 hw
-      exact (((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).comp_contDiffOn hc).congr
-        fun w _ ↦ hess w
-    have hesU : es.source ⊆ (φ.target ∩ φ.symm ⁻¹' (ι ⁻¹' χ.source)) ×ˢ univ := fun p hp ↦
-      ⟨(heU ((hessrc p).1 hp)).1.2, mem_univ _⟩
-    obtain ⟨ψ, hψcoe, hψsymm, hψsrc, hψtgt, -, -, hψ⟩ :=
-      exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension h.isSmoothEmbedding.contMDiff hℓ
-        hk hesΦ hessc hesU hO₁ hx₀O₁ fun z hz ↦
-          ⟨(hO₁e z hz).1, (hessrc _).2 (hSV₁ (mk_mem_prod hs.1.2 (hO₁e z hz).2))⟩
-    refine ⟨ψ, hψ, fun x ↦ by rw [hψcoe, hess], fun x ↦ by rw [hψsrc, hestgt],
-      fun p hp ↦ ⟨((hψtgt p).1 hp).1, by rw [hψsymm, hes]⟩⟩
+      ∀ p ∈ ψ.target, ((s, p.1), p.2) ∈ e.source ∧ ψ.symm p = χ.symm (e ((s, p.1), p.2)).2 :=
+    fun s hs ↦ exists_isAdaptedChart_slice h.isSmoothEmbedding.contMDiff hℓ hk he hesc
+      (fun p hp ↦ (heU hp).1.2) hO₁ hx₀O₁ fun z hz ↦
+        ⟨(hO₁e z hz).1, hSV₁ (mk_mem_prod hs.1.2 (hO₁e z hz).2)⟩
   have : Nonempty (OpenPartialHomeomorph M (F × F)) := ⟨(key s₀ hs₀S').choose⟩
   choose! ψ hψ hψcoe hψsrc hψtgt using key
   -- The common part of the sources.
