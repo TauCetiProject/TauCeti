@@ -226,7 +226,6 @@ theorem isQuasiIso_tensorPathChainConcat (h : Nonempty (MoorePathBetween B a b))
   let N := tensorBimoduleObj M (pathChainBimodule B a b R)
   -- Instance search does not see the graded actions on a tensor product through its carrier.
   let := (tensorBimoduleObj N (pathChainBimodule B b c R)).gradedSMul
-  let := (tensorBimoduleObj M (pathChainBimodule B a c R)).gradedSMul
   rcases isEmpty_or_nonempty (MoorePathBetween B b c) with hc | ⟨⟨δ⟩⟩
   · -- Without Moore paths from `b` to `c` there are none from `a` to `c`, so both sides vanish.
     have : IsEmpty (MoorePathBetween B a c) := ⟨fun η ↦ hc.false (γ.symm.trans η)⟩
