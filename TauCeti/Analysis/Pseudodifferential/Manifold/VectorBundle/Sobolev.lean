@@ -137,7 +137,7 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFr
   choose C hC using fun k ↦
     exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le
       ((mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2 t ρ hρ (b k) t' χ hχ ℓ) he he'
-      φ ψ s
+      φ ψ ENNReal.one_lt_two ENNReal.ofNat_ne_top s
   refine ⟨∑ k, |C k|, fun u ↦ ?_⟩
   -- `ρ = 1` wherever `Ψ = ψ ∘ e'` does not vanish.
   have hΨρ (x : M) (hx : e'.cutoffPullback he' ψ 1 x ≠ 0) : ρ x = 1 := by

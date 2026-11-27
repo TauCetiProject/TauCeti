@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.FourierTransformDeriv
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
@@ -53,6 +55,8 @@ all of `E`, the factor `‖∇ψ‖⁻²` is replaced by a smooth function that 
 * `TauCeti.exists_one_add_norm_pow_mul_norm_integral_fourierChar_le`: decay of order `N` of the
   oscillatory integral with phase `Λ ∘ Φ`, uniformly over the covectors `Λ` whose phase is
   uniformly non-stationary on the support of the amplitude.
+* `TauCeti.exists_one_add_norm_add_norm_pow_mul_norm_integral_mul_fourierChar_le`: the case of the
+  phase `⟪g x, m⟫ + ⟪x, ξ⟫` of a smooth map `g`, with decay in `1 + ‖m‖ + ‖ξ‖`.
 
 ## References
 
@@ -67,7 +71,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter Complex
-open scoped Topology ContDiff FourierTransform RealInnerProductSpace
+open scoped Topology ContDiff FourierTransform InnerProduct RealInnerProductSpace
 
 namespace TauCeti
 
@@ -395,5 +399,57 @@ theorem exists_one_add_norm_pow_mul_norm_integral_fourierChar_le
       fun y hy ↦ (hM₀ (θ, y) ⟨hθS, hy⟩).trans (le_max_left _ _)
   rw [hosc, integral_osc_mul_eq_iterate hΦ hδ hA hK hAK hΛ0 hKΛ N, norm_mul, norm_pow]
   exact one_add_pow_mul_norm_inv_le h1.le (norm_nonneg _) hbound N
+
+/-- **Non-stationary phase for a graph phase.** For a smooth compactly supported `ψ` on `E` and a
+smooth map `g : E → F`, the oscillatory integral `∫ ψ(x) 𝐞(-(⟪g x, m⟫ + ⟪x, ξ⟫)) dx` decays
+faster than every power of `1 + ‖m‖ + ‖ξ‖`, uniformly over the pairs `(m, ξ)` for which the
+gradient `Dg(x)ᵀ m + ξ` of the phase is at least `c (‖m‖ + ‖ξ‖)` on the support of `ψ`. This is
+`TauCeti.exists_one_add_norm_pow_mul_norm_integral_fourierChar_le` for `Φ x = (g x, x)` and the
+covector `(z, w) ↦ ⟪m, z⟫ + ⟪ξ, w⟫`. Unlike
+`TauCeti.exists_norm_integral_mul_fourierChar_inner_sub_le`, the gradient is bounded below
+pointwise rather than through a fixed approximation of `Dg(x)ᵀ`. -/
+theorem exists_one_add_norm_add_norm_pow_mul_norm_integral_mul_fourierChar_le
+    {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    {ψ : E → ℂ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) {g : E → F}
+    (hg : ContDiff ℝ ∞ g) {c : ℝ} (hc : 0 < c) (N : ℕ) :
+    ∃ C, ∀ (m : F) (ξ : E), (∀ x ∈ tsupport ψ, c * (‖m‖ + ‖ξ‖) ≤ ‖((fderiv ℝ g x)†) m + ξ‖) →
+      (1 + ‖m‖ + ‖ξ‖) ^ N * ‖∫ x, ψ x * 𝐞 (-(⟪g x, m⟫ + ⟪x, ξ⟫)) ∂μ‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_norm_integral_fourierChar_le μ hψ hψc
+    (Φ := fun x ↦ (g x, x)) (hg.prodMk contDiff_id) hc N
+  refine ⟨2 ^ N * C, fun m ξ hmξ ↦ ?_⟩
+  -- The covector `Λ (z, w) = ⟪m, z⟫ + ⟪ξ, w⟫`, with `‖m‖ + ‖ξ‖ ≤ 2 ‖Λ‖ ≤ 2 (‖m‖ + ‖ξ‖)`.
+  set Λ : F × E →L[ℝ] ℝ := (innerSL ℝ m).coprod (innerSL ℝ ξ)
+  have hΛle : ‖Λ‖ ≤ ‖m‖ + ‖ξ‖ := ((innerSL ℝ m).opNorm_coprod_le (innerSL ℝ ξ)).trans_eq
+    (by rw [innerSL_apply_norm, innerSL_apply_norm])
+  have hΛge : ‖m‖ + ‖ξ‖ ≤ 2 * ‖Λ‖ := by
+    have h1 := (innerSL ℝ m).opNorm_le_opNorm_coprod_left (innerSL ℝ ξ)
+    have h2 := (innerSL ℝ m).opNorm_le_opNorm_coprod_right (innerSL ℝ ξ)
+    rw [innerSL_apply_norm] at h1 h2
+    linarith
+  -- Composed with `DΦ(x)`, `Λ` is the inner product with the gradient `Dg(x)ᵀ m + ξ`.
+  have hD (x : E) : Λ ∘L fderiv ℝ (fun x ↦ (g x, x)) x = innerSL ℝ (((fderiv ℝ g x)†) m + ξ) := by
+    have hd : fderiv ℝ (fun x ↦ (g x, x)) x = (fderiv ℝ g x).prod (ContinuousLinearMap.id ℝ E) :=
+      ((hg.differentiable (by simp)) x).fderiv_prodMk differentiableAt_id |>.trans
+        (by rw [fderiv_id])
+    ext v
+    simp [hd, Λ, ContinuousLinearMap.adjoint_inner_left]
+  have hbound := hC Λ fun x hx ↦ by
+    rw [hD, innerSL_apply_norm]
+    exact (mul_le_mul_of_nonneg_left hΛle hc.le).trans (hmξ x hx)
+  have hint : ∫ x, 𝐞 (-Λ (g x, x)) • ψ x ∂μ = ∫ x, ψ x * 𝐞 (-(⟪g x, m⟫ + ⟪x, ξ⟫)) ∂μ := by
+    refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
+    simp only [Λ, ContinuousLinearMap.coprod_apply, innerSL_apply_apply, Circle.smul_def,
+      smul_eq_mul, real_inner_comm m, real_inner_comm ξ]
+    ring
+  rw [hint] at hbound
+  calc (1 + ‖m‖ + ‖ξ‖) ^ N * ‖∫ x, ψ x * 𝐞 (-(⟪g x, m⟫ + ⟪x, ξ⟫)) ∂μ‖
+      ≤ (2 * (1 + ‖Λ‖)) ^ N * ‖∫ x, ψ x * 𝐞 (-(⟪g x, m⟫ + ⟪x, ξ⟫)) ∂μ‖ := by
+        gcongr
+        linarith
+    _ = 2 ^ N * ((1 + ‖Λ‖) ^ N * ‖∫ x, ψ x * 𝐞 (-(⟪g x, m⟫ + ⟪x, ξ⟫)) ∂μ‖) := by
+        rw [mul_pow, mul_assoc]
+    _ ≤ 2 ^ N * C := by gcongr
 
 end TauCeti

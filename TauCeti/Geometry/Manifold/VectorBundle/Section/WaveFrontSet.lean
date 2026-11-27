@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.MicrolocalRegularit
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmulLeft
 public import TauCeti.Topology.VectorBundle.ZeroSection
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 import TauCeti.Topology.VectorBundle.Trivialization
 
@@ -227,6 +228,21 @@ theorem IsMicrolocallySmoothAt.smul {T : BundleTest I F V →L_c[ℝ] ℝ} {x : 
     IsMicrolocallySmoothAt (a • T) x ξ :=
   IsMicrolocallyAt.smul isInvariantMicrolocalRegularity_isMicrolocallySmoothAt h a
 
+/-- On a manifold without boundary, the zero functional is microlocally smooth at every
+covector. -/
+theorem isMicrolocallySmoothAt_zero [I.Boundaryless] (x : M) (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    IsMicrolocallySmoothAt (0 : BundleTest I F V →L_c[ℝ] ℝ) x ξ :=
+  isMicrolocallyAt_zero _ isInvariantMicrolocalRegularity_isMicrolocallySmoothAt x ξ
+
+/-- On a manifold without boundary, a finite sum of functionals microlocally smooth at a covector
+is microlocally smooth there. -/
+theorem IsMicrolocallySmoothAt.sum [I.Boundaryless] {ι : Type*} (s : Finset ι)
+    {T : ι → BundleTest I F V →L_c[ℝ] ℝ} {x : M} {ξ : TangentSpace I x →L[ℝ] ℝ}
+    (h : ∀ i ∈ s, IsMicrolocallySmoothAt (T i) x ξ) :
+    IsMicrolocallySmoothAt (∑ i ∈ s, T i) x ξ :=
+  Finset.sum_induction _ (fun S ↦ IsMicrolocallySmoothAt S x ξ) (fun _ _ ↦ .add)
+    (isMicrolocallySmoothAt_zero x ξ) h
+
 /-- The wave front set of a sum lies in the union of the wave front sets. -/
 theorem waveFrontSet_add_subset (S T : BundleTest I F V →L_c[ℝ] ℝ) :
     waveFrontSet I (S + T) ⊆ waveFrontSet I S ∪ waveFrontSet I T :=
@@ -270,17 +286,6 @@ theorem waveFrontSet_subset_dsupport [I.Boundaryless] (T : BundleTest I F V →L
     waveFrontSet I T ⊆ TotalSpace.proj ⁻¹' dsupport T :=
   fun p hp ↦ by_contra fun h ↦
     (mem_waveFrontSet_iff.1 hp).2 (isMicrolocallySmoothAt_of_notMem_dsupport h p.snd)
-
-omit [T2Space M] [IsManifold I ∞ M] in
-/-- In a smooth chart `c` at `x` with smooth inverse, a covector `ξ` at `x` is read as the zero
-vector of `E` exactly when it is zero. -/
-private theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff {c : OpenPartialHomeomorph M E}
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
-    {x : M} (hx : x ∈ c.source) {ξ : TangentSpace I x →L[ℝ] ℝ} :
-    (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) = 0 ↔ ξ = 0 :=
-  (toDual ℝ E).symm.map_eq_zero_iff.trans
-    (OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff
-      ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx)
 
 /-! ### The singular support and the projection of the wave front set -/
 
@@ -328,11 +333,11 @@ private theorem forall_notMem_singularSupport_chartComponent_iff
     ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx
   refine ⟨fun h ξ hξ ↦ (isMicrolocallySmoothAt_iff T hc hcs hct hx ξ).2 fun v ↦
     (Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt hcx).1 (h v) _
-      (mt (toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).1 hξ), fun h v ↦ ?_⟩
+      (mt (c.toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).1 hξ), fun h v ↦ ?_⟩
   refine (Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt hcx).2 fun η hη ↦ ?_
   obtain ⟨ξ, hξη⟩ := hb.2 (toDual ℝ E η)
   rw [← (toDual ℝ E).symm_apply_apply η, ← hξη] at hη ⊢
-  have hξ : ξ ≠ 0 := mt (toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).2 hη
+  have hξ : ξ ≠ 0 := mt (c.toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).2 hη
   exact (isMicrolocallySmoothAt_iff T hc hcs hct hx ξ).1 (h ξ hξ) v
 
 /-- **The singular support in any chart and frame.** For a smooth chart `c` at `x` with smooth
@@ -455,7 +460,7 @@ theorem waveFrontSet_delta [I.Boundaryless] {x : M} {ℓ : V x →L[ℝ] ℝ} (h
   -- A nonzero covector at `y` is read in the chart as a nonzero vector.
   have hne {ξ : TangentSpace I y →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
       (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c y)) ≠ 0 :=
-    mt (toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hy).1 hξ
+    mt (c.toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hy).1 hξ
   refine ⟨fun ⟨hξ, hT⟩ ↦ ⟨by_contra fun hyx ↦ hT fun v ↦ ?_, hξ⟩, ?_⟩
   · -- Away from `x`, every component is microlocally smooth at `c y`.
     by_cases hx : x ∈ c.source

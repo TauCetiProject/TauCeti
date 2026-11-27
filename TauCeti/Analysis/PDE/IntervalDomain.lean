@@ -41,6 +41,10 @@ endpoint values.
   `TauCeti.PDE.intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff`,
   `TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_intervalDomainEquivL` and
   `TauCeti.PDE.inner_value_eq_setIntegral_intervalDomainEquivL`.
+* `TauCeti.PDE.w1pVanishingOnSubmodule_empty_intervalDomain_eq_top`: for finite `p`,
+  `W^{1,p}_∅(a, b)` is all of `W^{1,p}(a, b)`, so with no Dirichlet part the mixed problem on the
+  interval domain is the Neumann problem. Its membership form is
+  `TauCeti.PDE.mem_w1pVanishingOnSubmodule_empty_intervalDomain`.
 * `TauCeti.PDE.norm_value_le_mul_norm_gradient_intervalDomain`: the Poincaré–Friedrichs inequality
   `‖u‖ ≤ (b - a) ‖u'‖` on `W^{1,p}_{{a}}(a, b)`.
 -/
@@ -297,6 +301,25 @@ theorem intervalDomainEquivL_mem_w1pVanishingOnSubmodule_singleton_iff {c : ℝ}
     ext t
     simp
   rw [← intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff, h]
+
+/-- **`W^{1,p}_∅` of the interval domain is all of `W^{1,p}`.** For `1 ≤ p < ∞`, every Sobolev
+function on the interval domain `(a, b)` lies in the space `W^{1,p}_∅(a, b)` of the mixed problem
+with no Dirichlet part, as on the real interval
+(`TauCeti.W1p.w1pVanishingOnSubmodule_empty_Ioo_eq_top`). -/
+theorem w1pVanishingOnSubmodule_empty_intervalDomain_eq_top (hp : p ≠ ⊤) :
+    w1pVanishingOnSubmodule volume (intervalDomain a b) p ∅ = ⊤ :=
+  eq_top_iff.2 fun u _ => intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff.1 <| by
+    rw [preimage_empty, W1p.w1pVanishingOnSubmodule_empty_Ioo_eq_top hp]
+    exact ClosedSubmodule.mem_top
+
+/-- For `1 ≤ p < ∞`, every `u ∈ W^{1,p}(a, b)` lies in `W^{1,p}_∅(a, b)`
+(`TauCeti.PDE.w1pVanishingOnSubmodule_empty_intervalDomain_eq_top`). -/
+@[simp]
+theorem mem_w1pVanishingOnSubmodule_empty_intervalDomain (hp : p ≠ ⊤)
+    (u : W1p volume (intervalDomain a b) p) :
+    u ∈ w1pVanishingOnSubmodule volume (intervalDomain a b) p ∅ := by
+  rw [w1pVanishingOnSubmodule_empty_intervalDomain_eq_top hp]
+  exact ClosedSubmodule.mem_top
 
 /-- **The Poincaré–Friedrichs inequality on the interval domain with `Γ = {a}`**: every
 `u ∈ W^{1,p}_{{a}}(a, b)` satisfies `‖u‖_{Lᵖ} ≤ (b - a) ‖u'‖_{Lᵖ}`. -/
