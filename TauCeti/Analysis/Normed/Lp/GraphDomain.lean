@@ -20,6 +20,8 @@ elementary metric properties, and the graph map `v ↦ (v, A v)` of a continuous
 ## Main declarations
 
 * `TauCeti.normalHalfSpace`: the region above a constant normal coordinate.
+* `TauCeti.preimage_withLpMap_prodMap_id_normalHalfSpace`: maps keeping the normal coordinate
+  preserve each half-space.
 * `TauCeti.normalEpigraph`: the region above the graph of a continuous function.
 * `TauCeti.normalGraphEmbedding`: the normal graph parametrization `y ↦ (φ y, y)`.
 * `TauCeti.frontier_setOf_lt_fst`: the frontier of a continuous epigraph is its graph.
@@ -28,8 +30,10 @@ elementary metric properties, and the graph map `v ↦ (v, A v)` of a continuous
 * `ContinuousLinearMap.normalGraphL`: the continuous linear graph map `x ↦ (A x, x)`.
 * `ContinuousLinearMap.injective_normalGraphL`: the linear graph map is injective.
 * `ContinuousLinearMap.range_normalGraphL`: its range is the linear graph of `A`.
-* `LipschitzWith.graph`: a `K`-Lipschitz map has a `(K + 1)`-Lipschitz graph parametrization
-  `x ↦ (x, f x)`.
+* `LipschitzOnWith.graph`, `LipschitzWith.graph`: a map `K`-Lipschitz on a set, or on the whole
+  space, has a graph parametrization `x ↦ (x, f x)` that is `(K + 1)`-Lipschitz there.
+* `TauCeti.antilipschitzWith_graph`: the graph parametrization `x ↦ (x, f x)` is
+  `1`-antilipschitz.
 * `ContinuousLinearMap.graphL`: the continuous linear graph map `v ↦ (v, A v)` of
   `A : E →L[ℝ] F`, in every codimension.
 * `ContinuousLinearMap.injective_graphL`, `ContinuousLinearMap.range_graphL`: it is injective,
@@ -63,6 +67,15 @@ theorem mem_normalHalfSpace (a : ℝ) (x : WithLp 2 (ℝ × E)) :
 theorem coe_normalHalfSpace (a : ℝ) :
     (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) = {x | a < x.fst} :=
   Set.ext (mem_normalHalfSpace a)
+
+/-- A map of `ℝ × E` that keeps the normal coordinate preserves each half-space `{a < t}`. -/
+@[simp]
+theorem preimage_withLpMap_prodMap_id_normalHalfSpace (ψ : E → E) (a : ℝ) :
+    WithLp.map 2 (Prod.map (id : ℝ → ℝ) ψ) ⁻¹'
+        (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) =
+      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
+  ext x
+  simp
 
 /-- The open region `{x | φ x.snd < x.fst}` above the graph of a continuous function
 `φ : E → ℝ` in the ℓ² product `ℝ × E`. -/
@@ -140,11 +153,11 @@ theorem antilipschitzWith_normalGraphEmbedding [PseudoEMetricSpace E] (φ : E �
   simpa only [ENNReal.coe_one, one_mul, normalGraphEmbedding_snd] using
     WithLp.edist_snd_le (normalGraphEmbedding φ x) (normalGraphEmbedding φ y)
 
-/-- A `K`-Lipschitz map has a `(K + 1)`-Lipschitz graph parametrization `x ↦ (x, f x)` into the
-`L²` product. -/
-theorem _root_.LipschitzWith.graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
-    {K : ℝ≥0} {f : α → β} (hf : LipschitzWith K f) :
-    LipschitzWith (K + 1) (fun x ↦ WithLp.toLp 2 (x, f x)) := fun x y ↦ by
+/-- A map that is `K`-Lipschitz on a set `s` has a graph parametrization `x ↦ (x, f x)` into the
+`L²` product that is `(K + 1)`-Lipschitz on `s`. -/
+theorem _root_.LipschitzOnWith.graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
+    {K : ℝ≥0} {f : α → β} {s : Set α} (hf : LipschitzOnWith K f s) :
+    LipschitzOnWith (K + 1) (fun x ↦ WithLp.toLp 2 (x, f x)) s := fun x hx y hy ↦ by
   set a := edist (f x) (f y)
   set b := edist x y
   calc
@@ -158,8 +171,20 @@ theorem _root_.LipschitzWith.graph {α β : Type*} [PseudoEMetricSpace α] [Pseu
     _ = a + b := by
       rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
       norm_num
-    _ ≤ K * b + b := add_le_add (hf x y) le_rfl
+    _ ≤ K * b + b := add_le_add (hf hx hy) le_rfl
     _ = (K + 1) * b := by rw [add_mul, one_mul]
+
+/-- The graph parametrization `x ↦ (x, f x)` into the `L²` product is `1`-antilipschitz. -/
+theorem antilipschitzWith_graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
+    (f : α → β) : AntilipschitzWith 1 (fun x ↦ WithLp.toLp 2 (x, f x)) := fun x y ↦ by
+  simpa using WithLp.edist_fst_le (WithLp.toLp 2 (x, f x)) (WithLp.toLp 2 (y, f y))
+
+/-- A `K`-Lipschitz map has a `(K + 1)`-Lipschitz graph parametrization `x ↦ (x, f x)` into the
+`L²` product. -/
+theorem _root_.LipschitzWith.graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
+    {K : ℝ≥0} {f : α → β} (hf : LipschitzWith K f) :
+    LipschitzWith (K + 1) (fun x ↦ WithLp.toLp 2 (x, f x)) :=
+  lipschitzOnWith_univ.1 (lipschitzOnWith_univ.2 hf).graph
 
 /-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
 theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E] {K : ℝ≥0}

@@ -31,6 +31,10 @@ and at `c τ` for real `c > 0`, where the branches of `√(c τ)` and `√τ` di
 ## Main results
 
 * `TauCeti.ModularForm.eta_eq_exp_mul_tprod`: `η(τ) = e^{2π i τ / 24} ∏_{n ≥ 1} (1 - qⁿ)`.
+* `TauCeti.ModularForm.norm_eta_q_lt_one`: the factors `qⁿ` of the product have modulus less
+  than one.
+* `TauCeti.ModularForm.discriminant_eq_qParam_mul_tprod_pow`: `Δ(τ) = q (∏_{n ≥ 1} (1 - qⁿ))²⁴`,
+  the product form of the discriminant with the power taken outside the product.
 * `TauCeti.ModularForm.tendsto_eta_div_exp`: `η(z) / e^{2π i z / 24} → 1` as `Im z → ∞`.
 * `TauCeti.ModularForm.eta_two_mul`, `TauCeti.ModularForm.eta_div_two`,
   `TauCeti.ModularForm.eta_add_one_div_two`: the three product identities above.
@@ -56,6 +60,24 @@ theorem eta_eq_exp_mul_tprod (τ : ℂ) :
     η τ = cexp (2 * π * I * τ / 24) * ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (n + 1)) := by
   simp only [_root_.ModularForm.eta, _root_.ModularForm.eta_q_eq_pow, Function.Periodic.qParam,
     ofReal_ofNat]
+
+/-- On the upper half-plane, the powers `eta_q n τ = q^(n+1)` of `q = e^{2π i τ}` have modulus
+less than one. -/
+theorem norm_eta_q_lt_one (n : ℕ) {τ : ℂ} (hτ : 0 < τ.im) :
+    ‖_root_.ModularForm.eta_q n τ‖ < 1 := by
+  simpa using pow_lt_one₀ (norm_nonneg _) (Function.Periodic.norm_qParam_lt_one one_pos hτ)
+    n.succ_ne_zero
+
+/-- The discriminant as `q = e^{2π i τ}` times the twenty-fourth power of the Euler product:
+`Δ(τ) = q (∏_{n ≥ 1} (1 - qⁿ))²⁴`. Mathlib's `ModularForm.discriminant_eq_q_prod` states this with
+the power inside the product. -/
+theorem discriminant_eq_qParam_mul_tprod_pow (τ : UpperHalfPlane) :
+    _root_.ModularForm.discriminant τ =
+      Function.Periodic.qParam 1 (τ : ℂ) * (∏' n, (1 - _root_.ModularForm.eta_q n τ)) ^ 24 := by
+  rw [_root_.ModularForm.discriminant_eq_q_prod]
+  congr 1
+  exact (_root_.ModularForm.multipliableLocallyUniformlyOn_eta.multipliable
+    τ.coe_im_pos).tprod_pow _
 
 /-- `η(z) ~ e^{2 π i z / 24}` as `Im z → ∞`: the quotient `η(z) / e^{2 π i z / 24}` is the Euler
 product `∏_{n ≥ 1} (1 - qⁿ)`, which tends to `1` as `q = e^{2 π i z} → 0`. -/

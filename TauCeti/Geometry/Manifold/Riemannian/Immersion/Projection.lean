@@ -8,11 +8,11 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.RankOne
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Tangent and normal projections along immersions

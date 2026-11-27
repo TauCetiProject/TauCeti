@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.MahlerBasis
 public import TauCeti.Topology.Algebra.ContinuousMulEquiv
 public import TauCeti.GroupTheory.GroupExtension.Of.Surjective
-public import TauCeti.Topology.Algebra.Group.Heisenberg
+public import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product

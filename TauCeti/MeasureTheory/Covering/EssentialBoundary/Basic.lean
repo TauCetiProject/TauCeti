@@ -67,6 +67,8 @@ interior.
   measure, the three sets commute with translations.
 * `TauCeti.interior_subset_essentialInterior`, `TauCeti.essentialInterior_subset_closure` and
   `TauCeti.essentialBoundary_subset_frontier`: comparison with the topological notions.
+* `TauCeti.sum_eq_one_of_hasDensityAt`: for a locally finite measure that charges every open set,
+  the densities at a point of the cells of a finite almost disjoint partition add up to `1`.
 * `TauCeti.essentialInterior_ae_eq` and `TauCeti.measure_essentialBoundary`: Lebesgue's density
   theorem.
 * `TauCeti.not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball`: a lower
@@ -143,6 +145,39 @@ theorem compl (hs : NullMeasurableSet s μ)
     (hx : ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≠ 0 ∧ μ (closedBall x r) ≠ ∞)
     (h : HasDensityAt μ s x d) : HasDensityAt μ sᶜ x (1 - d) :=
   hs.tendsto_measure_compl_inter_div hx h
+
+/-- **Densities of almost disjoint sets add.** If `s` and `t` have densities `a` and `b` at `x`,
+are almost disjoint and `t` is null-measurable, then `s ∪ t` has density `a + b` at `x`. -/
+theorem union [OpensMeasurableSpace α] {a b : ℝ≥0∞} (hs : HasDensityAt μ s x a)
+    (ht : HasDensityAt μ t x b) (hst : AEDisjoint μ s t) (htm : NullMeasurableSet t μ) :
+    HasDensityAt μ (s ∪ t) x (a + b) := by
+  have hm (r : ℝ) : μ ((s ∪ t) ∩ closedBall x r) =
+      μ (s ∩ closedBall x r) + μ (t ∩ closedBall x r) := by
+    rw [union_inter_distrib_right]
+    exact measure_union₀ (htm.inter measurableSet_closedBall.nullMeasurableSet)
+      (hst.mono inter_subset_left inter_subset_left)
+  simpa only [hasDensityAt_iff, hm, ENNReal.add_div] using
+    (hasDensityAt_iff.1 hs).add (hasDensityAt_iff.1 ht)
+
+/-- **Densities of finitely many almost disjoint sets add.** -/
+theorem biUnion_finset [OpensMeasurableSpace α] {ι : Type*} {s : ι → Set α} {d : ι → ℝ≥0∞}
+    {S : Finset ι} (hs : ∀ i ∈ S, HasDensityAt μ (s i) x (d i))
+    (hd : ∀ i ∈ S, ∀ j ∈ S, i ≠ j → AEDisjoint μ (s i) (s j))
+    (hm : ∀ i ∈ S, NullMeasurableSet (s i) μ) :
+    HasDensityAt μ (⋃ i ∈ S, s i) x (∑ i ∈ S, d i) := by
+  classical
+  induction S using Finset.induction_on with
+  | empty => simp [hasDensityAt_iff]
+  | insert j S hj ih =>
+    rw [Finset.set_biUnion_insert, Finset.sum_insert hj, union_comm, add_comm]
+    refine (ih (fun i hi => hs i (Finset.mem_insert_of_mem hi))
+      (fun i hi k hk => hd i (Finset.mem_insert_of_mem hi) k (Finset.mem_insert_of_mem hk))
+      fun i hi => hm i (Finset.mem_insert_of_mem hi)).union
+      (hs j (Finset.mem_insert_self j S)) ?_ (hm j (Finset.mem_insert_self j S))
+    -- `AEDisjoint` asks for a null intersection, which splits over the finite union.
+    rw [AEDisjoint, iUnion₂_inter]
+    exact (measure_biUnion_null_iff S.countable_toSet).2 fun i hi =>
+      hd i (Finset.mem_insert_of_mem hi) j (Finset.mem_insert_self j S) (ne_of_mem_of_not_mem hi hj)
 
 end HasDensityAt
 
@@ -398,6 +433,14 @@ theorem mem_essentialInterior_of_mem_interior
   rw [inter_eq_right.2 ((closedBall_subset_ball hr.2).trans (hεs.trans interior_subset)),
     ENNReal.div_self hr'.1 hr'.2]
 
+/-- A set whose complement is null has density one at `x`, provided closed balls of small positive
+radius around `x` have positive finite measure. -/
+theorem hasDensityAt_one_of_measure_compl_eq_zero
+    (hx : ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≠ 0 ∧ μ (closedBall x r) ≠ ∞) (hs : μ sᶜ = 0) :
+    HasDensityAt μ s x 1 :=
+  HasDensityAt.congr_ae (mem_essentialInterior_of_mem_interior hx (by simp))
+    (ae_eq_univ.2 hs).symm
+
 section OpenPos
 
 variable [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
@@ -411,6 +454,18 @@ theorem interior_subset_essentialInterior : interior s ⊆ essentialInterior μ 
 theorem essentialExterior_subset_compl_interior : essentialExterior μ s ⊆ (interior s)ᶜ :=
   fun _ hx hint => disjoint_left.1 disjoint_essentialInterior_essentialExterior
     (interior_subset_essentialInterior hint) hx
+
+/-- **The densities of the cells of a partition add up to `1`.** If finitely many pairwise almost
+disjoint null-measurable sets cover the space up to a null set and have densities `d i` at `x`,
+then `∑ i, d i = 1`. -/
+theorem sum_eq_one_of_hasDensityAt [OpensMeasurableSpace α] {ι : Type*} [Fintype ι]
+    {s : ι → Set α} {d : ι → ℝ≥0∞} (hm : ∀ i, NullMeasurableSet (s i) μ)
+    (hd : ∀ i j, i ≠ j → AEDisjoint μ (s i) (s j)) (hcov : μ (⋃ i, s i)ᶜ = 0)
+    (hdens : ∀ i, HasDensityAt μ (s i) x (d i)) : ∑ i, d i = 1 :=
+  (HasDensityAt.biUnion_finset (fun i _ => hdens i) (fun i _ j _ => hd i j)
+    fun i _ => hm i).unique
+    (hasDensityAt_one_of_measure_compl_eq_zero (eventually_measure_closedBall_ne_zero_ne_top μ x)
+      (by simpa using hcov))
 
 end OpenPos
 

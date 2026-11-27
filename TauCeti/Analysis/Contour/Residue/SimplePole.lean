@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.Analysis.Complex.RemovableSingularity
+import TauCeti.Analysis.Contour.Residue.RegularPart
 
 /-!
 # The residue at a simple pole as a limit
@@ -258,13 +259,10 @@ theorem MeromorphicAt.isBigO_sub_inv_smul_residue {E : Type*} [NormedAddCommGrou
     [NormedSpace ℂ E] [CompleteSpace E] {f : ℂ → E} {z₀ : ℂ} (hf : MeromorphicAt f z₀)
     (horder : ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f z₀) :
     (f - fun z ↦ (z - z₀)⁻¹ • residue f z₀) =O[𝓝[≠] z₀] (1 : ℂ → ℂ) := by
-  obtain ⟨g, hg, hfg⟩ := exists_analyticAt_eventuallyEq_zpow_smul hf horder
-  have hres : residue f z₀ = g z₀ := by
-    simpa using residue_eq_of_eventuallyEq_zpow_smul (n := -1) (by decide) hg hfg
-  have hbound := hg.differentiableAt.hasDerivAt.tendsto_slope.isBigO_one ℂ
-  refine hbound.congr' ?_ .rfl
-  filter_upwards [hfg] with z hz
-  simp only [Pi.sub_apply, slope_def_module, zpow_neg_one] at hz ⊢
-  rw [hz, hres, smul_sub]
+  obtain ⟨h, hh, hfh⟩ :=
+    hf.exists_analyticAt_eventuallyEq_inv_smul_residue_add (by simpa using horder)
+  refine ((hh.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).isBigO_one ℂ).congr' ?_ .rfl
+  filter_upwards [hfh] with z hz
+  rw [Pi.sub_apply, hz, add_sub_cancel_left]
 
 end

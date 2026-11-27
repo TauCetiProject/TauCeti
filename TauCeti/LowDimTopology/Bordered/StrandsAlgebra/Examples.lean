@@ -6,21 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Data.ZMod.Defs
-import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading.Basic
-import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Matched
+import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Primitive
 
 /-!
-# Products and gradings in small strands algebras
+# Products, differentials and gradings in small strands algebras
 
 Two products in the strands algebras `A(4, 2)` and `A(3, 1)` of Lipshitz, Ozsváth and Thurston
-over `𝔽₂`, one grading, and the noncommutativity of the grading group, with points `1, …, n`
-written `0, …, n - 1`.
+over `𝔽₂`, one differential in `A(3, 2)`, the part `A(2, 2)`, one grading, and the
+noncommutativity of the grading group, with points `1, …, n` written `0, …, n - 1`.
 
 * In `A(4, 2)` the diagrams `φ = (1 ↦ 3, 2 ↦ 2)` and `ψ = (2 ↦ 4, 3 ↦ 3)` each have one
   crossing, and their composite `(1 ↦ 3, 2 ↦ 4)` has none. Since `0 ≠ 1 + 1` the concatenation
   has a double crossing and the product `φ ψ` is zero, although the target of `φ` is the source of
   `ψ`.
 * In `A(3, 1)` the product of `(1 ↦ 2)` and `(2 ↦ 3)` is `(1 ↦ 3)`: no diagram has a crossing.
+* In `A(3, 2)` the differential of `(1 ↦ 3, 2 ↦ 2)` is `(1 ↦ 2, 2 ↦ 3)`: resolving the only
+  crossing exchanges the end points of the two strands and lowers the number of crossings from `1`
+  to `0`, and the differential of the result is zero.
+* `A(2, 2)` is spanned by the identity `I({1, 2})` alone: two strands starting at both points end
+  at both points, and a crossing would need a strand going downwards
+  (`TauCeti.StrandsAlgebra.strandCountPart_card_eq_span_idem_univ`).
 * In `A(3, 1)` the strand `(1 ↦ 2)` has grading `(-1/2, e₂ - e₁)`: it has no crossing, and the
   multiplicity of its class at its starting point is `1/2`. This is the grading of the chord `ρ₁`
   of the torus algebra.
@@ -79,6 +84,49 @@ example :
     (of (single (0 : Fin 3) 1 (by decide)) * of (single 1 2 (by decide)) :
       StrandsAlgebra (ZMod 2) (Fin 3)) = of (single 0 2 (by decide)) := by
   rw [of_mul_of_of_composable (composable_single_single _ _), single_trans_single]
+
+example :
+    let φ : StrandDiagram (Fin 3) :=
+      ⟨(PEquiv.ofSet ({0, 1} : Finset (Fin 3))).trans (Equiv.swap 0 2).toPEquiv, by decide⟩
+    let ψ : StrandDiagram (Fin 3) :=
+      ⟨(PEquiv.ofSet ({0, 1} : Finset (Fin 3))).trans (finRotate 3).toPEquiv, by decide⟩
+    φ.inversionCount = 1 ∧ ψ.inversionCount = 0 ∧
+      differential (ZMod 2) (Fin 3) (of φ) = of ψ ∧ differential (ZMod 2) (Fin 3) (of ψ) = 0 := by
+  intro φ ψ
+  have hφ : φ.inversions = {(0, 1)} := by
+    ext p
+    rw [mem_inversions, Finset.mem_singleton]
+    revert p
+    decide
+  have hψ : ψ.inversions = ∅ := by
+    ext p
+    simp only [mem_inversions, Finset.notMem_empty, iff_false]
+    revert p
+    decide
+  -- Resolving the crossing `(0, 1)` exchanges the end points of the two strands.
+  have hres : φ.resolve (0, 1) = ψ := by
+    ext i j
+    rw [resolve_apply (by rw [hφ]; exact Finset.mem_singleton_self _)]
+    revert i j
+    decide
+  have h₁ : φ.inversionCount = 1 := by rw [inversionCount_def, hφ, Finset.card_singleton]
+  have h₀ : ψ.inversionCount = 0 := by rw [inversionCount_def, hψ, Finset.card_empty]
+  have hr : φ.resolvableInversions = {(0, 1)} := by
+    ext p
+    rw [mem_resolvableInversions, hφ, Finset.mem_singleton]
+    refine ⟨And.left, ?_⟩
+    rintro rfl
+    exact ⟨rfl, by rw [hres, h₀, h₁]⟩
+  have hr' : ψ.resolvableInversions = ∅ :=
+    Finset.subset_empty.1 (hψ ▸ resolvableInversions_subset_inversions ψ)
+  refine ⟨h₁, h₀, ?_, ?_⟩
+  · rw [differential_of, hr, Finset.sum_singleton, hres]
+  · rw [differential_of, hr', Finset.sum_empty]
+
+example :
+    strandCountPart (ZMod 2) 2 =
+      ZMod 2 ∙ (idem Finset.univ : StrandsAlgebra (ZMod 2) (Fin 2)) := by
+  simpa using strandCountPart_card_eq_span_idem_univ (R := ZMod 2) (α := Fin 2)
 
 example :
     let φ : StrandDiagram (Fin 3) :=

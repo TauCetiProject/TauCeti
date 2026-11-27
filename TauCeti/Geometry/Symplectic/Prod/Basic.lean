@@ -41,6 +41,9 @@ Mathlib's `LinearMap.prodMap` naming convention.
   direct sum with the second factor negated.
 * `TauCeti.SymplecticForm.prod_invariant`, `prod_tames`, `prod_compatible`: a direct sum of
   invariant / tame / compatible pairs is invariant / tame / compatible.
+* `TauCeti.SymplecticForm.twistedProd_tames`, `twistedProd_compatible`: the twisted product
+  `ω₁ ⊖ ω₂` is tamed by, or compatible with, `J₁ ⊕ (-J₂)` when `J₁` and `J₂` are by `ω₁` and
+  `ω₂`.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1, where products of compatible triples model split symplectic vector spaces.
@@ -273,6 +276,18 @@ lemma prod_compatible (h₁ : ω₁.Compatible J₁) (h₂ : ω₂.Compatible J�
     (ω₁.prod ω₂).Compatible (J₁.prod J₂) :=
   Compatible.of_tames (prod_invariant h₁.invariant h₂.invariant)
     (prod_tames h₁.tames h₂.tames)
+
+/-- A twisted product `ω₁ ⊖ ω₂` is tamed by the direct sum `J₁ ⊕ (-J₂)` of a structure tamed by
+`ω₁` and the negative of a structure tamed by `ω₂`. -/
+lemma twistedProd_tames (h₁ : ω₁.Tames J₁) (h₂ : ω₂.Tames J₂) :
+    (twistedProd ω₁ ω₂).Tames (J₁.prod (-J₂)) :=
+  prod_tames h₁ (h₂.rescale_neg_of_neg (by norm_num))
+
+/-- A twisted product `ω₁ ⊖ ω₂` is compatible with the direct sum `J₁ ⊕ (-J₂)` of a structure
+compatible with `ω₁` and the negative of a structure compatible with `ω₂`. -/
+lemma twistedProd_compatible (h₁ : ω₁.Compatible J₁) (h₂ : ω₂.Compatible J₂) :
+    (twistedProd ω₁ ω₂).Compatible (J₁.prod (-J₂)) :=
+  prod_compatible h₁ (h₂.rescale_neg_of_neg (by norm_num))
 
 end Prod
 

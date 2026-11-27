@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Analysis.Normed.Module.Normalize
 public import TauCeti.Topology.Algebra.GroupAction.OrbitTrivialization
@@ -31,6 +33,8 @@ giving the chart `v ↦ ([v], v_k / |v_k|)` (`TauCeti.ComplexProjectiveSpace.hop
   `{X_k ≠ 0}`, with fibre the unit circle.
 * `TauCeti.ComplexProjectiveSpace.hopfFiberHomeomorph`: the fibre of the Hopf fibration over `[v]`
   is homeomorphic to the unit circle, through `u ↦ u • v`.
+* `TauCeti.ComplexProjectiveSpace.hopfFiberCircleHomeomorph`: the same fibre parametrized by
+  `ℝ / ℤ`, through `t ↦ e^{2πit} v`.
 
 ## Main results
 
@@ -162,5 +166,17 @@ theorem coe_hopfFiberHomeomorph_apply (u : sphere (0 : ℂ) 1) :
 @[simp]
 theorem hopfFiberHomeomorph_one : hopfFiberHomeomorph v 1 = ⟨v, rfl⟩ :=
   Subtype.ext (one_smul _ v)
+
+/-- The parametrization `t ↦ e^{2πit} v` of the fibre of the Hopf fibration over `[v]` by the
+circle `ℝ / ℤ`. -/
+def hopfFiberCircleHomeomorph : AddCircle (1 : ℝ) ≃ₜ mk n ⁻¹' {mk n v} :=
+  ((AddCircle.homeomorphCircle one_ne_zero).trans Circle.homeomorphSphere).trans
+    (hopfFiberHomeomorph v)
+
+@[simp]
+theorem coe_hopfFiberCircleHomeomorph_apply (t : AddCircle (1 : ℝ)) :
+    (hopfFiberCircleHomeomorph v t : EuclideanSpace ℂ (Fin (n + 1))) =
+      (AddCircle.toCircle t : ℂ) • (v : EuclideanSpace ℂ (Fin (n + 1))) := by
+  simp [hopfFiberCircleHomeomorph, AddCircle.homeomorphCircle_apply]
 
 end TauCeti.ComplexProjectiveSpace

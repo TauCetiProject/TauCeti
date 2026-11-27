@@ -35,6 +35,9 @@ through the blocks of the data:
 
 The same estimates hold in mixed norm at the pairs `(∞, r)` with `2 ≤ r ≤ ∞`, which are all
 wave-admissible, with `γ = n / 2 - n / r`; at `(∞, ∞)` this is `γ = n / 2`.
+In dimension `n ≥ 4` they also hold in mixed norm at the wave-admissible pairs `(2, r)`, that is
+`2 (n - 1) / (n - 3) ≤ r ≤ ∞`, with `γ = n / 2 - n / r - 1 / 2`; these are proved in
+`TauCeti.Analysis.PDE.Wave.TimeExponentTwo`.
 
 The right-hand sides are the norms of the data in `\dot B^γ_{2,1}` and `\dot B^{γ - 1}_{2,1}`.
 Since these are `ℓ¹` sums over the blocks rather than square functions, the pairs with `r = ∞` are
@@ -180,30 +183,6 @@ theorem exists_enorm_integral_inner_halfWavePropagator_neg_le_tsum (hq : 2 < q)
   rw [← integral_neg_eq_self, hG.eLpNorm_eLpNorm_comp_neg] at h
   simpa only [neg_neg] using h
 
-/-- Sum frequency-localized mixed-norm estimates with weights `2^{jσ}` for a strongly continuous
-family `T(t)` of operators on `L²(E)` over the Littlewood–Paley blocks, along exponents `1 ≤ q` and
-`1 ≤ r`. This is the common step of the estimates for `W₊(t)`, `cos(tD)` and `D⁻¹ sin(tD)`. -/
-private theorem exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le_of_one_le {q : ℝ≥0∞}
-    (hq : 1 ≤ q) (hr : 1 ≤ r) (σ : ℝ)
-    (T : ℝ → Lp ℂ 2 (volume : Measure E) →L[ℂ] Lp ℂ 2 (volume : Measure E))
-    (hT : ∀ x, Continuous fun t ↦ T t x)
-    (hloc : ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
-      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp ℂ 2 (volume : Measure E),
-        eLpNorm (fun t ↦ eLpNorm (T t (Lp.fourierMultiplierCLM ℂ m f)) r volume) q volume ≤
-          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) * ‖f‖ₑ) :
-    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
-      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
-      ∀ f : Lp ℂ 2 (volume : Measure E),
-        eLpNorm (fun t ↦ eLpNorm (T t f) r volume) q volume ≤
-          C * ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
-            ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ := by
-  obtain ⟨C, hC⟩ := hloc
-  obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum (F := ℂ) (β := ℝ) (ρ := volume) σ hq hr
-  refine ⟨K * C, fun m hm f ↦ (hK m hm T (fun x ↦ (hT x).aestronglyMeasurable) C
-    (fun k x ↦ hC k (m k) (hm k) x) f).trans_eq ?_⟩
-  push_cast
-  ring
-
 /-- `ContDiffBump.exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le_of_one_le` for a
 wave-admissible pair `(q, r)` with `2 < q < ∞`. At `r = 0` every mixed norm vanishes; otherwise
 wave-admissibility gives `2 ≤ r`. -/
@@ -226,7 +205,8 @@ private theorem exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le (hq : 2 < q
   · exact ⟨0, fun _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
   obtain ⟨-, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq hr0 hqr Module.finrank_pos
   exact φ.exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le_of_one_le
-    (by exact_mod_cast one_le_two.trans hq.le) (one_le_two.trans hr2) σ T hT hloc
+    (by exact_mod_cast one_le_two.trans hq.le) (one_le_two.trans hr2) σ T
+    (fun x ↦ (hT x).aestronglyMeasurable) hloc
 
 /-- **The Strichartz estimate for `cos(tD)` with data in `\dot B^γ_{2,1}`.** Let `E` be nontrivial
 of dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, and let `Pⱼ` be the `L²`
@@ -339,7 +319,7 @@ theorem exists_eLpNorm_top_eLpNorm_halfWavePropagator_le_tsum (hr : 2 ≤ r) :
           C * ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal)) * ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ :=
   φ.exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le_of_one_le le_top (one_le_two.trans hr) _ _
-    (continuous_phasePropagator_apply _)
+    (fun x ↦ (continuous_phasePropagator_apply _ x).aestronglyMeasurable)
     (φ.exists_eLpNorm_top_eLpNorm_halfWavePropagator_littlewoodPaley_le hr)
 
 /-- **The Strichartz estimate for the backward half-wave propagator at the pairs `(∞, r)` with data
@@ -373,7 +353,7 @@ theorem exists_eLpNorm_top_eLpNorm_waveCosPropagator_le_tsum (hr : 2 ≤ r) :
           C * ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal)) * ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ :=
   φ.exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le_of_one_le le_top (one_le_two.trans hr) _ _
-    continuous_waveCosPropagator_apply
+    (fun x ↦ (continuous_waveCosPropagator_apply x).aestronglyMeasurable)
     (φ.exists_eLpNorm_top_eLpNorm_waveCosPropagator_littlewoodPaley_le hr)
 
 /-- **The Strichartz estimate for `D⁻¹ sin(tD)` at the pairs `(∞, r)` with data in
@@ -390,7 +370,7 @@ theorem exists_eLpNorm_top_eLpNorm_waveSinPropagator_le_tsum (hr : 2 ≤ r) :
           C * ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - 1)) * ‖Lp.fourierMultiplierCLM ℂ (m j) g‖ₑ :=
   φ.exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le_of_one_le le_top (one_le_two.trans hr) _ _
-    continuous_waveSinPropagator_apply
+    (fun x ↦ (continuous_waveSinPropagator_apply x).aestronglyMeasurable)
     (φ.exists_eLpNorm_top_eLpNorm_waveSinPropagator_littlewoodPaley_le hr)
 
 /-- **The Strichartz estimate for the free wave equation at the pairs `(∞, r)` with data in
