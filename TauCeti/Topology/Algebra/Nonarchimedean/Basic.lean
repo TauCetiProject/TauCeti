@@ -42,6 +42,9 @@ an *open* embedding, which a subgroup's need not be.
   a nonarchimedean structure on the ring of definition of a rational localisation.
 * `NonarchimedeanGroup.nonarchimedean_of_isOpenMap`, and its additive form
   `NonarchimedeanAddGroup.nonarchimedean_of_isOpenMap`.
+* `Multiplicative.instNonarchimedeanGroup`, `Additive.instNonarchimedeanAddGroup`: the type
+  synonyms `Multiplicative G` and `Additive G` keep the topology, so they are nonarchimedean
+  exactly when `G` is; for instance `Multiplicative ℤ_[p]` is a nonarchimedean group.
 -/
 
 public section
@@ -122,3 +125,19 @@ instance Subring.instNonarchimedeanRing {R : Type*} [Ring R] [TopologicalSpace R
   -- `AddSubgroup` on its own, so the instance is keyed here.
   is_nonarchimedean :=
     (inferInstance : NonarchimedeanAddGroup ↥S.toAddSubgroup).is_nonarchimedean
+
+/-- **`Multiplicative G` of a nonarchimedean additive group is nonarchimedean**: an open additive
+subgroup of `G` is an open subgroup of `Multiplicative G`, with the same carrier. -/
+instance Multiplicative.instNonarchimedeanGroup {G : Type*} [AddGroup G] [TopologicalSpace G]
+    [NonarchimedeanAddGroup G] : NonarchimedeanGroup (Multiplicative G) where
+  is_nonarchimedean U hU := by
+    obtain ⟨V, hV⟩ := NonarchimedeanAddGroup.is_nonarchimedean (G := G) U hU
+    exact ⟨⟨V.toAddSubgroup.toSubgroup, V.isOpen⟩, hV⟩
+
+/-- **`Additive G` of a nonarchimedean group is nonarchimedean**: an open subgroup of `G` is an
+open additive subgroup of `Additive G`, with the same carrier. -/
+instance Additive.instNonarchimedeanAddGroup {G : Type*} [Group G] [TopologicalSpace G]
+    [NonarchimedeanGroup G] : NonarchimedeanAddGroup (Additive G) where
+  is_nonarchimedean U hU := by
+    obtain ⟨V, hV⟩ := NonarchimedeanGroup.is_nonarchimedean (G := G) U hU
+    exact ⟨⟨V.toSubgroup.toAddSubgroup, V.isOpen⟩, hV⟩

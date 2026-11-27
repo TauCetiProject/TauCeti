@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import TauCeti.MeasureTheory.Group.HaarMeasureWithValues.HeckeUnit
+public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
 
 /-!
 # Examples: units of the Hecke algebra
@@ -33,20 +34,13 @@ example (μ : HaarMeasureWithValues ℤ (Multiplicative (ZMod 3)))
         compactOpenIndicator_mem_compactlySupported _ 1⟩ f = f ∧
       μ.convolution f ⟨compactOpenIndicator ⟨⟨{1}, isCompact_singleton⟩, isOpen_discrete _⟩ 1,
         compactOpenIndicator_mem_compactlySupported _ 1⟩ = f := by
-  rw [convolution_pointIndicator_left, convolution_pointIndicator_right, h1, one_mul, one_smul]
+  rw [convolution_compactOpenIndicator_singleton_one_left,
+    convolution_compactOpenIndicator_singleton_one_right, h1, one_mul, one_smul]
   exact ⟨rfl, rfl⟩
 
 section Padic
 
 variable (p : ℕ) [Fact p.Prime]
-
-/-- `ℤ_p`, written multiplicatively, is a nonarchimedean group: its open additive subgroups are
-the open subgroups of `Multiplicative ℤ_p`. -/
-instance instNonarchimedeanGroupMultiplicativePadicInt :
-    NonarchimedeanGroup (Multiplicative ℤ_[p]) where
-  is_nonarchimedean U hU := by
-    obtain ⟨V, hV⟩ := NonarchimedeanAddGroup.is_nonarchimedean (G := ℤ_[p]) U hU
-    exact ⟨⟨AddSubgroup.toSubgroup V.toAddSubgroup, V.isOpen⟩, hV⟩
 
 /-- `H(ℤ_p, ℚ)` has no left unit, whatever the `ℚ`-valued Haar measure: `ℤ_p` is compact and
 infinite, so not discrete. -/
@@ -55,7 +49,7 @@ example (μ : HaarMeasureWithValues ℚ (Multiplicative ℤ_[p])) :
   rintro ⟨e, he⟩
   have : WeaklyLocallyCompactSpace (Multiplicative ℤ_[p]) :=
     inferInstanceAs (WeaklyLocallyCompactSpace ℤ_[p])
-  have := μ.discreteTopology_of_forall_convolution_eq he
+  have := μ.discreteTopology_of_forall_convolution_eq_left he
   have : CompactSpace (Multiplicative ℤ_[p]) := inferInstanceAs (CompactSpace ℤ_[p])
   have : Finite (Multiplicative ℤ_[p]) := finite_of_compact_of_discrete
   have : Infinite (Multiplicative ℤ_[p]) :=

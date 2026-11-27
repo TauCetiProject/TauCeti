@@ -45,6 +45,10 @@ compact open subgroup.
 * `NonarchimedeanGroup.nhds_hasBasis_isCompact_openSubgroup`,
   `NonarchimedeanGroup.isCoinitial_isCompact_openSubgroup`: left cosets of compact open subgroups
   form a basis at every point, and the compact open subgroups are coinitial among open subgroups.
+* `NonarchimedeanGroup.eq_one_of_forall_mem_isCompact_openSubgroup`,
+  `NonarchimedeanGroup.discreteTopology_of_forall_isCompact_openSubgroup_le`: in a T1 such group
+  the compact open subgroups meet in `{1}`, so an open subgroup inside all of them makes the
+  group discrete.
 * `Subgroup.isOpen_iff_exists_isCompact_openSubgroup_le`: in such a group a subgroup is open
   exactly when it contains a compact open subgroup.
 * `OpenSubgroup.directedOn_isCompact`: the compact open subgroups are directed under reverse
@@ -145,6 +149,30 @@ additive subgroups are coinitial in `OpenAddSubgroup G` (cofinal under reverse i
 theorem isCoinitial_isCompact_openSubgroup :
     IsCoinitial {V : OpenSubgroup G | IsCompact (V : Set G)} := fun W ↦
   (nhds_one_hasBasis_isCompact_openSubgroup (G := G)).mem_iff.1 W.mem_nhds_one
+
+variable [T1Space G]
+
+/-- In a T1, weakly locally compact nonarchimedean group, an element lying in every compact open
+subgroup is the identity: some compact open subgroup lies in the neighbourhood `{g}ᶜ` of `1`. -/
+@[to_additive /-- In a T1, weakly locally compact nonarchimedean additive group, an element lying
+in every compact open additive subgroup is zero. -/]
+theorem eq_one_of_forall_mem_isCompact_openSubgroup {g : G}
+    (h : ∀ V : OpenSubgroup G, IsCompact (V : Set G) → g ∈ V) : g = 1 := by
+  by_contra hne
+  obtain ⟨V, hVc, hVg⟩ := (nhds_one_hasBasis_isCompact_openSubgroup (G := G)).mem_iff.1
+    (isOpen_compl_singleton.mem_nhds (Ne.symm hne))
+  exact hVg (h V hVc) rfl
+
+/-- A T1, weakly locally compact nonarchimedean group is discrete as soon as some open subgroup `U`
+lies in every compact open subgroup: then `U = {1}`. -/
+@[to_additive /-- A T1, weakly locally compact nonarchimedean additive group is discrete as soon
+as some open additive subgroup `U` lies in every compact open additive subgroup. -/]
+theorem discreteTopology_of_forall_isCompact_openSubgroup_le {U : OpenSubgroup G}
+    (h : ∀ V : OpenSubgroup G, IsCompact (V : Set G) → U ≤ V) : DiscreteTopology G := by
+  refine discreteTopology_of_isOpen_singleton_one ?_
+  convert U.isOpen using 1
+  exact Set.ext fun g ↦ ⟨fun hg ↦ hg ▸ U.one_mem,
+    fun hg ↦ eq_one_of_forall_mem_isCompact_openSubgroup fun V hV ↦ h V hV hg⟩
 
 end NonarchimedeanGroup
 
