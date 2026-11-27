@@ -7,10 +7,7 @@ module
 
 public import Mathlib.RingTheory.TwoSidedIdeal.Basic
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Amitsur
-import Mathlib.Algebra.Algebra.Bilinear
-import Mathlib.Algebra.Polynomial.Eval.Degree
-import Mathlib.RingTheory.MatrixPolynomialAlgebra
-import Mathlib.RingTheory.PolynomialAlgebra
+import TauCeti.RingTheory.MatrixPolynomialAlgebra
 
 /-!
 # Ribet's polynomial
@@ -61,7 +58,7 @@ grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthro
 
 public section
 
-open Polynomial Matrix
+open Polynomial Matrix TauCeti
 
 namespace AlgHom
 
@@ -73,20 +70,6 @@ section Extension
 variable [Semiring Λ] [Algebra R Λ]
 
 attribute [local instance] Polynomial.algebra
-
-/-- The coefficientwise extension `Λ[X] →ₐ[R[X]] Matrix σ σ L[X]` of `ρ : Λ →ₐ[R] Matrix σ σ L`. -/
-private noncomputable def polynomialExtension (ρ : Λ →ₐ[R] Matrix σ σ L) :
-    Λ[X] →ₐ[R[X]] Matrix σ σ L[X] where
-  toRingHom := (matPolyEquiv : Matrix σ σ L[X] ≃ₐ[L] (Matrix σ σ L)[X]).symm.toRingHom.comp
-    (mapRingHom ρ.toRingHom)
-  commutes' q := by
-    ext s t k
-    simp only [algebraMap_matrix_apply]
-    split_ifs <;> simp [matPolyEquiv_symm_apply_coeff, algebraMap_matrix_apply, *]
-
-private theorem coeff_polynomialExtension_apply (ρ : Λ →ₐ[R] Matrix σ σ L) (p : Λ[X]) (s t : σ)
-    (k : ℕ) : (polynomialExtension ρ p s t).coeff k = ρ (p.coeff k) s t := by
-  simp [polynomialExtension, matPolyEquiv_symm_apply_coeff]
 
 /-- If every `ρ w` has characteristic polynomial over `R`, then every value of the polynomial
 extension of `ρ` has characteristic polynomial over `R[X]`. -/
@@ -111,64 +94,6 @@ private theorem charpoly_polynomialExtension_coeff_mem_range (ρ : Λ →ₐ[R] 
   exact ⟨C r, by rw [hC, charpoly_map, coeff_map, ← hr]; simp⟩
 
 end Extension
-
-section Action
-
-variable [Ring Λ] [Algebra R Λ]
-
-variable (R) in
-/-- `Λ[X]` acting on `Λ`: a coefficient acts by left multiplication and `X` by right
-multiplication by `ρ₀`. -/
-private noncomputable def polynomialAction (ρ₀ : Λ) : Λ[X] →+* Module.End R Λ :=
-  eval₂RingHom' (Algebra.lmul R Λ).toRingHom (LinearMap.mulRight R ρ₀)
-    fun a ↦ LinearMap.commute_mulLeft_right a ρ₀
-
-private theorem polynomialAction_apply (ρ₀ : Λ) {p : Λ[X]} {n : ℕ} (hn : p.natDegree < n)
-    (q : Λ) : polynomialAction R ρ₀ p q = ∑ i ∈ Finset.range n, p.coeff i * (q * ρ₀ ^ i) := by
-  simp [polynomialAction, eval₂_eq_sum_range' _ hn, LinearMap.sum_apply, LinearMap.pow_mulRight]
-
-private theorem polynomialAction_C (ρ₀ a q : Λ) : polynomialAction R ρ₀ (C a) q = a * q := by
-  simp [polynomialAction]
-
-private theorem polynomialAction_X (ρ₀ q : Λ) : polynomialAction R ρ₀ X q = q * ρ₀ := by
-  simp [polynomialAction]
-
-private theorem polynomialAction_map_algebraMap (ρ₀ : Λ) (F : R[X]) (q : Λ) :
-    polynomialAction R ρ₀ (F.map (algebraMap R Λ)) q = q * aeval ρ₀ F := by
-  have hn : (F.map (algebraMap R Λ)).natDegree < F.natDegree + 1 :=
-    (natDegree_map_le).trans_lt (Nat.lt_succ_self _)
-  rw [polynomialAction_apply ρ₀ hn, aeval_eq_sum_range, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [coeff_map, Algebra.smul_def, ← mul_assoc, Algebra.commutes, mul_assoc]
-
-private theorem polynomialAction_mem (𝔞 : TwoSidedIdeal Λ) (ρ₀ : Λ) (p : Λ[X]) {q : Λ}
-    (hq : q ∈ 𝔞) : polynomialAction R ρ₀ p q ∈ 𝔞 := by
-  rw [polynomialAction_apply ρ₀ (Nat.lt_succ_self _)]
-  exact sum_mem fun i _ ↦ 𝔞.mul_mem_left _ _ (𝔞.mul_mem_right _ _ hq)
-
-private theorem polynomialAction_mem_of_coeff_mem (𝔞 : TwoSidedIdeal Λ) (ρ₀ : Λ) {p : Λ[X]}
-    (hp : ∀ k, p.coeff k ∈ 𝔞) (q : Λ) : polynomialAction R ρ₀ p q ∈ 𝔞 := by
-  rw [polynomialAction_apply ρ₀ (Nat.lt_succ_self _)]
-  exact sum_mem fun i _ ↦ 𝔞.mul_mem_right _ _ (hp i)
-
-variable (R) in
-/-- Square matrices over `Λ[X]` acting on `N → Λ` through `polynomialAction`. -/
-private noncomputable def matrixAction (ρ₀ : Λ) (M : Matrix N N Λ[X]) (v : N → Λ) : N → Λ :=
-  fun i ↦ ∑ j, polynomialAction R ρ₀ (M i j) (v j)
-
-private theorem matrixAction_mul (ρ₀ : Λ) (M M' : Matrix N N Λ[X]) (v : N → Λ) :
-    matrixAction R ρ₀ (M * M') v = matrixAction R ρ₀ M (matrixAction R ρ₀ M' v) := by
-  ext i
-  simp only [matrixAction, Matrix.mul_apply, map_sum, map_mul, LinearMap.sum_apply,
-    mul_apply_eq_comp]
-  exact Finset.sum_comm
-
-private theorem matrixAction_sub (ρ₀ : Λ) (M M' : Matrix N N Λ[X]) (v : N → Λ) :
-    matrixAction R ρ₀ (M - M') v = matrixAction R ρ₀ M v - matrixAction R ρ₀ M' v := by
-  ext i
-  simp [matrixAction, map_sub, LinearMap.sub_apply, Finset.sum_sub_distrib]
-
-end Action
 
 section Ribet
 
@@ -208,21 +133,22 @@ private theorem exists_polynomial_of_mulVec_sub_mem (ρ : Λ →ₐ[R] Matrix σ
       refine h𝔞 _ (Matrix.ext fun s t ↦ ?_)
       have := congrArg (fun M : Matrix (N × σ) (N × σ) L[X] ↦ (M (i, s) (j, t)).coeff k) hφK
       simpa [φX, ρX, coeff_polynomialExtension_apply] using this
-    have hBX : ∀ i, matrixAction R ρ₀ BX y i ∈ 𝔞 := fun i ↦ by
+    have hBX : ∀ i, matrixPolynomialMulRightAction R ρ₀ BX y i ∈ 𝔞 := fun i ↦ by
       convert hB i using 1
-      simp [matrixAction, BX, polynomialAction_C, polynomialAction_X, mulVec, dotProduct,
-        Finset.sum_mul, mul_assoc]
-    have hVBX : matrixAction R ρ₀ (V * BX) y i ∈ 𝔞 := by
-      rw [matrixAction_mul]
-      exact sum_mem fun j _ ↦ polynomialAction_mem 𝔞 ρ₀ _ (hBX j)
-    have hKy : matrixAction R ρ₀ K y i ∈ 𝔞 :=
-      sum_mem fun j _ ↦ polynomialAction_mem_of_coeff_mem 𝔞 ρ₀ (hK i j) _
-    have hF : matrixAction R ρ₀ (algebraMap R[X] (Matrix N N Λ[X]) F) y i = y i * aeval ρ₀ F := by
-      simp only [matrixAction, algebraMap_matrix_apply]
+      simp [matrixPolynomialMulRightAction_apply, BX, mulVec, dotProduct, Finset.sum_mul, mul_assoc]
+    have hVBX : matrixPolynomialMulRightAction R ρ₀ (V * BX) y i ∈ 𝔞 := by
+      rw [map_mul, mul_apply_eq_comp, matrixPolynomialMulRightAction_apply]
+      exact sum_mem fun j _ ↦ 𝔞.polynomialMulRightAction_mem ρ₀ _ (hBX j)
+    have hKy : matrixPolynomialMulRightAction R ρ₀ K y i ∈ 𝔞 := by
+      rw [matrixPolynomialMulRightAction_apply]
+      exact sum_mem fun j _ ↦ 𝔞.polynomialMulRightAction_mem_of_coeff_mem ρ₀ (hK i j) _
+    have hF : matrixPolynomialMulRightAction R ρ₀ (algebraMap R[X] (Matrix N N Λ[X]) F) y i =
+        y i * aeval ρ₀ F := by
+      simp only [matrixPolynomialMulRightAction_apply, algebraMap_matrix_apply]
       rw [Finset.sum_eq_single i (fun j _ hj ↦ by simp [Ne.symm hj]) (by simp)]
-      simp [polynomialAction_map_algebraMap]
+      simp [polynomialMulRightAction_map_algebraMap]
     have hsub : V * BX - K = algebraMap R[X] (Matrix N N Λ[X]) F := sub_sub_cancel _ _
-    rw [← hF, ← hsub, matrixAction_sub, Pi.sub_apply]
+    rw [← hF, ← hsub, map_sub, LinearMap.sub_apply, Pi.sub_apply]
     exact 𝔞.sub_mem hVBX hKy
 
 /-- **Ribet's polynomial.** Let `ρ : Λ →ₐ[R] Matrix σ σ L` be an `R`-algebra homomorphism such
