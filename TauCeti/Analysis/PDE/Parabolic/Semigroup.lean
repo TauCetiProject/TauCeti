@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Duhamel
 public import TauCeti.Analysis.PDE.Spectrum.Operator.Basic
+import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
 # The Dirichlet semigroup of a divergence-form operator
@@ -264,7 +265,6 @@ theorem inner_eq_exp_mul_of_hasWeakLineDerivOn_gelfandDual {α : Type*}
     (hae : (fun t => W1p0.valueL (u t)) =ᵐ[volume.restrict (Set.Ioo t₀ t₁)] w)
     {t : ℝ} (ht : t ∈ Set.Icc t₀ t₁) (i : α) :
     ⟪basis i, w t⟫_ℝ = Real.exp (-(kappa i * (t - t₀))) * ⟪basis i, w t₀⟫_ℝ := by
-  classical
   -- By Duhamel's formula with zero forcing, `w t` is the Dirichlet semigroup applied to `w t₀`.
   have hS := eqOn_dirichletSemigroup_add_setIntegral_of_hasWeakLineDerivOn_gelfandDual hcoeff
     hcoercive (g := 0) h hu integrableOn_zero
@@ -273,14 +273,11 @@ theorem inner_eq_exp_mul_of_hasWeakLineDerivOn_gelfandDual {α : Type*}
     Semigroups.StronglyContinuousSemigroup.realOperator_def,
     Semigroups.ContractionSemigroup.toStronglyContinuousSemigroup_apply] at hS
   -- The semigroup multiplies the `i`-th coefficient by `exp (-κᵢ t)`.
-  have hi := (hasSum_dirichletSemigroup_apply hcoeff hcoercive basis hvalue hv (t - t₀).toNNReal
-    (w t₀)).mapL (innerSL ℝ (basis i))
-  simp only [innerSL_apply_apply, inner_smul_right, orthonormal_iff_ite.1 basis.orthonormal i,
-    mul_ite, mul_one, mul_zero] at hi
-  have h₂ := hi.unique (hasSum_single i fun j hj => ite_eq_right (Ne.symm hj))
-  rw [ite_eq_left rfl, HilbertBasis.repr_apply_apply, Real.coe_toNNReal _ (sub_nonneg.2 ht.1)]
-    at h₂
-  rw [hS, h₂]
+  have hi := hasSum_dirichletSemigroup_apply hcoeff hcoercive basis hvalue hv (t - t₀).toNNReal
+    (w t₀)
+  simp only [smul_smul] at hi
+  rw [hS, basis.orthonormal.inner_eq_of_hasSum hi i, HilbertBasis.repr_apply_apply,
+    Real.coe_toNNReal _ (sub_nonneg.2 ht.1)]
 
 end PDE
 
