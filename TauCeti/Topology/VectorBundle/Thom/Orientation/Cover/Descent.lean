@@ -80,6 +80,23 @@ Hence, whenever the lift of a class `U ∈ Hʳ(E, E₀; π^*o(E), k)` to `(E', E
 degree
 (`TauCeti.VectorBundleOrientationCover.nonempty_singularHomology_thomPair_iso_twistedHomology` and
 `TauCeti.VectorBundleOrientationCover.nonempty_singularCohomology_thomPair_iso_twistedCohomology`).
+
+The homology isomorphism depends only on `U`, not on the cocycle chosen to represent it
+(`thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass_eq_of_homologyπ_eq`). Two cocycles `ψ`,
+`ψ'` representing `U` differ by the coboundary of a twisted cochain `θ`, so their lifts differ by
+the coboundary of the lift of `θ`, which the deck involution also negates
+(`TauCeti.VectorBundleOrientationCover.isSemiInvariantCochain_thomPairSignCochainMap_f`). Capping
+with the lift of `θ` is then a homotopy of complexes of representations between the equivariant cap
+products (`TopPair.singularChainsRepCapHomotopy`), which the coinvariants preserve
+(`TopPair.coinvariantsTwistedChainMapHomotopy`), so the two chain-level Thom maps induce the same
+map in homology, and so do the maps they induce on `Hom(-, N)` in cohomology
+(`thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass_eq_of_homologyπ_eq`). This makes the
+Thom isomorphisms of `U` well-defined isomorphisms
+(`thomPairSingularHomologyIsoTwistedHomologyOfClass`,
+`thomPairSingularCohomologyIsoTwistedCohomologyOfClass`), computed by any representing cocycle
+(`thomPairSingularHomologyIsoTwistedHomologyOfClass_eq`,
+`thomPairSingularCohomologyIsoTwistedCohomologyOfClass_eq`), and not only the existence of one.
+
 The natural class `U` is the Thom class with coefficients in the orientation system
 (`TauCeti.twistedThomClass`), which takes the value `1` on the fibre class over every point. Its
 lift is a Thom class of `E'` (`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so
@@ -112,6 +129,14 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   `(E, E₀)` with coefficients in `π^*o(E)` whose lifted class is a Thom class of `E'`, and
   `nonempty_singularHomology_thomPair_iso_twistedHomology`: the same from a class of
   `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`.
+* `thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass_eq_of_homologyπ_eq` and
+  `thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass_eq_of_homologyπ_eq`: cocycles with
+  the same class give the same isomorphisms in homology and in cohomology.
+* `thomPairSingularHomologyIsoTwistedHomologyOfClass`: `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` from a
+  class of `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`, with
+  `thomPairSingularHomologyIsoTwistedHomologyOfClass_eq`: it is the isomorphism of any cocycle
+  representing the class; `thomPairSingularCohomologyIsoTwistedCohomologyOfClass` and
+  `thomPairSingularCohomologyIsoTwistedCohomologyOfClass_eq` are the same in cohomology.
 * `nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`:
   `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` for every bundle and every commutative ring `k`.
 * `thomPairSingularCohomologyIsoTwistedCohomology`: `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)`
@@ -411,6 +436,151 @@ def thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass
     (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι k ψ)
     (isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap hι k hu) p
 
+variable (F E) in
+/-- **Cohomologous semi-invariant Thom cocycles give homotopic chain-level Thom maps.** If two
+semi-invariant relative cocycles `φ`, `φ'` of degree `r + 1 = finrank ℝ F` of `(E', E'₀)` differ by
+the coboundary of a semi-invariant cochain `η`, then the chain maps `thomPairTwistedChainMap` of
+`φ'` and of `φ` are homotopic: the equivariant cap products are homotopic
+(`TopPair.singularChainsRepCapHomotopy`), and so are their sign coinvariants
+(`TopPair.coinvariantsTwistedChainMapHomotopy`). -/
+private def thomPairTwistedChainMapHomotopy {r : ℕ} (hr : r + 1 = finrank ℝ F)
+    {φ φ' : (TopPair.singularCochainComplex
+      (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+      (ModuleCat.of k k) k (ModuleCat.of k k)).cycles (finrank ℝ F)}
+    {η : (TopPair.singularCochainComplex
+      (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+      (ModuleCat.of k k) k (ModuleCat.of k k)).X r}
+    (hφ : TopPair.IsSemiInvariantCocycle (uliftIntUnitsSign.{w} k) φ)
+    (hφ' : TopPair.IsSemiInvariantCocycle (uliftIntUnitsSign.{w} k) φ')
+    (hη : TopPair.IsSemiInvariantCochain (uliftIntUnitsSign.{w} k) η)
+    (h : (TopPair.singularCochainComplex
+        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+        (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles (finrank ℝ F) φ' =
+      (TopPair.singularCochainComplex
+        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+        (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles (finrank ℝ F) φ +
+      (TopPair.singularCochainComplex
+        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+        (ModuleCat.of k k) k (ModuleCat.of k k)).d r (finrank ℝ F) η) :
+    Homotopy (thomPairTwistedChainMap F E hι k hφ') (thomPairTwistedChainMap F E hι k hφ) :=
+  (((TopPair.coinvariantsTwistedChainMapHomotopy
+      (isQuotientCoveringMap_coverThomPairMap_fst F E ι hι).ulift
+      (isQuotientCoveringMap_coverThomPairMap_snd F E ι hι).ulift (fun _ ↦ thomPair_map_smul _)
+      (Y := TopCat.of (VectorBundleOrientationCover F E ι)) (p := TopCat.ofHom projection)
+      (isQuotientCoveringMap_proj hι).ulift (uliftIntUnitsSign k) (Rep.trivial k (ULift.{w} ℤˣ) k)
+      (TopPair.singularChainsRepCapHomotopy
+        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+        (p₀ := thomPairProj F _) (fun _ ↦ thomPairProj_smul _) (uliftIntUnitsSign k)
+        (fun _ ↦ thomPair_map_smul _) hr hφ hφ' hη h)).compRight _).compLeft _).compLeft _
+
+variable (F E) in
+/-- The chain-level Thom maps of the lifts of two twisted cocycles with the same class are
+homotopic: the lifts differ by the coboundary of the lift of a cochain, which is semi-invariant
+(`thomPairTwistedChainMapHomotopy`). -/
+private theorem nonempty_homotopy_thomPairTwistedChainMap
+    {ψ ψ' : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+      (ModuleCat.of k k)).cycles (finrank ℝ F)}
+    (hψ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+      (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ =
+      ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+        (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ') :
+    Nonempty (Homotopy
+      (thomPairTwistedChainMap F E hι k
+        (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι k ψ))
+      (thomPairTwistedChainMap F E hι k
+        (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι k ψ'))) := by
+  -- `ψ` is `ψ'` plus the coboundary of a cochain `θ`
+  obtain ⟨θ, hθ⟩ := (HomologicalComplex.moduleCat_homologyπ_eq_iff _ rfl ψ ψ').1 hψ
+  by_cases hrel : (ComplexShape.up ℕ).Rel ((ComplexShape.up ℕ).prev (finrank ℝ F)) (finrank ℝ F)
+  · -- the lifts differ by the coboundary of the lift of `θ`, which is semi-invariant
+    refine ⟨thomPairTwistedChainMapHomotopy F E hι k hrel
+      (η := (thomPairSignCochainMap F E hι k k (ModuleCat.of k k)).f _ θ) _ _
+      (isSemiInvariantCochain_thomPairSignCochainMap_f hι k θ) ?_⟩
+    have hcomm := ConcreteCategory.congr_hom
+      ((thomPairSignCochainMap F E hι k k (ModuleCat.of k k)).comm _ (finrank ℝ F)) θ
+    simp only [ConcreteCategory.comp_apply] at hcomm
+    rw [iCycles_cyclesMap_thomPairSignCochainMap, iCycles_cyclesMap_thomPairSignCochainMap,
+      ← thomPairSignCochainMap_f_apply, ← thomPairSignCochainMap_f_apply, hcomm, hθ, map_sub,
+      add_sub_cancel]
+  · -- in degree `0` there are no coboundaries, so `ψ = ψ'`
+    have h0 : (((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+        (ModuleCat.of k k)).d _ (finrank ℝ F)) θ = 0 := by
+      rw [HomologicalComplex.shape _ _ _ hrel]
+      rfl
+    rw [h0, eq_comm, sub_eq_zero] at hθ
+    obtain rfl : ψ = ψ' := (ModuleCat.mono_iff_injective _).1 inferInstance hθ
+    exact ⟨Homotopy.refl _⟩
+
+variable (F E) in
+/-- **The Thom isomorphism with orientation-twisted coefficients depends only on the class of the
+cocycle.** Let `ψ` and `ψ'` be relative cocycles of `(E, E₀)` of degree `r = finrank ℝ F` with
+coefficients in the orientation system whose lifted classes are Thom classes of `E'`. If `ψ` and
+`ψ'` have the same class in `Hʳ(E, E₀; π^*o(E), k)`, they give the same isomorphism
+`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)`: their lifts to `(E', E'₀)` differ by the coboundary of a
+lifted cochain, which the deck involution negates, so the chain-level Thom maps are homotopic. -/
+theorem thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass_eq_of_homologyπ_eq
+    {ψ ψ' : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+      (ModuleCat.of k k)).cycles (finrank ℝ F)}
+    (hu : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F)
+        (((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+          (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ)))
+    (hu' : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F)
+        (((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+          (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ')))
+    (hψ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+      (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ =
+      ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+        (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ') (p : ℕ) :
+    thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k ψ hu p =
+      thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k ψ' hu' p := by
+  obtain ⟨h⟩ := nonempty_homotopy_thomPairTwistedChainMap F E hι k hψ
+  refine Iso.ext ?_
+  rw [thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass,
+    thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass,
+    thomPairSingularHomologyIsoTwistedHomology_hom, thomPairSingularHomologyIsoTwistedHomology_hom,
+    h.homologyMap_eq]
+
+variable (F E) in
+/-- **The Thom isomorphism with orientation-twisted coefficients of a class.** Let `E → B` be a
+real vector bundle of rank `r`, `E'` its pull-back to the orientation double cover and `k` a
+commutative ring. A class `U ∈ Hʳ(E, E₀; π^*o(E), k)` whose lift to `(E', E'₀)` is a Thom class of
+`E'` gives `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)`: the isomorphism
+`thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass` of any cocycle representing `U`, which
+does not depend on the representative
+(`thomPairSingularHomologyIsoTwistedHomologyOfClass_eq`). -/
+def thomPairSingularHomologyIsoTwistedHomologyOfClass
+    (U : (thomPair F E).twistedCohomology (thomPairSignLocalSystem F E k hι) k (ModuleCat.of k k)
+      (finrank ℝ F))
+    (hU : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F) U)) (p : ℕ) :
+    (thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
+      twistedHomology (signLocalSystem F E k hι) p :=
+  thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k
+    ((ModuleCat.epi_iff_surjective _).1
+      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U).choose
+    (by rwa [((ModuleCat.epi_iff_surjective _).1
+      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U).choose_spec]) p
+
+variable (F E) in
+/-- `thomPairSingularHomologyIsoTwistedHomologyOfClass` of a class `U` is the isomorphism
+`thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass` of every cocycle representing `U`. -/
+theorem thomPairSingularHomologyIsoTwistedHomologyOfClass_eq
+    (ψ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+      (ModuleCat.of k k)).cycles (finrank ℝ F))
+    (hu : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F)
+        (((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+          (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ))) (p : ℕ) :
+    thomPairSingularHomologyIsoTwistedHomologyOfClass F E hι k
+        (((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+          (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ) hu p =
+      thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k ψ hu p :=
+  thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass_eq_of_homologyπ_eq F E hι k _ _
+    ((ModuleCat.epi_iff_surjective _).1
+      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) _).choose_spec p
+
 /-- **The Thom isomorphism with coefficients in the orientation system, from a twisted class whose
 lift is a Thom class.** Let `E → B` be a real vector bundle of rank `r`, `E'` its pull-back to the
 orientation double cover and `k` a commutative ring. If the lift to `(E', E'₀)`
@@ -424,10 +594,8 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology
     (hU : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
       (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F) U)) (p : ℕ) :
     Nonempty ((thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
-      twistedHomology (signLocalSystem F E k hι) p) := by
-  obtain ⟨ψ, rfl⟩ := (ModuleCat.epi_iff_surjective _).1
-    (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U
-  exact ⟨thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k ψ hU p⟩
+      twistedHomology (signLocalSystem F E k hι) p) :=
+  ⟨thomPairSingularHomologyIsoTwistedHomologyOfClass F E hι k U hU p⟩
 
 variable (F E) in
 /-- **The Thom isomorphism in cohomology with orientation-twisted coefficients over every ring,
@@ -453,6 +621,76 @@ def thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass
     (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι k ψ)
     (isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap hι k hu) N p
 
+variable (F E) in
+/-- **The Thom isomorphism in cohomology with orientation-twisted coefficients depends only on the
+class of the cocycle.** Cocycles `ψ` and `ψ'` of `(E, E₀)` with coefficients in the orientation
+system, with the same class whose lift is a Thom class of `E'`, give the same isomorphism
+`Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)`: their chain-level Thom maps are homotopic, and so are
+the maps they induce on `Hom(-, N)`. -/
+theorem thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass_eq_of_homologyπ_eq
+    {ψ ψ' : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+      (ModuleCat.of k k)).cycles (finrank ℝ F)}
+    (hu : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F)
+        (((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+          (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ)))
+    (hu' : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F)
+        (((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+          (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ')))
+    (hψ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+      (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ =
+      ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+        (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ') (N : ModuleCat.{w} k) (p : ℕ) :
+    thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass F E hι k ψ hu N p =
+      thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass F E hι k ψ' hu' N p := by
+  obtain ⟨h⟩ := nonempty_homotopy_thomPairTwistedChainMap F E hι k hψ
+  refine Iso.ext ((Iso.inv_eq_inv _ _).1 ?_)
+  rw [thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass,
+    thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass,
+    thomPairSingularCohomologyIsoTwistedCohomology_inv,
+    thomPairSingularCohomologyIsoTwistedCohomology_inv,
+    (h.linearYonedaFunctorMap (k := k) (Y := N)).homologyMap_eq]
+
+variable (F E) in
+/-- **The Thom isomorphism in cohomology with orientation-twisted coefficients of a class.** A
+class `U ∈ Hʳ(E, E₀; π^*o(E), k)` whose lift to `(E', E'₀)` is a Thom class of `E'` gives
+`Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` for every `k`-module `N`: the isomorphism
+`thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass` of any cocycle representing `U`,
+which does not depend on the representative
+(`thomPairSingularCohomologyIsoTwistedCohomologyOfClass_eq`). -/
+def thomPairSingularCohomologyIsoTwistedCohomologyOfClass
+    (U : (thomPair F E).twistedCohomology (thomPairSignLocalSystem F E k hι) k (ModuleCat.of k k)
+      (finrank ℝ F))
+    (hU : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F) U))
+    (N : ModuleCat.{w} k) (p : ℕ) :
+    (thomPair F E).singularCohomology (ModuleCat.of k k) k N (p + finrank ℝ F) ≅
+      (signLocalSystem F E k hι).twistedCohomology k N p :=
+  thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass F E hι k
+    ((ModuleCat.epi_iff_surjective _).1
+      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U).choose
+    (by rwa [((ModuleCat.epi_iff_surjective _).1
+      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U).choose_spec]) N p
+
+variable (F E) in
+/-- `thomPairSingularCohomologyIsoTwistedCohomologyOfClass` of a class `U` is the isomorphism
+`thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass` of every cocycle representing `U`. -/
+theorem thomPairSingularCohomologyIsoTwistedCohomologyOfClass_eq
+    (ψ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+      (ModuleCat.of k k)).cycles (finrank ℝ F))
+    (hu : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F)
+        (((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+          (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ))) (N : ModuleCat.{w} k) (p : ℕ) :
+    thomPairSingularCohomologyIsoTwistedCohomologyOfClass F E hι k
+        (((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+          (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ) hu N p =
+      thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass F E hι k ψ hu N p :=
+  thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass_eq_of_homologyπ_eq F E hι k _ _
+    ((ModuleCat.epi_iff_surjective _).1
+      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) _).choose_spec N p
+
 /-- **The Thom isomorphism in cohomology with coefficients in the orientation system, from a
 twisted class whose lift is a Thom class.** Let `E → B` be a real vector bundle of rank `r`, `E'`
 its pull-back to the orientation double cover and `k` a commutative ring. If the lift to
@@ -468,10 +706,8 @@ theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology
       (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F) U))
     (N : ModuleCat.{w} k) (p : ℕ) :
     Nonempty ((thomPair F E).singularCohomology (ModuleCat.of k k) k N (p + finrank ℝ F) ≅
-      (signLocalSystem F E k hι).twistedCohomology k N p) := by
-  obtain ⟨ψ, rfl⟩ := (ModuleCat.epi_iff_surjective _).1
-    (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U
-  exact ⟨thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass F E hι k ψ hU N p⟩
+      (signLocalSystem F E k hι).twistedCohomology k N p) :=
+  ⟨thomPairSingularCohomologyIsoTwistedCohomologyOfClass F E hι k U hU N p⟩
 
 end Descent
 
