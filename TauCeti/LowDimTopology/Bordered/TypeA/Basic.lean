@@ -135,6 +135,8 @@ an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
   over paths of generators; under either boundedness hypothesis, see
   `TauCeti.TypeDStructure.typeABoxDifferential_apply_eq_sum_of_act_eq_zero` and
   `TauCeti.TypeDStructure.typeABoxDifferential_apply_eq_sum_of_lt`.
+* `TauCeti.TypeDStructure.typeABoxDifferential_eq_zero_of_forall_act_eq_zero`: the differential
+  vanishes when the operations of `M` vanish along every path of coefficients of `N`.
 * `TauCeti.TypeDStructure.typeABoxDifferential_apply_eq_sum_lift_iteratedCoeff`: the differential
   is `∂ (m ⊗ x) = ∑_k (m_{k+1} ⊗ 1) (m ⊗ δ^k (x))`, with the iterates of the structure map. Its
   variant `typeABoxDifferential_apply_eq_sum_lift_iteratedCoeff_of_iteratedCoeff_eq_zero` (in the
@@ -257,6 +259,18 @@ theorem typeABoxDifferential_apply_eq_sum_of_lt (N : TypeDStructure d ι X)
       else 0 :=
   N.typeABoxDifferential_apply_eq_sum Mm
     (fun _ hn => Mm.matrixAct_eq_zero_of_lt X h hn fun _ => hh) φ z
+
+/-- **A box tensor differential vanishing along every path.** If the operations of `M` vanish on
+the coefficients `δ x₀ x₁, …, δ xₙ₋₁ xₙ` along every path `x₀ → ⋯ → xₙ` of generators of `N`, the
+box tensor differential vanishes, whether or not `M` or `N` is bounded. -/
+theorem typeABoxDifferential_eq_zero_of_forall_act_eq_zero (N : TypeDStructure d ι X)
+    (Mm : UngradedAInfinityRightModule d M)
+    (h : ∀ n (x : Fin (n + 1) → X), Mm.act n (fun l => N.coeff (x l.castSucc) (x l.succ)) = 0) :
+    N.typeABoxDifferential Mm = 0 := by
+  refine LinearMap.ext fun φ => funext fun z => ?_
+  rw [N.typeABoxDifferential_apply_eq_sum Mm (K := 0) fun n _ => LinearMap.ext fun ψ => funext
+    fun y => by simp [UngradedAInfinityRightModule.matrixAct_apply, h]]
+  simp
 
 /-- **The box tensor differential of a bounded module squares to zero.** If the operations
 `m_{k+1}` of `M` vanish for `k ≥ K`, then `∂ ∘ ∂ = 0` on the row vectors `X → M`, over a ring of
@@ -1035,6 +1049,12 @@ theorem coe_typeABoxTensorDifferential_apply [CharP R 2] (hMm : Mm.IsStrictlyUni
     (hι : ∀ s, d (ι s) = 0) (φ : N.typeABoxTensor Mm) :
     (N.typeABoxTensorDifferential hMm hι φ : X → M) = N.typeABoxDifferential Mm φ :=
   (rfl)
+
+/-- The box tensor differential vanishes on `M ⊗ N` when it vanishes on all row vectors. -/
+theorem typeABoxTensorDifferential_eq_zero [CharP R 2] (hMm : Mm.IsStrictlyUnital ι)
+    (hι : ∀ s, d (ι s) = 0) (h : N.typeABoxDifferential Mm = 0) :
+    N.typeABoxTensorDifferential hMm hι = 0 :=
+  LinearMap.ext fun φ => Subtype.ext (by simp [h])
 
 /-- The box tensor differential of a bounded module squares to zero on `M ⊗ N`. -/
 theorem typeABoxTensorDifferential_typeABoxTensorDifferential_of_act_eq_zero [CharP R 2]
