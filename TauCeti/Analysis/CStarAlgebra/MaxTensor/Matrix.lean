@@ -50,7 +50,10 @@ universe u
 
 namespace TauCeti
 
-variable (n : Type*) [Fintype n] [DecidableEq n] (A : Type u) [NonUnitalCStarAlgebra A]
+section Equiv
+
+variable (n : Type*) [Fintype n] [DecidableEq n] (A : Type u) [NonUnitalSemiring A] [StarRing A]
+  [Module ℂ A] [StarModule ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
 
 /-- The bilinear map `(m, a) ↦ [mᵢⱼ a]` from `M_n(ℂ) × A` to `M_n(A)`. -/
 private def cstarMatrixTensorBilin : CStarMatrix n n ℂ →ₗ[ℂ] A →ₗ[ℂ] CStarMatrix n n A :=
@@ -60,7 +63,8 @@ private def cstarMatrixTensorBilin : CStarMatrix n n ℂ →ₗ[ℂ] A →ₗ[�
     (fun _ _ _ ↦ CStarMatrix.ext fun _ _ ↦ smul_add _ _ _)
     (fun _ _ _ ↦ CStarMatrix.ext fun _ _ ↦ smul_comm _ _ _)
 
-omit [Fintype n] [DecidableEq n] in
+omit [Fintype n] [DecidableEq n] [StarRing A] [StarModule ℂ A] [IsScalarTower ℂ A A]
+  [SMulCommClass ℂ A A] in
 variable {n A} in
 @[simp]
 private theorem cstarMatrixTensorBilin_apply (m : CStarMatrix n n ℂ) (a : A) (i j : n) :
@@ -113,12 +117,14 @@ theorem cstarMatrixTensorEquiv_apply_tmul (m : CStarMatrix n n ℂ) (a : A) (i j
   (rfl)
 
 /-- The inverse of `TauCeti.cstarMatrixTensorEquiv` is `x ↦ Σᵢⱼ Eᵢⱼ ⊗ xᵢⱼ`. -/
-@[simp]
 theorem cstarMatrixTensorEquiv_symm_apply (x : CStarMatrix n n A) :
     (cstarMatrixTensorEquiv n A).symm x = ∑ i, ∑ j, CStarMatrix.matrixUnit i j ⊗ₜ x i j :=
   (rfl)
 
-variable [PartialOrder A] [StarOrderedRing A]
+end Equiv
+
+variable {n : Type*} [Fintype n] [DecidableEq n] {A : Type u} [NonUnitalCStarAlgebra A]
+  [PartialOrder A] [StarOrderedRing A]
 
 /-- **The minimal norm on `M_n ⊙ A`** is the `CStarMatrix` norm (Blackadar II.9.4.2). -/
 theorem minTensorNorm_eq_norm_cstarMatrixTensorEquiv (x : CStarMatrix n n ℂ ⊗[ℂ] A) :
