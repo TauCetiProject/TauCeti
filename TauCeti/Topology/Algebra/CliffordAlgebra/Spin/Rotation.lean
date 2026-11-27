@@ -21,8 +21,12 @@ The standard coordinate pair specializes this construction to a path between the
 central elements `1` and `-1` of `Spin(2)`. This is the endpoint-closing path used when a lifted
 rotation ends at the nontrivial point of the two-element kernel.
 
+The circle subgroup `z ↦ Re z + Im z ι u ι w` of `Spin(Q)` determined by an orthogonal pair
+`u, w` with `Q u * Q w = 1` is continuous (`CliffordAlgebra.continuous_spinCircle`).
+
 ## Main definitions and results
 
+* `CliffordAlgebra.continuous_spinCircle`: the circle subgroup of `Spin(Q)` is continuous.
 * `CliffordAlgebra.spinRotationPath`: the resulting path from `1` to `-1`.
 * `CliffordAlgebra.joined_one_negOne_realCliffordSpinGroupZero_two`: the two elements of the
   double-cover kernel in `Spin(2)` are joined.
@@ -68,6 +72,19 @@ theorem continuous_spinRotation (hx : Q x = 1) (hy : Q y = 1)
   intro t
   simp only [Function.comp_apply, LinearMap.mulLeft_apply, coe_spinRotation, map_add, map_smul]
   rw [mul_add, mul_smul_comm, mul_smul_comm]
+
+section Circle
+
+variable {Q} {u w : V} (huw : Q.IsOrtho u w) (h : Q u * Q w = 1)
+
+/-- The circle subgroup `z ↦ Re z + Im z ι u ι w` of `Spin(Q)` is continuous. -/
+@[fun_prop]
+theorem continuous_spinCircle : Continuous (spinCircle Q u w huw h) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, coe_spinCircle, Algebra.algebraMap_eq_smul_one]
+  fun_prop
+
+end Circle
 
 /-- An orthonormal pair determines a path in the Spin group from `1` to the scalar `-1`. -/
 def spinRotationPath (hx : Q x = 1) (hy : Q y = 1)
