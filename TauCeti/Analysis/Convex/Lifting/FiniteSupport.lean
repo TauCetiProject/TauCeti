@@ -359,8 +359,8 @@ theorem exists_strict_sharedOA_ssubset_directOA :
     have hL : (ContinuousLinearMap.proj (R := ℝ) j).comp (Dg i) =
         (2 * a i j) • ContinuousLinearMap.proj (R := ℝ) j := by
       ext v
-      simp [Dg]
-      simp [a]
+      simp only [Dg, ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply,
+        ContinuousLinearMap.proj_apply, Pi.smul_apply, smul_eq_mul, a]
     rw [hL]; exact hpow.comp_hasFDerivAt (a i) (hasFDerivAt_apply (𝕜 := ℝ) j (a i))
   have hh : ∀ i, HasFDerivAt h (Dh i) (g (a i)) := fun i =>
     HasFDerivAt.fun_sum fun j _ => hasFDerivAt_apply (𝕜 := ℝ) j (g (a i))
