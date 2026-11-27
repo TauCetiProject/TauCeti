@@ -30,6 +30,8 @@ estimate, after summing over nonzero frequencies.
 * `ZMod.map_stdAddChar_of_map_stdAddChar_one`: a multiplicative map of `ℂ` sending `ζ_N` to
   `ζ_N^d` sends every character value `stdAddChar j` to `stdAddChar (d * j)`.
 * `ZMod.isPrimitiveRoot_stdAddChar_one`: `ζ_N = stdAddChar 1` is a primitive `N`-th root of unity.
+* `ZMod.stdAddChar_eq_mul_of_coprime`: for coprime `c₁, c₂`, the standard character modulo
+  `c₁ c₂` is `e(c₂' x / c₁) e(c₁' x / c₂)` with `c₂' c₂ ≡ 1 (mod c₁)` and `c₁' c₁ ≡ 1 (mod c₂)`.
 * `ZMod.exists_map_stdAddChar_one_eq`: every ring endomorphism of `ℂ` sends `ζ_N` to `ζ_N^d` for
   a unit `d` of `ZMod N`.
 * `ZMod.two_div_norm_stdAddChar_sub_one_le`: an upper bound for the reciprocal chord length.
@@ -116,6 +118,42 @@ theorem exists_map_stdAddChar_one_eq {F : Type*} [FunLike F ℂ ℂ] [RingHomCla
   obtain ⟨i, -, hi⟩ := hζ.eq_pow_of_pow_eq_one hσ.pow_eq_one
   refine ⟨unitOfCoprime i ((hζ.pow_iff_coprime (NeZero.pos N) i).mp (hi ▸ hσ)), ?_⟩
   rw [coe_unitOfCoprime, ← hi, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one]
+
+/-- **The standard character modulo a product of coprime moduli** splits along the Chinese
+remainder theorem with inverse shifts: `e(x / (c₁ c₂)) = e(c₂' x / c₁) e(c₁' x / c₂)`, where
+`c₂' = c₂⁻¹` modulo `c₁` and `c₁' = c₁⁻¹` modulo `c₂`. With Bézout's `u c₁ + v c₂ = 1`, the inverses
+are `v` modulo `c₁` and `u` modulo `c₂`, and `k / (c₁ c₂) = v k / c₁ + u k / c₂`. -/
+theorem stdAddChar_eq_mul_of_coprime {c₁ c₂ : ℕ} [NeZero c₁] [NeZero c₂] (h : c₁.Coprime c₂)
+    (x : ZMod (c₁ * c₂)) :
+    stdAddChar x =
+      stdAddChar ((c₂ : ZMod c₁)⁻¹ * castHom (Nat.dvd_mul_right c₁ c₂) (ZMod c₁) x) *
+        stdAddChar ((c₁ : ZMod c₂)⁻¹ * castHom (Nat.dvd_mul_left c₂ c₁) (ZMod c₂) x) := by
+  set u := Nat.gcdA c₁ c₂
+  set v := Nat.gcdB c₁ c₂
+  have huv : (c₁ : ℤ) * u + c₂ * v = 1 := by
+    rw [← Nat.gcd_eq_gcd_ab, h.gcd_eq_one, Nat.cast_one]
+  -- The two inverses are `v` modulo `c₁` and `u` modulo `c₂`.
+  have hv : (c₂ : ZMod c₁)⁻¹ = v := by
+    refine ZMod.inv_eq_of_mul_eq_one _ _ _ ?_
+    have := congrArg (Int.cast : ℤ → ZMod c₁) huv
+    push_cast at this
+    rwa [ZMod.natCast_self, zero_mul, zero_add] at this
+  have hu : (c₁ : ZMod c₂)⁻¹ = u := by
+    refine ZMod.inv_eq_of_mul_eq_one _ _ _ ?_
+    have := congrArg (Int.cast : ℤ → ZMod c₂) huv
+    push_cast at this
+    rwa [ZMod.natCast_self, zero_mul, add_zero] at this
+  obtain ⟨k, rfl⟩ := ZMod.intCast_surjective x
+  rw [hv, hu, map_intCast (castHom (Nat.dvd_mul_right c₁ c₂) (ZMod c₁)),
+    map_intCast (castHom (Nat.dvd_mul_left c₂ c₁) (ZMod c₂)), ← Int.cast_mul, ← Int.cast_mul,
+    stdAddChar_coe, stdAddChar_coe, stdAddChar_coe, ← Complex.exp_add]
+  congr 1
+  have hC : (c₁ : ℂ) * u + c₂ * v = 1 := by exact_mod_cast huv
+  have h₁ : (c₁ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne c₁)
+  have h₂ : (c₂ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne c₂)
+  push_cast
+  field_simp
+  linear_combination (-(k : ℂ)) * hC
 
 /-- The reciprocal chord bound in terms of the least nonnegative representatives of a
 nonzero residue and its negative. -/
