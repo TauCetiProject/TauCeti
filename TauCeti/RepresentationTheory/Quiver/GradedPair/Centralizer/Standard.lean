@@ -251,7 +251,7 @@ private theorem standardBasis_repr_operator_comp_standardVector
         ((standardPair m .up).operator ((L : Module.End ℂ (standardSpace m).Carrier)
           (standardVector m j a))) (StandardIndex.mk i a haI) =
       if a - 1 ∈ occurrenceInterval m i then blockEntry m L i j a else 0 := by
-  rw [expand_of_isHomogeneous (GradedPair.centralizer_isHomogeneous L) haJ, map_sum, map_sum,
+  rw [expand_of_isHomogeneous (GradedPair.isHomogeneous_coe_centralizer L) haJ, map_sum, map_sum,
     Finsupp.coe_finsetSum, Finset.sum_apply]
   have hterm (k : Fin m.card) :
       (standardBasis m).repr
@@ -284,7 +284,7 @@ private theorem standardBasis_repr_comp_operator_standardVector
   rw [standardPair_operator_standardVector .up haJ, StepDirection.step_up]
   by_cases ha1 : a + 1 ∈ occurrenceInterval m j
   · simp only [ha1, ↓reduceIte]
-    rw [expand_of_isHomogeneous (GradedPair.centralizer_isHomogeneous L) ha1, map_sum,
+    rw [expand_of_isHomogeneous (GradedPair.isHomogeneous_coe_centralizer L) ha1, map_sum,
       Finsupp.coe_finsetSum, Finset.sum_apply]
     simp only [map_smul, Finsupp.smul_apply, smul_eq_mul, add_sub_cancel_right,
       standardBasis_repr_standardVector_same_deg haI, mul_ite, mul_one, mul_zero,
@@ -462,7 +462,7 @@ private theorem centralizer_apply_standardVector_blockEntry
               (StandardIndex.mk i ((occurrenceInterval m j).fst - 1) h.fst_sub_one_mem) •
             standardVector m i (a - 1)
         else 0 := by
-  rw [expand_of_isHomogeneous (GradedPair.centralizer_isHomogeneous L) ha]
+  rw [expand_of_isHomogeneous (GradedPair.isHomogeneous_coe_centralizer L) ha]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   by_cases h : (occurrenceInterval m i).Precedes (occurrenceInterval m j)
   · simp only [h, ↓reduceDIte]
@@ -592,6 +592,14 @@ theorem centralizer_standardPair_up_apply_standardVector (L : (standardPair m .u
         else 0 :=
   centralizer_apply_standardVector_blockEntry L ha
 
+private theorem standardBasis_repr_standardVector_of_deg_eq {i : Fin m.card} {a : ℤ}
+    {y : StandardIndex m} (hy : (y.2 : ℤ) = a) :
+    (standardBasis m).repr (standardVector m i a) y = if i = y.1 then 1 else 0 := by
+  have hya : a ∈ occurrenceInterval m y.1 := hy ▸ y.mem_occurrenceInterval
+  have hyeq : y = StandardIndex.mk y.1 a hya := by
+    simp [Sigma.subtype_ext_iff, hy]
+  conv_lhs => rw [hyeq, standardBasis_repr_standardVector_same_deg hya]
+
 open Classical in
 /-- Cut-entry formula for `(standardPair m .up).centralizer` in `standardBasis m`: the `(y, x)`
 matrix entry of `L` is nonzero only when `y` has degree `x.2 - 1` and interval `y.1` precedes
@@ -610,22 +618,11 @@ theorem standardBasis_repr_centralizer_apply (L : (standardPair m .up).centraliz
     map_sum, Finsupp.coe_finsetSum, Finset.sum_apply]
   by_cases hy : (y.2 : ℤ) = (x.2 : ℤ) - 1
   · simp only [hy, ↓reduceIte]
-    have hyi : (x.2 : ℤ) - 1 ∈ occurrenceInterval m y.1 := hy ▸ y.mem_occurrenceInterval
-    have hyeq : y = StandardIndex.mk y.1 ((x.2 : ℤ) - 1) hyi := by
-      simp [Sigma.subtype_ext_iff, hy]
     rw [Finset.sum_eq_single y.1]
-    · split_ifs with h
-      · conv_lhs => rw [map_smul, Finsupp.smul_apply, smul_eq_mul,
-          show (standardBasis m).repr (standardVector m y.1 ((x.2 : ℤ) - 1)) y = 1 by
-            rw [hyeq, standardBasis_repr_standardVector_same_deg hyi]; simp]
-        simp
-      · simp
+    · split_ifs <;> simp [standardBasis_repr_standardVector_of_deg_eq hy]
     · intro i _ hiy
       split_ifs
-      · rw [map_smul, Finsupp.smul_apply, smul_eq_mul,
-          show (standardBasis m).repr (standardVector m i ((x.2 : ℤ) - 1)) y = 0 by
-            rw [hyeq, standardBasis_repr_standardVector_same_deg hyi]; simp [hiy],
-          mul_zero]
+      · simp [standardBasis_repr_standardVector_of_deg_eq hy, hiy]
       · simp
     · intro hymem
       exact absurd (Finset.mem_univ y.1) hymem

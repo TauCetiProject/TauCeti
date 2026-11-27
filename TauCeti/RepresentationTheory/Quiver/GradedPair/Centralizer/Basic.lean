@@ -46,7 +46,7 @@ the restricted operator extends to an element of `P.centralizer`. Consequently,
 
 ## Main results
 
-* `TauCeti.GradedPair.SubmoduleModel.restrictCentralizer_comp_centralizerEquiv`: conjugation
+* `TauCeti.GradedPair.SubmoduleModel.centralizerEquiv_restrictCentralizer`: conjugation
   commutes with restriction through the induced image equivalence.
 * `TauCeti.GradedPair.centralizer_image_extension`: every opposite-degree commuting endomorphism
   on `LinearMap.range P.operator` extends to `P.centralizer`.
@@ -89,7 +89,7 @@ theorem mem_centralizer_iff {P : GradedPair S d} {L : Module.End ℂ S.Carrier} 
     forall_eq, Module.End.mul_eq_comp, eq_comm]
 
 /-- A member of `P.centralizer` is homogeneous of degree `-d.step`. -/
-theorem centralizer_isHomogeneous {P : GradedPair S d} (L : P.centralizer) :
+theorem isHomogeneous_coe_centralizer {P : GradedPair S d} (L : P.centralizer) :
     LinearMap.IsHomogeneous (L : Module.End ℂ S.Carrier) S.grade S.grade (-d.step) :=
   (mem_centralizer_iff.1 L.property).1
 
@@ -118,7 +118,7 @@ theorem centralizer_zero (S : GradedCoordSpace) (d : StepDirection) :
 def oppositePair (P : GradedPair S d) (L : P.centralizer) : GradedPair S d.reverse where
   operator := L
   isHomogeneous := by
-    simpa only [StepDirection.step_reverse] using centralizer_isHomogeneous L
+    simpa only [StepDirection.step_reverse] using isHomogeneous_coe_centralizer L
 
 @[simp]
 theorem oppositePair_operator (P : GradedPair S d) (L : P.centralizer) :
@@ -313,7 +313,7 @@ noncomputable def restrictCentralizer (M : P.SubmoduleModel W)
       · rw [← M.embed_mem_grade_iff]
         have hv' : M.embed v ∈ S.grade a := M.embed_mem_grade_iff.2 hv
         have himg : (L : Module.End ℂ S.Carrier) (M.embed v) ∈ S.grade (a + -d.step) :=
-          (centralizer_isHomogeneous L).map_mem hv'
+          (isHomogeneous_coe_centralizer L).map_mem hv'
         simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, M.embed_equiv_symm_apply,
           LinearMap.restrict_apply, M.coe_equiv_apply] using himg
       · simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, M.embed_operator,
@@ -634,7 +634,7 @@ theorem restrictCentralizer_surjective (M : P.ImageModel) :
       rw [← M.embed_mem_grade_iff, M.embed_equiv_symm_apply]
       exact hv
     have hL' : (L' : Module.End ℂ M.space.Carrier) (M.equiv.symm v) ∈
-        M.space.grade (a + -d.step) := (centralizer_isHomogeneous L').map_mem hv'
+        M.space.grade (a + -d.step) := (isHomogeneous_coe_centralizer L').map_mem hv'
     simpa only [L'', LinearMap.comp_apply, LinearEquiv.coe_coe, M.coe_equiv_apply,
       M.embed_mem_grade_iff, sub_eq_add_neg] using hL'
   have hcomm : ∀ v : LinearMap.range P.operator,
