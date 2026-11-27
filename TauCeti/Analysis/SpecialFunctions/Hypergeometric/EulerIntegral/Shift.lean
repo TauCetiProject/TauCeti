@@ -24,8 +24,9 @@ raise `re (c - b)`, respectively `re b`, by one on their right-hand sides. Apply
 counts `p` and `q`. It is holomorphic on the open region `Complex.eulerIntegralShiftRegion p q`
 where `-p < re b`, `p - q < re (c - b)` and `1 - z ∈ slitPlane`.
 
-On the unit disk each `eulerIntegralShift p q` is the series `Complex.regularizedGaussHGFun`, by
-induction from Euler's integral representation and the two contiguous relations of the series.
+On the part of its region inside the unit disk, each `eulerIntegralShift p q` is the series
+`Complex.regularizedGaussHGFun`, by induction from Euler's integral representation and the two
+contiguous relations of the series.
 The identity principle in `z` on the cut plane then shows that `eulerIntegralShift p q` agrees
 with Euler's integral where `0 < re b < re c`, and that two such functions with different counts
 agree where both regions contain the point. Every point of `ℂ × ℂ × ℂ × {1 - z ∈ slitPlane}` lies
@@ -50,7 +51,8 @@ the joint holomorphy in all four variables an induction.
 * `Complex.eulerIntegralShift_succ_left`, `Complex.eulerIntegralShift_succ_right`: the shift
   relations in `b` and in `c`, for all counts and all arguments.
 * `Complex.analyticOnNhd_eulerIntegralShift`: joint holomorphy on `eulerIntegralShiftRegion p q`.
-* `Complex.eulerIntegralShift_eq_regularizedGaussHGFun`: agreement with the series on the disk.
+* `Complex.eulerIntegralShift_eq_regularizedGaussHGFun`: agreement with the series on the region,
+  inside the unit disk.
 * `Complex.eulerIntegralShift_eq_eulerIntegral`: agreement with Euler's integral.
 * `Complex.eulerIntegralShift_eq_eulerIntegralShift`: compatibility of different counts.
 * `Complex.exists_mem_eulerIntegralShiftRegion`: the regions cover `ℂ³ × {1 - z ∈ slitPlane}`.
@@ -83,11 +85,11 @@ on which `eulerIntegralShift p q` is holomorphic. -/
 def eulerIntegralShiftRegion (p q : ℕ) : Set (ℂ × ℂ × ℂ × ℂ) :=
   {x | -(p : ℝ) < x.2.1.re ∧ (p : ℝ) - q < x.2.2.1.re - x.2.1.re ∧ 1 - x.2.2.2 ∈ slitPlane}
 
-/-- Membership in `eulerIntegralShiftRegion p q`, coordinatewise. -/
+/-- Membership in `eulerIntegralShiftRegion p q`, in terms of the coordinates of the point. -/
 @[simp]
-theorem mem_eulerIntegralShiftRegion {p q : ℕ} {a b c z : ℂ} :
-    (a, b, c, z) ∈ eulerIntegralShiftRegion p q ↔
-      -(p : ℝ) < b.re ∧ (p : ℝ) - q < c.re - b.re ∧ 1 - z ∈ slitPlane :=
+theorem mem_eulerIntegralShiftRegion {p q : ℕ} {x : ℂ × ℂ × ℂ × ℂ} :
+    x ∈ eulerIntegralShiftRegion p q ↔
+      -(p : ℝ) < x.2.1.re ∧ (p : ℝ) - q < x.2.2.1.re - x.2.1.re ∧ 1 - x.2.2.2 ∈ slitPlane :=
   Iff.rfl
 
 /-- The region `eulerIntegralShiftRegion p q` is open. -/
@@ -207,7 +209,8 @@ theorem analyticOnNhd_eulerIntegralShift (p q : ℕ) :
     exact h₁.sub ((Differentiable.analyticOnNhd_of_finiteDimensional
       (f := fun x ↦ x.1 * x.2.2.2) (by fun_prop)).mul h₂)
 
-/-- On the unit disk, `eulerIntegralShift p q` is the regularized Gauss series. -/
+/-- On its region `eulerIntegralShiftRegion p q`, inside the unit disk, `eulerIntegralShift p q`
+is the regularized Gauss series. -/
 theorem eulerIntegralShift_eq_regularizedGaussHGFun {p q : ℕ} {a b c z : ℂ}
     (hb : -(p : ℝ) < b.re) (hcb : (p : ℝ) - q < c.re - b.re) (hz : ‖z‖ < 1) :
     eulerIntegralShift p q a b c z = regularizedGaussHGFun a b c z := by
