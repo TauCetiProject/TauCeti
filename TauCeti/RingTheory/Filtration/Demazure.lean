@@ -415,15 +415,13 @@ private noncomputable def piFiltration (f : M ≃ₗ[A] ∀ l, A ⧸ maximalIdea
       Submodule A (A ⧸ maximalIdeal A ^ ν l))).comap f.toLinearMap
   mono i := Submodule.comap_mono (Submodule.pi_mono fun l _ ↦ Submodule.smul_mono_left
     (Ideal.pow_le_pow_right (Nat.count_monotone _ i.le_succ)))
-  smul_le i := Submodule.smul_le.2 fun r hr x hx ↦ by
-    simp only [Submodule.mem_comap, Submodule.mem_pi, Set.mem_univ, forall_const,
-      LinearEquiv.coe_coe, map_smul, Pi.smul_apply] at hx ⊢
-    intro l
-    have h := Submodule.smul_mem_smul hr (hx l)
-    rw [← Submodule.mul_smul, ← pow_succ'] at h
-    refine Submodule.smul_mono_left (Ideal.pow_le_pow_right ?_) h
-    rw [Nat.count_succ]
-    split_ifs <;> omega
+  smul_le i := (Submodule.smul_comap_le_comap_smul _ _ _).trans <| Submodule.comap_mono <|
+    Submodule.smul_le.2 fun r hr x hx l _ ↦ by
+      have h := Submodule.smul_mem_smul hr (hx l (Set.mem_univ l))
+      rw [← Submodule.mul_smul, ← pow_succ'] at h
+      refine Submodule.smul_mono_left (Ideal.pow_le_pow_right ?_) h
+      rw [Nat.count_succ]
+      split_ifs <;> omega
 
 /-- The quotient of `M` by the `i`-th step of `piFiltration f S` has length
 `∑ l, Nat.count (· ∈ S l) i`, when `#(S l) = ν l`. -/
@@ -434,8 +432,8 @@ private theorem length_quotient_piFiltration (f : M ≃ₗ[A] ∀ l, A ⧸ maxim
     (Submodule.map_comap_eq_of_surjective f.surjective _)).length_eq.trans ?_
   rw [TauCeti.IsDiscreteValuationRing.length_quotient_pi_pow_maximalIdeal_smul_top]
   refine congrArg _ (sum_congr rfl fun l _ ↦ min_eq_left ?_)
-  rw [Nat.count_eq_card_filter_range, ← hS l]
-  exact card_le_card fun a ha ↦ (mem_filter.1 ha).2
+  exact (Nat.count_le_card (p := (· ∈ S l)) (S l).finite_toSet i).trans_eq
+    (by rw [finite_toSet_toFinset, hS l])
 
 /-- **Demazure filtrations below the exact type.** Over a discrete valuation ring with maximal
 ideal `𝔪`, a module `M ≃ ∏ l, A ⧸ 𝔪 ^ ν l` carries a Demazure filtration of type `μ` if and only if

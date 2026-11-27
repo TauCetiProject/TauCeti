@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Fintype.Card
+import Mathlib.Algebra.Group.Nat.Range
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
 import TauCeti.Algebra.Order.BigOperators.Sum.Min
@@ -147,7 +148,7 @@ private theorem exists_of_greedy (hCpos : ∀ l ∈ C, 0 < ν l) (hC : #C = #{j 
     (hcol' : ∀ i, #{l | i ∈ S' l} = #{j | i < μ j - 1}) :
     ∃ S : κ → Finset ℕ, (∀ l, #(S l) = ν l) ∧ ∀ i, #{l | i ∈ S l} = #{j | i < μ j} := by
   classical
-  let sh : ℕ ↪ ℕ := ⟨Nat.succ, Nat.succ_injective⟩
+  let sh : ℕ ↪ ℕ := addRightEmbedding 1
   let S : κ → Finset ℕ := fun l ↦ if l ∈ C then insert 0 ((S' l).map sh) else (S' l).map sh
   have hzero (l : κ) : 0 ∈ S l ↔ l ∈ C := by
     by_cases hl : l ∈ C <;> simp [S, sh, hl]
@@ -158,7 +159,9 @@ private theorem exists_of_greedy (hCpos : ∀ l ∈ C, 0 < ν l) (hC : #C = #{j 
     by_cases hl : l ∈ C
     · have := hCpos l hl
       simp only [S, hl, ↓reduceIte] at h ⊢
-      rw [card_insert_of_notMem (by simp [sh]), card_map, h]
+      rw [card_insert_of_notMem
+        (disjoint_left.1 (disjoint_range_addRightEmbedding 1 (S' l)) (self_mem_range_succ 0)),
+        card_map, h]
       omega
     · simp only [S, hl, ↓reduceIte] at h ⊢
       rw [card_map, h]
