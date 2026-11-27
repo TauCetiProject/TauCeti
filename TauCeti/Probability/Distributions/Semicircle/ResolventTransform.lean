@@ -42,8 +42,6 @@ is written as `v * (m * m) + (z - a) * m + 1`, the shape used by Mathlib's `disc
   Catalan moments.
 * `TauCeti.Probability.resolventTransform_semicircleReal_quadratic_eq_zero`: the quadratic
   equation off the support.
-* `TauCeti.Probability.resolventTransform_semicircleReal_zero_one_quadratic_eq_zero`: the
-  standard-law quadratic equation at every nonreal point.
 * `TauCeti.Probability.eq_resolventTransform_semicircleReal_iff`: in the upper half-plane, `m(z)`
   is the only root of the quadratic with positive imaginary part.
 * `TauCeti.Probability.deriv_resolventTransform_semicircleReal`: the derivative
@@ -177,15 +175,6 @@ theorem resolventTransform_semicircleReal_quadratic_eq_zero
   · refine quadratic_eq_zero_of_convex (isOpen_lt continuous_const continuous_im)
       (convex_halfSpace_im_gt 0) (fun _ h ↦ h.ne') (z₀ := ⟨a, R + 1⟩)
       (show (0 : ℝ) < R + 1 by linarith) (lt_norm_mk_sub (lt_abs.2 (.inl (by linarith)))) him
-
-/-- The standard semicircle resolvent satisfies `m² + z m + 1 = 0` at every nonreal point. -/
-theorem resolventTransform_semicircleReal_zero_one_quadratic_eq_zero (hz : z.im ≠ 0) :
-    resolventTransform (semicircleReal 0 1) z *
-      resolventTransform (semicircleReal 0 1) z +
-      z * resolventTransform (semicircleReal 0 1) z + 1 = 0 := by
-  have h := resolventTransform_semicircleReal_quadratic_eq_zero (a := 0) (v := 1) (z := z)
-    (Complex.notMem_image_ofReal_of_im_ne_zero hz)
-  simpa using h
 
 /-- In the upper half-plane, the resolvent transform of `semicircleReal a v` is the unique root of
 `v * (w * w) + (z - a) * w + 1 = 0` with positive imaginary part. -/
@@ -363,11 +352,6 @@ theorem resolventTransform_semicircleReal_zero_one_I :
 private def standardSemicircleResolventAt (x ε : ℝ) : ℂ :=
   resolventTransform (semicircleReal 0 1) ((x : ℂ) + (ε : ℂ) * Complex.I)
 
-private theorem standardSemicircleResolventAt_im_pos {x ε : ℝ} (hε : 0 < ε) :
-    0 < (standardSemicircleResolventAt x ε).im :=
-  im_resolventTransform_pos (μ := semicircleReal 0 1) (IsProbabilityMeasure.ne_zero _)
-    (by simpa using hε)
-
 private def standardSemicircleResolventNormSq (x ε : ℝ) : ℝ :=
   Complex.normSq (standardSemicircleResolventAt x ε)
 
@@ -390,7 +374,7 @@ private theorem standard_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
     simp [m, q, standardSemicircleResolventNormSq, Complex.normSq_apply]
   have hquad : m * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * m + 1 = 0 := by
     simpa [m, standardSemicircleResolventAt] using
-      resolventTransform_semicircleReal_zero_one_quadratic_eq_zero hz.ne'
+      ((eq_resolventTransform_semicircleReal_iff (a := 0) (v := 1) hz).1 rfl).2
   have hmul := congrArg (fun w => w * star m) hquad
   have hrelmul : (q : ℂ) * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * (q : ℂ) + star m =
       (m * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * m + 1) * star m := by
@@ -415,7 +399,8 @@ private theorem standard_boundary_normSq_lt_one {x ε : ℝ} (hε : 0 < ε) :
   let q : ℝ := standardSemicircleResolventNormSq x ε
   have hids := standard_boundary_identities x ε hε
   have himag : b * (1 - q) = ε * q := by simpa [b, q] using hids.2
-  have hb : 0 < b := standardSemicircleResolventAt_im_pos hε
+  have hb : 0 < b := im_resolventTransform_pos (μ := semicircleReal 0 1)
+    (IsProbabilityMeasure.ne_zero _) (by simpa using hε)
   have hq : 0 < q := by
     dsimp only [q]
     rw [standardSemicircleResolventNormSq_eq]
@@ -455,7 +440,8 @@ private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
   have hids := standard_boundary_identities x ε hε
   have hreal : a * (q + 1) = -x * q := by simpa [a, q] using hids.1
   have himag : b * (1 - q) = ε * q := by simpa [b, q] using hids.2
-  have hb : 0 < b := standardSemicircleResolventAt_im_pos hε
+  have hb : 0 < b := im_resolventTransform_pos (μ := semicircleReal 0 1)
+    (IsProbabilityMeasure.ne_zero _) (by simpa using hε)
   have hqdef : q = a ^ 2 + b ^ 2 := by
     dsimp only [q]
     rw [standardSemicircleResolventNormSq_eq]
@@ -586,7 +572,8 @@ private theorem tendsto_standard_resolvent_im_of_mem_Icc {x : ℝ}
     let a : ℝ := (standardSemicircleResolventAt x ε).re
     let b : ℝ := (standardSemicircleResolventAt x ε).im
     let q : ℝ := standardSemicircleResolventNormSq x ε
-    have hb : 0 < b := standardSemicircleResolventAt_im_pos hε
+    have hb : 0 < b := im_resolventTransform_pos (μ := semicircleReal 0 1)
+      (IsProbabilityMeasure.ne_zero _) (by simpa using hε)
     have hq : q = a ^ 2 + b ^ 2 := by
       dsimp only [q]
       rw [standardSemicircleResolventNormSq_eq]

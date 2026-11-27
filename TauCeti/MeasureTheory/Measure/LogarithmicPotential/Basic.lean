@@ -33,8 +33,8 @@ measure.
 
 For real measures embedded in the plane, the potential is the integral of the real-line
 kernel. Compactly supported finite real measures have integrable off-axis kernels and a
-complex logarithmic kernel integral whose derivative in the upper half-plane is minus the
-resolvent transform.
+complex logarithmic kernel integral whose derivative off the real axis is minus the resolvent
+transform.
 Bounded real probability measures admit affine transport and normalization at imaginary
 infinity; at non-atomic points their vertical boundary values converge when the real kernel
 is integrable.
@@ -101,27 +101,34 @@ theorem integral_log_norm_sub_eq_re_of_im_ne_zero (μ : Measure ℝ) [IsFiniteMe
     _ = (∫ y : ℝ, Complex.log (z - y) ∂μ).re :=
       integral_re (integrable_clog_sub_of_im_ne_zero μ hs hμ hz)
 
-/-- The derivative of the complex logarithmic potential in the upper half-plane is minus
+/-- The derivative of the complex logarithmic potential off the real axis is minus
 the resolvent transform of the real measure. -/
-theorem hasDerivAt_integral_clog_sub_of_im_pos (μ : Measure ℝ) [IsFiniteMeasure μ]
-    {s : Set ℝ} (hs : IsCompact s) (hμ : μ.restrict s = μ) {z : ℂ} (hz : 0 < z.im) :
+theorem hasDerivAt_integral_clog_sub_of_im_ne_zero (μ : Measure ℝ) [IsFiniteMeasure μ]
+    {s : Set ℝ} (hs : IsCompact s) (hμ : μ.restrict s = μ) {z : ℂ} (hz : z.im ≠ 0) :
     HasDerivAt (fun w : ℂ ↦ ∫ y : ℝ, Complex.log (w - y) ∂μ)
       (-MeasureTheory.resolventTransform μ z) z := by
-  have hr : 0 < z.im / 2 := by positivity
+  have hr : 0 < |z.im| / 2 := by positivity
   have key := hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (μ := μ) (F := fun (w : ℂ) (y : ℝ) ↦ Complex.log (w - y))
     (F' := fun (w : ℂ) (y : ℝ) ↦ ((w - y)⁻¹ : ℂ)) (x₀ := z)
-    (bound := fun _ ↦ 2 / z.im) (Metric.ball_mem_nhds z hr)
+    (bound := fun _ ↦ 2 / |z.im|) (Metric.ball_mem_nhds z hr)
     (Filter.Eventually.of_forall fun w ↦
       (Complex.measurable_log.comp (by fun_prop)).aestronglyMeasurable)
-    (integrable_clog_sub_of_im_ne_zero μ hs hμ hz.ne')
+    (integrable_clog_sub_of_im_ne_zero μ hs hμ hz)
     (by fun_prop)
     (Filter.Eventually.of_forall fun y w hw ↦ Complex.norm_sub_inv_le_of_mem_ball hw y)
     (integrable_const _)
     (Filter.Eventually.of_forall fun y w hw ↦ by
-      have hw' : 0 < w.im := by have := Complex.sub_lt_im_of_mem_ball hw; linarith
+      have hw' : w.im ≠ 0 := by
+        have h := Complex.abs_im_sub_lt_abs_im_of_mem_ball hw
+        have : 0 < |w.im| := by linarith
+        exact abs_pos.mp this
       have hd : HasDerivAt (fun w : ℂ ↦ w - (y : ℂ)) 1 w := (hasDerivAt_id w).sub_const (y : ℂ)
-      simpa using HasDerivAt.clog hd (TauCeti.sub_ofReal_mem_slitPlane_of_im_pos hw' y))
+      have hslit : w - (y : ℂ) ∈ Complex.slitPlane := by
+        apply Complex.mem_slitPlane_iff.mpr
+        right
+        simpa using hw'
+      simpa using HasDerivAt.clog hd hslit)
   convert key.2 using 1
   rw [MeasureTheory.resolventTransform_apply, ← integral_neg]
   apply integral_congr_ae

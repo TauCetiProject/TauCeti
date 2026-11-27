@@ -88,24 +88,22 @@ theorem continuous_resolvent_real {z : ℂ} (hz : z.im ≠ 0) : Continuous (reso
   continuous_iff_continuousAt.2 fun x ↦
     (spectrum.hasDerivAt_resolvent_const_left (mem_resolventSet_real hz x)).continuousAt
 
-/-- The reciprocal kernel is bounded in a ball around a point in the upper half-plane. -/
+/-- The reciprocal kernel is bounded in a ball around a point off the real axis. -/
 theorem norm_sub_inv_le_of_mem_ball {z w : ℂ}
-    (hw : w ∈ Metric.ball z (z.im / 2)) (y : ℝ) :
-    ‖((w - y)⁻¹ : ℂ)‖ ≤ 2 / z.im := by
-  have h1 : z.im / 2 < w.im := by
-    have := sub_lt_im_of_mem_ball hw
+    (hw : w ∈ Metric.ball z (|z.im| / 2)) (y : ℝ) :
+    ‖((w - y)⁻¹ : ℂ)‖ ≤ 2 / |z.im| := by
+  have h1 : |z.im| / 2 < |w.im| := by
+    have := abs_im_sub_lt_abs_im_of_mem_ball hw
     linarith
-  have hradius : 0 < z.im / 2 :=
+  have hradius : 0 < |z.im| / 2 :=
     (dist_nonneg : 0 ≤ dist w z).trans_lt (Metric.mem_ball.mp hw)
-  have hwpos : 0 < w.im := by linarith
+  have hwne : w.im ≠ 0 := abs_pos.mp (hradius.trans h1)
   calc
     ‖((w - y)⁻¹ : ℂ)‖ = ‖resolvent w y‖ := by
       simp [resolvent, Ring.inverse_eq_inv', norm_inv, norm_sub_rev]
-    _ ≤ |w.im|⁻¹ := norm_resolvent_real_le w y hwpos.ne'
-    _ ≤ (z.im / 2)⁻¹ := by
-      rw [abs_of_pos hwpos]
-      exact inv_anti₀ hradius h1.le
-    _ = 2 / z.im := by field_simp
+    _ ≤ |w.im|⁻¹ := norm_resolvent_real_le w y hwne
+    _ ≤ (|z.im| / 2)⁻¹ := inv_anti₀ hradius h1.le
+    _ = 2 / |z.im| := by field_simp
 
 /-- As a function of the real input, the resolvent kernel is Lipschitz with constant
 `|Im z|⁻²`. -/

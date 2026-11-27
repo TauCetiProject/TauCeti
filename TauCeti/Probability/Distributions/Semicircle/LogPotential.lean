@@ -106,10 +106,6 @@ section UpperHalfPlane
 
 variable {z : ℂ}
 
-private theorem restrict_standardSemicircleReal :
-    (semicircleReal 0 1).restrict (Icc (-2) 2) = semicircleReal 0 1 := by
-  simpa using restrict_Icc_semicircleReal 0 1
-
 private theorem mem_slitPlane_neg_m (hz : 0 < z.im) : -(m z) ∈ Complex.slitPlane := by
   rw [Complex.mem_slitPlane_iff]
   right
@@ -119,29 +115,25 @@ private theorem mem_slitPlane_neg_m (hz : 0 < z.im) : -(m z) ∈ Complex.slitPla
 
 private theorem m_ne_zero (hz : 0 < z.im) : m z ≠ 0 := by
   intro hm
-  have h := resolventTransform_semicircleReal_zero_one_quadratic_eq_zero hz.ne'
+  have h : m z * m z + z * m z + 1 = 0 := by
+    simpa using ((eq_resolventTransform_semicircleReal_iff (a := 0) (v := 1) hz).1 rfl).2
   rw [hm] at h
   norm_num at h
 
 private theorem deriv_m_quad (hz : 0 < z.im) {d : ℂ} (hdm : HasDerivAt m d z) :
     d * m z + m z * d + m z + z * d = 0 := by
-  have hq : HasDerivAt (fun w : ℂ ↦ m w * m w + w * m w + 1)
-      (d * m z + m z * d + m z + z * d) z := by
-    convert ((hdm.mul hdm).add ((hasDerivAt_id z).mul hdm)).add
-      (hasDerivAt_const z 1) using 1
-    · funext w
-      simp only [Pi.add_apply, Pi.mul_apply, id_eq]
-    · simp only [id_eq]
-      ring
-  have hEq : (fun w : ℂ ↦ m w * m w + w * m w + 1) =ᶠ[𝓝 z] fun _ ↦ 0 := by
-    filter_upwards [Metric.ball_mem_nhds z (by positivity : 0 < z.im / 2)] with w hw
-    simpa using resolventTransform_semicircleReal_zero_one_quadratic_eq_zero (by
-      have h := sub_lt_im_of_mem_ball hw
-      linarith)
-  have hzero := (hasDerivAt_const z 0).congr_of_eventuallyEq hEq
-  have := hzero.deriv
-  rw [hq.deriv] at this
-  exact this
+  have him : 0 < (2 * m z + z).im := by
+    have hm := im_resolventTransform_pos (μ := semicircleReal 0 1)
+      (IsProbabilityMeasure.ne_zero _) hz
+    have heq : (2 * m z + z).im = 2 * (m z).im + z.im := by simp
+    rw [heq]
+    linarith
+  have hne : 2 * m z + z ≠ 0 := fun h ↦ him.ne' (by rw [h, zero_im])
+  have hderiv : d = -m z / (2 * m z + z) := by
+    rw [← hdm.deriv]
+    simpa using deriv_resolventTransform_semicircleReal (a := 0) (v := 1) hz
+  have h := (eq_div_iff hne).mp hderiv
+  linear_combination h
 
 private theorem hasDerivAt_primitive (hz : 0 < z.im) :
     HasDerivAt primitive (-m z) z := by
@@ -165,7 +157,8 @@ private theorem hasDerivAt_primitive (hz : 0 < z.im) :
       simp only [Pi.neg_apply]
       ring
   have hval : -(m z + z * d) / 2 - (-d) / (-(m z)) = -m z := by
-    have hq1 := resolventTransform_semicircleReal_zero_one_quadratic_eq_zero hz.ne'
+    have hq1 : m z * m z + z * m z + 1 = 0 := by
+      simpa using ((eq_resolventTransform_semicircleReal_iff (a := 0) (v := 1) hz).1 rfl).2
     field_simp [hm0]
     linear_combination m z * hq0 - 2 * d * hq1
   convert hprim using 1
@@ -179,8 +172,9 @@ private theorem logPotential_sub_primitive_is_const {z w : ℂ}
   let D : ℂ → ℂ :=
     fun u ↦ (∫ y : ℝ, Complex.log (u - y) ∂semicircleReal 0 1) - primitive u
   have hD (u : ℂ) (hu : 0 < u.im) : HasDerivAt D 0 u := by
-    convert (Measure.hasDerivAt_integral_clog_sub_of_im_pos (semicircleReal 0 1)
-      isCompact_Icc restrict_standardSemicircleReal hu).sub (hasDerivAt_primitive hu) using 1
+    convert (Measure.hasDerivAt_integral_clog_sub_of_im_ne_zero (semicircleReal 0 1)
+      isCompact_Icc (by simpa using restrict_Icc_semicircleReal 0 1) hu.ne').sub
+        (hasDerivAt_primitive hu) using 1
     simp
   have hopen : IsOpen {u : ℂ | 0 < u.im} := isOpen_lt continuous_const Complex.continuous_im
   have hconv : IsPreconnected {u : ℂ | 0 < u.im} :=
@@ -212,9 +206,9 @@ private theorem real_logPotential_sub_primitive_is_const {z w : ℂ}
   have h := congrArg Complex.re (logPotential_sub_primitive_is_const hz hw)
   simpa only [Complex.sub_re,
     Measure.integral_log_norm_sub_eq_re_of_im_ne_zero (semicircleReal 0 1)
-      isCompact_Icc restrict_standardSemicircleReal hz.ne',
+      isCompact_Icc (by simpa using restrict_Icc_semicircleReal 0 1) hz.ne',
     Measure.integral_log_norm_sub_eq_re_of_im_ne_zero (semicircleReal 0 1)
-      isCompact_Icc restrict_standardSemicircleReal hw.ne'] using h
+      isCompact_Icc (by simpa using restrict_Icc_semicircleReal 0 1) hw.ne'] using h
 
 private theorem tendsto_primitive_re_sub_log_atTop :
     Tendsto (fun t : ℝ ↦ (primitive ((t : ℂ) * Complex.I)).re - Real.log t)
@@ -315,7 +309,7 @@ private theorem integral_log_norm_sub_semicircleReal_of_im_pos_of_pos
   have hlogInt :
       Integrable (fun y : ℝ ↦ Real.log ‖w - y‖) (semicircleReal 0 1) :=
     Measure.integrable_log_norm_sub_of_im_ne_zero (semicircleReal 0 1)
-      isCompact_Icc restrict_standardSemicircleReal hw.ne'
+      isCompact_Icc (by simpa using restrict_Icc_semicircleReal 0 1) hw.ne'
   have hne : ∀ᵐ y : ℝ ∂semicircleReal 0 1, w - y ≠ 0 := by
     filter_upwards with y
     exact sub_ne_zero.mpr
