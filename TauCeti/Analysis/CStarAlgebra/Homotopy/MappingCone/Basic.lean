@@ -464,11 +464,7 @@ theorem sectionCLM_map_mul_eq_iff (φ : A →⋆ₙₐ[ℂ] B) (a b : A) :
       CStarCone.linearPath_apply, half, ← Complex.coe_smul, smul_mul_smul_comm, ← map_mul] at hhalf
     have hsub : (((2⁻¹ : ℝ) : ℂ) - ((2⁻¹ : ℝ) : ℂ) * ((2⁻¹ : ℝ) : ℂ)) • φ (a * b) = 0 := by
       rw [sub_smul, hhalf, sub_self]
-    have hquarter := congrArg ((4 : ℂ) • ·) hsub
-    rw [smul_zero, smul_smul] at hquarter
-    have h4 : (4 : ℂ) * (((2⁻¹ : ℝ) : ℂ) - ((2⁻¹ : ℝ) : ℂ) * ((2⁻¹ : ℝ) : ℂ)) = 1 := by
-      push_cast; ring
-    rwa [h4, one_smul] at hquarter
+    exact (smul_eq_zero.mp hsub).resolve_left (by norm_num)
   · intro hab
     refine ext rfl ?_; ext t
     simp [hab, ← Complex.coe_smul, smul_mul_smul_comm, ← map_mul]

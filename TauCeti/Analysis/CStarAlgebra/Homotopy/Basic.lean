@@ -112,28 +112,23 @@ private noncomputable def transPath (H₀ : Homotopy φ₀ φ₁) (H₁ : Homoto
 /-- Concatenate two homotopies `H₀ : Homotopy φ₀ φ₁` and `H₁ : Homotopy φ₁ φ₂`. -/
 noncomputable def trans (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) : Homotopy φ₀ φ₂ where
   toHom := ContinuousMap.nonUnitalStarAlgHomOfPointwise (transPath H₀ H₁) fun t => by
-    by_cases ht : (t : ℝ) ≤ 1 / 2
-    · have ht' : (t : ℝ) ≤ 2⁻¹ := one_div (2 : ℝ) ▸ ht
-      refine ⟨(ContinuousMap.evalNonUnitalStarAlgHom 𝕜 B
-          ⟨2 * t, (mul_pos_mem_iff zero_lt_two).2 (mem_Icc.mpr ⟨nonneg t, ht⟩)⟩).comp H₀.toHom,
-        fun a => ?_⟩
-      simp [transPath, Path.trans_apply, ht']
-    · have ht' : ¬(t : ℝ) ≤ 2⁻¹ := one_div (2 : ℝ) ▸ ht
-      refine ⟨(ContinuousMap.evalNonUnitalStarAlgHom 𝕜 B
-          ⟨2 * t - 1, two_mul_sub_one_mem_iff.2 (mem_Icc.mpr ⟨(not_le.1 ht).le, le_one t⟩)⟩).comp
-          H₁.toHom, fun a => ?_⟩
-      simp [transPath, Path.trans_apply, ht']
+    by_cases ht : (t : ℝ) ≤ 2⁻¹
+    · refine ⟨(ContinuousMap.evalNonUnitalStarAlgHom 𝕜 B
+          ⟨2 * t, mul_nonneg zero_le_two (nonneg t), by linarith⟩).comp H₀.toHom, fun a => ?_⟩
+      simp [transPath, Path.trans_apply, ht]
+    · refine ⟨(ContinuousMap.evalNonUnitalStarAlgHom 𝕜 B
+          ⟨2 * t - 1, by linarith, by linarith [le_one t]⟩).comp H₁.toHom, fun a => ?_⟩
+      simp [transPath, Path.trans_apply, ht]
   toHom_apply_zero a := by simp [transPath]
   toHom_apply_one a := by simp [transPath]
 
 /-- Pointwise evaluation of a concatenated homotopy across the unit interval. -/
 theorem trans_toHom_apply (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) (a : A) (t : I) :
     (H₀.trans H₁).toHom a t =
-      if h : (t : ℝ) ≤ 1 / 2 then
-        H₀.toHom a ⟨2 * t, (mul_pos_mem_iff zero_lt_two).2 (mem_Icc.mpr ⟨nonneg t, h⟩)⟩
+      if h : (t : ℝ) ≤ 2⁻¹ then
+        H₀.toHom a ⟨2 * t, mul_nonneg zero_le_two (nonneg t), by linarith⟩
       else
-        H₁.toHom a ⟨2 * t - 1,
-          two_mul_sub_one_mem_iff.2 (mem_Icc.mpr ⟨(not_le.1 h).le, le_one t⟩)⟩ := by
+        H₁.toHom a ⟨2 * t - 1, by linarith, by linarith [le_one t]⟩ := by
   simpa [trans, transPath] using
     Path.trans_apply (Path.mk (H₀.toHom a) (H₀.toHom_apply_zero a) (H₀.toHom_apply_one a))
       (Path.mk (H₁.toHom a) (H₁.toHom_apply_zero a) (H₁.toHom_apply_one a)) t
@@ -144,9 +139,8 @@ theorem trans_toHom_apply (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ �
 theorem trans_toHom_apply_of_le_half (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) (a : A) {t : I}
     (ht : (t : ℝ) ≤ 2⁻¹) :
     (H₀.trans H₁).toHom a t =
-      H₀.toHom a ⟨2 * t, (mul_pos_mem_iff zero_lt_two).2
-        (mem_Icc.mpr ⟨nonneg t, (one_div (2 : ℝ)).symm ▸ ht⟩)⟩ := by
-  rw [trans_toHom_apply, dite_eq_left ((one_div (2 : ℝ)).symm ▸ ht)]
+      H₀.toHom a ⟨2 * t, mul_nonneg zero_le_two (nonneg t), by linarith⟩ := by
+  rw [trans_toHom_apply, dite_eq_left ht]
 
 /-- On the second half `2⁻¹ ≤ t`, `H₀.trans H₁` evaluates `H₁` at `2 * t - 1` (stated with `2⁻¹`
 for `simp` normal form). -/
@@ -154,8 +148,7 @@ for `simp` normal form). -/
 theorem trans_toHom_apply_of_half_le (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) (a : A) {t : I}
     (ht : 2⁻¹ ≤ (t : ℝ)) :
     (H₀.trans H₁).toHom a t =
-      H₁.toHom a ⟨2 * t - 1, two_mul_sub_one_mem_iff.2
-        (mem_Icc.mpr ⟨(one_div (2 : ℝ)).symm ▸ ht, le_one t⟩)⟩ := by
+      H₁.toHom a ⟨2 * t - 1, by linarith, by linarith [le_one t]⟩ := by
   let γ₀ := Path.mk (H₀.toHom a) (H₀.toHom_apply_zero a) (H₀.toHom_apply_one a)
   let γ₁ := Path.mk (H₁.toHom a) (H₁.toHom_apply_zero a) (H₁.toHom_apply_one a)
   have hdef : (H₀.trans H₁).toHom a = (γ₀.trans γ₁).toContinuousMap := by
@@ -164,9 +157,8 @@ theorem trans_toHom_apply_of_half_le (H₀ : Homotopy φ₀ φ₁) (H₁ : Homot
     (H₀.trans H₁).toHom a t = (γ₀.trans γ₁).extend t := by
       rw [hdef]
       exact (Path.extend_apply (γ₀.trans γ₁) t.property).symm
-    _ = γ₁.extend (2 * t - 1) := Path.extend_trans_of_half_le γ₀ γ₁ ((one_div (2 : ℝ)).symm ▸ ht)
-    _ = H₁.toHom a ⟨2 * t - 1, two_mul_sub_one_mem_iff.2
-          (mem_Icc.mpr ⟨(one_div (2 : ℝ)).symm ▸ ht, le_one t⟩)⟩ := Path.extend_apply γ₁ _
+    _ = γ₁.extend (2 * t - 1) := Path.extend_trans_of_half_le γ₀ γ₁ (by linarith)
+    _ = H₁.toHom a ⟨2 * t - 1, by linarith, by linarith [le_one t]⟩ := Path.extend_apply γ₁ _
 
 /-- Precompose a homotopy `H : Homotopy φ₀ φ₁` on the right with `ψ : C →⋆ₙₐ[𝕜] A`. -/
 def compRight {C : Type*} [NonUnitalNonAssocSemiring C] [DistribMulAction 𝕜 C] [Star C]
@@ -318,16 +310,14 @@ def trans (e₁ : StarHomotopyEquiv A B) (e₂ : StarHomotopyEquiv B C) :
     StarHomotopyEquiv A C where
   toFun := e₂.toFun.comp e₁.toFun
   invFun := e₁.invFun.comp e₂.invFun
-  left_inv :=
-    have hassoc : (e₁.invFun.comp e₂.invFun).comp (e₂.toFun.comp e₁.toFun) =
-        e₁.invFun.comp ((e₂.invFun.comp e₂.toFun).comp e₁.toFun) := rfl
-    hassoc ▸ ((e₂.left_inv.compRight e₁.toFun).compLeft e₁.invFun
-      (map_continuous e₁.invFun)).trans e₁.left_inv
-  right_inv :=
-    have hassoc : (e₂.toFun.comp e₁.toFun).comp (e₁.invFun.comp e₂.invFun) =
-        e₂.toFun.comp ((e₁.toFun.comp e₁.invFun).comp e₂.invFun) := rfl
-    hassoc ▸ ((e₁.right_inv.compRight e₂.invFun).compLeft e₂.toFun
-      (map_continuous e₂.toFun)).trans e₂.right_inv
+  left_inv := by
+    simpa only [NonUnitalStarAlgHom.comp_assoc] using
+      ((e₂.left_inv.compRight e₁.toFun).compLeft e₁.invFun
+        (map_continuous e₁.invFun)).trans e₁.left_inv
+  right_inv := by
+    simpa only [NonUnitalStarAlgHom.comp_assoc] using
+      ((e₁.right_inv.compRight e₂.invFun).compLeft e₂.toFun
+        (map_continuous e₂.toFun)).trans e₂.right_inv
 
 /-- Every `⋆`-algebra isomorphism `A ≃⋆ₐ[ℂ] B` induces a C⋆-homotopy equivalence. -/
 def ofStarAlgEquiv (e : A ≃⋆ₐ[ℂ] B) : StarHomotopyEquiv A B where
