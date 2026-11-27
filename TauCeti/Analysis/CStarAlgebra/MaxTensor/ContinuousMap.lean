@@ -5,45 +5,39 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.UniformSpace.ProdApproximation
 public import TauCeti.Analysis.CStarAlgebra.MinTensorNorm
 public import TauCeti.Analysis.VonNeumannAlgebra.Adjoin
+public import TauCeti.Topology.ContinuousMap.TensorProduct
 import Mathlib.Analysis.CStarAlgebra.GelfandDuality
-import Mathlib.Topology.ContinuousMap.StoneWeierstrass
-import Mathlib.Topology.Separation.CompletelyRegular
 import TauCeti.Analysis.Normed.Algebra.Character.ContinuousMap
 
 /-!
 # The minimal and maximal C*-norms on `C(X) ⊙ C(Y)`
 
 For compact Hausdorff spaces `X` and `Y`, the star homomorphism
-`TauCeti.continuousMapTensorHom X Y : C(X) ⊗[ℂ] C(Y) → C(X × Y)`,
-`f ⊗ g ↦ ((x, y) ↦ f x * g y)` (a star homomorphism version of Mathlib's linear map
-`ContinuousMap.tensorHom`, see `TauCeti.coe_continuousMapTensorHom`), is isometric for both the
-minimal and the maximal C*-norm:
+`TauCeti.continuousMapTensorHom ℂ X Y : C(X) ⊗[ℂ] C(Y) → C(X × Y)`,
+`f ⊗ g ↦ ((x, y) ↦ f x * g y)` (from `TauCeti.Topology.ContinuousMap.TensorProduct`), is
+isometric for both the minimal and the maximal C*-norm:
 
 * `TauCeti.minTensorNorm_continuousMap` and `TauCeti.maxTensorNorm_continuousMap`:
-  `‖z‖_min = ‖z‖_max = ‖(continuousMapTensorHom X Y) z‖_∞`;
+  `‖z‖_min = ‖z‖_max = ‖(continuousMapTensorHom ℂ X Y) z‖_∞`;
 * `TauCeti.minTensorNorm_eq_maxTensorNorm_continuousMap`: the two norms agree on
   `C(X) ⊗[ℂ] C(Y)`;
-* `TauCeti.continuousMapTensorHom_injective` and `TauCeti.denseRange_continuousMapTensorHom`
-  (Stone–Weierstrass): the map is injective with dense range, from which the identification
-  of the completion of `C(X) ⊙ C(Y)` in either norm with `C(X × Y)` follows once that completion
-  isomorphism is constructed. Through `TauCeti.coe_continuousMapTensorHom` the density also holds
-  for Mathlib's `ContinuousMap.tensorHom` (`ContinuousMap.denseRange_tensorHom_complex`).
+* `TauCeti.continuousMapTensorHom_injective`: the map is injective; its range is dense by
+  Stone–Weierstrass (`TauCeti.denseRange_continuousMapTensorHom`).
 
 The upper bound is the content. A commuting pair of representations `π`, `ρ` of `C(X)` and `C(Y)`
 on a Hilbert space `H` has commuting, star-closed ranges, so the von Neumann algebra `D` they
 generate (their double commutant, `VonNeumannAlgebra.adjoin`) is a closed commutative
-C*-subalgebra of `B(H)` (`TauCeti.CommutingRepresentationPair.mul_comm_adjoin`) containing every
+C*-subalgebra of `B(H)` (`VonNeumannAlgebra.isMulCommutative_adjoin`) containing every
 `(π × ρ) z` (`TauCeti.CommutingRepresentationPair.tensorHom_mem_adjoin`). By Gelfand
 theory the norm of an element of `D` is the supremum of `|χ(·)|` over the characters `χ` of `D`.
 A character `χ` restricts along `π` to a multiplicative linear functional on `C(X)`, which is
 either `0` or the evaluation at a point `x`
 (`ContinuousMap.nonUnitalAlgHom_eq_zero_or_exists_eval`), and likewise along `ρ`; so
-`χ((π × ρ) z)` is `0` or the value of `(continuousMapTensorHom X Y) z` at a point `(x, y)`.
+`χ((π × ρ) z)` is `0` or the value of `(continuousMapTensorHom ℂ X Y) z` at a point `(x, y)`.
 The lower bound comes from the one-dimensional representations `f ↦ f x` and `g ↦ g y`, whose
-spatial tensor product sends `z` to the scalar `(continuousMapTensorHom X Y) z (x, y)`.
+spatial tensor product sends `z` to the scalar `(continuousMapTensorHom ℂ X Y) z (x, y)`.
 
 ## References
 
@@ -61,33 +55,7 @@ universe u v
 
 namespace TauCeti
 
-/-! ### The star homomorphism `C(X) ⊗ C(Y) → C(X × Y)` -/
-
-variable (X : Type u) (Y : Type v) [TopologicalSpace X] [TopologicalSpace Y]
-
-/-- The star homomorphism `C(X, ℂ) ⊗[ℂ] C(Y, ℂ) → C(X × Y, ℂ)`,
-`f ⊗ g ↦ ((x, y) ↦ f x * g y)`. -/
-def continuousMapTensorHom : C(X, ℂ) ⊗[ℂ] C(Y, ℂ) →⋆ₙₐ[ℂ] C(X × Y, ℂ) :=
-  Algebra.TensorProduct.liftNonUnitalStarAlgHom
-    (ContinuousMap.compStarAlgHom' ℂ ℂ (ContinuousMap.fst : C(X × Y, X))).toNonUnitalStarAlgHom
-    (ContinuousMap.compStarAlgHom' ℂ ℂ (ContinuousMap.snd : C(X × Y, Y))).toNonUnitalStarAlgHom
-    fun _ _ ↦ Commute.all _ _
-
-variable {X Y}
-
-/-- `TauCeti.continuousMapTensorHom` is Mathlib's linear map `ContinuousMap.tensorHom`. -/
-theorem coe_continuousMapTensorHom :
-    ⇑(continuousMapTensorHom X Y) =
-      ⇑(ContinuousMap.tensorHom : C(X, ℂ) ⊗[ℂ] C(Y, ℂ) →ₗ[ℂ] C(X × Y, ℂ)) := by
-  funext z
-  induction z using TensorProduct.inductionOn with
-  | tmul f g => ext; simp [continuousMapTensorHom]
-  | add z z' hz hz' => rw [map_add, map_add, hz, hz']
-
-@[simp]
-theorem continuousMapTensorHom_tmul_apply (f : C(X, ℂ)) (g : C(Y, ℂ)) (p : X × Y) :
-    continuousMapTensorHom X Y (f ⊗ₜ g) p = f p.1 * g p.2 := by
-  rw [coe_continuousMapTensorHom, ContinuousMap.tensorHom_tmul, ContinuousMap.prodMul_apply]
+variable {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-! ### The upper bound: commuting pairs and Gelfand theory -/
 
@@ -100,19 +68,21 @@ section Commutative
 variable {A : Type u} {B : Type v} [NonUnitalCommCStarAlgebra A] [NonUnitalCommCStarAlgebra B]
 variable (p : CommutingRepresentationPair A B)
 
-private theorem star_range_union_subset :
-    star (Set.range p.left ∪ Set.range p.right) ⊆ Set.range p.left ∪ Set.range p.right := by
-  rintro _ (⟨f, hf⟩ | ⟨g, hg⟩)
-  · exact Or.inl ⟨star f, by rw [map_star, hf, star_star]⟩
-  · exact Or.inr ⟨star g, by rw [map_star, hg, star_star]⟩
+private theorem star_mem_range_union {a : p.H →L[ℂ] p.H}
+    (ha : a ∈ Set.range p.left ∪ Set.range p.right) :
+    star a ∈ Set.range p.left ∪ Set.range p.right := by
+  rcases ha with ⟨f, rfl⟩ | ⟨g, rfl⟩
+  · exact Or.inl ⟨star f, map_star _ f⟩
+  · exact Or.inr ⟨star g, map_star _ g⟩
 
-private theorem range_union_pairwise_commute :
-    (Set.range p.left ∪ Set.range p.right).Pairwise Commute := by
+private theorem commute_of_mem_range_union {a b : p.H →L[ℂ] p.H}
+    (ha : a ∈ Set.range p.left ∪ Set.range p.right)
+    (hb : b ∈ Set.range p.left ∪ Set.range p.right) : Commute a b := by
   have hl : ∀ f f' : A, Commute (p.left f) (p.left f') := fun f f' ↦ by
     rw [Commute, SemiconjBy, ← map_mul, ← map_mul, mul_comm]
   have hr : ∀ g g' : B, Commute (p.right g) (p.right g') := fun g g' ↦ by
     rw [Commute, SemiconjBy, ← map_mul, ← map_mul, mul_comm]
-  rintro _ (⟨f, rfl⟩ | ⟨g, rfl⟩) _ (⟨f', rfl⟩ | ⟨g', rfl⟩) -
+  rcases ha with ⟨f, rfl⟩ | ⟨g, rfl⟩ <;> rcases hb with ⟨f', rfl⟩ | ⟨g', rfl⟩
   · exact hl f f'
   · exact p.commute f g'
   · exact (p.commute f' g).symm
@@ -120,15 +90,12 @@ private theorem range_union_pairwise_commute :
 
 /-- The von Neumann algebra generated by the ranges of a commuting pair of commutative
 C*-algebras is commutative. -/
-theorem mul_comm_adjoin
-    (a b : (adjoin (Set.range p.left ∪ Set.range p.right)).toStarSubalgebra) :
-    a * b = b * a := by
-  refine Subtype.ext ?_
-  have ha := a.property
-  have hb := b.property
-  rw [← SetLike.mem_coe, VonNeumannAlgebra.coe_toStarSubalgebra,
-    VonNeumannAlgebra.coe_adjoin_of_star_subset p.star_range_union_subset] at ha hb
-  exact Set.centralizer_centralizer_comm_of_comm p.range_union_pairwise_commute _ ha _ hb
+private theorem isMulCommutative_adjoin :
+    IsMulCommutative (adjoin (Set.range p.left ∪ Set.range p.right)) :=
+  VonNeumannAlgebra.isMulCommutative_adjoin
+    (fun _ ha ↦ ⟨p.commute_of_mem_range_union (p.star_mem_range_union ha) ha⟩)
+    (fun _ ha _ hb _ ↦ p.commute_of_mem_range_union ha hb)
+    (fun _ ha _ hb _ ↦ p.commute_of_mem_range_union ha (p.star_mem_range_union hb))
 
 /-- The integrated form of a commuting pair takes values in the von Neumann algebra generated by
 the pair. -/
@@ -139,12 +106,6 @@ theorem tensorHom_mem_adjoin (z : A ⊗[ℂ] B) :
     rw [tensorHom_tmul]
     exact mul_mem (subset_adjoin _ (Or.inl ⟨f, rfl⟩)) (subset_adjoin _ (Or.inr ⟨g, rfl⟩))
   | add z z' hz hz' => rw [map_add]; exact add_mem hz hz'
-
-/-- The von Neumann algebra generated by the ranges of a commuting pair of commutative
-C*-algebras is a commutative unital C*-algebra. -/
-private abbrev adjoinCommCStarAlgebra :
-    CommCStarAlgebra (adjoin (Set.range p.left ∪ Set.range p.right)).toStarSubalgebra :=
-  { StarSubalgebra.cstarAlgebra _ with mul_comm := p.mul_comm_adjoin }
 
 /-- The restriction of the representation of `A` to a multiplicative functional, through a
 character of the von Neumann algebra generated by the pair. -/
@@ -190,7 +151,7 @@ variable (p : CommutingRepresentationPair C(X, ℂ) C(Y, ℂ))
 form of the pair that are bounded by the supremum norm of the corresponding function on `X × Y`. -/
 private theorem norm_tensorChar_le [T2Space X] [T2Space Y]
     (χ : (adjoin (Set.range p.left ∪ Set.range p.right)).toStarSubalgebra →ₙₐ[ℂ] ℂ)
-    (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) : ‖p.tensorChar χ z‖ ≤ ‖continuousMapTensorHom X Y z‖ := by
+    (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) : ‖p.tensorChar χ z‖ ≤ ‖continuousMapTensorHom ℂ X Y z‖ := by
   by_cases h0 : ∀ f g, p.leftChar χ f * p.rightChar χ g = 0
   · have : p.tensorChar χ z = 0 := by
       induction z using TensorProduct.inductionOn with
@@ -204,19 +165,20 @@ private theorem norm_tensorChar_le [T2Space X] [T2Space Y]
     (p.leftChar χ)).resolve_left fun h ↦ hfg (by rw [h, NonUnitalAlgHom.zero_apply, zero_mul])
   obtain ⟨y, hy⟩ := (ContinuousMap.nonUnitalAlgHom_eq_zero_or_exists_eval
     (p.rightChar χ)).resolve_left fun h ↦ hfg (by rw [h, NonUnitalAlgHom.zero_apply, mul_zero])
-  have : p.tensorChar χ z = continuousMapTensorHom X Y z (x, y) := by
+  have : p.tensorChar χ z = continuousMapTensorHom ℂ X Y z (x, y) := by
     induction z using TensorProduct.inductionOn with
     | tmul f g => rw [tensorChar_tmul, hx, hy, continuousMapTensorHom_tmul_apply]
     | add z z' hz hz' => rw [map_add, hz, hz', map_add, ContinuousMap.add_apply]
   rw [this]
-  exact (continuousMapTensorHom X Y z).norm_coe_le_norm (x, y)
+  exact (continuousMapTensorHom ℂ X Y z).norm_coe_le_norm (x, y)
 
+open scoped IsMulCommutative in
 /-- **The upper bound.** The integrated form of a commuting pair of representations of `C(X)` and
 `C(Y)` is bounded by the supremum norm on `X × Y`. -/
 theorem norm_tensorHom_le_norm_continuousMapTensorHom [T2Space X] [T2Space Y]
-    (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) : ‖p.tensorHom z‖ ≤ ‖continuousMapTensorHom X Y z‖ := by
-  let := p.adjoinCommCStarAlgebra
+    (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) : ‖p.tensorHom z‖ ≤ ‖continuousMapTensorHom ℂ X Y z‖ := by
   let M := (adjoin (Set.range p.left ∪ Set.range p.right)).toStarSubalgebra
+  have : IsMulCommutative M := p.isMulCommutative_adjoin
   let T : M := ⟨p.tensorHom z, p.tensorHom_mem_adjoin z⟩
   -- The von Neumann algebra carries the norm of `B(H)`, restricted to the subalgebra.
   have hT : ‖p.tensorHom z‖ = ‖T‖ := rfl
@@ -238,10 +200,10 @@ end CommutingRepresentationPair
 
 /-- **The lower bound.** The minimal norm dominates the supremum norm on `X × Y`: the
 one-dimensional representations `f ↦ f x` and `g ↦ g y` have spatial tensor product
-`z ↦ (continuousMapTensorHom X Y) z (x, y)`. -/
+`z ↦ (continuousMapTensorHom ℂ X Y) z (x, y)`. -/
 theorem norm_continuousMapTensorHom_le_minTensorNorm [CompactSpace X] [CompactSpace Y]
     (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) :
-    ‖continuousMapTensorHom X Y z‖ ≤ minTensorNorm C(X, ℂ) C(Y, ℂ) z := by
+    ‖continuousMapTensorHom ℂ X Y z‖ ≤ minTensorNorm C(X, ℂ) C(Y, ℂ) z := by
   rw [ContinuousMap.norm_le _ (minTensorNorm_nonneg z)]
   rintro ⟨x, y⟩
   let E := EuclideanSpace ℂ (ULift.{u} Unit)
@@ -260,14 +222,14 @@ theorem norm_continuousMapTensorHom_le_minTensorNorm [CompactSpace X] [CompactSp
     rw [norm_eq_sqrt_re_inner (𝕜 := ℂ), this]
     simp
   let T := π.spatialTensorHom ρ z
-  have key : ⟪w, T w⟫_ℂ = continuousMapTensorHom X Y z (x, y) := by
+  have key : ⟪w, T w⟫_ℂ = continuousMapTensorHom ℂ X Y z (x, y) := by
     induction z using TensorProduct.inductionOn with
     | tmul a b =>
       simp [T, w, π, ρ, Algebra.algebraMap_eq_smul_one, inner_smul_right, he, hf, mul_comm]
     | add z z' hz hz' =>
       simp only [T, map_add, add_apply, inner_add_right, ContinuousMap.add_apply]
       rw [hz, hz']
-  calc ‖continuousMapTensorHom X Y z (x, y)‖ = ‖⟪w, T w⟫_ℂ‖ := by rw [key]
+  calc ‖continuousMapTensorHom ℂ X Y z (x, y)‖ = ‖⟪w, T w⟫_ℂ‖ := by rw [key]
     _ ≤ ‖w‖ * ‖T w‖ := norm_inner_le_norm _ _
     _ ≤ ‖w‖ * (‖T‖ * ‖w‖) := by gcongr; exact T.le_opNorm w
     _ = ‖T‖ := by rw [hw, one_mul, mul_one]
@@ -279,14 +241,14 @@ variable [CompactSpace X] [T2Space X] [CompactSpace Y] [T2Space Y]
 
 /-- **The maximal norm on `C(X) ⊙ C(Y)` is the supremum norm on `X × Y`.** -/
 theorem maxTensorNorm_continuousMap (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) :
-    maxTensorNorm C(X, ℂ) C(Y, ℂ) z = ‖continuousMapTensorHom X Y z‖ :=
+    maxTensorNorm C(X, ℂ) C(Y, ℂ) z = ‖continuousMapTensorHom ℂ X Y z‖ :=
   le_antisymm
     (maxTensorNorm_le_of_forall fun p ↦ p.norm_tensorHom_le_norm_continuousMapTensorHom z)
     ((norm_continuousMapTensorHom_le_minTensorNorm z).trans (minTensorNorm_le_maxTensorNorm z))
 
 /-- **The minimal norm on `C(X) ⊙ C(Y)` is the supremum norm on `X × Y`.** -/
 theorem minTensorNorm_continuousMap (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) :
-    minTensorNorm C(X, ℂ) C(Y, ℂ) z = ‖continuousMapTensorHom X Y z‖ :=
+    minTensorNorm C(X, ℂ) C(Y, ℂ) z = ‖continuousMapTensorHom ℂ X Y z‖ :=
   le_antisymm ((minTensorNorm_le_maxTensorNorm z).trans (maxTensorNorm_continuousMap z).le)
     (norm_continuousMapTensorHom_le_minTensorNorm z)
 
@@ -296,46 +258,9 @@ theorem minTensorNorm_eq_maxTensorNorm_continuousMap (z : C(X, ℂ) ⊗[ℂ] C(Y
   rw [minTensorNorm_continuousMap, maxTensorNorm_continuousMap]
 
 /-- The star homomorphism `C(X) ⊗[ℂ] C(Y) → C(X × Y)` is injective. -/
-theorem continuousMapTensorHom_injective : Function.Injective (continuousMapTensorHom X Y) := by
+theorem continuousMapTensorHom_injective : Function.Injective (continuousMapTensorHom ℂ X Y) := by
   intro z z' h
   rw [← sub_eq_zero, ← maxTensorNorm_eq_zero_iff, maxTensorNorm_continuousMap, map_sub, h,
     sub_self, norm_zero]
-
-/-- **Stone–Weierstrass**: the functions `(x, y) ↦ Σ fᵢ x * gᵢ y` are dense in `C(X × Y)`. -/
-theorem denseRange_continuousMapTensorHom : DenseRange (continuousMapTensorHom X Y) := by
-  let S : StarSubalgebra ℂ C(X × Y, ℂ) :=
-    { carrier := Set.range (continuousMapTensorHom X Y)
-      mul_mem' := by
-        rintro _ _ ⟨a, rfl⟩ ⟨b, rfl⟩
-        exact ⟨a * b, map_mul _ a b⟩
-      add_mem' := by
-        rintro _ _ ⟨a, rfl⟩ ⟨b, rfl⟩
-        exact ⟨a + b, map_add _ a b⟩
-      algebraMap_mem' := fun c ↦ ⟨c • (1 ⊗ₜ 1), by ext; simp [Algebra.algebraMap_eq_smul_one]⟩
-      star_mem' := by
-        rintro _ ⟨a, rfl⟩
-        exact ⟨star a, map_star _ a⟩ }
-  have hsep : S.SeparatesPoints := by
-    rintro ⟨x, y⟩ ⟨x', y'⟩ hne
-    by_cases hx : x = x'
-    · subst hx
-      obtain ⟨g, hg, hgy⟩ :=
-        separatesPoints_continuous_of_t35Space (fun h ↦ hne (by rw [h]) : y ≠ y')
-      exact ⟨_, ⟨_, ⟨1 ⊗ₜ ⟨fun t ↦ (g t : ℂ), Complex.continuous_ofReal.comp hg⟩, rfl⟩, rfl⟩,
-        by simpa using hgy⟩
-    · obtain ⟨f, hf, hfx⟩ := separatesPoints_continuous_of_t35Space hx
-      exact ⟨_, ⟨_, ⟨⟨fun t ↦ (f t : ℂ), Complex.continuous_ofReal.comp hf⟩ ⊗ₜ 1, rfl⟩, rfl⟩,
-        by simpa using hfx⟩
-  have h := ContinuousMap.starSubalgebra_topologicalClosure_eq_top_of_separatesPoints S hsep
-  rw [DenseRange, dense_iff_closure_eq]
-  have := congr_arg (fun T : StarSubalgebra ℂ C(X × Y, ℂ) ↦ (T : Set C(X × Y, ℂ))) h
-  simp only [StarSubalgebra.topologicalClosure_coe, StarSubalgebra.coe_top] at this
-  exact this
-
-/-- Mathlib's linear map `ContinuousMap.tensorHom : C(X, ℂ) ⊗[ℂ] C(Y, ℂ) → C(X × Y, ℂ)` has dense
-range for compact Hausdorff `X` and `Y`. -/
-theorem _root_.ContinuousMap.denseRange_tensorHom_complex :
-    DenseRange (ContinuousMap.tensorHom : C(X, ℂ) ⊗[ℂ] C(Y, ℂ) → C(X × Y, ℂ)) :=
-  coe_continuousMapTensorHom (X := X) (Y := Y) ▸ denseRange_continuousMapTensorHom
 
 end TauCeti
