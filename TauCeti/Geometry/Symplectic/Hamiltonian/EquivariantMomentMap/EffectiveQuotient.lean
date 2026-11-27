@@ -29,7 +29,7 @@ Let a commutative Lie group `G`, such as a torus, act smoothly on a manifold `M`
   (`TauCeti.SmoothTwoForm.HamiltonianTorusData.comp_monoidHom`).
 * **The effective quotient.** The kernel `K` of a smooth action on a Hausdorff manifold is a closed
   subgroup, so `G ⧸ K` is a Lie group, acting smoothly and faithfully on `M`
-  (`Subgroup.contMDiffSMul_quotientKerToPermHom`). The projection `G → G ⧸ K` is a surjective
+  (`TauCeti.contMDiffSMul_quotientKerToPermHom`). The projection `G → G ⧸ K` is a surjective
   submersion, so the descent applies: the effective quotient carries Hamiltonian torus data,
   with moment map `ν` determined by `ν x ∘ dπ = μ x - μ x₀`
   (`TauCeti.SmoothTwoForm.HamiltonianTorusData.existsUnique_quotientKerToPermHom`).
@@ -151,7 +151,7 @@ theorem existsUnique_quotientKerToPermHom [PreconnectedSpace M] (h : σ.Hamilton
     (hK : IsClosed ((toPermHom G M).ker : Set G)) (x₀ : M) :
     letI := Subgroup.quotientChartedSpaceOfIsClosed I hK
     haveI := Subgroup.lieGroup_quotientOfIsClosed (I := I) hK
-    haveI := Subgroup.contMDiffSMul_quotientKerToPermHom (I := I) (I' := I') (M := M) hK
+    haveI := TauCeti.contMDiffSMul_quotientKerToPermHom (I := I) (I' := I') (M := M) hK
     ∃! ν : M → Module.Dual ℝ (GroupLieAlgebra 𝓘(ℝ, Subgroup.QuotientModelSpace I
         (toPermHom G M).ker) (G ⧸ (toPermHom G M).ker)),
       σ.HamiltonianTorusData ν ∧ ∀ x, (ν x).comp ((QuotientGroup.mk' (toPermHom G M).ker)
@@ -159,7 +159,7 @@ theorem existsUnique_quotientKerToPermHom [PreconnectedSpace M] (h : σ.Hamilton
         |>.toLinearMap) = μ x - μ x₀ := by
   let _ := Subgroup.quotientChartedSpaceOfIsClosed I hK
   have := Subgroup.lieGroup_quotientOfIsClosed (I := I) hK
-  have := Subgroup.contMDiffSMul_quotientKerToPermHom (I := I) (I' := I') (M := M) hK
+  have := TauCeti.contMDiffSMul_quotientKerToPermHom (I := I) (I' := I') (M := M) hK
   exact h.existsUnique_comp_eq_sub _
     ((Subgroup.contMDiff_quotientMk (I := I) hK).mdifferentiableAt (by simp))
     (fun g x ↦ (quotientKerToPermHom_mk_smul G M g x).symm) (QuotientGroup.mk'_surjective _)
