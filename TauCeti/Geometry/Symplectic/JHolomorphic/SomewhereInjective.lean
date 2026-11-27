@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactness.Lindelof
+public import TauCeti.Analysis.Complex.RiemannSurface.Descent
 public import TauCeti.Analysis.Complex.RiemannSurface.SomewhereInjective
 public import TauCeti.Geometry.Symplectic.JHolomorphic.BranchDegree
+import TauCeti.Analysis.Complex.RiemannSurface.Branch.Values
+import TauCeti.Analysis.Complex.RiemannSurface.Ramification
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Immersion.Family
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
@@ -16,7 +19,7 @@ import TauCeti.Topology.Perfect
 import TauCeti.Topology.Separation.Hausdorff
 
 /-!
-# Closed pseudoholomorphic curves of branch degree one are somewhere injective
+# Somewhere injective closed pseudoholomorphic curves
 
 Let `S` be a compact connected Hausdorff Riemann surface, `N` a Hausdorff manifold with a smooth
 almost complex structure `J`, and `u : S → N` a nonconstant pseudoholomorphic map of class `C²`.
@@ -29,7 +32,8 @@ through which `u` factors over its simple curve (McDuff–Salamon, Proposition 2
 shows that `d = 1` exactly when `u` has an injective point, a point `z` with `du(z)` injective and
 `u⁻¹(u z) = {z}` (`TauCeti.IsInjectivePoint`), and that the injective points of such a curve are
 all points except a countable set of noninjective points, which accumulates at no point where `u`
-is immersed.
+is immersed. It then shows that the factorization of a closed curve through a somewhere injective
+one is unique (McDuff–Salamon, Proposition 2.5.1).
 
 * **Branch degree one everywhere.** If no point of a dense set, such as the complement of `B`, is
   related to another point, then no point of `S` at all is related to another point
@@ -61,11 +65,25 @@ is immersed.
   points, at which `du` vanishes or another point has the same value, accumulate only at the
   finitely many critical points and form a countable set
   (`TauCeti.countable_setOf_not_isInjectivePoint`).
+* **Uniqueness of the underlying simple curve.** Let `u = v₁ ∘ π₁ = v₂ ∘ π₂` with finite
+  holomorphic maps `πᵢ : S → Sᵢ` onto compact connected Riemann surfaces and somewhere injective
+  `C²` pseudoholomorphic curves `vᵢ : Sᵢ → N`. At two points `z`, `z'` of `S` where `πᵢ` is
+  unramified, the branch of `u` at `z'` factors holomorphically through its branch at `z` exactly
+  when `πᵢ z' = πᵢ z` (`TauCeti.IsSomewhereInjective.germFactorsThrough_comp_iff`), by pushing
+  changes of coordinate down through local inverses of `πᵢ`
+  (`TauCeti.RiemannSurface.germFactorsThrough_comp_iff`). Off a finite subset of `S` the fibres of
+  `π₁` and of `π₂` are therefore both described by the germs of `u`, so they coincide; by the open
+  mapping theorem they coincide everywhere
+  (`TauCeti.RiemannSurface.FiniteHolomorphicMap.apply_eq_of_apply_eq_of_finite`), and two finite
+  holomorphic maps with the same fibres differ by a unique biholomorphism
+  (`TauCeti.RiemannSurface.FiniteHolomorphicMap.existsUnique_biholomorph_comp_eq`).
 
 ## Main results
 
-* `TauCeti.IsSomewhereInjective.eq_of_germFactorsThrough`: on a somewhere injective closed curve,
+* `TauCeti.IsSomewhereInjective.germFactorsThrough_iff`: on a somewhere injective closed curve,
   coincident branches occur only at the same point.
+* `TauCeti.IsSomewhereInjective.germFactorsThrough_comp_iff`: the coincident branches of
+  `v ∘ π` at unramified points lie over the same point of the somewhere injective curve `v`.
 * `TauCeti.eventually_isInjectivePoint_of_forall_germFactorsThrough_imp_eq`,
   `TauCeti.setOf_isInjectivePoint_mem_codiscreteWithin`: near an immersed point, the other points
   of a curve of branch degree one are injective points.
@@ -76,6 +94,8 @@ is immersed.
   simple.
 * `TauCeti.countable_setOf_not_isInjectivePoint`: a closed curve of branch degree one has countably
   many noninjective points.
+* `TauCeti.existsUnique_biholomorph_of_isSomewhereInjective`: uniqueness of the factorization of
+  a closed pseudoholomorphic curve through a somewhere injective one.
 
 ## References
 
@@ -219,26 +239,27 @@ theorem isSomewhereInjective_of_forall_germFactorsThrough_imp_eq [CompactSpace S
       (fun ζ h ↦ (hd ζ z₀ h).symm) hz₀).exists
   exact hz.isSomewhereInjective
 
-/-- **On a somewhere injective closed curve, coincident branches occur only at the same point.**
-Let `u : S → N` be a `C²` pseudoholomorphic map from a compact connected Hausdorff Riemann surface
-into a Hausdorff almost complex manifold with an injective point. Then the branch of `u` at a point
-`z` factors holomorphically through the branch of `u` at no point other than `z`. -/
-theorem IsSomewhereInjective.eq_of_germFactorsThrough [CompactSpace S] [ConnectedSpace S]
+/-- **A somewhere injective curve has no coincident branches.** Let `u : S → N` be a `C²`
+pseudoholomorphic map from a compact connected Hausdorff Riemann surface into a Hausdorff almost
+complex manifold with an injective point. Then the branch of `u` at `w'` factors holomorphically
+through the branch of `u` at `w` only for `w = w'`. -/
+theorem IsSomewhereInjective.germFactorsThrough_iff [CompactSpace S] [ConnectedSpace S]
     [T2Space S] [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
     (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (h : IsSomewhereInjective 𝓘(ℝ, ℂ) I u)
-    {z ζ : S} (hzζ : GermFactorsThrough u z u ζ) : ζ = z := by
+    {w w' : S} : GermFactorsThrough u w' u w ↔ w' = w := by
+  refine ⟨fun hww' ↦ ?_, fun h ↦ h ▸ .refl u w'⟩
   have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
   obtain ⟨x, hx⟩ := isSomewhereInjective_iff.1 h
   -- `u` is not constant: the points near `x` other than `x` have other values.
-  obtain ⟨w, hw⟩ := (eventually_mem_nhdsWithin (a := x) (s := {x}ᶜ)).exists
-  have hne : ∃ x₁ x₂, u x₁ ≠ u x₂ := ⟨w, x, hx.apply_ne hw⟩
+  obtain ⟨y, hy⟩ := (eventually_mem_nhdsWithin (a := x) (s := {x}ᶜ)).exists
+  have hne : ∃ x₁ x₂, u x₁ ≠ u x₂ := ⟨y, x, hx.apply_ne hy⟩
   -- The class of the injective point `x` is `{x}`, so all classes off `B` have one point.
   have hx1 : {ζ | GermFactorsThrough u x u ζ} = {x} :=
     setOf_germFactorsThrough_eq_singleton_iff.2 fun _ hζ ↦ hx.eq_of_apply_eq hζ.apply_eq.symm
   obtain ⟨d, -, hd⟩ := exists_pos_forall_ncard_setOf_germFactorsThrough_eq hu hJu hne
   have hd1 : d = 1 := by rw [← hd x hx.notMem_criticalValuePreimage, hx1, ncard_singleton]
-  exact eq_of_germFactorsThrough_of_forall_ncard_eq_one (hu.of_le one_le_two) hJu hne
-    (fun y hy ↦ (hd y hy).trans hd1) hzζ
+  exact (eq_of_germFactorsThrough_of_forall_ncard_eq_one (hu.of_le one_le_two) hJu hne
+    (fun y hy ↦ (hd y hy).trans hd1) hww').symm
 
 /-- **A closed curve is somewhere injective exactly when it has branch degree one.** A `C²`
 pseudoholomorphic map `u : S → N` from a compact connected Hausdorff Riemann surface into a
@@ -248,7 +269,7 @@ theorem isSomewhereInjective_iff_forall_germFactorsThrough_imp_eq [CompactSpace 
     [ConnectedSpace S] [T2Space S] [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
     (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) :
     IsSomewhereInjective 𝓘(ℝ, ℂ) I u ↔ ∀ z ζ, GermFactorsThrough u z u ζ → ζ = z :=
-  ⟨fun h _ _ ↦ h.eq_of_germFactorsThrough hu hJu,
+  ⟨fun h _ _ hzζ ↦ ((h.germFactorsThrough_iff hu hJu).1 hzζ).symm,
     isSomewhereInjective_of_forall_germFactorsThrough_imp_eq hu hJu⟩
 
 /-- **A closed curve is somewhere injective exactly when its branch degree `d` is one.** A
@@ -301,5 +322,69 @@ theorem isSimpleSphere_of_forall_germFactorsThrough_imp_eq [T2Space N] {u : OneP
     (hd : ∀ z ζ, GermFactorsThrough u z u ζ → ζ = z) : IsSimpleSphere u :=
   (isSomewhereInjective_of_forall_germFactorsThrough_imp_eq hu hJu hd).isSimpleSphere
     (hu.of_le one_le_two)
+
+/-- **Coincident branches of a multiple cover lie over one point.** Let `u` be a `C²`
+pseudoholomorphic, somewhere injective curve on a compact connected Hausdorff Riemann surface and
+`π` a map to it, holomorphic near `z` and `z'` and unramified there. Then the branch of `u ∘ π` at
+`z'` factors holomorphically through its branch at `z` exactly when `π z' = π z`. -/
+theorem IsSomewhereInjective.germFactorsThrough_comp_iff [CompactSpace S] [ConnectedSpace S]
+    [T2Space S] [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
+    (hi : IsSomewhereInjective 𝓘(ℝ, ℂ) I u) {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
+    [IsManifold 𝓘(ℂ) 1 X] {π : X → S} {z z' : X}
+    (hπz : ∀ᶠ x in 𝓝 z, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) π x)
+    (hπz' : ∀ᶠ x in 𝓝 z', MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) π x)
+    (hz : localMultiplicity π z = 1) (hz' : localMultiplicity π z' = 1) :
+    GermFactorsThrough (u ∘ π) z' (u ∘ π) z ↔ π z' = π z :=
+  (RiemannSurface.germFactorsThrough_comp_iff hπz hπz' hz hz').trans
+    (hi.germFactorsThrough_iff hu hJu)
+
+omit [IsManifold 𝓘(ℂ) ∞ S] in
+/-- **Uniqueness of the simple curve underlying a closed pseudoholomorphic curve.** Let `S` be a
+compact Riemann surface, `π₁ : S → S₁` and `π₂ : S → S₂` finite holomorphic maps onto compact
+connected Riemann surfaces, and `v₁ : S₁ → N`, `v₂ : S₂ → N` somewhere injective `C²`
+pseudoholomorphic curves with `v₁ ∘ π₁ = v₂ ∘ π₂`. Then there is exactly one biholomorphism
+`a : S₁ → S₂` with `a ∘ π₁ = π₂` and `v₂ ∘ a = v₁`. -/
+theorem existsUnique_biholomorph_of_isSomewhereInjective [CompactSpace S] [T2Space N]
+    {S₁ S₂ : Type*} [TopologicalSpace S₁]
+    [ChartedSpace ℂ S₁] [IsManifold 𝓘(ℂ) ∞ S₁] [ConnectedSpace S₁] [T2Space S₁]
+    [TopologicalSpace S₂] [ChartedSpace ℂ S₂] [IsManifold 𝓘(ℂ) ∞ S₂] [ConnectedSpace S₂]
+    [T2Space S₂] [IsManifold 𝓘(ℂ) 1 S] (π₁ : FiniteHolomorphicMap S S₁)
+    (π₂ : FiniteHolomorphicMap S S₂) {v₁ : S₁ → N} {v₂ : S₂ → N} (hv₁ : ContMDiff 𝓘(ℝ, ℂ) I 2 v₁)
+    (hv₂ : ContMDiff 𝓘(ℝ, ℂ) I 2 v₂) (hJv₁ : IsPseudoholomorphic (ofComplexManifold ℂ S₁) J v₁)
+    (hJv₂ : IsPseudoholomorphic (ofComplexManifold ℂ S₂) J v₂)
+    (hi₁ : IsSomewhereInjective 𝓘(ℝ, ℂ) I v₁) (hi₂ : IsSomewhereInjective 𝓘(ℝ, ℂ) I v₂)
+    (h : v₁ ∘ π₁ = v₂ ∘ π₂) :
+    ∃! a : S₁ ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ S₂, a ∘ π₁ = π₂ ∧ v₂ ∘ a = v₁ := by
+  have := π₁.compactSpace_codomain
+  have := π₂.compactSpace_codomain
+  -- Off a finite set `F`, both covers are unramified.
+  set F := π₁ ⁻¹' π₁.branchValues ∪ π₂ ⁻¹' π₂.branchValues
+  have hF : F.Finite :=
+    (π₁.finite_branchValues.preimage' fun y _ ↦ π₁.finite_fiber y).union
+      (π₂.finite_branchValues.preimage' fun y _ ↦ π₂.finite_fiber y)
+  have hlm₁ : ∀ z ∉ F, localMultiplicity π₁ z = 1 := fun z hz ↦
+    (π₁.notMem_branchValues_iff _).1 (fun h ↦ hz (.inl h)) z rfl
+  have hlm₂ : ∀ z ∉ F, localMultiplicity π₂ z = 1 := fun z hz ↦
+    (π₂.notMem_branchValues_iff _).1 (fun h ↦ hz (.inr h)) z rfl
+  -- There, the fibres of both covers are the classes of coincident branches of `v₁ ∘ π₁`.
+  have hfib : ∀ z ∉ F, ∀ z' ∉ F, π₁ z = π₁ z' ↔ π₂ z = π₂ z' := fun z hz z' hz' ↦ by
+    rw [eq_comm (a := π₁ z), eq_comm (a := π₂ z),
+      ← hi₁.germFactorsThrough_comp_iff hv₁ hJv₁ (.of_forall fun x ↦ π₁.holomorphic x)
+        (.of_forall fun x ↦ π₁.holomorphic x) (hlm₁ z hz) (hlm₁ z' hz'), h,
+      hi₂.germFactorsThrough_comp_iff hv₂ hJv₂ (.of_forall fun x ↦ π₂.holomorphic x)
+        (.of_forall fun x ↦ π₂.holomorphic x) (hlm₂ z hz) (hlm₂ z' hz')]
+  -- By the open mapping theorem the fibres coincide everywhere.
+  have hfib' : ∀ z z', π₁ z = π₁ z' ↔ π₂ z = π₂ z' := fun z z' ↦
+    ⟨π₁.apply_eq_of_apply_eq_of_finite π₂.holomorphic.continuous hF
+      (fun x hx x' hx' ↦ (hfib x hx x' hx').1),
+     π₂.apply_eq_of_apply_eq_of_finite π₁.holomorphic.continuous hF
+      (fun x hx x' hx' ↦ (hfib x hx x' hx').2)⟩
+  obtain ⟨a, ha, huniq⟩ := π₁.existsUnique_biholomorph_comp_eq π₂ hfib'
+  refine ⟨a, ⟨ha, funext fun y ↦ ?_⟩, fun a' ha' ↦ huniq a' ha'.1⟩
+  obtain ⟨x, rfl⟩ := π₁.surjective y
+  rw [comp_apply, ← comp_apply (f := a), ha]
+  exact (congrFun h x).symm
+
 
 end TauCeti

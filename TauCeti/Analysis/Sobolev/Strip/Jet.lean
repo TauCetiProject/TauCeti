@@ -91,7 +91,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter Topology
-open scoped ENNReal
+open scoped ENNReal BoundedContinuousFunction
 
 namespace TauCeti.StripSobolev
 
@@ -740,6 +740,48 @@ theorem jetClosure_induction₂ {P : jetClosure p S → jetClosure p S → Prop}
     (h : ∀ ξ η : S, P (toJetClosure p S ξ) (toJetClosure p S η)) (x y : jetClosure p S) :
     P x y :=
   (denseRange_toJetClosure p S).induction_on₂ hP h x y
+
+/-- Every element of `jetClosure p S` is the limit of the jets of a sequence of elements of
+`S`. -/
+theorem exists_seq_tendsto_toJetClosure (x : jetClosure p S) :
+    ∃ ξ : ℕ → S, Tendsto (fun n ↦ toJetClosure p S (ξ n)) atTop (𝓝 x) := by
+  obtain ⟨y, hy, hlim⟩ := mem_closure_iff_seq_limit.1 (denseRange_toJetClosure p S x)
+  choose ξ hξ using hy
+  exact ⟨ξ, by simpa only [hξ] using hlim⟩
+
+/-- Limits of bounded continuous functions depending continuously on `x : jetClosure p S` pass
+from the jets of the elements of `S` to all of `jetClosure p S`: if `T x` tends to `w` along `l`
+whenever `x` is the jet of an element of `S`, then it does so for every `x`, since `T x` is a
+uniform limit of such functions. -/
+theorem tendsto_of_forall_tendsto_toJetClosure {X W : Type*} [TopologicalSpace X]
+    [PseudoMetricSpace W] {T : jetClosure p S → X →ᵇ W} (hT : Continuous T) {l : Filter X}
+    {w : W} (h : ∀ ξ : S, Tendsto (T (toJetClosure p S ξ)) l (𝓝 w)) (x : jetClosure p S) :
+    Tendsto (T x) l (𝓝 w) := by
+  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toJetClosure x
+  exact (BoundedContinuousFunction.tendsto_iff_tendstoUniformly.1
+    ((hT.tendsto x).comp hξ)).tendsto_of_eventually_tendsto (L := fun _ ↦ w)
+    (Eventually.of_forall fun n ↦ h (ξ n)) tendsto_const_nhds
+
+/-- Continuous representatives pass from the jets of the elements of `S` to all of
+`jetClosure p S`: if `T x`, read through `φ`, agrees almost everywhere on the strip with the value
+of `x`, the first component of its `Lᵖ` jet, whenever `x` is the jet of an element of `S`, then it
+does so for every `x`. -/
+theorem fst_ae_eq_of_forall_toJetClosure {X : Type*} [TopologicalSpace X]
+    {T : jetClosure p S → X →ᵇ V} (hT : Continuous T) {φ : ℝ × ℝ → X}
+    (h : ∀ ξ : S, (fun z ↦ ((toJetClosure p S ξ : Lp (V × V × V) p stripMeasure) z).1)
+      =ᵐ[stripMeasure] fun z ↦ T (toJetClosure p S ξ) (φ z))
+    (x : jetClosure p S) :
+    (fun z ↦ ((x : Lp (V × V × V) p stripMeasure) z).1) =ᵐ[stripMeasure] fun z ↦ T x (φ z) := by
+  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toJetClosure x
+  -- The jets converge in `Lᵖ`, so a subsequence converges almost everywhere.
+  obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp
+    ((continuous_subtypeVal.tendsto x).comp hξ)).exists_seq_tendsto_ae
+  -- The functions `T` of the jets converge uniformly, so pointwise.
+  have hT' := ((hT.tendsto x).comp hξ).comp hmono.tendsto_atTop
+  filter_upwards [hns, ae_all_iff.2 fun n ↦ h (ξ (ns n))] with z hz hzn
+  refine tendsto_nhds_unique ((continuous_fst.tendsto _).comp hz) ?_
+  exact (((continuous_eval_const (φ z)).tendsto _).comp hT').congr
+    fun n ↦ (hzn n).symm
 
 end JetLp
 

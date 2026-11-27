@@ -13,7 +13,8 @@ public import Mathlib.MeasureTheory.Measure.Real
 
 This file records elementary identities for real-valued measures and for measures on the real
 line. Bounds by finite sums divided by a nonzero constant pass from extended to real values
-when every measure in the sum is finite.
+when every measure in the sum is finite, and the real measure is countably additive on families
+of sets of finite measure.
 The absolute-value map folds the negative half-line onto the positive half-line. Squaring loses
 the sign of a real number
 and nothing else, so it determines a measure on the line as soon as the measure cannot tell the two
@@ -29,6 +30,8 @@ determines the measure outright.
   nonzero constant passes to real-valued measures when each summand is finite;
 * `MeasureTheory.sum_measureReal_preimage_singleton_inter` — the measurable fibres of a map into
   a finite type split the mass of every set of finite measure;
+* `MeasureTheory.measureReal_iUnion` — the real measure is countably additive on disjoint
+  measurable families of sets of finite measure;
 * `TauCeti.volume_Ioc_inter_Ioo_of_le_of_le` — the portion of an interval inside a larger open
   interval keeps its full length;
 * `TauCeti.ae_measureReal_preimage_ne_zero` — for a finite measure, almost every point lies in a
@@ -213,6 +216,16 @@ mass one. -/
 theorem sum_measureReal_preimage_singleton_eq_one [IsProbabilityMeasure μ] {X : Ω → A}
     (hX : ∀ a, MeasurableSet (X ⁻¹' {a})) : ∑ a, μ.real (X ⁻¹' {a}) = 1 := by
   simpa using sum_measureReal_preimage_singleton_inter (μ := μ) hX univ
+
+omit [Fintype A] in
+/-- **Countable additivity of the real measure.** The real measure of a countable disjoint union
+of measurable sets of finite measure is the sum of the real measures. -/
+theorem measureReal_iUnion {ι : Type*} [Countable ι] {f : ι → Set Ω}
+    (hn : Pairwise (Function.onFun Disjoint f)) (hm : ∀ i, MeasurableSet (f i))
+    (h : ∀ i, μ (f i) ≠ ∞ := by finiteness) :
+    μ.real (⋃ i, f i) = ∑' i, μ.real (f i) := by
+  simp only [measureReal_def]
+  rw [measure_iUnion hn hm, ENNReal.tsum_toReal_eq h]
 
 end MeasureTheory
 
