@@ -26,8 +26,8 @@ The functor `C^⊗ ⥤ Fin_*` is a cofibered category in the sense of Mathlib's
 `CategoryTheory.Functor.IsStronglyCocartesian`: every map `f : ⟨m⟩ ⟶ ⟨n⟩` has, at every family
 `X` over `⟨m⟩`, the strongly coCartesian lift `X ⟶ f_! X` whose target is the family of the
 tensor products over the fibers of `f` and whose components are identities. Its fiber over `⟨n⟩`
-is equivalent to `C^n`: a morphism over the identity of `⟨n⟩` is a family of maps of the members.
-This is the Segal condition in the category of operators.
+is equivalent to `C^n` by the inclusion of families: a morphism over the identity of `⟨n⟩` is a
+family of maps of the members.
 
 ## Main definitions
 
@@ -438,8 +438,8 @@ instance (n : FinPointed.{w}) : (toFiber C n).EssSurj where
 instance (n : FinPointed.{w}) : (toFiber C n).IsEquivalence where
 
 variable (C) in
-/-- **The Segal condition for the category of operators.** The fiber of `C^⊗` over `⟨n⟩` is
-equivalent to `C^n`, by the inclusion of the families over `⟨n⟩`. -/
+/-- The fiber of `C^⊗` over `⟨n⟩` is equivalent to `C^n`, by the inclusion of the families
+over `⟨n⟩`. -/
 noncomputable def fiberEquivalence (n : FinPointed.{w}) :
     (Fin n.len → C) ≌ (toFinPointed C).Fiber n :=
   (toFiber C n).asEquivalence
