@@ -17,7 +17,7 @@ import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Integral.Layercake
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.Analysis.InnerProductSpace.Euclidean.Fin
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.MeasureTheory.Function.LocallyIntegrable.Compact
 
 /-!
@@ -48,7 +48,8 @@ noncomputable section
 
 private abbrev Euclidean (n : ℕ) := EuclideanSpace ℝ (Fin n)
 
-open EuclideanSpace (cons cons_apply cons_zero cons_tail dist_cons_sq tail tail_apply tail_cons)
+open EuclideanSpace (consEquivL consEquivL_apply consEquivL_apply_zero consEquivL_apply_succ
+  consEquivL_symm_apply_fst consEquivL_symm_apply_snd dist_consEquivL_sq)
 
 private theorem exp_one_div_four_le_four_div_three : Real.exp (1 / 4 : ℝ) ≤ 4 / 3 := by
   convert Real.exp_bound_div_one_sub_of_interval (x := 1 / 4) (by norm_num) (by norm_num)
@@ -88,31 +89,35 @@ private theorem exp_sq_div_four_le_two_sub {r : ℝ} (hr₁ : r ≤ 1) :
           nlinarith [pow_nonneg (sub_nonneg.2 hr₁) 4]
 
 private def slice {n : ℕ} (A : Set (Euclidean (n + 1))) (t : ℝ) : Set (Euclidean n) :=
-  (fun x ↦ cons (t, x)) ⁻¹' A
+  (fun x ↦ consEquivL ℝ n (t, x)) ⁻¹' A
 
 private theorem slice_subset_image_tail {n : ℕ} (A : Set (Euclidean (n + 1))) (t : ℝ) :
-    slice A t ⊆ tail '' A := fun y hy ↦ ⟨cons (t, y), hy, tail_cons t y⟩
+    slice A t ⊆ (Prod.snd ∘ (consEquivL ℝ n).symm) '' A :=
+  fun y hy ↦ ⟨consEquivL ℝ n (t, y), hy, by simp⟩
 
 private theorem isCompact_slice {n : ℕ} {A : Set (Euclidean (n + 1))}
     (hA : IsCompact A) (t : ℝ) : IsCompact (slice A t) := by
-  have heq : slice A t = tail '' (A ∩ {z | z 0 = t}) := by
+  have heq : slice A t = (Prod.snd ∘ (consEquivL ℝ n).symm) '' (A ∩ {z | z 0 = t}) := by
     ext y
     constructor
     · intro hy
-      exact ⟨cons (t, y), ⟨hy, cons_zero t y⟩, tail_cons t y⟩
+      exact ⟨consEquivL ℝ n (t, y), ⟨hy, consEquivL_apply_zero (t, y)⟩, by simp⟩
     · rintro ⟨z, ⟨hz, hzt⟩, rfl⟩
       rw [mem_ofPred_eq] at hzt
-      rw [slice, mem_preimage, ← hzt, cons_tail]
+      rw [slice, mem_preimage, Function.comp_apply, ← hzt, ← consEquivL_symm_apply_fst,
+        Prod.mk.eta, ContinuousLinearEquiv.apply_symm_apply]
       exact hz
   rw [heq]
   exact (hA.inter_right (isClosed_eq (PiLp.continuous_apply 2 _ 0) continuous_const)).image
-    (tail (𝕜 := ℝ) (n := n)).continuous_of_finiteDimensional
+    (continuous_snd.comp (consEquivL ℝ n).symm.continuous)
 
 private theorem convex_slice {n : ℕ} {A : Set (Euclidean (n + 1))}
     (hA : Convex ℝ A) (t : ℝ) : Convex ℝ (slice A t) := by
   intro x hx y hy a b ha hb hab
   have ht : a * t + b * t = t := by rw [← add_mul, hab, one_mul]
-  have h := hA (show cons (t, x) ∈ A from hx) (show cons (t, y) ∈ A from hy) ha hb hab
+  have hx' : consEquivL ℝ n (t, x) ∈ A := hx
+  have hy' : consEquivL ℝ n (t, y) ∈ A := hy
+  have h := hA hx' hy' ha hb hab
   rw [← map_smul, ← map_smul, ← map_add] at h
   simpa only [slice, mem_preimage, Prod.smul_mk, Prod.mk_add_mk, smul_eq_mul, ht] using h
 
@@ -125,49 +130,53 @@ private theorem infDist_cons_sq_le_of_mem {n : ℕ}
     {t : ℝ} {x y : Euclidean n} {z : Euclidean (n + 1)}
     (hy : y ∈ slice A t) (hz : z ∈ A) (htz : dist t (z 0) ≤ 1)
     {b : ℝ} (hb : b ∈ Icc (0 : ℝ) 1) :
-    infDist (cons (t, x)) A ^ 2 ≤ (1 - b) * dist x y ^ 2 + b * dist x (tail z) ^ 2 + b ^ 2 := by
+    infDist (consEquivL ℝ n (t, x)) A ^ 2 ≤ (1 - b) * dist x y ^ 2 +
+      b * dist x ((consEquivL ℝ n).symm z).2 ^ 2 + b ^ 2 := by
+  let zTail := ((consEquivL ℝ n).symm z).2
   let c := (1 - b) * t + b * z 0
-  let w := (1 - b) • y + b • tail z
-  have hw : cons (c, w) ∈ A := by
-    have h := hAc (show cons (t, y) ∈ A from hy) hz (sub_nonneg.2 hb.2) hb.1
-      (sub_add_cancel 1 b)
-    rw [← cons_tail z, ← map_smul, ← map_smul, ← map_add] at h
-    simpa only [Prod.smul_mk, Prod.mk_add_mk, smul_eq_mul, c, w] using h
+  let w := (1 - b) • y + b • zTail
+  have hw : consEquivL ℝ n (c, w) ∈ A := by
+    have hy' : consEquivL ℝ n (t, y) ∈ A := hy
+    have h := hAc hy' hz (sub_nonneg.2 hb.2) hb.1 (sub_add_cancel 1 b)
+    rw [← (consEquivL ℝ n).apply_symm_apply z, ← map_smul, ← map_smul, ← map_add] at h
+    have heq : (1 - b) • (t, y) + b • (consEquivL ℝ n).symm z = (c, w) := by
+      apply Prod.ext <;> simp [c, w, zTail, smul_eq_mul]
+    rwa [heq] at h
   have hc : (t - c) ^ 2 ≤ b ^ 2 := by
     dsimp [c]
     nlinarith [mul_le_mul_of_nonneg_left (sq_sub_le_one_of_dist_le_one htz) (sq_nonneg b)]
-  have hd : dist x w ^ 2 ≤ (1 - b) * dist x y ^ 2 + b * dist x (tail z) ^ 2 := by
+  have hd : dist x w ^ 2 ≤ (1 - b) * dist x y ^ 2 + b * dist x zTail ^ 2 := by
     have h₁ := sub_nonneg.2 hb.2
     have hsum := sub_add_cancel 1 b
-    have hdist : dist w x ≤ (1 - b) * dist y x + b * dist (tail z) x :=
-      (convexOn_univ_dist x).2 (mem_univ y) (mem_univ (tail z)) h₁ hb.1 hsum
-    rw [dist_comm w x, dist_comm y x, dist_comm (tail z) x] at hdist
-    have hweighted : 0 ≤ (1 - b) * dist x y + b * dist x (tail z) :=
+    have hdist : dist w x ≤ (1 - b) * dist y x + b * dist zTail x :=
+      (convexOn_univ_dist x).2 (mem_univ y) (mem_univ zTail) h₁ hb.1 hsum
+    rw [dist_comm w x, dist_comm y x, dist_comm zTail x] at hdist
+    have hweighted : 0 ≤ (1 - b) * dist x y + b * dist x zTail :=
       add_nonneg (mul_nonneg h₁ dist_nonneg) (mul_nonneg hb.1 dist_nonneg)
     exact ((sq_le_sq₀ dist_nonneg hweighted).2 hdist).trans
       ((convexOn_pow 2).2 (mem_Ici.2 dist_nonneg) (mem_Ici.2 dist_nonneg) h₁ hb.1 hsum)
   calc
-    _ ≤ dist (cons (t, x)) (cons (c, w)) ^ 2 :=
+    _ ≤ dist (consEquivL ℝ n (t, x)) (consEquivL ℝ n (c, w)) ^ 2 :=
       (sq_le_sq₀ infDist_nonneg dist_nonneg).2 (infDist_le_dist_of_mem hw)
-    _ ≤ _ := by rw [dist_cons_sq, Real.dist_eq, sq_abs]; linarith
+    _ ≤ _ := by rw [dist_consEquivL_sq, Real.dist_eq, sq_abs]; linarith
 
 private theorem infDist_cons_sq_le {n : ℕ}
     {A : Set (Euclidean (n + 1))} (hAc : Convex ℝ A)
     {t : ℝ} (hline : ∀ z ∈ A, dist t (z 0) ≤ 1) {x : Euclidean n}
     {b : ℝ} (hb : b ∈ Icc (0 : ℝ) 1) (hne : (slice A t).Nonempty) :
-    infDist (cons (t, x)) A ^ 2 ≤ (1 - b) * infDist x (slice A t) ^ 2 +
-      b * infDist x (tail '' A) ^ 2 + b ^ 2 := by
+    infDist (consEquivL ℝ n (t, x)) A ^ 2 ≤ (1 - b) * infDist x (slice A t) ^ 2 +
+      b * infDist x ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A) ^ 2 + b ^ 2 := by
   obtain ⟨y, hy, hyd⟩ := exists_mem_closure_infDist_eq_dist hne x
   obtain ⟨z, hz, hzd⟩ :=
     exists_mem_closure_infDist_eq_dist (hne.mono (slice_subset_image_tail A t)) x
   rw [hyd, hzd]
   -- Extend the inequality to the closures of the slice and projection to use nearest points.
-  have hS : IsClosed {u : Euclidean n | infDist (cons (t, x)) A ^ 2 ≤
+  have hS : IsClosed {u : Euclidean n | infDist (consEquivL ℝ n (t, x)) A ^ 2 ≤
       (1 - b) * dist x u ^ 2 + b * dist x z ^ 2 + b ^ 2} :=
     isClosed_le continuous_const (by fun_prop)
   apply closure_minimal ?_ hS hy
   intro u hu
-  have hT : IsClosed {v : Euclidean n | infDist (cons (t, x)) A ^ 2 ≤
+  have hT : IsClosed {v : Euclidean n | infDist (consEquivL ℝ n (t, x)) A ^ 2 ≤
       (1 - b) * dist x u ^ 2 + b * dist x v ^ 2 + b ^ 2} :=
     isClosed_le continuous_const (by fun_prop)
   apply closure_minimal ?_ hT hz
@@ -177,23 +186,27 @@ private theorem infDist_cons_sq_le {n : ℕ}
 private theorem infDist_cons_sq_le_of_projection {n : ℕ}
     {A : Set (Euclidean (n + 1))} {t : ℝ} (hline : ∀ z ∈ A, dist t (z 0) ≤ 1)
     (x : Euclidean n) :
-    infDist (cons (t, x)) A ^ 2 ≤ infDist x (tail '' A) ^ 2 + 1 := by
+    infDist (consEquivL ℝ n (t, x)) A ^ 2 ≤
+      infDist x ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A) ^ 2 + 1 := by
   obtain rfl | hne := A.eq_empty_or_nonempty
   · simp
-  obtain ⟨y, hy, hyd⟩ := exists_mem_closure_infDist_eq_dist (hne.image tail) x
+  obtain ⟨y, hy, hyd⟩ :=
+    exists_mem_closure_infDist_eq_dist (hne.image (Prod.snd ∘ (consEquivL ℝ n).symm)) x
   rw [hyd]
-  have hT : IsClosed {v : Euclidean n | infDist (cons (t, x)) A ^ 2 ≤ dist x v ^ 2 + 1} :=
+  have hT : IsClosed {v : Euclidean n | infDist (consEquivL ℝ n (t, x)) A ^ 2 ≤ dist x v ^ 2 + 1} :=
     isClosed_le continuous_const (by fun_prop)
   apply closure_minimal ?_ hT hy
   rintro _ ⟨z, hz, rfl⟩
   have hsq := sq_sub_le_one_of_dist_le_one (hline z hz)
   calc
-    _ ≤ dist (cons (t, x)) z ^ 2 :=
+    _ ≤ dist (consEquivL ℝ n (t, x)) z ^ 2 :=
       (sq_le_sq₀ infDist_nonneg dist_nonneg).2 (infDist_le_dist_of_mem hz)
-    _ = (t - z 0) ^ 2 + dist x (tail z) ^ 2 := by
-      nth_rw 1 [← cons_tail z]
-      rw [dist_cons_sq, Real.dist_eq, sq_abs]
-    _ ≤ _ := by linarith
+    _ = (t - z 0) ^ 2 + dist x ((consEquivL ℝ n).symm z).2 ^ 2 := by
+      simpa only [ContinuousLinearEquiv.apply_symm_apply, consEquivL_symm_apply_fst, Real.dist_eq,
+        sq_abs] using dist_consEquivL_sq (t, x) ((consEquivL ℝ n).symm z)
+    _ ≤ _ := by
+      simp only [Function.comp_apply]
+      linarith only [hsq]
 
 private theorem integrable_pi_of_continuous {ι : Type*} [Fintype ι] {μ : ι → Measure ℝ}
     [∀ i, IsFiniteMeasure (μ i)] {a b : ι → ℝ}
@@ -220,9 +233,9 @@ private theorem integrable_expSqInfDist_toLp {ι : Type*} [Fintype ι] {μ : ι 
 private theorem integrable_expSqInfDist_cons_toLp {n : ℕ} {μ : Fin n → Measure ℝ}
     [∀ i, IsFiniteMeasure (μ i)] {a b : Fin n → ℝ}
     (hμ : ∀ i, ∀ᵐ x ∂μ i, x ∈ Icc (a i) (b i)) (A : Set (Euclidean (n + 1))) (t : ℝ) :
-    Integrable (fun x ↦ expSqInfDist A (cons (t, WithLp.toLp 2 x))) (Measure.pi μ) :=
+    Integrable (fun x ↦ expSqInfDist A (consEquivL ℝ n (t, WithLp.toLp 2 x))) (Measure.pi μ) :=
   integrable_pi_of_continuous hμ ((continuous_expSqInfDist A).comp
-    (cons.continuous.comp (continuous_const.prodMk (PiLp.continuous_toLp _ _))))
+    ((consEquivL ℝ n).continuous.comp (continuous_const.prodMk (PiLp.continuous_toLp _ _))))
 
 -- Normalize the two exponential moments before applying convexity of the exponential.
 private theorem exp_le_weighted {u v w c p q : ℝ} (hp : 0 < p) (hq : 0 < q)
@@ -249,14 +262,16 @@ private theorem integral_expSqInfDist_cons_le_of_projection {n : ℕ} {μ : Fin 
     [∀ i, IsFiniteMeasure (μ i)] {a b : Fin n → ℝ}
     (hμ : ∀ i, ∀ᵐ x ∂μ i, x ∈ Icc (a i) (b i))
     {A : Set (Euclidean (n + 1))} {t : ℝ} (hline : ∀ z ∈ A, dist t (z 0) ≤ 1)
-    (hp : 0 < (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' (tail '' A)))
-    (hproj : (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' (tail '' A)) *
-      (∫ x, expSqInfDist (tail '' A) (WithLp.toLp 2 x) ∂Measure.pi μ) ≤ 1) :
-    (∫ x, expSqInfDist A (cons (t, WithLp.toLp 2 x)) ∂Measure.pi μ) ≤
-      2 / (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' (tail '' A)) := by
-  let p := (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' (tail '' A))
-  let G := fun x : Fin n → ℝ ↦ expSqInfDist (tail '' A) (WithLp.toLp 2 x)
-  let H := fun x : Fin n → ℝ ↦ expSqInfDist A (cons (t, WithLp.toLp 2 x))
+    (hp : 0 < (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A)))
+    (hproj : (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A)) *
+      (∫ x, expSqInfDist ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A) (WithLp.toLp 2 x)
+        ∂Measure.pi μ) ≤ 1) :
+    (∫ x, expSqInfDist A (consEquivL ℝ n (t, WithLp.toLp 2 x)) ∂Measure.pi μ) ≤
+      2 / (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A)) := by
+  let p := (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A))
+  let G := fun x : Fin n → ℝ ↦
+    expSqInfDist ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A) (WithLp.toLp 2 x)
+  let H := fun x : Fin n → ℝ ↦ expSqInfDist A (consEquivL ℝ n (t, WithLp.toLp 2 x))
   have hG : Integrable G (Measure.pi μ) :=
     integrable_expSqInfDist_toLp hμ _
   have hH : Integrable H (Measure.pi μ) :=
@@ -285,20 +300,22 @@ private theorem integral_expSqInfDist_cons_le {n : ℕ} {μ : Fin n → Measure 
     (hμ : ∀ i, ∀ᵐ x ∂μ i, x ∈ Icc (a i) (b i))
     {A : Set (Euclidean (n + 1))} (hAc : Convex ℝ A)
     {t : ℝ} (hline : ∀ z ∈ A, dist t (z 0) ≤ 1)
-    (hp : 0 < (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' (tail '' A)))
-    (hproj : (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' (tail '' A)) *
-      (∫ x, expSqInfDist (tail '' A) (WithLp.toLp 2 x) ∂Measure.pi μ) ≤ 1)
+    (hp : 0 < (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A)))
+    (hproj : (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A)) *
+      (∫ x, expSqInfDist ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A) (WithLp.toLp 2 x)
+        ∂Measure.pi μ) ≤ 1)
     (hslice : (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' slice A t) *
       (∫ x, expSqInfDist (slice A t) (WithLp.toLp 2 x) ∂Measure.pi μ) ≤ 1) :
-    (∫ x, expSqInfDist A (cons (t, WithLp.toLp 2 x)) ∂Measure.pi μ) ≤
+    (∫ x, expSqInfDist A (consEquivL ℝ n (t, WithLp.toLp 2 x)) ∂Measure.pi μ) ≤
       (2 - (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' slice A t) /
-        (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' (tail '' A))) /
-        (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' (tail '' A)) := by
-  let p := (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' (tail '' A))
+        (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A))) /
+        (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A)) := by
+  let p := (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A))
   let q := (Measure.pi μ).real ((WithLp.toLp 2) ⁻¹' slice A t)
   let F := fun x : Fin n → ℝ ↦ expSqInfDist (slice A t) (WithLp.toLp 2 x)
-  let G := fun x : Fin n → ℝ ↦ expSqInfDist (tail '' A) (WithLp.toLp 2 x)
-  let H := fun x : Fin n → ℝ ↦ expSqInfDist A (cons (t, WithLp.toLp 2 x))
+  let G := fun x : Fin n → ℝ ↦
+    expSqInfDist ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A) (WithLp.toLp 2 x)
+  let H := fun x : Fin n → ℝ ↦ expSqInfDist A (consEquivL ℝ n (t, WithLp.toLp 2 x))
   have hF : Integrable F (Measure.pi μ) :=
     integrable_expSqInfDist_toLp hμ _
   have hG : Integrable G (Measure.pi μ) :=
@@ -352,7 +369,7 @@ private theorem preimage_slice_eq {n : ℕ} (A : Set (Euclidean (n + 1))) (t : �
     WithLp.toLp 2 ⁻¹' slice A t =
       Prod.mk t ⁻¹' (finConsEquiv n ⁻¹' (WithLp.toLp 2 ⁻¹' A)) := by
   ext x
-  simp only [slice, mem_preimage, finConsEquiv_apply, cons_apply]
+  simp only [slice, mem_preimage, finConsEquiv_apply, consEquivL_apply]
 
 private theorem measureReal_pi_eq_integral_slice {n : ℕ} (μ : Fin (n + 1) → Measure ℝ)
     [∀ i, IsFiniteMeasure (μ i)] {A : Set (Euclidean (n + 1))} (hA : MeasurableSet A) :
@@ -382,9 +399,9 @@ private theorem integrable_slice_measureReal {n : ℕ} (μ : Fin (n + 1) → Mea
 private theorem integrable_expSqInfDist_cons {n : ℕ} {μ : Fin (n + 1) → Measure ℝ}
     [∀ i, IsFiniteMeasure (μ i)] {a b : Fin (n + 1) → ℝ}
     (hμ : ∀ i, ∀ᵐ x ∂μ i, x ∈ Icc (a i) (b i)) (A : Set (Euclidean (n + 1))) :
-    Integrable (fun z : ℝ × (Fin n → ℝ) ↦ expSqInfDist A (cons (z.1, WithLp.toLp 2 z.2)))
+    Integrable (fun z : ℝ × (Fin n → ℝ) ↦ expSqInfDist A (consEquivL ℝ n (z.1, WithLp.toLp 2 z.2)))
       ((μ 0).prod (Measure.pi fun i : Fin n ↦ μ i.succ)) := by
-  simpa only [Function.comp_def, finConsEquiv_apply, cons_apply, WithLp.ofLp_toLp] using
+  simpa only [Function.comp_def, finConsEquiv_apply, consEquivL_apply, WithLp.ofLp_toLp] using
     (measurePreserving_finConsEquiv μ).integrable_comp_of_integrable
       (integrable_expSqInfDist_toLp hμ A)
 
@@ -394,8 +411,10 @@ private theorem measureReal_mul_integral_expSqInfDist_le_succ {n : ℕ}
     (hμ : ∀ i, ∀ᵐ x ∂μ i, x ∈ Icc (a i) (b i))
     {A : Set (Euclidean (n + 1))} (hA : MeasurableSet A) (hAc : Convex ℝ A)
     (hAbox : ∀ x ∈ A, x 0 ∈ Icc (a 0) (b 0))
-    (hproj : (Measure.pi fun i : Fin n ↦ μ i.succ).real (WithLp.toLp 2 ⁻¹' (tail '' A)) *
-      (∫ x, expSqInfDist (tail '' A) (WithLp.toLp 2 x) ∂Measure.pi fun i : Fin n ↦ μ i.succ) ≤ 1)
+    (hproj : (Measure.pi fun i : Fin n ↦ μ i.succ).real
+      (WithLp.toLp 2 ⁻¹' ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A)) *
+      (∫ x, expSqInfDist ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A) (WithLp.toLp 2 x)
+        ∂Measure.pi fun i : Fin n ↦ μ i.succ) ≤ 1)
     (hslice : ∀ t, (Measure.pi fun i : Fin n ↦ μ i.succ).real (WithLp.toLp 2 ⁻¹' slice A t) *
       (∫ x, expSqInfDist (slice A t) (WithLp.toLp 2 x) ∂Measure.pi fun i : Fin n ↦ μ i.succ) ≤ 1) :
     (Measure.pi μ).real (WithLp.toLp 2 ⁻¹' A) *
@@ -406,7 +425,7 @@ private theorem measureReal_mul_integral_expSqInfDist_le_succ {n : ℕ}
   let f := fun x : Fin (n + 1) → ℝ ↦ expSqInfDist A (WithLp.toLp 2 x)
   let C := (WithLp.toLp 2) ⁻¹' A
   let m := (Measure.pi μ).real C
-  let p := ν.real ((WithLp.toLp 2) ⁻¹' (tail '' A))
+  let p := ν.real ((WithLp.toLp 2) ⁻¹' ((Prod.snd ∘ (consEquivL ℝ n).symm) '' A))
   let q := fun t ↦ ν.real ((WithLp.toLp 2) ⁻¹' slice A t)
   have hm : m = ∫ t, q t ∂μ 0 := measureReal_pi_eq_integral_slice μ hA
   have hqle (t : ℝ) : q t ≤ p :=
@@ -420,9 +439,9 @@ private theorem measureReal_mul_integral_expSqInfDist_le_succ {n : ℕ}
   have hp : 0 < p := hmpos.trans_le hmp
   have hI := integrable_expSqInfDist_cons hμ A
   have hIeq : (∫ x, f x ∂Measure.pi μ) =
-      ∫ t, ∫ x, expSqInfDist A (cons (t, WithLp.toLp 2 x)) ∂ν ∂μ 0 := by
+      ∫ t, ∫ x, expSqInfDist A (consEquivL ℝ n (t, WithLp.toLp 2 x)) ∂ν ∂μ 0 := by
     rw [← (measurePreserving_finConsEquiv μ).integral_comp' f]
-    simpa only [Function.comp_apply, finConsEquiv_apply, cons_apply, WithLp.ofLp_toLp] using
+    simpa only [Function.comp_apply, finConsEquiv_apply, consEquivL_apply, WithLp.ofLp_toLp] using
       integral_prod _ hI
   have hi : (∫ x, f x ∂Measure.pi μ) ≤ (2 - m / p) / p := by
     rw [hIeq, hm]
@@ -465,13 +484,18 @@ private theorem measureReal_mul_integral_expSqInfDist_le_box (n : ℕ)
         integral_const, probReal_univ, smul_eq_mul, mul_one]
       exact measureReal_le_one
   | succ n ih =>
+      let proj := (ContinuousLinearMap.snd ℝ ℝ (Euclidean n)).comp
+        (consEquivL ℝ n).symm.toContinuousLinearMap
       have hproj := ih (fun i ↦ μ i.succ) (fun i ↦ a i.succ) (fun i ↦ b i.succ)
         (fun i ↦ hwidth i.succ) (fun i ↦ hμ i.succ)
-        (hA.image (tail (𝕜 := ℝ) (n := n)).continuous_of_finiteDimensional) (hAc.linear_image tail)
-        (by rintro _ ⟨z, hz, rfl⟩ i; simpa only [tail_apply] using hAbox z hz i.succ)
+        (hA.image proj.continuous) (hAc.linear_image proj.toLinearMap)
+        (by
+          rintro _ ⟨z, hz, rfl⟩ i
+          simpa [proj] using hAbox z hz i.succ)
       have hslice (t : ℝ) := ih (fun i ↦ μ i.succ) (fun i ↦ a i.succ) (fun i ↦ b i.succ)
         (fun i ↦ hwidth i.succ) (fun i ↦ hμ i.succ) (isCompact_slice hA t) (convex_slice hAc t)
-        (fun z hz i ↦ by simpa only [EuclideanSpace.cons_succ] using hAbox (cons (t, z)) hz i.succ)
+        (fun z hz i ↦ by
+          simpa only [consEquivL_apply_succ] using hAbox (consEquivL ℝ n (t, z)) hz i.succ)
       exact measureReal_mul_integral_expSqInfDist_le_succ μ (hwidth 0) hμ
         hA.isClosed.measurableSet hAc (fun z hz ↦ hAbox z hz 0) hproj hslice
 
