@@ -40,9 +40,9 @@ definitions here make sense for every sign vector and every coefficient represen
 For a linear form `L` on `W`, the function `φ_L(z, g) = L(ρ(z)⁻¹ φ(g))` on `G(s)`
 (`Representation.adelicFunction`) is left invariant under `Γ_V`, right invariant
 under the stabilizer of `φ`, and continuous when `φ` is a form and the matrix coefficients
-`z ↦ L(ρ(z) w)` are continuous. It recovers `φ` through `φ(g) = φ_L(1, g)`, so the `φ_L` determine
-`φ` when `W` is projective. This is how algebraic modular forms are compared with automorphic
-functions on `G(s)`.
+`z ↦ L(ρ(z) w)` are continuous. It recovers `L(φ(g))` through `φ_L(1, g) = L(φ(g))`, so the
+`φ_L` for all `L` determine `φ` when `W` is projective. This is how algebraic modular forms are
+compared with automorphic functions on `G(s)`.
 
 ## Main definitions
 
@@ -196,11 +196,11 @@ theorem algebraicModularFormsOfLevel_one_of_isOpen {K : Subgroup (finiteAdelicUn
     (hK : IsOpen (K : Set (finiteAdelicUnitaryGroup E ι))) :
     V.algebraicModularFormsOfLevel ρ K 1 =
       weightSpace ((coind V.finiteRationalEmbedding (V.coefficientRep ρ)).comp K.subtype) 1 := by
-  refine inf_eq_right.2 fun φ hφ ↦ (V.mem_algebraicModularForms_iff ρ).2 ⟨⟨K, hK⟩, ?_⟩
-  intro u hu g
+  refine inf_eq_right.2 fun φ hφ ↦ (V.mem_algebraicModularForms_iff ρ).2 ⟨⟨K, hK⟩, fun u hu g ↦ ?_⟩
   have h := mem_weightSpace.1 hφ ⟨u, hu⟩
-  rw [MonoidHom.one_apply, one_smul] at h
-  exact (coind_apply_coe_apply _ _ φ u g).symm.trans (congrFun (congrArg Subtype.val h) g)
+  simp only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype, MonoidHom.one_apply,
+    one_smul, Subtype.ext_iff, funext_iff, coind_apply_coe_apply] at h
+  exact h g
 
 /-- Forms of level `(K, χ)` are forms of level `(K', χ|_{K'})` for every `K' ≤ K`. -/
 theorem algebraicModularFormsOfLevel_mono {K K' : Subgroup (finiteAdelicUnitaryGroup E ι)}
@@ -270,9 +270,7 @@ theorem adelicFunction_rationalPoint_mul (L : W →ₗ[A] A)
     (hφ : φ ∈ coindV V.finiteRationalEmbedding (V.coefficientRep ρ))
     {γ : adelicUnitaryGroup E s} (hγ : γ ∈ V.rationalPoints) (g : adelicUnitaryGroup E s) :
     adelicFunction ρ L φ (γ * g) = adelicFunction ρ L φ g := by
-  rw [adelicFunction_apply, adelicFunction_apply, map_mul, map_mul,
-    (V.mem_coindV_finiteRationalEmbedding_iff ρ).1 hφ γ hγ, _root_.mul_inv_rev, map_mul,
-    mul_apply_eq_comp, inv_self_apply]
+  simp [(V.mem_coindV_finiteRationalEmbedding_iff ρ).1 hφ γ hγ, map_mul, _root_.mul_inv_rev]
 
 /-- Right translation by `(1, u)` on `φ_L` is right translation by `u` on `φ`:
 `φ_L(g (1, u)) = ψ_L(g)` for `ψ(h) = φ(h u)`. -/
@@ -307,7 +305,7 @@ theorem continuous_adelicFunction [TopologicalSpace A] (L : W →ₗ[A] A)
 
 /-- **The `φ_L` determine `φ`**: for a projective module `W` over a commutative ring, two functions
 `φ, ψ : G_f → W` are equal exactly when `φ_L = ψ_L` for every linear form `L`, as
-`φ(g) = φ_L(1, g)`. -/
+`φ_L(1, g) = L(φ(g))` and linear forms separate points of a projective module. -/
 theorem forall_adelicFunction_eq_iff {A W : Type*} [CommRing A] [AddCommGroup W] [Module A W]
     [Module.Projective A W] (ρ : Representation A (infiniteAdelicUnitaryGroup E s) W)
     {φ ψ : finiteAdelicUnitaryGroup E ι → W} :
