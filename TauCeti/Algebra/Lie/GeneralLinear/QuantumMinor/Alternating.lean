@@ -42,6 +42,13 @@ def HasMatrixUnitLieRelations (E : Matrix ι ι A) : Prop :=
   ∀ a b c d, E a b * E c d - E c d * E a b =
     (if b = c then E a d else 0) - (if d = a then E c b else 0)
 
+/-- The matrix-unit relations expressed by entrywise commutators. -/
+theorem hasMatrixUnitLieRelations_iff (E : Matrix ι ι A) :
+    E.HasMatrixUnitLieRelations ↔
+      ∀ a b c d, E a b * E c d - E c d * E a b =
+        (if b = c then E a d else 0) - (if d = a then E c b else 0) :=
+  (Iff.rfl)
+
 /-- The matrix units `single i j 1` satisfy the matrix-unit relations. -/
 theorem hasMatrixUnitLieRelations_single [Fintype ι] (R : Type*) [Ring R] :
     HasMatrixUnitLieRelations (of fun i j ↦ (single i j 1 : Matrix ι ι R)) := by
