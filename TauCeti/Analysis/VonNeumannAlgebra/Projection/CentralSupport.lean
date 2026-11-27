@@ -219,30 +219,58 @@ theorem centralSupport_unitary_conj {M : VonNeumannAlgebra H} {u a : H →L[ℂ]
     M.centralSupport (u * a * star u) = M.centralSupport a :=
   congrArg Projection.val (M.centralSupportProjection_unitary_conj huM hu)
 
+/-- The linear span of the `M`-orbits `{x (a ξ) | x ∈ M, ξ ∈ H}`. -/
+private def orbitSpan (M : VonNeumannAlgebra H) (a : H →L[ℂ] H) : Submodule ℂ H :=
+  Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η}
+
+/-- For `a ∈ M`, `orbitSpan M a` is invariant under every operator in `M.commutant`. -/
+private theorem orbitSpan_mem_invtSubmodule_commutant {M : VonNeumannAlgebra H}
+    {a y : H →L[ℂ] H} (ha : a ∈ M) (hy : y ∈ M.commutant) :
+    orbitSpan M a ∈ Module.End.invtSubmodule y := by
+  rw [Module.End.mem_invtSubmodule, orbitSpan, Submodule.span_le]
+  rintro _ ⟨x, hx, ξ, rfl⟩
+  refine Submodule.subset_span ⟨x, hx, y ξ, ?_⟩
+  have hcomm : y * (x * a) = (x * a) * y :=
+    (mem_commutant_iff.1 hy (x * a) (mul_mem hx ha)).symm
+  exact congr($hcomm ξ).symm
+
+/-- If `y ∈ M.commutant` and `y * a = 0`, then `orbitSpan M a` lies in `y.ker`. -/
+private theorem orbitSpan_le_ker {M : VonNeumannAlgebra H} {a y : H →L[ℂ] H}
+    (hy : y ∈ M.commutant) (hya : y * a = 0) :
+    orbitSpan M a ≤ y.ker := by
+  rw [orbitSpan, Submodule.span_le]
+  rintro _ ⟨x, hx, ξ, rfl⟩
+  rw [SetLike.mem_coe, LinearMap.mem_ker]
+  have hyx : y * x = x * y := (mem_commutant_iff.1 hy x hx).symm
+  calc y (x (a ξ))
+    _ = (y * x) (a ξ) := rfl
+    _ = (x * y) (a ξ) := by rw [hyx]
+    _ = x ((y * a) ξ) := rfl
+    _ = 0 := by rw [hya, zero_apply, map_zero]
+
 /-- The orthogonal projection onto the closed span of the `M`-orbits `{x (a ξ) | x ∈ M, ξ ∈ H}`
 belongs to `M.commutant`. -/
 private theorem starProjection_closure_span_orbit_mem_commutant (M : VonNeumannAlgebra H)
     (a : H →L[ℂ] H) :
-    (Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η}).topologicalClosure.starProjection ∈
-      M.commutant := by
-  set W : Submodule ℂ H := Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η} with hW_def
+    (orbitSpan M a).topologicalClosure.starProjection ∈ M.commutant := by
   let A := M.toStarSubalgebra.toNonUnitalStarSubalgebra
   let O : H → Submodule ℂ H := fun ξ =>
     A.toNonUnitalSubalgebra.toSubmodule.map (ContinuousLinearMap.apply ℂ H (a ξ)).toLinearMap
-  have hW_eq : W = ⨆ ξ, O ξ := by
+  have hW_eq : orbitSpan M a = ⨆ ξ, O ξ := by
     have hset : {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η} = ⋃ ξ, (O ξ : Set H) := by
       ext η
       simp only [Set.mem_ofPred_eq, Set.mem_iUnion, SetLike.mem_coe, O, Submodule.mem_map,
         NonUnitalSubalgebra.mem_toSubmodule, ContinuousLinearMap.coe_coe,
         ContinuousLinearMap.apply_apply, A]
       exact ⟨fun ⟨x, hx, ξ, h⟩ => ⟨ξ, x, hx, h⟩, fun ⟨ξ, x, hx, h⟩ => ⟨x, hx, ξ, h⟩⟩
-    rw [hW_def, hset, Submodule.span_iUnion]
+    rw [orbitSpan, hset, Submodule.span_iUnion]
     simp only [Submodule.span_eq]
   have hK_eq :
-      W.topologicalClosure = (⨆ ξ, (O ξ).closure : ClosedSubmodule ℂ H).toSubmodule := by
+      (orbitSpan M a).topologicalClosure =
+        (⨆ ξ, (O ξ).closure : ClosedSubmodule ℂ H).toSubmodule := by
     have gc : GaloisConnection (Submodule.closure : Submodule ℂ H → ClosedSubmodule ℂ H)
         ClosedSubmodule.toSubmodule := fun _ _ => Submodule.closure_le
-    have hcl : W.closure = ⨆ ξ, (O ξ).closure := by
+    have hcl : (orbitSpan M a).closure = ⨆ ξ, (O ξ).closure := by
       rw [hW_eq]
       exact gc.l_iSup
     exact congrArg ClosedSubmodule.toSubmodule hcl
@@ -259,49 +287,36 @@ theorem centralSupport_eq_starProjection_closure_span {M : VonNeumannAlgebra H} 
     M.centralSupport a =
       (Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η}).topologicalClosure.starProjection
       := by
-  set W : Submodule ℂ H := Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η}
-  set K : Submodule ℂ H := W.topologicalClosure
-  -- Step 1: `W` is invariant under `M.commutant` (so `K.starProjection ∈ M`) and is the span of
-  -- the orbits `M (a ξ)` (so `K.starProjection ∈ M.commutant`).
-  have hW_comm : ∀ y ∈ M.commutant, W ∈ Module.End.invtSubmodule y := by
-    intro y hy
-    rw [Module.End.mem_invtSubmodule, Submodule.span_le]
-    rintro _ ⟨x, hx, ξ, rfl⟩
-    refine Submodule.subset_span ⟨x, hx, y ξ, ?_⟩
-    have hcomm : y * (x * a) = (x * a) * y :=
-      (mem_commutant_iff.1 hy (x * a) (mul_mem hx ha)).symm
-    exact congr($hcomm ξ).symm
+  rw [← orbitSpan]
+  set K : Submodule ℂ H := (orbitSpan M a).topologicalClosure
+  -- Step 1: `orbitSpan M a` is invariant under `M.commutant` (so `K.starProjection ∈ M`) and is
+  -- the span of the orbits `M (a ξ)` (so `K.starProjection ∈ M.commutant`).
   have hKM : K.starProjection ∈ M := by
     rw [IsStarProjection.mem_iff isStarProjection_starProjection M, Submodule.range_starProjection]
-    exact fun y hy => Submodule.topologicalClosure_mem_invtSubmodule (hW_comm y hy)
+    exact fun y hy =>
+      Submodule.topologicalClosure_mem_invtSubmodule (orbitSpan_mem_invtSubmodule_commutant ha hy)
   have hKC : K.starProjection ∈ M.commutant :=
     M.starProjection_closure_span_orbit_mem_commutant a
-  -- Step 2: `K.starProjection * a = a` since `a ξ = 1 (a ξ) ∈ W ≤ K`.
+  -- Step 2: `K.starProjection * a = a` since `a ξ = 1 (a ξ) ∈ orbitSpan M a ≤ K`.
   have hKa : K.starProjection * a = a := by
     rw [ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
         K.isIdempotentElem_starProjection a,
       Submodule.range_starProjection]
     rintro _ ⟨ξ, rfl⟩
-    exact W.le_topologicalClosure (Submodule.subset_span ⟨1, one_mem M, ξ, rfl⟩)
-  -- Step 3: Every central projection `z` with `z * a = a` contains `W`, hence `K`, in its range.
+    exact (orbitSpan M a).le_topologicalClosure (Submodule.subset_span ⟨1, one_mem M, ξ, rfl⟩)
+  -- Step 3: Every central projection `z` with `z * a = a` satisfies `1 - z ∈ M.commutant` and
+  -- `(1 - z) * a = 0`, so `orbitSpan M a ≤ (1 - z).ker ≤ z.range`, hence `K ≤ z.range`.
   refine le_antisymm
     ((centralSupport_le_iff isStarProjection_starProjection hKM hKC).2 hKa) ?_
   rw [← coe_centralSupportProjection]
   set z := M.centralSupportProjection a
   rw [← z.starProjection_range, Submodule.starProjection_le_starProjection_iff]
-  refine W.topologicalClosure_minimal ?_
+  refine (orbitSpan M a).topologicalClosure_minimal ?_
     (ContinuousLinearMap.IsIdempotentElem.isClosed_range z.isStarProjection.isIdempotentElem)
-  rw [Submodule.span_le]
-  rintro _ ⟨x, hx, ξ, rfl⟩
-  have hzx : (z : H →L[ℂ] H) * x = x * z :=
-    (mem_commutant_iff.1 (mem_inf.1 z.coe_mem).2 x hx).symm
-  have hza : (z : H →L[ℂ] H) * a = a := M.centralSupport_mul_self a
-  refine ⟨x (a ξ), ?_⟩
-  calc (z : H →L[ℂ] H) (x (a ξ))
-    _ = ((z : H →L[ℂ] H) * x) (a ξ) := rfl
-    _ = (x * z) (a ξ) := by rw [hzx]
-    _ = x (((z : H →L[ℂ] H) * a) ξ) := rfl
-    _ = x (a ξ) := by rw [hza]
+  refine (orbitSpan_le_ker (sub_mem (one_mem M.commutant) (mem_inf.1 z.coe_mem).2) ?_).trans ?_
+  · rw [sub_mul, one_mul, coe_centralSupportProjection, M.centralSupport_mul_self a, sub_self]
+  · intro η hη
+    exact ⟨η, (sub_eq_zero.1 (LinearMap.mem_ker.1 hη)).symm⟩
 
 /-- **Central-support kernel theorem.** For `a ∈ M` and `y ∈ M.commutant`, `y * a = 0` holds if and
 only if `y * M.centralSupport a = 0`. -/
@@ -310,19 +325,9 @@ theorem commutant_mul_eq_zero_iff_mul_centralSupport_eq_zero {M : VonNeumannAlge
     y * a = 0 ↔ y * M.centralSupport a = 0 := by
   refine ⟨fun hya => ?_, fun hyc => by
     rw [← M.centralSupport_mul_self a, ← mul_assoc, hyc, zero_mul]⟩
-  rw [centralSupport_eq_starProjection_closure_span ha]
-  set W : Submodule ℂ H := Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η}
-  have hW_ker : W.topologicalClosure ≤ y.ker := by
-    refine W.topologicalClosure_minimal ?_ y.isClosed_ker
-    rw [Submodule.span_le]
-    rintro _ ⟨x, hx, ξ, rfl⟩
-    rw [SetLike.mem_coe, LinearMap.mem_ker]
-    have hyx : y * x = x * y := (mem_commutant_iff.1 hy x hx).symm
-    calc y (x (a ξ))
-      _ = (y * x) (a ξ) := rfl
-      _ = (x * y) (a ξ) := by rw [hyx]
-      _ = x ((y * a) ξ) := rfl
-      _ = 0 := by rw [hya, zero_apply, map_zero]
+  rw [centralSupport_eq_starProjection_closure_span ha, ← orbitSpan]
+  have hW_ker : (orbitSpan M a).topologicalClosure ≤ y.ker :=
+    (orbitSpan M a).topologicalClosure_minimal (orbitSpan_le_ker hy hya) y.isClosed_ker
   ext ξ
   exact hW_ker (Submodule.starProjection_apply_mem _ ξ)
 

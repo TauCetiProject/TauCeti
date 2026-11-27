@@ -44,10 +44,8 @@ variable {𝕜 E : Type*} [Semiring 𝕜] [AddCommMonoid E] [UniformSpace E] [Mo
 
 /-- The underlying submodule of a closed submodule of a complete space is complete. -/
 instance instCompleteSpaceToSubmodule (K : ClosedSubmodule 𝕜 E) :
-    CompleteSpace K.toSubmodule := by
-  refine IsComplete.completeSpace_coe ?_
-  rw [coe_toSubmodule]
-  exact K.isClosed.isComplete
+    CompleteSpace K.toSubmodule :=
+  inferInstanceAs (CompleteSpace K)
 
 /-- The intersection of the underlying submodules of two closed submodules of a complete space is
 complete. -/

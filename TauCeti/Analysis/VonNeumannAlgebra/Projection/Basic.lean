@@ -565,13 +565,15 @@ instance : ComplementedLattice M.Projection where
 
 /-- Transport of projections along an inclusion `M ≤ N` of von Neumann algebras, as an order
 embedding. -/
-def inclusion {M N : VonNeumannAlgebra H} (hMN : M ≤ N) : M.Projection ↪o N.Projection where
-  toFun p := ⟨p, p.isStarProjection, hMN p.coe_mem⟩
-  inj' _ _ h := Projection.ext (congrArg (fun q : N.Projection => (q : H →L[ℂ] H)) h)
-  map_rel_iff' {p q} := by
-    change (⟨p, p.isStarProjection, hMN p.coe_mem⟩ : N.Projection) ≤
-      ⟨q, q.isStarProjection, hMN q.coe_mem⟩ ↔ p ≤ q
-    rw [← coe_le_coe, ← coe_le_coe, coe_mk, coe_mk]
+def inclusion {M N : VonNeumannAlgebra H} (hMN : M ≤ N) : M.Projection ↪o N.Projection :=
+  let toFun : M.Projection → N.Projection := fun p => ⟨p, p.isStarProjection, hMN p.coe_mem⟩
+  have hinj : Function.Injective toFun :=
+    fun _ _ h => Projection.ext (congrArg (fun q : N.Projection => (q : H →L[ℂ] H)) h)
+  { toFun := toFun
+    inj' := hinj
+    map_rel_iff' {p q} := by
+      rw [Function.Embedding.coeFn_mk]
+      simp only [← coe_le_coe, toFun] }
 
 @[simp, norm_cast]
 theorem coe_inclusion {M N : VonNeumannAlgebra H} (hMN : M ≤ N) (p : M.Projection) :
