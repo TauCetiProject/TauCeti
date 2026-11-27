@@ -91,6 +91,8 @@ contracts with `∂ₜ` first.
 * `TauCeti.rectangleIntegral_comp_fst`, `TauCeti.rectangleIntegral_comp_snd`: the integral over a
   map depending on only one coordinate vanishes.
 * `TauCeti.rectangleIntegral_const`: the integral over a constant map vanishes.
+* `TauCeti.rectangleIntegral_comp_real`: the integral over a map factoring through a
+  differentiable real function vanishes.
 * `TauCeti.rectangleIntegral_add_adjacent`: additivity over adjacent rectangles.
 * `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization invariance in the first coordinate,
   and `TauCeti.rectangleIntegral_comp_prodMap_of_contDiff` for a `C¹` change of parameter.
@@ -301,6 +303,21 @@ theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
 theorem rectangleIntegral_const (φ : RoughForm I M F 2) (x : M) (a b : ℝ × ℝ) :
     rectangleIntegral φ (fun _ ↦ x) a b = 0 :=
   rectangleIntegral_comp_fst φ (fun _ ↦ x) a b
+
+/-- The integral of a two-form over a map `γ ∘ Θ` that factors through a differentiable function
+`Θ : ℝ × ℝ → ℝ` and a differentiable curve `γ` vanishes: both partial derivatives of `γ ∘ Θ` are
+multiples of the velocity of `γ`. For instance a homotopy of loops running inside a circle has
+zero area. -/
+theorem rectangleIntegral_comp_real (φ : RoughForm I M F 2) {γ : ℝ → M} {Θ : ℝ × ℝ → ℝ}
+    (hγ : MDifferentiable 𝓘(ℝ) I γ) (hΘ : Differentiable ℝ Θ) (a b : ℝ × ℝ) :
+    rectangleIntegral φ (γ ∘ Θ) a b = 0 := by
+  -- The pullback factors through `fderiv ℝ Θ z`, and a two-form on the line `ℝ` vanishes.
+  have h (z : ℝ × ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) φ z ![(1, 0), (0, 1)] = 0 := by
+    rw [mpullback_comp_apply_of_hasFDerivAt (hΘ z).hasFDerivAt (hγ _),
+      ContinuousAlternatingMap.eq_zero_of_finrank_lt (mpullback 𝓘(ℝ) I γ φ (Θ z)) (by simp)]
+    -- The tangent spaces of `ℝ` are `ℝ` itself, so the zero form pulled back is zero.
+    rfl
+  simp [rectangleIntegral_def, h]
 
 /-- The integrand of `TauCeti.rectangleIntegral` along `u ∘ Prod.map σ τ` is the integrand along
 `u` at the image point, scaled by the product of the derivatives of `σ` and `τ`. -/
