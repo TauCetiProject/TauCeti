@@ -107,27 +107,29 @@ theorem IsItoIntegral.mono_ac {Q : Measure Ω} [IsFiniteMeasure Q]
     obtain ⟨n, τ, a, hτ, ha, hE, hG⟩ := hI.exists_approx t
     exact ⟨n, τ, a, hτ, ha, fun ε hε ↦ hQP.tendsto_measure_zero (hE ε hε), hG.mono_ac hQP⟩
 
-/-- Two sequences of predictable processes approximating the same predictable process in
-square energy in probability on `(0,t]` approximate each other there. -/
-private theorem tendsto_measure_le_lintegral_sub (hH : IsStronglyPredictable ℱ H)
-    {K L : ℕ → ℝ≥0 → Ω → ℝ} (hK : ∀ k, IsStronglyPredictable ℱ (K k)) (t : ℝ≥0)
-    (hKH : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
-      ∫⁻ s, ‖K k s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0))
-    (hLH : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
-      ∫⁻ s, ‖L k s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0))
+/-- **Triangle inequality for square energies in probability.** If `F k - M k` and `G k - M k`
+have lower square energies on `(0,t]` converging to zero in probability, then so does
+`F k - G k`. The middle processes `M k` may vary along the filter. -/
+theorem tendsto_measure_le_lintegral_enorm_sub_sq {ι : Type*} {l : Filter ι}
+    {F G M : ι → ℝ≥0 → Ω → ℝ} (hF : ∀ k, IsStronglyPredictable ℱ (F k))
+    (hM : ∀ k, IsStronglyPredictable ℱ (M k)) (t : ℝ≥0)
+    (hFM : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖F k s ω - M k s ω‖ₑ ^ 2 ∂timeMeasure t}) l (𝓝 0))
+    (hGM : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖G k s ω - M k s ω‖ₑ ^ 2 ∂timeMeasure t}) l (𝓝 0))
     (ε : ℝ≥0∞) (hε : 0 < ε) :
-    Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s, ‖K k s ω - L k s ω‖ₑ ^ 2 ∂timeMeasure t})
-      atTop (𝓝 0) := by
+    Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s, ‖F k s ω - G k s ω‖ₑ ^ 2 ∂timeMeasure t})
+      l (𝓝 0) := by
   set η := ε / 4
   have hη : 0 < η := ENNReal.div_pos hε.ne' (by norm_num)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa only [add_zero] using (hKH η hη).add (hLH η hη)) (fun _ ↦ bot_le) fun k ↦ ?_
+    (by simpa only [add_zero] using (hFM η hη).add (hGM η hη)) (fun _ ↦ bot_le) fun k ↦ ?_
   refine (measure_mono fun ω hω ↦ ?_).trans (measure_union_le _ _)
   simp only [mem_ofPred_eq, mem_union] at hω ⊢
   by_contra hcon
   simp only [not_or, not_le] at hcon
-  have hmeas : Measurable fun s ↦ ‖K k s ω - H s ω‖ₑ ^ 2 :=
-    ((((hK k).sub hH).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2).comp
+  have hmeas : Measurable fun s ↦ ‖F k s ω - M k s ω‖ₑ ^ 2 :=
+    ((((hF k).sub (hM k)).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2).comp
       (measurable_id.prodMk measurable_const)
   have hlt := ENNReal.add_lt_add hcon.1 hcon.2
   refine (hω.trans (lintegral_enorm_sub_sq_le_two_mul hmeas.aemeasurable)).not_gt ?_
@@ -160,8 +162,9 @@ theorem IsItoIntegral.tendstoInMeasure_simpleGains (hW : IsFilteredPreBrownianRe
         ∫⁻ s, ‖Finance.simpleHolding (ρ k) (N k) (c k) s ω‖ₑ ^ 2 ∂timeMeasure t})
           atTop (𝓝 0) := by
       simp_rw [hhold]
-      exact tendsto_measure_le_lintegral_sub hI.isStronglyPredictable
-        (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k)) t hKH hLH
+      exact tendsto_measure_le_lintegral_enorm_sub_sq
+        (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k))
+        (fun _ ↦ hI.isStronglyPredictable) t hKH hLH
     exact (hW.tendstoInMeasure_simpleGains_of_energy (fun k ↦ (hρ k).monotoneOn) hc t
       henergy).congr_left fun k ↦ ae_of_all _ fun ω ↦ hgain k W t ω
   simpa using hKI.sub hdiff

@@ -33,7 +33,9 @@ to zero in probability of these energies forces the integrals at `t` to converge
 probability. The terminal estimate only needs filtered pre-Brownian laws. With almost surely
 continuous paths, the same bound controls the supremum over all observation times, and convergence
 to zero in probability of the energies implies uniform convergence to zero in outer probability
-of the elementary integral processes. The process-level estimate reuses `Finance.simpleGains`
+of the elementary integral processes. Clipping the grid at a horizon `T` gives the same estimate
+for the supremum over times up to `T` in terms of the lower square energy on `(0,T]`. The
+process-level estimate reuses `Finance.simpleGains`
 and the continuous-time Doob inequality applied to squared cutoff gains. No integral
 completion or usual-filtration assumption is needed.
 
@@ -502,6 +504,36 @@ theorem IsFilteredPreBrownianReal.measure_exists_abs_simpleGains_gt_le
       rwa [heq]
   exact (measure_mono hset).trans ((measure_union_le _ _).trans (add_le_add hcut le_rfl))
 
+/-- **Uniform elementary energy estimate on a horizon.** Large gains at some time up to `T`
+require lower square energy of the holding on `(0,T]` larger than `δ`, or a fluctuation of outer
+probability at most `δ / ε²`. The grid may extend beyond `T`. -/
+theorem IsFilteredPreBrownianReal.measure_exists_le_abs_simpleGains_gt_le
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
+    (hτ : MonotoneOn τ (Iic n))
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (T : ℝ≥0)
+    {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 ≤ δ) :
+    P {ω | ∃ t ≤ T, ε < |Finance.simpleGains τ n a W t ω|} ≤
+      ENNReal.ofReal (δ / ε ^ 2) + P {ω | ENNReal.ofReal δ <
+        ∫⁻ s, ‖Finance.simpleHolding τ n a s ω‖ₑ ^ 2 ∂timeMeasure T} := by
+  -- Apply the uniform estimate to the grid clipped at `T`.
+  have hτ' : MonotoneOn (fun i ↦ min (τ i) T) (Iic n) :=
+    fun i hi j hj hij ↦ min_le_min_right T (hτ hi hj hij)
+  calc
+    _ ≤ P {ω | ∃ t, ε < |Finance.simpleGains (fun i ↦ min (τ i) T) n
+          (fun i ↦ if τ i ≤ T then a i else 0) W t ω|} :=
+      measure_mono fun ω hω ↦ by
+        obtain ⟨t, htT, ht⟩ := hω
+        exact ⟨t, by rwa [Finance.simpleGains_min_ite_of_le hτ htT]⟩
+    _ ≤ ENNReal.ofReal (δ / ε ^ 2) + P {ω | δ < elementaryEnergy (fun i ↦ min (τ i) T)
+          (fun i ↦ if τ i ≤ T then a i else 0) n ω} :=
+      hW.measure_exists_abs_simpleGains_gt_le hcont hτ'
+        (fun i hi ↦ Finance.stronglyMeasurable_ite_le_min ha T hi) hε hδ
+    _ ≤ _ := add_le_add le_rfl (measure_mono fun ω hω ↦ by
+      simp only [mem_ofPred_eq] at hω ⊢
+      rw [← ofReal_elementaryEnergy_min_ite hτ T ω]
+      exact (ENNReal.ofReal_lt_ofReal_iff (hδ.trans_lt hω)).2 hω)
+
 /-- Vanishing square energy in probability gives uniform convergence to zero in outer
 probability of the entire elementary integral processes. Both the grids and their horizons
 may vary. -/
@@ -519,5 +551,30 @@ theorem IsFilteredPreBrownianReal.tendsto_measure_exists_abs_simpleGains_gt_of_e
   exact tendsto_measure_of_le_ofReal_div_sq_add
     (fun δ hδ ↦ tendsto_measure_lt_of_tendstoInMeasure henergy hδ) fun δ hδ k ↦
       hW.measure_exists_abs_simpleGains_gt_le hcont (hgrid k) (hheight k) hε hδ.le
+
+/-- Simple holdings whose lower square energies on `(0,T]` converge to zero in probability have
+elementary Brownian integral processes converging to zero uniformly on `[0,T]` in outer
+probability. Infinite energies are allowed, grids and their sizes may vary, and grids may extend
+beyond `T`. -/
+theorem IsFilteredPreBrownianReal.tendsto_measure_exists_le_abs_simpleGains_gt_of_energy
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
+    {ι : Type*} {l : Filter ι} {N : ι → ℕ} {grid : ι → ℕ → ℝ≥0}
+    {height : ι → ℕ → Ω → ℝ}
+    (hgrid : ∀ k, MonotoneOn (grid k) (Iic (N k)))
+    (hheight : ∀ k i, i < N k → StronglyMeasurable[ℱ (grid k i)] (height k i)) (T : ℝ≥0)
+    (henergy : ∀ δ : ℝ≥0∞, 0 < δ → Filter.Tendsto (fun k ↦ P {ω | δ ≤
+      ∫⁻ s, ‖Finance.simpleHolding (grid k) (N k) (height k) s ω‖ₑ ^ 2 ∂timeMeasure T})
+        l (nhds 0))
+    {ε : ℝ} (hε : 0 < ε) :
+    Filter.Tendsto (fun k ↦ P {ω | ∃ t ≤ T,
+      ε < |Finance.simpleGains (grid k) (N k) (height k) W t ω|}) l (nhds 0) := by
+  refine tendsto_measure_of_le_ofReal_div_sq_add (fun δ hδ ↦ ?_) fun δ hδ k ↦
+    hW.measure_exists_le_abs_simpleGains_gt_le hcont (hgrid k) (hheight k) T hε hδ.le
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (henergy _ (ENNReal.ofReal_pos.2 hδ)) (fun _ ↦ bot_le)
+    fun k ↦ measure_mono fun _ hω ↦ by
+      simp only [mem_ofPred_eq] at hω ⊢
+      exact hω.le
 
 end TauCeti.Probability

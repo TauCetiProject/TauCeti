@@ -216,6 +216,21 @@ theorem simpleGains_eq_sum_ite_le (hτ : MonotoneOn τ (Set.Iic n)) (X : ι → 
       (hτ (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i)))
     simp only [hit, ↓reduceIte, Pi.zero_apply, h₀, h₁, sub_self, mul_zero]
 
+/-- Clipping a partition monotone up to `n` at `T`, and discarding the positions on intervals
+starting after `T`, leaves the gains unchanged at every time `t ≤ T`. -/
+theorem simpleGains_min_ite_of_le (hτ : MonotoneOn τ (Set.Iic n)) {T : ι} (htT : t ≤ T)
+    (X : ι → Ω → ℝ) (ω : Ω) :
+    simpleGains (fun i ↦ min (τ i) T) n (fun i ↦ if τ i ≤ T then a i else 0) X t ω =
+      simpleGains τ n a X t ω := by
+  refine sum_congr rfl fun i hi ↦ ?_
+  simp only [min_assoc, min_eq_right htT]
+  by_cases hiT : τ i ≤ T
+  · simp only [hiT, ↓reduceIte]
+  · have h₀ : min (τ i) t = t := min_eq_right (htT.trans (not_le.mp hiT).le)
+    have h₁ : min (τ (i + 1)) t = t := min_eq_right ((htT.trans (not_le.mp hiT).le).trans
+      (hτ (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i)))
+    simp only [hiT, ↓reduceIte, Pi.zero_apply, h₀, h₁, sub_self, mul_zero]
+
 /-- The gains along a continuous price path are continuous in time. -/
 theorem continuous_simpleGains [TopologicalSpace ι] [OrderClosedTopology ι] {ω : Ω}
     (hX : Continuous fun t ↦ X t ω) : Continuous fun t ↦ simpleGains τ n a X t ω := by
