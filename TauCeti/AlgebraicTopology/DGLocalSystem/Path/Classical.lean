@@ -458,7 +458,10 @@ theorem transport_comp_tensorPathChainAct (δ : MoorePathBetween X a b) :
         tensorPathChainAct (classicalDGLocalSystem a L) δ =
       (tensorPathChainTransport L).toLinearMap.restrictScalars R := by
   refine BalancedTensorProduct.hom_ext fun (m : classicalDGLocalSystem a L) c ↦ ?_
-  -- Unfold the composite and the restriction of scalars on the pure tensor.
+  -- Unfold the composite and the restriction of scalars on the pure tensor. The composite
+  -- passes through the carrier of `classicalDGLocalSystem a L`, which is the fiber `L_a` only
+  -- after unfolding a semireducible definition, so the goal is not type-correct at the
+  -- transparency `rw` uses and `LinearMap.comp_apply` cannot fire.
   change LocalCoefficientSystem.transport L _
       (tensorPathChainAct (classicalDGLocalSystem a L) δ (tmul R (loopChainAlgebra X a R) m c)) =
     tensorPathChainTransport L (tmul R (loopChainAlgebra X a R) m c)
@@ -477,7 +480,7 @@ theorem tensorPathChainTransport_eq_tensorPathChainAct_one
   have h := LinearMap.congr_fun
     (transport_comp_tensorPathChainAct L (MoorePathBetween.loopHomeomorph a 1)) z
   rw [MoorePathBetween.toPath_loopHomeomorph, MooreLoopSpace.toPath_one,
-    show Path.Homotopic.Quotient.mk (Path.refl a) = Path.Homotopic.Quotient.refl a from rfl,
+    Path.Homotopic.Quotient.mk_refl,
     LocalCoefficientSystem.transport_refl] at h
   exact h.symm
 
@@ -509,9 +512,10 @@ theorem tensorPathChainTransport_isQuasiIso (h : Joined a b) :
       rw [e.injective hx, classicalDGLocalSystem_differential]
       -- `e.symm y` is an element of the fiber `L_a`, the carrier of the DG local system.
       exact LinearMap.zero_apply (e.symm y)
-    · -- The target differential is zero.
-      change e (e.symm y) + 0 = y
-      rw [LinearEquiv.apply_symm_apply, add_zero]
+    · rw [LinearMap.zero_apply, add_zero]
+      -- `e` is coerced to a linear map out of the carrier of `M`, which is the fiber `L_a` only
+      -- up to unfolding, so `rw [LinearEquiv.coe_coe]` finds no instance of its pattern.
+      exact (congrFun (LinearEquiv.coe_coe e) (e.symm y)).trans (e.apply_symm_apply y)
   · rw [tensorPathChainPoint_apply, tensorPathChainTransport_tmul_pathChainPoint,
       LinearMap.id_apply]
     -- `m` is an element of the carrier of `L_a`, the fiber of `L`, on which `e` acts.
