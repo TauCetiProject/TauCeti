@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
+public import TauCeti.Topology.Algebra.Module.LinearPMap.CommonDomain
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic.Basic
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Sobolev
 public import TauCeti.Geometry.Manifold.Sobolev.L2
+import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain
 import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic.Estimate
 
 /-!
@@ -24,7 +26,10 @@ A classical pseudodifferential operator `P` of order `m ≥ 0` extends to a boun
 `H^m(M) → H⁰(M)` (`TauCeti.chartSobolevExtension`). Read in `L²(M, μ)`, this is an unbounded
 operator with domain `H^m(M)`, its **realization in `L²`**
 (`TauCeti.chartSobolevRealization`): a function `f ∈ L²` lies in its domain when `f ∈ H^m(M)`,
-and its value is then the extension of `P` applied to `f`. On smooth functions it is `P`
+and its value is then the extension of `P` applied to `f`. It is the partial operator
+`ContinuousLinearMap.domainOperator` of the pair formed by the injection `H^m(M) → L²(M, μ)` and
+the extension of `P`, so the graph, domain and evaluation lemmas of `domainOperator` apply to
+it. On smooth functions it is `P`
 (`TauCeti.chartSobolevRealization_toLp`), and its domain is dense
 (`TauCeti.dense_domain_chartSobolevRealization`).
 
@@ -37,8 +42,9 @@ and its value is then the extension of `P` applied to `f`. On smooth functions i
 * **Closedness.** If `P` is elliptic, its realization is a **closed** operator
   (`TauCeti.IsClassicalElliptic.isClosed_chartSobolevRealization`). This rests on the elliptic
   estimate `‖x‖_{H^m} ≤ C (‖P x‖_{H⁰} + ‖x‖_{H⁰})` on all of `H^m(M)`
-  (`TauCeti.IsClassicalElliptic.exists_norm_le_mul_norm_chartSobolevExtension_add`): the graph is
-  the range of `x ↦ (x, P x)` on the Hilbert space `H^m(M)`, which this estimate bounds below.
+  (`TauCeti.IsClassicalElliptic.exists_norm_le_mul_norm_chartSobolevExtension_add`), which bounds
+  the norm of the Hilbert space `H^m(M)` by the graph norm
+  (`ContinuousLinearMap.isClosed_domainOperator_of_norm_le`).
 
 For a formally self-adjoint elliptic operator the realization is therefore a closed, densely
 defined symmetric operator in `L²(M, μ)` with domain `H^m(M)`. Self-adjointness, the equality of
@@ -89,79 +95,30 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
 
 /-! ### The realization in `L²` -/
 
-/-- The map `x ↦ (x, P x)` from `H^m(M)` to `L²(M, μ) × L²(M, μ)`, whose range is the graph of
-the realization of `P` (`TauCeti.graph_chartSobolevRealization`). -/
-def chartSobolevGraphMap : chartSobolevSpace hc ψ m →L[ℂ] Lp ℂ 2 μ × Lp ℂ 2 μ :=
-  (chartSobolevToLp hμ hc ψ hψ hm).prod
+/-- The **realization in `L²(M, μ)`** of an operator `P` on the smooth functions of a compact
+manifold, with domain the Sobolev space `H^m(M)` of a chart partition, `m ≥ 0`: the partial
+operator `ContinuousLinearMap.domainOperator` of the pair formed by the injection
+`TauCeti.chartSobolevToLp : H^m(M) → L²(M, μ)` and `Pₑ = chartSobolevExtension P m 0`, the
+extension `H^m(M) → H⁰(M)` of `P` (`TauCeti.chartSobolevExtension`) read in `L²` through
+`H⁰(M) = L²(M, μ)`. Its domain is the image of `H^m(M)`, and it sends the image of `x` to that of
+`Pₑ x`. The extension is meaningful when `P` satisfies the a priori estimate
+`‖P u‖_{H⁰} ≤ C ‖u‖_{H^m}` on smooth functions, for instance when `P` is a classical
+pseudodifferential operator of order `m`; it then agrees with `P` on smooth functions
+(`TauCeti.chartSobolevRealization_toLp`). Otherwise the extension, and with it the realization, is
+a junk value unrelated to `P`. -/
+abbrev chartSobolevRealization : Lp ℂ 2 μ →ₗ.[ℂ] Lp ℂ 2 μ :=
+  ContinuousLinearMap.domainOperator (chartSobolevToLp hμ hc ψ hψ hm)
     ((chartSobolevSpaceZeroEquivLp hμ hc ψ hψ : chartSobolevSpace hc ψ 0 →L[ℂ] Lp ℂ 2 μ) ∘L
       chartSobolevExtension hc ψ hc ψ P m 0)
-
-@[simp]
-theorem chartSobolevGraphMap_apply (x : chartSobolevSpace hc ψ m) :
-    chartSobolevGraphMap hμ hc ψ hψ P hm x = (chartSobolevToLp hμ hc ψ hψ hm x,
-      chartSobolevSpaceZeroEquivLp hμ hc ψ hψ (chartSobolevExtension hc ψ hc ψ P m 0 x)) :=
-  (rfl)
-
-/-- The **realization in `L²(M, μ)`** of an operator `P` on the smooth functions of a compact
-manifold, with domain the Sobolev space `H^m(M)` of a chart partition, `m ≥ 0`: the unbounded
-operator whose graph is the set of pairs `(x, Pₑ x)` for `x ∈ H^m(M)`, read in `L²(M, μ)` through
-`TauCeti.chartSobolevToLp` and `H⁰(M) = L²(M, μ)`, where `Pₑ = chartSobolevExtension P m 0` is the
-extension `H^m(M) → H⁰(M)` of `P` (`TauCeti.chartSobolevExtension`). The extension is meaningful
-when `P` satisfies the a priori estimate `‖P u‖_{H⁰} ≤ C ‖u‖_{H^m}` on smooth functions, for
-instance when `P` is a classical pseudodifferential operator of order `m`; it then agrees with `P`
-on smooth functions (`TauCeti.chartSobolevRealization_toLp`). Otherwise the extension, and with it
-the realization, is a junk value unrelated to `P`. -/
-def chartSobolevRealization : Lp ℂ 2 μ →ₗ.[ℂ] Lp ℂ 2 μ :=
-  (LinearMap.range (chartSobolevGraphMap hμ hc ψ hψ P hm :
-    chartSobolevSpace hc ψ m →ₗ[ℂ] Lp ℂ 2 μ × Lp ℂ 2 μ)).toLinearPMap
-
-/-- The graph of the realization of `P` is the range of `x ↦ (x, P x)` on `H^m(M)`. -/
-theorem graph_chartSobolevRealization :
-    (chartSobolevRealization hμ hc ψ hψ P hm).graph =
-      LinearMap.range (chartSobolevGraphMap hμ hc ψ hψ P hm :
-        chartSobolevSpace hc ψ m →ₗ[ℂ] Lp ℂ 2 μ × Lp ℂ 2 μ) := by
-  refine Submodule.toLinearPMap_graph_eq _ ?_
-  rintro _ ⟨x, rfl⟩ hx
-  obtain rfl : x = 0 := chartSobolevToLp_injective hμ hc ψ hψ hm (by simpa using hx)
-  simp
-
-/-- `(f, g)` lies on the graph of the realization of `P` exactly when `f` is the image of some
-`x ∈ H^m(M)` and `g` that of the extension of `P` applied to `x`. -/
-theorem mem_graph_chartSobolevRealization_iff {f g : Lp ℂ 2 μ} :
-    (f, g) ∈ (chartSobolevRealization hμ hc ψ hψ P hm).graph ↔
-      ∃ x : chartSobolevSpace hc ψ m, chartSobolevToLp hμ hc ψ hψ hm x = f ∧
-        chartSobolevSpaceZeroEquivLp hμ hc ψ hψ (chartSobolevExtension hc ψ hc ψ P m 0 x) = g := by
-  simp [graph_chartSobolevRealization, Prod.ext_iff]
-
-/-- The domain of the realization of `P` is `H^m(M)`, read in `L²(M, μ)`. -/
-theorem mem_domain_chartSobolevRealization_iff {f : Lp ℂ 2 μ} :
-    f ∈ (chartSobolevRealization hμ hc ψ hψ P hm).domain ↔
-      ∃ x : chartSobolevSpace hc ψ m, chartSobolevToLp hμ hc ψ hψ hm x = f := by
-  simp [chartSobolevRealization, Submodule.toLinearPMap_domain]
-
-/-- The image in `L²` of every `x ∈ H^m(M)` lies in the domain of the realization. -/
-theorem chartSobolevToLp_mem_domain_chartSobolevRealization (x : chartSobolevSpace hc ψ m) :
-    chartSobolevToLp hμ hc ψ hψ hm x ∈ (chartSobolevRealization hμ hc ψ hψ P hm).domain :=
-  (mem_domain_chartSobolevRealization_iff hμ hc ψ hψ P hm).2 ⟨x, rfl⟩
-
-/-- On the image `f` of `x ∈ H^m(M)` in `L²`, the realization of `P` is the extension of `P`
-applied to `x`. -/
-theorem chartSobolevRealization_apply (f : (chartSobolevRealization hμ hc ψ hψ P hm).domain)
-    {x : chartSobolevSpace hc ψ m} (hx : chartSobolevToLp hμ hc ψ hψ hm x = f) :
-    chartSobolevRealization hμ hc ψ hψ P hm f =
-      chartSobolevSpaceZeroEquivLp hμ hc ψ hψ (chartSobolevExtension hc ψ hc ψ P m 0 x) := by
-  obtain ⟨y, hy, hPy⟩ := (mem_graph_chartSobolevRealization_iff hμ hc ψ hψ P hm).1
-    ((chartSobolevRealization hμ hc ψ hψ P hm).mem_graph f)
-  obtain rfl := chartSobolevToLp_injective hμ hc ψ hψ hm (hy.trans hx.symm)
-  exact hPy.symm
+    (chartSobolevToLp_injective hμ hc ψ hψ hm)
 
 /-- Smooth functions lie in the domain of the realization. -/
 theorem toLp_mem_domain_chartSobolevRealization
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u ∈
       (chartSobolevRealization hμ hc ψ hψ P hm).domain :=
-  (mem_domain_chartSobolevRealization_iff hμ hc ψ hψ P hm).2
-    ⟨_, chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u⟩
+  chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u ▸
+    ContinuousLinearMap.apply_mem_domain_domainOperator _ _ _ _
 
 /-- **On smooth functions the realization is `P`.** For a classical pseudodifferential operator
 `P` of order `m`, the realization of `P` sends the class of a smooth function `u` in `L²` to the
@@ -172,10 +129,10 @@ theorem chartSobolevRealization_toLp (hP : P ∈ classicalPseudodifferentialOper
         ⟨ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u,
           toLp_mem_domain_chartSobolevRealization hμ hc ψ hψ P hm u⟩ =
       ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ (P u) := by
-  rw [chartSobolevRealization_apply hμ hc ψ hψ P hm _
-    (chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u),
+  rw [ContinuousLinearMap.domainOperator_apply _ _ _
+    (chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u), ContinuousLinearMap.comp_apply,
     chartSobolevExtension_toChartSobolevSpace_of_mem hP hψ (by linarith),
-    chartSobolevSpaceZeroEquivLp_toChartSobolevSpace]
+    ContinuousLinearEquiv.coe_coe, chartSobolevSpaceZeroEquivLp_toChartSobolevSpace]
 
 /-- The domain `H^m(M)` of the realization is dense in `L²(M, μ)`: it contains the smooth
 functions. -/
@@ -197,10 +154,10 @@ theorem isFormalAdjoint_chartSobolevRealization (hP : P ∈ classicalPseudodiffe
     (chartSobolevRealization hμ hc ψ hψ P hm).IsFormalAdjoint
       (chartSobolevRealization hμ hc ψ hψ Q hm) := by
   intro f g
-  obtain ⟨x, hx⟩ := (mem_domain_chartSobolevRealization_iff hμ hc ψ hψ P hm).1 f.property
-  obtain ⟨y, hy⟩ := (mem_domain_chartSobolevRealization_iff hμ hc ψ hψ Q hm).1 g.property
-  rw [chartSobolevRealization_apply hμ hc ψ hψ P hm f hx,
-    chartSobolevRealization_apply hμ hc ψ hψ Q hm g hy, ← hx, ← hy]
+  obtain ⟨x, hx⟩ := (ContinuousLinearMap.mem_domain_domainOperator_iff _ _ _).1 f.property
+  obtain ⟨y, hy⟩ := (ContinuousLinearMap.mem_domain_domainOperator_iff _ _ _).1 g.property
+  rw [ContinuousLinearMap.domainOperator_apply _ _ _ hx,
+    ContinuousLinearMap.domainOperator_apply _ _ _ hy, ← hx, ← hy]
   have h := inner_chartSobolevToLp_eq_of_forall_integral_inner_eq hμ hc ψ hψ hPQ hm le_rfl hm le_rfl
     (chartSobolevExtension_toChartSobolevSpace_of_mem hP hψ (by linarith))
     (chartSobolevExtension_toChartSobolevSpace_of_mem hQ hψ (by linarith)) x y
@@ -222,37 +179,29 @@ theorem chartSobolevRealization_le_adjoint (hP : P ∈ classicalPseudodifferenti
 
 /-- **The realization of an elliptic operator is closed.** If `P` is an elliptic classical
 pseudodifferential operator of order `m ≥ 0`, its realization in `L²(M, μ)` with domain `H^m(M)`
-is a closed operator. Its graph is the range of `x ↦ (x, P x)` on the Hilbert space `H^m(M)`,
-which the elliptic estimate bounds below, so the range is complete. -/
+is a closed operator: by the elliptic estimate, the norm of the Hilbert space `H^m(M)` is bounded
+by the graph norm. -/
 theorem IsClassicalElliptic.isClosed_chartSobolevRealization
     (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P) :
     (chartSobolevRealization hμ hc ψ hψ P hm).IsClosed := by
-  set J₀ := (chartSobolevSpaceZeroEquivLp hμ hc ψ hψ : chartSobolevSpace hc ψ 0 →L[ℂ] Lp ℂ 2 μ)
-  set L := chartSobolevGraphMap hμ hc ψ hψ P hm
+  set J₀ := chartSobolevSpaceZeroEquivLp hμ hc ψ hψ
   -- The norm on `H⁰(M)` is bounded by that on `L²`.
-  set E₀ := ((chartSobolevSpaceZeroEquivLp hμ hc ψ hψ).symm :
-    Lp ℂ 2 μ →L[ℂ] chartSobolevSpace hc ψ 0)
-  set D := ‖E₀‖
-  have hD : 0 ≤ D := norm_nonneg E₀
-  have hJ₀ (y : chartSobolevSpace hc ψ 0) : ‖y‖ ≤ D * ‖J₀ y‖ := by
-    simpa [J₀, E₀] using E₀.le_opNorm (J₀ y)
+  set E₀ := (J₀.symm : Lp ℂ 2 μ →L[ℂ] chartSobolevSpace hc ψ 0)
+  have hJ₀ (y : chartSobolevSpace hc ψ 0) : ‖y‖ ≤ ‖E₀‖ * ‖J₀ y‖ := by
+    simpa [E₀] using E₀.le_opNorm (J₀ y)
   obtain ⟨C, hC⟩ := hPe.exists_norm_le_mul_norm_chartSobolevExtension_add hP hc ψ hψ
     (zero_add m) hm
-  -- The elliptic estimate bounds `x ↦ (x, P x)` below.
-  have hL (x : chartSobolevSpace hc ψ m) : ‖x‖ ≤ (2 * |C| * D).toNNReal * ‖L x‖ := by
-    have h₁ : ‖chartSobolevExtension hc ψ hc ψ P m 0 x‖ ≤ D * ‖L x‖ :=
-      (hJ₀ _).trans (mul_le_mul_of_nonneg_left (norm_snd_le (L x)) hD)
-    have h₂ : ‖chartSobolevInclusion hc ψ hm x‖ ≤ D * ‖L x‖ :=
-      (hJ₀ _).trans (mul_le_mul_of_nonneg_left (by
-        simpa only [L, J₀, chartSobolevGraphMap_apply, chartSobolevToLp_apply,
-          ContinuousLinearEquiv.coe_coe] using norm_fst_le (L x)) hD)
-    rw [Real.coe_toNNReal _ (by positivity)]
-    calc ‖x‖ ≤ C * (‖chartSobolevExtension hc ψ hc ψ P m 0 x‖ +
-          ‖chartSobolevInclusion hc ψ hm x‖) := hC x
-      _ ≤ |C| * (D * ‖L x‖ + D * ‖L x‖) :=
-          mul_le_mul (le_abs_self C) (add_le_add h₁ h₂) (by positivity) (abs_nonneg C)
-      _ = 2 * |C| * D * ‖L x‖ := by ring
-  rw [LinearPMap.IsClosed, graph_chartSobolevRealization, LinearMap.coe_range]
-  exact (L.antilipschitz_of_bound hL).isClosed_range L.uniformContinuous
+  -- The elliptic estimate bounds the norm of `H^m(M)` by the graph norm.
+  refine ContinuousLinearMap.isClosed_domainOperator_of_norm_le (C := |C| * ‖E₀‖) fun x ↦ ?_
+  calc ‖x‖ ≤ C * (‖chartSobolevExtension hc ψ hc ψ P m 0 x‖ +
+        ‖chartSobolevInclusion hc ψ hm x‖) := hC x
+    _ ≤ |C| * (‖E₀‖ * ‖J₀ (chartSobolevExtension hc ψ hc ψ P m 0 x)‖ +
+        ‖E₀‖ * ‖J₀ (chartSobolevInclusion hc ψ hm x)‖) :=
+        mul_le_mul (le_abs_self C) (add_le_add (hJ₀ _) (hJ₀ _)) (by positivity) (abs_nonneg C)
+    _ = |C| * ‖E₀‖ * (‖chartSobolevToLp hμ hc ψ hψ hm x‖ +
+        ‖((J₀ : chartSobolevSpace hc ψ 0 →L[ℂ] Lp ℂ 2 μ) ∘L
+          chartSobolevExtension hc ψ hc ψ P m 0) x‖) := by
+        rw [chartSobolevToLp_apply, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+        ring
 
 end TauCeti
