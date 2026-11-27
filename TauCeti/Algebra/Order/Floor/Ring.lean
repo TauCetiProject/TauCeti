@@ -83,7 +83,7 @@ theorem _root_.Function.Periodic.apply_fract {R β : Type*} [Ring R] [LinearOrde
 /-- The fractional part of a difference is the difference of the fractional parts exactly when
 the fractional part of the term taken away is at most the other one. -/
 theorem _root_.Int.fract_sub_eq_sub_iff {R : Type*} [Ring R] [LinearOrder R]
-    [IsStrictOrderedRing R] [FloorRing R] {a b : R} :
+    [IsOrderedAddMonoid R] [FloorRing R] {a b : R} :
     Int.fract (a - b) = Int.fract a - Int.fract b ↔ Int.fract b ≤ Int.fract a := by
   refine ⟨fun h => sub_nonneg.1 (by rw [← h]; exact Int.fract_nonneg _), fun h =>
     Int.fract_eq_iff.2 ⟨sub_nonneg.2 h,
@@ -95,7 +95,7 @@ theorem _root_.Int.fract_sub_eq_sub_iff {R : Type*} [Ring R] [LinearOrder R]
 /-- The fractional part of a difference is the difference of the fractional parts plus one
 exactly when the fractional part of the term taken away is the larger one. -/
 theorem _root_.Int.fract_sub_eq_sub_add_one_iff {R : Type*} [Ring R] [LinearOrder R]
-    [IsStrictOrderedRing R] [FloorRing R] {a b : R} :
+    [IsOrderedAddMonoid R] [FloorRing R] {a b : R} :
     Int.fract (a - b) = Int.fract a - Int.fract b + 1 ↔ Int.fract a < Int.fract b := by
   refine ⟨fun h => sub_neg.1 ((add_lt_iff_neg_right 1).1 (by rw [← h]; exact Int.fract_lt_one _)),
     fun h => Int.fract_eq_iff.2 ⟨?_, (add_lt_iff_neg_right 1).2 (sub_neg.2 h), ⌊a⌋ - ⌊b⌋ - 1, ?_⟩⟩
@@ -108,7 +108,7 @@ theorem _root_.Int.fract_sub_eq_sub_add_one_iff {R : Type*} [Ring R] [LinearOrde
 /-- For natural numbers `i ≤ j`, if the fractional part of `i * a` is at most that of `j * a`,
 then their difference is the fractional part of `(j - i) * a`. -/
 theorem _root_.Int.fract_natCast_sub_mul_of_le {R : Type*} [Ring R] [LinearOrder R]
-    [IsStrictOrderedRing R] [FloorRing R] {a : R} {i j : ℕ} (hij : i ≤ j)
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ} (hij : i ≤ j)
     (h : Int.fract (i * a) ≤ Int.fract (j * a)) :
     Int.fract (↑(j - i) * a) = Int.fract (j * a) - Int.fract (i * a) := by
   rw [Nat.cast_sub hij, sub_mul, Int.fract_sub_eq_sub_iff.2 h]
@@ -116,7 +116,7 @@ theorem _root_.Int.fract_natCast_sub_mul_of_le {R : Type*} [Ring R] [LinearOrder
 /-- For natural numbers `i ≤ j`, if the fractional part of `j * a` is less than that of `i * a`,
 then their difference plus one is the fractional part of `(j - i) * a`. -/
 theorem _root_.Int.fract_natCast_sub_mul_of_lt {R : Type*} [Ring R] [LinearOrder R]
-    [IsStrictOrderedRing R] [FloorRing R] {a : R} {i j : ℕ} (hij : i ≤ j)
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ} (hij : i ≤ j)
     (h : Int.fract (j * a) < Int.fract (i * a)) :
     Int.fract (↑(j - i) * a) = Int.fract (j * a) - Int.fract (i * a) + 1 := by
   rw [Nat.cast_sub hij, sub_mul, Int.fract_sub_eq_sub_add_one_iff.2 h]
@@ -124,7 +124,7 @@ theorem _root_.Int.fract_natCast_sub_mul_of_lt {R : Type*} [Ring R] [LinearOrder
 /-- For natural numbers `i` and `j`, if the fractional parts of `i * a` and `j * a` sum to less
 than `1`, then their sum is the fractional part of `(i + j) * a`. -/
 theorem _root_.Int.fract_natCast_add_mul_of_lt {R : Type*} [Ring R] [LinearOrder R]
-    [IsStrictOrderedRing R] [FloorRing R] {a : R} {i j : ℕ}
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ}
     (h : Int.fract (i * a) + Int.fract (j * a) < 1) :
     Int.fract (↑(i + j) * a) = Int.fract (i * a) + Int.fract (j * a) := by
   rw [Nat.cast_add, add_mul, Int.fract_add_eq_add_iff.2 h]
@@ -132,7 +132,7 @@ theorem _root_.Int.fract_natCast_add_mul_of_lt {R : Type*} [Ring R] [LinearOrder
 /-- For natural numbers `i` and `j`, if the fractional parts of `i * a` and `j * a` sum to at
 least `1`, then their sum minus one is the fractional part of `(i + j) * a`. -/
 theorem _root_.Int.fract_natCast_add_mul_of_le {R : Type*} [Ring R] [LinearOrder R]
-    [IsStrictOrderedRing R] [FloorRing R] {a : R} {i j : ℕ}
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ}
     (h : 1 ≤ Int.fract (i * a) + Int.fract (j * a)) :
     Int.fract (↑(i + j) * a) = Int.fract (i * a) + Int.fract (j * a) - 1 := by
   rw [Nat.cast_add, add_mul, Int.fract_add_eq_add_sub_one_iff.2 h]
