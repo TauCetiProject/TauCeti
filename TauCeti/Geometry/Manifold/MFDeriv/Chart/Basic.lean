@@ -54,8 +54,6 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
     `range I`.
   - `MDifferentiableAt.mfderiv_eq_mfderivWithin_comp_extChartAt_symm`: `mfderiv` at `x` is the
     derivative on `range I` of the map read through the inverse extended chart at `x`.
-  - `ContinuousAt.comp_comp_extChartAt_symm_eventuallyEq`: near the chart image of `x`, a function
-    composed with `π` reads in charts through the coordinate expression of `π`.
 * **Charts of the maximal atlas**:
   - `TauCeti.mdifferentiable_of_mem_maximalAtlas` and `TauCeti.isInvertible_mvfderiv_extend`:
     differentiability and invertibility of the differential for charts of the `C¹` maximal atlas.
@@ -338,19 +336,6 @@ theorem MDifferentiableAt.mfderiv_eq_mfderivWithin_comp_extChartAt_symm [IsManif
   -- The two sides differ only in the tangent-space casts `tangentSpaceCastModel` at the equal
   -- points `x` and `(extChartAt I x).symm (extChartAt I x x)`, which are identities by definition.
   rfl
-
-/-- If `π : M → M'` is continuous at `x`, then near the chart image of `x` the coordinate expression
-of `g ∘ π` in the preferred extended chart at `x` is the coordinate expression of `g` in the
-preferred extended chart at `π x`, composed with the coordinate expression of `π`. -/
-theorem ContinuousAt.comp_comp_extChartAt_symm_eventuallyEq {α : Type*} {π : M → M'} {x : M}
-    (hπ : ContinuousAt π x) (g : M' → α) :
-    (g ∘ π) ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x x)]
-      (g ∘ (extChartAt I' (π x)).symm) ∘ writtenInExtChartAt I I' x π := by
-  have ht := (continuousAt_extChartAt_symm (I := I) x).tendsto
-  rw [extChartAt_to_inv] at ht
-  filter_upwards [ht.eventually
-    (hπ.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I') (π x)))] with z hz
-  exact congrArg g (extChartAt_symm_writtenInExtChartAt hz).symm
 
 section MaximalAtlasExtend
 

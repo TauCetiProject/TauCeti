@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Geometry.Manifold.ExtChartAt.Comp
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic

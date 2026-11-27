@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
+import TauCeti.Geometry.Manifold.ExtChartAt.Comp
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
