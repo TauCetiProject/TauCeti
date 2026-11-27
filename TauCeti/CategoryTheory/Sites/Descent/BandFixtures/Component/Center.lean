@@ -142,9 +142,13 @@ theorem val_singleCenterUnit (g : G) : (singleCenterUnit g).val = singleCenter g
   (rfl)
 
 /-- The inverse of the central unit of `g` is the central endomorphism of `g⁻¹`. -/
-@[simp]
 theorem val_inv_singleCenterUnit (g : G) : (singleCenterUnit g)⁻¹.val = singleCenter g⁻¹ :=
   (rfl)
+
+/-- The inverse of the central unit of `g` is the central unit of `g⁻¹`. -/
+@[simp]
+theorem singleCenterUnit_inv (g : G) : (singleCenterUnit g)⁻¹ = singleCenterUnit g⁻¹ :=
+  Units.ext (val_inv_singleCenterUnit g)
 
 @[simp]
 theorem singleCenterUnit_mul (g h : G) :
