@@ -22,10 +22,10 @@ sense that its first-order part lies in `H¹₀(H)`, and solve the non-divergenc
 `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere on `B_r⁺`,
 
 with a measurable coefficient matrix `a`, neither continuous nor symmetric in general. Fix a
-constant matrix `A`, uniformly elliptic with constants `0 < λ ≤ Λ`, and write `θ(x) = ‖a(x) - A‖`
-in the operator norm of the attached bilinear forms `TauCeti.PDE.matrixBilinearForm`. This file
-proves the boundary counterparts of the mean oscillation estimates for the Hessian on balls (in
-the `TauCeti.PDE` namespace,
+constant matrix `A`, uniformly elliptic with constants `0 < λ ≤ Λ`, write `θ(x) = ‖a(x) - A‖`
+in the operator norm of the attached bilinear forms `TauCeti.PDE.matrixBilinearForm`, and assume
+`θ ≤ K` on `B_r⁺` for a constant `K`. This file proves the boundary counterparts of the mean
+oscillation estimates for the Hessian on balls (in the `TauCeti.PDE` namespace,
 `setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matrixBilinearForm_sub_le`
 in the interior) for the columns `D²u τ` of the weak Hessian in the tangential directions,
 `⟪τ, ν⟫ = 0`. There is `C`, depending only on `n`, `λ` and `Λ`, such that for `0 < ρ ≤ r` and every
@@ -37,7 +37,7 @@ real `t`
 where `p_ρ` is the multiple of `ν` closest to `D²u τ` in `L²(B_ρ⁺)`. This is
 `exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le_add`,
 whose case `a = A`, `K = 0` covers constant coefficients.
-If `θ ≤ K` on `B_r⁺` and `D²u ∈ L^{2q}(B_r⁺)` for Hölder conjugate exponents `q, q'`, the
+If moreover `D²u ∈ L^{2q}(B_r⁺)` for Hölder conjugate exponents `q, q'`, the
 coefficient term becomes a mean deviation of `a`, and the estimate takes the scale-invariant form
 
 `⨍_{B_ρ⁺} ‖D²u τ - p_ρ‖² ≤ C (ρ / r)² ⨍_{B_r⁺} ‖D²u τ - t ν‖²`
