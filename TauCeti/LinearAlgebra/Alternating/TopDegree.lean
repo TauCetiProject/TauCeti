@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # Top-degree alternating forms and hyperplanes
@@ -28,6 +29,12 @@ If all vectors in a tuple `u` lie in `ker f`, evaluations on `Matrix.vecCons W u
 proportional to `f W` (`AlternatingMap.smul_map_vecCons_eq`). In dimension two this compares
 area contractions with conormal values, providing the linear-algebra input for independence
 of boundary orientation from the choice of inward transverse vector.
+
+A nonzero top-degree form vanishes exactly on the linearly dependent families
+(`AlternatingMap.map_eq_zero_iff_not_linearIndependent`): a linearly independent family of the
+right size is a basis, on which a nonzero form does not vanish. In dimension two this says that
+`ω (u, w) = 0` for a nonzero `u` exactly when `w` is a multiple of `u`
+(`AlternatingMap.map_eq_zero_iff_exists_smul_eq`).
 
 These are the steps from a top wedge power to nondegeneracy: a two-form with a nonzero vector in
 its kernel has vanishing top power, and the top-degree form `α ∧ (dα)ⁿ` on a space of dimension
@@ -99,5 +106,25 @@ theorem eq_zero_of_curryLeft_eq_zero (hn : finrank K V = n + 1) (ω : V [⋀^Fin
     {v : V} (hv : v ≠ 0) (hω : ω.curryLeft v = 0) : ω = 0 := by
   obtain ⟨f, hf⟩ := Projective.exists_dual_eq_one K hv
   rw [← curryLeft_compLinearMap_subtype_eq_zero_iff hn ω hf, hω, zero_compLinearMap]
+
+/-- **A nonzero top-degree form vanishes exactly on linearly dependent families.** On a
+finite-dimensional space `V`, a nonzero alternating form `ω` of degree `finrank K V` vanishes on a
+family `v` exactly when `v` is linearly dependent. -/
+theorem map_eq_zero_iff_not_linearIndependent [FiniteDimensional K V] {ι : Type*} [Fintype ι]
+    (hι : Fintype.card ι = finrank K V) {ω : V [⋀^ι]→ₗ[K] K} (hω : ω ≠ 0) {v : ι → V} :
+    ω v = 0 ↔ ¬LinearIndependent K v := by
+  refine ⟨fun h hv ↦ ?_, fun hv ↦ ω.map_linearDependent v hv⟩
+  have hb := (map_basis_ne_zero_iff (basisOfLinearIndependentOfCardEqFinrank' v hv hι) ω).2 hω
+  rw [coe_basisOfLinearIndependentOfCardEqFinrank'] at hb
+  exact hb h
+
+/-- **A nonzero area form vanishes exactly on parallel pairs.** On a space of dimension two, a
+nonzero alternating form `ω` of degree two vanishes on `(u, w)`, for a nonzero `u`, exactly when
+`w` is a multiple of `u`. -/
+theorem map_eq_zero_iff_exists_smul_eq (hV : finrank K V = 2) {ω : V [⋀^Fin 2]→ₗ[K] K}
+    (hω : ω ≠ 0) {u : V} (hu : u ≠ 0) (w : V) : ω ![u, w] = 0 ↔ ∃ a : K, a • u = w := by
+  have := Module.finite_of_finrank_eq_succ hV
+  rw [map_eq_zero_iff_not_linearIndependent (by simp [hV]) hω, LinearIndependent.pair_iff' hu]
+  simp only [not_forall, not_not]
 
 end AlternatingMap
