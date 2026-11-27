@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
@@ -27,7 +28,11 @@ the input and output of a complex-linear map, `f ↦ conj (P (conj f))`, gives a
 and `B` complexifications
 (`ContMDiffMap.exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq`), namely of
 `u ↦ Re (P u)` and `u ↦ Im (P u)` on real-valued functions
-(`ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp`).
+(`ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp`). When `P` is
+a complex differential operator in Grothendieck's sense, these real and imaginary parts are real
+differential operators of the same order
+(`TauCeti.re_comp_restrictScalars_comp_ofReal_mem_differentialOperators`,
+`TauCeti.im_comp_restrictScalars_comp_ofReal_mem_differentialOperators`).
 Differentiation commutes with real and imaginary parts at every nonzero differentiability
 order. Precomposition with a smooth map is a complex algebra homomorphism
 (`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data.
@@ -186,6 +191,20 @@ theorem ofReal_re (f : C^n⟮I, M; ℝ⟯) : (ofReal f).re = f := by
 
 @[simp]
 theorem ofReal_im (f : C^n⟮I, M; ℝ⟯) : (ofReal f).im = 0 := by
+  ext x
+  simp
+
+/-- The real part is linear over real-valued functions. -/
+@[simp]
+theorem re_ofReal_mul (b : C^n⟮I, M; ℝ⟯) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ofReal b * f).re = b * f.re := by
+  ext x
+  simp
+
+/-- The imaginary part is linear over real-valued functions. -/
+@[simp]
+theorem im_ofReal_mul (b : C^n⟮I, M; ℝ⟯) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ofReal b * f).im = b * f.im := by
   ext x
   simp
 
@@ -630,6 +649,57 @@ theorem mvfderiv_eq_zero_iff_re_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hn 
         congrArg (fun L ↦ L v) hi
 
 end ContMDiffMap
+
+namespace TauCeti
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+
+section RealImaginaryParts
+
+variable {m : ℕ} {Q : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
+
+/-- Reading a complex differential operator `Q` on real-valued functions and composing with a
+real-linear map `σ` that intertwines multiplication by a real function `b` on complex and on real
+functions gives a real differential operator of the same order: the inclusion of real functions
+and `σ` intertwine the commutators with `b`. -/
+private theorem comp_restrictScalars_comp_ofReal_mem_differentialOperators
+    {σ : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hσ : ∀ (b : C^∞⟮I, M; ℝ⟯) y, σ (ContMDiffMap.ofReal b * y) = b * σ y)
+    (hQ : Q ∈ differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
+    σ ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m :=
+  comp_comp_mem_differentialOperators
+    (fun b ↦ ⟨ContMDiffMap.ofReal b, fun x ↦ map_mul ContMDiffMap.ofReal b x, hσ b⟩)
+    (restrictScalars_mem_differentialOperators hQ)
+
+/-- **The real part of a complex differential operator.** If `Q` is a complex differential
+operator of order at most `m` on the complex-valued smooth functions, for commutators with
+complex-valued smooth functions, then `u ↦ Re (Q u)`, on real-valued functions `u`, is a real
+differential operator of order at most `m`. -/
+theorem re_comp_restrictScalars_comp_ofReal_mem_differentialOperators
+    (hQ : Q ∈ differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
+    ContMDiffMap.re ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m :=
+  comp_restrictScalars_comp_ofReal_mem_differentialOperators ContMDiffMap.re_ofReal_mul hQ
+
+/-- **The imaginary part of a complex differential operator.** If `Q` is a complex differential
+operator of order at most `m` on the complex-valued smooth functions, for commutators with
+complex-valued smooth functions, then `u ↦ Im (Q u)`, on real-valued functions `u`, is a real
+differential operator of order at most `m`. -/
+theorem im_comp_restrictScalars_comp_ofReal_mem_differentialOperators
+    (hQ : Q ∈ differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
+    ContMDiffMap.im ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m :=
+  comp_restrictScalars_comp_ofReal_mem_differentialOperators ContMDiffMap.im_ofReal_mul hQ
+
+end RealImaginaryParts
+
+end TauCeti
 
 namespace Diffeomorph
 
