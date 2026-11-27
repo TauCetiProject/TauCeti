@@ -90,11 +90,8 @@ theorem finrank_ker_mixedOperator_laplacian_empty
     finrank ℝ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
         (1 : Matrix ι ι ℝ)) ∅).ker =
       Nat.card (ConnectedComponents (Omega : Set (EuclideanSpace ℝ ι))) := by
-  have hinj : Function.Injective (W1p.valueL : W1p mu Omega 2 →L[ℝ] _).toLinearMap :=
-    fun u v h ↦ W1p.ext_value <| by
-      rwa [ContinuousLinearMap.coe_coe, W1p.valueL_apply, W1p.valueL_apply] at h
   rw [ker_mixedOperator_laplacian_empty htop, ← W1p.finrank_ker_gradientL (mu := mu) (p := 2)]
-  exact (Submodule.equivMapOfInjective _ hinj _).finrank_eq.symm
+  exact (Submodule.equivMapOfInjective _ W1p.valueL_injective _).finrank_eq.symm
 
 /-- **The Neumann eigenvalue `0` is simple on a connected domain.** Let `Ω` be a nonempty
 preconnected open set of finite measure on which `H¹_∅(Ω) = H¹(Ω)`, as on a bounded connected
