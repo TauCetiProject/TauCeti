@@ -62,7 +62,8 @@ Left scalar multiplication on a residue class is multiplication of representativ
 
 For `Ideal.span {a} * I ≤ J`, `Ideal.Quotient.mulLeft a h : (R ⧸ I) →ₗ[R] (R ⧸ J)`
 is multiplication by `a`, compatible with `Ideal.Quotient.factor` and injective when
-`J ≤ Ideal.span {a} * I` and `a` is left-regular.
+`J ≤ Ideal.span {a} * I` and `a` is left-regular. `Submodule.quotEquivOfEq_ideal_mk` simplifies
+`Submodule.quotEquivOfEq` applied to `Ideal.Quotient.mk`.
 -/
 
 public section
@@ -326,3 +327,11 @@ theorem mulLeft_injective {a : R} (h : Ideal.span {a} * I ≤ J) (hJI : J ≤ Id
 end MulLeft
 
 end Ideal.Quotient
+
+/-- `Submodule.quotEquivOfEq` between equal ideals sends `Ideal.Quotient.mk I r` to
+`Ideal.Quotient.mk J r`. -/
+@[simp]
+theorem Submodule.quotEquivOfEq_ideal_mk {R : Type*} [Ring R] {I J : Ideal R}
+    [I.IsTwoSided] [J.IsTwoSided] (h : I = J) (r : R) :
+    Submodule.quotEquivOfEq I J h (Ideal.Quotient.mk I r) = Ideal.Quotient.mk J r :=
+  rfl

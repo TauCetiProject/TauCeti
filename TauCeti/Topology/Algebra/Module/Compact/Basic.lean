@@ -77,7 +77,6 @@ itself.
   `TauCeti.IsCompactModule.existsUnique_forall_mkQ_eq`, `TauCeti.IsCompactModule.submodule`,
   `TauCeti.IsCompactModule.quotient`, `TauCeti.IsCompactModule.finite_quotient_of_isOpen`,
   `TauCeti.IsCompactModule.isClosed_smul_top`,
-  `TauCeti.IsCompactModule.isClosed_smul_top_of_isNoetherianRing`,
   `TauCeti.IsCompactModule.pi`, `TauCeti.IsCompactModule.prod`,
   `TauCeti.IsCompactModule.of_subsingleton`, `TauCeti.IsCompactModule.of_continuousLinearEquiv`,
   `TauCeti.IsCompactModule.self`: the same statements for the predicate, its stability under
@@ -458,13 +457,6 @@ theorem isClosed_smul_top {R M : Type*} [CommRing R] [TopologicalSpace R] [AddCo
     IsClosed ((I • (⊤ : Submodule R M) : Submodule R M) : Set M) := by
   have ⟨_, _, _, _⟩ := hM; have := hM.t2Space
   exact (hI.isCompact_smul (by simpa using isCompact_univ)).isClosed
-
-/-- In a compact module over a noetherian ring, `I • ⊤` is closed for every ideal `I`. -/
-theorem isClosed_smul_top_of_isNoetherianRing {R M : Type*} [CommRing R] [IsNoetherianRing R]
-    [TopologicalSpace R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
-    (hM : IsCompactModule R M) (I : Ideal R) :
-    IsClosed ((I • (⊤ : Submodule R M) : Submodule R M) : Set M) :=
-  hM.isClosed_smul_top (IsNoetherian.noetherian I)
 
 end IsCompactModule
 

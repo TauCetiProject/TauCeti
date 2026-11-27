@@ -11,7 +11,6 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 import Mathlib.RingTheory.AdicCompletion.Topology
 import TauCeti.LinearAlgebra.Quotient.Basic
-import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Adic topology and adic completeness

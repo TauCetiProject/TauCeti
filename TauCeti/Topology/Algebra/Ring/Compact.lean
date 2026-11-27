@@ -32,10 +32,9 @@ residue field, being constant on the open cosets of the maximal ideal.
 
 * `IsLocalRing.isAdic_maximalIdeal`: the topology of a compact Hausdorff noetherian local ring is
   its `m`-adic topology.
-* `IsLocalRing.nonarchimedeanRing_of_compactSpace`,
-  `IsLocalRing.totallyDisconnectedSpace_of_compactSpace`,
-  `IsLocalRing.isAdicComplete_maximalIdeal_of_compactSpace`: `R` is nonarchimedean, totally
-  disconnected, and `m`-adically complete.
+* `IsLocalRing.totallyDisconnectedSpace_of_compactSpace`,
+  `IsLocalRing.isAdicComplete_maximalIdeal_of_compactSpace`: `R` is totally disconnected and
+  `m`-adically complete.
 * `IsLocalRing.continuous_residue`: the residue map of a local ring with continuous translations
   and open maximal ideal is continuous for every topology on its residue field.
 -/
@@ -61,10 +60,6 @@ theorem isAdic_maximalIdeal : IsAdic (maximalIdeal R) := by
     (fun n ↦ Ideal.isCompact_of_fg (IsNoetherian.noetherian _)) (by rwa [hinter, nhdsSet_singleton])
   · exact Ideal.pow_le_pow_right (le_max_left i j)
   · exact Ideal.pow_le_pow_right (le_max_right i j)
-
-/-- A compact Hausdorff noetherian local ring is nonarchimedean: its topology is `m`-adic. -/
-theorem nonarchimedeanRing_of_compactSpace : NonarchimedeanRing R :=
-  (isAdic_maximalIdeal R).nonarchimedeanRing
 
 /-- A compact Hausdorff noetherian local ring is totally disconnected. -/
 theorem totallyDisconnectedSpace_of_compactSpace : TotallyDisconnectedSpace R :=
