@@ -47,12 +47,16 @@ namespace IsAdmissibleAuxiliaryPair
 
 variable {B : ℝ} {a q d : ℕ}
 
+/-- The second prime of an admissible pair is odd. -/
+theorem d_ne_two (h : IsAdmissibleAuxiliaryPair B a q d) : d ≠ 2 := by
+  have := h.d_mod_eight
+  omega
+
 /-- The prime `d` is larger than the cutoff of an admissible pair. -/
 theorem lt_d (h : IsAdmissibleAuxiliaryPair B a q d) : B < (d : ℝ) := by
   by_contra! hd
-  have hd2 : d ≠ 2 := by have := h.d_mod_eight; omega
-  have hd1 := Nat.dvd_add_iff_right (dvd_refl d) |>.2 (h.prime_dvd d h.d_prime hd2 hd)
-  exact h.d_prime.not_dvd_one hd1
+  exact h.d_prime.not_dvd_one
+    ((Nat.dvd_add_right dvd_rfl).mp (h.prime_dvd d h.d_prime h.d_ne_two hd))
 
 /-- The second prime is at least `23`, independently of the cutoff. -/
 theorem twenty_three_le_d (h : IsAdmissibleAuxiliaryPair B a q d) : 23 ≤ d := by
@@ -65,14 +69,13 @@ theorem twenty_three_le_d (h : IsAdmissibleAuxiliaryPair B a q d) : 23 ≤ d := 
 
 /-- The second prime does not divide a level all of whose odd prime factors are at most `B`. -/
 theorem not_d_dvd (h : IsAdmissibleAuxiliaryPair B a q d) {f : ℕ}
-    (hf : ∀ p : ℕ, p.Prime → p ≠ 2 → p ∣ f → (p : ℝ) ≤ B) : ¬ d ∣ f := by
-  have hd2 : d ≠ 2 := by have := h.d_mod_eight; omega
-  exact fun hd ↦ h.lt_d.not_ge (hf d h.d_prime hd2 hd)
+    (hf : ∀ p : ℕ, p.Prime → p ≠ 2 → p ∣ f → (p : ℝ) ≤ B) : ¬ d ∣ f :=
+  fun hd ↦ h.lt_d.not_ge (hf d h.d_prime h.d_ne_two hd)
 
 /-- The two primes of an admissible pair are distinct. -/
 theorem q_ne_d (h : IsAdmissibleAuxiliaryPair B a q d) : q ≠ d := by
   rintro rfl
-  exact h.q_prime.not_dvd_one ((Nat.dvd_add_iff_right (dvd_refl q)).2 h.q_dvd)
+  exact h.q_prime.not_dvd_one ((Nat.dvd_add_right dvd_rfl).mp h.q_dvd)
 
 /-- The odd prime `q` and each prime up to `B` have Kronecker symbol `1` for the
 quadratic discriminant `−d`. -/
@@ -104,7 +107,18 @@ theorem three_le_d_multiplicity (h : IsAdmissibleAuxiliaryPair B a q d) :
   have := h.d_mod_eight
   omega
 
+/-- At dyadic bound `3`, the dyadic valuation of `d + 1` is exactly three. -/
+theorem d_multiplicity_eq_three (h : IsAdmissibleAuxiliaryPair B 3 q d) :
+    multiplicity 2 (d + 1) = 3 :=
+  le_antisymm h.d_multiplicity_le h.three_le_d_multiplicity
+
 end IsAdmissibleAuxiliaryPair
+
+/-- If `n ≡ 3 (mod 8)`, then the dyadic valuation of `n + 1` is exactly two. This applies to
+the first prime `q` of a sharp admissible pair. -/
+theorem multiplicity_two_add_one_eq_two_of_mod_eight {n : ℕ} (hn : n % 8 = 3) :
+    multiplicity 2 (n + 1) = 2 :=
+  multiplicity_eq_of_dvd_of_not_dvd (by omega) (by omega)
 
 /-- At dyadic bound `3`, if `q ≡ 3 (mod 8)`, the admissible second primes are precisely those
 congruent to `7` modulo `16` with the prescribed odd divisors of `d + 1`. -/
@@ -129,19 +143,64 @@ theorem isAdmissibleAuxiliaryPair_iff_of_mod_eight {B : ℝ} {q d : ℕ}
       have := (hmul d).mpr h
       omega
 
+/-- The modulus of the progression of sharp admissible second primes: `16` times the lcm of `q`
+and the product of the odd primes at most `B`. -/
+noncomputable def admissiblePairModulus (B : ℝ) (q : ℕ) : ℕ :=
+  16 * q.lcm (∏ p ∈ (Nat.primesLE ⌊B⌋₊).erase 2, p)
+
+/-- An odd prime `p` lies in the product defining `admissiblePairModulus` iff `p ≤ B`. -/
+private theorem mem_primesLE_erase_two_iff {B : ℝ} {p : ℕ} :
+    p ∈ (Nat.primesLE ⌊B⌋₊).erase 2 ↔ p.Prime ∧ p ≠ 2 ∧ (p : ℝ) ≤ B := by
+  by_cases hp : p.Prime
+  · simp [Nat.mem_primesLE, hp, Nat.le_floor_iff' hp.ne_zero]
+  · simp [Nat.mem_primesLE, hp]
+
+/-- The progression modulus is positive. -/
+theorem admissiblePairModulus_pos (B : ℝ) {q : ℕ} (hq : q ≠ 0) : 0 < admissiblePairModulus B q :=
+  Nat.mul_pos (by decide) (Nat.lcm_pos (Nat.pos_of_ne_zero hq)
+    (Finset.prod_pos fun _ hp ↦ (mem_primesLE_erase_two_iff.mp hp).1.pos))
+
+/-- The progression modulus is divisible by `16`. -/
+theorem sixteen_dvd_admissiblePairModulus (B : ℝ) (q : ℕ) : 16 ∣ admissiblePairModulus B q :=
+  dvd_mul_right _ _
+
+/-- The first prime `q` divides the progression modulus. -/
+theorem dvd_admissiblePairModulus (B : ℝ) (q : ℕ) : q ∣ admissiblePairModulus B q :=
+  (Nat.dvd_lcm_left _ _).trans (dvd_mul_left _ _)
+
+/-- Every odd prime at most `B` divides the progression modulus. -/
+theorem prime_dvd_admissiblePairModulus {B : ℝ} (q : ℕ) {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
+    (hpB : (p : ℝ) ≤ B) : p ∣ admissiblePairModulus B q :=
+  (Finset.dvd_prod_of_mem id (mem_primesLE_erase_two_iff.mpr ⟨hp, hp2, hpB⟩)).trans
+    ((Nat.dvd_lcm_right _ _).trans (dvd_mul_left _ _))
+
+/-- Modulo `M > 0`, the residue class of `M - 1` consists of the `n` with `M ∣ n + 1`. -/
+private theorem modEq_sub_one_iff_dvd_add_one {n M : ℕ} (hM : 0 < M) :
+    n ≡ M - 1 [MOD M] ↔ M ∣ n + 1 := by
+  have hpred : M - 1 + 1 = M := Nat.sub_add_cancel hM
+  have hz : M ≡ 0 [MOD M] := Nat.modEq_zero_iff_dvd.mpr dvd_rfl
+  rw [← Nat.modEq_zero_iff_dvd]
+  constructor
+  · intro h
+    have h1 := h.add_right 1
+    rw [hpred] at h1
+    exact h1.trans hz
+  · intro h
+    apply Nat.ModEq.add_right_cancel' 1
+    rw [hpred]
+    exact h.trans hz.symm
+
 /-- At fixed `q ≡ 3 (mod 8)`, admissibility at dyadic bound `3` cuts out one reduced
-residue class modulo `16` times the lcm of `q` and the product of the odd primes up to `B`.
+residue class modulo `admissiblePairModulus B q`, which is `16` times the lcm of `q` and the
+product of the odd primes up to `B`.
 The prime-selection estimates can therefore be applied to a single progression. -/
 theorem exists_coprime_modEq_iff_isAdmissibleAuxiliaryPair (B : ℝ) {q : ℕ}
     (hq : q.Prime) (hq8 : q % 8 = 3) :
-    let m := 16 * q.lcm (∏ p ∈ (Nat.primesLE ⌊B⌋₊).erase 2, p)
-    ∃ r < m, r.Coprime m ∧ ∀ d : ℕ, d.Prime →
-      (d ≡ r [MOD m] ↔ IsAdmissibleAuxiliaryPair B 3 q d) := by
+    ∃ r < admissiblePairModulus B q, r.Coprime (admissiblePairModulus B q) ∧
+      ∀ d : ℕ, d.Prime →
+        (d ≡ r [MOD admissiblePairModulus B q] ↔ IsAdmissibleAuxiliaryPair B 3 q d) := by
   let S := (Nat.primesLE ⌊B⌋₊).erase 2
-  have hS (p : ℕ) : p ∈ S ↔ p.Prime ∧ p ≠ 2 ∧ (p : ℝ) ≤ B := by
-    by_cases hp : p.Prime
-    · simp [S, Nat.mem_primesLE, hp, Nat.le_floor_iff' hp.ne_zero]
-    · simp [S, Nat.mem_primesLE, hp]
+  have hS (p : ℕ) : p ∈ S ↔ p.Prime ∧ p ≠ 2 ∧ (p : ℝ) ≤ B := mem_primesLE_erase_two_iff
   let P := ∏ p ∈ S, p
   let M := q.lcm P
   have hM : 0 < M := Nat.lcm_pos hq.pos (Finset.prod_pos fun p hp ↦ ((hS p).mp hp).1.pos)
@@ -154,14 +213,7 @@ theorem exists_coprime_modEq_iff_isAdmissibleAuxiliaryPair (B : ℝ) {q : ℕ}
       (fun h ↦ hp2 ((Nat.prime_dvd_prime_iff_eq Nat.prime_two hp').mp h).symm)
   have hcop : Nat.Coprime 16 M := (Nat.coprime_pow_left_iff (by decide : 0 < 4) _ _).mpr htwo
   let r := Nat.chineseRemainder hcop 7 (M - 1)
-  have hm (n : ℕ) : n ≡ M - 1 [MOD M] ↔ M ∣ n + 1 := by
-    have hpred : M - 1 + 1 = M := by omega
-    have hz : M ≡ 0 [MOD M] := Nat.modEq_zero_iff_dvd.mpr dvd_rfl
-    rw [← Nat.modEq_zero_iff_dvd]
-    refine ⟨fun h ↦ ?_, fun h ↦ Nat.ModEq.add_right_cancel' 1 ?_⟩
-    · simpa only [hpred] using (h.add_right 1).trans (hpred.symm ▸ hz)
-    · rw [hpred]
-      exact h.trans hz.symm
+  have hm (n : ℕ) : n ≡ M - 1 [MOD M] ↔ M ∣ n + 1 := modEq_sub_one_iff_dvd_add_one hM
   have hr16 : r.val.Coprime 16 :=
     Nat.coprime_of_mul_modEq_one 7 ((r.property.1.mul_right 7).trans (by decide))
   have hrM : r.val.Coprime M :=
