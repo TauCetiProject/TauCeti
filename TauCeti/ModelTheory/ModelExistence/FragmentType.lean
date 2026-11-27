@@ -58,6 +58,17 @@ theorem mem_fragmentType {a : Fin n → M} {φ : L.BoundedFormulaω Empty n} :
 theorem fragmentType_eq_inter (A : Fragment L) (a : Fin n → M) :
     fragmentType A M a = A.slice n ∩ infinitaryType M a := (rfl)
 
+/-- The type of a tuple relative to the top fragment is its complete infinitary type. -/
+@[simp]
+theorem fragmentType_top (a : Fin n → M) :
+    fragmentType (⊤ : Fragment L) M a = infinitaryType M a := by
+  rw [fragmentType_eq_inter, Fragment.slice_top, Set.univ_inter]
+
+/-- The type of a tuple relative to the bottom fragment is empty. -/
+@[simp]
+theorem fragmentType_bot (a : Fin n → M) : fragmentType (⊥ : Fragment L) M a = ∅ := by
+  rw [fragmentType_eq_inter, Fragment.slice_bot, Set.empty_inter]
+
 /-- Restricting a fragment restricts the fragment type by intersection with its arity slice. -/
 theorem fragmentType_eq_inter_of_le (hAB : A ≤ B) (a : Fin n → M) :
     fragmentType A M a = A.slice n ∩ fragmentType B M a := by

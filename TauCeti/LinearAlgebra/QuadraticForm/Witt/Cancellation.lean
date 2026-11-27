@@ -31,6 +31,8 @@ I.4.5–I.4.7.
   carried by a line spanned by a vector of nonzero value.
 * `TauCeti.equivalent_of_equivalent_prod`: **Witt cancellation** for a regular finite-dimensional
   summand, and `TauCeti.equivalent_of_equivalent_prod_right` on the other side.
+* `TauCeti.isRepresentedBy_of_isRepresentedBy_prod`: the same cancellation for representation of
+  orthogonal sums.
 * `TauCeti.RegularFormClass` is cancellative under orthogonal sum.
 
 ## References
@@ -210,6 +212,36 @@ theorem equivalent_of_equivalent_prod_right [FiniteDimensional K V₀] {Q₀ : Q
   have hcomm₂ : (Q₂.prod Q₀).Equivalent (Q₀.prod Q₂) :=
     ⟨QuadraticMap.IsometryEquiv.prodComm Q₂ Q₀⟩
   exact equivalent_of_equivalent_prod hQ₀ (hcomm₁.trans (h.trans hcomm₂))
+
+/-- **Witt cancellation for representation**: over a field in which `2` is invertible, a regular
+finite-dimensional summand cancels from a representation of orthogonal sums. If `Q₀ ⊥ Q₁` is
+represented by `Q₀ ⊥ Q₂`, then `Q₁` is represented by `Q₂`. -/
+theorem isRepresentedBy_of_isRepresentedBy_prod [FiniteDimensional K V₀] {Q₀ : QuadraticForm K V₀}
+    (hQ₀ : Q₀.Nondegenerate) {Q₁ : QuadraticForm K V₁} {Q₂ : QuadraticForm K V₂}
+    (h : (Q₀.prod Q₁).IsRepresentedBy (Q₀.prod Q₂)) : Q₁.IsRepresentedBy Q₂ := by
+  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff _ _).mp h
+  let F : Q₀.prod Q₁ →qᵢ Q₀.prod Q₂ := ⟨f, hfQ⟩
+  -- The restriction of `f` to `Q₀` splits `T = Q₀ ⊥ Q₂` as `Q₀ ⊥ T|_O`, where `O` is the
+  -- orthogonal complement of its image `U`, and Witt cancellation identifies `Q₂` with `T|_O`.
+  let g : Q₀ →qᵢ Q₀.prod Q₂ := F.comp (Isometry.inl Q₀ Q₁)
+  let U := LinearMap.range g.toLinearMap
+  let O := LinearMap.BilinForm.orthogonal (Q₀.prod Q₂).polarBilin U
+  have hQ₂ : Q₂.Equivalent ((Q₀.prod Q₂).restrict O) :=
+    equivalent_of_equivalent_prod hQ₀ (g.equivalent_prod_restrict_orthogonal hQ₀)
+  -- The image of `Q₁` is orthogonal to the image of `Q₀`, since `F` preserves polarization and
+  -- `(a, 0)` is orthogonal to `(0, x)`, so `Q₁` embeds in `T|_O`.
+  have hmem (x : V₁) : (F.toLinearMap ∘ₗ LinearMap.inr K V₀ V₁) x ∈ O := by
+    rw [LinearMap.BilinForm.mem_orthogonal_iff]
+    rintro _ ⟨a, rfl⟩
+    simp only [polarBilin_apply_apply, g, LinearMap.comp_apply, Isometry.coe_toLinearMap,
+      Isometry.comp_apply, Isometry.inl_apply, LinearMap.inr_apply, F.polar_apply, polar_prod,
+      polar_zero_left, polar_zero_right, add_zero]
+  refine ((isRepresentedBy_iff _ _).mpr
+    ⟨LinearMap.codRestrict O (F.toLinearMap ∘ₗ LinearMap.inr K V₀ V₁) hmem,
+      (LinearMap.injective_codRestrict_iff hmem).mpr (hf.comp LinearMap.inr_injective),
+      fun x ↦ ?_⟩).trans hQ₂.symm.isRepresentedBy
+  -- The restricted form takes the value `T (F (0, x)) = Q₀ 0 + Q₁ x = Q₁ x`.
+  simp
 
 private theorem isLeftCancelAdd_regularFormClass : IsLeftCancelAdd (RegularFormClass K) where
   add_left_cancel x y z h := by

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Tiling
+import TauCeti.Combinatorics.Tiling.Tile
 
 /-!
 # Regression examples: lozenge tilings
@@ -21,8 +22,14 @@ Edge directions `1, 2, 3` are the indices `0, 1, 2` of `TriEdge.k`.
   `W(0)`.
 * **Frozen tilings.** The configurations `M₁`, `M₂`, `M₃` of all edges of one direction are plane
   tilings, while `M₁ ∪ M₃` is not, since `W(0)` contains two of its edges.
-* **Placed tiles.** The placed tiles of `(0,1)` and `(0,3)` share the face `W(0)`, so no tiling
-  contains both edges.
+* **Placed tiles.** The tiling `T_a` of the unit hexagon is the family of placed tiles of indices
+  `3`, `1`, `2` at `0`, `(−1,0)`, `(0,−1)`, with face sets `{W(0), B(0)}`, `{W(−e₁), B(−e₃)}`,
+  `{W(−e₃), B(−e₂)}`, which partition `R₆`. The placed tiles of `(0,1)` and `(0,3)` share the face
+  `W(0)`, so no tiling contains both edges. A translation other than `0` fixes no face and no placed
+  tile, so the stabilizer of each prototile is trivial, equal to its (trivial) symmetry group.
+* **A wedge.** For `R = {W(0), W(−e₁)}` and `M = {(0,3), (0,2)}`, `M` is a free tiling of `R` but
+  not a tiling: its lozenges `W(0) ∪ B(0)` and `W(−e₁) ∪ B(0)` share the face `B(0) ∉ R`. The
+  region `R` is not of the form `Faces(V)`, since the three vertices of `B(0)` are vertices of `R`.
 -/
 
 public section
@@ -30,6 +37,7 @@ public section
 namespace TauCeti.Examples.LozengeTiling
 
 open TauCeti
+open scoped Pointwise
 
 /-! ### The unit hexagon -/
 
@@ -203,5 +211,97 @@ theorem not_mem_and_mem_of_isTiling {R : Set TriFace} {M : Set TriEdge} (h : IsT
     ¬ ((⟨(0, 0), 0⟩ : TriEdge) ∈ M ∧ (⟨(0, 0), 2⟩ : TriEdge) ∈ M) := fun hM => by
   have := h.eq_of_mem_edges (f := white₀) hM.1 hM.2 (by simp) (by simp)
   simp at this
+
+/-- The tiling `T_a` is the family of placed tiles of indices `3`, `1`, `2` (the `Fin 3` indices
+`2`, `0`, `1`) at `0`, `(−1,0)`, `(0,−1)`. -/
+theorem toPlacedTile_image_tilingA : TriEdge.toPlacedTile '' tilingA =
+    {⟨2, (Multiplicative.ofAdd ((0, 0) : ℤ × ℤ) : Multiplicative (ℤ × ℤ))⟩,
+      ⟨0, (Multiplicative.ofAdd ((-1, 0) : ℤ × ℤ) : Multiplicative (ℤ × ℤ))⟩,
+      ⟨1, (Multiplicative.ofAdd ((0, -1) : ℤ × ℤ) : Multiplicative (ℤ × ℤ))⟩} := by
+  simp [tilingA, Set.image_insert_eq, TriEdge.toPlacedTile_def]
+
+/-- The face sets of the placed tiles of `T_a`: `{W(0), B(0)}`, `{W(−e₁), B(−e₃)}` and
+`{W(−e₃), B(−e₂)}`. -/
+theorem coe_toPlacedTile_tilingA :
+    ((⟨(0, 0), 2⟩ : TriEdge).toPlacedTile : Set TriFace) = {⟨(0, 0), true⟩, ⟨(0, 0), false⟩} ∧
+    ((⟨(-1, 0), 0⟩ : TriEdge).toPlacedTile : Set TriFace) =
+      {⟨(-1, 0), true⟩, ⟨(-1, -1), false⟩} ∧
+    ((⟨(0, -1), 1⟩ : TriEdge).toPlacedTile : Set TriFace) =
+      {⟨(-1, -1), true⟩, ⟨(0, -1), false⟩} := by
+  simp [TriEdge.faces_def]
+
+/-- The placed tiles of `T_a` partition the unit hexagon. -/
+theorem placedTiles_tilingA_partition :
+    tilingA.PairwiseDisjoint (fun e => (e.toPlacedTile : Set TriFace)) ∧
+      ⋃ e ∈ tilingA, (e.toPlacedTile : Set TriFace) = hexagon := by
+  obtain ⟨hsub, hdisj, hcov⟩ := isTiling_iff_placedTile.1 isTiling_tilingA
+  exact ⟨hdisj, (Set.iUnion₂_subset hsub).antisymm hcov⟩
+
+/-- Translations act freely on faces: a translation fixing a face is trivial. -/
+theorem isCancelSMul_triFace : IsCancelSMul (Multiplicative (ℤ × ℤ)) TriFace :=
+  isCancelSMul_iff_eq_one_of_smul_eq.2 fun g f h => by
+    obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, ofAdd_toAdd g⟩
+    rw [ofAdd_smul, TriFace.vadd_eq_self_iff] at h
+    simp [h]
+
+/-- Translations act freely on placed tiles: a translation fixing a placed tile is trivial, since
+every lozenge has trivial symmetries. -/
+theorem isCancelSMul_placedTile :
+    IsCancelSMul (Multiplicative (ℤ × ℤ)) (DiscreteTiling.PlacedTile lozengeProtoset) :=
+  DiscreteTiling.PlacedTile.isCancelSMul_iff.2 fun k => by rw [lozengeProtoset_apply]
+
+/-- The stabilizer of each prototile of `lozengeProtoset` is trivial, so its trivial symmetry group
+is the whole stabilizer. -/
+theorem stabilizer_lozengeProtoset (k : Fin 3) :
+    MulAction.stabilizer (Multiplicative (ℤ × ℤ)) (lozengeProtoset k : Set TriFace) = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).2 fun g hg => ?_
+  obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, ofAdd_toAdd g⟩
+  simpa [MulAction.mem_stabilizer_iff, ← Finset.coe_vadd_finset, ← TriEdge.faces_vadd,
+    TriEdge.faces_injective.eq_iff, TriEdge.vadd_eq_self_iff] using hg
+
+/-! ### A wedge -/
+
+/-- The wedge `R = {W(0), W(−e₁)}`. -/
+abbrev wedge : Set TriFace := {⟨(0, 0), true⟩, ⟨(-1, 0), true⟩}
+
+/-- The configuration `M = {(0,3), (0,2)}`. -/
+abbrev wedgeConfig : Set TriEdge := {⟨(0, 0), 2⟩, ⟨(0, 0), 1⟩}
+
+/-- `M` is a free tiling of the wedge: `W(0)` contains only `(0,3)` and `W(−e₁)` only `(0,2)`. -/
+theorem isFreeTiling_wedgeConfig : IsFreeTiling wedge wedgeConfig := by
+  refine isFreeTiling_def.2 ⟨?_, ?_⟩
+  · rintro e (rfl | rfl)
+    · exact mem_regionEdges.2 ⟨⟨(0, 0), true⟩, by simp, by simp⟩
+    · exact mem_regionEdges.2 ⟨⟨(-1, 0), true⟩, by simp, by simp⟩
+  · rintro f (rfl | rfl)
+    · refine ⟨⟨(0, 0), 2⟩, by simp, ?_⟩
+      rintro e ⟨he, he'⟩
+      rcases he with rfl | rfl <;> simp_all
+    · refine ⟨⟨(0, 0), 1⟩, by simp, ?_⟩
+      rintro e ⟨he, he'⟩
+      rcases he with rfl | rfl <;> simp_all
+
+/-- The lozenges of `(0,3)` and `(0,2)` share the face `B(0)`, which is not in the wedge. -/
+theorem blackFace_mem_toPlacedTile_wedgeConfig :
+    (⟨(0, 0), false⟩ : TriFace) ∈ (⟨(0, 0), 2⟩ : TriEdge).toPlacedTile ∧
+      (⟨(0, 0), false⟩ : TriFace) ∈ (⟨(0, 0), 1⟩ : TriEdge).toPlacedTile ∧
+      (⟨(0, 0), false⟩ : TriFace) ∉ wedge := by
+  simp
+
+/-- `M` is not a tiling of the wedge. -/
+theorem not_isTiling_wedgeConfig : ¬ IsTiling wedge wedgeConfig := fun h =>
+  blackFace_mem_toPlacedTile_wedgeConfig.2.2
+    (h.mem_of_mem_edges (e := ⟨(0, 0), 2⟩) (by simp) (by simp))
+
+/-- The wedge is not of the form `Faces(V)`: the three vertices of `B(0)` are vertices of it. -/
+theorem wedge_ne_facesOf (V : Set (ℤ × ℤ)) : wedge ≠ facesOf V := by
+  intro h
+  have hV : regionVertices wedge ⊆ V := h ▸ regionVertices_facesOf_subset V
+  have hB : (⟨(0, 0), false⟩ : TriFace) ∈ facesOf V := by
+    refine mem_facesOf.2 fun u hu => hV ?_
+    simp only [TriFace.vertices_mk_false, Finset.mem_insert, Finset.mem_singleton] at hu
+    rcases hu with rfl | rfl | rfl <;> simp
+  rw [← h] at hB
+  simp at hB
 
 end TauCeti.Examples.LozengeTiling
