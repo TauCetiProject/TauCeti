@@ -45,10 +45,11 @@ finite-dimensional vector space; here the scalars form any commutative semiring.
 * `LinearMap.leftDualBasis`: the left dual basis of a finite basis for a perfect pairing, with
   `LinearMap.apply_leftDualBasis`, `LinearMap.eq_leftDualBasis_iff`, the left dual of a pairing
   given by a bijection of the index sets `LinearMap.coe_leftDualBasis_eq_comp_symm` and its
-  anti-diagonal case `LinearMap.coe_leftDualBasis_eq_comp_rev`, the coordinates
+  anti-diagonal case `LinearMap.coe_leftDualBasis_eq_comp_rev`, the biduality
+  `LinearMap.flip_leftDualBasis_leftDualBasis`, the coordinates
   `LinearMap.apply_leftDualBasis_eq_repr` of `N` in `e`, the reconstruction
   `LinearMap.sum_apply_smul_leftDualBasis`, and over a commutative ring the left dual basis through
-  the inverse Gram matrix, `LinearMap.leftDualBasis_eq_sum_inv_toMatrix₂`.
+  the inverse Gram matrix, `LinearMap.leftDualBasis_apply_eq_sum_inv_toMatrix₂_smul`.
 -/
 
 public section
@@ -165,6 +166,15 @@ theorem coe_leftDualBasis_eq_comp_rev {n : ℕ} (e : Basis (Fin (n + 1)) R N)
   rw [Fin.revPerm_apply, Fin.ext_iff, Fin.val_rev]
   omega
 
+/-- **Biduality of the left dual basis.** The left dual basis of `e^i` for the flipped pairing is
+`e` again. -/
+@[simp]
+theorem flip_leftDualBasis_leftDualBasis (e : Basis ι R N) :
+    p.flip.leftDualBasis (p.leftDualBasis e) = e :=
+  Basis.eq_of_apply_eq fun i ↦ (congr_fun ((p.flip.eq_leftDualBasis_iff _).2 fun i j ↦ by
+    rw [flip_apply, apply_leftDualBasis]
+    exact if_congr eq_comm rfl rfl) i).symm
+
 /-- Pairing against the left dual basis vector `e^i` reads off the `i`-th coordinate in `e`. -/
 theorem apply_leftDualBasis_eq_repr (e : Basis ι R N) (i : ι) (y : N) :
     p (p.leftDualBasis e i) y = e.repr y i := by
@@ -197,8 +207,8 @@ variable {ι R M N : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
 /-- **The left dual basis through the inverse Gram matrix.** For finite bases `b` of `M` and `e` of
 `N` indexed by the same type, with Gram matrix `G_ij = p (bᵢ) (eⱼ)`, the left dual basis of `e` is
 `eⁱ = ∑ⱼ (G⁻¹)ᵢⱼ bⱼ`. -/
-theorem leftDualBasis_eq_sum_inv_toMatrix₂ (b : Basis ι R M) (e : Basis ι R N)
-    (i : ι) :
+theorem leftDualBasis_apply_eq_sum_inv_toMatrix₂_smul (b : Basis ι R M)
+    (e : Basis ι R N) (i : ι) :
     p.leftDualBasis e i = ∑ j, (toMatrix₂ b e p)⁻¹ i j • b j := by
   have hG := (toMatrix₂ b e p).nonsing_inv_mul (Basis.isUnit_det_of_isPerfPair b e p ‹_›)
   refine congr_fun ((p.eq_leftDualBasis_iff e (f := fun i ↦ ∑ j, (toMatrix₂ b e p)⁻¹ i j • b j)).2

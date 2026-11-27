@@ -29,7 +29,7 @@ transports it along the identification of `M` with the dual of `N`.
 **The Gram-matrix form.** For a pairing `g : M × M → R` of a module with itself and a finite
 basis `Δ` of `M`, write `g_ab = g (Δ_a) (Δ_b)` for its Gram matrix and `g^ab` for the inverse
 matrix, which exists because `g` is perfect. The left dual basis is `Δ^a = ∑_b g^ab Δ_b`
-(`LinearMap.leftDualBasis_eq_sum_inv_toMatrix₂`), so the Casimir is
+(`LinearMap.leftDualBasis_apply_eq_sum_inv_toMatrix₂_smul`), so the Casimir is
 
 `∑_(a, b) g^ab Δ_a ⊗ Δ_b`
 
@@ -67,6 +67,8 @@ three-point correlator with its third insertion joined to the output by the diag
 * `LinearMap.casimir_eq_sum_tmul_leftDualBasis`: the Casimir in any finite basis.
 * `LinearMap.lid_rTensor_casimir`, `LinearMap.rid_lTensor_casimir`, `LinearMap.eq_casimir_iff`:
   the Casimir is the copairing of `p`, and is characterised by this.
+* `LinearMap.equivFinsuppOfBasisLeft_apply_eq_lid_rTensor`: the coordinates of a tensor along a
+  basis of `N` are its contractions against the left dual basis.
 * `LinearMap.casimir_flip`: the Casimir of the flipped pairing is the swapped Casimir.
 * `LinearMap.casimir_id_eq_coevaluation`: for the evaluation pairing it is `coevaluation K V 1`.
 * `LinearMap.casimir_eq_sum_sum_inv_toMatrix₂_smul_tmul`: the Gram-matrix form, in bases of `M`
@@ -104,6 +106,18 @@ private theorem sum_tmul_leftDualBasis_eq [Fintype ι] [DecidableEq ι] [Fintype
     _ = ∑ j, f j ⊗ₜ[R] p.leftDualBasis f j := by
         simp only [sum_apply_smul_leftDualBasis]
 
+/-- **The coordinates of a tensor along a basis are its contractions with the left dual basis.**
+The `i`-th coordinate in `M` of `u ∈ N ⊗ M` along the basis `e` of `N` is the contraction of its
+`N` factor against `p (eⁱ)`. -/
+theorem equivFinsuppOfBasisLeft_apply_eq_lid_rTensor [DecidableEq ι] [Finite ι] (e : Basis ι R N)
+    (u : N ⊗[R] M) (i : ι) :
+    equivFinsuppOfBasisLeft e u i =
+      TensorProduct.lid R M ((p (p.leftDualBasis e i)).rTensor M u) := by
+  have : Finsupp.lapply i ∘ₗ (equivFinsuppOfBasisLeft e).toLinearMap =
+      (TensorProduct.lid R M).toLinearMap ∘ₗ (p (p.leftDualBasis e i)).rTensor M :=
+    TensorProduct.ext' fun y m ↦ by simp [apply_leftDualBasis_eq_repr]
+  exact LinearMap.congr_fun this u
+
 variable [Module.Free R N] [Module.Finite R N]
 
 /-- The **Casimir** of a perfect pairing `p : M × N → R` on a finite free module `N`: the tensor
@@ -137,26 +151,15 @@ theorem eq_casimir_iff {t : N ⊗[R] M} :
     t = p.casimir ↔ ∀ x, TensorProduct.lid R M ((p x).rTensor M t) = x := by
   refine ⟨fun h x ↦ h ▸ p.lid_rTensor_casimir x, fun h ↦ ?_⟩
   let e := Free.chooseBasis R N
-  -- The coordinates of a tensor along `e` are its contractions against the left dual basis.
-  have key (u : N ⊗[R] M) (i) :
-      equivFinsuppOfBasisLeft e u i =
-        TensorProduct.lid R M ((p (p.leftDualBasis e i)).rTensor M u) := by
-    have : Finsupp.lapply i ∘ₗ (equivFinsuppOfBasisLeft e).toLinearMap =
-        (TensorProduct.lid R M).toLinearMap ∘ₗ (p (p.leftDualBasis e i)).rTensor M :=
-      TensorProduct.ext' fun y m ↦ by simp [apply_leftDualBasis_eq_repr]
-    exact LinearMap.congr_fun this u
   refine (equivFinsuppOfBasisLeft e).injective (Finsupp.ext fun i ↦ ?_)
-  rw [key, key, h, lid_rTensor_casimir]
+  rw [p.equivFinsuppOfBasisLeft_apply_eq_lid_rTensor,
+    p.equivFinsuppOfBasisLeft_apply_eq_lid_rTensor, h, lid_rTensor_casimir]
 
 /-- **The Casimir of the flipped pairing is the swapped Casimir.** -/
 theorem casimir_flip [Module.Free R M] [Module.Finite R M] :
     p.flip.casimir = TensorProduct.comm R N M p.casimir := by
   let e := Free.chooseBasis R N
-  have hf : ⇑(p.flip.leftDualBasis (p.leftDualBasis e)) = e :=
-    ((p.flip.eq_leftDualBasis_iff _).2 fun i j ↦ by
-      rw [flip_apply, apply_leftDualBasis]
-      exact if_congr eq_comm rfl rfl).symm
-  simp [p.flip.casimir_eq_sum_tmul_leftDualBasis (p.leftDualBasis e), hf,
+  simp [p.flip.casimir_eq_sum_tmul_leftDualBasis (p.leftDualBasis e),
     p.casimir_eq_sum_tmul_leftDualBasis e]
 
 /-- **The Casimir of an anti-diagonal pairing.** If `p (fᵢ) (eⱼ)` is `1` when `i + j = n` and `0`
@@ -205,8 +208,8 @@ Gram matrix `g_ab = g (Δ_a) (Δ_b)` and inverse matrix `g^ab`, this is the orde
 theorem casimir_eq_sum_sum_inv_toMatrix₂_smul_tmul [DecidableEq ι] [Module.Free R N]
     [Module.Finite R N] (b : Basis ι R M) (e : Basis ι R N) :
     p.casimir = ∑ i, ∑ j, (toMatrix₂ b e p)⁻¹ i j • (e i ⊗ₜ[R] b j) := by
-  simp only [p.casimir_eq_sum_tmul_leftDualBasis e, p.leftDualBasis_eq_sum_inv_toMatrix₂ b e,
-    tmul_sum, tmul_smul]
+  simp only [p.casimir_eq_sum_tmul_leftDualBasis e,
+    p.leftDualBasis_apply_eq_sum_inv_toMatrix₂_smul b e, tmul_sum, tmul_smul]
 
 /-- **The contraction of a pairing with its Casimir.** Let `g` be a perfect pairing of `M` with
 itself and `Δ` a finite basis of `M`. If exchanging the arguments of `g` on basis vectors
