@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Regularity
 import TauCeti.Geometry.Manifold.Boundary.Charts
 import TauCeti.Geometry.Manifold.Boundary.Derivative
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
+import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 
@@ -37,7 +38,11 @@ In particular the coefficients of `II` in Tau Ceti's boundary charts are `C^k`.
 
 Pairing `II` with a local frame of `T∂M` at `k = 0` shows that `II` is a continuous section of the
 bundle of bilinear forms on `T∂M` (`TauCeti.continuousAt_boundarySecondFundamentalForm`,
-`TauCeti.continuous_boundarySecondFundamentalForm`).
+`TauCeti.continuous_boundarySecondFundamentalForm`). The induced metric `h` is the pullback of the
+metric along the inclusion `ι : ∂M → M`, hence a `C^k` section on a `C^(k + 1)` manifold with a
+`C^k` metric (`TauCeti.contMDiffAt_boundaryInducedForm`, by
+`Bundle.contMDiffAt_bilinearForm_pullback`), and in particular continuous
+(`TauCeti.continuousAt_boundaryInducedForm`, `TauCeti.continuous_boundaryInducedForm`).
 
 Near every point the boundary also carries tangent fields `e₁, …, eₙ` that are `C^k` and
 orthonormal for the induced metric `h`
@@ -223,5 +228,67 @@ theorem exists_contMDiffAt_boundaryInducedForm_orthonormal (hm : k + 1 ≤ m) (h
     rw [boundaryInducedForm_eq_inner_boundaryTangentEquiv, LinearEquiv.apply_symm_apply,
       LinearEquiv.apply_symm_apply, Submodule.coe_inner]
     exact orthonormal_iff_ite.1 (gramSchmidtNormed_orthonormal (hli hq)) i j
+
+omit [IsManifold (𝓡∂ (n + 1)) 2 M]
+  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
+/-- **The induced metric of the boundary is a `C^k` section** of the bundle of bilinear forms on
+`T∂M`, on a `C^(k + 1)` manifold with a `C^k` metric: it is the pullback of the metric of `M` along
+the inclusion `ι : ∂M → M`. -/
+theorem contMDiffAt_boundaryInducedForm [IsManifold (𝓡∂ (n + 1)) 1 M]
+    [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) l (EuclideanSpace ℝ (Fin (n + 1)))
+      (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
+    (hm : k + 1 ≤ m) (hl : k ≤ l) (q₀ : (𝓡∂ (n + 1)).boundary M) :
+    ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
+      (𝓘(ℝ, EuclideanSpace ℝ (Fin n)).prod
+        𝓘(ℝ, EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ)) k
+      (fun q ↦ TotalSpace.mk'
+        (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ)
+        (E := fun q : (𝓡∂ (n + 1)).boundary M ↦ TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ]
+          TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ) q
+        (boundaryInducedForm q).toContinuousBilinearMap) q₀ := by
+  have hg : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) k (EuclideanSpace ℝ (Fin (n + 1)))
+      (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := .of_le hl
+  obtain ⟨g, hg, hinner⟩ := hg.exists_contMDiff
+  have hι : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) (k + 1)
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q₀ :=
+    ((isSmoothEmbedding_subtypeVal_boundary (n := n) (k := m) M).contMDiff q₀).of_le hm
+  refine (contMDiffAt_bilinearForm_pullback (hg (q₀ : M)) hι).congr_of_eventuallyEq
+    (Eventually.of_forall fun q ↦ congrArg (TotalSpace.mk' _ q) ?_)
+  ext u w
+  simp [boundaryInducedForm_apply, hinner]
+
+omit [IsManifold (𝓡∂ (n + 1)) 2 M]
+  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
+/-- **Continuity of the induced metric**: on a `C^1` manifold with a continuous metric, `q ↦ h_q`
+is a section of the bundle of bilinear forms on `T∂M` that is continuous at every point. -/
+theorem continuousAt_boundaryInducedForm [IsManifold (𝓡∂ (n + 1)) 1 M]
+    [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 0 (EuclideanSpace ℝ (Fin (n + 1)))
+      (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
+    (q₀ : (𝓡∂ (n + 1)).boundary M) :
+    ContinuousAt (fun q ↦ TotalSpace.mk'
+      (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ)
+      (E := fun q : (𝓡∂ (n + 1)).boundary M ↦ TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ]
+        TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ) q
+      (boundaryInducedForm q).toContinuousBilinearMap) q₀ :=
+  (contMDiffAt_boundaryInducedForm (k := 0) (m := 1) (l := 0) (zero_add 1).le le_rfl
+    q₀).continuousAt
+
+omit [IsManifold (𝓡∂ (n + 1)) 2 M]
+  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
+variable (n M) in
+/-- **Continuity of the induced metric**: on a `C^1` manifold with a continuous metric, `q ↦ h_q`
+is a continuous section of the bundle of bilinear forms on `T∂M`. -/
+theorem continuous_boundaryInducedForm [IsManifold (𝓡∂ (n + 1)) 1 M]
+    [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 0 (EuclideanSpace ℝ (Fin (n + 1)))
+      (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] :
+    Continuous (fun q ↦ TotalSpace.mk'
+      (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ)
+      (E := fun q : (𝓡∂ (n + 1)).boundary M ↦ TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ]
+        TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ) q
+      (boundaryInducedForm q).toContinuousBilinearMap) :=
+  continuous_iff_continuousAt.2 continuousAt_boundaryInducedForm
 
 end TauCeti
