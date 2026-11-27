@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Algebra.Module.Alternating.Basic
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.Topology.FiberBundle.Separation
@@ -819,6 +820,14 @@ theorem const_apply {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (const A).val x v = A (fun i ↦ NormedSpace.fromTangentSpace x (v i)) := by
   rw [const_toRoughForm, ContinuousAlternatingMap.compContinuousLinearMap_apply]
   rfl
+
+/-- A constant one-form evaluates a tangent vector as the model-space vector it is. -/
+theorem const_apply_one {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (A : V [⋀^Fin 1]→L[ℝ] F) {x : V} (v : TangentSpace (modelWithCornersSelf ℝ V) x) :
+    (const A).val x ![v] = A ![v] := by
+  simp only [const_apply, NormedSpace.fromTangentSpace_apply (𝕜 := ℝ), Matrix.cons_val_fin_one]
+  exact congrArg A (funext fun i ↦ (Matrix.cons_val_fin_one v ![] i).symm)
 
 /-- The coordinate one-form `dz` of the real line. -/
 def realLineCoordForm : SmoothForm 𝓘(ℝ) ℝ ℝ 1 :=

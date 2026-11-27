@@ -34,6 +34,8 @@ half-height and radius `1/4`, the unit ball is exactly the region above this gra
   `TauCeti.unitSphereChart_symm_apply` and `TauCeti.norm_unitSphereChart_symm_sq`.
 * `TauCeti.unitSphereChart_symm_mem_ball_iff`: near the chart centre the unit ball is the region
   above `TauCeti.unitSphereGraph`.
+* `TauCeti.exists_affineIsometryEquiv_unitSphereGraph_chart`: such charts at every point of the
+  unit sphere, all with values in one model space.
 -/
 
 public section
@@ -176,6 +178,27 @@ theorem unitSphereChart_symm_mem_ball_iff (ν : E) (hν : ‖ν‖ = 1)
     have hlt : 1 - z.fst < √(1 - ‖z.snd‖ ^ 2) := by linarith
     have hsq' := (Real.lt_sqrt (by linarith)).1 hlt
     nlinarith
+
+/-- **Charts of the unit ball with one model space.** Fix a unit vector `e₀`. At every point `x`
+of the unit sphere there are rigid coordinates with values in `ℝ × (ℝ ∙ e₀)ᗮ`, sending `x` to the
+origin, in which the unit ball is the region above the cut-off sphere graph inside the cylinder of
+half-height and radius `1/4`: the coordinates `TauCeti.unitSphereChart e₀` after the reflection
+exchanging `x` and `e₀`. So the unit ball is a bounded open set with smooth boundary, in the form
+that the global estimates up to the boundary take as input, with charts sharing one model space. -/
+theorem exists_affineIsometryEquiv_unitSphereGraph_chart {e₀ x : E} (he₀ : ‖e₀‖ = 1)
+    (hx : ‖x‖ = 1) :
+    ∃ e : E ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × (ℝ ∙ e₀)ᗮ), e x = 0 ∧
+      ∀ z ∈ normalCylinder (1 / 4) (1 / 4),
+        (e.symm z ∈ ball 0 1 ↔ unitSphereGraph z.snd < z.fst) := by
+  set R : E ≃ₗᵢ[ℝ] E := (ℝ ∙ (x - e₀))ᗮ.reflection
+  refine ⟨R.toAffineIsometryEquiv.trans (unitSphereChart e₀ he₀), ?_, fun z hz => ?_⟩
+  · simp [R, Submodule.reflection_sub (hx.trans he₀.symm)]
+  · rw [← unitSphereChart_symm_mem_ball_iff e₀ he₀ hz, mem_ball_zero_iff, mem_ball_zero_iff,
+      AffineIsometryEquiv.coe_symm_trans, Function.comp_apply]
+    have h0 : R.toAffineIsometryEquiv.symm (0 : E) = 0 := by
+      rw [AffineIsometryEquiv.symm_apply_eq, LinearIsometryEquiv.coe_toAffineIsometryEquiv,
+        map_zero]
+    rw [← dist_zero_right, ← h0, AffineIsometryEquiv.dist_map, dist_zero_right]
 
 end Chart
 

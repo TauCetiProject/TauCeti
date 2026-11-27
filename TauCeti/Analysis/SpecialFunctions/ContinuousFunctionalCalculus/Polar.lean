@@ -53,7 +53,7 @@ abstract algebra, where invertibility makes the factor an element of the unitary
   `Units.mul_eq_iff_polarUnitary_eq_and_sqrt_star_mul_eq`: uniqueness of both factorizations;
   `Units.sqrt_star_mul_eq`: the two positive factors are conjugate by the unitary factor.
 * `Units.polarUnitary_unitary_mul_mul_unitary`, `Units.sqrt_unitary_mul_mul_unitary`: unitary
-  equivariance.
+  equivariance; `Units.polarUnitary_neg`: the unitary factor is odd.
 * `Units.coe_polarUnitary_map`: naturality of the unitary factor for unital star ring
   homomorphisms.
 * `Units.polarUnitary_mul_eq_mul_polarUnitary`: the unitary factor intertwines any two
@@ -276,6 +276,12 @@ theorem polarUnitary_unitary_mul_mul_unitary (v w : unitary A) :
   polarUnitary_eq_of_mul_eq _
     (star_right_conjugate_nonneg (CFC.sqrt_nonneg ((a : A) * star (a : A))) (v : A))
     (unitary_mul_mul_unitary_eq a v w)
+
+/-- The unitary factor is odd: the unitary factor of `-a = √(a a⋆) (-u)` is `-u`. -/
+@[simp]
+theorem polarUnitary_neg : (-a).polarUnitary = -a.polarUnitary :=
+  polarUnitary_eq_of_mul_eq _ (CFC.sqrt_nonneg ((a : A) * star (a : A))) <| by
+    rw [Unitary.coe_neg, mul_neg, sqrt_mul_star_mul_polarUnitary, Units.val_neg]
 
 /-- **Unitary equivariance of the positive factor.** For unitaries `v` and `w`, the positive
 factor of `v a w` is the conjugate `v √(a a⋆) v⋆`. -/

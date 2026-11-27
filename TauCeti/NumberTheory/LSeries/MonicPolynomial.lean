@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 public import TauCeti.RingTheory.Polynomial.Monic.Irreducible
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 public import TauCeti.RingTheory.PowerSeries.Derivative
 import Mathlib.Algebra.Order.Antidiag.Finsupp
 import TauCeti.RingTheory.Polynomial.Monic.Factorization

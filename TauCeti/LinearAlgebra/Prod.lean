@@ -27,6 +27,8 @@ quadratic forms with the subgroup preserving both summands.
 
 ## Main results
 
+* `LinearEquiv.prodAssoc_symm_apply`: the inverse of the reassociation of a triple product
+  regroups `(x, y, z)` as `((x, y), z)`.
 * `LinearEquiv.prodCongr_inj`: products of linear equivalences are equal exactly when their
   factors are.
 * `LinearEquiv.exists_prodCongr_eq_iff`: an automorphism of `M₁ × M₂` is `e₁.prodCongr e₂` for
@@ -99,6 +101,8 @@ quadratic forms with the subgroup preserving both summands.
   of one factor, the inclusion of the smaller fibre product in the fibre product of `α` and `β`.
 * `LinearMap.kerEquivKerIdProdMap`: the kernel of `g` is the kernel of `id × g`, embedded in the
   second factor.
+* `LinearMap.snd_snd_apply_eq_mul`: a linear map `E × F × R → E' × F' × R` carrying the
+  hyperplane `z = 0` into itself multiplies the `z` coordinate by that of the image of `(0, 0, 1)`.
 * `LinearMap.axes_of_commute_neg_snd`: a linear endomorphism of `R × R × R` preserving the third
   coordinate and commuting with `(x, y, z) ↦ (x, -y, 0)` preserves the first two coordinate axes
   and fixes the third basis vector.
@@ -299,6 +303,13 @@ theorem exists_skewProd_eq_iff {M₂ : Type*} [AddCommGroup M₂] [Module R M₂
   refine ⟨ofBijective _ hb₁, ofBijective _ hb₂,
     LinearMap.snd R M₁ M₂ ∘ₗ g.toLinearMap ∘ₗ LinearMap.inl R M₁ M₂, ?_⟩
   ext x <;> simp [hg x, skewProd_apply]
+
+/-- The inverse of the reassociation `(M₁ × M₂) × M₃ ≃ M₁ × (M₂ × M₃)` regroups `(x, y, z)` as
+`((x, y), z)`. -/
+@[simp]
+theorem prodAssoc_symm_apply {M₃ : Type*} [AddCommMonoid M₃] [Module R M₃] (x : M₁ × M₂ × M₃) :
+    (prodAssoc R M₁ M₂ M₃).symm x = ((x.1, x.2.1), x.2.2) :=
+  rfl
 
 end Semiring
 
@@ -968,6 +979,23 @@ theorem map_prodAssoc_prod {R E F G : Type*} [Semiring R] [AddCommMonoid E] [Mod
 end Module.Basis
 
 namespace LinearMap
+
+section TripleProduct
+
+variable {R E F E' F' : Type*} [CommSemiring R] [AddCommMonoid E] [Module R E] [AddCommMonoid F]
+  [Module R F] [AddCommMonoid E'] [Module R E'] [AddCommMonoid F'] [Module R F']
+
+/-- A linear map `E × F × R → E' × F' × R` carrying the hyperplane `z = 0` into `z = 0`
+multiplies the `z` coordinate by the `z` coordinate of the image of `(0, 0, 1)`. -/
+theorem snd_snd_apply_eq_mul (S : E × F × R →ₗ[R] E' × F' × R)
+    (hS : ∀ y : E × F × R, y.2.2 = 0 → (S y).2.2 = 0) (y : E × F × R) :
+    (S y).2.2 = (S (0, 0, 1)).2.2 * y.2.2 := by
+  have hy : y = (y.1, y.2.1, 0) + y.2.2 • ((0, 0, 1) : E × F × R) := by
+    ext <;> simp
+  rw [hy, map_add, map_smul, Prod.snd_add, Prod.snd_add, hS _ rfl]
+  simp [mul_comm]
+
+end TripleProduct
 
 variable {R : Type*} [Ring R] [HasUniqueDiv R]
 

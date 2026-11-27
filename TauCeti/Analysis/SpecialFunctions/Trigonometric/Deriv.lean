@@ -20,7 +20,9 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 The derivative of `t ↦ sin (c t)` is `c cos (c t)` (`TauCeti.deriv_sin_mul`). The first and
 second derivatives of `t ↦ cos (c t)` are `-c sin (c t)` and `-c² cos (c t)`
-(`TauCeti.deriv_cos_mul`, `TauCeti.deriv_deriv_cos_mul`).
+(`TauCeti.deriv_cos_mul`, `TauCeti.deriv_deriv_cos_mul`). For a `C²` function `ζ`, the second
+derivative of `t ↦ ζ(t) cos(k t + θ)` is
+`ζ'' cos(k t + θ) - 2 k ζ' sin(k t + θ) - k² ζ cos(k t + θ)` (`TauCeti.iteratedDeriv_two_mul_cos`).
 Where `cos t ≠ 0`, the first and second derivatives of `log (cos t)` are `-tan t` and
 `-(1 / cos t ^ 2)` (`TauCeti.deriv_log_cos`, `TauCeti.iteratedDeriv_two_log_cos`).
 
@@ -70,6 +72,28 @@ theorem deriv_deriv_cos_mul (c t : ℝ) :
     funext (deriv_cos_mul c)
   rw [hderiv, deriv.fun_neg, deriv_const_mul _ (by fun_prop), deriv_comp_mul_left (f := sin),
     Real.deriv_sin, smul_eq_mul]
+  ring
+
+/-- The second derivative of a `C²` function modulated by a cosine, `t ↦ ζ(t) cos(k t + θ)`, is
+`ζ'' cos(k t + θ) - 2 k ζ' sin(k t + θ) - k² ζ cos(k t + θ)`. -/
+theorem iteratedDeriv_two_mul_cos {ζ : ℝ → ℝ} (hζ : ContDiff ℝ 2 ζ) (k θ t : ℝ) :
+    iteratedDeriv 2 (fun t => ζ t * cos (k * t + θ)) t =
+      iteratedDeriv 2 ζ t * cos (k * t + θ) -
+        2 * k * (deriv ζ t * sin (k * t + θ)) - k ^ 2 * (ζ t * cos (k * t + θ)) := by
+  have hζ1 : Differentiable ℝ ζ := hζ.differentiable two_ne_zero
+  have hζ2 : Differentiable ℝ (deriv ζ) :=
+    (hζ.iterate_deriv' 1 1).differentiable one_ne_zero
+  have hc (t : ℝ) : HasDerivAt (fun t => k * t + θ) k t := by
+    simpa using ((hasDerivAt_id' t).const_mul k).add_const θ
+  have hd : deriv (fun t => ζ t * cos (k * t + θ)) =
+      fun t => deriv ζ t * cos (k * t + θ) - k * (ζ t * sin (k * t + θ)) := by
+    ext t
+    refine ((hζ1 t).hasDerivAt.mul (hc t).cos).deriv.trans ?_
+    ring
+  have hd2 := ((hζ2 t).hasDerivAt.mul (hc t).cos).sub
+    (((hζ1 t).hasDerivAt.mul (hc t).sin).const_mul k)
+  rw [iteratedDeriv_succ, iteratedDeriv_one, hd, iteratedDeriv_succ, iteratedDeriv_one]
+  refine hd2.deriv.trans ?_
   ring
 
 /-- For `k ^ 2 < 1` and every real exponent `p`, the derivative in `k` of

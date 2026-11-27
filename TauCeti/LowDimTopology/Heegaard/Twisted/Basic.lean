@@ -69,6 +69,8 @@ formalized here.
 * `TauCeti.HeegaardRegionSystem.augmentation_twistedHatCoefficient` and
   `TauCeti.HeegaardRegionSystem.mapRange_augmentation_twistedHatDifferential`: the augmentation
   of the twisted differential is the hat differential.
+* `TauCeti.HeegaardRegionSystem.sum_twistedHatCoefficient_mul_twistedHatCoefficient_eq_zero`: if
+  the twisted hat differential squares to zero, so does the matrix of its coefficients.
 * `TauCeti.HeegaardRegionSystem.twistedHatCoefficient_eq_single_mul`: the coefficients for two
   choices of reference domains differ by the monomials `t^{a(x) - a(y)}`.
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains.changeEquiv_twistedHatDifferential`: the diagonal
@@ -406,6 +408,23 @@ theorem twistedHatDifferential_apply
     (y : H.Generator) :
     H.twistedHatDifferential r χ c y = c.sum fun x a => a * H.twistedHatCoefficient r χ x y := by
   simp [twistedHatDifferential, Finsupp.linearCombination_apply, Finsupp.sum_apply]
+
+/-- The coefficient of `y` in the twisted hat differential of a chain `c`, as a sum over all
+generators. -/
+theorem twistedHatDifferential_apply_eq_sum
+    (c : H.Generator →₀ MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains))
+    (y : H.Generator) :
+    H.twistedHatDifferential r χ c y = ∑ x, c x * H.twistedHatCoefficient r χ x y := by
+  rw [twistedHatDifferential_apply, Finsupp.sum_fintype _ _ (by simp)]
+
+/-- If the twisted hat differential squares to zero, then so does the matrix of its coefficients:
+`∑_y c(x, y) c(y, z) = 0` for all generators `x` and `z`. -/
+theorem sum_twistedHatCoefficient_mul_twistedHatCoefficient_eq_zero
+    (hd : H.twistedHatDifferential r χ ∘ₗ H.twistedHatDifferential r χ = 0) (x z : H.Generator) :
+    ∑ y, H.twistedHatCoefficient r χ x y * H.twistedHatCoefficient r χ y z = 0 := by
+  have h := congr($hd (Finsupp.single x 1) z)
+  rw [LinearMap.comp_apply, twistedHatDifferential_apply_eq_sum] at h
+  simpa using h
 
 /-- **The augmentation of the twisted hat differential is the hat differential.** Applying the
 augmentation `t^P ↦ 1` to the coefficients of chains turns the twisted hat differential into the

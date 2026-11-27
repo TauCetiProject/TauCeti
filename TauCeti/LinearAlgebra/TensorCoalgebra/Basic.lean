@@ -11,6 +11,7 @@ public import Mathlib.Data.Stream.Defs
 public import Mathlib.LinearAlgebra.TensorProduct.Map
 public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.Algebra.BigOperators.Finset.Range
+public import TauCeti.LinearAlgebra.DirectSum.TensorProduct
 public import TauCeti.LinearAlgebra.TensorPower.Basic
 
 /-!
@@ -38,6 +39,9 @@ with `TensorPower.splitAt`.  It is the coalgebra-side input for the suspended ba
 
 * `TauCeti.ReducedTensorWords.of_tprod_congr`: a pure tensor word depends only on its letters,
   even when the two sides present its length by different arithmetic expressions.
+* `TauCeti.ReducedTensorWords.linearMap_ext_component`,
+  `TauCeti.ReducedTensorWords.tensor_ext_component`: maps into reduced tensor words, and elements
+  of their tensor square, are determined by their length components.
 * `TauCeti.ReducedTensorWords.subword_congr`: equal-length blocks in different ambient tuples or
   at different offsets agree when their letters agree.
 * `TauCeti.ReducedTensorWords.subword_tail`: blocks of the tail of a tuple.
@@ -137,6 +141,11 @@ noncomputable def component (n : {n : ℕ // 0 < n}) :
     ReducedTensorWords R M →ₗ[R] TensorPower R n.val M :=
   DirectSum.component R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.val M) n
 
+/-- The length-`n` projection is the direct-sum component projection. -/
+theorem component_def (n : {n : ℕ // 0 < n}) :
+    component R M n = DirectSum.component R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.val M) n :=
+  (rfl)
+
 /-- Evaluating a reduced tensor word at a length agrees with its named component projection. -/
 @[simp]
 theorem apply_eq_component (x : ReducedTensorWords R M) (n : {n : ℕ // 0 < n}) :
@@ -160,6 +169,23 @@ theorem component_of_eq {m n : {k : ℕ // 0 < k}} (h : m = n) (z : TensorPower 
 theorem component_of_of_ne {m n : {n : ℕ // 0 < n}} (h : m ≠ n) (x : TensorPower R m.val M) :
     component R M n (of R M m x) = 0 := by
   simp [component, of, DirectSum.component.of, h]
+
+/-- Two linear maps into reduced tensor words agree when all their length components agree. -/
+theorem linearMap_ext_component {X : Type*} [AddCommMonoid X] [Module R X]
+    {F G : X →ₗ[R] ReducedTensorWords R M}
+    (h : ∀ n : ℕ, component R M ⟨n + 1, n.succ_pos⟩ ∘ₗ F =
+      component R M ⟨n + 1, n.succ_pos⟩ ∘ₗ G) : F = G := by
+  refine LinearMap.ext fun c ↦ DFinsupp.ext fun ⟨k, hk⟩ ↦ ?_
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
+  rw [apply_eq_component, apply_eq_component]
+  exact LinearMap.congr_fun (h n) c
+
+/-- An element of `Tᶜ(M) ⊗ Tᶜ(M)` is determined by its bihomogeneous components. -/
+theorem tensor_ext_component {z w : ReducedTensorWords R M ⊗[R] ReducedTensorWords R M}
+    (h : ∀ p q : {n : ℕ // 0 < n}, TensorProduct.map (component R M p) (component R M q) z =
+      TensorProduct.map (component R M p) (component R M q) w) : z = w :=
+  TensorProduct.ext_map_component fun p q ↦ by
+    simpa only [component_def] using h p q
 
 
 /-- A linear map assembled from its length components is that component on a tensor word of that
