@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.BoundedVariation.SurfaceArea
 import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Function.AreaFormula.Circle
 
@@ -50,24 +49,36 @@ def quarterDisc : Set ℂ := unitSquare ∩ ball 0 (1 / 2)
 /-- The ball `ball 0 (1/2)` as an open set. -/
 def halfBall : Opens ℂ := ⟨ball 0 (1 / 2), isOpen_ball⟩
 
+/-- Membership in the open unit square, coordinatewise. -/
+@[simp]
+theorem mem_unitSquare {z : ℂ} : z ∈ unitSquare ↔ z.re ∈ Ioo 0 1 ∧ z.im ∈ Ioo 0 1 :=
+  mem_reProdIm
+
+/-- The quarter disc is the truncation of the unit square by `ball 0 (1/2)`. -/
+theorem quarterDisc_eq : quarterDisc = unitSquare ∩ ball 0 (1 / 2) :=
+  (rfl)
+
+/-- The underlying set of `halfBall` is `ball 0 (1/2)`. -/
+@[simp]
+theorem coe_halfBall : (halfBall : Set ℂ) = ball 0 (1 / 2) :=
+  (rfl)
+
+/-- Points of the closed ball `closedBall 0 (1/2)` have both coordinates below `1`. -/
+private theorem re_lt_one_and_im_lt_one {z : ℂ} (h : ‖z‖ ≤ 1 / 2) : z.re < 1 ∧ z.im < 1 :=
+  ⟨by linarith [re_le_norm z], by linarith [im_le_norm z]⟩
+
+/-- In the closed ball `closedBall 0 (1/2)`, the unit square is the open first quadrant. -/
+theorem mem_unitSquare_iff_of_norm_le {z : ℂ} (h : ‖z‖ ≤ 1 / 2) :
+    z ∈ unitSquare ↔ 0 < z.re ∧ 0 < z.im := by
+  simp only [mem_unitSquare, mem_Ioo, re_lt_one_and_im_lt_one h, and_true]
+
+/-- Membership in the quarter disc: the open first quadrant inside `ball 0 (1/2)`. -/
+@[simp]
+theorem mem_quarterDisc {z : ℂ} : z ∈ quarterDisc ↔ 0 < z.re ∧ 0 < z.im ∧ ‖z‖ < 1 / 2 := by
+  rw [quarterDisc_eq, mem_inter_iff, mem_ball_zero_iff, ← and_assoc]
+  exact and_congr_left fun h ↦ mem_unitSquare_iff_of_norm_le h.le
+
 /-! ### Lengths of radii and arcs -/
-
-private theorem isometry_mul_I : Isometry fun t : ℝ ↦ (t : ℂ) * I :=
-  Isometry.of_dist_eq fun s t ↦ by
-    rw [dist_eq_norm, ← sub_mul, norm_mul, norm_I, mul_one, ← ofReal_sub, norm_real,
-      Real.dist_eq, Real.norm_eq_abs]
-
-/-- The one-dimensional Hausdorff measure of a real set placed on the real axis. -/
-private theorem euclideanHausdorffMeasure_image_ofReal (S : Set ℝ) :
-    μHE[1] (((↑) : ℝ → ℂ) '' S) = volume S := by
-  rw [Measure.euclideanHausdorffMeasure_one,
-    isometry_ofReal.hausdorffMeasure_image (Or.inl zero_le_one), hausdorffMeasure_real]
-
-/-- The one-dimensional Hausdorff measure of a real set placed on the imaginary axis. -/
-private theorem euclideanHausdorffMeasure_image_mul_I (S : Set ℝ) :
-    μHE[1] ((fun t : ℝ ↦ (t : ℂ) * I) '' S) = volume S := by
-  rw [Measure.euclideanHausdorffMeasure_one,
-    isometry_mul_I.hausdorffMeasure_image (Or.inl zero_le_one), hausdorffMeasure_real]
 
 /-- Arcs of the circle `sphere 0 (1/2)` by the parameters on a full turn. -/
 private theorem euclideanHausdorffMeasure_sphere_inter {T : Set ℂ} (hT : MeasurableSet T) :
@@ -76,10 +87,15 @@ private theorem euclideanHausdorffMeasure_sphere_inter {T : Set ℂ} (hT : Measu
   simpa [abs_of_pos (by norm_num : (0 : ℝ) < 1 / 2)] using
     euclideanHausdorffMeasure_sphere_inter_eq_volume_preimage_circleMap 0 (1 / 2) 0 hT
 
-/-- On a full turn `[0, 2π]`, the cosine and sine are both nonnegative only on `[0, π/2]` and at
-`2π`. -/
-private theorem mem_of_cos_nonneg_of_sin_nonneg {θ : ℝ} (hθ : θ ∈ Icc 0 (2 * π))
-    (hc : 0 ≤ Real.cos θ) (hs : 0 ≤ Real.sin θ) : θ ∈ Icc 0 (π / 2) ∪ {2 * π} := by
+/-- The parameters on `[0, 2π]` of the closed quarter arc of `sphere 0 (1/2)` lie in `[0, π/2]`,
+except for the endpoint `2π`. -/
+private theorem Icc_inter_preimage_circleMap_closedQuadrant_subset :
+    Icc 0 (2 * π) ∩ circleMap 0 (1 / 2) ⁻¹' {z | 0 ≤ z.re ∧ 0 ≤ z.im} ⊆
+      Icc 0 (π / 2) ∪ {2 * π} := by
+  rintro θ ⟨hθ, hz⟩
+  simp only [mem_preimage, mem_ofPred_eq, circleMap_zero_re, circleMap_zero_im] at hz
+  have hc : 0 ≤ Real.cos θ := by linarith
+  have hs : 0 ≤ Real.sin θ := by linarith
   by_contra h
   simp only [mem_union, mem_Icc, mem_singleton_iff, not_or, not_and_or, not_le] at h
   have h1 : π / 2 < θ := h.1.resolve_left hθ.1.not_gt
@@ -94,22 +110,21 @@ private theorem mem_of_cos_nonneg_of_sin_nonneg {θ : ℝ} (hθ : θ ∈ Icc 0 (
 private theorem Icc_inter_preimage_circleMap_quadrant :
     Icc 0 (2 * π) ∩ circleMap 0 (1 / 2) ⁻¹' {z | 0 < z.re ∧ 0 < z.im} = Ioo 0 (π / 2) := by
   ext θ
-  simp only [mem_inter_iff, mem_preimage, mem_ofPred_eq, circleMap_zero_re, circleMap_zero_im,
-    mem_Ioo]
   constructor
   · rintro ⟨hθ, hc, hs⟩
-    have hc' : 0 < Real.cos θ := by linarith
-    have hs' : 0 < Real.sin θ := by linarith
-    rcases mem_of_cos_nonneg_of_sin_nonneg hθ hc'.le hs'.le with h | h
+    have h := Icc_inter_preimage_circleMap_closedQuadrant_subset ⟨hθ, hc.le, hs.le⟩
+    simp only [circleMap_zero_re, circleMap_zero_im] at hc hs
+    rcases h with h | h
     · refine ⟨lt_of_le_of_ne h.1 ?_, lt_of_le_of_ne h.2 ?_⟩
       · rintro rfl
-        simp at hs'
+        simp at hs
       · rintro rfl
-        simp at hc'
+        simp at hc
     · rw [mem_singleton_iff] at h
       subst h
-      simp at hs'
+      simp at hs
   · rintro ⟨h0, h1⟩
+    simp only [mem_inter_iff, mem_preimage, mem_ofPred_eq, circleMap_zero_re, circleMap_zero_im]
     refine ⟨⟨h0.le, by linarith [pi_pos]⟩, ?_, ?_⟩
     · have := Real.cos_pos_of_mem_Ioo ⟨by linarith, h1⟩
       positivity
@@ -132,18 +147,14 @@ private theorem euclideanHausdorffMeasure_sphere_inter_closedQuadrant :
   rw [euclideanHausdorffMeasure_sphere_inter (T := {z : ℂ | 0 ≤ z.re ∧ 0 ≤ z.im})
     ((isClosed_le continuous_const continuous_re).inter
       (isClosed_le continuous_const continuous_im)).measurableSet]
-  have hsub : Icc 0 (2 * π) ∩ circleMap 0 (1 / 2) ⁻¹' {z | 0 ≤ z.re ∧ 0 ≤ z.im} ⊆
-      Icc 0 (π / 2) ∪ {2 * π} := by
-    rintro θ ⟨hθ, hz⟩
-    simp only [mem_preimage, mem_ofPred_eq, circleMap_zero_re, circleMap_zero_im] at hz
-    exact mem_of_cos_nonneg_of_sin_nonneg hθ (by linarith) (by linarith)
   have hsup : Ioo 0 (π / 2) ⊆ Icc 0 (2 * π) ∩ circleMap 0 (1 / 2) ⁻¹' {z | 0 ≤ z.re ∧ 0 ≤ z.im} :=
     fun θ hθ ↦ by
       rw [← Icc_inter_preimage_circleMap_quadrant] at hθ
       exact ⟨hθ.1, hθ.2.1.le, hθ.2.2.le⟩
   have hle : volume (Icc 0 (2 * π) ∩ circleMap 0 (1 / 2) ⁻¹' {z | 0 ≤ z.re ∧ 0 ≤ z.im}) ≤
       ENNReal.ofReal (π / 2) :=
-    (measure_mono hsub).trans ((measure_union_le _ _).trans (by simp [Real.volume_Icc]))
+    (measure_mono Icc_inter_preimage_circleMap_closedQuadrant_subset).trans
+      ((measure_union_le _ _).trans (by simp [Real.volume_Icc]))
   have hge : ENNReal.ofReal (π / 2) ≤
       volume (Icc 0 (2 * π) ∩ circleMap 0 (1 / 2) ⁻¹' {z | 0 ≤ z.re ∧ 0 ≤ z.im}) := by
     simpa [Real.volume_Ioo] using measure_mono (μ := volume) hsup
@@ -162,39 +173,61 @@ def radiusIm : Set ℂ := {z | z.re = 0 ∧ 0 < z.im ∧ z.im < 1 / 2}
 /-- The closed quarter arc of `sphere 0 (1/2)` in the closed first quadrant. -/
 def quarterArc : Set ℂ := sphere 0 (1 / 2) ∩ {z | 0 ≤ z.re ∧ 0 ≤ z.im}
 
+/-- Membership in the radius `[0, 1/2)` on the real axis. -/
+@[simp]
+theorem mem_radiusRe {z : ℂ} : z ∈ radiusRe ↔ z.im = 0 ∧ 0 ≤ z.re ∧ z.re < 1 / 2 :=
+  Iff.rfl
+
+/-- Membership in the radius `(0, 1/2) i` on the imaginary axis. -/
+@[simp]
+theorem mem_radiusIm {z : ℂ} : z ∈ radiusIm ↔ z.re = 0 ∧ 0 < z.im ∧ z.im < 1 / 2 :=
+  Iff.rfl
+
+/-- Membership in the closed quarter arc of `sphere 0 (1/2)`. -/
+@[simp]
+theorem mem_quarterArc {z : ℂ} : z ∈ quarterArc ↔ ‖z‖ = 1 / 2 ∧ 0 ≤ z.re ∧ 0 ≤ z.im := by
+  rw [quarterArc, mem_inter_iff, mem_sphere_zero_iff_norm, mem_ofPred_eq]
+
+/-- On the real axis, the radius `[0, 1/2)` is cut out by the norm. -/
+theorem mem_radiusRe_iff_norm {z : ℂ} : z ∈ radiusRe ↔ z.im = 0 ∧ 0 ≤ z.re ∧ ‖z‖ < 1 / 2 := by
+  refine mem_radiusRe.trans (and_congr_right fun him ↦ and_congr_right fun h0 ↦ ?_)
+  rw [← abs_re_eq_norm.2 him, abs_of_nonneg h0]
+
+/-- On the imaginary axis, the radius `(0, 1/2) i` is cut out by the norm. -/
+theorem mem_radiusIm_iff_norm {z : ℂ} : z ∈ radiusIm ↔ z.re = 0 ∧ 0 < z.im ∧ ‖z‖ < 1 / 2 := by
+  refine mem_radiusIm.trans (and_congr_right fun hre ↦ and_congr_right fun h0 ↦ ?_)
+  rw [← abs_im_eq_norm.2 hre, abs_of_pos h0]
+
 /-- The radius `[0, 1/2)` on the real axis has length `1/2`. -/
 theorem euclideanHausdorffMeasure_radiusRe : μHE[1] radiusRe = ENNReal.ofReal (1 / 2) := by
   have : radiusRe = ((↑) : ℝ → ℂ) '' Ico 0 (1 / 2) := by
     ext z
     refine ⟨fun ⟨him, h0, h1⟩ ↦ ⟨z.re, ⟨h0, h1⟩, ext (by simp) (by simp [him])⟩, ?_⟩
     rintro ⟨t, ht, rfl⟩
-    simpa [radiusRe] using ht
-  rw [this, euclideanHausdorffMeasure_image_ofReal, Real.volume_Ico, sub_zero]
+    simpa using ht
+  rw [this, Measure.euclideanHausdorffMeasure_one,
+    isometry_ofReal.hausdorffMeasure_image (Or.inl zero_le_one), hausdorffMeasure_real,
+    Real.volume_Ico, sub_zero]
 
 /-- The radius `(0, 1/2) i` on the imaginary axis has length `1/2`. -/
 theorem euclideanHausdorffMeasure_radiusIm : μHE[1] radiusIm = ENNReal.ofReal (1 / 2) := by
+  have hI : Isometry fun t : ℝ ↦ (t : ℂ) * I := Isometry.of_dist_eq fun s t ↦ by
+    rw [dist_eq_norm, ← sub_mul, norm_mul, norm_I, mul_one, ← ofReal_sub, norm_real,
+      Real.dist_eq, Real.norm_eq_abs]
   have : radiusIm = (fun t : ℝ ↦ (t : ℂ) * I) '' Ioo 0 (1 / 2) := by
     ext z
     refine ⟨fun ⟨hre, h0, h1⟩ ↦ ⟨z.im, ⟨h0, h1⟩, ext (by simp [hre]) (by simp)⟩, ?_⟩
     rintro ⟨t, ht, rfl⟩
-    simpa [radiusIm] using ht
-  rw [this, euclideanHausdorffMeasure_image_mul_I, Real.volume_Ioo, sub_zero]
+    simpa using ht
+  rw [this, Measure.euclideanHausdorffMeasure_one,
+    hI.hausdorffMeasure_image (Or.inl zero_le_one), hausdorffMeasure_real, Real.volume_Ioo,
+    sub_zero]
 
 /-- The closed quarter arc of `sphere 0 (1/2)` has length `π/4`. -/
 theorem euclideanHausdorffMeasure_quarterArc : μHE[1] quarterArc = ENNReal.ofReal (π / 4) :=
   euclideanHausdorffMeasure_sphere_inter_closedQuadrant
 
 /-! ### The quarter disc -/
-
-private theorem mem_quarterDisc {z : ℂ} : z ∈ quarterDisc ↔ 0 < z.re ∧ 0 < z.im ∧ ‖z‖ < 1 / 2 := by
-  simp only [quarterDisc, unitSquare, mem_inter_iff, mem_reProdIm, mem_Ioo, mem_ball_zero_iff]
-  constructor
-  · rintro ⟨⟨⟨h1, -⟩, h2, -⟩, h3⟩
-    exact ⟨h1, h2, h3⟩
-  · rintro ⟨h1, h2, h3⟩
-    have := abs_re_le_norm z
-    have := abs_im_le_norm z
-    exact ⟨⟨⟨h1, by linarith [le_abs_self z.re]⟩, h2, by linarith [le_abs_self z.im]⟩, h3⟩
 
 /-- The open unit square is convex. -/
 theorem convex_unitSquare : Convex ℝ unitSquare :=
@@ -245,26 +278,21 @@ which are pairwise disjoint. -/
 theorem frontier_quarterDisc : frontier quarterDisc = radiusRe ∪ radiusIm ∪ quarterArc := by
   rw [isOpen_quarterDisc.frontier_eq, closure_quarterDisc]
   ext z
-  simp only [mem_sdiff, mem_ofPred_eq, mem_quarterDisc, mem_union, radiusRe, radiusIm, quarterArc,
-    mem_inter_iff, mem_sphere_zero_iff_norm]
+  simp only [mem_sdiff, mem_ofPred_eq, mem_quarterDisc, mem_union, mem_radiusRe_iff_norm,
+    mem_radiusIm_iff_norm, mem_quarterArc]
   constructor
   · rintro ⟨⟨h1, h2, h3⟩, h⟩
     rcases h3.lt_or_eq with h3 | h3
     · rcases h1.lt_or_eq with h1 | h1
       · have him : z.im = 0 := le_antisymm (not_lt.1 fun h' ↦ h ⟨h1, h', h3⟩) h2
-        rw [← abs_re_eq_norm.2 him, abs_of_pos h1] at h3
         exact Or.inl (Or.inl ⟨him, h1.le, h3⟩)
       · rcases h2.lt_or_eq with h2 | h2
-        · rw [← abs_im_eq_norm.2 h1.symm, abs_of_pos h2] at h3
-          exact Or.inl (Or.inr ⟨h1.symm, h2, h3⟩)
-        · rw [← abs_re_eq_norm.2 h2.symm, ← h1, abs_zero] at h3
-          exact Or.inl (Or.inl ⟨h2.symm, h1.le, by linarith⟩)
+        · exact Or.inl (Or.inr ⟨h1.symm, h2, h3⟩)
+        · exact Or.inl (Or.inl ⟨h2.symm, h1.le, h3⟩)
     · exact Or.inr ⟨h3, h1, h2⟩
   · rintro ((⟨him, h1, h2⟩ | ⟨hre, h1, h2⟩) | ⟨h3, h1, h2⟩)
-    · rw [← abs_re_eq_norm.2 him, abs_of_nonneg h1]
-      exact ⟨⟨h1, him.ge, h2.le⟩, fun h ↦ h.2.1.ne' him⟩
-    · rw [← abs_im_eq_norm.2 hre, abs_of_pos h1]
-      exact ⟨⟨hre.ge, h1.le, h2.le⟩, fun h ↦ h.1.ne' hre⟩
+    · exact ⟨⟨h1, him.ge, h2.le⟩, fun h ↦ h.2.1.ne' him⟩
+    · exact ⟨⟨hre.ge, h1.le, h2.le⟩, fun h ↦ h.1.ne' hre⟩
     · exact ⟨⟨h1, h2, h3.le⟩, fun h ↦ h.2.2.ne h3⟩
 
 private theorem measurableSet_radiusIm : MeasurableSet radiusIm :=
@@ -281,12 +309,10 @@ private theorem disjoint_radiusRe_radiusIm : Disjoint radiusRe radiusIm :=
 
 private theorem disjoint_radius_quarterArc : Disjoint (radiusRe ∪ radiusIm) quarterArc := by
   refine disjoint_left.2 fun z h h' ↦ ?_
-  have h3 : ‖z‖ = 1 / 2 := mem_sphere_zero_iff_norm.1 h'.1
-  rcases h with ⟨him, h1, h2⟩ | ⟨hre, h1, h2⟩
-  · rw [← abs_re_eq_norm.2 him, abs_of_nonneg h1] at h3
-    exact h2.ne h3
-  · rw [← abs_im_eq_norm.2 hre, abs_of_pos h1] at h3
-    exact h2.ne h3
+  have h3 := (mem_quarterArc.1 h').1
+  rcases h with h | h
+  · exact (mem_radiusRe_iff_norm.1 h).2.2.ne h3
+  · exact (mem_radiusIm_iff_norm.1 h).2.2.ne h3
 
 private theorem two_le_finrank : 2 ≤ Module.finrank ℝ ℂ := by
   rw [finrank_real_complex]
@@ -307,33 +333,27 @@ theorem perimeter_quarterDisc : perimeter volume ⊤ quarterDisc = ENNReal.ofRea
 square inside the ball. -/
 theorem perimeter_unitSquare_ball : perimeter volume halfBall unitSquare = 1 := by
   rw [convex_unitSquare.perimeter_eq_euclideanHausdorffMeasure_frontier_inter two_le_finrank
-      (by rw [isOpen_unitSquare.interior_eq]; exact ⟨_, mem_quarterDisc_eighth.1⟩) halfBall,
+      (by
+        rw [isOpen_unitSquare.interior_eq]
+        exact ⟨_, inter_subset_left (quarterDisc_eq ▸ mem_quarterDisc_eighth)⟩) halfBall,
     finrank_real_complex]
   have : frontier unitSquare ∩ halfBall = radiusRe ∪ radiusIm := by
     ext z
-    simp only [halfBall, Opens.coe_mk, unitSquare, frontier_reProdIm, closure_Ioo zero_ne_one,
+    simp only [coe_halfBall, unitSquare, frontier_reProdIm, closure_Ioo zero_ne_one,
       frontier_Ioo zero_lt_one, mem_inter_iff, mem_union, mem_reProdIm, mem_Icc,
-      mem_insert_iff, mem_singleton_iff, mem_ball_zero_iff, radiusRe, radiusIm, mem_ofPred_eq]
-    have hre := abs_re_le_norm z
-    have him := abs_im_le_norm z
-    have hre' := le_abs_self z.re
-    have him' := le_abs_self z.im
+      mem_insert_iff, mem_singleton_iff, mem_ball_zero_iff, mem_radiusRe_iff_norm,
+      mem_radiusIm_iff_norm]
     constructor
     · rintro ⟨⟨⟨h1, -⟩, h2 | h2⟩ | ⟨h1 | h1, h2, -⟩, h3⟩
-      · rw [← abs_re_eq_norm.2 h2, abs_of_nonneg h1] at h3
-        exact Or.inl ⟨h2, h1, h3⟩
-      · linarith
+      · exact Or.inl ⟨h2, h1, h3⟩
+      · exact absurd h2 (re_lt_one_and_im_lt_one h3.le).2.ne
       · rcases h2.lt_or_eq with h2 | h2
-        · rw [← abs_im_eq_norm.2 h1, abs_of_pos h2] at h3
-          exact Or.inr ⟨h1, h2, h3⟩
-        · rw [← abs_re_eq_norm.2 h2.symm, h1, abs_zero] at h3
-          exact Or.inl ⟨h2.symm, h1.ge, by linarith⟩
-      · linarith
+        · exact Or.inr ⟨h1, h2, h3⟩
+        · exact Or.inl ⟨h2.symm, h1.ge, h3⟩
+      · exact absurd h1 (re_lt_one_and_im_lt_one h3.le).1.ne
     · rintro (⟨h2, h1, h3⟩ | ⟨h1, h2, h3⟩)
-      · refine ⟨Or.inl ⟨⟨h1, by linarith⟩, Or.inl h2⟩, ?_⟩
-        rwa [← abs_re_eq_norm.2 h2, abs_of_nonneg h1]
-      · refine ⟨Or.inr ⟨Or.inl h1, h2.le, by linarith⟩, ?_⟩
-        rwa [← abs_im_eq_norm.2 h1, abs_of_pos h2]
+      · exact ⟨Or.inl ⟨⟨h1, (re_lt_one_and_im_lt_one h3.le).1.le⟩, Or.inl h2⟩, h3⟩
+      · exact ⟨Or.inr ⟨Or.inl h1, h2.le, (re_lt_one_and_im_lt_one h3.le).2.le⟩, h3⟩
   rw [this, measure_union disjoint_radiusRe_radiusIm measurableSet_radiusIm,
     euclideanHausdorffMeasure_radiusRe, euclideanHausdorffMeasure_radiusIm,
     ← ENNReal.ofReal_add (by norm_num) (by norm_num)]
@@ -344,18 +364,10 @@ quarter arc, of length `π/4`. -/
 theorem euclideanHausdorffMeasure_unitSquare_inter_sphere :
     μHE[1] (unitSquare ∩ sphere 0 (1 / 2)) = ENNReal.ofReal (π / 4) := by
   have : unitSquare ∩ sphere 0 (1 / 2) = sphere 0 (1 / 2) ∩ {z : ℂ | 0 < z.re ∧ 0 < z.im} := by
+    rw [inter_comm]
     ext z
-    simp only [unitSquare, mem_inter_iff, mem_reProdIm, mem_Ioo, mem_sphere_zero_iff_norm,
-      mem_ofPred_eq]
-    have hre := abs_re_le_norm z
-    have him := abs_im_le_norm z
-    have hre' := le_abs_self z.re
-    have him' := le_abs_self z.im
-    constructor
-    · rintro ⟨⟨⟨h1, -⟩, h2, -⟩, h3⟩
-      exact ⟨h3, h1, h2⟩
-    · rintro ⟨h3, h1, h2⟩
-      exact ⟨⟨⟨h1, by linarith⟩, h2, by linarith⟩, h3⟩
+    simp only [mem_inter_iff, mem_sphere_zero_iff_norm, mem_ofPred_eq]
+    exact and_congr_right fun h ↦ mem_unitSquare_iff_of_norm_le h.le
   rw [this, euclideanHausdorffMeasure_sphere_inter_quadrant]
 
 /-- **The truncation inequality is an equality for the square and `ball 0 (1/2)`**:
