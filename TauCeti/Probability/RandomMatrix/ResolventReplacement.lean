@@ -298,9 +298,10 @@ theorem norm_integral_trace_inv_add_smul_add_conj_smul_sub_smul_one_sub_integral
   obtain ⟨hTμ, hTν, hT⟩ := integral_trace_quadratic_eq hμ hν hmean hsq habs R B
   have hrest (ρ : Measure ℂ) (hρ : Integrable (fun w : ℂ ↦ ‖w‖ ^ 2) ρ) :
       ‖∫ w, f w - T w ∂ρ‖ ≤ K * ∫ w, replacementWeight b c w ∂ρ := by
+    have hweight : Integrable (fun w ↦ replacementWeight b c w) ρ := by
+      simpa only [replacementWeight] using hρ.norm_sq_mul_min_mul_one (by positivity : 0 ≤ b * c)
     rw [← integral_const_mul]
-    refine norm_integral_le_of_norm_le
-      ((hρ.norm_sq_mul_min_mul_one (by positivity : 0 ≤ b * c)).const_mul K)
+    refine norm_integral_le_of_norm_le (hweight.const_mul K)
       (Filter.Eventually.of_forall fun w ↦ ?_)
     exact norm_trace_resolvent_quadratic_remainder hA B hz w
   have heq : (∫ w, f w ∂μ) - ∫ w, f w ∂ν =
@@ -311,7 +312,7 @@ theorem norm_integral_trace_inv_add_smul_add_conj_smul_sub_smul_one_sub_integral
       K * ((∫ w, replacementWeight b c w ∂μ) + ∫ w, replacementWeight b c w ∂ν) := by
     rw [heq, mul_add]
     exact (norm_sub_le _ _).trans (add_le_add (hrest μ hμ) (hrest ν hν))
-  exact hbound
+  simpa only [f, K, complexPerturbation, replacementWeight] using hbound
 
 /-- Replacing each complex coordinate of an affine Hermitian matrix by a law with matching
 mixed moments through degree two changes the expected resolvent trace by at most the sum
@@ -345,6 +346,11 @@ theorem norm_integral_pi_trace_inv_add_sum_smul_add_conj_smul_sub_smul_one_sub_i
   have hint (s : Finset ι) : Integrable f (Measure.pi fun i ↦ if i ∈ s then ν i else μ i) := by
     have (i : ι) : IsProbabilityMeasure (if i ∈ s then ν i else μ i) := by split <;> infer_instance
     exact hcont.integrable_trace_inv_sub_smul_one hH hz
+  have hf : f =
+      (fun x : ι → ℂ ↦ (A + ∑ i, (x i • B i + conj (x i) • (B i)ᴴ) - z • 1)⁻¹.trace) := by
+    simp only [f, H, complexPerturbation]
+  dsimp only
+  rw [← hf]
   refine TauCeti.norm_integral_pi_sub_integral_pi_le_of_ae_slice_le (α := fun _ ↦ ℂ) μ ν hint _
     (fun _ i _ ↦ ae_of_all _ fun x ↦ ?_)
   let C := A + ∑ j ∈ univ.erase i, complexPerturbation (B j)
