@@ -16,11 +16,13 @@ import TauCeti.Analysis.InnerProductSpace.Reflection
 The orthogonal group of a real inner product space `V` is the unitary group
 `unitary (V →L[ℝ] V)` of its operator algebra, with the operator-norm topology. This file defines
 its subgroup of transformations of determinant `1`, the special orthogonal group
-`TauCeti.specialOrthogonalGroup V`. It is the structure group of the oriented orthonormal frame
-bundle of an oriented Riemannian vector bundle.
+`TauCeti.specialOrthogonalGroup V`, the kernel of the determinant `Unitary.detMonoidHom V`. It is
+the structure group of the oriented orthonormal frame bundle of an oriented Riemannian vector
+bundle.
 
 An orthogonal transformation of a real inner product space has determinant `1` or `-1`
-(`Unitary.det_eq_one_or_eq_neg_one`; in infinite dimension every determinant is `1`), so it is
+(`Unitary.det_eq_one_or_eq_neg_one`; in infinite dimension every determinant is `1`), the same as
+the determinant of its inverse (`Unitary.det_inv_eq_det`), so it is
 special orthogonal exactly when its determinant is positive
 (`TauCeti.mem_specialOrthogonalGroup_iff_det_pos`) and not special orthogonal exactly when its
 determinant is negative (`TauCeti.notMem_specialOrthogonalGroup_iff_det_neg`). Because the
@@ -54,6 +56,25 @@ theorem det_eq_one_or_eq_neg_one (g : unitary (V →L[ℝ] V)) :
     (g : V →L[ℝ] V).det = 1 ∨ (g : V →L[ℝ] V).det = -1 :=
   abs_eq (zero_le_one' ℝ) |>.1 (abs_det_eq_one g)
 
+variable (V) in
+/-- The determinant of the orthogonal transformations of `V`, as a monoid homomorphism. -/
+def detMonoidHom : unitary (V →L[ℝ] V) →* ℝ :=
+  LinearMap.det.comp (ContinuousLinearMap.toLinearMapRingHom.toMonoidHom.comp (unitary _).subtype)
+
+/-- `Unitary.detMonoidHom V` sends an orthogonal transformation to its determinant. -/
+@[simp]
+theorem detMonoidHom_apply (g : unitary (V →L[ℝ] V)) :
+    detMonoidHom V g = (g : V →L[ℝ] V).det :=
+  (rfl)
+
+/-- An orthogonal transformation and its inverse have the same determinant `±1`. -/
+@[simp]
+theorem det_inv_eq_det (g : unitary (V →L[ℝ] V)) :
+    ((g⁻¹ : unitary (V →L[ℝ] V)) : V →L[ℝ] V).det = (g : V →L[ℝ] V).det := by
+  have h : ((g⁻¹ : unitary (V →L[ℝ] V)) : V →L[ℝ] V).det * (g : V →L[ℝ] V).det = 1 := by
+    rw [← detMonoidHom_apply, ← detMonoidHom_apply, ← map_mul, inv_mul_cancel, map_one]
+  rcases det_eq_one_or_eq_neg_one g with hg | hg <;> rw [hg] at h ⊢ <;> linarith
+
 /-- In positive dimension there is an orthogonal transformation of determinant `-1`: the
 reflection in a hyperplane. -/
 theorem exists_det_eq_neg_one (hV : 0 < Module.finrank ℝ V) :
@@ -73,8 +94,7 @@ variable (V) in
 /-- The special orthogonal group of a real inner product space `V`: the orthogonal
 transformations of `V`, as elements of the unitary group of `V →L[ℝ] V`, of determinant `1`. -/
 def specialOrthogonalGroup : Subgroup (unitary (V →L[ℝ] V)) :=
-  (LinearMap.det.comp
-    (ContinuousLinearMap.toLinearMapRingHom.toMonoidHom.comp (unitary (V →L[ℝ] V)).subtype)).ker
+  (Unitary.detMonoidHom V).ker
 
 /-- An orthogonal transformation is special orthogonal exactly when its determinant is `1`. -/
 @[simp]
