@@ -35,6 +35,7 @@ for instance `ℤ[1/p]` for a `p`-adic group.
 * `TauCeti.HaarMeasureWithValues.integral_compactlySupportedRep`: the integral is invariant under
   left translation.
 * `TauCeti.HaarMeasureWithValues.convolution_assoc`: convolution is associative.
+* `TauCeti.HaarMeasureWithValues.convolution_smul_measure`: `f₁ ⋆_{cμ} f₂ = c (f₁ ⋆_μ f₂)`.
 * `TauCeti.HaarMeasureWithValues.support_convolution_subset`:
   `supp (f₁ ⋆ f₂) ⊆ supp f₁ · supp f₂`.
 * `TauCeti.HaarMeasureWithValues.convolution_compactlySupportedRep_left`,
@@ -169,6 +170,13 @@ theorem convolution_apply (f₁ f₂ : compactlySupported A G A) (x : G) :
 @[simp]
 theorem convolution_zero_measure (f₁ f₂ : compactlySupported A G A) :
     (0 : HaarMeasureWithValues A G).convolution f₁ f₂ = 0 := by
+  ext x
+  simp [convolution_apply]
+
+/-- **Convolution against a rescaled measure**: `f₁ ⋆_{cμ} f₂ = c (f₁ ⋆_μ f₂)`. -/
+@[simp]
+theorem convolution_smul_measure (c : A) (f₁ f₂ : compactlySupported A G A) :
+    (c • μ).convolution f₁ f₂ = c • μ.convolution f₁ f₂ := by
   ext x
   simp [convolution_apply]
 

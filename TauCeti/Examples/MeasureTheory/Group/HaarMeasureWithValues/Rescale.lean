@@ -36,13 +36,13 @@ example (μ : HaarMeasureWithValues ℤ (Multiplicative (ZMod 2)))
           (g : LocallyConstant (Multiplicative (ZMod 2)) ℤ) 1 +
         (f : LocallyConstant (Multiplicative (ZMod 2)) ℤ) (Multiplicative.ofAdd 1) *
           (g : LocallyConstant (Multiplicative (ZMod 2)) ℤ) (Multiplicative.ofAdd 1)) := by
-  rw [convolution_smul_measure, Submodule.coe_smul, LocallyConstant.coe_smul, Pi.smul_apply,
-    smul_eq_mul, convolution_apply_of_discrete, h1, one_smul,
+  have hsum (φ : Multiplicative (ZMod 2) → ℤ) : ∑ y, φ y = φ 1 + φ (Multiplicative.ofAdd 1) :=
     Fintype.sum_eq_add 1 (Multiplicative.ofAdd 1) (by decide) fun x hx ↦ by
       fin_cases x
-      exacts [(hx.1 rfl).elim, (hx.2 rfl).elim]]
-  have hs : (Multiplicative.ofAdd (1 : ZMod 2))⁻¹ * 1 = Multiplicative.ofAdd 1 := by decide
-  rw [inv_one, mul_one, hs]
+      exacts [(hx.1 rfl).elim, (hx.2 rfl).elim]
+  have hs : (Multiplicative.ofAdd (1 : ZMod 2))⁻¹ = Multiplicative.ofAdd 1 := by decide
+  simp only [convolution_smul_measure, Submodule.coe_smul, LocallyConstant.coe_smul, Pi.smul_apply,
+    smul_eq_mul, convolution_apply_of_discrete, h1, one_mul, hsum, inv_one, mul_one, hs]
 
 /-- Rescaling by the unit `-1` identifies `H(G, -μ)` with `H(G, μ)` through `f ↦ -f`. -/
 example (μ : HaarMeasureWithValues ℤ G) (f : HeckeAlgebra (((-1 : ℤˣ) : ℤ) • μ)) :

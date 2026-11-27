@@ -42,6 +42,7 @@ holds for every expansion by indicators, with overlaps allowed
   `∑ μ(K_i) • m_i`.
 * `TauCeti.HaarMeasureWithValues.eq_integral_of_apply_compactOpenIndicator`: uniqueness; a linear
   map with these values on indicators is the integral.
+* `TauCeti.HaarMeasureWithValues.integral_smul_measure`: `∫ f d(cμ) = c ∫ f dμ`.
 * `TauCeti.HaarMeasureWithValues.integral_comp_comm`: naturality under `A`-linear maps `M → N`.
 * `TauCeti.HaarMeasureWithValues.integral_eq_smul_sum_of_discrete`: on a finite discrete group,
   `∫ f dμ = μ({1}) • ∑_g f(g)`.
@@ -298,6 +299,15 @@ theorem eq_integral_of_apply_compactOpenIndicator [T2Space G]
   obtain ⟨s, K, hf⟩ := exists_eq_sum_compactOpenIndicator (mem_compactlySupported.1 f.property)
   rw [apply_eq_sum_smul_of_eq_sum_compactOpenIndicator μ L hL f s K id hf,
     integral_eq_sum_smul_of_eq_sum_compactOpenIndicator μ f s K id hf]
+
+/-- **Integrals against a rescaled measure**: `∫ f d(cμ) = c ∫ f dμ`. -/
+@[simp]
+theorem integral_smul_measure [T2Space G] (c : A) (f : compactlySupported A G M) :
+    (c • μ).integral f = c • μ.integral f := by
+  have h := eq_integral_of_apply_compactOpenIndicator (c • μ)
+      (c • μ.integral : compactlySupported A G M →ₗ[A] M) fun K m ↦ by
+    rw [LinearMap.smul_apply, integral_compactOpenIndicator, smul_apply, smul_assoc]
+  exact (LinearMap.congr_fun h f).symm
 
 /-- **Naturality.** Integration commutes with `A`-linear maps `φ : M → N`. -/
 @[simp]
