@@ -96,8 +96,9 @@ theorem contMDiffAt_oneForm_quotient_iff {n : ℕ∞ω} {g : E ⧸ N → E →L[
   simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
     Trivial.continuousLinearMapAt_trivialization, symmL_trivializationAt_quotient hx,
     ContinuousLinearMap.id_comp]
-  exact (ContinuousLinearMap.comp_apply _ _ v).trans
-    (congrArg (g x) (ContinuousLinearMap.id_apply (R₁ := 𝕜) v))
+  -- The identity acts on `TangentSpace 𝓘(𝕜, E) x`, which is `E` only by definition, so
+  -- `ContinuousLinearMap.comp_id` does not match syntactically; the composite is `g x` by `rfl`.
+  rfl
 
 /-- **Differentials on `E ⧸ N` are derivatives of lifts.** The differential of a function `σ` on
 `E ⧸ N` at the class of `z` is the derivative of its lift `σ ∘ (↑)` at `z`. There is no

@@ -238,12 +238,7 @@ theorem comp_quotientMk_mem_cauchyRiemannKernel_iff {σ : ℂ ⧸ Λ → ℂ} :
       MDifferentiable 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) σ ∧ ∀ x, torusCauchyRiemannOperator Λ ν μ σ x = 0 := by
   have hdiff : Differentiable ℝ (fun z : ℂ ↦ σ z) ↔ MDifferentiable 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) σ := by
     rw [← mdifferentiable_iff_differentiable]
-    refine ⟨fun h x ↦ ?_, fun h z ↦ ?_⟩
-    · obtain ⟨z, rfl⟩ := QuotientAddGroup.mk_surjective x
-      exact ((Λ.isLocalDiffeomorph_quotientMk (I := 𝓘(ℝ, ℂ)) (n := ∞) z).mdifferentiableAt_comp_iff
-        (by simp)).1 (h z)
-    · exact ((Λ.isLocalDiffeomorph_quotientMk (I := 𝓘(ℝ, ℂ)) (n := ∞) z).mdifferentiableAt_comp_iff
-        (by simp)).2 (h z)
+    exact (Λ.mdifferentiable_quotient_iff (I := 𝓘(ℝ, ℂ)) (n := ∞) (by simp) σ).symm
   rw [mem_cauchyRiemannKernel, hdiff]
   refine and_congr_right fun _ ↦ ⟨fun h x ↦ ?_, fun h z ↦ ?_⟩
   · obtain ⟨z, rfl⟩ := QuotientAddGroup.mk_surjective x
@@ -360,8 +355,8 @@ theorem mem_range_kerTorusCauchyRiemannSobolevLLift_iff (hp : 1 < p)
   refine ⟨?_, fun hv ↦ ?_⟩
   · rintro ⟨w, rfl⟩
     set t := (IsRealCauchyRiemannOperator.kerSobolevLEquivComap A _ _ hp).symm w
-    have ht := (Trivial.contMDiff_mk_iff.1 t.val.contMDiff).2.comp
-      ((Λ.isLocalDiffeomorph_quotientMk (I := 𝓘(ℝ, ℂ)) (n := ∞)).contMDiff.of_le (by simp))
+    have ht := (Λ.contMDiff_quotient_iff (I := 𝓘(ℝ, ℂ)) (n := ∞) (by simp) _).1
+      (Trivial.contMDiff_mk_iff.1 t.val.contMDiff).2
     exact contMDiff_iff_contDiff.1 ht
   -- Descend the periodic map `v` to `ℂ ⧸ Λ`.
   set σ : ℂ ⧸ Λ → ℂ :=

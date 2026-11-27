@@ -175,7 +175,7 @@ variable (R N) in
 /-- **Periodic maps are maps on the quotient.** The maps on `B` twisted by the trivial sign
 character along the inclusion of `N`, that is the `N`-periodic maps, descend to `B ⧸ N`; their
 descents are all the maps on `B ⧸ N`, with inverse the lift `f ↦ f ∘ (↑)`. -/
-@[expose] def signTwistedZeroEquivQuotientFun :
+def signTwistedZeroEquivQuotientFun :
     (signTwisted R N.subtype 0 : Submodule R (B → E)) ≃ₗ[R] (B ⧸ N → E) where
   toFun v x := Quotient.liftOn' x (v : B → E) fun a b h ↦ by
     have := mem_signTwisted_zero.1 v.property ⟨-a + b, QuotientAddGroup.leftRel_apply.1 h⟩ a
@@ -191,13 +191,13 @@ descents are all the maps on `B ⧸ N`, with inverse the lift `f ↦ f ∘ (↑)
 theorem signTwistedZeroEquivQuotientFun_apply_mk
     (v : (signTwisted R N.subtype 0 : Submodule R (B → E))) (z : B) :
     signTwistedZeroEquivQuotientFun R N v z = (v : B → E) z :=
-  rfl
+  (rfl)
 
 /-- The inverse of the descent is the lift `f ↦ f ∘ (↑)`. -/
 @[simp]
 theorem coe_signTwistedZeroEquivQuotientFun_symm_apply (f : B ⧸ N → E) :
     ((signTwistedZeroEquivQuotientFun R N).symm f : B → E) = fun z : B ↦ f z :=
-  rfl
+  (rfl)
 
 end Quotient
 
