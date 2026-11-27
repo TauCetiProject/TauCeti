@@ -11,9 +11,9 @@ import Mathlib.Analysis.Convex.Function
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
 import TauCeti.Analysis.Matrix.FunctionalCalculus
 import TauCeti.Analysis.Matrix.Order
-import TauCeti.Analysis.Matrix.PosSemidef.Block
 import TauCeti.LinearAlgebra.Matrix.Hermitian.Basic
 import TauCeti.LinearAlgebra.Matrix.Block.Spectrum
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Matrix and operator monotone and convex functions
@@ -40,15 +40,15 @@ calculus `cfc f A`; since the spectrum of a matrix is finite, every `f` is conti
   and convexity of order `n` imply those of every order `m ≤ n`, through the direct sum with a
   scalar `c ∈ I`.
 * `TauCeti.isMatrixMonotoneOn_zero`, `TauCeti.isMatrixMonotoneOn_one_iff` and their convex
-  counterparts: every function is matrix monotone and convex of order `0`, and order `1` is
-  scalar monotonicity and convexity on `I`. Hence an operator monotone function is monotone on
-  `I` and an operator convex function is convex on a convex `I`.
+  counterparts: every function is matrix monotone and convex of order `0`; order `1` is scalar
+  monotonicity on `I` and, when `I` is convex, scalar convexity on `I`. Hence an operator
+  monotone function is monotone on `I` and an operator convex function is convex on a convex `I`.
 * The cone properties: sums and nonnegative multiples of matrix and operator monotone, convex
   or concave functions are again so, and constants and the identity are all three.
 * `TauCeti.IsOperatorMonotoneOn.comp`: if `g` is operator monotone on `I` and maps `I` into `J`,
   and `f` is operator monotone on `J`, then `f ∘ g` is operator monotone on `I`.
-* `TauCeti.isOperatorMonotoneOn_of_tendsto`: a pointwise limit on `I` of operator monotone
-  functions on `I` is operator monotone on `I`.
+* `TauCeti.isOperatorMonotoneOn_of_tendsto`: a pointwise limit on `I`, along any nontrivial
+  filter, of operator monotone functions on `I` is operator monotone on `I`.
 
 ## References
 
@@ -347,11 +347,11 @@ theorem isOperatorMonotoneOn_const (c : ℝ) (I : Set ℝ) : IsOperatorMonotoneO
 theorem isOperatorMonotoneOn_id (I : Set ℝ) : IsOperatorMonotoneOn id I :=
   fun n ↦ isMatrixMonotoneOn_id n I
 
-/-- **Pointwise limits.** A pointwise limit on `I` of operator monotone functions on `I` is
-operator monotone on `I`. -/
-theorem isOperatorMonotoneOn_of_tendsto {F : ℕ → ℝ → ℝ} {f : ℝ → ℝ} {I : Set ℝ}
-    (hF : ∀ k, IsOperatorMonotoneOn (F k) I)
-    (hlim : ∀ x ∈ I, Tendsto (fun k ↦ F k x) atTop (𝓝 (f x))) :
+/-- **Pointwise limits.** A pointwise limit on `I`, along a nontrivial filter (for instance a
+sequence along `atTop`), of operator monotone functions on `I` is operator monotone on `I`. -/
+theorem isOperatorMonotoneOn_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {F : ι → ℝ → ℝ}
+    {f : ℝ → ℝ} {I : Set ℝ} (hF : ∀ k, IsOperatorMonotoneOn (F k) I)
+    (hlim : ∀ x ∈ I, Tendsto (fun k ↦ F k x) l (𝓝 (f x))) :
     IsOperatorMonotoneOn f I :=
   fun n ↦ isMatrixMonotoneOn_of_tendsto (fun k ↦ hF k n) hlim
 
@@ -414,6 +414,7 @@ theorem isMatrixConvexOn_id (n : ℕ) (I : Set ℝ) : IsMatrixConvexOn n id I :=
       cfc_id ℝ A hA.isSelfAdjoint, cfc_id ℝ B hB.isSelfAdjoint]
 
 /-- On a convex set, matrix convexity of order `1` is convexity. -/
+@[simp]
 theorem isMatrixConvexOn_one_iff (hI : Convex ℝ I) : IsMatrixConvexOn 1 f I ↔ ConvexOn ℝ I f := by
   -- Real convex combinations of real scalars in the `1 × 1` matrices.
   have hlin : ∀ s u v : ℝ, (1 - s) • algebraMap ℝ (Matrix (Fin 1) (Fin 1) ℂ) u +
