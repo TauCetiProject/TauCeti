@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Manifold
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Compactness of Floer pairs of pants in a closed manifold
@@ -63,6 +64,14 @@ In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
   part of `S`, the bounds on the pushforwards of the Hamiltonian vector fields of the perturbation
   that the first theorem takes hold for every `C¹` map `e` and `C¹` Hamiltonians `H_q`, since each
   component of the perturbation is `C¹` jointly on `S × M`.
+
+In the namespace `TauCeti.SmoothTwoForm`, the conclusions of the end theorem are read back on the
+domain through `g(y) = φ'_q(y + (m, 0))`:
+`eventually_ofReal_le_withDensity_image_positiveEndChart_add` moves the concentration of energy at
+the bubbling points to their images under `g`, and
+`exists_mem_nhds_forall_floerEnergyDensity_le_image_positiveEndChart_add` moves the bounds on the
+energy densities to bounds near every other point of the image of the window, through the Jacobian
+of `g`.
 
 The regularity of the limits, the bubbles at the points of `Z` and the assembly of the limits at the
 ends into a broken configuration are not treated here.
@@ -180,12 +189,13 @@ injective and differentiable, with the structures `J_q` uniformly tame with resp
 `c ‖d e v‖² ≤ ω(v, J_q v)` with `c > 0`, and the pushforwards through `e` of the Hamiltonian
 vector fields of the end Hamiltonians `H'_q(t)` at most `L`. Fix a compact window
 `D ⊆ (max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end chart. There is a threshold `δ > 0` with
-the following property. Let `Kₖ` be perturbations on `S = ℂ ∖ {0, 1}` equal to `H_q(t) dt` beyond
-`T₀` on the end `q`, and `Jₖ(z, x)` structures on the tangent spaces of `M`, `z ∈ S` read in real
+the following property. Let `Kₖ` be perturbations on `ℂ` equal to `H_q(t) dt` beyond
+`T₀` on the end `q`, and `Jₖ(z, x)` structures on the tangent spaces of `M`, `z` read in real
 coordinates, with `Jₖ(φ_q(±s, t), x) = J_q(t, x)` on the end `q` beyond `T₀`. Let `uₖ` be `C³`
-solutions of `(du - X_{Kₖ})^{0,1} = 0` on `S` for `Jₖ(z, u)` with energy at most `E ≥ 0`, let
-`Rₖ ≥ 0` be heights, and let `Ω ⊆ D` be open. Then there are a subsequence `φ` and a finite set
-`Z ⊆ Ω` with `#Z * δ ≤ E` such that, along `φ`, for the translated ends
+solutions of `(du - X_{Kₖ})^{0,1} = 0` for `Jₖ(z, u)` with energy at most `E ≥ 0` on open sets
+`Uₖ` containing the part `s > max T₀ 0` of the positive end chart, such as Floer pairs of pants on
+`S = Uₖ`, let `Rₖ ≥ 0` be heights, and let `Ω ⊆ D` be open. Then there are a subsequence `φ` and a
+finite set `Z ⊆ Ω` with `#Z * δ ≤ E` such that, along `φ`, for the translated ends
 `vₖ(z) = uₖ(φ'_q(z + (Rₖ, 0)))`, every disc about a point of `Z` eventually carries energy at least
 `δ` for the cylindrical datum `H'_q dt`, the energy densities are uniformly bounded on every
 compact subset of `Ω \ Z`, and the translated ends converge on `Ω \ Z` to a continuous map `v`,
@@ -206,18 +216,19 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_comp_
     (hDT : D ⊆ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) :
     ∃ δ > 0, ∀ ⦃K : ℕ → ℂ → M → ℂ →L[ℝ] ℝ⦄
       ⦃J : ℕ → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)⦄
-      ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃R : ℕ → ℝ⦄ ⦃E : ℝ⦄,
+      ⦃Ω : Set (ℝ × ℝ)⦄ ⦃U : ℕ → Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃R : ℕ → ℝ⦄ ⦃E : ℝ⦄,
       (∀ k w x, T₀ ≤ q.endSign * (q.endCoord w).re →
         K k w x = H q (q.endCoord w).im x • q.endAngularForm w) →
       (∀ k s t x, T₀ ≤ s → J k (endChart q (q.endSign * s, t)) x = Jq t x) →
-      IsOpen Ω → Ω ⊆ D → (∀ k, 0 ≤ R k) →
-      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u k) thricePuncturedSphereReal) →
-      (∀ k, ∀ z ∈ thricePuncturedSphereReal,
+      IsOpen Ω → Ω ⊆ D → (∀ k, 0 ≤ R k) → (∀ k, IsOpen (U k)) →
+      (∀ k (ζ : ℝ × ℝ), max T₀ 0 < ζ.1 → positiveEndChart q ζ ∈ U k) →
+      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u k) (U k)) →
+      (∀ k, ∀ z ∈ U k,
         IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J k z (u k z))
           (ω.perturbedMFDeriv (fun z x ↦ K k (equivRealProdCLM.symm z) x 1)
             (fun z x ↦ K k (equivRealProdCLM.symm z) x Complex.I) (u k) z).toLinearMap) →
       0 ≤ E →
-      (∀ k, ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+      (∀ k, ∫⁻ z in U k, ENNReal.ofReal (ω.floerEnergyDensity
         (fun z x ↦ K k (equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K k (equivRealProdCLM.symm z) x Complex.I) (u k) z) ≤ ENNReal.ofReal E) →
       ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ Z : Finset (ℝ × ℝ), ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
@@ -255,12 +266,12 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_comp_
     (fun _ _ x ↦ (norm_mvfderiv_hamiltonianVectorField_zero_le_zero ω e x).trans
       ((norm_nonneg _).trans (hL 0 x)))
     fun w _ x ↦ hL w.2 x
-  refine ⟨δ, hδ, fun K J Ω u R E hKH hJ hΩ hΩD hR hu hfl hE0 hE ↦ ?_⟩
+  refine ⟨δ, hδ, fun K J Ω U u R E hKH hJ hΩ hΩD hR hU hUq hu hfl hE0 hE ↦ ?_⟩
   -- The translated ends solve the Floer equation of the end, with energy at most `E`.
   have h (k : ℕ) :=
     contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add hω (hKH k) hH
-      hHq (hJ k) (C := univ) (fun t x _ ↦ hJt t x) hΩ hΩD hDT (hR k) (hu k) (hfl k) hE0 (hE k)
-      fun _ _ ↦ mem_univ _
+      hHq (hJ k) (C := univ) (fun t x _ ↦ hJt t x) hΩ hΩD hDT (hR k) (hU k) (hUq k) (hu k)
+      (hfl k) hE0 (hE k) fun _ _ ↦ mem_univ _
   exact hconv hΩ hΩD (fun k ↦ (h k).1) (fun k ↦ (h k).2.1) (fun k ↦ (h k).2.2.1)
     fun k ↦ (h k).2.2.2
 
@@ -283,3 +294,127 @@ theorem exists_forall_norm_mvfderiv_hamiltonianVectorField_pairOfPantsPerturbati
     fun _ hz x ↦ contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs (hDS hz) x v
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
+
+namespace TauCeti.SmoothTwoForm
+
+open Floer
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+  [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ}
+
+/-- **Energy concentration on a window of an end, read on the domain.** Let `Kₖ` be perturbations
+equal to `H_q(t) dt` beyond `T₀` on the end `q`, let `g(y) = φ'_q(y + (m, 0))` be the translated
+positive end chart of the end `q`, and let `Ω` be an open window whose translate by `(m, 0)` lies
+beyond `max T 0`, for `T ≥ T₀`, in a band of angular width one. Let `uₖ` be differentiable on open
+sets `Uₖ` containing the part `s > max T 0` of the positive end chart, such as `S`. If the energy
+`δ` of the end readings `uₖ ∘ g` concentrates in every disc about a point of `Z ⊆ Ω`, then every
+neighbourhood of a point of `g(Z)` eventually carries energy at least `δ` for the energy measure
+of `uₖ` on `Uₖ`. -/
+theorem eventually_ofReal_le_withDensity_image_positiveEndChart_add
+    {K : ℕ → ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ k w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K k w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : Periodic (H q) 1) (hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t))
+    {U : ℕ → Set (ℝ × ℝ)} (hU : ∀ k, IsOpen (U k)) {m : ℕ} {T t₀ : ℝ} (hT : T₀ ≤ T)
+    (hUq : ∀ k (ζ : ℝ × ℝ), max T 0 < ζ.1 → positiveEndChart q ζ ∈ U k)
+    {u : ℕ → ℝ × ℝ → M} (hu : ∀ k, MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I (u k) (U k))
+    {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
+    (hΩT : ∀ z ∈ Ω, z + ((m : ℝ), 0) ∈ Ioi (max T 0) ×ˢ Ioo t₀ (t₀ + 1)) {δ : ℝ} {φ : ℕ → ℕ}
+    {Z : Finset (ℝ × ℝ)}
+    (hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
+      (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+      (fun z ↦ u (φ n) (positiveEndChart q (z + ((m : ℝ), 0)))) y) :
+    ∀ z ∈ (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' ↑Z, ∀ N ∈ 𝓝 z,
+      ∀ᶠ n in atTop, ENNReal.ofReal δ ≤ (volume.restrict (U (φ n))).withDensity
+        (fun y ↦ ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x Complex.I)
+          (u (φ n)) y)) N := by
+  set g : ℝ × ℝ → ℝ × ℝ := fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))
+  have hg : Continuous g :=
+    (contDiff_positiveEndChart q 0).continuous.comp (continuous_id.add continuous_const)
+  have hgo : IsOpenMap g := (isOpenMap_positiveEndChart q).comp (Homeomorph.addRight _).isOpenMap
+  rintro _ ⟨z, hz, rfl⟩ N hN
+  obtain ⟨ε, hε, hεN⟩ := Metric.mem_nhds_iff.1 (hg.continuousAt.preimage_mem_nhds hN)
+  filter_upwards [hconc z hz ε hε] with n hn
+  -- The image of the disc is open, so measurable, and lies in `U ∩ N`.
+  have hs : MeasurableSet (ball z ε ∩ Ω) := measurableSet_ball.inter hΩ.measurableSet
+  have hgsS : g '' (ball z ε ∩ Ω) ⊆ U (φ n) := by
+    rintro _ ⟨y, hy, rfl⟩
+    exact hUq _ _ (hΩT y hy.2).1
+  refine TauCeti.MeasureTheory.le_withDensity_of_le_setLIntegral
+    (hgo _ (isOpen_ball.inter hΩ)).measurableSet hgsS
+    (image_subset_iff.2 (inter_subset_left.trans hεN)) ?_
+  rw [← SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq_of_isOpen q
+    (T₀ := T) (fun w x hw ↦ hKH (φ n) w x (hT.trans hw)) hH hHd (hU _)
+    (hu _) (le_max_left T 0) (hUq _) m hs fun y hy ↦ hΩT y hy.2]
+  exact (ENNReal.ofReal_le_ofReal hn).trans
+    TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal
+
+/-- **Bounds on the energy densities on a window of an end, read on the domain.** Let `Kₖ` be
+perturbations equal to `H_q(t) dt` beyond `T₀` on the end `q`, let `g(y) = φ'_q(y + (m, 0))` be the
+translated positive end chart of the end `q`, and let `Ω` be an open window whose translate by
+`(m, 0)` lies beyond `max T 0`, for `T ≥ T₀`, in a band of angular width one. Let `uₖ` be
+differentiable on open sets `Uₖ` containing the part `s > max T 0` of the positive end chart, such
+as `S`. If along `φ` the energy densities of the end readings `uₖ ∘ g` are uniformly bounded on
+every compact subset of `Ω \ Z`, then the energy densities of the `uₖ` are uniformly bounded near
+every point of `g(Ω) \ g(Z)`, since the energy density of `uₖ ∘ g` is that of `uₖ` times the
+Jacobian of `g`. -/
+theorem exists_mem_nhds_forall_floerEnergyDensity_le_image_positiveEndChart_add
+    {K : ℕ → ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ k w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K k w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : Periodic (H q) 1) (hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t))
+    {U : ℕ → Set (ℝ × ℝ)} (hU : ∀ k, IsOpen (U k)) {m : ℕ} {T t₀ : ℝ} (hT : T₀ ≤ T)
+    (hUq : ∀ k (ζ : ℝ × ℝ), max T 0 < ζ.1 → positiveEndChart q ζ ∈ U k)
+    {u : ℕ → ℝ × ℝ → M} (hu : ∀ k, MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I (u k) (U k))
+    {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
+    (hΩT : ∀ z ∈ Ω, z + ((m : ℝ), 0) ∈ Ioi (max T 0) ×ˢ Ioo t₀ (t₀ + 1)) {φ : ℕ → ℕ}
+    {Z : Finset (ℝ × ℝ)}
+    (hbd : ∀ C, IsCompact C → C ⊆ Ω \ ↑Z → ∃ A, ∀ n, ∀ y ∈ C, ω.floerEnergyDensity
+      (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+      (fun z ↦ u (φ n) (positiveEndChart q (z + ((m : ℝ), 0)))) y ≤ A) :
+    ∀ y ∈ (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' Ω \
+        (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' ↑Z, ∃ N ∈ 𝓝 y, ∃ A,
+      ∀ᶠ n in atTop, ∀ x ∈ N, ω.floerEnergyDensity
+        (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x Complex.I) (u (φ n)) x ≤ A := by
+  set g : ℝ × ℝ → ℝ × ℝ := fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))
+  have hgo : IsOpenMap g := (isOpenMap_positiveEndChart q).comp (Homeomorph.addRight _).isOpenMap
+  rintro _ ⟨⟨ζ, hζ, rfl⟩, hζZ⟩
+  -- A compact neighbourhood of `ζ` off the bubbling points, on which the end readings are bounded.
+  obtain ⟨L, hL, hLΩ, hLc⟩ := local_compact_nhds
+    ((hΩ.sdiff Z.finite_toSet.isClosed).mem_nhds ⟨hζ, fun h ↦ hζZ ⟨ζ, h, rfl⟩⟩)
+  obtain ⟨A, hA⟩ := hbd L hLc hLΩ
+  -- The Jacobian of the translated end chart is bounded below on it by some `c > 0`.
+  have hdet : Continuous fun y : ℝ × ℝ ↦ (fderiv ℝ (positiveEndChart q) (y + ((m : ℝ), 0))).det :=
+    ContinuousLinearMap.continuous_det.comp
+      (((contDiff_positiveEndChart q 1).continuous_fderiv one_ne_zero).comp
+        (continuous_id.add continuous_const))
+  obtain ⟨c, hc, hcL⟩ : ∃ c > 0, ∀ y ∈ L,
+      c ≤ (fderiv ℝ (positiveEndChart q) (y + ((m : ℝ), 0))).det := by
+    obtain ⟨y₀, -, hmin⟩ := hLc.exists_isMinOn ⟨ζ, mem_of_mem_nhds hL⟩ hdet.continuousOn
+    exact ⟨_, det_fderiv_positiveEndChart_pos q _, fun y hy ↦ hmin hy⟩
+  refine ⟨g '' L, mem_of_superset ((hgo _ isOpen_interior).mem_nhds
+    (mem_image_of_mem g (mem_interior_iff_mem_nhds.2 hL))) (image_mono interior_subset),
+    max A 0 / c, .of_forall fun n ↦ ?_⟩
+  rintro _ ⟨y, hy, rfl⟩
+  have hyΩ := hΩT y (hLΩ hy).1
+  have hyU : g y ∈ U (φ n) := hUq _ _ hyΩ.1
+  -- The energy density of the end reading is the Jacobian times that of `u`.
+  have h := SmoothTwoForm.floerEnergyDensity_comp_positiveEndChart (ω := ω) (T₀ := T)
+    (fun w x hw ↦ hKH (φ n) w x (hT.trans hw)) hH hHd (u := u (φ n))
+    ((le_max_left _ _).trans hyΩ.1.le) ((hu _ _ hyU).mdifferentiableAt ((hU _).mem_nhds hyU))
+  rw [← ω.floerEnergyDensity_cylindrical_comp_add_right] at h
+  have hAy : (fderiv ℝ (positiveEndChart q) (y + ((m : ℝ), 0))).det * ω.floerEnergyDensity
+      (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x Complex.I) (u (φ n)) (g y) ≤ max A 0 :=
+    h ▸ (hA n y hy).trans (le_max_left _ _)
+  rcases lt_or_ge (ω.floerEnergyDensity (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x Complex.I) (u (φ n)) (g y)) 0 with h0 | h0
+  · exact h0.le.trans (div_nonneg (le_max_right _ _) hc.le)
+  · rw [le_div_iff₀ hc, mul_comm]
+    exact (mul_le_mul_of_nonneg_right (hcL y hy) h0).trans hAy
+
+end TauCeti.SmoothTwoForm
