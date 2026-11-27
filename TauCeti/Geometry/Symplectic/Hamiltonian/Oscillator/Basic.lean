@@ -16,7 +16,10 @@ public import Mathlib.Analysis.Calculus.FDeriv.Pow
 `TauCeti.oscillatorEvolution` is the evolution of the Hamiltonian `(q² + p²) / 2` on the
 standard symplectic plane. It is smooth jointly in time and initial point, satisfies the flow
 law, is inverted by reversing time, and preserves the standard symplectic form. Its velocity
-is `(p, -q)`, the Hamiltonian vector field of the oscillator energy.
+is `(p, -q)`, the Hamiltonian vector field of the oscillator energy. As a family of linear maps
+it is `R(t) = cos t · 1 + sin t · A` (`TauCeti.oscillatorEvolution_eq_cos_smul_add_sin_smul`)
+and solves the variational equation `R' = A R` for its generator `A = [[0, 1], [-1, 0]]`
+(`TauCeti.hasDerivAt_oscillatorEvolution_eq_comp`).
 
 More generally, `TauCeti.oscillatorHamiltonian m ν` is the energy `p² / (2m) + m ν² q² / 2` of a
 harmonic oscillator of mass `m` and angular frequency `ν`, and
@@ -80,6 +83,27 @@ theorem hasDerivAt_oscillatorEvolution (t : ℝ) (x : ℝ × ℝ) :
       ((Real.hasDerivAt_sin t).mul_const x.2))
       ((((Real.hasDerivAt_sin t).neg).mul_const x.1).add
         ((Real.hasDerivAt_cos t).mul_const x.2))
+
+/-- The evolution is `R(t) = cos t · 1 + sin t · A` for the generator `A = [[0, 1], [-1, 0]]`,
+`A (q, p) = (p, -q)`. -/
+theorem oscillatorEvolution_eq_cos_smul_add_sin_smul (t : ℝ) :
+    oscillatorEvolution t = Real.cos t • ContinuousLinearMap.id ℝ (ℝ × ℝ) +
+      Real.sin t • (snd ℝ ℝ ℝ).prod (-fst ℝ ℝ ℝ) := by
+  refine ContinuousLinearMap.ext fun x ↦ Prod.ext ?_ ?_
+  · simp [oscillatorEvolution_apply]
+  · simp [oscillatorEvolution_apply]
+    ring
+
+/-- **The variational equation of the oscillator.** As a family of linear maps, the evolution
+`R(t)` solves `R' = A R` for its generator `A = [[0, 1], [-1, 0]]`. -/
+theorem hasDerivAt_oscillatorEvolution_eq_comp (t : ℝ) :
+    HasDerivAt oscillatorEvolution (((snd ℝ ℝ ℝ).prod (-fst ℝ ℝ ℝ)).comp (oscillatorEvolution t))
+      t := by
+  have h := ((Real.hasDerivAt_cos t).smul_const (ContinuousLinearMap.id ℝ (ℝ × ℝ))).add
+    ((Real.hasDerivAt_sin t).smul_const ((snd ℝ ℝ ℝ).prod (-fst ℝ ℝ ℝ)))
+  refine (h.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall oscillatorEvolution_eq_cos_smul_add_sin_smul)).congr_deriv
+      (ContinuousLinearMap.ext fun x ↦ Prod.ext ?_ ?_) <;> simp [oscillatorEvolution_apply]
 
 /-- Hamilton's vector field of the oscillator energy is `(p, -q)`. -/
 theorem stdSymplecticForm_hamiltonianVectorField_oscillator (x : ℝ × ℝ) :
