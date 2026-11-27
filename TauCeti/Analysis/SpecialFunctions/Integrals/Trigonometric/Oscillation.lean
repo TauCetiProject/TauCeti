@@ -21,6 +21,10 @@ asymptotically orthogonal on any nondegenerate interval: for `n` large compared 
 integral of `(sin (m * x + c) - sin (n * x + c)) ^ 2` over `[a, b]` is at least `(b - a) / 4`
 (`TauCeti.eventually_integral_sin_sub_sin_sq_ge`).
 
+Over a quarter period the two squares balance exactly: with `k = π / (2 (b - a))`, both
+`sin (k (x - a)) ^ 2` and `cos (k (x - a)) ^ 2` integrate to `(b - a) / 2` over `[a, b]`
+(`TauCeti.integral_sin_sq_and_integral_cos_sq_quarter_period`).
+
 For power-damped oscillations `t ^ α * cos (c * t ^ p + φ)` on positive intervals `[x, R]`
 (`c ≠ 0`, `0 < p`), `TauCeti.integral_rpow_mul_cos_add` records finite-interval integration by
 parts.
@@ -168,5 +172,24 @@ theorem integral_rpow_mul_cos_add {c p α φ x R : ℝ}
   rw [hcongr, intervalIntegral.integral_mul_deriv_eq_deriv_mul hu hv
     hu'_cont.intervalIntegrable hv'_cont.intervalIntegrable, huv,
     intervalIntegral.integral_const_mul]
+
+/-- **`sin²` and `cos²` over a quarter period.** With `k = π / (2 (b - a))`, the squares of
+`sin (k (x - a))` and `cos (k (x - a))` both integrate to `(b - a) / 2` over `[a, b]`. -/
+theorem integral_sin_sq_and_integral_cos_sq_quarter_period {a b : ℝ} (hab : a < b) :
+    ∫ x in a..b, sin (π / (2 * (b - a)) * (x - a)) ^ 2 = (b - a) / 2 ∧
+      ∫ x in a..b, cos (π / (2 * (b - a)) * (x - a)) ^ 2 = (b - a) / 2 := by
+  set k := π / (2 * (b - a)) with hk
+  have hk0 : k ≠ 0 := (div_pos pi_pos (by linarith)).ne'
+  have hkb : k * b - k * a = π / 2 := by
+    rw [hk]
+    field_simp
+  simp_rw [mul_sub]
+  rw [intervalIntegral.integral_comp_mul_sub (fun y ↦ sin y ^ 2) hk0,
+    intervalIntegral.integral_comp_mul_sub (fun y ↦ cos y ^ 2) hk0, sub_self, hkb,
+    integral_sin_sq, integral_cos_sq]
+  constructor <;>
+  · simp only [sin_zero, cos_zero, sin_pi_div_two, cos_pi_div_two, smul_eq_mul]
+    field_simp
+    linarith
 
 end TauCeti

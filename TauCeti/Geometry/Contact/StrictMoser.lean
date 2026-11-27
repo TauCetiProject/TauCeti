@@ -14,7 +14,7 @@ import TauCeti.Geometry.Contact.Family
 import TauCeti.Geometry.Manifold.Flow.Parametric
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 

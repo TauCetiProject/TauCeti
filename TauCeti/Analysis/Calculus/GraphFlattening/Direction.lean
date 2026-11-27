@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Calculus.SecondDerivative
+import Mathlib.LinearAlgebra.Transvection.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Normed.Operator.Holder
@@ -23,13 +27,23 @@ is invariant under translation along `ν`, the shear by `-γ` inverts it
 `ν` in an inner product space it raises the height `⟪y, ν⟫` by `γ y`
 (`TauCeti.real_inner_shearAlong`), so it carries the height `⟪y, ν⟫` to the height
 `⟪x, ν⟫ - γ x` above the graph of `γ` (`TauCeti.real_inner_shearAlong_sub`). So it flattens
-the region above the graph of `γ` over the hyperplane `ν^⊥` to a half-space, without the
+the region above the graph of `γ` over the hyperplane `ν^⊥` to the half-space
+`{0 < ⟪y, ν⟫}` (`TauCeti.preimage_shearAlong_setOf_lt_inner`), without the
 splitting `E = ℝ × ν^⊥` used by `TauCeti.graphFlattening`.
 
 This file records the calculus of this shear. It is `C^m` when `γ` is
 (`TauCeti.contDiff_shearAlong`), its derivative is `id + Dγ(y) ν`
-(`TauCeti.hasFDerivAt_shearAlong`), of norm at most `1 + ‖Dγ(y)‖` when `‖ν‖ ≤ 1`, and its second
-derivative is `D²γ(h, k) ν`. The second-order chain rule through it
+(`TauCeti.hasFDerivAt_shearAlong`), of norm at most `1 + ‖Dγ(y)‖` when `‖ν‖ ≤ 1`
+(`TauCeti.norm_fderiv_shearAlong_le`). When `Dγ(y) ν = 0`, for instance when `γ` is invariant
+along `ν`, this derivative is a transvection, of Jacobian determinant one
+(`TauCeti.det_fderiv_shearAlong`, and `TauCeti.abs_det_fderiv_shearAlong` for `γ` differentiable
+and invariant along `ν`). For `γ` invariant along `ν` the derivative of the inverse shear at
+`shearAlong γ ν y` inverts it (`TauCeti.fderiv_shearAlong_neg_comp_fderiv`,
+`TauCeti.fderiv_comp_fderiv_shearAlong_neg`). Its second
+derivative is `D²γ(h, k) ν` (`TauCeti.fderiv_fderiv_shearAlong`), so for `‖ν‖ ≤ 1` it is bounded
+and Hölder wherever `D²γ` is, with the same constants
+(`TauCeti.norm_fderiv_fderiv_shearAlong_le`, `TauCeti.holderOnWith_fderiv_fderiv_shearAlong`).
+The second-order chain rule through it
 (`TauCeti.fderiv_fderiv_comp_shearAlong_apply`) reads
 
 `D²(w ∘ φ)(y)(h, k) = D²w(φ y)(h + Dγ(y) h ν, k + Dγ(y) k ν) + D²γ(y)(h, k) Dw(φ y) ν`,
@@ -72,6 +86,16 @@ theorem shearAlong_shearAlong_neg (hγν : ∀ x (t : ℝ), γ (x + t • ν) = 
     shearAlong γ ν (shearAlong (-γ) ν x) = x := by
   rw [shearAlong_def γ, shearAlong_def, Pi.neg_apply, hγν, neg_smul, neg_add_cancel_right]
 
+/-- If `γ` is invariant along `ν`, so is `-γ`. -/
+theorem neg_apply_add_smul_eq (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) (x : E) (t : ℝ) :
+    (-γ) (x + t • ν) = (-γ) x := by
+  rw [Pi.neg_apply, Pi.neg_apply, hγν]
+
+/-- The shear `shearAlong γ ν` is injective when `γ` is invariant along `ν`. -/
+theorem injective_shearAlong (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) :
+    Function.Injective (shearAlong γ ν) :=
+  Function.LeftInverse.injective (g := shearAlong (-γ) ν) (shearAlong_neg_shearAlong hγν)
+
 end Module
 
 section InnerProduct
@@ -88,6 +112,15 @@ height `⟪y, ν⟫` to the height `⟪x, ν⟫ - γ x` above the graph of `γ`.
 theorem real_inner_shearAlong_sub (hν : ‖ν‖ = 1) (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
     (y : E) : ⟪shearAlong γ ν y, ν⟫_ℝ - γ (shearAlong γ ν y) = ⟪y, ν⟫_ℝ := by
   rw [real_inner_shearAlong hν, shearAlong_def, hγν, add_sub_cancel_right]
+
+/-- For a unit vector `ν` and `γ` invariant along `ν`, the preimage under the shear
+`shearAlong γ ν` of the region `{γ x < ⟪x, ν⟫}` above the graph of `γ` is the half-space
+`{0 < ⟪y, ν⟫}`. -/
+theorem preimage_shearAlong_setOf_lt_inner (hν : ‖ν‖ = 1)
+    (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) :
+    shearAlong γ ν ⁻¹' {x | γ x < ⟪x, ν⟫_ℝ} = {y | 0 < ⟪y, ν⟫_ℝ} := by
+  ext y
+  rw [mem_preimage, mem_ofPred_eq, mem_ofPred_eq, ← sub_pos, real_inner_shearAlong_sub hν hγν]
 
 end InnerProduct
 
@@ -173,6 +206,71 @@ theorem hasFDerivAt_shearAlong {y : E} (hγ : DifferentiableAt ℝ γ y) :
     HasFDerivAt (shearAlong γ ν) (ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν) y :=
   (hasFDerivAt_id y).add (hγ.hasFDerivAt.smul_const ν)
 
+/-- The shear `shearAlong γ ν` is differentiable when `γ` is. -/
+theorem differentiable_shearAlong (hγ : Differentiable ℝ γ) : Differentiable ℝ (shearAlong γ ν) :=
+  fun y => (hasFDerivAt_shearAlong (hγ y)).differentiableAt
+
+/-- The derivative of the shear `shearAlong γ ν` is `id + Dγ(y) ν`. -/
+theorem fderiv_shearAlong {y : E} (hγ : DifferentiableAt ℝ γ y) :
+    fderiv ℝ (shearAlong γ ν) y = ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν :=
+  (hasFDerivAt_shearAlong hγ).fderiv
+
+/-- The shear by a function with derivative of norm at most `K` at `y` has derivative of norm at
+most `1 + K` at `y`, for `‖ν‖ ≤ 1`. -/
+theorem norm_fderiv_shearAlong_le (hν : ‖ν‖ ≤ 1) {K : ℝ≥0} {y : E} (hγ : DifferentiableAt ℝ γ y)
+    (hK : ‖fderiv ℝ γ y‖ ≤ K) : ‖fderiv ℝ (shearAlong γ ν) y‖ ≤ 1 + K := by
+  rw [fderiv_shearAlong hγ]
+  exact_mod_cast norm_id_add_smulRight_le hν hK
+
+/-- The inverse shear `shearAlong (-γ) ν` has derivative of norm at most `1 + K` at `y` when
+`‖Dγ(y)‖ ≤ K` and `‖ν‖ ≤ 1`. -/
+theorem norm_fderiv_shearAlong_neg_le (hν : ‖ν‖ ≤ 1) {K : ℝ≥0} {y : E}
+    (hγ : DifferentiableAt ℝ γ y) (hK : ‖fderiv ℝ γ y‖ ≤ K) :
+    ‖fderiv ℝ (shearAlong (-γ) ν) y‖ ≤ 1 + K :=
+  norm_fderiv_shearAlong_le hν hγ.neg (by rwa [fderiv_neg, norm_neg])
+
+/-- For `γ` invariant along `ν`, the derivative of the inverse shear `shearAlong (-γ) ν` at
+`shearAlong γ ν y` is a left inverse of the derivative of the shear `shearAlong γ ν` at `y`. -/
+theorem fderiv_shearAlong_neg_comp_fderiv (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) {y : E}
+    (hy : DifferentiableAt ℝ γ y) (hΦy : DifferentiableAt ℝ γ (shearAlong γ ν y)) :
+    fderiv ℝ (shearAlong (-γ) ν) (shearAlong γ ν y) ∘L fderiv ℝ (shearAlong γ ν) y =
+      ContinuousLinearMap.id ℝ E :=
+  fderiv_comp_fderiv_eq_id_of_eqOn_comp_id uniqueDiffWithinAt_univ
+    (hasFDerivAt_shearAlong hy).differentiableAt (hasFDerivAt_shearAlong hΦy.neg).differentiableAt
+    (fun z _ => shearAlong_neg_shearAlong hγν z) (mem_univ y)
+
+/-- For `γ` invariant along `ν`, the derivative of the shear `shearAlong γ ν` at `y` is a left
+inverse of the derivative of the inverse shear `shearAlong (-γ) ν` at `shearAlong γ ν y`. -/
+theorem fderiv_comp_fderiv_shearAlong_neg (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) {y : E}
+    (hy : DifferentiableAt ℝ γ y) (hΦy : DifferentiableAt ℝ γ (shearAlong γ ν y)) :
+    fderiv ℝ (shearAlong γ ν) y ∘L fderiv ℝ (shearAlong (-γ) ν) (shearAlong γ ν y) =
+      ContinuousLinearMap.id ℝ E := by
+  have h := fderiv_comp_fderiv_eq_id_of_eqOn_comp_id uniqueDiffWithinAt_univ
+    (hasFDerivAt_shearAlong hΦy.neg).differentiableAt
+    (hasFDerivAt_shearAlong (y := shearAlong (-γ) ν (shearAlong γ ν y))
+      (by rwa [shearAlong_neg_shearAlong hγν])).differentiableAt
+    (fun z _ => shearAlong_shearAlong_neg hγν z) (mem_univ _)
+  rwa [shearAlong_neg_shearAlong hγν] at h
+
+/-- If `Dγ(y) ν = 0`, for instance when `γ` is invariant along `ν`, the shear `shearAlong γ ν`
+has Jacobian determinant one at `y`: its derivative `id + Dγ(y) ν` is a transvection. -/
+theorem det_fderiv_shearAlong [FiniteDimensional ℝ E] {y : E} (hγ : DifferentiableAt ℝ γ y)
+    (hγν : fderiv ℝ γ y ν = 0) : (fderiv ℝ (shearAlong γ ν) y).det = 1 := by
+  have h : ((fderiv ℝ (shearAlong γ ν) y : E →L[ℝ] E) : E →ₗ[ℝ] E) =
+      LinearMap.transvection (fderiv ℝ γ y : E →ₗ[ℝ] ℝ) ν := by
+    ext h
+    simp [fderiv_shearAlong hγ, LinearMap.transvection.apply]
+  rw [ContinuousLinearMap.det, h, LinearMap.transvection.det, ContinuousLinearMap.coe_coe, hγν,
+    add_zero]
+
+/-- For `γ` differentiable and invariant along `ν`, the shear `shearAlong γ ν` has Jacobian
+determinant of absolute value one everywhere, by `TauCeti.det_fderiv_shearAlong`. -/
+theorem abs_det_fderiv_shearAlong [FiniteDimensional ℝ E] (hγ : Differentiable ℝ γ)
+    (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) (y : E) :
+    |(fderiv ℝ (shearAlong γ ν) y).det| = 1 := by
+  rw [det_fderiv_shearAlong (hγ y)
+    (fderiv_apply_eq_zero_of_forall_periodic_smul (fun t x => hγν x t) y), abs_one]
+
 /-- The second derivative of the shear `shearAlong γ ν` is `D²γ (h, k) ν`. -/
 theorem fderiv_fderiv_shearAlong_apply {y : E} (hγ : ContDiffAt ℝ 2 γ y) (h k : E) :
     fderiv ℝ (fderiv ℝ (shearAlong γ ν)) y h k = fderiv ℝ (fderiv ℝ γ) y h k • ν := by
@@ -184,6 +282,35 @@ theorem fderiv_fderiv_shearAlong_apply {y : E} (hγ : ContDiffAt ℝ 2 γ y) (h 
   have h0 : fderiv ℝ (fun z : E => z) = fun _ => ContinuousLinearMap.id ℝ E :=
     funext fun _ => fderiv_fun_id
   simp [h0]
+
+/-- The second derivative of the shear `shearAlong γ ν`, as a bilinear map:
+`(h, k) ↦ D²γ(y)(h, k) ν`. -/
+theorem fderiv_fderiv_shearAlong {y : E} (hγ : ContDiffAt ℝ 2 γ y) :
+    fderiv ℝ (fderiv ℝ (shearAlong γ ν)) y =
+      ((StrongDual.smulRightL ℝ E E).flip ν).comp (fderiv ℝ (fderiv ℝ γ) y) := by
+  ext h k
+  simp [fderiv_fderiv_shearAlong_apply hγ]
+
+/-- For `‖ν‖ ≤ 1`, the second derivative of the shear `shearAlong γ ν` has norm at most that of
+`D²γ`. -/
+theorem norm_fderiv_fderiv_shearAlong_le (hν : ‖ν‖ ≤ 1) {y : E} (hγ : ContDiffAt ℝ 2 γ y) :
+    ‖fderiv ℝ (fderiv ℝ (shearAlong γ ν)) y‖ ≤ ‖fderiv ℝ (fderiv ℝ γ) y‖ := by
+  rw [fderiv_fderiv_shearAlong hγ]
+  exact (ContinuousLinearMap.norm_smulRightL_flip_comp_le _ _).trans
+    (mul_le_of_le_one_left (by positivity) hν)
+
+/-- For `‖ν‖ ≤ 1`, the second derivative of the shear `shearAlong γ ν` is Hölder on `s` with the
+exponent and constant of `D²γ`. -/
+theorem holderOnWith_fderiv_fderiv_shearAlong (hν : ‖ν‖ ≤ 1) {s : Set E} {α K : ℝ≥0}
+    (hγ : ∀ y ∈ s, ContDiffAt ℝ 2 γ y) (hK : HolderOnWith K α (fderiv ℝ (fderiv ℝ γ)) s) :
+    HolderOnWith K α (fderiv ℝ (fderiv ℝ (shearAlong γ ν))) s := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have hd := hK.dist_le hx hy
+  rw [dist_eq_norm] at hd
+  rw [dist_eq_norm, fderiv_fderiv_shearAlong (hγ x hx), fderiv_fderiv_shearAlong (hγ y hy),
+    ← ContinuousLinearMap.comp_sub]
+  exact (ContinuousLinearMap.norm_smulRightL_flip_comp_le _ _).trans
+    ((mul_le_of_le_one_left (by positivity) hν).trans hd)
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 

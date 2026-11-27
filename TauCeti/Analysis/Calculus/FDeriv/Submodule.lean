@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Const
+import Mathlib.Analysis.Calculus.FDeriv.Linear
+import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 
 /-!
 # Derivatives of maps into a closed subspace
@@ -24,6 +27,10 @@ the tangent cone of `s` at `x` into `S`. A variant asks only for the increments 
 
 Dually, a map vanishing on a subspace near one of its points has derivative vanishing on that
 subspace.
+
+In the normed setting, `IsClosed.differentiableAt_submodule_iff` shows that a map into a closed
+submodule is differentiable at a point if and only if its composition with the subtype inclusion is
+differentiable there.
 
 Between complete inner product spaces, if `f` maps a neighbourhood of `x` into a subspace `V`,
 then the adjoint of its derivative at `x` vanishes on `Vᗮ`
@@ -96,6 +103,29 @@ theorem _root_.HasFDerivAt.apply_eq_zero_of_eventually_eq_zero [T2Space F] {S : 
     mem_tangentConeAt_of_add_smul_mem (l := 𝓝[≠] (0 : 𝕜)) (c := id) tendsto_id
       (Eventually.of_forall fun c ↦ S.add_mem hx (S.smul_mem c hv))
   simpa using hf.hasFDerivWithinAt.unique_on h0 hv'
+
+section Normed
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {S : Submodule 𝕜 F} {f : E → S} {a : E}
+
+/-- A map into a closed submodule `S` is differentiable at `a` if and only if its composition with
+the subtype inclusion is differentiable at `a`. -/
+theorem _root_.IsClosed.differentiableAt_submodule_iff (hS : IsClosed (S : Set F)) :
+    DifferentiableAt 𝕜 f a ↔ DifferentiableAt 𝕜 (fun x ↦ (f x : F)) a := by
+  refine ⟨fun hf ↦ S.subtypeL.differentiableAt.comp a hf, fun hg ↦ ?_⟩
+  have hfg := hg.hasFDerivAt
+  have hmem : ∀ v, fderiv 𝕜 (fun x ↦ (f x : F)) a v ∈ S :=
+    hfg.apply_mem_of_eventually_sub_mem hS
+      (Eventually.of_forall fun y ↦ S.sub_mem (f y).property (f a).property)
+  let L : E →L[𝕜] S := (fderiv 𝕜 (fun x ↦ (f x : F)) a).codRestrict S hmem
+  exact (HasFDerivAt.of_comp_of_isEmbedding (f := S.subtypeL) (f' := S.subtypeL) (g := f) (g' := L)
+    (Topology.IsEmbedding.subtypeVal.continuousAt_iff.2 hg.continuousAt)
+    S.subtypeL.hasFDerivAt Topology.IsEmbedding.subtypeVal hfg EventuallyEq.rfl).differentiableAt
+
+end Normed
 
 end TauCeti
 

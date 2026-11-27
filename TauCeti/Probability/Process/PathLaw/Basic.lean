@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.MeasurableSpace.Embedding
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Tactic.Measurability
 public import Mathlib.Probability.ConditionalProbability
-public import TauCeti.MeasureTheory.MeasurableSpace.Pi
+public import TauCeti.MeasureTheory.MeasurableSpace.Pi.Basic
 
 /-!
 # Finite-dimensional and path laws of a process

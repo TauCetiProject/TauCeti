@@ -256,6 +256,14 @@ theorem det_realSpinCGroupHom (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠
   obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective _ hpos x
   simp
 
+/-- The Spinᶜ frame comparison commutes with charge conjugation `[s, z] ↦ [s, z⁻¹]`. -/
+theorem realSpinCGroupHom_chargeConj (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0)
+    (x : spinCGroup (realCliffordForm n 0) hpos) :
+    b.realSpinCGroupHom hQ hpos hQ₀ (spinCGroup.chargeConj _ hpos x) =
+      spinCGroup.chargeConj Q hQ₀ (b.realSpinCGroupHom hQ hpos hQ₀ x) := by
+  obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective _ hpos x
+  simp [spinCGroup.chargeConj_mk]
+
 /-- The Spinᶜ frame comparison intertwines the rotation projections. -/
 theorem toSpecialOrthogonal_realSpinCGroupHom_apply
     (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0)

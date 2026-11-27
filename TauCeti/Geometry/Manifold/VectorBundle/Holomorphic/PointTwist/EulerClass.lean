@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.FDeriv.Smul
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linear
 public import TauCeti.Geometry.Manifold.Complex.FundamentalClass
 public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.PreferredChartReading
 public import TauCeti.Topology.VectorBundle.Orientation.Complex.EulerClass
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Comparison
 
@@ -278,8 +279,7 @@ canonical orientations of `L` and `X`, is the sign of `det D`. Since `D` is inje
 isolated: the reading has no other zero near `φ x`. -/
 theorem sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt (x : X) {σ : ∀ z, L z}
     (hσ : Continuous fun z ↦ TotalSpace.mk' ℂ z (σ z)) (hσx : σ x = 0) {D : ℂ →L[ℝ] ℂ}
-    (hA : HasFDerivAt (fun w ↦ (trivializationAt ℂ L x (TotalSpace.mk' ℂ ((chartAt ℂ x).symm w)
-        (σ ((chartAt ℂ x).symm w)))).2) D (chartAt ℂ x x))
+    (hA : HasFDerivAt (preferredChartReading ℂ ℂ σ x) D (chartAt ℂ x x))
     (hD : D.det ≠ 0) :
     (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
         (VectorBundleOrientation.complex ℂ L)).sectionIndex
@@ -311,8 +311,7 @@ real derivative of multiplication by a nonzero `c`, of determinant `|c|² > 0`, 
 of `σ` at `x` is `1`, for the canonical orientations of `L` and `X`. -/
 theorem sectionIndex_eq_one_of_hasFDerivAt_smulRight (x : X) {σ : ∀ z, L z}
     (hσ : Continuous fun z ↦ TotalSpace.mk' ℂ z (σ z)) (hσx : σ x = 0) {c : ℂ} (hc : c ≠ 0)
-    (hA : HasFDerivAt (fun w ↦ (trivializationAt ℂ L x (TotalSpace.mk' ℂ ((chartAt ℂ x).symm w)
-        (σ ((chartAt ℂ x).symm w)))).2) ((ContinuousLinearMap.id ℝ ℂ).smulRight c)
+    (hA : HasFDerivAt (preferredChartReading ℂ ℂ σ x) ((ContinuousLinearMap.id ℝ ℂ).smulRight c)
       (chartAt ℂ x x)) :
     (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
         (VectorBundleOrientation.complex ℂ L)).sectionIndex

@@ -5,34 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.Filter.Map
 public import Mathlib.Topology.Defs.Filter
 
-import Mathlib.Order.Filter.Map
-
 /-!
-# Congruence and composition for `Filter.limUnder`
+# Limits of functions along a filter
 
-Two functions that agree eventually along a filter induce the same pushed-forward filter and
-therefore have equal `Filter.limUnder` limits, without requiring convergence or separation;
-similarly, precomposing with a map pushes forward the underlying filter.
-
-## Main results
-
-* `Filter.limUnder_congr`: if `g₁ =ᶠ[l] g₂`, then `limUnder l g₁ = limUnder l g₂`.
-* `Filter.limUnder_comp`: `limUnder l (g ∘ φ) = limUnder (l.map φ) g`.
+`Filter.limUnder l f` depends only on the germ of `f` along `l`: functions which agree eventually
+along `l` have the same `limUnder` (`Filter.limUnder_congr`). This holds for the junk value too,
+so no convergence hypothesis is needed. Similarly, precomposing with a map pushes forward the
+underlying filter (`Filter.limUnder_comp`).
 -/
 
 public section
 
-open Filter
+namespace Filter
 
-/-- Two eventually equal functions have equal `Filter.limUnder` limits. -/
-theorem Filter.limUnder_congr {α β : Type*} {l : Filter α} [TopologicalSpace β] [Nonempty β]
-    {g₁ g₂ : α → β} (h : g₁ =ᶠ[l] g₂) : limUnder l g₁ = limUnder l g₂ := by
-  rw [limUnder, limUnder, Filter.map_congr h]
+/-- Functions which agree eventually along `l` have the same limit along `l`. -/
+theorem limUnder_congr {α X : Type*} [TopologicalSpace X] [Nonempty X] {l : Filter α}
+    {f g : α → X} (h : f =ᶠ[l] g) : limUnder l f = limUnder l g :=
+  congrArg lim (map_congr h)
 
 /-- Precomposing with a map `φ` pushes forward the filter in `Filter.limUnder`. -/
-theorem Filter.limUnder_comp {α β γ : Type*} {l : Filter α} [TopologicalSpace γ] [Nonempty γ]
+theorem limUnder_comp {α β γ : Type*} {l : Filter α} [TopologicalSpace γ] [Nonempty γ]
     (g : β → γ) (φ : α → β) :
     limUnder l (g ∘ φ) = limUnder (l.map φ) g := by
   rw [limUnder, limUnder, Filter.map_map]
+
+end Filter
