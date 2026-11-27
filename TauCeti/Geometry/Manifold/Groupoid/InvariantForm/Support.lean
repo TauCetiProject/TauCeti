@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Submodule.Map
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
 public import TauCeti.Geometry.Manifold.Groupoid.InvariantForm.Descent
 public import TauCeti.Topology.CategoryTheory.Functor.IsomorphismClasses
@@ -92,6 +93,14 @@ theorem coarseTSupport_eq_empty_iff {φ : RoughForm I C F k} : φ.coarseTSupport
 @[simp]
 theorem coarseTSupport_zero : (0 : RoughForm I C F k).coarseTSupport = ∅ :=
   coarseTSupport_eq_empty_iff.mpr rfl
+
+/-- A rough form with full support has full coarse topological support. -/
+theorem coarseTSupport_eq_univ_of_support_eq_univ {φ : RoughForm I C F k}
+    (hφ : Function.support (M := E [⋀^Fin k]→L[ℝ] F) φ = Set.univ) :
+    φ.coarseTSupport = Set.univ := by
+  rw [coarseTSupport_def]
+  dsimp only [_root_.tsupport]
+  rw [hφ, closure_univ, Set.image_univ_of_surjective Quotient.mk_surjective, closure_univ]
 
 /-- Coarse topological support of a sum is contained in the union of the coarse supports. -/
 theorem coarseTSupport_add_subset [ContinuousAdd F] (φ ψ : RoughForm I C F k) :
@@ -630,8 +639,6 @@ theorem compactlySupportedInvariantForms_submoduleOf_map :
     simp only [Submodule.submoduleOf, SetLike.mem_coe, Submodule.mem_comap,
       Submodule.coe_subtype] at hφ ⊢
     rw [LinearEquiv.coe_coe, invariantFormsEquiv_apply, Prefunctor.coe_invariantFormsPullback]
-    have hobj : Φ.toPrefunctor.obj = Φ.obj := funext (Functor.toPrefunctor_obj Φ)
-    simp_rw [hobj]
     exact Φ.mpullback_mem_compactlySupportedInvariantForms hΦ.contMDiff hΦ₁ hp hφ
   · intro α hα
     simp only [Submodule.submoduleOf, Submodule.mem_comap, Submodule.coe_subtype] at hα
@@ -670,19 +677,12 @@ theorem compactlySupportedInvariantFormsEquiv_apply
           hΦ.contMDiff.continuous hΦ.isOpenMap).isProperMap φ := by
   apply Subtype.ext
   dsimp only [compactlySupportedInvariantFormsEquiv]
-  rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply]
-  -- `Submodule.submoduleOfEquivOfLe` has no Mathlib `apply`/`symm_apply` lemmas, so its
-  -- underlying `SmoothForm` coercions are unfolded by `rfl`.
-  have hsub : ∀ {p q : Submodule ℝ (SmoothForm I C V k)} (h : p ≤ q) (x : p.submoduleOf q),
-      ((Submodule.submoduleOfEquivOfLe h x : p) : SmoothForm I C V k) = x.val.val := fun _ _ ↦ rfl
-  have hsub_symm : ∀ {p q : Submodule ℝ (SmoothForm I' D V k)} (h : p ≤ q) (x : p),
-      (((Submodule.submoduleOfEquivOfLe h).symm x : q) : SmoothForm I' D V k) = x.val :=
-    fun _ _ ↦ rfl
-  have hobj : Φ.toPrefunctor.obj = Φ.obj := funext (Functor.toPrefunctor_obj Φ)
-  rw [hsub, LinearEquiv.ofSubmodules_apply, Φ.invariantFormsEquiv_apply,
-    Prefunctor.coe_invariantFormsPullback, coe_compactlySupportedInvariantFormsPullback,
-    hsub_symm]
-  simp_rw [hobj]
+  rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    Submodule.submoduleOfEquivOfLe_apply_coe, LinearEquiv.ofSubmodules_apply,
+    Φ.invariantFormsEquiv_apply, Prefunctor.coe_invariantFormsPullback,
+    coe_compactlySupportedInvariantFormsPullback,
+    Submodule.submoduleOfEquivOfLe_symm_apply_coe]
+  rfl
 
 /-- The descended compact-coarse-support form has the same underlying smooth form as ordinary
 invariant-form descent. -/
@@ -862,12 +862,10 @@ theorem compactlySupportedInvariantFormsEquiv_comp [IsGroupoid D] [TauCeti.IsTop
       LinearEquiv.trans_apply,
       Ψ.compactlySupportedInvariantFormsEquiv_apply hs' ht'.contMDiff hs'' ht'' hΨ hΨ₁,
       Φ.compactlySupportedInvariantFormsEquiv_apply hs ht hs' ht' hΦ hΦ₁]
+    apply Subtype.ext
+    simp only [coe_compactlySupportedInvariantFormsPullback]
     exact LinearMap.congr_fun
-      (compactlySupportedInvariantFormsPullback_comp Φ Ψ hΦ.contMDiff hΦ₁ hΨ.contMDiff hΨ₁
-        (Φ.isHomeomorph_isomorphismClasses_map_of_isOpenMap hs'.contMDiff.continuous ht'.isOpenMap
-          hΦ.contMDiff.continuous hΦ.isOpenMap).isProperMap
-        (Ψ.isHomeomorph_isomorphismClasses_map_of_isOpenMap hs''.contMDiff.continuous
-          ht''.isOpenMap hΨ.contMDiff.continuous hΨ.isOpenMap).isProperMap) φ
+      (SmoothForm.mpullback_comp Φ.obj Ψ.obj hΦ.contMDiff hΨ.contMDiff) φ.val
 
 end Comp
 
@@ -965,14 +963,15 @@ theorem Quiver.exists_mpullback_notMem_compactlySupportedInvariantForms_of_not_c
   refine ⟨φ, by rwa [Quiver.compactlySupportedInvariantForms_eq_invariantForms],
     fun hmem ↦ hnc ⟨?_⟩⟩
   have huniv : (SmoothForm.mpullback f hf φ).coarseTSupport = Set.univ := by
-    have hc : ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) v ≠ 0 :=
-      fun h ↦ hv <| by simpa using congrArg (· 0) h
-    have hconst : (RoughForm.ofFunction I ((fun _ ↦ v) ∘ f) : C → E [⋀^Fin 0]→L[ℝ] V) =
-        fun _ ↦ ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) v :=
-      funext fun x ↦ RoughForm.ofFunction_apply_eq_constOfIsEmpty (I := I) ((fun _ ↦ v) ∘ f) x
-    rw [SmoothForm.coarseTSupport_def, SmoothForm.coe_mpullback, hφ_coe, mpullback_ofFunction,
-      RoughForm.coarseTSupport_def, hconst, _root_.tsupport, Function.support_const hc,
-      closure_univ, Set.image_univ_of_surjective Quotient.mk_surjective, closure_univ]
+    rw [SmoothForm.coarseTSupport_def]
+    refine RoughForm.coarseTSupport_eq_univ_of_support_eq_univ (I := I) (F := V) ?_
+    ext x
+    simp only [Set.mem_univ, iff_true, SmoothForm.coe_mpullback, hφ_coe,
+      mpullback_ofFunction]
+    intro h
+    have hx := congrArg (· (0 : Fin 0 → E)) h
+    rw [RoughForm.ofFunction_apply_eq_constOfIsEmpty] at hx
+    exact hv hx
   exact huniv ▸ hmem.2
 
 end TauCeti
