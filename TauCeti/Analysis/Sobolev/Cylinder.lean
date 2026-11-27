@@ -305,6 +305,14 @@ theorem valueL_eq_compLpL (x : W1p V p) :
     valueL p x = (ContinuousLinearMap.fst ℝ V (V × V)).compLpL p stripMeasure x :=
   (rfl)
 
+/-- The value of an element of `W1p V p` has `Lᵖ` norm at most the `W^{1,p}` norm of the
+element. -/
+theorem norm_valueL_le (x : W1p V p) : ‖valueL p x‖ ≤ ‖x‖ :=
+  (Lp.norm_le_norm_of_ae_le (by
+    filter_upwards [coeFn_valueL x] with z hz
+    rw [hz]
+    exact norm_fst_le _)).trans_eq (Submodule.norm_coe x)
+
 /-! ### Elements of `H1` are determined by their values -/
 
 /-- A test section of the cylinder is a test section of the strip with no boundary
