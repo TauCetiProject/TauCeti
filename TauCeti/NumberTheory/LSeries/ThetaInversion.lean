@@ -19,6 +19,10 @@ transform. For primitive Dirichlet characters the Gauss sum then gives an absolu
 inversion formula. This symmetry permits folding the Mellin integral on the critical line at
 the inverse square root of the conductor.
 
+For the classical transformation of the theta series of a primitive character, see
+H. L. Montgomery and R. C. Vaughan, *Multiplicative Number Theory I. Classical Theory*
+(2007), §10.1.
+
 The normalization of the absolute-value formula is that of `New.norm_thetaSeries_inv` in
 `grh/src/Lib/Analytic/DirichletTheta.lean` of `lsernau/grh-lean` (revision `72fead1`). The
 Poisson formula used here comes from Mathlib's even and odd Hurwitz theta kernels.
@@ -95,7 +99,8 @@ theorem IsPrimitive.norm_gaussianThetaSeries_inv {N : ℕ} [NeZero N]
       ∑' n : ℕ, χ (n + 1 : ℕ) * W j.val ((n + 1 : ℕ) * u) := by
     rw [gaussianTheta_def, ← tsum_pnat_eq_tsum_succ
       (f := fun n : ℕ ↦ χ n * W j.val ((n : ℝ) * u))]
-    rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
+    have hj : j = 0 ∨ j = 1 := by omega
+    rcases hj with rfl | rfl
     · simp only [Fin.val_zero, pow_zero, one_mul, gaussianMonomial_zero]
     · simp only [Fin.val_one, pow_one, gaussianMonomial_one]
   simp only [gaussianThetaSeries_def, norm_mul, norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _),

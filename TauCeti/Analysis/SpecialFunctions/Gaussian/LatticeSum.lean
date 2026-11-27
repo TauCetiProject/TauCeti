@@ -37,7 +37,8 @@ centre `c`.
   most `1 + √(π / t)`.
 * `Real.summable_pow_mul_exp_neg_sub_sq` — convergence of the lattice sums with polynomial weights;
   `Real.summable_abs_pow_mul_exp_neg_sub_sq_div` is the absolute version for any positive
-  denominator, as used for domination arguments.
+  denominator, as used for domination arguments. `TauCeti.summable_mul_gaussian_int` gives
+  convergence for bounded complex coefficients times a polynomially weighted Gaussian.
 * `Real.gaussianLatticeSum_add_intCast`, `Real.gaussianLatticeSum_periodic`,
   `Real.gaussianLatticeSum_neg_left` and `Real.gaussianLatticeSum_intCast_sub` — invariance under
   integer translations and reflections of the centre.
@@ -416,3 +417,22 @@ theorem measurable_gaussianLatticeSum :
   Measurable.tsum fun n => by fun_prop
 
 end Real
+
+namespace TauCeti
+
+/-- A monomial times a Gaussian of nonzero width is summable against bounded coefficients. -/
+theorem summable_mul_gaussian_int (c : ℤ → ℂ) {B : ℝ} (hc : ∀ n, ‖c n‖ ≤ B)
+    (j : ℕ) {t : ℝ} (ht : t ≠ 0) :
+    Summable fun n : ℤ ↦
+      c n * ((((n : ℝ) * t) ^ j * Real.exp (-Real.pi * ((n : ℝ) * t) ^ 2) : ℝ) : ℂ) := by
+  have hsum : Summable fun n : ℤ ↦
+      |(n : ℝ)| ^ j * Real.exp (-Real.pi * (t ^ 2 * (n : ℝ) ^ 2)) := by
+    simpa using summable_pow_mul_jacobiTheta₂_term_bound 0 (sq_pos_of_ne_zero ht) j
+  refine (hsum.mul_left (B * |t| ^ j)).of_norm_bounded fun n ↦ ?_
+  have hexp : -Real.pi * ((n : ℝ) * t) ^ 2 = -Real.pi * (t ^ 2 * (n : ℝ) ^ 2) := by ring
+  rw [norm_mul, norm_real, Real.norm_eq_abs, abs_mul, abs_pow, abs_mul, mul_pow,
+    abs_of_nonneg (Real.exp_pos _).le, hexp]
+  refine (mul_le_mul_of_nonneg_right (hc n) (by positivity)).trans_eq ?_
+  ring
+
+end TauCeti

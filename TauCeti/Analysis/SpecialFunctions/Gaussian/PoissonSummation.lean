@@ -240,23 +240,6 @@ open scoped Real ZMod
 
 local notation "W" j:arg t:arg => ((t ^ j * Real.exp (-Real.pi * t ^ 2) : ℝ) : ℂ)
 
-namespace TauCeti
-
-/-- A monomial times a Gaussian of nonzero width is summable against bounded coefficients. -/
-theorem summable_mul_gaussian_int (c : ℤ → ℂ) {B : ℝ} (hc : ∀ n, ‖c n‖ ≤ B)
-    (j : ℕ) {t : ℝ} (ht : t ≠ 0) :
-    Summable fun n : ℤ ↦ c n * W j ((n : ℝ) * t) := by
-  have hsum : Summable fun n : ℤ ↦ |(n : ℝ)| ^ j * Real.exp (-π * (t ^ 2 * (n : ℝ) ^ 2)) := by
-    simpa using summable_pow_mul_jacobiTheta₂_term_bound 0 (sq_pos_of_ne_zero ht) j
-  refine (hsum.mul_left (B * |t| ^ j)).of_norm_bounded fun n ↦ ?_
-  have hexp : -π * ((n : ℝ) * t) ^ 2 = -π * (t ^ 2 * (n : ℝ) ^ 2) := by ring
-  rw [norm_mul, norm_real, Real.norm_eq_abs, abs_mul, abs_pow, abs_mul, mul_pow,
-    abs_of_nonneg (Real.exp_pos _).le, hexp]
-  refine (mul_le_mul_of_nonneg_right (hc n) (by positivity)).trans_eq ?_
-  ring
-
-end TauCeti
-
 namespace ZMod
 
 /-- A Gaussian of nonzero width times a monomial is summable against periodic coefficients. -/
