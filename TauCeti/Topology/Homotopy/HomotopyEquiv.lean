@@ -53,8 +53,8 @@ homotopy equivalence is one too, with the same homotopy inverse.
 * `ContinuousMap.HomotopyEquiv.prodCongr_apply`, `ContinuousMap.HomotopyEquiv.prodCongr_symm_apply`:
   the product of two homotopy equivalences and its homotopy inverse act componentwise.
 * `ContinuousMap.HomotopyEquiv.prodContractibleAt`: for `Y` contractible and any point `y` of `Y`,
-  the slice `x ↦ (x, y)` is a homotopy equivalence `X ≃ₕ X × Y`, with homotopy inverse the
-  projection.
+  the inclusion of the slice `x ↦ (x, y)` is a homotopy equivalence `X ≃ₕ X × Y`, with homotopy
+  inverse the projection.
 * `ContinuousMap.HomotopyEquiv.prodContractible`: the homotopy equivalence `X × Y ≃ₕ X` given by
   the projection, for `Y` contractible.
 * `ContinuousMap.HomotopyEquiv.prodIcc`: the slice `x ↦ (x, t)` is a homotopy equivalence
@@ -196,21 +196,19 @@ theorem HomotopyEquiv.prodCongr_symm_apply (h₁ : X ≃ₕ Y) (h₂ : Z ≃ₕ 
   (rfl)
 
 variable (X) in
-/-- **A product with a contractible space deforms onto each of its slices.** For contractible `Y`
-and a point `y` of `Y`, the slice `x ↦ (x, y)` is a homotopy equivalence `X ≃ₕ X × Y`, with
-homotopy inverse the projection: a homotopy from the constant map at `y` to the identity of `Y`
-moves the second coordinate. -/
+/-- **Each slice of a product with a contractible space is a homotopy equivalence.** For
+contractible `Y` and a point `y` of `Y`, the inclusion of the slice `x ↦ (x, y)` is a homotopy
+equivalence `X ≃ₕ X × Y`, with homotopy inverse the projection: a homotopy from the constant map
+at `y` to the identity of `Y` moves the second coordinate. This homotopy need not fix the slice. -/
 def HomotopyEquiv.prodContractibleAt [ContractibleSpace Y] (y : Y) : X ≃ₕ X × Y where
   toFun := (ContinuousMap.id X).prodMk (const X y)
   invFun := fst
   left_inv := Homotopic.refl _
   right_inv := by
-    obtain ⟨H⟩ := homotopic_of_contractibleSpace (const Y y) (ContinuousMap.id Y)
-    exact ⟨{
-      toFun q := (q.2.1, H (q.1, q.2.2))
-      continuous_toFun := by fun_prop
-      map_zero_left _ := by simp
-      map_one_left _ := by simp }⟩
+    -- Projecting and then including the slice is `id × const y`, homotopic to `id × id`.
+    have h := (Homotopic.refl (ContinuousMap.id X)).prodMap
+      (homotopic_of_contractibleSpace (const Y y) (ContinuousMap.id Y))
+    convert h using 1 <;> ext <;> rfl
 
 /-- The slice homotopy equivalence sends `x` to `(x, y)`. -/
 @[simp]

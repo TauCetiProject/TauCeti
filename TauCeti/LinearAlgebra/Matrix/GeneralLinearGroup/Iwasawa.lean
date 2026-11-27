@@ -68,7 +68,8 @@ statement here is topological; the real smooth diffeomorphism is supplied in
 * `TauCeti.iwasawaHomeomorph_symm_unitary_eq_iff`: the unitary factor is characterized by the
   positive upper-triangular remainder.
 * `Matrix.GeneralLinearGroup.iwasawaUnitaryFactor`: the unitary factor as an element of the
-  unitary group, continuous and equivariant for left multiplication by unitary matrices.
+  unitary group, continuous and equivariant for left multiplication by unitary matrices; it is the
+  identity on unitary matrices (`Matrix.GeneralLinearGroup.iwasawaUnitaryFactor_toUnits`).
 * `Matrix.GeneralLinearGroup.iwasawaUnitaryFactor_eq_iff`: the unitary factor is the unitary `U`
   for which `star U * g` is upper triangular with positive diagonal
   (`Matrix.GeneralLinearGroup.star_iwasawaUnitaryFactor_mul_isUpperTriangular`,
@@ -434,6 +435,7 @@ theorem continuous_iwasawaUnitaryFactor :
       unitarySubgroupUnitsContinuousMulEquiv_apply _
 
 /-- The unitary Iwasawa factor is equivariant for left multiplication by unitary matrices. -/
+@[simp]
 theorem iwasawaUnitaryFactor_toUnits_mul (g : GL (Fin n) 𝕜) (A : unitaryGroup (Fin n) 𝕜) :
     iwasawaUnitaryFactor (Unitary.toUnits A * g) = A * g.iwasawaUnitaryFactor := by
   have hA : Unitary.toUnits A ∈ unitarySubgroup (GL (Fin n) 𝕜) :=
@@ -441,6 +443,12 @@ theorem iwasawaUnitaryFactor_toUnits_mul (g : GL (Fin n) 𝕜) (A : unitaryGroup
   refine Subtype.ext ?_
   rw [coe_iwasawaUnitaryFactor, iwasawaHomeomorph_symm_mul_fst hA, Units.val_mul,
     Unitary.val_toUnits_apply, Submonoid.coe_mul, coe_iwasawaUnitaryFactor]
+
+/-- Removing a unitary matrix `U` from `g` on the left gives the matrix `star U * g`. -/
+private theorem coe_inv_toUnits_mul (U : unitaryGroup (Fin n) 𝕜) (g : GL (Fin n) 𝕜) :
+    (((Unitary.toUnits U)⁻¹ * g : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) =
+      star (U : Matrix (Fin n) (Fin n) 𝕜) * g := by
+  rw [Units.val_mul, Unitary.val_inv_toUnits_apply, ← Unitary.star_eq_inv, Unitary.coe_star]
 
 /-- **Characterization of the unitary Iwasawa factor.** The unitary Iwasawa factor of `g` is the
 unitary matrix `U` for which the remainder `star U * g` is upper triangular with positive
@@ -451,11 +459,20 @@ theorem iwasawaUnitaryFactor_eq_iff (g : GL (Fin n) 𝕜) (U : unitaryGroup (Fin
         ∀ i, 0 < (star (U : Matrix (Fin n) (Fin n) 𝕜) * g) i i := by
   have hU : Unitary.toUnits U ∈ unitarySubgroup (GL (Fin n) 𝕜) :=
     mem_unitarySubgroup_GL_iff_mem_unitaryGroup.mpr (by simp)
-  have hmul : (((Unitary.toUnits U)⁻¹ * g : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) =
-      star (U : Matrix (Fin n) (Fin n) 𝕜) * g := by
-    rw [Units.val_mul, coe_inv_eq_star_of_mem_unitarySubgroup hU, Unitary.val_toUnits_apply]
-  rw [← hmul, ← iwasawaHomeomorph_symm_unitary_eq_iff _ _ hU, ← Units.val_inj,
+  rw [← coe_inv_toUnits_mul, ← iwasawaHomeomorph_symm_unitary_eq_iff _ _ hU, ← Units.val_inj,
     Unitary.val_toUnits_apply, ← coe_iwasawaUnitaryFactor, Subtype.coe_inj]
+
+/-- The unitary Iwasawa factor of the identity matrix is `1`. -/
+@[simp]
+theorem iwasawaUnitaryFactor_one : iwasawaUnitaryFactor (1 : GL (Fin n) 𝕜) = 1 := by
+  rw [iwasawaUnitaryFactor_eq_iff, OneMemClass.coe_one, star_one, Units.val_one, Matrix.one_mul]
+  exact ⟨blockTriangular_one, fun i ↦ by simp⟩
+
+/-- The unitary Iwasawa factor of a unitary matrix is the matrix itself. -/
+@[simp]
+theorem iwasawaUnitaryFactor_toUnits (A : unitaryGroup (Fin n) 𝕜) :
+    iwasawaUnitaryFactor (Unitary.toUnits A) = A := by
+  simpa using iwasawaUnitaryFactor_toUnits_mul 1 A
 
 /-- The remainder `star U * g` of `g` after its unitary Iwasawa factor `U` is upper triangular. -/
 theorem star_iwasawaUnitaryFactor_mul_isUpperTriangular (g : GL (Fin n) 𝕜) :
@@ -474,11 +491,9 @@ theorem iwasawaUnitaryFactor_eq_iwasawaUnitaryFactor_iff (g h : GL (Fin n) 𝕜)
     g.iwasawaUnitaryFactor = h.iwasawaUnitaryFactor ↔
       h⁻¹ * g ∈ posUpperTriangularGroup (Fin n) 𝕜 := by
   set k : GL (Fin n) 𝕜 := Unitary.toUnits h.iwasawaUnitaryFactor
-  have hk : k ∈ unitarySubgroup (GL (Fin n) 𝕜) :=
-    mem_unitarySubgroup_GL_iff_mem_unitaryGroup.mpr (by simp [k])
   have hcoe (x : GL (Fin n) 𝕜) : ((k⁻¹ * x : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) =
-      star (h.iwasawaUnitaryFactor : Matrix (Fin n) (Fin n) 𝕜) * x := by
-    rw [Units.val_mul, coe_inv_eq_star_of_mem_unitarySubgroup hk, Unitary.val_toUnits_apply]
+      star (h.iwasawaUnitaryFactor : Matrix (Fin n) (Fin n) 𝕜) * x :=
+    coe_inv_toUnits_mul _ x
   -- The remainder `k⁻¹ * h` of `h` after its unitary factor `k` is positive upper triangular.
   have hb : k⁻¹ * h ∈ posUpperTriangularGroup (Fin n) 𝕜 := by
     rw [PosUpperTriangularGroup.mem_iff, hcoe]

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
-public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import TauCeti.Geometry.Sphere.LinearIsometry
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
@@ -103,16 +102,11 @@ theorem linearIndependent_sphereFrame {f : sphere (0 : EuclideanSpace ℝ (Fin (
         EuclideanSpace ℝ (Fin (n + 1))) (f p)
           ((mfderiv (𝓡 n) (𝓡 n) f p : TangentSpace (𝓡 n) p →ₗ[ℝ] TangentSpace (𝓡 n) (f p))
             (EuclideanSpace.single k 1)) := by
+    -- `f` is differentiable at `p`, since its derivative there is injective.
+    have hf := mdifferentiableAt_of_mfderiv_injective hinj
     refine funext fun j ↦ Fin.cases ?_ (fun k ↦ ?_) j
     · rw [sphereFrame_zero, Fin.cons_zero]
-    · -- The derivative does not vanish on `eₖ ≠ 0`, so `f` is differentiable at `p`.
-      have hf : MDifferentiableAt (𝓡 n) (𝓡 n) f p := by
-        by_contra hf
-        have hne : (EuclideanSpace.single k (1 : ℝ) : TangentSpace (𝓡 n) p) ≠ 0 := by simp
-        exact hne (@hinj (EuclideanSpace.single k 1) 0
-          (by rw [mfderiv_zero_of_not_mdifferentiableAt hf, map_zero]
-              exact zero_apply _))
-      rw [sphereFrame_succ, Fin.cons_succ]
+    · rw [sphereFrame_succ, Fin.cons_succ]
       exact mvfderiv_comp_apply p (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero) hf _
   rw [hframe]
   exact h
