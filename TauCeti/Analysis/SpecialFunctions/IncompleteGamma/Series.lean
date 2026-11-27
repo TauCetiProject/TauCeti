@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Complementary
 import Mathlib.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.SpecialValues
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Series expansions of the complex incomplete Gamma functions
@@ -44,9 +45,9 @@ together with the complementary relation DLMF 8.2.3
 DLMF 8.7.2 is proved for real `x`, where the segment from `x` to `x + y` lies in the right half
 plane. There `Γ(a, x) − Γ(a, x + y)` is the integral of `t^{a−1} e^{−t}` along the segment; the
 binomial series of `(1 + t y / x)^{a−1}` (Mathlib's `binomialSeries`) is integrated termwise by
-dominated convergence, and `∫₀^y sⁿ e^{−s} ds = n! (1 − e^{−y} eₙ(y))` is DLMF 8.4.9
-(`Complex.regularizedGamma_natCast_add_one`) through Tricomi's integral
-(`Complex.tricomiIncompleteGamma_eq_integral`). The upper form holds at every `a`; the lower form
+dominated convergence, and `∫₀^y sⁿ e^{−s} ds = n! (1 − e^{−y} eₙ(y))` is `γ(n + 1, y)` by
+DLMF 8.2.1 (`Complex.lowerIncompleteGamma_eq_integral`) and DLMF 8.4.7
+(`Complex.lowerIncompleteGamma_natCast_add_one`). The upper form holds at every `a`; the lower form
 needs `a ∉ −ℕ`, where `γ(a, ·)` takes Mathlib's junk value `0`.
 
 ## References
@@ -57,7 +58,7 @@ Adapted from `incompleteGamma_increment_series`, `upperIncompleteGamma_hasSum_al
 `upperIncompleteGamma_hasSum_exponential` of the lean-DLMF project
 (<https://github.com/bjbraams/lean-DLMF>), file `DLMF/IncompleteGamma/SeriesRecurrences.lean`.
 There 8.7.2 is stated for complex `x` with the segment from `x` to `x + y` in the slit plane;
-here, following DLMF and the roadmap, `x` is real and positive, and the upper form is stated for
+here, following DLMF, `x` is real and positive, and the upper form is stated for
 every `a`.
 -/
 
@@ -114,6 +115,20 @@ theorem hasSum_Gamma_sub_upperIncompleteGamma_cexp {a z : ℂ} (ha : ∀ n : ℕ
     lowerIncompleteGamma_def]
   exact ((hasSum_regularizedGamma a z).mul_left (Gamma a)).congr_fun fun k => by ring
 
+/-- For `t ∈ [0, 1]`, `‖t y‖ ≤ ‖y‖`. -/
+private theorem norm_ofReal_mul_le {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (y : ℂ) :
+    ‖(t : ℂ) * y‖ ≤ ‖y‖ := by
+  rw [norm_mul, norm_real, Real.norm_of_nonneg ht.1]
+  exact mul_le_of_le_one_left (norm_nonneg y) ht.2
+
+/-- For real `x` and `‖y‖ < x`, the segment from `x` to `x + y` lies in the right half plane,
+hence in the slit plane. -/
+private theorem ofReal_add_mul_mem_slitPlane {x : ℝ} {y : ℂ} (hy : ‖y‖ < x) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) : (x : ℂ) + t * y ∈ slitPlane := by
+  refine mem_slitPlane_iff.mpr (Or.inl ?_)
+  rw [add_re, ofReal_re]
+  linarith [(abs_le.mp (abs_re_le_norm ((t : ℂ) * y))).1, norm_ofReal_mul_le ht y]
+
 /-- The binomial series of `(1 + t y / x)^{a−1}` integrates termwise along the segment from `x`
 to `x + y`, for real `x` and `|y| < x`. -/
 private theorem hasSum_integral_binomialSeries (a : ℂ) {x : ℝ} {y : ℂ} (hy : ‖y‖ < x) :
@@ -121,15 +136,12 @@ private theorem hasSum_integral_binomialSeries (a : ℂ) {x : ℝ} {y : ℂ} (hy
         (Ring.choose (a - 1) n * ((t : ℂ) * y / x) ^ n))
       (∫ t in (0 : ℝ)..1, y * (((x : ℂ) + t * y) ^ (a - 1) * cexp (-((x : ℂ) + t * y)))) := by
   have hx : 0 < x := (norm_nonneg y).trans_lt hy
-  have hty (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) : ‖(t : ℂ) * y‖ ≤ ‖y‖ := by
-    rw [norm_mul, norm_real, Real.norm_of_nonneg ht.1]
-    exact mul_le_of_le_one_left (norm_nonneg y) ht.2
   -- on the segment, `t y / x` lies in the disc of radius `ρ = |y| / x < 1`
   set ρ : ℝ≥0 := ⟨‖y‖ / x, by positivity⟩
   have hρ1 : (ρ : ℝ) < 1 := (div_lt_one hx).mpr hy
   have hsmall (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) : ‖(t : ℂ) * y / x‖ ≤ ρ := by
     rw [norm_div, norm_real, Real.norm_of_nonneg hx.le]
-    exact div_le_div_of_nonneg_right (hty t ht) hx.le
+    exact div_le_div_of_nonneg_right (norm_ofReal_mul_le ht y) hx.le
   have hIoc {t : ℝ} (ht : t ∈ Ι (0 : ℝ) 1) : t ∈ Set.Icc (0 : ℝ) 1 :=
     Ioc_subset_Icc_self (by rwa [uIoc_of_le zero_le_one] at ht)
   -- the binomial series of `(1 + t y / x)^{a − 1}` on the segment
@@ -158,7 +170,7 @@ private theorem hasSum_integral_binomialSeries (a : ℂ) {x : ℝ} {y : ℂ} (hy
       ‖y‖ * Real.exp ‖y‖ * ‖(x : ℂ) ^ (a - 1)‖ * (‖(Ring.choose (a - 1) n : ℂ)‖ * (ρ : ℝ) ^ n) := by
     have hE : ‖cexp (-((x : ℂ) + t * y))‖ ≤ Real.exp ‖y‖ := by
       rw [norm_exp, Real.exp_le_exp, neg_re, add_re, ofReal_re]
-      linarith [(abs_le.mp (abs_re_le_norm ((t : ℂ) * y))).1, hty t ht]
+      linarith [(abs_le.mp (abs_re_le_norm ((t : ℂ) * y))).1, norm_ofReal_mul_le ht y]
     have := hsmall t ht
     simp only [norm_mul, norm_pow]
     gcongr
@@ -173,13 +185,13 @@ private theorem hasSum_integral_binomialSeries (a : ℂ) {x : ℝ} {y : ℂ} (hy
 
 /-- The `n`-th term of the binomial series in DLMF 8.7.2, integrated along the segment from `x`
 to `x + y`: `∫₀¹ y e^{−(x + t y)} x^{a−1} (a − 1 choose n) (t y / x)ⁿ dt` is
-`e^{−x} x^{a−1} (1 − a)ₙ / (−x)ⁿ (1 − e^{−y} eₙ(y))`. -/
-private theorem integral_binomialSeries_term (a y : ℂ) {x : ℝ} (hx : x ≠ 0) (n : ℕ) :
+`e^{−x} x^{a−1} (1 − a)ₙ / (−x)ⁿ (1 − e^{−y} eₙ(y))`, for every real `x` (at `x = 0` both
+sides use Lean's convention `x / 0 = 0`). -/
+private theorem integral_binomialSeries_term (a y : ℂ) (x : ℝ) (n : ℕ) :
     ∫ t in (0 : ℝ)..1, y * cexp (-((x : ℂ) + t * y)) * (x : ℂ) ^ (a - 1) *
         (Ring.choose (a - 1) n * ((t : ℂ) * y / x) ^ n) =
       cexp (-x) * (x : ℂ) ^ (a - 1) * (ascPochhammer ℂ n).eval (1 - a) / (-(x : ℂ)) ^ n *
         (1 - cexp (-y) * ∑ k ∈ range (n + 1), y ^ k / k !) := by
-  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx
   -- `y^{n+1} ∫₀¹ tⁿ e^{−y t} dt = γ(n + 1, y) = n! (1 − e^{−y} eₙ(y))` (DLMF 8.2.1, 8.4.7)
   have hγ := lowerIncompleteGamma_eq_integral (a := (n : ℂ) + 1)
     (by simp only [add_re, natCast_re, one_re]; positivity) y
@@ -188,23 +200,17 @@ private theorem integral_binomialSeries_term (a y : ℂ) {x : ℝ} (hx : x ≠ 0
   rw [← Nat.cast_add_one, cpow_natCast] at hγ
   -- `n! (a − 1 choose n) (−1)ⁿ = (1 − a)ₙ`
   have hc : (n ! : ℂ) * Ring.choose (a - 1) n * (-1) ^ n = (ascPochhammer ℂ n).eval (1 - a) := by
-    rw [Ring.choose_eq_smul, smul_eq_mul, Polynomial.descPochhammer_smeval_eq_ascPochhammer,
-      Polynomial.ascPochhammer_smeval_eq_eval, show 1 - a = -(a - 1) by ring,
-      ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_ascPochhammer,
-      ← mul_assoc, mul_inv_cancel₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero), one_mul,
-      mul_comm]
+    rw [TauCeti.Ring.factorial_mul_choose_mul_neg_one_pow, neg_sub]
   have hF : (fun t : ℝ => y * cexp (-((x : ℂ) + t * y)) * (x : ℂ) ^ (a - 1) *
       (Ring.choose (a - 1) n * ((t : ℂ) * y / x) ^ n)) = fun t : ℝ =>
       cexp (-x) * (x : ℂ) ^ (a - 1) * Ring.choose (a - 1) n / x ^ n *
         (y ^ (n + 1) * ((t : ℂ) ^ n * cexp (-(y * t)))) := by
     funext t
-    rw [neg_add, Complex.exp_add, div_pow, mul_pow]
-    field_simp
-    ring_nf
+    rw [neg_add, Complex.exp_add, div_pow, mul_pow, mul_comm (t : ℂ) y]
+    ring
   rw [hF, intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul, ← hγ,
-    neg_pow]
+    neg_pow, ← hc]
   field_simp
-  linear_combination ((x : ℂ) ^ (a - 1) * (1 - cexp (-y) * ∑ k ∈ range (n + 1), y ^ k / k !)) * hc
 
 /-- **DLMF 8.7.2** for the upper function: for every `a`, real `x` and complex `y` with
 `|y| < x`,
@@ -215,18 +221,10 @@ theorem hasSum_upperIncompleteGamma_sub_upperIncompleteGamma_add (a : ℂ) {x : 
     HasSum (fun n : ℕ => cexp (-x) * (x : ℂ) ^ (a - 1) * (ascPochhammer ℂ n).eval (1 - a) /
         (-(x : ℂ)) ^ n * (1 - cexp (-y) * ∑ k ∈ range (n + 1), y ^ k / k !))
       (upperIncompleteGamma a x - upperIncompleteGamma a (x + y)) := by
-  have hx : 0 < x := (norm_nonneg y).trans_lt hy
-  -- the segment from `x` to `x + y` lies in the right half plane
-  have hmem (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) : (x : ℂ) + t * y ∈ slitPlane := by
-    have hty : ‖(t : ℂ) * y‖ ≤ ‖y‖ := by
-      rw [norm_mul, norm_real, Real.norm_of_nonneg ht.1]
-      exact mul_le_of_le_one_left (norm_nonneg y) ht.2
-    refine mem_slitPlane_iff.mpr (Or.inl ?_)
-    rw [add_re, ofReal_re]
-    linarith [(abs_le.mp (abs_re_le_norm ((t : ℂ) * y))).1]
-  rw [upperIncompleteGamma_sub_upperIncompleteGamma_add_eq_integral a hmem]
+  rw [upperIncompleteGamma_sub_upperIncompleteGamma_add_eq_integral a
+    fun _ ht => ofReal_add_mul_mem_slitPlane hy ht]
   exact (hasSum_integral_binomialSeries a hy).congr_fun fun n =>
-    (integral_binomialSeries_term a y hx.ne' n).symm
+    (integral_binomialSeries_term a y x n).symm
 
 /-- **DLMF 8.7.2** for the lower function: for `a ∉ −ℕ`, real `x` and complex `y` with
 `|y| < x`,
@@ -239,11 +237,7 @@ theorem hasSum_lowerIncompleteGamma_add_sub_lowerIncompleteGamma {a : ℂ}
       (lowerIncompleteGamma a (x + y) - lowerIncompleteGamma a x) := by
   have hx : 0 < x := (norm_nonneg y).trans_lt hy
   have hmem : (x : ℂ) + y ∈ slitPlane := by
-    refine mem_slitPlane_iff.mpr (Or.inl ?_)
-    have := neg_abs_le y.re
-    have := abs_re_le_norm y
-    simp only [add_re, ofReal_re]
-    linarith
+    simpa using ofReal_add_mul_mem_slitPlane hy (right_mem_Icc.mpr zero_le_one)
   have h1 := upperIncompleteGamma_add_lowerIncompleteGamma ha (ofReal_mem_slitPlane.mpr hx)
   have h2 := upperIncompleteGamma_add_lowerIncompleteGamma ha hmem
   convert hasSum_upperIncompleteGamma_sub_upperIncompleteGamma_add a hy using 1
