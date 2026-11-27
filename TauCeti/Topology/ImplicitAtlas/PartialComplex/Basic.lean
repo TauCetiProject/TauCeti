@@ -40,17 +40,22 @@ This file constructs them, for coefficients in a commutative ring `k`.
 
 * **The action on the deformation pairs.** `Γ_B` acts on `D_(I,J,B)` through
   `TauCeti.ImplicitAtlas.deformationAction`, and the supports `Z_K` are invariant, so it acts on
-  the pair `(D_(I,J,B), D_(I,J,B) ∖ Z_K)` (`TauCeti.ImplicitAtlas.deformationPairFunctor`).
+  the pair `(D_(I,J,B), D_(I,J,B) ∖ Z_K)` (`TauCeti.ImplicitAtlas.deformationPairFunctor`). For
+  `K ⊆ L` the identity of `D_(I,J,B)` restricts the pair of `L` to the pair of `K`, since
+  `Z_K ⊆ Z_L`, so the pairs form a K-presheaf
+  (`TauCeti.ImplicitAtlas.deformationPairPresheaf`).
 * **The coefficients.** The dual orientation line `o_(E_B)^∨`, on which `g ∈ Γ_B` acts by the sign
   of the determinant of `g` on `E_B`, is `Representation.dualOrientationLine` of the external
-  direct sum `E_B` (`Representation.externalPi`).
+  direct sum `E_B` (`Representation.externalPi`), named
+  `TauCeti.ImplicitAtlas.partialVirtualCoefficients`.
 * **The complexes.** The complex of invariant relative chains
   `C(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_(E_B)^∨)^(Γ_B)`, in its homological grading, is the limit
   of the diagonal action `TopPair.diagonalChainAction`. Placing the chains of degree `n` in
   cochain degree `d + m_B - n`, invariant chains become a functor of the pair with its action
   (`TauCeti.ImplicitAtlas.invariantChainsFunctor`), and the complexes form a K-presheaf of cochain
-  complexes on `X`, `TauCeti.ImplicitAtlas.partialVirtualComplex`: for `K ⊆ L` the restriction
-  `R_IJ(L) ⟶ R_IJ(K)` is induced by the identity of `D_(I,J,B)`, since `Z_K ⊆ Z_L`.
+  complexes on `X`, `TauCeti.ImplicitAtlas.partialVirtualComplex`, the invariant chains of the
+  K-presheaf of deformation pairs: for `K ⊆ L` the restriction `R_IJ(L) ⟶ R_IJ(K)` is induced by
+  the identity of `D_(I,J,B)`.
 * **The interval arrows.** For `I ⊆ I' ⊆ J' ⊆ J ⊆ B`, the comparison map
   `D_(I,J,B) ⟶ D_(I',J',B)` (`TauCeti.ImplicitAtlas.deformationMap`) is an equivariant map of
   pairs, so it induces a map of K-presheaves (`TauCeti.ImplicitAtlas.partialVirtualComplexMap`).
@@ -149,6 +154,15 @@ def deformationPairRestriction (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) {
     -- Both composites have ambient map `deformationAction g`, as the restriction is the identity.
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq (h := ConcreteCategory.hom_ext _ _ fun _ ↦ rfl) ..
 
+/-- The component of the restriction of the deformation pairs is the map of pairs induced by the
+identity of `D_(I,J,B)`. -/
+theorem deformationPairRestriction_app (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) {K L : Set X}
+    (h : K ⊆ L) (Y : SingleObj ((α : B) → Γ α)) :
+    (𝒜.deformationPairRestriction I hJB h).app Y =
+      TopPair.ofSubsetMap (𝟙 (TopCat.of (𝒜.deformationSpace I hJB)))
+        (Set.compl_subset_compl.2 (deformationSupport_mono h)) :=
+  (rfl)
+
 /-- The restriction of the deformation pairs is the identity on `D_(I,J,B)`. -/
 @[simp]
 theorem deformationPairRestriction_app_fst_apply (I : Finset A) {J B : Finset A} (hJB : J ⊆ B)
@@ -243,11 +257,30 @@ theorem deformationPairArrow_comp_deformationPairArrow (hII' : I ⊆ I') (hI'J' 
 
 end PairLaws
 
+/-- **The deformation pairs as a K-presheaf**: the deformation pairs `(D_(I,J,B), D_(I,J,B) ∖ Z_K)`
+with their actions of `Γ_B`, as a contravariant functor of the compact set `K ⊆ X`, with the
+restrictions `deformationPairRestriction`. -/
+-- The body is exposed so that the values are definitionally the deformation pairs: the partial
+-- virtual complex is defined through it, and its values typecheck against the pairs only then.
+@[expose, simps]
+def deformationPairPresheaf (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
+    (Compacts (TopCat.of X))ᵒᵖ ⥤ (SingleObj ((α : B) → Γ α) ⥤ TopPair.{u}) where
+  obj K := 𝒜.deformationPairFunctor I hJB K.unop
+  map h := 𝒜.deformationPairRestriction I hJB (SetLike.coe_subset_coe.2 (leOfHom h.unop))
+  map_id _ := deformationPairRestriction_refl _ _
+  map_comp _ _ := (deformationPairRestriction_comp_deformationPairRestriction _ _ _).symm
+
 /-! ### The partial virtual complexes -/
 
 section Complexes
 
 variable (k : Type u) [CommRing k]
+
+variable (ρ) in
+/-- The dual orientation line `o_(E_B)^∨` of the obstruction space `E_B`, as an action of `Γ_B` on
+a `k`-module: the coefficients of the partial virtual complexes. -/
+abbrev partialVirtualCoefficients (B : Finset A) : SingleObj ((α : B) → Γ α) ⥤ ModuleCat.{u} k :=
+  (Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k
 
 variable (ρ) in
 /-- **The invariant relative chains with coefficients in the dual orientation line, in cochain
@@ -259,8 +292,7 @@ degrees `n - •`**, as a functor of a pair with an action of `Γ_B`: a pair `P`
 @[expose]
 def invariantChainsFunctor (B : Finset A) (n : ℤ) :
     (SingleObj ((α : B) → Γ α) ⥤ TopPair.{u}) ⥤ CochainComplex (ModuleCat.{u} k) ℤ :=
-  TopPair.diagonalChainActionFunctor
-      ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k) ⋙ lim ⋙
+  TopPair.diagonalChainActionFunctor (partialVirtualCoefficients ρ k B) ⋙ lim ⋙
     (ComplexShape.embeddingUpIntLE n).extendFunctor _
 
 omit [DecidableEq A] [∀ α, Finite (Γ α)] in
@@ -269,8 +301,8 @@ extension to `ℤ` of the limit of the diagonal action on its chains. -/
 @[simp]
 theorem invariantChainsFunctor_obj (B : Finset A) (n : ℤ)
     (P : SingleObj ((α : B) → Γ α) ⥤ TopPair.{u}) :
-    (invariantChainsFunctor ρ k B n).obj P = (limit (TopPair.diagonalChainAction
-      ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k) P)).extend
+    (invariantChainsFunctor ρ k B n).obj P =
+      (limit (TopPair.diagonalChainAction (partialVirtualCoefficients ρ k B) P)).extend
         (ComplexShape.embeddingUpIntLE n) :=
   (rfl)
 
@@ -280,8 +312,7 @@ induced by the equivariant chain map of `τ`. -/
 theorem invariantChainsFunctor_map (B : Finset A) (n : ℤ)
     {P Q : SingleObj ((α : B) → Γ α) ⥤ TopPair.{u}} (τ : P ⟶ Q) :
     (invariantChainsFunctor ρ k B n).map τ = HomologicalComplex.extendMap (lim.map
-      (TopPair.diagonalChainActionMap
-        ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k) τ))
+      (TopPair.diagonalChainActionMap (partialVirtualCoefficients ρ k B) τ))
           (ComplexShape.embeddingUpIntLE n) :=
   (rfl)
 
@@ -293,15 +324,9 @@ compact set `K` is `R_IJ(K)^q = C_(d + m_B - q)(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_
 `m_B = dim E_B`, with the restrictions induced by the identity of the deformation space. -/
 @[expose]
 def partialVirtualComplex (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
-    TopCat.KPresheaf (CochainComplex (ModuleCat.{u} k) ℤ) (TopCat.of X) where
-  obj K := (invariantChainsFunctor ρ k B (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))).obj
-    (𝒜.deformationPairFunctor I hJB K.unop)
-  map h := (invariantChainsFunctor ρ k B _).map
-    (𝒜.deformationPairRestriction I hJB (SetLike.coe_subset_coe.2 (leOfHom h.unop)))
-  map_id K := by
-    rw [deformationPairRestriction_refl, CategoryTheory.Functor.map_id]
-  map_comp h h' := by
-    rw [← Functor.map_comp, deformationPairRestriction_comp_deformationPairRestriction]
+    TopCat.KPresheaf (CochainComplex (ModuleCat.{u} k) ℤ) (TopCat.of X) :=
+  𝒜.deformationPairPresheaf I hJB ⋙
+    invariantChainsFunctor ρ k B (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))
 
 /-- The value of the partial virtual complex on a compact set `K` is the complex of invariant
 relative chains of the deformation pair of `K`, the limit of the diagonal action of `Γ_B`, in
@@ -311,8 +336,7 @@ that values and restrictions share one simp normal form. -/
 theorem partialVirtualComplex_obj (I : Finset A) {J B : Finset A} (hJB : J ⊆ B)
     (K : (Compacts (TopCat.of X))ᵒᵖ) :
     (𝒜.partialVirtualComplex k I hJB).obj K = (limit (TopPair.diagonalChainAction
-      ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k)
-      (𝒜.deformationPairFunctor I hJB K.unop))).extend
+      (partialVirtualCoefficients ρ k B) (𝒜.deformationPairFunctor I hJB K.unop))).extend
         (ComplexShape.embeddingUpIntLE (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))) :=
   (rfl)
 
@@ -333,7 +357,8 @@ def partialVirtualComplexMap {I I' J J' B : Finset A} (hII' : I ⊆ I') (hI'J' :
   naturality K L h := by
     let F := invariantChainsFunctor ρ k B (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))
     refine (F.map_comp _ _).symm.trans (Eq.trans ?_ (F.map_comp _ _))
-    rw [deformationPairRestriction_comp_deformationPairArrow]
+    exact F.congr_map (deformationPairRestriction_comp_deformationPairArrow hII' hI'J' hJ'J hJB
+      (SetLike.coe_subset_coe.2 (leOfHom h.unop)))
 
 variable {𝒜 k} {I I' I'' J J' J'' B : Finset A}
 
@@ -363,7 +388,9 @@ theorem partialVirtualComplexMap_comp_partialVirtualComplexMap (hII' : I ⊆ I')
       𝒜.partialVirtualComplexMap k (hII'.trans hI'I'') hI''J'' (hJ''J'.trans hJ'J) hJB := by
   refine NatTrans.ext (funext fun K ↦ ?_)
   refine ((invariantChainsFunctor ρ k B _).map_comp _ _).symm.trans ?_
-  rw [deformationPairArrow_comp_deformationPairArrow, partialVirtualComplexMap_app]
+  exact (invariantChainsFunctor ρ k B _).congr_map
+    (deformationPairArrow_comp_deformationPairArrow hII' hI'J' hJ'J hI'I'' hI''J'' hJ''J' hJB
+      (K.unop : Set X))
 
 end Complexes
 

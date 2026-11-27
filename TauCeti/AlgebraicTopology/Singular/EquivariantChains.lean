@@ -29,7 +29,7 @@ hence a chain map of invariants `lim.map (TopPair.diagonalChainActionMap L τ)`.
 
 With `L` the dual orientation line of an obstruction representation, these invariant chains on the
 deformation spaces of an implicit atlas are the partial virtual complexes of Pardon's construction
-of virtual fundamental classes (`TauCeti.Topology.ImplicitAtlas.PartialComplex`).
+of virtual fundamental classes (`TauCeti.Topology.ImplicitAtlas.PartialComplex.Basic`).
 
 ## Main definitions
 
@@ -38,6 +38,11 @@ of virtual fundamental classes (`TauCeti.Topology.ImplicitAtlas.PartialComplex`)
 * `TopPair.diagonalChainActionMap L τ`: the equivariant chain map induced by an equivariant map
   `τ : P ⟶ P'` of pairs.
 * `TopPair.diagonalChainActionFunctor L`: the two together, as a functor of the action on the pair.
+
+## Main results
+
+* `TopPair.diagonalChainActionMap_app_comp_eqToHom`: on the underlying relative chain complexes,
+  the induced chain map is the chain map of the map of pairs.
 
 ## References
 
@@ -108,6 +113,17 @@ lemma diagonalChainActionMap_app (τ : P ⟶ P') (Y : SingleObj G) :
   change ((singularChainComplexFunctor C).map (𝟙 (L.obj Y))).app (P.obj Y) ≫
     ((singularChainComplexFunctor C).obj (L.obj Y)).map (τ.app Y) = _
   rw [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
+
+/-- Read in the relative singular chain complexes, the component of the chain map induced by an
+equivariant map of pairs is the chain map `TopPair.singularChainComplexMap` of the map of pairs. -/
+@[reassoc]
+lemma diagonalChainActionMap_app_comp_eqToHom (τ : P ⟶ P') (Y : SingleObj G) :
+    (diagonalChainActionMap L τ).app Y ≫
+        eqToHom (singularChainComplexFunctor_obj_obj (C := C) (P'.obj Y) (L.obj Y)) =
+      eqToHom (singularChainComplexFunctor_obj_obj (C := C) (P.obj Y) (L.obj Y)) ≫
+        singularChainComplexMap (τ.app Y) (L.obj Y) := by
+  rw [diagonalChainActionMap_app]
+  exact singularChainComplexFunctor_obj_map_comp_eqToHom _ _
 
 @[simp]
 lemma diagonalChainActionMap_id : diagonalChainActionMap L (𝟙 P) = 𝟙 _ := by

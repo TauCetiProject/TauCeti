@@ -43,6 +43,13 @@ additive functor preserves this limit (`CategoryTheory.Limits.SingleObj.isLimitM
 This is why the transfer identifies the homology of the base with the invariants of the homology of
 the total space.
 
+In a `k`-linear category, for a finite group `G` whose order is a unit of `k`, the averaging map
+`|G|⁻¹ • ∑_{g ∈ G} J.map g` is a cone over the action
+(`CategoryTheory.Limits.SingleObj.averageCone`), and it retracts the acted-on object onto the
+invariants, naturally in the action: the limit functor is a retract of the evaluation at the object
+of `SingleObj G` (`CategoryTheory.Limits.SingleObj.limRetract`). So every property of objects or
+morphisms that is stable under retracts passes from an action to its invariants.
+
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
@@ -233,5 +240,86 @@ noncomputable def isLimitMapConeOfTransfer {D : Type*} [Category D] [Preadditive
       CategoryTheory.Functor.comp_map])
 
 end PreadditiveLimit
+
+section Average
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {k : Type*} [CommRing k] [Linear k C]
+  {G : Type*} [Group G] [Fintype G] (hG : IsUnit (Fintype.card G : k))
+
+/-- **The averaging cone** over an action `J : SingleObj G ⥤ C` of a finite group whose order is a
+unit of `k`: its point is the acted-on object and its leg is the averaging map
+`|G|⁻¹ • ∑_{g ∈ G} J.map g`, which is invariant under the action. -/
+-- Reducible so that its point is reducibly the acted-on object, the source of its lift.
+@[expose, reducible]
+noncomputable def averageCone (J : SingleObj G ⥤ C) : Cone J where
+  pt := J.obj (SingleObj.star G)
+  π :=
+    { app _ := (↑hG.unit⁻¹ : k) • ∑ g : G, J.map g
+      naturality _ _ f := by
+        dsimp only [Functor.const_obj_obj, Functor.const_obj_map]
+        rw [Category.id_comp, Linear.smul_comp, Preadditive.sum_comp]
+        congr 1
+        simp_rw [← J.map_comp, SingleObj.comp_as_mul]
+        exact (Fintype.sum_equiv (Equiv.mulLeft f) _ _ fun _ ↦ rfl).symm }
+
+/-- The leg of the averaging cone is the averaging map `|G|⁻¹ • ∑_{g ∈ G} J.map g`. -/
+lemma averageCone_π_app (J : SingleObj G ⥤ C) (Y : SingleObj G) :
+    (averageCone hG J).π.app Y = (↑hG.unit⁻¹ : k) • ∑ g : G, J.map g :=
+  (rfl)
+
+variable [HasLimitsOfShape (SingleObj G) C]
+
+/-- The lift of the averaging cone is a retraction of the inclusion of the invariants. -/
+@[reassoc (attr := simp)]
+lemma limit_π_comp_lift_averageCone (J : SingleObj G ⥤ C) :
+    limit.π J (SingleObj.star G) ≫ limit.lift J (averageCone hG J) = 𝟙 _ := by
+  refine limit.hom_ext fun Y ↦ ?_
+  obtain rfl : Y = SingleObj.star G := rfl
+  rw [Category.assoc, limit.lift_π, averageCone_π_app, Linear.comp_smul, Preadditive.comp_sum,
+    Category.id_comp]
+  simp_rw [limit.w]
+  simp [← Nat.cast_smul_eq_nsmul k, smul_smul]
+
+/-- The lift of the averaging cone is natural in the action. -/
+@[reassoc]
+lemma app_comp_lift_averageCone {J J' : SingleObj G ⥤ C} (τ : J ⟶ J') :
+    τ.app (SingleObj.star G) ≫ limit.lift J' (averageCone hG J') =
+      limit.lift J (averageCone hG J) ≫ limMap τ := by
+  refine limit.hom_ext fun Y ↦ ?_
+  obtain rfl : Y = SingleObj.star G := rfl
+  rw [Category.assoc, Category.assoc, limit.lift_π, limMap_π, limit.lift_π_assoc,
+    averageCone_π_app, averageCone_π_app, Linear.comp_smul, Linear.smul_comp,
+    Preadditive.comp_sum, Preadditive.sum_comp]
+  simp_rw [τ.naturality]
+
+/-- **Averaging retracts an action onto its invariants.** For a finite group `G` whose order is a
+unit of `k`, the limit functor on actions of `G` on objects of a `k`-linear category is a retract
+of the evaluation at the object of `SingleObj G`: the leg of the limit cone is the inclusion of the
+invariants, and the lift of the averaging cone (`CategoryTheory.Limits.SingleObj.averageCone`) is
+the retraction, both natural in the action. -/
+noncomputable def limRetract :
+    Retract (lim : (SingleObj G ⥤ C) ⥤ C) ((evaluation (SingleObj G) C).obj (SingleObj.star G))
+    where
+  i := { app J := limit.π J (SingleObj.star G) }
+  r :=
+    { app J := limit.lift J (averageCone hG J)
+      naturality _ _ τ := app_comp_lift_averageCone hG τ }
+  retract := by
+    ext J : 2
+    exact limit_π_comp_lift_averageCone hG J
+
+/-- The inclusion of the averaging retraction is the leg of the limit cone. -/
+@[simp]
+lemma limRetract_i_app (J : SingleObj G ⥤ C) :
+    (limRetract hG).i.app J = limit.π J (SingleObj.star G) :=
+  (rfl)
+
+/-- The retraction of the averaging retraction is the lift of the averaging cone. -/
+@[simp]
+lemma limRetract_r_app (J : SingleObj G ⥤ C) :
+    (limRetract hG).r.app J = limit.lift J (averageCone hG J) :=
+  (rfl)
+
+end Average
 
 end CategoryTheory.Limits.SingleObj
