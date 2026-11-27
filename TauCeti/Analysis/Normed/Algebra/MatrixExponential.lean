@@ -52,13 +52,16 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 
 The rational exponential series converges entrywise over any complete normed rational-algebra
 coefficient ring. In particular, two matrices have the same indicated entry in their
-exponentials whenever all their powers agree at those entries.
+exponentials whenever all their powers agree at those entries, and a column vector killed by a
+matrix is fixed by its exponential.
 
 ## Main results
 
 * `Matrix.exp_series_hasSum_exp_apply`: the rational exponential series at a matrix entry.
 * `Matrix.IsUpperTriangular.exp_submatrix`: restriction to order-connected index sets.
 * `Matrix.exp_apply_eq_of_forall_pow_apply_eq`: comparison of exponential entries through powers.
+* `Matrix.exp_mulVec_eq_self_of_mulVec_eq_zero`: a column vector killed by a matrix is fixed by its
+  exponential.
 * `Matrix.IsUpperTriangular.exp_apply_diag`: diagonal entries of a triangular exponential.
 * `Matrix.IsUpperTriangular.exp_apply_diag_pos`: real diagonal entries exponentiate to positive
   real diagonal entries.
@@ -118,6 +121,23 @@ theorem exp_apply_eq_of_forall_pow_apply_eq {p q : Type*}
   have h := exp_series_hasSum_exp_apply M i j
   simp only [hp] at h
   exact h.unique (exp_series_hasSum_exp_apply N u v)
+
+/-- A column vector killed by a matrix is fixed by its exponential. -/
+theorem exp_mulVec_eq_self_of_mulVec_eq_zero {l : Type*} [Fintype l] [DecidableEq l]
+    {M : Matrix l l R} {v : l → R} (hM : M *ᵥ v = 0) : exp M *ᵥ v = v := by
+  ext i
+  have h := hasSum_sum fun j (_ : j ∈ Finset.univ) ↦
+    (exp_series_hasSum_exp_apply M i j).mul_right (v j)
+  simp only [smul_mul_assoc, ← Finset.smul_sum] at h
+  simp only [mulVec, dotProduct]
+  refine h.unique ((hasSum_ite_eq 0 (v i)).congr_fun fun k ↦ ?_)
+  cases k with
+  | zero => simpa [mulVec, dotProduct] using congrFun (one_mulVec v) i
+  | succ k =>
+    have hk : (M ^ (k + 1) *ᵥ v) i = 0 := by
+      rw [pow_succ, ← mulVec_mulVec, hM, mulVec_zero, Pi.zero_apply]
+    simp only [mulVec, dotProduct] at hk
+    simp [hk]
 
 /-- On the diagonal, exponentiating an upper-triangular matrix exponentiates each entry. -/
 @[simp]
