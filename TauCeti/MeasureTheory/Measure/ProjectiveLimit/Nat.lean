@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Probability.Kernel.IonescuTulcea.Traj
+public import TauCeti.Probability.Kernel.IonescuTulcea.Traj
 
 /-!
 # Projective limits on sequences
@@ -44,21 +44,6 @@ universe u
 
 variable {X : ℕ → Type u} [∀ n, MeasurableSpace (X n)]
 
-/-- Split a trajectory through time `n + 1` into its prefix through time `n` and its last
-coordinate. -/
-private def prefixSuccEquiv (n : ℕ) :
-    ((∀ i : Iic n, X i) × X (n + 1)) ≃ᵐ (∀ i : Iic (n + 1), X i) :=
-  (MeasurableEquiv.prodCongr (MeasurableEquiv.refl _) (MeasurableEquiv.piSingleton n)).trans
-    (MeasurableEquiv.IicProdIoc n.le_succ)
-
-private theorem coe_prefixSuccEquiv_symm (n : ℕ) :
-    ⇑(prefixSuccEquiv (X := X) n).symm =
-      fun x ↦ (frestrictLe₂ n.le_succ x, x ⟨n + 1, mem_Iic.2 le_rfl⟩) := rfl
-
-private theorem prefixSuccEquiv_symm_comp_frestrictLe (n : ℕ) :
-    (prefixSuccEquiv (X := X) n).symm ∘ frestrictLe (n + 1) =
-      fun x ↦ (frestrictLe n x, x (n + 1)) := rfl
-
 /-- The Ionescu--Tulcea path law whose `n`-th transition kernel is the conditional law of
 coordinate `n + 1` given the prefix through time `n` under the prescribed law `P (n + 1)`. -/
 private def prefixLimit (P : ∀ n : ℕ, Measure (∀ i : Iic n, X i))
@@ -88,10 +73,11 @@ private theorem map_frestrictLe_succ_prefixLimit
   let κ :=
     condDistrib (fun x ↦ x ⟨n + 1, mem_Iic.2 le_rfl⟩) (frestrictLe₂ n.le_succ) (P (n + 1))
   -- Compare both laws after splitting off the last coordinate.
-  apply (prefixSuccEquiv n).symm.map_measurableEquiv_injective
-  calc ((prefixLimit P).map (frestrictLe (n + 1))).map (prefixSuccEquiv n).symm
+  apply (MeasurableEquiv.IicProdSucc n).symm.map_measurableEquiv_injective
+  calc ((prefixLimit P).map (frestrictLe (n + 1))).map (MeasurableEquiv.IicProdSucc n).symm
       = (prefixLimit P).map fun x ↦ (frestrictLe n x, x (n + 1)) := by
-        rw [Measure.map_map (by fun_prop) (by fun_prop), prefixSuccEquiv_symm_comp_frestrictLe]
+        rw [Measure.map_map (by fun_prop) (by fun_prop),
+          MeasurableEquiv.IicProdSucc_symm_comp_frestrictLe]
     -- The path law is its prefix law through time `n` followed by the `n`-th kernel.
     _ = (prefixLimit P).map (frestrictLe n) ⊗ₘ κ := by
         rw [prefixLimit]; exact Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure.symm
@@ -99,7 +85,8 @@ private theorem map_frestrictLe_succ_prefixLimit
     -- Disintegrating `P (n + 1)` along its prefix through time `n` recovers it.
     _ = (P (n + 1)).map fun x ↦ (frestrictLe₂ n.le_succ x, x ⟨n + 1, mem_Iic.2 le_rfl⟩) :=
         compProd_map_condDistrib (by fun_prop) (measurable_pi_apply _).aemeasurable
-    _ = (P (n + 1)).map (prefixSuccEquiv n).symm := by rw [coe_prefixSuccEquiv_symm]
+    _ = (P (n + 1)).map (MeasurableEquiv.IicProdSucc n).symm := by
+        rw [MeasurableEquiv.coe_IicProdSucc_symm]
 
 /-- **Countable projective-family extension for coherent prefixes.** A coherent family of
 probability laws on the prefixes `∀ i : Iic n, X i` of a dependent sequence of standard Borel
