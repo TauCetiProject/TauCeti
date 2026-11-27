@@ -77,6 +77,9 @@ vanishes near `∂B` its extension by zero lies in `W^{1,p}_0(U ∩ H)`
   `t ν` of the normal is at most `√2` times that of `∇u` on `U ∩ H`, and
   `TauCeti.W1p.norm_gradient_sub_compHyperplaneReflectionL_sq_le`: in particular the `L²(U)` norm
   of the gradient of the odd reflection is at most `√2` times that of the gradient of `u|_{U ∩ H}`.
+* `TauCeti.W1p.memLp_sub_compHyperplaneReflectionL`: if the value and the gradient of `u` lie in
+  `L^q(U ∩ H)`, those of the odd reflection lie in `L^q(U)`, with
+  `‖∇(u - u ∘ ρ)‖_{L^q(U)} ≤ 2 ‖∇u‖_{L^q(U ∩ H)}`.
 * `TauCeti.W1p.exists_value_eq_zero_and_value_ae_eq`: a `C¹` function vanishing on the hyperplane,
   cut off near a compact set, extends by zero across the hyperplane to a Sobolev function.
 -/
@@ -660,6 +663,47 @@ theorem W1p.norm_gradient_sub_compHyperplaneReflectionL_sq_le (hν : ν ≠ 0)
   refine integral_congr_ae ?_
   filter_upwards [W1p.gradient_restrictL_ae (inf_le_left : U ⊓ H ≤ U) u] with x hx
   rw [hx]
+
+/-- **The odd reflection in `L^q`.** Let `u ∈ W^{1,p}(U)`, `p < ∞`, vanish on `U ∖ H`, where
+`H = {x | c < ⟪x, ν⟫}`, `ν ≠ 0`. If the value and the weak gradient of `u` lie in `L^q(U ∩ H)`,
+`1 ≤ q`, then those of the odd reflection `w = u - u ∘ ρ` lie in `L^q(U)`, and
+`‖∇w‖_{L^q(U)} ≤ 2 ‖∇u‖_{L^q(U ∩ H)}`. -/
+theorem W1p.memLp_sub_compHyperplaneReflectionL (hp : p ≠ ⊤) (hν : ν ≠ 0)
+    (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c) U U) {q : ENNReal}
+    (hq : 1 ≤ q) {u : W1p mu U p} (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0)
+    (hv : MemLp (W1p.value u) q (mu.restrict ((U : Set E) ∩ H)))
+    (hg : MemLp (W1p.gradient u) q (mu.restrict ((U : Set E) ∩ H))) :
+    MemLp (W1p.value (u - W1p.compHyperplaneReflectionL hp ν c hU u)) q (mu.restrict U) ∧
+      MemLp (W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u)) q (mu.restrict U) ∧
+      eLpNorm (W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u)) q (mu.restrict U) ≤
+        2 * eLpNorm (W1p.gradient u) q (mu.restrict ((U : Set E) ∩ H)) := by
+  set R : E ≃ₗᵢ[ℝ] E := (ℝ ∙ ν)ᗮ.reflection
+  have hUm := U.isOpen.measurableSet
+  have hHm := H.isOpen.measurableSet
+  -- The gradient of `u` vanishes on `U ∖ H`: off the closed half-space, and the hyperplane is null.
+  have hg0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.gradient u x = 0 := by
+    filter_upwards [W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_inner_lt hH hu0,
+      ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.1
+        (Measure.addHaar_setOf_inner_eq mu hν c))] with x h1 h2 hx
+    exact h1 (lt_of_le_of_ne (not_lt.1 fun h => hx ((hH x).2 h)) h2)
+  -- The value and the gradient of the odd reflection, in indicator form.
+  have hval : W1p.value (u - W1p.compHyperplaneReflectionL hp ν c hU u)
+      =ᵐ[mu.restrict U] fun x => (H : Set E).indicator (W1p.value u) x -
+        (H : Set E).indicator (fun y => id (W1p.value u y)) (hyperplaneReflection ν c x) := by
+    rw [W1p.value_sub]
+    refine ((Lp.coeFn_sub _ _).trans ?_).trans
+      (sub_comp_hyperplaneReflection_ae_eq_indicator hUm hU (T := id) rfl hu0)
+    filter_upwards [W1p.value_compHyperplaneReflectionL_ae hp hU u] with x hx
+    rw [Pi.sub_apply, hx, id]
+  have hgrad : W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u)
+      =ᵐ[mu.restrict U] fun x => (H : Set E).indicator (W1p.gradient u) x -
+        (H : Set E).indicator (fun y => R (W1p.gradient u y)) (hyperplaneReflection ν c x) :=
+    (W1p.gradient_sub_compHyperplaneReflectionL_ae hp hU u).trans
+      (sub_comp_hyperplaneReflection_ae_eq_indicator hUm hU (map_zero R) hg0)
+  obtain ⟨hgp, hgle⟩ :=
+    memLp_indicator_sub_indicator_linearIsometryEquiv_comp_hyperplaneReflection hq hHm hUm hU R hg
+  exact ⟨(memLp_indicator_sub_indicator_comp_hyperplaneReflection hHm hUm hU hv hv).ae_eq
+      hval.symm, hgp.ae_eq hgrad.symm, (eLpNorm_congr_ae hgrad).trans_le hgle⟩
 
 /-- **Extension by zero across the hyperplane.** Let `H = {x | c < ⟪x, ν⟫}`, let `d` be `C¹` on an
 open set `U₀` and vanish on the part of the hyperplane `∂H` in `U₀`. Let `V` be bounded and open

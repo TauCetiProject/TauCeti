@@ -17,6 +17,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 import TauCeti.Data.Set.Function
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -82,6 +83,11 @@ normal vector and an offset.
   `x ↦ 1_H f x - 1_H g (ρ x)` built from two functions `f`, `g` given on one side `H` of the
   hyperplane lies in `Lᵖ` with norm at most `‖f‖_p + ‖g‖_p`. For `g = f` this is the odd
   reflection of `f`, of norm at most twice that of `f`.
+* `TauCeti.memLp_indicator_sub_indicator_linearIsometryEquiv_comp_hyperplaneReflection`: for a
+  linear isometric equivalence `T`, the field `1_H G - 1_H (T ∘ G) ∘ ρ` lies in `Lᵖ` with norm at
+  most twice that of `G`; for `T` the linear part of `ρ` this is the odd reflection of a field.
+* `TauCeti.sub_comp_hyperplaneReflection_ae_eq_indicator`: for `f` vanishing off `H`, the odd
+  reflection `f - T (f ∘ ρ)` is `1_H f - 1_H (T ∘ f) ∘ ρ`.
 * `TauCeti.setIntegral_inner_reflection_comp_hyperplaneReflection`: the reflection moves across a
   pairing, `∫_U ⟪G, R (v ∘ ρ)⟫ = ∫_U ⟪R (G ∘ ρ), v⟫`.
 -/
@@ -479,6 +485,44 @@ theorem eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (hp : 1 ≤
         eLpNorm_sub_le hp
     _ = eLpNorm f p (μ.restrict (U ∩ H)) + eLpNorm g p (μ.restrict (U ∩ H)) := by
         rw [eLpNorm_comp_measurePreserving hg' hρ, hnorm, hnorm]
+
+/-- **The odd reflection of a vector field.** Let `U` be a measurable set mapped into itself by
+the hyperplane reflection `ρ`, let `H` be measurable, let `1 ≤ p` and let `T` be a linear isometric
+equivalence of `E`, such as the linear part of `ρ`. If `G ∈ Lᵖ(U ∩ H)`, then
+`x ↦ 1_H G x - 1_H (T ∘ G) (ρ x)` lies in `Lᵖ(U)`, with norm at most `2 ‖G‖_{Lᵖ(U ∩ H)}`. -/
+theorem memLp_indicator_sub_indicator_linearIsometryEquiv_comp_hyperplaneReflection
+    [NormedSpace ℝ E] (hp : 1 ≤ p) (hHm : MeasurableSet H) (hUm : MeasurableSet U)
+    (hU : Set.MapsTo (hyperplaneReflection ν c) U U) (T : E ≃ₗᵢ[ℝ] E)
+    (hf : MemLp f p (μ.restrict (U ∩ H))) :
+    MemLp (fun x => H.indicator f x - H.indicator (fun y => T (f y)) (hyperplaneReflection ν c x))
+        p (μ.restrict U) ∧
+      eLpNorm (fun x => H.indicator f x -
+        H.indicator (fun y => T (f y)) (hyperplaneReflection ν c x)) p (μ.restrict U) ≤
+          2 * eLpNorm f p (μ.restrict (U ∩ H)) := by
+  refine ⟨memLp_indicator_sub_indicator_comp_hyperplaneReflection hHm hUm hU hf
+    (T.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp' hf), ?_⟩
+  refine (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le hp hHm hUm hU).trans_eq ?_
+  rw [LinearIsometryEquiv.eLpNorm_comp, two_mul]
+
+/-- **The odd reflection in indicator form.** Let `U` be a measurable set mapped into itself by
+the hyperplane reflection `ρ`, and let `f` vanish almost everywhere on `U ∖ H`. For a map `T` with
+`T 0 = 0`, the function `x ↦ f x - T (f (ρ x))` is almost everywhere on `U` the function
+`x ↦ 1_H f x - 1_H (T ∘ f) (ρ x)`. -/
+theorem sub_comp_hyperplaneReflection_ae_eq_indicator (hUm : MeasurableSet U)
+    (hU : Set.MapsTo (hyperplaneReflection ν c) U U) {T : E → E} (hT : T 0 = 0)
+    (hf : ∀ᵐ x ∂μ.restrict U, x ∉ H → f x = 0) :
+    (fun x => f x - T (f (hyperplaneReflection ν c x))) =ᵐ[μ.restrict U]
+      fun x => H.indicator f x - H.indicator (fun y => T (f y)) (hyperplaneReflection ν c x) := by
+  filter_upwards [hf,
+    (measurePreserving_restrict_hyperplaneReflection hU hUm).quasiMeasurePreserving.ae hf]
+    with x h1 h2
+  congr 1
+  · by_cases hx : x ∈ H
+    · rw [Set.indicator_of_mem hx]
+    · rw [Set.indicator_of_notMem hx, h1 hx]
+  · by_cases hx : hyperplaneReflection ν c x ∈ H
+    · rw [Set.indicator_of_mem hx]
+    · rw [Set.indicator_of_notMem hx, h2 hx, hT]
 
 /-- **Moving the reflection across a pairing.** Let `U` be a measurable set mapped into itself by
 the hyperplane reflection `ρ`, with linear part `R = (ℝ ∙ ν)ᗮ.reflection`. For vector fields `G`

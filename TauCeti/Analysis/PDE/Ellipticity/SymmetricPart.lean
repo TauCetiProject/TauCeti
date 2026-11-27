@@ -69,6 +69,13 @@ lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.Is
   rw [coefficientSymmetricPart_apply, hA.apply i j]
   ring
 
+/-- Subtracting its symmetric part from a coefficient matrix leaves an antisymmetric matrix. -/
+lemma transpose_sub_coefficientSymmetricPart_eq_neg (A : Matrix n n ℝ) :
+    (A - coefficientSymmetricPart A)ᵀ = -(A - coefficientSymmetricPart A) := by
+  ext i j
+  simp only [transpose_apply, Matrix.neg_apply, Matrix.sub_apply, coefficientSymmetricPart_apply]
+  ring
+
 @[simp]
 lemma coefficientSymmetricPart_transpose (A : Matrix n n ℝ) :
     coefficientSymmetricPart Aᵀ = coefficientSymmetricPart A := by
