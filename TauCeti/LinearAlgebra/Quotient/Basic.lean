@@ -23,6 +23,8 @@ of which it contains a multiple by a regular scalar.
   when `f⁻¹(q) ≤ p`.
 * `Submodule.isTorsionFree_quotient_iff`: a submodule has torsion-free quotient if and only if
   it is saturated.
+* `Submodule.surjective_mkQ_comp_comp_subtype_of_map_sup_eq_top`: a linear map restricted to `W`,
+  followed by the quotient by `S`, is onto when the image of `W` and `S` span the target.
 -/
 
 public section
@@ -52,5 +54,13 @@ theorem isTorsionFree_quotient_iff {S : Submodule R M} :
     Module.IsTorsionFree R (M ⧸ S) ↔ ∀ (c : R) (z : M), IsRegular c → c • z ∈ S → z ∈ S :=
   ⟨fun _ c _ hc ↦ (isSMulRegular_quotient_iff_mem_of_smul_mem S c).mp hc.isSMulRegular _,
     fun hS ↦ ⟨fun c hc ↦ (isSMulRegular_quotient_iff_mem_of_smul_mem S c).mpr (hS c · hc)⟩⟩
+
+/-- A linear map `d` restricted to `W`, followed by the quotient by `S`, is onto when the image of
+`W` under `d` and `S` span the target. -/
+theorem surjective_mkQ_comp_comp_subtype_of_map_sup_eq_top {N : Type*} [AddCommGroup N]
+    [Module R N] {d : M →ₗ[R] N} {W : Submodule R M} {S : Submodule R N} (h : W.map d ⊔ S = ⊤) :
+    Function.Surjective (S.mkQ ∘ₗ d ∘ₗ W.subtype) :=
+  LinearMap.range_eq_top.1 <| by
+    simpa [LinearMap.range_comp, map_mkQ_eq_top, sup_comm] using h
 
 end Submodule
