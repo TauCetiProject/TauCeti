@@ -13,9 +13,9 @@ public import TauCeti.Analysis.SpecialFunctions.Elliptic.Weierstrass.Sigma
 
 The reduced sigma function is the Weierstrass product multiplied by `exp (-s₂ z² / 2)`,
 where `s₂` removes the complex-linear part of the quasi-period map. Its transformation law
-involves only the Hermitian form `π conj(l) z / area(ℂ/Λ)` and the sign that is positive
-exactly on `2Λ`. It is entire, odd, has derivative one at zero, and has simple zeros exactly
-on the lattice. Both the correction and the function depend only on the lattice.
+involves only the Hermitian form `π conj(l) z / area(ℂ/Λ)` and a sign that is `1` exactly
+on `2Λ` and `-1` otherwise. It is entire, odd, has derivative one at zero, and has simple
+zeros exactly on the lattice. Both the correction and the function depend only on the lattice.
 
 This normalization permits translating sigma by a half-period to construct even theta
 functions with a Hermitian transformation law.
@@ -126,8 +126,8 @@ theorem reducedSigma_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.la
     weierstrassSigma_eq_of_lattice_eq h]
 
 open Classical in
-/-- The Hermitian transformation law of reduced sigma. The multiplier is positive exactly
-at twice a lattice vector. -/
+/-- The Hermitian transformation law of reduced sigma. The multiplier is a sign times an
+exponential; the sign is `1` exactly when `l` is twice a lattice vector and `-1` otherwise. -/
 theorem reducedSigma_add_coe (z : ℂ) (l : L.lattice) :
     L.reducedSigma (z + l) =
       (if (l : ℂ) / 2 ∈ L.lattice then (1 : ℂ) else -1) *
