@@ -19,7 +19,7 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
 # Gluing first-order operators on the cylinder along a long neck
 
 Let `D₁` and `D₂` be first-order operators `D ξ = M (ξ, ∂s ξ, ∂t ξ)` on the cylinder `ℝ × S¹`,
-realized from `W^{1,2}(ℝ × S¹, V)` to `L²(ℝ × S¹, W)` by `TauCeti.jetOperator stripMeasure`, with
+realized from `W^{1,2}(ℝ × S¹, V)` to `L²(ℝ × S¹, W)` by `TauCeti.jetOperator 2 stripMeasure`, with
 essentially bounded coefficient fields `M₁` and `M₂` whose ends match: `M₁(s, t) → M(t)` as
 `s → +∞` and `M₂(s, t) → M(t)` as `s → -∞`, uniformly in `t`. Gluing the positive end of `M₁` to
 the negative end of `M₂` along a neck of length `2 R` gives the coefficient field
@@ -135,12 +135,12 @@ theorem norm_jetOperator_cutoffL_sub_le {G N : ℝ × ℝ → V × V × V →L[�
     (hB : ∀ᵐ z ∂stripMeasure, ‖G z‖ ≤ B) (hd : ∀ s, |deriv β s| ≤ d) (hε : 0 ≤ ε)
     (hGN : ∀ᵐ z ∂stripMeasure, β z.1 ≠ 0 → ‖G z - N z‖ ≤ ε) {x : H1 V}
     {ζ : Lp W 2 stripMeasure} (hζ : ∀ᵐ z ∂stripMeasure,
-      ζ z = β z.1 • jetOperator stripMeasure N (x : Lp (V × V × V) 2 stripMeasure) z) :
-    ‖jetOperator stripMeasure G (cutoffL hβ hβ1 hβ'1 x : Lp (V × V × V) 2 stripMeasure) - ζ‖ ≤
+      ζ z = β z.1 • jetOperator 2 stripMeasure N (x : Lp (V × V × V) 2 stripMeasure) z) :
+    ‖jetOperator 2 stripMeasure G (cutoffL hβ hβ1 hβ'1 x : Lp (V × V × V) 2 stripMeasure) - ζ‖ ≤
       (ε + d * B) * ‖x‖ := by
   rw [← Submodule.norm_coe x]
   refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-  filter_upwards [Lp.coeFn_sub (jetOperator stripMeasure G
+  filter_upwards [Lp.coeFn_sub (jetOperator 2 stripMeasure G
       (cutoffL hβ hβ1 hβ'1 x : Lp (V × V × V) 2 stripMeasure)) ζ,
     coeFn_jetOperator hG (cutoffL hβ hβ1 hβ'1 x : Lp (V × V × V) 2 stripMeasure),
     coeFn_jetOperator (memLp_cutoffCoeff (hβ.of_le one_le_two) hβ1 hβ'1)
@@ -184,9 +184,9 @@ private theorem norm_jetOperator_cutoffL_add_sub_le {S : Type*} [NormedAddCommGr
     (hB : ∀ᵐ z ∂stripMeasure, ‖G z‖ ≤ B) (hB0 : 0 ≤ B) (hd : ∀ s, |deriv β s| ≤ d) (hε : 0 ≤ ε)
     (hGN : ∀ᵐ z ∂stripMeasure, β z.1 ≠ 0 → ‖G z - N z‖ ≤ ε) {ι : S →L[ℝ] Lp W 2 stripMeasure}
     (hι : ∀ σ, ∀ᵐ z ∂stripMeasure, z ∉ A → ι σ z = 0) {Q : Lp W 2 stripMeasure →L[ℝ] H1 V × S}
-    (hQ : (((jetOperator stripMeasure N).comp (H1 V).subtypeL).coprod ι).comp Q =
+    (hQ : (((jetOperator 2 stripMeasure N).comp (H1 V).subtypeL).coprod ι).comp Q =
       ContinuousLinearMap.id ℝ _) (η : Lp W 2 stripMeasure) :
-    ‖jetOperator stripMeasure G (cutoffL hβ hβ1 hβ'1
+    ‖jetOperator 2 stripMeasure G (cutoffL hβ hβ1 hβ'1
           (Q (Lp.multiplicationOperator (linftyIndicator stripMeasure A hA) η)).1 :
           Lp (V × V × V) 2 stripMeasure) +
         ι (Q (Lp.multiplicationOperator (linftyIndicator stripMeasure A hA) η)).2 -
@@ -194,11 +194,11 @@ private theorem norm_jetOperator_cutoffL_add_sub_le {S : Type*} [NormedAddCommGr
       (ε + d * B) * (‖Q‖ * ‖η‖) := by
   set χη := Lp.multiplicationOperator (linftyIndicator stripMeasure A hA) η
   set y := Q χη
-  have hy : jetOperator stripMeasure N (y.1 : Lp (V × V × V) 2 stripMeasure) + ι y.2 = χη := by
+  have hy : jetOperator 2 stripMeasure N (y.1 : Lp (V × V × V) 2 stripMeasure) + ι y.2 = χη := by
     simpa using congrArg (fun T ↦ T χη) hQ
   -- `D_N x = 𝟙_A η - ι σ`, which vanishes wherever `β ≠ 1`, so it is `β D_N x`.
   have hζ : ∀ᵐ z ∂stripMeasure, (χη - ι y.2) z =
-      β z.1 • jetOperator stripMeasure N (y.1 : Lp (V × V × V) 2 stripMeasure) z := by
+      β z.1 • jetOperator 2 stripMeasure N (y.1 : Lp (V × V × V) 2 stripMeasure) z := by
     rw [eq_sub_of_add_eq hy]
     filter_upwards [Lp.coeFn_sub χη (ι y.2), Lp.multiplicationOperator_linftyIndicator_ae hA η,
       hι y.2] with z h₁ h₂ h₃
@@ -207,7 +207,7 @@ private theorem norm_jetOperator_cutoffL_add_sub_le {S : Type*} [NormedAddCommGr
     have hzA : z ∉ A := fun hzA ↦ hz (hβA z hzA)
     rw [h₁, Pi.sub_apply, h₂, h₃ hzA, indicator_of_notMem hzA, sub_zero, smul_zero]
   have hδ : 0 ≤ ε + d * B := add_nonneg hε (mul_nonneg ((abs_nonneg _).trans (hd 0)) hB0)
-  calc _ = ‖jetOperator stripMeasure G (cutoffL hβ hβ1 hβ'1 y.1 : Lp (V × V × V) 2 stripMeasure) -
+  calc _ = ‖jetOperator 2 stripMeasure G (cutoffL hβ hβ1 hβ'1 y.1 : Lp (V × V × V) 2 stripMeasure) -
         (χη - ι y.2)‖ := by rw [sub_sub_eq_add_sub]
     _ ≤ (ε + d * B) * ‖y.1‖ :=
         norm_jetOperator_cutoffL_sub_le hG hN hβ hβ1 hβ'1 hB hd hε hGN hζ
@@ -369,12 +369,12 @@ private theorem exists_splicedInverse {G N₁ N₂ : ℝ × ℝ → V × V × V 
     (hι₁ : ∀ σ, ∀ᵐ z ∂stripMeasure, 0 ≤ z.1 → ι₁ σ z = 0)
     (hι₂ : ∀ σ, ∀ᵐ z ∂stripMeasure, z.1 < 0 → ι₂ σ z = 0)
     {Q₁ : Lp W 2 stripMeasure →L[ℝ] H1 V × S₁} {Q₂ : Lp W 2 stripMeasure →L[ℝ] H1 V × S₂}
-    (hQ₁ : (((jetOperator stripMeasure N₁).comp (H1 V).subtypeL).coprod ι₁).comp Q₁ =
+    (hQ₁ : (((jetOperator 2 stripMeasure N₁).comp (H1 V).subtypeL).coprod ι₁).comp Q₁ =
       ContinuousLinearMap.id ℝ _)
-    (hQ₂ : (((jetOperator stripMeasure N₂).comp (H1 V).subtypeL).coprod ι₂).comp Q₂ =
+    (hQ₂ : (((jetOperator 2 stripMeasure N₂).comp (H1 V).subtypeL).coprod ι₂).comp Q₂ =
       ContinuousLinearMap.id ℝ _) :
     ∃ Q₀ : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂), ‖Q₀‖ ≤ 2 * (‖Q₁‖ + ‖Q₂‖) ∧
-      ‖(((jetOperator stripMeasure G).comp (H1 V).subtypeL).coprod (ι₁.coprod ι₂)).comp Q₀ -
+      ‖(((jetOperator 2 stripMeasure G).comp (H1 V).subtypeL).coprod (ι₁.coprod ι₂)).comp Q₀ -
         ContinuousLinearMap.id ℝ _‖ ≤ (ε + 2 / R * L * B) * (‖Q₁‖ + ‖Q₂‖) := by
   set S : Set (ℝ × ℝ) := {z | z.1 < 0}
   have hS : MeasurableSet S := measurableSet_lt measurable_fst measurable_const
@@ -417,9 +417,9 @@ private theorem exists_splicedInverse {G N₁ N₂ : ℝ × ℝ → V × V × V 
       ContinuousLinearMap.prod_apply, add_apply, ContinuousLinearMap.coe_fst',
       ContinuousLinearMap.coe_snd', Submodule.subtypeL_apply, map_add,
       ContinuousLinearMap.id_apply]
-    calc _ = ‖(jetOperator stripMeasure G (β₁ (Q₁ (χ₁ η)).1 : Lp (V × V × V) 2 stripMeasure) +
+    calc _ = ‖(jetOperator 2 stripMeasure G (β₁ (Q₁ (χ₁ η)).1 : Lp (V × V × V) 2 stripMeasure) +
             ι₁ (Q₁ (χ₁ η)).2 - χ₁ η) +
-          (jetOperator stripMeasure G (β₂ (Q₂ (χ₂ η)).1 : Lp (V × V × V) 2 stripMeasure) +
+          (jetOperator 2 stripMeasure G (β₂ (Q₂ (χ₂ η)).1 : Lp (V × V × V) 2 stripMeasure) +
             ι₂ (Q₂ (χ₂ η)).2 - χ₂ η)‖ := by
           rw [sub_add_sub_comm, Lp.multiplicationOperator_linftyIndicator_add_compl hS η]
           abel_nf
@@ -555,12 +555,12 @@ theorem exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff
     (hι₁ : ∀ σ, ∀ᵐ z ∂stripMeasure, T < z.1 → ι₁ σ z = 0)
     (hι₂ : ∀ σ, ∀ᵐ z ∂stripMeasure, z.1 < -T → ι₂ σ z = 0)
     {Q₁ : Lp W 2 stripMeasure →L[ℝ] H1 V × S₁} {Q₂ : Lp W 2 stripMeasure →L[ℝ] H1 V × S₂}
-    (hQ₁ : (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).comp Q₁ =
+    (hQ₁ : (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).comp Q₁ =
       ContinuousLinearMap.id ℝ _)
-    (hQ₂ : (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).comp Q₂ =
+    (hQ₂ : (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).comp Q₂ =
       ContinuousLinearMap.id ℝ _) :
     ∃ R₀ : ℝ, ∀ R ≥ R₀, ∃ Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂),
-      (((jetOperator stripMeasure
+      (((jetOperator 2 stripMeasure
           (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
           (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).comp Q =
           ContinuousLinearMap.id ℝ _ ∧
@@ -628,12 +628,12 @@ theorem exists_forall_ge_exists_rightInverse_jetOperator_gluedCoeff
     (h₁ : TendstoUniformlyOn (Function.curry M₁) M atTop (Icc 0 1))
     (h₂ : TendstoUniformlyOn (Function.curry M₂) M atBot (Icc 0 1))
     {Q₁ Q₂ : Lp W 2 stripMeasure →L[ℝ] H1 V}
-    (hQ₁ : ((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).comp Q₁ =
+    (hQ₁ : ((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).comp Q₁ =
       ContinuousLinearMap.id ℝ _)
-    (hQ₂ : ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).comp Q₂ =
+    (hQ₂ : ((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).comp Q₂ =
       ContinuousLinearMap.id ℝ _) :
     ∃ R₀ : ℝ, ∀ R ≥ R₀, ∃ Q : Lp W 2 stripMeasure →L[ℝ] H1 V,
-      ((jetOperator stripMeasure
+      ((jetOperator 2 stripMeasure
           (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
           (H1 V).subtypeL).comp Q = ContinuousLinearMap.id ℝ _ ∧
         ‖Q‖ ≤ 4 * (‖Q₁‖ + ‖Q₂‖) := by

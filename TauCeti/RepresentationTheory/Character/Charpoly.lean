@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 public import TauCeti.RepresentationTheory.Character.Pow
 import TauCeti.LinearAlgebra.Charpoly.FinrankTwo
+import TauCeti.LinearAlgebra.Charpoly.Trace
 
 /-!
 # Characters determine characteristic polynomials
@@ -118,8 +119,7 @@ theorem det_eq_det_pow_of_character_eq (ρ' : Representation k G W) {x : G} {j :
   have hcp : (ρ' x).charpoly = (ρ (x ^ j)).charpoly :=
     charpoly_eq_of_character_pow_eq hdim fun i _ _ ↦ by
       rw [h _ (pow_mem (Submonoid.mem_powers x) i), ← pow_mul, ← pow_mul, mul_comm]
-  rw [LinearMap.det_eq_sign_charpoly_coeff, hcp, hdim, ← LinearMap.det_eq_sign_charpoly_coeff,
-    map_pow, map_pow]
+  rw [LinearMap.det_eq_of_charpoly_eq hcp, map_pow, map_pow]
 
 /-- In characteristic zero, if `g ^ 2 = 1`, then the characteristic polynomial of `ρ g` is
 `(X - 1) ^ a * (X + 1) ^ b` for any `a` and `b` with `a + b = dim ρ` and `a - b = χ_ρ (g)`. -/

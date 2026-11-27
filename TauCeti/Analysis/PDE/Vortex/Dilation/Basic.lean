@@ -29,6 +29,15 @@ derivative `d_a α` by `t`, so for `t = √(2r)` the plane integral of the integ
 scaled energy does not depend on `r`. Pullback by a fixed dilation is real linear in the field
 (`dilateFieldLinearMap`).
 
+Writing `h = (2 r)^(-1/2)`, the coupling `2 r` is `h⁻²`. The defect at coupling `h⁻²` with its
+curvature row multiplied by `h²` and its complex rows by `h`, as the Seiberg–Witten section of
+Taubes's gluing normalizes them, is `scaledCoupledEquation h`. For `h ≠ 0` it is the plane vortex
+defect of `dilateField h x` at `h⁻¹ z` (`scaledCoupledEquation_eq_equation_dilateField`, the flat
+scaling `equation_dilateField_inv_sqrt` in terms of `h`), so the normalized defect of
+`dilateField h⁻¹ x` at `z` is the plane vortex defect of `x` at `h⁻¹ z`
+(`scaledCoupledEquation_dilateField_inv`), and it vanishes exactly at the solutions of coupling
+`h⁻²` (`scaledCoupledEquation_eq_zero_iff`).
+
 The same laws hold for the linearization and the infinitesimal and finite gauge
 actions. For positive coupling the gauge row uses the coefficient metric `|b|² + c |δα|²/4`; its
 transformation accounts for the change of that metric. The energy density acquires the factors
@@ -396,6 +405,67 @@ theorem equation_dilateField_inv_sqrt_eq_zero_iff {r : ℝ} (hr : 0 < r)
   simpa only [hc, coupledEquation_one] using
     coupledEquation_dilateField_eq_zero_iff (2 * r) (t := (√(2 * r))⁻¹)
       (inv_ne_zero (by positivity)) x
+
+/-- **The normalized defect at coupling `h⁻²`.** The defect of the field `x` for the plane vortex
+equation `*iF_a = (1 - |α|²) / (8 h²)` with coupling `h⁻²`, normalized as the Seiberg–Witten
+section of Taubes's gluing at `h = (2 r)^(-1/2)`: its curvature row is multiplied by `h²` and the
+two rows of `∂bar_a α` by `h`. -/
+def scaledCoupledEquation (h : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    EuclideanSpace ℝ (Fin 3) :=
+  !₂[h ^ 2 * coupledEquation (h ^ 2)⁻¹ x z 0, h * coupledEquation (h ^ 2)⁻¹ x z 1,
+    h * coupledEquation (h ^ 2)⁻¹ x z 2]
+
+theorem scaledCoupledEquation_def (h : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    scaledCoupledEquation h x z =
+      !₂[h ^ 2 * coupledEquation (h ^ 2)⁻¹ x z 0, h * coupledEquation (h ^ 2)⁻¹ x z 1,
+        h * coupledEquation (h ^ 2)⁻¹ x z 2] :=
+  (rfl)
+
+@[simp]
+theorem scaledCoupledEquation_apply_zero (h : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    scaledCoupledEquation h x z 0 = h ^ 2 * coupledEquation (h ^ 2)⁻¹ x z 0 :=
+  (rfl)
+
+@[simp]
+theorem scaledCoupledEquation_apply_one (h : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    scaledCoupledEquation h x z 1 = h * coupledEquation (h ^ 2)⁻¹ x z 1 :=
+  (rfl)
+
+@[simp]
+theorem scaledCoupledEquation_apply_two (h : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    scaledCoupledEquation h x z 2 = h * coupledEquation (h ^ 2)⁻¹ x z 2 :=
+  (rfl)
+
+/-- **The normalized defect is the plane defect in the unit-scale coordinate.** For `h ≠ 0`, the
+normalized defect of `x` at `z` is the plane vortex defect of the dilated field `dilateField h x`
+at `w = h⁻¹ z`. -/
+theorem scaledCoupledEquation_eq_equation_dilateField {h : ℝ} (hh : h ≠ 0)
+    (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    scaledCoupledEquation h x z = equation (dilateField h x) (h⁻¹ • z) := by
+  have h₁ := coupledEquation_dilateField (h ^ 2)⁻¹ h x (h⁻¹ • z)
+  rw [mul_inv_cancel₀ (pow_ne_zero 2 hh), coupledEquation_one, smul_inv_smul₀ hh] at h₁
+  rw [h₁, scaledCoupledEquation_def]
+
+/-- **The normalized defect of a field moved to the scale `h`.** For `h ≠ 0`, the normalized
+defect of `dilateField h⁻¹ x`, the field `x` moved from the coordinate `w` to `z = h w`, is the
+plane vortex defect of `x` at `w = h⁻¹ z`. -/
+@[simp]
+theorem scaledCoupledEquation_dilateField_inv {h : ℝ} (hh : h ≠ 0)
+    (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    scaledCoupledEquation h (dilateField h⁻¹ x) z = equation x (h⁻¹ • z) := by
+  rw [scaledCoupledEquation_eq_equation_dilateField hh, dilateField_dilateField,
+    mul_inv_cancel₀ hh, dilateField_one]
+
+/-- For `h ≠ 0`, the normalized defect vanishes exactly at the solutions of the plane vortex
+equation of coupling `h⁻²`. -/
+theorem scaledCoupledEquation_eq_zero_iff {h : ℝ} (hh : h ≠ 0)
+    (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    scaledCoupledEquation h x = 0 ↔ coupledEquation (h ^ 2)⁻¹ x = 0 := by
+  rw [← coupledEquation_dilateField_eq_zero_iff (h ^ 2)⁻¹ hh x,
+    mul_inv_cancel₀ (pow_ne_zero 2 hh), coupledEquation_one]
+  simp only [funext_iff, Pi.zero_apply, scaledCoupledEquation_eq_equation_dilateField hh]
+  refine ⟨fun H w ↦ ?_, fun H z ↦ H _⟩
+  simpa [smul_smul, hh] using H (h • w)
 
 /-- The linearization of `coupledEquation c` with gauge row
 `div b + c(p δq - q δp)`. For positive `c`, that row is the gauge adjoint for

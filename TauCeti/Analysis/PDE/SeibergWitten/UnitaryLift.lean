@@ -118,6 +118,9 @@ canonical lift as a homomorphism of structure groups.
 * `TauCeti.SeibergWitten.spinCUnitary_mem_canonicalLineFixingSubgroup` and
   `TauCeti.SeibergWitten.spinCCircle_mem_canonicalLineFixingSubgroup`: the quaternionic frame lift
   `e.spinCUnitary` and the plane lift `spinCCircle` on `⟨e₂, e₃⟩` fix the canonical eigenspace.
+* `TauCeti.SeibergWitten.realSpinCGroupHom_unitarySpinCLift_mem_canonicalLineFixingSubgroup`: so
+  does the coordinate lift `TauCeti.unitarySpinCLift` of `U(ℝ⁴, J₀)`, read on `V` through a frame
+  carrying `J₀` to `J`.
 * `toSpecialOrthogonal_mem_unitaryGroup_of_mem_canonicalLineFixingSubgroup`,
   `eq_one_of_mem_canonicalLineFixingSubgroup_of_toSpecialOrthogonal_eq_one` and
   `exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq_of_mem_unitaryGroup`: the three
@@ -431,6 +434,27 @@ theorem spinCUnitary_mem_canonicalLineFixingSubgroup {e : OrthonormalBasis (Fin 
   have hcu' : spinCGroupHalfSpinRep o ρ 1 hQ₀ (e.spinCUnitary hQ hQ₀ h) u = c • u :=
     Subtype.ext hcu
   rw [map_mul, map_mul, mul_apply_eq_comp, hcu', map_smul, hcu', smul_smul, ← sq, hc2, one_smul]
+
+/-- **The unitary lift of `ℝ⁴` fixes the canonical eigenspace of the model.** Let `J` be the
+complex structure of `V` corresponding to `J₀` under the frame `b`. Then, read on `V` through `b`,
+the coordinate lift `TauCeti.unitarySpinCLift g` acts trivially on the `-2i`-eigenspace of `c₂(ω)`
+in the positive half-spinors of every complex Clifford module, Taubes's canonical line. -/
+theorem realSpinCGroupHom_unitarySpinCLift_mem_canonicalLineFixingSubgroup
+    {J₀ : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))}
+    (hJ₀ : ∀ v, (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
+      ((J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) v) = -v)
+    (e : OrthonormalBasis (Fin 4) ℝ (EuclideanSpace ℝ (Fin 4)))
+    (h₀ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 0) = e 1)
+    (h₂ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 2) = e 3)
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (b : OrthonormalBasis (Fin 4) ℝ V)
+    (hJ : ∀ w, J (b.repr.symm w) =
+      b.repr.symm ((J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) w)) (hQ₀ : Q ≠ 0)
+    (g : Subgroup.centralizer {J₀}) :
+    b.realSpinCGroupHom hQ (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀
+        (unitarySpinCLift hJ₀ e h₀ h₂ g) ∈
+      canonicalLineFixingSubgroup o ρ J hQ₀ := by
+  rw [realSpinCGroupHom_unitarySpinCLift hJ₀ e h₀ h₂ hQ hQ₀ b g]
+  exact spinCUnitary_mem_canonicalLineFixingSubgroup hQ (by simp [hJ, h₀]) (by simp [hJ, h₂]) hQ₀ _
 
 /-- **Every unitary rotation lifts to the subgroup fixing the canonical eigenspace**, on every
 complex Clifford module `W`: in any unitary frame `e`, the quaternionic lift `e.spinCUnitary`
