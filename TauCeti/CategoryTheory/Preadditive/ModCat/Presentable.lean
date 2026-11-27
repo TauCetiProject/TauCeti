@@ -37,35 +37,6 @@ namespace TauCeti.ModCat
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
-/-- Maps from a representable module are the elements at its representing object,
-naturally in the target module. -/
-noncomputable def coyonedaYonedaIsoEvaluation (X : C) :
-    coyoneda.obj (op ((yoneda C).obj X)) ≅
-      (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι ⋙
-        (evaluation Cᵒᵖ AddCommGrpCat.{v}).obj (op X) ⋙
-        forget AddCommGrpCat.{v} ⋙ uliftFunctor.{u} :=
-  NatIso.ofComponents (fun F ↦ (Equiv.ofBijective
-    (fun (f : (yoneda C).obj X ⟶ F) ↦ ULift.up (f.hom.app (op X) (𝟙 X)))
-    ⟨fun _ _ h ↦ ObjectProperty.hom_ext _ (preadditiveYoneda_obj_hom_ext (congrArg ULift.down h)),
-      fun x ↦ by
-        let : F.obj.Additive := (additiveFunctor_iff _).1 F.property
-        let t : preadditiveYoneda.obj X ⟶ F.obj :=
-          { app Y := AddCommGrpCat.ofHom (
-              { toFun := fun a ↦ F.obj.map a.op x.down
-                map_zero' := by simp
-                map_add' a b := by simp } : (Y.unop ⟶ X) →+ F.obj.obj Y)
-            naturality Y Z f := by
-              ext (a : Y.unop ⟶ X)
-              exact ConcreteCategory.congr_hom (F.obj.map_comp a.op f) x.down }
-        refine ⟨ObjectProperty.homMk t, ULift.ext ?_⟩
-        exact (by simp : F.obj.map (𝟙 X).op x.down = x.down)⟩).toIso) (fun _ ↦ rfl)
-
-@[simp↓]
-lemma coyonedaYonedaIsoEvaluation_hom_app_down (X : C) (F : ModCat.{v} C)
-    (f : (yoneda C).obj X ⟶ F) :
-    ((coyonedaYonedaIsoEvaluation X).hom.app F f).down = f.hom.app (op X) (𝟙 X) :=
-  (rfl)
-
 /-- Representable modules preserve filtered colimits under covariant Hom in the
 morphism universe of the source category. -/
 instance (X : C) : IsFinitelyPresentable.{v} ((yoneda C).obj X) := by
@@ -86,11 +57,14 @@ private lemma isSeparating_ofObj_yoneda [EssentiallySmall.{v} C] :
   have eq := h _ (ObjectProperty.ofObj_apply (e.inverse ⋙ yoneda C).obj X) (i.inv ≫ a)
   have hab : a ≫ f = a ≫ g := by
     simpa using congrArg (i.hom ≫ ·) eq
-  have hx : a.hom.app Y (𝟙 Y.unop) = x := congrArg ULift.down ha
+  have hx : a.hom.app Y (𝟙 Y.unop) = x := by
+    simpa only [coyonedaYonedaIsoEvaluation_hom_app_down] using
+      congrArg (fun y : ULift.{u} (F.obj.obj Y) ↦ y.down) ha
   simpa [Function.comp_def, hx] using
     congrArg (fun t : (yoneda C).obj Y.unop ⟶ G ↦ t.hom.app Y (𝟙 Y.unop)) hab
 
-private lemma isStrongGenerator_ofObj_yoneda [EssentiallySmall.{v} C] :
+/-- The representable modules indexed by a small model of `C` form a strong generating family. -/
+lemma isStrongGenerator_ofObj_yoneda [EssentiallySmall.{v} C] :
     (ObjectProperty.ofObj ((equivSmallModel.{v} C).inverse ⋙ yoneda C).obj).IsStrongGenerator := by
   have h := isSeparating_ofObj_yoneda (C := C)
   exact ObjectProperty.isStrongGenerator_iff.2
@@ -190,18 +164,20 @@ private def lift (P : ∀ k : K, Presentation (D.obj k)) (a : Arrow K) :
     (∐ fun i ↦ (yoneda C).obj ((P a.left).X i)) ⟶
       ∐ fun i ↦ (yoneda C).obj ((P a.right).X i) :=
   have : Epi (P a.right).π := Cofork.IsColimit.epi (P a.right).isCokernel
-  Sigma.desc fun i ↦ Projective.factorThru
-    (Sigma.ι (fun i ↦ (yoneda C).obj ((P a.left).X i)) i ≫ (P a.left).π ≫ D.map a.hom)
-    (P a.right).π
+  -- Mathlib's coproduct projectivity instance uses the module category's morphism universe.
+  let e := Sigma.reindex (Equiv.ulift : ULift.{u} (P a.left).I ≃ (P a.left).I)
+    (fun i ↦ (yoneda C).obj ((P a.left).X i))
+  have hProjective (i : ULift.{u} (P a.left).I) :
+      Projective ((yoneda C).obj ((P a.left).X i.down)) := inferInstance
+  have : Projective (∐ fun i ↦ (yoneda C).obj ((P a.left).X i)) :=
+    Projective.of_iso e (@Projective.instSigmaObj _ _ _ _ _ hProjective)
+  Projective.factorThru ((P a.left).π ≫ D.map a.hom) (P a.right).π
 
 @[reassoc]
 private lemma lift_π (P : ∀ k : K, Presentation (D.obj k)) (a : Arrow K) :
     lift P a ≫ (P a.right).π = (P a.left).π ≫ D.map a.hom := by
-  have : Epi (P a.right).π := Cofork.IsColimit.epi (P a.right).isCokernel
-  apply Sigma.hom_ext
-  intro i
-  simp only [lift, Sigma.ι_comp_desc_assoc]
-  exact Projective.factorThru_comp _ _
+  unfold lift
+  exact @Projective.factorThru_comp ..
 
 -- The first family gives the relations of the individual modules. The second imposes
 -- compatibility along each arrow of the diagram, on each generator of its source.

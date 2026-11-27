@@ -34,6 +34,8 @@ finitely presented functors are additive, so `mod C` is a full subcategory of `M
 
 * `TauCeti.ModCat C`: the category `Cᵒᵖ ⥤+ AddCommGrpCat.{w}` of `C`-modules.
 * `TauCeti.ModCat.yoneda C : C ⥤ ModCat C`: the Yoneda embedding `X ↦ Hom(-, X)`.
+* `TauCeti.ModCat.coyonedaYonedaIsoEvaluation`: maps out of `Hom(-, X)` are computed by
+  evaluation at `X`.
 * `TauCeti.ModCat.ofFinitelyPresented C`: the fully faithful inclusion `mod C ⥤ ModCat C`.
 
 ## Main results
@@ -80,6 +82,40 @@ through the full subcategory of additive functors. It is fully faithful by the `
 instances, and `ObjectProperty.liftCompιIso` recovers `preadditiveYoneda`. -/
 abbrev yoneda : C ⥤ ModCat.{v} C :=
   ObjectProperty.lift _ preadditiveYoneda fun _ ↦ (additiveFunctor_iff _).2 inferInstance
+
+variable {C} in
+/-- Maps from a representable module are the elements at its representing object,
+naturally in the target module. -/
+def coyonedaYonedaIsoEvaluation (X : C) :
+    coyoneda.obj (op ((yoneda C).obj X)) ≅
+      (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι ⋙
+        (evaluation Cᵒᵖ AddCommGrpCat.{v}).obj (op X) ⋙
+        forget AddCommGrpCat.{v} ⋙ uliftFunctor.{u} :=
+  NatIso.ofComponents (fun F ↦
+    letI : F.obj.Additive := (additiveFunctor_iff _).1 F.property
+    ({ toFun := fun f ↦ ULift.up (f.hom.app (op X) (𝟙 X))
+       invFun := fun x ↦ ObjectProperty.homMk (preadditiveYonedaHomOfElement x.down)
+       left_inv := fun f ↦ ObjectProperty.hom_ext _
+         (preadditiveYoneda_obj_hom_ext (by simp))
+       right_inv := fun x ↦ ULift.ext (by simp) } :
+        ((yoneda C).obj X ⟶ F) ≃ ULift.{u} (F.obj.obj (op X))).toIso) (fun _ ↦ rfl)
+
+variable {C} in
+/-- The evaluation isomorphism sends a morphism to its value on the identity of `X`. -/
+@[simp↓]
+lemma coyonedaYonedaIsoEvaluation_hom_app_down (X : C) (F : ModCat.{v} C)
+    (f : (yoneda C).obj X ⟶ F) :
+    ((coyonedaYonedaIsoEvaluation X).hom.app F f).down = f.hom.app (op X) (𝟙 X) :=
+  (rfl)
+
+variable {C} in
+/-- The inverse evaluation isomorphism sends an arrow to its action on the given element. -/
+@[simp↓]
+lemma coyonedaYonedaIsoEvaluation_inv_app_hom_app (X : C) (F : ModCat.{v} C)
+    (x : ULift.{u} (F.obj.obj (op X))) (Y : Cᵒᵖ) (a : Y.unop ⟶ X) :
+    ((coyonedaYonedaIsoEvaluation X).inv.app F x).hom.app Y a = F.obj.map a.op x.down := by
+  let : F.obj.Additive := (additiveFunctor_iff _).1 F.property
+  exact preadditiveYonedaHomOfElement_app_apply x.down Y a
 
 /-- **Representable modules are projective.** A morphism `Hom(-, X) ⟶ G` is an element of
 `G(X)` by Yoneda, and it lifts along an epimorphism `F ⟶ G`, which is surjective at `X`. -/
