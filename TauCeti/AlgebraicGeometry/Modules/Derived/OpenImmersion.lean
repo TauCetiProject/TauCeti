@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.Functor
 public import TauCeti.Algebra.Homology.HomotopyCategory.KInjective
 public import TauCeti.AlgebraicGeometry.Modules.Derived.Restrict
 public import TauCeti.AlgebraicGeometry.Modules.Derived.TotalDirectImage
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.ExtensionByZero
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Pushforward
 
 /-!
@@ -67,17 +68,7 @@ theorem isKInjective_restrictFunctor_mapHomologicalComplex_obj {X Y : Scheme.{u}
   have hU (U : Y.Opens) (J : CochainComplex Y.Modules ℤ) [J.IsKInjective] :
       CochainComplex.IsKInjective
         (((restrictFunctor U.ι).mapHomologicalComplex (.up ℤ)).obj J) := by
-    -- The left adjoint of restriction to `U` is extension by zero from the slice site, up to the
-    -- equivalence `Scheme.Modules.overEquiv U`; it is exact.
-    let P := SheafOfModules.pullback.{u} (F := Over.forget U) (𝟙 (Y.ringCatSheaf.over U))
-    let L : U.toScheme.Modules ⥤ Y.Modules := (overEquiv U).inverse ⋙ P
-    let adj : L ⊣ restrictFunctor U.ι :=
-      ((overEquiv U).symm.toAdjunction.comp
-        (SheafOfModules.pullbackPushforwardAdjunction (F := Over.forget U)
-          (𝟙 (Y.ringCatSheaf.over U)))).ofNatIsoRight (overFunctorEquiv U)
-    have h : PreservesFiniteLimits ((overEquiv U).inverse ⋙ P) := inferInstance
-    have : PreservesFiniteLimits L := h
-    exact CochainComplex.isKInjective_map_of_adjunction adj J
+    exact CochainComplex.isKInjective_map_of_adjunction (extensionByZeroAdjunction U) J
   let e := f.isoOpensRange
   let i : restrictFunctor f.opensRange.ι ⋙ restrictFunctor e.hom ≅ restrictFunctor f :=
     (restrictFunctorComp e.hom f.opensRange.ι).symm ≪≫ restrictFunctorCongr f.isoOpensRange_hom_ι
