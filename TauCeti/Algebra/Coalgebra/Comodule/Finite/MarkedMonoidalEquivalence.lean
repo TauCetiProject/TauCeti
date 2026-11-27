@@ -106,6 +106,31 @@ theorem markedTensorComoduleIso_hom_toLinearMap (X Y : C) :
       (markedTensorIso E ω θ X Y).hom.hom :=
   (rfl)
 
+/-- Forgetting the inverse tensor lift recovers the inverse marked comparison. -/
+@[simp]
+theorem markedTensorComoduleIso_inv_toLinearMap (X Y : C) :
+    (markedTensorComoduleIso E ω θ h X Y).inv.hom.toLinearMap =
+      (markedTensorIso E ω θ X Y).inv.hom :=
+  (rfl)
+
+-- The transport comparisons and the marked comparisons agree after the forgetful
+-- functor's identity comparisons have been removed.
+private theorem transport_μ_eq_markedTensorIso_hom (X Y : C) :
+    letI := Functor.Monoidal.transport θ.symm
+    Functor.LaxMonoidal.μ
+      (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k))) X Y =
+      (markedTensorIso E ω θ X Y).hom := by
+  rw [Functor.Monoidal.transport_μ, markedTensorIso_hom, forget₂_semimoduleCat_δ]
+  exact (Category.id_comp _).symm
+
+private theorem transport_ε_eq_markedUnitIso_hom :
+    letI := Functor.Monoidal.transport θ.symm
+    Functor.LaxMonoidal.ε
+      (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k))) =
+      (markedUnitIso E ω θ).hom := by
+  rw [Functor.Monoidal.transport_ε, markedUnitIso_hom, forget₂_semimoduleCat_η]
+  exact (Category.id_comp _).symm
+
 -- A preimage of the native tensor unit turns the left unit comparison into an isomorphism
 -- from the image of the source unit to the native unit.
 private noncomputable def unitCandidate (X : C) (e : E.obj X ≅ 𝟙_ _) :
@@ -123,16 +148,17 @@ private theorem map_unitCandidate_hom (X : C) (e : E.obj X ≅ 𝟙_ _) :
   have hu := Functor.LaxMonoidal.tensorUnit_whiskerLeft_comp_leftUnitor_hom
     (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)))
       ((forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)).map e.inv)
-  have hm (Y Z : C) : (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)).map
-      (markedTensorComoduleIso E ω θ h Y Z).hom =
-      Functor.LaxMonoidal.μ
-        (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k))) Y Z := rfl
-  have he : (markedUnitIso E ω θ).hom = Functor.LaxMonoidal.ε
-      (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k))) := rfl
   simp only [unitCandidate, Iso.trans_hom, Iso.symm_hom, tensorIso_hom, Iso.refl_hom,
-    Functor.map_comp, Functor.mapIso_hom, hm, he]
+    Functor.map_comp, Functor.mapIso_hom]
   simp only [Functor.Monoidal.map_rightUnitor_inv, Functor.Monoidal.map_tensor]
-  -- The forgetful functor has identity tensor and unit comparisons.
+  -- Apply the monoidal map laws before forgetting to linear maps, so the categorical
+  -- coherence maps remain visible. The existing linear-map API identifies the tensor lift.
+  simp only [forget₂_semimoduleCat_map, ComoduleCat.forget₂_map,
+    markedTensorComoduleIso_hom_toLinearMap,
+    ← transport_μ_eq_markedTensorIso_hom E ω θ, ← transport_ε_eq_markedUnitIso_hom E ω θ]
+  -- The induced tensor/unit objects have the same carriers as their semimodule counterparts.
+  -- change removes the identity comparisons and their bundled-object wrappers together;
+  -- the categorical rewrites below then use these definitionally equal objects.
   change Functor.LaxMonoidal.ε (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B)
       (SemimoduleCat.{u} k))) ≫
       (ρ_ ((forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)).obj
@@ -140,15 +166,22 @@ private theorem map_unitCandidate_hom (X : C) (e : E.obj X ≅ 𝟙_ _) :
       (𝟙 _ ⊗ₘ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)).map e.inv) ≫
       Functor.LaxMonoidal.μ (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B)
         (SemimoduleCat.{u} k))) (𝟙_ C) X ≫ _ ≫ _ = 𝟙 _
+  -- Naturality moves the chosen preimage inverse past the right unitor; erw matches
+  -- the native unit carrier with the semimodule tensor unit.
   erw [rightUnitor_inv_naturality_assoc]
   rw [← tensorHom_id, tensorHom_comp_tensorHom_assoc]
+  -- The tensor-hom identities have definitionally equal bundled tensor sources.
   erw [Category.comp_id, Category.id_comp]
+  -- Apply the transported left unit law and move the preimage map past the left unitor;
+  -- their objects still use the induced tensor/unit wrappers.
   erw [← reassoc_of% hu, leftUnitor_naturality_assoc]
+  -- Cancel the preimage isomorphism after identifying composite-functor object wrappers.
   erw [← Functor.map_comp, Iso.inv_hom_id, CategoryTheory.Functor.map_id]
   simp only [Category.comp_id]
   apply SemimoduleCat.hom_ext
   apply LinearMap.ext
   intro r
+  -- On the base semiring, the remaining left/right unitors send r to r * 1.
   exact mul_one r
 
 variable [E.EssSurj]
@@ -168,6 +201,13 @@ theorem markedUnitComoduleIso_hom_toLinearMap :
       (markedUnitIso E ω θ).symm := Iso.ext
     (map_unitCandidate_hom E ω θ h _ _)
   exact congrArg (fun i => i.inv.hom) hi
+
+/-- Forgetting the inverse unit lift recovers the inverse marked comparison. -/
+@[simp]
+theorem markedUnitComoduleIso_inv_toLinearMap :
+    (markedUnitComoduleIso E ω θ h).inv.hom.toLinearMap =
+      (markedUnitIso E ω θ).inv.hom :=
+  congrArg (fun f => f.hom) (map_unitCandidate_hom E ω θ h _ _)
 
 omit [E.EssSurj] in
 private theorem markedTensor_natural_left {X Y : C} (f : X ⟶ Y) (Z : C) :
@@ -202,21 +242,19 @@ private theorem markedTensor_associativity (X Y Z : C) :
           (markedTensorComoduleIso E ω θ h X (Y ⊗ Z)).hom := by
   let : (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k))).Monoidal :=
     Functor.Monoidal.transport θ.symm
-  have hδ (M N : FGComoduleCat.{u, v, u} k B) : Functor.OplaxMonoidal.δ
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) M N = 𝟙 _ := rfl
-  have hμ (M N : FGComoduleCat.{u, v, u} k B) : Functor.LaxMonoidal.μ
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) M N = 𝟙 _ := rfl
-  have hη : Functor.OplaxMonoidal.η
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) = 𝟙 _ := rfl
   apply (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)).map_injective
   simp only [Functor.map_comp, Functor.Monoidal.map_whiskerLeft,
     Functor.Monoidal.map_whiskerRight, Functor.Monoidal.map_associator]
+  -- Transport gives the same tensor maps; the remaining heterogeneous equalities only
+  -- compare the induced tensor objects with their underlying semimodule tensor products.
+  -- Normalize those object wrappers before removing the identity comparisons.
   convert Functor.LaxMonoidal.associativity
     (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k))) X Y Z using 1 <;>
     first
     | rfl
     | apply heq_of_eq
-      simp_all only [forget₂_semimoduleCat_obj, ComoduleCat.forget₂_obj,
+      simp_all only [forget₂_semimoduleCat_δ, forget₂_semimoduleCat_μ,
+        forget₂_semimoduleCat_obj, ComoduleCat.forget₂_obj,
         SemimoduleCat.of_coe, forget₂_semimoduleCat_map, ComoduleCat.forget₂_map,
         Functor.comp_obj]
       (repeat' first | erw [Category.id_comp] | erw [Category.comp_id] |
@@ -228,26 +266,23 @@ private theorem markedUnit_left_unitality (X : C) :
       (markedTensorComoduleIso E ω θ h (𝟙_ C) X).hom ≫ E.map (λ_ X).hom := by
   let : (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k))).Monoidal :=
     Functor.Monoidal.transport θ.symm
-  have hδ (M N : FGComoduleCat.{u, v, u} k B) : Functor.OplaxMonoidal.δ
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) M N = 𝟙 _ := rfl
-  have hμ (M N : FGComoduleCat.{u, v, u} k B) : Functor.LaxMonoidal.μ
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) M N = 𝟙 _ := rfl
-  have hη : Functor.OplaxMonoidal.η
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) = 𝟙 _ := rfl
-  have hε : (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)).map
-      (markedUnitComoduleIso E ω θ h).hom = (markedUnitIso E ω θ).hom := by
-    apply SemimoduleCat.hom_ext
-    exact markedUnitComoduleIso_hom_toLinearMap E ω θ h
   apply (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)).map_injective
   simp only [Functor.map_comp, Functor.Monoidal.map_whiskerRight,
-    Functor.Monoidal.map_leftUnitor, hε]
+    Functor.Monoidal.map_leftUnitor]
+  simp only [forget₂_semimoduleCat_map, ComoduleCat.forget₂_map,
+    markedUnitComoduleIso_hom_toLinearMap, markedTensorComoduleIso_hom_toLinearMap,
+    SemimoduleCat.ofHom_hom]
+  -- The source objects differ syntactically by forgetting the native unit and tensor.
+  -- After normalizing these wrappers, the transported unit/tensor maps agree by definition;
+  -- the remaining identity whiskering is removed with erw across those equal objects.
   convert Functor.LaxMonoidal.left_unitality
     (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k))) X
     using 1 <;>
     first
     | rfl
     | apply heq_of_eq
-      simp_all only [forget₂_semimoduleCat_obj, ComoduleCat.forget₂_obj,
+      simp_all only [forget₂_semimoduleCat_δ, forget₂_semimoduleCat_η,
+        forget₂_semimoduleCat_obj, ComoduleCat.forget₂_obj,
         SemimoduleCat.of_coe, Functor.comp_obj]
       erw [Category.id_comp, id_whiskerRight, Category.id_comp]
 
@@ -256,26 +291,22 @@ private theorem markedUnit_right_unitality (X : C) :
       (markedTensorComoduleIso E ω θ h X (𝟙_ C)).hom ≫ E.map (ρ_ X).hom := by
   let : (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k))).Monoidal :=
     Functor.Monoidal.transport θ.symm
-  have hδ (M N : FGComoduleCat.{u, v, u} k B) : Functor.OplaxMonoidal.δ
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) M N = 𝟙 _ := rfl
-  have hμ (M N : FGComoduleCat.{u, v, u} k B) : Functor.LaxMonoidal.μ
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) M N = 𝟙 _ := rfl
-  have hη : Functor.OplaxMonoidal.η
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) = 𝟙 _ := rfl
-  have hε : (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)).map
-      (markedUnitComoduleIso E ω θ h).hom = (markedUnitIso E ω θ).hom := by
-    apply SemimoduleCat.hom_ext
-    exact markedUnitComoduleIso_hom_toLinearMap E ω θ h
   apply (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)).map_injective
   simp only [Functor.map_comp, Functor.Monoidal.map_whiskerLeft,
-    Functor.Monoidal.map_rightUnitor, hε]
+    Functor.Monoidal.map_rightUnitor]
+  simp only [forget₂_semimoduleCat_map, ComoduleCat.forget₂_map,
+    markedUnitComoduleIso_hom_toLinearMap, markedTensorComoduleIso_hom_toLinearMap,
+    SemimoduleCat.ofHom_hom]
+  -- As on the left, convert separates the transported maps from the induced object wrappers.
+  -- The heterogeneous goal normalizes to identity whiskering on semimodules.
   convert Functor.LaxMonoidal.right_unitality
     (E ⋙ (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k))) X
     using 1 <;>
     first
     | rfl
     | apply heq_of_eq
-      simp_all only [forget₂_semimoduleCat_obj, ComoduleCat.forget₂_obj,
+      simp_all only [forget₂_semimoduleCat_δ, forget₂_semimoduleCat_η,
+        forget₂_semimoduleCat_obj, ComoduleCat.forget₂_obj,
         SemimoduleCat.of_coe, Functor.comp_obj]
       erw [Category.id_comp, MonoidalCategory.whiskerLeft_id, Category.id_comp]
 
@@ -307,6 +338,19 @@ theorem markedMonoidal_μ (X Y : C) : letI := markedMonoidal E ω θ h
     (Functor.LaxMonoidal.μ E X Y).hom.toLinearMap =
       (markedTensorIso E ω θ X Y).hom.hom :=
   markedTensorComoduleIso_hom_toLinearMap E ω θ h X Y
+
+/-- The lifted inverse tensorator has the inverse tensor map specified by the marking. -/
+@[simp]
+theorem markedMonoidal_δ (X Y : C) : letI := markedMonoidal E ω θ h
+    (Functor.OplaxMonoidal.δ E X Y).hom.toLinearMap =
+      (markedTensorIso E ω θ X Y).inv.hom :=
+  markedTensorComoduleIso_inv_toLinearMap E ω θ h X Y
+
+/-- The lifted inverse unit has the inverse unit map specified by the marking. -/
+@[simp]
+theorem markedMonoidal_η : letI := markedMonoidal E ω θ h
+    (Functor.OplaxMonoidal.η E).hom.toLinearMap = (markedUnitIso E ω θ).inv.hom :=
+  markedUnitComoduleIso_inv_toLinearMap E ω θ h
 
 /-- The original fibre comparison becomes monoidal for the lifted structure. -/
 theorem markedMonoidal_isMonoidal : letI := markedMonoidal E ω θ h
@@ -413,7 +457,7 @@ theorem fgComoduleScalarMarking_inv_app_apply (a : kˣ)
 
 /-- Rescaling the identity marking multiplies its tensorator by the same scalar. -/
 @[simp]
-theorem markedTensorIso_hom_apply (a : kˣ)
+theorem markedTensorIso_fgComoduleScalarMarking_hom_apply (a : kˣ)
     (M N : FGComoduleCat.{u, v, u} k B) (m : M) (n : N) :
     @DFunLike.coe (M ⊗[k] N →ₗ[k] M ⊗[k] N) (M ⊗[k] N) (fun _ => M ⊗[k] N) _
       (markedTensorIso (𝟭 _) (forget₂ _ (SemimoduleCat k))
@@ -426,7 +470,7 @@ theorem markedTensorIso_hom_apply (a : kˣ)
 
 /-- Rescaling the identity marking multiplies its unit comparison by the inverse scalar. -/
 @[simp]
-theorem markedUnitIso_hom_apply (a : kˣ) (r : k) :
+theorem markedUnitIso_fgComoduleScalarMarking_hom_apply (a : kˣ) (r : k) :
     @DFunLike.coe (k →ₗ[k] k) k (fun _ => k) _
       (markedUnitIso (𝟭 _) (forget₂ _ (SemimoduleCat k))
         (fgComoduleScalarMarking (B := B) a)).hom.hom r =
@@ -445,8 +489,10 @@ theorem markedTensorColinear_fgComoduleScalarMarking (a : kˣ) :
       (fgComoduleScalarMarking a) M N).hom.hom = (a : k) • LinearMap.id := by
     apply TensorProduct.ext'
     intro m n
-    exact markedTensorIso_hom_apply a M N m n
+    exact markedTensorIso_fgComoduleScalarMarking_hom_apply a M N m n
   rw [ht, TensorProduct.map_smul_left]
+  -- The identity functor's tensor object has the same carrier and coaction as M ⊗ N;
+  -- erw crosses that bundled-object wrapper to use the concrete coaction formula.
   erw [FGComoduleCat.tensor_coact k B M N]
   ext z
   simp
@@ -477,18 +523,14 @@ noncomputable def markedBraided : letI := markedMonoidal E ω θ h
   apply (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)).map_injective
   have hb := Functor.LaxBraided.braided
     (F := E ⋙ forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) X Y
-  have hδ (M N : FGComoduleCat.{u, v, u} k B) : Functor.OplaxMonoidal.δ
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) M N = 𝟙 _ := rfl
-  have hμ (M N : FGComoduleCat.{u, v, u} k B) : Functor.LaxMonoidal.μ
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) M N = 𝟙 _ := rfl
   simp only [Functor.map_comp, Functor.map_braiding]
-  have hm (A D : C) : Functor.LaxMonoidal.μ
-      (E ⋙ forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)) A D =
-      (forget₂ (FGComoduleCat.{u, v, u} k B) (SemimoduleCat.{u} k)).map
-        (Functor.LaxMonoidal.μ E A D) := rfl
-  rw [hm, hm] at hb
-  simp only [hδ, hμ]
+  simp only [Functor.LaxMonoidal.comp_μ, forget₂_semimoduleCat_μ] at hb
+  simp only [forget₂_semimoduleCat_δ, forget₂_semimoduleCat_μ]
+  -- Forgetting the tensor object and tensoring the forgotten objects give the same
+  -- semimodule only definitionally; erw removes the identities at those two presentations.
   erw [Category.id_comp, Category.comp_id]
+  -- The composite tensorator has one additional identity comparison at the same carrier.
+  erw [Category.id_comp, Category.id_comp] at hb
   exact hb
 
 end CategoryTheory.Functor
