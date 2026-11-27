@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
-public import TauCeti.NumberTheory.NumberField.Quadratic.PrimeDecomposition
+public import TauCeti.NumberTheory.NumberField.Quadratic.Prime.Decomposition
 import TauCeti.NumberTheory.NumberField.Quadratic.Radicand
 import TauCeti.RingTheory.Ideal.Maps
 

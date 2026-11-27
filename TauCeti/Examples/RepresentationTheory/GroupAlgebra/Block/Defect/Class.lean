@@ -8,6 +8,7 @@ module
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectGroup.Principal
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectZero.Splitting
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Defect.Class
+public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Defect.Sylow
 
 /-!
 # Defect classes of small blocks
@@ -28,6 +29,11 @@ The Checks of defect classes (`TauCeti.IsDefectClass`).
   `C_{S₃}(1) = S₃`, of order `2`, are the defect groups. The class of `ρ` has coefficient `1`, but
   its class sum is `ρ + ρ²`, with augmentation `2 = 0`, so it is not a defect class, and the Sylow
   `2`-subgroup `1` of `C_{S₃}(ρ)` is not a defect group.
+* **Martínez's theorem on these blocks** (`TauCeti.IsDefectClass.isDefectGroup_iff`): the defect
+  groups of `1 + ρ + ρ²` are exactly the Sylow `2`-subgroups of `C_{S₃}(1)`, read off the defect
+  class `{1}`; and for every central character `λ` of the block `1 + α² r + α r²` of `k[C₃]`, the
+  defect groups are exactly the Sylow `2`-subgroups of `C_{C₃}(r)`, read off the defect class
+  `{r}`, so the defect group is `1`.
 -/
 
 public section
@@ -105,6 +111,18 @@ theorem isDefectGroup_eOne_bot (hα : α ^ 2 + α + 1 = 0) :
   obtain ⟨D, hD⟩ := exists_isDefectGroup 2 hne
   rwa [← DefectZeroSplittingExamples.eq_bot_of_isPGroup_two hD.isPGroup]
 
+/-- **Martínez's theorem on `k[C₃]`.** For every central character `λ` of the block
+`1 + α² r + α r²`, the class `{r}` is a defect class, so the defect groups of the block are
+exactly the Sylow `2`-subgroups of `C_{C₃}(r)`. -/
+theorem isDefectGroup_eOne_iff_sylow_centralizer_r (hα : α ^ 2 + α + 1 = 0)
+    {φ : Subalgebra.center k (MonoidAlgebra k C₃) →ₐ[k] k} (hφ : φ (toCenter (eOne α)) = 1)
+    {D : Subgroup C₃} :
+    IsDefectGroup k 2 (eOne α) D ↔ ∃ S : Sylow 2 (Subgroup.centralizer {r}),
+      D = (S : Subgroup (Subgroup.centralizer {r})).map (Subgroup.subtype _) := by
+  rw [← coe_toCenter (eOne α),
+    (isDefectClass_eOne_r hα hφ).isDefectGroup_iff (isBlockIdempotent_eOne hα) hφ]
+  simp only [ConjClasses.mk_eq_mk_iff_isConj, isConj_iff_eq, exists_eq_left]
+
 end C₃
 
 /-! ### `𝔽₂[S₃]` -/
@@ -141,5 +159,17 @@ theorem not_isDefectGroup_blockOneS₃_bot :
   have hτ := S.maximal_isPGroup.eq_of_le (IsPGroup.of_card card_zpowers_τ) (hS ▸ bot_le)
   have : τ ∈ (⊥ : Subgroup S₃) := hS ▸ hτ ▸ Subgroup.mem_zpowers τ
   exact absurd (Subgroup.mem_bot.1 this) (by decide)
+
+/-- **Martínez's theorem on `𝔽₂[S₃]`.** The class `{1}` is a defect class of `1 + ρ + ρ²` for
+its central character, the augmentation, so the defect groups of the block are exactly the Sylow
+`2`-subgroups of `C_{S₃}(1)`. -/
+theorem isDefectGroup_blockOneS₃_iff_sylow_centralizer_one {D : Subgroup S₃} :
+    IsDefectGroup (ZMod 2) 2 (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) D ↔
+      ∃ S : Sylow 2 (Subgroup.centralizer {(1 : S₃)}),
+        D = (S : Subgroup (Subgroup.centralizer {(1 : S₃)})).map (Subgroup.subtype _) := by
+  have hφ : centerAugmentation (ZMod 2) S₃ blockOneS₃ = 1 := by
+    rw [blockOneS₃_eq_principalBlockIdempotent, centerAugmentation_principalBlockIdempotent]
+  rw [isDefectClass_blockOneS₃_one.isDefectGroup_iff isBlockIdempotent_blockOneS₃ hφ]
+  simp only [ConjClasses.mk_eq_mk_iff_isConj, isConj_one_left, exists_eq_left]
 
 end TauCeti.Examples.DefectClass
