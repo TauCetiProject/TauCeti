@@ -342,9 +342,7 @@ private theorem two_mul_log_norm_baseVec_le {d : ℤ} (hd0 : d ≠ 0) {N R S : �
   have _ : (0 : ℝ) < 2 * N * Real.sqrt d.natAbs :=
     lt_of_lt_of_le zero_lt_one (one_le_two_mul_mul_sqrt_natAbs hd0 hN)
   have hlog := Real.log_le_log hv0 hsq
-  rw [Real.log_pow, Nat.cast_ofNat, Real.log_mul (by positivity) (by positivity),
-    Real.log_mul (by positivity) (by positivity),
-    Real.log_pow, Real.log_pow, Real.log_pow, Real.log_pow] at hlog
+  simp (disch := positivity) only [Real.log_mul, Real.log_pow, Nat.cast_ofNat] at hlog ⊢
   push_cast at hlog
   linarith
 
