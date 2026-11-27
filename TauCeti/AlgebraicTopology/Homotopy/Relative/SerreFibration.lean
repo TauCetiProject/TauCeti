@@ -33,13 +33,16 @@ Both halves are proved by relative cube lifting:
   `A`, so it is a homotopy through relative cubes of `(E, p⁻¹(A), e)`
   (`TauCeti.TopCat.relHomotopyGroup_map_injective_of_mem_serreFibrations`).
 
-So the pair `(E, p⁻¹(A))` is exactly as highly connected as the pair `(B, A)`
-(`TauCeti.TopCat.subsingleton_relHomotopyGroup_preimage_of_mem_serreFibrations`). For the skeleta
-`Xⁱ ⊆ Xⁱ⁺¹` of a CW complex this says that the pairs `(p⁻¹(Xⁱ⁺¹), p⁻¹(Xⁱ))` of the skeletal
-filtration of a fibration over `X` are `i`-connected, which is what places the first page of its
-spectral sequence in nonnegative fibre degrees. Likewise, if every point of `B` is joined by a path
-to a point of `A`, every point of `E` is joined by a path to a point of `p⁻¹(A)`
-(`TauCeti.TopCat.exists_joined_preimage_of_mem_serreFibrations`).
+So for every `n ≥ 0`, `π_{n+1}(E, p⁻¹(A), e)` is trivial exactly when `π_{n+1}(B, A, p e)` is;
+the direction from `B` to `E` is
+`TauCeti.TopCat.subsingleton_relHomotopyGroup_preimage_of_mem_serreFibrations`. Likewise, if every
+point of `B` is joined by a path to a point of `A`, every point of `E` is joined by a path to a
+point of `p⁻¹(A)` (`TauCeti.TopCat.exists_joined_preimage_of_mem_serreFibrations`). Together, a
+Serre fibration pulls `n`-connected pairs `(B, A)` back to `n`-connected pairs `(E, p⁻¹(A))`: the
+pair `(E, p⁻¹(A))` is at least as highly connected as `(B, A)`. For the skeleta `Xⁱ ⊆ Xⁱ⁺¹` of a
+CW complex this says that the pairs `(p⁻¹(Xⁱ⁺¹), p⁻¹(Xⁱ))` of the skeletal filtration of a
+fibration over `X` are `i`-connected, which is what places the first page of its spectral sequence
+in nonnegative fibre degrees.
 
 ## Main definitions
 
