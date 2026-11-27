@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.ContactElements
 public import TauCeti.Geometry.Contact.Symplectization.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.ModelSpace
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Cosphere.Symplectization
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 
@@ -60,7 +61,9 @@ Liouville form and `dθ` to `dλ = -ω`.
 * `TauCeti.contactElementLine_contactElementOfCovector`: the contact element of `p` is `ker p`.
 * `TauCeti.contMDiffAt_contactElementOfCovector`: it depends smoothly on `p ≠ 0`.
 * `TauCeti.contMDiff_cotangentToContactElementAnnihilator`,
-  `TauCeti.injective_cotangentToContactElementAnnihilator`: `Φ` is smooth and injective.
+  `TauCeti.cotangentToContactElementAnnihilator_injective`: `Φ` is smooth and injective.
+* `TauCeti.coe_contactElementSymplectizationDiffeomorph_symm_apply`: the inverse diffeomorphism
+  sends a covector `w` of `ξ⁰ ∖ 0` over `(q, θ)` to the covector `u ↦ w(u, 0)` at `q`.
 * `TauCeti.mpullback_cotangentToContactElementAnnihilator_annihilatorLiouvilleForm`: `Φ^* θ = λ`.
 * `TauCeti.range_cotangentToContactElementAnnihilator`: the image of `Φ` is `ξ⁰ ∖ 0`.
 * `TauCeti.mpullback_contactElementSymplectizationDiffeomorph_annihilatorLiouvilleForm`,
@@ -91,17 +94,6 @@ local instance : Fact (0 < π) := ⟨pi_pos⟩
 
 /-! ### The contact element of a covector -/
 
-/-- A covector of `ℝ²` is determined by its values on the standard basis. -/
-private theorem covector_apply (p : (ℝ × ℝ) →L[ℝ] ℝ) (u : ℝ × ℝ) :
-    p u = p (1, 0) * u.1 + p (0, 1) * u.2 := by
-  conv_lhs => rw [show u = u.1 • ((1, 0) : ℝ × ℝ) + u.2 • ((0, 1) : ℝ × ℝ) by ext <;> simp]
-  rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, mul_comm u.1, mul_comm u.2]
-
-/-- A covector of `ℝ²` vanishing on the standard basis is zero. -/
-private theorem covector_eq_zero {p : (ℝ × ℝ) →L[ℝ] ℝ} (h₁ : p (1, 0) = 0) (h₂ : p (0, 1) = 0) :
-    p = 0 :=
-  ContinuousLinearMap.ext fun u ↦ by rw [covector_apply, h₁, h₂]; simp
-
 /-- The **contact element of a covector** `p` of the plane, as an angle class: the class in
 `ℝ / πℤ` of the argument of `(p(1, 0), p(0, 1))`. For `p ≠ 0` it is the class of the contact
 element `ker p` (`TauCeti.contactElementLine_contactElementOfCovector`), and this characterizes
@@ -113,15 +105,17 @@ def contactElementOfCovector (p : (ℝ × ℝ) →L[ℝ] ℝ) : AddCircle π :=
 theorem contactElementLine_contactElementOfCovector {p : (ℝ × ℝ) →L[ℝ] ℝ} (hp : p ≠ 0) :
     contactElementLine (contactElementOfCovector p) = LinearMap.ker (p : (ℝ × ℝ) →ₗ[ℝ] ℝ) := by
   set c : ℂ := ⟨p (1, 0), p (0, 1)⟩
-  have hc₀ : c ≠ 0 := fun h ↦ hp <| covector_eq_zero (congrArg Complex.re h)
-    (congrArg Complex.im h)
+  have hc₀ : c ≠ 0 := fun h ↦ hp <| p.eq_zero_of_apply_one_zero_of_apply_zero_one
+    (congrArg Complex.re h) (congrArg Complex.im h)
   have hn : ‖c‖ ≠ 0 := norm_ne_zero_iff.2 hc₀
-  ext u
+  ext ⟨a, b⟩
   rw [contactElementOfCovector, mem_contactElementLine_coe, Complex.cos_arg hc₀, Complex.sin_arg,
-    LinearMap.mem_ker, ContinuousLinearMap.coe_coe, covector_apply p u]
+    LinearMap.mem_ker, ContinuousLinearMap.coe_coe, p.apply_mk_eq_smul_add_smul a b, smul_eq_mul,
+    smul_eq_mul]
+  dsimp only
   -- `(cos τ, sin τ)` is `(p(1, 0), p(0, 1))` divided by its norm.
-  have key : c.re / ‖c‖ * u.1 + c.im / ‖c‖ * u.2 = (p (1, 0) * u.1 + p (0, 1) * u.2) / ‖c‖ := by
-    rw [div_mul_eq_mul_div, div_mul_eq_mul_div, ← add_div]
+  have key : c.re / ‖c‖ * a + c.im / ‖c‖ * b = (a * p (1, 0) + b * p (0, 1)) / ‖c‖ := by
+    rw [div_mul_eq_mul_div, div_mul_eq_mul_div, ← add_div, mul_comm c.re, mul_comm c.im]
   rw [key, div_eq_zero_iff, or_iff_left hn]
 
 /-- The contact element of a nonzero covector `p` is the angle class `θ` exactly when the contact
@@ -139,8 +133,8 @@ theorem contMDiffAt_contactElementOfCovector {p : (ℝ × ℝ) →L[ℝ] ℝ} (h
   let C : ((ℝ × ℝ) →L[ℝ] ℝ) →L[ℝ] ℂ := Complex.equivRealProdCLM.symm.toContinuousLinearMap ∘L
     ((ContinuousLinearMap.apply ℝ ℝ ((1, 0) : ℝ × ℝ)).prod
       (ContinuousLinearMap.apply ℝ ℝ ((0, 1) : ℝ × ℝ)))
-  have hC₀ : C p ≠ 0 := fun h ↦ hp <| covector_eq_zero (congrArg Complex.re h)
-    (congrArg Complex.im h)
+  have hC₀ : C p ≠ 0 := fun h ↦ hp <| p.eq_zero_of_apply_one_zero_of_apply_zero_one
+    (congrArg Complex.re h) (congrArg Complex.im h)
   have hcoe := AddCircle.contMDiff_coe (p := π) n
   rcases Complex.mem_slitPlane_or_neg_mem_slitPlane hC₀ with h | h
   · exact (hcoe _).comp p ((Complex.contDiffAt_arg h).comp p C.contDiff.contDiffAt).contMDiffAt
@@ -161,6 +155,34 @@ local instance : IsManifold (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) ((∞ : WithT
     ((ℝ × ℝ) × AddCircle π) :=
   IsManifold.of_le (n := ∞) (by simp)
 
+/-- The annihilator line `ξ⁰` of the contact structure of the space of contact elements, as a fibre
+bundle of rank one (`TauCeti.IsContMDiffDistribution.annihilatorFiberBundle`). -/
+local instance instFiberBundleAnnihilatorSpaceContactElementDistribution :
+    FiberBundle (Fin 1 → ℝ) fun x : (ℝ × ℝ) × AddCircle π ↦
+      annihilatorSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) contactElementDistribution x :=
+  (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
+    |>.annihilatorFiberBundle
+      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
+
+/-- The annihilator line `ξ⁰` of the contact structure of the space of contact elements is a
+vector bundle (`TauCeti.IsContMDiffDistribution.annihilatorVectorBundle`). -/
+local instance instVectorBundleAnnihilatorSpaceContactElementDistribution :
+    VectorBundle ℝ (Fin 1 → ℝ) fun x : (ℝ × ℝ) × AddCircle π ↦
+      annihilatorSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) contactElementDistribution x :=
+  (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
+    |>.annihilatorVectorBundle
+      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
+
+/-- The annihilator line `ξ⁰` of the contact structure of the space of contact elements is a smooth
+vector bundle (`TauCeti.IsContMDiffDistribution.annihilatorContMDiffVectorBundle`). -/
+local instance instContMDiffVectorBundleAnnihilatorSpaceContactElementDistribution :
+    ContMDiffVectorBundle ∞ (Fin 1 → ℝ) (fun x : (ℝ × ℝ) × AddCircle π ↦
+      annihilatorSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) contactElementDistribution x)
+      (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) :=
+  (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
+    |>.annihilatorContMDiffVectorBundle
+      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
+
 variable (z : punctured 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ))
 
 /-- The covector `(u, w) ↦ p(u)` at the contact element `(q, ker p)` annihilates the contact
@@ -174,8 +196,10 @@ private theorem comp_fst_mem_annihilatorSpace :
   rw [mem_annihilatorSpace_iff]
   intro v hv
   rw [mem_contactElementDistribution,
-    contactElementLine_contactElementOfCovector (mem_punctured.1 z.property)] at hv
-  exact hv
+    contactElementLine_contactElementOfCovector (mem_punctured.1 z.property),
+    LinearMap.mem_ker] at hv
+  -- The covector `p ∘ fst` evaluates `v` to `p(v₁)`.
+  exact (ContinuousLinearMap.comp_apply _ _ v).trans hv
 
 /-- The map `T*ℝ² ∖ 0 → ξ⁰` from the punctured cotangent bundle of the plane to the annihilator line
 of the contact structure of its space of contact elements: a nonzero covector `p` at `q` goes to
@@ -240,14 +264,8 @@ private theorem annihilatorInclusion_cotangentToContactElementAnnihilator :
 
 /-- **The map is smooth.** -/
 theorem contMDiff_cotangentToContactElementAnnihilator :
-    letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorFiberBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
     ContMDiff (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, (ℝ × ℝ) →L[ℝ] ℝ))
       ((𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)).prod 𝓘(ℝ, Fin 1 → ℝ)) ∞ cotangentToContactElementAnnihilator :=
-  letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorFiberBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
   fun z ↦ by
   have hξ := isContactDistribution_contactElementDistribution (n := ∞)
   -- The inclusion `ξ⁰ → T*M` is a smooth embedding, and its composite with the map is smooth.
@@ -269,30 +287,11 @@ theorem contMDiff_cotangentToContactElementAnnihilator :
 /-- **The map is tautological.** It pulls the tautological one-form `θ` of the annihilator line
 back to the Liouville form `λ` of the plane, `p₁ dx + p₂ dy`, restricted to `T*ℝ² ∖ 0`. -/
 theorem mpullback_cotangentToContactElementAnnihilator_annihilatorLiouvilleForm :
-    letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorFiberBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorContMDiffVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
     SmoothForm.mpullback cotangentToContactElementAnnihilator
         contMDiff_cotangentToContactElementAnnihilator
         (isContactDistribution_contactElementDistribution (n := ∞)).annihilatorLiouvilleForm =
       SmoothForm.mpullback (Subtype.val : punctured 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) → _) contMDiff_subtypeVal
-        (liouvilleForm 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ)) :=
-  letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorFiberBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorContMDiffVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  by
+        (liouvilleForm 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ)) := by
   have hξ := isContactDistribution_contactElementDistribution (n := ∞)
   have hΦ := contMDiff_cotangentToContactElementAnnihilator
   have hg := contMDiff_proj_cotangentToContactElementAnnihilator
@@ -322,7 +321,7 @@ theorem mpullback_cotangentToContactElementAnnihilator_annihilatorLiouvilleForm 
 
 /-- **The map is injective**: the image of a nonzero covector `p` at `q` determines `q` as its base
 point and `p` by its values on the vectors `(u, 0)`. -/
-theorem injective_cotangentToContactElementAnnihilator :
+theorem cotangentToContactElementAnnihilator_injective :
     Injective cotangentToContactElementAnnihilator := by
   intro z z' h
   refine Subtype.ext (CotangentBundle.ext (congrArg (fun w ↦ w.proj.1) h) fun u ↦ ?_)
@@ -330,49 +329,17 @@ theorem injective_cotangentToContactElementAnnihilator :
       annihilatorSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) contactElementDistribution x ↦
     (w.snd : TangentSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) w.proj →L[ℝ] ℝ) ((u, 0) : (ℝ × ℝ) × ℝ)) h
   -- The image of `p` takes the value `p(u)` on `(u, 0)`.
-  exact hu
-
-/-- A covector of `ℝ²` vanishing on the contact element of angle `θ` has kernel exactly that
-contact element, unless it is zero. -/
-private theorem contactElementLine_eq_ker_of_le {θ : AddCircle π} {P : (ℝ × ℝ) →L[ℝ] ℝ}
-    (hP : P ≠ 0) (h : contactElementLine θ ≤ LinearMap.ker (P : (ℝ × ℝ) →ₗ[ℝ] ℝ)) :
-    contactElementLine θ = LinearMap.ker (P : (ℝ × ℝ) →ₗ[ℝ] ℝ) := by
-  induction θ using QuotientAddGroup.induction_on with | H τ => ?_
-  refine le_antisymm h fun u hu ↦ ?_
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, covector_apply P u] at hu
-  rw [mem_contactElementLine_coe]
-  -- `P` vanishes on the direction `(-sin τ, cos τ)` of the line, so it is `k (cos τ, sin τ)`.
-  have h₀ : P (1, 0) * -sin τ + P (0, 1) * cos τ = 0 := by
-    have hmem : ((-sin τ, cos τ) : ℝ × ℝ) ∈ contactElementLine (τ : AddCircle π) := by
-      rw [mem_contactElementLine_coe]
-      ring
-    have := h hmem
-    rwa [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, covector_apply] at this
-  have hs := sin_sq_add_cos_sq τ
-  set k := P (1, 0) * cos τ + P (0, 1) * sin τ
-  have ha : P (1, 0) = k * cos τ := by linear_combination (-sin τ) * h₀ - P (1, 0) * hs
-  have hb : P (0, 1) = k * sin τ := by linear_combination cos τ * h₀ - P (0, 1) * hs
-  have hk₀ : k ≠ 0 := fun hk₀ ↦ hP <| covector_eq_zero (by rw [ha, hk₀, zero_mul])
-    (by rw [hb, hk₀, zero_mul])
-  have hku : k * (cos τ * u.1 + sin τ * u.2) = 0 := by
-    linear_combination hu - u.1 * ha - u.2 * hb
-  exact (mul_eq_zero.1 hku).resolve_left hk₀
+  exact (cotangentToContactElementAnnihilator_snd_apply z (u, 0)).symm.trans
+    (hu.trans (cotangentToContactElementAnnihilator_snd_apply z' (u, 0)))
 
 /-- **The image of the map is the symplectization.** The nonzero covectors annihilating the
 contact structure of the space of contact elements are exactly the images of the nonzero
 covectors of the plane. -/
 theorem range_cotangentToContactElementAnnihilator :
-    letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorFiberBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
     range cotangentToContactElementAnnihilator =
       ((isContactDistribution_contactElementDistribution (n := ∞)).annihilatorPunctured :
         Set (TotalSpace (Fin 1 → ℝ) fun x : (ℝ × ℝ) × AddCircle π ↦
-          annihilatorSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) contactElementDistribution x)) :=
-  letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorFiberBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  by
+          annihilatorSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) contactElementDistribution x)) := by
   ext w
   rw [SetLike.mem_coe, IsContactDistribution.mem_annihilatorPunctured]
   constructor
@@ -382,9 +349,10 @@ theorem range_cotangentToContactElementAnnihilator :
     have hu : ((cotangentToContactElementAnnihilator z).snd :
         TangentSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) (cotangentToContactElementAnnihilator z).proj →L[ℝ] ℝ)
           ((u, 0) : (ℝ × ℝ) × ℝ) = 0 := by
-      rw [h₀]
-      rfl
-    exact hu
+      rw [h₀, ZeroMemClass.coe_zero]
+      exact zero_apply _
+    exact (cotangentToContactElementAnnihilator_snd_apply z (u, 0)).symm.trans
+      (hu.trans (zero_apply _).symm)
   · intro hw
     -- The covector `w` at `x`, read on `ℝ² × ℝ`, is the pullback of `P = w(·, 0)` on `ℝ²`.
     let W : (ℝ × ℝ) × ℝ →L[ℝ] ℝ :=
@@ -398,7 +366,7 @@ theorem range_cotangentToContactElementAnnihilator :
         hann (0, v.2) (Submodule.zero_mem _)
       rw [← W.comp_inl_add_comp_inr v, hvert, add_zero]
     have hP : P ≠ 0 := fun hP₀ ↦ hw <| Subtype.ext
-      (ContinuousLinearMap.ext fun v ↦ (hW v).trans (by rw [hP₀]; rfl) : W = 0)
+      (ContinuousLinearMap.ext fun v ↦ by rw [hW v, hP₀, zero_apply, zero_apply] : W = 0)
     have hline : contactElementLine w.proj.2 = LinearMap.ker (P : (ℝ × ℝ) →ₗ[ℝ] ℝ) :=
       contactElementLine_eq_ker_of_le hP fun u hu ↦ by
         rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
@@ -407,26 +375,14 @@ theorem range_cotangentToContactElementAnnihilator :
     refine totalSpace_annihilatorSpace_ext ?_ fun v ↦ ?_
     · exact Prod.ext rfl ((contactElementOfCovector_eq_iff hP).2 hline)
     · -- The image of `P` takes the value `P(v₁)` on `v`.
+      rw [cotangentToContactElementAnnihilator_snd_apply]
       exact (hW v).symm
 
 /-- The differential of the map is injective: the map pulls `dθ` back to `dλ`, which is minus the
 nondegenerate canonical symplectic form of `T*ℝ²`. -/
 private theorem injective_mfderiv_cotangentToContactElementAnnihilator :
-    letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorFiberBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
     Injective (mfderiv (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, (ℝ × ℝ) →L[ℝ] ℝ))
-      ((𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)).prod 𝓘(ℝ, Fin 1 → ℝ)) cotangentToContactElementAnnihilator z) :=
-  letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorFiberBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorContMDiffVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  by
+      ((𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)).prod 𝓘(ℝ, Fin 1 → ℝ)) cotangentToContactElementAnnihilator z) := by
   have hd := congrArg (mextDerivₗ _ 1)
     mpullback_cotangentToContactElementAnnihilator_annihilatorLiouvilleForm
   rw [SmoothForm.mextDerivₗ_mpullback, SmoothForm.mextDerivₗ_mpullback] at hd
@@ -450,40 +406,15 @@ private theorem injective_mfderiv_cotangentToContactElementAnnihilator :
 
 /-- The map, with values in the symplectization `ξ⁰ ∖ 0`. -/
 private def toAnnihilatorPunctured :
-    letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorFiberBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
     (isContactDistribution_contactElementDistribution (n := ∞)).annihilatorPunctured :=
-  letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorFiberBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
   ⟨cotangentToContactElementAnnihilator z, by
     rw [← SetLike.mem_coe, ← range_cotangentToContactElementAnnihilator]
     exact mem_range_self z⟩
 
 /-- The map into `ξ⁰ ∖ 0` is a local diffeomorphism, by the inverse function theorem. -/
 private theorem isLocalDiffeomorph_toAnnihilatorPunctured :
-    letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorFiberBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorContMDiffVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
     IsLocalDiffeomorph (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, (ℝ × ℝ) →L[ℝ] ℝ))
-      ((𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)).prod 𝓘(ℝ, Fin 1 → ℝ)) ∞ toAnnihilatorPunctured :=
-  letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorFiberBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorContMDiffVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  fun z ↦ by
+      ((𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)).prod 𝓘(ℝ, Fin 1 → ℝ)) ∞ toAnnihilatorPunctured := fun z ↦ by
   have hcont : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, (ℝ × ℝ) →L[ℝ] ℝ))
       ((𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)).prod 𝓘(ℝ, Fin 1 → ℝ)) ∞ toAnnihilatorPunctured :=
     (ContMDiff.subtypeVal_comp_iff _ _).1 contMDiff_cotangentToContactElementAnnihilator
@@ -499,14 +430,8 @@ private theorem isLocalDiffeomorph_toAnnihilatorPunctured :
 
 /-- The map into `ξ⁰ ∖ 0` is bijective. -/
 private theorem bijective_toAnnihilatorPunctured :
-    letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorFiberBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
     Bijective toAnnihilatorPunctured :=
-  letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorFiberBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  ⟨fun _ _ h ↦ injective_cotangentToContactElementAnnihilator (congrArg Subtype.val h), fun w ↦ by
+  ⟨fun _ _ h ↦ cotangentToContactElementAnnihilator_injective (congrArg Subtype.val h), fun w ↦ by
     obtain ⟨z, hz⟩ :
         (w : TotalSpace (Fin 1 → ℝ) _) ∈ range cotangentToContactElementAnnihilator := by
       rw [range_cotangentToContactElementAnnihilator]
@@ -520,27 +445,9 @@ complement `ξ⁰ ∖ 0` of the zero section in the annihilator line of the cont
 carries the tautological one-form `θ` to the Liouville form of `T*ℝ²`
 (`TauCeti.mpullback_contactElementSymplectizationDiffeomorph_annihilatorLiouvilleForm`). -/
 def contactElementSymplectizationDiffeomorph :
-    letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorFiberBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorContMDiffVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
     punctured 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) ≃ₘ⟮𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, (ℝ × ℝ) →L[ℝ] ℝ),
       (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)).prod 𝓘(ℝ, Fin 1 → ℝ)⟯
       (isContactDistribution_contactElementDistribution (n := ∞)).annihilatorPunctured :=
-  letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorFiberBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorContMDiffVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
   isLocalDiffeomorph_toAnnihilatorPunctured.diffeomorphOfBijective
     bijective_toAnnihilatorPunctured
 
@@ -548,62 +455,40 @@ def contactElementSymplectizationDiffeomorph :
 contact element `(q, ker p)`. -/
 @[simp]
 theorem coe_contactElementSymplectizationDiffeomorph_apply :
-    letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorFiberBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorContMDiffVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
     (contactElementSymplectizationDiffeomorph z :
         TotalSpace (Fin 1 → ℝ) fun x : (ℝ × ℝ) × AddCircle π ↦
           annihilatorSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) contactElementDistribution x) =
-      cotangentToContactElementAnnihilator z :=
-  letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorFiberBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorContMDiffVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  by
+      cotangentToContactElementAnnihilator z := by
   rw [contactElementSymplectizationDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective]
   rfl
+
+/-- The inverse of the diffeomorphism sends a nonzero covector `w` of `ξ⁰` over `(q, θ)` to the
+covector `u ↦ w(u, 0)` at `q`. -/
+@[simp]
+theorem coe_contactElementSymplectizationDiffeomorph_symm_apply
+    (w : (isContactDistribution_contactElementDistribution (n := ∞)).annihilatorPunctured) :
+    (contactElementSymplectizationDiffeomorph.symm w : CotangentBundle 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ)) =
+      TotalSpace.mk' ((ℝ × ℝ) →L[ℝ] ℝ) w.val.proj.1
+        ((w.val.snd : TangentSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) w.val.proj →L[ℝ] ℝ) ∘L
+          ContinuousLinearMap.inl ℝ (ℝ × ℝ) ℝ) := by
+  obtain ⟨z, rfl⟩ : ∃ z, contactElementSymplectizationDiffeomorph z = w :=
+    contactElementSymplectizationDiffeomorph.surjective w
+  rw [Diffeomorph.symm_apply_apply, coe_contactElementSymplectizationDiffeomorph_apply]
+  refine CotangentBundle.ext rfl fun u ↦ ?_
+  -- The image of `p` takes the value `p(u)` on `(u, 0)`.
+  exact (cotangentToContactElementAnnihilator_snd_apply z (u, 0)).symm
 
 /-- **The symplectization of the space of contact elements carries the Liouville form.** The
 diffeomorphism `T*ℝ² ∖ 0 ≃ ξ⁰ ∖ 0` pulls the tautological one-form `θ`, restricted to `ξ⁰ ∖ 0`,
 back to the Liouville form `p₁ dx + p₂ dy` of `T*ℝ²`, restricted to `T*ℝ² ∖ 0`. -/
 theorem mpullback_contactElementSymplectizationDiffeomorph_annihilatorLiouvilleForm :
-    letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorFiberBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorContMDiffVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
     SmoothForm.mpullback contactElementSymplectizationDiffeomorph
         contactElementSymplectizationDiffeomorph.contMDiff
         (SmoothForm.mpullback (Subtype.val : (isContactDistribution_contactElementDistribution
           (n := ∞)).annihilatorPunctured → _) contMDiff_subtypeVal
           (isContactDistribution_contactElementDistribution (n := ∞)).annihilatorLiouvilleForm) =
       SmoothForm.mpullback (Subtype.val : punctured 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) → _) contMDiff_subtypeVal
-        (liouvilleForm 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ)) :=
-  letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorFiberBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorContMDiffVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  by
+        (liouvilleForm 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ)) := by
   rw [SmoothForm.mpullback_mpullback,
     ← mpullback_cotangentToContactElementAnnihilator_annihilatorLiouvilleForm]
   apply Subtype.ext
@@ -611,19 +496,11 @@ theorem mpullback_contactElementSymplectizationDiffeomorph_annihilatorLiouvilleF
   exact congrArg (fun f ↦ TauCeti.mpullback _ _ f _)
     (funext coe_contactElementSymplectizationDiffeomorph_apply)
 
-/-- **The diffeomorphism is symplectic.** The diffeomorphism `T*ℝ² ∖ 0 ≃ ξ⁰ ∖ 0` pulls the
-symplectic form `dθ` of the symplectization back to the exterior derivative `dλ = -ω` of the
-Liouville form of `T*ℝ²`, where `ω` is the canonical symplectic form. -/
+/-- **The diffeomorphism is symplectic for `dλ = -ω`.** The diffeomorphism `T*ℝ² ∖ 0 ≃ ξ⁰ ∖ 0`
+pulls the symplectic form `dθ` of the symplectization back to the exterior derivative `dλ = -ω` of
+the Liouville form of `T*ℝ²`, where `ω` is the canonical symplectic form: it is a symplectomorphism
+from `(T*ℝ² ∖ 0, -ω)` to `(ξ⁰ ∖ 0, dθ)`. -/
 theorem mpullback_contactElementSymplectizationDiffeomorph_mextDerivₗ_annihilatorLiouvilleForm :
-    letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorFiberBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-    haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-      |>.annihilatorContMDiffVectorBundle
-        (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
     SmoothForm.mpullback contactElementSymplectizationDiffeomorph
         contactElementSymplectizationDiffeomorph.contMDiff
         (SmoothForm.mpullback (Subtype.val : (isContactDistribution_contactElementDistribution
@@ -631,17 +508,7 @@ theorem mpullback_contactElementSymplectizationDiffeomorph_mextDerivₗ_annihila
           (mextDerivₗ _ 1
             (isContactDistribution_contactElementDistribution (n := ∞)).annihilatorLiouvilleForm)) =
       -SmoothForm.mpullback (Subtype.val : punctured 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) → _) contMDiff_subtypeVal
-        (symplecticForm 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ)) :=
-  letI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorFiberBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  haveI := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
-    |>.annihilatorContMDiffVectorBundle
-      (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
-  by
+        (symplecticForm 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ)) := by
   rw [← SmoothForm.mextDerivₗ_mpullback, ← SmoothForm.mextDerivₗ_mpullback,
     mpullback_contactElementSymplectizationDiffeomorph_annihilatorLiouvilleForm,
     SmoothForm.mextDerivₗ_mpullback, symplecticForm_eq_neg_mextDerivₗ, map_neg, neg_neg]
