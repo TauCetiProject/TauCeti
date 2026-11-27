@@ -46,21 +46,23 @@ theorem range_toWashnitzerAlgebra :
   exact ⟨by rintro ⟨g, rfl⟩; simp, fun hf ↦ ⟨⟨f, hf⟩, toWashnitzerAlgebra_mk f hf⟩⟩
 
 /-- The ring isomorphism `K°⟨X⟩† ≃+* W^int` between the integral Monsky–Washnitzer algebra and the
-integral subring of `W = K⟨X⟩†`: the codomain restriction of the inclusion `toWashnitzerAlgebra`,
-which is bijective onto `W^int` by `range_toWashnitzerAlgebra`. -/
+integral subring of `W = K⟨X⟩†`: the injective inclusion `toWashnitzerAlgebra` is an isomorphism
+onto its range, which is `W^int` by `range_toWashnitzerAlgebra`. -/
 noncomputable def equivIntSubring :
     intWashnitzerAlgebra σ K ≃+* intSubring K (washnitzerAlgebra σ K) :=
-  RingEquiv.ofBijective ((toWashnitzerAlgebra σ K).codRestrict _ fun f ↦
-      (range_toWashnitzerAlgebra σ).le (RingHom.mem_range_self _ f))
-    (show Function.Bijective _ from
-      ⟨RingHom.injective_codRestrict.mpr toWashnitzerAlgebra_injective, fun g ↦ by
-        obtain ⟨f, hf⟩ := RingHom.mem_range.mp ((range_toWashnitzerAlgebra σ).ge g.property)
-        exact ⟨f, Subtype.ext ((RingHom.codRestrict_apply _ _ _ f).trans hf)⟩⟩)
+  (RingEquiv.ofBijective (toWashnitzerAlgebra σ K).rangeRestrict
+    ⟨RingHom.injective_codRestrict.mpr toWashnitzerAlgebra_injective,
+      RingHom.rangeRestrict_surjective _⟩).trans
+    (RingEquiv.subringCongr (range_toWashnitzerAlgebra σ))
 
 /-- The isomorphism `K°⟨X⟩† ≃+* W^int` is the inclusion `toWashnitzerAlgebra` on series. -/
 @[simp]
 theorem coe_equivIntSubring (f : intWashnitzerAlgebra σ K) :
     (equivIntSubring σ f : washnitzerAlgebra σ K) = toWashnitzerAlgebra σ K f := by
-  rw [equivIntSubring, RingEquiv.ofBijective_apply, RingHom.codRestrict_apply]
+  rw [equivIntSubring, RingEquiv.trans_apply, RingEquiv.coe_subringCongr_apply]
+  -- The bijectivity proof is stored with its unfolded `∧` type, so `rw`/`simp` cannot match
+  -- `RingEquiv.ofBijective_apply`; applying the lemma as a term unifies it.
+  exact (congrArg Subtype.val (RingEquiv.ofBijective_apply _ _ f)).trans
+    (RingHom.coe_rangeRestrict _ f)
 
 end TauCeti.Dagger.intWashnitzerAlgebra
