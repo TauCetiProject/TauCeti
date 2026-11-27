@@ -26,6 +26,10 @@ The lemmas `Equiv.sumSigmaDistrib_apply_sigmaMap_inl` and `Equiv.sumSigmaDistrib
 compute Mathlib's `Equiv.sumSigmaDistrib` on the two parts of a disjoint union indexed by a sum,
 included by `Sigma.map`. They are not simp lemmas: Mathlib's simp lemma
 `Equiv.sumSigmaDistrib_apply` rewrites their left-hand sides first.
+
+Finally, `Equiv.sumLeftComm α β γ : α ⊕ (β ⊕ γ) ≃ β ⊕ (α ⊕ γ)` exchanges the first two summands of
+a threefold sum, the analogue for `⊕` of `mul_left_comm`. It splits an index type `β ⊕ (α ⊕ γ)`
+into the part `α` and the rest `β ⊕ γ`.
 -/
 
 public section
@@ -78,5 +82,36 @@ summand. -/
 theorem sumSigmaDistrib_apply_sigmaMap_inr {α β : Type*} (t : α ⊕ β → Type*)
     (x : Σ i, t (.inr i)) : sumSigmaDistrib t (Sigma.map Sum.inr (fun _ ↦ id) x) = .inr x :=
   (rfl)
+
+/-- The equivalence `α ⊕ (β ⊕ γ) ≃ β ⊕ (α ⊕ γ)` exchanging the first two summands. -/
+def sumLeftComm (α β γ : Type*) : α ⊕ (β ⊕ γ) ≃ β ⊕ (α ⊕ γ) :=
+  (sumAssoc α β γ).symm.trans (((sumComm α β).sumCongr (Equiv.refl γ)).trans (sumAssoc β α γ))
+
+section sumLeftComm
+
+variable {α β γ : Type*}
+
+/-- `Equiv.sumLeftComm` sends the first summand to the middle summand. -/
+@[simp]
+theorem sumLeftComm_apply_inl (x : α) : sumLeftComm α β γ (.inl x) = .inr (.inl x) :=
+  (rfl)
+
+/-- `Equiv.sumLeftComm` sends the middle summand to the first summand. -/
+@[simp]
+theorem sumLeftComm_apply_inr_inl (y : β) : sumLeftComm α β γ (.inr (.inl y)) = .inl y :=
+  (rfl)
+
+/-- `Equiv.sumLeftComm` fixes the last summand. -/
+@[simp]
+theorem sumLeftComm_apply_inr_inr (z : γ) : sumLeftComm α β γ (.inr (.inr z)) = .inr (.inr z) :=
+  (rfl)
+
+/-- `Equiv.sumLeftComm` is its own inverse, up to the order of the first two summands. -/
+@[simp]
+theorem sumLeftComm_symm : (sumLeftComm α β γ).symm = sumLeftComm β α γ := by
+  ext x
+  rcases x with x | x | x <;> rfl
+
+end sumLeftComm
 
 end Equiv

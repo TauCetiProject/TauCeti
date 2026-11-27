@@ -41,7 +41,8 @@ of the blocks of `B` and `C` via `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks�
 block of the product is the product of the upper-left blocks
 (`Matrix.toBlocks₁₁_mul_of_toBlocks₂₁_eq_zero`). The blocks of the identity matrix are the
 identity and zero (`Matrix.toBlocks₁₁_one` and its companions), and taking a block commutes with
-entrywise maps (`Matrix.toBlocks₁₁_map` and its companions).
+entrywise maps (`Matrix.toBlocks₁₁_map` and its companions). A sum over all block matrices is the
+iterated sum over their four blocks (`Matrix.sum_fromBlocks`).
 
 For an upper two-block matrix, the diagonal blocks of its powers are the powers of the diagonal
 blocks. Its off-diagonal block is the finite convolution of the powers of the two diagonal
@@ -56,6 +57,7 @@ and empty blocks.
   for the other three blocks: taking a block is linear.
 * `Matrix.toBlocks₁₁_one`, `Matrix.toBlocks₁₁_map` and their companions: the blocks of the
   identity matrix and of an entrywise image.
+* `Matrix.sum_fromBlocks`: a sum over all block matrices is the iterated sum over the four blocks.
 * `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
 * `Matrix.fromBlocks₁₁NonUnitalStarAlgHom`: the corner embedding `y ↦ fromBlocks y 0 0 0` as a
   non-unital `⋆`-algebra homomorphism.
@@ -263,6 +265,26 @@ public theorem toBlocks₂₂_map : (M.map f).toBlocks₂₂ = M.toBlocks₂₂.
   (rfl)
 
 end ToBlocksMap
+
+section SumFromBlocks
+
+variable {n o l m α β : Type*} [Fintype n] [Fintype o] [Fintype l] [Fintype m] [DecidableEq n]
+  [DecidableEq o] [DecidableEq l] [DecidableEq m] [Fintype α] [AddCommMonoid β]
+
+/-- A sum over all block matrices is the iterated sum over their four blocks. -/
+public theorem sum_fromBlocks (g : Matrix (n ⊕ o) (l ⊕ m) α → β) :
+    ∑ x, g x = ∑ A, ∑ B, ∑ C, ∑ D, g (fromBlocks A B C D) := by
+  let e : (Matrix n l α × Matrix n m α) × (Matrix o l α × Matrix o m α) ≃
+      Matrix (n ⊕ o) (l ⊕ m) α :=
+    { toFun t := fromBlocks t.1.1 t.1.2 t.2.1 t.2.2
+      invFun x := ((x.toBlocks₁₁, x.toBlocks₁₂), (x.toBlocks₂₁, x.toBlocks₂₂))
+      left_inv t := by simp
+      right_inv := fromBlocks_toBlocks }
+  rw [← e.sum_comp]
+  simp only [Fintype.sum_prod_type]
+  rfl
+
+end SumFromBlocks
 
 /-- The power of an upper two-block matrix, with its off-diagonal block given by the finite
 convolution of the two diagonal-block powers. -/
