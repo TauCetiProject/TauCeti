@@ -55,9 +55,11 @@ cylinder extending `φ₀` (`TauCeti.IsSmoothCylinder.conleyZehnderIndex_eq`). I
   the index read in the reference frame
   (`TauCeti.IsSmoothCylinder.conleyZehnderIndex_eq_frameConleyZehnderIndex`).
 
-The index does depend on the cylinder: two cylinders from `γ` to `γ₀` glue to a torus, and when
-the first Chern number of the tangent bundle vanishes on tori the two indices agree. That
-comparison is not made here.
+The index does depend on the cylinder: two cylinders from `γ` to `γ₀` glue to a torus, and the two
+indices differ by twice the first Chern number of the tangent bundle on it, so they agree when that
+number vanishes on tori
+(`TauCeti.IsSmoothCylinder.conleyZehnderIndex_eq_sub_two_mul_torusClutchingNumber`, in
+`TauCeti.Geometry.Symplectic.Manifold.ConleyZehnder.Torus`).
 
 ## Main definitions
 
@@ -71,12 +73,16 @@ comparison is not made here.
 
 * `TauCeti.IsSmoothCylinder.exists_isCylinderFrame`: frames of a cylinder extending a periodic
   reference frame exist.
+* `TauCeti.IsSmoothCylinder.exists_isCylinderFrame_of_isSymplecticFrame`: they can be obtained from
+  any symplectic frame along the cylinder, on the whole plane, keeping every structure, such as a
+  complex structure, that this frame and the reference frame both intertwine.
 * `TauCeti.SmoothTwoForm.IsCylinderFrame.frameConleyZehnderIndex_eq`: the index along the loop does
   not depend on the frame of the cylinder.
 * `TauCeti.IsSmoothCylinder.exists_int_conleyZehnderIndex_eq`,
   `TauCeti.IsSmoothCylinder.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`: integrality and
   parity of the index along a nondegenerate orbit.
 * `TauCeti.IsSmoothCylinder.conleyZehnderIndex_eq_add_maslovIndex`: the change of reference frame.
+* `TauCeti.IsSmoothCylinder.conleyZehnderIndex_trans`: the change of model of the reference frame.
 * `TauCeti.IsSmoothCylinder.conleyZehnderIndex_eq_frameConleyZehnderIndex`: the index of the
   reference loop through the trivial cylinder.
 
@@ -228,18 +234,33 @@ private theorem continuous_cylinderFrameCorrection {d b : unitInterval → W ≃
       ContinuousLinearEquiv.trans_apply, Function.comp_apply]
   · simp only [ContinuousLinearEquiv.trans_apply, hdω, hd₁, hbω]
 
-/-- **Frames of a cylinder exist.** For a fiberwise nondegenerate two-form `σ` on a Hausdorff
-σ-compact manifold, every smooth cylinder from `γ` to `γ₀` carries a frame extending any symplectic
-frame `φ₀` along `γ₀` with `φ₀ 0 = φ₀ 1`. -/
-theorem IsSmoothCylinder.exists_isCylinderFrame [T2Space M] [SigmaCompactSpace M]
-    [FiniteDimensional ℝ W] (h : σ.IsNondegenerate) (hu : IsSmoothCylinder I γ γ₀ u)
-    (hφ₀ : IsSymplecticFrame σ ω₀ (fun t : unitInterval ↦ γ₀ t) φ₀) (hφ₀₁ : ∀ v, φ₀ 0 v = φ₀ 1 v) :
-    ∃ χ, IsCylinderFrame σ ω₀ u φ₀ χ := by
-  -- A symplectic frame `Ψ` along the cylinder, neither periodic nor equal to `φ₀`.
-  obtain ⟨Ψ, hΨ⟩ := h.exists_isSymplecticFrame (ω₀ := ω₀) (φ₀ 0).toLinearEquiv.finrank_eq
-    hu.contMDiff.continuous
-  have hΨsq : IsSymplecticFrame σ ω₀ (fun z : unitInterval × unitInterval ↦ u (z.1, z.2))
-      fun z ↦ Ψ (z.1, z.2) := hΨ.comp (by fun_prop)
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
+/-- If frames `φ` and `ψ` at equal points intertwine a map `j` of the model with the same map `K`
+of the tangent space, then so does their change of frame `ψ⁻¹ ∘ φ`. -/
+private theorem trans_symm_apply_map_of_intertwine {a b : M} (hab : a = b)
+    {φ : W ≃L[ℝ] TangentSpace I a} {ψ : W ≃L[ℝ] TangentSpace I b} {j : W → W}
+    {K : ∀ x : M, TangentSpace I x → TangentSpace I x} (hφ : ∀ v, φ (j v) = K a (φ v))
+    (hψ : ∀ v, ψ (j v) = K b (ψ v)) (x : W) : φ.trans ψ.symm (j x) = j (φ.trans ψ.symm x) := by
+  subst hab
+  apply ψ.injective
+  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply, hφ, hψ,
+    ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The correction of a symplectic frame `Ψ` along a smooth cylinder into a frame of the cylinder
+extending `φ₀`: a continuous family `A` of linear symplectic automorphisms of the model over the
+unit square such that `Ψ ∘ A` is periodic on the loops and equal to `φ₀` along `γ₀`, commuting with
+every map `j` that `Ψ` and `φ₀` both intertwine with the same `K`. -/
+private theorem IsSmoothCylinder.exists_cylinderFrameCorrection
+    (hu : IsSmoothCylinder I γ γ₀ u) {Ψ : ∀ z : ℝ × ℝ, W ≃L[ℝ] TangentSpace I (u z)}
+    (hΨ : IsSymplecticFrame σ ω₀ u Ψ)
+    (hφ₀ : IsSymplecticFrame σ ω₀ (fun t : unitInterval ↦ γ₀ t) φ₀) (hφ₀₁ : ∀ v, φ₀ 0 v = φ₀ 1 v)
+    {j : W → W} {K : ∀ x : M, TangentSpace I x → TangentSpace I x}
+    (hΨK : ∀ z v, Ψ z (j v) = K (u z) (Ψ z v)) (hφ₀K : ∀ t v, φ₀ t (j v) = K (γ₀ t) (φ₀ t v)) :
+    ∃ A : unitInterval × unitInterval → W ≃L[ℝ] W, (Continuous fun p ↦ (A p : W →L[ℝ] W)) ∧
+      (∀ p v w, ω₀ (A p v) (A p w) = ω₀ v w) ∧
+      (∀ (s : unitInterval) v, Ψ ((s : ℝ), 1) (A (s, 1) v) = Ψ ((s : ℝ), 0) (A (s, 0) v)) ∧
+      (∀ (t : unitInterval) v, Ψ (1, (t : ℝ)) (A (1, t) v) = φ₀ t v) ∧
+      ∀ p v, A p (j v) = j (A p v) := by
   -- The defect `d s = Ψ(s, 1)⁻¹ Ψ(s, 0)` of periodicity on the loop `u (s, ·)`.
   obtain ⟨hdc, hdω⟩ := continuous_trans_symm_of_forall_eq
     (fun s : unitInterval ↦ (hu.periodic s s.property).symm)
@@ -257,22 +278,83 @@ theorem IsSmoothCylinder.exists_isCylinderFrame [T2Space M] [SigmaCompactSpace M
   have hdΨ (s : unitInterval) (x : W) : Ψ ((s : ℝ), 1) (d s x) = Ψ ((s : ℝ), 0) x :=
     (Ψ ((s : ℝ), 1)).apply_symm_apply _
   have hbΨ (t : unitInterval) (x : W) : Ψ (1, (t : ℝ)) (b t x) = φ₀ t x :=
-    (Ψ (1, (t : ℝ))).apply_symm_apply _
+    (Ψ (1, (t : ℝ)) ).apply_symm_apply _
   have hd₁ (x : W) : (d 1).symm (b 1 x) = b 0 x := by
     refine (d 1).symm_apply_eq.2 ((Ψ (1, 1)).injective ?_)
     -- The frames at `(1, 0)` and `(1, 1)` live over the same point only up to definitional
     -- equality, so the steps are composed as terms.
     exact (((hbΨ 1 x).trans (hφ₀₁ x).symm).trans (hbΨ 0 x).symm).trans (hdΨ 1 (b 0 x)).symm
-  refine ⟨fun p ↦ ((b p.2).trans ((d 1).symm.trans (d (cylinderFrameParam p)))).trans
-    (Ψ (p.1, p.2)), hΨsq.trans_of_continuous hAc hAω, fun s v ↦ ?_, fun t v ↦ ?_⟩
-  · -- The frame applies `b`, `d(1)⁻¹`, `d(r)` and `Ψ` in turn, with `r = s` at `t = 1` and `r = 1`
+  -- Both defects intertwine `j`, and so does the inverse of `d 1`.
+  have hdj (s : unitInterval) (x : W) : d s (j x) = j (d s x) :=
+    trans_symm_apply_map_of_intertwine (hu.periodic s s.property).symm (hΨK _) (hΨK _) x
+  have hbj (t : unitInterval) (x : W) : b t (j x) = j (b t x) :=
+    trans_symm_apply_map_of_intertwine (hu.apply_one t t.property).symm (hφ₀K t) (hΨK _) x
+  have hdj₁ (x : W) : (d 1).symm (j x) = j ((d 1).symm x) :=
+    (d 1).symm_apply_eq.2 (by rw [hdj, ContinuousLinearEquiv.apply_symm_apply])
+  refine ⟨fun p ↦ (b p.2).trans ((d 1).symm.trans (d (cylinderFrameParam p))), hAc, hAω,
+    fun s v ↦ ?_, fun t v ↦ ?_, fun p v ↦ ?_⟩
+  · -- The correction applies `b`, `d(1)⁻¹` and `d(r)` in turn, with `r = s` at `t = 1` and `r = 1`
     -- at `t = 0`.
-    simp only [ContinuousLinearEquiv.trans_apply, Icc.coe_one, Icc.coe_zero]
+    simp only [ContinuousLinearEquiv.trans_apply]
     rw [cylinderFrameParam_one, hd₁, hdΨ, cylinderFrameParam_zero,
       ContinuousLinearEquiv.apply_symm_apply]
   · -- At `s = 1` the parameter is `r = 1`, so the frame is `Ψ(1, t) b(t) = φ₀(t)`.
-    simp only [ContinuousLinearEquiv.trans_apply, Icc.coe_one]
+    simp only [ContinuousLinearEquiv.trans_apply]
     rw [cylinderFrameParam_one_left, ContinuousLinearEquiv.apply_symm_apply, hbΨ]
+  · simp only [ContinuousLinearEquiv.trans_apply]
+    rw [hbj, hdj₁, hdj]
+
+/-- **Frames of a cylinder from a frame along it.** Let `u` be a smooth cylinder from `γ` to `γ₀`,
+`Ψ` a symplectic frame of the tangent bundle along `u`, and `φ₀` a symplectic frame along `γ₀` with
+`φ₀ 0 = φ₀ 1`. Correcting `Ψ` by its defect of periodicity and its defect from `φ₀` gives a
+symplectic frame `χ` along `u` on the whole plane whose restriction to the unit square is a frame of
+the cylinder extending `φ₀`. This frame intertwines every structure that `Ψ` and `φ₀` both
+intertwine: if a map `j` of the model and maps `K x` of the tangent spaces satisfy
+`Ψ z (j v) = K (u z) (Ψ z v)` and `φ₀ t (j v) = K (γ₀ t) (φ₀ t v)`, then `χ` satisfies the same
+identity. For `j` the multiplication by `i` on a complex model and `K` an almost complex structure,
+`χ` is a complex frame. -/
+theorem IsSmoothCylinder.exists_isCylinderFrame_of_isSymplecticFrame
+    (hu : IsSmoothCylinder I γ γ₀ u) {Ψ : ∀ z : ℝ × ℝ, W ≃L[ℝ] TangentSpace I (u z)}
+    (hΨ : IsSymplecticFrame σ ω₀ u Ψ)
+    (hφ₀ : IsSymplecticFrame σ ω₀ (fun t : unitInterval ↦ γ₀ t) φ₀) (hφ₀₁ : ∀ v, φ₀ 0 v = φ₀ 1 v)
+    {j : W → W} {K : ∀ x : M, TangentSpace I x → TangentSpace I x}
+    (hΨK : ∀ z v, Ψ z (j v) = K (u z) (Ψ z v)) (hφ₀K : ∀ t v, φ₀ t (j v) = K (γ₀ t) (φ₀ t v)) :
+    ∃ χ : ∀ z : ℝ × ℝ, W ≃L[ℝ] TangentSpace I (u z), IsSymplecticFrame σ ω₀ u χ ∧
+      IsCylinderFrame σ ω₀ u φ₀ (fun p ↦ χ ((p.1 : ℝ), (p.2 : ℝ))) ∧
+      ∀ z v, χ z (j v) = K (u z) (χ z v) := by
+  obtain ⟨A, hAc, hAω, hA₀, hA₁, hAj⟩ := hu.exists_cylinderFrameCorrection hΨ hφ₀ hφ₀₁ hΨK hφ₀K
+  -- The correction is read on the plane through the clamping `cl` onto the unit square.
+  let cl : ℝ × ℝ → unitInterval × unitInterval := Prod.map (projIcc 0 1 zero_le_one)
+    (projIcc 0 1 zero_le_one)
+  have hcl (p : unitInterval × unitInterval) : cl ((p.1 : ℝ), (p.2 : ℝ)) = p := by
+    simp [cl, projIcc_val]
+  have hχ : IsSymplecticFrame σ ω₀ u fun z ↦ (A (cl z)).trans (Ψ z) :=
+    hΨ.trans_of_continuous (hAc.comp (by fun_prop)) fun z ↦ hAω (cl z)
+  refine ⟨fun z ↦ (A (cl z)).trans (Ψ z), hχ, ⟨hχ.comp (by fun_prop), fun s v ↦ ?_, fun t v ↦ ?_⟩,
+    fun z v ↦ ?_⟩
+  · have h₁ : cl ((s : ℝ), 1) = (s, 1) := hcl (s, 1)
+    have h₀ : cl ((s : ℝ), 0) = (s, 0) := hcl (s, 0)
+    simp only [ContinuousLinearEquiv.trans_apply, Icc.coe_one, Icc.coe_zero, h₁, h₀]
+    exact hA₀ s v
+  · have h₁ : cl (1, (t : ℝ)) = (1, t) := hcl (1, t)
+    simp only [ContinuousLinearEquiv.trans_apply, Icc.coe_one, h₁]
+    exact hA₁ t v
+  · simp only [ContinuousLinearEquiv.trans_apply]
+    rw [hAj, hΨK]
+
+/-- **Frames of a cylinder exist.** For a fiberwise nondegenerate two-form `σ` on a Hausdorff
+σ-compact manifold, every smooth cylinder from `γ` to `γ₀` carries a frame extending any symplectic
+frame `φ₀` along `γ₀` with `φ₀ 0 = φ₀ 1`. -/
+theorem IsSmoothCylinder.exists_isCylinderFrame [T2Space M] [SigmaCompactSpace M]
+    [FiniteDimensional ℝ W] (h : σ.IsNondegenerate) (hu : IsSmoothCylinder I γ γ₀ u)
+    (hφ₀ : IsSymplecticFrame σ ω₀ (fun t : unitInterval ↦ γ₀ t) φ₀) (hφ₀₁ : ∀ v, φ₀ 0 v = φ₀ 1 v) :
+    ∃ χ, IsCylinderFrame σ ω₀ u φ₀ χ := by
+  -- A symplectic frame `Ψ` along the cylinder, neither periodic nor equal to `φ₀`.
+  obtain ⟨Ψ, hΨ⟩ := h.exists_isSymplecticFrame (ω₀ := ω₀) (φ₀ 0).toLinearEquiv.finrank_eq
+    hu.contMDiff.continuous
+  obtain ⟨χ, -, hχ, -⟩ := hu.exists_isCylinderFrame_of_isSymplecticFrame hΨ hφ₀ hφ₀₁ (j := id)
+    (K := fun _ ↦ id) (fun _ _ ↦ rfl) fun _ _ ↦ rfl
+  exact ⟨_, hχ⟩
 
 end Existence
 
@@ -398,6 +480,28 @@ theorem IsSmoothCylinder.conleyZehnderIndex_eq_add_maslovIndex (h : σ.IsNondege
   rw [hu.conleyZehnderIndex_eq h hφ₀' hφ₀₁' hχ', hu.conleyZehnderIndex_eq h hφ₀ hφ₀₁ hχ,
     frameConleyZehnderIndex_eq_add_maslovIndex (hχ.isSymplecticFrame_apply_zero hu)
       (hχ'.isSymplecticFrame_apply_zero hu) hper, hm]
+
+/-- **Change of model of the reference frame.** Composing the reference frame `φ₀` with a linear
+symplectomorphism `e : (W', ω') ≃ (W, ω₀)` of the models does not change the Conley–Zehnder index
+through a cylinder. -/
+theorem IsSmoothCylinder.conleyZehnderIndex_trans {W' : Type*} [NormedAddCommGroup W']
+    [NormedSpace ℝ W'] [FiniteDimensional ℝ W'] {ω' : SymplecticForm W'} (h : σ.IsNondegenerate)
+    (hu : IsSmoothCylinder I γ γ₀ u) (hφ₀ : IsSymplecticFrame σ ω₀ (fun t : unitInterval ↦ γ₀ t) φ₀)
+    (hφ₀₁ : ∀ v, φ₀ 0 v = φ₀ 1 v) (e : W' ≃L[ℝ] W) (he : ∀ v w, ω₀ (e v) (e w) = ω' v w)
+    {Φ : ∀ t : unitInterval, TangentSpace I (γ 0) ≃L[ℝ] TangentSpace I (γ t)}
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ (t : unitInterval) u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) :
+    hu.conleyZehnderIndex h (hφ₀.trans e he) (fun v ↦ hφ₀₁ (e v)) hΦ hΦσ =
+      hu.conleyZehnderIndex h hφ₀ hφ₀₁ hΦ hΦσ := by
+  obtain ⟨χ, hχ⟩ := hu.exists_isCylinderFrame h hφ₀ hφ₀₁
+  -- The frame `χ ∘ e` of the cylinder extends `φ₀ ∘ e`.
+  have hχe : IsCylinderFrame σ ω' u (fun t ↦ e.trans (φ₀ t)) fun p ↦ e.trans (χ p) :=
+    ⟨hχ.isSymplecticFrame.trans e he, fun s v ↦ hχ.periodic s (e v),
+      fun t v ↦ hχ.apply_one t (e v)⟩
+  rw [hu.conleyZehnderIndex_eq h (hφ₀.trans e he) (fun v ↦ hφ₀₁ (e v)) hχe,
+    hu.conleyZehnderIndex_eq h hφ₀ hφ₀₁ hχ]
+  exact frameConleyZehnderIndex_trans _ e he hΦ hΦσ
 
 /-- **The index of the reference loop.** Through the trivial cylinder `(s, t) ↦ γ₀(t)` from the
 reference loop to itself, the Conley–Zehnder index of a family `Φ` along `γ₀` is its index read in

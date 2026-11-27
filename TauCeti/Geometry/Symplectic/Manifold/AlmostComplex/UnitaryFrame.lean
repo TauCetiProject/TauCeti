@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Unitarization
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ComplexTangentBundle
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+import TauCeti.Analysis.Matrix.GeneralLinearGroup.Connected
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
+import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
 # Unitary trivializations of the tangent bundle along maps from contractible spaces
@@ -32,6 +34,15 @@ linearized flow along the orbit becomes a path of symplectic matrices, the path 
 Conley–Zehnder index grades the capped orbit. Any two unitary frames along the same map differ by
 a family of unitary automorphisms of `G`
 (`TauCeti.SymplecticForm.inner_symm_apply_symm_apply_of_unitary`).
+
+More generally every frame of the complex vector bundle `(TM, J)` along a continuous map from any
+space is normalized fibrewise to a unitary frame, which only depends on the frame at each point
+(`TauCeti.SmoothTwoForm.Compatible.exists_continuous_unitary_frame_of_frame`). Along a loop this
+gives a unitary frame that closes up
+(`TauCeti.SmoothTwoForm.Compatible.exists_continuous_unitary_frame_loop`): a frame of `(TM, J)`
+along the loop, corrected by a path of complex automorphisms joining its two ends, normalized
+fibrewise. This is a periodic unitary trivialization along a reference loop, in which the
+Conley–Zehnder indices of the orbits graded through cylinders to that loop are read.
 
 The construction starts from a frame of the complex vector bundle `(TM, J)` along `f`
 (`TauCeti.ContMDiffAlmostComplexStructure.exists_continuous_frame`), which exists because `Y` is
@@ -68,23 +79,40 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [FiniteDimensional ℂ G]
   {Y : Type*} [TopologicalSpace Y] {f : Y → M}
 
-/-- **Unitary trivializations along maps from contractible spaces.** Let `σ` be a smooth two-form
-on `M` with a compatible smooth almost complex structure `J`, and `G` a complex inner product space
-of half the real dimension of `M`. Along a continuous map `f` from a contractible paracompact R₁
-space, there are real-linear isomorphisms `φ y : G ≃ T_(f y) M`, continuous into the tangent bundle,
-which are complex linear and carry the Hermitian inner product of `G` to the one of `(σ, J)`: the
-metric `σ(·, J ·)` restricts to `Re ⟪·, ·⟫` and `σ` to the standard symplectic form `Im ⟪·, ·⟫`. -/
-theorem Compatible.exists_continuous_unitary_frame [Fact (finrank ℝ E = 2 * finrank ℂ G)]
-    [R1Space Y] [ParacompactSpace Y] [ContractibleSpace Y] (hJ : σ.Compatible J)
-    (hf : Continuous f) :
+omit [FiniteDimensional ℝ E] in
+/-- The unitarization of a frame of the tangent space at a point only depends on the point and on
+the frame there. -/
+private theorem unitarization_apply_congr (hJ : σ.Compatible J) {a b : M} (hab : a = b)
+    {L : G ≃L[ℝ] TangentSpace I a} {L' : G ≃L[ℝ] TangentSpace I b} (hL : ∀ v, L v = L' v)
+    (v : G) :
+    (hJ.isNondegenerate.symplecticFormAt a).unitarization (J.almostComplexStructureAt a)
+        (L : G →ₗ[ℝ] TangentSpace I a) v =
+      (hJ.isNondegenerate.symplecticFormAt b).unitarization (J.almostComplexStructureAt b)
+        (L' : G →ₗ[ℝ] TangentSpace I b) v := by
+  subst hab
+  obtain rfl : L = L' := ContinuousLinearEquiv.ext (funext hL)
+  rfl
+
+omit [FiniteDimensional ℝ E] in
+/-- **The unitarization of a complex frame.** Let `σ` be a smooth two-form on `M` with a
+compatible smooth almost complex structure `J`, and `G` a complex inner product space of half the
+real dimension of `M`. Along a continuous map `f : Y → M`, every frame `φ₀` of the complex vector
+bundle `(TM, J)`, continuous into the tangent bundle and complex linear, is normalized fibrewise
+to real-linear isomorphisms `φ y : G ≃ T_(f y) M`, continuous into the tangent bundle, which are
+complex linear and carry the Hermitian inner product of `G` to the one of `(σ, J)`: the metric
+`σ(·, J ·)` restricts to `Re ⟪·, ·⟫` and `σ` to the standard symplectic form `Im ⟪·, ·⟫`. Each
+`φ y` only depends on the point `f y` and on `φ₀ y`: wherever `f` and `φ₀` take the same values,
+so does `φ`. -/
+theorem Compatible.exists_continuous_unitary_frame_of_frame (hJ : σ.Compatible J)
+    (hf : Continuous f) {φ₀ : ∀ y, G ≃L[ℝ] TangentSpace I (f y)}
+    (hφ₀ : Continuous fun q : Y × G ↦ (⟨f q.1, φ₀ q.1 q.2⟩ : TangentBundle I M))
+    (hφ₀J : ∀ y v, φ₀ y (Complex.I • v) = J (f y) (φ₀ y v)) :
     ∃ φ : ∀ y, G ≃L[ℝ] TangentSpace I (f y),
       Continuous (fun q : Y × G ↦ (⟨f q.1, φ q.1 q.2⟩ : TangentBundle I M)) ∧
       (∀ y v, φ y (Complex.I • v) = J (f y) (φ y v)) ∧
       (∀ y v w, σ.eval₂ (f y) (φ y v) (J (f y) (φ y w)) = (inner ℂ v w).re) ∧
-      ∀ y v w, σ.eval₂ (f y) (φ y v) (φ y w) = (inner ℂ v w).im := by
-  obtain ⟨φ₀, hφ₀, hφ₀J⟩ := (J.toContMDiff 0).exists_continuous_frame (G := G) hf
-  replace hφ₀J (y : Y) (v : G) : φ₀ y (Complex.I • v) = J (f y) (φ₀ y v) :=
-    (hφ₀J y v).trans (J.toContMDiff_apply 0 (f y) _)
+      (∀ y v w, σ.eval₂ (f y) (φ y v) (φ y w) = (inner ℂ v w).im) ∧
+      ∀ y y', f y = f y' → (∀ v, φ₀ y v = φ₀ y' v) → ∀ v, φ y v = φ y' v := by
   have hφ₀J' (y : Y) (v : G) : (φ₀ y : G →ₗ[ℝ] TangentSpace I (f y)) (Complex.I • v) =
       J.almostComplexStructureAt (f y) (φ₀ y v) := by
     rw [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
@@ -114,7 +142,7 @@ theorem Compatible.exists_continuous_unitary_frame [Fact (finrank ℝ E = 2 * fi
       SymplecticForm.unitarization_apply, LinearEquiv.coe_coe,
       ContinuousLinearEquiv.coe_toLinearEquiv, k]
   refine ⟨fun y ↦ ((k y).metricChangeEquiv (hk y)).trans (φ₀ y), ?_, fun y v ↦ ?_,
-    fun y v w ↦ ?_, fun y v w ↦ ?_⟩
+    fun y v w ↦ ?_, fun y v w ↦ ?_, fun y y' hy hφy v ↦ ?_⟩
   · exact (hφ₀.comp (continuous_fst.prodMk ((hTc.comp continuous_fst).clm_apply
       continuous_snd))).congr fun q ↦ by
         simp only [Function.comp_apply, ContinuousLinearEquiv.trans_apply,
@@ -126,5 +154,74 @@ theorem Compatible.exists_continuous_unitary_frame [Fact (finrank ℝ E = 2 * fi
     exact (hJ' y).apply_unitarization_apply_unitarization (φ₀ y).injective v w
   · rw [hφ, hφ, ← IsNondegenerate.symplecticFormAt_apply hJ.isNondegenerate]
     exact (hJ' y).apply_unitarization_unitarization (φ₀ y).injective (hφ₀J' y) v w
+  · rw [hφ, hφ]
+    exact unitarization_apply_congr hJ hy hφy v
+
+/-- **Unitary trivializations along maps from contractible spaces.** Let `σ` be a smooth two-form
+on `M` with a compatible smooth almost complex structure `J`, and `G` a complex inner product space
+of half the real dimension of `M`. Along a continuous map `f` from a contractible paracompact R₁
+space, there are real-linear isomorphisms `φ y : G ≃ T_(f y) M`, continuous into the tangent bundle,
+which are complex linear and carry the Hermitian inner product of `G` to the one of `(σ, J)`: the
+metric `σ(·, J ·)` restricts to `Re ⟪·, ·⟫` and `σ` to the standard symplectic form `Im ⟪·, ·⟫`. -/
+theorem Compatible.exists_continuous_unitary_frame [Fact (finrank ℝ E = 2 * finrank ℂ G)]
+    [R1Space Y] [ParacompactSpace Y] [ContractibleSpace Y] (hJ : σ.Compatible J)
+    (hf : Continuous f) :
+    ∃ φ : ∀ y, G ≃L[ℝ] TangentSpace I (f y),
+      Continuous (fun q : Y × G ↦ (⟨f q.1, φ q.1 q.2⟩ : TangentBundle I M)) ∧
+      (∀ y v, φ y (Complex.I • v) = J (f y) (φ y v)) ∧
+      (∀ y v w, σ.eval₂ (f y) (φ y v) (J (f y) (φ y w)) = (inner ℂ v w).re) ∧
+      ∀ y v w, σ.eval₂ (f y) (φ y v) (φ y w) = (inner ℂ v w).im := by
+  obtain ⟨φ₀, hφ₀, hφ₀J⟩ := (J.toContMDiff 0).exists_continuous_frame (G := G) hf
+  obtain ⟨φ, hφ, hφJ, hφg, hφσ, -⟩ := hJ.exists_continuous_unitary_frame_of_frame hf hφ₀
+    fun y v ↦ (hφ₀J y v).trans (J.toContMDiff_apply 0 (f y) _)
+  exact ⟨φ, hφ, hφJ, hφg, hφσ⟩
+
+/-- **Periodic unitary frames along loops.** Let `σ` be a smooth two-form on `M` with a compatible
+smooth almost complex structure `J`, and `G` a complex inner product space of half the real
+dimension of `M`. Along every continuous loop `f : [0, 1] → M`, `f 0 = f 1`, there is a unitary
+frame of the tangent bundle, as in
+`TauCeti.SmoothTwoForm.Compatible.exists_continuous_unitary_frame`, that takes the same value at
+the two ends of the loop. It is the unitarization of a frame of the complex vector bundle `(TM, J)`
+along the loop, corrected at its end by a path of complex automorphisms of `G` that closes it
+up. -/
+theorem Compatible.exists_continuous_unitary_frame_loop [Fact (finrank ℝ E = 2 * finrank ℂ G)]
+    (hJ : σ.Compatible J) {f : unitInterval → M} (hf : Continuous f) (hf₀₁ : f 0 = f 1) :
+    ∃ φ : ∀ t, G ≃L[ℝ] TangentSpace I (f t),
+      Continuous (fun q : unitInterval × G ↦ (⟨f q.1, φ q.1 q.2⟩ : TangentBundle I M)) ∧
+      (∀ t v, φ t (Complex.I • v) = J (f t) (φ t v)) ∧
+      (∀ t v w, σ.eval₂ (f t) (φ t v) (J (f t) (φ t w)) = (inner ℂ v w).re) ∧
+      (∀ t v w, σ.eval₂ (f t) (φ t v) (φ t w) = (inner ℂ v w).im) ∧
+      ∀ v, φ 0 v = φ 1 v := by
+  obtain ⟨φc, hφc, hφcJ⟩ := (J.toContMDiff 0).exists_continuous_frame (G := G) hf
+  replace hφcJ (t : unitInterval) (v : G) : φc t (Complex.I • v) = J (f t) (φc t v) :=
+    (hφcJ t v).trans (J.toContMDiff_apply 0 (f t) _)
+  -- The frame at the end of the loop, read over its start: the tangent spaces are both the model
+  -- space, so this is the same family of maps.
+  let ψ₁ : G ≃L[ℝ] TangentSpace I (f 0) := φc 1
+  have hJf (a b : M) (hab : a = b) (w : E) : J a w = J b w := by
+    subst hab
+    rfl
+  have hψ₁J (v : G) : ψ₁ (Complex.I • v) = J (f 0) (ψ₁ v) :=
+    (hφcJ 1 v).trans (hJf _ _ hf₀₁.symm _)
+  -- The defect `D = φc(1)⁻¹ φc(0)` is a complex automorphism, joined to the identity by a path `P`.
+  let D : G ≃L[ℂ] G := ((φc 0).trans ψ₁.symm).complexOfMapISmul
+    (SmoothAlmostComplexStructure.trans_symm_I_smul (hφcJ 0) hψ₁J)
+  obtain ⟨P, hPc, hP₀, hP₁⟩ := ContinuousLinearEquiv.exists_continuous_path_refl D
+  -- The frame `φc ∘ P` closes up along the loop.
+  let φp : ∀ t, G ≃L[ℝ] TangentSpace I (f t) := fun t ↦ ((P t).restrictScalars ℝ).trans (φc t)
+  have hPc' : Continuous fun t ↦ ((P t : G →L[ℂ] G).restrictScalars ℝ : G →L[ℝ] G) :=
+    (ContinuousLinearMap.restrictScalarsIsometry ℂ G G ℝ ℝ).continuous.comp hPc
+  have hφp : Continuous fun q : unitInterval × G ↦ (⟨f q.1, φp q.1 q.2⟩ : TangentBundle I M) :=
+    hφc.comp (continuous_fst.prodMk ((hPc'.comp continuous_fst).clm_apply continuous_snd))
+  have hφpJ (t : unitInterval) (v : G) : φp t (Complex.I • v) = J (f t) (φp t v) := by
+    simp only [φp, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.restrictScalars_apply,
+      map_smul, hφcJ]
+  have hφp₀₁ (v : G) : φp 0 v = φp 1 v := by
+    simp only [φp, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.restrictScalars_apply,
+      hP₀, hP₁, ContinuousLinearEquiv.refl_apply, D,
+      ContinuousLinearEquiv.complexOfMapISmul_apply]
+    exact (ψ₁.apply_symm_apply _).symm
+  obtain ⟨φ, hφ, hφJ, hφg, hφσ, hφ₀₁⟩ := hJ.exists_continuous_unitary_frame_of_frame hf hφp hφpJ
+  exact ⟨φ, hφ, hφJ, hφg, hφσ, hφ₀₁ 0 1 hf₀₁ hφp₀₁⟩
 
 end TauCeti.SmoothTwoForm

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.GeneralLinearGroup.Connected
 public import TauCeti.Topology.VectorBundle.Complex.RelativeClutching
+import TauCeti.Topology.VectorBundle.FiberCast
 
 /-!
 # The clutching number of a complex vector bundle over a torus
@@ -43,6 +44,13 @@ boundary circle.
   (`ContinuousLinearEquiv.exists_continuous_path_refl_family`), and on the right and top edges with
   the same paths followed by `A t` and `B s`, gives a torus frame. At the corner `(1, 1)` the two
   prescriptions agree because `A` and `B` both compare frames at the four corners.
+* **Frames with monodromy.** If a frame `Ψ` over the whole square takes the same values on the
+  top and bottom edges and `Ψ (1, t) = Ψ (0, t) ∘ k t` across the vertical edges, then the torus
+  clutching number is minus the winding of `det k`
+  (`TauCeti.torusClutchingNumber_mul_two_pi_eq_of_frame`): twisting `Ψ` along the boundary by
+  automorphisms equal to `(k t)⁻¹` on the right edge (`TauCeti.exists_twisted_boundary`) gives a
+  torus frame. This computes the first Chern number of the torus glued from two cylinders with
+  frames that agree on their common boundary loops.
 * **Homotopy invariance.** Homotopic maps of the torus, through maps of the torus, have the same
   clutching number (`TauCeti.torusClutchingNumber_eq_of_homotopy`).
 * **Spheres.** A sphere `p`, a map of the square sending its boundary to a point, is a map of the
@@ -77,6 +85,9 @@ homotopy classes of loops.
 * `TauCeti.IsTorusFrame.torusClutchingNumber_eq`: the torus clutching number is the relative
   clutching number relative to any torus frame.
 * `TauCeti.torusClutchingNumber_eq_zero_of_not_periodic`: the value `0` off maps of the torus.
+* `TauCeti.torusClutchingNumber_mul_two_pi_eq_of_frame`: the torus clutching number from a frame
+  over the square that differs across the vertical edges by a loop `k` of automorphisms, minus the
+  winding of `det k`.
 * `TauCeti.torusClutchingNumber_eq_of_homotopy`: homotopy invariance.
 * `TauCeti.torusClutchingNumber_eq_clutchingNumber`: comparison with spheres.
 * `TauCeti.IsTorusFrame.map`: bundle maps carry torus frames to torus frames.
@@ -178,7 +189,7 @@ around the corner `(1, 1)` agree, there are automorphisms `ψ (r, y)` along the 
 square, continuous on `I × ∂I²`, with `ψ (r, (1, t)) = A (r, t) ∘ ψ (r, (0, t))` and
 `ψ (r, (s, 1)) = B (r, s) ∘ ψ (r, (s, 0))`. They are paths from the identity to `A (r, 0)` along the
 bottom edge and to `B (r, 0)` along the left edge, followed by `A` and `B` on the opposite edges. -/
-private theorem exists_twisted_boundary {A B : I × I → F ≃L[ℂ] F}
+theorem exists_twisted_boundary {A B : I × I → F ≃L[ℂ] F}
     (hA : Continuous fun q ↦ (A q : F →L[ℂ] F)) (hB : Continuous fun q ↦ (B q : F →L[ℂ] F))
     (hAB : ∀ r, (B (r, 0)).trans (A (r, 1)) = (A (r, 0)).trans (B (r, 1))) :
     ∃ ψ : I × (Fin 2 → I) → F ≃L[ℂ] F,
@@ -312,6 +323,123 @@ theorem torusClutchingNumber_eq_zero_of_not_periodic {u : C(Fin 2 → I, X)}
     (h : ¬((∀ t, u ![1, t] = u ![0, t]) ∧ ∀ s, u ![s, 1] = u ![s, 0])) :
     torusClutchingNumber F E u = 0 :=
   dite_eq_right fun ⟨_, hτ⟩ ↦ h ⟨hτ.apply_right_eq_left, hτ.apply_top_eq_bottom⟩
+
+/-! ### The clutching number from a frame over the square -/
+
+omit [TopologicalSpace X] [FiniteDimensional ℂ F] [TopologicalSpace (TotalSpace F E)]
+  [FiberBundle F E] [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)]
+  [∀ x, ContinuousSMul ℂ (E x)] in
+/-- The degree around the boundary of the square of the determinant of automorphisms `ψ` that agree
+on the top and bottom edges and differ by `(k t)⁻¹` across the vertical edges is minus the winding
+of `det k`. -/
+private theorem squareBoundaryDegree_normalizedDet_mul_two_pi_eq {ψ : (Fin 2 → I) → F ≃L[ℂ] F}
+    (hψ : ContinuousOn (fun y ↦ (ψ y : F →L[ℂ] F)) (Cube.boundary (Fin 2)))
+    {k : I → F ≃L[ℂ] F} (hR : ∀ t v, ψ ![1, t] v = (k t).symm (ψ ![0, t] v))
+    (hT : ∀ s v, ψ ![s, 1] v = ψ ![s, 0] v) {θ : I → ℝ} (hθ : Continuous θ)
+    (hθk : ∀ t, Circle.exp (θ t) = (k t).normalizedDet) :
+    (squareBoundaryDegree (fun y ↦ (ψ y).normalizedDet) : ℝ) * (2 * Real.pi) = θ 0 - θ 1 := by
+  have hΓc : ContinuousOn (fun y ↦ (ψ y).normalizedDet) (Cube.boundary (Fin 2)) :=
+    hψ.normalizedDet
+  -- Lifts along the bottom and left edges; the top edge repeats the bottom one, and on the right
+  -- edge the determinant is divided by `det k`.
+  have hB : Continuous fun s : I ↦ (ψ ![s, 0]).normalizedDet :=
+    hΓc.comp_continuous (by fun_prop) fun _ ↦ ⟨1, Or.inl rfl⟩
+  have hL : Continuous fun t : I ↦ (ψ ![0, t]).normalizedDet :=
+    hΓc.comp_continuous (by fun_prop) fun _ ↦ ⟨0, Or.inl rfl⟩
+  obtain ⟨θB, hθB⟩ := Circle.exists_lift (⟨⟨_, hB⟩, rfl, rfl⟩ : Path _ _)
+  obtain ⟨θL, hθL⟩ := Circle.exists_lift (⟨⟨_, hL⟩, rfl, rfl⟩ : Path _ _)
+  have hθL' (t : I) : Circle.exp (θL t) = (ψ ![0, t]).normalizedDet := hθL t
+  have hθB' (s : I) : Circle.exp (θB s) = (ψ ![s, 0]).normalizedDet := hθB s
+  rw [squareBoundaryDegree_mul_two_pi_eq hΓc θB.continuous (θL.continuous.sub hθ) θB.continuous
+    θL.continuous hθB' (fun t ↦ ?_) (fun s ↦ ?_) hθL', Pi.sub_apply, Pi.sub_apply]
+  · ring
+  · rw [Pi.sub_apply, Circle.exp_sub, hθk, hθL', div_eq_mul_inv,
+      ← ContinuousLinearEquiv.normalizedDet_symm, ← ContinuousLinearEquiv.normalizedDet_trans]
+    congr 1
+    ext v
+    rw [ContinuousLinearEquiv.trans_apply, hR]
+  · rw [hθB']
+    congr 1
+    ext v
+    rw [hT]
+
+omit [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
+/-- If a continuous frame `Ψ` over the square takes the value `Ψ (0, t) ∘ k t` at `(1, t)`, then
+`t ↦ (k t)⁻¹` is continuous: it is the change of frame between the two vertical edges. -/
+private theorem continuous_symm_of_frame_right_eq_left {w : C(Fin 2 → I, X)}
+    {Ψ : ∀ y, F ≃L[ℂ] E (w y)}
+    (hΨ : Continuous fun q : (Fin 2 → I) × F ↦ TotalSpace.mk' F (w q.1) (Ψ q.1 q.2))
+    {k : I → F ≃L[ℂ] F} (hR : ∀ t v, TotalSpace.mk' F (w ![1, t]) (Ψ ![1, t] v) =
+      TotalSpace.mk' F (w ![0, t]) (Ψ ![0, t] (k t v))) :
+    Continuous fun t ↦ ((k t).symm : F →L[ℂ] F) := by
+  have hpt (t : I) : w ![1, t] = w ![0, t] := congrArg TotalSpace.proj (hR t 0)
+  -- The frame on the right edge, read over the left edge.
+  let Ψ₁ : ∀ t : I, F ≃L[ℂ] E (w ![0, t]) := fun t ↦ (Ψ ![1, t]).trans (fiberCast (hpt t))
+  have hΨ₁ (t : I) (v : F) : Ψ₁ t v = Ψ ![0, t] (k t v) :=
+    TotalSpace.mk_inj.1 ((mk_fiberCast (R := ℂ) (hpt t) _).trans (hR t v))
+  have hc := continuous_trans_symm_of_continuous_frame (f := fun t : I ↦ w ![0, t])
+    (φ := fun t ↦ Ψ ![0, t]) (ψ := Ψ₁)
+    (hΨ.comp (by fun_prop : Continuous fun q : I × F ↦ (![0, q.1], q.2)))
+    ((hΨ.comp (by fun_prop : Continuous fun q : I × F ↦ (![1, q.1], q.2))).congr fun q ↦
+      (mk_fiberCast (R := ℂ) (hpt q.1) _).symm)
+  refine hc.congr fun t ↦ ContinuousLinearMap.ext fun v ↦ ?_
+  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.symm_apply_eq, hΨ₁, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- **The clutching number of a torus from a frame over its square.** Let `w` be a map of the
+square and `Ψ` a continuous frame of `E` along `w` that takes the same values on the top and bottom
+edges and differs across the vertical edges by a family `k` of automorphisms of `F`,
+`Ψ (1, t) = Ψ (0, t) ∘ k t`; then `w` is a map of the torus and `k` a continuous loop. For every
+continuous lift `θ` of the normalized determinant of `k` through `Circle.exp`, `2π` times the
+torus clutching number of `w` is `θ 0 - θ 1`, minus the winding of `det k`. The torus frame is `Ψ`
+twisted along the boundary of the square by automorphisms equal to `(k t)⁻¹` on the right edge. -/
+theorem torusClutchingNumber_mul_two_pi_eq_of_frame {w : C(Fin 2 → I, X)}
+    {Ψ : ∀ y, F ≃L[ℂ] E (w y)}
+    (hΨ : Continuous fun q : (Fin 2 → I) × F ↦ TotalSpace.mk' F (w q.1) (Ψ q.1 q.2))
+    {k : I → F ≃L[ℂ] F} (hR : ∀ t v, TotalSpace.mk' F (w ![1, t]) (Ψ ![1, t] v) =
+      TotalSpace.mk' F (w ![0, t]) (Ψ ![0, t] (k t v)))
+    (hT : ∀ s v, TotalSpace.mk' F (w ![s, 1]) (Ψ ![s, 1] v) =
+      TotalSpace.mk' F (w ![s, 0]) (Ψ ![s, 0] v))
+    {θ : I → ℝ} (hθ : Continuous θ) (hθk : ∀ t, Circle.exp (θ t) = (k t).normalizedDet) :
+    (torusClutchingNumber F E w : ℝ) * (2 * Real.pi) = θ 0 - θ 1 := by
+  -- The loop `k` closes up: going around the corners of the square compares `k 0` with `k 1`.
+  have hk₀₁ : k 1 = k 0 := by
+    ext v
+    have h := (((hT 0 (k 1 v)).symm.trans (hR 1 v).symm).trans (hT 1 v)).trans (hR 0 v)
+    exact (Ψ ![0, 0]).injective (TotalSpace.mk_inj.1 h)
+  -- Automorphisms `ψ` along the boundary, twisted by `k⁻¹` across the vertical edges.
+  obtain ⟨ψb, hψbc, hψbR, hψbT⟩ := exists_twisted_boundary
+    (A := fun q : I × I ↦ (k q.2).symm) (B := fun _ ↦ ContinuousLinearEquiv.refl ℂ F)
+    ((continuous_symm_of_frame_right_eq_left hΨ hR).comp continuous_snd) continuous_const
+    fun r ↦ by
+      ext v
+      simp [hk₀₁]
+  set ψ : (Fin 2 → I) → F ≃L[ℂ] F := fun y ↦ ψb (0, y)
+  have hψc : ContinuousOn (fun y ↦ (ψ y : F →L[ℂ] F)) (Cube.boundary (Fin 2)) :=
+    hψbc.comp (by fun_prop) fun y hy ↦ ⟨mem_univ _, hy⟩
+  have hψR (t : I) (v : F) : ψ ![1, t] v = (k t).symm (ψ ![0, t] v) := by
+    simp only [ψ, hψbR, ContinuousLinearEquiv.trans_apply]
+  have hψT (s : I) (v : F) : ψ ![s, 1] v = ψ ![s, 0] v := by
+    simp only [ψ, hψbT, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.refl_apply]
+  -- `Ψ` twisted by `ψ` is a torus frame along `w`.
+  have hτ : IsTorusFrame w fun y ↦ (ψ y).trans (Ψ y) := by
+    refine ⟨?_, fun t v ↦ ?_, fun s v ↦ ?_⟩
+    · exact hΨ.comp_continuousOn (continuousOn_fst.prodMk
+        ((hψc.comp continuousOn_fst
+          fun q (hq : q ∈ Cube.boundary (Fin 2) ×ˢ univ) ↦ hq.1).clm_apply continuousOn_snd))
+    · simp only [ContinuousLinearEquiv.trans_apply]
+      rw [hR, hψR, ContinuousLinearEquiv.apply_symm_apply]
+    · simp only [ContinuousLinearEquiv.trans_apply]
+      rw [hψT, hT]
+  -- Relative to the frame `Ψ` over the square, the torus frame differs by `ψ` on the boundary.
+  have hΓ : (fun y ↦ (((ψ y).trans (Ψ y)).trans (Ψ y).symm).normalizedDet) =
+      fun y ↦ (ψ y).normalizedDet := by
+    funext y
+    congr 1
+    ext v
+    simp
+  rw [hτ.torusClutchingNumber_eq, relativeClutchingNumber_eq_squareBoundaryDegree w _ hΨ, hΓ]
+  exact squareBoundaryDegree_normalizedDet_mul_two_pi_eq hψc hψR hψT hθ hθk
 
 /-- **Homotopy invariance.** If `H : I × I² → X` is a homotopy through maps of the torus, the two
 ends `H (0, ·)` and `H (1, ·)` have the same torus clutching number. -/

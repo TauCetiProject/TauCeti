@@ -102,14 +102,16 @@ variable {X : Type*} [TopologicalSpace X]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℂ F E]
   [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)]
 
-omit [FiniteDimensional ℂ F] [FiberBundle F E] [VectorBundle ℂ F E]
+omit [TopologicalSpace X] [FiniteDimensional ℂ F] [FiberBundle F E] [VectorBundle ℂ F E]
   [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
-/-- **The frame of a sphere glued from two caps.** For continuous frames `φ` and `φ'` along `u` and
-`u'` with `φ (0, t) = φ' (0, t) ∘ k t`, there is a continuous frame along the sphere
-`rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u'` that is `φ` on the half `s ≤ 1/2` and
-`φ' ∘ k` on the half `s ≥ 1/2`. -/
-private theorem exists_frame_rectangleTrans {x : X} {u u' : ℝ × ℝ → X}
-    (hseam : ∀ t, u (0, t) = u' (0, t)) {p : Ω^ (Fin 2) X x}
+/-- **The frame of a square glued from two maps.** Let `u` and `u'` be maps of the plane that
+agree on the line `s = 0`, and `p` the map of the unit square
+`rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u'`, `u` run backwards followed by `u'`, such as
+the sphere glued from two caps or the torus glued from two cylinders. For continuous frames `φ` and
+`φ'` along `u` and `u'` with `φ (0, t) = φ' (0, t) ∘ k t`, there is a continuous frame along `p`
+that is `φ` on the half `s ≤ 1/2` and `φ' ∘ k` on the half `s ≥ 1/2`. -/
+theorem exists_frame_rectangleTrans {u u' : ℝ × ℝ → X}
+    (hseam : ∀ t, u (0, t) = u' (0, t)) {p : (Fin 2 → unitInterval) → X}
     (hp : ∀ y, p y = rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u' ((y 0 : ℝ), (y 1 : ℝ)))
     {φ : ∀ z, F ≃L[ℂ] E (u z)} {φ' : ∀ z, F ≃L[ℂ] E (u' z)}
     (hφ : Continuous fun q : (ℝ × ℝ) × F ↦ TotalSpace.mk' F (u q.1) (φ q.1 q.2))
@@ -173,7 +175,7 @@ private theorem exists_frame_rectangleTrans {x : X} {u u' : ℝ × ℝ → X}
 omit [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
 /-- If continuous frames `φ` and `φ'` along maps agreeing on the line `s = 0` differ there by
 automorphisms `k t` of `F`, `φ (0, t) = φ' (0, t) ∘ k t`, then `k` is continuous. -/
-private theorem continuous_of_mk_eq_mk {u u' : ℝ × ℝ → X} (hseam : ∀ t, u (0, t) = u' (0, t))
+theorem continuous_of_mk_eq_mk {u u' : ℝ × ℝ → X} (hseam : ∀ t, u (0, t) = u' (0, t))
     {φ : ∀ z, F ≃L[ℂ] E (u z)} {φ' : ∀ z, F ≃L[ℂ] E (u' z)}
     (hφ : Continuous fun q : (ℝ × ℝ) × F ↦ TotalSpace.mk' F (u q.1) (φ q.1 q.2))
     (hφ' : Continuous fun q : (ℝ × ℝ) × F ↦ TotalSpace.mk' F (u' q.1) (φ' q.1 q.2))
