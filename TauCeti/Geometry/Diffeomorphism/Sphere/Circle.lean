@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Sphere.Isotopy
+public import TauCeti.Geometry.Manifold.Orientation.Preserving
 import TauCeti.Geometry.Diffeomorphism.Composition
 import TauCeti.Geometry.Diffeomorphism.Congr
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.AddCircle
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Path
+import TauCeti.Geometry.Diffeomorphism.Sphere.Orientation
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Circle
 
 /-!
@@ -36,6 +38,8 @@ The reflection `θ ↦ -θ` of `ℝ / ℤ` is the reflection `(x, y) ↦ (x, -y)
 * `TauCeti.exists_joined_orthogonalToDiffSphere_circle`: every diffeomorphism of `S¹` is isotopic
   to an orthogonal transformation.
 * `TauCeti.natCard_zerothHomotopy_diff_circle`: `Diff(S¹)` has two path components.
+* `TauCeti.pathConnectedSpace_orientationPreservingSubgroup_circle`: the orientation-preserving
+  diffeomorphisms of `S¹` form a path-connected subgroup, the identity component of `Diff(S¹)`.
 
 ## References
 
@@ -91,6 +95,17 @@ theorem exists_joined_orthogonalToDiffSphere_circle (hm : m ≠ 0)
 theorem natCard_zerothHomotopy_diff_circle (hm : m ≠ 0) :
     Nat.card (ZerothHomotopy (Diff (𝓡 1) (sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) m)) = 2 :=
   forall_exists_joined_orthogonalToDiffSphere_iff_natCard_zerothHomotopy_eq_two.1
+    (exists_joined_orthogonalToDiffSphere_circle hm)
+
+/-- **The orientation-preserving diffeomorphisms of the circle form a path-connected subgroup**,
+for the weak Whitney `C^m` topology, `m ≠ 0`, and every orientation `o` of `S¹`: `π₀ Diff⁺(S¹) = 0`.
+Since `Diff⁺(S¹)` is open and closed in `Diff(S¹)`
+(`TauCeti.isClopen_orientationPreservingSubgroup_sphere`), it is the path component of the
+identity. -/
+theorem pathConnectedSpace_orientationPreservingSubgroup_circle (hm : m ≠ 0) {ι : Type*}
+    [Fintype ι] (o : Manifold.Orientation (𝓡 1) (sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) ι) :
+    PathConnectedSpace (Diffeomorph.orientationPreservingSubgroup hm o) :=
+  (forall_exists_joined_orthogonalToDiffSphere_iff_pathConnectedSpace hm o).1
     (exists_joined_orthogonalToDiffSphere_circle hm)
 
 end TauCeti

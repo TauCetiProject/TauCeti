@@ -419,3 +419,31 @@ theorem exists_eventually_isOrientationPreservingAt {g : M → E} {a : M}
       ((isOrientationPreservingAt_iff_of_coe_eq _ _ g a e he).2 (orientationAt_model _ _ _).symm)⟩
 
 end TauCeti.Manifold.Orientation
+
+namespace Diffeomorph
+
+open TauCeti.Manifold.Orientation
+open scoped ContDiff
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I 1 M] {ι : Type*} [Fintype ι] {n : ℕ∞ω}
+
+/-- **A diffeomorphism of a connected manifold preserves or reverses an orientation everywhere.**
+A `Cⁿ` self-diffeomorphism of a preconnected manifold, `n ≠ 0`, that lies outside the
+orientation-preserving subgroup of an orientation `o` reverses `o` at every point: preservation
+fails somewhere, so everywhere by `IsPreconnected.isOrientationPreservingAt_iff`, and a local
+diffeomorphism that does not preserve orientations at a point reverses them there. -/
+theorem isOrientationReversingAt_of_notMem_orientationPreservingSubgroup [PreconnectedSpace M]
+    {hn : n ≠ 0} {o : TauCeti.Manifold.Orientation I M ι} {f : TauCeti.Diff I M n}
+    (hf : f ∉ orientationPreservingSubgroup hn o) (x : M) :
+    IsOrientationReversingAt o o f x := by
+  obtain ⟨y, hy⟩ := not_forall.1 (mt mem_orientationPreservingSubgroup_iff.2 hf)
+  have hfx : ¬ IsOrientationPreservingAt o o f x := fun h ↦ hy <|
+    (isPreconnected_univ.isOrientationPreservingAt_iff
+      (fun z _ ↦ (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)).contMDiffAt)
+      (fun z _ ↦ f.isInvertible_mfderiv hn) o o (Set.mem_univ x) (Set.mem_univ y)).1 h
+  exact ((f.isLocalDiffeomorph x).isOrientationPreservingAt_or_isOrientationReversingAt hn o o
+    ).resolve_left hfx
+
+end Diffeomorph

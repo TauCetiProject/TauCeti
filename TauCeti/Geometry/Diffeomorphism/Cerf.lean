@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Smale
+public import TauCeti.Geometry.Manifold.Orientation.Preserving
 import Mathlib.Topology.Homotopy.Path
 import TauCeti.Geometry.Diffeomorphism.Sphere.Isotopy
+import TauCeti.Geometry.Diffeomorphism.Sphere.Orientation
 public import TauCeti.Geometry.Diffeomorphism.Sphere.RadialExtension
 
 /-!
@@ -33,7 +35,10 @@ The orientation-free form is equivalent to Cerf's: a diffeomorphism isotopic to 
 transformation of determinant `-1` reverses orientation, so under `TauCeti.CerfTheorem` an
 orientation-preserving diffeomorphism is isotopic to an element of `SO(4)`, hence to the identity;
 and conversely an orientation-reversing diffeomorphism composed with a reflection preserves
-orientation. Orientation-preservation of diffeomorphisms is not used here.
+orientation. So `TauCeti.CerfTheorem` holds exactly when the orientation-preserving subgroup
+`Diff⁺(S³)` of any orientation of `S³` is path-connected
+(`TauCeti.cerfTheorem_iff_pathConnectedSpace_orientationPreservingSubgroup`), the case `n = 3` of
+`TauCeti.forall_exists_joined_orthogonalToDiffSphere_iff_pathConnectedSpace`.
 
 Cerf's theorem follows from the Smale conjecture `Diff(S³) ≃ O(4)` (Hatcher), since a homotopy
 equivalence is surjective on path components (`TauCeti.SmaleConjecture.cerfTheorem`). It is not
@@ -51,6 +56,8 @@ along the isotopy (`TauCeti.exists_diffeomorph_closedBall_of_joined_unitSphereDi
 * `TauCeti.SmaleConjecture.cerfTheorem`: the Smale conjecture implies Cerf's theorem.
 * `TauCeti.cerfTheorem_iff_natCard_zerothHomotopy_eq_two`: Cerf's theorem holds exactly when
   `Diff(S³)` has two path components.
+* `TauCeti.cerfTheorem_iff_pathConnectedSpace_orientationPreservingSubgroup`: Cerf's theorem holds
+  exactly when `π₀ Diff⁺(S³) = 0`, its classical form.
 * `TauCeti.CerfTheorem.exists_diffeomorph_closedBall`: Cerf's theorem implies `Γ₄ = 0`, every
   diffeomorphism of `S³` extends to a diffeomorphism of `D⁴`.
 
@@ -94,6 +101,15 @@ theorem cerfTheorem_iff_natCard_zerothHomotopy_eq_two :
     CerfTheorem ↔
       Nat.card (ZerothHomotopy (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞)) = 2 :=
   forall_exists_joined_orthogonalToDiffSphere_iff_natCard_zerothHomotopy_eq_two
+
+/-- **Cerf's theorem in its classical form**, `π₀ Diff⁺(S³) = 0`. For every orientation `o` of
+`S³`, `TauCeti.CerfTheorem` holds exactly when the smooth diffeomorphisms of `S³` preserving `o`
+form a path-connected subgroup of `Diff(S³)`. -/
+theorem cerfTheorem_iff_pathConnectedSpace_orientationPreservingSubgroup {ι : Type*} [Fintype ι]
+    (o : Manifold.Orientation (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ι) :
+    CerfTheorem ↔
+      PathConnectedSpace (Diffeomorph.orientationPreservingSubgroup (n := ∞) (by simp) o) :=
+  forall_exists_joined_orthogonalToDiffSphere_iff_pathConnectedSpace _ o
 
 /-- **Cerf's theorem implies `Γ₄ = 0`** (Cerf, Corollaire 1). If every diffeomorphism of `S³` is
 isotopic to an orthogonal one, then every smooth diffeomorphism of `S³` is the restriction to the
