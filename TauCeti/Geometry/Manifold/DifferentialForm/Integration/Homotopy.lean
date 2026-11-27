@@ -311,29 +311,13 @@ zero area. -/
 theorem rectangleIntegral_comp_real (φ : RoughForm I M F 2) {γ : ℝ → M} {Θ : ℝ × ℝ → ℝ}
     (hγ : MDifferentiable 𝓘(ℝ) I γ) (hΘ : Differentiable ℝ Θ) (a b : ℝ × ℝ) :
     rectangleIntegral φ (γ ∘ Θ) a b = 0 := by
-  have h (z : ℝ × ℝ) : φ ((γ ∘ Θ) z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z (1, 0),
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z (0, 1)] = 0 := by
-    -- Each partial derivative is `c • w` for the velocity `w` of `γ` at `Θ z`.
-    have hv (v : ℝ × ℝ) : mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z v =
-        fderiv ℝ Θ z v • mfderiv 𝓘(ℝ) I γ (Θ z) 1 := by
-      have hcomp : mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z =
-          (mfderiv 𝓘(ℝ) I γ (Θ z)).comp (fderiv ℝ Θ z) :=
-        ((hγ (Θ z)).hasMFDerivAt.comp z (hΘ z).hasFDerivAt.hasMFDerivAt).mfderiv
-      rw [hcomp]
-      calc mfderiv 𝓘(ℝ) I γ (Θ z) (fderiv ℝ Θ z v)
-          = mfderiv 𝓘(ℝ) I γ (Θ z) (fderiv ℝ Θ z v • (1 : ℝ)) := by rw [smul_eq_mul, mul_one]
-        _ = fderiv ℝ Θ z v • mfderiv 𝓘(ℝ) I γ (Θ z) 1 :=
-          (mfderiv 𝓘(ℝ) I γ (Θ z)).map_smul _ _
-    have hsmul : ![mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z (1, 0),
-        mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z (0, 1)] =
-        fun i ↦ ![fderiv ℝ Θ z (1, 0), fderiv ℝ Θ z (0, 1)] i •
-          ![mfderiv 𝓘(ℝ) I γ (Θ z) 1, mfderiv 𝓘(ℝ) I γ (Θ z) 1] i := by
-      ext1 i
-      fin_cases i <;> simp [hv]
-    rw [hsmul, ContinuousAlternatingMap.map_smul_univ,
-      (φ _).map_eq_zero_of_eq _ (i := 0) (j := 1) rfl (by decide), smul_zero]
-  rw [rectangleIntegral_eq]
-  simp only [h, intervalIntegral.integral_zero]
+  -- The pullback factors through `fderiv ℝ Θ z`, and a two-form on the line `ℝ` vanishes.
+  have h (z : ℝ × ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) φ z ![(1, 0), (0, 1)] = 0 := by
+    rw [mpullback_comp_apply_of_hasFDerivAt (hΘ z).hasFDerivAt (hγ _),
+      ContinuousAlternatingMap.eq_zero_of_finrank_lt (mpullback 𝓘(ℝ) I γ φ (Θ z)) (by simp)]
+    -- The tangent spaces of `ℝ` are `ℝ` itself, so the zero form pulled back is zero.
+    rfl
+  simp [rectangleIntegral_def, h]
 
 /-- The integrand of `TauCeti.rectangleIntegral` along `u ∘ Prod.map σ τ` is the integrand along
 `u` at the image point, scaled by the product of the derivatives of `σ` and `τ`. -/
