@@ -11,7 +11,14 @@ import Mathlib.Data.Nat.Factorization.LCM
 import Mathlib.Tactic.Ring
 
 /-!
-# The Chinese remainder theorem in gcd–lcm form
+# The Chinese remainder theorem on unit groups and in gcd–lcm form
+
+For coprime `m` and `n`, `ZMod.unitsChineseRemainder` identifies `(ZMod (m * n))ˣ` with
+`(ZMod m)ˣ × (ZMod n)ˣ` through the two reductions (`ZMod.unitsChineseRemainder_apply_fst`,
+`ZMod.unitsChineseRemainder_apply_snd`), and `ZMod.eq_mul_comp_unitsMap_of_coprime` splits a hom
+out of `(ZMod (m * n))ˣ` as the product of its restrictions to the two factors, composed with the
+reductions. This is the splitting used for the Dirichlet character factorizations at coprime
+product levels.
 
 Mathlib's `ZMod.chineseRemainder` splits `ZMod (m * n)` as `ZMod m × ZMod n` for coprime `m` and
 `n`. Without coprimality, `ZMod a × ZMod b` is still isomorphic to
@@ -36,7 +43,7 @@ variable {m n : ℕ}
 /-- **The Chinese remainder equivalence on unit groups.** For coprime `m` and `n`, a unit modulo
 `m * n` is identified with its reductions modulo `m` and modulo `n`
 (`ZMod.unitsChineseRemainder_apply_fst`, `ZMod.unitsChineseRemainder_apply_snd`). -/
-@[expose] def unitsChineseRemainder (h : m.Coprime n) : (ZMod (m * n))ˣ ≃* (ZMod m)ˣ × (ZMod n)ˣ :=
+def unitsChineseRemainder (h : m.Coprime n) : (ZMod (m * n))ˣ ≃* (ZMod m)ˣ × (ZMod n)ˣ :=
   (Units.mapEquiv (chineseRemainder h).toMulEquiv).trans MulEquiv.prodUnits
 
 /-- The Chinese remainder ring equivalence is the pair of reductions modulo `m` and modulo `n`. -/

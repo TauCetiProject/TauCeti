@@ -117,15 +117,24 @@ noncomputable def unitsEquivProd (h : Q ∥ N) :
 exact divisor. -/
 @[simp]
 theorem unitsEquivProd_apply_fst (h : Q ∥ N) (u : (ZMod N)ˣ) :
-    (h.unitsEquivProd u).1 = ZMod.unitsMap h.dvd u :=
-  Units.ext congr(($(h.ringEquivProd_apply u)).1)
+    (h.unitsEquivProd u).1 = ZMod.unitsMap h.dvd u := by
+  -- Both sides are reductions of `u` by ring homs out of `ZMod N`, and such a ring hom is unique.
+  rw [unitsEquivProd, MulEquiv.trans_apply, ZMod.unitsChineseRemainder_apply_fst]
+  exact Units.ext congr($(RingHom.ext_zmod ((ZMod.castHom (dvd_mul_right Q (N / Q)) (ZMod Q)).comp
+    (ZMod.ringEquivCongr (Nat.mul_div_cancel' h.dvd).symm : ZMod N →+* ZMod (Q * (N / Q))))
+    (ZMod.castHom h.dvd (ZMod Q))) (u : ZMod N))
 
 /-- The second component of the unit-group Chinese remainder equivalence is reduction modulo the
 complementary divisor. -/
 @[simp]
 theorem unitsEquivProd_apply_snd (h : Q ∥ N) (u : (ZMod N)ˣ) :
-    (h.unitsEquivProd u).2 = ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd) u :=
-  Units.ext congr(($(h.ringEquivProd_apply u)).2)
+    (h.unitsEquivProd u).2 = ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd) u := by
+  -- Both sides are reductions of `u` by ring homs out of `ZMod N`, and such a ring hom is unique.
+  rw [unitsEquivProd, MulEquiv.trans_apply, ZMod.unitsChineseRemainder_apply_snd]
+  exact Units.ext congr($(RingHom.ext_zmod
+    ((ZMod.castHom (dvd_mul_left (N / Q) Q) (ZMod (N / Q))).comp
+      (ZMod.ringEquivCongr (Nat.mul_div_cancel' h.dvd).symm : ZMod N →+* ZMod (Q * (N / Q))))
+    (ZMod.castHom (Nat.div_dvd_of_dvd h.dvd) (ZMod (N / Q)))) (u : ZMod N))
 
 /-- A character modulo `N` splits as the product of its restrictions to the Chinese
 remainder factors modulo `Q` and `N / Q`. -/

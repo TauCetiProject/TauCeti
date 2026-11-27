@@ -609,11 +609,10 @@ theorem exists_eq_changeLevel_mul_of_coprime {R : Type*} [CommMonoidWithZero R] 
   let f := χ.toUnitHom.comp (ZMod.unitsChineseRemainder hMN).symm.toMonoidHom
   refine ⟨MulChar.ofUnitHom (f.comp (MonoidHom.inl _ _)),
     MulChar.ofUnitHom (f.comp (MonoidHom.inr _ _)), MulChar.ext fun u ↦ ?_⟩
-  rw [MulChar.mul_apply, changeLevel_apply_unitsMap, changeLevel_apply_unitsMap,
-    MulChar.ofUnitHom_coe, MulChar.ofUnitHom_coe, ← Units.val_mul,
-    ← MonoidHom.comp_apply _ (ZMod.unitsMap (dvd_mul_right M N)),
-    ← MonoidHom.comp_apply _ (ZMod.unitsMap (dvd_mul_left N M)), ← MonoidHom.mul_apply,
-    ← ZMod.eq_mul_comp_unitsMap_of_coprime hMN, MulChar.coe_toUnitHom]
+  have := DFunLike.congr_fun (ZMod.eq_mul_comp_unitsMap_of_coprime hMN χ.toUnitHom) u
+  simpa only [MulChar.mul_apply, changeLevel_apply_unitsMap, MulChar.ofUnitHom_coe,
+    MulChar.coe_toUnitHom, MonoidHom.mul_apply, MonoidHom.comp_apply, Units.val_mul, f] using
+    congr(($this : R))
 
 /-- At a product of coprime levels, a character of order dividing two splits as the product
 of lifts of characters of order dividing two from the two levels. -/
