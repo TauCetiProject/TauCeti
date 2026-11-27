@@ -380,6 +380,14 @@ theorem coe_maximalRealSubfieldMaximalRealOrCMSubfieldEquiv_apply
   obtain ⟨y, rfl⟩ := maximalRealSubfieldMaximalRealOrCMSubfieldEquiv.symm.surjective x
   simp [maximalRealSubfieldMaximalRealOrCMSubfieldEquiv, RingHom.rangeRestrictFieldEquiv_apply_coe]
 
+/-- The inverse of `maximalRealSubfieldMaximalRealOrCMSubfieldEquiv` is the identity on `K`. -/
+@[simp]
+theorem coe_maximalRealSubfieldMaximalRealOrCMSubfieldEquiv_symm_apply
+    (y : maximalRealSubfield K) :
+    ((maximalRealSubfieldMaximalRealOrCMSubfieldEquiv.symm y : maximalRealOrCMSubfield K) : K) =
+      y := by
+  rw [← coe_maximalRealSubfieldMaximalRealOrCMSubfieldEquiv_apply, RingEquiv.apply_symm_apply]
+
 /-- **`[E_K : K⁺]` is `1` or `2`**, for the algebra structure given by the inclusion
 `K⁺ ≤ E_K`: `E_K` is `K⁺` if it is totally real, and a quadratic extension of its maximal real
 subfield, which is `K⁺` (`map_maximalRealSubfield_maximalRealOrCMSubfield`), if it is CM. -/
@@ -399,11 +407,9 @@ theorem finrank_maximalRealSubfield_maximalRealOrCMSubfield_eq_one_or_eq_two :
       maximalRealSubfieldMaximalRealOrCMSubfieldEquiv.symm
     have hc : (algebraMap (maximalRealSubfield E) E).comp i.toRingHom =
         (RingEquiv.refl E).toRingHom.comp (algebraMap (maximalRealSubfield K) E) :=
-      RingHom.ext fun x ↦ Subtype.ext <| by
-        obtain ⟨y, rfl⟩ := maximalRealSubfieldMaximalRealOrCMSubfieldEquiv.surjective x
-        simp only [i, RingEquiv.toRingHom_eq_coe, RingHom.coe_comp, RingHom.coe_coe,
-          Function.comp_apply, RingEquiv.symm_apply_apply]
-        exact (coe_maximalRealSubfieldMaximalRealOrCMSubfieldEquiv_apply y).symm
+      RingHom.ext fun x ↦ Subtype.ext <|
+        (coe_maximalRealSubfieldMaximalRealOrCMSubfieldEquiv_symm_apply x).trans
+          (coe_algebraMap_maximalRealSubfield_maximalRealOrCMSubfield x).symm
     rw [Algebra.finrank_eq_of_equiv_equiv i (RingEquiv.refl E) hc]
     exact .inr (Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield E) E)
 
