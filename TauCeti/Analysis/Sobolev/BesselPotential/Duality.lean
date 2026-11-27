@@ -455,11 +455,8 @@ theorem eq_zero_of_forall_inner_toLp_eq_zero {r : ℝ} (x : H^{r}(E, F))
     (toLpₗᵢ E F (-r) 2).surjective.denseRange.comp
       (denseRange_toBesselPotentialSpaceCLM (-r) ENNReal.ofNat_ne_top)
       (toLpₗᵢ E F (-r) 2).continuous
-  have h0 (c : Lp F 2 (volume : Measure E)) : ⟪c, x.toLp⟫_ℂ = 0 :=
-    hdense.induction_on c (isClosed_eq (continuous_id.inner continuous_const) continuous_const)
-      fun b ↦ by simpa using hx b
-  rw [← norm_eq_zero, ← norm_toLp_eq]
-  exact norm_eq_zero.2 (inner_self_eq_zero.1 (h0 _))
+  have h : x.toLp = 0 := hdense.eq_zero_of_inner_right ℂ fun b ↦ by simpa using hx b
+  rw [← norm_eq_zero, ← norm_toLp_eq, h, norm_zero]
 
 /-- For `x ∈ H^s` and `m ≤ s`, the `H^m` inner product of a Schwartz function `φ` with `x` is
 bounded by `‖φ‖_{H^{2m - s}} ‖x‖_{H^s}`. -/

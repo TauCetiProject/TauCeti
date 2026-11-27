@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Basic
 
 /-!
@@ -61,8 +62,7 @@ theorem integral_inner_complexCutoffPullback (θ : 𝓓(⟨e.target, e.open_targ
       e.symm '' tsupport θ :=
     (closure_mono <| Function.support_subset_iff'.2 fun x hx ↦ by
       simp [Function.notMem_support.1 hx]).trans (e.tsupport_complexCutoffPullback_subset he θ f)
-  obtain ⟨hc, hs⟩ := OpenPartialHomeomorph.hasCompactSupport_and_tsupport_subset_source_of_subset
-    θ hsupp
+  obtain ⟨hc, hs⟩ := e.hasCompactSupport_and_tsupport_subset_source_of_subset θ hsupp
   rw [hint _ (hF.inner (e.complexCutoffPullback he θ f).contMDiff.continuous) hc hs,
     ← setIntegral_eq_integral_of_forall_compl_eq_zero (μ := volume) (s := e.target)
       (f := fun y ↦ ((ρ y * θ y : ℝ) : ℂ) * inner ℂ (F (e.symm y)) (f y)) fun y hy ↦ by

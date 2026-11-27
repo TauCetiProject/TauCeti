@@ -114,7 +114,7 @@ namespace TauCeti
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
   [MeasurableSpace M] [T2Space M] {μ : Measure M}
 
-/-! ### Changing variables in a chart -/
+/-! ### The formal adjoint in a chart -/
 
 section Chart
 
@@ -123,7 +123,7 @@ variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
 
 include he
 
-section ChangeOfVariables
+section ChartDensity
 
 variable {ρ : CoordinateSpace n → ℝ}
   (hint : ∀ f : M → ℂ, Continuous f → HasCompactSupport f → tsupport f ⊆ e.source →
@@ -163,10 +163,10 @@ private theorem quantizeSchwartzValue_weightedAdjoint_eq_complexChartCompression
   set G := e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))
   set H := e.complexCutoffPullback he φ' (ContMDiffMap.ofContDiff w (w.smooth ⊤))
   have hG : HasCompactSupport G :=
-    (OpenPartialHomeomorph.hasCompactSupport_and_tsupport_subset_source_of_subset ψ
+    (e.hasCompactSupport_and_tsupport_subset_source_of_subset ψ
       (e.tsupport_complexCutoffPullback_subset he ψ _)).1
   have hH : HasCompactSupport H :=
-    (OpenPartialHomeomorph.hasCompactSupport_and_tsupport_subset_source_of_subset φ'
+    (e.hasCompactSupport_and_tsupport_subset_source_of_subset φ'
       (e.tsupport_complexCutoffPullback_subset he φ' _)).1
   have hφ0 (z : CoordinateSpace n) (hz : z ∉ e.target) : φ z = 0 :=
     image_eq_zero_of_notMem_tsupport fun h ↦ hz (φ.tsupport_subset h)
@@ -205,7 +205,7 @@ private theorem quantizeSchwartzValue_weightedAdjoint_eq_complexChartCompression
           field_simp
         · simp [hφ', hφ0 z hz]
 
-end ChangeOfVariables
+end ChartDensity
 
 variable [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℝ}
   {P Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
