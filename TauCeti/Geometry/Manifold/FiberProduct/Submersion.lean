@@ -23,7 +23,8 @@ subtype have tangent images `df⁻¹(range dg)` and `dg⁻¹(range df)`, respect
 Consequently the projection to `X` is a submersion when `g` is a submersion, and the
 projection to `Y` is a submersion when `f` is. Likewise the projection to `X` has injective
 differential wherever `g` does, so it is an immersion when `g` is
-(`TauCeti.isImmersion_fst_transverseFiberProduct`). These results use the previously constructed
+(`TauCeti.isImmersion_fst_transverseFiberProduct`), and symmetrically for the projection to `Y`
+(`TauCeti.isImmersion_snd_transverseFiberProduct`). These results use the previously constructed
 transverse fibre-product atlas and its inherited topology, including for an empty fibre
 product. No Hausdorff or countability assumptions are needed.
 
@@ -244,6 +245,36 @@ theorem isImmersion_fst_transverseFiberProduct
   exact (isSmoothEmbedding_coe_transverseFiberProduct hn hf hg htrans).contMDiff.fst
     |>.isImmersion_of_injective_mfderiv hn
       fun p ↦ injective_mfderiv_fst_transverseFiberProduct hn hf hg htrans p (hgi p)
+
+/-- Base change preserves injectivity of differentials: the differential of the second projection
+of the transverse fibre product at `p` is injective if the differential of `f` at `p.1` is. -/
+theorem injective_mfderiv_snd_transverseFiberProduct :
+    letI := transverseFiberProductChartedSpace hn hf hg htrans
+    ∀ p : {p : X × Y // f p.1 = g p.2}, Injective (mfderiv IX IN f p.val.1) →
+      Injective (mfderiv 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IY
+        (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.2) p) := by
+  let := transverseFiberProductChartedSpace hn hf hg htrans
+  intro p hfi
+  refine (injective_iff_map_eq_zero _).2 fun ξ hξ ↦
+    eq_zero_of_mfderiv_transverseFiberProduct hn hf hg htrans p ξ ?_ hξ
+  have hfg := mfderiv_mfderiv_fst_transverseFiberProduct hn hf hg htrans p ξ
+  rw [hξ, map_zero, map_zero] at hfg
+  exact (injective_iff_map_eq_zero _).1 hfi _ hfg
+
+/-- Base change preserves immersions: the second projection of the transverse fibre product is an
+immersion if `f` has injective differential at the first component of every point of the fibre
+product, for instance if `f` is an immersion. -/
+theorem isImmersion_snd_transverseFiberProduct
+    (hfi : ∀ p : {p : X × Y // f p.1 = g p.2}, Injective (mfderiv IX IN f p.val.1)) :
+    letI := transverseFiberProductChartedSpace hn hf hg htrans
+    Manifold.IsImmersion
+      𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IY n
+      (fun p : {p : X × Y // f p.1 = g p.2} ↦ p.val.2) := by
+  let := transverseFiberProductChartedSpace hn hf hg htrans
+  have := isManifold_transverseFiberProduct hn hf hg htrans
+  exact (isSmoothEmbedding_coe_transverseFiberProduct hn hf hg htrans).contMDiff.snd
+    |>.isImmersion_of_injective_mfderiv hn
+      fun p ↦ injective_mfderiv_snd_transverseFiberProduct hn hf hg htrans p (hfi p)
 
 end BaseChange
 

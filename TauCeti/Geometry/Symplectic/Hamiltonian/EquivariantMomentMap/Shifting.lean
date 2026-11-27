@@ -129,36 +129,6 @@ theorem isRegularPoint_sub_of_surjective (h : σ.IsMomentMap a μ) (b : Basis κ
     ← Basis.dualBasis_equivFun]
   exact congrFun (b.dualBasis.equivFun.apply_symm_apply _) i
 
-/-- **The vectors that `dμ` sends into a coadjoint orbit.** At a point `x` with `μ(x) = ι(n)`, if
-the tangent image of `ι` at `n` consists of the coordinates of the tangent space `𝔤 · ι(n)` of the
-coadjoint orbit, then `dμ_x(v)` lies in the tangent image of `ι` at `n`, both read in a basis of
-`𝔤`, exactly when `dμ_x(v)` lies in `𝔤 · μ(x)`. -/
-theorem exists_mfderiv_components_eq_iff (h : σ.IsMomentMap a μ) (b : Basis κ ℝ 𝔤)
-    {ι : N → Module.Dual ℝ 𝔤} {x : M} {n : N} (hxn : μ x = ι n)
-    (hιT : Set.range (mfderiv J 𝓘(ℝ, κ → ℝ) (fun m i ↦ ι m (b i)) n) =
-      Set.range fun Z : 𝔤 ↦ fun i ↦ (⁅Z, ι n⁆ : Module.Dual ℝ 𝔤) (b i))
-    (v : TangentSpace I x) :
-    (∃ w : TangentSpace J n, mfderiv I 𝓘(ℝ, κ → ℝ) (fun y i ↦ μ y (b i)) x v =
-        mfderiv J 𝓘(ℝ, κ → ℝ) (fun m i ↦ ι m (b i)) n w) ↔
-      v ∈ (LinearMap.range (μ x).coadjointTangentMap).comap (h.differential x) := by
-  simp only [Submodule.mem_comap, LinearMap.mem_range]
-  constructor
-  · rintro ⟨w, hw⟩
-    obtain ⟨Z, hZ⟩ : mfderiv J 𝓘(ℝ, κ → ℝ) (fun m i ↦ ι m (b i)) n w ∈
-        Set.range fun Z : 𝔤 ↦ fun i ↦ (⁅Z, ι n⁆ : Module.Dual ℝ 𝔤) (b i) :=
-      hιT ▸ Set.mem_range_self w
-    refine ⟨Submodule.Quotient.mk Z, b.ext fun i ↦ ?_⟩
-    have hi := (congrFun hw i).trans (congrFun hZ i).symm
-    rw [h.mfderiv_components_apply] at hi
-    rw [Module.Dual.coadjointTangentMap_mk, hxn, hi]
-  · rintro ⟨u, hu⟩
-    obtain ⟨Z, rfl⟩ := Submodule.Quotient.mk_surjective _ u
-    obtain ⟨w, hw⟩ : (fun i ↦ (⁅Z, ι n⁆ : Module.Dual ℝ 𝔤) (b i)) ∈
-        Set.range (mfderiv J 𝓘(ℝ, κ → ℝ) (fun m i ↦ ι m (b i)) n) :=
-      hιT ▸ Set.mem_range_self Z
-    refine ⟨w, funext fun i ↦ ?_⟩
-    rw [h.mfderiv_components_apply, ← hu, Module.Dual.coadjointTangentMap_mk, hxn, hw]
-
 /-- The image under the first projection of the kernel of the derivative of the shifting map. At
 a point `(x, n)` of its zero level, if the tangent image of `ι` at `n` consists of the coordinates
 of the tangent space `𝔤 · ι(n)` of the coadjoint orbit, then the first components of the kernel

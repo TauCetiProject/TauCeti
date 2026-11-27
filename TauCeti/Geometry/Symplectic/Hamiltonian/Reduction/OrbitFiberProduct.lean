@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 
 import TauCeti.Geometry.Manifold.FiberProduct.Submersion
 import TauCeti.Geometry.Symplectic.Coadjoint.LiePoisson
-import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Shifting
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.OrbitLevel
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.RegularLevel
 
 /-!

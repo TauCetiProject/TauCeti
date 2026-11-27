@@ -31,8 +31,9 @@ subtype-topology convergence API for continuous maps on subtypes.
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
   pullback; the projection of a fibre product to one factor is open onto its range when the map
   from the other factor is.
-* `Function.Pullback.isEmbedding_fst`: embeddings are stable under pullback; the projection of a
-  fibre product to one factor is an embedding when the map from the other factor is.
+* `Function.Pullback.isEmbedding_fst`, `Function.Pullback.isEmbedding_snd`: embeddings are stable
+  under pullback; the projection of a fibre product to one factor is an embedding when the map
+  from the other factor is.
 * `ContinuousMap.pullbackFst`, `ContinuousMap.pullbackSnd`, `ContinuousMap.mapPullback`,
   `ContinuousMap.mapPullbackSnd`, `Homeomorph.pullbackComm`: bundled projections, functoriality,
   and symmetry of the fibre product.
@@ -216,6 +217,13 @@ def Homeomorph.pullbackComm : f.Pullback g ≃ₜ g.Pullback f where
     (Homeomorph.pullbackComm g f : C(g.Pullback f, f.Pullback g)).comp
       (Homeomorph.pullbackComm f g : C(f.Pullback g, g.Pullback f)) = .id (f.Pullback g) := by
   ext : 1; rfl
+
+variable {f g} in
+/-- **Embeddings are stable under pullback.** If `f : X → Y` is an embedding and `g : Z → Y` is
+continuous, then the projection `X ×_Y Z → Z` is an embedding. -/
+theorem Function.Pullback.isEmbedding_snd [TopologicalSpace Y] (hf : IsEmbedding f)
+    (hg : Continuous g) : IsEmbedding (Pullback.snd : f.Pullback g → Z) :=
+  (isEmbedding_fst hg hf).comp (Homeomorph.pullbackComm f g).isEmbedding
 
 section MapPullback
 

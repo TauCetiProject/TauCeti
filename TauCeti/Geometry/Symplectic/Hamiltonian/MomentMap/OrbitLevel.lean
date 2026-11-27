@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Level
 public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.RegularLevel
+
 /-!
 # Preimages of coadjoint orbits under a moment map are coisotropic
 
@@ -48,6 +50,11 @@ as a parametrization of `μ⁻¹(O)`, is a coisotropic map
 (`TauCeti.SmoothTwoForm.IsMomentMap.isCoisotropicMap_of_range_mfderiv_eq`). This is the
 coisotropicness of the orbit-level manifold in the shifting trick, which realizes the reduced space
 at `c` as the reduced space at zero of the shifted moment map `(x, o) ↦ μ(x) - o` on `M × O⁻`.
+
+These subspaces are also described through a map `ι : N → 𝔤*` whose tangent images are the orbit
+tangent spaces `𝔤 · ι(n)`, such as a parametrization of `O`: where `μ(x) = ι(n)`, `dμ_x(v)` lies in
+the tangent image of `ι` at `n` exactly when `v` lies in `dμ_x⁻¹(𝔤 · μ(x))`
+(`TauCeti.SmoothTwoForm.IsMomentMap.exists_mfderiv_components_eq_iff`).
 
 ## References
 
@@ -189,6 +196,36 @@ theorem isCoisotropicMap_of_range_mfderiv_eq [FiniteDimensional ℝ E] (hσ : σ
     hσ.IsCoisotropicMap J g := IsNondegenerate.isCoisotropicMap_iff.2 fun p ↦ by
   rw [hg p, h.comap_differential_range_coadjointTangentMap (hc p)]
   exact h.isCoisotropic_ker_differential_sup_orbitTangent hσ (hc p)
+
+/-- **The vectors that `dμ` sends into a coadjoint orbit.** At a point `x` with `μ(x) = ι(n)`, if
+the tangent image of `ι` at `n` consists of the coordinates of the tangent space `𝔤 · ι(n)` of the
+coadjoint orbit, then `dμ_x(v)` lies in the tangent image of `ι` at `n`, both read in a basis of
+`𝔤`, exactly when `dμ_x(v)` lies in `𝔤 · μ(x)`. -/
+theorem exists_mfderiv_components_eq_iff {κ : Type*} [Fintype κ] (b : Basis κ ℝ 𝔤)
+    {ι : N → Module.Dual ℝ 𝔤} {n : N} (hxn : μ x = ι n)
+    (hιT : Set.range (mfderiv J 𝓘(ℝ, κ → ℝ) (fun m i ↦ ι m (b i)) n) =
+      Set.range fun Z : 𝔤 ↦ fun i ↦ (⁅Z, ι n⁆ : Module.Dual ℝ 𝔤) (b i))
+    (v : TangentSpace I x) :
+    (∃ w : TangentSpace J n, mfderiv I 𝓘(ℝ, κ → ℝ) (fun y i ↦ μ y (b i)) x v =
+        mfderiv J 𝓘(ℝ, κ → ℝ) (fun m i ↦ ι m (b i)) n w) ↔
+      v ∈ (LinearMap.range (μ x).coadjointTangentMap).comap (h.differential x) := by
+  simp only [Submodule.mem_comap, LinearMap.mem_range]
+  constructor
+  · rintro ⟨w, hw⟩
+    obtain ⟨Z, hZ⟩ : mfderiv J 𝓘(ℝ, κ → ℝ) (fun m i ↦ ι m (b i)) n w ∈
+        Set.range fun Z : 𝔤 ↦ fun i ↦ (⁅Z, ι n⁆ : Module.Dual ℝ 𝔤) (b i) :=
+      hιT ▸ Set.mem_range_self w
+    refine ⟨Submodule.Quotient.mk Z, b.ext fun i ↦ ?_⟩
+    have hi := (congrFun hw i).trans (congrFun hZ i).symm
+    rw [h.mfderiv_components_apply] at hi
+    rw [Module.Dual.coadjointTangentMap_mk, hxn, hi]
+  · rintro ⟨u, hu⟩
+    obtain ⟨Z, rfl⟩ := Submodule.Quotient.mk_surjective _ u
+    obtain ⟨w, hw⟩ : (fun i ↦ (⁅Z, ι n⁆ : Module.Dual ℝ 𝔤) (b i)) ∈
+        Set.range (mfderiv J 𝓘(ℝ, κ → ℝ) (fun m i ↦ ι m (b i)) n) :=
+      hιT ▸ Set.mem_range_self Z
+    refine ⟨w, funext fun i ↦ ?_⟩
+    rw [h.mfderiv_components_apply, ← hu, Module.Dual.coadjointTangentMap_mk, hxn, hw]
 
 end IsMomentMap
 
