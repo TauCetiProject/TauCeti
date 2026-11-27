@@ -53,6 +53,8 @@ over the parts of `S` in the balls about a point tend to `0` with the radius
 
 * `TauCeti.measure_ball_inter_ne_top`: the intersection of a ball with any set has finite
   measure.
+* `TauCeti.isFiniteMeasure_restrict_ball_inter`: the restriction to the intersection of a ball
+  with any set is a finite measure.
 * `TauCeti.monotone_measureReal_inter_ball`: `ρ ↦ μ(s ∩ ball x₀ ρ)` is monotone.
 * `TauCeti.continuousAt_measureReal_inter_closedBall`: `ρ ↦ μ(s ∩ closedBall x₀ ρ)` is
   continuous wherever `ρ ↦ μ(closedBall x₀ ρ)` is.
@@ -93,6 +95,12 @@ compact sets of a proper space. -/
 theorem measure_ball_inter_ne_top {μ : Measure E} [IsFiniteMeasureOnCompacts μ] {x : E} {r : ℝ}
     {s : Set E} : μ (ball x r ∩ s) ≠ ⊤ :=
   (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne
+
+/-- The restriction of a measure finite on compact sets of a proper space to the intersection of a
+ball with any set is a finite measure. -/
+theorem isFiniteMeasure_restrict_ball_inter (μ : Measure E) [IsFiniteMeasureOnCompacts μ] (x : E)
+    (r : ℝ) (s : Set E) : IsFiniteMeasure (μ.restrict (ball x r ∩ s)) :=
+  isFiniteMeasure_restrict.2 measure_ball_inter_ne_top
 
 /-- For a measure finite on compact sets, the measure `m(ρ) = μ(s ∩ ball x₀ ρ)` of `s` in the
 balls about `x₀` is monotone in the radius. -/

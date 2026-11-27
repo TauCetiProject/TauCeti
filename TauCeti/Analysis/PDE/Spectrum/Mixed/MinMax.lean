@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Spectrum.MinMax
 public import TauCeti.Analysis.PDE.Spectrum.Operator.Mixed
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 
 /-!
 # The min–max principle for the mixed eigenvalues
@@ -56,6 +57,14 @@ when `Ω` is moreover bounded (`TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero
 (`TauCeti.PDE.mixedEigenvalue_laplacian_le_dirichletEigenvalue`). For instance, on `(0, 1)` with
 `Γ = {0}` the least Neumann, mixed and Dirichlet eigenvalues are `0`, `π² / 4` and `π²`.
 
+On a nonempty bounded Lipschitz domain the Rellich property holds
+(`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomain`), so there the eigenbasis of `-Δ_Γ`,
+its attained min–max and its spectrum `0 ≤ λ₀(Γ) ≤ λ₁(Γ) ≤ ⋯ → ∞` hold for every `Γ` missing `Ω`
+with no further hypothesis
+(`TauCeti.PDE.exists_hilbertBasis_mixedEigenvalue_laplacian_of_isLipschitzDomain`,
+`TauCeti.PDE.isLeast_mixedEigenvalue_laplacian_of_isLipschitzDomain` and
+`TauCeti.PDE.mixedEigenvalue_laplacian_spectrum_of_isLipschitzDomain`).
+
 ## Main declarations
 
 * `TauCeti.PDE.mixedEigenvalue`: the `k`-th mixed eigenvalue, by min–max.
@@ -72,6 +81,10 @@ when `Ω` is moreover bounded (`TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero
   `TauCeti.PDE.mixedEigenvalue_laplacian_nonneg`, `TauCeti.PDE.mixedEigenvalue_laplacian_mono`,
   `TauCeti.PDE.mixedEigenvalue_laplacian_le_dirichletEigenvalue` and
   `TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero`: the mixed Laplacian `-Δ_Γ`.
+* `TauCeti.PDE.exists_hilbertBasis_mixedEigenvalue_laplacian_of_isLipschitzDomain`,
+  `TauCeti.PDE.isLeast_mixedEigenvalue_laplacian_of_isLipschitzDomain` and
+  `TauCeti.PDE.mixedEigenvalue_laplacian_spectrum_of_isLipschitzDomain`: the mixed Laplacian on a
+  nonempty bounded Lipschitz domain, where the Rellich property holds outright.
 
 ## References
 
@@ -537,6 +550,67 @@ theorem mixedEigenvalue_laplacian_empty_zero [Nonempty ι]
   refine le_antisymm ?_ (mixedEigenvalue_laplacian_nonneg (empty_disjoint _) hK hOmega 0)
   exact hk ▸ monotone_mixedEigenvalue _ (isCoercive_mixedForm_laplacian_one (Γ := ∅))
     (empty_disjoint _) (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _) hK hOmega k.zero_le
+
+/-! ### The mixed Laplacian on a bounded Lipschitz domain -/
+
+variable [Nonempty ι] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E)
+  (hb : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
+  (hOmega : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty) (hΓ : Disjoint Γ Omega)
+include hΩ hb hOmega hΓ
+
+/-- **The mixed eigenbasis of `-Δ` on a bounded Lipschitz domain.** On a nonempty bounded
+Lipschitz domain `Ω ⊆ ℝⁿ` and for `Γ` missing `Ω`, for instance `Γ ⊆ ∂Ω`, there is an orthonormal
+basis `(eₖ)` of `L²(Ω)` such that `eₖ` is the value of some `uₖ ∈ H¹_Γ(Ω)` with
+`∫_Ω ∇uₖ · ∇v = λₖ(Γ) ∫_Ω uₖ v` for every `v ∈ H¹_Γ(Ω)`. The Rellich property holds by
+`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomain`. -/
+theorem exists_hilbertBasis_mixedEigenvalue_laplacian_of_isLipschitzDomain :
+    ∃ (basis : HilbertBasis ℕ ℝ (Lp ℝ 2 (mu.restrict Omega)))
+      (u : ℕ → W1pVanishingOn mu Omega 2 Γ),
+      (∀ k, W1p.value (u k : W1p mu Omega 2) = basis k) ∧
+      ∀ (k : ℕ) (v : W1pVanishingOn mu Omega 2 Γ),
+        ⟪W1p.gradient (u k : W1p mu Omega 2), W1p.gradient (v : W1p mu Omega 2)⟫_ℝ =
+          mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k *
+            ⟪W1p.value (u k : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ :=
+  exists_hilbertBasis_mixedEigenvalue_laplacian hΓ
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hOmega
+
+/-- **The min–max principle for `-Δ` on a bounded Lipschitz domain is attained.** On a nonempty
+bounded Lipschitz domain and for `Γ` missing `Ω`, `λₖ(Γ)` is the least `C` for which some subspace
+`W` of `H¹_Γ(Ω)`, whose values span a subspace of `L²(Ω)` of dimension at least `k + 1`, satisfies
+`∫_Ω |∇v|² ≤ C ∫_Ω v²` for every `v ∈ W`. -/
+theorem isLeast_mixedEigenvalue_laplacian_of_isLipschitzDomain (k : ℕ) :
+    IsLeast {C : ℝ | ∃ W : Submodule ℝ (W1pVanishingOn mu Omega 2 Γ),
+      k + 1 ≤ Module.finrank ℝ
+        (W.map (W1pVanishingOn.valueL (mu := mu) (Omega := Omega) (p := 2) (Γ := Γ)).toLinearMap) ∧
+        ∀ v ∈ W, energyFormH1 (fun _ ↦ 1) 0 0 (v : W1p mu Omega 2) (v : W1p mu Omega 2) ≤
+          C * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2}
+      (mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k) :=
+  isLeast_mixedEigenvalue _ isCoercive_mixedForm_laplacian_one hΓ
+    (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _)
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hOmega k
+
+/-- **The mixed spectrum of `-Δ` on a bounded Lipschitz domain.** On a nonempty bounded Lipschitz
+domain and for `Γ` missing `Ω`, the mixed eigenvalues of `-Δ` satisfy `0 ≤ λ₀ ≤ λ₁ ≤ ⋯ → ∞`, and
+`∫_Ω ∇w · ∇v = κ ∫_Ω w v` has a nonzero solution `w ∈ H¹_Γ(Ω)` for every `v ∈ H¹_Γ(Ω)` exactly
+when `κ` is some `λₖ(Γ)`. -/
+theorem mixedEigenvalue_laplacian_spectrum_of_isLipschitzDomain :
+    0 ≤ mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 0 ∧
+      Monotone (mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0) ∧
+      Tendsto (mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0) atTop atTop ∧
+      ∀ kappa : ℝ, (∃ w : W1pVanishingOn mu Omega 2 Γ, w ≠ 0 ∧
+        ∀ v : W1pVanishingOn mu Omega 2 Γ,
+          energyFormH1 (fun _ ↦ 1) 0 0 (w : W1p mu Omega 2) (v : W1p mu Omega 2) =
+            kappa * ⟪W1p.value (w : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ) ↔
+        ∃ k, mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k = kappa := by
+  have hK := W1p.isCompactOperator_valueL_of_isLipschitzDomain (mu := mu) (p := 2) hΩ hb
+  have hsymm (u v : W1pVanishingOn mu Omega 2 Γ) :=
+    energyFormH1_one_zero_zero_comm (u : W1p mu Omega 2) v
+  exact ⟨mixedEigenvalue_laplacian_nonneg hΓ hK hOmega 0,
+    monotone_mixedEigenvalue _ isCoercive_mixedForm_laplacian_one hΓ hsymm hK hOmega,
+    tendsto_mixedEigenvalue_atTop _ isCoercive_mixedForm_laplacian_one hΓ hsymm hK hOmega,
+    exists_ne_zero_forall_energyFormH1_eq_iff_exists_mixedEigenvalue_eq _
+      isCoercive_mixedForm_laplacian_one hΓ hsymm hK hOmega⟩
 
 end Laplacian
 

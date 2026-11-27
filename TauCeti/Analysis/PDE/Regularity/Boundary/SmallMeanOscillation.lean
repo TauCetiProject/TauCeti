@@ -753,15 +753,15 @@ private theorem exists_reflected_datum {H : Opens E} {ν : E} {c₀ : ℝ} (hν 
       (∀ x, ‖G' (hyperplaneReflection ν c₀ x)‖ = ‖G' x‖) ∧
       MemLp G' p volume ∧ eLpNorm G' p volume ≤ 2 * eLpNorm G p (volume.restrict H) := by
   set R : E ≃ₗᵢ[ℝ] E := (ℝ ∙ ν)ᗮ.reflection
-  have hHm : MeasurableSet (H : Set E) := H.isOpen.measurableSet
-  have hRGp : MemLp (fun y => R (G y)) p (volume.restrict H) :=
-    R.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp' hGp
-  have hRG : eLpNorm (fun y => R (G y)) p (volume.restrict H) = eLpNorm G p (volume.restrict H) :=
-    eLpNorm_congr_norm_ae hRGp.aestronglyMeasurable hGp.aestronglyMeasurable
-      (Filter.Eventually.of_forall fun y => R.norm_map (G y))
+  obtain ⟨hG'p, hG'le⟩ :=
+    memLp_indicator_sub_indicator_linearIsometry_comp_hyperplaneReflection
+      (μ := (volume : Measure E)) (ν := ν) (c := c₀) hp H.isOpen.measurableSet
+      MeasurableSet.univ (mapsTo_univ _ _) R.toLinearIsometry (by rwa [univ_inter])
+  simp only [Measure.restrict_univ, univ_inter, LinearIsometryEquiv.coe_toLinearIsometry]
+    at hG'p hG'le
   refine ⟨fun x => (H : Set E).indicator G x -
       (H : Set E).indicator (fun y => R (G y)) (hyperplaneReflection ν c₀ x), fun x hx => ?_,
-    fun x => ?_, ?_, ?_⟩
+    fun x => ?_, hG'p, hG'le⟩
   · -- The reflection of a point of `H` lies outside `H`.
     have hnotH : hyperplaneReflection ν c₀ x ∉ H := by
       rw [hH, not_lt]
@@ -773,15 +773,6 @@ private theorem exists_reflected_datum {H : Opens E} {ν : E} {c₀ : ℝ} (hν 
     by_cases h1 : x ∈ (H : Set E) <;> by_cases h2 : hyperplaneReflection ν c₀ x ∈ (H : Set E) <;>
       simp [Set.indicator_of_mem, Set.indicator_of_notMem, h1, h2, R,
         Submodule.reflection_reflection]
-  · simpa only [Measure.restrict_univ, univ_inter] using
-      memLp_indicator_sub_indicator_comp_hyperplaneReflection (μ := (volume : Measure E))
-        (ν := ν) (c := c₀) hHm MeasurableSet.univ (mapsTo_univ _ _) (f := G)
-        (g := fun y => R (G y)) (by rwa [univ_inter]) (by rwa [univ_inter])
-  · have h' := eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le
-      (μ := (volume : Measure E)) (ν := ν) (c := c₀) hp hHm
-      MeasurableSet.univ (mapsTo_univ _ _) (f := G) (g := fun y => R (G y))
-    simp only [Measure.restrict_univ, univ_inter, hRG] at h'
-    exact h'.trans_eq (two_mul _).symm
 
 /-- **The `W^{1,p}` estimate up to a flat boundary for coefficients of small mean oscillation.**
 Let `2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on `n`, `p`,
