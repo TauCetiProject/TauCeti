@@ -14,8 +14,8 @@ import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.BubblingSet
-import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence.Compact
 
 /-!
 # Compactness of Floer pairs of pants on the whole domain
@@ -103,10 +103,10 @@ data (`exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_comp_p
 so it does not change along the family. The diagonal argument runs with the readings `e ∘ uₖ`,
 whose energy on a window of an end is the energy of `uₖ` on its image
 (`TauCeti.SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq`), and the
-limit is read back in `M` through `e` (`IsCompact.exists_tendsto_of_tendsto_comp`): the solutions
-converge locally uniformly after applying `e`, and pointwise in `M`. The windows also give bounds
-on the energy densities near every point off their bubbling points; read on `S` through the
-Jacobian of the end chart
+limit is read back in `M` through `e` (`TendstoLocallyUniformlyOn.exists_tendsto_of_comp`): the
+solutions converge locally uniformly after applying `e`, and pointwise in `M`. The windows also
+give bounds on the energy densities near every point off their bubbling points; read on `S`
+through the Jacobian of the end chart
 (`TauCeti.SmoothTwoForm.floerEnergyDensity_comp_positiveEndChart`), they pass through the diagonal
 argument (`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_le`), so the energy
 densities are eventually bounded near every point of `S \ Z`. For smooth solutions of the
@@ -1078,9 +1078,9 @@ private theorem exists_pos_forall_family_window (hω : ω.IsNondegenerate)
         (isOpen_window _ _ none).measurableSet hΩS
         fun ε hε ↦ (hc z hz ε hε).mono fun n hn ↦ (min_le_left _ _).trans hn,
       -- A compact neighbourhood of a point off the bubbling points carries a bound.
-      fun y hy ↦ (local_compact_nhds (((isOpen_window _ _ none).sdiff
-        Z.finite_toSet.isClosed).mem_nhds hy)).elim fun L ⟨hL, hLΩ, hLc⟩ ↦
-          ⟨L, hL, (hbd L hLc hLΩ).imp fun _ hA ↦ .of_forall hA⟩, e ∘ v, hv⟩
+      forall_exists_mem_nhds_eventually_forall_le_of_isCompact
+        ((isOpen_window _ _ none).sdiff Z.finite_toSet.isClosed) fun L hLc hLΩ ↦
+          (hbd L hLc hLΩ).imp fun _ hA ↦ .of_forall hA, e ∘ v, hv⟩
   · -- Read the end `q` in its end chart moved by the offsets of `q` at the parameters.
     obtain ⟨φ, hφ, Z, hconc, hbd, v, hv⟩ := hconve q b (K := fun k ↦ K (p (ψ k)))
       (J := fun k ↦ J (p (ψ k))) (u := u ∘ ψ) (tendsto_endOffset (ha.comp hψ.tendsto_atTop) q)
@@ -1243,15 +1243,11 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
   have hA0 : 0 ≤ A₀ := (abs_nonneg _).trans (hA₀' p₀ hp₀)
   rw [iUnion_window (by positivity) (by linarith [hA₀' p₀ hp₀, le_max_right T₀ 2])] at hZ hbd hconv
   -- The limit is continuous, and it is read back in `M` through the embedding `e`.
-  have hg : ContinuousOn g (thricePuncturedSphereReal \ ↑Z) :=
-    hconv.continuousOn (Eventually.of_forall fun n ↦
-      (he.continuous.comp_continuousOn (hu (ψ (φ n))).continuousOn).mono sdiff_subset).frequently
-  obtain ⟨v, hv, -, hev, hpt⟩ := isCompact_univ.exists_tendsto_of_tendsto_comp
-    he.continuous.continuousOn he_inj.injOn (fun _ _ ↦ .of_forall fun _ ↦ mem_univ _) hg
-    fun z hz ↦ hconv.tendsto_at hz
+  obtain ⟨v, hv, hev, hpt⟩ := hconv.exists_tendsto_of_comp he.continuous he_inj
+    (.of_forall fun n ↦
+      (he.continuous.comp_continuousOn (hu (ψ (φ n))).continuousOn).mono sdiff_subset)
   refine ⟨ψ ∘ φ, hψ.comp hφ, p₀, hp₀, hpψ.comp hφ.tendsto_atTop, Z, v, hZ,
-    (ENNReal.natCast_mul_ofReal_le_ofReal_iff hE0).1 hcard, fun z hz ε hε ↦ ?_, hbd, hv,
-    hconv.congr_right hev.symm, hpt⟩
+    (ENNReal.natCast_mul_ofReal_le_ofReal_iff hE0).1 hcard, fun z hz ε hε ↦ ?_, hbd, hv, hev, hpt⟩
   -- The energy measure of a disc is the energy over its part in `S`.
   filter_upwards [hconc z hz _ (ball_mem_nhds z hε)] with n hn
   exact TauCeti.MeasureTheory.le_setIntegral_of_ofReal_le_withDensity measurableSet_ball

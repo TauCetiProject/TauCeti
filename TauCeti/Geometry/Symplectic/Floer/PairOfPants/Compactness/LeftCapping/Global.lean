@@ -7,11 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Global
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LeftCapping.Closed
-import TauCeti.Data.ENNReal.NatCastDiv
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Measure.BubblingSet
-import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Compactness of the input-exchange family capped at `0` on the whole capped domain
@@ -53,9 +49,11 @@ The energy over every part of `S₁` is at most the topological energy plus
 `B₀ + (B₀ + B₁ + B_∞)`
 (`IsNondegenerate.setIntegral_floerEnergyDensity_cappedExchangePerturbation_le`), and the
 diagonal argument over the two windows
-(`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_le`) runs for the energy
-measures of the solutions on `S₁`; the point `0` is a null set, so these are the energy measures
-on `S`.
+(`TauCeti.exists_tendstoLocallyUniformlyOn_comp_subseq_off_finset_iUnion_of_setIntegral_le`) runs
+for the energy densities of the solutions on `S₁`, whose integrals over `S₁` are those over `S`
+since the point `0` is a null set. On the disc, the bounds on compact sets off the bubbling points
+are bounds near each of their points
+(`TauCeti.forall_exists_mem_nhds_eventually_forall_le_of_isCompact`).
 
 The structures `J_c` are taken cylindrical beyond some height `T₀` on each end of `S`: in the end
 chart of an input end and in the end chart recentred at `c` of the output end, with end structures
@@ -90,117 +88,13 @@ namespace TauCeti.SmoothTwoForm.IsNondegenerate
 
 open Floer
 
-/-- **Two windows.** Let `g n ≥ 0` be densities on an open set `S₁ = U₁ ∪ U₂` with integrals at
-most `E` over `S₁`. Suppose that on each window `Uᵢ` every subsequence has a further subsequence
-converging locally uniformly off a set `Zᵢ`, at whose points energy `δ > 0` of the densities over
-`Uᵢ` concentrates, with the densities eventually bounded near every other point of `Uᵢ`. Then one
-subsequence converges on `S₁` off a finite set `Z` with `#Z * δ ≤ E`, with the energy `δ` over `S₁`
-concentrating at the points of `Z` and the densities eventually bounded near every point of
-`S₁ \ Z`. -/
-private theorem exists_subseq_off_finset_union {α : Type*} [UniformSpace α] [T2Space α]
-    {U₁ U₂ S₁ : Set (ℝ × ℝ)} (hU₁ : IsOpen U₁) (hU₂ : IsOpen U₂) (hU : U₁ ∪ U₂ = S₁)
-    {f : ℕ → ℝ × ℝ → α} {g : ℕ → ℝ × ℝ → ℝ} {δ E : ℝ} (hδ : 0 < δ)
-    (hg0 : ∀ n, ∀ z ∈ S₁, 0 ≤ g n z) (hint : ∀ n, IntegrableOn (g n) S₁)
-    (hE : ∀ n, ∫ z in S₁, g n z ≤ E)
-    (h : ∀ b : Bool, ∀ ⦃ψ : ℕ → ℕ⦄, StrictMono ψ → ∃ φ : ℕ → ℕ, StrictMono φ ∧
-      ∃ Z : Set (ℝ × ℝ), (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
-        δ ≤ ∫ y in ball z ε ∩ cond b U₁ U₂, g (ψ (φ n)) y) ∧
-      (∀ y ∈ cond b U₁ U₂ \ Z, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ n in atTop, ∀ x ∈ N, g (ψ (φ n)) x ≤ A) ∧
-      ∃ v : ℝ × ℝ → α, TendstoLocallyUniformlyOn (fun n ↦ f (ψ (φ n))) v atTop
-        (cond b U₁ U₂ \ Z)) :
-    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → α), ↑Z ⊆ S₁ ∧
-      Z.card * δ ≤ E ∧ (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ S₁, g (φ n) y) ∧
-      (∀ y ∈ S₁ \ ↑Z, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ n in atTop, ∀ x ∈ N, g (φ n) x ≤ A) ∧
-      TendstoLocallyUniformlyOn (fun n ↦ f (φ n)) v atTop (S₁ \ ↑Z) := by
-  have hS₁ : MeasurableSet S₁ := (hU ▸ hU₁.union hU₂ : IsOpen S₁).measurableSet
-  have hE0 : 0 ≤ E := (setIntegral_nonneg hS₁ (hg0 0)).trans (hE 0)
-  have hUS (b : Bool) : cond b U₁ U₂ ⊆ S₁ := by
-    cases b
-    · exact hU ▸ subset_union_right
-    · exact hU ▸ subset_union_left
-  -- The diagonal argument for the energy measures of the densities on `S₁`.
-  obtain ⟨φ, Z, v, hφ, hZ, hcard, hconc, hbd, hv⟩ :=
-    exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_le (U := fun b ↦ cond b U₁ U₂)
-      (fun b ↦ by cases b <;> assumption) (F := f) (G := g)
-      (μ := fun n ↦ (volume.restrict S₁).withDensity fun y ↦ ENNReal.ofReal (g n y))
-      (ENNReal.ofReal_pos.2 hδ).ne' ENNReal.ofReal_ne_top
-      (fun n ↦ (measure_mono (subset_univ _)).trans (by
-        rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
-          ← ofReal_integral_eq_lintegral_ofReal (hint n) (ae_restrict_of_forall_mem hS₁ (hg0 n))]
-        exact ENNReal.ofReal_le_ofReal (hE n))) fun b ψ hψ ↦ by
-      obtain ⟨φ, hφ, Z, hconc, hbd, v, hv⟩ := h b hψ
-      refine ⟨φ, hφ, Z, fun z hz ↦ ?_, hbd, v, hv⟩
-      exact eventually_ofReal_le_withDensity_of_forall_eventually_le_setIntegral_ball
-        (by cases b <;> [exact hU₂.measurableSet; exact hU₁.measurableSet]) (hUS b) (hconc z hz)
-  rw [← union_eq_iUnion, hU] at hZ hbd hv
-  refine ⟨φ, hφ, Z, v, hZ, (ENNReal.natCast_mul_ofReal_le_ofReal_iff hE0).1 hcard,
-    fun z hz ε hε ↦ ?_, hbd, hv⟩
-  -- The energy measure of a disc is the energy over its part in `S₁`.
-  filter_upwards [hconc z hz _ (ball_mem_nhds z hε)] with n hn
-  exact TauCeti.MeasureTheory.le_setIntegral_of_ofReal_le_withDensity measurableSet_ball hS₁
-    ((hint _).mono_set inter_subset_right) (fun y hy ↦ hg0 _ y hy.2) hn
-
-/-- **Two windows, read back in a compact space.** As
-`exists_subseq_off_finset_union`, for maps `uₙ` continuous on `S₁` with values in a compact
-space `M`, read through a continuous injection `e : M → F` on the windows, where on the second
-window the densities are bounded on compact subsets off its bubbling points. The limit is read
-back in `M`: it is continuous on `S₁ \ Z`, and the maps converge to it locally uniformly after
-applying `e` and pointwise in `M`. -/
-private theorem exists_subseq_off_finset_union_comp {M F : Type*} [TopologicalSpace M]
-    [CompactSpace M] [UniformSpace F] [T2Space F] {U₁ U₂ S₁ : Set (ℝ × ℝ)} (hU₁ : IsOpen U₁)
-    (hU₂ : IsOpen U₂) (hU : U₁ ∪ U₂ = S₁) {u : ℕ → ℝ × ℝ → M} {e : M → F} (he : Continuous e)
-    (he_inj : Injective e) (hu : ∀ n, ContinuousOn (u n) S₁) {g : ℕ → ℝ × ℝ → ℝ} {δ E : ℝ}
-    (hδ : 0 < δ) (hg0 : ∀ n, ∀ z ∈ S₁, 0 ≤ g n z) (hint : ∀ n, IntegrableOn (g n) S₁)
-    (hE : ∀ n, ∫ z in S₁, g n z ≤ E)
-    (h₁ : ∀ ⦃ψ : ℕ → ℕ⦄, StrictMono ψ → ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ Z : Finset (ℝ × ℝ),
-      (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ U₁, g (ψ (φ n)) y) ∧
-      (∀ y ∈ U₁ \ ↑Z, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ n in atTop, ∀ x ∈ N, g (ψ (φ n)) x ≤ A) ∧
-      ∃ v : ℝ × ℝ → F, TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (ψ (φ n))) v atTop (U₁ \ ↑Z))
-    (h₂ : ∀ ⦃ψ : ℕ → ℕ⦄, StrictMono ψ → ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ Z : Finset (ℝ × ℝ),
-      (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ U₂, g (ψ (φ n)) y) ∧
-      (∀ K, IsCompact K → K ⊆ U₂ \ ↑Z → ∃ A, ∀ n, ∀ y ∈ K, g (ψ (φ n)) y ≤ A) ∧
-      ∃ v : ℝ × ℝ → F, TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (ψ (φ n))) v atTop (U₂ \ ↑Z)) :
-    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M), ↑Z ⊆ S₁ ∧
-      Z.card * δ ≤ E ∧ (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ S₁, g (φ n) y) ∧
-      (∀ y ∈ S₁ \ ↑Z, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ n in atTop, ∀ x ∈ N, g (φ n) x ≤ A) ∧
-      ContinuousOn v (S₁ \ ↑Z) ∧
-      TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop (S₁ \ ↑Z) ∧
-      ∀ z ∈ S₁ \ ↑Z, Tendsto (fun n ↦ u (φ n) z) atTop (𝓝 (v z)) := by
-  -- On the second window, bounds on compact sets give bounds near every point.
-  have h₂' : ∀ ⦃ψ : ℕ → ℕ⦄, StrictMono ψ → ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ Z : Set (ℝ × ℝ),
-      (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ U₂, g (ψ (φ n)) y) ∧
-      (∀ y ∈ U₂ \ Z, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ n in atTop, ∀ x ∈ N, g (ψ (φ n)) x ≤ A) ∧
-      ∃ v : ℝ × ℝ → F, TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (ψ (φ n))) v atTop (U₂ \ Z) := by
-    intro ψ hψ
-    obtain ⟨φ, hφ, Z, hconc, hbd, v, hv⟩ := h₂ hψ
-    refine ⟨φ, hφ, Z, hconc, fun y hy ↦ ?_, v, hv⟩
-    obtain ⟨r, hr, hrsub⟩ := Metric.isOpen_iff.1 (hU₂.sdiff Z.finite_toSet.isClosed) y hy
-    obtain ⟨A, hA⟩ := hbd _ (isCompact_closedBall y (r / 2))
-      ((closedBall_subset_ball (by linarith)).trans hrsub)
-    exact ⟨_, closedBall_mem_nhds y (by positivity), A, .of_forall fun n x hx ↦ hA n x hx⟩
-  obtain ⟨φ, hφ, Z, w, hZ, hcard, hconc, hbd, hconv⟩ :=
-    exists_subseq_off_finset_union hU₁ hU₂ hU (f := fun n ↦ e ∘ u n) hδ hg0 hint hE
-      fun b ↦ by
-        cases b
-        · exact h₂'
-        · intro ψ hψ
-          obtain ⟨φ, hφ, Z, hconc, hbd, v, hv⟩ := h₁ hψ
-          exact ⟨φ, hφ, Z, hconc, hbd, v, hv⟩
-  -- The limit is continuous, and it is read back in `M` through `e`.
-  have hw : ContinuousOn w (S₁ \ ↑Z) :=
-    hconv.continuousOn (Eventually.of_forall fun n ↦
-      (he.comp_continuousOn (hu (φ n))).mono sdiff_subset).frequently
-  obtain ⟨v, hv, -, hev, hpt⟩ := isCompact_univ.exists_tendsto_of_tendsto_comp
-    he.continuousOn he_inj.injOn (fun _ _ ↦ .of_forall fun _ ↦ mem_univ _) hw
-    fun z hz ↦ hconv.tendsto_at hz
-  exact ⟨φ, hφ, Z, v, hZ, hcard, hconc, hbd, hv, hconv.congr_right hev.symm, hpt⟩
-
 /-- **The two windows of the capped domain.** The capped domain `S₁ = ℂ ∖ {1}` is the union of
-the pair of pants `S = ℂ ∖ {0, 1}` and the disc `|w| < 1/4` about the capped puncture, the closed
-disc `|w| ≤ 1/4` is a compact part of `S₁`, and `S₁` lies in `S` up to a null set. -/
+the pair of pants `S = ℂ ∖ {0, 1}` and the open disc `|w| < 1/4` about the capped puncture, the
+closed disc `|w| ≤ 1/4` is a compact part of `S₁`, and `S₁` lies in `S` up to a null set. -/
 private theorem thricePuncturedSphereReal_union_ball_and_ae_le :
     thricePuncturedSphereReal ∪ equivRealProdCLM.symm ⁻¹' ball 0 (1 / 4) =
       {z | equivRealProdCLM.symm z ≠ 1} ∧
+    IsOpen (equivRealProdCLM.symm ⁻¹' ball (0 : ℂ) (1 / 4)) ∧
     thricePuncturedSphereReal ⊆ {z | equivRealProdCLM.symm z ≠ 1} ∧
     IsCompact (equivRealProdCLM.symm ⁻¹' closedBall (0 : ℂ) (1 / 4)) ∧
     equivRealProdCLM.symm ⁻¹' closedBall (0 : ℂ) (1 / 4) ⊆ {z | equivRealProdCLM.symm z ≠ 1} ∧
@@ -209,7 +103,8 @@ private theorem thricePuncturedSphereReal_union_ball_and_ae_le :
       {z | equivRealProdCLM.symm z ≠ 1} := fun z hz h ↦ by
     rw [mem_preimage, mem_closedBall_zero_iff, h, norm_one] at hz
     norm_num at hz
-  refine ⟨?_, fun z hz ↦ (mem_thricePuncturedSphereReal_iff.1 hz).2,
+  refine ⟨?_, isOpen_ball.preimage equivRealProdCLM.symm.continuous,
+    fun z hz ↦ (mem_thricePuncturedSphereReal_iff.1 hz).2,
     equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_closedBall _ _), hD,
     by filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz _ using hz⟩
   ext z
@@ -420,19 +315,18 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_off_finset_cappedExchange_ne
           ({z | equivRealProdCLM.symm z ≠ 1} \ ↑Z) ∧
         ∀ z ∈ {z | equivRealProdCLM.symm z ≠ 1} \ ↑Z,
           Tendsto (fun n ↦ u (φ n) z) atTop (𝓝 (v z)) := by
-  obtain ⟨hU, hSS₁, hD₀, hD₀₁, hS₁le⟩ := thricePuncturedSphereReal_union_ball_and_ae_le
+  obtain ⟨hU, hD, hSS₁, hD₀, hD₀₁, hS₁le⟩ := thricePuncturedSphereReal_union_ball_and_ae_le
   -- The thresholds of the two windows: the pair of pants and the disc about the capped puncture.
   obtain ⟨δ₁, hδ₁, hS⟩ :=
     exists_pos_forall_subseq_off_finset_thricePuncturedSphereReal_cappedExchange hω hH hHs hL
       hW hC hC₀₁ ((prod_mono subset_rfl hSS₁).trans hCW) hJ (fun c hc z hz ↦ hJt c hc z (hSS₁ hz))
       (fun D hD hDS ↦ hJc D hD fun z hz ↦ hSS₁ (hDS hz)) hJe hJe' he he_inj
-  obtain ⟨κ, hκ, hκD⟩ := hJc _ hD₀ fun z hz ↦ hD₀₁ hz
+  obtain ⟨κ, hκ, hκD⟩ := hJc _ hD₀ hD₀₁
   obtain ⟨L', hL'⟩ :=
-    exists_forall_norm_mvfderiv_hamiltonianVectorField_cappedExchange_le hω hH hHs hL hC hD₀
-      (fun z hz ↦ hD₀₁ hz) he
+    exists_forall_norm_mvfderiv_hamiltonianVectorField_cappedExchange_le hω hH hHs hL hC hD₀ hD₀₁ he
   obtain ⟨δ₂, hδ₂, hdisc⟩ :=
     hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedExchange
-      hH hHs hB hL hW hC hC₀₁ hD₀ (fun z hz ↦ hD₀₁ hz) ((prod_mono subset_rfl hD₀₁).trans hCW)
+      hH hHs hB hL hW hC hC₀₁ hD₀ hD₀₁ ((prod_mono subset_rfl hD₀₁).trans hCW)
       hJ hJt (fun x ↦ (he x).mdifferentiableAt one_ne_zero) he_inj hκ hκD
       (fun c hc z hz x ↦ (hL' c hc z hz x).1) fun c hc z hz x ↦ (hL' c hc z hz x).2
   refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, fun c u x₁ xinf A hcC hu hfl hx₁ hxinf hint harea htop ↦ ?_⟩
@@ -443,32 +337,33 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_off_finset_cappedExchange_ne
     (fun z hz ↦ hJt _ (hcC k) z (hSS₁ hz) _) (fun z hz ↦ hfl k z (hSS₁ hz)) (htop k)
   -- First make the parameters converge, then run the diagonal argument over the two windows.
   obtain ⟨c₀, hc₀, ψ, hψ, hcψ⟩ := hC.tendsto_subseq hcC
-  obtain ⟨φ, hφ, Z, v, hZ, hcard, hconc, hbd, hv, hconv, hpt⟩ :=
-    exists_subseq_off_finset_union_comp isOpen_thricePuncturedSphereReal
-      (isOpen_ball.preimage equivRealProdCLM.symm.continuous) hU (u := fun k ↦ u (ψ k))
-      he.continuous he_inj (fun k ↦ (hu _).continuousOn) (g := fun k ↦ ω.floerEnergyDensity
+  obtain ⟨φ, hφ, h⟩ :=
+    exists_tendstoLocallyUniformlyOn_comp_subseq_off_finset_iUnion_of_setIntegral_le
+      (Bool.forall_bool.2 ⟨hD, isOpen_thricePuncturedSphereReal⟩) (union_eq_iUnion ▸ hU)
+      (u := fun k ↦ u (ψ k)) he.continuous he_inj (fun k ↦ (hu _).continuousOn)
+      (g := fun k ↦ ω.floerEnergyDensity
         (fun z x ↦ cappedExchangePerturbation H L (c (ψ k)) (equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedExchangePerturbation H L (c (ψ k)) (equivRealProdCLM.symm z) x
           Complex.I) (u (ψ k))) (lt_min hδ₁ hδ₂)
       (fun k z hz ↦ floerEnergyDensity_nonneg hω (hJt _ (hcC _) z hz _) (hfl _ z hz))
-      (fun k ↦ (hint _).mono_set_ae hS₁le) (fun k ↦ hE _ _)
-      (fun ψ' _ ↦ by
-        -- On the pair of pants.
-        obtain ⟨φ, hφ, -, -, -, Z, v, -, -, hconc, hbd, -, hconv, -⟩ :=
-          hS (c := fun k ↦ c (ψ (ψ' k))) (u := fun k ↦ u (ψ (ψ' k))) (fun k ↦ hcC _)
-            (fun k ↦ (hu _).mono hSS₁) (fun k z hz ↦ hfl _ z (hSS₁ hz)) (fun k ↦ hint _)
-            fun k ↦ hE _ _
-        exact ⟨φ, hφ, Z, fun z hz ε hε ↦ (hconc z hz ε hε).mono fun n hn ↦
-          (min_le_left _ _).trans hn, hbd, _, hconv⟩) fun ψ' _ ↦ by
-        -- On the disc about the capped puncture.
-        obtain ⟨φ, hφ, -, -, -, Z, -, -, hconc, hbd, v, -, hconv, -⟩ :=
-          hdisc (isOpen_ball.preimage equivRealProdCLM.symm.continuous)
-            (preimage_mono ball_subset_closedBall) (fun k ↦ hcC (ψ (ψ' k))) (fun k ↦ hu _)
-            (fun k ↦ hfl _) (fun k ↦ hx₁ _) (fun k ↦ hxinf _) (fun k ↦ hint _)
-            (fun k ↦ harea _) fun k ↦ htop _
-        exact ⟨φ, hφ, Z, fun z hz ε hε ↦ (hconc z hz ε hε).mono fun n hn ↦
-          (min_le_right _ _).trans hn, hbd, _, hconv⟩
-  exact ⟨ψ ∘ φ, hψ.comp hφ, c₀, hc₀, hcψ.comp hφ.tendsto_atTop, Z, v, hZ, hcard, hconc, hbd, hv,
-    hconv, hpt⟩
+      (fun k ↦ (hint _).mono_set_ae hS₁le) (fun k ↦ hE _ _) fun b ψ' _ ↦ by
+        cases b
+        · -- On the disc about the capped puncture, bounds on compact sets are local bounds.
+          obtain ⟨φ, hφ, -, -, -, Z, -, -, hconc, hbd, v, -, hconv, -⟩ :=
+            hdisc hD (preimage_mono ball_subset_closedBall) (fun k ↦ hcC (ψ (ψ' k)))
+              (fun k ↦ hu _) (fun k ↦ hfl _) (fun k ↦ hx₁ _) (fun k ↦ hxinf _) (fun k ↦ hint _)
+              (fun k ↦ harea _) fun k ↦ htop _
+          exact ⟨φ, hφ, Z, fun z hz ε hε ↦ (hconc z hz ε hε).mono fun n hn ↦
+            (min_le_right _ _).trans hn, forall_exists_mem_nhds_eventually_forall_le_of_isCompact
+              (hD.sdiff Z.finite_toSet.isClosed) fun K hK hKZ ↦
+                (hbd K hK hKZ).imp fun _ hA ↦ .of_forall hA, _, hconv⟩
+        · -- On the pair of pants.
+          obtain ⟨φ, hφ, -, -, -, Z, v, -, -, hconc, hbd, -, hconv, -⟩ :=
+            hS (c := fun k ↦ c (ψ (ψ' k))) (u := fun k ↦ u (ψ (ψ' k))) (fun k ↦ hcC _)
+              (fun k ↦ (hu _).mono hSS₁) (fun k z hz ↦ hfl _ z (hSS₁ hz)) (fun k ↦ hint _)
+              fun k ↦ hE _ _
+          exact ⟨φ, hφ, Z, fun z hz ε hε ↦ (hconc z hz ε hε).mono fun n hn ↦
+            (min_le_left _ _).trans hn, hbd, _, hconv⟩
+  exact ⟨ψ ∘ φ, hψ.comp hφ, c₀, hc₀, hcψ.comp hφ.tendsto_atTop, h⟩
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
