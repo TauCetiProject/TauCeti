@@ -20,6 +20,8 @@ the denominator of a rational number off its valuation.
   exactly when `p` divides neither its numerator nor its denominator.
 * `padicValRat.eq_zero_of_add_eq_one_of_pos` and `padicValRat.eq_of_add_eq_one_of_neg`: if
   `x + y = 1`, then `v_p(x) > 0` forces `v_p(y) = 0`, and `v_p(x) < 0` forces `v_p(y) = v_p(x)`.
+* `padicValRat.eq_zero_and_eq_zero_of_add_eq_one_of_mul_eq_zero`: if `x + y = 1` and their
+  product has valuation zero, then both factors have valuation zero.
 * `padicValRat.max_natAbs_eq_of_add_eq_one`: if `x + y = 1`, then `x` and `y` have the common
   denominator `w = x.den`, and `max(|v_p(x)|, |v_p(y)|)` is the largest of the valuations of the
   three terms of `x.num + y.num = w`.
@@ -67,6 +69,23 @@ theorem eq_of_add_eq_one_of_neg {p : ℕ} [Fact p.Prime] {x y : ℚ} (hxy : x + 
   have h := add_eq_of_lt (p := p) (q := -x) (r := 1) (hy'.symm ▸ hy) (neg_ne_zero.2 hx0)
     one_ne_zero (by rwa [padicValRat.one, padicValRat.neg])
   rwa [padicValRat.neg, hy'] at h
+
+/-- If `x + y = 1` and their product has `p`-adic valuation zero, both factors have valuation
+zero. -/
+theorem eq_zero_and_eq_zero_of_add_eq_one_of_mul_eq_zero {p : ℕ} [Fact p.Prime] {x y : ℚ}
+    (hxy : x + y = 1) (hprod : padicValRat p (x * y) = 0) :
+    padicValRat p x = 0 ∧ padicValRat p y = 0 := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp_all
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp_all
+  rw [padicValRat.mul hx hy] at hprod
+  rcases lt_trichotomy (padicValRat p x) 0 with hneg | hzero | hpos
+  · have := eq_of_add_eq_one_of_neg hxy hneg
+    omega
+  · omega
+  · have := eq_zero_of_add_eq_one_of_pos hxy hpos
+    omega
 
 /-- If `x + y = 1`, write `x = u / w` and `y = v / w` in lowest terms, with `u = x.num`,
 `v = y.num` and the common denominator `w = x.den`, so that `u + v = w`. Then at every prime `p`
