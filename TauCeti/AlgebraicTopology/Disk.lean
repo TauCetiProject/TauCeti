@@ -503,6 +503,12 @@ lemma diskSegment_coord (t : unitInterval) :
         EuclideanSpace ℝ (Fin 1)) 0 = 2 * (t : ℝ) - 1 :=
   (rfl)
 
+/-- At time `t`, the straight path `TauCeti.diskSegment` has norm `|2 * t - 1|`. -/
+lemma norm_diskSegment (t : unitInterval) :
+    ‖((diskSegment.{u} t : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1))‖ = |2 * (t : ℝ) - 1| := by
+  rw [EuclideanSpace.norm_fin_one, diskSegment_coord]
+
 /-- **`S⁰` consists of the two points `-e₀` and `e₀`.** -/
 lemma eq_sphereMinus_or_eq_spherePlus (p : TopCat.diskBoundary.{u} 1) :
     p = sphereMinus ∨ p = spherePlus := by
