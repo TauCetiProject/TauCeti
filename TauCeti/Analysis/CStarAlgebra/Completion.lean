@@ -76,7 +76,7 @@ variable (𝕜 : Type*) {E : Type*} [NormedField 𝕜] [NonUnitalSeminormedRing 
   [StarRing E] [ContinuousStar E]
 
 /-- The embedding of a seminormed ⋆-algebra into its completion, as a ⋆-homomorphism. -/
-@[expose] def coeNonUnitalStarAlgHom : E →⋆ₙₐ[𝕜] Completion E where
+def coeNonUnitalStarAlgHom : E →⋆ₙₐ[𝕜] Completion E where
   toFun := (↑)
   map_smul' := coe_smul
   map_zero' := coe_zero

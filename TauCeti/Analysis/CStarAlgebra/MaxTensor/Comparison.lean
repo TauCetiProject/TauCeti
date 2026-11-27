@@ -19,8 +19,9 @@ injective, a seminorm in general). Every such seminorm is bounded by the maximal
 `TauCeti.maxTensorNorm` (`NonUnitalStarAlgHom.norm_apply_le_maxTensorNorm`).
 
 The proof: `Φ` is the integrated form of its restrictions `a ↦ Φ (a ⊗ 1)` and `b ↦ Φ (1 ⊗ b)`
-(`Algebra.TensorProduct.liftNonUnitalStarAlgHom_comp_include`), so a star homomorphism into a
-C*-algebra in the universe `max u v` of `A ⊗[ℂ] B` is bounded by the universal bound
+(`Algebra.TensorProduct.liftNonUnitalStarAlgHom_comp_includeLeft_includeRight`), so a star
+homomorphism into a C*-algebra in the universe `max u v` of `A ⊗[ℂ] B` is bounded by the universal
+bound
 `TauCeti.norm_liftNonUnitalStarAlgHom_le_maxTensorNorm`. For general `D`, the completion of
 `A ⊗[ℂ] B` in the seminorm `y ↦ ‖Φ y‖` is such a C*-algebra. In particular every C*-seminorm on
 `A ⊗[ℂ] B` is subcross, `‖Φ (a ⊗ b)‖ ≤ ‖a‖ ‖b‖` (`NonUnitalStarAlgHom.norm_apply_tmul_le`).
@@ -58,8 +59,8 @@ private theorem norm_apply_le_maxTensorNorm_of_nonUnitalCStarAlgebra {C : Type (
     [NonUnitalCStarAlgebra C] (Φ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] C) (x : A ⊗[ℂ] B) :
     ‖Φ x‖ ≤ maxTensorNorm A B x := by
   have h := norm_liftNonUnitalStarAlgHom_le_maxTensorNorm _ _
-    (Algebra.TensorProduct.commute_comp_include Φ) x
-  rwa [Algebra.TensorProduct.liftNonUnitalStarAlgHom_comp_include] at h
+    (Algebra.TensorProduct.commute_comp_includeLeft_includeRight Φ) x
+  rwa [Algebra.TensorProduct.liftNonUnitalStarAlgHom_comp_includeLeft_includeRight] at h
 
 variable {D : Type*} [NonUnitalNormedRing D] [StarRing D] [CStarRing D] [NormedSpace ℂ D]
 
