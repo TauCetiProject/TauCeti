@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 public import TauCeti.Topology.Algebra.RestrictedProduct.Units
+import Mathlib.Topology.Algebra.Group.Units
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 
@@ -34,6 +35,8 @@ outside the open set of integral finite adeles.
 
 * `IsDedekindDomain.FiniteAdeleRing.unitsContinuousMulEquiv`: the isomorphism of topological groups
   between the finite ideles and the restricted product of the `K_vˣ` with respect to the `𝒪_vˣ`.
+* `IsDedekindDomain.FiniteAdeleRing.isOpen_units_adicCompletionIntegers`: the local integral units
+  `𝒪_vˣ` are open in `K_vˣ`.
 * `IsDedekindDomain.FiniteAdeleRing.not_isEmbedding_val`: for infinitely many height-one primes,
   the inclusion of the finite ideles into the finite adeles is not an embedding.
 
@@ -62,6 +65,19 @@ noncomputable def unitsContinuousMulEquiv :
     𝔸ᶠ[R, K]ˣ ≃ₜ* Πʳ v : HeightOneSpectrum R,
       [(v.adicCompletion K)ˣ, (Submonoid.ofClass (v.adicCompletionIntegers K)).units] :=
   ContinuousMulEquiv.restrictedProductUnits fun _ ↦ Valued.isOpen_valuationSubring _
+
+/-- The local integral units `𝒪_vˣ` are open in the unit group `K_vˣ` of the completion. -/
+theorem isOpen_units_adicCompletionIntegers (v : HeightOneSpectrum R) :
+    IsOpen ((Submonoid.ofClass (v.adicCompletionIntegers K)).units :
+      Set (v.adicCompletion K)ˣ) :=
+  Submonoid.isOpen_units (Valued.isOpen_valuationSubring _)
+
+/-- The local integral units are open at every place, in the form in which the restricted
+products of Haar measures (`TauCeti.restrictedHaar`) take this hypothesis. -/
+instance instFactIsOpenUnitsAdicCompletionIntegers :
+    Fact (∀ v : HeightOneSpectrum R, IsOpen
+      ((Submonoid.ofClass (v.adicCompletionIntegers K)).units : Set (v.adicCompletion K)ˣ)) :=
+  ⟨isOpen_units_adicCompletionIntegers R K⟩
 
 variable {R K}
 

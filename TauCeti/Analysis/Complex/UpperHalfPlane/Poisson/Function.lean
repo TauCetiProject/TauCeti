@@ -91,6 +91,12 @@ theorem upperHalfPlanePoissonIntegralFun_def (h : ℝ → ℂ) (z : ℂ) :
     upperHalfPlanePoissonIntegralFun h z = ∫ x, upperHalfPlanePoissonKernel z x • h x := by
   rw [upperHalfPlanePoissonIntegralFun]
 
+/-- Poisson integrals of almost everywhere equal functions agree. -/
+theorem upperHalfPlanePoissonIntegralFun_congr_ae {h g : ℝ → ℂ} (hhg : h =ᵐ[volume] g) (z : ℂ) :
+    upperHalfPlanePoissonIntegralFun h z = upperHalfPlanePoissonIntegralFun g z := by
+  rw [upperHalfPlanePoissonIntegralFun_def, upperHalfPlanePoissonIntegralFun_def]
+  exact integral_congr_ae (hhg.mono fun x hx ↦ congrArg _ hx)
+
 /-- **The Poisson integral reproduces constants**: `P[c](z) = c` on the upper half-plane. -/
 theorem upperHalfPlanePoissonIntegralFun_const (c : ℂ) {z : ℂ} (hz : 0 < z.im) :
     upperHalfPlanePoissonIntegralFun (fun _ ↦ c) z = c := by
