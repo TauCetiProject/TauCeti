@@ -11,8 +11,9 @@ public import TauCeti.RingTheory.Idempotents.Corner.Basic
 /-!
 # Normalized compact open Hecke idempotents
 
-For a compact open subgroup of unit volume, `TauCeti.HeckeAlgebra.normalizedIndicator` is its
-indicator divided by its volume. Left and right multiplication by this idempotent characterize
+For a compact open subgroup whose volume is invertible in the coefficient semiring,
+`TauCeti.HeckeAlgebra.normalizedIndicator` is its indicator scaled by the inverse volume.
+Left and right multiplication by this idempotent characterize
 left and right subgroup invariance, respectively. For nested subgroups the larger subgroup's
 idempotent absorbs the smaller one on either side.
 
@@ -39,7 +40,7 @@ section Indicator
 
 variable [SeparatelyContinuousMul G]
 
-/-- The indicator of a compact open subgroup divided by its unit volume. -/
+/-- The indicator of a compact open subgroup scaled by the inverse of its invertible volume. -/
 noncomputable def normalizedIndicator (μ : HaarMeasureWithValues A G)
     (U : OpenSubgroup G) (hU : IsCompact (U : Set G))
     (h : IsUnit (μ (U.toCompactOpens hU))) : HeckeAlgebra μ :=
@@ -54,6 +55,38 @@ theorem normalizedIndicator_apply {μ : HaarMeasureWithValues A G}
     (normalizedIndicator μ U hU h).toCompactlySupported.val x =
       (U : Set G).indicator (fun _ ↦ (↑h.unit⁻¹ : A)) x :=
   (rfl)
+
+/-- Left translation by a subgroup element preserves the normalized indicator. -/
+theorem normalizedIndicator_apply_mul_left {μ : HaarMeasureWithValues A G}
+    {U : OpenSubgroup G} {hU : IsCompact (U : Set G)}
+    (h : IsUnit (μ (U.toCompactOpens hU))) {g : G} (hg : g ∈ U) (x : G) :
+    (normalizedIndicator μ U hU h).toCompactlySupported.val (g * x) =
+      (normalizedIndicator μ U hU h).toCompactlySupported.val x := by
+  rw [normalizedIndicator_apply, normalizedIndicator_apply]
+  exact Set.indicator_const_eq_indicator_const ((U : Subgroup G).mul_mem_cancel_left hg)
+
+/-- Right translation by a subgroup element preserves the normalized indicator. -/
+theorem normalizedIndicator_apply_mul_right {μ : HaarMeasureWithValues A G}
+    {U : OpenSubgroup G} {hU : IsCompact (U : Set G)}
+    (h : IsUnit (μ (U.toCompactOpens hU))) {g : G} (hg : g ∈ U) (x : G) :
+    (normalizedIndicator μ U hU h).toCompactlySupported.val (x * g) =
+      (normalizedIndicator μ U hU h).toCompactlySupported.val x := by
+  rw [normalizedIndicator_apply, normalizedIndicator_apply]
+  exact Set.indicator_const_eq_indicator_const ((U : Subgroup G).mul_mem_cancel_right hg)
+
+/-- The normalized indicator is the compact open indicator of value one scaled by the
+inverse volume. -/
+theorem normalizedIndicator_eq_smul [T2Space G] {μ : HaarMeasureWithValues A G}
+    {U : OpenSubgroup G} {hU : IsCompact (U : Set G)}
+    (h : IsUnit (μ (U.toCompactOpens hU))) :
+    normalizedIndicator μ U hU h =
+      (↑h.unit⁻¹ : A) • ofCompactlySupported ⟨compactOpenIndicator (U.toCompactOpens hU) 1,
+        compactOpenIndicator_mem_compactlySupported _ 1⟩ := by
+  ext x
+  simp only [normalizedIndicator_apply, toCompactlySupported_smul, Submodule.coe_smul,
+    LocallyConstant.coe_smul, Pi.smul_apply, coe_compactOpenIndicator,
+    OpenSubgroup.coe_toCompactOpens]
+  exact (Set.smul_indicator_one_apply (U : Set G) (↑h.unit⁻¹ : A) x).symm
 
 end Indicator
 
@@ -72,9 +105,8 @@ theorem normalizedIndicator_mul_eq_iff (f : HeckeAlgebra μ) :
         compactlySupportedRep A G G A g⁻¹ (normalizedIndicator μ U hU h).toCompactlySupported =
           (normalizedIndicator μ U hU h).toCompactlySupported := by
       ext y
-      rw [compactlySupportedRep_apply_coe, inv_inv, smul_eq_mul, normalizedIndicator_apply,
-        normalizedIndicator_apply]
-      exact if_congr ((U : Subgroup G).mul_mem_cancel_left hg) rfl rfl
+      rw [compactlySupportedRep_apply_coe, inv_inv, smul_eq_mul,
+        normalizedIndicator_apply_mul_left h hg]
     have hFixed : compactlySupportedRep A G G A g⁻¹ f.toCompactlySupported =
         f.toCompactlySupported := by
       have hMul := congrArg HeckeAlgebra.toCompactlySupported hf
@@ -118,8 +150,7 @@ theorem mul_normalizedIndicator_eq_iff (f : HeckeAlgebra μ) :
           (normalizedIndicator μ U hU h).toCompactlySupported := by
       ext y
       rw [compactlySupportedRep_apply_coe, MulOpposite.smul_eq_mul_unop, MulOpposite.unop_inv,
-        MulOpposite.unop_op, inv_inv, normalizedIndicator_apply, normalizedIndicator_apply]
-      exact if_congr ((U : Subgroup G).mul_mem_cancel_right hg) rfl rfl
+        MulOpposite.unop_op, inv_inv, normalizedIndicator_apply_mul_right h hg]
     have hFixed : compactlySupportedRep A Gᵐᵒᵖ G A (MulOpposite.op g⁻¹)
         f.toCompactlySupported = f.toCompactlySupported := by
       have hMul := congrArg HeckeAlgebra.toCompactlySupported hf
@@ -165,11 +196,9 @@ theorem normalizedIndicator_mul_normalizedIndicator_of_ge {W : OpenSubgroup G}
     {hW : IsCompact (W : Set G)} (h' : IsUnit (μ (W.toCompactOpens hW))) (hWU : W ≤ U) :
     normalizedIndicator μ U hU h * normalizedIndicator μ W hW h' =
       normalizedIndicator μ U hU h := by
-  classical
   apply (mul_normalizedIndicator_eq_iff h' _).2
   intro g hg x
-  rw [normalizedIndicator_apply, normalizedIndicator_apply]
-  exact if_congr ((U : Subgroup G).mul_mem_cancel_right (hWU hg)) rfl rfl
+  exact normalizedIndicator_apply_mul_right h (hWU hg) x
 
 /-- The larger subgroup's normalized indicator absorbs the smaller one's on the right. -/
 @[simp]
@@ -177,13 +206,11 @@ theorem normalizedIndicator_mul_normalizedIndicator_of_le {W : OpenSubgroup G}
     {hW : IsCompact (W : Set G)} (h' : IsUnit (μ (W.toCompactOpens hW))) (hWU : W ≤ U) :
     normalizedIndicator μ W hW h' * normalizedIndicator μ U hU h =
       normalizedIndicator μ U hU h := by
-  classical
   apply (normalizedIndicator_mul_eq_iff h' _).2
   intro g hg x
-  rw [normalizedIndicator_apply, normalizedIndicator_apply]
-  exact if_congr ((U : Subgroup G).mul_mem_cancel_left (hWU hg)) rfl rfl
+  exact normalizedIndicator_apply_mul_left h (hWU hg) x
 
-/-- The normalized indicator of a compact open subgroup of unit volume is idempotent
+/-- The normalized indicator of a compact open subgroup whose volume is invertible is idempotent
 (Bushnell and Henniart, §4.1). -/
 theorem isIdempotentElem_normalizedIndicator :
     IsIdempotentElem (normalizedIndicator μ U hU h) :=
