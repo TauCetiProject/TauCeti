@@ -422,18 +422,17 @@ theorem perturbationPullback_positiveEndChart_inf_puncturedSpherePerturbation
   simp
 
 omit [Fintype ι] in
-/-- If the discs `‖w - c i‖ < ‖a i‖ / 2` lie in the disc `‖w‖ ≤ 2 exp (2π)`, then beyond `s = 1`
-the output end, in the positive end chart `φ'_∞`, lies outside that disc, so it avoids the centers
-of the input ends. -/
+/-- If the centers lie in the disc `‖w‖ ≤ 2 exp (2π)`, then beyond `s = 1` the output end, in the
+positive end chart `φ'_∞`, lies outside that disc, so it misses every center. -/
 theorem equivRealProdCLM_symm_positiveEndChart_inf_ne
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {ζ : ℝ × ℝ} (hζ : 1 < ζ.1) (j : ι) :
+    (hc : ∀ i, ‖c i‖ ≤ 2 * Real.exp (2 * π)) {ζ : ℝ × ℝ} (hζ : 1 < ζ.1) (j : ι) :
     Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ c j := by
   intro h
   have h₁ := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
   rw [Prod.mk.eta, h] at h₁
   have : Real.exp (2 * π) < Real.exp (2 * π * ζ.1) :=
     Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
-  linarith [hout j, norm_nonneg (a j)]
+  linarith [hc j]
 
 end Sphere
 

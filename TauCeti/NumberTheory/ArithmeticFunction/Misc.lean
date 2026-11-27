@@ -7,28 +7,27 @@ module
 
 public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
-public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 
 /-!
-# Weighted hyperbola sums of Dirichlet convolutions
+# Dirichlet convolutions: weighted hyperbola sums and prime powers
 
 Mathlib's `ArithmeticFunction.sum_Ioc_mul_eq_sum_sum` rewrites `∑_{0<n≤N} (f * g)(n)` as a sum
 over the hyperbola `mℓ ≤ N`. This file adds the weighted form, where each term carries a weight
 `w(n)` with values in a module; the weight stays attached to the product `mℓ`, so it need not be
 multiplicative (for instance `w(n) = e(nα)`). The proof follows the plan of Mathlib's
 `ArithmeticFunction.sum_Ioc_mul_eq_sum_sum`, through
-`Nat.divisorsAntidiagonal_eq_prod_filter_of_le`. Specializing to `f = μ` and `g = ζ` gives
-hyperbola Möbius inversion (`ArithmeticFunction.sum_moebius_smul_sum_div`).
+`Nat.divisorsAntidiagonal_eq_prod_filter_of_le`.
 
-The file also records the elementary bound `2 ^ Ω n ≤ n`, for `n ≠ 0`, on the number `Ω n` of
-prime factors of `n` counted with multiplicity.
+The file also evaluates a Dirichlet convolution at a prime power `p ^ k` as a sum over the pairs
+of exponents with sum `k`, and records the elementary bound `2 ^ Ω n ≤ n`, for `n ≠ 0`, on the
+number `Ω n` of prime factors of `n` counted with multiplicity.
 
 ## Main results
 
 * `ArithmeticFunction.sum_Ioc_mul_smul_eq_sum_sum`:
   `∑_{0<n≤N} (f * g)(n) • w(n) = ∑_{0<m≤N} f(m) • ∑_{0<ℓ≤N/m} g(ℓ) • w(mℓ)`.
-* `ArithmeticFunction.sum_moebius_smul_sum_div`:
-  `∑_{1≤d≤N} μ(d) • ∑_{1≤m≤N/d} g(dm) = if 1 ≤ N then g 1 else 0`.
+* `ArithmeticFunction.mul_apply_prime_pow`:
+  `(f * g)(p ^ k) = ∑_{i + j = k} f(p ^ i) g(p ^ j)` for a prime `p`.
 * `ArithmeticFunction.two_pow_cardFactors_le`: `2 ^ Ω n ≤ n` for `n ≠ 0`, since each of the
   `Ω n` prime factors of `n`, counted with multiplicity, is at least `2`.
 -/
@@ -78,31 +77,15 @@ theorem sum_Ioc_mul_smul_eq_sum_sum (f g : ArithmeticFunction R) (w : ℕ → A)
         rw [this]
         exact sum_congr rfl fun ℓ _ ↦ (smul_smul _ _ _).symm
 
-open scoped ArithmeticFunction.Moebius ArithmeticFunction.zeta in
-/-- Hyperbola Möbius inversion: for an additive commutative group `A`, `g : ℕ → A`, and `N : ℕ`,
-`∑ d ∈ Icc 1 N, μ d • ∑ m ∈ Icc 1 (N / d), g (d * m)` equals `g 1` when `1 ≤ N`, and `0`
-when `N = 0`. -/
-theorem sum_moebius_smul_sum_div {A : Type*} [AddCommGroup A] (N : ℕ) (g : ℕ → A) :
-    ∑ d ∈ Icc 1 N, μ d • ∑ m ∈ Icc 1 (N / d), g (d * m) =
-      if 1 ≤ N then g 1 else 0 := by
-  have h := sum_Ioc_mul_smul_eq_sum_sum (μ : ArithmeticFunction ℤ) (ζ : ArithmeticFunction ℤ) g N
-  rw [moebius_mul_coe_zeta] at h
-  simp_rw [← Icc_add_one_left_eq_Ioc, zero_add] at h
-  have hzeta : ∀ d ∈ Icc 1 N,
-      ∑ m ∈ Icc 1 (N / d), (ζ : ArithmeticFunction ℤ) m • g (d * m) =
-        ∑ m ∈ Icc 1 (N / d), g (d * m) := fun d _ ↦
-    Finset.sum_congr rfl fun m hm ↦ by
-      rw [natCoe_apply, zeta_apply_ne (Nat.pos_iff_ne_zero.mp (Finset.mem_Icc.mp hm).1),
-        Nat.cast_one, one_zsmul]
-  rw [Finset.sum_congr rfl fun d hd ↦ congrArg (μ d • ·) (hzeta d hd)] at h
-  rw [← h]
-  by_cases hN : 1 ≤ N
-  · simp only [hN, ↓reduceIte]
-    rw [Finset.sum_eq_single_of_mem 1 (Finset.mem_Icc.mpr ⟨le_rfl, hN⟩)
-      fun n _ hn ↦ by simp [ArithmeticFunction.one_apply_ne hn]]
-    simp
-  · obtain rfl : N = 0 := Nat.lt_one_iff.mp (not_le.mp hN)
-    simp
+/-- At a prime power, a Dirichlet convolution is the sum over the pairs of exponents with sum `k`:
+`(f * g)(p ^ k) = ∑_{i + j = k} f(p ^ i) g(p ^ j)`. -/
+theorem mul_apply_prime_pow (f g : ArithmeticFunction R) {p : ℕ} (hp : p.Prime) (k : ℕ) :
+    (f * g) (p ^ k) = ∑ ij ∈ antidiagonal k, f (p ^ ij.1) * g (p ^ ij.2) := by
+  rw [ArithmeticFunction.mul_apply, Nat.sum_divisorsAntidiagonal (fun a b ↦ f a * g b),
+    Nat.sum_divisors_prime_pow hp,
+    Nat.sum_antidiagonal_eq_sum_range_succ (fun i j ↦ f (p ^ i) * g (p ^ j))]
+  exact sum_congr rfl fun i hi ↦ by
+    rw [Nat.pow_div (Nat.lt_succ_iff.1 (mem_range.1 hi)) hp.pos]
 
 open scoped ArithmeticFunction.Omega in
 /-- A nonzero natural number `n` is at least `2 ^ Ω n`, since each of its `Ω n` prime factors

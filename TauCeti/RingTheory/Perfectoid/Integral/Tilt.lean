@@ -257,16 +257,9 @@ associated to `p`: writing the distinguished generator as `g = [g₀] + p u` wit
 `0 = θ(g) = (g₀)♯ + p θ(u)`. So `g₀` is a choice of `p♭`. -/
 theorem associated_untilt_coeff_zero {g : WittVector p (PreTilt A p)}
     (hg : RingHom.ker (fontaineTheta A p) = span {g}) :
-    Associated (g.coeff 0).untilt (p : A) := by
-  have hgk : g ∈ RingHom.ker (fontaineTheta A p) := hg ▸ mem_span_singleton_self g
-  obtain ⟨u, hu⟩ :=
-    isDistinguished_iff_exists_unit.mp (isDistinguished_of_ker_fontaineTheta_eq_span hg)
-  have h := RingHom.mem_ker.mp hgk
-  rw [hu, map_add, map_mul, map_natCast, fontaineTheta_teichmuller] at h
-  have hθu : IsUnit (fontaineTheta A p u) := u.isUnit.map _
-  refine Associated.symm ⟨-hθu.unit, ?_⟩
-  rw [Units.val_neg, hθu.unit_spec]
-  linear_combination -h
+    Associated (g.coeff 0).untilt (p : A) :=
+  associated_untilt_coeff_zero_of_isDistinguished (hg ▸ mem_span_singleton_self g)
+    (isDistinguished_of_ker_fontaineTheta_eq_span hg)
 
 /-- **The tilt is complete for the zeroth Witt coordinate of a generator of `ker θ`.** If `g`
 generates `ker θ`, then `A♭` is `(g₀)`-adically complete and separated: `(g₀)♯` is a unit multiple
