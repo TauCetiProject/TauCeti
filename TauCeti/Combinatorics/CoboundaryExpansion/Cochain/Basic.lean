@@ -403,6 +403,23 @@ theorem cost_complete (ℓ : GroupNorm G) (α : Cochain (complete V) G) (β : V 
     and_iff_left_iff_imp]
   exact LT.lt.ne
 
+/-- On a complete complex, the defect of an edge labelling uses just its increasing triples. -/
+theorem defect_ofLt_complete (ℓ : GroupNorm G) (f : V → V → G) :
+    (ofLt (complete V) f).defect ℓ =
+      ∑ p ∈ univ.filter (fun p : V × V × V => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+        ℓ (f p.1 p.2.1 * f p.2.1 p.2.2 * (f p.1 p.2.2)⁻¹) := by
+  rw [defect_complete]
+  exact sum_congr rfl fun p hp => by
+    rw [holonomy_ofLt_complete _ (mem_filter.mp hp).2.1 (mem_filter.mp hp).2.2]
+
+/-- On a complete complex, the cost of an edge labelling uses just its increasing pairs. -/
+theorem cost_ofLt_complete (ℓ : GroupNorm G) (f : V → V → G) (β : V → G) :
+    (ofLt (complete V) f).cost ℓ β =
+      ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2), ℓ ((β p.1)⁻¹ * f p.1 p.2 * β p.2) := by
+  rw [cost_complete]
+  exact sum_congr rfl fun p hp => by
+    rw [ofLt_apply_of_lt _ ((adj_complete _ _).mpr (mem_filter.mp hp).2.ne) (mem_filter.mp hp).2]
+
 /-- The gauge distance from `α` to the coboundaries: the infimum of `cost` over all gauges. -/
 noncomputable def gaugeDist (ℓ : GroupNorm G) (α : Cochain X G) : ℝ := ⨅ β : V → G, α.cost ℓ β
 
