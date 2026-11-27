@@ -426,6 +426,24 @@ theorem closure_nsmulSaturationInfClosure_eq_nsmulSaturation (F : SaturatedAddSu
   rw [← map_nsmul, ← hfs, S.nsmulSaturationInfClosureToGroupClosure_inclusion_apply]
   exact F.toGroupClosure_mem_faceSubgroup_iff.2 hsF
 
+/-- Mapping the face subgroup of `(S.nsmulSaturationInfClosureFaceOrderIso).symm F` along
+`AddEquiv.addSubgroupCongr S.addSubgroupClosure_nsmulSaturation_inf_closure` yields
+`F.faceSubgroup.nsmulSaturation`. -/
+theorem map_addSubgroupCongr_faceSubgroup (F : SaturatedAddSubmonoid S) :
+    ((S.nsmulSaturationInfClosureFaceOrderIso).symm F).faceSubgroup.map
+        (AddEquiv.addSubgroupCongr S.addSubgroupClosure_nsmulSaturation_inf_closure :
+          _ →+ _) =
+      F.faceSubgroup.nsmulSaturation := by
+  rw [faceSubgroup_def, AddMonoidHom.map_closure, ← Set.image_comp]
+  have hcomp :
+      (((AddEquiv.addSubgroupCongr S.addSubgroupClosure_nsmulSaturation_inf_closure : _ →+ _) :
+          _ → _) ∘
+        (S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid).toGroupClosure) =
+        S.nsmulSaturationInfClosureToGroupClosure := by
+    ext x
+    simpa using AddSubmonoid.coe_toGroupClosure _ x
+  rw [hcomp, F.closure_nsmulSaturationInfClosure_eq_nsmulSaturation]
+
 /-- Canonical additive equivalence between the face subgroup of the saturated face
 `(S.nsmulSaturationInfClosureFaceOrderIso).symm F` and the subgroup saturation
 `F.faceSubgroup.nsmulSaturation` inside `AddSubgroup.closure (S : Set G)`. -/
@@ -434,14 +452,7 @@ def faceSubgroupNSMulSaturationEquiv (F : SaturatedAddSubmonoid S) :
       F.faceSubgroup.nsmulSaturation :=
   ((AddEquiv.addSubgroupCongr S.addSubgroupClosure_nsmulSaturation_inf_closure).addSubgroupMap
     ((S.nsmulSaturationInfClosureFaceOrderIso).symm F).faceSubgroup).trans
-    (AddEquiv.addSubgroupCongr (by
-      rw [faceSubgroup_def, AddMonoidHom.map_closure, ← Set.image_comp]
-      convert F.closure_nsmulSaturationInfClosure_eq_nsmulSaturation using 3
-      refine Subtype.ext ?_
-      simp only [AddSubmonoid.coe_inf, AddSubgroup.coe_toAddSubmonoid, AddMonoidHom.coe_ofClass,
-        Function.comp_apply, AddEquiv.addSubgroupCongr_apply,
-        AddSubmonoid.coe_nsmulSaturationInfClosureToGroupClosure_apply]
-      exact AddSubmonoid.coe_toGroupClosure _ _))
+    (AddEquiv.addSubgroupCongr F.map_addSubgroupCongr_faceSubgroup)
 
 /-- `faceSubgroupNSMulSaturationEquiv` preserves the underlying element of the ambient group `G`. -/
 theorem coe_faceSubgroupNSMulSaturationEquiv_apply (F : SaturatedAddSubmonoid S)

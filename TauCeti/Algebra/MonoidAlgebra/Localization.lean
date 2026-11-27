@@ -20,11 +20,11 @@ whose image is a unit of `N`. When every element of `N` becomes an element of th
 after multiplying by a sufficiently large power of `f x`, the induced map of monoid algebras
 `R[M] → R[N]` is the localization away from the monomial of `x`.
 
-Additively, for an injective homomorphism `f : M →+ H` into an abelian group `H`,
+Additively, for an injective homomorphism `f : M →+ H` of commutative additive monoids,
 `AddMonoidAlgebra.isLocalization_mapDomain_of_single` gives a general criterion for `R[H]` to be a
-localization of `R[M]` at a submonoid `T`, and
-`AddMonoidAlgebra.exists_isLocalization_away_of_exists_add_eq` specializes to principal
-localizations when `M` is finitely generated.
+localization of `R[M]` at a submonoid `T`, and when `H` is an abelian group and `M` is finitely
+generated, `AddMonoidAlgebra.exists_isLocalization_away_of_exists_add_eq` specializes to principal
+localizations.
 
 This is the algebraic form of an open immersion of affine monoid schemes: in toric geometry, the
 coordinate ring of the affine chart of a face `σ ∩ m^⊥` of a cone `σ` is obtained from the
@@ -44,7 +44,7 @@ constant monomials, for arbitrary commutative monoids and commutative coefficien
 
 * `AddMonoidAlgebra.isLocalization_mapDomain_of_single` and
   `AddMonoidAlgebra.exists_isLocalization_away_of_exists_add_eq`: localization criteria for
-  additive monoid algebras into an abelian group.
+  additive monoid algebras.
 
 ## References
 
@@ -148,12 +148,12 @@ theorem MonoidAlgebra.isLocalization_coefficients {S : Type*} [CommSemiring S]
 
 namespace AddMonoidAlgebra
 
-/-- Let `f : M →+ H` be an injective homomorphism from an additive commutative monoid into an
-abelian group, and `T` a submonoid of `R[M]` sent to units of `R[H]`. If every monomial `single g 1`
-in `R[H]` clears into the image of `f` by multiplying with `mapDomain f s.1` for some `s : T`, then
-`R[H]` is the localization of `R[M]` at `T`. -/
+/-- Let `f : M →+ H` be an injective homomorphism of additive commutative monoids, and `T` a
+submonoid of `R[M]` sent to units of `R[H]`. If every monomial `single g 1` in `R[H]` clears into
+the image of `f` by multiplying with `mapDomain f s.1` for some `s : T`, then `R[H]` is the
+localization of `R[M]` at `T`. -/
 theorem isLocalization_mapDomain_of_single {M H R : Type*} [AddCommMonoid M]
-    [AddCommGroup H] [CommSemiring R] {f : M →+ H} (hf : Function.Injective f)
+    [AddCommMonoid H] [CommSemiring R] {f : M →+ H} (hf : Function.Injective f)
     {T : Submonoid (AddMonoidAlgebra R M)}
     (hunits : ∀ s : T, IsUnit (mapDomain f s.val))
     (hsurj : ∀ g : H, ∃ (a : M) (s : T), single g (1 : R) * mapDomain f s.val = single (f a) 1) :
@@ -193,17 +193,13 @@ theorem exists_isLocalization_away_of_exists_add_eq {M H : Type*}
       IsLocalization.Away (single u (1 : R)) (AddMonoidAlgebra R H) := by
   have htop : (⊤ : AddSubmonoid M).FG := (AddMonoid.fg_iff_addSubmonoid_fg ⊤).1 inferInstance
   obtain ⟨u, hu⟩ := htop.exists_forall_exists_add_eq_nsmul
-  refine ⟨u.val, isLocalization_mapDomain_of_single hf (fun s ↦ ?_) (fun g ↦ ?_)⟩
-  · obtain ⟨n, hn⟩ := s.property
-    dsimp only at hn
-    rw [← hn, single_pow, one_pow, mapDomain_single]
-    exact (Group.isUnit (Multiplicative.ofAdd (f (n • u.val)))).map (of R H)
-  · obtain ⟨a, b, hab⟩ := hshift g
-    obtain ⟨n, c, hbc⟩ := hu ⟨b, trivial⟩
-    have hnu : g + n • f u.val = f (a + c.val) := by
-      have hbc' : b + c.val = n • u.val := congrArg Subtype.val hbc
-      rw [← map_nsmul, ← hbc', map_add, ← add_assoc, hab, ← map_add]
-    exact ⟨a + c.val, ⟨single u.val (1 : R) ^ n, n, rfl⟩, by
-      simp [single_pow, single_mul_single, hnu]⟩
+  refine ⟨u.val, TauCeti.AddMonoidAlgebra.isLocalization_away_mapDomainRingHom R f hf u.val
+    (AddGroup.isAddUnit (f u.val)) fun y ↦ ?_⟩
+  obtain ⟨a, b, hab⟩ := hshift y
+  obtain ⟨n, c, hbc⟩ := hu ⟨b, trivial⟩
+  have hnu : y + n • f u.val = f (a + c.val) := by
+    have hbc' : b + c.val = n • u.val := congrArg Subtype.val hbc
+    rw [← map_nsmul, ← hbc', map_add, ← add_assoc, hab, ← map_add]
+  exact ⟨n, a + c.val, hnu.symm⟩
 
 end AddMonoidAlgebra

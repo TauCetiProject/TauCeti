@@ -112,9 +112,11 @@ theorem orbitHom_def :
 @[reassoc (attr := simp)]
 theorem orbitOpenHom_comp_closedFaceHom :
     F.orbitOpenHom R ≫ F.closedFaceHom R = F.orbitHom R := by
-  rw [orbitOpenHom, closedFaceHom, orbitHom, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
-    F.orbitMap_def R]
-  congr 2
+  have h : (F.orbitMap R).toRingHom =
+      (mapDomainRingHom R F.toFaceSubgroup).comp
+        (F.toAddSubmonoid.faceRestriction F.addSaturated R).toRingHom :=
+    RingHom.ext fun x ↦ by simp [F.orbitMap_def R]
+  rw [orbitOpenHom, closedFaceHom, orbitHom, h, CommRingCat.ofHom_comp, Spec.map_comp]
 
 /-- Over any commutative ring `R`, the Zariski closure of the `F`-orbit in `Spec R[S]` is the
 zero locus of `F.faceIdeal R`. -/
