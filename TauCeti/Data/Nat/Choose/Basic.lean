@@ -292,4 +292,13 @@ theorem mem_filter_range_not_dvd_choose {p n k : ℕ} :
   by_contra! hk
   exact h (by simp [choose_eq_zero_of_lt (lt_of_succ_le hk)])
 
+/-- Exponent identity `(a + b).choose 2 + a.choose 2 + a = b.choose 2 + (a + b) * a`. -/
+theorem add_choose_two_add_choose_two_add_left (a b : ℕ) :
+    (a + b).choose 2 + a.choose 2 + a = b.choose 2 + (a + b) * a := by
+  have h1 := add_choose_two a b
+  have h2 : 2 * a.choose 2 + a = a * a := by
+    simpa [sq] using two_mul_choose_two_add_mul a 1
+  have h3 : (a + b) * a = a * a + a * b := by ring
+  omega
+
 end Nat
