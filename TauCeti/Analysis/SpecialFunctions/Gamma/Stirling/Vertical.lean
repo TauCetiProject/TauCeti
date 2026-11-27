@@ -82,10 +82,6 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
   balls.
 * `TauCeti.exists_norm_Gamma_sub_natCast_le`: left-shift factorial decay
   `‖Γ(σ - N + i t)‖ ≤ C / (N - ⌈σ⌉₊)! * exp (-π |t| / 2)` for a noninteger real offset `σ`.
-* `TauCeti.exists_norm_Gamma_vertical_strip_le_exp`: pure exponential vertical-strip upper bound
-  `‖Γ(s)‖ ≤ K exp (-((π / 2 - ε) |Im s|))` for `Re s ∈ [a, b]` and `δ ≤ |Im s|`.
-* `TauCeti.exists_norm_Gamma_mul_Gamma_add_le_exp`: exponential vertical-strip upper bound
-  `‖Γ(s) Γ(s + p)‖ ≤ K exp (-((π - ε) |Im s|))` for `Re s ∈ [a, b]` and `|Im s| ≥ Y`.
 
 The statements of `TauCeti.exists_norm_Gamma_le` and `TauCeti.exists_norm_Gamma_le_of_pos` follow
 the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
@@ -814,7 +810,7 @@ private lemma norm_inv_Gamma_one_sub_sub_natCast_le {σ K : ℝ} (hK : 0 ≤ K) 
       K * Real.exp (π * |t| / 2) / (Nat.factorial (N - M) : ℝ) := by
   set a : ℝ := 1 + M - σ
   have hsplit : 1 - ((σ : ℂ) - N + t * I) = ((a : ℂ) + (-t : ℝ) * I) + ((N - M : ℕ) : ℂ) := by
-    apply Complex.ext <;> simp [a, Nat.cast_sub hMN]; ring
+    simp only [a, Nat.cast_sub hMN]; push_cast; ring
   rw [hsplit]
   have hinv_t : ‖(Complex.Gamma ((a : ℂ) + (-t : ℝ) * I))⁻¹‖ ≤ K * Real.exp (π * |t| / 2) := by
     have hb := hinv ((a : ℂ) + (-t : ℝ) * I) (by simp [a])
@@ -870,74 +866,5 @@ theorem exists_norm_Gamma_sub_natCast_le {σ : ℝ} (hσ : ∀ m : ℤ, σ ≠ m
           (Real.exp (-(π * |t|)) * Real.exp (π * |t| / 2)) := by ring
     _ = π * (2 / |Real.sin (π * σ)|) * K / (Nat.factorial (N - M) : ℝ) *
           Real.exp (-(π * |t| / 2)) := by rw [hexp]
-
-/-- Pure exponential vertical-strip upper bound for `‖Γ(s)‖`: on any vertical strip
-`a ≤ Re s ≤ b` away from the real axis (`δ ≤ |Im s|`), for every `ε > 0`,
-`‖Γ(s)‖ ≤ K exp (-((π / 2 - ε) |Im s|))`. -/
-theorem exists_norm_Gamma_vertical_strip_le_exp (a b : ℝ) {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) :
-    ∃ K > 0, ∀ s : ℂ, s.re ∈ Icc a b → δ ≤ |s.im| →
-      ‖Complex.Gamma s‖ ≤ K * Real.exp (-((π / 2 - ε) * |s.im|)) := by
-  obtain ⟨C, hC, hS⟩ := exists_norm_Gamma_vertical_strip_le a b hδ
-  set B : ℝ := max (b - 1 / 2) 0 + 1
-  set r : ℝ := ε / B
-  have hB : 0 < B := by positivity
-  have hr : 0 < r := by positivity
-  refine ⟨C * Real.exp (ε - B * Real.log r), by positivity, fun s hs hsim ↦ ?_⟩
-  have h1s : 1 ≤ 1 + |s.im| := le_add_of_nonneg_right (abs_nonneg _)
-  have h1s_pos : 0 < 1 + |s.im| := zero_lt_one.trans_le h1s
-  have hlog : Real.log (1 + |s.im|) ≤ r * (1 + |s.im|) - Real.log r := by
-    linarith [Real.log_le_sub_one_of_pos (mul_pos hr h1s_pos), Real.log_mul hr.ne' h1s_pos.ne']
-  have hBr : B * r = ε := by simp only [r]; field_simp
-  have hpow : (1 + |s.im|) ^ (s.re - 1 / 2) ≤
-      Real.exp (ε - B * Real.log r) * Real.exp (ε * |s.im|) := by
-    calc (1 + |s.im|) ^ (s.re - 1 / 2)
-        ≤ (1 + |s.im|) ^ B := Real.rpow_le_rpow_of_exponent_le h1s
-          (by linarith [hs.2, le_max_left (b - 1 / 2) 0])
-      _ = Real.exp (B * Real.log (1 + |s.im|)) := by
-          rw [Real.rpow_def_of_pos h1s_pos, mul_comm]
-      _ ≤ Real.exp (ε - B * Real.log r + ε * |s.im|) :=
-          Real.exp_le_exp.mpr (by nlinarith [mul_le_mul_of_nonneg_left hlog hB.le, hBr])
-      _ = Real.exp (ε - B * Real.log r) * Real.exp (ε * |s.im|) := Real.exp_add _ _
-  calc ‖Complex.Gamma s‖
-      ≤ C * (1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2)) := hS s hs hsim
-    _ ≤ C * (Real.exp (ε - B * Real.log r) * Real.exp (ε * |s.im|)) *
-          Real.exp (-(π * |s.im| / 2)) := by gcongr
-    _ = C * Real.exp (ε - B * Real.log r) *
-          (Real.exp (ε * |s.im|) * Real.exp (-(π * |s.im| / 2))) := by ring
-    _ = C * Real.exp (ε - B * Real.log r) * Real.exp (-((π / 2 - ε) * |s.im|)) := by
-        rw [← Real.exp_add]; congr 2; ring
-
-/-- On any vertical strip `Re s ∈ [a, b]` and for any `ε > 0`, the shifted Gamma product
-`Γ(s) Γ(s + p)` satisfies `‖Γ(s) Γ(s + p)‖ ≤ K * exp (-((π - ε) * |Im s|))` for `|Im s| ≥ Y`. -/
-theorem exists_norm_Gamma_mul_Gamma_add_le_exp (p : ℂ) (a b : ℝ) {ε : ℝ} (hε : 0 < ε) :
-    ∃ K Y : ℝ, 0 < K ∧ 0 ≤ Y ∧ ∀ s : ℂ, s.re ∈ Icc a b → Y ≤ |s.im| →
-      ‖Complex.Gamma s * Complex.Gamma (s + p)‖ ≤ K * Real.exp (-((π - ε) * |s.im|)) := by
-  set ε₀ : ℝ := min ε π
-  have hε₀ : 0 < ε₀ := lt_min hε Real.pi_pos
-  have hε₀' : ε₀ ≤ π := min_le_right ε π
-  obtain ⟨K₀, hK₀, hΓ⟩ := exists_norm_Gamma_vertical_strip_le_exp
-    (min a (a + p.re)) (max b (b + p.re)) zero_lt_one (half_pos hε₀)
-  refine ⟨K₀ * K₀ * Real.exp ((π / 2 - ε₀ / 2) * |p.im|), 1 + |p.im|, by positivity,
-    by positivity, fun s hs hsim ↦ ?_⟩
-  have htri : |s.im| - |p.im| ≤ |(s + p).im| := by
-    simpa [sub_neg_eq_add, abs_neg] using abs_sub_abs_le_abs_sub s.im (-p.im)
-  have hG1 := hΓ s ⟨(min_le_left _ _).trans hs.1, hs.2.trans (le_max_left _ _)⟩
-    (by linarith [abs_nonneg p.im])
-  have hG2 := hΓ (s + p)
-    ⟨(min_le_right _ _).trans (by simpa using add_le_add_right hs.1 p.re),
-      le_trans (by simpa using add_le_add_right hs.2 p.re) (le_max_right _ _)⟩
-    (by linarith)
-  rw [norm_mul]
-  calc ‖Complex.Gamma s‖ * ‖Complex.Gamma (s + p)‖
-      ≤ (K₀ * Real.exp (-((π / 2 - ε₀ / 2) * |s.im|))) *
-          (K₀ * Real.exp (-((π / 2 - ε₀ / 2) * |(s + p).im|))) := by gcongr
-    _ = K₀ * K₀ * Real.exp (-((π / 2 - ε₀ / 2) * (|s.im| + |(s + p).im|))) := by
-        rw [mul_mul_mul_comm]; congr 1; rw [← Real.exp_add]; congr 1; ring
-    _ ≤ K₀ * K₀ * Real.exp ((π / 2 - ε₀ / 2) * |p.im| + -((π - ε₀) * |s.im|)) := by
-        gcongr; nlinarith [htri, hε₀']
-    _ = K₀ * K₀ * Real.exp ((π / 2 - ε₀ / 2) * |p.im|) * Real.exp (-((π - ε₀) * |s.im|)) := by
-        rw [Real.exp_add]; ring
-    _ ≤ K₀ * K₀ * Real.exp ((π / 2 - ε₀ / 2) * |p.im|) * Real.exp (-((π - ε) * |s.im|)) := by
-        gcongr; nlinarith [min_le_left ε π, abs_nonneg s.im]
 
 end TauCeti

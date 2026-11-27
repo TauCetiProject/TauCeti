@@ -41,11 +41,12 @@ integral, this yields the integral representation of generalized Airy functions.
 ## Proof outline
 
 1. **Exponential decay on vertical strips.** Stirling's vertical-strip formula
-   (`TauCeti.exists_abs_log_norm_Gamma_vertical_sub_le`) gives `‖Γ(s) Γ(s + p)‖` decaying like
-   `e^{-π |Im s|}` uniformly on `Re s ∈ [a, b]`, while `‖c^{-s}‖` grows at most like
-   `e^{|arg c| |Im s|}` (`Complex.norm_cpow_le_mul_exp_arg`) with `|arg c| < π` on
+   (`TauCeti.exists_norm_Gamma_add_vertical_strip_le`) gives `‖Γ(s) Γ(s + p)‖` decaying like
+   `(1 + |Im s|)^K e^{-π |Im s|}` uniformly on `Re s ∈ [a, b]`, while `‖c^{-s}‖` grows at most
+   like `e^{|arg c| |Im s|}` (`TauCeti.exists_norm_cpow_strip_le`) with `|arg c| < π` on
    `Complex.slitPlane`. Hence the integrand decays exponentially in `|Im s|` on every vertical
-   strip, giving both vertical-line integrability and vanishing horizontal rectangle caps.
+   strip, giving vanishing horizontal rectangle caps, while vertical-line Stirling bounds give
+   integrability.
 2. **Simple-pole residues.** For `p ∉ ℤ`, the poles of `c^{-s} Γ(s) Γ(s + p)` form two disjoint
    simple-pole lattices `-k` and `-p - k` (`k ∈ ℕ`). Euler's reflection formula converts their
    residues into `(π / sin (π p))` times the terms of `₀F₁(; 1 - p; c)` and
@@ -62,9 +63,9 @@ integral, this yields the integral representation of generalized Airy functions.
 
 ## Main results
 
-* `Complex.exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le_exp`: uniform exponential decay in
-  `|Im s|` of `c ^ (-s) * (Γ(s) * Γ(s + p))` on any vertical strip `Re s ∈ [a, b]` for
-  `c ∈ Complex.slitPlane`.
+* `Complex.exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le`: uniform vertical-strip decay
+  `O((1 + |T|)^K e^{-(π - |arg c|) |T|})` of `c ^ (-s) * (Γ(s) * Γ(s + p))` on `Re s ∈ [a, b]`
+  for `c ≠ 0`.
 * `Complex.integrable_cpow_neg_mul_Gamma_mul_Gamma_add`: vertical-line integrability of
   `y ↦ c^{-(σ + i y)} Γ(σ + i y) Γ(σ + i y + p)` for `c ∈ slitPlane` and pole-avoiding `σ`.
 * `Complex.residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_nat` and
@@ -120,31 +121,37 @@ private lemma differentiableAt_cpow_neg_mul_Gamma_mul_Gamma_add {c p s : ℂ} (h
   (differentiable_cpow_neg hc s).mul ((differentiableAt_Gamma s hs).mul
     ((differentiableAt_Gamma (s + p) hsp).comp s (differentiableAt_id.add_const p)))
 
-/-- On any vertical strip `Re s ∈ [a, b]` and for `c ∈ slitPlane`, the integrand
-`c ^ (-s) * (Γ(s) * Γ(s + p))` decays exponentially in `|Im s|` at rate `(π - |arg c|) / 2`. -/
-theorem exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le_exp {c p : ℂ} (hc : c ∈ slitPlane)
-    (a b : ℝ) :
-    ∃ K Y : ℝ, 0 < K ∧ 0 ≤ Y ∧ ∀ s : ℂ, s.re ∈ Icc a b → Y ≤ |s.im| →
-      ‖c ^ (-s) * (Gamma s * Gamma (s + p))‖ ≤
-        K * Real.exp (-((π - |c.arg|) / 2 * |s.im|)) := by
-  have hc0 : c ≠ 0 := slitPlane_ne_zero hc
-  set α : ℝ := (π - |c.arg|) / 2
-  have hα : 0 < α := half_pos (sub_pos.mpr (abs_arg_lt_pi_of_mem_slitPlane hc))
-  obtain ⟨KΓ, Y, hKΓ, hY, hΓ⟩ := TauCeti.exists_norm_Gamma_mul_Gamma_add_le_exp p a b hα
-  set M_c : ℝ := max (‖c‖ ^ (-b)) (‖c‖ ^ (-a))
-  have hM_c : 0 < M_c :=
-    lt_of_lt_of_le (Real.rpow_pos_of_pos (norm_pos_iff.mpr hc0) _) (le_max_left _ _)
-  refine ⟨M_c * KΓ, Y, mul_pos hM_c hKΓ, hY, fun s hs hsim ↦ ?_⟩
-  have hcpow : ‖c ^ (-s)‖ ≤ M_c * Real.exp (|c.arg| * |s.im|) := by
-    simpa only [neg_im, abs_neg] using
-      norm_cpow_le_max_mul_exp_arg_of_re_mem_Icc hc0 (d := -s)
-        ⟨by simpa using hs.2, by simpa using hs.1⟩
-  rw [norm_mul]
-  calc ‖c ^ (-s)‖ * ‖Gamma s * Gamma (s + p)‖
-      ≤ (M_c * Real.exp (|c.arg| * |s.im|)) * (KΓ * Real.exp (-((π - α) * |s.im|))) := by
-        gcongr; exact hΓ s hs hsim
-    _ = M_c * KΓ * Real.exp (|c.arg| * |s.im| + -((π - α) * |s.im|)) := by rw [Real.exp_add]; ring
-    _ = M_c * KΓ * Real.exp (-(α * |s.im|)) := by congr 2; simp only [α]; ring
+/-- On any vertical strip `x ∈ [a, b]` and for `c ≠ 0`, the integrand
+`c ^ (-s) * (Γ(s) * Γ(s + p))` at `s = x + i T` is `O((1 + |T|)^K exp (-(π - |arg c|) |T|))`
+once `|T| ≥ T₀`. -/
+theorem exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le {c p : ℂ} (hc : c ≠ 0) (a b : ℝ) :
+    ∃ C K T₀ : ℝ, 0 ≤ C ∧ ∀ x ∈ Icc a b, ∀ T : ℝ, T₀ ≤ |T| →
+      ‖c ^ (-((x : ℂ) + T * I)) * (Gamma (x + T * I) * Gamma (x + T * I + p))‖ ≤
+        C * ((1 + |T|) ^ K * Real.exp (-((π - |c.arg|) * |T|))) := by
+  obtain ⟨C₁, hC₁, K₁, T₁, h₁⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le 0 a b
+  obtain ⟨C₂, hC₂, K₂, T₂, h₂⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le p a b
+  obtain ⟨Cz, hzb⟩ := TauCeti.exists_norm_cpow_strip_le hc (-b) (-a)
+  refine ⟨max Cz 0 * C₁ * C₂, K₁ + K₂, max T₁ T₂, by positivity, fun x hx T hT ↦ ?_⟩
+  have hG₁ := h₁ x hx T ((le_max_left T₁ T₂).trans hT)
+  have hG₂ := h₂ x hx T ((le_max_right T₁ T₂).trans hT)
+  have hcpow := hzb (-x) ⟨neg_le_neg hx.2, neg_le_neg hx.1⟩ (-T)
+  rw [zero_add] at hG₁
+  rw [add_comm p] at hG₂
+  rw [show ((-x : ℝ) : ℂ) + ((-T : ℝ) : ℂ) * I = -((x : ℂ) + T * I) by push_cast; ring,
+    abs_neg] at hcpow
+  have hcpow' : ‖c ^ (-((x : ℂ) + T * I))‖ ≤ max Cz 0 * Real.exp (|c.arg| * |T|) :=
+    hcpow.trans (mul_le_mul_of_nonneg_right (le_max_left Cz 0) (Real.exp_pos _).le)
+  rw [norm_mul, norm_mul]
+  calc ‖c ^ (-((x : ℂ) + T * I))‖ * (‖Gamma (x + T * I)‖ * ‖Gamma (x + T * I + p)‖)
+      ≤ (max Cz 0 * Real.exp (|c.arg| * |T|)) *
+          ((C₁ * (1 + |T|) ^ K₁ * Real.exp (-(π * |T| / 2))) *
+            (C₂ * (1 + |T|) ^ K₂ * Real.exp (-(π * |T| / 2)))) := by gcongr
+    _ = max Cz 0 * C₁ * C₂ * (((1 + |T|) ^ K₁ * (1 + |T|) ^ K₂) *
+          (Real.exp (|c.arg| * |T|) * Real.exp (-(π * |T| / 2)) *
+            Real.exp (-(π * |T| / 2)))) := by ring
+    _ = max Cz 0 * C₁ * C₂ * ((1 + |T|) ^ (K₁ + K₂) * Real.exp (-((π - |c.arg|) * |T|))) := by
+        rw [← Real.rpow_add (by positivity), ← Real.exp_add, ← Real.exp_add]
+        congr 2; congr 1; ring
 
 /-- For `c ∈ Complex.slitPlane` and any abscissa `σ` avoiding the poles of `Γ(s)` and `Γ(s + p)`,
 the vertical Mellin–Barnes integrand `y ↦ c^{-(σ + i y)} Γ(σ + i y) Γ(σ + i y + p)` is
@@ -154,36 +161,35 @@ theorem integrable_cpow_neg_mul_Gamma_mul_Gamma_add {c p : ℂ} (hc : c ∈ slit
     Integrable fun y : ℝ ↦
       c ^ (-(σ + y * I)) * (Gamma (σ + y * I) * Gamma (σ + y * I + p)) := by
   have hc0 : c ≠ 0 := slitPlane_ne_zero hc
-  set α : ℝ := (π - |c.arg|) / 2
-  have hα : 0 < α := half_pos (sub_pos.mpr (abs_arg_lt_pi_of_mem_slitPlane hc))
-  -- Continuity along the vertical line and exponential tail bound give integrability.
+  have hα : 0 < π - |c.arg| := sub_pos.mpr (abs_arg_lt_pi_of_mem_slitPlane hc)
   have hcont : Continuous fun y : ℝ ↦
       c ^ (-(σ + y * I)) * (Gamma (σ + y * I) * Gamma (σ + y * I + p)) := by
     refine continuous_iff_continuousAt.mpr fun y ↦ ?_
     exact (differentiableAt_cpow_neg_mul_Gamma_mul_Gamma_add hc0
       (fun n h ↦ hσ n (by simpa using congrArg re h))
       (fun n h ↦ hσp n (by simpa using congrArg re h))).continuousAt.comp (by fun_prop)
-  obtain ⟨K, Y, _, _, hK⟩ := exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le_exp hc σ σ
-  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (hcont.continuousOn (s := Icc (-Y) Y))
-  set C : ℝ := max K (max M 0 * Real.exp (α * Y))
-  refine ((TauCeti.integrable_exp_neg_mul_abs hα).const_mul C).mono' hcont.aestronglyMeasurable
-    (Eventually.of_forall fun y ↦ ?_)
-  rcases le_total Y |y| with hy | hy
-  · refine (hK (σ + y * I) (by simp) (by simpa using hy)).trans ?_
-    simpa [α] using mul_le_mul_of_nonneg_right (le_max_left K _) (Real.exp_pos _).le
-  · have hMy : ‖c ^ (-(σ + y * I)) * (Gamma (σ + y * I) * Gamma (σ + y * I + p))‖ ≤ max M 0 :=
-      (hM y (abs_le.mp hy)).trans (le_max_left M 0)
-    have hexp : 1 ≤ Real.exp (α * Y) * Real.exp (-(α * |y|)) := by
-      rw [← Real.exp_add]
-      exact Real.one_le_exp (by nlinarith)
-    calc ‖c ^ (-(σ + y * I)) * (Gamma (σ + y * I) * Gamma (σ + y * I + p))‖
-        ≤ max M 0 * 1 := by simpa using hMy
-      _ ≤ max M 0 * (Real.exp (α * Y) * Real.exp (-(α * |y|))) :=
-        mul_le_mul_of_nonneg_left hexp (le_max_right M 0)
-      _ = (max M 0 * Real.exp (α * Y)) * Real.exp (-(α * |y|)) := by ring
-      _ ≤ C * Real.exp (-(α * |y|)) :=
-        mul_le_mul_of_nonneg_right (le_max_right K _) (Real.exp_pos _).le
+  obtain ⟨C₁, _, hG₁⟩ := TauCeti.exists_norm_Gamma_vertical_line_le hσ
+  obtain ⟨C₂, _, hG₂⟩ :=
+    TauCeti.exists_norm_Gamma_add_I_le (w := (σ : ℂ) + p) (by simpa using hσp)
+  set K : ℝ := (σ - 1 / 2) + (σ + p.re - 1 / 2)
+  refine ((TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_mul_abs K hα).const_mul
+    (‖c‖ ^ (-σ) * C₁ * C₂)).mono' hcont.aestronglyMeasurable (Eventually.of_forall fun y ↦ ?_)
+  have hcpow : ‖c ^ (-((σ : ℂ) + y * I))‖ ≤ ‖c‖ ^ (-σ) * Real.exp (|c.arg| * |y|) := by
+    simpa using norm_cpow_le_mul_exp_arg c (-((σ : ℂ) + y * I))
+  have hb₁ := hG₁ y
+  have hb₂ := hG₂ y
+  rw [show ((σ : ℂ) + p) + y * I = (σ : ℂ) + y * I + p by ring, add_re, ofReal_re] at hb₂
+  rw [norm_mul, norm_mul]
+  calc ‖c ^ (-((σ : ℂ) + y * I))‖ * (‖Gamma (σ + y * I)‖ * ‖Gamma (σ + y * I + p)‖)
+      ≤ (‖c‖ ^ (-σ) * Real.exp (|c.arg| * |y|)) *
+          ((C₁ * (1 + |y|) ^ (σ - 1 / 2) * Real.exp (-(π * |y| / 2))) *
+            (C₂ * (1 + |y|) ^ (σ + p.re - 1 / 2) * Real.exp (-(π * |y| / 2)))) := by gcongr
+    _ = ‖c‖ ^ (-σ) * C₁ * C₂ * (((1 + |y|) ^ (σ - 1 / 2) * (1 + |y|) ^ (σ + p.re - 1 / 2)) *
+          (Real.exp (|c.arg| * |y|) * Real.exp (-(π * |y| / 2)) *
+            Real.exp (-(π * |y| / 2)))) := by ring
+    _ = ‖c‖ ^ (-σ) * C₁ * C₂ * ((1 + |y|) ^ K * Real.exp (-((π - |c.arg|) * |y|))) := by
+        rw [← Real.rpow_add (by positivity), ← Real.exp_add, ← Real.exp_add]
+        congr 2; congr 1; ring
 
 /-! ### Residues at the two simple-pole lattices -/
 
@@ -232,6 +238,12 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_nat {c p : ℂ} (k : �
     show -(-(k : ℂ) - p) = p + k by ring, show -(k : ℂ) - p = -p - k by ring]
   ring
 
+/-- For `p ∉ ℤ`, `sin (π * p) ≠ 0`. -/
+private lemma sin_pi_mul_ne_zero_of_forall_ne_intCast {p : ℂ} (hp : ∀ m : ℤ, p ≠ m) :
+    sin (π * p) ≠ 0 :=
+  sin_ne_zero_iff.mpr fun m h ↦
+    hp m (mul_left_cancel₀ (ofReal_ne_zero.mpr pi_ne_zero) (by linear_combination h))
+
 /-- For `p ∉ ℤ` and `c ≠ 0`, the residue of `s ↦ c ^ (-s) * (Γ(s) * Γ(s + p))` at `s = -k` is
 `(π / sin (π * p))` times the `k`-th term of `₀F₁(; 1 - p; c)`. -/
 theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_nat_eq_regularizedHGFunCoeff
@@ -240,9 +252,8 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_nat_eq_regularizedHGFunCoef
       π / sin (π * p) * (regularizedHGFunCoeff 0 {1 - p} k * c ^ k) := by
   have hp_sub : ∀ m : ℕ, p - k ≠ -m := fun m h ↦
     hp ((k : ℤ) - m) (by push_cast; linear_combination h)
-  have hsin_ne : sin (π * p) ≠ 0 := sin_ne_zero_iff.mpr fun m h ↦
-    hp m (mul_left_cancel₀ (ofReal_ne_zero.mpr pi_ne_zero) (by linear_combination h))
-  have hrefl := neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin_ne k
+  have hrefl :=
+    neg_one_pow_div_factorial_mul_Gamma_sub_natCast (sin_pi_mul_ne_zero_of_forall_ne_intCast hp) k
   rw [residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_nat hc k hp_sub,
     regularizedHGFunCoeff_zero_singleton, mul_right_comm, hrefl]
   ring
@@ -262,8 +273,7 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_nat_eq_regularizedHGFun
     simp
   have hsin_ne : sin (π * (-p)) ≠ 0 := by
     rw [mul_neg, sin_neg, neg_ne_zero]
-    exact sin_ne_zero_iff.mpr fun m h ↦
-      hp m (mul_left_cancel₀ (ofReal_ne_zero.mpr pi_ne_zero) (by linear_combination h))
+    exact sin_pi_mul_ne_zero_of_forall_ne_intCast hp
   have hrefl := neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin_ne k
   rw [mul_neg, sin_neg, sub_neg_eq_add] at hrefl
   rw [residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_nat k hp_neg,
@@ -293,33 +303,6 @@ private lemma exists_open_strip_avoiding_poles {p : ℂ} {σ₁ σ₂ : ℝ}
       (h2 (lt_min hε₁ hε₂) (min_le_right _ _) k).mpr
         ⟨by simp only [sub_re, neg_re, natCast_re] at hs1; linarith,
          by simp only [sub_re, neg_re, natCast_re] at hs2; linarith⟩, rfl⟩)
-
-/-- Horizontal rectangle caps `∫_{σ₁}^{σ₂} f(x ± i T) dx` tend to `0` as `T → ∞`. -/
-private lemma tendsto_horizontal_cpow_neg_mul_Gamma_mul_Gamma_add
-    {c p : ℂ} (hc : c ∈ slitPlane) (σ₁ σ₂ : ℝ) (sgn : ℝ) (hsgn : |sgn| = 1) :
-    Tendsto (fun T : ℝ ↦ ∫ x : ℝ in σ₁..σ₂,
-        c ^ (-(x + (sgn * T : ℝ) * I)) *
-          (Gamma (x + (sgn * T : ℝ) * I) * Gamma (x + (sgn * T : ℝ) * I + p)))
-      atTop (𝓝 0) := by
-  set α : ℝ := (π - |c.arg|) / 2
-  have hα : 0 < α := half_pos (sub_pos.mpr (abs_arg_lt_pi_of_mem_slitPlane hc))
-  obtain ⟨K, Y, _, _, hK⟩ :=
-    exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le_exp hc (min σ₁ σ₂) (max σ₁ σ₂)
-  have hlim : Tendsto (fun T : ℝ ↦ K * Real.exp (-(α * T)) * |σ₂ - σ₁|) atTop (𝓝 0) := by
-    have h1 : Tendsto (fun T : ℝ ↦ Real.exp (-(α * T))) atTop (𝓝 0) :=
-      Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp (tendsto_id.const_mul_atTop hα))
-    simpa using (h1.const_mul K).mul_const |σ₂ - σ₁|
-  refine squeeze_zero_norm' ?_ hlim
-  filter_upwards [eventually_ge_atTop (max Y 0)] with T hT
-  have hT0 : 0 ≤ T := (le_max_right Y 0).trans hT
-  have hTY : Y ≤ |sgn * T| := by
-    rw [abs_mul, hsgn, one_mul, abs_of_nonneg hT0]
-    exact (le_max_left Y 0).trans hT
-  refine intervalIntegral.norm_integral_le_of_norm_le_const fun x hx ↦ ?_
-  have hx' : (↑x + ↑(sgn * T) * I : ℂ).re ∈ Icc (min σ₁ σ₂) (max σ₁ σ₂) := by
-    simpa [Set.uIcc] using Set.uIoc_subset_uIcc hx
-  simpa [α, abs_mul, hsgn, abs_of_nonneg hT0] using
-    hK (↑x + ↑(sgn * T) * I) hx' (by simpa using hTY)
 
 /-- Evaluation of the finite residue sum over the two disjoint pole families in `(σ₁, σ₂)`. -/
 private lemma sum_residue_strip_cpow_neg_mul_Gamma_mul_Gamma_add
@@ -402,18 +385,25 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_add_sub_integral_eq_sum_residue
           (hstrip_poles s (by linarith [hs.1]) (by linarith [hs.2]) (Or.inl ⟨k, hk⟩))))
         (fun k hk ↦ hsP (Finset.mem_coe.mpr (hstrip_poles s (by linarith [hs.1])
           (by linarith [hs.2]) (Or.inr ⟨k, by linear_combination hk⟩))))).differentiableWithinAt
-  have htop : Tendsto (fun T : ℝ ↦ ∫ x : ℝ in σ₁..σ₂, f (x + (T : ℝ) * I)) atTop (𝓝 0) := by
-    simpa [f] using tendsto_horizontal_cpow_neg_mul_Gamma_mul_Gamma_add hc σ₁ σ₂ 1 (by norm_num)
-  have hbot : Tendsto (fun T : ℝ ↦ ∫ x : ℝ in σ₁..σ₂, f (x + (T : ℝ) * I)) atBot (𝓝 0) := by
-    simpa [f, Function.comp_def] using
-      (tendsto_horizontal_cpow_neg_mul_Gamma_mul_Gamma_add (p := p) hc σ₁ σ₂ (-1)
-        (by norm_num)).comp tendsto_neg_atBot_atTop
-  exact TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue f hσ P hP
+  obtain ⟨C, K, T₀, _, hstrip⟩ := exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le hc0 σ₁ σ₂
+  have hα : 0 < π - |c.arg| := sub_pos.mpr (abs_arg_lt_pi_of_mem_slitPlane hc)
+  have hB : Tendsto (fun T : ℝ ↦ C * ((1 + |T|) ^ K * Real.exp (-((π - |c.arg|) * |T|))))
+      atTop (𝓝 0) := by
+    simpa using ((TauCeti.tendsto_one_add_abs_rpow_mul_exp_neg_mul_abs K hα).mono_left
+      atTop_le_cocompact).const_mul C
+  have hbound : ∀ᶠ (T : ℝ) in atTop, ∀ x ∈ Icc σ₁ σ₂,
+      ‖f ((x : ℂ) + T * I)‖ ≤ C * ((1 + |T|) ^ K * Real.exp (-((π - |c.arg|) * |T|))) ∧
+        ‖f ((x : ℂ) - T * I)‖ ≤ C * ((1 + |T|) ^ K * Real.exp (-((π - |c.arg|) * |T|))) := by
+    filter_upwards [eventually_ge_atTop T₀] with T hT x hx
+    refine ⟨hstrip x hx T (hT.trans (le_abs_self T)), ?_⟩
+    simpa [f, sub_eq_add_neg, abs_neg] using
+      hstrip x hx (-T) (by rw [abs_neg]; exact hT.trans (le_abs_self T))
+  exact TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue_of_norm_le f hσ P hP
     hdiff_closed.continuousOn
     (hdiff_closed.mono (sdiff_subset_sdiff_left fun _ ⟨h1, h2⟩ ↦ ⟨h1.le, h2.le⟩))
     (fun s _ ↦ meromorphicAt_cpow_neg_mul_Gamma_mul_Gamma_add hc0 s)
     (integrable_cpow_neg_mul_Gamma_mul_Gamma_add hc hσ₂ hσ₂p)
-    (integrable_cpow_neg_mul_Gamma_mul_Gamma_add hc hσ₁ hσ₁p) htop hbot
+    (integrable_cpow_neg_mul_Gamma_mul_Gamma_add hc hσ₁ hσ₁p) hB hbound
 
 /-- **Finite contour shift for `Γ(s) Γ(s + p)`.** For `c ∈ Complex.slitPlane`, `p ∉ ℤ`, and any
 two pole-avoiding abscissas `σ₁ ≤ σ₂`, the difference of the vertical integrals along `Re s = σ₂`
@@ -470,11 +460,12 @@ private lemma exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_sub_natCast_le
     have h := hG₁ (N := N) (hceil₀ ▸ Nat.zero_le N) y
     rw [hceil₀, Nat.sub_zero] at h
     refine h.trans_eq' (congrArg (fun z ↦ ‖Gamma z‖) ?_)
-    apply Complex.ext <;> simp [s]; ring
+    simp only [s]; push_cast; ring
   have hb₂ : ‖Gamma (s + p)‖ ≤ C₂ * Real.exp (π * |p.im| / 2) * Real.exp (-(π * |y| / 2)) := by
     have h := hG₂ hMN (y + p.im)
     rw [show ((p.re - δ : ℝ) : ℂ) - N + (y + p.im : ℝ) * I = s + p by
-      apply Complex.ext <;> simp [s]; ring] at h
+      dsimp [s]; conv_rhs => rw [← re_add_im p]
+      push_cast; ring] at h
     have hfac1 : (1 : ℝ) ≤ (Nat.factorial (N - M) : ℝ) :=
       by exact_mod_cast Nat.factorial_pos (N - M)
     have htri : |y| - |p.im| ≤ |y + p.im| := by
