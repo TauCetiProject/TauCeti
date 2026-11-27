@@ -23,10 +23,9 @@ restricts symmetrization to a **linear** equivalence
 generators over all orders with weight `1/m!`, and it carries the word-degree filtration of the
 invariants onto the PBW filtration of the centre
 (`TauCeti.UniversalEnvelopingAlgebra.lieInvariantsCenterEquiv_mem_centerPBWFiltration_iff`). It is
-a linear equivalence only: it is not claimed to be multiplicative on invariant tensors. This is the
-first of the three centre comparisons of the reductive Harish-Chandra layer; the second is the
+a linear equivalence only: it is not claimed to be multiplicative on invariant tensors. Compare the
 graded identification of the PBW symbols of central elements with the homogeneous invariants
-(`TauCeti.UniversalEnvelopingAlgebra.centerPBWGradedInvariantIso`).
+(`TauCeti.UniversalEnvelopingAlgebra.centerPBWGradedInvariantIso`, for free `L`).
 
 No freeness of `L` over `R` is needed, since the symmetrization equivalence exists for every Lie
 algebra over a commutative `ℚ`-algebra.
@@ -62,33 +61,27 @@ local notation "F" => TauCeti.Algebra.wordFiltration (SymmetricAlgebra.ι R L)
 /-- **Symmetrization identifies the Lie invariants with the centre**, as `R`-modules: PBW
 symmetrization restricts to a linear equivalence `Sym(L)^L ≃ₗ[R] Z(U(L))`. It is not
 multiplicative in general. -/
-@[expose] noncomputable def lieInvariantsCenterEquiv :
-    lieInvariants R L L ≃ₗ[R] Subalgebra.center R U where
-  toFun p := ⟨pbwSymmetrizationEquiv R L (p : SymmetricAlgebra R L), by
-    rw [pbwSymmetrizationEquiv_apply, pbwSymmetrizationMap_mem_center_iff]
-    exact p.property⟩
-  invFun z := ⟨(pbwSymmetrizationEquiv R L).symm (z : U), by
-    rw [← pbwSymmetrizationMap_mem_center_iff, ← pbwSymmetrizationEquiv_apply,
-      LinearEquiv.apply_symm_apply]
-    exact z.property⟩
-  map_add' p q := Subtype.ext (map_add (pbwSymmetrizationEquiv R L) (p : SymmetricAlgebra R L) q)
-  map_smul' r p := Subtype.ext (map_smul (pbwSymmetrizationEquiv R L) r (p : SymmetricAlgebra R L))
-  left_inv p :=
-    Subtype.ext ((pbwSymmetrizationEquiv R L).symm_apply_apply (p : SymmetricAlgebra R L))
-  right_inv z := Subtype.ext ((pbwSymmetrizationEquiv R L).apply_symm_apply (z : U))
+noncomputable def lieInvariantsCenterEquiv :
+    lieInvariants R L L ≃ₗ[R] Subalgebra.center R U :=
+  (pbwSymmetrizationEquiv R L).ofSubmodules (Subalgebra.toSubmodule (lieInvariants R L L))
+    (Subalgebra.toSubmodule (Subalgebra.center R U)) <| by
+      ext z
+      rw [Submodule.mem_map_equiv, Subalgebra.mem_toSubmodule, Subalgebra.mem_toSubmodule,
+        ← pbwSymmetrizationMap_mem_center_iff, ← pbwSymmetrizationEquiv_apply,
+        LinearEquiv.apply_symm_apply]
 
 /-- The equivalence `Sym(L)^L ≃ₗ[R] Z(U(L))` is symmetrization. -/
 @[simp]
 theorem coe_lieInvariantsCenterEquiv_apply (p : lieInvariants R L L) :
     (lieInvariantsCenterEquiv R L p : U) = pbwSymmetrizationMap R L p :=
-  pbwSymmetrizationEquiv_apply R L _
+  (LinearEquiv.ofSubmodules_apply _ _ _).trans (pbwSymmetrizationEquiv_apply R L _)
 
 /-- The inverse of `Sym(L)^L ≃ₗ[R] Z(U(L))` is the inverse of symmetrization. -/
 @[simp]
 theorem coe_lieInvariantsCenterEquiv_symm_apply (z : Subalgebra.center R U) :
     ((lieInvariantsCenterEquiv R L).symm z : SymmetricAlgebra R L) =
       (pbwSymmetrizationEquiv R L).symm z :=
-  rfl
+  (rfl)
 
 /-- **The averaging formula**: on an invariant written as a product of `m` generators, the
 equivalence is `1/m!` times the sum of the products in all `m!` orders. -/
@@ -102,12 +95,8 @@ theorem coe_lieInvariantsCenterEquiv_prod_ι (m : ℕ) (x : Fin m → L)
 
 /-- The equivalence sends `1` to `1`. -/
 @[simp]
-theorem lieInvariantsCenterEquiv_one : lieInvariantsCenterEquiv R L 1 = 1 := by
-  apply Subtype.ext
-  have h : ∏ j : Fin 0, SymmetricAlgebra.ι R L (Fin.elim0 j) = 1 := Finset.prod_empty
-  rw [coe_lieInvariantsCenterEquiv_apply, OneMemClass.coe_one, OneMemClass.coe_one, ← h,
-    pbwSymmetrizationMap_prod_ι]
-  simp
+theorem lieInvariantsCenterEquiv_one : lieInvariantsCenterEquiv R L 1 = 1 :=
+  Subtype.ext ((coe_lieInvariantsCenterEquiv_apply R L 1).trans (pbwSymmetrizationMap_one R L))
 
 /-- **The equivalence is filtered in both directions**: an invariant has word degree at most `k`
 exactly when its symmetrization lies in the `k`-th step of the PBW filtration of the centre. -/
@@ -119,7 +108,8 @@ theorem lieInvariantsCenterEquiv_mem_centerPBWFiltration_iff {k : ℕ} {p : lieI
 
 /-- The inverse equivalence is filtered: a central element has PBW degree at most `k` exactly when
 the invariant it comes from has word degree at most `k`. -/
-theorem coe_lieInvariantsCenterEquiv_symm_mem_iff {k : ℕ} {z : Subalgebra.center R U} :
+theorem coe_lieInvariantsCenterEquiv_symm_mem_wordFiltration_iff {k : ℕ}
+    {z : Subalgebra.center R U} :
     ((lieInvariantsCenterEquiv R L).symm z : SymmetricAlgebra R L) ∈ F k ↔
       z ∈ centerPBWFiltration R L k := by
   rw [← lieInvariantsCenterEquiv_mem_centerPBWFiltration_iff, LinearEquiv.apply_symm_apply]
