@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.ZLattice.Complex
 public import TauCeti.Analysis.Complex.AppellHumbert.Basic
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
+import TauCeti.LinearAlgebra.Complex.Determinant
 import Mathlib.Algebra.Ring.Int.Parity
 
 /-!
@@ -142,7 +143,11 @@ private theorem im_hermitianForm_periods (L : PeriodPair) (a b c d : ℤ) :
     (hermitianForm L.lattice (a * L.ω₁ + b * L.ω₂) (c * L.ω₁ + d * L.ω₂)).im = (a * d - b * c : ℤ) ∨
       (hermitianForm L.lattice (a * L.ω₁ + b * L.ω₂) (c * L.ω₁ + d * L.ω₂)).im =
         (-(a * d - b * c) : ℤ) := by
-  rw [im_hermitianForm, L.im_mul_conj_eq_det, mul_div_assoc]
+  have hflip (u v : ℂ) : (u * conj v).im = -(conj u * v).im := by
+    simp only [mul_im, conj_re, conj_im]
+    ring
+  rw [im_hermitianForm, hflip, TauCeti.im_conj_intCast_mul_add_mul_intCast_mul_add, ← mul_neg,
+    ← hflip, mul_div_assoc]
   rcases im_hermitianForm_basis_eq_one_or_eq_neg_one L.lattice L.latticeBasis with hk | hk <;>
     rw [PeriodPair.latticeBasis_zero, PeriodPair.latticeBasis_one, im_hermitianForm] at hk <;>
     rw [hk]
@@ -312,7 +317,7 @@ noncomputable def sigmaSignData : TauCeti.AppellHumbertData Λ :=
 
 variable (Λ) in
 /-- The datum `(H, ε)` is the Appell–Humbert datum of `Λ` for the multiplier `ε`. -/
-theorem sigmaSignData_eq : sigmaSignData Λ =
+theorem sigmaSignData_def : sigmaSignData Λ =
     appellHumbertData Λ (sigmaSign Λ) (isAppellHumbertMultiplier_sigmaSign Λ) := by
   rw [sigmaSignData]
 
@@ -320,6 +325,6 @@ variable (Λ) in
 /-- The semicharacter of the datum `(H, ε)` is the sign `ε`. -/
 @[simp]
 theorem semichar_sigmaSignData : (sigmaSignData Λ).semichar = sigmaSign Λ := by
-  rw [sigmaSignData_eq, semichar_appellHumbertData]
+  rw [sigmaSignData_def, semichar_appellHumbertData]
 
 end ZLattice

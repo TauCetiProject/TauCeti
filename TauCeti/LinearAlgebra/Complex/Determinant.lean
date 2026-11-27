@@ -27,7 +27,9 @@ for the injective complex-linear endomorphisms
 
 Two complex numbers `ω₁`, `ω₂` are linearly independent over `ℝ` exactly when their real
 determinant, the oriented area `Im (conj ω₁ ω₂)` of the parallelogram they span, is nonzero
-(`TauCeti.linearIndependent_pair_iff_im_conj_mul_ne_zero`).
+(`TauCeti.linearIndependent_pair_iff_im_conj_mul_ne_zero`). Passing to the integral combinations
+`a ω₁ + b ω₂`, `c ω₁ + d ω₂` multiplies this oriented area by the determinant `a d - b c`
+(`TauCeti.im_conj_intCast_mul_add_mul_intCast_mul_add`).
 -/
 
 public section
@@ -118,5 +120,15 @@ theorem linearIndependent_pair_iff_im_conj_mul_ne_zero {ω₁ ω₂ : ℂ} :
     have h1 : t * (ω₁.re * ω₂.im - ω₁.im * ω₂.re) = 0 := by
       linear_combination ω₁.re * hi - ω₁.im * hre
     exact ⟨by simpa [hω] using h0, by simpa [hω] using h1⟩
+
+/-- **The orientation of a sublattice basis.** For integers `a, b, c, d`,
+`Im (conj (a ω₁ + b ω₂) (c ω₁ + d ω₂)) = (a d - b c) Im (conj ω₁ ω₂)`. -/
+theorem im_conj_intCast_mul_add_mul_intCast_mul_add {ω₁ ω₂ : ℂ} (a b c d : ℤ) :
+    (conj (a * ω₁ + b * ω₂) * (c * ω₁ + d * ω₂)).im =
+      ((a * d - b * c : ℤ) : ℝ) * (conj ω₁ * ω₂).im := by
+  simp only [map_add, map_mul, map_intCast, mul_im, add_im, add_re, mul_re, conj_re, conj_im,
+    intCast_re, intCast_im]
+  push_cast
+  ring
 
 end TauCeti

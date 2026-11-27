@@ -36,15 +36,12 @@ a period exactly when `m` and `n` are even (`PeriodPair.div_two_mem_lattice_iff`
 this also shows that `ℂ / Λ` has exactly three points of order two: given three distinct ones `t`,
 `t'`, `t - t'`, every half-period is congruent to `0`, `t`, `t'` or `t - t'`
 (`PeriodPair.mem_lattice_or_sub_mem_lattice_of_two_mul_mem`).
-
-In the coordinates of a period pair, `Im ((m ω₁ + n ω₂) conj (m' ω₁ + n' ω₂))` is the determinant
-`m n' - n m'` times `Im (ω₁ conj(ω₂))` (`PeriodPair.im_mul_conj_eq_det`).
 -/
 
 public section
 
 open Filter
-open scoped Topology ComplexConjugate
+open scoped Topology
 
 namespace Submodule
 
@@ -153,16 +150,6 @@ theorem div_two_mem_lattice_iff (m n : ℤ) :
     (m * L.ω₁ + n * L.ω₂) / 2 ∈ L.lattice ↔ Even m ∧ Even n := by
   simpa [ZMod.intCast_zmod_eq_zero_iff_dvd, even_iff_two_dvd] using
     L.div_mem_lattice_iff_intCast_eq_zero (N := 2) (m := m) (n := n)
-
-/-- In the coordinates of a period pair, `Im ((m ω₁ + n ω₂) conj (m' ω₁ + n' ω₂))` is the
-determinant `m n' - n m'` times `Im (ω₁ conj(ω₂))`. -/
-theorem im_mul_conj_eq_det (m n m' n' : ℤ) :
-    ((m * L.ω₁ + n * L.ω₂) * conj (m' * L.ω₁ + n' * L.ω₂)).im =
-      (m * n' - n * m' : ℤ) * (L.ω₁ * conj L.ω₂).im := by
-  simp only [map_add, map_mul, map_intCast, Complex.mul_im, Complex.mul_re, Complex.add_re,
-    Complex.add_im, Complex.intCast_re, Complex.intCast_im, Complex.conj_re, Complex.conj_im]
-  push_cast
-  ring
 
 /-- **The points of order two of `ℂ / Λ`.** If `t`, `t'` and `t - t'` are half-periods outside
 the lattice, every half-period `x` is congruent modulo the lattice to `0`, `t`, `t'` or

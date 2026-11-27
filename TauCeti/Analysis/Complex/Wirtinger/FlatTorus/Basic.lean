@@ -18,6 +18,7 @@ import TauCeti.Algebra.Group.Action.Pow
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.TwistedWirtinger
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
+import TauCeti.LinearAlgebra.Complex.Determinant
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Rectangle
 
@@ -643,16 +644,6 @@ theorem mul_setIntegral_norm_sq_le_setIntegral_norm_wirtingerDeriv_sq (hu : Cont
 end Estimate
 
 section Irrational
-
-/-- **The orientation of a sublattice basis.** For integers `a, b, c, d`,
-`Im (conj (a ω₁ + b ω₂) (c ω₁ + d ω₂)) = (a d - b c) Im (conj ω₁ ω₂)`. -/
-theorem im_conj_intCast_mul_add_mul_intCast_mul_add (a b c d : ℤ) :
-    (conj (a * ω₁ + b * ω₂) * (c * ω₁ + d * ω₂)).im =
-      ((a * d - b * c : ℤ) : ℝ) * (conj ω₁ * ω₂).im := by
-  simp only [map_add, map_mul, map_intCast, mul_im, add_im, add_re, mul_re, conj_re, conj_im,
-    intCast_re, intCast_im]
-  push_cast
-  ring
 
 /-- **A sublattice basis is linearly independent.** If `ω₁, ω₂` are linearly independent over `ℝ`
 and `a d - b c ≠ 0`, then so are `a ω₁ + b ω₂` and `c ω₁ + d ω₂`. -/
