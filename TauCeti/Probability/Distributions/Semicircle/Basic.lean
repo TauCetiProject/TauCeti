@@ -38,6 +38,8 @@ Semicircle laws with other centres and variances, including the radius-two, vari
   variance is `1 / 4`.
 * `integrableExpSet_id_semicircleMeasure`: every exponential moment is finite.
 * `integrable_pow_semicircleMeasure`: every natural power is integrable.
+* the results in `ProbabilityTheory.HasLaw` transfer the carrier, natural moments, mean, variance,
+  and exponential integrability to random variables with the unit-radius semicircle law.
 
 ## References
 
@@ -146,3 +148,45 @@ theorem integrable_pow_semicircleMeasure (n : ℕ) :
   simp only [integrableExpSet_id_semicircleMeasure, interior_univ, mem_univ]
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+
+/-- A random variable with the unit-radius semicircle law lies almost everywhere in `(-1, 1)`. -/
+theorem ae_mem_Ioo_semicircleMeasure (hX : HasLaw X semicircleMeasure P) :
+    ∀ᵐ ω ∂P, X ω ∈ Set.Ioo (-1 : ℝ) 1 :=
+  hX.ae_iff measurableSet_Ioo.mem |>.2 TauCeti.Probability.ae_mem_Ioo_semicircleMeasure
+
+/-- Every natural power of a unit-radius semicircle random variable is integrable. -/
+theorem integrable_pow_semicircleMeasure (hX : HasLaw X semicircleMeasure P) (n : ℕ) :
+    Integrable (fun ω ↦ X ω ^ n) P :=
+  hX.integrable_fun_comp (TauCeti.Probability.integrable_pow_semicircleMeasure n)
+
+/-- The natural raw moments of a unit-radius semicircle random variable. -/
+theorem integral_pow_semicircleMeasure (hX : HasLaw X semicircleMeasure P) (n : ℕ) :
+    ∫ ω, X ω ^ n ∂P =
+      ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * (-1) ^ (n - k) * 2 ^ k *
+        (Real.Gamma (3 / 2 + k) * 2 / (Real.Gamma (3 / 2) * (k + 2).factorial)) := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ n), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_pow_semicircleMeasure]
+
+/-- The expectation of a unit-radius semicircle random variable is zero. -/
+theorem integral_semicircleMeasure (hX : HasLaw X semicircleMeasure P) : ∫ ω, X ω ∂P = 0 := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_semicircleMeasure]
+
+/-- The variance of a unit-radius semicircle random variable is one quarter. -/
+theorem variance_semicircleMeasure (hX : HasLaw X semicircleMeasure P) :
+    variance X P = 1 / 4 := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_semicircleMeasure]
+
+/-- Every real exponential moment of a unit-radius semicircle random variable is integrable. -/
+theorem integrable_exp_mul_semicircleMeasure (hX : HasLaw X semicircleMeasure P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P := by
+  refine hX.integrable_fun_comp (f := fun x : ℝ ↦ Real.exp (t * x)) ?_
+  have ht : t ∈ integrableExpSet id semicircleMeasure := by simp
+  simpa only [integrableExpSet, Set.mem_ofPred_eq, id_eq] using ht
+
+end ProbabilityTheory.HasLaw

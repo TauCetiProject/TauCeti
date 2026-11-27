@@ -14,6 +14,8 @@ The arcsine distribution on the unit interval is the beta distribution with both
 parameters equal to one half. This file records the measure-level definition, its exact
 topological support, natural moments, mean, variance, and exponential-integrability domain.
 Defining the law as a beta measure makes these results direct specializations of the beta theory.
+The corresponding `ProbabilityTheory.HasLaw` results expose the same support, moment, and
+exponential-integrability facts for random variables carrying the arcsine law.
 
 ## References
 
@@ -98,3 +100,45 @@ theorem integrableExpSet_id_arcsineMeasure : integrableExpSet id arcsineMeasure 
       (show (0 : ℝ) < 1 / 2 by norm_num)
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+
+/-- A random variable with the arcsine law lies almost everywhere in the open unit interval. -/
+theorem ae_mem_Ioo_arcsineMeasure (hX : HasLaw X arcsineMeasure P) :
+    ∀ᵐ ω ∂P, X ω ∈ Set.Ioo (0 : ℝ) 1 :=
+  hX.ae_iff measurableSet_Ioo.mem |>.2 TauCeti.Probability.ae_mem_Ioo_arcsineMeasure
+
+/-- Every natural power of an arcsine random variable is integrable. -/
+theorem integrable_pow_arcsineMeasure (hX : HasLaw X arcsineMeasure P) (n : ℕ) :
+    Integrable (fun ω ↦ X ω ^ n) P :=
+  hX.integrable_fun_comp (TauCeti.Probability.integrable_pow_arcsineMeasure n)
+
+/-- The natural raw moments of an arcsine random variable. -/
+theorem integral_pow_arcsineMeasure (hX : HasLaw X arcsineMeasure P) (n : ℕ) :
+    ∫ ω, X ω ^ n ∂P =
+      Real.Gamma (1 / 2 + n) * Real.Gamma (1 / 2 + 1 / 2) /
+        (Real.Gamma (1 / 2) * Real.Gamma (1 / 2 + 1 / 2 + n)) := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ n), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_pow_arcsineMeasure]
+
+/-- The expectation of an arcsine random variable is one half. -/
+theorem integral_arcsineMeasure (hX : HasLaw X arcsineMeasure P) : ∫ ω, X ω ∂P = 1 / 2 := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_arcsineMeasure]
+
+/-- The variance of an arcsine random variable is one eighth. -/
+theorem variance_arcsineMeasure (hX : HasLaw X arcsineMeasure P) :
+    variance X P = 1 / 8 := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_arcsineMeasure]
+
+/-- Every real exponential moment of an arcsine random variable is integrable. -/
+theorem integrable_exp_mul_arcsineMeasure (hX : HasLaw X arcsineMeasure P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P := by
+  refine hX.integrable_fun_comp (f := fun x : ℝ ↦ Real.exp (t * x)) ?_
+  have ht : t ∈ integrableExpSet id arcsineMeasure := by simp
+  simpa only [integrableExpSet, Set.mem_ofPred_eq, id_eq] using ht
+
+end ProbabilityTheory.HasLaw
