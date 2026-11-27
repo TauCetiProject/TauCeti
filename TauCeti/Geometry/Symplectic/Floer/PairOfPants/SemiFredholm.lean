@@ -15,6 +15,7 @@ import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Topology.Compactness.Normed
 
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator on the pair of pants
@@ -702,7 +703,8 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
       (hu z (hKS hz)).continuousAt).continuousWithinAt
   obtain ⟨M, hMq, hMc⟩ := hK.exists_forall_norm_fderiv_le
     (fun q z hz ↦ contDiffAt_endCutoff R₀ q (hKS hz)) fun z hz ↦ fderiv_coreCutoff R₀ (hKS hz)
-  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_one_le_mul_of_continuousOn hK hKS hwc hwS
+  obtain ⟨Λ, hΛ₀, hΛ⟩ := hK.exists_forall_le_and_one_le_mul_of_continuousOn (hwc.mono hKS)
+    fun z hz ↦ hwS z (hKS hz)
   -- The estimate on the compact core `K`.
   obtain ⟨C₀, hC₀, hint⟩ :=
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK

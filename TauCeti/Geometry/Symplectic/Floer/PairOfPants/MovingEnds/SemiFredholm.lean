@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
+import TauCeti.Topology.Compactness.Normed
 import TauCeti.Topology.Separation.Basic
 
 /-!
@@ -874,7 +875,8 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
   obtain ⟨M, hMe, hMc⟩ := hK.exists_forall_norm_fderiv_le
     (fun e z hz ↦ contDiffAt_movingEndCutoff ha (by linarith) e (hKU hz))
     fun z hz ↦ fderiv_movingCoreCutoff ha (by linarith) (hKU hz)
-  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_one_le_mul_of_continuousOn hK hKU hwc hwU
+  obtain ⟨Λ, hΛ₀, hΛ⟩ := hK.exists_forall_le_and_one_le_mul_of_continuousOn (hwc.mono hKU)
+    fun z hz ↦ hwU z (hKU hz)
   -- The estimate on the compact core `K`.
   obtain ⟨C₀, hC₀, hint⟩ :=
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK

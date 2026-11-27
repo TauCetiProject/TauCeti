@@ -50,8 +50,6 @@ that is positive on `S`.
 * `TauCeti.SymplecticForm.mul_integral_mul_norm_floerLinearizationAdjoint_sq_le_of_le`: if
   `0 ≤ g ≤ w` on the support of `η`, then `C ∫ g ‖D_u^* η‖² ≤ max C 0 ∫ w ‖D_u^* η‖²`; this
   replaces the weights of the end estimates by `w`.
-* `TauCeti.Floer.exists_forall_le_and_one_le_mul_of_continuousOn`: a weight `w` that is continuous
-  and positive on `S` satisfies `w ≤ Λ` and `1 ≤ Λ w` on a compact `K ⊆ S`, for some `Λ ≥ 0`.
 * `setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_smul_add`, in the
   namespace `TauCeti.SymplecticForm`: the core estimate of the adjoint. If `D_u^*` satisfies an
   `L²` estimate on covector fields supported in `K`, `1 ≤ Λ w` on `K`, and the cutoff `f` is `1` to
@@ -122,23 +120,6 @@ theorem continuous_sobolevDensity_covectorPullback {V : Type*} [NormedAddCommGro
     filter_upwards [((isClosed_tsupport η).isOpen_compl.preimage hφ.continuous).mem_nhds hζ]
       with ζ' hζ'
     exact covectorPullback_eq_zero_of_apply_eq_zero φ J u (image_eq_zero_of_notMem_tsupport hζ')
-
-/-- **Bounding the weight on the core.** A weight `w` that is continuous and positive on a set `S`
-is bounded above and below on a compact set `K ⊆ S`: there is `Λ ≥ 0` with `w ≤ Λ` and
-`1 ≤ Λ w` on `K`. -/
-theorem exists_forall_le_and_one_le_mul_of_continuousOn {X : Type*} [TopologicalSpace X]
-    {w : X → ℝ} {S K : Set X} (hK : IsCompact K) (hKS : K ⊆ S) (hwc : ContinuousOn w S)
-    (hwS : ∀ z ∈ S, 0 < w z) :
-    ∃ Λ, 0 ≤ Λ ∧ ∀ z ∈ K, w z ≤ Λ ∧ 1 ≤ Λ * w z := by
-  obtain ⟨Λ, hΛ⟩ := hK.exists_bound_of_continuousOn
-    ((hwc.add (hwc.inv₀ fun z hz ↦ (hwS z hz).ne')).mono hKS)
-  refine ⟨max Λ 0, le_max_right _ _, fun z hz ↦ ?_⟩
-  have hw := hwS z (hKS hz)
-  have h : w z + (w z)⁻¹ ≤ max Λ 0 :=
-    (Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left Λ 0))
-  refine ⟨by linarith [inv_pos.2 hw], ?_⟩
-  rw [← inv_mul_cancel₀ hw.ne']
-  exact mul_le_mul_of_nonneg_right (by linarith) hw.le
 
 end TauCeti.Floer
 
