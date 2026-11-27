@@ -24,8 +24,8 @@ agree, `isScalarTower_completionExtensionAlgebra` also identifies the original c
 through the completed extension. The completed extension restricts to an injective local
 homomorphism `completionIntegersExtension` of completed valuation rings, whose algebra
 `completionIntegersExtensionAlgebra` is likewise installed locally and makes `𝒪̂_{P'}` a
-torsion-free `𝒪̂_P`-subalgebra of `F̂_{P'}` (`completionIntegersExtension_injective`,
-`isScalarTower_completionIntegers`, `isTorsionFree_completionIntegers`).
+torsion-free `𝒪̂_P`-subalgebra of `F̂_{P'}` (`isScalarTower_completionIntegersExtensionAlgebra`,
+`isTorsionFree_completionIntegers`).
 No finiteness, separability, or residue-field assumptions are needed.
 
 The construction uses Mathlib's `UniformSpace.Completion.mapRingHom`. The valuation-extension

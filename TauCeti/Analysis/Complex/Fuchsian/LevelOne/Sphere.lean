@@ -166,12 +166,8 @@ theorem degree_jSphere : degree jSphere = 1 := by
       {ofCusp cuspOrbitInfty} := by
     ext x
     simp
-  have hfinset : (jFiniteHolomorphicMap.finite_fiber (∞ : OnePoint ℂ)).toFinset =
-      {ofCusp cuspOrbitInfty} := by
-    ext x
-    simp only [Set.Finite.mem_toFinset, hfiber, mem_singleton_iff, Finset.mem_singleton]
   rw [← coe_jFiniteHolomorphicMap,
-    degree_eq_fiber_sum jFiniteHolomorphicMap (∞ : OnePoint ℂ), hfinset]
+    degree_eq_localMultiplicity_of_preimage_eq_singleton jFiniteHolomorphicMap hfiber]
   simp
 
 /-- The normalized modular invariant identifies the compactified level-one modular quotient

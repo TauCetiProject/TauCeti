@@ -107,8 +107,9 @@ example : ∃ (F : ℕᵒᵖ ⥤ TopCat.{0}) (s : Set (F.obj (Opposite.op 0))),
     obtain ⟨x, hx⟩ := hsurj True
     have hTF : True = False := hx.symm.trans (hcoord x 0)
     exact hTF.mp trivial
-  · exact exists_preimage_eq_of_isLimit F hF _ (limitConeIsLimit F)
-      isOpen_singleton_true isCompact_singleton isOpen_empty isCompact_empty
-      (by simpa using hempty)
+  · exact exists_preimage_eq_of_isConstructible F hF _ (limitConeIsLimit F)
+      (s := ({True} : Set Prop)) (t := ∅)
+      (isCompact_singleton.isConstructible isOpen_singleton_true)
+      (isCompact_empty.isConstructible isOpen_empty) (by simpa using hempty)
 
 end TauCeti

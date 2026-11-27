@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Regular
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.Integrable
+public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.TurningPoint
 import Mathlib.Topology.LocalAtTarget
 import TauCeti.Geometry.Manifold.RegularValue.Factorization
 import TauCeti.Topology.Connected.Basic
@@ -25,13 +26,15 @@ equilibria
 This file collects the regular values of `F` lying in its image into an open subset `B` of the
 plane (`TauCeti.sphericalPendulumRegularValues`): these are the values of `F` other than the
 values `(-1, 0)` and `(1, 0)` of the equilibria and the values of the relative equilibria
-(`TauCeti.mem_sphericalPendulumRegularValues_iff_mem_image_and_ne`). The energy–momentum map is
-proper and its fibres are connected, so over `B`, that is on the open set
-`TauCeti.sphericalPendulumRegularPart` of states over `B`, it is a regular Lagrangian torus
-fibration (`TauCeti.isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec`), an instance of
-`TauCeti.SmoothTwoForm.IsIntegrableSystem.isLagrangianTorusFibration_restrictPreimage`. So its
-fibres are two-tori (`IsLagrangianTorusFibration.nonempty_homeomorph_unitAddTorus`), and it
-carries the fibrewise action of `T*B` and the period lattices
+(`TauCeti.mem_sphericalPendulumRegularValues_iff_mem_image_and_ne`); off the axis `j = 0` they lie
+strictly above the curve of relative equilibria
+(`TauCeti.mem_sphericalPendulumTurningPointDomain_of_mem_sphericalPendulumRegularValues`). The
+energy–momentum map is proper and its fibres are connected, so over every open set `U ⊆ B` of
+regular values, for instance `B` itself, it is a regular Lagrangian torus fibration on the open set
+of states over `U` (`TauCeti.isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec`), an
+instance of `TauCeti.SmoothTwoForm.IsIntegrableSystem.isLagrangianTorusFibration_restrictPreimage`.
+So its fibres are two-tori (`IsLagrangianTorusFibration.nonempty_homeomorph_unitAddTorus`), and it
+carries the fibrewise action of `T*U` and the period lattices
 (`IsLagrangianTorusFibration.periodLattice`) of Lagrangian torus fibrations.
 
 The base `B` contains a punctured neighbourhood of `(1, 0)`
@@ -42,12 +45,13 @@ such a loop is the Hamiltonian monodromy of the spherical pendulum.
 ## Main declarations
 
 * `TauCeti.sphericalPendulumRegularValues`: the open set of regular values in the image of `F`.
-* `TauCeti.sphericalPendulumRegularPart`: the open set of states over it.
 * `TauCeti.mem_sphericalPendulumRegularValues_iff_mem_image_and_ne`: its explicit description.
+* `TauCeti.mem_sphericalPendulumTurningPointDomain_of_mem_sphericalPendulumRegularValues`: a regular
+  value off the axis lies strictly above the curve of relative equilibria.
 * `TauCeti.eventually_mem_sphericalPendulumRegularValues_nhdsNE`: it contains a punctured
   neighbourhood of the focus–focus value `(1, 0)`.
-* `TauCeti.isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec`: over it, `F` is a regular
-  Lagrangian torus fibration.
+* `TauCeti.isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec`: over every open set of
+  regular values, in particular over all of them, `F` is a regular Lagrangian torus fibration.
 
 ## References
 
@@ -99,6 +103,21 @@ theorem mem_sphericalPendulumRegularValues_iff_mem_image_and_ne {c : Fin 2 → �
   · rintro ⟨y, hy, hyc⟩
     exact ⟨⟨y, hy⟩, (sphericalPendulumEnergyMomentumVec_eq_iff ⟨y, hy⟩ c).2 hyc⟩
 
+/-- **Regular values off the axis lie above the relative equilibria.** A regular value `(h, j)` in
+the image of the energy–momentum map of the spherical pendulum with `j ≠ 0` lies strictly above
+the curve of relative equilibria: `h` exceeds the minimum of the effective potential `V_j`. -/
+theorem mem_sphericalPendulumTurningPointDomain_of_mem_sphericalPendulumRegularValues
+    {c : Fin 2 → ℝ} (hc : c ∈ sphericalPendulumRegularValues) (hc₁ : c 1 ≠ 0) :
+    (c 0, c 1) ∈ sphericalPendulumTurningPointDomain := by
+  obtain ⟨himg, -, -, hleast⟩ := mem_sphericalPendulumRegularValues_iff_mem_image_and_ne.1 hc
+  obtain ⟨z₀, hz₀, hmin⟩ := (existsUnique_isMinOn_sphericalPendulumEffectivePotential hc₁).exists
+  have hle := (mk_mem_image_sphericalPendulumEnergyMomentum_iff_of_isMinOn hc₁ hz₀ hmin _).1 himg
+  -- If `h` were the minimum value `V_j(z₀)`, it would be the least value of `V_j`.
+  refine mem_sphericalPendulumTurningPointDomain_iff.2
+    ⟨hc₁, z₀, hz₀, hle.lt_of_ne fun heq ↦ hleast ⟨hc₁, ⟨z₀, hz₀, heq⟩, ?_⟩⟩
+  rintro _ ⟨z, hz, rfl⟩
+  exact heq ▸ hmin hz
+
 /-- **The regular values surround the focus–focus value.** Every vector of the plane close to
 `(1, 0)`, other than `(1, 0)` itself, is a regular value in the image of the energy–momentum map of
 the spherical pendulum. -/
@@ -115,39 +134,26 @@ theorem eventually_mem_sphericalPendulumRegularValues_nhdsNE :
   obtain ⟨y, hy, hyc⟩ := interior_subset hc
   exact ⟨⟨⟨y, hy⟩, (sphericalPendulumEnergyMomentumVec_eq_iff ⟨y, hy⟩ c).2 hyc⟩, hreg⟩
 
-/-- **The regular part of the phase space of the spherical pendulum**: the open set of states whose
-value of the energy–momentum map `![H, J]` is a regular value, the preimage of
-`sphericalPendulumRegularValues`. -/
-noncomputable def sphericalPendulumRegularPart : Opens sphericalPendulumPhaseSpace :=
-  sphericalPendulumRegularValues.comap
-    ⟨_, isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff.continuous⟩
-
-/-- A state lies in the regular part of the phase space of the spherical pendulum exactly when its
-value of `![H, J]` is a regular value. -/
-@[simp]
-theorem mem_sphericalPendulumRegularPart_iff {x : sphericalPendulumPhaseSpace} :
-    x ∈ sphericalPendulumRegularPart ↔
-      sphericalPendulumEnergyMomentumVec x ∈ sphericalPendulumRegularValues :=
-  Iff.rfl
-
-/-- **The regular part of the spherical pendulum is a Lagrangian torus fibration.** Over the open
-set of its regular values `B = sphericalPendulumRegularValues`, the energy–momentum map `![H, J]`
-of the spherical pendulum, restricted to the open subset of the phase space lying over `B`, is a
-regular Lagrangian torus fibration for the restriction of the symplectic form: a proper submersion
-onto `B` with connected Lagrangian fibres. -/
-theorem isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec :
+/-- **The spherical pendulum is a Lagrangian torus fibration over every open set of regular
+values.** Let `U` be an open set of regular values in the image of the energy–momentum map `![H, J]`
+of the spherical pendulum, for instance the set `sphericalPendulumRegularValues` of all of them.
+Restricted to the open subset of the phase space lying over `U`, the map `![H, J]` is a regular
+Lagrangian torus fibration onto `U` for the restriction of the symplectic form: a proper submersion
+with connected Lagrangian fibres. -/
+theorem isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec
+    {U : Opens (Fin 2 → ℝ)} (hU : U ≤ sphericalPendulumRegularValues) :
     (isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate.mpullback_subtype_val
-      sphericalPendulumRegularPart).IsLagrangianTorusFibration 𝓘(ℝ, Fin 2 → ℝ)
-      fun x : sphericalPendulumRegularPart ↦ (⟨sphericalPendulumEnergyMomentumVec x,
-        mem_sphericalPendulumRegularPart_iff.1 x.property⟩ : sphericalPendulumRegularValues) := by
+      (U.comap ⟨_, isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff.continuous⟩)
+      ).IsLagrangianTorusFibration 𝓘(ℝ, Fin 2 → ℝ)
+      fun x ↦ (⟨sphericalPendulumEnergyMomentumVec x, x.property⟩ : U) := by
   refine isIntegrableSystem_sphericalPendulumEnergyMomentumVec
     |>.isLagrangianTorusFibration_restrictPreimage
-      isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate sphericalPendulumRegularValues
-      (fun c hc ↦ hc.2) (fun c hc ↦ ?_)
+      isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate U
+      (fun c hc ↦ (hU hc).2) (fun c hc ↦ ?_)
       (IsProperMap.restrictPreimage isProperMap_sphericalPendulumEnergyMomentumVec _)
   -- The inclusion of the phase space carries the fibre of `![H, J]` over `c` onto the fibre of
   -- `(H, J)` over `(c 0, c 1)`, which is connected.
-  obtain ⟨x, rfl⟩ := hc.1
+  obtain ⟨x, rfl⟩ := (hU hc).1
   have hfib : sphericalPendulumEnergyMomentumVec ⁻¹' {sphericalPendulumEnergyMomentumVec x} =
       Subtype.val ⁻¹'
         (sphericalPendulumEnergyMomentum ⁻¹' {sphericalPendulumEnergyMomentum x}) := by

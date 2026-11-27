@@ -1,0 +1,249 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Claude
+-/
+module
+
+public import Mathlib.Dynamics.Flow
+public import Mathlib.Dynamics.TopologicalEntropy.CoverEntropy
+import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Data.EReal.Operations
+import TauCeti.Dynamics.Entropy.Equicontinuous
+import TauCeti.Dynamics.Flow.Basic
+import TauCeti.Dynamics.TopologicalEntropy.Inverse
+import TauCeti.Topology.Instances.EReal
+
+/-!
+# Topological entropy of the time-`t` maps of a continuous flow
+
+For a continuous real flow `ϕ` on a compact uniform space, the topological entropy of the
+time-`t` map is proportional to `|t|`:
+`coverEntropy (ϕ t) univ = |t| * coverEntropy (ϕ 1) univ`. In particular the entropy of a flow
+depends on its time scale: the time change `t ↦ ϕ (c * t)` multiplies it by `c > 0`.
+
+The proof compares Bowen balls at two positive times `s` and `t`. By uniform continuity of
+`(u, x) ↦ ϕ u x` on the compact set `[0, s] × X`, every entourage `U` has an entourage `V` such
+that `V`-close points stay `U`-close under `ϕ u` for all `u ∈ [0, s]`. Then two points that are
+`V`-close along `N` steps of `ϕ s` are `U`-close along the whole flow segment of length `N * s`,
+hence along `m` steps of `ϕ t` whenever `m * t ≤ N * s`. Taking `N = ⌈(t / s) * m⌉₊` gives
+`coverEntropy (ϕ t) F ≤ (t / s) * coverEntropy (ϕ s) F` for every set `F`; exchanging `s` and `t`
+gives equality. Negative times reduce to positive ones through the inverse homeomorphism, and
+time `0` is the identity, of entropy `0`.
+
+## Main results
+
+* `TauCeti.exists_mem_uniformity_forall_mem_flow_mem_of_isCompact`: uniform equicontinuity of the
+  time-`u` maps for `u` in a compact set of times.
+* `TauCeti.dynEntourage_flow_subset`: the comparison of dynamical entourages of `ϕ s` and `ϕ t`.
+* `TauCeti.coverEntropy_flow_le`, `TauCeti.coverEntropyInf_flow_le`: for `0 < s` and `0 < t`, the
+  entropy of `ϕ t` on any set is at most `t / s` times that of `ϕ s`.
+* `TauCeti.coverEntropy_flow_eq_div_mul`, `TauCeti.coverEntropyInf_flow_eq_div_mul`: equality.
+* `TauCeti.coverEntropy_flow_of_pos`: `coverEntropy (ϕ t) F = t * coverEntropy (ϕ 1) F` for
+  `t > 0`.
+* `TauCeti.coverEntropy_flow_univ`: `coverEntropy (ϕ t) univ = |t| * coverEntropy (ϕ 1) univ` for
+  every real `t`, on a nonempty compact space.
+* `TauCeti.coverEntropyInf_flow_univ`: the same for the `liminf` entropy `coverEntropyInf`.
+
+## References
+
+* R. Bowen, *Entropy for group endomorphisms and homogeneous spaces*, Trans. Amer. Math. Soc. 153
+  (1971), 401–414: the entropy of the time-`t` maps of a continuous flow on a compact metric space
+  is `|t|` times that of the time-`1` map.
+-/
+
+public section
+
+namespace TauCeti
+
+open Dynamics Set Filter ExpGrowth Topology
+open scoped Uniformity
+
+variable {X : Type*}
+
+section Comparison
+
+variable [TopologicalSpace X]
+
+/-- If `V`-close points stay `U`-close under `ϕ u` for `u ∈ [0, s]`, then points `V`-close along
+`N` steps of `ϕ s` are `U`-close along `m` steps of `ϕ t` whenever `m * t ≤ N * s`. -/
+theorem dynEntourage_flow_subset (ϕ : Flow ℝ X) {s t : ℝ} (ht : 0 < t) {U V : SetRel X X}
+    (hV : ∀ x y, (x, y) ∈ V → ∀ u ∈ Icc 0 s, (ϕ u x, ϕ u y) ∈ U) {m N : ℕ}
+    (hmN : m * t ≤ N * s) :
+    dynEntourage (ϕ s) V N ⊆ dynEntourage (ϕ t) U m := by
+  rintro ⟨x, y⟩ hxy
+  rw [mem_dynEntourage] at hxy ⊢
+  intro j hj
+  have hjt : (j : ℝ) * t < N * s :=
+    (mul_lt_mul_of_pos_right (by exact_mod_cast hj) ht).trans_le hmN
+  have hs : 0 < s :=
+    pos_of_mul_pos_right ((by positivity : (0 : ℝ) ≤ j * t).trans_lt hjt) N.cast_nonneg
+  have hjt₀ : 0 ≤ (j : ℝ) * t / s := by positivity
+  set k := ⌊(j : ℝ) * t / s⌋₊
+  have hkN : k < N := (Nat.floor_lt hjt₀).2 ((div_lt_iff₀ hs).2 hjt)
+  have hks : (k : ℝ) * s ≤ j * t := (le_div_iff₀ hs).1 (Nat.floor_le hjt₀)
+  have hks' : (j : ℝ) * t < (k + 1) * s := (div_lt_iff₀ hs).1 (Nat.lt_floor_add_one _)
+  have hu : (j : ℝ) * t - k * s ∈ Icc 0 s := ⟨by linarith, by linarith⟩
+  have key : ∀ z, (ϕ t)^[j] z = ϕ (j * t - k * s) ((ϕ s)^[k] z) := by
+    intro z
+    rw [← ϕ.map_nsmul, ← ϕ.map_nsmul, nsmul_eq_mul, nsmul_eq_mul, ← ϕ.map_add]
+    congr 1
+    ring
+  rw [key, key]
+  exact hV _ _ (hxy k hkN) _ hu
+
+/-- Minimal covers for `ϕ t` at `m` steps are no larger than those for `ϕ s` at `N` steps, under
+the hypotheses of `dynEntourage_flow_subset`. -/
+theorem coverMincard_flow_le (ϕ : Flow ℝ X) {s t : ℝ} (ht : 0 < t) {U V : SetRel X X}
+    (hV : ∀ x y, (x, y) ∈ V → ∀ u ∈ Icc 0 s, (ϕ u x, ϕ u y) ∈ U) (F : Set X) {m N : ℕ}
+    (hmN : m * t ≤ N * s) :
+    coverMincard (ϕ t) F U m ≤ coverMincard (ϕ s) F V N :=
+  biInf_mono fun _ h ↦ h.mono_entourage (dynEntourage_flow_subset ϕ ht hV hmN)
+
+private theorem le_natCeil_mul {s t : ℝ} (hs : 0 < s) (m : ℕ) :
+    (m : ℝ) * t ≤ ⌈t / s * m⌉₊ * s := by
+  have := Nat.le_ceil (t / s * m)
+  calc (m : ℝ) * t = t / s * m * s := by field_simp
+    _ ≤ ⌈t / s * m⌉₊ * s := mul_le_mul_of_nonneg_right this hs.le
+
+/-- The entourage-level `limsup` comparison between `ϕ t` and `ϕ s`. -/
+theorem coverEntropyEntourage_flow_le (ϕ : Flow ℝ X) {s t : ℝ}
+    (hs : 0 < s) (ht : 0 < t) {U V : SetRel X X}
+    (hV : ∀ x y, (x, y) ∈ V → ∀ u ∈ Icc 0 s, (ϕ u x, ϕ u y) ∈ U) (F : Set X) :
+    coverEntropyEntourage (ϕ t) F U ≤ ((t / s : ℝ) : EReal) * coverEntropyEntourage (ϕ s) F V := by
+  have hts : (0 : ℝ) < t / s := div_pos ht hs
+  calc coverEntropyEntourage (ϕ t) F U
+      ≤ expGrowthSup ((fun N : ℕ ↦ (coverMincard (ϕ s) F V N : ENNReal)) ∘
+          fun m : ℕ ↦ ⌈t / s * m⌉₊) :=
+        expGrowthSup_monotone fun m ↦ ENat.toENNReal_mono
+          (coverMincard_flow_le ϕ ht hV F (le_natCeil_mul hs m))
+    _ = ((t / s : ℝ) : EReal) * coverEntropyEntourage (ϕ s) F V :=
+        Monotone.expGrowthSup_comp
+          (fun _ _ h ↦ ENat.toENNReal_mono (coverMincard_monotone_time _ F V h))
+          (EReal.tendsto_natCeil_mul_div_atTop hts.le) (EReal.coe_ne_zero.2 hts.ne')
+          (EReal.coe_ne_top _)
+
+/-- The entourage-level `liminf` comparison between `ϕ t` and `ϕ s`. -/
+theorem coverEntropyInfEntourage_flow_le (ϕ : Flow ℝ X) {s t : ℝ}
+    (hs : 0 < s) (ht : 0 < t) {U V : SetRel X X}
+    (hV : ∀ x y, (x, y) ∈ V → ∀ u ∈ Icc 0 s, (ϕ u x, ϕ u y) ∈ U) (F : Set X) :
+    coverEntropyInfEntourage (ϕ t) F U ≤
+      ((t / s : ℝ) : EReal) * coverEntropyInfEntourage (ϕ s) F V := by
+  have hts : (0 : ℝ) < t / s := div_pos ht hs
+  calc coverEntropyInfEntourage (ϕ t) F U
+      ≤ expGrowthInf ((fun N : ℕ ↦ (coverMincard (ϕ s) F V N : ENNReal)) ∘
+          fun m : ℕ ↦ ⌈t / s * m⌉₊) :=
+        expGrowthInf_monotone fun m ↦ ENat.toENNReal_mono
+          (coverMincard_flow_le ϕ ht hV F (le_natCeil_mul hs m))
+    _ = ((t / s : ℝ) : EReal) * coverEntropyInfEntourage (ϕ s) F V :=
+        Monotone.expGrowthInf_comp
+          (fun _ _ h ↦ ENat.toENNReal_mono (coverMincard_monotone_time _ F V h))
+          (EReal.tendsto_natCeil_mul_div_atTop hts.le) (EReal.coe_ne_zero.2 hts.ne')
+          (EReal.coe_ne_top _)
+
+end Comparison
+
+section Compact
+
+variable [UniformSpace X] [CompactSpace X] (ϕ : Flow ℝ X)
+
+/-- On a compact uniform space, the time-`u` maps of a real flow for `u` in a compact set `K` of
+times are uniformly equicontinuous: every entourage `U` has an entourage `V` whose pairs stay in
+`U` under all of them. -/
+theorem exists_mem_uniformity_forall_mem_flow_mem_of_isCompact {K : Set ℝ} (hK : IsCompact K)
+    {U : SetRel X X} (hU : U ∈ 𝓤 X) :
+    ∃ V ∈ 𝓤 X, ∀ x y, (x, y) ∈ V → ∀ u ∈ K, (ϕ u x, ϕ u y) ∈ U := by
+  -- `(u, x) ↦ ϕ u x` is uniformly continuous on the compact set `K ×ˢ univ`.
+  have hc := (hK.prod isCompact_univ).uniformContinuousOn_of_continuous ϕ.cont'.continuousOn
+  -- Unfolding `UniformContinuousOn`: the pairs of points of `K ×ˢ univ` with `U`-close images
+  -- contain the trace on `K ×ˢ univ` of an entourage of `ℝ × X`, and that entourage contains the
+  -- (coordinate-reordered) product of an entourage `A` of `ℝ` and an entourage `B` of `X`.
+  have h := hc hU
+  rw [mem_map, mem_inf_principal, uniformity_prod_eq_prod, mem_map, mem_prod_iff] at h
+  obtain ⟨A, hA, B, hB, hAB⟩ := h
+  -- For `(x, y) ∈ B` and `u ∈ K`, the pair `((u, x), (u, y))` lies in that product,
+  -- because `(u, u) ∈ A`.
+  refine ⟨B, hB, fun x y hxy u hu ↦ ?_⟩
+  exact hAB (mk_mem_prod (refl_mem_uniformity hA) hxy) ⟨⟨hu, mem_univ x⟩, ⟨hu, mem_univ y⟩⟩
+
+/-- For a continuous flow on a compact uniform space and `0 < s`, `0 < t`, the topological entropy
+of `ϕ t` on any set is at most `t / s` times that of `ϕ s`. -/
+theorem coverEntropy_flow_le {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (F : Set X) :
+    coverEntropy (ϕ t) F ≤ ((t / s : ℝ) : EReal) * coverEntropy (ϕ s) F := by
+  refine iSup₂_le fun U hU ↦ ?_
+  obtain ⟨V, hV, hVU⟩ := exists_mem_uniformity_forall_mem_flow_mem_of_isCompact ϕ
+    (isCompact_Icc : IsCompact (Icc 0 s)) hU
+  exact (coverEntropyEntourage_flow_le ϕ hs ht hVU F).trans <|
+    mul_le_mul_of_nonneg_left (coverEntropyEntourage_le_coverEntropy _ F hV)
+      (EReal.coe_nonneg.2 (div_pos ht hs).le)
+
+/-- For a continuous flow on a compact uniform space and `0 < s`, `0 < t`, the `liminf`
+topological entropy of `ϕ t` on any set is at most `t / s` times that of `ϕ s`. -/
+theorem coverEntropyInf_flow_le {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (F : Set X) :
+    coverEntropyInf (ϕ t) F ≤ ((t / s : ℝ) : EReal) * coverEntropyInf (ϕ s) F := by
+  refine iSup₂_le fun U hU ↦ ?_
+  obtain ⟨V, hV, hVU⟩ := exists_mem_uniformity_forall_mem_flow_mem_of_isCompact ϕ
+    (isCompact_Icc : IsCompact (Icc 0 s)) hU
+  exact (coverEntropyInfEntourage_flow_le ϕ hs ht hVU F).trans <|
+    mul_le_mul_of_nonneg_left (coverEntropyInfEntourage_le_coverEntropyInf _ F hV)
+      (EReal.coe_nonneg.2 (div_pos ht hs).le)
+
+/-- For a continuous flow on a compact uniform space and `0 < s`, `0 < t`, the topological entropy
+of `ϕ t` on any set is `t / s` times that of `ϕ s`. -/
+theorem coverEntropy_flow_eq_div_mul {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (F : Set X) :
+    coverEntropy (ϕ t) F = ((t / s : ℝ) : EReal) * coverEntropy (ϕ s) F :=
+  (coverEntropy_flow_le ϕ hs ht F).antisymm
+    ((EReal.coe_mul_le_iff_le_coe_inv_mul (div_pos ht hs)).2
+      (inv_div t s ▸ coverEntropy_flow_le ϕ ht hs F))
+
+/-- For a continuous flow on a compact uniform space and `0 < s`, `0 < t`, the `liminf`
+topological entropy of `ϕ t` on any set is `t / s` times that of `ϕ s`. -/
+theorem coverEntropyInf_flow_eq_div_mul {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (F : Set X) :
+    coverEntropyInf (ϕ t) F = ((t / s : ℝ) : EReal) * coverEntropyInf (ϕ s) F :=
+  (coverEntropyInf_flow_le ϕ hs ht F).antisymm
+    ((EReal.coe_mul_le_iff_le_coe_inv_mul (div_pos ht hs)).2
+      (inv_div t s ▸ coverEntropyInf_flow_le ϕ ht hs F))
+
+/-- For a continuous flow on a compact uniform space and `t > 0`, the topological entropy of the
+time-`t` map on any set is `t` times that of the time-`1` map. -/
+theorem coverEntropy_flow_of_pos {t : ℝ} (ht : 0 < t) (F : Set X) :
+    coverEntropy (ϕ t) F = t * coverEntropy (ϕ 1) F := by
+  simpa using coverEntropy_flow_eq_div_mul ϕ one_pos ht F
+
+/-- For a continuous flow on a compact uniform space and `t > 0`, the `liminf` topological entropy
+of the time-`t` map on any set is `t` times that of the time-`1` map. -/
+theorem coverEntropyInf_flow_of_pos {t : ℝ} (ht : 0 < t) (F : Set X) :
+    coverEntropyInf (ϕ t) F = t * coverEntropyInf (ϕ 1) F := by
+  simpa using coverEntropyInf_flow_eq_div_mul ϕ one_pos ht F
+
+/-- For a continuous flow on a nonempty compact uniform space, the topological entropy of the
+time-`t` map is `|t|` times that of the time-`1` map, for every real `t`. -/
+theorem coverEntropy_flow_univ [Nonempty X] (t : ℝ) :
+    coverEntropy (ϕ t) univ = |t| * coverEntropy (ϕ 1) univ := by
+  rcases lt_trichotomy t 0 with ht | rfl | ht
+  · rw [abs_of_neg ht, ← coverEntropy_flow_of_pos ϕ (neg_pos.2 ht) univ,
+      show ϕ t = ⇑(ϕ.toHomeomorph (-t)).symm by rw [ϕ.coe_toHomeomorph_symm, neg_neg],
+      Homeomorph.coverEntropy_symm_univ, ϕ.coe_toHomeomorph]
+  · rw [Flow.map_zero, abs_zero, EReal.coe_zero, zero_mul]
+    exact coverEntropy_id_eq_zero isCompact_univ.totallyBounded univ_nonempty
+  · rw [abs_of_pos ht]
+    exact coverEntropy_flow_of_pos ϕ ht univ
+
+/-- For a continuous flow on a nonempty compact uniform space, the `liminf` topological entropy of
+the time-`t` map is `|t|` times that of the time-`1` map, for every real `t`. -/
+theorem coverEntropyInf_flow_univ [Nonempty X] (t : ℝ) :
+    coverEntropyInf (ϕ t) univ = |t| * coverEntropyInf (ϕ 1) univ := by
+  rcases lt_trichotomy t 0 with ht | rfl | ht
+  · rw [abs_of_neg ht, ← coverEntropyInf_flow_of_pos ϕ (neg_pos.2 ht) univ,
+      show ϕ t = ⇑(ϕ.toHomeomorph (-t)).symm by rw [ϕ.coe_toHomeomorph_symm, neg_neg],
+      Homeomorph.coverEntropyInf_symm_univ, ϕ.coe_toHomeomorph]
+  · rw [Flow.map_zero, abs_zero, EReal.coe_zero, zero_mul]
+    refine le_antisymm ?_ (coverEntropyInf_nonneg id univ_nonempty)
+    exact (coverEntropyInf_le_coverEntropy id univ).trans
+      (coverEntropy_id_eq_zero isCompact_univ.totallyBounded univ_nonempty).le
+  · rw [abs_of_pos ht]
+    exact coverEntropyInf_flow_of_pos ϕ ht univ
+
+end Compact
+
+end TauCeti

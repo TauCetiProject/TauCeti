@@ -32,6 +32,8 @@ moves such scalars out of either factor.
 * `TauCeti.RoughForm.mapCoeff_wedgeWith_eq_postcomp`,
   `TauCeti.SmoothForm.mapCoeff_wedgeWith_eq_postcomp`: a coefficient map of the product is
   absorbed into the pairing by postcomposition.
+* `TauCeti.SmoothForm.wedgeWith_mapCoeff_smulRight`: pairing with a real form times a fixed vector
+  `z` is the real wedge with the component `μ(φ, z)`.
 * `TauCeti.RoughForm.wedgeWith_bilinearRestrictScalars_smul_left`,
   `TauCeti.RoughForm.wedgeWith_bilinearRestrictScalars_smul_right`, and their `SmoothForm`
   versions: the paired wedge for a
@@ -169,6 +171,19 @@ theorem mapCoeff_wedgeWith_eq_postcomp (L : F₃ →L[ℝ] G) (μ : F₁ →L[�
     mapCoeff L (wedgeWith μ φ ψ) = wedgeWith ((ContinuousLinearMap.postcomp F₂ L).comp μ) φ ψ :=
   Subtype.ext <| by
     simp only [coe_wedgeWith, coe_mapCoeff, RoughForm.mapCoeff_wedgeWith_eq_postcomp]
+
+/-- Pairing a smooth form `φ` with a real form `c` times a fixed vector `z` by a real-valued
+pairing `μ` is the real wedge of the component `μ(φ, z)` with `c`: `μ(φ ∧ c z) = μ(φ, z) ∧ c`. -/
+theorem wedgeWith_mapCoeff_smulRight (μ : F₁ →L[ℝ] F₂ →L[ℝ] ℝ) (z : F₂)
+    (φ : SmoothForm I M F₁ k) (c : SmoothForm I M ℝ l) :
+    wedgeWith μ φ (mapCoeff ((ContinuousLinearMap.id ℝ ℝ).smulRight z) c) =
+      wedge (mapCoeff (μ.flip z) φ) c := by
+  have hμ : μ.bilinearComp (ContinuousLinearMap.id ℝ F₁)
+      ((ContinuousLinearMap.id ℝ ℝ).smulRight z) =
+        (ContinuousLinearMap.mul ℝ ℝ).comp (μ.flip z) := by
+    ext a
+    simp [mul_comm]
+  rw [wedge_def, wedgeWith_mapCoeff_right, wedgeWith_mapCoeff_left, hμ]
 
 section RestrictScalars
 

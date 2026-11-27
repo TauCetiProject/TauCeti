@@ -41,6 +41,8 @@ covering an algebraic closure; that identification is also one of abstract group
 
 * `TauCeti.quotientFixingSubgroupEquiv`: the isomorphism of topological groups
   `Gal(E/F) ⧸ M.fixingSubgroup ≃ₜ* Gal(M/F)`, for `E/F` and `M/F` normal.
+* `TauCeti.isOpenMap_restrictNormalHom`, `TauCeti.isQuotientMap_restrictNormalHom`: restriction
+  `Gal(E/F) → Gal(M/F)` is an open quotient map.
 -/
 
 public section
@@ -93,5 +95,25 @@ theorem quotientFixingSubgroupEquiv_symm_restrictNormalHom (σ : Gal(E/F)) :
     (quotientFixingSubgroupEquiv F E M).symm (AlgEquiv.restrictNormalHom M σ) =
       (σ : Gal(E/F) ⧸ M.fixingSubgroup) := by
   rw [← quotientFixingSubgroupEquiv_mk σ, ContinuousMulEquiv.symm_apply_apply]
+
+variable (M)
+
+/-- **Restriction to a normal intermediate field is an open map** `Gal(E/F) → Gal(M/F)`: it is the
+quotient map onto `Gal(E/F) ⧸ M.fixingSubgroup` followed by `quotientFixingSubgroupEquiv`. -/
+theorem isOpenMap_restrictNormalHom :
+    IsOpenMap (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) M) := by
+  have h : ⇑(AlgEquiv.restrictNormalHom (F := F) (K₁ := E) M) =
+      quotientFixingSubgroupEquiv F E M ∘ ((↑) : Gal(E/F) → Gal(E/F) ⧸ M.fixingSubgroup) :=
+    funext fun σ ↦ (quotientFixingSubgroupEquiv_mk σ).symm
+  rw [h]
+  exact (quotientFixingSubgroupEquiv F E M).toHomeomorph.isOpenMap.comp
+    QuotientGroup.isOpenMap_coe
+
+/-- **Restriction to a normal intermediate field is a quotient map**: `Gal(M/F)` carries the
+quotient topology of `Gal(E/F)`. -/
+theorem isQuotientMap_restrictNormalHom :
+    Topology.IsQuotientMap (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) M) :=
+  (isOpenMap_restrictNormalHom M).isQuotientMap (InfiniteGalois.restrictNormalHom_continuous M)
+    (AlgEquiv.restrictNormalHom_surjective E)
 
 end TauCeti
