@@ -215,12 +215,13 @@ theorem height_eq_log_order_nsmulSeries (p : ℕ) :
     F.height p = ENat.map (Nat.log p) (F.nsmulSeries p).order := by
   classical
   rw [height]
+  -- `ENat.map` returns `WithTop ℕ` here, with top and natural casts definitionally as in `ℕ∞`.
   split_ifs with hz
-  · rw [hz, PowerSeries.order_zero, ENat.map_top]
-    rfl
+  · rw [hz, PowerSeries.order_zero]
+    exact (ENat.map_top _).symm
   · obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp (PowerSeries.order_eq_top.not.mpr hz)
-    rw [← hn, ENat.map_natCast, ENat.toNat_natCast]
-    rfl
+    rw [← hn, ENat.toNat_natCast]
+    exact (ENat.map_natCast _ _).symm
 
 /-- A formal group law has infinite height exactly when multiplication by `p` is zero. -/
 @[simp]

@@ -38,6 +38,7 @@ variable (A) [CommRing A] [IsDomain A] [_root_.IsDiscreteValuationRing A]
 
 /-- Restricting scalars along a finite extension of DVRs multiplies height by the extension rank,
 including at infinite height. -/
+@[simp]
 theorem height_restrictScalars (ρ : FormalModule O F) :
     (ρ.restrictScalars A).height = Module.finrank A O * ρ.height := by
   have : FaithfulSMul A O := IsDiscreteValuationRing.faithfulSMul_of_isIntegral
@@ -56,8 +57,7 @@ theorem height_restrictScalars (ρ : FormalModule O F) :
   let τ := ρ.map (IsScalarTower.toAlgHom O R (ResidueField R))
   have hord : (PowerSeries.map (residue R) ((ρ.restrictScalars A).act π).toPowerSeries).order =
       (PowerSeries.map (residue R) (ρ.act ϖ).toPowerSeries).order ^ e := by
-    simpa only [τ, restrictScalars_act, map_act, FormalGroupHom.map_toPowerSeries,
-      IsScalarTower.coe_toAlgHom, ResidueField.algebraMap_eq] using
+    simpa only [τ, restrictScalars_act, map_residue_act_toPowerSeries] using
       (τ.order_act_eq_of_associated hassoc.symm).trans (τ.order_act_pow ϖ e)
   cases hρ : ρ.height with
   | top =>

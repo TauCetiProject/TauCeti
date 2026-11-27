@@ -16,10 +16,9 @@ import Mathlib.FieldTheory.Finite.GaloisField
 /-!
 # Height of a formal module
 
-For a formal module over a field containing the residue field of its scalar DVR, the height is
-the exponent of the residue cardinality in the order of the uniformizer action. If the
-uniformizer acts by zero, the height is infinite. Over a local base these conditions are
-tested on the special fibre.
+For a formal module over a local ring `R` with scalars in a DVR `O`, the height is computed on
+the special fibre. It is infinite when the reduced uniformizer action is zero. Otherwise it is
+the logarithm of the order of that action with base `Nat.card (ResidueField O)`.
 
 The residue cardinality enters through scalar linearity. If a nonzero homomorphism of formal
 modules starts in degree `n`, comparison of leading coefficients shows that every residue scalar
@@ -100,7 +99,7 @@ end Hom
 
 variable (ρ : FormalModule O F)
 
-/-- Divisibility of scalars increases the order of their action series. -/
+/-- If `a` divides `b`, the action series of `b` has order at least that of `a`. -/
 theorem order_act_le_of_dvd {a b : O} (h : a ∣ b) :
     (ρ.act a).toPowerSeries.order ≤ (ρ.act b).toPowerSeries.order := by
   obtain ⟨c, rfl⟩ := h
@@ -128,6 +127,13 @@ theorem order_act_pow [IsDomain R] (a : O) (n : ℕ) :
   | zero => simp
   | succ n ih => rw [pow_succ, ρ.order_act_mul, ih, pow_succ]
 
+/-- The action series on the special fibre is the reduction of the original action series. -/
+theorem map_residue_act_toPowerSeries [IsLocalRing R] (a : O) :
+    ((ρ.map (IsScalarTower.toAlgHom O R (ResidueField R))).act a).toPowerSeries =
+      PowerSeries.map (residue R) (ρ.act a).toPowerSeries := by
+  rw [map_act, FormalGroupHom.map_toPowerSeries, IsScalarTower.coe_toAlgHom,
+    ResidueField.algebraMap_eq]
+
 section Local
 
 variable [IsDomain O] [IsDiscreteValuationRing O] [IsLocalRing R]
@@ -149,8 +155,7 @@ theorem height_eq_of_irreducible {π : O} (hπ : Irreducible π) :
     (IsDiscreteValuationRing.exists_irreducible O).choose_spec hπ)
   unfold height
   apply congrArg (ENat.map (Nat.log (Nat.card (ResidueField O))))
-  simpa only [τ, map_act, FormalGroupHom.map_toPowerSeries, IsScalarTower.coe_toAlgHom,
-    ResidueField.algebraMap_eq] using h
+  simpa only [τ, map_residue_act_toPowerSeries] using h
 
 /-- Infinite height means that the uniformizer acts by zero on the special fibre. -/
 theorem height_eq_top_iff {π : O} (hπ : Irreducible π) :
@@ -164,9 +169,8 @@ theorem height_eq_natCast_iff {π : O} (hπ : Irreducible π) {h : ℕ} :
       (Nat.card (ResidueField O) ^ h : ℕ) := by
   let τ := ρ.map (IsScalarTower.toAlgHom O R (ResidueField R))
   let φ : Hom τ τ := ⟨τ.act π, τ.act_comp_act_comm π⟩
-  have hφ : φ.toPowerSeries = PowerSeries.map (residue R) (ρ.act π).toPowerSeries := by
-    simp only [φ, τ, map_act, FormalGroupHom.map_toPowerSeries, IsScalarTower.coe_toAlgHom,
-      ResidueField.algebraMap_eq]
+  have hφ : φ.toPowerSeries = PowerSeries.map (residue R) (ρ.act π).toPowerSeries :=
+    ρ.map_residue_act_toPowerSeries π
   rw [ρ.height_eq_of_irreducible hπ, ← hφ]
   by_cases hz : φ.toPowerSeries = 0
   · rw [hz, PowerSeries.order_zero, ENat.map_top]
