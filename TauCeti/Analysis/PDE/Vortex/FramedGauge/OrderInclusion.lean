@@ -98,7 +98,7 @@ def quotientInclusion (h : k ≤ k') :
   Quotient.map' (inclusion (Nat.cast_le.2 h)) fun _ _ hxy ↦ by
     obtain ⟨u, hu, hxy⟩ := orbitRel_iff.1 hxy
     exact orbitRel_iff.2 ⟨u, sobolevGaugeGroup_mono hs
-      (by exact_mod_cast Nat.add_le_add_right h 1) hu, hxy⟩
+      (by exact_mod_cast Nat.add_le_add_right h 1) hu, by simpa only [coe_inclusion] using hxy⟩
 
 /-- The induced map sends the `G_(k'+1)`-orbit of a field to its `G_(k+1)`-orbit. -/
 @[simp]
@@ -117,7 +117,7 @@ theorem continuous_quotientInclusion (h : k ≤ k') :
 theorem quotientInclusion_self
     (q : MulAction.orbitRel.Quotient (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m k)) :
     quotientInclusion (hs := hs) (hs' := hs) le_rfl q = q :=
-  Quotient.inductionOn' q fun _ ↦ rfl
+  Quotient.inductionOn' q fun x ↦ congrArg (Quotient.mk _) (inclusion_self x)
 
 /-- The maps of orbit spaces induced by inclusions compose. -/
 @[simp]
@@ -126,7 +126,7 @@ theorem quotientInclusion_quotientInclusion (h : k ≤ k') (h' : k' ≤ k'')
       (SobolevFieldSpace f m k'')) :
     quotientInclusion (hs := hs) (hs' := hs') h (quotientInclusion (hs' := hs'') h' q) =
       quotientInclusion (h.trans h') q :=
-  Quotient.inductionOn' q fun _ ↦ rfl
+  Quotient.inductionOn' q fun x ↦ congrArg (Quotient.mk _) (inclusion_inclusion _ _ x)
 
 /-- The induced map of orbit spaces carries vortex orbits to vortex orbits. -/
 theorem quotientInclusion_mem_vortexModuli (h : k ≤ k')
@@ -134,7 +134,7 @@ theorem quotientInclusion_mem_vortexModuli (h : k ≤ k')
       (SobolevFieldSpace f m k')} (hq : q ∈ vortexModuli f m hs') :
     quotientInclusion (hs := hs) h q ∈ vortexModuli f m hs := by
   obtain ⟨x, hx, rfl⟩ := mem_vortexModuli_iff.1 hq
-  exact mk_mem_vortexModuli hx
+  exact mk_mem_vortexModuli (by simpa only [coe_inclusion] using hx)
 
 /-- **The map of vortex moduli induced by the inclusion** `A_m^(k') ⊆ A_m^k`, for `k ≤ k'`: the
 `G_(k'+1)`-orbit of a vortex goes to its `G_(k+1)`-orbit. -/
@@ -158,6 +158,20 @@ theorem vortexModuliInclusion_mk (h : k ≤ k') {x : SobolevFieldSpace f m k'}
         mk_mem_vortexModuli (by simpa only [coe_inclusion] using hx)⟩ :=
   (rfl)
 
+/-- The map of vortex moduli induced by the inclusion of `A_m^k` into itself is the identity. -/
+@[simp]
+theorem vortexModuliInclusion_self (q : vortexModuli f m hs) :
+    vortexModuliInclusion (hs := hs) (hs' := hs) le_rfl q = q :=
+  Subtype.ext (quotientInclusion_self q.val)
+
+/-- The maps of vortex moduli induced by inclusions compose. -/
+@[simp]
+theorem vortexModuliInclusion_vortexModuliInclusion (h : k ≤ k') (h' : k' ≤ k'')
+    (q : vortexModuli f m hs'') :
+    vortexModuliInclusion (hs := hs) (hs' := hs') h (vortexModuliInclusion (hs' := hs'') h' q) =
+      vortexModuliInclusion (h.trans h') q :=
+  Subtype.ext (quotientInclusion_quotientInclusion h h' q.val)
+
 /-- The induced map of vortex moduli is continuous. -/
 theorem continuous_vortexModuliInclusion (h : k ≤ k') :
     Continuous (vortexModuliInclusion (f := f) (m := m) (hs := hs) (hs' := hs') h) :=
@@ -174,7 +188,7 @@ theorem vortexModuliDivisor_vortexModuliInclusion (hk : 3 < k) (h : k ≤ k')
   obtain ⟨x, hx, rfl⟩ := mem_vortexModuli_iff.1 hq
   rw [vortexModuliInclusion_mk h hx,
     vortexModuliDivisor_mk _ (by simpa only [coe_inclusion] using hx), vortexModuliDivisor_mk _ hx]
-  -- The field of `A_m^k` underlying `inclusion x` is `Set.inclusion` of that of `x`.
+  simp only [toFramedFieldSpace_inclusion]
   exact sobolevVortexDivisor_inclusion h
     ⟨_, toFramedFieldSpace_mem_sobolevVortices (hk.trans_le h) hx⟩
 

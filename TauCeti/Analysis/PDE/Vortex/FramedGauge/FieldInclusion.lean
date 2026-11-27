@@ -47,12 +47,19 @@ variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s s' s'' : ℝ}
 
 /-- **The inclusion `A_m^(s') ⊆ A_m^s`** of continuous framed fields, for `s ≤ s'`: a field of the
 smaller affine space `A_m^(s')` is a field of `A_m^s` (`TauCeti.Vortex.framedFieldSpace_mono`). -/
-@[expose] def inclusion (h : s ≤ s') (x : SobolevFieldSpace f m s') : SobolevFieldSpace f m s :=
+def inclusion (h : s ≤ s') (x : SobolevFieldSpace f m s') : SobolevFieldSpace f m s :=
   ⟨x, framedFieldSpace_mono f m h x.mem_framedFieldSpace, x.continuous⟩
 
 /-- The inclusion does not change the field. -/
 @[simp]
 theorem coe_inclusion (h : s ≤ s') (x : SobolevFieldSpace f m s') : ⇑(inclusion h x) = ⇑x :=
+  (rfl)
+
+/-- As an element of `A_m^s`, the included field is `Set.inclusion` of the original one. -/
+@[simp]
+theorem toFramedFieldSpace_inclusion (h : s ≤ s') (x : SobolevFieldSpace f m s') :
+    (inclusion h x).toFramedFieldSpace =
+      Set.inclusion (framedFieldSpace_mono f m h) x.toFramedFieldSpace :=
   (rfl)
 
 /-- The inclusion of fields is injective. -/
