@@ -41,10 +41,10 @@ The proof goes through the field of meromorphic functions on the sphere.
   ratio is `Fⱼ / Fᵢ`, a quotient of holomorphic functions.
 * **The identity theorem.** On a connected `X`, if the coordinate `uᵢ` is nonzero at one point,
   it is nonzero on a punctured neighbourhood of every point
-  (`TauCeti.RiemannSurface.eventually_rep_ne_zero`). The ratio `uᵢ / uᵢ` takes only the values
-  `0` and `1`, so its meromorphic function `m` satisfies `m (1 - m) = 0`. In the field of
-  meromorphic functions this forces `m = 0` or `m = 1`, and `m = 0` is excluded since `m` is `1`
-  near the point where `uᵢ` does not vanish.
+  (`TauCeti.RiemannSurface.eventually_rep_ne_zero`). The meromorphic function `m` of the ratio
+  `uᵢ / uᵢ` is `1` near the point where `uᵢ` does not vanish, so `m ≠ 0`; its zeros are therefore
+  isolated (`TauCeti.RiemannSurface.MeromorphicFunction.eventually_finitePart_ne_zero`), and `m`
+  vanishes wherever `uᵢ` does.
 * **Rationality.** On the Riemann sphere every meromorphic function is rational
   (`TauCeti.RiemannSurface.MeromorphicFunction.ratFuncEquiv`), so the ratios `uⱼ / uᵢ` are
   rational functions `rⱼ`. Clearing their denominators gives polynomials `Qⱼ` with
@@ -60,6 +60,9 @@ The proof goes through the field of meromorphic functions on the sphere.
   of a holomorphic map to projective space are meromorphic.
 * `TauCeti.RiemannSurface.eventually_rep_ne_zero`: a homogeneous coordinate of a holomorphic map
   on a connected Riemann surface that is nonzero somewhere has isolated zeros.
+* `TauCeti.RiemannSurface.apply_infty_eq_mk_coeff`: a continuous map from the Riemann sphere to
+  projective space given at the finite points by polynomials of degree at most `d` takes at `∞`
+  the value of their coefficient vector of `X^d`.
 * `TauCeti.RiemannSurface.exists_polynomial_eq_mk`: a holomorphic map from the Riemann sphere to
   projective space is given by polynomials.
 * `TauCeti.RiemannSurface.exists_injective_eq_map_of_natDegree_le_one`: when these polynomials
@@ -114,37 +117,25 @@ theorem eventually_rep_ne_zero [ConnectedSpace X] (hu : MDifferentiable 𝓘(ℂ
     ∀ᶠ y in 𝓝[≠] x, (u y).rep i ≠ 0 := by
   have hk := meromorphicAt_rep_div_rep hu i i
   set m := MeromorphicFunction.ofMeromorphic hk
-  -- The ratio `uᵢ / uᵢ` takes only the values `0` and `1`, so `m * (1 - m) = 0`.
-  have hm : m * (1 - m) = 0 := by
-    have h := MeromorphicFunction.ofMeromorphic_mul hk
-      fun x ↦ (meromorphicAt_const (1 : ℂ) x).sub (hk x)
-    rw [MeromorphicFunction.ofMeromorphic_sub (fun x ↦ meromorphicAt_const (1 : ℂ) x) hk,
-      MeromorphicFunction.ofMeromorphic_const,
-      map_one] at h
-    rw [← h, ← map_zero (algebraMap ℂ (MeromorphicFunction X)),
-      ← MeromorphicFunction.ofMeromorphic_const]
-    refine MeromorphicFunction.ofMeromorphic_congr _ _ fun x ↦ Eventually.of_forall fun y ↦ ?_
-    by_cases hy : (u y).rep i = 0 <;> simp [hy]
   have hev (x : X) :
       m.finitePart =ᶠ[𝓝[≠] x] fun y ↦ (u y).rep i / (u y).rep i :=
     MeromorphicFunction.finitePart_ofMeromorphic_eventuallyEq hk x
-  have hne (x : X) : (𝓝[≠] x).NeBot := (chartAt ℂ x).nhdsNE_neBot (mem_chart_source ℂ x)
-  rcases mul_eq_zero.1 hm with h0 | h1
-  · -- `m = 0` is impossible, since the ratio is `1` near `x₀`.
+  -- `m ≠ 0`, since the ratio `uᵢ / uᵢ` is `1` near `x₀`.
+  have hm0 : m ≠ 0 := by
+    intro h0
     have hk₀ : ∀ᶠ y in 𝓝 x₀, (u y).rep i / (u y).rep i = 1 := by
       filter_upwards [hu.continuous.continuousAt.preimage_mem_nhds
         ((isOpen_affineOpen (K := ℂ) i).mem_nhds ((mem_affineOpen_iff i _).2 hx₀))] with y hy
       exact div_self ((mem_affineOpen_iff i _).1 hy)
-    have := hne x₀
+    have : (𝓝[≠] x₀).NeBot := (chartAt ℂ x₀).nhdsNE_neBot (mem_chart_source ℂ x₀)
     obtain ⟨y, hy, hy₁⟩ := ((hev x₀).and (nhdsWithin_le_nhds hk₀)).exists
     beta_reduce at hy
     rw [h0, MeromorphicFunction.finitePart_zero, Pi.zero_apply, hy₁] at hy
-    exact (zero_ne_one hy).elim
-  · -- `m = 1`, so the ratio is `1`, and `uᵢ ≠ 0`, near every point.
-    rw [sub_eq_zero] at h1
-    filter_upwards [hev x] with y hy h
-    rw [← h1, MeromorphicFunction.finitePart_one, h, div_zero] at hy
-    exact zero_ne_one hy.symm
+    exact zero_ne_one hy
+  -- The nonzero meromorphic function `m` has isolated zeros, and it vanishes wherever `uᵢ` does.
+  filter_upwards [hev x, MeromorphicFunction.eventually_finitePart_ne_zero hm0 x] with y hy hne h
+  rw [hy, h, div_zero] at hne
+  exact hne rfl
 
 end RiemannSurface
 
@@ -202,7 +193,7 @@ private theorem exists_polynomial_eventually_eq_mk
 polynomials of degree at most `d` takes at `∞` the value of their coefficient vector of `X^d`,
 when it is nonzero: near `∞`, in the coordinate `w = 1 / z`, the map is given by the reflected
 polynomials `w ^ d Pⱼ(1 / w)`, whose value at `w = 0` is that coefficient vector. -/
-private theorem apply_infty_eq_mk_coeff (hu : Continuous u) {P : Fin (n + 1) → ℂ[X]} {d : ℕ}
+theorem apply_infty_eq_mk_coeff (hu : Continuous u) {P : Fin (n + 1) → ℂ[X]} {d : ℕ}
     (hdeg : ∀ j, (P j).natDegree ≤ d) (hc : (fun j ↦ (P j).coeff d) ≠ 0)
     (hPz : ∀ z : ℂ, (fun j ↦ (P j).eval z) ≠ 0) (hfin : ∀ z : ℂ, u z = mk ℂ _ (hPz z)) :
     u ∞ = mk ℂ _ hc := by
@@ -210,8 +201,9 @@ private theorem apply_infty_eq_mk_coeff (hu : Continuous u) {P : Fin (n + 1) →
   have hRinv (w : ℂ) (hw : w ≠ 0) : (fun j ↦ (P j).eval w⁻¹) = (w⁻¹) ^ d • R w := by
     have : Invertible w⁻¹ := invertibleOfNonzero (inv_ne_zero hw)
     funext j
-    rw [Pi.smul_apply, smul_eq_mul, mul_comm, ← eval₂_id, ← eval₂_reflect_mul_pow _ _ d _ (hdeg j),
-      invOf_eq_inv, inv_inv, eval₂_id]
+    -- Reflecting `Pⱼ` in degree `d` gives `Pⱼ(1 / w) = w⁻¹ ^ d Rⱼ(w)`.
+    have := eval₂_reflect_mul_pow (RingHom.id ℂ) w⁻¹ d (P j) (hdeg j)
+    simpa [R, eval₂_id, mul_comm] using this.symm
   have hR0 : R 0 = fun j ↦ (P j).coeff d := by
     funext j
     simp [R, ← coeff_zero_eq_eval_zero, coeff_reflect]
@@ -288,6 +280,7 @@ theorem exists_injective_eq_map_of_natDegree_le_one {P : Fin (n + 1) → ℂ[X]}
     (hinf : u ∞ = mk ℂ _ hc)
     (hz : ∀ z : ℂ, ∃ h : (fun j ↦ (P j).eval z) ≠ 0, u z = mk ℂ _ h) :
     ∃ (A : (Fin 2 → ℂ) →ₗ[ℂ] Fin (n + 1) → ℂ) (hA : Injective A),
+      (∀ x, A x = fun j ↦ x 0 * (P j).coeff 1 + x 1 * (P j).coeff 0) ∧
       ∀ x, u x = Projectivization.map A hA (equivProjectivization ℂ x) := by
   obtain ⟨A, hA⟩ : ∃ A : (Fin 2 → ℂ) →ₗ[ℂ] Fin (n + 1) → ℂ,
       ∀ x, A x = fun j ↦ x 0 * (P j).coeff 1 + x 1 * (P j).coeff 0 :=
@@ -320,7 +313,7 @@ theorem exists_injective_eq_map_of_natDegree_le_one {P : Fin (n + 1) → ℂ[X]}
       simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Pi.zero_apply]
       field_simp
       linear_combination this
-  refine ⟨A, hinj, fun x ↦ ?_⟩
+  refine ⟨A, hinj, hA, fun x ↦ ?_⟩
   induction x using OnePoint.rec with
   | infty =>
     rw [hinf, equivProjectivization_apply_infinity, map_mk]
