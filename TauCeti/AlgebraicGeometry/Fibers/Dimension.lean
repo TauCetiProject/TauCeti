@@ -44,6 +44,9 @@ algebraic cycles, `TauCeti.AlgebraicGeometry.Chow.cyclesPullback`.
 * `TauCeti.AlgebraicGeometry.height_eq_height_add_of_isFiberGenericPoint`: if moreover `f` has
   pure relative dimension `n`, a generic point `x` of its fibre satisfies
   `dim {x}⁻ = dim {f x}⁻ + n`.
+* `TauCeti.AlgebraicGeometry.PureRelativeDimension.comp_of_flat`: if `f` is flat of pure relative
+  dimension `n` and `g` has pure relative dimension `n'`, then `f ≫ g` has pure relative dimension
+  `n + n'`.
 -/
 
 public section
@@ -177,6 +180,59 @@ theorem height_eq_height_add_of_isFiberGenericPoint (f : X ⟶ Y) [f.IsOver (Spe
     have := (height_eq_topologicalKrullDim_closure_singleton (f.asFiber x)).trans hdim
     exact_mod_cast this
   rw [height_eq_height_add_height_asFiber k f x, h]
+
+/-- **Pure relative dimension of a composite.** Let `f : X ⟶ Y` and `g : Y ⟶ Z` be morphisms over
+a field `k` between schemes locally of finite type over `k`, of pure relative dimensions `n` and
+`n'`. If `f` is flat, then `f ≫ g` has pure relative dimension `n + n'`. A generic point `x` of a
+fibre of `f ≫ g` maps to a generic point of a fibre of `g` because flat morphisms are generalizing
+(`AlgebraicGeometry.Scheme.Hom.isFiberGenericPoint_comp_iff_of_generalizingMap`), so the closure of
+`x` has dimension `dim {g (f x)}⁻ + n' + n`, and comparing with
+`TauCeti.AlgebraicGeometry.height_eq_height_add_height_asFiber` for `f ≫ g` shows that the
+component of the fibre with generic point `x` has dimension `n + n'`. -/
+theorem PureRelativeDimension.comp_of_flat {Z : Scheme.{u}} [Z.Over (Spec (.of k))]
+    [LocallyOfFiniteType (Z ↘ Spec (.of k))] (f : X ⟶ Y) (g : Y ⟶ Z) [Flat f]
+    [f.IsOver (Spec (.of k))] [g.IsOver (Spec (.of k))] (n n' : ℕ) [PureRelativeDimension n f]
+    [PureRelativeDimension n' g] : PureRelativeDimension (n + n') (f ≫ g) := by
+  have : LocallyOfFiniteType f := by
+    have : LocallyOfFiniteType (f ≫ Y ↘ Spec (.of k)) := by
+      rw [comp_over]
+      infer_instance
+    exact locallyOfFiniteType_of_comp f (Y ↘ Spec (.of k))
+  have : LocallyOfFiniteType g := by
+    have : LocallyOfFiniteType (g ≫ Z ↘ Spec (.of k)) := by
+      rw [comp_over]
+      infer_instance
+    exact locallyOfFiniteType_of_comp g (Z ↘ Spec (.of k))
+  rw [pureRelativeDimension_iff_relativeDimensionLE_and_isPureDimensional_fiber]
+  refine ⟨inferInstance, fun z ↦ isPureDimensional_iff.mpr fun C hC ↦ ?_⟩
+  -- `C` is the closure of its generic point, which is `(f ≫ g).asFiber x` for a point `x` of
+  -- `X` with `(f ≫ g) x = z`.
+  obtain ⟨ξ, hξ⟩ : ∃ ξ, closure ({ξ} : Set ((f ≫ g).fiber z)) = C :=
+    ⟨_, hC.1.isGenericPoint_genericPoint_closure.def.trans
+      (isClosed_of_mem_irreducibleComponents C hC).closure_eq⟩
+  obtain ⟨⟨x, hx⟩, rfl⟩ : ∃ p, ((f ≫ g).fiberHomeo z).symm p = ξ :=
+    ⟨(f ≫ g).fiberHomeo z ξ, Homeomorph.symm_apply_apply _ _⟩
+  obtain rfl : (f ≫ g) x = z := hx
+  change closure {(f ≫ g).asFiber x} = C at hξ
+  have hx : (f ≫ g).IsFiberGenericPoint x := by
+    rw [Scheme.Hom.isFiberGenericPoint_iff_asFiber_mem_genericPoints]
+    change closure {(f ≫ g).asFiber x} ∈ irreducibleComponents _
+    rwa [hξ]
+  obtain ⟨hgx, hfx⟩ :=
+    (Scheme.Hom.isFiberGenericPoint_comp_iff_of_generalizingMap g (Flat.generalizingMap f) x).mp hx
+  have h1 := height_eq_height_add_height_asFiber k (f ≫ g) x
+  rw [height_eq_height_add_of_isFiberGenericPoint k f n hfx,
+    height_eq_height_add_of_isFiberGenericPoint k g n' hgx,
+    show height ((f ≫ g) x) = height (g (f x)) from congrArg height (Scheme.Hom.comp_apply ..),
+    add_assoc] at h1
+  have hfin : height (g (f x)) ≠ ⊤ := by
+    rw [height_eq_toNat_trdeg_residueField k]
+    exact ENat.natCast_ne_top _
+  have h2 : height ((f ≫ g).asFiber x) = ((n + n' : ℕ) : ℕ∞) := by
+    rw [add_comm n n', Nat.cast_add]
+    exact ((WithTop.add_left_inj hfin).mp h1).symm
+  rw [← hξ, ← height_eq_topologicalKrullDim_closure_singleton, h2]
+  rfl
 
 end GenericPointDimension
 
