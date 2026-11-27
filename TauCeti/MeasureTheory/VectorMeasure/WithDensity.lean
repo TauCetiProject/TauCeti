@@ -452,7 +452,7 @@ omit [IsFiniteMeasure ν]
 variable {m : VectorMeasure X F} {s t : Set X} {f : X → F}
 
 /-- If a vector measure `m` restricted to a measurable set `s` has density `f` with respect to
-`ν`, then `m t = ∫ x in t, f x ∂ν` for every measurable `t ⊆ s`. -/
+`ν`, where `f` is integrable on `s`, then `m t = ∫ x in t, f x ∂ν` for every measurable `t ⊆ s`. -/
 theorem apply_eq_setIntegral_of_restrict_eq_withDensityᵥ (hs : MeasurableSet s)
     (hm : m.restrict s = (ν.restrict s).withDensityᵥ f) (hf : IntegrableOn f s ν)
     (ht : MeasurableSet t) (hts : t ⊆ s) : m t = ∫ x in t, f x ∂ν := by
