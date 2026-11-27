@@ -54,8 +54,10 @@ The coefficient field is continuous where the data are regular along `u`
 regular jointly in the parameter it is continuous jointly in the parameter and the domain point
 (`continuousAt_floerConformalJetCoeff_family`). When the family only changes over a compact set, its
 coefficient fields are therefore continuous in the parameter in `L^∞`
-(`tendsto_eLpNorm_floerConformalJetCoeff_family`); this is how the operators of a family of data are
-compared in operator norm.
+(`tendsto_eLpNorm_floerConformalJetCoeff_family`), and the realizations of the members depend
+continuously on the parameter in operator norm
+(`continuousOn_floerConformalSobolevOperator_family`); this is how the operators of a family of data
+are compared.
 
 The `L²` norm of `D_u ξ` for the Lebesgue measure of the coordinates is the `L²` norm of the
 `(0, 1)`-form `(dξ + …)^(0,1)` for the conformal metric, since the conformal factors of a
@@ -395,6 +397,48 @@ theorem norm_floerConformalSobolevOperator_sq (ω : SymplecticForm V) (hρ : IsW
   exact setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
     rw [ω.floerLinearization_of_notMem_tsupport J Ks Kt u
       fun h ↦ hz ((mem_testSection_iff.1 hξ).2.2 h), norm_zero, zero_pow two_ne_zero]
+
+/-- **Continuity of the realizations along a family of data.** Let `(J_p, K_{s,p}, K_{t,p})`, for
+`p` in a subset `s` of a normed space `P`, be a family of Floer data which do not depend on `p` on
+`U` off a compact set `K`. Suppose that at every point `z` of `K` and every parameter of `s` the
+family is `C¹` (with `C²` Hamiltonians) jointly in the parameter, the domain point and the target
+point at `((p, z), u z)`, `u` is `C¹` at `z`, and the weight is continuous and positive at `z`. If
+the coefficient fields on conformal jets of the members are essentially bounded on `U`, then the
+realizations `D_u : W^{1,2}_0(U, V) → L²(U, V)` of the linearized Floer operators of the members
+depend continuously on `p ∈ s` in the operator norm. -/
+theorem continuousOn_floerConformalSobolevOperator_family (ω : SymplecticForm V)
+    {U K : Set (ℝ × ℝ)} (hU : MeasurableSet U) (hK : IsCompact K) {ρ : ℝ × ℝ → ℝ}
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {s : Set P}
+    {J : P × (ℝ × ℝ) → V → V →L[ℝ] V} {Ks Kt : P × (ℝ × ℝ) → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ p ∈ s, ∀ z ∈ K, ContDiffAt ℝ 1 (uncurry J) ((p, z), u z))
+    (hKs : ∀ p ∈ s, ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Ks) ((p, z), u z))
+    (hKt : ∀ p ∈ s, ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Kt) ((p, z), u z))
+    (hu : ∀ z ∈ K, ContDiffAt ℝ 1 u z) (hρ : ∀ z ∈ K, ContinuousAt ρ z)
+    (hρp : ∀ z ∈ K, 0 < ρ z)
+    (heq : ∀ p ∈ s, ∀ p' ∈ s, ∀ z ∈ U, z ∉ K →
+      J (p, z) = J (p', z) ∧ Ks (p, z) = Ks (p', z) ∧ Kt (p, z) = Kt (p', z))
+    (hM : ∀ p ∈ s, MemLp (ω.floerConformalJetCoeff ρ (fun z ↦ J (p, z)) (fun z ↦ Ks (p, z))
+      (fun z ↦ Kt (p, z)) u) ∞ (volume.restrict U)) :
+    ContinuousOn (fun p ↦ ω.floerConformalSobolevOperator U ρ (fun z ↦ J (p, z))
+      (fun z ↦ Ks (p, z)) (fun z ↦ Kt (p, z)) u) s := by
+  simp only [floerConformalSobolevOperator_def]
+  refine (continuousOn_jetOperator hM fun lam hlam ↦ ?_).clm_comp continuousOn_const
+  -- Convergence within `s` is convergence along the subtype `s`.
+  rw [tendsto_nhdsWithin_iff_subtype hlam]
+  refine tendsto_eLpNorm_top_sub_of_continuousAt_of_eq
+    (M := fun p : s ↦ ω.floerConformalJetCoeff ρ (fun z ↦ J (p.val, z)) (fun z ↦ Ks (p.val, z))
+      (fun z ↦ Kt (p.val, z)) u)
+    hU hK (.of_forall fun p ↦ (hM p p.property).aestronglyMeasurable) (fun z hzK ↦ ?_)
+    (.of_forall fun p z hz hzK ↦ ?_)
+  -- On the compact set `K` the coefficient field is jointly continuous in `(p, z)`.
+  · have h := ω.continuousAt_floerConformalJetCoeff_family (p := (lam, z)) (hJ lam hlam z hzK)
+      (hKs lam hlam z hzK) (hKt lam hlam z hzK) (hu z hzK) (hρ z hzK) (hρp z hzK)
+    exact h.comp (x := ((⟨lam, hlam⟩ : s), z))
+      (f := fun q : s × (ℝ × ℝ) ↦ ((q.1.val, q.2) : P × (ℝ × ℝ)))
+      ((continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd).continuousAt
+  -- Off `K` the data, hence the coefficient fields, do not depend on `p`.
+  · obtain ⟨hJz, hsz, htz⟩ := heq p p.property lam hlam z hz hzK
+    exact ω.floerConformalJetCoeff_congr_data _ u hJz hsz htz
 
 
 /-- **Peetre's estimate from an energy estimate.** Let the coefficient field of the linearized
