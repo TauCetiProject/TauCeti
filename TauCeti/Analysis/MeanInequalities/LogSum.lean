@@ -22,10 +22,11 @@ with equality exactly when `a` is proportional to `b` on `s`. A zero `a i` contr
 `0 * log 0 = 0` to the right side, which is the intended value. For the empty finset both sides
 are `0` and the proportionality condition holds.
 
-With `b i = 0` allowed and the value `+∞` for `a i * log (a i / 0)` when `a i > 0`, the
-inequality is Mathlib's `InformationTheory.mul_log_le_klDiv` for the finite measures with masses
-`a` and `b` on `s`; when `∑ a = ∑ b` it is the Gibbs inequality. The equality case is not stated
-in Mathlib.
+For the finite measures `μ` and `ν` with masses `a` and `b` on `s`, the Kullback-Leibler
+divergence `InformationTheory.klDiv μ ν` is `∑ i ∈ s, a i * log (a i / b i) + ∑ b - ∑ a`, so
+adding `∑ b - ∑ a` to both sides of the log-sum inequality gives the real form
+`InformationTheory.mul_log_le_toReal_klDiv` of Mathlib's `InformationTheory.mul_log_le_klDiv`.
+When `∑ a = ∑ b` the log-sum inequality is the Gibbs inequality.
 
 ## Main results
 
