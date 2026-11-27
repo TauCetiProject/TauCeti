@@ -45,10 +45,7 @@ theorem _root_.IsAddPGroup.finsupp {ι M : Type*} [AddCommGroup M] {p : ℕ}
     obtain ⟨m, hm⟩ := hM a
     obtain ⟨n, hn⟩ := ih
     refine ⟨m + n, ?_⟩
-    rw [smul_add, Finsupp.smul_single, pow_add]
-    rw [mul_comm (p ^ m) (p ^ n), ← smul_smul, hm, smul_zero, Finsupp.single_zero,
-      zero_add]
-    rw [mul_comm, ← smul_smul, hn, smul_zero]
+    simp [pow_add, smul_add, Finsupp.smul_single, mul_nsmul a, mul_nsmul' x, hm, hn]
 
 /-- Finitely supported functions into a divisible additive monoid are divisible. -/
 noncomputable instance instDivisibleByNatFinsupp {ι M : Type*} [AddMonoid M] [DivisibleBy M ℕ] :

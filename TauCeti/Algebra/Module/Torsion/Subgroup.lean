@@ -52,6 +52,8 @@ theorem torsionByEquivOfLE_apply_coe {A : Type*} [AddCommGroup A] (D : AddSubgro
     (n : ℕ) [Module (ZMod n) A[n]] [Module (ZMod n) D[n]]
     (hD : A[n] ≤ D) (x : A[n]) : ((D.torsionByEquivOfLE n hD x : D) : A) = x := by
   unfold torsionByEquivOfLE
+  erw [LinearEquiv.ofBijective_apply, AddMonoidHom.coe_toZModLinearMap]
+  -- The remaining coercions project the subtype constructors in the additive homomorphism.
   rfl
 
 /-- The inverse equivalence with torsion inside a subgroup preserves the ambient element. -/

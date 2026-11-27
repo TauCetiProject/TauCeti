@@ -5,18 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Torsion
+public import TauCeti.GroupTheory.Divisible.Prufer
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
-public import Mathlib.Topology.Instances.AddCircle.Defs
-import TauCeti.Algebra.AddCircle
 import TauCeti.NumberTheory.Padics.RatCast
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # The primary rational circle as a p-adic quotient
 
-Rational inclusion identifies the `p`-primary component of `ℚ/ℤ` with `ℚ_p/ℤ_p`.
+Rational inclusion identifies the Prüfer group `prufer p` with `ℚ_p/ℤ_p`.
+
+## Main definitions
+
+* `TauCeti.ratCirclePrimaryEquivPadicQuotient`: the additive equivalence from the Prüfer group
+  to the quotient of the p-adic field by its integers.
+
+## Main results
+
+* `TauCeti.ratCirclePrimaryEquivPadicQuotient_apply` and
+  `TauCeti.ratCirclePrimaryEquivPadicQuotient_symm_mk`: forward and inverse equations on rational
+  representatives.
 -/
 
 public section
@@ -40,7 +49,7 @@ private theorem ratCircleToPadicQuotient_coe (q : ℚ) :
       Submodule.Quotient.mk (q : ℚ_[p]) := rfl
 
 private theorem ratCircleToPadicQuotient_eq_zero {q : ℚ}
-    (hq : (q : AddCircle (1 : ℚ)) ∈ AddCommGroup.primaryComponent _ p)
+    (hq : (q : AddCircle (1 : ℚ)) ∈ prufer p)
     (h : ratCircleToPadicQuotient p q = 0) : (q : AddCircle (1 : ℚ)) = 0 := by
   obtain ⟨n, hn⟩ := AddCommGroup.mem_primaryComponent.mp hq
   rw [← AddCircle.coe_nsmul, AddCircle.coe_eq_zero_iff] at hn
@@ -53,7 +62,7 @@ private theorem ratCircleToPadicQuotient_eq_zero {q : ℚ}
     (by simpa using hz.symm)
 
 private theorem exists_rat_primary_representative (x : ℚ_[p]) :
-    ∃ q : ℚ, (q : AddCircle (1 : ℚ)) ∈ AddCommGroup.primaryComponent _ p ∧
+    ∃ q : ℚ, (q : AddCircle (1 : ℚ)) ∈ prufer p ∧
       Submodule.Quotient.mk (q : ℚ_[p]) =
         (Submodule.Quotient.mk x : ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) := by
   have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
@@ -91,10 +100,10 @@ private theorem exists_rat_primary_representative (x : ℚ_[p]) :
 /-- Rational inclusion identifies the `p`-primary component of the rational circle with
 `ℚ_p/ℤ_p`. -/
 noncomputable def ratCirclePrimaryEquivPadicQuotient :
-    AddCommGroup.primaryComponent (AddCircle (1 : ℚ)) p ≃+
+    prufer p ≃+
       ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p]) :=
   AddEquiv.ofBijective ((ratCircleToPadicQuotient p).comp
-    (AddCommGroup.primaryComponent (AddCircle (1 : ℚ)) p).subtype) <| by
+    (prufer p).subtype) <| by
     constructor
     · intro x y hxy
       apply sub_eq_zero.mp
@@ -113,7 +122,7 @@ noncomputable def ratCirclePrimaryEquivPadicQuotient :
 
 /-- The equivalence sends the class of a rational number to its class in `ℚ_p/ℤ_p`. -/
 theorem ratCirclePrimaryEquivPadicQuotient_apply (q : ℚ)
-    (hq : (q : AddCircle (1 : ℚ)) ∈ AddCommGroup.primaryComponent _ p) :
+    (hq : (q : AddCircle (1 : ℚ)) ∈ prufer p) :
     ratCirclePrimaryEquivPadicQuotient p ⟨q, hq⟩ =
       Submodule.Quotient.mk (q : ℚ_[p]) := by
   simp only [ratCirclePrimaryEquivPadicQuotient]
@@ -122,7 +131,7 @@ theorem ratCirclePrimaryEquivPadicQuotient_apply (q : ℚ)
 /-- The inverse equivalence sends a primary rational representative back to its class in
 the primary component of `ℚ/ℤ`. -/
 theorem ratCirclePrimaryEquivPadicQuotient_symm_mk (q : ℚ)
-    (hq : (q : AddCircle (1 : ℚ)) ∈ AddCommGroup.primaryComponent _ p) :
+    (hq : (q : AddCircle (1 : ℚ)) ∈ prufer p) :
     (ratCirclePrimaryEquivPadicQuotient p).symm
       (Submodule.Quotient.mk (q : ℚ_[p])) = ⟨q, hq⟩ := by
   apply (ratCirclePrimaryEquivPadicQuotient p).injective

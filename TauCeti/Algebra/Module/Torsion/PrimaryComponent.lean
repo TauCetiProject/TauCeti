@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Submodule.Defs
 public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import Mathlib.GroupTheory.Torsion
-import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 import TauCeti.GroupTheory.Torsion
 
 /-!
@@ -58,8 +57,6 @@ For finitely generated `𝔞`, the quotient `N ⧸ Γ_𝔞(N)` has no `𝔞`-pow
   `Z` and `M` are torsion, `M → N` is a bijection of `p`-power torsion;
 * `TauCeti.primaryComponent_toIntSubmodule_eq`: the additive `p`-primary component agrees with
   the primary component of the ideal `(p)` over the integers.
-* `IsAddTorsion.primaryComponent_isInternal`: a torsion abelian group is the internal direct sum
-  of its primary components indexed by the natural primes.
 * `Ideal.primaryComponent_directSum_eq_top`: direct sums of ideal-power torsion modules are torsion;
 * `Ideal.primaryComponent_quotient_pow_eq_top`: `R / Iⁿ` is `I`-power torsion;
 * `Ideal.primaryComponent_primaryComponent_eq_top`: `Γ_𝔞(N)` is `𝔞`-power torsion;
@@ -361,32 +358,5 @@ theorem primaryComponent_toIntSubmodule_eq (A : Type*) [AddCommGroup A] (p : ℕ
   change x ∈ AddCommGroup.primaryComponent A p ↔ _
   simp only [AddCommGroup.mem_primaryComponent,
     Ideal.mem_primaryComponent_span_singleton_iff, ← Int.natCast_pow, natCast_zsmul]
-
-/-- A torsion abelian group is the internal direct sum of its prime-primary components. -/
-theorem _root_.IsAddTorsion.primaryComponent_isInternal {A : Type*} [AddCommGroup A]
-    [DecidableEq Nat.Primes] (hA : IsAddTorsion A) :
-    DirectSum.IsInternal
-      (fun p : Nat.Primes ↦ (AddCommGroup.primaryComponent A p).toIntSubmodule) := by
-  classical
-  let e := Rat.HeightOneSpectrum.primesEquiv (R := ℤ)
-  have he : Rat.IsIntegralClosure.intEquiv ℤ = RingEquiv.refl ℤ := by
-    ext n
-    simp
-  have hgen (p : Nat.Primes) : Ideal.span {(p : ℤ)} = (e.symm p).asIdeal := by
-    have hpr := congrArg Subtype.val (e.apply_symm_apply p)
-    -- The prime underlying `e v` is the natural generator of the ideal.
-    change Rat.HeightOneSpectrum.natGenerator (e.symm p) = (p : ℕ) at hpr
-    have h := Rat.HeightOneSpectrum.span_natGenerator (e.symm p)
-    rw [hpr, he] at h
-    -- Display the ring homomorphism of the identity equivalence for `Ideal.map_id`.
-    change Ideal.span {(p : ℤ)} = Ideal.map (RingHom.id ℤ) _ at h
-    simpa only [Ideal.map_id] using h
-  refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top ?_ ?_
-  · simp only [primaryComponent_toIntSubmodule_eq, hgen]
-    exact (Ideal.iSupIndep_primaryComponent ℤ A).comp e.symm.injective
-  · simp only [primaryComponent_toIntSubmodule_eq, hgen]
-    exact (e.symm.surjective.iSup_comp
-      (fun P : IsDedekindDomain.HeightOneSpectrum ℤ ↦ P.asIdeal.primaryComponent A)).trans
-      (Ideal.iSup_primaryComponent_eq_top (isAddTorsion_iff_isTorsion_int.mp hA))
 
 end TauCeti

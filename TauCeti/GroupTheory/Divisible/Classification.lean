@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AddCircle
+public import TauCeti.GroupTheory.Divisible.Prufer
 public import TauCeti.GroupTheory.Divisible.MaxDivisible
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.Algebra.DirectSum.Basic
+public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Algebra.Field.ZMod
 
 import TauCeti.Algebra.Module.Torsion.Essential
@@ -17,6 +17,7 @@ import TauCeti.Algebra.Group.Finsupp
 import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import TauCeti.Algebra.Module.Torsion.Subgroup
 import Mathlib.Algebra.Category.Grp.Injective
+import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 
 /-!
 # Classification of divisible abelian groups
@@ -32,6 +33,13 @@ respectively, so their cardinalities are intrinsic.
 `nonempty_ratModule` supplies the unique rational structure on a divisible torsion-free
 group. All classification results accept caller-chosen bases and scalar structures.
 
+## Main results
+
+* `IsAddTorsion.primaryComponent_isInternal`: a torsion abelian group is the internal direct sum
+  of its primary components indexed by the natural primes.
+* `TauCeti.nonempty_addEquiv_pruferSum`: a divisible primary group is a sum of Prüfer groups.
+* `TauCeti.nonempty_addEquiv_rat_pruferSum`: the classification of divisible abelian groups.
+
 ## References
 
 * L. Fuchs, *Abelian Groups* (2015), Chapter 4, Theorem 3.1, pp. 140–141.
@@ -43,46 +51,6 @@ public section
 namespace TauCeti
 
 open AddSubgroup
-
-/-- For prime `p`, the Prüfer `p`-group, realized inside the rational circle `ℚ/ℤ`. -/
-abbrev prufer (p : ℕ) := AddCommGroup.primaryComponent (AddCircle (1 : ℚ)) p
-
-/-- For prime `p`, the Prüfer subgroup of the rational circle is divisible. -/
-theorem isDivisible_prufer (p : ℕ) [Fact p.Prime] : (prufer p).IsDivisible := by
-  let : DivisibleBy (AddCircle (1 : ℚ)) ℕ :=
-    AddGroup.divisibleByNatOfDivisibleByInt _
-  exact AddCommGroup.isDivisible_primaryComponent p (Fact.out : p.Prime)
-
-/-- The canonical embedding of the order-`p` cyclic group in the Prüfer group. -/
-def pruferTorsion (p : ℕ) : ZMod p →+ prufer p where
-  toFun x := ⟨ZMod.toRatAddCircle p x, 1, by
-    have hx : p • ZMod.toRatAddCircle p x = 0 := by rw [← map_nsmul]; simp
-    simpa using hx⟩
-  map_zero' := Subtype.ext (map_zero _)
-  map_add' x y := Subtype.ext (map_add _ x y)
-
-/-- The cyclic embedding agrees with the rational-circle character. -/
-@[simp]
-theorem coe_pruferTorsion (p : ℕ) (a : ZMod p) :
-    (pruferTorsion p a : AddCircle (1 : ℚ)) = ZMod.toRatAddCircle p a := by
-  simp only [pruferTorsion, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
-
-/-- The canonical cyclic embedding in a Prüfer group is injective. -/
-theorem pruferTorsion_injective (p : ℕ) [NeZero p] : Function.Injective (pruferTorsion p) :=
-  fun _ _ h ↦ ZMod.toRatAddCircle_injective p (congrArg Subtype.val h)
-
-/-- The image of the canonical cyclic embedding is exactly the `p`-torsion. -/
-theorem pruferTorsion_range (p : ℕ) [NeZero p] :
-    (pruferTorsion p).range = (prufer p)[p] := by
-  ext x
-  constructor
-  · rintro ⟨a, rfl⟩
-    rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul]
-    simp
-  · intro hx
-    obtain ⟨a, ha⟩ := ZMod.exists_toRatAddCircle_eq_of_nsmul_eq_zero p
-      (congrArg Subtype.val (AddSubgroup.torsionBy.nsmul_iff.mp hx))
-    exact ⟨a, Subtype.ext ha⟩
 
 section Primary
 
@@ -171,6 +139,33 @@ section Torsion
 
 open scoped DirectSum
 
+/-- A torsion abelian group is the internal direct sum of its prime-primary components. -/
+theorem _root_.IsAddTorsion.primaryComponent_isInternal {A : Type*} [AddCommGroup A]
+    [DecidableEq Nat.Primes] (hA : IsAddTorsion A) :
+    DirectSum.IsInternal
+      (fun p : Nat.Primes ↦ (AddCommGroup.primaryComponent A p).toIntSubmodule) := by
+  classical
+  let e := Rat.HeightOneSpectrum.primesEquiv (R := ℤ)
+  have he : Rat.IsIntegralClosure.intEquiv ℤ = RingEquiv.refl ℤ := by
+    ext n
+    simp
+  have hgen (p : Nat.Primes) : Ideal.span {(p : ℤ)} = (e.symm p).asIdeal := by
+    have hpr := congrArg Subtype.val (e.apply_symm_apply p)
+    -- The prime underlying `e v` is the natural generator of the ideal.
+    change Rat.HeightOneSpectrum.natGenerator (e.symm p) = (p : ℕ) at hpr
+    have h := Rat.HeightOneSpectrum.span_natGenerator (e.symm p)
+    rw [hpr, he] at h
+    -- Display the ring homomorphism of the identity equivalence for `Ideal.map_id`.
+    change Ideal.span {(p : ℤ)} = Ideal.map (RingHom.id ℤ) _ at h
+    simpa only [Ideal.map_id] using h
+  refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top ?_ ?_
+  · simp only [primaryComponent_toIntSubmodule_eq, hgen]
+    exact (Ideal.iSupIndep_primaryComponent ℤ A).comp e.symm.injective
+  · simp only [primaryComponent_toIntSubmodule_eq, hgen]
+    exact (e.symm.surjective.iSup_comp
+      (fun P : IsDedekindDomain.HeightOneSpectrum ℤ ↦ P.asIdeal.primaryComponent A)).trans
+      (Ideal.iSup_primaryComponent_eq_top (isAddTorsion_iff_isTorsion_int.mp hA))
+
 attribute [local instance] AddSubgroup.torsionBy.zmodModule
 
 /-- A divisible torsion abelian group is a direct sum, over the primes, of Prüfer groups.
@@ -186,8 +181,10 @@ theorem nonempty_addEquiv_torsion_pruferSum {A : Type*} [AddCommGroup A] [Divisi
     let : Fact (p : ℕ).Prime := ⟨p.property⟩
     obtain ⟨_⟩ := isDivisible_iff_nonempty_divisibleBy.mp
       (AddCommGroup.isDivisible_primaryComponent (A := A) p p.property)
-    exact nonempty_addEquiv_pruferSum
-      (CommGroup.primaryComponent.isPGroup (G := Multiplicative A))
+    -- Mathlib's multiplicative primary component has the same additive carrier.
+    have hprimary : IsAddPGroup p (AddCommGroup.primaryComponent A p) :=
+      CommGroup.primaryComponent.isPGroup (G := Multiplicative A)
+    exact nonempty_addEquiv_pruferSum hprimary
       ((b p).map ((AddCommGroup.primaryComponent A p).torsionByEquivOfLE p fun x hx ↦
         ⟨1, by simpa only [pow_one] using torsionBy.nsmul_iff.mp hx⟩))
   let e := fun p ↦ Classical.choice (hex p)
