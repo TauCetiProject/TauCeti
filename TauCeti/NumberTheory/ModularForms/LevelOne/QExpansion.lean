@@ -372,18 +372,10 @@ theorem mapRingHom_laurentQExpansion_discriminant_zpow (φ : ℂ →+* ℂ) (m :
     · exact map_zero φ
     · exact ModularForm.qExpansion_natCast_discriminant_coeff_mem (N := N)
         (R := φ.eqLocus (RingHom.id ℂ)) _
-  have hpow (m : ℤ) : UpperHalfPlane.laurentQExpansion N
+  have hpow : UpperHalfPlane.laurentQExpansion N
       (fun τ ↦ ModularForm.discriminant τ ^ m) =
-      UpperHalfPlane.laurentQExpansion N ModularForm.discriminant ^ m := by
-    cases m with
-    | ofNat n =>
-      have h := UpperHalfPlane.laurentQExpansion_pow hΔ.meromorphicAt n
-      simpa [Pi.pow_def] using h
-    | negSucc n =>
-      have h := UpperHalfPlane.laurentQExpansion_inv
-        (UpperHalfPlane.meromorphicAt_cuspFunction_pow hΔ.meromorphicAt (n + 1))
-      rw [UpperHalfPlane.laurentQExpansion_pow hΔ.meromorphicAt] at h
-      simpa [Pi.pow_def, Pi.inv_def, zpow_negSucc] using h
+      UpperHalfPlane.laurentQExpansion N ModularForm.discriminant ^ m :=
+    UpperHalfPlane.laurentQExpansion_zpow hΔ.meromorphicAt m
   rw [hpow, map_zpow₀, hfix]
 
 end Period

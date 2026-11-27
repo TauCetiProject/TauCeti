@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Holomorphic
 public import TauCeti.NumberTheory.ModularForms.WeakForm
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
-import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Invariant
 import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
 
 /-!
@@ -64,45 +63,6 @@ namespace TauCeti
 
 variable {N : ℕ} [NeZero N]
 
-/-- A weight-zero weak form on `Γ(N)` as a meromorphic function on `X(N)`. -/
-private def weakFormMeromorphicFunction {F : ℍ → ℂ} (hF : IsWeakForm (Gamma N) 0 F) :
-    MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient :=
-  meromorphicFunctionOfGammaInvariant F hF.mdifferentiable
-    (fun γ hγ τ ↦ by rw [← congrFun (ModularForm.SL_slash_zero F γ) τ, hF.slash_eq γ hγ])
-    (fun γ ↦ by
-      obtain ⟨c, hc⟩ := hF.exists_isBigO_exp γ
-      exact ⟨c, by rwa [ModularForm.SL_slash_zero] at hc⟩)
-
-private theorem weakFormMeromorphicFunction_ofQuotient_mk {F : ℍ → ℂ}
-    (hF : IsWeakForm (Gamma N) 0 F) (τ : ℍ) :
-    weakFormMeromorphicFunction hF (ofQuotient (Quotient.mk _ τ)) = F τ :=
-  meromorphicFunctionOfGammaInvariant_ofQuotient_mk _ _ _ τ
-
-/-- The pullback to `ℍ` of a function on `X(N)` without poles on `Y(N)` is a weak form of weight
-`0` on `Γ(N)`. -/
-private theorem isWeakForm_finitePart
-    {Ψ : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient}
-    (hΨ : ∀ τ : ℍ, Ψ (ofQuotient (Quotient.mk _ τ)) ≠ ∞) :
-    IsWeakForm (Gamma N) 0 fun τ ↦ Ψ.finitePart (ofQuotient (Quotient.mk _ τ)) := by
-  have hslash (γ : SL(2, ℤ)) : (fun τ ↦ Ψ.finitePart (ofQuotient (Quotient.mk _ τ))) ∣[(0 : ℤ)] γ =
-      fun τ ↦ (unop (modularFunctionAction N γ) Ψ).finitePart (ofQuotient (Quotient.mk _ τ)) := by
-    rw [ModularForm.SL_slash_zero]
-    funext τ
-    rw [finitePart_unop_modularFunctionAction]
-  have hinv : ∀ γ ∈ Gamma N,
-      (fun τ ↦ Ψ.finitePart (ofQuotient (Quotient.mk _ τ))) ∣[(0 : ℤ)] γ =
-        fun τ ↦ Ψ.finitePart (ofQuotient (Quotient.mk _ τ)) := fun γ hγ ↦ by
-    rw [hslash, modularFunctionAction_eq_one_of_mem hγ, unop_one, AlgEquiv.one_apply]
-  refine isWeakForm_iff_meromorphicAt_cuspFunction.mpr ⟨fun τ ↦ ?_, hinv, fun γ ↦ ?_⟩
-  · exact (MeromorphicFunction.mdifferentiableAt_finitePart (hΨ τ)).comp τ
-      ((mdifferentiable_ofQuotient _).comp τ (Subgroup.mdifferentiable_quotientMk _ τ))
-  · refine ⟨N, NeZero.pos N, ?_, ?_⟩
-    · simpa [strictLevel_Gamma] using periodic_slash_comp_ofComplex hinv γ
-    · rw [hslash]
-      simpa [cuspDatumInftyGamma_width, cuspDatumInftyGamma_scaling] using
-        meromorphicAt_cuspFunction_finitePart (cuspDatumInftyGamma N)
-          (unop (modularFunctionAction N γ) Ψ)
-
 /-- Conjugating the Fourier coefficients of a weight-zero weak form on `Γ(N)`, at every cusp. -/
 private theorem exists_isWeakForm_zero_laurentQExpansion_slash_eq {F : ℍ → ℂ}
     (hF : IsWeakForm (Gamma N) 0 F) (σ : ℂ ≃+* ℂ) {d : (ZMod N)ˣ}
@@ -114,36 +74,27 @@ private theorem exists_isWeakForm_zero_laurentQExpansion_slash_eq {F : ℍ → �
       UpperHalfPlane.laurentQExpansion N (G ∣[(0 : ℤ)] γ) =
         HahnSeries.mapRingHom (σ : ℂ →+* ℂ)
           (UpperHalfPlane.laurentQExpansion N (F ∣[(0 : ℤ)] γ')) := by
-  set Φ := weakFormMeromorphicFunction hF
+  set Φ := hF.meromorphicFunction
   have hΨ : ∀ τ : ℍ, modularFunctionCoeffAction N σ Φ (ofQuotient (Quotient.mk _ τ)) ≠ ∞ :=
     (forall_ne_infty_modularFunctionCoeffAction_iff σ Φ).mpr fun τ ↦ by
-      rw [weakFormMeromorphicFunction_ofQuotient_mk]
+      rw [hF.meromorphicFunction_ofQuotient_mk]
       exact coe_ne_infty _
-  refine ⟨_, isWeakForm_finitePart hΨ, fun γ γ' hγ ↦ ?_⟩
-  have hF' : F ∣[(0 : ℤ)] γ' = fun τ ↦
-      (unop (modularFunctionAction N γ') Φ).finitePart (ofQuotient (Quotient.mk _ τ)) := by
-    rw [ModularForm.SL_slash_zero]
-    funext τ
-    rw [finitePart_unop_modularFunctionAction, MeromorphicFunction.finitePart_of_eq_coe
-      (weakFormMeromorphicFunction_ofQuotient_mk hF _)]
-  have hG : (fun τ ↦ (modularFunctionCoeffAction N σ Φ).finitePart
-      (ofQuotient (Quotient.mk _ τ))) ∣[(0 : ℤ)] γ = fun τ ↦
-      (unop (modularFunctionAction N γ) (modularFunctionCoeffAction N σ Φ)).finitePart
-        (ofQuotient (Quotient.mk _ τ)) := by
-    rw [ModularForm.SL_slash_zero]
-    funext τ
-    rw [finitePart_unop_modularFunctionAction]
+  refine ⟨_, isWeakForm_finitePart_ofQuotient_mk hΨ, fun γ γ' hγ ↦ ?_⟩
+  -- `F` is the pullback to `ℍ` of the finite part of `Φ`.
+  have hFΦ : (fun τ ↦ Φ.finitePart (ofQuotient (Quotient.mk _ τ))) = F :=
+    funext hF.finitePart_meromorphicFunction_ofQuotient_mk
   calc
     _ = laurentQExpansion (cuspDatumInftyGamma N)
         (unop (modularFunctionAction N γ) (modularFunctionCoeffAction N σ Φ)) := by
-      rw [hG, laurentQExpansion_cuspDatumInftyGamma]
+      rw [finitePart_ofQuotient_slash_zero, laurentQExpansion_cuspDatumInftyGamma]
     _ = laurentQExpansion (cuspDatumInftyGamma N)
         (modularFunctionCoeffAction N σ (unop (modularFunctionAction N γ') Φ)) := by
       rw [modularFunctionCoeffAction_unop_modularFunctionAction hσ hγ]
     _ = HahnSeries.mapRingHom (σ : ℂ →+* ℂ)
         (laurentQExpansion (cuspDatumInftyGamma N) (unop (modularFunctionAction N γ') Φ)) :=
       laurentQExpansion_modularFunctionCoeffAction σ _
-    _ = _ := by rw [hF', laurentQExpansion_cuspDatumInftyGamma]
+    _ = _ := by
+      rw [← hFΦ, finitePart_ofQuotient_slash_zero, laurentQExpansion_cuspDatumInftyGamma]
 
 /-- **Galois conjugates of weak forms of weight divisible by `12`.** Let `σ` be an automorphism
 of `ℂ` with `σ ζ_N = ζ_N ^ d`. For a weak form `f` of weight `12 m` on `Γ(N)` there is a weak
@@ -208,6 +159,14 @@ theorem IsWeakForm.exists_laurentQExpansion_slash_eq_mapRingHom {m : ℤ} {f : �
       rw [← UpperHalfPlane.laurentQExpansion_mul (hmero (-m)) (hmero m), hDD]
       simp only [UpperHalfPlane.laurentQExpansion_one, mul_one]
 
+/-- Every translate of a modular form on `Γ(N)` has a cusp function in `exp (2 π i τ / N)`
+analytic at `0`. -/
+private theorem analyticAt_cuspFunction_slash_Gamma {k : ℤ} {F : Type*} [FunLike F ℍ ℂ]
+    [ModularFormClass F ((Gamma N).map (mapGL ℝ)) k] (f : F) (γ : SL(2, ℤ)) :
+    AnalyticAt ℂ (cuspFunction N (f ∣[k] γ)) 0 := by
+  simpa only [strictLevel_Gamma] using
+    ModularFormClass.analyticAt_cuspFunction_slash (Γ := Gamma N) f γ
+
 /-- The weak-form conjugate of a modular form on `Γ(N)` of weight `12 m`: its expansion at `∞`
 is the conjugate of that of `f`, and at every cusp it tends to the conjugate of the value of `f`
 at a twisted cusp. -/
@@ -219,9 +178,6 @@ private theorem exists_isWeakForm_tendsto_slash_atImInfty {m : ℤ} {F : Type*} 
       ∀ γ : SL(2, ℤ), ∃ γ' : SL(2, ℤ), Tendsto (g ∣[12 * m] γ) atImInfty
         (nhds (σ ((qExpansion N (f ∣[12 * m] γ')).coeff 0))) := by
   obtain ⟨d, hd⟩ := ZMod.exists_map_stdAddChar_one_eq (N := N) σ
-  have han (γ : SL(2, ℤ)) : AnalyticAt ℂ (cuspFunction N (f ∣[12 * m] γ)) 0 := by
-    simpa only [strictLevel_Gamma] using
-      ModularFormClass.analyticAt_cuspFunction_slash (Γ := Gamma N) f γ
   obtain ⟨g, hg, hgσ⟩ :=
     (ModularFormClass.isWeakForm f).exists_laurentQExpansion_slash_eq_mapRingHom σ hd
   have hσ (γ γ' : SL(2, ℤ)) (hγ : ((γ' : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) *
@@ -229,7 +185,7 @@ private theorem exists_isWeakForm_tendsto_slash_atImInfty {m : ℤ} {F : Type*} 
         (γ : SL(2, ZMod N))) : UpperHalfPlane.laurentQExpansion N (g ∣[12 * m] γ) =
       (PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N (f ∣[12 * m] γ')) : LaurentSeries ℂ) := by
     rw [hgσ γ γ' hγ,
-      UpperHalfPlane.laurentQExpansion_of_analyticAt (han γ'),
+      UpperHalfPlane.laurentQExpansion_of_analyticAt (analyticAt_cuspFunction_slash_Gamma f γ'),
       HahnSeries.mapRingHom_apply, HahnSeries.map_ofPowerSeries]
   refine ⟨g, hg, by simpa using hσ 1 1 (by simp), fun γ ↦ ?_⟩
   obtain ⟨γ', hγ'⟩ := exists_mul_diagonal_eq_diagonal_mul d γ
@@ -258,7 +214,7 @@ theorem _root_.ModularForm.exists_qExpansion_eq_map {k : ℤ} (hk : 12 ∣ k)
   obtain ⟨F, rfl⟩ := exists_modularForm_coe_eq_iff.mpr ⟨hg, hbdd⟩
   refine ⟨F, HahnSeries.ofPowerSeries_injective (Γ := ℤ) ?_⟩
   rw [← hg₀, UpperHalfPlane.laurentQExpansion_of_analyticAt]
-  simpa [strictLevel_Gamma] using ModularFormClass.analyticAt_cuspFunction_slash (Γ := Gamma N) F 1
+  simpa using analyticAt_cuspFunction_slash_Gamma F 1
 
 /-- **Galois conjugates of cusp forms of weight divisible by `12`.** For every automorphism `σ`
 of `ℂ` and every cusp form `f` on `Γ(N)` of weight `k` divisible by `12`, applying `σ` to the
@@ -277,10 +233,7 @@ theorem _root_.CuspForm.exists_qExpansion_eq_map {k : ℤ} (hk : 12 ∣ k)
     have hf := ModularFormClass.isWeakForm f
     have hper : Function.Periodic ((f ∣[12 * m] γ') ∘ ofComplex) N := by
       simpa [strictLevel_Gamma] using periodic_slash_comp_ofComplex hf.slash_eq γ'
-    have han : AnalyticAt ℂ (cuspFunction N (f ∣[12 * m] γ')) 0 := by
-      simpa only [strictLevel_Gamma] using
-        ModularFormClass.analyticAt_cuspFunction_slash (Γ := Gamma N) f γ'
-    rwa [qExpansion_coeff_zero hN han hper,
+    rwa [qExpansion_coeff_zero hN (analyticAt_cuspFunction_slash_Gamma f γ') hper,
       (CuspFormClass.zero_at_infty_slash f γ').valueAtInfty_eq_zero, map_zero] at hγ'
   let G : CuspForm ((Gamma N).map (mapGL ℝ)) (12 * m) :=
     { toFun := g
@@ -295,6 +248,6 @@ theorem _root_.CuspForm.exists_qExpansion_eq_map {k : ℤ} (hk : 12 ∣ k)
   have hGg : ⇑G = g := rfl
   refine ⟨G, HahnSeries.ofPowerSeries_injective (Γ := ℤ) ?_⟩
   rw [← hg₀, ← hGg, UpperHalfPlane.laurentQExpansion_of_analyticAt]
-  simpa [strictLevel_Gamma] using ModularFormClass.analyticAt_cuspFunction_slash (Γ := Gamma N) G 1
+  simpa using analyticAt_cuspFunction_slash_Gamma G 1
 
 end TauCeti

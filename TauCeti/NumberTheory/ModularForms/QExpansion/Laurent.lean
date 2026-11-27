@@ -462,6 +462,15 @@ theorem laurentQExpansion_inv (hf : MeromorphicAt (cuspFunction h f) 0) :
     rw [cuspFunction_of_ne_zero hq, cuspFunction_of_ne_zero hq, Pi.mul_apply, Pi.inv_apply,
       mul_inv_cancel₀ hq', Pi.one_apply]
 
+/-- The Laurent `q`-expansion takes integer powers to integer powers. -/
+theorem laurentQExpansion_zpow (hf : MeromorphicAt (cuspFunction h f) 0) (n : ℤ) :
+    laurentQExpansion h (f ^ n) = laurentQExpansion h f ^ n := by
+  cases n with
+  | ofNat n => simpa only [Int.ofNat_eq_natCast, zpow_natCast] using laurentQExpansion_pow hf n
+  | negSucc n =>
+    rw [zpow_negSucc, zpow_negSucc, laurentQExpansion_inv (meromorphicAt_cuspFunction_pow hf _),
+      laurentQExpansion_pow hf]
+
 /-- The Laurent `q`-expansion commutes with quotients. -/
 theorem laurentQExpansion_div (hf : MeromorphicAt (cuspFunction h f) 0)
     (hg : MeromorphicAt (cuspFunction h g) 0) :
