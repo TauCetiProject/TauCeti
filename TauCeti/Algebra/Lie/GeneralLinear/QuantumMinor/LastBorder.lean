@@ -49,7 +49,7 @@ private theorem sum_mul_quantumMinor_removeNth_castSucc
     rw [Fin.removeNth_apply, Fin.succAbove_ne_last_last j.castSucc_lt_last.ne]
   rw [hj, hlast, mul_smul_comm, smul_comm, mul_assoc]
 
-private theorem quantumMinor_cons_of_notMem_range_step (E : Matrix ι ι A) {n : ℕ} (u : K)
+private theorem quantumMinor_cons_left_of_notMem_range_step (E : Matrix ι ι A) {n : ℕ} (u : K)
     (a : Fin (n + 1) → ι) (b : Fin (n + 2) → ι) {r : ι} (hr : r ∉ Set.range b)
     (hE : ∀ i (j : Fin (n + 1)), ⁅E r (b (Fin.last (n + 1))), E (a i) (b j.castSucc)⁆ =
       if b (Fin.last (n + 1)) = a i then E r (b j.castSucc) else 0)
@@ -102,7 +102,7 @@ private theorem quantumMinor_cons_of_notMem_range_step (E : Matrix ι ι A) {n :
   rw [← hcorr]
   abel
 
-private theorem quantumMinor_cons_of_notMem_range (E : Matrix ι ι A) {n : ℕ} (u : K)
+private theorem quantumMinor_cons_left_of_notMem_range (E : Matrix ι ι A) {n : ℕ} (u : K)
     (a : Fin n → ι) (b : Fin (n + 1) → ι) {r : ι} (hr : r ∉ Set.range b)
     (hE : ∀ i j k, k < j → ⁅E r (b j), E (a i) (b k)⁆ = if b j = a i then E r (b k) else 0) :
     E.quantumMinor u (Fin.cons r a) b = ∑ j : Fin (n + 1), (-1 : ℤ) ^ j.val •
@@ -112,7 +112,7 @@ private theorem quantumMinor_cons_of_notMem_range (E : Matrix ι ι A) {n : ℕ}
     have hne : r ≠ b 0 := fun h ↦ hr ⟨0, h.symm⟩
     simp [hne]
   | succ n ih =>
-    refine quantumMinor_cons_of_notMem_range_step E u a b hr
+    refine quantumMinor_cons_left_of_notMem_range_step E u a b hr
       (fun i j ↦ hE i _ _ j.castSucc_lt_last) fun i ↦ ?_
     exact ih (i.removeNth a) (Fin.init b) (fun ⟨j, hj⟩ ↦ hr ⟨j.castSucc, hj⟩)
       (fun k j l h ↦ hE (i.succAbove k) j.castSucc l.castSucc (Fin.castSucc_lt_castSucc_iff.mpr h))
@@ -120,12 +120,12 @@ private theorem quantumMinor_cons_of_notMem_range (E : Matrix ι ι A) {n : ℕ}
 /-- Expand along an inserted row whose label is absent from the columns. Its entries multiply
 on the left, and the cofactors retain `u`. Only the commutators of an exterior entry with
 entries in preceding columns of the other rows are required. -/
-theorem quantumMinor_insertNth_of_notMem_range (E : Matrix ι ι A) {n : ℕ} (u : K)
+theorem quantumMinor_insertNth_left_of_notMem_range (E : Matrix ι ι A) {n : ℕ} (u : K)
     (a : Fin n → ι) (b : Fin (n + 1) → ι) (p : Fin (n + 1)) {r : ι} (hr : r ∉ Set.range b)
     (hE : ∀ i j k, k < j → ⁅E r (b j), E (a i) (b k)⁆ = if b j = a i then E r (b k) else 0) :
     E.quantumMinor u (p.insertNth r a) b = ∑ j : Fin (n + 1), (-1 : ℤ) ^ (p.val + j.val) •
       (E r (b j) * E.quantumMinor u a (j.removeNth b)) := by
-  rw [E.quantumMinor_insertNth_left, E.quantumMinor_cons_of_notMem_range u a b hr hE,
+  rw [E.quantumMinor_insertNth_left, E.quantumMinor_cons_left_of_notMem_range u a b hr hE,
     Finset.smul_sum]
   simp only [smul_smul, ← pow_add]
 
@@ -156,7 +156,7 @@ theorem quantumMinor_snoc (E : Matrix ι ι A) {n : ℕ} (u : K) (a b : Fin (n +
   have hci : a i ≠ c := fun h ↦ hc ⟨i, h⟩
   simp only [htuple, hci, ite_false, zero_add]
   rw [← Fin.insertNth_last',
-    E.quantumMinor_insertNth_of_notMem_range u (i.removeNth a) b (Fin.last n)
+    E.quantumMinor_insertNth_left_of_notMem_range u (i.removeNth a) b (Fin.last n)
       hr (fun k j l ↦ hE (i.succAbove k) j l), Finset.sum_mul, Finset.smul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp only [Fin.val_last, smul_mul_assoc, smul_smul, ← pow_add, ← neg_smul]
