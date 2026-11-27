@@ -627,7 +627,7 @@ variable [Fintype X]
 
 /-- **The shift moves the string powers along the string**: `𝔢 𝔢^i = 𝔢^(i+1)`; in particular
 `𝔢 𝔢^(s-1) = 0`. -/
-theorem gradedShift_mulVec_stringPower (i : ℕ) :
+@[simp] theorem gradedShift_mulVec_stringPower (i : ℕ) :
     gradedShift X s N c *ᵥ stringPower X s N c i = stringPower X s N c (i + 1) := by
   classical
   rcases lt_or_ge i s with hi | hi
@@ -642,7 +642,7 @@ theorem gradedShift_mulVec_stringPower (i : ℕ) :
   · rw [stringPower_eq_zero N c hi, stringPower_eq_zero N c (by omega), mulVec_zero]
 
 /-- The string power `𝔢^i` is the image of `𝔢^0` under the `i`-th power of the shift. -/
-theorem gradedShift_pow_mulVec_stringPower_zero [DecidableEq X] (i : ℕ) :
+@[simp] theorem gradedShift_pow_mulVec_stringPower_zero [DecidableEq X] (i : ℕ) :
     gradedShift X s N c ^ i *ᵥ stringPower X s N c 0 = stringPower X s N c i := by
   induction i with
   | zero => simp
@@ -725,17 +725,17 @@ section Map
 variable {S : Type*}
 
 /-- The graded Gram matrix is compatible with ring homomorphisms. -/
-theorem gradedGram_map [Ring R] [Ring S] [DecidableEq X] (f : R →+* S) (N : R) :
+@[simp] theorem gradedGram_map [Ring R] [Ring S] [DecidableEq X] (f : R →+* S) (N : R) :
     (gradedGram X s N).map f = gradedGram X s (f N) := by
   ext (x | a) (y | b) <;> simp [Matrix.one_apply, apply_ite f]
 
 /-- The shift is compatible with ring homomorphisms. -/
-theorem gradedShift_map [Ring R] [Ring S] (f : R →+* S) (N c : R) :
+@[simp] theorem gradedShift_map [Ring R] [Ring S] (f : R →+* S) (N c : R) :
     (gradedShift X s N c).map f = gradedShift X s (f N) (f c) := by
   ext (x | b) (y | a) <;> simp [gradedShiftCoeff_def, apply_ite f]
 
 /-- The string map is compatible with ring homomorphisms. -/
-theorem stringMap_map [Ring R] [Ring S] (f : R →+* S) (N c : R) :
+@[simp] theorem stringMap_map [Ring R] [Ring S] (f : R →+* S) (N c : R) :
     (stringMap X X' s N c).map f = stringMap X X' s (f N) (f c) := by
   ext (x | b) (y | a) <;> simp [stringMapCoeff_def, apply_ite f]
 
