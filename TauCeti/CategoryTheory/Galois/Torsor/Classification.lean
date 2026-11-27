@@ -306,6 +306,13 @@ noncomputable def torsorHomOfIso
       ← GrothendieckTopology.Point.grpGerm_smul_toPresheafFiber]
     exact e.map_smul_A _ _
 
+/-- The morphism of sheaves underlying `torsorHomOfIso e` is `sheafHomOfIso e`. -/
+@[simp]
+theorem torsorHomOfIso_hom
+    (e : (torsorStalkSmoothTorsor P).Iso (torsorStalkSmoothTorsor Q)) :
+    (torsorHomOfIso e).hom = sheafHomOfIso e :=
+  (rfl)
+
 end HomOfIso
 
 section Bijective
