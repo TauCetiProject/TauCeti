@@ -9,7 +9,6 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Homogeneous.Basic
 public import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
 import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 import Mathlib.Order.Filter.AtTopBot.Interval
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Series
 
@@ -150,19 +149,14 @@ theorem ae_ae_eq_apply_of_tendsto_eLpNorm_sub_sum_apply_block [Nontrivial V] {σ
   set m : ℤ → Lp ℂ ∞ (volume : Measure V) := fun j ↦ (φ.memLp_ofReal_littlewoodPaley j ∞).toLp _
   have hm (j : ℤ) : m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) :=
     (φ.memLp_ofReal_littlewoodPaley j ∞).coeFn_toLp
-  -- The blocks of `u` are the `L²` blocks of `f`.
-  have hblock (j : ℤ) : u.block j = Lp.fourierMultiplierCLM F (m j) f :=
-    Lp.toTemperedDistribution_injective <| by
-      dsimp only
-      rw [TauCeti.HomogeneousBesovSpace.coe_block, hf,
-        homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ (hm j)]
   have hL2 := φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm f
   filter_upwards [hU] with b hb
   -- Along the partial sums over `(-N, N]`, the series tends to `U(b)` in `L^r` and to `T(b) f` in
   -- `L²`.
   refine ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum hb (Finset.tendsto_Ioc_neg (R := ℤ))
     (((T b).continuous.tendsto f).comp hL2 |>.congr fun N ↦ ?_)
-  simp only [Function.comp_apply, map_sum, hblock]
+  simp only [Function.comp_apply, map_sum,
+    TauCeti.HomogeneousBesovSpace.block_eq_fourierMultiplierCLM hf (hm _)]
 
 /-- The frequency-localized estimates of a single operator `A` bound `A Pⱼ u` by
 `K C 2^{jσ} ‖Pⱼ u‖₂`, with `K` depending only on `φ` and `σ`. This is the mixed-norm estimate

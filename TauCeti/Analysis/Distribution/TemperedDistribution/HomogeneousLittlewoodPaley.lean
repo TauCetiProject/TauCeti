@@ -15,7 +15,9 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.SpecificLimits.ZPow
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 
 /-!
 # The homogeneous Littlewood–Paley decomposition of a tempered distribution
@@ -95,6 +97,8 @@ inequalities on annuli apply.
   `Pⱼ` is the `L²` Fourier multiplier with symbol `ψⱼ`.
 * `TemperedDistribution.exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock`:
   almost orthogonality on `L²`, an `L²` function `Pⱼ v` has no block `Pₖ` with `|k - j| ≥ L`.
+* `exists_eLpNorm_eLpNorm_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock`: the same in
+  mixed norms, with the bound `‖Pₖ x‖_{L^p_α L^r} ≤ K ‖x‖_{L^p_α L^r}` on every block.
 * `TemperedDistribution.tendsto_fourierMultiplierCLM_two_zpow_atTop`: `Sᵦ u → u` as `b → ∞`.
 * `TemperedDistribution.tendsto_sum_homogeneousLittlewoodPaleyBlock_iff`: the homogeneous
   reconstruction holds exactly when `Sₐ u → 0` as `a → -∞`, and
@@ -118,7 +122,7 @@ public section
 
 open Filter Topology MeasureTheory
 open FourierTransform Distribution
-open scoped SchwartzMap LineDeriv ENNReal
+open scoped SchwartzMap LineDeriv ENNReal NNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -643,6 +647,37 @@ theorem exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBloc
   rcases hk with hk | hk
   · exact congr($((hL k j (by omega)).1) v)
   · exact congr($((hL j k (by omega)).2) v)
+
+/-- **Almost orthogonality of the blocks in mixed norms.** There are `L` and `K`, depending only on
+`φ`, such that for every family `x : α → L²` whose values are almost everywhere `j`-th blocks
+`Pⱼ v` of tempered distributions, every block `Pₖ`, acting on `L²` as the Fourier multiplier with
+any symbol almost everywhere equal to `ψₖ`, satisfies, for `1 ≤ r`,
+
+`‖Pₖ x‖_{L^p_α L^r} = 0` for `|k - j| ≥ L`, and `‖Pₖ x‖_{L^p_α L^r} ≤ K ‖x‖_{L^p_α L^r}`.
+
+Over a one-point measure space this bounds the blocks of a single `L²` function. -/
+theorem exists_eLpNorm_eLpNorm_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock :
+    ∃ (L : ℕ) (K : ℝ≥0), ∀ {α : Type*} {mα : MeasurableSpace α} {ρ : Measure α} {p r : ℝ≥0∞},
+      1 ≤ r → ∀ {j : ℤ} {x : α → Lp G 2 (volume : Measure E)}, AEStronglyMeasurable x ρ →
+      (∀ᵐ a ∂ρ, ∃ v : 𝓢'(E, G), (x a : 𝓢'(E, G)) = homogeneousLittlewoodPaleyBlock G φ j v) →
+      ∀ {k : ℤ} {m : Lp ℂ ∞ (volume : Measure E)},
+        m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley k ξ : ℂ)) →
+        (k ∉ Finset.Ioo (j - L) (j + L) →
+          eLpNorm (fun a ↦ eLpNorm (Lp.fourierMultiplierCLM G m (x a)) r volume) p ρ = 0) ∧
+        eLpNorm (fun a ↦ eLpNorm (Lp.fourierMultiplierCLM G m (x a)) r volume) p ρ ≤
+          K * eLpNorm (fun a ↦ eLpNorm (x a) r volume) p ρ := by
+  obtain ⟨L, hL⟩ := exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock
+    (G := G) φ
+  refine ⟨L, (eLpNorm (𝓕⁻ (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))) 1 volume).toNNReal,
+    fun {_ _ _ _ r} hr {j x} hx hblock {k m} hm ↦ ⟨fun hk ↦ ?_, ?_⟩⟩
+  · have h0 : (fun a ↦ eLpNorm (Lp.fourierMultiplierCLM G m (x a)) r volume) =ᵐ[_] 0 :=
+      hblock.mono fun a ⟨v, hv⟩ ↦ by
+        dsimp only [Pi.zero_apply]
+        rw [hL j k hk hm (x a) v hv, eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
+    rw [eLpNorm_congr_ae h0, eLpNorm_zero]
+  · rw [ENNReal.coe_toNNReal (φ.memLp_fourierInv_littlewoodPaley 0 1).eLpNorm_ne_top]
+    exact eLpNorm_eLpNorm_apply_le (Lp.fourierMultiplierCLM G m).continuous
+      (fun f ↦ φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le hm f hr) hx
 
 end L2
 

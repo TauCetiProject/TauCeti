@@ -525,7 +525,8 @@ theorem sum_ofReal_two_zpow_add_rpow_mul (σ : ℝ) (S : Finset ℤ) (l : ℤ) (
 `j - L < k < j + L` and is at most `B` inside it, then
 `∑ₖ 2^{kσ} w k ≤ (∑_{-L < d < L} 2^{dσ}) 2^{jσ} B`. -/
 theorem tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero (σ : ℝ) {L : ℕ} {j : ℤ} {w : ℤ → ℝ≥0∞}
-    {B : ℝ≥0∞} (hfar : ∀ k ∉ Finset.Ioo (j - L) (j + L), w k = 0) (hnear : ∀ k, w k ≤ B) :
+    {B : ℝ≥0∞} (hfar : ∀ k ∉ Finset.Ioo (j - L) (j + L), w k = 0)
+    (hnear : ∀ k ∈ Finset.Ioo (j - L) (j + L), w k ≤ B) :
     ∑' k : ℤ, ENNReal.ofReal (((2 : ℝ) ^ k) ^ σ) * w k ≤
       ((∑ d ∈ Finset.Ioo (-(L : ℤ)) L, (((2 : ℝ) ^ d) ^ σ).toNNReal : ℝ≥0) : ℝ≥0∞) *
         (ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) * B) := by
@@ -533,10 +534,12 @@ theorem tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero (σ : ℝ) {L : ℕ} {j : �
     show Finset.Ioo (j - L) (j + L) = (Finset.Ioo (-(L : ℤ)) L).map (addRightEmbedding j) by
       rw [Finset.map_add_right_Ioo, neg_add_eq_sub, add_comm (L : ℤ)],
     Finset.sum_map, ← sum_ofReal_two_zpow_add_rpow_mul]
-  refine Finset.sum_le_sum fun d _ ↦ ?_
+  refine Finset.sum_le_sum fun d hd ↦ ?_
   rw [addRightEmbedding_apply]
   gcongr
-  exact hnear _
+  refine hnear _ ?_
+  rw [Finset.mem_Ioo] at hd ⊢
+  omega
 
 /-- A sum over the truncation `-N ≤ k < N` is at most the sum over all of `ℤ`. -/
 theorem sum_range_sub_le_tsum (f : ℤ → ℝ≥0∞) (N : ℕ) :

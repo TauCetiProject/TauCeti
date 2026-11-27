@@ -11,7 +11,6 @@ import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
-import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Series
 
 /-!
@@ -130,35 +129,18 @@ private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_
             Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
           C' * (ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
             eLpNorm (fun s ↦ eLpNorm (G s) r₁' volume) p₁ volume) := by
-  obtain ⟨L, hL⟩ :=
-    exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock (G := ℂ) φ
+  obtain ⟨L, K, hLK⟩ :=
+    exists_eLpNorm_eLpNorm_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock (G := ℂ) φ
   set m : ℤ → Lp ℂ ∞ (volume : Measure E) := fun j ↦ (φ.memLp_ofReal_littlewoodPaley j ∞).toLp _
   have hm (j : ℤ) : m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) :=
     (φ.memLp_ofReal_littlewoodPaley j ∞).coeFn_toLp
-  set K := eLpNorm (𝓕⁻ (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))) 1 volume
-  have hK : (K.toNNReal : ℝ≥0∞) = K :=
-    ENNReal.coe_toNNReal (φ.memLp_fourierInv_littlewoodPaley 0 1).eLpNorm_ne_top
-  set S := Finset.Ioo (-(L : ℤ)) L
-  refine ⟨C * K.toNNReal * ∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal, fun j G hG hblock ↦ ?_⟩
-  set X := eLpNorm (fun s ↦ eLpNorm (G s) r₁' volume) p₁ volume
+  refine ⟨C * K * ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, (((2 : ℝ) ^ d) ^ σ).toNNReal,
+    fun j G hG hblock ↦ ?_⟩
   -- Only the blocks `Pₖ` with `|k - j| < L` see `G`, and each costs at most the factor `K`.
-  have hfar (k : ℤ) (hk : k ∉ Finset.Ioo (j - L) (j + L)) :
-      eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m k) (G s)) r₁' volume) p₁ volume =
-        0 := by
-    have h0 (s : ℝ) : eLpNorm (Lp.fourierMultiplierCLM ℂ (m k) (G s)) r₁' volume = 0 := by
-      obtain ⟨v, hv⟩ := hblock s
-      rw [hL j k hk (hm k) (G s) v hv,
-        eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
-    simp [h0]
-  have hnear (k : ℤ) :
-      eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m k) (G s)) r₁' volume) p₁ volume ≤
-        K * X :=
-    eLpNorm_eLpNorm_apply_le (Lp.fourierMultiplierCLM ℂ (m k)).continuous
-      (fun f ↦ φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le (hm k) f hr₁')
-      hG.aestronglyMeasurable
+  have h (k : ℤ) := hLK (p := p₁) hr₁' hG.aestronglyMeasurable (ae_of_all _ hblock) (hm k)
   refine (hC m hm G hG).trans ?_
-  grw [tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero σ hfar hnear]
-  rw [ENNReal.coe_mul, ENNReal.coe_mul, hK]
+  grw [tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero σ (fun k hk ↦ (h k).1 hk) fun k _ ↦ (h k).2]
+  rw [ENNReal.coe_mul, ENNReal.coe_mul]
   exact le_of_eq (by ring)
 
 /-- **Summation of the retarded estimates over the blocks of a forcing term.** If the retarded

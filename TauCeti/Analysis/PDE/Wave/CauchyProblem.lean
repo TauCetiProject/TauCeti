@@ -8,16 +8,15 @@ module
 public import TauCeti.Analysis.Distribution.TemperedDistribution.HomogeneousLittlewoodPaley
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Homogeneous.Basic
 public import TauCeti.Analysis.PDE.Wave.DuhamelStrichartz
+import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 import Mathlib.Order.Filter.AtTopBot.Interval
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
-import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Series
 
 /-!
-# The Cauchy problem for the wave equation with Besov data and dyadic forcing
+# The dyadic Duhamel series for the wave equation with Besov data and dyadic forcing
 
 On a nontrivial real inner product space `E` of dimension `n`, let `D = √(-Δ)` and let `Pⱼ`,
 `j ∈ ℤ`, be the homogeneous Littlewood–Paley blocks built from a bump function `φ`. For data
@@ -31,15 +30,17 @@ is solved by Duhamel's formula (`TauCeti.waveDuhamelSolution`)
 
 which satisfies the Strichartz estimate on `[0, T]` with the dyadic `ℓ¹` norms of the data and of
 the forcing on the right (`ContDiffBump.exists_eLpNorm_eLpNorm_waveDuhamelSolution_le_tsum`). This
-file solves the same problem when the data lie in the homogeneous Besov spaces themselves,
-`f ∈ \dot B^γ_{2,1}` and `g ∈ \dot B^{γ - 1}_{2,1}` (`TauCeti.HomogeneousBesovSpace`), and the
-forcing `F(s)` is a tempered distribution at every time `s` of `[0, T]`, known only through its
-blocks `Gⱼ(s) = Pⱼ F(s)`, which are `L²` functions integrable on `[0, T]` with
+file constructs the candidate solution, and proves its Strichartz estimate, when the data lie in the
+homogeneous Besov spaces themselves, `f ∈ \dot B^γ_{2,1}` and `g ∈ \dot B^{γ - 1}_{2,1}`
+(`TauCeti.HomogeneousBesovSpace`), and the forcing `F(s)` is a tempered distribution at every time
+`s` of `[0, T]`, known only through its blocks `Gⱼ(s) = Pⱼ F(s)`, which are `L²` functions
+integrable on `[0, T]` with
 
 `∑ⱼ 2^{j(γ + γ₁ - 1)} ‖Gⱼ‖_{L^{p₁}([0, T]; L^{r₁'}_x)} < ∞`.
 
 Neither the data nor the forcing need be functions, so Duhamel's formula has no a priori meaning
-for them, but it does for their blocks, and the solution is the dyadic series
+for them, but it does for their blocks, and the candidate solution is the sum of the dyadic
+Duhamel series
 
 `∑ⱼ (cos(tD) Pⱼ f + D⁻¹ sin(tD) Pⱼ g + ∫₀ᵗ D⁻¹ sin((t - s)D) Gⱼ(s) ds)`,
 
@@ -58,23 +59,26 @@ and `C` independent of `T`, of the data and of the forcing. This holds at the pa
 (`ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_waveDuhamelSolution_block`), and at the
 pairs `(∞, r)`, `2 ≤ r ≤ ∞`, with `γ = n / 2 - n / r`
 (`ContDiffBump.exists_tendsto_eLpNorm_top_eLpNorm_sub_sum_waveDuhamelSolution_block`); at `(∞, ∞)`
-the solution is bounded uniformly on `[0, T] × E`.
+the sum `U` is bounded uniformly on `[0, T] × E`.
+
+This file proves only the convergence of the series and the estimate of its sum `U`: that `U`
+satisfies `∂ₜ²u - Δu = F` in a weak sense and attains the data `f` and `g` is not proved here.
 
 When the data are `L²` functions `f₀`, `g₀` and the forcing is a function `G₀ : ℝ → L²(E)`
-integrable on `[0, T]`, with blocks `Gⱼ(s) = Pⱼ G₀(s)`, any such limit agrees with Duhamel's formula
+integrable on `[0, T]`, with blocks `Gⱼ(s) = Pⱼ G₀(s)`, any such sum agrees with Duhamel's formula
 `waveDuhamelSolution ℂ f₀ g₀ G₀ t` for almost every `t ∈ [0, T]`
 (`ContDiffBump.ae_ae_eq_waveDuhamelSolution_of_tendsto`), so the series extends Duhamel's formula
 to these data and forcings.
 
 ## The argument
 
-The blocks are almost orthogonal: there is `L` such that `Pₖ Pⱼ = 0` unless `|k - j| < L`
-(`TemperedDistribution.exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock`).
+The blocks are almost orthogonal: there is `L` such that `Pₖ Pⱼ = 0` unless `|k - j| < L`, and
+they are bounded on every `Lᵖ`, `1 ≤ p`, uniformly in the scale, also in mixed norms (in the
+namespace `TemperedDistribution`,
+`exists_eLpNorm_eLpNorm_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock`).
 So when the data and the forcing are the `j`-th blocks `Pⱼ f`, `Pⱼ g` and `Gⱼ`, the Strichartz
 estimate on `[0, T]` for `L²` data and forcing has at most `2L - 1` nonzero terms in each of its
-three sums, and since the blocks are bounded on every `Lᵖ`, `1 ≤ p`, uniformly in the scale
-(`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`), it bounds the `j`-th term of the
-series by a constant times
+three sums, and it bounds the `j`-th term of the series by a constant times
 
 `2^{jγ} ‖Pⱼ f‖₂ + 2^{j(γ - 1)} ‖Pⱼ g‖₂ + 2^{j(γ + γ₁ - 1)} ‖Gⱼ‖_{L^{p₁}([0, T]; L^{r₁'}_x)}`
 
@@ -91,9 +95,9 @@ and in `L^r` are both limits in measure, so they agree almost everywhere
 
 ## Main declarations
 
-* `ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_waveDuhamelSolution_block`: the solution of
-  the Cauchy problem on `[0, T]` with Besov data and dyadic forcing, as a convergent dyadic series,
-  with the Strichartz estimate at the pairs with `2 ≤ q < ∞`.
+* `ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_waveDuhamelSolution_block`: convergence of
+  the dyadic Duhamel series on `[0, T]` with Besov data and dyadic forcing, with the Strichartz
+  estimate of its sum at the pairs with `2 ≤ q < ∞`.
 * `ContDiffBump.exists_tendsto_eLpNorm_top_eLpNorm_sub_sum_waveDuhamelSolution_block`: the same at
   the pairs `(∞, r)`.
 * `ContDiffBump.ae_ae_eq_waveDuhamelSolution_of_tendsto`: for `L²` data and forcing the series sums
@@ -159,54 +163,39 @@ private theorem exists_eLpNorm_eLpNorm_waveDuhamelSolution_le_of_eq_block {q r p
             ENNReal.ofReal (((2 : ℝ) ^ j) ^ (γ - 1)) * ‖y‖ₑ +
             ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
               eLpNorm (fun s ↦ eLpNorm (G s) r₁' volume) p₁ (volume.restrict (Set.Icc 0 T))) := by
-  obtain ⟨L, hL⟩ :=
-    exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock (G := ℂ) φ
+  obtain ⟨L, K, hLK⟩ :=
+    exists_eLpNorm_eLpNorm_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock (G := ℂ) φ
   set m : ℤ → Lp ℂ ∞ (volume : Measure E) := fun j ↦ (φ.memLp_ofReal_littlewoodPaley j ∞).toLp _
   have hm (j : ℤ) : m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) :=
     (φ.memLp_ofReal_littlewoodPaley j ∞).coeFn_toLp
-  set K := eLpNorm (𝓕⁻ (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))) 1 volume
-  have hK : (K.toNNReal : ℝ≥0∞) = K :=
-    ENNReal.coe_toNNReal (φ.memLp_fourierInv_littlewoodPaley 0 1).eLpNorm_ne_top
   -- The constant of the window `-L < d < L` for the weight exponent `a`.
   set S : ℝ → ℝ≥0 := fun a ↦ ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, (((2 : ℝ) ^ d) ^ a).toNNReal
-  refine ⟨C * K.toNNReal * (S γ + S (γ - 1) + S σ),
-    fun j x y G T hG ⟨vx, hx⟩ ⟨vy, hy⟩ hblock ↦ ?_⟩
-  set ρ := volume.restrict (Set.Icc (0 : ℝ) T)
-  -- Only the blocks `Pₖ` with `|k - j| < L` see the data, and each costs at most the factor `K`.
-  have hfar_data {z : Lp ℂ 2 (volume : Measure E)} {v : 𝓢'(E, ℂ)}
-      (hz : (z : 𝓢'(E, ℂ)) = homogeneousLittlewoodPaleyBlock ℂ φ j v) (k : ℤ)
-      (hk : k ∉ Finset.Ioo (j - L) (j + L)) : ‖Lp.fourierMultiplierCLM ℂ (m k) z‖ₑ = 0 := by
-    rw [hL j k hk (hm k) z v hz, eNorm_zero]
-  have hnear_data (z : Lp ℂ 2 (volume : Measure E)) (k : ℤ) :
-      ‖Lp.fourierMultiplierCLM ℂ (m k) z‖ₑ ≤ K * ‖z‖ₑ := by
-    rw [Lp.eNorm_def, Lp.eNorm_def]
-    exact φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le (hm k) z one_le_two
-  -- The same for the forcing, on `[0, T]`.
-  have hfar_forcing (k : ℤ) (hk : k ∉ Finset.Ioo (j - L) (j + L)) :
-      eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m k) (G s)) r₁' volume) p₁ ρ = 0 := by
-    have h0 : (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m k) (G s)) r₁' volume) =ᵐ[ρ] 0 :=
-      ae_restrict_of_forall_mem measurableSet_Icc fun s hs ↦ by
-        obtain ⟨v, hv⟩ := hblock s hs
-        dsimp only [Pi.zero_apply]
-        rw [hL j k hk (hm k) (G s) v hv, eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
-    rw [eLpNorm_congr_ae h0, eLpNorm_zero]
-  have hnear_forcing (k : ℤ) :
-      eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m k) (G s)) r₁' volume) p₁ ρ ≤
-        K * eLpNorm (fun s ↦ eLpNorm (G s) r₁' volume) p₁ ρ :=
-    eLpNorm_eLpNorm_apply_le (Lp.fourierMultiplierCLM ℂ (m k)).continuous
-      (fun f ↦ φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le (hm k) f hr₁')
-      hG.aestronglyMeasurable
+  refine ⟨C * K * (S γ + S (γ - 1) + S σ), fun j x y G T hG hx hy hblock ↦ ?_⟩
+  -- Only the blocks `Pₖ` with `|k - j| < L` see the data, as constant families over a point, and
+  -- the forcing on `[0, T]`, and each costs at most the factor `K`.
+  have hdata {z : Lp ℂ 2 (volume : Measure E)}
+      (hz : ∃ v : 𝓢'(E, ℂ), (z : 𝓢'(E, ℂ)) = homogeneousLittlewoodPaleyBlock ℂ φ j v) (k : ℤ) :
+      (k ∉ Finset.Ioo (j - L) (j + L) → ‖Lp.fourierMultiplierCLM ℂ (m k) z‖ₑ = 0) ∧
+        ‖Lp.fourierMultiplierCLM ℂ (m k) z‖ₑ ≤ K * ‖z‖ₑ := by
+    simpa only [eLpNorm_dirac _ _ one_ne_zero, eNorm_eq_self, ← Lp.eNorm_def] using
+      hLK (ρ := Measure.dirac ()) (p := 1) one_le_two (x := fun _ ↦ z) aestronglyMeasurable_const
+        (ae_of_all _ fun _ ↦ hz) (hm k)
+  have hforcing (k : ℤ) := hLK (p := p₁) hr₁' hG.aestronglyMeasurable
+    (ae_restrict_of_forall_mem measurableSet_Icc hblock) (hm k)
   refine (hC m hm x y G T hG).trans ?_
-  grw [tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero γ (hfar_data hx) (hnear_data x),
-    tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero (γ - 1) (hfar_data hy) (hnear_data y),
-    tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero σ hfar_forcing hnear_forcing]
+  grw [tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero γ (fun k hk ↦ (hdata hx k).1 hk)
+      fun k _ ↦ (hdata hx k).2,
+    tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero (γ - 1) (fun k hk ↦ (hdata hy k).1 hk)
+      fun k _ ↦ (hdata hy k).2,
+    tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero σ (fun k hk ↦ (hforcing k).1 hk)
+      fun k _ ↦ (hforcing k).2]
   -- Each window constant is at most their sum.
   set S₀ := S γ + S (γ - 1) + S σ
   have hS₁ : (S γ : ℝ≥0∞) ≤ S₀ := by exact_mod_cast le_add_right le_self_add
   have hS₂ : (S (γ - 1) : ℝ≥0∞) ≤ S₀ := by exact_mod_cast le_add_right le_add_self
   have hS₃ : (S σ : ℝ≥0∞) ≤ S₀ := by exact_mod_cast le_add_self
   grw [hS₁, hS₂, hS₃]
-  rw [ENNReal.coe_mul, ENNReal.coe_mul, hK]
+  rw [ENNReal.coe_mul, ENNReal.coe_mul]
   exact le_of_eq (by ring)
 
 /-- **Summation over the blocks.** If the solutions of the forced wave equation with `L²` data and
@@ -287,7 +276,8 @@ private theorem exists_tendsto_of_eLpNorm_eLpNorm_waveDuhamelSolution_le {q r p�
 
 variable [Nontrivial E]
 
-/-- **The Cauchy problem on `[0, T]` with Besov data and dyadic forcing.** Let `E` be nontrivial
+/-- **Convergence of the dyadic Duhamel series on `[0, T]` with Besov data and dyadic forcing.**
+Let `E` be nontrivial
 of dimension `n`, let `Pⱼ` be the homogeneous Littlewood–Paley blocks built from `φ`, let `(q, r)`
 be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 ≤ q < ∞`, and let `(q₁, r₁)` be
 wave-admissible with `2 ≤ q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`, where `q = 2` and
@@ -344,15 +334,16 @@ theorem exists_tendsto_eLpNorm_eLpNorm_sub_sum_waveDuhamelSolution_block {q : �
   exact φ.exists_tendsto_of_eLpNorm_eLpNorm_waveDuhamelSolution_le
     (by exact_mod_cast one_le_two.trans hq) (ENNReal.HolderConjugate.one_le r₁' r₁) hC
 
-/-- **The Cauchy problem on `[0, T]` with Besov data and dyadic forcing, at the pairs `(∞, r)`.**
-Let `E` be nontrivial of dimension `n`, let `Pⱼ` be the homogeneous Littlewood–Paley blocks built
-from `φ`, let `2 ≤ r ≤ ∞` and `γ = n / 2 - n / r`. Let `(q₁, r₁)` be wave-admissible with
-`2 ≤ q₁ ≤ ∞` and `2 ≤ r₁`, with Hölder conjugates `p₁` and `r₁'`, where `q₁ = 2` only if
-`1 + (n - 1) / r₁ = (n - 1) / 2` in dimension `n ≥ 4`, and put `γ₁ = n / 2 - n / r₁ - 1 / q₁`.
-There is `C` such that the following holds for every `T`, all data `f ∈ \dot B^γ_{2,1}` and
-`g ∈ \dot B^{γ - 1}_{2,1}`, and every family `F(s)` of tempered distributions whose blocks
-`Gⱼ(s) = Pⱼ F(s)` at the times `s ∈ [0, T]` are `L²` functions, integrable on `[0, T]`, with
-`∑ⱼ 2^{j(γ + γ₁ - 1)} ‖Gⱼ‖_{L^{p₁}([0, T]; L^{r₁'}_x)} < ∞`: the dyadic series
+/-- **Convergence of the dyadic Duhamel series on `[0, T]` with Besov data and dyadic forcing, at
+the pairs `(∞, r)`.** Let `E` be nontrivial of dimension `n`, let `Pⱼ` be the homogeneous
+Littlewood–Paley blocks built from `φ`, let `2 ≤ r ≤ ∞` and `γ = n / 2 - n / r`. Let `(q₁, r₁)` be
+wave-admissible with `2 ≤ q₁ ≤ ∞` and `2 ≤ r₁`, with Hölder conjugates `p₁` and `r₁'`, where
+`q₁ = 2` only if `1 + (n - 1) / r₁ = (n - 1) / 2` in dimension `n ≥ 4`, and put
+`γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that the following holds for every `T`, all
+data `f ∈ \dot B^γ_{2,1}` and `g ∈ \dot B^{γ - 1}_{2,1}`, and every family `F(s)` of tempered
+distributions whose blocks `Gⱼ(s) = Pⱼ F(s)` at the times `s ∈ [0, T]` are `L²` functions,
+integrable on `[0, T]`, with `∑ⱼ 2^{j(γ + γ₁ - 1)} ‖Gⱼ‖_{L^{p₁}([0, T]; L^{r₁'}_x)} < ∞`: the
+dyadic series
 
 `∑ⱼ (cos(tD) Pⱼ f + D⁻¹ sin(tD) Pⱼ g + ∫₀ᵗ D⁻¹ sin((t - s)D) Gⱼ(s) ds)`
 
@@ -362,7 +353,7 @@ converges, to some `U : ℝ → L^r` in `L^r` for almost every `t ∈ [0, T]` an
 `‖U‖_{L^∞([0, T]; L^r_x)} ≤ C (‖f‖_{\dot B^γ_{2,1}} + ‖g‖_{\dot B^{γ - 1}_{2,1}}`
 `  + ∑ⱼ 2^{j(γ + γ₁ - 1)} ‖Gⱼ‖_{L^{p₁}([0, T]; L^{r₁'}_x)})`.
 
-At `r = ∞` this bounds the solution uniformly on `[0, T] × E`. -/
+At `r = ∞` this bounds the sum `U` uniformly on `[0, T] × E`. -/
 theorem exists_tendsto_eLpNorm_top_eLpNorm_sub_sum_waveDuhamelSolution_block {r : ℝ≥0∞}
     [Fact (1 ≤ r)] (hr : 2 ≤ r) {p₁ q₁ r₁ r₁' : ℝ≥0∞} [p₁.HolderConjugate q₁]
     [r₁'.HolderConjugate r₁] (hq₁ : 2 ≤ q₁) (hr₁ : 2 ≤ r₁)
@@ -417,14 +408,6 @@ theorem ae_ae_eq_waveDuhamelSolution_of_tendsto {r : ℝ≥0∞} [Fact (1 ≤ r)
         (fun τ ↦ Lp.fourierMultiplierCLM ℂ (m j) (G₀ τ)) t)) r volume) atTop (𝓝 0)) :
     ∀ᵐ t ∂volume.restrict (Set.Icc 0 T),
       ⇑(U t) =ᵐ[volume] ⇑(waveDuhamelSolution ℂ f₀ g₀ G₀ t) := by
-  -- The blocks of the Besov data are the `L²` blocks of `f₀` and `g₀`.
-  have hblock {s : ℝ} {c : ℝ≥0∞} {u : HomogeneousBesovSpace ℂ φ s 2 c}
-      {u₀ : Lp ℂ 2 (volume : Measure E)} (hu : u.toDistr = u₀) (j : ℤ) :
-      u.block j = Lp.fourierMultiplierCLM ℂ (m j) u₀ :=
-    Lp.toTemperedDistribution_injective <| by
-      dsimp only
-      rw [HomogeneousBesovSpace.coe_block, hu,
-        homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ (hm j)]
   filter_upwards [hU, ae_restrict_mem measurableSet_Icc] with t ht htT
   have hGt : IntervalIntegrable G₀ volume 0 t :=
     (hG₀.mono_set (by rw [Set.uIcc_of_le htT.1]; exact Set.Icc_subset_Icc le_rfl htT.2)
@@ -434,6 +417,9 @@ theorem ae_ae_eq_waveDuhamelSolution_of_tendsto {r : ℝ≥0∞} [Fact (1 ≤ r)
   refine ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum ht (Finset.tendsto_Ioc_neg (R := ℤ))
     ((φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm _).congr fun N ↦ ?_)
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [fourierMultiplierCLM_waveDuhamelSolution _ _ _ hGt, hblock hf, hblock hg]
+  -- The blocks of the Besov data are the `L²` blocks of `f₀` and `g₀`.
+  rw [fourierMultiplierCLM_waveDuhamelSolution _ _ _ hGt,
+    HomogeneousBesovSpace.block_eq_fourierMultiplierCLM hf (hm j),
+    HomogeneousBesovSpace.block_eq_fourierMultiplierCLM hg (hm j)]
 
 end ContDiffBump
