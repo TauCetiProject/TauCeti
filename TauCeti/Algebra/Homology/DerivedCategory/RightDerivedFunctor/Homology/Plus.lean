@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.RightDerivedFunctorPlus
 public import Mathlib.CategoryTheory.Abelian.RightDerived
+public import TauCeti.Algebra.Homology.DerivedCategory.Plus.Homology
 public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Basic
 public import TauCeti.Algebra.Homology.Functor.Extend
 import TauCeti.Algebra.Homology.DerivedCategory.RightDerivedFunctor.Homology
+import TauCeti.Algebra.Homology.HomotopyCategory.Plus
 
 /-!
 # Cohomology of bounded below right derived functors on objects
@@ -26,19 +28,6 @@ noncomputable section
 open CategoryTheory DerivedCategory Functor
 
 local notation "upNat" => ComplexShape.embeddingUpNat
-
-namespace DerivedCategory.Plus
-
-/-- The homology of a localized bounded below complex is its homotopy-category homology. -/
-def homologyFunctorFactorsh (C : Type*) [Category* C] [Abelian C] [HasDerivedCategory C]
-    (n : ℤ) :
-    Qh ⋙ homologyFunctor C n ≅ HomotopyCategory.Plus.ι C ⋙
-      HomotopyCategory.homologyFunctor C (.up ℤ) n :=
-  (Functor.associator Qh ι (DerivedCategory.homologyFunctor C n)).symm ≪≫
-    isoWhiskerRight (QhCompιIsoιCompQh C) _ ≪≫ Functor.associator _ _ _ ≪≫
-    isoWhiskerLeft _ (DerivedCategory.homologyFunctorFactorsh C n)
-
-end DerivedCategory.Plus
 
 namespace TauCeti
 
@@ -192,12 +181,6 @@ lemma Functor.rightDerivedFunctorPlusHomologyIso_hom_naturality (τ : F ⟶ G) (
       IsIso.hom_inv_id, Category.comp_id]
   have hH := (Plus.homologyFunctorFactorsh D n).hom.naturality
     (τ.mapHomotopyCategoryPlus.app K)
-  have hι :
-      (HomotopyCategory.Plus.ι D).map (τ.mapHomotopyCategoryPlus.app K) ≫
-          G.mapHomotopyCategoryPlusCompι.hom.app K =
-        F.mapHomotopyCategoryPlusCompι.hom.app K ≫
-          (τ.mapHomotopyCategory (.up ℤ)).app ((HomotopyCategory.Plus.ι C).obj K) :=
-    (Category.comp_id _).trans (Category.id_comp _).symm
   have hK := (τ.mapHomotopyCategory (.up ℤ)).naturality
     ((injectiveResolutionsPlusCompιIso C).hom.app X)
   have hE := congrArg Hℤ.map (F.mapHomotopyCategoryExtendIso_hom_app_naturality (e := upNat) τ I)
@@ -205,14 +188,14 @@ lemma Functor.rightDerivedFunctorPlusHomologyIso_hom_naturality (τ : F ⟶ G) (
     ((τ.mapHomotopyCategory (.up ℕ)).app I)
   simp only [Functor.comp_map] at hH hN
   have hU' := congrArg H.map hU
-  have hι' := congrArg Hℤ.map hι
+  have hι := congrArg Hℤ.map (τ.mapHomotopyCategoryPlusCompι_hom_app_naturality K)
   have hK' := congrArg Hℤ.map hK.symm
-  simp only [Functor.map_comp] at hA hU' hι' hK' hE
+  simp only [Functor.map_comp] at hA hU' hι hK' hE
   have hR : (τ.rightDerived n).app X = Hℕ.map ((τ.mapHomotopyCategory (.up ℕ)).app I) :=
     rfl
   simp only [NatTrans.comp_app, whiskerLeft_app, whiskerRight_app,
     rightDerivedFunctorPlusHomologyIso_hom_app, hR]
-  erw [reassoc_of% hA, reassoc_of% hU', reassoc_of% hH, reassoc_of% hι',
+  erw [reassoc_of% hA, reassoc_of% hU', reassoc_of% hH, reassoc_of% hι,
     reassoc_of% hK', reassoc_of% hE, hN]
   repeat' erw [Category.assoc]
   rfl
