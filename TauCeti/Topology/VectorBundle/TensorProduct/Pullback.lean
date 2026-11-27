@@ -146,7 +146,10 @@ theorem continuous_tensorProduct_map {g : C(B', B)}
     Continuous fun p : TotalSpace (ProjectiveTensor 𝕜 F₁' F₂') (fun y ↦ E₁' y ⊗[𝕜] E₂' y) ↦
       TotalSpace.mk' (ProjectiveTensor 𝕜 F₁ F₂) (E := fun x ↦ E₁ x ⊗[𝕜] E₂ x) (g p.proj)
         (_root_.TensorProduct.map (φ₁ p.proj).toLinearMap (φ₂ p.proj).toLinearMap p.snd) := by
-  open TauCeti.ModuleTopology in
+  -- The fibres `(g^*E₁) y ⊗ (g^*E₂) y` of the intermediate tensor bundle over `B'` take the scoped
+  -- module topology; `bundleTensorMap ψ₁ ψ₂`, `hmap` and `continuous_tensorProduct_pullback` below
+  -- need it. The `open … in` covers the whole rest of this tactic block.
+  open scoped TauCeti.ModuleTopology in
   have := VectorBundle.isTopologicalAddGroup 𝕜 F₁ E₁
   have := VectorBundle.continuousSMul 𝕜 F₁ E₁
   have := VectorBundle.isTopologicalAddGroup 𝕜 F₂ E₂
