@@ -118,9 +118,7 @@ class of a shift `c` to `c mod m (m - 1)`. -/
 theorem shiftClassGroupAwayGradingDepressedDiscrEquiv_mk [IsDomain R] {m : ℕ} (h2 : (2 : R) ≠ 0)
     (hmR : (m : R) ≠ 0) (hm2 : 2 ≤ m) (c : ℤ) :
     shiftClassGroupAwayGradingDepressedDiscrEquiv h2 hmR hm2 c = c := by
-  rw [shiftClassGroupAwayGradingDepressedDiscrEquiv, AddEquiv.trans_apply,
-    ShiftClassGroup.equivZMod_mk, RingEquiv.toAddEquiv_eq_coe, RingEquiv.coe_toAddEquiv,
-    map_intCast]
+  simp [shiftClassGroupAwayGradingDepressedDiscrEquiv]
 
 /-- **Homogeneous units away from the discriminant of the short Weierstrass equation.** Over a
 domain in which `2 ≠ 0` and `3 ≠ 0`, the degrees of the homogeneous units of `R[a, b]_Δ`,

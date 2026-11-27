@@ -343,69 +343,77 @@ private theorem depressedDiscr_eq_single_of_support_subset {m : ℕ} (hm : 3 ≤
     omega
   exact depressedDiscr_eq_single_of_le hm hd hdi₀.ge
 
-/-- Evaluate `depressedDiscr R m` at `Pi.single i₀ 1` (corresponding to `X ^ m + X`) to extract
-the coefficient of `aₘ₋₁ ^ m`. -/
-private theorem depressedDiscr_coeff_single_eq (R : Type*) [CommRing R] {m : ℕ} (hm : 3 ≤ m) :
-    (depressedDiscr R m).coeff (Finsupp.single ⟨m - 3, by omega⟩ m) =
-      (-1 : R) ^ ((m - 1) * (m - 2) / 2) * ((m - 1 : ℕ) : R) ^ (m - 1) := by
+/-- Evaluating `depressedDiscr R m` at `Pi.single i₀ 1` extracts the coefficient of `aₘ₋₁ ^ m`:
+every other monomial in the support involves some `j ≠ i₀`. -/
+private theorem eval_single_one_depressedDiscr (R : Type*) [CommRing R] {m : ℕ} (hm : 3 ≤ m) :
+    MvPolynomial.eval (Pi.single (⟨m - 3, by omega⟩ : Fin (m - 1)) 1) (depressedDiscr R m) =
+      (depressedDiscr R m).coeff (Finsupp.single ⟨m - 3, by omega⟩ m) := by
   classical
   let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
   let v : Fin (m - 1) → R := Pi.single i₀ 1
-  -- Only the monomial `aₘ₋₁ ^ m` survives when evaluating at `Pi.single i₀ 1`: every other
-  -- monomial in the support involves some `j ≠ i₀` (`depressedDiscr_eq_single_of_support_subset`).
-  have heval_sum : MvPolynomial.eval v (depressedDiscr R m) =
-      (depressedDiscr R m).coeff (Finsupp.single i₀ m) := by
-    rw [MvPolynomial.eval_eq, Finset.sum_eq_single (Finsupp.single i₀ m)]
-    · rw [Finset.prod_eq_single i₀]
-      · simp [v]
-      · intro j _ hj
-        simp [Finsupp.single_eq_of_ne hj]
-      · intro hi0
-        exact (hi0 (Finsupp.mem_support_iff.mpr (by simp; omega))).elim
-    · intro d hd hne
-      have hex : ∃ j : Fin (m - 1), j ≠ i₀ ∧ d j ≠ 0 := by
-        by_contra hno
-        push Not at hno
-        exact hne (depressedDiscr_eq_single_of_support_subset hm hd hno)
-      obtain ⟨j, hj, hdj⟩ := hex
-      have hprod : ∏ i ∈ d.support, v i ^ d i = 0 :=
-        Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hdj)
-          (by simp [v, Pi.single_eq_of_ne hj, hdj])
-      rw [hprod, mul_zero]
-    · intro hnot
-      rw [MvPolynomial.notMem_support_iff.mp hnot, zero_mul]
-  -- On the other hand, specializing `genericDepressed R m` at `Pi.single i₀ 1` gives `X ^ m + X`.
-  have heval_discr : MvPolynomial.eval v (depressedDiscr R m) =
+  rw [MvPolynomial.eval_eq, Finset.sum_eq_single (Finsupp.single i₀ m)]
+  · rw [Finset.prod_eq_single i₀]
+    · simp [i₀]
+    · intro j _ hj
+      simp [Finsupp.single_eq_of_ne hj]
+    · intro hi0
+      exact (hi0 (Finsupp.mem_support_iff.mpr (by simp; omega))).elim
+  · intro d hd hne
+    have hex : ∃ j : Fin (m - 1), j ≠ i₀ ∧ d j ≠ 0 := by
+      by_contra hno
+      push Not at hno
+      exact hne (depressedDiscr_eq_single_of_support_subset hm hd hno)
+    obtain ⟨j, hj, hdj⟩ := hex
+    have hprod : ∏ i ∈ d.support, v i ^ d i = 0 :=
+      Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hdj)
+        (by simp [v, Pi.single_eq_of_ne hj, hdj])
+    rw [hprod, mul_zero]
+  · intro hnot
+    rw [MvPolynomial.notMem_support_iff.mp hnot, zero_mul]
+
+/-- Evaluating `depressedDiscr R m` at `Pi.single i₀ 1` gives the discriminant of `X ^ m + X`. -/
+private theorem eval_single_one_depressedDiscr_eq_discr (R : Type*) [CommRing R] {m : ℕ}
+    (hm : 3 ≤ m) :
+    MvPolynomial.eval (Pi.single (⟨m - 3, by omega⟩ : Fin (m - 1)) 1) (depressedDiscr R m) =
       (X ^ m + X : R[X]).discr := by
-    nontriviality R
-    let p : R[X] := X ^ m + X
-    have hp_mon : p.Monic := (monic_X_pow m).add_of_left
-      (by rw [degree_X_pow, degree_X]; exact_mod_cast (by omega : 1 < m))
-    have hp_deg : p.natDegree = m := by
-      rw [natDegree_add_eq_left_of_degree_lt
-        (by rw [degree_X_pow, degree_X]; exact_mod_cast (by omega : 1 < m)), natDegree_X_pow]
-    have hp_next : p.nextCoeff = 0 := by
-      rw [nextCoeff, hp_deg, ite_eq_right (by omega)]
-      have hm1 : m - 1 ≠ m := by omega
-      have h1m : 1 ≠ m - 1 := by omega
-      simp [p, coeff_X, hm1, h1m]
-    have hv_eq : (fun j : Fin (m - 1) ↦ p.coeff (m - 2 - (j : ℕ))) = v := by
-      ext j
-      by_cases hj : j = i₀
-      · subst hj
-        have hidx : m - 2 - (m - 3) = 1 := by omega
-        have h1m : 1 ≠ m := by omega
-        simp [p, v, i₀, coeff_X, hidx, h1m]
-      · have hne1 : 1 ≠ m - 2 - (j : ℕ) := by
-          intro h1
-          apply hj
-          ext
-          dsimp [i₀]
-          omega
-        have hnem : m - 2 - (j : ℕ) ≠ m := by omega
-        simp [p, v, coeff_X, Pi.single_eq_of_ne hj, hne1, hnem]
-    rw [discr_eq_eval_depressedDiscr hp_mon hp_deg hp_next, hv_eq]
-  rw [← heval_sum, heval_discr, discr_X_pow_add_X (by omega)]
+  nontriviality R
+  let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
+  let v : Fin (m - 1) → R := Pi.single i₀ 1
+  let p : R[X] := X ^ m + X
+  have hp_mon : p.Monic := (monic_X_pow m).add_of_left
+    (by rw [degree_X_pow, degree_X]; exact_mod_cast (by omega : 1 < m))
+  have hp_deg : p.natDegree = m := by
+    rw [natDegree_add_eq_left_of_degree_lt
+      (by rw [degree_X_pow, degree_X]; exact_mod_cast (by omega : 1 < m)), natDegree_X_pow]
+  have hp_next : p.nextCoeff = 0 := by
+    rw [nextCoeff, hp_deg, ite_eq_right (by omega)]
+    have hm1 : m - 1 ≠ m := by omega
+    have h1m : 1 ≠ m - 1 := by omega
+    simp [p, coeff_X, hm1, h1m]
+  have hv_eq : (fun j : Fin (m - 1) ↦ p.coeff (m - 2 - (j : ℕ))) = v := by
+    ext j
+    by_cases hj : j = i₀
+    · subst hj
+      have hidx : m - 2 - (m - 3) = 1 := by omega
+      have h1m : 1 ≠ m := by omega
+      simp [p, v, i₀, coeff_X, hidx, h1m]
+    · have hne1 : 1 ≠ m - 2 - (j : ℕ) := by
+        intro h1
+        apply hj
+        ext
+        dsimp [i₀]
+        omega
+      have hnem : m - 2 - (j : ℕ) ≠ m := by omega
+      simp [p, v, coeff_X, Pi.single_eq_of_ne hj, hne1, hnem]
+  rw [discr_eq_eval_depressedDiscr hp_mon hp_deg hp_next, hv_eq]
+
+/-- Extract the coefficient of `aₘ₋₁ ^ m` in `depressedDiscr R m` by evaluating at
+`Pi.single i₀ 1` (corresponding to `X ^ m + X`). -/
+private theorem depressedDiscr_coeff_single_eq (R : Type*) [CommRing R] {m : ℕ} (hm : 3 ≤ m) :
+    (depressedDiscr R m).coeff (Finsupp.single ⟨m - 3, by omega⟩ m) =
+      (-1 : R) ^ ((m - 1) * (m - 2) / 2) * ((m - 1 : ℕ) : R) ^ (m - 1) := by
+  rw [← eval_single_one_depressedDiscr R hm, eval_single_one_depressedDiscr_eq_discr R hm,
+    discr_X_pow_add_X (by omega)]
 
 private theorem coeff_optionSubtypeNeEquiv_depressedDiscr_of_lt (A : Type*) [CommRing A]
     {m : ℕ} (hm : 3 ≤ m) {n : ℕ} (hn : m < n) :
@@ -415,13 +423,9 @@ private theorem coeff_optionSubtypeNeEquiv_depressedDiscr_of_lt (A : Type*) [Com
   refine MvPolynomial.ext _ _ fun d ↦ ?_
   rw [AddMonoidAlgebra.coeff_zero, MvPolynomial.coeff_coeff_optionSubtypeNeEquiv]
   by_contra hne
-  let u := (Finsupp.optionElim n d).mapDomain (Equiv.optionSubtypeNe i₀)
-  have hui₀ : u i₀ = n := by
-    dsimp only [u]
-    rw [Finsupp.mapDomain_equiv_apply]
-    simp
   have hle := depressedDiscr_support_le hm (MvPolynomial.mem_support_iff.mpr hne)
-  dsimp only [u, i₀] at hui₀
+  have hui₀ := Finsupp.mapDomain_optionSubtypeNe_optionElim_self i₀ n d
+  dsimp only [i₀] at hui₀
   omega
 
 private theorem coeff_optionSubtypeNeEquiv_depressedDiscr_self (A : Type*) [CommRing A]
@@ -430,11 +434,6 @@ private theorem coeff_optionSubtypeNeEquiv_depressedDiscr_self (A : Type*) [Comm
       (depressedDiscr A m)).coeff m =
       MvPolynomial.C ((depressedDiscr A m).coeff (Finsupp.single ⟨m - 3, by omega⟩ m)) := by
   let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
-  have hσ_none : (Equiv.optionSubtypeNe i₀).symm i₀ = none :=
-    Equiv.optionSubtypeNe_symm_self i₀
-  have hσ_some : ∀ j : {b : Fin (m - 1) // b ≠ i₀},
-      (Equiv.optionSubtypeNe i₀).symm j.val = some j :=
-    fun j ↦ Equiv.optionSubtypeNe_symm_of_ne j.property
   refine MvPolynomial.ext _ _ fun d ↦ ?_
   rw [MvPolynomial.coeff_coeff_optionSubtypeNeEquiv]
   by_cases hd : d = 0
@@ -444,31 +443,61 @@ private theorem coeff_optionSubtypeNeEquiv_depressedDiscr_self (A : Type*) [Comm
     ext j
     by_cases hj : j = i₀
     · subst hj
-      rw [Finsupp.mapDomain_equiv_apply, hσ_none, Finsupp.optionElim_apply_none,
-        Finsupp.single_eq_same]
-    · rw [Finsupp.mapDomain_equiv_apply, hσ_some ⟨j, hj⟩, Finsupp.optionElim_apply_some,
-        Finsupp.coe_zero, Pi.zero_apply, Finsupp.single_apply, ite_eq_right (Ne.symm hj)]
+      rw [Finsupp.mapDomain_optionSubtypeNe_optionElim_self, Finsupp.single_eq_same]
+    · rw [Finsupp.mapDomain_optionSubtypeNe_optionElim_of_ne hj]
+      simp [i₀, Ne.symm hj]
   · rw [MvPolynomial.coeff_C, ite_eq_right (Ne.symm hd)]
     by_contra hne
     let u := (Finsupp.optionElim m d).mapDomain (Equiv.optionSubtypeNe i₀)
-    have hui₀ : u i₀ = m := by
-      dsimp only [u]
-      rw [Finsupp.mapDomain_equiv_apply, hσ_none, Finsupp.optionElim_apply_none]
+    have hui₀ : u i₀ = m := Finsupp.mapDomain_optionSubtypeNe_optionElim_self i₀ m d
     have hu_eq := depressedDiscr_eq_single_of_le hm (MvPolynomial.mem_support_iff.mpr hne) hui₀.ge
     obtain ⟨j, hj⟩ := Finsupp.ne_iff.mp hd
-    have huj : u j.val = d j := by
-      dsimp only [u]
-      rw [Finsupp.mapDomain_equiv_apply, hσ_some j, Finsupp.optionElim_apply_some]
+    have huj : u j.val = d j := Finsupp.mapDomain_optionSubtypeNe_optionElim_of_ne j.property m d
     dsimp only [u, i₀] at huj
     rw [hu_eq, Finsupp.single_eq_of_ne j.property] at huj
     exact hj huj.symm
 
+private theorem natCast_sub_one_eq_neg_one {A : Type*} [CommRing A] {m : ℕ} (hm : 1 ≤ m)
+    (hmA : (m : A) = 0) : ((m - 1 : ℕ) : A) = -1 := by
+  have h1 : ((m - 1 : ℕ) : A) + ((1 : ℕ) : A) = 0 := by
+    rw [← Nat.cast_add, Nat.sub_add_cancel hm, hmA]
+  rw [Nat.cast_one] at h1
+  exact eq_neg_of_add_eq_zero_left h1
+
+private theorem isUnit_leadingCoeff_optionSubtypeNeEquiv_depressedDiscr (A : Type*) [CommRing A]
+    [Nontrivial A] {m : ℕ} (hm : 3 ≤ m) (hmA : (m : A) = 0) :
+    IsUnit (MvPolynomial.optionSubtypeNeEquiv A (⟨m - 3, by omega⟩ : Fin (m - 1))
+      (depressedDiscr A m)).leadingCoeff := by
+  let e := MvPolynomial.optionSubtypeNeEquiv A (⟨m - 3, by omega⟩ : Fin (m - 1))
+  have hunit : IsUnit ((e (depressedDiscr A m)).coeff m) := by
+    rw [coeff_optionSubtypeNeEquiv_depressedDiscr_self A hm, depressedDiscr_coeff_single_eq A hm,
+      natCast_sub_one_eq_neg_one (by omega) hmA, ← pow_add]
+    exact (isUnit_one.neg.pow _).map MvPolynomial.C
+  have hdeg : (e (depressedDiscr A m)).natDegree = m :=
+    natDegree_eq_of_le_of_coeff_ne_zero
+      (natDegree_le_iff_coeff_eq_zero.mpr
+        fun n hn ↦ coeff_optionSubtypeNeEquiv_depressedDiscr_of_lt A hm hn)
+      hunit.ne_zero
+  rwa [leadingCoeff, hdeg]
+
+private theorem eq_zero_of_depressedDiscr_mul_eq_zero {A : Type*} [CommRing A] {m : ℕ}
+    (hm : 3 ≤ m) (hmA : (m : A) = 0) {x : MvPolynomial (Fin (m - 1)) A}
+    (hx : depressedDiscr A m * x = 0) : x = 0 := by
+  rcases subsingleton_or_nontrivial A with _ | _
+  · exact Subsingleton.elim _ _
+  · let e := MvPolynomial.optionSubtypeNeEquiv A (⟨m - 3, by omega⟩ : Fin (m - 1))
+    have hlc := isUnit_leadingCoeff_optionSubtypeNeEquiv_depressedDiscr A hm hmA
+    have heq0 : e (depressedDiscr A m) * e x = 0 := by
+      rw [← map_mul, hx, map_zero]
+    exact e.injective (((isUnit_leadingCoeff_mul_right_eq_zero_iff hlc).mp heq0).trans
+      (map_zero e).symm)
+
 /-- Descent step for primality of `depressedDiscr R m`: if `C (m ^ k) * f` is divisible by
 `depressedDiscr R m`, then `f` itself is divisible by `depressedDiscr R m`.
 
-The proof descends one power of `m` at a time: modulo `(m)`, the coefficient of `aₘ₋₁ ^ m` in
-`depressedDiscr` is the unit `±1` while higher degrees vanish, so the quotient `q` vanishes
-modulo `(m)`, letting us cancel `C m` from both sides. -/
+The proof descends one power of `m` at a time: modulo `(m)`, `depressedDiscr` cancels on the left
+by `eq_zero_of_depressedDiscr_mul_eq_zero`, so the quotient `q` vanishes modulo `(m)`, letting us
+cancel `C m` from both sides. -/
 private theorem depressedDiscr_dvd_of_C_pow_mul_dvd [IsDomain R] {m : ℕ} (hm : 3 ≤ m)
     (hmR : (m : R) ≠ 0) {f : MvPolynomial (Fin (m - 1)) R} {k : ℕ}
     {q : MvPolynomial (Fin (m - 1)) R}
@@ -490,32 +519,8 @@ private theorem depressedDiscr_dvd_of_C_pow_mul_dvd [IsDomain R] {m : ℕ} (hm :
       rw [map_mul, MvPolynomial.map_C, hpow, map_zero, zero_mul, map_mul,
         map_depressedDiscr] at hmap
       exact hmap.symm
-    let e := MvPolynomial.optionSubtypeNeEquiv A (⟨m - 3, by omega⟩ : Fin (m - 1))
-    have hunit : IsUnit ((e (depressedDiscr A m)).coeff m) := by
-      rw [coeff_optionSubtypeNeEquiv_depressedDiscr_self A hm, depressedDiscr_coeff_single_eq A hm]
-      have hmA : (m : A) = 0 := by simpa [π] using hπm
-      have hm1A : ((m - 1 : ℕ) : A) = -1 := by
-        have h1 : ((m - 1 : ℕ) : A) + ((1 : ℕ) : A) = (m : A) := by
-          rw [← Nat.cast_add, Nat.sub_add_cancel (by omega)]
-        rw [Nat.cast_one, hmA] at h1
-        exact eq_neg_of_add_eq_zero_left h1
-      rw [hm1A, ← pow_add]
-      exact (isUnit_one.neg.pow _).map MvPolynomial.C
-    have hmapq : MvPolynomial.map π q = 0 := by
-      by_cases hnt : Nontrivial A
-      · have hdeg : (e (depressedDiscr A m)).natDegree = m :=
-          natDegree_eq_of_le_of_coeff_ne_zero
-            (natDegree_le_iff_coeff_eq_zero.mpr
-              fun n hn ↦ coeff_optionSubtypeNeEquiv_depressedDiscr_of_lt A hm hn)
-            hunit.ne_zero
-        have hlc_unit : IsUnit (e (depressedDiscr A m)).leadingCoeff := by
-          rwa [leadingCoeff, hdeg]
-        have heq0 : e (depressedDiscr A m) * e (MvPolynomial.map π q) = 0 := by
-          rw [← map_mul, hq0, map_zero]
-        exact e.injective (((isUnit_leadingCoeff_mul_right_eq_zero_iff hlc_unit).mp heq0).trans
-          (map_zero e).symm)
-      · rw [not_nontrivial_iff_subsingleton] at hnt
-        exact Subsingleton.elim _ _
+    have hmapq : MvPolynomial.map π q = 0 :=
+      eq_zero_of_depressedDiscr_mul_eq_zero hm (by simpa [π] using hπm) hq0
     have hr : ∀ r' : R, π r' = 0 ↔ (m : R) ∣ r' := fun r' ↦
       (Ideal.Quotient.eq_zero_iff_mem (I := I)).trans Ideal.mem_span_singleton
     obtain ⟨q', hq_eq⟩ := (MvPolynomial.C_dvd_iff_map_hom_eq_zero π (m : R) hr q).mpr hmapq
@@ -578,6 +583,29 @@ private theorem depressedDiscr_prime_of_isUnit [IsDomain R] (h2 : (2 : R) ≠ 0)
   rw [hψ]
   exact prime_discr_freeMonic h2 hm2
 
+/-- Divisibility by `p` after localizing away from `r` descends to `C (r ^ k) * x = p * q₀`. -/
+private theorem exists_C_pow_mul_eq_mul_of_map_localization_away
+    {σ R : Type*} [CommRing R] {r : R} (hr : r ∈ nonZeroDivisors R) {p x : MvPolynomial σ R}
+    (hdvd : MvPolynomial.map (algebraMap R (Localization.Away r)) p ∣
+      MvPolynomial.map (algebraMap R (Localization.Away r)) x) :
+    ∃ (k : ℕ) (q₀ : MvPolynomial σ R), MvPolynomial.C (r ^ k) * x = p * q₀ := by
+  let := MvPolynomial.algebraMvPolynomial (σ := σ) (R := R) (S := Localization.Away r)
+  have hinj : Function.Injective (algebraMap R (Localization.Away r)) :=
+    IsLocalization.injective (Localization.Away r) (Submonoid.powers_le.mpr hr)
+  obtain ⟨qS, hqS⟩ := hdvd
+  obtain ⟨⟨q₀, _, b, ⟨k, rfl⟩, rfl⟩, hq₀⟩ :=
+    IsLocalization.surj ((Submonoid.powers r).map (MvPolynomial.C (σ := σ))) qS
+  simp only [MvPolynomial.algebraMap_def, MvPolynomial.map_C] at hq₀
+  refine ⟨k, q₀, MvPolynomial.map_injective _ hinj ?_⟩
+  calc
+    MvPolynomial.map (algebraMap R (Localization.Away r)) (MvPolynomial.C (r ^ k) * x)
+        = MvPolynomial.map (algebraMap R (Localization.Away r)) p *
+            (qS * MvPolynomial.C (algebraMap R (Localization.Away r) (r ^ k))) := by
+      simp only [map_mul, MvPolynomial.map_C, hqS]
+      ring
+    _ = MvPolynomial.map (algebraMap R (Localization.Away r)) (p * q₀) := by
+      simp only [map_mul, hq₀]
+
 /-- **The generic depressed discriminant is prime.** Over a domain in which `2 ≠ 0` and
 `(m : R) ≠ 0`, with `IsUnit (2 : R)` when `m = 2`, the discriminant of `Xᵐ + a₂ Xᵐ⁻² + ⋯ + aₘ`
 is a prime element of `R[a₂, …, aₘ]` for every `m ≥ 2`. -/
@@ -607,15 +635,10 @@ theorem depressedDiscr_prime [IsDomain R] (h2 : (2 : R) ≠ 0) (hmR : (m : R) �
       rwa [map_mul, hmap_eq] at h1
     have descend : ∀ x : MvPolynomial (Fin (m - 1)) R,
         depressedDiscr Rm m ∣ MvPolynomial.map (algebraMap R Rm) x → depressedDiscr R m ∣ x := by
-      let := MvPolynomial.algebraMvPolynomial (σ := Fin (m - 1)) (R := R) (S := Rm)
-      rintro x ⟨qRm, hqRm⟩
-      obtain ⟨⟨q₀, _, b, ⟨kb, rfl⟩, rfl⟩, hq₀⟩ :=
-        IsLocalization.surj ((Submonoid.powers (m : R)).map (MvPolynomial.C (σ := Fin (m - 1))))
-          qRm
-      simp only [MvPolynomial.algebraMap_def, MvPolynomial.map_C] at hq₀
-      have hcx : MvPolynomial.C ((m : R) ^ kb) * x = depressedDiscr R m * q₀ := by
-        apply MvPolynomial.map_injective _ hinj
-        rw [map_mul, MvPolynomial.map_C, map_mul, hmap_eq, hqRm, mul_left_comm, mul_comm _ qRm, hq₀]
+      intro x hx
+      rw [← hmap_eq] at hx
+      obtain ⟨k, q₀, hcx⟩ := exists_C_pow_mul_eq_mul_of_map_localization_away
+        (mem_nonZeroDivisors_of_ne_zero hmR) hx
       exact depressedDiscr_dvd_of_C_pow_mul_dvd hm3 hmR hcx
     rcases hprime_Rm.dvd_or_dvd hfg_Rm with hf | hg
     · exact Or.inl (descend f hf)

@@ -453,8 +453,11 @@ theorem discr_X_pow_add_X {m : ℕ} (hm : 2 ≤ m) :
   nontriviality R
   have hm1 : m - 1 ≠ 0 := by omega
   have hfac : (X ^ m + X : R[X]) = X * (X ^ (m - 1) - C (-1)) := by
-    rw [map_neg, map_one, sub_neg_eq_add, mul_add, mul_one, ← pow_succ',
-      Nat.sub_add_cancel (by omega)]
+    have hxm : (X ^ m : R[X]) = X * X ^ (m - 1) := by
+      rw [← pow_succ', Nat.sub_add_cancel (by omega)]
+    rw [hxm]
+    simp
+    ring
   have hmonX : (X : R[X]).Monic := monic_X
   have hmonQ : (X ^ (m - 1) - C (-1 : R)).Monic := monic_X_pow_sub_C (-1) hm1
   have hdiscrX : (X : R[X]).discr = 1 := by simpa using discr_X_pow_sub_C (0 : R) 1
@@ -462,9 +465,8 @@ theorem discr_X_pow_add_X {m : ℕ} (hm : 2 ≤ m) :
     rw [natDegree_X, ← sub_zero (X : R[X]), ← C_0, resultant_X_sub_C_left _ _ 0 le_rfl]
     simp [zero_pow hm1]
   have hm2 : m - 1 - 1 = m - 2 := by omega
-  rw [hfac, hmonX.discr_mul hmonQ, hdiscrX, hres, one_pow, one_mul, mul_one,
-    discr_X_pow_sub_C, hm2]
-  simp only [neg_neg, one_pow, mul_one]
+  rw [hfac, hmonX.discr_mul hmonQ, discr_X_pow_sub_C, hres]
+  simp [hdiscrX, hm2]
 
 /-! ### The root-product formula -/
 
