@@ -336,21 +336,6 @@ theorem differentiableAt_coord_apply_one {η : Π x : M, TangentSpace 𝓘(ℝ, 
     (contDiffOn_const (c := (1 : ℂ)))).differentiableOn (by simp)).differentiableAt
       (((A.chart i).isOpen_inter_preimage_symm (A.tangentHom.triv i).open_baseSet).mem_nhds hy)
 
-omit [IsManifold 𝓘(ℂ) ∞ M] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [T2Space M] [FiniteDimensional ℝ F] [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
-  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
-  [RiemannianBundle fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] [RiemannianBundle V]
-  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
-/-- The trivialization of `V` of chart `i` is complex linear over its base set. -/
-private theorem continuousLinearMapAt_I_smul {x : M} (hx : x ∈ (A.triv i).baseSet) (u : V x) :
-    (A.triv i).continuousLinearMapAt ℝ x (Complex.I • u) =
-      Complex.I • (A.triv i).continuousLinearMapAt ℝ x u := by
-  have hR (u : V x) : (A.triv i).continuousLinearMapAt ℝ x u =
-      (A.triv i).continuousLinearMapAt ℂ x u := by
-    rw [(A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) hx,
-      (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℂ) hx]
-  rw [hR, hR, map_smul]
-
 omit [T2Space M] [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
   [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
   [RiemannianBundle fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x]
@@ -414,7 +399,9 @@ theorem continuousLinearMapAt_zeroOneFrame_mgradient
     rw [map_smul, hTa, Complex.real_smul, mul_one]
   clear_value v
   have hE := continuousLinearMapAt_zeroOneFrame_apply A i hy k
-  have hI := continuousLinearMapAt_I_smul A i hxV
+  have hI (u : V x) : L (Complex.I • u) = Complex.I • L u := by
+    simp only [L]
+    rw [Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ, map_smul]
   -- The derivatives of `g` through the chart.
   have hg' : DifferentiableAt ℝ g (chartAt ℂ (A.center i) x) := by rwa [← hyx] at hg
   have hd (w : TangentSpace 𝓘(ℝ, ℂ) x) :
