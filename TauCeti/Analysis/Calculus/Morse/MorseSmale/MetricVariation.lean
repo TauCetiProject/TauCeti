@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Fredholm
 public import TauCeti.Analysis.ODE.TrajectoryOperator.FreeEndpoint
 import TauCeti.Analysis.Calculus.BumpFunction.Path
+import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 import TauCeti.Analysis.InnerProductSpace.RankOne
-import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.MeasureTheory.Function.L2Space
 
@@ -71,12 +71,11 @@ statements hold at the given inner product of `E`, and are the surjectivity inpu
 linearization in the Fredholm-theoretic proofs that Morse–Smale metrics, and metrics transverse
 along the broken trajectories of a Morse–Bott function, are generic.
 
-The proof goes through the cokernel. A path `v` orthogonal to the range of
+The proof goes through the cokernel. A nonzero path `v` orthogonal to the range of
 `ξ ↦ ξ' + (Hess f(γ) - c) ξ` agrees almost everywhere with a solution `u` of the formal adjoint
-equation `u' = (Hess f(γ) - c) u`
-(`WeakDerivStep.exists_hasDerivAt_adjoint_of_mem_orthogonal_range_trajectoryOperator`), and if
-`u` vanishes at one time it vanishes identically, by uniqueness for linear equations. If
-`u (s₀) ≠ 0`, take the symmetric operator
+equation `u' = (Hess f(γ) - c) u` which vanishes at no time, by uniqueness for linear equations
+(`WeakDerivStep.exists_hasDerivAt_ne_zero_of_mem_orthogonal_range_trajectoryOperator`). Take the
+symmetric operator
 `B x = ⟪∇f(γ s₀), x⟫ u(s₀) + ⟪u(s₀), x⟫ ∇f(γ s₀)`, for which `⟪B ∇f(γ s₀), u(s₀)⟫ > 0`, and a
 bump function `ψ` at `γ s₀`. Since `f` strictly decreases along `γ` near the regular point
 `γ s₀`, and decreases along all of `γ`, a small enough bump meets the trajectory only at times
@@ -242,26 +241,16 @@ theorem eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_forall_inner_eq_ze
   have hA : Continuous fun s ↦ hessianOperator f (γ s) - c s • ContinuousLinearMap.id ℝ E :=
     ((hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous).sub
       (hc.smul continuous_const)
-  -- `v` is a solution of the adjoint equation `u' = (Hess f(γ) - c) u`, the coefficient being
-  -- symmetric.
-  obtain ⟨u, hu, hvu⟩ :=
-    WeakDerivStep.exists_hasDerivAt_adjoint_of_mem_orthogonal_range_trajectoryOperator hA hAL hv
-  have hu' (s : ℝ) :
-      HasDerivAt u ((hessianOperator f (γ s) - c s • ContinuousLinearMap.id ℝ E) (u s)) s := by
-    have hsa : IsSelfAdjoint (hessianOperator f (γ s) - c s • ContinuousLinearMap.id ℝ E) :=
-      hf.contDiffAt.isSelfAdjoint_hessianOperator.sub
-        ((IsSelfAdjoint.all (c s)).smul (IsSelfAdjoint.one _))
-    simpa only [hsa.adjoint_eq] using hu s
-  have huc : Continuous u := continuous_iff_continuousAt.2 fun s ↦ (hu' s).continuousAt
   by_contra hv0
-  -- A solution vanishing at one time vanishes identically.
-  have hu0 : u s₀ ≠ 0 := by
-    intro h
-    have hu00 : u = fun _ ↦ 0 := hA.eq_of_hasDerivAt_clm_apply hu' (fun s ↦ by
-      simpa using hasDerivAt_const s (0 : E)) h
-    exact hv0 (Lp.eq_zero_iff_ae_eq_zero.2 (hvu.trans (.of_forall fun s ↦ by simp [hu00])))
+  -- `v` is a nowhere vanishing solution of the adjoint equation `u' = (Hess f(γ) - c) u`, the
+  -- coefficient being symmetric.
+  obtain ⟨u, hu, hvu, hu0⟩ :=
+    WeakDerivStep.exists_hasDerivAt_ne_zero_of_mem_orthogonal_range_trajectoryOperator hA
+      (fun s ↦ hf.contDiffAt.isSelfAdjoint_hessianOperator.sub
+        ((IsSelfAdjoint.all (c s)).smul (IsSelfAdjoint.one _))) hAL hv hv0
+  have huc : Continuous u := continuous_iff_continuousAt.2 fun s ↦ (hu s).continuousAt
   obtain ⟨H, hHs, hHc, hHU, hHsa, hpath_supp, hpos⟩ := exists_integral_inner_metricVariation_pos
-    hf hγ hU hcrit (hw.rexp.smul huc) (smul_ne_zero (Real.exp_pos _).ne' hu0)
+    hf hγ hU hcrit (hw.rexp.smul huc) (smul_ne_zero (Real.exp_pos _).ne' (hu0 s₀))
   -- The weighted path of `H` lies in `L²(ℝ, E)`, as a metric variation localized in `U`.
   have hmem : MemLp (fun s ↦ Real.exp (w s) • H (γ s) (∇ f (γ s))) 2
       (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)) := by
@@ -291,19 +280,10 @@ theorem range_trajectoryOperator_sup_metricVariations_eq_top_of_isClosed_of_coFG
     (hDc : IsClosed ((WeakDerivStep.trajectoryOperator (p := 2) AL).range :
       Set (Lp E 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)))))
     (hDf : (WeakDerivStep.trajectoryOperator (p := 2) AL).range.CoFG) :
-    (WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔ metricVariations f γ w U = ⊤ := by
-  have := hDf
-  -- The sum contains the closed range, of finite codimension, so it is closed.
-  have hK : IsClosed (((WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔
-      metricVariations f γ w U : Submodule ℝ _) : Set
-        (Lp E 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)))) :=
-    Submodule.isClosed_mono_of_finiteDimensional_quotient hDc le_sup_left
-  have := hK.completeSpace_coe
-  rw [← Submodule.orthogonal_eq_bot_iff, eq_bot_iff]
-  intro v hv
-  rw [← Submodule.inf_orthogonal] at hv
-  exact eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_forall_inner_eq_zero hf hγ hc hw hAL
-    hU hcrit hv.1 fun g hg ↦ (Submodule.mem_orthogonal _ _).1 hv.2 g hg
+    (WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔ metricVariations f γ w U = ⊤ :=
+  Submodule.sup_eq_top_of_isClosed_of_coFG hDc hDf fun _ hv hvar ↦
+    eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_forall_inner_eq_zero hf hγ hc hw hAL hU
+      hcrit hv ((Submodule.mem_orthogonal _ _).1 hvar)
 
 /-- **Localized metric variations make the linearized operator onto.** Let `f` be a `C²` function
 on a finite-dimensional real inner product space and `γ` a negative gradient trajectory from a

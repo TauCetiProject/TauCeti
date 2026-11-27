@@ -10,8 +10,8 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import TauCeti.Analysis.Calculus.BumpFunction.Path
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.Morse.GradientFlow
+import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 import TauCeti.Analysis.Normed.Group.Basic
-import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.MeasureTheory.Function.L2Space
 
@@ -48,9 +48,10 @@ neighbourhood of one point `γ s₀` of the trajectory that is not a critical po
   already suffice
   (`TauCeti.exists_finset_subset_potentialVariations_range_trajectoryOperator_sup_span_eq_top`).
 
-The proof goes through the cokernel. A path `v` orthogonal to the range of `D_γ` agrees almost
-everywhere with a solution `u` of the formal adjoint equation `u' = Hess f(γ) u`
-(`WeakDerivStep.exists_hasDerivAt_adjoint_of_mem_orthogonal_range_trajectoryOperator`).
+The proof goes through the cokernel. A nonzero path `v` orthogonal to the range of `D_γ` agrees
+almost everywhere with a solution `u` of the formal adjoint equation `u' = Hess f(γ) u` which
+vanishes at no time
+(`WeakDerivStep.exists_hasDerivAt_ne_zero_of_mem_orthogonal_range_trajectoryOperator`).
 
 * **The tangential component.** Since `γ'' = -Hess f(γ) γ'` and the Hessian is symmetric, the
   pairing `⟪u, ∇f(γ)⟫` is constant (`TauCeti.hasDerivAt_inner_gradient_comp`). As `u` is square
@@ -195,15 +196,17 @@ theorem inner_gradient_comp_eq_zero_of_memLp (hf : ContDiff ℝ 2 f)
 
 /-! ### A potential variation pairing positively with a normal path -/
 
-/-- **The level-hitting time near a regular point.** Let `f` be `Cⁿ`, `n ≠ 0`, and `γ` a `Cⁿ`
-negative gradient trajectory with `∇f(γ s₀) ≠ 0`. Then `f ∘ γ` has a local inverse `σ` near
-`s₀`, of class `Cⁿ` on an open set `T` containing `f (γ s₀)`: `σ (f (γ s)) = s` for `s` near `s₀`.
-So `σ (f x)` is the time at which the trajectory reaches the level of `f` at `x`. -/
-private theorem exists_contDiffAt_comp_eq {n : ℕ∞} (hf : ContDiff ℝ n f) (hγn : ContDiff ℝ n γ)
+/-- **The level-hitting time near a regular point.** Let `f` be `Cⁿ`, `n ≠ 0`, and `γ` a negative
+gradient trajectory with `∇f(γ s₀) ≠ 0`, so that `γ` is `Cⁿ` as well. Then `f ∘ γ` has a local
+inverse `σ` near `s₀`, of class `Cⁿ` on an open set `T` containing `f (γ s₀)`:
+`σ (f (γ s)) = s` for `s` near `s₀`. So `σ (f x)` is the time at which the trajectory reaches the
+level of `f` at `x`. -/
+private theorem exists_contDiffAt_comp_eq {n : ℕ∞} (hf : ContDiff ℝ n f)
     (hn0 : (n : WithTop ℕ∞) ≠ 0) (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {s₀ : ℝ}
     (hcrit : ∇ f (γ s₀) ≠ 0) :
     ∃ σ : ℝ → ℝ, ∃ T : Set ℝ, IsOpen T ∧ f (γ s₀) ∈ T ∧ (∀ a ∈ T, ContDiffAt ℝ n σ a) ∧
       ∀ᶠ s in 𝓝 s₀, σ (f (γ s)) = s := by
+  have hγn := hγ.contDiff_neg_gradient hf (Order.one_le_iff_ne_zero.2 (by exact_mod_cast hn0))
   have hφ (t : ℝ) := hγ.hasDerivAt_comp_neg_gradient (t := t) (hf.differentiable hn0 _)
   have hφ0 : -‖∇ f (γ s₀)‖ ^ 2 ≠ 0 := by simpa using hcrit
   have hφn : ContDiff ℝ n (f ∘ γ) := hf.comp hγn
@@ -221,18 +224,19 @@ private theorem exists_contDiffAt_comp_eq {n : ℕ∞} (hf : ContDiff ℝ n f) (
   filter_upwards [Φ.open_source.mem_nhds hs₀] with s hs using Φ.left_inv hs
 
 /-- **A function vanishing on the trajectory with prescribed normal derivative.** Let `f` be `Cⁿ`,
-`n ≠ 0`, and `γ` a `Cⁿ` negative gradient trajectory with `∇f(γ s₀) ≠ 0`. For every vector `w`
-there is a function `g`, of class `Cⁿ` at the points of an open set `O ∋ γ s₀`, which vanishes on
-the trajectory at times near `s₀`, and whose derivative at every point `γ s ∈ O` is `⟪w, ·⟫` on
-the vectors orthogonal to `∇f(γ s)`: `g x = ⟪w, x - γ (σ (f x))⟫` for the level-hitting time
-`σ ∘ f` of `TauCeti.exists_contDiffAt_comp_eq`. -/
+`n ≠ 0`, and `γ` a negative gradient trajectory with `∇f(γ s₀) ≠ 0`, so that `γ` is `Cⁿ` as well.
+For every vector `w` there is a function `g`, of class `Cⁿ` at the points of an open set
+`O ∋ γ s₀`, which vanishes on the trajectory at times near `s₀`, and whose derivative at every
+point `γ s ∈ O` is `⟪w, ·⟫` on the vectors orthogonal to `∇f(γ s)`: `g x = ⟪w, x - γ (σ (f x))⟫`
+for the level-hitting time `σ ∘ f` of `TauCeti.exists_contDiffAt_comp_eq`. -/
 private theorem exists_contDiffAt_eventually_eq_zero_fderiv_eq_inner {n : ℕ∞}
-    (hf : ContDiff ℝ n f) (hγn : ContDiff ℝ n γ) (hn0 : (n : WithTop ℕ∞) ≠ 0)
+    (hf : ContDiff ℝ n f) (hn0 : (n : WithTop ℕ∞) ≠ 0)
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) (w : E) :
     ∃ O : Set E, IsOpen O ∧ γ s₀ ∈ O ∧ ∃ g : E → ℝ, (∀ x ∈ O, ContDiffAt ℝ n g x) ∧
       (∀ᶠ s in 𝓝 s₀, g (γ s) = 0) ∧
       ∀ s, γ s ∈ O → ∀ v, ⟪v, ∇ f (γ s)⟫ = 0 → fderiv ℝ g (γ s) v = ⟪w, v⟫ := by
-  obtain ⟨σ, T, hT, hsT, hσ, hσγ⟩ := exists_contDiffAt_comp_eq hf hγn hn0 hγ hcrit
+  have hγn := hγ.contDiff_neg_gradient hf (Order.one_le_iff_ne_zero.2 (by exact_mod_cast hn0))
+  obtain ⟨σ, T, hT, hsT, hσ, hσγ⟩ := exists_contDiffAt_comp_eq hf hn0 hγ hcrit
   have hk {x : E} (hx : f x ∈ T) : ContDiffAt ℝ n (fun y ↦ γ (σ (f y))) x :=
     hγn.contDiffAt.comp x ((hσ _ hx).comp x hf.contDiffAt)
   refine ⟨f ⁻¹' T, hT.preimage hf.continuous, hsT, fun x ↦ ⟪w, x - γ (σ (f x))⟫,
@@ -240,15 +244,14 @@ private theorem exists_contDiffAt_eventually_eq_zero_fderiv_eq_inner {n : ℕ∞
   · filter_upwards [hσγ] with s hs
     rw [hs, sub_self, inner_zero_right]
   -- The derivative of `x ↦ γ (σ (f x))` factors through `fderiv f`, which kills `v`.
-  have hγσ : DifferentiableAt ℝ (fun a ↦ γ (σ a)) (f (γ s)) :=
-    (hγn.contDiffAt.comp _ (hσ _ hs)).differentiableAt hn0
-  have hsub : DifferentiableAt ℝ (fun x ↦ x - γ (σ (f x))) (γ s) :=
-    differentiableAt_id.sub ((hk hs).differentiableAt hn0)
-  rw [fderiv_inner_apply ℝ (differentiableAt_const w) hsub, fderiv_const_apply, zero_apply,
-    inner_zero_left, add_zero, fderiv_fun_sub (f := fun x : E ↦ x) differentiableAt_id
-      ((hk hs).differentiableAt hn0), sub_apply, fderiv_fun_id, ContinuousLinearMap.id_apply,
-    fderiv_fun_comp _ hγσ (hf.differentiable hn0 _), ContinuousLinearMap.comp_apply,
-    ← inner_gradient_left, real_inner_comm v, hv, map_zero, sub_zero]
+  have hfv : fderiv ℝ f (γ s) v = 0 := by rw [← inner_gradient_left, real_inner_comm, hv]
+  have hγσ : HasFDerivAt (fun a ↦ γ (σ a)) (fderiv ℝ (fun a ↦ γ (σ a)) (f (γ s))) (f (γ s)) :=
+    ((hγn.contDiffAt.comp _ (hσ _ hs)).differentiableAt hn0).hasFDerivAt
+  have hg : HasFDerivAt (fun x ↦ ⟪w, x - γ (σ (f x))⟫) ((innerSL ℝ w).comp
+      (.id ℝ E - (fderiv ℝ (fun a ↦ γ (σ a)) (f (γ s))).comp (fderiv ℝ f (γ s)))) (γ s) :=
+    (innerSL ℝ w).hasFDerivAt.comp _
+      ((hasFDerivAt_id _).sub (hγσ.comp _ (hf.differentiable hn0 _).hasFDerivAt))
+  simp [hg.fderiv, hfv]
 
 section FiniteDimensional
 
@@ -268,9 +271,8 @@ private theorem exists_potentialVariation_integral_inner_pos {n : ℕ∞} (hf : 
     ∃ h : E → ℝ, ContDiff ℝ n h ∧ HasCompactSupport h ∧ tsupport h ⊆ U ∧ (∀ s, h (γ s) = 0) ∧
       HasCompactSupport (fun s ↦ ∇ h (γ s)) ∧ 0 < ∫ s, ⟪∇ h (γ s), u s⟫ := by
   have hn0 : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_two.trans_le hn).ne'
-  have hγn : ContDiff ℝ n γ := hγ.contDiff_neg_gradient hf (one_le_two.trans hn)
   obtain ⟨O, hO, hx₀, g, hgO, hg0, hgd⟩ :=
-    exists_contDiffAt_eventually_eq_zero_fderiv_eq_inner hf hγn hn0 hγ hcrit (u s₀)
+    exists_contDiffAt_eventually_eq_zero_fderiv_eq_inner hf hn0 hγ hcrit (u s₀)
   -- A bump `ψ` at `γ s₀` inside `U ∩ O`, met by `γ` only at times in a unit interval around `s₀`
   -- where `g` vanishes on `γ`.
   have hvisit := hγ.comap_nhds_le_nhds (fun t ↦ hf.differentiable hn0 _) hcrit
@@ -300,8 +302,8 @@ private theorem exists_potentialVariation_integral_inner_pos {n : ℕ∞} (hf : 
     rw [inner_gradient_left]
     by_cases hs : γ s ∈ tsupport ψ
     · rw [fderiv_fun_mul ((hψ.differentiable (by simp)) _)
-        ((hgO _ (hψO hs)).differentiableAt hn0), add_apply, smul_apply, smul_apply,
-        hgd s (hψO hs) (u s) (hnormal s), (hψs hs).1, zero_smul, add_zero, smul_eq_mul]
+        ((hgO _ (hψO hs)).differentiableAt hn0)]
+      simp [hgd s (hψO hs) (u s) (hnormal s), (hψs hs).1]
     · rw [fderiv_of_notMem_tsupport ℝ (hh0 hs), image_eq_zero_of_notMem_tsupport hs,
         zero_apply, zero_mul]
 
@@ -326,24 +328,18 @@ theorem eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_mem_orthogonal_pot
   have hf2 : ContDiff ℝ 2 f := hf.of_le (WithTop.coe_le_coe.2 hn)
   have hA : Continuous fun s ↦ hessianOperator f (γ s) :=
     (hf2.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous
-  -- `v` is a solution of the adjoint equation `u' = Hess f(γ) u`, the Hessian being symmetric.
-  obtain ⟨u, hu, hvu⟩ :=
-    WeakDerivStep.exists_hasDerivAt_adjoint_of_mem_orthogonal_range_trajectoryOperator hA hAL hv
-  have hu' (s : ℝ) : HasDerivAt u (hessianOperator f (γ s) (u s)) s := by
-    simpa only [hf2.contDiffAt.isSelfAdjoint_hessianOperator.adjoint_eq] using hu s
-  have huc : Continuous u := continuous_iff_continuousAt.2 fun s ↦ (hu' s).continuousAt
+  by_contra hv0
+  -- `v` is a nowhere vanishing solution of the adjoint equation `u' = Hess f(γ) u`, the Hessian
+  -- being symmetric.
+  obtain ⟨u, hu, hvu, hu0⟩ :=
+    WeakDerivStep.exists_hasDerivAt_ne_zero_of_mem_orthogonal_range_trajectoryOperator hA
+      (fun _ ↦ hf2.contDiffAt.isSelfAdjoint_hessianOperator) hAL hv hv0
+  have huc : Continuous u := continuous_iff_continuousAt.2 fun s ↦ (hu s).continuousAt
   -- It is square integrable, hence normal to the trajectory.
   have hu2 : MemLp u 2 volume := hvol ▸ (Lp.memLp v).ae_eq hvu
-  have hnormal := inner_gradient_comp_eq_zero_of_memLp hf2 hγ hu' hu2 hC
-  by_contra hv0
-  -- A solution vanishing at one time vanishes identically.
-  have hu0 : u s₀ ≠ 0 := by
-    intro h
-    have hu00 : u = fun _ ↦ 0 := hA.eq_of_hasDerivAt_clm_apply hu' (fun s ↦ by
-      simpa using hasDerivAt_const s (0 : E)) h
-    exact hv0 (Lp.eq_zero_iff_ae_eq_zero.2 (hvu.trans (.of_forall fun s ↦ by simp [hu00])))
+  have hnormal := inner_gradient_comp_eq_zero_of_memLp hf2 hγ hu hu2 hC
   obtain ⟨h, hh, hhc, hhU, hhγ, hpath_supp, hpos⟩ :=
-    exists_potentialVariation_integral_inner_pos hf hn hγ hU hcrit huc hu0 hnormal
+    exists_potentialVariation_integral_inner_pos hf hn hγ hU hcrit huc (hu0 s₀) hnormal
   -- The path of `h` lies in `L²(ℝ, E)`, as a potential variation localized in `U`.
   have hmem : MemLp (fun s ↦ ∇ h (γ s)) 2
       (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)) := by
@@ -373,19 +369,10 @@ theorem range_trajectoryOperator_sup_potentialVariations_eq_top_of_isClosed_of_c
     (hDc : IsClosed ((WeakDerivStep.trajectoryOperator (p := 2) AL).range :
       Set (Lp E 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)))))
     (hDf : (WeakDerivStep.trajectoryOperator (p := 2) AL).range.CoFG) :
-    (WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔ potentialVariations γ n U = ⊤ := by
-  have := hDf
-  -- The sum contains the closed range, of finite codimension, so it is closed.
-  have hK : IsClosed (((WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔
-      potentialVariations γ n U : Submodule ℝ _) : Set
-        (Lp E 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)))) :=
-    Submodule.isClosed_mono_of_finiteDimensional_quotient hDc le_sup_left
-  have := hK.completeSpace_coe
-  rw [← Submodule.orthogonal_eq_bot_iff, eq_bot_iff]
-  intro v hv
-  rw [← Submodule.inf_orthogonal] at hv
-  exact eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_mem_orthogonal_potentialVariations
-    hf hn hγ hC hAL hU hcrit hv.1 hv.2
+    (WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔ potentialVariations γ n U = ⊤ :=
+  Submodule.sup_eq_top_of_isClosed_of_coFG hDc hDf fun _ ↦
+    eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_mem_orthogonal_potentialVariations
+      hf hn hγ hC hAL hU hcrit
 
 /-- **Localized potential variations make the linearized operator onto.** Let `f` be a `Cⁿ`
 function, `2 ≤ n`, on a finite-dimensional real inner product space and `γ` a negative gradient
