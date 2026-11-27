@@ -19,6 +19,7 @@ public import Mathlib.Topology.VectorBundle.FiniteDimensional
 
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.FiberBundle.Sigma
+import TauCeti.Topology.Homeomorph.Sigma
 import TauCeti.Topology.LocallyConstant.Fiber
 import TauCeti.Topology.VectorBundle.IsEmpty
 import TauCeti.Topology.VectorBundle.Smul
@@ -90,6 +91,19 @@ abbrev StratumFiber (n : ℕ) (x : {x : X // E.rank x = n}) : Type w := E.Fiber 
 /-- Preferred continuous linear equivalence between `E.Fiber x` and `Fin (E.rank x) → 𝕜`. -/
 noncomputable def fiberContinuousLinearEquiv (x : X) : E.Fiber x ≃L[𝕜] (Fin (E.rank x) → 𝕜) :=
   VectorBundle.continuousLinearEquivAt 𝕜 (Fin (E.rank x) → 𝕜) (E.StratumFiber (E.rank x)) ⟨x, rfl⟩
+
+/-- The preferred fibre equivalence is the preferred trivialization of the rank stratum. -/
+theorem fiberContinuousLinearEquiv_apply (x : X) (v : E.Fiber x) :
+    E.fiberContinuousLinearEquiv x v =
+      (trivializationAt (Fin (E.rank x) → 𝕜) (E.StratumFiber (E.rank x)) ⟨x, rfl⟩
+        ⟨⟨x, rfl⟩, v⟩).2 := (rfl)
+
+/-- The inverse of the preferred fibre equivalence is the inverse of the preferred trivialization
+of the rank stratum. -/
+theorem fiberContinuousLinearEquiv_symm_apply (x : X) (v : Fin (E.rank x) → 𝕜) :
+    (E.fiberContinuousLinearEquiv x).symm v =
+      (trivializationAt (Fin (E.rank x) → 𝕜) (E.StratumFiber (E.rank x)) ⟨x, rfl⟩).symm
+        ⟨x, rfl⟩ v := (rfl)
 
 /-- Each fibre `E.Fiber x` is a topological additive group via its stratum vector bundle chart. -/
 instance (x : X) : IsTopologicalAddGroup (E.Fiber x) :=
@@ -649,15 +663,12 @@ variable (𝕜) (r : LocallyConstant X ℕ) (V : X → Type w')
 private noncomputable def gluedOfBundlesHomeomorph :
     (ofBundles 𝕜 r V E e).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
   letI (n : ℕ) := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
-  { toEquiv := Equiv.sigmaCongrRight fun n ↦
-      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
-        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).toEquiv
-    continuous_toFun := continuous_sigma fun n ↦ continuous_sigmaMk.comp
-      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
-        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).continuous
-    continuous_invFun := continuous_sigma fun n ↦ continuous_sigmaMk.comp
-      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
-        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).symm.continuous }
+  Homeomorph.sigmaCongrRight
+    (X := fun n ↦ TotalSpace (Fin n → 𝕜) (fun x : {x : X // r x = n} ↦ V x.val))
+    (Y := fun n ↦ TotalSpace (Fin n → 𝕜) (E n))
+    fun n ↦
+      totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
+        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)
 
 /-- Homeomorphism over `X` between the global total space of `ofBundles 𝕜 r V E e` and the disjoint
 union of the stratum total spaces `TotalSpace (Fin n → 𝕜) (E n)`. -/

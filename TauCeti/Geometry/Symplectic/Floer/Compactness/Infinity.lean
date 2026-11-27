@@ -66,7 +66,10 @@ differentiable map `e : M → F`, such as the Whitney embedding.
   the closed disc of radius `T⁻¹`.
 
 The `C³` regularity of `wₖ` at `0` is a hypothesis: it is the removal of the singularity of `uₖ`
-at `∞`, which is not proved here.
+at `∞`. For maps into a vector space this removal is proved, under its hypotheses, in
+`TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`
+(`TauCeti.SymplecticForm.exists_contDiffOn_update_comp_inv_of_finite_energy`); for maps into a
+closed manifold `M` it is not yet proved.
 
 ## References
 

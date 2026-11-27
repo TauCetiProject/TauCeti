@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 public import TauCeti.Topology.VectorBundle.SphereBundle.LocallyTrivial
-import TauCeti.LinearAlgebra.Orientation.Basis
+import TauCeti.Topology.VectorBundle.Orientation.ZeroSectionCompl
 
 /-!
 # The orientation local system of a line bundle and its unit sphere bundle
@@ -66,18 +66,12 @@ variable {B : Type u} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
 
 /-- In rank one a unit vector `v` orients its fibre: the map from the unit sphere bundle to the
 orientation double cover sending `v` to the orientation of its fibre in which `v` is positive.
-It lies over the base and carries `-v` to the opposite orientation
-(`TauCeti.sphereBundleOrientation_sphereBundleNeg`). -/
-def sphereBundleOrientation : C(sphereBundle F E, VectorBundleOrientationCover F E (Fin 1)) where
-  toFun v := ⟨(v : TotalSpace F E).proj,
-    (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
-      (v : TotalSpace F E).snd
-      (snd_ne_zero_of_mem_sphereBundle v.property)).orientation⟩
-  continuous_toFun :=
-    VectorBundleOrientationCover.continuous_mk_basis_orientation
-      ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal) _ fun i ↦ by
-        simp only [FiniteDimensional.basisSingleton_apply]
-        exact continuous_subtypeVal
+It is the restriction of the orientation map of the nonzero vectors
+(`TauCeti.zeroSectionComplOrientation`). It lies over the base and carries `-v` to the opposite
+orientation (`TauCeti.sphereBundleOrientation_sphereBundleNeg`). -/
+def sphereBundleOrientation : C(sphereBundle F E, VectorBundleOrientationCover F E (Fin 1)) :=
+  (zeroSectionComplOrientation hF).comp
+    (ContinuousMap.inclusion fun _ hv ↦ mem_zeroSectionCompl.2 (snd_ne_zero_of_mem_sphereBundle hv))
 
 /-- The orientation map sends a unit vector `v` over `b` to the orientation of `E_b` given by the
 basis `(v)`. -/
@@ -86,18 +80,18 @@ theorem sphereBundleOrientation_apply (v : sphereBundle F E) :
       (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
         (v : TotalSpace F E).snd
         (snd_ne_zero_of_mem_sphereBundle v.property)).orientation⟩ :=
-  (rfl)
+  zeroSectionComplOrientation_apply hF _
 
 /-- The orientation given by a unit vector lies over the base point of the vector. -/
 @[simp]
 theorem proj_sphereBundleOrientation (v : sphereBundle F E) :
     (sphereBundleOrientation hF v).proj = (v : TotalSpace F E).proj :=
-  (rfl)
+  proj_zeroSectionComplOrientation hF _
 
 /-- The orientation map of the unit sphere bundle lies over the base. -/
 theorem proj_comp_sphereBundleOrientation :
     VectorBundleOrientationCover.proj ∘ ⇑(sphereBundleOrientation hF) = ⇑(sphereBundleProj F E) :=
-  funext fun v ↦ (sphereBundleProj_apply F E v).symm
+  funext fun v ↦ (proj_sphereBundleOrientation hF v).trans (sphereBundleProj_apply F E v).symm
 
 /-- The opposite unit vector gives the opposite orientation. -/
 @[simp]
@@ -108,9 +102,8 @@ theorem sphereBundleOrientation_sphereBundleNeg (v : sphereBundle F E) :
   have hneg : sphereBundleNeg F E ⟨⟨b, x⟩, hx⟩ =
       ⟨⟨b, -x⟩, mem_sphereBundle.2 ((norm_neg x).trans (mem_sphereBundle.1 hx))⟩ :=
     Subtype.ext (coe_sphereBundleNeg_apply F E _)
-  rw [hneg, VectorBundleOrientationCover.deck_apply, sphereBundleOrientation_apply,
-    sphereBundleOrientation_apply]
-  exact VectorBundleOrientationCover.mk_eq_mk_iff.2 (orientation_basisSingleton_neg _ _)
+  rw [hneg]
+  exact zeroSectionComplOrientation_neg hF (snd_ne_zero_of_mem_sphereBundle hx)
 
 /-- Distinct unit vectors give distinct points of the orientation double cover. -/
 theorem sphereBundleOrientation_injective :
@@ -127,15 +120,11 @@ theorem sphereBundleOrientation_injective :
 theorem sphereBundleOrientation_surjective :
     Function.Surjective (sphereBundleOrientation (E := E) hF) := by
   intro p
-  have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
-  obtain ⟨v, hv⟩ := sphereBundleProj_surjective F E p.proj
-  have hp : (sphereBundleOrientation hF v).proj = p.proj := by
-    rw [proj_sphereBundleOrientation, ← sphereBundleProj_apply, hv]
-  rcases VectorBundleOrientationCover.eq_or_eq_deck ((Fintype.card_fin 1).trans hF.symm) hp
-    with h | h
-  · exact ⟨v, h⟩
-  · exact ⟨sphereBundleNeg F E v, by rw [sphereBundleOrientation_sphereBundleNeg, h,
-      VectorBundleOrientationCover.deck_deck]⟩
+  -- Normalize a nonzero vector giving `p`: a positive multiple gives the same orientation.
+  obtain ⟨⟨⟨b, x⟩, hx⟩, rfl⟩ := zeroSectionComplOrientation_surjective hF p
+  have hx : x ≠ 0 := mem_zeroSectionCompl.1 hx
+  exact ⟨⟨⟨b, ‖x‖⁻¹ • x⟩, mem_sphereBundle.2 (norm_smul_inv_norm hx)⟩,
+    zeroSectionComplOrientation_smul hF hx (inv_pos.2 (norm_pos_iff.2 hx))⟩
 
 /-- **The unit sphere bundle of a line bundle is its orientation double cover.** For a real
 vector bundle of rank one whose fibre norm is continuous on the total space, sending a unit

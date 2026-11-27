@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Plus
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Restriction
+import TauCeti.RingTheory.Huber.LocalizationTopology.Valuation
 
 /-!
 # The adic spectrum of a rational localisation lies over the rational subset
@@ -58,6 +59,11 @@ in `TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedHomeomorph`.
 * `TauCeti.ValuationSpectrum.spaComapLoc_mem_rationalSubset` and
   `TauCeti.ValuationSpectrum.range_spaComapLoc_subset` : the rational localisation satisfies that
   criterion, so `Spa (A_U, A_U⁺)` lies over `R(T/s)`.
+* `TauCeti.ValuationSpectrum.completedPlusSubring_eq_completionPlus` : `A_U⁺` is the completion
+  plus ring of `C`.
+* `TauCeti.ValuationSpectrum.comap_mem_spa_completedPlusSubring` : a continuous valuation pulled
+  back along a continuous map out of `A⟨T/s⟩` is a point of `Spa (A⟨T/s⟩, A_U⁺)` once its
+  pullback to `A` lies in `R(T/s)`.
 * `TauCeti.ValuationSpectrum.continuous_spaLocToRationalSubset` : the corestriction is continuous.
 * `TauCeti.ValuationSpectrum.rationalSubset_image_toCompletionLoc_eq_spa` : over `A_U` the
   conditions defining `R(T/s)` become vacuous — the rational subset presented by the images of
@@ -212,6 +218,95 @@ theorem spaComapLoc_mem_rationalSubset (P : PairOfDefinition A) (Aplus : Subring
   -- and `t` times that inverse is the fraction `t/s`, which lies in `A_U⁺`
   rw [toCompletionLoc_mul_unit_inv_eq_divBy P T s S hden t hu]
   exact divBy_mem_completedPlusSubring P Aplus T s S hden ht
+
+-- **The plus ring of the localisation is sub-unit.** Let `w` be a point of `Spv B` that is
+-- sub-unit on the image of `A⁺` under `φ` and on the images `ψ (t/s)` of the fractions, and let
+-- `ψ : Aₛ → B` restrict along `algebraMap A Aₛ` to `φ`. Then `w` is sub-unit on the image under
+-- `ψ` of the plus ring of `Aₛ` — the integral closure of `A⁺[t₁/s, …, tₙ/s]`.
+--
+-- The bound on the fractions is asked of `ψ` directly, so no unit hypothesis on `φ s` is needed;
+-- a caller holding the bound as `φ t * (φ s)⁻¹` converts it with
+-- `TauCeti.Localization.map_divBy_eq_mul_inv`.
+--
+-- `B` carries no topology and no `B⁺` appears: the two bounds enter as hypotheses on the single
+-- point `w`, not as a quantifier over `spa B⁺`.
+omit [IsTopologicalRing A] [TopologicalSpace A] in
+private theorem vle_one_of_mem_integralClosure_adjoin_plus {B : Type*} [CommRing B]
+    (Aplus : Subring A) (T : Finset A) (s : A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] {φ : A →+* B} {ψ : S →+* B}
+    (hψ : ∀ a : A, ψ (algebraMap A S a) = φ a) {w : Spv B}
+    (hA : ∀ a ∈ Aplus, w.toValuativeRel.vle (φ a) 1)
+    (hT : ∀ t ∈ T, w.toValuativeRel.vle (ψ (divBy (t : A) s : S)) 1) {x : S}
+    (hx : x ∈ integralClosure
+      ↥(Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S))) S) :
+    w.toValuativeRel.vle (ψ x) 1 := by
+  have key (y : S) : w.valuation.comap ψ y ≤ 1 ↔ w.toValuativeRel.vle (ψ y) 1 := by
+    rw [Valuation.comap_apply, ← map_one w.valuation, valuation_le_iff]
+  exact (key x).mp (Huber.le_one_of_mem_integralClosure_adjoin_plus S T s Aplus
+    (fun a ha ↦ (key _).mpr (hψ a ▸ hA a ha))
+    (fun t ht ↦ (key _).mpr (hT t ht)) hx)
+
+/-- **`A_U⁺` is the completion plus ring of `C`.** Both are the closure, in `A⟨T/s⟩`, of the image
+of the integral closure `C` of `A⁺[T/s]` in `A(T/s)`, so the plus ring that `completedPlusSubring`
+puts on the completed localization is the one `completionPlus` builds from `C` — the plus ring of
+Wedhorn's Proposition 7.48. -/
+theorem completedPlusSubring_eq_completionPlus (P : PairOfDefinition A) (Aplus : Subring A)
+    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    completedPlusSubring P Aplus T s S hden = completionPlus (integralClosure ↥(Algebra.adjoin Aplus
+      (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  -- neither `completedPlusSubring` nor `completionPlus` is exposed outside the module that
+  -- introduces it, so neither side unfolds here and the two are compared on their carriers
+  exact SetLike.coe_injective <| by
+    rw [coe_completedPlusSubring, completionPlus_def,
+      UniformSpace.Completion.coe_topologicalClosure_map_coeRingHom, Subalgebra.coe_toSubring]
+
+/-- **A criterion for a pullback to lie in `Spa (A⟨T/s⟩, A_U⁺)`.** Let `σ : A⟨T/s⟩ → B` be a
+continuous ring homomorphism and `w` a continuous valuation on `B` whose pullback to `A` along
+`σ ∘ ρ`, where `ρ : A → A⟨T/s⟩` is the structure map, lies in `R(T/s)`. Then the pullback of `w`
+along `σ` is a point of `Spa (A⟨T/s⟩, A_U⁺)`. The sub-unit condition on `A_U⁺` itself is not
+asked: it follows from the sub-unit condition on `A⁺` and on the fractions `t/s`, both of which
+hold because the pullback lies in `R(T/s)`. -/
+theorem comap_mem_spa_completedPlusSubring (P : PairOfDefinition A)
+    (Aplus : Subring A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) {B : Type*} [CommRing B]
+    [TopologicalSpace B] :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ (σ : UniformSpace.Completion S →+* B), Continuous σ → ∀ {w : Spv B}, w.IsContinuous →
+      comap (σ.comp (toCompletionLoc P T s S hden)) w ∈ rationalSubset Aplus T s →
+      comap σ w ∈ spa (completedPlusSubring P Aplus T s S hden) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  intro σ hσ w hw hfac
+  have hψ : ∀ a : A, (σ.comp UniformSpace.Completion.coeRingHom) (algebraMap A S a) =
+      (σ.comp (toCompletionLoc P T s S hden)) a := fun a ↦ by
+    rw [RingHom.comp_apply, RingHom.comp_apply, UniformSpace.Completion.coe_coeRingHom,
+      ← toCompletionLoc_apply P T s S hden]
+  -- `s` is already inverted in `S` by the `IsLocalization.Away` binder, so its image is a unit
+  have hu : IsUnit ((σ.comp (toCompletionLoc P T s S hden)) s) :=
+    hψ s ▸ (IsLocalization.Away.algebraMap_isUnit (S := S) s).map _
+  have hA : ∀ a ∈ Aplus, w.toValuativeRel.vle (σ (toCompletionLoc P T s S hden a)) 1 :=
+      fun a ha ↦ by
+    simpa only [comap_vle, map_one, RingHom.comp_apply] using
+      ((mem_spa_iff _ _).mp ((mem_rationalSubset_iff Aplus T s _).mp hfac).1).2 a ha
+  have hcont := hw.comap hσ
+  rw [completedPlusSubring_eq_completionPlus, completionPlus_def, spa_topologicalClosure,
+    mem_spa_map_iff UniformSpace.Completion.continuous_coeRingHom _ hcont]
+  refine (mem_spa_iff _ _).mpr
+    ⟨hcont.comap UniformSpace.Completion.continuous_coeRingHom, fun x hx ↦ ?_⟩
+  simpa only [comap_vle, map_one, RingHom.comp_apply] using
+    vle_one_of_mem_integralClosure_adjoin_plus Aplus T s S hψ hA
+      (fun t ht ↦ (map_divBy_eq_mul_inv (S := S) t s hψ).symm ▸
+        vle_one_of_comap_mem_rationalSubset hu hfac ht) hx
 
 /-- The range of `spaComapLoc` is contained in the rational subset `R(T/s)`, as a subset of the
 subtype `↥(Spa (A, A⁺))`. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.ToAtlas
+public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.Atlas
 public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.ULift.Basic
 
 /-!
@@ -43,23 +43,24 @@ noncomputable def uliftToAtlasNatIso :
   NatIso.ofComponents (fun V ↦
     let V' : FiniteRankBundle.{max w w'} 𝕜 X := V.ulift
     FiniteRankAtlas.isoMk (fun x ↦ LinearEquiv.refl 𝕜 (V.toAtlas.Fiber x))
-      ((V.toAtlasTotalSpaceHomeomorph.continuous.comp
+      ((V.toAtlasHomeomorph.continuous.comp
         (V.uliftTotalSpaceHomeomorph.continuous.comp
-          V'.toAtlasTotalSpaceHomeomorph.symm.continuous)).congr fun p ↦ by
-        simp only [V', Function.comp_apply, toAtlasTotalSpaceHomeomorph_symm_apply,
-          uliftTotalSpaceHomeomorph_apply, toAtlasTotalSpaceHomeomorph_apply]
-        erw [continuousLinearEquivAt_ulift.{w, w'} V p.proj, ContinuousLinearEquiv.symm_trans_apply,
+          V'.toAtlasHomeomorph.symm.continuous)).congr fun p ↦ by
+        simp only [V', Function.comp_apply, toAtlasHomeomorph_symm_apply,
+          uliftTotalSpaceHomeomorph_apply, toAtlasHomeomorph_apply]
+        erw [fiberContinuousLinearEquiv_ulift.{w, w'} V p.proj,
+          ContinuousLinearEquiv.symm_trans_apply,
           ContinuousLinearEquiv.ulift_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
         exact congrArg (TotalSpace.mk p.proj) (LinearEquiv.refl_apply (R := 𝕜) p.snd).symm)
-      ((V'.toAtlasTotalSpaceHomeomorph.continuous.comp
+      ((V'.toAtlasHomeomorph.continuous.comp
         (V.uliftTotalSpaceHomeomorph.symm.continuous.comp
-          V.toAtlasTotalSpaceHomeomorph.symm.continuous)).congr fun p ↦ by
-        simp only [V', Function.comp_apply, toAtlasTotalSpaceHomeomorph_symm_apply,
-          uliftTotalSpaceHomeomorph_symm_apply, toAtlasTotalSpaceHomeomorph_apply]
-        erw [continuousLinearEquivAt_ulift.{w, w'} V p.proj, ContinuousLinearEquiv.trans_apply]
+          V.toAtlasHomeomorph.symm.continuous)).congr fun p ↦ by
+        simp only [V', Function.comp_apply, toAtlasHomeomorph_symm_apply,
+          uliftTotalSpaceHomeomorph_symm_apply, toAtlasHomeomorph_apply]
+        erw [fiberContinuousLinearEquiv_ulift.{w, w'} V p.proj,
+          ContinuousLinearEquiv.trans_apply]
         exact congrArg (TotalSpace.mk p.proj)
-          ((VectorBundle.continuousLinearEquivAt 𝕜 (Fin (V.rank p.proj) → 𝕜)
-            (V.StratumFiber (V.rank p.proj)) ⟨p.proj, rfl⟩).apply_symm_apply _)))
+          ((V.fiberContinuousLinearEquiv p.proj).apply_symm_apply _)))
     fun {V W} f ↦ FiniteRankAtlas.hom_ext fun x ↦ LinearMap.ext fun u ↦ by
       dsimp only [Functor.comp_obj, Functor.comp_map]
       rw [FiniteRankAtlas.fiberMap_comp, FiniteRankAtlas.fiberMap_comp]
@@ -68,9 +69,10 @@ noncomputable def uliftToAtlasNatIso :
       change (((toAtlasFunctor.{max w w'} 𝕜 X).map
             ((uliftFunctor.{w, w'} 𝕜 X).map f)).fiberMap x) u =
         (((toAtlasFunctor.{w} 𝕜 X).map f).fiberMap x) u
-      erw [fiberMap_toAtlasFunctor_map_apply, fiberMap_toAtlasFunctor_map_apply,
-        fiberMap_uliftFunctor_map_apply]
-      erw [continuousLinearEquivAt_ulift.{w, w'} V x, continuousLinearEquivAt_ulift.{w, w'} W x]
+      erw [toAtlasFunctor_map, toAtlasFunctor_map, fiberMap_toAtlasMap_apply,
+        fiberMap_toAtlasMap_apply, fiberMap_uliftFunctor_map_apply]
+      erw [fiberContinuousLinearEquiv_ulift.{w, w'} V x,
+        fiberContinuousLinearEquiv_ulift.{w, w'} W x]
       rfl
 
 variable {𝕜 X}
@@ -92,7 +94,7 @@ variable {𝕜 X}
 variable (𝕜 X) in
 /-- `uliftFunctor 𝕜 X` is unconditionally fully faithful in all universes `w, w', u, v`. -/
 noncomputable def fullyFaithfulUliftFunctor : (uliftFunctor.{w, w'} 𝕜 X).FullyFaithful :=
-  ((fullyFaithfulToAtlasFunctor.{w} 𝕜 X).ofIso
+  ((fullyFaithfulToAtlasFunctor.{w} (𝕜 := 𝕜) (X := X)).ofIso
     (uliftToAtlasNatIso.{w, w'} 𝕜 X).symm).ofCompFaithful
 
 instance : (uliftFunctor.{w, w'} 𝕜 X).Full := (fullyFaithfulUliftFunctor 𝕜 X).full

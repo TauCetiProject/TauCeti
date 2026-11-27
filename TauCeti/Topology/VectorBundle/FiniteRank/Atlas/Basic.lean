@@ -9,6 +9,7 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 
 import TauCeti.Topology.FiberBundle.Sigma
+import TauCeti.Topology.Homeomorph.Sigma
 import TauCeti.Topology.LocallyConstant.Fiber
 
 /-!
@@ -278,12 +279,8 @@ stratum trivialization domain at `z`. -/
   rw [VectorBundleCore.baseSet_at, pointIndexedCore_localTriv_baseSet]
 
 private noncomputable def gluedReconstructionHomeomorph :
-    (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) where
-  toEquiv := Equiv.sigmaCongrRight fun n => (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).toEquiv
-  continuous_toFun := continuous_sigma fun n => continuous_sigmaMk.comp
-    (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).continuous
-  continuous_invFun := continuous_sigma fun n => continuous_sigmaMk.comp
-    (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm.continuous
+    (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
+  Homeomorph.sigmaCongrRight fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)
 
 /-- The reconstructed atlas is homeomorphic, over the base, to the disjoint union
 of the original bundles. The fibre maps are the preferred-chart continuous linear

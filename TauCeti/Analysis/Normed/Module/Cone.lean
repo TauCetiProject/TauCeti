@@ -12,6 +12,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.Compact
 import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Topology.Algebra.Module.Cone
 import TauCeti.Topology.MetricSpace.CoboundedImage
 
 /-!
@@ -58,6 +59,10 @@ decays rapidly on `Γ` and `g` decays rapidly everywhere, `g (ξ - p ζ) F ζ` d
 `ξ ∈ Γ'` and `ζ` jointly. This is how a cone in which a localized Fourier transform decays is
 transported along the transpose of an injective linear map, such as the inclusion `x ↦ (x, 0)`.
 
+Conversely, decay forbids constancy: a function with `(1 + ‖η‖) ‖g η‖` bounded on an open cone
+around `ξ ≠ 0` vanishes wherever it is constant along a line `t ↦ t • ξ + w`, since the line
+eventually lies in the cone. This is how lower bounds on wave front sets are proved.
+
 ## Main results
 
 * `IsOpen.exists_cone_exists_smul_mem`: the open cone over an open set containing `ξ`.
@@ -65,6 +70,8 @@ transported along the transpose of an injective linear map, such as the inclusio
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
 * `IsOpen.exists_isOpen_cone_subset_isClosed_cone`: an open cone `Γ` containing `ξ` contains the
   nonzero elements of a closed cone `F` which contains an open cone `Γ'` containing `ξ`.
+* `IsOpen.eq_zero_of_forall_smul_add_eq`: a function with `(1 + ‖η‖) ‖g η‖` bounded on an open
+  cone around `ξ ≠ 0` vanishes wherever it is constant along a line `t ↦ t • ξ + w`.
 * `IsOpen.exists_pos_setOf_norm_fst_lt_subset`: an open cone of `E × D` containing the nonzero
   vectors of `{0} × D` contains a cone `‖ζ.1‖ < c ‖ζ.2‖` around them.
 * `IsOpen.exists_cone_mul_add_le_norm_sub`: for a linear automorphism `B`, an open cone `Γ'`
@@ -104,6 +111,8 @@ transported along the transpose of an injective linear map, such as the inclusio
 * `TauCeti.exists_finset_subset_biUnion_interior_and_isOpen_cone`: finitely many of given
   neighbourhoods of the points of a compact set cover it, and the corresponding open cones
   intersect in an open cone.
+* `IsClosed.zero_mem_of_smul_mem`: a nonempty closed set closed under multiplication by positive
+  reals contains `0`.
 * `TauCeti.forall_smul_mem_neg`, `TauCeti.forall_smul_mem_compl`, `TauCeti.forall_smul_mem_add`,
   `TauCeti.forall_smul_mem_insert_zero`: the negative and the complement of a set closed under
   multiplication by positive reals, the sum of two such sets, and such a set with `0` adjoined, are
@@ -404,7 +413,48 @@ theorem exists_cone_mul_add_le_norm_apply_sub {X : Type*} [NormedAddCommGroup X]
     rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
     linarith
 
+
+open Filter in
+/-- **Decay in a cone forces vanishing along lines.** Let `Γ` be an open cone containing a nonzero
+`ξ`, and let `(1 + ‖η‖) ‖g η‖` be bounded on `Γ`. If `g` is constant along the line
+`t ↦ t • ξ + w`, then the constant is zero: the line eventually lies in `Γ`, where
+`‖g (t • ξ + w)‖ ≤ C / (1 + ‖t • ξ + w‖)` tends to `0`. Applied to a localized Fourier transform,
+this shows that a distribution is not microlocally smooth. -/
+theorem eq_zero_of_forall_smul_add_eq {F : Type*} [NormedAddCommGroup F] {g : E → F} {Γ : Set E}
+    (hΓ : IsOpen Γ) {ξ : E} (hξΓ : ξ ∈ Γ) (hξ : ξ ≠ 0)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) {C : ℝ}
+    (hC : ∀ η ∈ Γ, (1 + ‖η‖) * ‖g η‖ ≤ C) {w : E} {c : F} (hc : ∀ t : ℝ, g (t • ξ + w) = c) :
+    c = 0 := by
+  have hξpos : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  have hgrow : Tendsto (fun t : ℝ => 1 + ‖t • ξ + w‖) atTop atTop := by
+    refine tendsto_atTop_mono (fun t => ?_)
+      (tendsto_atTop_add_const_right _ (-‖w‖) (tendsto_id.atTop_mul_const hξpos))
+    have h := norm_sub_le (t • ξ + w) w
+    rw [add_sub_cancel_right, norm_smul, Real.norm_eq_abs] at h
+    have := mul_le_mul_of_nonneg_right (le_abs_self t) (norm_nonneg ξ)
+    simp only [id]
+    linarith
+  refine norm_le_zero_iff.1 (ge_of_tendsto ((tendsto_const_nhds (x := C)).div_atTop hgrow) ?_)
+  filter_upwards [hΓ.eventually_smul_add_mem hξΓ hcone w] with t ht
+  have hbound := hC _ ht
+  rw [hc] at hbound
+  exact (le_div_iff₀' (by positivity)).2 hbound
+
 end IsOpen
+
+namespace IsClosed
+
+/-- A closed set closed under multiplication by positive reals contains `0` as soon as it is
+nonempty. -/
+theorem zero_mem_of_smul_mem {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [ContinuousSMul ℝ E] {V : Set E} (hV : IsClosed V)
+    (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {ξ : E} (hξ : ξ ∈ V) : (0 : E) ∈ V := by
+  have h : Filter.Tendsto (fun n : ℕ ↦ (1 / ((n : ℝ) + 1)) • ξ) Filter.atTop (nhds 0) := by
+    have h0 := (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const ξ
+    rwa [zero_smul] at h0
+  exact hV.mem_of_tendsto h (Filter.Eventually.of_forall fun n ↦ hVcone _ (by positivity) ξ hξ)
+
+end IsClosed
 
 namespace TauCeti
 

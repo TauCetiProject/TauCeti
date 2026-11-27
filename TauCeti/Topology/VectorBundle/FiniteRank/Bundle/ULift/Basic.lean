@@ -69,6 +69,18 @@ variable (V : FiniteRankBundle.{w} 𝕜 X)
   exact congrArg Prod.snd (trivializationAt_ulift_apply (Fin (V.rank x) → 𝕜)
     (V.StratumFiber (V.rank x)) ⟨x, rfl⟩ ⟨⟨x, rfl⟩, v⟩)
 
+/-- On `V.ulift`, the preferred fibre equivalence at `x` factors through
+`ContinuousLinearEquiv.ulift`. -/
+@[simp] theorem fiberContinuousLinearEquiv_ulift (x : X) :
+    (V.ulift : FiniteRankBundle.{max w w'} 𝕜 X).fiberContinuousLinearEquiv x =
+      (ContinuousLinearEquiv.ulift : ULift.{w'} (V.Fiber x) ≃L[𝕜] V.Fiber x).trans
+        (V.fiberContinuousLinearEquiv x) := by
+  refine DFunLike.ext _ _ fun v ↦ ?_
+  rw [fiberContinuousLinearEquiv_apply, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.ulift_apply, fiberContinuousLinearEquiv_apply]
+  exact congrArg Prod.snd (trivializationAt_ulift_apply (Fin (V.rank x) → 𝕜)
+    (V.StratumFiber (V.rank x)) ⟨x, rfl⟩ ⟨⟨x, rfl⟩, v⟩)
+
 /-- The glued total space of `V.ulift` is homeomorphic over `X` to `TotalSpace Unit V.Fiber` via
 `ULift.down` on fibres. -/
 noncomputable def uliftTotalSpaceHomeomorph :

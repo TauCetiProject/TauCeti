@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Topology.Algebra.Group.Quotient.Prod
 public import TauCeti.Topology.Algebra.Module.Submodule
+import TauCeti.Algebra.Module.ZLattice.Quotient
 import TauCeti.Topology.Algebra.Group.Quotient.Basic
 import TauCeti.Topology.Algebra.Module.CompactQuotient
 
@@ -37,6 +38,9 @@ finite centre (`Subgroup.finite_map_snd_of_le_center`).
 
 * `Subgroup.span_toAddSubgroup'_comap_inl_eq_top`: `Λ` spans `V`.
 * `Subgroup.isZLattice_toAddSubgroup'_comap_inl`: `Λ` is a full lattice in `V`.
+* `Subgroup.compactSpace_quotient_comap_inl`: the torus `V ⧸ Λ` is compact.
+* `Subgroup.compactSpace_quotient_toAddSubgroup'_iff`: a quotient of `Multiplicative V` is compact
+  exactly when the corresponding additive quotient of `V` is.
 
 ## References
 
@@ -54,6 +58,13 @@ section Topology
 
 variable {V K : Type*} [AddCommGroup V] [TopologicalSpace V] [Group K] [TopologicalSpace K]
   (Γ : Subgroup (Multiplicative V × K))
+
+/-- The quotient of `Multiplicative V` by a subgroup `L` is compact exactly when the quotient of `V`
+by `L.toAddSubgroup'` is: `Multiplicative V` carries the topology of `V`, and `toAddSubgroup'`
+keeps the carrier, so both quotients are taken by the same relation on the same space. -/
+theorem compactSpace_quotient_toAddSubgroup'_iff (L : Subgroup (Multiplicative V)) :
+    CompactSpace (V ⧸ L.toAddSubgroup') ↔ CompactSpace (Multiplicative V ⧸ L) :=
+  Iff.rfl
 
 /-- The part `{v | (v, 1) ∈ Γ}` of a discrete subgroup `Γ` of `V × K` lying in `V` is discrete. -/
 instance discreteTopology_toAddSubgroup'_comap_inl [DiscreteTopology Γ] :
@@ -75,11 +86,7 @@ theorem span_toAddSubgroup'_comap_inl_eq_top [CompactSpace ((Multiplicative V ×
   set P := (Γ.map (MonoidHom.fst (Multiplicative V) K)).toAddSubgroup'
   have : CompactSpace (Multiplicative V ⧸ Γ.map (MonoidHom.fst (Multiplicative V) K)) :=
     Γ.compactSpace_quotient_map continuous_fst Prod.fst_surjective
-  -- `V ⧸ P` is `Multiplicative V ⧸ Γ.map fst` by definition: `Multiplicative V` carries the
-  -- topology of `V`, and `toAddSubgroup'` keeps the carrier, so both quotients are taken by the
-  -- same relation on the same space.
-  have : CompactSpace (V ⧸ P) :=
-    inferInstanceAs (CompactSpace (Multiplicative V ⧸ Γ.map (MonoidHom.fst (Multiplicative V) K)))
+  have : CompactSpace (V ⧸ P) := (compactSpace_quotient_toAddSubgroup'_iff _).2 this
   have hP := AddSubgroup.span_eq_top_of_compactSpace_quotient (𝕜 := ℝ) P
   -- If the image of `Γ` in `K` has `m` elements, then `m • P ⊆ Λ`.
   set m := Nat.card (Γ.map (MonoidHom.snd (Multiplicative V) K))
@@ -111,6 +118,16 @@ theorem isZLattice_toAddSubgroup'_comap_inl [DiscreteTopology Γ]
     [Finite (Γ.map (MonoidHom.snd (Multiplicative V) K))] :
     IsZLattice ℝ (Γ.comap (MonoidHom.inl (Multiplicative V) K)).toAddSubgroup'.toIntSubmodule where
   span_top := Γ.span_toAddSubgroup'_comap_inl_eq_top
+
+/-- **The torus `V ⧸ Λ` is compact.** If `Γ` is a discrete subgroup of `V × K` with compact
+quotient and finite image in `K`, then the quotient of `V`, written multiplicatively, by the full
+lattice `Λ = {v | (v, 1) ∈ Γ}` is compact. -/
+instance compactSpace_quotient_comap_inl [DiscreteTopology Γ]
+    [CompactSpace ((Multiplicative V × K) ⧸ Γ)]
+    [Finite (Γ.map (MonoidHom.snd (Multiplicative V) K))] :
+    CompactSpace (Multiplicative V ⧸ Γ.comap (MonoidHom.inl (Multiplicative V) K)) :=
+  have := Γ.isZLattice_toAddSubgroup'_comap_inl
+  (compactSpace_quotient_toAddSubgroup'_iff _).1 inferInstance
 
 end Normed
 

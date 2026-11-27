@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.CoordinateHom
-public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.ToAtlas
+public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.Atlas
 
 import TauCeti.Topology.FiberBundle.Pullback
 
@@ -46,18 +46,15 @@ theorem isIso_iff_bijective (f : E ⟶ F) :
       fun _ ↦ isIso_of_fully_faithful (toAtlasFunctor.{w} 𝕜 X) f⟩
   rw [hIso, FiniteRankAtlas.isIso_iff_bijective]
   refine forall_congr' fun x ↦ ?_
+  rw [toAtlasFunctor_map, fiberMap_toAtlasMap]
   change Function.Bijective
-      (⇑(VectorBundle.continuousLinearEquivAt 𝕜 (Fin (F.rank x) → 𝕜)
-          (F.StratumFiber (F.rank x)) ⟨x, rfl⟩) ∘
+      (⇑(F.fiberContinuousLinearEquiv x) ∘
         ⇑(f.fiberMap x) ∘
-        ⇑(VectorBundle.continuousLinearEquivAt 𝕜 (Fin (E.rank x) → 𝕜)
-          (E.StratumFiber (E.rank x)) ⟨x, rfl⟩).symm) ↔ _
-  have hL : Function.Bijective
-      (VectorBundle.continuousLinearEquivAt 𝕜 (Fin (F.rank x) → 𝕜)
-        (F.StratumFiber (F.rank x)) ⟨x, rfl⟩) := ContinuousLinearEquiv.bijective _
-  have hR : Function.Bijective
-      (VectorBundle.continuousLinearEquivAt 𝕜 (Fin (E.rank x) → 𝕜)
-        (E.StratumFiber (E.rank x)) ⟨x, rfl⟩).symm := ContinuousLinearEquiv.bijective _
+        ⇑(E.fiberContinuousLinearEquiv x).symm) ↔ _
+  have hL : Function.Bijective (F.fiberContinuousLinearEquiv x) :=
+    ContinuousLinearEquiv.bijective _
+  have hR : Function.Bijective (E.fiberContinuousLinearEquiv x).symm :=
+    ContinuousLinearEquiv.bijective _
   exact (hL.of_comp_iff' _).trans (hR.of_comp_iff _)
 
 private noncomputable def ofBundleConstWitness (E : FiniteRankBundle.{w} 𝕜 X) (n : ℕ)
