@@ -6,23 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
-public import TauCeti.NumberTheory.LocalField.Padic
-public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+public import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
+public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocalUnits
 
 /-!
 # The squaring map on the ideles of `ℚ`
 
-The squaring map `x ↦ x²` of `𝔾ₘ` induces on adelic points the squaring map of the ideles
-`𝔸_ℚ^×`. Its image `(𝔸_ℚ^×)²` is not open, and has infinite index. At every odd prime `p` there is
-a unit `u_p ∈ ℤ_p^×` that is not a square in `ℚ_p` (an integer that is a quadratic nonresidue
-modulo `p`). Every open subgroup of the ideles contains, at almost every prime, the units of
-`ℚ_p` embedded at that single place (`eventually_unitsOfAdicCompletion_mem_of_isOpen`), so it
-contains a nonsquare idele; and the ideles concentrated at distinct odd primes with value `u_p` lie
-in distinct cosets of the squares. So the adelic squaring map is neither surjective nor open.
-The ideles are the adelic points of `𝔾ₘ` (`TauCeti.MultiplicativeGroup.pointsContinuousMulEquiv`),
-and squaring on them is the map induced by `x ↦ x²`.
+The squaring map `x ↦ x²` of `𝔾ₘ` induces on adelic points the squaring map of the ideles `𝔸_ℚ^×`.
+Its image `(𝔸_ℚ^×)²` is not open, and has infinite index. At every odd prime `p` there is a unit
+`u_p ∈ ℤ_p^×` that is not a square in `ℚ_p` (a lift of a quadratic nonresidue modulo `p`,
+`IsDedekindDomain.HeightOneSpectrum.exists_unit_not_isSquare`). Every open subgroup of the ideles
+contains, at almost every prime, the units of `ℚ_p` embedded at that single place
+(`eventually_unitsOfAdicCompletion_mem_of_isOpen`), so it contains a nonsquare idele; and the ideles
+concentrated at distinct odd primes with value `u_p` lie in distinct cosets of the squares. So the
+adelic squaring map is neither surjective nor open. The ideles are the adelic points of `𝔾ₘ`
+(`TauCeti.MultiplicativeGroup.pointsContinuousMulEquiv`), and squaring on them is the map induced by
+`x ↦ x²`.
 
 ## Main results
 
@@ -42,57 +43,23 @@ theorem finite_setOf_primesEquiv_eq_two :
   (Set.finite_singleton (primesEquiv.symm ⟨2, Nat.prime_two⟩)).subset fun _ hv ↦
     (Equiv.eq_symm_apply _).2 (Subtype.ext hv)
 
-/-- `ℚ` has infinitely many finite places, one for each prime. -/
-instance instInfiniteHeightOneSpectrumRat : Infinite (HeightOneSpectrum (𝓞 ℚ)) :=
-  Infinite.of_injective _ (primesEquiv (R := 𝓞 ℚ)).symm.injective
-
 /-- At the place `v` of `ℚ` of an odd prime `p`, there is a unit of `ℚ_p` of valuation one which
-is not a square: a positive integer that is a quadratic nonresidue modulo `p`. -/
+is not a square: the image of a unit of `ℤ_p` that is not a square in `ℚ_p`
+(`HeightOneSpectrum.exists_unit_not_isSquare`). -/
 theorem exists_valued_eq_one_not_isSquare (v : HeightOneSpectrum (𝓞 ℚ))
     (hv : (primesEquiv v : ℕ) ≠ 2) :
     ∃ u : (v.adicCompletion ℚ)ˣ, Valued.v (u : v.adicCompletion ℚ) = 1 ∧
       ¬IsSquare (u : v.adicCompletion ℚ) := by
-  set p := (primesEquiv v : ℕ)
-  have : Fact p.Prime := ⟨(primesEquiv v).property⟩
-  obtain ⟨b, hb⟩ := FiniteField.exists_nonsquare (F := ZMod p) (by rwa [ZMod.ringChar_zmod_n])
-  have hb0 : b ≠ 0 := by
-    rintro rfl
-    exact hb ⟨0, by simp⟩
-  set a : ℕ := b.val
-  have ha : (a : ZMod p) = b := ZMod.natCast_zmod_val b
-  have hpa : ¬p ∣ a := by
-    rw [← ZMod.natCast_eq_zero_iff, ha]
-    exact hb0
-  have ha0 : (a : v.adicCompletion ℚ) ≠ 0 := by
-    have : (a : ℚ) ≠ 0 := by
-      exact_mod_cast fun h : a = 0 ↦ hpa (h ▸ dvd_zero p)
-    simpa using (map_ne_zero (algebraMap ℚ (v.adicCompletion ℚ))).2 this
-  refine ⟨Units.mk0 _ ha0, ?_, ?_⟩
-  · -- `p ∤ a`, so `a` is not in the prime ideal of `v`.
-    have key := (HeightOneSpectrum.notMem_asIdeal_iff_valued_algebraMap_eq_one (K := ℚ) (v := v)
-      (r := (a : 𝓞 ℚ))).1 fun hmem ↦ hpa <| by
-        change natGenerator v ∣ a
-        rw [natGenerator_dvd_iff]
-        simpa using Ideal.mem_map_of_mem (Rat.IsIntegralClosure.intEquiv (𝓞 ℚ)) hmem
-    rw [Units.val_mk0]
-    convert key using 2
-    simp
-  · -- A square root in `ℚ_p` would make `a` a square modulo `p`.
-    rintro ⟨x, hx⟩
-    apply Padic.not_isSquare_intCast_of_not_isSquare_zmod (p := p) (a := (a : ℤ)) (k := 1)
-    · rw [pow_one, Int.cast_natCast, ha]
-      exact hb
-    · refine ⟨adicCompletion.padicEquiv v x, ?_⟩
-      rw [← map_mul, ← hx]
-      simp
-
-/-- The coordinate at `v` of the idele with finite part `x` and infinite part `1` is the
-coordinate of `x` at `v`. -/
-theorem ideleFiniteCoord_ofFiniteIdele (v : HeightOneSpectrum (𝓞 ℚ))
-    (x : (FiniteAdeleRing (𝓞 ℚ) ℚ)ˣ) :
-    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele (𝓞 ℚ) ℚ x) = unitsProj ℚ v x :=
-  Units.ext (by
-    rw [coe_unitsProj_apply, HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele])
+  have : Finite (𝓞 ℚ ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  -- `2 ∈ v` would make the prime of `v` divide `2`
+  have h2 : (2 : 𝓞 ℚ) ∉ v.asIdeal := fun hmem ↦ hv <|
+    (Nat.prime_dvd_prime_iff_eq (primesEquiv v).property Nat.prime_two).1 <| by
+      change natGenerator v ∣ 2
+      rw [natGenerator_dvd_iff, Nat.cast_ofNat, ← map_ofNat (Rat.IsIntegralClosure.intEquiv (𝓞 ℚ))]
+      exact Ideal.mem_map_of_mem _ hmem
+  obtain ⟨c, hc⟩ := v.exists_unit_not_isSquare (K := ℚ) h2
+  exact ⟨Units.map (algebraMap _ _).toMonoidHom c,
+    (HeightOneSpectrum.adicCompletionIntegers.integers ℚ v).valuation_unit c, hc⟩
 
 /-- An idele of `ℚ` concentrated at the single place `v` with value `u` is a square only if `u` is
 a square in `ℚ_v`. -/
@@ -102,7 +69,8 @@ theorem isSquare_of_isSquare_ofFiniteIdele {v : HeightOneSpectrum (𝓞 ℚ)}
     IsSquare (u : v.adicCompletion ℚ) := by
   obtain ⟨y, hy⟩ := h
   have := congrArg v.ideleFiniteCoord hy
-  rw [ideleFiniteCoord_ofFiniteIdele, unitsProj_unitsOfAdicCompletion, map_mul] at this
+  rw [HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele, unitsProj_unitsOfAdicCompletion,
+    map_mul] at this
   exact ⟨_, by rw [this, Units.val_mul]⟩
 
 /-- **The squares are not open in the ideles of `ℚ`.** -/
@@ -140,9 +108,9 @@ theorem not_finiteIndex_range_sq :
     obtain ⟨y, hy⟩ := QuotientGroup.eq.1 h
     -- The coordinate at `w` of the quotient is `(u w)⁻¹`, which would be a square.
     have := congrArg w.val.ideleFiniteCoord hy
-    simp only [powMonoidHom_apply, map_pow, map_mul, map_inv, ideleFiniteCoord_ofFiniteIdele,
-      unitsProj_unitsOfAdicCompletion, unitsProj_unitsOfAdicCompletion_of_ne hne', mul_one]
-      at this
+    simp only [powMonoidHom_apply, map_pow, map_mul, map_inv,
+      HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele, unitsProj_unitsOfAdicCompletion,
+      unitsProj_unitsOfAdicCompletion_of_ne hne', mul_one] at this
     refine hu w ⟨((w.val.ideleFiniteCoord y)⁻¹ : (w.val.adicCompletion ℚ)ˣ), ?_⟩
     rw [← Units.val_mul, ← mul_inv, ← sq, this, inv_inv]
   have : Finite P := Finite.of_injective e he
