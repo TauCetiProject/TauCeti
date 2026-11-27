@@ -63,6 +63,9 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
   the power `x ^ k` for `k ≡ 1 [MOD m]`, `k ≡ 0 [MOD n]`.
 * `IsCoprime.orderOf_zpow`, and its additive counterpart: an integer exponent coprime to the order
   of `x` preserves it.
+* `zpow_injOn_Ico_orderOf`, and its additive counterpart: integer exponents in
+  `[0, orderOf x)` give distinct powers of `x`, the integer-exponent form of Mathlib's
+  `pow_injOn_Iio_orderOf`.
 * `QuotientGroup.orderOf_mk_dvd_iff_pow_mem`, and its additive counterpart: the order of the
   image of `g` in a quotient `G ⧸ K` divides `n` exactly when `g ^ n ∈ K`.
 * `Subgroup.mem_of_pow_mem_of_coprime_index`, and its additive counterpart: a normal subgroup
@@ -199,6 +202,17 @@ theorem IsCoprime.injOn_zpow_of_orderOf_dvd {G : Type*} [Group G] {u : ℤ} {N :
   hu.eq_of_zpow_eq_zpow h <| by
     rw [zpow_natCast, zpow_natCast, orderOf_dvd_iff_pow_eq_one.mp hx,
       orderOf_dvd_iff_pow_eq_one.mp hy]
+
+/-- Integer exponents in `[0, orderOf x)` give distinct powers of `x`. This is Mathlib's
+`pow_injOn_Iio_orderOf` for integer exponents. -/
+@[to_additive /-- Integer coefficients in `[0, addOrderOf x)` give distinct multiples of `x`.
+This is Mathlib's `nsmul_injOn_Iio_addOrderOf` for integer coefficients. -/]
+theorem zpow_injOn_Ico_orderOf {G : Type*} [Group G] (x : G) :
+    (Set.Ico 0 (orderOf x : ℤ)).InjOn (x ^ ·) := by
+  intro s hs t ht heq
+  rw [Set.mem_Ico] at hs ht
+  exact (sub_eq_zero.mp (Int.eq_zero_of_abs_lt_dvd (zpow_eq_zpow_iff_modEq.mp heq).dvd
+    (by rw [abs_lt]; omega))).symm
 
 /-- The order of the image of `g` in `G ⧸ K` divides `n` exactly when `g ^ n` lies in `K`. -/
 @[to_additive

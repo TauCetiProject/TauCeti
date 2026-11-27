@@ -9,6 +9,8 @@ public import Mathlib.GroupTheory.Index
 public import TauCeti.Combinatorics.Additive.NoRelation
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+import TauCeti.Analysis.SpecialFunctions.Log.PowerDecay
+import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # Dense thick sets in cyclic subgroups
@@ -31,14 +33,6 @@ open Filter Real
 
 namespace TauCeti
 
-/-- A fixed multiple of `(log x)²` is eventually at most any positive power of `x`. -/
-private theorem eventually_mul_log_sq_le_rpow (c : ℝ) {δ : ℝ} (hδ : 0 < δ) :
-    ∀ᶠ x : ℝ in atTop, c * log x ^ 2 ≤ x ^ δ := by
-  filter_upwards [eventually_ge_atTop (0 : ℝ),
-    ((isLittleO_log_rpow_rpow_atTop 2 hδ).const_mul_left c).bound zero_lt_one] with x hx₀ hx
-  rw [one_mul, norm_of_nonneg (rpow_nonneg hx₀ δ), rpow_two] at hx
-  exact (le_norm_self _).trans hx
-
 /-- The loss in the relation-free set bound is subpolynomial, uniformly for moduli bounded by
 a power of `x` and lengths bounded by `(log x)²`. Include a fixed extra factor `o` so the same
 estimate controls density in an ambient group of index at most `o` over the modulus group. -/
@@ -52,7 +46,7 @@ private theorem eventually_behrend_loss_le (C b : ℝ) (o : ℕ) {ε : ℝ} (hε
   have hb : 0 < max b 1 := zero_lt_one.trans_le (le_max_right ..)
   have hδ : 0 < δ := lt_min (by positivity) (div_pos (sq_pos_of_pos hr) hb)
   have hd : ∀ᶠ x : ℝ in atTop, log x ^ 2 ≤ x ^ δ := by
-    simpa only [one_mul] using eventually_mul_log_sq_le_rpow 1 hδ
+    simpa only [one_mul] using eventually_mul_log_pow_le_rpow 1 2 hδ
   have ho := (tendsto_rpow_atTop (show 0 < ε / 3 by positivity)).eventually_ge_atTop (o : ℝ)
   filter_upwards [eventually_ge_atTop (1 : ℝ), hd, ho] with x hx hlog ho
   intro M L hL hMb hLb
@@ -90,15 +84,6 @@ private theorem eventually_behrend_loss_le (C b : ℝ) (o : ℕ) {ε : ℝ} (hε
       exact hLδ.trans (rpow_le_rpow_of_exponent_le hx (min_le_left ..))
     _ = _ := by rw [← rpow_add hx₀, ← rpow_add hx₀]; ring_nf
 
-/-- Integer exponents in `[0, orderOf g)` give distinct powers of `g`. -/
-private theorem injOn_zpow_of_lt_orderOf {G : Type*} [Group G] {g : G} {T : Set ℤ}
-    (hT : ∀ s ∈ T, 0 ≤ s ∧ s < orderOf g) : Set.InjOn (g ^ ·) T := by
-  intro s hs t ht heq
-  have := hT s hs
-  have := hT t ht
-  exact (sub_eq_zero.mp (Int.eq_zero_of_abs_lt_dvd (zpow_eq_zpow_iff_modEq.mp heq).dvd
-    (by rw [abs_lt]; omega))).symm
-
 /-- In a cyclic subgroup `H` of bounded index in a finite group `G` of polynomial size, one can
 choose a thick set `(g ^ ·) '' T ⊆ G` of density at least `x ^ (-ε)`, for any relation length
 `2 ≤ L ≤ (log x)²`. Here `g ∈ G` generates `H`, so `orderOf g = |H|`. The threshold depends only
@@ -114,7 +99,7 @@ theorem eventually_exists_thickSet_density {a b ε : ℝ} (ha : 0 < a) (hε : 0 
         (Nat.card G : ℝ) * x ^ (-ε) ≤ ((g ^ ·) '' (T : Set ℤ)).ncard ∧
         (((g ^ ·) '' (T : Set ℤ)).ncard : ℝ) ≤ orderOf g / (4 * L) := by
   obtain ⟨C, hC⟩ := exists_noRelation
-  filter_upwards [eventually_ge_atTop (1 : ℝ), eventually_mul_log_sq_le_rpow (4 * o) ha,
+  filter_upwards [eventually_ge_atTop (1 : ℝ), eventually_mul_log_pow_le_rpow (4 * o) 2 ha,
     eventually_behrend_loss_le C b o hε]
     with x hx hxsmall hloss
   intro G _ H _ hindex hlo hhi L hL hLx
@@ -137,7 +122,7 @@ theorem eventually_exists_thickSet_density {a b ε : ℝ} (ha : 0 < a) (hε : 0 
   have hb := div_le_self (Nat.cast_nonneg (α := ℝ) (orderOf g))
     (by exact_mod_cast (show 1 ≤ 4 * L by omega) : (1 : ℝ) ≤ 4 * L)
   have himage : ((g ^ ·) '' (T : Set ℤ)).ncard = T.card := by
-    refine (Set.InjOn.ncard_image (injOn_zpow_of_lt_orderOf fun s hs ↦ ?_)).trans
+    refine (Set.InjOn.ncard_image ((zpow_injOn_Ico_orderOf g).mono fun s hs ↦ ?_)).trans
       (Set.ncard_coe_finset T)
     exact ⟨(hinterval' s hs).1, by exact_mod_cast (hinterval' s hs).2.trans_le hb⟩
   refine ⟨g, T, hzp, hord, hT, hinterval', hrel, ?_, by rw [himage, hord]; exact hupper h4L⟩
