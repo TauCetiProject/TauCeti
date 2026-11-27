@@ -333,10 +333,8 @@ theorem add_mem_linearForwardTimes {y : M} {T s : ℝ} (hT : T ∈ hX.linearForw
         φ.linearFlow s (φ.coord (φ.toChart (hX.flow T y))) := by
   have hs' : ∀ t ∈ uIcc 0 s, φ.coord.symm (φ.linearFlow t (φ.coord (φ.toChart (hX.flow T y)))) ∈
       φ.toChart.target := fun t ht ↦ hT.2 t (by rw [uIcc_of_le hs] at ht; exact ht.1)
-  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ hs'
-  rw [φ.toChart_symm_coord_symm_coord hT.1, ← Flow.map_add] at hflow
   have hcoord := coord_toChart_flow_add hφ hT.1 hs'
-  refine ⟨⟨hflow ▸ φ.toChart.map_target (hT.2 s hs), fun t ht ↦ ?_⟩, hcoord⟩
+  refine ⟨⟨flow_add_mem_source_of_forall_mem_uIcc hφ hT.1 hs', fun t ht ↦ ?_⟩, hcoord⟩
   rw [hcoord, ← φ.linearFlow_add]
   exact hT.2 _ (by linarith)
 
@@ -350,13 +348,12 @@ theorem add_mem_linearBackwardTimes {y : M} {T s : ℝ} (hT : T ∈ hX.linearBac
   have hs' : ∀ t ∈ uIcc 0 (-s), φ.coord.symm (φ.linearFlow t (φ.coord (φ.toChart
       (hX.flow (-T) y)))) ∈ φ.toChart.target := fun t ht ↦
     hT.2 t (by rw [uIcc_of_ge (by linarith)] at ht; exact ht.2)
-  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ hs'
-  rw [φ.toChart_symm_coord_symm_coord hT.1, ← Flow.map_add, ← neg_add, add_comm s] at hflow
   have hcoord : φ.coord (φ.toChart (hX.flow (-(T + s)) y)) =
       φ.linearFlow (-s) (φ.coord (φ.toChart (hX.flow (-T) y))) := by
     rw [neg_add_rev]
     exact coord_toChart_flow_add hφ hT.1 hs'
-  refine ⟨⟨hflow ▸ φ.toChart.map_target (hT.2 (-s) (by linarith)), fun t ht ↦ ?_⟩, hcoord⟩
+  refine ⟨⟨neg_add_rev T s ▸ flow_add_mem_source_of_forall_mem_uIcc hφ hT.1 hs', fun t ht ↦ ?_⟩,
+    hcoord⟩
   rw [hcoord, ← φ.linearFlow_add]
   exact hT.2 _ (by linarith)
 
