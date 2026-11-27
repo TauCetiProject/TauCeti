@@ -39,6 +39,11 @@ of virtual fundamental classes (`TauCeti.Topology.ImplicitAtlas.PartialComplex`)
   `τ : P ⟶ P'` of pairs.
 * `TopPair.diagonalChainActionFunctor L`: the two together, as a functor of the action on the pair.
 
+## Main results
+
+* `TopPair.diagonalChainActionMap_app_comp_eqToHom`: on the underlying relative chain complexes,
+  the induced chain map is the chain map of the map of pairs.
+
 ## References
 
 * J. Pardon, *An algebraic approach to virtual fundamental cycles on moduli spaces of
@@ -108,6 +113,26 @@ lemma diagonalChainActionMap_app (τ : P ⟶ P') (Y : SingleObj G) :
   change ((singularChainComplexFunctor C).map (𝟙 (L.obj Y))).app (P.obj Y) ≫
     ((singularChainComplexFunctor C).obj (L.obj Y)).map (τ.app Y) = _
   rw [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
+
+-- Stated for the relative chain functor itself, whose values the composites typecheck against.
+private lemma singularChainComplexFunctor_obj_map_comp_eqToHom {Q Q' : TopPair.{w}} (f : Q ⟶ Q')
+    (R : C) :
+    ((singularChainComplexFunctor C).obj R).map f ≫
+        eqToHom (singularChainComplexFunctor_obj_obj (C := C) Q' R) =
+      eqToHom (singularChainComplexFunctor_obj_obj (C := C) Q R) ≫
+        singularChainComplexMap f R := by
+  simp [singularChainComplexFunctor_obj_map]
+
+/-- Read in the relative singular chain complexes, the component of the chain map induced by an
+equivariant map of pairs is the chain map `TopPair.singularChainComplexMap` of the map of pairs. -/
+@[reassoc]
+lemma diagonalChainActionMap_app_comp_eqToHom (τ : P ⟶ P') (Y : SingleObj G) :
+    (diagonalChainActionMap L τ).app Y ≫
+        eqToHom (singularChainComplexFunctor_obj_obj (C := C) (P'.obj Y) (L.obj Y)) =
+      eqToHom (singularChainComplexFunctor_obj_obj (C := C) (P.obj Y) (L.obj Y)) ≫
+        singularChainComplexMap (τ.app Y) (L.obj Y) := by
+  rw [diagonalChainActionMap_app]
+  exact singularChainComplexFunctor_obj_map_comp_eqToHom _ _
 
 @[simp]
 lemma diagonalChainActionMap_id : diagonalChainActionMap L (𝟙 P) = 𝟙 _ := by
