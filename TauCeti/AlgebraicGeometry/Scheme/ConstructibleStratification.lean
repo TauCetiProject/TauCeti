@@ -44,6 +44,10 @@ quasi-separated open:
 * `AlgebraicGeometry.Scheme.ConstructibleStratification.exists_of_iSup_eq`: stratifications of the
   members of a finite cover of `U` by retrocompact opens glue to a stratification of `U` each of
   whose strata factors through a stratum of one of the given stratifications.
+* `AlgebraicGeometry.Scheme.ConstructibleStratification.sdiffι` and
+  `AlgebraicGeometry.Scheme.ConstructibleStratification.extend`: for opens `W ≤ U` with `W`
+  retrocompact in `U`, the reduced closed subscheme of `U` on `U \ W` immersed into `X`, and the
+  stratification of `U` made of a stratification of `W` together with this closed stratum.
 * `AlgebraicGeometry.Scheme.ConstructibleStratification.existsUnique_mem_range`: every point of `U`
   lies in exactly one stratum.
 * `AlgebraicGeometry.Scheme.ConstructibleStratification.inf`: the common refinement of two
@@ -497,6 +501,86 @@ private lemma isConstructible_range_glueι (hVU : ⨆ m, V m = U)
   exact IsRetrocompact.iUnion fun l ↦ IsRetrocompact.iUnion fun _ ↦ hV l
 
 end Glue
+
+section Extend
+
+/-! ### Adding the closed complement of a retrocompact open -/
+
+variable {W : X.Opens}
+
+/-- The closed subset of the open subscheme `U` lying outside the open `W`. -/
+def sdiffClosed (U W : X.Opens) : TopologicalSpace.Closeds U :=
+  ⟨U.ι ⁻¹' (W : Set X)ᶜ, W.isOpen.isClosed_compl.preimage U.ι.continuous⟩
+
+/-- The immersion into `X` of the reduced closed subscheme of the open subscheme `U` on the
+complement of `W`; its image is `U \ W` (`range_sdiffι`). -/
+noncomputable def sdiffι (U W : X.Opens) :
+    (IdealSheafData.vanishingIdeal (sdiffClosed U W)).subscheme ⟶ X :=
+  (IdealSheafData.vanishingIdeal (sdiffClosed U W)).subschemeι ≫ U.ι
+
+instance isImmersion_sdiffι (U W : X.Opens) : IsImmersion (sdiffι U W) := by
+  unfold sdiffι
+  infer_instance
+
+lemma range_sdiffι (U W : X.Opens) : Set.range (sdiffι U W) = (U : Set X) \ W := by
+  have h : ⇑(sdiffι U W) =
+      U.ι ∘ (IdealSheafData.vanishingIdeal (sdiffClosed U W)).subschemeι :=
+    funext fun _ ↦ Scheme.Hom.comp_apply _ _ _
+  rw [h, Set.range_comp, IdealSheafData.range_subschemeι,
+    IdealSheafData.coe_support_vanishingIdeal, sdiffClosed, TopologicalSpace.Closeds.coe_mk,
+    Set.image_preimage_eq_range_inter, Opens.range_ι, Set.sdiff_eq]
+
+/-- **Adding a closed stratum.** For opens `W ≤ U` such that the trace of `W` on `U` is
+retrocompact, a constructible stratification `T` of `W` extends to a constructible stratification
+of `U` whose strata are those of `T` (indexed by `some i`) together with the reduced closed
+subscheme on `U \ W` (indexed by `none`, immersed by `sdiffι U W`). -/
+@[expose]
+noncomputable def extend (T : X.ConstructibleStratification W) (hWU : W ≤ U)
+    (hW : IsRetrocompact ((U : Set X) ↓∩ (W : Set X))) : X.ConstructibleStratification U where
+  ι := Option T.ι
+  Z o := o.elim (IdealSheafData.vanishingIdeal (sdiffClosed U W)).subscheme T.Z
+  f
+    | none => sdiffι U W
+    | some i => T.f i
+  isImmersion o := by cases o <;> dsimp <;> infer_instance
+  pairwise_disjoint_range := by
+    rintro (_ | i) (_ | i') h
+    · exact (h rfl).elim
+    · change Disjoint (Set.range (sdiffι U W)) (Set.range (T.f i'))
+      rw [range_sdiffι]
+      exact Set.disjoint_sdiff_left.mono_right (T.range_subset i')
+    · change Disjoint (Set.range (T.f i)) (Set.range (sdiffι U W))
+      rw [range_sdiffι]
+      exact Set.disjoint_sdiff_right.mono_left (T.range_subset i)
+    · exact T.pairwise_disjoint_range fun hii' ↦ h (congrArg some hii')
+  iUnion_range := by
+    rw [Set.iUnion_option]
+    change Set.range (sdiffι U W) ∪ ⋃ i, Set.range (T.f i) = U
+    rw [range_sdiffι, T.iUnion_range, Set.sdiff_union_self, Set.union_eq_left.mpr hWU]
+  isConstructible_range
+    | none => by
+      change IsConstructible ((U : Set X) ↓∩ Set.range (sdiffι U W))
+      rw [range_sdiffι, Set.preimage_sdiff, Subtype.coe_preimage_self,
+        ← Set.compl_eq_univ_sdiff]
+      exact (hW.isConstructible (W.isOpen.preimage continuous_subtypeVal)).compl
+    | some i => by
+      change IsConstructible ((U : Set X) ↓∩ Set.range (T.f i))
+      have hrange : Set.range (Set.inclusion hWU) = (U : Set X) ↓∩ (W : Set X) :=
+        Set.range_inclusion hWU
+      exact (isConstructible_preimage_iff_of_isOpenEmbedding
+        (IsOpenEmbedding.inclusion hWU (W.isOpen.preimage continuous_subtypeVal))
+        (hrange ▸ hW) (hrange ▸ fun _ hx ↦ T.range_subset i hx)).mp (T.isConstructible_range i)
+
+variable (T : X.ConstructibleStratification W) (hWU : W ≤ U)
+  (hW : IsRetrocompact ((U : Set X) ↓∩ (W : Set X)))
+
+@[simp]
+lemma extend_f_none : (T.extend hWU hW).f none = sdiffι U W := rfl
+
+@[simp]
+lemma extend_f_some (i : T.ι) : (T.extend hWU hW).f (some i) = T.f i := rfl
+
+end Extend
 
 /-- Constructible stratifications of the members `V k` of a finite cover of `U` by opens whose
 traces on `U` are retrocompact glue to a constructible stratification of `U`, each of whose strata

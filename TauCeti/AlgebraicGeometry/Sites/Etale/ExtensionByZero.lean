@@ -28,7 +28,9 @@ limits. Its geometric stalks are computed as follows: at `s ≫ j` for a geometr
 `s : Spec Ω ⟶ X` the stalk of `j_! F` is the stalk of `F` at `s`, and at a geometric point of
 `Y` not factoring through `j` it is zero when the coefficient category has zero morphisms (the
 latter for every étale `j`). For sheaves of
-`Λ`-modules, `j_!` preserves short exact sequences.
+`Λ`-modules, `j_!` preserves short exact sequences. Restricting back along an étale monomorphism
+recovers the sheaf, `j^* j_! ≅ 𝟭`, so `j_!` is fully faithful; and for every étale `j`, the
+pullback of `j_! F` along a morphism whose image avoids the image of `j` is zero.
 
 ## Main declarations
 
@@ -41,6 +43,11 @@ latter for every étale `j`). For sheaves of
   `j_! F`.
 * `AlgebraicGeometry.Scheme.Hom.shortExact_map_smallEtaleExtensionByZero`: `j_!` preserves short
   exact sequences of étale sheaves of `Λ`-modules.
+* `AlgebraicGeometry.Scheme.Hom.smallEtaleExtensionByZeroCompSmallEtalePullbackIso` and
+  `AlgebraicGeometry.Scheme.Hom.fullyFaithfulSmallEtaleExtensionByZero`: `j^* j_! ≅ 𝟭` for an
+  étale monomorphism `j`, so `j_!` is fully faithful.
+* `AlgebraicGeometry.Scheme.Hom.isZero_smallEtalePullback_smallEtaleExtensionByZero_obj`: the
+  pullback of `j_! F` to a scheme mapping into the complement of the image of `j` is zero.
 
 ## References
 
@@ -131,6 +138,34 @@ theorem isZero_sheafFiber_smallEtaleExtensionByZero_obj [HasZeroMorphisms A]
 
 end Stalks
 
+section Restriction
+
+variable (A : Type*) [Category* A]
+  [(j.smallEtaleMap.sheafPushforwardContinuous A (smallEtaleTopology X)
+    (smallEtaleTopology Y)).IsRightAdjoint]
+
+/-- **Restriction of an extension by zero.** For an étale monomorphism `j` (for instance an open
+immersion), restricting `j_! F` back along `j` recovers `F`: `j^* j_! ≅ 𝟭`. It comes from
+`j.smallEtaleMap ⋙ j.smallEtaleBaseChange ≅ 𝟭`. -/
+noncomputable def smallEtaleExtensionByZeroCompSmallEtalePullbackIso :
+    j.smallEtaleExtensionByZero A ⋙ j.smallEtalePullback A ≅ 𝟭 _ :=
+  Functor.sheafPullbackComp' j.smallEtaleMapCompSmallEtaleBaseChangeIso A _ _ _ ≪≫
+    Functor.sheafPullbackId' (Iso.refl _) A _
+
+/-- The unit `F ⟶ j^* j_! F` of `j_! ⊣ j^*` is an isomorphism for an étale monomorphism `j`. -/
+instance isIso_smallEtaleExtensionByZeroAdjunction_unit :
+    IsIso (j.smallEtaleExtensionByZeroAdjunction A).unit :=
+  (j.smallEtaleExtensionByZeroAdjunction A).isIso_unit_of_iso
+    (j.smallEtaleExtensionByZeroCompSmallEtalePullbackIso A)
+
+/-- **Extension by zero is fully faithful** along an étale monomorphism `j`. -/
+noncomputable def fullyFaithfulSmallEtaleExtensionByZero :
+    (j.smallEtaleExtensionByZero A).FullyFaithful :=
+  (j.smallEtaleExtensionByZeroAdjunction A).fullyFaithfulLOfCompIsoId
+    (j.smallEtaleExtensionByZeroCompSmallEtalePullbackIso A)
+
+end Restriction
+
 /-- **Extension by zero of étale module sheaves is exact.** For an étale monomorphism `j` (for
 instance an open immersion), `j_!` sends short exact sequences of étale sheaves of `Λ`-modules on
 `X` to short exact sequences on `Y`. -/
@@ -140,5 +175,28 @@ theorem shortExact_map_smallEtaleExtensionByZero {Λ : Type u} [Ring Λ]
   hT.map_of_exact _
 
 end Mono
+
+/-- **Extension by zero vanishes off the image.** For an étale `j : X ⟶ Y` and a morphism
+`g : Z ⟶ Y` whose image is disjoint from the image of `j`, the pullback along `g` of the extension
+by zero `j_! F` of an étale sheaf of `Λ`-modules is zero: all its stalks vanish. -/
+theorem isZero_smallEtalePullback_smallEtaleExtensionByZero_obj {Z : Scheme.{u}} (g : Z ⟶ Y)
+    (hg : Disjoint (Set.range g) (Set.range j)) {Λ : Type u} [Ring Λ]
+    [(j.smallEtaleMap.sheafPushforwardContinuous (ModuleCat.{u} Λ) (smallEtaleTopology X)
+      (smallEtaleTopology Y)).IsRightAdjoint]
+    (F : Sheaf (smallEtaleTopology X) (ModuleCat.{u} Λ)) :
+    IsZero ((g.smallEtalePullback (ModuleCat.{u} Λ)).obj
+      ((j.smallEtaleExtensionByZero (ModuleCat.{u} Λ)).obj F)) := by
+  set G := (g.smallEtalePullback (ModuleCat.{u} Λ)).obj
+    ((j.smallEtaleExtensionByZero (ModuleCat.{u} Λ)).obj F)
+  have hG (Ω : Type u) [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ Z) :
+      IsZero ((TauCeti.AlgebraicGeometry.Scheme.etaleStalk Λ s).obj G) :=
+    IsZero.of_iso (j.isZero_sheafFiber_smallEtaleExtensionByZero_obj _ (fun s' h ↦
+        Set.disjoint_left.mp hg ⟨s default, rfl⟩
+          ⟨s' default, by rw [← Scheme.Hom.comp_apply, h, Scheme.Hom.comp_apply]⟩) F)
+      ((g.smallEtalePullbackCompEtaleStalkIso Λ s).app _)
+  have : IsIso (0 : G ⟶ G) :=
+    TauCeti.AlgebraicGeometry.Scheme.isIso_of_forall_isIso_etaleStalk _ fun Ω _ _ s ↦
+      (hG Ω s).isIso (hG Ω s) _
+  exact ((isIsoZero_iff_source_target_isZero G G).mp this).1
 
 end AlgebraicGeometry.Scheme.Hom
