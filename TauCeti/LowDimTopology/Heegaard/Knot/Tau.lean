@@ -33,8 +33,9 @@ torsion module the supremum is therefore attained, so `-τ` is the greatest non-
 be that of the empty set, which Mathlib takes to be `0` (`IsKnotGrading.tau_eq_zero_of_isTorsion`).
 
 The Alexander grading of a knot grading is determined only up to an overall shift. Shifting it by
-`a` shifts every non-torsion degree by `a`, so `τ` decreases by `a`
-(`IsKnotGrading.tau_add_const`); the symmetric normalization fixes the shift
+`a` shifts the grading of `HFK⁻`, and with it every non-torsion degree, by `a`
+(`IsKnotGrading.knotMinusHomologyAlexanderGrading_add_const`); so when `HFK⁻` is not torsion, `τ`
+decreases by `a` (`IsKnotGrading.tau_add_const`); the symmetric normalization fixes the shift
 (`TauCeti.HeegaardRegionSystem.IsKnotGrading.alexander_eq_of_invert_gradedEulerChar_eq`).
 
 To compute `τ`, it suffices to find a generator `x₀` of largest Alexander grading which is a cycle
@@ -60,7 +61,7 @@ domains rather than holomorphic disks, and `∂ ∘ ∂ = 0` is a hypothesis.
 * `TauCeti.HeegaardRegionSystem.IsKnotGrading.tau_eq_zero_of_isTorsion`: `τ = 0` when `HFK⁻` is
   torsion.
 * `TauCeti.HeegaardRegionSystem.IsKnotGrading.tau_add_const`: shifting the Alexander grading by `a`
-  lowers `τ` by `a`.
+  lowers `τ` by `a` when `HFK⁻` is not torsion.
 * `TauCeti.HeegaardRegionSystem.IsKnotGrading.tau_eq_neg_of_forall_le`: `τ = -A(x₀)` for a
   generator `x₀` of maximal Alexander grading that is a cycle with no multiple `U ^ k x₀` a
   boundary.
@@ -165,40 +166,14 @@ theorem tau_eq_zero_of_isTorsion (h : H.IsKnotGrading χ w z M A)
       (InternalGrading.nonTorsionDegrees_nonempty_iff _).mp hne hT,
     Int.csSup_empty, neg_zero]
 
-/-- Shifting the Alexander grading by `a` shifts the Alexander pieces of `HFK⁻` by `a`. -/
-private theorem mem_knotMinusHomologyAlexanderGrading_add_const_piece_iff
-    (h : H.IsKnotGrading χ w z M A) (m a : ℤ) {p : ℤ} {y : H.knotMinusHomology χ w z hd} :
-    y ∈ ((h.add_const m a).knotMinusHomologyAlexanderGrading hd).piece p ↔
-      y ∈ (h.knotMinusHomologyAlexanderGrading hd).piece (p - a) := by
-  have hpiece (c : H.Generator →₀ (ZMod 2)[X]) :
-      c ∈ H.knotMinusAlexanderPiece (fun x => A x + a) p ↔
-        c ∈ H.knotMinusAlexanderPiece A (p - a) := by
-    simp only [mem_knotMinusAlexanderPiece_iff]
-    exact forall₃_congr fun x k _ => by omega
-  rw [mem_knotMinusHomologyAlexanderGrading_piece_iff,
-    mem_knotMinusHomologyAlexanderGrading_piece_iff]
-  simp only [hpiece]
-
 /-- **Shifting the Alexander grading by `a` lowers `τ` by `a`**, when `HFK⁻` is not torsion: every
 non-torsion degree is shifted by `a`. -/
 theorem tau_add_const (h : H.IsKnotGrading χ w z M A) (m a : ℤ)
     (hT : ¬Module.IsTorsion (ZMod 2)[X] (H.knotMinusHomology χ w z hd)) :
     (h.add_const m a).tau hd = h.tau hd - a := by
-  have hdeg : ((h.add_const m a).knotMinusHomologyAlexanderGrading hd).nonTorsionDegrees =
-      OrderIso.addRight a '' (h.knotMinusHomologyAlexanderGrading hd).nonTorsionDegrees := by
-    ext p
-    simp only [InternalGrading.mem_nonTorsionDegrees, Set.mem_image, OrderIso.addRight_apply]
-    constructor
-    · rintro ⟨y, hy, hyt⟩
-      exact ⟨p - a, ⟨y, (h.mem_knotMinusHomologyAlexanderGrading_add_const_piece_iff m a).mp hy,
-        hyt⟩, by omega⟩
-    · rintro ⟨q, ⟨y, hy, hyt⟩, rfl⟩
-      refine ⟨y, (h.mem_knotMinusHomologyAlexanderGrading_add_const_piece_iff m a).mpr ?_, hyt⟩
-      rwa [add_sub_cancel_right]
-  rw [tau_def, tau_def, InternalGrading.supNonTorsionDegree_def, hdeg,
-    ← OrderIso.map_csSup' _ ((InternalGrading.nonTorsionDegrees_nonempty_iff _).mpr hT)
-      (h.bddAbove_nonTorsionDegrees hd),
-    OrderIso.addRight_apply, InternalGrading.supNonTorsionDegree_def]
+  rw [tau_def, tau_def, h.knotMinusHomologyAlexanderGrading_add_const m a,
+    InternalGrading.supNonTorsionDegree_shift _ _
+      ((InternalGrading.nonTorsionDegrees_nonempty_iff _).mpr hT) (h.bddAbove_nonTorsionDegrees hd)]
   ring
 
 /-- **`τ` from a cycle of maximal Alexander grading.** Let `x₀` be a generator of largest Alexander

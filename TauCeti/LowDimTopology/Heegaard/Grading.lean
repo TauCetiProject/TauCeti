@@ -51,7 +51,9 @@ A grading `gr` of the generators grades the chain groups over `𝔽₂ = ZMod 2`
 * `CF̂`, by `gr` (`TauCeti.HeegaardRegionSystem.hatGrading`);
 * `CF⁻` and `CF^∞`, in which `U ^ k x` has degree `gr(x) - 2 k`
   (`TauCeti.HeegaardRegionSystem.minusGrading`, `TauCeti.HeegaardRegionSystem.infinityGrading`).
-  Each is the grading of the `𝔽₂`-basis of the chains `U ^ k x` by these degrees;
+  Each is the grading of the `𝔽₂`-basis of the chains `U ^ k x` by these degrees; for `CF⁻` this is
+  an instance of the grading by any degree of the chains `U ^ k x`
+  (`TauCeti.HeegaardRegionSystem.monomialGrading`);
 * `CF⁺ = CF^∞ / CF⁻`, by the images of the pieces of `CF^∞`
   (`TauCeti.HeegaardRegionSystem.plusGrading`). This is a grading because `CF⁻` is a homogeneous
   submodule of `CF^∞`.
@@ -79,6 +81,9 @@ into `CF^∞` (`isHomogeneous_mapRange_toLaurent`), the quotient map onto `CF⁺
 
 * `TauCeti.HeegaardRegionSystem.IsMaslovGrading`: a rational grading of the generators lifting the
   relative Maslov grading.
+* `TauCeti.HeegaardRegionSystem.monomialGradedPiece`,
+  `TauCeti.HeegaardRegionSystem.monomialGrading`: the grading of the free `𝔽₂[U]`-module on the
+  generators by a degree of each chain `U ^ k x`.
 * `TauCeti.HeegaardRegionSystem.minusGradedPiece`,
   `TauCeti.HeegaardRegionSystem.infinityGradedPiece`: the homogeneous pieces of `CF⁻` and `CF^∞`.
 * `TauCeti.HeegaardRegionSystem.hatGrading`, `TauCeti.HeegaardRegionSystem.minusGrading`,
@@ -284,12 +289,73 @@ piece consists of the chains supported on the generators of degree `q`. -/
 noncomputable abbrev hatGrading : InternalGrading (ZMod 2) (H.Generator →₀ ZMod 2) ℚ :=
   InternalGrading.finsupp (ZMod 2) gr
 
+section Monomial
+
+variable {ι : Type*} (deg : H.Generator → ℕ → ι)
+
+/-- The degree-`a` piece of the free `𝔽₂[U]`-module on the generators for a degree `deg x k` of
+each chain `U ^ k x`: the span of the chains `U ^ k x` with `deg x k = a`. The grading of `CF⁻`
+(`minusGradedPiece`) and the Alexander grading of the minus knot Floer complex are of this
+form. -/
+@[expose] noncomputable def monomialGradedPiece (a : ι) :
+    Submodule (ZMod 2) (H.Generator →₀ (ZMod 2)[X]) :=
+  Submodule.span (ZMod 2)
+    (Finsupp.basis (fun _ : H.Generator => basisMonomials (ZMod 2)) '' {i | deg i.1 i.2 = a})
+
+/-- The grading of the free `𝔽₂[U]`-module on the generators in which `U ^ k x` has degree
+`deg x k`: the grading of its `𝔽₂`-basis of the chains `U ^ k x` by these degrees. -/
+@[expose] noncomputable def monomialGrading [DecidableEq ι] :
+    InternalGrading (ZMod 2) (H.Generator →₀ (ZMod 2)[X]) ι where
+  piece := H.monomialGradedPiece deg
+  isInternal := (Finsupp.basis fun _ : H.Generator => basisMonomials (ZMod 2))
+    |>.isInternal_span_image_fiber fun i => deg i.1 i.2
+
+variable {H deg}
+
+@[simp]
+theorem monomialGrading_piece [DecidableEq ι] :
+    (H.monomialGrading deg).piece = H.monomialGradedPiece deg :=
+  (rfl)
+
+/-- A chain has degree `a` exactly when each of its terms `U ^ k x` has `deg x k = a`. -/
+@[simp]
+theorem mem_monomialGradedPiece_iff {a : ι} {c : H.Generator →₀ (ZMod 2)[X]} :
+    c ∈ H.monomialGradedPiece deg a ↔ ∀ x (k : ℕ), (c x).coeff k ≠ 0 → deg x k = a := by
+  rw [monomialGradedPiece, Module.Basis.mem_span_image]
+  simp [Set.subset_def, basisMonomials, Sigma.forall]
+
+/-- The chain `U ^ k x` has degree `deg x k`. -/
+theorem single_X_pow_mem_monomialGradedPiece (x : H.Generator) (k : ℕ) :
+    Finsupp.single x (X ^ k : (ZMod 2)[X]) ∈ H.monomialGradedPiece deg (deg x k) := by
+  rw [mem_monomialGradedPiece_iff]
+  intro y j hj
+  by_cases hy : y = x
+  · subst hy
+    simp only [Finsupp.single_eq_same, coeff_X_pow, ne_eq, ite_eq_right_iff,
+      Classical.not_imp] at hj
+    rw [hj.1]
+  · simp [Finsupp.single_eq_of_ne hy] at hj
+
+/-- **`U` has degree `-d`** when multiplying a monomial chain by `U` lowers its degree by `d`. -/
+theorem X_smul_mem_monomialGradedPiece [AddGroup ι] {d : ι}
+    (hdeg : ∀ x k, deg x (k + 1) = deg x k - d) {a : ι} {c : H.Generator →₀ (ZMod 2)[X]}
+    (hc : c ∈ H.monomialGradedPiece deg a) :
+    (X : (ZMod 2)[X]) • c ∈ H.monomialGradedPiece deg (a - d) := by
+  rw [mem_monomialGradedPiece_iff] at hc ⊢
+  intro x k hk
+  rw [Finsupp.smul_apply, smul_eq_mul, ← pow_one X, coeff_X_pow_mul'] at hk
+  split_ifs at hk with h1
+  · obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' h1
+    rw [Nat.add_sub_cancel] at hk
+    rw [hdeg, hc x j hk]
+  · exact absurd rfl hk
+
+end Monomial
+
 /-- The degree-`q` piece of `CF⁻` for a grading `gr` of the generators: the span of the chains
 `U ^ k x` with `gr(x) - 2 k = q`. -/
 noncomputable def minusGradedPiece (q : ℚ) : Submodule (ZMod 2) (H.Generator →₀ (ZMod 2)[X]) :=
-  Submodule.span (ZMod 2)
-    (Finsupp.basis (fun _ : H.Generator => basisMonomials (ZMod 2)) ''
-      {i | gr i.1 - 2 * i.2 = q})
+  H.monomialGradedPiece (fun x k => gr x - 2 * k) q
 
 /-- The degree-`q` piece of `CF^∞` for a grading `gr` of the generators: the span of the chains
 `U ^ k x`, `k ∈ ℤ`, with `gr(x) - 2 k = q`. -/
@@ -305,9 +371,8 @@ variable {H gr}
 `gr(x) - 2 k = q`. -/
 @[simp]
 theorem mem_minusGradedPiece_iff {q : ℚ} {c : H.Generator →₀ (ZMod 2)[X]} :
-    c ∈ H.minusGradedPiece gr q ↔ ∀ x (k : ℕ), (c x).coeff k ≠ 0 → gr x - 2 * k = q := by
-  rw [minusGradedPiece, Module.Basis.mem_span_image]
-  simp [Set.subset_def, basisMonomials, Sigma.forall]
+    c ∈ H.minusGradedPiece gr q ↔ ∀ x (k : ℕ), (c x).coeff k ≠ 0 → gr x - 2 * k = q :=
+  mem_monomialGradedPiece_iff
 
 /-- A chain of `CF^∞` has degree `q` exactly when each of its terms `U ^ k x` has
 `gr(x) - 2 k = q`. -/
@@ -320,10 +385,8 @@ theorem mem_infinityGradedPiece_iff {q : ℚ} {c : H.Generator →₀ (ZMod 2)[T
 variable (H gr) in
 /-- The grading of `CF⁻` by a grading `gr` of the generators, in which `U ^ k x` has degree
 `gr(x) - 2 k`. -/
-noncomputable def minusGrading : InternalGrading (ZMod 2) (H.Generator →₀ (ZMod 2)[X]) ℚ where
-  piece := H.minusGradedPiece gr
-  isInternal := (Finsupp.basis fun _ : H.Generator => basisMonomials (ZMod 2))
-    |>.isInternal_span_image_fiber fun i => gr i.1 - 2 * i.2
+noncomputable def minusGrading : InternalGrading (ZMod 2) (H.Generator →₀ (ZMod 2)[X]) ℚ :=
+  H.monomialGrading fun x k => gr x - 2 * k
 
 variable (H gr) in
 /-- The grading of `CF^∞` by a grading `gr` of the generators, in which `U ^ k x` has degree
@@ -344,15 +407,8 @@ theorem infinityGrading_piece : (H.infinityGrading gr).piece = H.infinityGradedP
 
 /-- The chain `U ^ k x` of `CF⁻` has degree `gr(x) - 2 k`. -/
 theorem single_X_pow_mem_minusGradedPiece (x : H.Generator) (k : ℕ) :
-    Finsupp.single x (X ^ k : (ZMod 2)[X]) ∈ H.minusGradedPiece gr (gr x - 2 * k) := by
-  rw [mem_minusGradedPiece_iff]
-  intro y j hj
-  by_cases hy : y = x
-  · subst hy
-    simp only [Finsupp.single_eq_same, coeff_X_pow, ne_eq, ite_eq_right_iff,
-      Classical.not_imp] at hj
-    rw [hj.1]
-  · simp [Finsupp.single_eq_of_ne hy] at hj
+    Finsupp.single x (X ^ k : (ZMod 2)[X]) ∈ H.minusGradedPiece gr (gr x - 2 * k) :=
+  single_X_pow_mem_monomialGradedPiece x k
 
 /-- The chain `U ^ k x` of `CF^∞`, for an integer `k`, has degree `gr(x) - 2 k`. -/
 theorem single_T_mem_infinityGradedPiece (x : H.Generator) (k : ℤ) :
@@ -368,15 +424,8 @@ theorem single_T_mem_infinityGradedPiece (x : H.Generator) (k : ℤ) :
 
 /-- **`U` lowers the degree of `CF⁻` by two.** -/
 theorem X_smul_mem_minusGradedPiece {q : ℚ} {c : H.Generator →₀ (ZMod 2)[X]}
-    (hc : c ∈ H.minusGradedPiece gr q) : (X : (ZMod 2)[X]) • c ∈ H.minusGradedPiece gr (q - 2) := by
-  rw [mem_minusGradedPiece_iff] at hc ⊢
-  intro x k hk
-  rw [Finsupp.smul_apply, smul_eq_mul, ← pow_one X, coeff_X_pow_mul'] at hk
-  split_ifs at hk with h1
-  · have := hc x (k - 1) hk
-    push_cast [h1] at this
-    linarith
-  · exact absurd rfl hk
+    (hc : c ∈ H.minusGradedPiece gr q) : (X : (ZMod 2)[X]) • c ∈ H.minusGradedPiece gr (q - 2) :=
+  X_smul_mem_monomialGradedPiece (fun x k => by push_cast; ring) hc
 
 /-- **Multiplication by `U ^ m` shifts the degree of `CF^∞` by `-2 m`**, for every integer `m`. -/
 theorem T_smul_mem_infinityGradedPiece {q : ℚ} {c : H.Generator →₀ (ZMod 2)[T;T⁻¹]}

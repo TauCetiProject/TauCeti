@@ -10,6 +10,8 @@ public import TauCeti.LowDimTopology.Heegaard.Grading
 public import TauCeti.LowDimTopology.Heegaard.Knot.Differential
 public import TauCeti.LowDimTopology.Heegaard.Knot.EulerCharacteristic
 
+import TauCeti.Algebra.MvPolynomial.AevalConstX
+
 /-!
 # The minus knot Floer complex `CFK⁻` of a doubly pointed Heegaard diagram
 
@@ -48,9 +50,10 @@ Hence the minus knot differential is homogeneous of degree `0` for the Alexander
 `-1`. When the differential squares to zero, its homology `HFK⁻` (`knotMinusHomology`), a module
 over `𝔽₂[U]`, inherits the Alexander grading
 (`IsKnotGrading.knotMinusHomologyAlexanderGrading`), and `U` still lowers it by one
-(`IsKnotGrading.X_smul_mem_knotMinusHomologyAlexanderGrading_piece`). A nonzero chain of Alexander
-degree `a` involves a generator `x` with `a ≤ A(x)` (`exists_le_of_mem_knotMinusAlexanderPiece`),
-which bounds the degrees of `HFK⁻` from above.
+(`IsKnotGrading.X_smul_mem_knotMinusHomologyAlexanderGrading_piece`); shifting `A` by a constant
+shifts this grading (`IsKnotGrading.knotMinusHomologyAlexanderGrading_add_const`). A nonzero chain
+of Alexander degree `a` involves a generator `x` with `a ≤ A(x)`
+(`exists_le_of_mem_knotMinusAlexanderPiece`), which bounds the degrees of `HFK⁻` from above.
 
 As for the other differentials of `TauCeti.HeegaardRegionSystem`, these are counts of domains rather
 than of holomorphic disks; they agree with the holomorphic counts only for diagrams in which each
@@ -62,7 +65,8 @@ nor `∂ ∘ ∂ = 0` is formalized here. The results about homology carry `∂ 
 * `TauCeti.HeegaardRegionSystem.knotMinusCoefficient`: the knot coefficient at `U = X`, `V = 0`.
 * `TauCeti.HeegaardRegionSystem.knotMinusDifferential`: the differential of `CFK⁻`.
 * `TauCeti.HeegaardRegionSystem.knotMinusAlexanderGrading`: the Alexander grading of `CFK⁻`, in
-  which `U ^ k x` has degree `A(x) - k`.
+  which `U ^ k x` has degree `A(x) - k`, an instance of
+  `TauCeti.HeegaardRegionSystem.monomialGrading`.
 * `TauCeti.HeegaardRegionSystem.knotMinusHomology`: the homology `HFK⁻`.
 * `TauCeti.HeegaardRegionSystem.IsKnotGrading.knotMinusHomologyAlexanderGrading`: its Alexander
   grading.
@@ -84,6 +88,8 @@ nor `∂ ∘ ∂ = 0` is formalized here. The results about homology carry `∂ 
   differential has Alexander degree `0`.
 * `TauCeti.HeegaardRegionSystem.IsKnotGrading.X_smul_mem_knotMinusHomologyAlexanderGrading_piece`:
   `U` lowers the Alexander grading of `HFK⁻` by one.
+* `TauCeti.HeegaardRegionSystem.IsKnotGrading.knotMinusHomologyAlexanderGrading_add_const`:
+  shifting the Alexander grading by `a` shifts the grading of `HFK⁻` by `a`.
 
 ## References
 
@@ -116,16 +122,13 @@ variable (H) (A : H.Generator → ℤ)
 chains `U ^ k x` with `A(x) - k = a`. -/
 noncomputable def knotMinusAlexanderPiece (a : ℤ) :
     Submodule (ZMod 2) (H.Generator →₀ (ZMod 2)[X]) :=
-  Submodule.span (ZMod 2)
-    (Finsupp.basis (fun _ : H.Generator => basisMonomials (ZMod 2)) '' {i | A i.1 - i.2 = a})
+  H.monomialGradedPiece (fun x k => A x - k) a
 
 /-- The Alexander grading of `CFK⁻` by an Alexander grading `A` of the generators, in which
 `U ^ k x` has degree `A(x) - k`. -/
 noncomputable def knotMinusAlexanderGrading :
-    InternalGrading (ZMod 2) (H.Generator →₀ (ZMod 2)[X]) ℤ where
-  piece := H.knotMinusAlexanderPiece A
-  isInternal := (Finsupp.basis fun _ : H.Generator => basisMonomials (ZMod 2))
-    |>.isInternal_span_image_fiber fun i => A i.1 - i.2
+    InternalGrading (ZMod 2) (H.Generator →₀ (ZMod 2)[X]) ℤ :=
+  H.monomialGrading fun x k => A x - k
 
 variable {H A}
 
@@ -138,34 +141,19 @@ theorem knotMinusAlexanderGrading_piece :
 `A(x) - k = a`. -/
 @[simp]
 theorem mem_knotMinusAlexanderPiece_iff {a : ℤ} {c : H.Generator →₀ (ZMod 2)[X]} :
-    c ∈ H.knotMinusAlexanderPiece A a ↔ ∀ x (k : ℕ), (c x).coeff k ≠ 0 → A x - k = a := by
-  rw [knotMinusAlexanderPiece, Module.Basis.mem_span_image]
-  simp [Set.subset_def, basisMonomials, Sigma.forall]
+    c ∈ H.knotMinusAlexanderPiece A a ↔ ∀ x (k : ℕ), (c x).coeff k ≠ 0 → A x - k = a :=
+  mem_monomialGradedPiece_iff
 
 /-- The chain `U ^ k x` of `CFK⁻` has Alexander degree `A(x) - k`. -/
 theorem single_X_pow_mem_knotMinusAlexanderPiece (x : H.Generator) (k : ℕ) :
-    Finsupp.single x (X ^ k : (ZMod 2)[X]) ∈ H.knotMinusAlexanderPiece A (A x - k) := by
-  rw [mem_knotMinusAlexanderPiece_iff]
-  intro y j hj
-  by_cases hy : y = x
-  · subst hy
-    simp only [Finsupp.single_eq_same, coeff_X_pow, ne_eq, ite_eq_right_iff,
-      Classical.not_imp] at hj
-    rw [hj.1]
-  · simp [Finsupp.single_eq_of_ne hy] at hj
+    Finsupp.single x (X ^ k : (ZMod 2)[X]) ∈ H.knotMinusAlexanderPiece A (A x - k) :=
+  single_X_pow_mem_monomialGradedPiece x k
 
 /-- **`U` lowers the Alexander grading of `CFK⁻` by one.** -/
 theorem X_smul_mem_knotMinusAlexanderPiece {a : ℤ} {c : H.Generator →₀ (ZMod 2)[X]}
     (hc : c ∈ H.knotMinusAlexanderPiece A a) :
-    (X : (ZMod 2)[X]) • c ∈ H.knotMinusAlexanderPiece A (a - 1) := by
-  rw [mem_knotMinusAlexanderPiece_iff] at hc ⊢
-  intro x k hk
-  rw [Finsupp.smul_apply, smul_eq_mul, ← pow_one X, coeff_X_pow_mul'] at hk
-  split_ifs at hk with h1
-  · have := hc x (k - 1) hk
-    push_cast [h1] at this
-    omega
-  · exact absurd rfl hk
+    (X : (ZMod 2)[X]) • c ∈ H.knotMinusAlexanderPiece A (a - 1) :=
+  X_smul_mem_monomialGradedPiece (fun x k => by push_cast; ring) hc
 
 /-- A nonzero chain of `CFK⁻` of Alexander degree `a` has a generator `x` with `a ≤ A(x)`: the
 powers of `U` only lower the degree. -/
@@ -235,7 +223,8 @@ theorem exists_mem_minusDomains_of_coeff_knotMinusCoefficient_ne_zero {k : ℕ}
     ∃ D ∈ H.minusDomains χ x y, D (H.basepoint w) = k ∧ D (H.basepoint z) = 0 := by
   by_cases hfin : (H.minusDomains χ x y).Finite
   · rw [coeff_knotMinusCoefficient hfin] at h
-    obtain ⟨D, hD, hDw, hDz⟩ := Set.nonempty_of_ncard_ne_zero fun h0 => h (by rw [h0]; rfl)
+    obtain ⟨D, hD, hDw, hDz⟩ :=
+      Set.nonempty_of_ncard_ne_zero fun h0 => h (by rw [h0, Nat.cast_zero])
     exact ⟨D, hD, hDw, hDz⟩
   · rw [knotMinusCoefficient_def, knotCoefficient_eq_zero_of_infinite hfin, map_zero] at h
     exact absurd (coeff_zero k) h
@@ -336,17 +325,6 @@ theorem mapRange_aeval_X_zero_knotDifferential
     knotMinusDifferential_apply]
   simp only [fullCoefficient_withBasepoints_eq_knotCoefficient, knotMinusCoefficient_def]
 
-omit [Fintype Point] [DecidableEq Region] [Fintype Region] in
-/-- Evaluating `U = X` and `V = 0` maps the chains over `𝔽₂[U, V]` onto the chains over `𝔽₂[U]`:
-the polynomial `p(U)` is the image of `p(U)` viewed in `𝔽₂[U, V]`. -/
-private theorem mapRange_aeval_X_zero_surjective :
-    Function.Surjective (Finsupp.mapRange (α := H.Generator)
-      (MvPolynomial.aeval (R := ZMod 2) ![(X : (ZMod 2)[X]), 0]) (map_zero _)) := by
-  refine Finsupp.mapRange_surjective _ _ fun p =>
-    ⟨aeval (MvPolynomial.X 0 : MvPolynomial (Fin 2) (ZMod 2)) p, ?_⟩
-  rw [← Polynomial.aeval_algHom_apply, MvPolynomial.aeval_X, Matrix.cons_val_zero,
-    Polynomial.aeval_X_left_apply]
-
 /-- **`CFK⁻` squares to zero when the full knot complex does.** If the full knot differential
 over `𝔽₂[U, V]` squares to zero, so does its specialization `V = 0`, the minus knot
 differential. -/
@@ -354,7 +332,9 @@ theorem knotMinusDifferential_comp_self_eq_zero
     (hd : H.knotDifferential χ w z ∘ₗ H.knotDifferential χ w z = 0) :
     H.knotMinusDifferential χ w z ∘ₗ H.knotMinusDifferential χ w z = 0 := by
   refine LinearMap.ext fun c => ?_
-  obtain ⟨c, rfl⟩ := mapRange_aeval_X_zero_surjective (H := H) c
+  -- Every chain over `𝔽₂[U]` is the image of a chain over `𝔽₂[U, V]`.
+  obtain ⟨c, rfl⟩ := Finsupp.mapRange_surjective _ (map_zero _)
+    (MvPolynomial.aeval_surjective_of_eq_X (f := ![(X : (ZMod 2)[X]), 0]) (i := 0) rfl) c
   rw [LinearMap.comp_apply, ← mapRange_aeval_X_zero_knotDifferential,
     ← mapRange_aeval_X_zero_knotDifferential, ← LinearMap.comp_apply, hd, LinearMap.zero_apply,
     Finsupp.mapRange_zero, LinearMap.zero_apply]
@@ -445,6 +425,22 @@ theorem X_smul_mem_knotMinusHomologyAlexanderGrading_piece (h : H.IsKnotGrading 
   rw [sub_eq_add_neg]
   exact InternalGrading.smul_mem_homology_piece _ _ _
     (fun _ _ hc => by simpa [sub_eq_add_neg] using X_smul_mem_knotMinusAlexanderPiece hc) hy
+
+/-- **Shifting the Alexander grading by `a` shifts the grading of `HFK⁻` by `a`**: the Alexander
+grading of `HFK⁻` for `A + a` is the shift by `-a` of the one for `A`, whose degree-`p` piece is
+the degree-`(p - a)` piece. -/
+theorem knotMinusHomologyAlexanderGrading_add_const (h : H.IsKnotGrading χ w z M A) (m a : ℤ) :
+    (h.add_const m a).knotMinusHomologyAlexanderGrading hd =
+      (h.knotMinusHomologyAlexanderGrading hd).shift (-a) := by
+  refine InternalGrading.ext fun p => Submodule.ext fun y => ?_
+  have hpiece (c : H.Generator →₀ (ZMod 2)[X]) :
+      c ∈ H.knotMinusAlexanderPiece (fun x => A x + a) p ↔
+        c ∈ H.knotMinusAlexanderPiece A (p + -a) := by
+    simp only [mem_knotMinusAlexanderPiece_iff]
+    exact forall₃_congr fun x k _ => by omega
+  rw [InternalGrading.shift_piece, mem_knotMinusHomologyAlexanderGrading_piece_iff,
+    mem_knotMinusHomologyAlexanderGrading_piece_iff]
+  simp only [hpiece]
 
 end IsKnotGrading
 
