@@ -41,9 +41,12 @@ with the mapping torus `Y_φ` of a surface diffeomorphism with `b₁(Y_φ) = 1`,
 `TauCeti.SmoothMappingTorus.apply_self_sub_apply_canonical_eq`: `H = H²(X; ℤ)`, `v` is the pullback
 of a class of `H²(Y_φ; ℤ)` pairing to one with the fibre, and `t = [ds ∧ dt]`. Writing `t` as
 `[ds] ⌣ pr₂^* a` for a generator `a` of `H¹(Y_φ; ℤ)`, the classes `v, t` span `H²(X; ℤ)` modulo
-torsion (`TauCeti.MappingTorus.exists_isOfFinAddOrder_sub_smul_add_smul_addCircleProd`); that they
-form a hyperbolic pair is a geometric input, not proved here. Given it, and
-`ℝ ⊗[ℤ] H²(X; ℤ) = H²(X; ℝ)`, the results say `b₂(X) = 2` and `b₂⁺(X) = b₂⁻(X) = 1`. Together
+torsion (`TauCeti.MappingTorus.exists_isOfFinAddOrder_sub_smul_add_smul_addCircleProd`). They
+form a hyperbolic pair for a generator `a` with `⟨v ⌣ a, [Y_φ]⟩ = 1`, which Poincaré duality on
+`Y_φ` provides (`TauCeti.MappingTorus.exists_forall_eq_zsmul_and_singularCupPairing_eq_one`). The
+results then give `b₂⁺ = b₂⁻ = 1` for the real extension of the intersection form
+(`TauCeti.MappingTorus.sigPos_eq_one_and_sigNeg_eq_one_singularCupPairing_addCircleProd`); with
+`ℝ ⊗[ℤ] H²(X; ℤ) = H²(X; ℝ)` this says `b₂(X) = 2` and `b₂⁺(X) = b₂⁻(X) = 1`. Together
 with the evenness of the intersection form, which excludes classes of square `-1`, this places `X`
 among the minimal four-manifolds with `b₂⁺ = 1`, where Seiberg–Witten invariants depend on a
 chamber.
@@ -61,7 +64,8 @@ open scoped TensorProduct
 
 namespace LinearMap.BilinForm
 
-variable {𝕜 H : Type*} [Field 𝕜] [AddCommGroup H] {B : LinearMap.BilinForm ℤ H} {v t : H}
+variable {𝕜 H : Type*} [Field 𝕜] [AddCommGroup H] [Module ℤ H] {B : LinearMap.BilinForm ℤ H}
+  {v t : H}
 
 /-- A `ℤ`-valued form on a group spanned modulo torsion by `v` and `t` is symmetric as soon as
 `B v t = B t v`, since it sees each argument only modulo torsion. In particular a form spanned by
@@ -124,6 +128,8 @@ of the lines through `1 ⊗ v` and `1 ⊗ t`. -/
 private theorem isCompl_span_one_tmul (ht : B t t = 0) (hvt : B v t = 1) (htv : B t v = 1)
     (hspan : ∀ x : H, ∃ a c : ℤ, IsOfFinAddOrder (x - (a • v + c • t))) :
     IsCompl (𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] v)) (𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] t)) := by
+  -- `H` has only one `ℤ`-module structure, the one `span_one_tmul_eq_top_of_isOfFinAddOrder` uses.
+  obtain rfl : ‹Module ℤ H› = AddCommGroup.toIntModule H := Subsingleton.elim _ _
   -- The torsion of `H` dies in `𝕜 ⊗[ℤ] H`, so the two lines span it.
   have hsup : 𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] v) ⊔ 𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] t) = ⊤ := by
     have h := TauCeti.span_one_tmul_eq_top_of_isOfFinAddOrder (A := 𝕜) (s := {v, t}) fun x ↦ by

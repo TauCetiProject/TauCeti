@@ -58,6 +58,8 @@ Mathlib's `NormedAlgebra.norm_eq_spectralNorm`), giving `‖x‖ ^ d = ‖a₀�
   and `TauCeti.norm_eq_spectralNorm`: multiplicativity on algebraic elements, unbundled normed
   field structure on algebraic extensions, and uniqueness of the norm on algebraic elements of
   normed field extensions over any complete ultrametric field.
+* `AlgHom.isometry`: a `K`-algebra map from an algebraic normed extension of a complete
+  ultrametric field `K` to a normed extension is an isometry.
 * `TauCeti.spectralNorm_pow_natDegree_minpoly_eq_norm_coeff_zero` and
   `NormedAlgebra.norm_pow_natDegree_minpoly_eq_norm_coeff_zero`: `spectralNorm K L x ^ d = ‖a₀‖`
   and `‖x‖ ^ d = ‖a₀‖` for an algebraic element `x` with minimal polynomial of degree `d` and
@@ -447,6 +449,21 @@ theorem norm_eq_spectralNorm (K : Type*) {L : Type*} [NormedField K] [IsUltramet
       ((inv_le_one₀ (norm_pos_iff.2 hx0)).1 (norm_inv x ▸ hinv))).trans hspec.symm
 
 end TauCeti
+
+namespace AlgHom
+
+/-- **`K`-algebra maps of algebraic extensions are isometries.** Let `K` be a complete field with
+an ultrametric absolute value. A `K`-algebra map from a normed field `E`, algebraic over `K`, to a
+normed field `L` over `K` preserves the norm: both norms are spectral norms. -/
+protected theorem isometry {K E L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+    [NormedField E] [NormedAlgebra K E] [Algebra.IsAlgebraic K E] [NormedField L]
+    [NormedAlgebra K L] (φ : E →ₐ[K] L) : Isometry φ :=
+  AddMonoidHomClass.isometry_of_norm φ fun x ↦ by
+    have hx := Algebra.IsAlgebraic.isAlgebraic (R := K) x
+    rw [TauCeti.norm_eq_spectralNorm K hx, TauCeti.norm_eq_spectralNorm K (hx.algHom φ),
+      AlgHom.spectralNorm_map]
+
+end AlgHom
 
 /-- For any element `x` algebraic over a complete ultrametric field `K` in a normed field extension
 `L`, the norm of `x` raised to the degree of its minimal polynomial equals the norm of the constant

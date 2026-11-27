@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Clique
 public import Mathlib.Probability.Distributions.Bernoulli
-public import TauCeti.Probability.Distributions.Uniform.Finite
+public import TauCeti.Probability.Distributions.Uniform.Finite.Basic
 public import TauCeti.Probability.Kernel.PMF
 public import TauCeti.Probability.Kernel.Reachability
 public import TauCeti.Probability.MarkovChain.Period

@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Analysis.Polynomial.GCD
 import TauCeti.MeasureTheory.Group.BoundedLineSections

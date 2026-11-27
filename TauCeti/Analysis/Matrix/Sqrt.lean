@@ -37,8 +37,9 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
 
 ## Main results
 
-* `Matrix.isHermitian_sqrt_mul_mul_sqrt` — the sandwich of a Hermitian matrix by a square root
-  is Hermitian;
+* `Matrix.isHermitian_sqrt_mul_mul_sqrt` and `Matrix.PosSemidef.sqrt_mul_mul_sqrt` — the
+  sandwich of a Hermitian (positive-semidefinite) matrix by a square root is Hermitian (positive
+  semidefinite);
 * `Matrix.PosSemidef.rank_sqrt` — the square root of a positive-semidefinite matrix has the same
   rank;
 * `Matrix.PosSemidef.sqrt_mul_transpose_sqrt` — over the reals, the square root times its
@@ -53,9 +54,11 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
   and both identities reduce to `0 = 0`);
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
   positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree;
-* `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
-  `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
-  of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
+* `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt`,
+  `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` and
+  `Matrix.PosSemidef.det_sqrt_mul_mul_sqrt` — for positive-semidefinite `S`, the traces of the
+  sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`, and its determinant is
+  `det S * det Θ`;
 * `Matrix.PosDef.isUnit_det_sqrt` — the square root of a positive-definite matrix is invertible;
 * `Matrix.PosDef.inv_sqrt_mul_mul_conjTranspose_inv_sqrt` — the inverse square root whitens `S`:
   `(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1`, with the transpose form
@@ -123,6 +126,14 @@ theorem isHermitian_sqrt_mul_mul_sqrt (S : Matrix ι ι 𝕜) {Θ : Matrix ι ι
   simpa only [(Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq] using
     isHermitian_conjTranspose_mul_mul (CFC.sqrt S) hΘ
 
+open scoped Classical in
+/-- Sandwiching a positive-semidefinite matrix between two copies of a square root gives a
+positive-semidefinite matrix. -/
+theorem PosSemidef.sqrt_mul_mul_sqrt (S : Matrix ι ι 𝕜) {Θ : Matrix ι ι 𝕜}
+    (hΘ : Θ.PosSemidef) : (CFC.sqrt S * Θ * CFC.sqrt S).PosSemidef := by
+  simpa only [(Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq] using
+    hΘ.mul_mul_conjTranspose_same (CFC.sqrt S)
+
 /-- The quadratic form of `Θ` at `CFC.sqrt S x` is the quadratic form of the sandwich
 `CFC.sqrt S * Θ * CFC.sqrt S` at `x`. -/
 theorem inner_toEuclideanCLM_sqrt_toEuclideanLin [DecidableEq ι] (S Θ : Matrix ι ι 𝕜)
@@ -183,6 +194,12 @@ theorem PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self {S : Matrix ι ι 𝕜} (hS 
         CFC.sqrt S * (M * (CFC.sqrt S * CFC.sqrt S) * M) * CFC.sqrt S := by
     simp only [Matrix.mul_assoc]
   rw [hreassoc, trace_mul_cycle, CFC.sqrt_mul_sqrt_self S hS.nonneg, trace_mul_comm]
+
+/-- For positive-semidefinite `S`, the determinant of the sandwich `CFC.sqrt S * M * CFC.sqrt S`
+is `det S * det M`. -/
+theorem PosSemidef.det_sqrt_mul_mul_sqrt [DecidableEq ι] {S : Matrix ι ι 𝕜} (hS : S.PosSemidef)
+    (M : Matrix ι ι 𝕜) : (CFC.sqrt S * M * CFC.sqrt S).det = S.det * M.det := by
+  rw [det_mul_right_comm, CFC.sqrt_mul_sqrt_self S hS.nonneg, det_mul]
 
 /-! ### The scale form of the pencil -/
 

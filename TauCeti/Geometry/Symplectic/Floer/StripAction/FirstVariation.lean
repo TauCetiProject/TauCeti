@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.StripAction
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
@@ -56,10 +54,10 @@ The first variation formula shows that the **Hamiltonian chords** from `L₀` to
 fixed, gives a variation along which the action has a nonzero derivative. Hence, on a manifold
 without boundary modelled on a finite-dimensional space, the critical paths are exactly the
 Hamiltonian chords (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianPathActionCritical_iff`).
-These are the generators of the Floer complex of the pair `(L₀, L₁)`. The converse follows the
-argument for loops,
-`TauCeti.SmoothTwoForm.IsNondegenerate.mem_periodicSolutions_of_forall_integral_eq_zero`, with the
-chart variations `TauCeti.Manifold.sinChartVariation`.
+These are the generators of the Floer complex of the pair `(L₀, L₁)`. The converse applies the
+chart-variation argument for paths of `TauCeti.Geometry.Symplectic.Hamiltonian.LoopVariation`,
+shared with the action of seamed paths, to the chart variations
+`TauCeti.Manifold.sinChartVariation`, which fix the endpoints.
 
 ## Main definitions
 
@@ -291,64 +289,11 @@ theorem _root_.TauCeti.IsLagrangianPathActionCritical.hasMFDerivAt
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) {t₀ : ℝ} (ht₀ : t₀ ∈ Icc (0 : ℝ) 1) :
     HasMFDerivAt 𝓘(ℝ, ℝ) I γ t₀
       ((1 : ℝ →L[ℝ] ℝ).smulRight (ω.hamiltonianVectorField (H t₀) (γ t₀))) := by
-  have hγd : MDifferentiable 𝓘(ℝ, ℝ) I γ := hc.contMDiff.mdifferentiable two_ne_zero
-  suffices hv : Manifold.curveVelocity I γ t₀ = ω.hamiltonianVectorField (H t₀) (γ t₀) by
-    rw [← hv]
-    exact Manifold.hasMFDerivAt_curveVelocity (hγd t₀)
-  by_contra hne
-  set x₀ := γ t₀
-  -- a chart vector `e` whose tangent vector at `x₀` pairs positively with the obstruction
-  -- `γ' - X_H` at `t₀`, and a radius `δ` of times near `t₀` along which `γ` stays in the chart at
-  -- `x₀` and the points displaced by at most `e` stay in the chart target
-  obtain ⟨e, he, hU⟩ :=
-    hω.exists_pos_apply_and_eventually_add_smul_mem_target (sub_ne_zero.mpr hne)
-  obtain ⟨δ, hδ, hδU⟩ := Metric.eventually_nhds_iff.mp
-    ((hc.contMDiff.continuous.continuousAt (x := t₀)).eventually hU)
-  -- `g t` pairs the obstruction at `t` with the tangent vector of chart coordinates `e`
-  set g : ℝ → ℝ := fun t ↦ ω.val (γ t) ![Manifold.curveVelocity I γ t -
-    ω.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e]
-  have hg₀ : 0 < g t₀ := he
-  -- on a set of times within `δ` of `t₀`, `γ` stays in the chart, and the points displaced by a
-  -- profile bounded by `1` stay in the chart target
-  have hJ : ∀ {K : Set ℝ}, K ⊆ ball t₀ δ → ∀ t ∈ K, γ t ∈ (extChartAt I x₀).source :=
-    fun hK t ht ↦ (hδU (hK ht)).1
-  have hT : ∀ {K : Set ℝ} {ψ : ℝ → ℝ}, K ⊆ ball t₀ δ → (∀ t, |ψ t| ≤ 1) → ∀ t ∈ K, ∀ c : ℝ,
-      |c| ≤ 1 → extChartAt I x₀ (γ t) + (c * ψ t) • e ∈ (extChartAt I x₀).target :=
-    fun hK hψ t ht c hc1 ↦ (hδU (hK ht)).2 _ (by
-      rw [abs_mul]
-      exact (mul_le_mul hc1 (hψ t) (abs_nonneg _) zero_le_one).trans_eq (one_mul 1))
-  have hbump : ∀ {c : ℝ} (b : ContDiffBump c) (t : ℝ), |b t| ≤ 1 := fun b t ↦
-    abs_le.mpr ⟨by linarith [b.nonneg (x := t)], b.le_one⟩
-  -- `g` is continuous at `t₀`, where it agrees with `φ g` for a bump `φ` equal to `1` near `t₀`
-  have hgcont : ContinuousAt g t₀ := by
-    obtain ⟨b, hbJ⟩ := exists_contDiffBump_tsupport_subset_ball t₀ hδ
-    refine (hω.continuous_mul_apply_curveVelocity_sub hH (n := 2) (by norm_num) isOpen_ball
-      (hJ subset_rfl)
-      (hT subset_rfl (hbump b)) b.contDiff hbJ hc.contMDiff).continuousAt.congr ?_
-    filter_upwards [closedBall_mem_nhds t₀ b.rIn_pos] with t ht
-    rw [b.one_of_mem_closedBall ht, one_mul]
-  obtain ⟨ε, hε, hεg⟩ := Metric.eventually_nhds_iff.mp (hgcont.eventually (lt_mem_nhds hg₀))
-  -- an interior time `t₁` near `t₀`, and a ball around it inside `(0, 1)` where `g > 0`
-  obtain ⟨t₁, ht₁, ht₁₀⟩ : ∃ t₁ ∈ Ioo (0 : ℝ) 1, dist t₀ t₁ < min δ ε :=
-    Metric.mem_closure_iff.mp (by rwa [closure_Ioo zero_ne_one]) _ (lt_min hδ hε)
-  obtain ⟨r, hr, hrsub⟩ := Metric.isOpen_iff.mp (isOpen_Ioo.inter isOpen_ball) t₁
-    ⟨ht₁, by rwa [mem_ball, dist_comm]⟩
-  have hrδ : ball t₁ r ⊆ ball t₀ δ := fun t ht ↦ ball_subset_ball (min_le_left _ _) (hrsub ht).2
-  have hg : ∀ t ∈ ball t₁ r, 0 < g t := fun t ht ↦
-    hεg ((mem_ball.mp (hrsub ht).2).trans_le (min_le_right _ _))
-  obtain ⟨b, hbJ⟩ := exists_contDiffBump_tsupport_subset_ball t₁ hr
-  have hint := hc.integral_mul_apply_eq_zero hω hα hH isOpen_ball (fun t ht ↦ (hrsub ht).1)
-    (hJ hrδ) (hT hrδ (hbump b)) b.contDiff hbJ
-  have hcont := hω.continuous_mul_apply_curveVelocity_sub hH (n := 2) (by norm_num) isOpen_ball
-    (hJ hrδ) (hT hrδ (hbump b)) b.contDiff hbJ hc.contMDiff
-  -- `b g` is nonnegative, as `g > 0` on the support of `b`, and `b g = g > 0` at `t₁`
-  refine (intervalIntegral.integral_pos zero_lt_one hcont.continuousOn (fun t _ ↦ ?_)
-    ⟨t₁, Ioo_subset_Icc_self ht₁, ?_⟩).ne' hint
-  · by_cases hb : b t = 0
-    · rw [hb, zero_mul]
-    · exact mul_nonneg b.nonneg (hg t (hbJ (subset_tsupport _ hb))).le
-  · rw [b.one_of_mem_closedBall (mem_closedBall_self b.rIn_pos.le), one_mul]
-    exact hg t₁ (mem_ball_self hr)
+  rw [← hω.curveVelocity_eq_hamiltonianVectorField_of_forall_integral_mul_eq_zero hH (n := 2)
+    (by norm_num) hc.contMDiff (fun _ _ _ _ hJo hJ01 hJ hT hφ hφJ ↦
+      hc.integral_mul_apply_eq_zero hω hα hH hJo hJ01 hJ hT hφ hφJ) ht₀]
+  exact Manifold.hasMFDerivAt_curveVelocity
+    ((hc.contMDiff t₀).mdifferentiableAt two_ne_zero)
 
 /-- **The critical points of the action are the Hamiltonian chords.** Let `ω = dα` be a
 nondegenerate exact two-form on a manifold without boundary modelled on a finite-dimensional

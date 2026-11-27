@@ -28,9 +28,16 @@ then extend it to every regular complex point. Telescoping the finite partial su
 the Euler–Gauss limit representation `log (s + N) - ∑_{k ≤ N} (s + k)⁻¹ → digamma s`
 (`Complex.tendsto_log_add_sub_sum_inv_add`).
 
+The series converges uniformly on bounded sets, so on a pole-free disc it can be differentiated
+termwise. This gives Gauss' series for the derivative of digamma,
+`deriv digamma s = ∑ n, 1 / (s + n) ^ 2` at every regular point (`Complex.hasSum_deriv_digamma`),
+from which the series of the higher derivatives of digamma follow.
+
 ## References
 
 * [NIST DLMF, equation 5.7.6](https://dlmf.nist.gov/5.7.E6).
+* [NIST DLMF, equation 5.15.1](https://dlmf.nist.gov/5.15.E1).
+* G. E. Andrews, R. Askey, R. Roy, *Special Functions*, Theorem 1.2.5.
 * T. Tao, [Mathlib PR #43556](https://github.com/leanprover-community/mathlib4/pull/43556),
   for the Gauss series theorem statements.
 -/
@@ -52,25 +59,43 @@ private theorem gaussTerm_eq {s : ℂ} {n : ℕ} (hsn : s + n ≠ 0) :
 private theorem norm_natCast_add_one (n : ℕ) : ‖(n : ℂ) + 1‖ = (n : ℝ) + 1 := by
   simpa only [Nat.cast_add, Nat.cast_one] using Complex.norm_natCast (n + 1)
 
-private theorem summable_gaussTerm (s : ℂ) : Summable (gaussTerm s) := by
-  have hu : Summable (fun n : ℕ ↦ (2 * ‖s - 1‖) / (n : ℝ) ^ 2) := by
-    exact ((Real.summable_one_div_nat_pow.mpr (by norm_num : 1 < (2 : ℕ))).mul_left
-      (2 * ‖s - 1‖)).congr (fun n ↦ by ring)
-  apply hu.of_norm_bounded_eventually_nat
-  filter_upwards [eventually_ge_atTop (2 * ⌈‖s‖⌉₊ + 1)] with n hn
-  have hnR : (2 : ℝ) * (⌈‖s‖⌉₊ : ℝ) + 1 ≤ n := by exact_mod_cast hn
-  have hn0 : (0 : ℝ) < n := by linarith [Nat.cast_nonneg (α := ℝ) ⌈‖s‖⌉₊]
+/-- Beyond `n ≥ 2R + 1`, the Gauss terms at points of norm at most `R` are bounded by
+`2 (R + 1) / n²`. -/
+private theorem norm_gaussTerm_le {s : ℂ} {R : ℝ} (hs : ‖s‖ ≤ R) {n : ℕ}
+    (hn : 2 * R + 1 ≤ n) : ‖gaussTerm s n‖ ≤ 2 * (R + 1) / (n : ℝ) ^ 2 := by
+  have hR : 0 ≤ R := (norm_nonneg s).trans hs
+  have hn0 : (0 : ℝ) < n := by linarith
   have hnorm : (n : ℝ) - ‖s‖ ≤ ‖s + n‖ := by
     simpa only [Complex.norm_natCast, add_comm] using norm_sub_le_norm_add (n : ℂ) s
-  have hlow : (n : ℝ) / 2 ≤ ‖s + n‖ := by linarith [Nat.le_ceil ‖s‖]
+  have hlow : (n : ℝ) / 2 ≤ ‖s + n‖ := by linarith
   have hsn : s + n ≠ 0 := norm_pos_iff.mp (by linarith)
+  have hnum : ‖s - 1‖ ≤ R + 1 := by
+    linarith [norm_sub_le s 1, norm_one (α := ℂ)]
   rw [gaussTerm_eq hsn, norm_div, norm_mul, norm_natCast_add_one]
   have hden : 0 < ((n : ℝ) + 1) * ‖s + n‖ :=
     mul_pos (by linarith) (by linarith)
   apply (div_le_div_iff₀ hden (by positivity : 0 < (n : ℝ) ^ 2)).mpr
   have hprod : (n : ℝ) ^ 2 / 2 ≤ ((n : ℝ) + 1) * ‖s + n‖ := by
     nlinarith [mul_le_mul_of_nonneg_left hlow (by positivity : 0 ≤ (n : ℝ) + 1)]
-  nlinarith only [mul_le_mul_of_nonneg_left hprod (norm_nonneg (s - 1))]
+  nlinarith only [mul_le_mul_of_nonneg_right hnum (sq_nonneg (n : ℝ)),
+    mul_le_mul_of_nonneg_left hprod (by linarith : 0 ≤ 2 * (R + 1))]
+
+private theorem summable_bound (R : ℝ) : Summable (fun n : ℕ ↦ 2 * (R + 1) / (n : ℝ) ^ 2) :=
+  ((Real.summable_one_div_nat_pow.mpr (by norm_num : 1 < (2 : ℕ))).mul_left
+    (2 * (R + 1))).congr fun n ↦ by ring
+
+private theorem summable_gaussTerm (s : ℂ) : Summable (gaussTerm s) := by
+  apply (summable_bound ‖s‖).of_norm_bounded_eventually_nat
+  filter_upwards [eventually_ge_atTop ⌈2 * ‖s‖ + 1⌉₊] with n hn
+  exact norm_gaussTerm_le le_rfl (Nat.ceil_le.mp hn)
+
+/-- Gauss' series converges uniformly on every bounded set. -/
+private theorem hasSumUniformlyOn_gaussTerm {K : Set ℂ} {R : ℝ} (hK : ∀ s ∈ K, ‖s‖ ≤ R) :
+    HasSumUniformlyOn (fun n s ↦ gaussTerm s n) (fun s ↦ ∑' n, gaussTerm s n) K := by
+  apply HasSumUniformlyOn.of_norm_le_summable_eventually (summable_bound R)
+  rw [Nat.cofinite_eq_atTop]
+  filter_upwards [eventually_ge_atTop ⌈2 * R + 1⌉₊] with n hn s hs
+  exact norm_gaussTerm_le (hK s hs) (Nat.ceil_le.mp hn)
 
 private theorem gaussTerm_sum (s : ℂ) (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) (N : ℕ) :
     ∑ n ∈ Finset.range N, gaussTerm s n =
@@ -87,34 +112,9 @@ private theorem hasSumLocallyUniformlyOn_gaussTerm :
     HasSumLocallyUniformlyOn (fun n s ↦ gaussTerm s n)
       (fun s ↦ ∑' n, gaussTerm s n) {s : ℂ | 0 < s.re} := by
   apply hasSumLocallyUniformlyOn_of_forall_compact (isOpen_re_gt 0)
-  intro K hKU hK
+  intro K _ hK
   obtain ⟨R, hR⟩ := hK.exists_bound_of_continuousOn continuous_id.continuousOn
-  let C := max (R + 1) 1
-  have hC : 0 ≤ C := le_trans zero_le_one (le_max_right _ _)
-  have hu : Summable (fun n : ℕ ↦ C / (n : ℝ) ^ 2) := by
-    exact ((Real.summable_one_div_nat_pow.mpr (by norm_num : 1 < (2 : ℕ))).mul_left C).congr
-      (fun n ↦ by ring)
-  apply HasSumUniformlyOn.of_norm_le_summable_eventually hu
-  rw [Nat.cofinite_eq_atTop]
-  filter_upwards [eventually_ge_atTop (1 : ℕ)] with n hn s hs
-  have hs0 : 0 < s.re := hKU hs
-  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
-  have hnum' : ‖s - 1‖ ≤ C := by
-    calc ‖s - 1‖ ≤ ‖s‖ + 1 := by simpa using norm_sub_le s 1
-         _ ≤ R + 1 := by simpa using add_le_add_right (hR s hs) 1
-         _ ≤ C := le_max_left _ _
-  have hden : (n : ℝ) ≤ ‖s + n‖ := by
-    have h := Complex.re_le_norm (s + n)
-    simp only [Complex.add_re, Complex.natCast_re] at h
-    linarith
-  have hsn : s + n ≠ 0 := norm_pos_iff.mp (by linarith)
-  rw [gaussTerm_eq hsn, norm_div, norm_mul, norm_natCast_add_one]
-  apply (div_le_div_iff₀ (by nlinarith : 0 < ((n : ℝ) + 1) * ‖s + n‖)
-    (by positivity : 0 < (n : ℝ) ^ 2)).mpr
-  have hprod : (n : ℝ) ^ 2 ≤ ((n : ℝ) + 1) * ‖s + n‖ := by
-    nlinarith [mul_le_mul_of_nonneg_left hden (by positivity : 0 ≤ (n : ℝ) + 1)]
-  nlinarith only [mul_le_mul_of_nonneg_right hnum' (sq_nonneg (n : ℝ)),
-    mul_le_mul_of_nonneg_left hprod hC]
+  exact hasSumUniformlyOn_gaussTerm hR
 
 private theorem differentiableOn_gaussSeries :
     DifferentiableOn ℂ gaussSeries {s : ℂ | 0 < s.re} := by
@@ -179,6 +179,7 @@ private theorem digamma_ofReal_eq_gaussSeries {x : ℝ} (hx : 0 < x) :
   dsimp [gaussSeries]
   rw [he]
   ring
+
 
 private theorem digamma_eq_gaussSeries_of_re_pos {s : ℂ} (hs : 0 < s.re) :
     digamma s = gaussSeries s := by
@@ -268,6 +269,49 @@ theorem digamma_eq_gaussSeries {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
     digamma s = -Real.eulerMascheroniConstant +
       ∑' n : ℕ, (1 / ((n : ℂ) + 1) - 1 / (s + n)) := by
   simpa only [gaussSeries, gaussTerm] using digamma_eq_gaussSeries_regular hs
+
+private theorem hasDerivAt_gaussTerm {s : ℂ} {n : ℕ} (hsn : s + n ≠ 0) :
+    HasDerivAt (fun w ↦ gaussTerm w n) (1 / (s + n) ^ 2) s := by
+  have h := (((hasDerivAt_id s).add_const (n : ℂ)).inv hsn).const_sub (1 / ((n : ℂ) + 1))
+  simp only [id] at h
+  convert h using 1
+  · ext w
+    simp [gaussTerm]
+  · ring
+
+/-- Gauss' series for the derivative of digamma: `ψ′(s) = ∑ₙ 1 / (s + n)²` away from the poles
+`s = 0, -1, -2, …`. -/
+theorem hasSum_deriv_digamma {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
+    HasSum (fun n : ℕ ↦ 1 / (s + n) ^ 2) (deriv digamma s) := by
+  -- Differentiate Gauss' series termwise on a ball around `s` free of poles, where it converges
+  -- uniformly (Weierstrass).
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp (eventually_ne_neg_natCast hs)
+  have hsn {w : ℂ} (hw : w ∈ Metric.ball s ε) (n : ℕ) : w + n ≠ 0 := by
+    rw [ne_eq, add_eq_zero_iff_eq_neg]
+    exact hball hw n
+  have hdiff (I : Finset ℕ) :
+      DifferentiableOn ℂ (fun w ↦ ∑ n ∈ I, gaussTerm w n) (Metric.ball s ε) :=
+    DifferentiableOn.fun_sum fun n _ w hw ↦
+      (hasDerivAt_gaussTerm (hsn hw n)).differentiableAt.differentiableWithinAt
+  have hU : HasSumUniformlyOn (fun n w ↦ gaussTerm w n) (fun w ↦ ∑' n, gaussTerm w n)
+      (Metric.ball s ε) := by
+    refine hasSumUniformlyOn_gaussTerm (R := ‖s‖ + ε) fun w hw ↦ ?_
+    linarith [norm_le_norm_add_norm_sub' w s, (mem_ball_iff_norm.mp hw).le]
+  have hlim := ((hasSumUniformlyOn_iff_tendstoUniformlyOn.mp hU).tendstoLocallyUniformlyOn.deriv
+    (Eventually.of_forall hdiff) Metric.isOpen_ball).tendsto_at (Metric.mem_ball_self hε)
+  -- Near `s`, Gauss' series is `ψ + γ`, so their derivatives agree at `s`.
+  have hsum : deriv (fun w ↦ ∑' n, gaussTerm w n) s = deriv digamma s := by
+    have heq : (fun w ↦ ∑' n, gaussTerm w n) =ᶠ[𝓝 s]
+        fun w ↦ digamma w + Real.eulerMascheroniConstant := by
+      filter_upwards [eventually_ne_neg_natCast hs] with w hw
+      rw [digamma_eq_gaussSeries_regular hw, gaussSeries]
+      ring
+    rw [heq.deriv_eq, deriv_add_const]
+  rw [hsum] at hlim
+  have hterm (n : ℕ) := hasDerivAt_gaussTerm (hsn (Metric.mem_ball_self hε) n)
+  refine hlim.congr fun I ↦ ?_
+  rw [Function.comp_apply, deriv_fun_sum fun n _ ↦ (hterm n).differentiableAt]
+  exact Finset.sum_congr rfl fun n _ ↦ (hterm n).deriv
 
 private theorem tendsto_log_add_natCast_sub_log (s : ℂ) :
     Tendsto (fun N : ℕ ↦ Complex.log (s + N) - Complex.log (((N : ℝ) + 2 : ℝ) : ℂ))

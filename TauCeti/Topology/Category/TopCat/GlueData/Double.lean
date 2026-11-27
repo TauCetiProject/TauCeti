@@ -155,10 +155,8 @@ theorem not_isClosed_doubleGlueData_chartRel {x : X} (hx : x ∈ closure (U : Se
 theorem t2Space_doubleGlueData_iff :
     T2Space (doubleGlueData X U).toGlueData.glued ↔ T2Space X ∧ IsClosed (U : Set X) := by
   refine (doubleGlueData X U).t2Space_iff_isClosed_chartRel.trans ⟨fun h ↦ ⟨?_, ?_⟩, ?_⟩
-  · -- The relation of a chart with itself is the diagonal.
-    have hdiag : (doubleGlueData X U).chartRel ⟨false⟩ ⟨false⟩ = diagonal X :=
-      Set.ext fun p ↦ mem_doubleGlueData_chartRel_iff.trans (and_iff_left (Or.inl rfl))
-    exact t2_iff_isClosed_diagonal.2 (hdiag ▸ h ⟨false⟩ ⟨false⟩)
+  · exact t2_iff_isClosed_diagonal.2
+      ((doubleGlueData X U).chartRel_self ⟨false⟩ ▸ h ⟨false⟩ ⟨false⟩)
   · -- A point of `closure U` outside `U` would make the relation between the two charts
     -- not closed.
     exact isClosed_of_closure_subset fun x hx ↦ of_not_not fun hxU ↦

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Diffeomorph.RestrictScalars
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.SimpleSphere
 public import TauCeti.Geometry.Manifold.MFDeriv.InjectivePoint
+import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 
 /-!
@@ -39,6 +40,9 @@ factor.
   (`Diffeomorph.isInjectivePoint_comp_biholomorph_iff`), so somewhere injectivity is a property of
   the unparametrized curve (`Diffeomorph.isSomewhereInjective_comp_biholomorph_iff`). Invariance
   under diffeomorphisms of the target is `Diffeomorph.isInjectivePoint_diffeomorph_comp_iff`.
+
+* **Nonconstancy.** A somewhere injective map from a Riemann surface takes two distinct values
+  (`TauCeti.IsSomewhereInjective.exists_apply_ne`), since the injective point is not isolated.
 
 The converse, that a nonconstant closed pseudoholomorphic curve which factors only through covers
 of degree one has an injective point, rests on the factorization of every such curve through a
@@ -122,6 +126,16 @@ theorem IsSomewhereInjective.isSimpleSphere (h : IsSomewhereInjective 𝓘(ℝ, 
   exact hz.isSimpleSphere (hc z)
 
 end Sphere
+
+/-- **Somewhere injective maps are nonconstant.** A somewhere injective map from a Riemann surface
+takes two distinct values: the injective point is not isolated, and every other point has a
+different image. -/
+theorem IsSomewhereInjective.exists_apply_ne {S : Type*} [TopologicalSpace S] [ChartedSpace ℂ S]
+    {v : S → N} (h : IsSomewhereInjective 𝓘(ℝ, ℂ) I v) : ∃ z z', v z ≠ v z' := by
+  obtain ⟨z, hz⟩ := isSomewhereInjective_iff.1 h
+  have := ChartedSpace.perfectSpace (H := ℂ) (X := S)
+  obtain ⟨z', hz'⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin : {z}ᶜ ∈ nhdsWithin z {z}ᶜ)
+  exact ⟨z', z, hz.apply_ne hz'⟩
 
 end TauCeti
 

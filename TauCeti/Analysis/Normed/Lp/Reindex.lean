@@ -48,12 +48,15 @@ sequence in `ℓᵖ`, `1 ≤ p`, form a sequence in `ℓᵖ` of norm at most `(1
 shifts. Such sums arise when each dyadic piece interacts with all the pieces of higher index, with
 geometrically decaying weights.
 
-When `g : ι' → ι` is injective, composing with `g` preserves `ℓᵖ` membership without increasing the
-norm (`Memℓp.comp_injective`, `lp.norm_le_of_forall_eq_comp`). In particular, when `e : ι ≃ ι'` is
-a bijection between index types (possibly in different universes), composing with `e` preserves `ℓᵖ`
-membership (`Memℓp.comp_equiv`, `Equiv.memℓp_comp_iff`) and the `ℓᵖ` norm
-(`lp.norm_eq_of_forall_eq_comp_equiv`), and for `1 ≤ p` induces the linear isometric equivalence
-`LinearIsometryEquiv.lpCongrLeft` between `ℓᵖ(ι, G)` and `ℓᵖ(ι', G)`.
+When `g : ι' → ι` is injective, precomposing a (possibly dependent) family on `ι` with `g` or
+extending a sequence by zero along `g` preserves `ℓᵖ` membership without increasing the norm
+(`Memℓp.comp_injective`, `Memℓp.extend_zero`, `Function.Injective.memℓp_extend_zero_iff`,
+`lp.norm_le_of_forall_norm_eq_comp`, `lp.norm_le_of_forall_eq_comp`). In particular, when
+`e : ι' ≃ ι` is a bijection between index types (possibly in different universes), precomposing a
+family on `ι` with `e` preserves `ℓᵖ` membership (`Memℓp.comp_equiv`, `Equiv.memℓp_apply_iff`,
+`Equiv.memℓp_comp_iff`) and the `ℓᵖ` norm (`lp.norm_eq_of_forall_norm_eq_comp_equiv`,
+`lp.norm_eq_of_forall_eq_comp_equiv`), and for `e : ι ≃ ι'` and `1 ≤ p` induces the linear
+isometric equivalence `LinearIsometryEquiv.lpCongrLeft` between `ℓᵖ(ι, G)` and `ℓᵖ(ι', G)`.
 
 Reading a sequence `b ∈ ℓᵖ(ℤ)` along `k ↦ -k` and weighting it by `2^{(e - s) (-k)}` gives a
 summable series over `k : ℕ` when `s < e`, or `s = e` and `p ≤ 1`
@@ -91,6 +94,7 @@ theorem Memℓp.indicator_comp {f : ι → G} (hf : Memℓp f p) {g : ι' → ι
     exact (Finset.sum_apply_indicator_comp_eq_sum_image (h := fun x : G ↦ ‖x‖ ^ p.toReal)
       (by simp [Real.zero_rpow hp.ne']) hg t).trans_le
       ((hf.summable hp).sum_le_tsum _ fun k _ ↦ by positivity)
+
 
 /-- **Reindexing in `ℓᵖ` does not increase the norm.** If `g` is injective on `s` and `f'` reads
 `f` along `g` on `s` and vanishes off `s`, then `‖f'‖ ≤ ‖f‖`. -/
@@ -295,37 +299,99 @@ theorem lp.exists_forall_hasSum_pow_smul_add_and_norm_le [Fact (1 ≤ p)] [Norme
 
 section Equiv
 
-/-- Composing a sequence in `ℓᵖ` with an injective map (possibly between different universes)
-preserves membership in `ℓᵖ`. -/
-theorem Memℓp.comp_injective {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H] {q : ℝ≥0∞}
-    {f : β → H} (hf : Memℓp f q) {g : α → β} (hg : Function.Injective g) : Memℓp (f ∘ g) q := by
-  simpa only [Set.indicator_univ] using hf.indicator_comp (s := Set.univ) hg.injOn
+/-- Precomposing a (possibly dependent) sequence in `ℓᵖ` with an injective map between index types
+(possibly in different universes) preserves membership in `ℓᵖ`. -/
+theorem Memℓp.comp_injective {α : Type*} {β : Type*} {E : β → Type*}
+    [∀ j, NormedAddCommGroup (E j)] {q : ℝ≥0∞} {f : ∀ j, E j} (hf : Memℓp f q) {g : α → β}
+    (hg : Function.Injective g) : Memℓp (fun i ↦ f (g i)) q := by
+  rw [← memℓp_norm_iff]
+  simpa [Function.comp_def] using hf.norm.indicator_comp (s := Set.univ) hg.injOn
 
-/-- Composing a sequence in `ℓᵖ` with an equivalence of index types (possibly in different
+/-- Extending a sequence in `ℓᵖ` by zero along an injective map (possibly between different
 universes) preserves membership in `ℓᵖ`. -/
-theorem Memℓp.comp_equiv {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H] {q : ℝ≥0∞}
-    {f : β → H} (hf : Memℓp f q) (e : α ≃ β) : Memℓp (f ∘ e) q :=
+theorem Memℓp.extend_zero {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H] {q : ℝ≥0∞}
+    {f : α → H} (hf : Memℓp f q) {e : α → β} (he : Function.Injective e) :
+    Memℓp (Function.extend e f 0) q := by
+  classical
+  rcases isEmpty_or_nonempty α with hα | hα
+  · have h0 : Function.extend e f 0 = 0 := funext fun j ↦ Function.extend_apply' _ _ _ (by simp)
+    rw [h0]; exact zero_memℓp
+  · have hinv : (Set.range e).InjOn (Function.invFun e) := by
+      rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩ h
+      rw [Function.leftInverse_invFun he, Function.leftInverse_invFun he] at h; rw [h]
+    have heq : Function.extend e f 0 = (Set.range e).indicator (f ∘ Function.invFun e) := by
+      ext j; by_cases h : j ∈ Set.range e
+      · obtain ⟨i, rfl⟩ := h; simp [he.extend_apply, Function.leftInverse_invFun he i]
+      · simp [h, Function.extend_apply' _ _ _ h]
+    rw [heq]; exact hf.indicator_comp hinv
+
+/-- Extending a sequence by zero along an injective map lies in `ℓᵖ` iff the original does. -/
+@[simp]
+theorem Function.Injective.memℓp_extend_zero_iff {α : Type*} {β : Type*} {H : Type*}
+    [NormedAddCommGroup H] {q : ℝ≥0∞} {f : α → H} {e : α → β} (he : Function.Injective e) :
+    Memℓp (Function.extend e f 0) q ↔ Memℓp f q :=
+  ⟨fun h ↦ by simpa [he.extend_apply] using h.comp_injective he,
+   fun h ↦ h.extend_zero he⟩
+
+/-- Precomposing a (possibly dependent) sequence in `ℓᵖ` with an equivalence of index types
+(possibly in different universes) preserves membership in `ℓᵖ`. -/
+theorem Memℓp.comp_equiv {α : Type*} {β : Type*} {E : β → Type*}
+    [∀ j, NormedAddCommGroup (E j)] {q : ℝ≥0∞} {f : ∀ j, E j} (hf : Memℓp f q) (e : α ≃ β) :
+    Memℓp (fun i ↦ f (e i)) q :=
   hf.comp_injective e.injective
 
-/-- Composing with an equivalence of index types preserves `ℓᵖ` membership in both directions. -/
+/-- Precomposing a dependent family with an equivalence of index types preserves `ℓᵖ` membership in
+both directions. -/
+@[simp]
+theorem Equiv.memℓp_apply_iff {α : Type*} {β : Type*} {E : β → Type*}
+    [∀ j, NormedAddCommGroup (E j)] {q : ℝ≥0∞} {f : ∀ j, E j} (e : α ≃ β) :
+    Memℓp (fun i ↦ f (e i)) q ↔ Memℓp f q := by
+  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.comp_equiv e⟩
+  have hsymm : (fun j ↦ ‖f (e (e.symm j))‖) = fun j ↦ ‖f j‖ :=
+    funext fun j ↦ congrArg (fun k ↦ ‖f k‖) (e.apply_symm_apply j)
+  rw [← memℓp_norm_iff] at hf ⊢
+  simpa only [hsymm] using hf.comp_equiv e.symm
+
+/-- Composing a non-dependent sequence with an equivalence of index types preserves `ℓᵖ` membership
+in both directions. -/
 @[simp]
 theorem Equiv.memℓp_comp_iff {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H]
     {q : ℝ≥0∞} {f : β → H} (e : α ≃ β) : Memℓp (f ∘ e) q ↔ Memℓp f q :=
-  ⟨fun h ↦ by simpa [Function.comp_def] using h.comp_equiv e.symm, fun h ↦ h.comp_equiv e⟩
+  e.memℓp_apply_iff
+
+/-- Reindexing coordinate norms along an injective map between dependent `ℓᵖ` spaces does not
+increase the `ℓᵖ` norm, at every exponent `0 ≤ q ≤ ∞`. -/
+theorem lp.norm_le_of_forall_norm_eq_comp {α : Type*} {β : Type*}
+    {E : β → Type*} {E' : α → Type*}
+    [∀ j, NormedAddCommGroup (E j)] [∀ i, NormedAddCommGroup (E' i)] {q : ℝ≥0∞}
+    {f : lp E q} {g : lp E' q} {e : α → β} (he : Function.Injective e)
+    (h : ∀ i, ‖g i‖ = ‖f (e i)‖) : ‖g‖ ≤ ‖f‖ := by
+  rw [← lp.norm_normSeq g, ← lp.norm_normSeq f]
+  exact lp.norm_le_of_forall_eq_indicator_comp (s := Set.univ) he.injOn fun i ↦ by
+    simpa using h i
 
 /-- Reindexing a sequence in `ℓᵖ` along an injective map does not increase the `ℓᵖ` norm. -/
 theorem lp.norm_le_of_forall_eq_comp {α : Type*} {β : Type*} {H : Type*}
     [NormedAddCommGroup H] {q : ℝ≥0∞} {f : lp (fun _ : β ↦ H) q}
     {g : lp (fun _ : α ↦ H) q} {e : α → β} (he : Function.Injective e) (h : ∀ i, g i = f (e i)) :
     ‖g‖ ≤ ‖f‖ :=
-  lp.norm_le_of_forall_eq_indicator_comp (s := Set.univ) he.injOn fun i ↦ by simpa using h i
+  lp.norm_le_of_forall_norm_eq_comp he fun i ↦ congrArg norm (h i)
+
+/-- **Equivalence invariance of the `ℓᵖ` norm.** Two dependent sequences in `ℓᵖ` whose pointwise
+norms match along an equivalence of index types have equal norm at every exponent `0 ≤ q ≤ ∞`. -/
+theorem lp.norm_eq_of_forall_norm_eq_comp_equiv {α : Type*} {β : Type*}
+    {E : β → Type*} {E' : α → Type*}
+    [∀ j, NormedAddCommGroup (E j)] [∀ i, NormedAddCommGroup (E' i)] {q : ℝ≥0∞}
+    {f : lp E q} {g : lp E' q} (e : α ≃ β) (h : ∀ i, ‖g i‖ = ‖f (e i)‖) : ‖g‖ = ‖f‖ :=
+  le_antisymm (lp.norm_le_of_forall_norm_eq_comp e.injective h)
+    (lp.norm_le_of_forall_norm_eq_comp e.symm.injective fun j ↦
+      (congrArg (fun k ↦ ‖f k‖) (e.apply_symm_apply j)).symm.trans (h (e.symm j)).symm)
 
 /-- Reindexing a sequence in `ℓᵖ` along an equivalence preserves the `ℓᵖ` norm. -/
 theorem lp.norm_eq_of_forall_eq_comp_equiv {α : Type*} {β : Type*} {H : Type*}
     [NormedAddCommGroup H] {q : ℝ≥0∞} {f : lp (fun _ : β ↦ H) q}
     {g : lp (fun _ : α ↦ H) q} (e : α ≃ β) (h : ∀ i, g i = f (e i)) : ‖g‖ = ‖f‖ :=
-  le_antisymm (lp.norm_le_of_forall_eq_comp e.injective h)
-    (lp.norm_le_of_forall_eq_comp e.symm.injective fun j ↦ by simp [h (e.symm j)])
+  lp.norm_eq_of_forall_norm_eq_comp_equiv e fun i ↦ congrArg norm (h i)
 
 namespace AddEquiv
 

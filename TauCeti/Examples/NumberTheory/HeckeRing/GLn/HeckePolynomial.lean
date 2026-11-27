@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.HeckeRing.GLn.HeckePolynomial
+public import TauCeti.NumberTheory.HeckeRing.GLn.HeckePolynomial.Basic
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.Algebra.Field.Rat
 import Mathlib.Algebra.CharP.Two
