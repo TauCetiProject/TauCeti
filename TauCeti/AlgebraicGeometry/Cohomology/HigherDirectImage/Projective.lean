@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Spec
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite
 
 /-!

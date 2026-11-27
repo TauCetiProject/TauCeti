@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Chow.SurfaceIntersection.Basic
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
 import TauCeti.AlgebraicGeometry.Chow.SurfaceIntersection.Restriction

@@ -5,7 +5,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 public import TauCeti.RingTheory.MvPolynomial.HomogeneousLocalization
 public import TauCeti.RingTheory.MvPolynomial.SymmetricPresentation

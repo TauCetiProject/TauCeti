@@ -27,6 +27,8 @@ used to work one summand at a time:
   to `∐ X` lands in a single summand;
 * `TauCeti.AlgebraicGeometry.locallyFinite_range_sigmaι`: the summands form a locally finite
   family;
+* `AlgebraicGeometry.isClosedImmersion_sigmaDesc`: a finite disjoint family of closed
+  immersions gives a closed immersion from the coproduct;
 * `TauCeti.AlgebraicGeometry.isLocallyNoetherian_sigma`: a coproduct of locally Noetherian schemes
   is locally Noetherian.
 -/
@@ -100,3 +102,42 @@ instance isLocallyNoetherian_sigma [hX : ∀ i, IsLocallyNoetherian (X i)] :
   (isLocallyNoetherian_iff_openCover (sigmaOpenCover X)).mpr hX
 
 end TauCeti.AlgebraicGeometry
+
+namespace AlgebraicGeometry
+
+open scoped Function
+
+/-- A finite disjoint family of closed immersions induces a closed immersion from the
+coproduct. Disjointness is required on the underlying ranges, with no reducedness assumption. -/
+theorem isClosedImmersion_sigmaDesc {ι : Type v} [Finite ι]
+    {X : ι → Scheme.{u}} {Y : Scheme.{u}} (f : ∀ i, X i ⟶ Y)
+    [∀ i, IsClosedImmersion (f i)]
+    (hf : Pairwise (Disjoint on (Set.range <| f ·))) :
+    IsClosedImmersion (Sigma.desc f) := by
+  -- Surjectivity on stalks is local at the source; coprojections induce stalk isomorphisms.
+  have : SurjectiveOnStalks (Sigma.desc f) :=
+    IsZariskiLocalAtSource.sigmaDesc fun _ ↦ inferInstance
+  refine ⟨Topology.IsClosedEmbedding.of_continuous_injective_isClosedMap
+    (Sigma.desc f).continuous ?_ ?_⟩
+  · intro x y h
+    obtain ⟨i, x, rfl⟩ := TauCeti.AlgebraicGeometry.sigmaι_jointly_surjective X x
+    obtain ⟨j, y, rfl⟩ := TauCeti.AlgebraicGeometry.sigmaι_jointly_surjective X y
+    have hxy : f i x = f j y := by simpa [← Scheme.Hom.comp_apply] using h
+    obtain rfl : i = j := by
+      by_contra hij
+      exact Set.disjoint_iff_forall_ne.mp (hf hij) ⟨x, rfl⟩ ⟨y, rfl⟩ hxy
+    exact congrArg (Sigma.ι X i) ((f i).isClosedEmbedding.injective hxy)
+  · intro Z hZ
+    have himage : Sigma.desc f '' Z = ⋃ i, f i '' ((Sigma.ι X i) ⁻¹' Z) := by
+      ext y
+      constructor
+      · rintro ⟨x, hx, rfl⟩
+        obtain ⟨i, x, rfl⟩ := TauCeti.AlgebraicGeometry.sigmaι_jointly_surjective X x
+        exact Set.mem_iUnion.mpr ⟨i, x, hx, by simp [← Scheme.Hom.comp_apply]⟩
+      · rintro ⟨_, ⟨i, rfl⟩, x, hx, rfl⟩
+        exact ⟨Sigma.ι X i x, hx, by simp [← Scheme.Hom.comp_apply]⟩
+    rw [himage]
+    exact isClosed_iUnion_of_finite fun i ↦
+      (f i).isClosedEmbedding.isClosedMap _ (hZ.preimage (Sigma.ι X i).continuous)
+
+end AlgebraicGeometry

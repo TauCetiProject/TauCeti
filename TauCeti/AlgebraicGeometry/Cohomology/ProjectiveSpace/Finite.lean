@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.DimensionShifting
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.GlobalGeneration
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
