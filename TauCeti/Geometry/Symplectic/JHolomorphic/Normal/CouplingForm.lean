@@ -63,7 +63,10 @@ Under a change of unitary frame `w ↦ e^(iφ(z)) w` the connection form becomes
 (`TauCeti.normalCouplingPrimitive_eq_smul_cutoffPhaseForm`), its gauge invariance
 `TauCeti.SeibergWitten.cutoffPhaseForm_sub_phaseForm_mul`, which only needs `χ 0 = 0`, and its
 naturality under pullback `TauCeti.SeibergWitten.cutoffPhaseForm_comp` relate the coupling
-primitives of the two frames; that comparison is not stated here.
+primitives of the two frames. The comparison is stated at the level of coupling forms, not
+primitives, in `Normal/Connection.lean`: the gauge transformation `TauCeti.normalModelGauge`
+pulls the coupling form of `A - dφ` back to that of `A` where the two have the same curvature
+(`TauCeti.normalCouplingForm_normalModelGauge_apply`).
 
 ## Main definitions
 

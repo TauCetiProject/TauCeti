@@ -315,6 +315,29 @@ theorem exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord {c : ℝ} (hc
   rw [TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero, exchangePerturbation_add hc₀ hc₁
     (by linarith [eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf hz])]
 
+/-- On the part `s > 0` of an input end `q`, for `0 ≤ c ≤ 1`, the components of the member `c` of
+the family are those of the pair-of-pants perturbation. -/
+theorem exchangePerturbation_components_eq_of_pos_fst_positiveEndCoord {c : ℝ} (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {q : Puncture} (hq : q ≠ inf) {z : ℝ × ℝ} (hz : 0 < (positiveEndCoord q z).1) :
+    (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1) =
+        (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+      (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) =
+        fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I := by
+  have h := exchangePerturbation_eq_of_pos_fst_positiveEndCoord (H := H) hc₀ hc₁ hq hz
+  exact ⟨funext fun x ↦ by rw [h], funext fun x ↦ by rw [h]⟩
+
+/-- Beyond the height `1` of the output end, for `0 ≤ c ≤ 1`, the components of the member `c` of
+the family at `z + (c, 0)` are those of the pair-of-pants perturbation at `z`. -/
+theorem exchangePerturbation_add_components_eq_of_one_lt_fst_positiveEndCoord {c : ℝ}
+    (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℝ × ℝ} (hz : 1 < (positiveEndCoord inf z).1) :
+    (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm (z + (c, 0))) x 1) =
+        (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+      (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm (z + (c, 0))) x
+          Complex.I) =
+        fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I := by
+  have h := exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord (H := H) hc₀ hc₁ hz
+  exact ⟨funext fun x ↦ by rw [h], funext fun x ↦ by rw [h]⟩
+
 /-- **The family on an input end.** For `0 ≤ c ≤ 1`, on the part `s > 0` of an input end `q`, the
 pullback of every member of the family along the end lift `φ_q` is the continuation datum
 `β(s - 1) H_q(t) dt` of the pair of pants: it sends a tangent vector `v` of the cylinder to
