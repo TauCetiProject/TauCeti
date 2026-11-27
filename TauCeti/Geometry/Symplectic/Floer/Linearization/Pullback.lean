@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
+public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Analysis.Calculus.FDeriv.Mul
@@ -78,7 +79,10 @@ Let `dφ_w` be complex linear, so that it is multiplication by a complex number 
   structure and `φ` has period one in `t`, the form `η'` is `C^n` when the end structure, `u` and
   `η` are, and has period one
   (`TauCeti.Floer.contDiff_covectorPullback_of_eqOn`,
-  `TauCeti.Floer.covectorPullback_add_snd_of_periodic_snd`).
+  `TauCeti.Floer.covectorPullback_add_snd_of_periodic_snd`). Conversely, inverting `a + b J`,
+  whose squared norm is `det dφ_w`, and changing variables, the `L²` norm of `η` on `φ '' S` is at
+  most `(1 + B)²` times the `W^{1,2}` energy of `η'` on `S`, for a bound `B` of `J`
+  (`TauCeti.Floer.setIntegral_image_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPullback`).
 
 Away from solutions, `floerLinearization_perturbationPullback_eq_sub` gives the correction
 `-b (dJ ξ) F(u)` for endomorphism-valued families with `J² = -1` near the target point.
@@ -214,6 +218,42 @@ theorem det_mul_norm_sq_le_mul_norm_covectorPullback_realChart_sq [FiniteDimensi
   have h1 := pow_le_pow_left₀ h0 (h.trans (mul_le_mul_of_nonneg_right (add_le_add_right hB 1)
     (norm_nonneg _))) 2
   rwa [mul_pow, Real.sq_sqrt hdet.le, mul_pow] at h1
+
+/-- **The `L²` norm of a covector field from the energy of its pullback along a holomorphic
+chart.** Let `f` have a complex derivative at every point of a measurable set `S`, let
+`φ = realChart f` be injective on `S`, and let `‖J‖ ≤ B` at the image points. Then the `L²` norm of
+`g` on `φ '' S` is at most `(1 + B)²` times the `W^{1,2}` energy of the pullback
+`g' = g (φ ·) ∘ (a + b J)` on any set `S' ⊇ S` on which that energy is integrable. -/
+theorem setIntegral_image_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPullback
+    [FiniteDimensional ℝ V] {f : ℂ → ℂ} {S S' : Set (ℝ × ℝ)} (hS : MeasurableSet S)
+    (hSS' : S ⊆ S') (hf : ∀ ζ ∈ S, DifferentiableAt ℂ f (Complex.equivRealProdCLM.symm ζ))
+    (hinj : InjOn (TauCeti.Complex.realChart f) S)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V} {g : ℝ × ℝ → V →L[ℝ] ℝ} {B : ℝ}
+    (hB : ∀ ζ ∈ S, ‖(J (TauCeti.Complex.realChart f ζ)
+      (u (TauCeti.Complex.realChart f ζ))).toLinearMap.toContinuousLinearMap‖ ≤ B)
+    (hint : IntegrableOn (sobolevDensity (covectorPullback (TauCeti.Complex.realChart f)
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u g)) S') :
+    ∫ z in TauCeti.Complex.realChart f '' S, ‖g z‖ ^ 2 ≤
+      (1 + B) ^ 2 * ∫ ζ in S', sobolevDensity (covectorPullback (TauCeti.Complex.realChart f)
+        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u g) ζ := by
+  set φ := TauCeti.Complex.realChart f
+  set g' := covectorPullback φ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u g
+  rw [integral_image_eq_integral_of_eq_abs_det_smul hS hinj
+    (fun ζ hζ ↦ (TauCeti.Complex.hasFDerivAt_realChart (hf ζ hζ).hasDerivAt).differentiableAt)
+    (f := fun ζ ↦ |(fderiv ℝ φ ζ).det| • ‖g (φ ζ)‖ ^ 2) fun _ _ ↦ rfl, ← integral_const_mul]
+  refine (integral_mono_of_nonneg (ae_of_all _ fun ζ ↦ by positivity)
+    ((hint.mono_set hSS').const_mul _) ((ae_restrict_iff' hS).2 (ae_of_all _ fun ζ hζ ↦ ?_))).trans
+    (setIntegral_mono_set (hint.const_mul _)
+      (ae_of_all _ fun ζ ↦ mul_nonneg (sq_nonneg _) (sobolevDensity_nonneg g' ζ))
+      (Eventually.of_forall hSS'))
+  have hfζ := (hf ζ hζ).hasDerivAt
+  have hdet : 0 ≤ (fderiv ℝ φ ζ).det := TauCeti.Complex.det_fderiv_realChart_nonneg hfζ
+  rw [smul_eq_mul, abs_of_nonneg hdet]
+  refine (det_mul_norm_sq_le_mul_norm_covectorPullback_realChart_sq hfζ (hB ζ hζ)).trans
+    (mul_le_mul_of_nonneg_left ?_ (sq_nonneg _))
+  rw [sobolevDensity_apply]
+  nlinarith [sq_nonneg ‖fderiv ℝ g' ζ stdComplexLineReal‖,
+    sq_nonneg ‖fderiv ℝ g' ζ stdComplexLineImag‖]
 
 end TauCeti.Floer
 

@@ -145,35 +145,17 @@ private theorem setIntegral_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPu
       (1 + B) ^ 2 * ∫ ζ in Ioi R ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
         (realChart positive.cylindricalEndLift)
         (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u g) ζ := by
-  set φ := realChart positive.cylindricalEndLift
-  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap
-  have hS : MeasurableSet (Ioi R ×ˢ Ico (0 : ℝ) 1) := measurableSet_Ioi.prod measurableSet_Ico
-  have hφ : ContDiff ℝ 2 φ := contDiff_realChart positive.contDiff_cylindricalEndLift
-  have hint' : IntegrableOn (fun ζ ↦ (1 + B) ^ 2 * sobolevDensity (covectorPullback φ J' u g) ζ)
-      (Ioi R ×ˢ Icc 0 1) :=
-    (integrableOn_sobolevDensity_covectorPullback_positive hJ hu hg hgc R).const_mul _
   -- Change variables along the end lift, which is injective on the half-strip.
   have hIoi : {s : ℝ | R < positive.endSign * s} = Ioi R := by
     ext s
     simp [endSign_positive]
-  rw [← positive.image_realChart_cylindricalEndLift_prod_Ico, hIoi,
-    integral_image_eq_integral_of_eq_abs_det_smul hS
+  rw [← positive.image_realChart_cylindricalEndLift_prod_Ico, hIoi]
+  exact Floer.setIntegral_image_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPullback
+    (measurableSet_Ioi.prod measurableSet_Ico) (prod_mono subset_rfl Ico_subset_Icc_self)
+    (fun _ _ ↦ (positive.hasDerivAt_cylindricalEndLift _).differentiableAt)
     ((positive.injOn_realChart_cylindricalEndLift 0).mono
-      (prod_mono (subset_univ _) (by rw [zero_add])))
-    (fun ζ _ ↦ (hφ.differentiable (by norm_num)) ζ) (fun ζ _ ↦ rfl), ← integral_const_mul]
-  refine (integral_mono_of_nonneg (ae_of_all _ fun ζ ↦ by positivity)
-    (hint'.mono_set (prod_mono subset_rfl Ico_subset_Icc_self))
-    ((ae_restrict_iff' hS).2 (ae_of_all _ fun ζ _ ↦ ?_))).trans
-    (setIntegral_mono_set hint' (ae_of_all _ fun ζ ↦ by
-      have := sobolevDensity_nonneg (covectorPullback φ J' u g) ζ
-      positivity) (ae_of_all _ (prod_mono subset_rfl Ico_subset_Icc_self)))
-  rw [smul_eq_mul, abs_of_pos (positive.det_fderiv_realChart_cylindricalEndLift_pos ζ)]
-  refine (det_mul_norm_sq_le_mul_norm_covectorPullback_realChart_sq
-    (positive.hasDerivAt_cylindricalEndLift _) (hB _)).trans
-    (mul_le_mul_of_nonneg_left ?_ (by positivity))
-  rw [sobolevDensity_apply]
-  nlinarith [sq_nonneg ‖fderiv ℝ (covectorPullback φ J' u g) ζ stdComplexLineReal‖,
-    sq_nonneg ‖fderiv ℝ (covectorPullback φ J' u g) ζ stdComplexLineImag‖]
+      (prod_mono (subset_univ _) (by rw [zero_add]))) (fun _ _ ↦ hB _)
+    (integrableOn_sobolevDensity_covectorPullback_positive hJ hu hg hgc R)
 
 /-- **The adjoint on a cut-off cokernel element.** Let `D^* η = 0` and `‖J(z, u z)‖ ≤ B`, and let
 `χ` be a cutoff whose derivative vanishes off the annulus `n ≤ ‖w‖ ≤ 2n`, `n ≥ 1`, and has norm at

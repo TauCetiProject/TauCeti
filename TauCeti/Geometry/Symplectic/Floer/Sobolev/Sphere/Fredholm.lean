@@ -266,7 +266,6 @@ private theorem setIntegral_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPu
         sobolevDensity (covectorPullback (realChart (·⁻¹))
           (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u g) ζ := by
   set ι : ℝ × ℝ → ℝ × ℝ := realChart (·⁻¹)
-  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap
   set N : ℝ × ℝ → ℝ := fun z ↦ ‖Complex.equivRealProdCLM.symm z‖
   have hNc : Continuous N := Complex.equivRealProdCLM.symm.continuous.norm
   set S := {ζ : ℝ × ℝ | Complex.equivRealProdCLM.symm ζ ≠ 0} ∩ {ζ | N ζ < r⁻¹}
@@ -285,29 +284,11 @@ private theorem setIntegral_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPu
     · intro hz
       have hz0 : 0 < ‖Complex.equivRealProdCLM.symm z‖ := hr.trans hz
       exact ⟨norm_pos_iff.1 hz0, (inv_lt_inv₀ hz0 hr).2 hz⟩
-  have hint := integrableOn_sobolevDensity_covectorPullback_inv hJ hu hg hgc r⁻¹
-  rw [← hSimg, integral_image_eq_integral_of_eq_abs_det_smul hS
-    TauCeti.Complex.realChart_inv_involutive.injective.injOn
-    (fun ζ hζ ↦ (contDiffAt_realChart_inv hζ.1 (n := 1)).differentiableAt one_ne_zero)
-    (f := fun ζ ↦ |(fderiv ℝ ι ζ).det| • ‖g (ι ζ)‖ ^ 2) fun _ _ ↦ rfl, ← integral_const_mul]
-  have hSD : S ⊆ {ζ | N ζ ≤ r⁻¹} := fun ζ hζ ↦ show N ζ ≤ r⁻¹ from le_of_lt hζ.2
-  calc ∫ ζ in S, |(fderiv ℝ ι ζ).det| • ‖g (ι ζ)‖ ^ 2
-      ≤ ∫ ζ in S, (1 + B) ^ 2 * sobolevDensity (covectorPullback ι J' u g) ζ := by
-        refine integral_mono_of_nonneg (ae_of_all _ fun ζ ↦ by positivity)
-          ((hint.mono_set hSD).const_mul _) ((ae_restrict_iff' hS).2 (ae_of_all _ fun ζ hζ ↦ ?_))
-        have hdet : 0 ≤ (fderiv ℝ ι ζ).det := by
-          rw [TauCeti.Complex.det_fderiv_realChart_inv hζ.1]
-          positivity
-        simp only [smul_eq_mul, abs_of_nonneg hdet]
-        refine (det_mul_norm_sq_le_mul_norm_covectorPullback_realChart_sq (hasDerivAt_inv hζ.1)
-          (hB _)).trans (mul_le_mul_of_nonneg_left ?_ (sq_nonneg _))
-        rw [sobolevDensity_apply]
-        nlinarith [sq_nonneg ‖fderiv ℝ (covectorPullback ι J' u g) ζ stdComplexLineReal‖,
-          sq_nonneg ‖fderiv ℝ (covectorPullback ι J' u g) ζ stdComplexLineImag‖]
-    _ ≤ ∫ ζ in {ζ | N ζ ≤ r⁻¹}, (1 + B) ^ 2 * sobolevDensity (covectorPullback ι J' u g) ζ :=
-        setIntegral_mono_set (hint.const_mul _)
-          (ae_of_all _ fun ζ ↦ mul_nonneg (sq_nonneg _) (sobolevDensity_nonneg _ ζ))
-          (Eventually.of_forall hSD)
+  rw [← hSimg]
+  exact Floer.setIntegral_image_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPullback hS
+    (fun _ hζ ↦ show N _ ≤ r⁻¹ from le_of_lt hζ.2) (fun _ hζ ↦ differentiableAt_inv hζ.1)
+    TauCeti.Complex.realChart_inv_involutive.injective.injOn (fun _ _ ↦ hB _)
+    (integrableOn_sobolevDensity_covectorPullback_inv hJ hu hg hgc r⁻¹)
 
 /-- **The weighted adjoint of a cut-off cokernel element.** Let `D_u^* η = 0`, `‖J(z, u z)‖ ≤ B`,
 and `|w|⁴ ‖η(w)‖² ≤ S` on `|w| ≥ n`, with `1 ≤ n`. For a cutoff `χ` whose derivative vanishes on
