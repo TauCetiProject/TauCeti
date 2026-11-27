@@ -435,6 +435,14 @@ noncomputable def coefficientEquivOneVertexPlumbingLatticeHomology {w : ℤ} (hw
   PlumbingGraph.coefficientEquivLatticeHomologyOfUnique _ k h e.choose e.choose_spec.1
     e.choose_spec.2
 
+/-- The one-vertex plumbing with framing `w` has `|w|` characteristic orbits: for `w = -p < 0`
+these are the `p` spin-c structures of the lens space `L(p, 1)`, and for `w = 0` there are
+infinitely many, matching the infinite `H₁(S¹ × S²)`. -/
+theorem natCard_characteristicOrbits_oneVertexPlumbing (w : ℤ) :
+    Nat.card (oneVertexPlumbing w).characteristicOrbits = w.natAbs := by
+  rw [PlumbingGraph.natCard_characteristicOrbits, oneVertexPlumbing_intersectionMatrix,
+    Matrix.det_fin_one_of]
+
 /-- The rational square `k²` of a covector `k` on the one-vertex plumbing with framing `w` is
 `k₀² / w`, where `k₀ = k 0` is the single integer entry of `k`. -/
 theorem oneVertexPlumbing_covectorSquare (w : ℤ) (k : Fin 1 → ℤ) :
