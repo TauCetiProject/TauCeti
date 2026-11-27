@@ -77,6 +77,8 @@ Morse-theoretic definitions that use them.
   two fixed directions is continuous.
 * `TauCeti.fderiv_sum_comp_fderiv_apply`: the derivative of `y ↦ ∑ᵢ Lᵢ (Dω(y) bᵢ)` for fixed
   continuous linear maps `Lᵢ`, where the derivative of `ω` is differentiable.
+* `TauCeti.fderiv_sum_comp_smul_fderiv_add_mul_fderiv_smul_apply`: the product rule for frame
+  sums `y ↦ ∑ᵢ Lᵢ (c ∂ᵢφ(y) + t ∂ᵢf(y) φ(y))`, the shape of the summands of Witten's operators.
 * `ContDiffOn.hasFDerivWithinAt_fderiv_and_fderiv_fderiv`: the first and second derivatives of a
   map that is `C²` on an open set `U ⊇ s`, as derivatives within `s`.
 * `TauCeti.fderiv_fderiv_of_notMem_tsupport`: the second derivative vanishes off the support.
@@ -225,6 +227,30 @@ theorem fderiv_sum_comp_fderiv_apply {ι : Type*} [Fintype ι] (L : ι → F →
       ((ContinuousLinearMap.apply 𝕜 F (b i)).hasFDerivAt.comp x hω.hasFDerivAt)
   rw [(HasFDerivAt.fun_sum fun i _ ↦ h i).fderiv]
   simp
+
+/-- **The derivative of a frame sum of Witten summands**, by the product rule: for continuous
+linear maps `Lᵢ` and vectors `bᵢ`, with `∂ᵢ` the derivative in the direction `bᵢ`, the
+derivative of `y ↦ ∑ᵢ Lᵢ (c ∂ᵢφ + t ∂ᵢf φ)` at `x` in the direction `w` is
+`∑ᵢ Lᵢ (c ∂_w ∂ᵢφ + t ∂_w ∂ᵢf φ + t ∂ᵢf ∂_w φ)`, for `f` and `φ` that are `C²` at `x`. -/
+theorem fderiv_sum_comp_smul_fderiv_add_mul_fderiv_smul_apply {κ : Type*} [Fintype κ]
+    (L : κ → F →L[𝕜] G) (b : κ → E) {f : E → 𝕜} {φ : E → F} {x : E} (hf : ContDiffAt 𝕜 2 f x)
+    (hφ : ContDiffAt 𝕜 2 φ x) (t c : 𝕜) (w : E) :
+    fderiv 𝕜 (fun y ↦ ∑ i, L i (c • fderiv 𝕜 φ y (b i) + (t * fderiv 𝕜 f y (b i)) • φ y)) x w =
+      ∑ i, L i (c • fderiv 𝕜 (fderiv 𝕜 φ) x w (b i) + (t * fderiv 𝕜 (fderiv 𝕜 f) x w (b i)) • φ x +
+        (t * fderiv 𝕜 f x (b i)) • fderiv 𝕜 φ x w) := by
+  have h (i : κ) : HasFDerivAt
+      (fun y ↦ L i (c • fderiv 𝕜 φ y (b i) + (t * fderiv 𝕜 f y (b i)) • φ y))
+      ((L i).comp (c • (fderiv 𝕜 (fderiv 𝕜 φ) x).flip (b i) +
+        ((t * fderiv 𝕜 f x (b i)) • fderiv 𝕜 φ x +
+          (t • (fderiv 𝕜 (fderiv 𝕜 f) x).flip (b i)).smulRight (φ x)))) x :=
+    (L i).hasFDerivAt.comp x (((hφ.hasFDerivAt_fderiv_apply le_rfl (b i)).const_smul c).add
+      (((hf.hasFDerivAt_fderiv_apply le_rfl (b i)).const_mul t).smul
+        (hφ.differentiableAt (by norm_num)).hasFDerivAt))
+  rw [(HasFDerivAt.fun_sum fun i _ ↦ h i).fderiv]
+  simp only [sum_apply, ContinuousLinearMap.comp_apply, add_apply, smul_apply,
+    ContinuousLinearMap.flip_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg _ ?_
+  abel
 
 /-- The first and second derivatives of a map that is `C²` on an open set `U ⊇ s`, as
 derivatives within `s`: `g` has derivative `fderiv 𝕜 g` and `fderiv 𝕜 g` has derivative
