@@ -123,6 +123,16 @@ theorem chartSobolevRealization_def :
         (chartSobolevToLp_injective hμ hc ψ hψ hm) :=
   (rfl)
 
+/-- **Evaluation of the realization.** The realization sends the image in `L²(M, μ)` of
+`x ∈ H^m(M)` to the image of `chartSobolevExtension P m 0 x`. -/
+theorem chartSobolevRealization_apply {y : (chartSobolevRealization hμ hc ψ hψ P hm).domain}
+    {x : chartSobolevSpace hc ψ m} (hx : chartSobolevToLp hμ hc ψ hψ hm x = y) :
+    chartSobolevRealization hμ hc ψ hψ P hm y =
+      chartSobolevSpaceZeroEquivLp hμ hc ψ hψ (chartSobolevExtension hc ψ hc ψ P m 0 x) :=
+  -- The domain of the realization depends on it, so `chartSobolevRealization_def` cannot be
+  -- rewritten here; `domainOperator_apply` applies through the definitional unfolding instead.
+  ContinuousLinearMap.domainOperator_apply _ _ _ hx
+
 /-- Smooth functions lie in the domain of the realization. -/
 theorem toLp_mem_domain_chartSobolevRealization
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
@@ -140,14 +150,10 @@ theorem chartSobolevRealization_toLp (hP : P ∈ classicalPseudodifferentialOper
         ⟨ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u,
           toLp_mem_domain_chartSobolevRealization hμ hc ψ hψ P hm u⟩ =
       ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ (P u) := by
-  -- The domain of the realization depends on it, so `chartSobolevRealization_def` cannot be
-  -- rewritten here; `domainOperator_apply` applies through the definitional unfolding instead.
-  refine (ContinuousLinearMap.domainOperator_apply _ _ _
-    (y := ⟨_, toLp_mem_domain_chartSobolevRealization hμ hc ψ hψ P hm u⟩)
-    (chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u)).trans ?_
-  rw [ContinuousLinearMap.comp_apply,
+  rw [chartSobolevRealization_apply hμ hc ψ hψ P hm
+      (chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u),
     chartSobolevExtension_toChartSobolevSpace_of_mem hP hψ (by linarith),
-    ContinuousLinearEquiv.coe_coe, chartSobolevSpaceZeroEquivLp_toChartSobolevSpace]
+    chartSobolevSpaceZeroEquivLp_toChartSobolevSpace]
 
 /-- The domain `H^m(M)` of the realization is dense in `L²(M, μ)`: it contains the smooth
 functions. -/
