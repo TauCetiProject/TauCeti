@@ -418,12 +418,14 @@ theorem differentiableAt_complexHurwitzZeta_left {s c : ℂ} (hs : s ≠ 1) (hc 
     DifferentiableAt ℂ (fun w => complexHurwitzZeta w c) s :=
   (analyticAt_complexHurwitzZeta_left hs hc).differentiableAt
 
-/-- For fixed `s ≠ 1`, `c ↦ complexHurwitzZeta s c` is complex differentiable at every `c` with
+/-- For any `s : ℂ`, `c ↦ complexHurwitzZeta s c` is complex differentiable at every `c` with
 `0 < c.re`. -/
-theorem differentiableAt_complexHurwitzZeta_right {s c : ℂ} (hs : s ≠ 1) (hc : 0 < c.re) :
-    DifferentiableAt ℂ (complexHurwitzZeta s) c :=
-  ((analyticOnNhd_complexHurwitzZeta (s, c) ⟨hs, hc⟩).comp (f := fun w : ℂ => (s, w))
-    (analyticAt_const.prod analyticAt_id)).differentiableAt
+theorem differentiableAt_complexHurwitzZeta_right {s c : ℂ} (hc : 0 < c.re) :
+    DifferentiableAt ℂ (complexHurwitzZeta s) c := by
+  have hcore : DifferentiableAt ℂ (fun w => complexHurwitzZeta s w - (Gamma s)⁻¹ / (s - 1)) c :=
+    ((analyticOnNhd_complexHurwitzZeta_sub_inv_Gamma_div (s, c) hc).comp
+      (f := fun w : ℂ => (s, w)) (analyticAt_const.prod analyticAt_id)).differentiableAt
+  simpa using hcore.add (differentiableAt_const ((Gamma s)⁻¹ / (s - 1)))
 
 /-- Near `s = 1` on `𝓝[≠] 1`, `complexHurwitzZeta s c` agrees with
 `(s - 1) ^ (-1 : ℤ) • complexHurwitzZeta₁ s c`. -/
