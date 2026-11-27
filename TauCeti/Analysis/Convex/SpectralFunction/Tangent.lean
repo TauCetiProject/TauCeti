@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Function
-public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction
+public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction.Basic
 import TauCeti.Analysis.Convex.Strong
 import TauCeti.Analysis.Convex.Symmetric
 import TauCeti.Analysis.InnerProductSpace.SchurHorn

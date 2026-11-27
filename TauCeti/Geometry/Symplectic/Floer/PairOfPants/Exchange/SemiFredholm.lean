@@ -624,26 +624,14 @@ theorem exists_forall_le_mul_integral_floerLinearization_exchangePerturbation_ad
   set R₂ := max R₁ 2
   have hR₁ : R₁ ≤ R₂ := le_max_left _ _
   have h1 {r : ℝ} (hr : R₂ ≤ r) : 1 < r := by linarith [le_max_right R₁ 2]
-  have hK (q : Puncture) (hq : q ≠ inf) (z : ℝ × ℝ) (_ : z ∈ thricePuncturedSphereReal)
-      (hz : R₂ ≤ (positiveEndCoord q z).1) :
-      (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1) =
-          (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
-        (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) =
-          fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I := by
-    have h := exchangePerturbation_eq_of_pos_fst_positiveEndCoord (H := H) hc₀ hc₁ hq
-      (by linarith [h1 hz] : 0 < (positiveEndCoord q z).1)
-    exact ⟨funext fun x ↦ by rw [h], funext fun x ↦ by rw [h]⟩
-  have hK_inf (z : ℝ × ℝ) (hz : R₂ ≤ (positiveEndCoord inf z).1) :
-      (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm (z + (c, 0))) x 1) =
-          (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
-        (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm (z + (c, 0))) x
-            Complex.I) =
-          fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I := by
-    have h := exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord (H := H) hc₀ hc₁ (h1 hz)
-    exact ⟨funext fun x ↦ by rw [h], funext fun x ↦ by rw [h]⟩
   exact ω.exists_forall_le_mul_integral_floerLinearization_add_of_recentered hH hHs hc₀ hc₁ hX hx
     hnd hJe hJex (fun q hq ζ hζ ↦ hJeq q hq ζ (hR₁.trans hζ))
-    (fun ζ hζ ↦ hJeq_inf ζ (hR₁.trans hζ)) hK hK_inf hJ
+    (fun ζ hζ ↦ hJeq_inf ζ (hR₁.trans hζ))
+    (fun _ hq _ _ hz ↦
+      exchangePerturbation_components_eq_of_pos_fst_positiveEndCoord hc₀ hc₁ hq
+        (zero_lt_one.trans (h1 hz)))
+    (fun _ hz ↦ exchangePerturbation_add_components_eq_of_one_lt_fst_positiveEndCoord hc₀ hc₁
+      (h1 hz)) hJ
     (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) 1)
     (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) Complex.I) hu hc
     (fun q hq z hz hzR ↦ hF q hq z hz (hR₁.trans hzR)) (fun z hz ↦ hF_inf z (hR₁.trans hz)) hux

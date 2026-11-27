@@ -53,6 +53,8 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
   exactly when the polynomial is irreducible.
 * `Polynomial.count_one_map_natDegree_normalizedFactors`: a nonzero squarefree polynomial has as
   many linear normalized factors as distinct roots.
+* `Polynomial.sum_natDegree_toFinset_normalizedFactors`: the degrees of the distinct normalized
+  factors of a squarefree polynomial add up to its degree.
 * `Polynomial.monic_squarefree_normalizedFactors_prod`: a product of distinct monic irreducible
   polynomials is monic and squarefree, and its normalized factors are those polynomials.
 * `Polynomial.filter_aroots_eq_count_normalizedFactors_nsmul_aroots`: the roots of `g` in an
@@ -291,6 +293,18 @@ lemma count_one_map_natDegree_normalizedFactors {g : K[X]} (hsq : Squarefree g) 
       Fintype.card_subtype, Finset.card_def]
   rw [hlin, Nat.card_congr Factors.linearEquivRoots, ← Nat.card_eq_finsetCard]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun x ↦ by simp [hg])
+
+/-- For a squarefree polynomial over a field, the degrees of its distinct normalized irreducible
+factors add up to its degree. -/
+lemma sum_natDegree_toFinset_normalizedFactors {g : K[X]} (hsq : Squarefree g) :
+    ∑ p ∈ (normalizedFactors g).toFinset, p.natDegree = g.natDegree := by
+  -- Squarefreeness means that no normalized factor is repeated.
+  have hnodup : (normalizedFactors g).Nodup :=
+    (squarefree_iff_nodup_normalizedFactors hsq.ne_zero).mp hsq
+  calc ∑ p ∈ (normalizedFactors g).toFinset, p.natDegree
+      = ((normalizedFactors g).map natDegree).sum := by
+        rw [Finset.sum_eq_multiset_sum, Multiset.toFinset_val, hnodup.dedup]
+    _ = g.natDegree := sum_natDegree_normalizedFactors g
 
 /-- The product of a duplicate-free multiset of monic irreducible polynomials is monic and
 squarefree, and its normalized factors are the multiset itself. -/

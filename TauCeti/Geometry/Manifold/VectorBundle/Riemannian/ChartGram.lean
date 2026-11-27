@@ -55,6 +55,10 @@ API replace them.
   inner product in the basis given by the trivialization.
 * `Riemannian.Tensor.gram_basisAt_finBasis_reindex`: it is the Gram matrix of the basis of the
   tangent space given by the trivialization and a reindexing of the basis of the model space.
+* `Riemannian.Tensor.chartMetricForm`, `Riemannian.Tensor.chartMetricForm_apply` and
+  `Riemannian.Tensor.toMatrix_chartMetricForm`: the
+  metric read in the chart as a bilinear form on the model space, whose matrix in
+  `Module.finBasis ℝ E` is the chart Gram matrix at every point.
 * `Riemannian.Tensor.posDef_chartGramMatrix`: positive-definiteness on the base set.
 * `Riemannian.Tensor.chartGramMatrix_det_pos`: strict positivity of its determinant there.
 * `Riemannian.Tensor.contMDiffOn_chartGramMatrix_entry`: smoothness of Gram-matrix entries.
@@ -149,28 +153,6 @@ theorem chartLocalFrame_eq_symmL (α x : M) (i : Fin (Module.finrank ℝ E)) :
   · rw [chartLocalFrame_def, Trivialization.localFrame_apply_of_notMem _ _ hx,
       Trivialization.symmL_apply_of_notMem _ hx]
 
-/-- On a boundaryless manifold, the derivative of a function along the chart-local frame at `α` is
-the partial derivative, along the corresponding basis vector of the model space, of the function
-read in the extended chart at `α`. -/
-theorem mvfderiv_chartLocalFrame [I.Boundaryless] (α : M) {y : M}
-    (hy : y ∈ (chartAt H α).source) {f : M → ℝ} (hf : MDifferentiableAt I 𝓘(ℝ) f y)
-    (k : Fin (Module.finrank ℝ E)) :
-    mvfderiv I f y (chartLocalFrame (I := I) α k y) =
-      fderiv ℝ (f ∘ (extChartAt I α).symm) (extChartAt I α y) (Module.finBasis ℝ E k) := by
-  have hz : extChartAt I α y ∈ (extChartAt I α).target :=
-    (extChartAt I α).map_source (by rwa [extChartAt_source])
-  have hsymm : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I α).symm (extChartAt I α y) := by
-    have := mdifferentiableWithinAt_extChartAt_symm (I := I) hz
-    rwa [I.range_eq_univ, mdifferentiableWithinAt_univ] at this
-  have hy' : (extChartAt I α).symm (extChartAt I α y) = y :=
-    (extChartAt I α).left_inv (by rwa [extChartAt_source])
-  have h := mvfderiv_comp_apply_of_eq (g := f) (extChartAt I α y) (hy'.symm ▸ hf) hsymm hy'
-    (Module.finBasis ℝ E k)
-  rw [mvfderiv_eq_fderiv] at h
-  rw [chartLocalFrame_eq_symmL, TangentBundle.symmL_trivializationAt hy, I.range_eq_univ,
-    mfderivWithin_univ]
-  exact h.symm
-
 /-- Each member of `chartLocalFrame` is `C^n` on the tangent-trivialization base set. -/
 theorem contMDiffOn_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (α : M) (i : Fin (Module.finrank ℝ E)) :
@@ -227,6 +209,30 @@ theorem chartGramMatrix_eq_toMatrix (α : M) {x : M}
     simpa only [TangentBundle.trivializationAt_baseSet] using hx
   simp only [chartGramMatrix_apply, chartLocalFrame_apply_of_mem_chart_source α hx',
     LinearMap.BilinForm.toMatrix_apply, innerₗ_apply_apply]
+
+/-- The metric at `x`, read in the coordinates of the tangent trivialization at `α`: the bilinear
+form on the model space `E` pulled back along the inverse trivialization at `x`. -/
+def chartMetricForm (α x : M) : LinearMap.BilinForm ℝ E :=
+  (innerₗ (TangentSpace I x)).compl₁₂
+    ((trivializationAt E (TangentSpace I) α).symmL ℝ x).toLinearMap
+    ((trivializationAt E (TangentSpace I) α).symmL ℝ x).toLinearMap
+
+omit [FiniteDimensional ℝ E] in
+/-- The metric read in the chart pairs two vectors of the model space through the inner product of
+their images under the inverse trivialization. -/
+@[simp]
+theorem chartMetricForm_apply (α x : M) (u v : E) :
+    chartMetricForm (I := I) α x u v =
+      inner ℝ ((trivializationAt E (TangentSpace I) α).symmL ℝ x u)
+        ((trivializationAt E (TangentSpace I) α).symmL ℝ x v) := (rfl)
+
+/-- At every point, including outside the chart domain, the chart Gram matrix is the matrix of
+the metric read in the chart, in the basis `Module.finBasis ℝ E`. -/
+theorem toMatrix_chartMetricForm (α x : M) :
+    LinearMap.BilinForm.toMatrix (Module.finBasis ℝ E) (chartMetricForm (I := I) α x) =
+      chartGramMatrix (I := I) α x := by
+  ext i j
+  simp [chartLocalFrame_eq_symmL, LinearMap.BilinForm.toMatrix_apply]
 
 /-- The Gram matrix of the chart-local frame is positive-definite on the tangent-trivialization
 base set. -/

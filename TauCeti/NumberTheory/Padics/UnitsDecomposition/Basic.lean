@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 public import TauCeti.RingTheory.Henselian.Basic
-public import TauCeti.RingTheory.Henselian.Teichmuller
+public import TauCeti.RingTheory.Henselian.Teichmuller.Basic
 
 /-!
 # The Teichmüller splitting of `ℤ_pˣ`

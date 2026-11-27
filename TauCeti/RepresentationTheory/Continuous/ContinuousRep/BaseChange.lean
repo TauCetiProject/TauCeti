@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
+public import TauCeti.LinearAlgebra.Dual.BaseChange
 
 /-!
 # Extension of scalars commutes with the operations on continuous representations
@@ -19,7 +20,9 @@ extension of scalars `M ↦ B ⊗[A] M` (`TauCeti.ContinuousRep.baseChange`) com
 * twists by a continuous character `χ`, as an equality, the base-changed twist being by the image
   of `χ` in `Bˣ`;
 * tensor products, through
-  `TensorProduct.AlgebraTensorModule.distribBaseChange : B ⊗ (M ⊗ N) ≃ (B ⊗ M) ⊗_B (B ⊗ N)`.
+  `TensorProduct.AlgebraTensorModule.distribBaseChange : B ⊗ (M ⊗ N) ≃ (B ⊗ M) ⊗_B (B ⊗ N)`;
+* contragredients of finite projective modules, through
+  `TauCeti.Module.Dual.baseChangeEvaluationEquiv : B ⊗ M^∨ ≃ (B ⊗ M)^∨`.
 
 The raw reduction `TauCeti.ContinuousRep.reduction` to the residue field is a base change, so it
 commutes with these operations through the same identifications.
@@ -30,6 +33,7 @@ commutes with these operations through the same identifications.
 * `TauCeti.ContinuousRep.baseChangeProdIso`: `B ⊗ (M × N) ≅ (B ⊗ M) × (B ⊗ N)`.
 * `TauCeti.ContinuousRep.baseChange_twist`: `B ⊗ M(χ) = (B ⊗ M)(χ_B)`.
 * `TauCeti.ContinuousRep.baseChangeTprodIso`: `B ⊗ (M ⊗ N) ≅ (B ⊗ M) ⊗_B (B ⊗ N)`.
+* `TauCeti.ContinuousRep.baseChangeDualIso`: `B ⊗ M^∨ ≅ (B ⊗ M)^∨` for finite projective `M`.
 -/
 
 public section
@@ -141,5 +145,48 @@ theorem baseChangeTprodIso_symm_tmul (ρ : ContinuousRep Γ A M) (σ : Continuou
   simp [baseChangeTprodIso]
 
 end Tensor
+
+section Dual
+
+variable {Γ A M : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ] [CommRing A]
+  [TopologicalSpace A] [IsTopologicalRing A] [AddCommGroup M] [Module A M] [TopologicalSpace M]
+  [IsModuleTopology A M] [Module.Finite A M] [Module.Projective A M]
+  [TopologicalSpace (Module.Dual A M)] [IsModuleTopology A (Module.Dual A M)]
+
+variable (B : Type*) [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [Algebra A B]
+  [ContinuousSMul A B] [TopologicalSpace (B ⊗[A] M)] [IsModuleTopology B (B ⊗[A] M)]
+  [TopologicalSpace (B ⊗[A] Module.Dual A M)] [IsModuleTopology B (B ⊗[A] Module.Dual A M)]
+  [TopologicalSpace (Module.Dual B (B ⊗[A] M))] [IsModuleTopology B (Module.Dual B (B ⊗[A] M))]
+
+/-- **Extension of scalars commutes with contragredients** of finite projective modules:
+`B ⊗ M^∨ ≅ (B ⊗ M)^∨`, through `TauCeti.Module.Dual.baseChangeEvaluationEquiv`, which pairs
+`b ⊗ ψ` with `c ⊗ x` to `b c ψ(x)`. For `B` the residue field this says that the raw reduction of
+the contragredient is the contragredient of the raw reduction. -/
+def baseChangeDualIso (ρ : ContinuousRep Γ A M) :
+    Iso (ρ.dual.baseChange B) ((ρ.baseChange B).dual) :=
+  .ofEquiv (.mk (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := A) (A := B) (M := M))
+    fun g ↦ by
+      refine TensorProduct.AlgebraTensorModule.ext fun b ψ ↦ ?_
+      refine TensorProduct.AlgebraTensorModule.ext fun c x ↦ ?_
+      simp [Module.Dual.transpose_apply])
+
+/-- The dual base-change isomorphism is the scalar-extended evaluation
+`TauCeti.Module.Dual.baseChangeEvaluation`. -/
+theorem baseChangeDualIso_apply (ρ : ContinuousRep Γ A M) (z : B ⊗[A] Module.Dual A M) :
+    baseChangeDualIso B ρ z = TauCeti.Module.Dual.baseChangeEvaluation (R := A) (A := B) z := by
+  simp [baseChangeDualIso]
+
+@[simp]
+theorem baseChangeDualIso_symm_baseChange (ρ : ContinuousRep Γ A M) (ψ : Module.Dual A M) :
+    (baseChangeDualIso B ρ).symm (Module.Dual.baseChange B ψ) = 1 ⊗ₜ ψ := by
+  rw [← TauCeti.Module.Dual.baseChangeEvaluation_one_tmul, ← baseChangeDualIso_apply B ρ,
+    Iso.symm_apply_apply]
+
+@[simp]
+theorem baseChangeDualIso_tmul_tmul (ρ : ContinuousRep Γ A M) (b c : B) (ψ : Module.Dual A M)
+    (x : M) : baseChangeDualIso B ρ (b ⊗ₜ ψ) (c ⊗ₜ x) = b * c * algebraMap A B (ψ x) := by
+  simp [baseChangeDualIso]
+
+end Dual
 
 end TauCeti.ContinuousRep

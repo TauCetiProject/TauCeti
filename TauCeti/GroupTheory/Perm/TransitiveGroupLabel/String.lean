@@ -19,13 +19,13 @@ The reference transitive groups have zero-based indices, whereas the external la
 uses a one-based group number. `transitiveGroupLabelString` renders an index in this notation,
 and `parseTransitiveGroupLabel` recognizes exactly these strings, with no whitespace, leading
 zeroes, or suffixes. Recognition searches the finite reference table (currently degrees one
-through five), so unsupported degrees are rejected rather than assigned a spurious reference
+through six), so unsupported degrees are rejected rather than assigned a spurious reference
 group. `parseTransitiveGroupLabel_eq_some_iff` is both soundness and completeness of recognition;
 the returned index can be used directly with `TransitiveGroupLabel` and `referenceSubgroup`.
 
 ## References
 
-* LMFDB, *Transitive groups*, entries of degrees at most five.
+* LMFDB, *Transitive groups*, entries of degrees at most six.
 * G. Butler and J. McKay, *The transitive groups of degree up to eleven*.
 -/
 

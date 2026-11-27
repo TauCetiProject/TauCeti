@@ -24,7 +24,8 @@ The ratio `(√3 - 1) / (√2 - 1)` is irrational
 
 For an irrational real number `θ`, the only integer solution of `a + b * θ = 0` has
 `a = b = 0` (`Irrational.intCast_add_mul_eq_zero_iff`), and for nonzero `c` the multiple `c * θ`
-is not an integer multiple of `c` (`Irrational.intCast_mul_ne_mul`).
+is not an integer multiple of `c` (`Irrational.intCast_mul_ne_mul`). The natural multiples
+`n * θ` have pairwise distinct fractional parts (`Irrational.injective_fract_natCast_mul`).
 
 If `θ₁` or `θ₂` is irrational, an integer matrix of nonzero determinant cannot send `(θ₁, θ₂)`
 into `ℚ²`: for `j ≠ 0` and `a d - b c ≠ 0`, `j (a θ₁ + b θ₂)` and `j (c θ₁ + d θ₂)` are not both
@@ -38,6 +39,8 @@ twists of the powers and finite-cover pullbacks of a flat line over a torus with
   real number has both coefficients zero.
 * `Irrational.intCast_mul_ne_mul`: for irrational `a` and nonzero `c`, `k * c ≠ c * a` for every
   integer `k`.
+* `Irrational.injective_fract_natCast_mul`: for irrational `α` the fractional parts of the
+  multiples `n * α`, `n : ℕ`, are pairwise distinct.
 * `TauCeti.irrational_rpow_one_quarter_sq_iff`: for `0 ≤ x`,
   `Irrational ((x ^ (1 / 4 : ℝ)) ^ 2) ↔ Irrational √x`.
 * `Nat.Prime.irrational_rpow_one_quarter_sq`: for prime `p`,
@@ -153,5 +156,18 @@ theorem intCast_mul_ne_mul {a c : ℝ} (ha : Irrational a) (hc : c ≠ 0) (k : �
     (k : ℝ) * c ≠ c * a := by
   intro h
   exact ha.ne_int k (mul_left_cancel₀ hc (by rw [← h, mul_comm]))
+
+/-- For irrational `α`, the multiples `n * α`, `n : ℕ`, have pairwise distinct fractional
+parts. -/
+theorem injective_fract_natCast_mul {α : ℝ} (hα : Irrational α) :
+    Function.Injective fun n : ℕ => Int.fract (n * α) := by
+  intro m n h
+  obtain ⟨z, hz⟩ := Int.fract_eq_fract.1 h
+  by_contra hmn
+  have hne : (m : ℝ) - n ≠ 0 := sub_ne_zero.2 (Nat.cast_injective.ne hmn)
+  refine hα.ne_rat ((z : ℚ) / ((m : ℚ) - n)) ?_
+  push_cast
+  rw [eq_div_iff hne, ← hz]
+  ring
 
 end Irrational

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Smooth
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.TotallyReal.Trivialization
 public import TauCeti.Topology.VectorBundle.RealForm
 public import TauCeti.Topology.Algebra.Module.ComplexSmulI
@@ -167,11 +167,6 @@ private def targetBase (c : SmoothCollar n ∞ M) {ε : ℝ} (hε : ε < 1) :
     c.contMDiff.comp (contMDiff_fst.prodMk
       ((contMDiff_inclusion hsub).comp contMDiff_snd))⟩
 
-
-local instance depthHausdorff (ε : ℝ) : T2Space (normalIioOpens ε) := by
-  let : T2Space (EuclideanHalfSpace 1) :=
-    (𝓡∂ 1).isClosedEmbedding.toIsEmbedding.t2Space
-  infer_instance
 
 variable (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
   [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F]

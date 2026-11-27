@@ -401,6 +401,11 @@ theorem sectionDegree_def (s : E) :
       Real.log (Submodule.span (𝓞 K) {s}).cardQuot - ∑ σ : K →+* ℂ, Real.log (E.norm σ s) :=
   sectionDegreeOfNorms_def _ _
 
+/-- The degree computed with `s` is `TauCeti.sectionDegreeOfNorms` for the norms of `E`. -/
+theorem sectionDegree_eq_sectionDegreeOfNorms (s : E) :
+    E.sectionDegree s = sectionDegreeOfNorms E.norm s :=
+  (rfl)
+
 /-- The degree of `Ō_K` computed with the section `1` is zero. -/
 @[simp]
 theorem sectionDegree_trivial_one : (trivial K).sectionDegree 1 = 0 :=

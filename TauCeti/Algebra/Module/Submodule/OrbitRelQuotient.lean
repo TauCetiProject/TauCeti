@@ -17,7 +17,8 @@ A submodule `p` of a module `M` over a ring acts on `M` by translation, and the 
 action is the standard carrier `AddAction.orbitRel.Quotient p M` for quotients of `M` by
 translations, for instance for a complex torus `E ⧸ Λ` built from a lattice `Λ` in a complex
 vector space `E`. Two points lie in one orbit exactly when their difference lies in `p`, which is
-also the relation defining the quotient module `M ⧸ p`.
+also the relation defining the quotient module `M ⧸ p`; so the orbits are the fibres of any linear
+map with kernel `p`.
 
 This file transfers the additive group structure of `M ⧸ p` to the orbit space, so that the orbit
 projection is additive, and records the resulting additive equivalence between the two quotients.
@@ -41,6 +42,8 @@ linear maps.
 
 ## Main declarations
 
+* `LinearMap.apply_eq_apply_iff_exists_smul_eq`: the fibres of a linear map with kernel `p` are
+  the orbits of `Multiplicative p` acting by translations.
 * `Submodule.orbitRelQuotientAddEquiv`: the orbit space of translation by `p` is additively
   equivalent to the quotient module `M ⧸ p`, by an equivalence sending the orbit of `x` to the
   class of `x`.
@@ -87,6 +90,17 @@ theorem Submodule.orbitRel_apply_iff_sub_mem {x y : M} :
     AddAction.orbitRel p M x y ↔ x - y ∈ p :=
   (QuotientAddGroup.rightRel_apply (s := p.toAddSubgroup)).trans <| by
     rw [← sub_eq_add_neg]; exact sub_mem_comm_iff
+
+/-- **The fibres of a linear map with kernel `p` are the orbits of translations along `p`**, for
+the action of `p` as the multiplicative group `Multiplicative p`. -/
+theorem LinearMap.apply_eq_apply_iff_exists_smul_eq {N : Type*} [AddCommGroup N] [Module R N]
+    {p : Submodule R M} (f : M →ₗ[R] N) (hker : ker f = p) (x y : M) :
+    f x = f y ↔ ∃ g : Multiplicative p, g • y = x := by
+  rw [← sub_eq_zero, ← map_sub, ← mem_ker, hker]
+  refine ⟨fun h ↦ ⟨.ofAdd ⟨x - y, h⟩, ?_⟩, fun ⟨g, hg⟩ ↦ ?_⟩
+  · rw [ofAdd_smul, Submodule.vadd_def, vadd_eq_add, Submodule.coe_mk, sub_add_cancel]
+  · rw [← hg, ← ofAdd_toAdd g, ofAdd_smul, Submodule.vadd_def, vadd_eq_add, add_sub_cancel_right]
+    exact (Multiplicative.toAdd g).property
 
 /-- The additive group structure on the orbit space of translation by `p`, transferred from the
 quotient module `M ⧸ p`, which is the same quotient of `M`. -/
@@ -142,6 +156,11 @@ def Submodule.orbitRelQuotientMkHom : M →+ AddAction.orbitRel.Quotient p M whe
 theorem Submodule.coe_orbitRelQuotientMkHom :
     ⇑p.orbitRelQuotientMkHom = _root_.Quotient.mk (AddAction.orbitRel p M) :=
   (rfl)
+
+/-- The orbit projection for translation by `p` is surjective. -/
+theorem Submodule.orbitRelQuotientMkHom_surjective :
+    Function.Surjective p.orbitRelQuotientMkHom :=
+  _root_.Quotient.mk_surjective
 
 /-- Two points of `M` have the same image in the orbit space of translation by `p` exactly when
 their difference lies in `p`. -/

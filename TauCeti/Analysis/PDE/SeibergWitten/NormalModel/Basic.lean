@@ -1081,7 +1081,7 @@ theorem flatDeformation_familyNormalModel_eq_zero_iff (x : ℂ → EuclideanSpac
   -- The Dirac row vanishes exactly when both of its coefficients do.
   have hD (A B : ℂ) : A • ρ (ι Q (e 0)) u₀ + B • ρ (ι Q (e 2)) u₀ = 0 ↔ A = 0 ∧ B = 0 := by
     have h := sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ h₀ h₂
-      hρ hu₀ ![A, 0, B, 0]
+      hu₀ ![A, 0, B, 0]
     simpa [Fin.sum_univ_four, hu₀'] using h
   have hC (a b : ℝ) : (2 * ((a : ℂ) + b * I) = 0) ↔ a = 0 ∧ b = 0 := by
     constructor
