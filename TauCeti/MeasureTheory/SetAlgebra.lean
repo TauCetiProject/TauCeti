@@ -23,6 +23,8 @@ on the signs of finitely many functions of the class.
   algebra of sets form an algebra of sets.
 * `MeasureTheory.isSetAlgebra_measurableSet`, `MeasureTheory.isSetRing_measurableSet`: the
   measurable sets form an algebra, hence a ring, of sets.
+* `MeasureTheory.isSetAlgebra_iUnion_measurableSet`: the sets measurable for some member of a
+  nonempty directed family of σ-algebras form an algebra of sets.
 * `MeasureTheory.isSetRing_nullMeasurableSet`: the null-measurable sets of a measure form a ring
   of sets.
 -/
@@ -87,6 +89,21 @@ theorem isSetAlgebra_measurableSet : IsSetAlgebra {s : Set α | MeasurableSet s}
 /-- The measurable sets form a ring of sets. -/
 theorem isSetRing_measurableSet : IsSetRing {s : Set α | MeasurableSet s} :=
   isSetAlgebra_measurableSet.isSetRing
+
+omit [MeasurableSpace α] in
+/-- The sets measurable for some member of a nonempty directed family of σ-algebras form an algebra
+of sets. -/
+theorem isSetAlgebra_iUnion_measurableSet {ι : Type*} [Nonempty ι] {m : ι → MeasurableSpace α}
+    (hm : Directed (· ≤ ·) m) : IsSetAlgebra (⋃ i, {s : Set α | MeasurableSet[m i] s}) where
+  empty_mem := mem_iUnion.2 ⟨Classical.arbitrary ι, @MeasurableSet.empty α (m _)⟩
+  compl_mem s hs := by
+    obtain ⟨i, hi⟩ := mem_iUnion.1 hs
+    exact mem_iUnion.2 ⟨i, hi.compl⟩
+  union_mem s t hs ht := by
+    obtain ⟨i, hi⟩ := mem_iUnion.1 hs
+    obtain ⟨j, hj⟩ := mem_iUnion.1 ht
+    obtain ⟨k, hik, hjk⟩ := hm i j
+    exact mem_iUnion.2 ⟨k, (hik _ hi).union (hjk _ hj)⟩
 
 /-- The null-measurable sets of a measure form a ring of sets. -/
 theorem isSetRing_nullMeasurableSet {μ : Measure α} :
