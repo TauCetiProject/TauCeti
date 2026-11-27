@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Dimension
-public import TauCeti.Analysis.PDE.Vortex.SobolevScale
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Scale
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.MeasureTheory.Function.L2Space
 import Mathlib.Algebra.Module.Submodule.Equiv

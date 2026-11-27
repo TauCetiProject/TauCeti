@@ -5,17 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.LocalFactor
+public import Mathlib.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Quadratic.LocalFactor
 
 /-!
-# Descent of quadratic Dirichlet characters on powers of a fixed modulus
+# Quadratic Dirichlet characters at powers of a fixed modulus
 
-When descending a character of order dividing two between positive powers of a fixed modulus,
-only the dyadic conductor requires a restriction on the smaller power: it must be divisible by
-`8` if the base is even. In particular, the cube always suffices. This generalizes the descent
-to the square in `New.factorsThrough_sq_of_sq_eq_one` from `Lib/Analytic/Primes.lean` in
-lsernau/grh-lean (commit `72fead1`), using the bounds on the prime exponents in quadratic
-conductors.
+A character whose square is principal descends to a smaller positive power of the same
+base provided the smaller level retains the factors of `4` and `8` of the larger one.
+For descent to `m ^ 2`, the factor of `4` is retained automatically. The cube retains both
+factors, so a single fixed level suffices without any restriction on the base modulus.
+
+Descent to the square is the statement of `New.factorsThrough_sq_of_sq_eq_one` in
+`grh/src/Lib/Analytic/Primes.lean` of https://github.com/lsernau/grh-lean (rev. `72fead1`).
+Here it is deduced from the bounds on the prime exponents of a quadratic conductor.
 -/
 
 public section
@@ -23,27 +26,39 @@ public section
 namespace DirichletCharacter
 
 /-- A character of order dividing two modulo `m ^ k` descends to `m ^ j` if `0 < j ≤ k`
-and `m ^ j` is divisible by `8` whenever `m` is even. -/
+and the smaller level retains the factors of `4` and `8` of the larger level. -/
 theorem factorsThrough_pow_of_sq_eq_one {R : Type*} [CommMonoidWithZero R] {m j k : ℕ}
     (χ : DirichletCharacter R (m ^ k)) (hχ : χ ^ 2 = 1) (hj : 0 < j) (hjk : j ≤ k)
-    (hm : 2 ∣ m → 8 ∣ m ^ j) : χ.FactorsThrough (m ^ j) := by
-  rcases eq_or_ne m 0 with rfl | hm₀
-  · simpa [Nat.zero_pow hj, Nat.zero_pow (hj.trans_le hjk)] using FactorsThrough.same_level χ
-  let : NeZero (m ^ k) := ⟨pow_ne_zero _ hm₀⟩
-  refine FactorsThrough.mono χ χ.factorsThrough_conductor ?_
-    (pow_dvd_pow_of_dvd_of_le (dvd_refl m) hjk)
-  refine (Nat.factorization_prime_le_iff_dvd χ.conductor_ne_zero (pow_ne_zero _ hm₀)).mp ?_
+    (h₄ : 4 ∣ m ^ k → 4 ∣ m ^ j) (h₈ : 8 ∣ m ^ k → 8 ∣ m ^ j) : χ.FactorsThrough (m ^ j) := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simpa only [Nat.zero_pow hj, Nat.zero_pow (hj.trans_le hjk)] using FactorsThrough.same_level χ
+  let : NeZero (m ^ k) := ⟨pow_ne_zero _ hm⟩
+  refine FactorsThrough.mono χ χ.factorsThrough_conductor ?_ (pow_dvd_pow m hjk)
+  refine (Nat.factorization_prime_le_iff_dvd χ.conductor_ne_zero (pow_ne_zero _ hm)).mp ?_
   intro p hp
   by_cases hd : p ∣ χ.conductor
   · have hpm := hp.dvd_of_dvd_pow (hd.trans χ.conductor_dvd_level)
-    by_cases hp₂ : p = 2
-    · subst p
-      have hm₂ : 3 ≤ (m ^ j).factorization 2 :=
-        (Nat.Prime.pow_dvd_iff_le_factorization Nat.prime_two (pow_ne_zero _ hm₀)).mp (hm hpm)
-      have h := χ.factorization_two_conductor_eq_zero_or_two_or_three_of_sq_eq_one hχ
-      omega
+    rcases eq_or_ne p 2 with rfl | hp₂
+    · have hsource (e : ℕ) := Nat.prime_two.pow_dvd_iff_le_factorization (k := e)
+        χ.conductor_ne_zero
+      have htarget (e : ℕ) := Nat.prime_two.pow_dvd_iff_le_factorization (k := e) (pow_ne_zero j hm)
+      rcases χ.factorization_two_conductor_eq_zero_or_two_or_three_of_sq_eq_one hχ with h | h | h
+      · simp [h]
+      · exact h.le.trans ((htarget 2).mp (h₄ (((hsource 2).mpr h.ge).trans χ.conductor_dvd_level)))
+      · exact h.le.trans ((htarget 3).mp (h₈ (((hsource 3).mpr h.ge).trans χ.conductor_dvd_level)))
     · exact (χ.factorization_conductor_le_one_of_sq_eq_one hχ hp hp₂).trans
-        (hp.factorization_pos_of_dvd (pow_ne_zero _ hm₀) (hpm.trans (dvd_pow_self _ hj.ne')))
+        (hp.factorization_pos_of_dvd (pow_ne_zero _ hm) (hpm.trans (dvd_pow_self _ hj.ne')))
   · simp [Nat.factorization_eq_zero_of_not_dvd hd]
+
+/-- A character of order dividing two modulo `m ^ k` descends to `m ^ 2` if `2 ≤ k`
+and the reduction does not lose a factor of `8`. The condition at `2` is necessary:
+a primitive character of order two modulo `8` need not descend modulo `4`. -/
+theorem factorsThrough_sq_of_sq_eq_one {R : Type*} [CommMonoidWithZero R] {m k : ℕ}
+    (χ : DirichletCharacter R (m ^ k)) (hχ : χ ^ 2 = 1) (hk : 2 ≤ k)
+    (h₈ : 8 ∣ m ^ k → 8 ∣ m ^ 2) : χ.FactorsThrough (m ^ 2) := by
+  apply χ.factorsThrough_pow_of_sq_eq_one hχ (by decide) hk ?_ h₈
+  intro h₄
+  exact pow_dvd_pow_of_dvd_of_le (Nat.prime_two.dvd_of_dvd_pow (dvd_trans (by decide : 2 ∣ 4) h₄))
+    le_rfl
 
 end DirichletCharacter
