@@ -164,9 +164,9 @@ theorem IsKSheaf.pullback (hf : Function.Injective f) (hP : P.IsKSheaf) :
       have hK' := (hP.nonempty_isColimit_coconeOfCompacts
         (Compacts.map f f.hom.continuous K'.unop)).some
       refine hK'.hom_ext fun L ↦ ?_
-      have hKL : L.unop.val ∈ (Compacts.map f f.hom.continuous K).compactNhds := fun x ↦
-        L.unop.property ⟨x, Set.image_mono
-          (Compacts.subset_of_mem_compactNhds K'.unop.property) x.property⟩
+      have hKL : L.unop.val ∈ (Compacts.map f f.hom.continuous K).compactNhds :=
+        Compacts.compactNhds_anti (Compacts.map_mono _ f.hom.continuous
+          (Compacts.subset_of_mem_compactNhds K'.unop.property)) L.unop.property
       have h := hK.fac (imageCocone f s) (op ⟨_, hKL⟩)
       rw [imageCocone_ι_app f s (K' := K'.unop)
         (Compacts.subset_of_mem_compactNhds L.unop.property)] at h
