@@ -22,8 +22,9 @@ For a potential `q : ℝ → ℂ` and its scattering functions `a = (G_q)₂₂`
 * `TauCeti.diracScatteringA_conj_potential`, `TauCeti.diracScatteringB_conj_potential`: for any
   potential `q`, `a_{conj q}(t, -conj z) = conj a_q(t, z)` and
   `b_{conj q}(t, -conj z) = conj b_q(t, z)`;
-* `TauCeti.diracScatteringA_neg_conj`, `TauCeti.diracScatteringB_neg_conj`: hence, for a real
-  potential, `a(t, -conj z) = conj a(t, z)` and `b(t, -conj z) = conj b(t, z)`;
+* `TauCeti.diracScatteringA_neg_conj_of_im_eq_zero`,
+  `TauCeti.diracScatteringB_neg_conj_of_im_eq_zero`: hence, for a real potential,
+  `a(t, -conj z) = conj a(t, z)` and `b(t, -conj z) = conj b(t, z)`;
 * `TauCeti.im_diracScatteringA_I_mul`, `TauCeti.im_diracScatteringB_I_mul`: hence `a(t, iy)` and
   `b(t, iy)` are real;
 * `TauCeti.diracScatteringA_spectralParam_zero_of_im_eq_zero`,
@@ -109,7 +110,7 @@ private theorem diracScatteringMatrix_conj_of_im_eq_zero (hre : ∀ s ∈ Icc 0 
 
 /-- **Real potentials.** If `q` is integrable and real on `[0, t]` with `t ≥ 0`, then
 `a(t, -conj z) = conj a(t, z)`. -/
-theorem diracScatteringA_neg_conj (hq : IntegrableOn q (Icc 0 t))
+theorem diracScatteringA_neg_conj_of_im_eq_zero (hq : IntegrableOn q (Icc 0 t))
     (hre : ∀ s ∈ Icc 0 t, (q s).im = 0) (ht : 0 ≤ t) (z : ℂ) :
     diracScatteringA q t (-conj z) = conj (diracScatteringA q t z) := by
   rw [diracScatteringA_def, ← diracScatteringMatrix_conj_of_im_eq_zero hre ht,
@@ -117,7 +118,7 @@ theorem diracScatteringA_neg_conj (hq : IntegrableOn q (Icc 0 t))
 
 /-- **Real potentials.** If `q` is integrable and real on `[0, t]` with `t ≥ 0`, then
 `b(t, -conj z) = conj b(t, z)`. -/
-theorem diracScatteringB_neg_conj (hq : IntegrableOn q (Icc 0 t))
+theorem diracScatteringB_neg_conj_of_im_eq_zero (hq : IntegrableOn q (Icc 0 t))
     (hre : ∀ s ∈ Icc 0 t, (q s).im = 0) (ht : 0 ≤ t) (z : ℂ) :
     diracScatteringB q t (-conj z) = conj (diracScatteringB q t z) := by
   rw [diracScatteringB_def, ← diracScatteringMatrix_conj_of_im_eq_zero hre ht,
@@ -128,7 +129,7 @@ theorem diracScatteringB_neg_conj (hq : IntegrableOn q (Icc 0 t))
 theorem im_diracScatteringA_I_mul (hq : IntegrableOn q (Icc 0 t))
     (hre : ∀ s ∈ Icc 0 t, (q s).im = 0) (ht : 0 ≤ t) (y : ℝ) :
     (diracScatteringA q t (I * y)).im = 0 := by
-  have h := diracScatteringA_neg_conj hq hre ht (I * y)
+  have h := diracScatteringA_neg_conj_of_im_eq_zero hq hre ht (I * y)
   rw [map_mul, conj_I, conj_ofReal, neg_mul, neg_neg] at h
   exact conj_eq_iff_im.1 h.symm
 
@@ -137,7 +138,7 @@ theorem im_diracScatteringA_I_mul (hq : IntegrableOn q (Icc 0 t))
 theorem im_diracScatteringB_I_mul (hq : IntegrableOn q (Icc 0 t))
     (hre : ∀ s ∈ Icc 0 t, (q s).im = 0) (ht : 0 ≤ t) (y : ℝ) :
     (diracScatteringB q t (I * y)).im = 0 := by
-  have h := diracScatteringB_neg_conj hq hre ht (I * y)
+  have h := diracScatteringB_neg_conj_of_im_eq_zero hq hre ht (I * y)
   rw [map_mul, conj_I, conj_ofReal, neg_mul, neg_neg] at h
   exact conj_eq_iff_im.1 h.symm
 
@@ -178,15 +179,12 @@ theorem diracScatteringMatrix_const_zero (c : ℂ) (t : ℝ) :
   generalize (Real.sinh (t * ‖c‖) : ℂ) / ‖c‖ = S
   have hc : (c.re : ℂ) + c.im * I = c := re_add_im c
   have hcc : (c.re : ℂ) - c.im * I = conj c := by apply Complex.ext <;> simp
+  rw [Matrix.one_fin_two]
+  simp only [mul_zero, exp_zero, Matrix.smul_of, smul_cons, smul_eq_mul, Matrix.smul_empty,
+    of_add_of, cons_add_cons, empty_add_empty, Matrix.mul_fin_two]
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp only [mul_zero, exp_zero, cons_mul, Nat.succ_eq_add_one, Nat.reduceAdd, vecMul_cons,
-      head_cons, one_smul, tail_cons, zero_smul, empty_vecMul, add_zero, Matrix.symm_of, zero_add,
-      Matrix.empty_mul, coe_rowEquiv, row_of, smul_of, smul_cons, smul_eq_mul, mul_neg,
-      Matrix.smul_empty, one_div, Fin.zero_eta, Fin.isValue, Fin.mk_one, Matrix.mul_apply, of_apply,
-      cons_val', vecMul, dotProduct, Matrix.add_apply, Matrix.smul_apply, Matrix.one_apply, mul_ite,
-      mul_one, cons_val_fin_one, Fin.sum_univ_two, cons_val_zero, one_mul, cons_val_one, neg_mul,
-      ↓reduceIte, one_ne_zero, zero_ne_one, neg_neg]
+    simp only [Fin.zero_eta, Fin.mk_one, of_apply, cons_val_zero, cons_val_one]
   · linear_combination (S * c.re - C) / 2 * I_sq
   · linear_combination (C - S * c.re) / 2 * I_sq + S * hcc
   · linear_combination (C - S * c.re) / 2 * I_sq + S * hc
