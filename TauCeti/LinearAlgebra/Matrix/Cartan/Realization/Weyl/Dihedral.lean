@@ -153,7 +153,7 @@ theorem orderOf_weylSimple_mul_weylSimple_eq_four {I K H : Type*} [Field K]
   have heval : Dual.eval K H (R.coroot i) (R.root j) *
       Dual.eval K H (R.coroot j) (R.root i) = 2 := by
     simpa [R.root_coroot] using hprod
-  rw [R.orderOf_weylSimple_mul_weylSimple_eq_orderOf_simpleReflection_mul_simpleReflection,
+  rw [← Subgroup.orderOf_coe, Subgroup.coe_mul, coe_weylSimple, coe_weylSimple,
     R.simpleReflection_eq_reflection hdiag i hfi, R.simpleReflection_eq_reflection hdiag j hfj]
   refine Module.orderOf_reflection_mul_reflection_eq_four_of_not_commute heval fun hcomm ↦ ?_
   rw [← R.simpleReflection_eq_reflection hdiag i hfi,

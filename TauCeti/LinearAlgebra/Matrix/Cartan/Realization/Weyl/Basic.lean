@@ -249,14 +249,6 @@ theorem weylSimple_injective : Function.Injective (R.weylSimple hA) := fun _ _ h
 theorem orderOf_weylSimple (i : I) : orderOf (R.weylSimple hA i) = 2 :=
   orderOf_eq_prime (R.weylSimple_mul_self hA i ▸ sq _) (R.weylSimple_ne_one hA i)
 
-/-- The order of `sᵢ * sⱼ` in `R.weylGroup` equals the order of the product of the ambient
-simple reflections over any field. -/
-theorem orderOf_weylSimple_mul_weylSimple_eq_orderOf_simpleReflection_mul_simpleReflection
-    (i j : I) :
-    orderOf (R.weylSimple hA i * R.weylSimple hA j) =
-      orderOf (R.simpleReflection hA i * R.simpleReflection hA j) := by
-  rw [← Subgroup.orderOf_coe, Subgroup.coe_mul, coe_weylSimple, coe_weylSimple]
-
 /-- If `A i j = 0` and `A j i = 0`, the simple reflections `sᵢ` and `sⱼ` commute in the Weyl
 group. -/
 theorem commute_weylSimple_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A j i = 0) :
@@ -526,7 +518,7 @@ theorem orderOf_weylSimple_mul_weylSimple {I K H : Type*} [DecidableEq I] [Field
     orderOf (R.weylSimple (diag_map_intCast hdiag) i *
         R.weylSimple (diag_map_intCast hdiag) j) =
       coxeterMatrixOfGeneralizedCartanMatrix A i j := by
-  rw [R.orderOf_weylSimple_mul_weylSimple_eq_orderOf_simpleReflection_mul_simpleReflection]
+  rw [← Subgroup.orderOf_coe, Subgroup.coe_mul, coe_weylSimple, coe_weylSimple]
   exact R.orderOf_simpleReflection_mul_simpleReflection (diag_map_intCast hdiag) hzero hprod
 
 section RankOne
