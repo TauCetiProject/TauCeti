@@ -16,7 +16,8 @@ public import TauCeti.Examples.Combinatorics.Tiling.Lozenge.Cochain
   satisfies the hypothesis of `TauCeti.not_isSimplyConnectedRegion_of_hole`, which shows again that
   it is not simply connected.
 * The five faces at the origin other than `W(0)` with `Q = {W(0)}` do not: `B(e₁)` shares the edge
-  `(e₁, 2)` with `W(0)` and lies in neither set. That region is simply connected, by shelling.
+  `(e₁, 2)` with `W(0)` and lies in neither set. That region is simply connected, by shelling, and
+  the faces outside it are connected through shared edges.
 * For `R = ∅` the conclusion holds trivially, since simple connectivity includes nonemptiness.
 -/
 
@@ -55,7 +56,7 @@ example : ∃ g : TriFace, ∃ e ∈ (⟨(0, 0), true⟩ : TriFace).edges, e ∈
 /-- The five faces at the origin other than `W(0)` are simply connected, by shelling in the order
 `B(0)`, `W(−e₁)`, `B(−e₃)`, `W(−e₃)`, `B(−e₂)`, each glued along one edge, adding one new
 vertex. -/
-example : IsSimplyConnectedRegion fiveFaces := by
+theorem isSimplyConnectedRegion_fiveFaces : IsSimplyConnectedRegion fiveFaces := by
   have h1 := isSimplyConnectedRegion_singleton (⟨(0, 0), false⟩ : TriFace)
   have h2 := h1.insert_of_notMem_regionVertices (f := ⟨(-1, 0), true⟩) (i := 1) (p := (-1, 0))
     (by simp) (by simp) (by simp [Prod.ext_iff])
@@ -65,6 +66,11 @@ example : IsSimplyConnectedRegion fiveFaces := by
     (by simp) (by simp) (by simp [Prod.ext_iff])
   exact h4.insert_of_notMem_regionVertices (f := ⟨(0, -1), false⟩) (i := 1) (p := (1, 0))
     (by simp) (by simp) (by simp [Prod.ext_iff])
+
+/-- The faces outside the five faces are connected through shared edges, as for every finite simply
+connected region; in particular `W(0)` is joined to the rest through `B(e₁)`. -/
+example : (hexGraph.induce fiveFacesᶜ).Connected :=
+  isSimplyConnectedRegion_fiveFaces.connected_induce_compl (Set.toFinite _)
 
 /-- The empty region is not simply connected. -/
 example : ¬ IsSimplyConnectedRegion ∅ := fun h => Set.not_nonempty_empty h.nonempty

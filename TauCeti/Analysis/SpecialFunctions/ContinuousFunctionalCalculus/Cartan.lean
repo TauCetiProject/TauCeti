@@ -45,7 +45,7 @@ groups (`Matrix.SpecialLinearGroup.cartanHomeomorph`) and, more generally, for r
 stable under conjugate transpose; they fail for a discrete subgroup such as the powers of a
 positive diagonal matrix, which is not a product of this form. For a closed subgroup of
 `GL(n, ℝ)` or `GL(n, ℂ)` with finitely many connected components, the line hypothesis is
-discharged in `TauCeti/Analysis/Matrix/Cartan/Closed.lean`
+discharged in `TauCeti/Analysis/Matrix/Cartan/Closed/Basic.lean`
 (`Subgroup.cartanHomeomorphOfIsClosed`).
 
 ## Main declarations

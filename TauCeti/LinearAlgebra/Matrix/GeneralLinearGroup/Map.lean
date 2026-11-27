@@ -22,8 +22,13 @@ all of which a construction transporting a group of matrices along a change of s
 
 ## Main results
 
+* `Matrix.GeneralLinearGroup.piEquiv_apply_eq_map_eval`: a component of a matrix over a product
+  is its image under evaluation.
 * `Matrix.GeneralLinearGroup.map_injective`: entrywise application of an injective ring hom is
   injective on general linear groups.
+* `Matrix.GeneralLinearGroup.mem_range_map_iff_of_injective`: along an injective ring hom `f`, an
+  invertible matrix comes from the source exactly when its entries and those of its inverse lie in
+  the range of `f`.
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
 * `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff`: the kernel of reduction modulo an ideal
   `I` consists of the matrices congruent to the identity matrix entrywise modulo `I`.
@@ -46,11 +51,43 @@ namespace Matrix.GeneralLinearGroup
 
 variable {n R S : Type*} [DecidableEq n] [Fintype n] [CommRing R] [CommRing S]
 
+/-- The component of an invertible matrix over a product of rings is its image under the
+corresponding evaluation homomorphism. -/
+theorem piEquiv_apply_eq_map_eval {ι : Type*} (A : ι → Type*) [∀ i, CommRing (A i)]
+    (g : GL n (∀ i, A i)) (i : ι) : piEquiv A g i = map (Pi.evalRingHom A i) g := by
+  ext j k
+  simp
+
 /-- **Entrywise application of an injective ring hom is injective on `GL n`.** A matrix over `R`
 is determined by its image over `S`, and a unit by its underlying matrix. -/
 theorem map_injective {f : R →+* S} (hf : Function.Injective f) :
     Function.Injective (Matrix.GeneralLinearGroup.map (n := n) f) :=
   Units.map_injective (Matrix.map_injective hf)
+
+/-- **Which invertible matrices come from `R`** along an injective ring hom `f : R →+* S`: those
+whose entries, and whose inverse's entries, all lie in the range of `f`. Invertibility over `R` is
+a condition on the inverse rather than a consequence of the determinant being a unit of `S`, so
+the second clause cannot be dropped. -/
+theorem mem_range_map_iff_of_injective {f : R →+* S} (hf : Function.Injective f) {g : GL n S} :
+    g ∈ (Matrix.GeneralLinearGroup.map (n := n) f).range ↔
+      (∀ i j, (g : Matrix n n S) i j ∈ f.range) ∧
+        ∀ i j, (↑g⁻¹ : Matrix n n S) i j ∈ f.range := by
+  refine ⟨?_, fun ⟨hg, hg'⟩ ↦ ?_⟩
+  · rintro ⟨h, rfl⟩
+    refine ⟨fun i j ↦ ⟨(h : Matrix n n R) i j, ?_⟩, fun i j ↦ ⟨(↑h⁻¹ : Matrix n n R) i j, ?_⟩⟩
+    · rw [Matrix.GeneralLinearGroup.map_apply]
+    · rw [← map_inv, Matrix.GeneralLinearGroup.map_apply]
+  · choose M hM using hg
+    choose N hN using hg'
+    have hM' : (Matrix.of M).map f = g := Matrix.ext hM
+    have hN' : (Matrix.of N).map f = ↑g⁻¹ := Matrix.ext hN
+    -- The inverse equations over `R` hold after the injective map `f`.
+    refine ⟨⟨Matrix.of M, Matrix.of N, Matrix.map_injective hf ?_, Matrix.map_injective hf ?_⟩,
+      Units.ext hM'⟩
+    · simp only [Matrix.map_mul, hM', hN', Matrix.map_one _ (map_zero f) (map_one f),
+        Units.mul_inv]
+    · simp only [Matrix.map_mul, hM', hN', Matrix.map_one _ (map_zero f) (map_one f),
+        Units.inv_mul]
 
 /-- Change of scalars commutes with negation. Together with Mathlib's `map_one`, `map_mul` and
 `map_inv`, this lets subgroup constructions involving `-1`, such as `Subgroup.adjoinNegOne`, be

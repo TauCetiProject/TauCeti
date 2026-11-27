@@ -50,7 +50,9 @@ locally uniform convergence on the union to the pointwise limit
 
 On an open set on which the limit is continuous, locally uniform convergence is the same as
 continuous convergence at every point of the set
-(`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`). Convergence of
+(`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`). In a topological additive
+group it therefore survives translations of the domain that converge, to the translated limit on the
+translated set (`TendstoLocallyUniformlyOn.comp_sub_of_tendsto`). Convergence of
 `Fᵢ ∘ g` on an open set `s`, for an open map `g` injective on `s`, is convergence of `Fᵢ` on
 `g '' s` (`TendstoLocallyUniformlyOn.image_of_isOpenMap`). Locally uniform limits on open windows
 `Uᵢ \ Zᵢ` glue to a locally uniform limit on `(⋃ᵢ Uᵢ) \ Z` for every closed set `Z` containing
@@ -113,6 +115,28 @@ theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι 
     ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
   refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
   exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
+
+/-- **Locally uniform convergence along converging translations.** If `Fᵢ → f` locally uniformly
+on an open set `s` of a topological additive group, with `f` continuous on `s`, and the
+translations `oᵢ` tend to `o`, then `y ↦ Fᵢ (y - oᵢ)` converges to `y ↦ f (y - o)` locally
+uniformly on the translate `s + o`. -/
+theorem TendstoLocallyUniformlyOn.comp_sub_of_tendsto {ι α β : Type*} [AddGroup α]
+    [TopologicalSpace α] [IsTopologicalAddGroup α] [UniformSpace β] {F : ι → α → β} {f : α → β}
+    {l : Filter ι} {s : Set α} (hs : IsOpen s) (hf : ContinuousOn f s)
+    (h : TendstoLocallyUniformlyOn F f l s) {o : ι → α} {o₀ : α} (ho : Tendsto o l (𝓝 o₀)) :
+    TendstoLocallyUniformlyOn (fun i y ↦ F i (y - o i)) (fun y ↦ f (y - o₀)) l
+      ((· + o₀) '' s) := by
+  have hs' : IsOpen ((· + o₀) '' s) := (Homeomorph.addRight o₀).isOpenMap _ hs
+  have hf' : ContinuousOn (fun y ↦ f (y - o₀)) ((· + o₀) '' s) :=
+    hf.comp (continuous_sub_right o₀).continuousOn (by rintro _ ⟨y, hy, rfl⟩; simpa using hy)
+  rw [hs'.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn hf']
+  rw [hs.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn hf] at h
+  rintro _ ⟨x, hx, rfl⟩
+  simp only [add_sub_cancel_right]
+  -- The map `(i, y) ↦ (i, y - oᵢ)` sends `l ×ˢ 𝓝 (x + o)` to `l ×ˢ 𝓝 x`.
+  have hsub : Tendsto (fun p : ι × α ↦ p.2 - o p.1) (l ×ˢ 𝓝 (x + o₀)) (𝓝 x) := by
+    simpa using (tendsto_snd (f := l) (g := 𝓝 (x + o₀))).sub (ho.comp tendsto_fst)
+  exact (h x hx).comp (tendsto_fst.prodMk hsub)
 
 /-- A locally uniform limit `w` of maps `e ∘ uᵢ`, where the `uᵢ` take values in a set
 `K ⊆ e.source` and `w` takes values in `e '' K`, is read back through the inverse of `e`:
