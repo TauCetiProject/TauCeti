@@ -27,8 +27,9 @@ descent-indexed Eulerian numbers `TauCeti.eulerianNumber n q`, counting permutat
 with `q` descents.
 
 By convention, `eulerianNumber 0 0 = 1` and `eulerianNumber 0 (q + 1) = 0`, while for `n ≥ 1`,
-`eulerianNumber n q = 0` for `q ≥ n`. This matches Stanley's `A(n, q + 1)` and Lawrence–Sawin's
-`A(n, q)` (whose values are extended by zero outside `0 ≤ q < n` for `n ≥ 1`), as well as the
+`eulerianNumber n q = 0` for `q ≥ n`. This matches Stanley's `A(n, q + 1)` for `n ≥ 1` (whereas
+Stanley sets `A(0, k) = δ_{0, k}` separately at `n = 0`, matching `eulerianNumber 0 k`),
+Lawrence–Sawin's `A(n, q)` (extended by zero outside `0 ≤ q < n` for `n ≥ 1`), and the
 coefficients of `TauCeti.eulerianPolynomial n`.
 
 ## Main definitions

@@ -26,7 +26,7 @@ This file proves upper and lower bounds on the descent-indexed Eulerian numbers
 * `TauCeti.eulerianNumber_le_pow`: `eulerianNumber n q ≤ (q + 1) ^ n`.
 * `TauCeti.eulerianNumber_le_factorial`: `eulerianNumber n q ≤ n.factorial`.
 * `TauCeti.pow_sub_mul_pow_le_eulerianNumber`:
-  `(q + 1) ^ n - (n + 1) * q ^ n ≤ eulerianNumber n q` for `1 ≤ n`.
+  `((q : ℤ) + 1) ^ n - ((n : ℤ) + 1) * (q : ℤ) ^ n ≤ (eulerianNumber n q : ℤ)` for `1 ≤ n`.
 * `TauCeti.one_sub_exp_neg_one_mul_pow_le_eulerianNumber`:
   `(1 - Real.exp (-1)) * ((q : ℝ) + 1) ^ n ≤ eulerianNumber n q` when `2 ≤ n` and
   `(q : ℝ) + 1 < n / (Real.log (n + 1) + 1)`.
@@ -110,11 +110,11 @@ theorem pow_le_eulerianNumber_add_mul_pow {n : ℕ} (hn : 1 ≤ n) (q : ℕ) :
         Nat.mul_le_mul_left _ hchoose
       _ = (n + 1) * (eulerianNumber n j * (n + p - j).choose n) := by ring
 
-/-- Lower power bound on Eulerian numbers (Lawrence–Sawin, Lemma C.1):
-`(q + 1) ^ n - (n + 1) * q ^ n ≤ eulerianNumber n q` for `1 ≤ n`. -/
+/-- Lower power bound on Eulerian numbers in `ℤ` (Lawrence–Sawin, Lemma C.1):
+`((q : ℤ) + 1) ^ n - ((n : ℤ) + 1) * (q : ℤ) ^ n ≤ (eulerianNumber n q : ℤ)` for `1 ≤ n`. -/
 theorem pow_sub_mul_pow_le_eulerianNumber {n : ℕ} (hn : 1 ≤ n) (q : ℕ) :
-    (q + 1) ^ n - (n + 1) * q ^ n ≤ eulerianNumber n q :=
-  Nat.sub_le_of_le_add (pow_le_eulerianNumber_add_mul_pow hn q)
+    ((q : ℤ) + 1) ^ n - ((n : ℤ) + 1) * (q : ℤ) ^ n ≤ (eulerianNumber n q : ℤ) :=
+  sub_le_iff_le_add.mpr (by exact_mod_cast pow_le_eulerianNumber_add_mul_pow hn q)
 
 /-- Real lower bound on Eulerian numbers with few descents (Lawrence–Sawin, Lemma C.3):
 for `2 ≤ n` and `(q : ℝ) + 1 < n / (Real.log (n + 1) + 1)`,
