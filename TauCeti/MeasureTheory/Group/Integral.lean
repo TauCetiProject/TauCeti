@@ -45,6 +45,9 @@ of the kernel.
 For a measure invariant under a group action, an integrand invariant under `g` has the same
 integral, and the same integrability, on `g • V` as on `V`.
 
+For a left-invariant measure, a function whose left translate by some `g` is `c • f` with `c ≠ 1`
+has integral `0`: the integral of a character over a subgroup on which it is nontrivial vanishes.
+
 The integral of the difference `w (· + a) - w` of an integrable function against an
 a.e. strongly measurable, essentially bounded function `φ` (that is, `φ ∈ L^∞`) equals the
 integral of `w` against `φ (· - a) - φ`, by right-translation invariance. Only right translations
@@ -80,6 +83,9 @@ need to be measurable.
   `MeasureTheory.IntegrableOn.comp_inv_inter_Iio`, `MeasureTheory.IntegrableOn.comp_neg_inter_Iio`:
   integrability and set-integral change of variables under `x ↦ x⁻¹` (or `x ↦ -x`) for an
   inversion-invariant (or negation-invariant) measure.
+* `TauCeti.integral_eq_zero_of_mul_left_eq_smul`, `TauCeti.integral_eq_zero_of_add_left_eq_smul`:
+  a function whose left translate by some `g` is `c • f` with `c ≠ 1` has integral `0` against a
+  left-invariant measure.
 -/
 
 public section
@@ -361,6 +367,30 @@ theorem setIntegral_comp_inv_inter_Iio {G E : Type*} [MeasurableSpace G] [CommGr
   simp [Set.inter_inv]
 
 end InvInvariant
+
+section TranslationScaling
+
+variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] {μ : Measure G}
+  [μ.IsMulLeftInvariant] [NormedDivisionRing 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [Module 𝕜 E] [NormSMulClass 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+
+/-- If a left translate `x ↦ f (g * x)` of a function is a scalar multiple `c • f` with `c ≠ 1`,
+then the integral of `f` against a left-invariant measure is `0`. For `c = -1` this is
+`MeasureTheory.integral_eq_zero_of_mul_left_eq_neg`; the typical use is the integral of a
+character over a subgroup on which it is nontrivial. -/
+@[to_additive (dont_translate := 𝕜) integral_eq_zero_of_add_left_eq_smul
+  /-- If a left translate `x ↦ f (g + x)` of a function is a scalar multiple `c • f` with
+  `c ≠ 1`, then the integral of `f` against a left-invariant measure is `0`. For `c = -1` this is
+  `MeasureTheory.integral_eq_zero_of_add_left_eq_neg`; the typical use is the integral of a
+  character over a subgroup on which it is nontrivial. -/]
+theorem integral_eq_zero_of_mul_left_eq_smul {f : G → E} {g : G} {c : 𝕜} (hc : c ≠ 1)
+    (hf : ∀ x, f (g * x) = c • f x) : ∫ x, f x ∂μ = 0 := by
+  have h : c • ∫ x, f x ∂μ = ∫ x, f x ∂μ := by
+    simp_rw [← integral_smul, ← hf, integral_mul_left_eq_self]
+  have h' : (1 - c) • ∫ x, f x ∂μ = 0 := by rw [sub_smul, one_smul, h, sub_self]
+  exact (smul_eq_zero.mp h').resolve_left (sub_ne_zero.mpr hc.symm)
+
+end TranslationScaling
 
 end TauCeti
 
