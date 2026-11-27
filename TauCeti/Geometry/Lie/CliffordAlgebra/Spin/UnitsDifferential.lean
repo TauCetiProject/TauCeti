@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Differential
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.UnitsRange
 import TauCeti.Analysis.Normed.Algebra.Basic
+import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.SpecialFunctions.Exponential
 
 /-!
@@ -25,8 +26,6 @@ differential `d(spinToSpecialOrthogonal)` by comparing a one-parameter exponenti
 This module extracts the core of that calculation over any finite-dimensional commutative normed
 `ℝ`-algebra `𝕜` (with `2` invertible for the Spin commutator):
 
-* `TauCeti.CliffordAlgebra.hasDerivAt_linearMap_exp_mulVec`: differentiates
-  `t ↦ f (exp (t • A) *ᵥ v)` at `t = 0` for any `ℝ`-linear map `f` into a normed space.
 * `TauCeti.CliffordAlgebra.ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve`: given an
   algebra identification `e : CliffordAlgebra Q ≃ₐ[ℝ] R` into a complete normed algebra `R` and a
   curve `u : ℝ → MonoidHom.range spinGroup.toUnits` whose Spin and matrix projections follow
@@ -54,31 +53,6 @@ open _root_.CliffordAlgebra
 attribute [local instance] Matrix.linftyOpTopologicalSpace
 attribute [local instance] NormedAlgebra.toNormedSpace
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
-
-section ChainRule
-
-variable {𝕜 : Type*} [NormedCommRing 𝕜] [NormedAlgebra ℝ 𝕜]
-  [FiniteDimensional ℝ 𝕜]
-  {m : Type*} [Fintype m] [DecidableEq m]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- Differentiating the linear evaluation `t ↦ f (NormedSpace.exp (t • A) *ᵥ v)` at `0`
-yields `f (A *ᵥ v)`. -/
-theorem hasDerivAt_linearMap_exp_mulVec
-    (f : (m → 𝕜) →ₗ[ℝ] E) (A : Matrix m m 𝕜) (v : m → 𝕜) :
-    HasDerivAt (fun t : ℝ ↦ f (NormedSpace.exp (t • A) *ᵥ v)) (f (A *ᵥ v)) 0 := by
-  let _ : CompleteSpace 𝕜 := FiniteDimensional.completeSpace ℝ 𝕜
-  let fLin : Matrix m m 𝕜 →ₗ[ℝ] E :=
-    f.comp (((Matrix.mulVecBilin 𝕜 𝕜).flip v).restrictScalars ℝ)
-  let fCLM : Matrix m m 𝕜 →L[ℝ] E :=
-    ContinuousLinearMap.mk fLin fLin.continuous_of_finiteDimensional
-  have hfCLM (M : Matrix m m 𝕜) : fCLM M = f (M *ᵥ v) := by
-    simp only [fCLM, fLin, ContinuousLinearMap.coe_mk', LinearMap.comp_apply,
-      LinearMap.restrictScalars_apply, LinearMap.flip_apply, Matrix.mulVecBilin_apply]
-  have h := fCLM.hasFDerivAt.comp_hasDerivAt 0 (hasDerivAt_exp_smul_const A (0 : ℝ))
-  simpa only [Function.comp_def, hfCLM, zero_smul, NormedSpace.exp_zero, one_mul] using h
-
-end ChainRule
 
 section Commutator
 
@@ -124,8 +98,7 @@ theorem ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve
         rw [← hs, ← map_mul, hmul, map_one]
       rw [← invOf_eq_right_inv he, NormedSpace.invOf_exp, smul_neg]
     rw [hmatrix, ι_spinVectorAction_apply, map_mul, map_mul, hs, hstar]
-  have hleft := hasDerivAt_linearMap_exp_mulVec
-    (e.toLinearMap.comp ((ι Q).restrictScalars ℝ)) A v
+  have hleft := (e.toLinearMap.comp ((ι Q).restrictScalars ℝ)).hasDerivAt_exp_mulVec A v
   have hright := (TauCeti.hasDerivAt_exp_mul_const_mul_exp_neg
     (e x) (e (ι Q v))).congr_of_eventuallyEq (Filter.Eventually.of_forall hconj)
   have hderiv : e (ι Q (A *ᵥ v)) = e x * e (ι Q v) - e (ι Q v) * e x :=

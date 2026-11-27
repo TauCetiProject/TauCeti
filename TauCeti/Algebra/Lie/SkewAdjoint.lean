@@ -54,7 +54,7 @@ composite is not built here.
 
 ## Main definitions
 
-* `TauCeti.skewAdjointDefect`: the linear map `A ↦ Aᵀ * J + J * A` measuring failure of
+* `Matrix.skewAdjointDefect`: the linear map `A ↦ Aᵀ * J + J * A` measuring failure of
   skew-adjointness for `J`.
 * `TauCeti.skewAdjointLieEquivOfBasis`: the basis transport from skew-adjoint matrices to
   skew-adjoint endomorphisms.
@@ -66,8 +66,8 @@ composite is not built here.
 
 ## Main results
 
-* `TauCeti.mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect`: a matrix is skew-adjoint for
-  `J` if and only if `skewAdjointDefect J A = 0`.
+* `Matrix.mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect`: a matrix is skew-adjoint for
+  `J` if and only if `Matrix.skewAdjointDefect J A = 0`.
 * `TauCeti.mem_skewAdjointMatricesLieSubalgebra_toMatrix_iff`: matrix skew-adjointness for a Gram
   matrix is equivalent to basis-free skew-adjointness.
 * `TauCeti.mem_skewAdjointMatricesLieSubalgebra_iff_transposeConj_eq_neg`: for invertible `J`,
@@ -119,13 +119,9 @@ public section
 
 open LinearMap (BilinForm)
 
-namespace TauCeti
-
-universe u v w
+namespace Matrix
 
 section Defect
-
-open Matrix
 
 variable {T : Type u} [CommRing T] {n : Type v} [Fintype n] [DecidableEq n]
 
@@ -149,6 +145,12 @@ theorem mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect (J A : Matrix n n
   simp [Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, eq_neg_iff_add_eq_zero]
 
 end Defect
+
+end Matrix
+
+namespace TauCeti
+
+universe u v w
 
 section Basis
 

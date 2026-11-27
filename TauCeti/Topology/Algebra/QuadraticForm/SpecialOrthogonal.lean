@@ -155,8 +155,8 @@ theorem specialOrthogonalContinuousMulEquivRange_symm_apply
     (Q : QuadraticMap R (n → R) N) (g : specialOrthogonalGroup Q) :
     Q.specialOrthogonalContinuousMulEquivRange.symm
         ⟨Q.specialOrthogonalToGeneralLinear g, ⟨g, rfl⟩⟩ = g := by
-  rw [← specialOrthogonalContinuousMulEquivRange_apply]
-  exact Q.specialOrthogonalContinuousMulEquivRange.symm_apply_apply g
+  rw [specialOrthogonalContinuousMulEquivRange]
+  exact ContinuousMonoidHom.equivRangeOfIsEmbedding_symm_apply _ _ g
 
 end RangeEquiv
 
@@ -169,14 +169,19 @@ variable {n : Type u} [Fintype n] [DecidableEq n]
 ring is closed in `GL(n, R)`. -/
 theorem isClosed_range_orthogonalToGeneralLinear (Q : QuadraticForm R (n → R)) :
     IsClosed (Set.range Q.orthogonalToGeneralLinear) := by
+  let _ : TopologicalSpace (Module.End R (n → R)) := moduleTopology R (Module.End R (n → R))
+  have : ContinuousAdd (Module.End R (n → R)) := IsModuleTopology.toContinuousAdd R _
   have hset : Set.range Q.orthogonalToGeneralLinear =
-      ⋂ x : n → R, {U : Matrix.GeneralLinearGroup n R | Q ((U : Matrix n n R) *ᵥ x) = Q x} := by
+      (fun U : Matrix.GeneralLinearGroup n R ↦ Matrix.toLin' (U : Matrix n n R)) ⁻¹'
+        {f : Module.End R (n → R) | ∀ x : n → R, Q (f x) = Q x} := by
     ext U
     simp only [← MonoidHom.coe_range, SetLike.mem_coe, mem_range_orthogonalToGeneralLinear_iff,
-      Set.mem_iInter, Set.mem_ofPred_eq]
+      Set.mem_preimage, Set.mem_ofPred_eq, Matrix.toLin'_apply]
   rw [hset]
-  refine isClosed_iInter fun x ↦ isClosed_eq ?_ continuous_const
-  exact Q.continuous.comp (Units.continuous_val.matrix_mulVec continuous_const)
+  exact (Q.isClosed_setOfPred_forall_map_app Q.continuous).preimage
+    ((IsModuleTopology.continuous_of_linearMap
+      (Matrix.toLin' : Matrix n n R ≃ₗ[R] Module.End R (n → R)).toLinearMap).comp
+      Units.continuous_val)
 
 /-- The coordinate range of the special orthogonal group of a quadratic form over a Hausdorff
 topological ring is closed in `GL(n, R)`. -/

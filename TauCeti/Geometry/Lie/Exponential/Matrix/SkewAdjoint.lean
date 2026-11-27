@@ -71,8 +71,8 @@ theorem exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra
     (exp A)ᵀ * J * exp A = J := by
   have hsemi : SemiconjBy J A (-Aᵀ) := by
     rw [mem_skewAdjointMatricesLieSubalgebra,
-      TauCeti.mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect,
-      TauCeti.skewAdjointDefect_apply] at hA
+      mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect,
+      skewAdjointDefect_apply] at hA
     rw [SemiconjBy, neg_mul]
     exact eq_neg_of_add_eq_zero_right hA
   have h := hsemi.exp_neg_mul_mul_exp_eq_self
@@ -100,8 +100,8 @@ theorem forall_exp_smul_transpose_mul_mul_eq_iff_mem_skewAdjointMatricesLieSubal
     have h0 := hderiv.unique hconst
     simp only [zero_smul, exp_zero, one_mul, mul_one] at h0
     rw [mem_skewAdjointMatricesLieSubalgebra,
-      TauCeti.mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect,
-      TauCeti.skewAdjointDefect_apply]
+      mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect,
+      skewAdjointDefect_apply]
     exact h0
   · intro hA t
     exact exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra J (t • A)

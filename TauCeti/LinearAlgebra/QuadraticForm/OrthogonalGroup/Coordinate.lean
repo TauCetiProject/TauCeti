@@ -90,14 +90,8 @@ theorem mem_range_orthogonalToGeneralLinear_iff
         (matrixGeneralLinearEquiv U),
       mem_orthogonalGroup_iff.mpr fun x ↦ by
         rw [matrixGeneralLinearEquiv_apply, hU x]⟩
-    refine ⟨g, ?_⟩
-    apply Units.ext
-    have hlin : (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap = Matrix.toLin' (U : Matrix n n R) :=
-      LinearMap.ext fun v ↦ matrixGeneralLinearEquiv_apply U v
-    have hmat :
-        LinearMap.toMatrix' (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap = (U : Matrix n n R) :=
-      (congrArg LinearMap.toMatrix' hlin).trans (LinearMap.toMatrix'_toLin' (U : Matrix n n R))
-    rw [coe_orthogonalToGeneralLinear, hmat]
+    refine ⟨g, Units.ext <| Matrix.ext fun i j ↦ ?_⟩
+    simp [orthogonalToGeneralLinear_apply, g, matrixGeneralLinearEquiv_apply]
 
 /-- A general-linear matrix lies in the coordinate range of `SO(Q)` if and only if its
 matrix-vector action preserves `Q` and its determinant is one. -/

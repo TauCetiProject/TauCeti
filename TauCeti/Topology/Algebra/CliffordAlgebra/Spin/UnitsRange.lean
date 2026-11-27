@@ -98,8 +98,9 @@ element. -/
 theorem spinGroupContinuousMulEquivUnitsRange_symm_apply
     (Q : QuadraticForm R V) (x : spinGroup Q) :
     (spinGroupContinuousMulEquivUnitsRange Q).symm ⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩ = x := by
-  rw [← spinGroupContinuousMulEquivUnitsRange_apply]
-  exact (spinGroupContinuousMulEquivUnitsRange Q).symm_apply_apply x
+  rw [spinGroupContinuousMulEquivUnitsRange]
+  exact (spinGroupToUnitsContinuousMonoidHom Q).equivRangeOfIsEmbedding_symm_apply
+    (isEmbedding_spinGroup_toUnits Q) x
 
 /-- Reconstructing a Spin element from the unit range preserves its underlying Clifford-algebra
 value. -/

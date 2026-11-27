@@ -85,6 +85,8 @@ matrix is fixed by its exponential.
   the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
 * `Matrix.IsHermitian.det_exp_eq_one_iff`: the exponential of a Hermitian matrix has determinant
   one exactly when the matrix is trace-free.
+* `LinearMap.hasDerivAt_exp_mulVec`: differentiates `t ↦ f (exp (t • A) *ᵥ v)` at `t = 0` for
+  any `ℝ`-linear map `f` into a normed space.
 
 ## References
 
@@ -406,3 +408,38 @@ theorem trace_exp_pos (hK : K.IsHermitian) :
 end IsHermitian
 
 end Matrix
+
+namespace LinearMap
+
+section ExpMulVec
+
+attribute [local instance] Matrix.linftyOpTopologicalSpace
+attribute [local instance] NormedAlgebra.toNormedSpace
+attribute [local instance] TauCeti.normedAlgebraRatOfReal
+
+/-- Differentiating the linear evaluation `t ↦ f (NormedSpace.exp (t • A) *ᵥ v)` at `0`
+yields `f (A *ᵥ v)`. -/
+theorem hasDerivAt_exp_mulVec
+    {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜] [FiniteDimensional ℝ 𝕜]
+    {m : Type*} [Fintype m] [DecidableEq m]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : (m → 𝕜) →ₗ[ℝ] E) (A : Matrix m m 𝕜) (v : m → 𝕜) :
+    HasDerivAt (fun t : ℝ ↦ f (NormedSpace.exp (t • A) *ᵥ v)) (f (A *ᵥ v)) 0 := by
+  let _ : CompleteSpace 𝕜 := FiniteDimensional.completeSpace ℝ 𝕜
+  let fLin : Matrix m m 𝕜 →ₗ[ℝ] E :=
+    f.comp
+      ({ toFun := fun M ↦ M *ᵥ v
+         map_add' := fun M N ↦ Matrix.add_mulVec M N v
+         map_smul' := fun c M ↦ by
+           ext i
+           simp [Matrix.mulVec, dotProduct, Finset.smul_sum] } :
+        Matrix m m 𝕜 →ₗ[ℝ] (m → 𝕜))
+  let fCLM : Matrix m m 𝕜 →L[ℝ] E :=
+    ContinuousLinearMap.mk fLin fLin.continuous_of_finiteDimensional
+  have hfCLM (M : Matrix m m 𝕜) : fCLM M = f (M *ᵥ v) := rfl
+  have h := fCLM.hasFDerivAt.comp_hasDerivAt 0 (hasDerivAt_exp_smul_const A (0 : ℝ))
+  simpa only [Function.comp_def, hfCLM, zero_smul, NormedSpace.exp_zero, one_mul] using h
+
+end ExpMulVec
+
+end LinearMap
