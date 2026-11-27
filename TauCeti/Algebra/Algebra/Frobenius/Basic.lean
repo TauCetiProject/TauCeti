@@ -126,16 +126,17 @@ theorem IsFrobeniusFunctional.op (hφ : φ.IsFrobeniusFunctional) :
 
 end CommSemiring
 
-section CommRing
+section Ring
 
-variable {k : Type v} [CommRing k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
+variable {k : Type v} [CommSemiring k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
 
 /-- Two elements pairing identically from the right against a Frobenius functional are equal. -/
 theorem IsFrobeniusFunctional.eq_of_forall_apply_mul_eq
     (hφ : φ.IsFrobeniusFunctional) {x y : A} (h : ∀ b, φ (b * x) = φ (b * y)) : x = y :=
-  sub_eq_zero.mp <| hφ.eq_zero_of_forall_right fun b => by rw [mul_sub, map_sub, h, sub_self]
+  sub_eq_zero.mp <| hφ.eq_zero_of_forall_right fun b => by
+    rw [mul_sub, sub_eq_add_neg, map_add, h, ← map_add, add_neg_cancel, map_zero]
 
-end CommRing
+end Ring
 
 section Projective
 

@@ -193,6 +193,20 @@ theorem IsMultiHomogeneous.prod {α : Type*} (s : Finset α) (φ : α → MvPoly
   simpa only [Finset.sum_apply] using
     IsWeightedHomogeneous.prod s φ (fun a ↦ d a h) fun a ha ↦ hφ a ha h
 
+/-- For `m ≤ d`, the block monomial `∏ h, X (h, i) ^ m h * X (h, j) ^ (d h - m h)`, with the
+coordinates `i` and `j` taken in every block, is multihomogeneous of multidegree `d`. -/
+theorem isMultiHomogeneous_prod_X_pow_mul_X_pow [Fintype κ] {m : κ → ℕ} (hm : ∀ h, m h ≤ d h)
+    (i j : ι) :
+    IsMultiHomogeneous d
+      (∏ h, X (h, i) ^ m h * X (h, j) ^ (d h - m h) : MvPolynomial (κ × ι) R) := by
+  have hprod := IsMultiHomogeneous.prod (R := R) Finset.univ
+    (fun h ↦ X (h, i) ^ m h * X (h, j) ^ (d h - m h)) (fun h ↦ Pi.single h (d h)) fun h _ ↦ by
+      have hXX := ((isMultiHomogeneous_X (R := R) h i).pow (m h)).mul
+        ((isMultiHomogeneous_X (R := R) h j).pow (d h - m h))
+      rwa [← add_smul, Nat.add_sub_cancel' (hm h), ← Pi.single_smul', smul_eq_mul,
+        mul_one] at hXX
+  rwa [Finset.univ_sum_single] at hprod
+
 /-- The multidegree of a nonzero multihomogeneous polynomial is unique. -/
 theorem IsMultiHomogeneous.inj_right (hP₀ : P ≠ 0) (hd : IsMultiHomogeneous d P)
     (he : IsMultiHomogeneous e P) : d = e :=
@@ -322,6 +336,25 @@ These index the monomials of a multihomogeneous polynomial of multidegree `d`. -
 noncomputable def multiMons (d : κ → ℕ) : Finset (κ × ι →₀ ℕ) :=
   (Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)).map
     (Finsupp.equivFunOnFinite.symm.trans Finsupp.curryEquiv.symm).toEmbedding
+
+/-- A multidegree exponent vector is obtained by assembling one exponent vector
+of degree `d h` for each block `h`. -/
+noncomputable def _root_.TauCeti.multiMonsEquiv (d : κ → ℕ) :
+    (∀ h, (univ : Finset ι).finsuppAntidiag (d h)) ≃ multiMons ι d :=
+  (Equiv.subtypePiEquivPi.symm.trans
+    (Equiv.subtypeEquivRight (fun _ ↦ Fintype.mem_piFinset.symm))).trans
+      (Finset.equivMap _ _)
+
+/-- The assembled exponent vector evaluates in each block to the given vector for that block. -/
+theorem _root_.TauCeti.multiMonsEquiv_apply (d : κ → ℕ)
+    (x : ∀ h, (univ : Finset ι).finsuppAntidiag (d h)) (h : κ) (i : ι) :
+    (TauCeti.multiMonsEquiv d x).val (h, i) = (x h).val i := by
+  delta TauCeti.multiMonsEquiv multiMons
+  rw [Equiv.trans_apply, Finset.equivMap_apply_coe]
+  simp only [Equiv.toEmbedding_apply, Equiv.trans_apply, Equiv.subtypeEquivRight_apply,
+    Finsupp.curryEquiv_symm_apply, Finsupp.uncurry_apply,
+    Finsupp.coe_equivFunOnFinite_symm, Equiv.subtypePiEquivPi]
+  rfl
 
 @[simp]
 theorem mem_multiMons {n : κ × ι →₀ ℕ} : n ∈ multiMons ι d ↔ ∀ h, ∑ i, n (h, i) = d h := by

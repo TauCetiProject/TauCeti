@@ -14,7 +14,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 public import TauCeti.Algebra.BigOperators.Finset.Fiber
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Analysis.Asymptotics.Lemmas
@@ -43,6 +43,11 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
+* `EuclideanSpace.ext_continuousLinearMap_single`: continuous linear maps on Euclidean space are
+  determined by their values on the standard basis vectors.
+* `EuclideanSpace.add_sub_smul_single_apply`: the point `x + (t - xᵢ) eᵢ` is `x` with its `i`-th
+  coordinate replaced by `t`; the map `t ↦ x + (t - xᵢ) eᵢ` is `1`-Lipschitz
+  (`EuclideanSpace.lipschitzWith_add_sub_smul_single`).
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
@@ -82,6 +87,10 @@ Borel measurable structure on the scalar field.
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
 * `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
   first factor of the splitting along `j < m`.
+* `OrthonormalBasis.singleton_repr_symm`: the inverse coordinate equivalence of
+  `OrthonormalBasis.singleton` evaluates at `default`.
+* `EuclideanSpace.finrank_subtype_val_lt` and `EuclideanSpace.finrank_subtype_not_val_lt`: the two
+  factors of the splitting of `𝕜ⁿ` along `j < m` have dimensions `m` and `n - m`.
 * `TauCeti.euclideanLinearEquivHom 𝕜 ι`: a unitary transformation of `EuclideanSpace 𝕜 ι` as a
   linear automorphism of `ι → 𝕜`.
 * `LinearEquiv.toEuclideanIsometry`: a linear automorphism of `ι → 𝕜` preserving the Euclidean
@@ -99,6 +108,16 @@ public section
 noncomputable section
 
 open scoped BigOperators
+
+/-- The inverse coordinate equivalence of `OrthonormalBasis.singleton` reads the unique coordinate
+of `EuclideanSpace 𝕜 ι`. -/
+@[simp]
+theorem OrthonormalBasis.singleton_repr_symm {ι 𝕜 : Type*} [Unique ι] [RCLike 𝕜]
+    (v : EuclideanSpace 𝕜 ι) :
+    (OrthonormalBasis.singleton ι 𝕜).repr.symm v = v default := by
+  have h := OrthonormalBasis.singleton_repr (ι := ι) (𝕜 := 𝕜)
+    ((OrthonormalBasis.singleton ι 𝕜).repr.symm v) default
+  rwa [(OrthonormalBasis.singleton ι 𝕜).repr.apply_symm_apply, eq_comm] at h
 
 namespace EuclideanSpace
 
@@ -129,6 +148,32 @@ theorem posDef_iff_of_forall_eq_sum_mul_sq {ι : Type*} [Fintype ι]
   rw [← QuadraticMap.posDef_weightedSumSquares_iff, hQ']
   refine ⟨fun h x hx ↦ ?_, fun h ↦ h.comp _ (WithLp.linearEquiv 2 ℝ (ι → ℝ)).injective⟩
   simpa using h (WithLp.toLp 2 x) (by simpa using hx)
+
+/-- Two continuous linear maps on `EuclideanSpace 𝕜 ι` agreeing on the standard basis vectors
+`EuclideanSpace.single i 1` are equal. -/
+theorem ext_continuousLinearMap_single {𝕜 ι E : Type*} [RCLike 𝕜] [Finite ι] [DecidableEq ι]
+    [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E] {L L' : EuclideanSpace 𝕜 ι →L[𝕜] E}
+    (h : ∀ i, L (EuclideanSpace.single i 1) = L' (EuclideanSpace.single i 1)) : L = L' := by
+  have := Fintype.ofFinite ι
+  exact ContinuousLinearMap.coe_injective <| (EuclideanSpace.basisFun ι 𝕜).toBasis.ext fun i ↦ by
+    simpa using h i
+
+/-- The coordinates of the point `x + (t - xᵢ) eᵢ`: the `i`-th one is `t`, the others are
+those of `x`. -/
+theorem add_sub_smul_single_apply {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq ι]
+    (x : EuclideanSpace 𝕜 ι) (i j : ι) (t : 𝕜) :
+    (x + (t - x i) • EuclideanSpace.single i (1 : 𝕜)) j = if j = i then t else x j := by
+  by_cases h : j = i
+  · subst h; simp
+  · simp [h]
+
+/-- The map `t ↦ x + (t - xᵢ) eᵢ`, replacing the `i`-th coordinate of `x` with `t`, is an
+isometry, so `1`-Lipschitz. -/
+theorem lipschitzWith_add_sub_smul_single {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
+    (x : EuclideanSpace 𝕜 ι) (i : ι) :
+    LipschitzWith 1 fun t : 𝕜 ↦ x + (t - x i) • EuclideanSpace.single i (1 : 𝕜) :=
+  LipschitzWith.of_dist_le_mul fun s t ↦ by
+    simp [dist_eq_norm, ← sub_smul, norm_smul]
 
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
@@ -278,6 +323,14 @@ omit [Fintype ι] in
 theorem surjective_proj (i : ι) : Function.Surjective (EuclideanSpace.proj (𝕜 := 𝕜) i) := by
   classical
   exact fun r ↦ ⟨EuclideanSpace.single i r, by simp⟩
+
+/-- The coordinates of the standard basis of Euclidean space are the identity: the inverse of its
+coordinate map fixes every vector. -/
+@[simp]
+theorem basisFun_repr_symm_apply (x : EuclideanSpace 𝕜 ι) : (basisFun ι 𝕜).repr.symm x = x := by
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext i
+  exact (basisFun_repr ι 𝕜 x i).symm
 
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
@@ -602,6 +655,20 @@ theorem adjoint_piLpExtendByZero_castLEEmb_apply (hm : m ≤ n) (x : EuclideanSp
     ← finCastLEEquiv_symm_fst_sumComplEquivProd, LinearIsometryEquiv.inner_map_eq_flip,
     LinearIsometryEquiv.symm_symm, inner_fst_sumComplEquivProd,
     sumComplEquivProd_symm_finCastLEEquiv]
+
+variable (𝕜) in
+/-- The first factor of the splitting of `𝕜ⁿ` along `j < m`, for `m ≤ n`, has dimension `m`. -/
+theorem finrank_subtype_val_lt (hm : m ≤ n) :
+    Module.finrank 𝕜 (EuclideanSpace 𝕜 {j : Fin n // j.val < m}) = m :=
+  (finCastLEEquiv 𝕜 hm).toLinearEquiv.finrank_eq.symm.trans finrank_euclideanSpace_fin
+
+variable (𝕜) in
+/-- The second factor of the splitting of `𝕜ⁿ` along `j < m`, for `m ≤ n`, has dimension
+`n - m`. -/
+theorem finrank_subtype_not_val_lt (hm : m ≤ n) :
+    Module.finrank 𝕜 (EuclideanSpace 𝕜 {j : Fin n // ¬ j.val < m}) = n - m := by
+  rw [finrank_euclideanSpace, Fintype.card_subtype_compl, Fintype.card_fin,
+    ← finrank_euclideanSpace (𝕜 := 𝕜), finrank_subtype_val_lt 𝕜 hm]
 
 end finCastLE
 

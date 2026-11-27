@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
@@ -21,8 +22,10 @@ the `lpNorm` form of Mathlib's `MeasureTheory.eLpNorm_le_mul_eLpNorm_of_ae_le_mu
 multiplication by a bounded measurable coefficient, as for the lower-order terms of a
 differential operator.
 
-In particular, scalar multiplication by a function bounded by `c` multiplies the `Lᵖ` norm by at
-most `c` (`MeasureTheory.lpNorm_smul_le_mul_lpNorm_of_ae_le`). For `1 ≤ p`, the lower-order terms
+Scaling by a constant `c ≥ 0` multiplies the `Lᵖ` norm by `c`
+(`MeasureTheory.lpNorm_const_smul_of_nonneg`). More generally, scalar multiplication by a function
+bounded by `c` multiplies the `Lᵖ` norm by at most `c`
+(`MeasureTheory.lpNorm_smul_le_mul_lpNorm_of_ae_le`). For `1 ≤ p`, the lower-order terms
 `⟪b, G⟫ + c V` of a second-order operator over `ℝ` or `ℂ`, with `‖b‖ ≤ β` and `‖c‖ ≤ γ`, lie in
 `Lᵖ` with norm at most `β ‖G‖ + γ ‖V‖` (`MeasureTheory.memLp_inner_add_mul_and_lpNorm_le`), so
 they can be moved to the right-hand side of an equation
@@ -31,6 +34,9 @@ they can be moved to the right-hand side of an equation
 For `p = 2`, the squared `L²` norm of an almost everywhere strongly measurable function is the
 integral of its squared pointwise norm (`MeasureTheory.lpNorm_two_sq_eq_integral_norm_sq`), the
 `p = 2` analogue of Mathlib's `MeasureTheory.lpNorm_one_eq_integral_norm`.
+
+For a right-invariant measure on an additive group, translation does not change the `Lᵖ` norm
+(`MeasureTheory.lpNorm_comp_sub_right`).
 
 Additional helpers convert `eLpNorm` estimates into bounds for the Bochner `L¹` integral
 `∫ x, ‖f x‖ ∂μ`:
@@ -84,6 +90,12 @@ theorem integral_norm_lt_of_eLpNorm_one_lt_ofReal {f : α → F} {η : ℝ}
     aestronglyMeasurable_of_eLpNorm_ne_top (ne_top_of_lt h)
   rw [← lpNorm_one_eq_integral_norm hf, ← toReal_eLpNorm]
   exact ENNReal.toReal_lt_of_lt_ofReal h
+
+/-- Scaling by a nonnegative real `c` multiplies `lpNorm` by `c`: the form of Mathlib's
+`MeasureTheory.lpNorm_const_smul` without the norm of the scalar. -/
+theorem lpNorm_const_smul_of_nonneg [Module ℝ F] [NormSMulClass ℝ F] {c : ℝ} (hc : 0 ≤ c)
+    (f : α → F) : lpNorm (c • f) p μ = c * lpNorm f p μ := by
+  rw [lpNorm_const_smul, coe_nnNorm, Real.norm_of_nonneg hc]
 
 /-- **Multiplying by a bounded function.** If `f ∈ Lᵖ(μ)` and `‖ψ x‖ ≤ c` for almost every `x`,
 then `lpNorm (ψ • f) p μ ≤ c * lpNorm f p μ`. -/
@@ -149,5 +161,13 @@ theorem lpNorm_two_sq_eq_integral_norm_sq {f : α → F} (hf : AEStronglyMeasura
     ENNReal.toReal_ofNat, ← Real.rpow_natCast,
     ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
   norm_num
+
+/-- **Translation invariance of `lpNorm`.** For a right-invariant measure on an additive group,
+translating a function does not change its `Lᵖ` norm: `‖u (· - c)‖_p = ‖u‖_p`. -/
+theorem lpNorm_comp_sub_right [AddGroup α] [MeasurableAdd α] [μ.IsAddRightInvariant] (u : α → F)
+    (c : α) : lpNorm (fun x ↦ u (x - c)) p μ = lpNorm u p μ := by
+  rw [← toReal_eLpNorm, ← toReal_eLpNorm]
+  conv_rhs => rw [← (measurePreserving_sub_right μ c).map_eq]
+  rw [(measurableEmbedding_subRight c).eLpNorm_map_measure, Function.comp_def]
 
 end MeasureTheory

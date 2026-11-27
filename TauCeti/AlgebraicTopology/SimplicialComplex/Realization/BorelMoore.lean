@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.IteratedNeighborhood
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Iterated.Neighborhood
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Complement
 
 /-!

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
-public import TauCeti.RingTheory.PowerSeries.Geometric
+public import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Basic
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 

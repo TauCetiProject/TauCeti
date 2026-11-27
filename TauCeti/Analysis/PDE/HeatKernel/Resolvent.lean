@@ -117,6 +117,11 @@ theorem heatResolventKernel_neg (lam : ℝ) (x : E) :
     heatResolventKernel lam (-x) = heatResolventKernel lam x := by
   simp only [heatResolventKernel_apply, heatKernel_neg]
 
+/-- The heat resolvent kernel is radial: it takes the same value at points of equal norm. -/
+theorem heatResolventKernel_eq_of_norm_eq (lam : ℝ) {x y : E} (h : ‖x‖ = ‖y‖) :
+    heatResolventKernel lam x = heatResolventKernel lam y := by
+  simp only [heatResolventKernel_apply, heatKernel_eq_of_norm_eq _ h]
+
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 

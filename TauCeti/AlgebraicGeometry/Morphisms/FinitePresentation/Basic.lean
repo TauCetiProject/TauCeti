@@ -21,10 +21,20 @@ This is the scheme version of `RingHom.FinitePresentation.of_comp_finiteType`, t
 reduces on affine opens. It parallels Mathlib's `AlgebraicGeometry.locallyOfFiniteType_of_comp`,
 which needs no hypothesis on `g`; for finite presentation the hypothesis on `g` cannot be dropped.
 
+A morphism `∐ᵢ Yᵢ ⟶ X` out of a coproduct is locally of finite presentation when each component is
+(`AlgebraicGeometry.locallyOfFinitePresentation_sigmaDesc`), the analogue of Mathlib's instance
+for flat morphisms.
+
 ## Main results
 
 * `AlgebraicGeometry.locallyOfFinitePresentation_of_comp`: if `f ≫ g` is locally of finite
   presentation and `g` is locally of finite type, then `f` is locally of finite presentation.
+
+* `AlgebraicGeometry.locallyOfFinitePresentation_SpecMap_algebraMap`: `Spec S ⟶ Spec R` is
+  locally of finite presentation for a finitely presented `R`-algebra `S`.
+
+* `AlgebraicGeometry.locallyOfFinitePresentation_sigmaDesc`: a morphism out of a coproduct whose
+  components are locally of finite presentation is locally of finite presentation.
 
 * `CommRingCat.locallyOfFinitePresentation_terminal_from_Spec_iff`: finite presentation over
   the terminal scheme for an affine scheme is equivalent to finite presentation over `ℤ`.
@@ -38,7 +48,7 @@ public section
 
 open CategoryTheory TopologicalSpace
 
-universe u
+universe v u
 
 namespace AlgebraicGeometry
 
@@ -64,6 +74,26 @@ theorem locallyOfFinitePresentation_of_comp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (
     rw [Scheme.Hom.appLE_comp_appLE]
     exact HasRingHomProperty.appLE _ _ hfg ⟨W, hW⟩ ⟨V, hV⟩ _
   exact H.of_comp_finiteType _ (HasRingHomProperty.appLE _ g hg ⟨W, hW⟩ ⟨U, hU⟩ hUW)
+
+/-- If `S` is a finitely presented `R`-algebra, then `Spec S ⟶ Spec R` is locally of finite
+presentation. -/
+instance locallyOfFinitePresentation_SpecMap_algebraMap (R S : Type u) [CommRing R] [CommRing S]
+    [Algebra R S] [Algebra.FinitePresentation R S] :
+    LocallyOfFinitePresentation (Spec.map (CommRingCat.ofHom (algebraMap R S))) :=
+  HasRingHomProperty.Spec_iff.mpr (RingHom.finitePresentation_algebraMap.mpr inferInstance)
+
+/-- A morphism `∐ᵢ Yᵢ ⟶ X` out of a coproduct is locally of finite presentation if each of its
+components `Yᵢ ⟶ X` is. -/
+instance locallyOfFinitePresentation_sigmaDesc {X : Scheme.{u}} {ι : Type v} [Small.{u} ι]
+    {Y : ι → Scheme.{u}} {f : ∀ i, Y i ⟶ X} [∀ i, LocallyOfFinitePresentation (f i)] :
+    LocallyOfFinitePresentation (CategoryTheory.Limits.Sigma.desc f) :=
+  -- Instance search cannot apply `HasRingHomProperty.instIsZariskiLocalAtSource` here: under
+  -- instance transparency it fails to unify `@LocallyOfFinitePresentation` with the metavariable
+  -- `?P : MorphismProperty Scheme`. Mathlib's `Flat (Sigma.desc f)` instance avoids this by
+  -- relaxing the transparency option, which is not allowed here, so we supply the instance.
+  have : IsZariskiLocalAtSource @LocallyOfFinitePresentation.{u} :=
+    HasRingHomProperty.instIsZariskiLocalAtSource
+  IsZariskiLocalAtSource.sigmaDesc fun _ ↦ inferInstance
 
 end AlgebraicGeometry
 

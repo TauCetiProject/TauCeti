@@ -54,6 +54,8 @@ of the profile and the square of its derivative `-(r log (c / r))⁻¹`.
 
 * `TauCeti.locallyIntegrable_log_norm_pow`: `x ↦ (log ‖x‖) ^ k` is locally integrable.
 * `TauCeti.locallyIntegrable_log_norm`: `x ↦ log ‖x‖` is locally integrable.
+* `TauCeti.locallyIntegrable_log_norm_sub`: the translated kernel `w ↦ log ‖z - w‖` is locally
+  integrable.
 * `TauCeti.intervalIntegrable_log_pow`: `t ↦ (log t) ^ k` is interval integrable.
 * `TauCeti.integrable_log_abs_sub_restrict_Icc_prod`: `(x, y) ↦ log |x - y|` is integrable
   on bounded rectangles.
@@ -148,6 +150,20 @@ theorem locallyIntegrable_log_norm {E : Type*} [NormedAddCommGroup E] [NormedSpa
     [μ.IsAddHaarMeasure] :
     LocallyIntegrable (fun x : E ↦ Real.log ‖x‖) μ := by
   simpa using locallyIntegrable_log_norm_pow (μ := μ) 1
+
+/-- On a finite-dimensional real normed space with an additive Haar measure, the logarithmic
+kernel `w ↦ log ‖z - w‖` with pole `z`, the integrand of logarithmic potentials, is locally
+integrable. -/
+theorem locallyIntegrable_log_norm_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
+    [μ.IsAddHaarMeasure] (z : E) :
+    LocallyIntegrable (fun w : E ↦ Real.log ‖z - w‖) μ := by
+  -- The kernel is `log ‖·‖` composed with the measure-preserving reflection `w ↦ z - w`.
+  have hmap : μ.map (Homeomorph.subLeft z) = μ := (μ.measurePreserving_sub_left z).map_eq
+  have hloc : LocallyIntegrable (fun x : E ↦ Real.log ‖x‖) (μ.map (Homeomorph.subLeft z)) := by
+    rw [hmap]
+    exact locallyIntegrable_log_norm
+  exact (locallyIntegrable_map_homeomorph _).1 hloc
 
 /-- Every natural power `t ↦ (log t) ^ k` of the real logarithm is interval integrable on every
 interval. For `k = 1` this is Mathlib's `intervalIntegrable_log'`. -/

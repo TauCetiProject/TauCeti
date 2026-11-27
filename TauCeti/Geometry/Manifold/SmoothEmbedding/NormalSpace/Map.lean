@@ -102,8 +102,8 @@ private theorem mfderiv_comp_eq_of_eventuallyEq (hn : n ≠ 0) (hm : m ≠ 0)
 tangent vectors. -/
 theorem tangentRange_le_comap_mfderiv (hn : n ≠ 0) (hm : m ≠ 0)
     (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
-    f.tangentRange x hn ≤
-      (g.tangentRange (u x) hm).comap
+    f.isImmersion.tangentRange x hn ≤
+      (g.isImmersion.tangentRange (u x) hm).comap
         ((tangentSpaceCast J' (v (f x)) (g (u x))).toContinuousLinearMap.comp
         (mfderiv J J' v (f x))).toLinearMap := by
   by_cases hv : MDifferentiableAt J J' v (f x)
@@ -111,41 +111,41 @@ theorem tangentRange_le_comap_mfderiv (hn : n ≠ 0) (hm : m ≠ 0)
   · intro w _
     simp [mfderiv_zero_of_not_mdifferentiableAt hv]
   intro w hw
-  obtain ⟨w, rfl⟩ := (f.mem_tangentRange_iff x hn w).mp hw
-  apply (g.mem_tangentRange_iff (u x) hm _).mpr
+  obtain ⟨w, rfl⟩ := (f.isImmersion.mem_tangentRange_iff x hn w).mp hw
+  apply (g.isImmersion.mem_tangentRange_iff (u x) hm _).mpr
   refine ⟨mfderiv I I' u x w, ?_⟩
   exact (congrArg (fun L => L w) (f.mfderiv_comp_eq_of_eventuallyEq g hn hm hv h)).symm
 
 /-- The normal map induced by a square commuting near `x`. On an ambient tangent class,
 it is given by the differential of `v`. -/
 def normalMap (hn : n ≠ 0) (hm : m ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
-    f.NormalSpace x hn →L[𝕜] g.NormalSpace (u x) hm :=
-  f.normalLiftL x hn ((g.normalClassL (u x) hm).comp
+    f.isImmersion.NormalSpace x hn →L[𝕜] g.isImmersion.NormalSpace (u x) hm :=
+  f.isImmersion.normalLiftL x hn ((g.isImmersion.normalClassL (u x) hm).comp
       ((tangentSpaceCast J' (v (f x)) (g (u x))).toContinuousLinearMap.comp
         (mfderiv J J' v (f x))))
     (fun w hw => by
-      simp only [ContinuousLinearMap.comp_apply, normalClassL_apply,
-        normalClass_eq_zero_iff]
+      simp only [ContinuousLinearMap.comp_apply, Manifold.IsImmersion.normalClassL_apply,
+        Manifold.IsImmersion.normalClass_eq_zero_iff]
       exact f.tangentRange_le_comap_mfderiv g hn hm h hw)
 
 /-- The induced normal map commutes with the continuous quotient maps. -/
 @[simp]
 theorem normalMap_comp_normalClassL (hn : n ≠ 0) (hm : m ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
-    (f.normalMap g hn hm h).comp (f.normalClassL x hn) =
-      (g.normalClassL (u x) hm).comp
+    (f.normalMap g hn hm h).comp (f.isImmersion.normalClassL x hn) =
+      (g.isImmersion.normalClassL (u x) hm).comp
         ((tangentSpaceCast J' (v (f x)) (g (u x))).toContinuousLinearMap.comp
         (mfderiv J J' v (f x))) := by
-  exact f.normalLiftL_comp_normalClassL x hn _ _
+  exact f.isImmersion.normalLiftL_comp_normalClassL x hn _ _
 
 /-- The induced normal map sends the class of `w` to the class of `dv(w)`. -/
 @[simp]
 theorem normalMap_normalClass (hn : n ≠ 0) (hm : m ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u)
     (w : TangentSpace J (f x)) :
-    f.normalMap g hn hm h (f.normalClass x hn w) =
-      g.normalClass (u x) hm
+    f.normalMap g hn hm h (f.isImmersion.normalClass x hn w) =
+      g.isImmersion.normalClass (u x) hm
         (tangentSpaceCast J' (v (f x)) (g (u x)) (mfderiv J J' v (f x) w)) := by
   simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    normalClassL_apply] using
+    Manifold.IsImmersion.normalClassL_apply] using
     congrArg (fun L => L w) (f.normalMap_comp_normalClassL g hn hm h)
 
 /-- The identity square induces the identity on the normal space. -/
@@ -153,21 +153,21 @@ theorem normalMap_normalClass (hn : n ≠ 0) (hm : m ≠ 0) (h : v ∘ f =ᶠ[�
 theorem normalMap_id (hn : n ≠ 0) (x : M) :
     f.normalMap f hn hn (u := _root_.id) (v := _root_.id) (x := x)
       (Filter.EventuallyEq.refl _ _) =
-      ContinuousLinearMap.id 𝕜 (f.NormalSpace x hn) := by
+      ContinuousLinearMap.id 𝕜 (f.isImmersion.NormalSpace x hn) := by
   ext z
-  obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn z
+  obtain ⟨w, rfl⟩ := f.isImmersion.normalClass_surjective x hn z
   simp [tangentSpaceCast]
 
 /-- A commuting square induces a map of intrinsic normal total spaces.
 On each fibre it is the normal map induced by the ambient differential. -/
 def normalBundleMap (hn : n ≠ 0) (hm : m ≠ 0) (h : v ∘ f = g ∘ u)
-    (p : Bundle.TotalSpace K (fun x => f.NormalSpace x hn)) :
-    Bundle.TotalSpace K' (fun x => g.NormalSpace x hm) :=
+    (p : Bundle.TotalSpace K (fun x => f.isImmersion.NormalSpace x hn)) :
+    Bundle.TotalSpace K' (fun x => g.isImmersion.NormalSpace x hm) :=
   ⟨u p.proj, f.normalMap g hn hm (EventuallyEq.of_eq h) p.snd⟩
 
 /-- The induced total map applies the normal map in each fibre. -/
 @[simp] theorem normalBundleMap_apply (hn : n ≠ 0) (hm : m ≠ 0) (h : v ∘ f = g ∘ u)
-    (p : Bundle.TotalSpace K (fun x => f.NormalSpace x hn)) :
+    (p : Bundle.TotalSpace K (fun x => f.isImmersion.NormalSpace x hn)) :
     f.normalBundleMap (K' := K') g hn hm h p =
       ⟨u p.proj, f.normalMap g hn hm (EventuallyEq.of_eq h) p.snd⟩ :=
   (rfl)
@@ -203,7 +203,7 @@ theorem normalMap_comp (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
         exact (congrArg v' hy).trans hy') =
       (g.normalMap q hm hr h').comp (f.normalMap g hn hm h) := by
   ext z
-  obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn z
+  obtain ⟨w, rfl⟩ := f.isImmersion.normalClass_surjective x hn z
   simp only [ContinuousLinearMap.comp_apply, normalMap_normalClass]
   -- The first square identifies `v (f x)` with `g (u x)`, so the middle
   -- tangent-space identification cancels in the chain rule for `v' ∘ v`.
@@ -239,28 +239,29 @@ ambient differential carries the tangent range onto the target tangent range. -/
 theorem map_tangentRange_mfderiv (hn : n ≠ 0) (hm : m ≠ 0)
     (hv : MDifferentiableAt J J' v (f x))
     (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) (hsurj : Surjective (mfderiv I I' u x)) :
-    (f.tangentRange x hn).map ((tangentSpaceCast J' (v (f x)) (g (u x))).toContinuousLinearMap.comp
+    (f.isImmersion.tangentRange x hn).map
+        ((tangentSpaceCast J' (v (f x)) (g (u x))).toContinuousLinearMap.comp
         (mfderiv J J' v (f x))).toLinearMap =
-      g.tangentRange (u x) hm := by
+      g.isImmersion.tangentRange (u x) hm := by
   apply le_antisymm
   · exact Submodule.map_le_iff_le_comap.mpr
       (f.tangentRange_le_comap_mfderiv g hn hm h)
   · intro w hw
-    obtain ⟨w, rfl⟩ := (g.mem_tangentRange_iff (u x) hm w).mp hw
+    obtain ⟨w, rfl⟩ := (g.isImmersion.mem_tangentRange_iff (u x) hm w).mp hw
     obtain ⟨z, rfl⟩ := hsurj w
-    refine ⟨mfderiv I J f x z, (f.mem_tangentRange_iff x hn _).mpr ⟨z, rfl⟩, ?_⟩
+    refine ⟨mfderiv I J f x z, (f.isImmersion.mem_tangentRange_iff x hn _).mpr ⟨z, rfl⟩, ?_⟩
     exact congrArg (fun L => L z) (f.mfderiv_comp_eq_of_eventuallyEq g hn hm hv h)
 
 /-- A commuting square identifies the intrinsic normal fibres when the base differential is
 surjective and the ambient differential is invertible at the chosen point. -/
 def normalSpaceEquiv (hn : n ≠ 0) (hm : m ≠ 0) (hv : (mfderiv J J' v (f x)).IsInvertible)
     (hsurj : Surjective (mfderiv I I' u x)) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
-    f.NormalSpace x hn ≃L[𝕜] g.NormalSpace (u x) hm :=
+    f.isImmersion.NormalSpace x hn ≃L[𝕜] g.isImmersion.NormalSpace (u x) hm :=
   -- The range hypothesis `map_tangentRange_mfderiv` is stated for the linear map underlying
   -- `tangentSpaceCast ∘L mfderiv`. It is the one underlying the equivalence below by definition,
   -- since `ContinuousLinearEquiv.ofContinuousLinearMap` applies `mfderiv` (see
   -- `ContinuousLinearEquiv.coe_ofContinuousLinearMap`) and the cast then follows it.
-  f.normalSpaceEquivOfMapTangentRange g x (u x) hn hm
+  f.isImmersion.normalSpaceEquivOfMapTangentRange g.isImmersion x (u x) hn hm
     ((ContinuousLinearEquiv.ofContinuousLinearMap _ _ hv.self_comp_inverse
       hv.inverse_comp_self).trans
       (tangentSpaceCast J' (v (f x)) (g (u x))))
@@ -273,9 +274,10 @@ theorem normalSpaceEquiv_toContinuousLinearMap (hn : n ≠ 0) (hm : m ≠ 0)
     (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
     (f.normalSpaceEquiv g hn hm hv hsurj h).toContinuousLinearMap = f.normalMap g hn hm h := by
   ext z
-  obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn z
+  obtain ⟨w, rfl⟩ := f.isImmersion.normalClass_surjective x hn z
   rw [ContinuousLinearEquiv.coe_apply, normalMap_normalClass]
-  refine (f.normalSpaceEquivOfMapTangentRange_normalClass g x (u x) hn hm _ _ w).trans ?_
+  refine (f.isImmersion.normalSpaceEquivOfMapTangentRange_normalClass g.isImmersion x (u x) hn hm
+    _ _ w).trans ?_
   rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.coe_ofContinuousLinearMap]
 
 /-- On representatives, the normal-fibre equivalence applies the ambient differential. -/
@@ -283,11 +285,11 @@ theorem normalSpaceEquiv_toContinuousLinearMap (hn : n ≠ 0) (hm : m ≠ 0)
 theorem normalSpaceEquiv_normalClass (hn : n ≠ 0) (hm : m ≠ 0)
     (hv : (mfderiv J J' v (f x)).IsInvertible) (hsurj : Surjective (mfderiv I I' u x))
     (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) (w : TangentSpace J (f x)) :
-    f.normalSpaceEquiv g hn hm hv hsurj h (f.normalClass x hn w) =
-      g.normalClass (u x) hm
+    f.normalSpaceEquiv g hn hm hv hsurj h (f.isImmersion.normalClass x hn w) =
+      g.isImmersion.normalClass (u x) hm
         (tangentSpaceCast J' (v (f x)) (g (u x)) (mfderiv J J' v (f x) w)) := by
   simpa only [ContinuousLinearEquiv.coe_apply, normalMap_normalClass] using
-    congrArg (fun L => L (f.normalClass x hn w))
+    congrArg (fun L => L (f.isImmersion.normalClass x hn w))
       (f.normalSpaceEquiv_toContinuousLinearMap g hn hm hv hsurj h)
 
 /-- On representatives, the inverse normal-fibre equivalence applies the inverse ambient
@@ -296,8 +298,8 @@ differential, after identifying the equal ambient base points. -/
 theorem normalSpaceEquiv_symm_normalClass (hn : n ≠ 0) (hm : m ≠ 0)
     (hv : (mfderiv J J' v (f x)).IsInvertible) (hsurj : Surjective (mfderiv I I' u x))
     (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) (w : TangentSpace J' (g (u x))) :
-    (f.normalSpaceEquiv g hn hm hv hsurj h).symm (g.normalClass (u x) hm w) =
-      f.normalClass x hn
+    (f.normalSpaceEquiv g hn hm hv hsurj h).symm (g.isImmersion.normalClass (u x) hm w) =
+      f.isImmersion.normalClass x hn
         ((mfderiv J J' v (f x)).inverse ((tangentSpaceCast J' (v (f x)) (g (u x))).symm w)) := by
   apply (f.normalSpaceEquiv g hn hm hv hsurj h).injective
   rw [ContinuousLinearEquiv.apply_symm_apply, normalSpaceEquiv_normalClass,

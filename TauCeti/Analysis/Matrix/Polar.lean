@@ -39,8 +39,10 @@ or the symplectic group (`W = J`), contains the polar factors of its elements.
 * `Matrix.GeneralLinearGroup.existsUnique_posDef_mul_unitary`: existence and uniqueness of the
   polar decomposition `A = P U` with `P` positive definite and `U` unitary.
 * `Matrix.GeneralLinearGroup.coe_mul_inv_toUnits_polarUnitary`: the positive factor is `A U⁻¹`.
+* `Matrix.det_mul_star`: the determinant of `A Aᴴ` is `‖det A‖ ^ 2`.
 * `Matrix.det_sqrt_mul_star`, `Matrix.GeneralLinearGroup.det_polarUnitary`: the determinants of
-  the two factors; the first holds for every square matrix.
+  the two factors; the first holds for every square matrix, as does its right-hand counterpart
+  `Matrix.det_sqrt_star_mul`.
 * `Matrix.GeneralLinearGroup.exists_scalar_mul_mul_toGL_eq`: every invertible matrix is a scalar
   times a unitary matrix times a matrix of determinant one.
 * `Matrix.GeneralLinearGroup.det_rpow_sqrt_mul_star_of_det_eq_one`,
@@ -66,13 +68,21 @@ namespace Matrix
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
+/-- The determinant of `A Aᴴ` is `‖det A‖ ^ 2`. -/
+theorem det_mul_star (A : Matrix n n 𝕜) : (A * star A).det = (‖A.det‖ : 𝕜) ^ 2 := by
+  rw [det_mul, star_eq_conjTranspose, det_conjTranspose, RCLike.star_def, RCLike.mul_conj]
+
 /-- The determinant of the positive factor `√(A Aᴴ)` of the polar decomposition is `‖det A‖`;
 this holds for every square matrix `A`, invertible or not. -/
 theorem det_sqrt_mul_star (A : Matrix n n 𝕜) : (CFC.sqrt (A * star A)).det = ‖A.det‖ := by
   have hAA : (A * star A).PosSemidef := nonneg_iff_posSemidef.1 (mul_star_self_nonneg _)
-  rw [CFC.sqrt_eq_rpow, hAA.det_rpow, det_mul, star_eq_conjTranspose, det_conjTranspose,
-    RCLike.star_def, RCLike.mul_conj, ← RCLike.ofReal_pow, RCLike.ofReal_re, ← Real.sqrt_eq_rpow,
-    Real.sqrt_sq (norm_nonneg _)]
+  rw [CFC.sqrt_eq_rpow, hAA.det_rpow, det_mul_star, ← RCLike.ofReal_pow, RCLike.ofReal_re,
+    ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _)]
+
+/-- The determinant of the right positive factor `√(Aᴴ A)` is `‖det A‖`; this holds for every
+square matrix `A`, invertible or not. -/
+theorem det_sqrt_star_mul (A : Matrix n n 𝕜) : (CFC.sqrt (star A * A)).det = ‖A.det‖ := by
+  simpa [star_eq_conjTranspose, det_conjTranspose] using det_sqrt_mul_star (star A)
 
 namespace GeneralLinearGroup
 

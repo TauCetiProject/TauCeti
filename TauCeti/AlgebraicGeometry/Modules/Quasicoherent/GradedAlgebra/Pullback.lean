@@ -20,8 +20,8 @@ its homogeneous multiplications are
 
 `f^* Aᵢ ⊗ f^* Aⱼ ≅ f^* (Aᵢ ⊗ Aⱼ) ⟶ f^* Aᵢ₊ⱼ`,
 
-where the first map inverts the tensor comparison of pullback, which is an isomorphism because
-`Aᵢ` is quasicoherent (Stacks Project, Tag 03EL). This is base change of graded algebras along
+where the first map inverts the tensor comparison of pullback, which is an isomorphism for all
+module sheaves (Stacks Project, Tag 03EL). This is base change of graded algebras along
 `f`, the graded counterpart of `TauCeti.AlgebraicGeometry.QuasicoherentAlgebra.pullback`. It is
 the algebraic side of base change for graded relative spectra, such as the linear scheme
 `Spec_X (Sym F)`.
@@ -122,7 +122,7 @@ private def pullbackMul (i j : ℕ) :
 private lemma pullbackOne_def :
     pullbackOne f A = (Scheme.Modules.pullbackObjUnitIso f).inv ≫
       (Scheme.Modules.pullback f).map A.obj.toMon.one := by
-  rw [pullbackOne, Scheme.Modules.pullbackToModules_ε]
+  simp only [pullbackOne, Scheme.Modules.pullbackToModules_ε]
   -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
   exact congrArg (_ ≫ ·) (eq_of_heq ((comp_eqToHom_heq _
     (congrArg (Scheme.Modules.pullback f).obj (degree_obj_obj A 0).symm).symm).trans
@@ -133,11 +133,13 @@ private lemma pullbackMul_def (i j : ℕ) :
     pullbackMul f A i j =
       inv (δ (Scheme.Modules.pullback f) (A.obj.X i) (A.obj.X j)) ≫
         (Scheme.Modules.pullback f).map (A.obj.toMon.mul i j) := by
-  rw [pullbackMul, Scheme.Modules.pullbackToModules_μ]
-  have := @Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent _ _ f _
-    ((degree j).obj A).obj ((degree i).obj A).property
-  -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
-  exact Functor.eqToHom_conjugate_inv_δ_comp_map (C := X.Modules) _ (degree_obj_obj A i).symm
+  simp only [pullbackMul, Scheme.Modules.pullbackToModules_μ,
+    ← Functor.Monoidal.inv_δ (Scheme.Modules.pullback f)
+      ((degree i).obj A).obj ((degree j).obj A).obj]
+  -- The transport lemma needs invertibility at the degree objects with their scheme-module carrier.
+  have := Scheme.Modules.isIso_pullback_δ f ((degree i).obj A).obj ((degree j).obj A).obj
+  exact Functor.eqToHom_conjugate_inv_δ_comp_map (C := X.Modules) (D := Y.Modules)
+    (Scheme.Modules.pullback f) (degree_obj_obj A i).symm
     (degree_obj_obj A j).symm (degree_obj_obj A (i + j)).symm _ _ (A.mul_hom i j)
 
 /-- The homogeneous components `f^* Aₙ` of the pullback of a graded quasicoherent algebra. -/

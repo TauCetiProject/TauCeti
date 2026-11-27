@@ -42,8 +42,12 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
   (`iUnion_puncturedSphereTruncation`), and specializes to the truncation of the thrice-punctured
   sphere (`puncturedSphereTruncation_eq_truncation`).
 * `hasDerivAt_add_mul_cylindricalEndLift`: the complex derivative of the end lift of an input end.
+* `det_fderiv_realChart_add_mul_cylindricalEndLift`: its Jacobian in real coordinates is
+  `4π² |w - c|²` at the point `w` it reaches.
 * `injOn_add_mul_cylindricalEndLift` and `injOn_realChart_add_mul_cylindricalEndLift`: the end
   lift of an input end is injective on every horizontal strip of height one.
+* `realChart_add_mul_cylindricalEndLift_add_one`: in real coordinates it has period one in the
+  angular coordinate.
 * `add_mul_cylindricalEndLift_mem_puncturedSphereTruncation` and
   `cylindricalEndLift_inf_mem_puncturedSphereTruncation`: the end pieces lie in `Σ_R`.
 * `exists_add_mul_cylindricalEndLift_eq`: the converse for the input ends; for the output end it
@@ -154,6 +158,19 @@ theorem hasDerivAt_add_mul_cylindricalEndLift (c a w : ℂ) :
       (a * deriv zero.cylindricalEndLift w) w :=
   ((zero.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt.const_mul a).const_add c
 
+/-- The Jacobian of the end lift `z ↦ c + a φ₀(z)` of an input end, in real coordinates, is
+`4π² |w - c|²` at the point `w` it reaches. -/
+theorem det_fderiv_realChart_add_mul_cylindricalEndLift (c a : ℂ) (ζ : ℝ × ℝ) :
+    (fderiv ℝ (realChart fun z ↦ c + a * zero.cylindricalEndLift z) ζ).det =
+      4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm
+        (realChart (fun z ↦ c + a * zero.cylindricalEndLift z) ζ) - c‖ ^ 2 := by
+  rw [TauCeti.Complex.det_fderiv_realChart (hasDerivAt_add_mul_cylindricalEndLift c a _),
+    TauCeti.Complex.equivRealProdCLM_symm_realChart, add_sub_cancel_left,
+    zero.deriv_cylindricalEndLift, endCenter_zero, sub_zero, Complex.normSq_eq_norm_sq]
+  simp only [norm_mul, norm_neg, Complex.norm_ofNat, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos Real.pi_pos]
+  ring
+
 /-- If the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in the disc
 `‖w‖ ≤ 2 exp (2π)`, then the part `1 ≤ s ≤ R` of every input end lies in the truncation `Σ_R`. -/
 theorem add_mul_cylindricalEndLift_mem_puncturedSphereTruncation
@@ -263,5 +280,15 @@ theorem injOn_realChart_add_mul_cylindricalEndLift {c a : ℂ} (ha : a ≠ 0) {S
   injOn_realChart <| (injOn_add_mul_cylindricalEndLift ha t₀).mono <| by
     rintro _ ⟨p, hp, rfl⟩
     simpa using hp.2
+
+/-- The end lift `z ↦ c + a φ₀(z)` of an input end, in real coordinates, has period one in the
+angular coordinate. -/
+theorem realChart_add_mul_cylindricalEndLift_add_one (c a : ℂ) (s t : ℝ) :
+    realChart (fun z ↦ c + a * zero.cylindricalEndLift z) (s, t + 1) =
+      realChart (fun z ↦ c + a * zero.cylindricalEndLift z) (s, t) := by
+  have h := zero.periodic_cylindricalEndLift s t
+  simp only [Complex.ofReal_add, Complex.ofReal_one] at h
+  rw [TauCeti.Complex.realChart_mk, TauCeti.Complex.realChart_mk, Complex.ofReal_add,
+    Complex.ofReal_one, h]
 
 end TauCeti.ThricePuncturedSphere

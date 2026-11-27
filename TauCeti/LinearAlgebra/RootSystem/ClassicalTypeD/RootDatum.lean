@@ -22,15 +22,16 @@ has no roots for `n ≤ 1`, it is of type `A₁ × A₁` for `n = 2` and of type
 It is the root pairing of the norm-two shell (`Matrix.PosDef.normTwoShellRootPairing`) of the
 identity matrix over `ℤ`, reindexed by `TauCeti.DynkinType.TypeDRoot`.
 
-For `4 ≤ n` the Bourbaki simple roots `e_i - e_{i+1}` and `e_{n-2} + e_{n-1}` form a base, by
-the expansion of every root in them with coefficients of one sign
-(`TauCeti.DynkinType.typeDSimpleRootCoordinates_nonneg_or_nonpos`).
+For `2 ≤ n` the Bourbaki simple roots `e_i - e_{i+1}` and `e_{n-2} + e_{n-1}`
+(`TauCeti.DynkinType.typeDSimpleRoot`) form a base, by the expansion of every root in them with
+coefficients of one sign (`TauCeti.DynkinType.typeDSimpleRootCoordinates_nonneg_or_nonpos`); for
+`n = 2` and `n = 3` it is a base of type `A₁ × A₁` and `A₃`.
 
 ## Main declarations
 
 * `TauCeti.DynkinType.typeDClassicalRootDatum`: the root datum.
 * `TauCeti.DynkinType.flip_typeDClassicalRootDatum`: it is its own dual.
-* `TauCeti.DynkinType.typeDClassicalBase`: the Bourbaki base for `4 ≤ n`.
+* `TauCeti.DynkinType.typeDClassicalBase`: the Bourbaki base for `2 ≤ n`.
 
 ## References
 
@@ -99,15 +100,13 @@ theorem flip_typeDClassicalRootDatum :
 
 section Base
 
-variable (hn : 4 ≤ n)
+variable (hn : 2 ≤ n)
 
-omit hn in
 /-- The roots of the classical root datum of type `Dₙ`, as a function. -/
 private theorem coe_typeDClassicalRootDatum_root :
     ⇑(typeDClassicalRootDatum n).root = Subtype.val :=
   funext typeDClassicalRootDatum_root
 
-omit hn in
 /-- The coroots of the classical root datum of type `Dₙ`, as a function, are the roots. -/
 private theorem coe_typeDClassicalRootDatum_coroot :
     ⇑(typeDClassicalRootDatum n).coroot = Subtype.val :=
@@ -115,9 +114,7 @@ private theorem coe_typeDClassicalRootDatum_coroot :
 
 /-- The `i`-th Bourbaki simple root of type `Dₙ`, as a root. -/
 def typeDClassicalSimpleIndex (i : Fin n) : TypeDRoot n :=
-  ⟨typeDSimpleRoot n hn i, by
-    rw [typeDSimpleRoot_dotProduct_typeDSimpleRoot]
-    simp [CartanMatrix.D]⟩
+  ⟨typeDSimpleRoot n hn i, by simp⟩
 
 @[simp]
 theorem typeDClassicalSimpleIndex_val (i : Fin n) :
@@ -138,7 +135,7 @@ private theorem mem_or_neg_mem_closure (x : TypeDRoot n) :
   rw [image_simpleSupport, ← sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x)]
   exact sum_smul_mem_or_neg_mem_closure _ _ (typeDSimpleRootCoordinates_nonneg_or_nonpos hn x)
 
-/-- **The Bourbaki base of the classical root datum of type `Dₙ`**, for `4 ≤ n`: the simple roots
+/-- **The Bourbaki base of the classical root datum of type `Dₙ`**, for `2 ≤ n`: the simple roots
 `e_i - e_{i+1}` and `e_{n-2} + e_{n-1}`. -/
 noncomputable def typeDClassicalBase : (typeDClassicalRootDatum n).Base where
   support := simpleSupport (typeDClassicalSimpleIndex_injective hn)
@@ -160,6 +157,25 @@ theorem mem_typeDClassicalBase_support {x : TypeDRoot n} :
     x ∈ (typeDClassicalBase hn).support ↔ ∃ i, typeDClassicalSimpleIndex hn i = x :=
   mem_simpleSupport _
 
+/-- The Bourbaki base of type `Dₙ` has `n` simple roots. -/
+@[simp]
+theorem card_typeDClassicalBase_support : (typeDClassicalBase hn).support.card = n := by
+  simp [typeDClassicalBase]
+
 end Base
+
+/-! ### Checks -/
+
+/-- In type `D₂ = A₁ × A₁` the two simple roots `e₀ - e₁` and `e₀ + e₁` are orthogonal. -/
+example : typeDSimpleRoot 2 le_rfl 0 ⬝ᵥ typeDSimpleRoot 2 le_rfl 1 = 0 := by
+  simp [dotProduct, Fin.sum_univ_two, Pi.single_apply]
+
+/-- In type `D₃ = A₃` the simple roots `e₁ - e₂` and `e₁ + e₂` are orthogonal and both pair to
+`-1` with `e₀ - e₁`: the Dynkin diagram is the chain `A₃` with `e₀ - e₁` in the middle. -/
+example :
+    typeDSimpleRoot 3 (by norm_num) 1 ⬝ᵥ typeDSimpleRoot 3 (by norm_num) 2 = 0 ∧
+      typeDSimpleRoot 3 (by norm_num) 0 ⬝ᵥ typeDSimpleRoot 3 (by norm_num) 1 = -1 ∧
+      typeDSimpleRoot 3 (by norm_num) 0 ⬝ᵥ typeDSimpleRoot 3 (by norm_num) 2 = -1 := by
+  simp [dotProduct, Fin.sum_univ_three, Pi.single_apply]
 
 end TauCeti.DynkinType
