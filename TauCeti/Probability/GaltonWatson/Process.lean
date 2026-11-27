@@ -88,17 +88,8 @@ theorem pgf_gwKernel_pow_apply (n j : ℕ) {s : ℝ} (hs : |s| ≤ 1) :
 /-- The mean number of offspring of `j` individuals is `j` times the offspring mean, in `[0, ∞]`. -/
 theorem lintegral_gwKernel_apply (j : ℕ) :
     ∫⁻ k, (k : ℝ≥0∞) ∂ν.gwKernel j = j * ν.offspringMean := by
-  induction j with
-  | zero => simp
-  | succ j ih =>
-    have hx (x : ℕ) : ∫⁻ y, ((x + y : ℕ) : ℝ≥0∞) ∂ν = x + ν.offspringMean := by
-      simp only [Nat.cast_add]
-      rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one,
-        offspringMean_def]
-    rw [gwKernel_apply, lintegral_convolutionPower_succ _ _ _ (measurable_of_countable _)]
-    simp only [hx]
-    rw [lintegral_add_right _ measurable_const, lintegral_const, measure_univ, mul_one,
-      ← gwKernel_apply, ih, Nat.cast_succ, add_mul, one_mul]
+  simpa [offspringMean_def] using lintegral_addMonoidHom_convolutionPower ν
+    (Nat.castAddMonoidHom ℝ≥0∞) (measurable_of_countable _) j
 
 /-- The mean number of descendants of `j` individuals after `n` generations is `j m ^ n`, in
 `[0, ∞]`, for every offspring law; here `0 ^ 0 = 1`. -/
