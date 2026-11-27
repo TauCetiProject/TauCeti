@@ -25,6 +25,10 @@ used for orientation-free integration and density-valued test sections.
 The change-of-basis formula rests on `Module.Basis.det_constr`: the endomorphism sending a
 basis `b` to a tuple `v` has determinant `b.det v`.
 
+Densities are transported along linear equivalences by `TauCeti.Density.map`, the analogue of
+`Orientation.map`; along an automorphism `f` the transport is scaling by `|det f|⁻¹`
+(`TauCeti.Density.map_eq_abs_det_inv_smul`).
+
 The construction adapts Li Xuanji’s implementation in Tau Ceti PR #22145.
 
 ## References
@@ -113,14 +117,6 @@ theorem apply_eq_abs_det_mul (μ : Density V m) (b : Module.Basis (Fin m) ℝ V)
     μ v = μ ((b.constr ℝ v : V → V) ∘ b) := congrArg μ hv.symm
     _ = |b.det v| * μ b := by rw [comp_apply, b.det_constr]
 
-/-- A top-dimensional density does not see the order of the vectors of a tuple: reordering
-changes the determinant only by a sign. The basis `b` only witnesses that `m` is the dimension
-of `V`; in other dimensions densities need not be symmetric. -/
-theorem apply_comp_perm (μ : Density V m) (b : Module.Basis (Fin m) ℝ V)
-    (σ : Equiv.Perm (Fin m)) (v : Fin m → V) : μ (v ∘ σ) = μ v := by
-  rw [apply_eq_abs_det_mul μ b, apply_eq_abs_det_mul μ b v, b.det.map_perm]
-  simp [Units.smul_def, abs_mul, abs_unit_intCast]
-
 /-- A density is zero exactly when its value on a basis is zero. -/
 @[simp]
 theorem apply_basis_eq_zero_iff (μ : Density V m) (b : Module.Basis (Fin m) ℝ V) :
@@ -204,5 +200,66 @@ theorem apply_eq_zero_of_not_linearIndependent (μ : Density V m)
     μ v = 0 := by
   have hd : b.det v = 0 := b.det.map_linearDependent v hv
   simp [apply_eq_abs_det_mul μ b v, hd]
+
+/-! ### Transport along linear equivalences -/
+
+variable {V' V'' : Type*} [AddCommGroup V'] [Module ℝ V'] [AddCommGroup V''] [Module ℝ V'']
+
+/-- The density `v ↦ μ (e⁻¹ ∘ v)` on `V'`, the underlying function of `TauCeti.Density.map`. -/
+private def mapAux (e : V ≃ₗ[ℝ] V') (μ : Density V m) : Density V' m :=
+  ⟨fun v ↦ μ (e.symm ∘ v), fun T v ↦ by
+    -- `e⁻¹ ∘ T = (e⁻¹ T e) ∘ e⁻¹`, and conjugation does not change the determinant.
+    have h : ⇑e.symm ∘ (⇑T ∘ v) =
+        ⇑((e.symm : V' →ₗ[ℝ] V) ∘ₗ T ∘ₗ (e : V →ₗ[ℝ] V')) ∘ (⇑e.symm ∘ v) := by
+      funext i
+      simp
+    rw [h, comp_apply, ← LinearMap.det_conj T e.symm, LinearEquiv.symm_symm]⟩
+
+/-- The transport `e_* μ` of a density along a linear equivalence `e : V ≃ V'`, a density on `V'`
+with `(e_* μ) v = μ (e⁻¹ ∘ v)`. This is the density analogue of `Orientation.map`. -/
+noncomputable def map (e : V ≃ₗ[ℝ] V') : Density V m ≃ₗ[ℝ] Density V' m where
+  toFun := mapAux e
+  invFun := mapAux e.symm
+  left_inv μ := by
+    ext v
+    simp [mapAux, Function.comp_def]
+  right_inv μ := by
+    ext v
+    simp [mapAux, Function.comp_def]
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem map_apply (e : V ≃ₗ[ℝ] V') (μ : Density V m) (v : Fin m → V') :
+    map e μ v = μ (e.symm ∘ v) :=
+  (rfl)
+
+@[simp]
+theorem map_symm (e : V ≃ₗ[ℝ] V') : (map e).symm = (map e.symm : Density V' m ≃ₗ[ℝ] _) :=
+  (rfl)
+
+@[simp]
+theorem map_refl : map (LinearEquiv.refl ℝ V) = LinearEquiv.refl ℝ (Density V m) :=
+  (rfl)
+
+theorem map_trans (e : V ≃ₗ[ℝ] V') (e' : V' ≃ₗ[ℝ] V'') :
+    map (e.trans e') = ((map e).trans (map e') : Density V m ≃ₗ[ℝ] _) :=
+  (rfl)
+
+/-- Transport along a linear equivalence evaluates a density on the transported basis. -/
+theorem map_apply_basis_map (e : V ≃ₗ[ℝ] V') (μ : Density V m) (b : Module.Basis (Fin m) ℝ V) :
+    map e μ (b.map e) = μ b := by
+  rw [map_apply]
+  congr 1
+  funext i
+  simp
+
+/-- Transport along an automorphism `f` of `V` scales a density by `|det f|⁻¹`; compare
+`Orientation.map_eq_det_inv_smul`. -/
+theorem map_eq_abs_det_inv_smul (f : V ≃ₗ[ℝ] V) (μ : Density V m) :
+    map f μ = |LinearMap.det (f : V →ₗ[ℝ] V)|⁻¹ • μ := by
+  ext v
+  rw [map_apply, smul_apply, smul_eq_mul, ← LinearEquiv.coe_coe, comp_apply,
+    LinearEquiv.det_coe_symm, abs_inv]
 
 end TauCeti.Density

@@ -21,6 +21,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Topology.LocallyConstant.Preconnected
 
 /-!
 # Mean value estimates
@@ -76,6 +77,13 @@ On a set that is not convex, the mean value inequality still bounds the incremen
 along any polygonal path inside the set by the derivative bound times the length of the path
 (`TauCeti.norm_image_sub_le_of_norm_fderiv_le_of_segment_subset`, for three segments).
 
+## Constancy on a relatively open part of a convex set
+
+A function whose derivative within `Ω ∩ s` vanishes, for `Ω` open and `s` convex, is constant on
+`Ω ∩ s` when that set is preconnected (`Convex.is_const_of_fderivWithin_inter_eq_zero`), since
+near each of its points `Ω ∩ s` is the convex set `ball ∩ s`. For `s` a closed half-space this is
+constancy up to the boundary of a half-disc.
+
 ## Space-time functions vanishing outside a time interval
 
 A function of time and space with derivative bounded by `C` that vanishes outside the time
@@ -121,6 +129,9 @@ projection and the derivative of a map kills `ker π` on a ball about `0`, then 
 only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
+Over `ℝ`, if the derivative of a function in a direction `e` is a constant `c` along the
+segment from `x + a • e` to `x + b • e`, the function grows by `(b - a) • c` along it
+(`TauCeti.sub_eq_smul_of_fderiv_apply_eq`).
 
 ## Constancy from a vanishing derivative
 
@@ -496,6 +507,25 @@ theorem _root_.HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero {g : F → G}
 
 end Direction
 
+/-- If `f` is differentiable at every point `x + s • e` with `s ∈ [a, b]` and its derivative in
+the direction `e` is the constant `c` there, then `f` grows by `(b - a) • c` from `x + a • e` to
+`x + b • e`. Unlike `TauCeti.apply_add_smul_eq_of_fderiv_apply_eq`, differentiability and the
+directional derivative are only assumed on the segment. -/
+theorem sub_eq_smul_of_fderiv_apply_eq {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : E → G} (x e : E) {a b : ℝ} {c : G} (hab : a ≤ b)
+    (hf : ∀ s ∈ Set.Icc a b, DifferentiableAt ℝ f (x + s • e) ∧ fderiv ℝ f (x + s • e) e = c) :
+    f (x + b • e) - f (x + a • e) = (b - a) • c := by
+  have hd : ∀ s ∈ Set.Icc a b, HasDerivAt (fun s ↦ f (x + s • e) - s • c) 0 s := fun s hs ↦ by
+    refine (((hf s hs).1.hasFDerivAt.comp_hasDerivAt s
+      (((hasDerivAt_id s).smul_const e).const_add x)).sub
+      ((hasDerivAt_id s).smul_const c)).congr_deriv ?_
+    simp [(hf s hs).2]
+  have h := constant_of_has_deriv_right_zero
+    (fun s hs ↦ (hd s hs).continuousAt.continuousWithinAt)
+    (fun s hs ↦ (hd s (Set.Ico_subset_Icc_self hs)).hasDerivWithinAt) b ⟨hab, le_rfl⟩
+  rw [sub_smul]
+  exact sub_eq_sub_iff_sub_eq_sub.1 h
+
 /-- **The mean value inequality along three segments.** If the segments `[x, p]`, `[p, q]` and
 `[q, y]` lie in a set `s` on which `g` is differentiable with derivative bounded by `L`, then
 `‖g y - g x‖ ≤ L (‖x - p‖ + ‖p - q‖ + ‖q - y‖)`. Compare
@@ -711,6 +741,41 @@ theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
   simpa [sub_eq_zero, eq_comm] using h
 
 end IsPreconnected
+
+namespace Convex
+
+variable {𝕜 E G : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E] [NormedAddCommGroup G]
+  [NormedSpace 𝕜 G] {f : E → G} {Ω s : Set E} {x y : E}
+
+open Metric Set in
+open scoped Topology in
+/-- **Constancy on a preconnected relatively open part of a convex set.** Let `Ω` be open and `s`
+convex, such as a closed half-space. A function on `Ω ∩ s` whose derivative within `Ω ∩ s`
+vanishes at every point is constant on `Ω ∩ s` when that set is preconnected. The convex case
+`Ω = univ` is Mathlib's `Convex.is_const_of_fderivWithin_eq_zero`. -/
+theorem is_const_of_fderivWithin_inter_eq_zero (hs : Convex ℝ s) (hΩ : IsOpen Ω)
+    (hc : IsPreconnected (Ω ∩ s)) (hf : DifferentiableOn 𝕜 f (Ω ∩ s))
+    (hf' : ∀ z ∈ Ω ∩ s, fderivWithin 𝕜 f (Ω ∩ s) z = 0) (hx : x ∈ Ω ∩ s) (hy : y ∈ Ω ∩ s) :
+    f x = f y := by
+  -- `f` is locally constant on `Ω ∩ s`, which agrees near each of its points with a convex set
+  have hloc : ∀ z ∈ Ω ∩ s, ∀ᶠ w in 𝓝[Ω ∩ s] z, f w = f z := by
+    intro z hz
+    obtain ⟨r, hr, hrΩ⟩ := isOpen_iff.1 hΩ z hz.1
+    have hset : ball z r ∩ s = (Ω ∩ s) ∩ ball z r :=
+      Set.ext fun w ↦ ⟨fun h ↦ ⟨⟨hrΩ h.1, h.2⟩, h.1⟩, fun h ↦ ⟨h.2, h.1.2⟩⟩
+    have hd : ∀ w ∈ ball z r ∩ s, fderivWithin 𝕜 f (ball z r ∩ s) w = 0 := fun w hw ↦ by
+      rw [hset, fderivWithin_inter (isOpen_ball.mem_nhds hw.1)]
+      exact hf' w ⟨hrΩ hw.1, hw.2⟩
+    have hconst : ∀ w ∈ ball z r ∩ s, f z = f w := fun w hw ↦
+      ((convex_ball z r).inter hs).is_const_of_fderivWithin_eq_zero
+        (hf.mono fun w hw ↦ ⟨hrΩ hw.1, hw.2⟩) hd ⟨mem_ball_self hr, hz.2⟩ hw
+    exact Filter.mem_of_superset (inter_mem_nhdsWithin _ (ball_mem_nhds z hr))
+      fun w hw ↦ (hconst w ⟨hw.2, hw.1.2⟩).symm
+  -- a locally constant map on a preconnected set is constant
+  exact hc.apply_eq_of_eventually_eq hloc hx hy
+
+end Convex
 
 /-- A function `f : 𝕜 → G`, `𝕜 = ℝ` or `𝕜 = ℂ`, with zero derivative at every point is constant.
 This is the `HasDerivAt` form of Mathlib's `is_const_of_deriv_eq_zero`. -/

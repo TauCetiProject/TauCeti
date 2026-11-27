@@ -18,6 +18,7 @@ public import Mathlib.LinearAlgebra.Basis.Submodule
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+public import TauCeti.NumberTheory.Padics.Basic
 import Mathlib.Algebra.Group.Equiv.TypeTags
 import Mathlib.LinearAlgebra.Dimension.Constructions
 
@@ -61,10 +62,12 @@ additive isomorphism between two such modules preserves `Module.finrank`, and `�
   is torsion-free.
 * `LinearMap.padicIntCodRestrict`: a `ℚ_[p]`-valued `ℤ_[p]`-linear map with values in
   `ℤ_[p]`, as a `ℤ_[p]`-valued functional.
-* `TauCeti.instContinuousConstSMulPadicInt`: `ℤ_[p]` acts continuously on a topological
-  `ℚ_[p]`-module through `ℚ_[p]`.
+* `TauCeti.instContinuousConstSMulPadicInt`, `TauCeti.instContinuousSMulPadicInt`: `ℤ_[p]` acts
+  continuously on a topological `ℚ_[p]`-module through `ℚ_[p]`.
 * `Module.Basis.mem_span_padicInt_iff_norm_repr_le_one`: the `ℤ_p`-span of a `ℚ_p`-basis is the
   set of vectors whose coordinates have norm at most `1`.
+* `Module.Basis.isOpen_span_padicInt_of_continuous_coord`: the `ℤ_p`-span of a finite
+  `ℚ_p`-basis with continuous coordinate functionals is open.
 * `Module.Basis.isOpen_span_padicInt`: the `ℤ_p`-span of a `ℚ_p`-basis of a finite-dimensional
   Hausdorff topological vector space is open.
 -/
@@ -318,6 +321,10 @@ instance instContinuousConstSMulPadicInt [ContinuousConstSMul ℚ_[p] V] :
     ContinuousConstSMul ℤ_[p] V :=
   IsScalarTower.continuousConstSMul ℤ_[p] ℚ_[p] V
 
+/-- `ℤ_[p]` acts jointly continuously on a topological `ℚ_[p]`-module through `ℚ_[p]`. -/
+instance instContinuousSMulPadicInt [ContinuousSMul ℚ_[p] V] : ContinuousSMul ℤ_[p] V :=
+  IsScalarTower.continuousSMul ℚ_[p]
+
 end TauCeti
 
 namespace Module.Basis
@@ -335,20 +342,27 @@ theorem mem_span_padicInt_iff_norm_repr_le_one (b : Module.Basis ι ℚ_[p] V) (
   rw [← hx, PadicInt.algebraMap_apply, ← PadicInt.norm_def]
   exact x.norm_le_one
 
-/-- The `ℤ_[p]`-span of a `ℚ_[p]`-basis of a finite-dimensional Hausdorff topological vector
-space is open. -/
-theorem isOpen_span_padicInt [TopologicalSpace V] [IsTopologicalAddGroup V]
-    [ContinuousSMul ℚ_[p] V] [T2Space V] [Finite ι] (b : Module.Basis ι ℚ_[p] V) :
+/-- The `ℤ_[p]`-span of a finite `ℚ_[p]`-basis whose coordinate functionals are continuous is
+open: it is the finite intersection of the preimages of the open unit ball under the
+coordinates. -/
+theorem isOpen_span_padicInt_of_continuous_coord [TopologicalSpace V] [Finite ι]
+    (b : Module.Basis ι ℚ_[p] V) (hb : ∀ i, Continuous (b.coord i)) :
     IsOpen (Submodule.span ℤ_[p] (Set.range b) : Set V) := by
-  have := Module.Finite.of_basis b
   have h : (Submodule.span ℤ_[p] (Set.range b) : Set V) =
       ⋂ i, (b.coord i) ⁻¹' Metric.closedBall 0 1 := by
     ext v
     simp [mem_span_padicInt_iff_norm_repr_le_one]
   rw [h]
   exact isOpen_iInter_of_finite fun i ↦
-    (IsUltrametricDist.isOpen_closedBall (0 : ℚ_[p]) one_ne_zero).preimage
-      (LinearMap.continuous_of_finiteDimensional _)
+    (IsUltrametricDist.isOpen_closedBall (0 : ℚ_[p]) one_ne_zero).preimage (hb i)
+
+/-- The `ℤ_[p]`-span of a `ℚ_[p]`-basis of a finite-dimensional Hausdorff topological vector
+space is open. -/
+theorem isOpen_span_padicInt [TopologicalSpace V] [IsTopologicalAddGroup V]
+    [ContinuousSMul ℚ_[p] V] [T2Space V] [Finite ι] (b : Module.Basis ι ℚ_[p] V) :
+    IsOpen (Submodule.span ℤ_[p] (Set.range b) : Set V) :=
+  have := Module.Finite.of_basis b
+  b.isOpen_span_padicInt_of_continuous_coord fun _ ↦ LinearMap.continuous_of_finiteDimensional _
 
 end Module.Basis
 
