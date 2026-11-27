@@ -78,13 +78,13 @@ theorem mem_of_isMulCommutative [IsMulCommutative G] (f : G → k) : f ∈ Class
 /-- A class function takes the same value at `x` and at its conjugate `g * x * g⁻¹`. -/
 @[simp]
 theorem apply_conj (f : ClassFunction k G) (g x : G) : f.val (g * x * g⁻¹) = f.val x :=
-  f.property x g
+  mem_iff.mp f.property x g
 
 /-- Class functions take the same value on conjugate elements. -/
 theorem eq_of_isConj (f : ClassFunction k G) {g h : G} (hgh : IsConj g h) :
     f.val g = f.val h := by
   obtain ⟨x, rfl⟩ := isConj_iff.mp hgh
-  exact (f.property g x).symm
+  exact (apply_conj f x g).symm
 
 /-- Evaluate a class function on a conjugacy class. -/
 noncomputable def toConjClasses (f : ClassFunction k G) : ConjClasses G → k :=

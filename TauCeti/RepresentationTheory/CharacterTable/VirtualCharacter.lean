@@ -604,29 +604,37 @@ theorem mem_irreducibleCharacters_of_characterPairing_self_eq_one {f : ClassFunc
     rw [Nat.cast_eq_zero] at hsum
     omega
 
+omit [Invertible (Nat.card G : k)] in
 open ClassFunction Finset in
 /-- **A class function of norm `1` with coefficients in `n⁻¹ ℤ` and a nonzero integer coefficient
 is `±` an irreducible character, hence an irreducible character when its degree is natural.** If
-`n ≠ 0` times each coefficient `⟨χᵢ, f⟩` is an integer `zᵢ`, then `∑ zᵢ² = n²`; a term `(n w)²`
-with `w ≠ 0` leaves no room for the others and forces `w = ±1`. So `f = w χ_{i₀}` is a virtual
-character, and `TauCeti.mem_irreducibleCharacters_of_characterPairing_self_eq_one` applies.
+`n ≠ 0` times the pairing `⟨ψ, f⟩` with every irreducible character `ψ` is an integer, then in the
+basis `χᵢ` of irreducible characters `n • f = ∑ zᵢ χᵢ` with `∑ zᵢ² = n²`; a term `(n w)²` with
+`w ≠ 0` leaves no room for the others and forces `w = ±1`. So `f = w ψ₀` is a virtual character,
+and `TauCeti.mem_irreducibleCharacters_of_characterPairing_self_eq_one` applies.
 
 Unlike that test, this one does not assume that `f` is a virtual character: the bounded
 denominators of the coefficients and one nonzero integer coefficient replace it. -/
 theorem mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast
     {f : ClassFunction k G} (hnorm : characterPairing f f = 1) {n : ℕ} (hn : n ≠ 0)
-    (hrat : ∀ i, ∃ z : ℤ, (n : k) *
-      characterPairing (ofCharacter (irreducibleRepresentation k i)) f = z)
-    {i₀ : Fin (Nat.card (ConjClasses G))} {w : ℤ} (hw : w ≠ 0)
-    (hi₀ : characterPairing (ofCharacter (irreducibleRepresentation k i₀)) f = w)
-    {d : ℕ} (hd : f.val 1 = d) :
+    (hrat : ∀ ψ : ClassFunction k G, (ψ : G → k) ∈ irreducibleCharacters k G →
+      ∃ z : ℤ, (n : k) * characterPairing ψ f = z)
+    {ψ₀ : ClassFunction k G} (hψ₀ : (ψ₀ : G → k) ∈ irreducibleCharacters k G) {w : ℤ}
+    (hw : w ≠ 0) (hψ₀f : characterPairing ψ₀ f = w) {d : ℕ} (hd : f.val 1 = d) :
     (f : G → k) ∈ irreducibleCharacters k G := by
   classical
+  let _ : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  -- read the coefficients in the chosen enumeration `χᵢ` of the irreducible characters
+  obtain ⟨i₀, hi₀⟩ := exists_irreducibleCharacter_eq k hψ₀
+  have hc₀ : ofCharacter (irreducibleRepresentation k i₀) = ψ₀ :=
+    Subtype.ext (by rw [coe_ofCharacter_irreducibleRepresentation, hi₀])
   set a := fun i => characterPairing (ofCharacter (irreducibleRepresentation k i)) f
   have hexp : ∑ i, a i • ofCharacter (irreducibleRepresentation k i) = f :=
     sum_characterPairing_smul_ofCharacter (irreducibleRepresentation k)
       (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) f
-  choose z hz using hrat
+  choose z hz using fun i => hrat (ofCharacter (irreducibleRepresentation k i))
+    (by rw [coe_ofCharacter_irreducibleRepresentation]; exact irreducibleCharacter_mem k i)
   -- `n • f` is the virtual character `∑ zᵢ χᵢ`, so in `ℤ`: `∑ zᵢ² = n²`, and `z i₀ = n w`
   have hnf : (((n : k) • f : ClassFunction k G) : G → k) =
       ∑ i, (z i : k) • irreducibleCharacter k i := by
@@ -638,7 +646,7 @@ theorem mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast
     have h := characterPairing_eq_intCast_sum hnf hnf
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hnorm, mul_one] at h
     exact_mod_cast h.symm
-  have hzi₀ : z i₀ = n * w := Int.cast_injective (α := k) (by push_cast; rw [← hz, hi₀])
+  have hzi₀ : z i₀ = n * w := Int.cast_injective (α := k) (by push_cast; rw [← hz, hc₀, hψ₀f])
   -- so `∑ zᵢ² = n² ≤ (n w)² = z i₀ ²`, and the other `zᵢ` vanish
   have hle : ∑ i, z i * z i ≤ z i₀ * z i₀ := by
     rw [hsq, hzi₀]
@@ -649,7 +657,7 @@ theorem mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast
     exact (mul_eq_zero.mp h).resolve_left (Nat.cast_ne_zero.mpr hn)
   -- hence `f = w • χ_{i₀}` is a virtual character
   have hfv : (f : G → k) ∈ virtualCharacters k G := by
-    have ha₀ : a i₀ = w := hi₀
+    have ha₀ : a i₀ = w := by rw [← hψ₀f, ← hc₀]
     rw [← hexp, sum_eq_single i₀ (fun j _ hj => by rw [hzero j hj, zero_smul]) (by simp), ha₀,
       Submodule.coe_smul, Int.cast_smul_eq_zsmul]
     exact zsmul_mem (ofCharacter_mem_virtualCharacters _) w

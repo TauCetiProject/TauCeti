@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.SemidirectProduct
+public import TauCeti.GroupTheory.SemidirectProduct
 public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
-import TauCeti.GroupTheory.SemidirectProduct
 import TauCeti.RepresentationTheory.CharacterTable.Automorphism
 import TauCeti.RepresentationTheory.Induction.Clifford.Decomposition
 
@@ -90,25 +89,24 @@ private theorem characterPairing_self_eq_one [NeZero (N.index : k)]
 
 variable [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
-omit [Fintype N] in
-/-- The coefficients of the glued class function in the basis of irreducible characters lie in
-`n⁻¹ ℤ` for the index `n` of `N`, since the three pairings that make them up are pairings of
-virtual characters. -/
+omit [Fintype N] [IsAlgClosed k] [Invertible (Nat.card G : k)] in
+/-- The pairings of the glued class function with virtual characters, in particular its
+coefficients in the basis of irreducible characters, lie in `n⁻¹ ℤ` for the index `n` of `N`,
+since the three pairings that make them up are pairings of virtual characters. -/
 private theorem exists_index_mul_characterPairing_eq_intCast (hres : ∀ n : N, F.val n = Y.val n)
     (hoff : Set.EqOn F.val Θ.val (N : Set G)ᶜ) (hY : (Y : N → k) ∈ virtualCharacters k N)
-    (hΘ : (Θ : G → k) ∈ virtualCharacters k G) (i : Fin (Nat.card (ConjClasses G))) :
-    ∃ z : ℤ, (N.index : k) *
-      characterPairing (ofCharacter (irreducibleRepresentation k i)) F = z := by
+    (hΘ : (Θ : G → k) ∈ virtualCharacters k G) {ψ : ClassFunction k G}
+    (hψ : (ψ : G → k) ∈ virtualCharacters k G) :
+    ∃ z : ℤ, (N.index : k) * characterPairing ψ F = z := by
+  by_cases hi : (N.index : k) = 0
+  · exact ⟨0, by rw [hi, zero_mul, Int.cast_zero]⟩
   let _ : Fintype N := Fintype.ofFinite N
-  have hχ := ofCharacter_mem_virtualCharacters (irreducibleRepresentation k i)
   -- restrictions of virtual characters to `N` are virtual characters
-  have hχN := comap_mem_virtualCharacters N.subtype hχ
-  obtain ⟨z₁, hz₁⟩ := exists_characterPairing_eq_intCast hχ hΘ
-  obtain ⟨z₂, hz₂⟩ := exists_characterPairing_eq_intCast hχN hY
-  obtain ⟨z₃, hz₃⟩ := exists_characterPairing_eq_intCast hχN
+  have hψN := comap_mem_virtualCharacters N.subtype hψ
+  obtain ⟨z₁, hz₁⟩ := exists_characterPairing_eq_intCast hψ hΘ
+  obtain ⟨z₂, hz₂⟩ := exists_characterPairing_eq_intCast hψN hY
+  obtain ⟨z₃, hz₃⟩ := exists_characterPairing_eq_intCast hψN
     (comap_mem_virtualCharacters N.subtype hΘ)
-  have hi : (N.index : k) ≠ 0 :=
-    left_ne_zero_of_mul (by rw [← Nat.cast_mul, N.index_mul_card]; exact Invertible.ne_zero _)
   refine ⟨N.index * z₁ + z₂ - z₃, ?_⟩
   rw [characterPairing_eq_add_inv_index_mul hres hoff, hz₁, hz₂, hz₃]
   field_simp
@@ -124,8 +122,8 @@ private theorem exists_characterPairing_eq_intCast_ne_zero [N.Normal]
     (hres : ∀ n : N, F.val n = Y.val n) (hoff : Set.EqOn F.val Θ.val (N : Set G)ᶜ)
     (hY : (Y : N → k) ∈ irreducibleCharacters k N) (hΘ : (Θ : G → k) ∈ virtualCharacters k G)
     {m : ℤ} (h₂ : characterPairing Y (comap N.subtype Θ) = 1 + N.index * m) :
-    ∃ (i : Fin (Nat.card (ConjClasses G))) (w : ℤ), w ≠ 0 ∧
-      characterPairing (ofCharacter (irreducibleRepresentation k i)) F = w := by
+    ∃ ψ : ClassFunction k G, (ψ : G → k) ∈ irreducibleCharacters k G ∧
+      ∃ w : ℤ, w ≠ 0 ∧ characterPairing ψ F = w := by
   -- `|G| = n |N|` is invertible in `k`, hence so are the index `n` and `|N|`
   have hG : (N.index : k) * Nat.card N ≠ 0 := by
     rw [← Nat.cast_mul, N.index_mul_card]
@@ -167,7 +165,8 @@ private theorem exists_characterPairing_eq_intCast_ne_zero [N.Normal]
     field_simp
     push_cast
     ring
-  exact ⟨i, t - e * m, fun h0 => ha (by rw [hai, h0, Int.cast_zero]), hai⟩
+  exact ⟨c i, hc i ▸ irreducibleCharacter_mem k i, t - e * m,
+    fun h0 => ha (by rw [hai, h0, Int.cast_zero]), hai⟩
 
 end Pairing
 
@@ -206,13 +205,14 @@ theorem mem_irreducibleCharacters_of_restrict_eq_of_eqOn_compl {Y : ClassFunctio
   let F : ClassFunction k G := ⟨χ, hcl⟩
   have hYY :=
     characterPairing_self_of_mem_irreducibleCharacters hY (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
-  obtain ⟨i₀, w, hw, hi₀⟩ :=
+  obtain ⟨ψ₀, hψ₀, w, hw, hψ₀F⟩ :=
     exists_characterPairing_eq_intCast_ne_zero (F := F) hres hoff hY hΘ h₂
   obtain ⟨d, ρ, -, hρ⟩ := mem_irreducibleCharacters_iff.mp hY
   exact mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast
     (characterPairing_self_eq_one (F := F) hres hoff hYY h₁) Subgroup.index_ne_zero_of_finite
-    (exists_index_mul_characterPairing_eq_intCast (F := F) hres hoff
-      (irreducibleCharacters_subset_virtualCharacters hY) hΘ) hw hi₀
+    (fun _ hψ => exists_index_mul_characterPairing_eq_intCast (F := F) hres hoff
+      (irreducibleCharacters_subset_virtualCharacters hY) hΘ
+      (irreducibleCharacters_subset_virtualCharacters hψ)) hψ₀ hw hψ₀F
     (by simpa [F, ← hρ, Representation.char_one] using hres 1)
 
 open SemidirectProduct in
