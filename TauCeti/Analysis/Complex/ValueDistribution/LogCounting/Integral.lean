@@ -9,7 +9,8 @@ public import Mathlib.Analysis.Complex.ValueDistribution.LogCounting.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.PosLog
+import TauCeti.Analysis.SpecialFunctions.Log.PosLog
 
 /-!
 # The logarithmic counting function as an integral of the counting function
@@ -22,7 +23,11 @@ for `0 ≤ r`,
 (`Function.locallyFinsuppWithin.logCounting_eq_integral`). The proof goes through the finite-sum
 form `logCounting D r = ∑ z, D z * log⁺ (r / ‖z‖) + D 0 * log r`
 (`Function.locallyFinsuppWithin.logCounting_eq_sum_posLog`), in which a point `z ≠ 0` of the support
-contributes `log⁺ (r / ‖z‖) = ∫ t in 0..r, 1_{‖z‖ ≤ t} t⁻¹`.
+contributes `log⁺ (r / ‖z‖) = ∫ t in 0..r, 1_{‖z‖ ≤ t} t⁻¹` (`TauCeti.integral_indicator_Ici_inv`).
+The same finite-sum form compares the counting function with the increments of the logarithmic
+counting function: if `D` is nonnegative on the closed ball of radius `max r R`, then
+`n(r) * log (R / r) ≤ logCounting D R - logCounting D r` for all positive radii `r` and `R`
+(`Function.locallyFinsuppWithin.finsum_mem_closedBall_mul_log_le_logCounting_sub`).
 
 For a function `f` on a proper nontrivially normed field,
 `TauCeti.zeroCount f univ (closedBall 0 r)` is the unintegrated count `n(r)` of the zeros of `f` in
@@ -52,37 +57,21 @@ namespace Function.locallyFinsuppWithin
 
 variable {E : Type*} [NormedAddCommGroup E] [ProperSpace E]
 
-/-- The reciprocal function cut off below `a > 0` is interval integrable on every interval: on
-`Ici a` it agrees with the continuous function `t ↦ (max t a)⁻¹`. -/
-private theorem intervalIntegrable_indicator_Ici_inv {a : ℝ} (ha : 0 < a) (b c : ℝ) :
-    IntervalIntegrable ((Ici a).indicator fun t : ℝ ↦ t⁻¹) volume b c := by
-  have heq : (Ici a).indicator (fun t : ℝ ↦ t⁻¹) = (Ici a).indicator fun t ↦ (max t a)⁻¹ :=
-    indicator_congr fun t ht ↦ by rw [max_eq_left (mem_Ici.1 ht)]
-  have hcont : Continuous fun t : ℝ ↦ (max t a)⁻¹ :=
-    (continuous_id.max continuous_const).inv₀ fun t ↦ (ha.trans_le (le_max_right t a)).ne'
-  rw [heq, intervalIntegrable_iff]
-  exact (intervalIntegrable_iff.1 (hcont.intervalIntegrable b c)).indicator measurableSet_Ici
-
-/-- For `0 < a` and `0 ≤ x`, `∫ t in 0..x, 1_{a ≤ t} t⁻¹ = log⁺ (x / a)`. -/
-private theorem integral_indicator_Ici_inv {a x : ℝ} (ha : 0 < a) (hx : 0 ≤ x) :
-    ∫ t in (0 : ℝ)..x, (Ici a).indicator (fun t : ℝ ↦ t⁻¹) t = Real.posLog (x / a) := by
-  rw [intervalIntegral.integral_of_le hx, setIntegral_indicator measurableSet_Ici]
-  rcases le_or_gt a x with hax | hxa
-  · have hset : Ioc 0 x ∩ Ici a = Icc a x := by
-      ext t
-      simp only [mem_inter_iff, mem_Ioc, mem_Ici, mem_Icc]
-      exact ⟨fun ⟨⟨_, htx⟩, hat⟩ ↦ ⟨hat, htx⟩, fun ⟨hat, htx⟩ ↦ ⟨⟨ha.trans_le hat, htx⟩, hat⟩⟩
-    rw [hset, integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hax,
-      integral_inv_of_pos ha (ha.trans_le hax), Real.posLog_eq_log]
-    rw [abs_of_pos (div_pos (ha.trans_le hax) ha), one_le_div ha]
-    exact hax
-  · have hset : Ioc 0 x ∩ Ici a = ∅ := by
-      ext t
-      simp only [mem_inter_iff, mem_Ioc, mem_Ici, mem_empty_iff_false, iff_false]
-      exact fun ⟨⟨_, htx⟩, hat⟩ ↦ (hat.trans htx).not_gt hxa
-    rw [hset, Measure.restrict_empty, integral_zero_measure, eq_comm, Real.posLog_eq_zero_iff,
-      abs_of_nonneg (div_nonneg hx ha.le)]
-    exact (div_le_one ha).2 hxa.le
+/-- For `0 ≤ ρ`, some finite subset of the closed ball of radius `ρ` contains the origin and every
+point of that ball at which `D` is nonzero. -/
+private theorem exists_finset_cover (D : locallyFinsupp E ℤ) {ρ : ℝ} (hρ : 0 ≤ ρ) :
+    ∃ T : Finset E, 0 ∈ T ∧ (∀ z ∈ T, ‖z‖ ≤ ρ) ∧ ∀ z, ‖z‖ ≤ ρ → D z ≠ 0 → z ∈ T := by
+  classical
+  have hball (z : E) : z ∈ closedBall (0 : E) |ρ| ↔ ‖z‖ ≤ ρ := by
+    rw [mem_closedBall_zero_iff, abs_of_nonneg hρ]
+  have hfin : (toClosedBall ρ D).support.Finite :=
+    (toClosedBall ρ D).finiteSupport (isCompact_closedBall 0 |ρ|)
+  refine ⟨insert 0 hfin.toFinset, Finset.mem_insert_self 0 _, fun z hz ↦ ?_, fun z hz hD ↦ ?_⟩
+  · rcases Finset.mem_insert.1 hz with rfl | hz
+    · simpa using hρ
+    · exact (hball z).1 (toClosedBall_support_subset_closedBall D (hfin.mem_toFinset.1 hz))
+  · refine Finset.mem_insert_of_mem (hfin.mem_toFinset.2 ?_)
+    rwa [Function.mem_support, toClosedBall_eval_within _ ((hball z).2 hz)]
 
 omit [ProperSpace E] in
 /-- On the closed ball of radius `x`, the counting function of `D` is a finite sum over any finite
@@ -113,17 +102,14 @@ theorem logCounting_eq_sum_posLog (D : locallyFinsupp E ℤ) {x : ℝ} (hx : 0 �
   rw [finsum_eq_sum_of_support_subset _ (s := T) fun z hz ↦ ?_]
   · refine Finset.sum_congr rfl fun z _ ↦ ?_
     by_cases hz : ‖z‖ ≤ x
-    · rw [toClosedBall_eval_within _ ((hball z).2 hz)]
-      rcases (norm_nonneg z).eq_or_lt with h0 | hpos
-      · simp [← h0]
-      · have hxz : 1 ≤ |x / ‖z‖| := by
-          rw [abs_of_pos (div_pos (hpos.trans_le hz) hpos)]
-          exact (one_le_div hpos).2 hz
-        rw [Real.posLog_eq_log hxz, div_eq_mul_inv]
-    · have hxz : |x / ‖z‖| ≤ 1 := by
-        rw [abs_of_nonneg (div_nonneg hx (norm_nonneg z))]
-        exact (div_le_one (hx.trans_lt (not_le.1 hz))).2 (not_le.1 hz).le
-      rw [apply_eq_zero_of_notMem _ (mt (hball z).1 hz), (Real.posLog_eq_zero_iff _).2 hxz]
+    · have hzx : |‖z‖| ≤ |x| := by rwa [abs_norm, abs_of_nonneg hx]
+      rw [toClosedBall_eval_within _ ((hball z).2 hz), Real.posLog_div_eq_log_of_abs_le_abs hzx,
+        div_eq_mul_inv]
+    · have hxz : |x| ≤ |‖z‖| := by
+        rw [abs_norm, abs_of_nonneg hx]
+        exact (not_le.1 hz).le
+      rw [apply_eq_zero_of_notMem _ (mt (hball z).1 hz),
+        Real.posLog_div_eq_zero_of_abs_le_abs hxz]
       simp
   · have h1 : toClosedBall x D z ≠ 0 := fun h ↦ hz (by simp [h])
     have h2 : z ∈ closedBall (0 : E) |x| := by
@@ -140,67 +126,26 @@ theorem logCounting_eq_integral (D : locallyFinsupp E ℤ) {r : ℝ} (hr : 0 ≤
     D.logCounting r = (∫ t in (0 : ℝ)..r,
       ((∑ᶠ z ∈ closedBall (0 : E) t, (D z : ℝ)) - D 0) / t) + D 0 * Real.log r := by
   classical
-  have hfin : (toClosedBall r D).support.Finite :=
-    (toClosedBall r D).finiteSupport (isCompact_closedBall 0 |r|)
-  set T : Finset E := insert 0 hfin.toFinset
-  have hT : ∀ z, ‖z‖ ≤ r → D z ≠ 0 → z ∈ T := fun z hz hD ↦ by
-    refine Finset.mem_insert_of_mem (hfin.mem_toFinset.2 ?_)
-    rwa [mem_support, toClosedBall_eval_within _
-      (by rwa [mem_closedBall_zero_iff, abs_of_nonneg hr])]
+  obtain ⟨T, hT0, -, hT⟩ := exists_finset_cover D hr
   have hpos : ∀ z ∈ T.erase 0, 0 < ‖z‖ := fun z hz ↦ norm_pos_iff.2 (Finset.ne_of_mem_erase hz)
   have hn : ∀ t ∈ uIcc 0 r, ((∑ᶠ z ∈ closedBall (0 : E) t, (D z : ℝ)) - D 0) / t =
       ∑ z ∈ T.erase 0, (D z : ℝ) * (Ici ‖z‖).indicator (fun t : ℝ ↦ t⁻¹) t := by
     intro t ht
     rw [uIcc_of_le hr] at ht
     rw [finsum_mem_closedBall_eq_sum D fun z hz hD ↦ hT z (hz.trans ht.2) hD,
-      ← Finset.add_sum_erase T _ (Finset.mem_insert_self 0 _), norm_zero, ite_eq_left ht.1,
-      add_sub_cancel_left, Finset.sum_div]
+      ← Finset.add_sum_erase T _ hT0, norm_zero, ite_eq_left ht.1, add_sub_cancel_left,
+      Finset.sum_div]
     refine Finset.sum_congr rfl fun z _ ↦ ?_
     by_cases hzt : ‖z‖ ≤ t
     · rw [ite_eq_left hzt, indicator_of_mem (mem_Ici.2 hzt), div_eq_mul_inv]
     · rw [ite_eq_right hzt, indicator_of_notMem (by simpa using hzt), zero_div, mul_zero]
   rw [intervalIntegral.integral_congr hn, intervalIntegral.integral_finsetSum fun z hz ↦
-      (intervalIntegrable_indicator_Ici_inv (hpos z hz) 0 r).const_mul _,
-    logCounting_eq_sum_posLog D hr hT, ← Finset.add_sum_erase T _ (Finset.mem_insert_self 0 _)]
+      (TauCeti.intervalIntegrable_indicator_Ici_inv (hpos z hz) 0 r).const_mul _,
+    logCounting_eq_sum_posLog D hr hT, ← Finset.add_sum_erase T _ hT0]
   simp only [intervalIntegral.integral_const_mul, norm_zero, div_zero, Real.posLog_zero, mul_zero,
     zero_add]
   exact congrArg (· + _) (Finset.sum_congr rfl fun z hz ↦ by
-    rw [integral_indicator_Ici_inv (hpos z hz) hr])
-
-end Function.locallyFinsuppWithin
-
-namespace TauCeti
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-omit [ProperSpace 𝕜] in
-/-- The zero count in a closed ball is the counting function of the positive part of the
-divisor. -/
-private theorem zeroCount_closedBall_eq_finsum (f : 𝕜 → F) (t : ℝ) :
-    (zeroCount f univ (closedBall 0 t) : ℝ) =
-      ∑ᶠ z ∈ closedBall (0 : 𝕜) t, ((MeromorphicOn.divisor f univ)⁺ z : ℝ) := by
-  have hcast := (Nat.castAddMonoidHom ℝ).map_finsum_of_injective Nat.cast_injective
-    (fun z ↦ ∑ᶠ _ : z ∈ closedBall (0 : 𝕜) t, (MeromorphicOn.divisor f univ z).toNat)
-  simp only [AddMonoidHom.map_finsum_Prop, Nat.coe_castAddMonoidHom] at hcast
-  rw [zeroCount_def, hcast]
-  refine finsum_congr fun z ↦ finsum_congr fun _ ↦ ?_
-  rw [Function.locallyFinsuppWithin.posPart_apply, posPart_def, ← Int.toNat_eq_max,
-    Int.cast_natCast]
-
-/-- **The logarithmic counting function of the zeros is the log-weighted integral of the zero
-count.** With `n(t) = zeroCount f univ (closedBall 0 t)`, for every `0 ≤ r`,
-`ValueDistribution.logCounting f 0 r = ∫ t in 0..r, (n(t) - n(0)) / t + n(0) * log r`. -/
-theorem logCounting_zero_eq_integral_zeroCount (f : 𝕜 → F) {r : ℝ} (hr : 0 ≤ r) :
-    ValueDistribution.logCounting f 0 r =
-      (∫ t in (0 : ℝ)..r, ((zeroCount f univ (closedBall 0 t) : ℝ) -
-        zeroCount f univ (closedBall 0 0)) / t) +
-        zeroCount f univ (closedBall 0 0) * Real.log r := by
-  have h0 : (zeroCount f univ (closedBall 0 0) : ℝ) = ((MeromorphicOn.divisor f univ)⁺ 0 : ℝ) := by
-    rw [zeroCount_closedBall_eq_finsum, closedBall_zero, finsum_mem_singleton]
-  rw [ValueDistribution.logCounting_zero, h0]
-  simp only [zeroCount_closedBall_eq_finsum]
-  exact Function.locallyFinsuppWithin.logCounting_eq_integral _ hr
+    rw [TauCeti.integral_indicator_Ici_inv (hpos z hz) hr])
 
 /-- For `0 < a` and positive radii `r` and `R`, the weight `log⁺ (· / a)` increases from `r` to `R`
 by at least `log (R / r)` when `a ≤ r`, and by at least `0` otherwise. -/
@@ -208,54 +153,36 @@ private theorem ite_le_posLog_div_sub_posLog_div {a r R : ℝ} (ha : 0 < a) (hr 
     (hR : 0 < R) :
     (if a ≤ r then Real.log (R / r) else 0) ≤ Real.posLog (R / a) - Real.posLog (r / a) := by
   split_ifs with h
-  · have hra : 1 ≤ |r / a| := by
-      rw [abs_of_pos (div_pos hr ha)]
-      exact (one_le_div ha).2 h
-    have hlog : Real.log (R / r) = Real.log (R / a) - Real.log (r / a) := by
+  · have hlog : Real.log (R / r) = Real.log (R / a) - Real.log (r / a) := by
       rw [Real.log_div hR.ne' hr.ne', Real.log_div hR.ne' ha.ne', Real.log_div hr.ne' ha.ne']
       ring
     have hle : Real.log (R / a) ≤ Real.posLog (R / a) := by
       rw [Real.posLog_apply]
       exact le_max_right _ _
-    rw [Real.posLog_eq_log hra]
+    rw [Real.posLog_div_eq_log_of_abs_le_abs (abs_le_abs_of_nonneg ha.le h)]
     linarith
-  · have hra : |r / a| ≤ 1 := by
-      rw [abs_of_pos (div_pos hr ha)]
-      exact (div_le_one ha).2 (not_le.1 h).le
-    rw [(Real.posLog_eq_zero_iff _).2 hra, sub_zero]
+  · rw [Real.posLog_div_eq_zero_of_abs_le_abs (abs_le_abs_of_nonneg hr.le (not_le.1 h).le),
+      sub_zero]
     exact Real.posLog_nonneg
 
-/-- **The zero count against the logarithmic counting function.** For positive radii `r` and `R`,
-the zero count `n(r) = zeroCount f univ (closedBall 0 r)` satisfies
-`n(r) * log (R / r) ≤ ValueDistribution.logCounting f 0 R - ValueDistribution.logCounting f 0 r`.
+/-- **The counting function against the logarithmic counting function.** If `D` is nonnegative on
+the closed ball of radius `max r R`, then for positive radii `r` and `R`, with
+`n(r) = ∑ᶠ z ∈ closedBall 0 r, D z`, `n(r) * log (R / r) ≤ logCounting D R - logCounting D r`.
 For `r ≤ R` this bounds the increment of the logarithmic counting function from below; for
-`R < r` it reads `N(r) - N(R) ≤ n(r) * log (r / R)`, an upper bound. -/
-theorem zeroCount_mul_log_le_logCounting_sub (f : 𝕜 → F) {r R : ℝ} (hr : 0 < r) (hR : 0 < R) :
-    (zeroCount f univ (closedBall 0 r) : ℝ) * Real.log (R / r) ≤
-      ValueDistribution.logCounting f 0 R - ValueDistribution.logCounting f 0 r := by
+`R < r` it reads `logCounting D r - logCounting D R ≤ n(r) * log (r / R)`, an upper bound. -/
+theorem finsum_mem_closedBall_mul_log_le_logCounting_sub (D : locallyFinsupp E ℤ) {r R : ℝ}
+    (hD : ∀ z, ‖z‖ ≤ max r R → 0 ≤ D z) (hr : 0 < r) (hR : 0 < R) :
+    (∑ᶠ z ∈ closedBall (0 : E) r, (D z : ℝ)) * Real.log (R / r) ≤
+      D.logCounting R - D.logCounting r := by
   classical
-  set D := (MeromorphicOn.divisor f univ)⁺ with hD_def
-  have hD : ∀ z, 0 ≤ D z := fun z ↦ by
-    rw [hD_def, Function.locallyFinsuppWithin.posPart_apply]
-    exact posPart_nonneg _
-  have hM : 0 < max r R := hr.trans_le (le_max_left r R)
-  have hfin : (Function.locallyFinsuppWithin.toClosedBall (max r R) D).support.Finite :=
-    (Function.locallyFinsuppWithin.toClosedBall (max r R) D).finiteSupport
-      (isCompact_closedBall 0 |max r R|)
-  set T : Finset 𝕜 := insert 0 hfin.toFinset
-  have hT : ∀ x ≤ max r R, ∀ z, ‖z‖ ≤ x → D z ≠ 0 → z ∈ T := fun x hx z hz hDz ↦ by
-    refine Finset.mem_insert_of_mem (hfin.mem_toFinset.2 ?_)
-    rwa [Function.mem_support, Function.locallyFinsuppWithin.toClosedBall_eval_within _
-      (by rw [mem_closedBall_zero_iff, abs_of_pos hM]; exact hz.trans hx)]
-  rw [ValueDistribution.logCounting_zero, zeroCount_closedBall_eq_finsum, ← hD_def,
-    Function.locallyFinsuppWithin.logCounting_eq_sum_posLog D hR.le (hT R (le_max_right r R)),
-    Function.locallyFinsuppWithin.logCounting_eq_sum_posLog D hr.le (hT r (le_max_left r R)),
-    Function.locallyFinsuppWithin.finsum_mem_closedBall_eq_sum D (hT r (le_max_left r R)),
-    Finset.sum_mul]
+  obtain ⟨T, hT0, hTball, hT⟩ := exists_finset_cover D (hr.le.trans (le_max_left r R))
+  have hTr : ∀ z, ‖z‖ ≤ r → D z ≠ 0 → z ∈ T := fun z hz ↦ hT z (hz.trans (le_max_left r R))
+  rw [logCounting_eq_sum_posLog D hR.le fun z hz ↦ hT z (hz.trans (le_max_right r R)),
+    logCounting_eq_sum_posLog D hr.le hTr, finsum_mem_closedBall_eq_sum D hTr, Finset.sum_mul]
   have key : ∀ z ∈ T, (if ‖z‖ ≤ r then (D z : ℝ) else 0) * Real.log (R / r) ≤
       (D z : ℝ) * (Real.posLog (R / ‖z‖) - Real.posLog (r / ‖z‖)) +
         if z = 0 then (D 0 : ℝ) * Real.log (R / r) else 0 := by
-    intro z _
+    intro z hzT
     by_cases hz : z = 0
     · subst hz
       simp [hr.le]
@@ -266,11 +193,46 @@ theorem zeroCount_mul_log_le_logCounting_sub (f : 𝕜 → F) {r R : ℝ} (hr : 
         _ ≤ (D z : ℝ) * (Real.posLog (R / ‖z‖) - Real.posLog (r / ‖z‖)) :=
             mul_le_mul_of_nonneg_left
               (ite_le_posLog_div_sub_posLog_div (norm_pos_iff.2 hz) hr hR)
-              (by exact_mod_cast hD z)
+              (by exact_mod_cast hD z (hTball z hzT))
   refine (Finset.sum_le_sum key).trans_eq ?_
-  rw [Finset.sum_add_distrib, Finset.sum_ite_eq' T 0, ite_eq_left (Finset.mem_insert_self 0 _),
+  rw [Finset.sum_add_distrib, Finset.sum_ite_eq' T 0, ite_eq_left hT0,
     Real.log_div hR.ne' hr.ne']
   simp only [mul_sub, Finset.sum_sub_distrib]
   ring
+
+end Function.locallyFinsuppWithin
+
+namespace TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **The logarithmic counting function of the zeros is the log-weighted integral of the zero
+count.** With `n(t) = zeroCount f univ (closedBall 0 t)`, for every `0 ≤ r`,
+`ValueDistribution.logCounting f 0 r = ∫ t in 0..r, (n(t) - n(0)) / t + n(0) * log r`. -/
+theorem logCounting_zero_eq_integral_zeroCount (f : 𝕜 → F) {r : ℝ} (hr : 0 ≤ r) :
+    ValueDistribution.logCounting f 0 r =
+      (∫ t in (0 : ℝ)..r, ((zeroCount f univ (closedBall 0 t) : ℝ) -
+        zeroCount f univ (closedBall 0 0)) / t) +
+        zeroCount f univ (closedBall 0 0) * Real.log r := by
+  have h0 : (zeroCount f univ (closedBall 0 0) : ℝ) = ((MeromorphicOn.divisor f univ)⁺ 0 : ℝ) := by
+    rw [zeroCount_eq_finsum_posPart, closedBall_zero, finsum_mem_singleton]
+  rw [ValueDistribution.logCounting_zero, h0]
+  simp only [zeroCount_eq_finsum_posPart]
+  exact Function.locallyFinsuppWithin.logCounting_eq_integral _ hr
+
+/-- **The zero count against the logarithmic counting function.** For positive radii `r` and `R`,
+the zero count `n(r) = zeroCount f univ (closedBall 0 r)` satisfies
+`n(r) * log (R / r) ≤ ValueDistribution.logCounting f 0 R - ValueDistribution.logCounting f 0 r`.
+For `r ≤ R` this bounds the increment of the logarithmic counting function from below; for
+`R < r` it reads `N(r) - N(R) ≤ n(r) * log (r / R)`, an upper bound. -/
+theorem zeroCount_mul_log_le_logCounting_sub (f : 𝕜 → F) {r R : ℝ} (hr : 0 < r) (hR : 0 < R) :
+    (zeroCount f univ (closedBall 0 r) : ℝ) * Real.log (R / r) ≤
+      ValueDistribution.logCounting f 0 R - ValueDistribution.logCounting f 0 r := by
+  rw [ValueDistribution.logCounting_zero, zeroCount_eq_finsum_posPart]
+  refine Function.locallyFinsuppWithin.finsum_mem_closedBall_mul_log_le_logCounting_sub _
+    (fun z _ ↦ ?_) hr hR
+  rw [Function.locallyFinsuppWithin.posPart_apply]
+  exact posPart_nonneg _
 
 end TauCeti

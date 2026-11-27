@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrability.PosLog
 import Mathlib.Analysis.SpecialFunctions.Integrals.PosLog
 import Mathlib.MeasureTheory.Integral.IntervalAverage
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
+import TauCeti.Analysis.SpecialFunctions.Log.PosLog
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Integral.NormRpow
 
@@ -37,6 +38,12 @@ The averaging argument is adapted from Matteo Cipollina's
 `PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/CartanBound.lean` in
 [PrimeNumberTheoremAnd, revision 5754873](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd/blob/5754873e8dae73f3b50f8f2b7a4f0b15d4df58aa/PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/CartanBound.lean),
 for the good-circle minimum-modulus argument in finite-order Hadamard factorization.
+
+For `0 < a` and `0 ≤ x`, `TauCeti.integral_indicator_Ici_inv` evaluates the integral of the
+reciprocal function cut off below `a` as a positive logarithm,
+`∫ t in 0..x, 1_{a ≤ t} t⁻¹ = log⁺ (x / a)`, with the integrability
+`TauCeti.intervalIntegrable_indicator_Ici_inv`. This is the weight of one point in the logarithmic
+counting function of value distribution theory.
 
 Mathlib's `circleAverage_log_norm_sub_const_eq_log_radius_add_posLog` evaluates the circle average
 of `log ‖· - a‖` over the circle of center `c` and radius `R ≠ 0` as `log R + log⁺ (R⁻¹ * ‖c - a‖)`.
@@ -306,5 +313,45 @@ theorem circleAverage_log_norm_sub_const_eq_log_max {a c : ℂ} {R : ℝ} :
   rw [← circleAverage_abs_radius, circleAverage_log_norm_sub_const_eq_log_radius_add_posLog hR',
     posLog_eq_log_max_one (by positivity), ← log_mul hR' (by positivity),
     mul_max_of_nonneg _ _ (abs_nonneg R), mul_one, mul_inv_cancel_left₀ hR']
+
+end TauCeti
+
+namespace TauCeti
+
+/-! ### The reciprocal function cut off below a point -/
+
+/-- The reciprocal function cut off below `a > 0`, `t ↦ 1_{a ≤ t} t⁻¹`, is interval integrable for
+every locally finite measure on every interval: on `Ici a` it agrees with the continuous function
+`t ↦ (max t a)⁻¹`. -/
+theorem intervalIntegrable_indicator_Ici_inv {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] {a : ℝ}
+    (ha : 0 < a) (b c : ℝ) :
+    IntervalIntegrable ((Set.Ici a).indicator fun t : ℝ ↦ t⁻¹) μ b c := by
+  have heq : (Set.Ici a).indicator (fun t : ℝ ↦ t⁻¹) =
+      (Set.Ici a).indicator fun t ↦ (max t a)⁻¹ :=
+    Set.indicator_congr fun t ht ↦ by rw [max_eq_left (Set.mem_Ici.1 ht)]
+  have hcont : Continuous fun t : ℝ ↦ (max t a)⁻¹ :=
+    (continuous_id.max continuous_const).inv₀ fun t ↦ (ha.trans_le (le_max_right t a)).ne'
+  rw [heq, intervalIntegrable_iff]
+  exact (intervalIntegrable_iff.1 (hcont.intervalIntegrable b c)).indicator measurableSet_Ici
+
+/-- For `0 < a` and `0 ≤ x`, the integral of the reciprocal function cut off below `a` over
+`[0, x]` is `log⁺ (x / a)`: it is `log (x / a)` when `a ≤ x`, and `0` otherwise. -/
+theorem integral_indicator_Ici_inv {a x : ℝ} (ha : 0 < a) (hx : 0 ≤ x) :
+    ∫ t in (0 : ℝ)..x, (Set.Ici a).indicator (fun t : ℝ ↦ t⁻¹) t = log⁺ (x / a) := by
+  rw [intervalIntegral.integral_of_le hx, setIntegral_indicator measurableSet_Ici]
+  rcases le_or_gt a x with hax | hxa
+  · have hset : Set.Ioc 0 x ∩ Set.Ici a = Set.Icc a x := by
+      ext t
+      simp only [Set.mem_inter_iff, Set.mem_Ioc, Set.mem_Ici, Set.mem_Icc]
+      exact ⟨fun ⟨⟨_, htx⟩, hat⟩ ↦ ⟨hat, htx⟩, fun ⟨hat, htx⟩ ↦ ⟨⟨ha.trans_le hat, htx⟩, hat⟩⟩
+    rw [hset, integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hax,
+      integral_inv_of_pos ha (ha.trans_le hax),
+      posLog_div_eq_log_of_abs_le_abs (abs_le_abs_of_nonneg ha.le hax)]
+  · have hset : Set.Ioc 0 x ∩ Set.Ici a = ∅ := by
+      ext t
+      simp only [Set.mem_inter_iff, Set.mem_Ioc, Set.mem_Ici, Set.mem_empty_iff_false, iff_false]
+      exact fun ⟨⟨_, htx⟩, hat⟩ ↦ (hat.trans htx).not_gt hxa
+    rw [hset, Measure.restrict_empty, integral_zero_measure,
+      posLog_div_eq_zero_of_abs_le_abs (abs_le_abs_of_nonneg hx hxa.le)]
 
 end TauCeti

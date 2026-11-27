@@ -11,7 +11,8 @@ public import TauCeti.Analysis.Meromorphic.Divisor
 # Counting zeros and poles in a region
 
 `TauCeti.divisorCount` sums the signed meromorphic divisor in a region, while
-`TauCeti.zeroCount` sums its positive multiplicities. The signed count is appropriate for
+`TauCeti.zeroCount` sums its positive multiplicities, the values of the positive part of the
+divisor (`TauCeti.zeroCount_eq_finsum_posPart`). The signed count is appropriate for
 argument principles; the natural count records zeros without subtracting poles.
 
 The sums use `finsum`, which returns zero on infinite support. The finite-support results
@@ -47,6 +48,19 @@ theorem divisorCount_def (f : 𝕜 → E) (U R : Set 𝕜) :
 /-- The zero count is the finite sum of positive divisor multiplicities in the region. -/
 theorem zeroCount_def (f : 𝕜 → E) (U R : Set 𝕜) :
     zeroCount f U R = ∑ᶠ z ∈ R, (MeromorphicOn.divisor f U z).toNat := (rfl)
+
+/-- The zero count, cast to an additive group with one of characteristic zero, is the finite sum
+over the region of the positive part of the divisor. The cast commutes with the sum even on
+infinite support, where both sides take the default value zero, since it is injective. -/
+theorem zeroCount_eq_finsum_posPart {M : Type*} [AddCommGroupWithOne M] [CharZero M] :
+    (zeroCount f U R : M) = ∑ᶠ z ∈ R, (((MeromorphicOn.divisor f U)⁺ z : ℤ) : M) := by
+  have hcast := (Nat.castAddMonoidHom M).map_finsum_of_injective Nat.cast_injective
+    (fun z ↦ ∑ᶠ _ : z ∈ R, (MeromorphicOn.divisor f U z).toNat)
+  simp only [AddMonoidHom.map_finsum_Prop, Nat.coe_castAddMonoidHom] at hcast
+  rw [zeroCount_def, hcast]
+  refine finsum_congr fun z ↦ finsum_congr fun _ ↦ ?_
+  rw [Function.locallyFinsuppWithin.posPart_apply, posPart_def, ← Int.toNat_eq_max,
+    Int.cast_natCast]
 
 /-- Finite signed divisor support also gives finite support for the positive multiplicities. -/
 theorem zeroCount_support_finite

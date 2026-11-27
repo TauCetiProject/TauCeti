@@ -28,6 +28,8 @@ singularity that a choice of good radius has to control.
 
 * `Real.posLog_le_exp_neg_one_mul`: `log⁺ x ≤ exp (-1) * x` for `0 ≤ x`.
 * `Real.lipschitzWith_posLog`: `|log⁺ x - log⁺ y| ≤ |x - y|`.
+* `Real.posLog_div_eq_log_of_abs_le_abs`, `Real.posLog_div_eq_zero_of_abs_le_abs`: the two values
+  of `log⁺ (x / a)`, namely `log (x / a)` when `|a| ≤ |x|` and `0` when `|x| ≤ |a|`.
 * `Complex.neg_log_norm_one_sub_le_posLog_one_div_abs_one_sub_norm`:
   `-log ‖1 - w‖ ≤ log⁺ (1 / |1 - ‖w‖|)` for `‖w‖ ≠ 1`.
 -/
@@ -54,6 +56,22 @@ theorem lipschitzWith_posLog : LipschitzWith 1 log⁺ := by
     rw [max_comm 1 |x|, max_comm 1 |y|]
     exact (abs_max_sub_max_le_abs _ _ _).trans (abs_abs_sub_abs_le _ _)
   exact (abs_log_sub_log_le (le_max_left _ _) (le_max_left _ _)).trans hmax
+
+/-- `log⁺ (x / a) = log (x / a)` when `|a| ≤ |x|`: then `1 ≤ |x / a|`, or `a = 0` and both sides
+take the junk value `log 0 = 0`. -/
+theorem posLog_div_eq_log_of_abs_le_abs {a x : ℝ} (h : |a| ≤ |x|) :
+    log⁺ (x / a) = log (x / a) := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  rw [posLog_eq_log]
+  rw [abs_div, one_le_div (abs_pos.2 ha)]
+  exact h
+
+/-- `log⁺ (x / a) = 0` when `|x| ≤ |a|`: then `|x / a| ≤ 1`, including `a = 0`, where the quotient
+takes the junk value `0`. -/
+theorem posLog_div_eq_zero_of_abs_le_abs {a x : ℝ} (h : |x| ≤ |a|) : log⁺ (x / a) = 0 := by
+  rw [posLog_eq_zero_iff, abs_div]
+  exact div_le_one_of_le₀ h (abs_nonneg a)
 
 end Real
 
