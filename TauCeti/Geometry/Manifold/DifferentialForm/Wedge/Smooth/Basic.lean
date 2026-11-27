@@ -261,6 +261,25 @@ theorem wedgeWith_comm (μ : F₁ →L[ℝ] F₁ →L[ℝ] F₃)
   simpa only [coe_wedgeWith] using
     RoughForm.wedgeWith_comm μ hμ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₁ l) x v
 
+/-- A symmetric coefficient pairing makes the smooth paired wedge of two one-forms
+antisymmetric: `μ(ψ ∧ φ) = -μ(φ ∧ ψ)`. -/
+theorem wedgeWith_comm_one_one (μ : F₁ →L[ℝ] F₁ →L[ℝ] F₃) (hμ : ∀ a b, μ a b = μ b a)
+    (φ ψ : SmoothForm I M F₁ 1) : wedgeWith μ ψ φ = -wedgeWith μ φ ψ :=
+  Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ by
+    rw [wedgeWith_comm μ hμ, Fin.cast_refl, Function.comp_id, pow_one, neg_one_smul,
+      Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply]
+
+/-- An antisymmetric coefficient pairing, such as a Lie bracket, makes the smooth paired wedge of
+two one-forms symmetric: `μ(ψ ∧ φ) = μ(φ ∧ ψ)`. -/
+theorem wedgeWith_comm_one_one_of_antisymm (μ : F₁ →L[ℝ] F₁ →L[ℝ] F₃)
+    (hμ : ∀ a b, μ a b = -μ b a) (φ ψ : SmoothForm I M F₁ 1) :
+    wedgeWith μ ψ φ = wedgeWith μ φ ψ := by
+  have hflip : μ.flip = -μ :=
+    ContinuousLinearMap.ext fun a ↦ ContinuousLinearMap.ext fun b ↦ hμ b a
+  refine Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_
+  rw [wedgeWith_flip, hflip, Fin.cast_refl, Function.comp_id, wedgeWith_apply, wedgeWith_apply]
+  simp
+
 /-- Real-valued smooth forms commute with the usual graded sign. -/
 theorem wedge_comm (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M)
     (v : Fin (k + l) → TangentSpace I x) :

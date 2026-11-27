@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.WithAbs
+public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 
@@ -47,8 +48,12 @@ finite place of the extension.
   power of the restriction of `v`. For an archimedean absolute value only `t ≤ 1` works in
   general; the example at the end of the file checks that `|·| ^ 2` on `ℚ` is not an absolute
   value.
+* `AbsoluteValue.isNonarchimedean_comp`: the restriction of a nonarchimedean absolute value along
+  an injective ring homomorphism is nonarchimedean.
 * `AbsoluteValue.isNonarchimedean_trivial`: the trivial absolute value on any semiring without zero
   divisors is nonarchimedean.
+* `NormedField.isNonarchimedean_toAbsoluteValue`: the norm of a nonarchimedean normed field is a
+  nonarchimedean absolute value.
 
 ## References
 
@@ -67,13 +72,21 @@ theorem LiesOver.apply_algebraMap {K L S : Type*} [CommSemiring K] [Semiring L] 
     (v : AbsoluteValue K S) [w.LiesOver v] (x : K) : w (algebraMap K L x) = v x := by
   rw [← LiesOver.under_eq w v, under_def, comp_apply]
 
+/-- The restriction of a nonarchimedean absolute value along an injective ring homomorphism is
+nonarchimedean. -/
+theorem isNonarchimedean_comp {R T S : Type*} [Semiring R] [Semiring T] [Semiring S]
+    [LinearOrder S] {v : AbsoluteValue R S} (hv : IsNonarchimedean v) {f : T →+* R}
+    (hf : Function.Injective f) :
+    IsNonarchimedean (v.comp hf) := fun x y ↦ by
+  simpa only [comp_apply, map_add] using hv (f x) (f y)
+
 /-- An absolute value underneath a nonarchimedean absolute value is nonarchimedean. -/
 theorem isNonarchimedean_under_of_liesOver {K L S : Type*} [CommSemiring K] [Semiring L]
     [Algebra K L] [FaithfulSMul K L] [LinearOrder S] [Semiring S]
     {w : AbsoluteValue L S} (u : AbsoluteValue K S) [w.LiesOver u]
-    (hw : IsNonarchimedean w) : IsNonarchimedean u := fun x y ↦ by
-  simpa only [← LiesOver.apply_algebraMap (w := w) u, map_add] using
-    hw (algebraMap K L x) (algebraMap K L y)
+    (hw : IsNonarchimedean w) : IsNonarchimedean u := by
+  rw [← LiesOver.under_eq w u, under_def]
+  exact isNonarchimedean_comp hw _
 
 /-- The trivial absolute value is nonarchimedean. -/
 theorem isNonarchimedean_trivial {R S : Type*} [Semiring R] [DecidablePred fun x : R ↦ x = 0]
@@ -144,17 +157,12 @@ variable {R F : Type*} [CommRing R] [Ring F] [Algebra R F] {v : AbsoluteValue F 
 is bounded by `1` on every element integral over `R`.
 
 This is the absolute-value analogue of the forward implication of Mathlib's
-`Valuation.Integers.isIntegral_iff_v_le_one`, and the proof follows it. -/
+`Valuation.Integers.isIntegral_iff_v_le_one`, and the case of absolute values of
+`IsNonarchimedean.apply_le_one_of_isIntegral_of_isPowMul`. -/
 theorem apply_le_one_of_isIntegral (hv : IsNonarchimedean v)
-    (h : ∀ r : R, v (algebraMap R F r) ≤ 1) {x : F} (hx : IsIntegral R x) : v x ≤ 1 := by
-  by_contra! hx1
-  have : Nontrivial F := ⟨x, 0, by rintro rfl; rw [map_zero] at hx1; linarith⟩
-  obtain ⟨p, hpm, hp⟩ := hx
-  -- Some coefficient `aᵢ` of the equation of integrality has `v x ^ (n - i) ≤ v aᵢ ≤ 1`.
-  obtain ⟨i, hi, hle⟩ := (hpm.map (algebraMap R F)).exists_apply_pow_le_apply_coeff_of_eval_eq_zero
-    v.nonneg (fun a b ↦ (v.map_mul a b).le) (MulHomClass.isPowMul v) hv (by rwa [eval_map])
-  rw [coeff_map] at hle
-  exact (one_lt_pow₀ hx1 (Nat.sub_pos_of_lt hi).ne').not_ge (hle.trans (h _))
+    (h : ∀ r : R, v (algebraMap R F r) ≤ 1) {x : F} (hx : IsIntegral R x) : v x ≤ 1 :=
+  hv.apply_le_one_of_isIntegral_of_isPowMul v.nonneg (fun a b ↦ (v.map_mul a b).le)
+    (MulHomClass.isPowMul v) h hx
 
 /-- A nonarchimedean absolute value is bounded by `1` on every element integral over `ℤ`. -/
 theorem apply_le_one_of_isIntegral_int (hv : IsNonarchimedean v) {x : F} (hx : IsIntegral ℤ x) :
@@ -221,6 +229,15 @@ theorem liesOver_nonarchRpow {K L : Type*} [CommSemiring K] [Semiring L] [Algebr
   simp [under_def, LiesOver.apply_algebraMap u]
 
 end AbsoluteValue
+
+namespace NormedField
+
+/-- The norm of a nonarchimedean normed field is a nonarchimedean absolute value. -/
+theorem isNonarchimedean_toAbsoluteValue (K : Type*) [NormedField K] [IsUltrametricDist K] :
+    IsNonarchimedean (toAbsoluteValue K) := fun x y ↦ by
+  simpa using IsUltrametricDist.isNonarchimedean_norm x y
+
+end NormedField
 
 /- For an archimedean absolute value a power with exponent greater than `1` need not be an
 absolute value: `|·| ^ 2` on `ℚ` violates the triangle inequality at `1 + 1`. -/

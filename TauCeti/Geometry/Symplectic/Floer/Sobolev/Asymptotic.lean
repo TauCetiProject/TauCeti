@@ -13,7 +13,7 @@ import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 # The linearized Floer operator is asymptotic to its end models
 
 Let `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` be the Sobolev realization
-(`TauCeti.SymplecticForm.floerSobolevOperator`) of the linearized Floer operator along a map `u`
+(`TauCeti.SymplecticForm.floerSobolevOperator 2`) of the linearized Floer operator along a map `u`
 of the cylinder, for Floer data that are cylindrical near the ends: equal to `(J₋_t, 0, H₋_t)` for
 `s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`, with the loops of `u` converging uniformly to
 orbits `x₋` of `H₋` at `-∞` and `x₊` of `H₊` at `+∞`, and with the slice defects
@@ -27,14 +27,21 @@ linearization `∂s + J±_t(x±(t)) (∂t - dX_{H±_t}(x±(t)))` at the stationa
 `TauCeti.SymplecticForm.eventually_forall_norm_floerJetCoeff_sub_lt_atTop`). This is the
 convergence of the linearized operator on an end to the stationary cylinder operator
 (`TauCeti.SymplecticForm.eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le`),
-read on the jets of affine sections, which realize every jet.
+read on the jets of affine sections, which realize every jet. Both are instances of the statement
+for the end datum alone
+(`TauCeti.SymplecticForm.eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt`), which
+puts no condition on the data away from the end, so that it also applies to an end of a punctured
+surface read in an end chart.
 
 In a unitary trivialization, where the complex structure is constant, the Fredholm property of
 `D_u` follows from a parametrix built from the invertible end models without these slice-defect
 hypotheses (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical` in
 `TauCeti.Geometry.Symplectic.Floer.Sobolev.Parametrix`). For a general loop of compatible
 structures `J_t(y)` the principal part `∂s + J(z, u z) ∂t` of `D_u` differs from those of its end
-models, so the parametrix theorem does not apply directly.
+models, so the parametrix theorem does not apply directly; the Fredholm property for such
+structures follows instead by deforming them to `i`
+(`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible` in
+`TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`).
 
 ## References
 
@@ -90,6 +97,33 @@ private theorem norm_floerJetCoeff_sub_stationaryJetCoeff_le (ω : SymplecticFor
   have h₂ : ‖v.1‖ ≤ ‖v‖ := norm_fst_le v
   nlinarith
 
+/-- **The coefficient field on an end converges to its stationary model.** Let `J_t(y)` be a `C¹`
+family of almost complex structures and `H_t(y)` a `C²` Hamiltonian, and let `x` be a loop that is
+continuous on a compact set `T` of times. If the loops of `u` converge uniformly on `T` to `x` along
+a filter `l` of `s`, and the slice defect `∂t u - X_{H_t}(u)` tends uniformly to zero there, then
+for every `ε > 0`, eventually along `l`, at every `t ∈ T`, the coefficient field on jets of the
+linearized operator along `u` of the datum `(J_t, 0, H_t)` is within `ε` of that of the stationary
+cylinder operator `∂s + J_t(x(t)) (∂t - dX_{H_t}(x(t)))`. No condition is put on the datum away
+from the end: the statement only concerns the end datum. -/
+theorem eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt (ω : SymplecticForm V)
+    {Je : ℝ → V → AlmostComplexStructure V} {He : ℝ → V → ℝ}
+    (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hHe : ContDiff ℝ 2 (uncurry He)) {T : Set ℝ} (hT : IsCompact T) {x : ℝ → V}
+    (hx : ContinuousOn x T) {l : Filter ℝ} {u : ℝ × ℝ → V}
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l T)
+    (hδ : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (He t)) u (s, t)) 0 l T)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ s in l, ∀ t ∈ T,
+      ‖ω.floerJetCoeff (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+          (fun w ↦ He w.2) u (s, t) -
+        Floer.stationaryJetCoeff (fun t ↦ Je t (x t))
+          (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (He t)) (x t)) (s, t)‖ < ε := by
+  filter_upwards [ω.eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le hJe hHe hT
+    hx hux hδ (by positivity : 0 < ε / 4)] with s hs t ht
+  exact (norm_floerJetCoeff_sub_stationaryJetCoeff_le ω (by positivity) (hs t ht)).trans_lt
+    (by linarith)
+
 variable {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
   {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
 
@@ -115,17 +149,16 @@ theorem eventually_forall_norm_floerJetCoeff_sub_lt_atBot (ω : SymplecticForm V
         ω.floerJetCoeff (fun w y ↦ (Jm w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (fun w ↦ Hm w.2) (fun w ↦ xm w.2) (s, t)‖ < ε := by
   filter_upwards [eventually_le_atBot (-R),
-    ω.eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le hJm hHm isCompact_Icc
-      (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt).continuousOn huxm hδm
-      (by positivity : 0 < ε / 4)] with s hsR hs t ht
+    ω.eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt hJm hHm isCompact_Icc
+      (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt).continuousOn huxm hδm hε]
+    with s hsR hs t ht
   -- For `s ≤ -R` the data are the end data `(J₋_t, 0, H₋_t)`.
   rw [ω.floerJetCoeff_congr_data u
     (J' := fun w y ↦ (Jm w.2 y).toLinearMap.toContinuousLinearMap) (Ks' := fun _ _ ↦ 0)
     (Kt' := fun w ↦ Hm w.2) (by simp only [hcyl.almostComplex_eq_of_le_neg (s, t) hsR])
     (hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ absurd h.1 (not_lt.2 hsR))
     (hcyl.hamiltonianT_eq_of_le_neg (s, t) hsR), floerJetCoeff_eq_stationaryJetCoeff ω Jm Hm hxm]
-  exact (norm_floerJetCoeff_sub_stationaryJetCoeff_le ω (by positivity) (hs t ht)).trans_lt
-    (by linarith)
+  exact hs t ht
 
 /-- **The positive end model.** The counterpart at `+∞` of
 `TauCeti.SymplecticForm.eventually_forall_norm_floerJetCoeff_sub_lt_atBot`: for every `ε > 0` and
@@ -147,17 +180,16 @@ theorem eventually_forall_norm_floerJetCoeff_sub_lt_atTop (ω : SymplecticForm V
         ω.floerJetCoeff (fun w y ↦ (Jp w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (fun w ↦ Hp w.2) (fun w ↦ xp w.2) (s, t)‖ < ε := by
   filter_upwards [eventually_ge_atTop R,
-    ω.eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le hJp hHp isCompact_Icc
-      (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt).continuousOn huxp hδp
-      (by positivity : 0 < ε / 4)] with s hsR hs t ht
+    ω.eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt hJp hHp isCompact_Icc
+      (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt).continuousOn huxp hδp hε]
+    with s hsR hs t ht
   -- For `s ≥ R` the data are the end data `(J₊_t, 0, H₊_t)`.
   rw [ω.floerJetCoeff_congr_data u
     (J' := fun w y ↦ (Jp w.2 y).toLinearMap.toContinuousLinearMap) (Ks' := fun _ _ ↦ 0)
     (Kt' := fun w ↦ Hp w.2) (by simp only [hcyl.almostComplex_eq_of_le (s, t) hsR])
     (hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ absurd h.2 (not_lt.2 hsR))
     (hcyl.hamiltonianT_eq_of_le (s, t) hsR), floerJetCoeff_eq_stationaryJetCoeff ω Jp Hp hxp]
-  exact (norm_floerJetCoeff_sub_stationaryJetCoeff_le ω (by positivity) (hs t ht)).trans_lt
-    (by linarith)
+  exact hs t ht
 
 end General
 

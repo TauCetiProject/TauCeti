@@ -33,6 +33,8 @@ with `𝓘(𝕜, E)`.
   coordinate change for `I.restrictScalars 𝕜` is that for `I` with scalars restricted to `𝕜`.
 * `ModelWithCorners.tangentCoordChange_smul`: on the overlap of two charts, the tangent coordinate
   change for `I.restrictScalars 𝕜` is `𝕜'`-linear.
+* `TauCeti.tangentCoordChange_modelWithCornersSelf_restrictScalars_apply`: for the self models,
+  the tangent coordinate changes for `𝓘(𝕜, E)` and `𝓘(𝕜', E)` agree on chart overlaps.
 -/
 
 public section
@@ -78,3 +80,23 @@ theorem tangentCoordChange_smul {x y z : M}
     map_smul]
 
 end ModelWithCorners
+
+namespace TauCeti
+
+variable (𝕜 : Type*) {𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E]
+  [LinearMap.CompatibleSMul E E 𝕜 𝕜'] {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
+  [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘(𝕜, E) 1 M]
+
+/-- For the self models, on the overlap of the charts at `x` and `y`, the tangent coordinate
+change for `𝓘(𝕜, E)` is the one for `𝓘(𝕜', E)`. For instance, the real tangent coordinate changes
+of a complex manifold are the complex ones. -/
+theorem tangentCoordChange_modelWithCornersSelf_restrictScalars_apply {x y z : M}
+    (h : z ∈ (chartAt E x).source ∩ (chartAt E y).source) (v : E) :
+    tangentCoordChange 𝓘(𝕜, E) x y z v = tangentCoordChange 𝓘(𝕜', E) x y z v := by
+  have : IsManifold (𝓘(𝕜', E).restrictScalars 𝕜) 1 M := by
+    rwa [modelWithCornersSelf_restrictScalars]
+  simpa only [modelWithCornersSelf_restrictScalars, ContinuousLinearMap.coe_restrictScalars'] using
+    congrArg (fun L : E →L[𝕜] E ↦ L v) (𝓘(𝕜', E).tangentCoordChange_restrictScalars 𝕜 h)
+
+end TauCeti

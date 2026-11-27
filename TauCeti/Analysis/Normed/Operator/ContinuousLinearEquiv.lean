@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
-public import TauCeti.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Analysis.Real.Sqrt
 public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 public import TauCeti.Topology.Algebra.Module.Equiv.SMul
+import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Normalizing continuous linear equivalences
@@ -26,6 +28,13 @@ For finite index types `S` and `T`, the splitting `ContinuousLinearEquiv.sumPiEq
 family indexed by `S ⊕ T` into its restrictions to `S` and to `T` preserves the sup norms
 (`ContinuousLinearEquiv.norm_sumPiEquivProdPi_apply`), so it and its inverse have operator norm
 at most `1`.
+
+For two continuous linear equivalences `e` and `e'`, the resolvent identity
+`e⁻¹ - e'⁻¹ = e⁻¹ (e' - e) e'⁻¹` bounds the difference of the inverses by `‖e⁻¹‖ ‖e' - e‖ ‖e'⁻¹‖`
+(`ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le`, the equivalence form of
+`ContinuousLinearMap.IsInvertible.norm_inverse_sub_inverse_le`): under uniform bounds on the
+inverses, inversion is Lipschitz, as in the dependence of the solution operator of a linear problem
+on its coefficients.
 -/
 
 public section
@@ -110,8 +119,8 @@ end ContinuousLinearEquiv
 
 namespace ContinuousLinearEquiv
 
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 E F : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E] [Module 𝕜 E]
+  [SeminormedAddCommGroup F] [Module 𝕜 F]
 
 /-- A quadratic lower bound `λ ‖y‖ ^ 2 ≤ ‖e y‖ ^ 2` with `0 < λ` on a continuous linear
 equivalence `e` bounds its inverse: `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`. -/
@@ -120,10 +129,12 @@ theorem norm_symm_apply_le_inv_sqrt_mul_norm (e : E ≃L[𝕜] F) {lam : ℝ} (h
   -- `√λ ‖y‖ ≤ ‖e y‖`, applied to `y = e⁻¹ x`.
   have hx := h (e.symm x)
   rw [e.apply_symm_apply] at hx
+  have hsq : ‖e.symm x‖ ^ 2 ≤ lam⁻¹ * ‖x‖ ^ 2 := by
+    rw [inv_mul_eq_div, le_div_iff₀ hlam, mul_comm]
+    exact hx
   rw [← Real.sqrt_inv]
-  refine Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg x) ?_
-  rw [inv_mul_eq_div, le_div_iff₀ hlam, mul_comm]
-  exact hx
+  exact (Real.le_sqrt_of_sq_le hsq).trans_eq
+    (by rw [Real.sqrt_mul_sq, abs_norm])
 
 end ContinuousLinearEquiv
 
@@ -145,5 +156,33 @@ theorem image_add_symm_smul_subset_ball (L : E ≃L[ℝ] F) (x : E) {t R : ℝ} 
     _ = t * ‖(L.symm : F →L[ℝ] E)‖ * ‖z‖ := by rw [norm_smul, Real.norm_of_nonneg ht]; ring
     _ ≤ t * ‖(L.symm : F →L[ℝ] E)‖ := mul_le_of_le_one_right (by positivity) hz1.le
     _ < R := htR
+
+end ContinuousLinearEquiv
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The inverses of two continuous linear equivalences differ in operator norm by at most
+`‖e⁻¹‖ ‖e' - e‖ ‖e'⁻¹‖`: the equivalence form of
+`ContinuousLinearMap.IsInvertible.norm_inverse_sub_inverse_le`. With uniform bounds on the
+inverses, inversion is thus Lipschitz on a family of equivalences. -/
+theorem norm_coe_symm_sub_coe_symm_le (e e' : E ≃L[𝕜] F) :
+    ‖(e.symm : F →L[𝕜] E) - e'.symm‖ ≤
+      ‖(e.symm : F →L[𝕜] E)‖ * ‖(e' : E →L[𝕜] F) - (e : E →L[𝕜] F)‖ * ‖(e'.symm : F →L[𝕜] E)‖ := by
+  simpa only [ContinuousLinearMap.inverse_equiv] using
+    ContinuousLinearMap.IsInvertible.norm_inverse_sub_inverse_le
+      (⟨e, rfl⟩ : (e : E →L[𝕜] F).IsInvertible) (⟨e', rfl⟩ : (e' : E →L[𝕜] F).IsInvertible)
+
+/-- Inverses bounded by `C` of two continuous linear equivalences at distance at most `D` are at
+distance at most `C D C`, by `ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le`. -/
+theorem norm_coe_symm_sub_coe_symm_le_of_le {e e' : E ≃L[𝕜] F} {C D : ℝ}
+    (he : ‖(e.symm : F →L[𝕜] E)‖ ≤ C) (he' : ‖(e'.symm : F →L[𝕜] E)‖ ≤ C)
+    (hD : ‖(e' : E →L[𝕜] F) - (e : E →L[𝕜] F)‖ ≤ D) :
+    ‖(e.symm : F →L[𝕜] E) - e'.symm‖ ≤ C * D * C :=
+  (e.norm_coe_symm_sub_coe_symm_le e').trans <| mul_le_mul
+    (mul_le_mul he hD (norm_nonneg _) ((norm_nonneg _).trans he)) he' (norm_nonneg _)
+    (mul_nonneg ((norm_nonneg _).trans he) ((norm_nonneg _).trans hD))
 
 end ContinuousLinearEquiv

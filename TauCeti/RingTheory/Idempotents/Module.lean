@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.Algebra.Module.Projective
+public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.Algebra.Star.Projection.Family
@@ -59,6 +61,10 @@ hypothesis in the intended applications.
 
 * `TauCeti.smulTopMap S e f`: the restriction of an `R`-linear map `f : M →ₗ[R] N` to
   `e • M →ₗ[S] e • N`.
+* `IsIdempotentElem.smulTopSubmoduleEquiv`: for an idempotent `e` of a ring `A`, the
+  corner of an `A`-submodule containing `eM` is `eM`.
+* `TauCeti.smulTopRetraction e`: multiplication by `e` as a map `M → e • M`; for an idempotent
+  `e` it retracts `M` onto the piece `e • M` (`IsIdempotentElem.smulTopRetraction_comp_subtype`).
 
 ## Main results
 
@@ -70,6 +76,11 @@ hypothesis in the intended applications.
   `i` being `eᵢ • x` (`TauCeti.coe_ofBijective_coeLinearMap_symm_apply_smul_top`).
 * `TauCeti.smul_coeLinearMap_smul_top`: multiplying by `eᵢ` reads off the `i`-th component of a
   sum. This is what makes the sum direct.
+* `IsIdempotentElem.isCompl_smul_top_one_sub_smul_top`: a single idempotent splits `M` as
+  `e • M ⊕ (1 - e) • M`.
+* `IsIdempotentElem.projective_smul_top`, `IsIdempotentElem.flat_smul_top`,
+  `TauCeti.finite_smul_top`: the piece `e • M` is a direct summand, so it inherits projectivity,
+  flatness and finiteness from `M`.
 * `TauCeti.finrank_eq_sum_finrank_smul_top`: for a module finite-dimensional over a division
   ring `S`, the dimensions of the pieces add up to the dimension of the module.
 * `IsIdempotentElem.instModuleCornerSmulTop`: for a single idempotent `e`, the piece `e • M` is a
@@ -177,6 +188,39 @@ theorem smulTopMap_comp [LinearMap.CompatibleSMul N P S R] [LinearMap.Compatible
   simp
 
 end Map
+
+section Equiv
+
+variable {M N R : Type*} [Semiring R]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- An `R`-linear equivalence restricts to an `S`-linear equivalence on the pieces cut out by a
+scalar `e`. -/
+def _root_.LinearEquiv.smulTopCongr (f : M ≃ₗ[R] N) (S : Type*) [Semiring S]
+    [Module S M] [Module S N] [SMulCommClass R S M] [SMulCommClass R S N]
+    [LinearMap.CompatibleSMul M N S R] [LinearMap.CompatibleSMul N M S R] (e : R) :
+    ↥(e • (⊤ : Submodule S M)) ≃ₗ[S] ↥(e • (⊤ : Submodule S N)) :=
+  LinearEquiv.ofLinearMap (smulTopMap S e f.toLinearMap) (smulTopMap S e f.symm.toLinearMap)
+    (by ext x; simp) (by ext x; simp)
+
+variable {S : Type*} [Semiring S] [Module S M] [Module S N]
+  [SMulCommClass R S M] [SMulCommClass R S N]
+  [LinearMap.CompatibleSMul M N S R] [LinearMap.CompatibleSMul N M S R]
+
+/-- On the underlying modules, the restricted equivalence acts by the original equivalence. -/
+@[simp]
+theorem _root_.LinearEquiv.coe_smulTopCongr_apply (f : M ≃ₗ[R] N) (e : R)
+    (x : ↥(e • (⊤ : Submodule S M))) :
+    (f.smulTopCongr S e x : N) = f (x : M) :=
+  coe_smulTopMap_apply e f.toLinearMap x
+
+/-- The inverse of a restricted equivalence is the restriction of the inverse equivalence. -/
+@[simp]
+theorem _root_.LinearEquiv.smulTopCongr_symm (f : M ≃ₗ[R] N) (e : R) :
+    (f.smulTopCongr S e).symm = f.symm.smulTopCongr S e :=
+  (rfl)
+
+end Equiv
 
 section Orthogonal
 
@@ -417,5 +461,153 @@ theorem coe_algebraMap_corner_smul {R : Type*} [CommSemiring R] [Algebra R A] (r
       algebraMap R A r • (x : M) := by
   rw [Corner.coe_smul, Corner.val_algebraMap, Algebra.smul_def, mul_smul,
     he.smul_eq_self_of_mem_smul_top x.property]
+
+section Submodule
+
+variable {A M : Type*} [Ring A] [AddCommGroup M] [Module A M] {e : A} (he : IsIdempotentElem e)
+
+/-- **The corner of a submodule containing `eM` is `eM`.** If an `A`-submodule `X` of `M`
+contains every `e • m`, then the corner `eX` is identified with `eM` by the inclusion `X ⊆ M`. -/
+def smulTopSubmoduleEquiv (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X) :
+    ↥(e • (⊤ : Submodule ℤ X)) ≃ₗ[he.Corner] ↥(e • (⊤ : Submodule ℤ M)) where
+  toFun y := ⟨y.val.val, he.mem_smul_top_iff_smul_eq_self.2
+    (congrArg Subtype.val (he.smul_eq_self_of_mem_smul_top y.property))⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun z := ⟨⟨z.val, he.smul_eq_self_of_mem_smul_top z.property ▸ hX z.val⟩,
+    he.mem_smul_top_iff_smul_eq_self.2 (Subtype.ext (he.smul_eq_self_of_mem_smul_top z.property))⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem coe_smulTopSubmoduleEquiv_apply (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X)
+    (y : ↥(e • (⊤ : Submodule ℤ X))) :
+    (he.smulTopSubmoduleEquiv X hX y : M) = y.val.val :=
+  (rfl)
+
+@[simp]
+theorem coe_coe_smulTopSubmoduleEquiv_symm_apply (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X)
+    (z : ↥(e • (⊤ : Submodule ℤ M))) :
+    (((he.smulTopSubmoduleEquiv X hX).symm z : X) : M) = z.val :=
+  (rfl)
+
+end Submodule
+
+end IsIdempotentElem
+
+/-! ### The piece `e • M` as a direct summand -/
+
+namespace TauCeti
+
+variable {S M A : Type*} [Semiring S] [Monoid A] [AddCommMonoid M] [Module S M]
+  [DistribMulAction A M] [SMulCommClass A S M]
+
+/-- The piece `e • M` of a finite module is finite: it is the image of `M` under multiplication
+by `e`. -/
+instance finite_smul_top [Module.Finite S M] (e : A) :
+    Module.Finite S ↥(e • (⊤ : Submodule S M)) := by
+  rw [Submodule.pointwise_smul_def, Submodule.map_top]
+  infer_instance
+
+/-- Multiplication by `e`, as a map from `M` onto the piece `e • M`. For an idempotent `e` it
+retracts `M` onto `e • M` (`IsIdempotentElem.smulTopRetraction_comp_subtype`). -/
+def smulTopRetraction (e : A) : M →ₗ[S] ↥(e • (⊤ : Submodule S M)) :=
+  (DistribSMul.toLinearMap S M e).codRestrict _
+    fun x ↦ Submodule.smul_mem_pointwise_smul x e ⊤ trivial
+
+@[simp]
+theorem coe_smulTopRetraction_apply (e : A) (x : M) :
+    (smulTopRetraction (S := S) e x : M) = e • x :=
+  (rfl)
+
+end TauCeti
+
+namespace IsIdempotentElem
+
+section Summand
+
+variable {S M A : Type*} [Semiring S] [Monoid A] [AddCommMonoid M] [Module S M]
+  [DistribMulAction A M] [SMulCommClass A S M] {e : A}
+
+/-- Multiplication by an idempotent `e` restricts to the identity of the piece `e • M`. -/
+theorem smulTopRetraction_comp_subtype (he : IsIdempotentElem e) :
+    TauCeti.smulTopRetraction e ∘ₗ (e • (⊤ : Submodule S M)).subtype = LinearMap.id :=
+  LinearMap.ext fun x ↦ Subtype.ext (he.smul_eq_self_of_mem_smul_top x.property)
+
+/-- **The piece `e • M` of a projective module is projective**: multiplication by the idempotent
+`e` retracts `M` onto it. -/
+theorem projective_smul_top [Module.Projective S M] (he : IsIdempotentElem e) :
+    Module.Projective S ↥(e • (⊤ : Submodule S M)) :=
+  .of_split _ _ he.smulTopRetraction_comp_subtype
+
+end Summand
+
+section Flat
+
+variable {S M A : Type*} [CommSemiring S] [Monoid A] [AddCommMonoid M] [Module S M]
+  [DistribMulAction A M] [SMulCommClass A S M] {e : A}
+
+/-- **The piece `e • M` of a flat module is flat**: multiplication by the idempotent `e` retracts
+`M` onto it. -/
+theorem flat_smul_top [Module.Flat S M] (he : IsIdempotentElem e) :
+    Module.Flat S ↥(e • (⊤ : Submodule S M)) :=
+  .of_retract _ _ he.smulTopRetraction_comp_subtype
+
+end Flat
+
+section IsCompl
+
+variable {S M A : Type*} [Semiring S] [Ring A] [AddCommMonoid M] [Module S M] [Module A M]
+  [SMulCommClass A S M] {e : A}
+
+/-- **An idempotent splits a module in two**: `M` is the direct sum of `e • M` and `(1 - e) • M`. -/
+theorem isCompl_smul_top_one_sub_smul_top (he : IsIdempotentElem e) :
+    IsCompl (e • (⊤ : Submodule S M)) ((1 - e) • (⊤ : Submodule S M)) :=
+  (TauCeti.isInternal_smul_top (CompleteOrthogonalIdempotents.of_isIdempotentElem he)).isCompl
+    (i := 0) (j := 1) zero_ne_one
+    (by ext i; fin_cases i <;> simp)
+
+end IsCompl
+
+section ProdEquiv
+
+variable {S M A : Type*} [Semiring S] [Ring A] [AddCommMonoid M] [Module S M] [Module A M]
+  [SMulCommClass A S M] {e : A}
+
+/-- An idempotent `e` and its complement `f` give product coordinates on `M` by projection onto
+the two summands `e • M` and `f • M`. -/
+def smulTopProdEquiv (he : IsIdempotentElem e) {f : A} (hsum : e + f = 1) :
+    M ≃ₗ[S] ↥(e • (⊤ : Submodule S M)) × ↥(f • (⊤ : Submodule S M)) := by
+  have hcompl : f = 1 - e := eq_sub_of_add_eq' hsum
+  have hf : IsIdempotentElem f := hcompl.symm ▸ he.one_sub
+  refine LinearEquiv.ofLinearMap ((TauCeti.smulTopRetraction e).prod (TauCeti.smulTopRetraction f))
+    ((e • (⊤ : Submodule S M)).subtype.coprod (f • (⊤ : Submodule S M)).subtype)
+    (LinearMap.ext ?_) (LinearMap.ext ?_)
+  · rintro ⟨x, y⟩
+    have hx : f • (x : M) = 0 := TauCeti.smul_eq_zero_of_mul_eq_zero_of_mem_smul_top
+      (hcompl.symm ▸ he.one_sub_mul_self) x.property
+    have hy : e • (y : M) = 0 := TauCeti.smul_eq_zero_of_mul_eq_zero_of_mem_smul_top
+      (hcompl.symm ▸ he.mul_one_sub_self) y.property
+    refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;>
+      simp [he.smul_eq_self_of_mem_smul_top x.property, hf.smul_eq_self_of_mem_smul_top y.property,
+        hx, hy]
+  · intro x
+    simp [← add_smul, hsum]
+
+/-- The product coordinates are obtained by multiplication by the two complementary scalars. -/
+@[simp]
+theorem smulTopProdEquiv_apply (he : IsIdempotentElem e) {f : A} (hsum : e + f = 1) (x : M) :
+    he.smulTopProdEquiv (S := S) hsum x =
+      (TauCeti.smulTopRetraction e x, TauCeti.smulTopRetraction f x) :=
+  (rfl)
+
+/-- The inverse of the product coordinates adds the two summand vectors. -/
+@[simp]
+theorem smulTopProdEquiv_symm_apply (he : IsIdempotentElem e) {f : A} (hsum : e + f = 1)
+    (x : ↥(e • (⊤ : Submodule S M)) × ↥(f • (⊤ : Submodule S M))) :
+    (he.smulTopProdEquiv (S := S) hsum).symm x = (x.1 : M) + (x.2 : M) :=
+  (rfl)
+
+end ProdEquiv
 
 end IsIdempotentElem

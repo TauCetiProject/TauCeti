@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.HeatKernel.Generator
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
+import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.LpLaplacian
 import TauCeti.Analysis.PDE.Regularity.Hessian.Poisson
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 
@@ -27,7 +28,15 @@ that domain with a Sobolev space for real-valued functions and `1 < p < ∞`:
 * `TauCeti.generator_heatSemigroup_ae_eq_trace`: if `f` in the domain of `A` is almost everywhere
   the value of `w ∈ W^{2,p}(E)`, then `A f` is almost everywhere the trace `tr D²w` of the weak
   Hessian of `w`, for every `1 ≤ p < ∞`; for `1 < p < ∞` such a `w` exists for every `f` in the
-  domain.
+  domain;
+* `TauCeti.exists_memLp_mul_inv_norm_notMem_domain_heatSemigroup`: in `ℝ³`, for `1 ≤ p < 3` and
+  any bounded, almost everywhere strongly measurable cutoff `χ` with bounded support that equals
+  `1` near the origin, `u(x) = χ(x) / ‖x‖` lies in `Lᵖ` (for example in `L²` when `p = 2`) but not
+  in the domain of `A`: near the origin `u` is `4π` times the Newtonian kernel, so its
+  distributional Laplacian is `-4π δ₀` there, which is not a function
+  (`TauCeti.notMem_domain_weakLaplacianLp_of_ae_eq_mul_newtonianKernel_sub`). Any such cutoff,
+  for instance a smooth bump function at the origin, thus witnesses an element of `Lᵖ` outside the
+  domain of `A`.
 
 One inclusion holds because the distributional Laplacian of a `W^{2,p}` function is its weak
 Laplacian (`TauCeti.Wkp.integral_laplacian_smul_value_eq_laplacianL`), an element of `Lᵖ`. The
@@ -48,7 +57,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory TemperedDistribution TopologicalSpace
+open MeasureTheory TemperedDistribution TopologicalSpace Topology
 open scoped ENNReal Laplacian Distributions
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -116,5 +125,32 @@ theorem generator_heatSemigroup_ae_eq_trace (hp_top : p ≠ ∞)
     (integral_congr_ae (hw.mono fun x hx ↦ by simp only [hx])).trans
       ((mem_graph_weakLaplacianLp_iff.1 hgraph) φ)
   simpa only [Opens.coe_top, Measure.restrict_univ] using h.symm
+
+/-- **A cutoff of `1 / ‖x‖` lies outside the domain of the heat generator.** In `ℝ³`, let
+`1 ≤ p < 3`. For any bounded, almost everywhere strongly measurable cutoff `χ` with bounded
+support that equals `1` near the origin, `u(x) = χ(x) / ‖x‖` lies in `Lᵖ(ℝ³)` (for example in
+`L²(ℝ³)` when `p = 2`), but not in the domain of the generator of the heat semigroup on `Lᵖ(ℝ³)`:
+near the origin `u` is `4π` times the Newtonian kernel `1 / (4π ‖x‖)`, so its distributional
+Laplacian is `-4π δ₀` there, which is not a function. -/
+theorem exists_memLp_mul_inv_norm_notMem_domain_heatSemigroup (hp_top : p ≠ ∞)
+    (hp : p.toReal < 3) {χ : EuclideanSpace ℝ (Fin 3) → ℝ} (hχm : AEStronglyMeasurable χ volume)
+    {M : ℝ} (hχM : ∀ x, ‖χ x‖ ≤ M) (hχs : Bornology.IsBounded (Function.support χ))
+    (hχ1 : χ =ᶠ[𝓝 0] 1) :
+    ∃ hu : MemLp (fun x ↦ χ x * ‖x‖⁻¹) p volume,
+      hu.toLp _ ∉ (heatSemigroup (E := EuclideanSpace ℝ (Fin 3)) (F := ℝ) hp_top).domain := by
+  have heq : (fun x : EuclideanSpace ℝ (Fin 3) ↦ χ x * ‖x‖⁻¹) =
+      fun x ↦ 4 * Real.pi * (χ x * newtonianKernel 3 (x - 0)) := by
+    funext x
+    rw [sub_zero, newtonianKernel_three]
+    field_simp
+  have hu : MemLp (fun x ↦ χ x * ‖x‖⁻¹) p volume := heq ▸
+    (memLp_mul_newtonianKernel_sub hp_top (by norm_num; linarith) hχm hχM hχs 0).const_mul _
+  refine ⟨hu, ?_⟩
+  rw [← Semigroups.StronglyContinuousSemigroup.generator_domain,
+    generator_heatSemigroup_eq_weakLaplacianLp hp_top]
+  refine notMem_domain_weakLaplacianLp_of_ae_eq_mul_newtonianKernel_sub (by norm_num)
+    (by norm_num) hχ1 (by positivity : 4 * Real.pi ≠ 0) ?_
+  filter_upwards [hu.coeFn_toLp] with x hx hx1
+  rw [hx, congrFun heq x, hx1, Pi.one_apply, one_mul]
 
 end TauCeti

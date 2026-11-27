@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.RingTheory.Finiteness.Prod
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Finrank of zero objects, biproducts and short exact sequences in `ModuleCat`
@@ -28,7 +28,8 @@ Over a ring satisfying the rank-nullity theorem (`HasRankNullity`), such as a di
 commutative domain, finrank is moreover additive on every short exact sequence whose middle term is
 finitely generated (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`), hence on
 binary biproducts (`ModuleCat.finrank_biprod_of_hasRankNullity`) and finite biproducts
-(`ModuleCat.finrank_biproduct`) of finitely generated modules. Unlike Mathlib's
+(`ModuleCat.finrank_biproduct`) of finitely generated modules, and so on every finitely generated
+module isomorphic to a finite coproduct (`ModuleCat.finrank_eq_sum_of_iso_sigma`). Unlike Mathlib's
 `ModuleCat.free_shortExact_finrank_add`, no freeness is assumed, so this covers biproducts and
 sequences of finitely generated abelian groups with torsion.
 
@@ -141,5 +142,16 @@ theorem finrank_biproduct {ι : Type*} [Fintype ι] (V : ι → ModuleCat.{v} R)
       finite_biproduct (fun j ↦ W (some j))
     rw [(TauCeti.biproductOptionIso W).toLinearEquiv.finrank_eq,
       finrank_biprod_of_hasRankNullity, ih (fun j ↦ W (some j)), Fintype.sum_option]
+
+/-- Over a ring satisfying the strong rank condition and the rank-nullity property
+(`HasRankNullity`), such as a division ring or a commutative domain, a finitely generated module
+isomorphic to a finite coproduct `∐ W` has finrank the sum of the finranks of the `W i`. -/
+theorem finrank_eq_sum_of_iso_sigma {ι : Type*} [Fintype ι] {X : ModuleCat.{v} R}
+    [Module.Finite R X] {W : ι → ModuleCat.{v} R} (e : X ≅ ∐ W) :
+    Module.finrank R X = ∑ i, Module.finrank R (W i) := by
+  let e' := e ≪≫ (biproduct.isoCoproduct W).symm
+  have := Module.Finite.equiv e'.toLinearEquiv
+  have := finite_of_finite_biproduct W
+  rw [e'.toLinearEquiv.finrank_eq, finrank_biproduct]
 
 end ModuleCat

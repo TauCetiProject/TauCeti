@@ -15,6 +15,7 @@ import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.LinearAlgebra.Determinant
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Instances.Sign
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
@@ -71,8 +72,9 @@ need not be bounded. A measure of temperate growth is finite on compact sets.
   give temperate growth.
 * `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow`: symbol estimates
   give temperate growth.
-* `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`: the rescaled Bessel potential has
-  temperate growth.
+* `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`,
+  `Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow`: rescaled and translated Bessel potentials
+  have temperate growth.
 * `TauCeti.hasTemperateGrowth_mul_norm_sq_add_rpow`: so does `x ↦ (a ‖x‖ ^ 2 + c) ^ r` for
   `0 ≤ a` and `0 < c`.
 * `Function.hasTemperateGrowth_log_one_add_norm_sq`: `x ↦ log (1 + ‖x‖ ^ 2)` has temperate growth.
@@ -81,6 +83,8 @@ need not be bounded. A measure of temperate growth is finite on compact sets.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
 * `Function.HasTemperateGrowth.continuousLinearMap_comp`: `L ∘ f` has temperate growth for a
   continuous linear map `L`.
+* `Function.HasTemperateGrowth.basis_repr`: the coordinates of `f` in a finite basis have temperate
+  growth.
 * `Function.HasTemperateGrowth.basis_repr_fderiv_apply`: so do the coordinates of `Df(x) v` in a
   basis.
 * `Function.HasTemperateGrowth.prod`: finite products of functions of temperate growth.
@@ -231,19 +235,22 @@ theorem continuousLinearMap_comp {𝕜 G : Type*} [NontriviallyNormedField 𝕜]
     (L ∘ f).HasTemperateGrowth :=
   (L.restrictScalars ℝ).hasTemperateGrowth.comp hf
 
+/-- The coordinates `x ↦ b.repr (f x) i` of a function of temperate growth in a finite basis `b`
+have temperate growth. -/
+theorem basis_repr {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜]
+    [Finite ι] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F]
+    (hf : f.HasTemperateGrowth) (b : Module.Basis ι 𝕜 F) (i : ι) :
+    (fun x ↦ b.repr (f x) i).HasTemperateGrowth := by
+  have := b.finiteDimensional_of_finite
+  exact hf.continuousLinearMap_comp (LinearMap.toContinuousLinearMap (b.coord i))
+
 /-- The coordinates in a basis `b` of the directional derivative `x ↦ Df(x) v` of a function `f` of
 temperate growth have temperate growth. These are the coefficients of the chain rule for
 composition with `f`. -/
 theorem basis_repr_fderiv_apply {𝕜 ι : Type*} [RCLike 𝕜] [Finite ι]
     (hf : f.HasTemperateGrowth) (b : Module.Basis ι ℝ F) (v : E) (i : ι) :
-    (fun x ↦ ((b.repr (_root_.fderiv ℝ f x v) i : ℝ) : 𝕜)).HasTemperateGrowth := by
-  have h : (fun x ↦ ((b.repr (_root_.fderiv ℝ f x v) i : ℝ) : 𝕜)) =
-      ((RCLike.ofRealCLM (K := 𝕜)).comp ((ContinuousLinearMap.proj i).comp
-        b.equivFunL.toContinuousLinearMap)) ∘ fun x ↦ _root_.fderiv ℝ f x v := by
-    ext x
-    simp
-  rw [h]
-  exact (ContinuousLinearMap.hasTemperateGrowth _).comp (hf.fderiv_apply v)
+    (fun x ↦ ((b.repr (_root_.fderiv ℝ f x v) i : ℝ) : 𝕜)).HasTemperateGrowth :=
+  (RCLike.ofRealCLM (K := 𝕜)).hasTemperateGrowth.comp ((hf.fderiv_apply v).basis_repr b i)
 
 /-- A finite product of functions of temperate growth has temperate growth. -/
 theorem prod {ι R : Type*} [NormedCommRing R] [NormedAlgebra ℝ R] {f : ι → E → R}
@@ -359,6 +366,11 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
 @[fun_prop]
 theorem hasTemperateGrowth_one_add_norm_smul_sq_rpow (c r : ℝ) :
     (fun x : H ↦ (1 + ‖c • x‖ ^ 2) ^ r).HasTemperateGrowth :=
+  (hasTemperateGrowth_one_add_norm_sq_rpow H r).comp (by fun_prop)
+
+/-- The translated Bessel potential `y ↦ (1 + ‖x - y‖ ^ 2) ^ r` has temperate growth. -/
+theorem hasTemperateGrowth_one_add_norm_sub_sq_rpow (x : H) (r : ℝ) :
+    (fun y : H ↦ (1 + ‖x - y‖ ^ 2) ^ r).HasTemperateGrowth :=
   (hasTemperateGrowth_one_add_norm_sq_rpow H r).comp (by fun_prop)
 
 /-- For `0 ≤ a` and `0 < c`, the function `x ↦ (a ‖x‖ ^ 2 + c) ^ r` has temperate growth: it is

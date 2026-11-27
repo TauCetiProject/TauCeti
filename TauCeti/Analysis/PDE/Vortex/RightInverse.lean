@@ -14,7 +14,6 @@ import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.PDE.Vortex.WeightedEstimate
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Function.Lp.Adjoint
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
@@ -69,7 +68,7 @@ adjoint equation: `Q† g` is a weak solution of `L_x* η = g` there
 (`TauCeti.Vortex.integral_inner_adjoint_apply_gaugeFixedOperator_eq`). It satisfies the same
 weighted estimate, `‖exp(c ρ) Q† g‖₂ ≤ K ‖exp(c ρ) g‖₂` for `|c| < 1/2`
 (`TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_adjoint_apply_le`). This is dual to the estimate for
-`Q` at the rate `-c`, by `ContinuousLinearMap.eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le`.
+`Q` at the rate `-c`, by `ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le`.
 
 The constant `K` depends on the vortex only through its spectral gap `c₀` and a radius `R`
 beyond which its squared mass `|α|² / 4` exceeds a fixed `a` with `c² < a ≤ 1/4`
@@ -318,7 +317,7 @@ theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mul_le
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
       ‖Q‖ ≤ (√c)⁻¹ ∧ ∀ f, IsMinimalGaugeFixedWeakSolution μ x f (Q f) := by
   set S := gaugeFixedAdjointToLp μ hx
-  set ι := (TestFunction.ambientToLp 2 μ : TestField →L[ℝ] _).toLinearMap
+  set ι := (TestFunction.ambientToLp ℝ 2 μ : TestField →L[ℝ] _).toLinearMap
   have hS := inner_gaugeFixedAdjointToLp (μ := μ) hx
   have hι (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
       ⟪u, ι η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ :=
@@ -929,41 +928,6 @@ theorem integral_inner_adjoint_apply_gaugeFixedOperator_eq (hx : Continuous x)
         rwa [inner_sub_right, sub_eq_zero] at h0
     _ = ∫ z, ⟪g z, v z⟫ ∂μ := L2.inner_toLp _ _
 
-/-- **Weighted estimates pass to the adjoint by duality.** Suppose every square-integrable weak
-solution `y` of `L_x y = f` orthogonal to the weak kernel of `L_x` satisfies
-`‖exp(-c ρ) y‖₂ ≤ K ‖exp(-c ρ) f‖₂`, with `ρ = √(1 + |z|²)`. Let `Q` be a bounded operator on
-`L²(ℂ; ℝ⁴)` such that `Q f` is such a solution for every `f`. Then its Hilbert space adjoint
-satisfies `‖exp(c ρ) Q† g‖₂ ≤ K ‖exp(c ρ) g‖₂` for every `g ∈ L²`. -/
-private theorem eLpNorm_exp_mul_smul_adjoint_apply_le {c : ℝ} {K : ℝ≥0}
-    (hK : ∀ f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-        ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) →
-      (∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
-        ∫ z, ⟪y z, u z⟫ ∂μ = 0) →
-      eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • y z) 2 μ ≤
-        K * eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • f z) 2 μ)
-    {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
-    (hweak : ∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
-      ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
-    (horth : ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-        ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
-      ∫ z, ⟪Q f z, u z⟫ ∂μ = 0)
-    (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
-    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • ContinuousLinearMap.adjoint Q g z) 2 μ ≤
-      K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ := by
-  have hw : AEStronglyMeasurable (fun z : ℂ ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))) μ :=
-    (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous.aestronglyMeasurable
-  have h := ContinuousLinearMap.eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le
-    (ContinuousLinearMap.adjoint Q) (p := 2) (p' := 2) (q := 2) (q' := 2) ENNReal.ofNat_ne_top
-    (ae_of_all _ fun z ↦ (Real.exp_pos (c * √(1 + ‖z‖ ^ 2))).ne') hw (C := K) (fun f ↦ ?_) g
-  · simpa using h
-  · -- `Q†† = Q`, and `exp(c ρ)⁻¹ = exp(-c ρ)`.
-    simpa [ContinuousLinearMap.adjoint_adjoint, ← Real.exp_neg, neg_mul] using
-      hK f (Q f) (hweak f) (horth f)
-
 /-- **Exponentially weighted estimate for the adjoint of the weak right inverse.** Let `x` be a
 `C¹` solution of the plane vortex equation with `|α| → 1` at infinity, let `ρ = √(1 + |z|²)` and
 `|c| < 1/2`. There is `K`, depending only on the vortex and `c`, with the following property. Let
@@ -994,7 +958,8 @@ theorem exists_eLpNorm_exp_mul_smul_adjoint_apply_le (hx : ContDiff ℝ 1 x)
           K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ := by
   obtain ⟨K, hK⟩ := exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq (μ := μ)
     hx hsol hlim (c := -c) (by rwa [abs_neg])
-  exact ⟨K, fun Q hweak horth ↦ eLpNorm_exp_mul_smul_adjoint_apply_le hK hweak horth⟩
+  exact ⟨K, fun Q hweak horth ↦ Q.eLpNorm_exp_mul_smul_adjoint_apply_le
+    fun f ↦ hK f (Q f) (hweak f) (horth f)⟩
 
 /-! ### Uniformity over windows of divisors -/
 
@@ -1071,6 +1036,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_adjoint_apply_le_of_forall_mem_norm_l
   obtain ⟨K, hK⟩ := exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le (μ := μ) m r
     (c := -c) (by rwa [abs_neg])
   exact ⟨K, fun x D hx hsol hframe hD hDr Q hweak horth ↦
-    eLpNorm_exp_mul_smul_adjoint_apply_le (hK x D hx hsol hframe hD hDr) hweak horth⟩
+    Q.eLpNorm_exp_mul_smul_adjoint_apply_le
+      fun f ↦ hK x D hx hsol hframe hD hDr f (Q f) (hweak f) (horth f)⟩
 
 end TauCeti.Vortex

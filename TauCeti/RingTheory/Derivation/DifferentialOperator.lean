@@ -51,6 +51,12 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
 * `mem_differentialOperators_of_intertwining`: the order of an operator can be checked after
   mapping to a jointly injective family of targets, for instance on the members of an open
   cover.
+* `comp_comp_mem_differentialOperators`: sandwiching `D` between maps `ρ` and `σ` that intertwine
+  multiplication by each `b` with multiplication by some `a` preserves the order, since the
+  commutator of `σ ∘ D ∘ ρ` with `b` is `σ ∘ [D, a] ∘ ρ` (`smulCommutator_comp_comp`). This reads
+  operators on a manifold in a chart through cutoffs.
+* `restrictScalars_mem_differentialOperators`: for a tower `R → S → A`, restricting the scalars
+  of an `S`-linear operator to `R` preserves its order over `A`.
 * `smulCommutator_pow_comp_of_mem`: the top iterated commutators of a composition multiply,
   `ad_a ^ (m + k) (P ∘ Q) = (m + k).choose m • (ad_a ^ m P ∘ ad_a ^ k Q)`. Dividing by
   factorials over a `ℚ`-algebra, this is multiplicativity of principal symbols.
@@ -431,6 +437,97 @@ theorem mem_differentialOperators_of_intertwining {ι : Type*} {B M' N' : ι →
 
 end
 
+/-! ### Sandwiching between intertwining maps -/
+
+section Sandwich
+
+variable {R A B M N M' N' : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [CommSemiring B] [Algebra R B]
+  [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower R A M]
+  [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N]
+  [AddCommMonoid M'] [Module B M'] [Module R M'] [IsScalarTower R B M']
+  [AddCommGroup N'] [Module B N'] [Module R N'] [IsScalarTower R B N']
+  {ρ : M' →ₗ[R] M} {σ : N →ₗ[R] N'} {a : A} {b : B}
+
+/-- Let `ρ : M' → M` and `σ : N → N'` intertwine multiplication by `b : B` with multiplication by
+`a : A`, in the sense that `ρ (b • x) = a • ρ x` and `σ (a • y) = b • σ y`. Then the commutator
+with `b` of the sandwiched operator `σ ∘ D ∘ ρ` is the sandwiched commutator of `D` with `a`. -/
+theorem smulCommutator_comp_comp (hρ : ∀ x, ρ (b • x) = a • ρ x)
+    (hσ : ∀ y, σ (a • y) = b • σ y) (D : M →ₗ[R] N) :
+    smulCommutator R b (σ ∘ₗ D ∘ₗ ρ) = σ ∘ₗ smulCommutator R a D ∘ₗ ρ := by
+  ext x
+  simp [hρ, hσ]
+
+/-- The iterated form of `TauCeti.smulCommutator_comp_comp`. -/
+theorem smulCommutator_pow_comp_comp (hρ : ∀ x, ρ (b • x) = a • ρ x)
+    (hσ : ∀ y, σ (a • y) = b • σ y) (D : M →ₗ[R] N) (k : ℕ) :
+    (smulCommutator R b ^ k) (σ ∘ₗ D ∘ₗ ρ) = σ ∘ₗ (smulCommutator R a ^ k) D ∘ₗ ρ := by
+  induction k with
+  | zero => rfl
+  | succ k ih => rw [pow_succ', mul_apply_eq_comp, ih, smulCommutator_comp_comp hρ hσ,
+      pow_succ', mul_apply_eq_comp]
+
+/-- **Sandwiching preserves the order.** Let `D : M → N` be a differential operator of order at
+most `m` over `A`, and let `ρ : M' → M` and `σ : N → N'` be `R`-linear maps from and to modules
+over a second algebra `B`, such that each `b : B` is intertwined by `ρ` and `σ` with some `a : A`:
+`ρ (b • x) = a • ρ x` and `σ (a • y) = b • σ y`. Then `σ ∘ D ∘ ρ` is a differential operator of
+order at most `m` over `B`. For instance, `ρ` may cut functions on a chart off and pull them back
+to a manifold, and `σ` may push functions on the manifold forward to the chart and cut them off. -/
+theorem comp_comp_mem_differentialOperators
+    (h : ∀ b : B, ∃ a : A, (∀ x, ρ (b • x) = a • ρ x) ∧ ∀ y, σ (a • y) = b • σ y)
+    {D : M →ₗ[R] N} {m : ℕ} (hD : D ∈ differentialOperators R A M N m) :
+    σ ∘ₗ D ∘ₗ ρ ∈ differentialOperators R B M' N' m := by
+  induction m generalizing D with
+  | zero =>
+    refine mem_differentialOperators_zero_iff_smulCommutator.2 fun b ↦ ?_
+    obtain ⟨a, hρ, hσ⟩ := h b
+    rw [smulCommutator_comp_comp hρ hσ,
+      smulCommutator_eq_zero_of_mem_differentialOperators_zero hD, LinearMap.zero_comp,
+      LinearMap.comp_zero]
+  | succ m ih =>
+    refine mem_differentialOperators_succ_iff.2 fun b ↦ ?_
+    obtain ⟨a, hρ, hσ⟩ := h b
+    rw [smulCommutator_comp_comp hρ hσ]
+    exact ih (smulCommutator_mem_differentialOperators hD a)
+
+end Sandwich
+
+/-! ### Restriction of scalars -/
+
+section RestrictScalars
+
+variable {R S A M N : Type*} [CommSemiring R] [CommSemiring S] [CommSemiring A] [Algebra R S]
+  [Algebra R A] [Algebra S A]
+  [AddCommMonoid M] [Module A M] [Module S M] [Module R M] [IsScalarTower S A M]
+  [IsScalarTower R A M] [IsScalarTower R S M]
+  [AddCommGroup N] [Module A N] [Module S N] [Module R N] [IsScalarTower S A N]
+  [IsScalarTower R A N] [IsScalarTower R S N]
+
+/-- The commutator with multiplication by `a` of an `S`-linear map, viewed as an `R`-linear map,
+is its commutator as an `S`-linear map, viewed as an `R`-linear map. -/
+@[simp]
+theorem smulCommutator_restrictScalars (a : A) (D : M →ₗ[S] N) :
+    smulCommutator R a (D.restrictScalars R) = (smulCommutator S a D).restrictScalars R := by
+  ext x
+  simp
+
+/-- **Restriction of scalars preserves the order.** For a tower `R → S → A`, an `S`-linear
+differential operator of order at most `m` over `A` is also one when viewed as an `R`-linear map.
+For instance a complex-linear differential operator between spaces of sections of complex vector
+bundles, in the sense of commutators with complex-valued functions, is one as a real-linear map. -/
+theorem restrictScalars_mem_differentialOperators {D : M →ₗ[S] N} {m : ℕ}
+    (hD : D ∈ differentialOperators S A M N m) :
+    D.restrictScalars R ∈ differentialOperators R A M N m := by
+  induction m generalizing D with
+  | zero =>
+    exact mem_differentialOperators_zero_iff.2 fun a x ↦ mem_differentialOperators_zero_iff.1 hD a x
+  | succ m ih =>
+    refine mem_differentialOperators_succ_iff.2 fun a ↦ ?_
+    rw [smulCommutator_restrictScalars]
+    exact ih (smulCommutator_mem_differentialOperators hD a)
+
+end RestrictScalars
+
 /-! ### Detecting the order at points -/
 
 section Points
@@ -480,6 +577,14 @@ theorem _root_.LinearMap.mulLeft_mem_differentialOperators_zero {R A : Type*} [C
     [CommRing A] [Algebra R A] (a : A) :
     LinearMap.mulLeft R a ∈ differentialOperators R A A A 0 :=
   mem_differentialOperators_zero_iff.2 fun b x ↦ by simp [mul_left_comm]
+
+/-- Multiplication by an element of `A` on an `A`-module is a differential operator of order
+`0`. -/
+theorem _root_.Algebra.lsmul_mem_differentialOperators_zero {R A M : Type*} [CommSemiring R]
+    [CommSemiring A] [Algebra R A] [AddCommGroup M] [Module R M] [Module A M]
+    [IsScalarTower R A M] (a : A) :
+    Algebra.lsmul R R M a ∈ differentialOperators R A M M 0 :=
+  mem_differentialOperators_zero_iff.2 fun b x ↦ smul_comm a b x
 
 /-! ### First-order operators on the algebra -/
 

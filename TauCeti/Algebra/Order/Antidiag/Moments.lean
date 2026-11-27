@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
+public import Mathlib.Basic.Real.Basic
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Data.Nat.Choose.Sum
 import TauCeti.Algebra.Order.Antidiag.Pi
 import TauCeti.Data.Nat.Choose.Sum
@@ -89,6 +91,34 @@ theorem card_mul_sum_finsuppAntidiag_apply {s : Finset ι} {i : ι} (hi : i ∈ 
   have hcard : m + 1 + N - 1 = N + m := by omega
   rw [htop, hbot, hcard, Nat.choose_symm_add]
   simpa [mul_comm] using Nat.choose_succ_right_eq (N + m) m
+
+/-- Summing over the antidiagonal and normalizing by its size gives the mean of the weights. -/
+theorem _root_.TauCeti.mean_normalized_sum_finsuppAntidiag [Fintype ι] [Nonempty ι]
+    {d : ℕ} (hd : 0 < d)
+    (w : ι → ℝ) :
+    let S := (univ : Finset ι).finsuppAntidiag d
+    (∑ e : S, (∑ i, (e.val i : ℝ) * w i) / d) / Fintype.card S =
+      (∑ i, w i) / Fintype.card ι := by
+  intro S
+  have hne : S.Nonempty := by
+    obtain ⟨i⟩ := ‹Nonempty ι›
+    exact ⟨Finsupp.single i d, by simp [S, mem_finsuppAntidiag]⟩
+  rw [Fintype.card_coe, Finset.univ_eq_attach,
+    sum_attach S (fun e ↦ (∑ i, (e i : ℝ) * w i) / d)]
+  have hd' : (d : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hd.ne'
+  have hcard : (S.card : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hne.card_ne_zero
+  have hι : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hmoment (i : ι) :
+      (Fintype.card ι : ℝ) * (∑ e ∈ S, (e i : ℝ)) = (d : ℝ) * S.card := by
+    have h := card_mul_sum_finsuppAntidiag_apply (s := (univ : Finset ι)) (mem_univ i) d
+    rw [card_univ] at h
+    exact_mod_cast h
+  simp_rw [← sum_div, sum_comm (s := S) (t := (univ : Finset ι)), ← sum_mul, div_div]
+  apply (div_eq_div_iff (mul_ne_zero hd' hcard) hι).2
+  rw [mul_comm _ (Fintype.card ι : ℝ), mul_sum, sum_mul]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [← mul_assoc, hmoment]
+  ring
 
 /-- The mean binomial square of an exponent of a degree-`N` monomial in `s` is
 `N (N - 1) / (card s (card s + 1))`, with denominators cleared. This is the exact second

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Logic.Function.DependsOn
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -21,6 +22,11 @@ functions on `X` is locally constant as soon as `Function.uncurry f` is
 family of bundled functions, valued in any `FunLike` type. For functions with values in a discrete
 space, local constancy is continuity, so such a family `F : P → C` is continuous, for any topology
 on `C`, as soon as `(p, x) ↦ F p x` is continuous (`Continuous.of_uncurry_coe`).
+
+A locally constant function takes only finitely many values on a compact set
+(`IsLocallyConstant.finite_image_of_isCompact`), extending Mathlib's
+`IsLocallyConstant.range_finite` for compact spaces. On a compact product, a locally constant
+function depends on only finitely many coordinates (`IsLocallyConstant.exists_finset_dependsOn`).
 -/
 
 public section
@@ -28,6 +34,30 @@ public section
 namespace IsLocallyConstant
 
 variable {X P A : Type*} [TopologicalSpace X] [TopologicalSpace P]
+
+/-- A locally constant function takes finitely many values on a compact set. -/
+theorem finite_image_of_isCompact {f : X → A} (hf : IsLocallyConstant f) {K : Set X}
+    (hK : IsCompact K) : (f '' K).Finite := by
+  have := isCompact_iff_compactSpace.1 hK
+  rw [Set.image_eq_range]
+  exact (hf.comp_continuous continuous_subtypeVal).range_finite
+
+/-- A locally constant function on a compact product depends on only finitely many coordinates. -/
+theorem exists_finset_dependsOn {ι : Type*} {π : ι → Type*} [∀ i, TopologicalSpace (π i)]
+    [CompactSpace (Π i, π i)] {f : (Π i, π i) → A} (hf : IsLocallyConstant f) :
+    ∃ s : Finset ι, DependsOn f s := by
+  classical
+  -- Each fibre of `f` is open, so it contains a basic cylinder around each of its points.
+  choose I u hu hsub using fun x ↦ isOpen_pi_iff.1 (hf.isOpen_fiber (f x)) x rfl
+  -- Finitely many of these cylinders cover the compact product.
+  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover (fun x ↦ (I x : Set ι).pi (u x))
+    (fun x ↦ isOpen_set_pi (I x).finite_toSet fun i hi ↦ (hu x i hi).1)
+    fun x _ ↦ Set.mem_iUnion.2 ⟨x, fun i hi ↦ (hu x i hi).2⟩
+  refine ⟨t.biUnion I, fun y y' hyy' ↦ ?_⟩
+  obtain ⟨x, hx, hy⟩ := Set.mem_iUnion₂.1 (ht (Set.mem_univ y))
+  have hy' : y' ∈ (I x : Set ι).pi (u x) := fun i hi ↦
+    hyy' i (Finset.mem_biUnion.2 ⟨x, hx, hi⟩) ▸ hy i hi
+  exact (hsub x hy).trans (hsub x hy').symm
 
 /-- A locally constant family is locally constant in its parameter, uniformly on a compact set. -/
 theorem exists_isOpen_forall_mem_eq {f : X × P → A} (hf : IsLocallyConstant f)

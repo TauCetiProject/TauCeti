@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Principal
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
@@ -37,6 +39,16 @@ elliptic on `ℝⁿ`.
   that is a homogeneous symbol of degree `-m` on `U`.
 * `TauCeti.LocalClassicalSymbol.IsElliptic.finrank_eq`: in positive dimension, ellipticity on a
   nonempty open set forces the two fibres to have the same dimension.
+* `TauCeti.LocalClassicalSymbol.IsElliptic.exists_isInvertible_and_norm_inverse_le`: on every
+  compact set `K ⊆ U` the full symbol `a(x, ξ)` is invertible at large frequencies, with
+  `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`, so a symbol on `ℝⁿ` that agrees with `a` on `K` is elliptic there in
+  the sense of `TauCeti.Symbol.IsEllipticOn`
+  (`TauCeti.LocalClassicalSymbol.IsElliptic.exists_isEllipticOn`).
+* `TauCeti.LocalClassicalSymbol.IsElliptic.exists_eventually_comp_eq_id`: a symbol on `ℝⁿ` that
+  agrees with `a` near a position `x ∈ U` has an inverse symbol of order `-m` at large frequencies
+  near `x`. A cut-off extension of `a` is elliptic only where the cutoff is `1`, so this is the
+  form in which the elliptic regularity of an operator read in a chart is proved
+  (`TauCeti.LocalClassicalSymbol.IsElliptic.isLocallySobolevAt_of_quantizeDistribution`).
 
 ## References
 
@@ -50,6 +62,7 @@ public section
 noncomputable section
 
 open Set
+open scoped Topology
 
 namespace TauCeti
 
@@ -283,6 +296,69 @@ theorem existsUnique_inversePrincipalSymbol [CompleteSpace V] {a : LocalClassica
       LocalHomogeneousSymbol.coefficient_comp_coefficient_inverse _ ha hx hξ⟩,
     fun _ hb => LocalHomogeneousSymbol.eq_inverse_of_comp_eq_id_left _ ha fun x hx ξ hξ =>
       (hb x hx ξ hξ).1⟩
+
+/-- **Invertibility of an elliptic symbol at large frequencies.** On every compact set `K ⊆ U` of
+positions, the full symbol `a(x, ξ)` of an elliptic classical symbol of order `m` on `U` is
+invertible at all frequencies of norm at least some radius `R`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. -/
+theorem IsElliptic.exists_isInvertible_and_norm_inverse_le [CompleteSpace V]
+    {a : LocalClassicalSymbol U V W m} (ha : a.IsElliptic) {K : Set (CoordinateSpace n)}
+    (hKU : K ⊆ U) (hK : IsCompact K) :
+    ∃ R C : ℝ, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → (a.toLocalSymbol.coefficient (x, ξ)).IsInvertible ∧
+      ‖(a.toLocalSymbol.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) := by
+  -- Near `K`, `a` agrees with its cut-off extension `ψ a` to `ℝⁿ`, for a cutoff `ψ = 1` on `K`.
+  obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one U.isOpen hKU
+  have hψK (x : CoordinateSpace n) (hx : x ∈ K) : ψ x = 1 := (hψ1 x hx).self_of_nhds
+  -- On `K`, the inverse of the principal symbol is the cut-off extension of the local inverse
+  -- for `‖ξ‖ ≥ 2`, which is bounded by `C₀ ⟨ξ⟩^(-m)`.
+  obtain ⟨C₀, hC₀⟩ := (HomogeneousSymbol.cutoffSymbol default (LocalHomogeneousSymbol.extend ψ
+    hψ hψU (a.principal.inverse ha))).exists_norm_coefficient_le K hK
+  obtain ⟨R, C, h⟩ := (extend ψ hψ hψU a).exists_isInvertible_and_norm_inverse_le_of_principal hK
+    (Γ := Set.univ) (C₀ := C₀) fun x hx ξ _ h2 ↦ by
+      have hM := hC₀ x hx ξ
+      rw [HomogeneousSymbol.coefficient_cutoffSymbol_of_two_le_norm _ _ h2] at hM
+      simp only [principal_extend, LocalHomogeneousSymbol.coefficient_extend, hψK x hx,
+        one_smul] at hM ⊢
+      exact ⟨isElliptic_iff.1 ha x (hKU hx) ξ (norm_pos_iff.1 (by linarith)), hM⟩
+  refine ⟨R, C, fun x hx ξ hξ ↦ ?_⟩
+  simpa [LocalSymbol.coefficient_extend, hψK x hx] using h x hx ξ (Set.mem_univ ξ) hξ
+
+/-- **Ellipticity on compact sets of positions.** If a symbol `p` on `ℝⁿ` agrees with an elliptic
+classical symbol `a` on `U` at the positions of a compact set `K ⊆ U`, for instance a cut-off
+extension of `a` by a cutoff equal to `1` on `K`, then `p` is elliptic on `K` at the frequencies of
+norm at least some radius `R`, in the sense of `TauCeti.Symbol.IsEllipticOn`. -/
+theorem IsElliptic.exists_isEllipticOn [CompleteSpace V] {a : LocalClassicalSymbol U V W m}
+    (ha : a.IsElliptic) {K : Set (CoordinateSpace n)} (hKU : K ⊆ U) (hK : IsCompact K)
+    {p : Symbol n V W m}
+    (hpa : ∀ x ∈ K, ∀ ξ, p.coefficient (x, ξ) = a.toLocalSymbol.coefficient (x, ξ)) :
+    ∃ R, p.IsEllipticOn {q | q.1 ∈ K ∧ R ≤ ‖q.2‖} := by
+  obtain ⟨R, C, hC⟩ := ha.exists_isInvertible_and_norm_inverse_le hKU hK
+  refine ⟨R, Symbol.isEllipticOn_iff.2 fun _ _ ↦ ⟨C, fun ⟨x, ξ⟩ hq _ ↦ ?_⟩⟩
+  rw [hpa x hq.1 ξ]
+  exact hC x hq.1 ξ hq.2
+
+/-- **Local inverse symbols.** If a symbol `p` on `ℝⁿ` agrees near a position `x ∈ U` with an
+elliptic classical symbol `a` on `U`, then a symbol of order `-m` on `ℝⁿ` inverts `p` on both
+sides at all large frequencies and all positions near `x`. This inverts an operator on a manifold,
+read in a chart through a cut-off extension of its symbol, near the points where the cutoff is
+`1`. -/
+theorem IsElliptic.exists_eventually_comp_eq_id [CompleteSpace V]
+    {a : LocalClassicalSymbol U V W m} (ha : a.IsElliptic) {p : Symbol n V W m}
+    {x : CoordinateSpace n} (hx : x ∈ U)
+    (hpa : ∀ᶠ y in 𝓝 x, ∀ ξ, p.coefficient (y, ξ) = a.toLocalSymbol.coefficient (y, ξ)) :
+    ∃ (e : Symbol n W V (-m)) (R : ℝ), ∀ᶠ y in 𝓝 x, ∀ ξ, R ≤ ‖ξ‖ →
+      e.coefficient (y, ξ) ∘L p.coefficient (y, ξ) = .id ℂ V ∧
+        p.coefficient (y, ξ) ∘L e.coefficient (y, ξ) = .id ℂ W := by
+  -- A closed ball `K` around `x`, inside `U`, on which `p = a`; `p` is elliptic on `K`.
+  obtain ⟨δ, hδ, hδU⟩ := Metric.mem_nhds_iff.1 (Filter.inter_mem (U.isOpen.mem_nhds hx) hpa)
+  have hK : Metric.closedBall x (δ / 2) ⊆ _ :=
+    (Metric.closedBall_subset_ball (half_lt_self hδ)).trans hδU
+  obtain ⟨R, hR⟩ := ha.exists_isEllipticOn (fun y hy ↦ (hK hy).1) (isCompact_closedBall x _)
+    fun y hy ↦ (hK hy).2
+  have hKx : Metric.closedBall x (δ / 2) ∈ 𝓝ˢ {x} := by
+    rw [nhdsSet_singleton]
+    exact Metric.closedBall_mem_nhds x (half_pos hδ)
+  simpa [nhdsSet_singleton] using
+    (Symbol.exists_mem_nhdsSet_isEllipticOn_iff isCompact_singleton).1 ⟨_, hKx, R, hR⟩
 
 end LocalClassicalSymbol
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 public import TauCeti.Analysis.PDE.Vortex.Existence
-public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Realization
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.PDE.Vortex.Fredholm
@@ -56,7 +56,7 @@ coefficients of divisors with colliding zeros
 (`TauCeti.Vortex.exists_norm_orthogonalKerProjection_sobolevGaugeFixedOperator_le_of_isCompact`,
 `TauCeti.Vortex.exists_norm_orthogonalRightInverse_sobolevGaugeFixedOperator_le_of_isCompact`).
 No bound uniform over all of `Sym^m ℂ`, which is not compact, is asserted. Smooth dependence on
-the coefficients is not treated here.
+the coefficients is proved in `TauCeti.Analysis.PDE.Vortex.Divisor.Smooth`.
 
 ## Main definitions
 
@@ -65,6 +65,8 @@ the coefficients is not treated here.
 
 ## Main results
 
+* `TauCeti.Vortex.isZeroMultiplicity_sectionValue_polynomialVortex`: the zero divisor of the vortex
+  of a nonzero polynomial is its multiset of roots.
 * `TauCeti.Vortex.exists_norm_polynomialVortex_le`: the vortex of a polynomial is bounded.
 * `TauCeti.Vortex.tendstoUniformly_polynomialVortex`,
   `TauCeti.Vortex.continuous_polynomialVortexLp`: continuity of the vortex in the coefficients.
@@ -143,6 +145,16 @@ theorem tendsto_sectionValue_polynomialVortex (hP : P.Monic) (hm : 0 < P.natDegr
     Tendsto (fun z ↦ sectionValue (polynomialVortex P) z * ((z / (‖z‖ : ℂ)) ^ P.natDegree)⁻¹)
       (cocompact ℂ) (𝓝 1) :=
   (equation_amplitudeField_reducedSolution_eq_zero_and_tendsto_sectionValue hP hm).2
+
+/-- The zero divisor of the vortex of a nonzero polynomial `P` is the multiset of roots of `P`:
+its section `exp (u₀ + w) P` vanishes at each root to the order of that root. -/
+theorem isZeroMultiplicity_sectionValue_polynomialVortex (hP : P ≠ 0) :
+    IsZeroMultiplicity (sectionValue (polynomialVortex P)) fun z ↦ P.roots.count z := by
+  simpa only [polynomialVortex_def, _root_.Polynomial.count_roots] using
+    isZeroMultiplicity_sectionValue_amplitudeField
+      ((contDiff_backgroundAmplitude ((P.differentiable.contDiff (n := 0)).restrict_scalars ℝ)).add
+        ((contDiff_reducedSolution P).of_le (by simp))).continuous
+        (isZeroMultiplicity_eval_rootMultiplicity hP)
 
 /-! ### Boundedness -/
 

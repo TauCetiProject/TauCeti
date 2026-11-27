@@ -51,7 +51,8 @@ approximation of the free loop space by broken geodesics. It sends constant tupl
 loops of length zero, and because the segment of length zero is a strict unit, it is strictly
 compatible with the embedding `ιⁿ : 𝓛ⁿM → 𝓛ⁿ⁺¹M` repeating the first vertex
 (`TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst`):
-`geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`.
+`geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`, and so with its iterates
+(`TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirstIterate`).
 
 ## Main definitions
 
@@ -76,8 +77,12 @@ compatible with the embedding `ιⁿ : 𝓛ⁿM → 𝓛ⁿ⁺¹M` repeating the
   `TauCeti.Manifold.brokenGeodesicLoop_apply_partialSum`: a broken geodesic passes through its
   vertices at the partial sums of the distances between consecutive vertices.
 * `TauCeti.Manifold.brokenGeodesicLoop_const`: a constant tuple gives the constant loop.
+* `TauCeti.Manifold.geodesicInterpolation_brokenGeodesicLoop_apply`: the radial geodesic from a
+  vertex of a closed broken geodesic to a point of the following arc runs along that arc.
 * `TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst`:
   `geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`.
+* `TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirstIterate`:
+  `geoⁿ⁺ᵏ ∘ ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ = geoⁿ`.
 
 ## References
 
@@ -571,6 +576,42 @@ theorem brokenGeodesicLoop_cons (n : ℕ) (q : Fin (n + 1) → M)
   exact brokenGeodesic_cons_of_eq hr (n + 1)
     (by rw [Fin.snoc_apply_zero]) _ _
 
+/-- Repeating the first vertex of a cyclic tuple `k` more times, `(q₀, …, q₀, q₁, …, qₙ)` with `q₀`
+repeated `k + 1` times, does not change its closed broken geodesic. -/
+theorem brokenGeodesicLoop_repeatFirstIterate (n : ℕ) (q : Fin (n + 1) → M)
+    (h : ∀ i, dist (q i) (q (i - 1)) < r) (k : ℕ)
+    (h' : ∀ j : Fin (n + k + 1),
+      dist (q ⟨j - k, by omega⟩) (q ⟨(j - 1 : Fin (n + k + 1)) - k, by omega⟩) < r) :
+    brokenGeodesicLoop hr (n + k) (fun j ↦ q ⟨j - k, by omega⟩) h' =
+      brokenGeodesicLoop hr n q h := by
+  induction k with
+  -- For `k = 0` the tuple is `q`, since `j - 0` reduces to `j`.
+  | zero => congr 1
+  | succ k ih =>
+    -- The edges of the tuple repeating `q₀` only `k` more times are edges of `q` or have length
+    -- zero, so they are shorter than `r`.
+    have hk : ∀ j : Fin (n + k + 1),
+        dist (q ⟨j - k, by omega⟩) (q ⟨(j - 1 : Fin (n + k + 1)) - k, by omega⟩) < r :=
+      fun j ↦ (dist_repeatFirstIterate_le q j).trans_lt (h _)
+    -- Repeating `q₀` once more is `Fin.cons` of the first vertex.
+    have hcons : (fun j : Fin (n + (k + 1) + 1) ↦ q ⟨j - (k + 1), by omega⟩) =
+        Fin.cons (q ⟨(0 : Fin (n + k + 1)) - k, by omega⟩)
+          (fun j : Fin (n + k + 1) ↦ q ⟨j - k, by omega⟩) := by
+      refine funext fun j ↦ Fin.cases ?_ (fun i ↦ ?_) j
+      · rw [Fin.cons_zero]
+        exact congrArg q (Fin.ext (by simp))
+      · rw [Fin.cons_succ]
+        exact congrArg q (Fin.ext (by simp))
+    calc _ = brokenGeodesicLoop hr (n + k + 1)
+          (Fin.cons (q ⟨(0 : Fin (n + k + 1)) - k, by omega⟩)
+            (fun j : Fin (n + k + 1) ↦ q ⟨j - k, by omega⟩))
+          (fun i ↦ by rw [← hcons]; exact h' i) := by
+          -- The tuples agree by `hcons`, and `n + (k + 1)` is `n + k + 1` by definition.
+          simp only [hcons]
+          rfl
+      _ = _ := brokenGeodesicLoop_cons hr (n + k) _ hk _
+      _ = _ := ih hk
+
 /-- A closed broken geodesic is `1`-Lipschitz in its time. -/
 theorem lipschitzWith_brokenGeodesicLoop (n : ℕ) (q : Fin (n + 1) → M)
     (h : ∀ i, dist (q i) (q (i - 1)) < r) :
@@ -603,6 +644,57 @@ theorem brokenGeodesicLoop_apply_partialSum_add (n : ℕ) (q : Fin (n + 1) → M
   rw [nndist_snoc_castSucc_succ q] at hs
   rw [toMoorePath_brokenGeodesicLoop hr n q h (forall_dist_snoc_lt h), hs]
   simp only [Fin.snoc_castSucc, Fin.snoc_self_zero_succ]
+
+/-- **The initial parts of the arcs of a closed broken geodesic are radial geodesics.** Let `T` be
+the time `d(q 0, q 1) + ⋯ + d(q (i - 1), q i)` at which the closed broken geodesic `γ` through `q`
+passes through `q i`, and `d = d(q i, q (i + 1))`. For `a ∈ [0, 1]`, the radial geodesic from
+`γ T = q i` to `γ (T + a d)` is at `γ (T + u a d)` at the parameter `u`: it runs along `γ`. -/
+theorem geodesicInterpolation_brokenGeodesicLoop_apply (n : ℕ) (q : Fin (n + 1) → M)
+    (h : ∀ i, dist (q i) (q (i - 1)) < r) (i : Fin (n + 1)) (a u : unitInterval) :
+    geodesicInterpolation hr ((brokenGeodesicLoop hr n q h).toMoorePath
+        (Fin.partialSum (fun k ↦ nndist (q k) (q (k + 1))) i.castSucc),
+      (brokenGeodesicLoop hr n q h).toMoorePath
+        (Fin.partialSum (fun k ↦ nndist (q k) (q (k + 1))) i.castSucc +
+          nndist (q i) (q (i + 1)) * unitInterval.toNNReal a)) u =
+      (brokenGeodesicLoop hr n q h).toMoorePath
+        (Fin.partialSum (fun k ↦ nndist (q k) (q (k + 1))) i.castSucc +
+          nndist (q i) (q (i + 1)) * unitInterval.toNNReal (u * a)) := by
+  have hd : dist (q i) (q (i + 1)) < r := dist_add_one_lt_of_forall_dist_sub_one_lt h i
+  set p : {p : M × M // dist p.1 p.2 < r} := ⟨(q i, q (i + 1)), hd⟩
+  -- On its `i`-th arc the loop is the radial geodesic from `q i` to `q (i + 1)`.
+  have key : ∀ b : unitInterval, (brokenGeodesicLoop hr n q h).toMoorePath
+      (Fin.partialSum (fun k ↦ nndist (q k) (q (k + 1))) i.castSucc +
+        nndist (q i) (q (i + 1)) * unitInterval.toNNReal b) = geodesicSegmentUnitPath hr p b :=
+    fun b ↦ by
+      rw [brokenGeodesicLoop_apply_partialSum_add hr n q h i
+        (mul_le_of_le_one_right zero_le (unitInterval.toNNReal_le_one b))]
+      exact geodesicSegment_apply_nndist_mul hr p b
+  have h0 := key 0
+  rw [unitInterval.toNNReal_zero, mul_zero, add_zero, geodesicSegmentUnitPath_zero] at h0
+  rw [h0, key a, key (u * a)]
+  -- The point `y` at the parameter `a` is closer to `q i` than `r`.
+  have hlen : nndist (q i) (q (i + 1)) * unitInterval.toNNReal a ≤
+      (geodesicSegment hr p).length := by
+    rw [length_geodesicSegment]
+    exact mul_le_of_le_one_right zero_le (unitInterval.toNNReal_le_one a)
+  have hy : dist (q i) (geodesicSegmentUnitPath hr p a) < r := by
+    rw [← geodesicSegment_apply_nndist_mul hr p a]
+    conv_lhs => rw [show q i = geodesicSegment hr p 0 by
+      rw [← MoorePath.source_def, source_geodesicSegment]]
+    rw [dist_geodesicSegment_apply hr p zero_le hlen]
+    refine lt_of_le_of_lt ?_ hd
+    rw [NNReal.coe_zero, zero_sub, abs_neg, NNReal.abs_eq, NNReal.coe_mul, coe_nndist,
+      unitInterval.coe_toNNReal]
+    exact mul_le_of_le_one_right dist_nonneg a.property.2
+  -- The logarithm of `y` at `q i` is `a • log_{q i} (q (i + 1))`.
+  have hv : (a : ℝ) • riemannianLog I M (q i) (ball 0 r) (q (i + 1)) ∈
+      ball (0 : TangentSpace I (q i)) r := by
+    rw [mem_ball_zero_iff, norm_smul, Real.norm_eq_abs, abs_of_nonneg a.property.1,
+      ← (hr (q i)).dist_eq_norm_riemannianLog_of_mem_ball subset_rfl (by rwa [mem_ball, dist_comm])]
+    exact lt_of_le_of_lt (mul_le_of_le_one_left dist_nonneg a.property.2) hd
+  rw [geodesicInterpolation_of_dist_lt hr _ hy, geodesicSegmentUnitPath_apply]
+  simp only [geodesicSegmentUnitPath_apply hr p a, geodesicSegmentUnitPath_apply hr p (u * a)]
+  rw [(hr (q i)).riemannianLog_riemannianExp hv, smul_smul, Set.Icc.coe_mul]
 
 /-- The closed broken geodesics through the cyclic tuples in which every point is at distance less
 than `r` from the preceding one depend continuously on the tuple. -/
@@ -665,6 +757,22 @@ theorem cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst {n : ℕ} {
       cyclicDistanceCutBrokenGeodesic hr hδ q := by
   simp only [cyclicDistanceCutBrokenGeodesic_apply, coe_cyclicDistanceCutRepeatFirst_apply]
   exact brokenGeodesicLoop_cons hr n q.val _ _
+
+/-- **`geoⁿ⁺ᵏ ∘ ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ = geoⁿ`.** The broken geodesics through a tuple of a distance cut
+and through the tuple obtained by repeating its first vertex `k` more times
+(`TauCeti.cyclicDistanceCutRepeatFirstIterate`) are equal free Moore loops. -/
+theorem cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirstIterate {n k : ℕ}
+    {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r) (hδ' : ∀ j, δ' j < r)
+    (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j) (q : cyclicDistanceCut (X := M) δ) :
+    cyclicDistanceCutBrokenGeodesic hr hδ' (cyclicDistanceCutRepeatFirstIterate k h q) =
+      cyclicDistanceCutBrokenGeodesic hr hδ q := by
+  rw [cyclicDistanceCutBrokenGeodesic_apply, cyclicDistanceCutBrokenGeodesic_apply,
+    ← brokenGeodesicLoop_repeatFirstIterate hr n q.val _ k
+      fun j ↦ (dist_repeatFirstIterate_le q.val j).trans_lt
+        ((mem_cyclicDistanceCut.1 q.property _).trans_lt (hδ _))]
+  -- The two tuples agree pointwise.
+  congr 1
+  exact funext (coe_cyclicDistanceCutRepeatFirstIterate_apply k h q)
 
 /-- The length of the closed broken geodesic through a tuple of a distance cut is at most the sum of
 the cut-offs. -/

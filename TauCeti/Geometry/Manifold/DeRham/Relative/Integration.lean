@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.Relative.Basic
-public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham
+public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham.Basic
 import TauCeti.Algebra.Homology.Embedding.Extend
 import TauCeti.Algebra.Homology.ModuleCat.LinearYoneda
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
@@ -24,8 +24,8 @@ sends `(α, β)` to `(∫ α, ∫ β)`, where `α` is a form on `M` and `β` a f
 (`TauCeti.relativeCoordinates_relativeDeRhamIntegration_f`).
 
 A relative smooth cycle of degree `k + 1` is a smooth `(k + 1)`-chain `c` of `M` whose boundary
-lies in `W`: `∂c = c'` for a smooth `k`-chain `c'` of `W`, read in `M`. A relative smooth cochain
-with coordinates `(a, b)` takes the value `a(c) - b(c')` on it
+lies in `W`: `∂c = c'` for a smooth `k`-chain `c'` of `W`, read in `M`. A cochain of the mapping
+cocone of restriction with coordinates `(a, b)` takes the value `a(c) - b(c')` on it
 (`TauCeti.relativeSmoothCochainComplex.eval`). This pairing vanishes on coboundaries
 (`TauCeti.relativeSmoothCochainComplex.eval_d`): in coordinates `d (a, b) = (da, a|_W - db)`, and
 `da(c) = a(∂c) = a(c')` cancels `a|_W (c')`, while `db(c') = b(∂c') = 0`. On the relative
@@ -54,9 +54,9 @@ The cochain-level construction needs no finite dimensionality, separation or cou
   to `W`, extended to `ℤ`.
 * `TauCeti.relativeSmoothCochainComplex I W`: its mapping cocone.
 * `TauCeti.relativeDeRhamIntegration I W`: relative integration, a cochain map from the relative de
-  Rham complex to the relative smooth cochain complex.
-* `TauCeti.relativeSmoothCochainComplex.eval`: the pairing of relative smooth cochains with pairs
-  of smooth chains.
+  Rham complex to the mapping cocone of the restriction of smooth cochains.
+* `TauCeti.relativeSmoothCochainComplex.eval`: the pairing of cochains of the mapping cocone of
+  restriction with pairs of smooth chains.
 * `TauCeti.relativeDeRhamCohomology.integral`: the integral of relative de Rham classes over a
   relative smooth cycle.
 
@@ -116,8 +116,10 @@ theorem smoothCochainRestriction_f_comp_extendXIso_hom {k : ℕ} {p : ℤ}
           (smoothSingularSubcomplexMap (Subtype.val : W → M) contMDiff_subtypeVal)).f k :=
   extendMap_f_comp_extendXIso_hom _ _ h
 
-/-- The relative smooth singular cochain complex of the open pair `(M, W)`, with real
-coefficients: the mapping cocone of the restriction of smooth cochains from `M` to `W`. -/
+/-- The cocone model of the relative smooth singular cochains of the open pair `(M, W)`, with real
+coefficients: the mapping cocone of the restriction of smooth cochains from `M` to `W`. It is not
+literally the complex of cochains of the smooth singular pair `TauCeti.smoothSingularPair I W`, but
+is quasi-isomorphic to it through `TauCeti.relativeSmoothCochainLift`. -/
 abbrev relativeSmoothCochainComplex : CochainComplex (ModuleCat ℝ) ℤ :=
   CochainComplex.mappingCocone (smoothCochainRestriction I W)
 
@@ -131,8 +133,8 @@ theorem deRhamRestriction_comp_extendMap_deRhamIntegration :
     deRhamIntegration_naturality]
 
 /-- **Relative integration.** The cochain map from the relative de Rham complex of `(M, W)` to the
-relative smooth cochain complex induced by integration over smooth simplices. In relative
-coordinates it sends `(α, β)` to `(∫ α, ∫ β)`. -/
+mapping cocone of the restriction of smooth cochains, induced by integration over smooth simplices.
+In relative coordinates it sends `(α, β)` to `(∫ α, ∫ β)`. -/
 def relativeDeRhamIntegration : relativeDeRhamComplex I W ⟶ relativeSmoothCochainComplex I W :=
   (CochainComplex.mappingCone.map _ _ _ _
     (deRhamRestriction_comp_extendMap_deRhamIntegration I W))⟦(-1 : ℤ)⟧'
@@ -151,11 +153,20 @@ theorem relativeCoordinates_relativeDeRhamIntegration_f (p q : ℤ) (hpq : p + -
   -- `relativeCoordinates_map` is stated for the shifted cone map; they agree by unfolding.
   relativeCoordinates_map _ _ _ _ _ p q hpq x
 
+/-- Relative integration is compatible with the first projections of the two cocones: the first
+component of the relative integral of `(α, β)` is the integral of `α`. -/
+@[reassoc]
+theorem relativeDeRhamIntegration_fst :
+    relativeDeRhamIntegration I W ≫ fst (smoothCochainRestriction I W) =
+      fst (deRhamRestriction I W) ≫
+        extendMap (deRhamIntegration I M) ComplexShape.embeddingUpNat :=
+  shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _ _
+
 namespace relativeSmoothCochainComplex
 
-/-- **The pairing of relative smooth cochains with pairs of chains.** For a smooth
-`(k + 1)`-chain `c` of `M` and a smooth `k`-chain `c'` of `W`, a relative smooth cochain of degree
-`k + 1` with relative coordinates `(a, b)` takes the value `a(c) - b(c')`. On relative cycles,
+/-- **The pairing of cocone cochains with pairs of chains.** For a smooth `(k + 1)`-chain `c` of
+`M` and a smooth `k`-chain `c'` of `W`, a cochain of degree `k + 1` of the mapping cocone of
+restriction with relative coordinates `(a, b)` takes the value `a(c) - b(c')`. On relative cycles,
 `∂c = c'` read in `M`, it vanishes on coboundaries (`eval_d`). -/
 def eval (k : ℕ)
     (c : 𝒮[M].X (k + 1))
@@ -199,14 +210,11 @@ private theorem d_eq_zero_of_d_eq (j : ℕ)
     (hc : 𝒮[M].d (j + 1 + 1) (j + 1) c =
       (SSet.chainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
         contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f (j + 1) c') :
-    𝒮[W].d (j + 1) j c' = 0 := by
-  apply (ModuleCat.mono_iff_injective ((SSet.chainComplexMap (smoothSingularSubcomplexMap
-    (Subtype.val : W → M) contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f j)).mp inferInstance
-  have h := ConcreteCategory.congr_hom ((SSet.chainComplexMap (smoothSingularSubcomplexMap
-    (Subtype.val : W → M) contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).comm (j + 1) j) c'
-  simp only [ModuleCat.comp_apply] at h
-  rw [map_zero, ← h, ← hc, ← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]
-  simp
+    𝒮[W].d (j + 1) j c' = 0 :=
+  HomologicalComplex.d_apply_eq_zero_of_d_f_apply_eq_zero
+    (SSet.chainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
+      contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ))
+    (by rw [← hc, ← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]; simp)
 
 omit [IsManifold I 2 M] in
 /-- On the `W`-part `c'` of a relative smooth cycle, the coboundary `db` of a cochain of `W` of
@@ -240,7 +248,7 @@ private theorem hom_extendXIso_hom_extend_d_apply_eq_zero (k : ℕ) {c : 𝒮[M]
 
 omit [IsManifold I 2 M] in
 /-- **Relative cycles annihilate coboundaries.** If `∂c = c'` in `M`, the pairing with `(c, c')`
-vanishes on the differential of every relative smooth cochain. -/
+vanishes on the differential of every cochain of the mapping cocone of restriction. -/
 theorem eval_d (k : ℕ)
     {c : 𝒮[M].X (k + 1)}
     {c' : 𝒮[W].X k}

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.TransferInstance
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
+public import TauCeti.Analysis.InnerProductSpace.Amplification
 public import TauCeti.Analysis.LocallyConvex.StrongOperatorTopology
 public import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
 
@@ -24,7 +25,8 @@ As for Mathlib's weak operator topology `E →WOT[𝕜] F`, the topology lives o
 topology. The copy is a Hausdorff locally convex topological vector space (`withSeminorms`).
 Unlike the strong operator topology, it makes the adjoint continuous
 (`continuous_adjoint`, `instContinuousStar`); multiplication of operators is separately
-continuous.
+continuous, and so is taking a matrix entry of an operator on a finite Hilbert sum
+`PiLp 2 (fun _ : ι => H)` (`continuous_piLpEntry`).
 
 The strong-star topology is coarser than the norm topology and finer than the strong operator
 topology on Mathlib's pointwise-convergence copy `E →Lₚₜ[𝕜] F`, hence than the weak operator
@@ -341,6 +343,29 @@ theorem continuous_adjoint :
 
 end Adjoint
 
+/-! ### Matrix entries of operators on a finite Hilbert sum -/
+
+section PiLp
+
+variable {H ι : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
+  [Fintype ι] [DecidableEq ι]
+
+/-- Taking the `(i, j)` matrix entry of an operator on the Hilbert sum `PiLp 2 (fun _ : ι => H)`
+is continuous for the strong-star topologies. -/
+theorem continuous_piLpEntry (i j : ι) :
+    Continuous fun Y : ContinuousLinearMapStrongStar 𝕜 (PiLp 2 (fun _ : ι => H))
+      (PiLp 2 (fun _ : ι => H)) => ofCLM (Y.toCLM.piLpEntry i j) := by
+  refine continuous_of_continuous_apply (fun v => ?_) fun v => ?_
+  · simpa only [ContinuousLinearMap.piLpEntry_apply, PiLp.proj_apply, Function.comp_def] using
+      (PiLp.proj 2 (𝕜 := 𝕜) (fun _ : ι => H) i).continuous.comp
+        (continuous_toCLM_apply (PiLp.single 2 (β := fun _ : ι => H) j v))
+  · -- The adjoint of the `(i, j)` entry is the `(j, i)` entry of the adjoint.
+    refine ((PiLp.proj 2 (𝕜 := 𝕜) (fun _ : ι => H) j).continuous.comp
+      (continuous_adjoint_apply (PiLp.single 2 (β := fun _ : ι => H) i v))).congr fun Y => ?_
+    simp [← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.piLpEntry_star]
+
+end PiLp
+
 section Ring
 
 variable [CompleteSpace E]
@@ -396,6 +421,16 @@ theorem continuous_toWOT :
       ContinuousLinearMapWOT.ofCLM A.toCLM :=
   ContinuousLinearMapWOT.continuous_ofPointwiseConvergenceCLM.comp
     continuous_toPointwiseConvergenceCLM
+
+/-- A set of operators which is closed in the weak operator topology is closed in the strong-star
+topology. -/
+theorem isClosed_image_ofCLM_of_isClosed_image_wot {s : Set (E →L[𝕜] F)}
+    (hs : IsClosed (ContinuousLinearMapWOT.ofCLM '' s)) : IsClosed (ofCLM '' s) := by
+  -- The preimage is along the continuous identity to the weak operator copy.
+  convert hs.preimage continuous_toWOT using 1
+  ext A
+  rw [Set.mem_preimage, ContinuousLinearMapWOT.ofCLM_injective.mem_set_image]
+  exact ⟨by rintro ⟨x, hx, rfl⟩; exact hx, fun hA ↦ ⟨A.toCLM, hA, rfl⟩⟩
 
 end Comparison
 

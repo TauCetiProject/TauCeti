@@ -20,7 +20,8 @@ function on `ℂ` they are the vectors of the lattice `ℤ τ + ℤ`.
 
 A function on a product is periodic under `(0, c)` exactly when it is `c`-periodic in its second
 coordinate (`Function.periodic_zero_prodMk_iff`); for instance a map on the cylinder `ℝ × ℝ` of
-period one in `t`.
+period one in `t`. A function that agrees with `f ∘ φ` along a line `{a} × γ` has every period
+that `φ` has along that line (`Function.periodic_of_forall_comp_eq`).
 
 A function with period `c` composed with the reflection `x ↦ -x` still has period `c`
 (`Function.Periodic.comp_neg`).
@@ -50,6 +51,14 @@ second coordinate. -/
 theorem periodic_zero_prodMk_iff {γ δ : Type*} [AddZeroClass γ] [Add δ] {g : γ × δ → β}
     {c : δ} : Periodic g (0, c) ↔ ∀ a, Periodic (fun b ↦ g (a, b)) c :=
   ⟨fun h a b ↦ by simpa using h (a, b), fun h ⟨a, b⟩ ↦ by simpa using h a b⟩
+
+/-- A function `g` that agrees with `f ∘ φ` along a line `{a} × γ` has period `c` when `φ` has
+period `c` along that line. For instance, an end structure `J_e(t)` agreeing with `J` in an end
+chart of a cylindrical end has period one. -/
+theorem periodic_of_forall_comp_eq {γ δ ε : Type*} [Add γ] {φ : δ × γ → ε} {f : ε → β}
+    {g : γ → β} {a : δ} {c : γ} (hφ : ∀ b, φ (a, b + c) = φ (a, b))
+    (hfg : ∀ b, f (φ (a, b)) = g b) : Periodic g c := fun b ↦ by
+  rw [← hfg, ← hfg, hφ]
 
 /-- A function with period `c`, composed with the reflection `x ↦ -x`, has period `c`. -/
 theorem Periodic.comp_neg {γ : Type*} [AddCommGroup γ] {f : γ → β} {c : γ} (h : Periodic f c) :

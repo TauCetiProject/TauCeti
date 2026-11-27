@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
+import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
+import TauCeti.CategoryTheory.Limits.Shapes.BinaryProducts
 
 /-!
 # Base changes of base changes
@@ -14,7 +16,10 @@ Let `P` be a property of morphisms stable under base change. If the base change
 `pullback.snd f k` of `f` along `k` has `P`, then so does every further base change of `f` along a
 morphism factoring through `k`: this file records the forms of this used when reducing a property
 of morphisms of schemes to an affine base. Mathlib's `MorphismProperty.pullback_snd` is the case
-where `f` itself has `P`.
+where `f` itself has `P`. If `P` is moreover stable under composition, then the product of two
+morphisms of `Over S` has `P` on underlying morphisms whenever both factors do and the source,
+target, and intermediate binary products exist. The same holds for the composite `f ≫ Δ_g` of `f`
+with the diagonal of `g` whenever `f` and the diagonal of `f ≫ g` have the property.
 
 ## Main results
 
@@ -27,6 +32,11 @@ where `f` itself has `P`.
   `P (pullback.snd (pullback.snd f v) a)` whenever `a ≫ v` factors through `k`.
 * `CategoryTheory.MorphismProperty.pullback_snd_comp_left`: if `P` is moreover stable under
   composition, `P e` and `P (pullback.snd f k)` imply `P (pullback.snd (e ≫ f) k)`.
+* `CategoryTheory.MorphismProperty.prod_map_left`: if `P` is moreover stable under composition,
+  `P f.left` and `P g.left` imply `P (prod.map f g).left` for morphisms `f` and `g` of `Over S`,
+  assuming the source, target, and intermediate binary products exist.
+* `CategoryTheory.MorphismProperty.comp_diagonal`: if `P` is moreover stable under composition,
+  `P f` and `P Δ_{f ≫ g}` imply `P (f ≫ Δ_g)`.
 -/
 
 public section
@@ -80,5 +90,28 @@ theorem pullback_snd_comp_left [P.IsStableUnderComposition] {X' : C} (f : X ⟶ 
     P (pullback.snd (e ≫ f) k) := by
   simpa using P.comp_mem _ _ (P.of_isPullback
     ((IsPullback.of_hasPullback (e ≫ f) k).of_bot' (.of_hasPullback f k)) he) h
+
+/-- For a property stable under base change and composition, a product `prod.map f g` of morphisms
+`f : X ⟶ X'` and `g : Y ⟶ Y'` in `Over S` has the property on underlying morphisms when both
+factors do and the source product `X ⨯ Y`, target product `X' ⨯ Y'`, and intermediate product
+`X' ⨯ Y` exist. This parallels Mathlib's `MorphismProperty.pullbackMap`, which treats
+`pullback.map`. -/
+theorem prod_map_left [P.IsStableUnderComposition] {S : C} {X Y X' Y' : Over S}
+    [HasBinaryProduct X Y] [HasBinaryProduct X' Y] [HasBinaryProduct X' Y'] (f : X ⟶ X')
+    (g : Y ⟶ Y') (hf : P f.left) (hg : P g.left) : P (prod.map f g).left := by
+  have h₁ : P (prod.map f (𝟙 Y)).left :=
+    P.of_isPullback ((IsPullback.of_prod_fst_with_id f Y).map (Over.forget S)) hf
+  have h₂ : P (prod.map (𝟙 X') g).left :=
+    P.of_isPullback ((IsPullback.of_prod_snd_with_id X' g).map (Over.forget S)) hg
+  simpa [← Over.comp_left] using P.comp_mem _ _ h₁ h₂
+
+/-- For a property stable under base change and composition, `P f` and `P Δ_{f ≫ g}` imply
+`P (f ≫ Δ_g)`: by `pullback.comp_diagonal`, `f ≫ Δ_g` is `Δ_{f ≫ g}` followed by the map
+`f ×_Z f`, which has the property by Mathlib's `MorphismProperty.pullbackMap`. -/
+theorem comp_diagonal [P.IsStableUnderComposition] [HasPullbacks C] {Z : C} (f : X ⟶ Y)
+    (g : Y ⟶ Z) (hf : P f) (h : P (pullback.diagonal (f ≫ g))) :
+    P (f ≫ pullback.diagonal g) := by
+  rw [pullback.comp_diagonal]
+  exact P.comp_mem _ _ h (P.pullbackMap hf hf rfl rfl)
 
 end CategoryTheory.MorphismProperty

@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Euclidean.Volume.Sphere
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
 # The coordinate ADM flux
@@ -29,12 +31,18 @@ flux at radius `r`, `TauCeti.normalizedCoordinateFlux`. The area measure is the 
 
 The flux at radius `r` only sees the coefficients near the sphere of radius `r`
 (`TauCeti.normalizedCoordinateFlux_congr_of_eqOn`), so the mass of an end only depends on its
-coefficients outside a ball. The flux is homogeneous in `g`, additive for coefficients
-differentiable on the sphere with integrable flux densities, and unchanged by adding constant
-coefficients such as `δ_ij`. Replacing `g` by `g(s ·)` for `s > 0` turns the flux at radius `r`
-into `s ^ (2 - n)` times the flux at radius `s r` (`TauCeti.normalizedCoordinateFlux_comp_smul`):
-for the metric `λ g` in the coordinates `√λ x`, whose coefficients are `g(x / √λ)`, this is the
-scaling law `m(λ g) = λ ^ ((n - 2) / 2) m(g)` of the mass.
+coefficients outside a ball. The flux density is measurable whatever the coefficients
+(`TauCeti.measurable_coordinateFluxIntegrand`), it is `o(|x|⁻¹)` at infinity when the derivatives
+of the coefficients are (`TauCeti.isLittleO_coordinateFluxIntegrand`), and it obeys a product
+rule for coefficients `w g_ij` with a scalar factor `w` (`TauCeti.coordinateFluxIntegrand_mul`).
+The flux is homogeneous in `g`, additive for coefficients differentiable on the sphere with
+integrable flux densities, and unchanged by adding constant coefficients such as `δ_ij`.
+Continuous coefficient derivatives on a sphere suffice for integrability
+(`TauCeti.integrableOn_coordinateFluxIntegrand`).
+Replacing `g` by `g(s ·)` for `s > 0` turns the flux at radius `r` into `s ^ (2 - n)` times the
+flux at radius `s r` (`TauCeti.normalizedCoordinateFlux_comp_smul`): for the metric `λ g` in the
+coordinates `√λ x`, whose coefficients are `g(x / √λ)`, this is the scaling law
+`m(λ g) = λ ^ ((n - 2) / 2) m(g)` of the mass.
 
 The remaining results evaluate the flux on the model metrics against which the normalization is
 checked. For conformally flat coefficients `w(|x|) δ_ij` the flux density is
@@ -99,6 +107,60 @@ theorem normalizedCoordinateFlux_def (g : EuclideanSpace ℝ (Fin n) → Fin n �
       (∫ x in sphere (0 : EuclideanSpace ℝ (Fin n)) r, coordinateFluxIntegrand g x ∂μHE[n - 1]) /
         (2 * ((n : ℝ) - 1) * roundSphereVolume (n - 1)) :=
   (rfl)
+
+/-- The flux density is measurable, whatever the regularity of the coefficients. -/
+theorem measurable_coordinateFluxIntegrand (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ) :
+    Measurable (coordinateFluxIntegrand g) := by
+  rw [funext (coordinateFluxIntegrand_def g)]
+  fun_prop
+
+/-- Coefficients with derivatives `o(|x|⁻¹)` at infinity have flux density `o(|x|⁻¹)`. -/
+theorem isLittleO_coordinateFluxIntegrand {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ}
+    (hg : ∀ i j, (fun x ↦ fderiv ℝ (fun y ↦ g y i j) x) =o[Bornology.cobounded _]
+      fun x ↦ ‖x‖⁻¹) :
+    coordinateFluxIntegrand g =o[Bornology.cobounded _] fun x ↦ ‖x‖⁻¹ := by
+  have hD (i j k : Fin n) : (fun x ↦ fderiv ℝ (fun y ↦ g y i j) x (EuclideanSpace.single k 1))
+      =o[Bornology.cobounded _] fun x ↦ ‖x‖⁻¹ :=
+    ((ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single k 1)).isBigO_comp _ _).trans_isLittleO
+      (hg i j)
+  rw [funext (coordinateFluxIntegrand_def g)]
+  refine Asymptotics.IsLittleO.fun_sum fun j _ ↦ ?_
+  simpa using ((Asymptotics.IsLittleO.fun_sum fun i _ ↦ (hD i j i).sub (hD i i j))).mul_isBigO
+    (EuclideanSpace.isBigO_apply_div_norm _ j)
+
+/-- Continuous coefficient derivatives give a continuous flux density on sets avoiding the
+origin. -/
+theorem continuousOn_coordinateFluxIntegrand
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {s : Set (EuclideanSpace ℝ (Fin n))}
+    (h₀ : 0 ∉ s) (hg : ∀ i j, ContinuousOn (fun x ↦ fderiv ℝ (fun y ↦ g y i j) x) s) :
+    ContinuousOn (coordinateFluxIntegrand g) s := by
+  have hn (x : EuclideanSpace ℝ (Fin n)) (hx : x ∈ s) : ‖x‖ ≠ 0 :=
+    norm_ne_zero_iff.2 fun h ↦ h₀ (h ▸ hx)
+  rw [funext (coordinateFluxIntegrand_def g)]
+  refine continuousOn_finsetSum _ fun j _ ↦ ContinuousOn.mul ?_ ?_
+  · fun_prop
+  · exact (by fun_prop : ContinuousOn (fun x : EuclideanSpace ℝ (Fin n) ↦ x j) s).div
+      continuous_norm.continuousOn hn
+
+/-- Continuous coefficient derivatives on a sphere give an integrable flux density. -/
+theorem integrableOn_coordinateFluxIntegrand
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r : ℝ}
+    (hg : ∀ i j, ContinuousOn (fun x ↦ fderiv ℝ (fun y ↦ g y i j) x) (sphere 0 r)) :
+    IntegrableOn (coordinateFluxIntegrand g) (sphere 0 r) μHE[n - 1] := by
+  have h : ContinuousOn (coordinateFluxIntegrand g) (sphere 0 r) := by
+    by_cases hr : r = 0
+    · simp [hr, sphere_zero, continuousOn_singleton]
+    · exact continuousOn_coordinateFluxIntegrand
+        (fun h ↦ hr ((mem_sphere_zero_iff_norm.1 h).symm.trans norm_zero)) hg
+  simpa only [finrank_euclideanSpace_fin] using h.integrableOn_sphere_euclideanHausdorffMeasure
+
+/-- A flux density constant on a sphere is integrable there. -/
+theorem integrableOn_coordinateFluxIntegrand_of_eqOn_const
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r c : ℝ}
+    (hc : EqOn (coordinateFluxIntegrand g) (fun _ ↦ c) (sphere 0 r)) :
+    IntegrableOn (coordinateFluxIntegrand g) (sphere 0 r) μHE[n - 1] := by
+  simpa only [finrank_euclideanSpace_fin] using
+    (continuousOn_const.congr hc).integrableOn_sphere_euclideanHausdorffMeasure
 
 /-- The flux density vanishes at the origin, where `x_j / |x|` is `0`. -/
 @[simp]
@@ -227,6 +289,25 @@ theorem coordinateFluxIntegrand_add {g h : EuclideanSpace ℝ (Fin n) → Fin n 
   congr 1
   exact Finset.sum_congr rfl fun i _ ↦ by ring
 
+/-- **Product rule for the flux density.** For a function `w` and coefficients `g` differentiable
+at `x`, the flux density of `w g_ij` at `x` is `w(x)` times that of `g`, plus
+`Σ_j (Σ_i (∂_i w g_ij - ∂_j w g_ii)) x_j / |x|`. -/
+theorem coordinateFluxIntegrand_mul {w : EuclideanSpace ℝ (Fin n) → ℝ}
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {x : EuclideanSpace ℝ (Fin n)}
+    (hw : DifferentiableAt ℝ w x) (hg : ∀ i j, DifferentiableAt ℝ (fun y ↦ g y i j) x) :
+    coordinateFluxIntegrand (fun y i j ↦ w y * g y i j) x =
+      w x * coordinateFluxIntegrand g x +
+        ∑ j, (∑ i, (fderiv ℝ w x (EuclideanSpace.single i 1) * g x i j -
+          fderiv ℝ w x (EuclideanSpace.single j 1) * g x i i)) * (x j / ‖x‖) := by
+  have hd (i j : Fin n) : fderiv ℝ (fun y ↦ w y * g y i j) x =
+      w x • fderiv ℝ (fun y ↦ g y i j) x + g x i j • fderiv ℝ w x :=
+    fderiv_fun_mul hw (hg i j)
+  simp only [coordinateFluxIntegrand_def, hd, add_apply, smul_apply, smul_eq_mul, Finset.mul_sum,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp only [Finset.sum_mul, Finset.mul_sum, ← Finset.sum_add_distrib]
+  exact Finset.sum_congr rfl fun i _ ↦ by ring
+
 /-- The flux is additive in coefficients differentiable on the sphere with integrable flux
 densities. -/
 theorem normalizedCoordinateFlux_add {g h : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r : ℝ}
@@ -332,19 +413,37 @@ theorem coordinateFluxIntegrand_conformal_radial (w : ℝ → ℝ) {x : Euclidea
     deriv_zero_of_not_differentiableAt hw]
   simp
 
+/-- The flux density of radial conformally flat coefficients is constant on each sphere of
+nonzero radius, with value `(1 - n) * deriv w r`. -/
+theorem eqOn_coordinateFluxIntegrand_conformal_radial (w : ℝ → ℝ) {r : ℝ} (hr : r ≠ 0) :
+    EqOn (coordinateFluxIntegrand (fun y : EuclideanSpace ℝ (Fin n) ↦ fun i j ↦
+      if i = j then w ‖y‖ else 0)) (fun _ ↦ (1 - n) * deriv w r) (sphere 0 r) := by
+  intro x hx
+  have hx' : ‖x‖ = r := mem_sphere_zero_iff_norm.1 hx
+  exact (coordinateFluxIntegrand_conformal_radial w (norm_ne_zero_iff.1 (hx' ▸ hr))).trans
+    (by rw [hx'])
+
+/-- Radial conformally flat coefficients have an integrable flux density on every sphere,
+without assumptions on the radial function or radius. -/
+theorem integrableOn_coordinateFluxIntegrand_conformal_radial (w : ℝ → ℝ) (r : ℝ) :
+    IntegrableOn (coordinateFluxIntegrand (fun y : EuclideanSpace ℝ (Fin n) ↦ fun i j ↦
+      if i = j then w ‖y‖ else 0)) (sphere 0 r) μHE[n - 1] := by
+  by_cases hr : r = 0
+  · subst r
+    exact integrableOn_coordinateFluxIntegrand_of_eqOn_const (c := 0) (by simp [sphere_zero])
+  · exact integrableOn_coordinateFluxIntegrand_of_eqOn_const
+      (eqOn_coordinateFluxIntegrand_conformal_radial w hr)
+
 /-- **The flux of a radial conformally flat metric.** For `n ≥ 2` and `r > 0`, the normalized
 flux of the coefficients `w(|x|) δ_ij` at radius `r` is `-r ^ (n - 1) w'(r) / 2`. -/
 theorem normalizedCoordinateFlux_conformal_radial (hn : 2 ≤ n) (w : ℝ → ℝ) {r : ℝ} (hr : 0 < r) :
     normalizedCoordinateFlux (fun y : EuclideanSpace ℝ (Fin n) ↦ fun i j ↦
       if i = j then w ‖y‖ else 0) r = -(r ^ (n - 1) * deriv w r) / 2 := by
   have hn' : (n : ℝ) - 1 ≠ 0 := sub_ne_zero.2 (Nat.one_lt_cast.2 hn).ne'
-  rw [normalizedCoordinateFlux_eq_of_eqOn_sphere (c := (1 - n) * deriv w r) (by omega) hr
-    fun x hx ↦ ?_]
-  · field_simp
-    ring
-  · have hx' : ‖x‖ = r := mem_sphere_zero_iff_norm.1 hx
-    exact (coordinateFluxIntegrand_conformal_radial w (norm_pos_iff.1 (hx' ▸ hr))).trans
-      (by rw [hx'])
+  rw [normalizedCoordinateFlux_eq_of_eqOn_sphere (by omega) hr
+    (eqOn_coordinateFluxIntegrand_conformal_radial w hr.ne')]
+  field_simp
+  ring
 
 /-- **The mass of a conformally flat end.** For `n ≥ 3`, the normalized flux of the coefficients
 `(1 + c |x| ^ (2 - n)) ^ (4 / (n - 2)) δ_ij` tends to `2 c`. For `c = m / 2` these are the

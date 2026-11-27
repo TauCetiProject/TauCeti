@@ -16,6 +16,7 @@ public import Mathlib.Algebra.Star.Unitary
 -- `QuadraticMap.comp` and `QuadraticMap.weightedSumSquares`, which is why that file is not
 -- imported again here.
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # The norm form of a quaternion algebra
@@ -52,6 +53,9 @@ question about `⟨1, -a, -b, ab⟩`.
 * `QuaternionAlgebra.equivalent_normForm_weightedSumSquares`: the norm form of `ℍ[R,a,b]` is the
   diagonal form `⟨1, -a, -b, ab⟩`, with the explicit isometry
   `QuaternionAlgebra.normFormIsometryEquivWeightedSumSquares`.
+* `QuaternionAlgebra.posDef_normForm_of_neg`: over a strictly ordered commutative ring, the norm
+  form of `ℍ[R,a,b]` with `a < 0` and `b < 0` is positive definite, as for the Hamilton
+  quaternions.
 * `QuaternionAlgebra.equivalent_pureNormForm_weightedSumSquares`: the pure norm form of `ℍ[R,a,b]`
   is the diagonal form `⟨-a, -b, ab⟩`, with the explicit isometry
   `QuaternionAlgebra.pureNormFormIsometryEquivWeightedSumSquares`.
@@ -127,12 +131,21 @@ theorem normForm_mul (x y : ℍ[R,c₁,c₂,c₃]) :
   simp only [normForm_apply_coordinates, re_mul, imI_mul, imJ_mul, imK_mul]
   ring
 
+/-- The norm form of `1` is `1`. -/
+@[simp]
+theorem normForm_one : normForm c₁ c₂ c₃ (1 : ℍ[R,c₁,c₂,c₃]) = 1 := by
+  rw [← coe_one, normForm_coe, one_pow]
+
+/-- The norm forms of a unit and of its inverse are inverse to each other. -/
+theorem normForm_units_inv_mul (u : ℍ[R,c₁,c₂,c₃]ˣ) :
+    normForm c₁ c₂ c₃ ↑u⁻¹ * normForm c₁ c₂ c₃ ↑u = 1 := by
+  rw [← normForm_mul, Units.inv_mul, normForm_one]
+
 /-- **A quaternion is invertible exactly when its norm is.** -/
 theorem isUnit_iff_normForm_isUnit (x : ℍ[R,c₁,c₂,c₃]) :
     IsUnit x ↔ IsUnit (normForm c₁ c₂ c₃ x) := by
   refine ⟨fun ⟨u, hu⟩ => ?_, fun ⟨n, hn⟩ => ?_⟩
-  · refine IsUnit.of_mul_eq_one (normForm c₁ c₂ c₃ ↑u⁻¹) ?_
-    rw [← hu, ← normForm_mul, Units.mul_inv, ← coe_one, normForm_coe, one_pow]
+  · exact hu ▸ IsUnit.of_mul_eq_one_right _ (normForm_units_inv_mul c₁ c₂ c₃ u)
   · refine ⟨⟨x, star x * ((n⁻¹ : Rˣ) : R), ?_, ?_⟩, rfl⟩
     · rw [← mul_assoc, self_mul_star, ← hn, ← coe_mul, Units.mul_inv, coe_one]
     · rw [mul_assoc, coe_commutes, ← mul_assoc, star_mul_self, ← hn, ← coe_mul, Units.mul_inv,
@@ -225,6 +238,20 @@ theorem equivalent_pureNormForm_weightedSumSquares :
   ⟨pureNormFormIsometryEquivWeightedSumSquares a b⟩
 
 end Diagonal
+
+/-- **Definite quaternion algebras.** Over a strictly ordered commutative ring, the norm form
+`⟨1, -a, -b, ab⟩` of `ℍ[R,a,b]` is positive definite when `a < 0` and `b < 0`; the Hamilton
+quaternions `ℍ[R,-1,-1]` are the basic example. -/
+theorem posDef_normForm_of_neg [LinearOrder R] [IsStrictOrderedRing R] {a b : R} (ha : a < 0)
+    (hb : b < 0) : (normForm a 0 b).PosDef := by
+  have hw : ∀ i, 0 < ![(1 : R), -a, -b, a * b] i := by
+    intro i
+    fin_cases i <;> simp [ha, hb, mul_pos_of_neg_of_neg ha hb]
+  convert ((QuadraticMap.posDef_weightedSumSquares_iff _).mpr hw).comp
+    (normFormIsometryEquivWeightedSumSquares a b).toLinearMap
+    (normFormIsometryEquivWeightedSumSquares a b).injective
+  ext x
+  exact ((normFormIsometryEquivWeightedSumSquares a b).map_app x).symm
 
 end QuaternionAlgebra
 

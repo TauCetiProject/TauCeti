@@ -42,11 +42,17 @@ of translations, and star-scalar-product lemmas show that replacing a scalar mul
 - `MeasureTheory.aestronglyMeasurable_uncurry_sum_indicator`: a function of two variables that is
   piecewise in the first variable on a finite measurable family, with a.e. strongly measurable
   slices, is a.e. strongly measurable for the product measure.
+- `MeasureTheory.AEStronglyMeasurable.exists_stronglyMeasurable_ae_eq_norm_le`: an a.e. strongly
+  measurable function with `‖f‖ ≤ C` almost everywhere agrees almost everywhere with a strongly
+  measurable function bounded everywhere by `max C 0`.
 - `MeasureTheory.aestronglyMeasurable_star_smul_of_aestronglyMeasurable` and
   `MeasureTheory.aestronglyMeasurable_star_smul_iff`: over a normed field `𝕜` with a
   norm-preserving additive star involution and a normed `𝕜`-space `E`, for an a.e. strongly
   measurable `u : α → E`, `t ↦ star (f t) • u t` is a.e. strongly measurable if and only if
   `t ↦ f t • u t` is, with no measurability hypothesis on `f`.
+- `TauCeti.not_aestronglyMeasurable_restrict_of_pairwise_le_dist`: under a null-singleton measure, a
+  map sending a set of nonzero measure to pairwise `ε`-separated points (`ε > 0`) is not a.e.
+  strongly measurable on that set.
 
 The antitone σ-algebra results hold for a codomain in any second-countable conditionally complete
 linear order with the order topology (`ℝ` qualifies); no σ-algebra on the codomain is needed, since
@@ -240,6 +246,24 @@ theorem aestronglyMeasurable_uncurry_sum_indicator {ι M : Type*} [Fintype ι]
     ((hL i).comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_snd (μ := μ))).indicator
       ((hP i).prod .univ)
 
+/-- An a.e. strongly measurable function with `‖f‖ ≤ C` almost everywhere agrees almost
+everywhere with a strongly measurable function bounded everywhere by `max C 0`. -/
+theorem AEStronglyMeasurable.exists_stronglyMeasurable_ae_eq_norm_le {E : Type*}
+    [SeminormedAddCommGroup E] {f : α → E} (hf : AEStronglyMeasurable f μ) {C : ℝ}
+    (hC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) :
+    ∃ f₀ : α → E, StronglyMeasurable f₀ ∧ f =ᵐ[μ] f₀ ∧ ∀ x, ‖f₀ x‖ ≤ max C 0 := by
+  set g := hf.mk f
+  refine ⟨{x | ‖g x‖ ≤ C}.indicator g, hf.stronglyMeasurable_mk.indicator
+    (measurableSet_le hf.stronglyMeasurable_mk.norm.measurable measurable_const), ?_, fun x ↦ ?_⟩
+  · filter_upwards [hf.ae_eq_mk, hC] with x hx hxC
+    rw [hx]
+    exact (Set.indicator_of_mem (show x ∈ {x | ‖g x‖ ≤ C} by simpa [g, ← hx] using hxC) g).symm
+  · by_cases hx : ‖g x‖ ≤ C
+    · rw [Set.indicator_of_mem hx g]
+      exact hx.trans (le_max_left _ _)
+    · rw [Set.indicator_of_notMem hx g, norm_zero]
+      exact le_max_right _ _
+
 end MeasureTheory
 
 namespace MeasureTheory
@@ -333,3 +357,40 @@ end Measure
 end StarSMul
 
 end MeasureTheory
+
+namespace TauCeti
+
+/-- Under a measure that assigns measure zero to singletons, a map sending a set `s` of nonzero
+measure to points that are pairwise at distance at least `ε > 0` cannot be almost-everywhere
+strongly measurable on `s`, since any separable subset of the codomain meets `u '' s` in a
+countable set. -/
+theorem not_aestronglyMeasurable_restrict_of_pairwise_le_dist {α β : Type*} [MeasurableSpace α]
+    [PseudoMetricSpace β] {μ : Measure α} [NullSingletonClass μ] {u : α → β} {s : Set α}
+    {ε : ℝ} (hμs : μ s ≠ 0) (hε : 0 < ε)
+    (hsep : s.Pairwise fun x y => ε ≤ dist (u x) (u y)) :
+    ¬ AEStronglyMeasurable u (μ.restrict s) := by
+  intro hmeas
+  obtain ⟨t, ht_sep, ht_ae⟩ := hmeas.isSeparable_ae_range
+  -- Open `(ε / 2)`-balls in the separable subspace `t` around `u x` (`x ∈ s ∩ u ⁻¹' t`) are
+  -- pairwise disjoint, so `s ∩ u ⁻¹' t` is countable and therefore `μ`-null.
+  have hpair : Set.PairwiseDisjoint (s ∩ u ⁻¹' t)
+      fun x : α => ((↑) : t → β) ⁻¹' Metric.ball (u x) (ε / 2) := by
+    rintro x ⟨hxs, _⟩ y ⟨hys, _⟩ hxy
+    refine Set.disjoint_left.2 fun z hzx hzy => ?_
+    have htri : dist (u x) (u y) ≤ dist (u x) (z : β) + dist (z : β) (u y) :=
+      dist_triangle _ _ _
+    have hdx : dist (u x) (z : β) < ε / 2 := by simpa [dist_comm] using Metric.mem_ball.1 hzx
+    have hdy : dist (z : β) (u y) < ε / 2 := Metric.mem_ball.1 hzy
+    linarith [hsep hxs hys hxy]
+  have hcnt : (s ∩ u ⁻¹' t).Countable := by
+    have : TopologicalSpace.SeparableSpace t := ht_sep.separableSpace
+    exact hpair.countable_of_isOpen (fun _ _ => Metric.isOpen_ball.preimage continuous_subtypeVal)
+      fun x hx => ⟨⟨u x, hx.2⟩, Set.mem_preimage.2 (Metric.mem_ball_self (half_pos hε))⟩
+  have hnull : μ s = 0 := by
+    refine measure_mono_null (fun x hx => ?_)
+      (measure_union_null (hcnt.measure_zero μ)
+        (Measure.measure_inter_eq_zero_of_restrict (mem_ae_iff.1 ht_ae)))
+    exact (em (x ∈ u ⁻¹' t)).imp (fun h => ⟨hx, h⟩) (fun h => ⟨h, hx⟩)
+  exact hμs hnull
+
+end TauCeti

@@ -137,6 +137,14 @@ theorem coeFn_toLp_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
   rw [toLp_toBesselPotentialSpaceCLM]
   exact coeFn_toLp _ p volume
 
+/-- The `H^{s,p}` norm of a Schwartz function `u` is the `Lᵖ` norm of the Schwartz function
+`J^s u`. -/
+theorem norm_toBesselPotentialSpaceCLM_eq_eLpNorm (u : 𝓢(E, F)) :
+    ‖toBesselPotentialSpaceCLM s p u‖ =
+      (eLpNorm (fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u) p
+        volume).toReal := by
+  rw [← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM, norm_toLp]
+
 @[simp]
 theorem toDistr_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
     (toBesselPotentialSpaceCLM s p u).toDistr = (u : 𝓢'(E, F)) := by
@@ -440,6 +448,14 @@ theorem toDistr_toLpₗᵢ_zero_symm_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (f : Lp F p (volume : Measure E)) :
     ((toLpₗᵢ E F 0 p).symm f).toDistr = (f : 𝓢'(E, F)) := by
   rw [toLpₗᵢ_symm_apply, neg_zero, besselPotential_zero, ContinuousLinearMap.id_apply]
+
+/-- Transporting `u ∈ H^{s,p}(E, F)` to `H^{r,p}(E, F)` via `Lᵖ` applies the Bessel potential
+`J^{s - r}` to its underlying tempered distribution. -/
+theorem toDistr_toLpₗᵢ_symm_toLpₗᵢ {s r : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, p}(E, F)) :
+    ((toLpₗᵢ E F r p).symm (toLpₗᵢ E F s p u)).toDistr =
+      TemperedDistribution.besselPotential E F (s - r) u.toDistr := by
+  simp [toLpₗᵢ_symm_apply, ← u.bessel_toDistr_eq_toLp,
+    TemperedDistribution.besselPotential_besselPotential_apply, ← sub_eq_add_neg]
 
 section Fourier
 

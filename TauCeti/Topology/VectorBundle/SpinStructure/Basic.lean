@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Euclidean
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Real
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Extension
 
 /-!
@@ -62,6 +62,8 @@ nonzero form `Q`, which for the standard form on `ℝⁿ` means `n ≥ 1`
   fibre inner products.
 * `TauCeti.OrthonormalFrameLift.extendSpinC`: the `Spinᶜ` structure induced by a lift of the
   orthonormal frame bundle and a lift of its structure group homomorphism to `Spinᶜ(n)`.
+* `TauCeti.OrthonormalFrameLift.extendSpinCEquivOfEquivariant`: its universal property, an
+  equivalence with any `Spinᶜ` structure receiving a frame-preserving equivariant map.
 
 ## Main results
 
@@ -179,17 +181,51 @@ Hermitian four-manifold and the canonical lift `U(2) → Spinᶜ(4)`, this is th
 structure. -/
 noncomputable abbrev OrthonormalFrameLift.extendSpinC : SpinCStructure F V n :=
   s.extend σ hσ hσρ
-    (fun g ↦ TauCeti.CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply n
-      (spinCGroup.toSpecialOrthogonal _ _ g))
-    (fun v ↦ (TauCeti.CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply n
-      v).comp (spinCGroup.continuous_toSpecialOrthogonal_pi _ _))
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
 
-/-- **The frame of `[p, 1]`** in the `Spinᶜ` structure induced by a lift is the frame of `p`. -/
-@[simp]
+/-- **The frame of `[p, 1]`** in the `Spinᶜ` structure induced by a lift is the frame of `p`. Not a
+simp lemma: `simp` proves it by `TauCeti.OrthonormalFrameLift.toFrame_extend_inl`, since
+`extendSpinC` is reducible. -/
 theorem OrthonormalFrameLift.toFrame_extendSpinC_inl (x : X) (p : s.P x) :
     (s.extendSpinC σ hσ hσρ).toFrame ⟨x, PrincipalBundle.Extend.inl σ hσ p⟩ =
       s.toFrame ⟨x, p⟩ :=
   s.toFrame_extend_inl σ hσ hσρ _ _ x p
+
+/-- **Universal property of the `Spinᶜ` structure induced by a lift** (the universal property of
+the extension, `TauCeti.OrthonormalFrameLift.extendEquivOfEquivariant`): a `Spinᶜ` structure `t`
+receiving a continuous `σ`-equivariant fibrewise map `φ` from the principal bundle of `s` that
+preserves frames is equivalent to `s.extendSpinC σ hσ hσρ`, by `[p, h] ↦ φ p • h`. -/
+noncomputable def OrthonormalFrameLift.extendSpinCEquivOfEquivariant (t : SpinCStructure F V n)
+    (φ : ∀ x, s.P x → t.P x) (hφ : ∀ x (p : s.P x) (g : G), φ x (op g • p) = op (σ g) • φ x p)
+    (hφc : Continuous fun p : TotalSpace G s.P ↦ (⟨p.proj, φ p.proj p.snd⟩ :
+      TotalSpace (spinCGroup (realCliffordForm n 0) _) t.P))
+    (hφf : ∀ x (p : s.P x), t.toFrame ⟨x, φ x p⟩ = s.toFrame ⟨x, p⟩) :
+    (s.extendSpinC σ hσ hσρ).Equiv t :=
+  s.extendEquivOfEquivariant σ hσ hσρ _ _ t φ hφ hφc hφf
+
+@[simp]
+theorem OrthonormalFrameLift.extendSpinCEquivOfEquivariant_toEquiv_mk
+    (t : SpinCStructure F V n) (φ : ∀ x, s.P x → t.P x)
+    (hφ : ∀ x (p : s.P x) (g : G), φ x (op g • p) = op (σ g) • φ x p)
+    (hφc : Continuous fun p : TotalSpace G s.P ↦ (⟨p.proj, φ p.proj p.snd⟩ :
+      TotalSpace (spinCGroup (realCliffordForm n 0) _) t.P))
+    (hφf : ∀ x (p : s.P x), t.toFrame ⟨x, φ x p⟩ = s.toFrame ⟨x, p⟩) (x : X) (p : s.P x)
+    (h : spinCGroup (realCliffordForm n 0)
+      (QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm n 0))) :
+    (s.extendSpinCEquivOfEquivariant σ hσ hσρ t φ hφ hφc hφf).toEquiv x
+        (PrincipalBundle.Extend.mk σ hσ p h) = op h • φ x p :=
+  s.extendEquivOfEquivariant_toEquiv_mk σ hσ hσρ _ _ t φ hφ hφc hφf x p h
+
+@[simp]
+theorem OrthonormalFrameLift.extendSpinCEquivOfEquivariant_toEquiv_inl
+    (t : SpinCStructure F V n) (φ : ∀ x, s.P x → t.P x)
+    (hφ : ∀ x (p : s.P x) (g : G), φ x (op g • p) = op (σ g) • φ x p)
+    (hφc : Continuous fun p : TotalSpace G s.P ↦ (⟨p.proj, φ p.proj p.snd⟩ :
+      TotalSpace (spinCGroup (realCliffordForm n 0) _) t.P))
+    (hφf : ∀ x (p : s.P x), t.toFrame ⟨x, φ x p⟩ = s.toFrame ⟨x, p⟩) (x : X) (p : s.P x) :
+    (s.extendSpinCEquivOfEquivariant σ hσ hσρ t φ hφ hφc hφf).toEquiv x
+        (PrincipalBundle.Extend.inl σ hσ p) = φ x p :=
+  s.extendEquivOfEquivariant_toEquiv_inl σ hσ hσρ _ _ t φ hφ hφc hφf x p
 
 end ExtendSpinC
 
