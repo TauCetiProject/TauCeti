@@ -22,7 +22,7 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Von
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Mellin
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
-import TauCeti.NumberTheory.LSeries.RiemannZeta.RieszMellin
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Riesz.Mellin
 
 /-!
 # First Riesz remainders for primitive Dirichlet characters
@@ -109,6 +109,12 @@ noncomputable def rieszRemainder (χ : PrimitiveDirichletCharacter) (y : ℝ) : 
       (y : ℂ) * (1 + (Real.eulerMascheroniConstant : ℂ)) - (y : ℂ) * Real.log y
     else (y : ℂ) * logDeriv χ.character.LFunction 1
 
+/-- The L-function of the trivial bundle is the Riemann zeta function. -/
+theorem LFunction_character_one :
+    (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
+  rw [character_one]
+  exact DirichletCharacter.LFunction_modOne_eq
+
 /-- At conductor one the first Riesz remainder subtracts `y log y - (1 + γ) y` from the
 untwisted sum. -/
 @[simp] theorem rieszRemainder_one (y : ℝ) :
@@ -154,6 +160,13 @@ theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
     simp [rieszRemainder_of_ne_one hi, rieszRemainder_of_ne_one hχ, character_inv,
       rieszSum_def, hlog, ← MulChar.star_apply']
 
+/-- The conductor-one first Riesz remainder is real. -/
+theorem ofReal_re_rieszRemainder_one (y : ℝ) :
+    (((1 : PrimitiveDirichletCharacter).rieszRemainder y).re : ℂ) =
+      (1 : PrimitiveDirichletCharacter).rieszRemainder y := by
+  refine Complex.conj_eq_iff_re.mp ?_
+  simpa only [inv_one] using (rieszRemainder_inv 1 y).symm
+
 /-- For `1 < s.re`, the remainder in logarithmic coordinates has one-sided Laplace transform
 given by the meromorphic Riesz expression. -/
 theorem hasLaplace_rieszRemainder_comp_exp (χ : PrimitiveDirichletCharacter) {s : ℂ}
@@ -175,10 +188,7 @@ theorem hasLaplace_rieszRemainder_comp_exp (χ : PrimitiveDirichletCharacter) {s
   have hlin (c : ℂ) := (hasLaplace_exp_mul_pow 0 hs).const_smul c
   by_cases hχ : χ = 1
   · subst χ
-    have hzeta : (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
-      rw [character_one]
-      exact DirichletCharacter.LFunction_modOne_eq
-    rw [hzeta] at hr ⊢
+    rw [LFunction_character_one] at hr ⊢
     have h := hr.add ((hlin (1 + (Real.eulerMascheroniConstant : ℂ))).sub
       (hasLaplace_exp_mul_pow 1 hs))
     rw [rieszRemainderMellin_riemannZeta hs]

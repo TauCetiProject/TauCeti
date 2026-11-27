@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.Analysis.Complex.Hadamard.Riesz
 public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Riesz
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
-public import TauCeti.NumberTheory.LSeries.RiemannZeta.RieszMellin
+public import TauCeti.NumberTheory.LSeries.RiemannZeta.Riesz.Mellin
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Growth
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Growth
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne

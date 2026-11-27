@@ -46,10 +46,8 @@ theorem rieszRemainder_one_eq_riemannZetaRieszZeroSide {y : ℝ} (hy : 1 ≤ y) 
   · intro s hs
     have hs' : 1 < s.re := hs.symm ▸ (one_lt_two : (1 : ℝ) < 2)
     simp_rw [smul_eq_mul, mul_comm (_ ^ _)]
-    have hζ : (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
-      rw [character_one]
-      exact DirichletCharacter.LFunction_modOne_eq
-    rw [integral_rieszRemainder_mul_cpow _ hs', integral_riemannZetaRieszZeroSide_mul_cpow hs', hζ]
+    rw [integral_rieszRemainder_mul_cpow _ hs', integral_riemannZetaRieszZeroSide_mul_cpow hs',
+      LFunction_character_one]
 
 /-- A zero-free half-plane `Re s > σ` for zeta bounds the first Riesz remainder by
 `C * y ^ max σ 0` for all `y ≥ 1`. The maximum with zero accounts for the constant term
