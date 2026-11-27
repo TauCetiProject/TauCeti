@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Connected.LocallyPathConnected
+public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Geometry.Manifold.Instances.Icc
+import Mathlib.Analysis.Convex.Contractible
+import Mathlib.Topology.Algebra.Module.LocallyConvex
 import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
@@ -14,6 +18,10 @@ import TauCeti.Geometry.Manifold.ExtChartAt
 A rectangle uses the actual product of the two closed-interval manifolds. Its preferred charts
 are products of the interval charts; their inverse inclusion derivatives retain the signs of
 both interval factors.
+
+As a convex subset of the plane, the rectangle is contractible and locally path connected, and
+its manifold boundary, the union of its four edges, is connected
+(`TauCeti.isConnected_boundary_rectangle`).
 -/
 
 public section
@@ -136,5 +144,42 @@ theorem subtypeValRectangleTangentEquiv_toContinuousLinearMap (x : Icc a b × Ic
     subtypeValIccTangentEquiv_toContinuousLinearMap, mfderiv_subtypeVal_Icc,
     mfderiv_subtypeVal_Icc, mfderiv_subtypeVal_rectangle]
   rfl
+
+/-! ### Topology of the rectangle -/
+
+/-- The rectangle `[a, b] × [c, d]` is contractible, as a convex subset of the plane. -/
+instance : ContractibleSpace (Icc a b × Icc c d) :=
+  haveI := ((convex_Icc a b).prod (convex_Icc c d)).contractibleSpace
+    ⟨(a, c), ⟨left_mem_Icc.2 (Fact.out : a < b).le, left_mem_Icc.2 (Fact.out : c < d).le⟩⟩
+  (Homeomorph.Set.prod (Icc a b) (Icc c d)).symm.toHomotopyEquiv.contractibleSpace
+
+/-- The rectangle `[a, b] × [c, d]` is locally path connected, as a convex subset of the plane. -/
+instance : LocallyPathConnectedSpace (Icc a b × Icc c d) :=
+  haveI := Convex.locallyPathConnectedSpace (ℝ × ℝ) ((convex_Icc a b).prod (convex_Icc c d))
+  (Homeomorph.Set.prod (Icc a b) (Icc c d)).locallyPathConnectedSpace
+
+/-- The manifold boundary of the rectangle `[a, b] × [c, d]`, the union of its four edges, is
+connected. -/
+theorem isConnected_boundary_rectangle :
+    IsConnected (((𝓡∂ 1).prod (𝓡∂ 1)).boundary (Icc a b × Icc c d)) := by
+  have : ConnectedSpace (Icc a b) := Subtype.connectedSpace (isConnected_Icc (Fact.out : a < b).le)
+  have : ConnectedSpace (Icc c d) := Subtype.connectedSpace (isConnected_Icc (Fact.out : c < d).le)
+  -- The bottom edge meets the left and right edges, and the left edge meets the top edge.
+  have hB : IsConnected (univ ×ˢ {(⊥ : Icc c d)} : Set (Icc a b × Icc c d)) :=
+    isConnected_univ.prod isConnected_singleton
+  have hT : IsConnected (univ ×ˢ {(⊤ : Icc c d)} : Set (Icc a b × Icc c d)) :=
+    isConnected_univ.prod isConnected_singleton
+  have hL : IsConnected ({(⊥ : Icc a b)} ×ˢ univ : Set (Icc a b × Icc c d)) :=
+    isConnected_singleton.prod isConnected_univ
+  have hR : IsConnected ({(⊤ : Icc a b)} ×ˢ univ : Set (Icc a b × Icc c d)) :=
+    isConnected_singleton.prod isConnected_univ
+  have h := ((hB.union ⟨(⊥, ⊥), by simp⟩ hL).union ⟨(⊤, ⊥), by simp⟩ hR).union
+    ⟨(⊥, ⊤), by simp⟩ hT
+  convert h using 1
+  rw [ModelWithCorners.boundary_prod, boundary_Icc, boundary_Icc]
+  ext ⟨x, y⟩
+  simp only [Set.prod, mem_union, mem_ofPred_eq, mem_univ, mem_insert_iff, mem_singleton_iff,
+    true_and, and_true, mem_prod]
+  tauto
 
 end TauCeti
