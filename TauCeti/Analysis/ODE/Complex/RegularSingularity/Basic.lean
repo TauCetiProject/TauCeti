@@ -11,7 +11,6 @@ public import TauCeti.Analysis.ODE.Complex.LinearEquation
 public import TauCeti.Analysis.ODE.Complex.RegularSingularity.Defs
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Complex.PowerSeries.BranchCut
 import TauCeti.Analysis.Complex.SlitPlane
@@ -240,36 +239,14 @@ theorem hasSum_regularSingularLogForcing_mul_pow {z₀ α₂ : ℂ} {N : ℕ} {r
   have hue : ‖u‖ₑ < ENNReal.ofReal r := eNorm_lt_ofReal_iff.mpr hu
   have hpA := FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt a z₀ hr
     fun z _ hzr => ha z hzr
-  have ha_norm := hpA.summable_norm_mul_pow_ofScalars hue
-  have hf_norm := FormalMultilinearSeries.summable_norm_mul_pow_of_norm_sub_lt fs z₀ hf hu
-  have hA0 : HasSum (fun s : ℕ => a s * u ^ s) (A₁ u) := by
-    simpa only [FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul, zero_add] using
-      hpA.hasSum (mem_eball_zero_iff.mpr hue)
-  have hA1 : HasSum (fun s : ℕ => (s : ℂ) * a s * u ^ s) (u * deriv A₁ u) :=
-    hpA.hasSum_mul_deriv_ofScalars hue
-  have hprod := hasSum_sum_range_mul_of_summable_norm ha_norm hf_norm
-  have hunshifted : HasSum (fun m : ℕ =>
-      ((2 * (α₂ + N + m) + fs 0 - 1) * a m + ∑ k ∈ range m, fs (m - k) * a k) * u ^ m)
-      (2 * u * deriv A₁ u + (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * A₁ u) := by
-    have htot := ((hA1.mul_left 2).add (hA0.mul_left (2 * (α₂ + N) - 1))).add hprod
-    have htot_eq :
-        2 * (u * deriv A₁ u) + (2 * (α₂ + N) - 1) * A₁ u + A₁ u * ∑' s, fs s * u ^ s =
-          2 * u * deriv A₁ u + (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * A₁ u := by
-      ring
-    rw [htot_eq] at htot
-    refine htot.congr_fun fun m => ?_
-    have hsum_comm :
-        (∑ k ∈ range m, a k * fs (m - k)) = ∑ k ∈ range m, fs (m - k) * a k :=
-      sum_congr rfl fun _ _ => mul_comm _ _
-    rw [sum_range_succ_mul_pow a fs u m, hsum_comm]; ring
-  -- Reindex along `m ↦ m + N`: terms below `N` vanish by `regularSingularLogForcing_of_lt`.
-  refine ((add_left_injective N).hasSum_iff fun s hs => ?_).mp
-    ((hunshifted.mul_left (u ^ N)).congr_fun fun m => ?_)
-  · simp [regularSingularLogForcing_of_lt _ _ _
-      (not_le.mp fun h => hs ⟨s - N, Nat.sub_add_cancel h⟩)]
-  · simp only [Function.comp_apply]
-    rw [regularSingularLogForcing_of_le _ _ _ (Nat.le_add_left N m), Nat.add_sub_cancel, pow_add]
-    push_cast; ring
+  have hfr := (FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt fs z₀ hr
+    hf).r_le
+  have hf_sum := (FormalMultilinearSeries.summable_norm_mul_pow_of_norm_sub_lt fs z₀ hf hu).of_norm
+  have hfor := hasSum_regularSingularLogForcing_ofScalars (α₂ := α₂) (c := 1) (N := N)
+    hpA hue (hue.trans_le hfr) hf_sum.hasSum
+  simp only [one_mul] at hfor
+  convert hfor using 1
+  ring
 
 /-- Algebraic recombination of `(z - z₀)^α` powers when adding the `(z - z₀)^α₂` series part
 to `c'` times the logarithmic forcing of `w₁(z) = (z - z₀)^{α₂ + N} A₁(z - z₀)`. -/

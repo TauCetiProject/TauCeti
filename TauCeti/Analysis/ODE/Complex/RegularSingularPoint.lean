@@ -12,8 +12,10 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Normed
-import TauCeti.Algebra.BigOperators.Ring.Finset
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.ODE.Complex.RegularSingularity.Defs
+import TauCeti.Analysis.ODE.Complex.RegularSingularity.Primary
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Deriv
 import TauCeti.Data.Nat.Choose.Sum
 
@@ -290,24 +292,6 @@ theorem le_radius_ofScalars_of_regularSingular {ρ : ℂ} {fs gs es a : ℕ → 
 
 /-! ### The Frobenius series solves the equation -/
 
-/-- The coefficient of `ζⁿ` in the Euler-operator form of the equation, with the forcing term
-`eₙ ζⁿ`, vanishes by the recursion. -/
-private theorem euler_form_coeff_eq_zero {ρ ζ : ℂ} {fs gs es a : ℕ → ℂ}
-    (ha : ∀ s : ℕ, ((ρ + s) * (ρ + s - 1) + fs 0 * (ρ + s) + gs 0) * a s +
-      ∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k + es s = 0) (n : ℕ) :
-    ρ * (ρ - 1) * (a n * ζ ^ n) + 2 * ρ * (n * a n * ζ ^ n) + n * (n - 1) * a n * ζ ^ n +
-        ∑ k ∈ range (n + 1), (ρ + k) * a k * ζ ^ k * (fs (n - k) * ζ ^ (n - k)) +
-      ∑ k ∈ range (n + 1), a k * ζ ^ k * (gs (n - k) * ζ ^ (n - k)) + es n * ζ ^ n = 0 := by
-  have hrec := ha n
-  have hsplit : ∑ k ∈ range n, ((ρ + k) * fs (n - k) + gs (n - k)) * a k =
-      ∑ k ∈ range n, (ρ + k) * a k * fs (n - k) + ∑ k ∈ range n, a k * gs (n - k) := by
-    rw [← sum_add_distrib]
-    exact sum_congr rfl fun k _ ↦ by ring
-  rw [hsplit] at hrec
-  rw [sum_range_mul_pow_mul_mul_pow_sub ζ (fun k ↦ (ρ + k) * a k),
-    sum_range_mul_pow_mul_mul_pow_sub ζ a, sum_range_succ, sum_range_succ, Nat.sub_self]
-  linear_combination ζ ^ n * hrec
-
 /-- The Euler-operator form of the equation, at a point `ζ` of the disc: with `S = ∑ aₛ ζˢ`,
 `F = ∑ fₛ ζˢ`, `G = ∑ gₛ ζˢ` and `E = ∑ eₛ ζˢ`, the expression below, which is `ζ^{2 - ρ}` times
 the left-hand side of the equation applied to `ζ^ρ S` plus `E`, vanishes. -/
@@ -320,34 +304,11 @@ private theorem euler_form_eq_zero {ρ ζ F G E : ℂ} {fs gs es a : ℕ → ℂ
       ∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k + es s = 0) :
     ρ * (ρ - 1) * S ζ + 2 * ρ * (ζ * deriv S ζ) + ζ ^ 2 * deriv (deriv S) ζ +
       F * (ρ * S ζ + ζ * deriv S ζ) + G * S ζ + E = 0 := by
-  -- the series of `S`, of `ζ S'` and of `ζ² S''`
-  have h0 := hS.hasSum_ofScalars hζ
-  have h1 := hS.hasSum_mul_deriv_ofScalars hζ
-  have h2 := hS.hasSum_sq_mul_deriv_deriv_ofScalars hζ
-  -- absolute convergence of the factors of the two Cauchy products
-  have hA := summable_norm_mul_pow_of_lt_radius a (hζ.trans_le hS.r_le)
-  have hP : Summable fun n : ℕ ↦ ‖(ρ + n) * a n * ζ ^ n‖ := by
-    refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
-      ((hA.mul_left ‖ρ‖).add (summable_norm_natCast_mul_ofScalars a
-        (hζ.trans_le hS.r_le)))
-    rw [add_mul, add_mul]
-    refine (norm_add_le _ _).trans_eq ?_
-    rw [mul_assoc ρ, norm_mul]
-  have hfN := summable_norm_mul_pow_of_lt_radius fs hζf
-  have hgN := summable_norm_mul_pow_of_lt_radius gs hζg
-  have hPsum : HasSum (fun n : ℕ ↦ (ρ + n) * a n * ζ ^ n) (ρ * S ζ + ζ * deriv S ζ) := by
-    convert (h0.mul_left ρ).add h1 using 1
-    ext n
-    ring
-  have hC1 := hasSum_sum_range_mul_of_summable_norm hP hfN
-  have hC2 := hasSum_sum_range_mul_of_summable_norm hA hgN
-  rw [hPsum.tsum_eq, hF.tsum_eq] at hC1
-  rw [h0.tsum_eq, hG.tsum_eq] at hC2
-  -- the combined series has all coefficients zero
-  have htotal := (((((h0.mul_left (ρ * (ρ - 1))).add (h1.mul_left (2 * ρ))).add h2).add
-    hC1).add hC2).add hE
-  rw [mul_comm (ρ * S ζ + ζ * deriv S ζ) F, mul_comm (S ζ) G] at htotal
-  exact htotal.unique ((hasSum_zero).congr_fun fun n ↦ euler_form_coeff_eq_zero (ζ := ζ) ha n)
+  have htotal := (hasSum_eulerOperator_ofScalars (σ := ρ) hS hζ hζf hζg hF hG).add hE
+  refine htotal.unique ((hasSum_zero).congr_fun fun s ↦ ?_)
+  have hs := congrArg (· * ζ ^ s) (ha s)
+  simp only [indicialPoly_def]
+  linear_combination hs
 
 /-- The derivative of `y ↦ y ^ ρ * S y` on the slit disc of convergence of `S`. -/
 private theorem hasDerivAt_cpow_mul {ρ y : ℂ} {S : ℂ → ℂ} {p : FormalMultilinearSeries ℂ ℂ ℂ}
@@ -410,40 +371,24 @@ private theorem regularSingular_recursion {ρ : ℂ} {fs gs a : ℕ → ℂ}
 
 /-! ### The logarithmic solution -/
 
-/-- With `S = ∑ aₛ ζˢ` and `F = ∑ fₛ ζˢ`, the function `2 α S + 2 ζ S' - S + F S` has the
-coefficients `dₛ = (2 (α + s) - 1) aₛ + ∑_{k ≤ s} f_{s-k} aₖ`. For `w = ζ^α S` it is
-`ζ^{2 - α} (2 w' / ζ + (F - 1) w / ζ²)`, the part of the equation applied to `w log ζ` that does
-not involve `log ζ`. -/
-private theorem hasSum_log_coeff {α ζ F : ℂ} {fs a : ℕ → ℂ} {S : ℂ → ℂ} {R : ℝ≥0∞}
-    (hS : HasFPowerSeriesOnBall S (ofScalars ℂ a) 0 R) (hζ : ‖ζ‖ₑ < R)
-    (hζf : ‖ζ‖ₑ < (ofScalars ℂ fs).radius) (hF : HasSum (fun s ↦ fs s * ζ ^ s) F) :
-    HasSum (fun n ↦ ((2 * (α + n) - 1) * a n + ∑ k ∈ range (n + 1), fs (n - k) * a k) * ζ ^ n)
-      (2 * α * S ζ + 2 * (ζ * deriv S ζ) - S ζ + F * S ζ) := by
-  have h0 := hS.hasSum_ofScalars hζ
-  have h1 := hS.hasSum_mul_deriv_ofScalars hζ
-  have hC := hasSum_sum_range_mul_of_summable_norm
-    (summable_norm_mul_pow_of_lt_radius a (hζ.trans_le hS.r_le))
-    (summable_norm_mul_pow_of_lt_radius fs hζf)
-  rw [h0.tsum_eq, hF.tsum_eq, mul_comm] at hC
-  convert (((h0.mul_left (2 * α)).add (h1.mul_left 2)).sub h0).add hC using 1
-  ext n
-  rw [sum_range_mul_pow_mul_mul_pow_sub ζ a fs,
-    sum_congr rfl fun k _ ↦ mul_comm (a k) (fs (n - k))]
-  ring
-
-/-- The forcing term `c ζᴺ D` of the logarithmic solution, as a power series: its coefficients
-vanish below `N` and are `c d_{s-N}` from `N` on. -/
-private theorem hasSum_log_forcing {α c ζ D : ℂ} {N : ℕ} {fs a : ℕ → ℂ}
-    (hD : HasSum (fun n ↦ ((2 * (α + n) - 1) * a n +
-      ∑ k ∈ range (n + 1), fs (n - k) * a k) * ζ ^ n) D) :
-    HasSum (fun s ↦ (if s < N then 0 else c * ((2 * (α + (s - N : ℕ)) - 1) * a (s - N) +
-      ∑ k ∈ range (s - N + 1), fs (s - N - k) * a k)) * ζ ^ s) (c * ζ ^ N * D) := by
-  refine (hasSum_nat_add_iff' N).mp ?_
-  rw [sum_eq_zero fun i hi ↦ by simp [mem_range.1 hi], sub_zero]
-  convert hD.mul_left (c * ζ ^ N) using 1
-  ext n
-  simp only [show ¬n + N < N by omega, ↓reduceIte, Nat.add_sub_cancel]
-  ring
+private theorem hasSum_log_forcing_of_eq {α₁ α₂ c ζ F : ℂ} {N : ℕ} {fs a : ℕ → ℂ}
+    {S : ℂ → ℂ} {R : ℝ≥0∞} (hS : HasFPowerSeriesOnBall S (ofScalars ℂ a) 0 R)
+    (hζ : ‖ζ‖ₑ < R) (hζf : ‖ζ‖ₑ < (ofScalars ℂ fs).radius)
+    (hF : HasSum (fun s ↦ fs s * ζ ^ s) F) (hN : α₁ = α₂ + N) :
+    HasSum (fun s ↦ (if s < N then 0 else c * ((2 * (α₁ + (s - N : ℕ)) - 1) * a (s - N) +
+      ∑ k ∈ range (s - N + 1), fs (s - N - k) * a k)) * ζ ^ s)
+      (c * ζ ^ N * (2 * α₁ * S ζ + 2 * (ζ * deriv S ζ) - S ζ + F * S ζ)) := by
+  have hfor := hasSum_regularSingularLogForcing_ofScalars (α₂ := α₂) (c := c) (N := N)
+    hS hζ hζf hF
+  rw [← hN] at hfor
+  refine hfor.congr_fun fun s ↦ congrArg (· * ζ ^ s) ?_
+  rcases lt_or_ge s N with hs | hs
+  · simp [hs]
+  · simp only [not_lt_of_ge hs, ↓reduceIte, regularSingularLogForcing_of_le _ _ _ hs, hN,
+      sum_range_succ, Nat.sub_self]
+    have hs' : (s : ℂ) = N + ((s - N : ℕ) : ℂ) := by exact_mod_cast (Nat.add_sub_of_le hs).symm
+    rw [hs']
+    ring
 
 /-- The two recursions of the logarithmic solution combine into one recursion for all `s`, with
 the forcing term `eₛ = c d_{s-N}` for `s ≥ N` and `eₛ = 0` for `s < N`. -/
@@ -514,7 +459,7 @@ private theorem deriv_deriv_log_add_eq_zero {α₁ α₂ c ζ fζ gζ : ℂ} {N 
   have eq1 := deriv_deriv_cpow_mul_add_eq_zero hS hζs hζ hζf hζg hF hG
     (by simp only [Pi.zero_apply, zero_mul]; exact hasSum_zero) ha
   have eq2 := deriv_deriv_cpow_mul_add_eq_zero hT hζs hζ hζf hζg hF hG
-    (hasSum_log_forcing (c := c) (N := N) (hasSum_log_coeff (α := α₁) hS hζ hζf hF)) hb
+    (hasSum_log_forcing_of_eq (c := c) hS hζ hζf hF hN) hb
   have hL1 := Complex.deriv_mul_log (h1.differentiableAt hUn) hζs
   have hL2 := Complex.deriv_deriv_mul_log (eventually_of_mem hUn fun y hy ↦
     h1.differentiableAt (hU.mem_nhds hy)) ((h1.deriv hU).differentiableAt hUn) hζs
@@ -600,9 +545,9 @@ theorem regularSingular_log_solution {z₀ α₁ α₂ c : ℂ} {N : ℕ} {r : �
     (zero_le).trans_lt hζ
   -- the series of the forcing term converges on the disc, hence so does that of the `bₛ`
   have hes := le_radius_ofScalars_of_summable _ fun ζ _ hζ ↦
-    (hasSum_log_forcing (c := c) (N := N) (hasSum_log_coeff (α := α₁)
-      (hasFPowerSeriesOnBall_tsum_mul_pow a (hr hζ) har) hζ (hζ.trans_le hfr)
-      (summable_norm_mul_pow_of_lt_radius fs (hζ.trans_le hfr)).of_norm.hasSum)).summable
+    (hasSum_log_forcing_of_eq (c := c) (hasFPowerSeriesOnBall_tsum_mul_pow a (hr hζ) har)
+      hζ (hζ.trans_le hfr)
+      (summable_norm_mul_pow_of_lt_radius fs (hζ.trans_le hfr)).of_norm.hasSum hN).summable
   have hrecB := (log_recursion_iff hN).1 ⟨hb, hb'⟩
   have hbr := le_radius_ofScalars_of_regularSingular (s₀ := 0) hfr hgr hes fun s _ ↦ hrecB s
   have hlt {z : ℂ} (hz : ‖z - z₀‖ < r) := eNorm_lt_ofReal_iff.2 hz
@@ -937,12 +882,6 @@ example {z : ℂ} (hz : z ∈ slitPlane) :
 
 /-! ### The Wronskian -/
 
-/-- The slit punctured disc `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}` is open. -/
-private theorem isOpen_slitDisc (z₀ : ℂ) (r : ℝ) :
-    IsOpen {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} :=
-  (isOpen_slitPlane.preimage (continuous_sub_right z₀)).inter
-    (isOpen_lt (continuous_norm.comp (continuous_sub_right z₀)) continuous_const)
-
 /-- The points `z₀ + t` with `0 < t < r` lie in the slit punctured disc. -/
 private theorem add_ofReal_mem_slitDisc {z₀ : ℂ} {t r : ℝ} (ht : 0 < t) (htr : t < r) :
     z₀ + t ∈ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} := by
@@ -1001,7 +940,7 @@ private theorem hasDerivAt_abelExponent_mul_wronskian {z₀ x : ℂ} {r : ℝ} {
     HasDerivAt (fun z ↦ (z - z₀) ^ fs 0 *
       cexp (∑' s : ℕ, fs (s + 1) / (s + 1) * (z - z₀) ^ (s + 1)) *
       (w₁ z * deriv w₂ z - deriv w₁ z * w₂ z)) 0 x := by
-  have hDo := isOpen_slitDisc z₀ r
+  have hDo := isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
   have hfr := le_radius_ofScalars_of_summable_sub fs fun z h0 hz ↦ (hf z h0 hz).summable
   have hU := hDo.mem_nhds hx
   obtain ⟨hx, hxr⟩ := hx
@@ -1047,19 +986,7 @@ theorem exists_wronskian_eq_of_regularSingular {z₀ : ℂ} {r : ℝ} {f g w₁ 
   rcases le_or_gt r 0 with hr | hr
   · exact ⟨0, fun z _ hz ↦ absurd ((norm_nonneg _).trans_lt hz) hr.not_gt⟩
   have hz₁ : z₀ + ((r / 2 : ℝ) : ℂ) ∈ D := add_ofReal_mem_slitDisc (by positivity) (by linarith)
-  -- `D` is star-shaped about `z₀ + r / 2`, hence preconnected
-  have hDc : IsPreconnected D := by
-    have hc : StarConvex ℝ ((r / 2 : ℝ) : ℂ) (slitPlane ∩ Metric.ball 0 r) :=
-      (starConvex_ofReal_slitPlane (by positivity)).inter ((convex_ball 0 r).starConvex
-        (by rw [mem_ball_zero_iff, norm_real, Real.norm_of_nonneg (by positivity)]; linarith))
-    have hD : D = (fun x ↦ x + -z₀) ⁻¹' (slitPlane ∩ Metric.ball 0 r) := by
-      ext z
-      simp [D, sub_eq_add_neg, dist_eq_norm]
-    rw [hD] at hz₁ ⊢
-    have hc' : StarConvex ℝ (z₀ + ((r / 2 : ℝ) : ℂ) + -z₀) (slitPlane ∩ Metric.ball 0 r) := by
-      convert hc using 1
-      ring
-    exact (hc'.preimage_add_left.isPathConnected hz₁).isConnected.isPreconnected
+  have hDc : IsPreconnected D := isPreconnected_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
   -- `K = (z - z₀)^{f₀} exp(Φ(z - z₀)) W` has derivative zero on `D`, by Abel's identity
   set K : ℂ → ℂ := fun z ↦ (z - z₀) ^ fs 0 *
     cexp (∑' s : ℕ, fs (s + 1) / (s + 1) * (z - z₀) ^ (s + 1)) *
@@ -1067,7 +994,7 @@ theorem exists_wronskian_eq_of_regularSingular {z₀ : ℂ} {r : ℝ} {f g w₁ 
   have hK (x : ℂ) (hx : x ∈ D) : HasDerivAt K 0 x :=
     hasDerivAt_abelExponent_mul_wronskian hf hd₁ hd₂ he₁ he₂ hx
   refine ⟨K (z₀ + ((r / 2 : ℝ) : ℂ)), fun z hz hzr ↦ ?_⟩
-  rw [← (isOpen_slitDisc z₀ r).is_const_of_deriv_eq_zero hDc
+  rw [← (isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r).is_const_of_deriv_eq_zero hDc
     (fun x hx ↦ (hK x hx).differentiableAt.differentiableWithinAt) (fun x hx ↦ (hK x hx).deriv)
     ⟨hz, hzr⟩ hz₁]
   simp only [K]

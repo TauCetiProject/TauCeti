@@ -14,6 +14,7 @@ import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Range reindexing for finite sums
@@ -749,11 +750,7 @@ sequences in a commutative semiring, splitting out the `k = s` boundary term. -/
 theorem sum_range_succ_mul_pow {R : Type*} [CommSemiring R] (p q : ℕ → R) (u : R) (s : ℕ) :
     (∑ k ∈ range (s + 1), (p k * u ^ k) * (q (s - k) * u ^ (s - k))) =
       ((∑ k ∈ range s, p k * q (s - k)) + p s * q 0) * u ^ s := by
-  rw [sum_range_succ, Nat.sub_self, pow_zero, mul_one, add_mul, Finset.sum_mul]
-  refine congrArg₂ (· + ·) (sum_congr rfl fun k hk ↦ ?_) (by ring)
-  have hpow : u ^ k * u ^ (s - k) = u ^ s := by
-    rw [← pow_add, Nat.add_sub_of_le (mem_range.mp hk).le]
-  rw [mul_mul_mul_comm, hpow]
+  rw [sum_range_mul_pow_mul_mul_pow_sub u p q s, sum_range_succ, Nat.sub_self, mul_comm]
 
 end TauCeti
 

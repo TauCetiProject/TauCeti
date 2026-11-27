@@ -30,6 +30,9 @@ This file records power-series and pointwise identities for the second-order dif
   `Q(α) = TauCeti.indicialPoly (fs 0) (gs 0) α`.
 * `TauCeti.deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum`: pointwise operator identity on the
   slit punctured disc `{z | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}`.
+* `TauCeti.hasSum_regularSingularLogCoeff_ofScalars` and
+  `TauCeti.hasSum_regularSingularLogForcing_ofScalars`: series expansions for the unshifted and
+  `N`-shifted logarithmic forcing operators.
 
 ## References
 
@@ -172,5 +175,50 @@ theorem deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum {z₀ σ : ℂ} {r : ℝ
     (hf z (norm_pos_iff.mpr hu0) hzb).tsum_eq, (hg z (norm_pos_iff.mpr hu0) hzb).tsum_eq, hderiv2,
     (hasDerivAt_cpow_mul_tsum hc hzs hzb).deriv]
   dsimp only [ψ, A, u]; rw [hcpow1, hcpow2]; ring
+
+/-! ### Logarithmic forcing series identities -/
+
+/-- Coefficient expansion for the logarithmic forcing operator
+`2 α S(ζ) + 2 ζ S'(ζ) - S(ζ) + F S(ζ)` applied to `S(ζ) = ∑ a_s ζ^s`: inside the radii of
+convergence of `S` and `fs`, it is the sum of the series with `n`-th coefficient
+`(2 (α + n) - 1) a_n + ∑_{k ≤ n} fs_{n - k} a_k`. -/
+theorem hasSum_regularSingularLogCoeff_ofScalars {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] {α ζ F : 𝕜} {fs a : ℕ → 𝕜} {S : 𝕜 → 𝕜} {R : ℝ≥0∞}
+    (hS : HasFPowerSeriesOnBall S (ofScalars 𝕜 a) 0 R) (hζ : ‖ζ‖ₑ < R)
+    (hζf : ‖ζ‖ₑ < (ofScalars 𝕜 fs).radius) (hF : HasSum (fun s ↦ fs s * ζ ^ s) F) :
+    HasSum (fun n ↦ ((2 * (α + n) - 1) * a n + ∑ k ∈ range (n + 1), fs (n - k) * a k) * ζ ^ n)
+      (2 * α * S ζ + 2 * (ζ * deriv S ζ) - S ζ + F * S ζ) := by
+  have h0 : HasSum (fun n ↦ a n * ζ ^ n) (S ζ) := by
+    simpa [ofScalars_apply_eq, mul_comm] using hS.hasSum (mem_eball_zero_iff.mpr hζ)
+  have h1 := hS.hasSum_mul_deriv_ofScalars hζ
+  have hC := hasSum_sum_range_mul_of_summable_norm
+    (summable_norm_mul_pow_of_lt_radius a (hζ.trans_le hS.r_le))
+    (summable_norm_mul_pow_of_lt_radius fs hζf)
+  rw [h0.tsum_eq, hF.tsum_eq, mul_comm] at hC
+  convert (((h0.mul_left (2 * α)).add (h1.mul_left 2)).sub h0).add hC using 1
+  ext n
+  rw [sum_range_succ_mul_pow a fs ζ n, sum_range_succ, Nat.sub_self,
+    sum_congr rfl fun k _ ↦ mul_comm (a k) (fs (n - k))]
+  ring
+
+/-- Shifted logarithmic forcing series identity: for `S(ζ) = ∑ a_s ζ^s`, the shifted series with
+`s`-th term `(c * regularSingularLogForcing fs a α₂ N s) * ζ ^ s` sums to
+`c * ζ ^ N * (2 * (α₂ + N) * S ζ + 2 * (ζ * deriv S ζ) - S ζ + F * S ζ)`. -/
+theorem hasSum_regularSingularLogForcing_ofScalars {α₂ c ζ F : ℂ} {N : ℕ}
+    {fs a : ℕ → ℂ} {S : ℂ → ℂ} {R : ℝ≥0∞}
+    (hS : HasFPowerSeriesOnBall S (ofScalars ℂ a) 0 R) (hζ : ‖ζ‖ₑ < R)
+    (hζf : ‖ζ‖ₑ < (ofScalars ℂ fs).radius) (hF : HasSum (fun s ↦ fs s * ζ ^ s) F) :
+    HasSum (fun s ↦ (c * regularSingularLogForcing fs a α₂ N s) * ζ ^ s)
+      (c * ζ ^ N * (2 * (α₂ + N) * S ζ + 2 * (ζ * deriv S ζ) - S ζ + F * S ζ)) := by
+  have hD := hasSum_regularSingularLogCoeff_ofScalars (α := α₂ + N) hS hζ hζf hF
+  refine (hasSum_nat_add_iff' N).mp ?_
+  rw [sum_eq_zero fun i hi ↦ by simp [regularSingularLogForcing_of_lt _ _ _ (mem_range.mp hi)],
+    sub_zero]
+  convert hD.mul_left (c * ζ ^ N) using 1
+  ext n
+  rw [regularSingularLogForcing_of_le _ _ _ (Nat.le_add_left N n), Nat.add_sub_cancel,
+    sum_range_succ, Nat.sub_self, pow_add]
+  push_cast
+  ring
 
 end TauCeti
