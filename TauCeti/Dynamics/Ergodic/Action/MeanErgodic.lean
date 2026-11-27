@@ -9,7 +9,6 @@ public import Mathlib.Dynamics.Ergodic.Action.Basic
 public import TauCeti.Analysis.Semigroups.Group.Eigenspace
 public import TauCeti.Dynamics.Ergodic.Action.Koopman
 import TauCeti.Analysis.Semigroups.Group.MeanErgodic
-import TauCeti.Dynamics.Ergodic.Action.Eigenfunction
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Group.ErgodicExtreme
 
@@ -60,14 +59,11 @@ almost everywhere constant. -/
 theorem exists_ae_eq_const_of_koopmanGroup_eq [ErgodicVAdd ℝ X μ] (u : Lp ℂ 2 μ)
     (hu : ∀ t : ℝ, koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t u = u) :
     ∃ c : ℂ, u =ᵐ[μ] Function.const X c := by
-  have hmem : u ∈ (koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top).eigenspace
-      (koopmanGroup_isUnitary μ ℂ).isComplexLinear 0 :=
-    (Semigroups.StronglyContinuousGroup.mem_eigenspace_iff _ _ _ _).2 fun t =>
-      (Eq.congr_left (hu t)).2 (by simp)
   refine ErgodicVAdd.ae_eq_const_of_forall_ae_eq_comp_vadd₀ ℝ
     (Lp.aestronglyMeasurable u).aemeasurable.nullMeasurable fun t => ?_
-  filter_upwards [(mem_eigenspace_koopmanGroup_iff 0 u).1 hmem t] with x hx
-  simpa using hx
+  have h := Lp.coeFn_compMeasurePreserving u (measurePreserving_vadd t μ)
+  rw [← koopmanGroup_apply μ ℂ 2 ENNReal.ofNat_ne_top, hu t] at h
+  exact h.symm
 
 /-- **Ergodicity from Koopman-fixed vectors.** A jointly measurable action of `ℝ` preserving a
 finite measure `μ` is ergodic if every vector of complex `L²(μ)` fixed by the Koopman group is

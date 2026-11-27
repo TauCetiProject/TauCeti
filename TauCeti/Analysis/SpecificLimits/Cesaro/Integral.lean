@@ -72,24 +72,25 @@ theorem tendsto_average_add {ψ₁ ψ₂ : ℝ → ℝ} {a₁ a₂ : ℝ}
     Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, (ψ₁ t + ψ₂ t)) atTop (𝓝 (a₁ + a₂)) := by
   simpa [intervalIntegral.integral_add (h₁i _) (h₂i _), mul_add] using h₁.add h₂
 
-/-- If `c₁` is Cesàro close to `α` in absolute value, `T⁻¹ ∫₀ᵀ |c₁ t - α| dt → 0`, and the
-continuous function `c₂` is bounded by `C` in absolute value with Cesàro limit `β`, then `c₁ c₂`
-has Cesàro limit `α β`. -/
+/-- If `c₁` is Cesàro close to `α` in absolute value, `T⁻¹ ∫₀ᵀ |c₁ t - α| dt → 0`, and `c₂` is
+bounded by `C` in absolute value with Cesàro limit `β`, then `c₁ c₂` has Cesàro limit `α β`. -/
 theorem tendsto_average_mul_of_tendsto_average_abs_sub {c₁ c₂ : ℝ → ℝ}
-    (h₁ : Continuous c₁) (h₂ : Continuous c₂) {C : ℝ} (hc₂ : ∀ t, |c₂ t| ≤ C) {α β : ℝ}
+    (h₁ : ∀ T, IntervalIntegrable c₁ volume 0 T) (h₂ : ∀ T, IntervalIntegrable c₂ volume 0 T)
+    {C : ℝ} (hc₂ : ∀ t, |c₂ t| ≤ C) {α β : ℝ}
     (hα : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, |c₁ t - α|) atTop (𝓝 0))
     (hβ : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, c₂ t) atTop (𝓝 β)) :
     Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, c₁ t * c₂ t) atTop (𝓝 (α * β)) := by
+  have hsub : ∀ T, IntervalIntegrable (fun t => c₁ t - α) volume 0 T := fun T =>
+    (h₁ T).sub intervalIntegrable_const
+  have hprod : ∀ T, IntervalIntegrable (fun t => (c₁ t - α) * c₂ t) volume 0 T := fun T =>
+    intervalIntegrable_iff.2 <| (hsub T).def'.mul_bdd (h₂ T).aestronglyMeasurable_restrict_uIoc
+      (ae_of_all _ fun t => (Real.norm_eq_abs _).le.trans (hc₂ t))
   have hsplit : ∀ T : ℝ, T⁻¹ * ∫ t in (0 : ℝ)..T, c₁ t * c₂ t =
       T⁻¹ * (∫ t in (0 : ℝ)..T, (c₁ t - α) * c₂ t) + α * (T⁻¹ * ∫ t in (0 : ℝ)..T, c₂ t) := by
     intro T
-    have hi₁ : IntervalIntegrable (fun t => (c₁ t - α) * c₂ t) volume 0 T :=
-      ((h₁.sub continuous_const).mul h₂).intervalIntegrable 0 T
-    have hi₂ : IntervalIntegrable (fun t => α * c₂ t) volume 0 T :=
-      (continuous_const.mul h₂).intervalIntegrable 0 T
     have : ∫ t in (0 : ℝ)..T, c₁ t * c₂ t =
         (∫ t in (0 : ℝ)..T, (c₁ t - α) * c₂ t) + ∫ t in (0 : ℝ)..T, α * c₂ t := by
-      rw [← intervalIntegral.integral_add hi₁ hi₂]
+      rw [← intervalIntegral.integral_add (hprod T) ((h₂ T).const_mul α)]
       congr 1
       ext t
       ring
@@ -104,9 +105,8 @@ theorem tendsto_average_mul_of_tendsto_average_abs_sub {c₁ c₂ : ℝ → ℝ}
     ← intervalIntegral.integral_const_mul]
   gcongr
   refine (intervalIntegral.abs_integral_le_integral_abs hT).trans ?_
-  refine intervalIntegral.integral_mono_on hT
-    (((h₁.sub continuous_const).mul h₂).abs.intervalIntegrable _ _)
-    (continuous_const.mul (h₁.sub continuous_const).abs |>.intervalIntegrable _ _) fun t _ => ?_
+  refine intervalIntegral.integral_mono_on hT (hprod T).abs ((hsub T).abs.const_mul C)
+    fun t _ => ?_
   rw [abs_mul, mul_comm C]
   exact mul_le_mul_of_nonneg_left (hc₂ t) (abs_nonneg _)
 

@@ -81,11 +81,10 @@ private theorem inner_rectL2_koopmanGroup [IsProbabilityMeasure μ] [IsProbabili
     ⟪rectL2 hC hD, TauCeti.koopmanGroup (μ.prod ν) ℂ 2 ENNReal.ofNat_ne_top t (rectL2 hA hB)⟫_ℂ =
       ((μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ C) * ν.real ((fun y => t +ᵥ y) ⁻¹' B ∩ D) : ℝ) :
         ℂ) := by
-  rw [TauCeti.koopmanGroup_indicatorConstLp, L2.inner_indicatorConstLp_indicatorConstLp]
   have hpre : (fun z : X × Y => t +ᵥ z) ⁻¹' A ×ˢ B =
       ((fun x => t +ᵥ x) ⁻¹' A) ×ˢ ((fun y => t +ᵥ y) ⁻¹' B) := rfl
-  simp only [hpre, prod_inter_prod, measureReal_prod_prod, inter_comm C, inter_comm D]
-  simp
+  rw [TauCeti.inner_indicatorConstLp_koopmanGroup (μ.prod ν) (hA.prod hB) (hC.prod hD) t, hpre,
+    prod_inter_prod, measureReal_prod_prod]
 
 /-- The averaged Koopman correlations of two rectangles, for `X` weakly mixing and `Y` ergodic,
 tend to `μ(A) μ(C) ν(B) ν(D)`. -/
@@ -108,8 +107,8 @@ private theorem tendsto_average_inner_rectL2 [IsProbabilityMeasure μ] [IsProbab
     simpa only [Function.comp_def, ← Complex.ofReal_inv, Complex.real_smul, mul_one,
       Complex.conj_ofReal, ← Complex.ofReal_mul, Complex.ofReal_re] using h'
   have hlim := TauCeti.tendsto_average_mul_of_tendsto_average_abs_sub
-    (TauCeti.continuous_measureReal_preimage_vadd_inter μ hA hC)
-    (TauCeti.continuous_measureReal_preimage_vadd_inter ν hB hD)
+    (fun T => (TauCeti.continuous_measureReal_preimage_vadd_inter μ hA hC).intervalIntegrable 0 T)
+    (fun T => (TauCeti.continuous_measureReal_preimage_vadd_inter ν hB hD).intervalIntegrable 0 T)
     (C := 1) (fun t => by
       rw [abs_of_nonneg measureReal_nonneg]
       exact measureReal_le_one) ((isWeaklyMixing_def.1 hμ) A C hA hC) h₂
