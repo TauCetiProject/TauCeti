@@ -7,11 +7,11 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.MinTensor.CrossNorm
 public import TauCeti.Analysis.CStarAlgebra.MinTensorNorm
+import Mathlib.Algebra.Central.TensorProduct
 import Mathlib.Topology.PartitionOfUnity
-import Mathlib.Topology.UrysohnsLemma
 import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Order.Archimedean.Basic
-import TauCeti.Algebra.TensorProduct.Mul
+import TauCeti.Topology.UrysohnsLemma
 
 /-!
 # `C(X) ⊙ B` has a unique C*-norm
@@ -171,9 +171,8 @@ private theorem norm_apply_tmul_one_mul_sub_le [NonUnitalCStarAlgebra D]
   rw [this, norm_mul]
   by_cases h0 : φ x' = 0
   · simp [h0, hδ]
-  · calc ‖φ x'‖ * ‖p.1 x' - p.1 x‖ ≤ 1 * δ :=
-          mul_le_mul (hφ x') (hloc x' h0 p hp).le (norm_nonneg _) zero_le_one
-      _ = δ := one_mul δ
+  · exact (mul_le_mul_of_nonneg_left (hloc x' h0 p hp).le (norm_nonneg _)).trans
+      (mul_le_of_le_one_left hδ (hφ x'))
 
 omit [T2Space X] in
 /-- The local bound of the upper estimate: `‖Ψ(φ ⊗ 1) Ψ(y)‖ ≤ ‖y‖_∞ + δ Σ ‖bᵢ‖` when `|φ| ≤ 1`
@@ -188,14 +187,10 @@ private theorem norm_apply_tmul_one_mul_le [NonUnitalCStarAlgebra D]
   set u := Ψ ((φ ⊗ₜ 1) * ∑ p ∈ S, p.1 ⊗ₜ p.2)
   set v := Ψ (φ ⊗ₜ T (∑ p ∈ S, p.1 ⊗ₜ p.2) x)
   have hφn : ‖φ‖ ≤ 1 := (ContinuousMap.norm_le _ zero_le_one).2 hφ
-  calc ‖u‖ = ‖v + (u - v)‖ := by rw [add_sub_cancel]
-    _ ≤ ‖v‖ + ‖u - v‖ := norm_add_le _ _
-    _ ≤ ‖T (∑ p ∈ S, p.1 ⊗ₜ p.2)‖ + δ * ∑ p ∈ S, ‖p.2‖ := by
-        refine add_le_add ?_ (norm_apply_tmul_one_mul_sub_le Ψ S x hδ hφ hloc)
-        refine (Ψ.norm_apply_tmul_le _ _).trans ?_
-        calc ‖φ‖ * ‖T (∑ p ∈ S, p.1 ⊗ₜ p.2) x‖ ≤ 1 * ‖T (∑ p ∈ S, p.1 ⊗ₜ p.2)‖ :=
-              mul_le_mul hφn (ContinuousMap.norm_coe_le_norm _ _) (norm_nonneg _) zero_le_one
-          _ = _ := one_mul _
+  refine (norm_le_norm_add_norm_sub' u v).trans
+    (add_le_add ?_ (norm_apply_tmul_one_mul_sub_le Ψ S x hδ hφ hloc))
+  refine (Ψ.norm_apply_tmul_le _ _).trans ?_
+  exact (mul_le_of_le_one_left (norm_nonneg _) hφn).trans (ContinuousMap.norm_coe_le_norm _ _)
 
 /-- The `N`-th root `x ↦ ρ(x) ^ (1 / N)` of a function `0 ≤ ρ ≤ 1`, as a complex function. -/
 private def rootFun (ρ : C(X, ℝ)) (N : ℕ) : C(X, ℂ) :=
@@ -246,8 +241,10 @@ private theorem apply_pow_eq_sum {E : Type*} [CStarAlgebra E] (Ψ : C(X, ℂ) �
     ext x'
     rw [ContinuousMap.pow_apply, rootFun_apply, ContinuousMap.coe_mk, ← Complex.ofReal_pow,
       Real.rpow_inv_natCast_pow (ρ.nonneg i x') hN]
-  rw [hroot, hn, map_pow_succ Ψ _ n, ← hn,
-    ((Algebra.TensorProduct.commute_tmul_one (rootFun (ρ i) N) _).map Ψ).mul_pow, hn]
+  have hc : Commute (rootFun (ρ i) N ⊗ₜ[ℂ] (1 : B)) z :=
+    (Subalgebra.mem_center_iff.1 (Algebra.TensorProduct.includeLeft_map_center_le ℂ C(X, ℂ) B
+      ⟨rootFun (ρ i) N, by simp [Subalgebra.center_eq_top], rfl⟩) z).symm
+  rw [hroot, hn, map_pow_succ Ψ _ n, ← hn, (hc.map Ψ).mul_pow, hn]
 
 /-- The upper estimate for elements with self-adjoint image. -/
 private theorem norm_apply_le_of_isSelfAdjoint [CStarAlgebra D] (Ψ : C(X, ℂ) ⊗[ℂ] B →⋆ₙₐ[ℂ] D)
@@ -296,19 +293,6 @@ theorem _root_.NonUnitalStarAlgHom.norm_apply_le_norm_continuousMapTensorHom
     CStarRing.norm_star_mul_self, hΨ'] at h
   exact (mul_self_le_mul_self_iff (norm_nonneg _) (norm_nonneg _)).2 h
 
-/-- An Urysohn function at `x`: `|g| ≤ 1`, `g x = 1`, and `g` vanishes off the open set `U ∋ x`. -/
-private theorem exists_bump_of_isOpen {U : Set X} (hU : IsOpen U) {x : X} (hx : x ∈ U) :
-    ∃ g : C(X, ℂ), (∀ x', ‖g x'‖ ≤ 1) ∧ g x = 1 ∧ ∀ x', g x' ≠ 0 → x' ∈ U := by
-  obtain ⟨f, hf0, hf1, hf01⟩ := exists_continuous_zero_one_of_isClosed hU.isClosed_compl
-    isClosed_singleton (Set.disjoint_singleton_right.2 fun h ↦ h hx)
-  refine ⟨⟨fun x' ↦ ((f x' : ℝ) : ℂ), by fun_prop⟩, fun x' ↦ ?_, ?_, fun x' hx' ↦ ?_⟩
-  · rw [ContinuousMap.coe_mk, Complex.norm_real, Real.norm_of_nonneg (hf01 x').1]
-    exact (hf01 x').2
-  · rw [ContinuousMap.coe_mk, hf1 (Set.mem_singleton x), Pi.one_apply, Complex.ofReal_one]
-  · by_contra hU'
-    apply hx'
-    rw [ContinuousMap.coe_mk, hf0 hU', Pi.zero_apply, Complex.ofReal_zero]
-
 /-- **Lower bound.** Every injective star homomorphism from `C(X, ℂ) ⊗[ℂ] B` into a C*-algebra
 dominates the supremum norm of `TauCeti.continuousMapTensorHom`. -/
 theorem norm_continuousMapTensorHom_le_norm_apply [NonUnitalCStarAlgebra D]
@@ -318,26 +302,21 @@ theorem norm_continuousMapTensorHom_le_norm_apply [NonUnitalCStarAlgebra D]
   refine le_of_forall_pos_le_add fun ε hε ↦ ?_
   obtain ⟨S, rfl⟩ := TensorProduct.exists_finset y
   obtain ⟨δ, hδ, hδM⟩ := exists_pos_mul_sum_le S hε
-  obtain ⟨g, hg1, hgx, hloc⟩ := exists_bump_of_isOpen (isOpen_nearSet S x δ)
+  obtain ⟨g, hg1, hgx, hloc⟩ := exists_bump_of_isOpen (𝕜 := ℂ) (isOpen_nearSet S x δ)
     (mem_nearSet_self S x hδ)
   have hgn : ‖g‖ = 1 := le_antisymm ((ContinuousMap.norm_le _ zero_le_one).2 hg1)
     (by simpa [hgx] using g.norm_coe_le_norm x)
   have h1 := norm_apply_tmul_one_mul_sub_le Ψ S x hδ.le hg1 hloc
   have hu : ‖Ψ ((g ⊗ₜ 1) * ∑ p ∈ S, p.1 ⊗ₜ p.2)‖ ≤ ‖Ψ (∑ p ∈ S, p.1 ⊗ₜ p.2)‖ := by
     rw [map_mul]
-    refine (norm_mul_le _ _).trans ?_
-    calc ‖Ψ (g ⊗ₜ 1)‖ * ‖Ψ (∑ p ∈ S, p.1 ⊗ₜ p.2)‖ ≤ 1 * ‖Ψ (∑ p ∈ S, p.1 ⊗ₜ p.2)‖ := by
-          refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
-          rw [← hgn]
-          exact Ψ.norm_apply_tmul_one_le g
-      _ = _ := one_mul _
+    exact (norm_mul_le _ _).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (hgn ▸ Ψ.norm_apply_tmul_one_le g))
   set T := continuousMapTensorHom X B
   set u := Ψ ((g ⊗ₜ 1) * ∑ p ∈ S, p.1 ⊗ₜ p.2)
   set v := Ψ (g ⊗ₜ T (∑ p ∈ S, p.1 ⊗ₜ p.2) x)
   calc ‖T (∑ p ∈ S, p.1 ⊗ₜ p.2) x‖ = ‖v‖ := by
         rw [norm_apply_tmul_of_injective hΨ, hgn, one_mul]
-    _ = ‖u + (v - u)‖ := by rw [add_sub_cancel]
-    _ ≤ ‖u‖ + ‖v - u‖ := norm_add_le _ _
+    _ ≤ ‖u‖ + ‖v - u‖ := norm_le_norm_add_norm_sub' v u
     _ ≤ ‖Ψ (∑ p ∈ S, p.1 ⊗ₜ p.2)‖ + ε := add_le_add hu (by rw [norm_sub_rev]; linarith)
 
 variable (X B)

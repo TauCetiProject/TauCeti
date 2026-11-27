@@ -15,7 +15,6 @@ Multiplication formulas and anticommutation criteria for `A ⊗[K] B` over a com
 semiring. The anticommutation criteria need only nonunital, nonassociative semirings whose
 multiplication is bilinear over `K`. The formulas for multiplication by `a ⊗ₜ 1` use a
 `K`-algebra `A` and a possibly nonassociative semiring `B` with `K`-bilinear multiplication.
-When `A` is commutative, `a ⊗ₜ 1` is central.
 
 ## Main results
 
@@ -23,7 +22,6 @@ When `A` is commutative, `a ⊗ₜ 1` is central.
   `A`-module action on `A ⊗[K] B`.
 * `Algebra.TensorProduct.basis_repr_mul_tmul_one`: multiplying on the right by `a ⊗ₜ 1` multiplies
   each coordinate against `Algebra.TensorProduct.basis` by `a` on the right.
-* `Algebra.TensorProduct.commute_tmul_one`: `a ⊗ₜ 1` is central when `A` is commutative.
 * `Algebra.TensorProduct.tmul_anticommute_of_left` and
   `Algebra.TensorProduct.tmul_anticommute_of_right`: pure tensors anticommute when the factors
   on one side anticommute and the factors on the other side commute.
@@ -84,12 +82,5 @@ theorem basis_repr_mul_tmul_one (a : A) (x : A ⊗[K] B) (j : ι) :
   | add x y hx hy => simp [add_mul, hx, hy]
 
 end Semiring
-
-/-- When the left factor is commutative, `a ⊗ₜ 1` is central in `A ⊗[K] B`. -/
-theorem commute_tmul_one [CommSemiring A] [Algebra K A] [Semiring B] [Algebra K B] (a : A)
-    (x : A ⊗[K] B) : Commute (a ⊗ₜ[K] (1 : B)) x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul a' b => rw [commute_iff_eq, tmul_mul_tmul, tmul_mul_tmul, mul_comm a a', one_mul, mul_one]
-  | add x y hx hy => exact hx.add_right hy
 
 end Algebra.TensorProduct

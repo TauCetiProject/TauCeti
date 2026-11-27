@@ -5,15 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.UrysohnsLemma
 
 /-!
-# Continuous maps agreeing with a map continuous on an open set
+# Continuous maps agreeing with a map continuous on an open set, and bump functions
 
 In a normal space, a map into a topological real module that is continuous on an open set `Ω`
 agrees on each closed subset `K ⊆ Ω` with a map continuous everywhere
 (`ContinuousOn.exists_continuous_eqOn_of_isClosed`): multiply it by a Urysohn cutoff equal to `1`
 on `K` and to `0` off an open `W ⊇ K` with `closure W ⊆ Ω`.
+
+In a normal T1 space, every point `x` of an open set `U` carries an `RCLike`-valued Urysohn
+function `g` with `‖g‖ ≤ 1`, `g x = 1` and `g = 0` off `U` (`TauCeti.exists_bump_of_isOpen`).
 -/
 
 public section
@@ -36,3 +40,21 @@ theorem ContinuousOn.exists_continuous_eqOn_of_isClosed {X E : Type*} [Topologic
   exact ⟨fun x ↦ χ x • u x, (χ.continuous.continuousOn.smul hu).continuous_of_tsupport_subset hΩ
     (((tsupport_smul_subset_left _ _).trans (closure_mono hχ)).trans hWΩ),
     fun x hx ↦ by simp [hχK hx]⟩
+
+namespace TauCeti
+
+/-- An Urysohn function at `x`: `‖g‖ ≤ 1`, `g x = 1`, and `g` vanishes off the open set `U ∋ x`. -/
+theorem exists_bump_of_isOpen {X 𝕜 : Type*} [TopologicalSpace X] [NormalSpace X] [T1Space X]
+    [RCLike 𝕜] {U : Set X} (hU : IsOpen U) {x : X} (hx : x ∈ U) :
+    ∃ g : C(X, 𝕜), (∀ x', ‖g x'‖ ≤ 1) ∧ g x = 1 ∧ ∀ x', g x' ≠ 0 → x' ∈ U := by
+  obtain ⟨f, hf0, hf1, hf01⟩ := exists_continuous_zero_one_of_isClosed hU.isClosed_compl
+    isClosed_singleton (disjoint_singleton_right.2 fun h ↦ h hx)
+  refine ⟨⟨fun x' ↦ ((f x' : ℝ) : 𝕜), by fun_prop⟩, fun x' ↦ ?_, ?_, fun x' hx' ↦ ?_⟩
+  · rw [ContinuousMap.coe_mk, RCLike.norm_ofReal, abs_of_nonneg (hf01 x').1]
+    exact (hf01 x').2
+  · rw [ContinuousMap.coe_mk, hf1 (mem_singleton x), Pi.one_apply, RCLike.ofReal_one]
+  · by_contra hU'
+    apply hx'
+    rw [ContinuousMap.coe_mk, hf0 hU', Pi.zero_apply, RCLike.ofReal_zero]
+
+end TauCeti

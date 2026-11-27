@@ -24,6 +24,9 @@ star version of Mathlib's `Algebra.TensorProduct.map`.
 ## Main declarations
 
 * `Algebra.TensorProduct.liftNonUnitalStarAlgHom`: the star homomorphism `a ⊗ b ↦ φ a * ψ b`.
+* `Algebra.TensorProduct.includeLeftNonUnitalStarAlgHom` and
+  `Algebra.TensorProduct.includeRightNonUnitalStarAlgHom`: the star homomorphisms `a ↦ a ⊗ 1`
+  and `b ↦ 1 ⊗ b`.
 * `Algebra.TensorProduct.mapNonUnitalStarAlgHom`: the star homomorphism `a ⊗ b ↦ f a ⊗ g b`,
   with `Algebra.TensorProduct.mapNonUnitalStarAlgHom_id` and
   `Algebra.TensorProduct.mapNonUnitalStarAlgHom_comp`.
@@ -91,6 +94,50 @@ theorem liftNonUnitalStarAlgHom_tmul (h : ∀ a b, Commute (φ a) (ψ b)) (a : A
   (rfl)
 
 end Lift
+
+section Include
+
+variable {R A B : Type*} [CommSemiring R] [StarRing R]
+
+/-- The star homomorphism `a ↦ a ⊗ 1` from `A` into `A ⊗[R] B`, for unital `B`: the non-unital
+star version of Mathlib's `Algebra.TensorProduct.includeLeft`. -/
+noncomputable def includeLeftNonUnitalStarAlgHom [NonUnitalSemiring A] [Module R A]
+    [SMulCommClass R A A] [IsScalarTower R A A] [StarRing A] [StarModule R A] [Semiring B]
+    [Algebra R B] [StarRing B] [StarModule R B] : A →⋆ₙₐ[R] A ⊗[R] B where
+  toFun a := a ⊗ₜ 1
+  map_smul' c a := TensorProduct.smul_tmul' c a 1 |>.symm
+  map_zero' := TensorProduct.zero_tmul A 1
+  map_add' a a' := TensorProduct.add_tmul a a' 1
+  map_mul' a a' := by rw [tmul_mul_tmul, one_mul]
+  map_star' a := by rw [TensorProduct.star_tmul, star_one]
+
+@[simp]
+theorem includeLeftNonUnitalStarAlgHom_apply [NonUnitalSemiring A] [Module R A]
+    [SMulCommClass R A A] [IsScalarTower R A A] [StarRing A] [StarModule R A] [Semiring B]
+    [Algebra R B] [StarRing B] [StarModule R B] (a : A) :
+    includeLeftNonUnitalStarAlgHom (B := B) a = a ⊗ₜ[R] 1 :=
+  (rfl)
+
+/-- The star homomorphism `b ↦ 1 ⊗ b` from `B` into `A ⊗[R] B`, for unital `A`: the non-unital
+star version of Mathlib's `Algebra.TensorProduct.includeRight`. -/
+noncomputable def includeRightNonUnitalStarAlgHom [Semiring A] [Algebra R A] [StarRing A]
+    [StarModule R A] [NonUnitalSemiring B] [Module R B] [SMulCommClass R B B]
+    [IsScalarTower R B B] [StarRing B] [StarModule R B] : B →⋆ₙₐ[R] A ⊗[R] B where
+  toFun b := 1 ⊗ₜ b
+  map_smul' c b := TensorProduct.tmul_smul c 1 b
+  map_zero' := TensorProduct.tmul_zero B 1
+  map_add' b b' := TensorProduct.tmul_add 1 b b'
+  map_mul' b b' := by rw [tmul_mul_tmul, one_mul]
+  map_star' b := by rw [TensorProduct.star_tmul, star_one]
+
+@[simp]
+theorem includeRightNonUnitalStarAlgHom_apply [Semiring A] [Algebra R A] [StarRing A]
+    [StarModule R A] [NonUnitalSemiring B] [Module R B] [SMulCommClass R B B]
+    [IsScalarTower R B B] [StarRing B] [StarModule R B] (b : B) :
+    includeRightNonUnitalStarAlgHom (A := A) b = 1 ⊗ₜ[R] b :=
+  (rfl)
+
+end Include
 
 section Map
 

@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Star.TensorProduct
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import TauCeti.Algebra.Star.TensorProductLift
+import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Separation
 
@@ -17,8 +19,9 @@ import TauCeti.LinearAlgebra.TensorProduct.Separation
 Let `A` and `B` be unital C*-algebras. A C*-norm on the algebraic tensor product `A ⊗[ℂ] B` is
 presented as `x ↦ ‖Ψ x‖` for an injective star homomorphism `Ψ : A ⊗[ℂ] B → D` into a
 C*-algebra `D`. Such a `Ψ` restricts to commuting star homomorphisms `a ↦ Ψ (a ⊗ 1)` and
-`b ↦ Ψ (1 ⊗ b)` whose products are the values of `Ψ` on elementary tensors, so
-`‖Ψ (a ⊗ b)‖ ≤ ‖a‖ ‖b‖` for every star homomorphism `Ψ`
+`b ↦ Ψ (1 ⊗ b)` (its compositions with `Algebra.TensorProduct.includeLeftNonUnitalStarAlgHom`
+and `Algebra.TensorProduct.includeRightNonUnitalStarAlgHom`) whose products are the values of
+`Ψ` on elementary tensors, so `‖Ψ (a ⊗ b)‖ ≤ ‖a‖ ‖b‖` for every star homomorphism `Ψ`
 (`NonUnitalStarAlgHom.norm_apply_tmul_le`). This file proves the reverse inequality for
 injective `Ψ`: every C*-norm on `A ⊗[ℂ] B` is a cross norm, `‖Ψ (a ⊗ b)‖ = ‖a‖ ‖b‖`
 (`TauCeti.norm_apply_tmul_of_injective`).
@@ -55,51 +58,15 @@ namespace TauCeti
 variable {A : Type u} {B : Type v} {D : Type w} [CStarAlgebra A] [CStarAlgebra B]
   [NonUnitalCStarAlgebra D]
 
-/-- The restriction `a ↦ Ψ (a ⊗ 1)` of a star homomorphism `Ψ` out of `A ⊗[ℂ] B` to the left
-factor. -/
-private def tensorLeftHom (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) : A →⋆ₙₐ[ℂ] D where
-  toFun a := Ψ (a ⊗ₜ 1)
-  map_smul' c a := by simp [← map_smul, smul_tmul']
-  map_zero' := by simp
-  map_add' a a' := by simp [add_tmul]
-  map_mul' a a' := by
-    rw [← map_mul, Algebra.TensorProduct.tmul_mul_tmul, mul_one]
-  map_star' a := by
-    rw [← map_star, TensorProduct.star_tmul, star_one]
-
-/-- The restriction `b ↦ Ψ (1 ⊗ b)` of a star homomorphism `Ψ` out of `A ⊗[ℂ] B` to the right
-factor. -/
-private def tensorRightHom (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) : B →⋆ₙₐ[ℂ] D where
-  toFun b := Ψ (1 ⊗ₜ b)
-  map_smul' c b := by simp [← map_smul, tmul_smul]
-  map_zero' := by simp
-  map_add' b b' := by simp [tmul_add]
-  map_mul' b b' := by
-    rw [← map_mul, Algebra.TensorProduct.tmul_mul_tmul, mul_one]
-  map_star' b := by
-    rw [← map_star, TensorProduct.star_tmul, star_one]
-
-private theorem tensorLeftHom_apply (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) (a : A) :
-    tensorLeftHom Ψ a = Ψ (a ⊗ₜ 1) :=
-  rfl
-
-private theorem tensorRightHom_apply (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) (b : B) :
-    tensorRightHom Ψ b = Ψ (1 ⊗ₜ b) :=
-  rfl
-
-/-- A star homomorphism out of `A ⊗[ℂ] B` is the product of its restrictions on elementary
-tensors. -/
-private theorem tensorLeftHom_mul_tensorRightHom (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) (a : A) (b : B) :
-    tensorLeftHom Ψ a * tensorRightHom Ψ b = Ψ (a ⊗ₜ b) := by
-  rw [tensorLeftHom_apply, tensorRightHom_apply, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul,
-    mul_one, one_mul]
-
 /-- Every star homomorphism out of `A ⊗[ℂ] B` into a C*-algebra is bounded by `‖a‖ ‖b‖` on
 `a ⊗ b`. -/
 theorem _root_.NonUnitalStarAlgHom.norm_apply_tmul_le (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) (a : A)
     (b : B) :
     ‖Ψ (a ⊗ₜ b)‖ ≤ ‖a‖ * ‖b‖ := by
-  rw [← tensorLeftHom_mul_tensorRightHom]
+  have h : Ψ (a ⊗ₜ b) = (Ψ.comp Algebra.TensorProduct.includeLeftNonUnitalStarAlgHom) a *
+      (Ψ.comp Algebra.TensorProduct.includeRightNonUnitalStarAlgHom) b := by
+    simp [← map_mul]
+  rw [h]
   exact (norm_mul_le _ _).trans (mul_le_mul (NonUnitalStarAlgHom.norm_apply_le _ _)
     (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _) (norm_nonneg _))
 
@@ -107,8 +74,8 @@ theorem _root_.NonUnitalStarAlgHom.norm_apply_tmul_le (Ψ : A ⊗[ℂ] B →⋆�
 `a ⊗ 1`. -/
 theorem _root_.NonUnitalStarAlgHom.norm_apply_tmul_one_le (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) (a : A) :
     ‖Ψ (a ⊗ₜ 1)‖ ≤ ‖a‖ := by
-  rw [← tensorLeftHom_apply]
-  exact NonUnitalStarAlgHom.norm_apply_le _ _
+  simpa using NonUnitalStarAlgHom.norm_apply_le
+    (Ψ.comp Algebra.TensorProduct.includeLeftNonUnitalStarAlgHom) a
 
 /-- The real functions of the proof of `TauCeti.one_le_norm_apply_tmul_of_injective`: with
 `0 < t < s < 1`, `g` is `0` on `(-∞, t]` and `1` on `[s, ∞)`. -/
@@ -216,12 +183,6 @@ private theorem exists_cutoff_params {c : ℝ} (hc0 : 0 ≤ c) (hc1 : c < 1) :
   rw [← mul_inv, ← pow_two, Real.sq_sqrt hq0.le, inv_mul_lt_iff₀ hq0, mul_one, hq]
   linarith
 
-/-- Normalizing `star x * x` by `‖x‖ ^ 2` gives an element of norm one. -/
-private theorem norm_inv_norm_sq_smul_star_mul_self {C : Type*} [CStarAlgebra C] {x : C}
-    (hx : x ≠ 0) : ‖(‖x‖ ^ 2)⁻¹ • (star x * x)‖ = 1 := by
-  rw [norm_smul, CStarRing.norm_star_mul_self, norm_inv, norm_pow, Real.norm_of_nonneg
-    (norm_nonneg x), pow_two, inv_mul_cancel₀ (by positivity)]
-
 /-- The core of `TauCeti.norm_apply_tmul_of_injective`: for an injective `Ψ` and positive `a`, `b`
 of norm one, `‖Ψ (a ⊗ b)‖ ≥ 1`. -/
 theorem one_le_norm_apply_tmul_of_injective [PartialOrder A] [StarOrderedRing A]
@@ -271,7 +232,8 @@ theorem norm_apply_tmul_of_injective {Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D} (h�
   have ha' : 0 ≤ a' := smul_nonneg (by positivity) (star_mul_self_nonneg a)
   have hb' : 0 ≤ b' := smul_nonneg (by positivity) (star_mul_self_nonneg b)
   have key := one_le_norm_apply_tmul_of_injective hΨ ha' hb'
-    (norm_inv_norm_sq_smul_star_mul_self ha) (norm_inv_norm_sq_smul_star_mul_self hb)
+    (CStarRing.norm_inv_norm_sq_smul_star_mul_self ha)
+    (CStarRing.norm_inv_norm_sq_smul_star_mul_self hb)
   have heq : Ψ (a' ⊗ₜ b') =
       (((‖a‖ ^ 2)⁻¹ * (‖b‖ ^ 2)⁻¹ : ℝ) : ℂ) • (star (Ψ (a ⊗ₜ b)) * Ψ (a ⊗ₜ b)) := by
     rw [← map_star, ← map_mul, TensorProduct.star_tmul, Algebra.TensorProduct.tmul_mul_tmul,
