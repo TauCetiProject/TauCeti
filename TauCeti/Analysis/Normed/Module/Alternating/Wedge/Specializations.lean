@@ -71,6 +71,18 @@ theorem wedge_smul_right (c : ℝ) (φ : E [⋀^Fin k]→L[ℝ] ℝ)
     (ψ : E [⋀^Fin l]→L[ℝ] ℝ) : wedge φ (c • ψ) = c • wedge φ ψ :=
   pairedWedge_smul_right _ _ _ _ _
 
+/-- The real wedge distributes over finite sums in its first argument. -/
+@[simp]
+theorem wedge_sum_left {ι : Type*} (s : Finset ι) (φ : ι → E [⋀^Fin k]→L[ℝ] ℝ)
+    (ψ : E [⋀^Fin l]→L[ℝ] ℝ) : wedge (∑ i ∈ s, φ i) ψ = ∑ i ∈ s, wedge (φ i) ψ :=
+  pairedWedge_sum_left _ _ _ _ _
+
+/-- The real wedge distributes over finite sums in its second argument. -/
+@[simp]
+theorem wedge_sum_right {ι : Type*} (s : Finset ι) (φ : E [⋀^Fin k]→L[ℝ] ℝ)
+    (ψ : ι → E [⋀^Fin l]→L[ℝ] ℝ) : wedge φ (∑ i ∈ s, ψ i) = ∑ i ∈ s, wedge φ (ψ i) :=
+  pairedWedge_sum_right _ _ _ _ _
+
 /-- The real wedge vanishes when its first form is zero. -/
 @[simp]
 theorem wedge_zero_left (ψ : E [⋀^Fin l]→L[ℝ] ℝ) : wedge (0 : E [⋀^Fin k]→L[ℝ] ℝ) ψ = 0 :=

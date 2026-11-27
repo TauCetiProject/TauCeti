@@ -18,6 +18,9 @@ its derivative `mvfderiv I f x` sends a family of tangent vectors at `x` on whic
 volume form is positive to a family on which the volume form of `F` is positive, and conversely
 (`TauCeti.Manifold.Orientation.IsOrientationPreservingAt.volumeForm_mvfderiv_comp_pos_iff`).
 
+On an oriented Riemannian surface the volume form of a pair of tangent vectors is the area form of
+the oriented tangent plane (`TauCeti.Manifold.Orientation.riemannianVolumeForm_eq_areaForm`).
+
 For an oriented Riemannian surface and a map `φ` into `ℂ` with its constant standard orientation
 `Complex.orientation`, the volume form of `ℂ` is the area form `(w, z) ↦ Im (conj w * z)`.
 If `φ` preserves orientations at `x`, a pair of tangent vectors has positive area form exactly
@@ -60,6 +63,15 @@ theorem IsOrientationPreservingAt.volumeForm_mvfderiv_comp_pos_iff {n : ℕ} {F 
     simp [e', mvfderiv, ← he]
   rw [riemannianVolumeForm_apply, hv, ← hmap', _root_.Orientation.volumeForm_map_comp_pos_iff]
 
+/-- On an oriented Riemannian surface, the volume form evaluated on a pair `![v₀, v₁]` is the
+area form `ω(v₀, v₁)` of the oriented tangent plane. -/
+theorem riemannianVolumeForm_eq_areaForm (o : Manifold.Orientation I M (Fin 2)) {x : M}
+    (v₀ v₁ : TangentSpace I x) :
+    riemannianVolumeForm o x ![v₀, v₁] =
+      (letI := o.fact_finrank_tangentSpace x; (o.orientationAt x).areaForm v₀ v₁) := by
+  let := o.fact_finrank_tangentSpace x
+  rw [riemannianVolumeForm_apply, (o.orientationAt x).areaForm_to_volumeForm]
+
 /-- If `φ` maps an oriented Riemannian surface into `ℂ` with its constant standard orientation
 `Complex.orientation` and preserves orientations at `x`, then
 `0 < Im (conj (mvfderiv I φ x X) * mvfderiv I φ x Y)` exactly when the area form is positive on
@@ -74,7 +86,7 @@ theorem IsOrientationPreservingAt.im_conj_mvfderiv_mul_pos_iff
   let := o.fact_finrank_tangentSpace x
   have : Fact (Module.finrank ℝ ℂ = 2) := Complex.finrank_real_complex_fact
   have h := hφ.volumeForm_mvfderiv_comp_pos_iff ![X, Y]
-  rw [riemannianVolumeForm_apply, ← Orientation.areaForm_to_volumeForm] at h
+  rw [riemannianVolumeForm_eq_areaForm] at h
   rw [← h, ← Complex.areaForm, Orientation.areaForm_to_volumeForm]
   congr! 2
   ext i

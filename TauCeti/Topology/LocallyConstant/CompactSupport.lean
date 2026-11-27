@@ -56,6 +56,8 @@ are treated in `TauCeti.Topology.Algebra.Group.LocallyConstant.CompactSupport`.
   linear map into `C_c^∞(X, M)` whose range contains every `1_K • m` is surjective.
 * `LocallyConstant.comap_subtypeVal_compactOpenIndicator`: restricting `1_W • m` to a subspace
   gives the indicator of the compact open set that `W` cuts out of it.
+* `LocallyConstant.map_compactOpenIndicator`: composing `1_K • m` with a map preserving `0` gives
+  the indicator `1_K • f m`.
 * `LocallyConstant.compactlySupported_eq_top`, `LocallyConstant.compactlySupported_eq_bot`: every
   locally constant function on a compact space is a test function, and on a preconnected
   noncompact space, such as `ℝ`, the only test function is `0`.
@@ -164,6 +166,14 @@ theorem comap_subtypeVal_compactOpenIndicator {Z : Set X} {W : CompactOpens X}
   have hzK : (z : X) ∈ (W : Set X) ↔ z ∈ (K : Set Z) := by rw [← h, mem_preimage]
   by_cases hz : z ∈ (K : Set Z) <;> simp [hz, hzK]
 
+/-- Composing the indicator `1_K • m` of a compact open set with a map `f` preserving `0` gives the
+indicator `1_K • f m`. -/
+@[simp]
+theorem map_compactOpenIndicator {N : Type*} [Zero N] {f : M → N} (hf : f 0 = 0)
+    (K : CompactOpens X) (m : M) :
+    (compactOpenIndicator K m).map f = compactOpenIndicator K (f m) :=
+  ext fun x => by by_cases hx : x ∈ K <;> simp [hx, hf]
+
 end Indicator
 
 end Zero
@@ -245,6 +255,13 @@ theorem compactlySupported.coeFn_injective :
 theorem compactlySupported.ext {f g : compactlySupported R X M}
     (h : ∀ x, (f : LocallyConstant X M) x = (g : LocallyConstant X M) x) : f = g :=
   compactlySupported.coeFn_injective (funext h)
+
+/-- Composing a test function with a map `g` preserving `0` gives a test function, with values
+in any module over any semiring. -/
+theorem map_mem_compactlySupported {S N : Type*} [Semiring S] [AddCommMonoid N] [Module S N]
+    {f : LocallyConstant X M} (hf : f ∈ compactlySupported R X M) {g : M → N} (hg : g 0 = 0) :
+    f.map g ∈ compactlySupported S X N :=
+  mem_compactlySupported.2 ((mem_compactlySupported.1 hf).comp_left hg)
 
 /-- The indicator of a compact clopen set `K`, for instance `1_K • m` when `f = const X m`, has
 compact support. -/
