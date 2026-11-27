@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Topology.Covering.AddCircle
+public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Convex.Contractible
@@ -27,7 +28,9 @@ particular a vector field on the circle, read as a real function, is as smooth a
 The tangent lines of the circle carry the norm of `ℝ`, and a curve whose velocity has norm at most
 `L` moves by at most `L` per unit time for the distance of the circle
 (`AddCircle.dist_le_mul_of_hasMFDerivAt`): a continuous lift of the curve to `ℝ` has the same
-velocity, and the quotient map does not increase distances.
+velocity, and the quotient map does not increase distances. In particular the time-dependent flow
+of a `C¹` field bounded by `L` moves every angle by at most `L` per unit time
+(`AddCircle.dist_timeDependentFlowOf_le`).
 
 ## Main results
 
@@ -38,6 +41,8 @@ velocity, and the quotient map does not increase distances.
   are.
 * `AddCircle.dist_le_mul_of_hasMFDerivAt`: a curve of the circle with velocity bounded by `L`
   moves by at most `L |t - s|` between the times `s` and `t`.
+* `AddCircle.dist_timeDependentFlowOf_le`: the time-dependent flow of a `C¹` field on the circle
+  bounded by `L` moves every angle by at most `L |t - s|` from the time `s` to the time `t`.
 -/
 
 public section
@@ -109,28 +114,43 @@ theorem contMDiff_totalSpace_mk_iff :
     fun y ↦ (contMDiffAt_totalSpace_mk_iff.1 (h y)).2⟩,
     fun h y ↦ contMDiffAt_totalSpace_mk_iff.2 ⟨h.1 y, h.2 y⟩⟩
 
-/-- **A curve of the circle with bounded velocity is Lipschitz.** If the curve `γ` of the circle has
-velocity `v u` at every time `u`, read in the tangent line `ℝ`, and `|v u| ≤ L` for the times `u`
-between `s` and `t`, then `dist (γ t) (γ s) ≤ L |t - s|`. -/
+/-- **A curve of the circle with bounded velocity is Lipschitz.** If the continuous curve `γ` of the
+circle has velocity `v u` at every time `u` between `s` and `t`, read in the tangent line `ℝ`, and
+`|v u| ≤ L` for these times, then `dist (γ t) (γ s) ≤ L |t - s|`. -/
 theorem dist_le_mul_of_hasMFDerivAt {γ : ℝ → AddCircle p} {v : ℝ → ℝ} {L s t : ℝ}
-    (hγ : ∀ u, HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) γ u ((1 : ℝ →L[ℝ] ℝ).smulRight (v u)))
+    (hγc : Continuous γ)
+    (hγ : ∀ u ∈ uIcc s t, HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) γ u ((1 : ℝ →L[ℝ] ℝ).smulRight (v u)))
     (hv : ∀ u ∈ uIcc s t, |v u| ≤ L) :
     dist (γ t) (γ s) ≤ L * |t - s| := by
   -- Lift the curve continuously to `ℝ` through the covering map.
-  obtain ⟨Γ, ⟨-, hΓ⟩, -⟩ := (isCoveringMap_coe p).existsUnique_continuousMap_lifts
-    ⟨γ, continuous_iff_continuousAt.2 fun u ↦ (hγ u).continuousAt⟩ 0
+  obtain ⟨Γ, ⟨-, hΓ⟩, -⟩ := (isCoveringMap_coe p).existsUnique_continuousMap_lifts ⟨γ, hγc⟩ 0
     (Classical.choose (QuotientAddGroup.mk_surjective (γ 0)))
     (Classical.choose_spec (QuotientAddGroup.mk_surjective (γ 0)))
   have hlift (u : ℝ) : (Γ u : AddCircle p) = γ u := congrFun hΓ u
   -- The lift has the velocity of the curve as its derivative.
   have hΓγ : (fun u ↦ (Γ u : AddCircle p)) = γ := funext hlift
-  have hderiv (u : ℝ) : HasDerivAt Γ (v u) u :=
-    hasDerivAt_of_hasMFDerivAt_coe_comp Γ.continuous.continuousAt (hΓγ ▸ hγ u)
+  have hderiv (u : ℝ) (hu : u ∈ uIcc s t) : HasDerivAt Γ (v u) u :=
+    hasDerivAt_of_hasMFDerivAt_coe_comp Γ.continuous.continuousAt (hΓγ ▸ hγ u hu)
   have hbound : ‖Γ t - Γ s‖ ≤ L * ‖t - s‖ :=
     (convex_uIcc s t).norm_image_sub_le_of_norm_hasDerivWithin_le
-      (fun u _ ↦ (hderiv u).hasDerivWithinAt) (fun u hu ↦ (Real.norm_eq_abs _).trans_le (hv u hu))
-      left_mem_uIcc right_mem_uIcc
+      (fun u hu ↦ (hderiv u hu).hasDerivWithinAt)
+      (fun u hu ↦ (Real.norm_eq_abs _).trans_le (hv u hu)) left_mem_uIcc right_mem_uIcc
   rw [← hlift t, ← hlift s, dist_eq_norm, ← coe_sub, ← Real.norm_eq_abs]
   exact (QuotientAddGroup.norm_mk_le_norm (S := AddSubgroup.zmultiples p)).trans hbound
+
+/-- **The drift of a time-dependent flow on the circle.** If the `C¹` time-dependent vector field
+`Y` on the circle satisfies `|Y u θ| ≤ L` everywhere, its flow from the time `s` to the time `t`
+moves every angle by at most `L |t - s|`. -/
+theorem dist_timeDependentFlowOf_le {Y : ℝ → (θ : AddCircle p) → TangentSpace 𝓘(ℝ) θ} {L : ℝ}
+    (hY : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ)) 𝓘(ℝ).tangent 1
+      fun z : ℝ × AddCircle p ↦ (⟨z.2, Y z.1 z.2⟩ : TangentBundle 𝓘(ℝ) (AddCircle p)))
+    (hL : ∀ u θ, abs (α := ℝ) (Y u θ) ≤ L) (s t : ℝ) (θ : AddCircle p) :
+    dist (TauCeti.timeDependentFlowOf Y s t θ) θ ≤ L * |t - s| := by
+  have hγ (u : ℝ) :=
+    TauCeti.hasMFDerivAt_timeDependentFlowOf_of_compactSpace hY (s := s) (t := u) (x := θ)
+  have h := dist_le_mul_of_hasMFDerivAt (s := s) (t := t) (L := L)
+    (continuous_iff_continuousAt.2 fun u ↦ (hγ u).continuousAt) (fun u _ ↦ hγ u)
+    (fun u _ ↦ hL _ _)
+  rwa [TauCeti.timeDependentFlowOf_self] at h
 
 end AddCircle

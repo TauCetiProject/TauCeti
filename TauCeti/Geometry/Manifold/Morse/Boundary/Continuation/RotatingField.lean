@@ -24,9 +24,10 @@ of a map moving every angle as little as we like.
 
 **Rotated pseudo-gradients.** Let `X` be a pseudo-gradient adapted to `f`. Its rotation
 `θ ↦ X (θ - r)` (`TauCeti.circleRotatedField X r`) is the pullback of `X` along the rotation
-`θ ↦ θ - r`, which carries `f` to its rotation by `r`, so it is a pseudo-gradient adapted to that
-rotation (`TauCeti.IsAdaptedPseudoGradient.circleRotatedField`); for `f = f_0` it is adapted to
-`f_r` (`TauCeti.IsAdaptedPseudoGradient.circleRotatedField_circleCosTwo`).
+`θ ↦ θ - r` (`TauCeti.mpullback_addZSMulDiffeomorph_neg_eq_circleRotatedField`), which carries
+`f` to its rotation by `r`, so it is a pseudo-gradient adapted to that rotation
+(`TauCeti.IsAdaptedPseudoGradient.circleRotatedField`); for `f = f_0` it is adapted to `f_r`
+(`TauCeti.IsAdaptedPseudoGradient.circleRotatedField_circleCosTwo`).
 
 **The rotating continuation field.** For a smooth path `r` and a rate `C`, the field
 `C t (1 - t²) ∂_t + X (θ - r t)` on the cylinder `S¹ × ℝ`
@@ -48,7 +49,8 @@ the flow of the rotation by `r₁` for the time `b - s₁`; its inverse decompos
 
 **The drift estimate.** If `|X| ≤ L`, the time-dependent flow of the space component moves each
 angle by at most `L |t - s|` from the time `s` to the time `t`
-(`TauCeti.dist_timeDependentFlowOf_circleRotatingContinuationField_le`). The window times
+(`TauCeti.dist_timeDependentFlowOf_circleRotatingContinuationField_le`, a case of
+`AddCircle.dist_timeDependentFlowOf_le`). The window times
 `s₀ = (U(t₀) - 1) / C` and `s₁ = (U(t₁) + 1) / C` are `(U(t₁) - U(t₀) + 2) / C` apart, so for every
 `ε > 0` and all large rates `C` the flow across the window, forwards and backwards, moves every
 angle by less than `ε`
@@ -60,6 +62,8 @@ down to make this drift small; the rate `C` is made large instead, which shorten
 
 * `TauCeti.circleRotatedField_zero`, `TauCeti.circleRotatedField_circleRotatedField`: rotating
   by `0` does nothing, and rotations compose.
+* `TauCeti.mpullback_addZSMulDiffeomorph_neg_eq_circleRotatedField`: the rotated field is the
+  pullback along the rotation.
 * `TauCeti.IsAdaptedPseudoGradient.circleRotatedField`,
   `TauCeti.IsAdaptedPseudoGradient.circleRotatedField_circleCosTwo`: rotating an adapted
   pseudo-gradient of `f` by `r` gives one of the rotation of `f` by `r`, in particular rotating
@@ -108,6 +112,7 @@ theorem circleRotatedField_zero : circleRotatedField X 0 = X :=
   funext fun θ ↦ by rw [circleRotatedField_apply, AddCircle.coe_zero, sub_zero]
 
 /-- Rotating a vector field on the circle by `r` and then by `s` is rotating it by `r + s`. -/
+@[simp]
 theorem circleRotatedField_circleRotatedField (r s : ℝ) :
     circleRotatedField (circleRotatedField X r) s = circleRotatedField X (r + s) :=
   funext fun θ ↦ by
@@ -231,13 +236,10 @@ theorem dist_timeDependentFlowOf_circleRotatingContinuationField_le {L : ℝ}
     (hL : ∀ θ, abs (α := ℝ) (X θ) ≤ L) (s t : ℝ) (θ : AddCircle p) :
     dist (timeDependentFlowOf (continuationSpaceField C (circleRotatingContinuationField X r C))
       s t θ) θ ≤ L * |t - s| := by
-  have hY := contMDiff_continuationSpaceField_circleRotating (C := C) hXs hr
-  have h := AddCircle.dist_le_mul_of_hasMFDerivAt (s := s) (t := t) (L := L)
-    (fun u ↦ hasMFDerivAt_timeDependentFlowOf_of_compactSpace hY (s := s) (t := u) (x := θ))
-    (fun u _ ↦ by
-      simp only [continuationSpaceField_apply, circleRotatingContinuationField_apply]
-      exact hL _)
-  rwa [timeDependentFlowOf_self] at h
+  refine AddCircle.dist_timeDependentFlowOf_le
+    (contMDiff_continuationSpaceField_circleRotating hXs hr) (fun u θ ↦ ?_) s t θ
+  simp only [continuationSpaceField_apply, circleRotatingContinuationField_apply]
+  exact hL _
 
 /-- **The window drift is small for large rates.** For every `ε > 0` and all large rates `C`, the
 time-dependent flow of the space component of the rotating field across the window from
@@ -278,6 +280,28 @@ section Adapted
 
 variable {f₀ : AddCircle p → ℝ}
 
+/-- **The rotated field is a pullback.** The rotation of a vector field `X` on the circle by `r` is
+the pullback of `X` along the rotation `θ ↦ θ - r`, a diffeomorphism of the circle whose
+differential is the identity. -/
+theorem mpullback_addZSMulDiffeomorph_neg_eq_circleRotatedField (r : ℝ) :
+    VectorField.mpullback 𝓘(ℝ) 𝓘(ℝ)
+        (Lie.addZSMulDiffeomorph 𝓘(ℝ) ∞ (-(r : AddCircle p)) 1 (by norm_num)) X =
+      circleRotatedField X r := by
+  set σ := Lie.addZSMulDiffeomorph 𝓘(ℝ) ∞ (-(r : AddCircle p)) 1 (by norm_num)
+  have hσ : ⇑σ = (· + (-(r : AddCircle p))) := funext fun θ ↦ by
+    simp only [σ, Lie.addZSMulDiffeomorph_apply, one_zsmul, add_comm]
+  have hσθ (θ : AddCircle p) : σ θ = θ - r := by rw [hσ, sub_eq_add_neg]
+  -- The differential of the rotation is the identity, so the pullback of `X` is `X ∘ σ`.
+  funext θ
+  have hd : mfderiv 𝓘(ℝ) 𝓘(ℝ) σ θ = ContinuousLinearMap.id ℝ ℝ := by
+    rw [hσ]
+    exact AddCircle.mfderiv_add_right p (-(r : AddCircle p)) θ
+  have h₁ := σ.mfderiv_apply_mpullback (by simp) X θ
+  rw [hd] at h₁
+  rw [circleRotatedField_apply, ← hσθ]
+  -- `h₁` applies the identity of the tangent line `ℝ` to the left-hand side.
+  exact h₁
+
 /-- **Rotated adapted pseudo-gradients.** If `X` is a pseudo-gradient adapted to `f₀`, its
 rotation by `r` is a pseudo-gradient adapted to the rotation `θ ↦ f₀ (θ - r)` of `f₀`: it is the
 pullback of `X` along the rotation `θ ↦ θ - r`, a diffeomorphism of the circle whose differential
@@ -286,22 +310,10 @@ protected theorem IsAdaptedPseudoGradient.circleRotatedField
     (hX : IsAdaptedPseudoGradient f₀ X) (r : ℝ) :
     IsAdaptedPseudoGradient (fun θ ↦ f₀ (θ - r)) (circleRotatedField X r) := by
   set σ := Lie.addZSMulDiffeomorph 𝓘(ℝ) ∞ (-(r : AddCircle p)) 1 (by norm_num)
-  have hσ : ⇑σ = (· + (-(r : AddCircle p))) := funext fun θ ↦ by
-    simp only [σ, Lie.addZSMulDiffeomorph_apply, one_zsmul, add_comm]
+  have hf : f₀ ∘ σ = fun θ ↦ f₀ (θ - r) := funext fun θ ↦ by
+    simp only [comp_apply, σ, Lie.addZSMulDiffeomorph_apply, one_zsmul, sub_eq_add_neg, add_comm]
   have h := hX.mpullback σ
-  have hσθ (θ : AddCircle p) : σ θ = θ - r := by rw [hσ, sub_eq_add_neg]
-  have hf : f₀ ∘ σ = fun θ ↦ f₀ (θ - r) := funext fun θ ↦ by rw [comp_apply, hσθ]
-  -- The differential of the rotation is the identity, so the pullback of `X` is `X ∘ σ`.
-  have hV : VectorField.mpullback 𝓘(ℝ) 𝓘(ℝ) σ X = circleRotatedField X r := funext fun θ ↦ by
-    have hd : mfderiv 𝓘(ℝ) 𝓘(ℝ) σ θ = ContinuousLinearMap.id ℝ ℝ := by
-      rw [hσ]
-      exact AddCircle.mfderiv_add_right p (-(r : AddCircle p)) θ
-    have h₁ := σ.mfderiv_apply_mpullback (by simp) X θ
-    rw [hd] at h₁
-    rw [circleRotatedField_apply, ← hσθ]
-    -- `h₁` applies the identity of the tangent line `ℝ` to the left-hand side.
-    exact h₁
-  rwa [hf, hV] at h
+  rwa [hf, mpullback_addZSMulDiffeomorph_neg_eq_circleRotatedField] at h
 
 variable {r : ℝ → ℝ} {r₀ r₁ t₀ t₁ C : ℝ} (hX : IsAdaptedPseudoGradient f₀ X)
   (hr : ContDiff ℝ ∞ r) (ht₀ : t₀ ∈ Ioo 0 1) (ht₁ : t₁ ∈ Ioo 0 1) (hr₀ : ∀ t ≤ t₀, r t = r₀)
