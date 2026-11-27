@@ -54,6 +54,8 @@ local description of immersions, are built on.
 * `TauCeti.AffinoidSubdomain.stalk K x`: the analytic stalk `𝒪_{Sp A,x}`.
 * `TauCeti.AffinoidSubdomain.germ`: the germ at `x` of a section over `U ∋ x`.
 * `TauCeti.AffinoidSubdomain.toStalk`: the germ map `A → 𝒪_{Sp A,x}`.
+* `TauCeti.AffinoidSubdomain.stalkLift`: the ring homomorphism out of the stalk induced by
+  compatible ring homomorphisms out of the coordinate algebras of affinoid neighbourhoods.
 * `TauCeti.AffinoidSubdomain.localizationToStalk`: the factorisation `A_𝔪 → 𝒪_{Sp A,x}`.
 * `TauCeti.AffinoidSubdomain.quotientPowEquiv`: `A ⧸ 𝔪ₓⁿ ≃ 𝒪_{Sp A,x} ⧸ 𝔪ⁿ`.
 * `TauCeti.AffinoidSubdomain.completionRingEquiv`: the `𝔪ₓ`-adic completion of `A` is the
@@ -160,6 +162,50 @@ theorem germ_eq_germ_iff {U V : AffinoidSubdomain K A} (hU : x ∈ U) (hV : x �
   simp only [setEmbedding_apply, SetLike.mem_coe, ringPresheaf_map_apply] at this
   -- The fibre maps of `ringPresheaf` are `germ`, by definition.
   exact this
+
+/-- A section has zero germ at `x` iff it restricts to zero on a smaller affinoid neighbourhood
+of `x`. -/
+theorem germ_eq_zero_iff {U : AffinoidSubdomain K A} (hx : x ∈ U) (f : U.sections) :
+    germ U hx f = 0 ↔ ∃ (W : AffinoidSubdomain K A) (hWU : W ≤ U), x ∈ W ∧ restrict hWU f = 0 := by
+  rw [← map_zero (germ U hx), germ_eq_germ_iff]
+  simp only [map_zero]
+  exact ⟨fun ⟨W, hWU, _, hxW, hW⟩ ↦ ⟨W, hWU, hxW, hW⟩,
+    fun ⟨W, hWU, hxW, hW⟩ ↦ ⟨W, hWU, hWU, hxW, hW⟩⟩
+
+/-- **The universal property of the analytic stalk.** Ring homomorphisms out of the coordinate
+algebras of the affinoid neighbourhoods of `x`, compatible with restriction, induce a ring
+homomorphism out of the stalk at `x`. -/
+noncomputable def stalkLift {S : Type u} [CommRing S]
+    (g : ∀ U : AffinoidSubdomain K A, x ∈ U → U.sections →+* S)
+    (hg : ∀ (U V : AffinoidSubdomain K A) (hUV : U ≤ V) (hx : x ∈ U),
+      (g U hx).comp (restrict hUV).toRingHom = g V (hUV hx)) :
+    stalk K x →+* S :=
+  ((weakGTopology.point x).presheafFiberDesc (P := ringPresheaf K A) (T := CommRingCat.of S)
+    (fun U h ↦ CommRingCat.ofHom (g U (by simpa using h.down.down)))
+    (fun U V f h ↦ by
+      ext s
+      exact (congrArg (g U _) (ringPresheaf_map_apply (leOfHom f) s)).trans
+        (DFunLike.congr_fun (hg U V (leOfHom f) _) s))).hom
+
+/-- The homomorphism induced on the stalk restricts to the given homomorphisms on germs. -/
+@[simp]
+theorem stalkLift_germ {S : Type u} [CommRing S]
+    (g : ∀ U : AffinoidSubdomain K A, x ∈ U → U.sections →+* S)
+    (hg : ∀ (U V : AffinoidSubdomain K A) (hUV : U ≤ V) (hx : x ∈ U),
+      (g U hx).comp (restrict hUV).toRingHom = g V (hUV hx))
+    {U : AffinoidSubdomain K A} (hx : x ∈ U) (f : U.sections) :
+    stalkLift g hg (germ U hx f) = g U hx f :=
+  ConcreteCategory.congr_hom
+    ((weakGTopology.point x).toPresheafFiber_presheafFiberDesc (P := ringPresheaf K A) _ _ U
+      (weakGTopology.pointElement x (by simpa using hx))) f
+
+/-- Ring homomorphisms out of the analytic stalk agree once they agree on germs. -/
+theorem stalk_ringHom_ext {S : Type*} [Semiring S] {φ ψ : stalk K x →+* S}
+    (h : ∀ (U : AffinoidSubdomain K A) (hx : x ∈ U) (f : U.sections),
+      φ (germ U hx f) = ψ (germ U hx f)) : φ = ψ := by
+  ext s
+  obtain ⟨U, hx, f, rfl⟩ := exists_germ_eq s
+  exact h U hx f
 
 /-- Germs at `x` of sections over `U` factor through restriction to a smaller neighbourhood. -/
 theorem germ_comp_restrict {U V : AffinoidSubdomain K A} (h : U ≤ V) (hx : x ∈ U) :
