@@ -116,12 +116,13 @@ filtration of a space
 Over any commutative ring `K`, `ℤ` included, the lacunary principle holds for the twisted homology
 groups themselves, not only for their dimensions. Suppose that for every `n`, either
 `H_{n - r j}(S j; o(ν⁻ j) ⊗ K) = 0` for every piece of index at most `n`, or
-`H_{n + 1 - r j}(S j; o(ν⁻ j) ⊗ K) = 0` for every piece of index at most `n + 1`. Then the
-spectral sequence of a critical-band cut degenerates
-(`IsMorseBottFamily.filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_isZero_twistedHomology`),
+`H_{n + 1 - r j}(S j; o(ν⁻ j) ⊗ K) = 0` for every piece of index at most `n + 1`. Then, in the
+namespace `TauCeti.IsMorseBottFamily`, the spectral sequence of a critical-band cut degenerates
+(`filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_isZero_twistedHomology_or_isZero`),
 and the graded piece `F_{q+1} Hₙ(M; K) / F_q Hₙ(M; K)` is the coproduct of the groups
 `H_{n - r j}(S j; o(ν⁻ j) ⊗ K)` over the pieces with values in `(a q, a (q + 1)]` of index at
-most `n` (`IsMorseBottFamily.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_twistedHomology`).
+most `n`
+(`nonempty_cokernel_abutmentFiltrationMap_iso_sigma_twistedHomology_of_forall_isZero_or_isZero`).
 Over `ℤ` the hypothesis asks for the vanishing of groups, so a piece whose twisted homology is a
 nonzero torsion group, such as `H₀(S¹; o(ν⁻)) ≅ ℤ/2` for a Möbius negative normal line, counts as
 present even though its twisted Betti numbers over `ℚ` vanish. This is the Morse–Bott counterpart
@@ -177,11 +178,11 @@ In the namespace `TauCeti.IsMorseBottFamily`:
 * `filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_twistedBettiNumber_eq_zero_or_eq_zero`
   and `finrank_cokernel_abutmentFiltrationMap_of_forall_twistedBettiNumber_eq_zero_or_eq_zero`:
   degeneration and the graded pieces when no two consecutive twisted counts are both nonzero.
-* `filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_isZero_twistedHomology` and
-  `nonempty_cokernel_abutmentFiltrationMap_iso_sigma_twistedHomology`: over any commutative ring,
-  degeneration and the graded pieces of the homology of `M` as coproducts of twisted homology
-  groups, when in each pair of consecutive total degrees the twisted homology of the pieces vanishes
-  in one of them.
+* `filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_isZero_twistedHomology_or_isZero` and
+  `nonempty_cokernel_abutmentFiltrationMap_iso_sigma_twistedHomology_of_forall_isZero_or_isZero`:
+  over any commutative ring, degeneration and the graded pieces of the homology of `M` as
+  coproducts of twisted homology groups, when in each pair of consecutive total degrees the twisted
+  homology of the pieces vanishes in one of them.
 
 ## References
 
@@ -1044,7 +1045,7 @@ Suppose that for every `n`, either `H_{n - |κ j|}(S j; o(ν⁻ j) ⊗ K) = 0` f
 at most `n`, or `H_{n + 1 - |κ j|}(S j; o(ν⁻ j) ⊗ K) = 0` for every piece of index at most `n + 1`.
 Then every differential on every page of the spectral sequence of the filtration `q ↦ {f ≤ a q}`
 with coefficients in `K` vanishes. -/
-theorem filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_isZero_twistedHomology
+theorem filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_isZero_twistedHomology_or_isZero
     (ha : IsCriticalBandCut I f a) (r : ℤ) (hr : 2 ≤ r) (pq pq' : ℤ × ℤ) :
     ((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
       ((sublevel_mono f).comp ha.monotone)).page r).d pq pq' = 0 :=
@@ -1066,7 +1067,7 @@ most `n + 1`. Then the graded piece `F_{q+1} Hₙ / F_q Hₙ` is the coproduct o
 `n`. No orientation of the bundles `ν⁻ j` is assumed. The graded piece is written as the cokernel of
 the inclusion `F_q Hₙ ⟶ F_{q+1} Hₙ` of the filtration of the abutment of the spectral sequence,
 which is `Hₙ(M)` in total degree `p + q = -n` (`TauCeti.chainFiltrationAbutmentIso`). -/
-theorem nonempty_cokernel_abutmentFiltrationMap_iso_sigma_twistedHomology
+theorem nonempty_cokernel_abutmentFiltrationMap_iso_sigma_twistedHomology_of_forall_isZero_or_isZero
     (ha : IsCriticalBandCut I f a) {q₀ q₁ : ℤ} (hq₀ : ∀ x, a q₀ < f x) (hq₁ : ∀ x, f x ≤ a q₁)
     (pq : ℤ × ℤ) (n : ℕ) (hpq : pq.1 + pq.2 = -n) :
     letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
