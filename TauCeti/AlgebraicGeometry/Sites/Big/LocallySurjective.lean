@@ -70,8 +70,11 @@ theorem isLocallySurjective_bigPresheafFunctor_map (φ : F ⟶ G) [Epi φ] :
         T.left).map ψ) := (Sheaf.isLocallySurjective_iff_epi' (φ := _)).mpr inferInstance
     have hlift (x : T.left) : ∃ (V : T.left.Opens) (m : Γ((pullback T.hom).obj F, V)), x ∈ V ∧
         ψ.app V m = ((pullback T.hom).obj G).presheaf.map (homOfLE le_top).op s := by
+      -- A section of `bigPresheaf G` over `T` is by definition a global section of `h^* G`
+      -- (`bigPresheaf_obj`), so `s` is a section of `toSheaf T.left` over `⊤`.
       obtain ⟨V, j, ⟨m, hm⟩, hxV⟩ := Presheaf.imageSieve_mem (Opens.grothendieckTopology T.left)
         ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf T.left).map ψ).hom s x trivial
+      rw [TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf_map_hom, mapPresheaf_app] at hm
       exact ⟨V, m, hxV, hm.trans (congrArg (fun k ↦ ((pullback T.hom).obj G).presheaf.map k s)
         (Subsingleton.elim _ _))⟩
     choose V m hxV hm using hlift
@@ -83,6 +86,12 @@ theorem isLocallySurjective_bigPresheafFunctor_map (φ : F ⟶ G) [Epi φ] :
     rw [Sieve.overEquiv_iff]
     -- Over the `S`-scheme `V x`, the lift is the section `m x` read as a global section.
     refine ⟨bigSectionsRestrictLE F (V x).ι rfl (V x) ⊤ (by simp) (m x), ?_⟩
+    -- Unfold the maps of `bigPresheaf` and `bigPresheafFunctor` (`bigPresheaf_map_apply`,
+    -- `bigPresheafFunctor_map_app_apply`); `rw` cannot, as the index `x` of the cover is a point
+    -- of `T` only up to definitional equality.
+    change ((pullback ((V x).ι ≫ T.hom)).map φ).app ⊤
+        (bigSectionsRestrictLE F (V x).ι rfl (V x) ⊤ (by simp) (m x)) =
+      bigSectionsRestrict G (Over.homMk (V x).ι : Over.mk ((V x).ι ≫ T.hom) ⟶ T) s
     refine (bigSectionsRestrictLE_naturality φ (V x).ι rfl (V x) ⊤ (by simp) (m x)).symm.trans ?_
     exact (congrArg (bigSectionsRestrictLE G (V x).ι rfl (V x) ⊤ (by simp)) (hm x)).trans
       (bigSectionsRestrict_homMk_ι G T (V x) s).symm
