@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
+public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 public import TauCeti.CategoryTheory.Sites.Descent.Over
 public import TauCeti.CategoryTheory.Sites.Descent.StrongTrans
@@ -33,6 +34,9 @@ pullback along every arrow of some `J`-covering sieve.
   `CategoryTheory.Pseudofunctor.isStack_iff_of_isEquivalence`.
 * `CategoryTheory.Pseudofunctor.isGerbe_over`: the restriction `F.over U` of a gerbe for `J` to
   the slice site `(Over U, J.over U)` is a gerbe for `J.over U`.
+* `CategoryTheory.Pseudofunctor.isGerbe_constant`: the constant pseudofunctor with a nonempty
+  groupoid fibre any two of whose objects are isomorphic is a gerbe for any topology for which it
+  is a stack.
 
 ## References
 
@@ -157,5 +161,21 @@ instance isGerbe_over [F.IsGerbe J] (U : C) : (F.over U).IsGerbe (J.over U) wher
     obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_iso (F := F) (J := J) (U := X.left) x y
     exact ⟨(Sieve.overEquiv X).symm R, J.overEquiv_symm_mem_over X R hR,
       fun _ g hg ↦ h g.left ((Sieve.overEquiv_symm_iff R g).1 hg)⟩
+
+section constant
+
+variable {D : Type u'} [Category.{v'} D]
+
+/-- **A constant diagram with a nonempty connected groupoid fibre is a gerbe** for any topology
+`J` for which it is a stack: its fibres are groupoids, the maximal sieve has an object over every
+arrow, and any two objects of the fibre are isomorphic. For `J = ⊥` the stack property is
+`isStack_bot`. -/
+theorem isGerbe_constant (J : GrothendieckTopology C) [(constant C D).IsStack J] [IsGroupoid D]
+    [Nonempty D] (h : ∀ x y : D, Nonempty (x ≅ y)) : (constant C D).IsGerbe J where
+  isGroupoid _ := inferInstanceAs (IsGroupoid D)
+  exists_covering_nonempty U := ⟨⊤, J.top_mem U, fun _ _ _ ↦ inferInstanceAs (Nonempty D)⟩
+  exists_covering_iso x y := ⟨⊤, J.top_mem _, fun _ _ _ ↦ h x y⟩
+
+end constant
 
 end CategoryTheory.Pseudofunctor
