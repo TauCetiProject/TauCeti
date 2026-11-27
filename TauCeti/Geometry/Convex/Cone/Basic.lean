@@ -45,7 +45,10 @@ lattice, so they belong to the generic convex-cone API rather than to any consum
 * `PointedCone.mapsTo_nsmul_linearMap_id`: multiplication by a natural number carries a pointed
   cone into itself.
 * `PointedCone.map_linearEquiv_mul`: mapping a pointed cone by a product of linear automorphisms
-  maps it by each factor in turn.
+  maps it by each factor in turn; `PointedCone.map_map_linearEquiv_inv` and
+  `PointedCone.map_inv_map_linearEquiv` cancel a linear automorphism against its inverse.
+* `PointedCone.map_inf_comap_of_comm`: transporting `σ ⊓ g⁻¹(τ)` by `γ` gives
+  `γ(σ) ⊓ g⁻¹(γ'(τ))` when `g ∘ γ = γ' ∘ g`.
 -/
 
 public section
@@ -222,13 +225,40 @@ end Prod
 
 section Map
 
-variable {R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
-  [AddCommMonoid V] [Module R V]
+variable {R V V' : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommMonoid V] [Module R V] [AddCommMonoid V'] [Module R V']
 
 /-- Mapping a pointed cone by a product of linear automorphisms maps it by each factor in turn. -/
 theorem map_linearEquiv_mul (σ : PointedCone R V) (g h : V ≃ₗ[R] V) :
     σ.map ((g * h : V ≃ₗ[R] V) : V →ₗ[R] V) = (σ.map (h : V →ₗ[R] V)).map (g : V →ₗ[R] V) := by
   rw [LinearEquiv.coe_toLinearMap_mul, Module.End.mul_eq_comp, map_map]
+
+/-- Mapping a pointed cone by `g⁻¹` and then by `g` gives back the cone. -/
+@[simp]
+theorem map_map_linearEquiv_inv (σ : PointedCone R V) (g : V ≃ₗ[R] V) :
+    (σ.map ((g⁻¹ : V ≃ₗ[R] V) : V →ₗ[R] V)).map (g : V →ₗ[R] V) = σ := by
+  rw [← map_linearEquiv_mul, mul_inv_cancel, LinearEquiv.coe_toLinearMap_one, map_id]
+
+/-- Mapping a pointed cone by `g` and then by `g⁻¹` gives back the cone. -/
+@[simp]
+theorem map_inv_map_linearEquiv (σ : PointedCone R V) (g : V ≃ₗ[R] V) :
+    (σ.map (g : V →ₗ[R] V)).map ((g⁻¹ : V ≃ₗ[R] V) : V →ₗ[R] V) = σ := by
+  rw [← map_linearEquiv_mul, inv_mul_cancel, LinearEquiv.coe_toLinearMap_one, map_id]
+
+/-- Transporting `σ ⊓ g⁻¹(τ)` by a linear automorphism `γ` gives `γ(σ) ⊓ g⁻¹(γ'(τ))` when
+`g ∘ γ = γ' ∘ g`. -/
+theorem map_inf_comap_of_comm {g : V →ₗ[R] V'} {γ : V ≃ₗ[R] V} {γ' : V' ≃ₗ[R] V'}
+    (h : ∀ x, g (γ x) = γ' (g x)) (σ : PointedCone R V) (τ : PointedCone R V') :
+    (σ ⊓ τ.comap g).map (γ : V →ₗ[R] V) =
+      σ.map (γ : V →ₗ[R] V) ⊓ (τ.map (γ' : V' →ₗ[R] V')).comap g := by
+  ext x
+  simp only [Submodule.mem_inf, mem_comap, mem_map]
+  constructor
+  · rintro ⟨y, ⟨hyσ, hyτ⟩, rfl⟩
+    exact ⟨⟨y, hyσ, rfl⟩, g y, hyτ, (h y).symm⟩
+  · rintro ⟨⟨y, hyσ, rfl⟩, z, hzτ, hz⟩
+    rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe, h, γ'.injective.eq_iff] at hz
+    exact ⟨y, ⟨hyσ, hz ▸ hzτ⟩, rfl⟩
 
 end Map
 

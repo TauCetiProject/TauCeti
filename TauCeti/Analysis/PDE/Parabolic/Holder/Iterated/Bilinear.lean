@@ -485,4 +485,15 @@ theorem norm_compParabolicCkHolder₂_apply_le (u : ParabolicCkHolderSpace k α 
   rw [compParabolicCkHolder₂_eq]
   exact norm_compAux_le B hα u v
 
+/-- The pointwise product of two scalar parabolic Hölder maps of order `k` has norm at most
+`21 (k + 1)² 2ᵏ ‖u‖ ‖v‖`: `ContinuousLinearMap.norm_compParabolicCkHolder₂_apply_le` for the
+multiplication of `ℝ`, whose operator norm is at most `1`. -/
+theorem norm_mul_compParabolicCkHolder₂_apply_le (u v : ParabolicCkHolderSpace k α E ℝ hab) :
+    ‖(ContinuousLinearMap.mul ℝ ℝ).compParabolicCkHolder₂ hα u v‖ ≤
+      21 * (k + 1) ^ 2 * 2 ^ k * (‖u‖ * ‖v‖) := by
+  refine (norm_compParabolicCkHolder₂_apply_le _ hα u v).trans ?_
+  have h1 : ‖ContinuousLinearMap.mul ℝ ℝ‖ ≤ 1 := opNorm_mul_le ℝ ℝ
+  calc _ ≤ 21 * (k + 1) ^ 2 * 2 ^ k * 1 * ‖u‖ * ‖v‖ := by gcongr
+    _ = _ := by ring
+
 end ContinuousLinearMap

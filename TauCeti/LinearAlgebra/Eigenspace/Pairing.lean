@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 public import Mathlib.LinearAlgebra.Eigenspace.Zero
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Eigenspace.Range
 
@@ -45,7 +46,10 @@ characteristic polynomials is assumed either.
   spectrum `{2}` of `F` is not stable under `α ↦ 6 / α`.
 * The eigenvalue `0` is ruled out by the two-space determinant identity
   `det F * det F' = c ^ finrank M` (`LinearMap.det_mul_det_eq_of_compl₁₂_eq_smul`, in
-  `TauCeti.LinearAlgebra.Determinant.Basic`).
+  `TauCeti.LinearAlgebra.Determinant.Basic`): over a field, if `B` is perfect and `c ≠ 0`, then
+  `det F * det F' ≠ 0` (`LinearMap.det_mul_det_ne_zero_of_compl₁₂_eq_smul`), so `0` is not a root
+  of the characteristic polynomial of `F`
+  (`LinearMap.zero_notMem_roots_charpoly_of_compl₁₂_eq_smul`).
 
 The analogous statements for an adjoint pair, `B (f x) y = B x (g y)`, where the eigenvalues of `f`
 and `g` match additively rather than multiplicatively, are in
@@ -200,6 +204,22 @@ theorem finrank_maxGenEigenspace_eq_of_compl₁₂_eq_smul (h : B.compl₁₂ F 
   exact (finrank_of_isPerfPair
     (B.domRestrict₁₂ (F.maxGenEigenspace α) (F'.maxGenEigenspace β))).symm
 
+/-- **Maps scaling a perfect pairing by a nonzero multiplier are invertible.** If `B` is perfect
+and `B (F x) (F' y) = c • B x y` with `c ≠ 0`, then `det F * det F' ≠ 0`, since it equals
+`c ^ finrank K V`. -/
+theorem det_mul_det_ne_zero_of_compl₁₂_eq_smul [FiniteDimensional K V]
+    (h : B.compl₁₂ F F' = c • B) (hc : c ≠ 0) : LinearMap.det F * LinearMap.det F' ≠ 0 :=
+  B.det_mul_det_eq_of_compl₁₂_eq_smul (IsPerfPair.bijective_right B) h ▸ pow_ne_zero _ hc
+
+/-- **`0` is not an eigenvalue of a map scaling a perfect pairing by a nonzero multiplier.** If
+`B` is perfect and `B (F x) (F' y) = c • B x y` with `c ≠ 0`, then `0` is not a root of the
+characteristic polynomial of `F`. -/
+theorem zero_notMem_roots_charpoly_of_compl₁₂_eq_smul [FiniteDimensional K V]
+    (h : B.compl₁₂ F F' = c • B) (hc : c ≠ 0) : (0 : K) ∉ F.charpoly.roots := by
+  have hne := B.det_mul_det_ne_zero_of_compl₁₂_eq_smul h hc
+  simp only [det_eq_sign_charpoly_coeff, coeff_zero_eq_eval_zero, mul_ne_zero_iff] at hne
+  exact fun h0 ↦ hne.1.2 (mem_roots'.1 h0).2
+
 /-- **Eigenvalues under a perfect pairing with a multiplier.** If `B` is perfect and
 `B (F x) (F' y) = c • B x y` with `c ≠ 0`, then the eigenvalues of `F'` in `K`, counted with
 algebraic multiplicity, are the `c / α` for the eigenvalues `α` of `F` in `K`. Over an
@@ -213,15 +233,9 @@ theorem roots_charpoly_eq_map_div_of_compl₁₂_eq_smul [FiniteDimensional K V]
   conv_rhs => rw [← hinv β, Multiset.count_map_eq_count' _ _ hinv.injective]
   simp only [count_roots]
   rcases eq_or_ne β 0 with rfl | hβ
-  · -- Both maps are invertible, since `det F * det F' = c ^ finrank K V ≠ 0`.
-    have hne : LinearMap.det F * LinearMap.det F' ≠ 0 :=
-      B.det_mul_det_eq_of_compl₁₂_eq_smul (IsPerfPair.bijective_right B) h ▸ pow_ne_zero _ hc
-    have hF : ¬F.HasEigenvalue 0 := ((not_hasEigenvalue_zero_tfae F).out 4 1).1
-      (left_ne_zero_of_mul hne)
-    have hF' : ¬F'.HasEigenvalue 0 := ((not_hasEigenvalue_zero_tfae F').out 4 1).1
-      (right_ne_zero_of_mul hne)
-    rw [div_zero, rootMultiplicity_eq_zero (mt (hasEigenvalue_iff_isRoot_charpoly F 0).2 hF),
-      rootMultiplicity_eq_zero (mt (hasEigenvalue_iff_isRoot_charpoly F' 0).2 hF')]
+  · have hne := B.det_mul_det_ne_zero_of_compl₁₂_eq_smul h hc
+    simp only [det_eq_sign_charpoly_coeff, coeff_zero_eq_eval_zero, mul_ne_zero_iff] at hne
+    rw [div_zero, rootMultiplicity_eq_zero hne.1.2, rootMultiplicity_eq_zero hne.2.2]
   · rw [← finrank_maxGenEigenspace_eq, ← finrank_maxGenEigenspace_eq]
     exact B.finrank_maxGenEigenspace_eq_of_compl₁₂_eq_smul h hc (div_mul_cancel₀ c hβ)
 

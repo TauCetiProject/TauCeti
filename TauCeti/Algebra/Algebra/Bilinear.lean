@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Bilinear
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 
@@ -19,6 +20,13 @@ kernel of multiplication is stable under the outer bimodule actions.
 
 The multiplication map `TauCeti.LinearMap.mulUnop' R A : A ⊗[R] Aᵐᵒᵖ → A`, `a ⊗ bᵒᵖ ↦ a b`,
 is the variant with the second factor read in the opposite algebra.
+
+`TauCeti.Algebra.lsmul_eq_mulLeft` identifies the action `Algebra.lsmul R R A a` of `a` on `A`
+itself with left multiplication `LinearMap.mulLeft R a`.
+
+Left multiplication `Algebra.lmul R A` is the action map `Algebra.lsmul R R A` of `A` on itself
+regarded as a module over itself (`TauCeti.Algebra.lmul_eq_lsmul`), so results about the trace or
+action of an arbitrary module specialise to the regular module.
 -/
 
 public section
@@ -62,5 +70,23 @@ theorem mulUnop'_tmul (a : A) (b : Aᵐᵒᵖ) : mulUnop' R A (a ⊗ₜ b) = a *
   (rfl)
 
 end LinearMap
+
+namespace Algebra
+
+/-- Left multiplication by `a` in an `R`-algebra, as `Algebra.lsmul`, is `LinearMap.mulLeft R a`.
+This converts, for instance, a commutator with `Algebra.lsmul R R A a` into one with
+`LinearMap.mulLeft R a`. -/
+theorem lsmul_eq_mulLeft {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (a : A) : Algebra.lsmul R R A a = LinearMap.mulLeft R a :=
+  LinearMap.ext fun x ↦ smul_eq_mul a x
+
+variable (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- Left multiplication `L_a` is the action of `a` on `A` regarded as a module over itself. -/
+theorem lmul_eq_lsmul : Algebra.lmul R A = Algebra.lsmul R R A := by
+  ext a z
+  rw [Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', Algebra.lsmul_apply, smul_eq_mul]
+
+end Algebra
 
 end TauCeti

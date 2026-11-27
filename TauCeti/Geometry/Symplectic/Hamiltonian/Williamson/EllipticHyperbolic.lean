@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Nondegenerate
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Toral
+import TauCeti.Algebra.Order.Ring.Square
 import TauCeti.Algebra.Polynomial.EvenComp
 import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.Geometry.Symplectic.ExistsCompatible
@@ -342,13 +343,8 @@ theorem exists_mem_span_card_mul_two_eq_finrank_iff (h : ω.IsNondegenerateQuadr
   have hc (k : Fin n) : 0 < c k := by positivity
   have hc2 : StrictMono fun k ↦ c k ^ 2 := fun k l hkl ↦ by
     dsimp only [c]; gcongr; exact_mod_cast hkl
-  have hμ : Function.Injective μ := by
-    intro k l hkl
-    have hk := sq_pos_of_pos (hc k)
-    have hl := sq_pos_of_pos (hc l)
-    refine hc2.injective (?_ : c k ^ 2 = c l ^ 2)
-    by_cases hkt : k ∈ t <;> by_cases hlt : l ∈ t <;>
-      simp only [μ, hkt, hlt, ↓reduceIte] at hkl <;> linarith
+  have hμ : Function.Injective μ :=
+    injective_ite_neg_sq t (fun _ _ hkl _ ↦ hc2.injective.ne hkl) fun k ↦ (hc k).ne'
   have hAA (k : Fin n) :
       ω.hamiltonianEnd (∑ k, c k • ellipticHyperbolic b t k)
         (ω.hamiltonianEnd (∑ k, c k • ellipticHyperbolic b t k) (b (k, 0))) = μ k • b (k, 0) := by

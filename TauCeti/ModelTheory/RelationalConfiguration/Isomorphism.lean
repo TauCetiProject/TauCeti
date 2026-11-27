@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.RelationalConfiguration.Relabel
 public import TauCeti.MeasureTheory.Constructions.Polish.Analytic
 public import Mathlib.GroupTheory.GroupAction.Blocks
+import TauCeti.GroupTheory.GroupAction.Orbit.Invariant
 
 /-!
 # Isomorphism of relational configurations
@@ -262,11 +263,8 @@ theorem isomorphismInvariant_preimage_quotientMk (s : Set (Quotient (isoSetoid L
 theorem isomorphismInvariant_iff_preimage_image_quotientMk :
     IsomorphismInvariant A ↔
       Quotient.mk (isoSetoid L V) ⁻¹' (Quotient.mk (isoSetoid L V) '' A) = A := by
-  refine ⟨fun hA => (subset_preimage_image _ _).antisymm' ?_, fun h => ?_⟩
-  · rintro d ⟨c, hc, hcd⟩
-    exact hA (Quotient.exact hcd) hc
-  · rw [← h]
-    exact isomorphismInvariant_preimage_quotientMk _
+  rw [isoSetoid_eq_orbitRel, isomorphismInvariant_iff_isInvariantBlock]
+  exact isInvariantBlock_iff_preimage_image_quotientMk
 
 /-- The union of the images of a set under the logic action is isomorphism invariant. -/
 theorem isomorphismInvariant_iUnion_smul (A : Set (RelationalConfiguration L V)) :

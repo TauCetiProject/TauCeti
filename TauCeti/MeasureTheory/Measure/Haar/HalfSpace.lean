@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Sets stable under a half-space of translations
@@ -44,7 +45,12 @@ almost-everywhere representative of a half-space.
 * `TauCeti.eq_setOf_inner_lt_or_le_of_forall_inner_nonpos`: the exact classification.
 * `TauCeti.ae_eq_setOf_inner_lt_of_forall_inner_nonpos`: the almost-everywhere classification.
 * `MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall`,
-  `MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall`: the exact half-ball measures.
+  `MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall`,
+  `MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_ball`,
+  `MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_ball`: the exact half-ball measures.
+* `MeasureTheory.Measure.addHaar_real_setOf_lt_inner_inter_ball_pos`,
+  `MeasureTheory.Measure.addHaar_real_setOf_lt_inner_inter_ball_eq_div_pow_mul`: the open
+  half-balls have positive measure and scale like the balls.
 * `MeasureTheory.Measure.inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner`:
   density at least one half in the closed balls centred in the closed half-space.
 * `TauCeti.hasDensityAt_setOf_inner_lt`: density one half on the boundary hyperplane.
@@ -207,6 +213,54 @@ theorem _root_.MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall
     ext y
     simp only [mem_ofPred_eq, inner_neg_right, neg_lt_neg_iff]
   rw [h, μ.addHaar_setOf_inner_lt_inter_closedBall (neg_ne_zero.2 hν) (by rw [inner_neg_right, hx])]
+
+/-- A half-space cuts every open ball centred on its boundary hyperplane into two equal parts,
+for any additive Haar measure. -/
+theorem _root_.MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_ball
+    (μ : Measure E) [μ.IsAddHaarMeasure] {ν x : E} {c r : ℝ} (hν : ν ≠ 0)
+    (hx : ⟪x, ν⟫ = c) :
+    μ ({y | ⟪y, ν⟫ < c} ∩ ball x r) = μ (ball x r) / 2 := by
+  have : Nontrivial E := ⟨⟨ν, 0, hν⟩⟩
+  rw [← measure_congr (Filter.EventuallyEqSet.rfl.inter (μ.addHaar_closedBall_ae_eq_ball x r)),
+    μ.addHaar_setOf_inner_lt_inter_closedBall hν hx, μ.addHaar_closedBall_eq_addHaar_ball]
+
+/-- The upper half-space `{y | c < ⟪y, ν⟫}` cuts every open ball centred on its boundary
+hyperplane into two equal parts, for any additive Haar measure. -/
+theorem _root_.MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_ball
+    (μ : Measure E) [μ.IsAddHaarMeasure] {ν x : E} {c r : ℝ} (hν : ν ≠ 0)
+    (hx : ⟪x, ν⟫ = c) :
+    μ ({y | c < ⟪y, ν⟫} ∩ ball x r) = μ (ball x r) / 2 := by
+  have : Nontrivial E := ⟨⟨ν, 0, hν⟩⟩
+  rw [← measure_congr (Filter.EventuallyEqSet.rfl.inter (μ.addHaar_closedBall_ae_eq_ball x r)),
+    μ.addHaar_setOf_lt_inner_inter_closedBall hν hx, μ.addHaar_closedBall_eq_addHaar_ball]
+
+/-- An open half-ball centred on the boundary hyperplane of the upper half-space
+`{y | c < ⟪y, ν⟫}` has positive measure, for any additive Haar measure. -/
+theorem _root_.MeasureTheory.Measure.addHaar_real_setOf_lt_inner_inter_ball_pos
+    (μ : Measure E) [μ.IsAddHaarMeasure] {ν x : E} {c r : ℝ} (hν : ν ≠ 0)
+    (hx : ⟪x, ν⟫ = c) (hr : 0 < r) :
+    0 < μ.real ({y | c < ⟪y, ν⟫} ∩ ball x r) := by
+  rw [measureReal_def, μ.addHaar_setOf_lt_inner_inter_ball hν hx]
+  exact ENNReal.toReal_pos (ENNReal.div_pos (measure_ball_pos μ x hr).ne' ENNReal.ofNat_ne_top).ne'
+    (ENNReal.div_lt_top measure_ball_lt_top.ne two_ne_zero).ne
+
+/-- The open half-balls centred on the boundary hyperplane of the upper half-space
+`{y | c < ⟪y, ν⟫}` scale like the balls: for `0 ≤ ρ` and `0 < r`, their measures satisfy
+`μ (H ∩ B(x, ρ)) = (ρ / r)^d μ (H ∩ B(x, r))` with `d` the dimension, for any additive Haar
+measure. -/
+theorem _root_.MeasureTheory.Measure.addHaar_real_setOf_lt_inner_inter_ball_eq_div_pow_mul
+    (μ : Measure E) [μ.IsAddHaarMeasure] {ν x : E} {c ρ r : ℝ} (hν : ν ≠ 0)
+    (hx : ⟪x, ν⟫ = c) (hρ : 0 ≤ ρ) (hr : 0 < r) :
+    μ.real ({y | c < ⟪y, ν⟫} ∩ ball x ρ) =
+      (ρ / r) ^ Module.finrank ℝ E * μ.real ({y | c < ⟪y, ν⟫} ∩ ball x r) := by
+  have : Nontrivial E := ⟨⟨ν, 0, hν⟩⟩
+  have half (t : ℝ) : μ.real ({y | c < ⟪y, ν⟫} ∩ ball x t) = μ.real (ball x t) / 2 := by
+    rw [measureReal_def, μ.addHaar_setOf_lt_inner_inter_ball hν hx, ENNReal.toReal_div,
+      ← measureReal_def, ENNReal.toReal_ofNat]
+  rw [half, half, ← μ.addHaar_real_closedBall_eq_addHaar_real_ball,
+    ← μ.addHaar_real_closedBall_eq_addHaar_real_ball, μ.addHaar_real_closedBall x hρ,
+    μ.addHaar_real_closedBall x hr.le, div_pow]
+  field_simp
 
 /-- At every point of the boundary hyperplane of a half-space with nonzero normal, its
 density with respect to any additive Haar measure is one half. -/

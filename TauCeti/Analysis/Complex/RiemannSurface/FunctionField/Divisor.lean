@@ -28,7 +28,10 @@ meromorphic functions is needed.
 The same pullback computation bounds the degree of a finite holomorphic map `F : X → ℙ¹` by its
 poles. At a pole the affine part of `F` has order minus the local multiplicity, so if this order
 is at least `-D` everywhere, for an effective divisor `D`, then the fibre of `∞` counted with
-multiplicity is bounded by `D` and `deg F ≤ deg D`.
+multiplicity is bounded by `D` and `deg F ≤ deg D`. For `D = n[p]`,
+`TauCeti.RiemannSurface.FiniteHolomorphicMap.singlePole_of_neg_le_meromorphicOrderAt`
+uses this pullback-divisor bound to identify the entire fibre over infinity as `{p}` and the
+order there as minus the degree.
 
 ## References
 
@@ -211,5 +214,34 @@ theorem degree_le_degree_of_neg_le_meromorphicOrderAt [CompactSpace X] [T2Space 
   rw [← degree_divisorPullback_ofPoint F ∞]
   exact WeilDivisor.degree_le_of_le
     (divisorPullback_ofPoint_infty_le_of_neg_le_meromorphicOrderAt hD F hF)
+
+/-- A finite holomorphic map to the sphere whose poles are bounded by `n[p]` has exactly one
+pole, at `p`. Its order there is minus its degree, and its degree is at most `n`. -/
+theorem singlePole_of_neg_le_meromorphicOrderAt [CompactSpace X] [T2Space X]
+    (F : FiniteHolomorphicMap X (OnePoint ℂ)) (p : X) (n : ℕ)
+    (hF : ∀ x, ((-WeilDivisor.coeff (n • WeilDivisor.ofPoint p) x : ℤ) : WithTop ℤ) ≤
+      meromorphicOrderAt (fun y ↦ affineChart (F y)) x) :
+    degree F ≤ n ∧ F ⁻¹' {∞} = {p} ∧
+      meromorphicOrderAt (fun y ↦ affineChart (F y)) p = ((-(degree F : ℤ) : ℤ) : WithTop ℤ) := by
+  classical
+  have hD := nsmul_nonneg (WeilDivisor.ofPoint_nonneg p) n
+  have hdiv := F.divisorPullback_ofPoint_infty_le_of_neg_le_meromorphicOrderAt hD hF
+  have hpoint (x : X) (hx : F x = ∞) : x = p := by
+    by_contra hxp
+    have h : (localMultiplicity F x : ℤ) ≤ 0 := by
+      simpa [coeff_divisorPullback, hx, hxp] using WeilDivisor.le_iff.mp hdiv x
+    exact (localMultiplicity_pos F x).not_ge (by exact_mod_cast h)
+  have hfib : F ⁻¹' {∞} = {p} :=
+    (F.surjective.nonempty_preimage.mpr (Set.singleton_nonempty ∞)).subset_singleton_iff.mp
+      (Set.subset_singleton_iff.mpr hpoint)
+  have hp : F p = ∞ := hfib.symm.subset (Set.mem_singleton p)
+  have hdeg : degree F = localMultiplicity F p :=
+    degree_eq_localMultiplicity_of_preimage_eq_singleton F hfib
+  have horder : meromorphicOrderAt (fun y ↦ affineChart (F y)) p =
+      ((-(degree F : ℤ) : ℤ) : WithTop ℤ) := by
+    rw [hdeg, F.meromorphicOrderAt_affineChart_comp_of_eq_infty hp]
+  have hbound := F.degree_le_degree_of_neg_le_meromorphicOrderAt hD hF
+  simp only [map_nsmul, WeilDivisor.degree_ofPoint, nsmul_eq_mul, mul_one] at hbound
+  exact ⟨by exact_mod_cast hbound, hfib, horder⟩
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap

@@ -20,6 +20,7 @@ import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.Submersion.Basic
 import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
+import TauCeti.GroupTheory.Coset.Basic
 
 /-!
 # Homogeneous spaces of Lie groups
@@ -41,7 +42,17 @@ smooth manifold of dimension `dim G - dim K`, the **homogeneous space** of `G` b
 * the projection sends the generators of left multiplication on `G` to those of the action on
   `G ⧸ K` (`Subgroup.mfderiv_quotientMk_fundamentalVectorField`), which therefore span every
   tangent space of `G ⧸ K` (`Subgroup.surjective_fundamentalVectorField`);
-* `G` acts smoothly on `G ⧸ K` by left multiplication (`Subgroup.contMDiffSMul_quotientOfIsClosed`);
+* `G` acts smoothly on `G ⧸ K` by left multiplication (`Subgroup.contMDiffSMul_quotientOfIsClosed`,
+  with its `C^n` and smooth-translation forms `Subgroup.contMDiffSMul_quotientOfIsClosed_of_le` and
+  `Subgroup.contMDiffConstSMul_quotientOfIsClosed`);
+  the differential of each translation is injective (`Subgroup.injective_mfderiv_smul_quotient`)
+  and satisfies the chain rule (`Subgroup.mfderiv_smul_quotient_comp`), both instances of the
+  general lemmas for smooth group actions in `TauCeti.Geometry.Manifold.Algebra.SMul`; `dπ_1` is
+  the fundamental vector field at the base point
+  (`Subgroup.mfderiv_quotientMk_one_eq_fundamentalVectorField`), so it intertwines
+  `Ad_k` for `k ∈ K` with the differential of the translation by `k`
+  (`Subgroup.mfderiv_smul_mfderiv_quotientMk_one`) and `dπ_g` on left-invariant vector fields with
+  `dπ_1` (`Subgroup.mfderiv_smul_inv_mfderiv_quotientMk_mulInvariantVectorField`);
 * for closed subgroups `K ≤ G` and `L ≤ G'`, the map `[(g, g')] ↦ ([g], [g'])` is a diffeomorphism
   `(G × G') ⧸ (K × L) ≃ (G ⧸ K) × (G' ⧸ L)` (`Subgroup.quotientProdDiffeomorph`).
 
@@ -49,7 +60,8 @@ More generally, if `G` acts smoothly on a boundaryless manifold `M` and `K` acts
 properly, the orbit space `M ⧸ K` is a smooth manifold for the charts
 `Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`
 (`Subgroup.isManifold_orbitRelQuotientOfIsClosed`), and the orbit projection is a smooth
-submersion (`Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed`).
+submersion (`Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed`) whose vertical directions at `y`
+are the orbit directions `𝔨 · y` (`Subgroup.ker_mfderiv_orbitRelQuotientMkOfIsClosed`).
 
 The charts of `G ⧸ K` come from the case `M = G` of this quotient manifold theorem
 (`ProperSMul.instIsManifoldOrbitRelQuotient`), for the action of `K` on `G` by left
@@ -152,6 +164,28 @@ theorem isSubmersion_orbitRelQuotientMkOfIsClosed (hK : IsClosed (K : Set G)) :
   have := d.lieGroup
   have := d.contMDiffSMul (I'' := I') (M := M)
   exact ProperSMul.isSubmersion_quotientMk
+
+/-- **The vertical directions of the orbit projection of a closed subgroup.** For a free proper
+action of a closed subgroup `K`, the kernel of the differential at `y` of the projection
+`M → M ⧸ K` is the orbit tangent space `𝔨 · y`. -/
+theorem ker_mfderiv_orbitRelQuotientMkOfIsClosed (hK : IsClosed (K : Set G)) (y : M) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := orbitRelQuotientChartedSpaceOfIsClosed I I' M hK
+    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK).chartedSpace
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK).lieGroup
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK).contMDiffSMul
+      (I'' := I') (M := M)
+    (mfderiv I'
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule E')
+      (Quotient.mk (MulAction.orbitRel K M)) y).ker =
+      (InfinitesimalAction.fundamental 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
+        K I' M).orbitTangent y := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  exact ProperSMul.ker_mfderiv_quotientMk y
 
 end OrbitSpace
 
@@ -384,6 +418,120 @@ theorem contMDiffSMul_quotientOfIsClosed (hK : IsClosed (K : Set G)) :
     funext fun p ↦ MulAction.Quotient.smul_coe K p.1 p.2
   rw [hcomp]
   exact hπ.contMDiff.comp (contMDiff_mul I ∞)
+
+/-- The action of `G` on its homogeneous space `G ⧸ K` is `C^n` for every `n ≤ ∞`. -/
+theorem contMDiffSMul_quotientOfIsClosed_of_le (hK : IsClosed (K : Set G)) {n : ℕ∞ω}
+    (hn : n ≤ ∞) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    ContMDiffSMul I 𝓘(ℝ, QuotientModelSpace I K) n G (G ⧸ K) :=
+  letI := quotientChartedSpaceOfIsClosed I hK
+  haveI := contMDiffSMul_quotientOfIsClosed (I := I) hK
+  ContMDiffSMul.of_le (M := G ⧸ K) hn
+
+/-- **`G` acts on its homogeneous space `G ⧸ K` by smooth translations**; this is
+`ContMDiffSMul.contMDiffConstSMul` for the smooth action
+`Subgroup.contMDiffSMul_quotientOfIsClosed`. -/
+theorem contMDiffConstSMul_quotientOfIsClosed (hK : IsClosed (K : Set G)) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    ContMDiffConstSMul 𝓘(ℝ, QuotientModelSpace I K) ∞ G (G ⧸ K) :=
+  letI := quotientChartedSpaceOfIsClosed I hK
+  haveI := contMDiffSMul_quotientOfIsClosed (I := I) hK
+  ContMDiffSMul.contMDiffConstSMul I
+
+/-! ### Translations of the homogeneous space -/
+
+section Translation
+
+variable (hK : IsClosed (K : Set G))
+
+include hK in
+/-- The differential of a translation of `G ⧸ K` is injective; this is
+`ContMDiffConstSMul.injective_mfderiv_const_smul` for the action of `G` on `G ⧸ K`. -/
+theorem injective_mfderiv_smul_quotient (g : G) (x : G ⧸ K) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    Injective (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+      (fun y : G ⧸ K ↦ g • y) x) := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  have := contMDiffConstSMul_quotientOfIsClosed (I := I) hK
+  exact ContMDiffConstSMul.injective_mfderiv_const_smul (n := ∞) (by simp) g x
+
+include hK in
+/-- **Chain rule for translations of `G ⧸ K`**; this is
+`ContMDiffConstSMul.mfderiv_const_smul_comp` for the action of `G` on `G ⧸ K`. -/
+theorem mfderiv_smul_quotient_comp (g h : G) (x : G ⧸ K) {y : G ⧸ K} (hy : h • x = y) {c : G}
+    (hc : g * h = c) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    ∀ v : TangentSpace 𝓘(ℝ, QuotientModelSpace I K) x,
+    mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K) (fun z : G ⧸ K ↦ g • z) y
+        (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+          (fun z : G ⧸ K ↦ h • z) x v) =
+      mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+        (fun z : G ⧸ K ↦ c • z) x v := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  have := contMDiffConstSMul_quotientOfIsClosed (I := I) hK
+  exact ContMDiffConstSMul.mfderiv_const_smul_comp (n := ∞) (by simp) g h x hy hc
+
+include hK in
+/-- The differential at the base point of the projection `π : G → G ⧸ K` is the fundamental
+vector field of the action of `G` on `G ⧸ K` at the base point, since `π` is the orbit map of the
+base point. -/
+theorem mfderiv_quotientMk_one_eq_fundamentalVectorField (a : GroupLieAlgebra I G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 a =
+      fundamentalVectorField 𝓘(ℝ, QuotientModelSpace I K) a ((1 : G) : G ⧸ K) := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  rw [fundamentalVectorField_apply, QuotientGroup.smul_mk_one_eq_mk]
+  -- Both sides are now `dπ_1 a`, but the right side keeps the codomain fibre at `1 • ⟦1⟧`, the
+  -- value at `1` of the orbit map, instead of the fibre at `⟦1⟧`. These fibres coincide only up to
+  -- defeq, which the reducible `rfl` tried by `rw` does not see; the default-transparency `rfl`
+  -- closes the goal.
+  rfl
+
+/-- **The projection intertwines conjugation and translation.** For `k ∈ K`, the differential at
+the base point of the translation by `k` sends `dπ_1 a` to `dπ_1 (Ad_k a)`, where `π` is the
+projection `G → G ⧸ K`. This is `TauCeti.mfderiv_smul_fundamentalVectorField` at the base point,
+which `k` fixes. -/
+theorem mfderiv_smul_mfderiv_quotientMk_one {k : G} (hk : k ∈ K) (a : GroupLieAlgebra I G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K) (fun y : G ⧸ K ↦ k • y)
+        ((1 : G) : G ⧸ K)
+        (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 a) =
+      mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1
+        (Lie.adjointContinuousLinearMap (I := I) k a) := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  have := contMDiffSMul_quotientOfIsClosed_of_le (I := I) hK (n := 1) (by simp)
+  have hko : k • ((1 : G) : G ⧸ K) = ((1 : G) : G ⧸ K) := by
+    rw [MulAction.Quotient.smul_coe, smul_eq_mul, mul_one]
+    exact QuotientGroup.eq.2 (by simpa using K.inv_mem hk)
+  rw [mfderiv_quotientMk_one_eq_fundamentalVectorField hK,
+    mfderiv_quotientMk_one_eq_fundamentalVectorField hK,
+    mfderiv_smul_fundamentalVectorField (I := I) k a, hko]
+
+/-- **The projection is left-equivariant on left-invariant vector fields.** Translating
+`dπ_g (X_a g)` back to the base point by `g⁻¹` gives `dπ_1 a`, where `X_a` is the left-invariant
+vector field of `a` and `π` is the projection `G → G ⧸ K`. This is
+`TauCeti.mfderiv_smul_mulInvariantVectorField` at the base point, translated back by `g⁻¹`. -/
+theorem mfderiv_smul_inv_mfderiv_quotientMk_mulInvariantVectorField (g : G)
+    (a : GroupLieAlgebra I G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K) (fun y : G ⧸ K ↦ g⁻¹ • y)
+        (g : G ⧸ K)
+        (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g
+          (mulInvariantVectorField a g)) =
+      mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 a := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  have := contMDiffConstSMul_quotientOfIsClosed (I := I) hK
+  have := contMDiffSMul_quotientOfIsClosed_of_le (I := I) hK (n := 1) (by simp)
+  have key := mfderiv_smul_mulInvariantVectorField (I := I) (I' := 𝓘(ℝ, QuotientModelSpace I K))
+    a g ((1 : G) : G ⧸ K)
+  rw [QuotientGroup.smul_mk_one_eq_mk] at key
+  have hgo : g • ((1 : G) : G ⧸ K) = (g : G ⧸ K) := by simp
+  exact (congrArg (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+    (fun y : G ⧸ K ↦ g⁻¹ • y) (g : G ⧸ K)) key).trans
+    ((ContMDiffConstSMul.mfderiv_inv_smul_mfderiv_smul (n := ∞) (by simp) g _ hgo _).trans
+      (mfderiv_quotientMk_one_eq_fundamentalVectorField hK a).symm)
+
+end Translation
 
 /-! ### Products of homogeneous spaces -/
 

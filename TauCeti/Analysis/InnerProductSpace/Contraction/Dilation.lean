@@ -11,7 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Contraction
 public import TauCeti.Analysis.InnerProductSpace.ProdL2
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt.Basic
 
 /-!
 # The unitary dilation of a self-adjoint contraction

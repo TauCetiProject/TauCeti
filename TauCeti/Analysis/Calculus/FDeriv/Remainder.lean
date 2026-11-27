@@ -19,7 +19,10 @@ import TauCeti.Topology.Compactness.Normed
 A map `f` has Fréchet derivative `L` at `x` exactly when the relative remainder
 `‖f (x + h) - f x - L h‖ / ‖h‖` tends to `0` as `h → 0` with `h ≠ 0`. This is
 Mathlib's `hasFDerivAt_iff_isLittleO_nhds_zero` with the increment `0` removed from the filter,
-which is the form in which difference quotients are usually compared.
+which is the form in which difference quotients are usually compared. For relative derivatives
+`HasFDerivWithinAt f L s x`, `HasFDerivWithinAt.exists_ball_remainder_le` extracts the quantitative
+ball bound `‖f y - f x - L (y - x)‖ ≤ ε * ‖y - x‖` on `ball x δ ∩ s`, and
+`HasFDerivWithinAt.exists_ball_dist_le_add_one_mul` deduces the `(‖L‖ + 1)` distance bound at `x`.
 
 For a family of maps `F p` that is jointly `C¹` at the graph of `x`, the remainder is moreover
 small uniformly over a compact set `K` of parameters `p`, at base points `x p` depending
@@ -65,6 +68,30 @@ theorem hasFDerivAt_iff_tendsto_norm_div_nhdsNE :
     simp
   rw [hpunct, ← Asymptotics.isLittleO_norm_norm,
     Asymptotics.isLittleO_iff_tendsto (by simp +contextual)]
+
+/-- If the linear-approximation error `‖f y - f x - L (y - x)‖` is at most `‖y - x‖`, then
+`dist (f y) (f x) ≤ (‖L‖ + 1) * dist y x`. -/
+theorem _root_.ContinuousLinearMap.dist_le_add_one_mul_of_norm_sub_le (L : E →L[𝕜] F) {y : E}
+    (h : ‖f y - f x - L (y - x)‖ ≤ ‖y - x‖) :
+    dist (f y) (f x) ≤ (‖L‖ + 1) * dist y x := by
+  rw [dist_eq_norm, dist_eq_norm, ← sub_add_cancel (f y - f x) (L (y - x))]
+  exact (norm_add_le _ _).trans (by nlinarith [L.le_opNorm (y - x), norm_nonneg L])
+
+/-- Quantitative `δ`-ball remainder bound for `HasFDerivWithinAt`: for every `ε > 0`, there
+exists `δ > 0` such that `‖f y - f x - L (y - x)‖ ≤ ε * ‖y - x‖` for all `y ∈ ball x δ ∩ s`. -/
+theorem _root_.HasFDerivWithinAt.exists_ball_remainder_le {s : Set E}
+    (hf : HasFDerivWithinAt f L s x) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ y ∈ ball x δ, y ∈ s → ‖f y - f x - L (y - x)‖ ≤ ε * ‖y - x‖ :=
+  eventually_nhds_iff_ball.mp (eventually_nhdsWithin_iff.mp (hf.isLittleO.bound hε))
+
+/-- Near a relative differentiability point, `f` satisfies `dist (f y) (f x) ≤ (‖L‖ + 1) * dist y x`
+on `ball x δ ∩ s`. -/
+theorem _root_.HasFDerivWithinAt.exists_ball_dist_le_add_one_mul {s : Set E}
+    (hf : HasFDerivWithinAt f L s x) :
+    ∃ δ > 0, ∀ y ∈ ball x δ, y ∈ s → dist (f y) (f x) ≤ (‖L‖ + 1) * dist y x := by
+  obtain ⟨δ, hδ, hδb⟩ := hf.exists_ball_remainder_le zero_lt_one
+  exact ⟨δ, hδ, fun y hy hys =>
+    L.dist_le_add_one_mul_of_norm_sub_le (by simpa only [one_mul] using hδb y hy hys)⟩
 
 end TauCeti
 
