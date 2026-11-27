@@ -404,18 +404,18 @@ theorem relativeSpecPullbackFst_comp :
   rfl
 
 /-- Compatibility of `relativeSpecPullbackFst` with composition along a commuting triangle
-`g ≫ f = h`: the relative-Spec map of `pullbackComp g f ≪≫ eqToIso _` followed by the two
+`g ≫ f = h`: the relative-Spec map of `pullbackComp g f ≪≫ pullbackCongr _` followed by the two
 base-change projections is the projection for `h`. -/
 @[reassoc]
-theorem relativeSpecMap_pullbackComp_eqToIso_fst {h : Z ⟶ X} (hgf : g ≫ f = h) :
+theorem relativeSpecMap_pullbackComp_pullbackCongr_fst {h : Z ⟶ X} (hgf : g ≫ f = h) :
     CommMon.relativeSpecMap
         ((QuasicoherentAlgebra.pullbackComp g f ≪≫
-          eqToIso (congrArg QuasicoherentAlgebra.pullback hgf)).hom.app A).hom ≫
+          QuasicoherentAlgebra.pullbackCongr hgf).hom.app A).hom ≫
       relativeSpecPullbackFst ((QuasicoherentAlgebra.pullback f).obj A) g ≫
         relativeSpecPullbackFst A f =
       relativeSpecPullbackFst A h := by
   subst hgf
-  simp only [eqToIso_refl, Iso.trans_refl]
+  simp only [QuasicoherentAlgebra.pullbackCongr_refl, Iso.trans_refl]
   exact (relativeSpecPullbackFst_comp A f g).symm
 
 /-- **Base change of relative spectra along the identity.** The projection
@@ -449,10 +449,9 @@ theorem relativeSpecPullbackFst_id :
   rfl
 
 /-- Transporting `relativeSpecPullbackFst` along an equality of base morphisms. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem relativeSpecPullbackFst_congr {f₁ f₂ : Y ⟶ X} (hf : f₁ = f₂) :
-    CommMon.relativeSpecMap
-        (eqToHom (congrArg (fun k ↦ (QuasicoherentAlgebra.pullback k).obj A) hf)).hom ≫
+    CommMon.relativeSpecMap ((QuasicoherentAlgebra.pullbackCongr hf).hom.app A).hom ≫
       relativeSpecPullbackFst A f₁ = relativeSpecPullbackFst A f₂ := by
   subst hf
   simp

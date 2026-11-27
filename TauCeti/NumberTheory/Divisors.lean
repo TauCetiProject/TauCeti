@@ -62,6 +62,9 @@ product over the divisors of `1, …, N` by divisor: `d` occurs `N / d` times.
 For radical `P`, `Nat.pairwiseDisjoint_divisors_pow_filter_dvd` states that the families of
 divisors of `d ^ M` divisible by `d` are pairwise disjoint as `d` ranges over the divisors of `P`.
 
+For coprime `m` and `n`, `Nat.Coprime.divisors_filter_pow_dvd_mul` splits the divisors `d` of
+`m * n` with `d ^ k ∣ m * n` as products of the corresponding divisors of `m` and of `n`.
+
 For `N ≠ 0`, `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the
 subtype of `N.divisors` omitting the unit divisor. `TauCeti.pnatDvdEquivDivisors`,
 `TauCeti.pnatMulDvdEquivSigma`, and `TauCeti.pnatMulDvdAndEquivSigma` identify positive divisors
@@ -538,5 +541,24 @@ theorem prod_Ioc_prod_divisors {M : Type*} [CommMonoid M] (N : ℕ) (f : ℕ →
       exact ⟨⟨⟨hi, hiN⟩, hdi⟩, Nat.pos_of_dvd_of_pos hdi hi, (Nat.le_of_dvd hi hdi).trans hiN⟩
     · rintro ⟨⟨⟨hi, hiN⟩, hdi⟩, -⟩
       exact ⟨⟨hi, hiN⟩, hdi, hi.ne'⟩
+
+/-- For coprime `m` and `n`, the divisors `d` of `m * n` with `d ^ k ∣ m * n` are the products
+`a * b` of divisors `a` of `m` with `a ^ k ∣ m` and `b` of `n` with `b ^ k ∣ n`. -/
+theorem Coprime.divisors_filter_pow_dvd_mul {m n : ℕ} (hmn : m.Coprime n) (k : ℕ) :
+    {d ∈ (m * n).divisors | d ^ k ∣ m * n} =
+      ({a ∈ m.divisors | a ^ k ∣ m} ×ˢ {b ∈ n.divisors | b ^ k ∣ n}).image
+        fun p ↦ p.1 * p.2 := by
+  ext d
+  simp only [mem_filter, mem_image, mem_product, mem_divisors, Prod.exists]
+  constructor
+  · rintro ⟨⟨hd, hmn0⟩, hdk⟩
+    obtain ⟨a, b, ha, hb, rfl⟩ := Nat.dvd_mul.mp hd
+    rw [mul_pow] at hdk
+    refine ⟨a, b, ⟨⟨⟨ha, left_ne_zero_of_mul hmn0⟩, ?_⟩, ⟨hb, right_ne_zero_of_mul hmn0⟩, ?_⟩, rfl⟩
+    · exact ((hmn.coprime_dvd_left ha).pow_left k).dvd_of_dvd_mul_right (dvd_of_mul_right_dvd hdk)
+    · exact ((hmn.symm.coprime_dvd_left hb).pow_left k).dvd_of_dvd_mul_left
+        (dvd_of_mul_left_dvd hdk)
+  · rintro ⟨a, b, ⟨⟨⟨ha, hm⟩, hak⟩, ⟨hb, hn⟩, hbk⟩, rfl⟩
+    exact ⟨⟨mul_dvd_mul ha hb, mul_ne_zero hm hn⟩, mul_pow a b k ▸ mul_dvd_mul hak hbk⟩
 
 end Nat

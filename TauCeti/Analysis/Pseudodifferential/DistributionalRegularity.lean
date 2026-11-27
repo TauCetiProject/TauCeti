@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.WaveFrontSet.DifferentialOperator
 public import TauCeti.Analysis.Distribution.WaveFrontSet.EllipticRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 public import TauCeti.Analysis.Holder.Distribution
 public import TauCeti.Analysis.Sobolev.BesselPotential.Local
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
@@ -111,6 +113,16 @@ gives the **local Schauder theorem**: for `0 < α < 1`,
 
 (`Distribution.IsLocallyCkHolderAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`).
 
+The same holds for a differential operator `D` of order at most `r` on `C^∞(ℝⁿ)` in Grothendieck's
+sense (`TauCeti.differentialOperators`), acting on distributions by transposition, `φ ↦ S (D φ)`,
+and elliptic at `x`: its principal symbol `σ(D)(x, ⟪ξ, ·⟫)` (`TauCeti.smoothPrincipalSymbol`)
+vanishes at no `ξ ≠ 0`. In coordinates this transpose is an operator `∑ i, g i ∂^(v i)` with
+smooth coefficients and principal symbol `(-1) ^ r σ(D)`
+(`Distribution.exists_eq_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_mem_differentialOperators`),
+so the theorems above apply (`Distribution.IsLocallyMemSobolevAt.of_mem_differentialOperators` and
+its analogues). This is the form in which differential operators between vector bundles reach this
+file through their chart compressions.
+
 ## Main results
 
 * `TauCeti.differentialSymbol_filter_smul_id`,
@@ -133,6 +145,11 @@ gives the **local Schauder theorem**: for `0 < α < 1`,
 * `Distribution.IsLocallyMemBesovAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`,
   `Distribution.IsLocallyCkHolderAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`: interior elliptic
   regularity on `B^s_{p,q}` and the local Schauder theorem on `C^{j,α}`, `0 < α < 1`.
+* `Distribution.IsLocallyMemSobolevAt.of_mem_differentialOperators`,
+  `Distribution.IsLocallySobolevAt.of_mem_differentialOperators`,
+  `Distribution.IsLocallyMemBesovAt.of_mem_differentialOperators`,
+  `Distribution.IsLocallyCkHolderAt.of_mem_differentialOperators`: the same for the transposes of
+  differential operators on `C^∞(ℝⁿ)` in Grothendieck's sense.
 * `Distribution.sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero`,
   `Distribution.sobolevSingularSupport_laplacianCLM`: elliptic operators shift the `H^s` singular
   support by their order.
@@ -206,16 +223,8 @@ private theorem exists_isEllipticAbove_ofDifferentialSymbol {c : ι → ℂ}
     ∃ (b : ι → CoordinateSpace n → ℂ →L[ℂ] ℂ) (hb : ∀ i ∈ t, ContDiff ℝ ∞ (b i)) (R : ℝ),
       (ClassicalSymbol.ofDifferentialSymbol M t m b hb hk).toSymbol.IsEllipticAbove R ∧
         ∀ y ∈ closedBall x r, ∀ i, b i y = (c i * g i y) • ContinuousLinearMap.id ℂ ℂ := by
-  -- `ρ y = x + θ(y) (y - x)` is the identity on `closedBall x r`, maps into `B(x, ε)` and is
-  -- constant outside it.
-  let θ : ContDiffBump x := ⟨r, ε, hr, hrε⟩
-  let ρ : CoordinateSpace n → CoordinateSpace n := fun y ↦ x + θ y • (y - x)
-  have hρ : ContDiff ℝ ∞ ρ := contDiff_const.add (θ.contDiff.smul (contDiff_id.sub contDiff_const))
-  have hρε (y : CoordinateSpace n) : ρ y ∈ ball x ε := by
-    by_cases hy : y ∈ ball x ε
-    · rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg θ.nonneg]
-      exact (mul_le_of_le_one_left (norm_nonneg _) θ.le_one).trans_lt (mem_ball_iff_norm.1 hy)
-    · simpa [ρ, θ.zero_of_le_dist (not_lt.1 hy)] using mem_ball_self (x := x) (hr.trans hrε)
+  -- `ρ` is the identity on `closedBall x r`, maps into `B(x, ε)` and is constant outside it.
+  obtain ⟨ρ, hρ, hρε, hρid, hρout⟩ := exists_contDiff_cutoff_self x hr hrε
   set β : ι → CoordinateSpace n → ℂ := fun i y ↦ c i * g i (ρ y)
   have hβ (i : ι) : ContDiff ℝ ∞ (β i) :=
     contDiff_const.mul (Complex.ofRealCLM.contDiff.comp ((hg i).comp hρ))
@@ -226,13 +235,14 @@ private theorem exists_isEllipticAbove_ofDifferentialSymbol {c : ι → ℂ}
     (ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff M hb hk).2
       fun y ξ hξ ↦ hσ _ (hρε y) ξ hξ
   have hρx (y : CoordinateSpace n) (hy : y ∉ closedBall x ε) : ρ y = ρ x := by
-    simp [ρ, θ.zero_of_le_dist (le_of_lt (not_le.1 hy))]
+    rw [hρout y fun h ↦ hy (ball_subset_closedBall h),
+      hρid x (mem_closedBall_self hr.le)]
   obtain ⟨R, hR⟩ := ha.exists_isEllipticAbove (isCompact_closedBall x ε) fun y hy ↦
     ⟨x, mem_closedBall_self (hr.trans hrε).le, fun ξ ↦ by
       simp only [a, ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol,
         differentialSymbol_def, β, hρx y hy]⟩
   refine ⟨_, hb, R, hR, fun y hy i ↦ ?_⟩
-  simp [β, ρ, θ.one_of_mem_closedBall hy]
+  simp [β, hρid y hy]
 
 end TauCeti
 
@@ -638,5 +648,117 @@ theorem IsLocallyCkHolderAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp
     ENNReal.one_lt_top hg hk hσ
   rw [add_right_comm, ← Nat.cast_add] at hreg
   exact hreg.isLocallyCkHolderAt hα0 hα1
+
+/-! ### Differential operators in Grothendieck's sense -/
+
+section DifferentialOperators
+
+open scoped Manifold
+
+variable {D : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ →ₗ[ℝ]
+    C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯} {r : ℕ} {S R : 𝓓'(Ω, ℂ)}
+
+/-- The transpose `R : φ ↦ S (D φ)` of a distribution `S` by a differential operator `D` of order
+at most `r` that is elliptic at `x` is `∑ i ∈ t, g i ∂^(v i) S` for an operator with smooth real
+coefficients `g i` and orders at most `r`, which is elliptic at `x`. -/
+private theorem exists_eq_sum_smul_smulLeftCLM_iteratedLineDerivOp_and_forall_ne_zero
+    (hD : D ∈ TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ r)
+    (hR : ∀ (φ ψ : 𝓓(Ω, ℝ)) (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯),
+      ⇑f = φ → ⇑ψ = D f → R φ = S ψ)
+    {x : CoordinateSpace n} (hσ : ∀ ξ, ξ ≠ 0 → TauCeti.smoothPrincipalSymbol
+      𝓘(ℝ, CoordinateSpace n) (x := x) BoundarylessManifold.isInteriorPoint ⟨D, hD⟩
+      (innerSL ℝ ξ : CoordinateSpace n →L[ℝ] ℝ) ≠ 0) :
+    ∃ (ι : Type) (t : Finset ι) (k : ι → ℕ) (v : ∀ i, Fin (k i) → CoordinateSpace n)
+      (g : ι → CoordinateSpace n → ℝ) (hg : ∀ i, ContDiff ℝ ∞ (g i)), (∀ i ∈ t, k i ≤ r) ∧
+      (∀ ξ, ξ ≠ 0 → constCoeffPrincipalSymbol t (fun i ↦ 1 * g i x) v r ξ ≠ 0) ∧
+      R = ∑ i ∈ t, (1 : ℂ) • Distribution.smulLeftCLM (hg i) (∂^{v i} S) := by
+  obtain ⟨ι, t, k, v, g, hg, hk, hσD, hRS⟩ :=
+    exists_eq_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_mem_differentialOperators hD
+  refine ⟨ι, t, k, v, g, hg, hk, fun ξ hξ ↦ ?_, hRS Ω S R hR⟩
+  have h := hσD x ξ
+  rw [principalSymbol_def] at h
+  rw [h]
+  exact Complex.ofReal_ne_zero.2 (mul_ne_zero (pow_ne_zero _ (by norm_num)) (hσ ξ hξ))
+
+/-- **Interior elliptic regularity on `H^{s,p}` for differential operators.** Let `1 < p < ∞` and
+let `D` be a differential operator of order at most `r` on `C^∞(ℝⁿ)`, in Grothendieck's sense,
+elliptic at `x`: its principal symbol `σ(D)(x, ⟪ξ, ·⟫)` vanishes at no `ξ ≠ 0`. If the transpose
+`R : φ ↦ S (D φ)` of a distribution `S` is `H^{s,p}` near `x`, then `S` is `H^{s + r,p}` near
+`x`. -/
+theorem IsLocallyMemSobolevAt.of_mem_differentialOperators {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    (hD : D ∈ TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ r)
+    (hR : ∀ (φ ψ : 𝓓(Ω, ℝ)) (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯),
+      ⇑f = φ → ⇑ψ = D f → R φ = S ψ)
+    {x : CoordinateSpace n} {s : ℝ} (hσ : ∀ ξ, ξ ≠ 0 → TauCeti.smoothPrincipalSymbol
+      𝓘(ℝ, CoordinateSpace n) (x := x) BoundarylessManifold.isInteriorPoint ⟨D, hD⟩
+      (innerSL ℝ ξ : CoordinateSpace n →L[ℝ] ℝ) ≠ 0)
+    (h : R.IsLocallyMemSobolevAt s p x) : S.IsLocallyMemSobolevAt (s + r) p x := by
+  obtain ⟨_, _, _, _, _, hg, hk, hσ', rfl⟩ :=
+    exists_eq_sum_smul_smulLeftCLM_iteratedLineDerivOp_and_forall_ne_zero hD hR hσ
+  exact .of_sum_smul_smulLeftCLM_iteratedLineDerivOp hp hp_top hg hk hσ' h
+
+/-- **Interior elliptic regularity on `H^s` for differential operators.** Let `D` be a differential
+operator of order at most `r` on `C^∞(ℝⁿ)`, in Grothendieck's sense, elliptic at `x`. If the
+transpose `R : φ ↦ S (D φ)` of a distribution `S` is `H^s` near `x`, then `S` is `H^(s + r)` near
+`x`. -/
+theorem IsLocallySobolevAt.of_mem_differentialOperators
+    (hD : D ∈ TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ r)
+    (hR : ∀ (φ ψ : 𝓓(Ω, ℝ)) (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯),
+      ⇑f = φ → ⇑ψ = D f → R φ = S ψ)
+    {x : CoordinateSpace n} {s : ℝ} (hσ : ∀ ξ, ξ ≠ 0 → TauCeti.smoothPrincipalSymbol
+      𝓘(ℝ, CoordinateSpace n) (x := x) BoundarylessManifold.isInteriorPoint ⟨D, hD⟩
+      (innerSL ℝ ξ : CoordinateSpace n →L[ℝ] ℝ) ≠ 0)
+    (h : R.IsLocallySobolevAt s x) : S.IsLocallySobolevAt (s + r) x := by
+  obtain ⟨_, _, _, _, _, hg, hk, hσ', rfl⟩ :=
+    exists_eq_sum_smul_smulLeftCLM_iteratedLineDerivOp_and_forall_ne_zero hD hR hσ
+  exact .of_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk hσ' h
+
+/-- **Interior elliptic regularity on Besov spaces for differential operators.** Let `1 < p ≤ ∞`
+and `1 ≤ q ≤ ∞`, and let `D` be a differential operator of order at most `r` on `C^∞(ℝⁿ)`, in
+Grothendieck's sense, elliptic at `x`. If the transpose `R : φ ↦ S (D φ)` of a distribution `S` is
+`B^s_{p,q}` near `x`, then `S` is `B^{s + r}_{p,q}` near `x`. -/
+theorem IsLocallyMemBesovAt.of_mem_differentialOperators
+    {ρ : ContDiffBump (0 : CoordinateSpace n)} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+    (hp : 1 < p)
+    (hD : D ∈ TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ r)
+    (hR : ∀ (φ ψ : 𝓓(Ω, ℝ)) (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯),
+      ⇑f = φ → ⇑ψ = D f → R φ = S ψ)
+    {x : CoordinateSpace n} {s : ℝ} (hσ : ∀ ξ, ξ ≠ 0 → TauCeti.smoothPrincipalSymbol
+      𝓘(ℝ, CoordinateSpace n) (x := x) BoundarylessManifold.isInteriorPoint ⟨D, hD⟩
+      (innerSL ℝ ξ : CoordinateSpace n →L[ℝ] ℝ) ≠ 0)
+    (h : R.IsLocallyMemBesovAt ρ s p q x) : S.IsLocallyMemBesovAt ρ (s + r) p q x := by
+  obtain ⟨_, _, _, _, _, hg, hk, hσ', rfl⟩ :=
+    exists_eq_sum_smul_smulLeftCLM_iteratedLineDerivOp_and_forall_ne_zero hD hR hσ
+  exact .of_sum_smul_smulLeftCLM_iteratedLineDerivOp hp hg hk hσ' h
+
+/-- **Local Schauder regularity for differential operators.** Let `0 < α < 1`, and let `D` be a
+differential operator of order at most `r` on `C^∞(ℝⁿ)`, in Grothendieck's sense, elliptic at `x`.
+If the transpose `R : φ ↦ S (D φ)` of a distribution `S` is a `C^{j,α}` function near `x`, then `S`
+is a `C^{j + r,α}` function near `x`. -/
+theorem IsLocallyCkHolderAt.of_mem_differentialOperators
+    (hD : D ∈ TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ r)
+    (hR : ∀ (φ ψ : 𝓓(Ω, ℝ)) (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯),
+      ⇑f = φ → ⇑ψ = D f → R φ = S ψ)
+    {x : CoordinateSpace n} {j : ℕ} {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (hσ : ∀ ξ, ξ ≠ 0 → TauCeti.smoothPrincipalSymbol
+      𝓘(ℝ, CoordinateSpace n) (x := x) BoundarylessManifold.isInteriorPoint ⟨D, hD⟩
+      (innerSL ℝ ξ : CoordinateSpace n →L[ℝ] ℝ) ≠ 0)
+    (h : R.IsLocallyCkHolderAt j α x) : S.IsLocallyCkHolderAt (j + r) α x := by
+  obtain ⟨_, _, _, _, _, hg, hk, hσ', rfl⟩ :=
+    exists_eq_sum_smul_smulLeftCLM_iteratedLineDerivOp_and_forall_ne_zero hD hR hσ
+  exact .of_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk hα0 hα1 hσ' h
+
+end DifferentialOperators
 
 end Distribution

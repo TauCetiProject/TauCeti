@@ -16,7 +16,9 @@ import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Geometry.Symplectic.Floer.Plane.SemiFredholm
 import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Cokernel
+import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 
 /-!
@@ -250,33 +252,6 @@ private theorem inv_mul_norm_floerLinearizationAdjoint_smul_sq_le (ω : Symplect
     simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero]
     exact mul_nonneg (by positivity) (indicator_nonneg (fun _ _ ↦ by positivity) _)
 
-omit [FiniteDimensional ℝ V] in
-/-- If `g = η` on the disc `‖w‖ ≤ n`, then on every measurable set the `L²` norm of `η` is at most
-that of `g` plus the `L²` norm of `η` on `‖w‖ ≥ n`. -/
-private theorem setIntegral_norm_sq_le_setIntegral_add {η g : ℝ × ℝ → V →L[ℝ] ℝ} {n : ℝ}
-    {S : Set (ℝ × ℝ)} (hηi : Integrable fun z ↦ ‖η z‖ ^ 2)
-    (hgi : Integrable fun z ↦ ‖g z‖ ^ 2)
-    (hgη : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ n → g z = η z) :
-    ∫ z in S, ‖η z‖ ^ 2 ≤ (∫ z in S, ‖g z‖ ^ 2) +
-      ∫ z in {z : ℝ × ℝ | n ≤ ‖Complex.equivRealProdCLM.symm z‖}, ‖η z‖ ^ 2 := by
-  set T := {z : ℝ × ℝ | n ≤ ‖Complex.equivRealProdCLM.symm z‖}
-  have hT : MeasurableSet T :=
-    measurableSet_le measurable_const Complex.equivRealProdCLM.symm.continuous.norm.measurable
-  have hind : Integrable (T.indicator fun z ↦ ‖η z‖ ^ 2) := hηi.indicator hT
-  calc ∫ z in S, ‖η z‖ ^ 2 ≤ ∫ z in S, (‖g z‖ ^ 2 + T.indicator (fun z ↦ ‖η z‖ ^ 2) z) := by
-        refine setIntegral_mono hηi.integrableOn (hgi.integrableOn.add hind.integrableOn)
-          fun z ↦ ?_
-        by_cases hz : z ∈ T
-        · rw [indicator_of_mem hz]
-          linarith [sq_nonneg ‖g z‖]
-        · rw [indicator_of_notMem hz, hgη z (not_le.1 hz).le, add_zero]
-    _ = (∫ z in S, ‖g z‖ ^ 2) + ∫ z in S, T.indicator (fun z ↦ ‖η z‖ ^ 2) z :=
-        integral_add hgi.integrableOn hind.integrableOn
-    _ ≤ (∫ z in S, ‖g z‖ ^ 2) + ∫ z in T, ‖η z‖ ^ 2 := by
-        gcongr
-        rw [← integral_indicator hT]
-        exact setIntegral_le_integral hind (ae_of_all _ (indicator_nonneg fun z _ ↦ by positivity))
-
 /-- **The weighted adjoint of a cut-off cokernel element.** Under the hypotheses of
 `inv_mul_norm_floerLinearizationAdjoint_smul_sq_le`, for square-integrable `η`,
 `∫ (1 + ‖w‖²) ‖D^* (χ η)‖² ≤ 5 (M (1 + B))² ∫_{‖w‖ ≥ n} ‖η‖²`. -/
@@ -305,22 +280,6 @@ private theorem integral_inv_mul_norm_floerLinearizationAdjoint_smul_sq_le (ω :
       hχ0 hχ2 hχM z)
   have := (PSSPlane.isWeight_cylindricalWeight.pos z (mem_univ z)).le
   positivity
-
-omit [FiniteDimensional ℝ V] in
-/-- If `g = η` on the disc `‖w‖ ≤ a`, the `L²` norm of `η` there is at most the `W^{1,2}` energy of
-`g` there. -/
-private theorem setIntegral_norm_sq_le_setIntegral_sobolevDensity {η g : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hηi : Integrable fun z ↦ ‖η z‖ ^ 2) (hg : ContDiff ℝ 1 g) {a : ℝ}
-    (hgη : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ a → g z = η z) :
-    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, ‖η z‖ ^ 2 ≤
-      ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, sobolevDensity g z :=
-  setIntegral_mono_on hηi.integrableOn
-    ((continuous_sobolevDensity hg).continuousOn.integrableOn_compact
-      (isCompact_setOf_norm_equivRealProdCLM_symm_le _))
-    (isCompact_setOf_norm_equivRealProdCLM_symm_le _).measurableSet fun z hz ↦ by
-      rw [sobolevDensity_apply, hgη z hz]
-      nlinarith [sq_nonneg ‖fderiv ℝ g z stdComplexLineReal‖,
-        sq_nonneg ‖fderiv ℝ g z stdComplexLineImag‖]
 
 /-- The arithmetic closing the `L²` estimate: if `X = X₀ + X₁` with `X₀ ≤ D`,
 `X₁ ≤ (1 + B)² E + t`, `E, D, T, P ≥ 0`, `E + D ≤ C (T + P)` and `T ≤ c t`, then
@@ -416,9 +375,15 @@ private theorem exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero
     (hη.of_le one_le_two) hD hηi (hχs.of_le (by simp)) (by exact_mod_cast le_of_add_le_right hn)
     hχd0 hχd2 hχM
   -- On the disc `D₀` the cutoff is `1`, and off it the cutoff costs at most the tail.
-  have hDisc := setIntegral_norm_sq_le_setIntegral_sobolevDensity hηi (hg.of_le one_le_two)
-    fun z hz ↦ hgη z (le_trans hz hR0n)
-  have hEnd := setIntegral_norm_sq_le_setIntegral_add (S := D₀ᶜ) hηi hgi hgη
+  have hDisc := setIntegral_norm_sq_le_setIntegral_sobolevDensity
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le (Real.exp (2 * π * R))) hηi.integrableOn
+    (hg.of_le one_le_two) fun z hz ↦ hgη z (le_trans hz hR0n)
+  have hEnd := setIntegral_le_setIntegral_add_setIntegral (S := D₀ᶜ)
+    (f := fun z ↦ ‖η z‖ ^ 2) (g := fun z ↦ ‖g z‖ ^ 2)
+    (measurableSet_le measurable_const Complex.equivRealProdCLM.symm.continuous.norm.measurable)
+    (fun z ↦ by positivity) (fun z ↦ by positivity) hηi hgi
+    (T := {z : ℝ × ℝ | (n : ℝ) ≤ ‖Complex.equivRealProdCLM.symm z‖})
+    fun z hz ↦ by simp only [hgη z (not_le.1 fun h ↦ hz h).le]
   have hEnd' := setIntegral_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPullback hJ hu hB
     (hg.of_le one_le_two) hgc R
   rw [show {z : ℝ × ℝ | Real.exp (2 * π * R) < ν z} = D₀ᶜ by ext z; simp [D₀]] at hEnd'

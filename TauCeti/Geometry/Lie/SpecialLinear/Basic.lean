@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Instances.SpecialLinearGroup
 public import TauCeti.Geometry.Lie.Subgroup.SpecialLinear
 public import TauCeti.Geometry.Lie.Functor
+public import TauCeti.Geometry.Lie.Adjoint.Basic
 import TauCeti.Geometry.Lie.Subgroup.Differential
 import TauCeti.Geometry.Lie.AutomaticSmoothness
 
@@ -24,6 +25,9 @@ The target uses the canonical `RestrictScalars` type synonym. For `𝕜 = ℂ`, 
 underlying real Lie algebra of the complex trace-zero algebra. The empty and singleton
 index types give trivial groups.
 
+In matrix coordinates the adjoint action is conjugation: the differential at the identity of the
+matrix inclusion carries `Ad_g X` to `g X g⁻¹`.
+
 Matrix statements use the `L∞` operator norm. Enable `open scoped Matrix.Norms.Operator` and
 `attribute [local instance] Matrix.linftyOpTopologicalSpace` when using them.
 
@@ -34,6 +38,8 @@ Matrix statements use the `L∞` operator norm. Enable `open scoped Matrix.Norms
 * `Matrix.SpecialLinearGroup.toGLRealSmoothHom_apply`: the inclusion on group elements.
 * `Matrix.SpecialLinearGroup.lieAlgebraLieEquiv`: the real Lie algebra is the trace-zero algebra.
 * `Matrix.SpecialLinearGroup.coe_lieAlgebraLieEquiv_apply`: the inclusion differential formula.
+* `Matrix.SpecialLinearGroup.mvfderiv_subtypeVal_adjointContinuousLinearMap`: the adjoint action
+  in matrix coordinates is conjugation.
 
 ## References
 
@@ -179,5 +185,16 @@ theorem coe_lieAlgebraLieEquiv_apply (D : LeftInvariantDerivation 𝓘(ℝ, E) S
     (lieMap_comp (comparisonSmoothHom n 𝕜) (closedData n 𝕜).subtypeVal) D
   rw [comparison_comp_inclusion] at hcomp
   exact congrArg (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)) hcomp.symm
+
+variable {n 𝕜} in
+/-- **The adjoint action of the special linear group is conjugation.** The differential at the
+identity of the matrix inclusion carries `Ad_g X` to `g X g⁻¹`. -/
+theorem mvfderiv_subtypeVal_adjointContinuousLinearMap (g : S)
+    (X : GroupLieAlgebra 𝓘(𝕜, E) S) :
+    mvfderiv 𝓘(𝕜, E) (fun A : S ↦ (A : Matrix n n 𝕜)) 1
+        (adjointContinuousLinearMap (I := 𝓘(𝕜, E)) g X) =
+      (g : Matrix n n 𝕜) * mvfderiv 𝓘(𝕜, E) (fun A : S ↦ (A : Matrix n n 𝕜)) 1 X *
+        ((g⁻¹ : S) : Matrix n n 𝕜) :=
+  (coeMonoidHom (ι := n) (R := 𝕜)).mvfderiv_adjointContinuousLinearMap g X
 
 end Matrix.SpecialLinearGroup

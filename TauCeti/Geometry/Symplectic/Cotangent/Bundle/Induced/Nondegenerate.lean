@@ -9,13 +9,14 @@ public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Induced.BalancedProdu
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 
 /-!
-# Nondegeneracy of the induced form on `G ×_K N` at `[1, n]`
+# Nondegeneracy of the induced form on `G ×_K N` along the orbit of `[1, n]`
 
 Let `K` be a closed subgroup of a finite-dimensional real Lie group `G`, acting smoothly on a
 manifold `N` with a `K`-invariant two-form `σ`, and let `f : N → 𝔤*` be `K`-equivariant with
 `𝔨`-components a moment map. The form `Ω = -d⟨f, θ⟩ + pr₂^* σ` descends to the balanced product
 `G ×_K N` (`TauCeti.CotangentBundle.balancedProductInducedForm`). This file decides when the
-descended form is nondegenerate at the base point `[1, n]`.
+descended form is nondegenerate at the base point `[1, n]`, and, since it is `G`-invariant, along
+the whole `G`-orbit of `[1, n]`.
 
 At `(1, n)` the induced form pairs `(ξ, u)` and `(ζ, w)` in `𝔤 × T_n N` to
 
@@ -28,7 +29,12 @@ the null space of `B_n` consists of these orbit directions
 (`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one_iff`). When
 `n` is fixed by `K`, the orbit directions are the vectors `(ξ, 0)` with `ξ` in the image of `𝔨`
 (`nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one_iff_of_forall_smul_eq`, in the
-namespace `TauCeti.CotangentBundle`).
+namespace `TauCeti.CotangentBundle`). The descended form is `G`-invariant, so it is nondegenerate at
+`g • y` exactly when it is at `y`
+(`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff`, an
+instance of `TauCeti.SmoothTwoForm.nondegenerate_bilinFormAt_smul_iff`); as `[g, n] = g • [1, n]`,
+nondegeneracy at `[1, n]` gives nondegeneracy at every `[g, n]`
+(`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_mk`).
 
 The main application is the **Marle–Guillemin–Sternberg local model** `G ×_H (𝔪* × V)` of a
 Hamiltonian action near the orbit of a point `p` with stabilizer `H` and moment value `ν`. There
@@ -41,13 +47,17 @@ the model tensor
 
 `B_n((ξ, a, v), (ζ, b, w)) = b(P ξ) - a(P ζ) + ν ⁅ξ, ζ⁆ + ω_V(v, w)`.
 
-Its null space is `𝔥 × 0 × 0`: pairing with `(0, b, 0)` and `(0, 0, w)` forces `P ξ = 0` and
-`v = 0`, pairing with `(ζ, 0, 0)` for `ζ ∈ 𝔨_ν` forces `a = 0` because `P` maps `𝔨_ν` onto `𝔪`,
-and then `ν ⁅ξ, ·⁆ = 0`, so that `ξ ∈ 𝔨_ν ∩ ker P = 𝔥`. Hence the induced form of the local model
-is nondegenerate at `[1, 0, 0]`
-(`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one`). The
-statement takes the pointwise shape of `f` and `σ` at `n` as hypotheses, through a linear
-identification `e : T_n N ≃ 𝔪* × V`, so it applies to any realization of the model in which `f`
+Its null space is `𝔥 × 0 × 0` (`Module.Dual.forall_kirillovForm_add_eq_zero_iff`): pairing with
+`(0, b, 0)` and `(0, 0, w)` forces `P ξ = 0` and `v = 0`, pairing with `(ζ, 0, 0)` for `ζ ∈ 𝔨_ν`
+forces `a = 0` because `P` maps `𝔨_ν` onto `𝔪`, and then `ν ⁅ξ, ·⁆ = 0`, so that
+`ξ ∈ 𝔨_ν ∩ ker P = 𝔥`. Hence the induced form of the local model is nondegenerate at every
+`[g, 0, 0]`
+(`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_mk_of_dual_prod`,
+which only asks the fundamental vector fields of `K` to vanish at `n`; its special case at the base
+point of a `K`-fixed `n` is
+`TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one`). These
+statements take the pointwise shape of `f` and `σ` at `n` as hypotheses, through a linear
+identification `e : T_n N ≃ 𝔪* × V`, so they apply to any realization of the model in which `f`
 and `σ` have this shape at the base point.
 
 ## Main results
@@ -58,6 +68,12 @@ All declarations are in the namespace `TauCeti.CotangentBundle`.
   nondegenerate at `[1, n]` exactly when the null space of `B_n` consists of orbit directions.
 * `nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one_iff_of_forall_smul_eq`: the same at
   a point fixed by `K`.
+* `nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff`: nondegeneracy of the induced
+  form at a point is `G`-invariant.
+* `nondegenerate_bilinFormAt_balancedProductInducedForm_mk`: under the null-space criterion at
+  `[1, n]` the induced form is nondegenerate at every `[g, n]`.
+* `nondegenerate_bilinFormAt_balancedProductInducedForm_mk_of_dual_prod`: a criterion for
+  nondegeneracy along the orbit of `[1, n]` in Marle–Guillemin–Sternberg coordinates.
 * `nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one`: the induced form of the
   Marle–Guillemin–Sternberg model is nondegenerate at its base point.
 * `eventually_nondegenerate_bilinFormAt_balancedProductInducedForm`: it is nondegenerate on a
@@ -200,6 +216,92 @@ theorem nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one_iff_of_foral
   · rw [map_neg, hκ, neg_neg]
   · rw [map_neg, hκ]
 
+/-- **Nondegeneracy of the induced form on `G ×_K N` is `G`-invariant.** The induced form is
+nondegenerate at `g • y` exactly when it is nondegenerate at `y`. -/
+theorem nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff (g : G)
+    (y : BalancedProduct K K.RightTranslation N) :
+    letI := BalancedProduct.rightTranslationChartedSpace K N I IN F
+    haveI := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+      (F := F)
+    ((balancedProductInducedForm I G σ hf hfK hσK hμ).bilinFormAt (g • y)).Nondegenerate ↔
+      ((balancedProductInducedForm I G σ hf hfK hσK hμ).bilinFormAt y).Nondegenerate := by
+  let _ := BalancedProduct.rightTranslationChartedSpace K N I IN F
+  have := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+    (F := F)
+  have := BalancedProduct.contMDiffSMul_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+    (F := F)
+  have := ContMDiffSMul.contMDiffConstSMul I (I' := 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EN)))
+    (n := ∞) (G := G) (M := BalancedProduct K K.RightTranslation N)
+  exact SmoothTwoForm.nondegenerate_bilinFormAt_smul_iff
+    (mpullback_smul_balancedProductInducedForm (hf := hf) (hfK := hfK) (hσK := hσK) (hμ := hμ) g)
+    y
+
+/-- **The induced form is nondegenerate along the orbit of `[1, n]`.** If every `(ξ, u)` null for
+`B_n` is an orbit direction `(-ι κ, κ_N(n))` of some `κ ∈ 𝔨`, the induced form on `G ×_K N` is
+nondegenerate at every point `[g, n]`. -/
+theorem nondegenerate_bilinFormAt_balancedProductInducedForm_mk {n : N}
+    (hn : ∀ (ξ : GroupLieAlgebra I G) (u : TangentSpace IN n),
+      (∀ (ζ : GroupLieAlgebra I G) (w : TangentSpace IN n),
+        mvfderiv IN f n w ξ - mvfderiv IN f n u ζ +
+          Module.Dual.kirillovForm (L := GroupLieAlgebra I G) (f n : E →ₗ[ℝ] ℝ) ξ ζ +
+          σ.eval₂ n u w = 0) →
+      ∃ κ : GroupLieAlgebra 𝓘(ℝ, F) K,
+        K.subtype.groupLieAlgebraMap 𝓘(ℝ, F) I κ = -ξ ∧ fundamentalVectorField IN κ n = u)
+    (g : G) :
+    letI := BalancedProduct.rightTranslationChartedSpace K N I IN F
+    haveI := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+      (F := F)
+    ((balancedProductInducedForm I G σ hf hfK hσK hμ).bilinFormAt
+        (BalancedProduct.mk K (K.toRightTranslation g) n)).Nondegenerate := by
+  -- `[g, n] = g • [1, n]`.
+  have h := (nondegenerate_bilinFormAt_balancedProductInducedForm_smul_iff (hf := hf) (hfK := hfK)
+    (hσK := hσK) (hμ := hμ) g (BalancedProduct.mk K (K.toRightTranslation 1) n)).2
+    ((nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one_iff n).2 hn)
+  rwa [BalancedProduct.smul_mk_toRightTranslation, mul_one] at h
+
+/-- **Nondegeneracy along the orbit of `[1, n]` in Marle–Guillemin–Sternberg coordinates.** Let
+`n ∈ N` be a zero of every fundamental vector field of `K`, with `f n = ν`. Suppose the tangent
+space at `n` is identified with `P* × V` by `e` so that
+
+`df_n u ζ = (e u).1 (π ζ)` and `σ(u, u') = β((e u).2, (e u').2)`,
+
+where `β` has trivial left radical, and suppose `π : 𝔤 → P` maps the coadjoint stabilizer `𝔤_ν`
+onto `P` with `𝔤_ν ∩ ker π` contained in the image of `𝔨`. Then the induced form on `G ×_K N` is
+nondegenerate at every `[g, n]`: the null space of `B_n` is `(𝔤_ν ∩ ker π) × 0 × 0`
+(`Module.Dual.forall_kirillovForm_add_eq_zero_iff`). For the model `G ×_H (𝔪* × V)`, with
+`n = (0, 0)`, `f (η, v) = ν + η + μ_V v` and `π` the projection onto `𝔪` along `𝔥 ⊕ 𝔮`, these
+hypotheses become the conditions `𝔤_ν = 𝔥 ⊕ 𝔪` and `𝔥 ⊆ 𝔤_ν`. -/
+theorem nondegenerate_bilinFormAt_balancedProductInducedForm_mk_of_dual_prod
+    {P V : Type*} [AddCommGroup P] [Module ℝ P] [AddCommGroup V] [Module ℝ V] {n : N}
+    {ν : Module.Dual ℝ (GroupLieAlgebra I G)} (hfn : (f n : E →ₗ[ℝ] ℝ) = ν)
+    {π : GroupLieAlgebra I G →ₗ[ℝ] P} {β : LinearMap.BilinForm ℝ V}
+    (e : TangentSpace IN n ≃ₗ[ℝ] Module.Dual ℝ P × V)
+    (hD : ∀ (u : TangentSpace IN n) (ζ : GroupLieAlgebra I G),
+      mvfderiv IN f n u ζ = (e u).1 (π ζ))
+    (hσ : ∀ u u' : TangentSpace IN n, σ.eval₂ n u u' = β (e u).2 (e u').2)
+    (hβ : β.SeparatingLeft)
+    (hπ : (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule.map π = ⊤)
+    (hker : ∀ ζ ∈ lieAnnihilator ℝ (GroupLieAlgebra I G) ν, π ζ = 0 →
+      ζ ∈ LinearMap.range (K.subtype.groupLieAlgebraMap 𝓘(ℝ, F) I).toLinearMap)
+    (hfix : ∀ ξ : GroupLieAlgebra 𝓘(ℝ, F) K, fundamentalVectorField IN ξ n = 0) (g : G) :
+    letI := BalancedProduct.rightTranslationChartedSpace K N I IN F
+    haveI := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
+      (F := F)
+    ((balancedProductInducedForm I G σ hf hfK hσK hμ).bilinFormAt
+        (BalancedProduct.mk K (K.toRightTranslation g) n)).Nondegenerate := by
+  refine nondegenerate_bilinFormAt_balancedProductInducedForm_mk (fun ξ u hξu ↦ ?_) g
+  -- Read the radical condition in the coordinates `𝔤 × P* × V`.
+  obtain ⟨hstab, hπξ, ha, hu⟩ := (Module.Dual.forall_kirillovForm_add_eq_zero_iff ν hβ hπ ξ
+    (e u).1 (e u).2).1 fun ζ b w ↦ by
+      have h := hξu ζ (e.symm (b, w))
+      rw [hD (e.symm (b, w)) ξ, hD u ζ, hσ u (e.symm (b, w)), LinearEquiv.apply_symm_apply] at h
+      subst hfn
+      exact h
+  have hu₀ : u = 0 := e.map_eq_zero_iff.1 (Prod.ext ha hu)
+  obtain ⟨κ, hκ⟩ := hker ξ hstab hπξ
+  -- `(ξ, 0)` is the orbit direction of `-κ`.
+  exact ⟨-κ, by rw [map_neg, ← hκ]; rfl, (hfix _).trans hu₀.symm⟩
+
 /-- **The Marle–Guillemin–Sternberg model is nondegenerate at its base point.** Let `n` be fixed
 by `K`, put `ν = f(n)`, and identify `T_n N` with `𝔪* × V` by a linear equivalence `e`, where
 `df_n(u)(ξ) = (e u).1 (P ξ)` for a linear map `P : 𝔤 → 𝔪` and `σ_n(u, w) = β((e u).2, (e w).2)`
@@ -227,38 +329,20 @@ theorem nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one {n : N}
     ((balancedProductInducedForm I G σ hf hfK hσK hμ).bilinFormAt
         (Quotient.mk (MulAction.orbitRel K (K.RightTranslation × N))
           (K.toRightTranslation 1, n))).Nondegenerate := by
-  refine (nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one_iff_of_forall_smul_eq
-    hn).2 fun ξ u h ↦ ?_
-  have hkir (ζ ζ' : GroupLieAlgebra I G) :
-      Module.Dual.kirillovForm (L := GroupLieAlgebra I G) (f n : E →ₗ[ℝ] ℝ) ζ ζ' =
-        f n (⁅ζ, ζ'⁆ : GroupLieAlgebra I G) :=
-    (Module.Dual.kirillovForm_apply _ ζ ζ').trans (congrFun (ContinuousLinearMap.coe_coe (f n)) _)
-  -- Pairing with `(0, w)`: `(e w).1 (P ξ) + β((e u).2, (e w).2) = 0` for every `w`.
-  have hw (w : TangentSpace IN n) : (e w).1 (P ξ) + β (e u).2 (e w).2 = 0 := by
-    have h' := h 0 w
-    rw [hdf, hdf, hσ] at h'
-    simp only [map_zero, sub_zero, add_zero] at h'
-    linear_combination h'
-  -- Pairing with `(ζ, 0)`: `ν ⁅ξ, ζ⁆ = (e u).1 (P ζ)` for every `ζ`.
-  have hζ (ζ : GroupLieAlgebra I G) : f n (⁅ξ, ζ⁆ : GroupLieAlgebra I G) = (e u).1 (P ζ) := by
-    have h' := h ζ 0
-    rw [hdf, hdf, hσ] at h'
-    simp only [map_zero, Prod.fst_zero, Prod.snd_zero, LinearMap.zero_apply, zero_sub,
-      add_zero] at h'
-    linear_combination h' - hkir ξ ζ
-  have hPξ : P ξ = 0 := (Module.forall_dual_apply_eq_zero_iff ℝ (P ξ)).1 fun b ↦ by
-    simpa using hw (e.symm (b, 0))
-  have hv : (e u).2 = 0 := hβ _ fun y ↦ by simpa using hw (e.symm (0, y))
-  -- `(e u).1` vanishes on `P(𝔨_ν) = 𝔪`, since `ν ⁅ξ, κ⁆ = -ν ⁅κ, ξ⁆ = 0` for `κ ∈ 𝔨_ν`.
-  have ha : (e u).1 = 0 := LinearMap.ext fun m ↦ by
-    obtain ⟨κ, hκ, rfl⟩ := hP m
-    have hskew := LinearMap.IsAlt.neg (Module.Dual.isAlt_kirillovForm (L := GroupLieAlgebra I G)
-      (f n : E →ₗ[ℝ] ℝ)) κ ξ
-    rw [LinearMap.zero_apply, ← hζ κ]
-    linear_combination -hkir ξ κ - hskew - hkir κ ξ - hκ ξ
-  have hu : u = 0 := e.injective (by rw [map_zero]; exact Prod.ext ha hv)
-  subst hu
-  exact ⟨rfl, hK ξ (fun ζ ↦ by simp [hζ]) hPξ⟩
+  obtain ⟨ν, hfn⟩ : ∃ ν : Module.Dual ℝ (GroupLieAlgebra I G), (f n : E →ₗ[ℝ] ℝ) = ν := ⟨_, rfl⟩
+  -- An element is in the coadjoint stabilizer of `ν = f(n)` exactly when `ν ⁅ξ, ·⁆ = 0`.
+  have hmem (ξ : GroupLieAlgebra I G) : ξ ∈ lieAnnihilator ℝ (GroupLieAlgebra I G) ν ↔
+      ∀ ζ : GroupLieAlgebra I G, f n (⁅ξ, ζ⁆ : GroupLieAlgebra I G) = 0 := by
+    rw [← LieSubalgebra.mem_toSubmodule, ← Module.Dual.ker_kirillovForm, LinearMap.mem_ker,
+      LinearMap.ext_iff]
+    refine forall_congr' fun ζ ↦ ?_
+    rw [Module.Dual.kirillovForm_apply, LinearMap.zero_apply, ← hfn]
+    rfl
+  refine nondegenerate_bilinFormAt_balancedProductInducedForm_mk_of_dual_prod hfn e hdf hσ hβ
+    (Submodule.eq_top_iff'.2 fun m ↦ ?_) (fun ξ hξ hPξ ↦ hK ξ ((hmem ξ).1 hξ) hPξ)
+    (fundamentalVectorField_eq_zero_of_forall_smul_eq hn) 1
+  obtain ⟨κ, hκ, hPκ⟩ := hP m
+  exact ⟨κ, (hmem κ).2 hκ, hPκ⟩
 
 /-- **The Marle–Guillemin–Sternberg model is nondegenerate near its base point.** Under the
 hypotheses of `TauCeti.CotangentBundle.nondegenerate_bilinFormAt_balancedProductInducedForm_mk_one`,

@@ -222,10 +222,9 @@ private theorem exists_integral_weighted_smul_le (ω : SymplecticForm V) {ρ : �
     have hzU := hLU hz
     have hJd : DifferentiableAt ℝ (fun w ↦ J' w (u w)) z :=
       ((hJ z hzU).comp₂ contDiffAt_id (hu z hzU)).differentiableAt one_ne_zero
-    have hle := ω.norm_floerLinearizationAdjoint_fun_smul_le (Ks := Ks) (Kt := Kt)
+    have hle := ω.norm_floerLinearizationAdjoint_fun_smul_le_of_eq_zero (Ks := Ks) (Kt := Kt)
       ((hχ.differentiable two_ne_zero) z)
-      ((hη.differentiableOn two_ne_zero).differentiableAt (hρ.isOpen.mem_nhds hzU)) hJd
-    rw [hD z hzU, norm_zero, mul_zero, zero_add] at hle
+      ((hη.differentiableOn two_ne_zero).differentiableAt (hρ.isOpen.mem_nhds hzU)) hJd (hD z hzU)
     have hle' : ‖ω.floerLinearizationAdjoint J' Ks Kt u g z‖ ≤ M * (1 + B) * ‖η z‖ :=
       hle.trans (by gcongr; exacts [(norm_nonneg _).trans (hχM z), hχM z, hB z hz])
     have hgη : ‖g z‖ ≤ ‖η z‖ := by
