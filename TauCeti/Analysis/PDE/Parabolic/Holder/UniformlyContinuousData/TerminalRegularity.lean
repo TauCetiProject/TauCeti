@@ -74,6 +74,7 @@ namespace TauCeti.ParabolicC2HolderSpace
 
 open Set ParabolicSpaceTime BoundedContinuousFunction
 open CkHolderSpace (toBUC)
+open HolderSpace (slabTimeReverseLIE)
 open scoped NNReal
 
 variable {α : ℝ≥0} {ι : Type*} [Fintype ι] [DecidableEq ι] {T : ℝ≥0} (hα₀ : 0 < α) (hα₁ : α < 1)
@@ -99,9 +100,11 @@ def euclideanTerminalSolutionBUCRestrictL :
         ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ (sub_pos.2 hδT) :=
   (timeReverseLIE (E := EuclideanSpace ℝ ι) (F := ℝ) (α := α) (hab := hδT) (T : ℝ)
       (sub_self (T : ℝ)).symm rfl).toContinuousLinearEquiv.toContinuousLinearMap.comp
-    ((euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT (fun i j ↦ terminalTimeReverseL (a i j))
-      (fun i ↦ terminalTimeReverseL (b i)) (terminalTimeReverseL c)
-      (ellipticity_terminalTimeReverseL ha) hδ hδT).comp terminalDataTimeReverseL)
+    ((euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT
+      (fun i j ↦ slabTimeReverseLIE (T : ℝ) (sub_self _).symm (sub_zero _).symm (a i j))
+      (fun i ↦ slabTimeReverseLIE (T : ℝ) (sub_self _).symm (sub_zero _).symm (b i))
+      (slabTimeReverseLIE (T : ℝ) (sub_self _).symm (sub_zero _).symm c)
+      (ellipticity_slabTimeReverseLIE ha) hδ hδT).comp terminalDataTimeReverseL)
 
 variable {a b c}
 
@@ -160,15 +163,16 @@ theorem euclideanBackwardParabolicOperatorL_euclideanTerminalSolutionBUCRestrict
   -- The forward equation of the reversed problem at `S p` is the backward equation at `p`.
   have h := congrArg (fun g ↦ g (S p))
     (euclideanParabolicOperatorL_euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT
-      (a := fun i j ↦ terminalTimeReverseL (a i j)) (b := fun i ↦ terminalTimeReverseL (b i))
-      (c := terminalTimeReverseL c) (ellipticity_terminalTimeReverseL ha) hδ hδT
-      (-terminalTimeReverseL f) w)
+      (b := fun i ↦ slabTimeReverseLIE (T : ℝ) (sub_self _).symm (sub_zero _).symm (b i))
+      (c := slabTimeReverseLIE (T : ℝ) (sub_self _).symm (sub_zero _).symm c)
+      (ellipticity_slabTimeReverseLIE ha) hδ hδT
+      (-slabTimeReverseLIE (T : ℝ) (sub_self _).symm (sub_zero _).symm f) w)
   have hp : slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm
       (inclusion (slab_subset_slab hδ.le le_rfl) (S p)) =
       inclusion (slab_subset_slab le_rfl (sub_le_self (T : ℝ) hδ.le)) p := by
     ext <;> simp [S]
   simp only [euclideanParabolicOperatorL_apply, HolderSpace.compLipschitzL_apply,
-    HolderSpace.neg_apply, terminalTimeReverseL_apply, hp] at h
+    HolderSpace.neg_apply, HolderSpace.slabTimeReverseLIE_apply, hp] at h
   simp only [euclideanTerminalSolutionBUCRestrictL, euclideanBackwardParabolicOperatorL_apply,
     ContinuousLinearMap.comp_apply, terminalDataTimeReverseL_apply,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_coe,
@@ -205,12 +209,16 @@ theorem exists_rpow_mul_norm_euclideanTerminalSolutionBUCRestrictL_le {lam : ℝ
   refine ⟨C, hC, fun T hT hTT₀ a b c ha hak hbk hck δ hδ hδT d ↦ ?_⟩
   -- The forward estimate for the reversed coefficients and data; reversing the coefficients, the
   -- data and the solution keeps their norms.
-  have h := hest T hT hTT₀ (fun i j ↦ terminalTimeReverseL (a i j))
-    (fun i ↦ terminalTimeReverseL (b i)) (terminalTimeReverseL c)
-    (fun p ξ ↦ by simpa only [terminalTimeReverseL_apply] using ha _ ξ)
-    (fun i j ↦ (norm_terminalTimeReverseL_apply _).trans_le (hak i j))
-    (fun i ↦ (norm_terminalTimeReverseL_apply _).trans_le (hbk i))
-    ((norm_terminalTimeReverseL_apply c).trans_le hck) hδ hδT (terminalDataTimeReverseL d)
+  have h := hest T hT hTT₀
+    (fun i j ↦ slabTimeReverseLIE (T : ℝ) (sub_self _).symm (sub_zero _).symm (a i j))
+    (fun i ↦ slabTimeReverseLIE (T : ℝ) (sub_self _).symm (sub_zero _).symm (b i))
+    (slabTimeReverseLIE (T : ℝ) (sub_self _).symm (sub_zero _).symm c)
+    (fun p ξ ↦ by
+      simpa only [HolderSpace.slabTimeReverseLIE_eq_compLipschitzL] using
+        mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha p ξ)
+    (fun i j ↦ (LinearIsometryEquiv.norm_map _ _).trans_le (hak i j))
+    (fun i ↦ (LinearIsometryEquiv.norm_map _ _).trans_le (hbk i))
+    ((LinearIsometryEquiv.norm_map _ c).trans_le hck) hδ hδT (terminalDataTimeReverseL d)
   rw [norm_terminalDataTimeReverseL_apply] at h
   refine le_of_eq_of_le ?_ h
   simp only [euclideanTerminalSolutionBUCRestrictL, ContinuousLinearMap.comp_apply,
