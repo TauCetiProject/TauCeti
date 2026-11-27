@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 For submodule families `F` and `G`, the total degree `n` part of their tensor product is
 spanned by `x ⊗ y` with `x ∈ F i`, `y ∈ G j`, and `i + j ≤ n`. No flatness is needed:
 we use the images of the tensor factors, not an asserted embedding of their tensor product.
+Tensoring maps that preserve the factor families preserves the total filtration.
 Multiplicative families give a multiplicative total filtration. This allows coproduct degree
 bounds to be stated with the sum of the two degrees, rather than separate bounds on each leg.
 Exhaustive factor families give an exhaustive tensor filtration. If the
@@ -51,6 +52,18 @@ theorem tmul_mem_tensorFiltration {F : ℕ → Submodule R M} {G : ℕ → Submo
     {i j n : ℕ} {x : M} {y : N} (hij : i + j ≤ n) (hx : x ∈ F i) (hy : y ∈ G j) :
     x ⊗ₜ[R] y ∈ tensorFiltration F G n :=
   tensorFiltration_le_iff.mp le_rfl i j hij x hx y hy
+
+/-- Tensoring linear maps preserving the factor families preserves the total filtration. -/
+theorem tensorFiltration_le_comap_map {M' N' : Type*}
+    [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
+    {F : ℕ → Submodule R M} {G : ℕ → Submodule R N}
+    {F' : ℕ → Submodule R M'} {G' : ℕ → Submodule R N'}
+    {f : M →ₗ[R] M'} {g : N →ₗ[R] N'}
+    (hf : ∀ i, F i ≤ (F' i).comap f) (hg : ∀ j, G j ≤ (G' j).comap g) (n : ℕ) :
+    tensorFiltration F G n ≤ (tensorFiltration F' G' n).comap (TensorProduct.map f g) :=
+  tensorFiltration_le_iff.mpr fun i j hij x hx y hy ↦ by
+    simpa only [Submodule.mem_comap, TensorProduct.map_tmul] using
+      tmul_mem_tensorFiltration hij (hf i hx) (hg j hy)
 
 /-- Total degree is increasing, even if the input families are not increasing. -/
 theorem tensorFiltration_mono (F : ℕ → Submodule R M) (G : ℕ → Submodule R N) :
