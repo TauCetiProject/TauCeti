@@ -83,8 +83,8 @@ theorem Convex.mapsTo_forwardSemiflow_inter_interior_of_mem_interior {C U : Set 
 /-- **Interior entry of the global inward deformation.** Under global forward completeness on
 `U ∩ C`, for `T > 0` and any `t ≠ 1`, the inward deformation sends `U ∩ C` into
 `U ∩ interior C`. -/
-theorem Convex.mapsTo_inward_deformation_inter_interior {C U : Set E} (hC : Convex ℝ C)
-    {X : E → E} (hX_in : ∀ x ∈ U ∩ C, X x ∈ strictInwardCone C x)
+theorem Convex.mapsTo_forwardSemiflow_mul_one_sub_sq_inter_interior {C U : Set E}
+    (hC : Convex ℝ C) {X : E → E} (hX_in : ∀ x ∈ U ∩ C, X x ∈ strictInwardCone C x)
     (hglob : ∀ x ∈ U ∩ C, forwardSemiflowInterval X (U ∩ C) x = Ici 0)
     {T t : ℝ} (hT_pos : 0 < T) (ht : t ≠ 1) :
     MapsTo (fun x ↦ forwardSemiflow X (U ∩ C) (T * (1 - t) ^ 2) x)
@@ -96,7 +96,7 @@ theorem Convex.mapsTo_inward_deformation_inter_interior {C U : Set E} (hC : Conv
 /-- **Interior entry of the finite-time inward deformation.** If `forwardSemiflow X (U ∩ C)`
 is defined through time `T > 0` on `U ∩ C`, then for every `t ∈ Ico 0 1`, the inward
 deformation sends `U ∩ C` into `U ∩ interior C`. -/
-theorem Convex.mapsTo_inward_deformation_inter_interior_of_mem_Ico {C U : Set E}
+theorem Convex.mapsTo_forwardSemiflow_mul_one_sub_sq_inter_interior_of_mem_Ico {C U : Set E}
     (hC : Convex ℝ C) {X : E → E}
     (hX_in : ∀ x ∈ U ∩ C, X x ∈ strictInwardCone C x)
     {T t : ℝ} (hT_pos : 0 < T)
@@ -113,7 +113,7 @@ theorem Convex.mapsTo_inward_deformation_inter_interior_of_mem_Ico {C U : Set E}
 /-- **Interior preservation of the global inward deformation.** Under global forward
 completeness on `U ∩ C`, for any `T ≥ 0` and `t : ℝ`, the inward deformation maps
 `U ∩ interior C` into itself. -/
-theorem Convex.mapsTo_inward_deformation_inter_interior_of_mem_interior {C U : Set E}
+theorem Convex.mapsTo_forwardSemiflow_mul_one_sub_sq_inter_interior_of_mem_interior {C U : Set E}
     (hC : Convex ℝ C) {X : E → E}
     (hX_in : ∀ x ∈ U ∩ C, X x ∈ strictInwardCone C x)
     (hglob : ∀ x ∈ U ∩ C, forwardSemiflowInterval X (U ∩ C) x = Ici 0)
@@ -126,7 +126,7 @@ theorem Convex.mapsTo_inward_deformation_inter_interior_of_mem_interior {C U : S
 /-- **Interior preservation of the finite-time inward deformation.** If
 `forwardSemiflow X (U ∩ C)` is defined through time `T ≥ 0` on `U ∩ interior C`, then for
 every `t ∈ Icc 0 1`, the inward deformation maps `U ∩ interior C` into itself. -/
-theorem Convex.mapsTo_inward_deformation_inter_interior_of_mem_Icc_of_mem_interior
+theorem Convex.mapsTo_forwardSemiflow_mul_one_sub_sq_inter_interior_of_mem_Icc_of_mem_interior
     {C U : Set E} (hC : Convex ℝ C) {X : E → E}
     (hX_in : ∀ x ∈ U ∩ C, X x ∈ strictInwardCone C x)
     {T t : ℝ} (hT_nonneg : 0 ≤ T)

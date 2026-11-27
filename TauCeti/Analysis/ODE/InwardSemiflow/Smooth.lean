@@ -567,7 +567,8 @@ theorem Convex.contDiffOn_forwardSemiflow_comp {C U : Set E} (hC : Convex ℝ C)
 `m = ∞`) vector field `X` on `U ∩ C` (`U` open, `C` convex) that is strictly inward to `C` on
 `U ∩ C`, if `T` lies in `forwardSemiflowInterval X (U ∩ C) x` for every `x ∈ U ∩ C`, then
 `forwardSemiflow X (U ∩ C) T` is `C^m` on `U ∩ C`. -/
-theorem Convex.contDiffOn_forwardSemiflow_const {C U : Set E} (hC : Convex ℝ C) (hU : IsOpen U)
+theorem Convex.contDiffOn_forwardSemiflow_of_forall_mem_forwardSemiflowInterval
+    {C U : Set E} (hC : Convex ℝ C) (hU : IsOpen U)
     {m : ℕ∞} (hm : 1 ≤ m) {X : E → E} (hX : ContDiffOn ℝ m X (U ∩ C))
     (hX_in : ∀ x ∈ U ∩ C, X x ∈ TauCeti.strictInwardCone C x) {T : ℝ}
     (hT : ∀ x ∈ U ∩ C, T ∈ TauCeti.forwardSemiflowInterval X (U ∩ C) x) :
@@ -582,7 +583,8 @@ to `C` on `U ∩ C` and globally forward complete on `U ∩ C`
 `fun p : ℝ × E ↦ forwardSemiflow X (U ∩ C) (T * (1 - p.1) ^ 2) p.2` is `C^m` on
 `univ ×ˢ (U ∩ C)` (agreeing with `forwardSemiflow X (U ∩ C) T` at `t = 0` and the identity at
 `t = 1`, both by `simp`). -/
-theorem Convex.contDiffOn_inward_deformation {C U : Set E} (hC : Convex ℝ C) (hU : IsOpen U)
+theorem Convex.contDiffOn_forwardSemiflow_mul_one_sub_sq_univ_prod
+    {C U : Set E} (hC : Convex ℝ C) (hU : IsOpen U)
     {m : ℕ∞} (hm : 1 ≤ m) {X : E → E} (hX : ContDiffOn ℝ m X (U ∩ C))
     (hX_in : ∀ x ∈ U ∩ C, X x ∈ TauCeti.strictInwardCone C x)
     (hglob : ∀ x ∈ U ∩ C, TauCeti.forwardSemiflowInterval X (U ∩ C) x = Ici 0)
@@ -599,7 +601,7 @@ including `m = ∞`) vector field `X` on `U ∩ C` (`U` open, `C` convex) that i
 to `C` on `U ∩ C` and defined through time `T ≥ 0` for every `x ∈ U ∩ C`, the reparametrized
 semiflow `fun p : ℝ × E ↦ forwardSemiflow X (U ∩ C) (T * (1 - p.1) ^ 2) p.2` is `C^m` on
 `Icc 0 1 ×ˢ (U ∩ C)`. -/
-theorem Convex.contDiffOn_inward_deformation_Icc_prod {C U : Set E} (hC : Convex ℝ C)
+theorem Convex.contDiffOn_forwardSemiflow_mul_one_sub_sq_Icc_prod {C U : Set E} (hC : Convex ℝ C)
     (hU : IsOpen U) {m : ℕ∞} (hm : 1 ≤ m) {X : E → E} (hX : ContDiffOn ℝ m X (U ∩ C))
     (hX_in : ∀ x ∈ U ∩ C, X x ∈ TauCeti.strictInwardCone C x)
     {T : ℝ} (hT_nonneg : 0 ≤ T)
