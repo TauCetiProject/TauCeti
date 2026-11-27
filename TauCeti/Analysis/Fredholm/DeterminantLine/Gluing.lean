@@ -54,9 +54,9 @@ The isomorphism does not depend on the stabilizers. Enlarge `S₁` and `S₂` al
 isomorphism for the larger stabilizers which extends `g` along the inclusions of stabilized
 kernels and preserves stabilizer components modulo the smaller stabilizers. Then `g` and `g'`
 give the same gluing isomorphism
-(`ContinuousLinearMap.detLineGluingEquiv_eq_of_kerCoprodMap`). Since any two stabilizers of the
-pieces are contained in a common one, this lets the gluing isomorphism be computed with any
-sufficiently large stabilization. No sign appears: the Koszul sign
+(`ContinuousLinearMap.detLineGluingEquiv_eq_of_kerCoprodMap`). Comparing two stabilizations
+through a common enlargement still needs such a compatible `g'` for the enlargement, which is not
+constructed here. No sign appears: the Koszul sign
 `(-1) ^ (dim S₁ * (dim K₂ + dim S₂))` of the definition changes under the enlargement exactly by
 the sign of moving the new directions of `S₁'` past those of the second piece.
 
