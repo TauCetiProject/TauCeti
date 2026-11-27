@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Hom
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
 public import Mathlib.Topology.MetricSpace.Equicontinuity
+import TauCeti.Analysis.CStarAlgebra.Lift
 
 /-!
 # Topological properties of C⋆-algebra homomorphisms and equivalences
@@ -16,7 +17,11 @@ A `⋆`-algebra homomorphism between complex C⋆-algebras is automatically cont
 two-sided ideal kernel is closed (`NonUnitalStarAlgHom.isClosed_ker`, stated for any morphism
 class, so it covers unital `⋆`-homomorphisms and `⋆`-equivalences as well).
 A `⋆`-homomorphism between complex C⋆-algebras is contractive, so it bundles as a continuous
-linear map `NonUnitalStarAlgHom.toContinuousLinearMap` of norm at most `1`.
+linear map `NonUnitalStarAlgHom.toContinuousLinearMap` of norm at most `1`, with the zero
+homomorphism of norm `0` (`NonUnitalStarAlgHom.norm_toContinuousLinearMap_zero`) and every
+nonzero homomorphism of norm exactly `1`
+(`NonUnitalStarAlgHom.norm_toContinuousLinearMap_eq_one_of_ne_zero`, hence
+`NonUnitalStarAlgHom.norm_toContinuousLinearMap_eq_zero_or_one`).
 A `⋆`-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.isometry`), and so
 preserves the extended norm (`StarAlgEquiv.eNorm_map`). It therefore bundles as a continuous
 linear equivalence `StarAlgEquiv.toContinuousLinearEquiv` and as a linear isometric equivalence
@@ -94,6 +99,56 @@ theorem coe_toContinuousLinearMap (φ : A →⋆ₙₐ[ℂ] B) : ⇑φ.toContinu
 /-- A `⋆`-homomorphism between C⋆-algebras has norm at most `1` as a continuous linear map. -/
 theorem norm_toContinuousLinearMap_le (φ : A →⋆ₙₐ[ℂ] B) : ‖φ.toContinuousLinearMap‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-- The zero `⋆`-homomorphism has operator norm `0`. -/
+@[simp]
+theorem norm_toContinuousLinearMap_zero :
+    ‖(0 : A →⋆ₙₐ[ℂ] B).toContinuousLinearMap‖ = 0 := by
+  have : (0 : A →⋆ₙₐ[ℂ] B).toContinuousLinearMap = 0 := by
+    ext x; simp [coe_toContinuousLinearMap]
+  simp [this]
+
+/-- A nonzero `⋆`-homomorphism between C⋆-algebras has operator norm exactly `1`. -/
+theorem norm_toContinuousLinearMap_eq_one_of_ne_zero {φ : A →⋆ₙₐ[ℂ] B} (hφ : φ ≠ 0) :
+    ‖φ.toContinuousLinearMap‖ = 1 := by
+  refine le_antisymm (norm_toContinuousLinearMap_le φ) ?_
+  obtain ⟨a, ha⟩ : ∃ a, φ a ≠ 0 := not_forall.mp fun h =>
+    hφ <| DFunLike.ext _ _ fun x => by simpa using h x
+  -- The C⋆-identity gives ‖φ x‖² = ‖φ (star x * x)‖ ≤ ‖φ‖ ‖x‖², hence ‖φ‖ ≤ √‖φ‖.
+  have _hle_sqrt : ‖φ.toContinuousLinearMap‖ ≤ √‖φ.toContinuousLinearMap‖ := by
+    refine ContinuousLinearMap.opNorm_le_bound _ (Real.sqrt_nonneg _) fun x => ?_
+    have hsq : ‖φ x‖ ^ 2 ≤ ‖φ.toContinuousLinearMap‖ * ‖x‖ ^ 2 := by
+      calc ‖φ x‖ ^ 2
+          = ‖φ (star x * x)‖ := by
+            rw [sq, ← CStarRing.norm_star_mul_self (x := φ x), ← map_star φ, ← map_mul φ]
+        _ ≤ ‖φ.toContinuousLinearMap‖ * ‖star x * x‖ := by
+            simpa [coe_toContinuousLinearMap] using
+              φ.toContinuousLinearMap.le_opNorm (star x * x)
+        _ = ‖φ.toContinuousLinearMap‖ * ‖x‖ ^ 2 := by rw [CStarRing.norm_star_mul_self, sq]
+    have hr : 0 ≤ ‖φ.toContinuousLinearMap‖ := norm_nonneg _
+    exact le_of_sq_le_sq
+      (by simpa [coe_toContinuousLinearMap, mul_pow, Real.sq_sqrt hr] using hsq)
+      (mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg x))
+  -- Lower bound: lift a unit vector in the range to a unit-norm preimage.
+  set b : B := (‖φ a‖ : ℂ)⁻¹ • φ a with hb_def
+  have hφa_pos : 0 < ‖φ a‖ := norm_pos_iff.mpr ha
+  obtain ⟨c, hφc, hc⟩ := exists_apply_eq_norm_eq (φ := φ)
+    ⟨(‖φ a‖ : ℂ)⁻¹ • a, by rw [map_smul, ← hb_def]⟩
+  have hb_norm : ‖b‖ = 1 := by
+    rw [hb_def, norm_smul, norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hφa_pos,
+      inv_mul_cancel₀ hφa_pos.ne']
+  have hc1 : ‖c‖ = 1 := hc.trans hb_norm
+  calc (1 : ℝ) = ‖φ c‖ := by rw [hφc, hb_norm]
+    _ ≤ ‖φ.toContinuousLinearMap‖ * ‖c‖ := by
+        simpa [coe_toContinuousLinearMap] using φ.toContinuousLinearMap.le_opNorm c
+    _ = ‖φ.toContinuousLinearMap‖ := by rw [hc1, mul_one]
+
+/-- The operator norm of a `⋆`-homomorphism between C⋆-algebras is `0` or `1`. -/
+theorem norm_toContinuousLinearMap_eq_zero_or_one (φ : A →⋆ₙₐ[ℂ] B) :
+    ‖φ.toContinuousLinearMap‖ = 0 ∨ ‖φ.toContinuousLinearMap‖ = 1 := by
+  by_cases hφ : φ = 0
+  · simp [hφ]
+  · exact Or.inr (norm_toContinuousLinearMap_eq_one_of_ne_zero hφ)
 
 end NonUnitalStarAlgHom
 

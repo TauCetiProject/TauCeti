@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.PosPart.Isometric
-public import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!
 # Norm-preserving lifts through `⋆`-homomorphisms
@@ -25,8 +24,9 @@ with its norm:
 * `NonUnitalStarAlgHom.exists_nonneg_apply_eq_norm_eq`: every positive `b` in the range has a
   positive preimage of the same norm. In particular positive contractions lift to positive
   contractions through a surjective `φ`.
-* `TwoSidedIdeal.Quotient.exists_norm_mk_eq`: every class in a C⋆-quotient `A ⧸ I` has a
-  representative whose norm is the quotient norm `inf_{y ∈ I} ‖a + y‖`.
+
+The quotient-specialization `TwoSidedIdeal.Quotient.exists_norm_mk_eq` lives in
+`TauCeti.Analysis.CStarAlgebra.Quotient`.
 
 ## Implementation notes
 
@@ -179,16 +179,3 @@ theorem exists_nonneg_apply_eq_norm_eq (φ : F) {b : B} (hbφ : b ∈ Set.range 
     ((CStarAlgebra.norm_posPart_le s).trans hsn.le).antisymm (norm_le_of_apply_eq φ hφs)⟩
 
 end NonUnitalStarAlgHom
-
-namespace TwoSidedIdeal.Quotient
-
-variable {A : Type*} [NonUnitalCStarAlgebra A] {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
-
-/-- In the quotient of a C⋆-algebra by a closed two-sided ideal, every class has a representative
-whose norm equals the quotient norm: the infimum in `TwoSidedIdeal.Quotient.norm_mk_eq` is
-attained. -/
-theorem exists_norm_mk_eq (x : A ⧸ I) : ∃ a : A, mk I a = x ∧ ‖a‖ = ‖x‖ := by
-  simpa only [mkStarAlgHom_apply] using
-    NonUnitalStarAlgHom.exists_apply_eq_norm_eq (mkStarAlgHom I) (mkStarAlgHom_surjective I x)
-
-end TwoSidedIdeal.Quotient

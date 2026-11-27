@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.Matrix.Frobenius
@@ -37,6 +38,8 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
   (`CStarMatrix.normalizedTraceMap_mul_comm`), of norm at most `1`
   (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`, and invariant under
   reindexing (`CStarMatrix.normalizedTraceMap_comp_reindexₐ`).
+* `CStarMatrix.traceMap`: the unnormalized trace `Tr` as a positive continuous linear
+  functional, equal to `k • tr_k`, of norm `k` for `k ≠ 0` (`CStarMatrix.norm_traceMap`).
 * `CStarMatrix.normalizedTrace_blockDiagonal'`: the normalized trace of a block-diagonal matrix
   weights the block `i` by `|n i| / |Σ i, n i|`, and so does
   `CStarMatrix.normalizedTwoNorm_blockDiagonal'_sq` for `‖·‖₂²`; hence
@@ -88,7 +91,7 @@ public section
 noncomputable section
 
 open Matrix
-open scoped ComplexOrder InnerProductSpace Kronecker Matrix.Norms.Frobenius
+open scoped ComplexOrder InnerProductSpace Kronecker Matrix.Norms.Frobenius MatrixOrder
 
 namespace CStarMatrix
 
@@ -474,6 +477,46 @@ theorem norm_normalizedTraceMap [Nonempty n] :
   classical
   refine le_antisymm (norm_normalizedTraceMap_le n) ?_
   simpa [CStarRing.norm_one] using (normalizedTraceMap n).toContinuousLinearMap.le_opNorm 1
+
+variable (n) in
+/-- The unnormalized matrix trace `Tr(x) = Σᵢ xᵢᵢ` as a positive continuous linear functional on
+`CStarMatrix n n ℂ`. It is `k • tr_k` for `k = #n`, so it has operator norm `k`
+(`norm_traceMap`) and vanishes on the zero algebra. -/
+def traceMap : CStarMatrix n n ℂ →P[ℂ] ℂ :=
+  (Fintype.card n) • normalizedTraceMap n
+
+/-- `traceMap n` evaluates to the unnormalized matrix trace. -/
+@[simp]
+theorem traceMap_apply (x : CStarMatrix n n ℂ) :
+    traceMap n x = (ofMatrix.symm x).trace := by
+  -- `k • tr_k` evaluates pointwise as `k • tr_k(x)`, which for `ℂ` is `↑k * tr_k(x)`.
+  rw [traceMap, IsSMulApply.smul_apply, nsmul_eq_mul, normalizedTraceMap_apply]
+  cases isEmpty_or_nonempty n
+  · simp [Matrix.trace]
+  · rw [normalizedTrace_def, mul_inv_cancel_left₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)]
+
+/-- The unnormalized trace is `k` times the normalized trace. -/
+theorem traceMap_eq_card_smul_normalizedTraceMap :
+    traceMap n = (Fintype.card n) • normalizedTraceMap n :=
+  (rfl)
+
+variable (n) in
+/-- On the empty index type the unnormalized trace is the zero functional. -/
+theorem traceMap_of_isEmpty [IsEmpty n] : traceMap n = 0 := by
+  ext x
+  simp [traceMap, Fintype.card_eq_zero]
+
+variable (n) in
+/-- The unnormalized trace has operator norm `k = #n` for every finite index type. -/
+theorem norm_traceMap : ‖(traceMap n).toContinuousLinearMap‖ = Fintype.card n := by
+  classical
+  have h := PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one (traceMap n)
+  -- `h` is `(‖φ‖ : ℂ) = φ 1`; evaluate at `1` by the unnormalized trace of the identity.
+  have h1 : traceMap n 1 = (Fintype.card n : ℂ) := by
+    simp [traceMap_apply, ofMatrix_symm_one, Matrix.trace_one]
+  have : (‖(traceMap n).toContinuousLinearMap‖ : ℂ) = (Fintype.card n : ℂ) := by
+    simpa [h1] using h
+  exact_mod_cast this
 
 /-- Left multiplication by an isometry `u⋆u = 1` preserves the normalized 2-norm. -/
 theorem normalizedTwoNorm_mul_left_of_star_mul_self [DecidableEq n] {u : CStarMatrix n n ℂ}
