@@ -114,11 +114,11 @@ theorem maximalSpectrumComap_surjective (hB : IsAffinoidAlgebra K B) (f : A →�
     (hf : f.toRingHom.IsIntegral) (hfi : Function.Injective f) :
     Function.Surjective (hB.maximalSpectrumComap f) := by
   intro x
-  obtain ⟨y, hy⟩ := MaximalSpectrum.comapOfIsIntegral_surjective f.toRingHom hf
+  obtain ⟨y, hy⟩ := MaximalSpectrum.comapOfIsIntegral_surjective_of_ker_le_jacobson f.toRingHom hf
     (((RingHom.injective_iff_ker_eq_bot _).mp hfi).trans_le bot_le) x
   exact ⟨y, MaximalSpectrum.ext <| by
-    rw [hB.maximalSpectrumComap_asIdeal, ← hy, MaximalSpectrum.comapOfIsIntegral_asIdeal]
-    exact Ideal.ext fun _ ↦ by simp⟩
+    rw [hB.maximalSpectrumComap_asIdeal, ← hy,
+      MaximalSpectrum.comapOfIsIntegral_asIdeal_algHom]⟩
 
 /-- The residue field of a maximal ideal of `A` is finite over the ground field when `A` maps
 integrally and injectively into an affinoid algebra, since the ideal lies under a maximal ideal

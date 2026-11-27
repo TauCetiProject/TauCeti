@@ -49,8 +49,8 @@ theorem exists_basis_norm_comparison (hK : IsWeaklyStable K)
     ∃ C D : ℝ, 0 < C ∧ 0 < D ∧ ∀ x,
       b.norm x ≤ C * spectralNorm K L x ∧ spectralNorm K L x ≤ D * b.norm x := by
   have : FiniteDimensional K L := b.finiteDimensional_of_finite
-  simpa only [spectralAlgNorm_def] using
-    b.exists_norm_comparison_of_forall_exists_bound (spectralAlgNorm K L)
+  simpa only [spectralAlgNorm_def, b.norm_eq_norm_equivFun] using
+    b.exists_norm_comparison_of_forall_dual_exists_bound (spectralAlgNorm K L)
       ((isWeaklyStable_iff K).mp hK L)
 
 end TauCeti.IsWeaklyStable

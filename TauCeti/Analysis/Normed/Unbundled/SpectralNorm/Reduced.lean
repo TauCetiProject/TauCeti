@@ -41,6 +41,9 @@ restricting `E` to be a field.
 
 ## Main results
 
+* `TauCeti.spectralNorm_quotient_le_spectralValue_minpoly`: at every maximal ideal `m`, the
+  residue-field spectral norm of `x mod m` is at most `spectralValue (minpoly K x)` (no
+  reducedness needed).
 * `TauCeti.spectralValue_minpoly_eq_iSup_spectralNorm`: `spectralValue (minpoly K x)` is the
   supremum of the residue-field spectral norms across `MaximalSpectrum E`.
 * `TauCeti.isPowMul_reducedSpectralAlgNorm` and `TauCeti.isNonarchimedean_reducedSpectralAlgNorm`:
@@ -91,6 +94,22 @@ private theorem spectralNorm_quotient_le_iSup [Module.Finite K E] (x : E)
     spectralNorm K (E ⧸ n.asIdeal) (Ideal.Quotient.mk n.asIdeal x))
     (Set.finite_range _).bddAbove m
 
+/-- At every maximal ideal `m` of an integral commutative `K`-algebra `E` (not assumed reduced), the
+residue-field spectral norm of `x mod m` is at most `spectralValue (minpoly K x)`. -/
+theorem spectralNorm_quotient_le_spectralValue_minpoly [IsUltrametricDist K]
+    [Algebra.IsIntegral K E] (x : E) (m : MaximalSpectrum E) :
+    letI := Ideal.Quotient.field m.asIdeal
+    spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) ≤
+      spectralValue (minpoly K x) := by
+  let := Ideal.Quotient.field m.asIdeal
+  have hx : IsIntegral K x := Algebra.IsIntegral.isIntegral x
+  have hxm : IsIntegral K (Ideal.Quotient.mk m.asIdeal x) :=
+    hx.map (Ideal.Quotient.mkₐ K m.asIdeal)
+  have hdvd : minpoly K (Ideal.Quotient.mk m.asIdeal x) ∣ minpoly K x := by
+    refine minpoly.dvd K _ ?_
+    rw [← Ideal.Quotient.mkₐ_eq_mk K m.asIdeal, aeval_algHom_apply, minpoly.aeval, map_zero]
+  exact (minpoly.monic hxm).spectralValue_le_of_dvd (minpoly.monic hx) hdvd
+
 variable [IsUltrametricDist K] [Module.Finite K E]
 
 /-- **Residue-field formula for the spectral value of a minimal polynomial.** In a finite
@@ -106,37 +125,34 @@ theorem spectralValue_minpoly_eq_iSup_spectralNorm (x : E) :
   have hx : IsIntegral K x := Algebra.IsIntegral.isIntegral x
   have hxm (m : MaximalSpectrum E) : IsIntegral K (Ideal.Quotient.mk m.asIdeal x) :=
     hx.map (Ideal.Quotient.mkₐ K m.asIdeal)
-  refine le_antisymm ?_ (iSup_quotient_le x (spectralValue_nonneg _) fun m ↦ ?_)
-  · let Q : K[X] := ∏ m : MaximalSpectrum E, minpoly K (Ideal.Quotient.mk m.asIdeal x)
-    have hQ_monic : Q.Monic := monic_prod_of_monic _ _ fun m _ ↦ minpoly.monic (hxm m)
-    have hQ_mem (m : MaximalSpectrum E) : Ideal.Quotient.mk m.asIdeal (aeval x Q) = 0 := by
-      rw [← Ideal.Quotient.mkₐ_eq_mk K m.asIdeal, ← aeval_algHom_apply]
-      obtain ⟨R, hR⟩ := Finset.dvd_prod_of_mem
-        (fun n : MaximalSpectrum E ↦ minpoly K (Ideal.Quotient.mk n.asIdeal x))
-        (Finset.mem_univ m)
-      dsimp only [Q]
-      rw [hR, map_mul, Ideal.Quotient.mkₐ_eq_mk, minpoly.aeval, zero_mul]
-    have hQ_jac : aeval x Q ∈ Ideal.jacobson (⊥ : Ideal E) :=
-      Submodule.mem_sInf.mpr fun m ⟨_, hm⟩ ↦ Ideal.Quotient.eq_zero_iff_mem.mp (hQ_mem ⟨m, hm⟩)
-    rw [IsArtinianRing.jacobson_eq_radical, Ideal.mem_radical_iff] at hQ_jac
-    simp_rw [Ideal.mem_bot] at hQ_jac
-    obtain ⟨k, hk⟩ := hQ_jac
-    have hQk_aeval : aeval x (Q ^ (k + 1)) = 0 := by
-      rw [map_pow, pow_succ, hk, zero_mul]
-    calc
-      spectralValue (minpoly K x)
-        ≤ spectralValue (Q ^ (k + 1)) :=
-          (minpoly.monic hx).spectralValue_le_of_dvd (hQ_monic.pow (k + 1))
-            (minpoly.dvd K x hQk_aeval)
-      _ = spectralValue Q := hQ_monic.spectralValue_pow (Nat.succ_ne_zero k)
-      _ ≤ ⨆ m : MaximalSpectrum E,
-            spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) :=
-          Monic.spectralValue_prod_le (fun m _ ↦ minpoly.monic (hxm m))
-            (iSup_quotient_spectralNorm_nonneg x) fun m _ ↦ spectralNorm_quotient_le_iSup x m
-  · have hdvd : minpoly K (Ideal.Quotient.mk m.asIdeal x) ∣ minpoly K x := by
-      refine minpoly.dvd K _ ?_
-      rw [← Ideal.Quotient.mkₐ_eq_mk K m.asIdeal, aeval_algHom_apply, minpoly.aeval, map_zero]
-    exact (minpoly.monic (hxm m)).spectralValue_le_of_dvd (minpoly.monic hx) hdvd
+  refine le_antisymm ?_
+    (iSup_quotient_le x (spectralValue_nonneg _) (spectralNorm_quotient_le_spectralValue_minpoly x))
+  let Q : K[X] := ∏ m : MaximalSpectrum E, minpoly K (Ideal.Quotient.mk m.asIdeal x)
+  have hQ_monic : Q.Monic := monic_prod_of_monic _ _ fun m _ ↦ minpoly.monic (hxm m)
+  have hQ_mem (m : MaximalSpectrum E) : Ideal.Quotient.mk m.asIdeal (aeval x Q) = 0 := by
+    rw [← Ideal.Quotient.mkₐ_eq_mk K m.asIdeal, ← aeval_algHom_apply]
+    obtain ⟨R, hR⟩ := Finset.dvd_prod_of_mem
+      (fun n : MaximalSpectrum E ↦ minpoly K (Ideal.Quotient.mk n.asIdeal x))
+      (Finset.mem_univ m)
+    dsimp only [Q]
+    rw [hR, map_mul, Ideal.Quotient.mkₐ_eq_mk, minpoly.aeval, zero_mul]
+  have hQ_jac : aeval x Q ∈ Ideal.jacobson (⊥ : Ideal E) :=
+    Submodule.mem_sInf.mpr fun m ⟨_, hm⟩ ↦ Ideal.Quotient.eq_zero_iff_mem.mp (hQ_mem ⟨m, hm⟩)
+  rw [IsArtinianRing.jacobson_eq_radical, Ideal.mem_radical_iff] at hQ_jac
+  simp_rw [Ideal.mem_bot] at hQ_jac
+  obtain ⟨k, hk⟩ := hQ_jac
+  have hQk_aeval : aeval x (Q ^ (k + 1)) = 0 := by
+    rw [map_pow, pow_succ, hk, zero_mul]
+  calc
+    spectralValue (minpoly K x)
+      ≤ spectralValue (Q ^ (k + 1)) :=
+        (minpoly.monic hx).spectralValue_le_of_dvd (hQ_monic.pow (k + 1))
+          (minpoly.dvd K x hQk_aeval)
+    _ = spectralValue Q := hQ_monic.spectralValue_pow (Nat.succ_ne_zero k)
+    _ ≤ ⨆ m : MaximalSpectrum E,
+          spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) :=
+        Monic.spectralValue_prod_le (fun m _ ↦ minpoly.monic (hxm m))
+          (iSup_quotient_spectralNorm_nonneg x) fun m _ ↦ spectralNorm_quotient_le_iSup x m
 
 variable [IsReduced E]
 
@@ -208,9 +224,8 @@ norm of `x mod m` is at most `reducedSpectralAlgNorm K E x`. -/
 theorem spectralNorm_quotient_le_reducedSpectralAlgNorm (x : E) (m : MaximalSpectrum E) :
     letI := Ideal.Quotient.field m.asIdeal
     spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) ≤
-      reducedSpectralAlgNorm K E x := by
-  rw [reducedSpectralAlgNorm_eq_iSup_spectralNorm]
-  exact spectralNorm_quotient_le_iSup x m
+      reducedSpectralAlgNorm K E x :=
+  spectralNorm_quotient_le_spectralValue_minpoly x m
 
 /-- `reducedSpectralAlgNorm K E` is nonarchimedean. -/
 theorem isNonarchimedean_reducedSpectralAlgNorm :
@@ -354,9 +369,10 @@ theorem exists_basis_reducedSpectralAlgNorm_comparison (hK : IsWeaklyStable K)
     {ι : Type*} [Fintype ι] [Nonempty ι] (b : Module.Basis ι K E) :
     ∃ C D : ℝ, 0 < C ∧ 0 < D ∧ ∀ x : E,
       b.norm x ≤ C * reducedSpectralAlgNorm K E x ∧
-        reducedSpectralAlgNorm K E x ≤ D * b.norm x :=
-  b.exists_norm_comparison_of_forall_exists_bound (reducedSpectralAlgNorm K E) fun φ ↦
-    let ⟨C, _, hC⟩ := hK.exists_bound_reducedSpectralAlgNorm φ
-    ⟨C, hC⟩
+        reducedSpectralAlgNorm K E x ≤ D * b.norm x := by
+  simpa only [b.norm_eq_norm_equivFun] using
+    b.exists_norm_comparison_of_forall_dual_exists_bound (reducedSpectralAlgNorm K E) fun φ ↦
+      let ⟨C, _, hC⟩ := hK.exists_bound_reducedSpectralAlgNorm φ
+      ⟨C, hC⟩
 
 end TauCeti.IsWeaklyStable

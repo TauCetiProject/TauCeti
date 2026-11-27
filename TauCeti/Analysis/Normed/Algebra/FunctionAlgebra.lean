@@ -54,9 +54,8 @@ over `B` with continuous structure map `B → A`.
   `TauCeti.reducedSpectralAlgNorm_one_tmul_eq_spectralValue_minpoly`, and
   `TauCeti.smoothingFun_eq_reducedSpectralAlgNorm`: minimal-polynomial and base-change formulas in
   finite torsion-free extensions.
-* `TauCeti.exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable`,
-  `TauCeti.isUniform_of_isWeaklyStable`, and
-  `AlgHom.exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable`: [BGR, §3.8.3, Theorem 7].
+* `TauCeti.exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable` and
+  `TauCeti.isUniform_of_isWeaklyStable`: [BGR, §3.8.3, Theorem 7].
 
 ## References
 
@@ -245,28 +244,3 @@ theorem isUniform_of_isWeaklyStable [IsReduced A]
 end Extension
 
 end TauCeti
-
-/-- `AlgHom` wrapper for `TauCeti.exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable` over a
-nontrivially normed field `K`, taking a continuous finite `K`-algebra homomorphism `g : B →ₐ[K] A`
-whose nonzero elements act without torsion on `A`. -/
-theorem AlgHom.exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable
-    {K B F A : Type*} [NontriviallyNormedField K]
-    [NormedCommRing B] [IsDomain B] [IsUltrametricDist B] [CompleteSpace B]
-    [NormedAlgebra K B] [IsNoetherianRing B] [IsIntegrallyClosed B]
-    [NormedField F] [IsUltrametricDist F] [Algebra B F] [IsFractionRing B F]
-    [NormedCommRing A] [IsReduced A] [IsUltrametricDist A] [CompleteSpace A] [NormedAlgebra K A]
-    (g : B →ₐ[K] A) (hg_cont : Continuous g) (hg_fin : g.Finite)
-    (hg_tf : ∀ ⦃b : B⦄ ⦃a : A⦄, b ≠ 0 → g b * a = 0 → a = 0)
-    (hBF : ∀ b : B, ‖algebraMap B F b‖ = ‖b‖) (hF : TauCeti.IsWeaklyStable F) :
-    ∃ C : ℝ, 0 < C ∧ ∀ a : A,
-      smoothingFun (normRingSeminorm A) a ≤ ‖a‖ ∧
-        ‖a‖ ≤ C * smoothingFun (normRingSeminorm A) a := by
-  let _ : Algebra B A := g.toRingHom.toAlgebra
-  have : IsScalarTower K B A := .of_algebraMap_eq fun c ↦ (g.commutes c).symm
-  have : Module.Finite B A := hg_fin
-  have : Module.IsTorsionFree B A := by
-    refine Module.IsTorsionFree.of_smul_eq_zero fun b a hba ↦ ?_
-    by_cases hb : b = 0
-    · exact Or.inl hb
-    · exact Or.inr (hg_tf hb hba)
-  exact TauCeti.exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable K hBF hF hg_cont

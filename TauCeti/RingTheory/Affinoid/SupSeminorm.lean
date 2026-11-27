@@ -65,12 +65,14 @@ on `A`. The kernel computation uses that affinoid algebras are Jacobson rings.
 * `TauCeti.IsAffinoidAlgebra.isReduced_iff_supSeminorm_eq_zero`: `|·|sup` separates points
   exactly when `A` is reduced.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_map_le` and `AlgHom.supSeminorm_map_le_of_bddAbove`:
-  algebra homomorphisms contract `|·|sup`.
+  algebra homomorphisms contracting maximal ideals to maximal ideals do not increase `|·|sup`
+  on elements with bounded source point norms.
 * `TauCeti.IsAffinoidAlgebra.pointNorm_le_supSeminorm_map` and
-  `AlgHom.pointNorm_le_supSeminorm_map_of_bddAbove`: surjective pointwise lower bound by `|·|sup`
-  on the target.
-* `AlgHom.supSeminorm_map_of_isIntegral`: integral algebra homomorphisms whose kernel lies in the
-  Jacobson radical preserve `|·|sup`.
+  `AlgHom.pointNorm_le_supSeminorm_map_of_bddAbove`: for surjective algebra homomorphisms onto an
+  algebra with bounded target point norms, classical points containing the kernel satisfy
+  `|a(x)| ≤ |φ a|sup`.
+* `AlgHom.supSeminorm_map_of_isIntegral_of_ker_le_jacobson`: integral algebra homomorphisms whose
+  kernel lies in the Jacobson radical preserve `|·|sup`.
 * `TauCeti.supSeminorm_mk_nilradical`: `|·|sup` is unchanged by reduction.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_iSup_minimalPrimes`: `|f|sup` is the supremum of the
   supremum seminorms of the residues of `f` modulo the minimal primes of `A`.
@@ -78,8 +80,8 @@ on `A`. The kernel computation uses that affinoid algebras are Jacobson rings.
   `|f|sup` by the coefficients of a monic polynomial vanishing at `f`.
 * `AlgHom.pointNorm_apply_le_gelfandRadius`, `AlgHom.bddAbove_range_pointNorm`,
   `AlgHom.supSeminorm_apply_le_gelfandRadius`, and `AlgHom.supSeminorm_apply_le_norm`: spectral
-  contraction and point-norm boundedness from arbitrary Banach `K`-algebras into commutative
-  `K`-algebras.
+  contraction and point-norm boundedness from arbitrary normed `K`-algebras with summable geometric
+  series into commutative `K`-algebras.
 
 ## References
 
@@ -399,26 +401,33 @@ theorem supSeminorm_pow [IsUltrametricDist K] (f : A) {n : ℕ} (hn : n ≠ 0) :
 theorem isPowMul_supSeminorm [IsUltrametricDist K] : IsPowMul (supSeminorm K : A → ℝ) :=
   fun f _ hn ↦ supSeminorm_pow f (Nat.one_le_iff_ne_zero.mp hn)
 
-/-- A surjective algebra map whose kernel consists of nilpotent elements preserves supremum
-seminorms, since every classical point of the source contains the kernel and so comes from a
-classical point of the target. -/
-theorem supSeminorm_map_of_ker_le_nilradical {B : Type*} [CommRing B] [Algebra K B]
-    {φ : A →ₐ[K] B} (hφ : Function.Surjective φ) (hker : RingHom.ker φ ≤ nilradical A) (a : A) :
+/-- An integral `K`-algebra homomorphism between commutative `K`-algebras whose kernel is contained
+in the Jacobson radical `Ideal.jacobson (⊥ : Ideal A)` preserves supremum seminorms, since every
+classical point of the source lifts to the target. -/
+theorem _root_.AlgHom.supSeminorm_map_of_isIntegral_of_ker_le_jacobson {B : Type*} [CommRing B]
+    [Algebra K B] (φ : A →ₐ[K] B) (hφ : φ.toRingHom.IsIntegral)
+    (hker : RingHom.ker φ ≤ Ideal.jacobson (⊥ : Ideal A)) (a : A) :
     supSeminorm K (φ a) = supSeminorm K a := by
-  let g : MaximalSpectrum B → MaximalSpectrum A := fun y ↦
-    ⟨y.asIdeal.comap φ, Ideal.comap_isMaximal_of_surjective φ hφ⟩
-  have hg : Function.Surjective g := fun x ↦ by
-    have hmap : (x.asIdeal.map φ).comap φ = x.asIdeal := by
-      rw [Ideal.comap_map_of_surjective' φ hφ,
-        sup_eq_left.mpr (hker.trans (nilradical_le_prime x.asIdeal))]
-    have hy : (x.asIdeal.map φ).IsMaximal := by
-      refine (Ideal.map_eq_top_or_isMaximal_of_surjective φ hφ x.isMaximal).resolve_left
-        fun h ↦ x.isMaximal.ne_top ?_
-      rw [← hmap, h, Ideal.comap_top]
-    exact ⟨⟨_, hy⟩, MaximalSpectrum.ext hmap⟩
+  have hg := MaximalSpectrum.comapOfIsIntegral_surjective_of_ker_le_jacobson φ.toRingHom hφ hker
   simp only [supSeminorm]
   rw [← hg.iSup_comp]
-  exact iSup_congr fun y ↦ (pointNorm_comap φ y (Ideal.comap_isMaximal_of_surjective φ hφ) a).symm
+  refine iSup_congr fun y ↦ ?_
+  have hid : (MaximalSpectrum.comapOfIsIntegral φ.toRingHom hφ y).asIdeal =
+      Ideal.comap φ y.asIdeal :=
+    MaximalSpectrum.comapOfIsIntegral_asIdeal_algHom φ hφ y
+  have hmax : (Ideal.comap φ y.asIdeal).IsMaximal :=
+    hid ▸ (MaximalSpectrum.comapOfIsIntegral φ.toRingHom hφ y).isMaximal
+  rw [← pointNorm_comap φ y hmax a]
+  exact congrArg (pointNorm K · a) (MaximalSpectrum.ext hid.symm)
+
+/-- A surjective algebra map whose kernel consists of nilpotent elements preserves supremum
+seminorms, since it is integral and its kernel lies in the Jacobson radical. -/
+theorem supSeminorm_map_of_ker_le_nilradical {B : Type*} [CommRing B] [Algebra K B]
+    {φ : A →ₐ[K] B} (hφ : Function.Surjective φ) (hker : RingHom.ker φ ≤ nilradical A) (a : A) :
+    supSeminorm K (φ a) = supSeminorm K a :=
+  φ.supSeminorm_map_of_isIntegral_of_ker_le_jacobson
+    (φ.toRingHom.isIntegral_of_surjective hφ)
+    (hker.trans Ideal.radical_le_jacobson) a
 
 /-- A `K`-algebra isomorphism preserves the supremum seminorm. -/
 @[simp]
@@ -427,26 +436,6 @@ theorem _root_.AlgEquiv.supSeminorm_eq {B : Type*} [CommRing B] [Algebra K B] (e
     supSeminorm K (e a) = supSeminorm K a :=
   supSeminorm_map_of_ker_le_nilradical (φ := e.toAlgHom) e.surjective
     ((RingHom.injective_iff_ker_eq_bot _).mp e.injective ▸ bot_le) a
-
-/-- An integral `K`-algebra homomorphism between commutative `K`-algebras whose kernel is contained
-in the Jacobson radical `Ideal.jacobson (⊥ : Ideal A)` preserves supremum seminorms, since every
-classical point of the source lifts to the target. -/
-theorem _root_.AlgHom.supSeminorm_map_of_isIntegral {B : Type*} [CommRing B] [Algebra K B]
-    (φ : A →ₐ[K] B) (hφ : φ.toRingHom.IsIntegral)
-    (hker : RingHom.ker φ ≤ Ideal.jacobson (⊥ : Ideal A)) (a : A) :
-    supSeminorm K (φ a) = supSeminorm K a := by
-  have hg := MaximalSpectrum.comapOfIsIntegral_surjective φ.toRingHom hφ hker
-  simp only [supSeminorm]
-  rw [← hg.iSup_comp]
-  refine iSup_congr fun y ↦ ?_
-  have hid : (MaximalSpectrum.comapOfIsIntegral φ.toRingHom hφ y).asIdeal =
-      Ideal.comap φ y.asIdeal := by
-    rw [MaximalSpectrum.comapOfIsIntegral_asIdeal]
-    exact Ideal.ext fun _ ↦ by simp
-  have hmax : (Ideal.comap φ y.asIdeal).IsMaximal :=
-    hid ▸ (MaximalSpectrum.comapOfIsIntegral φ.toRingHom hφ y).isMaximal
-  rw [← pointNorm_comap φ y hmax a]
-  exact congrArg (pointNorm K · a) (MaximalSpectrum.ext hid.symm)
 
 /-- **The supremum seminorm is unchanged by reduction**: `|f|sup` is the same in `A` and in its
 reduction `A ⧸ nilradical A`. -/
