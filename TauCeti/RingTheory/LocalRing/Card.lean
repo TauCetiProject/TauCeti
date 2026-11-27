@@ -39,6 +39,8 @@ pairs not both even. These are the counts behind the indices of the congruence l
 * `TauCeti.IsLocalRing.card_eq_card_maximalIdeal_mul_card_residueField`: `#R = #𝔪 · q`, for any
   local ring.
 * `TauCeti.IsLocalRing.card_residueField_mul_card_units`: `q · #Rˣ = #R · (q - 1)`.
+* `TauCeti.IsLocalRing.card_not_isUnimodular` and `TauCeti.IsLocalRing.card_isUnimodular`: there
+  are `#𝔪ⁿ` non-unimodular and `#Rⁿ - #𝔪ⁿ` unimodular vectors `v : ι → R`, for `n = #ι`.
 * `TauCeti.IsLocalRing.card_residueField_pow_mul_card_isUnimodular`:
   `qⁿ · #{v : ι → R | v unimodular} = #Rⁿ · (qⁿ - 1)` for `n = #ι`.
 
@@ -72,6 +74,18 @@ theorem card_eq_card_maximalIdeal_mul_card_residueField :
   rw [Submodule.card_eq_card_quotient_mul_card (maximalIdeal R),
     Nat.card_congr (quotientEquivResidueField (maximalIdeal.isMaximal R)).toEquiv]
 
+variable (R) in
+/-- **The non-unimodular vectors over a local ring**: a vector with finitely many coordinates fails
+to be unimodular exactly when all of its coordinates lie in `𝔪`, so with `n = #ι` there are
+`#𝔪ⁿ` of them. -/
+theorem card_not_isUnimodular (ι : Type*) [Fintype ι] :
+    Nat.card {v : ι → R // ¬Module.IsUnimodular R v} =
+      Nat.card (maximalIdeal R) ^ Fintype.card ι := by
+  have hcompl (v : ι → R) : ¬Module.IsUnimodular R v ↔ ∀ i, v i ∈ maximalIdeal R := by
+    simp [TauCeti.Module.isUnimodular_iff_exists_isUnit, mem_maximalIdeal, mem_nonunits_iff]
+  rw [Nat.card_congr ((Equiv.subtypeEquivRight hcompl).trans Equiv.subtypePiEquivPi),
+    Nat.card_fun, Nat.card_eq_fintype_card (α := ι)]
+
 variable (R) [Finite R]
 
 /-- **The units of a finite local ring**: `q · #Rˣ = #R · (q - 1)`, where `q` is the size of the
@@ -86,24 +100,31 @@ theorem card_residueField_mul_card_units :
       (Equiv.subtypeEquivRight fun _ ↦ notMem_maximalIdeal.symm)), add_comm, ← Nat.card_sum,
     Nat.card_congr (Equiv.sumCompl fun x : R ↦ x ∈ maximalIdeal R)]
 
+variable (ι : Type*) [Fintype ι]
+
+/-- The unimodular vectors and the vectors of `𝔪^ι` split `R^ι`. -/
+private theorem card_isUnimodular_add :
+    Nat.card {v : ι → R // Module.IsUnimodular R v} +
+        Nat.card (maximalIdeal R) ^ Fintype.card ι = Nat.card R ^ Fintype.card ι := by
+  classical
+  rw [← card_not_isUnimodular, ← Nat.card_sum,
+    Nat.card_congr (Equiv.sumCompl fun v : ι → R ↦ Module.IsUnimodular R v), Nat.card_fun,
+    Nat.card_eq_fintype_card (α := ι)]
+
+/-- Over a finite local ring, the unimodular vectors are the complement of `𝔪^ι`: with `n = #ι`
+there are `#Rⁿ - #𝔪ⁿ` of them. -/
+theorem card_isUnimodular :
+    Nat.card {v : ι → R // Module.IsUnimodular R v} =
+      Nat.card R ^ Fintype.card ι - Nat.card (maximalIdeal R) ^ Fintype.card ι :=
+  Nat.eq_sub_of_add_eq (card_isUnimodular_add R ι)
+
 /-- **The unimodular vectors over a finite local ring**: for a finite index type `ι` with `n`
 elements, `qⁿ · #{v : ι → R | v unimodular} = #Rⁿ · (qⁿ - 1)`, where `q` is the size of the
 residue field. A vector is unimodular exactly when it does not lie in `𝔪^ι`, and `#R = q · #𝔪`. -/
-theorem card_residueField_pow_mul_card_isUnimodular (ι : Type*) [Fintype ι] :
+theorem card_residueField_pow_mul_card_isUnimodular :
     Nat.card (ResidueField R) ^ Fintype.card ι * Nat.card {v : ι → R // Module.IsUnimodular R v} =
-      Nat.card R ^ Fintype.card ι * (Nat.card (ResidueField R) ^ Fintype.card ι - 1) := by
-  -- A vector fails to be unimodular exactly when all of its coordinates lie in `𝔪`.
-  have hcompl (v : ι → R) : ¬Module.IsUnimodular R v ↔ ∀ i, v i ∈ maximalIdeal R := by
-    simp [TauCeti.Module.isUnimodular_iff_exists_isUnit, mem_maximalIdeal, mem_nonunits_iff]
-  have hnon : Nat.card {v : ι → R // ¬Module.IsUnimodular R v} =
-      Nat.card (maximalIdeal R) ^ Fintype.card ι := by
-    rw [Nat.card_congr ((Equiv.subtypeEquivRight hcompl).trans Equiv.subtypePiEquivPi),
-      Nat.card_fun, Nat.card_eq_fintype_card (α := ι)]
-  refine mul_eq_of_add_eq (m := Nat.card (maximalIdeal R) ^ Fintype.card ι) ?_ ?_
-  · rw [card_eq_card_maximalIdeal_mul_card_residueField R, mul_pow]
-  · classical
-    rw [← hnon, ← Nat.card_sum,
-      Nat.card_congr (Equiv.sumCompl fun v : ι → R ↦ Module.IsUnimodular R v), Nat.card_fun,
-      Nat.card_eq_fintype_card (α := ι)]
+      Nat.card R ^ Fintype.card ι * (Nat.card (ResidueField R) ^ Fintype.card ι - 1) :=
+  mul_eq_of_add_eq (by rw [card_eq_card_maximalIdeal_mul_card_residueField R, mul_pow])
+    (card_isUnimodular_add R ι)
 
 end TauCeti.IsLocalRing

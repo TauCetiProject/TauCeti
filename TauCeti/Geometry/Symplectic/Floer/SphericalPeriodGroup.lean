@@ -31,7 +31,8 @@ group, as `TauCeti.Floer.SphericalPeriodGroup ω c`, and describes it in terms o
   with area `ω` and Chern number `c` of its Hurewicz class. This is the class by which a cap of a
   contractible loop through `x` changes when a sphere representing `a` is glued to it. It does not
   depend on the base point along paths
-  (`SphericalPeriodGroup.ofHomotopyGroup_homotopyGroupTransport`), and on a path-connected space
+  (`SphericalPeriodGroup.ofHomotopyGroup_homotopyGroupTransport`) or along equalities of points
+  (`SphericalPeriodGroup.ofHomotopyGroup_map_id`), and on a path-connected space
   every element of `Γ` is the class of a sphere at any given base point
   (`SphericalPeriodGroup.ofHomotopyGroup_surjective`).
 * `Γ` is trivial exactly when `ω` and `c` vanish on the Hurewicz classes of all spheres
@@ -121,6 +122,15 @@ theorem ofHomotopyGroup_homotopyGroupTransport {x y : X} (γ : Path x y)
       ofHomotopyGroup ω c x (Additive.ofMul a) := by
   rw [ofHomotopyGroup_eq_ofHomotopyGroup_iff]
   simp
+
+/-- The class of a sphere does not change when its base point is renamed along an equality of
+points, by `HomotopyGroup.map` of the identity. -/
+@[simp]
+theorem ofHomotopyGroup_map_id {x y : X} (h : ContinuousMap.id X x = y)
+    (a : HomotopyGroup (Fin 2) X x) :
+    ofHomotopyGroup ω c y (Additive.ofMul (HomotopyGroup.map (ContinuousMap.id X) h a)) =
+      ofHomotopyGroup ω c x (Additive.ofMul a) :=
+  HomotopyGroup.apply_map_id (fun y b => ofHomotopyGroup ω c y (Additive.ofMul b)) h a
 
 /-- **On a path-connected space every class of the period group is the class of a sphere** at any
 given base point. -/

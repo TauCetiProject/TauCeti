@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Cotangent
-public import TauCeti.Algebra.Category.ModuleCat.ExtendScalarsQuotient
+public import TauCeti.Algebra.Category.ModuleCat.ExtendScalars.Quotient
 
 /-!
 # Extension of scalars of an ideal to its quotient ring

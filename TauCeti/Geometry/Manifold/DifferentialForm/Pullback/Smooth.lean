@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import Mathlib.Data.Set.UnionLift
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
@@ -28,7 +29,9 @@ corner points. No invertibility, finite dimensionality, or completeness is requi
 
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`. Restriction to an open subset does
-not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`).
+not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`), so
+a map pulls one form back to another near a set once its restriction to an open subset does
+(`TauCeti.SmoothForm.eventually_mpullback_eq_of_subtype_val_comp_eq`).
 Pullback commutes with wedge products and wedge powers
 (`TauCeti.SmoothForm.mpullback_wedge`, `TauCeti.SmoothForm.mpullback_wedgePow`); for wedge powers
 this holds pointwise along any map (`TauCeti.mpullback_wedgePow_apply`).
@@ -323,6 +326,13 @@ theorem mpullback_apply (f : M → M') (hf : ContMDiff I I' ∞ f)
     (mpullback f hf φ).val x v = φ.val (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
   rw [coe_mpullback, TauCeti.mpullback_apply]
 
+/-- Smooth forms which agree at every point of the image of a smooth map `f` have equal pullbacks
+along `f`. -/
+theorem mpullback_eq_of_forall_apply_eq (hf : ContMDiff I I' ∞ f) {φ ψ : SmoothForm I' M' F k}
+    (h : ∀ x, φ.val (f x) = ψ.val (f x)) : mpullback f hf φ = mpullback f hf ψ :=
+  Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ by
+    rw [mpullback_apply, mpullback_apply, h x])
+
 /-- Evaluation of the smooth pullback of a one-form on a tangent vector `v`: it is the form
 evaluated on the image of `v` under the differential. -/
 theorem mpullback_apply_one (f : M → M') (hf : ContMDiff I I' ∞ f)
@@ -496,6 +506,62 @@ theorem mpullback_prodMap_mpullback_snd {f : M → M''} {g : M' → M'''}
 theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : SmoothForm I M F k)
     (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ).val x = σ.val x :=
   TauCeti.mpullback_subtype_val_apply σ.val x
+
+/-- Smooth vector-valued zero-forms on an open partition glue to a global smooth zero-form whose
+restriction to each piece is the prescribed form. -/
+theorem exists_zeroForm_mpullback_eq_of_partition {U : M → TopologicalSpace.Opens M}
+    (hx : ∀ x, x ∈ U x) (hU : ∀ {x y}, y ∈ U x → U y = U x)
+    (f : (V : Set.range U) → SmoothForm I V.val F 0) :
+    ∃ σ : SmoothForm I M F 0, ∀ x,
+      mpullback (Subtype.val : U x → M) contMDiff_subtypeVal σ = f ⟨U x, ⟨x, rfl⟩⟩ := by
+  let C (x : M) : Set.range U := ⟨U x, ⟨x, rfl⟩⟩
+  let g (x : M) (y : U x) := (f (C x)).val y 0
+  have hg (i j x : M) (hi : x ∈ U i) (hj : x ∈ U j) :
+      g i ⟨x, hi⟩ = g j ⟨x, hj⟩ := by
+    have hij : C i = C j := Subtype.ext ((hU hi).symm.trans (hU hj))
+    have heval (V W : Set.range U) (h : V = W) (v : V.val) (w : W.val)
+        (hvw : (v : M) = w) : (f V).val v 0 = (f W).val w 0 := by
+      subst W
+      obtain rfl : v = w := Subtype.ext hvw
+      rfl
+    exact heval _ _ hij _ _ rfl
+  have hcover : ⋃ x, (U x : Set M) = Set.univ :=
+    Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.mpr ⟨x, hx x⟩
+  let u := Set.liftCover (fun x ↦ (U x : Set M)) g hg hcover
+  have heq (x : M) (y : U x) : u y = (f (C x)).val y 0 :=
+    Set.liftCover_coe (S := fun x ↦ (U x : Set M)) (f := g) (hf := hg) (hS := hcover) y
+  have hu : ContMDiff I 𝓘(ℝ, F) ∞ u := by
+    intro x
+    let y : U x := ⟨x, hx x⟩
+    apply (contMDiffAt_subtype_iff (x := y)).1
+    exact (contMDiff_apply_zero (f (C x)) y).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun z ↦ heq x z)
+  let σ := ofFunction (I := I) ⟨u, hu⟩
+  refine ⟨σ, fun x ↦ ?_⟩
+  apply Subtype.ext
+  funext z
+  rw [coe_mpullback_subtype_val_apply]
+  ext v
+  rw [Subsingleton.elim v 0]
+  exact (congrFun (ofFunction_apply_zero ⟨u, hu⟩) z).trans (heq x z)
+
+/-- Let `Φ : M → M'` be a smooth map which restricts on an open subset `U` of `M` to a smooth map
+`Ψ` into an open subset `V` of `M'`. If `Ψ` pulls the restriction of `σ₁` to `V` back to that of
+`σ₀` to `U` near a set `K ⊆ U`, then `Φ` pulls `σ₁` back to `σ₀` near the image of `K` in `M`. -/
+theorem eventually_mpullback_eq_of_subtype_val_comp_eq {U : TopologicalSpace.Opens M}
+    {V : TopologicalSpace.Opens M'} {Φ : M → M'} {Ψ : U → V} (hΦ : ContMDiff I I' ∞ Φ)
+    (hΨ : ContMDiff I I' ∞ Ψ) (hcomp : Φ ∘ (Subtype.val : U → M) = Subtype.val ∘ Ψ)
+    {σ₀ : SmoothForm I M F k} {σ₁ : SmoothForm I' M' F k} {K : Set U}
+    (h : ∀ᶠ x in 𝓝ˢ K, (mpullback Ψ hΨ (mpullback (Subtype.val : V → M') contMDiff_subtypeVal
+      σ₁)).val x = (mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ₀).val x) :
+    ∀ᶠ x in 𝓝ˢ (Subtype.val '' K), (mpullback Φ hΦ σ₁).val x = σ₀.val x := by
+  obtain ⟨W, ⟨hW, hKW⟩, hWΨ⟩ := (hasBasis_nhdsSet K).mem_iff.1 h
+  refine mem_of_superset ((U.isOpen.isOpenEmbedding_subtypeVal.isOpenMap W hW).mem_nhdsSet.2
+    (image_mono hKW)) ?_
+  rintro _ ⟨z, hz, rfl⟩
+  rw [mem_ofPred_eq, ← coe_mpullback_subtype_val_apply,
+    mpullback_mpullback_of_comp_eq _ _ hΨ contMDiff_subtypeVal hcomp]
+  exact (hWΨ hz).trans (coe_mpullback_subtype_val_apply σ₀ z)
 
 /-- Pulling a smooth form back along a map `f` restricted to an open subset `U` evaluates tangent
 vectors at `x ∈ U` through the differential of `f` itself. -/

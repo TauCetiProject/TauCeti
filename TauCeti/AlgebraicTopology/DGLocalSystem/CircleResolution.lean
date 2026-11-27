@@ -338,14 +338,11 @@ theorem exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_e
       (𝒜 := cubicalChainGrading (MooreLoopSpace Circle 1) R)
       (d := cubicalChainDifferential (MooreLoopSpace Circle 1) R)
       (loopCellCocycle R Circle.expLoop.toMooreLoop).m v = u := by
-  -- `MooreLoopSpace.fundamentalGroupHom` takes the inverse of the path class of the loop.
-  have hg : MooreLoopSpace.fundamentalGroupHom (1 : Circle) Circle.expLoop.toMooreLoop =
-      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))⁻¹ := by
-    rw [MooreLoopSpace.fundamentalGroupHom_apply, Path.toPath_toMooreLoop]
   refine exists_loopCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero
     (fun n ↦ inferInstance) ?_ ?_ hu hε
-  · rw [hg, Subgroup.zpowers_inv, Circle.zpowers_fromPath_expLoop]
-  · rw [hg, isOfFinOrder_inv_iff]
+  · rw [MooreLoopSpace.fundamentalGroupHom_toMooreLoop, Subgroup.zpowers_inv,
+      Circle.zpowers_fromPath_expLoop]
+  · rw [MooreLoopSpace.fundamentalGroupHom_toMooreLoop, isOfFinOrder_inv_iff]
     exact Circle.not_isOfFinOrder_fromPath_expLoop
 
 end Circle
