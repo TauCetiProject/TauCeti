@@ -351,8 +351,7 @@ private theorem exists_nested_chart_sets :
     A.isOpen_dom (by rw [A.iUnion_dom])
   -- The support of `χᵢ` read in chart `i` is a compact subset of the chart image.
   have hK (i : Fin A.n) : IsCompact (A.chart i '' tsupport (χ i)) :=
-    (isClosed_tsupport _).isCompact.image_of_continuousOn
-      ((A.chart i).continuousOn.mono ((hχ i).trans (A.dom_subset_chart_source i)))
+    A.isCompact_chart_image_of_isClosed (isClosed_tsupport _) (hχ i)
   have step {K U : Set ℂ} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
       ∃ W : Opens ℂ, K ⊆ W ∧ closure (W : Set ℂ) ⊆ U ∧ IsCompact (closure (W : Set ℂ)) :=
     let ⟨W, hW, hKW, hWU, hWc⟩ := exists_open_between_and_isCompact_closure hK hU hKU

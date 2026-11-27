@@ -38,8 +38,12 @@ about `C^{k,α}(V)` to a single chart, as for the little Hölder space of sectio
 
 * `TauCeti.HolderSection.eq_of_component_eq`: elements vanishing off a subset of the domain of
   chart `i` are determined by their chart-`i` components.
+* `TauCeti.HolderSection.mem_chartZeroOff_of_forall_notMem_eq_zero`: the chart-`i` component of
+  an element vanishing off `L` lies in `chartZeroOff A k α i L`.
 * `TauCeti.HolderSection.restrictOnL_mem_chartZeroOff`: restrictions to the chart image of
   functions on `E` supported in a set `K` lie in `chartZeroOff A k α i ((A.chart i).symm '' K)`.
+* `TauCeti.HolderSection.extendByZeroL_component`: the extension by zero of the chart-`i`
+  component of an element vanishing off `L` is that element.
 * `TauCeti.HolderSection.toSection_extendByZeroL_eq`: the extension by zero of the chart-`i`
   reading of a section vanishing off the domain of chart `i` is that section.
 
@@ -126,6 +130,15 @@ theorem eq_of_component_eq {v v' : HolderSection A k α} (hLi : L ⊆ A.dom i)
     exact ((coord_toSection v i ⟨_, hy⟩).trans (by rw [h])).trans
       (coord_toSection v' i ⟨_, hy⟩).symm
   · rw [hv x fun h ↦ hx (hLi h), hv' x fun h ↦ hx (hLi h)]
+
+/-- The chart-`i` component of an element of `C^{k,α}(V)` whose underlying section vanishes off `L`
+lies in `chartZeroOff A k α i L`. -/
+theorem mem_chartZeroOff_of_forall_notMem_eq_zero {v : HolderSection A k α}
+    (hv : ∀ x ∉ L, toSection v x = 0) :
+    (v : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F) i ∈ chartZeroOff A k α i L :=
+  mem_chartZeroOff.2 fun y hy ↦ by
+    rw [← coord_toSection]
+    exact A.coord_eq_zero y.property (hv _ hy)
 
 /-- The section reading as an element of `chartZeroOff A k α i L` in chart `i` and vanishing off
 the domain of chart `i` vanishes off `L`. -/
@@ -248,6 +261,15 @@ theorem toSection_extendByZeroL_eq_zero (hα : α ≤ 1) (hn : (k : WithTop ℕ�
     toSection (extendByZeroL hα hn hL hLi f) x = 0 := by
   rw [toSection_extendByZeroL]
   exact chartSection_eq_zero_of_notMem f hx
+
+/-- **The extension by zero is a retraction.** The extension by zero of the chart-`i` component of
+an element of `C^{k,α}(V)` vanishing off `L` is that element. -/
+@[simp]
+theorem extendByZeroL_component (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n) (hL : IsClosed L)
+    (hLi : L ⊆ A.dom i) {v : HolderSection A k α} (hv : ∀ x ∉ L, toSection v x = 0) :
+    extendByZeroL hα hn hL hLi ⟨_, mem_chartZeroOff_of_forall_notMem_eq_zero hv⟩ = v :=
+  eq_of_component_eq hLi (fun _ hx ↦ toSection_extendByZeroL_eq_zero hα hn hL hLi _ hx) hv
+    (extendByZeroL_apply_self hα hn hL hLi _)
 
 /-- **The extension by zero recovers sections supported in one chart.** If a section `s` vanishes
 off the domain of chart `i` and its reading in chart `i` is `f`, then `s` is the underlying section

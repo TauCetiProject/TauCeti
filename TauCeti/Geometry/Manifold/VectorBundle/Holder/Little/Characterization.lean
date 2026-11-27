@@ -81,13 +81,14 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensio
 the whole-space little Hölder space `h^{k,α}(E)` supported in the interior of `K'`. The extension by
 zero from chart `i` of the restriction of `g` to the chart image lies in `h^{k,α}(V)`: it is the
 limit of the extensions by zero of smooth approximants of `g`, which are smooth sections. -/
-private theorem extendByZeroL_restrictOnL_mem_littleHolder (hα : α < 1)
-    (hn : (k : WithTop ℕ∞) + 1 ≤ ∞) {i : Fin A.n} {K' : Set E} (hK'i : K' ⊆ A.image i)
-    (hL : IsClosed ((A.chart i).symm '' K')) (hLi : (A.chart i).symm '' K' ⊆ A.dom i)
+private theorem extendByZeroL_restrictOnL_mem_littleHolder (hα : α < 1) {i : Fin A.n}
+    {K' : Set E} (hK'i : K' ⊆ A.image i) (hL : IsClosed ((A.chart i).symm '' K'))
+    (hLi : (A.chart i).symm '' K' ⊆ A.dom i)
     {g : CkHolderSpace k α E F} (hg : g ∈ CkHolderSpace.littleHolder k α E F)
     (hgc : HasCompactSupport g) (hgK : tsupport g ⊆ interior K') :
-    extendByZeroL hα.le hn hL hLi
+    extendByZeroL (n := ∞) hα.le (by exact_mod_cast le_top) hL hLi
       ⟨_, restrictOnL_mem_chartZeroOff (hgK.trans interior_subset)⟩ ∈ littleHolder A k α := by
+  have hn : (k : WithTop ℕ∞) + 1 ≤ ∞ := by exact_mod_cast le_top
   set S := extendByZeroL hα.le hn hL hLi
   set T : Set (chartZeroOff A k α i ((A.chart i).symm '' K')) :=
     S ⁻¹' (smoothSections A k α : Set (HolderSection A k α))
@@ -133,10 +134,12 @@ private theorem exists_mem_littleHolder_toSection_eq_smul (hα : α < 1) {ρ : M
     rintro _ ⟨x, hx, rfl⟩
     exact A.mem_image.2 ⟨x, hρi hx, rfl⟩
   obtain ⟨χ, hχ, hχK, hχi⟩ := A.exists_contDiff_eqOn_comp_chart_symm hρ hρi
+  have hn : (k : WithTop ℕ∞) + 1 ≤ ∞ := by exact_mod_cast le_top
+  have hχk : ContDiff ℝ (k + 1) χ := hχ.of_le hn
   have hχK' : tsupport χ ⊆ K :=
     closure_minimal (fun y hy ↦ by_contra fun h ↦ hy (hχK y h)) hK.isClosed
   obtain ⟨C, -, hC⟩ := (HasCompactSupport.intro hK hχK).exists_bound_iteratedFDeriv_of_contDiff
-    (n := k + 1) (hχ.of_le (by exact_mod_cast le_top))
+    (n := k + 1) hχk
   have hχb : ∀ j ≤ k + 1, ∀ y, ‖iteratedFDeriv ℝ j χ y‖ ≤ C.toNNReal :=
     fun j hj y ↦ (hC j hj y).trans (Real.le_coe_toNNReal C)
   obtain ⟨δ, hδ, hδK⟩ := hK.exists_thickening_subset_open (A.image i).isOpen hKi
@@ -146,18 +149,16 @@ private theorem exists_mem_littleHolder_toSection_eq_smul (hα : α < 1) {ρ : M
   -- `g = χ wᵢ` is a compactly supported element of the whole-space little Hölder space, and
   -- its restriction to the chart image is the chart-`i` reading of `ρ w`.
   set wᵢ := (w : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F) i
-  set g := CkHolderSpaceOn.cutoffSMulL (hχ.of_le (by exact_mod_cast le_top))
-    (Real.toNNReal_pos.2 hδ) hχΩ hα.le hχb wᵢ
+  set g := CkHolderSpaceOn.cutoffSMulL hχk (Real.toNNReal_pos.2 hδ) hχΩ hα.le hχb wᵢ
   have hgK : tsupport g ⊆ K := (CkHolderSpaceOn.tsupport_cutoffSMulL_subset _ _ _ _ _ _).trans hχK'
   -- A compact `K'` between `K` and the chart image, and its preimage in the chart domain.
   obtain ⟨K', hK', hKK', hK'i⟩ := exists_compact_between hK (A.image i).isOpen hKi
-  have hn : (k : WithTop ℕ∞) + 1 ≤ ∞ := by exact_mod_cast le_top
   have hL : IsClosed ((A.chart i).symm '' K') :=
     (hK'.image_of_continuousOn ((A.continuousOn_chart_symm i).mono hK'i)).isClosed
   have hLi : (A.chart i).symm '' K' ⊆ A.dom i := by
     rintro _ ⟨y, hy, rfl⟩
     exact A.symm_mem_dom (hK'i hy)
-  refine ⟨_, extendByZeroL_restrictOnL_mem_littleHolder hα hn hK'i hL hLi
+  refine ⟨_, extendByZeroL_restrictOnL_mem_littleHolder hα hK'i hL hLi
     (CkHolderSpaceOn.cutoffSMulL_mem_littleHolder _ _ hχΩ hα hχb hw)
     (HasCompactSupport.intro hK fun y hy ↦ image_eq_zero_of_notMem_tsupport fun h ↦ hy (hgK h))
     (hgK.trans hKK'), toSection_extendByZeroL_eq hα.le hn hL hLi (fun x hx ↦ ?_) fun y ↦ ?_⟩
