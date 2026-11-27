@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldInclusion
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.SmoothDivisor
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.SobolevOrder
 
@@ -19,11 +20,10 @@ manifold of dimension `2m` diffeomorphic to `ℂᵐ` by the coefficients of its 
 does not depend on the order: for `4 ≤ k ≤ k'`, the inclusion `A_m^(k') ⊆ A_m^k` induces a
 diffeomorphism between the vortex moduli spaces of orders `k'` and `k`.
 
-**The inclusion of fields.** For `s ≤ s'`, a continuous field of `A_m^(s')` is a continuous field of
-`A_m^s` (`TauCeti.Vortex.SobolevFieldSpace.inclusion`). In the coordinates of `x - x_m` it is the
-inclusion `H^(s') ⊆ H^s` of Bessel-potential spaces
-(`TauCeti.Vortex.SobolevFieldSpace.subRef_inclusion`), so for `s ≥ 0` it is continuous
-(`TauCeti.Vortex.SobolevFieldSpace.continuous_inclusion`): the topology of `A_m^(s')` is finer.
+**The inclusion of fields.** For `0 ≤ s ≤ s'`, a continuous field of `A_m^(s')` is a continuous
+field of `A_m^s`, and this inclusion is continuous (`TauCeti.Vortex.SobolevFieldSpace.inclusion`,
+`TauCeti.Vortex.SobolevFieldSpace.continuous_inclusion`, in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldInclusion`).
 
 **The induced map of orbit spaces.** The gauge groups decrease with the order,
 `G_(k'+1) ≤ G_(k+1)` (`TauCeti.Vortex.sobolevGaugeGroup_mono`), so the inclusion carries
@@ -45,8 +45,6 @@ for the atlases `TauCeti.Vortex.SobolevFieldSpace.vortexModuliChartedSpace`
 
 ## Main definitions
 
-* `TauCeti.Vortex.SobolevFieldSpace.inclusion`: the inclusion `A_m^(s') ⊆ A_m^s` of continuous
-  fields, for `s ≤ s'`.
 * `TauCeti.Vortex.SobolevFieldSpace.quotientInclusion`: the induced map of orbit spaces.
 * `TauCeti.Vortex.SobolevFieldSpace.vortexModuliInclusion`: its restriction to the vortex moduli.
 * `TauCeti.Vortex.SobolevFieldSpace.vortexModuliHomeomorphOfLE`,
@@ -55,14 +53,15 @@ for the atlases `TauCeti.Vortex.SobolevFieldSpace.vortexModuliChartedSpace`
 
 ## Main results
 
-* `TauCeti.Vortex.SobolevFieldSpace.continuous_inclusion`,
-  `TauCeti.Vortex.SobolevFieldSpace.continuous_quotientInclusion`: the inclusion and the induced
-  map of orbit spaces are continuous.
+* `TauCeti.Vortex.SobolevFieldSpace.continuous_quotientInclusion`: the induced map of orbit
+  spaces is continuous.
 * `TauCeti.Vortex.SobolevFieldSpace.vortexModuliDivisor_vortexModuliInclusion`: the induced map
   keeps the zero divisor.
 * `TauCeti.Vortex.SobolevFieldSpace.coe_vortexModuliHomeomorphOfLE`,
   `TauCeti.Vortex.SobolevFieldSpace.coe_vortexModuliDiffeomorphOfLE`: the homeomorphism and the
   diffeomorphism are the map induced by the inclusion.
+* `TauCeti.Vortex.SobolevFieldSpace.toHomeomorph_vortexModuliDiffeomorphOfLE`: the diffeomorphism
+  has the homeomorphism as underlying homeomorphism.
 
 ## References
 
@@ -80,61 +79,9 @@ namespace TauCeti.Vortex
 
 namespace SobolevFieldSpace
 
-open BesselPotentialSpace
 open scoped ContDiff Manifold
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ}
-
-/-! ### The inclusion of fields -/
-
-section Inclusion
-
-variable {s s' s'' : ℝ}
-
-/-- **The inclusion `A_m^(s') ⊆ A_m^s`** of continuous framed fields, for `s ≤ s'`: a field of the
-smaller affine space `A_m^(s')` is a field of `A_m^s` (`TauCeti.Vortex.framedFieldSpace_mono`). -/
-def inclusion (h : s ≤ s') (x : SobolevFieldSpace f m s') : SobolevFieldSpace f m s :=
-  ⟨x, framedFieldSpace_mono f m h x.mem_framedFieldSpace, x.continuous⟩
-
-/-- The inclusion does not change the field. -/
-@[simp]
-theorem coe_inclusion (h : s ≤ s') (x : SobolevFieldSpace f m s') : ⇑(inclusion h x) = ⇑x :=
-  (rfl)
-
-/-- The inclusion of fields is injective. -/
-theorem inclusion_injective (h : s ≤ s') :
-    Function.Injective (inclusion (f := f) (m := m) h) :=
-  fun _ _ hxy ↦ ext (congrArg (⇑) hxy)
-
-/-- The inclusion of `A_m^s` into itself is the identity. -/
-@[simp]
-theorem inclusion_self (x : SobolevFieldSpace f m s) : inclusion le_rfl x = x :=
-  (rfl)
-
-/-- Inclusions of fields compose. -/
-@[simp]
-theorem inclusion_inclusion (h : s ≤ s') (h' : s' ≤ s'') (x : SobolevFieldSpace f m s'') :
-    inclusion h (inclusion h' x) = inclusion (h.trans h') x :=
-  (rfl)
-
-/-- **The inclusion in the coordinates of `x - x_m`** is the inclusion `H^(s') ⊆ H^s` of
-Bessel-potential spaces, for `0 ≤ s ≤ s'`. -/
-theorem subRef_inclusion (h₀ : 0 ≤ s) (h : s ≤ s') (x : SobolevFieldSpace f m s') (j : Fin 4) :
-    subRef (inclusion h x) j = BesselPotentialSpace.inclusion h (subRef x j) := by
-  rw [subRef_eq_iff h₀, BesselPotentialSpace.inclusion_inclusion]
-  exact coeFn_toLp_inclusion_subRef (h₀.trans h) x j
-
-/-- **The inclusion `A_m^(s') ⊆ A_m^s` is continuous** for `0 ≤ s ≤ s'`: the topology of `A_m^(s')`
-on its continuous fields is finer than that of `A_m^s`. -/
-@[fun_prop]
-theorem continuous_inclusion (h₀ : 0 ≤ s) (h : s ≤ s') :
-    Continuous (inclusion (f := f) (m := m) h) := by
-  refine (isEmbedding_subRef h₀).continuous_iff.2 (continuous_pi fun j ↦ ?_)
-  simp only [Function.comp_def, subRef_inclusion h₀ h]
-  exact (BesselPotentialSpace.inclusion h).continuous.comp
-    ((continuous_apply j).comp continuous_subRef)
-
-end Inclusion
 
 /-! ### The induced map of orbit spaces -/
 
@@ -294,6 +241,19 @@ theorem coe_vortexModuliDiffeomorphOfLE (hk : 3 < k) (h : k ≤ k') :
     ← Diffeomorph.symm_apply_apply (vortexModuliDiffeomorph hk) (vortexModuliInclusion h q),
     vortexModuliDiffeomorph_apply, vortexModuliDiffeomorph_apply,
     vortexModuliDivisor_vortexModuliInclusion]
+
+/-- The underlying homeomorphism of the diffeomorphism is `vortexModuliHomeomorphOfLE`. -/
+@[simp]
+theorem toHomeomorph_vortexModuliDiffeomorphOfLE (hk : 3 < k) (h : k ≤ k') :
+    letI := vortexModuliChartedSpace (f := f) (m := m) (hs := hs') (hk.trans_le h)
+    letI := vortexModuliChartedSpace (f := f) (m := m) (hs := hs) hk
+    (vortexModuliDiffeomorphOfLE (f := f) (m := m) hs hs' hk h).toHomeomorph =
+      vortexModuliHomeomorphOfLE hs hs' hk h := by
+  let _ := vortexModuliChartedSpace (f := f) (m := m) (hs := hs') (hk.trans_le h)
+  let _ := vortexModuliChartedSpace (f := f) (m := m) (hs := hs) hk
+  ext q
+  rw [Diffeomorph.coe_toHomeomorph, coe_vortexModuliDiffeomorphOfLE,
+    coe_vortexModuliHomeomorphOfLE]
 
 end Diffeomorph
 
