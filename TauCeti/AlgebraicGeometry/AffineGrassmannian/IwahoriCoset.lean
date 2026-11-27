@@ -52,6 +52,14 @@ noncomputable def iwahoriLoopSubgroup (R : CommAlgCat.{u} k) :
     Subgroup ((loopGroup k H).obj R) :=
   (positiveLoopPreimage H J R).map ((positiveLoopToLoop k H).app R).hom
 
+/-- A loop belongs to the Iwahori subgroup exactly when it is the image of a positive
+loop whose reduction belongs to the closed subgroup. -/
+theorem mem_iwahoriLoopSubgroup_iff (R : CommAlgCat.{u} k)
+    (g : (loopGroup k H).obj R) :
+    g ∈ iwahoriLoopSubgroup H J R ↔
+      ∃ a ∈ positiveLoopPreimage H J R, ((positiveLoopToLoop k H).app R).hom a = g :=
+  Iff.rfl
+
 /-- The literal left cosets of the Iwahori subgroup in the loop group. -/
 abbrev IwahoriCoset (R : CommAlgCat.{u} k) :=
   (loopGroup k H).obj R ⧸ iwahoriLoopSubgroup H J R
@@ -326,7 +334,7 @@ theorem iwahoriCosetProjection_eq_mk_iff (R : CommAlgCat.{u} k)
 
 /-- The fibre over the coset of a specified loop is `G/B`, with trivialization given by
 left multiplication by the inverse loop. -/
-def iwahoriCosetFibreEquiv (R : CommAlgCat.{u} k) (g : (loopGroup k H).obj R) :
+def iwahoriCosetFiberEquiv (R : CommAlgCat.{u} k) (g : (loopGroup k H).obj R) :
     {q : IwahoriCoset H J R // iwahoriCosetProjection H J R q = QuotientGroup.mk g} ≃
       (WithConv (H →ₐ[k] R) ⧸ CommHopfAlgCat.quotientPointsSubgroup H J R) where
   toFun q := (positiveIwahoriCosetEquiv H J R).symm
@@ -350,16 +358,16 @@ def iwahoriCosetFibreEquiv (R : CommAlgCat.{u} k) (g : (loopGroup k H).obj R) :
 
 /-- Inverse fibre coordinates are constant loops translated on the left by `g`. -/
 @[simp]
-theorem iwahoriCosetFibreEquiv_symm_coe (R : CommAlgCat.{u} k)
+theorem iwahoriCosetFiberEquiv_symm_coe (R : CommAlgCat.{u} k)
     (g : (loopGroup k H).obj R)
     (a : WithConv (H →ₐ[k] R) ⧸ CommHopfAlgCat.quotientPointsSubgroup H J R) :
-    ((iwahoriCosetFibreEquiv H J R g).symm a).val = g • constantIwahoriCoset H J R a := (rfl)
+    ((iwahoriCosetFiberEquiv H J R g).symm a).val = g • constantIwahoriCoset H J R a := (rfl)
 
 /-- The forward fibre coordinates use `g⁻¹`; this formula avoids unfolding the equivalence. -/
-theorem constant_iwahoriCosetFibreEquiv (R : CommAlgCat.{u} k)
+theorem constant_iwahoriCosetFiberEquiv (R : CommAlgCat.{u} k)
     (g : (loopGroup k H).obj R)
     (q : {q : IwahoriCoset H J R // iwahoriCosetProjection H J R q = QuotientGroup.mk g}) :
-    constantIwahoriCoset H J R (iwahoriCosetFibreEquiv H J R g q) = g⁻¹ • q.val :=
+    constantIwahoriCoset H J R (iwahoriCosetFiberEquiv H J R g q) = g⁻¹ • q.val :=
   congrArg Subtype.val ((positiveIwahoriCosetEquiv H J R).apply_symm_apply _)
 
 /-- Coefficient maps commute with the left loop action on cosets. -/
@@ -372,7 +380,7 @@ theorem iwahoriCosetPresheaf_map_smul {R S : CommAlgCat.{u} k} (f : R ⟶ S)
     exact congrArg QuotientGroup.mk (map_mul ((loopGroup k H).map f).hom g a)
 
 /-- Coefficient extension maps the fibre over `gL⁺G` to the fibre over its image. -/
-def iwahoriCosetFibreMap {R S : CommAlgCat.{u} k} (f : R ⟶ S)
+def iwahoriCosetFiberMap {R S : CommAlgCat.{u} k} (f : R ⟶ S)
     (g : (loopGroup k H).obj R)
     (q : {q : IwahoriCoset H J R // iwahoriCosetProjection H J R q = QuotientGroup.mk g}) :
     {q : IwahoriCoset H J S // iwahoriCosetProjection H J S q =
@@ -385,26 +393,27 @@ def iwahoriCosetFibreMap {R S : CommAlgCat.{u} k} (f : R ⟶ S)
 
 /-- On underlying cosets, the fibre map is the coefficient map of the coset presheaf. -/
 @[simp]
-theorem iwahoriCosetFibreMap_coe {R S : CommAlgCat.{u} k} (f : R ⟶ S)
+theorem iwahoriCosetFiberMap_coe {R S : CommAlgCat.{u} k} (f : R ⟶ S)
     (g : (loopGroup k H).obj R)
     (q : {q : IwahoriCoset H J R // iwahoriCosetProjection H J R q = QuotientGroup.mk g}) :
-    (iwahoriCosetFibreMap H J f g q).val =
+    (iwahoriCosetFiberMap H J f g q).val =
       (iwahoriCosetPresheaf H J).map f.op.op q.val := (rfl)
 
 /-- The fibre trivializations commute with coefficient maps, using the existing
 homogeneous quotient presheaf to map the `G/B` coordinate. -/
-theorem iwahoriCosetFibreEquiv_naturality {R S : CommAlgCat.{u} k} (f : R ⟶ S)
+theorem iwahoriCosetFiberEquiv_naturality {R S : CommAlgCat.{u} k} (f : R ⟶ S)
     (g : (loopGroup k H).obj R)
     (q : (_root_.CommHopfAlgCat.homogeneousQuotientPresheaf H J).obj (op (op R))) :
-    iwahoriCosetFibreMap H J f g ((iwahoriCosetFibreEquiv H J R g).symm
+    iwahoriCosetFiberMap H J f g ((iwahoriCosetFiberEquiv H J R g).symm
       (_root_.CommHopfAlgCat.homogeneousQuotientPresheafObjEquiv H J _ q)) =
-    (iwahoriCosetFibreEquiv H J S (((loopGroup k H).map f).hom g)).symm
+    (iwahoriCosetFiberEquiv H J S (((loopGroup k H).map f).hom g)).symm
       (_root_.CommHopfAlgCat.homogeneousQuotientPresheafObjEquiv H J _
         ((_root_.CommHopfAlgCat.homogeneousQuotientPresheaf H J).map f.op.op q)) := by
   apply Subtype.ext
-  convert (iwahoriCosetPresheaf_map_smul H J f g _).trans
-    (congrArg (fun a : IwahoriCoset H J S ↦ ((loopGroup k H).map f).hom g • a)
-      (constantIwahoriCoset_naturality H J f.op.op q)) using 1 <;> rfl
+  rw [iwahoriCosetFiberMap_coe, iwahoriCosetFiberEquiv_symm_coe,
+    iwahoriCosetFiberEquiv_symm_coe, iwahoriCosetPresheaf_map_smul]
+  exact congrArg (fun a : IwahoriCoset H J S ↦ ((loopGroup k H).map f).hom g • a)
+    (constantIwahoriCoset_naturality H J f.op.op q)
 
 /-- Pairs of a loop and an Iwahori coset over its positive-loop coset are pairs of a loop
 and a `G/B` coset. This is a trivialization over the loop group, before sheafification. -/
@@ -415,7 +424,7 @@ def iwahoriCosetPairsEquiv (R : CommAlgCat.{u} k) :
         (WithConv (H →ₐ[k] R) ⧸ CommHopfAlgCat.quotientPointsSubgroup H J R) :=
   (Equiv.subtypeProdEquivSigmaSubtype fun g q ↦
     iwahoriCosetProjection H J R q = QuotientGroup.mk g).trans
-      (Equiv.sigmaEquivProdOfEquiv (iwahoriCosetFibreEquiv H J R))
+      (Equiv.sigmaEquivProdOfEquiv (iwahoriCosetFiberEquiv H J R))
 
 /-- The inverse pair coordinates retain the loop and translate its constant-loop flag. -/
 @[simp]
@@ -431,14 +440,14 @@ theorem iwahoriCosetPairsEquiv_apply (R : CommAlgCat.{u} k)
       iwahoriCosetProjection H J R p.2 = QuotientGroup.mk p.1}) :
     Prod.map id (constantIwahoriCoset H J R) (iwahoriCosetPairsEquiv H J R p) =
       (p.val.1, p.val.1⁻¹ • p.val.2) :=
-  Prod.ext rfl (constant_iwahoriCosetFibreEquiv H J R p.val.1 ⟨p.val.2, p.property⟩)
+  Prod.ext rfl (constant_iwahoriCosetFiberEquiv H J R p.val.1 ⟨p.val.2, p.property⟩)
 
 /-- At the identity loop the fibre coordinates are the base-fibre coordinates. -/
 @[simp]
-theorem iwahoriCosetFibreEquiv_one_symm_coe (R : CommAlgCat.{u} k)
+theorem iwahoriCosetFiberEquiv_one_symm_coe (R : CommAlgCat.{u} k)
     (q : WithConv (H →ₐ[k] R) ⧸ CommHopfAlgCat.quotientPointsSubgroup H J R) :
-    ((iwahoriCosetFibreEquiv H J R 1).symm q).val = constantIwahoriCoset H J R q := by
-  rw [iwahoriCosetFibreEquiv_symm_coe, one_smul]
+    ((iwahoriCosetFiberEquiv H J R 1).symm q).val = constantIwahoriCoset H J R q := by
+  rw [iwahoriCosetFiberEquiv_symm_coe, one_smul]
 
 /-- For `B = G`, the Iwahori image is the entire positive-loop image. Thus the literal
 projection forgets no additional level structure. -/
@@ -476,8 +485,8 @@ def iwahoriCosetPairsMap {R S : CommAlgCat.{u} k} (f : R ⟶ S)
     {p : (loopGroup k H).obj S × IwahoriCoset H J S //
       iwahoriCosetProjection H J S p.2 = QuotientGroup.mk p.1} :=
   ⟨(((loopGroup k H).map f).hom p.val.1,
-      (iwahoriCosetFibreMap H J f p.val.1 ⟨p.val.2, p.property⟩).val),
-    (iwahoriCosetFibreMap H J f p.val.1 ⟨p.val.2, p.property⟩).property⟩
+      (iwahoriCosetFiberMap H J f p.val.1 ⟨p.val.2, p.property⟩).val),
+    (iwahoriCosetFiberMap H J f p.val.1 ⟨p.val.2, p.property⟩).property⟩
 
 /-- On underlying pairs, coefficient extension maps the loop and the coset separately. -/
 @[simp]
@@ -500,16 +509,23 @@ theorem iwahoriCosetPairsEquiv_naturality {R S : CommAlgCat.{u} k} (f : R ⟶ S)
           _root_.CommHopfAlgCat.homogeneousQuotientPresheafObjEquiv H J _
             ((_root_.CommHopfAlgCat.homogeneousQuotientPresheaf H J).map f.op.op q)) := by
   apply Subtype.ext
-  exact Prod.ext rfl (congrArg Subtype.val (iwahoriCosetFibreEquiv_naturality H J f g q))
+  rw [iwahoriCosetPairsMap_coe, iwahoriCosetPairsEquiv_symm_coe,
+    iwahoriCosetPairsEquiv_symm_coe]
+  apply Prod.ext
+  · rfl
+  · have h := congrArg Subtype.val (iwahoriCosetFiberEquiv_naturality H J f g q)
+    rw [iwahoriCosetFiberMap_coe, iwahoriCosetFiberEquiv_symm_coe,
+      iwahoriCosetFiberEquiv_symm_coe] at h
+    exact h
 
-/-- Fibre coordinates of a translated positive representative are its reduction. -/
+/-- Fiber coordinates of a translated positive representative are its reduction. -/
 @[simp]
-theorem iwahoriCosetFibreEquiv_symm_reduction (R : CommAlgCat.{u} k)
+theorem iwahoriCosetFiberEquiv_symm_reduction (R : CommAlgCat.{u} k)
     (g : (loopGroup k H).obj R) (a : WithConv (H →ₐ[k] PowerSeries R)) :
-    ((iwahoriCosetFibreEquiv H J R g).symm
+    ((iwahoriCosetFiberEquiv H J R g).symm
       (QuotientGroup.mk (positiveLoopEvalZero k H R a))).val =
         QuotientGroup.mk (g * ((positiveLoopToLoop k H).app R).hom a) := by
-  rw [iwahoriCosetFibreEquiv_symm_coe, constantIwahoriCoset_reduction,
+  rw [iwahoriCosetFiberEquiv_symm_coe, constantIwahoriCoset_reduction,
     MulAction.Quotient.smul_mk, smul_eq_mul]
 
 /-- With trivial `B`, the Iwahori image is the image of the first congruence subgroup. -/
