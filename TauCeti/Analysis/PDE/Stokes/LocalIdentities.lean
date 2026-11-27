@@ -219,8 +219,9 @@ theorem stressDivergence_const_smul (c : ℝ) (σ : (ι → ℝ) → Matrix ι �
   funext i
   rw [stressDivergence_apply, Pi.smul_apply, stressDivergence_apply, smul_eq_mul, Finset.mul_sum]
   refine Finset.sum_congr rfl fun j _ => ?_
-  rw [show (fun y => (c • σ) y i j) = c • fun y => σ y i j from rfl, fderiv_const_smul_field,
-    Pi.smul_apply, smul_apply, smul_eq_mul]
+  have hc : (fun y => (c • σ) y i j) = c • fun y => σ y i j :=
+    funext fun y => by rw [Pi.smul_apply, Pi.smul_apply, Matrix.smul_apply]
+  rw [hc, fderiv_const_smul_field, Pi.smul_apply, smul_apply, smul_eq_mul]
 
 /-- The row divergence at `x` only depends on the matrix field near `x`. -/
 theorem _root_.Filter.EventuallyEq.stressDivergence_eq {σ τ : (ι → ℝ) → Matrix ι ι ℝ}
