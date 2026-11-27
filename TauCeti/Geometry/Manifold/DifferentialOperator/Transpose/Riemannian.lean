@@ -221,8 +221,9 @@ theorem isFormalTranspose_vectorFieldDerivation_withDensity_exp
       (-(vectorFieldDerivation X : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) -
         mulLeft ℝ (smoothDivergence I M X + vectorFieldDerivation X φ))
       ((riemannianVolume I M).withDensity fun x ↦ ENNReal.ofReal (Real.exp (φ x))) := by
+  -- The weight `e^φ`; `Real.exp ∘ φ` is by definition `fun y ↦ Real.exp (φ y)`.
   let ρ : C^∞⟮I, M; ℝ⟯ :=
-    ⟨fun y ↦ Real.exp (φ y), (Real.contDiff_exp.comp_contMDiff φ.contMDiff :)⟩
+    ⟨fun y ↦ Real.exp (φ y), Real.contDiff_exp.comp_contMDiff φ.contMDiff⟩
   have hρ : ⇑ρ = fun y ↦ Real.exp (φ y) := ContMDiffMap.coeFn_mk _ _
   -- The chain rule `X (e^φ) = e^φ X φ`.
   have hXρ : vectorFieldDerivation X ρ = ρ * vectorFieldDerivation X φ := by

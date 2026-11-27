@@ -180,8 +180,9 @@ theorem IsMetricCompatible.isFormalAdjoint_alongVectorField_withDensity_exp
       -cov τ x (X x) - (divergence I (fun y ↦ X y) x + mvfderiv I φ x (X x)) • τ x) :
     (cov.alongVectorField X).IsFormalAdjoint Q
       ((riemannianVolume I M).withDensity fun x ↦ ENNReal.ofReal (Real.exp (φ x))) := by
+  -- The weight `e^φ`; `Real.exp ∘ φ` is by definition `fun y ↦ Real.exp (φ y)`.
   let ρ : C^∞⟮I, M; ℝ⟯ :=
-    ⟨fun y ↦ Real.exp (φ y), (Real.contDiff_exp.comp_contMDiff φ.contMDiff :)⟩
+    ⟨fun y ↦ Real.exp (φ y), Real.contDiff_exp.comp_contMDiff φ.contMDiff⟩
   have hρ : ⇑ρ = fun y ↦ Real.exp (φ y) := ContMDiffMap.coeFn_mk _ _
   let d : C^∞⟮I, M; ℝ⟯ := ⟨divergence I fun y ↦ X y, X.contMDiff_divergence⟩
   have hd : ⇑d = divergence I fun y ↦ X y := ContMDiffMap.coeFn_mk _ _
