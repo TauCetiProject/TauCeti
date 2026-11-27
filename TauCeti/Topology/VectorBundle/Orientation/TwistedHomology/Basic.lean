@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Constant
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Sign
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
+import TauCeti.RingTheory.Ideal.Quotient.LinearEquiv
 
 /-!
 # Zeroth homology with coefficients in the orientation local system
@@ -249,17 +250,10 @@ theorem nonempty_iff_nonempty_twistedHomology₀_linearEquiv [ConnectedSpace B]
   refine ⟨fun ⟨o⟩ ↦ ⟨twistedHomology₀Equiv hι o b⟩, fun ⟨φ⟩ ↦ ?_⟩
   by_contra h
   obtain ⟨q, -⟩ := VectorBundleOrientationCover.surjective_proj (F := F) (E := E) hι b
-  -- Otherwise `H₀(B; o(E)) ≅ R ⧸ 2R`, whose elements are killed by `2`, unlike `1 : R`.
-  let ψ := (VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo hι (not_nonempty_iff.1 h)
-    q.orientation).symm ≪≫ₗ φ
-  obtain ⟨n, hn⟩ := Ideal.Quotient.mk_surjective (ψ.symm 1)
-  have h2' : (2 : R) • ψ.symm 1 = 0 := by
-    rw [← hn, Algebra.smul_def, Ideal.Quotient.algebraMap_eq, ← map_mul,
-      Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self 2)
-  have := congrArg ψ h2'
-  rw [map_smul, LinearEquiv.apply_symm_apply, map_zero] at this
-  exact h2 (by simpa using this)
+  -- Otherwise `H₀(B; o(E)) ≅ R ⧸ 2R`, which is not isomorphic to `R` since `2R ≠ 0`.
+  exact h2 (Ideal.span_singleton_eq_bot.1 (Ideal.nonempty_quotient_linearEquiv_self_iff.1
+    ⟨(VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo hι (not_nonempty_iff.1 h)
+      q.orientation).symm ≪≫ₗ φ⟩))
 
 end VectorBundleOrientation
 
