@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RepresentationTheory.Homological.ContCohomology.Localization.Padic
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Coefficients.Localization.Padic
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Checks: rationalisation of lattice cohomology
 
-Checks that the hypotheses of `TauCeti.ContinuousCohomology.rationalisationEquiv` are met by the
+Checks that the hypotheses of `TauCeti.ContinuousCohomology.rationalizationEquiv` are met by the
 inclusion `ℤ_p → ℚ_p` with the trivial action of a compact group `G`, so that
 `ℚ_p ⊗[ℤ_p] Hⁿ(G, ℤ_p) ≃ Hⁿ(G, ℚ_p)` in every degree.
 -/
@@ -21,18 +22,15 @@ open scoped TensorProduct
 variable (p : ℕ) [Fact p.Prime] (G : Type) [Group G]
 
 /-- The inclusion `ℤ_p → ℚ_p` of trivial representations of a compact group satisfies the
-hypotheses of `rationalisationEquiv`: its scalar extension `ℚ_p ⊗ ℤ_p → ℚ_p` is bijective. -/
+hypotheses of `rationalizationEquiv`: its scalar extension `ℚ_p ⊗ ℤ_p → ℚ_p` is bijective. -/
 noncomputable example [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] (n : ℕ) :
     ℚ_[p] ⊗[ℤ_[p]] continuousCohomology n (TopRep.of (ContRepresentation.trivial ℤ_[p] G ℤ_[p]))
       ≃ₗ[ℤ_[p]] continuousCohomology n (TopRep.of (ContRepresentation.trivial ℤ_[p] G ℚ_[p])) :=
-  rationalisationEquiv
+  rationalizationEquiv
     (ι := (TopRep.ofHom
       { toLinearMap := Algebra.linearMap ℤ_[p] ℚ_[p]
         cont := continuous_subtypeVal
         isIntertwining' _ := rfl } :
       TopRep.of (ContRepresentation.trivial ℤ_[p] G ℤ_[p]) ⟶
         TopRep.of (ContRepresentation.trivial ℤ_[p] G ℚ_[p])))
-    (by
-      convert (IsBaseChange.linearMap ℤ_[p] ℚ_[p]).equiv.bijective
-      ext x
-      rfl) n
+    (IsBaseChange.linearMap ℤ_[p] ℚ_[p]).liftBaseChange_bijective n
