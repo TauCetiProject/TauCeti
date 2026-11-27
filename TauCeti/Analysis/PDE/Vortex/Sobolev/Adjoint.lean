@@ -165,7 +165,7 @@ theorem inner_sobolevGaugeFixedOperator_sobolevFieldValues (hx : Continuous x)
   · have hV := sobolevFieldValues_ofTestFunctionₗ_ae φ
     have hA := sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint hax
       (η := fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) ((contDiff_testField φ).of_le (by simp))
-      fun j ↦ (W1p.value_ofTestFunctionₗ_ae (p := 2) (φ j)).mono fun z hz ↦ by simp [hz]
+      (value_ofTestFunctionₗ_ae_eq_testField φ)
     have hy := sobolevFieldValues_ae_eq y
     have h := integral_inner_sobolevGaugeFixedOperator hx hax y
       ((contDiff_testField φ).of_le (by simp)) (hasCompactSupport_testField φ)
