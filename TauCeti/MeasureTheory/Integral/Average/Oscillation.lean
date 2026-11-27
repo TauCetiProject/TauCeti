@@ -22,7 +22,9 @@ the case `γ = 1` of the latter. Divided by `μ s`, the same comparison holds fo
 
 These are the Bochner-integral forms of the `Lᵖ` comparison `TauCeti.eLpNorm_sub_setAverage_le`;
 the `L²` analogue, with factor `4`, is `TauCeti.setIntegral_norm_sub_setAverage_sq_le`. Jensen's
-inequality `(⨍_s ‖g‖) ^ γ ≤ ⨍_s ‖g‖ ^ γ` is recorded alongside.
+inequality `(⨍_s ‖g‖) ^ γ ≤ ⨍_s ‖g‖ ^ γ` is recorded alongside. In a real inner product space the
+average is the best constant for the square deviation, with no loss, and this also holds for the
+averaged square deviation: `⨍_s ‖f - f_s‖² ≤ ⨍_s ‖f - c‖²`.
 
 ## Main results
 
@@ -33,6 +35,8 @@ inequality `(⨍_s ‖g‖) ^ γ ≤ ⨍_s ‖g‖ ^ γ` is recorded alongside.
   `(⨍_s ‖g‖) ^ γ ≤ ⨍_s ‖g‖ ^ γ` for `γ ≥ 1`.
 * `TauCeti.setAverage_norm_sub_setAverage_rpow_le`: `⨍_s ‖f - f_s‖ ^ γ ≤ 2 ^ γ ⨍_s ‖f - c‖ ^ γ`
   for `γ ≥ 1`.
+* `TauCeti.setAverage_norm_sub_setAverage_sq_le_setAverage_norm_sub_sq`:
+  `⨍_s ‖f - f_s‖² ≤ ⨍_s ‖f - c‖²` in a real inner product space.
 -/
 
 public section
@@ -114,5 +118,16 @@ theorem setAverage_norm_sub_setAverage_rpow_le (hf : IntegrableOn f s μ) {γ : 
     setAverage_eq (f := fun x ↦ ‖f x - c‖ ^ γ), smul_eq_mul, smul_eq_mul, mul_left_comm]
   exact mul_le_mul_of_nonneg_left (setIntegral_norm_sub_setAverage_rpow_le_two_rpow_mul hs hγ
     hf.aestronglyMeasurable c hfc) (inv_nonneg.2 measureReal_nonneg)
+
+/-- In a real inner product space, the average of `g` over a set `s` of finite measure minimizes
+the averaged square deviation: `⨍_s ‖g - g_s‖² ≤ ⨍_s ‖g - c‖²` for every constant `c`. -/
+theorem setAverage_norm_sub_setAverage_sq_le_setAverage_norm_sub_sq {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] {g : X → E} (hs : μ s ≠ ⊤)
+    (hg : IntegrableOn g s μ) {c : E} (hgc : IntegrableOn (fun x ↦ ‖g x - c‖ ^ 2) s μ) :
+    ⨍ x in s, ‖g x - ⨍ y in s, g y ∂μ‖ ^ 2 ∂μ ≤ ⨍ x in s, ‖g x - c‖ ^ 2 ∂μ := by
+  rw [setAverage_eq (f := fun x ↦ ‖g x - ⨍ y in s, g y ∂μ‖ ^ 2),
+    setAverage_eq (f := fun x ↦ ‖g x - c‖ ^ 2), smul_eq_mul, smul_eq_mul]
+  exact mul_le_mul_of_nonneg_left
+    (setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hs hg hgc) (by positivity)
 
 end TauCeti
