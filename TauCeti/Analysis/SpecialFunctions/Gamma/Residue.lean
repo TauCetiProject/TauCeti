@@ -23,8 +23,7 @@ The digamma function `ψ = Γ′/Γ` (`Complex.digamma`) also has simple poles a
 integers, but with residue `-1` at every one of them, independent of `n`: the residue of a
 logarithmic derivative is the order of the function
 (`TauCeti.Contour.residue_logDeriv_eq_meromorphicOrderAt`), and `Γ` has order `-1` at `-n`.
-Equivalently `(z + n) ψ(z) → -1` as `z → -n`. These poles are why every statement about `ψ` at a
-point assumes that the point is not a nonpositive integer.
+Equivalently `(z + n) ψ(z) → -1` as `z → -n`.
 
 ## Main results
 
@@ -127,13 +126,8 @@ theorem meromorphicTrailingCoeffAt_digamma_zero : meromorphicTrailingCoeffAt dig
 `-n`. -/
 theorem residue_digamma_mul_neg_nat (n : ℕ) {w : ℂ → ℂ} (hw : AnalyticAt ℂ w (-(n : ℂ))) :
     TauCeti.Contour.residue (fun s ↦ digamma s * w s) (-(n : ℂ)) = -w (-(n : ℂ)) := by
-  refine TauCeti.Contour.residue_eq_of_tendsto_sub_mul
-    ((meromorphic_digamma _).mul hw.meromorphicAt) ?_
-  have hlim := (tendsto_add_natCast_mul_digamma n).mul
-    (hw.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)
-  rw [neg_one_mul] at hlim
-  refine hlim.congr fun s ↦ ?_
-  ring
+  rw [TauCeti.Contour.residue_mul_of_neg_one_le (meromorphic_digamma _)
+    (meromorphicOrderAt_digamma_neg_nat n).ge hw, residue_digamma_neg_nat, neg_one_mul]
 
 /-- Multiplying `Complex.digamma` by a function `w` analytic at `0` gives residue `-w 0` at `0`. -/
 theorem residue_digamma_mul_zero {w : ℂ → ℂ} (hw : AnalyticAt ℂ w 0) :
