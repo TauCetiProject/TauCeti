@@ -270,23 +270,25 @@ private lemma numer_pos_d3 : 0 < numer 2.332 := by
   rw [numer, hc, hs]
   linarith
 
+/-- A point of `(0, π]` where `numer` is negative lies below `gwAngle`. -/
+private lemma lt_gwAngle_of_numer_neg {θ : ℝ} (h₀ : 0 < θ) (h₁ : θ ≤ π) (h : numer θ < 0) :
+    θ < gwAngle :=
+  lt_of_not_ge fun hle ↦ hle.lt_or_eq.elim (fun hlt ↦ lt_asymm h (numer_pos hlt h₁))
+    fun heq ↦ h.ne ((numer_eq_zero_iff h₀ h₁).2 heq.symm)
+
+/-- A point of `(0, π]` where `numer` is positive lies above `gwAngle`. -/
+private lemma gwAngle_lt_of_numer_pos {θ : ℝ} (h₀ : 0 < θ) (h₁ : θ ≤ π) (h : 0 < numer θ) :
+    gwAngle < θ :=
+  lt_of_not_ge fun hle ↦ hle.lt_or_eq.elim (fun hlt ↦ lt_asymm h (numer_neg h₀ hlt))
+    fun heq ↦ h.ne' ((numer_eq_zero_iff h₀ h₁).2 heq)
+
 /-- The lower bound `2.33 < gwAngle`. -/
-theorem gwAngle_gt_d2 : 2.33 < gwAngle := by
-  by_contra! h
-  have h₁ : π / 2 ≤ 2.33 := by linarith [pi_lt_d2]
-  have := strictMonoOn_numer.le_iff_le ⟨gwAngle_mem_Ioo.1.le, gwAngle_mem_Ioo.2.le⟩
-    ⟨h₁, by linarith [pi_gt_d2]⟩ |>.2 h
-  rw [numer_gwAngle] at this
-  linarith [numer_lt_zero_d2]
+theorem gwAngle_gt_d2 : 2.33 < gwAngle :=
+  lt_gwAngle_of_numer_neg (by norm_num) (by linarith [pi_gt_d2]) numer_lt_zero_d2
 
 /-- The upper bound `gwAngle < 2.332`. -/
-theorem gwAngle_lt_d3 : gwAngle < 2.332 := by
-  by_contra! h
-  have h₁ : π / 2 ≤ 2.332 := by linarith [pi_lt_d2]
-  have := strictMonoOn_numer.le_iff_le ⟨h₁, by linarith [pi_gt_d2]⟩
-    ⟨gwAngle_mem_Ioo.1.le, gwAngle_mem_Ioo.2.le⟩ |>.2 h
-  rw [numer_gwAngle] at this
-  linarith [numer_pos_d3]
+theorem gwAngle_lt_d3 : gwAngle < 2.332 :=
+  gwAngle_lt_of_numer_pos (by norm_num) (by linarith [pi_gt_d2]) numer_pos_d3
 
 /-- The numerical bounds `0.878 < gwConstant < 0.879`. -/
 theorem gwConstant_mem_Ioo : gwConstant ∈ Ioo 0.878 0.879 := by
