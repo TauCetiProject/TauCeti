@@ -40,6 +40,8 @@ finite-dimensional algebras.
 
 * `TauCeti.IsInjectiveEnvelope.bijective_mapOp_lcomp`: the Nakayama functor is fully faithful on
   finitely generated projective modules.
+* `TauCeti.IsInjectiveEnvelope.nakayamaEndRingEquiv`: the Nakayama functor identifies the
+  endomorphism rings of a finitely generated projective module and its Nakayama module.
 * `TauCeti.IsInjectiveEnvelope.nakayamaEquiv`: a finitely generated injective module `I` is
   isomorphic to `ν P` for the finitely generated projective module `P = Hom_{Aᵐᵒᵖ}(D_R I, A)`.
 * `TauCeti.IsInjectiveEnvelope.moduleInjective_iff_exists_linearEquiv`: a finitely generated
@@ -77,6 +79,30 @@ theorem IsInjectiveEnvelope.bijective_mapOp_lcomp (hf : IsInjectiveEnvelope f)
   have := hf.moduleInjective
   (MatlisDual.bijective_mapOp hf.length_quotient_linearMap_eq_one
     (isFiniteLength_dual R A P)).comp (opDual_lcomp_bijective A Q)
+
+/-- Nakayama dualization identifies the endomorphism ring of a finitely generated projective
+module with the endomorphism ring of its Nakayama module. -/
+def IsInjectiveEnvelope.nakayamaEndRingEquiv (hf : IsInjectiveEnvelope f)
+    (P : Type w) [AddCommGroup P] [Module A P] [Module.Finite A P] [Module.Projective A P] :
+    Module.End A P ≃+* Module.End A (MatlisDual R E (Module.Dual A P)) :=
+  RingEquiv.ofBijective
+    ({ toFun := fun g ↦ mapOp (g.lcomp Aᵐᵒᵖ A)
+       map_one' := by ext x ψ; simp [LinearMap.lcomp_apply', Module.End.one_eq_id]
+       map_mul' := fun g h ↦ by
+         ext x ψ
+         simp [LinearMap.lcomp_apply', LinearMap.comp_assoc, Module.End.mul_eq_comp]
+       map_zero' := by ext x ψ; simp [LinearMap.lcomp_apply']
+       map_add' := fun g h ↦ by ext x ψ; simp [LinearMap.lcomp_apply', LinearMap.comp_add] } :
+      Module.End A P →+* Module.End A (MatlisDual R E (Module.Dual A P)))
+    (hf.bijective_mapOp_lcomp P P)
+
+/-- On endomorphisms the Nakayama ring equivalence is successive precomposition with the
+endomorphism and its opposite dual. -/
+@[simp]
+theorem IsInjectiveEnvelope.nakayamaEndRingEquiv_apply (hf : IsInjectiveEnvelope f)
+    {P : Type w} [AddCommGroup P] [Module A P] [Module.Finite A P] [Module.Projective A P]
+    (g : Module.End A P) : hf.nakayamaEndRingEquiv P g = mapOp (g.lcomp Aᵐᵒᵖ A) :=
+  (rfl)
 
 variable {I : Type w} [AddCommGroup I] [Module R I] [Module A I] [IsScalarTower R A I]
   [Module.Finite A I] [Module.Injective A I] [Small.{w} A]
