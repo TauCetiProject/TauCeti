@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.MeanInequalities
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+import Mathlib.Data.Multiset.Fintype
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonMaclaurin
@@ -67,7 +68,8 @@ inequality of arithmetic and geometric means.
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
-* `Real.prod_rpow_inv_card_add_le`: the same at equal weights `1 / n`.
+* `Real.prod_rpow_inv_card_add_le`: the same at equal weights `1 / n`, and
+  `Real.multiset_prod_map_rpow_inv_card_add_le` for families indexed by a multiset.
 * `Real.concaveOn_prod_rpow`: the geometric mean is concave on the nonnegative orthant.
 * `Real.sq_add_sq_le_rpow_mul_rpow`: two interpolation bounds combine into one for the Euclidean
   norms of the pairs.
@@ -162,6 +164,20 @@ theorem prod_rpow_inv_card_add_le {ι : Type*} [Fintype ι] [Nonempty ι] {a b :
   exact prod_rpow_add_prod_rpow_le_prod_add_rpow Finset.univ
     (fun _ _ ↦ inv_nonneg.2 (Nat.cast_nonneg _))
     (by simp [Finset.card_univ, Fintype.card_ne_zero]) (fun i _ ↦ ha i) fun i _ ↦ hb i
+
+/-- **Superadditivity of the geometric mean**, for families indexed by a nonempty multiset `s`:
+for `a` and `b` nonnegative on `s`, `(∏ a)^{1/n} + (∏ b)^{1/n} ≤ (∏ (a + b))^{1/n}`, where
+`n = card s`. -/
+theorem multiset_prod_map_rpow_inv_card_add_le {ι : Type*} {s : Multiset ι} (hs : s ≠ 0)
+    {a b : ι → ℝ} (ha : ∀ i ∈ s, 0 ≤ a i) (hb : ∀ i ∈ s, 0 ≤ b i) :
+    (s.map a).prod ^ (Multiset.card s : ℝ)⁻¹ + (s.map b).prod ^ (Multiset.card s : ℝ)⁻¹ ≤
+      (s.map fun i ↦ a i + b i).prod ^ (Multiset.card s : ℝ)⁻¹ := by
+  classical
+  have : Nonempty s := Fintype.card_pos_iff.1 (by simpa [Multiset.card_pos])
+  simpa only [Finset.prod_eq_multiset_prod, Multiset.map_univ, Multiset.map_univ s
+    fun i ↦ a i + b i, Multiset.card_coe] using prod_rpow_inv_card_add_le (ι := s)
+      (a := fun i ↦ a i) (b := fun i ↦ b i) (fun i ↦ ha _ Multiset.coe_mem)
+      fun i ↦ hb _ Multiset.coe_mem
 
 /-- **Concavity of the geometric mean.** The geometric mean `μ ↦ (∏ i, μ i) ^ (1 / n)`,
 `n = card ι`, is concave on the nonnegative orthant. -/
