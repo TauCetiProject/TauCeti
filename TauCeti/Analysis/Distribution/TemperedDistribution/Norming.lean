@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.MeasureTheory.Function.Lp.Dual
-import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.Analysis.Distribution.SchwartzSpace.Lp
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.MeasureTheory.Function.L1Space.Dual
 import TauCeti.MeasureTheory.Function.LpSeminorm.WithDensity
@@ -27,7 +27,7 @@ Conversely, for `1 ≤ p < ∞` every tempered distribution `u` with `‖u g‖ 
 Schwartz functions `g` is an `Lᵠ` function of norm at most `B`
 (`TemperedDistribution.exists_eq_toTemperedDistribution_and_norm_le`). For `1 < p` the bound
 extends `u` from the dense Schwartz functions to a continuous linear functional on `Lᵖ(μ)`
-(`TemperedDistribution.exists_strongDual_apply_toLp_eq`), and the dual of `Lᵖ(μ)` is `Lᵠ(μ)`
+(`SchwartzMap.exists_strongDual_apply_toLp_eq`), and the dual of `Lᵖ(μ)` is `Lᵠ(μ)`
 (`MeasureTheory.Lp.dualEquiv`). For `p = 1` the measure `μ` need not be finite, and the dual of
 `L¹` is only available for finite measures (`MeasureTheory.Lp.dualOneEquiv`). So `u` is first
 weighted: for a weight `0 < w ≤ 1`, integrable for `μ`, such that `w` and `1 / w` have temperate
@@ -101,25 +101,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.HasTemperateGrowth]
   {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [q.HolderConjugate p]
 
-/-- **Extension from the Schwartz functions.** A linear functional `S` on the Schwartz functions
-with `‖S g‖ ≤ B ‖g‖_p`, `p < ∞`, extends from the dense Schwartz functions to a continuous linear
-functional on `Lᵖ(μ)` of norm at most `B`. -/
-theorem exists_strongDual_apply_toLp_eq (hp_top : p ≠ ∞) (S : 𝓢(E, ℂ) →ₗ[ℂ] ℂ) {B : ℝ}
-    (hB : 0 ≤ B) (hS : ∀ g : 𝓢(E, ℂ), ‖S g‖ ≤ B * ‖g.toLp p μ‖) :
-    ∃ Λ : StrongDual ℂ (Lp ℂ p μ), ‖Λ‖ ≤ B ∧ ∀ g : 𝓢(E, ℂ), Λ (g.toLp p μ) = S g := by
-  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
-  set e : 𝓢(E, ℂ) →ₗ[ℂ] Lp ℂ p μ := (SchwartzMap.toLpCLM ℂ ℂ p μ).toLinearMap
-  have he : DenseRange e := by
-    have hcoe : ⇑e = ⇑(SchwartzMap.toLpCLM ℝ ℂ p μ) := by
-      ext g : 1
-      simp [e]
-    rw [DenseRange, hcoe]
-    exact SchwartzMap.denseRange_toLpCLM hp_top
-  have hS' : ∀ g, ‖S g‖ ≤ B * ‖e g‖ := fun g ↦ by simpa [e] using hS g
-  refine ⟨S.extendOfNorm e, (S.extendOfNorm e).opNorm_le_bound hB
-    (LinearMap.norm_extendOfNorm_apply_le he B hS'), fun g ↦ ?_⟩
-  simpa [e] using LinearMap.extendOfNorm_eq he ⟨B, hS'⟩ g
-
 /-- The case `1 < p < ∞` of `TemperedDistribution.exists_eq_toTemperedDistribution_and_norm_le`,
 from the duality `(Lᵖ)^* = Lᵠ`. -/
 private theorem exists_eq_toTemperedDistribution_and_norm_le_of_one_lt (hp : 1 < p)
@@ -128,13 +109,13 @@ private theorem exists_eq_toTemperedDistribution_and_norm_le_of_one_lt (hp : 1 <
     ∃ h : Lp ℂ q μ, (h : 𝓢'(E, ℂ)) = u ∧ ‖h‖ ≤ B := by
   have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
   -- Extend `u` from the dense Schwartz functions to a functional `Λ` on `Lᵖ`.
-  obtain ⟨Λ, hΛ, hΛu⟩ := exists_strongDual_apply_toLp_eq hp_top (u : 𝓢(E, ℂ) →ₗ[ℂ] ℂ) hB hu
+  obtain ⟨Λ, hΛ, hΛu⟩ :=
+    SchwartzMap.exists_strongDual_apply_toLp_eq hp_top (u : 𝓢(E, ℂ) →ₗ[ℂ] ℂ) hB hu
   -- `Λ` is integration against some `h ∈ Lᵠ`, which represents `u`.
   refine ⟨(Lp.dualEquiv ℂ μ q p hp hp_top).symm Λ, ?_, by simpa using hΛ⟩
   ext g
   rw [Lp.toTemperedDistribution_apply_eq_toDual_apply (p := p), ← Lp.coe_dualEquiv hp hp_top,
-    LinearIsometryEquiv.apply_symm_apply, hΛu]
-  rfl
+    LinearIsometryEquiv.apply_symm_apply, hΛu, LinearMap.coe_ofClass]
 
 omit [FiniteDimensional ℝ E] [μ.HasTemperateGrowth] in
 /-- **Representing `u` through the weighted measure.** Let `w` and `w' = 1 / w` have temperate
@@ -193,15 +174,14 @@ private theorem exists_eq_toTemperedDistribution_and_norm_le_of_one (u : 𝓢'(E
     hw.1.continuous.nnNorm.measurable.coe_nnreal_ennreal.aemeasurable
     (Filter.Eventually.of_forall fun x ↦ by simpa [w] using (hw₀1 x).1.ne')
   -- `g ↦ u (w g)` is bounded on `L¹(ν)`, so it is integration against some `h ∈ L^∞(ν)`.
-  obtain ⟨Λ, hΛ, hΛu⟩ := exists_strongDual_apply_toLp_eq (μ := ν) ENNReal.one_ne_top
+  obtain ⟨Λ, hΛ, hΛu⟩ := SchwartzMap.exists_strongDual_apply_toLp_eq (μ := ν) ENNReal.one_ne_top
     ((u : 𝓢(E, ℂ) →ₗ[ℂ] ℂ) ∘ₗ (SchwartzMap.smulLeftCLM ℂ w).toLinearMap) hB fun g ↦ by
       refine (hu (SchwartzMap.smulLeftCLM ℂ w g)).trans_eq ?_
       rw [SchwartzMap.norm_toLp, SchwartzMap.norm_toLp, SchwartzMap.smulLeftCLM_apply hw]
       have := eLpNorm_smul_eq_eLpNorm_withDensity hwm g.continuous.aestronglyMeasurable
         ENNReal.one_ne_top
       simp only [ENNReal.toReal_one, ENNReal.rpow_one, eNorm_eq_nnNorm, ← hν] at this
-      rw [← this]
-      rfl
+      rw [← this, Pi.smul_def']
   set h := (Lp.dualOneEquiv ℂ ν).symm Λ
   have hle : eLpNorm h ∞ μ ≤ eLpNorm h ∞ ν := by
     rw [eLpNorm_exponent_top ((Lp.aestronglyMeasurable h).mono_ac hμν),
@@ -212,7 +192,9 @@ private theorem exists_eq_toTemperedDistribution_and_norm_le_of_one (u : 𝓢'(E
   · ext φ
     rw [Lp.toTemperedDistribution_apply, apply_eq_integral_dualOneEquiv_symm hw hw'
       (fun x ↦ by simp [w, w', (hw₀1 x).1.ne'])
-      (fun x ↦ by simp [w, Real.norm_of_nonneg (hw₀1 x).1.le]) hν Λ (fun g ↦ by rw [hΛu]; rfl)]
+      (fun x ↦ by simp [w, Real.norm_of_nonneg (hw₀1 x).1.le]) hν Λ
+      (fun g ↦ by
+        rw [hΛu, LinearMap.comp_apply, LinearMap.coe_ofClass, ContinuousLinearMap.coe_coe])]
     refine integral_congr_ae ?_
     filter_upwards [hh.coeFn_toLp] with x hx
     rw [hx, smul_eq_mul]

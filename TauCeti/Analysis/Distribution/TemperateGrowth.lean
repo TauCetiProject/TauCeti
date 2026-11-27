@@ -456,9 +456,9 @@ theorem MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts
 /-- **A weight of temperate growth.** A measure `μ` of temperate growth on a finite-dimensional
 space integrates a function `w` with `0 < w ≤ 1` such that both `w` and `1 / w` have temperate
 growth. Multiplication by `w` and by `1 / w` therefore maps Schwartz functions to Schwartz
-functions, and every function bounded by a multiple of `1 / w` lies in `Lᵖ(w μ)` for the finite
-measure `w μ`. One such weight is `w x = (1 + ‖e x‖ ^ 2) ^ (-n)` for a linear isomorphism `e` onto
-a Euclidean space and `n` large. -/
+functions, and the measure `w μ` is finite, with `‖w g‖_{L¹(μ)} = ‖g‖_{L¹(w μ)}`. One such
+weight is `w x = (1 + ‖e x‖ ^ 2) ^ (-n)` for a linear isomorphism `e` onto a Euclidean space and
+`n` large. -/
 theorem MeasureTheory.Measure.HasTemperateGrowth.exists_integrable_hasTemperateGrowth
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.HasTemperateGrowth] :
