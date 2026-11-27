@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.Flow
 import TauCeti.Geometry.Manifold.Flow.NormedSpace
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Contact Hamiltonian vector fields and flows of the standard contact form
@@ -62,18 +63,6 @@ namespace TauCeti
 
 /-! ### Contact Hamiltonian vector fields -/
 
-/-- The derivative of a function `f` on `ℝ³` in the coordinates of a tangent vector `v`:
-`df_p(v) = v_x f_x + v_y f_y + v_z f_z`, where `f_x = df_p(∂_x)`, `f_y = df_p(∂_y)` and
-`f_z = df_p(∂_z)`. -/
-theorem fderiv_apply_eq_coords (f : ℝ × ℝ × ℝ → ℝ) (p v : ℝ × ℝ × ℝ) :
-    fderiv ℝ f p v = v.1 * fderiv ℝ f p (1, 0, 0) + v.2.1 * fderiv ℝ f p (0, 1, 0) +
-      v.2.2 * fderiv ℝ f p (0, 0, 1) := by
-  have hv : v = v.1 • ((1, 0, 0) : ℝ × ℝ × ℝ) + v.2.1 • ((0, 1, 0) : ℝ × ℝ × ℝ) +
-      v.2.2 • ((0, 0, 1) : ℝ × ℝ × ℝ) := by
-    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp
-  conv_lhs => rw [hv]
-  simp only [map_add, map_smul, smul_eq_mul]
-
 /-- **Contact Hamiltonian vector fields of `dz - x dy`.** For every function `f` on `ℝ³`, the
 contact Hamiltonian vector field of `f` for the standard contact form is
 `X_f = (x f_z + f_y) ∂_x - f_x ∂_y + (f - x f_x) ∂_z`, where `f_x = df(∂_x)`, `f_y = df(∂_y)` and
@@ -94,8 +83,9 @@ theorem contactHamiltonianVectorField_standardContactForm (f : ℝ × ℝ × ℝ
       ring
     · rw [mextDeriv_standardContactForm_apply, standardContactForm_apply,
         reebVectorField_standardContactForm, mvfderiv_eq_fderiv_apply, mvfderiv_eq_fderiv_apply,
-        standardReebField_apply, fderiv_apply_eq_coords f q v]
-      simp only [X]
+        standardReebField_apply, ← ContinuousLinearMap.coe_coe (fderiv ℝ f q),
+        LinearMap.prod_prod_apply_eq_sum _ v]
+      simp only [X, ContinuousLinearMap.coe_coe, smul_eq_mul]
       ring
   exact congrFun ((isContactForm_standardContactForm.isContactHamiltonianVectorField_iff_eq).1
     hX).symm p

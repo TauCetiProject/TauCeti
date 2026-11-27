@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Jacobi
 public import TauCeti.Geometry.Contact.Standard
 import TauCeti.Geometry.Contact.Standard.Hamiltonian
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # The Jacobi bracket of the standard contact form
@@ -81,8 +82,10 @@ theorem jacobiBracket_standardContactForm (f g : ℝ × ℝ × ℝ → ℝ) (p :
   -- `{f, g}_α = X_f(g) - g R_α(f)`, with `X_f(g)` expanded in the coordinates of `X_f`.
   rw [isContactForm_standardContactForm.jacobiBracket_eq_mvfderiv, mvfderiv_eq_fderiv_apply,
     mvfderiv_eq_fderiv_apply, reebVectorField_standardContactForm, standardReebField_apply,
-    fderiv_apply_eq_coords g p (standardContactForm.contactHamiltonianVectorField f p),
+    ← ContinuousLinearMap.coe_coe (fderiv ℝ g p), LinearMap.prod_prod_apply_eq_sum _
+      (standardContactForm.contactHamiltonianVectorField f p),
     contactHamiltonianVectorField_standardContactForm]
+  simp only [ContinuousLinearMap.coe_coe, smul_eq_mul]
   ring
 
 /-- The Jacobi bracket of the coordinates `x` and `y` for `dz - x dy` is `{x, y}_α = -1`. -/
