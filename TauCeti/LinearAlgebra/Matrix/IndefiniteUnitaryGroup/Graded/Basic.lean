@@ -203,6 +203,17 @@ theorem gradedGrade_inr_eq_zero_iff {a : Fin s} : gradedGrade X s (.inr a) = 0 �
   simp only [gradedGrade_inr, Fin.ext_iff, Fin.val_rev]
   omega
 
+/-- A string vector has nonzero grade exactly when it differs from its reversed partner. -/
+theorem gradedGrade_inr_ne_zero_iff {a : Fin s} :
+    gradedGrade X s (.inr a) ≠ 0 ↔ a ≠ a.rev :=
+  gradedGrade_inr_eq_zero_iff.not
+
+/-- Reversing the string exchanges the two sides of a strict grade comparison. -/
+theorem gradedGrade_inr_rev_lt_iff {a b : Fin s} :
+    gradedGrade X s (.inr a.rev) < gradedGrade X s (.inr b) ↔
+      gradedGrade X s (.inr b.rev) < gradedGrade X s (.inr a) := by
+  simp only [gradedGrade_inr_rev, neg_lt]
+
 /-- The grade strictly decreases along the string. -/
 theorem gradedGrade_inr_lt_iff {a b : Fin s} :
     gradedGrade X s (.inr b) < gradedGrade X s (.inr a) ↔ a < b := by

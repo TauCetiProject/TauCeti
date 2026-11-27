@@ -56,13 +56,15 @@ they give the subgroups of its points over any `E`-algebra with involution, such
 * `TauCeti.gradedUnipotent X s N`: the unipotent group `U` of the flag of the grades.
 * `TauCeti.gradedBesselGroup X s N`: the Bessel group.
 * `TauCeti.gradedInclusion X s N`: the embedding of `U(X)` as the `X`-block.
+* `TauCeti.gradedBesselInclusion X s N`: the same embedding into the Bessel group.
 * `TauCeti.gradedBesselProj X s N`: the projection of the Bessel group onto `U(X)`.
 
 ## Main results
 
 * `TauCeti.toBlocks₁₁_mem_unitaryGroup_of_mem_gradedBesselGroup`: the `X`-block of an element of
   the Bessel group is unitary.
-* `TauCeti.gradedBesselProj_gradedInclusion`: the projection is the identity on `U(X)`.
+* `TauCeti.gradedBesselProj_gradedBesselInclusion`: the projection is the identity on `U(X)`.
+* `TauCeti.gradedBesselProj_surjective`: the projection is surjective.
 * `TauCeti.ker_gradedBesselProj`: its kernel is `U`, when `N` is not a zero divisor.
 * `TauCeti.exists_mem_gradedUnipotent_mul_gradedInclusion`: every element of the Bessel group is
   `u * a` with `u ∈ U` and `a ∈ U(X)`, when `N` is not a zero divisor; the decomposition is unique
@@ -147,18 +149,17 @@ theorem mem_gradedUnipotent_iff_blockUnitriangular_reindex {ϱ : ℕ}
     obtain ⟨l, rfl⟩ := (gradedSplitEquiv X ϱ).surjective j
     have := two_mul_splitLevel_gradedSplitEquiv ϱ k
     have := two_mul_splitLevel_gradedSplitEquiv ϱ l
-    rw [reindex_apply, submatrix_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
-      h _ _ (by omega), hone]
+    simpa only [reindex_apply, submatrix_apply, Equiv.symm_apply_apply, hone] using
+      h _ _ (by omega)
   · have := two_mul_splitLevel_gradedSplitEquiv ϱ k
     have := two_mul_splitLevel_gradedSplitEquiv ϱ l
     rcases (show splitLevel (gradedSplitEquiv X ϱ l) ≤ splitLevel (gradedSplitEquiv X ϱ k) by
       omega).lt_or_eq with hlt | heq
     · have h0 := h.blockTriangular hlt
-      rw [reindex_apply, submatrix_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply] at h0
+      simp only [reindex_apply, submatrix_apply, Equiv.symm_apply_apply] at h0
       rw [h0, one_apply_ne (by rintro rfl; exact hlt.false)]
     · have h1 := h.apply_of_eq heq.symm
-      rwa [reindex_apply, submatrix_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
-        hone] at h1
+      simpa only [reindex_apply, submatrix_apply, Equiv.symm_apply_apply, hone] using h1
 
 /-! ### The Bessel group -/
 
@@ -238,9 +239,8 @@ theorem star_apply_inr_inl_mul_gradedGram_eq_zero_of_mem_gradedBesselGroup
       rcases le_or_gt (gradedGrade X s (.inr c.rev)) (gradedGrade X s (.inr b.rev)) with h' | h'
       · rw [hR _ _ hb' h', one_apply_ne (by simpa using hc), mul_zero, mul_zero]
       · have h'' : gradedGrade X s (.inr c) < gradedGrade X s (.inr b) := by
-          have := gradedGrade_inr_rev (X := X) b; have := gradedGrade_inr_rev (X := X) c; omega
-        have hcc : c ≠ c.rev := fun h ↦ by
-          rw [← gradedGrade_inr_eq_zero_iff (X := X)] at h; omega
+          simpa only [Fin.rev_rev] using gradedGrade_inr_rev_lt_iff.mp h'
+        have hcc : c ≠ c.rev := (gradedGrade_inr_ne_zero_iff (X := X)).mp (by omega)
         have := ih c (gradedGrade_inr_lt_iff.mp h'') (by omega)
         simp only [gradedGram_inr_inr_rev, hcc, ↓reduceIte, mul_one] at this
         rw [this, zero_mul]
@@ -252,7 +252,7 @@ theorem apply_inr_inl_eq_zero_of_mem_gradedBesselGroup
     {b : Fin s} (hb : gradedGrade X s (.inr b) < 0) :
     ((g : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) (.inr b) (.inl x) = 0 := by
   have h := star_apply_inr_inl_mul_gradedGram_eq_zero_of_mem_gradedBesselGroup hg x hb.le
-  have hbb : b ≠ b.rev := fun h ↦ by rw [← gradedGrade_inr_eq_zero_iff (X := X)] at h; omega
+  have hbb : b ≠ b.rev := gradedGrade_inr_ne_zero_iff.mp hb.ne
   simpa only [gradedGram_inr_inr_rev, hbb, ↓reduceIte, mul_one, star_eq_zero] using h
 
 /-- The columns indexed by `X` of an element `g` of the Bessel group have no component on the
@@ -284,14 +284,14 @@ theorem apply_inr_inr_eq_one_apply_of_mem_gradedBesselGroup
   induction b using WellFoundedGT.induction with
   | _ b ih =>
   have hb' : 0 < gradedGrade X s (.inr b.rev) := by rw [gradedGrade_inr_rev]; omega
-  have hbb : b.rev ≠ b := fun h ↦ by
-    rw [eq_comm, ← gradedGrade_inr_eq_zero_iff (X := X)] at h; omega
+  have hbb : b.rev ≠ b := by
+    simpa only [Fin.rev_rev] using gradedGrade_inr_ne_zero_iff.mp hb'.ne'
   have h := sum_star_mul_gradedGram_mul g.property (.inr b.rev) (.inr c)
   rw [Fintype.sum_eq_single (.inr b.rev)] at h
-  · rw [hR _ _ hb'.le le_rfl, one_apply_eq, star_one, one_mul, gradedGram_mul_apply_inr,
-      Fin.rev_rev, gradedGram_inr_inr] at h
-    simp only [Fin.rev_rev, hbb, ↓reduceIte, one_mul] at h
-    rw [h, gradedGram_inr_inr, Fin.rev_rev]
+  · rw [hR _ _ hb'.le le_rfl] at h
+    simp only [one_apply_eq, star_one, one_mul, gradedGram_mul_apply_inr, Fin.rev_rev,
+      gradedGram_inr_inr, hbb, ↓reduceIte] at h
+    rw [h]
     by_cases hbc' : b = c
     · subst hbc'; simp [hbb]
     · simp [hbc', one_apply_ne]
@@ -301,7 +301,7 @@ theorem apply_inr_inr_eq_one_apply_of_mem_gradedBesselGroup
     · obtain c' | c' := k
       · rw [gradedGrade_inl] at h'; omega
       have h'' : gradedGrade X s (.inr c'.rev) < gradedGrade X s (.inr b) := by
-        have := gradedGrade_inr_rev (X := X) b; have := gradedGrade_inr_rev (X := X) c'; omega
+        exact gradedGrade_inr_rev_lt_iff.mp h'
       rw [gradedGram_mul_apply_inr, ih c'.rev (gradedGrade_inr_lt_iff.mp h'') (by omega),
         one_apply_ne (fun h ↦ by rw [Sum.inr.inj h] at h''; omega), mul_zero, mul_zero]
 
@@ -380,6 +380,17 @@ theorem gradedInclusion_mem_gradedBesselGroup (a : unitaryGroup X R) :
     gradedInclusion X s N a ∈ gradedBesselGroup X s N :=
   mem_gradedBesselGroup_iff.mpr fun i b _ _ ↦ by rcases i with x | c <;> simp [Matrix.one_apply]
 
+variable (X s N) in
+/-- The embedding of `U(X)` into the Bessel group as the `X`-block. -/
+def gradedBesselInclusion : unitaryGroup X R →* gradedBesselGroup X s N :=
+  (gradedInclusion X s N).codRestrict _ gradedInclusion_mem_gradedBesselGroup
+
+@[simp]
+theorem coe_gradedBesselInclusion (a : unitaryGroup X R) :
+    (gradedBesselInclusion X s N a : unitaryGroupOf (gradedGram X s N)) =
+      gradedInclusion X s N a :=
+  (rfl)
+
 /-- The unipotent group of the grades meets the image of `U(X)` only in `1`. -/
 theorem gradedInclusion_mem_gradedUnipotent_iff {a : unitaryGroup X R} :
     gradedInclusion X s N a ∈ gradedUnipotent X s N ↔ a = 1 := by
@@ -403,9 +414,20 @@ theorem coe_gradedBesselProj (g : gradedBesselGroup X s N) :
 
 /-- The projection of the Bessel group onto `U(X)` is the identity on `U(X)`. -/
 @[simp]
-theorem gradedBesselProj_gradedInclusion (a : unitaryGroup X R) :
-    gradedBesselProj X s N ⟨gradedInclusion X s N a, gradedInclusion_mem_gradedBesselGroup a⟩ = a :=
+theorem gradedBesselProj_gradedBesselInclusion (a : unitaryGroup X R) :
+    gradedBesselProj X s N (gradedBesselInclusion X s N a) = a :=
   Subtype.ext <| by simp
+
+/-- The projection retracts the embedding of `U(X)` into the Bessel group. -/
+@[simp]
+theorem gradedBesselProj_comp_gradedBesselInclusion :
+    (gradedBesselProj X s N).comp (gradedBesselInclusion X s N) = MonoidHom.id _ := by
+  ext a : 1
+  exact gradedBesselProj_gradedBesselInclusion a
+
+/-- The projection of the Bessel group onto `U(X)` is surjective. -/
+theorem gradedBesselProj_surjective : Function.Surjective (gradedBesselProj X s N) :=
+  fun a ↦ ⟨gradedBesselInclusion X s N a, gradedBesselProj_gradedBesselInclusion a⟩
 
 /-- The kernel of the projection of the Bessel group onto `U(X)` is the unipotent group of the
 grades, when `N` is not a zero divisor. -/
@@ -434,10 +456,10 @@ theorem mul_inv_gradedInclusion_mem_gradedUnipotent (hN : IsLeftRegular N)
     (g : gradedBesselGroup X s N) :
     (g : unitaryGroupOf (gradedGram X s N)) *
       (gradedInclusion X s N (gradedBesselProj X s N g))⁻¹ ∈ gradedUnipotent X s N := by
-  set a : gradedBesselGroup X s N :=
-    ⟨_, gradedInclusion_mem_gradedBesselGroup (gradedBesselProj X s N g)⟩
+  set a := gradedBesselInclusion X s N (gradedBesselProj X s N g)
   have hker : g * a⁻¹ ∈ (gradedBesselProj X s N).ker := by
-    rw [MonoidHom.mem_ker, map_mul, map_inv, gradedBesselProj_gradedInclusion, mul_inv_cancel]
+    rw [MonoidHom.mem_ker, map_mul, map_inv, gradedBesselProj_gradedBesselInclusion,
+      mul_inv_cancel]
   rw [ker_gradedBesselProj hN, Subgroup.mem_subgroupOf] at hker
   simpa [a] using hker
 
