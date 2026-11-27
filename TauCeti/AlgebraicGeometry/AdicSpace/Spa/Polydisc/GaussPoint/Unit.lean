@@ -132,6 +132,7 @@ theorem unitGaussPoint_vle_iff_norm (n : ℕ)
     coe_restrictedMvPowerSeriesGaussEquiv, coe_restrictedMvPowerSeriesGaussEquiv]
 
 /-- The unit Gauss point sends a series to `0` if and only if the series is `0`. -/
+@[simp high]
 theorem unitGaussPoint_vle_zero_iff (n : ℕ)
     (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
     (unitGaussPoint n K).val.toValuativeRel.vle f 0 ↔ f = 0 := by

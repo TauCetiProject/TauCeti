@@ -101,8 +101,8 @@ when its norm is less than `1`. -/
 theorem Valued.integer.mem_maximalIdeal_iff {x : Valued.integer K} :
     x ∈ IsLocalRing.maximalIdeal (Valued.integer K) ↔ ‖x‖ < 1 := by
   rw [mem_maximalIdeal, mem_nonunits_iff, Valuation.Integer.not_isUnit_iff_valuation_lt_one,
-    TauCeti.NormedField.v_eq_valuation, NormedField.valuation_apply]
-  exact NNReal.coe_lt_coe.symm
+    TauCeti.NormedField.v_eq_valuation, NormedField.valuation_apply,
+    ← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one, AddSubgroupClass.coe_norm]
 
 /-- An element of the valuation ring of a nonarchimedean field has residue zero exactly when its
 norm is less than `1`. -/
