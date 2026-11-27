@@ -929,11 +929,7 @@ theorem singularCubicalHomologyIso_inv_eq_neg_one_pow_smul_of_isCubicalRepresent
   | succ m =>
     have hκ' : κ = ((cubeBoundaryPair.{u} (m + 1)).cubicalChainComplex k).homologyπ (m + 1)
         (cubeBoundaryPairCycle k m) :=
-      hκ.unique ((TopPair.isCubicalRepresentative_iff _ _).2 ⟨_, by
-        have h := TopPair.cubicalChainOfCube_def k (P := cubeBoundaryPair.{u} (m + 1))
-          (upCube.{u} (m + 1))
-        rw [normalizedCubicalChainComplexXEquiv_symm_apply] at h
-        rw [iCycles_cubeBoundaryPairCycle, h], rfl⟩)
+      hκ.unique (isCubicalRepresentative_ofCube_upCube k m)
     rw [hκ', singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle,
       Nat.choose_two_right, Nat.add_sub_cancel, Nat.mul_comm (m + 1) m]
 

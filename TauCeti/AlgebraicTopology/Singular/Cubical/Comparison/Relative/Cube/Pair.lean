@@ -142,6 +142,18 @@ theorem iCycles_cubeBoundaryPairCycle (m : ℕ) :
         (upCube.{u} (m + 1) : SingularCube (cubeBoundaryPair.{u} (m + 1)).fst (m + 1)) :=
   TopPair.iCycles_cubicalCycleOfCube ..
 
+/-- The identity cube represents the class of the fundamental cycle of the cube pair. -/
+theorem isCubicalRepresentative_ofCube_upCube (m : ℕ) :
+    (cubeBoundaryPair.{u} (m + 1)).IsCubicalRepresentative k
+      (NormalizedCubicalChain.ofCube _ k (upCube.{u} (m + 1)))
+      (((cubeBoundaryPair.{u} (m + 1)).cubicalChainComplex k).homologyπ (m + 1)
+        (cubeBoundaryPairCycle k m)) :=
+  (TopPair.isCubicalRepresentative_iff _ _).2 ⟨_, by
+    have h := TopPair.cubicalChainOfCube_def k (P := cubeBoundaryPair.{u} (m + 1))
+      (upCube.{u} (m + 1))
+    rw [normalizedCubicalChainComplexXEquiv_symm_apply] at h
+    rw [iCycles_cubeBoundaryPairCycle, h], rfl⟩
+
 /-- The map of pairs `c : (Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ P` given by a cube `c` sends the class of the fundamental
 cycle of the cube pair to the class of `c` in relative cubical homology. -/
 theorem homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle {P : TopPair.{u}} {m : ℕ}
