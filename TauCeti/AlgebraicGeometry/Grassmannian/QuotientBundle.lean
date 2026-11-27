@@ -40,7 +40,9 @@ cokernel of its inclusion.
 * `Module.Grassmannian.schemeUniversalKernel R M k`: the universal kernel, with its inclusion
   `Module.Grassmannian.schemeUniversalKernelι R M k` into `π^* M~`.
 * `Module.Grassmannian.schemeUniversalQuotient R M k`: the universal quotient `Q`, with its
-  projection `Module.Grassmannian.schemeUniversalQuotientπ R M k : π^* M~ ⟶ Q`.
+  projection `Module.Grassmannian.schemeUniversalQuotientπ R M k : π^* M~ ⟶ Q` and the
+  factorization `Module.Grassmannian.schemeUniversalQuotientDesc` of morphisms killing the universal
+  kernel.
 * `Module.Grassmannian.sectionsSchemeUniversalQuotientEquiv U`: over an affine open `U`, the
   sections of `Q` are `(Γ(G(k, M), U) ⊗[R] M) ⧸ N_U`.
 
@@ -181,6 +183,27 @@ def isColimitSchemeUniversalQuotient :
       (schemeUniversalKernelι_schemeUniversalQuotientπ M k)) :=
   (schemeUniversalKernelData R M k).isColimit
 
+/-- A morphism out of `π^* M~` killing the universal kernel factors through the universal
+quotient. -/
+def schemeUniversalQuotientDesc {P : (scheme R M k).Modules} (g : pullbackTilde R M k ⟶ P)
+    (hg : schemeUniversalKernelι R M k ≫ g = 0) : schemeUniversalQuotient R M k ⟶ P :=
+  (schemeUniversalKernelData R M k).desc g hg
+
+/-- The factorization through the universal quotient composes with the projection to the given
+morphism. -/
+@[reassoc (attr := simp)]
+theorem schemeUniversalQuotientπ_schemeUniversalQuotientDesc {P : (scheme R M k).Modules}
+    (g : pullbackTilde R M k ⟶ P) (hg : schemeUniversalKernelι R M k ≫ g = 0) :
+    schemeUniversalQuotientπ R M k ≫ schemeUniversalQuotientDesc M k g hg = g :=
+  (schemeUniversalKernelData R M k).π_desc g hg
+
+/-- Two morphisms out of the universal quotient agree when they agree after the projection. -/
+@[ext]
+theorem schemeUniversalQuotient_hom_ext {P : (scheme R M k).Modules}
+    {g h : schemeUniversalQuotient R M k ⟶ P}
+    (e : schemeUniversalQuotientπ R M k ≫ g = schemeUniversalQuotientπ R M k ≫ h) : g = h :=
+  (schemeUniversalKernelData R M k).hom_ext e
+
 /-- The universal quotient is quasi-coherent. -/
 instance isQuasicoherent_schemeUniversalQuotient :
     (schemeUniversalQuotient R M k).IsQuasicoherent :=
@@ -205,6 +228,9 @@ theorem sectionsSchemeUniversalQuotientEquiv_π_app (U : (scheme R M k).affineOp
     sectionsSchemeUniversalQuotientEquiv M k U ((schemeUniversalQuotientπ R M k).app U
         ((toSpec R M k).pullbackTildeSectionsEquiv M U.property x)) =
       Submodule.Quotient.mk x := by
+  -- The goal uses `U.property : U ∈ affineOpens` as a proof of `IsAffineOpen U`, so it is not
+  -- type-correct at `implicit` transparency and `rw`/`simp` cannot rewrite with
+  -- `LinearEquiv.trans_apply`; we compose the named lemmas instead.
   have h := (schemeUniversalKernelData R M k).sectionsQuotientEquiv_π_app U
     ((toSpec R M k).pullbackTildeSectionsEquiv M U.property x)
   refine ((LinearEquiv.trans_apply _).trans (congrArg _ h)).trans ?_

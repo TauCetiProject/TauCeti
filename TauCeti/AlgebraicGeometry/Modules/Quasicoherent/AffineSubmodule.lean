@@ -223,7 +223,9 @@ theorem mem_sections_of_forall_exists {W : X.Opens} {s : Γ(M, W)}
   refine D.mem_submodule_of_span_eq_top V ht fun f ⟨W', i, hfW', hW'⟩ ↦ ?_
   have := hW' ⟨X.basicOpen f, V.property.basicOpen f⟩ hfW'
   rw [← ConcreteCategory.comp_apply, ← Functor.map_comp] at this ⊢
-  convert this using 4
+  -- the two composite restrictions `W ⟶ D(f)` agree in the thin category of opens
+  rwa [show i.op ≫ (homOfLE hfW').op = (homOfLE hVW).op ≫ (homOfLE (X.basicOpen_le f)).op from
+    Quiver.Hom.unop_inj (Subsingleton.elim _ _)] at this
 
 /-- The submodule of `M` whose sections over an open `W` are `D.sections W`. -/
 def submoduleSheaf : SheafOfModules.Submodule M where
@@ -303,15 +305,14 @@ instance isQuasicoherent_sheaf : D.sheaf.IsQuasicoherent := by
       (D.sections_eq ⟨X.basicOpen f, hU.basicOpen f⟩).le (D.ι_app_mem _ y)
     obtain ⟨m, hm, n, hmn⟩ := (D.mem_submodule_basicOpen_iff U f).1 hy
     refine ⟨n, D.sectionMk m ((D.sections_eq U).ge hm), D.ι_app_injective _ ?_⟩
-    rw [Scheme.Modules.basicOpenRestrict_apply, D.sheaf.basicOpen_smul_def,
-      Scheme.Modules.Hom.app_smul, ← M.basicOpen_smul_def, Scheme.Modules.Hom.naturality_apply,
-      ι_app_sectionMk, ← M.basicOpenRestrict_apply, hmn]
+    simp only [Scheme.Modules.basicOpenRestrict_apply, D.sheaf.basicOpen_smul_def,
+      M.basicOpen_smul_def, Scheme.Modules.Hom.app_smul, Scheme.Modules.Hom.naturality_apply,
+      ι_app_sectionMk] at hmn ⊢
+    exact hmn.symm
   · -- a section of the submodule vanishing on `D(f)` is killed by a power of `f`
     have hx' : M.basicOpenRestrict f (D.ι.app U x) = M.basicOpenRestrict f 0 := by
-      have := congrArg (D.ι.app _) hx
-      rw [Scheme.Modules.basicOpenRestrict_apply, map_zero] at this
-      rw [Scheme.Modules.basicOpenRestrict_apply, map_zero]
-      exact this
+      simpa only [Scheme.Modules.basicOpenRestrict_apply, map_zero,
+        Scheme.Modules.Hom.naturality_apply] using congrArg (D.ι.app _) hx
     obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsLocalizedModule.exists_of_eq (S := Submonoid.powers f) hx'
     exact ⟨n, D.ι_app_injective _ (hn.trans (smul_zero _))⟩
 
@@ -366,6 +367,9 @@ def sectionsQuotientEquiv (U : X.affineOpens) :
 @[simp]
 theorem sectionsQuotientEquiv_π_app (U : X.affineOpens) (s : Γ(M, U)) :
     D.sectionsQuotientEquiv U (D.π.app U s) = Submodule.Quotient.mk s :=
+  -- `sectionsCokernelEquiv` types sections as `(sectionsFunctor U).obj M` rather than `Γ(M, U)`,
+  -- so rewriting with `LinearEquiv.trans_apply` or `Submodule.quotEquivOfEq_mk` (by `rw` or
+  -- `simp`) produces ill-typed motives; we compose the two named lemmas instead.
   (congrArg (Submodule.quotEquivOfEq _ _ (D.range_sectionsFunctor_map_ι U))
     (sectionsCokernelEquiv_π_app D.ι U.property s)).trans (Submodule.quotEquivOfEq_mk _ _ _ _)
 
