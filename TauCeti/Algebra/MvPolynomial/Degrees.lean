@@ -38,6 +38,8 @@ finitely generated algebra.
 * `MvPolynomial.totalDegree_aeval_le`: the same bound for `aeval f p`.
 * `MvPolynomial.totalDegree_det_le`: a determinant of polynomials of total degree at most `d` has
   total degree at most `d` times the size of the matrix.
+* `MvPolynomial.totalDegree_coeff_finsetProd_le`: for nested polynomial rings, inner degree
+  bounds on the coefficients add under finite products.
 -/
 
 public section
@@ -119,5 +121,42 @@ theorem totalDegree_det_le {R σ ι : Type*} [CommRing R] [Fintype ι] [Decidabl
   refine (totalDegree_smul_le _ _).trans ((totalDegree_finsetProd _ _).trans ?_)
   calc ∑ i, (M (τ i) i).totalDegree ≤ ∑ _i : ι, d := Finset.sum_le_sum fun i _ ↦ h _ _
     _ = Fintype.card ι * d := by simp
+
+section Nested
+
+variable {R σ τ : Type*} [CommSemiring R]
+
+/-- A coefficient of a product in the outer variables has total degree in the inner variables
+at most the sum of the bounds on the coefficients of the factors. -/
+theorem totalDegree_coeff_mul_le {p q : MvPolynomial τ (MvPolynomial σ R)} {a b : ℕ}
+    (hp : ∀ e, (p.coeff e).totalDegree ≤ a) (hq : ∀ e, (q.coeff e).totalDegree ≤ b)
+    (e : τ →₀ ℕ) : ((p * q).coeff e).totalDegree ≤ a + b := by
+  classical
+  rw [coeff_mul]
+  exact totalDegree_finsetSum_le fun x _ ↦
+    (totalDegree_mul _ _).trans (Nat.add_le_add (hp x.1) (hq x.2))
+
+/-- Bound the inner degree of the coefficients of a finite product of polynomials in the outer
+variables. -/
+theorem totalDegree_coeff_finsetProd_le {ι : Type*} {p : ι → MvPolynomial τ (MvPolynomial σ R)}
+    {d : ι → ℕ} (s : Finset ι) (hp : ∀ i ∈ s, ∀ e, ((p i).coeff e).totalDegree ≤ d i)
+    (e : τ →₀ ℕ) : ((∏ i ∈ s, p i).coeff e).totalDegree ≤ ∑ i ∈ s, d i := by
+  classical
+  induction s using Finset.induction_on generalizing e with
+  | empty => by_cases he : 0 = e <;> simp [coeff_one, he]
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.sum_insert hi]
+    exact totalDegree_coeff_mul_le (hp i (by simp))
+      (ih fun j hj ↦ hp j (Finset.mem_insert_of_mem hj)) e
+
+/-- A coefficient of a power has inner degree at most the exponent times the inner degree bound
+for the coefficients of the base. -/
+theorem totalDegree_coeff_pow_le {p : MvPolynomial τ (MvPolynomial σ R)} {d : ℕ}
+    (hp : ∀ e, (p.coeff e).totalDegree ≤ d) (n : ℕ) (e : τ →₀ ℕ) :
+    ((p ^ n).coeff e).totalDegree ≤ n * d := by
+  simpa using totalDegree_coeff_finsetProd_le (p := fun _ : ℕ ↦ p) (d := fun _ ↦ d)
+    (Finset.range n) (fun _ _ ↦ hp) e
+
+end Nested
 
 end MvPolynomial
