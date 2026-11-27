@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Subgroup.Order
 public import Mathlib.CategoryTheory.Subobject.Lattice
 public import Mathlib.Data.Fintype.Order
 public import Mathlib.Order.CompactlyGenerated.Basic
+public import TauCeti.CategoryTheory.Abelian.Subobject.Modular
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
 
 /-!
@@ -50,7 +51,8 @@ module has a maximal proper subobject.
 
 * `TauCeti.ModCat.Submodule.nonempty_orderIsoSubobject`: the submodules and the subobjects of
   `F` form isomorphic orders.
-* `IsModularLattice (ModCat.Submodule F)` and `IsModularLattice (Subobject F)`.
+* `IsModularLattice (ModCat.Submodule F)`; `IsModularLattice (Subobject F)` comes from the instance
+  for abelian categories (`CategoryTheory.Subobject.isModularLattice`).
 * `TauCeti.ModCat.Submodule.isCompactElement_top`: if `M` is a quotient of a finite sum of
   representable functors, then `⊤` is compact in the submodule lattice of `M`.
 * `TauCeti.ModCat.exists_isCoatom_of_isFinitelyGeneratedFunctor`: a nonzero finitely generated
@@ -238,12 +240,12 @@ instance : S.toFunctor.Additive where
 abbrev toModCat : ModCat.{w} C := ⟨S.toFunctor, (additiveFunctor_iff _).2 inferInstance⟩
 
 /-- The inclusion of a submodule `S` into `F`. -/
-@[expose] def ι : S.toModCat ⟶ F :=
+def ι : S.toModCat ⟶ F :=
   ObjectProperty.homMk { app X := AddCommGrpCat.ofHom (S.carrier X).subtype }
 
 @[simp]
 theorem ι_hom_app_apply (X : Cᵒᵖ) (x : S.carrier X) : S.ι.hom.app X x = x :=
-  rfl
+  (rfl)
 
 instance : Mono S.ι := by
   have (X : Cᵒᵖ) : Mono (S.ι.hom.app X) :=
@@ -252,7 +254,7 @@ instance : Mono S.ι := by
   exact (additiveFunctor Cᵒᵖ AddCommGrpCat.{w}).ι.mono_of_mono_map this
 
 /-- A morphism of functors into `F` whose values lie in `S` factors through `S`. -/
-@[expose] def liftHom {G : Cᵒᵖ ⥤ AddCommGrpCat.{w}} (φ : G ⟶ F.obj)
+def liftHom {G : Cᵒᵖ ⥤ AddCommGrpCat.{w}} (φ : G ⟶ F.obj)
     (h : ∀ X (x : G.obj X), φ.app X x ∈ S.carrier X) : G ⟶ S.toFunctor where
   app X := AddCommGrpCat.ofHom ((φ.app X).hom.codRestrict _ (h X))
   naturality X Y f := by
@@ -262,7 +264,7 @@ instance : Mono S.ι := by
 @[reassoc (attr := simp)]
 theorem liftHom_ι {G : Cᵒᵖ ⥤ AddCommGrpCat.{w}} (φ : G ⟶ F.obj)
     (h : ∀ X (x : G.obj X), φ.app X x ∈ S.carrier X) : S.liftHom φ h ≫ S.ι.hom = φ :=
-  rfl
+  (rfl)
 
 /-- The pointwise image of a morphism `φ : A ⟶ F` of `C`-modules, a submodule of `F`. -/
 def range {A : ModCat.{w} C} (φ : A ⟶ F) : Submodule F where
@@ -271,17 +273,18 @@ def range {A : ModCat.{w} C} (φ : A ⟶ F) : Submodule F where
     rintro _ ⟨a, rfl⟩
     exact ⟨A.obj.map f a, NatTrans.naturality_apply φ.hom f a⟩
 
+@[simp]
 theorem mem_range {A : ModCat.{w} C} (φ : A ⟶ F) {X : Cᵒᵖ} {x : F.obj.obj X} :
     x ∈ (range φ).carrier X ↔ ∃ a, φ.hom.app X a = x :=
   Iff.rfl
 
 /-- A morphism of `C`-modules into `F` whose image lies in `S` factors through `S`. -/
-@[expose] def lift {A : ModCat.{w} C} (φ : A ⟶ F) (h : range φ ≤ S) : A ⟶ S.toModCat :=
+def lift {A : ModCat.{w} C} (φ : A ⟶ F) (h : range φ ≤ S) : A ⟶ S.toModCat :=
   ObjectProperty.homMk (S.liftHom φ.hom fun X _ ↦ h X ((mem_range φ).2 ⟨_, rfl⟩))
 
 @[reassoc (attr := simp)]
 theorem lift_ι {A : ModCat.{w} C} (φ : A ⟶ F) (h : range φ ≤ S) : S.lift φ h ≫ S.ι = φ :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem range_ι : range S.ι = S := by
@@ -326,7 +329,7 @@ theorem mk_range_ι {A : ModCat.{w} C} (φ : A ⟶ F) [Mono φ] :
 variable (F) in
 /-- The submodules of `F` correspond to the subobjects of `F`: a submodule `S` gives the
 subobject `S.ι`, and a subobject gives the pointwise image of its arrow. -/
-@[expose] noncomputable def orderIsoSubobject : Submodule F ≃o Subobject F where
+noncomputable def orderIsoSubobject : Submodule F ≃o Subobject F where
   toFun S := Subobject.mk S.ι
   invFun P := range P.arrow
   left_inv := range_mk_ι_arrow
@@ -335,12 +338,12 @@ subobject `S.ι`, and a subobject gives the pointwise image of its arrow. -/
 
 @[simp]
 theorem orderIsoSubobject_apply : orderIsoSubobject F S = Subobject.mk S.ι :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem orderIsoSubobject_symm_apply (P : Subobject F) :
     (orderIsoSubobject F).symm P = range P.arrow :=
-  rfl
+  (rfl)
 
 variable (F) in
 /-- **The submodules of `F` and the subobjects of `F` form isomorphic orders**, with no change of
@@ -350,12 +353,9 @@ theorem nonempty_orderIsoSubobject : Nonempty (Submodule F ≃o Subobject F) :=
 
 end Submodule
 
-/-- The subobjects of a `C`-module form a modular lattice: they correspond to its submodules. -/
-instance (M : ModCat.{w} C) : IsModularLattice (Subobject M) :=
-  ⟨fun {x} y z h ↦ by
-    have := IsModularLattice.sup_inf_le_assoc_of_le ((Submodule.orderIsoSubobject M).symm y)
-      ((Submodule.orderIsoSubobject M).symm.monotone h)
-    simpa only [← OrderIso.map_sup, ← OrderIso.map_inf, OrderIso.le_iff_le] using this⟩
+/-- The subobjects of a `C`-module form a modular lattice, by the instance for any abelian
+category (`CategoryTheory.Subobject.isModularLattice`). -/
+example (M : ModCat.{w} C) : IsModularLattice (Subobject M) := inferInstance
 
 /-! ### Maximal subobjects of finitely generated modules -/
 
