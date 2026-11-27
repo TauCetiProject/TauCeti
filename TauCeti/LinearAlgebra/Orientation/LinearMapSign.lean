@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Orientation.Basic
+public import TauCeti.LinearAlgebra.Orientation.Basis
 
 /-!
 # The sign of a linear map between oriented spaces
@@ -25,6 +25,11 @@ carrying `o` to `o'`, `-1` when it is an isomorphism not carrying `o` to `o'` (t
   orientation reverses the sign.
 * `Orientation.linearMapSign_map_map`: the sign is unchanged when the map is conjugated by linear
   equivalences of the source and the target and the orientations are transported along them.
+* `Orientation.linearMapSign_reindex`: the sign is unchanged when both orientations are reindexed
+  along the same equivalence.
+* `Orientation.linearMapSign_eq_signBasis_mul_signBasis`: a map sending a basis `b` to a basis `b'`
+  has sign the product of the signs of `b` and `b'` relative to the two orientations.
+* `Orientation.linearMapSign_smul_of_pos`: a positive multiple of a map has the same sign.
 -/
 
 public section
@@ -105,7 +110,47 @@ theorem linearMapSign_map_map {V' W' : Type*} [AddCommGroup V'] [Module R V'] [A
       exact eW.symm.bijective.comp (h'.comp eV.bijective))
     rw [linearMapSign_of_not_bijective h, linearMapSign_of_not_bijective h']
 
+/-- **Reindexing.** The sign is unchanged when both orientations are reindexed along the same
+equivalence of index types. -/
+@[simp]
+theorem linearMapSign_reindex {ι' : Type*} (e : ι ≃ ι') :
+    linearMapSign (Orientation.reindex R V e o) (Orientation.reindex R W e o') L =
+      linearMapSign o o' L := by
+  by_cases h : Bijective L
+  · rw [linearMapSign_of_bijective h, linearMapSign_of_bijective h, map_reindex,
+      (Orientation.reindex R W e).injective.eq_iff]
+  · rw [linearMapSign_of_not_bijective h, linearMapSign_of_not_bijective h]
+
 end CommRing
+
+section Basis
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+  {V W : Type*} [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W] {ι : Type*}
+  [Fintype ι] [DecidableEq ι] {L : V →ₗ[R] W}
+
+/-- **The sign of a map between bases.** If `L` sends each vector of a basis `b` of `V` to the
+corresponding vector of a basis `b'` of `W`, its sign is the product of the signs of `b` relative
+to `o` and of `b'` relative to `o'`. -/
+theorem linearMapSign_eq_signBasis_mul_signBasis (o : Orientation R V ι) (o' : Orientation R W ι)
+    (b : Basis ι R V) (b' : Basis ι R W) (hL : ∀ i, L (b i) = b' i) :
+    linearMapSign o o' L = (signBasis o b * signBasis o' b' : ℤˣ) := by
+  classical
+  -- `L` is the linear equivalence `b.equiv b'` matching the two bases.
+  set e := b.equiv b' (Equiv.refl ι)
+  have hLe : L = e.toLinearMap := b.ext fun i ↦ by simp [e, hL]
+  have hb : Bijective L := hLe ▸ e.bijective
+  have hmap : LinearEquiv.ofBijective L hb = e := LinearEquiv.ext fun v ↦ by
+    rw [LinearEquiv.ofBijective_apply, hLe, LinearEquiv.coe_coe]
+  have hbe : b.map e = b' := Basis.eq_of_apply_eq fun i ↦ by simp [e]
+  have hmo : Orientation.map ι e b.orientation = b'.orientation := by
+    rw [← Basis.orientation_map, hbe]
+  rw [linearMapSign_of_bijective hb, hmap]
+  rcases b.orientation_eq_or_eq_neg o with rfl | rfl <;>
+    rcases b'.orientation_eq_or_eq_neg o' with rfl | rfl <;>
+    simp [hmo, Orientation.map_neg, Module.Ray.ne_neg_self, (Module.Ray.ne_neg_self _).symm]
+
+end Basis
 
 section Field
 
@@ -143,6 +188,15 @@ theorem linearMapSign_neg_right (hι : Fintype.card ι = finrank R W) :
   · rw [linearMapSign_of_bijective h, linearMapSign_of_bijective h]
     exact ite_eq_neg_eq_neg_ite hι
   · rw [linearMapSign_of_not_bijective h, linearMapSign_of_not_bijective h, neg_zero]
+
+omit [Fintype ι] in
+/-- **A positive multiple has the same sign**: a positive homothety of the target preserves every
+orientation. -/
+theorem linearMapSign_smul_of_pos [Finite ι] {c : R} (hc : 0 < c) :
+    linearMapSign o o' (c • L) = linearMapSign o o' L := by
+  have h := linearMapSign_map_map (o := o) (o' := o') (L := L) (L' := c • L)
+    (LinearEquiv.refl R V) (LinearEquiv.smulOfNeZero R W c hc.ne') fun _ ↦ by simp
+  rwa [Orientation.map_refl, Orientation.map_smulOfNeZero_of_pos o' hc] at h
 
 end Field
 

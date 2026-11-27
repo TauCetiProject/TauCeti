@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Peripheral.Lifting
 import Mathlib.Topology.Instances.ZMod
-import TauCeti.Topology.Algebra.Group.Heisenberg
+import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 
 /-!
 # A non-unit obstruction to the peripheral product identity

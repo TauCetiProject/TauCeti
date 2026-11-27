@@ -20,10 +20,8 @@ We also count the root zero: it occurs in `f.roots` with multiplicity the order 
 `f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
 `f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
 `f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
-(`Polynomial.sum_rootMultiplicity_le_natDegree`, and
-`Polynomial.sum_rootMultiplicity_comp_le_natDegree` for indexed evaluation points injective on the
-indexing set), including for `f = 0`, and summing it over the distinct roots gives the number of
-roots counted with multiplicity
+(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`, and summing it over the
+distinct roots gives the number of roots counted with multiplicity
 (`Polynomial.sum_rootMultiplicity_roots_toFinset_eq_card_roots`). So if
 `k ≤ f.rootMultiplicity a` for every `a` in a finite set `s`, then `k * #s ≤ f.natDegree`
 (`Polynomial.mul_card_le_natDegree_of_le_rootMultiplicity`).
@@ -34,10 +32,12 @@ powers `(X - a) ^ f.rootMultiplicity a` at such points are pairwise coprime, so 
 divides `f` (`Polynomial.sum_rootMultiplicity_le_natDegree_of_pairwise_isUnit_sub`).
 
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
-occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`), and
-`Polynomial.cappedRootMultiplicity` caps the root multiplicity at `N` (taking value `N` on `0`,
-and `0` at any nonroot via `Polynomial.cappedRootMultiplicity_eq_zero_of_not_isRoot`),
-so `k ≤ p.cappedRootMultiplicity a N ↔ (X - C a) ^ k ∣ p` for all `k ≤ N`.
+occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`), the root
+multiplicity of a multiset product of nonzero polynomials is the sum of the root multiplicities of
+its factors (`Polynomial.rootMultiplicity_multiset_prod`), and pushing a factorization
+`P = C c * s.prod` forward along `φ : A →+* K` gives the nonvanishing criterion
+`Polynomial.map_ne_zero_iff_of_eq_C_mul_multiset_prod` and root-multiplicity sum formula
+`Polynomial.rootMultiplicity_map_eq_sum`.
 -/
 
 public section
@@ -66,8 +66,6 @@ theorem eventually_rootMultiplicity_eq_of_roots_eq_map
 end TauCeti
 
 namespace Polynomial
-
-section
 
 variable {R : Type*} [CommRing R] [IsDomain R]
 
@@ -109,17 +107,6 @@ theorem sum_rootMultiplicity_le_natDegree (f : R[X]) (s : Finset R) :
     _ = f.roots.card := Multiset.toFinset_sum_count_eq f.roots
     _ ≤ f.natDegree := card_roots' f
 
-/-- Over a domain, the sum of root multiplicities of a polynomial `f` over an indexed finite set
-with evaluation points injective on the set is at most `f.natDegree`. -/
-theorem sum_rootMultiplicity_comp_le_natDegree {ι : Type*} (f : R[X]) (s : Finset ι)
-    {β : ι → R} (hβ : Set.InjOn β s) :
-    ∑ i ∈ s, f.rootMultiplicity (β i) ≤ f.natDegree := by
-  classical
-  calc ∑ i ∈ s, f.rootMultiplicity (β i)
-      = ∑ b ∈ s.image β, f.rootMultiplicity b :=
-        (Finset.sum_image (f := fun b ↦ f.rootMultiplicity b) fun _ hx _ hy h ↦ hβ hx hy h).symm
-    _ ≤ f.natDegree := f.sum_rootMultiplicity_le_natDegree (s.image β)
-
 /-- **The root-count inequality.** Over a domain, if `k ≤ f.rootMultiplicity a` for every `a` in
 a finite set `s`, then `k * #s ≤ f.natDegree`. -/
 theorem mul_card_le_natDegree_of_le_rootMultiplicity {f : R[X]} {s : Finset R} {k : ℕ}
@@ -150,6 +137,28 @@ theorem sum_rootMultiplicity_le_natDegree_of_pairwise_isUnit_sub {ι : Type*} {s
         simp only [(monic_X_sub_C _).natDegree_pow, natDegree_X_sub_C, mul_one]
     _ ≤ f.natDegree := (monic_prod_of_monic _ _ hmonic).natDegree_le_of_dvd hf hdvd
 
+/-- Over an integral domain, if `f : α → R` is injective on a finite set `s : Finset α`, then the
+number of points `x ∈ s` at which a nonzero polynomial `c : R[X]` vanishes at `f x` is at most
+`c.natDegree`. -/
+theorem card_filter_eval_comp_eq_zero_le {α : Type*} [DecidableEq R] {c : R[X]} (hc0 : c ≠ 0)
+    {s : Finset α} {f : α → R} (hinj : Set.InjOn f (s : Set α)) :
+    (s.filter fun x ↦ c.eval (f x) = 0).card ≤ c.natDegree := by
+  let s₀ : Finset α := s.filter fun x ↦ c.eval (f x) = 0
+  have hinj₀ : Set.InjOn f (s₀ : Set α) :=
+    hinj.mono (Finset.coe_subset.mpr (Finset.filter_subset _ s))
+  rw [← Finset.card_image_of_injOn hinj₀]
+  refine card_le_degree_of_subset_roots fun b hb ↦ ?_
+  obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp (Finset.mem_val.mp hb)
+  exact (mem_roots hc0).mpr (Finset.mem_filter.mp hx).2
+
+/-- Over an integral domain, the root multiplicity of a multiset product of nonzero polynomials is
+the sum of the root multiplicities of its factors. -/
+theorem rootMultiplicity_multiset_prod (a : R) (s : Multiset R[X]) (hs : ∀ p ∈ s, p ≠ 0) :
+    s.prod.rootMultiplicity a = (s.map fun p ↦ p.rootMultiplicity a).sum := by
+  classical
+  rw [← count_roots, roots_multiset_prod s fun h0 ↦ hs 0 h0 rfl, Multiset.count_bind]
+  simp [count_roots]
+
 /-- A nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a` occurs
 at least `k` times in `E`. -/
 theorem X_sub_C_pow_dvd_smul_multiset_prod_iff [DecidableEq R] {E : Multiset R} {a c : R}
@@ -158,121 +167,43 @@ theorem X_sub_C_pow_dvd_smul_multiset_prod_iff [DecidableEq R] {E : Multiset R} 
   rw [← le_rootMultiplicity_iff (smul_ne_zero hc (monic_multisetProd_X_sub_C E).ne_zero),
     ← count_roots, roots_smul_of_ne_zero _ hc, roots_multiset_prod_X_sub_C]
 
-end
+end Polynomial
 
-section
+namespace Polynomial
 
-variable {R : Type*} [Ring R]
+/-- Given `P = C c * s.prod`, the mapped factorization
+`P.map φ = C (φ c) * (s.map (mapRingHom φ)).prod` is unconditional; if the target `K` has no zero
+divisors, then `P.map φ ≠ 0` if and only if `φ c ≠ 0` and `F.map φ ≠ 0` for every factor
+`F ∈ s`. -/
+theorem map_ne_zero_iff_of_eq_C_mul_multiset_prod {A K : Type*} [CommSemiring A] [CommSemiring K]
+    [NoZeroDivisors K] {φ : A →+* K} {P : A[X]} {c : A} {s : Multiset A[X]}
+    (hPeq : P = C c * s.prod) :
+    P.map φ ≠ 0 ↔ φ c ≠ 0 ∧ ∀ F ∈ s, F.map φ ≠ 0 := by
+  rw [hPeq, Polynomial.map_mul, map_C, ← coe_mapRingHom, map_multiset_prod,
+    mul_ne_zero_iff, C_ne_zero]
+  refine and_congr_right fun hcp ↦ ⟨fun h F hF h0 ↦ ?_, fun h ↦ ?_⟩
+  · exact h (Multiset.prod_eq_zero (Multiset.mem_map.mpr ⟨F, hF, h0⟩))
+  · have : Nontrivial K := ⟨⟨φ c, 0, hcp⟩⟩
+    exact Multiset.prod_ne_zero fun h0 ↦
+      let ⟨F, hF, hFeq⟩ := Multiset.mem_map.mp h0
+      h F hF hFeq
 
-/-- The root multiplicity of `p` at `a`, capped at `N` (equal to `N` when `p = 0`).
-This satisfies `k ≤ p.cappedRootMultiplicity a N ↔ (X - C a) ^ k ∣ p` for all `k ≤ N`,
-including `p = 0`, and is subadditive under multiplication. -/
-noncomputable def cappedRootMultiplicity (p : R[X]) (a : R) (N : ℕ) : ℕ :=
-  letI := Classical.propDecidable
-  if p = 0 then N else min N (p.rootMultiplicity a)
-
-/-- `p.cappedRootMultiplicity a N` never exceeds the cap `N`. -/
-theorem cappedRootMultiplicity_le (p : R[X]) (a : R) (N : ℕ) :
-    p.cappedRootMultiplicity a N ≤ N := by
-  dsimp [cappedRootMultiplicity]
-  split_ifs
-  · exact le_rfl
-  · exact min_le_left _ _
-
-/-- The capped root multiplicity of `0` is the cap `N`. -/
-@[simp]
-theorem cappedRootMultiplicity_zero (a : R) (N : ℕ) :
-    (0 : R[X]).cappedRootMultiplicity a N = N := by
-  simp [cappedRootMultiplicity]
-
-/-- The capped root multiplicity with cap `0` is `0`. -/
-@[simp]
-theorem cappedRootMultiplicity_zero_right (p : R[X]) (a : R) :
-    p.cappedRootMultiplicity a 0 = 0 := by
-  simpa using Nat.le_zero.mp (p.cappedRootMultiplicity_le a 0)
-
-/-- For nonzero `p`, `p.cappedRootMultiplicity a N = min N (p.rootMultiplicity a)`. -/
-theorem cappedRootMultiplicity_of_ne_zero {p : R[X]} (hp : p ≠ 0) (a : R) (N : ℕ) :
-    p.cappedRootMultiplicity a N = min N (p.rootMultiplicity a) := by
-  simp [cappedRootMultiplicity, hp]
-
-/-- The capped root multiplicity of a nonzero constant polynomial is `0`. -/
-@[simp]
-theorem cappedRootMultiplicity_C {c : R} (hc : c ≠ 0) (a : R) (N : ℕ) :
-    (C c).cappedRootMultiplicity a N = 0 := by
-  simp [cappedRootMultiplicity_of_ne_zero (C_ne_zero.mpr hc), rootMultiplicity_C]
-
-end
-
-section
-
-variable {R : Type*} [CommRing R] [IsDomain R]
-
-/-- Every unit polynomial has capped root multiplicity `0` at every point. -/
-theorem cappedRootMultiplicity_of_isUnit {u : R[X]} (hu : IsUnit u) (a : R) (N : ℕ) :
-    u.cappedRootMultiplicity a N = 0 := by
-  obtain ⟨c, hc, rfl⟩ := Polynomial.isUnit_iff.mp hu
-  exact cappedRootMultiplicity_C hc.ne_zero a N
-
-/-- Over an integral domain, `cappedRootMultiplicity` of a product is the capped sum of the
-factors' capped root multiplicities. -/
-theorem cappedRootMultiplicity_mul (p q : R[X]) (a : R) (N : ℕ) :
-    (p * q).cappedRootMultiplicity a N =
-      min N (p.cappedRootMultiplicity a N + q.cappedRootMultiplicity a N) := by
-  by_cases hp : p = 0
-  · simp [hp]
-  by_cases hq : q = 0
-  · simp [hq]
-  have hpq : p * q ≠ 0 := mul_ne_zero hp hq
-  rw [cappedRootMultiplicity_of_ne_zero hpq, cappedRootMultiplicity_of_ne_zero hp,
-    cappedRootMultiplicity_of_ne_zero hq, rootMultiplicity_mul hpq]
-  omega
-
-/-- `cappedRootMultiplicity` is subadditive under polynomial multiplication. -/
-theorem cappedRootMultiplicity_mul_le (p q : R[X]) (a : R) (N : ℕ) :
-    (p * q).cappedRootMultiplicity a N ≤
-      p.cappedRootMultiplicity a N + q.cappedRootMultiplicity a N := by
-  rw [cappedRootMultiplicity_mul]
-  exact min_le_right _ _
-
-end
-
-section
-
-variable {R : Type*} [CommRing R]
-
-/-- A polynomial's capped root multiplicity at any point where it evaluates to a nonzero value is
-`0`. This is the `simp` normal form of `Polynomial.cappedRootMultiplicity_eq_zero_of_not_isRoot`,
-since `Polynomial.IsRoot.def` simplifies `p.IsRoot a` to `p.eval a = 0`. -/
-@[simp]
-theorem cappedRootMultiplicity_eq_zero_of_eval_ne_zero {p : R[X]} {a : R}
-    (hp : p.eval a ≠ 0) (N : ℕ) :
-    p.cappedRootMultiplicity a N = 0 := by
-  have hp0 : p ≠ 0 := fun h ↦ hp (by simp [h])
-  simp [cappedRootMultiplicity_of_ne_zero hp0, rootMultiplicity_eq_zero (mt IsRoot.def.mp hp)]
-
-/-- A polynomial's capped root multiplicity at any nonroot is `0`. -/
-theorem cappedRootMultiplicity_eq_zero_of_not_isRoot {p : R[X]} {a : R}
-    (hp : ¬ p.IsRoot a) (N : ℕ) :
-    p.cappedRootMultiplicity a N = 0 :=
-  cappedRootMultiplicity_eq_zero_of_eval_ne_zero (mt IsRoot.def.mpr hp) N
-
-/-- For `k ≤ N`, `k ≤ p.cappedRootMultiplicity a N` if and only if `(X - C a) ^ k ∣ p`
-(including when `p = 0`). -/
-theorem le_cappedRootMultiplicity_iff {p : R[X]} {a : R} {N k : ℕ} (hk : k ≤ N) :
-    k ≤ p.cappedRootMultiplicity a N ↔ (X - C a) ^ k ∣ p := by
-  by_cases hp : p = 0
-  · simp [hp, hk]
-  · rw [cappedRootMultiplicity_of_ne_zero hp, le_min_iff, iff_true_intro hk, true_and,
-      le_rootMultiplicity_iff hp]
-
-/-- `p.cappedRootMultiplicity a N = N` if and only if `(X - C a) ^ N ∣ p`
-(including when `p = 0`). -/
-theorem cappedRootMultiplicity_eq_self_iff {p : R[X]} {a : R} {N : ℕ} :
-    p.cappedRootMultiplicity a N = N ↔ (X - C a) ^ N ∣ p := by
-  rw [← le_cappedRootMultiplicity_iff le_rfl, le_antisymm_iff,
-    iff_true_intro (p.cappedRootMultiplicity_le a N), true_and]
-
-end
+/-- Over an integral domain `K`, if `P = C c * s.prod` in `A[X]` and `P.map φ ≠ 0` for a ring
+homomorphism `φ : A →+* K`, then the root multiplicity of `P.map φ` at `a` equals the sum of the
+root multiplicities of `F.map φ` at `a` over `F ∈ s`. -/
+theorem rootMultiplicity_map_eq_sum {A K : Type*} [CommSemiring A] [CommRing K] [IsDomain K]
+    {φ : A →+* K} {P : A[X]} {c : A} {s : Multiset A[X]}
+    (hPeq : P = C c * s.prod) (hPmap : P.map φ ≠ 0) (a : K) :
+    (P.map φ).rootMultiplicity a =
+      (s.map fun F ↦ (F.map φ).rootMultiplicity a).sum := by
+  rw [hPeq, Polynomial.map_mul, map_C, ← coe_mapRingHom, map_multiset_prod] at hPmap ⊢
+  have hc0 : C (φ c) ≠ 0 := left_ne_zero_of_mul hPmap
+  have hprod_ne : (s.map (mapRingHom φ)).prod ≠ 0 := right_ne_zero_of_mul hPmap
+  have hmap_ne : ∀ p ∈ s.map (mapRingHom φ), p ≠ 0 := fun p hp h0 ↦
+    hprod_ne (Multiset.prod_eq_zero (h0 ▸ hp))
+  rw [rootMultiplicity_mul (mul_ne_zero hc0 hprod_ne),
+    rootMultiplicity_eq_zero (by simpa using C_ne_zero.mp hc0), zero_add,
+    rootMultiplicity_multiset_prod a _ hmap_ne, Multiset.map_map]
+  simp only [Function.comp_apply, coe_mapRingHom]
 
 end Polynomial

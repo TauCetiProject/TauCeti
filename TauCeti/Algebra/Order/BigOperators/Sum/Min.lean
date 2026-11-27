@@ -60,8 +60,9 @@ field.
   distinct members `a j ≤ a i` of `a` keep the inequality strict for all `a j ≤ k ≤ a i`.
   Moving a box between these two rows is the key step in generating dominance of partitions by
   box moves.
-* `Finset.two_mul_sum_range_min_eq_of_le`, `Finset.le_two_mul_sum_range_min`: exact formula for
-  `2 * ∑ s ∈ range S, min k s` when `k ≤ S` in any ring, and the general quadratic lower bound
+* `Finset.two_mul_sum_range_min_eq`, `Finset.two_mul_sum_range_min_eq_of_le`,
+  `Finset.le_two_mul_sum_range_min`: exact formula `2 * S * m - m ^ 2 - m` with `m = min k S` for
+  `2 * ∑ s ∈ range S, min k s` in any ring, its `k ≤ S` case, and the general quadratic lower bound
   `2 * S * k - k ^ 2 - k ≤ 2 * ∑ s ∈ range S, min k s` in any ordered ring.
 * `Finset.le_two_mul_sum_range_min_div`: double-sum lower bound on
   `2 * ∑ r ∈ range R, ∑ s ∈ range S, min (r / p) s` in any strictly ordered field.
@@ -191,6 +192,16 @@ theorem two_mul_sum_range_min_eq_of_le {R : Type*} [Ring R] {S k : ℕ} (hkS : k
   have hR := congrArg (Int.cast (R := R)) hZ
   rw [intCast_two_mul_sum_range_min_sub_quad, Int.cast_zero] at hR
   exact sub_eq_zero.mp hR
+
+/-- Exact formula for twice the truncated range sum `2 * ∑ s ∈ range S, min k s` for arbitrary
+`k` and `S`, in any ring: with `m = min k S`, it equals `2 * S * m - m ^ 2 - m`. -/
+theorem two_mul_sum_range_min_eq {R : Type*} [Ring R] (S k : ℕ) :
+    2 * ∑ s ∈ range S, ((min k s : ℕ) : R) =
+      2 * (S : R) * (min k S : ℕ) - ((min k S : ℕ) : R) ^ 2 - (min k S : ℕ) := by
+  have hsum : ∑ s ∈ range S, ((min k s : ℕ) : R) =
+      ∑ s ∈ range S, ((min (min k S) s : ℕ) : R) :=
+    sum_congr rfl fun s hs ↦ by rw [min_assoc, min_eq_right (mem_range.mp hs).le]
+  rw [hsum, two_mul_sum_range_min_eq_of_le (min_le_right k S)]
 
 /-- Quadratic lower bound on the truncated range sum:
 `2 * S * k - k ^ 2 - k ≤ 2 * ∑ s ∈ range S, min k s` in any ordered ring

@@ -149,7 +149,7 @@ private theorem log_two_mul_grid_mul_sqrt_eq {q C : ℕ} (hq : 0 < q) (hC : 0 < 
     Real.log_mul (by positivity) (by positivity), hlogN, hlogsq]; ring
 
 private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq3 : 3 ≤ q)
-    (hdq : d.natAbs ≤ q) (hC6 : 6 ≤ C) (hC3 : 3 ∣ C) :
+    (hdq : d.natAbs ≤ q) (hC : 0 < C) (hC3 : 3 ∣ C) :
     ((q ^ C : ℕ) : ℝ) * ((q ^ C / C : ℕ) : ℝ) * (Real.log (2 * ((q ^ (2 * (C / 3)) : ℕ) : ℝ) ^ 3)
         + 2 * (q ^ (2 * (C / 3)) : ℕ) * Real.log ((q ^ C : ℕ) : ℝ)) +
       ((q ^ C : ℕ) : ℝ) * ((q ^ C / C : ℕ) : ℝ) * (((q ^ C : ℕ) : ℝ) + ((q ^ C / C : ℕ) : ℝ)) *
@@ -159,7 +159,7 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
   set X := q ^ C
   set S := X / C
   set N := q ^ (2 * (C / 3))
-  obtain ⟨-, -, hN_pos, -⟩ := grid_deg_lt_cube hq3 hC6 hC3
+  have hN_pos : 0 < N := pow_pos (by omega) _
   have hlog2 : Real.log 2 ≤ 1 := Real.log_two_le_one
   have herr1 := log_grid_error_le hq3 hC3
   have h2Nq_log := log_two_mul_grid_mul_sqrt_eq (by omega : 0 < q) (by omega : 0 < C) hC3
@@ -304,7 +304,7 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 
   have hrhs_le : Real.log (D : ℝ) ≤
       (X : ℝ) ^ 2 * S * ((1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) *
         Real.log ((q : ℝ) ^ C) + 15) :=
-    hD_log.trans (log_det_bound_explicit hd.ne_zero hq3 hdq hC6 hC3)
+    hD_log.trans (log_det_bound_explicit hd.ne_zero hq3 hdq (by omega) hC3)
   have herr_sum := prime_error_sums_le
     (P := P) (fun _ hp ↦ ⟨(Finset.mem_filter.mp hp).1, (Finset.mem_filter.mp hp).2.1⟩)
     hS_pos (by omega : 0 < C) rfl

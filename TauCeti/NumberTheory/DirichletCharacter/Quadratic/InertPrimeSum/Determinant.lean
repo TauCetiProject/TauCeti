@@ -12,8 +12,10 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Data.Nat.Choose.Dvd
 import Mathlib.NumberTheory.Zsqrtd.Basic
 import TauCeti.Algebra.BigOperators.Intervals
-import TauCeti.Algebra.Polynomial.Bivariate
+import TauCeti.Algebra.Polynomial.Bivariate.Basic
+import TauCeti.Algebra.Polynomial.Bivariate.Vanishing
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Algebra.Ring.Parity
 import TauCeti.Algebra.Squarefree
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.Real.Sqrt
@@ -22,7 +24,6 @@ import TauCeti.Analysis.InnerProductSpace.Gram.Integral
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.NumberTheory.Zsqrtd.Gram
-import TauCeti.RingTheory.Polynomial.Resultant.Multiplicity
 
 /-!
 # Green's Gram determinant for jet evaluations in `ℤ√d`
@@ -37,7 +38,7 @@ matrix `G`:
 1. **Positivity (`1 ≤ G.det`).** Any real linear relation among the jet vectors gives a complex
    bivariate polynomial of bidegree `< (R, S)` vanishing to order `N` in `z` at `(x + y√d, x - y√d)`
    for all `x, y < N`, which is forced to vanish by
-   `Polynomial.eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube`.
+   `Polynomial.eq_zero_of_forall_linearGrid_X_sub_C_pow_dvd`.
 2. **Archimedean upper bound.** Hadamard's inequality (`Matrix.log_det_le_of_map_eq_gram`) bounds
    `log G.det` in terms of `N, R, S` and `|d|`.
 3. **`p`-adic divisibility.** At every prime `p` with `jacobiSym d p = -1`, Frobenius in
@@ -149,9 +150,8 @@ private theorem natDegree_relationPoly_le {R S : ℕ} (c : Fin R × Fin S → �
     (relationPoly c).natDegree ≤ R - 1 :=
   (natDegree_sum_le _ _).trans (Finset.sup_le fun r _ ↦ natDegree_monomial_le _ |>.trans (by omega))
 
-private theorem natDegree_swap_relationPoly_le {R S : ℕ} (c : Fin R × Fin S → ℝ) :
-    (Bivariate.swap (relationPoly c)).natDegree ≤ S - 1 := by
-  refine Bivariate.natDegree_swap_le_iff.mpr fun n ↦ ?_
+private theorem natDegree_coeff_relationPoly_le {R S : ℕ} (c : Fin R × Fin S → ℝ) (n : ℕ) :
+    ((relationPoly c).coeff n).natDegree ≤ S - 1 := by
   rw [relationPoly, finsetSum_coeff]
   refine (natDegree_sum_le _ _).trans (Finset.sup_le fun r _ ↦ ?_)
   simp only [Function.comp_apply, coeff_monomial_apply]
@@ -192,50 +192,43 @@ private noncomputable def gridFinset (N : ℕ) : Finset ℂ :=
 private theorem card_gridFinset (N : ℕ) : (gridFinset N).card = N := by
   rw [gridFinset, Finset.card_image_of_injective _ Nat.cast_injective, Finset.card_range]
 
-private noncomputable def gridL₁ (d : ℤ) : MvPolynomial (Fin 2) ℂ :=
-  MvPolynomial.X 0 + MvPolynomial.C (Complex.sqrt d) * MvPolynomial.X 1
+/-- The shear `(x, y) ↦ (x + y√d, x - y√d)` carrying the grid `{0, …, N - 1}²` to the evaluation
+points `(z, z')` of the jets. -/
+private noncomputable def gridMatrix (d : ℤ) : Matrix (Fin 2) (Fin 2) ℂ :=
+  !![1, Complex.sqrt d; 1, -Complex.sqrt d]
 
-private noncomputable def gridL₂ (d : ℤ) : MvPolynomial (Fin 2) ℂ :=
-  MvPolynomial.X 0 - MvPolynomial.C (Complex.sqrt d) * MvPolynomial.X 1
+private theorem det_gridMatrix_ne_zero {d : ℤ} (hd0 : d ≠ 0) : (gridMatrix d).det ≠ 0 := by
+  have hsqrt : Complex.sqrt (d : ℂ) ≠ 0 := by simpa using hd0
+  have hdet : (gridMatrix d).det = -(2 * Complex.sqrt d) := by
+    rw [gridMatrix, Matrix.det_fin_two_of]
+    ring
+  rw [hdet, neg_ne_zero]
+  exact mul_ne_zero two_ne_zero hsqrt
 
-private theorem totalDegree_gridL₁_le (d : ℤ) : (gridL₁ d).totalDegree ≤ 1 :=
-  (MvPolynomial.totalDegree_add _ _).trans
-    (max_le (by simp) ((MvPolynomial.totalDegree_mul _ _).trans (by simp)))
+private theorem toLinProd_gridMatrix_natCast (d : ℤ) (nx ny : ℕ) :
+    Matrix.toLinProd (gridMatrix d) ((nx : ℂ), (ny : ℂ)) =
+      ((nx : ℂ) + (ny : ℂ) * Complex.sqrt d, (nx : ℂ) - (ny : ℂ) * Complex.sqrt d) := by
+  simp only [Matrix.toLinProd_apply, gridMatrix, Matrix.of_apply, Matrix.cons_val',
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one,
+    Prod.mk.injEq]
+  constructor <;> ring
 
-private theorem totalDegree_gridL₂_le (d : ℤ) : (gridL₂ d).totalDegree ≤ 1 :=
-  (MvPolynomial.totalDegree_sub _ _).trans
-    (max_le (by simp) ((MvPolynomial.totalDegree_mul _ _).trans (by simp)))
-
-private theorem aevalAeval_grid_injective {d : ℤ} (hd0 : d ≠ 0) :
-    Function.Injective
-      (aevalAeval (gridL₂ d) (gridL₁ d) : ℂ[X][X] →ₐ[ℂ] MvPolynomial (Fin 2) ℂ) := by
-  have hsqrt : Complex.sqrt (d : ℂ) ≠ 0 := Complex.sqrt_intCast_ne_zero hd0
-  have hdet : (1 : ℂ) * Complex.sqrt d - (-Complex.sqrt d) * 1 = 2 * Complex.sqrt d := by ring
-  simpa [gridL₁, gridL₂, sub_eq_add_neg] using aevalAeval_linear_injective
-    (IsUnit.mk0 ((1 : ℂ) * Complex.sqrt d - (-Complex.sqrt d) * 1)
-      (by rw [hdet]; exact mul_ne_zero two_ne_zero hsqrt))
-
-private theorem eval_gridL₁_natCast (d : ℤ) (nx ny : ℕ) :
-    MvPolynomial.eval ![(nx : ℂ), (ny : ℂ)] (gridL₁ d) = (nx : ℂ) + (ny : ℂ) * Complex.sqrt d := by
-  simp [gridL₁, mul_comm]
-
-private theorem eval_gridL₂_natCast (d : ℤ) (nx ny : ℕ) :
-    MvPolynomial.eval ![(nx : ℂ), (ny : ℂ)] (gridL₂ d) = (nx : ℂ) - (ny : ℂ) * Complex.sqrt d := by
-  simp [gridL₂, mul_comm]
-
-private theorem gridL₂_injOn_gridFinset {d : ℤ} (hd : ¬ IsSquare d) (N : ℕ)
-    {x₁ y₁ x₂ y₂ : ℂ} (hx₁ : x₁ ∈ gridFinset N) (hy₁ : y₁ ∈ gridFinset N)
-    (hx₂ : x₂ ∈ gridFinset N) (hy₂ : y₂ ∈ gridFinset N)
-    (heq : MvPolynomial.eval ![x₁, y₁] (gridL₂ d) = MvPolynomial.eval ![x₂, y₂] (gridL₂ d)) :
-    x₁ = x₂ ∧ y₁ = y₂ := by
-  rcases Finset.mem_image.mp hx₁ with ⟨nx₁, -, rfl⟩
-  rcases Finset.mem_image.mp hy₁ with ⟨ny₁, -, rfl⟩
-  rcases Finset.mem_image.mp hx₂ with ⟨nx₂, -, rfl⟩
-  rcases Finset.mem_image.mp hy₂ with ⟨ny₂, -, rfl⟩
+private theorem gridMatrix_snd_injOn {d : ℤ} (hd : ¬ IsSquare d) (N : ℕ) :
+    Set.InjOn (Prod.snd ∘ Matrix.toLinProd (gridMatrix d))
+      (gridFinset N ×ˢ gridFinset N : Finset (ℂ × ℂ)) := by
+  rintro ⟨x₁, y₁⟩ h₁ ⟨x₂, y₂⟩ h₂ heq
+  rw [Finset.coe_product, Set.mem_prod] at h₁ h₂
+  rcases Finset.mem_image.mp h₁.1 with ⟨nx₁, -, rfl⟩
+  rcases Finset.mem_image.mp h₁.2 with ⟨ny₁, -, rfl⟩
+  rcases Finset.mem_image.mp h₂.1 with ⟨nx₂, -, rfl⟩
+  rcases Finset.mem_image.mp h₂.2 with ⟨ny₂, -, rfl⟩
+  rw [Function.comp_apply, Function.comp_apply, toLinProd_gridMatrix_natCast,
+    toLinProd_gridMatrix_natCast] at heq
   have hemb : Zsqrtd.embPos d ⟨nx₁, -(ny₁ : ℤ)⟩ = Zsqrtd.embPos d ⟨nx₂, -(ny₂ : ℤ)⟩ := by
-    simpa [eval_gridL₂_natCast, sub_eq_add_neg, Zsqrtd.embPos_apply] using heq
+    simpa [sub_eq_add_neg, Zsqrtd.embPos_apply] using heq
   obtain ⟨hre, him⟩ := Zsqrtd.ext_iff.mp (Zsqrtd.embPos_injective hd hemb)
   dsimp at hre him
+  rw [Prod.mk.injEq]
   exact ⟨by exact_mod_cast (by omega : nx₁ = nx₂), by exact_mod_cast (by omega : ny₁ = ny₂)⟩
 
 /-- **Fact 1: Linear independence of the jet vectors**, hence `1 ≤ G.det`. -/
@@ -245,26 +238,23 @@ private theorem linearIndependent_baseVec {d : ℤ} (hd : Squarefree d) (hd1 : d
   rw [Fintype.linearIndependent_iff]
   intro c hc
   set F := relationPoly c
-  have hF_deg : F.natDegree ≤ R - 1 := natDegree_relationPoly_le c
-  have hF_swap : (Bivariate.swap F).natDegree ≤ S - 1 := natDegree_swap_relationPoly_le c
-  have hmult (x : ℂ) (hx : x ∈ gridFinset N) (y : ℂ) (hy : y ∈ gridFinset N) :
-      (X - C (MvPolynomial.eval ![x, y] (gridL₁ d))) ^ (gridFinset N).card ∣
-        F.map (evalRingHom (MvPolynomial.eval ![x, y] (gridL₂ d))) := by
+  have hvan : ∀ q ∈ gridFinset N ×ˢ gridFinset N,
+      (X - C (Matrix.toLinProd (gridMatrix d) q).1) ^ N ∣
+        F.map (evalRingHom (Matrix.toLinProd (gridMatrix d) q).2) := by
+    rintro ⟨x, y⟩ hq
+    obtain ⟨hx, hy⟩ := Finset.mem_product.mp hq
     rcases Finset.mem_image.mp hx with ⟨nx, hnx, rfl⟩
     rcases Finset.mem_image.mp hy with ⟨ny, hny, rfl⟩
-    rw [card_gridFinset, eval_gridL₁_natCast, eval_gridL₂_natCast]
+    rw [toLinProd_gridMatrix_natCast]
     exact dvd_map_evalRingHom_relationPoly hd.ne_zero hc (Finset.mem_range.mp hnx)
       (Finset.mem_range.mp hny)
-  have hdeg_lt : (gridFinset N).card * (F.natDegree + (Bivariate.swap F).natDegree) +
-      2 * F.natDegree * (Bivariate.swap F).natDegree < (gridFinset N).card ^ 3 := by
-    rw [card_gridFinset]
-    refine lt_of_le_of_lt (add_le_add (Nat.mul_le_mul_left N (add_le_add hF_deg hF_swap))
-      (Nat.mul_le_mul (Nat.mul_le_mul_left 2 hF_deg) hF_swap)) hdeg
-  have hF0 : F = 0 := eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube (gridFinset N)
-    (totalDegree_gridL₁_le d) (totalDegree_gridL₂_le d) (aevalAeval_grid_injective hd.ne_zero)
-    (fun _ hx₁ _ hy₁ _ hx₂ _ hy₂ ↦ gridL₂_injOn_gridFinset
-      (Int.not_isSquare_of_squarefree_of_ne_one hd hd1) N hx₁ hy₁ hx₂ hy₂)
-    hmult hdeg_lt
+  have hlt : (gridFinset N).card * (R - 1) + max N (gridFinset N).card * (S - 1) +
+      2 * (R - 1) * (S - 1) < N * (gridFinset N).card ^ 2 := by
+    rw [card_gridFinset, max_self]
+    convert hdeg using 1 <;> ring
+  have hF0 : F = 0 := eq_zero_of_forall_linearGrid_X_sub_C_pow_dvd (natDegree_relationPoly_le c)
+    (natDegree_coeff_relationPoly_le c) (det_gridMatrix_ne_zero hd.ne_zero)
+    (gridMatrix_snd_injOn (Int.not_isSquare_of_squarefree_of_ne_one hd hd1) N) hvan hlt
   intro i
   have hval : (F.coeff i.1.val).coeff i.2.val = (c i : ℂ) := coeff_coeff_relationPoly c i
   exact Complex.ofReal_eq_zero.mp (hval.symm.trans (by simp [hF0]))
@@ -431,12 +421,6 @@ private def shiftIdx {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S)
      have : shiftExp p S i ≤ S - 1 - i.2.val := min_le_right _ _
      have := i.2.isLt; omega⟩)
 
-private theorem neg_one_pow_add_eq_sub {R : Type*} [Ring R] {m h : ℕ} (hm : m ≤ h) :
-    (-1 : R) ^ (m + h) = (-1 : R) ^ (h - m) := by
-  have hexp : m + h = (h - m) + 2 * m := by omega
-  rw [hexp, pow_add, pow_mul]
-  simp
-
 private theorem shiftPoly_term_eq (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S)
     (m : Fin (shiftExp p S i)) :
     Polynomial.C (Polynomial.X ^ i.2.val : (ℤ√d)[X]) *
@@ -447,7 +431,7 @@ private theorem shiftPoly_term_eq (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : Fin 
             ((shiftExp p S i).choose m.val : (ℤ√d)[X][X]))) =
       ((-1 : ℤ) ^ (shiftExp p S i - m.val) * (shiftExp p S i).choose m.val) •
         basePoly d (shiftIdx hp i m) := by
-  rw [neg_one_pow_add_eq_sub m.isLt.le]
+  rw [TauCeti.neg_one_pow_add_eq_sub (α := (ℤ√d)[X][X]) m.isLt.le]
   simp only [basePoly, shiftIdx, pow_add, C_mul, pow_mul, ← C_pow, zsmul_eq_mul]
   push_cast
   ring
@@ -468,7 +452,8 @@ private theorem shiftPoly_eq_add_sum (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : F
           (C (X : (ℤ√d)[X])) ^ (shiftExp p S i - m) *
           ((shiftExp p S i).choose m : (ℤ√d)[X][X])) +
         (X ^ p) ^ shiftExp p S i := by
-    rw [sub_pow, Finset.sum_range_succ, neg_one_pow_add_eq_sub le_rfl]
+    rw [sub_pow, Finset.sum_range_succ,
+      TauCeti.neg_one_pow_add_eq_sub (α := (ℤ√d)[X][X]) le_rfl]
     simp
   dsimp only [shiftPoly]
   rw [hsub_pow, mul_add, mul_add, htop, add_comm _ (basePoly d i), Finset.mul_sum,

@@ -16,7 +16,8 @@ vector. Setting one coordinate of its argument to `t` adds `σ t` times its valu
 vector to its value with the coordinate zeroed. Hence, over a semiring with left-cancellative
 addition, replacing the coordinate `i` of `v` by the value `f v` of a semilinear functional
 `f : (ι → R) →ₛₗ[τ] R` is injective if `t ↦ τ t * f (Pi.single i 1)` is injective, for a linear
-functional if its coefficient `f (Pi.single i 1)` is right-regular.
+functional if its coefficient `f (Pi.single i 1)` is right-regular. Forgetting the first
+coordinate of `Fin (n + 1) → R` has kernel the first coordinate axis.
 
 ## Main results
 
@@ -29,6 +30,8 @@ functional if its coefficient `f (Pi.single i 1)` is right-regular.
   replacing one coordinate `i` of `v` by the value of a semilinear functional
   `f : (ι → R) →ₛₗ[τ] R` is injective if `t ↦ τ t * f (Pi.single i 1)` is injective; for a linear
   functional, if the coefficient `f (Pi.single i 1)` is right-regular.
+* `LinearMap.ker_funLeft_succ`: forgetting the first coordinate of `Fin (n + 1) → R` has kernel the
+  first coordinate axis `R ∙ Pi.single 0 1`.
 
 These coordinate arguments are adapted from [KLS](https://github.com/human-ai-mathematics/kls-lean),
 commit `65810c73f9dd7945fc646ab484cb19d673f5291d`,
@@ -79,5 +82,20 @@ theorem update_with_apply_injective [IsLeftCancelAdd R] {τ : R →+* R} (f : (�
   have hvw : v i = w i := hf (add_left_cancel hfvw)
   calc v = Function.update (Function.update v i 0) i (v i) := by simp
     _ = w := by simp [hrest, hvw]
+
+/-- **Forgetting the first coordinate has kernel the first coordinate axis.** The restriction
+`v ↦ v ∘ Fin.succ` of `Fin (n + 1) → R` to the last `n` coordinates has kernel
+`R ∙ Pi.single 0 1`. -/
+theorem ker_funLeft_succ {n : ℕ} :
+    ker (funLeft R R (Fin.succ : Fin n → Fin (n + 1))) = R ∙ (Pi.single 0 1 : Fin (n + 1) → R) := by
+  ext x
+  rw [mem_ker, Submodule.mem_span_singleton]
+  refine ⟨fun hx ↦ ⟨x 0, funext fun i ↦ ?_⟩, ?_⟩
+  · cases i using Fin.cases with
+    | zero => simp
+    | succ j => simpa [Fin.succ_ne_zero] using (congrFun hx j).symm
+  · rintro ⟨a, rfl⟩
+    funext j
+    simp [funLeft_apply, Fin.succ_ne_zero]
 
 end LinearMap

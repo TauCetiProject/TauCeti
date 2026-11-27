@@ -11,11 +11,12 @@ public import Mathlib.Algebra.Ring.Parity
 # Parity of exponents of `-1`, of negated elements, and of nonzero elements
 
 This file records the identity `1 - (-x)^{2n+1} = 1 + x^{2n+1}` in a ring, which turns a product
-of factors `1 - (-q)^{2n+1}` into a product of factors `1 + q^{2n+1}`, and three sign cancellations
-for powers of `-1` in a monoid with a distributive negation: an even summand of the exponent can be
-dropped, two equal powers of `-1` cancel (also against a further factor), and
-`(-1)^{m + i} (-1)^m = (-1)^i`. It also records that a power of `-1` moves to the front of a
-product, and that multiplying a sign `±1` by a power of `-1` gives a sign.
+of factors `1 - (-q)^{2n+1}` into a product of factors `1 + q^{2n+1}`, and sign cancellations for
+powers of `-1` in a monoid with a distributive negation: an even summand of the exponent can be
+dropped, two equal powers of `-1` cancel (also against a further factor),
+`(-1)^{m + i} (-1)^m = (-1)^i`, and `(-1)^{m + h} = (-1)^{h - m}` for `m ≤ h`. It also records
+that a power of `-1` moves to the front of a product, and that multiplying a sign `±1` by a power
+of `-1` gives a sign.
 
 Finally, it records that a nonzero even element keeps `2` nonzero: `Even.two_ne_zero_of_ne_zero`.
 Combined with `Even.intCast`, a hypothesis `(n : R) ≠ 0` on an even integer `n` yields
@@ -53,6 +54,11 @@ theorem neg_one_pow_mul_neg_one_pow (a : ℕ) : (-1 : α) ^ a * (-1) ^ a = 1 := 
 /-- Multiplying `(-1)^{m + i}` by `(-1)^m` leaves `(-1)^i`. -/
 theorem neg_one_pow_add_mul_neg_one_pow (m i : ℕ) : (-1 : α) ^ (m + i) * (-1) ^ m = (-1) ^ i := by
   rw [add_comm, pow_add, mul_assoc, ← pow_add, ← two_mul, (even_two_mul m).neg_one_pow, mul_one]
+
+/-- When `m ≤ h`, the signs `(-1)^{m + h}` and `(-1)^{h - m}` agree, since the exponents differ
+by `2 * m`. -/
+theorem neg_one_pow_add_eq_sub {m h : ℕ} (hm : m ≤ h) : (-1 : α) ^ (m + h) = (-1) ^ (h - m) := by
+  rw [show m + h = (h - m) + 2 * m by omega, neg_one_pow_add_two_mul]
 
 /-- A power of `-1` moves to the front past any element:
 `z * ((-1)^n * w) = (-1)^n * (z * w)`. -/

@@ -18,9 +18,9 @@ Hausdorff extended distance (`TopologicalSpace.Closeds.edist_eq`). This file com
 in this distance with the local notion of Kuratowski convergence, `TauCeti.IsKuratowskiLimit`.
 
 * If closed sets `F i` converge to `Z` in the Hausdorff distance, then `F i` converges to `Z` in
-  the sense of Kuratowski (`Filter.Tendsto.isKuratowskiLimit`); in a metric space, every point of
-  `Z` is eventually arbitrarily close to a point of `F i`
-  (`Filter.Tendsto.eventually_exists_dist_lt`).
+  the sense of Kuratowski (`Filter.Tendsto.isKuratowskiLimit`). For Kuratowski limits in a
+  pseudometric space, every point of `Z` is eventually arbitrarily close to a point of `F i`
+  (`TauCeti.IsKuratowskiLimit.eventually_exists_dist_lt`).
 * When `X` is compact the converse holds, so the two notions of convergence of closed sets agree
   (`TauCeti.isKuratowskiLimit_iff_tendsto`). On a noncompact space Kuratowski convergence is
   weaker: the sets `{n}` of `ℝ` converge to `∅` in the sense of Kuratowski but stay at Hausdorff
@@ -32,6 +32,9 @@ in this distance with the local notion of Kuratowski convergence, `TauCeti.IsKur
 This is how convergence of a sequence of zero sets is used: on a compact set away from the limit,
 the sets of the sequence eventually keep a fixed distance, so estimates that hold at a definite
 distance from the zeros apply uniformly there.
+
+The extended distance on `TopologicalSpace.NonemptyCompacts X` is likewise the Hausdorff extended
+distance (`TopologicalSpace.NonemptyCompacts.edist_eq`).
 -/
 
 public section
@@ -81,15 +84,13 @@ theorem TauCeti.isKuratowskiLimit_iff_tendsto [CompactSpace X] {F : ι → Close
 
 end EMetricSpace
 
-/-- If closed sets `F i` converge to `Z` in the Hausdorff distance, then every point of `Z` is
+/-- If the sets `F i` converge to `Z` in the sense of Kuratowski, then every point of `Z` is
 eventually within any prescribed positive distance of a point of `F i`. -/
-theorem Filter.Tendsto.eventually_exists_dist_lt {X : Type*} [MetricSpace X] {F : ι → Closeds X}
-    {Z : Closeds X} (hF : Tendsto F l (𝓝 Z)) {x : X} (hx : x ∈ Z) {ε : ℝ}
-    (hε : 0 < ε) : ∀ᶠ i in l, ∃ y ∈ F i, dist x y < ε := by
-  filter_upwards [EMetric.tendsto_nhds.1 hF (ENNReal.ofReal ε) (by simpa using hε)] with i hi
-  rw [edist_comm, Closeds.edist_eq] at hi
-  obtain ⟨y, hy, hxy⟩ := exists_edist_lt_of_hausdorffEDist_lt hx hi
-  exact ⟨y, hy, by rwa [edist_dist, ENNReal.ofReal_lt_ofReal_iff hε] at hxy⟩
+theorem TauCeti.IsKuratowskiLimit.eventually_exists_dist_lt {Y : Type*} [PseudoMetricSpace Y]
+    {F : ι → Set Y} {Z : Set Y} (hF : TauCeti.IsKuratowskiLimit l F Z) {x : Y} (hx : x ∈ Z)
+    {ε : ℝ} (hε : 0 < ε) : ∀ᶠ i in l, ∃ y ∈ F i, dist y x < ε :=
+  (hF.eventually_inter_nonempty x hx _ (ball_mem_nhds x hε)).mono fun _ ⟨y, hy, hyx⟩ ↦
+    ⟨y, hy, mem_ball.1 hyx⟩
 
 /-- **Compact separation from a Kuratowski limit in a metric space.** If the sets `F i` converge to
 `Z` in the sense of Kuratowski and the compact set `K` is disjoint from `Z`, there is `δ > 0` such
@@ -104,3 +105,13 @@ theorem IsCompact.exists_pos_eventually_le_dist_of_isKuratowskiLimit {Y : Type*}
   refine ⟨δ, hδ, hFU.mono fun i hi x hx y hy ↦ ?_⟩
   by_contra! hxy
   exact Set.disjoint_left.1 hi hy (hVU (hδK (mem_thickening_iff.2 ⟨x, hx, by rwa [dist_comm]⟩)))
+
+namespace TopologicalSpace.NonemptyCompacts
+
+/-- The extended distance on `NonemptyCompacts α` is the Hausdorff extended distance, by
+construction of its emetric space instance. -/
+theorem edist_eq {α : Type*} [EMetricSpace α] {s t : NonemptyCompacts α} :
+    edist s t = hausdorffEDist (s : Set α) t :=
+  rfl
+
+end TopologicalSpace.NonemptyCompacts

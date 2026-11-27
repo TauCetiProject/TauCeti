@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Ideal.Operations
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Determinants with entries in row ideals
@@ -45,6 +46,8 @@ column `j` from some `G (f j)` has determinant in `P`.
   divisor of the determinant, and a common divisor `r` of all entries gives `r ^ card n ∣ det A`.
 * `Matrix.det_submatrix_mem_prod_row_ideals` and its companions: the membership and
   divisibility statements for every full-row minor of a rectangular matrix.
+* `Matrix.dvd_det_of_forall_row_mem_span`: if every row of a square matrix `N` lies in the row span
+  of `M`, any common divisor of the full-column minors of `M` divides `N.det`.
 * `Matrix.det_sum_smul_mem_of_forall_det_mem`: the determinant of `∑ i, s i • G i` lies in an
   ideal `P` whenever every column-selection matrix `of fun r j ↦ G (f j) r j` has determinant in
   `P`.
@@ -53,6 +56,9 @@ column `j` from some `G (f j)` has determinant in `P`.
 
 * S. Treil, *Linear Algebra Done Wrong*, Chapter 3, formula (4.2): every term of the expansion
   contains exactly one entry from each row and each column.
+* The row-span determinant divisibility theorem is adapted from `grh-lean`,
+  `src/Lib/General/Algebra/SharpMinors.lean`
+  (Copyright 2026 Anthropic, PBC, Apache 2.0).
 -/
 
 public section
@@ -178,5 +184,21 @@ theorem det_sum_smul_mem_of_forall_det_mem {ι : Type*} [Fintype ι] {P : Ideal 
   refine P.smul_mem _ ?_
   have h_mem := hcol f
   rwa [← det_transpose] at h_mem
+
+/-- If every row of a square matrix `N` lies in the row span of a matrix `M`, then any common
+divisor `x` of the full-column minors `(M.submatrix f id).det` divides `N.det`. -/
+theorem dvd_det_of_forall_row_mem_span {M : Matrix n m R} {N : Matrix m m R} {x : R}
+    (h_minor : ∀ f : m → n, x ∣ (M.submatrix f id).det)
+    (h_row : ∀ i : m, N.row i ∈ Submodule.span R (Set.range M.row)) : x ∣ N.det := by
+  rw [← Ideal.mem_span_singleton]
+  have h := TauCeti.det_mem_of_mem_span (I := Ideal.span {x})
+    (fun j : m ↦ LinearMap.proj (R := R) j) h_row fun w hw ↦ by
+      choose f hf using hw
+      have hM : (Matrix.of fun i j ↦ w i j) = M.submatrix f id := by
+        ext i j
+        exact congrFun (hf i).symm j
+      simpa [hM, Ideal.mem_span_singleton] using h_minor f
+  have hN : (Matrix.of fun i j ↦ N i j) = N := by ext i j; simp
+  simpa [hN] using h
 
 end Matrix

@@ -142,7 +142,7 @@ variable {r}
 /-- Coordinate recovery for the second coordinate, for `r ≠ 0`: `v = (σ₊ z - σ₋ z) / (2 s)`. -/
 theorem im_eq_sqrtEmbedding_sub_negSqrtEmbedding (hr : r ≠ 0) (z : QuadraticAlgebra ℚ r 0) :
     (z.im : ℂ) = (sqrtEmbedding r z - negSqrtEmbedding r z) / (2 * Complex.sqrt (r : ℂ)) := by
-  have hs : Complex.sqrt (r : ℂ) ≠ 0 := Complex.sqrt_ratCast_ne_zero hr
+  have hs : Complex.sqrt (r : ℂ) ≠ 0 := by simpa using hr
   rw [eq_div_iff (mul_ne_zero two_ne_zero hs), sqrtEmbedding_apply, negSqrtEmbedding_apply]
   ring
 
@@ -237,7 +237,8 @@ theorem sqrtEmbedding_ne_negSqrtEmbedding (hr : r ≠ 0) :
   intro h
   have h0 : Complex.sqrt (r : ℂ) = -Complex.sqrt (r : ℂ) := by
     simpa using AlgHom.congr_fun h ω
-  exact Complex.sqrt_ratCast_ne_zero hr (CharZero.eq_neg_self_iff.mp h0)
+  have hs : Complex.sqrt (r : ℂ) ≠ 0 := by simpa using hr
+  exact hs (CharZero.eq_neg_self_iff.mp h0)
 
 /-! ### Comparison with complex conjugation and the distinguished algebra map -/
 

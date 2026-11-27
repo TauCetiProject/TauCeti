@@ -66,8 +66,8 @@ theorem embPos_apply (d : ℤ) (u : ℤ√d) :
 
 /-- Value of `Zsqrtd.embNeg d` on an element `u : ℤ√d`. -/
 theorem embNeg_apply (d : ℤ) (u : ℤ√d) :
-    embNeg d u = (u.re : ℂ) + (u.im : ℂ) * (-Complex.sqrt d) := by
-  rw [embNeg, Zsqrtd.lift_apply_apply]
+    embNeg d u = (u.re : ℂ) - (u.im : ℂ) * Complex.sqrt d := by
+  rw [embNeg, Zsqrtd.lift_apply_apply, mul_neg, ← sub_eq_add_neg]
 
 /-- `Zsqrtd.embPos d` sends the generator `Zsqrtd.sqrtd` to `Complex.sqrt d`. -/
 @[simp]
@@ -137,7 +137,7 @@ theorem embNeg_eq_negSqrtEmbedding (d : ℤ) (u : ℤ√d) :
           (equivQuadraticAlgebra d u)) := by
   rw [embNeg_apply, QuadraticAlgebra.negSqrtEmbedding_apply,
     re_algebraMap_equivQuadraticAlgebra, im_algebraMap_equivQuadraticAlgebra]
-  simp only [Rat.cast_intCast, sub_eq_add_neg, mul_neg]
+  simp only [Rat.cast_intCast]
 
 /-- Coordinate norm bound for `Zsqrtd.embPos`, transported from
 `QuadraticAlgebra.norm_embedding_algebraMap_le`. -/
@@ -165,7 +165,7 @@ theorem two_mul_re_sq_add_im_sq_eq (d : ℤ) (u : ℤ√d) :
   have hpar := parallelogram_law_with_norm ℂ (u.re : ℂ) ((u.im : ℂ) * Complex.sqrt d)
   have hsq : ‖Complex.sqrt (d : ℂ)‖ ^ 2 = (d.natAbs : ℝ) := by
     rw [Complex.norm_sqrt_intCast, Real.sq_sqrt (Nat.cast_nonneg _)]
-  rw [embPos_apply, embNeg_apply, mul_neg, ← sub_eq_add_neg, hpar, Complex.norm_intCast,
+  rw [embPos_apply, embNeg_apply, hpar, Complex.norm_intCast,
     Complex.norm_mul, Complex.norm_intCast, mul_pow, sq_abs, sq_abs, hsq]
   ring
 
