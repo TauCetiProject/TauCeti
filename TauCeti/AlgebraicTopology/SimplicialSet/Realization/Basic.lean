@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Convex.ConvexSpace.Barycenter
 public import Mathlib.Topology.Category.TopCat.ULift
 public import TauCeti.AlgebraicTopology.SimplicialObject.GeometricRealization.Skeleton
-public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.PiZero
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.ULift
@@ -17,7 +16,7 @@ import Mathlib.CategoryTheory.Adjunction.FullyFaithful
 import TauCeti.CategoryTheory.Functor.KanExtension.Dense
 
 /-!
-# Open cells, faithfulness, discrete spaces, and universe lift of geometric realization
+# Open cells, faithfulness, and universe lift of geometric realization
 
 Every point of the geometric realization `|X|` of `X : SSet` has the form `SSet.toTopObjMk x w`
 (`SSet.exists_toTopObjMk`). Comparing `|X|` with the thin geometric realization of
@@ -26,8 +25,8 @@ onto nondegenerate simplices and interior coordinates (`SSet.toTopCellEquiv`).
 Evaluating at any interior point (`SSet.toTopObjMk_injective_of_weights_ne_zero`,
 `SSet.toTopObjMk_barycenter_injective`) shows that `sSetTopAdj.unit.app X` is a monomorphism,
 `SSet.toTop` is faithful, and `SSet.toTopPoint` is injective. We also identify realizations of
-constant maps (`SSet.toTop_map_const`), discrete simplicial sets (`SSet.toTopConstIso`), and
-universe lifts (`SSet.toTopUliftNatIso`, `SSet.toTopUliftIso`, `SSet.toTopUliftHomeomorph`).
+constant maps (`SSet.toTop_map_const`) and universe lifts (`SSet.toTopUliftNatIso`,
+`SSet.toTopUliftIso`, `SSet.toTopUliftHomeomorph`).
 
 ## References
 
@@ -86,47 +85,6 @@ coordinates along `stdSimplex.objEquiv x`. -/
       TopCat.const_apply]
 
 end Points
-
-section Discrete
-
-private noncomputable def toTopConstInv (S : Type u) :
-    TopCat.discrete.obj S ⟶ |(Functor.const SimplexCategoryᵒᵖ).obj S| :=
-  TopCat.ofHom (X := TopCat.discrete.obj S)
-    ⟨fun s ↦ toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s, continuous_bot⟩
-
-private lemma toTopConstInv_apply (S : Type u) (s : S) :
-    toTopConstInv S s = toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s := (rfl)
-
-/-- Every point `toTopObjMk s w` in the realization of the constant simplicial set on `S` collapses
-to the vertex `toTopPoint s`. -/
-@[simp] lemma toTopObjMk_const (S : Type u) {n : ℕ} (s : S) (w : StdSimplex ℝ (Fin (n + 1))) :
-    toTopObjMk (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s w =
-      toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s := by
-  have hs : s = ((Functor.const SimplexCategoryᵒᵖ).obj S).map
-      (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op s := by simp
-  conv_lhs => rw [hs]
-  rw [toTopObjMk_map, toTopObjMk_zero]
-
-/-- The geometric realization of the constant simplicial set on `S` is isomorphic in `TopCat` to
-the discrete topological space on `S`. -/
-noncomputable def toTopConstIso (S : Type u) :
-    |(Functor.const SimplexCategoryᵒᵖ).obj S| ≅ TopCat.discrete.obj S where
-  hom := toTopConstHom S
-  inv := toTopConstInv S
-  hom_inv_id := toTop_hom_ext fun _ _ _ ↦ by
-    simp only [ConcreteCategory.comp_apply, TopCat.id_app, toTopObjMk_const,
-      toTopConstHom_toTopPoint, toTopConstInv_apply]
-  inv_hom_id := by ext s; exact toTopConstHom_toTopPoint S s
-
-@[simp] lemma toTopConstIso_inv_apply (S : Type u) (s : S) :
-    (toTopConstIso S).inv s = toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s :=
-  toTopConstInv_apply S s
-
-@[simp] lemma toTopConstIso_hom_toTopPoint (S : Type u) (s : S) :
-    (toTopConstIso S).hom (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s :=
-  toTopConstHom_toTopPoint S s
-
-end Discrete
 
 section Cells
 

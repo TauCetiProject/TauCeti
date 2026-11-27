@@ -374,21 +374,6 @@ theorem _root_.CategoryTheory.nerveEquiv_symm_eq_const (X : C) :
     (F.mapComposableArrows 0).obj (nerveEquiv.symm X) = nerveEquiv.symm (F.obj X) := by
   rw [nerveEquiv_symm_eq_mk₀, Functor.mapComposableArrows_obj_mk₀, ← nerveEquiv_symm_eq_mk₀]
 
-@[simp] theorem representableBy_homEquiv_const_zero {n : ℕ} {α : Type u} [Preorder α]
-    (e : α ≃o Fin (n + 1)) (i : Fin (n + 1)) :
-    (representableBy α e).homEquiv (SimplexCategory.const ⦋0⦌ ⦋n⦌ i) =
-      objEquiv.symm (nerveEquiv.symm (e.symm i)) :=
-  objEquiv.injective <| ComposableArrows.ext (fun j ↦ by fin_cases j; rfl)
-    (fun _ _ ↦ Subsingleton.elim _ _)
-
-@[simp] theorem representableBy_homEquiv_obj {m n : ℕ} {α : Type u} [Preorder α]
-    (e : α ≃o Fin (n + 1)) (θ : ⦋m⦌ ⟶ ⦋n⦌) (i : Fin (m + 1)) :
-    (objEquiv ((representableBy α e).homEquiv θ)).obj i = e.symm (θ.toOrderHom i) := by
-  -- Unfolds `nerve.representableBy`, `SimplexCategory.homEquivFunctor`, and `homEquivOrderHom`.
-  rw [objEquiv_eq]
-  dsimp [representableBy, SimplexCategory.homEquivFunctor, SimplexCategory.homEquivOrderHom]
-  rfl
-
 /-- The nerve of any discrete category `C` (`[IsDiscrete C]`) is isomorphic to the constant
 simplicial set on `ULift.{v} C`. -/
 def isDiscreteIso (C : Type u) [Category.{v} C] [IsDiscrete C] :

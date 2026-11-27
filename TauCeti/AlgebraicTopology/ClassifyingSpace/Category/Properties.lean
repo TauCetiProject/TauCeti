@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Category.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.ULift
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
+import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Preorder
 import TauCeti.CategoryTheory.Category.ULift
 
 /-!

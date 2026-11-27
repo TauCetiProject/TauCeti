@@ -32,7 +32,8 @@ Consequently a weak equivalence of simplicial sets, a map whose realization is a
 equivalence, induces a bijection on connected components
 (`SSet.bijective_mapπ₀_of_weakEquivalence`). This is what makes a functor of simplicially
 enriched categories that is a weak equivalence on mapping simplicial sets fully faithful on
-homotopy categories.
+homotopy categories. We also identify the realization of a constant simplicial set with the
+discrete topological space (`SSet.toTopConstIso`).
 
 ## References
 
@@ -104,6 +105,8 @@ lemma bijective_mapπ₀_toSSet_map {T T' : TopCat.{u}} (g : T ⟶ T')
 
 variable (X : SSet.{u})
 
+section Discrete
+
 /-- The continuous map from the realization of the constant simplicial set on `S` to the discrete
 space `TopCat.discrete.obj S`, adjoint to the identification on `0`-simplices. -/
 noncomputable def toTopConstHom (S : Type u) :
@@ -121,6 +124,46 @@ lemma toTopConstHom_toTopPoint (S : Type u) (s : S) :
   rw [constHomEquiv_symm_app_zero] at h
   rw [toTopPoint, ← TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
   exact (TopCat.toSSetObj₀Equiv.symm_apply_eq.1 h).symm
+
+private noncomputable def toTopConstInv (S : Type u) :
+    TopCat.discrete.obj S ⟶ |(Functor.const SimplexCategoryᵒᵖ).obj S| :=
+  TopCat.ofHom (X := TopCat.discrete.obj S)
+    ⟨fun s ↦ toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s, continuous_bot⟩
+
+private lemma toTopConstInv_apply (S : Type u) (s : S) :
+    toTopConstInv S s = toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s := (rfl)
+
+/-- Every point `toTopObjMk s w` in the realization of the constant simplicial set on `S` collapses
+to the vertex `toTopPoint s`. -/
+@[simp] lemma toTopObjMk_const (S : Type u) {n : ℕ} (s : S)
+    (w : Convexity.StdSimplex ℝ (Fin (n + 1))) :
+    toTopObjMk (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s w =
+      toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s := by
+  have hs : s = ((Functor.const SimplexCategoryᵒᵖ).obj S).map
+      (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op s := by simp
+  conv_lhs => rw [hs]
+  rw [toTopObjMk_map, ← toTopPoint_eq_toTopObjMk]
+
+/-- The geometric realization of the constant simplicial set on `S` is isomorphic in `TopCat` to
+the discrete topological space on `S`. -/
+noncomputable def toTopConstIso (S : Type u) :
+    |(Functor.const SimplexCategoryᵒᵖ).obj S| ≅ TopCat.discrete.obj S where
+  hom := toTopConstHom S
+  inv := toTopConstInv S
+  hom_inv_id := toTop_hom_ext fun _ _ _ ↦ by
+    simp only [ConcreteCategory.comp_apply, TopCat.id_app, toTopObjMk_const,
+      toTopConstHom_toTopPoint, toTopConstInv_apply]
+  inv_hom_id := by ext s; exact toTopConstHom_toTopPoint S s
+
+@[simp] lemma toTopConstIso_inv_apply (S : Type u) (s : S) :
+    (toTopConstIso S).inv s = toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s :=
+  toTopConstInv_apply S s
+
+@[simp] lemma toTopConstIso_hom_toTopPoint (S : Type u) (s : S) :
+    (toTopConstIso S).hom (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s :=
+  toTopConstHom_toTopPoint S s
+
+end Discrete
 
 /-- The continuous map from `|X|` to the discrete space `π₀ X` adjoint to the map from `X` to the
 discrete simplicial set on `π₀ X`. -/
