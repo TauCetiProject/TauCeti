@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.Commute
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -85,13 +86,10 @@ theorem commute_of_smul_eq_self {v : Fin 2 → R} (hv : v ≠ 0) {A B : SL(2, R)
     eq_zero_of_mul_eq_zero_of_ne_zero hv
       (by linear_combination A 0 1 * (hB1 - v 1 * tB) - B 0 1 * (hA1 - v 1 * tA) - v 1 * hE1)
       (by linear_combination B 1 0 * hA0 - A 1 0 * hB0 + v 0 * hE2)
-  refine Subtype.ext (Matrix.ext fun i j => ?_)
-  fin_cases i <;> fin_cases j <;>
-    simp only [coe_mul, Matrix.mul_apply, Fin.sum_univ_two, Fin.zero_eta, Fin.mk_one]
+  refine Subtype.ext (TauCeti.commute_fin_two_iff_entries.2 ⟨?_, ?_, ?_⟩).eq
   · linear_combination hE3
-  · linear_combination 2 * hE1 + A 0 1 * tB - B 0 1 * tA
+  · linear_combination -2 * hE1 - A 0 1 * tB + B 0 1 * tA
   · linear_combination 2 * hE2 - A 1 0 * tB + B 1 0 * tA
-  · linear_combination -hE3
 
 /-- The stabilizer of a nonzero vector in `SL(2, R)` is commutative. -/
 theorem isMulCommutative_stabilizer {v : Fin 2 → R} (hv : v ≠ 0) :

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.VonNeumannAlgebra.Group.Factor
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.SemidirectProduct
+public import TauCeti.GroupTheory.SemidirectProduct.SpecialLinear
 
 /-!
 # The group von Neumann algebra of `ℤ² ⋊ G` is a factor
@@ -22,8 +22,8 @@ Neumann algebra `L(ℤ² ⋊ G)` is a factor. This applies to every finite-index
 
 * `TauCeti.isFactor_groupVonNeumannAlgebra_semidirectProduct_of_not_amenable`: `L(ℤ² ⋊ G)` is a
   factor for nonamenable `G` embedded in `SL(2, ℤ)`.
-* `Subgroup.isFactor_groupVonNeumannAlgebra_semidirectProduct_of_finiteIndex`: `L(ℤ² ⋊ G)` is a
-  factor for every finite-index subgroup `G ≤ SL(2, ℤ)`.
+* `Subgroup.isFactor_groupVonNeumannAlgebra_semidirectProduct_slTwo_of_finiteIndex`:
+  `L(ℤ² ⋊ G)` is a factor for every finite-index subgroup `G ≤ SL(2, ℤ)`.
 
 ## References
 
@@ -57,7 +57,7 @@ open TauCeti
 
 /-- For a finite-index subgroup `G ≤ SL(2, ℤ)`, the group von Neumann algebra of `ℤ² ⋊ G` is a
 factor. -/
-theorem isFactor_groupVonNeumannAlgebra_semidirectProduct_of_finiteIndex
+theorem isFactor_groupVonNeumannAlgebra_semidirectProduct_slTwo_of_finiteIndex
     (G : Subgroup SL(2, ℤ)) [G.FiniteIndex]
     [MeasurableSpace (Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp G.subtype] G)]
     [MeasurableMul (Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp G.subtype] G)]
@@ -65,6 +65,6 @@ theorem isFactor_groupVonNeumannAlgebra_semidirectProduct_of_finiteIndex
     (groupVonNeumannAlgebra
       (Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp G.subtype] G)).IsFactor :=
   (isFactor_groupVonNeumannAlgebra_iff _).2 fun _ =>
-    G.infinite_setOf_isConj_semidirectProduct_of_finiteIndex
+    G.infinite_setOf_isConj_semidirectProduct_slTwo_of_finiteIndex
 
 end Subgroup
