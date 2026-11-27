@@ -170,6 +170,15 @@ theorem _root_.Subgroup.isPreconnected_ambientConnectedComponentOfOne (H : Subgr
   rw [Subgroup.coe_ambientConnectedComponentOfOne]
   exact isPreconnected_connectedComponentIn
 
+/-- A continuous map from a preconnected space whose range lies in a subgroup and meets `1`
+has range in the subgroup's identity component. -/
+theorem _root_.Subgroup.range_subset_ambientConnectedComponentOfOne (H : Subgroup G)
+    {X : Type*} [TopologicalSpace X] [PreconnectedSpace X] {f : X → G} (hf : Continuous f)
+    (hone : 1 ∈ range f) (hsub : range f ⊆ H) :
+    range f ⊆ H.ambientConnectedComponentOfOne := by
+  rw [Subgroup.coe_ambientConnectedComponentOfOne]
+  exact (isPreconnected_range hf).subset_connectedComponentIn hone hsub
+
 /-- The identity component of a closed subgroup is closed. -/
 theorem _root_.Subgroup.isClosed_ambientConnectedComponentOfOne {H : Subgroup G}
     (hH : IsClosed (H : Set G)) : IsClosed (H.ambientConnectedComponentOfOne : Set G) := by

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 public import TauCeti.Geometry.Lie.Exponential.Smoothness
 public import TauCeti.Geometry.Lie.Exponential.Trotter
 public import Mathlib.Topology.Connected.TotallyDisconnected
+public import TauCeti.Topology.Algebra.Group.Connected
 -- Non-public: the slope characterisation of a derivative and the module description of a slope
 -- are used only inside proofs, and no statement below mentions `slope`.
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -465,6 +466,22 @@ theorem isClosed_lieSubalgebraOfSubgroup {K : Subgroup G} (hK : IsClosed (K : Se
 theorem lieSubalgebraOfSubgroup_mono {K K' : Subgroup G} (h : K ≤ K') :
     lieSubalgebraOfSubgroup (I := I) K ≤ lieSubalgebraOfSubgroup (I := I) K' :=
   LieSubalgebra.lieSpan_mono fun _ hX t => h (hX t)
+
+/-- A subgroup and its identity component have the same Lie subalgebra, since each
+one-parameter subgroup in it lies in its identity component. -/
+theorem lieSubalgebraOfSubgroup_ambientConnectedComponentOfOne (K : Subgroup G) :
+    let _ := topologicalGroup_of_lieGroup I ∞ (G := G)
+    lieSubalgebraOfSubgroup (I := I) K.ambientConnectedComponentOfOne =
+      lieSubalgebraOfSubgroup (I := I) K := by
+  let _ := topologicalGroup_of_lieGroup I ∞ (G := G)
+  refine le_antisymm (lieSubalgebraOfSubgroup_mono K.ambientConnectedComponentOfOne_le) ?_
+  refine lieSubalgebraOfSubgroup_le_iff.mpr fun X hX ↦
+    mem_lieSubalgebraOfSubgroup_of_forall fun t ↦ ?_
+  let f : ℝ → G := fun s ↦ lieExp (I := I) (s • X)
+  have hf : Continuous f := contMDiff_lieExp.continuous.comp (continuous_id.smul continuous_const)
+  have hone : 1 ∈ Set.range f := ⟨0, by simp [f]⟩
+  exact K.range_subset_ambientConnectedComponentOfOne hf hone (Set.range_subset_iff.mpr hX)
+    ⟨t, rfl⟩
 
 /-- **The Lie algebra of an intersection is the intersection of the Lie algebras.** For closed
 subgroups both sides say that the one-parameter subgroup of `X` lies in each factor, so the
