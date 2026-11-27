@@ -15,8 +15,9 @@ public import TauCeti.Analysis.SpecialFunctions.Gaussian.Mellin
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
-import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Moments
+import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.NumberTheory.LSeries.Dilation
 
 /-!
@@ -28,6 +29,10 @@ square root of the scale to form the normalized theta series. A single geometric
 gives absolute convergence and the bound `3 * exp (-u) / √u` for positive scales `u`.
 
 The Mellin transform of the Gaussian weight is evaluated using the Gamma function.
+Both weights are differentiable and tend to zero at positive infinity. Their derivative
+formulas give integrable derivatives on the positive half-line, with the integral of the
+absolute derivative at most `1`. These estimates are used in Abel summation for character
+theta sums.
 
 ## Dirichlet coefficients
 
@@ -58,10 +63,15 @@ namespace TauCeti
 
 section ThetaSeries
 
-open MeasureTheory Real Set
+open Filter MeasureTheory Real Set
+open scoped Topology
 
 /-- The Gaussian weight of parity `j ∈ {0, 1}`. -/
 def gaussianMonomial (j : Fin 2) (x : ℝ) : ℝ := x ^ j.val * exp (-π * x ^ 2)
+
+/-- The Gaussian weight is the Gaussian times the monomial of degree `j`. -/
+theorem gaussianMonomial_def (j : Fin 2) (x : ℝ) :
+    gaussianMonomial j x = x ^ j.val * exp (-π * x ^ 2) := (rfl)
 
 /-- The even Gaussian weight is the Gaussian itself. -/
 @[simp] theorem gaussianMonomial_zero (x : ℝ) : gaussianMonomial 0 x = exp (-π * x ^ 2) := by
@@ -70,6 +80,109 @@ def gaussianMonomial (j : Fin 2) (x : ℝ) : ℝ := x ^ j.val * exp (-π * x ^ 2
 /-- The odd Gaussian weight is the Gaussian multiplied by its argument. -/
 @[simp] theorem gaussianMonomial_one (x : ℝ) : gaussianMonomial 1 x = x * exp (-π * x ^ 2) := by
   simp [gaussianMonomial]
+
+/-- An even Gaussian weight has derivative `-2πx exp(-πx²)`. -/
+theorem hasDerivAt_gaussianMonomial_zero (x : ℝ) :
+    HasDerivAt (gaussianMonomial 0) ((-2 * π * x) * exp (-π * x ^ 2)) x := by
+  rw [funext gaussianMonomial_zero]
+  convert (((hasDerivAt_id x).pow 2).const_mul (-π)).exp using 1
+  · simp [Pi.pow_apply]
+  · simp [Pi.pow_apply]
+    ring
+
+/-- The derivative of the odd Gaussian weight is `(1 - 2πx²) exp(-πx²)`. -/
+theorem hasDerivAt_gaussianMonomial_one (x : ℝ) :
+    HasDerivAt (gaussianMonomial 1) ((1 - 2 * π * x ^ 2) * exp (-π * x ^ 2)) x := by
+  rw [funext gaussianMonomial_one]
+  convert (hasDerivAt_id x).mul (hasDerivAt_gaussianMonomial_zero x) using 1
+  · funext t
+    simp [gaussianMonomial_zero]
+  · simp [gaussianMonomial_zero]
+    ring
+
+/-- Both Gaussian weights tend to zero at positive infinity. -/
+theorem tendsto_gaussianMonomial_atTop_zero (j : Fin 2) :
+    Tendsto (gaussianMonomial j) atTop (𝓝 0) := by
+  have h := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero (j.val / 2) π pi_pos).comp
+    (tendsto_pow_atTop (α := ℝ) (n := 2) (by norm_num))
+  refine h.congr' ?_
+  filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
+  have hp : (x ^ 2) ^ ((j.val : ℝ) / 2) = x ^ j.val := by
+    rw [← Real.rpow_natCast_mul hx, ← Real.rpow_natCast]
+    congr 1
+    push_cast
+    ring
+  rw [Function.comp_apply, hp, gaussianMonomial_def]
+
+private theorem gaussianMonomial_deriv_control : ∀ j : Fin 2,
+    IntegrableOn (deriv (gaussianMonomial j)) (Set.Ioi 0) ∧
+      (∫ x in Set.Ioi 0, ‖deriv (gaussianMonomial j) x‖) ≤ 1 := by
+  have hi (k : ℕ) := (integrableOn_Ioi_pow_mul_exp_neg_mul_sq_iff (b := π) k).2 pi_pos
+  rw [Fin.forall_fin_two]
+  constructor
+  · have h (x : ℝ) : deriv (gaussianMonomial 0) x = -(2 * π) * (x * exp (-π * x ^ 2)) := by
+      rw [(hasDerivAt_gaussianMonomial_zero x).deriv]
+      ring
+    rw [funext h]
+    have h₁ : IntegrableOn (fun x : ℝ ↦ x * exp (-π * x ^ 2)) (Ioi 0) := by
+      simpa only [pow_one] using hi 1
+    refine ⟨h₁.const_mul _, ?_⟩
+    have hnorm : ∀ x ∈ Ioi (0 : ℝ), ‖-(2 * π) * (x * exp (-π * x ^ 2))‖ =
+        (2 * π) * (x * exp (-π * x ^ 2)) := by
+      intro x hx
+      have hπ : 0 ≤ 2 * π := by positivity
+      simp [norm_mul, norm_of_nonneg hπ, norm_of_nonneg (le_of_lt hx)]
+    have hmoment := integral_Ioi_pow_two_mul_add_one_mul_exp_neg_mul_sq pi_pos 0
+    norm_num [← neg_mul] at hmoment
+    rw [setIntegral_congr_fun measurableSet_Ioi hnorm, integral_const_mul, hmoment]
+    field_simp [pi_ne_zero]
+    exact le_rfl
+  · have hd : deriv (gaussianMonomial 1) = fun x ↦ (1 - 2 * π * x ^ 2) * exp (-π * x ^ 2) :=
+      funext fun x ↦ (hasDerivAt_gaussianMonomial_one x).deriv
+    have hmeas : Continuous (deriv (gaussianMonomial 1)) := by
+      rw [hd]
+      fun_prop
+    have hmaj : ∀ᵐ x ∂volume.restrict (Set.Ioi (0 : ℝ)),
+        ‖deriv (gaussianMonomial 1) x‖ ≤
+          exp (-π * x ^ 2) + 2 * π * (x ^ 2 * exp (-π * x ^ 2)) := by
+      refine Eventually.of_forall fun x ↦ ?_
+      rw [(hasDerivAt_gaussianMonomial_one x).deriv, norm_mul, norm_of_nonneg (exp_nonneg _)]
+      calc
+        _ ≤ (1 + 2 * π * x ^ 2) * exp (-π * x ^ 2) := by
+          gcongr
+          have hx : 0 ≤ 2 * π * x ^ 2 := by positivity
+          have h := norm_sub_le (1 : ℝ) (2 * π * x ^ 2)
+          rwa [norm_one, Real.norm_of_nonneg hx] at h
+        _ = _ := by ring
+    have h₀ : IntegrableOn (fun x : ℝ ↦ exp (-π * x ^ 2)) (Set.Ioi 0) := by simpa using hi 0
+    have h₂ := (hi 2).const_mul (2 * π)
+    have hdom := h₀.add h₂
+    have hderiv := hdom.mono' hmeas.aestronglyMeasurable hmaj
+    refine ⟨hderiv, (integral_mono_ae hderiv.norm hdom hmaj).trans_eq ?_⟩
+    simp only [Pi.add_apply]
+    rw [integral_add h₀ h₂, integral_const_mul]
+    have hmoment₀ := integral_Ioi_pow_two_mul_mul_exp_neg_mul_sq π 0
+    have hmoment₂ := integral_Ioi_pow_two_mul_mul_exp_neg_mul_sq π 1
+    norm_num [pi_ne_zero, ← neg_mul] at hmoment₀ hmoment₂
+    rw [hmoment₀, hmoment₂]
+    field_simp [pi_ne_zero]
+    ring
+
+/-- The derivative of either Gaussian weight is integrable on the positive half-line. -/
+theorem integrableOn_deriv_gaussianMonomial (j : Fin 2) :
+    IntegrableOn (deriv (gaussianMonomial j)) (Ioi 0) :=
+  (gaussianMonomial_deriv_control j).1
+
+/-- The integral of the absolute derivative of either Gaussian weight on the positive
+half-line is at most one. -/
+theorem integral_norm_deriv_gaussianMonomial_le (j : Fin 2) :
+    (∫ x in Ioi 0, ‖deriv (gaussianMonomial j) x‖) ≤ 1 :=
+  (gaussianMonomial_deriv_control j).2
+
+/-- Both Gaussian weights are differentiable. -/
+@[fun_prop] theorem differentiable_gaussianMonomial (j : Fin 2) :
+    Differentiable ℝ (gaussianMonomial j) := by
+  fun_prop [gaussianMonomial]
 
 /-- The sum of the parity-weighted Gaussians against the positive-index coefficients of `c`. -/
 def gaussianTheta (j : Fin 2) (c : ℕ → ℂ) (u : ℝ) : ℂ :=
