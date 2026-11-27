@@ -24,8 +24,8 @@ on `ι → A`. A **size** for `J` (`TauCeti.GramSize J`) is a family of subsets 
 
 A vector or a matrix has size `i` when all of its entries have (`TauCeti.GramSize.vecsOfSize`,
 `TauCeti.GramSize.matsOfSize`). The axioms make sizes behave like logarithms of absolute values
-on one scale: the sizes increase with `i` (`TauCeti.GramSize.ofSize_mono`, from `x = x * 1`), and
-the product of a matrix of size `i` whose columns are indexed by `ι` and a vector or matrix of
+on one scale: the sizes increase with `i` (`TauCeti.GramSize.ofSize_monotone`, from `x = x * 1`).
+The product of a matrix of size `i` whose columns are indexed by `ι` and a vector or matrix of
 size `j` whose rows are indexed by `ι` has size `i + j + 1`
 (`TauCeti.GramSize.mulVec_mem_vecsOfSize`, `TauCeti.GramSize.mul_mem_matsOfSize`). In particular
 the value `⟨u, v⟩` of the form at vectors of sizes `i` and `j` has size `i + j + 3`
@@ -128,13 +128,13 @@ theorem gram_inv_mem (a b : ι) : J⁻¹ a b ∈ S.ofSize 1 :=
   S.gram_inv_mem' a b
 
 /-- **Sizes increase**: a number of size `i` has every size `j ≥ i`, since `x = x * 1`. -/
-theorem ofSize_mono : Monotone S.ofSize := by
+theorem ofSize_monotone : Monotone S.ofSize := by
   intro i j hij x hx
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hij
   simpa using S.mul_mem hx (S.one_mem k)
 
 theorem mem_of_le (hx : x ∈ S.ofSize i) (hij : i ≤ j) : x ∈ S.ofSize j :=
-  S.ofSize_mono hij hx
+  S.ofSize_monotone hij hx
 
 /-- A sum, over a finite set of at most `#ι + 1` indices, of numbers of size `i` has size
 `i + 1`. -/
@@ -180,19 +180,19 @@ theorem mem_vecsOfSize {v : κ → A} : v ∈ S.vecsOfSize i ↔ ∀ k, v k ∈ 
 theorem mem_matsOfSize {M : Matrix m n A} : M ∈ S.matsOfSize i ↔ ∀ a b, M a b ∈ S.ofSize i :=
   Iff.rfl
 
-theorem vecsOfSize_mono : Monotone (fun i => S.vecsOfSize i (κ := κ)) :=
-  fun _ _ hij _ hv k => S.ofSize_mono hij (hv k)
+theorem vecsOfSize_monotone : Monotone (fun i => S.vecsOfSize i (κ := κ)) :=
+  fun _ _ hij _ hv k => S.ofSize_monotone hij (hv k)
 
-theorem matsOfSize_mono : Monotone (fun i => S.matsOfSize i (m := m) (n := n)) :=
-  fun _ _ hij _ hM a b => S.ofSize_mono hij (hM a b)
+theorem matsOfSize_monotone : Monotone (fun i => S.matsOfSize i (m := m) (n := n)) :=
+  fun _ _ hij _ hM a b => S.ofSize_monotone hij (hM a b)
 
 theorem mem_vecsOfSize_of_le {v : κ → A} (hv : v ∈ S.vecsOfSize i) (hij : i ≤ j) :
     v ∈ S.vecsOfSize j :=
-  S.vecsOfSize_mono hij hv
+  S.vecsOfSize_monotone hij hv
 
 theorem mem_matsOfSize_of_le {M : Matrix m n A} (hM : M ∈ S.matsOfSize i) (hij : i ≤ j) :
     M ∈ S.matsOfSize j :=
-  S.matsOfSize_mono hij hM
+  S.matsOfSize_monotone hij hM
 
 @[simp]
 theorem zero_mem_vecsOfSize (i : ℕ) : (0 : κ → A) ∈ S.vecsOfSize i :=
