@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 
 /-!
 # Smooth paths with prescribed Riemannian path length
@@ -25,10 +26,17 @@ open set.
 A path on an arbitrary compact interval can first be reparametrized affinely onto `[0, 1]`
 without changing its endpoints or length.
 
+A differential estimate on the velocity alone also controls the length of an image path.
+This comparison requires differentiability only in the open parameter interval and includes
+zero bounds and empty intervals.
+
 The construction uses Mathlib's `Real.smoothTransition` and
 `Manifold.pathELength_comp_of_monotoneOn`. No new notion of path length is introduced.
 
 ## Main results
+
+* `TauCeti.Manifold.pathELength_comp_le_mul_of_norm_mfderiv_le`: a velocity bound controls
+  image path length without an estimate on transverse tangent vectors.
 
 * `TauCeti.Manifold.exists_contMDiff_pathELength_eq`: obtain a globally `Cⁿ` path, constant near
   its endpoints, with the same endpoints, length, and image containment as a given `Cⁿ` path.
@@ -246,5 +254,38 @@ theorem pathELength_lineMap (x y : F) :
   rw [Manifold.pathELength_eq_lintegral_mfderivWithin_Icc]
   simp only [mfderivWithin_eq_fderivWithin, eNorm_tangentSpace_vectorSpace]
   exact lintegral_fderiv_lineMap_eq_edist .. |>.trans (eDist_eq_eNorm_sub ..)
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+open Bundle _root_.Manifold
+open scoped ENNReal NNReal
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+
+/-- A differential bound on the velocity of a differentiable path controls the length of
+its image. Both maps only need differentiability in the interior of the parameter interval. -/
+theorem pathELength_comp_le_mul_of_norm_mfderiv_le {f : M → N} {γ : ℝ → M} {a b : ℝ}
+    (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ (Ioo a b))
+    (hf : ∀ t ∈ Ioo a b, MDifferentiableAt I J f (γ t)) {C : ℝ≥0}
+    (hC : ∀ t ∈ Ioo a b,
+      ‖mfderiv I J f (γ t) (mfderiv 𝓘(ℝ, ℝ) I γ t 1)‖ ≤
+        C * ‖mfderiv 𝓘(ℝ, ℝ) I γ t 1‖) :
+    pathELength J (f ∘ γ) a b ≤ C * pathELength I γ a b := by
+  rw [pathELength_eq_lintegral_mfderiv_Ioo, pathELength_eq_lintegral_mfderiv_Ioo,
+    ← MeasureTheory.lintegral_const_mul' _ _ ENNReal.coe_ne_top]
+  refine MeasureTheory.setLIntegral_mono' measurableSet_Ioo fun t ht ↦ ?_
+  have hd := hγ.mdifferentiableAt (isOpen_Ioo.mem_nhds ht)
+  rw [mfderiv_comp t (hf t ht) hd, ContinuousLinearMap.comp_apply]
+  simpa only [ofReal_norm, ENNReal.ofReal_mul C.coe_nonneg,
+    ENNReal.ofReal_coe_nnreal] using ENNReal.ofReal_le_ofReal (hC t ht)
 
 end TauCeti.Manifold

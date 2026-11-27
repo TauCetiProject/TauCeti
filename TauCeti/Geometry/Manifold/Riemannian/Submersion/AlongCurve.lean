@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
+import TauCeti.Geometry.Manifold.Riemannian.PathELength
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
 
 /-!
@@ -154,17 +155,12 @@ theorem norm_curveVelocity_comp_eq_iff (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I
 increase its Riemannian path length on `[a, b]`. -/
 theorem pathELength_comp_le {a b : ℝ} (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ (Ioo a b)) :
     Manifold.pathELength J (f ∘ γ) a b ≤ Manifold.pathELength I γ a b := by
-  rw [Manifold.pathELength_eq_lintegral_mfderiv_Ioo, Manifold.pathELength_eq_lintegral_mfderiv_Ioo]
-  refine MeasureTheory.lintegral_mono_ae
-    ((MeasureTheory.ae_restrict_mem measurableSet_Ioo).mono fun r hr ↦ ?_)
-  have hγr : MDifferentiableAt 𝓘(ℝ, ℝ) I γ r :=
-    (hγ r hr).mdifferentiableAt (Ioo_mem_nhds hr.1 hr.2)
-  have hv₁ : mfderiv 𝓘(ℝ, ℝ) J (f ∘ γ) r 1 = curveVelocity J (f ∘ γ) r :=
-    (curveVelocity_apply (I := J)).symm
-  have hv₂ : mfderiv 𝓘(ℝ, ℝ) I γ r 1 = curveVelocity I γ r :=
-    (curveVelocity_apply (I := I)).symm
-  rw [hv₁, hv₂, ← ofReal_norm, ← ofReal_norm]
-  exact ENNReal.ofReal_le_ofReal (h.norm_curveVelocity_comp_le hγr)
+  simpa only [ENNReal.coe_one, one_mul] using
+    (TauCeti.Manifold.pathELength_comp_le_mul_of_norm_mfderiv_le hγ
+      (fun _ _ ↦ h.isSubmersion.contMDiff.mdifferentiableAt (by simp))
+      (C := 1) (fun t _ ↦ by
+        simpa only [NNReal.coe_one, one_mul] using
+          h.norm_mfderiv_le (γ t) (mfderiv 𝓘(ℝ, ℝ) I γ t 1)))
 
 /-- A curve differentiable on `(a, b)` whose velocity is horizontal at every parameter in `(a, b)`
 has the same Riemannian path length on `[a, b]` as its projection. -/
