@@ -385,11 +385,15 @@ private theorem exists_boundary_bound {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) :
   have hY := (volume : Measure E).setAverage_ball_le_div_pow_mul_setAverage_ball
     (fun x => by positivity : ∀ x, 0 ≤ ‖G' x‖ ^ 2) (by linarith : 0 < R / 2) hsub₂
     (by simpa using hgi hG'p c R 0)
-  have hZ := (volume : Measure E).rpow_inv_setAverage_ball_le_div_pow_mul
-    (fun x => by positivity : ∀ x, 0 ≤ ‖g x‖ ^ (2 * q)) (by linarith : 0 < R / 2) (by linarith)
+  have hZ := (volume : Measure E).rpow_setAverage_ball_le_div_pow_rpow_mul
+    (fun x => by positivity : ∀ x, 0 ≤ ‖g x‖ ^ (2 * q)) (by linarith : 0 < R / 2)
     hsub₂ ((hgp.restrict (ball c R)).integrableOn_norm_rpow_of_subset (mul_pos two_pos hq.pos)
-      hqp subset_rfl measure_ball_lt_top.ne) hq.lt.le
+      hqp subset_rfl measure_ball_lt_top.ne) (inv_nonneg.2 hq.pos.le)
   rw [hR2, finrank_euclideanSpace_fin] at hX hY hZ
+  -- Weaken the factor `(2^(n+1))^(1/q)` to `2^(n+1)`, as `q ≥ 1`.
+  replace hZ := hZ.trans (mul_le_mul_of_nonneg_right
+    (Real.rpow_le_self_of_one_le (one_le_pow₀ one_le_two) (inv_le_one_of_one_le₀ hq.lt.le))
+    (Real.rpow_nonneg (average_nonneg fun x => by positivity) _))
   set D := ((2 * Lam) ^ (2 * q' - 1) * δ) ^ q'⁻¹
   have hD : 0 ≤ D := deviation_factor_nonneg hA (by linarith) (fun x => by positivity) hδ
   set X := ⨍ x in ball c R, ‖g x‖ ^ 2
@@ -460,11 +464,16 @@ private theorem exists_interior_chain (lam Lam : ℝ) : ∃ C : ℝ, 0 < C ∧
     (fun x => by positivity : ∀ x, 0 ≤ ‖G' x‖ ^ 2) ht (ball_subset_ball htR)
     (by simpa using ((hG'p.restrict (ball c R)).integrableOn_norm_sub_sq_of_two_le h2p subset_rfl
       measure_ball_lt_top.ne 0))
-  have hZ := (volume : Measure E).rpow_inv_setAverage_ball_le_div_pow_mul
-    (fun x => by positivity : ∀ x, 0 ≤ ‖g x‖ ^ (2 * q)) ht htR (ball_subset_ball htR)
+  have hZ := (volume : Measure E).rpow_setAverage_ball_le_div_pow_rpow_mul
+    (fun x => by positivity : ∀ x, 0 ≤ ‖g x‖ ^ (2 * q)) ht (ball_subset_ball htR)
     ((hgp.restrict (ball c R)).integrableOn_norm_rpow_of_subset (mul_pos two_pos hq.pos) hqp
-      subset_rfl measure_ball_lt_top.ne) hq.lt.le
+      subset_rfl measure_ball_lt_top.ne) (inv_nonneg.2 hq.pos.le)
   rw [finrank_euclideanSpace_fin] at hY hZ
+  -- Weaken the factor `((R/t)^(n+1))^(1/q)` to `(R/t)^(n+1)`, as `t ≤ R` and `q ≥ 1`.
+  replace hZ := hZ.trans (mul_le_mul_of_nonneg_right
+    (Real.rpow_le_self_of_one_le (one_le_pow₀ ((one_le_div ht).2 htR))
+      (inv_le_one_of_one_le₀ hq.lt.le))
+    (Real.rpow_nonneg (average_nonneg fun x => by positivity) _))
   set D := ((2 * Lam) ^ (2 * q' - 1) * δ) ^ q'⁻¹
   have hD : 0 ≤ D := deviation_factor_nonneg hA ht (fun x => by positivity) hδ
   set X := ⨍ x in ball c R, ‖g x‖ ^ 2
@@ -599,10 +608,13 @@ private theorem exists_upper_bound {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) : �
     field_simp
     ring
   set d := (⟪c, ν⟫_ℝ - c₀) / ‖ν‖
+  -- A ball about `c` of radius at most `d`, the distance from `c` to the hyperplane, lies in `H`.
+  have hballH {r : ℝ} (hr : r ≤ d) : ball c r ⊆ H := fun x hx =>
+    (hH x).2 (ball_subset_setOf_lt_inner hν
+      (by linarith [(le_div_iff₀ (norm_pos_iff.2 hν)).1 hr]) hx)
   rcases le_or_gt (R / 4) d with hd | hd
   · -- `d ≥ R/4`: the interior step on `B(c, R/4) ⊆ H`, after the trivial bound there.
-    have hball : ball c (R / 4) ⊆ H := fun x hx => (hH x).2 (ball_subset_setOf_lt_inner hν
-      (by linarith [(le_div_iff₀ (norm_pos_iff.2 hν)).1 hd]) hx)
+    have hball : ball c (R / 4) ⊆ H := hballH hd
     have hρt : ρ ≤ R / 4 := by rw [hR_def]; nlinarith
     have htriv : ⨍ x in ball c (R / 4), ‖g x - ⨍ y in ball c (R / 4), g y‖ ^ 2 ≤
         (16 * 4 ^ (n + 1)) * (R / 4 / R) ^ 2 * X + 0 * (R / (R / 4)) ^ (n + 1) * W := by
@@ -622,8 +634,7 @@ private theorem exists_upper_bound {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) : �
       hρ hdρ (by rw [hR_def]; nlinarith)
     exact ⟨CB, CB, hMB, hMB, h⟩
   · -- `ρ < d < R/4`: the interior step on `B(c, d)`, then the boundary bound there.
-    have hball : ball c d ⊆ H := fun x hx => (hH x).2 (ball_subset_setOf_lt_inner hν
-      (by linarith [(le_div_iff₀ (norm_pos_iff.2 hν)).1 (le_refl d)]) hx)
+    have hball : ball c d ⊆ H := hballH le_rfl
     have hb := hbdry (R := R) hν hH ham hbd hosc hu0 hu hgH hgρ hG'H hG'ρ h2p hgp hG'p hq hqp hc
       (hρ.trans hdρ) le_rfl (by linarith)
     have h := hchain ham hbd hosc hu hgH hG'H h2p hgp hG'p hq hqp hc hρ hdρ.le (by linarith)
@@ -674,10 +685,9 @@ private theorem exists_ball_bound {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) : ∃
       ⨍ x in ball c s, f x = ⨍ x in ball c' s, f x := by
     rw [← setAverage_ball_comp_hyperplaneReflection ν c₀ f c' s, hcc]
     exact average_congr (Filter.Eventually.of_forall fun x => (hf x).symm)
-  have hgn (k : ℝ) : ∀ x, ‖g (σ x)‖ ^ k = ‖g x‖ ^ k := fun x => by
-    rw [hgρ, norm_neg, LinearIsometryEquiv.norm_map]
-  have hgn2 : ∀ x, ‖g (σ x)‖ ^ 2 = ‖g x‖ ^ 2 := fun x => by
-    rw [hgρ, norm_neg, LinearIsometryEquiv.norm_map]
+  have hgσ (x : E) : ‖g (σ x)‖ = ‖g x‖ := by rw [hgρ, norm_neg, LinearIsometryEquiv.norm_map]
+  have hgn (k : ℝ) : ∀ x, ‖g (σ x)‖ ^ k = ‖g x‖ ^ k := fun x => by rw [hgσ]
+  have hgn2 : ∀ x, ‖g (σ x)‖ ^ 2 = ‖g x‖ ^ 2 := fun x => by rw [hgσ]
   have hG'n : ∀ x, ‖G' (σ x)‖ ^ 2 = ‖G' x‖ ^ 2 := fun x => by rw [hG'ρ]
   -- The oscillation about `-R m'`, with `m'` the average over `B(c', ρ)`, is the oscillation there.
   set m' := ⨍ y in ball c' ρ, g y
@@ -728,8 +738,7 @@ private theorem exists_odd_reflection_gradient {H : Opens E} {ν : E} {c₀ : �
   -- `∇u` agrees with `g` on `H` and vanishes below the hyperplane, which is null.
   filter_upwards [hgH, h0, measure_eq_zero_iff_ae_notMem.1
     (Measure.addHaar_setOf_inner_eq volume hν c₀)] with x h1 h2 h3
-  have h3' : ⟪x, ν⟫_ℝ ≠ c₀ := h3
-  rcases lt_or_gt_of_ne h3' with hlt | hgt
+  rcases lt_or_gt_of_ne h3 with hlt | hgt
   · rw [h2 hlt, norm_zero]
     exact norm_nonneg _
   · rw [h1 ((hH x).2 hgt)]
