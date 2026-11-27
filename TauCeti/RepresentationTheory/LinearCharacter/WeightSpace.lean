@@ -15,9 +15,10 @@ The line `Representation.ofLinearCharacter χ` of a linear character `χ : G →
 weight: `G` acts through `χ` on every vector of it, and, over a commutative ring without zero
 divisors, through a different linear character on no nonzero vector of it.
 
-These facts live apart from `TauCeti.RepresentationTheory.LinearCharacter.Basic` because
-`Representation.weightSpace` would clash, through dot notation, with the torus weight spaces
-`TauCeti.weightSpace` of the many importers of that file.
+So in a direct sum of lines of linear characters, the vectors of weight `χ` lie in the summands
+whose character is `χ`; such a sum has a nonzero vector of weight `χ` exactly when `χ` is one of
+its characters. This is how the cancellation of linear characters from semisimple representations
+detects which characters occur.
 
 ## Main results
 
