@@ -9,7 +9,7 @@ public import Mathlib.Topology.KrullDimension
 public import TauCeti.Order.KrullDimension
 
 /-!
-# Proper closed subsets of irreducible spaces have smaller Krull dimension
+# Krull dimension of closed subsets containing no irreducible component
 
 If `Y` is an irreducible topological space and `Z ⊆ Y` is a closed subset different from `Y`,
 then `topologicalKrullDim Z + 1 ≤ topologicalKrullDim Y`. Every chain of irreducible closed
@@ -25,8 +25,10 @@ for an inducing map `f : X → Y` with non-dense range. The set-level form conce
 not needed either: for an arbitrary space `Y`, it is enough that the closure of the range of `f`
 contain no irreducible component of `Y`, since the closure of the image of the last member of a
 chain lies in some irreducible component, which then extends the chain. This is the form that
-applies to a nowhere dense closed subset of a reducible scheme, such as the centre of a
-modification.
+applies to a closed subset of a reducible space containing no generic point of an irreducible
+component, such as the centre of a modification of a locally Noetherian scheme. A nowhere dense
+closed subset need not qualify: with infinitely many components, a component can itself be
+nowhere dense.
 
 In the other extreme, an irreducible `T₀` space has Krull dimension zero exactly when it has at
 most one point: in dimension zero the closure of every point is a maximal irreducible closed

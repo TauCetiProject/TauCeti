@@ -25,8 +25,8 @@ one, and let `Q = coker(𝒪_X ⟶ f_* 𝒪_Y)` be the cokernel of
 forward along the closed immersion `f.conductor.subschemeι` from the Artinian (hence affine)
 conductor closed subscheme `V(f.conductor)`. The scheme `X` need not be irreducible: no
 irreducible component of `X` lies in the support of the conductor, so the conductor subscheme has
-dimension zero all the same. This covers the normalization of a reducible curve, such as a nodal
-curve with several components, whose source is a disjoint union of curves.
+dimension at most zero all the same. This covers the normalization of a reducible curve, such as
+a nodal curve with several components, whose source is a disjoint union of curves.
 
 Combining affine vanishing and pushforward comparison along closed immersions with the long exact
 sequence of `0 ⟶ 𝒪_X ⟶ f_* 𝒪_Y ⟶ Q ⟶ 0` (when `f` is scheme-theoretically dominant) yields the
@@ -55,7 +55,7 @@ regularity, or base-field assumptions where unnecessary:
   a field `k`, when `X` is locally of finite type over `k`, `Hⁿ(X, 𝒪_X)` is finite-dimensional as
   soon as `Hⁿ(Y, 𝒪_Y)` is.
 * `AlgebraicGeometry.Scheme.Modules.eulerCharBelow_trivial_eq_add_of_isModification`: if moreover
-  `H⁰(Y, 𝒪_Y)` and `H¹(Y, 𝒪_Y)` are finite-dimensional and `H²(Y, 𝒪_Y) = 0`, then
+  `H⁰(Y, 𝒪_Y)` and `H¹(Y, 𝒪_Y)` are finite-dimensional, then
   `χ(Y, 𝒪_Y) = χ(X, 𝒪_X) + dim_k Γ(Q, ⊤)`.
 
 ## References
@@ -276,15 +276,15 @@ include hX in
 /-- **Euler-characteristic comparison along a finite modification in dimension at most one.** Let
 `f : Y ⟶ X` be a finite scheme-theoretically dominant modification over a field `k` of a
 Noetherian scheme `X` of dimension at most one, locally of finite type over `k`, and suppose that
-`H⁰(Y, 𝒪_Y)` and `H¹(Y, 𝒪_Y)` are finite-dimensional and `H²(Y, 𝒪_Y) = 0`. Then the short exact
-sequence `0 ⟶ 𝒪_X ⟶ f_* 𝒪_Y ⟶ Q ⟶ 0`, with `Q = coker(𝒪_X ⟶ f_* 𝒪_Y)`, gives
+`H⁰(Y, 𝒪_Y)` and `H¹(Y, 𝒪_Y)` are finite-dimensional. Then the short exact sequence
+`0 ⟶ 𝒪_X ⟶ f_* 𝒪_Y ⟶ Q ⟶ 0`, with `Q = coker(𝒪_X ⟶ f_* 𝒪_Y)`, gives
 `χ(Y, 𝒪_Y) = χ(X, 𝒪_X) + dim_k Γ(Q, ⊤)` for the Euler characteristics truncated at degree `2`.
-Neither `X` nor `Y` need be irreducible: this applies to the normalization of a reducible curve,
-whose source is a disjoint union of curves. -/
+No vanishing of `H²` is needed: the connecting map `H¹(X, Q) → H²(X, 𝒪_X)` that the truncation
+cuts off has zero source. Neither `X` nor `Y` need be irreducible: this applies to the
+normalization of a reducible curve, whose source is a disjoint union of curves. -/
 theorem eulerCharBelow_trivial_eq_add_of_isModification
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial Y).obj 0)]
-    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial Y).obj 1)]
-    (hY : Subsingleton (Cohomology (InvertibleSheaf.trivial Y).obj 2)) :
+    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial Y).obj 1)] :
     eulerCharBelow k Y (InvertibleSheaf.trivial Y).obj 2 =
       eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 +
         (Module.finrank k
@@ -311,12 +311,16 @@ theorem eulerCharBelow_trivial_eq_add_of_isModification
   have hX₁ : FiniteDimensional k (Cohomology OX 1) :=
     have := finiteDimensional_cohomology_trivial_of_isModification k hX f 1
     Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X 1)
-  have hX₂ : Subsingleton (Cohomology OX 2) :=
-    (subsingleton_cohomology_unit_iff_of_two_le_of_isModification hX f 2 le_rfl).mpr
-      ((trivialCohomologyBaseLinearEquiv k Y 2).toEquiv.symm.subsingleton)
-  have hadd := eulerCharBelow_eq_add k (TauCeti.cokernelSequence_shortExact φ) 2
+  -- The connecting map `H¹(X, Q) → H²(X, 𝒪_X)` cut off by the truncation vanishes, since its
+  -- source does.
+  have hδ : cohomologyδBaseLinear k X (TauCeti.cokernelSequence_shortExact φ) 1 2 rfl = 0 := by
+    have := f.subsingleton_cohomology_succ_cokernel_unitToPushforwardObjUnit hX 0
+    exact LinearMap.ext fun x ↦ by
+      rw [show x = 0 from this.elim x 0, map_zero, LinearMap.zero_apply]
+  have hadd := eulerCharBelow_eq_add_of_cohomologyδ_eq_zero k
+    (TauCeti.cokernelSequence_shortExact φ) 1
     (fun i hi hi₀ ↦ by obtain rfl : i = 1 := (by omega); exact hX₁)
-    (fun i hi ↦ by interval_cases i <;> exact Module.Finite.equiv (eY _)) hX₂
+    (fun i hi ↦ by interval_cases i <;> exact Module.Finite.equiv (eY _)) hδ
   rw [hY_eq, hX_eq]
   exact hadd.trans (congrArg _ (f.eulerCharBelow_cokernel_unitToPushforwardObjUnit k hX 1))
 

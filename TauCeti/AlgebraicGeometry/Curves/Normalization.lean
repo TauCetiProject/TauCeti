@@ -263,7 +263,6 @@ theorem eulerCharBelow_trivial_of_isModification [X.IsCurveOver k] [IsReduced Y]
   have : IsSchemeTheoreticallyDominant f := .of_isDominant f
   exact eulerCharBelow_trivial_eq_add_of_isModification k
     (IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le f
-    (subsingleton_cohomology_trivial_of_two_le_of_isCurveOver k 2 le_rfl)
 
 /-- **Monotonicity of the arithmetic genus under a finite modification.** For any finite
 modification `f : Y ⟶ X` of curves over `k`, the surjection `H¹(X, 𝒪_X) ↠ H¹(Y, 𝒪_Y)` gives

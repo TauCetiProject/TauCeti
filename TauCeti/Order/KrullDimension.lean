@@ -8,7 +8,7 @@ module
 public import Mathlib.Order.KrullDimension
 
 /-!
-# Krull dimension of products, adjacent intervals and unions of upper sets
+# Krull dimension of products, intervals, unions of upper sets and strictly monotone maps
 
 Four facts about Krull dimension that hold in every preorder. The height of a pair is at
 most the sum of the heights of its components, so the Krull dimension of a product is at most the
@@ -18,16 +18,16 @@ in `[a, b]` and one in `[b, c]` concatenate to a strict chain in `[a, c]`, so th
 combine into additivity of Krull dimension on intervals
 (`Order.krullDim_Icc_eq_krullDim_Icc_add_krullDim_Icc`).
 
-Finally, a strict chain in a union of two upper sets lies entirely in the set that contains its
+Next, a strict chain in a union of two upper sets lies entirely in the set that contains its
 first element, so the Krull dimension of the union is the larger of the two Krull dimensions. In a
 prime spectrum the closed sets are upper sets for the inclusion order, so this computes the
 dimension of a union of two closed subsets, for instance the support of `M ⧸ r s M` as the union
 of the supports of `M ⧸ r M` and `M ⧸ s M`.
 
-Lastly, a strictly monotone map `f : α → β` none of whose values is maximal raises the Krull
-dimension by one: every strict chain of `α` maps to a strict chain of `β` that can be extended
-above its last element. In topology this is the statement that a closed subset containing no
-irreducible component has smaller Krull dimension than the whole space.
+Finally, if a strictly monotone map `f : α → β` takes no maximal value, then
+`krullDim α + 1 ≤ krullDim β`: every strict chain of `α` maps to a strict chain of `β` that can be
+extended above its last element. In topology this gives `dim Z + 1 ≤ dim Y` for a closed subset
+`Z` of a space `Y` that contains no irreducible component of `Y`.
 
 ## Main results
 
