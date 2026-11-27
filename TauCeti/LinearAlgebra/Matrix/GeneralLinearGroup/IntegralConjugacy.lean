@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.LinearAlgebra.FreeModule.PID
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Basis
 import TauCeti.RepresentationTheory.Lattice
 
@@ -15,8 +16,9 @@ import TauCeti.RepresentationTheory.Lattice
 
 `Subgroup.exists_map_conj_le_range_of_isFractionRing` conjugates a finite matrix group over the
 fraction field of a principal ideal domain into the image of the integral general linear group.
-It uses `TauCeti.exists_isFullLattice_subrepresentation` to find an invariant full lattice and
-`Module.Basis.mem_stabilizer_iff_exists_map_eq_toMatrix` to read its action in a lattice basis.
+It uses `TauCeti.exists_isFullLattice_subrepresentation` to find an invariant full lattice,
+`TauCeti.mem_stabilizer_set_iff_mapsTo` to identify its stabilizing automorphisms, and
+`Module.Basis.mem_stabilizer_iff_exists_map_eq_toMatrix` to read their action in a lattice basis.
 
 For the rational case, see J.-P. Serre, *Bounds for the orders of the finite subgroups of G(k)*,
 arXiv:1011.0346, §1.3.1.
@@ -58,27 +60,25 @@ theorem Subgroup.exists_map_conj_le_range_of_isFractionRing
       (L.toSubmodule : Set (ι → K)) := by
     have hact (k : H) {x : ι → K} (hx : x ∈ L.toSubmodule) :
         b₀.toGL.symm (k : GL ι K) x ∈ L.toSubmodule := by
-      have hk := L.apply_mem_toSubmodule k hx
-      rw [Representation.restrictScalars_apply] at hk
-      exact hk
-    rw [MulAction.mem_stabilizer_iff]
-    apply Set.Subset.antisymm
-    · exact Set.smul_set_subset_iff.mpr fun _ hx ↦ hact ⟨h, hh⟩ hx
-    · rw [Set.subset_smul_set_iff, Set.smul_set_subset_iff]
-      intro x hx
-      have hinv : f⁻¹ x ∈ L.toSubmodule := by
-        simpa only [Subgroup.coe_inv, map_inv, f] using hact (⟨h, hh⟩ : H)⁻¹ hx
-      exact hinv
+      simpa only [Representation.restrictScalars_apply, ρ, MonoidHom.comp_apply,
+        LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, LinearEquiv.coe_coe,
+        MulEquiv.coe_toMonoidHom, Subgroup.subtype_apply] using L.apply_mem_toSubmodule k hx
+    refine TauCeti.mem_stabilizer_set_iff_mapsTo.mpr ⟨?_, ?_⟩
+    · intro x hx
+      simpa only [LinearEquiv.smul_def, SetLike.mem_coe, f] using hact ⟨h, hh⟩ hx
+    · intro x hx
+      simpa only [LinearEquiv.smul_def, SetLike.mem_coe, Subgroup.coe_inv, map_inv, f]
+        using hact (⟨h, hh⟩ : H)⁻¹ hx
   obtain ⟨u, hu⟩ := (c.mem_stabilizer_iff_exists_map_eq_toMatrix f).mp hf
   refine ⟨u, Units.ext ?_⟩
   have hmatrix : LinearMap.toMatrix d d f =
-      LinearMap.toMatrix b₀ b₀ (e.symm * f * e : (ι → K) ≃ₗ[K] (ι → K)) := by
+      LinearMap.toMatrix b₀ b₀ (e⁻¹ * f * e : (ι → K) ≃ₗ[K] (ι → K)) := by
     have hd : b₀.map e = d := by simp only [e, Basis.map_equiv, Equiv.refl_symm, Basis.reindex_refl]
-    simp only [← hd, LinearMap.toMatrix_map_left, LinearMap.toMatrix_map_right,
+    have heinv : e⁻¹ = e.symm := LinearEquiv.ext (congrFun (LinearEquiv.coe_inv e))
+    simp only [heinv, ← hd, LinearMap.toMatrix_map_left, LinearMap.toMatrix_map_right,
       LinearEquiv.coe_toLinearMap_mul, Module.End.mul_eq_comp]
-  have hconj : b₀.toGL (e.symm * f * e) = MulAut.conj (b₀.toGL e)⁻¹ h := by
+  have hconj : b₀.toGL (e⁻¹ * f * e) = MulAut.conj (b₀.toGL e)⁻¹ h := by
     rw [MulAut.conj_apply]
-    have heinv : e.symm = e⁻¹ := rfl
-    simp only [heinv, map_mul, map_inv, MulEquiv.apply_symm_apply, inv_inv, f]
+    simp only [map_mul, map_inv, MulEquiv.apply_symm_apply, inv_inv, f]
   rw [MulEquiv.coe_toMonoidHom, ← hconj, Basis.coe_toGL, ← hmatrix]
   exact hu
