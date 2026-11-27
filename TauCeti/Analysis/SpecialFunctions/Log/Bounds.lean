@@ -23,7 +23,9 @@ integral below `3 / 2`.
 
 Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
 (`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
-decay of `log x`, as for the modulus `|α|²` of a section tending to one.
+decay of `log x`, as for the modulus `|α|²` of a section tending to one. On all of `(0, 1]` the
+truncation `min (-log x) 1` obeys the same bound (`Real.min_neg_log_one_le_two_mul_one_sub`),
+which compares the truncated logarithm of `|α|²` with the defect `1 - |α|²`.
 
 `Real.neg_log_le_sqrt_two_div` bounds `-log x` by `sqrt (2 / x)` for every `x ≥ 0`,
 including the totalized value at zero. `Real.posLog_le_sqrt_two_mul_abs` bounds
@@ -43,6 +45,7 @@ in explicit prime-counting estimates.
 * `Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
+* `Real.min_neg_log_one_le_two_mul_one_sub`: `min (-log x) 1 ≤ 2 (1 - x)` for `0 < x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
 * `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
@@ -89,6 +92,24 @@ theorem abs_log_le_two_mul_one_sub {x : ℝ} (hx : 1 / 2 ≤ x) (hx₁ : x ≤ 1
   rw [log_inv, inv_eq_one_div, div_sub_one hx₀.ne', le_div_iff₀ hx₀] at h
   rw [abs_of_nonpos (log_nonpos hx₀.le hx₁)]
   nlinarith
+
+/-- On all of `(0, 1]`, the truncation of `-log x` at height one is controlled by the distance
+to `1`: `min (-log x) 1 ≤ 2 (1 - x)`. -/
+theorem min_neg_log_one_le_two_mul_one_sub {x : ℝ} (hx : 0 < x) (hx₁ : x ≤ 1) :
+    min (-log x) 1 ≤ 2 * (1 - x) := by
+  -- `1 - log x ≤ exp (-log x) = x⁻¹`, so `x (1 - log x) ≤ 1`.
+  have hexp : x * (-log x + 1) ≤ 1 := by
+    have h := add_one_le_exp (-log x)
+    rw [exp_neg, exp_log hx] at h
+    calc x * (-log x + 1) ≤ x * x⁻¹ := mul_le_mul_of_nonneg_left h hx.le
+      _ = 1 := mul_inv_cancel₀ hx.ne'
+  rcases le_total (-log x) 1 with h | h
+  · -- `(1 - x) (1 - log x) ≥ -log x` and `1 - log x ≤ 2`.
+    rw [min_eq_left h]
+    nlinarith [mul_le_mul_of_nonneg_left (show -log x + 1 ≤ 2 by linarith)
+      (sub_nonneg.2 hx₁)]
+  · rw [min_eq_right h]
+    nlinarith
 
 /-- The negative logarithm is bounded by an inverse-square-root majorant on the nonnegative
 half-line, including its totalized value at zero. -/

@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Liouville
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 
 /-!
 # The log-modulus ratio of two flat vortex fields with the same zeros
@@ -326,23 +327,6 @@ open MeasureTheory Metric
 
 variable [Nontrivial E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- For `0 < s ≤ 1`, the truncation of `-log s` is at most `2 (1 - s)`. -/
-private lemma min_neg_log_one_le {s : ℝ} (hs : 0 < s) (hs1 : s ≤ 1) :
-    min (-Real.log s) 1 ≤ 2 * (1 - s) := by
-  -- `1 - log s ≤ exp (-log s) = s⁻¹`, so `s (1 - log s) ≤ 1`.
-  have hexp : s * (-Real.log s + 1) ≤ 1 := by
-    have h := Real.add_one_le_exp (-Real.log s)
-    rw [Real.exp_neg, Real.exp_log hs] at h
-    calc s * (-Real.log s + 1) ≤ s * s⁻¹ := mul_le_mul_of_nonneg_left h hs.le
-      _ = 1 := mul_inv_cancel₀ hs.ne'
-  rcases le_total (-Real.log s) 1 with h | h
-  · -- `(1 - s) (1 - log s) ≥ -log s` and `1 - log s ≤ 2`.
-    rw [min_eq_left h]
-    nlinarith [mul_le_mul_of_nonneg_left (show -Real.log s + 1 ≤ 2 by linarith)
-      (sub_nonneg.2 hs1)]
-  · rw [min_eq_right h]
-    nlinarith
-
 omit [Nontrivial E] in
 /-- For a continuous `α` with `0 < |α| ≤ 1`, the truncation of `-log |α|²` has integral over a
 ball at most twice that of the defect `1 - |α|²`. -/
@@ -357,7 +341,7 @@ private lemma setIntegral_ball_min_neg_log_le (hα : Continuous α) (hα₀ : �
   rw [← integral_const_mul]
   exact setIntegral_mono_on (hint (by fun_prop (disch := exact fun x ↦ (hpos x).ne')))
     (hint (by fun_prop)) measurableSet_ball fun x _ ↦
-      min_neg_log_one_le (hpos x) (pow_le_one₀ (norm_nonneg _) (hα₁ x))
+      Real.min_neg_log_one_le_two_mul_one_sub (hpos x) (pow_le_one₀ (norm_nonneg _) (hα₁ x))
 
 /-- **Zero-free flat vortex fields with codimension-two defect growth are the vacuum.** Let `J` be
 orthogonal on a nontrivial space of dimension `n`, `(eᵢ)` an orthonormal basis, `κ ≥ 0`, and let
