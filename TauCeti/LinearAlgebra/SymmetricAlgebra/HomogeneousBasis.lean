@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.DirectSum.Basis
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.DegreeFiltration
 
 /-!
@@ -42,30 +43,13 @@ vectors of degree at most `k`. -/
 theorem wordFiltration_eq_span_basis_image (hc : ∀ i, c i ∈ homogeneousSubmodule R M (deg i))
     (k : ℕ) :
     wordFiltration (_root_.SymmetricAlgebra.ι R M) k = span R (c '' {i | deg i ≤ k}) := by
-  classical
-  -- The `i`-th coordinate only sees the homogeneous component of degree `deg i`.
-  have hrepr (x : _root_.SymmetricAlgebra R M) (i : ι) :
-      c.repr (DirectSum.decompose (homogeneousSubmodule R M) x (deg i) :
-        _root_.SymmetricAlgebra R M) i = c.repr x i := by
-    let φ : _root_.SymmetricAlgebra R M →ₗ[R] _root_.SymmetricAlgebra R M :=
-      (homogeneousSubmodule R M (deg i)).subtype ∘ₗ DirectSum.component R ℕ _ (deg i) ∘ₗ
-        (DirectSum.decomposeLinearEquiv (homogeneousSubmodule R M)).toLinearMap
-    have hφ (y) : φ y = DirectSum.decompose (homogeneousSubmodule R M) y (deg i) := by
-      simp [φ, DirectSum.decomposeLinearEquiv_apply, ← DirectSum.apply_eq_component]
-    have hcoord : c.coord i ∘ₗ φ = c.coord i := c.ext fun j ↦ by
-      rw [LinearMap.comp_apply, hφ]
-      by_cases hj : deg j = deg i
-      · rw [DirectSum.decompose_of_mem_same _ (hj ▸ hc j)]
-      · have hij : j ≠ i := fun h ↦ hj (h ▸ rfl)
-        simp [DirectSum.decompose_of_mem_ne _ (hc j) hj, hij]
-    simpa [hφ] using LinearMap.congr_fun hcoord x
   refine le_antisymm (fun x hx ↦ ?_) (span_le.mpr ?_)
   · rw [Module.Basis.mem_span_image]
     intro i hi
     by_contra hik
     refine Finsupp.mem_support_iff.mp hi ?_
-    rw [← hrepr, coe_decompose_eq_zero_of_mem_wordFiltration (not_le.mp hik) hx, map_zero,
-      Finsupp.zero_apply]
+    rw [← c.repr_decompose_apply_of_mem hc x i,
+      coe_decompose_eq_zero_of_mem_wordFiltration (not_le.mp hik) hx, map_zero, Finsupp.zero_apply]
   · rintro _ ⟨i, hi, rfl⟩
     exact wordFiltration_mono _ hi (range_pow_le_wordFiltration _ _ (hc i))
 

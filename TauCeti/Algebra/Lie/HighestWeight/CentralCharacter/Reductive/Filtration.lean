@@ -151,19 +151,21 @@ theorem reductiveCenterEquiv_mem_tensorFiltration_iff {n : ℕ}
     Subtype.val_injective |>.symm
 
 omit [IsAlgClosed K] in
-/-- An algebra map out of `Z(U([L, L]))` sending PBW degree `j` into `G j`, applied to the second
-factor of the centre comparison, sends a central element of PBW degree `n` to total degree `n`.
-Both Harish-Chandra isomorphisms of `L` take this form. -/
+/-- An algebra isomorphism out of `Z(U([L, L]))` whose inverse detects `G j` by PBW degree `j`,
+applied to the second factor of the centre comparison, sends a central element of PBW degree `n`
+to total degree `n`. Both Harish-Chandra isomorphisms of `L` take this form. -/
 private theorem congr_reductiveCenterEquiv_mem_tensorFiltration {A : Type*} [Semiring A]
     [Algebra K A] (e : Subalgebra.center K (U (derivedSeries K L 1)) ≃ₐ[K] A)
     {G : ℕ → Submodule K A}
-    (he : ∀ j (c : Subalgebra.center K (U (derivedSeries K L 1))),
-      (c : U (derivedSeries K L 1)) ∈ pbwFiltration K (derivedSeries K L 1) j → e c ∈ G j)
+    (he : ∀ j (p : A),
+      ((e.symm p : Subalgebra.center K (U (derivedSeries K L 1))) : U (derivedSeries K L 1)) ∈
+        pbwFiltration K (derivedSeries K L 1) j → p ∈ G j)
     {n : ℕ} {z : Subalgebra.center K (U L)} (hz : (z : U L) ∈ pbwFiltration K L n) :
     Algebra.TensorProduct.congr (AlgEquiv.refl : SZ ≃ₐ[K] SZ) e (reductiveCenterEquiv K L z) ∈
       tensorFiltration FZ G n :=
   tensorFiltration_le_comap_map (f := LinearMap.id) (g := e.toLinearMap) (fun _ ↦ le_rfl)
-    (fun j c hc ↦ he j c hc) n (reductiveCenterEquiv_mem_tensorFiltration_iff.mpr hz)
+    (fun j c hc ↦ he j (e c) (by rwa [AlgEquiv.symm_apply_apply])) n
+    (reductiveCenterEquiv_mem_tensorFiltration_iff.mpr hz)
 
 /-- **The Harish-Chandra isomorphism of a reductive Lie algebra identifies the filtrations**: a
 central element has PBW degree at most `n` exactly when its image in `Sym(z(L)) ⊗ S(H)^{W·}` has
@@ -176,10 +178,8 @@ theorem reductiveHarishChandraIso_mem_tensorFiltration_iff {n : ℕ}
   refine ⟨fun h ↦ by simpa using reductiveHarishChandraIso_symm_mem_pbwFiltration b h,
     fun h ↦ ?_⟩
   rw [reductiveHarishChandraIso_apply]
-  refine congr_reductiveCenterEquiv_mem_tensorFiltration _ (fun j c hc ↦ ?_) h
-  rw [Submodule.mem_comap, AlgHom.toLinearMap_apply, Subalgebra.coe_val,
-    ← harishChandraIso_symm_mem_pbwFiltration b, AlgEquiv.symm_apply_apply]
-  exact hc
+  exact congr_reductiveCenterEquiv_mem_tensorFiltration _
+    (fun _ p ↦ (harishChandraIso_symm_mem_pbwFiltration b p).mp) h
 
 /-- **The linear Harish-Chandra isomorphism of a reductive Lie algebra identifies the
 filtrations**: a central element has PBW degree at most `n` exactly when its image in
@@ -192,9 +192,7 @@ theorem reductiveHarishChandraLinearIso_mem_tensorFiltration_iff {n : ℕ}
   refine ⟨fun h ↦ by simpa using reductiveHarishChandraLinearIso_symm_mem_pbwFiltration b h,
     fun h ↦ ?_⟩
   rw [reductiveHarishChandraLinearIso_apply]
-  refine congr_reductiveCenterEquiv_mem_tensorFiltration _ (fun j c hc ↦ ?_) h
-  rw [Submodule.mem_comap, AlgHom.toLinearMap_apply, Subalgebra.coe_val,
-    ← harishChandraLinearIso_symm_mem_pbwFiltration b, AlgEquiv.symm_apply_apply]
-  exact hc
+  exact congr_reductiveCenterEquiv_mem_tensorFiltration _
+    (fun _ p ↦ (harishChandraLinearIso_symm_mem_pbwFiltration b p).mp) h
 
 end TauCeti
