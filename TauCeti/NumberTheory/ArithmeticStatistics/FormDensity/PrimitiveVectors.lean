@@ -187,8 +187,7 @@ theorem card_primitiveVectors_filter_dotProduct_eq_zero {w : ι → R}
   obtain ⟨P, hP⟩ := unimodularEquiv_iff.mp (unimodularEquiv_single_of_isUnit hj j)
   have hdot (a : ι → R) : a ⬝ᵥ w = (a ᵥ* (↑P⁻¹ : Matrix ι ι R)) j := by
     have hw' : w = (↑P⁻¹ : Matrix ι ι R) *ᵥ Pi.single j 1 := by
-      rw [← hP, Matrix.mulVec_mulVec, ← Units.val_mul, inv_mul_cancel, Units.val_one,
-        Matrix.one_mulVec]
+      simp [← hP, Matrix.mulVec_mulVec]
     rw [hw', Matrix.dotProduct_mulVec, dotProduct_single, mul_one]
   rw [← card_primitiveVectors_filter_apply_eq_zero j]
   refine card_nbij' (· ᵥ* (↑P⁻¹ : Matrix ι ι R)) (· ᵥ* (P : Matrix ι ι R)) ?_ ?_ ?_ ?_
@@ -198,8 +197,8 @@ theorem card_primitiveVectors_filter_dotProduct_eq_zero {w : ι → R}
   · intro b hb
     simp only [mem_coe, mem_filter, mem_primitiveVectors] at hb ⊢
     refine ⟨P.isUnimodular_vecMul_iff.mpr hb.1, ?_⟩
-    rw [hdot, Matrix.vecMul_vecMul, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-      Matrix.vecMul_one, hb.2]
+    rw [hdot]
+    simpa [Matrix.vecMul_vecMul] using hb.2
   · intro a _
     simp [Matrix.vecMul_vecMul]
   · intro b _

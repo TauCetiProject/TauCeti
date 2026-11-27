@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
+import TauCeti.Data.Nat.Choose.Bounds
 import TauCeti.Data.ZMod.LocalRing
 import TauCeti.RingTheory.LocalRing.Card
 
@@ -25,14 +26,13 @@ its average over all primitive coefficient vectors exactly: with `N = binom(n + 
 
 The proof swaps the two sums. By the coefficient evaluation identity `f_a(b) = a ⬝ᵥ ν(b)`, the
 coefficient vectors vanishing at a primitive point `b` are those orthogonal to its Veronese vector
-`ν(b)`, which is again primitive. Over a local ring the number of primitive vectors orthogonal to a
-fixed primitive vector does not depend on it
+`ν(b)`, which is again primitive (`FormDensity.isUnimodular_veronese`). Over a local ring the
+number of primitive vectors orthogonal to a fixed primitive vector does not depend on it
 (`FormDensity.card_primitiveVectors_filter_dotProduct_eq_zero`), so every point `b` contributes
 the same count.
 
 ## Main results
 
-* `FormDensity.isUnimodular_veronese`: the Veronese vector of a primitive vector is primitive.
 * `FormDensity.sum_card_primitiveZeros`: the total number of primitive zeros of all primitive
   forms.
 * `FormDensity.sum_localDensity_div_card_primitiveVectors`: the exact first moment over a finite
@@ -55,26 +55,6 @@ open Finset MvPolynomial IsLocalRing
 open scoped Matrix
 
 namespace TauCeti.FormDensity
-
-section Veronese
-
-variable {σ R : Type*} [Fintype σ] [DecidableEq σ] [CommSemiring R] {d : ℕ}
-
-/-- The Veronese vector of a primitive vector is primitive: among its coordinates are the powers
-`xᵢ ^ d`, and these generate the unit ideal whenever the coordinates `xᵢ` do. -/
-theorem isUnimodular_veronese {x : σ → R} (hx : Module.IsUnimodular R x) :
-    Module.IsUnimodular R (veronese x : Monomials σ d → R) := by
-  rw [Module.Basis.isUnimodular_iff_span_repr_eq_top (b := Pi.basisFun R σ)] at hx
-  rw [Module.Basis.isUnimodular_iff_span_repr_eq_top (b := Pi.basisFun R _)]
-  rw [show ⇑((Pi.basisFun R σ).repr x) = x from funext (Pi.basisFun_repr R σ x)] at hx
-  rw [show ⇑((Pi.basisFun R _).repr (veronese x)) = veronese (d := d) x from
-    funext (Pi.basisFun_repr R _ _)]
-  refine top_unique ((Ideal.span_pow_eq_top _ hx d).ge.trans (Ideal.span_le.mpr ?_))
-  rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-  refine Ideal.subset_span ⟨⟨Finsupp.single i d, by simp⟩, ?_⟩
-  simp [Finsupp.single_apply, pow_ite]
-
-end Veronese
 
 section FirstMoment
 
@@ -116,17 +96,20 @@ private theorem card_primitiveVectors_eq_real (ι : Type*) [Fintype ι] :
   field_simp
   linarith
 
-/-- **The first moment of local densities.** Over a finite local ring whose residue field has `q`
-elements, the average of the local density `σ(a; R)` over the primitive coefficient vectors `a`
-of the forms of degree `d` in `n + 1` variables is
-`(1 - q^{-(n+1)}) (1 - q^{-(N-1)}) / (1 - q^{-N})`, where `N = binom(n + d, d)` is the number of
-monomials. -/
-theorem sum_localDensity_div_card_primitiveVectors :
+omit [Fintype R] in
+/-- The size of the residue field of a finite local ring, as a real number, exceeds one. -/
+private theorem one_lt_card_residueField_real [Finite R] :
+    (1 : ℝ) < Nat.card (ResidueField R) :=
+  Nat.one_lt_cast.mpr (TauCeti.IsLocalRing.one_lt_card_residueField R)
+
+/-- The first moment of local densities in terms of `M = N - 1`, where `N = binom(n + d, d)` is the
+number of monomials: it is `(1 - q^{-(n+1)}) (1 - q^{-M}) / (1 - q^{-(M+1)})`. -/
+private theorem sum_localDensity_div_card_primitiveVectors_eq_sub_one :
     (∑ a ∈ primitiveVectors (Monomials (Fin (n + 1)) d) R, localDensity a) /
         #(primitiveVectors (Monomials (Fin (n + 1)) d) R) =
       (1 - ((Nat.card (ResidueField R) : ℝ) ^ (n + 1))⁻¹) *
         (1 - ((Nat.card (ResidueField R) : ℝ) ^ ((n + d).choose d - 1))⁻¹) /
-          (1 - ((Nat.card (ResidueField R) : ℝ) ^ (n + d).choose d)⁻¹) := by
+          (1 - ((Nat.card (ResidueField R) : ℝ) ^ ((n + d).choose d - 1 + 1))⁻¹) := by
   obtain ⟨M, hM⟩ : ∃ M, (n + d).choose d = M + 1 :=
     Nat.exists_eq_add_one.mpr (Nat.choose_pos (Nat.le_add_left d n))
   have hcard (m : ℕ) : (Nat.card R ^ m - Nat.card (maximalIdeal R) ^ m : ℕ) =
@@ -144,10 +127,23 @@ theorem sum_localDensity_div_card_primitiveVectors :
   rw [hsum, hN, hM, Nat.add_sub_cancel]
   simp only [card_primitiveVectors_eq_real, Fintype.card_fin]
   have hq : (Nat.card R : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  have hk : (1 : ℝ) < Nat.card (ResidueField R) :=
-    Nat.one_lt_cast.mpr (TauCeti.IsLocalRing.one_lt_card_residueField R)
+  have hk := one_lt_card_residueField_real (R := R)
   field_simp
   ring
+
+/-- **The first moment of local densities.** Over a finite local ring whose residue field has `q`
+elements, the average of the local density `σ(a; R)` over the primitive coefficient vectors `a`
+of the forms of degree `d` in `n + 1` variables is
+`(1 - q^{-(n+1)}) (1 - q^{-(N-1)}) / (1 - q^{-N})`, where `N = binom(n + d, d)` is the number of
+monomials. -/
+theorem sum_localDensity_div_card_primitiveVectors :
+    (∑ a ∈ primitiveVectors (Monomials (Fin (n + 1)) d) R, localDensity a) /
+        #(primitiveVectors (Monomials (Fin (n + 1)) d) R) =
+      (1 - ((Nat.card (ResidueField R) : ℝ) ^ (n + 1))⁻¹) *
+        (1 - ((Nat.card (ResidueField R) : ℝ) ^ ((n + d).choose d - 1))⁻¹) /
+          (1 - ((Nat.card (ResidueField R) : ℝ) ^ (n + d).choose d)⁻¹) := by
+  rw [sum_localDensity_div_card_primitiveVectors_eq_sub_one,
+    Nat.sub_add_cancel (Nat.choose_pos (Nat.le_add_left d n))]
 
 /-- **The first moment of local densities modulo `pʳ`.** For a prime `p` and `r ≠ 0`, the average
 of the local density `σ(a; pʳ)` over the primitive coefficient vectors `a` modulo `pʳ` of the forms
@@ -166,11 +162,10 @@ theorem sum_localDensity_div_card_primitiveVectors_zmod_prime_pow (p r : ℕ) [F
 theorem sum_localDensity_div_card_primitiveVectors_le_one :
     (∑ a ∈ primitiveVectors (Monomials (Fin (n + 1)) d) R, localDensity a) /
         #(primitiveVectors (Monomials (Fin (n + 1)) d) R) ≤ 1 := by
-  obtain ⟨M, hM⟩ : ∃ M, (n + d).choose d = M + 1 :=
-    Nat.exists_eq_add_one.mpr (Nat.choose_pos (Nat.le_add_left d n))
-  rw [sum_localDensity_div_card_primitiveVectors, hM, Nat.add_sub_cancel]
+  rw [sum_localDensity_div_card_primitiveVectors_eq_sub_one]
+  have hq := one_lt_card_residueField_real (R := R)
   set q : ℝ := (Nat.card (ResidueField R) : ℝ)
-  have hq : 1 < q := Nat.one_lt_cast.mpr (TauCeti.IsLocalRing.one_lt_card_residueField R)
+  set M := (n + d).choose d - 1
   -- With `x = q^{-(n+1)}`, `y = q^{-M}` and `z = q^{-(M+1)} ≤ y`: `(1 - x)(1 - y) ≤ 1 - y ≤ 1 - z`.
   have hx : 0 ≤ (q ^ (n + 1))⁻¹ := by positivity
   have hy₁ : (q ^ M)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (one_le_pow₀ hq.le)
@@ -180,29 +175,17 @@ theorem sum_localDensity_div_card_primitiveVectors_le_one :
   rw [div_le_one (sub_pos.mpr hz)]
   nlinarith
 
-/-- For `d ≥ 2` and `n ≥ 1` there are at least `n + 2` monomials of degree `d` in `n + 1`
-variables. -/
-private theorem add_two_le_choose (hd : 2 ≤ d) (hn : 1 ≤ n) : n + 2 ≤ (n + d).choose d := by
-  have h2 : n + 2 ≤ (n + 2).choose 2 := by
-    rw [Nat.choose_two_right, Nat.le_div_iff_mul_le two_pos]
-    exact Nat.mul_le_mul_left _ (by omega)
-  calc n + 2 ≤ (n + 2).choose 2 := h2
-    _ = (n + 2).choose n := Nat.choose_symm_add.symm
-    _ ≤ (n + d).choose n := Nat.choose_le_choose n (by omega)
-    _ = (n + d).choose d := Nat.choose_symm_add
-
 /-- For `d ≥ 2` and `n ≥ 1`, the first moment of local densities over a finite local ring whose
 residue field has `q` elements is at least `1 - 2 q^{-(n+1)}`. -/
 theorem one_sub_two_mul_le_sum_localDensity_div_card_primitiveVectors (hd : 2 ≤ d) (hn : 1 ≤ n) :
     1 - 2 * ((Nat.card (ResidueField R) : ℝ) ^ (n + 1))⁻¹ ≤
       (∑ a ∈ primitiveVectors (Monomials (Fin (n + 1)) d) R, localDensity a) /
         #(primitiveVectors (Monomials (Fin (n + 1)) d) R) := by
-  obtain ⟨M, hM⟩ : ∃ M, (n + d).choose d = M + 1 :=
-    Nat.exists_eq_add_one.mpr (Nat.choose_pos (Nat.le_add_left d n))
-  have hnM : n + 1 ≤ M := by have := add_two_le_choose hd hn; omega
-  rw [sum_localDensity_div_card_primitiveVectors, hM, Nat.add_sub_cancel]
+  rw [sum_localDensity_div_card_primitiveVectors_eq_sub_one]
+  have hq := one_lt_card_residueField_real (R := R)
+  have hnM : n + 1 ≤ (n + d).choose d - 1 := by have := Nat.add_two_le_add_choose hd hn; omega
   set q : ℝ := (Nat.card (ResidueField R) : ℝ)
-  have hq : 1 < q := Nat.one_lt_cast.mpr (TauCeti.IsLocalRing.one_lt_card_residueField R)
+  set M := (n + d).choose d - 1
   -- With `x = q^{-(n+1)}`, `y = q^{-M} ≤ x` and `z = q^{-(M+1)}`, so that `0 < 1 - z ≤ 1`:
   -- `1 - 2x ≤ (1 - x)(1 - y) ≤ (1 - x)(1 - y) / (1 - z)`.
   have hx₀ : 0 ≤ (q ^ (n + 1))⁻¹ := by positivity
