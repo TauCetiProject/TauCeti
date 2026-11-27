@@ -79,7 +79,12 @@ images of the bases of `C₁` followed by lifts of the bases of `C₃`, then
 exchange of the boundaries of `C₃` in degree `j + 1` with the lifts of the boundaries of `C₁` in
 degree `j`. To prove it, the boundaries of `C₂` in each degree are given the basis made of the
 boundaries of `C₁` followed by lifts of the boundaries of `C₃`, using that the boundaries form a
-short exact sequence `0 → B₁,ⱼ → B₂,ⱼ → B₃,ⱼ → 0` when `C₃` is acyclic.
+short exact sequence `0 → B₁,ⱼ → B₂,ⱼ → B₃,ⱼ → 0` when `C₃` is acyclic
+(`HomologicalComplex.shortExactBoundaryBasis`). With these boundary bases each bracket of `C₂` is
+the product of the brackets of `C₁` and `C₃` up to a sign, for complexes of any shape
+(`HomologicalComplex.torsionBracket_shortExactBoundaryBasis`), which also gives the
+multiplicativity of the torsion of two-periodic complexes
+(`HomologicalComplex.parityTorsion_eq_mul_of_shortExact`).
 
 When the short exact sequence splits, no acyclicity is needed
 (`HomologicalComplex.reidemeisterTorsion_eq_mul_of_splitting`): the homology of `C₁` and `C₃` is a
@@ -134,6 +139,10 @@ homomorphisms between them.
   based complexes.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_finprod_det_toMatrix`: the change of the torsion
   under an isomorphism of complexes, in terms of the determinants of its matrices.
+* `HomologicalComplex.shortExactBoundaryBasis`,
+  `HomologicalComplex.torsionBracket_shortExactBoundaryBasis`: the boundary bases of the middle term
+  of a short exact sequence of complexes of any shape, in which its brackets are products of the
+  brackets of the outer terms up to sign.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_of_shortExact`: the multiplicativity of the
   torsion in a based short exact sequence of acyclic complexes.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_of_splitting`: the multiplicativity of the
@@ -406,6 +415,114 @@ theorem torsionBracket_semilinearMap {k : ι} (hi : cs.prev j = i) (hk : cs.next
   induction m using Fin.addCases <;> simp [hb₁]
 
 end ScalarExtensionBracket
+
+section ShortExactBracket
+
+/-! ### Brackets in a short exact sequence -/
+
+variable {ι : Type*} {cs : ComplexShape ι} {C' C C'' : HomologicalComplex (ModuleCat F) cs}
+  {f : C' ⟶ C} {g : C ⟶ C''} (hf : ∀ i, Function.Injective (f.f i).hom)
+  (hfg : ∀ i, Function.Exact (f.f i).hom (g.f i).hom) (hg : ∀ i, Function.Surjective (g.f i).hom)
+  {p' p'' : ℕ} {i j : ι}
+
+/-- The basis of the boundaries `Bⱼ = im (Cᵢ → Cⱼ)` of the middle term of a degreewise short exact
+sequence `0 → C' → C → C'' → 0`, made of the images of a basis `b'` of `B'ⱼ` followed by the
+boundaries of lifts `t` to `Cᵢ` of lifts to `C''ᵢ` of a basis `b''` of `B''ⱼ`. It is a basis
+because the boundaries form a short exact sequence `0 → B'ⱼ → Bⱼ → B''ⱼ → 0` when `C''` is exact
+in degree `i`. -/
+def shortExactBoundaryBasis (hij : cs.next i = j) (h'' : C''.ExactAt i)
+    (b' : Basis (Fin p') F (LinearMap.range (C'.d i j).hom))
+    (b'' : Basis (Fin p'') F (LinearMap.range (C''.d i j).hom)) (t : Fin p'' → C.X i)
+    (ht : ∀ k, (C''.d i j).hom ((g.f i).hom (t k)) = b'' k) :
+    Basis (Fin (p' + p'')) F (LinearMap.range (C.d i j).hom) :=
+  (Basis.ofExactLift (f.boundaryMap_injective i (hf j))
+    (Hom.exact_boundaryMap rfl hij (hfg i) (hg (cs.prev i)) h'') b' b''
+    (fun k ↦ ⟨(C.d i j).hom (t k), t k, rfl⟩)
+    fun k ↦ Subtype.ext ((Hom.coe_boundaryMap g _ _ _).trans
+      ((Hom.comm_apply g _ _ _).symm.trans (ht k)))).reindex finSumFinEquiv
+
+/-- The vectors of `shortExactBoundaryBasis` are the images of `b'` followed by the boundaries of
+the lifts `t`. -/
+theorem coe_shortExactBoundaryBasis (hij : cs.next i = j) (h'' : C''.ExactAt i)
+    (b' : Basis (Fin p') F (LinearMap.range (C'.d i j).hom))
+    (b'' : Basis (Fin p'') F (LinearMap.range (C''.d i j).hom)) (t : Fin p'' → C.X i)
+    (ht : ∀ k, (C''.d i j).hom ((g.f i).hom (t k)) = b'' k) :
+    (fun k ↦ (shortExactBoundaryBasis hf hfg hg hij h'' b' b'' t ht k : C.X j)) =
+      Fin.append (fun k ↦ (f.f j).hom (b' k)) fun k ↦ (C.d i j).hom (t k) := by
+  ext k
+  induction k using Fin.addCases <;> simp [shortExactBoundaryBasis]
+
+variable {n' n'' : ι → ℕ} {c' : ∀ i, Basis (Fin (n' i)) F (C'.X i)}
+  {c'' : ∀ i, Basis (Fin (n'' i)) F (C''.X i)} {c : ∀ i, Basis (Fin (n' i + n'' i)) F (C.X i)}
+  (hc' : ∀ i k, c i (Fin.castAdd (n'' i) k) = (f.f i).hom (c' i k))
+  (hc'' : ∀ i k, (g.f i).hom (c i (Fin.natAdd (n' i) k)) = c'' i k)
+
+include hc' hc'' in
+/-- **The bracket of the middle term of a short exact sequence.** Let `0 → C' → C → C'' → 0` be a
+degreewise short exact sequence of complexes, with compatible bases: the basis of `Cᵢ` is the image
+of the basis of `C'ᵢ` followed by lifts of the basis of `C''ᵢ`. In a degree `j`, between the
+degrees `i` and `k`, where `C'`, `C` and `C''` are exact, compute the bracket of `C` with the
+boundary bases `shortExactBoundaryBasis` and with the images of lifts `s'` of `C'` followed by
+lifts `t₀` through `C → C''` of lifts of `C''`. It is the product of the brackets of `C'` and
+`C''`, up to the sign `(-1) ^ (p'' * q')` of the exchange of the boundaries `B''ⱼ`, of dimension
+`p''`, with the `q'` lifts of the boundaries of `C'` in degree `k`. -/
+theorem torsionBracket_shortExactBoundaryBasis {k : ι} (hi : cs.prev j = i) (hk : cs.next j = k)
+    (hij : cs.next i = j) (hC : C.ExactAt j) (h' : C'.ExactAt j) (h''₁ : C''.ExactAt i)
+    (h''₀ : C''.ExactAt j) {q' q'' : ℕ}
+    (b'₁ : Basis (Fin p') F (LinearMap.range (C'.d i j).hom))
+    (b''₁ : Basis (Fin p'') F (LinearMap.range (C''.d i j).hom))
+    (t₁ : Fin p'' → C.X i) (ht₁ : ∀ l, (C''.d i j).hom ((g.f i).hom (t₁ l)) = b''₁ l)
+    (b'₀ : Basis (Fin q') F (LinearMap.range (C'.d j k).hom))
+    (b''₀ : Basis (Fin q'') F (LinearMap.range (C''.d j k).hom))
+    (t₀ : Fin q'' → C.X j) (ht₀ : ∀ l, (C''.d j k).hom ((g.f j).hom (t₀ l)) = b''₀ l)
+    (s' : Fin q' → C'.X j) (hs' : ∀ l, (C'.d j k).hom (s' l) = b'₀ l)
+    (hS : ∀ l, (C.d j k).hom (Fin.append (fun l ↦ (f.f j).hom (s' l)) t₀ l) =
+      shortExactBoundaryBasis hf hfg hg hk h''₀ b'₀ b''₀ t₀ ht₀ l) :
+    torsionBracket c hi hk hC (shortExactBoundaryBasis hf hfg hg hij h''₁ b'₁ b''₁ t₁ ht₁)
+        (shortExactBoundaryBasis hf hfg hg hk h''₀ b'₀ b''₀ t₀ ht₀)
+        (Fin.append (fun l ↦ (f.f j).hom (s' l)) t₀) hS =
+      (-1) ^ (p'' * q') * (torsionBracket c' hi hk h' b'₁ b'₀ s' hs' *
+        torsionBracket c'' hi hk h''₀ b''₁ b''₀ (fun l ↦ (g.f j).hom (t₀ l)) ht₀) := by
+  have hn' := eq_add_of_exactAt c' hi hk h' b'₁ b'₀
+  have hn'' := eq_add_of_exactAt c'' hi hk h''₀ b''₁ b''₀
+  have hN : n' j + n'' j = p' + q' + (p'' + q'') := by omega
+  rw [torsionBracket_eq_det_append c _ _ hC _ _ _ hS (by omega), coe_shortExactBoundaryBasis,
+    torsionBracket_eq_det_append c' _ _ h' b'₁ b'₀ s' hs' hn',
+    torsionBracket_eq_det_append c'' _ _ h''₀ b''₁ b''₀ _ ht₀ hn'']
+  -- Exchange the boundaries of the lifts of `B''ⱼ` with the lifts of `B'ₖ`; the resulting family is
+  -- block triangular with respect to the compatible basis `c j`.
+  have hsw := ((c j).reindex (finCongr hN)).det.map_append_append_comm
+    (fun l ↦ (f.f j).hom (b'₁ l)) (fun l ↦ (f.f j).hom (s' l))
+    (fun l ↦ (C.d i j).hom (t₁ l)) t₀
+  rw [Basis.det_reindex, Basis.det_reindex] at hsw
+  rw [show Fin.cast (show n' j + n'' j = p' + p'' + (q' + q'') by omega) =
+      Fin.cast (show p' + q' + (p'' + q'') = p' + p'' + (q' + q'') by omega) ∘ finCongr hN
+      from funext fun _ ↦ by simp,
+    ← Function.comp_assoc, hsw,
+    Basis.eq_reindex_ofExactLift (hf j) (hfg j) (c' j) (c'' j) _ (hc' j) (hc'' j),
+    Basis.det_reindex,
+    Basis.ofExactLift_det_eq_mul _ _ _ _ _ _
+      (Fin.append (fun l ↦ (b'₁ l : C'.X j)) s' ∘ Fin.cast hn')
+      (Fin.append (fun l ↦ (b''₁ l : C''.X j)) (fun l ↦ (g.f j).hom (t₀ l)) ∘
+        Fin.cast hn'') _ ?_ ?_]
+  · simp only [Units.smul_def, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, mul_comm q',
+      zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one]
+  -- It remains to check, block by block, that the reordered family is made of the images of the
+  -- family `(b'₁, s')` of `C'ⱼ` followed by lifts of the family `(b''₁, g ∘ t₀)` of `C''ⱼ`.
+  · have hl (m : Fin (p' + q')) : finCongr hN (finSumFinEquiv (.inl (finCongr hn'.symm m))) =
+        Fin.castAdd (p'' + q'') m := Fin.ext (by simp)
+    intro l
+    obtain ⟨m, rfl⟩ := (finCongr hn'.symm).surjective l
+    rw [Function.comp_apply, Function.comp_apply, hl]
+    induction m using Fin.addCases <;> simp
+  · have hr (m : Fin (p'' + q'')) : finCongr hN (finSumFinEquiv (.inr (finCongr hn''.symm m))) =
+        Fin.natAdd (p' + q') m := Fin.ext (by simp; omega)
+    intro l
+    obtain ⟨m, rfl⟩ := (finCongr hn''.symm).surjective l
+    rw [Function.comp_apply, Function.comp_apply, hr]
+    induction m using Fin.addCases <;> simp [← Hom.comm_apply, ht₁]
+
+end ShortExactBracket
 
 variable (C : ChainComplex (ModuleCat F) ℤ)
 
@@ -693,108 +810,6 @@ section ShortExact
 
 /-! ### Multiplicativity in short exact sequences -/
 
-variable {C} {C' C'' : ChainComplex (ModuleCat F) ℤ}
-
-variable {f : C' ⟶ C} {g : C ⟶ C''} (hf : ∀ i, Function.Injective (f.f i).hom)
-  (hfg : ∀ i, Function.Exact (f.f i).hom (g.f i).hom) (hg : ∀ i, Function.Surjective (g.f i).hom)
-
-variable {p' p'' : ℕ} {j : ℤ}
-
-/-- The basis of the boundaries `Bⱼ` of the middle term of a degreewise short exact sequence
-`0 → C' → C → C''→ 0`, made of the images of a basis `b'` of `B'ⱼ` followed by the boundaries of
-lifts `t` to `Cⱼ₊₁` of lifts to `C''ⱼ₊₁` of a basis `b''` of `B''ⱼ`. -/
-private def shortExactBoundaryBasis (h'' : C''.ExactAt (j + 1))
-    (b' : Basis (Fin p') F (LinearMap.range (C'.d (j + 1) j).hom))
-    (b'' : Basis (Fin p'') F (LinearMap.range (C''.d (j + 1) j).hom)) (t : Fin p'' → C.X (j + 1))
-    (ht : ∀ k, (C''.d (j + 1) j).hom ((g.f (j + 1)).hom (t k)) = b'' k) :
-    Basis (Fin (p' + p'')) F (LinearMap.range (C.d (j + 1) j).hom) :=
-  (Basis.ofExactLift (f.boundaryMap_injective (j + 1) (hf j))
-    (Hom.exact_boundaryMap (by simp) (by simp) (hfg (j + 1)) (hg (j + 1 + 1)) h'') b' b''
-    (fun k ↦ ⟨(C.d (j + 1) j).hom (t k), t k, rfl⟩)
-    fun k ↦ Subtype.ext ((Hom.coe_boundaryMap g _ _ _).trans
-      ((Hom.comm_apply g _ _ _).symm.trans (ht k)))).reindex finSumFinEquiv
-
-/-- The vectors of `shortExactBoundaryBasis` are the images of `b'` followed by the boundaries of
-the lifts `t`. -/
-private theorem coe_shortExactBoundaryBasis (h'' : C''.ExactAt (j + 1))
-    (b' : Basis (Fin p') F (LinearMap.range (C'.d (j + 1) j).hom))
-    (b'' : Basis (Fin p'') F (LinearMap.range (C''.d (j + 1) j).hom)) (t : Fin p'' → C.X (j + 1))
-    (ht : ∀ k, (C''.d (j + 1) j).hom ((g.f (j + 1)).hom (t k)) = b'' k) :
-    (fun k ↦ (shortExactBoundaryBasis hf hfg hg h'' b' b'' t ht k : C.X j)) =
-      Fin.append (fun k ↦ (f.f j).hom (b' k)) fun k ↦ (C.d (j + 1) j).hom (t k) := by
-  ext k
-  induction k using Fin.addCases <;> simp [shortExactBoundaryBasis]
-
-variable {n' n'' : ℤ → ℕ} {c' : ∀ i, Basis (Fin (n' i)) F (C'.X i)}
-  {c'' : ∀ i, Basis (Fin (n'' i)) F (C''.X i)} {c : ∀ i, Basis (Fin (n' i + n'' i)) F (C.X i)}
-  (hc' : ∀ i k, c i (Fin.castAdd (n'' i) k) = (f.f i).hom (c' i k))
-  (hc'' : ∀ i k, (g.f i).hom (c i (Fin.natAdd (n' i) k)) = c'' i k)
-
-include hc' hc'' in
-/-- The bracket of the middle term of a based short exact sequence of acyclic complexes, for the
-boundary bases `shortExactBoundaryBasis`, is the product of the brackets of the outer terms, up to
-the sign `(-1) ^ (p'' * q')` of the exchange of the boundaries `B''ⱼ₊₁` with the lifts of the
-boundaries `B'ⱼ`. -/
-private theorem torsionBracket_shortExactBoundaryBasis (hC : C.ExactAt (j + 1))
-    (h' : C'.ExactAt (j + 1)) (h''₁ : C''.ExactAt (j + 1 + 1)) (h''₀ : C''.ExactAt (j + 1))
-    {q' q'' : ℕ}
-    (b'₁ : Basis (Fin p') F (LinearMap.range (C'.d (j + 1 + 1) (j + 1)).hom))
-    (b''₁ : Basis (Fin p'') F (LinearMap.range (C''.d (j + 1 + 1) (j + 1)).hom))
-    (t₁ : Fin p'' → C.X (j + 1 + 1))
-    (ht₁ : ∀ k, (C''.d (j + 1 + 1) (j + 1)).hom ((g.f (j + 1 + 1)).hom (t₁ k)) = b''₁ k)
-    (b'₀ : Basis (Fin q') F (LinearMap.range (C'.d (j + 1) j).hom))
-    (b''₀ : Basis (Fin q'') F (LinearMap.range (C''.d (j + 1) j).hom))
-    (t₀ : Fin q'' → C.X (j + 1))
-    (ht₀ : ∀ k, (C''.d (j + 1) j).hom ((g.f (j + 1)).hom (t₀ k)) = b''₀ k)
-    (s' : Fin q' → C'.X (j + 1)) (hs' : ∀ k, (C'.d (j + 1) j).hom (s' k) = b'₀ k)
-    (hS : ∀ k, (C.d (j + 1) j).hom (Fin.append (fun k ↦ (f.f (j + 1)).hom (s' k)) t₀ k) =
-      shortExactBoundaryBasis hf hfg hg h''₀ b'₀ b''₀ t₀ ht₀ k) :
-    torsionBracket c (by simp) (by simp) hC
-        (shortExactBoundaryBasis hf hfg hg h''₁ b'₁ b''₁ t₁ ht₁)
-        (shortExactBoundaryBasis hf hfg hg h''₀ b'₀ b''₀ t₀ ht₀)
-        (Fin.append (fun k ↦ (f.f (j + 1)).hom (s' k)) t₀) hS =
-      (-1) ^ (p'' * q') * (torsionBracket c' (by simp) (by simp) h' b'₁ b'₀ s' hs' *
-        torsionBracket c'' (by simp) (by simp) h''₀ b''₁ b''₀
-          (fun k ↦ (g.f (j + 1)).hom (t₀ k)) ht₀) := by
-  have hn' := eq_add_of_exactAt c' (by simp) (by simp) h' b'₁ b'₀
-  have hn'' := eq_add_of_exactAt c'' (by simp) (by simp) h''₀ b''₁ b''₀
-  have hN : n' (j + 1) + n'' (j + 1) = p' + q' + (p'' + q'') := by omega
-  rw [torsionBracket_eq_det_append c _ _ hC _ _ _ hS (by omega), coe_shortExactBoundaryBasis,
-    torsionBracket_eq_det_append c' _ _ h' b'₁ b'₀ s' hs' hn',
-    torsionBracket_eq_det_append c'' _ _ h''₀ b''₁ b''₀ _ ht₀ hn'']
-  -- Exchange the boundaries of the lifts of `B''ⱼ₊₁` with the lifts of `B'ⱼ`; the resulting family
-  -- is block triangular with respect to the compatible basis `c (j + 1)`.
-  have hsw := ((c (j + 1)).reindex (finCongr hN)).det.map_append_append_comm
-    (fun k ↦ (f.f (j + 1)).hom (b'₁ k)) (fun k ↦ (f.f (j + 1)).hom (s' k))
-    (fun k ↦ (C.d (j + 1 + 1) (j + 1)).hom (t₁ k)) t₀
-  rw [Basis.det_reindex, Basis.det_reindex] at hsw
-  rw [show Fin.cast (show n' (j + 1) + n'' (j + 1) = p' + p'' + (q' + q'') by omega) =
-      Fin.cast (show p' + q' + (p'' + q'') = p' + p'' + (q' + q'') by omega) ∘ finCongr hN
-      from funext fun _ ↦ by simp,
-    ← Function.comp_assoc, hsw,
-    Basis.eq_reindex_ofExactLift (hf (j + 1)) (hfg (j + 1)) (c' (j + 1)) (c'' (j + 1)) _
-      (hc' (j + 1)) (hc'' (j + 1)), Basis.det_reindex,
-    Basis.ofExactLift_det_eq_mul _ _ _ _ _ _
-      (Fin.append (fun k ↦ (b'₁ k : C'.X (j + 1))) s' ∘ Fin.cast hn')
-      (Fin.append (fun k ↦ (b''₁ k : C''.X (j + 1))) (fun k ↦ (g.f (j + 1)).hom (t₀ k)) ∘
-        Fin.cast hn'') _ ?_ ?_]
-  · simp only [Units.smul_def, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, mul_comm q',
-      zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one]
-  -- It remains to check, block by block, that the reordered family is made of the images of the
-  -- family `(b'₁, s')` of `C'ⱼ₊₁` followed by lifts of the family `(b''₁, g ∘ t₀)` of `C''ⱼ₊₁`.
-  · have hl (m : Fin (p' + q')) : finCongr hN (finSumFinEquiv (.inl (finCongr hn'.symm m))) =
-        Fin.castAdd (p'' + q'') m := Fin.ext (by simp)
-    intro i
-    obtain ⟨m, rfl⟩ := (finCongr hn'.symm).surjective i
-    rw [Function.comp_apply, Function.comp_apply, hl]
-    induction m using Fin.addCases <;> simp
-  · have hr (m : Fin (p'' + q'')) : finCongr hN (finSumFinEquiv (.inr (finCongr hn''.symm m))) =
-        Fin.natAdd (p' + q') m := Fin.ext (by simp; omega)
-    intro i
-    obtain ⟨m, rfl⟩ := (finCongr hn''.symm).surjective i
-    rw [Function.comp_apply, Function.comp_apply, hr]
-    induction m using Fin.addCases <;> simp [← Hom.comm_apply, ht₁]
-
 /-- If the middle term of a sequence of based complexes is unbounded, then so is one of the outer
 terms, so both sides of the multiplicativity formula are `0`, whatever the sign `ε`. -/
 private theorem reidemeisterTorsion_eq_mul_of_not_finite {C₁ C₂ C₃ : ChainComplex (ModuleCat F) ℤ}
@@ -846,12 +861,12 @@ theorem reidemeisterTorsion_eq_mul_of_shortExact {S : ShortComplex (ChainComplex
   have ht (j : ℤ) (k) : (S.X₃.d (j + 1) j).hom ((S.g.f (j + 1)).hom (t j k)) =
       chosenBoundaryBasis S.X₃ c₃ (j + 1) j k := by
     rw [Function.surjInv_eq (hg (j + 1)), chosenBoundaryLift_spec]
-  let β (j : ℤ) := shortExactBoundaryBasis hf hfg hg (h₃ (j + 1))
+  let β (j : ℤ) := shortExactBoundaryBasis hf hfg hg (by simp) (h₃ (j + 1))
     (chosenBoundaryBasis S.X₁ c₁ (j + 1) j) (chosenBoundaryBasis S.X₃ c₃ (j + 1) j) (t j) (ht j)
   let s (j : ℤ) :=
     Fin.append (fun k ↦ (S.f.f (j + 1)).hom (chosenBoundaryLift S.X₁ c₁ (j + 1) j k)) (t j)
   have hs (j : ℤ) (k) : (S.X₂.d (j + 1) j).hom (s j k) = β j k := by
-    rw [congrFun (coe_shortExactBoundaryBasis hf hfg hg (h₃ (j + 1)) _ _ _ (ht j)) k]
+    rw [congrFun (coe_shortExactBoundaryBasis hf hfg hg _ (h₃ (j + 1)) _ _ _ (ht j)) k]
     induction k using Fin.addCases <;> simp [s, Hom.comm_apply, chosenBoundaryLift_spec]
   have hτ₁ := hasFiniteMulSupport_torsionBracket (c := c₁) hn₁ h₁
     (fun j ↦ chosenBoundaryBasis S.X₁ c₁ (j + 1) j)
