@@ -45,6 +45,8 @@ are read off from this formula, the inverse chart having an invertible derivativ
   with kernel `𝕜 v`.
 * `Projectivization.hasMFDerivAt_of_eventually_eq_mk`, `Projectivization.mfderiv_eq_mfderivMk_comp`:
   the chain rule for maps given in homogeneous coordinates.
+* `Projectivization.isInvertible_mfderiv_affineChart_symm`: the inverse of each standard affine
+  chart has an invertible derivative.
 
 ## References
 
@@ -196,8 +198,9 @@ private theorem mfderivMk_eq_comp {i : Fin (n + 1)} {v : Fin (n + 1) → 𝕜} (
     mk_eq_mk_iff']
   exact ⟨(w i)⁻¹, (Fin.insertNth_one_div_eq_inv_smul i w hwi).symm⟩
 
-/-- The inverse of the affine chart at `i` has an invertible derivative at every point. -/
-private theorem isInvertible_mfderiv_affineChart_symm (i : Fin (n + 1)) (z : Fin n → 𝕜) :
+/-- The inverse `z ↦ [Fin.insertNth i 1 z]` of the standard affine chart at `i` of projective
+space has an invertible derivative at every point. -/
+theorem isInvertible_mfderiv_affineChart_symm (i : Fin (n + 1)) (z : Fin n → 𝕜) :
     (mfderiv 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) (affineOpenPartialHomeomorph (K := 𝕜) i).symm
       z).IsInvertible :=
   TauCeti.isInvertible_mfderiv_chart_symm

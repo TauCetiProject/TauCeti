@@ -25,26 +25,30 @@ Let `H = ℙ(ker φ)` be a hyperplane and `p = [v]`, `q = [w]` two distinct poin
 marked line `A₀ = TauCeti.markedLine φ v w`, the line through `p` and `q` marked at its point
 `h = [u]` on `H`, is the one marked line that the evaluation sends to `H × {p} × {q}`
 (`TauCeti.existsUnique_markedLine`). This file proves that the evaluation is transverse to
-`H × {p} × {q}` there. The tangent space of `H` at `h` is the image of `ker φ` under the
-derivative of the projection at `u`, `H` being the image of the punctured cone `ker φ ∖ 0`; the
-tangent spaces of the points `p` and `q` are zero. So the tangent space of `H × {p} × {q}` at the
-image point is `T_h H × 0 × 0`, and:
+`H × {p} × {q}` there, at the level of derivatives. Here `T_h H` is taken to be the image of
+`ker φ` under the derivative of the projection at `u`, which models the tangent space of `H` at
+`h`, `H` being the image of the punctured cone `ker φ ∖ 0`; its identification with the tangent
+space of a submanifold structure on `H` is not proved here. The points `p` and `q` contribute the
+zero tangent spaces, so `T_h H × 0 × 0` plays the role of the tangent space of `H × {p} × {q}`
+at the image point, and:
 
 * **Transversality**: the range of the derivative and `T_h H × 0 × 0` span the tangent space
   `T_h ℙⁿ × T_p ℙⁿ × T_q ℙⁿ` (`TauCeti.range_markedPointsMFDeriv_markedLine_sup_eq_top`);
 * **the preimage is a single line**: the variations that the derivative sends into
   `T_h H × 0 × 0` are the multiples of `A₀` (`TauCeti.comap_markedPointsMFDeriv_markedLine`),
   the tangent line of the orbit of `A₀` under rescaling. These rescalings induce the same map of
-  projective spaces, so on the space of marked lines, where `A` is taken up to a nonzero scalar,
-  the evaluation meets `H × {p} × {q}` transversally in the single point `[A₀]`.
+  projective spaces. The intended consequence is that on the space of marked lines, where `A` is
+  taken up to a nonzero scalar, the evaluation meets `H × {p} × {q}` transversally in the single
+  point `[A₀]`; that quotient space and the evaluation on it are not formalized here.
 
 Both reduce, through the kernel and the range of the derivative of the projection
 (`Projectivization.ker_mfderivMk`, `Projectivization.surjective_mfderivMk`), to the linear
-incidence conditions of `TauCeti.markedLineIncidence`. Over `ℂ` this is the transversality of
-the evaluation map of the three-pointed lines of `ℂℙⁿ` at the line through two points marked at
-its point on a hyperplane, behind the three-point count `⟨x, xⁿ, xⁿ⟩_L = 1` of a hyperplane class
-and two point classes in the class `L` of a line. The orientation sign of this intersection
-point is not treated here.
+incidence conditions of `TauCeti.markedLineIncidence`. Over `ℂ` these linear statements are
+intended to give the transversality of the evaluation map of the three-pointed lines of `ℂℙⁿ` at
+the line through two points marked at its point on a hyperplane, behind the three-point count
+`⟨x, xⁿ, xⁿ⟩_L = 1` of a hyperplane class and two point classes in the class `L` of a line; that
+evaluation map is not formalized here. The orientation sign of this intersection point is not
+treated here either.
 
 ## References
 
@@ -137,7 +141,8 @@ theorem ker_mfderivMk_markedLine_single_zero_one (hv : φ v ≠ 0) (hw : φ w �
 `[v]` and `[w]` marked at its point `[u]` on `ker φ`, for `v` and `w` linearly independent and off
 `ker φ`, the range of the derivative of the evaluation and the tangent space
 `T_[u] ℙ(ker φ) × 0 × 0` of `ℙ(ker φ) × {[v]} × {[w]}` together span the whole tangent space.
-Here `T_[u] ℙ(ker φ)` is the image of `ker φ` under the derivative of the projection at `u`. -/
+Here `T_[u] ℙ(ker φ)` is taken to be the image of `ker φ` under the derivative of the projection
+at `u`. -/
 theorem range_markedPointsMFDeriv_markedLine_sup_eq_top (hvw : LinearIndependent 𝕜 ![v, w])
     (hv : φ v ≠ 0) (hw : φ w ≠ 0) :
     LinearMap.range (markedPointsMFDeriv (markedLine φ v w)) ⊔
@@ -174,7 +179,9 @@ line.** At the line through
 `[v]` and `[w]` marked at its point `[u]` on `ker φ`, for `v` and `w` linearly independent and off
 `ker φ`, the variations that the derivative of the evaluation sends into the tangent space
 `T_[u] ℙ(ker φ) × 0 × 0` of `ℙ(ker φ) × {[v]} × {[w]}` are exactly the multiples of the marked
-line: the directions of rescaling, which do not move the induced map of projective spaces. -/
+line: the directions of rescaling, which do not move the induced map of projective spaces. Here
+`T_[u] ℙ(ker φ)` is taken to be the image of `ker φ` under the derivative of the projection at
+`u`. -/
 theorem comap_markedPointsMFDeriv_markedLine (hvw : LinearIndependent 𝕜 ![v, w]) (hv : φ v ≠ 0)
     (hw : φ w ≠ 0) :
     (((LinearMap.ker φ).map (mfderivMk (markedLine φ v w (Pi.single 1 1))).toLinearMap).prod
