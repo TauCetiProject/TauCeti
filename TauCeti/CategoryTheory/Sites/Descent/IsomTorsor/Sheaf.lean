@@ -222,6 +222,28 @@ lemma sheafHomTorsor_smul
     a • p = b.homAct p ((abelianSheafToGrpSheafObjEquiv _ T).symm a) :=
   (rfl)
 
+/-- Translating both local isomorphisms multiplies their coefficients under composition. -/
+lemma sheafHomTorsor_smul_comp_smul {z : F.obj (.mk (op U))}
+    (hxy : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    (hyz : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj y ≅ (F.map f.op.toLoc).toFunctor.obj z))
+    {T : (Over U)ᵒᵖ} (p : (b.sheafHomTorsor x y hxy).sheaf.obj.obj T)
+    (q : (b.sheafHomTorsor y z hyz).sheaf.obj.obj T)
+    (g h : ((abelianSheafToGrpSheaf (J.over U)).obj
+      ((J.overPullback AddCommGrpCat U).obj A)).obj.obj T) :
+    (g • p) ≫ (h • q) =
+      b.homAct (p ≫ q) ((abelianSheafToGrpSheafObjEquiv _ T).symm (g * h)) := by
+  -- Name the fibre morphism so that `asIso` can infer its groupoid instance through the
+  -- exposed identification of torsor sections with Hom-presheaf sections.
+  let q' : (F.map T.unop.hom.op.toLoc).toFunctor.obj y ⟶
+    (F.map T.unop.hom.op.toLoc).toFunctor.obj z := q
+  rw [sheafHomTorsor_smul, sheafHomTorsor_smul]
+  -- This rewrite crosses that same identification and the multiplicative coefficient tag.
+  erw [b.comp_homAct, b.homAct_comp_hom p (asIso q'), ← b.homAct_mul]
+  congr 1
+  exact (mul_comm _ _).trans (map_mul _ _ _).symm
+
 /-- The torsor `Isom(x, y)` is trivial, that is has a global section, if and only if `x` and `y`
 are isomorphic over `U`. -/
 theorem mk_sheafHomTorsor_eq_one_iff
