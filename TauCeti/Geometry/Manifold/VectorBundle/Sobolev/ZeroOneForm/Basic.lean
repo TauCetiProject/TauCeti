@@ -70,6 +70,8 @@ which lifts the pointwise `(0,1)`-projection
   consists of the elements whose chart data are complex linear almost everywhere.
 * `TauCeti.chartValueL_zeroOnePartSobolevL_ae_coord`: the projection lifts the pointwise
   `(0,1)`-projection of one-forms.
+* `TauCeti.FiniteBundleAtlas.isZeroOneForm_smul_chartSection`: a one-form read in a chart as
+  antilinear maps, cut off outside the chart domain, is a `(0,1)`-form.
 * `TauCeti.mem_zeroOneSobolevSections_of_isZeroOneForm`: an element whose chart data are the
   readings of a `(0,1)`-form, for instance of a smooth one, is a Sobolev `(0,1)`-form.
 * `TauCeti.zeroOneLowerOrdersL_zeroOnePartSobolevL`:
@@ -141,6 +143,26 @@ theorem isZeroOneForm_iff_coord_tangentHom (i : Fin A.n)
   exact isZeroOneForm_iff_inCoordinates
     (inTangentCoordinates_ofComplexManifold (A.dom_subset_chart_source i (A.symm_mem_dom hy)))
     (A.dom_subset_baseSet i (A.symm_mem_dom hy))
+
+variable [∀ x, IsScalarTower ℝ ℂ (V x)] in
+/-- A real multiple of the one-form that reads in chart `i` as `G`, and vanishes off the chart
+domain, is a `(0,1)`-form if `G` takes complex antilinear values on the chart image. -/
+theorem isZeroOneForm_smul_chartSection {i : Fin A.n} {G : E → E →L[ℝ] F}
+    (hG : ∀ z ∈ A.image i, ∀ v, G z (Complex.I • v) = -(Complex.I • G z v)) (c : ℝ) (x : M) :
+    (ofComplexManifold E M).IsZeroOneForm (c • A.tangentHom.chartSection i G x) := by
+  set η := A.tangentHom.chartSection i G
+  have hηx : (ofComplexManifold E M).IsZeroOneForm (η x) := by
+    by_cases hx : x ∈ A.dom i
+    · have hy : A.chart i x ∈ A.image i := A.mem_image.2 ⟨x, hx, rfl⟩
+      have hη : A.tangentHom.coord i η (A.chart i x) = G (A.chart i x) :=
+        coord_chartSection _ (by rwa [image_tangentHom])
+      have h := (A.isZeroOneForm_iff_coord_tangentHom i η hy).2 fun v ↦ by rw [hη]; exact hG _ hy v
+      rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)] at h
+    · have h0 : η x = 0 := chartSection_eq_zero fun h ↦ (hx h).elim
+      rw [h0]
+      exact isZeroOneForm_iff.2 fun v ↦ by simp
+  refine isZeroOneForm_iff.2 fun v ↦ ?_
+  simp only [smul_apply, isZeroOneForm_iff.1 hηx v, smul_neg, smul_comm c Complex.I]
 
 section TangentHom
 

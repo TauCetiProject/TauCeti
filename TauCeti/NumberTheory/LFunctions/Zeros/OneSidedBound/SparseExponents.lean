@@ -17,7 +17,7 @@ To construct sparse sets of places in a cyclotomic tower, one takes powers of a 
 order `2 ^ s` with exponents from a modular Behrend set. The exponents must avoid weighted
 means with total weight at most `2 * l₀ s`, and the set must be large compared with
 `towerDeg s = 3 * l₀ s * 2 ^ s`. This file supplies the exponent set with the required
-cardinality, before transporting it to places.
+cardinality, and gives a digit bound for constructions that take the digit box as input.
 
 The cardinality budget is that of `New.Parameters.exists_isSparse` in
 `grh/src/New/Reduction/Data/Existence.lean` of lsernau/grh-lean (`72fead1`). We take the
@@ -33,7 +33,7 @@ namespace TauCeti.OneSidedBound
 private theorem exists_sparse_digit_bound {s n : ℕ} {W : ℝ} (hn : 0 < n)
     (hW : W ≤ 2 ^ s) (ho : (2 : ℝ) ^ s ≤ W ^ (n + 1))
     (hbase : (2 * (l₀ s : ℝ)) ^ n ≤ W) :
-    ∃ H : ℕ, (2 * l₀ s * H) ^ n ≤ 2 ^ s ∧ (H : ℝ) ≤ W ∧
+    ∃ H : ℕ, 0 < H ∧ (2 * l₀ s * H) ^ n ≤ 2 ^ s ∧ (H : ℝ) ≤ W ∧
       (2 : ℝ) ^ s < W * (2 * H) ^ n := by
   have hW₀ : 0 < W := lt_of_lt_of_le (by rw [l₀_def]; positivity) hbase
   let u : ℝ := ((2 : ℝ) ^ s / W) ^ ((n : ℝ)⁻¹)
@@ -57,7 +57,7 @@ private theorem exists_sparse_digit_bound {s n : ℕ} {W : ℝ} (hn : 0 < n)
   have hHu : (H : ℝ) ≤ u := Nat.floor_le hu₀
   have hH₂ : H + 1 ≤ 2 * H := by omega
   have huH : u < 2 * (H : ℝ) := (Nat.lt_floor_add_one u).trans_le (by exact_mod_cast hH₂)
-  refine ⟨H, ?_, hHu.trans huW, ?_⟩
+  refine ⟨H, hH, ?_, hHu.trans huW, ?_⟩
   · have hh := pow_le_pow_left₀ (Nat.cast_nonneg H) hHu n
     rw [hup] at hh
     have hfit : (2 * (l₀ s : ℝ) * H) ^ n ≤ (2 : ℝ) ^ s := by
@@ -106,6 +106,17 @@ private theorem towerDeg_le_sparse_bound {s n H : ℕ} {W : ℝ} (hn : 0 < n)
       rw [← hWW]
       gcongr
 
+/-- Choose a positive side length `H` for the modular Behrend construction. The digit box
+fits modulo `2 ^ s`, and its sphere-count lower bound covers the tower degree after
+multiplication by `W ^ 6`. -/
+theorem exists_sparse_place_digit_bound {s n : ℕ} {W : ℝ} (hn : 0 < n)
+    (hW : W ≤ 2 ^ s) (ho : (2 : ℝ) ^ s ≤ W ^ (n + 1))
+    (hbase : (2 * (l₀ s : ℝ)) ^ n ≤ W) :
+    ∃ H : ℕ, 0 < H ∧ (2 * l₀ s * H) ^ n ≤ 2 ^ s ∧
+      (towerDeg s : ℝ) ≤ ((H : ℝ) ^ n / (n * H ^ 2)) * W ^ 6 := by
+  obtain ⟨H, hH, hfit, hHW, hcover⟩ := exists_sparse_digit_bound hn hW ho hbase
+  exact ⟨H, hH, hfit, towerDeg_le_sparse_bound hn hbase hHW hcover⟩
+
 /-- At tower exponent `s`, there is a set of exponents below `2 ^ s` with cardinality at least
 `towerDeg s / W ^ 6`, avoiding all nontrivial modular weighted means with positive weights
 of sum at most `2 * l₀ s`. -/
@@ -116,10 +127,10 @@ theorem exists_large_sparse_exponents {s n : ℕ} {W : ℝ} (hn : 0 < n)
         (a + b) * e₂ ≡ a * e₁ + b * e₃ [MOD 2 ^ s] → e₁ = e₂ ∧ e₂ = e₃ := by
   have hL : 0 < l₀ s := by rw [l₀_def]; positivity
   by_cases hW : W ≤ (2 : ℝ) ^ s
-  · obtain ⟨H, hfit, hHW, hcover⟩ := exists_sparse_digit_bound hn hW ho hbase
+  · obtain ⟨H, _, hfit, hbudget⟩ := exists_sparse_place_digit_bound hn hW ho hbase
     obtain ⟨S, hS, hcard, hmean⟩ :=
       exists_eq_and_eq_of_add_mul_modEq (n := n) (H := H) (L := 2 * l₀ s) (by omega) hfit
-    refine ⟨S, hS, (towerDeg_le_sparse_bound hn hbase hHW hcover).trans ?_, hmean⟩
+    refine ⟨S, hS, hbudget.trans ?_, hmean⟩
     push_cast at hcard
     gcongr
   · have hL' : (1 : ℝ) ≤ l₀ s := by exact_mod_cast hL
