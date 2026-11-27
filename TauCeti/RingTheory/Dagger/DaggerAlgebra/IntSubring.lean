@@ -131,21 +131,19 @@ theorem intSubring.isUnit_one_sub_of_supSeminorm_lt_one {a : intSubring K A}
   have hA := isAffinoidAlgebra_completion (K := K) (A := A)
   obtain ⟨u, hu⟩ := IsDaggerAlgebra.isUnit_one_sub_of_supSeminorm_lt_one ha
   have hinv : ((u⁻¹ : Aˣ) : A) ∈ intSubring K A := by
-    rw [mem_intSubring_iff_supSeminorm_le_one, ← supSeminorm_toCompletion,
-      hA.supSeminorm_le_iff zero_le_one]
-    intro x
-    have hax : pointNorm K x (toCompletion K A a) < 1 :=
-      (hA.pointNorm_le_supSeminorm x _).trans_lt (by rwa [supSeminorm_toCompletion])
-    -- By the ultrametric inequality, `|1 - a| = 1` at `x`.
-    have h1 : 1 ≤ pointNorm K x (toCompletion K A u) := by
+    -- By the ultrametric inequality, `|1 - a| = 1` at every classical point of `Â`.
+    have h1 : ∀ x, 1 ≤ pointNorm K x (toCompletion K A u) := fun x ↦ by
+      have hax : pointNorm K x (toCompletion K A a) < 1 :=
+        (hA.pointNorm_le_supSeminorm x _).trans_lt (by rwa [supSeminorm_toCompletion])
       have h := hA.pointNorm_add_le x (toCompletion K A u) (toCompletion K A a)
       rw [← map_add, hu, sub_add_cancel, map_one, pointNorm_one] at h
       rw [hu]
       exact (le_max_iff.mp h).resolve_right hax.not_ge
-    have hmul : pointNorm K x (toCompletion K A ((u⁻¹ : Aˣ) : A)) *
-        pointNorm K x (toCompletion K A u) = 1 := by
-      rw [← hA.pointNorm_mul, ← map_mul, Units.inv_mul, map_one, pointNorm_one]
-    nlinarith [pointNorm_nonneg (K := K) (x := x) (toCompletion K A ((u⁻¹ : Aˣ) : A))]
+    have hτ : toCompletion K A ((u⁻¹ : Aˣ) : A) = Ring.inverse (toCompletion K A u) :=
+      (Ring.inverse_unit (Units.map (toCompletion K A : A →* completion K A) u)).symm
+    rw [mem_intSubring_iff_isPowerBounded_toCompletion, hτ]
+    exact (IsAffinoidAlgebra.isUnit_and_isPowerBounded_inverse_iff (K := K)
+      (A := completion K A) hA |>.mpr h1).2
   refine isUnit_iff_exists_inv.mpr ⟨⟨_, hinv⟩, Subtype.ext ?_⟩
   simp [← hu]
 
