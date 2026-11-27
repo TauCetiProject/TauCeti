@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
+public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
 
 /-!
 # Relative slices and coslices of inner fibrations
@@ -19,7 +20,8 @@ and along a right anodyne extension so is the relative coslice map
 (`SSet.coslice.rlp_restrictionMap`). For a right fibration `p : X ⟶ S` and a vertex `x` of `X`, the
 map of slices `X_{/x} ⟶ S_{/p x}` is a trivial fibration (`SSet.slice.rlp_map_of_rightFibration`),
 since `∂Δ[n] ⋆ Δ[0] ⟶ Δ[n] ⋆ Δ[0]` is the horn `Λ[n + 1, n + 1]`; dually, for a left fibration,
-so is the map of coslices `X_{x/} ⟶ S_{p x/}` (`SSet.coslice.rlp_map_of_leftFibration`).
+so is the map of coslices `X_{x/} ⟶ S_{p x/}` (`SSet.coslice.rlp_map_of_leftFibration`), which is
+the opposite of a map of slices of the right fibration `pᵒᵖ`.
 
 Through the universal properties of slices and coslices, lifting problems, ranging over all
 diagrams, correspond to extension problems along the pushout-join of `j : A ⟶ B` and
@@ -150,18 +152,6 @@ lemma rightAnodyneExtensions_map_boundary_ι_id :
   rw [← Subcomplex.toRange_ι (map ∂Δ[n].ι (𝟙 _))]
   exact MorphismProperty.comp_mem _ _ _ (MorphismProperty.of_isIso _ _) h
 
-/-- **The inclusion `Δ[0] ⋆ ∂Δ[n] ⟶ Δ[0] ⋆ Δ[n]` is left anodyne**: under
-`Δ[0] ⋆ Δ[n] ≅ Δ[0 + n + 1]`, it is the inclusion of the horn `Λ[0 + n + 1, 0]` opposite to the
-initial vertex (`SSet.join.preimage_range_map_id_boundary_ι`). -/
-lemma leftAnodyneExtensions_map_id_boundary_ι :
-    leftAnodyneExtensions (map (𝟙 (Δ[0] : SSet.{u})) ∂Δ[n].ι) := by
-  have h : leftAnodyneExtensions (Subcomplex.range (map (𝟙 (Δ[0] : SSet.{u})) ∂Δ[n].ι)).ι :=
-    (Subcomplex.morphismProperty_ι_iff_of_preimage_eq _ (stdSimplexIso 0 n)
-      (preimage_range_map_id_boundary_ι n)).2
-        (leftAnodyneExtensions.horn_ι (Fin.lt_def.2 (by simp)))
-  rw [← Subcomplex.toRange_ι (map (𝟙 _) ∂Δ[n].ι)]
-  exact MorphismProperty.comp_mem _ _ _ (MorphismProperty.of_isIso _ _) h
-
 end join
 
 namespace slice
@@ -196,27 +186,27 @@ namespace coslice
 
 /-- For a left fibration `p : X ⟶ S` and a vertex `x : Δ[0] ⟶ X`, **the map of coslices
 `X_{x/} ⟶ S_{x ≫ p/}` is a trivial fibration**: it has the right lifting property with respect to
-every monomorphism. Through the universal property of the coslice, a lifting problem against
-`∂Δ[n] ⟶ Δ[n]` is one against `Δ[0] ⋆ ∂Δ[n] ⟶ Δ[0] ⋆ Δ[n]`, which is left anodyne
-(`SSet.join.leftAnodyneExtensions_map_id_boundary_ι`). -/
+every monomorphism. Through `SSet.coslice.opSliceIso`, it is the opposite of the map of slices
+`Xᵒᵖ_{/xᵒᵖ} ⟶ Sᵒᵖ_{/(x ≫ p)ᵒᵖ}` of the right fibration `pᵒᵖ`, a trivial fibration by
+`SSet.slice.rlp_map_of_rightFibration` once `Δ[0]ᵒᵖ` is identified with `Δ[0]`. -/
 lemma rlp_map_of_leftFibration (p : X ⟶ S) [LeftFibration p] (x : Δ[0] ⟶ X) {y : Δ[0] ⟶ S}
     (h : 𝟙 Δ[0] ≫ x ≫ p = y) : (monomorphisms SSet.{u}).rlp (map (𝟙 Δ[0]) p h) := by
-  rw [rlp_monomorphisms]
-  rintro _ _ _ ⟨n⟩
-  refine ⟨fun {a b} sq ↦ ?_⟩
-  -- The square is a map `Δ[0] ⋆ ∂Δ[n] ⟶ X` over the restriction of a map `Δ[0] ⋆ Δ[n] ⟶ S`.
-  have hw : (homEquiv a).val ≫ p = join.map (𝟙 _) ∂Δ[n].ι ≫ (homEquiv b).val := by
-    have := congrArg (fun F ↦ (homEquiv F).val) sq.w
-    rwa [homEquiv_comp_map_coe, join.map_id, Category.id_comp, homEquiv_comp_coe] at this
-  have := (join.leftAnodyneExtensions_map_id_boundary_ι n).hasLiftingProperty p
-  have sq' : CommSq (homEquiv a).val (join.map (𝟙 _) ∂Δ[n].ι) p (homEquiv b).val := ⟨hw⟩
-  refine ⟨⟨⟨homEquiv.symm ⟨sq'.lift, ?_⟩, hom_ext ?_, hom_ext ?_⟩⟩⟩
-  · calc join.inl _ _ ≫ sq'.lift = join.inl _ _ ≫ join.map (𝟙 _) ∂Δ[n].ι ≫ sq'.lift := by
-          rw [join.inl_map_assoc, Category.id_comp]
-      _ = x := by rw [sq'.fac_left, (homEquiv a).property]
-  · rw [homEquiv_comp_coe, Equiv.apply_symm_apply, sq'.fac_left]
-  · rw [homEquiv_comp_map_coe, Equiv.apply_symm_apply, join.map_id, Category.id_comp,
-      sq'.fac_right]
+  rw [← cancel_left_of_respectsIso (monomorphisms SSet.{u}).rlp (opSliceIso x).inv,
+    opSliceIso_inv_comp_map _ _ h (CategoryTheory.Functor.map_id _ _) rfl,
+    cancel_right_of_respectsIso (monomorphisms SSet.{u}).rlp, rlp_monomorphisms_opFunctor_map_iff]
+  -- Restricting along `e : Δ[0] ≅ Δ[0]ᵒᵖ` identifies this map of slices with the map of slices over
+  -- the vertices `e ≫ xᵒᵖ` and `e ≫ yᵒᵖ` of `Xᵒᵖ` and `Sᵒᵖ`.
+  let e := (stdSimplex.opIso.{u} ⦋0⦌).inv
+  have hsq : slice.map (p := opFunctor.map x) (q := opFunctor.map y) (𝟙 _) (opFunctor.map p)
+        (by simp [← h]) ≫
+      slice.map (q := e ≫ opFunctor.map y) e (𝟙 S.op) (by simp) =
+      slice.map (p := opFunctor.map x) (q := e ≫ opFunctor.map x) e (𝟙 X.op) (by simp) ≫
+        slice.map (q := e ≫ opFunctor.map y) (𝟙 Δ[0]) (opFunctor.map p) (by simp [← h]) := by
+    simp
+  rw [← cancel_right_of_respectsIso (monomorphisms SSet.{u}).rlp _
+      (slice.map (q := e ≫ opFunctor.map y) e (𝟙 S.op) (by simp)), hsq,
+    cancel_left_of_respectsIso (monomorphisms SSet.{u}).rlp]
+  exact slice.rlp_map_of_rightFibration _ _ _
 
 /-- The relative coslice map of an inner fibration along a right anodyne extension is a trivial
 fibration. -/

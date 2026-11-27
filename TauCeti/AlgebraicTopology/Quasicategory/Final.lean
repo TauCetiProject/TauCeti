@@ -119,12 +119,10 @@ private lemma exists_extension (hx : L.IsTerminalVertex x) {n : ℕ} (τ : join 
     (hτ : join.inr _ _ ≫ τ = const x) :
     ∃ σ : join Δ[0] Δ[n] ⟶ L, join.map (𝟙 _) ∂Δ[n].ι ≫ σ = τ ∧ join.inr _ _ ≫ σ = const x := by
   let U := Subcomplex.unionJoin (∂Δ[0] : (Δ[0] : SSet.{u}).Subcomplex) ∂Δ[n]
-  have h₀ : ¬ (∂Δ[0] : SSet.{u}).Nonempty :=
-    fun ⟨v⟩ ↦ v.property fun _ ↦ ⟨0, Fin.subsingleton_one.elim _ _⟩
   -- Glue `τ` with the constant map at `x` on `∂Δ[0] ⋆ Δ[n] ≅ Δ[n]`.
   have hc : join.map (𝟙 _) ∂Δ[n].ι ≫ (const x : join ∂Δ[0] Δ[n] ⟶ L) =
       join.map ∂Δ[0].ι (𝟙 _) ≫ τ := by
-    have := join.isIso_inr (L := ∂Δ[n]) h₀
+    have := join.isIso_inr (L := ∂Δ[n]) not_nonempty_boundary_zero
     rw [comp_const, ← cancel_epi (join.inr _ _), join.inr_map_assoc, Category.id_comp, hτ,
       comp_const]
   let g : (U : SSet.{u}) ⟶ L := (Subcomplex.unionJoin.isPushout _ _).desc (const x) τ hc

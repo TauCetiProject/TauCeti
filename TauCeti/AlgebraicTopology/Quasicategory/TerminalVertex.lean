@@ -162,11 +162,8 @@ private lemma const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv (n : ℕ) :
 problem glues, on `(∂Δ[n] ⋆ Δ[0]) ∪ (Δ[n] ⋆ ∂Δ[0]) ≅ ∂Δ[n + 1]`, to a map with last vertex `x`. -/
 private lemma hasLiftingProperty_π_of_isTerminalVertex {x : X _⦋0⦌} (hx : X.IsTerminalVertex x)
     (n : ℕ) : HasLiftingProperty ∂Δ[n].ι (slice.π (yonedaEquiv.symm x)) := by
-  have h₀ : ¬ (∂Δ[0] : SSet.{u}).Nonempty := by
-    rw [boundary_zero]
-    exact Subcomplex.not_nonempty_bot
-  have := join.isIso_inl (K := Δ[n]) h₀
-  have := join.isIso_inl (K := ∂Δ[n]) h₀
+  have := join.isIso_inl (K := Δ[n]) not_nonempty_boundary_zero
+  have := join.isIso_inl (K := ∂Δ[n]) not_nonempty_boundary_zero
   refine ⟨fun {a b} sq ↦ ?_⟩
   -- Glue the cone `∂Δ[n] ⋆ Δ[0] ⟶ X` of `a` with `b` on `Δ[n] ≅ Δ[n] ⋆ ∂Δ[0]`.
   have hc : join.map (𝟙 _) (boundary.{u} 0).ι ≫ (slice.homEquiv a).val =
@@ -210,10 +207,7 @@ private lemma isTerminalVertex_of_hasLiftingProperty_π {x : X _⦋0⦌}
     (h : ∀ n : ℕ, HasLiftingProperty ∂Δ[n].ι (slice.π (yonedaEquiv.symm x))) :
     X.IsTerminalVertex x := by
   intro n σ₀ hσ₀
-  have h₀ : ¬ (∂Δ[0] : SSet.{u}).Nonempty := by
-    rw [boundary_zero]
-    exact Subcomplex.not_nonempty_bot
-  have := join.isIso_inl (K := Δ[n]) h₀
+  have := join.isIso_inl (K := Δ[n]) not_nonempty_boundary_zero
   let U := Subcomplex.unionJoin ∂Δ[n] ∂Δ[0]
   let e := join.stdSimplexIso.{u} n 0
   have key : U.preimage e.inv = ∂Δ[n + 1] := join.preimage_unionJoin_boundary_boundary n 0

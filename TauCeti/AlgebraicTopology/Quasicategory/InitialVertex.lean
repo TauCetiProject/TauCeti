@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.TerminalVertex
-public import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
 public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Op
 public import TauCeti.AlgebraicTopology.SimplicialSet.Op
+public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
 
 /-!
 # Initial vertices of simplicial sets
@@ -21,10 +21,10 @@ Higher Topos Theory, and colimits of diagrams in a quasicategory are the initial
 coslices.
 
 Equivalently, every simplex boundary whose first vertex is `x` extends to a simplex
-(`SSet.isInitialVertex_iff`). This criterion uses reversal of simplex boundaries. By the universal
-property of the join, it says that the projection `X_{x/} ⟶ X` from the coslice under `x` is a
-trivial fibration (`SSet.isInitialVertex_iff_rlp_monomorphisms_π`): under
-`Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the boundary `∂Δ[n + 1]` is the union of `Δ[n]` and `Δ[0] ⋆ ∂Δ[n]`.
+(`SSet.isInitialVertex_iff`). This criterion uses reversal of simplex boundaries. Equivalently, the
+projection `X_{x/} ⟶ X` from the coslice under `x` is a trivial fibration
+(`SSet.isInitialVertex_iff_rlp_monomorphisms_π`): it is the opposite of the projection from the
+slice of `Xᵒᵖ` over `x`, which is a trivial fibration exactly when `x` is terminal in `Xᵒᵖ`.
 
 Through the identification of the edges and `2`-simplices of `Xᵒᵖ` with those of `X`
 (`SSet.Edge.opEquiv`, `SSet.Edge.CompStruct.opEquiv`), the properties of terminal vertices give
@@ -136,126 +136,28 @@ lemma isInitialVertex_iff_of_iso (e : X ≅ Y) (x : X _⦋0⦌) :
     Y.IsInitialVertex (e.hom.app _ x) ↔ X.IsInitialVertex x :=
   isTerminalVertex_iff_of_iso (opFunctor.mapIso e) _
 
-/-- Under `Δ[0] ⋆ Δ[n] ≅ Δ[0 + n + 1]`, the vertex `Δ[0]` of `(∂Δ[0] ⋆ Δ[n]) ∪ (Δ[0] ⋆ ∂Δ[n])` is
-the first vertex of `∂Δ[0 + n + 1]`. -/
-private lemma yonedaEquiv_symm_vertex_zero_comp_isoOfPreimageEq_inv (n : ℕ) :
-    yonedaEquiv.symm (boundary.vertex (0 + n) 0) ≫
-      (Subcomplex.isoOfPreimageEq (join.stdSimplexIso.{u} 0 n)
-        (join.preimage_unionJoin_boundary_boundary 0 n)).inv =
-        join.inl _ _ ≫ Subcomplex.unionJoin.ι₂ (boundary.{u} 0) ∂Δ[n] := by
-  rw [← cancel_mono (Subcomplex.unionJoin (boundary.{u} 0) ∂Δ[n]).ι,
-    ← cancel_mono (join.stdSimplexIso.{u} 0 n).hom]
-  simp only [Category.assoc, Subcomplex.isoOfPreimageEq_inv_ι, Iso.inv_hom_id,
-    Category.comp_id, Subcomplex.unionJoin.ι₂_ι_assoc, join.inl_map_assoc, Category.id_comp,
-    join.inl_comp_stdSimplexIso_hom]
-  apply yonedaEquiv.injective
-  rw [yonedaEquiv_comp, Equiv.apply_symm_apply, yonedaEquiv_map]
-  refine (boundary.vertex_val _ _).trans ?_
-  ext i
-  fin_cases i
-  rfl
-
-/-- If `x` is initial, the projection `X_{x/} ⟶ X` lifts against `∂Δ[n] ⟶ Δ[n]`: a lifting
-problem glues, on `(∂Δ[0] ⋆ Δ[n]) ∪ (Δ[0] ⋆ ∂Δ[n]) ≅ ∂Δ[0 + n + 1]`, to a map with first vertex
-`x`. -/
-private lemma hasLiftingProperty_π_of_isInitialVertex {x : X _⦋0⦌} (hx : X.IsInitialVertex x)
-    (n : ℕ) : HasLiftingProperty ∂Δ[n].ι (coslice.π (yonedaEquiv.symm x)) := by
-  rw [isInitialVertex_iff] at hx
-  have h₀ : ¬ (∂Δ[0] : SSet.{u}).Nonempty := by
-    rw [boundary_zero]
-    exact Subcomplex.not_nonempty_bot
-  have := join.isIso_inr (L := Δ[n]) h₀
-  have := join.isIso_inr (L := ∂Δ[n]) h₀
-  refine ⟨fun {a b} sq ↦ ?_⟩
-  -- Glue the cocone `Δ[0] ⋆ ∂Δ[n] ⟶ X` of `a` with `b` on `Δ[n] ≅ ∂Δ[0] ⋆ Δ[n]`.
-  have hc : join.map (𝟙 _) ∂Δ[n].ι ≫ inv (join.inr (boundary.{u} 0 : SSet.{u}) Δ[n]) ≫ b =
-      join.map (boundary.{u} 0).ι (𝟙 _) ≫ (coslice.homEquiv a).val := by
-    rw [← cancel_epi (join.inr _ _), join.inr_map_assoc, IsIso.hom_inv_id_assoc,
-      join.inr_map_assoc, Category.id_comp, ← coslice.comp_π, sq.w]
-  let U := Subcomplex.unionJoin (boundary.{u} 0) ∂Δ[n]
-  let g := (Subcomplex.unionJoin.isPushout (boundary.{u} 0) ∂Δ[n]).desc
-    (inv (join.inr (boundary.{u} 0 : SSet.{u}) Δ[n]) ≫ b) (coslice.homEquiv a).val hc
-  have hg₁ : Subcomplex.unionJoin.ι₁ _ _ ≫ g =
-      inv (join.inr (boundary.{u} 0 : SSet.{u}) Δ[n]) ≫ b :=
-    (Subcomplex.unionJoin.isPushout _ _).inl_desc _ _ _
-  have hg₂ : Subcomplex.unionJoin.ι₂ _ _ ≫ g = (coslice.homEquiv a).val :=
-    (Subcomplex.unionJoin.isPushout _ _).inr_desc _ _ _
-  let e := join.stdSimplexIso.{u} 0 n
-  have key : U.preimage e.inv = ∂Δ[0 + n + 1] := join.preimage_unionJoin_boundary_boundary 0 n
-  let i := Subcomplex.isoOfPreimageEq e key
-  -- Extend the glued map, whose first vertex is `x`, to `Δ[0 + n + 1] ≅ Δ[0] ⋆ Δ[n]`.
-  obtain ⟨σ, hσ⟩ := hx (i.inv ≫ g) (by
-    apply yonedaEquiv.symm.injective
-    rw [← yonedaEquiv_symm_comp,
-      reassoc_of% yonedaEquiv_symm_vertex_zero_comp_isoOfPreimageEq_inv n, hg₂,
-      (coslice.homEquiv a).property])
-  have hσU : U.ι ≫ e.hom ≫ σ = g := by
-    rw [← Subcomplex.isoOfPreimageEq_hom_ι_assoc e key, ← hσ, i.hom_inv_id_assoc]
-  have hinl : join.inl Δ[0] Δ[n] ≫ e.hom ≫ σ = yonedaEquiv.symm x := by
-    rw [← Category.id_comp (join.inl Δ[0] Δ[n]), ← join.inl_map (𝟙 _) ∂Δ[n].ι, Category.assoc,
-      ← Subcomplex.unionJoin.ι₂_ι, Category.assoc, hσU, hg₂]
-    exact (coslice.homEquiv a).property
-  let l := coslice.homEquiv.symm ⟨e.hom ≫ σ, hinl⟩
-  have hl : (coslice.homEquiv l).val = e.hom ≫ σ := by rw [Equiv.apply_symm_apply]
-  refine ⟨⟨⟨l, coslice.hom_ext ?_, ?_⟩⟩⟩
-  · rw [coslice.homEquiv_comp_coe, hl, ← Subcomplex.unionJoin.ι₂_ι, Category.assoc, hσU, hg₂]
-  · rw [coslice.comp_π, hl, ← Category.id_comp (join.inr Δ[0] Δ[n]),
-      ← join.inr_map (boundary.{u} 0).ι (𝟙 _), Category.assoc, ← Subcomplex.unionJoin.ι₁_ι,
-      Category.assoc, hσU, hg₁, IsIso.hom_inv_id_assoc]
-
-/-- If the projection `X_{x/} ⟶ X` lifts against all boundary inclusions, then `x` is initial: a
-map `∂Δ[0 + m + 1] ≅ (∂Δ[0] ⋆ Δ[m]) ∪ (Δ[0] ⋆ ∂Δ[m]) ⟶ X` with first vertex `x` is a lifting
-problem against the projection. -/
-private lemma isInitialVertex_of_hasLiftingProperty_π {x : X _⦋0⦌}
-    (h : ∀ n : ℕ, HasLiftingProperty ∂Δ[n].ι (coslice.π (yonedaEquiv.symm x))) :
-    X.IsInitialVertex x := by
-  rw [isInitialVertex_iff]
-  intro n σ₀ hσ₀
-  obtain ⟨m, rfl⟩ : ∃ m, n = 0 + m := ⟨n, (Nat.zero_add n).symm⟩
-  have h₀ : ¬ (∂Δ[0] : SSet.{u}).Nonempty := by
-    rw [boundary_zero]
-    exact Subcomplex.not_nonempty_bot
-  have := join.isIso_inr (L := Δ[m]) h₀
-  let U := Subcomplex.unionJoin (boundary.{u} 0) ∂Δ[m]
-  let e := join.stdSimplexIso.{u} 0 m
-  have key : U.preimage e.inv = ∂Δ[0 + m + 1] := join.preimage_unionJoin_boundary_boundary 0 m
-  let i := Subcomplex.isoOfPreimageEq e key
-  let g : (U : SSet.{u}) ⟶ X := i.hom ≫ σ₀
-  -- The map `g` on `U` is a cocone `a` under `x` on `∂Δ[m]` and a simplex `b` on `Δ[m]`.
-  have ha : join.inl _ _ ≫ Subcomplex.unionJoin.ι₂ _ _ ≫ g = yonedaEquiv.symm x := by
-    rw [← reassoc_of% yonedaEquiv_symm_vertex_zero_comp_isoOfPreimageEq_inv m,
-      i.inv_hom_id_assoc, yonedaEquiv_symm_comp, hσ₀]
-  let a := coslice.homEquiv.symm ⟨Subcomplex.unionJoin.ι₂ _ _ ≫ g, ha⟩
-  let b : Δ[m] ⟶ X := join.inr _ _ ≫ Subcomplex.unionJoin.ι₁ (boundary.{u} 0) ∂Δ[m] ≫ g
-  have sq : CommSq a ∂Δ[m].ι (coslice.π (yonedaEquiv.symm x)) b := ⟨by
-    rw [coslice.comp_π, Equiv.apply_symm_apply, ← join.inr_map_assoc (𝟙 _) ∂Δ[m].ι,
-      (Subcomplex.unionJoin.isPushout _ _).w_assoc, join.inr_map_assoc, Category.id_comp]⟩
-  have := h m
-  have hl₁ := congrArg (fun F ↦ (coslice.homEquiv F).val) sq.fac_left
-  simp only [coslice.homEquiv_comp_coe, a, Equiv.apply_symm_apply] at hl₁
-  have hl₂ := sq.fac_right
-  rw [coslice.comp_π] at hl₂
-  -- The lift is a map `Δ[0] ⋆ Δ[m] ≅ Δ[0 + m + 1] ⟶ X` agreeing with `g` on both parts of `U`.
-  refine ⟨e.inv ≫ (coslice.homEquiv sq.lift).val, ?_⟩
-  have hU : U.ι ≫ (coslice.homEquiv sq.lift).val = g := by
-    refine (Subcomplex.unionJoin.isPushout _ _).hom_ext ?_ ?_
-    · rw [Subcomplex.unionJoin.ι₁_ι_assoc, ← cancel_epi (join.inr (boundary.{u} 0 : SSet.{u}) _),
-        join.inr_map_assoc, Category.id_comp, hl₂]
-    · rw [Subcomplex.unionJoin.ι₂_ι_assoc, hl₁]
-  rw [← cancel_epi i.hom, Subcomplex.isoOfPreimageEq_hom_ι_assoc e key, Iso.hom_inv_id_assoc, hU]
-
+open MorphismProperty in
 /-- **A vertex `x` is initial exactly when the projection `X_{x/} ⟶ X` from the coslice under `x`
 is a trivial fibration**: it has the right lifting property with respect to all monomorphisms.
-Under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the boundary `∂Δ[n + 1]` is the union of `Δ[n] ≅ ∂Δ[0] ⋆ Δ[n]` and
-`Δ[0] ⋆ ∂Δ[n]`, so that a map `∂Δ[n + 1] ⟶ X` with first vertex `x` is a lifting problem of
-`∂Δ[n] ⟶ Δ[n]` against the projection. -/
+Through `SSet.coslice.opSliceIso`, this projection is the opposite of the projection from the slice
+of `Xᵒᵖ` over `x` (`SSet.coslice.opSliceIso_inv_comp_π`), so this is the criterion
+`SSet.isTerminalVertex_iff_rlp_monomorphisms_π` for the terminal vertex `x` of `Xᵒᵖ`. -/
 theorem isInitialVertex_iff_rlp_monomorphisms_π (x : X _⦋0⦌) :
     X.IsInitialVertex x ↔
-      (MorphismProperty.monomorphisms SSet.{u}).rlp (coslice.π (yonedaEquiv.symm x)) := by
-  rw [rlp_monomorphisms]
-  exact ⟨fun hx _ _ _ ⟨n⟩ ↦ hasLiftingProperty_π_of_isInitialVertex hx n,
-    fun h ↦ isInitialVertex_of_hasLiftingProperty_π fun n ↦
-      h _ (modelCategoryQuillen.boundary_ι_mem_I n)⟩
+      (monomorphisms SSet.{u}).rlp (coslice.π (yonedaEquiv.symm x)) := by
+  -- Restricting along `Δ[0] ≅ Δ[0]ᵒᵖ` identifies the slice of `Xᵒᵖ` over the opposite of
+  -- `yonedaEquiv.symm x` with the slice over the vertex `x` of `Xᵒᵖ`, compatibly with projections.
+  have hq : (stdSimplex.opIso ⦋0⦌).inv ≫ opFunctor.map (yonedaEquiv.symm x) ≫ 𝟙 X.op =
+      yonedaEquiv.symm (X.opObjEquiv.symm x) := by
+    rw [Category.comp_id, stdSimplex.opIso_inv_comp_opFunctor_map_yonedaEquiv_symm]
+  have h := slice.map_π _ _ hq
+  rw [Category.comp_id] at h
+  rw [isInitialVertex_iff_isTerminalVertex_op, isTerminalVertex_iff_rlp_monomorphisms_π,
+    ← cancel_left_of_respectsIso (monomorphisms SSet.{u}).rlp (slice.map _ _ hq), h,
+    ← rlp_monomorphisms_opFunctor_map_iff,
+    ← cancel_right_of_respectsIso (monomorphisms SSet.{u}).rlp _
+      (opFunctorCompOpFunctorIso.hom.app X),
+    ← coslice.opSliceIso_inv_comp_π, cancel_left_of_respectsIso (monomorphisms SSet.{u}).rlp]
 
 /-- Every vertex of a terminal simplicial set, such as `Δ[0]`, is initial. -/
 lemma isInitialVertex_of_isTerminal (hX : IsTerminal X) (x : X _⦋0⦌) : X.IsInitialVertex x :=

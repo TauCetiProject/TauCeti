@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
+public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 
 /-!
@@ -35,6 +36,7 @@ This is the analogue for boundaries of Mathlib's description of horns in
   restrictions to the products of the faces with `Z`.
 * `SSet.boundary.vertex`, `SSet.boundary.vertex_val` and `SSet.boundary.map_const_yonedaEquiv_ι`:
   the vertices of `∂Δ[n + 1]`, their values in `Δ[n + 1]`, and the vertices of its faces.
+* `SSet.not_nonempty_boundary_zero`: the boundary `∂Δ[0]` is empty.
 -/
 
 public section
@@ -44,6 +46,10 @@ universe u
 namespace SSet
 
 open CategoryTheory Limits Simplicial MonoidalCategory
+
+/-- The boundary `∂Δ[0]` of the standard `0`-simplex is empty. -/
+lemma not_nonempty_boundary_zero : ¬ (∂Δ[0] : SSet.{u}).Nonempty :=
+  (notNonempty_iff_hasDimensionLT_zero _).2 inferInstance
 
 namespace boundary
 

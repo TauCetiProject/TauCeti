@@ -61,6 +61,8 @@ simplicial set on these edges.
   `X`.
 * `SSet.coslice.isIso_π`: the coslice under the empty diagram is the whole simplicial set.
 * `SSet.coslice.isTerminal`: the coslice of a terminal simplicial set is terminal.
+* `SSet.coslice.opSliceIso_inv_comp_π`: through `SSet.coslice.opSliceIso`, the projection
+  `C_{p/} ⟶ C` is the opposite of the projection `Cᵒᵖ_{/pᵒᵖ} ⟶ Cᵒᵖ`.
 * `SSet.coslice.opSliceIso_inv_comp_map`: through `SSet.coslice.opSliceIso`, a map of coslices
   is the image under the reversal functor `SSet.opFunctor` of a map of slices.
 * `SSet.coslice.opSliceIsoOfEq p hp`: for a diagram `p'` equal to `pᵒᵖ`, the identification of
@@ -252,6 +254,24 @@ along the inclusion `X ⟶ K ⋆ X`. -/
 @[reassoc (attr := simp)]
 lemma comp_π (F : X ⟶ coslice p) : F ≫ π p = join.inr K X ≫ (homEquiv F).val := by
   rw [π, ← join.inr_map_assoc (𝟙 K) F, ← homEquiv_comp_coe, Category.comp_id]
+
+variable (p) in
+/-- **The projection of the coslice is opposite to the projection of the slice**: through the
+identification of `C_{p/}` with `(Cᵒᵖ_{/pᵒᵖ})ᵒᵖ` (`SSet.coslice.opSliceIso`), the projection
+`C_{p/} ⟶ C` is the opposite of the projection `Cᵒᵖ_{/pᵒᵖ} ⟶ Cᵒᵖ`, followed by `Cᵒᵖᵒᵖ ≅ C`. -/
+lemma opSliceIso_inv_comp_π :
+    (opSliceIso p).inv ≫ π p =
+      opFunctor.map (slice.π (opFunctor.map p)) ≫ opFunctorCompOpFunctorIso.hom.app C := by
+  apply opFunctor.map_injective
+  have h : opFunctor.map (π p) = opHomEquiv (𝟙 _) ≫ slice.π (opFunctor.map p) := by
+    rw [slice.comp_π, ← opIso_inv_comp_opFunctor_map_homEquiv_coe, π, Functor.map_comp,
+      ← join.opFunctor_map_inr_comp_opIso_hom_assoc, Iso.hom_inv_id_assoc]
+  rw [Functor.map_comp, h]
+  -- The two sides agree on simplices by definition: `SSet.coslice.opSliceIso` is `Iso.refl`, and
+  -- `opFunctorCompOpFunctorIso`, the counit through which `opHomEquiv` is defined, acts on
+  -- simplices by `SSet.opObjEquiv` twice, which is `Equiv.refl`.
+  ext n σ
+  rfl
 
 variable (p) in
 /-- The coslice under the empty diagram is the whole simplicial set: when `K` is empty, the

@@ -49,9 +49,12 @@ Dually, for a cocone `c` under `p` with cocone point `x`, precomposition with `c
 `SSet.coslice.precomp c y` from the left mapping space `Hom^L_C(x, y)` to the fibre over `y` of the
 projection `C_{p/} ⟶ C`, and `c` is a colimit cocone exactly when it is a weak homotopy equivalence
 for every vertex `y` (`SSet.coslice.isColimit_iff_forall_isWeakHomotopyEquivalence_precomp`). The
-proof is the dual one: `C_{p/} ⟶ C` is a left fibration, `Δ[0] ⋆ ∂Δ[n] ⟶ Δ[0] ⋆ Δ[n]` is the horn
-`Λ[n + 1, 0]`, and an initial vertex is one under which the coslice projection is a trivial
-fibration (`SSet.isInitialVertex_iff_rlp_monomorphisms_π`).
+proof is the dual one, and shares with the slice case the steps about sections of trivial
+fibrations and fibres of restrictions: `C_{p/} ⟶ C` is a left fibration, so the map of coslices
+`C_{p/}_{c/} ⟶ C_{x/}` is a trivial fibration (`SSet.coslice.rlp_map_of_leftFibration`), and an
+initial vertex is one under which the coslice projection is a trivial fibration
+(`SSet.isInitialVertex_iff_rlp_monomorphisms_π`). These two facts are the slice ones, transported
+through the identification of coslices with opposite slices.
 
 ## Main definitions
 
@@ -95,6 +98,49 @@ namespace SSet
 
 open modelCategoryQuillen
 
+/-! ### Sections of trivial fibrations and fibres of restrictions -/
+
+section
+
+variable {A B D : SSet.{u}} {s : A ⟶ B} (hs : (monomorphisms SSet.{u}).rlp s) [IsSplitEpi s]
+  (t : A ⟶ D)
+include hs
+
+/-- For a trivial fibration `s : A ⟶ B` and a map `t : A ⟶ D`, the composite with `t` of any
+section `σ` of `s` is homotopic to the composite with `t` of the chosen section `section_ s`. -/
+private lemma nonempty_homotopy_comp_section_comp (σ : B ⟶ A) (hσ : σ ≫ s = 𝟙 B) :
+    Nonempty (Homotopy (σ ≫ t) (section_ s ≫ t)) := by
+  obtain ⟨H, -⟩ :=
+    exists_homotopy_of_rlp_monomorphisms hs σ (section_ s) (by rw [hσ, IsSplitEpi.id])
+  exact ⟨H.postcomp _⟩
+
+/-- For a trivial fibration `s : A ⟶ B` to a Kan complex and a Kan fibration `t : A ⟶ D` to a Kan
+complex, the composite `section_ s ≫ t` is a weak homotopy equivalence exactly when `t` is a
+trivial fibration, since the section of `s` is a weak homotopy equivalence. -/
+private lemma isWeakHomotopyEquivalence_section_comp_iff [KanComplex B] [Fibration t]
+    [KanComplex D] :
+    IsWeakHomotopyEquivalence (section_ s ≫ t) ↔ (monomorphisms SSet.{u}).rlp t := by
+  have : Fibration s := (rlp_monomorphisms_iff.1 hs).1
+  have := (rlp_monomorphisms_iff_isWeakHomotopyEquivalence s).1 hs
+  have : IsWeakHomotopyEquivalence (section_ s ≫ s) := by
+    rw [IsSplitEpi.id]
+    infer_instance
+  have := IsWeakHomotopyEquivalence.of_postcomp (section_ s) s
+  rw [rlp_monomorphisms_iff_isWeakHomotopyEquivalence]
+  exact ⟨fun _ ↦ IsWeakHomotopyEquivalence.of_precomp (section_ s) t, fun _ ↦ inferInstance⟩
+
+end
+
+/-- The fibres of the restriction `A.fromPreimage q` of `q` over a subcomplex `A` are weakly
+contractible exactly when the corresponding fibres of `q` are, since they are isomorphic
+(`SSet.fiber.fromPreimageIso`). -/
+private lemma isWeaklyContractible_fiber_fromPreimage_iff {X Y : SSet.{u}} (q : X ⟶ Y)
+    (A : Y.Subcomplex) (y : (A : SSet.{u}) _⦋0⦌) :
+    IsWeaklyContractible (fiber (A.fromPreimage q) y : SSet.{u}) ↔
+      IsWeaklyContractible (fiber q y.val : SSet.{u}) :=
+  ⟨fun _ ↦ .of_iso (fiber.fromPreimageIso q A y),
+    fun _ ↦ .of_iso (fiber.fromPreimageIso q A y).symm⟩
+
 variable {K C : SSet.{u}} {p : K ⟶ C}
 
 namespace slice
@@ -124,11 +170,8 @@ of `C_{/x} ⟶ C`, under the projection `C_{/p}_{/c} ⟶ C_{/x}`. -/
 theorem postcompSpace_eq_preimage :
     postcompSpace y c = (fiber (π (yonedaEquiv.symm ((π p).app _ c))) y).preimage
       (map (𝟙 Δ[0]) (π p) (by rw [Category.id_comp, yonedaEquiv_symm_comp])) := by
-  ext n s
-  have h := ConcreteCategory.congr_hom (NatTrans.congr_app (map_π (𝟙 Δ[0]) (π p)
-    (by rw [Category.id_comp, yonedaEquiv_symm_comp])) n) s
-  simp only [NatTrans.comp_app, ConcreteCategory.comp_apply] at h
-  rw [mem_postcompSpace_iff, Subcomplex.preimage_obj, Set.mem_preimage, mem_fiber_iff, h]
+  rw [postcompSpace, fiber_eq_preimage, fiber_eq_preimage, ← Subcomplex.preimage_comp,
+    ← Subcomplex.preimage_comp, map_π]
 
 namespace postcompSpace
 
@@ -236,8 +279,7 @@ theorem exists_edge_postcomp (f : C.Edge y ((π p).app _ c)) :
   have hf : f.edge = (π p).app _ (yonedaEquiv ((join.joinVertexIso ⦋0⦌).inv ≫
       (slice.objEquiv v.val).val) : (slice p).obj (op (joinVertex.obj ⦋0⦌))) := by
     rw [← rightMappingSpace.obj₀Equiv_symm_apply_coe, ← hv, postcompSpace.src_app_coe]
-    -- `yonedaEquiv (g ≫ π p)` is `(π p).app _ (yonedaEquiv g)` (`SSet.yonedaEquiv_comp`).
-    rfl
+    rw [← Category.assoc, yonedaEquiv_comp]
   -- `v` is a vertex of the fibre of `C_{/p}_{/c} ⟶ C_{/p}` over `d`, an edge from `d` to `c`.
   let w : (fiber (π (yonedaEquiv.symm c)) d : SSet.{u}) _⦋0⦌ :=
     fiber.basePoint (π (yonedaEquiv.symm c)) (x := v.val) rfl
@@ -255,9 +297,8 @@ theorem exists_homotopy_postcomp
     (hs : s ≫ postcompSpace.src y c = 𝟙 _) :
     Nonempty (Homotopy (s ≫ postcompSpace.tgt y c) (postcomp y c)) := by
   have := isSplitEpi_of_rlp_monomorphisms (postcompSpace.rlp_src y c)
-  obtain ⟨H, -⟩ := exists_homotopy_of_rlp_monomorphisms (postcompSpace.rlp_src y c) s
-    (section_ (postcompSpace.src y c)) (by rw [hs, IsSplitEpi.id])
-  exact ⟨H.postcomp _⟩
+  rw [postcomp]
+  exact nonempty_homotopy_comp_section_comp (postcompSpace.rlp_src y c) _ s hs
 
 /-- `SSet.slice.postcomp y c` is a weak homotopy equivalence exactly when the projection
 `Hom^R_C(y, c) ⟶ (C_{/p})_y` is a trivial fibration, since the section of `src` it is built from is
@@ -265,23 +306,9 @@ a weak homotopy equivalence. -/
 private lemma isWeakHomotopyEquivalence_postcomp_iff :
     IsWeakHomotopyEquivalence (postcomp y c) ↔
       (monomorphisms SSet.{u}).rlp (postcompSpace.tgt y c) := by
-  have h := postcompSpace.rlp_src y c
-  have := isSplitEpi_of_rlp_monomorphisms h
-  have : Fibration (postcompSpace.src y c) := (rlp_monomorphisms_iff.1 h).1
-  have := (rlp_monomorphisms_iff_isWeakHomotopyEquivalence (postcompSpace.src y c)).1 h
-  have : IsWeakHomotopyEquivalence (section_ (postcompSpace.src y c) ≫ postcompSpace.src y c) := by
-    rw [IsSplitEpi.id]
-    infer_instance
-  have := IsWeakHomotopyEquivalence.of_postcomp (section_ (postcompSpace.src y c))
-    (postcompSpace.src y c)
-  rw [rlp_monomorphisms_iff_isWeakHomotopyEquivalence]
-  refine ⟨fun h' ↦ ?_, fun _ ↦ ?_⟩
-  · -- `postcomp y c` is by definition the composite of the section with `tgt`.
-    have : IsWeakHomotopyEquivalence
-        (section_ (postcompSpace.src y c) ≫ postcompSpace.tgt y c) := h'
-    exact IsWeakHomotopyEquivalence.of_precomp (section_ (postcompSpace.src y c)) _
-  · exact inferInstanceAs
-      (IsWeakHomotopyEquivalence (section_ (postcompSpace.src y c) ≫ postcompSpace.tgt y c))
+  have := isSplitEpi_of_rlp_monomorphisms (postcompSpace.rlp_src y c)
+  rw [postcomp]
+  exact isWeakHomotopyEquivalence_section_comp_iff (postcompSpace.rlp_src y c) _
 
 variable {y c}
 
@@ -291,11 +318,8 @@ omit [Quasicategory C] in
 private lemma isWeaklyContractible_fiber_tgt_iff (d : (fiber (π p) y : SSet.{u}) _⦋0⦌) :
     IsWeaklyContractible (fiber (postcompSpace.tgt y c) d : SSet.{u}) ↔
       IsWeaklyContractible (fiber (π (yonedaEquiv.symm c)) d.val : SSet.{u}) := by
-  -- `postcompSpace.tgt y c` is the restriction of `C_{/p}_{/c} ⟶ C_{/p}` over `(C_{/p})_y`.
-  change IsWeaklyContractible
-      (fiber ((fiber (π p) y).fromPreimage (π (yonedaEquiv.symm c))) d : SSet.{u}) ↔ _
-  exact ⟨fun _ ↦ .of_iso (fiber.fromPreimageIso _ (fiber (π p) y) d),
-    fun _ ↦ .of_iso (fiber.fromPreimageIso _ (fiber (π p) y) d).symm⟩
+  rw [postcompSpace.tgt]
+  exact isWeaklyContractible_fiber_fromPreimage_iff _ _ d
 
 variable (c) in
 /-- **The mapping-space criterion for limits** (HTT Lemma 4.2.4.3). For a quasicategory `C`, a cone
@@ -342,11 +366,8 @@ of `C_{x/} ⟶ C`, under the projection `C_{p/}_{c/} ⟶ C_{x/}`. -/
 theorem precompSpace_eq_preimage :
     precompSpace c y = (fiber (π (yonedaEquiv.symm ((π p).app _ c))) y).preimage
       (map (𝟙 Δ[0]) (π p) (by rw [Category.id_comp, yonedaEquiv_symm_comp])) := by
-  ext n s
-  have h := ConcreteCategory.congr_hom (NatTrans.congr_app (map_π (𝟙 Δ[0]) (π p)
-    (by rw [Category.id_comp, yonedaEquiv_symm_comp])) n) s
-  simp only [NatTrans.comp_app, ConcreteCategory.comp_apply] at h
-  rw [mem_precompSpace_iff, Subcomplex.preimage_obj, Set.mem_preimage, mem_fiber_iff, h]
+  rw [precompSpace, fiber_eq_preimage, fiber_eq_preimage, ← Subcomplex.preimage_comp,
+    ← Subcomplex.preimage_comp, map_π]
 
 namespace precompSpace
 
@@ -454,8 +475,7 @@ theorem exists_edge_precomp (f : C.Edge ((π p).app _ c) y) :
   have hf : f.edge = (π p).app _ (yonedaEquiv ((join.coneIso 0).inv ≫
       (coslice.objEquiv v.val).val) : (coslice p) _⦋0 + 1⦌) := by
     rw [← leftMappingSpace.obj₀Equiv_symm_apply_coe, ← hv, precompSpace.src_app_coe]
-    -- `yonedaEquiv (g ≫ π p)` is `(π p).app _ (yonedaEquiv g)` (`SSet.yonedaEquiv_comp`).
-    rfl
+    rw [← Category.assoc, yonedaEquiv_comp]
   -- `v` is a vertex of the fibre of `C_{p/}_{c/} ⟶ C_{p/}` over `d`, an edge from `c` to `d`.
   let w : (fiber (π (yonedaEquiv.symm c)) d : SSet.{u}) _⦋0⦌ :=
     fiber.basePoint (π (yonedaEquiv.symm c)) (x := v.val) rfl
@@ -471,9 +491,8 @@ theorem exists_homotopy_precomp
     (hs : s ≫ precompSpace.src c y = 𝟙 _) :
     Nonempty (Homotopy (s ≫ precompSpace.tgt c y) (precomp c y)) := by
   have := isSplitEpi_of_rlp_monomorphisms (precompSpace.rlp_src c y)
-  obtain ⟨H, -⟩ := exists_homotopy_of_rlp_monomorphisms (precompSpace.rlp_src c y) s
-    (section_ (precompSpace.src c y)) (by rw [hs, IsSplitEpi.id])
-  exact ⟨H.postcomp _⟩
+  rw [precomp]
+  exact nonempty_homotopy_comp_section_comp (precompSpace.rlp_src c y) _ s hs
 
 /-- `SSet.coslice.precomp c y` is a weak homotopy equivalence exactly when the projection
 `Hom^L_C(c, y) ⟶ (C_{p/})_y` is a trivial fibration, since the section of `src` it is built from
@@ -481,23 +500,9 @@ is a weak homotopy equivalence. -/
 private lemma isWeakHomotopyEquivalence_precomp_iff :
     IsWeakHomotopyEquivalence (precomp c y) ↔
       (monomorphisms SSet.{u}).rlp (precompSpace.tgt c y) := by
-  have h := precompSpace.rlp_src c y
-  have := isSplitEpi_of_rlp_monomorphisms h
-  have : Fibration (precompSpace.src c y) := (rlp_monomorphisms_iff.1 h).1
-  have := (rlp_monomorphisms_iff_isWeakHomotopyEquivalence (precompSpace.src c y)).1 h
-  have : IsWeakHomotopyEquivalence (section_ (precompSpace.src c y) ≫ precompSpace.src c y) := by
-    rw [IsSplitEpi.id]
-    infer_instance
-  have := IsWeakHomotopyEquivalence.of_postcomp (section_ (precompSpace.src c y))
-    (precompSpace.src c y)
-  rw [rlp_monomorphisms_iff_isWeakHomotopyEquivalence]
-  refine ⟨fun h' ↦ ?_, fun _ ↦ ?_⟩
-  · -- `precomp c y` is by definition the composite of the section with `tgt`.
-    have : IsWeakHomotopyEquivalence
-        (section_ (precompSpace.src c y) ≫ precompSpace.tgt c y) := h'
-    exact IsWeakHomotopyEquivalence.of_precomp (section_ (precompSpace.src c y)) _
-  · exact inferInstanceAs
-      (IsWeakHomotopyEquivalence (section_ (precompSpace.src c y) ≫ precompSpace.tgt c y))
+  have := isSplitEpi_of_rlp_monomorphisms (precompSpace.rlp_src c y)
+  rw [precomp]
+  exact isWeakHomotopyEquivalence_section_comp_iff (precompSpace.rlp_src c y) _
 
 variable {c y}
 
@@ -507,11 +512,8 @@ omit [Quasicategory C] in
 private lemma isWeaklyContractible_fiber_tgt_iff (d : (fiber (π p) y : SSet.{u}) _⦋0⦌) :
     IsWeaklyContractible (fiber (precompSpace.tgt c y) d : SSet.{u}) ↔
       IsWeaklyContractible (fiber (π (yonedaEquiv.symm c)) d.val : SSet.{u}) := by
-  -- `precompSpace.tgt c y` is the restriction of `C_{p/}_{c/} ⟶ C_{p/}` over `(C_{p/})_y`.
-  change IsWeaklyContractible
-      (fiber ((fiber (π p) y).fromPreimage (π (yonedaEquiv.symm c))) d : SSet.{u}) ↔ _
-  exact ⟨fun _ ↦ .of_iso (fiber.fromPreimageIso _ (fiber (π p) y) d),
-    fun _ ↦ .of_iso (fiber.fromPreimageIso _ (fiber (π p) y) d).symm⟩
+  rw [precompSpace.tgt]
+  exact isWeaklyContractible_fiber_fromPreimage_iff _ _ d
 
 variable (c) in
 /-- **The mapping-space criterion for colimits**, dually to HTT Lemma 4.2.4.3. For a quasicategory

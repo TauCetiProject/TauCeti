@@ -243,11 +243,13 @@ noncomputable def fiber.fromPreimageIso (q : X ⟶ Y) (A : Y.Subcomplex) (y : (A
     (fiber (A.fromPreimage q) y : SSet.{u}) ≅ (fiber q y.val : SSet.{u}) where
   hom := fiber.lift ((fiber (A.fromPreimage q) y).ι ≫ (A.preimage q).ι) q y.val (by
     rw [Category.assoc, ← Subcomplex.fromPreimage_ι, fiber.ι_comp_assoc, const_comp]
+    -- `A.ι` sends a simplex `y` of `A` to its value `y.val`, by definition of `Subfunctor.ι`.
     rfl)
   inv := fiber.lift (Subcomplex.lift (fiber q y.val).ι (by simpa using fiber_le_preimage q y))
     (A.fromPreimage q) y (by
       rw [← cancel_mono A.ι, Category.assoc, Subcomplex.fromPreimage_ι, Subcomplex.lift_ι_assoc,
         fiber.ι_comp, const_comp]
+      -- `A.ι` sends a simplex `y` of `A` to its value `y.val`, by definition of `Subfunctor.ι`.
       rfl)
   hom_inv_id := by
     rw [← cancel_mono (fiber _ y).ι, ← cancel_mono (A.preimage q).ι]

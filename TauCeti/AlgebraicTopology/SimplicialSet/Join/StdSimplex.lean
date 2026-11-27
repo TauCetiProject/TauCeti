@@ -67,8 +67,8 @@ projections are right and left fibrations.
   `Λ[n + m + 1, n + 1 + j]`, for `m ≠ 0`.
 * `SSet.join.preimage_unionJoin_boundary_boundary`: `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])`
   corresponds to `∂Δ[n + m + 1]`.
-* `SSet.join.preimage_range_map_boundary_ι_id`, `SSet.join.preimage_range_map_id_boundary_ι`:
-  `∂Δ[n] ⋆ Δ[0]` and `Δ[0] ⋆ ∂Δ[m]` correspond to the horns `Λ[n + 1, n + 1]` and `Λ[m + 1, 0]`.
+* `SSet.join.preimage_range_map_boundary_ι_id`: `∂Δ[n] ⋆ Δ[0]` corresponds to the horn
+  `Λ[n + 1, n + 1]`.
 * `SSet.join.innerAnodyneExtensions_unionJoin_horn_boundary`,
   `SSet.join.innerAnodyneExtensions_unionJoin_boundary_horn`: the corresponding pushout-joins are
   inner anodyne extensions.
@@ -994,33 +994,6 @@ private lemma mem_horn_last_iff (x : Δ[n + 0 + 1] _⦋d⦌) :
     obtain ⟨t, ht⟩ := hx' (Fin.castLE (by omega) l) (by rw [Fin.val_castLE]; omega)
     exact hl (mem_range_left (n := n) (m := 0) h₀ (by rw [ht, Fin.val_castLE]))
 
-variable (x) in
-/-- A simplex `x` of `Δ[0 + m + 1]` lies in the horn `Λ[0 + m + 1, 0]` opposite to the initial
-vertex exactly when the part in `Δ[m]` of its image in `Δ[0] ⋆ Δ[m]` lies in `∂Δ[m]`. -/
-private lemma mem_horn_zero_iff (x : Δ[0 + m + 1] _⦋d⦌) :
-    x ∈ Λ[0 + m + 1, 0].obj _ ↔
-      (stdSimplexIso 0 m).inv.app _ x ∈ (Subcomplex.range (map (𝟙 Δ[0]) ∂Δ[m].ι)).obj _ := by
-  rw [mem_range_map_id_ι_iff, objEquiv_stdSimplexIso_inv_app, mem_horn_iff_notMem_range]
-  constructor
-  · rintro ⟨j, hj, hjx⟩ k y hy
-    induction k using Opposite.rec with | op k
-    induction k using SimplexCategory.rec with | _ a
-    have hjn : 0 < (j : ℕ) := Nat.pos_of_ne_zero fun h ↦ hj (Fin.ext h)
-    exact (mem_boundary_iff_notMem_range _).2 ⟨_, notMem_range_right (n := 0) hjn hjx y hy⟩
-  · intro h
-    by_contra hx
-    -- Otherwise `x` hits every vertex other than the initial one, so its last vertex is above `0`
-    -- and the part in `Δ[m]` of one of its faces hits every vertex of `Δ[m]`.
-    have hx' (j : Fin (0 + m + 1 + 1)) (hj : 0 < (j : ℕ)) : j ∈ Set.range x := by
-      by_contra hjx
-      exact hx ⟨j, fun h ↦ by rw [h, Fin.val_zero] at hj; omega, hjx⟩
-    have hlast := lt_apply_last (n := 0) (m := m) (j := Fin.last _) (by simp)
-      (hx' _ (by simp))
-    obtain ⟨l, hl⟩ :=
-      (mem_boundary_iff_notMem_range _).1 (h _ _ (upperSection_mem (n := 0) (m := m) x hlast))
-    obtain ⟨t, ht⟩ := hx' ⟨0 + 1 + l, by omega⟩ (by simp only; omega)
-    exact hl (mem_range_right (n := 0) (m := m) hlast (by rw [ht]))
-
 end horn
 
 variable (n m) in
@@ -1065,17 +1038,6 @@ theorem preimage_range_map_boundary_ι_id :
   ext ⟨k⟩ x
   induction k using SimplexCategory.rec with | _ d
   rw [Subcomplex.preimage_obj, Set.mem_preimage, mem_horn_last_iff x]
-
-variable (m) in
-/-- **The join of a vertex and a boundary is a horn.** Under `Δ[0] ⋆ Δ[m] ≅ Δ[0 + m + 1]`, the image
-of `Δ[0] ⋆ ∂Δ[m]` in `Δ[0] ⋆ Δ[m]` corresponds to the horn `Λ[0 + m + 1, 0]` opposite to the
-initial vertex. -/
-theorem preimage_range_map_id_boundary_ι :
-    (Subcomplex.range (map (𝟙 Δ[0]) ∂Δ[m].ι)).preimage (stdSimplexIso 0 m).inv =
-      Λ[0 + m + 1, 0] := by
-  ext ⟨k⟩ x
-  induction k using SimplexCategory.rec with | _ d
-  rw [Subcomplex.preimage_obj, Set.mem_preimage, mem_horn_zero_iff x]
 
 variable (m) in
 /-- **The pushout-join of a horn `Λ[n, i]` with `0 < i` and a boundary is inner anodyne**: the
