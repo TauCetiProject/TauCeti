@@ -482,15 +482,6 @@ theorem finiteCharacter_eq_one_of_mk_eq_one (χ : Grossencharacter K 𝔪) {a : 
     (ha : Ideal.Quotient.mk 𝔪.finitePart a = 1) : χ.finiteCharacter a = 1 := by
   rw [χ.finiteCharacter_eq_residueCharacter ha₀, ha, MulChar.map_one]
 
-/-- Inversion conjugates Hecke's finite character on `𝓞 K`. -/
-@[simp]
-theorem finiteCharacter_inverse (χ : Grossencharacter K 𝔪) (a : 𝓞 K) :
-    χ.inverse.finiteCharacter a = starRingEnd ℂ (χ.finiteCharacter a) := by
-  by_cases ha : a = 0
-  · simp [ha]
-  · rw [χ.inverse.finiteCharacter_eq_residueCharacter ha, χ.residueCharacter_inverse,
-      MulChar.star_apply, ← χ.finiteCharacter_eq_residueCharacter ha, starRingEnd_apply]
-
 /-- Every value of Hecke's finite character on an integer coprime to `𝔪` has absolute value
 `1`. -/
 theorem norm_finiteCharacter_of_isCoprimeTo (χ : Grossencharacter K 𝔪) {a : 𝓞 K}
@@ -498,13 +489,6 @@ theorem norm_finiteCharacter_of_isCoprimeTo (χ : Grossencharacter K 𝔪) {a : 
   obtain ⟨x, hx⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp ha
   rw [χ.finiteCharacter_eq_finiteCharacterK x hx.symm]
   exact χ.norm_finiteCharacterK x
-
-/-- Every value of Hecke's finite character has absolute value at most `1`. -/
-theorem norm_finiteCharacter_le_one (χ : Grossencharacter K 𝔪) (a : 𝓞 K) :
-    ‖χ.finiteCharacter a‖ ≤ 1 := by
-  by_cases ha : 𝔪.IsCoprimeTo (Ideal.span {a})
-  · exact (χ.norm_finiteCharacter_of_isCoprimeTo ha).le
-  · simp [χ.finiteCharacter_eq_zero_of_not_isCoprimeTo ha]
 
 /-- Two presentations of the same Hecke character agree on every integer whose principal ideal
 is coprime to both moduli. -/
@@ -644,6 +628,13 @@ theorem finiteCharacterField_inverse (χ : Grossencharacter K 𝔪) (x : K) :
   · rw [χ.inverse.finiteCharacterField_eq_zero (not_exists.mp hx),
       χ.finiteCharacterField_eq_zero (not_exists.mp hx), map_zero]
 
+/-- Inversion conjugates Hecke's finite character on `𝓞 K`. -/
+@[simp]
+theorem finiteCharacter_inverse (χ : Grossencharacter K 𝔪) (a : 𝓞 K) :
+    χ.inverse.finiteCharacter a = starRingEnd ℂ (χ.finiteCharacter a) := by
+  simpa only [finiteCharacterField_algebraMap] using
+    χ.finiteCharacterField_inverse (algebraMap (𝓞 K) K a)
+
 /-- The values of the finite character on `K` have norm at most `1`. -/
 theorem norm_finiteCharacterField_le (χ : Grossencharacter K 𝔪) (x : K) :
     ‖χ.finiteCharacterField x‖ ≤ 1 := by
@@ -652,6 +643,12 @@ theorem norm_finiteCharacterField_le (χ : Grossencharacter K 𝔪) (x : K) :
     rw [finiteCharacterField_coe, norm_finiteCharacterK]
   · rw [χ.finiteCharacterField_eq_zero (not_exists.mp hx), norm_zero]
     exact zero_le_one
+
+/-- Every value of Hecke's finite character has absolute value at most `1`. -/
+theorem norm_finiteCharacter_le_one (χ : Grossencharacter K 𝔪) (a : 𝓞 K) :
+    ‖χ.finiteCharacter a‖ ≤ 1 := by
+  simpa only [finiteCharacterField_algebraMap] using
+    χ.norm_finiteCharacterField_le (algebraMap (𝓞 K) K a)
 
 /-- **At a trivial finite modulus, the finite character on `K` is `1` at every nonzero element**:
 every element of `Kˣ` is prime to `𝔪`, and the finite character is trivial
