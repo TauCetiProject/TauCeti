@@ -8,8 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Geometrically.Integral
 public import TauCeti.Geometry.Toric.Algebraic.BaseChange.Fan
 public import TauCeti.Geometry.Toric.Algebraic.Normal
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
-import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Finiteness
+import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 
 /-!
 # Field fibres of toric schemes
@@ -20,9 +19,8 @@ Since coefficient change is cartesian, the structure morphism of a nonempty fan 
 geometrically integral fibres over any base. Normality over integrally closed domains follows
 from normality of the saturated dual-semigroup algebras.
 
-The chart cover is finite and each dual semigroup is finitely generated. Thus these schemes
-are Noetherian over Noetherian coefficient rings. In particular, over fields a nonempty fan
-has the normality, integrality and finiteness needed for Weil divisors, even for singular cones.
+Over fields, these results and Noetherianity give the properties needed for Weil divisors,
+even for singular cones.
 
 ## References
 
@@ -40,32 +38,13 @@ universe u
 variable (R : Type u) [CommRing R] {N : Type u} {V : Type*} [AddCommGroup N] [AddCommGroup V]
   [Module ℝ V] {i : N →+ V} (Φ : Fan i)
 
-/-- The zero-cone chart, the split torus over `R`, has dense image in the toric scheme. -/
-theorem denseRange_affineChartι_bot (h₀ : (⊥ : PointedCone ℝ V) ∈ Φ.cones) :
-    DenseRange (Φ.affineChartι R ⟨⊥, h₀⟩) := by
-  intro x
-  obtain ⟨σ, y, rfl⟩ := Φ.exists_affineChartι_apply_eq R x
-  let hface := (Φ.isToricCone σ.property).salient.bot_isFaceOf
-  have hdense := denseRange_faceAffineChartMap R Φ.lattice hface y
-  have hy := mem_closure_image (Φ.affineChartι R σ).continuous.continuousAt hdense
-  have hcomp : ⇑(Φ.affineChartι R σ) ∘ ⇑(faceAffineChartMap R Φ.lattice hface) =
-      ⇑(Φ.affineChartι R ⟨⊥, h₀⟩) := by
-    funext z
-    simpa only [Scheme.Hom.comp_apply, Function.comp_apply] using
-      congrArg (fun f : affineChart R Φ.lattice ⊥ ⟶ Φ.finiteFanScheme R ↦ f z)
-        (Φ.faceAffineChartMap_comp_affineChartι R (τ := ⟨⊥, h₀⟩) (σ := σ) hface)
-  rwa [← Set.range_comp, hcomp] at hy
-
 /-- A nonempty finite fan over a domain defines an integral scheme. -/
 instance isIntegral_finiteFanScheme [IsDomain R] [hΦ : Nonempty Φ.cones] :
     IsIntegral (Φ.finiteFanScheme R) := by
   have h₀ := Φ.bot_mem hΦ.some.property
-  have hirr := (IrreducibleSpace.isIrreducible_univ (affineChart R Φ.lattice ⊥)).image
-    (Φ.affineChartι R ⟨⊥, h₀⟩) (Φ.affineChartι R ⟨⊥, h₀⟩).continuous.continuousOn
-  rw [Set.image_univ, ← isIrreducible_iff_closure,
-    (Φ.denseRange_affineChartι_bot R h₀).closure_range] at hirr
-  refine (isIntegral_iff_irreducibleSpace_and_isReduced _).mpr ⟨
-    (irreducibleSpace_def _).mpr hirr, ?_⟩
+  have : IsDominant (Φ.affineChartι R ⟨⊥, h₀⟩) := ⟨Φ.denseRange_affineChartι_bot R h₀⟩
+  refine (isIntegral_iff_irreducibleSpace_and_isReduced _).mpr
+    ⟨(Φ.affineChartι R ⟨⊥, h₀⟩).irreducibleSpace_of_isDominant, ?_⟩
   refine (IsReduced.iff_of_openCover _ (Φ.affineChartOpenCover R)).mpr fun (σ : Φ.cones) ↦ ?_
   rw [affineChartOpenCover_X]
   infer_instance
@@ -85,29 +64,5 @@ instance geometricallyIntegral_finiteFanSchemeToSpec [Nonempty Φ.cones] :
     rw [geometrically_iff_of_commRing_of_isClosedUnderIsomorphisms]
     intro K _ _
     exact IsIntegral.of_isIso (Φ.isPullback_finiteFanSchemeMap R K).isoPullback.hom
-
-/-- The structure morphism of a finite fan scheme is locally of finite type. -/
-instance locallyOfFiniteType_finiteFanSchemeToSpec :
-    LocallyOfFiniteType (Φ.finiteFanSchemeToSpec R) := by
-  have : IsZariskiLocalAtSource @LocallyOfFiniteType :=
-    HasRingHomProperty.instIsZariskiLocalAtSource (Q := RingHom.FiniteType)
-  refine (IsZariskiLocalAtSource.iff_of_openCover (P := @LocallyOfFiniteType)
-    (Φ.affineChartOpenCover R)).mpr fun (σ : Φ.cones) ↦ ?_
-  have := (Φ.isToricCone σ.property).fg_dualSemigroup Φ.lattice
-  have hchart : LocallyOfFiniteType (Spec.algebraMap R (affineChartRing R Φ.lattice σ.val)) :=
-    LocallyOfFiniteType.Spec_algebraMap_iff.mpr inferInstance
-  exact (Φ.affineChartι_finiteFanSchemeToSpec R σ).symm ▸ hchart
-
-/-- A finite fan scheme over a Noetherian coefficient ring is Noetherian. -/
-instance isNoetherian_finiteFanScheme [IsNoetherianRing R] :
-    IsNoetherian (Φ.finiteFanScheme R) where
-  toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian (Φ.finiteFanSchemeToSpec R)
-  toCompactSpace := by
-    let 𝒰 := Φ.affineChartOpenCover R
-    have : Finite 𝒰.I₀ := inferInstanceAs (Finite Φ.cones)
-    have : ∀ σ : 𝒰.I₀, CompactSpace (𝒰.X σ) := fun (σ : Φ.cones) ↦ by
-      rw [affineChartOpenCover_X]
-      infer_instance
-    exact 𝒰.compactSpace
 
 end TauCeti.Toric.Fan
