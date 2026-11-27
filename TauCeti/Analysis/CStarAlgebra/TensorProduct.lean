@@ -290,6 +290,7 @@ theorem starAlgHom_ext {C : Type*} [NonUnitalCStarAlgebra C]
 
 /-- Continuous linear maps out of `CStarTensorProduct N` into a Hausdorff space are determined by
 their values on `A ⊗[ℂ] B`. -/
+@[ext]
 theorem continuousLinearMap_ext {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E]
     [Module ℂ E] {f g : CStarTensorProduct N →L[ℂ] E} (h : ∀ x, f (of N x) = g (of N x)) :
     f = g :=
