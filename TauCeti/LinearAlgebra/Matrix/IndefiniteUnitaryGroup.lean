@@ -64,6 +64,10 @@ The basic structure of these groups is recorded here.
 * `Matrix.unitaryGroupOf.ofMatrix`: the element of `unitaryGroupOf A` defined by a matrix
   preserving the form, for invertible `A`.
 * `Matrix.unitaryGroupOf.scalarHom`: the embedding `λ ↦ λ • 1` of the unitary scalars.
+* `Matrix.unitaryGroupOf.conjEquiv`: for `bᴴ (t A) b = A'` with `t ≠ 0`, the isomorphism
+  `g ↦ b⁻¹ g b` from `unitaryGroupOf A` onto `unitaryGroupOf A'`.
+* `Matrix.unitaryGroupOf.transport`: for such `b` and `a b ∈ unitaryGroupOf A'`, the bijection
+  `g ↦ a g b` from `unitaryGroupOf A` onto `unitaryGroupOf A'`.
 * `Matrix.unitaryGroupOf.reflection`: the reflection in a non-isotropic vector, for a Hermitian
   invertible Gram matrix `A`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup p q R`: the group `U(p, q)` of invertible matrices
@@ -268,6 +272,106 @@ theorem val_scalarHom (u : unitary R) :
 theorem scalarHom_injective [Nonempty n] : Function.Injective (scalarHom A) := fun u v h => by
   rw [unitaryGroupOf.ext_iff, val_scalarHom, val_scalarHom] at h
   exact Subtype.ext (scalar_inj.mp h)
+
+section Congruence
+
+variable {A' : Matrix n n R} {b : GL n R}
+
+section CommSemiring
+
+variable {K : Type*} [CommSemiring K] [Algebra K R] {t : K}
+
+/-- If `bᴴ (t A) b = A'`, conjugation `g ↦ b⁻¹ g b` maps the unitary group of `A` into that of
+`A'`. -/
+theorem inv_mul_mul_mem (hb : star (b : Matrix n n R) * (t • A) * b = A') {g : GL n R}
+    (hg : g ∈ unitaryGroupOf A) : b⁻¹ * g * b ∈ unitaryGroupOf A' := by
+  rw [mem_unitaryGroupOf_iff] at hg ⊢
+  rw [← hb]
+  have h1 : star ((b⁻¹ : GL n R) : Matrix n n R) * star (b : Matrix n n R) = 1 := by
+    rw [← star_mul, Units.mul_inv, star_one]
+  have h2 : (b : Matrix n n R) * ((b⁻¹ : GL n R) : Matrix n n R) = 1 := Units.mul_inv b
+  calc star (((b⁻¹ * g * b : GL n R)) : Matrix n n R) * (star (b : Matrix n n R) * (t • A) * b) *
+        ((b⁻¹ * g * b : GL n R) : Matrix n n R)
+      = star (b : Matrix n n R) * star (g : Matrix n n R) *
+          (star ((b⁻¹ : GL n R) : Matrix n n R) * star (b : Matrix n n R)) * (t • A) *
+          ((b : Matrix n n R) * ((b⁻¹ : GL n R) : Matrix n n R)) * g * b := by
+        simp only [Units.val_mul, star_mul, Matrix.mul_assoc]
+    _ = star (b : Matrix n n R) * (t • (star (g : Matrix n n R) * A * g)) * b := by
+        rw [h1, h2, Matrix.mul_one, Matrix.mul_one]
+        simp only [Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_assoc]
+    _ = star (b : Matrix n n R) * (t • A) * b := by rw [hg]
+
+end CommSemiring
+
+variable {K : Type*} [Semifield K] [Algebra K R] {t : K}
+
+/-- If `bᴴ (t A) b = A'` with `A` invertible and `t ≠ 0`, then `A'` is invertible. -/
+theorem isUnit_of_star_mul_smul_mul_eq (hA : IsUnit A) (ht : t ≠ 0)
+    (hb : star (b : Matrix n n R) * (t • A) * b = A') : IsUnit A' := by
+  rw [← hb]
+  exact ((b.isUnit.star).mul (hA.smul (Units.mk0 t ht))).mul b.isUnit
+
+/-- The congruence `bᴴ (t A) b = A'` inverted: `(b⁻¹)ᴴ (t⁻¹ A') b⁻¹ = A`. -/
+theorem star_inv_mul_smul_mul_inv (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A') :
+    star ((b⁻¹ : GL n R) : Matrix n n R) * (t⁻¹ • A') * (b⁻¹ : GL n R) = A := by
+  have h1 : star ((b⁻¹ : GL n R) : Matrix n n R) * star (b : Matrix n n R) = 1 := by
+    rw [← star_mul, Units.mul_inv, star_one]
+  have h2 : (b : Matrix n n R) * ((b⁻¹ : GL n R) : Matrix n n R) = 1 := Units.mul_inv b
+  rw [← hb]
+  simp only [Matrix.mul_smul, Matrix.smul_mul, ← Matrix.mul_assoc, h1, Matrix.one_mul]
+  rw [Matrix.mul_assoc, h2, Matrix.mul_one, smul_smul, inv_mul_cancel₀ ht, one_smul]
+
+/-- The **conjugation isomorphism** `g ↦ b⁻¹ g b` from the unitary group of `A` to that of
+`A' = bᴴ (t A) b`, for a nonzero scalar `t`. Its inverse is `g ↦ b g b⁻¹`. -/
+noncomputable def conjEquiv (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A') :
+    unitaryGroupOf A ≃* unitaryGroupOf A' where
+  toFun g := ⟨b⁻¹ * g * b, inv_mul_mul_mem hb g.property⟩
+  invFun g := ⟨b * g * b⁻¹, by
+    simpa using inv_mul_mul_mem (star_inv_mul_smul_mul_inv ht hb) g.property⟩
+  left_inv g := Subtype.ext (by simp [mul_assoc])
+  right_inv g := Subtype.ext (by simp [mul_assoc])
+  map_mul' g h := Subtype.ext (by simp [mul_assoc])
+
+theorem conjEquiv_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    (g : unitaryGroupOf A) :
+    conjEquiv ht hb g = ⟨b⁻¹ * g * b, inv_mul_mul_mem hb g.property⟩ :=
+  (rfl)
+
+@[simp]
+theorem coe_conjEquiv_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    (g : unitaryGroupOf A) :
+    (((conjEquiv ht hb g : unitaryGroupOf A') : GL n R) : Matrix n n R) =
+      (b : Matrix n n R)⁻¹ * ((g : GL n R) : Matrix n n R) * b := by
+  simp [conjEquiv, coe_units_inv]
+
+@[simp]
+theorem coe_conjEquiv_symm_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    (g : unitaryGroupOf A') :
+    ((((conjEquiv ht hb).symm g : unitaryGroupOf A) : GL n R) : Matrix n n R) =
+      (b : Matrix n n R) * ((g : GL n R) : Matrix n n R) * (b : Matrix n n R)⁻¹ := by
+  simp [conjEquiv, coe_units_inv]
+
+/-- For `a b ∈ U(A')`, the bijection `g ↦ a g b` from the unitary group of `A` to that of
+`A' = bᴴ (t A) b`: the conjugation isomorphism `g ↦ b⁻¹ g b` followed by the left translation by
+`a b`. -/
+noncomputable def transport (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    {a : GL n R} (hab : a * b ∈ unitaryGroupOf A') : unitaryGroupOf A ≃ unitaryGroupOf A' :=
+  (conjEquiv ht hb).toEquiv.trans (Equiv.mulLeft ⟨a * b, hab⟩)
+
+theorem transport_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    {a : GL n R} (hab : a * b ∈ unitaryGroupOf A') (g : unitaryGroupOf A) :
+    transport ht hb hab g = ⟨a * b, hab⟩ * conjEquiv ht hb g :=
+  (rfl)
+
+/-- `Matrix.unitaryGroupOf.transport` is `g ↦ a g b`. -/
+@[simp]
+theorem coe_transport_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    {a : GL n R} (hab : a * b ∈ unitaryGroupOf A') (g : unitaryGroupOf A) :
+    (((transport ht hb hab g : unitaryGroupOf A') : GL n R) : Matrix n n R) =
+      (a : Matrix n n R) * ((g : GL n R) : Matrix n n R) * b := by
+  simp [transport_apply, Matrix.mul_assoc]
+
+end Congruence
 
 end unitaryGroupOf
 
