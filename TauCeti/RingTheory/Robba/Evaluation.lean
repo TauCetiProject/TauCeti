@@ -7,14 +7,12 @@ module
 
 public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.Analysis.Normed.Algebra.Ultra
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Analysis.Normed.Ring.UnitBall
 public import TauCeti.RingTheory.Robba.Basic
-import Mathlib.Algebra.Polynomial.Laurent.Roots
 import Mathlib.Topology.Algebra.Algebra
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import TauCeti.Analysis.Normed.Group.NullFamily
-import TauCeti.RingTheory.Henselian.IntegrallyClosed
+import TauCeti.Analysis.Normed.Ring.LaurentMaximum
 
 /-!
 # Evaluation of Robba series
@@ -22,9 +20,9 @@ import TauCeti.RingTheory.Henselian.IntegrallyClosed
 A Robba series that converges at the norm of a nonzero point in a complete valued extension can
 be evaluated there by summing its two-sided Laurent series. Evaluation is an algebra homomorphism
 on the subalgebra of series converging at that radius and is bounded by the corresponding Gauss
-norm. On an annular stage this gives evaluation at every point of the annulus, compatible with
-restriction and isometric extensions of the target field. Over a field with infinite residue
-field, a point on each nonempty circle attains the Gauss norm.
+norm. It commutes with isometric extensions of the target field. On an annular stage, evaluation
+at each point of the annulus is compatible with restriction. Over a field with infinite residue
+field, a point on each nonempty circle of convergence attains the Gauss norm.
 
 For the specialized integral annulus convention with inner radius `p⁻¹`, see
 `TauCeti.AnnularRing.eval`.
@@ -63,6 +61,11 @@ theorem mem_atRadius {ρ : ℝ} (hρ : 0 < ρ) {f : RobbaRing K} :
     f ∈ atRadius K hρ ↔ LaurentConvergesAt ρ (f : ℤ → K) :=
   (Iff.rfl)
 
+/-- Every Laurent monomial converges at every positive radius. -/
+theorem monomial_mem_atRadius {ρ : ℝ} (hρ : 0 < ρ) (n : ℤ) (c : K) :
+    monomial n c ∈ atRadius K hρ := by
+  simpa only [mem_atRadius, coe_monomial] using laurentConvergesAt_single ρ n c
+
 /-- Every series on an annular stage converges at each radius in its defining interval. -/
 theorem annulus_le_atRadius {r ρ : ℝ} (hρ : 0 < ρ) (hr : r < ρ) (h₁ : ρ < 1) :
     annulus K r ≤ atRadius K hρ := fun _ hf ↦
@@ -72,8 +75,7 @@ private def annulusMonomialOne (r : ℝ) : Multiplicative ℤ →* annulus K r w
   toFun n := ⟨monomial n.toAdd 1, monomial_mem_annulus r n.toAdd 1⟩
   map_one' := Subtype.ext (by simp)
   map_mul' m n := Subtype.ext (by
-    rw [Subalgebra.coe_mul, monomial_mul_monomial, one_mul]
-    rfl)
+    rw [Subalgebra.coe_mul, monomial_mul_monomial, one_mul, toAdd_mul])
 
 /-- Regard a Laurent polynomial as a series on the annulus. -/
 noncomputable def ofLaurentPolynomial (r : ℝ) : K[T;T⁻¹] →ₐ[K] annulus K r :=
@@ -89,8 +91,7 @@ theorem ofLaurentPolynomial_C_mul_T (r : ℝ) (n : ℤ) (c : K) :
   rw [map_mul, hT, LaurentPolynomial.C_eq_algebraMap, AlgHom.commutes]
   exact Subtype.ext (by
     simp only [Subalgebra.coe_mul, Subalgebra.coe_algebraMap, annulusMonomialOne,
-      MonoidHom.coe_mk, OneHom.coe_mk, algebraMap_mul_monomial, mul_one]
-    rfl)
+      MonoidHom.coe_mk, OneHom.coe_mk, algebraMap_mul_monomial, mul_one, toAdd_ofAdd])
 
 /-- The annular series of a Laurent polynomial has the same coefficient family. -/
 @[simp]
@@ -187,6 +188,14 @@ theorem evalAt_apply (hz : 0 < ‖z‖) (f : atRadius K hz) :
     evalAt K hz f = ∑' n : ℤ, algebraMap K L ((f.val : ℤ → K) n) * z ^ n :=
   (rfl)
 
+/-- A Laurent monomial of degree `n` evaluates to its coefficient times `z ^ n`. -/
+@[simp]
+theorem evalAt_monomial (hz : 0 < ‖z‖) (n : ℤ) (c : K) :
+    evalAt K hz ⟨monomial n c, monomial_mem_atRadius K hz n c⟩ =
+      algebraMap K L c * z ^ n := by
+  rw [evalAt_apply]
+  simpa only [coe_monomial] using tsum_eval_single K z n c
+
 /-- The series of evaluated Laurent monomials converges to the value of the Robba series. -/
 theorem hasSum_evalAt (hz : 0 < ‖z‖) (f : atRadius K hz) :
     HasSum (fun n : ℤ ↦ algebraMap K L ((f.val : ℤ → K) n) * z ^ n) (evalAt K hz f) := by
@@ -212,10 +221,29 @@ theorem tendsto_evalAt_of_tendsto_laurentGaussNorm_sub (hz : 0 < ‖z‖) {ι : 
   exact Eventually.of_forall fun i ↦ by
     simpa only [norm_norm, map_sub] using norm_evalAt_le K hz (f i - g)
 
+/-- Mapping a Robba series value into an isometric extension agrees with evaluating the same
+series at the image of the point. -/
+theorem comp_evalAt {M : Type*} [NormedField M] [NormedAlgebra K M] [CompleteSpace M]
+    (φ : L →ₐ[K] M) (hφ : Isometry φ) (hz : 0 < ‖z‖) (f : atRadius K hz) :
+    φ (evalAt K hz f) =
+      evalAt K (z := φ z)
+        (by simpa only [hφ.norm_map_of_map_zero (map_zero φ)] using hz)
+        ⟨f.val, by
+          simpa only [mem_atRadius, hφ.norm_map_of_map_zero (map_zero φ)] using f.property⟩ := by
+  refine ((hasSum_evalAt K hz f).map φ hφ.continuous |>.congr_fun fun n ↦ ?_).unique
+    (hasSum_evalAt K _ _)
+  simp only [Function.comp_apply, map_mul, AlgHom.commutes, map_zpow₀]
+
 /-- Evaluate a series on the annulus `r < ‖z‖ < 1` at the nonzero point `z`. -/
 noncomputable def annulusEval {r : ℝ} (hz : 0 < ‖z‖) (hr : r < ‖z‖) (h₁ : ‖z‖ < 1) :
     annulus K r →ₐ[K] L :=
   (evalAt K hz).comp (Subalgebra.inclusion (annulus_le_atRadius K hz hr h₁))
+
+/-- Annular evaluation is fixed-radius evaluation restricted to the annular subalgebra. -/
+theorem annulusEval_eq_evalAt {r : ℝ} (hz : 0 < ‖z‖) (hr : r < ‖z‖) (h₁ : ‖z‖ < 1) :
+    annulusEval K hz hr h₁ =
+      (evalAt K hz).comp (Subalgebra.inclusion (annulus_le_atRadius K hz hr h₁)) :=
+  (rfl)
 
 /-- The value of a series on an annulus is its convergent Laurent sum at the point. -/
 theorem annulusEval_apply {r : ℝ} (hz : 0 < ‖z‖) (hr : r < ‖z‖) (h₁ : ‖z‖ < 1)
@@ -242,8 +270,8 @@ theorem annulusEval_monomial {r : ℝ} (hz : 0 < ‖z‖) (hr : r < ‖z‖) (h�
     (n : ℤ) (c : K) :
     annulusEval K hz hr h₁ ⟨monomial n c, monomial_mem_annulus r n c⟩ =
       algebraMap K L c * z ^ n := by
-  rw [annulusEval_apply]
-  simpa only [coe_monomial] using tsum_eval_single K z n c
+  rw [annulusEval_eq_evalAt, AlgHom.comp_apply, Subalgebra.inclusion_mk]
+  exact evalAt_monomial K hz n c
 
 /-- On Laurent polynomials, annular evaluation agrees with algebraic evaluation at the same
 nonzero point. -/
@@ -264,8 +292,7 @@ theorem annulusEval_comp_inclusion {r s : ℝ} (h : r ≤ s) (hz : 0 < ‖z‖)
     (annulusEval K hz hs h₁).comp (Subalgebra.inclusion (annulus_mono h)) =
       annulusEval K hz (h.trans_lt hs) h₁ := by
   ext f
-  simp only [AlgHom.comp_apply, annulusEval_apply]
-  rfl
+  simp only [AlgHom.comp_apply, annulusEval_apply, Subalgebra.coe_inclusion]
 
 /-- Evaluating an annular series and mapping its value into a further valued extension agrees
 with evaluating at the image of the point. -/
@@ -277,95 +304,60 @@ theorem comp_annulusEval {M : Type*} [NormedField M] [NormedAlgebra K M] [Comple
         (by simpa only [hφ.norm_map_of_map_zero (map_zero φ)] using hz)
         (by simpa only [hφ.norm_map_of_map_zero (map_zero φ)] using hr)
         (by simpa only [hφ.norm_map_of_map_zero (map_zero φ)] using h₁) := by
-  ext f
-  refine ((hasSum_annulusEval K hz hr h₁ f).map φ hφ.continuous |>.congr_fun fun n ↦ ?_).unique
-    (hasSum_annulusEval K _ _ _ f)
-  simp only [Function.comp_apply, map_mul, AlgHom.commutes, map_zpow₀]
-
-section Maximum
+  ext ⟨f, hf⟩
+  simpa only [annulusEval_eq_evalAt, AlgHom.comp_apply, Subalgebra.inclusion_mk] using
+    comp_evalAt K φ hφ hz ⟨f, annulus_le_atRadius K hz hr h₁ hf⟩
 
 open _root_.IsLocalRing
 
-variable {E : Type*} [NormedField E] [IsUltrametricDist E]
+/-- A Robba series converging on a nonempty circle over an extension with infinite residue field
+attains its Gauss norm at some point of that circle. -/
+theorem exists_norm_evalAt_eq_laurentGaussNorm [IsUltrametricDist L]
+    [Infinite (ResidueField (Subring.unitClosedBall L))]
+    (hz : 0 < ‖z‖) (f : atRadius K hz) :
+    ∃ w : L, ∃ hw : ‖w‖ = ‖z‖,
+      ‖evalAt K (z := w) (hw.symm ▸ hz)
+        ⟨f.val, by simpa only [mem_atRadius, hw] using f.property⟩‖ =
+        laurentGaussNorm ‖z‖ (f.val : ℤ → K) := by
+  let a (n : ℤ) := algebraMap K L ((f.val : ℤ → K) n) * z ^ n
+  have ha : Summable a := (hasSum_evalAt K hz f).summable
+  have hn (n : ℤ) : ‖a n‖ = ‖(f.val : ℤ → K) n‖ * ‖z‖ ^ n := by
+    simp only [a, norm_mul, norm_algebraMap', norm_zpow]
+  obtain ⟨j, hj⟩ := ha.tendsto_cofinite_zero.exists_norm_eq_ciSup
+  have hG : ‖a j‖ = laurentGaussNorm ‖z‖ (f.val : ℤ → K) := by
+    simpa only [hn, laurentGaussNorm_def] using hj
+  rcases eq_or_ne (a j) 0 with hzero | hj'
+  · refine ⟨z, rfl, le_antisymm (norm_evalAt_le K hz f) ?_⟩
+    rw [← hG, hzero, norm_zero]
+    exact norm_nonneg _
+  have hle (n : ℤ) : ‖a n‖ ≤ ‖a j‖ := by
+    rw [hn, hG]
+    exact le_laurentGaussNorm ((mem_atRadius K hz).mp f.property).bddAbove n
+  have hjnorm : ‖a j / a j‖ = 1 := by simp [hj']
+  obtain ⟨u, hu, hsum⟩ := exists_norm_tsum_mul_zpow_eq_one (ha.div_const (a j))
+    (fun n ↦ by rw [norm_div]; exact div_le_one_of_le₀ (hle n) (norm_nonneg _)) hjnorm
+  have hw : ‖z * u‖ = ‖z‖ := by rw [norm_mul, hu, mul_one]
+  refine ⟨z * u, hw, ?_⟩
+  rw [evalAt_apply, ← hG]
+  have hscaled : (∑' n : ℤ, a n / a j * u ^ n) * a j =
+      ∑' n : ℤ, algebraMap K L ((f.val : ℤ → K) n) * (z * u) ^ n := by
+    rw [← tsum_mul_right]
+    refine tsum_congr fun n ↦ ?_
+    rw [mul_right_comm, div_mul_cancel₀ _ hj', mul_zpow, ← mul_assoc]
+  rw [← hscaled, norm_mul, hsum, one_mul]
 
-private theorem exists_norm_sum_mul_zpow_eq_one [Infinite (ResidueField (Subring.unitClosedBall E))]
-    (s : Finset ℤ) (b : ℤ → Subring.unitClosedBall E) {j : ℤ} (hj : j ∈ s)
-    (hb : ‖(b j : E)‖ = 1) :
-    ∃ u : E, ‖u‖ = 1 ∧ ‖∑ n ∈ s, (b n : E) * u ^ n‖ = 1 := by
-  classical
-  let O := Subring.unitClosedBall E
-  let k := ResidueField O
-  let π : O →+* k := residue O
-  let P : k[T;T⁻¹] := ∑ n ∈ s, LaurentPolynomial.C (π (b n)) * LaurentPolynomial.T n
-  have hj' : π (b j) ≠ 0 :=
-    ((isUnit_unitClosedBall_iff_norm_eq_one.mpr hb).map π).ne_zero
-  have hP : P ≠ 0 := by
-    intro h
-    have hc := congrArg (fun Q : k[T;T⁻¹] ↦ Q.coeff j) h
-    simp only [P, ← LaurentPolynomial.single_eq_C_mul_T, AddMonoidAlgebra.coeff_sum,
-      Finsupp.finsetSum_apply, AddMonoidAlgebra.coeff_single, Finsupp.single_apply,
-      Finset.sum_ite_eq', hj, ite_true, AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply] at hc
-    exact hj' hc
-  have : Infinite kˣ := unitsEquivNeZero.infinite_iff.mpr
-    ((Set.finite_singleton (0 : k)).infinite_compl).to_subtype
-  obtain ⟨v, hv⟩ : ∃ v : kˣ, P.smeval v ≠ 0 := by
-    by_contra! h
-    exact hP (P.eq_zero_of_infinite_smeval_eq_zero (S := k) (Set.infinite_univ.mono fun x _ ↦ h x))
-  rw [← LaurentPolynomial.eval₂_eq_smeval, Algebra.algebraMap_self] at hv
-  obtain ⟨u, huv⟩ := surjective_units_map_of_local_ringHom π residue_surjective
-    (by simpa only [π] using (inferInstance : IsLocalHom (residue O))) v
-  refine ⟨(u.val : E), isUnit_unitClosedBall_iff_norm_eq_one.mp u.isUnit, ?_⟩
-  let y : O := ∑ n ∈ s, b n * (u ^ n).val
-  have hvpow (n : ℤ) : π (u ^ n).val = (v ^ n).val := by
-    rw [← huv, ← map_zpow]
-    rfl
-  have hy : π y ≠ 0 := by
-    intro hyzero
-    apply hv
-    calc
-      LaurentPolynomial.eval₂ (RingHom.id k) v P =
-          ∑ n ∈ s, π (b n) * (v ^ n).val := by
-        simp only [P, map_sum, LaurentPolynomial.eval₂_C_mul_T, RingHom.id_apply]
-      _ = π y := by simp only [y, map_sum, map_mul, hvpow]
-      _ = 0 := hyzero
-  have hnorm : ‖O.subtype y‖ = 1 := isUnit_unitClosedBall_iff_norm_eq_one.mp <| by
-    rwa [← notMem_maximalIdeal, ← residue_eq_zero_iff]
-  have hpow (n : ℤ) : O.subtype (u ^ n).val = (u.val : E) ^ n := by
-    let v' := Units.map O.subtype.toMonoidHom u
-    calc
-      O.subtype (u ^ n).val = ((v' ^ n : Eˣ) : E) :=
-        congrArg Units.val (map_zpow (Units.map O.subtype.toMonoidHom) u n)
-      _ = (u.val : E) ^ n := Units.val_zpow_eq_zpow_val v' n
-  simpa only [y, map_sum, map_mul, hpow, Subring.coe_subtype] using hnorm
-
-variable [CompleteSpace E]
-
-private theorem exists_norm_tsum_mul_zpow_eq_one
-    [Infinite (ResidueField (Subring.unitClosedBall E))]
-    {a : ℤ → E} (ha : Summable a) (hle : ∀ n, ‖a n‖ ≤ 1) {j : ℤ} (hj : ‖a j‖ = 1) :
-    ∃ u : E, ‖u‖ = 1 ∧ ‖∑' n : ℤ, a n * u ^ n‖ = 1 := by
-  classical
-  have hs : {n : ℤ | ¬ ‖a n‖ < 1}.Finite :=
-    eventually_cofinite.mp <|
-      (tendsto_norm_zero.comp ha.tendsto_cofinite_zero).eventually (gt_mem_nhds zero_lt_one)
-  let s := hs.toFinset
-  obtain ⟨u, hu, hus⟩ := exists_norm_sum_mul_zpow_eq_one s
-    (fun n ↦ ⟨a n, Subring.mem_unitClosedBall.mpr (hle n)⟩)
-    (hs.mem_toFinset.mpr (by simp [hj])) hj
-  have hnorm (n : ℤ) : ‖a n * u ^ n‖ = ‖a n‖ := by
-    rw [norm_mul, norm_zpow, hu, one_zpow, mul_one]
-  have hsum : Summable (fun n : ℤ ↦ a n * u ^ n) := by
-    apply NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-    rw [tendsto_zero_iff_norm_tendsto_zero]
-    simpa only [hnorm, norm_zero] using ha.tendsto_cofinite_zero.norm
-  have htail : ‖∑' n : {n // n ∉ s}, a n.val * u ^ n.val‖ < 1 :=
-    (hsum.subtype (· ∉ s)).hasSum.norm_lt_of_forall_norm_lt zero_lt_one fun n ↦ by
-      rw [Function.comp_apply, hnorm]
-      simpa [s] using n.property
-  refine ⟨u, hu, ?_⟩
-  rw [← hsum.sum_add_tsum_subtype_compl s,
-    IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (hus.trans_ne htail.ne'), hus,
-    max_eq_left htail.le]
+/-- A Robba series converging on a nonempty circle over an algebraically closed valued extension
+attains its Gauss norm at some point of that circle. -/
+theorem exists_norm_evalAt_eq_laurentGaussNorm_of_isAlgClosed [IsAlgClosed L]
+    (hz : 0 < ‖z‖) (f : atRadius K hz) :
+    ∃ w : L, ∃ hw : ‖w‖ = ‖z‖,
+      ‖evalAt K (z := w) (hw.symm ▸ hz)
+        ⟨f.val, by simpa only [mem_atRadius, hw] using f.property⟩‖ =
+        laurentGaussNorm ‖z‖ (f.val : ℤ → K) := by
+  have : IsUltrametricDist L := IsUltrametricDist.of_normedAlgebra K
+  have : IsAlgClosed (ResidueField (Subring.unitClosedBall L)) :=
+    isAlgClosed_residueField_unitClosedBall L
+  exact exists_norm_evalAt_eq_laurentGaussNorm K hz f
 
 /-- On a nonempty circle in an annulus over a valued field with infinite residue field, some
 evaluation attains the Gauss norm. -/
@@ -375,33 +367,9 @@ theorem exists_norm_annulusEval_eq_laurentGaussNorm [IsUltrametricDist L]
     ∃ w : L, ∃ hw : ‖w‖ = ‖z‖,
       ‖annulusEval K (z := w) (hw.symm ▸ hz) (hw.symm ▸ hr) (hw.symm ▸ h₁) f‖ =
         laurentGaussNorm ‖z‖ (f.val : ℤ → K) := by
-  let a (n : ℤ) := algebraMap K L ((f.val : ℤ → K) n) * z ^ n
-  have ha : Summable a := (hasSum_annulusEval K hz hr h₁ f).summable
-  have hn (n : ℤ) : ‖a n‖ = ‖(f.val : ℤ → K) n‖ * ‖z‖ ^ n := by
-    simp only [a, norm_mul, norm_algebraMap', norm_zpow]
-  obtain ⟨j, hj⟩ := ha.tendsto_cofinite_zero.exists_norm_eq_ciSup
-  have hG : ‖a j‖ = laurentGaussNorm ‖z‖ (f.val : ℤ → K) := by
-    simpa only [hn, laurentGaussNorm_def] using hj
-  rcases eq_or_ne (a j) 0 with hzero | hj'
-  · refine ⟨z, rfl, le_antisymm (norm_annulusEval_le K hz hr h₁ f) ?_⟩
-    rw [← hG, hzero, norm_zero]
-    exact norm_nonneg _
-  have hle (n : ℤ) : ‖a n‖ ≤ ‖a j‖ := by
-    rw [hn, hG]
-    exact le_laurentGaussNorm
-      ((mem_annularCoeff.mp (mem_annulus.mp f.property)) ‖z‖ hz hr h₁).bddAbove n
-  obtain ⟨u, hu, hsum⟩ := exists_norm_tsum_mul_zpow_eq_one (ha.div_const (a j))
-    (fun n ↦ by rw [norm_div]; exact div_le_one_of_le₀ (hle n) (norm_nonneg _))
-    (show ‖a j / a j‖ = 1 by simp [hj'])
-  have hw : ‖z * u‖ = ‖z‖ := by rw [norm_mul, hu, mul_one]
-  refine ⟨z * u, hw, ?_⟩
-  rw [annulusEval_apply, ← hG]
-  have hscaled : (∑' n : ℤ, a n / a j * u ^ n) * a j =
-      ∑' n : ℤ, algebraMap K L ((f.val : ℤ → K) n) * (z * u) ^ n := by
-    rw [← tsum_mul_right]
-    refine tsum_congr fun n ↦ ?_
-    rw [mul_right_comm, div_mul_cancel₀ _ hj', mul_zpow, ← mul_assoc]
-  rw [← hscaled, norm_mul, hsum, one_mul]
+  rcases f with ⟨f, hf⟩
+  simpa only [annulusEval_eq_evalAt, AlgHom.comp_apply, Subalgebra.inclusion_mk] using
+    exists_norm_evalAt_eq_laurentGaussNorm K hz ⟨f, annulus_le_atRadius K hz hr h₁ hf⟩
 
 /-- On a nonempty circle in an annulus over an algebraically closed valued extension, the Gauss
 norm is attained by evaluating at a point on that circle. -/
@@ -410,16 +378,9 @@ theorem exists_norm_annulusEval_eq_laurentGaussNorm_of_isAlgClosed [IsAlgClosed 
     ∃ w : L, ∃ hw : ‖w‖ = ‖z‖,
       ‖annulusEval K (z := w) (hw.symm ▸ hz) (hw.symm ▸ hr) (hw.symm ▸ h₁) f‖ =
         laurentGaussNorm ‖z‖ (f.val : ℤ → K) := by
-  have : IsUltrametricDist L := IsUltrametricDist.of_normedAlgebra K
-  let O := Subring.unitClosedBall L
-  let V := ValuationSubring.ofSubring O fun x ↦ by
-    simp only [O, Subring.mem_unitClosedBall, norm_inv]
-    exact (le_total ‖x‖ 1).imp_right fun hx ↦ inv_le_one_of_one_le₀ hx
-  have : ValuationRing O := inferInstanceAs (ValuationRing V)
-  have : IsFractionRing O L := inferInstanceAs (IsFractionRing V L)
-  have : IsAlgClosed (ResidueField O) := TauCeti.ValuationRing.isAlgClosed_residueField O L
-  exact exists_norm_annulusEval_eq_laurentGaussNorm K hz hr h₁ f
-
-end Maximum
+  rcases f with ⟨f, hf⟩
+  simpa only [annulusEval_eq_evalAt, AlgHom.comp_apply, Subalgebra.inclusion_mk] using
+    exists_norm_evalAt_eq_laurentGaussNorm_of_isAlgClosed K hz
+      ⟨f, annulus_le_atRadius K hz hr h₁ hf⟩
 
 end TauCeti.RobbaRing
