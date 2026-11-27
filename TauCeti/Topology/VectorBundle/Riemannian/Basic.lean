@@ -35,6 +35,8 @@ continuous reference inner products on the fibres.
 
 ## Main results
 
+* `TauCeti.inner_eq_of_totalSpaceMk_eq`: equal points in a bundle total space with fibrewise inner
+  products have equal fibre inner products.
 * `Continuous.norm_bundle`: the fiber norm of a continuous map into the fibers of a continuous
   Riemannian bundle is continuous, with `TauCeti.continuous_norm_bundle` its tautological case.
 * `Bundle.Trivialization.continuousAt_norm_symmL`: in a continuous Riemannian bundle, the fiber
@@ -68,6 +70,21 @@ public section
 
 open Bundle Filter Set
 open scoped Topology
+
+namespace TauCeti
+
+/-- Equal points of the total space of a bundle with fibrewise inner products have equal inner
+products of their fibre components. -/
+theorem inner_eq_of_totalSpaceMk_eq {𝕜 B F : Type*} {V : B → Type*} [∀ x, Inner 𝕜 (V x)]
+    {x y : B} {u v : V x} {u' v' : V y}
+    (hu : TotalSpace.mk' F x u = TotalSpace.mk' F y u')
+    (hv : TotalSpace.mk' F x v = TotalSpace.mk' F y v') :
+    inner 𝕜 u v = inner 𝕜 u' v' := by
+  cases hu
+  cases hv
+  rfl
+
+end TauCeti
 
 variable
   {B : Type*} [TopologicalSpace B]

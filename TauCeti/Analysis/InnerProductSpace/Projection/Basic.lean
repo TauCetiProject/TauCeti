@@ -141,6 +141,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `infDist w U ≤ infDist w V + ‖P_U - P_V‖ * ‖w‖`.
 * `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
+* `Submodule.inner_sub_starProjection_singleton`:
+  inner product of components orthogonal to a vector `u`.
 * `Submodule.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one`: the sign identity
   `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫` for the projection `P` onto a real line.
 * `Submodule.inner_starProjection_sq_of_finrank_eq_one`: `⟪P x, y⟫² = ⟪P x, x⟫ ⟪P y, y⟫` for the
@@ -591,6 +593,20 @@ theorem norm_sub_add_sq_of_mem_of_mem_orthogonal (v : F) {b c : F} (hb : b ∈ R
   rw [hsplit, norm_add_sq_real,
     R.inner_right_of_mem_orthogonal (R.sub_mem (R.starProjection_apply_mem v) hb) hperp,
     norm_sub_sq_real, real_inner_comm]
+  ring
+
+omit R [R.HasOrthogonalProjection] in
+/-- The inner product of the components of `v` and `w` orthogonal to a vector `u`:
+`⟪v - P_u v, w - P_u w⟫ = ⟪v, w⟫ - ⟪v, u⟫ * ⟪w, u⟫ / ‖u‖²`. Holds for `u = 0` as well by the
+division-by-zero convention `x / 0 = 0`. -/
+theorem inner_sub_starProjection_singleton (u v w : F) :
+    ⟪v - (ℝ ∙ u).starProjection v, w - (ℝ ∙ u).starProjection w⟫_ℝ =
+      ⟪v, w⟫_ℝ - ⟪v, u⟫_ℝ * ⟪w, u⟫_ℝ / ‖u‖ ^ 2 := by
+  have hperp : ⟪v - (ℝ ∙ u).starProjection v, (ℝ ∙ u).starProjection w⟫_ℝ = 0 :=
+    (ℝ ∙ u).starProjection_inner_eq_zero v _ ((ℝ ∙ u).starProjection_apply_mem w)
+  rw [inner_sub_right, hperp, sub_zero, inner_sub_left, Submodule.starProjection_singleton]
+  simp only [RCLike.ofReal_real_eq_id, id_eq, real_inner_smul_left, real_inner_comm u v,
+    real_inner_comm u w]
   ring
 
 /-- For the orthogonal projection `P` onto a line, `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫`: if `n`
