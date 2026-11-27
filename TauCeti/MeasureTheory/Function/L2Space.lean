@@ -18,6 +18,7 @@ import TauCeti.Algebra.Order.Ring.PosPart.Sq
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Inner products of square-integrable functions
@@ -43,12 +44,15 @@ More generally, the L² pairing of an L² function with the class of any square-
 function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), also
 in the other order for an L² function given by an almost-everywhere representative
 (`MeasureTheory.L2.toLp_inner_of_ae_eq`). On a finite measure space the pairing of a constant
-class `c` with `f` is `⟪c, ∫ f⟫` (`MeasureTheory.L2.inner_const_left`). The zero class pairs to
+class `c` with `f` is `⟪c, ∫ f⟫` (`MeasureTheory.L2.inner_const_left`), and in the other order
+`⟪∫ f, c⟫` (`MeasureTheory.L2.inner_const_right`). The zero class pairs to
 zero with every function
 (`MeasureTheory.Lp.integral_inner_coeFn_zero_left`), and composition with a measure-preserving map
 preserves the L² inner product (`MeasureTheory.Lp.inner_compMeasurePreserving`).
 An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
 almost everywhere on that set (`MeasureTheory.L2.ae_restrict_eq_zero_of_forall_inner_eq_zero`).
+For a finite measure on a product `X × Y`, the indicators of measurable rectangles are total in
+`L²` (`MeasureTheory.Lp.eq_zero_of_forall_inner_indicatorConstLp_prod`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
 product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
@@ -318,6 +322,13 @@ theorem L2.inner_const_left [IsFiniteMeasure μ] [CompleteSpace E] [NormedSpace 
     (f : Lp E 2 μ) : ⟪Lp.const 2 μ c, f⟫_𝕜 = ⟪c, ∫ x, f x ∂μ⟫_𝕜 := by
   rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_eq_inner_setIntegral, setIntegral_univ]
 
+/-- On a finite measure space, the L² inner product of an L² function `f` with the constant class
+`c` is the inner product of `∫ f` with `c`. -/
+@[simp]
+theorem L2.inner_const_right [IsFiniteMeasure μ] [CompleteSpace E] [NormedSpace ℝ E] (c : E)
+    (f : Lp E 2 μ) : ⟪f, Lp.const 2 μ c⟫_𝕜 = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
+  rw [← inner_conj_symm, L2.inner_const_left, inner_conj_symm]
+
 /-- The pointwise inner product of the zero class of `Lᵖ` with any function integrates to zero. -/
 theorem Lp.integral_inner_coeFn_zero_left {p : ℝ≥0∞} (g : α → E) :
     ∫ x, ⟪(0 : Lp E p μ) x, g x⟫_𝕜 ∂μ = 0 := by
@@ -352,6 +363,24 @@ theorem L2.ae_restrict_eq_zero_of_forall_inner_eq_zero {A : Set α} (hA : Measur
   rw [Filter.EventuallyEq, ae_restrict_iff' hA]
   filter_upwards [h0] with x hx hxA
   rwa [Set.indicator_of_mem hxA] at hx
+
+/-- **Indicators of rectangles are total in `L²` of a product space.** For a finite measure `ρ` on
+`X × Y`, a vector of `L²(ρ)` orthogonal to the indicator of every measurable rectangle `A ×ˢ B`
+vanishes. -/
+theorem Lp.eq_zero_of_forall_inner_indicatorConstLp_prod {X Y : Type*} [MeasurableSpace X]
+    [MeasurableSpace Y] {ρ : Measure (X × Y)} [IsFiniteMeasure ρ] (w : Lp 𝕜 2 ρ)
+    (h : ∀ (A : Set X) (B : Set Y) (hA : MeasurableSet A) (hB : MeasurableSet B),
+      ⟪indicatorConstLp 2 (hA.prod hB) (measure_ne_top ρ _) (1 : 𝕜), w⟫_𝕜 = 0) :
+    w = 0 := by
+  have hint : Integrable w ρ := (Lp.memLp w).integrable one_le_two
+  have hrect : ∀ A, MeasurableSet A → ∀ B, MeasurableSet B → ∫ z in A ×ˢ B, w z ∂ρ = 0 :=
+    fun A hA B hB => by
+      rw [← L2.inner_indicatorConstLp_one (hA.prod hB) (measure_ne_top _ _)]
+      exact h A B hA hB
+  have hset := TauCeti.setIntegral_eq_zero_of_forall_prod hint hrect
+  refine Lp.ext ?_
+  exact (ae_eq_zero_of_forall_setIntegral_eq_of_sigmaFinite (fun s _ _ => hint.integrableOn)
+    fun s hs _ => hset s hs).trans (Lp.coeFn_zero 𝕜 2 _).symm
 
 open Filter in
 /-- **The squared `L²` norm of the positive part is differentiable**: on real `L²`, the map

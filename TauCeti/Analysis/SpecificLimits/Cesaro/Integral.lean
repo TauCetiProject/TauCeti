@@ -18,6 +18,8 @@ Facts about the limits of the Cesàro means `T⁻¹ ∫₀ᵀ φ t dt` of real f
   arbitrarily small additive constant, by functions whose Cesàro means tend to `0`, its Cesàro
   means tend to `0`;
 * `TauCeti.tendsto_average_add`: Cesàro means of a sum converge to the sum of the limits;
+* `TauCeti.tendsto_average_mul_of_tendsto_average_abs_sub`: the Cesàro limit of a product `c₁ c₂`
+  when `c₁` is Cesàro close to a constant and `c₂` is bounded;
 * `TauCeti.tendsto_average_norm_apply_add`, `TauCeti.isClosed_setOf_tendsto_average_norm`: for a
   continuous family `φ x` additive in `x`, the `x` for which the Cesàro means of `‖φ x t‖` tend
   to `0` are closed under addition, and form a closed set when `‖φ x t‖ ≤ C ‖x‖`.
@@ -69,6 +71,43 @@ theorem tendsto_average_add {ψ₁ ψ₂ : ℝ → ℝ} {a₁ a₂ : ℝ}
     (h₂ : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ψ₂ t) atTop (𝓝 a₂)) :
     Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, (ψ₁ t + ψ₂ t)) atTop (𝓝 (a₁ + a₂)) := by
   simpa [intervalIntegral.integral_add (h₁i _) (h₂i _), mul_add] using h₁.add h₂
+
+/-- If `c₁` is Cesàro close to `α` in absolute value, `T⁻¹ ∫₀ᵀ |c₁ t - α| dt → 0`, and the
+continuous function `c₂` is bounded by `1` in absolute value with Cesàro limit `β`, then `c₁ c₂`
+has Cesàro limit `α β`. -/
+theorem tendsto_average_mul_of_tendsto_average_abs_sub {c₁ c₂ : ℝ → ℝ}
+    (h₁ : Continuous c₁) (h₂ : Continuous c₂) (hc₂ : ∀ t, |c₂ t| ≤ 1) {α β : ℝ}
+    (hα : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, |c₁ t - α|) atTop (𝓝 0))
+    (hβ : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, c₂ t) atTop (𝓝 β)) :
+    Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, c₁ t * c₂ t) atTop (𝓝 (α * β)) := by
+  have hsplit : ∀ T : ℝ, T⁻¹ * ∫ t in (0 : ℝ)..T, c₁ t * c₂ t =
+      T⁻¹ * (∫ t in (0 : ℝ)..T, (c₁ t - α) * c₂ t) + α * (T⁻¹ * ∫ t in (0 : ℝ)..T, c₂ t) := by
+    intro T
+    have hi₁ : IntervalIntegrable (fun t => (c₁ t - α) * c₂ t) volume 0 T :=
+      ((h₁.sub continuous_const).mul h₂).intervalIntegrable 0 T
+    have hi₂ : IntervalIntegrable (fun t => α * c₂ t) volume 0 T :=
+      (continuous_const.mul h₂).intervalIntegrable 0 T
+    have : ∫ t in (0 : ℝ)..T, c₁ t * c₂ t =
+        (∫ t in (0 : ℝ)..T, (c₁ t - α) * c₂ t) + ∫ t in (0 : ℝ)..T, α * c₂ t := by
+      rw [← intervalIntegral.integral_add hi₁ hi₂]
+      congr 1
+      ext t
+      ring
+    rw [this, intervalIntegral.integral_const_mul]
+    ring
+  simp_rw [hsplit]
+  rw [← zero_add (α * β)]
+  refine Tendsto.add ?_ (hβ.const_mul α)
+  refine squeeze_zero_norm' ?_ hα
+  filter_upwards [eventually_ge_atTop 0] with T hT
+  rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (inv_nonneg.2 hT)]
+  gcongr
+  refine (intervalIntegral.abs_integral_le_integral_abs hT).trans ?_
+  refine intervalIntegral.integral_mono_on hT
+    (((h₁.sub continuous_const).mul h₂).abs.intervalIntegrable _ _)
+    ((h₁.sub continuous_const).abs.intervalIntegrable _ _) fun t _ => ?_
+  rw [abs_mul]
+  exact mul_le_of_le_one_right (abs_nonneg _) (hc₂ t)
 
 section Family
 

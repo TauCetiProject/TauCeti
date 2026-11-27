@@ -46,7 +46,10 @@ and is dominated by `2 ∫₀² g (u +ᵥ x) du`.
   `TauCeti.koopmanGroup_isUnitary`: on `L²(μ)` with values in a complex inner product space,
   such as complex `L²(μ)`, it is unitary;
 * `TauCeti.koopmanGroup_indicatorConstLp`: the Koopman operator at time `t` sends the indicator
-  of `A` to the indicator of `(t +ᵥ ·)⁻¹' A`.
+  of `A` to the indicator of `(t +ᵥ ·)⁻¹' A`; `TauCeti.koopmanGroup_const`: it fixes constants;
+* `TauCeti.inner_indicatorConstLp_koopmanGroup`: the Koopman correlation of the indicators of `C`
+  and `A` is `μ((t +ᵥ ·)⁻¹' A ∩ C)`, which depends continuously on `t`
+  (`TauCeti.continuous_measureReal_preimage_vadd_inter`).
 
 The s-finiteness of `μ` cannot be dropped: for the action of `ℝ` on itself by translation with
 counting measure, which is not s-finite, `‖1_{{-t}} - 1_{{0}}‖₂ = √2` for every `t ≠ 0`. Joint
@@ -60,7 +63,7 @@ public section
 noncomputable section
 
 open Filter Set
-open scoped Topology ENNReal symmDiff Interval
+open scoped Topology ENNReal symmDiff Interval InnerProductSpace
 
 namespace MeasureTheory
 
@@ -435,6 +438,12 @@ theorem koopmanGroup_indicatorConstLp (hp : p ≠ ∞) {A : Set X} (hA : Measura
         (by rwa [(measurePreserving_vadd t μ).measure_preimage hA.nullMeasurableSet]) c :=
   Lp.indicatorConstLp_compMeasurePreserving hA hμA c (measurePreserving_vadd t μ)
 
+/-- For a finite measure `μ`, the Koopman group fixes the constant classes of `Lᵖ(μ)`. -/
+theorem koopmanGroup_const [IsFiniteMeasure μ] (hp : p ≠ ∞) (c : E) (t : ℝ) :
+    koopmanGroup μ E p hp t (Lp.const p μ c) = Lp.const p μ c := by
+  rw [← indicatorConstLp_univ, koopmanGroup_indicatorConstLp]
+  simp only [Set.preimage_univ]
+
 /-- On `L²(μ)` with values in a complex inner product space, such as complex `L²(μ)`, the Koopman
 group is unitary. -/
 theorem koopmanGroup_isUnitary (F : Type*) [NormedAddCommGroup F] [InnerProductSpace ℂ F] :
@@ -442,5 +451,29 @@ theorem koopmanGroup_isUnitary (F : Type*) [NormedAddCommGroup F] [InnerProductS
       (koopmanGroup μ F 2 ENNReal.ofNat_ne_top) :=
   .intro fun t f g =>
     (Lp.compMeasurePreservingₗᵢ ℂ (t +ᵥ ·) (measurePreserving_vadd t μ)).inner_map_map f g
+
+/-- The Koopman correlation of two indicators is the measure of an intersection:
+`⟪1_C, U_t 1_A⟫ = μ((t +ᵥ ·)⁻¹' A ∩ C)`. -/
+theorem inner_indicatorConstLp_koopmanGroup [IsFiniteMeasure μ] {A C : Set X}
+    (hA : MeasurableSet A) (hC : MeasurableSet C) (t : ℝ) :
+    ⟪indicatorConstLp 2 hC (measure_ne_top μ C) (1 : ℂ),
+        koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t
+          (indicatorConstLp 2 hA (measure_ne_top μ A) (1 : ℂ))⟫_ℂ =
+      (μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ C) : ℂ) := by
+  rw [koopmanGroup_indicatorConstLp, L2.inner_indicatorConstLp_indicatorConstLp, Set.inter_comm C]
+  simp
+
+/-- For a jointly measurable action of `ℝ` preserving a finite measure `μ`, the measure
+`μ((t +ᵥ ·)⁻¹' A ∩ C)` depends continuously on `t`. -/
+theorem continuous_measureReal_preimage_vadd_inter [IsFiniteMeasure μ] {A C : Set X}
+    (hA : MeasurableSet A) (hC : MeasurableSet C) :
+    Continuous fun t : ℝ => μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ C) := by
+  have h : Continuous fun t : ℝ => ⟪indicatorConstLp 2 hC (measure_ne_top μ C) (1 : ℂ),
+      koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t
+        (indicatorConstLp 2 hA (measure_ne_top μ A) (1 : ℂ))⟫_ℂ :=
+    continuous_const.inner ((koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top).continuous_orbit _)
+  have h' := Complex.continuous_re.comp h
+  simpa only [Function.comp_def, inner_indicatorConstLp_koopmanGroup μ hA hC, Complex.ofReal_re]
+    using h'
 
 end TauCeti
