@@ -37,6 +37,8 @@ Hilbert pour Γ₁(c, n)*, proof of Théorème 8.3).
 * `NumberField.unitsMulEquivTorsionProdMultiplicative`: the unit group as the product of
   its torsion subgroup and the free abelian group on the fundamental system.
 * `NumberField.Units.rank_add_one`: the unit rank plus one is the number of infinite places.
+* `NumberField.Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces`: the unit rank plus one is
+  the sum of the numbers of real and complex places.
 * `NumberField.Units.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of
   complex places plus one is the degree.
 * `NumberField.Units.rank_eq_one_of_finrank_eq_two_of_isReal`: a quadratic field with a real
@@ -136,6 +138,12 @@ theorem rank_add_one : rank K + 1 = Nat.card (InfinitePlace K) := by
   have := Fintype.card_pos (α := InfinitePlace K)
   rw [rank, Nat.card_eq_fintype_card]
   omega
+
+/-- **The unit rank plus one is the sum of real and complex places.** -/
+theorem rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces :
+    rank K + 1 = InfinitePlace.nrRealPlaces K + InfinitePlace.nrComplexPlaces K := by
+  rw [rank_add_one K, Nat.card_eq_fintype_card,
+    InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces K]
 
 /-- **The unit rank, the complex places and one exhaust the degree.** Dirichlet's rank is
 `#(InfinitePlace K) - 1` while the degree is `r₁ + 2 * r₂`, so restoring the complex places and

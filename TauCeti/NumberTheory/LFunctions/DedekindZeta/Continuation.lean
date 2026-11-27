@@ -55,12 +55,6 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-! ### Vanishing order and leading coefficient at `s = 0` -/
 
-private theorem rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces
-    (K : Type*) [Field K] [NumberField K] :
-    NumberField.Units.rank K + 1 = nrRealPlaces K + nrComplexPlaces K := by
-  rw [NumberField.Units.rank_add_one K, Nat.card_eq_fintype_card,
-    InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces K]
-
 variable (K) in
 /-- **Vanishing order of the Dedekind zeta function at `s = 0`**: `dedekindZetaC K` has meromorphic
 order `r₁ + r₂ - 1 = NumberField.Units.rank K` at `s = 0`. -/
@@ -76,7 +70,7 @@ theorem meromorphicOrderAt_dedekindZetaC_zero :
     dedekindZetaData_completed, meromorphicOrderAt_completedDedekindZeta_zero,
     funext (dedekindZetaData_gammaFactor K), h, sub_neg_eq_add, ← WithTop.coe_add]
   congr 1
-  have hr := rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
+  have hr := NumberField.Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
   omega
 
 variable (K) in
@@ -124,7 +118,7 @@ private theorem uncompletedProduct_div_pow_rank_eq (K : Type*) [Field K] [Number
         (s * Gammaℂ s)⁻¹ ^ nrComplexPlaces K * (s * completedDedekindZeta K s) =
       (dedekindZetaData K).uncompletedProduct s / s ^ NumberField.Units.rank K := by
   have hspow : s ^ NumberField.Units.rank K * s = s ^ (nrRealPlaces K + nrComplexPlaces K) := by
-    rw [← pow_succ, rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K]
+    rw [← pow_succ, NumberField.Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K]
   rw [uncompletedProduct_dedekindZetaData, invDedekindZetaCompletionFactor_def, div_eq_mul_inv]
   simp only [mul_inv, mul_pow]
   calc

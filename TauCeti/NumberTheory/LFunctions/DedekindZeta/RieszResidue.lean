@@ -33,8 +33,7 @@ theorem residue_rieszRemainderMellin_dedekindZetaC_zero {y : ℂ} (hy : y ≠ 0)
         ((nrRealPlaces K : ℂ) + nrComplexPlaces K - 1) * (1 + log y) := by
   have horder : meromorphicOrderAt (dedekindZetaC K) 0 =
       ((nrRealPlaces K : ℤ) + nrComplexPlaces K - 1 : ℤ) := by
-    have hr := NumberField.Units.rank_add_one K
-    rw [Nat.card_eq_fintype_card, card_eq_nrRealPlaces_add_nrComplexPlaces] at hr
+    have hr := NumberField.Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
     rw [meromorphicOrderAt_dedekindZetaC_zero K]
     congr 1
     omega

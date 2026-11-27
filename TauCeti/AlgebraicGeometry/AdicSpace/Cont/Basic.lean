@@ -58,6 +58,8 @@ So `IsContinuous` is defined here by testing the *canonical* valuation of the po
   lift through a quotient.
 * `TauCeti.ValuationSpectrum.IsContinuous.isClosed_supp` : the support of a continuous point is
   closed.
+* `TauCeti.ValuationSpectrum.IsContinuous.of_specializes_of_supp_eq` : a specialization of a
+  continuous point with the same support is continuous.
 * `TauCeti.ValuationSpectrum.closure_zero_subset_supp_of_isContinuous`,
   `closure_zero_le_supp_of_isContinuous`: every continuous valuation kills the closure of zero.
 * `TauCeti.ValuationSpectrum.cont_eq_univ` : **Remark 7.8(2)**, `Cont A = Spv A` for discrete `A`.
@@ -196,6 +198,20 @@ theorem cont_eq_empty_of_one_mem_closure_zero (h : (1 : A) ∈ closure ({0} : Se
   intro hv
   exact (inferInstance : v.supp.IsPrime).ne_top ((Ideal.eq_top_iff_one _).mpr
     (closure_zero_subset_supp_of_isContinuous hv h))
+
+/-- **Same-support specializations of continuous points are continuous.** If `x` is continuous
+and specializes to `x'` with the same support, then `x'` refines `x`: `x(a) < x(b)` forces
+`x'(a) < x'(b)`. So `x'` is continuous by `Valuation.IsContinuous.of_lt_imp_lt`. -/
+theorem IsContinuous.of_specializes_of_supp_eq {x x' : Spv A} (hx : x.IsContinuous)
+    (h : x ⤳ x') (hs : x'.supp = x.supp) : x'.IsContinuous := by
+  have h0 (b : A) : x'.valuation b = 0 ↔ x.valuation b = 0 := by
+    simpa only [supp_eq_valuation_supp, Valuation.mem_supp_iff] using SetLike.ext_iff.mp hs b
+  refine (isContinuous_def x').mpr <| ((isContinuous_def x).mp hx).of_lt_imp_lt
+    (fun b hb ↦ (h0 b).mpr hb) fun a b hab ↦ (valuation_lt_iff _ _ _).mpr <|
+      vlt_of_specializes h ((valuation_lt_iff _ _ _).mp hab) (.inr fun hb ↦ ?_)
+  -- `x'(b) = 0` would give `x(b) = 0`, contradicting `x(a) < x(b)`
+  have hb0 := (h0 b).mp (by simpa using (valuation_le_iff x' b 0).mpr hb)
+  simp [hb0] at hab
 
 end SeparatelyContinuousAdd
 
