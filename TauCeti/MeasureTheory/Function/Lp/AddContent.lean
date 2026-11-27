@@ -72,6 +72,8 @@ simple functions in `L∞` come from `TauCeti/MeasureTheory/Function/Lp/Indicato
   `PositiveLinearMap.ofAddContentLpTop_toAddContentLpTop`: the two constructions are inverse.
 * `PositiveLinearMap.ofAddContentLpTop_congr`: contents agreeing on measurable sets give the same
   functional.
+* `PositiveLinearMap.le_iff_addContentLpTopEquiv_le`: `addContentLpTopEquiv` matches the order of
+  functionals on the nonnegative cone with the pointwise order of contents.
 * `PositiveLinearMap.forall_apply_leftTranslation_eq_iff`: invariance of a functional under left
   translation is invariance of its content.
 * `MeasureTheory.exists_invariant_positiveLinearMap_lpTop_iff_exists_invariantContent`: `L∞` of
@@ -303,6 +305,37 @@ theorem addContentLpTopEquiv_symm_apply
     (addContentLpTopEquiv μ).symm ν = ofAddContentLpTop ν.val
         (fun s _ => ν.property.1 s) ν.property.2.1 :=
   (rfl)
+
+/-- `addContentLpTopEquiv` is an order isomorphism: one positive functional lies below another
+on the nonnegative cone of `L∞(μ)` exactly when its content lies below the other content on
+every set. -/
+theorem le_iff_addContentLpTopEquiv_le (M M' : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) :
+    (∀ φ : Lp ℝ ∞ μ, 0 ≤ φ → M φ ≤ M' φ) ↔
+      ∀ s, (addContentLpTopEquiv μ M).val s ≤ (addContentLpTopEquiv μ M').val s := by
+  simp only [coe_addContentLpTopEquiv_apply]
+  refine ⟨fun h s => ?_, fun h φ hφ => ?_⟩
+  · by_cases hs : MeasurableSet s
+    · simpa [LinearMap.toAddContentLpTop_apply _ hs] using h _ (linftyIndicator_nonneg hs)
+    · simp [LinearMap.toAddContentLpTop_of_not_measurableSet _ hs]
+  · -- The difference `M' - M` is integration against its content, which is nonnegative.
+    set D := M'.toLinearMap - M.toLinearMap
+    have hD s (hs : MeasurableSet s) :
+        D.toAddContentLpTop s = M'.toLinearMap.toAddContentLpTop s -
+          M.toLinearMap.toAddContentLpTop s := by
+      simp [D, LinearMap.toAddContentLpTop_apply _ hs]
+    have hD₀ s (hs : MeasurableSet s) : 0 ≤ D.toAddContentLpTop s := by
+      rw [hD s hs, sub_nonneg]
+      exact h s
+    have hDμ s (hs : MeasurableSet s) (h0 : μ s = 0) : D.toAddContentLpTop s = 0 :=
+      D.toAddContentLpTop_of_measure_eq_zero hs h0
+    have hP : (ofAddContentLpTop D.toAddContentLpTop hD₀ hDμ).toLinearMap = D :=
+      LinearMap.ext_linftyIndicator (PositiveLinearMap.continuous_lpTop _)
+        (M'.continuous_lpTop.sub M.continuous_lpTop) fun s hs => by
+          rw [coe_toLinearMap, ofAddContentLpTop_linftyIndicator,
+            LinearMap.toAddContentLpTop_apply _ hs]
+    have := (ofAddContentLpTop D.toAddContentLpTop hD₀ hDμ).map_nonneg hφ
+    rw [← coe_toLinearMap, hP] at this
+    simpa [D, sub_nonneg] using this
 
 /-! ### Contents on the null-measurable sets
 
