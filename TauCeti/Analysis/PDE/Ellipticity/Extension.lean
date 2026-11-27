@@ -13,7 +13,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
-import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Extending a uniformly elliptic field to the whole space
@@ -254,18 +253,8 @@ private theorem exists_lipschitzWith_contDiff_smul_add_one_sub_smul
   · rw [ha'g]
     exact (hg i j).add contDiff_const
   · -- The derivatives of `g i j` are bounded, and the constant `c i j` only adds to the value.
-    obtain ⟨C, -, hC⟩ := (hgc i j).exists_bound_iteratedFDeriv_of_contDiff
-      ((hg i j).of_le (by exact_mod_cast le_top) : ContDiff ℝ k (g i j))
     rw [ha'g]
-    refine bddDerivOn_iff.2 ⟨((hg i j).add contDiff_const).contDiffOn.of_le
-      (by exact_mod_cast le_top), C + |c i j|, fun l hl x _ => ?_⟩
-    rw [show (fun x => g i j x + c i j) = g i j + fun _ => c i j from rfl,
-      iteratedFDeriv_add_apply ((hg i j).of_le (by exact_mod_cast le_top)).contDiffAt
-        contDiffAt_const]
-    refine (norm_add_le _ _).trans (add_le_add (hC l hl x) ?_)
-    rcases l with _ | l
-    · simp
-    · simp [iteratedFDeriv_succ_const]
+    exact ((hgc i j).bddDerivOn ((hg i j).of_le (by exact_mod_cast le_top)) univ).add_const _
   · refine (norm_matrixBilinearForm_le_sum_abs (a' x)).trans
       (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => ?_)
     rw [show a' x i j = g i j x + c i j from congrFun (ha'g i j) x]
