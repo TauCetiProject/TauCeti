@@ -54,7 +54,8 @@ route to Morse homology.
   `IsIntegralCurveOn.strictAntiOn_comp_neg_gradient`: Lyapunov monotonicity and strict
   descent away from critical points.
 * `IsIntegralCurve.exists_pos_forall_dist_lt_mem_Ioo`: near a point which is not critical, a
-  global trajectory passes only at nearby times.
+  global trajectory passes only at nearby times; `IsIntegralCurve.comap_nhds_le_nhds` is the same
+  statement for filters.
 * `IsIntegralCurveOn.intervalIntegrable_norm_gradient_sq`: finite energy on compact time
   intervals.
 * `IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` and
@@ -302,6 +303,20 @@ theorem exists_pos_forall_dist_lt_mem_Ioo
     have := hanti (show t₂ ≤ s by linarith [ht₂I.2])
     simp only [Function.comp_apply] at this
     linarith [min_le_right (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))]
+
+/-- **Near a regular point, a trajectory passes only at nearby times**, in the language of
+filters: if `γ s₀` is not a critical point of `f`, the times at which the global negative gradient
+trajectory `γ` is close to `γ s₀` are close to `s₀`. This is the form in which bump functions at
+`γ s₀` are localized in time along `γ`
+(`TauCeti.exists_contDiff_tsupport_subset_integral_comp_mul_pos`). -/
+theorem comap_nhds_le_nhds (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
+    (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) :
+    comap γ (𝓝 (γ s₀)) ≤ 𝓝 s₀ := by
+  intro S hS
+  obtain ⟨δ, hδ, hδS⟩ := Metric.mem_nhds_iff.1 hS
+  obtain ⟨r, hr, hrs⟩ := hγ.exists_pos_forall_dist_lt_mem_Ioo hf hcrit hδ
+  exact mem_comap.2 ⟨Metric.ball (γ s₀) r, Metric.ball_mem_nhds _ hr,
+    fun s hs ↦ hδS (by rw [Real.ball_eq_Ioo]; exact hrs s hs)⟩
 
 /-- Along a negative gradient trajectory from `p` at `-∞` to `q` at `+∞`, the value of `f` lies
 between `f q` and `f p`, since it decreases. -/
