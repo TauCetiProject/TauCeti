@@ -13,8 +13,9 @@ public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 A rational function has a unique relatively prime numerator and monic denominator. Consequently,
 an embedding of coefficient fields carries its normalized numerator and denominator to those of
 the image. These compatibility results allow invariance of a rational function to be checked on
-its polynomial coefficients. Evaluating a rational function at a point of its coefficient field
-divides the values there of its normalized numerator and denominator.
+its polynomial coefficients. Subtracting a constant `c` from `P / Q` gives `(P - c Q) / Q`, again in
+lowest terms. Evaluating a rational function at a point of its coefficient field divides the values
+there of its normalized numerator and denominator.
 -/
 
 public section
@@ -38,6 +39,30 @@ theorem num_eq_and_denom_eq_iff_eq_div {z : RatFunc K} {p q : K[X]}
     associated_of_dvd_dvd ((denom_dvd hq.ne_zero).2 ⟨p, hz⟩)
       (hpq.symm.dvd_of_dvd_mul_left (hcross ▸ dvd_mul_left q z.num))
   exact ⟨mul_right_cancel₀ hq.ne_zero (hdenom ▸ hcross), hdenom⟩
+
+/-- Subtracting the constant `c` from `z = P / Q` gives `(P - c Q) / Q`. -/
+private theorem sub_C_eq_div (z : RatFunc K) (c : K) :
+    z - RatFunc.C c = algebraMap K[X] (RatFunc K) (z.num - Polynomial.C c * z.denom) /
+      algebraMap K[X] (RatFunc K) z.denom := by
+  have hQ := algebraMap_ne_zero z.denom_ne_zero
+  conv_lhs => rw [← num_div_denom z]
+  rw [map_sub, map_mul, algebraMap_C]
+  field_simp
+
+/-- Subtracting a constant `c` from a rational function `P / Q` in lowest terms gives
+`(P - c Q) / Q`, again in lowest terms, so its normalized numerator is `P - c Q`. -/
+@[simp]
+theorem num_sub_C (z : RatFunc K) (c : K) :
+    (z - RatFunc.C c).num = z.num - Polynomial.C c * z.denom :=
+  ((num_eq_and_denom_eq_iff_eq_div (IsCoprime.sub_mul_right_left_iff.2 z.isCoprime_num_denom)
+    (monic_denom z)).2 (sub_C_eq_div z c)).1
+
+/-- Subtracting a constant from a rational function does not change its normalized
+denominator. -/
+@[simp]
+theorem denom_sub_C (z : RatFunc K) (c : K) : (z - RatFunc.C c).denom = z.denom :=
+  ((num_eq_and_denom_eq_iff_eq_div (IsCoprime.sub_mul_right_left_iff.2 z.isCoprime_num_denom)
+    (monic_denom z)).2 (sub_C_eq_div z c)).2
 
 /-- Embedding the coefficient field commutes with taking the normalized numerator. -/
 @[simp]
