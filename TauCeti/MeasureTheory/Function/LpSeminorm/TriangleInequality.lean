@@ -15,7 +15,10 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 If `‖f‖ ≤ A ‖g‖ + B ‖h‖` almost everywhere, then for `1 ≤ p` the Minkowski inequality gives
 `‖f‖_{Lᵖ} ≤ A ‖g‖_{Lᵖ} + B ‖h‖_{Lᵖ}` (`TauCeti.eLpNorm_le_mul_add_mul_of_ae_norm_le`). This is the
 `Lᵖ` step of a product rule estimate such as `‖ψ Du + Dψ ⊗ u‖_{Lᵖ}`, where only the pointwise
-bound depends on the product.
+bound depends on the product. For `0 ≤ c`, scaling the norm of `f` by `c` scales its `Lᵖ` norm:
+`‖c |f|‖_{Lᵖ} = c ‖f‖_{Lᵖ}` (`TauCeti.eLpNorm_const_mul_norm`), so for `0 ≤ R, c` the Minkowski
+inequality gives `‖R |f| + c |g|‖_{Lᵖ} ≤ R ‖f‖_{Lᵖ} + c ‖g‖_{Lᵖ}`
+(`TauCeti.eLpNorm_mul_norm_add_mul_norm_le`).
 
 If `f` differs from `g` by at most `M` on a measurable set `s` and `‖g‖_{Lᵖ(s)} ≤ B`, the same
 inequality gives `‖f‖_{Lᵖ(s)} ≤ μ(s)^(1/p) M + B` (`TauCeti.eLpNorm_restrict_le_of_norm_sub_le`).
@@ -47,6 +50,23 @@ theorem eLpNorm_le_mul_add_mul_of_ae_norm_le (hp : 1 ≤ p) {f : α → E} {g : 
     _ = A * eLpNorm g p μ + B * eLpNorm h p μ := by
         rw [eLpNorm_const_smul, eLpNorm_const_smul, eLpNorm_norm _ hg, eLpNorm_norm _ hh]
         simp
+
+/-- **Scaling the norm of a function.** For `0 ≤ c`, the `Lᵖ` norm of `x ↦ c ‖f x‖` is
+`c ‖f‖_{Lᵖ}`. -/
+theorem eLpNorm_const_mul_norm {c : ℝ} (hc : 0 ≤ c) {f : α → E}
+    (hf : AEStronglyMeasurable f μ) :
+    eLpNorm (fun x ↦ c * ‖f x‖) p μ = ENNReal.ofReal c * eLpNorm f p μ := by
+  have hcf : (fun x ↦ c * ‖f x‖) = c • fun x ↦ ‖f x‖ := funext fun _ ↦ (smul_eq_mul _ _).symm
+  rw [hcf, eLpNorm_const_smul, eLpNorm_norm f hf, Real.eNorm_of_nonneg hc]
+
+/-- For `1 ≤ p` and `0 ≤ R, c`, the `Lᵖ` norm of `x ↦ R ‖f x‖ + c ‖g x‖` is at most
+`R ‖f‖_{Lᵖ} + c ‖g‖_{Lᵖ}`. -/
+theorem eLpNorm_mul_norm_add_mul_norm_le (hp : 1 ≤ p) {R c : ℝ} (hR : 0 ≤ R) (hc : 0 ≤ c)
+    {f : α → E} {g : α → F} (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) :
+    eLpNorm (fun x ↦ R * ‖f x‖ + c * ‖g x‖) p μ ≤
+      ENNReal.ofReal R * eLpNorm f p μ + ENNReal.ofReal c * eLpNorm g p μ := by
+  refine (eLpNorm_add_le hp).trans_eq ?_
+  rw [eLpNorm_const_mul_norm hR hf, eLpNorm_const_mul_norm hc hg]
 
 /-- **`Lᵖ` bounds up to a bounded error.** Let `1 ≤ p` and let `s` be measurable. If
 `‖f - g‖ ≤ M` on `s` and `‖g‖_{Lᵖ(s)} ≤ B`, then `‖f‖_{Lᵖ(s)} ≤ μ(s)^(1/p) M + B`. -/

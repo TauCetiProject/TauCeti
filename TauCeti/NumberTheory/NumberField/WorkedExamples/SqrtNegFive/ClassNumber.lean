@@ -12,7 +12,7 @@ import TauCeti.Algebra.QuadraticAlgebra.Discriminant
 import TauCeti.NumberTheory.Multiquadratic.MinusFive.ClassNumber
 import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
 import TauCeti.NumberTheory.NumberField.Quadratic.ClassNumber
-import TauCeti.NumberTheory.NumberField.Quadratic.PrimeDecomposition
+import TauCeti.NumberTheory.NumberField.Quadratic.Prime.Decomposition
 import TauCeti.NumberTheory.NumberField.WorkedExamples.SqrtNegFive.Norm
 import TauCeti.RingTheory.DedekindDomain.Basic
 
