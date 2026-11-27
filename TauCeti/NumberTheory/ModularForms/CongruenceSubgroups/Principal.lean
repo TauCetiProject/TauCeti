@@ -119,20 +119,17 @@ theorem index_Gamma_prime {p : ℕ} (hp : p.Prime) :
 /-- For a prime `p` and `1 ≤ k`, `[SL₂(ℤ) : Γ(p^k)] = p^{3k - 2}(p² - 1)`. -/
 theorem index_Gamma_prime_pow {p k : ℕ} (hp : p.Prime) (hk : 1 ≤ k) :
     (Gamma (p ^ k)).index = p ^ (3 * k - 2) * (p ^ 2 - 1) := by
-  have : Fact p.Prime := ⟨hp⟩
-  rw [index_Gamma, Matrix.natCard_SL_zmod_pow (by omega), Fintype.card_fin,
-    TauCeti.natCard_SL_fin_two_zmod, ← mul_assoc, ← pow_succ]
-  congr 1; exact congrArg (p ^ ·) (by omega)
+  rw [index_Gamma, TauCeti.natCard_SL_fin_two_zmod_prime_pow hp hk]
 
 /-- For `N ≠ 0`, `[SL₂(ℤ) : Γ(N)] = ∏_{p^k ∥ N} p^{3k - 2}(p² - 1)`. -/
 theorem index_Gamma_eq_prod_factorization {N : ℕ} (hN : N ≠ 0) :
     (Gamma N).index = N.factorization.prod fun p k ↦ p ^ (3 * k - 2) * (p ^ 2 - 1) := by
   rw [index_Gamma, Matrix.natCard_SL_zmod_eq_prod_factorization hN]
   refine Finsupp.prod_congr fun p hp ↦ ?_
-  have : Fact p.Prime := ⟨Nat.prime_of_mem_primeFactors hp⟩
+  have hp' := Nat.prime_of_mem_primeFactors hp
   have hk : 1 ≤ N.factorization p := Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hp)
-  rw [Fintype.card_fin, TauCeti.natCard_SL_fin_two_zmod, ← mul_assoc, ← pow_succ]
-  congr 1; exact congrArg (p ^ ·) (by omega)
+  rw [← Matrix.natCard_SL_zmod_pow (by omega),
+    TauCeti.natCard_SL_fin_two_zmod_prime_pow hp' hk]
 
 /-- **Cleared Euler product for `[SL₂(ℤ) : Γ(N)]`** (valid for every `N : ℕ`):
 `[SL₂(ℤ) : Γ(N)] · ∏_{p ∣ N} p² = N³ · ∏_{p ∣ N} (p² - 1)`. -/
@@ -164,7 +161,7 @@ theorem slZModToQuotientNormalCore_map_intCast {N : ℕ} {Δ : Subgroup SL(2, �
       QuotientGroup.mk γ := by
   rw [slZModToQuotientNormalCore, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     ← quotientGammaEquiv_mk, MulEquiv.symm_apply_apply]
-  rfl
+  exact QuotientGroup.map_mk _ _ _ _ γ
 
 /-- The canonical reduction homomorphism `SL₂(ℤ/Nℤ) →* SL₂(ℤ) ⧸ Δ.normalCore` is surjective. -/
 theorem slZModToQuotientNormalCore_surjective {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ) :

@@ -61,7 +61,8 @@ noncomputable def toPSL (n R : Type*) [Fintype n] [DecidableEq n] [CommRing R]
 @[simp]
 theorem toPSL_mk (n R : Type*) [Fintype n] [DecidableEq n] [CommRing R]
     [Fact (Even (Fintype.card n))] (g : _root_.Matrix.SpecialLinearGroup n R) :
-    toPSL n R (QuotientGroup.mk g) = QuotientGroup.mk g := by rw [toPSL]; rfl
+    toPSL n R (QuotientGroup.mk g) = QuotientGroup.mk g :=
+  QuotientGroup.map_mk _ _ _ _ g
 
 /-- The canonical projection `SignedQuotient n R →* PSL(n, R)` is surjective. -/
 theorem toPSL_surjective (n R : Type*) [Fintype n] [DecidableEq n] [CommRing R]
@@ -79,7 +80,8 @@ noncomputable def equivPSL (R : Type*) [CommRing R] [NoZeroDivisors R] :
 /-- `equivPSL` maps the class of `g` modulo `{±I}` to the class of `g` in `PSL₂(R)`. -/
 @[simp]
 theorem equivPSL_mk (R : Type*) [CommRing R] [NoZeroDivisors R] (g : SL(2, R)) :
-    equivPSL R (QuotientGroup.mk g) = QuotientGroup.mk g := by rw [equivPSL]; rfl
+    equivPSL R (QuotientGroup.mk g) = QuotientGroup.mk g := by
+  rw [equivPSL, QuotientGroup.quotientMulEquivOfEq_mk]
 
 private theorem map_zpowers_neg_one_le {n R S : Type*} [Fintype n] [DecidableEq n]
     [CommRing R] [CommRing S] [Fact (Even (Fintype.card n))] (f : R →+* S) :
@@ -101,8 +103,8 @@ noncomputable def map {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [
 @[simp]
 theorem map_mk {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
     [Fact (Even (Fintype.card n))] (f : R →+* S) (g : _root_.Matrix.SpecialLinearGroup n R) :
-    map f (QuotientGroup.mk g) = QuotientGroup.mk (_root_.Matrix.SpecialLinearGroup.map f g) := by
-  rw [map]; rfl
+    map f (QuotientGroup.mk g) = QuotientGroup.mk (_root_.Matrix.SpecialLinearGroup.map f g) :=
+  QuotientGroup.map_mk _ _ _ _ g
 
 /-- If `SL(n, R) →* SL(n, S)` along `f` is surjective, then `SignedQuotient.map f` is surjective. -/
 theorem map_surjective {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]

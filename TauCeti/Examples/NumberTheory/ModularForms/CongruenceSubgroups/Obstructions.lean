@@ -38,45 +38,40 @@ namespace TauCeti.Examples.NumberTheory.ModularForms.CongruenceSubgroups
 
 /-! ### Finite-level orders of `SL₂(ℤ/Nℤ)`, `Q_N`, and `PSL₂(ℤ/Nℤ)` -/
 
+private theorem card_fin_two_zmod_of_index {N k : ℕ} [NeZero N] (hN : 3 ≤ N)
+    (hidx : (GammaProjective N).index = k)
+    (hroots : Fintype.card { u : (ZMod N)ˣ // u ^ 2 = 1 } = 4) :
+    Nat.card SL(2, ZMod N) = 2 * k ∧
+      Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N)) = k ∧
+      Nat.card PSL(2, ZMod N) = k / 2 := by
+  have hq : Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N)) = k :=
+    (GammaProjective_index_eq_card N).symm.trans hidx
+  have hsl : Nat.card SL(2, ZMod N) = 2 * k := by
+    have h := two_mul_GammaProjective_index hN
+    rw [hidx] at h
+    exact h.symm
+  refine ⟨hsl, hq, ?_⟩
+  have h := Matrix.ProjectiveSpecialLinearGroup.card_mul_card_rootsOfUnity 2 two_pos (ZMod N)
+  have h4 : Nat.card (rootsOfUnity 2 (ZMod N)) = 4 := by
+    rw [Nat.card_congr (Equiv.subtypeEquivRight fun u : (ZMod N)ˣ ↦ mem_rootsOfUnity 2 u),
+      Nat.card_eq_fintype_card]
+    exact hroots
+  rw [hsl, h4] at h
+  omega
+
 /-- At modulus `8`, `|SL₂(ℤ/8ℤ)| = 384`, `|Q_8| = 192`, and `|PSL₂(ℤ/8ℤ)| = 96`. -/
 theorem card_fin_two_zmod_eight :
     Nat.card SL(2, ZMod 8) = 384 ∧
       Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 8)) = 192 ∧
-      Nat.card PSL(2, ZMod 8) = 96 := by
-  have hq : Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 8)) = 192 :=
-    (GammaProjective_index_eq_card 8).symm.trans GammaProjective_index_eight
-  have hsl : Nat.card SL(2, ZMod 8) = 384 := by
-    have h := two_mul_GammaProjective_index (N := 8) (by omega)
-    rw [GammaProjective_index_eight] at h
-    exact h.symm
-  refine ⟨hsl, hq, ?_⟩
-  have h := Matrix.ProjectiveSpecialLinearGroup.card_mul_card_rootsOfUnity 2 two_pos (ZMod 8)
-  have h4 : Nat.card (rootsOfUnity 2 (ZMod 8)) = 4 := by
-    rw [Nat.card_congr (Equiv.subtypeEquivRight fun u : (ZMod 8)ˣ ↦ mem_rootsOfUnity 2 u),
-      Nat.card_eq_fintype_card]
-    decide
-  rw [hsl, h4] at h
-  omega
+      Nat.card PSL(2, ZMod 8) = 96 :=
+  card_fin_two_zmod_of_index (by omega) GammaProjective_index_eight (by decide)
 
 /-- At modulus `12`, `|SL₂(ℤ/12ℤ)| = 1152`, `|Q_12| = 576`, and `|PSL₂(ℤ/12ℤ)| = 288`. -/
 theorem card_fin_two_zmod_twelve :
     Nat.card SL(2, ZMod 12) = 1152 ∧
       Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 12)) = 576 ∧
-      Nat.card PSL(2, ZMod 12) = 288 := by
-  have hq : Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 12)) = 576 :=
-    (GammaProjective_index_eq_card 12).symm.trans GammaProjective_index_twelve
-  have hsl : Nat.card SL(2, ZMod 12) = 1152 := by
-    have h := two_mul_GammaProjective_index (N := 12) (by omega)
-    rw [GammaProjective_index_twelve] at h
-    exact h.symm
-  refine ⟨hsl, hq, ?_⟩
-  have h := Matrix.ProjectiveSpecialLinearGroup.card_mul_card_rootsOfUnity 2 two_pos (ZMod 12)
-  have h4 : Nat.card (rootsOfUnity 2 (ZMod 12)) = 4 := by
-    rw [Nat.card_congr (Equiv.subtypeEquivRight fun u : (ZMod 12)ˣ ↦ mem_rootsOfUnity 2 u),
-      Nat.card_eq_fintype_card]
-    decide
-  rw [hsl, h4] at h
-  omega
+      Nat.card PSL(2, ZMod 12) = 288 :=
+  card_fin_two_zmod_of_index (by omega) GammaProjective_index_twelve (by decide)
 
 /-! ### Projective indices and explicit obstruction checks -/
 

@@ -56,7 +56,8 @@ noncomputable def psl2zToSignedQuotient (N : ℕ) :
 theorem psl2zToSignedQuotient_mk (N : ℕ) (g : SL(2, ℤ)) :
     psl2zToSignedQuotient N (QuotientGroup.mk g) =
       QuotientGroup.mk (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) g) := by
-  rw [psl2zToSignedQuotient]; rfl
+  rw [psl2zToSignedQuotient, QuotientGroup.lift_mk, MonoidHom.comp_apply,
+    QuotientGroup.mk'_apply]
 
 /-- By strong approximation for `SL₂(ℤ)`, `psl2zToSignedQuotient N` is surjective at every level. -/
 theorem psl2zToSignedQuotient_surjective (N : ℕ) :
@@ -124,46 +125,45 @@ the index. -/
 theorem GammaProjective_index_two : (GammaProjective 2).index = 6 := by
   rw [GammaProjective_index_eq_card, TauCeti.Matrix.SignedQuotient.card_fin_two_zmod_two]
 
+private theorem gammaProjective_index_of_mul_prime_pow {N p a q b : ℕ}
+    (hN : N = p ^ a * q ^ b) (h3 : 3 ≤ N) (hp : p.Prime) (ha : 1 ≤ a)
+    (hq : q.Prime) (hb : 1 ≤ b) (hcop : (p ^ a).Coprime (q ^ b)) :
+    2 * (GammaProjective N).index =
+      p ^ (3 * a - 2) * (p ^ 2 - 1) * (q ^ (3 * b - 2) * (q ^ 2 - 1)) := by
+  have h := two_mul_GammaProjective_index h3
+  rw [hN, Matrix.natCard_SL_zmod_mul hcop,
+    TauCeti.natCard_SL_fin_two_zmod_prime_pow hp ha,
+    TauCeti.natCard_SL_fin_two_zmod_prime_pow hq hb] at h
+  rw [hN]
+  exact h
+
 /-- `GammaProjective 6` has index `72 = |SL₂(𝔽₂)| · |SL₂(𝔽₃)| / 2`. -/
 theorem GammaProjective_index_six : (GammaProjective 6).index = 72 := by
-  have h := two_mul_GammaProjective_index (N := 6) (by norm_num)
-  have hc : Nat.card SL(2, ZMod 6) = 144 := by
-    have h6 : (6 : ℕ) = 2 * 3 := rfl
-    rw [h6, Matrix.natCard_SL_zmod_mul (by norm_num),
-      natCard_SL_fin_two_zmod, natCard_SL_fin_two_zmod]
-    norm_num
+  have h := gammaProjective_index_of_mul_prime_pow (N := 6) (p := 2) (a := 1) (q := 3) (b := 1)
+    (by norm_num) (by norm_num) Nat.prime_two le_rfl Nat.prime_three le_rfl (by norm_num)
+  norm_num at h
   omega
 
 /-- `GammaProjective 8` has index `192 = |SL₂(ℤ/8ℤ)| / 2`. -/
 theorem GammaProjective_index_eight : (GammaProjective 8).index = 192 := by
   have h := two_mul_GammaProjective_index (N := 8) (by norm_num)
-  have hc : Nat.card SL(2, ZMod 8) = 384 := by
-    have h8 : (8 : ℕ) = 2 ^ 3 := rfl
-    rw [h8, Matrix.natCard_SL_zmod_pow three_ne_zero,
-      natCard_SL_fin_two_zmod, Fintype.card_fin]
-    norm_num
+  have h8 : (8 : ℕ) = 2 ^ 3 := by norm_num
+  rw [h8, TauCeti.natCard_SL_fin_two_zmod_prime_pow Nat.prime_two (by norm_num)] at h
+  norm_num at h
   omega
 
 /-- `GammaProjective 10` has index `360 = |SL₂(𝔽₂)| · |SL₂(𝔽₅)| / 2`. -/
 theorem GammaProjective_index_ten : (GammaProjective 10).index = 360 := by
-  have h := two_mul_GammaProjective_index (N := 10) (by norm_num)
-  have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
-  have hc : Nat.card SL(2, ZMod 10) = 720 := by
-    have h10 : (10 : ℕ) = 2 * 5 := rfl
-    rw [h10, Matrix.natCard_SL_zmod_mul (by norm_num),
-      natCard_SL_fin_two_zmod, natCard_SL_fin_two_zmod]
-    norm_num
+  have h := gammaProjective_index_of_mul_prime_pow (N := 10) (p := 2) (a := 1) (q := 5) (b := 1)
+    (by norm_num) (by norm_num) Nat.prime_two le_rfl Nat.prime_five le_rfl (by norm_num)
+  norm_num at h
   omega
 
 /-- `GammaProjective 12` has index `576 = |SL₂(ℤ/4ℤ)| · |SL₂(𝔽₃)| / 2`. -/
 theorem GammaProjective_index_twelve : (GammaProjective 12).index = 576 := by
-  have h := two_mul_GammaProjective_index (N := 12) (by norm_num)
-  have hc : Nat.card SL(2, ZMod 12) = 1152 := by
-    have h12 : (12 : ℕ) = 2 ^ 2 * 3 := rfl
-    rw [h12, Matrix.natCard_SL_zmod_mul (by norm_num),
-      Matrix.natCard_SL_zmod_pow two_ne_zero, natCard_SL_fin_two_zmod, natCard_SL_fin_two_zmod,
-      Fintype.card_fin]
-    norm_num
+  have h := gammaProjective_index_of_mul_prime_pow (N := 12) (p := 2) (a := 2) (q := 3) (b := 1)
+    (by norm_num) (by norm_num) Nat.prime_two (by norm_num) Nat.prime_three le_rfl (by norm_num)
+  norm_num at h
   omega
 
 /-! ### Order obstructions in `PSL₂(ℤ)` -/
@@ -194,7 +194,7 @@ theorem signedQuotientToQuotientNormalCore_psl2zToSignedQuotient {N : ℕ} {Γ :
     signedQuotientToQuotientNormalCore h (psl2zToSignedQuotient N x) = QuotientGroup.mk x := by
   rw [signedQuotientToQuotientNormalCore, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     ← quotientGammaProjectiveEquiv_mk, MulEquiv.symm_apply_apply]
-  rfl
+  exact QuotientGroup.map_mk _ _ _ _ x
 
 /-- The canonical homomorphism `SL₂(ℤ/Nℤ) ⧸ {±I} →* PSL₂(ℤ) ⧸ Γ.normalCore` is surjective. -/
 theorem signedQuotientToQuotientNormalCore_surjective {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}

@@ -47,6 +47,7 @@ cleared. At `N = 0` both sides vanish, since `SL n R` is infinite for an infinit
 * `Matrix.natCard_SL_zmod_eq_prod_factorization`: the order of `SL n (ℤ/N)` as a product over the
   prime powers exactly dividing `N`.
 * `TauCeti.natCard_SL_fin_two`, `TauCeti.natCard_SL_fin_two_zmod`: `|SL₂(𝔽_q)| = q (q² - 1)`.
+* `TauCeti.natCard_SL_fin_two_zmod_prime_pow`: `|SL₂(ℤ/p^kℤ)| = p^(3k - 2) (p² - 1)` for `1 ≤ k`.
 * `TauCeti.natCard_SL_fin_two_zmod_mul_prod_primeFactors`: `|SL₂(ℤ/N)| = N³ ∏_{p ∣ N} (1 - 1/p²)`.
 
 ## References
@@ -168,6 +169,15 @@ theorem natCard_SL_fin_two (F : Type*) [Field F] :
 theorem natCard_SL_fin_two_zmod (p : ℕ) [Fact p.Prime] :
     Nat.card SL(2, ZMod p) = p * (p ^ 2 - 1) := by
   rw [natCard_SL_fin_two, Nat.card_zmod]
+
+/-- **The order of `SL₂(ℤ/p^kℤ)`** for a prime `p` and `1 ≤ k` is `p ^ (3 * k - 2) * (p ^ 2 - 1)`.
+-/
+theorem natCard_SL_fin_two_zmod_prime_pow {p k : ℕ} (hp : p.Prime) (hk : 1 ≤ k) :
+    Nat.card SL(2, ZMod (p ^ k)) = p ^ (3 * k - 2) * (p ^ 2 - 1) := by
+  have : Fact p.Prime := ⟨hp⟩
+  rw [Matrix.natCard_SL_zmod_pow (by omega), Fintype.card_fin, natCard_SL_fin_two_zmod,
+    ← mul_assoc, ← pow_succ]
+  congr 1; exact congrArg (p ^ ·) (by omega)
 
 /-- **The order of `SL₂(ℤ/Nℤ)`** is `N³ ∏_{p ∣ N} (1 - 1/p²)`, here with the denominators
 cleared. At `N = 0` both sides vanish, since `SL₂(ℤ)` is infinite. -/

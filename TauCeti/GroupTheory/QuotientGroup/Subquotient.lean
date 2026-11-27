@@ -123,14 +123,22 @@ noncomputable def mapSubtypeSubquotientEquiv {M : Subgroup G} (K H : Subgroup M)
     (H.equivMapOfInjective M.subtype M.subtype_injective)
     (map_equivMapOfInjective_subgroupOf K H)
 
+/-- Evaluation of `AddSubgroup.mapSubtypeSubquotientEquiv` on coset representatives. -/
+@[simp]
+theorem _root_.AddSubgroup.mapSubtypeSubquotientEquiv_mk {A : Type*} [AddGroup A]
+    {M : AddSubgroup A} (K H : AddSubgroup M) [(K.addSubgroupOf H).Normal] (x : H) :
+    AddSubgroup.mapSubtypeSubquotientEquiv K H (QuotientAddGroup.mk x) =
+      QuotientAddGroup.mk (H.equivMapOfInjective M.subtype M.subtype_injective x) := by
+  simp only [AddSubgroup.mapSubtypeSubquotientEquiv, QuotientAddGroup.congr,
+    AddEquiv.coe_mk, Equiv.coe_fn_mk, QuotientAddGroup.map_mk, AddMonoidHom.coe_ofClass]
+
 /-- Evaluation of `Subgroup.mapSubtypeSubquotientEquiv` on coset representatives. -/
-@[to_additive (attr := simp) /-- Evaluation of `AddSubgroup.mapSubtypeSubquotientEquiv` on coset
-representatives. -/]
+@[to_additive existing (attr := simp)]
 theorem mapSubtypeSubquotientEquiv_mk {M : Subgroup G} (K H : Subgroup M)
     [(K.subgroupOf H).Normal] (x : H) :
     mapSubtypeSubquotientEquiv K H (QuotientGroup.mk x) =
-      QuotientGroup.mk (H.equivMapOfInjective M.subtype M.subtype_injective x) := by
-  rw [mapSubtypeSubquotientEquiv]; rfl
+      QuotientGroup.mk (H.equivMapOfInjective M.subtype M.subtype_injective x) :=
+  QuotientGroup.congr_mk _ _ _ _ x
 
 /-- For `H = ⊤` and `K = ⊥`, the subquotient `H ⧸ K.subgroupOf H` is canonically isomorphic to
 `G`. -/
@@ -149,7 +157,8 @@ theorem subquotientEquivOfEqTopOfEqBot_mk {H K : Subgroup G} [(K.subgroupOf H).N
     (hH : H = ⊤) (hK : K = ⊥) (x : H) :
     subquotientEquivOfEqTopOfEqBot hH hK (QuotientGroup.mk x) = (x : G) := by
   subst hH hK
-  simp [subquotientEquivOfEqTopOfEqBot]
-  rfl
+  simp only [subquotientEquivOfEqTopOfEqBot, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk, Subgroup.topEquiv_apply,
+    ← QuotientGroup.quotientBot_symm_apply, MulEquiv.apply_symm_apply]
 
 end Subgroup

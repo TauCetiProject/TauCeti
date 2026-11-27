@@ -253,8 +253,8 @@ theorem quotientNormalCoreLiftSLEquiv_mk (Γ : Subgroup (ProjectiveSpecialLinear
     (g : SpecialLinearGroup n R) :
     Γ.quotientNormalCoreLiftSLEquiv (QuotientGroup.mk g) =
       QuotientGroup.mk (g : ProjectiveSpecialLinearGroup n R) := by
-  rw [quotientNormalCoreLiftSLEquiv, QuotientGroup.liftEquiv_mk]
-  rfl
+  rw [quotientNormalCoreLiftSLEquiv, QuotientGroup.liftEquiv_mk, MonoidHom.comp_apply]
+  exact congrArg QuotientGroup.mk (QuotientGroup.mk'_apply _ g)
 
 end Lift
 

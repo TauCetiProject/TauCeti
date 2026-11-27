@@ -23,10 +23,11 @@ quotients place on congruence subgroups of `SL₂(ℤ)` and `PSL₂(ℤ)` (order
 `TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Principal` and
 `TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective.Principal`):
 
-* **Composition-factor obstructions**: for `N ≠ 0`, every nonabelian simple subnormal section of
-  `SL₂(ℤ) ⧸ Δ.normalCore` or `PSL₂(ℤ) ⧸ Γ.normalCore` is isomorphic to `PSL₂(𝔽_ℓ)` for a prime
-  `ℓ ≥ 5` dividing `N` (with level-free forms for arbitrary congruence subgroups, and prime-level
-  divisibility `ℓ ∣ N` when `PSL₂(𝔽_ℓ)` occurs).
+* **Composition-factor obstructions**: if `Γ(N) ≤ Δ` (resp. `Γ(N) ≤ Γ.liftSL`) with `N ≠ 0`,
+  then every nonabelian simple subnormal section of `SL₂(ℤ) ⧸ Δ.normalCore` (resp.
+  `PSL₂(ℤ) ⧸ Γ.normalCore`) is isomorphic to `PSL₂(𝔽_ℓ)` for a prime `ℓ ≥ 5` dividing `N` (with
+  level-free forms for arbitrary congruence subgroups, and prime-level divisibility `ℓ ∣ N` when
+  `PSL₂(𝔽_ℓ)` occurs).
 * **Alternating and symmetric noncongruence criteria**: if `PSL₂(ℤ) ⧸ Γ.normalCore` admits
   `alternatingGroup α` (`6 ≤ Nat.card α`) as a subnormal section — in particular if it is
   isomorphic to `A_n` or `S_n` for `n ≥ 6` — then `Γ.liftSL` is noncongruence.

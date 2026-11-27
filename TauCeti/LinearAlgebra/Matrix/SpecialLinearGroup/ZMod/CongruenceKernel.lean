@@ -37,10 +37,10 @@ theorem card_ker_map_zmod_prime_pow {p k : ℕ} (hp : p.Prime) (hk : 1 ≤ k) :
   refine Nat.mul_right_cancel hpos ?_
   have hlag := Subgroup.card_ker_mul_card_of_surjective
     (map_zmod_castHom_surjective (dvd_pow_self p (Nat.ne_of_gt hk) : p ∣ p ^ k))
-  rw [Matrix.natCard_SL_zmod_pow (by omega), Fintype.card_fin,
-    TauCeti.natCard_SL_fin_two_zmod] at hlag
-  rw [hlag]
-  congr 1; exact congrArg (p ^ ·) (by omega)
+  rw [TauCeti.natCard_SL_fin_two_zmod_prime_pow hp hk, TauCeti.natCard_SL_fin_two_zmod] at hlag
+  have hexp : 3 * k - 2 = 3 * (k - 1) + 1 := by omega
+  rw [hlag, hexp, pow_succ]
+  ring
 
 /-- For prime `p` and `1 ≤ k`, the kernel of `SL₂(ℤ/p^kℤ) →* SL₂(𝔽_p)` is a `p`-group. -/
 theorem isPGroup_ker_map_zmod_prime_pow {p k : ℕ} (hp : p.Prime) (hk : 1 ≤ k) :
