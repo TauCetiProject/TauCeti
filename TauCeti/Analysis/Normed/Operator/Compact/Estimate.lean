@@ -16,8 +16,13 @@ import TauCeti.Analysis.Normed.Operator.ClosedRange
 # Peetre's compact-error estimate
 
 An estimate `‖x‖ ≤ C * ‖T x‖ + ‖K x‖`, with `K` compact, forces the kernel of `T` to be
-finite dimensional. If the domain is complete, the estimate also makes `T` bounded below
-on any closed subspace disjoint from its kernel, and the range of `T` is closed over any
+finite dimensional; in particular a compact operator bounded below has finite-dimensional domain.
+The compact operator may be replaced by any map `f`, not necessarily linear, sending the closed unit
+ball into a compact set with `‖x - y‖ ≤ C * dist (f x) (f y)` on the ball
+(`FiniteDimensional.of_norm_sub_le_mul_dist`); this is how a space of functionals represented by
+chosen, compactly bounded fields is shown to be finite-dimensional.
+If the domain is complete, the estimate also makes `T` bounded below on any closed subspace
+disjoint from its kernel, and the range of `T` is closed over any
 nontrivially normed field. The closed-range step needs no complement of the kernel: by the
 sequential criterion `ContinuousLinearMap.isClosed_range_of_exists_subseq_tendsto` from
 `TauCeti.Analysis.Normed.Operator.ClosedRange`, an operator has closed range as soon as every
@@ -38,6 +43,19 @@ closed complement, and the bound is witnessed by a continuous projection `P` ont
 `‖x - P x‖ ≤ C' * ‖T x‖`. This is the abstract form of the Deny–Lions lemma: applied to the highest
 weak derivative of a Sobolev space with compact lower-order inclusion, it says that the quotient
 norm modulo the kernel of the top derivative is equivalent to the top seminorm.
+
+An estimate `‖x‖ ≤ C * (‖T x‖ + ‖K x‖)`, the usual shape of an elliptic estimate, has this form
+after rescaling `K` (`ContinuousLinearMap.exists_compact_estimate_of_norm_le_mul_add_norm`).
+
+Two consequences adapt such an estimate to a changed operator or a changed error term. A compact
+perturbation `S` of `T` satisfies an estimate of the same form
+(`ContinuousLinearMap.exists_compact_estimate_of_isCompactOperator_sub`), so the semi-Fredholm
+conclusions pass to `S`. And on a complete domain, over any nontrivially normed field, the compact
+error may be replaced by `‖j x‖` for any continuous linear `j` which is injective on `ker T`,
+compact or not (`ContinuousLinearMap.exists_norm_le_mul_norm_add_norm_of_compact_estimate`): the
+pair `(T, j)` is injective and satisfies the same compact-error estimate, so it is bounded below.
+For an elliptic operator with a compact lower-order perturbation, this recovers the elliptic
+estimate with an `Lᵖ` error term from one whose error contains the perturbation.
 
 The argument uses Mathlib's Riesz lemma, uniform-inducing maps, the sequential closed-range
 criterion and quotient estimate, and the compact-operator subsequence API in
@@ -63,6 +81,30 @@ namespace ContinuousLinearMap
 open Filter
 open scoped Topology
 
+section Seminormed
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+variable [SeminormedAddCommGroup E] [Module 𝕜 E] [SeminormedAddCommGroup F] [Module 𝕜 F]
+variable [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] {C : ℝ}
+
+/-- An estimate `‖x‖ ≤ C * (‖T x‖ + ‖K x‖)` with `K` compact has the compact-error form
+`‖x‖ ≤ C' * ‖T x‖ + ‖K' x‖`. The new compact error is `x ↦ a • K x` for a scalar `a` of large
+enough norm. The domain need only be seminormed, and the target of `T` only enters through its
+seminorm. -/
+theorem exists_compact_estimate_of_norm_le_mul_add_norm {T : E →L[𝕜] F} {K : E →L[𝕜] G}
+    (hK : IsCompactOperator K) (hbound : ∀ x, ‖x‖ ≤ C * (‖T x‖ + ‖K x‖)) :
+    ∃ (C' : ℝ) (K' : E →L[𝕜] G), IsCompactOperator K' ∧ ∀ x, ‖x‖ ≤ C' * ‖T x‖ + ‖K' x‖ := by
+  obtain ⟨a, ha⟩ := NormedField.exists_lt_norm 𝕜 |C|
+  refine ⟨|C|, a • K, hK.smul a, fun x ↦ ?_⟩
+  rw [smul_apply, norm_smul]
+  calc ‖x‖ ≤ C * (‖T x‖ + ‖K x‖) := hbound x
+    _ ≤ |C| * (‖T x‖ + ‖K x‖) := by gcongr; exact le_abs_self C
+    _ ≤ |C| * ‖T x‖ + ‖a‖ * ‖K x‖ := by
+        rw [mul_add]
+        exact add_le_add_right (mul_le_mul_of_nonneg_right ha.le (norm_nonneg (K x))) _
+
+end Seminormed
+
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 variable [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
@@ -85,6 +127,80 @@ theorem finiteDimensional_ker_of_compact_estimate [CompleteSpace 𝕜]
   simp only [map_sub, hTv, sub_self, norm_zero, mul_zero, zero_add] at h
   have hsep : 1 ≤ ‖(v m : E) - (v n : E)‖ := hvsep hmn.ne
   exact (hsep.trans h).not_gt (by simpa [dist_eq_norm] using hclose)
+
+/-- **Compact perturbations preserve compact-error estimates.** If
+`‖x‖ ≤ C * ‖T x‖ + ‖K x‖` with `K` compact and `S - T` is compact, then `S` satisfies an estimate
+of the same form. The new compact error is `x ↦ a • ((S - T) x, K x)` for a scalar `a` of large
+enough norm. -/
+theorem exists_compact_estimate_of_isCompactOperator_sub [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {T S : E →L[𝕜] F} {K : E →L[𝕜] G} (hK : IsCompactOperator K)
+    (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) (hST : IsCompactOperator (S - T)) :
+    ∃ (C' : ℝ) (K' : E →L[𝕜] F × G), IsCompactOperator K' ∧
+      ∀ x, ‖x‖ ≤ C' * ‖S x‖ + ‖K' x‖ := by
+  obtain ⟨a, ha⟩ := NormedField.exists_lt_norm 𝕜 (2 * (|C| + 1))
+  refine ⟨|C|, a • (S - T).prod K, ?_, fun x ↦ ?_⟩
+  · have h := ((hST.clm_comp (inl 𝕜 F G)).add (hK.clm_comp (inr 𝕜 F G))).smul a
+    convert h using 1
+    funext x
+    simp
+  · -- `T x = S x - (S - T) x`, and both error terms are controlled by the product norm.
+    have hT : ‖T x‖ ≤ ‖S x‖ + ‖(S - T) x‖ := by
+      calc ‖T x‖ = ‖S x - (S - T) x‖ := by rw [sub_apply, sub_sub_cancel]
+        _ ≤ ‖S x‖ + ‖(S - T) x‖ := norm_sub_le _ _
+    have h₁ : ‖(S - T) x‖ ≤ ‖((S - T).prod K) x‖ := norm_fst_le ((S - T) x, K x)
+    have h₂ : ‖K x‖ ≤ ‖((S - T).prod K) x‖ := norm_snd_le ((S - T) x, K x)
+    set N := ‖((S - T).prod K) x‖
+    have hN := norm_nonneg (((S - T).prod K) x)
+    have hC := abs_nonneg C
+    rw [smul_apply, norm_smul]
+    calc ‖x‖ ≤ C * ‖T x‖ + ‖K x‖ := hbound x
+      _ ≤ |C| * (‖S x‖ + N) + N := by
+          gcongr
+          exacts [le_abs_self C, hT.trans (by gcongr)]
+      _ ≤ |C| * ‖S x‖ + ‖a‖ * N := by nlinarith
+
+/-- A compact operator bounded below, `‖x‖ ≤ C * ‖K x‖`, has finite-dimensional domain. -/
+theorem _root_.IsCompactOperator.finiteDimensional_of_norm_le_mul_norm [CompleteSpace 𝕜]
+    {K : E →L[𝕜] G} (hK : IsCompactOperator K) (hbound : ∀ x, ‖x‖ ≤ C * ‖K x‖) :
+    FiniteDimensional 𝕜 E := by
+  obtain ⟨k, hk⟩ := NormedField.exists_lt_norm 𝕜 C
+  have := (0 : E →L[𝕜] E).finiteDimensional_ker_of_compact_estimate (C := 0) (K := k • K)
+    (hK.smul k) fun x ↦ by
+      simpa [norm_smul] using (hbound x).trans (mul_le_mul_of_nonneg_right hk.le (norm_nonneg _))
+  rw [ContinuousLinearMap.toLinearMap_zero, LinearMap.ker_zero] at this
+  exact Submodule.topEquiv.finiteDimensional
+
+/-- **A nonlinear compact estimate.** A normed space is finite-dimensional if some map `f`, not
+necessarily linear, sends its closed unit ball into a compact set and satisfies
+`‖x - y‖ ≤ C * dist (f x) (f y)` there: points of the ball whose images lie in one small ball of a
+finite cover of the compact set are close, so the closed unit ball is totally bounded. -/
+theorem _root_.FiniteDimensional.of_norm_sub_le_mul_dist [CompleteSpace 𝕜] {Y : Type*}
+    [PseudoMetricSpace Y] {f : E → Y} {K : Set Y} (hK : IsCompact K)
+    (hfK : ∀ x, ‖x‖ ≤ 1 → f x ∈ K)
+    (hf : ∀ x y, ‖x‖ ≤ 1 → ‖y‖ ≤ 1 → ‖x - y‖ ≤ C * dist (f x) (f y)) :
+    FiniteDimensional 𝕜 E := by
+  refine .of_totallyBounded_nhds_zero 𝕜 (Metric.closedBall_mem_nhds 0 one_pos)
+    (Metric.totallyBounded_of_finite_discretization fun ε hε ↦ ?_)
+  have hx (x : Metric.closedBall (0 : E) 1) : ‖(x : E)‖ ≤ 1 := mem_closedBall_zero_iff.1 x.property
+  -- Cover `K` by finitely many balls of radius `δ`, and send `x` to the centre of one containing
+  -- `f x`.
+  set δ := ε / (2 * (|C| + 1)) with hδ
+  obtain ⟨t, ht, hKt⟩ := Metric.totallyBounded_iff.1 hK.totallyBounded δ (by positivity)
+  choose F hF using fun x : Metric.closedBall (0 : E) 1 ↦ by
+    simpa using hKt (hfK _ (hx x))
+  have := ht.fintype
+  refine ⟨ULift (Fin (Fintype.card t)), inferInstance,
+    fun x ↦ ULift.up (Fintype.equivFin t ⟨F x, (hF x).1⟩), fun x y hxy ↦ ?_⟩
+  have hFxy : F x = F y :=
+    congrArg Subtype.val ((Fintype.equivFin t).injective (ULift.up_injective hxy))
+  have hd : dist (f x) (f y) < 2 * δ := by
+    linarith [dist_triangle_right (f x) (f y) (F y), hFxy ▸ (hF x).2, (hF y).2]
+  rw [dist_eq_norm]
+  calc ‖(x : E) - y‖ ≤ C * dist (f x) (f y) := hf _ _ (hx x) (hx y)
+    _ ≤ (|C| + 1) * dist (f x) (f y) :=
+        mul_le_mul_of_nonneg_right (by linarith [le_abs_self C]) dist_nonneg
+    _ < (|C| + 1) * (2 * δ) := by gcongr
+    _ = ε := by rw [hδ]; field_simp
 
 section CompleteDomain
 
@@ -177,6 +293,36 @@ theorem exists_norm_quotientMk_ker_le_of_compact_estimate
   T.exists_norm_quotientMk_ker_le_of_exists_subseq_tendsto fun hv hTv ↦
     let ⟨x, ψ, hψ, hx, _⟩ := T.exists_subseq_tendsto_of_compact_estimate hK hbound hv hTv
     ⟨x, ψ, hψ, hx⟩
+
+/-- **Changing the error term of a compact-error estimate.** Let `‖x‖ ≤ C * ‖T x‖ + ‖K x‖` on a
+complete space, with `K` compact, and let `j` be a continuous linear map which is injective on the
+kernel of `T`. Then the compact error may be replaced by `j`: there is `C'` with
+`‖x‖ ≤ C' * (‖T x‖ + ‖j x‖)` for every `x`.
+
+No compactness of `j` is needed, and `j` need not be injective off the kernel of `T`. For an
+elliptic operator `T` on a compact base whose estimate carries a compact lower-order perturbation
+in `K`, taking for `j` the inclusion into `Lᵖ` gives the elliptic estimate with an `Lᵖ` error. -/
+theorem exists_norm_le_mul_norm_add_norm_of_compact_estimate {Z : Type*}
+    [NormedAddCommGroup Z] [NormedSpace 𝕜 Z] (hK : IsCompactOperator K)
+    (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) {j : E →L[𝕜] Z}
+    (hj : Disjoint T.ker j.ker) :
+    ∃ C' : ℝ, 0 ≤ C' ∧ ∀ x, ‖x‖ ≤ C' * (‖T x‖ + ‖j x‖) := by
+  -- The pair `(T, j)` is injective and satisfies a compact-error estimate, hence is bounded below.
+  have hTj (x : E) : ‖T x‖ ≤ ‖(T.prod j) x‖ := by
+    simpa only [prod_apply] using norm_fst_le (T x, j x)
+  have hbound' (x : E) : ‖x‖ ≤ |C| * ‖(T.prod j) x‖ + ‖K x‖ :=
+    (hbound x).trans (by gcongr; exacts [le_abs_self C, hTj x])
+  have hker : Disjoint (T.prod j).ker (⊤ : Submodule 𝕜 E) := by
+    rw [ker_prod, disjoint_top]
+    exact hj.eq_bot
+  obtain ⟨c, hc, hcx⟩ := (T.prod j).exists_pos_mul_norm_le_of_compact_estimate hK hbound'
+    (by simp) hker
+  refine ⟨c⁻¹, inv_nonneg.2 hc.le, fun x ↦ ?_⟩
+  rw [le_inv_mul_iff₀ hc]
+  calc c * ‖x‖ ≤ ‖(T.prod j) x‖ := hcx x Submodule.mem_top
+    _ ≤ ‖T x‖ + ‖j x‖ := by
+        rw [prod_apply, Prod.norm_def]
+        exact max_le_add_of_nonneg (norm_nonneg _) (norm_nonneg _)
 
 section Projection
 

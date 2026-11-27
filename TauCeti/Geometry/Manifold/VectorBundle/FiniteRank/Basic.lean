@@ -194,8 +194,8 @@ noncomputable def constIsoDiffeomorph
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     A.core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin A.rank → 𝕜),
       I.prod 𝓘(𝕜, Fin D.rank → 𝕜)⟯ D.core.TotalSpace where
-  toFun := (constIso hbase e he).hom.totalSpaceMap
-  invFun := (constIso hbase e he).inv.totalSpaceMap
+  toFun := (constIso (fun i ↦ (hbase i).le) e he).hom.totalSpaceMap
+  invFun := (constIso (fun i ↦ (hbase i).le) e he).inv.totalSpaceMap
   left_inv := fun ⟨x, v⟩ ↦ by
     simp only [CoordinateHom.totalSpaceMap_def, fiberMap_constIso_hom, fiberMap_constIso_inv]
     exact congrArg (fun w : Fin A.rank → 𝕜 ↦ (⟨x, w⟩ : A.core.TotalSpace))
@@ -211,7 +211,9 @@ noncomputable def constIsoDiffeomorph
         rfl
   contMDiff_invFun :=
     (contMDiff_totalSpaceMap_constHom (I := I) (n := n) (fun i ↦ (hbase i).ge)
-      e.symm.toContinuousLinearMap (coordChange_intertwines_symm hbase e he)).congr fun p ↦ by
+      e.symm.toContinuousLinearMap fun i j x hi hj ↦
+        coordChange_intertwines_symm e he i j x ((hbase i).ge hi) ((hbase j).ge hj)).congr
+      fun p ↦ by
         simp only [CoordinateHom.totalSpaceMap_def, fiberMap_constHom, fiberMap_constIso_inv]
         rfl
 
@@ -224,7 +226,7 @@ theorem coe_constIsoDiffeomorph
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     ⇑(constIsoDiffeomorph (I := I) (n := n) hbase e he) =
-      (constIso hbase e he).hom.totalSpaceMap := (rfl)
+      (constIso (fun i ↦ (hbase i).le) e he).hom.totalSpaceMap := (rfl)
 
 /-- The inverse smooth comparison is the inverse of the original core isomorphism. -/
 @[simp]
@@ -235,7 +237,7 @@ theorem coe_constIsoDiffeomorph_symm
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     ⇑(constIsoDiffeomorph (I := I) (n := n) hbase e he).symm =
-      (constIso hbase e he).inv.totalSpaceMap := (rfl)
+      (constIso (fun i ↦ (hbase i).le) e he).inv.totalSpaceMap := (rfl)
 
 /-- For a morphism between `C^n` finite-rank cores, `C^n` regularity of the glued total-space map
 implies `C^n` regularity of every chart operator, without completeness of the scalar field. -/

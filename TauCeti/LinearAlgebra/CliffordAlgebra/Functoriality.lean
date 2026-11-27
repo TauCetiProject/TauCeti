@@ -27,7 +27,8 @@ Clifford algebra is faithful.
 
 ## Main results
 
-* `CliffordAlgebra.map_involute` proves naturality of the grade involution.
+* `CliffordAlgebra.map_involute` proves naturality of the grade involution, and
+  `ExteriorAlgebra.map_involute` is its exterior-algebra case.
 * `CliffordAlgebra.map_reverse` proves naturality of Clifford reversal.
 * `CliffordAlgebra.map_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.map_mem_evenOdd` proves preservation of the `ℤ/2`-grading, and
@@ -41,8 +42,10 @@ Clifford algebra is faithful.
   generators along a map `f` forces `f` to preserve the quadratic forms.
 * `CliffordAlgebra.mul_eq_map_involute_mul_of_forall_ι`: an element that moves past each
   generator by an isometry `f` up to sign moves past every `a` by `map f ∘ involute`.
-* `CliffordAlgebra.equivOfIsometry_injective`: when `2` is invertible, different isometry
-  equivalences induce different algebra equivalences.
+* `CliffordAlgebra.equivOfIsometry_toAlgHom`: the algebra homomorphism underlying
+  `equivOfIsometry e` is `map e.toIsometry`.
+* `CliffordAlgebra.equivOfIsometry_injective`: when the generator map is injective, for instance
+  when `2` is invertible, different isometry equivalences induce different algebra equivalences.
 * `CliffordAlgebra.map_evenOdd_equivOfIsometry` proves that an isometry equivalence preserves the
   `ℤ/2`-grading.
 * `CliffordAlgebra.evenEquivOfIsometry` restricts an isometry-induced equivalence to the even
@@ -230,6 +233,13 @@ theorem mul_eq_map_involute_mul_of_forall_ι (f : Q₁ →qᵢ Q₁) {u : Cliffo
   | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, map_mul, map_mul, mul_assoc]
   | add a b ha hb => rw [mul_add, ha, hb, map_add, map_add, add_mul]
 
+/-- The algebra homomorphism underlying `CliffordAlgebra.equivOfIsometry e` is
+`CliffordAlgebra.map e.toIsometry`. -/
+@[simp]
+theorem equivOfIsometry_toAlgHom (e : Q₁.IsometryEquiv Q₂) :
+    (equivOfIsometry e).toAlgHom = map e.toIsometry :=
+  AlgHom.ext fun x ↦ equivOfIsometry_apply e x
+
 /-- An isometry equivalence maps the even Clifford subalgebra onto the even Clifford subalgebra. -/
 theorem map_equivOfIsometry_even (e : Q₁.IsometryEquiv Q₂) :
     (even Q₁).map (equivOfIsometry e).toAlgHom = even Q₂ := by
@@ -246,20 +256,22 @@ theorem ι_range_map_equivOfIsometry (e : Q₁.IsometryEquiv Q₂) :
   (ι_range_map_map e.toIsometry).trans <|
     (congrArg _ (LinearEquiv.range e.toLinearEquiv)).trans (Submodule.map_top _)
 
-/-- **Different isometries induce different Clifford algebra equivalences**, when `2` is
-invertible: an isometry is recovered from the algebra equivalence it induces on generators. -/
-theorem equivOfIsometry_injective [Invertible (2 : R)] :
+/-- **Different isometries induce different Clifford algebra equivalences**, when the generator
+map `ι Q₂` is injective, for instance when `2` is invertible (`CliffordAlgebra.ι_injective`) or
+for the zero form: an isometry is recovered from the algebra equivalence it induces on
+generators. -/
+theorem equivOfIsometry_injective (hι : Function.Injective (ι Q₂)) :
     Function.Injective (equivOfIsometry : Q₁.IsometryEquiv Q₂ → _) := fun e e' h ↦
-  DFunLike.ext _ _ fun v ↦ ι_injective Q₂ <| by
+  DFunLike.ext _ _ fun v ↦ hι <| by
     simpa only [equivOfIsometry_apply, map_apply_ι, IsometryEquiv.toIsometry_apply] using
       DFunLike.congr_fun h (ι Q₁ v)
 
-/-- Two isometries induce the same Clifford algebra equivalence only if they are equal, when `2`
-is invertible. -/
+/-- Two isometries induce the same Clifford algebra equivalence only if they are equal, when the
+generator map `ι Q₂` is injective, for instance when `2` is invertible. -/
 @[simp]
-theorem equivOfIsometry_inj [Invertible (2 : R)] {e e' : Q₁.IsometryEquiv Q₂} :
+theorem equivOfIsometry_inj (hι : Function.Injective (ι Q₂)) {e e' : Q₁.IsometryEquiv Q₂} :
     equivOfIsometry e = equivOfIsometry e' ↔ e = e' :=
-  equivOfIsometry_injective.eq_iff
+  (equivOfIsometry_injective hι).eq_iff
 
 /-- An isometry equivalence preserves the `ℤ/2`-grading: it maps `evenOdd Q₁ i` onto
 `evenOdd Q₂ i`. -/
@@ -279,20 +291,23 @@ theorem equivOfIsometry_mem_evenOdd_iff (e : Q₁.IsometryEquiv Q₂) {x : Cliff
   rw [← map_evenOdd_equivOfIsometry e i]
   exact ⟨fun ⟨y, hy, hxy⟩ ↦ (equivOfIsometry e).injective hxy ▸ hy, fun hx ↦ ⟨x, hx, rfl⟩⟩
 
-/-- The algebra homomorphism underlying `CliffordAlgebra.equivOfIsometry e` is
-`CliffordAlgebra.map e.toIsometry`. This is not a `simp` lemma, so
-`(equivOfIsometry e).toAlgHom` stays intact in conjugation and tensor-product statements. -/
-theorem equivOfIsometry_toAlgHom (e : Q₁.IsometryEquiv Q₂) :
-    (equivOfIsometry e).toAlgHom = map e.toIsometry :=
-  AlgHom.ext (equivOfIsometry_apply e)
+/-- The equivalence induced by an isometry equivalence sends the generator `ι Q₁ v` to
+`ι Q₂ (e v)`. This is not a `simp` lemma, because `simp` rewrites `equivOfIsometry e x` to
+`map e.toIsometry x` by `equivOfIsometry_apply`. -/
+theorem equivOfIsometry_ι (e : Q₁.IsometryEquiv Q₂) (v : M₁) :
+    equivOfIsometry e (ι Q₁ v) = ι Q₂ (e v) := by
+  rw [equivOfIsometry_apply, map_apply_ι, IsometryEquiv.toIsometry_apply]
 
-/-- Composition of the algebra homomorphisms underlying `CliffordAlgebra.equivOfIsometry` respects
-composition of quadratic isometry equivalences. -/
-theorem equivOfIsometry_toAlgHom_comp {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
-    {Q₃ : QuadraticForm R M₃} (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
-    (equivOfIsometry e₂₃).toAlgHom.comp (equivOfIsometry e₁₂).toAlgHom =
-      (equivOfIsometry (e₁₂.trans e₂₃)).toAlgHom :=
-  congrArg AlgEquiv.toAlgHom (equivOfIsometry_trans e₁₂ e₂₃)
+/-- Mapping a unit along the equivalence induced by an isometry equivalence `e`, and back along
+the one induced by `e.symm`, gives it back. -/
+@[simp]
+theorem units_map_equivOfIsometry_symm_units_map (e : Q₁.IsometryEquiv Q₂)
+    (x : (CliffordAlgebra Q₁)ˣ) :
+    Units.map (equivOfIsometry e.symm : CliffordAlgebra Q₂ →* CliffordAlgebra Q₁)
+      (Units.map (equivOfIsometry e : CliffordAlgebra Q₁ →* CliffordAlgebra Q₂) x) = x :=
+  Units.ext <| by
+    rw [Units.coe_map, Units.coe_map, MonoidHom.coe_ofClass, MonoidHom.coe_ofClass,
+      ← equivOfIsometry_symm, AlgEquiv.symm_apply_apply]
 
 /-- The Clifford-algebra equivalence induced by a quadratic isometry equivalence, restricted to
 the even subalgebras. -/
@@ -439,3 +454,19 @@ theorem map_inr_injective (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K 
 end OrthogonalProduct
 
 end CliffordAlgebra
+
+namespace ExteriorAlgebra
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- The grade involution commutes with the algebra map of exterior algebras induced by a linear
+map. -/
+@[simp]
+theorem map_involute (f : M →ₗ[R] N) (x : ExteriorAlgebra R M) :
+    map f (CliffordAlgebra.involute (Q := (0 : QuadraticForm R M)) x) =
+      CliffordAlgebra.involute (Q := (0 : QuadraticForm R N)) (map f x) :=
+  -- `ExteriorAlgebra.map f` is by definition the Clifford-algebra map of `f`, viewed as an
+  -- isometry of the zero quadratic forms.
+  CliffordAlgebra.map_involute { f with map_app' := fun _ ↦ rfl } x
+
+end ExteriorAlgebra

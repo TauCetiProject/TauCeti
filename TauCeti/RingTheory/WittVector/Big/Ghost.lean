@@ -9,9 +9,10 @@ public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.RingTheory.WittVector.Big.TruncationSet
 
-import TauCeti.Algebra.Regular.NatCast
+import Mathlib.Algebra.Regular.SMul
 import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.NumberTheory.Basic
+import TauCeti.NumberTheory.Divisors
 import TauCeti.RingTheory.Coprime.Lemmas
 
 /-!
@@ -35,16 +36,21 @@ is a unit, every sequence is the ghost sequence of a unique coordinate sequence 
 
 ## Main definitions
 
-* `TauCeti.BigWitt.ghostPolynomial n x`: the ghost component `∑_{d ∣ n} d * x_d ^ (n / d)`.
+* `TauCeti.BigWitt.ghostPolynomial n x`: the ghost component `∑_{d ∣ n} d * x_d ^ (n / d)`, also
+  over nonunital semirings.
 
 ## Main results
 
+* `TauCeti.BigWitt.ghostPolynomial_ite_dvd`: the ghost components of a coordinate sequence
+  spread out along the multiples of `n`.
 * `TauCeti.BigWitt.ghostPolynomial_sub_map_ghostPolynomial_div_mem`: for every sequence `x`,
   `w_n(x) ≡ φ_p(w_{n/p}(x))` modulo `p ^ v_p(n)`.
 * `TauCeti.BigWitt.ghost_image`: Dwork's lemma, the congruence description of the image of the
   ghost map on a truncation set.
 * `TauCeti.BigWitt.eqOn_ghostPolynomial_iff`: injectivity of the ghost map on a truncation set
   whose primes are non-zero-divisors.
+* `TauCeti.BigWitt.eqOn_of_ghostPolynomial_eq_of_prime_nsmul_injective`: the same injectivity over
+  nonunital semirings.
 * `TauCeti.BigWitt.exists_ghostPolynomial_eq_of_isUnit`: surjectivity of the ghost map on a
   truncation set whose elements are units.
 
@@ -61,17 +67,22 @@ open Finset
 
 variable {R : Type*}
 
-section CommSemiring
+section NonUnitalSemiring
 
-variable [CommSemiring R] {n : ℕ} {x y : ℕ → R}
+variable [NonUnitalSemiring R] {n : ℕ} {x y : ℕ → R}
 
 /-- The `n`-th big Witt ghost polynomial `w_n(x) = ∑_{d ∣ n} d * x_d ^ (n / d)`, evaluated on the
-coordinates `x`. It is `0` for `n = 0`; only its values at positive `n` are meaningful. -/
+coordinates `x`. It is `0` for `n = 0`; only its values at positive `n` are meaningful. Every
+exponent `n / d` is positive, so the power is written as iterated multiplication starting at
+`x_d`: the same polynomial evaluates on nonunital coefficients. Over a unital semiring it is the
+usual divisor sum (`ghostPolynomial_eq_sum`). -/
 def ghostPolynomial (n : ℕ) (x : ℕ → R) : R :=
-  ∑ d ∈ n.divisors, (d : R) * x d ^ (n / d)
+  ∑ d ∈ n.divisors, d • (· * x d)^[n / d - 1] (x d)
 
-theorem ghostPolynomial_def (n : ℕ) (x : ℕ → R) :
-    ghostPolynomial n x = ∑ d ∈ n.divisors, (d : R) * x d ^ (n / d) :=
+/-- The ghost polynomial on a nonunital semiring, by iterated multiplication and natural scalar
+multiplication. -/
+theorem ghostPolynomial_eq_sum_nsmul (n : ℕ) (x : ℕ → R) :
+    ghostPolynomial n x = ∑ d ∈ n.divisors, d • (· * x d)^[n / d - 1] (x d) :=
   (rfl)
 
 @[simp]
@@ -82,36 +93,141 @@ theorem ghostPolynomial_zero (x : ℕ → R) : ghostPolynomial 0 x = 0 := by
 theorem ghostPolynomial_one (x : ℕ → R) : ghostPolynomial 1 x = x 1 := by
   simp [ghostPolynomial]
 
-/-- For a prime `p`, `w_p(x) = x_1 ^ p + p * x_p`. -/
-theorem ghostPolynomial_prime {p : ℕ} (hp : p.Prime) (x : ℕ → R) :
-    ghostPolynomial p x = x 1 ^ p + p * x p := by
-  simp [ghostPolynomial, Nat.Prime.sum_divisors hp, Nat.div_self hp.pos, add_comm]
+/-- The ghost components of the zero coordinate sequence vanish. -/
+@[simp]
+theorem ghostPolynomial_zero_right (n : ℕ) : ghostPolynomial n (0 : ℕ → R) = 0 := by
+  simp [ghostPolynomial, Function.iterate_fixed]
 
-/-- The ghost polynomial separates its top coordinate:
-`w_n(x) = ∑_{d ∣ n, d < n} d * x_d ^ (n / d) + n * x_n`. -/
-theorem ghostPolynomial_eq_sum_properDivisors_add (hn : n ≠ 0) (x : ℕ → R) :
-    ghostPolynomial n x = ∑ d ∈ n.properDivisors, (d : R) * x d ^ (n / d) + n * x n := by
+/-- The ghost polynomial separates its top coordinate, over a nonunital semiring:
+`w_n(x) = ∑_{d ∣ n, d < n} d • x_d ^ (n / d) + n • x_n`. -/
+theorem ghostPolynomial_eq_sum_properDivisors_nsmul_add (hn : n ≠ 0) (x : ℕ → R) :
+    ghostPolynomial n x =
+      ∑ d ∈ n.properDivisors, d • (· * x d)^[n / d - 1] (x d) + n • x n := by
   rw [ghostPolynomial, ← Nat.cons_self_properDivisors hn, sum_cons, add_comm,
-    Nat.div_self (Nat.pos_of_ne_zero hn), pow_one]
+    Nat.div_self (Nat.pos_of_ne_zero hn)]
+  rfl
 
 /-- The ghost polynomial `w_n` only depends on the coordinates indexed by divisors of `n`. -/
 theorem ghostPolynomial_congr (h : ∀ d, d ∣ n → x d = y d) :
     ghostPolynomial n x = ghostPolynomial n y :=
   sum_congr rfl fun d hd ↦ by rw [h d (Nat.dvd_of_mem_divisors hd)]
 
-/-- Ghost polynomials commute with ring homomorphisms. -/
+/-- Ghost polynomials commute with ring homomorphisms, including nonunital ones. -/
 @[simp]
-theorem map_ghostPolynomial {R' F : Type*} [CommSemiring R'] [FunLike F R R']
-    [RingHomClass F R R']
+theorem map_ghostPolynomial {R' F : Type*} [NonUnitalSemiring R'] [FunLike F R R']
+    [NonUnitalRingHomClass F R R']
     (f : F) (n : ℕ) (x : ℕ → R) : f (ghostPolynomial n x) = ghostPolynomial n (f ∘ x) := by
-  simp [ghostPolynomial]
+  rw [ghostPolynomial, ghostPolynomial, map_sum]
+  refine sum_congr rfl fun d _ ↦ ?_
+  have h : Function.Semiconj f (· * x d) (· * f (x d)) := fun a ↦ map_mul f a (x d)
+  rw [map_nsmul]
+  exact congrArg (d • ·) (h.iterate_right (n / d - 1) (x d))
 
 /-- If two coordinate sequences agree on a truncation set `S`, so do their ghost components. -/
 theorem eqOn_ghostPolynomial {S : TruncationSet} (h : Set.EqOn x y S) :
     Set.EqOn (ghostPolynomial · x) (ghostPolynomial · y) S :=
   fun _ hn ↦ ghostPolynomial_congr fun _ hd ↦ h (S.mem_of_dvd hn hd)
 
-end CommSemiring
+/-- **Injectivity of the ghost map, nonunital form.** If multiplication by every element of the
+truncation set `S` is injective, then coordinate sequences with the same ghost components on `S`
+agree on `S`. -/
+theorem eqOn_of_ghostPolynomial_eq [IsLeftCancelAdd R] (S : TruncationSet)
+    (hS : ∀ n ∈ S, Function.Injective (n • · : R → R))
+    (h : ∀ n ∈ S, ghostPolynomial n x = ghostPolynomial n y) : Set.EqOn x y S := by
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+  intro hn
+  apply hS n hn
+  have hs : ∑ d ∈ n.properDivisors, d • (· * x d)^[n / d - 1] (x d) =
+      ∑ d ∈ n.properDivisors, d • (· * y d)^[n / d - 1] (y d) :=
+    sum_congr rfl fun d hd ↦ by
+      rw [ih d (Nat.mem_properDivisors.1 hd).2 (S.mem_of_dvd hn (Nat.mem_properDivisors.1 hd).1)]
+  have hg := h n hn
+  rw [ghostPolynomial_eq_sum_properDivisors_nsmul_add (S.ne_zero_of_mem hn),
+    ghostPolynomial_eq_sum_properDivisors_nsmul_add (S.ne_zero_of_mem hn), hs] at hg
+  exact add_left_cancel hg
+
+/-- **Injectivity of the ghost map, nonunital form.** Injectivity of multiplication by the primes
+in the truncation set `S` suffices for coordinates to be determined on `S` by their ghost
+components on `S`. -/
+theorem eqOn_of_ghostPolynomial_eq_of_prime_nsmul_injective [IsLeftCancelAdd R]
+    (S : TruncationSet) (hS : ∀ p, p.Prime → p ∈ S → Function.Injective (p • · : R → R))
+    (h : ∀ n ∈ S, ghostPolynomial n x = ghostPolynomial n y) : Set.EqOn x y S := by
+  refine eqOn_of_ghostPolynomial_eq S (fun n hn ↦ ?_) h
+  have hreg : IsSMulRegular R n := by
+    rw [Nat.prod_primeFactors_pow_factorization (S.ne_zero_of_mem hn)]
+    refine prod_induction _ (IsSMulRegular R) (fun _ _ ha hb ↦ ha.mul hb)
+      (IsSMulRegular.one R) fun p hp ↦ IsSMulRegular.pow _ ?_
+    exact hS p (Nat.prime_of_mem_primeFactors hp)
+      (S.mem_of_dvd hn (Nat.dvd_of_mem_primeFactors hp))
+  exact hreg
+
+end NonUnitalSemiring
+
+section Semiring
+
+variable [Semiring R] {n : ℕ}
+
+/-- Over a unital semiring, the ghost polynomial is the divisor sum
+`w_n(x) = ∑_{d ∣ n} d * x_d ^ (n / d)`. -/
+theorem ghostPolynomial_eq_sum (n : ℕ) (x : ℕ → R) :
+    ghostPolynomial n x = ∑ d ∈ n.divisors, (d : R) * x d ^ (n / d) := by
+  refine sum_congr rfl fun d hd ↦ ?_
+  have hn : 0 < n := Nat.pos_of_ne_zero (Nat.ne_zero_of_mem_divisors hd)
+  have hquot := Nat.div_pos (Nat.le_of_dvd hn (Nat.dvd_of_mem_divisors hd))
+    (Nat.pos_of_mem_divisors hd)
+  rw [nsmul_eq_mul, mul_right_iterate_apply_self, Nat.sub_add_cancel hquot]
+
+/-- The coordinate sequence `1, 0, 0, …` has all its ghost components at positive indices equal
+to `1`. -/
+@[simp]
+theorem ghostPolynomial_single_one (hn : n ≠ 0) :
+    ghostPolynomial n (Pi.single 1 1 : ℕ → R) = 1 := by
+  rw [ghostPolynomial, sum_eq_single 1]
+  · simp [Function.iterate_fixed]
+  · intro d _ hd
+    simp [Pi.single_eq_of_ne hd, Function.iterate_fixed]
+  · simp [hn]
+
+/-- For a prime `p`, `w_p(x) = x_1 ^ p + p * x_p`. -/
+theorem ghostPolynomial_prime {p : ℕ} (hp : p.Prime) (x : ℕ → R) :
+    ghostPolynomial p x = x 1 ^ p + p * x p := by
+  simp [ghostPolynomial_eq_sum, Nat.Prime.sum_divisors hp, Nat.div_self hp.pos, add_comm]
+
+/-- The ghost polynomial separates its top coordinate:
+`w_n(x) = ∑_{d ∣ n, d < n} d * x_d ^ (n / d) + n * x_n`. -/
+theorem ghostPolynomial_eq_sum_properDivisors_add (hn : n ≠ 0) (x : ℕ → R) :
+    ghostPolynomial n x = ∑ d ∈ n.properDivisors, (d : R) * x d ^ (n / d) + n * x n := by
+  rw [ghostPolynomial_eq_sum, ← Nat.cons_self_properDivisors hn, sum_cons, add_comm,
+    Nat.div_self (Nat.pos_of_ne_zero hn), pow_one]
+
+/-- **Ghost components of a spread-out sequence.** Moving the coordinate of index `e` to index
+`n * e` and putting zeros at the indices not divisible by `n` multiplies the ghost components by
+`n` and spreads them out the same way:
+`w_m(x') = n * w_{m/n}(x)` if `n ∣ m` and `w_m(x') = 0` otherwise. -/
+theorem ghostPolynomial_ite_dvd (n m : ℕ) (x : ℕ → R) :
+    ghostPolynomial m (fun k ↦ if n ∣ k then x (k / n) else 0) =
+      if n ∣ m then n * ghostPolynomial (m / n) x else 0 := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  -- a term indexed by a divisor `d` of `m` not divisible by `n` is `d * 0 ^ (m / d) = 0`
+  have hzero : ∀ d ∈ m.divisors, ¬n ∣ d →
+      (d : R) * (if n ∣ d then x (d / n) else 0) ^ (m / d) = 0 := fun d hd hnd ↦ by
+    rw [ite_eq_right hnd,
+      zero_pow (Nat.div_pos (Nat.divisor_le hd) (Nat.pos_of_mem_divisors hd)).ne', mul_zero]
+  rw [ghostPolynomial_eq_sum]
+  split_ifs with hnm
+  · -- only the divisors `d = n * e` with `e ∣ m / n` contribute
+    have hn : 0 < n := Nat.pos_of_ne_zero (ne_zero_of_dvd_ne_zero hm hnm)
+    rw [← sum_filter_of_ne (p := (n ∣ ·)) fun d hd h ↦ by_contra (h <| hzero d hd ·),
+      Nat.sum_divisors_filter_dvd hnm, ghostPolynomial_eq_sum, mul_sum]
+    refine sum_congr rfl fun e _ ↦ ?_
+    rw [ite_eq_left (dvd_mul_right n e), Nat.mul_div_cancel_left e hn, Nat.div_div_eq_div_mul,
+      Nat.cast_mul, mul_assoc]
+  · exact sum_eq_zero fun d hd ↦ hzero d hd fun hnd ↦ hnm (hnd.trans (Nat.dvd_of_mem_divisors hd))
+
+end Semiring
 
 section CommRing
 
@@ -132,9 +248,9 @@ theorem ghostPolynomial_sub_map_ghostPolynomial_div_mem {p : ℕ} (hp : p.Prime)
   · simp [multiplicity_eq_zero_of_not_dvd hpn]
   obtain ⟨m, rfl⟩ := hpn
   have hm : m ≠ 0 := right_ne_zero_of_mul hn
-  rw [Nat.mul_div_cancel_left m hp.pos, map_ghostPolynomial, ghostPolynomial, ghostPolynomial,
-    ← sum_sdiff (Nat.divisors_subset_of_dvd hn (dvd_mul_left m p)), add_sub_assoc,
-    ← sum_sub_distrib]
+  rw [Nat.mul_div_cancel_left m hp.pos, map_ghostPolynomial, ghostPolynomial_eq_sum,
+    ghostPolynomial_eq_sum, ← sum_sdiff (Nat.divisors_subset_of_dvd hn (dvd_mul_left m p)),
+    add_sub_assoc, ← sum_sub_distrib]
   refine dvd_add (dvd_sum fun d hd ↦ ?_) (dvd_sum fun d hd ↦ ?_)
   · -- divisors of `p * m` not dividing `m` are divisible by `p ^ v_p(p m)`
     obtain ⟨hd, hdm⟩ := mem_sdiff.1 hd
@@ -245,18 +361,9 @@ components agree on `S`. -/
 theorem eqOn_ghostPolynomial_iff {S : TruncationSet}
     (hS : ∀ p ∈ S, p.Prime → IsSMulRegular R (p : R)) {x y : ℕ → R} :
     Set.EqOn (ghostPolynomial · x) (ghostPolynomial · y) S ↔ Set.EqOn x y S := by
-  refine ⟨fun h n ↦ ?_, eqOn_ghostPolynomial⟩
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-  intro hn
-  have hxy := h hn
-  simp only [ghostPolynomial_eq_sum_properDivisors_add (S.ne_zero_of_mem hn)] at hxy
-  rw [sum_congr rfl fun d hd ↦ by
-    rw [ih d (Nat.mem_properDivisors.1 hd).2 (S.mem_of_dvd hn (Nat.mem_properDivisors.1 hd).1)],
-    add_right_inj] at hxy
-  refine (isSMulRegular_natCast_iff_forall_mem_primeFactors (S.ne_zero_of_mem hn)).2
-    (fun p hp ↦ hS p (S.mem_of_dvd hn (Nat.dvd_of_mem_primeFactors hp))
-      (Nat.prime_of_mem_primeFactors hp)) (by simpa only [smul_eq_mul] using hxy)
+  refine ⟨fun h ↦ eqOn_of_ghostPolynomial_eq_of_prime_nsmul_injective S
+    (fun p hp hpS a b hab ↦ hS p hpS hp ?_) fun n hn ↦ h hn, eqOn_ghostPolynomial⟩
+  simpa only [smul_eq_mul, nsmul_eq_mul] using hab
 
 end CommRing
 

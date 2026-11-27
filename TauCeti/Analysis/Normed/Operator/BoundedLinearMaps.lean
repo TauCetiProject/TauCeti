@@ -12,15 +12,19 @@ public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 Over a seminormed commutative ring `R`, which need not be a field, an `R`-bilinear map `β` with
 `‖β x y‖ ≤ C * ‖x‖ * ‖y‖` is jointly continuous (`LinearMap.continuous₂_of_bound`), and so is a
-scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuousSMul_of_norm_smul_le`). For an
-`R`-algebra `S`, such a bound on the action makes the structure map bounded
-(`TauCeti.exists_norm_algebraMap_le_of_norm_smul_le`).
+scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuousSMul_of_norm_smul_le`).
+For an `R`-algebra `S`, a bound on the action makes the structure map bounded
+(`TauCeti.exists_norm_algebraMap_le_of_norm_smul_le`), and conversely a bound on the structure map
+makes the action bounded (`TauCeti.exists_norm_smul_le_of_norm_algebraMap_le`).
+The evaluation action of bounded operators on a seminormed space is bounded
+(`ContinuousLinearMap.isBoundedSMul_apply`) and hence jointly continuous
+(`IsBoundedSMul.continuousSMul`), as is every submonoid such as the unitary group.
 
 A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`, tends
 to `(a, 0)` at `(a, 0)` (`ContinuousAt.tendsto_prodMk_clm_apply`).
 
 Bounded operators act jointly continuously on their domain for the operator norm topology
-(`ContinuousLinearMap.instContinuousSMulApply`), and so does every submonoid of them, such as a
+(`IsBoundedSMul.continuousSMul`), and so does every submonoid of them, such as a
 unitary group.
 -/
 
@@ -50,6 +54,13 @@ theorem TauCeti.continuousSMul_of_norm_smul_le {M : Type*} [SeminormedAddCommGro
     (h : ∃ C : ℝ≥0, ∀ (r : R) (m : M), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖) : ContinuousSMul R M :=
   h.elim fun C hC ↦ ⟨(LinearMap.lsmul R M).continuous₂_of_bound C hC⟩
 
+/-- The action of bounded operators on a seminormed space by evaluation is bounded:
+`‖f v‖ ≤ ‖f‖ * ‖v‖`. In particular it is jointly continuous, and so are the actions of the units
+and of submonoids such as the unitary group. -/
+instance ContinuousLinearMap.isBoundedSMul_apply {𝕜 V : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup V] [NormedSpace 𝕜 V] : IsBoundedSMul (V →L[𝕜] V) V :=
+  .of_norm_smul_le ContinuousLinearMap.le_opNorm
+
 /-- If the action of `R` on an `R`-algebra `S` is bounded, `‖r • s‖ ≤ C * ‖r‖ * ‖s‖`, then so is
 the structure map: `‖algebraMap R S r‖ ≤ C * ‖1‖ * ‖r‖`. -/
 theorem TauCeti.exists_norm_algebraMap_le_of_norm_smul_le {S : Type*} [SeminormedRing S]
@@ -57,6 +68,15 @@ theorem TauCeti.exists_norm_algebraMap_le_of_norm_smul_le {S : Type*} [Seminorme
     ∃ C : ℝ≥0, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖ :=
   h.elim fun C hC ↦ ⟨C * ‖(1 : S)‖₊, fun r ↦ by
     simpa [Algebra.algebraMap_eq_smul_one, mul_right_comm] using hC r 1⟩
+
+/-- If the structure map of an `R`-algebra `S` is bounded, `‖algebraMap R S r‖ ≤ C * ‖r‖`, then
+so is the scalar action: `‖r • s‖ ≤ C * ‖r‖ * ‖s‖`. -/
+theorem TauCeti.exists_norm_smul_le_of_norm_algebraMap_le {S : Type*} [SeminormedRing S]
+    [Algebra R S] (h : ∃ C : ℝ≥0, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖) :
+    ∃ C : ℝ≥0, ∀ (r : R) (s : S), ‖r • s‖ ≤ C * ‖r‖ * ‖s‖ :=
+  h.imp fun C hC r s ↦ by
+    rw [Algebra.smul_def]
+    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hC r) (norm_nonneg s))
 
 /-- A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`,
 tends to `(a, 0)` at `(a, 0)`. -/
@@ -67,12 +87,5 @@ theorem ContinuousAt.tendsto_prodMk_clm_apply {𝕜 X E F : Type*} [Nontrivially
   have h : ContinuousAt (fun z : X × E ↦ e z.1 z.2) (a, 0) :=
     (he.comp (f := Prod.fst) (x := (a, (0 : E))) continuousAt_fst).clm_apply continuousAt_snd
   simpa using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
-
-
-/-- Bounded operators act jointly continuously on their domain, for the operator norm topology. -/
-instance ContinuousLinearMap.instContinuousSMulApply {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] : ContinuousSMul (E →L[𝕜] E) E :=
-  ⟨by simpa only [ContinuousLinearMap.smul_def] using
-    (isBoundedBilinearMap_apply (𝕜 := 𝕜) (E := E) (F := E)).continuous⟩
 
 end

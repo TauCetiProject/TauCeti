@@ -96,6 +96,16 @@ theorem cliffordReverseDual_unique (ρ : CliffordAlgebra Q →ₐ[R] Module.End 
   intro v
   exact (hσ v).trans (cliffordReverseDual_ι ρ v).symm
 
+open QuadraticMap in
+/-- Reverse duality commutes with pulling back a Clifford action along a quadratic isometry. -/
+theorem cliffordReverseDual_comp_map
+    {V' : Type*} [AddCommGroup V'] [Module R V'] {Q' : QuadraticForm R V'}
+    (ρ : CliffordAlgebra Q' →ₐ[R] Module.End K S) (f : Q →qᵢ Q') :
+    (ρ.comp (map f)).cliffordReverseDual = ρ.cliffordReverseDual.comp (map f) := by
+  refine (cliffordReverseDual_unique (ρ.comp (map f)) (ρ.cliffordReverseDual.comp (map f))
+    fun v ↦ ?_).symm
+  simp [map_apply_ι]
+
 /-- Transposition sends a Clifford intertwiner to an intertwiner in the opposite direction. -/
 theorem cliffordReverseDual_comp_dualMap
     (ρ : CliffordAlgebra Q →ₐ[R] Module.End K S)
@@ -133,14 +143,5 @@ theorem cliffordReverseDual_smul_prod_map_ι
       (r * (-1 : R) ^ l.length.choose 2) • (ρ (l.map (ι Q)).prod).dualMap := by
   ext φ s
   simp [reverse_prod_map_ι_of_pairwise_isOrtho hl, mul_smul]
-
-/-- Reverse duality commutes with precomposition along a Clifford map induced by a quadratic
-isometry. -/
-@[simp]
-theorem cliffordReverseDual_comp_map {V' : Type*} [AddCommGroup V'] [Module R V']
-    {Q' : QuadraticForm R V'} (ρ : CliffordAlgebra Q →ₐ[R] Module.End K S) (f : Q' →qᵢ Q) :
-    (ρ.comp (map f)).cliffordReverseDual = ρ.cliffordReverseDual.comp (map f) :=
-  (cliffordReverseDual_unique (ρ.comp (map f)) (ρ.cliffordReverseDual.comp (map f))
-    fun v ↦ by simp).symm
 
 end AlgHom

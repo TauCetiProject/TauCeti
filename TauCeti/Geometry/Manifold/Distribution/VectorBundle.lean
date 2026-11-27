@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
+import TauCeti.Geometry.Manifold.VectorBundle.Pullback
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 
 /-!
 # Distributions as vector bundles
@@ -43,7 +46,9 @@ On a `C^(n+1)` manifold, the tangent bundle is a `C^n` vector bundle and the `C^
 `D` are `C^n` sections of it, so the smooth local frame criterion
 (`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`) applies. Hence a `C^n`
 distribution of rank `k` is a `C^n` vector bundle with model fibre `Fin k → 𝕜`
-(`hD.contMDiffVectorBundle`), a `C^n` subbundle of the tangent bundle.
+(`hD.contMDiffVectorBundle`), a `C^n` subbundle of the tangent bundle. A local frame of the
+distribution, read as sections of this subbundle, is a local frame in Mathlib's `IsLocalFrameOn`
+sense.
 
 ## Main definitions
 
@@ -71,6 +76,9 @@ distribution of rank `k` is a `C^n` vector bundle with model fibre `Fin k → �
   `TauCeti.IsContMDiffDistribution.contMDiffAt_totalSpace_mk`: on a `C^(n+1)` manifold, the
   total-space inclusion of a `C^n` distribution is `C^n` and `C^n` maps into the tangent bundle
   with values in `D` factor as `C^n` maps into `D`.
+* `TauCeti.IsContMDiffDistribution.contMDiffAt_pullback_mk`: a section of the pullback of a `C^n`
+  distribution along a map is `C^n` where it agrees with a `C^n` section of the pulled-back tangent
+  bundle.
 * `TauCeti.IsDistributionFrameOn.exists_mdifferentiableAt_coeff`: a vector field tangent to `D`
   and differentiable at `x` is, near `x`, a combination of a `C¹` local frame with coefficients
   differentiable at `x`.
@@ -226,6 +234,25 @@ theorem contMDiffAt_totalSpace_mk [IsManifold I (n + 1) M] {EM HM N : Type*}
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
   hD.hasLocalContMDiffSubbundleFrames.contMDiffAt_totalSpace_mk le_rfl hw hmem
 
+/-- On a `C^(n+1)` manifold, a section `w` of the pullback `f^* D` of a `C^n` distribution `D` of
+rank `k` along a map `f` that is `C^n` at `y₀` is `C^n` at `y₀` as soon as it agrees near `y₀`
+with a section `X` of `f^* TM` that is `C^n` at `y₀`. -/
+theorem contMDiffAt_pullback_mk [IsManifold I (n + 1) M] {EN HN N : Type*}
+    [NormedAddCommGroup EN] [NormedSpace 𝕜 EN] [TopologicalSpace HN] {J : ModelWithCorners 𝕜 EN HN}
+    [TopologicalSpace N] [ChartedSpace HN N] {K : Type*} [FunLike K N M]
+    [ContinuousMapClass K N M] (hD : IsContMDiffDistribution I n k D) {f : K} {y₀ : N}
+    (hf : ContMDiffAt J I n f y₀) {X : Π y, TangentSpace I (f y)} {w : Π y, D (f y)}
+    (hX : ContMDiffAt J (J.prod 𝓘(𝕜, E)) n
+      (fun y ↦ TotalSpace.mk' E (E := (f : N → M) *ᵖ (TangentSpace I)) y (X y)) y₀)
+    (hwX : ∀ᶠ y in 𝓝 y₀, (w y : TangentSpace I (f y)) = X y) :
+    letI := hD.fiberBundle
+    ContMDiffAt J (J.prod 𝓘(𝕜, Fin k → 𝕜)) n
+      (fun y ↦ TotalSpace.mk' (Fin k → 𝕜) (E := (f : N → M) *ᵖ fun x ↦ D x) y (w y)) y₀ :=
+  letI := hD.fiberBundle
+  (Bundle.Pullback.contMDiffAt_iff f hf).2 ⟨contMDiffAt_id, hD.contMDiffAt_totalSpace_mk
+    (((Bundle.Pullback.contMDiffAt_iff f hf).1 hX).2.congr_of_eventuallyEq
+      (hwX.mono fun _ hy ↦ congrArg (TotalSpace.mk _) hy)) fun y ↦ (w y).property⟩
+
 section Sections
 variable [IsManifold I (n + 1) M] (hD : IsContMDiffDistribution I n k D)
 
@@ -245,19 +272,19 @@ def toTangentSection : letI := hD.fiberBundle; letI := hD.vectorBundle
     Cₛ^n⟮I; Fin k → 𝕜, fun x ↦ D x⟯ →ₗ[C^n⟮I, M; 𝕜⟯]
       Cₛ^n⟮I; E, (TangentSpace I : M → Type _)⟯ :=
   let := hD.fiberBundle; let := hD.vectorBundle; have h := hD.contMDiff_totalSpace_inclusion
-  ⟨(ContMDiffSection.mapLinearMap (fun x ↦ (D x).subtype) h).toAddHom,
-    ContMDiffSection.mapLinearMap_smul_function (fun x ↦ (D x).subtype) h⟩
+  ContMDiffSection.mapFunctionLinearMap (fun x ↦ (D x).subtype) h
 
 @[simp] theorem toTangentSection_apply : letI := hD.fiberBundle; letI := hD.vectorBundle
     ∀ (a : Cₛ^n⟮I; Fin k → 𝕜, fun x ↦ D x⟯) (x : M),
       hD.toTangentSection a x = (a x : TangentSpace I x) :=
   let := hD.fiberBundle; let := hD.vectorBundle
-  ContMDiffSection.mapLinearMap_apply (fun x ↦ (D x).subtype) hD.contMDiff_totalSpace_inclusion
+  ContMDiffSection.mapFunctionLinearMap_apply (fun x ↦ (D x).subtype)
+    hD.contMDiff_totalSpace_inclusion
 
 theorem toTangentSection_injective : letI := hD.fiberBundle; letI := hD.vectorBundle
     Function.Injective hD.toTangentSection :=
   let := hD.fiberBundle; let := hD.vectorBundle
-  ContMDiffSection.mapLinearMap_injective (fun x ↦ (D x).subtype)
+  ContMDiffSection.mapFunctionLinearMap_injective (fun x ↦ (D x).subtype)
     hD.contMDiff_totalSpace_inclusion fun _ ↦ Subtype.val_injective
 
 /-- A `C^n` tangent vector field taking values in `D` defines a `C^n` section of `D`. -/
@@ -282,4 +309,48 @@ def mkSection (X : Cₛ^n⟮I; E, (TangentSpace I : M → Type _)⟯) (hX : ∀ 
 
 end Sections
 end IsContMDiffDistribution
+
+namespace IsDistributionFrameOn
+
+variable {ι : Type*} {D : ∀ x : M, Submodule 𝕜 (TangentSpace I x)}
+  {X : ι → ∀ x : M, TangentSpace I x} {U : Set M}
+
+/-- The sections of `D` represented by the frame `X` on `U`, with value zero off `U`. -/
+noncomputable def bundleFrame (hX : IsDistributionFrameOn I n D X U) (i : ι) (x : M) : D x :=
+  open Classical in
+  if hx : x ∈ U then hX.isSubbundleFrameOn.basis hx i else 0
+
+/-- The frame as a section of `D` has its original value at every point of its domain. -/
+@[simp]
+theorem coe_bundleFrame_apply (hX : IsDistributionFrameOn I n D X U)
+    (i : ι) {x : M} (hx : x ∈ U) : (hX.bundleFrame i x : TangentSpace I x) = X i x := by
+  simp [bundleFrame, hx]
+
+/-- Off its domain the frame as a section of `D` has the junk value zero. -/
+@[simp]
+theorem bundleFrame_apply_of_notMem (hX : IsDistributionFrameOn I n D X U)
+    (i : ι) {x : M} (hx : x ∉ U) : hX.bundleFrame i x = 0 := by
+  simp [bundleFrame, hx]
+
+/-- Any `C^n` local frame of a `C^n` distribution gives a `C^n` local frame of its native
+vector bundle. The frame may use any index type and its domain need not be open. -/
+theorem isLocalFrameOn_bundleFrame [IsRCLikeNormedField 𝕜] [IsManifold I (n + 1) M]
+    (hX : IsDistributionFrameOn I n D X U) (hD : IsContMDiffDistribution I n k D) :
+    letI := hD.fiberBundle
+    IsLocalFrameOn I (Fin k → 𝕜) n hX.bundleFrame U := by
+  classical
+  let := hD.fiberBundle
+  have hvalue {x : M} (hx : x ∈ U) (i : ι) :
+      hX.bundleFrame i x = hX.isSubbundleFrameOn.basis hx i := dite_eq_left hx
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_, fun i ↦ ?_⟩
+  · simpa only [hvalue hx] using (hX.isSubbundleFrameOn.basis hx).linearIndependent
+  · simp only [hvalue hx, (hX.isSubbundleFrameOn.basis hx).span_eq, le_refl]
+  have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  have h := (hX.contMDiffOn i).congr (f₁ := T% (fun x ↦ (hX.bundleFrame i x : TangentSpace I x)))
+    (fun x hx ↦ by simp only [hX.coe_bundleFrame_apply i hx])
+  exact hD.hasLocalContMDiffSubbundleFrames.contMDiffOn_totalSpace_mk le_rfl h
+    (fun x ↦ (hX.bundleFrame i x).property)
+
+end IsDistributionFrameOn
 end TauCeti

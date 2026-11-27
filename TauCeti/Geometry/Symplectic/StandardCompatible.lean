@@ -83,6 +83,12 @@ lemma stdSymplecticForm_apply (u w : V × V) :
     stdSymplecticForm u w = ⟪u.1, w.2⟫_ℝ - ⟪u.2, w.1⟫_ℝ := by
   simp [stdSymplecticForm]
 
+/-- On the plane `ℝ × ℝ`, the standard symplectic form is the area form `dx ∧ dy`:
+`ω₀(u, w) = u₁ w₂ - u₂ w₁`. -/
+lemma stdSymplecticForm_real_apply (u w : ℝ × ℝ) :
+    stdSymplecticForm u w = u.1 * w.2 - u.2 * w.1 := by
+  simp [mul_comm]
+
 /-- The standard symplectic form is invariant under the product almost complex structure. -/
 lemma stdSymplecticForm_invariant_product :
     (stdSymplecticForm (V := V)).Invariant (AlmostComplexStructure.product V) := by

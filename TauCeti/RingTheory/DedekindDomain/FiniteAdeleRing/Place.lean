@@ -37,6 +37,8 @@ places; it is a closed embedding as well.
 
 * `IsDedekindDomain.FiniteAdeleRing.isOpenQuotientMap_proj`: the projection is an open quotient
   map.
+* `IsDedekindDomain.FiniteAdeleRing.proj_surjective`: the projection is surjective, so the finite
+  adele ring is nontrivial when `R` has a height one prime.
 * `IsDedekindDomain.FiniteAdeleRing.image_proj_integralAdeles`: the integral finite adeles project
   onto the local integers.
 * `IsDedekindDomain.FiniteAdeleRing.isClosedEmbedding_single` and
@@ -44,6 +46,8 @@ places; it is a closed embedding as well.
   is the set of finite adeles vanishing away from `v`;
   `IsDedekindDomain.FiniteAdeleRing.isClosedEmbedding_ofAdicCompletion` is the multiplicative
   counterpart.
+* `IsDedekindDomain.FiniteAdeleRing.tendsto_ofAdicCompletion_cofinite`: local integers placed at
+  single places tend to `1` in the finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.single_mem_integralAdeles_iff`: a finite adele supported at
   `v` is integral exactly when its `v`-component is.
 
@@ -166,6 +170,34 @@ theorem isClosedEmbedding_ofAdicCompletion (v : HeightOneSpectrum R) :
   exact TauCeti.isClosedEmbedding_restrictedProduct_mulSingle
     (fun w : HeightOneSpectrum R ↦ w.adicCompletionIntegers K) v
 
+variable (K) in
+/-- The finite adele `ofAdicCompletion K v x` has `v`-component `x`. -/
+@[simp]
+theorem ofAdicCompletion_apply_self (v : HeightOneSpectrum R) (x : v.adicCompletion K) :
+    ofAdicCompletion K v x v = x := by
+  classical
+  -- Mathlib's `ofAdicCompletion_apply_coe` reads the coordinate through `Subtype.val`
+  exact (ofAdicCompletion_apply_coe K v x v).trans (Pi.mulSingle_eq_same v x)
+
+variable (K) in
+/-- The finite adele `ofAdicCompletion K v x` is `1` at every place other than `v`. -/
+@[simp]
+theorem ofAdicCompletion_apply_of_ne {v w : HeightOneSpectrum R} (h : w ≠ v)
+    (x : v.adicCompletion K) : ofAdicCompletion K v x w = 1 := by
+  classical
+  -- Mathlib's `ofAdicCompletion_apply_coe` reads the coordinate through `Subtype.val`
+  exact (ofAdicCompletion_apply_coe K v x w).trans (Pi.mulSingle_eq_of_ne h x)
+
+/-- For local integers `x v ∈ 𝒪_v`, the finite adeles `ofAdicCompletion K v (x v)`, equal to `x v`
+at `v` and to `1` at every other place, tend to `1` as `v` leaves every finite set of places. -/
+theorem tendsto_ofAdicCompletion_cofinite {x : ∀ v : HeightOneSpectrum R, v.adicCompletion K}
+    (hx : ∀ v, x v ∈ v.adicCompletionIntegers K) :
+    Filter.Tendsto (fun v ↦ ofAdicCompletion K v (x v)) Filter.cofinite (𝓝 1) := by
+  classical
+  -- `ofAdicCompletion K v` is `RestrictedProduct.mulSingle` for the classical decidable equality
+  exact TauCeti.tendsto_restrictedProduct_mulSingle_cofinite
+    (fun w : HeightOneSpectrum R ↦ w.adicCompletionIntegers K) hx
+
 /-- A finite adele supported at `v` is integral exactly when its `v`-component lies in the local
 integers. -/
 @[simp]
@@ -184,6 +216,10 @@ theorem single_mem_integralAdeles_iff (v : HeightOneSpectrum R) {x : v.adicCompl
 theorem proj_surjective (v : HeightOneSpectrum R) :
     Function.Surjective (proj K v : FiniteAdeleRing R K → v.adicCompletion K) :=
   (leftInverse_proj_single v).surjective
+
+/-- The finite adele ring is nontrivial as soon as `R` has a height one prime. -/
+instance [Nonempty (HeightOneSpectrum R)] : Nontrivial (FiniteAdeleRing R K) :=
+  (proj_surjective (K := K) (Classical.arbitrary (HeightOneSpectrum R))).nontrivial
 
 /-- The projection onto the completion at `v` is an open map. -/
 theorem isOpenMap_proj (v : HeightOneSpectrum R) :

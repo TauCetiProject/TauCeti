@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Topology.MetricSpace.Holder
@@ -47,6 +49,9 @@ of a smooth family of compactly supported functions with respect to a parameter.
   `ContDiff.norm_iteratedFDeriv_clm_fderiv_comp_apply_le`: bounds on the derivatives of
   `y ↦ A (Df(y) v)` and, by Faà di Bruno's formula, of `x ↦ A (Df(φ x) v)`, from bounds on the
   derivatives of positive order of `f` and `φ`.
+* `ContDiff.ofReal_fderiv_apply`, `ContDiff.norm_iteratedFDeriv_ofReal_fderiv_apply_le`: the
+  directional derivative `y ↦ DΦ(y) v` of a real function `Φ`, viewed as a complex function, is
+  smooth, with derivatives bounded by those of `Φ`.
 * `ContDiffAt.iteratedFDeriv_fderiv_apply_eq_iteratedFDeriv_snoc`: the pointwise form
   `Dⁱ (y ↦ Df(y) v) (x) m = D^{i+1} f (x) (m, v)`, with `v` in the last slot.
 * `ContDiff.holderWith_iteratedFDeriv_fderiv_apply`: if `D^{k+1} f` is `r`-Hölder with constant
@@ -106,9 +111,9 @@ theorem ContDiff.iteratedFDeriv_fderiv_apply {n : WithTop ℕ∞} {f : E → F} 
 `(i + 1)`-th iterated derivative of `f`: `‖Dⁱ (y ↦ Df(y) v) (x)‖ ≤ ‖D^{i+1} f (x)‖ ‖v‖`. -/
 theorem ContDiff.norm_iteratedFDeriv_fderiv_apply_le {n : WithTop ℕ∞} {f : E → F}
     (hf : ContDiff 𝕜 n f) {i : ℕ} (hi : minSmoothness 𝕜 (i + 1) ≤ n) (v x : E) :
-    ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ ‖iteratedFDeriv 𝕜 (i + 1) f x‖ * ‖v‖ := by
-  rw [hf.iteratedFDeriv_fderiv_apply hi, ← norm_fderiv_iteratedFDeriv]
-  exact (fderiv 𝕜 (iteratedFDeriv 𝕜 i f) x).le_opNorm v
+    ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ ‖iteratedFDeriv 𝕜 (i + 1) f x‖ * ‖v‖ :=
+  ((hf.of_le (le_minSmoothness.trans hi)).contDiffOn.norm_iteratedFDeriv_fderiv_apply_le
+    isOpen_univ v le_rfl (Set.mem_univ x)).trans_eq (mul_comm _ _)
 
 /-- A uniform bound `C` on the iterated derivatives of `f` up to order `k + 1` bounds those of a
 directional derivative `y ↦ Df(y) v` up to order `k` by `C ‖v‖`. -/
@@ -170,6 +175,31 @@ theorem ContDiff.norm_iteratedFDeriv_clm_fderiv_comp_apply_le {D G : Type*}
     (norm_nonneg _).trans (hf.norm_iteratedFDeriv_clm_fderiv_apply_le hk A hfL v 0 (by omega) (φ x))
   gcongr
   exact le_max_left 1 K
+
+section OfReal
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n m : WithTop ℕ∞} {Φ : E → ℝ}
+
+/-- The directional derivative `y ↦ DΦ(y) v` of a `C^n` real function `Φ`, viewed as a complex
+function, is `C^m` for `m + 1 ≤ n`. -/
+theorem ContDiff.ofReal_fderiv_apply (hΦ : ContDiff ℝ n Φ) (hmn : m + 1 ≤ n) (v : E) :
+    ContDiff ℝ m fun y ↦ ((fderiv ℝ Φ y v : ℝ) : ℂ) :=
+  Complex.ofRealCLM.contDiff.comp ((hΦ.fderiv_right hmn).clm_apply contDiff_const)
+
+/-- The derivatives of the directional derivative `y ↦ DΦ(y) v` of a real function `Φ`, viewed as
+a complex function, are bounded by those of `Φ`: `‖Dⁱ (y ↦ DΦ(y) v) (x)‖ ≤ ‖D^{i+1} Φ (x)‖ ‖v‖`. -/
+theorem ContDiff.norm_iteratedFDeriv_ofReal_fderiv_apply_le (hΦ : ContDiff ℝ n Φ) {i : ℕ}
+    (hi : i + 1 ≤ n) (v x : E) :
+    ‖iteratedFDeriv ℝ i (fun y ↦ ((fderiv ℝ Φ y v : ℝ) : ℂ)) x‖ ≤
+      ‖iteratedFDeriv ℝ (i + 1) Φ x‖ * ‖v‖ := by
+  have h := Complex.ofRealLI.norm_iteratedFDeriv_comp_left (i := i)
+    ((hΦ.fderiv_right hi).clm_apply (contDiff_const (c := v))).contDiffAt (x := x) le_rfl
+  rw [show (Complex.ofRealLI : ℝ →ₗᵢ[ℝ] ℂ) ∘ (fun y ↦ fderiv ℝ Φ y v) =
+      fun y ↦ ((fderiv ℝ Φ y v : ℝ) : ℂ) from funext fun _ ↦ Complex.ofRealLI_apply _] at h
+  rw [h]
+  exact hΦ.norm_iteratedFDeriv_fderiv_apply_le (by rwa [minSmoothness_of_isRCLikeNormedField]) v x
+
+end OfReal
 
 /-- **The innermost derivative of an iterated derivative.** If `f` is `C^{k+1}` at `x`, the `k`-th
 iterated derivative of the directional derivative `y ↦ Df(y) v` at `x` is the `(k + 1)`-th

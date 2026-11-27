@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Lp.MapCLM
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Eigenbasis
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The orbit-torus operator on the nonconstant modes along the circle factor
@@ -47,7 +48,8 @@ acts on the mode `k` by `(aₖ, bₖ) ↦ (A aₖ + ωₖ bₖ, A bₖ - ωₖ a
 (`TauCeti.torusModeOperator`, `TauCeti.torusModeOperator_apply_apply_eq`). It depends
 continuously on `S` (`TauCeti.continuous_torusModeOperator`), and for `S = 0` it is complex linear
 (`TauCeti.torusModeOperator_zero_apply_smul`,
-`TauCeti.exists_restrictScalars_eq_torusModeOperator_zero`).
+`TauCeti.exists_restrictScalars_eq_torusModeOperator_zero`), as it is for every loop whose loop
+operator is complex linear (`TauCeti.torusModeOperator_apply_smul`).
 
 **The estimate.** By the symmetry of `A` the cross terms cancel and each mode satisfies
 `‖A a + ω b‖² + ‖A b - ω a‖² = ‖A a‖² + ‖A b‖² + ω² (‖a‖² + ‖b‖²)`, the operator counterpart of
@@ -66,15 +68,29 @@ twisted orbit-torus operator is oriented (`TauCeti.isInvertible_torusModeOperato
 for maps periodic in `s` it splits off the nonconstant modes as an invertible summand
 (`TauCeti.isInvertible_torusModeOperator_periodic`).
 
-The twist along `γ` by the sign `-1` is not treated here: a map antiperiodic in `t` of period `T`
-is `exp (J₀ π t / T)` times a periodic one, and the corresponding loop operator is that of a
-different loop. Finite covers of the torus are not treated either.
+The twist along `γ` by the sign `-1` needs no separate operator on the torus of period `T`: a map
+antiperiodic in `t` of period `T` is `exp (J₀ π t / T)` times a periodic one, and the
+corresponding loop operator is that of the loop `TauCeti.CircleSobolev.antiperiodicGaugeLoop T S`,
+which is infinitesimally symplectic with `S`, so the results here apply to it (for maps periodic
+in `s`, see `TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.OrbitTwistSobolev`). Together
+with the twist along the circle factor it is also treated in
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.DoublyAntiperiodic`, on the double cover of
+`γ`, by restricting the operator of this file. Finite covers of the torus are treated in
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Cover` and
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.SkewCover`, the latter using the rotation
+`TauCeti.rotateMode` of this file.
 
 ## Main definitions
 
 * `TauCeti.torusModeSobolev F ω`: the Sobolev space `H¹` of maps with the frequencies `ω` along
   `s`, in modes.
 * `TauCeti.torusModeOperator T ω S`: the operator `∂s + J₀ (∂t - S)` on it.
+* `TauCeti.rotateMode θ`: the rotation by `θ` of every mode, with which the operator commutes for
+  a loop invariant under that rotation (`TauCeti.torusModeOperator_rotateMode`).
+* `TauCeti.restrictTorusModeOperator T hV W S hS`: the restriction of the operator to a subspace
+  `V` it maps into a subspace `W`, continuous in the loop
+  (`TauCeti.continuous_restrictTorusModeOperator`) and invertible when the operator is and its
+  inverse maps `W` into `V` (`TauCeti.isInvertible_restrictTorusModeOperator`).
 
 ## Main results
 
@@ -181,6 +197,54 @@ instance [CompleteSpace F] (ω : ℕ → ℝ) : CompleteSpace (torusModeSobolev 
 
 end Space
 
+/-! ### Rotations of the modes -/
+
+section Rotation
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {T : ℝ}
+
+/-- The rotation `TauCeti.CircleSobolev.rotate θ` of both loops of a mode. -/
+def rotatePair (s : ℝ) (θ : AddCircle T) :
+    WithLp 2 (CircleSobolev s F × CircleSobolev s F) →L[ℂ]
+      WithLp 2 (CircleSobolev s F × CircleSobolev s F) :=
+  let r : CircleSobolev s F →L[ℂ] CircleSobolev s F :=
+    (rotate θ).toLinearIsometry.toContinuousLinearMap
+  r.withLpProdMap 2 r
+
+@[simp]
+theorem rotatePair_apply (s : ℝ) (θ : AddCircle T)
+    (y : WithLp 2 (CircleSobolev s F × CircleSobolev s F)) :
+    rotatePair s θ y = WithLp.toLp 2 (rotate θ y.fst, rotate θ y.snd) := by
+  simp [rotatePair]
+
+/-- The rotation of a mode commutes with the inclusions `H¹(F)² → H⁰(F)²` relating the two
+sequences of `TauCeti.torusModeSobolev`, scaled by a real frequency. -/
+theorem rotatePair_smul_withLpProdMap_inclusion (θ : AddCircle T) (c : ℝ)
+    (y : WithLp 2 (CircleSobolev 1 F × CircleSobolev 1 F)) :
+    rotatePair 0 θ (c • (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one) y) =
+      c • (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one) (rotatePair 1 θ y) := by
+  refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;> simp [← Complex.coe_smul]
+
+/-- The rotation by `θ` of every mode of an element of `TauCeti.torusModeSobolev F ω`: the
+translation `u(s, t) ↦ u(s, t + θ)` in the second factor. -/
+def rotateMode {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω) : torusModeSobolev F ω :=
+  ⟨(lp.ampliation ℕ 2 (rotatePair 1 θ) (x : 𝕏[F]).1,
+      lp.ampliation ℕ 2 (rotatePair 0 θ) (x : 𝕏[F]).2), mem_torusModeSobolev_iff.2 fun k ↦ by
+    rw [lp.ampliation_apply_apply, lp.ampliation_apply_apply,
+      mem_torusModeSobolev_iff.1 x.property k, rotatePair_smul_withLpProdMap_inclusion]⟩
+
+@[simp]
+theorem rotateMode_fst_apply {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω) (k : ℕ) :
+    (rotateMode θ x : 𝕏[F]).1 k = rotatePair 1 θ ((x : 𝕏[F]).1 k) :=
+  lp.ampliation_apply_apply _ _ _
+
+@[simp]
+theorem rotateMode_snd_apply {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω) (k : ℕ) :
+    (rotateMode θ x : 𝕏[F]).2 k = rotatePair 0 θ ((x : 𝕏[F]).2 k) :=
+  lp.ampliation_apply_apply _ _ _
+
+end Rotation
+
 section Operator
 
 variable (T : ℝ) [hT : Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -226,15 +290,24 @@ theorem torusModeOperator_apply_apply_eq (ω : ℕ → ℝ) (S : C(AddCircle T, 
   rw [torusModeOperator_apply_apply, fst_snd_apply_of_mem_torusModeSobolev x.property,
     snd_snd_apply_of_mem_torusModeSobolev x.property]
 
-/-- **The reference operator is complex linear.** For `S = 0` the operator `∂s + J₀ ∂t` commutes
-with multiplication by complex scalars, the complex structure of `H¹` and `L²` acting by `J₀`. -/
-theorem torusModeOperator_zero_apply_smul (ω : ℕ → ℝ) (c : ℂ) (x : torusModeSobolev F ω) :
-    torusModeOperator T ω 0 (c • x) = c • torusModeOperator T ω 0 x := by
+/-- **Complex linearity.** If the loop operator `L_S` commutes with multiplication by complex
+scalars, as for a constant complex scalar loop, so does the operator `∂s + A` on the modes, the
+complex structure of `H¹` and `L²` acting by `J₀`. -/
+theorem torusModeOperator_apply_smul (ω : ℕ → ℝ) {S : C(AddCircle T, F →L[ℝ] F)}
+    (hS : ∀ (c : ℂ) (a : CircleSobolev 1 F), loopOperator T S (c • a) = c • loopOperator T S a)
+    (c : ℂ) (x : torusModeSobolev F ω) :
+    torusModeOperator T ω S (c • x) = c • torusModeOperator T ω S x := by
   refine lp.ext (funext fun k ↦ ?_)
   rw [lp.coeFn_smul, Pi.smul_apply, torusModeOperator_apply_apply,
     torusModeOperator_apply_apply]
   refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
-    simp [smul_comm c I, smul_add, smul_sub]
+    simp [hS, smul_comm c I, smul_add, smul_sub]
+
+/-- **The reference operator is complex linear.** For `S = 0` the operator `∂s + J₀ ∂t` commutes
+with multiplication by complex scalars, the complex structure of `H¹` and `L²` acting by `J₀`. -/
+theorem torusModeOperator_zero_apply_smul (ω : ℕ → ℝ) (c : ℂ) (x : torusModeSobolev F ω) :
+    torusModeOperator T ω 0 (c • x) = c • torusModeOperator T ω 0 x :=
+  torusModeOperator_apply_smul T ω (fun c a ↦ by simp) c x
 
 /-- **The reference operator as a complex-linear map.** For `S = 0` the operator `∂s + J₀ ∂t` is
 the restriction of scalars of a bounded complex-linear map, for the complex structures of `H¹` and
@@ -259,6 +332,82 @@ theorem continuous_torusModeOperator (ω : ℕ → ℝ) :
       ContinuousLinearMap.norm_withLpProdMap, max_self, NNReal.coe_one, one_mul]
   exact ((((lp.ampliation ℕ 2).continuous.comp hpair).clm_comp continuous_const).add
     continuous_const).clm_comp continuous_const
+
+/-- **Rotation equivariance.** For a loop `S` invariant under the rotation by `θ`, the orbit-torus
+operator commutes with the rotation by `θ` of every mode (`TauCeti.rotateMode`). -/
+theorem torusModeOperator_rotateMode {ω : ℕ → ℝ} {θ : AddCircle T}
+    {S : C(AddCircle T, F →L[ℝ] F)} (hS : ∀ t, S (t + θ) = S t) (x : torusModeSobolev F ω)
+    (k : ℕ) :
+    torusModeOperator T ω S (rotateMode θ x) k = rotatePair 0 θ (torusModeOperator T ω S x k) := by
+  rw [torusModeOperator_apply_apply_eq, torusModeOperator_apply_apply_eq]
+  refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
+    simp [← Complex.coe_smul, loopOperator_rotate_of_invariant T hS]
+
+/-- The inclusion of a subspace `V ≤ TauCeti.torusModeSobolev F ω` of the ambient space of pairs
+of mode sequences into `TauCeti.torusModeSobolev F ω`. -/
+private def inclusionTorusModeSobolev {ω : ℕ → ℝ} {V : Submodule ℂ 𝕏[F]}
+    (hV : V ≤ torusModeSobolev F ω) : V →L[ℂ] torusModeSobolev F ω :=
+  V.subtypeL.codRestrict _ fun x ↦ hV x.property
+
+omit hT [FiniteDimensional ℂ F] in
+@[simp]
+private theorem inclusionTorusModeSobolev_apply {ω : ℕ → ℝ} {V : Submodule ℂ 𝕏[F]}
+    (hV : V ≤ torusModeSobolev F ω) (x : V) :
+    inclusionTorusModeSobolev hV x = Submodule.inclusion hV x :=
+  (rfl)
+
+/-- **The orbit-torus operator on an invariant subspace.** The restriction of
+`TauCeti.torusModeOperator T ω S` to a subspace `V ≤ TauCeti.torusModeSobolev F ω` of the ambient
+space of pairs of mode sequences, with values in a subspace `W` of the `L²` mode sequences, given
+that the operator maps `V` into `W`. The twisted and the skew-cover operators
+(`TauCeti.doublyAntiperiodicTorusOperator`, `TauCeti.skewTorusModeOperator`) are such
+restrictions. -/
+def restrictTorusModeOperator {ω : ℕ → ℝ} {V : Submodule ℂ 𝕏[F]}
+    (hV : V ≤ torusModeSobolev F ω) (W : Submodule ℂ 𝕐[F]) (S : C(AddCircle T, F →L[ℝ] F))
+    (hS : ∀ x : V, torusModeOperator T ω S (Submodule.inclusion hV x) ∈ W) : V →L[ℝ] W :=
+  (torusModeOperator T ω S ∘L (inclusionTorusModeSobolev hV).restrictScalars ℝ).codRestrictOfTower
+    hS
+
+@[simp]
+theorem coe_restrictTorusModeOperator_apply {ω : ℕ → ℝ} {V : Submodule ℂ 𝕏[F]}
+    (hV : V ≤ torusModeSobolev F ω) (W : Submodule ℂ 𝕐[F]) (S : C(AddCircle T, F →L[ℝ] F))
+    (hS : ∀ x : V, torusModeOperator T ω S (Submodule.inclusion hV x) ∈ W) (x : V) :
+    (restrictTorusModeOperator T hV W S hS x : 𝕐[F]) =
+      torusModeOperator T ω S (Submodule.inclusion hV x) :=
+  ContinuousLinearMap.coe_codRestrictOfTower_apply _ _ x
+
+/-- **Continuous dependence on the loop.** Among the loops `S` satisfying a condition `P S` under
+which the operator maps `V` into `W`, the restriction of the orbit-torus operator depends
+continuously, in operator norm, on the loop with its uniform norm. -/
+theorem continuous_restrictTorusModeOperator {ω : ℕ → ℝ} {V : Submodule ℂ 𝕏[F]}
+    (hV : V ≤ torusModeSobolev F ω) (W : Submodule ℂ 𝕐[F])
+    {P : C(AddCircle T, F →L[ℝ] F) → Prop}
+    (hP : ∀ S, P S → ∀ x : V, torusModeOperator T ω S (Submodule.inclusion hV x) ∈ W) :
+    Continuous fun S : {S // P S} ↦
+      restrictTorusModeOperator T hV W S.val (hP S.val S.property) := by
+  -- Composed with the inclusion of the target into `L²`, which induces the topology of the
+  -- operators, the operator is `∂s + A` composed with the inclusion of the domain.
+  refine (ContinuousLinearMap.isInducing_postcomp (E := V) (σ := RingHom.id ℝ)
+    (W.subtypeL.restrictScalars ℝ) Topology.IsInducing.subtypeVal).continuous_iff.2 ?_
+  have h : (fun S : {S // P S} ↦ (W.subtypeL.restrictScalars ℝ).comp
+      (restrictTorusModeOperator T hV W S.val (hP S.val S.property))) = fun S ↦
+      (torusModeOperator T ω S.val).comp ((inclusionTorusModeSobolev hV).restrictScalars ℝ) :=
+    funext fun S ↦ ContinuousLinearMap.ext fun x ↦ by simp
+  rw [Function.comp_def, h]
+  exact (ContinuousLinearMap.precomp _
+    ((inclusionTorusModeSobolev hV).restrictScalars ℝ)).continuous.comp
+      ((continuous_torusModeOperator T ω).comp continuous_subtypeVal)
+
+/-- **Invertibility of the restriction.** If the orbit-torus operator is invertible and every `x`
+it maps into `W` lies in `V`, its restriction to `V` with values in `W` is invertible: its inverse
+maps `W` into `V`. -/
+theorem isInvertible_restrictTorusModeOperator {ω : ℕ → ℝ} {V : Submodule ℂ 𝕏[F]}
+    (hV : V ≤ torusModeSobolev F ω) (W : Submodule ℂ 𝕐[F]) {S : C(AddCircle T, F →L[ℝ] F)}
+    (hS : ∀ x : V, torusModeOperator T ω S (Submodule.inclusion hV x) ∈ W)
+    (hD : (torusModeOperator T ω S).IsInvertible)
+    (hW : ∀ x, torusModeOperator T ω S x ∈ W → (x : 𝕏[F]) ∈ V) :
+    (restrictTorusModeOperator T hV W S hS).IsInvertible :=
+  hD.codRestrictOfTower_comp (fun _ ↦ rfl) _ hW
 
 end Operator
 

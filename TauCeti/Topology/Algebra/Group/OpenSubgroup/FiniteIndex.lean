@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Index
-public import Mathlib.Topology.Algebra.ClopenNhdofOne
-import Mathlib.Algebra.Group.Subgroup.Order
+public import Mathlib.Topology.Algebra.OpenSubgroup
+import TauCeti.GroupTheory.Index.Coatom
 import Mathlib.Topology.Algebra.Group.ClosedSubgroup
-import Mathlib.Order.Atoms.Finite
 import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.Index.Map
 
@@ -35,8 +34,9 @@ The same bundling supplies the other instance an open subgroup of a compact grou
 is handed to an API stated for a compact group, such as the profinite theory of a closed subgroup:
 an open subgroup is closed, so it is compact.
 
-Every proper open subgroup of a compact group lies in a maximal open subgroup. This follows
-by passing to a finite quotient by an open normal subgroup contained in the given subgroup.
+When multiplication is separately continuous, every proper open subgroup of finite index, in
+particular every proper open subgroup of a compact group, lies in a maximal subgroup, which is then
+open. The maximal subgroup comes from `Subgroup.exists_isCoatom_le_of_finiteIndex`.
 
 The normal core of an open subgroup is open as soon as its normalizer has finite index; so an open
 subgroup of finite index contains an open normal subgroup of finite index, and every open normal
@@ -49,6 +49,9 @@ This needs no compactness.
   compact group has finite index.
 * `OpenSubgroup.compactSpace_toSubgroup`: the underlying subgroup of an open subgroup of a
   compact group is compact.
+* `Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact`: an open subgroup has finite index in every
+  compact subgroup; `Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact` is the same fact as a
+  `Subgroup.IsFiniteRelIndex` statement.
 * `OpenSubgroup.finiteIndex_comap`: the preimage of an open subgroup of finite index under a
   continuous homomorphism has finite index.
 * `Subgroup.isOpen_normalCore`: the normal core of an open subgroup whose normalizer has finite
@@ -57,8 +60,8 @@ This needs no compactness.
   contains an open normal subgroup of finite index.
 * `OpenNormalSubgroup.exists_le_map_subtype`: an open normal subgroup of an open subgroup of
   finite index contains an open normal subgroup of the ambient group.
-* `Subgroup.exists_isOpen_isCoatom_le_of_isOpen`: a proper open subgroup of a compact group
-  lies in a maximal open subgroup.
+* `Subgroup.exists_isOpen_isCoatom_le_of_isOpen`: if multiplication is separately continuous, a
+  proper open subgroup of finite index lies in a maximal subgroup, which is open.
 -/
 
 public section
@@ -82,6 +85,30 @@ instance OpenSubgroup.compactSpace_toSubgroup {G : Type*} [Group G] [Topological
     CompactSpace U.toSubgroup :=
   isCompact_iff_compactSpace.mp U.isClosed.isCompact
 
+/-- **An open subgroup has finite index in every compact subgroup.** The intersection `U' ∩ U` is
+an open subgroup of the compact group `U`, so its coset space in `U` is finite. No containment
+`U' ≤ U` is assumed. -/
+@[to_additive /-- **An open additive subgroup has finite index in every compact additive
+subgroup.** The intersection `U' ∩ U` is an open additive subgroup of the compact additive group
+`U`, so its coset space in `U` is finite. No containment `U' ≤ U` is assumed. -/]
+theorem Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact {G : Type*} [Group G]
+    [TopologicalSpace G] [SeparatelyContinuousMul G] {U U' : Subgroup G}
+    (hU' : IsOpen (U' : Set G)) (hU : IsCompact (U : Set G)) : U'.relIndex U ≠ 0 := by
+  have : CompactSpace U := isCompact_iff_compactSpace.mp hU
+  have := U.toSubmonoid.separatelyContinuousMul
+  have := Subgroup.quotient_finite_of_isOpen _ (Subgroup.subgroupOf_isOpen U U' hU')
+  rw [Subgroup.relIndex]
+  exact Subgroup.index_ne_zero_of_finite
+
+/-- **An open subgroup has finite relative index in every compact subgroup**, in the form of the
+`Subgroup.IsFiniteRelIndex` class. No containment is assumed. -/
+@[to_additive /-- **An open additive subgroup has finite relative index in every compact additive
+subgroup**, in the form of the `AddSubgroup.IsFiniteRelIndex` class. No containment is assumed. -/]
+theorem Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact {G : Type*} [Group G]
+    [TopologicalSpace G] [SeparatelyContinuousMul G] {U U' : Subgroup G}
+    (hU' : IsOpen (U' : Set G)) (hU : IsCompact (U : Set G)) : U'.IsFiniteRelIndex U :=
+  ⟨relIndex_ne_zero_of_isOpen_of_isCompact hU' hU⟩
+
 /-- **The preimage of an open subgroup of finite index has finite index.** Mathlib's instance
 for `Subgroup.comap` does not fire on `OpenSubgroup.comap` directly, since instance search does not
 unfold it. -/
@@ -95,31 +122,20 @@ instance OpenSubgroup.finiteIndex_comap {G N : Type*} [Group G] [TopologicalSpac
 
 section MaximalOpenSubgroup
 
-variable {G : Type*} [Group G] [TopologicalSpace G]
+variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
-/-- **A proper open subgroup of a compact group lies in a maximal open subgroup.** It contains an
-open normal subgroup `U` of finite index, and a maximal subgroup of the finite group `G ⧸ U` above
-its image pulls back to a maximal subgroup of `G` containing `U`, hence open. -/
-theorem Subgroup.exists_isOpen_isCoatom_le_of_isOpen [IsTopologicalGroup G]
-    [CompactSpace G] {K : Subgroup G} (hKo : IsOpen (K : Set G)) (hK : K ≠ ⊤) :
+/-- **A proper open subgroup of finite index lies in a maximal subgroup, which is open**, when
+multiplication is separately continuous. In a compact group every open subgroup has finite index
+(`OpenSubgroup.finiteIndex_toSubgroup`), so this applies to every proper open subgroup there. -/
+@[to_additive /-- **A proper open additive subgroup of finite index lies in a maximal additive
+subgroup, which is open**, when addition is separately continuous. In a compact additive group every
+open additive subgroup has finite index (`OpenAddSubgroup.finiteIndex_toAddSubgroup`), so this
+applies to every proper open additive subgroup there. -/]
+theorem Subgroup.exists_isOpen_isCoatom_le_of_isOpen {K : Subgroup G} [K.FiniteIndex]
+    (hKo : IsOpen (K : Set G)) (hK : K ≠ ⊤) :
     ∃ M : Subgroup G, IsOpen (M : Set G) ∧ IsCoatom M ∧ K ≤ M := by
-  obtain ⟨U, hU⟩ := IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one
-    ⟨K.isClosed_of_isOpen hKo, hKo⟩ K.one_mem
-  let q : G →* G ⧸ U.toSubgroup := QuotientGroup.mk' U.toSubgroup
-  have hq : Function.Surjective q := QuotientGroup.mk'_surjective U.toSubgroup
-  have hUK : q.ker ≤ K := by
-    rw [QuotientGroup.ker_mk']
-    exact hU
-  have : Finite (G ⧸ U.toSubgroup) := Subgroup.quotient_finite_of_isOpen _ U.isOpen
-  have : Finite (Subgroup (G ⧸ U.toSubgroup)) :=
-    Finite.of_injective (fun L : Subgroup (G ⧸ U.toSubgroup) ↦ (L : Set (G ⧸ U.toSubgroup)))
-      SetLike.coe_injective
-  obtain ⟨L, hL, hKL⟩ := (eq_top_or_exists_le_coatom (K.map q)).resolve_left fun h ↦
-    hK (by rw [← Subgroup.comap_map_eq_self hUK, h, Subgroup.comap_top])
-  exact ⟨L.comap q,
-    Subgroup.isOpen_mono ((QuotientGroup.ker_mk' _).ge.trans (L.ker_le_comap q)) U.isOpen,
-    Subgroup.isCoatom_comap_of_surjective hq hL,
-    (Subgroup.comap_map_eq_self hUK).ge.trans (Subgroup.comap_mono hKL)⟩
+  obtain ⟨M, hM, hKM⟩ := exists_isCoatom_le_of_finiteIndex hK
+  exact ⟨M, isOpen_mono hKM hKo, hM, hKM⟩
 
 end MaximalOpenSubgroup
 

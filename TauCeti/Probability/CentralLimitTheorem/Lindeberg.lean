@@ -25,14 +25,15 @@ living on a probability space `(Ω n, P n)`, such that
 
 * for each `n`, the row `X n` is independent;
 * each `X n i` is centred and square integrable;
-* the row variances sum to `1` for all large `n`;
+* the row variances `∑ i, Var[X n i; P n]` converge to `v : ℝ≥0`;
 * the **Lindeberg condition** holds: for every `ε > 0`,
   `∑ i, E[X n i ^ 2; ε ≤ |X n i|] → 0` as `n → ∞`.
 
-Then the row sums `∑ i, X n i` converge in distribution to the standard Gaussian law. Neither
-boundedness nor identical distribution is assumed, and different rows need not live on a common
-space, which is what makes the theorem apply to triangular arrays such as sums of independent
-indicators with varying success probabilities.
+Then the row sums `∑ i, X n i` converge in distribution to `gaussianReal 0 v`. Neither
+boundedness nor identical distribution is assumed, `v = 0` is allowed, and different rows need not
+live on a common space, which is what makes the theorem apply to triangular arrays such as sums of
+independent indicators with varying success probabilities or scalar projections of Euclidean
+triangular arrays in singular directions.
 
 The main consequence proved here is the central limit theorem for bounded independent summands
 whose variance tends to infinity: if every centred summand `X n i - E[X n i]` is bounded by a
@@ -45,21 +46,22 @@ variables with diverging variance are the basic example.
 * `MeasureTheory.MemLp.norm_charFun_sub_one_sub_le`: the truncation estimate
   `‖φ_X t - (1 - t² E[X²] / 2)‖ ≤ |t|³ ε E[X²] / 6 + t² E[X²; ε ≤ |X|]` for a centred `X ∈ L²`.
 * `TauCeti.Probability.norm_prod_charFun_sub_exp_le`: the product of the characteristic
-  functions of one row is close to `exp (-t² / 2)`, with an explicit error.
+  functions of one row with variance sum `V` is close to `exp (-t² V / 2)`, with an explicit error.
 * `ProbabilityTheory.HasLaw.tendstoInDistribution_sum_of_lindeberg`: the Lindeberg–Feller theorem
-  (sufficiency direction).
+  for any limiting variance `v : ℝ≥0` (sufficiency direction).
 * `ProbabilityTheory.HasLaw.tendstoInDistribution_sum_sub_div_sqrt_of_abs_sub_le`: the central
   limit theorem for uniformly bounded independent summands with diverging variance.
 
 ## Implementation notes
 
 The proof goes through characteristic functions and Lévy's continuity theorem, as in Mathlib's
-`ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum`. Writing `σᵢ² = E[X n i ^ 2]`, each
-factor `φ_{X n i} t` is compared with `exp (-t² σᵢ² / 2)` rather than with `1 - t² σᵢ² / 2`:
-both have norm at most `1`, and the product of the Gaussian factors is exactly `exp (-t² / 2)`
-because the variances sum to `1`. The error `(t² σᵢ² / 2) ^ 2 / 2` from `exp (-u) ≈ 1 - u` is
-summed using `σᵢ² ≤ ε² + E[X n i ^ 2; ε ≤ |X n i|]`, so the intermediate statement
-`maxᵢ σᵢ² → 0` is never needed separately.
+`ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum`. Writing `σᵢ² = E[X n i ^ 2]` and
+`Vₙ = ∑ i, σᵢ²`, each factor `φ_{X n i} t` is compared with `exp (-t² σᵢ² / 2)` rather than with
+`1 - t² σᵢ² / 2`: both have norm at most `1`, and the product of the Gaussian factors is
+`exp (-t² Vₙ / 2)`, which converges to `exp (-t² v / 2)` as `Vₙ → v`. The error
+`(t² σᵢ² / 2) ^ 2 / 2` from `exp (-u) ≈ 1 - u` is summed using
+`σᵢ² ≤ ε² + E[X n i ^ 2; ε ≤ |X n i|]`, so the intermediate statement `maxᵢ σᵢ² → 0` is never
+needed separately.
 
 ## References
 
@@ -79,7 +81,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped Real Topology
+open scoped Real Topology NNReal
 
 namespace MeasureTheory
 
@@ -160,73 +162,85 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsProbabilityMeasure P]
 
-/-- Row estimate for the Lindeberg–Feller theorem: for a finite family of centred
-square-integrable random variables whose second moments sum to `1`, the product of their
-characteristic functions is within `|t|³ ε / 6 + (t² + t⁴ / 8) Lε + t⁴ ε² / 8` of
-`exp (-t² / 2)`, where `Lε = ∑ i, E[Y i ²; ε ≤ |Y i|]` is the Lindeberg sum. -/
-theorem norm_prod_charFun_sub_exp_le {ι : Type*} [Fintype ι] {Y : ι → Ω → ℝ}
-    (hL2 : ∀ i, MemLp (Y i) 2 P) (h0 : ∀ i, P[Y i] = 0)
-    (hvar : ∑ i, ∫ ω, Y i ω ^ 2 ∂P = 1) (t : ℝ) {ε : ℝ} (hε : 0 ≤ ε) :
-    ‖∏ i, charFun (P.map (Y i)) t - (Real.exp (-(t ^ 2 / 2)) : ℂ)‖ ≤
-      |t| ^ 3 * ε / 6 + (t ^ 2 + t ^ 4 / 8) *
-        (∑ i, ∫ ω, ({ω | ε ≤ |Y i ω|}.indicator fun ω ↦ Y i ω ^ 2) ω ∂P) +
-        t ^ 4 / 8 * ε ^ 2 := by
+/-- Nonnegative-threshold case of `norm_prod_charFun_sub_exp_le`. -/
+private theorem norm_prod_charFun_sub_exp_le_of_nonneg {ι : Type*} [Fintype ι] {Y : ι → Ω → ℝ}
+    (hL2 : ∀ i, MemLp (Y i) 2 P) (h0 : ∀ i, P[Y i] = 0) (t : ℝ) {ε : ℝ} (hε : 0 ≤ ε) :
+    ‖∏ i, charFun (P.map (Y i)) t -
+        (Real.exp (-(t ^ 2 * (∑ i, ∫ ω, Y i ω ^ 2 ∂P) / 2)) : ℂ)‖ ≤
+      (|t| ^ 3 * ε / 6 + t ^ 4 / 8 * ε ^ 2) * (∑ i, ∫ ω, Y i ω ^ 2 ∂P) +
+        (t ^ 2 + t ^ 4 / 8 * (∑ i, ∫ ω, Y i ω ^ 2 ∂P)) *
+          (∑ i, ∫ ω, ({ω | ε ≤ |Y i ω|}.indicator fun ω ↦ Y i ω ^ 2) ω ∂P) := by
   set σ : ι → ℝ := fun i ↦ ∫ ω, Y i ω ^ 2 ∂P
+  set V : ℝ := ∑ i, σ i
   set Li : ι → ℝ := fun i ↦ ∫ ω, ({ω | ε ≤ |Y i ω|}.indicator fun ω ↦ Y i ω ^ 2) ω ∂P
   set L : ℝ := ∑ i, Li i
-  have hσ0 : ∀ i, 0 ≤ σ i := fun i ↦ integral_nonneg fun ω ↦ sq_nonneg _
-  have hLi0 : ∀ i, 0 ≤ Li i := fun i ↦
-    integral_nonneg fun ω ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _
-  have hLiL : ∀ i, Li i ≤ L := fun i ↦
-    Finset.single_le_sum (fun j _ ↦ hLi0 j) (Finset.mem_univ i)
-  have hσL : ∀ i, σ i ≤ ε ^ 2 + L := fun i ↦
-    ((hL2 i).integral_sq_le_sq_add_integral_indicator ε).trans (by linarith [hLiL i])
-  -- the Gaussian factor splits as a product over the row
-  have hprod : (Real.exp (-(t ^ 2 / 2)) : ℂ) =
+  have hσ0 (i : ι) : 0 ≤ σ i := integral_nonneg fun _ ↦ sq_nonneg _
+  have hLi0 (i : ι) : 0 ≤ Li i :=
+    integral_nonneg fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _
+  have hσL (i : ι) : σ i ≤ ε ^ 2 + L :=
+    ((hL2 i).integral_sq_le_sq_add_integral_indicator ε).trans
+      (by linarith [Finset.single_le_sum (fun j _ ↦ hLi0 j) (Finset.mem_univ i)])
+  have hprod : (Real.exp (-(t ^ 2 * V / 2)) : ℂ) =
       ∏ i, ((Real.exp (-(t ^ 2 * σ i / 2)) : ℝ) : ℂ) := by
     rw [← Complex.ofReal_prod, ← Real.exp_sum]
     congr 2
-    rw [Finset.sum_neg_distrib, ← Finset.sum_div, ← Finset.mul_sum, hvar, mul_one]
+    rw [Finset.sum_neg_distrib, ← Finset.sum_div, ← Finset.mul_sum]
   rw [hprod]
-  refine (norm_prod_sub_prod_le_sum_norm_sub _ (fun i _ ↦ ?_) (fun i _ ↦ ?_)).trans ?_
-  · exact norm_charFun_le_one t
+  refine (norm_prod_sub_prod_le_sum_norm_sub _ (fun _ _ ↦ norm_charFun_le_one t)
+    (fun i _ ↦ ?_)).trans ?_
   · rw [Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_le_one_iff]
-    have := hσ0 i
-    nlinarith [sq_nonneg t]
-  -- termwise: compare each factor with `1 - t² σᵢ / 2`, then with the Gaussian factor
-  have hterm : ∀ i, ‖charFun (P.map (Y i)) t - ((Real.exp (-(t ^ 2 * σ i / 2)) : ℝ) : ℂ)‖ ≤
+    nlinarith [hσ0 i, sq_nonneg t]
+  have hterm (i : ι) : ‖charFun (P.map (Y i)) t - ((Real.exp (-(t ^ 2 * σ i / 2)) : ℝ) : ℂ)‖ ≤
       |t| ^ 3 * ε / 6 * σ i + t ^ 2 * Li i + t ^ 4 / 8 * (ε ^ 2 + L) * σ i := by
-    intro i
     have h1 := (hL2 i).norm_charFun_sub_one_sub_le (h0 i) t hε
-    have hu : 0 ≤ t ^ 2 * σ i / 2 := by have := hσ0 i; positivity
-    have h2 : |Real.exp (-(t ^ 2 * σ i / 2)) - (1 - t ^ 2 * σ i / 2)| ≤
-        (t ^ 2 * σ i / 2) ^ 2 / 2 := by
-      have hlo := Real.add_one_le_exp (-(t ^ 2 * σ i / 2))
-      have hhi := Real.exp_le_one_add_add_sq_div_two_of_nonpos (x := -(t ^ 2 * σ i / 2))
-        (by linarith)
-      rw [abs_of_nonneg (by linarith)]
-      nlinarith
+    have hlo := Real.add_one_le_exp (-(t ^ 2 * σ i / 2))
+    have hhi := Real.exp_le_one_add_add_sq_div_two_of_nonpos
+      (x := -(t ^ 2 * σ i / 2)) (by nlinarith [hσ0 i, sq_nonneg t])
     have h3 : ‖((1 - t ^ 2 * σ i / 2 : ℝ) : ℂ) - ((Real.exp (-(t ^ 2 * σ i / 2)) : ℝ) : ℂ)‖ ≤
         (t ^ 2 * σ i / 2) ^ 2 / 2 := by
-      rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, abs_sub_comm]
-      exact h2
-    have h4 : (t ^ 2 * σ i / 2) ^ 2 / 2 ≤ t ^ 4 / 8 * (ε ^ 2 + L) * σ i := by
-      have h5 : σ i * σ i ≤ (ε ^ 2 + L) * σ i := mul_le_mul_of_nonneg_right (hσL i) (hσ0 i)
-      have ht4 : 0 ≤ t ^ 4 := by positivity
+      rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, abs_sub_comm,
+        abs_of_nonneg (by linarith)]
       nlinarith
-    calc ‖charFun (P.map (Y i)) t - ((Real.exp (-(t ^ 2 * σ i / 2)) : ℝ) : ℂ)‖
-        ≤ ‖charFun (P.map (Y i)) t - (1 - t ^ 2 * σ i / 2)‖ +
+    have h4 : (t ^ 2 * σ i / 2) ^ 2 / 2 ≤ t ^ 4 / 8 * (ε ^ 2 + L) * σ i := by
+      rw [(by ring : (t ^ 2 * σ i / 2) ^ 2 / 2 = t ^ 4 / 8 * σ i * σ i)]
+      exact mul_le_mul_of_nonneg_right
+        (mul_le_mul_of_nonneg_left (hσL i) (by positivity)) (hσ0 i)
+    have htri : ‖charFun (P.map (Y i)) t - ((Real.exp (-(t ^ 2 * σ i / 2)) : ℝ) : ℂ)‖ ≤
+        ‖charFun (P.map (Y i)) t - (1 - t ^ 2 * σ i / 2)‖ +
           ‖((1 - t ^ 2 * σ i / 2 : ℝ) : ℂ) - ((Real.exp (-(t ^ 2 * σ i / 2)) : ℝ) : ℂ)‖ := by
-          refine (norm_sub_le_norm_sub_add_norm_sub _
-            ((1 - t ^ 2 * σ i / 2 : ℝ) : ℂ) _).trans_eq ?_
-          push_cast
-          rfl
-      _ ≤ _ := by
-          linarith
+      have hcast : ((1 - t ^ 2 * σ i / 2 : ℝ) : ℂ) = 1 - (t : ℂ) ^ 2 * (σ i : ℂ) / 2 := by
+        simp only [Complex.ofReal_sub, Complex.ofReal_one, Complex.ofReal_div, Complex.ofReal_mul,
+          Complex.ofReal_pow, Complex.ofReal_ofNat]
+      rw [← hcast]
+      exact norm_sub_le_norm_sub_add_norm_sub _ _ _
+    linarith
   refine (Finset.sum_le_sum fun i _ ↦ hterm i).trans (le_of_eq ?_)
   simp only [Finset.sum_add_distrib, ← Finset.mul_sum]
-  rw [hvar]
   ring
+
+/-- Row estimate for the Lindeberg–Feller theorem: for a finite family of centred
+square-integrable random variables with variance sum `V = ∑ i, E[Y i ²]`, the product of their
+characteristic functions is within
+`(|t|³ |ε| / 6 + t⁴ ε² / 8) V + (t² + t⁴ V / 8) Lε` of `exp (-t² V / 2)`, where
+`Lε = ∑ i, E[Y i ²; ε ≤ |Y i|]` is the Lindeberg sum. -/
+theorem norm_prod_charFun_sub_exp_le {ι : Type*} [Fintype ι] {Y : ι → Ω → ℝ}
+    (hL2 : ∀ i, MemLp (Y i) 2 P) (h0 : ∀ i, P[Y i] = 0) (t ε : ℝ) :
+    ‖∏ i, charFun (P.map (Y i)) t -
+        (Real.exp (-(t ^ 2 * (∑ i, ∫ ω, Y i ω ^ 2 ∂P) / 2)) : ℂ)‖ ≤
+      (|t| ^ 3 * |ε| / 6 + t ^ 4 / 8 * ε ^ 2) * (∑ i, ∫ ω, Y i ω ^ 2 ∂P) +
+        (t ^ 2 + t ^ 4 / 8 * (∑ i, ∫ ω, Y i ω ^ 2 ∂P)) *
+          (∑ i, ∫ ω, ({ω | ε ≤ |Y i ω|}.indicator fun ω ↦ Y i ω ^ 2) ω ∂P) := by
+  rcases le_or_gt 0 ε with hε | hε
+  · simpa only [abs_of_nonneg hε] using norm_prod_charFun_sub_exp_le_of_nonneg hL2 h0 t hε
+  · have hset (i : ι) : {ω | ε ≤ |Y i ω|} = {ω | 0 ≤ |Y i ω|} := by
+      ext ω; simp [hε.le.trans (abs_nonneg _)]
+    have h0_bound := norm_prod_charFun_sub_exp_le_of_nonneg hL2 h0 t (le_refl (0 : ℝ))
+    simp_rw [← hset] at h0_bound
+    have : 0 ≤ ∑ i, ∫ ω, Y i ω ^ 2 ∂P :=
+      Finset.sum_nonneg fun i _ ↦ integral_nonneg fun _ ↦ sq_nonneg _
+    have hextra : 0 ≤ (|t| ^ 3 * |ε| / 6 + t ^ 4 / 8 * ε ^ 2) * (∑ i, ∫ ω, Y i ω ^ 2 ∂P) := by
+      positivity
+    linarith
 
 end TauCeti.Probability
 
@@ -239,19 +253,73 @@ variable {Ω : ℕ → Type*} {mΩ : ∀ n, MeasurableSpace (Ω n)} {P : (n : �
   {Ω' : Type*} {mΩ' : MeasurableSpace Ω'} {P' : Measure Ω'} [IsProbabilityMeasure P']
   {Y : Ω' → ℝ}
 
+/-- Under boundedness of row variance sums `V n → v` and the Lindeberg condition, the difference
+between the row characteristic-function product and `exp (-t² V n / 2)` tends to `0`. -/
+private theorem tendsto_prod_charFun_sub_exp_zero {ι : ℕ → Type*} [∀ n, Fintype (ι n)]
+    {X : (n : ℕ) → ι n → Ω n → ℝ} {v : ℝ≥0}
+    (hL2 : ∀ n i, MemLp (X n i) 2 (P n))
+    (h0 : ∀ n i, (P n)[X n i] = 0)
+    (hV : Tendsto (fun n ↦ ∑ i, ∫ ω, X n i ω ^ 2 ∂(P n)) atTop (𝓝 (v : ℝ)))
+    (hlind : ∀ ε > 0, Tendsto
+      (fun n ↦ ∑ i, (P n)[{ω | ε ≤ |X n i ω|}.indicator (fun ω ↦ X n i ω ^ 2)]) atTop (𝓝 0))
+    (t : ℝ) :
+    Tendsto (fun n ↦ ∏ i, charFun ((P n).map (X n i)) t -
+      (Real.exp (-(t ^ 2 * (∑ i, ∫ ω, X n i ω ^ 2 ∂(P n)) / 2)) : ℂ)) atTop (𝓝 0) := by
+  set V : ℕ → ℝ := fun n ↦ ∑ i, ∫ ω, X n i ω ^ 2 ∂(P n)
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  set M : ℝ := (v : ℝ) + 1
+  set C : ℝ := (|t| ^ 3 + t ^ 4) * M + t ^ 2 + t ^ 4 * M
+  have hC0 : 0 ≤ C := by positivity
+  refine Metric.tendsto_nhds.2 fun δ hδ ↦ ?_
+  set ε := min 1 (δ / (2 * (C + 1)))
+  have hε0 : 0 < ε := lt_min one_pos (by positivity)
+  have hCε : C * ε < δ / 2 := by
+    calc C * ε ≤ C * (δ / (2 * (C + 1))) := mul_le_mul_of_nonneg_left (min_le_right _ _) hC0
+      _ < δ / 2 := by
+        rw [mul_div_assoc', div_lt_div_iff₀ (by positivity) two_pos]; nlinarith
+  have hLC := (hlind ε hε0).const_mul C
+  rw [mul_zero] at hLC
+  filter_upwards [hLC (Iio_mem_nhds (half_pos hδ)), hV (Iio_mem_nhds (lt_add_one (v : ℝ)))]
+    with n hn hVn
+  have hn' : C * ∑ i, (P n)[{ω | ε ≤ |X n i ω|}.indicator (fun ω ↦ X n i ω ^ 2)] < δ / 2 := hn
+  have hVn' : V n < M := hVn
+  have hV0 : 0 ≤ V n := Finset.sum_nonneg fun i _ ↦ integral_nonneg fun _ ↦ sq_nonneg _
+  have hL0 : 0 ≤ ∑ i, ∫ ω, ({ω | ε ≤ |X n i ω|}.indicator fun ω ↦ X n i ω ^ 2) ω ∂(P n) :=
+    Finset.sum_nonneg fun i _ ↦
+      integral_nonneg fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _
+  have hε2 : ε ^ 2 ≤ ε := by nlinarith [min_le_left 1 (δ / (2 * (C + 1)))]
+  rw [sub_zero, Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _)]
+  have hrow := norm_prod_charFun_sub_exp_le (hL2 n) (h0 n) t ε
+  rw [abs_of_nonneg hε0.le] at hrow
+  refine hrow.trans_lt ?_
+  have h1 : (|t| ^ 3 * ε / 6 + t ^ 4 / 8 * ε ^ 2) * V n ≤ (|t| ^ 3 + t ^ 4) * M * ε := by
+    have : |t| ^ 3 * ε / 6 + t ^ 4 / 8 * ε ^ 2 ≤ (|t| ^ 3 + t ^ 4) * ε := by
+      nlinarith [mul_le_mul_of_nonneg_left hε2 (by positivity : 0 ≤ t ^ 4),
+        (by positivity : 0 ≤ |t| ^ 3 * ε), (by positivity : 0 ≤ t ^ 4 * ε)]
+    nlinarith [mul_le_mul this hVn'.le hV0 (by positivity)]
+  have h2 : (t ^ 2 + t ^ 4 / 8 * V n) *
+      (∑ i, ∫ ω, ({ω | ε ≤ |X n i ω|}.indicator fun ω ↦ X n i ω ^ 2) ω ∂(P n)) ≤
+      (t ^ 2 + t ^ 4 * M) *
+        (∑ i, ∫ ω, ({ω | ε ≤ |X n i ω|}.indicator fun ω ↦ X n i ω ^ 2) ω ∂(P n)) := by
+    refine mul_le_mul_of_nonneg_right ?_ hL0
+    nlinarith [mul_le_mul_of_nonneg_left hVn'.le (by positivity : 0 ≤ t ^ 4),
+      (by positivity : 0 ≤ t ^ 4 * M)]
+  nlinarith [mul_nonneg (by positivity : 0 ≤ (|t| ^ 3 + t ^ 4) * M) hL0,
+    mul_nonneg (by positivity : 0 ≤ t ^ 2 + t ^ 4 * M) hε0.le]
+
 /-- **Lindeberg–Feller central limit theorem** (sufficiency direction). Let `X n i`, `i : ι n`,
 be a triangular array of real random variables, the `n`th row on its own probability space
 `(Ω n, P n)`. Suppose the rows are independent, centred and square integrable, with row variances
-summing to `1` for all large `n`. If the Lindeberg condition
-`∑ i, E[X n i ^ 2; ε ≤ |X n i|] → 0` holds for every `ε > 0`, then the row sums converge in
-distribution to a standard Gaussian random variable `Y`. -/
+converging to `v : ℝ≥0`. If the Lindeberg condition `∑ i, E[X n i ^ 2; ε ≤ |X n i|] → 0` holds for
+every `ε > 0`, then the row sums converge in distribution to any random variable `Y` with law
+`gaussianReal 0 v`. -/
 theorem HasLaw.tendstoInDistribution_sum_of_lindeberg {ι : ℕ → Type*} [∀ n, Fintype (ι n)]
-    {X : (n : ℕ) → ι n → Ω n → ℝ}
-    (hY : HasLaw Y (gaussianReal 0 1) P')
+    {X : (n : ℕ) → ι n → Ω n → ℝ} {v : ℝ≥0}
+    (hY : HasLaw Y (gaussianReal 0 v) P')
     (hindep : ∀ n, iIndepFun (X n) (P n))
     (hL2 : ∀ n i, MemLp (X n i) 2 (P n))
     (h0 : ∀ n i, (P n)[X n i] = 0)
-    (hvar : ∀ᶠ n in atTop, ∑ i, Var[X n i; P n] = 1)
+    (hvar : Tendsto (fun n ↦ ∑ i, Var[X n i; P n]) atTop (𝓝 (v : ℝ)))
     (hlind : ∀ ε > 0, Tendsto
       (fun n ↦ ∑ i, (P n)[{ω | ε ≤ |X n i ω|}.indicator (fun ω ↦ X n i ω ^ 2)]) atTop (𝓝 0)) :
     TendstoInDistribution (fun n ω ↦ ∑ i, X n i ω) atTop Y P P' where
@@ -259,51 +327,23 @@ theorem HasLaw.tendstoInDistribution_sum_of_lindeberg {ι : ℕ → Type*} [∀ 
     Finset.aemeasurable_fun_sum _ fun i _ ↦ (hL2 n i).aestronglyMeasurable.aemeasurable
   tendsto := by
     have hm n i : AEMeasurable (X n i) (P n) := (hL2 n i).aestronglyMeasurable.aemeasurable
-    have hvar' n (hn : ∑ i, Var[X n i; P n] = 1) : ∑ i, ∫ ω, X n i ω ^ 2 ∂(P n) = 1 := by
-      rw [← hn]
-      exact Finset.sum_congr rfl fun i _ ↦ (variance_of_integral_eq_zero (hm n i) (h0 n i)).symm
-    -- Lévy's continuity theorem reduces the claim to pointwise convergence of the
-    -- characteristic functions, which factor over each independent row
+    set V : ℕ → ℝ := fun n ↦ ∑ i, ∫ ω, X n i ω ^ 2 ∂(P n)
+    have hV : Tendsto V atTop (𝓝 (v : ℝ)) := hvar.congr fun n ↦
+      Finset.sum_congr rfl fun i _ ↦ variance_of_integral_eq_zero (hm n i) (h0 n i)
     refine ProbabilityMeasure.tendsto_iff_tendsto_charFun.2 fun t ↦ ?_
     rw! [hY.map_eq]
     have key n : charFun ((P n).map fun ω ↦ ∑ i, X n i ω) t =
         ∏ i, charFun ((P n).map (X n i)) t := by
       rw [(hindep n).charFun_map_fun_sum_eq_prod (hm n), Finset.prod_apply]
-    have hG : charFun (gaussianReal 0 1) t = ((Real.exp (-(t ^ 2 / 2)) : ℝ) : ℂ) := by
-      rw [charFun_gaussianReal]
-      push_cast
-      ring_nf
+    have hG : charFun (gaussianReal 0 v) t = ((Real.exp (-(t ^ 2 * (v : ℝ) / 2)) : ℝ) : ℂ) := by
+      rw [charFun_gaussianReal]; push_cast; ring_nf
     simp only [ProbabilityMeasure.coe_mk, key, hG]
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    -- for `0 < ε ≤ 1` the row estimate is at most `C ε + C Lₙ(ε)`; choose `ε` with `C ε < δ / 2`
-    -- and wait until `C Lₙ(ε) < δ / 2`
-    set C : ℝ := |t| ^ 3 + 3 * t ^ 2 + t ^ 4
-    have hC0 : 0 ≤ C := by positivity
-    refine Metric.tendsto_nhds.2 fun δ hδ ↦ ?_
-    set ε := min 1 (δ / (2 * (C + 1)))
-    have hε0 : 0 < ε := lt_min one_pos (by positivity)
-    have hε1 : ε ≤ 1 := min_le_left _ _
-    have hCε : C * ε < δ / 2 := by
-      calc C * ε ≤ C * (δ / (2 * (C + 1))) := mul_le_mul_of_nonneg_left (min_le_right _ _) hC0
-        _ < δ / 2 := by
-          rw [mul_div_assoc', div_lt_div_iff₀ (by positivity) two_pos]
-          nlinarith
-    have hLC := (hlind ε hε0).const_mul C
-    rw [mul_zero] at hLC
-    filter_upwards [hLC (Iio_mem_nhds (half_pos hδ)), hvar] with n hn hvn
-    have hn' : C * ∑ i, (P n)[{ω | ε ≤ |X n i ω|}.indicator (fun ω ↦ X n i ω ^ 2)] < δ / 2 :=
-      hn
-    rw [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _)]
-    refine (norm_prod_charFun_sub_exp_le (hL2 n) (h0 n) (hvar' n hvn) t hε0.le).trans_lt ?_
-    have hL0 : 0 ≤ ∑ i, ∫ ω, ({ω | ε ≤ |X n i ω|}.indicator fun ω ↦ X n i ω ^ 2) ω ∂(P n) :=
-      Finset.sum_nonneg fun i _ ↦
-        integral_nonneg fun ω ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _
-    have hε2 : ε ^ 2 ≤ ε := by nlinarith
-    have ht3 : 0 ≤ |t| ^ 3 := by positivity
-    have ht2 : 0 ≤ t ^ 2 := by positivity
-    have ht4 : 0 ≤ t ^ 4 := by positivity
-    nlinarith [mul_le_mul_of_nonneg_left hε2 ht4, mul_nonneg ht2 hL0, mul_nonneg ht3 hL0,
-      mul_nonneg ht4 hL0, mul_nonneg ht3 hε0.le, mul_nonneg ht4 hε0.le]
+    have hG_lim : Tendsto (fun n ↦ ((Real.exp (-(t ^ 2 * V n / 2)) : ℝ) : ℂ)) atTop
+        (𝓝 ((Real.exp (-(t ^ 2 * (v : ℝ) / 2)) : ℝ) : ℂ)) :=
+      ((Complex.continuous_ofReal.comp (Real.continuous_exp.comp
+        (((continuous_const.mul continuous_id).div_const 2).neg))).tendsto _).comp hV
+    simpa only [V, sub_add_cancel, zero_add] using
+      (tendsto_prod_charFun_sub_exp_zero hL2 h0 hV hlind t).add hG_lim
 
 /-- **Central limit theorem for bounded summands with diverging variance.** Let the rows of the
 triangular array `X n i`, `i : ι n`, be independent, the `n`th row on its own probability space
@@ -331,21 +371,16 @@ theorem HasLaw.tendstoInDistribution_sum_sub_div_sqrt_of_abs_sub_le {ι : ℕ �
     MemLp.of_bound ((hm n i).sub_const _).aestronglyMeasurable C
       ((hC n i).mono fun ω h ↦ by rwa [Real.norm_eq_abs])
   have hL2 n i : MemLp (X n i) 2 (P n) := by
-    convert (hcL2 n i).add (memLp_const ((P n)[X n i])) using 1
-    ext ω
-    simp
+    convert (hcL2 n i).add (memLp_const ((P n)[X n i])) using 1; ext ω; simp
   -- the normalised array
   set Z : (n : ℕ) → ι n → Ω n → ℝ := fun n i ω ↦ (X n i ω - (P n)[X n i]) / s n with hZ
   have hsum : (fun n ω ↦ (∑ i, (X n i ω - (P n)[X n i])) / √(∑ i, Var[X n i; P n])) =
-      fun n ω ↦ ∑ i, Z n i ω := by
-    ext n ω
-    simp only [hZ, hs, Finset.sum_div]
+      fun n ω ↦ ∑ i, Z n i ω := by ext n ω; simp only [hZ, hs, Finset.sum_div]
   rw [hsum]
   have hZL2 n i : MemLp (Z n i) 2 (P n) := by
     simpa only [hZ, div_eq_mul_inv] using (hcL2 n i).mul_const (s n)⁻¹
   have hZ0 n i : (P n)[Z n i] = 0 := by
-    simp only [hZ]
-    rw [integral_div, integral_sub ((hL2 n i).integrable one_le_two) (integrable_const _)]
+    rw [hZ, integral_div, integral_sub ((hL2 n i).integrable one_le_two) (integrable_const _)]
     simp
   have hs_top : Tendsto s atTop atTop := Real.tendsto_sqrt_atTop.comp hvar
   have hZindep n : iIndepFun (Z n) (P n) := by
@@ -354,11 +389,13 @@ theorem HasLaw.tendstoInDistribution_sum_sub_div_sqrt_of_abs_sub_le {ι : ℕ �
     simpa only [hZ, Function.comp_def] using h
   refine hY.tendstoInDistribution_sum_of_lindeberg hZindep hZL2 hZ0 ?_ fun ε hε ↦ ?_
   · -- the normalised row variances are eventually `1`
+    rw [NNReal.coe_one]
+    refine tendsto_const_nhds.congr' ?_
     filter_upwards [hvar.eventually_gt_atTop 0] with n hn
+    symm
     have hVZ i : Var[Z n i; P n] = Var[X n i; P n] / s n ^ 2 := by
       simp only [hZ, div_eq_mul_inv, variance_mul_const,
-        variance_sub_const (hm n i).aestronglyMeasurable]
-      rw [inv_pow]
+        variance_sub_const (hm n i).aestronglyMeasurable, inv_pow]
     simp only [hVZ, ← Finset.sum_div, hs, Real.sq_sqrt hn.le]
     exact div_self hn.ne'
   · -- the Lindeberg sum vanishes once `C / s n < ε`

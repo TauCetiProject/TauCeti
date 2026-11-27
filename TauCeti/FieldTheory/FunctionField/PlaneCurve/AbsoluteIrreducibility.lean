@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.PlaneCurve.ConstantField
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
-import TauCeti.Algebra.Polynomial.Bivariate
+import TauCeti.Algebra.Polynomial.Bivariate.Basic
 
 /-!
 # Exact constants and absolute irreducibility of plane equations

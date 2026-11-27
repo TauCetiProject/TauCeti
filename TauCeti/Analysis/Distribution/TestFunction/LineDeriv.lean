@@ -6,9 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import Mathlib.Analysis.Calculus.Gradient.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
 # Directional derivatives of test functions
@@ -19,9 +24,13 @@ derivatives of a test function commute, `∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v}
 derivative of a smooth function is symmetric. Moving derivatives between the two sides of an
 integration-by-parts identity uses exactly this, for instance to show that weak derivatives
 commute. Summing over an orthonormal basis, the Laplacian of a test function commutes with every
-directional derivative. Finally, a test function on `Ω` times a function smooth on `Ω` is again a
-test function, with the classical product rule for its directional derivatives; this is what lets
-a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
+directional derivative. Finally, a test function `φ` on `Ω` times a function `g` differentiable on
+`Ω` obeys the classical product rule for its directional derivatives; with
+`TestFunction.exists_coe_eq_smul_of_contDiffOn`, which makes `g φ` a test function, this is what
+lets a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`. On a real inner
+product space, the directional derivative of a scalar test function is the pairing with its
+gradient, and the product of a scalar test function with a smooth function supported in `Ω` is a
+test function on `Ω` whose gradient obeys the product rule.
 
 ## Main declarations
 
@@ -37,23 +46,29 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   of `φ`.
 * `TestFunction.coe_iterate_lineDerivOp_one`: repeated derivatives on the real line agree with
   the iterates of the ordinary derivative.
+* `TestFunction.im_lineDerivOp_ofReal_apply_ofReal`: in the plane, a derivative along a real
+  direction of a complex test function real on the real axis is real there.
 * `TestFunction.lineDeriv_eq_fderiv`: the classical directional derivative of a test function is
   its Fréchet derivative in that direction.
 * `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
   by a continuous linear map.
 * `TestFunction.iteratedLineDerivOp_postcompCLM`: so do iterated directional derivatives.
+* `TestFunction.lineDerivCLM_lineDerivCLM_apply`: `∂_{v} (∂_{w} φ) x = D²φ(x) v w`.
+* `TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv`: an iterated directional derivative
+  is the iterated Fréchet derivative evaluated on the directions.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
   directional derivatives.
-* `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a test function on `Ω` with a
-  function smooth on `Ω` is a test function on `Ω`.
-* `TestFunction.lineDeriv_fun_smul_of_differentiableOn`: its directional derivatives obey the
-  product rule.
+* `TestFunction.lineDeriv_fun_smul_of_differentiableOn`: the product of a test function on `Ω`
+  with a function differentiable on `Ω` obeys the product rule.
 * `TestFunction.laplacianCLM_apply`: the test-function Laplacian agrees pointwise with the
   classical Laplacian.
 * `TestFunction.integrable_laplacian_smul`: `x ↦ Δφ(x) • u x` is integrable when `u` is locally
   integrable on `Ω`.
+* `TestFunction.lineDerivCLM_apply_eq_inner`: `∂_{v} φ x = ⟪v, ∇φ x⟫` for a scalar test function.
+* `TauCeti.exists_testFunction_mul`: for `ζ` smooth with `tsupport ζ ⊆ Ω`, the product `ζ φ` is a
+  test function on `Ω` with gradient `ζ ∇φ + φ ∇ζ`.
 -/
 
 public section
@@ -70,6 +85,17 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 @[simp]
 theorem lineDerivOp_apply (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = lineDeriv ℝ φ x v :=
   lineDerivCLM_apply_of_le le_top
+
+/-- The derivative of the restriction `t ↦ ψ (y + t • e)` of a test function to a line is the
+directional derivative of `ψ` along the line. This holds at every smoothness `n` and for every
+codomain, with both sides `0` when the restriction `s ↦ ψ (y + s • e)` is not differentiable at
+`t`. -/
+@[simp]
+theorem deriv_lineTestFunction {n : ℕ∞} (ψ : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0) (t : ℝ) :
+    deriv (ψ.lineTestFunction y e he) t = lineDeriv ℝ ψ (y + t • e) e := by
+  rw [show ⇑(ψ.lineTestFunction y e he) = fun s : ℝ => ψ (y + s • e) from
+    funext (lineTestFunction_apply ψ y e he)]
+  exact TauCeti.deriv_comp_add_smul_eq_lineDeriv (ψ : E → F) y e t
 
 /-- The directional derivative of a test function is its Fréchet derivative applied to the
 direction. -/
@@ -124,6 +150,22 @@ theorem coe_iterate_lineDerivOp_one {Ω : Opens ℝ} (φ : 𝓓(Ω, F)) (n : ℕ
     rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
     exact (funext (lineDerivOp_one_apply_eq_deriv _)).trans (congrArg deriv ih)
 
+/-- In the plane, the derivative along a real direction of a complex test function real on the
+real axis is real on the real axis. -/
+theorem im_lineDerivOp_ofReal_apply_ofReal {Ω : Opens ℂ} (φ : 𝓓(Ω, ℂ))
+    (hφ : ∀ x : ℝ, (φ (x : ℂ)).im = 0) (v x : ℝ) :
+    ((∂_{(v : ℂ)} φ : 𝓓(Ω, ℂ)) (x : ℂ)).im = 0 := by
+  rw [lineDerivOp_apply_eq_fderiv]
+  have hd : HasFDerivAt (φ : ℂ → ℂ) (fderiv ℝ (φ : ℂ → ℂ) x) x :=
+    (φ.contDiff.differentiable (by simp) x).hasFDerivAt
+  have hγ : HasDerivAt (fun t : ℝ ↦ ((x + t * v : ℝ) : ℂ)) v 0 := by
+    simpa using (((hasDerivAt_id (0 : ℝ)).mul_const v).const_add x).ofReal_comp
+  have him := Complex.imCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ)
+    (hd.comp_hasDerivAt_of_eq (0 : ℝ) hγ (by simp))
+  have h0 := him.unique ((hasDerivAt_const (0 : ℝ) (0 : ℝ)).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun t ↦ by simpa using hφ (x + t * v)))
+  simpa using h0
+
 /-- The underlying function of a directional derivative of a test function is its classical
 directional derivative. -/
 @[simp]
@@ -169,6 +211,19 @@ theorem iteratedLineDerivOp_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 
     rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, ih,
       lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivCLM_postcompCLM]
 
+/-- An iterated directional derivative of a test function is its iterated Fréchet derivative
+evaluated on the directions. This is the test-function counterpart of Mathlib's
+`SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv`, with the same proof. -/
+theorem iteratedLineDerivOp_apply_eq_iteratedFDeriv (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
+    (x : E) : ∂^{m} φ x = iteratedFDeriv ℝ k φ x m := by
+  induction k generalizing x with
+  | zero => simp
+  | succ k ih =>
+    rw [iteratedLineDerivOp_succ_left, lineDerivOp_apply_eq_fderiv, iteratedFDeriv_succ_apply_left,
+      ← fderiv_continuousMultilinear_apply_const_apply
+        ((φ.contDiff.differentiable_iteratedFDeriv (mod_cast ENat.natCast_lt_top k)) x)]
+    simp only [funext (ih (Fin.tail m))]
+
 /-- Iterated directional derivatives of a test function agree with its iterated Fréchet
 derivatives evaluated in those directions. -/
 theorem lineDeriv_lineDeriv_eq_fderiv_fderiv (φ : 𝓓(Ω, F)) (v w x : E) :
@@ -179,6 +234,18 @@ theorem lineDeriv_lineDeriv_eq_fderiv_fderiv (φ : 𝓓(Ω, F)) (v w x : E) :
   simp_rw [hφ]
   exact (((φ.contDiff.fderiv_right (by simp)).clm_apply contDiff_const).differentiable
     one_ne_zero x).lineDeriv_eq_fderiv
+
+/-- Two directional derivatives of a test function evaluate to its second Fréchet derivative:
+`∂_{v} (∂_{w} φ) x = D²φ(x) v w`. -/
+theorem lineDerivCLM_lineDerivCLM_apply (φ : 𝓓(Ω, F)) (v w x : E) :
+    (lineDerivCLM ℝ v (lineDerivCLM ℝ w φ : 𝓓(Ω, F)) : 𝓓(Ω, F)) x =
+      fderiv ℝ (fderiv ℝ (φ : E → F)) x v w := by
+  have hd : DifferentiableAt ℝ (fderiv ℝ (φ : E → F)) x :=
+    (φ.contDiff.fderiv_right (m := 1) (by simp)).differentiable one_ne_zero x
+  rw [coe_lineDerivCLM, coe_lineDerivCLM]
+  dsimp only
+  rw [lineDeriv_lineDeriv_eq_fderiv_fderiv]
+  simp [fderiv_clm_apply hd (differentiableAt_const _)]
 
 /-- **Directional derivatives of test functions commute.** -/
 theorem lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w : E) : ∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v} φ) := by
@@ -198,22 +265,7 @@ theorem lineDeriv_lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w x : E) :
     lineDeriv ℝ (∂_{v} φ : 𝓓(Ω, F)) x w = lineDeriv ℝ (∂_{w} φ : 𝓓(Ω, F)) x v := by
   rw [← lineDerivOp_apply, ← lineDerivOp_apply, lineDerivOp_comm]
 
-/-! ### Multiplication by a function smooth on `Ω` -/
-
-/-- **A test function times a function smooth on `Ω` is a test function.** If `g` is smooth on
-`Ω`, with no condition off `Ω`, and `φ ∈ 𝓓(Ω, F)`, then `x ↦ g x • φ x` is again a test function
-on `Ω`: it is smooth on `Ω` and vanishes on the open complement of `tsupport φ`, and these two
-open sets cover `E`. -/
-theorem exists_coe_eq_smul_of_contDiffOn {g : E → ℝ} (hg : ContDiffOn ℝ ∞ g Ω) (φ : 𝓓(Ω, F)) :
-    ∃ ψ : 𝓓(Ω, F), ⇑ψ = fun x => g x • φ x := by
-  have hsmooth : ContDiff ℝ ∞ fun x => g x • φ x := by
-    refine contDiff_of_contDiffOn_union_of_isOpen (hg.smul φ.contDiff.contDiffOn)
-      ((contDiffOn_const (c := (0 : F))).congr fun x hx => ?_) ?_ Ω.isOpen
-      (isClosed_tsupport (φ : E → F)).isOpen_compl
-    · simp [image_eq_zero_of_notMem_tsupport (f := (φ : E → F)) hx]
-    · exact Set.eq_univ_of_forall fun x => (em (x ∈ tsupport φ)).imp (φ.tsupport_subset ·) id
-  exact ⟨⟨fun x => g x • φ x, hsmooth, φ.hasCompactSupport.smul_left,
-    (tsupport_smul_subset_right _ _).trans φ.tsupport_subset⟩, rfl⟩
+/-! ### Multiplication by a function differentiable on `Ω` -/
 
 /-- **The product rule for a test function times a function differentiable on `Ω`**:
 `∂_v (g φ) = g ∂_v φ + (∂_v g) φ` at every point of `E`. Off `tsupport φ` both sides vanish, so
@@ -285,3 +337,44 @@ theorem integrable_laplacian_smul [MeasurableSpace E] [OpensMeasurableSpace E] {
   simpa only [laplacianCLM_apply] using (laplacianCLM ℝ E 𝓓(Ω, ℝ) φ).integrable_smul hu
 
 end TestFunction
+
+namespace TestFunction
+
+open TopologicalSpace
+open scoped Distributions Gradient InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {Ω : Opens E}
+
+/-- The directional derivative of a test function along `v` is the pairing of `v` with its
+gradient. -/
+theorem lineDerivCLM_apply_eq_inner (phi : 𝓓(Ω, ℝ)) (v x : E) :
+    (lineDerivCLM (n := ⊤) (k := ⊤) ℝ v phi : E → ℝ) x = ⟪v, ∇ (phi : E → ℝ) x⟫_ℝ := by
+  rw [lineDerivCLM_apply_of_le le_top, real_inner_comm, gradient,
+    InnerProductSpace.toDual_symm_apply,
+    (phi.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
+
+end TestFunction
+
+namespace TauCeti
+
+open TopologicalSpace
+open scoped ContDiff Distributions Gradient InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {Ω : Opens E}
+
+/-- The product `ζ φ` of a test function `φ` with a smooth function `ζ` whose support lies in
+`Ω` is a test function on `Ω`, with gradient `ζ ∇φ + φ ∇ζ`. -/
+theorem exists_testFunction_mul {U : Opens E} {ζ : E → ℝ} (hζ : ContDiff ℝ ∞ ζ)
+    (hts : tsupport ζ ⊆ Ω) (phi : 𝓓(U, ℝ)) :
+    ∃ psi : 𝓓(Ω, ℝ), (psi : E → ℝ) = (fun x => ζ x * phi x) ∧
+      ∀ x, ∇ (psi : E → ℝ) x = ζ x • ∇ (phi : E → ℝ) x + phi x • ∇ ζ x := by
+  refine ⟨⟨fun x => ζ x * phi x, hζ.mul phi.contDiff, phi.hasCompactSupport.mul_left,
+    tsupport_mul_subset_left.trans hts⟩, TestFunction.coe_mk, fun x => ?_⟩
+  rw [TestFunction.coe_mk]
+  apply (InnerProductSpace.toDual ℝ E).injective
+  simp only [toDual_gradient, map_add, map_smul]
+  exact fderiv_fun_mul (hζ.differentiable (by simp) x) (phi.contDiff.differentiable (by simp) x)
+
+end TauCeti

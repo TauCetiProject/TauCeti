@@ -50,6 +50,8 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
   `denom g z ^ (-2)`.
 * `Subgroup.denom_zpow_eq_one_of_dvd`: for a lift `g` of an element of the stabilizer of `z`,
   of order `m`, `denom g z ^ n = 1` whenever `2 * m ∣ n`.
+* `Subgroup.odd_card_stabilizer_of_le_map_of_neg_one_notMem`: a finite point stabilizer that
+  lifts to a subgroup of `SL(2, ℝ)` not containing `-1` has odd order.
 * `Subgroup.discCoordinate_stabilizer_smul` and `Subgroup.discCoordinate_smul_eq_rotation_smul`:
   in the disc coordinate centred at the fixed point, an element of the stabilizer acts by
   multiplication by its derivative, that is, by its rotation.
@@ -61,6 +63,8 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
 * `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of
   `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic, which by
   `Matrix.isElliptic_iff_abs_trace_lt_two` means that its trace has absolute value less than `2`.
+* `Matrix.SpecialLinearGroup.smul_eq_self_iff_of_isElliptic`: an elliptic matrix fixing `w ∈ ℍ`
+  fixes no other point of `ℍ`.
 * `Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self`: a nontrivial
   element of `PSL(2, ℝ)` fixes at most one point of `ℍ`.
 * `Matrix.ProjectiveSpecialLinearGroup.exists_rotation_eq_of_smul_I_eq_I`: the stabilizer of `I`
@@ -349,6 +353,36 @@ theorem coe_stabilizerRotationEquiv (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finit
     ⇑(stabilizerRotationEquiv Γ z) = stabilizerRotation Γ z :=
   (rfl)
 
+/-- **A finite point stabilizer lifting without `-1` has odd order.** If `Γ ≤ PSL(2, ℝ)` lies in
+the image of `Γ' ≤ SL(2, ℝ)` and `-1 ∉ Γ'`, then the stabilizer of `z` in `Γ` has odd order: an
+element of order `2` rotates the disc coordinate by `-1`, so a lift `g ∈ Γ'` has
+`denom g z ^ 2 = -1`, which forces `g ^ 2 = -1`. -/
+theorem odd_card_stabilizer_of_le_map_of_neg_one_notMem {Γ : Subgroup PSL(2, ℝ)} {z : ℍ}
+    {Γ' : Subgroup SL(2, ℝ)} (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))))
+    [Finite (stabilizer Γ z)] (hneg : (-1 : SL(2, ℝ)) ∉ Γ') :
+    Odd (Nat.card (stabilizer Γ z)) := by
+  by_contra hev
+  rw [Nat.not_odd_iff_even] at hev
+  obtain ⟨q, hq⟩ := (stabilizerRotation_bijective Γ z).2
+    ⟨-1, (mem_rootsOfUnity _ _).mpr hev.neg_one_pow⟩
+  obtain ⟨g, hg, hgq⟩ := mem_map.mp (hΓ (q : Γ).property)
+  have hgz : g • z = z := smul_eq_self_of_coe_eq q hgq
+  have hrot := coe_stabilizerRotation_eq_denom_zpow q hgq
+  rw [hq] at hrot
+  have hsq : denom (mapGL ℝ (g ^ 2)) z = -1 := by
+    rw [denom_mapGL_pow_of_smul_eq_self hgz]
+    simp only [Units.val_neg, Units.val_one] at hrot
+    rw [_root_.zpow_neg, zpow_two] at hrot
+    have h := congrArg (·⁻¹) hrot
+    simp only [inv_inv, inv_neg, inv_one] at h
+    rw [sq, h]
+  have hc := mem_center_of_smul_eq_self_of_denom_sq_eq_one (g := g ^ 2) (z := z)
+    (by rw [sq, mul_smul, hgz, hgz]) (by rw [hsq]; norm_num)
+  rcases mem_center_iff_eq_one_or_eq_neg_one.mp hc with h | h
+  · rw [h] at hsq
+    norm_num at hsq
+  · exact hneg (h ▸ pow_mem hg 2)
+
 section PositiveGenerator
 
 variable (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finite (stabilizer Γ z)]
@@ -436,5 +470,14 @@ theorem isElliptic_of_smul_eq_self_of_ne_one {g : SL(2, ℝ)} {z : ℍ} (hz : g 
   refine isElliptic_of_exists_smul_eq_self (by simp) (fun hc ↦ hg ?_) ⟨z, hz⟩
   have h := forall_smul_eq_self_iff_mem_center.mpr hc
   exact eq_of_smul_eq_smul fun w : ℍ ↦ by rw [one_smul, pslMk_smul]; exact h w
+
+/-- **An elliptic element fixes exactly one point of `ℍ`.** If `mapGL ℝ g` is elliptic and `g`
+fixes `w`, then `w` is the only point of `ℍ` fixed by `g`. -/
+theorem smul_eq_self_iff_of_isElliptic {g : SL(2, ℝ)} {w : ℍ}
+    (hell : Matrix.GeneralLinearGroup.IsElliptic (mapGL ℝ g)) (hw : g • w = w) (z : ℍ) :
+    g • z = z ↔ z = w := by
+  have hpos : 0 < (mapGL ℝ g).val.det := by simp
+  rw [← mapGL_smul, gl_smul_eq_self_iff_eq_fixedPt hpos hell] at hw ⊢
+  rw [hw]
 
 end Matrix.SpecialLinearGroup

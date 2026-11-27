@@ -39,9 +39,10 @@ family of fibrewise linear equivalences between two cores yields an isomorphism
 isomorphisms between `ofBundle 𝕜 n E₀` and `ofBundle 𝕜 n E₁` to continuous families of fibrewise
 continuous linear equivalences.
 
-Between two cores with the same chart domains, a fixed coordinate operator intertwining their
-transition maps is a bundle map with that operator on every fibre (`constHom`), and a fixed
-intertwining coordinate equivalence is an isomorphism (`constIso`).
+When the chart domains of one core lie in those of a second, a fixed coordinate operator
+intertwining their transition maps is a bundle map with that operator on every fibre (`constHom`);
+the same holds for maps in the reverse direction, from the second core to the first
+(`constHomOfSupset`). A fixed intertwining coordinate equivalence is an isomorphism (`constIso`).
 
 A map into the total space of `trivial 𝕜 B n` is continuous exactly when its base point and its
 coordinate vector in `Fin n → 𝕜` are (`continuous_trivial_iff`). Hence bundle maps into a trivial
@@ -148,6 +149,20 @@ variable {A D C : FiniteRankBundleCore 𝕜 B}
 @[simp] theorem fiberMap_comp (f : A ⟶ D) (g : D ⟶ C) (x : B) :
     (f ≫ g).fiberMap x = (g.fiberMap x).comp (f.fiberMap x) :=
   CoordinateHom.fiberMap_comp g f x
+
+/-- The inverse of an isomorphism of cores undoes it on every fibre. -/
+@[simp] theorem _root_.CategoryTheory.Iso.fiberMap_hom_inv_id_apply (e : A ≅ D) (x : B)
+    (v : Fin A.rank → 𝕜) :
+    e.inv.fiberMap x (e.hom.fiberMap x v) = v := by
+  rw [← ContinuousLinearMap.comp_apply, ← fiberMap_comp, e.hom_inv_id, fiberMap_id,
+    ContinuousLinearMap.id_apply]
+
+/-- An isomorphism of cores undoes its inverse on every fibre. -/
+@[simp] theorem _root_.CategoryTheory.Iso.fiberMap_inv_hom_id_apply (e : A ≅ D) (x : B)
+    (v : Fin D.rank → 𝕜) :
+    e.hom.fiberMap x (e.inv.fiberMap x v) = v := by
+  rw [← ContinuousLinearMap.comp_apply, ← fiberMap_comp, e.inv_hom_id, fiberMap_id,
+    ContinuousLinearMap.id_apply]
 
 /-- Evaluating the fibre map of `eqToHom h` casts the coordinate index along the rank equality. -/
 @[simp] theorem fiberMap_eqToHom_apply (h : A = D) (x : B)
@@ -393,56 +408,94 @@ def constHom (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
   simp only [constHom, ContinuousMap.coe_mk, ContinuousLinearMap.comp_apply, A.indexAt_eq,
     D.indexAt_eq, coordChange_self, ContinuousLinearMap.id_apply]
 
-/-- An equivalence intertwining two cores' transitions also intertwines them in reverse. -/
-theorem coordChange_intertwines_symm (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
-    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+/-- An equivalence intertwining two cores' transitions on the chart overlaps of the source also
+intertwines them in reverse there. -/
+theorem coordChange_intertwines_symm (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
     (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
       e.toContinuousLinearMap.comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp e.toContinuousLinearMap)
-    (i j : B) (x : B) (hi : x ∈ D.core.baseSet i) (hj : x ∈ D.core.baseSet j) :
+    (i j : B) (x : B) (hi : x ∈ A.core.baseSet i) (hj : x ∈ A.core.baseSet j) :
     e.symm.toContinuousLinearMap.comp (D.core.coordChange i j x) =
       (A.core.coordChange i j x).comp e.symm.toContinuousLinearMap := by
   ext w : 1
   apply e.injective
-  have h := congrArg (fun S => S (e.symm w))
-    (he i j x ((hbase i).symm ▸ hi) ((hbase j).symm ▸ hj))
+  have h := congrArg (fun S => S (e.symm w)) (he i j x hi hj)
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     ContinuousLinearEquiv.apply_symm_apply] at h ⊢
   exact h.symm
 
-/-- Two cores with the same chart domains whose transition maps are intertwined by a fixed
-coordinate equivalence `e` are isomorphic, by `e` on every fibre. -/
-def constIso (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+/-- The bundle map whose coordinate matrix is the same operator `T` at every point, to a core whose
+chart domains lie in those of the source, when `T` intertwines the transition maps on the chart
+overlaps of the target. In the charts `i` and `j` it is represented by `T` after the source
+transition from `i` to `j`. -/
+def constHomOfSupset (hbase : ∀ i, D.core.baseSet i ⊆ A.core.baseSet i)
+    (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
+    (hT : ∀ i j x, x ∈ D.core.baseSet i → x ∈ D.core.baseSet j →
+      T.comp (A.core.coordChange i j x) = (D.core.coordChange i j x).comp T) :
+    A ⟶ D where
+  operator i j :=
+    ⟨fun x => T.comp (A.core.coordChange i j x),
+      (continuousOn_iff_continuous_domRestrict.1 ((A.core.continuousOn_coordChange i j).mono
+        fun _ (hx : _ ∈ A.core.baseSet i ∩ D.core.baseSet j) =>
+          ⟨hx.1, hbase j hx.2⟩)).const_clm_comp T⟩
+  compatible i i' j j' x hi hi' hj hj' v := by
+    have hAj : x ∈ A.core.baseSet j := hbase j hj
+    have hAj' : x ∈ A.core.baseSet j' := hbase j' hj'
+    -- Move `T` past the target transition, then compose the source transitions.
+    calc D.core.coordChange j j' x (T (A.core.coordChange i j x v))
+        = T (A.core.coordChange j j' x (A.core.coordChange i j x v)) := by
+          rw [← ContinuousLinearMap.comp_apply (D.core.coordChange j j' x), ← hT j j' x hj hj',
+            ContinuousLinearMap.comp_apply]
+      _ = T (A.core.coordChange i j' x v) := by
+          rw [A.core.coordChange_comp i j j' x ⟨⟨hi, hAj⟩, hAj'⟩]
+      _ = T (A.core.coordChange i' j' x (A.core.coordChange i i' x v)) := by
+          rw [A.core.coordChange_comp i i' j' x ⟨⟨hi, hi'⟩, hAj'⟩]
+
+/-- A bundle map with constant coordinate matrix `T` into a core with smaller chart domains is `T`
+on every fibre. -/
+@[simp] theorem fiberMap_constHomOfSupset (hbase : ∀ i, D.core.baseSet i ⊆ A.core.baseSet i)
+    (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
+    (hT : ∀ i j x, x ∈ D.core.baseSet i → x ∈ D.core.baseSet j →
+      T.comp (A.core.coordChange i j x) = (D.core.coordChange i j x).comp T) (x : B) :
+    (constHomOfSupset hbase T hT).fiberMap x = T := by
+  ext v : 1
+  rw [CoordinateHom.fiberMap_def]
+  simp only [constHomOfSupset, ContinuousMap.coe_mk, ContinuousLinearMap.comp_apply,
+    A.indexAt_eq, D.indexAt_eq, coordChange_self, ContinuousLinearMap.id_apply]
+
+/-- A core whose chart domains lie in those of a second core, with transition maps intertwined by
+a fixed coordinate equivalence `e` on its own chart overlaps, is isomorphic to the second core by
+`e` on every fibre. -/
+def constIso (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
     (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
     (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     A ≅ D where
-  hom := constHom (fun i => (hbase i).le) e he
-  inv := constHom (fun i => (hbase i).ge) e.symm.toContinuousLinearMap
-    (coordChange_intertwines_symm hbase e he)
+  hom := constHom hbase e he
+  inv := constHomOfSupset hbase e.symm (coordChange_intertwines_symm e he)
   hom_inv_id := hom_ext fun x => by
-    rw [fiberMap_comp, fiberMap_constHom, fiberMap_constHom, fiberMap_id]
+    rw [fiberMap_comp, fiberMap_constHom, fiberMap_constHomOfSupset, fiberMap_id]
     exact e.coe_symm_comp_coe
   inv_hom_id := hom_ext fun x => by
-    rw [fiberMap_comp, fiberMap_constHom, fiberMap_constHom, fiberMap_id]
+    rw [fiberMap_comp, fiberMap_constHom, fiberMap_constHomOfSupset, fiberMap_id]
     exact e.coe_comp_coe_symm
 
-@[simp] theorem fiberMap_constIso_hom (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+@[simp] theorem fiberMap_constIso_hom (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
     (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
     (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) (x : B) :
     (constIso hbase e he).hom.fiberMap x = e :=
-  fiberMap_constHom (fun i => (hbase i).le) _ he x
+  fiberMap_constHom hbase _ he x
 
-@[simp] theorem fiberMap_constIso_inv (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+@[simp] theorem fiberMap_constIso_inv (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
     (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
     (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) (x : B) :
     (constIso hbase e he).inv.fiberMap x = e.symm := by
-  simp only [constIso, fiberMap_constHom]
+  simp only [constIso, fiberMap_constHomOfSupset]
 
 section IsoTrivial
 

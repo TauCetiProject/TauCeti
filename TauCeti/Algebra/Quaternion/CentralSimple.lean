@@ -9,10 +9,13 @@ public import Mathlib.RingTheory.SimpleRing.Basic
 public import Mathlib.Algebra.Central.Defs
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
 public import Mathlib.GroupTheory.Subgroup.Center
+public import TauCeti.RingTheory.Trace.Regular
 import Mathlib.RingTheory.SimpleRing.Congr
 import Mathlib.RingTheory.SimpleRing.Matrix
 import Mathlib.Algebra.Ring.Regular
 import Mathlib.Tactic.LinearCombination
+import Mathlib.RingTheory.SimpleModule.WedderburnArtin
+import TauCeti.RingTheory.Semisimple.Trace.Form
 
 /-!
 # Central simple quaternion symbol algebras
@@ -33,6 +36,8 @@ this applies over integral domains of characteristic different from two.
   nonzero `j`-square and nonzero discriminant is simple.
 * `TauCeti.QuaternionAlgebra.instIsSimpleRing`: quaternion symbol algebras with both parameters
   units are simple.
+* `TauCeti.QuaternionAlgebra.nondegenerate_regularTraceForm_of_j_sq_mul_discr_ne_zero`: in
+  characteristic zero, such a simple quaternion algebra has nondegenerate regular trace form.
 * `TauCeti.QuaternionAlgebra.mem_center_iff` and
   `TauCeti.QuaternionAlgebra.isCentral_of_isLeftRegular_j_sq_or_isLeftRegular_discr`: centrality
   when two is regular and either the `j`-square or the discriminant is regular.
@@ -85,6 +90,17 @@ theorem isSimpleRing_of_j_sq_mul_discr_ne_zero {a b c : K}
   let v : Kˣ := Units.mk0 c hc
   have htarget : IsSimpleRing ℍ[K,QuadraticAlgebra.discr a b,0,c] := instIsSimpleRing u v
   exact IsSimpleRing.of_ringEquiv (completeSquareEquiv a b c).symm.toRingEquiv htarget
+
+omit [Invertible (2 : K)] in
+/-- In characteristic zero, a quaternion algebra with nonzero `j`-square and nonzero discriminant
+has nondegenerate regular trace form `(x, y) ↦ Tr_K (x * y)`, since it is simple. -/
+theorem nondegenerate_regularTraceForm_of_j_sq_mul_discr_ne_zero [CharZero K] {a b c : K}
+    (h : c * QuadraticAlgebra.discr a b ≠ 0) :
+    (Algebra.regularTraceForm K ℍ[K,a,b,c]).Nondegenerate := by
+  have : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  have := isSimpleRing_of_j_sq_mul_discr_ne_zero h
+  have : IsArtinianRing ℍ[K,a,b,c] := .of_finite K _
+  exact TauCeti.nondegenerate_regularTraceForm
 
 end Field
 

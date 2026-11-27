@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.ClosureOrder
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Map
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Naturality
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.DominantPoints
 
@@ -45,27 +45,15 @@ variable {k H K M : Type u} [Field k] [CommRing H] [CommRing K]
 
 /-- Restriction along a morphism surjective on rational points identifies rational vector
 orbits. The equivalence does not require finite-dimensional representations. -/
-def vectorOrbitEquivCorestrict (f : H →ₐc[k] K)
+noncomputable def vectorOrbitEquivCorestrict (f : H →ₐc[k] K)
     (hf : Function.Surjective (mapDomain (A := k) f)) :
     (letI : Comodule k K M := Corestrict f.toCoalgHom
      VectorOrbit k K M) ≃ VectorOrbit k H M := by
   letI : Comodule k K M := Corestrict f.toCoalgHom
-  refine { toFun := ?_, invFun := ?_, left_inv := ?_, right_inv := ?_ }
-  · refine VectorOrbit.lift (H := K) (fun v : M => VectorOrbit.mk (H := H) v) ?_
-    intro g v
-    rw [basePointsRepresentation_corestrict]
-    exact VectorOrbit.mk_basePointsRepresentation _ _
-  · refine VectorOrbit.lift (H := H) (fun v : M => VectorOrbit.mk (H := K) v) ?_
-    intro g v
-    obtain ⟨q, rfl⟩ := hf g
-    rw [← basePointsRepresentation_corestrict f q]
-    exact VectorOrbit.mk_basePointsRepresentation _ _
-  · intro O
-    induction O using VectorOrbit.ind with | h v
-    simp only [VectorOrbit.lift_mk]
-  · intro O
-    induction O using VectorOrbit.ind with | h v
-    simp only [VectorOrbit.lift_mk]
+  -- `rw`, not `simp`: simp would drop `LinearEquiv.refl` silently, so the stored proof would not
+  -- match the hypothesis of `VectorOrbit.equivOfSurjective_mk` used by the lemmas below.
+  exact VectorOrbit.equivOfSurjective hf (LinearEquiv.refl k M) fun g v ↦ by
+    rw [LinearEquiv.refl_apply, LinearEquiv.refl_apply, basePointsRepresentation_corestrict]
 
 /-- The rational-orbit comparison sends the orbit of a vector to its original orbit. -/
 @[simp]
@@ -112,18 +100,18 @@ noncomputable def vectorOrbitOrderIsoCorestrict (f : H →ₐc[k] K)
     (letI : Comodule k K M := Corestrict f.toCoalgHom
      VectorOrbit k K M) ≃o VectorOrbit k H M := by
   have hp : Function.Surjective (mapDomain (A := k) f) := by
+    -- Unfold explicitly: after a bare `intro`, the stored proof would have the unfolded type,
+    -- which `VectorOrbit.orderIsoOfSurjective_mk` would not match in the lemmas below.
+    rw [Function.Surjective]
     intro g
     obtain ⟨q, hq⟩ := CommHopfAlgCat.mapPointsFunctor_app_surjective_of_dominant
       (_root_.CommHopfAlgCat.ofHom f) hf.denseRange g
     exact ⟨q, (mapDomain_apply f q).trans
       ((CommHopfAlgCat.Hom.mapPointsFunctor_app_apply _ _ q).symm.trans hq)⟩
-  refine { toEquiv := vectorOrbitEquivCorestrict f hp, map_rel_iff' := ?_ }
-  intro O O'
-  let : Comodule k K M := Corestrict f.toCoalgHom
-  induction O using VectorOrbit.ind with | h v
-  induction O' using VectorOrbit.ind with | h w
-  simp only [vectorOrbitEquivCorestrict_mk, VectorOrbit.le_iff_closure_image_subset,
-    VectorOrbit.image_mk, range_projectiveOrbitMap_mk_one_corestrict f hf]
+  letI : Comodule k K M := Corestrict f.toCoalgHom
+  -- `rw`, not `simp`, for the reason given in `vectorOrbitEquivCorestrict`.
+  exact VectorOrbit.orderIsoOfSurjective hp (LinearEquiv.refl k M) fun g v ↦ by
+    rw [LinearEquiv.refl_apply, LinearEquiv.refl_apply, basePointsRepresentation_corestrict]
 
 /-- The order comparison preserves the vector representing an orbit. -/
 @[simp]
@@ -132,7 +120,7 @@ theorem vectorOrbitOrderIsoCorestrict_mk (f : H →ₐc[k] K)
     vectorOrbitOrderIsoCorestrict (M := M) f hf
         (letI : Comodule k K M := Corestrict f.toCoalgHom
          VectorOrbit.mk v) = VectorOrbit.mk v := by
-  simp [vectorOrbitOrderIsoCorestrict, vectorOrbitEquivCorestrict]
+  simp [vectorOrbitOrderIsoCorestrict]
 
 /-- The inverse order comparison preserves the vector representing an orbit. -/
 @[simp]
@@ -141,7 +129,7 @@ theorem vectorOrbitOrderIsoCorestrict_symm_mk (f : H →ₐc[k] K)
     (vectorOrbitOrderIsoCorestrict (M := M) f hf).symm (VectorOrbit.mk v) =
       (letI : Comodule k K M := Corestrict f.toCoalgHom
        VectorOrbit.mk v) := by
-  simp [vectorOrbitOrderIsoCorestrict, vectorOrbitEquivCorestrict]
+  simp [vectorOrbitOrderIsoCorestrict]
 
 /-- The orbit-order comparison preserves the entire geometric image, not only its rational
 points. Its closure and boundary therefore agree as well. -/

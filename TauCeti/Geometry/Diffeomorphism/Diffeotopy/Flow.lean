@@ -20,8 +20,9 @@ flow `ψ_(A t)` at time `A t` (`TauCeti.globalFlowDiffeotopyAlong`,
 `TauCeti.Diffeotopy.timeSlice_globalFlowDiffeotopyAlong`), with inverse `ψ_(-A t)`. Read on the
 cylinder, the motion `(x, t) ↦ ψ_(A t) x` has time derivative `A'(t) v` and spatial derivative
 `dψ_(A t)` (`TauCeti.Diffeotopy.mfderiv_cylinderMap_globalFlowDiffeotopyAlong_time`,
-`TauCeti.Diffeotopy.mfderiv_cylinderMap_globalFlowDiffeotopyAlong_space`). The constant-speed
-case `A t = a t` runs the field for an arbitrary real duration `a`
+`TauCeti.Diffeotopy.mfderiv_cylinderMap_globalFlowDiffeotopyAlong_space`), so its velocity
+field at time `t` is `A'(t) v` (`TauCeti.Diffeotopy.velocity_globalFlowDiffeotopyAlong`). The
+constant-speed case `A t = a t` runs the field for an arbitrary real duration `a`
 (`TauCeti.globalFlowDiffeotopy`, `TauCeti.Diffeotopy.timeSlice_globalFlowDiffeotopy`), whose
 velocity field is the time-independent field `a v`
 (`TauCeti.Diffeotopy.velocity_globalFlowDiffeotopy`).
@@ -30,10 +31,15 @@ compact set generates a motion supported in the same set.
 
 A time-dependent `C^n` vector field `X` whose suspension is complete generates a diffeotopy
 too (`TauCeti.timeDependentFlowDiffeotopy`): the motion at time `t ∈ [0,1]` is its
-time-dependent flow from time `0` to time `t`, with inverse the flow from `t` back to `0`. This
-holds in particular when `X` vanishes outside a fixed compact set at all times
-(`TauCeti.isCompleteVectorField_timeDependentSuspensionField`). Points at which `X` vanishes at all
-times are fixed throughout.
+time-dependent flow from time `0` to time `t`
+(`TauCeti.Diffeotopy.timeSlice_timeDependentFlowDiffeotopy`), with inverse the flow from `t` back
+to `0`. This holds in particular when `X` vanishes outside a fixed compact set at all times
+(`TauCeti.isCompleteVectorField_timeDependentSuspensionField`). Read on the cylinder, its motion
+`(x, t) ↦ φ_{0, t} x` has spatial derivative `dφ_{0, t}`
+(`TauCeti.Diffeotopy.mfderiv_cylinderMap_timeDependentFlowDiffeotopy_space`) and time derivative
+`X t (φ_{0, t} x)` (`TauCeti.Diffeotopy.mfderiv_cylinderMap_timeDependentFlowDiffeotopy_time`), so
+its velocity field at time `t` is `X t` (`TauCeti.Diffeotopy.velocity_timeDependentFlowDiffeotopy`).
+Points at which `X` vanishes at all times are fixed throughout.
 
 This converts cut-off local vector fields into ambient motions with controlled support. The
 isotopy extension theorem runs the time-dependent diffeotopy of the ambient velocity field of an
@@ -170,6 +176,16 @@ theorem mfderiv_cylinderMap_globalFlowDiffeotopyAlong_space (p : M × unitInterv
     (by exact_mod_cast hn) p w).trans
     (by rw [timeSlice_globalFlowDiffeotopyAlong])
 
+/-- **The velocity field of the motion along a time function.** Running a complete vector field
+`v` along a time function `A` has the velocity field `A'(t) v` at time `t`. -/
+@[simp]
+theorem velocity_globalFlowDiffeotopyAlong (t : unitInterval) (x : M) :
+    (globalFlowDiffeotopyAlong hn hv hcomplete A hA hA₀).velocity t x = deriv A t • v x := by
+  set Φ := globalFlowDiffeotopyAlong hn hv hcomplete A hA hA₀
+  obtain ⟨y, rfl⟩ : ∃ y, Φ (t, y) = x := ⟨Φ.symm (t, x), Φ.apply_mk_symm_apply t x⟩
+  rw [velocity_apply, mfderiv_cylinderMap_globalFlowDiffeotopyAlong_time,
+    globalFlowDiffeotopyAlong_apply, flowOf_apply]
+
 end Diffeotopy
 
 end Along
@@ -261,14 +277,14 @@ theorem mfderiv_cylinderMap_globalFlowDiffeotopy_space (hn : 1 ≤ n)
 
 /-- **The velocity field of the flow diffeotopy.** The diffeotopy which runs a complete vector field
 `v` for duration `a` has the time-independent velocity field `a v`. -/
+@[simp]
 theorem velocity_globalFlowDiffeotopy (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hcomplete : IsCompleteVectorField v) (a : ℝ) (t : unitInterval) (x : M) :
     (globalFlowDiffeotopy hn hv hcomplete a).velocity t x = a • v x := by
-  set Φ := globalFlowDiffeotopy hn hv hcomplete a
-  obtain ⟨y, rfl⟩ : ∃ y, Φ (t, y) = x := ⟨Φ.symm (t, x), Φ.apply_mk_symm_apply t x⟩
-  rw [velocity_apply, mfderiv_cylinderMap_globalFlowDiffeotopy_time, globalFlowDiffeotopy_apply,
-    flowOf_apply]
+  rw [globalFlowDiffeotopy_eq_globalFlowDiffeotopyAlong, velocity_globalFlowDiffeotopyAlong]
+  congr 1
+  simp
 
 end Diffeotopy
 
@@ -280,6 +296,15 @@ def compactlySupportedFlowDiffeotopy (hn : 1 ≤ n)
   globalFlowDiffeotopy hn hv
     (isCompleteVectorField_of_isCompact_of_eq_zero_off (hv.of_le (by exact_mod_cast hn)) hK
       hzero) a
+
+/-- The compactly supported motion is the global flow motion of the same field, for any proof
+that the field is complete. -/
+theorem compactlySupportedFlowDiffeotopy_eq_globalFlowDiffeotopy (hn : 1 ≤ n)
+    (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    (hK : IsCompact K) (hzero : ∀ y ∉ K, v y = 0) (hcomplete : IsCompleteVectorField v)
+    (a : ℝ) :
+    compactlySupportedFlowDiffeotopy hn hv hK hzero a = globalFlowDiffeotopy hn hv hcomplete a := by
+  rw [compactlySupportedFlowDiffeotopy]
 
 /-- The compactly supported motion is the maximal integral curve at the rescaled time. -/
 @[simp] theorem compactlySupportedFlowDiffeotopy_apply (hn : 1 ≤ n)
@@ -369,6 +394,68 @@ motion. -/
 theorem timeDependentFlowDiffeotopy_apply_of_forall_eq_zero {x : M} (hx : ∀ u, X u x = 0)
     (t : unitInterval) : timeDependentFlowDiffeotopy hn hX hcomplete (t, x) = x :=
   timeDependentFlowOf_eq_self_of_forall_eq_zero (hX.of_le (by exact_mod_cast hn)) hx 0 t
+
+namespace Diffeotopy
+
+/-- The time-`t` map of the time-dependent diffeotopy is the time-dependent flow of the field from
+time `0` to time `t`. -/
+theorem timeSlice_timeDependentFlowDiffeotopy (t : unitInterval) :
+    ⇑((timeDependentFlowDiffeotopy hn hX hcomplete).timeSlice t) = timeDependentFlowOf X 0 t :=
+  funext fun x ↦ by rw [timeSlice_apply, timeDependentFlowDiffeotopy_apply]
+
+/-- The motion of the time-dependent diffeotopy, read on the cylinder: at `(x, t)` it is the
+time-dependent flow of the field from time `0` to time `t`. -/
+theorem cylinderMap_timeDependentFlowDiffeotopy :
+    (timeDependentFlowDiffeotopy hn hX hcomplete).cylinderMap =
+      fun p : M × unitInterval ↦ timeDependentFlowOf X 0 p.2 p.1 :=
+  funext fun p ↦ by rw [cylinderMap_apply, timeDependentFlowDiffeotopy_apply]
+
+/-- **The velocity of the time-dependent diffeotopy.** The motion `(x, t) ↦ φ_{0, t} x` of the
+diffeotopy generated by a time-dependent field `X` sends the unit time vector `∂ₜ` at `(x, t)` to
+`X t (φ_{0, t} x)`. -/
+theorem mfderiv_cylinderMap_timeDependentFlowDiffeotopy_time (p : M × unitInterval) :
+    mfderiv (I.prod (𝓡∂ 1)) I (timeDependentFlowDiffeotopy hn hX hcomplete).cylinderMap p
+      ((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)) =
+        X p.2 ((timeDependentFlowDiffeotopy hn hX hcomplete).cylinderMap p) := by
+  have hX₁ := hX.of_le (m := 1) (by exact_mod_cast hn)
+  have hval : MDifferentiableAt (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : unitInterval → ℝ) p.2 :=
+    (contMDiff_subtypeVal_Icc (n := 1)).mdifferentiableAt one_ne_zero
+  have htraj := hasMFDerivAt_timeDependentFlowOf hX₁
+    (mem_timeDependentFlowDomain.2 (hcomplete.mem_flowDomain _ _)) (s := 0) (t := p.2) (x := p.1)
+  -- The trajectory `t ↦ φ_{0, t} x` has velocity `X t`, and the inclusion of the interval sends
+  -- `∂ₜ` to `1`.
+  have htime : mfderiv (𝓡∂ 1) I (fun z : unitInterval ↦ timeDependentFlowOf X 0 z p.1) p.2
+      (1 : TangentSpace (𝓡∂ 1) p.2) = X p.2 (timeDependentFlowOf X 0 p.2 p.1) := by
+    have hcomp : (fun z : unitInterval ↦ timeDependentFlowOf X 0 z p.1) =
+        (fun s ↦ timeDependentFlowOf X 0 s p.1) ∘ Subtype.val := rfl
+    rw [hcomp, mfderiv_comp p.2 htraj.mdifferentiableAt hval, ContinuousLinearMap.comp_apply,
+      mfderiv_subtypeVal_Icc_one, htraj.mfderiv]
+    exact one_smul ℝ _
+  refine (mfderiv_prod_eq_add_apply ((timeDependentFlowDiffeotopy hn hX
+    hcomplete).contMDiff_cylinderMap.mdifferentiableAt
+      (zero_lt_one.trans_le (by exact_mod_cast hn)).ne')).trans ?_
+  rw [cylinderMap_timeDependentFlowDiffeotopy]
+  exact (congrArg₂ (· + ·) (map_zero _) htime).trans (zero_add _)
+
+/-- The motion `(x, t) ↦ φ_{0, t} x` of the time-dependent diffeotopy acts on spatial tangent
+vectors at `(x, t)` by the differential of the time-dependent flow `φ_{0, t}`. -/
+theorem mfderiv_cylinderMap_timeDependentFlowDiffeotopy_space (p : M × unitInterval) (w : E) :
+    mfderiv (I.prod (𝓡∂ 1)) I (timeDependentFlowDiffeotopy hn hX hcomplete).cylinderMap p
+      (w, (0 : EuclideanSpace ℝ (Fin 1))) = mfderiv I I (timeDependentFlowOf X 0 p.2) p.1 w :=
+  ((timeDependentFlowDiffeotopy hn hX hcomplete).mfderiv_cylinderMap_inl
+    (by exact_mod_cast hn) p w).trans
+    (by rw [timeSlice_timeDependentFlowDiffeotopy])
+
+/-- **The velocity field of the time-dependent diffeotopy.** The diffeotopy generated by a
+time-dependent field `X` has the velocity field `X t` at time `t`. -/
+@[simp]
+theorem velocity_timeDependentFlowDiffeotopy (t : unitInterval) (x : M) :
+    (timeDependentFlowDiffeotopy hn hX hcomplete).velocity t x = X t x := by
+  set Φ := timeDependentFlowDiffeotopy hn hX hcomplete
+  obtain ⟨y, rfl⟩ : ∃ y, Φ (t, y) = x := ⟨Φ.symm (t, x), Φ.apply_mk_symm_apply t x⟩
+  rw [velocity_apply, mfderiv_cylinderMap_timeDependentFlowDiffeotopy_time, cylinderMap_apply]
+
+end Diffeotopy
 
 end TimeDependent
 

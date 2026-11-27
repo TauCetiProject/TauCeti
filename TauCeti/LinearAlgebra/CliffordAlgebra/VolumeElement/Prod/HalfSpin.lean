@@ -5,218 +5,154 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.ProdEquiv
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Orientation
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Involution
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
-import TauCeti.LinearAlgebra.Eigenspace.Separation
-import TauCeti.LinearAlgebra.TensorProduct.Submodule
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Bijective
+import TauCeti.LinearAlgebra.QuadraticForm.WithLp.L2
 
 /-!
-# Half-spin decomposition of the graded tensor product of Clifford modules
+# Half-spin decomposition of graded Clifford tensor products
 
-For even-dimensional oriented real inner product spaces `V` and `W` with `Q₁ v = -‖v‖²`,
-`Q₂ w = -‖w‖²`, and the transported product orientation `o` on `V ⊕ W`, `Γ_(V ⊕ W)` acts on
-`E ⊗ F` as `Γ_V ⊗ Γ_W`. Since `Γ_V` and `Γ_W` are involutions, `Module.End.eigenspaceTensorMapEquiv`
-decomposes the `μ`-eigenspace (`μ * μ = 1`) without finiteness or irreducibility assumptions:
+Decomposes the `±1`-eigenspaces of the product chirality `Γ_(V ⊕ W)` on `E ⊗ F` as
+`(E ⊗ F)^μ ≃ (E⁺ ⊗ F^μ) × (E⁻ ⊗ F^(-μ))`, and proves the corresponding complex dimension
+formulas `dim (E ⊗ F)^μ = dim E⁺ · dim F^μ + dim E⁻ · dim F^(-μ)`, and `2 ^ ((n + m) / 2 - 1)` for
+spinor modules in positive dimension `n + m ≠ 0`.
 
-* `CliffordAlgebra.complexProdTensorEigenspaceEquiv`:
-  `Eig(Γ_(V ⊕ W), μ) ≃ (E⁺ ⊗ Eig(Γ_W, μ)) × (E⁻ ⊗ Eig(Γ_W, -μ))` (`(E ⊗ F)⁺ ≃ (E⁺ ⊗ F⁺) × (E⁻ ⊗ F⁻)`
-  at `μ = 1`).
-* `CliffordAlgebra.complexProdTensorEigenspaceNegOneEquiv`:
-  `(E ⊗ F)⁻ ≃ (E⁺ ⊗ F⁻) × (E⁻ ⊗ F⁺)`.
-* `CliffordAlgebra.bijective_complexProdTensor`: the graded tensor product of two spinor modules
-  is again a spinor module.
-* `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume` and
-  `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume_of_bijective`: finite-rank
-  formula and half-spin dimension `2 ^ ((n + m) / 2 - 1)` for spinor modules when `n + m ≠ 0`.
+## Main definitions and results
+
+* `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv`: half-spin decomposition of the
+  `μ`-eigenspace of `Γ_(V ⊕ W)`.
+* `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv_apply` and
+  `CliffordAlgebra.coe_complexProdTensorComplexVolumeEigenspaceEquiv_symm_apply`: forward and
+  inverse maps of the half-spin equivalence.
+* `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume`: dimension formula in terms
+  of the factors' eigenspaces.
+* `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume_of_bijective`: half-spin
+  dimension `2 ^ ((n + m) / 2 - 1)` for tensor products of spinor modules in positive dimension
+  `n + m ≠ 0`.
 
 ## References
 
-* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §5.
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §1 and §5.
 * M. F. Atiyah, R. Bott and A. Shapiro, *Clifford modules*, Topology 3 (1964), §1.
+* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, Chapter 2, §2.2.
 -/
 
 public section
 
 noncomputable section
 
-open Module Module.End TensorProduct
+open Module
+open scoped TensorProduct
 
 namespace CliffordAlgebra
 
-variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
-  {n m : ℕ} [Fact (finrank ℝ V = n)] [Fact (finrank ℝ W = m)]
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [NormedAddCommGroup W] [InnerProductSpace ℝ W]
   {Q₁ : QuadraticForm ℝ V} {Q₂ : QuadraticForm ℝ W} {Q : QuadraticForm ℝ (WithLp 2 (V × W))}
   (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-  (o₁ : Orientation ℝ V (Fin n)) (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hn : Even n)
+  [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o₁ : Orientation ℝ V (Fin n))
+  (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hn : Even n)
   {E F : Type*} [AddCommGroup E] [Module ℂ E] [AddCommGroup F] [Module ℂ F]
   (ρ₁ : CliffordAlgebra (Q₁.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E)
   (ρ₂ : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F)
 
-section Decomposition
+/-! ### Half-spin eigenspace decomposition -/
 
-variable (o₂ : Orientation ℝ W (Fin m)) (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
+section HalfSpin
 
-/-- **Half-spin decomposition of `E ⊗ F`**: for even-dimensional `V` and `W` with `Q₁ v = -‖v‖²`,
-`Q₂ w = -‖w‖²`, the ordered product orientation `o` on `V ⊕ W`, and `μ * μ = 1`, the `μ`-eigenspace
-of `Γ_(V ⊕ W)` on `E ⊗ F` splits as `(E⁺ ⊗ Eig(Γ_W, μ)) × (E⁻ ⊗ Eig(Γ_W, -μ))`. -/
-def complexProdTensorEigenspaceEquiv (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) (hm : Even m)
-    (ho : (Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (n + m))
-      (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) {μ : ℂ} (hμ : μ * μ = 1) :
+variable [FiniteDimensional ℝ W] {m : ℕ} [Fact (finrank ℝ W = m)] (o₂ : Orientation ℝ W (Fin m))
+  [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)]
+  (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
+
+section Eigenspace
+
+variable (hm : Even m) (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
+  (ho : (o₁.prod o₂ Fact.out Fact.out).map (Fin (n + m))
+    (WithLp.linearEquiv 2 ℝ (V × W)).symm = o)
+  {μ : ℂ} (hμ : μ * μ = 1)
+
+/-- **Half-spin decomposition of the graded tensor product.** For even-dimensional `(V, o₁)` and
+`(W, o₂)` with `Q₁ v = -‖v‖²` and `Q₂ w = -‖w‖²`, the `μ`-eigenspace (`μ * μ = 1`) of `Γ_(V ⊕ W)`
+on `E ⊗ F` is linearly isomorphic to `(E⁺ ⊗ F^μ) × (E⁻ ⊗ F^(-μ))`. -/
+def complexProdTensorComplexVolumeEigenspaceEquiv :
     (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace μ ≃ₗ[ℂ]
-      ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1 ⊗[ℂ] (ρ₂ (complexVolume Q₂ o₂)).eigenspace μ) ×
+      ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1 ⊗[ℂ]
+          (ρ₂ (complexVolume Q₂ o₂)).eigenspace μ) ×
         ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1) ⊗[ℂ]
           (ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ)) :=
-  (LinearEquiv.ofEq _ _ (congrArg (Module.End.eigenspace · μ)
-      (complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm ho))).trans
-    (eigenspaceTensorMapEquiv (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
+  (LinearEquiv.ofEq _ _
+      (congrArg (fun f ↦ Module.End.eigenspace f μ)
+        (complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm ho))).trans
+    (Module.End.eigenspaceTensorMapEquiv
+      (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
       (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂) hμ)
 
-/-- The forward map of `CliffordAlgebra.complexProdTensorEigenspaceEquiv` projects onto
-the two complementary tensor summands via `Module.End.eigenProjOfInvolutive`. -/
+/-- Forward map of `complexProdTensorComplexVolumeEigenspaceEquiv`. -/
 @[simp]
-theorem complexProdTensorEigenspaceEquiv_apply (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
-    (hm : Even m) (ho : (Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (n + m))
-      (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) {μ : ℂ} (hμ : μ * μ = 1)
+theorem complexProdTensorComplexVolumeEigenspaceEquiv_apply
     (z : (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace μ) :
-    complexProdTensorEigenspaceEquiv hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hQ₂ hm ho hμ z =
+    complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm hQ₂ ho hμ z =
       (TensorProduct.map
-          (eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁) (one_mul 1))
-          (eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂) hμ) z,
+          (Module.End.eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁)
+            (one_mul 1))
+          (Module.End.eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂) hμ) z.val,
         TensorProduct.map
-          (eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁)
+          (Module.End.eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁)
             ((neg_mul_neg (1 : ℂ) 1).trans (one_mul 1)))
-          (eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂)
-            ((neg_mul_neg μ μ).trans hμ)) z) := by
-  rw [complexProdTensorEigenspaceEquiv, LinearEquiv.trans_apply,
-    eigenspaceTensorMapEquiv_apply, LinearEquiv.coe_ofEq_apply]
+          (Module.End.eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂)
+            ((neg_mul_neg μ μ).trans hμ)) z.val) := by
+  rw [complexProdTensorComplexVolumeEigenspaceEquiv, LinearEquiv.trans_apply,
+    Module.End.eigenspaceTensorMapEquiv_apply, LinearEquiv.coe_ofEq_apply]
 
-/-- The inverse of `CliffordAlgebra.complexProdTensorEigenspaceEquiv` adds the two
-tensor products of the half-spin submodule inclusions. -/
+/-- Inverse of `complexProdTensorComplexVolumeEigenspaceEquiv`. -/
 @[simp]
-theorem coe_complexProdTensorEigenspaceEquiv_symm_apply (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
-    (hm : Even m) (ho : (Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (n + m))
-      (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) {μ : ℂ} (hμ : μ * μ = 1)
-    (p : ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1 ⊗[ℂ] (ρ₂ (complexVolume Q₂ o₂)).eigenspace μ) ×
-      ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1) ⊗[ℂ]
-        (ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ))) :
-    ((complexProdTensorEigenspaceEquiv hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hQ₂ hm ho hμ).symm p :
+theorem coe_complexProdTensorComplexVolumeEigenspaceEquiv_symm_apply
+    (p : ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1 ⊗[ℂ]
+            (ρ₂ (complexVolume Q₂ o₂)).eigenspace μ) ×
+          ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1) ⊗[ℂ]
+            (ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ))) :
+    ((complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm hQ₂ ho hμ).symm p :
         E ⊗[ℂ] F) =
       TensorProduct.map ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1).subtype
-          ((ρ₂ (complexVolume Q₂ o₂)).eigenspace μ).subtype p.1 +
+          ((ρ₂ (complexVolume Q₂ o₂)).eigenspace μ).subtype p.fst +
         TensorProduct.map ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1)).subtype
-          ((ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ)).subtype p.2 := by
-  rw [complexProdTensorEigenspaceEquiv, LinearEquiv.trans_symm,
-    LinearEquiv.trans_apply, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
-    coe_eigenspaceTensorMapEquiv_symm_apply]
+          ((ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ)).subtype p.snd := by
+  rw [complexProdTensorComplexVolumeEigenspaceEquiv, LinearEquiv.symm_trans_apply,
+    LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
+    Module.End.coe_eigenspaceTensorMapEquiv_symm_apply]
 
-/-- **Negative half-spin decomposition of `E ⊗ F`**: `(E ⊗ F)⁻ ≃ (E⁺ ⊗ F⁻) × (E⁻ ⊗ F⁺)`. -/
-def complexProdTensorEigenspaceNegOneEquiv (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) (hm : Even m)
-    (ho : (Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (n + m))
-      (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) :
-    (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace (-1) ≃ₗ[ℂ]
-      ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1 ⊗[ℂ] (ρ₂ (complexVolume Q₂ o₂)).eigenspace (-1)) ×
-        ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1) ⊗[ℂ]
-          (ρ₂ (complexVolume Q₂ o₂)).eigenspace 1) :=
-  (complexProdTensorEigenspaceEquiv hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hQ₂ hm ho
-      ((neg_mul_neg (1 : ℂ) 1).trans (one_mul 1))).trans
-    ((LinearEquiv.refl ℂ _).prodCongr
-      (TensorProduct.congr (LinearEquiv.refl ℂ _)
-        (LinearEquiv.ofEq _ _
-          (congrArg (ρ₂ (complexVolume Q₂ o₂)).eigenspace (neg_neg (1 : ℂ))))))
-
-/-- The forward map of `CliffordAlgebra.complexProdTensorEigenspaceNegOneEquiv` projects onto
-`E⁺ ⊗ F⁻` and `E⁻ ⊗ F⁺`. -/
-@[simp]
-theorem complexProdTensorEigenspaceNegOneEquiv_apply (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) (hm : Even m)
-    (ho : (Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (n + m))
-      (WithLp.linearEquiv 2 ℝ (V × W)).symm = o)
-    (z : (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace (-1)) :
-    complexProdTensorEigenspaceNegOneEquiv hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hQ₂ hm ho z =
-      (TensorProduct.map
-          (eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁) (one_mul 1))
-          (eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂)
-            ((neg_mul_neg (1 : ℂ) 1).trans (one_mul 1))) z,
-        TensorProduct.map
-          (eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁)
-            ((neg_mul_neg (1 : ℂ) 1).trans (one_mul 1)))
-          (eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂) (one_mul 1)) z) := by
-  rw [complexProdTensorEigenspaceNegOneEquiv, LinearEquiv.trans_apply,
-    complexProdTensorEigenspaceEquiv_apply, LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply]
-  refine Prod.ext rfl ?_
-  dsimp only
-  rw [← LinearEquiv.coe_toLinearMap, TensorProduct.toLinearMap_congr,
-    LinearEquiv.refl_toLinearMap, ← LinearMap.comp_apply, ← TensorProduct.map_comp,
-    LinearMap.id_comp, ofEq_comp_eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂)
-      _ (one_mul 1) (neg_neg (1 : ℂ))]
-
-/-- The inverse of `CliffordAlgebra.complexProdTensorEigenspaceNegOneEquiv` adds the two
-tensor products of the half-spin submodule inclusions. -/
-@[simp]
-theorem coe_complexProdTensorEigenspaceNegOneEquiv_symm_apply
-    (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) (hm : Even m)
-    (ho : (Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (n + m))
-      (WithLp.linearEquiv 2 ℝ (V × W)).symm = o)
-    (p : ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1 ⊗[ℂ]
-        (ρ₂ (complexVolume Q₂ o₂)).eigenspace (-1)) ×
-      ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1) ⊗[ℂ]
-        (ρ₂ (complexVolume Q₂ o₂)).eigenspace 1)) :
-    ((complexProdTensorEigenspaceNegOneEquiv
-        hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hQ₂ hm ho).symm p : E ⊗[ℂ] F) =
-      TensorProduct.map ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1).subtype
-          ((ρ₂ (complexVolume Q₂ o₂)).eigenspace (-1)).subtype p.1 +
-        TensorProduct.map ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1)).subtype
-          ((ρ₂ (complexVolume Q₂ o₂)).eigenspace 1).subtype p.2 := by
-  rw [complexProdTensorEigenspaceNegOneEquiv, LinearEquiv.trans_symm,
-    LinearEquiv.trans_apply, LinearEquiv.prodCongr_symm, LinearEquiv.refl_symm,
-    LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply,
-    coe_complexProdTensorEigenspaceEquiv_symm_apply]
-  congr 1
-  dsimp only
-  rw [TensorProduct.congr_symm, LinearEquiv.refl_symm, LinearEquiv.ofEq_symm,
-    ← LinearEquiv.ofEq_rfl (p := (ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1)),
-    ← LinearEquiv.coe_toLinearMap, ← LinearMap.comp_apply,
-    TensorProduct.map_subtype_comp_congr_ofEq]
-
-/-- **Half-spin dimension formula for finite-dimensional modules**: for `μ * μ = 1`,
+include hm hQ₂ ho hμ in
+/-- Dimension of the `μ`-eigenspace (`μ * μ = 1`) of `Γ_(V ⊕ W)` on `E ⊗ F`:
 `dim (E ⊗ F)^μ = dim E⁺ · dim F^μ + dim E⁻ · dim F^(-μ)`. -/
 theorem finrank_eigenspace_complexProdTensor_complexVolume
-    [FiniteDimensional ℂ E] [FiniteDimensional ℂ F] (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) (hm : Even m)
-    (ho : (Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (n + m))
-      (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) {μ : ℂ} (hμ : μ * μ = 1) :
+    [FiniteDimensional ℂ E] [FiniteDimensional ℂ F] :
     finrank ℂ ((complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace μ) =
       finrank ℂ ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1) *
           finrank ℂ ((ρ₂ (complexVolume Q₂ o₂)).eigenspace μ) +
         finrank ℂ ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1)) *
           finrank ℂ ((ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ)) := by
-  rw [(complexProdTensorEigenspaceEquiv hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hQ₂ hm ho hμ).finrank_eq,
+  rw [(complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm hQ₂ ho
+      hμ).finrank_eq,
     Module.finrank_prod, Module.finrank_tensorProduct, Module.finrank_tensorProduct]
 
-end Decomposition
+end Eigenspace
 
-/-- **The graded tensor product of spinor modules is a spinor module**: when `ρ₁` and `ρ₂` are
-bijective onto `End_ℂ E` and `End_ℂ F`, `complexProdTensor` is bijective onto `End_ℂ (E ⊗ F)`. -/
-theorem bijective_complexProdTensor (hρ₁ : Function.Bijective ρ₁) (hρ₂ : Function.Bijective ρ₂) :
-    Function.Bijective (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂) := by
-  rw [complexProdTensor_eq_comp]
-  exact (AlgHom.bijective_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂
-      hρ₁ hρ₂).comp
-    (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ)).bijective
-
-/-- **Half-spin dimension of a graded tensor product of spinor modules**: when `ρ₁` and `ρ₂` are
-bijective onto `End_ℂ E` and `End_ℂ F` and `n + m ≠ 0`, both half-spin spaces `(E ⊗ F)^±` have
+omit [Fact (finrank ℝ W = m)] in
+/-- **Half-spin dimension of `S_V ⊗ S_W`.** When `E` and `F` are spinor modules (`ρ₁`, `ρ₂`
+bijective) and `n + m ≠ 0`, both the `±1`-eigenspaces of `Γ_(V ⊕ W)` on `E ⊗ F` have complex
 dimension `2 ^ ((n + m) / 2 - 1)`. -/
 theorem finrank_eigenspace_complexProdTensor_complexVolume_of_bijective
-    (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
-    (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) (hρ₁ : Function.Bijective ρ₁) (hρ₂ : Function.Bijective ρ₂)
-    (hnm : n + m ≠ 0) {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
+    (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) (hnm : n + m ≠ 0)
+    (hρ₁ : Function.Bijective ρ₁) (hρ₂ : Function.Bijective ρ₂)
+    {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
     finrank ℂ ((complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace μ) =
       2 ^ ((n + m) / 2 - 1) :=
-  AlgHom.finrank_eigenspace_complexVolume_of_bijective
-    (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂) o
-    (QuadraticMap.apply_eq_neg_norm_sq_of_withLp_prod Q hQ hQ₁ hQ₂)
-    (bijective_complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ hρ₁ hρ₂) hnm hμ
+  (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).finrank_eigenspace_complexVolume_of_bijective o
+    (QuadraticForm.withLpProd_eq_neg_norm_sq hQ hQ₁ hQ₂)
+    (complexProdTensor_bijective hQ o₁ hQ₁ hn ρ₁ ρ₂ hρ₁ hρ₂) hnm hμ
+
+end HalfSpin
 
 end CliffordAlgebra

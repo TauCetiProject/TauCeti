@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
-import TauCeti.LinearAlgebra.End.Basic
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Negating the grading in the graded tensor product of Clifford modules
@@ -23,7 +23,7 @@ conjugation (`AlgHom.cliffordProdTensor_of_eq_neg`).
 
 For spinor modules graded by their chirality, reversing the orientation of the first space negates
 its chirality, so this is the orientation-reversal law of the graded product; see
-`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Basic.lean`. No finiteness or
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Orientation.lean`. No finiteness or
 invertibility of two is needed.
 
 ## Main results
@@ -44,15 +44,6 @@ invertibility of two is needed.
 public section
 
 open TensorProduct CliffordAlgebra
-
-namespace TauCeti
-
-/-- If `γ` squares to `1`, then `-γ` also squares to `1`. -/
-theorem neg_mul_neg_self_of_mul_self {A : Type*} [Mul A] [One A] [HasDistribNeg A] {γ : A}
-    (hγ : γ * γ = 1) : (-γ) * (-γ) = 1 :=
-  (neg_mul_neg γ γ).trans hγ
-
-end TauCeti
 
 namespace AlgHom
 
@@ -76,7 +67,7 @@ theorem neg_mul_map_ι_of_mul_map_ι (v : M₁) :
 /-- Negating the grading `γ` of `E` in `AlgHom.cliffordProdTensor` is equivalent to twisting `ρ₂`
 by `CliffordAlgebra.involute`. -/
 theorem cliffordProdTensor_neg_grading :
-    cliffordProdTensor ρ₁ (-γ) (TauCeti.neg_mul_neg_self_of_mul_self hγ)
+    cliffordProdTensor ρ₁ (-γ) ((neg_mul_neg γ γ).trans hγ)
         (neg_mul_map_ι_of_mul_map_ι ρ₁ γ hγρ) ρ₂ =
       cliffordProdTensor ρ₁ γ hγ hγρ (ρ₂.comp CliffordAlgebra.involute) := by
   refine CliffordAlgebra.hom_ext <| LinearMap.ext fun ⟨v, w⟩ ↦ TensorProduct.ext' fun e f ↦ ?_
@@ -121,15 +112,16 @@ theorem conjAlgEquiv_lTensor_cliffordProdTensor (δ : Module.End R F)
     (hδ : Function.Involutive δ) (hδρ : ∀ w, δ * ρ₂ (ι Q₂ w) = -(ρ₂ (ι Q₂ w) * δ)) :
     (((LinearEquiv.ofInvolutive δ hδ).lTensor E).conjAlgEquiv R).toAlgHom.comp
         (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂) =
-      cliffordProdTensor ρ₁ (-γ) (TauCeti.neg_mul_neg_self_of_mul_self hγ)
+      cliffordProdTensor ρ₁ (-γ) ((neg_mul_neg γ γ).trans hγ)
         (neg_mul_map_ι_of_mul_map_ι ρ₁ γ hγρ) ρ₂ := by
-  have hδ_mul : δ * δ = 1 := LinearMap.ext hδ
-  refine AlgHom.ext fun a ↦ ?_
-  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
-    LinearEquiv.coe_lTensor, LinearEquiv.symm_lTensor, LinearEquiv.symm_ofInvolutive,
-    LinearEquiv.toLinearMap_ofInvolutive, ← Module.End.mul_eq_comp]
-  exact (cliffordProdTensor_of_eq_neg ρ₁ γ hγ hγρ (-γ)
-    (TauCeti.neg_mul_neg_self_of_mul_self hγ) (neg_mul_map_ι_of_mul_map_ι ρ₁ γ hγρ)
-    ρ₂ hδρ hδ_mul rfl a).symm
+  refine (LinearEquiv.conjAlgEquiv_toAlgHom_comp_eq_iff _ _ _).2 fun a z ↦ ?_
+  have hcoe : ∀ y : E ⊗[R] F, (LinearEquiv.lTensor E (LinearEquiv.ofInvolutive δ hδ)) y =
+      δ.lTensor E y := fun y ↦ by
+    induction y using TensorProduct.inductionOn with
+    | tmul e f => simp [LinearEquiv.coe_ofInvolutive]
+    | add x y hx hy => simp [hx, hy]
+  simpa [hcoe] using LinearMap.congr_fun
+    (lTensor_mul_cliffordProdTensor_of_eq_neg ρ₁ γ hγ hγρ (-γ)
+      ((neg_mul_neg γ γ).trans hγ) (neg_mul_map_ι_of_mul_map_ι ρ₁ γ hγρ) ρ₂ hδρ rfl a) z
 
 end AlgHom

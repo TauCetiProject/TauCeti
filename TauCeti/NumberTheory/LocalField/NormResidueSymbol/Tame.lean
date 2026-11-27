@@ -6,28 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormResidueSymbol.Basic
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.FieldTheory.Kummer.Degree
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
+import TauCeti.NumberTheory.LocalField.NormResidueSymbol.Steinberg
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.RootsOfUnity.Torsion
 
 /-!
-# The tame formula for the norm-residue symbol with a unit radical
+# The tame formula for the norm-residue symbol
 
 Let `K` be a nonarchimedean local field containing the `n`-th roots of unity, where `n` is prime
 to the residue characteristic `p`, and let `q` be the cardinality of the residue field. Then
 `n ∣ q - 1`. This file computes the norm-residue symbol `(a, b) = Art_K(a)(ⁿ√b) / ⁿ√b` of
-`TauCeti.normResidueSymbol` whenever the radical argument `b` is a unit of `𝒪[K]`:
+`TauCeti.normResidueSymbol` for all `a, b ∈ Kˣ`. Writing `v` for the normalized valuation, the
+element `c = (-1) ^ (v(a) v(b)) · b ^ v(a) · a ^ (-v(b))` is a unit of `𝒪[K]`, and
 
-`(a, b) = ω(b) ^ (v(a) · (q - 1) / n)`,
+`(a, b) = ω(c) ^ ((q - 1) / n)`,
 
-where `v` is the normalized valuation and `ω(b)` is the Teichmüller representative of `b`, the
-`(q - 1)`-st root of unity with the same residue as `b`. Equivalently, `(a, b)` is the unique
-`n`-th root of unity congruent to `b ^ (v(a) · (q - 1) / n)` modulo the maximal ideal. In
-particular two units pair trivially, and a uniformizer `π` pairs with a unit `b` to the root of
-unity whose residue is `r ^ ((q - 1) / n)`, the `n`-th power residue of the residue `r` of `b`.
+where `ω(c)` is the Teichmüller representative of `c`, the `(q - 1)`-st root of unity with the
+same residue as `c`. Equivalently, `(a, b)` is the unique `n`-th root of unity congruent to
+`c ^ ((q - 1) / n)` modulo the maximal ideal, and `(a, b) = 1` exactly when `c` is an `n`-th power.
+This is the tame formula. For a `ℤᵐ⁰`-valued valuation whose order is `v`, the unit `c` is the tame
+unit `Valuation.tameUnit` of `b` and `a`, so the residue of `c` is the tame symbol `∂{b, a}`.
+
+The file first treats a unit radical `b`, where `c = b ^ v(a)`: then
+`(a, b) = ω(b) ^ (v(a) · (q - 1) / n)`. In particular two units pair trivially, and a uniformizer
+`π` pairs with a unit `b` to the root of unity whose residue is `r ^ ((q - 1) / n)`, the `n`-th
+power residue of the residue `r` of `b`.
 
 The reason is that every `n`-th root of a unit lies in the maximal unramified extension. There the
 Artin symbol of a unit acts trivially, because it lies in inertia, while the Artin symbol of a
@@ -36,9 +43,9 @@ uniformizer acts as arithmetic Frobenius, which raises roots of unity of order p
 `n`-th root `z` of `ω(b)`, a root of unity of order prime to `p`, for which
 `Frob(z) / z = z ^ (q - 1) = ω(b) ^ ((q - 1) / n)`.
 
-These are the values of the symbol that identify it with the `n`-th power residue symbol and the
-tame symbol at a place prime to `n`. The remaining values, with both arguments non-units, follow
-from these and the Steinberg relation.
+For arbitrary arguments, write `a = π ^ v(a) u` and `b = π ^ v(b) w` with `u, w` units. By
+bimultiplicativity, skew symmetry, `(u, w) = 1` and the diagonal value `(π, π) = (π, -1)` of the
+Steinberg relation, `(a, b) = (π, c)`, whose radical is a unit.
 
 ## Main results
 
@@ -51,6 +58,15 @@ from these and the Steinberg relation.
   `(a, b) ≡ b ^ (v(a) · (q - 1) / n)` modulo the maximal ideal, read in `U(K,1)`.
 * `TauCeti.normResidueSymbol_eq_iff_mul_inv_zpow_mem_unitFiltration_one`: this congruence
   characterizes `(a, b)` among the `n`-th roots of unity.
+* `TauCeti.normResidueSymbol_eq_normResidueSymbol_uniformizer`: `(a, b) = (π, c)` for every
+  uniformizer `π`.
+* `TauCeti.coe_normResidueSymbol_eq_fst_unitFiltrationZeroEquivProd_pow`: the tame formula
+  `(a, b) = ω(c) ^ ((q - 1) / n)` for all `a, b`.
+* `TauCeti.normResidueSymbol_mul_inv_pow_mem_unitFiltration_one`,
+  `TauCeti.normResidueSymbol_eq_iff_mul_inv_pow_mem_unitFiltration_one`: the tame congruence
+  `(a, b) ≡ c ^ ((q - 1) / n)` for all `a, b`, and its characterization of `(a, b)`.
+* `TauCeti.normResidueSymbol_eq_one_iff_mem_range_powMonoidHom`: `(a, b) = 1` exactly when `c` is
+  an `n`-th power in `K`.
 
 ## References
 
@@ -58,7 +74,8 @@ from these and the Steinberg relation.
 * J. S. Milne, *Class Field Theory*, Chapter III, §4, Theorem 4.4 and Remark 4.5.
 
 Both sources state the formula for arbitrary arguments, each in its own orientation of the symbol;
-`TauCeti.normResidueSymbol` lets the first argument act through the Artin map.
+`TauCeti.normResidueSymbol` lets the first argument act through the Artin map, which places
+`b ^ v(a)` rather than `a ^ v(b)` in the numerator of `c`.
 -/
 
 public section
@@ -155,7 +172,7 @@ theorem coe_normResidueSymbol_of_mem_unitFiltration_zero (hp : ¬ ringChar 𝓀[
   let f : Kˣ →* rootsOfUnity n K :=
     MonoidHom.mk' (fun x ↦ normResidueSymbol K n x b) fun x y ↦ normResidueSymbol_mul_left x y b
   have ha : f a = f π ^ k * f (a * π ^ (-k)) := by
-    rw [← map_zpow, ← map_mul, mul_left_comm, ← zpow_add, add_neg_cancel, zpow_zero, mul_one]
+    rw [← map_zpow, ← map_mul, zpow_neg, mul_mul_inv_cancel'_right]
   have hfa : normResidueSymbol K n a b = normResidueSymbol K n π b ^ k := by
     simpa only [f, MonoidHom.mk'_apply,
       normResidueSymbol_eq_one_of_mem_unitFiltration_zero hp hu hb, mul_one] using ha
@@ -193,5 +210,111 @@ theorem normResidueSymbol_eq_iff_mul_inv_zpow_mem_unitFiltration_one (hp : ¬ ri
     (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit (isUnit_natCast_iff_not_dvd.2 hp))
     (div_mem (normResidueSymbol K n a b).property ζ.property) hmem
   exact Subtype.ext (div_eq_one.1 h1)
+
+/-! ### The tame formula for arbitrary arguments -/
+
+/-- **Reduction of the tame formula to a uniformizer.** If `n` is prime to the residue
+characteristic and `π` is a uniformizer, then for all `a, b ∈ Kˣ`
+`(a, b) = (π, (-1) ^ (v(a) v(b)) · b ^ v(a) · a ^ (-v(b)))`, whose radical argument is a unit of
+`𝒪[K]` (`TauCeti.neg_one_zpow_mul_zpow_mul_zpow_mem_unitFiltration_zero`). -/
+theorem normResidueSymbol_eq_normResidueSymbol_uniformizer (hp : ¬ ringChar 𝓀[K] ∣ n) {π : Kˣ}
+    (hπ : IsUniformizer K π) (a b : Kˣ) :
+    normResidueSymbol K n a b = normResidueSymbol K n π
+      ((-1) ^ ((normalizedValuation K a).toAdd * (normalizedValuation K b).toAdd) *
+        b ^ (normalizedValuation K a).toAdd * a ^ (-(normalizedValuation K b).toAdd)) := by
+  set α := (normalizedValuation K a).toAdd
+  set β := (normalizedValuation K b).toAdd
+  -- Write `a = π ^ α u` and `b = π ^ β w` with `u, w` units of `𝒪[K]`.
+  have hπ1 := (isUniformizer_def π).1 hπ
+  obtain ⟨u, hu, ha⟩ : ∃ u ∈ unitFiltration K 0, a = π ^ α * u :=
+    ⟨a * π ^ (-α), mul_zpow_neg_mem_unitFiltration_zero hπ1 a,
+      by rw [zpow_neg, mul_mul_inv_cancel'_right]⟩
+  obtain ⟨w, hw, hb⟩ : ∃ w ∈ unitFiltration K 0, b = π ^ β * w :=
+    ⟨b * π ^ (-β), mul_zpow_neg_mem_unitFiltration_zero hπ1 b,
+      by rw [zpow_neg, mul_mul_inv_cancel'_right]⟩
+  -- The values `(π, b)`, `(π, u)` and `(π, -1)` determine both sides.
+  have hub : normResidueSymbol K n u b = (normResidueSymbol K n π u)⁻¹ ^ β := by
+    conv_lhs => rw [hb]
+    rw [normResidueSymbol_mul_right, normResidueSymbol_zpow_right,
+      normResidueSymbol_eq_one_of_mem_unitFiltration_zero hp hu hw, mul_one,
+      normResidueSymbol_swap]
+  have hab : normResidueSymbol K n a b =
+      normResidueSymbol K n π b ^ α * (normResidueSymbol K n π u)⁻¹ ^ β := by
+    conv_lhs => rw [ha]
+    rw [normResidueSymbol_mul_left, normResidueSymbol_zpow_left, hub]
+  have hπa : normResidueSymbol K n π a =
+      normResidueSymbol K n π (-1) ^ α * normResidueSymbol K n π u := by
+    conv_lhs => rw [ha]
+    rw [normResidueSymbol_mul_right, normResidueSymbol_zpow_right,
+      normResidueSymbol_self_eq_normResidueSymbol_neg_one_right]
+  rw [hab, normResidueSymbol_mul_right, normResidueSymbol_mul_right, normResidueSymbol_zpow_right,
+    normResidueSymbol_zpow_right, normResidueSymbol_zpow_right, hπa]
+  -- The factors `(π, -1) ^ (α β)` and `(π, -1) ^ (-α β)` cancel, leaving
+  -- `(π, b) ^ α (π, u) ^ (-β)` on both sides.
+  rw [mul_zpow, ← zpow_mul, mul_neg, zpow_neg _ (α * β), inv_zpow',
+    mul_mul_mul_comm, mul_inv_cancel, one_mul]
+
+/-- **The tame formula.** If `n` is prime to the residue characteristic, then for all
+`a, b ∈ Kˣ` the norm-residue symbol is `(a, b) = ω(c) ^ ((q - 1) / n)`, where
+`c = (-1) ^ (v(a) v(b)) · b ^ v(a) · a ^ (-v(b))` is a unit of `𝒪[K]`, `ω(c)` is its Teichmüller
+representative and `q` is the cardinality of the residue field. -/
+theorem coe_normResidueSymbol_eq_fst_unitFiltrationZeroEquivProd_pow (hp : ¬ ringChar 𝓀[K] ∣ n)
+    (a b : Kˣ) :
+    (normResidueSymbol K n a b : Kˣ) =
+      ((unitFiltrationZeroEquivProd K
+        ⟨_, neg_one_zpow_mul_zpow_mul_zpow_mem_unitFiltration_zero a b⟩).1 : Kˣ) ^
+        ((Nat.card 𝓀[K] - 1) / n) := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer (K := K)
+  rw [normResidueSymbol_eq_normResidueSymbol_uniformizer hp hπ a b]
+  exact coe_normResidueSymbol_uniformizer hp hπ _
+
+/-- **The tame congruence.** If `n` is prime to the residue characteristic, then for all
+`a, b ∈ Kˣ` the norm-residue symbol satisfies
+`(a, b) ≡ ((-1) ^ (v(a) v(b)) · b ^ v(a) · a ^ (-v(b))) ^ ((q - 1) / n)` modulo the maximal ideal:
+their quotient is a principal unit. -/
+theorem normResidueSymbol_mul_inv_pow_mem_unitFiltration_one (hp : ¬ ringChar 𝓀[K] ∣ n)
+    (a b : Kˣ) :
+    (normResidueSymbol K n a b : Kˣ) *
+        (((-1) ^ ((normalizedValuation K a).toAdd * (normalizedValuation K b).toAdd) *
+          b ^ (normalizedValuation K a).toAdd * a ^ (-(normalizedValuation K b).toAdd)) ^
+            ((Nat.card 𝓀[K] - 1) / n))⁻¹ ∈
+      unitFiltration K 1 := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer (K := K)
+  have h := normResidueSymbol_mul_inv_zpow_mem_unitFiltration_one hp π
+    (neg_one_zpow_mul_zpow_mul_zpow_mem_unitFiltration_zero a b)
+  rwa [(isUniformizer_def π).1 hπ, toAdd_ofAdd, one_mul, zpow_natCast,
+    ← normResidueSymbol_eq_normResidueSymbol_uniformizer hp hπ a b] at h
+
+/-- **The tame congruence characterizes the symbol.** If `n` is prime to the residue
+characteristic, then for all `a, b ∈ Kˣ` the norm-residue symbol `(a, b)` is the unique `n`-th root
+of unity congruent to `((-1) ^ (v(a) v(b)) · b ^ v(a) · a ^ (-v(b))) ^ ((q - 1) / n)` modulo the
+maximal ideal. -/
+theorem normResidueSymbol_eq_iff_mul_inv_pow_mem_unitFiltration_one (hp : ¬ ringChar 𝓀[K] ∣ n)
+    (a b : Kˣ) (ζ : rootsOfUnity n K) :
+    normResidueSymbol K n a b = ζ ↔
+      (ζ : Kˣ) *
+          (((-1) ^ ((normalizedValuation K a).toAdd * (normalizedValuation K b).toAdd) *
+            b ^ (normalizedValuation K a).toAdd * a ^ (-(normalizedValuation K b).toAdd)) ^
+              ((Nat.card 𝓀[K] - 1) / n))⁻¹ ∈
+        unitFiltration K 1 := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer (K := K)
+  rw [normResidueSymbol_eq_normResidueSymbol_uniformizer hp hπ a b,
+    normResidueSymbol_eq_iff_mul_inv_zpow_mem_unitFiltration_one hp π
+      (neg_one_zpow_mul_zpow_mul_zpow_mem_unitFiltration_zero a b),
+    (isUniformizer_def π).1 hπ, toAdd_ofAdd, one_mul, zpow_natCast]
+
+/-- **The tame criterion for triviality.** If `n` is prime to the residue characteristic, then for
+all `a, b ∈ Kˣ` the norm-residue symbol `(a, b)` is trivial exactly when the unit
+`(-1) ^ (v(a) v(b)) · b ^ v(a) · a ^ (-v(b))` of `𝒪[K]` is an `n`-th power in `K`. -/
+theorem normResidueSymbol_eq_one_iff_mem_range_powMonoidHom (hp : ¬ ringChar 𝓀[K] ∣ n)
+    (a b : Kˣ) :
+    normResidueSymbol K n a b = 1 ↔
+      (-1) ^ ((normalizedValuation K a).toAdd * (normalizedValuation K b).toAdd) *
+          b ^ (normalizedValuation K a).toAdd * a ^ (-(normalizedValuation K b).toAdd) ∈
+        (powMonoidHom n : Kˣ →* Kˣ).range := by
+  rw [normResidueSymbol_eq_iff_mul_inv_pow_mem_unitFiltration_one hp a b, OneMemClass.coe_one,
+    one_mul, inv_mem_iff, pow_natCard_sub_one_div_mem_unitFiltration_one_iff
+      (dvd_natCard_residueField_sub_one (isUnit_natCast_iff_not_dvd.2 hp))
+      (neg_one_zpow_mul_zpow_mul_zpow_mem_unitFiltration_zero a b)]
 
 end TauCeti

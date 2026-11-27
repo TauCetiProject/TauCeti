@@ -7,15 +7,22 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 import Mathlib.Analysis.Convex.Slope
+import Mathlib.LinearAlgebra.AffineSpace.Slope
+import Mathlib.Tactic.Linarith
 
 /-!
-# Strictly convex functions: affine pullback and level sets
+# Convex functions: affine maps, affine pullback, level sets and increments
 
-An injective affine pullback preserves strict convexity. This algebraic fact is used to
-restrict a strictly convex function to a line before applying the strict tangent inequality.
+An affine map between modules is both convex and concave on any convex set (`AffineMap.convexOn`,
+`AffineMap.concaveOn`), complementing `LinearMap.convexOn` and `LinearMap.concaveOn`. Moreover, an
+injective affine pullback preserves strict convexity (`StrictConvexOn.comp_affineMap_of_injective`);
+this is used to restrict a strictly convex function to a line before applying the strict tangent
+inequality.
 
 A strictly convex function of one variable takes each value at most twice
 (`StrictConvexOn.eq_or_eq_of_apply_eq`), since its slopes on adjacent intervals strictly increase.
+The increments of a convex function of one variable over a fixed width `c ≥ 0` increase
+(`ConvexOn.sub_le_sub_of_le`).
 
 `StrictConvexOn.comp_affineMap_of_injective` is extracted from the tangent argument adapted
 from the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Convex/ContactMeasure.lean#L993).
@@ -24,6 +31,18 @@ from the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/bl
 public section
 
 open Set
+
+/-- An affine map is convex on any convex set. -/
+theorem AffineMap.convexOn {𝕜 E β : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E]
+    [AddCommGroup β] [PartialOrder β] [Module 𝕜 E] [Module 𝕜 β] (f : E →ᵃ[𝕜] β) {s : Set E}
+    (hs : Convex 𝕜 s) : ConvexOn 𝕜 s f :=
+  ⟨hs, fun _ _ _ _ _ _ _ _ hab => (Convex.combo_affine_apply hab).le⟩
+
+/-- An affine map is concave on any convex set. -/
+theorem AffineMap.concaveOn {𝕜 E β : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E]
+    [AddCommGroup β] [PartialOrder β] [Module 𝕜 E] [Module 𝕜 β] (f : E →ᵃ[𝕜] β) {s : Set E}
+    (hs : Convex 𝕜 s) : ConcaveOn 𝕜 s f :=
+  ⟨hs, fun _ _ _ _ _ _ _ _ hab => (Convex.combo_affine_apply hab).ge⟩
 
 /-- An injective affine change of variables preserves strict convexity on the preimage. -/
 theorem StrictConvexOn.comp_affineMap_of_injective
@@ -56,3 +75,26 @@ theorem StrictConvexOn.eq_or_eq_of_apply_eq {𝕜 : Type*} [Field 𝕜] [LinearO
   · exact key hx hy hxz hzy hfx hfz hfy
   · exact h.2 hzy
   · exact key hx hz hxy hyz hfx hfy hfz
+
+/-- For a convex function on `D ⊆ 𝕜`, increments over a fixed width `c ≥ 0` increase: if `s ≤ t`
+with `s ∈ D` and `t + c ∈ D`, then `f (s + c) - f s ≤ f (t + c) - f t`. -/
+theorem ConvexOn.sub_le_sub_of_le {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] {D : Set 𝕜} {f : 𝕜 → 𝕜} (hf : ConvexOn 𝕜 D f) {s t c : 𝕜}
+    (hs : s ∈ D) (htc : t + c ∈ D) (hc : 0 ≤ c) (hst : s ≤ t) :
+    f (s + c) - f s ≤ f (t + c) - f t := by
+  rcases hc.eq_or_lt with rfl | hc
+  · simp
+  have hsc : s + c ∈ D := hf.1.ordConnected.out hs htc ⟨by linarith, by linarith⟩
+  have ht : t ∈ D := hf.1.ordConnected.out hs htc ⟨hst, by linarith⟩
+  -- Both increments are compared with the common secant from `s` to `t + c`.
+  have key : slope f s (s + c) ≤ slope f t (t + c) := calc
+    slope f s (s + c) ≤ slope f s (t + c) := by
+      rw [slope_def_field, slope_def_field]
+      exact hf.secant_mono hs hsc htc (by linarith) (by linarith) (by linarith)
+    _ = slope f (t + c) s := slope_comm f s (t + c)
+    _ ≤ slope f (t + c) t := by
+      rw [slope_def_field, slope_def_field]
+      exact hf.secant_mono htc hs ht (by linarith) (by linarith) hst
+    _ = slope f t (t + c) := slope_comm f (t + c) t
+  simp only [slope_def_field, add_sub_cancel_left] at key
+  exact (div_le_div_iff_of_pos_right hc).1 key

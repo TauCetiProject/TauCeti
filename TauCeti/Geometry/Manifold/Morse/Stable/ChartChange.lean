@@ -116,7 +116,7 @@ private theorem quadratic_comp_transition :
   have h₁ := φ'.eq_quadratic _ hz.2
   have h₂ := φ.eq_quadratic _ (φ.toChart.map_target hz.1)
   rw [φ.toChart.right_inv hz.1] at h₂
-  simp only [comp_apply, OpenPartialHomeomorph.coe_trans, quadratic_apply]
+  simp only [comp_apply, OpenPartialHomeomorph.coe_trans, MorseBottChart.quadratic_apply]
   linarith
 
 omit [FiniteDimensional ℝ E] in
@@ -154,7 +154,7 @@ private theorem bijective_negativeChangeAt : Bijective (φ.negativeChangeAt φ' 
       refine Finset.sum_nonneg fun i _ ↦ ?_
       by_cases hi : φ'.weight i < 0
       · have := congrFun hc ⟨i, hi⟩
-        rw [negativeCoord_apply, Pi.zero_apply] at this
+        rw [MorseBottChart.negativeCoord_apply, Pi.zero_apply] at this
         rw [this]
         simp
       · exact mul_nonneg (not_lt.1 hi) (sq_nonneg _)

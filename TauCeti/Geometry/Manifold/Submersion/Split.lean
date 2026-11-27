@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
+import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Logic.Function.Const
 import TauCeti.LinearAlgebra.Dimension.Submodule
@@ -24,7 +24,8 @@ hence to being a regular point.
 For maps between finite-dimensional real or complex manifolds with boundaryless source, a split
 differential and smoothness on a neighbourhood give Mathlib's submersion normal form. The complement
 can be chosen uniformly as `Fin (dim E - dim F) → 𝕜`, even when the source is empty. Consequently
-a smooth map is a submersion exactly when its differentials split. No separation or countability
+a smooth map is a submersion exactly when its differentials split, and a smooth map whose composite
+with a smooth surjection is a submersion is itself one. No separation or countability
 hypothesis on either manifold is needed. These comparisons allow constructions using submersion
 charts to be applied to maps specified by their differentials. In particular, a map between
 finite-dimensional normed spaces that is `C¹` with surjective Fréchet derivative at a point has the
@@ -301,6 +302,22 @@ theorem submersion_iff_split_mfderiv (hf : ContMDiff I J n f) (hn : 1 ≤ n) :
   exact (hf.isSubmersionOfComplement_of_surjective_mfderiv hn
     (fun x ↦ (isRegularPoint_iff.mp (isDiffSubmersionAt_iff_isRegularPoint.mp (h x))))).isSubmersion
 
+/-- A smooth map `f` is a submersion when its composite `f ∘ π` with a smooth surjection `π` is
+one: by the chain rule, every differential of `f` is then surjective. The source of `π` may be
+modelled on any space. -/
+theorem _root_.Manifold.IsSubmersion.of_comp {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {π : M' → M} (hfπ : IsSubmersion I' J n (f ∘ π))
+    (hπ : ContMDiff I' I n π) (hsurj : Surjective π) (hf : ContMDiff I J n f) (hn : 1 ≤ n) :
+    IsSubmersion I J n f := by
+  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
+  refine (hf.isSubmersionOfComplement_of_surjective_mfderiv hn fun y ↦ ?_).isSubmersion
+  obtain ⟨x, rfl⟩ := hsurj y
+  have hs := hfπ.surjective_mfderiv hn0 x
+  rw [mfderiv_comp x (hf.mdifferentiableAt hn0) (hπ.mdifferentiableAt hn0),
+    ContinuousLinearMap.coe_comp] at hs
+  exact hs.of_comp
+
 end NormalForm
 
 section NormedSpace
@@ -328,6 +345,14 @@ theorem _root_.ContDiffAt.isSubmersionAt_of_surjective_fderiv (hf : ContDiffAt �
   obtain ⟨u, hu, hfu⟩ := hf.contDiffOn le_rfl (by simp)
   obtain ⟨U, hUu, hU, hxU⟩ := mem_nhds_iff.1 hu
   exact (hfu.mono hUu).isSubmersionAt_of_surjective_fderiv hU hxU le_rfl hs
+
+/-- A surjective continuous linear map from a finite-dimensional real or complex normed space is a
+`C^n` submersion for every `1 ≤ n`. -/
+theorem _root_.ContinuousLinearMap.isSubmersion_of_surjective {L : E →L[𝕜] F}
+    (hL : Function.Surjective L) (hn : 1 ≤ n) : IsSubmersion 𝓘(𝕜, E) 𝓘(𝕜, F) n L := by
+  have : FiniteDimensional 𝕜 F := Module.Finite.of_surjective (L : E →ₗ[𝕜] F) hL
+  exact (L.contMDiff.isSubmersionOfComplement_of_surjective_mfderiv hn fun y ↦ by
+    rwa [L.mfderiv_eq]).isSubmersion
 
 end NormedSpace
 

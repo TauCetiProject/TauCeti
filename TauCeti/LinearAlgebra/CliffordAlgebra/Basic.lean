@@ -21,8 +21,22 @@ linear equivalence with the exterior algebra, and the commutation rule
 `CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another, together with the
 square of a scalar plus a vector (`CliffordAlgebra.algebraMap_add_ι_mul_self`) and the
 extensionality of algebra equivalences on generators (`CliffordAlgebra.algEquiv_ext_ι`).
+A vector squares to its scalar inside a product (`CliffordAlgebra.ι_mul_ι_mul_eq_algebraMap_mul`),
+and `(e f) (f e) = Q e Q f` (`CliffordAlgebra.ι_mul_ι_mul_ι_mul_ι_swap`).
 Rescaling the factors of a product of vectors pulls the scalars out in front
 (`CliffordAlgebra.prod_map_ι_smul`).
+
+For a free module, in every characteristic, `-Q` is the quadratic form of a bilinear form
+(Mathlib's `LinearMap.BilinMap.toQuadraticMap_surjective`), so `CliffordAlgebra.changeForm`
+compares `C(Q)` with the exterior algebra. This gives linear left inverses of `ι` and of the
+scalars (`CliffordAlgebra.exists_leftInverse_ι_of_free`,
+`CliffordAlgebra.exists_leftInverse_algebraMap_of_free`), hence injectivity of `ι` and of the
+scalars (`CliffordAlgebra.ι_injective_of_free`, `CliffordAlgebra.algebraMap_injective_of_free`),
+and invertibility of `Q(m)` for an invertible vector `ι(m)`
+(`CliffordAlgebra.isUnit_of_isUnit_ι_of_free`).
+
+Twisted conjugation `ι m ↦ involute x * ι m * x⁻¹` by a unit preserves the square of a vector
+(`CliffordAlgebra.algebraMap_apply_eq_of_ι_eq_involute_mul_ι_mul_inv`), in every characteristic.
 -/
 
 public section
@@ -79,6 +93,16 @@ theorem algebraMap_add_ι_mul_self (Q : QuadraticForm R M) (r : R) (t : M) :
   rw [add_mul, mul_add, mul_add, ι_sq_scalar, ← map_mul, ← Algebra.commutes r (ι Q t),
     ← Algebra.smul_def, map_add, map_smul, mul_smul, two_smul]
   abel
+
+/-- A vector squares to its quadratic form value, also inside a product: `x (x y) = Q x y`. -/
+theorem ι_mul_ι_mul_eq_algebraMap_mul {Q : QuadraticForm R M} (x : M) (y : CliffordAlgebra Q) :
+    ι Q x * (ι Q x * y) = algebraMap R _ (Q x) * y := by
+  rw [← mul_assoc, ι_sq_scalar]
+
+/-- The product `(e f) (f e)` of two vectors and their swap is the scalar `Q e * Q f`. -/
+theorem ι_mul_ι_mul_ι_mul_ι_swap {Q : QuadraticForm R M} (e f : M) :
+    ι Q e * ι Q f * (ι Q f * ι Q e) = algebraMap R _ (Q e * Q f) := by
+  rw [mul_assoc, ι_mul_ι_mul_eq_algebraMap_mul, Algebra.commutes, ← mul_assoc, ι_sq_scalar, map_mul]
 
 /-- Two algebra equivalences out of a Clifford algebra agree when they agree on the generators:
 the equivalence form of `CliffordAlgebra.hom_ext`. -/
@@ -183,6 +207,86 @@ private theorem eq_algebraMap_of_all_contractLeft_eq_zero
 
 end Exterior
 
+/-- **Twisted conjugation preserves the square of a vector.** If the twisted conjugate
+`involute x * ι m * x⁻¹` of `ι m` by a unit `x` is the vector `ι w`, then `Q w` and `Q m` agree as
+scalars of the Clifford algebra, so `Q w = Q m` whenever the scalars embed. -/
+theorem algebraMap_apply_eq_of_ι_eq_involute_mul_ι_mul_inv {Q : QuadraticForm R M}
+    {x : (CliffordAlgebra Q)ˣ} {w m : M}
+    (h : ι Q w = involute (x : CliffordAlgebra Q) * ι Q m * ((x⁻¹ : (CliffordAlgebra Q)ˣ) :
+      CliffordAlgebra Q)) :
+    algebraMap R (CliffordAlgebra Q) (Q w) = algebraMap R (CliffordAlgebra Q) (Q m) := by
+  -- Applying the grade involution gives the other spelling of the twisted conjugate.
+  have h' : ι Q w = (x : CliffordAlgebra Q) * ι Q m *
+      involute ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+    simpa only [involute_ι, map_mul, involute_involute, mul_neg, neg_mul, neg_inj] using
+      congrArg involute h
+  calc algebraMap R (CliffordAlgebra Q) (Q w)
+      = ι Q w * ι Q w := (ι_sq_scalar Q w).symm
+    _ = (involute (x : CliffordAlgebra Q) * ι Q m *
+          ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) *
+        ((x : CliffordAlgebra Q) * ι Q m *
+          involute ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) :=
+        congrArg₂ (· * ·) h h'
+    _ = involute (x : CliffordAlgebra Q) *
+          (ι Q m * (((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * x) * ι Q m) *
+        involute ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+        simp only [mul_assoc]
+    _ = involute (x : CliffordAlgebra Q) * algebraMap R _ (Q m) *
+        involute ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+        rw [Units.inv_mul, mul_one, ι_sq_scalar]
+    _ = algebraMap R (CliffordAlgebra Q) (Q m) := by
+        -- The scalar `Q m` commutes past `involute x`, which then cancels `involute x⁻¹`.
+        rw [← Algebra.commutes, mul_assoc, ← map_mul, Units.mul_inv, map_one, mul_one]
+
+/-! ### Free modules in every characteristic -/
+
+section Free
+
+variable [Module.Free R M]
+
+/-- **`ι` has a linear left inverse for a free module**, in every characteristic:
+`ExteriorAlgebra.ιInv` after `CliffordAlgebra.changeForm` to the exterior algebra. It is the
+counterpart of `CliffordAlgebra.ιInv`, which needs `2` to be invertible. -/
+theorem exists_leftInverse_ι_of_free (Q : QuadraticForm R M) :
+    ∃ f : CliffordAlgebra Q →ₗ[R] M, Function.LeftInverse f (ι Q) := by
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (0 - Q)
+  refine ⟨ExteriorAlgebra.ιInv ∘ₗ changeForm hB, fun m => ?_⟩
+  rw [LinearMap.comp_apply, changeForm_ι]
+  exact ExteriorAlgebra.ι_leftInverse m
+
+/-- **`ι` is injective for a free module**, in every characteristic. -/
+theorem ι_injective_of_free (Q : QuadraticForm R M) : Function.Injective (ι Q) :=
+  (exists_leftInverse_ι_of_free Q).choose_spec.injective
+
+/-- **The scalars have a linear left inverse for a free module**, in every characteristic:
+`ExteriorAlgebra.algebraMapInv` after `CliffordAlgebra.changeForm` to the exterior algebra. -/
+theorem exists_leftInverse_algebraMap_of_free (Q : QuadraticForm R M) :
+    ∃ f : CliffordAlgebra Q →ₗ[R] R,
+      Function.LeftInverse f (algebraMap R (CliffordAlgebra Q)) := by
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (0 - Q)
+  refine ⟨(ExteriorAlgebra.algebraMapInv (R := R) (M := M)).toLinearMap ∘ₗ changeForm hB,
+    fun r => ?_⟩
+  rw [LinearMap.comp_apply, changeForm_algebraMap, AlgHom.toLinearMap_apply]
+  exact ExteriorAlgebra.algebraMap_leftInverse M r
+
+/-- **The scalars embed in the Clifford algebra of a free module**, in every characteristic. -/
+theorem algebraMap_injective_of_free (Q : QuadraticForm R M) :
+    Function.Injective (algebraMap R (CliffordAlgebra Q)) :=
+  (exists_leftInverse_algebraMap_of_free Q).choose_spec.injective
+
+/-- **An invertible vector has invertible square** for a free module, in every characteristic:
+if `ι(m)` is a unit then so is `Q(m)`. -/
+theorem isUnit_of_isUnit_ι_of_free {Q : QuadraticForm R M} {m : M} (h : IsUnit (ι Q m)) :
+    IsUnit (Q m) := by
+  have hsq : IsUnit (algebraMap R (CliffordAlgebra Q) (Q m)) := by
+    rw [← ι_sq_scalar]
+    exact h.mul h
+  obtain ⟨f, hf⟩ := exists_leftInverse_algebraMap_of_free Q
+  simpa only [Algebra.algebraMap_self, RingHom.id_apply] using
+    hsq.algebraMap_of_algebraMap f (by simpa only [map_one] using hf 1)
+
+end Free
+
 /-- A Clifford element annihilated by every left contraction is a scalar. -/
 theorem exists_eq_algebraMap_of_contractLeft_eq_zero [Module.Free R M]
     (Q : QuadraticForm R M) (x : CliffordAlgebra Q)
@@ -193,8 +297,7 @@ theorem exists_eq_algebraMap_of_contractLeft_eq_zero [Module.Free R M]
   let _ : LinearOrder (Module.Free.ChooseBasisIndex R M) :=
     linearOrderOfSTO WellOrderingRel
   let b := Module.Free.chooseBasis R M
-  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (R := R) (M := M) (N := R) (-Q)
-  have h : B.toQuadraticMap = (0 : QuadraticForm R M) - Q := by rw [hB]; simp
+  obtain ⟨B, h⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (0 - Q)
   let y : ExteriorAlgebra R M := changeForm h x
   have hycontract (d : Module.Dual R M) :
       contractLeft (Q := (0 : QuadraticForm R M)) d y = 0 := by

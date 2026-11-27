@@ -24,14 +24,16 @@ The pure-tensor map also restricts to the polar kernel of a vector, so orthogona
 be extended before passing to quotient spaces.
 It lifts isometries and isometric equivalences by extending their underlying linear maps, records
 the interaction with the additive operations on forms, compares direct and successive extension
-through a scalar tower, and proves that finite-dimensional nondegenerate forms remain
-nondegenerate over a field extension. It also identifies the base change of a diagonal form with
-the diagonal form obtained by mapping its coefficients into the target algebra, extends
-orthogonal and special orthogonal automorphisms so a quadratic space's rational symmetries act on
-each scalar extension, and shows that extending scalars carries the reflection in a vector `v` to
-the reflection in `1 ⊗ₜ v`, so that a reflection factorization `τ_{v₀} ⋯ τ_{vₙ₋₁}` extends to the
-factorization `τ_{1 ⊗ v₀} ⋯ τ_{1 ⊗ vₙ₋₁}`. Base change also distributes over orthogonal sums,
-so an isometric equivalence with an orthogonal sum extends to one between the base changes.
+through a scalar tower, and proves that, over a ring in which `2` is invertible, nondegenerate
+forms remain nondegenerate under any free scalar extension (in particular over a field extension in
+characteristic not two), with no finiteness assumption. It also
+identifies the base change of a diagonal form with the diagonal form obtained by mapping its
+coefficients into the target algebra, extends orthogonal and special orthogonal automorphisms so a
+quadratic space's rational symmetries act on each scalar extension, and shows that extending scalars
+carries the reflection in a vector `v` to the reflection in `1 ⊗ₜ v`, so that a reflection
+factorization `τ_{v₀} ⋯ τ_{vₙ₋₁}` extends to the factorization `τ_{1 ⊗ v₀} ⋯ τ_{1 ⊗ vₙ₋₁}`. Base
+change also distributes over orthogonal sums, so an isometric equivalence with an orthogonal sum
+extends to one between the base changes.
 
 These results complement Mathlib's construction `QuadraticForm.baseChange` and its pure-tensor
 evaluation theorem.  They allow localizations of a quadratic space to inherit maps, injective
@@ -45,6 +47,23 @@ noncomputable section
 open scoped TensorProduct
 
 universe uR uA uM uN uP
+
+section CommSemiring
+
+/-- Two quadratic isometries out of `A ⊗[R] M` are equal if they agree on every pure tensor
+`1 ⊗ₜ[R] x`. -/
+theorem QuadraticMap.Isometry.baseChange_ext
+    {R : Type uR} {A : Type uA} {M : Type uM} {N : Type uN} {P : Type uP}
+    [CommSemiring R] [CommSemiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module A N]
+    [AddCommMonoid P] [Module A P]
+    {Q₁ : QuadraticMap A (A ⊗[R] M) P} {Q₂ : QuadraticMap A N P}
+    ⦃f g : Q₁ →qᵢ Q₂⦄ (h : ∀ x : M, f (1 ⊗ₜ[R] x) = g (1 ⊗ₜ[R] x)) : f = g := by
+  refine ext fun y ↦ TensorProduct.inductionOn y (fun a x ↦ ?_) (fun x y hx hy ↦ ?_)
+  · rw [← mul_one a, ← smul_eq_mul, ← TensorProduct.smul_tmul', map_smul, map_smul, h]
+  · simp [hx, hy]
+
+end CommSemiring
 
 section CommRing
 
@@ -67,7 +86,7 @@ def QuadraticMap.Isometry.baseChange (f : Q₁ →qᵢ Q₂) (A : Type uA)
   toLinearMap := f.toLinearMap.baseChange A
   map_app' x := by
     have h : (Q₂.baseChange A).comp (f.toLinearMap.baseChange A) = Q₁.baseChange A := by
-      apply baseChange_ext
+      apply _root_.baseChange_ext
       intro m
       simp
     exact DFunLike.congr_fun h x
@@ -200,22 +219,6 @@ theorem QuadraticMap.IsometryEquiv.baseChange_symm (f : Q₁.IsometryEquiv Q₂)
       ((QuadraticMap.IsometryEquiv.baseChange f A).symm).toLinearEquiv :=
     LinearEquiv.baseChange_symm R A M N f.toLinearEquiv
   exact DFunLike.congr_fun h x
-
-/-- Two isometric equivalences out of a base-changed quadratic form agree if they agree on pure
-tensors `a ⊗ₜ m`. -/
-theorem QuadraticMap.IsometryEquiv.baseChange_ext {N : Type*} [AddCommGroup N]
-    [Module R N] [Module A N] [IsScalarTower R A N]
-    {Q : QuadraticForm R M} {Q' : QuadraticForm A N}
-    {f g : (Q.baseChange A).IsometryEquiv Q'}
-    (h : ∀ (a : A) (m : M), f (a ⊗ₜ m) = g (a ⊗ₜ m)) : f = g := by
-  have hlin : f.toLinearEquiv.toLinearMap = g.toLinearEquiv.toLinearMap := by
-    refine TensorProduct.AlgebraTensorModule.ext fun a m ↦ ?_
-    simp only [LinearEquiv.coe_toLinearMap, QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
-    exact h a m
-  exact DFunLike.ext f g fun x ↦ by
-    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
-      ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
-    exact LinearMap.congr_fun hlin x
 
 /-- Isometric quadratic forms remain isometric after base change. -/
 theorem QuadraticMap.Equivalent.baseChange (h : Q₁.Equivalent Q₂) (A : Type uA)
@@ -414,6 +417,17 @@ theorem exists_isUnit_baseChange {Q : QuadraticForm R M} (hQ : ∃ v, IsUnit (Q 
     ∃ v, IsUnit (Q.baseChange A v) :=
   hQ.imp' (1 ⊗ₜ ·) fun _ hv ↦ by
     simpa [baseChange_tmul, Algebra.smul_def] using hv.map (algebraMap R A)
+
+/-- Over a ring in which `2` is invertible, a nondegenerate quadratic form stays nondegenerate
+after any free scalar extension, with no finiteness assumption on the module; in particular after
+any extension of a base field of characteristic not two. -/
+theorem Nondegenerate.baseChange [Module.Free R A] {Q : QuadraticForm R M}
+    (hQ : Q.Nondegenerate) : (Q.baseChange A).Nondegenerate := by
+  let : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  rw [← QuadraticMap.nondegenerate_associated_iff, associated_baseChange]
+  exact LinearMap.BilinForm.Nondegenerate.baseChange A
+    (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
 
 end QuadraticForm
 
@@ -837,19 +851,6 @@ theorem Nondegenerate.of_baseChange [Invertible (2 : K)]
   rw [associated_baseChange] at h
   exact LinearMap.BilinForm.nondegenerate_of_nondegenerate_baseChange L
     (QuadraticMap.associated Q) (Module.Free.chooseBasis K V) h
-
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after extending its
-base field. -/
-theorem Nondegenerate.baseChange [Invertible (2 : K)]
-    [FiniteDimensional K V] {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) :
-    (Q.baseChange L).Nondegenerate := by
-  let : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  let b := Module.Free.chooseBasis K V
-  rw [← QuadraticMap.nondegenerate_associated_iff]
-  rw [associated_baseChange]
-  exact (LinearMap.BilinForm.nondegenerate_baseChange_iff (QuadraticMap.associated Q) b).2
-    (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
 
 /-- On a space of dimension at most one, a quadratic form is anisotropic exactly when its
 extension to a nontrivial ring without zero divisors is anisotropic.  Dimension one is sharp:

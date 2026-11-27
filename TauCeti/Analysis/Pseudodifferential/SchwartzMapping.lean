@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Quantization
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency.Basic
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
@@ -65,7 +65,8 @@ where the profile is bounded by `‖u‖_{L¹}`.
 * `TauCeti.Symbol.quantizeUniformCLM`: the quantization of a uniform symbol as a continuous linear
   map `𝓢(ℝⁿ, V) →L[ℂ] 𝓢(ℝⁿ, W)`.
 * `TauCeti.Symbol.quantizeUniformCLM_add`, `TauCeti.Symbol.quantizeUniformCLM_smul`,
-  `TauCeti.Symbol.quantizeUniformCLM_zero`, `TauCeti.Symbol.quantizeUniformCLM_sum`,
+  `TauCeti.Symbol.quantizeUniformCLM_zero`, `TauCeti.Symbol.quantizeUniformCLM_neg`,
+  `TauCeti.Symbol.quantizeUniformCLM_sub`, `TauCeti.Symbol.quantizeUniformCLM_sum`,
   `TauCeti.Symbol.quantizeUniformCLM_inclusion`, `TauCeti.Symbol.quantizeUniformCLM_congr`: the
   quantization is linear in the symbol and depends only on its coefficient, not on the order.
 * `TauCeti.Symbol.lineDerivOp_quantizeUniformCLM`,
@@ -306,6 +307,18 @@ theorem quantizeUniformCLM_congr {m' : ℝ} {a : Symbol n V W m} {b : Symbol n V
     quantizeUniformCLM a ha = quantizeUniformCLM b hb := by
   ext u x
   simp [h]
+
+/-- The quantization takes the negated symbol to the negated operator. -/
+theorem quantizeUniformCLM_neg {a : Symbol n V W m} (ha : a.IsUniform) :
+    quantizeUniformCLM (-a) ha.neg = -quantizeUniformCLM a ha := by
+  rw [quantizeUniformCLM_congr ha.neg (ha.smul (-1)) (by simp), quantizeUniformCLM_smul,
+    neg_one_smul]
+
+/-- The quantization takes differences of symbols to differences of operators. -/
+theorem quantizeUniformCLM_sub {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
+    quantizeUniformCLM (a - b) (ha.sub hb) = quantizeUniformCLM a ha - quantizeUniformCLM b hb := by
+  rw [quantizeUniformCLM_congr (ha.sub hb) (ha.add hb.neg) (by rw [sub_eq_add_neg]),
+    quantizeUniformCLM_add ha hb.neg, quantizeUniformCLM_neg hb, sub_eq_add_neg]
 
 /-- **Commutator with a derivative.** `∂_j (Op(a) u) = Op(a) (∂_j u) + Op(∂_{x_j} a) u` in
 Schwartz space. -/

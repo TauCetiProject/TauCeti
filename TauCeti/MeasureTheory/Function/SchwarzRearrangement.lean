@@ -20,6 +20,8 @@ import TauCeti.MeasureTheory.Integral.LayerCake
 import TauCeti.MeasureTheory.Measure.Continuity
 -- Proof-only: the measure of the set where the centered Haar ball is small.
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+-- Proof-only: `ENNReal.toReal` and `ENNReal.ofReal` are `edist`-non-expansive.
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Schwarz rearrangement
@@ -88,8 +90,10 @@ rearrangement, which gives the case `p = ∞`.
   superlevel sets have the truncated difference of the original level measures.
 * `TauCeti.lintegral_sub_rpow_schwarzRearrangement_le`,
   `TauCeti.lintegral_edist_rpow_schwarzRearrangement_le`,
-  `TauCeti.edist_schwarzRearrangement_le_essSup`, `TauCeti.eLpNorm_edist_schwarzRearrangement_le`:
-  one-sided and two-sided `Lᵖ` contraction for `1 ≤ p ≤ ∞`.
+  `TauCeti.edist_schwarzRearrangement_le_essSup`, `TauCeti.eLpNorm_edist_schwarzRearrangement_le`,
+  `TauCeti.lintegral_enorm_toReal_schwarzRearrangement_sub_rpow_le`,
+  `TauCeti.eLpNorm_toReal_schwarzRearrangement_sub_le`:
+  one-sided, two-sided, and real positive-part `Lᵖ` contraction for `1 ≤ p ≤ ∞`.
 
 ## References
 
@@ -240,6 +244,17 @@ theorem schwarzRearrangement_le_essSup (f : E → ℝ≥0∞) (x : E) :
   schwarzRearrangement_apply_zero μ f ▸
     schwarzRearrangement_le_of_norm_le μ f (by simp : ‖(0 : E)‖ ≤ ‖x‖)
 
+/-- The Schwarz rearrangement of the zero function is zero. -/
+@[simp]
+theorem schwarzRearrangement_zero : schwarzRearrangement μ 0 = 0 := by
+  ext x
+  simp [schwarzRearrangement_def]
+
+/-- Function-literal form of `TauCeti.schwarzRearrangement_zero`. -/
+@[simp]
+theorem schwarzRearrangement_fun_zero : schwarzRearrangement μ (fun _ ↦ 0) = 0 :=
+  schwarzRearrangement_zero μ
+
 /-- **`L^∞` contraction of Schwarz rearrangement.** The extended distance between two Schwarz
 rearrangements is bounded everywhere by the essential supremum of the distance between the two
 functions. No measurability hypothesis is needed, and the measure is arbitrary. -/
@@ -267,6 +282,44 @@ theorem edist_schwarzRearrangement_le_essSup (f g : E → ℝ≥0∞) (x : E) :
   exact (ENNReal.edist_le_iff_le_add_right _ _ _).2
     ⟨key f g (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).1),
       key g f (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).2)⟩
+
+/-- If every centered ball has finite measure, a strict superlevel set of the Schwarz
+rearrangement whose original superlevel set has infinite measure is the whole space. -/
+theorem setOf_lt_schwarzRearrangement_eq_univ_of_measure_ball_lt_top (f : E → ℝ≥0∞) (t : ℝ≥0∞)
+    (hball : ∀ x : E, μ (ball 0 ‖x‖) < ∞) (h : μ {y | t < f y} = ∞) :
+    {x | t < schwarzRearrangement μ f x} = univ := by
+  simp [setOf_lt_schwarzRearrangement, h, hball]
+
+/-- For a measure that is finite on compact sets of a proper space, a strict superlevel set of the
+Schwarz rearrangement whose original superlevel set has infinite measure is the whole space. -/
+@[simp]
+theorem setOf_lt_schwarzRearrangement_eq_univ [ProperSpace E] [IsFiniteMeasureOnCompacts μ]
+    (f : E → ℝ≥0∞) (t : ℝ≥0∞) (h : μ {y | t < f y} = ∞) :
+    {x | t < schwarzRearrangement μ f x} = univ :=
+  setOf_lt_schwarzRearrangement_eq_univ_of_measure_ball_lt_top μ f t
+    (fun _ ↦ measure_ball_lt_top) h
+
+/-- The Schwarz rearrangement takes the value `∞` at `x` if and only if every finite strict
+superlevel set of `f` has measure strictly larger than `μ (ball 0 ‖x‖)`. -/
+theorem schwarzRearrangement_eq_top_iff {x : E} :
+    schwarzRearrangement μ f x = ∞ ↔
+      ∀ t : ℝ≥0∞, t ≠ ∞ → μ (ball (0 : E) ‖x‖) < μ {y | t < f y} := by
+  refine ⟨fun h t ht ↦ (lt_schwarzRearrangement_iff μ).1 (h ▸ ht.lt_top), fun h ↦ ?_⟩
+  by_contra hne
+  exact lt_irrefl _ ((lt_schwarzRearrangement_iff μ).2 (h _ hne))
+
+variable {μ} in
+/-- For a measure that is finite on compact sets of a proper space, if every nonnegative strict
+superlevel set of `u` has infinite measure, the Schwarz rearrangement of `ENNReal.ofReal ∘ u` is
+identically `∞`. -/
+theorem schwarzRearrangement_ofReal_eq_top_of_forall_measure_eq_top
+    [ProperSpace E] [IsFiniteMeasureOnCompacts μ] {u : E → ℝ}
+    (hu : ∀ s : ℝ, 0 ≤ s → μ {y | s < u y} = ∞) (x : E) :
+    schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x = ∞ := by
+  rw [schwarzRearrangement_eq_top_iff]
+  intro t ht
+  simp_rw [ENNReal.lt_ofReal_iff_toReal_lt ht, hu _ ENNReal.toReal_nonneg]
+  exact measure_ball_lt_top
 
 end Measure
 
@@ -296,6 +349,25 @@ theorem addHaar_setOf_lt_schwarzRearrangement (f : E → ℝ≥0∞) (t : ℝ≥
       rw [Subsingleton.eq_univ_of_nonempty (s := {y | t < f y}) ⟨x, hx⟩]
       exact isOpen_univ.measure_pos μ univ_nonempty
   · exact μ.addHaar_setOf_addHaar_ball_norm_lt _
+
+/-- A strict superlevel set of the Schwarz rearrangement whose original superlevel set has finite
+measure is a centered open ball of that same measure. -/
+theorem exists_setOf_lt_schwarzRearrangement_eq_ball (f : E → ℝ≥0∞) (t : ℝ≥0∞)
+    (h : μ {y | t < f y} ≠ ∞) :
+    ∃ r : ℝ, 0 ≤ r ∧ {x | t < schwarzRearrangement μ f x} = ball 0 r ∧
+      μ (ball 0 r) = μ {y | t < f y} := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In dimension zero the superlevel set is `∅ = ball 0 0` or `univ = ball 0 1`.
+    obtain ⟨r, hr₀, hr⟩ : ∃ r : ℝ, 0 ≤ r ∧ {x | t < schwarzRearrangement μ f x} = ball 0 r := by
+      rcases {x | t < schwarzRearrangement μ f x}.eq_empty_or_nonempty with hs | hs
+      · exact ⟨0, le_rfl, by rw [hs, ball_zero]⟩
+      · refine ⟨1, zero_le_one, ?_⟩
+        rw [hs.eq_univ, eq_comm, eq_univ_iff_forall]
+        simp [norm_of_subsingleton]
+    exact ⟨r, hr₀, hr, by rw [← hr, addHaar_setOf_lt_schwarzRearrangement]⟩
+  obtain ⟨r, hr₀, hr⟩ := μ.exists_nonneg_addHaar_ball_eq h
+  refine ⟨r, hr₀, ?_, hr⟩
+  rw [setOf_lt_schwarzRearrangement, ← hr, μ.setOf_addHaar_ball_norm_lt_addHaar_ball]
 
 /-- Two superlevel sets of Schwarz rearrangements are concentric, so their intersection has the
 smaller of the two original superlevel measures. No measurability or finiteness hypothesis is
@@ -625,6 +697,55 @@ theorem eLpNorm_edist_schwarzRearrangement_le {f g : E → ℝ≥0∞} (hf : AEM
   simp only [eNorm_eq_self]
   exact ENNReal.rpow_le_rpow (lintegral_edist_rpow_schwarzRearrangement_le μ hf hg
     (by simpa using ENNReal.toReal_mono hptop hp)) (by positivity)
+
+/-- **`Lᵖ` contraction of the real positive-part Schwarz rearrangement**, integral form. For
+`1 ≤ p`, the integral of `‖(f⁺)* - (g⁺)*‖ₑ ^ p` is at most `∫⁻ x, ‖f x - g x‖ₑ ^ p ∂μ`. -/
+theorem lintegral_enorm_toReal_schwarzRearrangement_sub_rpow_le {f g : E → ℝ}
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) {p : ℝ} (hp : 1 ≤ p) :
+    ∫⁻ x, ‖(schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x).toReal -
+        (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x).toReal‖ₑ ^ p ∂μ ≤
+      ∫⁻ x, ‖f x - g x‖ₑ ^ p ∂μ := by
+  have hp0 : 0 ≤ p := zero_le_one.trans hp
+  simp_rw [← eDist_eq_eNorm_sub]
+  calc ∫⁻ x, edist (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x).toReal
+          (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x).toReal ^ p ∂μ
+      ≤ ∫⁻ x, edist (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x)
+          (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x) ^ p ∂μ :=
+        lintegral_mono fun _ ↦ ENNReal.rpow_le_rpow (ENNReal.edist_toReal_le _ _) hp0
+    _ ≤ ∫⁻ x, edist (ENNReal.ofReal (f x)) (ENNReal.ofReal (g x)) ^ p ∂μ :=
+        lintegral_edist_rpow_schwarzRearrangement_le μ hf.ennreal_ofReal hg.ennreal_ofReal hp
+    _ ≤ ∫⁻ x, edist (f x) (g x) ^ p ∂μ :=
+        lintegral_mono fun _ ↦ ENNReal.rpow_le_rpow (ENNReal.edist_ofReal_le _ _) hp0
+
+/-- **`Lᵖ` contraction of the real positive-part Schwarz rearrangement.** For every `1 ≤ p ≤ ∞`,
+the `Lᵖ` seminorm of the difference between the real positive-part Schwarz rearrangements of `f`
+and `g` is at most `eLpNorm (f - g) p μ`. -/
+theorem eLpNorm_toReal_schwarzRearrangement_sub_le {f g : E → ℝ}
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x).toReal -
+        (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x).toReal) p μ ≤
+      eLpNorm (fun x ↦ f x - g x) p μ := by
+  have hmeas_lhs : AEStronglyMeasurable
+      (fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x).toReal -
+        (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x).toReal) μ :=
+    ((measurable_schwarzRearrangement μ _).ennreal_toReal.sub
+      (measurable_schwarzRearrangement μ _).ennreal_toReal).aestronglyMeasurable
+  have hmeas_mid : AEStronglyMeasurable
+      (fun x ↦ edist (ENNReal.ofReal (f x)) (ENNReal.ofReal (g x))) μ := by
+    simp_rw [ENNReal.edist_eq_max]
+    exact ((hf.ennreal_ofReal.sub hg.ennreal_ofReal).max
+      (hg.ennreal_ofReal.sub hf.ennreal_ofReal)).aestronglyMeasurable
+  calc eLpNorm (fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x).toReal -
+          (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x).toReal) p μ
+      ≤ eLpNorm (fun x ↦ edist (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x)
+          (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x)) p μ :=
+        eLpNorm_mono_eNorm hmeas_lhs fun _ ↦ by
+          simpa only [← eDist_eq_eNorm_sub, eNorm_eq_self] using ENNReal.edist_toReal_le _ _
+    _ ≤ eLpNorm (fun x ↦ edist (ENNReal.ofReal (f x)) (ENNReal.ofReal (g x))) p μ :=
+        eLpNorm_edist_schwarzRearrangement_le μ hf.ennreal_ofReal hg.ennreal_ofReal hp
+    _ ≤ eLpNorm (fun x ↦ f x - g x) p μ :=
+        eLpNorm_mono_eNorm hmeas_mid fun _ ↦ by
+          simpa only [eDist_eq_eNorm_sub, eNorm_eq_self] using ENNReal.edist_ofReal_le _ _
 
 end AddHaar
 

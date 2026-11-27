@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
-import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Scalar extension of images and powers of submodules
@@ -31,9 +30,8 @@ generated submodule of the original module already spans that scalar extension
 (`Submodule.exists_fg_baseChange_eq_top`). A linear map of scalar factors carries one scalar
 extension of a submodule into another (`Submodule.map_mem_baseChange`), and for an algebra map
 `f : A →ₐ[R] B` the `B`-span of the image of `span A s` under `f ⊗ id` equals the `B`-span of the
-image of `s` (`Submodule.span_rTensor_image_span`). Finally,
-`TensorProduct.map_subtype_comp_congr_ofEq` transports a tensor product of submodule inclusions
-across submodule equalities.
+image of `s` (`Submodule.span_rTensor_image_span`). In particular, if a family `X` spans `M` over
+`R`, then the tensors `1 ⊗ X i` span `A ⊗[R] M` over `A` (`TauCeti.span_one_tmul_eq_top`).
 -/
 
 public section
@@ -237,23 +235,14 @@ theorem baseChange_pow (p : Submodule R B) (n : ℕ) :
 
 end Submodule
 
-namespace TensorProduct
+namespace TauCeti
 
-section Submodule
+/-- **A spanning family stays spanning after extension of scalars**: if `X` spans the
+`R`-module `M`, then the tensors `1 ⊗ X i` span `A ⊗[R] M` over `A`. -/
+theorem span_one_tmul_eq_top {R A M ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] {X : ι → M} (hX : Submodule.span R (Set.range X) = ⊤) :
+    Submodule.span A (Set.range fun i ↦ (1 : A) ⊗ₜ[R] X i) = ⊤ := by
+  have h := congrArg (Submodule.baseChange A) hX
+  rwa [Submodule.baseChange_span, Submodule.baseChange_top, ← Set.range_comp] at h
 
-variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-  [AddCommMonoid N] [Module R N]
-
-/-- Following a tensor product of submodule-equality equivalences by the tensor product of their
-inclusions recovers the tensor product of the source inclusions. -/
-theorem map_subtype_comp_congr_ofEq {p₁ q₁ : Submodule R M} {p₂ q₂ : Submodule R N}
-    (h₁ : p₁ = q₁) (h₂ : p₂ = q₂) :
-    TensorProduct.map q₁.subtype q₂.subtype ∘ₗ
-        (TensorProduct.congr (LinearEquiv.ofEq p₁ q₁ h₁) (LinearEquiv.ofEq p₂ q₂ h₂)).toLinearMap =
-      TensorProduct.map p₁.subtype p₂.subtype := by
-  rw [TensorProduct.toLinearMap_congr, ← TensorProduct.map_comp,
-    Submodule.subtype_comp_ofEq h₁, Submodule.subtype_comp_ofEq h₂]
-
-end Submodule
-
-end TensorProduct
+end TauCeti

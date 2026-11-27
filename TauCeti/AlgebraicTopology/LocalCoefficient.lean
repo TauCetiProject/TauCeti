@@ -118,6 +118,31 @@ theorem pullback_map_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
       η.app ((FundamentalGroupoid.map f).obj x) :=
   rfl
 
+/-- **Transport in a pulled-back local system only sees the image of a path.** Two paths with the
+same end points whose images under `f` are homotopic have the same transport in the pullback along
+`f` of a local coefficient system. -/
+theorem pullback_obj_map_mk_eq_of_homotopic {X : TopCat.{v₁}} {Y : TopCat.{v₂}}
+    (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v₂, w} R Y) {x y : X} {P Q : Path x y}
+    (h : (P.map f.continuous).Homotopic (Q.map f.continuous)) :
+    ((pullback (R := R) f).obj L).map
+        (Path.Homotopic.Quotient.mk P : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) =
+      ((pullback (R := R) f).obj L).map (Path.Homotopic.Quotient.mk Q) := by
+  rw [pullback_obj_map, pullback_obj_map, FundamentalGroupoid.map_map,
+    FundamentalGroupoid.map_map, ← Path.Homotopic.Quotient.mk_map,
+    ← Path.Homotopic.Quotient.mk_map]
+  exact congrArg L.map (Quotient.sound h)
+
+/-- Two paths with the same end points whose images under `f` agree at every time have the same
+transport in the pullback along `f` of a local coefficient system. -/
+theorem pullback_obj_map_mk_eq_of_forall_apply_eq {X : TopCat.{v₁}} {Y : TopCat.{v₂}}
+    (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v₂, w} R Y) {x y : X} {P Q : Path x y}
+    (h : ∀ t, f (P t) = f (Q t)) :
+    ((pullback (R := R) f).obj L).map
+        (Path.Homotopic.Quotient.mk P : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) =
+      ((pullback (R := R) f).obj L).map (Path.Homotopic.Quotient.mk Q) :=
+  pullback_obj_map_mk_eq_of_homotopic f L <|
+    (Path.ext (funext h) : P.map f.continuous = Q.map f.continuous) ▸ .refl _
+
 /-- Transport along corresponding morphisms, with propositionally equal targets, gives
 corresponding coefficients. -/
 theorem map_apply_heq (L : LocalCoefficientSystem.{u, v, w} R X)
@@ -204,6 +229,19 @@ theorem pullbackCompIso_inv_app_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z :
   rw [eqToHom_app, eqToHom_map, Category.id_comp]
   rfl
 
+/-- Pulling back along the identity map leaves a local coefficient system unchanged. This is the
+equality underlying `TauCeti.LocalCoefficientSystem.pullbackIdIso`. -/
+theorem pullback_obj_id (X : TopCat.{v}) (L : LocalCoefficientSystem.{u, v, w} R X) :
+    (pullback (R := R) (.id X)).obj L = L :=
+  congrArg (· ⋙ L) FundamentalGroupoid.map_id
+
+/-- Pulling back along a composite is pulling back twice. This is the equality underlying
+`TauCeti.LocalCoefficientSystem.pullbackCompIso`. -/
+theorem pullback_obj_comp {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v₃}}
+    (f : C(X, Y)) (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v₃, w} R Z) :
+    (pullback (R := R) (g.comp f)).obj L = (pullback f).obj ((pullback g).obj L) :=
+  congrArg (· ⋙ L) (FundamentalGroupoid.map_comp g f)
+
 /-- Pulling back a constant local coefficient system leaves it constant. -/
 def pullbackConstantIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
     (M : ModuleCat.{w} R) :
@@ -279,6 +317,91 @@ theorem pullbackTensorIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C
     (L K : LocalCoefficientSystem.{w, v₂, w} S Y) (x : FundamentalGroupoid X) :
     (pullbackTensorIso f L K).inv.app x = 𝟙 _ := by
   rfl
+
+/-- The tensor product of the constant system `M` with the pullback of `K` along `f` is the
+pullback of the tensor product of the constant system `M` with `K`. -/
+def pullbackConstantTensorIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (M : ModuleCat.{w} S) (K : LocalCoefficientSystem.{w, v₂, w} S Y) :
+    (constantFunctor X).obj M ⊗ (pullback f).obj K ≅
+      (pullback f).obj ((constantFunctor Y).obj M ⊗ K) :=
+  whiskerRightIso (pullbackConstantIso f M).symm _ ≪≫
+    (pullbackTensorIso f ((constantFunctor Y).obj M) K).symm
+
+/-- The comparison `M ⊗ f^*K ≅ f^*(M ⊗ K)` is the identity on each coefficient fibre. -/
+@[simp]
+theorem pullbackConstantTensorIso_hom_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (M : ModuleCat.{w} S) (K : LocalCoefficientSystem.{w, v₂, w} S Y)
+    (x : FundamentalGroupoid X) :
+    (pullbackConstantTensorIso f M K).hom.app x = 𝟙 _ := by
+  simp [pullbackConstantTensorIso]
+
+/-- The inverse comparison `f^*(M ⊗ K) ≅ M ⊗ f^*K` is the identity on each coefficient fibre. -/
+@[simp]
+theorem pullbackConstantTensorIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (M : ModuleCat.{w} S) (K : LocalCoefficientSystem.{w, v₂, w} S Y)
+    (x : FundamentalGroupoid X) :
+    (pullbackConstantTensorIso f M K).inv.app x = 𝟙 _ := by
+  simp [pullbackConstantTensorIso]
+
+/-- The constant system with fibre `S` is the unit of the tensor product of local systems: the left
+unitor, with the unit written as the constant system, as it appears in the target of a cap
+product with values in `S`. -/
+def constantTensorIso {X : TopCat.{v₁}} (K : LocalCoefficientSystem.{w, v₁, w} S X) :
+    (constantFunctor X).obj (ModuleCat.of S S) ⊗ K ≅ K :=
+  λ_ K
+
+@[simp]
+theorem constantTensorIso_hom_app {X : TopCat.{v₁}} (K : LocalCoefficientSystem.{w, v₁, w} S X)
+    (x : FundamentalGroupoid X) :
+    (constantTensorIso K).hom.app x = (λ_ (K.obj x)).hom :=
+  (rfl)
+
+@[simp]
+theorem constantTensorIso_inv_app {X : TopCat.{v₁}} (K : LocalCoefficientSystem.{w, v₁, w} S X)
+    (x : FundamentalGroupoid X) :
+    (constantTensorIso K).inv.app x = (λ_ (K.obj x)).inv :=
+  (rfl)
+
+/-- The identification `S ⊗ K ≅ K` is natural in `K`. This is `leftUnitor_naturality` with the
+unit written as the constant system, so that it rewrites against `constantTensorIso`. -/
+@[reassoc]
+theorem constantTensorIso_hom_naturality {X : TopCat.{v₁}}
+    {K K' : LocalCoefficientSystem.{w, v₁, w} S X} (η : K ⟶ K') :
+    (constantFunctor X).obj (ModuleCat.of S S) ◁ η ≫ (constantTensorIso K').hom =
+      (constantTensorIso K).hom ≫ η :=
+  leftUnitor_naturality η
+
+/-- Pulling back the identification `S ⊗ K ≅ K` along `f` gives the identification
+`S ⊗ f^*K ≅ f^*K`, after the comparison `S ⊗ f^*K ≅ f^*(S ⊗ K)`. -/
+@[reassoc]
+theorem pullbackConstantTensorIso_hom_map_constantTensorIso_hom {X : TopCat.{v₁}}
+    {Y : TopCat.{v₂}} (f : C(X, Y)) (K : LocalCoefficientSystem.{w, v₂, w} S Y) :
+    (pullbackConstantTensorIso f (ModuleCat.of S S) K).hom ≫
+        (pullback f).map (constantTensorIso K).hom =
+      (constantTensorIso ((pullback f).obj K)).hom := by
+  ext x : 2
+  simp only [NatTrans.comp_app, pullbackConstantTensorIso_hom_app, pullback_map_app,
+    constantTensorIso_hom_app]
+  -- Both sides are the left unitor of the fibre `K.obj (f x)`, read on `(f^*K).obj x`.
+  rfl
+
+/-- The pullback tensor comparison along a composite `g ∘ f` is the comparison along `g` pulled
+back along `f`, followed by the comparison along `f`, after the identifications
+`(g ∘ f)^* ≅ f^* g^*`. -/
+@[reassoc]
+theorem pullbackTensorIso_pullbackCompIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v₃}}
+    (f : C(X, Y)) (g : C(Y, Z)) (L K : LocalCoefficientSystem.{w, v₃, w} S Z) :
+    (pullbackCompIso f g).inv.app (L ⊗ K) ≫ (pullbackTensorIso (g.comp f) L K).hom ≫
+        ((pullbackCompIso f g).hom.app L ⊗ₘ (pullbackCompIso f g).hom.app K) =
+      (pullback f).map (pullbackTensorIso g L K).hom ≫
+        (pullbackTensorIso f ((pullback g).obj L) ((pullback g).obj K)).hom := by
+  ext x : 2
+  simp only [NatTrans.comp_app, pullbackCompIso_inv_app_app, pullbackTensorIso_hom_app,
+    Monoidal.tensorHom_app, pullbackCompIso_hom_app_app, pullback_map_app]
+  -- Every component is an identity, but on fibres at `(g ∘ f) x` and `g (f x)`, which agree only
+  -- by unfolding `FundamentalGroupoid.map`; so `rw` cannot remove the identity composites (its
+  -- motive is ill-typed), and `exact` closes the goal up to that unfolding.
+  exact MonoidalCategory.id_tensorHom_id (C := ModuleCat S) _ _
 
 end Tensor
 
@@ -364,6 +487,15 @@ theorem transport_refl (L : LocalCoefficientSystem.{u, v, w} R X) (x : X) :
     (FundamentalGroupoid.id_eq_path_refl _).symm
   rw [h]
   exact L.map_id_apply _ a
+
+/-- Transport in a constant system is the identity of its fibre, along any path class. -/
+@[simp]
+theorem transport_constantFunctor (M : ModuleCat.{w} R) {x y : X}
+    (p : Path.Homotopic.Quotient x y) :
+    transport ((constantFunctor X).obj M) p = LinearEquiv.refl R M := by
+  ext a
+  rw [transport_apply, constantFunctor_obj_map]
+  exact ModuleCat.id_apply M a
 
 /-- Transport along a concatenation of paths is the composite of the two transports. -/
 @[simp]
@@ -506,6 +638,19 @@ theorem monodromyFunctor_map_hom (x : X) {L K : LocalCoefficientSystem.{u, v, w}
     (η : L ⟶ K) :
     ((monodromyFunctor R X x).map η).hom = monodromyMap η x :=
   rfl
+
+/-- The underlying linear map of the monodromy of a morphism of local systems is its component
+at the basepoint. -/
+theorem forget₂_map_monodromyFunctor_map (x : X) {L K : LocalCoefficientSystem.{u, v, w} R X}
+    (η : L ⟶ K) :
+    (forget₂ (Rep R (FundamentalGroup X x)) (ModuleCat R)).map ((monodromyFunctor R X x).map η) =
+      η.app (FundamentalGroupoid.mk x) := by
+  ext a
+  rw [Rep.forget₂_moduleCat_map, ModuleCat.hom_ofHom,
+    Representation.IntertwiningMap.toLinearMap_apply, monodromyFunctor_map_hom]
+  -- `rw` cannot use `monodromyMap_apply` here: the coercion is typed by the fibres of
+  -- `monodromyFunctor`, which are those of `L` only up to `monodromyFunctor_obj_V`.
+  exact monodromyMap_apply η x a
 
 /-- Transport along a path intertwines monodromy after changing the basepoint along that path. -/
 @[expose] def basepointChangeEquiv (L : LocalCoefficientSystem.{u, v, w} R X) {x y : X}

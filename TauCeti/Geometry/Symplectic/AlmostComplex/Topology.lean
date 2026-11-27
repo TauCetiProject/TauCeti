@@ -35,6 +35,13 @@ equivalent, it does not depend on the choice of the norm of `V`.
   complex structure squares to `-1`.
 * `TauCeti.AlmostComplexStructure.toContinuousLinearMap_cayley`: in operator-norm coordinates the
   Cayley transform is the rational expression `-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹`.
+* `TauCeti.AlmostComplexStructure.mul_opNorm_le_of_eq_smul_sub_smul`: if `B = (a - b J) A` with
+  `a² + b² = r² > 0`, then `r ‖A‖ ≤ (1 + ‖J‖) ‖B‖`, inverting `a - b J` through
+  `(a + b J) (a - b J) = a² + b²`.
+* `TauCeti.AlmostComplexStructure.mul_opNorm_le_opNorm_comp_smul_add_smul`: the same inversion on
+  covectors, `r ‖θ‖ ≤ (1 + ‖J‖) ‖θ ∘ (a + b J)‖`.
+* `TauCeti.AlmostComplexStructure.isInvertible_smul_id_add_smul`: `a + b J` is invertible
+  whenever `a² + b² ≠ 0`, with inverse `(a² + b²)⁻¹ (a - b J)`.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
   families that are continuous in the operator norm.
 * `TauCeti.SymplecticForm.tames_of_mul_norm_sq_le`: a uniform lower bound `c ‖v‖² ≤ ω(v, J v)`
@@ -97,6 +104,90 @@ theorem toContinuousLinearMap_cayley (J₀ J₁ : AlmostComplexStructure V) {A B
   rw [← hA', ← hB', cayley_eq_cayleyFormula]
   exact map_cayleyFormula (Module.End.toContinuousLinearMap V) J₀.toLinearMap J₁.toLinearMap
 
+/-- The norm estimate shared by the inversions of `a ± b J`: if `a² + b² = r²` with `r ≥ 0`, then
+`‖a x‖ + ‖b J x‖ ≤ r (1 + ‖J‖) ‖x‖`, since `|a|, |b| ≤ r`. -/
+private theorem norm_smul_add_norm_smul_apply_le (J : AlmostComplexStructure V) {a b r : ℝ}
+    (hab : a ^ 2 + b ^ 2 = r ^ 2) (hr : 0 ≤ r) (x : V) :
+    ‖a • x‖ + ‖b • J x‖ ≤ r * ((1 + ‖J.toLinearMap.toContinuousLinearMap‖) * ‖x‖) := by
+  have ha : |a| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg b]) hr
+  have hb : |b| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg a]) hr
+  have hJx : ‖J x‖ ≤ ‖J.toLinearMap.toContinuousLinearMap‖ * ‖x‖ :=
+    J.toLinearMap.toContinuousLinearMap.le_opNorm x
+  rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+  calc |a| * ‖x‖ + |b| * ‖J x‖ ≤ r * ‖x‖ + r * (‖J.toLinearMap.toContinuousLinearMap‖ * ‖x‖) := by
+        gcongr
+    _ = r * ((1 + ‖J.toLinearMap.toContinuousLinearMap‖) * ‖x‖) := by ring
+
+/-- The operator-norm step shared by the inversions of `a ± b J`: a pointwise bound
+`r² ‖A v‖ ≤ r (C ‖v‖)` with `r > 0` and `C ≥ 0` gives `r ‖A‖ ≤ C`. -/
+private theorem mul_opNorm_le_of_sq_mul_norm_apply_le {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (A : E →L[ℝ] F) {r C : ℝ} (hr : 0 < r) (hC : 0 ≤ C)
+    (h : ∀ v, r ^ 2 * ‖A v‖ ≤ r * (C * ‖v‖)) : r * ‖A‖ ≤ C := by
+  rw [← abs_of_pos hr, ← Real.norm_eq_abs, ← norm_smul]
+  refine (r • A).opNorm_le_bound hC fun v ↦ ?_
+  rw [smul_apply, norm_smul, Real.norm_eq_abs, abs_of_pos hr]
+  refine le_of_mul_le_mul_left ?_ hr
+  rw [← mul_assoc, ← pow_two]
+  exact h v
+
+/-- Inverting `a - b J` for an almost complex structure `J`: if `B = (a - b J) A` and
+`a² + b² = r²` with `r > 0`, then `r ‖A‖ ≤ (1 + ‖J‖) ‖B‖`, since `(a + b J) (a - b J) = a² + b²`. -/
+theorem mul_opNorm_le_of_eq_smul_sub_smul (J : AlmostComplexStructure V)
+    {A B : V →L[ℝ] V} {a b r : ℝ} (hAB : ∀ v, B v = a • A v - b • J (A v))
+    (hab : a ^ 2 + b ^ 2 = r ^ 2) (hr : 0 < r) :
+    r * ‖A‖ ≤ (1 + ‖J.toLinearMap.toContinuousLinearMap‖) * ‖B‖ := by
+  set NJ := ‖J.toLinearMap.toContinuousLinearMap‖
+  refine mul_opNorm_le_of_sq_mul_norm_apply_le A hr (by positivity) fun v ↦ ?_
+  -- Taking norms in `(a² + b²) A v = a B v + b J B v`.
+  calc r ^ 2 * ‖A v‖ = ‖(a ^ 2 + b ^ 2) • A v‖ := by
+        rw [norm_smul, hab, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg r)]
+    _ = ‖a • B v + b • J (B v)‖ := by rw [hAB v, J.smul_add_smul_apply_smul_sub_smul]
+    _ ≤ ‖a • B v‖ + ‖b • J (B v)‖ := norm_add_le _ _
+    _ ≤ r * ((1 + NJ) * ‖B v‖) := J.norm_smul_add_norm_smul_apply_le hab hr.le _
+    _ ≤ r * ((1 + NJ) * (‖B‖ * ‖v‖)) := by gcongr; exact B.le_opNorm v
+    _ = r * ((1 + NJ) * ‖B‖ * ‖v‖) := by ring
+
+/-- **Inverting `a + b J` on covectors.** For an almost complex structure `J` and `a² + b² = r²`
+with `r > 0`, every continuous linear map `θ` out of `V`, such as a covector, satisfies
+`r ‖θ‖ ≤ (1 + ‖J‖) ‖θ ∘ (a + b J)‖`, since `(a + b J) (a - b J) = a² + b²`. This is the covector
+counterpart of `mul_opNorm_le_of_eq_smul_sub_smul`. -/
+theorem mul_opNorm_le_opNorm_comp_smul_add_smul {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (J : AlmostComplexStructure V) (θ : V →L[ℝ] F) {a b r : ℝ}
+    (hab : a ^ 2 + b ^ 2 = r ^ 2) (hr : 0 < r) :
+    r * ‖θ‖ ≤ (1 + ‖J.toLinearMap.toContinuousLinearMap‖) *
+      ‖θ.comp (a • (1 : V →L[ℝ] V) + b • J.toLinearMap.toContinuousLinearMap)‖ := by
+  set NJ := ‖J.toLinearMap.toContinuousLinearMap‖
+  set θ' := θ.comp (a • (1 : V →L[ℝ] V) + b • J.toLinearMap.toContinuousLinearMap)
+  refine mul_opNorm_le_of_sq_mul_norm_apply_le θ hr (by positivity) fun v ↦ ?_
+  -- `θ' (a v - b J v) = θ ((a² + b²) v) = r² θ v`.
+  have hθ' : θ' (a • v - b • J v) = r ^ 2 • θ v := by
+    have h := J.smul_add_smul_apply_smul_sub_smul a b v
+    simp only [θ', ContinuousLinearMap.comp_apply, add_apply,
+      smul_apply, one_apply_eq_self, LinearMap.coe_toContinuousLinearMap']
+    rw [h, map_smul, hab]
+  calc r ^ 2 * ‖θ v‖ = ‖θ' (a • v - b • J v)‖ := by
+        rw [hθ', norm_smul, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg r)]
+    _ ≤ ‖θ'‖ * ‖a • v - b • J v‖ := θ'.le_opNorm _
+    _ ≤ ‖θ'‖ * (‖a • v‖ + ‖b • J v‖) := by gcongr; exact norm_sub_le _ _
+    _ ≤ ‖θ'‖ * (r * ((1 + NJ) * ‖v‖)) := by
+        gcongr; exact J.norm_smul_add_norm_smul_apply_le hab hr.le v
+    _ = r * ((1 + NJ) * ‖θ'‖ * ‖v‖) := by ring
+
+/-- For an almost complex structure `J`, `a + b J` is invertible whenever `a² + b² ≠ 0`, with
+inverse `(a² + b²)⁻¹ (a - b J)`, since `(a + b J) (a - b J) = (a - b J) (a + b J) = a² + b²`. -/
+theorem isInvertible_smul_id_add_smul (J : AlmostComplexStructure V) {a b : ℝ}
+    (h : a ^ 2 + b ^ 2 ≠ 0) :
+    (a • ContinuousLinearMap.id ℝ V + b • J.toLinearMap.toContinuousLinearMap).IsInvertible := by
+  refine .of_inverse (g := (a ^ 2 + b ^ 2)⁻¹ •
+      (a • ContinuousLinearMap.id ℝ V - b • J.toLinearMap.toContinuousLinearMap))
+    (ContinuousLinearMap.ext fun v ↦ ?_) (ContinuousLinearMap.ext fun v ↦ ?_) <;>
+    conv_rhs => rw [ContinuousLinearMap.id_apply, ← inv_smul_smul₀ h v]
+  all_goals
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, smul_apply, add_apply,
+      sub_apply, LinearMap.coe_toContinuousLinearMap', map_add, map_sub, map_smul, J.apply_apply]
+    module
+
 end AlmostComplexStructure
 
 namespace SymplecticForm
@@ -107,16 +198,11 @@ theorem Tames.eventually_of_continuousAt {X : Type*} [TopologicalSpace X] {ω : 
     {J : X → AlmostComplexStructure V} {x : X}
     (hJ : ContinuousAt (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) x)
     (h : ω.Tames (J x)) : ∀ᶠ y in 𝓝 x, ω.Tames (J y) := by
-  let ωc := ω.toBilinForm.toContinuousBilinearMap
-  -- The forms `ω(·, A ·)` depend continuously on the operator `A`, and positivity is open.
-  have hc : Continuous fun A : V →L[ℝ] V => (ContinuousLinearMap.compL ℝ V V ℝ).flip A ∘L ωc := by
-    fun_prop
-  have hA : ∀ᶠ A in 𝓝 (LinearMap.toContinuousLinearMap (J x).toLinearMap),
-      ∀ v, v ≠ 0 → 0 < ((ContinuousLinearMap.compL ℝ V V ℝ).flip A ∘L ωc) v v :=
-    hc.continuousAt.preimage_mem_nhds (isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds
-      fun v hv => by simpa [ωc] using h v hv)
-  filter_upwards [hJ.eventually hA] with y hy v hv
-  simpa [ωc] using hy v hv
+  -- The endomorphisms tamed by the fixed form `ω` form an open set.
+  filter_upwards [hJ.eventually ((isOpen_setOf_forall_endomorphism_pos
+    ω.toBilinForm.toContinuousBilinearMap).mem_nhds fun v hv ↦ by simpa using h v hv)]
+    with y hy v hv
+  simpa using hy v hv
 
 omit [FiniteDimensional ℝ V] in
 /-- A uniform lower bound `c ‖v‖² ≤ ω(v, J v)` with `c > 0` makes `J` tame. Conversely, a family

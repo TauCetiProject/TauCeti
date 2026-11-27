@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Int.Interval
 public import Mathlib.MeasureTheory.Integral.IntervalAverage
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.Analysis.Convex.Segment
 
@@ -18,9 +20,13 @@ not belong to any particular application.
 
 ## Main results
 
+* `TauCeti.intervalIntegral.sum_integral_adjacent_intervals_fin` and
+  `TauCeti.intervalIntegral.sum_integral_adjacent_intervals_Ico_int`: additivity of interval
+  integrals over `Fin`-indexed and `ℤ`-indexed (`Finset.Ico a n`) partitions.
 * `TauCeti.intervalIntegral.monotoneOn_primitive_of_nonneg`: the primitive `t ↦ ∫ x in a..t, f x`
   of a function that is nonnegative and interval integrable on `[a, b]` is nondecreasing on
-  `[a, b]`.
+  `[a, b]`; `TauCeti.intervalIntegral.strictMonoOn_primitive_of_pos`: it is strictly increasing
+  when the function is positive on `(a, b)`.
 * `TauCeti.intervalIntegral.eq_of_integral_eq_sub`: if the increments of `F` are the interval
   integrals of a function vanishing outside `[-r, r]` with total integral zero, then `F` is
   constant outside `[-r, r]`.
@@ -38,25 +44,45 @@ not belong to any particular application.
   uniform `(N + 1)`-subinterval left-endpoint Riemann sums in terms of subinterval oscillation.
 * `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le`: if `‖F i x‖ ≤ B i` almost
   everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
+* `TauCeti.intervalIntegral.eq_zero_of_tendsto_average_const`: a constant whose time averages
+  `T⁻¹ ∫₀ᵀ c dt` tend to `0` vanishes.
+* `TauCeti.intervalIntegral.integral_eq_zero_of_forall_lt`: for `b ≤ a` and a measure vanishing
+  on singletons, the integral over `a..b` of a function vanishing on `(-∞, a)` is zero.
 * `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
   function leaves a function of integral zero over `a..b`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
   integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
   `+∞` and to `-∞` at `-∞`.
+* `TauCeti.intervalIntegral.integral_mul_comp_mul_neg`: for an even `f : ℂ → ℂ`, the integral
+  `∫ t in a..b, z f(tz)` is odd in `z`; `TauCeti.intervalIntegral.integral_mul_comp_mul_conj`:
+  for `f` commuting with conjugation, it commutes with conjugation in `z`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
+* `MeasureTheory.IntegrableOn.intervalIntegrable_clm_comp`: for an operator field `P` integrable
+  on `[a, b]` and an operator field `N` continuous on `[a, b]`, the composition `u ↦ P u ∘L N u`
+  is interval integrable between any two points of `[a, b]`.
 * `TauCeti.intervalIntegral.norm_integral_le_setIntegral_norm` and
   `TauCeti.intervalIntegral.norm_integral_le_abs_of_ae_norm_le`: for such a function
   and measure, the integral between two points of `[a, b]` is bounded by the `L¹(a, b)` norm, and
   by the integral of a function dominating `‖f‖` almost everywhere on `(a, b)`.
+* `TauCeti.intervalIntegral.abs_integral_norm_le`: for `M` integrable on `[a, b]`, the integral
+  of `‖M‖` between two points of `[a, b]` is at most its integral over `[a, b]`.
+* `TauCeti.intervalIntegral.abs_integral_norm_le_abs_integral_of_norm_le`: if `‖M‖ ≤ m` almost
+  everywhere between `c` and `d`, then `|∫ r in c..d, ‖M r‖| ≤ |∫ r in c..d, m r|`.
 * `MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub`: for `f` integrable on `(a, b)`, the
   integral over a subinterval `(s, t)` is a difference of primitives based at any `c ∈ [a, b]`.
 * `MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm`: an interval integral of an
   integrable function is bounded in norm by the integral of its norm over the whole space.
 * `MeasureTheory.setIntegral_Ioc_comp_add_left`: translating a set integral over `(a, b]` to one
   over `(d + a, d + b]`.
+* `MeasureTheory.IntegrableOn.comp_add_right_Icc`: a function integrable on `[a, b]` has its
+  translate `u ↦ f (u + c)` integrable on `[a - c, b - c]`.
+* `intervalIntegral.integral_of_not_completeSpace`: in an incomplete codomain every interval
+  integral is `0`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
   with interval integrals, with no integrability assumption.
+* `PiLp.ofLp_intervalIntegral`: `WithLp.ofLp` commutes with interval integrals of `PiLp`-valued
+  functions, with no integrability assumption.
 * `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
   on `[c, ∞)`, then its constant extension `x ↦ f (max x c)` is interval integrable on every
   interval.
@@ -96,6 +122,19 @@ theorem sum_integral_adjacent_intervals_fin {E : Type*} [NormedAddCommGroup E]
   intro i _
   simp only [← ha i.castSucc, ← ha i.succ, Fin.val_castSucc, Fin.val_succ]
 
+/-- Interval integrals add over an integer-indexed interval `Finset.Ico a n` (`a ≤ n`) for any
+sequence of endpoints `τ : ℤ → ℝ` (which need not be monotone). -/
+theorem sum_integral_adjacent_intervals_Ico_int {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} {f : ℝ → E} {a n : ℤ} (han : a ≤ n) (τ : ℤ → ℝ)
+    (hint : ∀ j ∈ Finset.Ico a n, IntervalIntegrable f μ (τ j) (τ (j + 1))) :
+    ∑ j ∈ Finset.Ico a n, ∫ t in τ j..τ (j + 1), f t ∂μ = ∫ t in τ a..τ n, f t ∂μ := by
+  rw [Int.Ico_eq_finset_map, Finset.sum_map]
+  have hm : max (n - a) 0 = n - a := by omega
+  have hsum := _root_.intervalIntegral.sum_integral_adjacent_intervals (n := (n - a).toNat)
+    (a := fun k : ℕ => τ (a + k)) fun k hk => by
+      simpa [Nat.cast_add, add_assoc] using hint (a + k) (Finset.mem_Ico.mpr (by omega))
+  simpa [Nat.cast_add, add_assoc, hm] using hsum
+
 /-- The primitive `t ↦ ∫ x in a..t, f x ∂μ` of a function that is almost everywhere nonnegative and
 interval integrable on `[a, b]` is nondecreasing on `[a, b]`. -/
 theorem monotoneOn_primitive_of_nonneg {f : ℝ → ℝ} {μ : Measure ℝ} {a b : ℝ}
@@ -104,6 +143,20 @@ theorem monotoneOn_primitive_of_nonneg {f : ℝ → ℝ} {μ : Measure ℝ} {a b
   _root_.intervalIntegral.integral_mono_interval le_rfl hs.1 hst
     (ae_mono (Measure.restrict_mono (Ioc_subset_Ioc_right ht.2) le_rfl) hf)
     (hfi.mono_set (uIcc_subset_uIcc_left (mem_uIcc_of_le ht.1 ht.2)))
+
+/-- The primitive `t ↦ ∫ x in a..t, f x` of a function that is positive on `(a, b)` and interval
+integrable on `[a, b]` is strictly increasing on `[a, b]`. -/
+theorem strictMonoOn_primitive_of_pos {f : ℝ → ℝ} {a b : ℝ} (hf : ∀ x ∈ Ioo a b, 0 < f x)
+    (hfi : IntervalIntegrable f volume a b) :
+    StrictMonoOn (fun t ↦ ∫ x in a..t, f x) (Icc a b) := by
+  intro s hs t ht hst
+  have his : IntervalIntegrable f volume a s :=
+    hfi.mono_set (uIcc_subset_uIcc_left (Icc_subset_uIcc hs))
+  have hit : IntervalIntegrable f volume a t :=
+    hfi.mono_set (uIcc_subset_uIcc_left (Icc_subset_uIcc ht))
+  rw [← sub_pos, _root_.intervalIntegral.integral_interval_sub_left hit his]
+  exact _root_.intervalIntegral.intervalIntegral_pos_of_pos_on (his.symm.trans hit)
+    (fun x hx ↦ hf x ⟨hs.1.trans_lt hx.1, hx.2.trans_le ht.2⟩) hst
 
 /-- If the increments of `F` are the interval integrals of a function `f` that vanishes outside
 `[-r, r]` and has total integral zero, then `F` is constant outside `[-r, r]`. -/
@@ -179,6 +232,25 @@ theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace
       (∫ t in t₁..t₂, (g t - g' t)),
     norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂)) (a₁ - b₁),
     norm_add_le (b₂ - b₁ - ∫ t in t₁..t₂, g' t) (a₂ - b₂)]
+
+/-- For an even function `f : ℂ → ℂ`, the integral `∫ t in a..b, z f(tz)` is odd in `z`:
+`∫ t in a..b, (−z) f(t(−z)) = −∫ t in a..b, z f(tz)`. -/
+theorem integral_mul_comp_mul_neg {f : ℂ → ℂ} (hf : ∀ u, f (-u) = f u) (a b : ℝ) (z : ℂ) :
+    ∫ t : ℝ in a..b, -z * f (t * -z) = -∫ t : ℝ in a..b, z * f (t * z) := by
+  simp only [mul_neg, hf, neg_mul, _root_.intervalIntegral.integral_neg]
+
+open scoped ComplexConjugate in
+/-- For a function `f : ℂ → ℂ` commuting with conjugation, the integral `∫ t in a..b, z f(tz)`
+commutes with conjugation in `z`:
+`∫ t in a..b, conj z f(t conj z) = conj (∫ t in a..b, z f(tz))`. -/
+theorem integral_mul_comp_mul_conj {f : ℂ → ℂ} (hf : ∀ u, f (conj u) = conj (f u)) (a b : ℝ)
+    (z : ℂ) :
+    ∫ t : ℝ in a..b, conj z * f (t * conj z) =
+      conj (∫ t : ℝ in a..b, z * f (t * z)) := by
+  rw [← _root_.intervalIntegral.intervalIntegral_conj]
+  congr 1
+  funext t
+  rw [map_mul, ← hf, map_mul, Complex.conj_ofReal]
 
 /-- Approximating an interval integral by a constant value `c` incurs error at most `C * |v - u|`
 whenever `‖c - g t‖ ≤ C` on `uIoc u v`. -/
@@ -345,6 +417,26 @@ theorem tendsto_integral_nhds_zero_of_ae_norm_le {ι E : Type*} [NormedAddCommGr
   rw [_root_.intervalIntegral.norm_integral_eq_norm_integral_uIoc]
   exact norm_setIntegral_le_of_norm_le_const_ae' measure_Ioc_lt_top hi
 
+open Filter Topology in
+/-- If the time averages `T⁻¹ ∫₀ᵀ c dt` of a constant `c` tend to `0` as `T → ∞`, then `c = 0`:
+the averages are eventually equal to `c`. -/
+theorem eq_zero_of_tendsto_average_const {c : ℝ}
+    (h : Tendsto (fun T : ℝ ↦ T⁻¹ * ∫ _ in (0 : ℝ)..T, c) atTop (𝓝 0)) : c = 0 := by
+  refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) h
+  filter_upwards [eventually_gt_atTop 0] with T hT
+  rw [_root_.intervalIntegral.integral_const, sub_zero, smul_eq_mul, inv_mul_cancel_left₀ hT.ne']
+
+/-- For `b ≤ a` and a measure vanishing on singletons, the integral over `a..b` of a function
+vanishing on `(-∞, a)` is zero. -/
+theorem integral_eq_zero_of_forall_lt {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} [NullSingletonClass μ] {F : ℝ → E} {a b : ℝ} (hF : ∀ t < a, F t = 0)
+    (hb : b ≤ a) :
+    ∫ t in a..b, F t ∂μ = 0 := by
+  refine _root_.intervalIntegral.integral_zero_ae ?_
+  filter_upwards [Measure.ae_ne μ a] with t hta ht
+  rw [uIoc_of_ge hb] at ht
+  exact hF t (lt_of_le_of_ne ht.2 hta)
+
 end intervalIntegral
 
 /-- A function vanishing on `(-∞, a]` and on a ball around `a` has zero integral on `a..t` for
@@ -421,6 +513,21 @@ theorem MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc {E : Type*}
   ((integrableOn_Icc_iff_integrableOn_Ioo (f := f)).2 hf |>.mono_set
     (uIcc_subset_Icc hs ht)).intervalIntegrable
 
+/-- For `P` integrable on `[a, b]` and `N` continuous on `[a, b]`, the integrand
+`u ↦ P u ∘L N u` is interval integrable between any two points of `[a, b]`. -/
+theorem MeasureTheory.IntegrableOn.intervalIntegrable_clm_comp {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] {E F G : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {P : ℝ → F →L[𝕜] G} {N : ℝ → E →L[𝕜] F} {a b c d : ℝ} (hP : IntegrableOn P (Icc a b))
+    (hN : ContinuousOn N (Icc a b)) (hc : c ∈ Icc a b) (hd : d ∈ Icc a b) :
+    IntervalIntegrable (fun u ↦ P u ∘L N u) volume c d := by
+  have hsub := uIcc_subset_Icc hc hd
+  obtain ⟨C, hC⟩ := isCompact_uIcc.exists_bound_of_continuousOn (hN.mono hsub)
+  exact IntegrableOn.intervalIntegrable <|
+    (ContinuousLinearMap.compL 𝕜 E F G).integrable_of_bilin_of_bdd_right C (hP.mono_set hsub)
+      ((hN.mono hsub).aestronglyMeasurable measurableSet_uIcc)
+      (ae_restrict_of_forall_mem measurableSet_uIcc hC)
+
 /-- For `f` integrable on `(a, b)`, `c ∈ [a, b]` and `a ≤ s ≤ t ≤ b`, the integral of `f` over
 `(s, t)` is the difference of the primitives `∫ x in c..t, f x` and `∫ x in c..s, f x` based at
 `c`. -/
@@ -454,6 +561,23 @@ theorem MeasureTheory.setIntegral_Ioc_comp_add_left {E : Type*} [NormedAddCommGr
   · rw [Ioc_eq_empty_of_le hab, Ioc_eq_empty_of_le (add_le_add_right hab d), setIntegral_empty,
       setIntegral_empty]
 
+/-- A function integrable on `[a, b]` has its translate by `c` integrable on `[a - c, b - c]`. -/
+theorem MeasureTheory.IntegrableOn.comp_add_right_Icc {F : Type*} [NormedAddCommGroup F]
+    {f : ℝ → F} {a b : ℝ} (hf : IntegrableOn f (Icc a b)) (c : ℝ) :
+    IntegrableOn (fun u ↦ f (u + c)) (Icc (a - c) (b - c)) := by
+  have h := (measurePreserving_add_right volume c).integrableOn_comp_preimage
+    (measurableEmbedding_addRight c) (f := f) (s := Icc a b)
+  rw [preimage_add_const_Icc] at h
+  exact h.2 hf
+
+/-- In an incomplete codomain every interval integral is `0`, as for the Bochner integral
+(`MeasureTheory.integral_of_not_completeSpace`). -/
+theorem intervalIntegral.integral_of_not_completeSpace {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (hE : ¬CompleteSpace E) (f : ℝ → E) (a b : ℝ) (μ : Measure ℝ) :
+    ∫ x in a..b, f x ∂μ = 0 := by
+  rw [intervalIntegral, MeasureTheory.integral_of_not_completeSpace hE,
+    MeasureTheory.integral_of_not_completeSpace hE, sub_zero]
+
 namespace TauCeti.intervalIntegral
 
 open scoped Interval
@@ -486,6 +610,29 @@ theorem norm_integral_le_abs_of_ae_norm_le {g : ℝ → ℝ}
     (ae_restrict_of_ae_restrict_of_subset (uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)) hfg)
     (hg.intervalIntegrable_of_mem_Icc hs ht)
 
+/-- For a function `M` into a normed group, integrable on `[a, b]`, the integral of `‖M‖` between
+two points of `[a, b]` is at most its integral over `[a, b]`. -/
+theorem abs_integral_norm_le {G : Type*} [NormedAddCommGroup G] {M : ℝ → G}
+    (hM : IntegrableOn M (Icc a b)) {c d : ℝ} (hc : c ∈ Icc a b) (hd : d ∈ Icc a b) :
+    |∫ s in c..d, ‖M s‖| ≤ ∫ s in a..b, ‖M s‖ := by
+  rw [_root_.intervalIntegral.abs_integral_eq_abs_integral_uIoc,
+    abs_of_nonneg (setIntegral_nonneg measurableSet_uIoc fun _ _ ↦ norm_nonneg _),
+    _root_.intervalIntegral.integral_of_le (hc.1.trans hc.2)]
+  have hsub : Ι c d ⊆ Ioc a b := fun x hx ↦
+    ⟨(le_min hc.1 hd.1).trans_lt hx.1, hx.2.trans (max_le hc.2 hd.2)⟩
+  exact setIntegral_mono_set (IntegrableOn.mono_set hM.norm Ioc_subset_Icc_self)
+    (ae_of_all _ fun _ ↦ norm_nonneg _) hsub.eventuallySubset
+
+/-- For a function `M` into a normed group and `m` integrable between `c` and `d` with
+`‖M r‖ ≤ m r` for almost every `r` between them, `|∫ r in c..d, ‖M r‖| ≤ |∫ r in c..d, m r|`. -/
+theorem abs_integral_norm_le_abs_integral_of_norm_le {G : Type*} [NormedAddCommGroup G]
+    {M : ℝ → G} {m : ℝ → ℝ} {c d : ℝ} (hm : IntervalIntegrable m volume c d)
+    (hMm : ∀ᵐ r, r ∈ Ι c d → ‖M r‖ ≤ m r) :
+    |∫ r in c..d, ‖M r‖| ≤ |∫ r in c..d, m r| := by
+  simpa only [Real.norm_eq_abs] using
+    _root_.intervalIntegral.norm_integral_le_abs_of_norm_le (f := fun r ↦ ‖M r‖)
+      ((ae_restrict_iff' measurableSet_uIoc).2 (by simpa only [norm_norm] using hMm)) hm
+
 end TauCeti.intervalIntegral
 
 /-- A continuous linear equivalence commutes with interval integrals of arbitrary functions;
@@ -496,6 +643,14 @@ theorem ContinuousLinearEquiv.intervalIntegral_comp_comm {𝕜 E F : Type*} [RCL
     (L : E ≃L[𝕜] F) (f : ℝ → E) :
     ∫ x in a..b, L (f x) ∂μ = L (∫ x in a..b, f x ∂μ) := by
   simp_rw [intervalIntegral, L.integral_comp_comm, map_sub]
+
+/-- `WithLp.ofLp` commutes with interval integrals of arbitrary `PiLp`-valued functions. -/
+@[simp]
+theorem PiLp.ofLp_intervalIntegral {p : ENNReal} [Fact (1 ≤ p)] {ι : Type*} [Fintype ι]
+    {β : ι → Type*} [∀ i, NormedAddCommGroup (β i)] [∀ i, NormedSpace ℝ (β i)]
+    {μ : Measure ℝ} {a b : ℝ} (f : ℝ → PiLp p β) :
+    WithLp.ofLp (∫ x in a..b, f x ∂μ) = ∫ x in a..b, WithLp.ofLp (f x) ∂μ :=
+  ((PiLp.continuousLinearEquiv p ℝ β).intervalIntegral_comp_comm f).symm
 
 /-- If `f` is locally integrable on `[c, ∞)` for a locally finite measure, then its constant
 extension `x ↦ f (max x c)` to all of `ℝ` is interval integrable between any two points. -/

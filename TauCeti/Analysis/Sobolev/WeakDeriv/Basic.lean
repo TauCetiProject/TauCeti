@@ -174,6 +174,7 @@ weaken them for no gain.
 * `TauCeti.HasWeakLineDerivOn.clm_comp` and `TauCeti.HasWeakFDerivOn.clm_comp`: a continuous
   linear map on the codomain passes through the weak derivative, which is how a vector-valued weak
   derivative is read off its scalar components.
+* `TauCeti.HasWeakFDerivOn.compLp`: the same for `Lᵖ` classes, with `ContinuousLinearMap.compLp`.
 * `TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg`: the defining identity tested
   against a test function valued in a finite-dimensional real inner product space,
   `∫ ⟪∂_v φ, u⟫ = -∫ ⟪φ, u'⟫`.
@@ -204,6 +205,8 @@ weaken them for no gain.
   fundamental solution, is shown to be weakly differentiable.
 * `TauCeti.hasWeakLineDerivOn_const`: against an additive Haar measure on a finite-dimensional
   `E` with its Borel σ-algebra and for complete `F`, a constant has weak derivative `0`.
+* `TauCeti.hasWeakFDerivOn_of_eqOn_continuousLinearMap`: under the same assumptions, a map that
+  agrees on `Ω` with a continuous linear map `A` has the constant weak derivative `A`.
 * `TauCeti.HasWeakFDerivOn.locallyIntegrableOn_gradient`: in finite dimension, a weak gradient is
   locally integrable on `Ω`.
 * `TauCeti.hasWeakFDerivOn_gradient_of_contDiffOn`: for an additive Haar measure on a
@@ -218,6 +221,8 @@ weaken them for no gain.
   finite-dimensional `E` with its Borel σ-algebra, uniqueness almost everywhere on `Ω`.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`: under the same assumptions, a weak line
   derivative vanishes almost everywhere on an open set where the function does.
+* `TauCeti.HasWeakFDerivOn.ae_apply_eq_zero_of_notMem_tsupport`: in particular, a weak
+  derivative vanishes almost everywhere on `Ω` off the support of the function.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: for an
   additive Haar measure on a finite-dimensional `E` with its Borel σ-algebra, where the classical
   derivative exists and is locally integrable on `Ω`, the weak one agrees with it almost
@@ -629,6 +634,15 @@ theorem HasWeakFDerivOn.clm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace
     HasWeakFDerivOn μ Ω (fun x => L (u x)) (fun x => L.comp (U x)) := fun v =>
   (h v).clm_comp L
 
+/-- **Weak derivatives commute with continuous linear maps, for `Lᵖ` classes.** If `D` is a weak
+derivative of `f` on `Ω`, then `M ∘ D` is a weak derivative of `M ∘ f`. -/
+theorem HasWeakFDerivOn.compLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G] {p : ENNReal} {f : Lp F p (μ.restrict Ω)}
+    {D : Lp (E →L[ℝ] F) p (μ.restrict Ω)} (h : HasWeakFDerivOn μ Ω f D) (M : F →L[ℝ] G) :
+    HasWeakFDerivOn μ Ω (M.compLp f) ((ContinuousLinearMap.compL ℝ E F G M).compLp D) :=
+  ((h.clm_comp M).congr_ae (M.coeFn_compLp' f).symm).congr_ae_deriv
+    ((ContinuousLinearMap.compL ℝ E F G M).coeFn_compLp' D).symm
+
 /-- **Weak derivatives of pairs.** The pair of two weakly differentiable maps is weakly
 differentiable, with the paired derivative. -/
 theorem HasWeakFDerivOn.prodMk {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
@@ -911,6 +925,16 @@ theorem hasWeakFDerivOn_of_differentiableOn
         (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp hu')
     fun x hx => (h x hx).hasFDerivAt.hasLineDerivAt v
 
+/-- A map that agrees, on `Ω`, with a continuous linear map `A` has the constant weak derivative
+`A` on `Ω`. -/
+theorem hasWeakFDerivOn_of_eqOn_continuousLinearMap {A : E →L[ℝ] F} (hu : Set.EqOn u A Ω) :
+    HasWeakFDerivOn μ Ω u (fun _ => A) := fun v =>
+  hasWeakLineDerivOn_of_hasLineDerivAt
+    ((A.continuous.continuousOn.congr hu).locallyIntegrableOn Ω.isOpen.measurableSet)
+    (locallyIntegrableOn_const (A v)) fun _ hx =>
+      (A.hasFDerivAt.congr_of_eventuallyEq
+        (Filter.eventuallyEq_of_mem (Ω.isOpen.mem_nhds hx) hu)).hasLineDerivAt v
+
 /-- **A `C¹` function is weakly differentiable**, with weak derivative its classical one. Only
 differentiability inside the open set `Ω` is used. -/
 theorem _root_.ContDiffOn.hasWeakFDerivOn_fderiv (hu : ContDiffOn ℝ 1 u Ω) :
@@ -1012,6 +1036,13 @@ theorem HasWeakLineDerivOn.ae_eq_zero_of_isOpen {u' : E → F}
     (((h.mono inf_le_left).congr_ae huW).ae_eq hasWeakLineDerivOn_zero)
   filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet, ae_restrict_of_ae hW]
     with x hxΩ hx hxt using hx ⟨hxΩ, hxt⟩
+
+/-- **A weak derivative vanishes off the support.** If `Du` is a weak derivative of `u` on `Ω`,
+then for every direction `c`, `Du x c = 0` for almost every `x ∈ Ω` outside the support of `u`. -/
+theorem HasWeakFDerivOn.ae_apply_eq_zero_of_notMem_tsupport {Du : E → E →L[ℝ] F}
+    (h : HasWeakFDerivOn μ Ω u Du) (c : E) : ∀ᵐ x ∂μ.restrict Ω, x ∉ tsupport u → Du x c = 0 :=
+  (h.hasWeakLineDerivOn c).ae_eq_zero_of_isOpen (isClosed_tsupport u).isOpen_compl
+    (.of_forall fun _ hx => image_eq_zero_of_notMem_tsupport hx)
 
 /-- **A weak Fréchet derivative is unique almost everywhere.** Two weak derivatives of `u` on `Ω`
 agree almost everywhere on `Ω`.

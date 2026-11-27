@@ -344,6 +344,15 @@ theorem finrank_eq_two_pow_of_bijective [Module.Finite K V] {S : Type*}
     sq] at hdim
   exact Nat.mul_self_inj.1 hdim.symm
 
+/-- **The dimension of a spinor module**, stated for a `CliffordAlgebra Q`-module `S` whose
+left scalar action `Algebra.lsmul K K S` is bijective onto `End_K S`. -/
+theorem finrank_eq_two_pow_of_bijective_lsmul [Module.Finite K V]
+    {S : Type*} [AddCommGroup S] [Module K S] [Module (CliffordAlgebra Q) S]
+    [IsScalarTower K (CliffordAlgebra Q) S]
+    (h : Function.Bijective (Algebra.lsmul K K S : CliffordAlgebra Q →ₐ[K] Module.End K S)) :
+    finrank K S = 2 ^ (finrank K V / 2) :=
+  finrank_eq_two_pow_of_bijective Q h
+
 end Field
 
 end CliffordAlgebra

@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Equiv
-public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.Algebra.Module.Submodule.Invariant
@@ -14,6 +12,7 @@ public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.SetTheory.Cardinal.NatCard
+import Mathlib.Algebra.Algebra.Equiv
 
 /-!
 # Basic facts about module endomorphisms
@@ -43,11 +42,14 @@ An endomorphism acting as a scalar `a` from a monoid acting on the module has `k
 as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
 (`Module.End.pow_eq_one_of_apply_eq_smul`).
 
+Iterates of endomorphisms intertwined by a semilinear map are intertwined
+(`Module.End.pow_apply_of_comp_eq`).
+
 A submodule fixed pointwise by an endomorphism `f` is invariant under `f`
-(`Submodule.le_comap_of_fixed`), and a submodule invariant under two endomorphisms is invariant
-under their difference (`Module.End.invtSubmodule_inf_invtSubmodule_le_invtSubmodule_sub`).
-Conjugation of endomorphisms along a linear equivalence is characterized by intertwining
-(`LinearEquiv.eq_conj_of_comp_eq`, `LinearEquiv.conj_apply_of_conjAlgEquiv_comp`).
+(`Submodule.le_comap_of_fixed`). If `f` maps `p` into `p ⊔ q` and leaves `q` invariant, then so
+does each power of `f` (`Submodule.le_comap_pow_of_le_comap_sup`). A submodule invariant under
+two endomorphisms is invariant under their difference
+(`Module.End.invtSubmodule_inf_invtSubmodule_le_invtSubmodule_sub`).
 -/
 
 public section
@@ -175,6 +177,14 @@ theorem pow_eq_one_of_apply_eq_smul {R M X : Type*} [Semiring R] [AddCommMonoid 
     (hk : a ^ k = 1) : S ^ k = 1 :=
   LinearMap.ext fun x ↦ by rw [pow_apply_eq_pow_smul S hS, hk, one_smul, one_apply_eq_self]
 
+/-- Iterates of intertwined endomorphisms are intertwined: if `f ∘ g = g₂ ∘ f`, then
+`(g₂ ^ k) (f m) = f ((g ^ k) m)`. This is the pointwise form of `commute_pow_left_of_commute`. -/
+theorem pow_apply_of_comp_eq {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂] [AddCommMonoid M]
+    [Module R M] [AddCommMonoid M₂] [Module R₂ M₂] {σ₁₂ : R →+* R₂} {f : M →ₛₗ[σ₁₂] M₂}
+    {g : Module.End R M} {g₂ : Module.End R₂ M₂} (h : f.comp g = g₂.comp f) (k : ℕ) (m : M) :
+    (g₂ ^ k) (f m) = f ((g ^ k) m) :=
+  LinearMap.congr_fun (commute_pow_left_of_commute h.symm k) m
+
 end Module.End
 
 namespace Submodule
@@ -184,6 +194,14 @@ theorem le_comap_of_fixed {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R
     (p : Submodule R V) (f : Module.End R V)
     (hfix : ∀ y ∈ p, f y = y) : p ≤ p.comap f :=
   fun y hy ↦ by rw [Submodule.mem_comap, hfix y hy]; exact hy
+
+/-- If an endomorphism maps `p` into `p ⊔ q` and leaves `q` invariant, so does each of its powers.
+This is the relative form of `Submodule.le_comap_pow_of_le_comap`. -/
+theorem le_comap_pow_of_le_comap_sup {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+    (p : Submodule R V) {q : Submodule R V} {f : Module.End R V} (hp : p ≤ (p ⊔ q).comap f)
+    (hq : q ≤ q.comap f) (k : ℕ) : p ≤ (p ⊔ q).comap (f ^ k) :=
+  le_sup_left.trans <|
+    (p ⊔ q).le_comap_pow_of_le_comap (sup_le hp (hq.trans (comap_mono le_sup_right))) k
 
 end Submodule
 
@@ -198,44 +216,3 @@ theorem invtSubmodule_inf_invtSubmodule_le_invtSubmodule_sub :
   fun p ⟨hfp, hgp⟩ _ hx ↦ p.sub_mem (hfp hx) (hgp hx)
 
 end Module.End
-
-namespace LinearEquiv
-
-/-- Evaluating a conjugated algebra-homomorphism intertwining equation
-`(T.conjAlgEquiv R).toAlgHom.comp ρ = ρ'.comp f` at an element `x : A`. -/
-theorem conj_apply_of_conjAlgEquiv_comp {R A B E E' : Type*}
-    [CommSemiring R] [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
-    [AddCommMonoid E] [Module R E] [AddCommMonoid E'] [Module R E']
-    {ρ : A →ₐ[R] Module.End R E} {ρ' : B →ₐ[R] Module.End R E'}
-    {T : E ≃ₗ[R] E'} {f : A →ₐ[R] B}
-    (hconj : (T.conjAlgEquiv R).toAlgHom.comp ρ = ρ'.comp f) (x : A) :
-    T.conj (ρ x) = ρ' (f x) := by
-  have hx := AlgHom.congr_fun hconj x
-  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
-    AlgHom.comp_apply] at hx
-  exact hx
-
-/-- If a linear equivalence `e` intertwines `A` and `B`, then `B = e.conj A`. -/
-theorem eq_conj_of_comp_eq {R M N : Type*} [CommSemiring R]
-    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    {e : M ≃ₗ[R] N} {A : Module.End R M} {B : Module.End R N}
-    (h : (e : M →ₗ[R] N) ∘ₗ A = B ∘ₗ (e : M →ₗ[R] N)) : B = e.conj A := by
-  ext y
-  simpa [LinearEquiv.conj_apply_apply] using (LinearMap.congr_fun h (e.symm y)).symm
-
-/-- The linear map underlying `LinearEquiv.ofInvolutive f hf` is `f`. -/
-@[simp]
-theorem toLinearMap_ofInvolutive {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    {σ σ' : R →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
-    (f : M →ₛₗ[σ] M) (hf : Function.Involutive f) :
-    (ofInvolutive f hf : M →ₛₗ[σ] M) = f :=
-  (rfl)
-
-/-- A linear involution is its own inverse linear equivalence. -/
-@[simp]
-theorem symm_ofInvolutive {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    (f : M →ₗ[R] M) (hf : Function.Involutive f) :
-    (ofInvolutive f hf).symm = ofInvolutive f hf :=
-  LinearEquiv.ext fun _ ↦ rfl
-
-end LinearEquiv
