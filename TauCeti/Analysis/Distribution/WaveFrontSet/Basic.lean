@@ -939,7 +939,23 @@ theorem waveFrontSet_transportCLM (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' Ω)
 
 end Transport
 
-variable [FiniteDimensional ℝ E] {V : Opens E}
+variable {V : Opens E}
+
+/-- The Jacobian factor `|det e|⁻¹` of an automorphism `e` is nonzero. -/
+private theorem ofReal_abs_det_inv_ne_zero (e : E ≃L[ℝ] E) :
+    ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) ≠ 0 := by
+  simpa using LinearEquiv.isUnit_det' e.toLinearEquiv |>.ne_zero
+
+/-- The pullback of a complex-valued distribution along an automorphism `e` is the transport
+along `e`, scaled by the complex number `|det e|⁻¹`. -/
+private theorem compCLMOfContinuousLinearEquiv_apply_eq_smul_transportCLM (e : E ≃L[ℝ] E)
+    (hVO : MapsTo e V Ω) (T : 𝓓'(Ω, ℂ)) :
+    compCLMOfContinuousLinearEquiv e hVO T =
+      ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) • transportCLM e hVO T := by
+  rw [compCLMOfContinuousLinearEquiv_eq_smul_transportCLM, _root_.smul_apply]
+  exact (Complex.coe_smul _ _).symm
+
+variable [FiniteDimensional ℝ E]
 
 /-- **Localized Fourier transforms under a linear change of coordinates.** The localized Fourier
 transform of the pullback `e^* T` with cutoff `φ`, at the frequency `η`, is `|det e|⁻¹` times that
@@ -949,8 +965,8 @@ theorem localFourier_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (hVO : M
     (compCLMOfContinuousLinearEquiv e hVO T).localFourier φ η =
       (|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) *
         T.localFourier (e.transportTestFunction ℝ hVO φ) (((e.symm : E →L[ℝ] E)†) η) := by
-  rw [compCLMOfContinuousLinearEquiv_eq_smul_transportCLM, _root_.smul_apply,
-    ← Complex.coe_smul, localFourier_smul, localFourier_transportCLM]
+  rw [compCLMOfContinuousLinearEquiv_apply_eq_smul_transportCLM, localFourier_smul,
+    localFourier_transportCLM]
 
 /-- If `T` is microlocally smooth at `(e x, (e⁻¹)ᵀ ξ)`, then its pullback along `e` is
 microlocally smooth at `(x, ξ)`. Here `e` identifies `V` with `Ω`. -/
@@ -959,8 +975,7 @@ theorem IsMicrolocallySmoothAt.compCLMOfContinuousLinearEquiv {T : 𝓓'(Ω, ℂ
     (h : T.IsMicrolocallySmoothAt (e x) (((e.symm : E →L[ℝ] E)†) ξ)) :
     (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySmoothAt x ξ := by
   -- The pullback is a scalar multiple of the transport.
-  rw [compCLMOfContinuousLinearEquiv_eq_smul_transportCLM, _root_.smul_apply,
-    ← Complex.coe_smul]
+  rw [compCLMOfContinuousLinearEquiv_apply_eq_smul_transportCLM]
   exact (h.transportCLM e hVO hOV).smul _
 
 /-- **Microlocal smoothness under a linear change of coordinates.** When `e` identifies `V` with
@@ -971,10 +986,8 @@ theorem isMicrolocallySmoothAt_compCLMOfContinuousLinearEquiv_iff {T : 𝓓'(Ω,
     (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySmoothAt x ξ ↔
       T.IsMicrolocallySmoothAt (e x) (((e.symm : E →L[ℝ] E)†) ξ) := by
   -- The pullback is a nonzero scalar multiple of the transport.
-  have hdet : ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) ≠ 0 := by
-    simpa using LinearEquiv.isUnit_det' e.toLinearEquiv |>.ne_zero
-  rw [compCLMOfContinuousLinearEquiv_eq_smul_transportCLM, _root_.smul_apply, ← Complex.coe_smul,
-    isMicrolocallySmoothAt_smul_iff_of_ne_zero hdet,
+  rw [compCLMOfContinuousLinearEquiv_apply_eq_smul_transportCLM,
+    isMicrolocallySmoothAt_smul_iff_of_ne_zero (ofReal_abs_det_inv_ne_zero e),
     isMicrolocallySmoothAt_transportCLM_iff e hVO hOV]
 
 /-- **The wave front set under a linear change of coordinates.** When `e` identifies `V` with
@@ -986,10 +999,8 @@ theorem waveFrontSet_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (hVO : M
     (compCLMOfContinuousLinearEquiv e hVO T).waveFrontSet =
       Prod.map e ((e.symm : E →L[ℝ] E)†) ⁻¹' T.waveFrontSet := by
   -- The pullback is a nonzero scalar multiple of the transport.
-  have hdet : ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) ≠ 0 := by
-    simpa using LinearEquiv.isUnit_det' e.toLinearEquiv |>.ne_zero
-  rw [compCLMOfContinuousLinearEquiv_eq_smul_transportCLM, _root_.smul_apply, ← Complex.coe_smul,
-    waveFrontSet_smul hdet, waveFrontSet_transportCLM e hVO hOV]
+  rw [compCLMOfContinuousLinearEquiv_apply_eq_smul_transportCLM,
+    waveFrontSet_smul (ofReal_abs_det_inv_ne_zero e), waveFrontSet_transportCLM e hVO hOV]
 
 end LinearEquiv
 
