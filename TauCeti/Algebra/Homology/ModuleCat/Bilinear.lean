@@ -22,8 +22,9 @@ cocycles a cocycle (`TauCeti.CochainComplex.moduleCatCyclesMap₂`), and the pro
 and a cocycle, in either order, a coboundary. So the product descends to an `R`-bilinear map
 `Hᵖ(K₁) × H^q(K₂) → Hⁿ(K₀)` on cohomology (`TauCeti.CochainComplex.moduleCatHomologyMap₂`),
 computed on classes of cocycles by the product of representatives
-(`TauCeti.CochainComplex.moduleCatHomologyMap₂_homologyπ`). Cochain maps which intertwine two such
-products intertwine the products on cohomology
+(`TauCeti.CochainComplex.moduleCatHomologyMap₂_homologyπ`). Associativity and units of products of
+cochains pass to the products on cohomology, and cochain maps which intertwine two such products
+intertwine the products on cohomology
 (`TauCeti.CochainComplex.homologyMap_moduleCatHomologyMap₂`).
 
 ## Main definitions
@@ -39,6 +40,11 @@ products intertwine the products on cohomology
   cocycles is the class of their product.
 * `TauCeti.CochainComplex.moduleCatHomologyMap₂_homologyπ_moduleCatCyclesMk`: the same for cocycles
   given as elements of the cochain modules.
+* `TauCeti.CochainComplex.moduleCatHomologyMap₂_unit_left`,
+  `TauCeti.CochainComplex.moduleCatHomologyMap₂_unit_right`: the class of a `0`-cocycle which is a
+  unit for the product of cochains is a unit for the product on cohomology.
+* `TauCeti.CochainComplex.moduleCatHomologyMap₂_assoc`: associativity of products of cochains gives
+  associativity of the products on cohomology.
 * `TauCeti.CochainComplex.homologyMap_moduleCatHomologyMap₂`: naturality under cochain maps
   intertwining the products.
 -/
@@ -201,6 +207,110 @@ theorem moduleCatHomologyMap₂_homologyπ_moduleCatCyclesMk {p q n : ℕ} (h : 
   congr 1
   apply K₀.moduleCat_iCycles_injective
   simp
+
+section Unit
+
+variable
+  (ε : ∀ p q n : ℕ, p + q = n → K₁.X p →ₗ[R] K₂.X q →ₗ[R] K₂.X n)
+  (hε : ∀ (p q n : ℕ) (h : p + q = n) (a : K₁.X p) (b : K₂.X q),
+    (K₂.d n (n + 1)).hom (ε p q n h a b) =
+      ε (p + 1) q (n + 1) ((Nat.succ_add p q).trans (congrArg Nat.succ h))
+          ((K₁.d p (p + 1)).hom a) b +
+        (-1 : ℤ) ^ p • ε p (q + 1) (n + 1) ((Nat.add_succ p q).trans (congrArg Nat.succ h)) a
+          ((K₂.d q (q + 1)).hom b))
+
+/-- **Left unit on cohomology.** If a `0`-cocycle `e` is a left unit for a product of cochains
+`K₁ × K₂ → K₂`, then its class is a left unit for the product on cohomology. -/
+theorem moduleCatHomologyMap₂_unit_left (e : K₁.X 0) (he : (K₁.d 0 1).hom e = 0) {q : ℕ}
+    (heε : ∀ b : K₂.X q, ε 0 q q (zero_add q) e b = b) (β : K₂.homology q) :
+    moduleCatHomologyMap₂ ε hε 0 q q (zero_add q)
+      ((K₁.homologyπ 0).hom (K₁.moduleCatCyclesMk e 1 (by simp) he)) β = β := by
+  obtain ⟨b, rfl⟩ := K₂.moduleCat_homologyπ_surjective q β
+  rw [moduleCatHomologyMap₂_homologyπ]
+  congr 1
+  apply K₂.moduleCat_iCycles_injective
+  simp [heε]
+
+end Unit
+
+section Unit
+
+variable
+  (ε : ∀ p q n : ℕ, p + q = n → K₁.X p →ₗ[R] K₂.X q →ₗ[R] K₁.X n)
+  (hε : ∀ (p q n : ℕ) (h : p + q = n) (a : K₁.X p) (b : K₂.X q),
+    (K₁.d n (n + 1)).hom (ε p q n h a b) =
+      ε (p + 1) q (n + 1) ((Nat.succ_add p q).trans (congrArg Nat.succ h))
+          ((K₁.d p (p + 1)).hom a) b +
+        (-1 : ℤ) ^ p • ε p (q + 1) (n + 1) ((Nat.add_succ p q).trans (congrArg Nat.succ h)) a
+          ((K₂.d q (q + 1)).hom b))
+
+/-- **Right unit on cohomology.** If a `0`-cocycle `e` is a right unit for a product of cochains
+`K₁ × K₂ → K₁`, then its class is a right unit for the product on cohomology. -/
+theorem moduleCatHomologyMap₂_unit_right (e : K₂.X 0) (he : (K₂.d 0 1).hom e = 0) {p : ℕ}
+    (heε : ∀ a : K₁.X p, ε p 0 p (add_zero p) a e = a) (α : K₁.homology p) :
+    moduleCatHomologyMap₂ ε hε p 0 p (add_zero p) α
+      ((K₂.homologyπ 0).hom (K₂.moduleCatCyclesMk e 1 (by simp) he)) = α := by
+  obtain ⟨a, rfl⟩ := K₁.moduleCat_homologyπ_surjective p α
+  rw [moduleCatHomologyMap₂_homologyπ]
+  congr 1
+  apply K₁.moduleCat_iCycles_injective
+  simp [heε]
+
+end Unit
+
+section Assoc
+
+variable {K₃ K₁₂ K₂₃ : CochainComplex (ModuleCat.{v} R) ℕ}
+  (μ₁₂ : ∀ p q n : ℕ, p + q = n → K₁.X p →ₗ[R] K₂.X q →ₗ[R] K₁₂.X n)
+  (hμ₁₂ : ∀ (p q n : ℕ) (h : p + q = n) (a : K₁.X p) (b : K₂.X q),
+    (K₁₂.d n (n + 1)).hom (μ₁₂ p q n h a b) =
+      μ₁₂ (p + 1) q (n + 1) ((Nat.succ_add p q).trans (congrArg Nat.succ h))
+          ((K₁.d p (p + 1)).hom a) b +
+        (-1 : ℤ) ^ p • μ₁₂ p (q + 1) (n + 1) ((Nat.add_succ p q).trans (congrArg Nat.succ h)) a
+          ((K₂.d q (q + 1)).hom b))
+  (μ₂₃ : ∀ p q n : ℕ, p + q = n → K₂.X p →ₗ[R] K₃.X q →ₗ[R] K₂₃.X n)
+  (hμ₂₃ : ∀ (p q n : ℕ) (h : p + q = n) (a : K₂.X p) (b : K₃.X q),
+    (K₂₃.d n (n + 1)).hom (μ₂₃ p q n h a b) =
+      μ₂₃ (p + 1) q (n + 1) ((Nat.succ_add p q).trans (congrArg Nat.succ h))
+          ((K₂.d p (p + 1)).hom a) b +
+        (-1 : ℤ) ^ p • μ₂₃ p (q + 1) (n + 1) ((Nat.add_succ p q).trans (congrArg Nat.succ h)) a
+          ((K₃.d q (q + 1)).hom b))
+  (μ₁₂₃ : ∀ p q n : ℕ, p + q = n → K₁₂.X p →ₗ[R] K₃.X q →ₗ[R] K₀.X n)
+  (hμ₁₂₃ : ∀ (p q n : ℕ) (h : p + q = n) (a : K₁₂.X p) (b : K₃.X q),
+    (K₀.d n (n + 1)).hom (μ₁₂₃ p q n h a b) =
+      μ₁₂₃ (p + 1) q (n + 1) ((Nat.succ_add p q).trans (congrArg Nat.succ h))
+          ((K₁₂.d p (p + 1)).hom a) b +
+        (-1 : ℤ) ^ p • μ₁₂₃ p (q + 1) (n + 1) ((Nat.add_succ p q).trans (congrArg Nat.succ h)) a
+          ((K₃.d q (q + 1)).hom b))
+  (μ₁₂₃' : ∀ p q n : ℕ, p + q = n → K₁.X p →ₗ[R] K₂₃.X q →ₗ[R] K₀.X n)
+  (hμ₁₂₃' : ∀ (p q n : ℕ) (h : p + q = n) (a : K₁.X p) (b : K₂₃.X q),
+    (K₀.d n (n + 1)).hom (μ₁₂₃' p q n h a b) =
+      μ₁₂₃' (p + 1) q (n + 1) ((Nat.succ_add p q).trans (congrArg Nat.succ h))
+          ((K₁.d p (p + 1)).hom a) b +
+        (-1 : ℤ) ^ p • μ₁₂₃' p (q + 1) (n + 1) ((Nat.add_succ p q).trans (congrArg Nat.succ h)) a
+          ((K₂₃.d q (q + 1)).hom b))
+
+/-- **Associativity on cohomology.** Products of cochains `μ₁₂ : K₁ × K₂ → K₁₂`,
+`μ₂₃ : K₂ × K₃ → K₂₃`, `μ₁₂₃ : K₁₂ × K₃ → K₀` and `μ₁₂₃' : K₁ × K₂₃ → K₀` with
+`μ₁₂₃ (μ₁₂ a b) c = μ₁₂₃' a (μ₂₃ b c)` induce products on cohomology satisfying the same
+identity. -/
+theorem moduleCatHomologyMap₂_assoc {p q r m l n : ℕ} (h₁ : p + q = m) (h₂ : m + r = n)
+    (h₃ : q + r = l) (h₄ : p + l = n)
+    (hassoc : ∀ (a : K₁.X p) (b : K₂.X q) (c : K₃.X r),
+      μ₁₂₃ m r n h₂ (μ₁₂ p q m h₁ a b) c = μ₁₂₃' p l n h₄ a (μ₂₃ q r l h₃ b c))
+    (α : K₁.homology p) (β : K₂.homology q) (γ : K₃.homology r) :
+    moduleCatHomologyMap₂ μ₁₂₃ hμ₁₂₃ m r n h₂ (moduleCatHomologyMap₂ μ₁₂ hμ₁₂ p q m h₁ α β) γ =
+      moduleCatHomologyMap₂ μ₁₂₃' hμ₁₂₃' p l n h₄ α
+        (moduleCatHomologyMap₂ μ₂₃ hμ₂₃ q r l h₃ β γ) := by
+  obtain ⟨a, rfl⟩ := K₁.moduleCat_homologyπ_surjective p α
+  obtain ⟨b, rfl⟩ := K₂.moduleCat_homologyπ_surjective q β
+  obtain ⟨c, rfl⟩ := K₃.moduleCat_homologyπ_surjective r γ
+  simp only [moduleCatHomologyMap₂_homologyπ]
+  congr 1
+  apply K₀.moduleCat_iCycles_injective
+  simp [hassoc]
+
+end Assoc
 
 section Naturality
 
