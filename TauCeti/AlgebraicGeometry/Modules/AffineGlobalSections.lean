@@ -38,7 +38,9 @@ modules that is bijective on global sections is an isomorphism, a quasicoherent 
 containing every global section is the whole module, and a quasicoherent module with vanishing
 global sections is zero. Global sections are those on the affine chart `Spec Γ(X, ⊤) ⟶ X`, an
 isomorphism, and on a spectrum they are the inverse of the tilde equivalence (Stacks, Lemma
-26.7.5, Tag 01I7).
+26.7.5, Tag 01I7). Hence on `Spec R` an epimorphism between isomorphic quasicoherent
+modules with finitely generated global sections is an isomorphism, by the Orzech property of
+commutative rings (`Scheme.Modules.isIso_of_epi_of_iso`).
 
 The file also identifies the global sections of a free module on `Spec R` with a direct sum of
 copies of `R`, and records the base-ring action on affine global sections, the additive
@@ -379,6 +381,34 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_mono_of_surjective_sect
   have := (SheafOfModules.evaluation X.ringCatSheaf (Opposite.op ⊤)).map_mono i
   exact Scheme.Modules.isIso_of_bijective_sectionsFunctor_map_top i
     ⟨(ModuleCat.mono_iff_injective _).mp this, hi⟩
+
+/-- **An epimorphism between isomorphic quasicoherent modules of finite type on an affine
+spectrum is an isomorphism.** On global sections it is a surjection between isomorphic finitely
+generated modules, which is injective by the Orzech property of commutative rings; and global
+sections are an equivalence on quasicoherent modules. Only the existence of an isomorphism
+`M ≅ N` matters, not its relation to `φ`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_epi_of_iso
+    [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) [Epi φ] (e : M ≅ N)
+    [Module.Finite R (moduleSpecΓFunctor.obj N)] : IsIso φ := by
+  have hsurj := moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent φ
+  -- Precomposed with the inverse of `e`, it is a surjective endomorphism of a finitely generated
+  -- module, hence injective.
+  have hinj : Function.Injective (moduleSpecΓFunctor.map φ) := by
+    have h := OrzechProperty.injective_of_surjective_endomorphism
+      ((moduleSpecΓFunctor.mapIso e).inv ≫ moduleSpecΓFunctor.map φ).hom
+      (hsurj.comp (moduleSpecΓFunctor.mapIso e).symm.toLinearEquiv.surjective)
+    exact (Function.Injective.of_comp_iff' _
+      (moduleSpecΓFunctor.mapIso e).symm.toLinearEquiv.bijective).mp h
+  have : IsIso (moduleSpecΓFunctor.map φ) :=
+    (ConcreteCategory.isIso_iff_bijective _).mpr ⟨hinj, hsurj⟩
+  -- Global sections are the inverse of the tilde equivalence, which reflects isomorphisms. As in
+  -- `isIso_of_bijective_sectionsFunctor_map_top`, two definitional equalities are used:
+  -- `tildeEquiv.inverse.map ψ` is `moduleSpecΓFunctor.map φ`, and `P.ι.map ψ` is `φ`.
+  let P := SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf
+  let ψ : (⟨M, ‹_›⟩ : P.FullSubcategory) ⟶ ⟨N, ‹_›⟩ := ObjectProperty.homMk φ
+  have : IsIso (tildeEquiv.inverse.map ψ) := by assumption
+  have : IsIso ψ := isIso_of_reflects_iso ψ tildeEquiv.inverse
+  exact inferInstanceAs (IsIso (P.ι.map ψ))
 
 end AlgebraicGeometry
 

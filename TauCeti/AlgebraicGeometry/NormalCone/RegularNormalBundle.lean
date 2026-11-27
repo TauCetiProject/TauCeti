@@ -10,8 +10,6 @@ public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.AffineChart
 public import TauCeti.AlgebraicGeometry.NormalCone.NormalBundle
 public import TauCeti.AlgebraicGeometry.NormalCone.Regular
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
-import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
-import TauCeti.AlgebraicGeometry.IdealSheaf.Tilde
 import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Affine
@@ -50,10 +48,6 @@ isomorphism between source and target on each chart enters.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.pullbackIdealSheafAffineChartIsoTilde`: for a closed immersion
-  `j : X ⟶ Z`, an affine open `U` of `Z` and an ideal sheaf `K` on `Z`, the pullback of `j^* K` to
-  the affine chart `Spec (Γ(Z, U) ⧸ (ker j)(U))` is the sheaf associated with the extension of
-  scalars of `K(U)`.
 * `AlgebraicGeometry.Scheme.Hom.IsRegularImmersion.isIso_symmetricAlgebraToNormalConeAlgebra`:
   for a regular immersion, `Sym (I/I²) ⟶ ⨁ₙ Iⁿ/Iⁿ⁺¹` is an isomorphism.
 * `AlgebraicGeometry.Scheme.Hom.IsRegularImmersion.isIso_normalConeToNormalSheaf`: for a regular
@@ -74,105 +68,13 @@ open CategoryTheory Opposite
 
 universe u
 
-namespace TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra
-
-variable {X : _root_.AlgebraicGeometry.Scheme.{u}}
-
-/-- A morphism of graded quasicoherent algebras whose homogeneous components are isomorphisms is
-an isomorphism. -/
-theorem isIso_of_isIso_hom_hom_hom {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B)
-    (hf : ∀ n, IsIso (f.hom.hom.hom n)) : IsIso f := by
-  have : IsIso f.hom.hom.hom := @GradedObject.isIso_of_isIso_apply _ _ _ _ _ _ hf
-  -- The forgetful functor to graded modules sends `f` to `f.hom.hom.hom` and reflects
-  -- isomorphisms.
-  have : IsIso ((ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _).map f) := by
-    simpa only [Functor.comp_map, ObjectProperty.ι_map, CommMon.forget₂Mon_map_hom,
-      Mon.forget_map]
-  exact isIso_of_reflects_iso f (ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _)
-
-end TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra
-
 namespace AlgebraicGeometry.Scheme.Hom
 
 open TauCeti.AlgebraicGeometry
 
-section AffineChart
-
-variable {X Z : Scheme.{u}} (j : X ⟶ Z) [IsClosedImmersion j] (U : Z.affineOpens)
-
-/-- For a closed immersion `j : X ⟶ Z`, an affine open `U` of `Z` and an ideal sheaf `K` on `Z`,
-the pullback of `j^* K` to the affine chart `Spec (Γ(Z, U) ⧸ (ker j)(U))` of `X` is the sheaf
-associated with the extension of scalars of the `Γ(Z, U)`-module `K(U)` along the quotient map.
-For `K = ker j` this is `Scheme.Hom.pullbackConormalAffineChartIsoTilde` before the
-identification of the extension of scalars with the conormal module. -/
-noncomputable def pullbackIdealSheafAffineChartIsoTilde (K : Z.IdealSheafData) :
-    (Scheme.Modules.pullback (j.affineChart U)).obj ((Scheme.Modules.pullback j).obj K.sheaf) ≅
-      tilde ((ModuleCat.extendScalars (Ideal.Quotient.mk (j.ker.ideal U))).obj
-        (ModuleCat.of Γ(Z, U) (K.ideal U))) :=
-  -- Pull `K` back along `Spec (Γ(Z, U) ⧸ I(U)) ⟶ Spec Γ(Z, U) ⟶ Z`: the open immersion
-  -- `U.fromSpec` turns it into the ideal sheaf `K(U)~`, and the closed immersion then extends
-  -- scalars (`tildeFunctorCompPullbackIso`).
-  have : IsOpenImmersion U.property.fromSpec := U.property.isOpenImmersion_fromSpec
-  (Scheme.Modules.pullbackComp (j.affineChart U) j).app _ ≪≫
-    (Scheme.Modules.pullbackCongr (j.affineChart_comp U)).app _ ≪≫
-    ((Scheme.Modules.pullbackComp _ U.property.fromSpec).app _).symm ≪≫
-    (Scheme.Modules.pullback _).mapIso (asIso (K.pullbackSheafHom U.property.fromSpec) ≪≫
-      eqToIso (congrArg IdealSheafData.sheaf (K.comap_fromSpec_eq_ofIdealTop U.property)) ≪≫
-      IdealSheafData.ofIdealTopSheafIsoTilde (K.ideal U)) ≪≫
-    (tildeFunctorCompPullbackIso _).app (ModuleCat.of _ _)
-
-end AffineChart
-
-section Affine
-
-variable {R : CommRingCat.{u}}
-
-/-- **An epimorphism between isomorphic quasicoherent modules of finite type on an affine
-spectrum is an isomorphism.** On global sections it is a surjection between isomorphic finitely
-generated modules, which is injective by the Orzech property of commutative rings; and global
-sections are an equivalence on quasicoherent modules. Only the existence of an isomorphism
-`M ≅ N` matters, not its relation to `φ`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_epi_of_iso {M N : (Spec R).Modules}
-    [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) [Epi φ] (e : M ≅ N)
-    [Module.Finite R (moduleSpecΓFunctor.obj N)] : IsIso φ := by
-  have hsurj := moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent φ
-  -- Precomposed with the inverse of `e`, it is a surjective endomorphism of a finitely generated
-  -- module, hence injective.
-  have hinj : Function.Injective (moduleSpecΓFunctor.map φ) := by
-    have h := OrzechProperty.injective_of_surjective_endomorphism
-      ((moduleSpecΓFunctor.mapIso e).inv ≫ moduleSpecΓFunctor.map φ).hom
-      (hsurj.comp (moduleSpecΓFunctor.mapIso e).symm.toLinearEquiv.surjective)
-    exact (Function.Injective.of_comp_iff' _
-      (moduleSpecΓFunctor.mapIso e).symm.toLinearEquiv.bijective).mp h
-  have : IsIso (moduleSpecΓFunctor.map φ) :=
-    (ConcreteCategory.isIso_iff_bijective _).mpr ⟨hinj, hsurj⟩
-  -- Global sections are the inverse of the tilde equivalence, which reflects isomorphisms.
-  let P := SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf
-  let ψ : (⟨M, ‹_›⟩ : P.FullSubcategory) ⟶ ⟨N, ‹_›⟩ := ObjectProperty.homMk φ
-  have : IsIso (tildeEquiv.inverse.map ψ) := by assumption
-  have : IsIso ψ := isIso_of_reflects_iso ψ tildeEquiv.inverse
-  exact inferInstanceAs (IsIso (P.ι.map ψ))
-
-end Affine
-
 section Regular
 
 variable {X Y : Scheme.{u}} (i : X ⟶ Y) [IsImmersion i]
-
-/-- Every homogeneous component `Symⁿ (I/I²) ⟶ Iⁿ/Iⁿ⁺¹` of
-`symmetricAlgebraToNormalConeAlgebra` is an epimorphism: it is a retract of the epimorphism of
-direct sums `⨁ₙ Symⁿ (I/I²) ⟶ ⨁ₙ Iⁿ/Iⁿ⁺¹`. -/
-theorem epi_symmetricAlgebraToNormalConeAlgebra_hom (n : ℕ) :
-    Epi (i.symmetricAlgebraToNormalConeAlgebra.hom.hom.hom n) := by
-  -- `πTotal` is typed in `X.Modules` and the components in `SheafOfModules X.ringCatSheaf`, so
-  -- the instances are passed explicitly.
-  have hπ : IsSplitEpi (GradedQuasicoherentAlgebra.πTotal i.normalConeAlgebra n) :=
-    .mk' ⟨_, GradedQuasicoherentAlgebra.ιTotal_πTotal_self _ n⟩
-  have hc := @epi_comp _ _ _ _ _ _
-    i.epi_toQuasicoherentAlgebra_map_symmetricAlgebraToNormalConeAlgebra _
-    (@IsSplitEpi.epi _ _ _ _ _ hπ)
-  rw [GradedQuasicoherentAlgebra.toQuasicoherentAlgebra_map_πTotal] at hc
-  exact @epi_of_epi _ _ _ _ _ _ _ hc
 
 /-- Over an affine open `U` of `i.coborderRange`, with `J = I(U)`, the pullback of `Symⁿ (I/I²)`
 to the affine chart `Spec (Γ(U) ⧸ J)` of `X` is the sheaf associated with `Symⁿ (J/J²)`. -/
