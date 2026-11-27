@@ -31,7 +31,7 @@ with no triangle and chromatic number `k`.
 * `SimpleGraph.chromaticNumber_mycielskian`: `χ(G.mycielskian) = χ(G) + 1`.
 * `SimpleGraph.cliqueFree_mycielskian_iff`: for `n ≥ 3`, `G.mycielskian` has no clique on `n`
   vertices exactly when `G` has none.
-* `SimpleGraph.exists_cliqueFree_three_chromaticNumber_eq`: Mycielski's theorem, that for every
+* `TauCeti.exists_cliqueFree_three_chromaticNumber_eq`: Mycielski's theorem, that for every
   `k` some triangle-free graph on finitely many vertices has chromatic number `k`.
 
 ## References
@@ -59,6 +59,18 @@ def mycielskian (G : SimpleGraph V) : SimpleGraph (V ⊕ V ⊕ Unit) where
     | _, _ => False
   symm := ⟨by rintro (v | v | u) (w | w | u') h <;> first | exact h.symm | trivial⟩
   loopless := ⟨by rintro (v | v | u) h <;> first | exact G.loopless.irrefl v h | exact h⟩
+
+/-- Adjacency in the Mycielskian, for arbitrary vertices. -/
+theorem mycielskian_adj_def (x y : V ⊕ V ⊕ Unit) :
+    G.mycielskian.Adj x y ↔ match x, y with
+      | .inl v, .inl w | .inl v, .inr (.inl w) | .inr (.inl v), .inl w => G.Adj v w
+      | .inr (.inl _), .inr (.inr _) | .inr (.inr _), .inr (.inl _) => True
+      | _, _ => False :=
+  Iff.rfl
+
+instance [DecidableRel G.Adj] : DecidableRel G.mycielskian.Adj := by
+  rintro (x | x | x) (y | y | y) <;>
+    exact decidable_of_iff _ (mycielskian_adj_def (G := G) _ _).symm
 
 @[simp, grind =]
 theorem mycielskian_adj_inl_inl {v w : V} :
@@ -101,6 +113,12 @@ theorem not_mycielskian_adj_inr_inl_inr_inl {v w : V} :
     ¬G.mycielskian.Adj (.inr (.inl v)) (.inr (.inl w)) :=
   id
 
+/-- Restricting the Mycielskian to the original vertices recovers `G`. -/
+@[simp]
+theorem comap_inl_mycielskian : G.mycielskian.comap Sum.inl = G := by
+  ext
+  exact mycielskian_adj_inl_inl
+
 /-- The embedding of `G` into its Mycielskian, onto the vertices `inl v`. -/
 def Embedding.mycielskianInl : G ↪g G.mycielskian where
   toFun := .inl
@@ -116,14 +134,19 @@ theorem Embedding.mycielskianInl_apply (v : V) :
 
 /-- A colouring of `G` by `α` extends to a colouring of `G.mycielskian` by `Option α`: each
 shadow gets the colour of its vertex and the apex the new colour `none`. -/
-private def Coloring.mycielskian (C : G.Coloring α) : G.mycielskian.Coloring (Option α) :=
+def Coloring.mycielskian (C : G.Coloring α) : G.mycielskian.Coloring (Option α) :=
   Coloring.mk (Sum.elim (some ∘ C) (Sum.elim (some ∘ C) fun _ ↦ none)) <| by
     rintro (v | v | u) (w | w | u') h <;> simp_all [C.valid]
 
+@[simp]
+theorem Coloring.mycielskian_apply (C : G.Coloring α) (x : V ⊕ V ⊕ Unit) :
+    C.mycielskian x = Sum.elim (some ∘ C) (Sum.elim (some ∘ C) fun _ ↦ none) x := by
+  rfl
+
 open scoped Classical in
-/-- A colouring of `G.mycielskian` restricts to a colouring of `G` that avoids the colour of the
-apex: every vertex `v` of the apex's colour is recoloured with the colour of its shadow. -/
-private noncomputable def Coloring.ofMycielskian (C : G.mycielskian.Coloring α) :
+/-- A colouring of `G` avoiding the apex colour, obtained from a colouring of `G.mycielskian`
+by replacing each occurrence of the apex colour with the corresponding shadow's colour. -/
+noncomputable def Coloring.ofMycielskian (C : G.mycielskian.Coloring α) :
     G.Coloring {a // a ≠ C (.inr (.inr ()))} :=
   Coloring.mk
     (fun v ↦ if h : C (.inl v) = C (.inr (.inr ())) then
@@ -136,6 +159,14 @@ private noncomputable def Coloring.ofMycielskian (C : G.mycielskian.Coloring α)
     · exact C.valid (mycielskian_adj_inl_inr_inl.2 h)
     · exact hvw
 
+open scoped Classical in
+@[simp]
+theorem Coloring.ofMycielskian_apply (C : G.mycielskian.Coloring α) (v : V) :
+    (C.ofMycielskian v : α) =
+      if C (.inl v) = C (.inr (.inr ())) then C (.inr (.inl v)) else C (.inl v) := by
+  dsimp [Coloring.ofMycielskian, Coloring.mk]
+  split_ifs <;> rfl
+
 /-- If `G` is colourable with `n` colours, its Mycielskian is colourable with `n + 1`. -/
 theorem Colorable.mycielskian (h : G.Colorable n) : G.mycielskian.Colorable (n + 1) := by
   simpa using h.some.mycielskian.colorable
@@ -147,24 +178,25 @@ theorem Colorable.of_mycielskian (h : G.mycielskian.Colorable (n + 1)) : G.Color
 
 /-- The Mycielskian of `G` is colourable with `n + 1` colours exactly when `G` is colourable with
 `n` colours. -/
+@[simp]
 theorem colorable_mycielskian_add_one_iff :
     G.mycielskian.Colorable (n + 1) ↔ G.Colorable n :=
   ⟨.of_mycielskian, .mycielskian⟩
 
 /-- The Mycielskian raises the chromatic number by exactly one. No finiteness is assumed: if `G`
 is not colourable with finitely many colours, both sides are `⊤`. -/
+@[simp]
 theorem chromaticNumber_mycielskian :
     G.mycielskian.chromaticNumber = G.chromaticNumber + 1 := by
-  refine eq_of_forall_ge_iff fun c ↦ ?_
-  induction c using ENat.recTopCoe with
-  | top => simp
-  | coe n =>
+  have h (n : ℕ) : G.mycielskian.chromaticNumber ≤ (n : ℕ∞) ↔
+      G.chromaticNumber + 1 ≤ (n : ℕ∞) := by
     rw [chromaticNumber_le_iff_colorable]
     cases n with
     | zero => simp
     | succ n =>
-      rw [colorable_mycielskian_add_one_iff, ← chromaticNumber_le_iff_colorable, Nat.cast_add,
-        Nat.cast_one, ENat.add_le_add_iff_right ENat.one_ne_top]
+      rw [colorable_mycielskian_add_one_iff, ← chromaticNumber_le_iff_colorable]
+      simp [ENat.add_le_add_iff_right ENat.one_ne_top]
+  exact WithTop.eq_of_forall_le_coe_iff h
 
 /-! ### Cliques -/
 
@@ -185,9 +217,8 @@ private theorem adj_foldMycielskian {v₀ : V} {x y : V ⊕ V ⊕ Unit}
     G.Adj (foldMycielskian v₀ x) (foldMycielskian v₀ y) := by
   rcases x with x | x | x <;> rcases y with y | y | y <;> simp_all [foldMycielskian]
 
-/-- For `n ≥ 3`, the Mycielskian of `G` has no clique on `n` vertices exactly when `G` has none.
-A clique on at least three vertices avoids the apex and contains at most one of a vertex and its
-shadow, so folding each shadow onto its vertex maps it onto a clique of `G`. -/
+/-- For `n ≥ 3`, the Mycielskian of `G` has no clique on `n` vertices exactly when `G` has none. -/
+@[simp]
 theorem cliqueFree_mycielskian_iff (hn : 3 ≤ n) :
     G.mycielskian.CliqueFree n ↔ G.CliqueFree n := by
   refine ⟨fun h ↦ h.comap Embedding.mycielskianInl.isContained, fun hG ↦ ?_⟩
@@ -195,18 +226,23 @@ theorem cliqueFree_mycielskian_iff (hn : 3 ≤ n) :
   rw [not_cliqueFree_iff_top_isContained] at hG ⊢
   obtain ⟨f⟩ := hG
   have hne (i : Fin n) : f i ≠ .inr (.inr ()) := by
-    obtain ⟨j, hj, k, hk, hjk⟩ := Finset.one_lt_card.1 <| show 1 < (Finset.univ.erase i).card by
-      rw [Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ, Fintype.card_fin]
-      omega
-    simp only [Finset.mem_erase] at hj hk
-    exact ne_apex_of_adj_of_adj_of_adj (f.toHom.map_adj (Ne.symm hj.1))
-      (f.toHom.map_adj (Ne.symm hk.1)) (f.toHom.map_adj hjk)
+    obtain ⟨j, hji, _⟩ := Fin.exists_ne_and_ne_of_two_lt i i (by omega)
+    obtain ⟨k, hki, hkj⟩ := Fin.exists_ne_and_ne_of_two_lt i j (by omega)
+    exact ne_apex_of_adj_of_adj_of_adj (f.toHom.map_adj ((top_adj _ _).2 hji.symm))
+      (f.toHom.map_adj ((top_adj _ _).2 hki.symm))
+      (f.toHom.map_adj ((top_adj _ _).2 hkj.symm))
   obtain ⟨v₀⟩ : Nonempty V := by
     rcases hx : f ⟨0, by omega⟩ with v | v | ⟨⟨⟩⟩
     exacts [⟨v⟩, ⟨v⟩, absurd hx (hne _)]
   let g : completeGraph (Fin n) →g G :=
     ⟨foldMycielskian v₀ ∘ f, fun h ↦ adj_foldMycielskian (f.toHom.map_adj h) (hne _) (hne _)⟩
   exact (g.toCopy g.injective_of_top_hom).isContained
+
+end SimpleGraph
+
+namespace TauCeti
+
+open SimpleGraph
 
 /-! ### Triangle-free graphs of every chromatic number -/
 
@@ -222,6 +258,7 @@ theorem exists_cliqueFree_three_chromaticNumber_eq (k : ℕ) :
     let e := H.mycielskian.overFinIso hc
     refine ⟨_, H.mycielskian.overFin hc, ?_, ?_⟩
     · exact ((cliqueFree_mycielskian_iff le_rfl).2 hH).comap e.symm.isContained
-    · rw [← chromaticNumber_congr e, chromaticNumber_mycielskian, hχ, Nat.cast_add, Nat.cast_one]
+    · rw [← chromaticNumber_congr e, chromaticNumber_mycielskian]
+      simp [hχ]
 
-end SimpleGraph
+end TauCeti
