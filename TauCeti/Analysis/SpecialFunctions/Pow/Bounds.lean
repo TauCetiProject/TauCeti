@@ -35,6 +35,10 @@ how a small scale is chosen to absorb a term `c r ^ α X` into `X` in a priori e
 for `0 < α`, every `c (ε ^ (1 + α) + ε ^ α)` is at most `b > 0` at some scale `ε ∈ (0, ε₀]`, as
 when interpolation inequalities absorb a Hölder constant.
 
+For `0 < c` and `1 < X₀`, a constant `K` in front of `X ^ B` is absorbed into a larger power:
+`K X ^ B ≤ X ^ D y` for `X₀ ≤ X` and `c ≤ y`. This is how a growth bound and a lower bound at a
+centre combine into the relative bound used by Jensen's and Landau's lemmas.
+
 For `1 ≤ p`, the graph of `u ↦ u ^ p` on `[0, ∞)` lies above each of its tangent lines:
 `v ^ p + p * v ^ (p - 1) * (u - v) ≤ u ^ p`, strictly so when `1 < p` and `u ≠ v`. Conversely,
 for `0 ≤ p ≤ 1`, `u ≥ 0`, and `v > 0`, concavity reverses the inequality:
@@ -96,6 +100,8 @@ for `log x`, the shifted logarithm is dominated by the power of `x` itself, so a
 * `Real.rpow_neg_le_mul_rpow_neg`: `y ^ (-q) ≤ a ^ q x ^ (-q)` for `0 < x ≤ a y`, `a ≥ 0` and
   `q ≥ 0`.
 * `Real.exists_pos_lt_one_lt_rpow`: for `θ < 1` and any `β`, some `τ ∈ (0, 1)` has `θ < τ ^ β`.
+* `Real.exists_mul_rpow_le_rpow_mul`: for `0 < c` and `1 < X₀`, some `D` has `K X ^ B ≤ X ^ D y`
+  whenever `X₀ ≤ X` and `c ≤ y`.
 * `Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow`,
   `Real.rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow`, and
   `Real.rpow_le_rpow_add_mul_rpow_sub_one_mul_sub`: convex and concave tangent-line inequalities
@@ -208,6 +214,31 @@ theorem exists_pos_le_mul_rpow_add_rpow_le (c : ℝ) {α b ε₀ : ℝ} (hα : 0
     _ ≤ max c 0 * (2 * ε₁ ^ α) := by gcongr; linarith
     _ = 2 * max c 0 * ε₁ ^ α := by ring
     _ ≤ b := hsmall
+
+/-- A constant factor is absorbed into a larger power of a base bounded away from `1`, relative to
+a quantity bounded below by a fixed `c > 0`: for `0 < c` and `1 < X₀` there is an exponent `D`
+with `K X ^ B ≤ X ^ D y` whenever `X₀ ≤ X` and `c ≤ y`. This turns a growth bound
+`‖f w‖ ≤ K X ^ B` and a lower bound `c ≤ ‖f z₀‖` into the relative bound `‖f w‖ ≤ X ^ D ‖f z₀‖`. -/
+theorem exists_mul_rpow_le_rpow_mul (K B : ℝ) {c X₀ : ℝ} (hc : 0 < c) (hX₀ : 1 < X₀) :
+    ∃ D : ℝ, ∀ X y : ℝ, X₀ ≤ X → c ≤ y → K * X ^ B ≤ X ^ D * y := by
+  set E := |log K| + |log c|
+  have hlog := log_pos hX₀
+  refine ⟨B + E / log X₀, fun X y hX hy ↦ ?_⟩
+  have hX0 : 0 < X := by linarith
+  have hy0 : 0 ≤ y := hc.le.trans hy
+  rcases le_or_gt K 0 with hK | hK
+  · exact (mul_nonpos_of_nonpos_of_nonneg hK (by positivity)).trans (by positivity)
+  have hKc : K ≤ c * exp E := by
+    rw [← exp_log hK, ← exp_log hc, ← exp_add]
+    exact exp_le_exp.mpr (by linarith [le_abs_self (log K), neg_abs_le (log c)])
+  have hEX : exp E ≤ X ^ (E / log X₀) := by
+    rw [rpow_def_of_pos hX0]
+    refine exp_le_exp.mpr ?_
+    calc E = log X₀ * (E / log X₀) := by field_simp
+      _ ≤ log X * (E / log X₀) := by gcongr
+  calc K * X ^ B ≤ c * X ^ (E / log X₀) * X ^ B := by gcongr; exact hKc.trans (by gcongr)
+    _ = X ^ (B + E / log X₀) * c := by rw [rpow_add hX0]; ring
+    _ ≤ _ := by gcongr
 
 /-- **The strict tangent-line inequality for real powers.** For `1 < p` and distinct `u, v ≥ 0`,
 `u ↦ u ^ p` lies strictly above its tangent line at `v`. -/
