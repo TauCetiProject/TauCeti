@@ -26,11 +26,11 @@ junk value `0`.
 
 Pullback commutes with the wedge product, wedge powers and the exterior derivative, so a smooth map
 `f` pulls `β ∧ (dβ)ⁿ` back to `(f^* β) ∧ (d(f^* β))ⁿ`
-(`TauCeti.SmoothForm.mpullback_wedge_wedgePow_mextDerivₗ`). By the change of variables formula, the
-integral of `β ∧ (dβ)ⁿ` against any orientation is therefore unchanged by an orientation-preserving
-diffeomorphism and changes sign under an orientation-reversing one
-(`Diffeomorph.integralTopForm_wedge_wedgePow_mpullback_of_isOrientationPreservingAt`,
-`Diffeomorph.integralTopForm_wedge_wedgePow_mpullback_of_isOrientationReversingAt`).
+(`TauCeti.SmoothForm.mpullback_wedge_wedgePow_mextDerivₗ`). By the change of variables formula
+(`Topology.IsOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt`,
+`Topology.IsOpenEmbedding.integralTopForm_mpullback_of_isOrientationReversingAt`), the integral of a
+top form is unchanged by an orientation-preserving diffeomorphism and changes sign under an
+orientation-reversing one.
 
 For contact forms this gives the transformation law of the contact volume. Let `e : M ≃ N` be a
 diffeomorphism with `e^* β = f α` for a function `f`. By the scaling law
@@ -67,9 +67,6 @@ to `2 α`, and a diffeomorphism pulling `c α` back to `α` forces `|c| = 1`, si
   `f^* (β ∧ (dβ)ⁿ) = (f^* β) ∧ (d(f^* β))ⁿ`.
 * `TauCeti.SmoothForm.mpullback_wedge_wedgePow_of_mpullback_eq_smul`: a map with `f^* β = g α` pulls
   `β ∧ (dβ)ⁿ` back to `gⁿ⁺¹ α ∧ (dα)ⁿ`.
-* `Diffeomorph.integralTopForm_wedge_wedgePow_mpullback_of_isOrientationPreservingAt`,
-  `Diffeomorph.integralTopForm_wedge_wedgePow_mpullback_of_isOrientationReversingAt`: the integral
-  of `β ∧ (dβ)ⁿ` is unchanged up to sign by a diffeomorphism.
 * `TauCeti.SmoothForm.IsContactForm.contactVolume_pos`: the contact volume of a compact nonempty
   contact manifold is positive.
 * `TauCeti.SmoothForm.IsContactForm.contactVolume_eq_integralTopForm_of_mpullback_eq_smul`,
@@ -132,44 +129,6 @@ end SmoothForm
 
 end TauCeti
 
-namespace Diffeomorph
-
-open TauCeti TauCeti.SmoothForm
-
-variable {E H M F H' N : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [TopologicalSpace H']
-  {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
-  {n : ℕ} (e : M ≃ₘ⟮I, J⟯ N) {o : Manifold.Orientation I M (Fin (1 + 2 * n))}
-  {o' : Manifold.Orientation J N (Fin (1 + 2 * n))}
-
-/-- **The volume integral under an orientation-preserving diffeomorphism.** For any one-form `β`
-and orientations `o`, `o'` preserved by `e`, the integral of `β ∧ (dβ)ⁿ` against `o'` is the
-integral of the volume form `(e^* β) ∧ (d(e^* β))ⁿ` of the pulled-back form against `o`. -/
-theorem integralTopForm_wedge_wedgePow_mpullback_of_isOrientationPreservingAt
-    (ho : ∀ x, Manifold.Orientation.IsOrientationPreservingAt o o' e x) (β : SmoothForm J N ℝ 1) :
-    integralTopForm o (wedge (mpullback e e.contMDiff β)
-        ((mextDerivₗ I 1 (mpullback e e.contMDiff β)).wedgePow n)).val =
-      integralTopForm o' (wedge β ((mextDerivₗ J 1 β).wedgePow n)).val := by
-  rw [← mpullback_wedge_wedgePow_mextDerivₗ, coe_mpullback]
-  exact e.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt ho
-    (by simp)
-
-/-- **The volume integral under an orientation-reversing diffeomorphism.** For any one-form `β`
-and orientations `o`, `o'` reversed by `e`, the integral of `β ∧ (dβ)ⁿ` against `o'` is minus the
-integral of the volume form `(e^* β) ∧ (d(e^* β))ⁿ` of the pulled-back form against `o`. -/
-theorem integralTopForm_wedge_wedgePow_mpullback_of_isOrientationReversingAt
-    (ho : ∀ x, Manifold.Orientation.IsOrientationReversingAt o o' e x) (β : SmoothForm J N ℝ 1) :
-    integralTopForm o (wedge (mpullback e e.contMDiff β)
-        ((mextDerivₗ I 1 (mpullback e e.contMDiff β)).wedgePow n)).val =
-      -integralTopForm o' (wedge β ((mextDerivₗ J 1 β).wedgePow n)).val := by
-  rw [← mpullback_wedge_wedgePow_mextDerivₗ, coe_mpullback]
-  exact e.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationReversingAt ho
-    (by simp)
-
-end Diffeomorph
-
 namespace TauCeti
 
 namespace SmoothForm
@@ -223,9 +182,9 @@ theorem contactVolume_eq_integralTopForm_of_mpullback_eq_smul (hβ : β.IsContac
     rw [volumeOrientation_def, volumeOrientation_def]
     exact Manifold.Orientation.isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
       (hpos x) (congrFun hvol x)
-  rw [contactVolume_def,
-    ← e.integralTopForm_wedge_wedgePow_mpullback_of_isOrientationPreservingAt ho,
-    ← mpullback_wedge_wedgePow_mextDerivₗ, coe_mpullback, hvol]
+  rw [contactVolume_def, ← hvol]
+  exact (e.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt ho
+    (by simp)).symm
 
 /-- **The contact volume under a diffeomorphism with a negative multiplier.** Let `α` and `β` be
 contact forms on manifolds of dimension `2 n + 1`, and let `e : M ≃ N` be a diffeomorphism with
@@ -245,9 +204,10 @@ theorem contactVolume_eq_neg_integralTopForm_of_mpullback_eq_smul (hβ : β.IsCo
     rw [volumeOrientation_def, volumeOrientation_def]
     exact Manifold.Orientation.isOrientationReversingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
       (hneg x) (congrFun hvol x)
-  rw [contactVolume_def, ← neg_neg (integralTopForm _ _),
-    ← e.integralTopForm_wedge_wedgePow_mpullback_of_isOrientationReversingAt ho,
-    ← mpullback_wedge_wedgePow_mextDerivₗ, coe_mpullback, hvol]
+  rw [contactVolume_def, ← hvol]
+  exact neg_eq_iff_eq_neg.1
+    (e.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationReversingAt ho
+      (by simp)).symm
 
 /-- **Scaling of the contact volume.** Multiplying a contact form on a manifold of dimension
 `2 n + 1` by a nonzero constant `c` multiplies its contact volume by `|c|ⁿ⁺¹`. For `n` even and
