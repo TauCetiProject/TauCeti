@@ -239,13 +239,13 @@ noncomputable def residueFieldAlgEquivOfSpecializes (h : x ⤳ y) :
   AlgEquiv.ofRingEquiv (f := (P.residueFieldAlgEquivOfIsLocalization
     (X.presheaf.stalk x)).toRingEquiv) fun c ↦ by
     rw [IsScalarTower.algebraMap_apply k (X.presheaf.stalk y)]
-    -- Both sides are residues in `𝒪_{X,x}` of the germ of the global function `c`.
+    -- The codomain `X.residueField x` is `ResidueField (stalk x)` only after unfolding
+    -- `Scheme.residueField`, so rewriting with `AlgEquiv.coe_toRingEquiv` produces an ill-typed
+    -- motive; `change` performs that unfolding and also exposes the `toAlgebra` instance.
     change P.residueFieldAlgEquivOfIsLocalization _ (algebraMap _ _ _) = _
-    rw [Ideal.residueFieldAlgEquivOfIsLocalization_algebraMap, RingHom.algebraMap_toAlgebra,
-      _root_.AlgebraicGeometry.Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk,
-      _root_.AlgebraicGeometry.Scheme.algebraMap_stalk_eq_baseRingToStalk, RingHom.comp_apply,
-      _root_.AlgebraicGeometry.Scheme.baseRingToStalk_apply,
-      _root_.AlgebraicGeometry.Scheme.baseRingToStalk_apply]
+    -- Both sides are residues in `𝒪_{X,x}` of the germ of the global function `c`.
+    simp only [Ideal.residueFieldAlgEquivOfIsLocalization_algebraMap, RingHom.algebraMap_toAlgebra,
+      RingHom.comp_apply, _root_.AlgebraicGeometry.Scheme.baseRingToStalk_apply]
     exact congr_arg (residue _) congr($(X.presheaf.germ_stalkSpecializes trivial h) _)
 
 variable (k : Type u) [CommRing k] [X.Over (Spec (.of k))] in
