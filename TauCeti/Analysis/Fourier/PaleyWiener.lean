@@ -392,6 +392,7 @@ theorem paleyWienerKernel_self (t : ℝ) {w : ℂ} (hw : w.im ≠ 0) :
   field_simp
 
 /-- **The diagonal of the reproducing kernel on the real line**: `k_t(x, x) = t/π`. -/
+@[simp]
 theorem paleyWienerKernel_self_ofReal (t x : ℝ) : paleyWienerKernel t x x = t / π := by
   simpa using paleyWienerKernel_conj_self t (x : ℂ)
 

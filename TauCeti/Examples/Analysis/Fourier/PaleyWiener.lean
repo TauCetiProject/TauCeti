@@ -16,8 +16,8 @@ public import TauCeti.Analysis.Fourier.PaleyWiener
   `∫_ℝ (sin(tx)/x)² dx = πt` (`integral_sin_mul_div_sq`).
 * *The trivial interval.* `PW_0 = {0}` (`TauCeti.paleyWienerFunction_zero_left`).
 * *The kernel on the real line.* For real `λ` the reproducing kernel at `λ` is
-  `k_t(λ, λ) = t/π` (`paleyWienerKernel_ofReal_self`), so `‖k_t(λ, ·)‖²_{L²(ℝ)} = t/π`
-  (`integral_norm_paleyWienerKernel_ofReal_sq`).
+  `k_t(λ, λ) = t/π` (`TauCeti.paleyWienerKernel_self_ofReal`), so `‖k_t(λ, ·)‖²_{L²(ℝ)} = t/π`
+  (`TauCeti.integral_norm_paleyWienerKernel_ofReal_sq`).
 -/
 
 public section
@@ -45,16 +45,5 @@ theorem integral_sin_mul_div_sq {t : ℝ} (ht : 0 ≤ t) :
     ring
   rw [integral_congr_ae hae, integral_const_mul] at h
   linarith
-
-/-- For real `λ` the reproducing kernel of `PW_t` at `λ` is `k_t(λ, λ) = t/π`. -/
-theorem paleyWienerKernel_ofReal_self (t x : ℝ) : paleyWienerKernel t x x = t / π := by
-  simpa using paleyWienerKernel_conj_self t x
-
-/-- For real `λ` the reproducing kernel `k_t(λ, ·)` of `PW_t` has `‖k_t(λ, ·)‖²_{L²(ℝ)} = t/π`:
-the case `λ ∈ ℝ` of `TauCeti.integral_norm_paleyWienerKernel_sq`. -/
-theorem integral_norm_paleyWienerKernel_ofReal_sq {t : ℝ} (ht : 0 ≤ t) (x : ℝ) :
-    ∫ y : ℝ, ‖paleyWienerKernel t x y‖ ^ 2 = t / π := by
-  rw [integral_norm_paleyWienerKernel_sq ht, paleyWienerKernel_ofReal_self]
-  norm_cast
 
 end TauCeti.Examples.PaleyWiener
