@@ -8,12 +8,10 @@ module
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Spectrum.Maximal.Basic
 public import TauCeti.RingTheory.Valuation.LocalizationAtCenter
-import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Localization.Integral
-import Mathlib.RingTheory.Polynomial.Tower
 import TauCeti.RingTheory.Valuation.AlgebraicExtension
-import TauCeti.RingTheory.Valuation.LinearIndependent
+import TauCeti.RingTheory.Valuation.ValuationRingCriterion
 import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
@@ -32,45 +30,33 @@ the integral closure of `O` in `L`.
 
 ## Method
 
-The engine is a criterion for an integrally closed local domain `R` with fraction field `K`: if
-`x ∈ K` is a root of a polynomial over `R` with some unit coefficient, then `x ∈ R` or
-`x⁻¹ ∈ R`. Induct on the degree. If the leading coefficient `c` is a unit, `x` is integral, hence
-in `R`. Otherwise `c x` is integral, so `c x = a ∈ R`. If `a` is a unit then `x⁻¹ = c a⁻¹ ∈ R`.
-If not, replacing the top two terms `c X ^ (m + 1) + c' X ^ m` by `(c' + a) X ^ m` gives a
-relation of smaller degree that still has a unit coefficient, as `R` is local.
+The engine is Kaplansky's criterion
+(`ValuationRing.of_forall_exists_isUnit_coeff_aeval_eq_zero`): an integrally closed local domain
+is a valuation ring if every element of its fraction field is a root of a polynomial over it with
+a unit coefficient. An element of `L` is algebraic over `K`, so it is a root of a polynomial over
+`O` with a coefficient equal to `1` (`ValuationSubring.exists_coeff_eq_one_and_aeval_eq_zero`).
+Its image in a localization `A_𝔮` satisfies the criterion. Since `B` is Prüfer, a valuation
+subring of `L` containing `B` is the localization of `B` at its centre
+(`ValuationSubring.IsCenteredAt.eq_valuationSubringAtPrime`). Such a subring restricts to `O`
+exactly when its centre lies over the maximal ideal of `O`, that is, since `B` is integral over
+`O`, exactly when the centre is a maximal ideal.
 
-An element of `L` is algebraic over `K`, so dividing a relation by a coefficient of largest value
-gives a relation over `O` with a coefficient equal to `1`. Its image in a localization `A_𝔮`
-satisfies the criterion. Since `B` is Prüfer, a valuation subring of `L` containing `B` is the
-localization of `B` at its centre (`ValuationSubring.IsCenteredAt.eq_valuationSubringAtPrime`).
-Such a subring restricts to `O` exactly when its centre lies over the maximal ideal of `O`, that
-is, since `B` is integral over `O`, exactly when the centre is a maximal ideal.
-
-The bound on the number of extensions comes from separating elements: distinct extensions are told
-apart by elements that are units at one and nonunits at the others
-(`ValuationSubring.exists_valuation_eq_one_and_lt_one`), and such elements are linearly
-independent over `K` (`Valuation.linearIndependent_of_map_lt`).
+The bound on the number of maximal ideals is the bound `[L : K]` on the number of extensions of
+`O` to `L` (`ValuationSubring.ncard_setOf_comap_eq_le_finrank`).
 
 ## Main results
 
-* `IsIntegrallyClosed.isInteger_or_isInteger_inv_of_aeval_eq_zero`: in an integrally closed local
-  domain `R`, a root of a polynomial over `R` with a unit coefficient, or its inverse, lies in `R`.
-* `ValuationRing.of_forall_exists_isUnit_coeff_aeval_eq_zero`: an integrally closed local domain
-  in whose fraction field every element is such a root is a valuation ring.
-* `ValuationSubring.exists_coeff_eq_one_and_aeval_eq_zero`: an algebraic element satisfies a
-  relation over `O` with a coefficient equal to `1`.
 * `ValuationSubring.preValuationRing_atPrime`: the localizations at primes of an integrally closed
   `O`-algebra with fraction field algebraic over `K` are valuation rings.
 * `ValuationSubring.extensionEquivMaximalSpectrum`: the extensions of `O` to `L` correspond to
   the maximal ideals of the integral closure of `O` in `L`.
-* `ValuationSubring.ncard_setOf_comap_eq_le_finrank`: for `L / K` finite, `O` has at most
-  `[L : K]` extensions to `L`; so the integral closure has finitely many maximal ideals
-  (`ValuationSubring.finite_maximalSpectrum_integralClosure`).
+* `ValuationSubring.finite_maximalSpectrum_integralClosure`,
+  `ValuationSubring.card_maximalSpectrum_integralClosure_le_finrank`: for `L / K` finite, the
+  integral closure has finitely many, indeed at most `[L : K]`, maximal ideals.
 
 ## References
 
-* [I. Kaplansky, *Commutative Rings*], Theorem 67, for the criterion through roots of polynomials
-  with a unit coefficient.
+* [I. Kaplansky, *Commutative Rings*], Theorem 67, for the valuation ring criterion.
 * [R. Gilmer, *Multiplicative Ideal Theory*], Theorem 22.1 and §19, for Prüfer domains and the
   integral closure of a valuation ring.
 * [A. J. Engler and A. Prestel, *Valued Fields*], §3.2, for the extensions of a valuation to an
@@ -83,103 +69,9 @@ public section
 
 open Polynomial
 
-section Kaplansky
-
-variable {R K : Type*} [CommRing R] [IsLocalRing R] [IsIntegrallyClosed R] [Field K]
-  [Algebra R K] [IsFractionRing R K]
-
-namespace IsIntegrallyClosed
-
-/-- **Kaplansky's criterion.** In an integrally closed local domain `R` with fraction field `K`,
-if `x ∈ K` is a root of a polynomial over `R` one of whose coefficients is a unit, then `x` or
-`x⁻¹` lies in `R`. -/
-theorem isInteger_or_isInteger_inv_of_aeval_eq_zero {x : K} {p : R[X]} {i : ℕ}
-    (hi : IsUnit (p.coeff i)) (hp : aeval x p = 0) :
-    IsLocalization.IsInteger R x ∨ IsLocalization.IsInteger R x⁻¹ := by
-  induction hn : p.natDegree using Nat.strong_induction_on generalizing p i with
-  | ind n ih =>
-  -- `c • x` is integral over `R`, for `c` the leading coefficient, so it is some `a ∈ R`
-  obtain ⟨a, ha⟩ := IsIntegrallyClosed.isIntegral_iff.mp (isIntegral_leadingCoeff_smul p x hp)
-  by_cases hc : IsUnit p.leadingCoeff
-  · exact Or.inl ⟨hc.unit⁻¹ * a, by
-      rw [map_mul, ha, Algebra.smul_def, ← mul_assoc, ← map_mul, hc.val_inv_mul, map_one,
-        one_mul]⟩
-  by_cases haU : IsUnit a
-  · refine Or.inr ⟨p.leadingCoeff * haU.unit⁻¹, eq_inv_of_mul_eq_one_left ?_⟩
-    rw [map_mul, mul_right_comm, ← Algebra.smul_def, ← ha, ← map_mul, haU.mul_val_inv, map_one]
-  -- the unit coefficient sits below the top degree `n = m + 1`
-  have hin : i < n := by
-    rcases lt_trichotomy i n with h | rfl | h
-    · exact h
-    · rw [← hn, coeff_natDegree] at hi
-      exact absurd hi hc
-    · rw [coeff_eq_zero_of_natDegree_lt (hn ▸ h)] at hi
-      exact absurd hi not_isUnit_zero
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := Nat.exists_eq_add_one_of_ne_zero (by omega)
-  -- replace `c X ^ (m + 1)` by `a X ^ m`
-  set q := p.eraseLead + C a * X ^ m
-  have hq : q.natDegree < m + 1 := by
-    refine Nat.lt_succ_of_le (natDegree_add_le_of_degree_le ?_ ?_)
-    · exact (eraseLead_natDegree_le p).trans (by omega)
-    · exact natDegree_C_mul_X_pow_le a m
-  refine ih _ hq (p := q) (i := i) ?_ ?_ rfl
-  · have hcoeff : q.coeff i = p.coeff i + if i = m then a else 0 := by
-      rw [coeff_add, eraseLead_coeff_of_ne _ (by omega), coeff_C_mul_X_pow]
-    rw [hcoeff]
-    split_ifs
-    · -- a unit plus a nonunit is a unit in a local ring
-      refine (IsLocalRing.isUnit_or_isUnit_of_isUnit_add (a := p.coeff i + a) (b := -a)
-        (by rwa [add_neg_cancel_right])).resolve_right ?_
-      rwa [IsUnit.neg_iff]
-    · rwa [add_zero]
-  · rw [aeval_add, ← self_sub_monomial_natDegree_leadingCoeff, aeval_sub, hp, hn, aeval_monomial,
-      map_mul, aeval_C, map_pow, aeval_X, ha, Algebra.smul_def, pow_succ]
-    ring
-
-end IsIntegrallyClosed
-
-namespace ValuationRing
-
-/-- **Kaplansky's criterion for valuation rings.** An integrally closed local domain `R` is a
-valuation ring if every element of its fraction field is a root of a polynomial over `R` with a
-unit coefficient. -/
-theorem of_forall_exists_isUnit_coeff_aeval_eq_zero [IsDomain R]
-    (h : ∀ x : K, ∃ p : R[X], (∃ i, IsUnit (p.coeff i)) ∧ aeval x p = 0) : ValuationRing R :=
-  (iff_isInteger_or_isInteger R K).mpr fun x ↦ by
-    obtain ⟨p, ⟨i, hi⟩, hp⟩ := h x
-    exact IsIntegrallyClosed.isInteger_or_isInteger_inv_of_aeval_eq_zero hi hp
-
-end ValuationRing
-
-end Kaplansky
-
 namespace ValuationSubring
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] (O : ValuationSubring K)
-
-/-- **A normalized algebraic relation.** An element `x` algebraic over `K` is a root of a
-polynomial with coefficients in a valuation subring `O` of `K` one of whose coefficients is
-`1`. -/
-theorem exists_coeff_eq_one_and_aeval_eq_zero {E : Type*} [Ring E] [Algebra K E] {x : E}
-    (hx : IsAlgebraic K x) :
-    ∃ p : O[X], (∃ i, p.coeff i = 1) ∧ aeval x p = 0 := by
-  obtain ⟨q, hq0, hqx⟩ := hx
-  -- divide by a coefficient `q.coeff k` of largest value
-  obtain ⟨k, -, hk, hkO⟩ := O.exists_ne_zero_and_div_mem (s := Finset.range (q.natDegree + 1))
-    (g := q.coeff) ⟨q.natDegree, Finset.self_mem_range_succ _, leadingCoeff_ne_zero.mpr hq0⟩
-  have hcoeff (i : ℕ) : (C (q.coeff k)⁻¹ * q).coeff i = q.coeff i / q.coeff k := by
-    rw [coeff_C_mul, div_eq_inv_mul]
-  obtain ⟨p, hp⟩ : C (q.coeff k)⁻¹ * q ∈ lifts (algebraMap O K) := by
-    refine (lifts_iff_coeff_lifts _).mpr fun i ↦ ⟨⟨(C (q.coeff k)⁻¹ * q).coeff i, ?_⟩, rfl⟩
-    rw [hcoeff]
-    by_cases hi : i ∈ Finset.range (q.natDegree + 1)
-    · exact hkO i hi
-    · rw [coeff_eq_zero_of_natDegree_lt (by simpa [Nat.lt_succ_iff] using hi), zero_div]
-      exact O.zero_mem
-  rw [coe_mapRingHom] at hp
-  refine ⟨p, ⟨k, Subtype.val_injective ?_⟩, ?_⟩
-  · rw [OneMemClass.coe_one, ← algebraMap_apply, ← coeff_map, hp, hcoeff, div_self hk]
-  · rw [← aeval_map_algebraMap K, hp, map_mul, aeval_C, hqx, mul_zero]
 
 /-- **Integrally closed algebras over a valuation ring are Prüfer domains.** Let `O` be a
 valuation subring of `K`, and `A` an `O`-algebra that is an integrally closed domain with
@@ -265,7 +157,7 @@ theorem IsCenteredAt.comap_eq_iff_isMaximal {W : ValuationSubring L}
   have := h.isPrime
   -- an element of `O` lies under `P` exactly when it is a nonunit of the restriction of `W`
   have hmem (o : O) : o ∈ P.under O ↔ (o : K) ∈ (W.comap (algebraMap K L)).nonunits := by
-    rw [Ideal.under, Ideal.mem_comap, ← h.algebraMap_mem_nonunits_iff, mem_nonunits_comap,
+    rw [Ideal.mem_under, ← h.algebraMap_mem_nonunits_iff, mem_nonunits_comap,
       algebraMap_integralClosure_algebraMap]
   have hle : O ≤ W.comap (algebraMap K L) := fun o ho ↦ by
     rw [mem_comap, ← algebraMap_integralClosure_algebraMap ⟨o, ho⟩]
@@ -327,38 +219,7 @@ end Extension
 
 section Finite
 
-variable {O} [FiniteDimensional K L]
-
-/-- Distinct extensions of `O` to `L` number at most `[L : K]`. -/
-private theorem card_le_finrank_of_forall_comap_eq {S : Finset (ValuationSubring L)}
-    (hS : ∀ W ∈ S, W.comap (algebraMap K L) = O) : S.card ≤ Module.finrank K L := by
-  obtain ⟨e, he⟩ := exists_valuation_eq_one_and_lt_one O S hS
-  have hli : LinearIndependent K fun W : S ↦ e W := by
-    refine Valuation.linearIndependent_of_map_lt (O := O) (fun W : S ↦ W.val.valuation)
-      (fun W a ha ↦ ?_) (fun W ↦ ?_) fun W W' hne ↦ ?_
-    · rw [valuation_le_one_iff, ← mem_comap, hS W W.property]
-      exact ha
-    · rw [(he W W.property).1]
-      exact one_ne_zero
-    · rw [(he W W.property).1]
-      exact (he W' W'.property).2 W W.property fun h ↦ hne (Subtype.ext h).symm
-  simpa using hli.fintype_card_le_finrank
-
-variable (O)
-
-/-- **A valuation subring has finitely many extensions to a finite extension.** -/
-theorem finite_setOf_comap_eq :
-    {W : ValuationSubring L | W.comap (algebraMap K L) = O}.Finite := by
-  by_contra hinf
-  obtain ⟨S, hS, hcard⟩ := Set.Infinite.exists_subset_card_eq hinf (Module.finrank K L + 1)
-  have := card_le_finrank_of_forall_comap_eq fun W hW ↦ hS hW
-  omega
-
-/-- **A valuation subring has at most `[L : K]` extensions to a finite extension `L`.** -/
-theorem ncard_setOf_comap_eq_le_finrank :
-    {W : ValuationSubring L | W.comap (algebraMap K L) = O}.ncard ≤ Module.finrank K L := by
-  rw [Set.ncard_eq_toFinset_card _ (finite_setOf_comap_eq O)]
-  exact card_le_finrank_of_forall_comap_eq fun W hW ↦ by simpa using hW
+variable [FiniteDimensional K L]
 
 /-- **The integral closure of a valuation ring in a finite extension is semilocal.** -/
 instance finite_maximalSpectrum_integralClosure : Finite (MaximalSpectrum (integralClosure O L)) :=
