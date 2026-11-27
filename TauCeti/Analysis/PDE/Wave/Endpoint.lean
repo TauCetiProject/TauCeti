@@ -33,9 +33,11 @@ weak form tested against `L²_t L^{r'}_x`
 (`TauCeti.exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le_of_endpoint`),
 and for the Littlewood–Paley blocks, where it also holds in mixed norm
 (`ContDiffBump.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint`). The
-endpoint exponent satisfies `2 ≤ r < ∞` (`TauCeti.two_le_and_ne_top_of_waveEndpoint`). The power
-of `2^j` is the one dictated by scaling, as at the non-endpoint pairs of
-`TauCeti.Analysis.PDE.Wave.Strichartz`.
+endpoint exponent satisfies `2 ≤ r < ∞` (`TauCeti.two_le_and_ne_top_of_waveEndpoint`), and it is
+at most every exponent `r` beyond the endpoint, `1 + (n - 1) / r < (n - 1) / 2`
+(`TauCeti.exists_waveEndpoint_le`), hence at most every `r ≠ 0` with
+`1 + (n - 1) / r ≤ (n - 1) / 2` (`TauCeti.exists_waveEndpoint_le_of_le`). The power of `2^j` is
+the one dictated by scaling, as at the non-endpoint pairs of `TauCeti.Analysis.PDE.Wave.Strichartz`.
 
 In dimension `3` the boundary pair with `q = 2` is `(2, ∞)`, which is excluded; there the time
 decay `|t|^(-1)` of the dispersive estimate is not integrable at infinity, and the argument below
@@ -267,22 +269,50 @@ theorem two_le_and_ne_top_of_waveEndpoint {n : ℝ} (hn : 3 < n)
   · rw [h, ENNReal.inv_top, ENNReal.toReal_zero, mul_zero, add_zero] at hr
     linarith
 
+/-- Beyond the endpoint, `1 + (n - 1) / r < (n - 1) / 2` with `r ≠ 0`, the endpoint exponent `r₀`,
+`1 + (n - 1) / r₀ = (n - 1) / 2`, satisfies `r₀ ≤ r`. -/
+theorem exists_waveEndpoint_le {n : ℝ} (hn : 3 < n) (hr0 : r ≠ 0)
+    (hr : 1 + (n - 1) * (r⁻¹).toReal < (n - 1) / 2) :
+    ∃ r₀ : ℝ≥0∞, 1 + (n - 1) * (r₀⁻¹).toReal = (n - 1) / 2 ∧ r₀ ≤ r := by
+  have hn1 : 0 < n - 1 := by linarith
+  set x : ℝ := (n - 3) / (2 * (n - 1))
+  have hx : 0 ≤ x := div_nonneg (by linarith) (by linarith)
+  have hxr : (r⁻¹).toReal ≤ x := by
+    refine le_of_lt ((lt_div_iff₀ (by linarith)).2 ?_)
+    nlinarith
+  refine ⟨(ENNReal.ofReal x)⁻¹, ?_, ?_⟩
+  · rw [inv_inv, ENNReal.toReal_ofReal hx]
+    simp only [x]
+    field_simp
+    ring
+  · rw [← ENNReal.inv_le_inv, inv_inv, ← ENNReal.ofReal_toReal (a := r⁻¹)
+      (ENNReal.inv_ne_top.2 hr0)]
+    exact ENNReal.ofReal_le_ofReal hxr
+
+/-- On or beyond the endpoint, `1 + (n - 1) / r ≤ (n - 1) / 2` with `r ≠ 0`, the endpoint exponent
+`r₀`, `1 + (n - 1) / r₀ = (n - 1) / 2`, satisfies `r₀ ≤ r`. -/
+theorem exists_waveEndpoint_le_of_le {n : ℝ} (hn : 3 < n) (hr0 : r ≠ 0)
+    (hr : 1 + (n - 1) * (r⁻¹).toReal ≤ (n - 1) / 2) :
+    ∃ r₀ : ℝ≥0∞, 1 + (n - 1) * (r₀⁻¹).toReal = (n - 1) / 2 ∧ r₀ ≤ r :=
+  hr.lt_or_eq.elim (exists_waveEndpoint_le hn hr0) fun h ↦ ⟨r, h, le_rfl⟩
+
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- In positive dimension `n`, a wave-admissible pair `2 / q + (n - 1) / r ≤ (n - 1) / 2` with
-`2 ≤ q < ∞` and `r ≠ 0`, where `q = 2` only at the endpoint `1 + (n - 1) / r = (n - 1) / 2` in
-dimension `n ≥ 4`, has `n ≥ 2` and `r ≥ 2`: the case `2 < q` is
-`TauCeti.two_le_finrank_of_waveAdmissible`, and the endpoint case
-`TauCeti.two_le_and_ne_top_of_waveEndpoint`. -/
+`2 ≤ q < ∞` and `r ≠ 0` has `n ≥ 2` and `r ≥ 2`: the case `2 < q` is
+`TauCeti.two_le_finrank_of_waveAdmissible`, and for `q = 2` admissibility forces `n ≥ 3`, so the
+case `q = 2` is `TauCeti.two_le_of_waveAdmissible`. -/
 theorem two_le_finrank_of_waveAdmissible_of_two_le {q : ℝ≥0∞} (hq : 2 ≤ q) (hq_top : q ≠ (∞ : ℝ≥0∞))
     (hr0 : r ≠ 0)
     (hqr : 2 * (q⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2)
-    (hq2 : q = 2 → 3 < Module.finrank ℝ E ∧
-      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2)
     (hE : 0 < Module.finrank ℝ E) : 2 ≤ Module.finrank ℝ E ∧ 2 ≤ r := by
   rcases hq.eq_or_lt with rfl | hq
-  · obtain ⟨hn, hre⟩ := hq2 rfl
-    exact ⟨by omega, (two_le_and_ne_top_of_waveEndpoint (by exact_mod_cast hn) hre).1⟩
+  · have hE' : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hE
+    have hn : (2 : ℝ) ≤ Module.finrank ℝ E := by
+      have h2 : ((2 : ℝ≥0∞)⁻¹).toReal = 2⁻¹ := by simp
+      nlinarith [ENNReal.toReal_nonneg (a := r⁻¹)]
+    have hn : 2 ≤ Module.finrank ℝ E := by exact_mod_cast hn
+    exact ⟨hn, two_le_of_waveAdmissible hr0 hqr hn⟩
   · obtain ⟨hqn, hqr'⟩ := waveAdmissible_toNNReal hq hq_top hqr
     obtain ⟨hn, -, hr2⟩ := two_le_finrank_of_waveAdmissible hqn hr0 hqr' hE
     exact ⟨hn, hr2⟩

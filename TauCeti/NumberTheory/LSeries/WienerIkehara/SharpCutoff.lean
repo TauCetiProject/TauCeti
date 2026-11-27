@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import TauCeti.Analysis.Asymptotics.Sum.Window
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.Approximation
+import TauCeti.NumberTheory.LSeries.WienerIkehara.Chebyshev
 
 /-!
 # The Wiener--Ikehara theorem
@@ -31,10 +32,12 @@ The analytic input is the smoothed asymptotic
   `n ≤ ε x` that it misses are controlled by the Chebyshev bound
   `TauCeti.LSeries.isBigO_sum_Icc_norm_id_of_boundary`. Letting `ε → 0` gives the theorem.
 
-The coefficients are real and nonnegative, the hypothesis on the series is `LSeriesHasSum` on the
-open half-plane (Mathlib's `LSeries` is a total function, zero where the series diverges), and the
-continuous extension is a separately named function `G`, so no junk value of `F` at `s = 1` or on
-the line `Re s = 1` is ever used. The sign of `κ` is not assumed: it is forced by the conclusion.
+The smooth-cutoff step holds for complex coefficients under a Chebyshev bound. For the sharp
+cutoff, the coefficients are real and nonnegative, the hypothesis on the series is `LSeriesHasSum`
+on the open half-plane (Mathlib's `LSeries` is a total function, zero where the series diverges),
+and the continuous extension is a separately named function `G`, so no junk value of `F` at `s = 1`
+or on the line `Re s = 1` is ever used. The sign of `κ` is not assumed: it is forced by the
+conclusion.
 
 ## Main results
 
@@ -63,7 +66,7 @@ by Fourier inversion on `𝓢(ℝ, ℂ)`, and the sharp step squeezes directly b
 
 public section
 
-open Complex Filter FourierTransform MeasureTheory Real Set
+open Asymptotics Complex Filter FourierTransform MeasureTheory Real Set
 open scoped ComplexOrder ContDiff SchwartzMap Topology
 
 namespace TauCeti.LSeries
@@ -118,14 +121,14 @@ private lemma integral_expWeight :
 
 variable {a : ℕ → ℂ} {A : ℂ} {G : ℂ → ℂ}
 
-/-- **The smoothed Wiener--Ikehara asymptotic for a cutoff on `(0, ∞)`.** Let `a` be
-nonnegative, with Dirichlet series summable on `Re s > 1` and a boundary remainder
+/-- **The smoothed Wiener--Ikehara asymptotic for a cutoff on `(0, ∞)`.** Let `a : ℕ → ℂ` satisfy
+the Chebyshev bound `∑_{1 ≤ n ≤ x} ‖a n‖ = O(x)`, with a boundary remainder
 `G = LSeries a - A / (s - 1)` continuous on `Re s ≥ 1`. For every smooth `Ψ` whose support is a
 compact subset of `(0, ∞)`, `x⁻¹ ∑ a n Ψ (n / x) → A ∫_{(0, ∞)} Ψ` as `x → ∞`. -/
-theorem tendsto_inv_mul_tsum_mul_div_atTop (ha : 0 ≤ a)
+theorem tendsto_inv_mul_tsum_mul_div_atTop
+    (hcheby : (fun x : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, ‖a n‖) =O[atTop] fun x ↦ x)
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
-    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
     (hΨ : ContDiff ℝ ∞ Ψ) (hΨc : HasCompactSupport Ψ) (hΨpos : tsupport Ψ ⊆ Ioi 0) :
     Tendsto (fun x : ℝ ↦ (x : ℂ)⁻¹ * ∑' n : ℕ, a n * Ψ (n / x)) atTop
       (𝓝 (A * ∫ y in Ioi 0, Ψ y)) := by
@@ -138,7 +141,7 @@ theorem tendsto_inv_mul_tsum_mul_div_atTop (ha : 0 ≤ a)
     rw [SchwartzMap.fourierInv_coe, Real.fourierInv_eq, ← integral_expWeight]
     simp [W]
   have hΨ0 : Ψ 0 = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ lt_irrefl (0 : ℝ) (hΨpos h)
-  have key := tendsto_tsum_term_mul_fourier_schwartz_atTop ha hG hG' hsum (𝓕⁻ W)
+  have key := tendsto_tsum_term_mul_fourier_schwartz_atTop hcheby hG hG' (𝓕⁻ W)
   have hscale : 2 * (π : ℂ) * A * ((2 * π : ℂ)⁻¹ * ∫ y in Ioi 0, Ψ y) =
       A * ∫ y in Ioi 0, Ψ y := by
     field_simp
@@ -188,10 +191,13 @@ private lemma tendsto_inv_mul_tsum_mul_bump (ha : 0 ≤ a)
     {c : ℝ} (φ : ContDiffBump c) (h : φ.rOut < c) :
     Tendsto (fun x : ℝ ↦ x⁻¹ * ∑' n : ℕ, a n * φ (n / x)) atTop
       (𝓝 (κ * ∫ y in Ioi 0, φ y)) := by
+  have hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries (fun n ↦ (a n : ℂ)) z - κ / (z - 1) :=
+    fun z hz ↦ by rw [hGF z hz, (hF z hz).LSeries_eq]
   have hmain := tendsto_inv_mul_tsum_mul_div_atTop (a := fun n ↦ (a n : ℂ)) (A := κ)
-    (Ψ := fun y ↦ (φ y : ℂ)) (fun n ↦ by simpa using ha n) hG
-    (fun z hz ↦ by rw [hGF z hz, (hF z hz).LSeries_eq])
-    (fun σ hσ ↦ (hF σ (by simpa using hσ)).LSeriesSummable)
+    (Ψ := fun y ↦ (φ y : ℂ))
+    (isBigO_sum_Icc_norm_id_of_boundary (fun n ↦ by simpa using ha n) hG hG'
+      fun σ hσ ↦ (hF σ (by simpa using hσ)).LSeriesSummable)
+    hG hG'
     (ofRealCLM.contDiff.comp φ.contDiff) (φ.hasCompactSupport.comp_left ofReal_zero)
     ((tsupport_comp_subset ofReal_zero φ).trans (tsupport_bump_subset φ h))
   rw [integral_complex_ofReal, ← ofReal_mul] at hmain

@@ -27,8 +27,10 @@ and Jordan-factor characterizations make the pointwise property usable without u
 
 This pointwise criterion is not offered as a definition for nonreduced group schemes: for example,
 both `αₚ` and `μₚ` have only the identity as an algebraic-closure-valued point in characteristic
-`p`, although only `αₚ` is unipotent scheme-theoretically. A future scheme-theoretic definition
-must instead detect infinitesimal points.
+`p`, although only `αₚ` is unipotent scheme-theoretically. The scheme-theoretic definition, by
+nonzero fixed vectors of comodules, is `TauCeti.unipotentCommHopfAlgProperty` in
+`TauCeti.Algebra.AlgebraicGroup.Unipotent.Comodule`; it rules out `μₚ`, whose coordinate Hopf
+algebra has a group-like element different from `1`.
 
 ## Main declarations
 

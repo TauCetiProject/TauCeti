@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 public import TauCeti.Analysis.PDE.EnergyForm.Poincare
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.L2Space.Pairing
 import TauCeti.MeasureTheory.Function.Lp.Duality
 
 /-!
@@ -190,20 +191,21 @@ attribute [local instance] instSeminormedAddCommGroupW1p instNormedSpaceW1p
 /-- The **right-hand side of the Dirichlet problem** as a continuous linear functional on
 `H¹₀(Ω)`: an `L²(Ω)` function `f` acts by `v ↦ ∫_Ω f v`, pairing against the value component of
 the Sobolev jet. Continuity is automatic from the construction, the value map
-`TauCeti.W1p0.valueL` being continuous and the pairing being the `L²` inner product. -/
+`TauCeti.W1p0.valueL` being continuous and the pairing `MeasureTheory.Lp.pairingL` being the `L²`
+inner product. -/
 def dirichletForcing (f : Lp ℝ 2 (mu.restrict Omega)) : StrongDual ℝ (W1p0 mu Omega 2) :=
-  (innerSL ℝ f).comp W1p0.valueL
-
-/-- The forcing functional is the `L²` inner product against the value component. -/
-@[simp] theorem dirichletForcing_apply (f : Lp ℝ 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
-    dirichletForcing f v = ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
-  rw [dirichletForcing, ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p0.valueL_apply]
+  Lp.pairingL f W1p0.valueL
 
 /-- The forcing functional written as the integral `∫_Ω f v` it names. -/
 theorem dirichletForcing_apply_eq_setIntegral (f : Lp ℝ 2 (mu.restrict Omega))
     (v : W1p0 mu Omega 2) :
     dirichletForcing f v = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  rw [dirichletForcing_apply, L2.inner_def]
+  rw [dirichletForcing, Lp.pairingL_apply, W1p0.valueL_apply]
+
+/-- The forcing functional is the `L²` inner product against the value component. -/
+@[simp] theorem dirichletForcing_apply (f : Lp ℝ 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
+    dirichletForcing f v = ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+  rw [dirichletForcing_apply_eq_setIntegral, L2.inner_def]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [RCLike.inner_apply, mul_comm])
 
@@ -344,6 +346,61 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
       (hforce ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).symm) v.property
   rw [← energyFormH1L_apply hcoeff, ← hforce v]
   exact hmem
+
+/-- **Testing against test functions suffices, for `Lʳ` data.** Let `n ≥ 1` be the dimension, let
+`Ω` have finite measure, and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)`. When
+the energy density is essentially bounded, a function `u ∈ H¹(Ω)` satisfies the weak equation
+`a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with a datum `f ∈ Lʳ(Ω)` that need not be square
+integrable, as soon as it does for every test function `v ∈ C_c^∞(Ω)`: both sides are continuous
+in `v ∈ H¹₀(Ω)` (`TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`), and `H¹₀(Ω)` is
+the closure of `C_c^∞(Ω)`. No boundary condition is imposed on `u`. For `f ∈ L²(Ω)` and every
+domain see `TauCeti.PDE.forall_energyFormH1_eq_setIntegral_iff_forall_testFunction`. -/
+theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction_of_memLp [Nonempty ι]
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hOmega : mu Omega ≠ ∞) {r : ℝ≥0} (hr : 1 < r)
+    (hrn : (Fintype.card ι : ℝ) * (2 - r) < 2 * r) {f : EuclideanSpace ℝ ι → ℝ}
+    (hf : MemLp f r (mu.restrict Omega)) (u : W1p mu Omega 2) :
+    (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2)
+        = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) ↔
+      ∀ φ : 𝓓(Omega, ℝ),
+        energyFormH1 a b c u (W1p.ofTestFunctionₗ mu Omega 2 φ)
+          = ∫ x in Omega, f x * φ x ∂mu := by
+  obtain ⟨ℓ, hℓ⟩ := W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp hOmega hr
+    (by rwa [finrank_euclideanSpace]) hf
+  -- The test functions, as elements of `H¹₀(Ω)`.
+  set T : 𝓓(Omega, ℝ) → W1p0 mu Omega 2 :=
+    fun φ => ⟨W1p.ofTestFunctionₗ mu Omega 2 φ, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
+  have htest : ∀ φ : 𝓓(Omega, ℝ), ℓ (T φ) = ∫ x in Omega, f x * φ x ∂mu := fun φ =>
+    (hℓ (T φ)).trans (integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono
+      fun x hx => congrArg (f x * ·) hx))
+  simp only [← hℓ, ← htest]
+  refine ⟨fun h φ => h (T φ), fun h v => ?_⟩
+  -- The set where the two functionals agree is closed in `H¹₀(Ω)`, hence in `H¹(Ω)`, and
+  -- contains the test functions.
+  have hclosed : IsClosed {w : W1p0 mu Omega 2 | energyFormH1L hcoeff u w = ℓ w} :=
+    isClosed_eq ((energyFormH1L hcoeff u).continuous.comp continuous_subtypeVal) ℓ.continuous
+  obtain ⟨w, hw, hwv⟩ := w1p0Submodule_subset_of_isClosed
+    (hclosed.trans (w1p0Submodule mu Omega 2).isClosed)
+    (fun φ => ⟨T φ, (energyFormH1L_apply hcoeff u _).trans (h φ), rfl⟩) v.property
+  rw [← energyFormH1L_apply hcoeff, ← Subtype.ext hwv]
+  exact hw
+
+/-- A homogeneous weak equation holding for smooth compactly supported tests holds for every
+`H¹₀` test when the energy density is essentially bounded. No boundary condition is imposed on
+the solution. -/
+theorem forall_energyFormH1_eq_zero_of_forall_testFunction
+    {U : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} {u : W1p mu U 2}
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict U))
+    (htest : ∀ φ : 𝓓(U, ℝ), energyFormH1 a b c u (W1p.ofTestFunctionₗ mu U 2 φ) = 0) :
+    ∀ w : W1p0 mu U 2, energyFormH1 a b c u (w : W1p mu U 2) = 0 := by
+  have hzero (f : EuclideanSpace ℝ ι → ℝ) :
+      ∫ x in U, (0 : Lp ℝ 2 (mu.restrict U)) x * f x ∂mu = 0 :=
+    integral_eq_zero_of_ae ((Lp.coeFn_zero ℝ 2 (mu.restrict U)).mono fun _ hx ↦ by
+      simp only [hx, Pi.zero_apply, zero_mul])
+  have h := forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff 0 u
+  simp only [hzero] at h
+  exact h.mpr htest
 
 /-- A weak solution satisfies the weak equation `a(u, φ) = ∫_Ω f φ` against every test function
 `φ ∈ C_c^∞(Ω)`. Unlike the converse in
@@ -914,9 +971,7 @@ theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_measure_ne_to
       have := ENNReal.toReal_mono (ENNReal.mul_ne_top hPfin eNorm_ne_top) (hP v)
       rwa [ENNReal.toReal_mul, toReal_eNorm, ← Lp.norm_def] at this
   -- The energy form is coercive on `H¹₀(Ω)`, by the Poincaré inequality.
-  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0)
-    h.upper_nonneg ha aestronglyMeasurable_const hc
-    (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) hc_bound
+  have hcoeff := h.memLp_energyIntegrand_zero_drift ha hc hc_bound
   have hlower : ∀ w : W1p0 mu Omega 2, lam / (P.toReal ^ 2 + 1) * ‖w‖ ^ 2 ≤
       energyFormH1 a 0 c (w : W1p mu Omega 2) (w : W1p mu Omega 2) := fun w =>
     h.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift (b := 0) ha hc (fun _ _ => rfl)
@@ -1118,6 +1173,32 @@ theorem energyFormH1_one_zero_zero_eq_inner [DecidableEq ι] (u v : W1p mu Omega
   rw [energyFormH1_one_zero_zero_apply, L2.inner_def]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [EuclideanSpace.inner_eq_star_dotProduct])
+
+/-- The energy form of the Laplacian model `-Δ` is symmetric. -/
+theorem energyFormH1_one_zero_zero_comm [DecidableEq ι] (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => 1) 0 0 u v = energyFormH1 (fun _ => 1) 0 0 v u := by
+  rw [energyFormH1_one_zero_zero_eq_inner, energyFormH1_one_zero_zero_eq_inner, real_inner_comm]
+
+/-- The Gårding inequality of the Laplacian model `-Δ`:
+`min 1 ω ‖v‖²_{H¹} ≤ ∫_Ω |∇v|² + ω ‖v‖²_{L²}` for every `ω`. -/
+theorem min_mul_norm_sq_le_energyFormH1_one_zero_zero_add [DecidableEq ι] (omega : ℝ)
+    (v : W1p mu Omega 2) :
+    min 1 omega * ‖v‖ ^ 2 ≤
+      energyFormH1 (fun _ => 1) 0 0 v v + omega * ‖W1p.value v‖ ^ 2 := by
+  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
+    W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+  nlinarith [min_le_left 1 omega, min_le_right 1 omega, sq_nonneg ‖W1p.value v‖,
+    sq_nonneg ‖W1p.gradient v‖]
+
+open scoped InnerProductSpace in
+/-- The energy form of `-Δ + c` (`a = 1`, no drift, constant mass `c`) is the Dirichlet form of
+`-Δ` plus `c` times the `L²` inner product of the values. -/
+theorem energyFormH1_one_zero_const [DecidableEq ι] (c : ℝ) (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 (fun _ => c) u v =
+      energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 0 u v + c * ⟪W1p.value u, W1p.value v⟫_ℝ := by
+  simpa only [Pi.zero_apply, neg_mul, sub_neg_eq_add, zero_add] using
+    energyFormH1_mass_sub_const (c := 0)
+      (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) 1) (-c) u v
 
 /-- The weak formulation of the Laplacian model `-Δ` is the classical one: `u ∈ H¹₀(Ω)` solves
 `-Δu = f` weakly exactly when `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. -/

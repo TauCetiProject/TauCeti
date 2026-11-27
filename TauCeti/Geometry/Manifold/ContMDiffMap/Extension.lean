@@ -34,6 +34,8 @@ any set closed in the ambient real space and contained in the domain.
 A closed set inside an open set has a smooth `[0, 1]`-valued cutoff equal to one exactly on the
 closed set, with topological support in the open set
 (`IsClosed.exists_contMDiff_tsupport_subset_eq_one_iff`).
+Multiplying by a cutoff with topological support in an open subset `U` turns a smooth map on `U`,
+extended by zero, into a smooth map on the whole manifold (`ContMDiffMap.cutoffExtend`).
 Reference: M. Hirsch, *Differential Topology*, Chapter 2, §2, and Chapter 8, §1.
 -/
 
@@ -93,6 +95,40 @@ theorem ContMDiffOn.contMDiff_smul_fst_of_tsupport_subset
   exact (closure_minimal (t := tsupport ψ ×ˢ (univ : Set P))
     (fun p hp ↦ ⟨subset_tsupport ψ hp, mem_univ p.2⟩)
     ((isClosed_tsupport ψ).prod isClosed_univ)).trans (prod_mono hψs subset_rfl)
+
+namespace ContMDiffMap
+
+variable {U : TopologicalSpace.Opens M} {σ : M → 𝕜}
+
+/-- **Extension by a cutoff.** For a cutoff `σ` that is `C^n` on an open subset `U` and has
+topological support in `U`, the product of `σ` with a `C^n` map `f` on `U` extended by zero off
+`U`, as a `C^n` map on the whole manifold. -/
+noncomputable def cutoffExtend (hσ : ContMDiffOn I 𝓘(𝕜) n σ U) (hσU : tsupport σ ⊆ U)
+    (f : C^n⟮I, U; 𝓘(𝕜, F), F⟯) : C^n⟮I, M; 𝓘(𝕜, F), F⟯ :=
+  ⟨fun x ↦ σ x • extend Subtype.val f 0 x,
+    (contMDiffOn_extend U f 0).contMDiff_smul_of_tsupport_subset U.isOpen hσ hσU⟩
+
+/-- The extension by a cutoff `σ` is `σ` times the extension by zero. -/
+theorem coe_cutoffExtend (hσ : ContMDiffOn I 𝓘(𝕜) n σ U) (hσU : tsupport σ ⊆ U)
+    (f : C^n⟮I, U; 𝓘(𝕜, F), F⟯) :
+    ⇑(cutoffExtend hσ hσU f) = σ • extend Subtype.val f 0 := by
+  rfl
+
+/-- On `U`, the extension of `f` by a cutoff `σ` is `σ • f`. -/
+@[simp]
+theorem cutoffExtend_apply_val (hσ : ContMDiffOn I 𝓘(𝕜) n σ U) (hσU : tsupport σ ⊆ U)
+    (f : C^n⟮I, U; 𝓘(𝕜, F), F⟯) (x : U) :
+    cutoffExtend hσ hσU f x = σ x • f x := by
+  simp [cutoffExtend]
+
+/-- Off `U`, the extension by a cutoff vanishes. -/
+@[simp]
+theorem cutoffExtend_apply_of_notMem (hσ : ContMDiffOn I 𝓘(𝕜) n σ U) (hσU : tsupport σ ⊆ U)
+    (f : C^n⟮I, U; 𝓘(𝕜, F), F⟯) {x : M} (hx : x ∉ U) :
+    cutoffExtend hσ hσU f x = 0 := by
+  simp [cutoffExtend, image_eq_zero_of_notMem_tsupport fun h ↦ hx (hσU h)]
+
+end ContMDiffMap
 
 end Cutoff
 

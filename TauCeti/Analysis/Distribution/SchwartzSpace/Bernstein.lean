@@ -43,6 +43,8 @@ derivative `Dᵏ f` is then compared with its entries on an orthonormal basis.
 
 ## Main declarations
 
+* `OrthonormalBasis.exists_sum_mul_eq_one_of_one_le_norm_of_norm_le`: Schwartz symbols inverting
+  the partial derivatives on an annulus.
 * `SchwartzMap.exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset`: the reverse
   Bernstein inequality for frequencies in an annulus.
 
@@ -62,21 +64,44 @@ open scoped ENNReal NNReal FourierTransform Pointwise
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- On the annulus `1 ≤ ‖ξ‖ ≤ θ` there are Schwartz symbols `σᵢ` inverting the partial derivatives
+along an orthonormal basis `b`: `∑ i, σᵢ(ξ) 2πi ⟪ξ, bᵢ⟫ = 1` there. The proof builds the symbols
+to agree with `⟪bᵢ, ξ⟫ / (2πi ‖ξ‖²)` on the annulus and uses `∑ᵢ ⟪ξ, bᵢ⟫² = ‖ξ‖²`; only the sum
+identity is part of the statement. -/
+theorem _root_.OrthonormalBasis.exists_sum_mul_eq_one_of_one_le_norm_of_norm_le {ι : Type*}
+    [Fintype ι] (b : OrthonormalBasis ι ℝ E) (θ : ℝ) :
+    ∃ σ : ι → 𝓢(E, ℂ), ∀ ξ : E, 1 ≤ ‖ξ‖ → ‖ξ‖ ≤ θ →
+      ∑ i, σ i ξ * (2 * Real.pi * Complex.I * inner ℝ ξ (b i)) = 1 := by
+  let m (i : ι) (ξ : E) : ℂ :=
+    (2 * Real.pi * Complex.I)⁻¹ * ((inner ℝ (b i) ξ / ‖ξ‖ ^ 2 : ℝ) : ℂ)
+  have hm (i : ι) : ContDiffOn ℝ (⊤ : ℕ∞) (m i) {0}ᶜ := by
+    refine contDiffOn_const.mul (Complex.ofRealCLM.contDiff.comp_contDiffOn ?_)
+    exact (innerSL ℝ (b i)).contDiff.contDiffOn.div (contDiff_norm_sq ℝ).contDiffOn
+      fun ξ hξ => pow_ne_zero 2 (norm_ne_zero_iff.2 hξ)
+  choose σ hσ using fun i => exists_eqOn_annulus_of_contDiffOn (hm i) θ
+  refine ⟨σ, fun ξ h1 hθ => ?_⟩
+  have hξ : ‖ξ‖ ^ 2 ≠ 0 := pow_ne_zero 2 (by linarith)
+  calc ∑ i, σ i ξ * (2 * Real.pi * Complex.I * inner ℝ ξ (b i))
+      = ∑ i, ((inner ℝ ξ (b i) ^ 2 / ‖ξ‖ ^ 2 : ℝ) : ℂ) := Finset.sum_congr rfl fun i _ => by
+        rw [hσ i ⟨h1, hθ⟩]
+        simp only [m, real_inner_comm ξ (b i)]
+        push_cast
+        field_simp
+    _ = 1 := by
+        rw [← Complex.ofReal_sum, ← Finset.sum_div, b.sum_sq_inner_left, div_self hξ,
+          Complex.ofReal_one]
+
 /-- A Schwartz function with frequencies in the annulus `1 ≤ ‖ξ‖ ≤ θ` is a sum of Fourier
 multipliers with Schwartz symbols applied to its partial derivatives: on the annulus, the
-symbols agree with `⟪bᵢ, ξ⟫ / (2πi ‖ξ‖²)`, and `∑ᵢ ⟪bᵢ, ξ⟫ ⟪ξ, bᵢ⟫ / ‖ξ‖² = 1`. -/
+symbols of `OrthonormalBasis.exists_sum_mul_eq_one_of_one_le_norm_of_norm_le` invert the partial
+derivatives. -/
 private theorem exists_eq_sum_fourierMultiplierCLM_lineDerivOp (θ : ℝ) :
     ∃ σ : Fin (finrank ℝ E) → 𝓢(E, ℂ), ∀ f : 𝓢(E, F),
       Function.support ⇑(𝓕 f : 𝓢(E, F)) ⊆ {ξ | 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ θ} →
         f = ∑ i, fourierMultiplierCLM F (σ i) (∂_{stdOrthonormalBasis ℝ E i} f) := by
   let b := stdOrthonormalBasis ℝ E
-  let m (i : Fin (finrank ℝ E)) (ξ : E) : ℂ :=
-    (2 * Real.pi * Complex.I)⁻¹ * ((inner ℝ (b i) ξ / ‖ξ‖ ^ 2 : ℝ) : ℂ)
-  have hm (i : Fin (finrank ℝ E)) : ContDiffOn ℝ (⊤ : ℕ∞) (m i) {0}ᶜ := by
-    refine contDiffOn_const.mul (Complex.ofRealCLM.contDiff.comp_contDiffOn ?_)
-    exact (innerSL ℝ (b i)).contDiff.contDiffOn.div (contDiff_norm_sq ℝ).contDiffOn
-      fun ξ hξ => pow_ne_zero 2 (norm_ne_zero_iff.2 hξ)
-  choose σ hσ using fun i => exists_eqOn_annulus_of_contDiffOn (hm i) θ
+  obtain ⟨σ, hσ⟩ := b.exists_sum_mul_eq_one_of_one_le_norm_of_norm_le θ
   refine ⟨σ, fun f hf => ?_⟩
   have hv (v : E) : (inner ℝ · v : E → ℝ).HasTemperateGrowth := by fun_prop
   have key : 𝓕 f = 𝓕 (∑ i, fourierMultiplierCLM F (σ i) (∂_{b i} f)) := by
@@ -88,19 +113,11 @@ private theorem exists_eq_sum_fourierMultiplierCLM_lineDerivOp (θ : ℝ) :
     by_cases h0 : (𝓕 f : 𝓢(E, F)) ξ = 0
     · simp [h0]
     · have hξ := hf h0
-      have hξ0 : ‖ξ‖ ≠ 0 := by linarith [hξ.1]
-      simp_rw [hσ _ hξ]
       have hterm (i : Fin (finrank ℝ E)) :
-          m i ξ • (2 * (Real.pi : ℂ) * Complex.I) • inner ℝ ξ (b i) • (𝓕 f : 𝓢(E, F)) ξ =
-            ((inner ℝ (b i) ξ ^ 2 / ‖ξ‖ ^ 2 : ℝ) : ℂ) • (𝓕 f : 𝓢(E, F)) ξ := by
-        rw [← Complex.coe_smul, smul_smul, smul_smul]
-        congr 1
-        simp only [m, real_inner_comm ξ (b i)]
-        push_cast
-        field_simp
-      rw [Finset.sum_congr rfl fun i _ => hterm i, ← Finset.sum_smul, ← Complex.ofReal_sum,
-        ← Finset.sum_div, b.sum_sq_inner_right, div_self (pow_ne_zero 2 hξ0), Complex.ofReal_one,
-        one_smul]
+          σ i ξ • (2 * (Real.pi : ℂ) * Complex.I) • inner ℝ ξ (b i) • (𝓕 f : 𝓢(E, F)) ξ =
+            (σ i ξ * (2 * Real.pi * Complex.I * inner ℝ ξ (b i))) • (𝓕 f : 𝓢(E, F)) ξ := by
+        rw [← Complex.coe_smul, smul_smul, smul_smul, mul_assoc]
+      rw [Finset.sum_congr rfl fun i _ => hterm i, ← Finset.sum_smul, hσ ξ hξ.1 hξ.2, one_smul]
   simpa using congrArg 𝓕⁻ key
 
 /-- The reverse Bernstein inequality for the first partial derivatives, at frequency scale `1`. -/

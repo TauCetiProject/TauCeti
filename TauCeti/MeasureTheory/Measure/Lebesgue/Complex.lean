@@ -11,11 +11,13 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Coordinates
 public import TauCeti.Analysis.Complex.Euclidean.Space
 public import Mathlib.Topology.Sets.Opens
+import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Analysis.Complex.ReImTopology
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.Compact
 import Mathlib.Analysis.Complex.Isometry
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Planar area of coordinate lines, graphs and rectangles
@@ -26,9 +28,14 @@ The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and
 (`MeasurableSet.reProdIm`).
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure,
 so a half-disc `Ω ∩ {0 ≤ im}` agrees almost everywhere with its interior
-(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`).
+(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`), and an integral over `ℂ` is the integral over
+the open upper half-plane of the function plus its composition with conjugation
+(`Complex.integral_eq_setIntegral_add_comp_conj`), and an almost-everywhere property on the upper
+part of a set containing the conjugates of its lower points holds at the conjugate points of its
+lower part (`TauCeti.ae_restrict_im_neg_of_ae_restrict_im_pos`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
-`s ×ℂ t`, planar measure is the product of the restrictions to the sides, so a function of the
+`s ×ℂ t`, planar measure is the product of the restrictions to the sides
+(`Complex.volume_reProdIm`, `Complex.volume_real_reProdIm_Icc` for the area), so a function of the
 imaginary part integrable on a rectangle of positive width is integrable on the vertical side,
 and a function of the real or imaginary part integrates by Fubini as the length of the other
 side times its one-dimensional integral (`Complex.setLIntegral_reProdIm_comp_re`,
@@ -37,7 +44,10 @@ Splitting complex vectors into real and imaginary blocks preserves product volum
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
 The real coordinates `(x, y) ↦ x + y i` of the plane preserve area
-(`Complex.measurePreserving_equivRealProdCLM_symm`).
+(`Complex.measurePreserving_equivRealProdCLM_symm`). Since the disc `|w| ≤ r`, read in the real
+coordinates, lies in the square `‖z‖ ≤ r`, the integral of a nonnegative function over the disc is
+at most its integral over any square `‖z‖ ≤ s` with `r ≤ s`
+(`TauCeti.setIntegral_setOf_norm_equivRealProdCLM_symm_le_le`).
 Multiplication by a complex number of modulus one is a rotation, so it preserves integrals
 (`Complex.integral_comp_mul_left_of_norm_eq_one`).
 -/
@@ -113,6 +123,27 @@ theorem setOf_le_im_ae_eq (c : ℝ) : {z : ℂ | c ≤ z.im} =ᵐ[volume] {z : �
   · have h1 : c < z.im := hz.1
     exact absurd h1.le hz.2
 
+/-- Almost every complex number is off the real axis. -/
+theorem ae_im_ne_zero : ∀ᵐ z : ℂ, z.im ≠ 0 :=
+  measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
+
+/-- An integral over `ℂ` is the integral over the open upper half-plane of the function plus its
+composition with conjugation: the real axis is null and `z ↦ conj z` preserves the measure. -/
+theorem integral_eq_setIntegral_add_comp_conj {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℂ → E} (hf : Integrable f) :
+    ∫ z, f z = ∫ z in {z : ℂ | 0 < z.im}, (f z + f (starRingEnd ℂ z)) := by
+  have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
+  have hpre : (conjLIE : ℂ → ℂ) ⁻¹' {z : ℂ | 0 ≤ z.im}ᶜ = {z : ℂ | 0 < z.im} := by
+    ext z
+    simp
+  rw [integral_add (g := fun z => f (starRingEnd ℂ z)) hf.integrableOn
+      ((integrable_comp conjLIE f).2 hf).integrableOn,
+    ← integral_add_compl hH hf,
+    setIntegral_congr_set (setOf_le_im_ae_eq 0),
+    ← conjLIE.measurePreserving.setIntegral_preimage_emb
+      conjLIE.toHomeomorph.measurableEmbedding f {z : ℂ | 0 ≤ z.im}ᶜ, hpre]
+  simp only [conjLIE_apply]
+
 /-- Restricted to a rectangle, planar Lebesgue measure is the product of the restrictions to its
 sides. -/
 theorem measurePreserving_measurableEquivRealProd_reProdIm {s t : Set ℝ} (hs : MeasurableSet s)
@@ -122,6 +153,19 @@ theorem measurePreserving_measurableEquivRealProd_reProdIm {s t : Set ℝ} (hs :
   have h := volume_preserving_equiv_real_prod.restrict_preimage (hs.prod ht)
   rw [Measure.volume_eq_prod, ← Measure.prod_restrict] at h
   exact h
+
+/-- The planar measure of a rectangle `s ×ℂ t` is the product of the lengths of its sides. -/
+@[simp]
+theorem volume_reProdIm (s t : Set ℝ) : volume (s ×ℂ t) = volume s * volume t := by
+  have h := volume_preserving_equiv_real_prod.measure_preimage_equiv (s ×ˢ t)
+  rw [Measure.volume_eq_prod, Measure.prod_prod] at h
+  rwa [← preimage_equivRealProd_prod]
+
+/-- The planar measure of a closed rectangle `[a, b] × [c, d]`, as a real number. -/
+theorem volume_real_reProdIm_Icc {a b c d : ℝ} (hab : a ≤ b) (hcd : c ≤ d) :
+    volume.real (Icc a b ×ℂ Icc c d) = (b - a) * (d - c) := by
+  rw [measureReal_def, volume_reProdIm, Real.volume_Icc, Real.volume_Icc, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (by linarith), ENNReal.toReal_ofReal (by linarith)]
 
 /-- A function of the imaginary part integrable on a rectangle of positive width is integrable
 on the vertical side. -/
@@ -196,6 +240,17 @@ namespace TauCeti
 
 open TopologicalSpace
 
+/-- The integral of a nonnegative function over the disc `|w| ≤ r`, read in the real coordinates,
+is at most its integral over the square `‖z‖ ≤ s` of any side `s ≥ r`. -/
+theorem setIntegral_setOf_norm_equivRealProdCLM_symm_le_le {μ : Measure (ℝ × ℝ)}
+    {f : ℝ × ℝ → ℝ} {r s : ℝ} (hf : IntegrableOn f (Metric.closedBall 0 s) μ)
+    (hf0 : 0 ≤ᵐ[μ.restrict (Metric.closedBall 0 s)] f) (hrs : r ≤ s) :
+    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ r}, f z ∂μ ≤
+      ∫ z in Metric.closedBall 0 s, f z ∂μ :=
+  setIntegral_mono_set hf hf0 (Filter.Eventually.of_forall fun _ hz ↦
+    Metric.closedBall_subset_closedBall hrs
+      (setOf_norm_equivRealProdCLM_symm_le_subset_closedBall r hz))
+
 /-- The half-disc `Ω ∩ {0 ≤ im}` and its interior `Ω ∩ {0 < im}` agree up to a null set: they
 differ by a subset of the real axis. So the half-disc and its interior carry the same restricted
 Lebesgue measure. -/
@@ -204,6 +259,27 @@ theorem inter_setOf_im_nonneg_ae_eq_interior (Ω : Opens ℂ) :
       (Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) : Set ℂ) := by
   rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
   exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
+
+/-- Almost every point, indeed every point, of the interior `Ω ∩ {0 < im}` of the half-disc
+`Ω ∩ {0 ≤ im}` lies in the open upper half-plane. -/
+theorem ae_restrict_interior_inter_setOf_im_nonneg_im_pos (Ω : Opens ℂ) :
+    ∀ᵐ z ∂volume.restrict (Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) : Set ℂ),
+      0 < z.im := by
+  refine (ae_restrict_iff' (Opens.interior _).isOpen.measurableSet).2 (.of_forall fun z hz => ?_)
+  rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen] at hz
+  exact hz.2
+
+/-- An almost-everywhere property on the upper part `Ω ∩ {0 < im}` of a set containing the
+conjugates of its lower points, read at the conjugate point, holds almost everywhere on the lower
+part `Ω ∩ {im < 0}`: conjugation preserves the measure and exchanges the two parts. -/
+theorem ae_restrict_im_neg_of_ae_restrict_im_pos {Ω : Set ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → starRingEnd ℂ z ∈ Ω) {P : ℂ → Prop}
+    (h : ∀ᵐ z ∂volume.restrict (Ω ∩ {z | 0 < z.im}), P z) :
+    ∀ᵐ z ∂volume.restrict (Ω ∩ {z | z.im < 0}), P (starRingEnd ℂ z) := by
+  have hconj := (Complex.conjLIE.measurePreserving.restrict_preimage_emb
+    Complex.conjLIE.toHomeomorph.measurableEmbedding (Ω ∩ {z | 0 < z.im})).quasiMeasurePreserving
+  refine ae_restrict_of_ae_restrict_of_subset (fun z hz ↦ ?_) (by simpa using hconj.ae h)
+  exact ⟨hΩ z hz.1 hz.2, by simpa using hz.2⟩
 
 /-- Splitting complex coordinates into their real and imaginary blocks preserves volume,
 including on an empty coordinate type. -/

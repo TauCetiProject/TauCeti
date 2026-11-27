@@ -92,17 +92,17 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- A smooth function equal to `t ↦ t⁻¹` on `[1, ∞)`: the reciprocal of the smooth lower clamp
-at level `1 / 2`. -/
+/-- A smooth function equal to `t ↦ t⁻¹` on `[1, ∞)`: the reciprocal of the smooth lower
+truncation between the levels `1 / 2` and `1`. -/
 private def smoothRecip (t : ℝ) : ℝ :=
-  (smoothLowerClamp (1 / 2) t)⁻¹
+  (smoothLowerTruncation (1 / 2) 1 t)⁻¹
 
 private theorem contDiff_smoothRecip : ContDiff ℝ ∞ smoothRecip :=
-  (contDiff_smoothLowerClamp _).inv fun t ↦
-    ((le_smoothLowerClamp (by norm_num) t).trans_lt' (by norm_num)).ne'
+  (contDiff_smoothLowerTruncation _ _).inv fun t ↦
+    ((le_smoothLowerTruncation (by norm_num) t).trans_lt' (by norm_num)).ne'
 
 private theorem smoothRecip_of_one_le {t : ℝ} (ht : 1 ≤ t) : smoothRecip t = t⁻¹ := by
-  rw [smoothRecip, smoothLowerClamp_of_two_mul_le (by norm_num) (by linarith)]
+  rw [smoothRecip, smoothLowerTruncation_of_right_le (by norm_num) ht]
 
 /-- The amplitudes produced by integrating by parts against `𝐞(Φ)` in the direction `w`, with the
 multiplier `v`: `h₀ = f` and `h_(k+1) = ∂_w (h_k v)`. -/
