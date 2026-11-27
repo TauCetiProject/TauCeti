@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.LocalLimit.MaximalSpanOne
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.TaylorExpansion
-import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Int
 import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Lattice
 
 /-!
@@ -30,10 +29,12 @@ away from `0` in the Fourier-analytic proof of the local limit theorem for latti
 
 ## Main results
 
+Throughout, `μ` is a probability measure on `ℤ`.
+
 * `MeasureTheory.Measure.HasMaximalSpanOne.norm_charFun_lt_one`: a law of maximal span one has
   `|φ(t)| < 1` for `t ∉ 2πℤ`.
-* `MeasureTheory.Measure.hasMaximalSpanOne_iff_norm_charFun_lt_one`: the converse, for a
-  probability measure.
+* `MeasureTheory.Measure.hasMaximalSpanOne_iff_norm_charFun_lt_one`: maximal span one is
+  equivalent to `|φ(t)| < 1` for all `t ∉ 2πℤ`.
 * `MeasureTheory.Measure.HasMaximalSpanOne.exists_lt_one_forall_norm_charFun_le`: on a compact
   set of frequencies avoiding `2πℤ`, `|φ|` is at most some `η < 1`;
   `MeasureTheory.Measure.HasMaximalSpanOne.exists_lt_one_forall_norm_charFun_le_of_le_abs`: in
@@ -87,22 +88,20 @@ theorem hasMaximalSpanOne_iff_norm_charFun_lt_one :
     μ.HasMaximalSpanOne ↔
       ∀ t : ℝ, (∀ j : ℤ, t ≠ j * (2 * π)) → ‖charFun (μ.map (Int.cast : ℤ → ℝ)) t‖ < 1 := by
   refine ⟨fun hμ _ ↦ hμ.norm_charFun_lt_one, fun h ↦ hasMaximalSpanOne_iff.2 fun b n hn hnull ↦ ?_⟩
-  -- A law carried by `b + nℤ` has characteristic function `exp(2πi b/n)` at `2π/n`.
-  have hae : ∀ᵐ k ∂μ, (n : ℤ) ∣ k - b := ae_iff.2 hnull
-  have hφ : charFun (μ.map (Int.cast : ℤ → ℝ)) (2 * π / n) = cexp ((2 * π / n * b : ℝ) * I) := by
-    rw [charFun_map_intCast_apply, integral_congr_ae (g := fun _ ↦ cexp ((2 * π / n * b : ℝ) * I))
-      (hae.mono fun k ⟨m, hm⟩ ↦ ?_)]
-    · simp
-    simp only [exp_eq_exp_iff_exists_int]
-    refine ⟨m, ?_⟩
-    have hk : (k : ℂ) = b + n * m := by exact_mod_cast (by omega : k = b + n * m)
-    have hnC : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
-    rw [hk]
-    push_cast
-    field_simp
-  refine (h (2 * π / n) fun j hj ↦ ?_).ne (by rw [hφ, norm_exp_ofReal_mul_I])
-  -- `2π/n` is not a multiple of `2π`, since `0 < 1/n < 1`.
   have hn₀ : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
+  -- A law carried by `b + nℤ` has phases `2π k/n` in the coset `2π b/n + 2πℤ`.
+  have hae : ∀ᵐ k ∂μ, (n : ℤ) ∣ k - b := ae_iff.2 hnull
+  have hone : ‖charFun (μ.map (Int.cast : ℤ → ℝ)) (2 * π / n)‖ = 1 := by
+    refine (norm_charFun_eq_one_iff _).2 ⟨2 * π / n * b, ?_⟩
+    rw [ae_map_iff (measurable_of_countable _).aemeasurable ?_]
+    · refine hae.mono fun k ⟨m, hm⟩ ↦ ⟨m, ?_⟩
+      have hk : (k : ℝ) = b + n * m := by exact_mod_cast (by omega : k = b + n * m)
+      simp only [RCLike.inner_apply, conj_trivial, hk]
+      field_simp
+    · simp only [Set.ofPred_exists]
+      exact MeasurableSet.iUnion fun _ ↦ measurableSet_eq_fun (by fun_prop) (by fun_prop)
+  refine (h (2 * π / n) fun j hj ↦ ?_).ne hone
+  -- `2π/n` is not a multiple of `2π`, since `0 < 1/n < 1`.
   rw [div_eq_iff hn₀] at hj
   have hjn : (j * n : ℝ) * (2 * π) = 1 * (2 * π) := by linear_combination -hj
   have hjn' : j * (n : ℤ) = 1 := by exact_mod_cast mul_right_cancel₀ two_pi_pos.ne' hjn
@@ -134,7 +133,7 @@ theorem HasMaximalSpanOne.exists_lt_one_forall_norm_charFun_le_of_le_abs
     -- A nonzero multiple of `2π` has modulus at least `2π > π`.
     subst hj
     rcases eq_or_ne j 0 with rfl | hj
-    · simp at hδt
+    · simp only [Int.cast_zero, zero_mul, abs_zero] at hδt
       linarith
     have h1 : (1 : ℝ) ≤ |(j : ℝ)| := by exact_mod_cast Int.one_le_abs hj
     rw [abs_mul, abs_of_pos two_pi_pos] at htπ
