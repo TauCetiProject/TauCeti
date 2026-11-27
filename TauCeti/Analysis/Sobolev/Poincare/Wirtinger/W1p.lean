@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+public import Mathlib.Topology.LocallyConstant.Basic
 import TauCeti.Analysis.Convex.Exhaustion
+import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.MeasureTheory.Function.Lp.Const
@@ -57,6 +59,10 @@ measure, and letting `q → ∞` (`TauCeti.tendsto_eLpNorm_atTop`).
 ## Main declarations
 
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex`: the inequality on `W^{1,p}(Ω)`.
+* `TauCeti.W1p.setAverage_norm_sub_setAverage_le_of_convex`: the mean oscillation of `u` over
+  `Ω`, by Hölder's inequality.
+* `TauCeti.W1p.isClosed_range_gradientL_of_convex`: the weak gradients of the elements of
+  `W^{1,p}(Ω)` form a closed subset of `Lᵖ(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball`: the constant on a ball of radius `R`
   is `2 ^ (n + 1) * R`.
 * `TauCeti.W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset`: the same bound in `L²`,
@@ -65,6 +71,18 @@ measure, and letting `q → ∞` (`TauCeti.tendsto_eLpNorm_atTop`).
   for a ball contained in `Ω` and any `u ∈ W^{1,p}(Ω)`.
 * `TauCeti.W1p.exists_value_ae_eq_const_of_gradient_eq_zero`: on a preconnected `Ω`, a Sobolev
   function with vanishing weak gradient is almost everywhere constant.
+* `TauCeti.W1p.exists_eq_const_of_gradient_eq_zero`: if moreover `Ω` has finite measure, such a
+  Sobolev function is the constant `TauCeti.W1p.const c`.
+* `TauCeti.W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero`: on a preconnected `Ω`, a
+  Sobolev function with vanishing gradient and vanishing integral over a set of positive measure
+  is zero.
+* `TauCeti.W1p.eq_zero_of_gradient_eq_zero_of_integralL_eq_zero`: on a preconnected `Ω` of finite
+  measure, a Sobolev function with vanishing gradient and vanishing integral over `Ω` is zero.
+* `TauCeti.W1p.gradient_eq_zero_iff_exists_isLocallyConstant`: on any open `Ω`, a Sobolev
+  function has vanishing weak gradient exactly when it is almost everywhere equal to a function
+  locally constant on `Ω`.
+* `TauCeti.W1p.eq_zero_of_gradient_eq_zero`: for `p < ∞`, a Sobolev function on the whole of a
+  nontrivial space with vanishing weak gradient is zero.
 * `TauCeti.W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq`: on a preconnected `Ω`, a Sobolev
   function whose weak gradient agrees almost everywhere with `∇ q` for a `C¹` function `q` equals
   `q + c` almost everywhere.
@@ -112,11 +130,8 @@ private theorem norm_value_sub_setAverage_restrictL_ofTestFunctionₗ_le (hp : p
     rw [W1p.value_ofTestFunctionₗ]
     exact (testFunctionLp_apply_ae (mu := mu) p phi).filter_mono
       (ae_mono (Measure.restrict_mono (SetLike.coe_subset_coe.2 hU) le_rfl))
-  have hgradU : W1p.gradient w =ᵐ[mu.restrict (U : Set E)] fun x ↦ ∇ (phi : E → ℝ) x := by
-    refine (W1p.gradient_restrictL_ae hU _).trans ?_
-    rw [W1p.gradient_ofTestFunctionₗ]
-    exact (gradientTestFunctionLp_apply_ae (mu := mu) p phi).filter_mono
-      (ae_mono (Measure.restrict_mono (SetLike.coe_subset_coe.2 hU) le_rfl))
+  have hgradU : W1p.gradient w =ᵐ[mu.restrict (U : Set E)] fun x ↦ ∇ (phi : E → ℝ) x :=
+    W1p.gradient_restrictL_ofTestFunctionₗ_ae hU phi
   have havg : (⨍ y in S, W1p.value w y ∂mu) = ⨍ y in S, phi y ∂mu :=
     average_congr (haeU.filter_mono (ae_mono (Measure.restrict_mono hSU le_rfl)))
   have hmain := eLpNorm_sub_setAverage_le_of_convex (μ := mu) (u := fun x ↦ (phi : E → ℝ) x)
@@ -350,6 +365,101 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex
   exact le_of_tendsto_of_tendsto tendsto_eLpNorm_atTop
     (ENNReal.Tendsto.const_mul tendsto_eLpNorm_atTop (Or.inr ENNReal.ofReal_ne_top)) hle
 
+/-- **The mean oscillation of a `W^{1,p}` function on a bounded convex domain.**  Let `Ω` be a
+bounded convex open set of positive measure in a finite-dimensional real inner product space of
+dimension `n`.  For `1 ≤ p ≤ ∞`, the mean over `Ω` of `|u - ⨍_Ω u|` is at most
+`μ(B(0, 1)) * (diam Ω) ^ (n + 1) * μ(Ω) ^ (-(1 + 1 / p))` times the `Lᵖ` norm of the weak gradient
+of `u ∈ W^{1,p}(Ω)`.  This is `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` with
+`S = Ω`, combined with Hölder's inequality. -/
+theorem W1p.setAverage_norm_sub_setAverage_le_of_convex
+    (hconv : Convex ℝ (Omega : Set E)) (hb : Bornology.IsBounded (Omega : Set E))
+    (hOmega : mu Omega ≠ 0) (u : W1p mu Omega p) :
+    ⨍ y in Omega, ‖W1p.value u y - ⨍ z in Omega, W1p.value u z ∂mu‖ ∂mu ≤
+      mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) *
+        mu.real Omega ^ (-(1 + 1 / p.toReal)) * ‖W1p.gradient u‖ := by
+  set g : E → ℝ := fun y ↦ W1p.value u y - ⨍ z in Omega, W1p.value u z ∂mu
+  set m := mu.real Omega
+  set K := mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1)
+  have hfin : mu Omega ≠ ∞ := hb.measure_lt_top.ne
+  have hm : 0 < m := ENNReal.toReal_pos hOmega hfin
+  have hK : 0 ≤ K := by positivity
+  have : IsFiniteMeasure (mu.restrict Omega) := isFiniteMeasure_restrict.2 hfin
+  -- The Poincaré–Wirtinger inequality in `Lᵖ(Ω)`.
+  have hP : eLpNorm g p (mu.restrict Omega) ≤ ENNReal.ofReal (K / m) * ‖W1p.gradient u‖ₑ :=
+    W1p.eLpNorm_value_sub_setAverage_le_of_convex hconv hb subset_rfl hOmega u
+  have hPr : (eLpNorm g p (mu.restrict Omega)).toReal ≤ K / m * ‖W1p.gradient u‖ := by
+    have := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top eNorm_ne_top) hP
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (div_nonneg hK hm.le), toReal_eNorm] at this
+  -- Hölder's inequality: `‖g‖_{L¹(Ω)} ≤ μ(Ω)^(1 - 1/p) ‖g‖_{Lᵖ(Ω)}`.
+  have hg : MemLp g p (mu.restrict Omega) := (Lp.memLp (W1p.value u)).sub (memLp_const _)
+  have hint := hg.integral_norm_le_mul_eLpNorm (Fact.out : 1 ≤ p)
+  rw [Measure.restrict_apply_univ, ← ENNReal.toReal_rpow, ← measureReal_def] at hint
+  rw [setAverage_eq, smul_eq_mul]
+  calc m⁻¹ * ∫ y in Omega, ‖g y‖ ∂mu
+      ≤ m⁻¹ * (m ^ (1 - 1 / p.toReal) * (K / m * ‖W1p.gradient u‖)) := by
+        gcongr
+        exact hint.trans (by gcongr)
+    _ = K * m ^ (-(1 + 1 / p.toReal)) * ‖W1p.gradient u‖ := by
+        have h : m ^ (-(1 + 1 / p.toReal)) =
+            m ^ (-1 : ℝ) * m ^ (-1 : ℝ) * m ^ (1 - 1 / p.toReal) := by
+          rw [← Real.rpow_add hm, ← Real.rpow_add hm]
+          congr 1
+          ring
+        rw [h, Real.rpow_neg_one]
+        ring
+
+/-- **The gradients of `W^{1,p}(Ω)` form a closed set.**  On a bounded convex open set `Ω`, a limit
+in `Lᵖ(Ω)` of weak gradients of elements of `W^{1,p}(Ω)` is again the weak gradient of an element of
+`W^{1,p}(Ω)`, for `1 ≤ p ≤ ∞`. -/
+theorem W1p.isClosed_range_gradientL_of_convex (hconv : Convex ℝ (Omega : Set E))
+    (hb : Bornology.IsBounded (Omega : Set E)) :
+    IsClosed (range (W1p.gradientL : W1p mu Omega p →L[ℝ] Lp E p (mu.restrict Omega))) := by
+  have : IsFiniteMeasure (mu.restrict (Omega : Set E)) :=
+    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
+  rcases eq_or_ne (mu Omega) 0 with h0 | h0
+  · -- On a null set every class in `Lᵖ(Ω)` vanishes, so every one is a gradient.
+    have hfalse : ∀ᵐ _ ∂mu.restrict (Omega : Set E), False := ae_iff.2 (by simp [h0])
+    convert isClosed_univ
+    exact eq_univ_of_forall fun g => ⟨0, Lp.ext (hfalse.mono fun _ h => h.elim)⟩
+  have hR : mu.real Omega ≠ 0 := (ENNReal.toReal_pos h0 hb.measure_lt_top.ne).ne'
+  -- Subtracting the mean over `Ω` keeps the gradient and makes the integral vanish.
+  have hmean : ∀ v : W1p mu Omega p,
+      W1p.integralL (v - W1p.const (⨍ x in Omega, W1p.value v x ∂mu)) = 0 := fun v => by
+    rw [map_sub, W1p.integralL_const, W1p.integralL_apply, setAverage_eq, smul_eq_mul,
+      ← mul_assoc, mul_inv_cancel₀ hR, one_mul, sub_self]
+  -- The Poincaré–Wirtinger inequality for functions of mean zero.
+  set C : ℝ := mu.real (ball 0 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) / mu.real Omega
+  have hC : 0 ≤ C := by positivity
+  have hbound : ∀ v : W1p mu Omega p, W1p.integralL v = 0 →
+      ‖v‖ ≤ (C + 1) * ‖W1p.gradientL v‖ := by
+    intro v hv
+    have hint : ∫ x in Omega, W1p.value v x ∂mu = 0 := by
+      rw [← W1p.integralL_apply]
+      exact hv
+    have hP := W1p.eLpNorm_value_sub_setAverage_le_of_convex hconv hb subset_rfl h0 v
+    simp only [setAverage_eq, hint, smul_zero, sub_zero] at hP
+    have hval : ‖W1p.value v‖ ≤ C * ‖W1p.gradient v‖ := by
+      rw [Lp.norm_def, ← toReal_eNorm, ← ENNReal.toReal_ofReal hC, ← ENNReal.toReal_mul]
+      exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top eNorm_ne_top) hP
+    rw [W1p.gradientL_apply]
+    linarith [W1p.norm_le_norm_value_add_norm_gradient v]
+  -- On the closed set of mean-zero functions the gradient map is antilipschitz by `hbound`,
+  -- so its range is closed, and subtracting the mean shows that this range is the whole range.
+  set S : Set (W1p mu Omega p) := {v | W1p.integralL v = 0}
+  have hS : ∀ v : S, W1p.integralL (v : W1p mu Omega p) = 0 := fun v => v.prop
+  have : CompleteSpace S :=
+    (isClosed_eq W1p.integralL.continuous continuous_const).completeSpace_coe
+  have hanti : AntilipschitzWith ⟨C + 1, by positivity⟩
+      fun v : S => W1p.gradientL (v : W1p mu Omega p) := by
+    refine AntilipschitzWith.of_le_mul_dist fun v w => ?_
+    rw [Subtype.dist_eq, dist_eq_norm, dist_eq_norm, ← map_sub]
+    exact hbound _ (by rw [map_sub, hS, hS, sub_self])
+  convert hanti.isClosed_range (W1p.gradientL.uniformContinuous.comp uniformContinuous_subtypeVal)
+    using 1
+  ext g
+  refine ⟨fun ⟨v, hv⟩ => ⟨⟨_, hmean v⟩, ?_⟩, fun ⟨v, hv⟩ => ⟨v, hv⟩⟩
+  simp only [← hv, map_sub, W1p.gradientL_apply, W1p.gradient_const, sub_zero]
+
 /-- **The Poincaré–Wirtinger inequality on a ball.**  On a ball of radius `R` the constant of
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` is `2 ^ (n + 1) * R`: the deviation of
 `u ∈ W^{1,p}(B(c, R))` from its mean over the ball is at most `2 ^ (n + 1) * R` times the `Lᵖ`
@@ -491,17 +601,119 @@ private theorem W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero {u : W1p m
     (hP.antisymm (integral_nonneg fun _ ↦ abs_nonneg _))
   exact ⟨m, hzero.mono fun y hy ↦ sub_eq_zero.1 (abs_eq_zero.1 hy)⟩
 
+/-- A Sobolev function with vanishing weak gradient is almost everywhere constant near each point
+of its domain. -/
+private theorem W1p.forall_mem_exists_nhds_ae_eq_const_of_gradient_eq_zero
+    {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
+    ∀ x ∈ (Omega : Set E), ∃ c : ℝ, ∃ U ∈ 𝓝 x, ∀ᵐ y ∂mu.restrict U, W1p.value u y = c := by
+  intro x hx
+  obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
+  exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
+
 /-- **A Sobolev function with vanishing gradient on a connected domain is constant.** If `Ω` is
 preconnected and the weak gradient of `u ∈ W^{1,p}(Ω)` vanishes, then `u` agrees almost everywhere
 on `Ω` with a constant. -/
 theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
     (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
-    ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c := by
-  refine hconn.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)
-    fun x hx => ?_
-  obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
-  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
-  exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
+    ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c :=
+  hconn.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)
+    (W1p.forall_mem_exists_nhds_ae_eq_const_of_gradient_eq_zero hu)
+
+/-- **A Sobolev function with vanishing gradient is locally constant.** If the weak gradient of
+`u ∈ W^{1,p}(Ω)` vanishes, then `u` agrees almost everywhere on `Ω` with a function that is
+locally constant on `Ω`, hence constant on each connected component of `Ω`. No connectedness or
+regularity of `Ω` is needed. -/
+theorem W1p.exists_isLocallyConstant_ae_eq_of_gradient_eq_zero {u : W1p mu Omega p}
+    (hu : W1p.gradient u = 0) :
+    ∃ g : E → ℝ, IsLocallyConstant ((Omega : Set E).domRestrict g) ∧
+      W1p.value u =ᵐ[mu.restrict Omega] g :=
+  IsOpen.exists_isLocallyConstant_ae_eq_of_forall_nhds Omega.isOpen
+    (HereditarilyLindelofSpace.isLindelof _)
+    (W1p.forall_mem_exists_nhds_ae_eq_const_of_gradient_eq_zero hu)
+
+/-- **A locally constant Sobolev function has vanishing gradient.** If `u ∈ W^{1,p}(Ω)` agrees
+almost everywhere on `Ω` with a function that is locally constant on `Ω`, then the weak gradient
+of `u` vanishes. -/
+theorem W1p.gradient_eq_zero_of_ae_eq_isLocallyConstant {u : W1p mu Omega p} {g : E → ℝ}
+    (hg : IsLocallyConstant ((Omega : Set E).domRestrict g))
+    (hug : W1p.value u =ᵐ[mu.restrict Omega] g) : W1p.gradient u = 0 := by
+  refine Lp.ext ?_
+  filter_upwards [((W1p.hasWeakFDerivOn u).congr_ae hug).ae_eq
+    (hg.hasWeakFDerivOn_zero (μ := mu)), Lp.coeFn_zero E p (mu.restrict Omega)] with x hx h0
+  rw [h0, Pi.zero_apply]
+  exact innerSL_inj.mp (hx.trans (map_zero _).symm)
+
+/-- **The Sobolev functions with vanishing gradient are the locally constant ones.** The weak
+gradient of `u ∈ W^{1,p}(Ω)` vanishes exactly when `u` agrees almost everywhere on `Ω` with a
+function that is locally constant on `Ω`. -/
+theorem W1p.gradient_eq_zero_iff_exists_isLocallyConstant {u : W1p mu Omega p} :
+    W1p.gradient u = 0 ↔ ∃ g : E → ℝ, IsLocallyConstant ((Omega : Set E).domRestrict g) ∧
+      W1p.value u =ᵐ[mu.restrict Omega] g :=
+  ⟨W1p.exists_isLocallyConstant_ae_eq_of_gradient_eq_zero,
+    fun ⟨_, hg, hug⟩ => W1p.gradient_eq_zero_of_ae_eq_isLocallyConstant hg hug⟩
+
+/-- **A Sobolev function with vanishing gradient on a connected domain is a constant.** If `Ω` is
+preconnected and of finite measure and the weak gradient of `u ∈ W^{1,p}(Ω)` vanishes, then `u` is
+the constant Sobolev function `TauCeti.W1p.const c` for some `c`. -/
+theorem W1p.exists_eq_const_of_gradient_eq_zero [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+    (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
+    ∃ c : ℝ, u = W1p.const c := by
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero hconn hu
+  refine ⟨c, W1p.ext_value (Lp.ext ?_)⟩
+  filter_upwards [hc, W1p.value_const_ae (mu := mu) (Omega := Omega) (p := p) c] with x h1 h2
+  rw [h1, h2]
+
+/-- On a preconnected domain, a Sobolev function with vanishing gradient and vanishing integral
+over a set of positive measure is zero. -/
+theorem W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero
+    (hconn : IsPreconnected (Omega : Set E)) (hS : S ⊆ (Omega : Set E)) (hS0 : mu.real S ≠ 0)
+    {u : W1p mu Omega p} (hu : W1p.gradient u = 0) (hint : ∫ y in S, W1p.value u y ∂mu = 0) :
+    u = 0 := by
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero hconn hu
+  rw [integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hS hc), setIntegral_const,
+    smul_eq_mul] at hint
+  obtain rfl : c = 0 := (mul_eq_zero.1 hint).resolve_left hS0
+  exact W1p.ext_value (by rw [W1p.value_zero]; exact Lp.eq_zero_iff_ae_eq_zero.2 hc)
+
+section IntegralL
+
+variable [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+
+/-- **A Sobolev function with vanishing gradient and mean is zero.** On a preconnected domain of
+finite measure, if the weak gradient of `u ∈ W^{1,p}(Ω)` and its integral over `Ω` both vanish,
+then `u = 0`. If `Ω` is a null set this holds because `W^{1,p}(Ω)` is trivial. -/
+theorem W1p.eq_zero_of_gradient_eq_zero_of_integralL_eq_zero
+    (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} (hu : W1p.gradient u = 0)
+    (hint : W1p.integralL u = 0) : u = 0 := by
+  by_cases h0 : mu.real Omega = 0
+  · have hae : ae (mu.restrict (Omega : Set E)) = ⊥ := ae_restrict_eq_bot.2
+      ((measureReal_eq_zero_iff (isFiniteMeasure_restrict.1 inferInstance)).1 h0)
+    exact W1p.ext_value (Lp.ext (hae.le Filter.eventually_bot))
+  · rw [W1p.integralL_apply] at hint
+    exact W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero hconn subset_rfl h0 hu hint
+
+end IntegralL
+
+/-- **A Sobolev function on the whole space with vanishing gradient is zero.** For `p < ∞` and a
+nontrivial space `E`, if the weak gradient of `u ∈ W^{1,p}(E)` vanishes, then `u = 0`: it is
+almost everywhere constant, and the only constant in `Lᵖ(E)` is zero, since `E` has infinite
+measure. -/
+theorem W1p.eq_zero_of_gradient_eq_zero [Nontrivial E] (hp : p ≠ ∞) {u : W1p mu ⊤ p}
+    (hu : W1p.gradient u = 0) : u = 0 := by
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
+    (by simpa using isPreconnected_univ) hu
+  simp only [Opens.coe_top, Measure.restrict_univ] at hc
+  have hc0 : c = 0 := by
+    refine ((memLp_const_iff (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hp).1
+      ((W1p.memLp_value u).ae_eq hc)).resolve_right ?_
+    rw [measure_univ_of_isAddLeftInvariant]
+    exact lt_irrefl _
+  subst hc0
+  refine W1p.ext_value (Lp.ext ?_)
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  filter_upwards [hc] with x hx
+  simp [hx]
 
 /-- **Integration up to a constant on a preconnected domain.** If `Ω` is preconnected and the weak
 gradient of `u ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with the classical gradient `∇ q` of

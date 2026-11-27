@@ -111,8 +111,8 @@ critical point of index `0` to a different one of index `1`. -/
 private theorem mem_or_mem_otherBasins (hf : IsMorse 𝓘(ℝ, E) f) (hE : finrank ℝ E = 1)
     (p q z : M) :
     z ∈ hX.flow.unstableSet p ∪ hX.flow.stableSet q ∨ z ∈ hX.otherBasins p q := by
-  obtain ⟨a, ha, hza⟩ := hX.exists_tendsto_atBot hf z
-  obtain ⟨b, hb, hzb⟩ := hX.exists_tendsto_atTop hf z
+  obtain ⟨a, ha, hza⟩ := hX.exists_tendsto_atBot z
+  obtain ⟨b, hb, hzb⟩ := hX.exists_tendsto_atTop z
   have hz : z ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b :=
     ⟨Flow.mem_unstableSet.2 hza, Flow.mem_stableSet.2 hzb⟩
   have hale : manifoldMorseIndex 𝓘(ℝ, E) f a ≤ 1 := hE ▸ manifoldMorseIndex_le_finrank

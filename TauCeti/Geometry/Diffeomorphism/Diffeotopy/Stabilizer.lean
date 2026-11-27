@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Prod
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
@@ -29,10 +29,29 @@ diffeotopy by an element `f` of the stabilizer gives the `σ`-preserving diffeot
 `f ∘ φ_t ∘ f⁻¹` (`TauCeti.Diffeotopy.transDiffeomorph`), so the subgroup is normal in the
 stabilizer (`TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`).
 
+The subgroup `TauCeti.SmoothForm.compactIsotopyStabilizer σ ≤ isotopyStabilizer σ` is defined in
+the same way from the diffeotopies which moreover are the identity outside one common compact set,
+for all times; for a symplectic form on a noncompact manifold it is `Symp_(c,0)(M, ω)`. The
+support conditions pass to pointwise composites, inverses and conjugates
+(`TauCeti.Diffeotopy.eqOn_id_trans`, `TauCeti.Diffeotopy.eqOn_id_symm`,
+`TauCeti.Diffeotopy.eqOn_id_transDiffeomorph`), so it is again a subgroup, normal in the
+stabilizer of `σ` (`TauCeti.SmoothForm.normal_compactIsotopyStabilizer_subgroupOf`).
+
+Stabilizers are natural under intertwining maps: if a smooth map `g : M' → M` satisfies
+`g ∘ f' = f ∘ g` and `f` preserves `σ`, then `f'` preserves `g^* σ`
+(`TauCeti.SmoothForm.mem_diffeomorphStabilizer_mpullback_of_semiconj`, in
+`TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth`). Applied to the two
+projections of a product, this shows that products `f × f'` of diffeomorphisms preserving `σ` on
+`M` and `τ` on `N` preserve the form `pr₁^* σ + pr₂^* τ` on `M × N`, and products of
+diffeomorphisms in the isotopy stabilizers lie in the isotopy stabilizer of `pr₁^* σ + pr₂^* τ`,
+through the product diffeotopy `TauCeti.Diffeotopy.prodCongr`.
+
 ## Main definitions
 
 * `TauCeti.SmoothForm.isotopyStabilizer σ`: the final diffeomorphisms of the diffeotopies
   preserving `σ` at every time.
+* `TauCeti.SmoothForm.compactIsotopyStabilizer σ`: the final diffeomorphisms of the diffeotopies
+  preserving `σ` at every time and equal to the identity outside a common compact set.
 
 ## Main results
 
@@ -45,6 +64,13 @@ stabilizer (`TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`).
   stabilizer preserves the subgroup.
 * `TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`: the subgroup is normal in the
   stabilizer of `σ` (an instance).
+* `TauCeti.SmoothForm.compactIsotopyStabilizer_le_isotopyStabilizer`,
+  `TauCeti.SmoothForm.normal_compactIsotopyStabilizer_subgroupOf`: the compactly supported
+  version is a smaller subgroup, also normal in the stabilizer.
+* `TauCeti.SmoothForm.prodCongr_mem_diffeomorphStabilizer`,
+  `TauCeti.SmoothForm.timeSlice_prodCongr_mem_diffeomorphStabilizer`,
+  `TauCeti.SmoothForm.prodCongr_mem_isotopyStabilizer`: products of form-preserving
+  diffeomorphisms and diffeotopies preserve the sum of the pulled-back forms.
 
 ## References
 
@@ -56,6 +82,7 @@ public section
 
 noncomputable section
 
+open Set
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -157,6 +184,121 @@ instance normal_isotopyStabilizer_subgroupOf :
     ((isotopyStabilizer σ).subgroupOf (diffeomorphStabilizer σ)).Normal :=
   (Subgroup.normal_subgroupOf_iff isotopyStabilizer_le_diffeomorphStabilizer).2
     fun _ _ hφ hf ↦ mul_mul_inv_mem_isotopyStabilizer hf hφ
+
+/-! ### Compactly supported isotopies -/
+
+/-- The **compactly supported isotopy stabilizer** of a smooth form `σ`: the final diffeomorphisms
+`φ₁` of the smooth diffeotopies `φ_t` all of whose time slices preserve `σ` and which are the
+identity outside one common compact set at every time. For a symplectic form on a noncompact
+manifold this is the group `Symp_(c,0)(M, ω)` of endpoints of compactly supported symplectic
+isotopies. -/
+def compactIsotopyStabilizer (σ : SmoothForm J M F k) : Subgroup (M ≃ₘ⟮J, J⟯ M) where
+  carrier := {φ | ∃ Φ : Diffeotopy J ∞ M,
+    (∃ K, IsCompact K ∧ ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ) ∧
+      (∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ) ∧ Φ.final = φ}
+  one_mem' := ⟨Diffeotopy.refl J ∞ M, ⟨∅, isCompact_empty, fun _ _ _ ↦ by simp⟩,
+    timeSlice_refl_mem_diffeomorphStabilizer, Diffeotopy.final_refl⟩
+  mul_mem' := by
+    rintro _ _ ⟨Φ, ⟨K, hK, hΦK⟩, hΦ, rfl⟩ ⟨Ψ, ⟨L, hL, hΨL⟩, hΨ, rfl⟩
+    exact ⟨Ψ.trans Φ, ⟨L ∪ K, hL.union hK, Diffeotopy.eqOn_id_trans hΨL hΦK⟩,
+      timeSlice_trans_mem_diffeomorphStabilizer hΨ hΦ, by
+        rw [Diffeotopy.final_trans, Diffeomorph.mul_def]⟩
+  inv_mem' := by
+    rintro _ ⟨Φ, ⟨K, hK, hΦK⟩, hΦ, rfl⟩
+    exact ⟨Φ.symm, ⟨K, hK, Diffeotopy.eqOn_id_symm hΦK⟩,
+      timeSlice_symm_mem_diffeomorphStabilizer hΦ, by
+        rw [Diffeotopy.final_symm, Diffeomorph.inv_def]⟩
+
+/-- A diffeomorphism lies in the compactly supported isotopy stabilizer of `σ` exactly when it is
+the final diffeomorphism of a diffeotopy which is the identity outside a compact set and all of
+whose time slices preserve `σ`. -/
+theorem mem_compactIsotopyStabilizer {φ : M ≃ₘ⟮J, J⟯ M} :
+    φ ∈ compactIsotopyStabilizer σ ↔
+      ∃ Φ : Diffeotopy J ∞ M, (∃ K, IsCompact K ∧ ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ) ∧
+        (∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ) ∧ Φ.final = φ :=
+  Iff.rfl
+
+/-- The final diffeomorphism of a diffeotopy which is the identity outside a compact set and
+preserves `σ` at every time lies in the compactly supported isotopy stabilizer of `σ`. -/
+theorem final_mem_compactIsotopyStabilizer {Φ : Diffeotopy J ∞ M} {K : Set M}
+    (hK : IsCompact K) (hΦK : ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ)
+    (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ) :
+    Φ.final ∈ compactIsotopyStabilizer σ :=
+  ⟨Φ, ⟨K, hK, hΦK⟩, hΦ, rfl⟩
+
+/-- Endpoints of compactly supported `σ`-preserving isotopies are endpoints of `σ`-preserving
+isotopies. -/
+theorem compactIsotopyStabilizer_le_isotopyStabilizer :
+    compactIsotopyStabilizer σ ≤ isotopyStabilizer σ := by
+  rintro _ ⟨Φ, -, hΦ, rfl⟩
+  exact final_mem_isotopyStabilizer hΦ
+
+/-- Conjugating an element of the compactly supported isotopy stabilizer of `σ` by an element `f`
+of the stabilizer of `σ` gives an element of the compactly supported isotopy stabilizer: if `φ_t`
+is the identity outside a compact set `K`, then `f ∘ φ_t ∘ f⁻¹` is the identity outside the
+compact set `f '' K`. -/
+theorem mul_mul_inv_mem_compactIsotopyStabilizer {f φ : M ≃ₘ⟮J, J⟯ M}
+    (hf : f ∈ diffeomorphStabilizer σ) (hφ : φ ∈ compactIsotopyStabilizer σ) :
+    f * φ * f⁻¹ ∈ compactIsotopyStabilizer σ := by
+  obtain ⟨Φ, ⟨K, hK, hΦK⟩, hΦ, rfl⟩ := hφ
+  refine ⟨Φ.transDiffeomorph f, ⟨f '' K, hK.image f.continuous,
+    Diffeotopy.eqOn_id_transDiffeomorph f hΦK⟩,
+    timeSlice_transDiffeomorph_mem_diffeomorphStabilizer hf hΦ, ?_⟩
+  rw [Diffeotopy.final_transDiffeomorph_eq_mul_mul_inv]
+
+/-- The compactly supported isotopy stabilizer of `σ` is a normal subgroup of the stabilizer of
+`σ`. For a symplectic form, `Symp_(c,0)(M, ω)` is normal in `Symp(M, ω)`. -/
+instance normal_compactIsotopyStabilizer_subgroupOf :
+    ((compactIsotopyStabilizer σ).subgroupOf (diffeomorphStabilizer σ)).Normal :=
+  (Subgroup.normal_subgroupOf_iff (compactIsotopyStabilizer_le_isotopyStabilizer.trans
+    isotopyStabilizer_le_diffeomorphStabilizer)).2
+    fun _ _ hφ hf ↦ mul_mul_inv_mem_compactIsotopyStabilizer hf hφ
+
+/-! ### Naturality and products -/
+
+section Naturality
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold J' 1 M']
+
+/-- The product `f × f'` of a diffeomorphism `f` of `M` preserving `σ` and a diffeomorphism `f'`
+of `M'` preserving `τ` preserves the form `pr₁^* σ + pr₂^* τ` on `M × M'`. -/
+theorem prodCongr_mem_diffeomorphStabilizer {τ : SmoothForm J' M' F k} {f : M ≃ₘ⟮J, J⟯ M}
+    {f' : M' ≃ₘ⟮J', J'⟯ M'} (hf : f ∈ diffeomorphStabilizer σ)
+    (hf' : f' ∈ diffeomorphStabilizer τ) :
+    f.prodCongr f' ∈ diffeomorphStabilizer
+      (mpullback Prod.fst contMDiff_fst σ + mpullback Prod.snd contMDiff_snd τ) := by
+  have hfst := mem_diffeomorphStabilizer_mpullback_of_semiconj contMDiff_fst
+    (f' := f.prodCongr f') (fun _ ↦ by rw [Diffeomorph.coe_prodCongr, Prod.map_fst]) hf
+  have hsnd := mem_diffeomorphStabilizer_mpullback_of_semiconj contMDiff_snd
+    (f' := f.prodCongr f') (fun _ ↦ by rw [Diffeomorph.coe_prodCongr, Prod.map_snd]) hf'
+  rw [mem_diffeomorphStabilizer] at hfst hsnd ⊢
+  rw [map_add, hfst, hsnd]
+
+/-- If diffeotopies `φ_t` of `M` and `ψ_t` of `M'` preserve `σ` and `τ` at every time, their
+product `φ_t × ψ_t` preserves `pr₁^* σ + pr₂^* τ` at every time. -/
+theorem timeSlice_prodCongr_mem_diffeomorphStabilizer {τ : SmoothForm J' M' F k}
+    {Φ : Diffeotopy J ∞ M} {Ψ : Diffeotopy J' ∞ M'}
+    (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ)
+    (hΨ : ∀ t, Ψ.timeSlice t ∈ diffeomorphStabilizer τ) (t : unitInterval) :
+    (Φ.prodCongr Ψ).timeSlice t ∈ diffeomorphStabilizer
+      (mpullback Prod.fst contMDiff_fst σ + mpullback Prod.snd contMDiff_snd τ) := by
+  rw [Diffeotopy.timeSlice_prodCongr]
+  exact prodCongr_mem_diffeomorphStabilizer (hΦ t) (hΨ t)
+
+/-- The product `f × f'` of a diffeomorphism `f` in the isotopy stabilizer of `σ` and a
+diffeomorphism `f'` in the isotopy stabilizer of `τ` lies in the isotopy stabilizer of
+`pr₁^* σ + pr₂^* τ`: the product of the two isotopies preserves this form at every time. -/
+theorem prodCongr_mem_isotopyStabilizer {τ : SmoothForm J' M' F k} {f : M ≃ₘ⟮J, J⟯ M}
+    {f' : M' ≃ₘ⟮J', J'⟯ M'} (hf : f ∈ isotopyStabilizer σ) (hf' : f' ∈ isotopyStabilizer τ) :
+    f.prodCongr f' ∈ isotopyStabilizer
+      (mpullback Prod.fst contMDiff_fst σ + mpullback Prod.snd contMDiff_snd τ) := by
+  obtain ⟨Φ, hΦ, rfl⟩ := hf
+  obtain ⟨Ψ, hΨ, rfl⟩ := hf'
+  exact ⟨Φ.prodCongr Ψ, timeSlice_prodCongr_mem_diffeomorphStabilizer hΦ hΨ,
+    Diffeotopy.final_prodCongr Φ Ψ⟩
+
+end Naturality
 
 end SmoothForm
 

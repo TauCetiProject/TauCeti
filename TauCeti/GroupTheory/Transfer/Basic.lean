@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Transfer
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.GroupTheory.TransversalWord
-import TauCeti.GroupTheory.Coset.Basic
+public import TauCeti.GroupTheory.Coset.Basic
 
 /-!
 # Transitivity of the transfer homomorphism
@@ -34,6 +34,8 @@ index to one of finite index, and in a tower `K ≤ H` the index of `H` divides 
   family of coset representatives.
 * `MonoidHom.transfer_eq_prod_mul_out`: for a normal subgroup, computation by right
   multiplication of quotient representatives, matching the factor-set convention.
+* `MonoidHom.transfer_eq_prod_out`: computation with the chosen representatives `q.out`, as a
+  product of the values at the cocycle `QuotientGroup.outCocycle`.
 * `MonoidHom.transfer_comp`: the transfer is natural in the commutative target.
 * `MonoidHom.transfer_apply_of_mulEquiv`: the transfer is invariant under an isomorphism of
   ambient groups carrying one subgroup onto the other.
@@ -51,7 +53,7 @@ public section
 namespace MonoidHom
 
 open Subgroup Subgroup.leftTransversals
-open QuotientGroup (mk_out_smul mk_mul_out_smul)
+open QuotientGroup (mk_out_smul mk_mul_out_smul outCocycle)
 
 variable {G : Type*} [Group G] {H : Subgroup G} {A : Type*} [CommGroup A]
 
@@ -107,9 +109,12 @@ theorem transfer_eq_prod_mul_out [H.Normal] [H.FiniteIndex] (g : G) :
   apply Subtype.ext
   simp [mul_assoc]
 
-private theorem transfer_eq_prod_out [H.FiniteIndex] [Fintype (G ⧸ H)] (g : G) : transfer ϕ g =
-    ∏ q : G ⧸ H, ϕ ⟨(g • q).out⁻¹ * (g * q.out), QuotientGroup.eq.mp (mk_out_smul g q)⟩ :=
-  transfer_eq_prod_of_bijective ϕ _ (by simp) g _ (mk_out_smul g)
+/-- The transfer of `ϕ` at `g` is the product of `ϕ` at the cocycle `outCocycle g q`, the element
+of `H` with `g * q.out = (g • q).out * outCocycle g q`, over the cosets `q`. -/
+theorem transfer_eq_prod_out [H.FiniteIndex] [Fintype (G ⧸ H)] (g : G) :
+    transfer ϕ g = ∏ q : G ⧸ H, ϕ (outCocycle g q) := by
+  rw [transfer_eq_prod_of_bijective ϕ _ (by simp) g _ (mk_out_smul g)]
+  exact Fintype.prod_congr _ _ fun q ↦ congrArg ϕ (Subtype.ext (by simp [mul_assoc]))
 
 /-- The transfer is natural in the commutative target. -/
 @[simp]
@@ -135,7 +140,7 @@ theorem transfer_apply_of_mulEquiv {G' : Type*} [Group G'] (e : G ≃* G') {H' :
   rw [transfer_eq_prod_of_bijective ϕ' _ (mk_mulEquiv_out_bijective e he) (e g) (g • ·)
     (fun q ↦ by simpa [QuotientGroup.eq, ← he] using QuotientGroup.eq.mp (mk_out_smul g q)),
     transfer_eq_prod_out]
-  simp [← hϕ]
+  simp [← hϕ, mul_assoc]
 
 end
 
@@ -152,19 +157,16 @@ theorem transfer_transfer {K : Subgroup G} (hKH : K ≤ H) [K.FiniteIndex] (ϕ :
   let _ := H.fintypeQuotientOfFiniteIndex
   let _ := (K.subgroupOf H).fintypeQuotientOfFiniteIndex
   ext g
-  -- `h q` is the element of `H` by which `g` moves the representative of `q ∈ G ⧸ H`.
-  let h : G ⧸ H → H := fun q ↦
-    ⟨(g • q).out⁻¹ * (g * q.out), QuotientGroup.eq.mp (mk_out_smul g q)⟩
   -- Compute the transfer to `K` with the representatives `p.out * k.out`, on which `g` acts by
-  -- `(p, k) ↦ (g • p, h p • k)`.
+  -- `(p, k) ↦ (g • p, outCocycle g p • k)`.
   rw [transfer_eq_prod_out, transfer_eq_prod_of_bijective ϕ _ (mk_out_mul_out_bijective hKH) g
-    (fun i ↦ (g • i.1, h i.1 • i.2)) fun _ ↦ by simp [h, mk_mul_out_smul, mul_assoc],
+    (fun i ↦ (g • i.1, outCocycle g i.1 • i.2)) fun _ ↦ by simp [mk_mul_out_smul, mul_assoc],
     Fintype.prod_prod_type]
   -- Expanding each inner transfer, the two double products agree term by term.
   simp only [transfer_eq_prod_out, MonoidHom.comp_apply]
   refine Fintype.prod_congr _ _ fun p ↦ Fintype.prod_congr _ _ fun k ↦ congrArg ϕ (Subtype.ext ?_)
   -- `subgroupOfEquivOfLe_apply_coe` reads off the underlying element of `G`.
-  simp [h, mul_assoc]
+  simp [mul_assoc]
 
 end MonoidHom
 

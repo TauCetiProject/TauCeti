@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 public import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # The Weyl vector of a base
@@ -52,6 +53,8 @@ positive coroot is not merely positive but at least `1`, being a positive intege
 * `TauCeti.reflection_twoWeylVector` and `TauCeti.reflection_weylVector`: `sᵢ(2ρ) = 2ρ - 2αᵢ` and
   `sᵢ(ρ) = ρ - αᵢ`.
 * `TauCeti.sum_root_negRootsFinset`: the sum of the negative roots is `-2ρ`.
+* `TauCeti.twoWeylVector_flip`: for the dual pairing, `2ρ` is the sum of the positive coroots
+  `2ρ^∨ = ∑_{α > 0} α^∨`.
 * `TauCeti.smul_twoWeylVector_sub_twoWeylVector` and `TauCeti.smul_weylVector_sub_weylVector`:
   a Weyl-group element `w` moves `2ρ` and `ρ` by a sum of roots,
   `w (2ρ) - 2ρ = -2 ∑_{α > 0, w⁻¹ α < 0} α` and `w ρ - ρ = -∑_{α > 0, w⁻¹ α < 0} α`.
@@ -200,10 +203,28 @@ theorem isRegularWeight_twoWeylVector : IsRegularWeight P (twoWeylVector P b) :=
   (isRegularWeight_iff P _).mpr (coroot'_twoWeylVector_ne_zero P b)
 
 /-- The sum of the positive roots is nonzero as soon as there is a root at all. -/
-theorem twoWeylVector_ne_zero [Nonempty ι] : twoWeylVector P b ≠ 0 := fun h ↦
-  coroot'_twoWeylVector_ne_zero P b (Classical.arbitrary ι) (by rw [h, map_zero])
+theorem twoWeylVector_ne_zero [Nonempty ι] : twoWeylVector P b ≠ 0 :=
+  (isRegularWeight_twoWeylVector P b).ne_zero
 
 end Reduced
+
+section Coroots
+
+variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
+
+/-- **The sum of the positive roots of the dual pairing is the sum of the positive coroots**,
+`2ρ^∨ = ∑_{α > 0} α^∨`. The roots of `P.flip` are the coroots of `P`, and `b.flip` has the same
+positive roots as `b`. -/
+theorem twoWeylVector_flip :
+    twoWeylVector P.flip b.flip = ∑ i ∈ posRootsFinset P b, P.coroot i := by
+  have := P.flip_isReduced
+  have h : posRootsFinset P.flip b.flip = posRootsFinset P b := by
+    ext i
+    rw [mem_posRootsFinset, mem_posRootsFinset, posRoots_flip]
+  rw [twoWeylVector_def, h]
+  simp only [RootPairing.flip_root]
+
+end Coroots
 
 /-- **The sum of the negative roots is `-2ρ`.** Root negation is a bijection from the negative
 roots onto the positive ones. -/
@@ -299,6 +320,10 @@ lemma weylVector_def : weylVector P b = ⅟(2 : R) • twoWeylVector P b := by
 lemma two_smul_weylVector : (2 : R) • weylVector P b = twoWeylVector P b := by
   rw [weylVector, smul_smul, mul_invOf_self, one_smul]
 
+/-- `n` times the sum of the positive roots is the multiple `2 n` of the Weyl vector. -/
+theorem nsmul_twoWeylVector (n : ℕ) : n • twoWeylVector P b = (2 * n) • weylVector P b := by
+  rw [← two_smul_weylVector, two_smul, ← two_nsmul, smul_smul, mul_comm]
+
 /-- **A Weyl-group element moves the Weyl vector by minus the inversions of its inverse**:
 `w ρ - ρ = -∑_{α > 0, w⁻¹ α < 0} α`. In particular `w ρ - ρ` is a sum of roots, whether or not
 `ρ` is. -/
@@ -367,8 +392,8 @@ theorem isRegularWeight_weylVector : IsRegularWeight P (weylVector P b) :=
   (isRegularWeight_iff P _).mpr (coroot'_weylVector_ne_zero P b)
 
 /-- The Weyl vector is nonzero as soon as there is a root at all. -/
-theorem weylVector_ne_zero [Nonempty ι] : weylVector P b ≠ 0 := fun h ↦
-  coroot'_weylVector_ne_zero P b (Classical.arbitrary ι) (by rw [h, map_zero])
+theorem weylVector_ne_zero [Nonempty ι] : weylVector P b ≠ 0 :=
+  (isRegularWeight_weylVector P b).ne_zero
 
 end Weyl
 

@@ -6,8 +6,10 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
+import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.Data.Nat.Factorization.PowDvd
+import TauCeti.Data.Nat.Totient
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import TauCeti.NumberTheory.Cyclotomic.Adjoin
 
 /-!
 # The degree of a cyclotomic extension of a number field
@@ -39,6 +41,10 @@ input below.
 * `IsCyclotomicExtension.finrank_eq_totient`: the degree identity `[M : K] = φ m`.
 * `IsPrimitiveRoot.finrank_adjoin_eq_totient`: the base case `[ℚ(ζ) : ℚ] = φ m` for a primitive
   `m`-th root of unity `ζ` in an arbitrary field of characteristic zero.
+* `IsPrimitiveRoot.totient_dvd_finrank_mul_finrank_adjoin`: over a field `K` of characteristic zero
+  with `[K : ℚ]` finite, `φ(N) ∣ [K : ℚ] · [K(ζ) : K]` for a primitive `N`-th root of unity `ζ`.
+* `IsPrimitiveRoot.pow_dvd_finrank_adjoin`: over such a `K`, `ℓ^n ∣ [K(ζ) : K]` for a primitive
+  `ℓ^(n + [K : ℚ] + 1)`-th root of unity `ζ`, so these degrees have unbounded `ℓ`-adic valuation.
 
 ## Implementation notes
 
@@ -144,10 +150,38 @@ root of unity in a field of characteristic zero, then `[ℚ(ζ) : ℚ] = φ m`.
 
 Mathlib's `IsCyclotomicExtension.Rat.finrank` computes this degree for a field that already carries
 an `IsCyclotomicExtension {m} ℚ` instance; the ambient field here is arbitrary, and the instance for
-`ℚ(ζ)` is supplied by `IsPrimitiveRoot.isCyclotomicExtension_adjoin_singleton`. -/
+`ℚ(ζ)` is supplied by `IsPrimitiveRoot.intermediateField_adjoin_isCyclotomicExtension`. -/
 theorem IsPrimitiveRoot.finrank_adjoin_eq_totient {Ω : Type*} [Field Ω] [CharZero Ω] {m : ℕ}
     [NeZero m] {ζ : Ω} (hζ : IsPrimitiveRoot ζ m) :
     Module.finrank ℚ (IntermediateField.adjoin ℚ {ζ}) = m.totient := by
   have : IsCyclotomicExtension {m} ℚ (IntermediateField.adjoin ℚ {ζ}) :=
-    hζ.isCyclotomicExtension_adjoin_singleton
+    hζ.intermediateField_adjoin_isCyclotomicExtension ℚ
   exact IsCyclotomicExtension.Rat.finrank m _
+
+/-- **Degrees of cyclotomic extensions.** If `ζ` is a primitive `N`-th root of unity in an
+extension `E` of a field `K` of characteristic zero with `[K : ℚ]` finite, then
+`φ(N) ∣ [K : ℚ] · [K(ζ) : K]`, since `[ℚ(ζ) : ℚ] = φ(N)`. -/
+theorem IsPrimitiveRoot.totient_dvd_finrank_mul_finrank_adjoin {K E : Type*} [Field K]
+    [CharZero K] [FiniteDimensional ℚ K] [Field E] [Algebra K E] {ζ : E} {N : ℕ}
+    (hζ : IsPrimitiveRoot ζ N) (hN : 0 < N) :
+    N.totient ∣ Module.finrank ℚ K * Module.finrank K (IntermediateField.adjoin K {ζ}) := by
+  have hint : IsIntegral K ζ := hζ.isIntegral hN |>.tower_top
+  have := IntermediateField.adjoin.finiteDimensional hint
+  have : CharZero E := charZero_of_injective_algebraMap (algebraMap K E).injective
+  let ζ' : IntermediateField.adjoin K {ζ} := IntermediateField.AdjoinSimple.gen K ζ
+  have hζ' : IsPrimitiveRoot ζ' N :=
+    hζ.of_map_of_injective (f := (IntermediateField.adjoin K {ζ}).val) Subtype.val_injective
+  rw [Module.finrank_mul_finrank ℚ K (IntermediateField.adjoin K {ζ}),
+    ← Polynomial.natDegree_cyclotomic N ℚ, Polynomial.cyclotomic_eq_minpoly_rat hζ' hN]
+  exact minpoly.degree_dvd (hζ'.isIntegral hN).tower_top
+
+/-- **Cyclotomic degrees have unbounded `ℓ`-adic valuation.** If `ζ` is a primitive
+`ℓ^(n + [K : ℚ] + 1)`-th root of unity over a field `K` of characteristic zero with `[K : ℚ]`
+finite, then `ℓ^n ∣ [K(ζ) : K]`. -/
+theorem IsPrimitiveRoot.pow_dvd_finrank_adjoin {K E : Type*} [Field K] [CharZero K]
+    [FiniteDimensional ℚ K] [Field E] [Algebra K E] {ζ : E} {ℓ n : ℕ}
+    (hζ : IsPrimitiveRoot ζ (ℓ ^ (n + Module.finrank ℚ K + 1))) (hℓ : ℓ ≠ 0) :
+    ℓ ^ n ∣ Module.finrank K (IntermediateField.adjoin K {ζ}) := by
+  have h := hζ.totient_dvd_finrank_mul_finrank_adjoin (K := K) (pow_pos (Nat.pos_of_ne_zero hℓ) _)
+  exact Nat.pow_dvd_of_pow_add_dvd_mul Module.finrank_pos.ne'
+    ((TauCeti.Nat.pow_dvd_totient_pow_succ ℓ _).trans h)

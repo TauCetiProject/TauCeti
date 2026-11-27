@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Inner
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Arbitrary-order weak Sobolev spaces
@@ -242,6 +243,12 @@ theorem firstOrder_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
     firstOrder (k + 1) u = firstOrder k (lowerOrder (k + 1) u) :=
   (rfl)
 
+/-- The first-order part preserves subtraction. Unlike `value_sub` it is not `@[simp]`: the
+simpNF linter finds that its left-hand side does not simplify with it. -/
+theorem firstOrder_sub (k : ℕ) (u v : Wkp mu Omega p (k + 1)) :
+    firstOrder k (u - v) = firstOrder k u - firstOrder k v :=
+  map_sub (firstOrderL k) u v
+
 /-- The continuous projection to the highest weak derivative of a positive-order Sobolev
 function.  For `W^{k+1,p}` its target is `Lᵖ(Ω; IteratedGradient E k)`. -/
 def iteratedGradientL (k : ℕ) : Wkp mu Omega p (k + 1) →L[ℝ]
@@ -257,6 +264,12 @@ def iteratedGradient (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
 theorem iteratedGradientL_apply (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     iteratedGradientL k u = iteratedGradient k u :=
   (rfl)
+
+/-- The highest weak derivative preserves subtraction. Unlike `value_sub` it is not `@[simp]`: the
+simpNF linter finds that its left-hand side does not simplify with it. -/
+theorem iteratedGradient_sub (k : ℕ) (u v : Wkp mu Omega p (k + 1)) :
+    iteratedGradient k (u - v) = iteratedGradient k u - iteratedGradient k v :=
+  map_sub (iteratedGradientL k) u v
 
 /-- The continuous projection of a Sobolev function to its `Lᵖ` value component. -/
 def valueL : (k : ℕ) → Wkp mu Omega p k →L[ℝ] Lp ℝ p (mu.restrict Omega)
@@ -321,10 +334,39 @@ theorem value_neg_ae (k : ℕ) (u : Wkp mu Omega p k) :
     ⇑(value k (-u)) =ᵐ[mu.restrict Omega] -⇑(value k u) := by
   simpa only [value_neg] using Lp.coeFn_neg (value k u)
 
+/-- Negating a doubly indexed family of Sobolev functions with given values negates their values
+almost everywhere, simultaneously over finitely many indices. -/
+theorem ae_forall_value_neg_eq {ι κ : Type*} {k : ℕ} {Y : ι → κ → Wkp mu Omega p k}
+    {c : ι → κ → E → ℝ} (hY : ∀ i j, ⇑(value k (Y i j)) =ᵐ[mu.restrict Omega] c i j)
+    (s : Finset ι) (t : Finset κ) :
+    ∀ᵐ x ∂mu.restrict Omega, ∀ i ∈ s, ∀ j ∈ t, value k (-Y i j) x = -c i j x :=
+  s.eventually_all.2 fun i _ => t.eventually_all.2 fun j _ => by
+    filter_upwards [value_neg_ae k (Y i j), hY i j] with x h₁ h₂
+    rw [h₁, Pi.neg_apply, h₂]
+
+/-- The highest weak derivative preserves negation. (Not `@[simp]`: the `simpNF` linter reports
+that `simp` cannot use it to rewrite its own left-hand side.) -/
+theorem iteratedGradient_neg (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
+    iteratedGradient k (-u) = -iteratedGradient k u :=
+  map_neg (iteratedGradientL k) u
+
+/-- The highest weak derivative of the negation of a Sobolev function is almost everywhere the
+negation of its highest weak derivative. -/
+theorem iteratedGradient_neg_ae (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
+    ⇑(iteratedGradient k (-u)) =ᵐ[mu.restrict Omega] -⇑(iteratedGradient k u) := by
+  rw [iteratedGradient_neg]
+  exact Lp.coeFn_neg (iteratedGradient k u)
+
 /-- The value of a sum of two Sobolev functions is almost everywhere the sum of their values. -/
 theorem value_add_ae (k : ℕ) (u v : Wkp mu Omega p k) :
     ⇑(value k (u + v)) =ᵐ[mu.restrict Omega] ⇑(value k u) + ⇑(value k v) := by
   simpa only [value_add] using Lp.coeFn_add (value k u) (value k v)
+
+/-- The value of a difference of two Sobolev functions is almost everywhere the difference of their
+values. -/
+theorem value_sub_ae (k : ℕ) (u v : Wkp mu Omega p k) :
+    ⇑(value k (u - v)) =ᵐ[mu.restrict Omega] ⇑(value k u) - ⇑(value k v) := by
+  simpa only [value_sub] using Lp.coeFn_sub (value k u) (value k v)
 
 /-- The value of a scalar multiple of a Sobolev function is almost everywhere the scalar multiple
 of its value. -/
@@ -374,6 +416,12 @@ theorem value_succ (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     value (k + 1) u = value k (lowerOrder k u) :=
   (rfl)
 
+/-- Convergence in `W^{k,p}(Ω)` gives convergence of the values in `Lᵖ(Ω)`. -/
+theorem tendsto_value {α : Type*} {l : Filter α} {k : ℕ} {u : α → Wkp mu Omega p k}
+    {v : Wkp mu Omega p k} (h : Filter.Tendsto u l (nhds v)) :
+    Filter.Tendsto (fun i => value k (u i)) l (nhds (value k v)) :=
+  ((valueL k).continuous.tendsto v).comp h
+
 /-- If `u i → v` in `W^{k,p}(Ω)` along a filter `l` and the values of `u i` and `v` represent
 `f i` and `g` almost everywhere on `Ω`, then `f i → g` in `Lᵖ(Ω)` along `l`. -/
 theorem tendsto_eLpNorm_sub_of_tendsto {α : Type*} {l : Filter α} {k : ℕ}
@@ -382,8 +430,8 @@ theorem tendsto_eLpNorm_sub_of_tendsto {α : Type*} {l : Filter α} {k : ℕ}
     (hv : value k v =ᵐ[mu.restrict Omega] g) :
     Filter.Tendsto (fun i => eLpNorm (f i - g) p (mu.restrict Omega)) l (nhds 0) := by
   refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
-    (((valueL k).continuous.tendsto v).comp huv)).congr fun i => eLpNorm_congr_ae ?_
-  simpa only [Function.comp_apply, valueL_apply] using (hu i).sub hv
+    (tendsto_value huv)).congr fun i => eLpNorm_congr_ae ?_
+  exact (hu i).sub hv
 
 /-- At first order, the generic lower-order projection is the `W1p` value projection. -/
 @[simp]
@@ -567,6 +615,11 @@ theorem ext : ∀ (k : ℕ) {u v : Wkp mu Omega p k}, value k u = value k v → 
   | 0, _, _, h => by simpa only [value_zero] using h
   | k + 1, _, _, h => ext_lowerOrder k (ext k (by simpa only [value_succ] using h))
 
+/-- The `Lᵖ` value map is injective on `W^{k,p}(Ω)`, by uniqueness of weak derivatives. -/
+theorem valueL_injective (k : ℕ) :
+    Function.Injective (valueL (mu := mu) (Omega := Omega) (p := p) k) :=
+  fun _ _ h ↦ ext k (by simpa only [valueL_apply] using h)
+
 open scoped Distributions in
 /-- **Sobolev functions are determined by their integrals against test functions**: if
 `∫ φ • u = ∫ φ • v` for every test function `φ` on `Ω`, then `u = v`. -/
@@ -591,6 +644,11 @@ theorem continuous_integral_value_mul (k : ℕ) {ψ : E → ℝ} (hψ : MemLp ψ
     rw [hx, real_inner_eq_re_inner, RCLike.inner_apply, conj_trivial, RCLike.re_to_real, mul_comm]
   simp_rw [key]
   exact (valueL k).continuous.inner continuous_const
+
+/-- On the whole space, a Sobolev function is determined by its value almost everywhere. -/
+theorem ext_ae {k : ℕ} {u v : Wkp mu ⊤ p k} (h : (value k u : E → ℝ) =ᵐ[mu] value k v) :
+    u = v :=
+  ext k (Lp.ext (by rwa [Filter.EventuallyEq, Measure.ae_restrict_coe_opens_top]))
 
 /-- On an empty domain every Sobolev space is trivial. -/
 theorem subsingleton_of_eq_empty (k : ℕ) (h : (Omega : Set E) = ∅) :

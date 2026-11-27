@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Yamabe.ConformalInvariance
 public import TauCeti.Analysis.PDE.Yamabe.PositiveApproximation
 public import TauCeti.Analysis.PDE.Yamabe.UpperBound
+public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Abs
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Embedding
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Multiplication
@@ -27,7 +28,9 @@ Laplacian `L_g = aₙ Δ⁺_g + Scal_g` on `H¹(M)` (`TauCeti.Manifold.SobolevH1
 symmetric bilinear form `E_g(w, v) = aₙ D_g(w, v) + ∫ Scal_g w v dV_g`
 (`TauCeti.Yamabe.energyForm`). Dividing `E_g(w, w)` by `(∫ |w| ^ pₙ dV_g) ^ (2 / pₙ)`
 (`pₙ = 2 n / (n - 2)`) defines the **weak Yamabe quotient** `TauCeti.Yamabe.weakYamabeQuotient` on
-`H¹(M)`.
+`H¹(M)`. Dividing instead by `(∫ |w| ^ q dV_g) ^ (2 / q)` for an exponent `q` defines the
+**subcritical Yamabe quotient** `TauCeti.Yamabe.subcriticalYamabeQuotient`, which is the weak
+Yamabe quotient at `q = pₙ` and is scale invariant for every `q ≠ 0`.
 
 In dimension `n > 2`, the critical Sobolev embedding `SobolevH1.toLpOfLE` makes the denominator
 finite, norm-continuous, and positive away from `0`. We establish:
@@ -38,6 +41,15 @@ finite, norm-continuous, and positive away from `0`. We establish:
   `forall_hasDerivAt_weakYamabeQuotient_add_smul_iff_exists_energyForm_eq`,
   `forall_ofSmooth_hasDerivAt_weakYamabeQuotient_iff_exists_energyForm_eq`,
   `weakYamabeQuotient_eq_of_energyForm_eq`);
+* **Coercivity** (`isCoercive_energyForm_of_forall_mul_norm_toLp_sq_le`): a lower bound
+  `E_g(w, w) ≥ μ ‖w‖²_{L²}` with `μ > 0` makes `E_g` coercive on `H¹(M)`, since `Scal_g` is
+  bounded below (`CovariantDerivative.exists_nonneg_forall_neg_le_scalarCurvature`,
+  `neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul`, `neg_mul_norm_toLp_sq_le_energyForm`);
+* **Absolute values** (`energyForm_self_le_of_toLp_eq_abs`,
+  `weakYamabeQuotient_le_of_toLp_eq_abs`, `exists_toLp_eq_abs_and_weakYamabeQuotient_le`,
+  `sInf_weakYamabeQuotient_nonneg_eq`): replacing `w` by its absolute value in `H¹(M)`
+  (`TauCeti.Manifold.SobolevH1.exists_toLp_eq_abs_and_dirichletForm_le`) does not increase the
+  quotient, so the infimum over nonzero `H¹` elements is an infimum over nonnegative ones;
 * **Lower bounds, equality of weak and smooth infima, and Aubin's bound**
   (`neg_integral_scalarCurvature_negPart_rpow_le_weakYamabeQuotient`,
   `sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient`,
@@ -186,6 +198,64 @@ theorem energyForm_self_nonneg_of_scalarCurvature_nonneg (w : SobolevH1 I M)
   dsimp only [Pi.zero_apply]; rw [mul_assoc]
   exact mul_nonneg (hS x) (mul_self_nonneg (SobolevH1.toLp w x))
 
+/-- If `Scal_g ≥ -K`, then the scalar-curvature term of `E_g(w, w)` is at least `-K ‖w‖²_{L²}`. -/
+theorem neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul {K : ℝ}
+    (hS : ∀ x, -K ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x)
+    (w : SobolevH1 I M) :
+    -K * ‖SobolevH1.toLp w‖ ^ 2 ≤
+      ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
+        SobolevH1.toLp w x * SobolevH1.toLp w x ∂riemannianVolume I M := by
+  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
+    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.continuousOn
+  have hsq : Integrable (fun x ↦ SobolevH1.toLp w x ^ 2) (riemannianVolume I M) :=
+    (Lp.memLp (SobolevH1.toLp w)).integrable_sq
+  have hSff : Integrable (fun x ↦ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
+      SobolevH1.toLp w x * SobolevH1.toLp w x) (riemannianVolume I M) := by
+    simpa only [mul_assoc, ← sq] using hsq.bdd_mul
+      (Continuous.aestronglyMeasurable
+        (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous)
+      (.of_forall fun x ↦ hC x (mem_univ x))
+  rw [← SobolevH1.integral_toLp_sq_eq_norm_sq, ← integral_const_mul]
+  refine integral_mono (hsq.const_mul _) hSff fun x ↦ ?_
+  dsimp only
+  rw [mul_assoc, ← sq]
+  exact mul_le_mul_of_nonneg_right (hS x) (sq_nonneg _)
+
+/-- If `Scal_g ≥ -K`, then `E_g(w, w) ≥ -K ‖w‖²_{L²}`, since the Dirichlet term is nonnegative. -/
+theorem neg_mul_norm_toLp_sq_le_energyForm {K : ℝ}
+    (hS : ∀ x, -K ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x)
+    (w : SobolevH1 I M) :
+    -K * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w := by
+  rw [energyForm_apply]
+  exact le_add_of_nonneg_of_le (mul_nonneg (conformalCoefficient_nonneg _)
+    (SobolevH1.dirichletForm_self_nonneg w))
+    (neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul hS w)
+
+/-- **An `L²` lower bound makes the energy form coercive.** In dimension `n > 2`, if
+`μ ‖w‖²_{L²} ≤ E_g(w, w)` for some `μ > 0` and every `w ∈ H¹(M)`, then `E_g` is coercive on
+`H¹(M)`. -/
+theorem isCoercive_energyForm_of_forall_mul_norm_toLp_sq_le (hn : 2 < finrank ℝ E) {μ : ℝ}
+    (hμ : 0 < μ) (h : ∀ w : SobolevH1 I M, μ * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w) :
+    IsCoercive (energyForm I (M := M)) := by
+  -- The scalar curvature is bounded below, so `E_g` controls the Dirichlet energy.
+  obtain ⟨K, hK0, hS⟩ :=
+    (CovariantDerivative.leviCivitaConnection I M).exists_nonneg_forall_neg_le_scalarCurvature
+  have ha := conformalCoefficient_pos hn
+  set B := (1 + K / μ) / conformalCoefficient (finrank ℝ E) + 1 / μ
+  refine ⟨B⁻¹, inv_pos.2 (by positivity), fun w ↦ ?_⟩
+  have hf : ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w / μ := (le_div_iff₀' hμ).2 (h w)
+  have hD : SobolevH1.dirichletForm w w ≤
+      (energyForm I w w + K * (energyForm I w w / μ)) / conformalCoefficient (finrank ℝ E) := by
+    have hpot := neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul hS w
+    rw [le_div_iff₀' ha]
+    rw [energyForm_apply] at hf ⊢
+    nlinarith [mul_le_mul_of_nonneg_left hf hK0]
+  rw [mul_assoc, ← sq, SobolevH1.norm_sq_eq_dirichletForm_add, inv_mul_le_iff₀ (by positivity)]
+  calc SobolevH1.dirichletForm w w + ‖SobolevH1.toLp w‖ ^ 2 ≤
+      (energyForm I w w + K * (energyForm I w w / μ)) / conformalCoefficient (finrank ℝ E) +
+        energyForm I w w / μ := add_le_add hD hf
+    _ = B * energyForm I w w := by ring
+
 variable (I) in
 /-- The **weak Yamabe quotient** `Q_g(w) = E_g(w, w) / (∫ |w| ^ pₙ dV_g) ^ (2 / pₙ)` of an element
 `w ∈ H¹(M)` on a closed Riemannian manifold of dimension `n`, where `pₙ = 2 n / (n - 2)`. -/
@@ -201,6 +271,53 @@ theorem weakYamabeQuotient_def (w : SobolevH1 I M) :
       energyForm I w w /
         (∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M) ^
           (2 / criticalExponent (finrank ℝ E)) := (rfl)
+
+variable (I) in
+/-- The **subcritical Yamabe quotient** `Q^q_g(w) = E_g(w, w) / (∫ |w| ^ q dV_g) ^ (2 / q)` of an
+element `w ∈ H¹(M)` at an exponent `q`. At the critical exponent `q = pₙ` it is the weak Yamabe
+quotient (`TauCeti.Yamabe.subcriticalYamabeQuotient_criticalExponent`); the exponents
+`2 ≤ q < pₙ` approximate the Yamabe problem from below. -/
+def subcriticalYamabeQuotient (q : ℝ) (w : SobolevH1 I M) : ℝ :=
+  energyForm I w w / (∫ x, |SobolevH1.toLp w x| ^ q ∂riemannianVolume I M) ^ (2 / q)
+
+variable (I) in
+/-- Unfolding lemma for `TauCeti.Yamabe.subcriticalYamabeQuotient`. -/
+theorem subcriticalYamabeQuotient_def (q : ℝ) (w : SobolevH1 I M) :
+    subcriticalYamabeQuotient I q w =
+      energyForm I w w / (∫ x, |SobolevH1.toLp w x| ^ q ∂riemannianVolume I M) ^ (2 / q) :=
+  (rfl)
+
+/-- At the critical exponent `pₙ`, the subcritical Yamabe quotient is the weak Yamabe quotient. -/
+@[simp]
+theorem subcriticalYamabeQuotient_criticalExponent (w : SobolevH1 I M) :
+    subcriticalYamabeQuotient I (criticalExponent (finrank ℝ E)) w = weakYamabeQuotient I w := by
+  rw [subcriticalYamabeQuotient_def, weakYamabeQuotient_def]
+
+/-- The subcritical Yamabe quotient of `0` is `0`. -/
+@[simp]
+theorem subcriticalYamabeQuotient_zero (q : ℝ) :
+    subcriticalYamabeQuotient I q (0 : SobolevH1 I M) = 0 := by
+  simp [subcriticalYamabeQuotient_def]
+
+/-- **Scale invariance of the subcritical Yamabe quotient.** For an exponent `q ≠ 0`, multiplying
+`w ∈ H¹(M)` by a nonzero constant `c` preserves `subcriticalYamabeQuotient`. -/
+theorem subcriticalYamabeQuotient_smul {q : ℝ} (hq : q ≠ 0) {w : SobolevH1 I M} {c : ℝ}
+    (hc : c ≠ 0) : subcriticalYamabeQuotient I q (c • w) = subcriticalYamabeQuotient I q w := by
+  have hnum : energyForm I (c • w) (c • w) = c ^ 2 * energyForm I w w := by
+    simp only [map_smul, smul_apply, smul_eq_mul]; ring
+  have hden : ∫ x, |SobolevH1.toLp (c • w) x| ^ q ∂riemannianVolume I M =
+      |c| ^ q * ∫ x, |SobolevH1.toLp w x| ^ q ∂riemannianVolume I M := by
+    rw [← integral_const_mul]
+    exact integral_congr_ae <|
+      (map_smul SobolevH1.toLp c w ▸ Lp.coeFn_smul c (SobolevH1.toLp w)).mono fun x hx ↦ by
+        dsimp only
+        rw [hx, Pi.smul_apply, smul_eq_mul, abs_mul, Real.mul_rpow (abs_nonneg _) (abs_nonneg _)]
+  have hc2 : (|c| ^ q) ^ (2 / q) = c ^ 2 := by
+    rw [← Real.rpow_mul (abs_nonneg _), mul_div_cancel₀ _ hq, Real.rpow_two, sq_abs]
+  rw [subcriticalYamabeQuotient_def, subcriticalYamabeQuotient_def, hnum, hden,
+    Real.mul_rpow (Real.rpow_nonneg (abs_nonneg _) _)
+      (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _),
+    hc2, mul_div_mul_left _ _ (pow_ne_zero 2 hc)]
 
 /-- On smooth functions, `weakYamabeQuotient` agrees with `yamabeQuotient`. -/
 @[simp]
@@ -222,29 +339,56 @@ theorem weakYamabeQuotient_nonneg_of_scalarCurvature_nonneg (w : SobolevH1 I M)
   div_nonneg (energyForm_self_nonneg_of_scalarCurvature_nonneg w hS)
     (Real.rpow_nonneg (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
 
+/-- If the value of `w'` in `L²` is `|w|` and its Dirichlet energy is at most that of `w`, then its
+weak Yamabe energy is at most that of `w`: the scalar-curvature term only depends on `|w|`. -/
+theorem energyForm_self_le_of_toLp_eq_abs {w w' : SobolevH1 I M}
+    (h : SobolevH1.toLp w' = |SobolevH1.toLp w|)
+    (hD : SobolevH1.dirichletForm w' w' ≤ SobolevH1.dirichletForm w w) :
+    energyForm I w' w' ≤ energyForm I w w := by
+  have hae : ⇑(SobolevH1.toLp w') =ᵐ[riemannianVolume I M] fun x ↦ |SobolevH1.toLp w x| :=
+    h ▸ Lp.coeFn_abs _
+  have hS : ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
+      SobolevH1.toLp w' x * SobolevH1.toLp w' x ∂riemannianVolume I M =
+      ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
+        SobolevH1.toLp w x * SobolevH1.toLp w x ∂riemannianVolume I M :=
+    integral_congr_ae <| hae.mono fun x hx ↦ by
+      dsimp only
+      rw [hx, mul_assoc, mul_assoc, abs_mul_abs_self]
+  rw [energyForm_apply, energyForm_apply, hS]
+  exact add_le_add_left (mul_le_mul_of_nonneg_left hD (conformalCoefficient_nonneg _)) _
+
+/-- If the value of `w'` in `L²` is `|w|` and its Dirichlet energy is at most that of `w`, then its
+weak Yamabe quotient is at most that of `w`. -/
+theorem weakYamabeQuotient_le_of_toLp_eq_abs {w w' : SobolevH1 I M}
+    (h : SobolevH1.toLp w' = |SobolevH1.toLp w|)
+    (hD : SobolevH1.dirichletForm w' w' ≤ SobolevH1.dirichletForm w w) :
+    weakYamabeQuotient I w' ≤ weakYamabeQuotient I w := by
+  have hae : ⇑(SobolevH1.toLp w') =ᵐ[riemannianVolume I M] fun x ↦ |SobolevH1.toLp w x| :=
+    h ▸ Lp.coeFn_abs _
+  have hN : ∫ x, |SobolevH1.toLp w' x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M =
+      ∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M :=
+    integral_congr_ae <| hae.mono fun x hx ↦ by
+      dsimp only
+      rw [hx, abs_abs]
+  rw [weakYamabeQuotient_def, weakYamabeQuotient_def, hN]
+  exact div_le_div_of_nonneg_right (energyForm_self_le_of_toLp_eq_abs h hD)
+    (Real.rpow_nonneg (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
+
+/-- **Absolute values do not increase the weak Yamabe quotient.** Every `w ∈ H¹(M)` has an
+absolute value `w' ∈ H¹(M)`, with value `|w|` in `L²`, whose weak Yamabe quotient is at most that
+of `w`. -/
+theorem exists_toLp_eq_abs_and_weakYamabeQuotient_le (w : SobolevH1 I M) :
+    ∃ w' : SobolevH1 I M, SobolevH1.toLp w' = |SobolevH1.toLp w| ∧
+      weakYamabeQuotient I w' ≤ weakYamabeQuotient I w :=
+  (SobolevH1.exists_toLp_eq_abs_and_dirichletForm_le w).imp fun _ h ↦
+    ⟨h.1, weakYamabeQuotient_le_of_toLp_eq_abs h.1 h.2⟩
+
 /-- **Scale invariance of the weak Yamabe quotient.** In dimension `n > 2`, multiplying `w ∈ H¹(M)`
 by a nonzero constant `c` preserves `weakYamabeQuotient`. -/
 theorem weakYamabeQuotient_smul (hn : 2 < finrank ℝ E) {w : SobolevH1 I M} {c : ℝ} (hc : c ≠ 0) :
     weakYamabeQuotient I (c • w) = weakYamabeQuotient I w := by
-  have hp := criticalExponent_pos hn
-  have hnum : energyForm I (c • w) (c • w) = c ^ 2 * energyForm I w w := by
-    simp only [map_smul, smul_apply, smul_eq_mul]; ring
-  have hden : ∫ x, |SobolevH1.toLp (c • w) x| ^ criticalExponent (finrank ℝ E)
-      ∂riemannianVolume I M =
-      |c| ^ criticalExponent (finrank ℝ E) *
-        ∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M := by
-    rw [← integral_const_mul]
-    exact integral_congr_ae <|
-      (map_smul SobolevH1.toLp c w ▸ Lp.coeFn_smul c (SobolevH1.toLp w)).mono fun x hx ↦ by
-        dsimp only
-        rw [hx, Pi.smul_apply, smul_eq_mul, abs_mul, Real.mul_rpow (abs_nonneg _) (abs_nonneg _)]
-  have hc2 : (|c| ^ criticalExponent (finrank ℝ E)) ^ (2 / criticalExponent (finrank ℝ E)) =
-      c ^ 2 := by
-    rw [← Real.rpow_mul (abs_nonneg _), mul_div_cancel₀ _ hp.ne', Real.rpow_two, sq_abs]
-  rw [weakYamabeQuotient_def, weakYamabeQuotient_def, hnum, hden,
-    Real.mul_rpow (Real.rpow_nonneg (abs_nonneg _) _)
-      (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _),
-    hc2, mul_div_mul_left _ _ (pow_ne_zero 2 hc)]
+  simpa only [subcriticalYamabeQuotient_criticalExponent] using
+    subcriticalYamabeQuotient_smul (criticalExponent_pos hn).ne' (w := w) hc
 
 /-- **Norm continuity of the weak Yamabe quotient away from zero.** On a closed manifold of
 dimension `n > 2`, `weakYamabeQuotient I` is continuous at every nonzero `w ∈ H¹(M)`. -/
@@ -887,6 +1031,29 @@ theorem sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient_pos (hn : 2 < finrank ℝ
     simpa using (weakYamabeQuotient_ofSmooth (I := I) (0 : C^∞⟮I, M; ℝ⟯))
   · rw [sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient hn,
       ← sInf_yamabeQuotient_pos_eq hn (by simp : (1 : ℕ∞ω) ≤ (∞ : ℕ∞ω))]
+
+/-- **The weak Yamabe invariant is an infimum over nonnegative elements.** On a closed manifold
+of dimension `n > 2`, the infimum of `weakYamabeQuotient` over nonzero `H¹` elements with
+nonnegative value in `L²` equals its infimum over all nonzero `H¹` elements. -/
+theorem sInf_weakYamabeQuotient_nonneg_eq (hn : 2 < finrank ℝ E) :
+    sInf (weakYamabeQuotient I '' {w : SobolevH1 I M | w ≠ 0 ∧ 0 ≤ SobolevH1.toLp w}) =
+      sInf (weakYamabeQuotient I '' {w : SobolevH1 I M | w ≠ 0}) := by
+  have hST : {w : SobolevH1 I M | w ≠ 0 ∧ 0 ≤ SobolevH1.toLp w} ⊆ {w | w ≠ 0} :=
+    fun _ hw ↦ hw.1
+  have hbT := bddBelow_image_weakYamabeQuotient (I := I) (M := M) hn
+  have key (w : SobolevH1 I M) (hw : w ≠ 0) : ∃ w' ∈ {w : SobolevH1 I M | w ≠ 0 ∧
+      0 ≤ SobolevH1.toLp w}, weakYamabeQuotient I w' ≤ weakYamabeQuotient I w := by
+    obtain ⟨w', hw', hQ⟩ := exists_toLp_eq_abs_and_weakYamabeQuotient_le w
+    refine ⟨w', ⟨fun h0 ↦ hw (SobolevH1.toLp_injective ?_), hw' ▸ abs_nonneg _⟩, hQ⟩
+    rw [map_zero, ← norm_eq_zero, ← norm_abs_eq_norm, ← hw', h0, map_zero, norm_zero]
+  rcases eq_empty_or_nonempty {w : SobolevH1 I M | w ≠ 0} with hT | ⟨w₀, hw₀⟩
+  · rw [hT, subset_empty_iff.1 (hST.trans hT.subset)]
+  obtain ⟨w₁, hw₁, -⟩ := key w₀ hw₀
+  refine le_antisymm (le_csInf ⟨_, mem_image_of_mem _ hw₀⟩ ?_)
+    (csInf_le_csInf hbT ⟨_, mem_image_of_mem _ hw₁⟩ (image_mono hST))
+  rintro _ ⟨w, hw, rfl⟩
+  obtain ⟨w', hw'S, hQ⟩ := key w hw
+  exact (csInf_le (hbT.mono (image_mono hST)) (mem_image_of_mem _ hw'S)).trans hQ
 
 /-- **Aubin's universal upper bound for positive smooth functions.** On a closed manifold of
 dimension `n > 2`, for every `ε > 0` there is a strictly positive smooth function `u` with

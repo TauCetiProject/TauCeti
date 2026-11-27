@@ -13,6 +13,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.Group.TypeTags.Finite
 import TauCeti.GroupTheory.FreeGroup.Centralizer
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Order.Concept
@@ -52,6 +53,8 @@ system `{a, b, x}` has no solutions; its radical and its normal closure are both
 * `TauCeti.GroupAlgGeom.CoordGroup ι S`: the coordinate group `G_{R(S)} = G[X] ⧸ Rad_H(S)`.
 * `TauCeti.GroupAlgGeom.CoordGroup.genericPoint ι S`: the generic point of `S`, the tuple of the
   images of the variables in `G_{R(S)}`.
+* `TauCeti.GroupAlgGeom.CoordGroup.evalGHomOfMemVRad`: evaluation `G_{R(S)} → K` at a point of a
+  group `K` over `G` where `Rad_H(S)` vanishes; `evalGHom` is the case of a solution in `H`.
 * `TauCeti.GroupAlgGeom.SystemGroup G S`: the group `G_S = G[X] ⧸ ncl(S)` of the system `S`.
 * `TauCeti.GroupAlgGeom.SystemGroup.toCoordGroup ι S`: the surjection `G_S →* G_{R(S)}`.
 * `TauCeti.GroupAlgGeom.CoordGroup.gHomEquivCentralizer`,
@@ -163,8 +166,7 @@ variable (ι : G →* H)
 
 /-- The algebraic set `V_H(S) ⊆ H^X` of a system of equations `S ⊆ G[X]`: the points `v : X → H`
 at which every equation of `S` evaluates to `1`. -/
-def V (S : Set (GX G X)) : Set (X → H) :=
-  upperPolar (fun s v => eval ι v s = 1) S
+def V (S : Set (GX G X)) : Set (X → H) := upperPolar (fun s v => eval ι v s = 1) S
 
 /-- The ideal `I_H(Y)` of a set of points `Y ⊆ H^X`: the equations of `G[X]` vanishing at every
 point of `Y`. It is a normal subgroup of `G[X]`. -/
@@ -203,36 +205,31 @@ theorem galoisConnection_V_I :
   gc_upperPolar_lowerPolar _
 
 variable (ι) in
-theorem V_antitone : Antitone (V ι : Set (GX G X) → Set (X → H)) :=
-  upperPolar_anti _
+theorem V_antitone : Antitone (V ι : Set (GX G X) → Set (X → H)) := upperPolar_anti _
 
 variable (ι) in
 theorem I_antitone : Antitone (I ι : Set (X → H) → Subgroup (GX G X)) :=
   fun _ _ h => lowerPolar_anti _ h
 
-theorem subset_V_I (Y : Set (X → H)) : Y ⊆ V ι (I ι Y) :=
-  subset_upperPolar_lowerPolar _ Y
+theorem subset_V_I (Y : Set (X → H)) : Y ⊆ V ι (I ι Y) := subset_upperPolar_lowerPolar _ Y
 
 /-- The algebraic set of the equations vanishing on an algebraic set is that algebraic set. -/
 @[simp]
-theorem V_I_V (S : Set (GX G X)) : V ι (I ι (V ι S)) = V ι S :=
-  upperPolar_lowerPolar_upperPolar _ S
+theorem V_I_V (S : Set (GX G X)) : V ι (I ι (V ι S)) = V ι S := upperPolar_lowerPolar_upperPolar _ S
 
 @[simp]
 theorem I_V_I (Y : Set (X → H)) : I ι (V ι (I ι Y)) = I ι Y :=
   SetLike.coe_injective (lowerPolar_upperPolar_lowerPolar _ Y)
 
 @[simp]
-theorem V_empty : V ι (∅ : Set (GX G X)) = Set.univ :=
-  upperPolar_empty _
+theorem V_empty : V ι (∅ : Set (GX G X)) = Set.univ := upperPolar_empty _
 
 @[simp]
 theorem I_empty : I ι (∅ : Set (X → H)) = ⊤ :=
   SetLike.coe_injective ((lowerPolar_empty _).trans coe_top.symm)
 
 @[simp]
-theorem V_union (S T : Set (GX G X)) : V ι (S ∪ T) = V ι S ∩ V ι T :=
-  upperPolar_union _ S T
+theorem V_union (S T : Set (GX G X)) : V ι (S ∪ T) = V ι S ∩ V ι T := upperPolar_union _ S T
 
 @[simp]
 theorem V_iUnion {κ : Sort*} (S : κ → Set (GX G X)) : V ι (⋃ k, S k) = ⋂ k, V ι (S k) :=
@@ -474,19 +471,16 @@ theorem exists_subsingleton_V_eq {ι : G →* H} [Subsingleton (X → H)] (S : S
 variable (ι) in
 /-- The radical `Rad_H(S) = I_H(V_H(S))` of a system `S ⊆ G[X]` over `H`: the equations satisfied
 by every solution of `S` in `H`. -/
-def Rad (S : Set (GX G X)) : Subgroup (GX G X) :=
-  I ι (V ι S)
+def Rad (S : Set (GX G X)) : Subgroup (GX G X) := I ι (V ι S)
 
 theorem Rad_def (S : Set (GX G X)) : Rad ι S = I ι (V ι S) := (rfl)
 
 @[simp]
 theorem mem_Rad : w ∈ Rad ι S ↔ ∀ v ∈ V ι S, eval ι v w = 1 := Iff.rfl
 
-instance (S : Set (GX G X)) : (Rad ι S).Normal :=
-  inferInstanceAs (I ι (V ι S)).Normal
+instance (S : Set (GX G X)) : (Rad ι S).Normal := inferInstanceAs (I ι (V ι S)).Normal
 
-theorem subset_Rad (S : Set (GX G X)) : S ⊆ Rad ι S :=
-  subset_I_iff.2 subset_rfl
+theorem subset_Rad (S : Set (GX G X)) : S ⊆ Rad ι S := subset_I_iff.2 subset_rfl
 
 /-- The radical of `S` contains the normal closure of `S`. -/
 theorem normalClosure_le_Rad (S : Set (GX G X)) : normalClosure S ≤ Rad ι S :=
@@ -497,8 +491,7 @@ theorem Rad_monotone : Monotone (Rad ι : Set (GX G X) → Subgroup (GX G X)) :=
   fun _ _ h => I_antitone ι (V_antitone ι h)
 
 @[simp]
-theorem V_Rad (S : Set (GX G X)) : V ι (Rad ι S : Set (GX G X)) = V ι S :=
-  V_I_V S
+theorem V_Rad (S : Set (GX G X)) : V ι (Rad ι S : Set (GX G X)) = V ι S := V_I_V S
 
 /-- Taking radicals is idempotent. -/
 @[simp]
@@ -611,13 +604,19 @@ namespace GX
 variable (N : Subgroup (GX G X)) [N.Normal]
 
 /-- The coefficient homomorphism `G →* G[X] ⧸ N` of a quotient of `G[X]`. -/
-def quotientCoeff : G →* GX G X ⧸ N :=
-  (QuotientGroup.mk' N).comp inl
+def quotientCoeff : G →* GX G X ⧸ N := (QuotientGroup.mk' N).comp inl
 
 theorem quotientCoeff_def : quotientCoeff N = (QuotientGroup.mk' N).comp inl := (rfl)
 
 @[simp]
 theorem quotientCoeff_apply (g : G) : quotientCoeff N g = ((inl g : GX G X) : GX G X ⧸ N) := (rfl)
+
+variable {N} in
+/-- A `G`-homomorphism out of `G[X] ⧸ N` sends the class of a coefficient to its image. It is the
+simp-normal form of `GHom.map_coeff` once `quotientCoeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} (φ : GHom (quotientCoeff N) κ) (g : G) :
+    φ ((inl g : GX G X) : GX G X ⧸ N) = κ g := φ.map_coeff g
 
 variable {N}
 
@@ -718,15 +717,13 @@ end GX
 
 variable (ι) in
 /-- The coordinate group `G_{R(S)} = G[X] ⧸ Rad_H(S)` of a system `S` over `H`. -/
-abbrev CoordGroup (S : Set (GX G X)) : Type _ :=
-  GX G X ⧸ Rad ι S
+abbrev CoordGroup (S : Set (GX G X)) : Type _ := GX G X ⧸ Rad ι S
 
 namespace CoordGroup
 
 variable (ι) in
 /-- The coefficient homomorphism `G →* G_{R(S)}`. -/
-def coeff (S : Set (GX G X)) : G →* CoordGroup ι S :=
-  GX.quotientCoeff _
+def coeff (S : Set (GX G X)) : G →* CoordGroup ι S := GX.quotientCoeff _
 
 theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) := (rfl)
 
@@ -734,10 +731,25 @@ theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) 
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff ι S g = ((inl g : GX G X) : CoordGroup ι S) := (rfl)
 
+/-- Evaluation at a point `p` of a group `K` over `G` at which every equation of the radical
+`Rad_H(S)` vanishes, as a `G`-homomorphism `G_{R(S)} → K` from the coordinate group over `H`. -/
+def evalGHomOfMemVRad {K : Type*} [Group K] {κ : G →* K} (p : X → K)
+    (hp : p ∈ V κ (Rad ι S : Set (GX G X))) : GHom (coeff ι S) κ := GX.quotientEvalGHom p hp
+
+@[simp]
+theorem evalGHomOfMemVRad_mk {K : Type*} [Group K] {κ : G →* K} {p : X → K}
+    (hp : p ∈ V κ (Rad ι S : Set (GX G X))) (w : GX G X) :
+    evalGHomOfMemVRad p hp (w : CoordGroup ι S) = eval κ p w := (rfl)
+
+/-- A `G`-homomorphism out of the coordinate group sends the class of a coefficient to its image. It
+is the simp-normal form of `GHom.map_coeff` once `coeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} {S : Set (GX G X)} (φ : GHom (coeff ι S) κ)
+    (g : G) : φ ((inl g : GX G X) : CoordGroup ι S) = κ g := φ.map_coeff g
+
 variable (v) in
 /-- Evaluation at a solution `v` of `S` in `H`, as a `G`-homomorphism `G_{R(S)} → H`. -/
-def evalGHom (hv : v ∈ V ι S) : GHom (coeff ι S) ι :=
-  GX.quotientEvalGHom v ((V_Rad (ι := ι) S).ge hv)
+def evalGHom (hv : v ∈ V ι S) : GHom (coeff ι S) ι := evalGHomOfMemVRad v ((V_Rad (ι := ι) S).ge hv)
 
 @[simp]
 theorem evalGHom_mk (hv : v ∈ V ι S) (w : GX G X) :
@@ -768,21 +780,18 @@ theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v
 /-- Evaluation at a solution agrees with the corresponding coordinate-group homomorphism. -/
 @[simp]
 theorem eval_homEquiv (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) (w : GX G X) :
-    eval ι (homEquiv ι S φ) w = φ (w : CoordGroup ι S) :=
-  GX.eval_quotientHomEquiv φ w
+    eval ι (homEquiv ι S φ) w = φ (w : CoordGroup ι S) := GX.eval_quotientHomEquiv φ w
 
 /-- A `G`-homomorphism out of `G_{R(S)}` is determined by its values on the variables. -/
 @[ext]
-theorem gHom_ext {K : Type*} [Group K] {κ : G →* K}
-    {φ ψ : GHom (coeff ι S) κ}
+theorem gHom_ext {K : Type*} [Group K] {κ : G →* K} {φ ψ : GHom (coeff ι S) κ}
     (h : ∀ x, φ (inr (FreeGroup.of x) : GX G X) = ψ (inr (FreeGroup.of x) : GX G X)) : φ = ψ :=
   GX.quotientGHom_ext h
 
 /-- If `ι` is injective and the system `S` has a solution in `H`, the coefficients embed in the
 coordinate group `G_{R(S)}`. -/
 theorem coeff_injective (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
-    Function.Injective (coeff ι S) :=
-  GX.quotientCoeff_injective hι (hS.mono (V_Rad (ι := ι) S).ge)
+    Function.Injective (coeff ι S) := GX.quotientCoeff_injective hι (hS.mono (V_Rad (ι := ι) S).ge)
 
 variable (ι) in
 /-- The coordinate group `G_{R(S)}` of a system with a solution in a `G`-group `H`, as a
@@ -831,13 +840,24 @@ theorem genericPoint_mem_V (S : Set (GX G X)) : genericPoint ι S ∈ V (coeff �
 /-- Evaluation at a solution `v` sends each coordinate of the generic point to that of `v`. -/
 @[simp]
 theorem evalGHom_genericPoint (hv : v ∈ V ι S) (x : X) :
-    evalGHom v hv (genericPoint ι S x) = v x :=
-  eval_inr_of ι v x
+    evalGHom v hv (genericPoint ι S x) = v x := eval_inr_of ι v x
 
 /-- Composing the generic point with evaluation at a solution `v` gives `v`. -/
 @[simp]
 theorem evalGHom_comp_genericPoint (hv : v ∈ V ι S) : evalGHom v hv ∘ genericPoint ι S = v :=
   funext (evalGHom_genericPoint hv)
+
+/-- Evaluation at a point `p` sends each coordinate of the generic point to that of `p`. -/
+@[simp]
+theorem evalGHomOfMemVRad_genericPoint {K : Type*} [Group K] {κ : G →* K} {p : X → K}
+    (hp : p ∈ V κ (Rad ι S : Set (GX G X))) (x : X) :
+    evalGHomOfMemVRad p hp (genericPoint ι S x) = p x := eval_inr_of κ p x
+
+/-- Composing the generic point with evaluation at a point `p` gives `p`. -/
+@[simp]
+theorem evalGHomOfMemVRad_comp_genericPoint {K : Type*} [Group K] {κ : G →* K} {p : X → K}
+    (hp : p ∈ V κ (Rad ι S : Set (GX G X))) : evalGHomOfMemVRad p hp ∘ genericPoint ι S = p :=
+  funext (evalGHomOfMemVRad_genericPoint hp)
 
 /-- If every solution of `S` is the point with coordinates `ι (g x)`, the generic point of `S` has
 the coefficients `g x` as coordinates. -/
@@ -906,8 +926,7 @@ theorem evalGHom_injective_iff (hv : v ∈ V ι S) :
 Together with `range_evalGHom`, this identifies the coordinate group of the point `v` with the
 subgroup of `H` generated by the coefficients and the coordinates of `v`. -/
 theorem evalGHom_injective (hv : v ∈ V ι S) (hS : V ι S ⊆ {v}) :
-    Function.Injective (evalGHom v hv) :=
-  (evalGHom_injective_iff hv).2 (I_antitone ι hS)
+    Function.Injective (evalGHom v hv) := (evalGHom_injective_iff hv).2 (I_antitone ι hS)
 
 /-- If `v` is the only solution of `S`, every coefficient-preserving homomorphism `G_{R(S)} → H`
 is evaluation at `v`. -/
@@ -939,8 +958,7 @@ theorem homOfMapsToWordMap_mk (w : Y → GX G X) (hw : Set.MapsTo (wordMap ι w)
 @[simp]
 theorem homOfMapsToWordMap_id :
     homOfMapsToWordMap ι S S (fun x => inr (FreeGroup.of x)) (mapsTo_wordMap_id ι (V ι S)) =
-      GHom.id (coeff ι S) :=
-  gHom_ext fun _ => by simp
+      GHom.id (coeff ι S) := gHom_ext fun _ => by simp
 
 /-- The homomorphism induced by a composite of word maps is the composite of the induced
 homomorphisms, in the opposite order. -/
@@ -1006,20 +1024,24 @@ end CoordGroup
 
 variable (G) in
 /-- The group `G_S = G[X] ⧸ ncl(S)` presented over `G` by the system `S` of equations. -/
-abbrev SystemGroup (S : Set (GX G X)) : Type _ :=
-  GX G X ⧸ normalClosure S
+abbrev SystemGroup (S : Set (GX G X)) : Type _ := GX G X ⧸ normalClosure S
 
 namespace SystemGroup
 
 /-- The coefficient homomorphism `G →* G_S`. -/
-def coeff (S : Set (GX G X)) : G →* SystemGroup G S :=
-  GX.quotientCoeff _
+def coeff (S : Set (GX G X)) : G →* SystemGroup G S := GX.quotientCoeff _
 
 theorem coeff_def (S : Set (GX G X)) : coeff S = GX.quotientCoeff (normalClosure S) := (rfl)
 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff S g = ((inl g : GX G X) : SystemGroup G S) := (rfl)
+
+/-- A `G`-homomorphism out of `G_S` sends the class of a coefficient to its image. It is the
+simp-normal form of `GHom.map_coeff` once `coeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} {S : Set (GX G X)} (φ : GHom (coeff S) κ)
+    (g : G) : φ ((inl g : GX G X) : SystemGroup G S) = κ g := φ.map_coeff g
 
 variable (ι) in
 /-- The canonical surjection `G_S →* G_{R(S)}`, a `G`-homomorphism. -/
@@ -1048,6 +1070,12 @@ theorem homEquiv_apply_coe (φ : GHom (coeff S) ι) (x : X) :
 
 @[simp]
 theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v.property := (rfl)
+
+/-- Evaluation at a solution agrees with the corresponding homomorphism out of `G_S`. -/
+@[simp]
+theorem eval_homEquiv (S : Set (GX G X)) (φ : GHom (coeff S) ι) (w : GX G X) :
+    eval ι (homEquiv ι S φ) w = φ (w : SystemGroup G S) :=
+  GX.eval_quotientHomEquiv φ w
 
 /-- A `G`-homomorphism out of `G_S` is determined by its values on the variables. -/
 @[ext]
@@ -1207,12 +1235,18 @@ theorem Rad_pow_eq_normalClosure (hι : Function.Injective ι) {n : ℕ}
   rw [Rad_def, hV, I_singleton_comp hι]
   simp [Set.range_unique]
 
+/-- In a group `H` with unique roots, the equation `u ^ n * w ^ n = 1` (`n ≠ 0`) in two words `u`
+and `w` has the same solutions as `u * w = 1`: the only `n`-th root of `(w ^ n)⁻¹` is `w⁻¹`. -/
+theorem V_pow_mul_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (u w : GX G X) :
+    V ι {u ^ n * w ^ n} = V ι {u * w} := by
+  ext v
+  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+
 /-- In a group `H` with unique roots, the equation `x ^ n * b ^ n = 1` (`n ≠ 0`) has the same
 solutions as `x * b = 1`: the only `n`-th root of `(b ^ n)⁻¹` is `b⁻¹`. -/
 theorem V_pow_mul_inl_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
     V ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = V ι {inr (of x) * inl b} := by
-  ext v
-  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+  rw [map_pow, V_pow_mul_pow hn]
 
 /-- In a group `H` with unique roots, the equations `x ^ n * b ^ n = 1` (`n ≠ 0`) and `x * b = 1`
 have the same radical. -/
@@ -1353,7 +1387,7 @@ generator `a` are the points whose `x`-coordinate is a power of `a`. -/
 theorem V_singleton_commutatorElement_of {α : Type*} (x : X) (a : α) :
     V (.id (FreeGroup α)) {⁅(inr (of x) : GX (FreeGroup α) X), inl (of a)⁆} =
       {v | v x ∈ zpowers (of a)} := by
-  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_singleton_of]
+  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_of]
 
 namespace CoordGroup
 
@@ -1386,7 +1420,7 @@ def gHomEquivZPowers {α : Type*} (a : α) : GHom (coeff (.id (FreeGroup α))
     {⁅(inr (of ()) : GX (FreeGroup α) Unit), (inl (of a) : GX (FreeGroup α) Unit)⁆})
     (.id (FreeGroup α)) ≃ zpowers (of a) :=
   (gHomEquivCentralizer (.id _) (of a)).trans <| Equiv.subtypeEquivRight fun h => by
-    rw [MonoidHom.id_apply, centralizer_singleton_of]
+    rw [MonoidHom.id_apply, centralizer_of]
 
 @[simp]
 theorem gHomEquivZPowers_apply_coe {α : Type*} (a : α) (φ : GHom (coeff (.id (FreeGroup α))

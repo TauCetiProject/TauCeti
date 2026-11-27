@@ -30,6 +30,8 @@ Facts about the invariants of an elliptic curve, complementing
 * `WeierstrassCurve.baseChange_c₄_ne_zero` and `WeierstrassCurve.baseChange_c₆_ne_zero`: the two
   corollaries of those criteria that say `j ≠ 0` and `j ≠ 1728` survive base change along an
   injection, in the `c₄`/`c₆` form the automorphism criterion consumes.
+* `WeierstrassCurve.baseChange_baseChange`: base change along a scalar tower `R → A → B` is
+  transitive.
 * `WeierstrassCurve.algebraMap_Δ_of_baseChange_eq`,
   `WeierstrassCurve.algebraMap_c₄_of_baseChange_eq` and
   `WeierstrassCurve.algebraMap_c₆_of_baseChange_eq`: the invariants of an equation known to be a
@@ -39,14 +41,15 @@ Facts about the invariants of an elliptic curve, complementing
   Weierstrass equation, and is the specialization target used to retract the universal ring onto
   `ℤ`.
 
-All are stated over a commutative ring, matching the generality of the Mathlib results they
-complement.
+The results on invariants are stated over a commutative ring, matching the generality of the
+Mathlib results they complement; the cusp curve itself needs only a `0` in its coefficient type.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 `FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Weierstrass.lean` at commit `bc2fe8ff7396`
 (FLT PR #1088), Apache 2.0, by Kevin Buzzard and Claude). Every result here except the cusp curve,
-`WeierstrassCurve.Δ_eq_invOf_mul`, `WeierstrassCurve.adjoin_c₄_c₆_Δ_eq` and
-`WeierstrassCurve.Δ_eq_of_a₃_eq_zero_of_a₄_eq_zero` is adapted from that file. All adapted results
+`WeierstrassCurve.baseChange_baseChange`, `WeierstrassCurve.Δ_eq_invOf_mul`,
+`WeierstrassCurve.adjoin_c₄_c₆_Δ_eq` and `WeierstrassCurve.Δ_eq_of_a₃_eq_zero_of_a₄_eq_zero` is
+adapted from that file. All adapted results
 are generalised from FLT's field-level statements to a commutative ring: the two `j`-criteria,
 and the base-change pair `baseChange_c₄_ne_zero` / `baseChange_c₆_ne_zero`, which FLT states only
 for a field extension.
@@ -82,16 +85,13 @@ theorem adjoin_c₄_c₆_Δ_eq {A : Type*} [CommRing A] [Algebra R A]
     (W : WeierstrassCurve A) (h : IsUnit (1728 : R)) :
     Algebra.adjoin R {W.c₄, W.c₆, W.Δ} = Algebra.adjoin R {W.c₄, W.c₆} := by
   let := h.invertible
-  apply le_antisymm
-  · refine Algebra.adjoin_le ?_
-    rintro _ (rfl | rfl | rfl)
-    · exact Algebra.subset_adjoin (by simp)
-    · exact Algebra.subset_adjoin (by simp)
-    · rw [W.Δ_eq_invOf_mul (R := R)]
-      exact mul_mem (Subalgebra.algebraMap_mem _ _) (sub_mem
-        (pow_mem (Algebra.subset_adjoin (by simp)) _) (pow_mem
-          (Algebra.subset_adjoin (by simp)) _))
-  · exact Algebra.adjoin_mono (by rintro x (rfl | rfl) <;> simp)
+  have h₄ : W.c₄ ∈ Algebra.adjoin R {W.c₄, W.c₆} := Algebra.subset_adjoin (by simp)
+  have h₆ : W.c₆ ∈ Algebra.adjoin R {W.c₄, W.c₆} := Algebra.subset_adjoin (by simp)
+  have hΔ : W.Δ ∈ Algebra.adjoin R {W.c₄, W.c₆} := by
+    rw [W.Δ_eq_invOf_mul (R := R)]
+    exact mul_mem (Subalgebra.algebraMap_mem _ _) (sub_mem (pow_mem h₄ _) (pow_mem h₆ _))
+  exact le_antisymm (Algebra.adjoin_le (by simp [Set.insert_subset_iff, h₄, h₆, hΔ]))
+    (Algebra.adjoin_mono (by simp [Set.insert_subset_iff]))
 
 /-- **The discriminant of an equation with `a₃ = a₄ = 0`** is `-a₆ (b₂³ + 432 a₆)`: here `b₄ = 0`,
 `b₆ = 4 a₆` and `b₈ = b₂ a₆`. When the reduction is singular at the origin and `b₂` is a unit, the
@@ -109,7 +109,7 @@ variable (E : WeierstrassCurve R)
 theorem a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero (hΔ : E.Δ ≠ 0) (h2 : (2 : R) = 0) :
     E.a₁ ≠ 0 ∨ E.a₃ ≠ 0 := by
   by_contra! h
-  exact hΔ (by rw [Δ, b₈, b₆, b₄, b₂, h.1, h.2]; grobner)
+  exact hΔ (by simp only [Δ, b₂, b₄, b₆, b₈, h]; grobner)
 
 section
 
@@ -118,8 +118,8 @@ variable [E.IsElliptic]
 /-- `j(E) = 1728` if and only if `c₆(E)² = 0`, by the relation `1728·Δ = c₄³ - c₆²`. This is the
 analogue for `j = 1728` of `WeierstrassCurve.j_eq_zero_iff'` (`j = 0 ↔ c₄³ = 0`). -/
 theorem j_eq_1728_iff' : E.j = 1728 ↔ E.c₆ ^ 2 = 0 := by
-  have h : E.c₆ ^ 2 = E.c₄ ^ 3 - 1728 * E.Δ := by linear_combination E.c_relation
-  rw [h, sub_eq_zero, j, Units.inv_mul_eq_iff_eq_mul, coe_Δ', mul_comm E.Δ 1728]
+  have h : E.c₄ ^ 3 - E.Δ * 1728 = E.c₆ ^ 2 := by linear_combination -E.c_relation
+  rw [j, Units.inv_mul_eq_iff_eq_mul, coe_Δ', ← sub_eq_zero, h]
 
 /-- `j(E) = 1728` if and only if `c₆(E) = 0`, by the relation `1728·Δ = c₄³ - c₆²`. This is the
 analogue for `j = 1728` of `WeierstrassCurve.j_eq_zero_iff` (`j = 0 ↔ c₄ = 0`). -/
@@ -144,15 +144,21 @@ image of `c₄`. Stated on `c₄` rather than on `j`: nothing here needs `[IsRed
 `j_eq_zero_iff`. -/
 theorem baseChange_c₄_ne_zero (hRA : Function.Injective (algebraMap R A)) (hc₄ : E.c₄ ≠ 0) :
     (E.baseChange A).c₄ ≠ 0 := by
-  simp only [baseChange, map_c₄]
-  exact (map_ne_zero_iff _ hRA).mpr hc₄
+  rwa [baseChange, map_c₄, map_ne_zero_iff _ hRA]
 
 /-- `c₆ ≠ 0` survives base change along an injection. The companion of
 `baseChange_c₄_ne_zero`; a caller with `j ≠ 1728` gets the hypothesis from `j_eq_1728_iff`. -/
 theorem baseChange_c₆_ne_zero (hRA : Function.Injective (algebraMap R A)) (hc₆ : E.c₆ ≠ 0) :
     (E.baseChange A).c₆ ≠ 0 := by
-  simp only [baseChange, map_c₆]
-  exact (map_ne_zero_iff _ hRA).mpr hc₆
+  rwa [baseChange, map_c₆, map_ne_zero_iff _ hRA]
+
+/-- **Base change is transitive**: base changing along `R → A` and then along `A → B` is base
+changing along `R → B`, for a scalar tower `R → A → B`. Stated in the `baseChange` spelling, so
+it rewrites directly in goals phrased that way. -/
+@[simp]
+theorem baseChange_baseChange (B : Type*) [CommRing B] [Algebra R B] [Algebra A B]
+    [IsScalarTower R A B] : (E.baseChange A).baseChange B = E.baseChange B :=
+  E.map_baseChange (Algebra.ofId A B)
 
 /-- The discriminant of a base change is the image of the discriminant, stated against an
 equation `W` known to be the base change of `W₀`. -/
@@ -184,7 +190,7 @@ section Zero
 
 variable [Zero R]
 
-/-- The cusp curve `Y² = X³` over a commutative ring `R`. -/
+/-- The cusp curve `Y² = X³`, all of whose coefficients are `0`; it needs only a `0` in `R`. -/
 def cusp : Affine R := { a₁ := 0, a₂ := 0, a₃ := 0, a₄ := 0, a₆ := 0 }
 
 /-- Every coefficient of the cusp curve vanishes, and likewise for `cusp_a₂` through `cusp_a₆`.
@@ -208,7 +214,7 @@ The case `R = ℤ` is the one the universal curve uses: specializing along that 
 route to nonvanishing statements, since `ψₙ(1,1) = n`, so a universal quantity that vanished would
 have to vanish in `ℤ`. -/
 theorem equation_cusp_one_one [CommRing R] : (cusp R).Equation 1 1 := by
-  simp [Affine.Equation, Affine.polynomial, cusp, Polynomial.evalEval]
+  simp [Affine.equation_iff]
 
 end WeierstrassCurve
 

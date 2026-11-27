@@ -259,33 +259,49 @@ theorem hilbertNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A 
       _ ≤ (1 * ‖B‖₊) * T.hilbertNumber n * (‖A‖₊ * 1) := by gcongr <;> assumption_mod_cast
       _ = ‖B‖₊ * T.hilbertNumber n * ‖A‖₊ := by ring
 
-/-- **Euclidean normalization.** The identity of `ℓ₂^{n+1}` has `hₙ = 1`. -/
-theorem hilbertNumber_id_euclideanSpace (n : ℕ) :
-    (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))).hilbertNumber n = 1 := by
-  set I := ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))
-  -- An isometric embedding `B : ℓ₂^{n+1} → ℓ₂` onto the first `n + 1` unit vectors, with its
-  -- adjoint `A` as a left inverse.
-  have hv : Orthonormal 𝕜 fun i : Fin (n + 1) ↦ (lp.single 2 (i : ℕ) 1 : ℓ²(ℕ, 𝕜)) := by
+/-- For contractions `A : ℓ₂ᵐ → E` and `B : F → ℓ₂ᵐ`, `aₙ(B ∘L T ∘L A) ≤ hₙ(T)`. -/
+theorem singularValue_comp_comp_euclideanSpace_le_hilbertNumber_of_norm_le_one {m : ℕ}
+    (T : E →L[𝕜] F) {A : EuclideanSpace 𝕜 (Fin m) →L[𝕜] E}
+    {B : F →L[𝕜] EuclideanSpace 𝕜 (Fin m)} (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) (n : ℕ) :
+    (B ∘L T ∘L A).singularValue n ≤ T.hilbertNumber n := by
+  have hv : Orthonormal 𝕜 fun i : Fin m ↦ (lp.single 2 (i : ℕ) 1 : ℓ²(ℕ, 𝕜)) := by
     classical
     rw [orthonormal_iff_ite]
     intro i j
     simp [lp.inner_single_left, Pi.single_apply, Fin.val_inj]
   set L := hv.synthesisMapIsometry
-  set B := L.toContinuousLinearMap
-  set A := B.adjoint
-  have hB : ‖B‖ ≤ 1 := L.norm_toContinuousLinearMap_le
-  have hA : ‖A‖ ≤ 1 := by rw [LinearIsometryEquiv.norm_map]; exact hB
+  set ι := L.toContinuousLinearMap
+  set π := ι.adjoint
+  have hι : ‖ι‖ ≤ 1 := L.norm_toContinuousLinearMap_le
+  have hπ : ‖π‖ ≤ 1 := by rw [LinearIsometryEquiv.norm_map]; exact hι
+  have hA' : ‖A ∘L π‖ ≤ 1 :=
+    (A.opNorm_comp_le π).trans ((mul_le_of_le_one_right (norm_nonneg A) hπ).trans hA)
+  have hB' : ‖ι ∘L B‖ ≤ 1 :=
+    (ι.opNorm_comp_le B).trans ((mul_le_of_le_one_right (norm_nonneg ι) hB).trans hι)
+  have hcomp : π ∘L ((ι ∘L B) ∘L T ∘L (A ∘L π)) ∘L ι = B ∘L T ∘L A := by
+    ext x
+    have hπι (y : EuclideanSpace 𝕜 (Fin m)) : π (ι y) = y :=
+      DFunLike.congr_fun L.adjoint_comp_self y
+    simp [hπι]
+  calc (B ∘L T ∘L A).singularValue n
+      = (π ∘L ((ι ∘L B) ∘L T ∘L (A ∘L π)) ∘L ι).singularValue n := by rw [hcomp]
+    _ ≤ ((ι ∘L B) ∘L T ∘L (A ∘L π)).singularValue n :=
+      singularValue_comp_comp_le_of_norm_le_one hπ hι _ n
+    _ ≤ T.hilbertNumber n := T.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA' hB' n
+
+/-- **Euclidean normalization.** The identity of `ℓ₂^{n+1}` has `hₙ = 1`. -/
+theorem hilbertNumber_id_euclideanSpace (n : ℕ) :
+    (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))).hilbertNumber n = 1 := by
+  set I := ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))
   have hrank : (n : Cardinal) < Module.rank 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1))) := by
     rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq]
     simp
   refine le_antisymm ((I.hilbertNumber_le_nnnorm n).trans (by exact_mod_cast norm_id_le)) ?_
-  -- `id = A ∘ (B ∘ id ∘ A) ∘ B`, and `aₙ(id) = 1` below the dimension.
-  have hid : A ∘L (B ∘L I ∘L A) ∘L B = I := by
-    simp only [I, id_comp, ← comp_assoc, A, B, L.adjoint_comp_self, one_def]
   calc (1 : ℝ≥0) = I.singularValue n := by simp [I, singularValue_id, hrank]
-    _ = (A ∘L (B ∘L I ∘L A) ∘L B).singularValue n := by rw [hid]
-    _ ≤ (B ∘L I ∘L A).singularValue n := singularValue_comp_comp_le_of_norm_le_one hA hB _ n
-    _ ≤ I.hilbertNumber n := I.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA hB n
+    _ = (I ∘L I ∘L I).singularValue n := by simp [I]
+    _ ≤ I.hilbertNumber n :=
+      I.singularValue_comp_comp_euclideanSpace_le_hilbertNumber_of_norm_le_one norm_id_le
+        norm_id_le n
 
 end ContinuousLinearMap
 

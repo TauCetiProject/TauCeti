@@ -7,8 +7,12 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
+import TauCeti.MeasureTheory.Measure.Restrict
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -21,7 +25,11 @@ representatives satisfy the integrability hypotheses of classical higher-order c
 Conversely, a function that is `Cᵏ` on the domain and whose classical derivatives through order
 `k` lie in `Lᵖ` represents an element of `W^{k,p}` (`TauCeti.Wkp.exists_value_ae_eq_of_contDiffOn`),
 whose norm is at most the sum of the `Lᵖ` seminorms of these derivatives
-(`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`). On a domain in `ℝⁿ`, the weak
+(`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`); on the whole space the two
+combine into `TauCeti.Wkp.exists_value_ae_eq_and_norm_le`. In particular every constant `c` lies in
+`W^{k,∞}(Ω)` with norm at most `|c|` (`TauCeti.Wkp.exists_value_ae_eq_const`), while for finite
+`p` no nonzero constant lies in `W^{k,p}` of a space of positive dimension
+(`TauCeti.Wkp.not_value_ae_eq_const_top_of_ne_top`). On a domain in `ℝⁿ`, the weak
 Hessian of a `W^{2,p}` function with a `C²` representative `f` has entries `∂ᵢ∂ⱼf` almost
 everywhere (`TauCeti.Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn`). Consequently,
 for `u ∈ W^{2,p}(U)` and a function `w` that is `C²` near the closure of a bounded open `Ω ⊆ U`,
@@ -45,72 +53,6 @@ namespace TauCeti
 
 open MeasureTheory TopologicalSpace
 open scoped ENNReal ContDiff
-
-section Classical
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-
-/-- Taking `i` further derivatives of the `k`th iterated-gradient field has the same norm as
-taking `i + k + 1` derivatives of the original scalar function. No smoothness is needed. -/
-theorem norm_iteratedFDeriv_iteratedGradientChain (f : E → ℝ) (i k : ℕ) (x : E) :
-    ‖iteratedFDeriv ℝ i (iteratedGradientChain f k) x‖ =
-      ‖iteratedFDeriv ℝ (i + k + 1) f x‖ := by
-  induction k generalizing i with
-  | zero =>
-      rw [iteratedGradientChain_zero]
-      -- The gradient is the inverse Riesz isometry applied to the Fréchet derivative.
-      exact ((InnerProductSpace.toDual ℝ E).symm.norm_iteratedFDeriv_comp_left
-        (fderiv ℝ f) x i).trans norm_iteratedFDeriv_fderiv
-  | succ k ih =>
-      rw [iteratedGradientChain_succ, norm_iteratedFDeriv_fderiv]
-      exact (ih (i + 1)).trans (congrArg
-        (fun j => ‖iteratedFDeriv ℝ (j + 1) f x‖) (by omega))
-
-/-- The nested iterated-gradient field has the same norm as the corresponding multilinear
-derivative of the scalar function. -/
-@[simp]
-theorem norm_iteratedGradientChain (f : E → ℝ) (k : ℕ) (x : E) :
-    ‖iteratedGradientChain f k x‖ = ‖iteratedFDeriv ℝ (k + 1) f x‖ :=
-  (norm_iteratedFDeriv_zero (f := iteratedGradientChain f k) (x := x)).symm.trans
-    ((norm_iteratedFDeriv_iteratedGradientChain f 0 k x).trans
-      (congrArg (fun j => ‖iteratedFDeriv ℝ (j + 1) f x‖) (Nat.zero_add k)))
-
-/-- Iterated-gradient fields through order `k + 1` preserve subtraction of scalar functions
-that are `C^{k+1}` at the point of evaluation. -/
-@[simp]
-theorem iteratedGradientChain_sub {f g : E → ℝ} {x : E}
-    (k : ℕ) (hf : ContDiffAt ℝ (k + 1) f x) (hg : ContDiffAt ℝ (k + 1) g x) :
-    iteratedGradientChain (f - g) k x =
-      iteratedGradientChain f k x - iteratedGradientChain g k x := by
-  induction k generalizing x with
-  | zero =>
-      simp only [iteratedGradientChain_zero, gradient,
-        fderiv_sub (hf.differentiableAt (by simp)) (hg.differentiableAt (by simp)), map_sub]
-  | succ k ih =>
-      simp only [iteratedGradientChain_succ]
-      have heq : iteratedGradientChain (f - g) k =ᶠ[nhds x]
-          iteratedGradientChain f k - iteratedGradientChain g k := by
-        filter_upwards [hf.eventually (by simp), hg.eventually (by simp)] with y hfy hgy
-        exact ih (hfy.of_le (by simp)) (hgy.of_le (by simp))
-      rw [heq.fderiv_eq]
-      have hfs := contDiffAt_iteratedGradientChain hf k (m := 1)
-        (by simp [add_comm, add_left_comm])
-      have hgs := contDiffAt_iteratedGradientChain hg k (m := 1)
-        (by simp [add_comm, add_left_comm])
-      exact fderiv_sub (hfs.differentiableAt (by simp)) (hgs.differentiableAt (by simp))
-
-/-- The order-`k + 1` iterated-gradient fields of two scalar functions that are `C^{k+1}` at
-a point have the same difference norm there as their multilinear derivatives. This identifies
-the error seminorms in smooth approximation. -/
-theorem norm_iteratedGradientChain_sub {f g : E → ℝ} {x : E}
-    (k : ℕ) (hf : ContDiffAt ℝ (k + 1) f x) (hg : ContDiffAt ℝ (k + 1) g x) :
-    ‖iteratedGradientChain f k x - iteratedGradientChain g k x‖ =
-      ‖iteratedFDeriv ℝ (k + 1) f x - iteratedFDeriv ℝ (k + 1) g x‖ := by
-  rw [← iteratedGradientChain_sub k hf hg, norm_iteratedGradientChain]
-  exact congrArg norm (fun_iteratedFDeriv_sub_apply
-    (hf.of_le (by simp)) (hg.of_le (by simp)))
-
-end Classical
 
 section Sobolev
 
@@ -189,11 +131,8 @@ theorem Wkp.lpNorm_iteratedFDeriv_le_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p
       subst i
       have he : eLpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) =
           eLpNorm (value 0 u) p (mu.restrict Omega) := by
-        refine eLpNorm_congr_norm_ae
-          ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen (by simp)).aestronglyMeasurable
-            Omega.isOpen.measurableSet) (Lp.aestronglyMeasurable _) ?_
-        filter_upwards [hu] with x hx
-        rw [norm_iteratedFDeriv_zero, hx]
+        rw [eLpNorm_iteratedFDeriv_zero]
+        exact eLpNorm_congr_ae hu.symm
       simpa only [lpNorm, he, ← Lp.norm_def, value_zero] using le_rfl (a := ‖u‖)
   | succ k ih =>
       intro i hi
@@ -216,10 +155,7 @@ theorem Wkp.memLp_iteratedFDeriv_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
       intro i hi
       have hi0 : i = 0 := by omega
       subst i
-      refine (MemLp.ae_eq hu (Lp.memLp (value 0 u))).congr_norm
-        ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen
-          (by simp)).aestronglyMeasurable Omega.isOpen.measurableSet) ?_
-      exact .of_forall fun x => (norm_iteratedFDeriv_zero (f := f) (x := x)).symm
+      exact memLp_iteratedFDeriv_zero_iff.2 (MemLp.ae_eq hu (Lp.memLp (value 0 u)))
   | succ k ih =>
       intro i hi
       by_cases hik : i ≤ k
@@ -238,13 +174,7 @@ derivative seminorm for any almost-everywhere representative on the domain. -/
 theorem Wkp.norm_value_eq_lpNorm_iteratedFDeriv_zero (k : ℕ) (u : Wkp mu Omega p k)
     {f : E → ℝ} (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     ‖value k u‖ = lpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) := by
-  rw [Lp.norm_def, lpNorm]
-  congr 1
-  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-    ((continuousMultilinearCurryFin0 ℝ E ℝ).symm.continuous.comp_aestronglyMeasurable
-      ((Lp.aestronglyMeasurable _).congr hu)) ?_
-  filter_upwards [hu] with x hx
-  rw [hx, norm_iteratedFDeriv_zero]
+  rw [lpNorm_iteratedFDeriv_zero, Lp.norm_def, lpNorm, eLpNorm_congr_ae hu]
 
 /-- **The Sobolev norm of a `Cᵏ` representative.** If `u ∈ W^{k,p}(Ω)` is represented by a
 function `f` that is `Cᵏ` on `Ω`, then `‖u‖` is at most the sum of the `Lᵖ` seminorms of the
@@ -277,15 +207,13 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
     ∀ (k : ℕ) {f : E → ℝ}, ContDiffOn ℝ k f Omega →
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p (mu.restrict Omega)) →
       ∃ u : Wkp mu Omega p k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f
-  | 0, f, hf, hmem => by
+  | 0, f, _, hmem => by
       have hv : MemLp f p (mu.restrict Omega) :=
-        (hmem 0 le_rfl).congr_norm (hf.continuousOn.aestronglyMeasurable
-          Omega.isOpen.measurableSet) (.of_forall fun x => norm_iteratedFDeriv_zero)
+        memLp_iteratedFDeriv_zero_iff.1 (hmem 0 le_rfl)
       exact ⟨hv.toLp f, by rw [value_zero]; exact hv.coeFn_toLp⟩
   | 1, f, hf, hmem => by
       have hv : MemLp f p (mu.restrict Omega) :=
-        (hmem 0 (by simp)).congr_norm (hf.continuousOn.aestronglyMeasurable
-          Omega.isOpen.measurableSet) (.of_forall fun x => norm_iteratedFDeriv_zero)
+        memLp_iteratedFDeriv_zero_iff.1 (hmem 0 (by simp))
       have hg : MemLp (gradient f) p (mu.restrict Omega) :=
         (hmem 1 le_rfl).congr_norm
           (((InnerProductSpace.toDual ℝ E).symm.continuous.comp_continuousOn
@@ -319,6 +247,60 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
             (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2))) hu).symm).congr_ae_deriv
           (by rw [← iteratedGradientChain_succ]; exact hD.coeFn_toLp.symm)
       exact ⟨mk k u _ hweak, by rw [value_mk]; exact hu⟩
+
+/-- **Constants are `W^{k,∞}` functions.** On every open set `Ω`, the constant function `c`
+represents an element of `W^{k,∞}(Ω)` of norm at most `|c|`. -/
+theorem Wkp.exists_value_ae_eq_const (k : ℕ) (c : ℝ) :
+    ∃ u : Wkp mu Omega ∞ k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] (fun _ ↦ c) ∧ ‖u‖ ≤ |c| := by
+  have hf : ContDiffOn ℝ k (fun _ : E ↦ c) Omega := contDiffOn_const
+  obtain ⟨u, hu⟩ := Wkp.exists_value_ae_eq_of_contDiffOn (mu := mu) (p := ∞) k hf fun i _ ↦ by
+    rcases eq_or_ne i 0 with rfl | hi
+    · rw [iteratedFDeriv_zero_eq_comp]
+      exact memLp_top_const _
+    · rw [iteratedFDeriv_const_of_ne hi]
+      exact memLp_top_const _
+  refine ⟨u, hu, ?_⟩
+  rcases (Omega : Set E).eq_empty_or_nonempty with hempty | hne
+  · rw [Subsingleton.elim u 0 (h := Wkp.subsingleton_of_eq_empty k hempty), norm_zero]
+    exact abs_nonneg c
+  have hμ : mu.restrict Omega ≠ 0 := by
+    rw [Ne, Measure.restrict_eq_zero]
+    exact Omega.isOpen.measure_ne_zero mu hne
+  -- The jet of `c` is `c` in degree zero and `0` in every positive degree, so the sum of the
+  -- `L^∞` norms of its components is `|c|`.
+  have hjet : ∀ i, lpNorm (iteratedFDeriv ℝ i fun _ : E ↦ c) ∞ (mu.restrict Omega) =
+      if i = 0 then |c| else 0 := fun i ↦ by
+    split_ifs with hi
+    · subst hi
+      rw [iteratedFDeriv_zero_eq_comp]
+      simp [Function.comp_def, lpNorm_const ENNReal.top_ne_zero hμ]
+    · simp [iteratedFDeriv_const_of_ne hi]
+  refine (Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k u hf hu).trans_eq ?_
+  simp [hjet, Finset.sum_ite_eq']
+
+/-- **For finite `p` no nonzero constant is a Sobolev function on the whole space.** In a space of
+positive dimension, no `u ∈ W^{k,p}(E)` with `p < ∞` is represented by a constant `c ≠ 0`, since
+the Haar measure of `E` is infinite. -/
+theorem Wkp.not_value_ae_eq_const_top_of_ne_top [Nontrivial E] {k : ℕ} (hp : p ≠ ⊤)
+    (u : Wkp mu ⊤ p k) {c : ℝ} (hc : c ≠ 0) : ¬(value k u : E → ℝ) =ᵐ[mu] fun _ ↦ c :=
+  fun hu ↦ by
+    have hmem : MemLp (fun _ : E ↦ c) p mu := (Wkp.memLp_value k u).ae_eq hu
+    rw [memLp_const_iff (zero_lt_one.trans_le Fact.out).ne' hp] at hmem
+    simp [hc, measure_univ_of_isAddLeftInvariant mu] at hmem
+
+/-- **`Cᵏ` functions on the whole space with `Lᵖ` derivatives are Sobolev functions.** If `f` is
+`Cᵏ` on `E` and its classical derivatives of orders `0` through `k` lie in `Lᵖ`, then `f` represents
+an element of `W^{k,p}(E)` whose norm is at most the sum of the `Lᵖ` seminorms of these
+derivatives. -/
+theorem Wkp.exists_value_ae_eq_and_norm_le {k : ℕ} {f : E → ℝ} (hf : ContDiff ℝ k f)
+    (hmem : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p mu) :
+    ∃ u : Wkp mu ⊤ p k, (value k u : E → ℝ) =ᵐ[mu] f ∧
+      ‖u‖ ≤ ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) p mu := by
+  have hres : mu.restrict ((⊤ : Opens E) : Set E) = mu := Measure.restrict_coe_opens_top mu
+  obtain ⟨u, hu⟩ := exists_value_ae_eq_of_contDiffOn (mu := mu) (Omega := ⊤) k hf.contDiffOn
+    (by simpa only [hres] using hmem)
+  refine ⟨u, by simpa only [hres] using hu, ?_⟩
+  simpa only [hres] using norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k u hf.contDiffOn hu
 
 /-- **A `Cᵏ` function is a Sobolev function on compactly contained subdomains.** If `f` is `Cᵏ` on
 an open set `U` and `Ω` lies in a compact subset `K` of `U`, then `f` represents an element of
@@ -371,12 +353,12 @@ theorem Wkp.exists_value_ae_eq_sub_of_contDiffOn {U : Opens (EuclideanSpace ℝ 
   obtain ⟨V, hV⟩ := exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (p := p)
     (Omega := Omega) 2 hW hw hΩ.isCompact_closure subset_closure hΩW
   refine ⟨V - restrictL hΩU 2 u, ?_, ?_⟩
-  · rw [← valueL_apply, map_sub, valueL_apply, valueL_apply]
+  · rw [value_sub]
     filter_upwards [Lp.coeFn_sub (value 2 V) (value 2 (restrictL hΩU 2 u)), hV,
       value_restrictL_ae hΩU 2 u, ae_restrict_of_ae_restrict_of_subset hΩU hū]
       with y h1 h2 h3 h4
     rw [h1, Pi.sub_apply, h2, h3, h4]
-  · rw [← iteratedGradientL_apply, map_sub, iteratedGradientL_apply, iteratedGradientL_apply]
+  · rw [iteratedGradient_sub]
     filter_upwards [Lp.coeFn_sub (iteratedGradient 1 V)
         (iteratedGradient 1 (restrictL hΩU 2 u)),
       iteratedGradient_one_single_apply_ae_eq_of_contDiffOn V (hw.mono (subset_closure.trans hΩW))

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Tensor
 public import TauCeti.AlgebraicGeometry.Modules.Sections
+public import TauCeti.AlgebraicGeometry.Modules.Stalk
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Stalk
 
 /-!
 # Tensoring sections of `𝒪_X`-modules with a section
@@ -25,6 +27,12 @@ These maps describe the sections of twists of a module by powers of a line bundl
 `TauCeti/AlgebraicGeometry/LineBundle/TwistedSections.lean` for their use over the nonvanishing
 locus of a section of an invertible sheaf.
 
+The monoidal tensor product `F ⊗ N` is the sheafification of the sectionwise tensor product, and
+`t ⊗ e` is the image of the pure tensor under the sheafification unit. Its stalk at `x` is the
+tensor product `F_x ⊗ N_x` over `𝒪_{X,x}` under `TauCeti.SheafOfModules.tensorStalkEquivMonoidal`.
+The germ of `s ⊗ t` corresponds to `s_x ⊗ t_x`, which computes nonvanishing loci of tensor products
+of sections.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.Modules.tmulRight`: the linear map `t ↦ t ⊗ e` on sections.
@@ -32,6 +40,12 @@ locus of a section of an invertible sheaf.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Modules.tensorUnderlyingIso_hom_app_tmulRight` and
+  `AlgebraicGeometry.Scheme.Modules.tensorUnderlyingIso_hom_comp_app_tmulRight`: under the
+  comparison with the sheafification of the sectionwise tensor product, `t ⊗ e` is the image of
+  the pure tensor under the sheafification unit.
+* `AlgebraicGeometry.Scheme.Modules.tensorStalkEquiv_germ_tmulRight`: the germ of `s ⊗ t`
+  corresponds to `s_x ⊗ t_x`.
 * `AlgebraicGeometry.Scheme.Modules.bijective_tmulRight` and
   `AlgebraicGeometry.Scheme.Modules.bijective_tmulRight_tensorPowSection`: `t ↦ t ⊗ eⁿ` is bijective
   when `e` is a basis of `L` over `U`.
@@ -44,6 +58,7 @@ locus of a section of an invertible sheaf.
 public section
 
 open CategoryTheory MonoidalCategory AlgebraicGeometry Opposite TopologicalSpace TauCeti
+open scoped TensorProduct
 
 namespace AlgebraicGeometry.Scheme.Modules
 
@@ -66,6 +81,45 @@ def tmulRight {U : X.Opens} (e : Γ(L, U)) : Γ(F, U) →ₗ[Γ(X, U)] Γ(F ⊗ 
 theorem tmulRight_apply {U : X.Opens} (e : Γ(L, U)) (t : Γ(F, U)) :
     tmulRight F e t = Functor.LaxMonoidal.μ (sectionsFunctor U) F L (t ⊗ₜ e) :=
   (rfl)
+
+/-- Under the identification of the monoidal tensor product with the sheafification of the
+sectionwise tensor product, `s ⊗ t` is the image of the pure tensor under sheafification. -/
+theorem tensorUnderlyingIso_hom_app_tmulRight {U : X.Opens} (e : Γ(L, U)) (t : Γ(F, U)) :
+    Hom.app (X := X) (F.tensorUnderlyingIso L).hom U (tmulRight F e t) =
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
+        (F.val ⊗ L.val)).app (op U) (t ⊗ₜ e)) := by
+  rw [tmulRight_apply]
+  have h := TauCeti.SheafOfModules.forget_μ_comp_tensorUnderlyingIso_hom X.sheaf F L
+  have hu := TauCeti.SheafOfModules.sheafificationForgetAdjunction_unit_app
+    X.sheaf (F.val ⊗ L.val)
+  exact congrArg (fun φ ↦ (φ.app (op U)).hom (t ⊗ₜ e)) (h.trans hu)
+
+/-- A morphism from the sheafification of the sectionwise tensor product evaluates a tensor
+of sections by first applying the sheafification unit. -/
+theorem tensorUnderlyingIso_hom_comp_app_tmulRight {P : X.Modules}
+    (p : (PresheafOfModules.sheafification (𝟙 X.ringCatSheaf.obj)).obj (F.val ⊗ L.val) ⟶ P)
+    {U : X.Opens} (e : Γ(L, U)) (t : Γ(F, U)) :
+    Hom.app (X := X) ((F.tensorUnderlyingIso L).hom ≫ p) U
+        (tmulRight F e t) =
+      Hom.app (X := X) p U
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
+        (F.val ⊗ L.val)).app (op U) (t ⊗ₜ e)) := by
+  -- `tensorUnderlyingIso` lives in sheaves of modules over `SheafOfModules.ringCatSheaf X.sheaf`,
+  -- so the composite is formed in that category rather than in `X.Modules` (over
+  -- `X.ringCatSheaf`). The two agree only up to unfolding, so the pattern of `Hom.comp_app` is not
+  -- found syntactically; instantiating its morphisms elaborates it at the composite in the goal.
+  rw [Hom.comp_app (φ := (F.tensorUnderlyingIso L).hom) (ψ := p), ConcreteCategory.comp_apply,
+    tensorUnderlyingIso_hom_app_tmulRight]
+
+/-- The germ of a tensor of sections of the monoidal product is the tensor of their germs. -/
+@[simp]
+theorem tensorStalkEquiv_germ_tmulRight {N : X.Modules} {U : X.Opens}
+    (s : Γ(F, U)) (t : Γ(N, U)) {x : X} (hx : x ∈ U) :
+    TauCeti.SheafOfModules.tensorStalkEquivMonoidal X.sheaf F N x
+        ((F ⊗ N).presheaf.germ U x hx (tmulRight F t s)) =
+      F.presheaf.germ U x hx s ⊗ₜ[X.presheaf.stalk x] N.presheaf.germ U x hx t := by
+  rw [tmulRight_apply]
+  exact TauCeti.SheafOfModules.tensorStalkEquivMonoidal_germ X.sheaf F N x U hx s t
 
 /-- Tensoring with `e` is linear in `e`. -/
 @[simp]

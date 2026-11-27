@@ -7,9 +7,11 @@ module
 
 public import TauCeti.MeasureTheory.Function.Lp.BallAverage
 public import Mathlib.MeasureTheory.Function.UnifTight
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 
 import Mathlib.MeasureTheory.Measure.TightNormed
 import TauCeti.Topology.ContinuousMap.Ascoli
+import TauCeti.MeasureTheory.Function.Lp.Translation
 
 /-!
 # The Fréchet--Kolmogorov compactness criterion in `Lᵖ`
@@ -37,7 +39,14 @@ set, which is the form
 that Rellich--Kondrachov for `W^{1,p}_0(Ω)` consumes: extending by zero makes a function vanish off
 `Ω`, and its translation increments are controlled by `‖h‖ ‖∇u‖_p` through
 `TauCeti.W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient`. The corresponding theorem for
-`W^{1,p}(Ω)` additionally needs an extension operator and boundary regularity.
+`W^{1,p}(Ω)` additionally needs an extension operator and boundary regularity. For `C¹`
+functions the translation increments are controlled in the same way by the `Lᵖ` norm of the
+derivative (`ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`), so `C¹` functions vanishing
+off a fixed bounded set with uniformly bounded values and derivatives in `Lᵖ` form a totally
+bounded family (`TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`). In particular, if a
+cutoff `χ` vanishing off a bounded set has `‖χ u‖_p` and `‖D(χ u)‖_p` controlled by a gauge `J u`
+for every `C¹` function `u`, the cut-offs of the `u` with `J u ≤ 1` are totally bounded
+(`TauCeti.totallyBounded_setOf_ae_eq_smul`); this is the interior step of Rellich's theorem.
 
 ## The proof
 
@@ -66,6 +75,10 @@ is uniformly at most `η` there, and `μ K ^ (1/p) η` is made small by the choi
   `TauCeti.isCompact_closure_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl`: the criterion for a
   family vanishing almost everywhere off a fixed bounded set, in totally bounded and in relatively
   compact form.
+* `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`: the criterion for a family of `C¹`
+  functions vanishing off a fixed bounded set, with `Lᵖ` bounds on the functions and their
+  derivatives, whose translation increments are controlled by
+  `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`.
 
 ## References
 
@@ -293,12 +306,12 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
   have hgB : ∀ i : S, ∀ x : E,
       ballAverage mu r ⇑(i : Lp F p mu) x ∈ closedBall (0 : F) Bₑ.toReal := fun i x => by
     rw [mem_closedBall, dist_zero_right]
-    have h := (enorm_ballAverage_le (r := r) hp hp' x).trans
+    have h := (enorm_ballAverage_le (r := r) hp x).trans
       (mul_le_mul' le_rfl (hbdd _ i.property))
     simpa [Bₑ, V] using ENNReal.toReal_mono hBₑt h
   -- The uniform equicontinuity of the ball averages, at the fixed scale `r`.
   have hequi : UniformEquicontinuous fun i : S => ballAverage mu r ⇑(i : Lp F p mu) :=
-    uniformEquicontinuous_ballAverage hp hp' (fun i => Lp.memLp (i : Lp F p mu))
+    uniformEquicontinuous_ballAverage hp (fun i => Lp.memLp (i : Lp F p mu))
       fun c hc => by
         obtain ⟨δ, hδ, hδS⟩ := htrans c hc
         exact ⟨δ, hδ, fun i => hδS _ i.property⟩
@@ -378,6 +391,68 @@ theorem isCompact_closure_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl (hp' 
     IsCompact (closure S) :=
   ((totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl hp' hs hsupp hM hbdd
     htrans).closure).isCompact_of_isClosed isClosed_closure
+
+/-- **The Fréchet--Kolmogorov criterion for `C¹` functions.** A family of `Lᵖ` functions, each
+almost everywhere equal to a `C¹` function vanishing off a fixed bounded set `s`, with the `Lᵖ`
+norms of the function and of its derivative at most `M`, is totally bounded. By the translation
+estimate `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`, its translation increments are at
+most `‖h‖ M`. -/
+theorem totallyBounded_of_contDiff_of_eLpNorm_fderiv_le [NormedSpace ℝ E] (hp' : p ≠ ∞)
+    {S : Set (Lp F p mu)} {s : Set E} (hs : Bornology.IsBounded s) {M : ℝ≥0∞} (hM : M ≠ ∞)
+    (hS : ∀ f ∈ S, ∃ u : E → F, ContDiff ℝ 1 u ∧ (∀ x ∉ s, u x = 0) ∧ eLpNorm u p mu ≤ M ∧
+      eLpNorm (fderiv ℝ u) p mu ≤ M ∧ f =ᵐ[mu] u) :
+    TotallyBounded S := by
+  refine totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl hp' hs ?_ hM ?_ ?_
+  · intro f hf
+    obtain ⟨u, -, hu, -, -, hfu⟩ := hS f hf
+    filter_upwards [hfu] with x hx hxs
+    rw [hx, hu x hxs]
+  · intro f hf
+    obtain ⟨u, -, -, hu, -, hfu⟩ := hS f hf
+    rwa [eLpNorm_congr_ae hfu]
+  · intro ε hε
+    obtain ⟨r, -, hrpos, hrε⟩ := ENNReal.lt_iff_exists_real_btwn.1 hε
+    have hr : 0 < r := ENNReal.ofReal_pos.1 hrpos
+    refine ⟨r / (M.toReal + 1), by positivity, fun f hf h hh ↦ ?_⟩
+    obtain ⟨u, hu, -, -, hdu, hfu⟩ := hS f hf
+    have hae : (fun x ↦ f (x + h) - f x) =ᵐ[mu] fun x ↦ u (x + h) - u x :=
+      ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hfu).sub hfu
+    rw [eLpNorm_congr_ae hae]
+    calc _ ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ u) p mu :=
+          hu.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv Fact.out h
+      _ ≤ ENNReal.ofReal ‖h‖ * ENNReal.ofReal M.toReal := by
+          rw [ofReal_norm, ENNReal.ofReal_toReal hM]
+          gcongr
+      _ = ENNReal.ofReal (‖h‖ * M.toReal) := (ENNReal.ofReal_mul (norm_nonneg _)).symm
+      _ ≤ ENNReal.ofReal r := by
+          refine ENNReal.ofReal_le_ofReal ?_
+          calc ‖h‖ * M.toReal ≤ r / (M.toReal + 1) * (M.toReal + 1) := by
+                gcongr; linarith
+            _ = r := div_mul_cancel₀ _ (by positivity)
+      _ ≤ ε := hrε.le
+
+/-- **The Fréchet--Kolmogorov criterion for cut-off `C¹` functions.** Let `χ` vanish off a bounded
+set `s`, and let `J` be a gauge on functions such that, for every `C¹` function `u`, the product
+`χ u` is `C¹` with `Lᵖ` norm at most `J u` and derivative of `Lᵖ` norm at most `A J u`. Then the
+cut-offs `χ u` of the `C¹` functions `u` with `J u ≤ 1` form a totally bounded family. This is the
+interior step of Rellich's theorem, with `J u` the `W^{1,p}` norm of `u` on a domain. -/
+theorem totallyBounded_setOf_ae_eq_smul [NormedSpace ℝ E] (hp' : p ≠ ∞) {s : Set E}
+    (hs : Bornology.IsBounded s) {χ : E → ℝ} (hχs : ∀ x, χ x ≠ 0 → x ∈ s)
+    {J : (E → F) → ℝ≥0∞} {A : ℝ≥0∞} (hA : A ≠ ∞)
+    (hest : ∀ u : E → F, ContDiff ℝ 1 u → ContDiff ℝ 1 (fun x ↦ χ x • u x) ∧
+      eLpNorm (fun x ↦ χ x • u x) p mu ≤ J u ∧
+      eLpNorm (fderiv ℝ fun x ↦ χ x • u x) p mu ≤ A * J u) :
+    TotallyBounded {f : Lp F p mu |
+      ∃ u : E → F, ContDiff ℝ 1 u ∧ J u ≤ 1 ∧ f =ᵐ[mu] fun x ↦ χ x • u x} := by
+  refine totallyBounded_of_contDiff_of_eLpNorm_fderiv_le hp' hs (M := 1 ⊔ A) (by finiteness) ?_
+  rintro f ⟨u, hu, hu1, hf⟩
+  obtain ⟨h₁, h₂, h₃⟩ := hest u hu
+  refine ⟨fun x ↦ χ x • u x, h₁, fun x hx ↦ ?_, le_sup_of_le_left (h₂.trans hu1),
+    le_sup_of_le_right (h₃.trans ?_), hf⟩
+  · by_contra h
+    exact hx (hχs x (left_ne_zero_of_smul h))
+  · calc A * J u ≤ A * 1 := by gcongr
+      _ = A := mul_one A
 
 end FrechetKolmogorov
 

@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Polynomial.Vieta
 import Mathlib.Algebra.Polynomial.Derivative
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Ring.Parity
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!
 # Vieta's formulas for indexed families of roots
@@ -30,6 +31,11 @@ same formula computes its coefficients.
   are the signed coefficients of `∏ i, (X - C (x i))`.
 * `Polynomial.eq_prod_X_sub_C_of_monic_of_roots_eq`: a monic polynomial whose roots are listed by
   `x` on a finite set `s` is the product of the linear factors `X - C (x i)` over `s`.
+* `Polynomial.eq_prod_X_sub_C_of_monic_of_isRoot`: the same when the values of `x` on `s` are
+  distinct roots, as many as the degree.
+* `Polynomial.coeff_reverse_eq_esymm_roots_of_card`: for a polynomial with as many roots as its
+  degree, the coefficient `a_k` of `X^(n-k)`, extended by `0` for `k > n`, is
+  `a₀ (-1)ᵏ e_k(roots)`.
 
 Evaluated at a point `v`, the product `P(v) = ∏_{w ∈ s} (v - w)` of a multiset `s` of `m` elements
 is `vᵐ + ∑_{j=1}^{m} (-1)ʲ e_j(s) v^(m-j)`, and its derivative at a root `v ∈ s` is
@@ -41,6 +47,8 @@ first-order equations for the coefficients of `P` become equations for its simpl
 * `Multiset.prod_map_sub_eq_pow_add_sum_esymm`: `∏_{w ∈ s} (v - w) = vᵐ + ∑ (-1)ʲ e_j(s) v^(m-j)`.
 * `Multiset.prod_map_sub_eq_zero_iff`: over a domain, `v` is a root of `∏_{w ∈ s} (W - w)` exactly
   when `v ∈ s`.
+* `Multiset.eq_zero_of_mem_of_forall_esymm_eq_zero`: over a reduced ring, a multiset whose
+  elementary symmetric functions of positive degree vanish consists of zeros.
 * `Multiset.prod_map_sub_erase_eq_sum_esymm`: the derivative at a root,
   `∏_{w ∈ s ∖ v} (v - w) = m v^(m-1) + ∑ (-1)ʲ (m - j) e_j(s) v^(m-j-1)`.
 * `Multiset.prod_map_sub_erase_ne_zero`: it is nonzero at a simple root of a multiset over a
@@ -49,6 +57,10 @@ first-order equations for the coefficients of `P` become equations for its simpl
   `∑ (-1)^(j-1) v^(m-j) j e_j(s) = v ∏_{w ∈ s ∖ v} (v - w)` at a root.
 * `Multiset.sum_mul_sum_map_mul_esymm_erase`: for any weights `f`,
   `∑ (-1)^(j-1) v^(m-j) ∑_{w ∈ s} f(w) e_{j-1}(s ∖ w) = f(v) ∏_{w ∈ s ∖ v} (v - w)` at a root.
+
+The weighted sums `∑_{w ∈ s} f(w) e_k(s ∖ w)` change in a simple way when an element `a` is
+adjoined to `s`: the new term `f(a) e_k(s)` appears, and every old term gains
+`a f(w) e_{k-1}(s ∖ w)` (`Multiset.sum_map_mul_esymm_erase_cons`).
 -/
 
 public section
@@ -81,6 +93,29 @@ theorem eq_prod_X_sub_C_of_monic_of_roots_eq {f : R[X]} {s : Finset σ} {x : σ 
     f = ∏ i ∈ s, (X - C (x i)) := by
   rw [← prod_multiset_X_sub_C_of_monic_of_roots_card_eq hf (by simp [hroots, hdeg]), hroots,
     Multiset.map_map, Function.comp_def, Finset.prod_map_val]
+
+/-- A monic polynomial of degree `s.card` with `s.card` distinct roots, listed by `x` on the finite
+set `s`, is the product of the linear factors `X - C (x i)` over `s`. -/
+theorem eq_prod_X_sub_C_of_monic_of_isRoot {f : R[X]} {s : Finset σ} {x : σ → R}
+    (hf : f.Monic) (hdeg : f.natDegree = s.card) (hx : Set.InjOn x s)
+    (hroot : ∀ i ∈ s, f.IsRoot (x i)) : f = ∏ i ∈ s, (X - C (x i)) := by
+  refine eq_prod_X_sub_C_of_monic_of_roots_eq hf hdeg (Multiset.eq_of_le_of_card_le ?_ ?_).symm
+  · refine (Multiset.le_iff_subset (s.nodup.map_on hx)).mpr fun y hy ↦ ?_
+    obtain ⟨i, hi, rfl⟩ := Multiset.mem_map.mp hy
+    exact (mem_roots hf.ne_zero).mpr (hroot i hi)
+  · simpa [hdeg] using card_roots' f
+
+/-- **Vieta's formulas, indexed from the leading term.** If `p = a₀ Xⁿ + a₁ Xⁿ⁻¹ + ⋯ + aₙ` has
+`n` roots with multiplicity, then for every `k` the coefficient `a_k = p.reverse.coeff k` (which is
+`0` for `k > n`) is `a₀ * (-1) ^ k * e_k(roots p)`. -/
+theorem coeff_reverse_eq_esymm_roots_of_card {p : R[X]}
+    (hroots : Multiset.card p.roots = p.natDegree) (k : ℕ) :
+    p.reverse.coeff k = p.leadingCoeff * (-1) ^ k * p.roots.esymm k := by
+  rw [coeff_reverse]
+  rcases le_or_gt k p.natDegree with hk | hk
+  · rw [revAt_le hk, coeff_eq_esymm_roots_of_card hroots (Nat.sub_le _ _), Nat.sub_sub_self hk]
+  · rw [revAt_eq_self_of_lt hk, coeff_eq_zero_of_natDegree_lt hk,
+      Multiset.esymm_of_card_lt (hroots ▸ hk), mul_zero]
 
 end Polynomial
 
@@ -117,6 +152,16 @@ theorem prod_map_sub_eq_pow_add_sum_esymm (hs : card s = m) (v : R) :
 /-- Over a domain, `v` is a root of `∏_{w ∈ s} (W - w)` exactly when `v ∈ s`. -/
 theorem prod_map_sub_eq_zero_iff [IsDomain R] : (s.map fun w ↦ v - w).prod = 0 ↔ v ∈ s := by
   simp [prod_eq_zero_iff, sub_eq_zero]
+
+/-- Over a reduced ring, if the elementary symmetric functions of positive degree of `s` vanish,
+then every element of `s` is `0`: it is a root of `∏_{w ∈ s} (W - w) = Wᵐ`. -/
+theorem eq_zero_of_mem_of_forall_esymm_eq_zero [IsReduced R] (h : ∀ j, j ≠ 0 → s.esymm j = 0)
+    (hv : v ∈ s) : v = 0 := by
+  have hP := prod_map_sub_eq_pow_add_sum_esymm (s := s) rfl v
+  rw [prod_eq_zero (mem_map.2 ⟨v, hv, sub_self v⟩), Finset.sum_eq_zero fun j hj ↦ by
+    rw [h j (Nat.one_le_iff_ne_zero.1 (Finset.mem_Icc.1 hj).1), mul_zero, zero_mul],
+    add_zero] at hP
+  exact IsNilpotent.eq_zero ⟨_, hP.symm⟩
 
 variable [DecidableEq R]
 
@@ -221,5 +266,25 @@ theorem sum_mul_sum_map_mul_esymm_erase (hs : card s = m) (hv : v ∈ s) (f : R 
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Nat.add_sub_cancel, Nat.sub_sub, add_comm 1 i]
   ring
+
+end Multiset
+
+namespace Multiset
+
+variable {R : Type*} [CommSemiring R] [DecidableEq R]
+
+/-- **Adjoining an element to the weighted sums of the erased elementary symmetric functions.**
+For any weights `f`,
+`∑_{w ∈ a :: s} f(w) e_{k+1}((a :: s) ∖ w) = f(a) e_{k+1}(s) + ∑_{w ∈ s} f(w) e_{k+1}(s ∖ w) +
+a ∑_{w ∈ s} f(w) e_k(s ∖ w)`. -/
+theorem sum_map_mul_esymm_erase_cons (f : R → R) (a : R) (s : Multiset R) (k : ℕ) :
+    ((a ::ₘ s).map fun w ↦ f w * ((a ::ₘ s).erase w).esymm (k + 1)).sum =
+      f a * s.esymm (k + 1) + (s.map fun w ↦ f w * (s.erase w).esymm (k + 1)).sum +
+        a * (s.map fun w ↦ f w * (s.erase w).esymm k).sum := by
+  -- for `w ∈ s`, erasing `w` from `a :: s` keeps `a`, so `esymm_cons` splits off `a`
+  have h : (s.map fun w ↦ f w * ((a ::ₘ s).erase w).esymm (k + 1)) =
+      s.map fun w ↦ f w * (s.erase w).esymm (k + 1) + a * (f w * (s.erase w).esymm k) :=
+    map_congr rfl fun w hw ↦ by rw [erase_cons_tail_of_mem hw, Multiset.esymm_cons]; ring
+  rw [map_cons, sum_cons, erase_cons_head, h, sum_map_add, sum_map_mul_left, add_assoc]
 
 end Multiset

@@ -12,14 +12,17 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 # The dimension of a Lie submodule
 
 A Lie submodule and its carrier submodule have the same underlying type, so they have the same
-dimension; the same holds for a Lie subalgebra and the Lie submodule it becomes over itself. This
-file states those definitional equalities once, as the bridges that dimension counts over Lie
-submodules pass through: the linear-algebra lemmas about dimensions of direct sums are stated for
-`Submodule`, while the Lie-theoretic dimension lemmas are stated for `LieSubmodule`.
+dimension; the same holds for a Lie subalgebra, its carrier submodule, and the Lie submodule it
+becomes over itself. This file states those definitional equalities once, as the bridges that
+dimension counts over Lie submodules pass through: the linear-algebra lemmas about dimensions of
+direct sums are stated for `Submodule`, while the Lie-theoretic dimension lemmas are stated for
+`LieSubmodule`.
 
 ## Main results
 
 * `LieSubmodule.finrank_toSubmodule`: a Lie submodule has the dimension of its carrier submodule.
+* `LieSubalgebra.finrank_toSubmodule`: a Lie subalgebra has the dimension of its carrier
+  submodule.
 * `LieSubalgebra.finrank_toLieSubmodule`: a Lie subalgebra has the dimension of the Lie submodule
   it determines over itself.
 * `LieSubmodule.finrank_bot`: the trivial Lie submodule has dimension zero.
@@ -61,6 +64,13 @@ end LieSubmodule
 namespace LieSubalgebra
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- The type underlying a Lie subalgebra is the type underlying its carrier submodule, so the two
+have the same dimension. -/
+@[simp]
+theorem finrank_toSubmodule (K : LieSubalgebra R L) :
+    finrank R K.toSubmodule = finrank R K :=
+  rfl
 
 /-- The type underlying a Lie subalgebra is the type underlying the Lie submodule it determines
 over itself, so the two have the same dimension. -/

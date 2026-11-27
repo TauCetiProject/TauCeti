@@ -45,8 +45,6 @@ inverted chart (`OnePoint.mdifferentiableAt_iff_of_eq_infty`).
   the inclusion `𝕜 → OnePoint 𝕜` and `w ↦ w⁻¹` (with `0 ↦ ∞`), are analytic.
 * `OnePoint.mdifferentiableAt_iff_of_ne_infty`, `OnePoint.mdifferentiableAt_iff_of_eq_infty`
   and `OnePoint.mdifferentiableAt_coe_comp_iff`: differentiability of maps into `OnePoint 𝕜`.
-* `OnePoint.mfderiv_apply_eq_of_hasDerivAt`: the derivative of a self-map of `OnePoint 𝕜`, read
-  in the preferred charts, from the derivative of its chart expression.
 * `OnePoint.writtenInExtChartAt_coe_of_ne_infty`, `OnePoint.writtenInExtChartAt_coe_of_eq_infty`
   and `OnePoint.invChart_eq_inv_writtenInExtChartAt_coe`: the local expression of a self-map of
   `OnePoint 𝕜` at a finite point, and its reciprocal read in the inverted chart at the target.
@@ -190,6 +188,13 @@ theorem invChart_coe (z : 𝕜) : invChart (z : OnePoint 𝕜) = z⁻¹ :=
 theorem invChart_infty : invChart (∞ : OnePoint 𝕜) = 0 :=
   (rfl)
 
+/-- The inverted chart does not vanish at the finite nonzero points. -/
+theorem invChart_ne_zero {x : OnePoint 𝕜} (hx : x ≠ (∞ : OnePoint 𝕜))
+    (hx0 : x ≠ ((0 : 𝕜) : OnePoint 𝕜)) : invChart x ≠ 0 := by
+  induction x using OnePoint.rec with
+  | infty => exact absurd rfl hx
+  | coe z => simpa using (show z ≠ 0 by simpa using hx0)
+
 @[simp]
 theorem invChart_symm_zero : invChart.symm (0 : 𝕜) = (∞ : OnePoint 𝕜) := by
   simp [invChart]
@@ -269,16 +274,14 @@ instance instIsManifold : IsManifold 𝓘(𝕜) ω (OnePoint 𝕜) := by
 /-- The affine chart belongs to the maximal atlas of `OnePoint 𝕜` at every regularity. -/
 theorem affineChart_mem_maximalAtlas {n : ℕ∞ω} :
     (affineChart : OpenPartialHomeomorph (OnePoint 𝕜) 𝕜) ∈
-      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) := by
-  simpa only [chartAt_coe] using
-    IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜)) (n := n) ((0 : 𝕜) : OnePoint 𝕜)
+      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) :=
+  IsManifold.subset_maximalAtlas (Or.inl rfl)
 
 /-- The inverted chart belongs to the maximal atlas of `OnePoint 𝕜` at every regularity. -/
 theorem invChart_mem_maximalAtlas {n : ℕ∞ω} :
     (invChart : OpenPartialHomeomorph (OnePoint 𝕜) 𝕜) ∈
-      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) := by
-  simpa only [chartAt_infty] using
-    IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜)) (n := n) (∞ : OnePoint 𝕜)
+      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) :=
+  IsManifold.subset_maximalAtlas (Or.inr rfl)
 
 /-! ### Differentiable maps into the projective line
 
@@ -332,20 +335,6 @@ theorem mdifferentiableAt_iff_of_eq_infty {f : M → OnePoint 𝕜} {x : M}
       ContinuousAt f x ∧ MDifferentiableAt I 𝓘(𝕜) (invChart ∘ f) x := by
   rw [mdifferentiableAt_iff_target, hx]
   simp only [mfld_simps, chartAt_infty]
-
-/-- The derivative of a self-map of the projective line, read in the preferred charts at a point and
-at its image, is multiplication by the derivative of the chart expression. -/
-theorem mfderiv_apply_eq_of_hasDerivAt {f : OnePoint 𝕜 → OnePoint 𝕜} {x : OnePoint 𝕜}
-    (hf : MDifferentiableAt 𝓘(𝕜) 𝓘(𝕜) f x) {φ : 𝕜 → 𝕜} {c : 𝕜}
-    (hφ : chartAt 𝕜 (f x) ∘ f ∘ (chartAt 𝕜 x).symm =ᶠ[𝓝 (chartAt 𝕜 x x)] φ)
-    (hc : HasDerivAt φ c (chartAt 𝕜 x x)) (v : 𝕜) :
-    mfderiv 𝓘(𝕜) 𝓘(𝕜) f x v = (c * v : 𝕜) := by
-  rw [hf.mfderiv_abuse]
-  have hw : writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x f = chartAt 𝕜 (f x) ∘ f ∘ (chartAt 𝕜 x).symm := by
-    ext; simp [writtenInExtChartAt]
-  simp only [hw, modelWithCornersSelf_coe, range_id, fderivWithin_univ, extChartAt_coe,
-    Function.comp_apply, id_eq, hφ.fderiv_eq, hc.hasFDerivAt.fderiv]
-  exact (ContinuousLinearMap.toSpanSingleton_apply 𝕜 c v).trans (mul_comm v c)
 
 /-- A self-map `f` of the projective line with `f x` finite at a finite point `x` reads
 `z ↦ f z` in the affine charts at `x` and at `f x`. -/

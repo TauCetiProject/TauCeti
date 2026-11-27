@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 
+import TauCeti.Algebra.Algebra.Unitization
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
@@ -184,6 +185,16 @@ noncomputable def unitizationSndL : WithLp 1 (Unitization 𝕜 A) →L[𝕜] A :
 theorem unitizationSndL_apply (u : WithLp 1 (Unitization 𝕜 A)) :
     unitizationSndL 𝕜 A u = (ofLp u).snd := (rfl)
 
+variable {𝕜 A} in
+/-- An element of the ℓ¹ unitization with zero scalar coordinate is recovered from its nonunital
+part. -/
+theorem unitizationInrL_unitizationSndL_of_fst_eq_zero {u : WithLp 1 (Unitization 𝕜 A)}
+    (hu : (ofLp u).fst = 0) :
+    unitizationInrL 𝕜 A (unitizationSndL 𝕜 A u) = u := by
+  apply WithLp.ofLp_injective 1
+  rw [unitizationInrL_apply, ofLp_toLp, unitizationSndL_apply]
+  exact Unitization.inr_snd_of_fst_eq_zero hu
+
 variable [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
 
 /-- The bounded inclusion into the ℓ¹ unitization preserves multiplication. -/
@@ -224,10 +235,8 @@ theorem mem_range_unitizationInrL_iff {u : WithLp 1 (Unitization 𝕜 A)} :
   · rintro ⟨a, rfl⟩
     simp
   · intro h
-    refine ⟨unitizationSndL 𝕜 A u, ?_⟩
-    conv_rhs => rw [unitization_eq_fst_smul_one_add_inr u]
     rw [unitizationFstA_apply] at h
-    simp [h]
+    exact ⟨unitizationSndL 𝕜 A u, unitizationInrL_unitizationSndL_of_fst_eq_zero h⟩
 
 /-- The spectrum of an element embedded into the ℓ¹ unitization is its quasispectrum. -/
 theorem spectrum_unitizationInrL (a : A) :

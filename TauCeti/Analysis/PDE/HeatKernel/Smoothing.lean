@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
+public import TauCeti.Analysis.PDE.HeatKernel.OffDiagonal
 public import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Convolution.Young
@@ -32,14 +32,14 @@ assert the optimal constant for intermediate exponents.
 The same splitting gives the **smoothing estimates** in every `Lᵖ`, `1 ≤ p < ∞`: the smooth
 representative `u` of `e^{tΔ} f` satisfies
 
-`‖D^m u‖_p ≤ C t^(-m/2) ‖f‖_p`,
+`‖D^m u‖_q ≤ C t^(-m/2 - (n/2)(1/p - 1/q)) ‖f‖_p` for `p ≤ q ≤ ∞`,
 
 with `C` depending only on `m` and the dimension. The derivatives of `K_{t/2} ⋆ g` are the
-convolutions `D^m K_{t/2} ⋆ g`, so Young's inequality bounds them by `‖D^m K_{t/2}‖_{L¹} ‖g‖_p`,
-the kernel bound `‖D^m K_s‖_{L¹} ≤ C s^(-m/2)` supplies the power of `t`, and the contraction
-property of the semigroup gives `‖g‖_p ≤ ‖f‖_p` for `g = e^{(t/2)Δ} f`. For `m = 2` this bounds
-`‖Δ u‖_p` by `C t⁻¹ ‖f‖_p`. For essentially bounded data the estimate holds directly, including
-`p = ∞`.
+convolutions `D^m K_{t/2} ⋆ g`, so Young's inequality bounds them by `‖D^m K_{t/2}‖_{L¹} ‖g‖_q`,
+the kernel bound `‖D^m K_s‖_{L¹} ≤ C s^(-m/2)` supplies the derivative power of `t`, and the
+off-diagonal estimates of the semigroup control `‖g‖_q` for `g = e^{(t/2)Δ} f`.
+For `m = 2` and `q = p` this bounds `‖Δ u‖_p` by `C t⁻¹ ‖f‖_p`. For essentially bounded
+data the estimate holds directly, including `p = ∞`.
 
 ## Main declarations
 
@@ -49,8 +49,9 @@ property of the semigroup gives `‖g‖_p ≤ ‖f‖_p` for `g = e^{(t/2)Δ} f
 * `TauCeti.eLpNorm_iteratedFDeriv_heatKernel_convolution_le`,
   `TauCeti.exists_eLpNorm_iteratedFDeriv_heatKernel_convolution_le`: the `Lᵖ` bounds on the
   derivatives of `K_t ⋆ g` for essentially bounded `g`.
-* `TauCeti.exists_eLpNorm_iteratedFDeriv_le_of_ae_eq_heatSemigroup`: the smoothing estimates for
-  the heat semigroup on `Lᵖ`.
+* `TauCeti.exists_eLpNorm_iteratedFDeriv_le_of_ae_eq_heatSemigroup_of_le`: the off-diagonal
+  derivative estimates for the heat semigroup.
+* `TauCeti.exists_eLpNorm_iteratedFDeriv_le_of_ae_eq_heatSemigroup`: their diagonal specialization.
 * `TauCeti.exists_eLpNorm_laplacian_le_of_ae_eq_heatSemigroup`: the `Lᵖ` bound on the
   Laplacian.
 
@@ -181,18 +182,6 @@ private theorem ae_norm_heatSemigroup_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp :
     (eLpNorm_heatSemigroup_top_le hp ht f).trans_lt (by finiteness)
   simpa only [toReal_eLpNorm] using ae_le_lpNorm_exponent_top hg
 
-/-- Splitting the evolution in two half-steps writes the heat semigroup at a positive time as the
-heat convolution of an essentially bounded function: `e^{tΔ} f = K_{t/2} ⋆ e^{(t/2)Δ} f`. -/
-private theorem heatSemigroup_ae_eq_convolution_heatSemigroup_half {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp : p ≠ ∞) {t : ℝ≥0} (ht : t ≠ 0) (f : Lp F p (volume : Measure E)) :
-    (heatSemigroup hp t f : E → F) =ᵐ[volume]
-      heatKernel ((t / 2 : ℝ≥0) : ℝ) ⋆ (heatSemigroup hp (t / 2) f : E → F) := by
-  have he : heatSemigroup hp t f = heatSemigroup hp (t / 2) (heatSemigroup hp (t / 2) f) := by
-    simpa only [add_halves, Semigroups.ContractionSemigroup.toStronglyContinuousSemigroup_apply]
-      using (heatSemigroup hp).toStronglyContinuousSemigroup.map_add_apply (t / 2) (t / 2) f
-  rw [he]
-  exact heatSemigroup_ae_eq_convolution_coeFn hp (by positivity) _
-
 /-- **Instantaneous smoothness for `Lᵖ` data.** At every positive time the heat semigroup
 has a smooth representative. No boundedness of the initial datum is required. -/
 theorem exists_contDiff_ae_eq_heatSemigroup {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -204,6 +193,60 @@ theorem exists_contDiff_ae_eq_heatSemigroup {p : ℝ≥0∞} [Fact (1 ≤ p)]
   ⟨_, contDiff_heatKernel_convolution (by positivity)
     (ae_norm_heatSemigroup_le hp (by positivity) f),
     heatSemigroup_ae_eq_convolution_heatSemigroup_half hp ht f⟩
+
+/-- **Off-diagonal derivative estimates.** For each order `m`, a constant depending only
+on `m` and the dimension bounds `‖D^m e^{tΔ} f‖_q` by
+`C t^(-m/2 - (d/2)(1/p - 1/q)) ‖f‖_p`, simultaneously for `1 ≤ p ≤ q ≤ ∞`, `p < ∞`.
+The estimate holds for every continuous representative of the heat evolution. -/
+theorem exists_eLpNorm_iteratedFDeriv_le_of_ae_eq_heatSemigroup_of_le (m : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃p q : ℝ≥0∞⦄ [Fact (1 ≤ p)] (hp : p ≠ ∞), p ≤ q →
+      ∀ ⦃t : ℝ≥0⦄, t ≠ 0 → ∀ (f : Lp F p (volume : Measure E)) ⦃u : E → F⦄,
+        Continuous u → (heatSemigroup hp t f : E → F) =ᵐ[volume] u →
+          eLpNorm (iteratedFDeriv ℝ m u) q volume ≤
+            ENNReal.ofReal (C * (t : ℝ) ^ (-(m : ℝ) / 2 -
+              (Module.finrank ℝ E : ℝ) / 2 * (1 / p.toReal - 1 / q.toReal))) *
+                eLpNorm f p volume := by
+  obtain ⟨C, hC₀, hC⟩ :=
+    exists_eLpNorm_iteratedFDeriv_heatKernel_convolution_le (E := E) (F := F) m
+  refine ⟨C * 2 ^ ((m : ℝ) / 2), by positivity, fun p q _ hp hpq t ht f u hu hfu => ?_⟩
+  let s : ℝ≥0 := t / 2
+  have hs : (0 : ℝ) < s := by positivity
+  let g := heatSemigroup hp s f
+  have hbound := ae_le_lpNorm_exponent_top
+    (memLp_heatSemigroup hp le_top (NNReal.coe_ne_zero.1 hs.ne') f)
+  have hug : u = heatKernel (s : ℝ) ⋆ (g : E → F) :=
+    (Continuous.ae_eq_iff_eq volume hu (contDiff_heatKernel_convolution hs hbound).continuous).1
+      (hfu.symm.trans (heatSemigroup_ae_eq_convolution_heatSemigroup_half hp ht f))
+  let a : ℝ := (Module.finrank ℝ E : ℝ) / 2 * (1 / p.toReal - 1 / q.toReal)
+  have ha : 0 ≤ a := by
+    have hi := ENNReal.toReal_mono
+      (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne')
+      (ENNReal.inv_le_inv.2 hpq)
+    exact mul_nonneg (by positivity) (sub_nonneg.2
+      (by simpa only [ENNReal.toReal_inv, one_div] using hi))
+  have hsmall : (4 * π * (s : ℝ)) ^ (-a) ≤ (t : ℝ) ^ (-a) := by
+    have he : 4 * π * (s : ℝ) = (2 * π) * (t : ℝ) := by simp [s]; ring
+    rw [he, mul_rpow (by positivity) t.coe_nonneg]
+    exact mul_le_of_le_one_left (by positivity)
+      (rpow_le_one_of_one_le_of_nonpos (by linarith [two_le_pi]) (by linarith))
+  have hscale : (s : ℝ) ^ (-(m : ℝ) / 2) =
+      2 ^ ((m : ℝ) / 2) * (t : ℝ) ^ (-(m : ℝ) / 2) := by
+    rw [NNReal.coe_div, NNReal.coe_ofNat, div_rpow t.coe_nonneg zero_le_two,
+      div_eq_inv_mul, ← rpow_neg zero_le_two, neg_div, neg_neg]
+  rw [hug]
+  grw [hC hs (Lp.aestronglyMeasurable g) hbound (le_trans Fact.out hpq),
+    eLpNorm_heatSemigroup_le hp hpq (NNReal.coe_ne_zero.1 hs.ne')]
+  have he : -(Module.finrank ℝ E : ℝ) / 2 * (1 / p.toReal - 1 / q.toReal) = -a := by
+    dsimp [a]; ring
+  rw [he]
+  grw [hsmall]
+  rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), hscale]
+  apply le_of_eq
+  have he' : -(m : ℝ) / 2 - (Module.finrank ℝ E : ℝ) / 2 *
+      (1 / p.toReal - 1 / q.toReal) = -(m : ℝ) / 2 + -a := by dsimp [a]; ring
+  rw [he', rpow_add (by positivity : 0 < (t : ℝ))]
+  congr 2
+  ring
 
 /-- **Smoothing estimates for the heat semigroup on `Lᵖ`.** For each order `m` there is a
 constant `C`, depending only on `m` and the dimension, such that for every `1 ≤ p < ∞`, every
@@ -217,28 +260,9 @@ theorem exists_eLpNorm_iteratedFDeriv_le_of_ae_eq_heatSemigroup (m : ℕ) :
           eLpNorm (iteratedFDeriv ℝ m u) p volume ≤
             ENNReal.ofReal (C * (t : ℝ) ^ (-(m : ℝ) / 2)) * eLpNorm f p volume := by
   obtain ⟨C, hC₀, hC⟩ :=
-    exists_eLpNorm_iteratedFDeriv_heatKernel_convolution_le (E := E) (F := F) m
-  refine ⟨C * 2 ^ ((m : ℝ) / 2), by positivity, fun p _ hp t ht f u hu hfu => ?_⟩
-  set s : ℝ≥0 := t / 2
-  have hs : (0 : ℝ) < s := by positivity
-  set g := heatSemigroup hp s f
-  have hbound := ae_norm_heatSemigroup_le hp (NNReal.coe_ne_zero.1 hs.ne') f
-  -- `u` is the smooth function `K_s ⋆ g`, two continuous functions being equal almost everywhere.
-  have hug : u = heatKernel (s : ℝ) ⋆ (g : E → F) :=
-    (Continuous.ae_eq_iff_eq volume hu (contDiff_heatKernel_convolution hs hbound).continuous).1
-      (hfu.symm.trans (heatSemigroup_ae_eq_convolution_heatSemigroup_half hp ht f))
-  -- The semigroup is a contraction, so `‖g‖_p ≤ ‖f‖_p`.
-  have hgf : eLpNorm (g : E → F) p volume ≤ eLpNorm f p volume := by
-    rw [← Lp.eNorm_def, ← Lp.eNorm_def, eNorm_le_iff_norm_le]
-    exact ContinuousLinearMap.le_of_opNorm_le _ ((heatSemigroup hp).contracting s) f |>.trans_eq
-      (one_mul _)
-  have hs2 : (s : ℝ) = (t : ℝ) / 2 := by simp [s]
-  have hst : (s : ℝ) ^ (-(m : ℝ) / 2) = 2 ^ ((m : ℝ) / 2) * (t : ℝ) ^ (-(m : ℝ) / 2) := by
-    rw [hs2, div_rpow t.coe_nonneg zero_le_two]
-    -- It remains to write `t ^ a / 2 ^ a` as `2 ^ (-a) * t ^ a`.
-    rw [div_eq_inv_mul, ← rpow_neg zero_le_two, neg_div, neg_neg]
-  rw [hug]
-  grw [hC hs (Lp.aestronglyMeasurable g) hbound Fact.out, hgf, hst, ← mul_assoc]
+    exists_eLpNorm_iteratedFDeriv_le_of_ae_eq_heatSemigroup_of_le (E := E) (F := F) m
+  refine ⟨C, hC₀, fun p _ hp t ht f u hu hfu => ?_⟩
+  simpa using hC hp le_rfl ht f hu hfu
 
 /-- **The `Lᵖ` bound on the Laplacian of the heat semigroup.** There is a constant `C`, depending
 only on the dimension, such that for every `1 ≤ p < ∞`, every `t > 0` and every `f ∈ Lᵖ`, the
@@ -263,9 +287,7 @@ theorem exists_eLpNorm_laplacian_le_of_ae_eq_heatSemigroup :
     exact (hw.of_le (by norm_cast)).continuous_laplacian.aestronglyMeasurable
   -- Pointwise, `‖Δ u‖ ≤ dim E * ‖D² u‖`.
   have hpt : ∀ᵐ x ∂volume, ‖Δ u x‖ ≤ Module.finrank ℝ E * ‖iteratedFDeriv ℝ 2 u x‖ :=
-    ae_of_all _ fun x => by
-      have h := norm_laplacian_le u x
-      rwa [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv] at h
+    ae_of_all _ fun x => norm_laplacian_le_norm_iteratedFDeriv_two u x
   grw [eLpNorm_le_mul_eLpNorm_of_ae_le_mul hΔ hpt p, hD, ← mul_assoc, ← ENNReal.ofReal_mul
     (by positivity), mul_assoc]
 

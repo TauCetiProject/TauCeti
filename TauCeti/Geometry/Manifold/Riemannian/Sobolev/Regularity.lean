@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
@@ -12,14 +13,19 @@ import TauCeti.Analysis.PDE.Ellipticity.PosDef
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.PDE.Regularity.Semilinear
+import TauCeti.Analysis.PDE.Regularity.Smooth
+import TauCeti.Analysis.Sobolev.Wkp.ClosedGraph
 import TauCeti.Geometry.Manifold.ContMDiff.LocalRepresentative
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
+import TauCeti.Geometry.Manifold.Riemannian.Poisson
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Chart
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
+import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
@@ -45,6 +51,35 @@ transfers Euclidean interior regularity to `H¹(M)`:
   three, if the metric, `A`, `C` on `M`, and `Φ : ℝ → ℝ` are smooth, then any continuous function
   `u` representing a weak solution `w ∈ H¹(M)` of `Δ⁺w = A Φ(u) + C` is smooth on `M` and solves
   `Δ⁺u = A Φ(u) + C` classically everywhere.
+* **Interior `H²` regularity**
+  (`TauCeti.Manifold.SobolevH1.exists_wkp_ae_eq_of_dirichletForm_add_eq`): for a smooth metric,
+  a continuous potential `V` and a forcing `f ∈ L²(M)`, every weak solution `w ∈ H¹(M)` of
+  `Δ⁺w + V w = f` has square-integrable second weak derivatives near every point: near each chart
+  point its reading in coordinates lies in `W^{2,2}`. In coordinates the coefficient `a` is
+  smooth, so Euclidean interior `H²` regularity
+  (`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_contDiffOn`) applies to the
+  forcing `√(det g) (f ∘ ψ)`, which is square integrable because the density is bounded above and
+  below on a coordinate ball. In particular the domain of the Laplacian on `L²(M)` lies in `H²` in
+  this sense (`TauCeti.Manifold.SobolevH1.exists_wkp_ae_eq_of_mem_domain_negLaplacian`). The
+  corresponding estimate `‖w‖_{W^{2,2}} ≤ C (‖f‖_{L²(M)} + ‖w‖_{H¹(M)})` near each point, with `C`
+  independent of `w` and `f`
+  (`TauCeti.Manifold.SobolevH1.exists_norm_wkp_le_of_dirichletForm_add_eq`), follows by the closed
+  graph theorem: the solution-forcing pairs form a closed subspace of
+  `H¹(M) × L²(M)`, and regularity factors the chart reading through `W^{2,2}`.
+* **Linear `C^∞` regularity in every dimension**
+  (`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq`):
+  if the metric, a potential `V` and a forcing `f` are smooth, every weak solution `w ∈ H¹(M)` of
+  `Δ⁺w + V w = f` is a smooth function solving the equation classically. In coordinates the
+  potential becomes the mass term of a divergence-form operator with smooth coefficients, to which
+  Euclidean interior smoothness
+  (`TauCeti.PDE.UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn`) applies. In particular
+  weak eigenfunctions of `Δ⁺` are smooth
+  (`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul`). With
+  the weak Poisson theory of `TauCeti.Geometry.Manifold.Riemannian.Poisson` this solves `Δ⁺u = f`
+  with `u` smooth for every smooth `f` of integral zero
+  (`TauCeti.Manifold.SobolevH1.exists_neg_laplaceBeltrami_eq`). For a smooth `1`-form `a` on a
+  closed four-manifold, this is the scalar equation `Δ⁺ξ = d*a / 2` of the global Coulomb gauge
+  `d*(a - 2 dξ) = 0`.
 
 Local continuous or smooth representatives constructed in charts are glued to a global one by
 `TauCeti.exists_contMDiff_ae_eq_of_locally`, since the Riemannian volume charges every nonempty
@@ -61,6 +96,20 @@ hence zero (`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`).
   `Δ⁺u = f` everywhere.
 * `TauCeti.Manifold.SobolevH1.contMDiff_of_dirichletForm_eq_semilinear`: smoothness and classical
   equation `Δ⁺u = A Φ(u) + C` for continuous weak solutions in dimension at most three.
+* `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq_semilinear`:
+  a semilinear weak solution in dimension at most three with `L²` forcing is a smooth classical
+  solution.
+* `TauCeti.Manifold.SobolevH1.exists_wkp_ae_eq_of_dirichletForm_add_eq`: a weak solution of
+  `Δ⁺w + V w = f` with continuous `V` and `f ∈ L²(M)` lies in `W^{2,2}` in charts near every point.
+* `TauCeti.Manifold.SobolevH1.exists_norm_wkp_le_of_dirichletForm_add_eq`: the interior `H²`
+  estimate `‖w‖_{W^{2,2}} ≤ C (‖f‖_{L²(M)} + ‖w‖_{H¹(M)})` in charts near every point.
+* `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq`:
+  a weak solution of `Δ⁺w + V w = f` with smooth `V` and `f` is a smooth classical solution, in
+  every dimension.
+* `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul`:
+  a weak solution of `Δ⁺w = μ w` is a smooth classical eigenfunction.
+* `TauCeti.Manifold.SobolevH1.exists_neg_laplaceBeltrami_eq`: a smooth `f` of integral zero is
+  `Δ⁺u` for a smooth `u` of integral zero.
 
 ## References
 
@@ -180,7 +229,7 @@ private theorem contMDiffOn_comp_coordEquiv_extChartAt [IsManifold I ∞ M] (p :
 private theorem gradient_comp_coordEquiv_apply [I.Boundaryless] [IsManifold I ∞ M] (p : M)
     {u : M → ℝ} {y : EuclideanSpace ℝ (Fin (finrank ℝ E))}
     (hy : (coordEquiv E).symm y ∈ (extChartAt I p).target)
-    (hu : MDifferentiableAt I 𝓘(ℝ) u (chartInvMap (I := I) p y))
+    (_hu : MDifferentiableAt I 𝓘(ℝ) u (chartInvMap (I := I) p y))
     (k : Fin (finrank ℝ E)) :
     ∇ (fun z ↦ u (chartInvMap (I := I) p z)) y k =
       mvfderiv I u (chartInvMap (I := I) p y)
@@ -198,8 +247,9 @@ private theorem gradient_comp_coordEquiv_apply [I.Boundaryless] [IsManifold I �
     rfl
   rw [hcoord, gradient, InnerProductSpace.toDual_symm_apply,
     ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, coordEquiv_symm_single, ← hz_eq,
-    ← mvfderiv_chartLocalFrame (I := I) p hx_src hu k]
+    ContinuousLinearEquiv.coe_coe, coordEquiv_symm_single, ← hz_eq, chartLocalFrame_def,
+    (Module.finBasis ℝ E).mvfderiv_localFrame_trivializationAt_eq_fderivWithin p
+      hx_src u k, I.range_eq_univ, fderivWithin_univ]
 
 /-- Pointwise identity between the Riemannian gradient inner product and the inverse chart Gram
 bilinear form in coordinates. -/
@@ -384,13 +434,9 @@ target. -/
 private theorem continuousOn_chartVolumeDensity_chartInvMap (p : M)
     {K : Set (EuclideanSpace ℝ (Fin (finrank ℝ E)))}
     (hKt : MapsTo (coordEquiv E).symm K (extChartAt I p).target) :
-    ContinuousOn (fun y ↦ chartVolumeDensity (I := I) p (chartInvMap (I := I) p y)) K := by
-  have : IsManifold I ((0 : ℕ∞ω) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
-  exact (contMDiffOn_chartVolumeDensity (I := I) (n := 0) p).continuousOn.comp
-    ((continuousOn_extChartAt_symm p).comp (coordEquiv E).symm.continuous.continuousOn hKt)
-    (mapsTo_chartInvMap_baseSet p hKt)
+    ContinuousOn (fun y ↦ chartVolumeDensity (I := I) p (chartInvMap (I := I) p y)) K :=
+  (continuousOn_chartVolumeDensity_extChartAt_symm p).comp
+    (coordEquiv E).symm.continuous.continuousOn hKt
 
 /-- The coefficient field `chartMatrix p` is continuous on any set mapped into the chart target. -/
 private theorem continuousOn_chartMatrix (p : M)
@@ -415,24 +461,6 @@ private theorem posDef_chartMatrix (p : M) {y : EuclideanSpace ℝ (Fin (finrank
   have hyb := mapsTo_chartInvMap_baseSet (I := I) p (s := {y}) (by simpa using hy) rfl
   rw [chartMatrix, chartInvGramMatrix_def]
   exact (posDef_chartGramMatrix p hyb).inv.smul (chartVolumeDensity_pos p hyb)
-
-/-- On an open coordinate set inside a compact set mapped into the chart target, a continuous
-function on `M`, read in coordinates and weighted by the chart volume density, is square
-integrable. -/
-private theorem memLp_two_chartVolumeDensity_mul (p : M)
-    {K : Set (EuclideanSpace ℝ (Fin (finrank ℝ E)))} (hK : IsCompact K)
-    (hKt : MapsTo (coordEquiv E).symm K (extChartAt I p).target)
-    {Ω : Opens (EuclideanSpace ℝ (Fin (finrank ℝ E)))} (hΩK : (Ω : Set _) ⊆ K)
-    {f : M → ℝ} (hf : Continuous f) :
-    MemLp (fun y ↦ chartVolumeDensity (I := I) p (chartInvMap (I := I) p y) *
-      f (chartInvMap (I := I) p y)) 2 (volume.restrict (Ω : Set _)) := by
-  have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (finrank ℝ E))))) :=
-    isFiniteMeasure_restrict.2 ((measure_mono hΩK).trans_lt hK.measure_lt_top).ne
-  refine (ContinuousOn.memLp_top_restrict_of_subset_isCompact ?_ hK Ω.isOpen.measurableSet
-    hΩK).mono_exponent le_top
-  exact (continuousOn_chartVolumeDensity_chartInvMap p hKt).mul (hf.continuousOn.comp
-    ((continuousOn_extChartAt_symm p).comp (coordEquiv E).symm.continuous.continuousOn hKt)
-    (mapsTo_univ _ _))
 
 end Coefficients
 
@@ -572,9 +600,6 @@ private structure ChartPDEData (p : M) where
   ha_meas : AEStronglyMeasurable (chartMatrix (I := I) p) (volume.restrict (Ω : Set _))
   hcoeff : MemLp (fun y ↦ PDE.energyIntegrand (chartMatrix (I := I) p y) 0 0) ⊤
     (volume.restrict (Ω : Set _))
-  hF_memLp2 : ∀ {f : M → ℝ}, Continuous f →
-    MemLp (fun y ↦ chartVolumeDensity (I := I) p (chartInvMap (I := I) p y) *
-      f (chartInvMap (I := I) p y)) 2 (volume.restrict (Ω : Set _))
   T : SobolevH1 I M →L[ℝ] W1p volume Ω 2
   hTv : ∀ w : SobolevH1 I M,
     W1p.value (T w) =ᵐ[volume.restrict (Ω : Set _)]
@@ -627,7 +652,6 @@ private theorem nonempty_chartPDEData (p : M) : Nonempty (ChartPDEData (I := I) 
       (fun _ hy η ξ ↦ hell.upper_bound hy η ξ) (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
   refine ⟨⟨Ω, mem_ball_self hδ, hΩt, hρ_contK.mono hΩK, _, hm_pos, fun y hy ↦ hρ_min (hΩK hy),
     _, fun y hy ↦ hρ_max (hΩK hy), lam, Lam, hell, ha_meas, hcoeff,
-    fun hf ↦ memLp_two_chartVolumeDensity_mul p hKcomp hKt hΩK hf,
     (W1p.restrictL hΩΩ₀).comp T₀,
     fun w ↦ (W1p.value_restrictL_ae hΩΩ₀ (T₀ w)).trans
       (ae_restrict_of_ae_restrict_of_subset hΩΩ₀ (hT₀v w)),
@@ -648,6 +672,26 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
+/-- The reading `ρ (g ∘ ψ)` in the coordinates at `p` of a function `g` on `M`, weighted by the
+chart volume density `ρ`, where `ψ` is the inverse chart. Integrals against the Riemannian volume
+become Lebesgue integrals of such readings. -/
+private def chartWeighted (p : M) (g : M → ℝ) (y : EuclideanSpace ℝ (Fin (finrank ℝ E))) : ℝ :=
+  chartVolumeDensity (I := I) p (chartInvMap (I := I) p y) * g (chartInvMap (I := I) p y)
+
+omit [I.Boundaryless] [T2Space M] in
+/-- The coordinate reading `ρ (f ∘ ψ)` of a function `f ∈ Lʳ(M)` lies in `Lʳ` of the coordinate
+domain of the chart data `d`, since the chart density is bounded above and below there. -/
+private theorem ChartPDEData.memLp_chartWeighted {p : M} (d : ChartPDEData (I := I) p)
+    {r : ℝ≥0∞} {f : M → ℝ} (hf : MemLp f r (riemannianVolume I M)) :
+    MemLp (chartWeighted (I := I) p f) r (volume.restrict (d.Ω : Set _)) := by
+  have hf_coord := memLp_comp_coordEquiv_of_memLp p d.hΩt d.hm d.hρ_min hf
+  exact hf_coord.of_le_mul
+    ((d.hρ_cont.aestronglyMeasurable d.Ω.isOpen.measurableSet).mul
+      hf_coord.aestronglyMeasurable)
+    ((ae_restrict_mem d.Ω.isOpen.measurableSet).mono fun y hy ↦ by
+      rw [chartWeighted, norm_mul]
+      exact mul_le_mul_of_nonneg_right (d.hρ_max y hy) (norm_nonneg _))
+
 omit [I.Boundaryless] [T2Space M] in
 /-- **De Giorgi continuity in a chart.** For `r ≥ 2` with `r > dim M / 2` and `f ∈ Lʳ(M)`, a weak
 solution `w ∈ H¹(M)` of `Δ⁺w = f` agrees almost everywhere on the chart neighbourhood of `d` with a
@@ -660,17 +704,7 @@ private theorem ChartPDEData.exists_continuousOn_ae_eq [Nonempty (Fin (finrank �
     ∃ g : M → ℝ, ContinuousOn g (chartNbhd (I := I) p d.Ω) ∧
       toLp w =ᵐ[(riemannianVolume I M).restrict (chartNbhd (I := I) p d.Ω)] g := by
   -- In coordinates `w` solves a divergence-form equation with forcing `ρ · (f ∘ ψ) ∈ Lʳ`.
-  have hf_coord : MemLp (fun y ↦ f (chartInvMap (I := I) p y)) r
-      (volume.restrict (d.Ω : Set _)) :=
-    memLp_comp_coordEquiv_of_memLp p d.hΩt d.hm d.hρ_min hf
-  have hF_memLp : MemLp (fun y ↦ chartVolumeDensity (I := I) p (chartInvMap (I := I) p y) *
-      f (chartInvMap (I := I) p y)) r (volume.restrict (d.Ω : Set _)) :=
-    hf_coord.of_le_mul
-      ((d.hρ_cont.aestronglyMeasurable d.Ω.isOpen.measurableSet).mul
-        hf_coord.aestronglyMeasurable)
-      ((ae_restrict_mem d.Ω.isOpen.measurableSet).mono fun y hy ↦ by
-        rw [norm_mul]
-        exact mul_le_mul_of_nonneg_right (d.hρ_max y hy) (norm_nonneg _))
+  have hF_memLp := d.memLp_chartWeighted hf
   have hcont_rep : ContinuousOn (preciseRepresentative volume (W1p.value (d.T w))) d.Ω :=
     PDE.continuousOn_preciseRepresentative_of_forall_memLp hr (by simpa using hrn) d.hell
       d.ha_meas (fun L _ hLΩ ↦ hF_memLp.mono_measure (Measure.restrict_mono hLΩ le_rfl))
@@ -749,8 +783,7 @@ theorem eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq
     (hw : ∀ φ : C^∞⟮I, M; ℝ⟯,
       dirichletForm w (ofSmooth φ) = ∫ x, f x * φ x ∂riemannianVolume I M) :
     w = ofSmooth u ∧ ∀ x, -laplaceBeltrami I u x = f x := by
-  have hw_eq : w = ofSmooth u :=
-    toLp_injective (Lp.ext (hwu.trans (toLp_ofSmooth_ae_eq u).symm))
+  have hw_eq : w = ofSmooth u := toLp_ae_eq_iff_eq_ofSmooth.1 hwu
   refine ⟨hw_eq, fun x ↦ sub_eq_zero.1 ?_⟩
   have hΔ_cont : Continuous (-laplaceBeltrami I u) :=
     (continuous_laplaceBeltrami (u.contMDiff.of_le (by simp))).neg
@@ -764,11 +797,9 @@ theorem eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq
         ∫ y, φ y * -laplaceBeltrami I u y ∂riemannianVolume I M :=
       integral_congr_ae ((toLp_ofSmooth_ae_eq φ).mono fun y hy ↦ congrArg (· * _) hy)
     have hint1 : Integrable (fun y ↦ φ y * -laplaceBeltrami I u y) (riemannianVolume I M) :=
-      ((map_continuous φ).mul hΔ_cont).integrable_of_hasCompactSupport
-        (HasCompactSupport.of_compactSpace _)
+      ((map_continuous φ).mul hΔ_cont).integrable_of_compactSpace
     have hint2 : Integrable (fun y ↦ φ y * f y) (riemannianVolume I M) :=
-      ((map_continuous φ).mul hf).integrable_of_hasCompactSupport
-        (HasCompactSupport.of_compactSpace _)
+      ((map_continuous φ).mul hf).integrable_of_compactSpace
     simp_rw [smul_eq_mul, mul_sub]
     rw [integral_sub hint1 hint2, ← h2, h1, sub_eq_zero]
     simp_rw [mul_comm]
@@ -848,7 +879,8 @@ private theorem ChartPDEData.contDiffOn_comp_chartInvMap_of_dirichletForm_eq {p 
   have hRHS_cont : Continuous fun x ↦ A x * Φ (u x) + C x :=
     (hA.continuous.mul (hΦ.continuous.comp hu_cont)).add hC.continuous
   have hF_L2 : MemLp F 2 (volume.restrict (d.Ω : Set _)) :=
-    (d.hF_memLp2 hRHS_cont).ae_eq (Filter.Eventually.of_forall hF_eq)
+    (d.memLp_chartWeighted (hRHS_cont.memLp_of_hasCompactSupport
+      (HasCompactSupport.of_compactSpace _))).ae_eq (Filter.Eventually.of_forall hF_eq)
   have hu_test : ∀ φ : 𝓓(d.Ω, ℝ),
       PDE.energyFormH1 (chartMatrix (I := I) p) 0 0 (d.T w)
           (W1p.ofTestFunctionₗ volume d.Ω 2 φ) =
@@ -868,6 +900,30 @@ private theorem ChartPDEData.contDiffOn_comp_chartInvMap_of_dirichletForm_eq {p 
   exact d.hell.contDiffOn_of_energyFormH1_eq (by simpa using hE) (contDiffOn_chartMatrix p d.hΩt)
     hA₀ hC₀ hΦ (hu_cont.continuousOn.comp hψ.continuousOn (mapsTo_univ _ _)) hTv_u hu_H10
 
+/-- Shared semilinear smooth bootstrap returning the `ContMDiff` proof together with
+`w = ofSmooth ⟨u, hu⟩` and the pointwise equation. -/
+private theorem contMDiff_and_eq_ofSmooth_of_dirichletForm_eq_semilinear (hE : finrank ℝ E < 4)
+    {A C : M → ℝ} (hA : ContMDiff I 𝓘(ℝ) ∞ A) (hC : ContMDiff I 𝓘(ℝ) ∞ C)
+    {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ ∞ Φ) {w : SobolevH1 I M} {u : M → ℝ}
+    (hu_cont : Continuous u) (hwu : toLp w =ᵐ[riemannianVolume I M] u)
+    (hw : ∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm w (ofSmooth φ) =
+      ∫ x, (A x * Φ (u x) + C x) * φ x ∂riemannianVolume I M) :
+    ∃ hu : ContMDiff I 𝓘(ℝ) ∞ u,
+      w = ofSmooth ⟨u, hu⟩ ∧ ∀ x, -laplaceBeltrami I u x = A x * Φ (u x) + C x := by
+  have : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
+  -- Near `p`, `u` agrees with its smooth reading in the coordinates of a chart at `p`.
+  have hu_smooth : ContMDiff I 𝓘(ℝ) ∞ u := fun p ↦ by
+    obtain ⟨d⟩ := nonempty_chartPDEData (I := I) p
+    have hcoord := d.contDiffOn_comp_chartInvMap_of_dirichletForm_eq hE hA hC hΦ hu_cont hwu hw
+    refine ((contMDiffOn_comp_coordEquiv_extChartAt p hcoord).congr fun x hx ↦ ?_).contMDiffAt
+      ((isOpen_chartNbhd p d.Ω).mem_nhds (mem_chartNbhd_self p d.hpΩ))
+    dsimp only [chartInvMap]
+    rw [(coordEquiv E).symm_apply_apply, (extChartAt I p).left_inv hx.1]
+  have hcl := eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq (u := ⟨u, hu_smooth⟩)
+    ((hA.continuous.mul (hΦ.continuous.comp hu_cont)).add hC.continuous) hwu hw
+  exact ⟨hu_smooth, hcl.1, hcl.2⟩
+
 /-- **Semilinear smooth bootstrap on `H¹(M)`.** Let `M` be a closed smooth Riemannian manifold of
 dimension at most three, let `A` and `C` be smooth on `M`, and let `Φ : ℝ → ℝ` be smooth. If
 `w ∈ H¹(M)` agrees almost everywhere with a continuous function `u : M → ℝ` and solves
@@ -879,20 +935,401 @@ theorem contMDiff_of_dirichletForm_eq_semilinear (hE : finrank ℝ E < 4)
     (hu_cont : Continuous u) (hwu : toLp w =ᵐ[riemannianVolume I M] u)
     (hw : ∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm w (ofSmooth φ) =
       ∫ x, (A x * Φ (u x) + C x) * φ x ∂riemannianVolume I M) :
-    ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, -laplaceBeltrami I u x = A x * Φ (u x) + C x := by
+    ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, -laplaceBeltrami I u x = A x * Φ (u x) + C x :=
+  let ⟨hu, _, hΔ⟩ :=
+    contMDiff_and_eq_ofSmooth_of_dirichletForm_eq_semilinear hE hA hC hΦ hu_cont hwu hw
+  ⟨hu, hΔ⟩
+
+/-- **Semilinear weak solutions in dimension `< 4` are smooth.** Let `M` be a closed smooth
+Riemannian manifold of dimension `< 4`, let `A, C : M → ℝ` and `Φ : ℝ → ℝ` be smooth, and let
+`w ∈ H¹(M)` satisfy `D(w, ψ) = ∫ (A Φ(w) + C) ψ dV` for every smooth function `ψ`, with
+`A Φ(w) + C ∈ L²(M)`. Then `w` is a smooth function `u` solving `-laplaceBeltrami I u x =
+A x * Φ (u x) + C x` everywhere on `M`. -/
+theorem exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq_semilinear
+    (hE : finrank ℝ E < 4)
+    {A C : M → ℝ} (hA : ContMDiff I 𝓘(ℝ) ∞ A) (hC : ContMDiff I 𝓘(ℝ) ∞ C)
+    {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ ∞ Φ) {w : SobolevH1 I M}
+    (hf : MemLp (fun x ↦ A x * Φ (toLp w x) + C x) 2 (riemannianVolume I M))
+    (hw : ∀ ψ : C^∞⟮I, M; ℝ⟯,
+      dirichletForm w (ofSmooth ψ) =
+        ∫ x, (A x * Φ (toLp w x) + C x) * ψ x ∂riemannianVolume I M) :
+    ∃ u : C^∞⟮I, M; ℝ⟯,
+      w = ofSmooth u ∧ ∀ x, -laplaceBeltrami I u x = A x * Φ (u x) + C x := by
+  have hE2 : (finrank ℝ E : ℝ) < 2 * ((2 : ℝ≥0) : ℝ) := by
+    exact_mod_cast (by omega : finrank ℝ E < 2 * 2)
+  obtain ⟨u, hu_cont, hwu⟩ :=
+    exists_continuous_ae_eq_of_dirichletForm_eq (r := 2) le_rfl hE2 hf hw
+  have hw' : ∀ ψ : C^∞⟮I, M; ℝ⟯,
+      dirichletForm w (ofSmooth ψ) =
+        ∫ x, (A x * Φ (u x) + C x) * ψ x ∂riemannianVolume I M := fun ψ ↦ by
+    rw [hw ψ]
+    refine integral_congr_ae ?_
+    filter_upwards [hwu] with x hx
+    rw [hx]
+  obtain ⟨hu_sm, hwu', hΔ⟩ :=
+    contMDiff_and_eq_ofSmooth_of_dirichletForm_eq_semilinear hE hA hC hΦ hu_cont hwu hw'
+  exact ⟨⟨u, hu_sm⟩, hwu', hΔ⟩
+
+omit [I.Boundaryless] [T2Space M] in
+/-- The coordinate reading `ρ (V ∘ ψ)` of a continuous function `V` is bounded on the coordinate
+domain of the chart data `d`, since the chart density is bounded there and `V` is bounded on the
+compact manifold. -/
+private theorem ChartPDEData.exists_norm_chartWeighted_le {p : M} (d : ChartPDEData (I := I) p)
+    {V : M → ℝ} (hV : Continuous V) :
+    ∃ C, ∀ y ∈ (d.Ω : Set _), ‖chartWeighted (I := I) p V y‖ ≤ C := by
+  obtain ⟨CV, hCV⟩ := (isCompact_range hV).isBounded.exists_norm_le
+  refine ⟨d.M_ρ * CV, fun y hy ↦ ?_⟩
+  rw [chartWeighted, norm_mul]
+  exact mul_le_mul (d.hρ_max y hy) (hCV _ (mem_range_self _)) (norm_nonneg _)
+    ((norm_nonneg _).trans (d.hρ_max y hy))
+
+omit [I.Boundaryless] [T2Space M] in
+/-- The coordinate reading `ρ (V ∘ ψ)` of a continuous function `V` is essentially bounded on the
+coordinate domain of the chart data `d`. -/
+private theorem ChartPDEData.memLp_top_chartWeighted {p : M} (d : ChartPDEData (I := I) p)
+    {V : M → ℝ} (hV : Continuous V) :
+    MemLp (chartWeighted (I := I) p V) ⊤ (volume.restrict (d.Ω : Set _)) := by
+  obtain ⟨C, hC⟩ := d.exists_norm_chartWeighted_le hV
+  have hc_cont : ContinuousOn (chartWeighted (I := I) p V) d.Ω :=
+    d.hρ_cont.mul (hV.comp_continuousOn (contMDiffOn_chartInvMap p d.hΩt).continuousOn)
+  exact memLp_top_of_bound (hc_cont.aestronglyMeasurable d.Ω.isOpen.measurableSet) C
+    ((ae_restrict_mem d.Ω.isOpen.measurableSet).mono hC)
+
+omit [I.Boundaryless] [T2Space M] in
+/-- **The weak equation `Δ⁺w + V w = f` in a chart, against test functions.** Read in the
+coordinates of the chart data `d`, a weak solution `w ∈ H¹(M)` of `Δ⁺w + V w = f` with
+continuous `V` weakly solves `-div(a ∇(w ∘ ψ)) + ρ (V ∘ ψ) (w ∘ ψ) = ρ (f ∘ ψ)` against test
+functions. -/
+private theorem ChartPDEData.energyFormH1_ofTestFunctionₗ_eq_of_dirichletForm_add_eq {p : M}
+    (d : ChartPDEData (I := I) p) {V f : M → ℝ} (hV : Continuous V) {w : SobolevH1 I M}
+    (hw : ∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm w (ofSmooth φ) +
+        ∫ x, V x * toLp w x * φ x ∂riemannianVolume I M =
+      ∫ x, f x * φ x ∂riemannianVolume I M) (φ : 𝓓(d.Ω, ℝ)) :
+    PDE.energyFormH1 (chartMatrix (I := I) p) 0 (chartWeighted (I := I) p V) (d.T w)
+        (W1p.ofTestFunctionₗ volume d.Ω 2 φ) =
+      ∫ y in (d.Ω : Set _), chartWeighted (I := I) p f y * φ y := by
+  obtain ⟨Φ, hD, hI⟩ := d.htest φ
+  have hmass := PDE.energyFormH1_mass_add (b := 0) (c := 0) d.hcoeff
+    (d.memLp_top_chartWeighted hV) (d.T w) (W1p.ofTestFunctionₗ volume d.Ω 2 φ)
+  simp only [Pi.zero_apply, zero_add] at hmass
+  -- In coordinates the potential term `∫ V w Φ dV` is the mass term `∫ ρ (V ∘ ψ) (w ∘ ψ) φ`.
+  have hVw := hI fun x ↦ V x * toLp w x
+  refine Eq.trans ?_ ((hw Φ).trans (hI f))
+  rw [hmass, ← hD w, hVw]
+  refine congrArg _ (integral_congr_ae ?_)
+  filter_upwards [d.hTv w, W1p.value_ofTestFunctionₗ_ae (p := 2) φ] with y hy hφ
+  rw [hy, hφ, chartWeighted]
+  ring
+
+omit [I.Boundaryless] [T2Space M] in
+/-- **The weak equation `Δ⁺w + V w = f` in a chart.** Read in the coordinates of the chart data
+`d`, a weak solution `w ∈ H¹(M)` of `Δ⁺w + V w = f` with continuous `V` and `f ∈ L²(M)` weakly
+solves `-div(a ∇(w ∘ ψ)) + ρ (V ∘ ψ) (w ∘ ψ) = ρ (f ∘ ψ)` against all of `H¹₀`. -/
+private theorem ChartPDEData.energyFormH1_eq_setIntegral_of_dirichletForm_add_eq {p : M}
+    (d : ChartPDEData (I := I) p) {V f : M → ℝ} (hV : Continuous V)
+    (hf : MemLp f 2 (riemannianVolume I M)) {w : SobolevH1 I M}
+    (hw : ∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm w (ofSmooth φ) +
+        ∫ x, V x * toLp w x * φ x ∂riemannianVolume I M =
+      ∫ x, f x * φ x ∂riemannianVolume I M) (v : W1p0 volume d.Ω 2) :
+    PDE.energyFormH1 (chartMatrix (I := I) p) 0 (chartWeighted (I := I) p V) (d.T w)
+        (v : W1p volume d.Ω 2) =
+      ∫ y in (d.Ω : Set _), chartWeighted (I := I) p f y * W1p.value (v : W1p volume d.Ω 2) y := by
+  -- With the mass `ρ (V ∘ ψ)` added, the coefficients of the energy form are still bounded.
+  obtain ⟨C, hC⟩ := d.exists_norm_chartWeighted_le hV
+  have hcoeff : MemLp (fun y ↦ PDE.energyIntegrand (chartMatrix (I := I) p y) 0
+      (chartWeighted (I := I) p V y)) ⊤ (volume.restrict (d.Ω : Set _)) :=
+    PDE.memLp_energyIntegrand_of_bounds (b := 0) (beta := 0) d.hell.upper_nonneg d.ha_meas
+      aestronglyMeasurable_const (d.memLp_top_chartWeighted hV).aestronglyMeasurable
+      (fun _ hy η ξ ↦ d.hell.upper_bound hy η ξ) (fun _ _ ↦ by simp) hC
+  have hF : MemLp (chartWeighted (I := I) p f) 2 (volume.restrict (d.Ω : Set _)) :=
+    d.memLp_chartWeighted hf
+  have hcongr (g : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ) :
+      ∫ y in (d.Ω : Set _), hF.toLp _ y * g y =
+        ∫ y in (d.Ω : Set _), chartWeighted (I := I) p f y * g y :=
+    integral_congr_ae (hF.coeFn_toLp.mono fun y hy ↦ congrArg (· * g y) hy)
+  rw [← hcongr]
+  exact (PDE.forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff _ (d.T w)).2
+    (fun φ ↦ (d.energyFormH1_ofTestFunctionₗ_eq_of_dirichletForm_add_eq hV hw φ).trans
+      (hcongr φ).symm) v
+
+omit [I.Boundaryless] [T2Space M] in
+/-- **Smoothness in a chart for `Δ⁺ + V`.** If `w ∈ H¹(M)` weakly solves `Δ⁺w + V w = f` with
+smooth `V` and `f`, then its reading in the coordinates of the chart data `d` agrees almost
+everywhere with a function smooth on the coordinate domain. -/
+private theorem ChartPDEData.exists_contDiffOn_ae_eq_of_dirichletForm_add_eq {p : M}
+    (d : ChartPDEData (I := I) p) {V f : M → ℝ} (hV : ContMDiff I 𝓘(ℝ) ∞ V)
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) {w : SobolevH1 I M}
+    (hw : ∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm w (ofSmooth φ) +
+        ∫ x, V x * toLp w x * φ x ∂riemannianVolume I M =
+      ∫ x, f x * φ x ∂riemannianVolume I M) :
+    ∃ g : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ, ContDiffOn ℝ ∞ g d.Ω ∧
+      (fun y ↦ toLp w (chartInvMap (I := I) p y)) =ᵐ[volume.restrict (d.Ω : Set _)] g := by
+  have hψ := contMDiffOn_chartInvMap p d.hΩt
+  have hρ := contDiffOn_chartVolumeDensity_chartInvMap p d.hΩt
+  have hc : ContDiffOn ℝ ∞ (chartWeighted (I := I) p V) d.Ω :=
+    hρ.mul (hV.comp_contMDiffOn hψ).contDiffOn
+  -- The forcing `ρ (f ∘ ψ)` lies in every `W^{k,2}` near each point of the coordinate domain.
+  have hF : ContDiffOn ℝ ∞ (chartWeighted (I := I) p f) d.Ω :=
+    hρ.mul (hf.comp_contMDiffOn hψ).contDiffOn
+  have hFk : ∀ x ∈ d.Ω, ∃ U : Opens (EuclideanSpace ℝ (Fin (finrank ℝ E))), x ∈ U ∧
+      ∀ k, ∃ Fk : Wkp volume U 2 k,
+        (Wkp.value k Fk : _ → ℝ) =ᵐ[volume.restrict (U : Set _)] chartWeighted (I := I) p f :=
+    fun x hx ↦ by
+      obtain ⟨r, hr, hrΩ⟩ := nhds_basis_closedBall.mem_iff.1 (d.Ω.isOpen.mem_nhds hx)
+      exact ⟨⟨ball x r, isOpen_ball⟩, mem_ball_self hr, fun k ↦
+        Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact k d.Ω.isOpen
+          (hF.of_le (by exact_mod_cast le_top)) (isCompact_closedBall x r) ball_subset_closedBall
+          hrΩ⟩
+  obtain ⟨g, hg, hug⟩ := d.hell.exists_contDiffOn_ae_eq_of_contDiffOn
+    (contDiffOn_chartMatrix p d.hΩt) contDiffOn_const hc hFk
+    (d.energyFormH1_eq_setIntegral_of_dirichletForm_add_eq hV.continuous
+      (hf.continuous.memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)) hw)
+  exact ⟨g, hg, (d.hTv w).symm.trans hug⟩
+
+omit [I.Boundaryless] [T2Space M] in
+/-- On an open set `U` inside the coordinate domain of the chart data `d`, the value of the
+restricted chart reading `T w` is the reading `w ∘ ψ` of `w` in coordinates. -/
+private theorem ChartPDEData.value_restrictL_T_ae {p : M} (d : ChartPDEData (I := I) p)
+    {U : Opens (EuclideanSpace ℝ (Fin (finrank ℝ E)))} (hUΩ : U ≤ d.Ω) (w : SobolevH1 I M) :
+    W1p.value (W1p.restrictL hUΩ (d.T w)) =ᵐ[volume.restrict (U : Set _)]
+      fun y ↦ toLp w (chartInvMap (I := I) p y) :=
+  (W1p.value_restrictL_ae hUΩ (d.T w)).trans (ae_restrict_of_ae_restrict_of_subset hUΩ (d.hTv w))
+
+omit [I.Boundaryless] [T2Space M] in
+/-- **`H²` in a chart for `Δ⁺ + V`.** If `w ∈ H¹(M)` weakly solves `Δ⁺w + V w = f` with continuous
+`V` and `f ∈ L²(M)`, then on every open set `U` whose closure is compact and contained in the
+coordinate domain of the chart data `d`, the reading of `w` in coordinates is the value of an
+element of `W^{2,2}(U)`. -/
+private theorem ChartPDEData.exists_wkp_ae_eq_of_dirichletForm_add_eq {p : M}
+    (d : ChartPDEData (I := I) p) {V f : M → ℝ} (hV : Continuous V)
+    (hf : MemLp f 2 (riemannianVolume I M)) {w : SobolevH1 I M}
+    (hw : ∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm w (ofSmooth φ) +
+        ∫ x, V x * toLp w x * φ x ∂riemannianVolume I M =
+      ∫ x, f x * φ x ∂riemannianVolume I M)
+    {U : Opens (EuclideanSpace ℝ (Fin (finrank ℝ E)))}
+    (hU : IsCompact (closure (U : Set (EuclideanSpace ℝ (Fin (finrank ℝ E))))))
+    (hUΩ : closure (U : Set (EuclideanSpace ℝ (Fin (finrank ℝ E)))) ⊆ d.Ω) :
+    ∃ u : Wkp volume U 2 2, (Wkp.value 2 u : _ → ℝ) =ᵐ[volume.restrict (U : Set _)]
+      fun y ↦ toLp w (chartInvMap (I := I) p y) := by
+  have hF := d.memLp_chartWeighted hf
+  -- The mass `ρ (V ∘ ψ)` is continuous and the coefficient matrix smooth on the coordinate
+  -- domain, so interior `H²` regularity applies with the forcing `ρ (f ∘ ψ) ∈ L²`.
+  have hc : ContDiffOn ℝ 0 (chartWeighted (I := I) p V) d.Ω :=
+    contDiffOn_zero.2 (d.hρ_cont.mul
+      (hV.comp_continuousOn (contMDiffOn_chartInvMap p d.hΩt).continuousOn))
+  obtain ⟨u, hu⟩ := d.hell.exists_value_eq_value_restrictL_of_contDiffOn 0
+    (fun i j ↦ (contDiffOn_chartMatrix p d.hΩt i j).of_le (by exact_mod_cast le_top))
+    (b := 0) contDiffOn_const hc (F := hF.toLp _) (u := d.T w) (fun v ↦ by
+      rw [d.energyFormH1_eq_setIntegral_of_dirichletForm_add_eq hV hf hw v, Wkp.value_zero]
+      exact integral_congr_ae (hF.coeFn_toLp.mono fun y hy ↦ by simp only [hy]))
+    hU hUΩ
+  have hUΩ' : U ≤ d.Ω := SetLike.coe_subset_coe.mp (subset_closure.trans hUΩ)
+  -- With `k = 0`, `u` lies in `Wkp volume U 2 (0 + 2)`, which is `Wkp volume U 2 2` because the
+  -- literal `0 + 2` reduces to `2` definitionally.
+  have hu' : Wkp.value 2 u = W1p.value (W1p.restrictL hUΩ' (d.T w)) := hu
+  exact ⟨u, hu' ▸ d.value_restrictL_T_ae hUΩ' w⟩
+
+omit [I.Boundaryless] [T2Space M] in
+/-- A ball around the chart point whose closure is compact and contained in the coordinate domain
+of the chart data `d`; in particular the ball lies in that domain and is mapped into the chart
+target. -/
+private theorem ChartPDEData.exists_ball {p : M} (d : ChartPDEData (I := I) p) :
+    ∃ U : Opens (EuclideanSpace ℝ (Fin (finrank ℝ E))), coordEquiv E (extChartAt I p p) ∈ U ∧
+      IsCompact (closure (U : Set (EuclideanSpace ℝ (Fin (finrank ℝ E))))) ∧
+      closure (U : Set (EuclideanSpace ℝ (Fin (finrank ℝ E)))) ⊆ d.Ω ∧ U ≤ d.Ω ∧
+      MapsTo (coordEquiv E).symm U (extChartAt I p).target := by
+  obtain ⟨r, hr, hrΩ⟩ := nhds_basis_closedBall.mem_iff.1 (d.Ω.isOpen.mem_nhds d.hpΩ)
+  have hUK : closure (ball (coordEquiv E (extChartAt I p p)) r) ⊆
+      closedBall (coordEquiv E (extChartAt I p p)) r :=
+    closure_ball_subset_closedBall
+  have hUΩ : closure (ball (coordEquiv E (extChartAt I p p)) r) ⊆ d.Ω := hUK.trans hrΩ
+  exact ⟨⟨ball _ r, isOpen_ball⟩, mem_ball_self hr,
+    (isCompact_closedBall _ r).of_isClosed_subset isClosed_closure hUK, hUΩ,
+    SetLike.coe_subset_coe.mp (subset_closure.trans hUΩ),
+    d.hΩt.mono_left (subset_closure.trans hUΩ)⟩
+
+/-- **Interior `H²` regularity on a closed manifold.** Let `M` be a closed smooth Riemannian
+manifold, `V` a continuous potential and `f ∈ L²(M)`. If `w ∈ H¹(M)` solves
+`D(w, φ) + ∫ V w φ dV = ∫ f φ dV` against every smooth function `φ`, that is `Δ⁺w + V w = f`
+weakly, then `w` has square-integrable second weak derivatives near every point of `M`: for every
+`p ∈ M` there are a linear identification `L` of the model space with `ℝⁿ`, an open neighbourhood
+`Ω` of `L (φ p)` in `ℝⁿ`, where `φ = extChartAt I p`, on which `φ⁻¹ ∘ L⁻¹` is defined, and an
+element of `W^{2,2}(Ω)` whose value is `w ∘ φ⁻¹ ∘ L⁻¹` almost everywhere on `Ω`. -/
+theorem exists_wkp_ae_eq_of_dirichletForm_add_eq {V f : M → ℝ} (hV : Continuous V)
+    (hf : MemLp f 2 (riemannianVolume I M)) {w : SobolevH1 I M}
+    (hw : ∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm w (ofSmooth φ) +
+        ∫ x, V x * toLp w x * φ x ∂riemannianVolume I M =
+      ∫ x, f x * φ x ∂riemannianVolume I M) (p : M) :
+    ∃ (L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)))
+      (Ω : Opens (EuclideanSpace ℝ (Fin (finrank ℝ E)))),
+      L (extChartAt I p p) ∈ Ω ∧ MapsTo L.symm Ω (extChartAt I p).target ∧
+      ∃ u : Wkp volume Ω 2 2, (Wkp.value 2 u : _ → ℝ) =ᵐ[volume.restrict (Ω : Set _)]
+        fun y ↦ toLp w ((extChartAt I p).symm (L.symm y)) := by
+  obtain ⟨d⟩ := nonempty_chartPDEData (I := I) p
+  obtain ⟨U, hpU, hUc, hUΩ, -, hUt⟩ := d.exists_ball
+  obtain ⟨u, hu⟩ := d.exists_wkp_ae_eq_of_dirichletForm_add_eq hV hf hw hUc hUΩ
+  exact ⟨coordEquiv E, U, hpU, hUt, u, hu⟩
+
+omit [I.Boundaryless] [T2Space M] in
+/-- The pairs `(w, f) ∈ H¹(M) × L²(M)` such that `w` weakly solves `Δ⁺w + V w = f` form a closed
+subspace: testing the equation against a smooth `φ` is the vanishing of a continuous linear
+functional of `(w, f)`. -/
+private theorem exists_isClosed_and_mem_iff_dirichletForm_add_eq {V : M → ℝ}
+    (hV : Continuous V) :
+    ∃ S : Submodule ℝ (SobolevH1 I M × Lp ℝ 2 (riemannianVolume I M)),
+      IsClosed (S : Set (SobolevH1 I M × Lp ℝ 2 (riemannianVolume I M))) ∧
+      ∀ q : SobolevH1 I M × Lp ℝ 2 (riemannianVolume I M), q ∈ S ↔
+        ∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm q.1 (ofSmooth φ) +
+            ∫ x, V x * toLp q.1 x * φ x ∂riemannianVolume I M =
+          ∫ x, q.2 x * φ x ∂riemannianVolume I M := by
+  have hVφ (φ : C^∞⟮I, M; ℝ⟯) : MemLp (fun x ↦ V x * φ x) 2 (riemannianVolume I M) :=
+    (hV.mul (map_continuous φ)).memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  let ℓ (φ : C^∞⟮I, M; ℝ⟯) : (SobolevH1 I M × Lp ℝ 2 (riemannianVolume I M)) →L[ℝ] ℝ :=
+    (dirichletForm.flip (ofSmooth φ)).comp (ContinuousLinearMap.fst ℝ _ _) +
+      ((innerSL ℝ ((hVφ φ).toLp _)).comp toLp).comp (ContinuousLinearMap.fst ℝ _ _) -
+      (innerSL ℝ (toLp (ofSmooth φ))).comp (ContinuousLinearMap.snd ℝ _ _)
+  have hℓ (φ : C^∞⟮I, M; ℝ⟯) (q : SobolevH1 I M × Lp ℝ 2 (riemannianVolume I M)) :
+      ℓ φ q = dirichletForm q.1 (ofSmooth φ) +
+        ∫ x, V x * toLp q.1 x * φ x ∂riemannianVolume I M -
+          ∫ x, q.2 x * φ x ∂riemannianVolume I M := by
+    simp only [ℓ, sub_apply, add_apply,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+      ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', innerSL_apply_apply,
+      L2.inner_def]
+    congr 1
+    · congr 1
+      refine integral_congr_ae ((hVφ φ).coeFn_toLp.mono fun x hx ↦ ?_)
+      simp only [hx, RCLike.inner_apply, conj_trivial]
+      ring
+    · refine integral_congr_ae ((toLp_ofSmooth_ae_eq φ).mono fun x hx ↦ ?_)
+      simp only [hx, RCLike.inner_apply, conj_trivial]
+  refine ⟨(ContinuousLinearMap.pi ℓ).ker, ContinuousLinearMap.isClosed_ker _, fun q ↦ ?_⟩
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, funext_iff,
+    ContinuousLinearMap.pi_apply, Pi.zero_apply, hℓ, sub_eq_zero]
+
+/-- **The interior `H²` estimate on a closed manifold.** Let `M` be a closed smooth Riemannian
+manifold and `V` a continuous potential. Near every point `p ∈ M` the `W^{2,2}` norm of the chart
+reading of a weak solution `w ∈ H¹(M)` of `Δ⁺w + V w = f`, `f ∈ L²(M)`, is controlled by the data:
+there are a linear identification `L` of the model space with `ℝⁿ`, an open neighbourhood `Ω` of
+`L (φ p)` in `ℝⁿ`, where `φ = extChartAt I p`, on which `φ⁻¹ ∘ L⁻¹` is defined, and a constant `C`
+such that for every such `w` and `f` the element of `W^{2,2}(Ω)` with value `w ∘ φ⁻¹ ∘ L⁻¹` has
+norm at most `C (‖f‖_{L²(M)} + ‖w‖_{H¹(M)})`. -/
+theorem exists_norm_wkp_le_of_dirichletForm_add_eq {V : M → ℝ} (hV : Continuous V) (p : M) :
+    ∃ (L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)))
+      (Ω : Opens (EuclideanSpace ℝ (Fin (finrank ℝ E)))),
+      L (extChartAt I p p) ∈ Ω ∧ MapsTo L.symm Ω (extChartAt I p).target ∧
+      ∃ C, 0 ≤ C ∧ ∀ (f : Lp ℝ 2 (riemannianVolume I M)) (w : SobolevH1 I M),
+        (∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm w (ofSmooth φ) +
+            ∫ x, V x * toLp w x * φ x ∂riemannianVolume I M =
+          ∫ x, f x * φ x ∂riemannianVolume I M) →
+        ∃ u : Wkp volume Ω 2 2, (Wkp.value 2 u : _ → ℝ) =ᵐ[volume.restrict (Ω : Set _)]
+          (fun y ↦ toLp w ((extChartAt I p).symm (L.symm y))) ∧ ‖u‖ ≤ C * (‖f‖ + ‖w‖) := by
+  obtain ⟨d⟩ := nonempty_chartPDEData (I := I) p
+  obtain ⟨U, hpU, hUc, hUΩ, hUΩ', hUt⟩ := d.exists_ball
+  obtain ⟨S, hS, hmem⟩ := exists_isClosed_and_mem_iff_dirichletForm_add_eq (I := I) hV
+  have : CompleteSpace S := hS.completeSpace_coe
+  -- The chart reading on `U` factors through `W^{2,2}(U)` by interior regularity, so by the closed
+  -- graph theorem the factorization is bounded.
+  let F : S →L[ℝ] Lp ℝ 2 (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (finrank ℝ E))))) :=
+    W1p.valueL.comp ((W1p.restrictL hUΩ').comp
+      (d.T.comp ((ContinuousLinearMap.fst ℝ _ _).comp S.subtypeL)))
+  have hF (q : S) : (F q : _ → ℝ) =ᵐ[volume.restrict (U : Set _)]
+      fun y ↦ toLp q.val.1 (chartInvMap (I := I) p y) := by
+    simpa [F] using d.value_restrictL_T_ae hUΩ' q.val.1
+  obtain ⟨C, hC⟩ := Wkp.exists_norm_le_of_forall_exists_value_ae_eq (k := 2) F fun q ↦
+    (d.exists_wkp_ae_eq_of_dirichletForm_add_eq hV (Lp.memLp q.val.2) ((hmem _).1 q.property) hUc
+      hUΩ).elim fun u hu ↦ ⟨u, hu.trans (hF q).symm⟩
+  refine ⟨coordEquiv E, U, hpU, hUt, max C 0, le_max_right _ _, fun f w hw ↦ ?_⟩
+  obtain ⟨u, hu, hCu⟩ := hC ⟨(w, f), (hmem _).2 hw⟩
+  refine ⟨u, hu.trans (hF _), hCu.trans ((mul_le_mul_of_nonneg_right (le_max_left _ _)
+    (norm_nonneg _)).trans (mul_le_mul_of_nonneg_left ?_ (le_max_right _ _)))⟩
+  rw [← Submodule.norm_coe, Prod.norm_def]
+  exact max_le (le_add_of_nonneg_left (norm_nonneg f)) (le_add_of_nonneg_right (norm_nonneg w))
+
+/-- **Weak solutions of `Δ⁺w + V w = f` are smooth.** Let `M` be a closed smooth Riemannian
+manifold, of any dimension, and let the potential `V` and the forcing `f` be smooth on `M`. If
+`w ∈ H¹(M)` solves `D(w, φ) + ∫ V w φ dV = ∫ f φ dV` against every smooth function `φ`, then `w`
+is a smooth function `u`, and `-laplaceBeltrami I u x + V x * u x = f x` holds everywhere on `M`. -/
+theorem exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq
+    {V f : M → ℝ} (hV : ContMDiff I 𝓘(ℝ) ∞ V) (hf : ContMDiff I 𝓘(ℝ) ∞ f) {w : SobolevH1 I M}
+    (hw : ∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm w (ofSmooth φ) +
+        ∫ x, V x * toLp w x * φ x ∂riemannianVolume I M =
+      ∫ x, f x * φ x ∂riemannianVolume I M) :
+    ∃ u : C^∞⟮I, M; ℝ⟯, w = ofSmooth u ∧ ∀ x, -laplaceBeltrami I u x + V x * u x = f x := by
   have : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
-  -- Near `p`, `u` agrees with its smooth reading in the coordinates of a chart at `p`.
-  have hu_smooth : ContMDiff I 𝓘(ℝ) ∞ u := fun p ↦ by
-    obtain ⟨d⟩ := nonempty_chartPDEData (I := I) p
-    have hcoord := d.contDiffOn_comp_chartInvMap_of_dirichletForm_eq hE hA hC hΦ hu_cont hwu hw
-    refine ((contMDiffOn_comp_coordEquiv_extChartAt p hcoord).congr fun x hx ↦ ?_).contMDiffAt
-      ((isOpen_chartNbhd p d.Ω).mem_nhds (mem_chartNbhd_self p d.hpΩ))
-    dsimp only [chartInvMap]
-    rw [(coordEquiv E).symm_apply_apply, (extChartAt I p).left_inv hx.1]
-  exact ⟨hu_smooth, (eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq
-    (u := ⟨u, hu_smooth⟩)
-    ((hA.continuous.mul (hΦ.continuous.comp hu_cont)).add hC.continuous) hwu hw).2⟩
+  -- Glue the smooth representatives found in charts.
+  obtain ⟨u, hu, hwu⟩ := exists_contMDiff_ae_eq_of_locally (I := I) (I' := 𝓘(ℝ)) (n := ∞)
+    (μ := riemannianVolume I M) (u := (toLp w : M → ℝ)) fun p ↦ by
+      obtain ⟨d⟩ := nonempty_chartPDEData (I := I) p
+      obtain ⟨g, hg, hwg⟩ := d.exists_contDiffOn_ae_eq_of_dirichletForm_add_eq hV hf hw
+      refine ⟨_, (isOpen_chartNbhd p d.Ω).mem_nhds (mem_chartNbhd_self p d.hpΩ),
+        fun x ↦ g (coordEquiv E (extChartAt I p x)), contMDiffOn_comp_coordEquiv_extChartAt p hg,
+        (ae_eq_restrict_chart_iff p d.hΩt).2 ?_⟩
+      filter_upwards [ae_restrict_mem d.Ω.isOpen.measurableSet, hwg] with y hy hgy
+      dsimp only [chartInvMap] at hgy ⊢
+      rw [(extChartAt I p).right_inv (d.hΩt hy), (coordEquiv E).apply_symm_apply]
+      exact hgy
+  let u' : C^∞⟮I, M; ℝ⟯ := ⟨u, hu⟩
+  -- With `w = u`, the potential term moves to the forcing `f - V u`, which is continuous.
+  have hw' : ∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm w (ofSmooth φ) =
+      ∫ x, (f x - V x * u' x) * φ x ∂riemannianVolume I M := fun φ ↦ by
+    have hVu : ∫ x, V x * toLp w x * φ x ∂riemannianVolume I M =
+        ∫ x, V x * u' x * φ x ∂riemannianVolume I M :=
+      integral_congr_ae (hwu.mono fun x hx ↦ by simp only [u', ContMDiffMap.coeFn_mk, hx])
+    have hfφ : Integrable (fun x ↦ f x * φ x) (riemannianVolume I M) :=
+      (hf.continuous.mul (map_continuous φ)).integrable_of_compactSpace
+    have hVuφ : Integrable (fun x ↦ V x * u' x * φ x) (riemannianVolume I M) :=
+      ((hV.continuous.mul (map_continuous u')).mul (map_continuous φ)).integrable_of_compactSpace
+    rw [eq_sub_of_add_eq (hw φ), hVu, ← integral_sub hfφ hVuφ]
+    simp_rw [sub_mul]
+  obtain ⟨hwu', hΔ⟩ := eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq (u := u')
+    (hf.continuous.sub (hV.continuous.mul (map_continuous u'))) hwu hw'
+  refine ⟨u', hwu', fun x ↦ ?_⟩
+  have h := hΔ x
+  simp only [Pi.sub_apply, Pi.mul_apply] at h
+  linarith
+
+/-- **Eigenfunctions of `Δ⁺` are smooth.** Let `M` be a closed smooth Riemannian manifold, of any
+dimension. If `w ∈ H¹(M)` solves `D(w, φ) = μ ∫ w φ dV` against every smooth function `φ`, for
+instance if `D(w, v) = μ ⟪w, v⟫_{L²}` for every `v ∈ H¹(M)`, then `w` is a smooth function `u`
+with `-laplaceBeltrami I u = μ u` everywhere on `M`. -/
+theorem exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul
+    {μ : ℝ} {w : SobolevH1 I M}
+    (hw : ∀ φ : C^∞⟮I, M; ℝ⟯,
+      dirichletForm w (ofSmooth φ) = μ * ∫ x, toLp w x * φ x ∂riemannianVolume I M) :
+    ∃ u : C^∞⟮I, M; ℝ⟯, w = ofSmooth u ∧ ∀ x, -laplaceBeltrami I u x = μ * u x := by
+  obtain ⟨u, hwu, hΔ⟩ :=
+    exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq
+      (V := fun _ ↦ -μ) (f := 0) contMDiff_const contMDiff_const fun φ ↦ by
+        rw [hw φ]
+        simp only [Pi.zero_apply, zero_mul, integral_zero, neg_mul, mul_assoc, integral_neg,
+          integral_const_mul, add_neg_cancel]
+  refine ⟨u, hwu, fun x ↦ ?_⟩
+  have h := hΔ x
+  simp only [Pi.zero_apply] at h
+  linarith
+
+/-- **The smooth Poisson equation on a closed manifold.** On a closed connected manifold of any
+dimension with a smooth Riemannian metric, every smooth function `f` of integral zero is `Δ⁺u` for
+a smooth function `u` of integral zero. -/
+theorem exists_neg_laplaceBeltrami_eq [PreconnectedSpace M] {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∫ x, f x ∂riemannianVolume I M = 0) :
+    ∃ u : C^∞⟮I, M; ℝ⟯, ∫ x, u x ∂riemannianVolume I M = 0 ∧
+      ∀ x, -laplaceBeltrami I u x = f x := by
+  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+  have hf2 : MemLp f 2 (riemannianVolume I M) :=
+    hf.continuous.memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  obtain ⟨w, hw₀, hw⟩ := (existsUnique_dirichletForm_eq (hf2.toLp f)
+    ((integral_congr_ae hf2.coeFn_toLp).trans hf₀)).exists
+  obtain ⟨u, rfl, hu⟩ :=
+    exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq (V := 0)
+      contMDiff_const hf (w := w) fun φ ↦ by
+        rw [hw, integral_congr_ae ((hf2.coeFn_toLp.mul (toLp_ofSmooth_ae_eq φ)).mono
+          fun x hx ↦ by simpa only [Pi.mul_apply] using hx)]
+        simp
+  exact ⟨u, (integral_congr_ae (toLp_ofSmooth_ae_eq u)).symm.trans hw₀,
+    fun x ↦ by simpa using hu x⟩
 
 end SmoothRegularity
 

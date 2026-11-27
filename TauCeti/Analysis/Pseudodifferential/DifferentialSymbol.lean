@@ -98,12 +98,38 @@ theorem differentialSymbol_add (s : Finset ι) (v : ∀ i, Fin (k i) → E)
       differentialSymbol s v b p + differentialSymbol s v c p := by
   simp [differentialSymbol, smul_add, Finset.sum_add_distrib]
 
+/-- The symbol of a differential expression of order at most `N` is the sum over `j ≤ N` of the
+symbols of its summands of order `j`. -/
+theorem differentialSymbol_eq_sum_range_filter (N : ℕ) (s : Finset ι)
+    (v : ∀ i, Fin (k i) → E) (b : ι → E → V →L[ℂ] W) (hk : ∀ i ∈ s, k i ≤ N) (p : E × E) :
+    differentialSymbol s v b p =
+      ∑ j ∈ Finset.range (N + 1), differentialSymbol {i ∈ s | k i = j} v b p := by
+  simp only [differentialSymbol_def]
+  exact (Finset.sum_fiberwise_of_maps_to
+    (fun i hi => Finset.mem_range_succ_iff.2 (hk i hi)) _).symm
+
 @[simp]
 theorem differentialSymbol_smul (s : Finset ι) (v : ∀ i, Fin (k i) → E)
     (z : ℂ) (b : ι → E → V →L[ℂ] W) :
     differentialSymbol s v (z • b) = z • differentialSymbol s v b := by
   funext p
   simp [differentialSymbol, smul_comm _ z, Finset.smul_sum]
+
+/-- The norm of a polynomial differential symbol is at most the sum over its summands of
+`‖ξ‖ ^ order` times the norms of the derivative directions and of the coefficient. -/
+theorem norm_differentialSymbol_le (s : Finset ι) (v : ∀ i, Fin (k i) → E)
+    (b : ι → E → V →L[ℂ] W) (x ξ : E) :
+    ‖differentialSymbol s v b (x, ξ)‖ ≤ ∑ i ∈ s, ‖ξ‖ ^ k i * (∏ j, ‖v i j‖) * ‖b i x‖ := by
+  rw [differentialSymbol_def]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  rw [norm_smul, Complex.norm_prod]
+  gcongr
+  calc ∏ j, ‖Complex.I * (⟪ξ, v i j⟫ : ℂ)‖ ≤ ∏ j, ‖ξ‖ * ‖v i j‖ :=
+        Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun j _ ↦ by
+          rw [norm_mul, Complex.norm_I, one_mul, Complex.norm_real]
+          exact norm_inner_le_norm ξ (v i j)
+    _ = ‖ξ‖ ^ k i * ∏ j, ‖v i j‖ := by
+      rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
 
 /-- Coefficients of class `C^r` give a polynomial differential symbol of class `C^r` jointly in
 the position and the frequency. -/

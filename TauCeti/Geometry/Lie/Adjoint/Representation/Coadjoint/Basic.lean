@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
+public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.Geometry.Lie.Adjoint.Basic
 
 import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 import TauCeti.Geometry.Lie.Adjoint.Smooth
 import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.RepresentationTheory.Compact.Semisimple
 
 /-!
 # The adjoint and coadjoint representations on the tangent Lie algebra
@@ -41,6 +43,8 @@ moment maps of Hamiltonian group actions are equivariant.
   finite-dimensional model, each component `g ↦ (Ad*_g ν) ξ` of the coadjoint action is smooth.
 * `TauCeti.Lie.mvfderiv_coadjointRepresentation_apply_one`: the derivative at the identity of
   `g ↦ (Ad*_g ν) ξ` in the direction `η` is `ν ⁅ξ, η⁆`.
+* `TauCeti.Lie.isSemisimpleRepresentation_adjointRepresentation_comp_subtype`: the adjoint
+  representation of a compact subgroup is semisimple.
 
 ## References
 
@@ -84,6 +88,11 @@ algebra: `Ad*_g ν = ν ∘ Ad_{g⁻¹}`. -/
 def coadjointRepresentation : Representation 𝕜 G (Module.Dual 𝕜 (GroupLieAlgebra I G)) :=
   (adjointRepresentation 𝕜 I G).dual
 
+/-- The coadjoint representation is the dual of the adjoint representation. -/
+theorem coadjointRepresentation_def :
+    coadjointRepresentation 𝕜 I G = (adjointRepresentation 𝕜 I G).dual :=
+  (rfl)
+
 @[simp]
 theorem coadjointRepresentation_apply (g : G) (ν : Module.Dual 𝕜 (GroupLieAlgebra I G))
     (X : GroupLieAlgebra I G) :
@@ -113,8 +122,7 @@ theorem coadjointRepresentation_apply_comp_tangentAd (g : G)
   ext X
   simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, tangentAd_apply,
     coadjointRepresentation_apply]
-  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
-    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+  rw [adjointContinuousLinearMap_inv_adjointContinuousLinearMap]
 
 end TangentAd
 
@@ -170,6 +178,20 @@ theorem mvfderiv_coadjointRepresentation_apply_one (ν : Module.Dual ℝ (GroupL
     GroupLieAlgebra.mfderiv_inv_one_apply, hAd] at hcomp
   rw [← lie_skew, ← neg_lie]
   exact hcomp
+
+/-- **The adjoint representation of a compact subgroup is semisimple.** The adjoint action of a
+compact subgroup `K` of a smooth real Lie group with finite-dimensional model is continuous, hence
+completely reducible (`Representation.isSemisimpleRepresentation_of_continuous`). -/
+theorem isSemisimpleRepresentation_adjointRepresentation_comp_subtype {K : Subgroup G}
+    (hK : IsCompact (K : Set G)) :
+    Representation.IsSemisimpleRepresentation ((adjointRepresentation ℝ I G).comp K.subtype) := by
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  refine Representation.isSemisimpleRepresentation_of_continuous _ fun f ξ ↦ ?_
+  simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, adjointRepresentation_apply]
+  exact (LinearMap.continuous_of_finiteDimensional f).comp
+    (((contMDiff_adjointContinuousLinearMap (I := I) (G := G)).continuous.comp
+      continuous_subtypeVal).clm_apply continuous_const)
 
 end Smooth
 

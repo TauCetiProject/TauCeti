@@ -7,22 +7,30 @@ module
 
 public import Mathlib.Topology.Bases
 public import Mathlib.Topology.EMetricSpace.Lipschitz
+public import Mathlib.Topology.EMetricSpace.Weak
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Topology.Compactness.Lindelof
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.Metrizable.Basic
 
+import Mathlib.Topology.MetricSpace.Isometry
+import Mathlib.Topology.MetricSpace.Lipschitz
+
 /-!
 # Lipschitz maps from extended metric spaces
 
 This file gives a real-valued Lipschitz estimate for the extended distance from a fixed point,
-shows that the inclusion of a subset into a larger subset is `1`-Lipschitz, records that a map
-Lipschitz on a set is locally Lipschitz on that set (`LipschitzOnWith.locallyLipschitzOn`), covers
-any separable set on which a map is locally Lipschitz by countably many open sets on whose
-intersections with the set the map is Lipschitz
-(`LocallyLipschitzOn.exists_open_cover_lipschitzOnWith`), and shows that composing a function
-locally Lipschitz on a set with a locally Lipschitz map keeps it locally Lipschitz on that set.
+records non-expansiveness (`edist` contraction) of `ENNReal.toReal` and `ENNReal.ofReal`
+(`ENNReal.edist_toReal_le`, `ENNReal.edist_ofReal_le`; stated directly in terms of `edist` because
+`ℝ≥0∞` carries `WeakEMetricSpace` rather than `PseudoEMetricSpace`), shows that the inclusion of a
+subset into a larger subset is `1`-Lipschitz, records that a map Lipschitz on a set is locally
+Lipschitz on that set (`LipschitzOnWith.locallyLipschitzOn`), covers any separable set on which a
+map is locally Lipschitz by countably many open sets on whose intersections with the set the map is
+Lipschitz (`LocallyLipschitzOn.exists_open_cover_lipschitzOnWith`), and shows
+(`LocallyLipschitzOn.comp`), also for outer maps locally Lipschitz only on a set containing the
+image, that composing a function locally Lipschitz on a set with a locally Lipschitz map keeps it
+locally Lipschitz on that set.
 
 `LipschitzOnWith.closure_of_continuousWithinAt` extends a Lipschitz bound to the closure when
 continuity is supplied only at the added points. `LipschitzOnWith.Icc_of_Ico` specializes this
@@ -43,27 +51,19 @@ namespace TauCeti
 /-- Distance from a fixed point, converted to a real number, is `1`-Lipschitz. -/
 theorem lipschitzWith_toReal_edist {X : Type*} [PseudoEMetricSpace X] (a : X) :
     LipschitzWith 1 (fun x ↦ (edist a x).toReal) := by
-  intro x y
-  by_cases hxy : edist x y = ∞
+  -- At finite distance the triangle inequality transfers to real numbers, since then
+  -- `edist a x = ∞` whenever `edist a y = ∞`.
+  have key {x y : X} (hxy : edist x y ≠ ∞) :
+      (edist a x).toReal - (edist a y).toReal ≤ (edist x y).toReal := by
+    refine sub_le_iff_le_add'.2 (ENNReal.toReal_le_add_of_top_imp_top
+      ((edist_triangle a y x).trans_eq (by rw [edist_comm y x])) (fun hay ↦ ?_) (absurd · hxy))
+    simpa [hay, hxy] using edist_triangle a x y
+  refine LipschitzWith.of_edist_le fun x y ↦ ?_
+  rcases eq_or_ne (edist x y) ∞ with hxy | hxy
   · simp [hxy]
-  have hxy' : edist y x ≠ ∞ := by simpa only [edist_comm] using hxy
-  by_cases hax : edist a x = ∞
-  · have hay : edist a y = ∞ := by
-      by_contra hay
-      exact ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hay, hxy'⟩) (edist_triangle a y x) hax
-    simp [hax, hay]
-  have hay : edist a y ≠ ∞ :=
-    ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hax, hxy⟩) (edist_triangle a x y)
-  suffices ENNReal.ofReal (dist (edist a x).toReal (edist a y).toReal) ≤ edist x y by
-    simpa only [edist_dist, ENNReal.coe_one, one_mul] using this
-  rw [ENNReal.ofReal_le_iff_le_toReal hxy, Real.dist_eq, abs_le]
-  have hforward := ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hax, hxy⟩)
-    (edist_triangle a x y)
-  have hbackward := ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hay, hxy'⟩)
-    (edist_triangle a y x)
-  rw [ENNReal.toReal_add hax hxy] at hforward
-  rw [ENNReal.toReal_add hay hxy', edist_comm y x] at hbackward
-  constructor <;> linarith
+  rw [edist_dist, Real.dist_eq]
+  refine ENNReal.ofReal_le_of_le_toReal (abs_sub_le_iff.2 ⟨key hxy, ?_⟩)
+  simpa only [edist_comm y x] using key (x := y) (y := x) (by rwa [edist_comm])
 
 end TauCeti
 
@@ -137,32 +137,52 @@ theorem LocallyLipschitzOn.exists_open_cover_lipschitzOnWith {α β : Type*}
     {s : Set α} {f : α → β} (hf : LocallyLipschitzOn s f) (hs : TopologicalSpace.IsSeparable s) :
     ∃ (U : ℕ → Set α) (K : ℕ → ℝ≥0),
       (∀ n, IsOpen (U n)) ∧ s ⊆ ⋃ n, U n ∧ ∀ n, LipschitzOnWith (K n) f (s ∩ U n) := by
-  have hloc : ∀ x ∈ s, ∃ U, IsOpen U ∧ x ∈ U ∧ ∃ K, LipschitzOnWith K f (s ∩ U) := by
-    intro x hx
+  -- The open sets on which `f` is Lipschitz on their intersection with `s`, each with a
+  -- Lipschitz constant; the empty set shows that this index type is nonempty.
+  let ι := {p : Set α × ℝ≥0 // IsOpen p.1 ∧ LipschitzOnWith p.2 f (s ∩ p.1)}
+  have : Nonempty ι := ⟨⟨(∅, 0), isOpen_empty, by simp⟩⟩
+  have hcov : s ⊆ ⋃ i : ι, i.val.1 := fun x hx ↦ by
     obtain ⟨K, t, ht, hK⟩ := hf hx
     obtain ⟨U, hU, hxU, hUt⟩ := mem_nhdsWithin.1 ht
-    exact ⟨U, hU, hxU, K, hK.mono ((inter_comm s U).subset.trans hUt)⟩
-  choose! U hU hxU K hK using hloc
+    exact mem_iUnion.2 ⟨⟨(U, K), hU, hK.mono fun y hy ↦ hUt ⟨hy.2, hy.1⟩⟩, hxU⟩
   -- A separable set is Lindelöf, since its subtype is second countable.
   have : SecondCountableTopology s := hs.secondCountableTopology
-  obtain ⟨c, hc, hcs, hcov⟩ := (isLindelof_iff_lindelofSpace.2 inferInstance).elim_nhds_subcover U
-    fun x hx ↦ (hU x hx).mem_nhds (hxU x hx)
-  rcases c.eq_empty_or_nonempty with rfl | hne
-  · refine ⟨fun _ ↦ ∅, fun _ ↦ 0, fun _ ↦ isOpen_empty, ?_, fun _ ↦ by simp⟩
-    simpa using hcov
-  · obtain ⟨g, rfl⟩ := hc.exists_eq_range hne
-    refine ⟨fun n ↦ U (g n), fun n ↦ K (g n), fun n ↦ hU _ (hcs _ (mem_range_self n)),
-      fun x hx ↦ ?_, fun n ↦ hK _ (hcs _ (mem_range_self n))⟩
-    obtain ⟨_, ⟨n, rfl⟩, hxU'⟩ := mem_iUnion₂.1 (hcov hx)
-    exact mem_iUnion.2 ⟨n, hxU'⟩
+  obtain ⟨g, hg⟩ := (isLindelof_iff_lindelofSpace.2 inferInstance).indexed_countable_subcover
+    (fun i : ι ↦ i.val.1) (fun i ↦ i.property.1) hcov
+  exact ⟨fun n ↦ (g n).val.1, fun n ↦ (g n).val.2, fun n ↦ (g n).property.1, hg,
+    fun n ↦ (g n).property.2⟩
 
-/-- A locally Lipschitz map composed with a function locally Lipschitz on `s` is locally Lipschitz
-on `s`. -/
-theorem LocallyLipschitz.comp_locallyLipschitzOn {α β γ : Type*} [PseudoEMetricSpace α]
+/-- Composing a function locally Lipschitz on `s` with a map locally Lipschitz on a set `t`
+containing its image gives a function locally Lipschitz on `s`. -/
+protected theorem LocallyLipschitzOn.comp {α β γ : Type*} [PseudoEMetricSpace α]
     [PseudoEMetricSpace β] [PseudoEMetricSpace γ] {g : β → γ} {f : α → β} {s : Set α}
-    (hg : LocallyLipschitz g) (hf : LocallyLipschitzOn s f) : LocallyLipschitzOn s (g ∘ f) := by
+    {t : Set β} (hg : LocallyLipschitzOn t g) (hf : LocallyLipschitzOn s f) (hst : MapsTo f s t) :
+    LocallyLipschitzOn s (g ∘ f) := by
   intro x hx
-  obtain ⟨Kf, t, ht, hKf⟩ := hf hx
-  obtain ⟨Kg, U, hU, hKg⟩ := hg (f x)
-  refine ⟨Kg * Kf, t ∩ f ⁻¹' U, inter_mem ht (hf.continuousOn x hx hU), ?_⟩
+  obtain ⟨Kf, u, hu, hKf⟩ := hf hx
+  obtain ⟨Kg, v, hv, hKg⟩ := hg (hst hx)
+  refine ⟨Kg * Kf, u ∩ f ⁻¹' v,
+    inter_mem hu ((hf.continuousOn x hx).tendsto_nhdsWithin hst hv), ?_⟩
   exact hKg.comp (hKf.mono inter_subset_left) fun _ hy => hy.2
+
+/-- `ENNReal.toReal` does not increase extended distances. Stated directly via `edist` because
+`ℝ≥0∞` carries `WeakEMetricSpace` rather than `PseudoEMetricSpace`. -/
+theorem ENNReal.edist_toReal_le (a b : ℝ≥0∞) : edist a.toReal b.toReal ≤ edist a b := by
+  rcases eq_or_ne a ∞ with rfl | ha
+  · rcases eq_or_ne b ∞ with rfl | hb
+    · simp
+    · rw [(ENNReal.edist_eq_top_iff ∞ b).2 ⟨Ne.symm hb, Or.inl rfl⟩]
+      exact le_top
+  · rcases eq_or_ne b ∞ with rfl | hb
+    · rw [(ENNReal.edist_eq_top_iff a ∞).2 ⟨ha, Or.inr rfl⟩]
+      exact le_top
+    · rw [← ENNReal.coe_toNNReal_eq_toReal a, ← ENNReal.coe_toNNReal_eq_toReal b,
+        NNReal.isometry_coe.edist_eq, ← ENNReal.edist_coe,
+        ENNReal.coe_toNNReal ha, ENNReal.coe_toNNReal hb]
+
+/-- `ENNReal.ofReal` does not increase extended distances. Stated directly via `edist` because
+`ℝ≥0∞` carries `WeakEMetricSpace` rather than `PseudoEMetricSpace`. -/
+theorem ENNReal.edist_ofReal_le (a b : ℝ) :
+    edist (ENNReal.ofReal a) (ENNReal.ofReal b) ≤ edist a b := by
+  rw [← ENNReal.ofNNReal_toNNReal, ← ENNReal.ofNNReal_toNNReal, ENNReal.edist_coe]
+  simpa only [ENNReal.coe_one, one_mul] using Real.lipschitzWith_toNNReal a b

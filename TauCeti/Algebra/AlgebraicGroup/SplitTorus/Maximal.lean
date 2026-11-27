@@ -35,8 +35,13 @@ a torus chosen over `ℤ` specializes to every commutative ring.
 * `TauCeti.SplitMaximalTorus.comapOfIso`: transport along an isomorphism of coordinate Hopf
   algebras.
 * `TauCeti.SplitMaximalTorus.baseChange`: base change along `R → S`.
+* `TauCeti.SplitMaximalTorus.baseChange_coordinateMap_hom_one_tmul`: the base-changed torus
+  restricts `1 ⊗ h` to the coefficient image of the restriction of `h`.
 * `TauCeti.SplitMaximalTorus.definingIdeal_baseChange`: the base-changed torus is cut out by the
   base change of the defining ideal.
+* `TauCeti.SplitMaximalTorus.comapOfIso_baseChange_self`, `baseChange_baseChange` and
+  `baseChange_comapOfIso`: base change of tori is trivial along the identity, composes in stages
+  and commutes with transport along isomorphisms.
 
 ## References
 
@@ -271,12 +276,74 @@ theorem baseChange_coordinateMap (T : SplitMaximalTorus R H r) :
           (SplitTorus.characterGroup (ULift.{u} (Fin r)))).hom :=
   (rfl)
 
+/-- The base-changed torus restricts `1 ⊗ h` to the restriction of `h` to the original torus,
+with its coefficients mapped along `R → S`. -/
+theorem baseChange_coordinateMap_hom_one_tmul (T : SplitMaximalTorus R H r) (h : H) :
+    (T.baseChange S).coordinateMap.hom (1 ⊗ₜ h) =
+      MonoidAlgebra.mapAlgHom _ (Algebra.ofId R S) (T.coordinateMap.hom h) := by
+  rw [baseChange_coordinateMap, CommHopfAlgCat.hom_comp, BialgHom.comp_apply,
+    CommHopfAlgCat.baseChangeMap_apply_tmul,
+    DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply,
+    MonoidAlgebra.scalarTensorBialgEquiv_tmul, one_smul]
+
 /-- The defining ideal of the base-changed torus is the base change of the defining ideal. -/
 @[simp]
 theorem definingIdeal_baseChange (T : SplitMaximalTorus R H r) :
     (T.baseChange S).definingIdeal =
       CommHopfAlgCat.baseChangeHopfIdeal (K := S) T.definingIdeal :=
   kerOfSurjective_baseChangeMap_comp S T (T.baseChange S).surjective
+
+/-- **Base change along the identity is trivial**: the base change of a torus along `R → R`,
+transported along `H ≅ R ⊗[R] H`, is the original torus. -/
+@[simp]
+theorem comapOfIso_baseChange_self (T : SplitMaximalTorus R H r) :
+    (T.baseChange R).comapOfIso (CommHopfAlgCat.baseChangeSelfIso H).symm = T := by
+  ext1
+  ext h : 2
+  rw [comapOfIso_coordinateMap, CommHopfAlgCat.hom_comp, BialgHom.comp_apply, Iso.symm_hom,
+    CommHopfAlgCat.baseChangeSelfIso_inv_apply, baseChange_coordinateMap_hom_one_tmul,
+    Algebra.ofId_self, MonoidAlgebra.mapAlgHom_id, AlgHom.id_apply]
+
+/-- **Base change of tori composes in stages**: for a tower `R → S → S'`, base-changing a torus to
+`S` and then to `S'` gives its base change to `S'`, transported along the tower identification
+`S' ⊗[S] (S ⊗[R] H) ≅ S' ⊗[R] H`. -/
+theorem baseChange_baseChange (S' : Type u) [CommRing S'] [Algebra R S'] [Algebra S S']
+    [IsScalarTower R S S'] (T : SplitMaximalTorus R H r) :
+    (T.baseChange S).baseChange S' =
+      (T.baseChange S').comapOfIso (CommHopfAlgCat.baseChangeTowerIso R S' H) := by
+  ext1
+  apply _root_.CommHopfAlgCat.hom_ext
+  apply BialgHom.coe_toAlgHom_injective
+  -- An `S'`-algebra map out of `S' ⊗[S] (S ⊗[R] H)` is determined by the elements `1 ⊗ (1 ⊗ h)`.
+  refine Algebra.TensorProduct.ext (Subsingleton.elim _ _)
+    (Algebra.TensorProduct.ext (Subsingleton.elim _ _) (AlgHom.ext fun h ↦ ?_))
+  simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+    Algebra.TensorProduct.includeRight_apply, BialgHom.coe_toAlgHom]
+  rw [baseChange_coordinateMap_hom_one_tmul, comapOfIso_coordinateMap, CommHopfAlgCat.hom_comp,
+    BialgHom.comp_apply, CommHopfAlgCat.baseChangeTowerIso_hom_apply, one_smul,
+    baseChange_coordinateMap_hom_one_tmul, baseChange_coordinateMap_hom_one_tmul]
+  ext m
+  simp only [MonoidAlgebra.coeff_mapAlgHom, Algebra.ofId_apply,
+    IsScalarTower.algebraMap_apply R S S']
+
+variable {L : CommHopfAlgCat.{u} R} [Algebra.FiniteType R L]
+
+/-- **Base change commutes with transport along isomorphisms**: base-changing a torus transported
+along `e : H ≅ L` gives the transport of the base-changed torus along the base change of `e`. -/
+theorem baseChange_comapOfIso (T : SplitMaximalTorus R L r) (e : H ≅ L) :
+    (T.comapOfIso e).baseChange S =
+      (T.baseChange S).comapOfIso ((CommHopfAlgCat.baseChangeFunctor (K := S)).mapIso e) := by
+  ext1
+  apply _root_.CommHopfAlgCat.hom_ext
+  apply BialgHom.coe_toAlgHom_injective
+  -- An `S`-algebra map out of `S ⊗[R] H` is determined by the elements `1 ⊗ h`.
+  refine Algebra.TensorProduct.ext (Subsingleton.elim _ _) (AlgHom.ext fun h ↦ ?_)
+  simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+    Algebra.TensorProduct.includeRight_apply, BialgHom.coe_toAlgHom]
+  rw [baseChange_coordinateMap_hom_one_tmul, comapOfIso_coordinateMap, comapOfIso_coordinateMap,
+    Functor.mapIso_hom, CommHopfAlgCat.baseChangeFunctor_map]
+  simp only [CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
+  rw [CommHopfAlgCat.baseChangeMap_apply_tmul, baseChange_coordinateMap_hom_one_tmul]
 
 end BaseChange
 

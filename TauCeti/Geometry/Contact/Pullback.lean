@@ -21,7 +21,10 @@ and reflect contactness. The contact hyperplanes are the inverse images under th
 For a contact form, the differential carries the Reeb field of the pulled-back form to the
 original Reeb field. Thus a strict contact diffeomorphism intertwines the Reeb fields, rather
 than merely preserving the contact hyperplanes. No compactness or completeness is needed for
-these statements, which concern vector fields rather than their global flows.
+these statements, which concern vector fields rather than their global flows. Restricting a
+one-form to an open subset changes neither where it is contact
+(`TauCeti.SmoothForm.isContactFormAt_mpullback_subtype_val_iff`) nor its Reeb vectors
+(`TauCeti.SmoothForm.reebVectorField_mpullback_subtype_val`).
 
 A smooth map is horizontal for the kernel of a one-form exactly when it pulls the form back to
 zero (`TauCeti.SmoothForm.isHorizontalMap_kerDistribution_iff_mpullback_eq_zero`).
@@ -163,6 +166,13 @@ theorem isContactForm_mpullback_iff {f : M → N} (hf : ContMDiff I J ∞ f)
       (α.contMDiff.of_le (by simp) (f x)) (hdf x)).mp hx
   · exact fun h ↦ h.mpullback f hf hdf
 
+/-- The pullback of the negative of a one-form, which coorients the pulled-back hyperplanes
+oppositely, is a contact form exactly when the pullback of the form is. -/
+theorem isContactForm_mpullback_neg_iff {f : M → N} (hf : ContMDiff I J ∞ f)
+    (α : SmoothForm J N ℝ 1) :
+    (mpullback f hf (-α)).IsContactForm ↔ (mpullback f hf α).IsContactForm := by
+  rw [map_neg, isContactForm_neg_iff]
+
 /-- Diffeomorphisms preserve and reflect contactness. -/
 @[simp]
 theorem _root_.Diffeomorph.isContactForm_mpullback_iff (e : M ≃ₘ⟮I, J⟯ N)
@@ -216,6 +226,34 @@ theorem IsContactForm.mfderiv_reebVectorField_mpullback
     rw [← mextDerivₗ_mpullback] at hd
     simp only [SmoothBundleForm.eval₂_apply, mextDerivₗ_apply] at hd
     exact hd.symm.trans h
+
+/-- Restricting a one-form to an open subset does not change where it is a contact form. -/
+theorem isContactFormAt_mpullback_subtype_val_iff {U : TopologicalSpace.Opens M}
+    (α : SmoothForm I M ℝ 1) (x : U) :
+    IsContactFormAt (mpullback (Subtype.val : U → M) contMDiff_subtypeVal α).val x ↔
+      IsContactFormAt α.val x := by
+  rw [coe_mpullback, isContactFormAt_mpullback_iff contMDiff_subtypeVal.contMDiffAt
+    (α.contMDiff.of_le (by simp) x)
+    (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)]
+
+/-- Restricting a one-form to an open subset does not change its Reeb vectors. -/
+@[simp]
+theorem reebVectorField_mpullback_subtype_val {U : TopologicalSpace.Opens M}
+    (α : SmoothForm I M ℝ 1) (x : U) :
+    (mpullback (Subtype.val : U → M) contMDiff_subtypeVal α).reebVectorField x =
+      α.reebVectorField x := by
+  rw [← characteristicVectorField_mextDerivₗ, ← characteristicVectorField_mextDerivₗ,
+    characteristicVectorField_def, characteristicVectorField_def, mextDerivₗ_mpullback]
+  -- The tangent spaces of `U` at `x` and of `M` at `↑x` are both the model space, so both sides
+  -- are the Reeb vector of the same covector for the same bilinear form.
+  congr 1
+  · ext v
+    rw [degreeOneEquiv_coe_apply, coe_mpullback_subtype_val_apply]
+    exact (degreeOneEquiv_coe_apply α (x : M) v).symm
+  · ext v w
+    rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, coe_mpullback_subtype_val_apply]
+    exact ((bilinFormAt_apply _ (x : M) v w).trans
+      (SmoothBundleForm.eval₂_apply _ (x : M) v w)).symm
 
 end SmoothForm
 

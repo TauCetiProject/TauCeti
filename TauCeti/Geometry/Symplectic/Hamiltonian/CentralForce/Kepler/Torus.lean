@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Kepler.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Torus
 import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
+import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Level
 import TauCeti.Geometry.Symplectic.Manifold.Opens
 import TauCeti.Topology.Compactness.Compact
 
@@ -28,7 +29,10 @@ with nonzero angular momentum fill out invariant tori.
   least the circular energy `-m κ² / (2 ℓ²)`
   (`TauCeti.centralForceHamiltonian_kepler_min_le`). Hence the common level of `H = E` and
   `L = ℓ` off the collision set is compact
-  (`TauCeti.isCompact_setOf_centralForceHamiltonian_kepler_eq`).
+  (`TauCeti.isCompact_setOf_centralForceHamiltonian_kepler_eq`). For `E` at least the circular
+  energy it is also connected
+  (`TauCeti.isConnected_setOf_centralForceHamiltonian_kepler_eq`): in polar coordinates it is the
+  radial level `p_r² / (2m) + U_ℓ(r) = E` times the circle of angles.
 * **Regularity.** Above the circular energy, `dH` and `dL` are independent at every state of the
   level (`TauCeti.isRegularPoint_centralForceEnergyMomentum_kepler`). At the circular energy the
   level is a single circular orbit, made of critical points.
@@ -38,13 +42,12 @@ with nonzero angular momentum fill out invariant tori.
   (`TauCeti.isCompact_keplerBoundPhaseSpace_preimage_singleton`), so the Hamiltonian vector fields
   of `H` and `L` are complete there
   (`TauCeti.isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace`). On the whole
-  punctured phase space the Kepler flow is not complete, since motions with `L = 0` fall into the
-  collision set in finite time.
+  punctured phase space the Kepler flow is not complete, since motions with `L = 0` leave it in
+  finite time (`TauCeti.not_isCompleteVectorField_hamiltonianVectorField_kepler`).
 * **Liouville tori.** By the topological Liouville–Arnold theorem
-  (`TauCeti.SmoothTwoForm.IsSymplectic.nonempty_homeomorph_unitAddTorus`), every connected
-  component of a level of `F` in the bound phase space with energy above the circular energy is
-  homeomorphic to the torus `(ℝ / ℤ)²`
-  (`TauCeti.nonempty_homeomorph_unitAddTorus_keplerBoundPhaseSpace`).
+  (`TauCeti.SmoothTwoForm.IsSymplectic.nonempty_homeomorph_unitAddTorus`) and connectedness, every
+  level of `F` in the bound phase space with energy above the circular energy is homeomorphic to
+  the torus `(ℝ / ℤ)²` (`TauCeti.nonempty_homeomorph_unitAddTorus_keplerBoundPhaseSpace`).
 
 ## References
 
@@ -167,6 +170,28 @@ theorem isCompact_setOf_centralForceHamiltonian_kepler_eq [FiniteDimensional ℝ
   exact hA.of_isClosed_subset (hcont.preimage_isClosed_of_isClosed hAc isClosed_singleton)
     inter_subset_left
 
+/-- **Bound Kepler levels are connected.** For `m, κ > 0`, a nonzero angular momentum `ℓ` and an
+energy `E` with `-m κ² / (2 ℓ²) ≤ E < 0`, the states off the collision set with energy `E` and
+angular momentum `ℓ` form a connected set. Its radial projection is the level
+`p_r² / (2m) + U_ℓ(r) = E` over the interval between the pericentre and apocentre radii: a closed
+curve above the circular energy and a single point at it. -/
+theorem isConnected_setOf_centralForceHamiltonian_kepler_eq (hm : 0 < m) (hκ : 0 < κ) {E ℓ : ℝ}
+    (hℓ : ℓ ≠ 0) (hmin : -(m * κ ^ 2) / (2 * ℓ ^ 2) ≤ E) (hE : E < 0) :
+    IsConnected {x : V × V | x.1 ≠ 0 ∧ centralForceHamiltonian m (fun r ↦ -κ / r) x = E ∧
+      angularMomentum (b 0) (b 1) x = ℓ} := by
+  obtain ⟨hr₁, -⟩ := kepler_turningRadii_pos_le hm hκ hℓ hmin hE
+  -- The effective potential is continuous away from `r = 0`.
+  have hcont : ContinuousOn (effectivePotential m ℓ fun r ↦ -κ / r)
+      (Icc (keplerPeriapsisRadius m κ ℓ E) (keplerApoapsisRadius m κ ℓ E)) := by
+    intro r hr
+    have hr0 : r ≠ 0 := (hr₁.trans_le hr.1).ne'
+    exact (continuousAt_effectivePotential (by fun_prop (disch := exact hr0))
+      hr0).continuousWithinAt
+  exact (isConnected_setOf_centralForceHamiltonian_eq_iff b m _ E ℓ).2
+    (isConnected_setOf_sq_div_add_eq hm hr₁ hcont
+      ((effectivePotential_kepler_eq_iff hm hκ hℓ hmin hE hr₁).2 (Or.inl rfl))
+      fun r hr ↦ effectivePotential_kepler_le_iff hm hκ hℓ hmin hE hr)
+
 /-- **Above the circular energy, Kepler states are regular.** At a state off the collision set
 with nonzero angular momentum `ℓ` and energy above the circular energy `-m κ² / (2 ℓ²)`, the
 differentials of the energy and of the angular momentum are linearly independent. -/
@@ -216,6 +241,17 @@ theorem mem_keplerBoundPhaseSpace {x : V × V} :
       centralForceHamiltonian m (fun r ↦ -κ / r) x < 0 ∧ angularMomentum (b 0) (b 1) x ≠ 0 :=
   Iff.rfl
 
+/-- For `m > 0` the bound phase space is empty unless the potential is attractive, `κ > 0`. -/
+theorem pos_of_mem_keplerBoundPhaseSpace (hm : 0 < m) {x : V × V}
+    (hx : x ∈ keplerBoundPhaseSpace b m κ) : 0 < κ := by
+  obtain ⟨hq, hE, -⟩ := (mem_keplerBoundPhaseSpace b).1 hx
+  rw [← Prod.mk.eta (p := x), centralForceHamiltonian_apply] at hE
+  have hp : 0 ≤ ‖x.2‖ ^ 2 / (2 * m) := by positivity
+  have hr : 0 < ‖x.1‖ := norm_pos_iff.2 hq
+  by_contra! hκ
+  have : 0 ≤ -κ / ‖x.1‖ := div_nonneg (by linarith) hr.le
+  linarith
+
 /-- The energy–momentum map of the Kepler problem is smooth off the collision set. -/
 private theorem contDiffAt_centralForceEnergyMomentum_kepler {n : WithTop ℕ∞} {x : V × V}
     (hq : x.1 ≠ 0) : ContDiffAt ℝ n (centralForceEnergyMomentum b m (fun r ↦ -κ / r)) x :=
@@ -230,6 +266,27 @@ theorem contMDiff_centralForceEnergyMomentum_keplerBoundPhaseSpace :
   fun x ↦ (contDiffAt_centralForceEnergyMomentum_kepler b x.property.1).contMDiffAt.comp x
     (contMDiff_subtypeVal x)
 
+/-- A common level of the energy and the angular momentum in the bound phase space, viewed in the
+phase space `V × V`. -/
+private theorem image_subtypeVal_keplerBoundPhaseSpace_preimage_singleton
+    (x : keplerBoundPhaseSpace b m κ) :
+    (Subtype.val : keplerBoundPhaseSpace b m κ → V × V) ''
+        ((centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
+          (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) ⁻¹'
+          {centralForceEnergyMomentum b m (fun r ↦ -κ / r) x}) =
+      {y : V × V | y.1 ≠ 0 ∧
+        centralForceHamiltonian m (fun r ↦ -κ / r) y =
+          centralForceHamiltonian m (fun r ↦ -κ / r) (x : V × V) ∧
+        angularMomentum (b 0) (b 1) y = angularMomentum (b 0) (b 1) (x : V × V)} := by
+  obtain ⟨_, hE, hℓ⟩ := x.property
+  ext y
+  simp only [mem_image, mem_preimage, comp_apply, mem_singleton_iff, mem_ofPred_eq]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨y.property.1, (centralForceEnergyMomentum_eq_iff b).1 hy⟩
+  · rintro ⟨hy, hyE, hyℓ⟩
+    exact ⟨⟨y, hy, hyE ▸ hE, hyℓ ▸ hℓ⟩, (centralForceEnergyMomentum_eq_iff b).2 ⟨hyE, hyℓ⟩, rfl⟩
+
 /-- **The levels of the Kepler problem in its bound phase space are compact.** For `m, κ > 0`,
 the states of the bound phase space sharing the energy and the angular momentum of a given one
 form a compact set. -/
@@ -238,16 +295,8 @@ theorem isCompact_keplerBoundPhaseSpace_preimage_singleton [FiniteDimensional �
     IsCompact ((centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
       (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) ⁻¹'
       {centralForceEnergyMomentum b m (fun r ↦ -κ / r) x}) := by
-  obtain ⟨_, hE, hℓ⟩ := x.property
-  rw [Subtype.isCompact_iff]
-  convert isCompact_setOf_centralForceHamiltonian_kepler_eq b hm hκ hE hℓ using 1
-  ext y
-  simp only [mem_image, mem_preimage, comp_apply, mem_singleton_iff, mem_ofPred_eq]
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact ⟨y.property.1, (centralForceEnergyMomentum_eq_iff b).1 hy⟩
-  · rintro ⟨hy, hyE, hyℓ⟩
-    exact ⟨⟨y, hy, hyE ▸ hE, hyℓ ▸ hℓ⟩, (centralForceEnergyMomentum_eq_iff b).2 ⟨hyE, hyℓ⟩, rfl⟩
+  rw [Subtype.isCompact_iff, image_subtypeVal_keplerBoundPhaseSpace_preimage_singleton]
+  exact isCompact_setOf_centralForceHamiltonian_kepler_eq b hm hκ x.property.2.1 x.property.2.2
 
 /-- The energy and the angular momentum Poisson-commute on the bound phase space. -/
 private theorem poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace
@@ -283,30 +332,42 @@ theorem isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace
 
 /-- **Bound Kepler levels are Liouville tori.** Let `m, κ > 0`, and let `x` be a state of the bound
 phase space with energy `E` and angular momentum `ℓ`, where `E` is above the circular energy
-`-m κ² / (2 ℓ²)`. Then the connected component of `x` in its common level of the energy and the
-angular momentum is homeomorphic to the torus `(ℝ / ℤ)²`. -/
+`-m κ² / (2 ℓ²)`. Then the common level of the energy and the angular momentum through `x` is
+homeomorphic to the torus `(ℝ / ℤ)²`. -/
 theorem nonempty_homeomorph_unitAddTorus_keplerBoundPhaseSpace [FiniteDimensional ℝ V]
     (hm : 0 < m) (hκ : 0 < κ) (x : keplerBoundPhaseSpace b m κ)
     (hx : -(m * κ ^ 2) / (2 * angularMomentum (b 0) (b 1) (x : V × V) ^ 2) <
       centralForceHamiltonian m (fun r ↦ -κ / r) (x : V × V)) :
-    Nonempty (connectedComponentIn
-      ((centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
+    Nonempty (((centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
         (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) ⁻¹'
-          {centralForceEnergyMomentum b m (fun r ↦ -κ / r) x}) x ≃ₜ UnitAddTorus (Fin 2)) := by
-  refine ((SymplecticForm.isSymplectic_constSmooth _).mpullback_subtype_val
-    (keplerBoundPhaseSpace b m κ)).nonempty_homeomorph_unitAddTorus
-    (contMDiff_centralForceEnergyMomentum_keplerBoundPhaseSpace b)
-    (poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace b) (fun y hy ↦ ?_)
-    ?_ ((isCompact_keplerBoundPhaseSpace_preimage_singleton b hm hκ
-      x).connectedComponentIn x)
-  · -- A state of the level has the energy and angular momentum of `x`, so it is regular.
-    have hFy := connectedComponentIn_subset _ _ hy
-    simp only [mem_preimage, comp_apply, mem_singleton_iff] at hFy
-    obtain ⟨hE, hℓ⟩ := (centralForceEnergyMomentum_eq_iff b).1 hFy
-    exact (isRegularPoint_centralForceEnergyMomentum_kepler b hm.ne' y.property.1
-        (hℓ ▸ x.property.2.2)
-      (by rwa [hE, hℓ])).comp (isRegularPoint_subtype_val y)
-  · rw [Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis]
-    simp
+          {centralForceEnergyMomentum b m (fun r ↦ -κ / r) x}) ≃ₜ UnitAddTorus (Fin 2)) := by
+  set S := (centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
+    (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) ⁻¹'
+      {centralForceEnergyMomentum b m (fun r ↦ -κ / r) x}
+  -- The connected component of `x` in its level is a torus by Liouville–Arnold.
+  have hcomp : Nonempty (connectedComponentIn S x ≃ₜ UnitAddTorus (Fin 2)) := by
+    refine ((SymplecticForm.isSymplectic_constSmooth _).mpullback_subtype_val
+      (keplerBoundPhaseSpace b m κ)).nonempty_homeomorph_unitAddTorus
+      (contMDiff_centralForceEnergyMomentum_keplerBoundPhaseSpace b)
+      (poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace b) (fun y hy ↦ ?_)
+      ?_ ((isCompact_keplerBoundPhaseSpace_preimage_singleton b hm hκ
+        x).connectedComponentIn x)
+    · -- A state of the level has the energy and angular momentum of `x`, so it is regular.
+      have hFy := connectedComponentIn_subset _ _ hy
+      simp only [mem_preimage, comp_apply, mem_singleton_iff] at hFy
+      obtain ⟨hE, hℓ⟩ := (centralForceEnergyMomentum_eq_iff b).1 hFy
+      exact (isRegularPoint_centralForceEnergyMomentum_kepler b hm.ne' y.property.1
+          (hℓ ▸ x.property.2.2)
+        (by rwa [hE, hℓ])).comp (isRegularPoint_subtype_val y)
+    · rw [Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis]
+      simp
+  -- The level is connected, so it is this component.
+  have hS : IsPreconnected S := by
+    rw [← Topology.IsInducing.subtypeVal.isPreconnected_image,
+      image_subtypeVal_keplerBoundPhaseSpace_preimage_singleton]
+    exact (isConnected_setOf_centralForceHamiltonian_kepler_eq b hm hκ x.property.2.2 hx.le
+      x.property.2.1).isPreconnected
+  obtain ⟨h⟩ := hcomp
+  exact ⟨(Homeomorph.setCongr (hS.connectedComponentIn rfl)).symm.trans h⟩
 
 end TauCeti

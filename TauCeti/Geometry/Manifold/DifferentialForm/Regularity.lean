@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
@@ -55,13 +56,17 @@ differentiation commutes with this extension.
   differentiable section.
 * `TauCeti.mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self`: a form whose
   coordinate expression in its own preferred chart is differentiable is a differentiable section.
-* `TauCeti.mextDeriv_sum`: exterior differentiation commutes with finite sums of `C¹` forms.
+* `TauCeti.mextDeriv_sum`, `TauCeti.IsSmoothForm.mextDeriv_add`: exterior differentiation
+  commutes with finite sums of `C¹` forms.
 * `TauCeti.isSmoothForm_zeroDim`, `TauCeti.isSmoothForm_modelSpace_iff`: over a zero-dimensional
   model every form is smooth, and over the model space a form is a `C^n` section exactly when it
   is a `C^n` function.
-* `TauCeti.SmoothForm.ofFunction`: the `0`-form of a smooth function as a smooth form, and
-  conversely `TauCeti.SmoothForm.contMDiff_apply_zero`: the function underlying a smooth `0`-form
-  is smooth;
+* `TauCeti.SmoothForm.ofFunction`: the `0`-form of a smooth function as a smooth form, which for a
+  real function `u` is `u` times the constant `0`-form `1`
+  (`TauCeti.SmoothForm.ofFunction_eq_funSMulₗ_one`), `TauCeti.SmoothForm.isSmoothForm_const`
+  (constant smooth forms are `C^n` for every `n`, including `ω`), and conversely
+  `TauCeti.SmoothForm.contMDiff_apply_zero`: the function underlying a smooth `0`-form is smooth,
+  and every smooth `0`-form is the `0`-form of that function (`TauCeti.SmoothForm.eq_ofFunction`);
   `TauCeti.SmoothForm.mextDerivₗ_cast` shows `mextDerivₗ` commutes with casts of the degree and
   `TauCeti.SmoothForm.mextDeriv_eq_bilinFormAt` identifies, for a real-valued smooth `1`-form `α`,
   `mextDeriv α.1 x ![v, w]` with `(mextDerivₗ I 1 α).bilinFormAt x v w`.
@@ -295,6 +300,14 @@ theorem mextDeriv_sum [IsManifold I 1 M] {ι : Type*}
       (hi'.differentiableWithinAt one_ne_zero) (hs'.differentiableWithinAt one_ne_zero)]
     exact congrArg (fun ψ : RoughForm I M F (k + 1) ↦ TauCeti.mextDeriv (φ i) x + ψ x)
       (ih hrest)
+
+/-- Exterior differentiation is additive on `C¹` forms. -/
+theorem IsSmoothForm.mextDeriv_add [IsManifold I 1 M] {φ ψ : RoughForm I M F k}
+    (hφ : IsSmoothForm I 1 φ) (hψ : IsSmoothForm I 1 ψ) :
+    mextDeriv (φ + ψ) = mextDeriv φ + mextDeriv ψ :=
+  funext fun x ↦ TauCeti.mextDeriv_add
+    ((hφ.contDiffWithinAt_inChartAt_self x).differentiableWithinAt one_ne_zero)
+    ((hψ.contDiffWithinAt_inChartAt_self x).differentiableWithinAt one_ne_zero)
 
 /-- Coordinate regularity of a form transfers between preferred charts: regularity within the
 model range in the chart at `β`, at the image of a point of the overlap, gives the same regularity
@@ -622,6 +635,35 @@ theorem contMDiff_apply_zero [IsManifold I 1 M] (f : SmoothForm I M F 0) :
     ContMDiff I 𝓘(ℝ, F) ∞ fun y ↦ f.val y 0 := by
   rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
   exact f.isSmoothForm
+
+/-- Every smooth `0`-form is the `0`-form of its underlying smooth function. -/
+theorem eq_ofFunction [IsManifold I 1 M] (f : SmoothForm I M F 0) :
+    f = ofFunction (show C^∞⟮I, M; 𝓘(ℝ, F), F⟯ from ⟨_, f.contMDiff_apply_zero⟩) :=
+  Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ by
+    rw [coe_ofFunction, RoughForm.ofFunction_apply, Subsingleton.elim v 0, ContMDiffMap.coeFn_mk]
+
+/-- The smooth `0`-form of a real function `u` is `u` times the constant `0`-form `1`. -/
+theorem ofFunction_eq_funSMulₗ_one [IsManifold I 1 M] (u : C^∞⟮I, M; ℝ⟯) :
+    ofFunction u = funSMulₗ u (ofFunction (ContMDiffMap.const 1)) := by
+  apply Subtype.ext
+  funext x
+  ext v
+  simp [RoughForm.ofFunction_apply, ContMDiffMap.const_apply]
+
+/-- A constant smooth form on a normed space has `C^n` regularity for every
+`n : WithTop ℕ∞`, including `ω`. -/
+theorem isSmoothForm_const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
+    (A : V [⋀^Fin k]→L[ℝ] F) (n : WithTop ℕ∞) :
+    IsSmoothForm 𝓘(ℝ, V) n (const A).val := by
+  have hconst : (const A).val = fun _ : V ↦ A := by
+    ext z v
+    rw [const_apply]
+    -- `TangentSpace 𝓘(ℝ, V) z` is definitionally `V`, on which
+    -- `NormedSpace.fromTangentSpace z` is the identity.
+    rfl
+  rw [hconst]
+  exact isSmoothForm_modelSpace_iff.2 contDiff_const
 
 /-- The exterior derivative of a smooth form is a smooth section. -/
 theorem contMDiff_mextDeriv [IsManifold I 2 M] (φ : SmoothForm I M F k) :

@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Leibniz
+public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
 
@@ -47,6 +49,9 @@ localization arguments need.
 * `TauCeti.W1p.contDiffSMul`: the product `ψ u`, as an element of `W^{1,p}(Ω)`.
 * `TauCeti.W1p.value_contDiffSMul_ae` and `TauCeti.W1p.gradient_contDiffSMul_ae`: its two
   components, `ψ u` and `ψ ∇u + u ∇ψ`.
+* `TauCeti.W1p.restrictL_contDiffSMul`: restriction to a smaller open set commutes with the product.
+* `TauCeti.W1p.eLpNorm_le_eLpNorm_value_contDiffSMul`: if `ψ = 1` on `s ⊆ Ω`, the `L^q(s)` norm
+  of `u` is at most the `L^q(Ω)` norm of `ψ u`.
 * `TauCeti.W1p.norm_contDiffSMul_le`: the bound `‖ψ u‖ ≤ 2 M ‖u‖`.
 * `TauCeti.W1p.contDiffSMulL`: the same map, bundled as a continuous linear operator.
 * `TauCeti.W1p.norm_gradient_contDiffSMul_sq_le`: at exponent two, the weighted bound
@@ -140,6 +145,23 @@ theorem W1p.value_contDiffSMul_ae (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
         = psi x • W1p.value u x := by
   rw [W1p.contDiffSMul, W1p.value_mk]
   exact MemLp.coeFn_toLp _
+
+/-- If a cutoff `ψ` equals `1` on a measurable set `s ⊆ Ω` and `f` agrees almost everywhere with
+`u`, then the `L^q(s)` norm of `f` is at most the `L^q(Ω)` norm of `ψ u`. -/
+theorem W1p.eLpNorm_le_eLpNorm_value_contDiffSMul (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
+    (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M)
+    {u : W1p mu Omega p} {f : E → ℝ} (huf : W1p.value u =ᵐ[mu.restrict Omega] f) {s : Set E}
+    (hs : s ⊆ Omega) (hsm : MeasurableSet s) (hpsi1 : EqOn psi 1 s) (q : ENNReal) :
+    eLpNorm f q (mu.restrict s) ≤
+      eLpNorm (W1p.value (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u)) q (mu.restrict Omega) := by
+  calc eLpNorm f q (mu.restrict s)
+      = eLpNorm (W1p.value (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u)) q (mu.restrict s) := by
+        refine eLpNorm_congr_ae ?_
+        filter_upwards [ae_restrict_of_ae_restrict_of_subset hs
+            (W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u),
+          ae_restrict_of_ae_restrict_of_subset hs huf, ae_restrict_mem hsm] with x h1 h2 hx
+        rw [h1, ← h2, hpsi1 hx, Pi.one_apply, one_smul]
+    _ ≤ _ := eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl)
 
 /-- **The Leibniz rule in `W^{1,p}(Ω)`**: the weak gradient of `ψ u` is `ψ ∇u + u ∇ψ`. -/
 theorem W1p.gradient_contDiffSMul_ae (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
@@ -257,6 +279,23 @@ theorem W1p.contDiffSMulL_apply (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
     W1p.contDiffSMulL psi hpsi hM hpsiM hgradM u
       = W1p.contDiffSMul psi hpsi hM hpsiM hgradM u :=
   (rfl)
+
+/-! ### Restriction -/
+
+/-- Restriction to a smaller open set commutes with multiplication by a smooth cutoff. -/
+@[simp]
+theorem W1p.restrictL_contDiffSMul {U : Opens E} (hU : U ≤ Omega) (hpsi : ContDiff ℝ ∞ psi)
+    (hM : 0 ≤ M) (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M)
+    (u : W1p mu Omega p) :
+    W1p.restrictL hU (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u) =
+      W1p.contDiffSMul psi hpsi hM (fun x hx => hpsiM x (hU hx)) (fun x hx => hgradM x (hU hx))
+        (W1p.restrictL hU u) := by
+  refine W1p.restrictL_eq_of_value_ae_eq hU ?_
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
+      (W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u),
+    W1p.value_contDiffSMul_ae hpsi hM _ _ (W1p.restrictL hU u), W1p.value_restrictL_ae hU u]
+    with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃]
 
 /-! ### The `L²` Leibniz estimate -/
 
@@ -484,5 +523,23 @@ theorem W1p.gradient_testFunctionSMulComp_ae (hp : p ≠ (∞ : ℝ≥0∞)) (ph
   abel
 
 end TestFunctionSMulComp
+
+/-- The Leibniz rule for a `C¹` scalar factor `ψ` on `Ω`. If `u, D ∈ W^{1,p}(Ω)` and
+`D` is the weak derivative of `u` along `w`, then `ψ ⟪∇u, w⟫` has the weak derivative
+`ψ ⟪∇D, v⟫ + (∂ᵥψ) ⟪∇u, w⟫` along any direction `v`. -/
+theorem W1p.hasWeakLineDerivOn_smul_inner_gradient (hpsi : ContDiffOn ℝ 1 psi Omega)
+    {u D : W1p mu Omega p} {v w : E}
+    (hD : HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value D) w) :
+    HasWeakLineDerivOn mu Omega
+      (fun x => psi x • innerSL ℝ (W1p.gradient u x) w)
+      (fun x => psi x • innerSL ℝ (W1p.gradient D x) v +
+        fderiv ℝ psi x v • innerSL ℝ (W1p.gradient u x) w) v := by
+  -- `∂_w u` agrees with the value of `D` almost everywhere on `Ω`, so it has the same weak
+  -- derivatives.
+  have hae : W1p.value D =ᵐ[mu.restrict Omega]
+      fun x => innerSL ℝ (W1p.gradient u x) w :=
+    hD.ae_eq ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn _)
+  exact (((W1p.hasWeakFDerivOn D).hasWeakLineDerivOn _).congr_ae hae).contDiffOn_smul_of_ne_zero
+    hpsi one_ne_zero
 
 end TauCeti

@@ -5,8 +5,9 @@ Authors: Jon Crall, Claude Opus 4.8
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
 # Entrywise bounds for the Euclidean action of a matrix
@@ -20,6 +21,8 @@ constant `n * ε`. The bounds include matrices with empty row or column types.
 
 * `Matrix.norm_toEuclideanLin_le_of_entry_le`: rectangular entrywise-to-action bound.
 * `Matrix.norm_toEuclideanLin_le_of_entry_le_square`: square finite-index specialization.
+* `Matrix.l2_opNorm_le_of_norm_apply_le`: operator norm comparison under entrywise domination.
+* `Matrix.l2_opNorm_le_sqrt_mul_of_row_col_sum_le`: the finite Schur test.
 
 ## Source
 
@@ -131,5 +134,94 @@ theorem norm_toEuclideanLin_le_of_entry_le_square {𝕜 ι : Type*} [RCLike 𝕜
         Real.sqrt (Fintype.card ι) * ε * Real.sqrt (Fintype.card ι) * ‖x‖ := h
     _ = Real.sqrt (Fintype.card ι) ^ 2 * ε * ‖x‖ := by ring
     _ = (Fintype.card ι : ℝ) * ε * ‖x‖ := by rw [hs]
+
+section L2Operator
+
+open scoped Matrix.Norms.L2Operator
+
+variable {𝕜 m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n] [DecidableEq n]
+
+/-- Entrywise domination by a real matrix bounds the Euclidean operator norm. -/
+theorem l2_opNorm_le_of_norm_apply_le (A : Matrix m n 𝕜) (B : Matrix m n ℝ)
+    (hAB : ∀ i j, ‖A i j‖ ≤ B i j) : ‖A‖ ≤ ‖B‖ := by
+  rw [l2_opNorm_def A]
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun x ↦ ?_
+  let y : EuclideanSpace ℝ n := WithLp.toLp 2 fun j ↦ ‖x j‖
+  have hy : ‖y‖ = ‖x‖ := by
+    apply sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _) |>.mp
+    simp [EuclideanSpace.norm_sq_eq, y]
+  have hcoord (i : m) :
+      ‖(toEuclideanLin A x) i‖ ≤ ‖(toEuclideanLin B y) i‖ := by
+    simp only [toEuclideanLin, toLpLin_apply, PiLp.toLp_apply, mulVec_apply_eq_sum, y]
+    calc
+      _ ≤ ∑ j, ‖A i j * x j‖ := norm_sum_le _ _
+      _ ≤ ∑ j, B i j * ‖x j‖ := by
+        simp only [norm_mul]
+        exact Finset.sum_le_sum fun j _ ↦ mul_le_mul_of_nonneg_right (hAB i j) (norm_nonneg _)
+      _ ≤ ‖∑ j, B i j * ‖x j‖‖ := Real.le_norm_self _
+  have hnorm : ‖toEuclideanLin A x‖ ≤ ‖toEuclideanLin B y‖ := by
+    apply le_of_sq_le_sq _ (norm_nonneg _)
+    simp only [EuclideanSpace.norm_sq_eq]
+    exact Finset.sum_le_sum fun i _ ↦ pow_le_pow_left₀ (norm_nonneg _) (hcoord i) 2
+  exact hnorm.trans (by
+    rw [← hy]
+    exact B.l2_opNorm_mulVec y)
+
+omit [Fintype m] in
+/-- Weighted Cauchy–Schwarz bounds the squared magnitude of a matrix-vector coordinate by the
+absolute row sum times a weighted sum of squared input coordinates. -/
+theorem norm_toEuclideanLin_apply_sq_le (A : Matrix m n 𝕜) (x : EuclideanSpace 𝕜 n)
+    (i : m) :
+    ‖(toEuclideanLin A x) i‖ ^ 2 ≤
+      (∑ j, ‖A i j‖) * ∑ j, ‖A i j‖ * ‖x j‖ ^ 2 := by
+  calc
+    _ ≤ (∑ j, ‖A i j‖ * ‖x j‖) ^ 2 := by
+      apply pow_le_pow_left₀ (norm_nonneg _) _ 2
+      simpa only [toEuclideanLin, toLpLin_apply, PiLp.toLp_apply, mulVec_apply_eq_sum,
+        norm_mul] using norm_sum_le Finset.univ (fun j ↦ A i j * x j)
+    _ ≤ _ := Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul _
+      (fun _ _ ↦ norm_nonneg _) (fun _ _ ↦ by positivity) (fun _ _ ↦ by ring_nf; rfl)
+
+/-- The finite Schur test. The Euclidean operator norm is at most the geometric mean of any
+upper bounds on the absolute row and column sums. Empty index types are allowed. -/
+theorem l2_opNorm_le_sqrt_mul_of_row_col_sum_le (A : Matrix m n 𝕜) {r c : ℝ}
+    (hrow : ∀ i, ∑ j, ‖A i j‖ ≤ r) (hcol : ∀ j, ∑ i, ‖A i j‖ ≤ c) :
+    ‖A‖ ≤ Real.sqrt (r * c) := by
+  rcases isEmpty_or_nonempty m with hm | ⟨⟨i⟩⟩
+  · rw [Subsingleton.elim A 0, norm_zero]
+    exact Real.sqrt_nonneg _
+  rcases isEmpty_or_nonempty n with hn | ⟨⟨j⟩⟩
+  · rw [Subsingleton.elim A 0, norm_zero]
+    exact Real.sqrt_nonneg _
+  have hr : 0 ≤ r := (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _).trans (hrow i)
+  have hc : 0 ≤ c := (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _).trans (hcol j)
+  rw [l2_opNorm_def]
+  refine ContinuousLinearMap.opNorm_le_bound _ (Real.sqrt_nonneg _) fun x ↦ ?_
+  apply le_of_sq_le_sq _ (by positivity)
+  rw [mul_pow, Real.sq_sqrt (mul_nonneg hr hc), EuclideanSpace.norm_sq_eq x]
+  calc
+    ‖toEuclideanLin A x‖ ^ 2 = ∑ i, ‖(toEuclideanLin A x) i‖ ^ 2 :=
+      EuclideanSpace.norm_sq_eq _
+    _ ≤ ∑ i, r * ∑ j, ‖A i j‖ * ‖x j‖ ^ 2 :=
+      Finset.sum_le_sum fun k _ ↦ (A.norm_toEuclideanLin_apply_sq_le x k).trans
+        (mul_le_mul_of_nonneg_right (hrow k) (Finset.sum_nonneg fun j _ ↦
+          mul_nonneg (norm_nonneg _) (sq_nonneg _)))
+    _ = r * ∑ j, (∑ i, ‖A i j‖) * ‖x j‖ ^ 2 := by
+      rw [← Finset.mul_sum, Finset.sum_comm]
+      simp only [Finset.sum_mul]
+    _ ≤ r * ∑ j, c * ‖x j‖ ^ 2 := by
+      gcongr with j
+      exact hcol j
+    _ = r * c * ∑ j, ‖x j‖ ^ 2 := by rw [← Finset.mul_sum, mul_assoc]
+
+/-- For a Hermitian matrix, an upper bound on the absolute row sums bounds the Euclidean
+operator norm. Nonnegativity of the bound also covers the empty matrix. -/
+theorem IsHermitian.l2_opNorm_le_of_row_sum_le {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+    {r : ℝ} (hr : 0 ≤ r) (hrow : ∀ i, ∑ j, ‖A i j‖ ≤ r) : ‖A‖ ≤ r := by
+  rw [← Real.sqrt_sq hr, sq]
+  refine A.l2_opNorm_le_sqrt_mul_of_row_col_sum_le hrow fun j ↦ ?_
+  simpa only [← hA.apply j, norm_star] using hrow j
+
+end L2Operator
 
 end Matrix

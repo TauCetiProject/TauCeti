@@ -6,21 +6,36 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+-- `Matrix.GeneralLinearGroup.upperRightHom` occurs in the statement of `map_upperRightHom`.
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
+-- Non-public: diagonal matrices give the reverse inclusion in `map_det_ker_map_quotientMk`.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
 /-!
 # Change of scalars on general linear groups
 
 `Matrix.GeneralLinearGroup.map f : GL n R →* GL n S` applies a ring hom `f : R →+* S` entrywise.
 Mathlib gives its functoriality (`map_id`, `map_comp`, `map_comp_apply`) but says nothing about
-injectivity, nor about how the map interacts with the positive-determinant subgroup — both of
-which a construction transporting a group of matrices along a change of scalars needs.
+injectivity or negation, nor about how the map interacts with the positive-determinant subgroup,
+all of which a construction transporting a group of matrices along a change of scalars needs.
 
 ## Main results
 
 * `Matrix.GeneralLinearGroup.map_injective`: entrywise application of an injective ring hom is
   injective on general linear groups.
+* `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
+* `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff`: the kernel of reduction modulo an ideal
+  `I` consists of the matrices congruent to the identity matrix entrywise modulo `I`.
+* `Matrix.GeneralLinearGroup.map_det_ker_map_quotientMk`: the determinants of that kernel are the
+  units congruent to `1` modulo `I`.
+* `Matrix.GeneralLinearGroup.map_upperRightHom`: change of scalars sends the unipotent matrix
+  `[[1, b], [0, 1]]` to the unipotent matrix with entry `f b`.
 * `Matrix.GeneralLinearGroup.map_mem_glpos_iff`: a monotone ring hom preserves and reflects
   membership in the positive-determinant subgroups.
+* `Matrix.SpecialLinearGroup.map_mapGL_int`: over `ℤ`, applying any ring hom `S →+* T` after
+  `mapGL S` is `mapGL T`; for instance reducing `SL(n, ℤ)` modulo `m` and then modulo `n ∣ m` is
+  reducing modulo `n`.
 * `Subgroup.map_mapGL`: extending a subgroup of `SL(n, R)` to `GL n S` and then to `GL n T`
   agrees with extending it directly to `GL n T`.
 -/
@@ -36,6 +51,54 @@ is determined by its image over `S`, and a unit by its underlying matrix. -/
 theorem map_injective {f : R →+* S} (hf : Function.Injective f) :
     Function.Injective (Matrix.GeneralLinearGroup.map (n := n) f) :=
   Units.map_injective (Matrix.map_injective hf)
+
+/-- Change of scalars commutes with negation. Together with Mathlib's `map_one`, `map_mul` and
+`map_inv`, this lets subgroup constructions involving `-1`, such as `Subgroup.adjoinNegOne`, be
+transported along `Matrix.GeneralLinearGroup.map f`. -/
+@[simp]
+protected theorem map_neg (f : R →+* S) (g : GL n R) :
+    Matrix.GeneralLinearGroup.map f (-g) = -Matrix.GeneralLinearGroup.map f g := by
+  ext i j
+  simp [Matrix.GeneralLinearGroup.map_apply]
+
+/-- The kernel of reduction `GL n R → GL n (R ⧸ I)`, the principal congruence level of `I`,
+consists of the matrices congruent to the identity matrix entrywise modulo `I`. -/
+theorem mem_ker_map_quotientMk_iff (I : Ideal R) {g : GL n R} :
+    g ∈ (Matrix.GeneralLinearGroup.map (n := n) (Ideal.Quotient.mk I)).ker ↔
+      ∀ i j, (g : Matrix n n R) i j - (1 : Matrix n n R) i j ∈ I := by
+  rw [MonoidHom.mem_ker, Matrix.GeneralLinearGroup.ext_iff]
+  refine forall₂_congr fun i j ↦ ?_
+  rw [Matrix.GeneralLinearGroup.map_apply, Matrix.GeneralLinearGroup.coe_one, ← Ideal.Quotient.eq,
+    Matrix.one_apply, Matrix.one_apply, apply_ite (Ideal.Quotient.mk I), map_one, map_zero]
+
+/-- **The determinants of the principal level are the units congruent to `1`**: for a nonempty
+finite index type `n`, the image under `det` of `ker(GL_n(R) → GL_n(R ⧸ I))` is
+`ker(Rˣ → (R ⧸ I)ˣ)`. -/
+theorem map_det_ker_map_quotientMk [Nonempty n] (I : Ideal R) :
+    (Matrix.GeneralLinearGroup.map (n := n) (Ideal.Quotient.mk I)).ker.map det =
+      (Units.map (Ideal.Quotient.mk I : R →* R ⧸ I)).ker := by
+  -- `≤`: the determinant commutes with reduction; `≥`: a diagonal matrix with a single entry `u`.
+  refine le_antisymm ?_ fun u hu ↦ ?_
+  · rintro _ ⟨g, hg, rfl⟩
+    rw [MonoidHom.mem_ker, ← GeneralLinearGroup.map_det, MonoidHom.mem_ker.mp hg, map_one]
+  · let i : n := Classical.arbitrary n
+    refine ⟨TauCeti.diagGL (Pi.mulSingle i u), ?_, by
+      rw [TauCeti.det_diagGL, Fintype.prod_pi_mulSingle' i]⟩
+    rw [SetLike.mem_coe, MonoidHom.mem_ker, TauCeti.map_diagGL, ← map_one TauCeti.diagGL]
+    congr 1
+    funext j
+    rcases eq_or_ne j i with rfl | hj
+    · simpa using MonoidHom.mem_ker.mp hu
+    · simp [hj]
+
+/-- Change of scalars sends the unipotent matrix `[[1, b], [0, 1]]` to the unipotent matrix
+`[[1, f b], [0, 1]]`. -/
+-- Not a simp lemma: Mathlib's simp lemma `upperRightHom_apply` unfolds `upperRightHom b` on the
+-- left-hand side, so the `simpNF` linter rejects it.
+theorem map_upperRightHom (f : R →+* S) (b : R) :
+    Matrix.GeneralLinearGroup.map f (upperRightHom b) = upperRightHom (f b) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
 
 section StrictOrdered
 
@@ -76,6 +139,26 @@ theorem det_coe_mapGL_pos [PartialOrder S] [IsStrictOrderedRing S] (g : SpecialL
     0 < ((mapGL S g : GL n S) : Matrix n n S).det := by
   rw [det_coe_mapGL]
   exact one_pos
+
+section Int
+
+variable {S} {T : Type*} [CommRing T]
+
+/-- **Over `ℤ`, change of scalars commutes with `mapGL`** along any ring hom `f : S →+* T`, since
+there is only one ring hom out of `ℤ`. Unlike Mathlib's `Matrix.SpecialLinearGroup.map_mapGL`, this
+needs no algebra structure on `T` over `S`; for instance it applies to `ZMod.castHom`. -/
+@[simp]
+theorem map_mapGL_int (f : S →+* T) (g : SpecialLinearGroup n ℤ) :
+    Matrix.GeneralLinearGroup.map f (mapGL S g) = mapGL T g := by
+  ext i j
+  simp [Matrix.GeneralLinearGroup.map_apply]
+
+/-- The homomorphism form of `Matrix.SpecialLinearGroup.map_mapGL_int`. -/
+theorem map_comp_mapGL_int (f : S →+* T) :
+    (Matrix.GeneralLinearGroup.map f).comp (mapGL (R := ℤ) (n := n) S) = mapGL T :=
+  MonoidHom.ext (map_mapGL_int f)
+
+end Int
 
 end Matrix.SpecialLinearGroup
 

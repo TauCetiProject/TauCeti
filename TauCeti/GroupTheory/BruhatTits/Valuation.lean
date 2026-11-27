@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Order.AddGroupWithTop
 public import TauCeti.GroupTheory.BruhatTits.RootDatum
 public import TauCeti.GroupTheory.GroupAction.ConjAct
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import TauCeti.Order.Interval.Finite
 
 /-!
 # Valuations of a root datum
@@ -38,16 +39,25 @@ if conjugation by `z ∈ T` lowers each `φ a` by `a (ν z)`; for the torus valu
 reductive group, normalized by `⟨χ, ν z⟩ = -ω (χ z)`, this is the compatibility with the
 valuation `ω` of the field, and it says that `z` acts on the apartment by the translation `ν z`.
 
+A valuation is *discrete* if each value set `Γ a` has finitely many elements in every closed
+bounded interval. The filtration `U (a, ·)` jumps exactly at the values of `φ a`
+(`Valuation.filtration_eq_filtration_iff`), so for a discrete valuation the subgroups
+`U (a, r+) = ⋃_{t > r} U (a, t)` are again filtration subgroups; this is the finiteness that makes
+the walls of the apartment locally finite.
+
 ## Main definitions
 
 * `TauCeti.BruhatTits.Valuation`: a valuation of a root datum.
 * `TauCeti.BruhatTits.Valuation.filtration`: the filtration subgroups `U (a, k)`.
+* `TauCeti.BruhatTits.Valuation.filtrationGT`: the strict filtration subgroups `U (a, k+)`.
 * `TauCeti.BruhatTits.Valuation.valueSet`: the set `Γ a = φ a (U a ∖ {1}) ⊆ ℝ`.
 * `TauCeti.BruhatTits.Valuation.shift`: the valuation `φ + v` for `v` in the coroot space; it
   defines an additive action of the coroot space on the valuations.
 * `TauCeti.BruhatTits.Valuation.Equipollent`: valuations differing by a shift, the orbit relation
   of this action.
 * `TauCeti.BruhatTits.Valuation.IsCompatible`: compatibility with a map `T → N`.
+* `TauCeti.BruhatTits.Valuation.IsDiscrete`: each `Γ a` meets every closed bounded interval in a
+  finite set.
 
 ## Main results
 
@@ -56,6 +66,13 @@ valuation `ω` of the field, and it says that `z` acts on the apartment by the t
 * `TauCeti.BruhatTits.Valuation.apply_reflectionPerm_right_eq_neg_of_mul_mul_mem_reflectionCoset`:
   the value form of (V5) for the right factor.
 * `TauCeti.BruhatTits.Valuation.valueSet_neg`: `Γ (-a) = -Γ a`.
+* `TauCeti.BruhatTits.Valuation.filtration_eq_filtration_iff`: for `k ≤ l`, `U (a, k) = U (a, l)`
+  if and only if `φ a` takes no value in `[k, l)`.
+* `TauCeti.BruhatTits.Valuation.IsDiscrete.exists_iSup_filtration_eq`: for a discrete valuation,
+  `U (a, r+) = U (a, s)` for some `s > r`.
+* `TauCeti.BruhatTits.Valuation.isDiscrete_shift_iff` and
+  `TauCeti.BruhatTits.Valuation.Equipollent.isDiscrete_iff`: discreteness is invariant under
+  equipollence.
 * `TauCeti.BruhatTits.Valuation.equivalence_equipollent`: equipollence is an equivalence relation.
 * `TauCeti.BruhatTits.Valuation.isCompatible_iff_filtration`: `φ` is compatible with `ν` if and
   only if each `z ∈ T` conjugates `U (a, k)` onto `U (a, k - a (ν z))`.
@@ -69,7 +86,8 @@ are then `Valuation.filtration`, and (V3) is stated elementwise on commutators o
 ## References
 
 * F. Bruhat, J. Tits, *Groupes réductifs sur un corps local. I*, Publ. Math. IHÉS 41 (1972),
-  6.1.2 (2), p. 108, Définition 6.2.1, pp. 116–117, 6.2.2, p. 117, and 6.2.5, p. 120.
+  6.1.2 (2), p. 108, Définition 6.2.1, pp. 116–117, 6.2.2, p. 117, 6.2.5, p. 120, and
+  Définition 6.2.21, p. 127.
 * F. Bruhat, J. Tits, *Groupes réductifs sur un corps local. II*, Publ. Math. IHÉS 60 (1984),
   4.2.7–4.2.9, p. 91.
 -/
@@ -188,6 +206,48 @@ theorem filtration_le_U (i : ι) (k : ℝ) : φ.filtration i k ≤ D.U i :=
 theorem filtration_antitone (i : ι) : Antitone (φ.filtration i) :=
   fun _ _ hkl _ ⟨h, hl⟩ ↦ ⟨h, (WithTop.coe_le_coe.mpr hkl).trans hl⟩
 
+/-- The strict filtration subgroup `U (a, k+)` is the union of `U (a, l)` over `k < l`. -/
+def filtrationGT (i : ι) (k : ℝ) : Subgroup G :=
+  ⨆ l : Set.Ioi k, φ.filtration i l
+
+/-- Membership in the strict filtration is equivalent to membership at some strictly larger
+depth. -/
+theorem mem_filtrationGT_iff_exists {k : ℝ} {g : G} :
+    g ∈ φ.filtrationGT i k ↔ ∃ l : ℝ, k < l ∧ g ∈ φ.filtration i l := by
+  let : Nonempty (Set.Ioi k) := (Set.nonempty_Ioi (a := k)).to_subtype
+  have hanti : Antitone (fun l : Set.Ioi k ↦ φ.filtration i l) :=
+    fun _ _ h ↦ φ.filtration_antitone i h
+  have hdir := hanti.directed_le
+  simpa [filtrationGT, SetCoe.exists] using (Subgroup.mem_iSup_of_directed hdir (x := g))
+
+/-- The strict filtration consists of elements of the root subgroup of value strictly above
+the given depth. -/
+@[simp]
+theorem mem_filtrationGT_iff {k : ℝ} {g : G} :
+    g ∈ φ.filtrationGT i k ↔ ∃ h : g ∈ D.U i, (k : WithTop ℝ) < φ i ⟨g, h⟩ := by
+  simp only [φ.mem_filtrationGT_iff_exists, φ.mem_filtration_iff]
+  refine ⟨fun ⟨l, hkl, h, hl⟩ ↦ ⟨h, (WithTop.coe_lt_coe.mpr hkl).trans_le hl⟩, ?_⟩
+  rintro ⟨h, hk⟩
+  obtain ⟨l, hkl, hl⟩ := exists_between hk
+  obtain ⟨r, rfl⟩ := WithTop.ne_top_iff_exists.mp (ne_top_of_lt hl)
+  exact ⟨r, WithTop.coe_lt_coe.mp hkl, h, hl.le⟩
+
+/-- For an element of the root subgroup, strict filtration membership tests its value. -/
+theorem coe_mem_filtrationGT_iff {k : ℝ} (u : D.U i) :
+    (u : G) ∈ φ.filtrationGT i k ↔ (k : WithTop ℝ) < φ i u :=
+  (φ.mem_filtrationGT_iff).trans ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨u.property, h⟩⟩
+
+/-- The strict filtration at a depth is contained in the weak filtration there. -/
+theorem filtrationGT_le_filtration (i : ι) (k : ℝ) :
+    φ.filtrationGT i k ≤ φ.filtration i k :=
+  iSup_le fun l ↦ φ.filtration_antitone i l.property.le
+
+/-- The strict filtration decreases with depth. -/
+theorem filtrationGT_antitone (i : ι) : Antitone (φ.filtrationGT i) := by
+  intro k l hkl g hg
+  obtain ⟨h, hl⟩ := φ.mem_filtrationGT_iff.mp hg
+  exact φ.mem_filtrationGT_iff.mpr ⟨h, (WithTop.coe_le_coe.mpr hkl).trans_lt hl⟩
+
 /-- `U (a, ∞) = ⋂ k, U (a, k)` is trivial. -/
 @[simp]
 theorem iInf_filtration (i : ι) : ⨅ k, φ.filtration i k = ⊥ := by
@@ -253,6 +313,62 @@ theorem valueSet_nontrivial (i : ι) : (φ.valueSet i).Nontrivial := by
   have h1 : (φ.valueSet i).encard ≤ 1 := not_lt.mp h
   have : (φ.valueSet i).encard + 1 ≤ 1 + 1 := by gcongr
   exact absurd (h3.trans this) (by decide)
+
+/-- For `k ≤ l`, the filtration subgroups `U (a, k) ⊇ U (a, l)` agree exactly when `φ a` takes no
+value in `[k, l)`: the filtration jumps only at the values of `φ a`. -/
+theorem filtration_eq_filtration_iff {k l : ℝ} (hkl : k ≤ l) :
+    φ.filtration i k = φ.filtration i l ↔ Disjoint (φ.valueSet i) (Set.Ico k l) := by
+  rw [Set.disjoint_left]
+  refine ⟨fun h r ⟨u, hu⟩ hr ↦ ?_, fun h ↦ le_antisymm (fun g ⟨hg, hk⟩ ↦ ⟨hg, ?_⟩)
+    (φ.filtration_antitone i hkl)⟩
+  · have hk : (u : G) ∈ φ.filtration i k := (φ.coe_mem_filtration_iff u).mpr (by
+      rw [hu]
+      exact_mod_cast hr.1)
+    rw [h, coe_mem_filtration_iff, hu, WithTop.coe_le_coe] at hk
+    exact hr.2.not_ge hk
+  · by_contra hl
+    rw [not_le] at hl
+    obtain ⟨r, hr⟩ := WithTop.ne_top_iff_exists.mp hl.ne_top
+    rw [← hr] at hk hl
+    exact h ⟨⟨g, hg⟩, hr.symm⟩ ⟨WithTop.coe_le_coe.mp hk, WithTop.coe_lt_coe.mp hl⟩
+
+/-! ### Discrete valuations -/
+
+/-- A valuation is *discrete* if each value set `Γ a` meets every closed bounded interval of `ℝ`
+in a finite set, that is, `Γ a` is closed and discrete in `ℝ`. For abstract root data this is
+stronger than the discreteness of [Bruhat–Tits I], Définition 6.2.21, which asks each `Γ a` to be
+discrete; the two agree for the valuations of reductive groups over discretely valued fields,
+whose value sets are cosets of discrete subgroups of `ℝ`. It is the finiteness condition under
+which the walls of the apartment are locally finite. -/
+def IsDiscrete : Prop :=
+  ∀ (i : ι) (r s : ℝ), (φ.valueSet i ∩ Set.Icc r s).Finite
+
+theorem isDiscrete_iff : φ.IsDiscrete ↔ ∀ (i : ι) (r s : ℝ), (φ.valueSet i ∩ Set.Icc r s).Finite :=
+  Iff.rfl
+
+variable {φ}
+
+/-- For a discrete valuation, the filtration `U (a, ·)` is constant on an interval `(r, s]` to
+the right of every `r`. -/
+theorem IsDiscrete.exists_forall_filtration_eq (h : φ.IsDiscrete) (i : ι) (r : ℝ) :
+    ∃ s, r < s ∧ ∀ t ∈ Set.Ioc r s, φ.filtration i t = φ.filtration i s := by
+  -- `s` is a lower bound of the values of `φ a` above `r`, with `s > r`.
+  obtain ⟨s, hrs, hmin⟩ := exists_lt_forall_le_of_finite_inter_Ioo (lt_add_one r)
+    ((h i r (r + 1)).subset (Set.inter_subset_inter_right _ Set.Ioo_subset_Icc_self))
+  refine ⟨s, hrs, fun t ht ↦ (φ.filtration_eq_filtration_iff ht.2).mpr ?_⟩
+  exact Set.disjoint_left.mpr fun q hq hqt ↦ hqt.2.not_ge (hmin q hq (ht.1.trans_le hqt.1))
+
+/-- For a discrete valuation, the subgroup `U (a, r+) = ⋃_{t > r} U (a, t)` is itself a
+filtration subgroup `U (a, s)` for some `s > r`. -/
+theorem IsDiscrete.exists_iSup_filtration_eq (h : φ.IsDiscrete) (i : ι) (r : ℝ) :
+    ∃ s, r < s ∧ ⨆ (t : ℝ) (_ : r < t), φ.filtration i t = φ.filtration i s := by
+  obtain ⟨s, hrs, hs⟩ := h.exists_forall_filtration_eq i r
+  refine ⟨s, hrs, le_antisymm (iSup₂_le fun t ht ↦ ?_) (le_iSup₂_of_le s hrs le_rfl)⟩
+  rcases le_total t s with hts | hst
+  · exact (hs t ⟨ht, hts⟩).le
+  · exact φ.filtration_antitone i hst
+
+variable (φ)
 
 section Ordered
 
@@ -325,6 +441,10 @@ instance : Unique (Valuation D) where
       apply_eq_two_smul := isEmptyElim
       apply_reflectionPerm_left_eq_neg_of_mul_mul_mem_reflectionCoset := isEmptyElim }
   uniq _ := ext isEmptyElim
+
+/-- Every valuation of a root datum with no roots is discrete. -/
+theorem isDiscrete_of_isEmpty : φ.IsDiscrete :=
+  isEmptyElim
 
 end RankZero
 
@@ -408,6 +528,14 @@ theorem filtration_shift (v : N) (k : ℝ) :
   ext g
   simp only [mem_filtration_iff, shift_apply, WithTop.coe_le_add_coe_iff]
 
+/-- Shifting the valuation by `v` subtracts `a(v)` from the threshold in the strict
+filtration. -/
+@[simp]
+theorem filtrationGT_shift (i : ι) (v : N) (k : ℝ) :
+    (φ.shift v).filtrationGT i k = φ.filtrationGT i (k - P.root' i v) := by
+  ext g
+  simp only [mem_filtrationGT_iff, shift_apply, WithTop.coe_lt_add_coe_iff]
+
 /-- Shifting by `v` translates the value set of `a` by `a v`. -/
 @[simp]
 theorem valueSet_shift (v : N) :
@@ -421,6 +549,28 @@ theorem valueSet_shift (v : N) :
     exact ⟨l, ⟨u, hl⟩, by exact_mod_cast hu⟩
   · rintro ⟨l, ⟨u, hu⟩, rfl⟩
     exact ⟨u, by rw [hu]; norm_cast⟩
+
+/-- A shift fixes a valuation exactly when every root vanishes on the shifting vector. -/
+theorem shift_eq_self_iff {v : N} : φ.shift v = φ ↔ ∀ i, P.root' i v = 0 := by
+  refine ⟨fun h i ↦ ?_, fun h ↦ ext fun i u ↦ by simp [h]⟩
+  obtain ⟨k, u, hu⟩ := (φ.valueSet_nontrivial i).nonempty
+  have e : φ i u + (P.root' i v : WithTop ℝ) = φ i u := by
+    simpa using congrArg (fun ψ : Valuation D ↦ ψ i u) h
+  rw [hu] at e
+  exact_mod_cast add_eq_left.mp (by exact_mod_cast e : k + P.root' i v = k)
+
+variable {φ} in
+/-- A shift of a discrete valuation is discrete. -/
+theorem IsDiscrete.shift (h : φ.IsDiscrete) (v : N) : (φ.shift v).IsDiscrete := fun i r s ↦ by
+  rw [valueSet_shift]
+  refine ((h i (r - P.root' i v) (s - P.root' i v)).image (· + P.root' i v)).subset ?_
+  rintro _ ⟨⟨t, ht, rfl⟩, h₁, h₂⟩
+  exact ⟨t, ⟨ht, by linarith, by linarith⟩, rfl⟩
+
+/-- Discreteness is invariant under shifts. -/
+@[simp]
+theorem isDiscrete_shift_iff (v : N) : (φ.shift v).IsDiscrete ↔ φ.IsDiscrete :=
+  ⟨fun h ↦ by simpa using h.shift (-v), fun h ↦ h.shift v⟩
 
 /-- The coroot space acts on the valuations by shifts: `v +ᵥ φ = φ + v`. -/
 instance : AddAction N (Valuation D) where
@@ -462,6 +612,12 @@ theorem Equipollent.symm {ψ : Valuation D} (h : φ.Equipollent ψ) : ψ.Equipol
 theorem Equipollent.trans {ψ χ : Valuation D} (h₁ : φ.Equipollent ψ) (h₂ : ψ.Equipollent χ) :
     φ.Equipollent χ :=
   (AddAction.orbitRel N (Valuation D)).trans h₂ h₁
+
+/-- Discreteness is invariant under equipollence. -/
+theorem Equipollent.isDiscrete_iff {ψ : Valuation D} (h : φ.Equipollent ψ) :
+    φ.IsDiscrete ↔ ψ.IsDiscrete := by
+  obtain ⟨v, rfl⟩ := AddAction.mem_orbit_iff.1 (AddAction.orbitRel_apply.1 h)
+  simp
 
 variable (D) in
 /-- Equipollence is an equivalence relation on the valuations of a root datum. -/

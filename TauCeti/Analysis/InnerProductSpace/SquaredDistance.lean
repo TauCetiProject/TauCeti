@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Complex.Pseudoconvex
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.InnerProductSpace.Calculus
 
 /-!
 # Squared distance along a differentiable map
@@ -45,6 +46,9 @@ and second derivatives of the base and of the cutoff.
 * `TauCeti.fderiv_norm_sq_sub_comp`: the first derivative of squared distance along a map.
 * `TauCeti.fderiv_norm_sq_sub_comp_eq_zero_iff`: the critical-point normal-vector test.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_apply`: the full Hessian formula.
+* `TauCeti.contDiff_exp_mul_norm_sq`, `TauCeti.contDiff_exp_mul_norm_sq_sub_sq`: the functions
+  `x ↦ exp (α ‖x‖ ^ 2)` and `x ↦ exp (α (‖x‖ ^ 2 - r) ^ 2)` are analytic; the derivative of the
+  second is `TauCeti.hasFDerivAt_exp_mul_norm_sq_sub_sq`.
 * `TauCeti.hasFDerivAt_exp_neg_mul_norm_sub_sq`,
   `TauCeti.fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply`: the first and second derivatives of
   `x ↦ exp (-α ‖x - a‖ ^ 2)`.
@@ -73,7 +77,7 @@ and second derivatives of the base and of the cutoff.
 public section
 
 open Complex Function Module
-open scoped RealInnerProductSpace
+open scoped ContDiff RealInnerProductSpace
 
 namespace TauCeti
 
@@ -112,18 +116,6 @@ theorem fderiv_norm_sq_sub_comp_eq_zero_iff (hi : DifferentiableAt ℝ i x) :
     rw [inner_sub_left] at hv'
     simpa using hv'
 
-/-- The second derivative of squared norm is twice the inner product. -/
-theorem fderiv_fderiv_norm_sq_apply (y u v : E) :
-    fderiv ℝ (fderiv ℝ (fun z : E ↦ ‖z‖ ^ 2)) y u v = 2 * inner ℝ u v := by
-  have hsnd : fderiv ℝ (fderiv ℝ (fun z : E ↦ ‖z‖ ^ 2)) y =
-      (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) := by
-    rw [fderiv_norm_sq]
-    exact (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
-  rw [hsnd]
-  simp only [two_smul, add_apply]
-  rw [innerSL_apply_apply]
-  ring
-
 /-- **The Hessian of squared distance along a map.** It is twice the sum of the pullback inner
 product and the pairing of the displacement with the second derivative of the map. -/
 theorem fderiv_fderiv_norm_sq_sub_comp_apply (hi : ContDiffAt ℝ 2 i x) (v w : V) :
@@ -148,6 +140,26 @@ end Real
 section Exp
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- For `α : ℝ`, the function `x ↦ e^{α|x|²}` is analytic. -/
+theorem contDiff_exp_mul_norm_sq (α : ℝ) :
+    ContDiff ℝ ω fun y : E ↦ Real.exp (α * ‖y‖ ^ 2) :=
+  (contDiff_const.mul (contDiff_norm_sq ℝ)).exp
+
+/-- For `α r : ℝ`, the function `x ↦ e^{α(|x|² - r)²}` is analytic. -/
+theorem contDiff_exp_mul_norm_sq_sub_sq (α r : ℝ) :
+    ContDiff ℝ ω fun y : E ↦ Real.exp (α * (‖y‖ ^ 2 - r) ^ 2) :=
+  (contDiff_const.mul (((contDiff_norm_sq ℝ).sub contDiff_const).pow 2)).exp
+
+/-- The derivative of `x ↦ e^{α(|x|² - r)²}` is `4 α (|x|² - r) e^{α(|x|² - r)²} ⟪x, ·⟫`. -/
+theorem hasFDerivAt_exp_mul_norm_sq_sub_sq (α r : ℝ) (x : E) :
+    HasFDerivAt (fun y : E ↦ Real.exp (α * (‖y‖ ^ 2 - r) ^ 2))
+      ((4 * α * (‖x‖ ^ 2 - r) * Real.exp (α * (‖x‖ ^ 2 - r) ^ 2)) • innerSL ℝ x) x := by
+  refine ((((hasStrictFDerivAt_norm_sq x).hasFDerivAt.sub_const r).pow 2).const_mul α).exp
+    |>.congr_fderiv ?_
+  ext v
+  simp
+  ring
 
 /-- The derivative of the Gaussian `x ↦ exp (-α ‖x - a‖ ^ 2)` of the squared distance from `a`
 is `-2 α exp (-α ‖x - a‖ ^ 2) ⟪x - a, ·⟫`. -/

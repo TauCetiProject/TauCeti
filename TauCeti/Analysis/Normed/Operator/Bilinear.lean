@@ -6,12 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
-# Pulling back continuous bilinear maps, and their quadratic maps
+# Continuous bilinear maps
+
+A family of continuous bilinear maps gives a continuous bilinear map into the product
+(`ContinuousLinearMap.piBilin`), with coordinatewise evaluation.
+
+Evaluating continuous linear maps at a fixed vector `v` (`ContinuousLinearMap.apply 𝕜 G v`) has
+operator norm at most `‖v‖` (`ContinuousLinearMap.opNorm_apply_apply_le`). Every continuous
+`R`-linear endomorphism of a commutative semiring `R` is its value at `1` times the identity
+(`ContinuousLinearMap.eq_apply_one_smul_id`), and every continuous `𝕜`-bilinear map
+`𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜` on a nontrivially normed field `𝕜` is its value at `(1, 1)` times
+`ContinuousLinearMap.mul 𝕜 𝕜` (`ContinuousLinearMap.eq_apply_one_one_smul_mul`).
 
 A continuous linear map `u : W →L[𝕜] V` pulls a continuous bilinear map `B` on `V` back to the
 bilinear map `B (u ·) (u ·)` on `W`. This operation is itself continuous and linear in `B`
@@ -20,12 +32,32 @@ bilinear maps, such as the coordinate expressions of metrics. In particular, pul
 value of a continuous family of multilinear maps valued in bilinear maps, along `u` in every
 argument, gives a continuous family
 (`Continuous.pullbackBilinL_compContinuousMultilinearMap`). Pulling back along a bijection preserves
-nondegeneracy (`ContinuousLinearMap.injective_bilinearComp`).
+nondegeneracy (`ContinuousLinearMap.injective_bilinearComp`). Pulling back a continuous family
+of bilinear maps along two fixed maps is also a continuous linear operation
+(`ContinuousLinearMap.bilinearCompL`), giving `ContinuousOn.bilinearComp` and
+`Continuous.bilinearComp` even when all spaces are only seminormed.
 
 The quadratic map `x ↦ B x x` of a continuous bilinear map is Lipschitz on every ball, with a
 constant proportional to the radius: `‖B x x - B y y‖ ≤ ‖B‖ (‖x‖ + ‖y‖) ‖x - y‖`
 (`ContinuousLinearMap.norm_apply_apply_sub_apply_apply_le`). This is the quadratic estimate on the
 nonlinear terms of an equation that is quadratic in its unknown.
+
+For a continuous map of two variables, semilinear in each argument with respect to isometric
+scalar homomorphisms (for instance sesquilinear), the sum `∑ i ∈ s, A (u i) (v i)` is bounded by
+`‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖` (`ContinuousLinearMap.norm_sum_apply_apply_le`); along a finite
+orthonormal basis taken twice, this is the dimension times `‖A‖`. Every value satisfies the
+Young-type bound `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for `c > 0`
+(`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
+
+For a continuous bilinear map `B : G × V → H`, the expression `B(A ∘ D, v)` is linear in each of
+`A`, `D` and `v`; `ContinuousLinearMap.compPrecompL E F B` is the continuous bilinear map
+`(D, v) ↦ (A ↦ B(A ∘ D, v))` that treats `A` as a separate factor
+(`ContinuousLinearMap.compPrecompL_apply`).
+
+Composing a bilinear map `f` with linear maps `g` and `h` gives a bilinear map of norm at most
+`‖f‖ ‖g‖ ‖h‖` (`ContinuousLinearMap.norm_bilinearComp_le`), and the bilinear map
+`(h, k) ↦ B h k • c` has norm at most `‖c‖ ‖B‖`
+(`ContinuousLinearMap.norm_smulRightL_flip_comp_le`).
 
 Pulling back along continuous linear equivalences keeps a bilinear map `B₀ : V →L V' →L G`
 invertible as a map to the dual (`ContinuousLinearMap.IsInvertible.bilinearComp`), and
@@ -42,6 +74,14 @@ reverses products, fixes the identity, and tends to the identity as `B₀` stays
 invertible map and `X` tends to the identity. On Banach spaces the comparison operator
 `B₀⁻¹ ∘ B` also tends to the identity as both maps tend to the same invertible map
 (`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
+
+On normable spaces over nontrivially normed fields, with isometric scalar homomorphisms `σ₁₃`,
+`σ₂₃` and `σ₂₃` surjective, the flip of a continuous pairing `μ : E →SL[σ₁₃] F →SL[σ₂₃] H` is
+Mathlib's flip: `μ.toLinearMap.pairingFlip hμ = μ.flip`, where `hμ` is a proof of joint continuity
+of `μ`, that is, continuity of `Function.uncurry fun x y ↦ μ x y`, which callers supply
+explicitly (`ContinuousLinearMap.pairingFlip_eq_flip`). Forgetting continuity via
+`ContinuousLinearMap.toLinearMap₁₂` commutes with `flip` and `bilinearComp`
+(`ContinuousLinearMap.toLinearMap₁₂_flip`, `ContinuousLinearMap.toLinearMap₁₂_bilinearComp`).
 -/
 
 public section
@@ -50,15 +90,90 @@ noncomputable section
 
 namespace ContinuousLinearMap
 
+/-- Every continuous `R`-linear endomorphism of a commutative semiring `R` with continuous scalar
+multiplication is its value at `1` times `ContinuousLinearMap.id R R`. -/
+theorem eq_apply_one_smul_id {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [ContinuousConstSMul R R] (D : R →L[R] R) :
+    D = D 1 • ContinuousLinearMap.id R R :=
+  ext_ring <| by simp
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
 
+/-- Every continuous `𝕜`-bilinear map `𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜` on a nontrivially normed field `𝕜` is its
+value at `(1, 1)` times `ContinuousLinearMap.mul 𝕜 𝕜`. -/
+theorem eq_apply_one_one_smul_mul (H : 𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜) :
+    H = H 1 1 • ContinuousLinearMap.mul 𝕜 𝕜 :=
+  ext_ring <| ext_ring <| by simp
+
+/-- Evaluating continuous linear maps at a fixed vector `v : V` has operator norm at most
+`‖v‖`. -/
+theorem opNorm_apply_apply_le (v : V) : ‖apply 𝕜 G v‖ ≤ ‖v‖ :=
+  opNorm_le_bound _ (norm_nonneg v) fun L ↦ by
+    simpa only [apply_apply, mul_comm] using L.le_opNorm v
+
+/-- A family of continuous bilinear maps is a continuous bilinear map into the product. -/
+def piBilin {ι : Type*} {G : ι → Type*}
+    [∀ i, SeminormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
+    (B : ∀ i, V →L[𝕜] W →L[𝕜] G i) : V →L[𝕜] W →L[𝕜] ∀ i, G i :=
+  (ContinuousLinearMap.piEquivL 𝕜 W G).toContinuousLinearMap.comp (ContinuousLinearMap.pi B)
+
+@[simp]
+theorem piBilin_apply {ι : Type*} {G : ι → Type*}
+    [∀ i, SeminormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
+    (B : ∀ i, V →L[𝕜] W →L[𝕜] G i) (x : V) (y : W) (i : ι) :
+    piBilin B x y i = B i x y :=
+  (rfl)
+
+section BilinearComp
+
+variable {V' W' : Type*} [SeminormedAddCommGroup V'] [NormedSpace 𝕜 V']
+  [SeminormedAddCommGroup W'] [NormedSpace 𝕜 W']
+
+/-- Pull back a bilinear map along `e` in the first slot and `f` in the second slot, as a
+continuous linear map in the bilinear map. -/
+def bilinearCompL (e : V' →L[𝕜] V) (f : W' →L[𝕜] W) :
+    (V →L[𝕜] W →L[𝕜] G) →L[𝕜] V' →L[𝕜] W' →L[𝕜] G :=
+  (compL 𝕜 V' (W →L[𝕜] G) (W' →L[𝕜] G) ((compL 𝕜 W' W G).flip f)).comp
+    ((compL 𝕜 V' V (W →L[𝕜] G)).flip e)
+
+/-- The bundled pullback acts by precomposition in both slots. -/
+@[simp]
+theorem bilinearCompL_apply (e : V' →L[𝕜] V) (f : W' →L[𝕜] W)
+    (B : V →L[𝕜] W →L[𝕜] G) : bilinearCompL e f B = B.bilinearComp e f := by
+  ext v w
+  simp only [bilinearCompL, comp_apply, compL_apply, flip_apply, bilinearComp_apply]
+
+end BilinearComp
+
+section CompPrecompL
+
+variable {E F H : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+variable (E F) in
+/-- For a continuous bilinear map `B : G × V → H`, the continuous bilinear map
+`(D, v) ↦ (A ↦ B.precompL E (A ∘L D) v)`. It writes the expression `B(A ∘ D, v)`, which is linear
+in each of `A`, `D` and `v`, as `compPrecompL E F B D v` applied to `A`, so that `A` can be
+treated as one factor of a product and `(D, v)` as the other. In the chain rule
+`D B(g ∘ u, v) = B(Dg(u) ∘ Du, v) + B(g ∘ u, Dv)` this separates `Dg(u)` from `Du` and `v`. -/
+def compPrecompL (B : G →L[𝕜] V →L[𝕜] H) :
+    (E →L[𝕜] F) →L[𝕜] V →L[𝕜] (F →L[𝕜] G) →L[𝕜] E →L[𝕜] H :=
+  (((compL 𝕜 (F →L[𝕜] G) (E →L[𝕜] G) (E →L[𝕜] H)).comp (B.precompL E).flip).flip).comp
+    (compL 𝕜 E F G).flip
+
+@[simp]
+theorem compPrecompL_apply (B : G →L[𝕜] V →L[𝕜] H) (D : E →L[𝕜] F) (v : V)
+    (A : F →L[𝕜] G) : compPrecompL E F B D v A = B.precompL E (A.comp D) v :=
+  (rfl)
+
+end CompPrecompL
+
 /-- Pulling a continuous bilinear map back along a continuous linear map `u`,
 `B ↦ B (u ·) (u ·)`, as a continuous linear map in `B`. -/
 def pullbackBilinL (u : W →L[𝕜] V) : (V →L[𝕜] V →L[𝕜] G) →L[𝕜] W →L[𝕜] W →L[𝕜] G :=
-  (compL 𝕜 W (V →L[𝕜] G) (W →L[𝕜] G) ((compL 𝕜 W V G).flip u)).comp
-    ((compL 𝕜 W V (V →L[𝕜] G)).flip u)
+  bilinearCompL u u
 
 @[simp]
 theorem pullbackBilinL_apply (u : W →L[𝕜] V) (B : V →L[𝕜] V →L[𝕜] G) (v w : W) :
@@ -228,7 +343,179 @@ theorem IsInvertible.tendsto_pairingAdjoint {B₀ : E →L[𝕜] E →L[𝕜] H}
 
 end Tendsto
 
+section PairingFlip
+
+variable {𝕜₂ 𝕜₃ E F H : Type*} [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
+  {σ₁₃ : 𝕜 →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
+  [RingHomSurjective σ₂₃]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsNormableSpace 𝕜 E]
+  [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsNormableSpace 𝕜₂ F]
+  [AddCommGroup H] [Module 𝕜₃ H] [TopologicalSpace H] [IsNormableSpace 𝕜₃ H]
+
+/-- On normable spaces, when both scalar homomorphisms are isometric and the second is
+surjective, the flip of a continuous pairing `μ` is Mathlib's flip:
+`μ.toLinearMap.pairingFlip hμ = μ.flip`, where the caller supplies `hμ`, a proof of joint
+continuity of `μ` (continuity of the uncurried pairing `Function.uncurry fun x y ↦ μ x y`). The
+topological additive group structures of `F` and `H` used by `LinearMap.pairingFlip`, by
+Mathlib's flip and by the topology of `F →SL[σ₂₃] H` come from their normability
+(`PolynormableSpace.isTopologicalAddGroup`). -/
+@[simp]
+theorem pairingFlip_eq_flip
+    (μ : haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H; E →SL[σ₁₃] F →SL[σ₂₃] H)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
+    haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₂ F
+    haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H
+    μ.toLinearMap.pairingFlip hμ = μ.flip := by
+  have := PolynormableSpace.isTopologicalAddGroup 𝕜₂ F
+  have := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H
+  ext
+  rw [LinearMap.pairingFlip_apply, coe_coe, flip_apply]
+
+end PairingFlip
+
 end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+section Semilinear₂
+
+variable {𝕜 𝕜₂ 𝕜₃ E F G : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  [NontriviallyNormedField 𝕜₃] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] [SeminormedAddCommGroup G] [NormedSpace 𝕜₃ G]
+  {σ₁₃ : 𝕜 →+* 𝕜₃} [RingHomIsometric σ₁₃]
+
+/-- The sum `∑ i ∈ s, A (u i) (v i)` of a continuous map `A`, semilinear in each argument with
+respect to isometric scalar homomorphisms (for instance sesquilinear), is bounded by
+`‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖`. When `u = v` is a finite orthonormal basis and `s` indexes the
+whole basis, the bound is the dimension times `‖A‖`. -/
+theorem norm_sum_apply_apply_le {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₂₃] {ι : Type*}
+    (s : Finset ι) (A : E →SL[σ₁₃] F →SL[σ₂₃] G) (u : ι → E) (v : ι → F) :
+    ‖∑ i ∈ s, A (u i) (v i)‖ ≤ ‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖ := by
+  rw [Finset.mul_sum]
+  exact norm_sum_le_of_le s fun i _ ↦ (A.le_opNorm₂ (u i) (v i)).trans_eq (mul_assoc _ _ _)
+
+/-- A Young-type bound for a continuous map `B` of two variables, semilinear in each argument with
+respect to isometric scalar homomorphisms: for every `c > 0`,
+`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)`. -/
+theorem norm_apply_apply_le_mul_add_sq {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₂₃]
+    (B : E →SL[σ₁₃] F →SL[σ₂₃] G) {c : ℝ} (hc : 0 < c) (u : E) (v : F) :
+    ‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2) := by
+  refine (B.le_opNorm₂ _ _).trans ?_
+  rw [mul_assoc]
+  gcongr
+  have h := two_mul_le_add_mul_sq (a := ‖u‖) (b := ‖v‖) (inv_pos.2 hc)
+  rw [inv_inv] at h
+  linarith
+
+end Semilinear₂
+
+section Comp
+
+variable {𝕜 E E' E'' F F' G H : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+/-- The operator norm of a bilinear map composed with two linear maps is at most the product of
+the three operator norms. -/
+theorem norm_bilinearComp_le (f : E →L[𝕜] F →L[𝕜] G) (g : E' →L[𝕜] E) (h : F' →L[𝕜] F) :
+    ‖f.bilinearComp g h‖ ≤ ‖f‖ * ‖g‖ * ‖h‖ :=
+  (f.bilinearComp g h).opNorm_le_bound₂ (by positivity) fun x y => by
+    rw [bilinearComp_apply]
+    calc ‖f (g x) (h y)‖ ≤ ‖f‖ * ‖g x‖ * ‖h y‖ := f.le_opNorm₂ _ _
+      _ ≤ ‖f‖ * (‖g‖ * ‖x‖) * (‖h‖ * ‖y‖) := by
+        gcongr
+        exacts [g.le_opNorm x, h.le_opNorm y]
+      _ = ‖f‖ * ‖g‖ * ‖h‖ * ‖x‖ * ‖y‖ := by ring
+
+/-- The bilinear map `(h, k) ↦ B h k • c` has norm at most `‖c‖ ‖B‖`. -/
+theorem norm_smulRightL_flip_comp_le (c : H) (B : E →L[𝕜] StrongDual 𝕜 E'') :
+    ‖((StrongDual.smulRightL 𝕜 E'' H).flip c).comp B‖ ≤ ‖c‖ * ‖B‖ := by
+  refine (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
+  refine (le_opNorm _ c).trans (mul_le_of_le_one_left (norm_nonneg _) ?_)
+  rw [opNorm_flip]
+  exact norm_smulRightL_le
+
+end Comp
+
+section ToLinearMap₁₂Flip
+
+variable {𝕜 𝕜₂ 𝕜₃ : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  [NontriviallyNormedField 𝕜₃] {σ₁₃ : 𝕜 →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃}
+  [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
+  {E F G : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsNormableSpace 𝕜 E]
+  [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsNormableSpace 𝕜₂ F]
+  [AddCommGroup G] [Module 𝕜₃ G] [TopologicalSpace G] [IsNormableSpace 𝕜₃ G]
+  [IsTopologicalAddGroup G]
+
+/-- Forgetting continuity commutes with transposing the arguments. -/
+@[simp]
+theorem toLinearMap₁₂_flip (L : E →SL[σ₁₃] F →SL[σ₂₃] G) :
+    toLinearMap₁₂ L.flip = (toLinearMap₁₂ L).flip :=
+  LinearMap.ext₂ fun _ _ ↦ by
+    simp only [toLinearMap₁₂_apply_apply_apply, LinearMap.flip_apply, flip_apply]
+
+end ToLinearMap₁₂Flip
+
+section ToLinearMap₁₂BilinearComp
+
+variable {𝕜 𝕜₂ 𝕜₃ 𝕜₁' 𝕜₂' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  [NontriviallyNormedField 𝕜₃] [NontriviallyNormedField 𝕜₁'] [NontriviallyNormedField 𝕜₂']
+  {σ₁₃ : 𝕜 →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃} {σ₁' : 𝕜₁' →+* 𝕜} {σ₁₃' : 𝕜₁' →+* 𝕜₃}
+  {σ₂' : 𝕜₂' →+* 𝕜₂} {σ₂₃' : 𝕜₂' →+* 𝕜₃} [RingHomCompTriple σ₁' σ₁₃ σ₁₃']
+  [RingHomCompTriple σ₂' σ₂₃ σ₂₃'] [RingHomIsometric σ₂₃] [RingHomIsometric σ₁₃']
+  [RingHomIsometric σ₂₃']
+  {E F G E' F' : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsNormableSpace 𝕜₂ F]
+  [AddCommGroup G] [Module 𝕜₃ G] [TopologicalSpace G] [IsNormableSpace 𝕜₃ G]
+  [IsTopologicalAddGroup G]
+  [AddCommGroup E'] [Module 𝕜₁' E'] [TopologicalSpace E'] [IsNormableSpace 𝕜₁' E']
+  [AddCommGroup F'] [Module 𝕜₂' F'] [TopologicalSpace F'] [IsNormableSpace 𝕜₂' F']
+
+/-- Forgetting continuity commutes with precomposition in both arguments: the continuous pullback
+`L.bilinearComp f g` becomes the algebraic pullback `(L.comp f).compl₂ g`. For linear maps this is
+`L.compl₁₂ f g`, by definition of `LinearMap.compl₁₂`. -/
+@[simp]
+theorem toLinearMap₁₂_bilinearComp (L : E →SL[σ₁₃] F →SL[σ₂₃] G) (f : E' →SL[σ₁'] E)
+    (g : F' →SL[σ₂'] F) :
+    toLinearMap₁₂ (L.bilinearComp f g) =
+      ((toLinearMap₁₂ L).comp (f : E' →ₛₗ[σ₁'] E)).compl₂ (g : F' →ₛₗ[σ₂'] F) :=
+  LinearMap.ext₂ fun _ _ ↦ by
+    simp only [toLinearMap₁₂_apply_apply_apply, LinearMap.compl₂_apply, LinearMap.comp_apply,
+      bilinearComp_apply, coe_coe]
+
+end ToLinearMap₁₂BilinearComp
+
+end ContinuousLinearMap
+
+section BilinearComp
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {X V W F G F' : Type*} [TopologicalSpace X]
+  [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {c : X → V →L[𝕜] W →L[𝕜] F'}
+
+/-- Pulling back a continuous family of bilinear maps along fixed trial maps preserves
+continuity on a set. All spaces need only seminorms. -/
+theorem ContinuousOn.bilinearComp {s : Set X} (hc : ContinuousOn c s)
+    (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    ContinuousOn (fun r ↦ (c r).bilinearComp e f) s := by
+  simpa only [Function.comp_def, ContinuousLinearMap.bilinearCompL_apply] using
+    (ContinuousLinearMap.bilinearCompL (G := F') e f).continuous.comp_continuousOn hc
+
+/-- Pulling back a continuous family of bilinear maps along fixed trial maps preserves
+continuity. All spaces need only seminorms. -/
+theorem Continuous.bilinearComp (hc : Continuous c)
+    (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    Continuous (fun r ↦ (c r).bilinearComp e f) :=
+  continuousOn_univ.mp (hc.continuousOn.bilinearComp e f)
+
+end BilinearComp
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]

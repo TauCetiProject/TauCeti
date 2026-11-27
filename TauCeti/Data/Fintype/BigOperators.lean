@@ -8,12 +8,19 @@ module
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Order.Prod.Lex.Basic
+public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Algebra.Module.Defs
+import Mathlib.Tactic.Linarith
+import Mathlib.Algebra.NoZeroSMulDivisors.Basic
+import Mathlib.Tactic.Module
 
 /-!
 # Sums over finite types
 
 A sum of values that are all equal to `d` on the indices satisfying `p`, and zero elsewhere, is
-the number of such indices times `d` (`Fintype.sum_ite_eq_card_nsmul`).
+the number of such indices times `d` (`Fintype.sum_ite_eq_card_nsmul`). The pairs of elements
+with equal values of a function `f` are counted by the sum of the squares of the fibre sizes of
+`f` (`Fintype.card_subtype_apply_fst_eq_apply_snd`).
 
 For a finite type `ι` and finite coordinate sets `s i`, a sum over maps taking their `i`th value
 in `s i` of a quantity depending only on two distinct coordinates is a sum over the pairs of
@@ -36,7 +43,12 @@ cases of one, two and three coordinates are stated separately.
 Splitting at a single coordinate `e` averages it out: if `G` does not see the value at `e`, the
 sum of `a (f e) * G f` over all maps `f` vanishes as soon as `a` sums to zero
 (`Fintype.sum_apply_mul_eq_zero`). Second-moment computations over uniformly random colorings
-use this to discard every term containing a coordinate that occurs only once.
+use this to discard every term containing a coordinate that occurs only once. The label
+deviation `Fintype.labelDev p i v`, the deviation of the indicator of `v = i` from its mean
+`1 / |ι|`, switched off unless `p` holds (`Fintype.labelDev_eq`), is such an `a`: it sums to zero
+over the labels `v` (`Fintype.sum_labelDev`) and has absolute value at most one
+(`Fintype.abs_labelDev_le_one`).
+Quasirandom splitting arguments average it over all labellings.
 
 Selecting, among all maps, those that agree with a fixed map `f` away from a coordinate `i` and
 summing over them is summing over the value at `i` (`Fintype.sum_ite_eq_update`). A sum over maps
@@ -48,6 +60,11 @@ sum over strictly increasing pairs `p.1 < p.2` splits into intra-cluster and int
 (`Fintype.sum_filter_lt_lex`). A sum over strictly increasing triples of a function of the clusters
 that vanishes when two consecutive clusters coincide counts each strictly increasing triple of
 clusters `(Fintype.card ι) ^ 3` times (`Fintype.sum_filter_lt_lex_triple`).
+
+A triple sum `∑ i, ∑ k, ∑ l, c i k l • x i k l` of a coefficient invariant under cyclic
+permutations of its indices against a family whose cyclic sums `x i k l + x k l i + x l i k`
+vanish is zero (`Fintype.sum_sum_sum_smul_eq_zero_of_cyclic`), over any field of characteristic
+zero.
 -/
 
 public section
@@ -63,6 +80,19 @@ theorem sum_ite_eq_card_nsmul {ι M : Type*} [Fintype ι] [AddCommMonoid M] {p :
     (∑ i, if p i then f i else 0) = Fintype.card {i // p i} • d := by
   rw [Fintype.card_subtype, ← sum_filter]
   exact sum_eq_card_nsmul fun i hi ↦ hf i (mem_filter.1 hi).2
+
+/-- The pairs of elements of a finite type with equal values of `f` are counted by the sum of the
+squares of the fibre sizes of `f`. -/
+theorem card_subtype_apply_fst_eq_apply_snd {α β : Type*} [Fintype α] [Fintype β] [DecidableEq β]
+    (f : α → β) :
+    Fintype.card {p : α × α // f p.1 = f p.2} = ∑ b, Fintype.card {a // f a = b} ^ 2 := by
+  simp_rw [Fintype.card_subtype, card_filter, Fintype.sum_prod_type, sq, sum_mul_sum, ite_mul,
+    one_mul, zero_mul]
+  conv_rhs => rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  conv_rhs => rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun b _ ↦ ?_
+  simp [eq_comm]
 
 /-- Prescribing the values `a m ∈ s m` of the maps in a finite box at the coordinates `m` of a
 finset `I` leaves as many maps as the volume of the cells outside `I`. -/
@@ -236,6 +266,55 @@ theorem sum_apply_mul_eq_zero {ι α R : Type*} [Fintype ι] [DecidableEq ι] [F
         Finset.sum_congr rfl fun v _ ↦ by rw [hsplit v, hG, Function.update_self]
     _ = 0 := by rw [← sum_mul, ha, zero_mul]
 
+/-- The deviation, at the label `v`, of the indicator of `v = i` from its mean `1 / |ι|` over
+the labels; it is zero unless `p` holds. -/
+def labelDev {ι R : Type*} [Fintype ι] [DecidableEq ι] [DivisionRing R] (p : Prop)
+    [Decidable p] (i v : ι) : R :=
+  if p then (if v = i then 1 else 0) - (Fintype.card ι : R)⁻¹ else 0
+
+/-- Where `p` holds, the label deviation is the indicator of `v = i` minus `1 / |ι|`. -/
+theorem labelDev_of_pos {ι R : Type*} [Fintype ι] [DecidableEq ι] [DivisionRing R] {p : Prop}
+    [Decidable p] (hp : p) (i v : ι) :
+    labelDev (R := R) p i v = (if v = i then 1 else 0) - (Fintype.card ι : R)⁻¹ :=
+  ite_eq_left hp
+
+/-- Where `p` fails, the label deviation vanishes. -/
+theorem labelDev_of_neg {ι R : Type*} [Fintype ι] [DecidableEq ι] [DivisionRing R] {p : Prop}
+    [Decidable p] (hp : ¬p) (i v : ι) : labelDev (R := R) p i v = 0 :=
+  ite_eq_right hp
+
+/-- The label deviation is the indicator of `p ∧ v = i` minus a `1 / |ι|` share of the indicator
+of `p`. -/
+theorem labelDev_eq {ι R : Type*} [Fintype ι] [DecidableEq ι] [DivisionRing R] (p : Prop)
+    [Decidable p] (i v : ι) :
+    labelDev (R := R) p i v =
+      (if p ∧ v = i then 1 else 0) - (if p then 1 else 0) / (Fintype.card ι : R) := by
+  by_cases hp : p
+  · rw [labelDev_of_pos hp]
+    simp [hp, div_eq_mul_inv]
+  · rw [labelDev_of_neg hp]
+    simp [hp]
+
+/-- The label deviation has mean zero over the labels. -/
+theorem sum_labelDev {ι R : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι] [DivisionRing R]
+    [CharZero R] (p : Prop) [Decidable p] (i : ι) : ∑ v, labelDev (R := R) p i v = 0 := by
+  by_cases hp : p
+  · simp only [labelDev_of_pos hp]
+    simp [sum_sub_distrib]
+  · simp [labelDev_of_neg hp]
+
+/-- The label deviation has absolute value at most one. -/
+theorem abs_labelDev_le_one {ι R : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι] [Field R]
+    [LinearOrder R] [IsStrictOrderedRing R] (p : Prop) [Decidable p] (i v : ι) :
+    |labelDev (R := R) p i v| ≤ 1 := by
+  have hq : (1 : R) ≤ Fintype.card ι := by exact_mod_cast Fintype.card_pos
+  have h₀ : 0 < (Fintype.card ι : R)⁻¹ := inv_pos.2 (zero_lt_one.trans_le hq)
+  have h₁ : (Fintype.card ι : R)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ hq
+  by_cases hp : p
+  · rw [labelDev_of_pos hp]
+    split_ifs <;> rw [abs_le] <;> constructor <;> linarith
+  · simp [labelDev_of_neg hp]
+
 /-- A product over all maps of the factors at the maps that agree with `f` away from `i`, the
 other factors being `1`, is a product over the value at `i`. -/
 @[to_additive /-- A sum over all maps of the terms at the maps that agree with `f` away from `i`,
@@ -362,5 +441,34 @@ theorem prod_filter_lt_lex_triple {V ι M : Type*} [Fintype V] [PartialOrder V] 
     rcases hnot with h | h
     · rw [(Prod.Lex.monotone_fst _ _ hp.1.le).eq_of_not_lt h]; exact hg₁ _ _
     · rw [(Prod.Lex.monotone_fst _ _ hp.2.le).eq_of_not_lt h]; exact hg₂ _ _
+
+/-- **Cyclic sums.** If the coefficient `c` is invariant under the cyclic permutation of its three
+indices and the family `x` has vanishing cyclic sums, `x i k l + x k l i + x l i k = 0`, then
+`∑ i, ∑ k, ∑ l, c i k l • x i k l = 0`. -/
+theorem sum_sum_sum_smul_eq_zero_of_cyclic {ι R W : Type*} [Fintype ι] [Field R] [CharZero R]
+    [AddCommGroup W] [Module R W] (c : ι → ι → ι → R) (x : ι → ι → ι → W)
+    (hc : ∀ i k l, c k l i = c i k l)
+    (hx : ∀ i k l, x i k l + x k l i + x l i k = 0) :
+    ∑ i, ∑ k, ∑ l, c i k l • x i k l = 0 := by
+  -- Reindexing the sum cyclically moves each cyclic shift of `x` onto `x` itself.
+  have h₁ : ∑ i, ∑ k, ∑ l, c i k l • x k l i = ∑ i, ∑ k, ∑ l, c i k l • x i k l := by
+    calc ∑ i, ∑ k, ∑ l, c i k l • x k l i = ∑ i, ∑ k, ∑ l, c k l i • x k l i :=
+          Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦
+            Finset.sum_congr rfl fun l _ ↦ by rw [hc i k l]
+      _ = ∑ k, ∑ i, ∑ l, c k l i • x k l i := Finset.sum_comm
+      _ = ∑ k, ∑ l, ∑ i, c k l i • x k l i := Finset.sum_congr rfl fun k _ ↦ Finset.sum_comm
+  have h₂ : ∑ i, ∑ k, ∑ l, c i k l • x l i k = ∑ i, ∑ k, ∑ l, c i k l • x i k l := by
+    calc ∑ i, ∑ k, ∑ l, c i k l • x l i k = ∑ i, ∑ k, ∑ l, c l i k • x l i k :=
+          Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦
+            Finset.sum_congr rfl fun l _ ↦ by rw [hc l i k]
+      _ = ∑ i, ∑ l, ∑ k, c l i k • x l i k := Finset.sum_congr rfl fun i _ ↦ Finset.sum_comm
+      _ = ∑ l, ∑ i, ∑ k, c l i k • x l i k := Finset.sum_comm
+  -- So three times the sum is the sum against the cyclic sums of `x`, which vanish.
+  have h : ∑ i, ∑ k, ∑ l, c i k l • (x i k l + x k l i + x l i k) = 0 := by simp [hx]
+  simp only [smul_add, Finset.sum_add_distrib, h₁, h₂] at h
+  have h₃ : (3 : R) • ∑ i, ∑ k, ∑ l, c i k l • x i k l = 0 := by
+    rw [← h]
+    module
+  exact (smul_eq_zero.1 h₃).resolve_left (OfNat.ofNat_ne_zero 3)
 
 end Fintype

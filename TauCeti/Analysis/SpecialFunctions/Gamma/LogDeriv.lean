@@ -5,9 +5,8 @@ Authors: OpenAI Codex
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
-import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 
 /-!
 # Logarithmic derivatives of the archimedean gamma factors
@@ -62,6 +61,28 @@ theorem logDeriv_Gammaℝ {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(2 * n)) :
     ((hasDerivAt_id' s).div_const 2).logDeriv_Gamma hh]
   ring
 
+/-- The real-place gamma recurrence adds `1 / s` to the logarithmic derivative when
+shifting `s` by two, away from the poles of `Gammaℝ`. -/
+theorem logDeriv_Gammaℝ_add_two {s : ℂ} (hs : Gammaℝ s ≠ 0) :
+    logDeriv Gammaℝ (s + 2) = logDeriv Gammaℝ s + s⁻¹ := by
+  have hnp : ∀ n : ℕ, s ≠ -(2 * n) := by
+    simpa only [Ne, Gammaℝ_eq_zero_iff, not_exists] using hs
+  have hs₀ : s ≠ 0 := by simpa using hnp 0
+  have hshift : Gammaℝ (s + 2) ≠ 0 := by
+    rw [Gammaℝ_add_two hs₀]
+    exact div_ne_zero (div_ne_zero (mul_ne_zero hs hs₀) two_ne_zero)
+      (ofReal_ne_zero.mpr Real.pi_ne_zero)
+  have hnp' : ∀ n : ℕ, s + 2 ≠ -(2 * n) := by
+    simpa only [Ne, Gammaℝ_eq_zero_iff, not_exists] using hshift
+  have hhalf : ∀ n : ℕ, s / 2 ≠ -(n : ℂ) := by
+    intro n hn
+    apply hnp n
+    linear_combination 2 * hn
+  rw [logDeriv_Gammaℝ hnp', logDeriv_Gammaℝ hnp,
+    (by ring : (s + 2) / 2 = s / 2 + 1), digamma_apply_add_one _ hhalf]
+  field_simp
+  ring
+
 /-- The logarithmic derivative of the complex-place gamma factor, away from its poles. -/
 theorem logDeriv_Gammaℂ {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) :
     logDeriv Gammaℂ s = digamma s - (Real.log (2 * Real.pi) : ℂ) := by
@@ -85,22 +106,24 @@ theorem logDeriv_Gammaℂ {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) :
       (differentiableAt_Gamma _ hs), hlog, ← digamma_def]
   ring
 
+/-- At one the complex-place normalization contributes log of two pi, not log of pi. -/
+example : logDeriv Gammaℂ 1 =
+    -(Real.eulerMascheroniConstant : ℂ) - (Real.log (2 * Real.pi) : ℂ) := by
+  simpa only [digamma_one] using
+    logDeriv_Gammaℂ (s := 1) (by
+      simpa only [Ne, Complex.Gamma_eq_zero_iff, not_exists] using
+        Gamma_ne_zero_of_re_pos (by norm_num : 0 < (1 : ℂ).re))
+
 /-- The logarithmic derivative is analytic off the poles of the real-place gamma factor. -/
 theorem analyticAt_logDeriv_Gammaℝ {s : ℂ} (hs : Gammaℝ s ≠ 0) :
     AnalyticAt ℂ (logDeriv Gammaℝ) s := by
-  have ha : AnalyticAt ℂ Gammaℝ s := by
-    have h := (differentiable_Gammaℝ_inv.analyticAt s).inv (inv_ne_zero hs)
-    rw [show (fun z ↦ (Gammaℝ z)⁻¹)⁻¹ = Gammaℝ from funext (fun z ↦ inv_inv _)] at h
-    exact h
+  have ha := analyticAt_Gammaℝ_of_ne_zero hs
   exact ha.deriv.div ha hs
 
 /-- The logarithmic derivative is analytic off the poles of the complex-place gamma factor. -/
 theorem analyticAt_logDeriv_Gammaℂ {s : ℂ} (hs : Gammaℂ s ≠ 0) :
     AnalyticAt ℂ (logDeriv Gammaℂ) s := by
-  have ha : AnalyticAt ℂ Gammaℂ s := by
-    have h := (differentiable_Gammaℂ_inv.analyticAt s).inv (inv_ne_zero hs)
-    rw [show (fun z ↦ (Gammaℂ z)⁻¹)⁻¹ = Gammaℂ from funext (fun z ↦ inv_inv _)] at h
-    exact h
+  have ha := analyticAt_Gammaℂ_of_ne_zero hs
   exact ha.deriv.div ha hs
 
 /-- The real-place logarithmic derivative is continuous on the positive half-plane. -/

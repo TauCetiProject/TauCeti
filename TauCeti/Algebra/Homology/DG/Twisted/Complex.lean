@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Twisted.Cocycle
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 public import TauCeti.Algebra.Homology.GradedCochainComplex
+public import TauCeti.Algebra.Module.GradedModule.Trivial
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
@@ -47,6 +48,8 @@ Right modules are represented as left modules over `Aᵐᵒᵖ`, so `α · a` is
 ## Main results
 
 * `TauCeti.twistedDifferential_single`: the formula on a homogeneous elementary tensor.
+* `TauCeti.twistedDifferential_trivialGrading_apply`: for coefficients concentrated in degree `0`,
+  `(D f) y = dM (f y) + Σ_x op (m x y) • f x`.
 * `TauCeti.twistedDifferential_mem_twistedTotalGrading`: `D` raises the total degree by one.
 * `TauCeti.twistedDifferential_sq_zero`: `D ∘ D = 0` under the twisting equation, and
   `TauCeti.TwistingCocycle.twistedDifferential_sq_zero` for a twisting cocycle.
@@ -257,6 +260,12 @@ theorem twistedDifferential_single_apply [DecidableEq P] (x z : P) {q : ℤ} {α
   rw [twistedDifferential_single m dM x hα, Pi.add_apply, Finset.sum_apply]
   simp [Pi.single_apply]
 
+/-- **Coefficients in degree zero.** For coefficients concentrated in degree `0`, the Koszul twist
+is the identity, and the twisted differential is `(D f) y = dM (f y) + Σ_x op (m x y) • f x`. -/
+theorem twistedDifferential_trivialGrading_apply (f : P → M) (y : P) :
+    twistedDifferential m (trivialGrading R M) dM f y = dM (f y) + ∑ x, op (m x y) • f x := by
+  simp [twistedDifferential_apply]
+
 end Differential
 
 section Homogeneity
@@ -373,6 +382,16 @@ theorem twistedCochainComplexXEquiv_d (n : ℤ) (f : (twistedCochainComplex hm h
       twistedDifferential m ℳ dM (twistedCochainComplexXEquiv hm htw hM n f) := by
   unfold twistedCochainComplexXEquiv
   exact gradedCochainComplexXEquiv_d n f
+
+/-- Under `twistedCochainComplexXEquiv`, the differential of the twisted complex between any two
+consecutive degrees is the twisted differential. -/
+theorem twistedCochainComplexXEquiv_d_of_add_one_eq {n n' : ℤ} (hn : n + 1 = n')
+    (f : (twistedCochainComplex hm htw hM).X n) :
+    (twistedCochainComplexXEquiv hm htw hM n'
+        (((twistedCochainComplex hm htw hM).d n n').hom f) : P → M) =
+      twistedDifferential m ℳ dM (twistedCochainComplexXEquiv hm htw hM n f) := by
+  unfold twistedCochainComplexXEquiv
+  exact gradedCochainComplexXEquiv_d_of_add_one_eq hn f
 
 end SqZero
 

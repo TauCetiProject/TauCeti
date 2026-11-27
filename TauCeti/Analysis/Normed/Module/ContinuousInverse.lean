@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
-public import Mathlib.Analysis.Normed.Ring.Units
+public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Continuity of inverses and left inverses of operators
@@ -26,7 +28,8 @@ corresponding statement for continuous pseudo-inverses.
   a topological vector space. If `A x` depends continuously on `x` and `A x₀` has a continuous
   left inverse, then so does `A x` for `x` near `x₀`, and the left inverses can be chosen to
   depend continuously on `x` at `x₀`. If `P` is a left inverse of `A x₀`, then `P ∘ A x` is
-  invertible near `x₀`, and `(P ∘ A x)⁻¹ ∘ P` is a left inverse of `A x`.
+  invertible near `x₀`, and `(P ∘ A x)⁻¹ ∘ P` (`ContinuousLinearMap.leftInverseAlong`) is a left
+  inverse of `A x`.
 
 The second fact is what makes coordinates with respect to a moving family of linearly
 independent vectors depend continuously on the base point, as in the local trivializations of a
@@ -122,16 +125,9 @@ theorem ContinuousWithinAt.clm_inverse_of_eventually_isInvertible {X E F : Type*
   refine squeeze_zero' (Eventually.of_forall fun _ => norm_nonneg _) ?_
     (by simpa using hfn.const_mul (2 * ‖g x₀‖ ^ 2))
   filter_upwards [hsmall, h] with y hy hiy
-  have hsub : g y - g x₀ = g y ∘L (f x₀ - f y) ∘L g x₀ :=
-    hiy.inverse_sub_inverse h₀
-  have hd : ‖f x₀ - f y‖ = ‖f y - f x₀‖ := norm_sub_rev _ _
   have he : ‖g y - g x₀‖ ≤ ‖g y‖ * ‖f y - f x₀‖ * ‖g x₀‖ := by
-    rw [hsub, ← hd]
-    calc ‖g y ∘L (f x₀ - f y) ∘L g x₀‖
-        ≤ ‖g y‖ * ‖(f x₀ - f y) ∘L g x₀‖ := ContinuousLinearMap.opNorm_comp_le _ _
-      _ ≤ ‖g y‖ * (‖f x₀ - f y‖ * ‖g x₀‖) := by
-        gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _
-      _ = _ := by ring
+    rw [← norm_sub_rev (f x₀)]
+    exact hiy.norm_inverse_sub_inverse_le h₀
   have ha : ‖g y‖ ≤ ‖g x₀‖ + ‖g y - g x₀‖ := by
     simpa using norm_add_le (g x₀) (g y - g x₀)
   have ha0 := norm_nonneg (g y)
@@ -189,9 +185,12 @@ theorem ContinuousAt.exists_continuousAt_leftInverse {A : X → G →L[𝕜] F} 
   -- The compression `P ∘ A x` is the identity at `x₀`, hence invertible near `x₀`.
   have hQ : ContinuousAt (fun x ↦ P ∘L A x) x₀ :=
     (ContinuousLinearMap.postcomp G P).continuous.continuousAt.comp hA
-  have hQ₀ : P ∘L A x₀ = ((1 : (G →L[𝕜] G)ˣ) : G →L[𝕜] G) := ContinuousLinearMap.ext hP
-  refine ⟨fun x ↦ Ring.inverse (P ∘L A x) ∘L P,
-    (ContinuousLinearMap.precomp G P).continuous.continuousAt.comp
-      ((NormedRing.inverse_continuousAt 1).comp_of_eq hQ hQ₀), ?_⟩
-  filter_upwards [hQ.preimage_mem_nhds (hQ₀ ▸ Units.nhds 1)] with x hx v
-  simpa using congr($(Ring.inverse_mul_cancel _ hx) v)
+  have hQ₀ : (P ∘L A x₀).IsInvertible := by
+    rw [show P ∘L A x₀ = .id 𝕜 G from ContinuousLinearMap.ext hP]
+    exact ⟨ContinuousLinearEquiv.refl 𝕜 G, rfl⟩
+  have hQev := hQ.eventually hQ₀.eventually_nhds
+  refine ⟨fun x ↦ (A x).leftInverseAlong P, ?_,
+    hQev.mono fun x hx ↦ ContinuousLinearMap.leftInverseAlong_apply_self hx⟩
+  simp_rw [ContinuousLinearMap.leftInverseAlong_def]
+  exact (ContinuousLinearMap.precomp G P).continuous.continuousAt.comp
+    (hQ.clm_inverse_of_eventually_isInvertible hQev)

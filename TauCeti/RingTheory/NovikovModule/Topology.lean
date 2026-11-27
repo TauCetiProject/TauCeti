@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.NovikovModule.Bilinear
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
 public import Mathlib.Topology.Algebra.Module.TransferInstance
+public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 
 /-!
 # The potential-cutoff topology on completed combinations
@@ -65,8 +66,12 @@ between them can be checked on their coefficients at single generators.
 * `TauCeti.NovikovModule.continuous_of_mem_potentialFiltration_add`: an additive map sending
   each `U_D` into `U_(D + C)` is continuous.
 * `TauCeti.NovikovModule.denseRange_ofFinsupp`: finite combinations are dense.
+* `TauCeti.NovikovModule.summable_iff_finite_setOf_notMem_potentialFiltration`: a family is
+  summable exactly when only finitely many members are nonzero above each potential cutoff.
 * `TauCeti.NovikovModule.addHom_ext`, `TauCeti.NovikovModule.lhom_ext`: continuous additive or
   linear maps agreeing on single generators are equal.
+* `TauCeti.NovikovModule.smul_mem_potentialFiltration_sub`: a Novikov series supported in periods
+  at least `D` maps `U_C` into `U_(C - D)`.
 * `TauCeti.NovikovModule.continuousSMul_module`: the Novikov scalar action is continuous.
 * `TauCeti.NovikovModule.continuous_kernelMap`: kernel maps are continuous.
 * `TauCeti.NovikovModule.kernelMap_toKernel`,
@@ -264,9 +269,7 @@ theorem tendsto_nhds_iff {ι : Type*} {l : Filter ι} {f : ι → NovikovModule 
 
 instance : T2Space (NovikovModule R F) :=
   IsTopologicalAddGroup.t2Space_of_zero_sep fun a ha => by
-    obtain ⟨s, hs⟩ : ∃ s, a.val s ≠ 0 := by
-      by_contra! h
-      exact ha (Subtype.ext (funext h))
+    obtain ⟨s, hs⟩ := ne_zero_iff.1 ha
     exact ⟨_, potentialFiltration_mem_nhds_zero (F s - 1), fun ha' =>
       hs (ha' s (sub_one_lt _))⟩
 
@@ -353,6 +356,15 @@ theorem denseRange_ofFinsupp : DenseRange (ofFinsupp (R := R) F) :=
   fun a => mem_closure_of_tendsto (tendsto_ofFinsupp_trunc a)
     (Eventually.of_forall fun _ => mem_range_self _)
 
+/-- A family of completed combinations is summable exactly when, above every potential cutoff,
+only finitely many of its members have a nonzero coefficient. -/
+theorem summable_iff_finite_setOf_notMem_potentialFiltration {ι : Type*}
+    {f : ι → NovikovModule R F} :
+    Summable f ↔ ∀ C, {i | f i ∉ potentialFiltration R F C}.Finite := by
+  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
+    hasBasis_nhds_zero.tendsto_right_iff]
+  simp [eventually_cofinite]
+
 /-- Continuous additive maps from completed combinations to a Hausdorff space are equal if they
 agree on all finite combinations supported at one generator. -/
 theorem addHom_ext {M : Type*} [AddCommMonoid M] [TopologicalSpace M] [T2Space M]
@@ -389,6 +401,23 @@ theorem mem_potentialFiltration_iff_coordinates {C : ℝ} {a : NovikovModule R F
       ∀ i, coordinates hF r a i ∈ NovikovSeries.periodFiltration R N (F ⟨i, r i⟩ - C) := by
   simp only [mem_potentialFiltration, NovikovSeries.mem_periodFiltration]
   exact (coordinates_coeff_eq_zero_iff hF r a C).symm
+
+omit r in
+/-- **Filtered scalar action.** A Novikov series whose coefficients vanish below the period `D`
+maps the completed combinations vanishing above the potential `C` to those vanishing above
+`C - D`. -/
+theorem smul_mem_potentialFiltration_sub {b : NovikovSeries R H N} {a : NovikovModule R F}
+    {C D : ℝ} (hb : b ∈ NovikovSeries.periodFiltration R N D)
+    (ha : a ∈ potentialFiltration R F C) :
+    letI := module (R := R) hF
+    b • a ∈ potentialFiltration R F (C - D) := by
+  let := module (R := R) hF
+  let r : ∀ i, P i := fun i => Classical.arbitrary (P i)
+  rw [mem_potentialFiltration_iff_coordinates hF r] at ha ⊢
+  intro i
+  rw [coordinates_smul, Pi.smul_apply, smul_eq_mul]
+  have := NovikovSeries.mul_mem_periodFiltration hb (ha i)
+  rwa [show D + (F ⟨i, r i⟩ - C) = F ⟨i, r i⟩ - (C - D) by ring] at this
 
 /-- Coordinates in any chosen lifts are continuous for the potential-cutoff topology. -/
 @[fun_prop]

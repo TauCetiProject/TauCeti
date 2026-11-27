@@ -9,7 +9,10 @@ public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Ball
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.InnerProductSpace.Gram.Perturbation
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
+import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
@@ -27,8 +30,8 @@ is what turns the smallest-scale lower bound at a zero of `α` into the quadrati
 quadratic upper bound at every centre (`TauCeti.exists_forall_measure_closedBall_le_of_ae_le`).
 This file derives it in a flat chart, the four-dimensional real inner product space `E` with an
 orthogonal complex structure `J` and a unitary frame `e` (`J e₀ = e₁`, `J e₂ = e₃`), whose Kähler
-form is `ω = e⁰ ∧ e¹ + e² ∧ e³`. The curvature geometry of the manifold, which contributes the
-factor `1 + C σ`, is not treated here.
+form is `ω = e⁰ ∧ e¹ + e² ∧ e³`, and then in a Darboux chart, where the geometry of the manifold
+contributes the factor `1 + C σ`.
 
 The argument is Stokes's theorem for a closed two-form `F`, in the application the curvature
 `i F_a` of the connection on the twisting line. The Liouville form `λ = ι_{x - c} ω / 2` about the
@@ -54,12 +57,32 @@ measure `δ dμ` this is the differential inequality hypothesis of the covering 
 arguments above with `C = 0` and `C r^(-1/2)` replaced by `κ`
 (`TauCeti.SeibergWitten.measure_closedBall_le_mul_deriv_add`).
 
+On a symplectic four-manifold, a Darboux chart about the centre makes the symplectic form the
+constant form `ω`, while the compatible complex structure `J' x` and the metric
+`g x = ω(·, J' x ·)` vary with the point; a linear symplectic change of coordinates makes them `J`
+and the Euclidean metric at `c`. In such a chart the bound on the ball needs no correction. The
+metric volume form is `ω² / 2`, the Lebesgue measure of the chart, and the Kähler component of
+`g x` is `F(f₀, f₁) + F(f₂, f₃)` in a `g x`-unitary frame `f`, which equals
+`F(e₀, e₁) + F(e₂, e₃)` because `ω` takes the standard values on both frames
+(`ContinuousAlternatingMap.apply_add_apply_eq_of_cross_eq_zero`). Only the Hermitian bound on the
+sphere sees the geometry. Replacing `J' x` by `J` changes `F(v, J' x v)` by at most
+`‖F‖ ‖J' x - J‖ ‖v‖²`, and Taubes's curvature bound `‖F‖ ≤ A δ + K` makes this a multiple of `δ`.
+If `J'` and `g` move by at most `L ‖x - c‖` from their values at the centre, the sphere of radius
+`σ` therefore carries the factor `1 + (1 + A) L σ`, which is the factor `1 + C σ` of the
+inequality (`TauCeti.SeibergWitten.measure_closedBall_le_mul_one_add_mul_deriv_add`). The balls
+are those of the chart.
+
 ## Main results
 
 * `TauCeti.SeibergWitten.setIntegral_ball_le_mul_integral_toSphere_add`: the monotonicity
   inequality, with the sphere integral.
 * `TauCeti.SeibergWitten.measure_closedBall_le_mul_deriv_add`: the monotonicity inequality for the
   measure `δ dμ`, with the derivative of the radial function `σ ↦ ∫_{B_σ} δ`.
+* `TauCeti.SeibergWitten.measure_closedBall_le_mul_one_add_mul_deriv_add`: the monotonicity
+  inequality in a Darboux chart, for a complex structure and a metric that vary with the point.
+* `TauCeti.SeibergWitten.measure_closedBall_le_mul_one_add_mul_deriv_add_of_frame`: the
+  monotonicity inequality in a symplectic frame `S x`, for a two-form `F x = G x ∘ S x`, from
+  bounds on `G`.
 
 ## References
 
@@ -311,9 +334,9 @@ theorem setIntegral_ball_le_mul_integral_toSphere_add {J : AlmostComplexStructur
 /-- **Taubes's monotonicity inequality for the defect measure.** Let `J`, `e` and the closed
 two-form field `F` be as in `setIntegral_ball_le_mul_integral_toSphere_add`, on the open ball
 `ball c R`, and let `δ ≥ 0` be a continuous density on that ball bounded by the Kähler component of
-`F`, `δ ≤ F(e₀, e₁) + F(e₂, e₃) + K`, which bounds the Hermitian part of `F`,
-`F(v, J v) ≤ ((1 + κ) δ + K) ‖v‖²`. Then the measure `ν = δ dμ` satisfies, at
-every radius `0 < σ < R`, the differential inequality
+`F`, `δ ≤ F(e₀, e₁) + F(e₂, e₃) + K`. Let `0 < σ < R` be a radius on whose sphere `δ` bounds the
+Hermitian part of `F`, `F(v, J v) ≤ ((1 + κ) δ + K) ‖v‖²`. Then the measure `ν = δ dμ` satisfies,
+at the radius `σ`, the differential inequality
 
 `ν(B_σ) ≤ (σ / 2) (1 + κ) d/dσ ν(B_σ) + K (|S| / 2 + |B₁|) σ⁴`
 
@@ -323,7 +346,7 @@ theorem measure_closedBall_le_mul_deriv_add {J : AlmostComplexStructure E}
     (hF : ∀ x ∈ ball c R, ContDiffAt ℝ 1 F x) (hdF : ∀ x ∈ ball c R, extDeriv F x = 0)
     (hδ : ContinuousOn δ (ball c R)) (hδ₀ : ∀ x ∈ ball c R, 0 ≤ δ x)
     (hω : ∀ x ∈ ball c R, δ x ≤ F x ![e 0, e 1] + F x ![e 2, e 3] + K)
-    (hB : ∀ x ∈ ball c R, ∀ v, F x ![v, J v] ≤ ((1 + κ) * δ x + K) * ‖v‖ ^ 2)
+    (hB : ∀ x ∈ sphere c σ, ∀ v, F x ![v, J v] ≤ ((1 + κ) * δ x + K) * ‖v‖ ^ 2)
     (hσ : σ ∈ Ioo 0 R) :
     ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c σ)).toReal ≤
       σ / 2 * (1 + κ) * deriv (fun s ↦
@@ -355,7 +378,155 @@ theorem measure_closedBall_le_mul_deriv_add {J : AlmostComplexStructure E}
   have hsubo : closedBall c σ ⊆ ball c R := closedBall_subset_ball hσ.2
   exact setIntegral_ball_le_mul_integral_toSphere_add h₀ h₂ hσ.1.le (fun x hx ↦ hF x (hsubo hx))
     (fun x hx ↦ hdF x (hsubo (ball_subset_closedBall hx))) (hδ.mono hsubo)
-    (fun x hx ↦ hω x (hsubo (ball_subset_closedBall hx)))
-    (fun x hx ↦ hB x (hsubo (sphere_subset_closedBall hx)))
+    (fun x hx ↦ hω x (hsubo (ball_subset_closedBall hx))) hB
+
+/-! ### The monotonicity inequality in a Darboux chart -/
+
+/-- **Taubes's monotonicity inequality in a Darboux chart.** Let `J`, `e` and the closed two-form
+field `F` be as in `measure_closedBall_le_mul_deriv_add`, on the open ball `ball c R`, and let
+`δ ≥ 0` be a continuous density there bounded by the Kähler component of `F`,
+`δ ≤ F(e₀, e₁) + F(e₂, e₃) + K`. Let `0 < σ < R` be a radius on whose sphere `δ` bounds the
+Hermitian part of `F` only for a complex structure `J' x` and a quadratic form `g x` that vary with
+the point: `F(v, J' x v) ≤ ((1 + κ) δ + K) g x v`, where `J' x` is within `L ‖x - c‖` of `J`,
+`g x v` is at most `(1 + L ‖x - c‖) ‖v‖²`, and the norm of `F` is bounded by the density,
+`‖F‖ ≤ A δ + K`. Then the measure `ν = δ dμ` satisfies, at the radius `σ`, the differential
+inequality
+
+`ν(B_σ) ≤ (σ / 2) (1 + (1 + A) L σ) (1 + κ) d/dσ ν(B_σ) + K (1 + 2 L R) (|S| / 2 + |B₁|) σ⁴`
+
+for the closed balls `B_σ = closedBall c σ`. -/
+theorem measure_closedBall_le_mul_one_add_mul_deriv_add {J : AlmostComplexStructure E}
+    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) {J' : E → E → E} {g : E → E → ℝ} {δ : E → ℝ}
+    {R κ K A L σ : ℝ} (hκ : 0 ≤ κ) (hK : 0 ≤ K) (hA : 0 ≤ A) (hL : 0 ≤ L)
+    (hF : ∀ x ∈ ball c R, ContDiffAt ℝ 1 F x) (hdF : ∀ x ∈ ball c R, extDeriv F x = 0)
+    (hδ : ContinuousOn δ (ball c R)) (hδ₀ : ∀ x ∈ ball c R, 0 ≤ δ x)
+    (hω : ∀ x ∈ ball c R, δ x ≤ F x ![e 0, e 1] + F x ![e 2, e 3] + K)
+    (hB : ∀ x ∈ sphere c σ, ∀ v, F x ![v, J' x v] ≤ ((1 + κ) * δ x + K) * g x v)
+    (hg : ∀ x ∈ sphere c σ, ∀ v, g x v ≤ (1 + L * ‖x - c‖) * ‖v‖ ^ 2)
+    (hJ : ∀ x ∈ sphere c σ, ∀ v, ‖J' x v - J v‖ ≤ L * ‖x - c‖ * ‖v‖)
+    (hFn : ∀ x ∈ sphere c σ, ‖F x‖ ≤ A * δ x + K) (hσ : σ ∈ Ioo 0 R) :
+    ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c σ)).toReal ≤
+      σ / 2 * (1 + (1 + A) * L * σ) * (1 + κ) * deriv (fun s ↦
+        ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c s)).toReal) σ +
+        K * (1 + 2 * L * R) * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)) * σ ^ 4 := by
+  have hσR : sphere c σ ⊆ ball c R := sphere_subset_closedBall.trans (closedBall_subset_ball hσ.2)
+  have hKR : K ≤ K * (1 + 2 * L * R) := by
+    nlinarith [mul_nonneg hK (mul_nonneg hL (hσ.1.trans hσ.2).le)]
+  -- On the sphere, `δ` bounds the Hermitian part of `F` for the constant structure `J`, at the
+  -- cost of the factor `1 + (1 + A) L σ`.
+  have hB' : ∀ x ∈ sphere c σ, ∀ v, F x ![v, J v] ≤
+      ((1 + ((1 + κ) * (1 + (1 + A) * L * σ) - 1)) * δ x + K * (1 + 2 * L * R)) * ‖v‖ ^ 2 := by
+    intro x hx v
+    have hxR := hσR hx
+    have hxc : ‖x - c‖ = σ := by rwa [mem_sphere, dist_eq_norm] at hx
+    have hδx := hδ₀ x hxR
+    -- Exchanging `J' x v` for `J v` changes `F(v, ·)` by `F(v, J' x v - J v)`.
+    have hsub : F x ![v, J v] = F x ![v, J' x v] - F x ![v, J' x v - J v] := by
+      have h := (F x).map_vecCons_sub (J' x v) (J v) ![v]
+      rw [(F x).apply_vecCons_swap v, (F x).apply_vecCons_swap v,
+        (F x).apply_vecCons_swap v] at h
+      linarith
+    have hnorm : |F x ![v, J' x v - J v]| ≤ ‖F x‖ * (‖v‖ * ‖J' x v - J v‖) := by
+      simpa [Fin.prod_univ_two, Real.norm_eq_abs] using (F x).le_opNorm ![v, J' x v - J v]
+    have hg' := hg x hx v
+    have hJ' := hJ x hx v
+    rw [hxc] at hg' hJ'
+    have h₁ : ((1 + κ) * δ x + K) * g x v ≤ ((1 + κ) * δ x + K) * ((1 + L * σ) * ‖v‖ ^ 2) :=
+      mul_le_mul_of_nonneg_left hg' (add_nonneg (mul_nonneg (by linarith) hδx) hK)
+    have h₂ : ‖F x‖ * (‖v‖ * ‖J' x v - J v‖) ≤ (A * δ x + K) * (‖v‖ * (L * σ * ‖v‖)) :=
+      mul_le_mul (hFn x hx) (mul_le_mul_of_nonneg_left hJ' (norm_nonneg v))
+        (by positivity) (add_nonneg (mul_nonneg hA hδx) hK)
+    calc F x ![v, J v]
+        ≤ ((1 + κ) * δ x + K) * ((1 + L * σ) * ‖v‖ ^ 2) +
+            (A * δ x + K) * (‖v‖ * (L * σ * ‖v‖)) := by
+          linarith [hB x hx v, neg_abs_le (F x ![v, J' x v - J v])]
+      _ ≤ _ := by
+          nlinarith [mul_nonneg (mul_nonneg (mul_nonneg (mul_nonneg hκ hA) hL) hσ.1.le)
+            (mul_nonneg hδx (sq_nonneg ‖v‖)),
+            mul_nonneg (mul_nonneg hK hL) (mul_nonneg (sub_nonneg.2 hσ.2.le) (sq_nonneg ‖v‖))]
+  refine (measure_closedBall_le_mul_deriv_add (μ := μ) h₀ h₂ hF hdF hδ hδ₀
+    (fun x hx ↦ (hω x hx).trans (by linarith)) hB' hσ).trans_eq ?_
+  ring
+
+/-- **Taubes's monotonicity inequality in a symplectic frame.** Let `J`, `e`, the closed two-form
+field `F` and the density `δ ≥ 0` be as in
+`measure_closedBall_le_mul_one_add_mul_deriv_add`, on the ball `ball c R`,
+with `δ ≤ F(e₀, e₁) + F(e₂, e₃) + K`. On the sphere of a radius `0 < σ < R`, let `F x = G x ∘ S x`
+for a coframe `S x` preserving `ω(u, v) = ⟪J u, v⟫` with `‖S x - 1‖ ≤ L ‖x - c‖`, and let `δ`
+bound the Hermitian part of `G x` for the constant structure `J`,
+`G x (u, J u) ≤ ((1 + κ) δ + K) ‖u‖²`, and its norm, `‖G x‖ ≤ A δ + K`. Then, with `M = L R`,
+
+`ν(B_σ) ≤ (σ / 2) (1 + (1 + A (1 + M)²) (2 + M) L σ) (1 + κ) d/dσ ν(B_σ) + K'' σ⁴`,
+
+`K'' = K (1 + M)² (1 + 2 (2 + M) L R) (|S³| / 2 + |B₁|)`, for the measure `ν = δ dμ`, where
+`|S³|` and `|B₁|` are the measures of the unit sphere and the unit ball. This is
+`measure_closedBall_le_mul_one_add_mul_deriv_add` for the complex structure
+`J' x = (S x)⁻¹ J S x = J S†S` and the metric `g x v = ‖S x v‖²` of the frame. -/
+theorem measure_closedBall_le_mul_one_add_mul_deriv_add_of_frame {J : AlmostComplexStructure E}
+    (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) {G : E → E [⋀^Fin 2]→L[ℝ] ℝ}
+    {S : E → E →L[ℝ] E} {δ : E → ℝ} {R κ K A L σ : ℝ} (hκ : 0 ≤ κ) (hK : 0 ≤ K) (hA : 0 ≤ A)
+    (hL : 0 ≤ L)
+    (hF : ∀ x ∈ ball c R, ContDiffAt ℝ 1 F x) (hdF : ∀ x ∈ ball c R, extDeriv F x = 0)
+    (hδ : ContinuousOn δ (ball c R)) (hδ₀ : ∀ x ∈ ball c R, 0 ≤ δ x)
+    (hω : ∀ x ∈ ball c R, δ x ≤ F x ![e 0, e 1] + F x ![e 2, e 3] + K)
+    (hFG : ∀ x ∈ sphere c σ, F x = (G x).compContinuousLinearMap (S x))
+    (hSω : ∀ x ∈ sphere c σ, ∀ u v, ⟪J (S x u), S x v⟫ = ⟪J u, v⟫)
+    (hS : ∀ x ∈ sphere c σ, ‖S x - 1‖ ≤ L * ‖x - c‖)
+    (hB : ∀ x ∈ sphere c σ, ∀ u, G x ![u, J u] ≤ ((1 + κ) * δ x + K) * ‖u‖ ^ 2)
+    (hGn : ∀ x ∈ sphere c σ, ‖G x‖ ≤ A * δ x + K) (hσ : σ ∈ Ioo 0 R) :
+    ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c σ)).toReal ≤
+      σ / 2 * (1 + (1 + A * (1 + L * R) ^ 2) * ((2 + L * R) * L) * σ) * (1 + κ) *
+        deriv (fun s ↦ ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c s)).toReal) σ +
+        K * (1 + L * R) ^ 2 * (1 + 2 * ((2 + L * R) * L) * R) *
+          (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)) * σ ^ 4 := by
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  have hσR : sphere c σ ⊆ ball c R := sphere_subset_closedBall.trans (closedBall_subset_ball hσ.2)
+  have hM : 0 ≤ L * R := mul_nonneg hL (hσ.1.trans hσ.2).le
+  have hK₁ : K ≤ K * (1 + L * R) ^ 2 := le_mul_of_one_le_right hK (one_le_pow₀ (by linarith))
+  -- On the sphere, `S x` is within `L σ ≤ L R` of the identity.
+  have hεM : ∀ x ∈ sphere c σ, L * ‖x - c‖ ≤ L * R := fun x hx ↦
+    mul_le_mul_of_nonneg_left ((mem_sphere_iff_norm.1 hx).le.trans hσ.2.le) hL
+  have hSn : ∀ x ∈ sphere c σ, ‖S x‖ ≤ 1 + L * ‖x - c‖ := fun x hx ↦
+    (norm_le_norm_add_norm_sub' (S x) 1).trans (add_le_add ContinuousLinearMap.norm_id_le (hS x hx))
+  refine measure_closedBall_le_mul_one_add_mul_deriv_add (μ := μ) h₀ h₂₃
+    (J' := fun x v ↦ J ((S x).adjoint (S x v))) (g := fun x v ↦ ‖S x v‖ ^ 2)
+    (K := K * (1 + L * R) ^ 2) (A := A * (1 + L * R) ^ 2) (L := (2 + L * R) * L) hκ
+    (by positivity) (by positivity) (by positivity) hF hdF hδ hδ₀
+    (fun x hx ↦ (hω x hx).trans (by linarith)) ?_ ?_ ?_ ?_ hσ
+  · -- The frame turns `J' x` into `J`: `S x (J' x v) = J (S x v)`.
+    intro x hx v
+    rw [hFG x hx, ContinuousAlternatingMap.compContinuousLinearMap_apply_vecCons_two,
+      AlmostComplexStructure.apply_apply_adjoint_apply (hSω x hx)]
+    exact (hB x hx (S x v)).trans (by gcongr)
+  · intro x hx v
+    calc ‖S x v‖ ^ 2 ≤ ((1 + L * ‖x - c‖) * ‖v‖) ^ 2 := by
+          gcongr
+          exact (S x).le_of_opNorm_le (hSn x hx) v
+      _ ≤ (1 + (2 + L * R) * L * ‖x - c‖) * ‖v‖ ^ 2 := by
+          rw [mul_pow]
+          gcongr
+          nlinarith [hεM x hx, mul_nonneg hL (norm_nonneg (x - c))]
+  · -- `J' x - J = J (S†S - 1†1)`, a Gram perturbation of size at most `(‖S‖ + 1) ‖S - 1‖`.
+    intro x hx v
+    have hG := (S x).norm_adjoint_comp_self_sub_adjoint_comp_self_le 1
+    rw [ContinuousLinearMap.adjoint_one, ← ContinuousLinearMap.mul_def 1 1, mul_one] at hG
+    rw [← J.apply_sub, AlmostComplexStructure.norm_apply hJ]
+    refine ((S x).adjoint ∘L S x - 1).le_of_opNorm_le (hG.trans ?_) v
+    calc (‖S x‖ + ‖(1 : E →L[ℝ] E)‖) * ‖S x - 1‖ ≤ (2 + L * R) * (L * ‖x - c‖) := by
+          gcongr ?_ * ?_
+          · have h1 : ‖(1 : E →L[ℝ] E)‖ ≤ 1 := ContinuousLinearMap.norm_id_le
+            linarith [hSn x hx, hεM x hx]
+          · exact hS x hx
+      _ = (2 + L * R) * L * ‖x - c‖ := by ring
+  · -- The norm of `F x = G x ∘ S x` is at most `‖G x‖ ‖S x‖²`.
+    intro x hx
+    rw [hFG x hx]
+    calc ‖(G x).compContinuousLinearMap (S x)‖ ≤ ‖G x‖ * ‖S x‖ ^ 2 := by
+          simpa using (G x).norm_compContinuousLinearMap_le (S x)
+      _ ≤ (A * δ x + K) * (1 + L * R) ^ 2 :=
+          mul_le_mul (hGn x hx) (pow_le_pow_left₀ (norm_nonneg _)
+            ((hSn x hx).trans (by linarith [hεM x hx])) 2) (by positivity)
+            (add_nonneg (mul_nonneg hA (hδ₀ x (hσR hx))) hK)
+      _ = A * (1 + L * R) ^ 2 * δ x + K * (1 + L * R) ^ 2 := by ring
 
 end TauCeti.SeibergWitten

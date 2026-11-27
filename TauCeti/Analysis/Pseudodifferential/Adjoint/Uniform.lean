@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Basic
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Pseudodifferential.LatticeDecomposition
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -39,8 +41,8 @@ symbol is the adjoint symbol `TauCeti.Symbol.adjoint`, by uniqueness of symbols
 ## The construction
 
 Cut `c` into the pieces `cⱼ(y, ξ) = χ(y - j) c(y, ξ)`, `j ∈ ℤⁿ`, by the integer translates of the
-bump `χ = TauCeti.latticeBump n` (`TauCeti.Symbol.isBallFamily_latticeBump_comp`). Each piece has
-compact spatial support, so it has the left symbol `bⱼ = cⱼ.ofRight`,
+bump `χ = TauCeti.latticeBump n` (`TauCeti.Symbol.isBallFamily_smulLeft_latticeBump`). Each piece
+has compact spatial support, so it has the left symbol `bⱼ = cⱼ.ofRight`,
 
 `bⱼ(x, ξ) = ∫ exp(2πi ⟪θ, x⟫) 𝓕cⱼ(θ, ξ + 2πθ) dθ`,
 
@@ -303,10 +305,14 @@ private theorem IsBallFamily.exists_norm_sub_pow_mul_norm_ofRight_le (N : ℕ) :
         (hC'.trans (mul_le_mul_of_nonneg_left hwC (hC0 j))))
         ((hD j i x ξ).trans (mul_le_mul_of_nonneg_left hwD (hD0 j)))).trans_eq (by ring)
     calc ‖x - z i‖ ^ (2 * (N + 1)) * ‖((c i).ofRight hci).coefficient (x, ξ)‖
-        = ∑ j, ‖x - z i‖ ^ (2 * N) * (((x - z i) j) ^ 2 *
-            ‖((c i).ofRight hci).coefficient (x, ξ)‖) :=
-          norm_pow_two_mul_succ_mul_eq_sum (x - z i) N _
-      _ ≤ ∑ j, (A j + B j + C j + D j) * w := Finset.sum_le_sum fun j _ ↦ hj j
+        = ‖x - z i‖ ^ ENNReal.toReal 2 *
+            (‖x - z i‖ ^ (2 * N) * ‖((c i).ofRight hci).coefficient (x, ξ)‖) := by
+          rw [ENNReal.toReal_ofNat, Real.rpow_two]
+          ring
+      _ ≤ ∑ j, (A j + B j + C j + D j) * w :=
+          PiLp.norm_rpow_mul_le_sum (x - z i) (by simp) fun j ↦ by
+            rw [ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs, sq_abs]
+            exact (mul_left_comm _ _ _).trans_le (hj j)
       _ = _ := by rw [Finset.sum_mul]
 
 /-- **Decay of the derivatives away from the centres.** Every mixed derivative
@@ -352,7 +358,8 @@ private theorem IsBallFamily.exists_norm_mixedDeriv_ofRight_le {c : ι → Symbo
   refine ⟨2 ^ (n - 1) * (C₀ + C₁), by positivity, fun i x ξ ↦ ?_⟩
   have h₀ := hC₀ i x ξ
   rw [mul_zero, pow_zero, one_mul] at h₀
-  exact (le_mul_one_add_norm_sq_pow_inv (norm_nonneg _) h₀ (hC₁ i x ξ)).trans_eq (by ring)
+  exact (Real.le_mul_one_add_sq_pow_inv ‖x - z i‖ (norm_nonneg _) h₀ (hC₁ i x ξ)).trans_eq
+    (by ring)
 
 end BallFamily
 
@@ -368,13 +375,12 @@ omit [CompleteSpace V] [CompleteSpace W] in
 `χ(· - j) u`. -/
 private theorem quantizeRightUniformCLM_latticeBump_comp {c : Symbol n V W m} (hc : c.IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) (j : Fin n → ℤ) :
-    quantizeRightUniformCLM _ ((isBallFamily_latticeBump_comp hc).hasCompactSpatialSupport
+    quantizeRightUniformCLM _ ((isBallFamily_smulLeft_latticeBump hc).hasCompactSpatialSupport
       j).isUniform u =
       quantizeRightUniformCLM c hc (SchwartzMap.smulLeftCLM V
         (fun y ↦ latticeBump n (y - latticePoint j)) u) := by
   refine quantizeRightUniformCLM_eq_of_coefficient_apply_eq _ hc fun y ξ ↦ ?_
-  simp [coefficient_comp,
-    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j),
+  simp [SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j),
     ContinuousLinearMap.map_smul_of_tower]
 
 /-- **The right quantization of a uniform symbol is a left quantization.** If `c` is a symbol of
@@ -386,21 +392,18 @@ compact spatial support is assumed. The symbol is unique
 theorem IsUniform.exists_quantizeRightUniformCLM_eq {c : Symbol n V W m} (hc : c.IsUniform) :
     ∃ (b : Symbol n V W m) (hb : b.IsUniform),
       quantizeRightUniformCLM c hc = quantizeUniformCLM b hb := by
-  have hfam := isBallFamily_latticeBump_comp hc
-  set F : (Fin n → ℤ) → Symbol n V W (0 + m) := fun j ↦
+  have hfam := isBallFamily_smulLeft_latticeBump hc
+  set F : (Fin n → ℤ) → Symbol n V W m := fun j ↦
     ofRight _ (hfam.hasCompactSpatialSupport j)
   set w : (Fin n → ℤ) → CoordinateSpace n → ℝ := fun j x ↦
     ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹
   obtain ⟨b, hb, hbsum⟩ := exists_isUniform_hasSum_coefficient F w (fun _ _ ↦ by positivity)
-    (fun x ↦ ⟨fun j ↦ 4 ^ n * w j x,
-      (summable_one_add_norm_sub_latticePoint_sq_pow_inv x).mul_left _,
-      fun j _ hy ↦ one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one (mem_ball.1 hy).le j⟩)
+    exists_summable_forall_one_add_norm_sub_latticePoint_sq_pow_inv_le
     tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le
     (hfam.exists_norm_mixedDeriv_ofRight_le)
-  have hord : 0 + m = m := zero_add m
-  refine ⟨Symbol.inclusion hord.le b, hb.inclusion hord.le, ?_⟩
+  refine ⟨b, hb, ?_⟩
   ext u x
-  rw [quantizeUniformCLM_apply, coefficient_inclusion]
+  rw [quantizeUniformCLM_apply]
   -- Both sides are the sum of the series `∑ⱼ Op(cⱼᵒ) u (x) = ∑ⱼ Op_R(c) (χ(· - j) u) (x)`.
   obtain ⟨C, -, hC⟩ := hfam.exists_norm_mixedDeriv_ofRight_le [] []
   simp only [mixedDeriv_nil_nil, List.length_nil, CharP.cast_eq_zero, sub_zero] at hC

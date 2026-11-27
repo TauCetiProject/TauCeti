@@ -8,6 +8,10 @@ module
 public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 public import TauCeti.LinearAlgebra.LinearPMap.Restrict
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Intertwining
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Compact
+import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
+import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Intertwining
 
 /-!
 # Reducing subspaces of partial linear maps
@@ -22,7 +26,10 @@ The reduced part `A.restrict hR.isInvariant.apply_mem : U →ₗ.[𝕜] U` inher
 `A` that matter for spectral theory: it is densely defined when `A` is, closed when `A` is
 (`LinearPMap.IsClosed.restrict`), symmetric when `A` is, and self-adjoint when `A` is. The last
 statement is what lets the spectral theory of a self-adjoint operator be split along an
-orthogonal decomposition into reducing subspaces.
+orthogonal decomposition into reducing subspaces. A compact resolvent also passes to the reduced
+part: the projection onto `U` commutes with every resolvent of `A`, so each resolvent maps `U` into
+itself and its restriction to `U` is the resolvent of the reduced part, compact when the resolvent
+of `A` is.
 
 ## Main definitions
 
@@ -33,6 +40,8 @@ orthogonal decomposition into reducing subspaces.
 * `LinearPMap.IsReducing.orthogonal`: if `U` reduces `A`, so does `Uᗮ`.
 * `LinearPMap.isReducing_iff_starProjection_mem_graph`: `U` reduces `A` exactly when the
   orthogonal projection onto `U` commutes with `A`.
+* `LinearPMap.isReducing_iff_intertwines_starProjection`: equivalently, the orthogonal projection
+  onto `U` intertwines `A` with itself.
 * `LinearPMap.isReducing_toPMap_top_iff`: for everywhere-defined maps, reduction agrees with
   `Submodule.IsReducing`.
 * `LinearPMap.IsReducing.dense_restrict_domain`: the reduced part of a densely defined map is
@@ -41,6 +50,8 @@ orthogonal decomposition into reducing subspaces.
   subspace is symmetric.
 * `LinearPMap.IsReducing.isSelfAdjoint_restrict`: the reduced part of a self-adjoint map is
   self-adjoint.
+* `LinearPMap.IsReducing.hasCompactResolvent_restrict`: the reduced part of a map with compact
+  resolvent has compact resolvent.
 
 ## References
 
@@ -128,6 +139,13 @@ theorem isReducing_iff_starProjection_mem_graph :
     rw [(U.starProjection_apply_eq_zero_iff).2 hx] at hg
     exact (U.starProjection_apply_eq_zero_iff).1 (A.graph_fst_eq_zero_snd hg rfl)
 
+/-- **Reduction is self-intertwining of the projection.** A subspace reduces a partial linear map
+exactly when the orthogonal projection onto it intertwines the map with itself. -/
+theorem isReducing_iff_intertwines_starProjection :
+    A.IsReducing U ↔ A.Intertwines A U.starProjection := by
+  rw [isReducing_iff_starProjection_mem_graph, intertwines_iff_forall_mem_graph]
+  exact ⟨fun h p hp ↦ h p.1 p.2 hp, fun h x y hxy ↦ h (x, y) hxy⟩
+
 /-- For an everywhere-defined linear map, reduction in the sense of partial linear maps is
 reduction in the sense of `Submodule.IsReducing`. -/
 theorem isReducing_toPMap_top_iff (f : Module.End 𝕜 E) :
@@ -183,5 +201,41 @@ theorem IsReducing.isSelfAdjoint_restrict [CompleteSpace E] {U : Submodule 𝕜 
   have hyA := hR.coe_mem_adjoint_domain hA.dense_domain hy
   rw [isSelfAdjoint_def.mp hA] at hyA
   exact (mem_restrict_domain _).2 hyA
+
+/-- A resolvent of a partial linear map maps every reducing subspace into itself. -/
+theorem IsReducing.apply_mem_of_isResolventAt (hR : A.IsReducing U) {z : 𝕜} {T : E →L[𝕜] E}
+    (hT : A.IsResolventAt z T) {x : E} (hx : x ∈ U) : T x ∈ U := by
+  have h := DFunLike.congr_fun
+    ((isReducing_iff_intertwines_starProjection.1 hR).comp_eq_of_isResolventAt hT hT) x
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    Submodule.starProjection_eq_self_iff.2 hx] at h
+  rw [← h]
+  exact U.starProjection_apply_mem _
+
+/-- The restriction of a resolvent of a partial linear map to a reducing subspace is a resolvent
+of the reduced part. -/
+theorem IsReducing.isResolventAt_restrict (hR : A.IsReducing U) {z : 𝕜} {T : E →L[𝕜] E}
+    (hT : A.IsResolventAt z T) :
+    (A.restrict hR.isInvariant.apply_mem).IsResolventAt z
+      (T.restrict fun _ ↦ hR.apply_mem_of_isResolventAt hT) where
+  mem_domain y := (mem_restrict_domain _).2 (hT.mem_domain y)
+  smul_sub_apply y := Subtype.ext <| by
+    simpa only [Submodule.coe_sub, Submodule.coe_smul, coe_restrict_apply,
+      ContinuousLinearMap.coe_restrict_apply] using hT.smul_sub_apply y
+  apply_smul_sub x := Subtype.ext <| by
+    simpa only [Submodule.coe_sub, Submodule.coe_smul, coe_restrict_apply,
+      ContinuousLinearMap.coe_restrict_apply] using
+      hT.apply_smul_sub ⟨x, (mem_restrict_domain _).1 x.property⟩
+
+/-- **Reduced parts of operators with compact resolvent.** The reduced part of a partial linear map
+with compact resolvent along a reducing subspace has compact resolvent. -/
+theorem IsReducing.hasCompactResolvent_restrict (hR : A.IsReducing U)
+    (hA : A.HasCompactResolvent) : (A.restrict hR.isInvariant.apply_mem).HasCompactResolvent := by
+  obtain ⟨z, hz, hc⟩ := hasCompactResolvent_def.1 hA
+  have hT := hR.isResolventAt_restrict (isResolventAt_resolvent hz)
+  refine HasCompactResolvent.of_isCompactOperator_resolvent hT.mem_resolventSet ?_
+  rw [resolvent_eq_of_isResolventAt hT]
+  exact hc.restrict (fun _ ↦ hR.apply_mem_of_isResolventAt (isResolventAt_resolvent hz))
+    U.isClosed_of_hasOrthogonalProjection
 
 end LinearPMap

@@ -75,6 +75,10 @@ norm to a Euclidean one.
   preconnected subset of the image is preconnected.
 * `TauCeti.exists_isConvexChart_inter_preimage_ball`: a map that is open onto a convex set near a
   point, with preconnected fibres there, has a convexity chart around that point.
+* `TauCeti.IsConvexChart.source_inter_preimage`: convexity charts of a map read in a chart give
+  convexity charts of the map.
+* `TauCeti.isConvexChart_source_inter_preimage`: a map reading as an open linear map in a chart
+  has the preimages of open convex sets as convexity charts.
 * `IsProperMap.convex_range_of_isConvexChart`: a proper locally convex map from a connected
   Hausdorff space has convex image.
 * `IsProperMap.isPreconnected_preimage_singleton_of_isConvexChart`: its fibres are preconnected,
@@ -222,6 +226,50 @@ theorem exists_isConvexChart_inter_preimage_ball {f : X → E} (hf : Continuous 
     ext y
     simp only [mem_inter_iff, mem_preimage, mem_singleton_iff]
     exact ⟨fun ⟨⟨hyU, _⟩, hyv⟩ ↦ ⟨hyU, hyv⟩, fun ⟨hyU, hyv⟩ ↦ ⟨⟨hyU, hyv ▸ hv.1⟩, hyv⟩⟩
+
+/-- **Convexity charts read in a chart.** Let `e` be a partial homeomorphism from `X` to a
+topological space `F`, and let `f` read in `e` as a map `g : F → E`, that is, `f = g ∘ e` on the
+source of `e`. Then the preimage under `e` of a convexity chart `B ⊆ e.target` of `g` is a convexity
+chart of `f`. This transports local models of `f`, such as the normal forms of the Morse–Bott lemma
+or of a moment map, from coordinates to `X`. -/
+theorem IsConvexChart.source_inter_preimage {F : Type*} [TopologicalSpace F]
+    {e : OpenPartialHomeomorph X F} {g : F → E} {B : Set F} (hB : IsConvexChart g B)
+    (hBt : B ⊆ e.target) {f : X → E} (hf : EqOn f (g ∘ e) e.source) :
+    IsConvexChart f (e.source ∩ e ⁻¹' B) := by
+  have himage : ∀ W ⊆ e.source ∩ e ⁻¹' B, f '' W = g '' (e '' W) := fun W hW ↦ by
+    rw [(hf.mono (hW.trans inter_subset_left)).image_eq, image_comp]
+  have hB' : e '' (e.source ∩ e ⁻¹' B) = B := by
+    rw [← e.symm_image_eq_source_inter_preimage hBt]
+    exact e.image_symm_image_of_subset_target hBt
+  refine ⟨e.isOpen_inter_preimage hB.isOpen, ?_, fun W hW hWo x hx ↦ ?_, fun v ↦ ?_⟩
+  · rw [himage _ subset_rfl, hB']
+    exact hB.convex_image
+  · rw [himage W hW, himage _ subset_rfl, hB', hf (hW hx).1, comp_apply]
+    exact hB.image_mem_nhdsWithin _ (by rw [← hB']; exact image_mono hW)
+      (e.isOpen_image_of_subset_source hWo (hW.trans inter_subset_left)) (e x)
+      (mem_image_of_mem e hx)
+  · -- The fibre is the image under `e⁻¹` of the fibre `B ∩ g⁻¹ {v}` of `g`.
+    have hfib : e.source ∩ e ⁻¹' B ∩ f ⁻¹' {v} = e.symm '' (B ∩ g ⁻¹' {v}) := by
+      rw [inter_right_comm, hf.inter_preimage_eq, preimage_comp, inter_assoc, ← preimage_inter,
+        inter_comm (g ⁻¹' {v}), e.symm_image_eq_source_inter_preimage (inter_subset_left.trans hBt)]
+    rw [hfib]
+    exact (hB.isPreconnected_inter_preimage_singleton v).image _
+      (e.continuousOn_symm.mono (inter_subset_left.trans hBt))
+
+/-- **Convexity charts of a linear map read in a chart.** Let `e` be a partial homeomorphism from
+`X` to a real normed space `F`, and let `f` read in `e` as an open linear map `g : F → E`, that is,
+`f = g ∘ e` on the source of `e`. Then the preimage under `e` of every open convex subset `B` of the
+target of `e` is a convexity chart of `f`: its image is `g '' B`, and its fibres are the images
+under `e⁻¹` of the convex slices of `B` by the fibres of `g`. Open linear maps between
+finite-dimensional spaces are the surjective ones (`LinearMap.isOpenMap_of_finiteDimensional`),
+and a map in submersion normal form reads in this way. -/
+theorem isConvexChart_source_inter_preimage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {e : OpenPartialHomeomorph X F} {g : F →ₗ[ℝ] E} (hg : IsOpenMap g) {f : X → E}
+    (hf : EqOn f (g ∘ e) e.source) {B : Set F} (hBo : IsOpen B) (hBc : Convex ℝ B)
+    (hBt : B ⊆ e.target) : IsConvexChart f (e.source ∩ e ⁻¹' B) :=
+  IsConvexChart.source_inter_preimage ⟨hBo, hBc.linear_image g,
+    fun W _ hWo _ hx ↦ mem_nhdsWithin_of_mem_nhds ((hg W hWo).mem_nhds (mem_image_of_mem g hx)),
+    fun v ↦ (hBc.inter ((convex_singleton v).linear_preimage g)).isPreconnected⟩ hBt hf
 
 /-! ### Chains of linked points -/
 
