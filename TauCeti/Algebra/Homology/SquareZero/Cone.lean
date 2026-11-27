@@ -308,8 +308,17 @@ theorem mappingConeZeroZeroHomologyEquiv_mk
     (z : ker (mappingCone (0 : M →ₗ[S] M) (0 : N →ₗ[S] N) f)) :
     mappingConeZeroZeroHomologyEquiv f (Submodule.Quotient.mk z) =
       (⟨(z : M × N).1, mem_ker_mappingCone_zero_zero_iff.mp z.property⟩,
-        Submodule.Quotient.mk (z : M × N).2) :=
-  (rfl)
+        Submodule.Quotient.mk (z : M × N).2) := by
+  rw [mappingConeZeroZeroHomologyEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    quotKerEquivOfSurjective_apply_mk, mappingConeZeroZeroCyclesMap_apply]
+
+/-- The inverse of the homology of the cone of `f` sends `m` in the kernel of `f` and the class of
+`n` to the class of the cycle `(m, n)`. -/
+@[simp]
+theorem mappingConeZeroZeroHomologyEquiv_symm_mk (m : ker f) (n : N) :
+    (mappingConeZeroZeroHomologyEquiv f).symm (m, Submodule.Quotient.mk n) =
+      Submodule.Quotient.mk ⟨((m : M), n), mem_ker_mappingCone_zero_zero_iff.mpr m.property⟩ := by
+  rw [LinearEquiv.symm_apply_eq, mappingConeZeroZeroHomologyEquiv_mk]
 
 end ZeroDifferential
 

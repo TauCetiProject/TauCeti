@@ -432,8 +432,8 @@ private theorem circleTimesSphereChainEquiv_comp_twistedHatDifferential :
         (circleTimesSphereChainEquiv _).toLinearMap := by
   have h := (circleTimesSphereGenerator_zero_ne_one 0).symm
   refine LinearMap.ext fun c => ?_
-  simpa [circleTimesSphereChainEquiv_apply, twistedHatDifferential_circleTimesSphere_zero, h]
-    using mul_comm _ _
+  simp [circleTimesSphereChainEquiv_apply, twistedHatDifferential_circleTimesSphere_zero, h,
+    mul_comm]
 
 /-- If `1 + t` acts by zero on `X`, then the twisted hat differential of the genus-one diagram of
 `S¹ × S²` with coefficients in `X` vanishes. For `X = R ⧸ (1 + t) = 𝔽₂` this is the vanishing of

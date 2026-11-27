@@ -394,6 +394,13 @@ theorem tensorQuotEquiv_tmul_one {x : R} (hx : Module.IsTorsionBy R M x) (m : M)
   rw [tensorQuotEquiv, LinearEquiv.trans_apply, ← h, LinearEquiv.symm_apply_apply,
     quotSMulTopEquiv_mk]
 
+open scoped TensorProduct in
+/-- The inverse of the identification `M ⊗[R] R ⧸ (x) ≃ M` sends `m` to `m ⊗ 1`. -/
+@[simp]
+theorem tensorQuotEquiv_symm_apply {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
+    hx.tensorQuotEquiv.symm m = m ⊗ₜ 1 :=
+  (LinearEquiv.symm_apply_eq _).2 (tensorQuotEquiv_tmul_one hx m).symm
+
 end Module.IsTorsionBy
 
 namespace Ideal
