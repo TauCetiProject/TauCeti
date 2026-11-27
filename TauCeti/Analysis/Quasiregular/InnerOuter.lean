@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Quasiregular.Euclidean
 public import TauCeti.Analysis.InnerProductSpace.SingularValues.Least
+import TauCeti.Analysis.InnerProductSpace.Projection.Trace
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -31,6 +32,15 @@ singular-value bounds `|det A| ≤ ‖A‖ⁿ⁻¹ ℓ(A)` and `‖A‖ ℓ(A)�
 (`LinearMap.normDet_le_norm_pow_mul_minimalStretch`,
 `LinearMap.norm_mul_minimalStretch_pow_le_normDet`). Where `det A ≤ 0`, the outer inequality
 forces `A = 0`.
+
+## Checks
+
+* `TauCeti.det_starProjection_le_one_mul_minimalStretch_pow` and
+  `TauCeti.not_isQuasiregularOn_starProjection`: the orthogonal projection `P` onto a subspace
+  `V ≠ 0, E`, for instance `(x₁, x₂) ↦ (x₁, 0)` of `ℝ²`, has `det P = 0 = ℓ(P)`, so it satisfies the
+  inner inequality with constant `1`, but it is not quasiregular, since `‖P‖ⁿ > 0 = K det P`. The
+  quasiregularity hypothesis of `TauCeti.IsQuasiregularOn.of_det_le_mul_minimalStretch_pow`
+  cannot be dropped.
 
 ## References
 
@@ -148,5 +158,37 @@ theorem IsQuasiregularOn.of_det_le_mul_minimalStretch_pow (hf : IsQuasiregularOn
   filter_upwards [hf.ae_norm_pow_le_mul_det hDu, hin] with x hout hx
   exact norm_pow_le_pow_mul_det_of_det_le_mul_minimalStretch_pow (zero_le_one.trans hf.one_le)
     hout hx
+
+/-! ### Checks: the orthogonal projection onto a proper nonzero subspace -/
+
+section Projection
+
+variable {V : Submodule ℝ E}
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- **Check: the inner inequality holds for a projection.** The orthogonal projection `P` onto a
+proper subspace satisfies the inner inequality `det P ≤ 1 · ℓ(P)ⁿ`, both sides being `0`
+(`Submodule.det_starProjection_eq_zero`, `Submodule.minimalStretch_starProjection_eq_zero`). For
+`E = ℝ²` and `V` the first axis, `P` is `(x₁, x₂) ↦ (x₁, 0)`. -/
+theorem det_starProjection_le_one_mul_minimalStretch_pow (hV : V ≠ ⊤) :
+    LinearMap.det ((V.starProjection : E →L[ℝ] E) : E →ₗ[ℝ] E) ≤
+      1 * ((V.starProjection : E →L[ℝ] E) : E →ₗ[ℝ] E).minimalStretch ^ finrank ℝ E := by
+  rw [V.det_starProjection_eq_zero hV, one_mul]
+  exact pow_nonneg (LinearMap.minimalStretch_nonneg _) _
+
+/-- **Check: a projection is not quasiregular.** The orthogonal projection `P` onto a
+subspace `V` with `V ≠ 0` and `V ≠ E` is not `K`-quasiregular, for any `K`, on any nonempty open
+set: `‖P‖ⁿ > 0 = K det P`. So the inner inequality, which `P` satisfies with constant `1`
+(`TauCeti.det_starProjection_le_one_mul_minimalStretch_pow`), does not imply quasiregularity, and
+`TauCeti.IsQuasiregularOn.of_det_le_mul_minimalStretch_pow` needs its quasiregularity
+hypothesis. -/
+theorem not_isQuasiregularOn_starProjection (hV₀ : V ≠ ⊥) (hV : V ≠ ⊤)
+    (hΩ : (Ω : Set E).Nonempty) : ¬ IsQuasiregularOn K Ω V.starProjection := by
+  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hV₀
+  refine not_isQuasiregularOn_of_eqOn_of_det_nonpos le_rfl hΩ (fun h ↦ hv0 ?_)
+    (V.det_starProjection_eq_zero hV).le fun _ _ ↦ rfl
+  rw [← Submodule.starProjection_eq_self_iff.2 hv, h, zero_apply]
+
+end Projection
 
 end TauCeti
