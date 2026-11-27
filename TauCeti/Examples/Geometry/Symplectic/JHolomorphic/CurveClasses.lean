@@ -44,8 +44,8 @@ exceptional class `E`, of square `-1`. The statements below need only these two 
 are made for any intersection lattice with a class `E` of square `-1` and `κ = E`.
 
 * The label `e = 2 E` has `e · e = -4` and `κ · e = -2`, so `d(2 E) = -2`
-  (`apply_two_smul_self_sub_apply_two_smul`): it has negative dimension. Truncated subtraction in
-  `ℕ`, as for a natural-number dimension, would return `0`.
+  (`apply_two_smul_self_sub_apply_two_smul`): it has negative dimension. Clamping this dimension
+  to `ℕ` with `Int.toNat`, as for a natural-number dimension, would return `0`.
 * The class `2 E` is not good, since `2 E · E = -2 < -1` (`apply_two_smul_lt_neg_one`), and both
   vanishing theorems apply to it: the count in class `2 E` vanishes because the class is bad
   (`TauCeti.configurationCount_eq_zero_of_apply_lt_neg_one`) and because its dimension is
@@ -65,9 +65,10 @@ image.
 
 **Multiple covers.** The virtual dimension of `m C` is `m d(C) + m (m - 1) C · C`. On a K3
 surface (`κ = 0`) a square-zero torus `T` therefore gives `d(2 T) = 0`, and `2 T` is a good cycle
-through no points (`isGoodCycle_const_two`). For a class `C` of nonzero square, `2 C` is not a
-good cycle (`not_isGoodCycle_const_two`): multiplicity above one occurs only on square-zero
-classes.
+through no points (`isGoodCycle_const_two`). For a class `C` of nonzero square, the
+single-component cycle `2 C` is not a good cycle (`not_isGoodCycle_const_two`). For a symmetric
+intersection form, every component of multiplicity above one has square zero
+(`TauCeti.IsGoodCycle.apply_self_eq_zero_of_one_lt_mult`).
 
 ## References
 
@@ -253,11 +254,11 @@ theorem apply_two_smul_self_sub_apply_two_smul (hE : B E E = -1) :
   simp only [map_zsmul, LinearMap.smul_apply, hE]
   norm_num
 
-/-- Truncated subtraction in `ℕ` would give the label `2 E` dimension `0` instead of `-2`. -/
+/-- Clamping the dimension to `ℕ` with `Int.toNat` would give the label `2 E` dimension `0`
+instead of `-2`. -/
 example (hE : B E E = -1) :
-    (B ((2 : ℤ) • E) ((2 : ℤ) • E)).toNat - (B E ((2 : ℤ) • E)).toNat = 0 := by
-  obtain ⟨h₁, h₂, -⟩ := apply_two_smul_self_sub_apply_two_smul hE
-  rw [h₁, h₂]
+    (B ((2 : ℤ) • E) ((2 : ℤ) • E) - B E ((2 : ℤ) • E)).toNat = 0 := by
+  rw [(apply_two_smul_self_sub_apply_two_smul hE).2.2]
   decide
 
 /-- The class `2 E` is not good: it pairs to `-2 < -1` with the exceptional class. -/
