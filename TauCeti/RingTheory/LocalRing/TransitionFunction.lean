@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.SeparableDegree
-public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.LocalRing.Herbrand
-public import TauCeti.RingTheory.LocalRing.RingHom
-import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
-import TauCeti.RingTheory.LocalRing.Pointwise
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.ResidueDegree
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.GroupTheory.Index.Basic
 
 /-!
 # The integral formula for the transition function of a subgroup
@@ -37,17 +35,16 @@ degree `f(L/K)`, which gives Serre's form
 
 The identification of the constant holds in general with the separable residue degree: if `G`
 acts faithfully on the local ring `B` by `A`-algebra automorphisms with invariants `A`, then
-`[G : G_0 H]` is the separable degree of the residue extension of the fixed ring `B^H` over `A`.
-Without separability it can differ from the residue degree: for the purely inseparable residue
-extension of degree `p` of `y^p - y = s t^{-p}` over `𝔽_p(s)((t))`, with `H = 1`, the index is
+`[G : G_0 H]` is the separable degree of the residue extension of the fixed ring `B^H` over
+`A` (`TauCeti.IsLocalRing.index_ramificationGroup_zero_sup_eq_finSepDegree`). Without
+separability it can differ from the residue degree: for the purely inseparable residue extension
+of degree `p` of `y^p - y = s t^{-p}` over `𝔽_p(s)((t))`, with `H = 1`, the index is
 `[G : G_0] = 1`.
 
 ## Main results
 
 * `TauCeti.IsLocalRing.herbrandFun_inverseHerbrandFun_eq_integral`: the integral formula
   `φ_H(ψ_G(u)) = ∫_0^u [G : G^t H] / [G : G_0 H] dt`.
-* `TauCeti.IsLocalRing.index_ramificationGroup_zero_sup_eq_finSepDegree`: `[G : G_0 H]` is the
-  separable residue degree of `B^H` over `A`.
 * `TauCeti.IsLocalRing.herbrandFun_inverseHerbrandFun_eq_integral_div_finrank`: over a separable
   residue extension, `φ_H(ψ_G(u)) = (1 / f) ∫_0^u [G : G^t H] dt`.
 
@@ -64,8 +61,6 @@ noncomputable section
 
 open IsLocalRing MeasureTheory Set intervalIntegral Filter
 
-open scoped Pointwise
-
 namespace TauCeti.IsLocalRing
 
 /-! ### The integral formula for a finite group acting on a local ring -/
@@ -73,22 +68,7 @@ namespace TauCeti.IsLocalRing
 section Integral
 
 variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
-
-/-- The product formula `#(G_i H) · #(H ∩ G_i) = #G_i · #H`, in the form
-`[G : G_i H] · #G_i · #H = #G · #H_i`, with `H_i = H ∩ G_i` the ramification group of `H`. -/
-private theorem index_sup_mul_natCard_mul_natCard (H : Subgroup G) (i : ℤ) :
-    (ramificationGroup G S i ⊔ H).index * Nat.card (ramificationGroup G S i) * Nat.card H =
-      Nat.card G * Nat.card (ramificationGroup H S i) := by
-  set N := ramificationGroup G S i
-  -- `[G_i H : G_i] = [H : H ∩ G_i]`, since `G_i` is normal.
-  have h₁ := Subgroup.relIndex_mul_index (le_sup_left : N ≤ N ⊔ H)
-  rw [Subgroup.relIndex_sup_left] at h₁
-  have h₂ := (N.subgroupOf H).card_mul_index
-  have h₃ := N.card_mul_index
-  rw [← subgroupOf_ramificationGroup, ← h₃, ← h₁, ← h₂, Subgroup.relIndex]
-  ring
-
-variable [Finite G]
+  [Finite G]
 
 /-- The integrand `[G : G^t H]` of the transition function is increasing in `t`. -/
 private theorem monotone_index_upperRamificationGroup_sup (H : Subgroup G) :
@@ -118,11 +98,15 @@ private theorem herbrandFun_sub_herbrandFun_eq_integral (H : Subgroup G) {i : �
   -- The product formula at `i` and at `0` identifies the slopes.
   have hPi : ((ramificationGroup G S i ⊔ H).index : ℝ) * Nat.card (ramificationGroup G S i) *
       Nat.card H = Nat.card G * Nat.card (ramificationGroup H S i) := by
-    exact_mod_cast index_sup_mul_natCard_mul_natCard G S H i
+    rw [← subgroupOf_ramificationGroup]
+    exact_mod_cast Subgroup.index_sup_mul_card_mul_card (N := ramificationGroup G S i) (H := H)
+      Subgroup.le_normalizer_of_normal
   have hP0 : c * Nat.card (ramificationGroup G S 0) * Nat.card H =
       Nat.card G * Nat.card (ramificationGroup H S 0) := by
     simp only [c]
-    exact_mod_cast index_sup_mul_natCard_mul_natCard G S H 0
+    rw [← subgroupOf_ramificationGroup]
+    exact_mod_cast Subgroup.index_sup_mul_card_mul_card (N := ramificationGroup G S 0) (H := H)
+      Subgroup.le_normalizer_of_normal
   have hG : (0 : ℝ) < Nat.card G := by exact_mod_cast Nat.card_pos
   have hG0 : (0 : ℝ) < Nat.card (ramificationGroup G S 0) := by exact_mod_cast Nat.card_pos
   have hH0 : (0 : ℝ) < Nat.card (ramificationGroup H S 0) := by exact_mod_cast Nat.card_pos
@@ -161,28 +145,15 @@ theorem herbrandFun_inverseHerbrandFun_eq_integral (H : Subgroup G) (u : ℝ) :
     rw [← integral_interval_sub_left (hk 0 _) (hk 0 _)] at h
     simp only [F]
     linarith
-  -- Hence `F` vanishes at every integer, since it vanishes at `0`.
-  have hint (i : ℤ) : F i = 0 := by
-    induction i using Int.induction_on with
-    | zero => simp [F]
-    | succ i ih =>
-      have h := hstep (i := i + 1) (x := ((i + 1 : ℤ) : ℝ)) (by push_cast; linarith) le_rfl
-      push_cast at h ih ⊢
-      rw [h, add_sub_cancel_right, ih]
-    | pred i ih =>
-      have h := hstep (i := -i) (x := ((-i : ℤ) : ℝ)) (by push_cast; linarith) le_rfl
-      push_cast at h ih ⊢
-      rw [← h, ih]
-  -- So `F` vanishes everywhere; evaluate at `ψ_G(u)`.
-  have h := hstep (by linarith [Int.ceil_lt_add_one (inverseHerbrandFun G S u)])
-    (Int.le_ceil (inverseHerbrandFun G S u))
-  rw [← Int.cast_one, ← Int.cast_sub, hint] at h
-  simp only [F, herbrandFun_inverseHerbrandFun] at h
+  -- Hence `F` is constant, and it vanishes at `0`; evaluate at `ψ_G(u)`.
+  have h := apply_eq_apply_zero_of_forall_mem_Icc_intCast_sub_one
+    (fun i x hx ↦ hstep (i := i) (x := x) hx.1 hx.2) (inverseHerbrandFun G S u)
+  simp only [F, herbrandFun_inverseHerbrandFun, herbrandFun_zero, integral_same, sub_zero] at h
   linarith
 
 end Integral
 
-/-! ### The normalizing index as a residue degree -/
+/-! ### Serre's form over a separable residue extension -/
 
 section ResidueDegree
 
@@ -190,58 +161,6 @@ variable {A B : Type*} [CommRing A] [IsLocalRing A] [CommRing B] [IsLocalRing B]
   [IsLocalHom (algebraMap A B)]
   {G : Type*} [Group G] [Finite G] [MulSemiringAction G B] [SMulCommClass G A B]
   [Algebra.IsInvariant A B G] [FaithfulSMul G B]
-
-attribute [local instance] Ideal.Quotient.field in
-/-- `#G = #G_0 · f_s`, with `f_s` the separable degree of the residue extension: every element of
-`G` stabilizes the maximal ideal of `B`. -/
-private theorem natCard_eq_natCard_ramificationGroup_zero_mul_finSepDegree :
-    Nat.card G = Nat.card (ramificationGroup G B 0) *
-      Field.finSepDegree (ResidueField A) (ResidueField B) := by
-  have : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
-  have h := Ideal.card_stabilizer_eq_card_inertia_mul_finSepDegree (G := G) (maximalIdeal A)
-    (maximalIdeal B)
-  have htop : MulAction.stabilizer G (maximalIdeal B) = ⊤ :=
-    eq_top_iff.2 fun σ _ ↦ smul_maximalIdeal σ
-  rw [htop, Subgroup.card_top] at h
-  rw [h, ramificationGroup_zero_eq_inertia]
-  -- The residue field of a local ring is its quotient by the maximal ideal.
-  rfl
-
-variable (A) in
-/-- **The normalizing index is the separable residue degree.** Let a finite group `G` act
-faithfully on the local ring `B` by `A`-algebra automorphisms, with invariants the local ring
-`A`, and let `H` be a subgroup. Then `[G : G_0 H]` is the separable degree of the residue
-extension of the fixed ring `B^H` over `A`. For `G = Gal(M/K)` and `H = Gal(M/L)` this is the
-separable residue degree of `L/K`. -/
-theorem index_ramificationGroup_zero_sup_eq_finSepDegree (H : Subgroup G) :
-    (ramificationGroup G B 0 ⊔ H).index =
-      Field.finSepDegree (ResidueField A) (ResidueField (FixedPoints.subalgebra A B H)) := by
-  -- `#G = #G_0 · f_s(B/A)` and `#H = #H_0 · f_s(B/B^H)`.
-  have hG := natCard_eq_natCard_ramificationGroup_zero_mul_finSepDegree (A := A) (B := B) (G := G)
-  have hH := natCard_eq_natCard_ramificationGroup_zero_mul_finSepDegree
-    (A := FixedPoints.subalgebra A B H) (B := B) (G := H)
-  -- The separable degree is multiplicative in the residue tower of `A ⊆ B^H ⊆ B`.
-  have := Algebra.IsInvariant.isIntegral (FixedPoints.subalgebra A B H) B H
-  have : Algebra.IsIntegral B (ResidueField B) :=
-    .of_surjective (Algebra.ofId B (ResidueField B)) residue_surjective
-  have : Algebra.IsIntegral (FixedPoints.subalgebra A B H) (ResidueField B) := .trans B
-  have : IsScalarTower (FixedPoints.subalgebra A B H) (ResidueField (FixedPoints.subalgebra A B H))
-      (ResidueField B) :=
-    -- Both maps into `ResidueField B` are the residue map of `B` after `B^H → B`, by definition.
-    .of_algebraMap_eq fun _ ↦ rfl
-  have : Algebra.IsIntegral (ResidueField (FixedPoints.subalgebra A B H)) (ResidueField B) :=
-    .tower_top (FixedPoints.subalgebra A B H)
-  have hmul := Field.finSepDegree_mul_finSepDegree_of_isAlgebraic (ResidueField A)
-    (ResidueField (FixedPoints.subalgebra A B H)) (ResidueField B)
-  -- Compare with the product formula `[G : G_0 H] · #G_0 · #H = #G · #H_0`.
-  have hP := index_sup_mul_natCard_mul_natCard G B H 0
-  have hf : Field.finSepDegree (ResidueField (FixedPoints.subalgebra A B H)) (ResidueField B) ≠ 0 :=
-    fun h ↦ (Nat.card_pos (α := H)).ne' (by rw [hH, h, mul_zero])
-  rw [hG, hH, ← hmul] at hP
-  have hG0 : Nat.card (ramificationGroup G B 0) ≠ 0 := Nat.card_pos.ne'
-  have hH0 : Nat.card (ramificationGroup H B 0) ≠ 0 := Nat.card_pos.ne'
-  refine mul_right_cancel₀ (mul_ne_zero (mul_ne_zero hG0 hH0) hf) ?_
-  linear_combination hP
 
 variable (A) in
 /-- **Serre's integral formula for `ψ_{L/K}`.** Let a finite group `G` act faithfully on the local

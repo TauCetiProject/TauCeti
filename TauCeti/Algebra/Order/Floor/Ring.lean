@@ -20,7 +20,8 @@ A point of `[0, n)` in an ordered ring with a floor operation is the sum of an i
 `Fin n` and a remainder in `[0, 1)`. This describes, for example, time along one of the
 finitely many edges in a polygonal boundary parametrization. In the same way, a `1`-periodic
 function is determined by its values on `[0, 1)`: it takes the same value at `t` and at the
-fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to one, and for
+fractional part of `t`, and a function constant on each interval `[i - 1, i]` with `i : ℤ` is
+constant. The integers in `[a, y)` number `max (y - a) 0` up to one, and for
 `N ≠ 0` only finitely many points `q` of a closed interval have `N q` an integer.
 
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
@@ -37,6 +38,8 @@ only finitely many rounded families have entries in `[-R, R]`.
   a remainder in `[0, 1)`.
 * `Function.Periodic.apply_fract`: a `1`-periodic function takes the same value at `t` and at
   its fractional part `Int.fract t`.
+* `TauCeti.apply_eq_apply_zero_of_forall_mem_Icc_intCast_sub_one`: a function constant on every
+  interval `[i - 1, i]` with `i : ℤ` is constant.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
 * `TauCeti.finite_setOf_mem_Icc_natCast_mul_eq_intCast`: for `N ≠ 0`, the points `q` of
@@ -111,6 +114,29 @@ theorem finite_setOf_mem_Icc_natCast_mul_eq_intCast {R : Type*} [Ring R] [Linear
     exact Int.floor_mono (mul_le_mul_of_nonneg_left ha hN'.le)
   · rw [← Int.ceil_intCast (R := R) m, ← hm]
     exact Int.ceil_mono (mul_le_mul_of_nonneg_left hb hN'.le)
+
+/-- A function constant on every interval `[i - 1, i]` with `i : ℤ` is constant: since the
+intervals overlap at the integers and cover the line, it takes the same value everywhere as at
+`0`. -/
+theorem apply_eq_apply_zero_of_forall_mem_Icc_intCast_sub_one {R β : Type*} [Ring R]
+    [LinearOrder R] [IsStrictOrderedRing R] [FloorRing R] {f : R → β}
+    (h : ∀ (i : ℤ), ∀ x ∈ Set.Icc ((i : R) - 1) i, f x = f ((i : R) - 1)) (x : R) :
+    f x = f 0 := by
+  -- `f` takes the value `f 0` at every integer, by induction in both directions.
+  have hint (i : ℤ) : f i = f 0 := by
+    induction i using Int.induction_on with
+    | zero => simp
+    | succ i ih =>
+      have hi := h (i + 1) ((i + 1 : ℤ) : R) ⟨sub_le_self _ zero_le_one, le_rfl⟩
+      push_cast at hi ih ⊢
+      rw [hi, add_sub_cancel_right, ih]
+    | pred i ih =>
+      have hi := h (-i) ((-i : ℤ) : R) ⟨sub_le_self _ zero_le_one, le_rfl⟩
+      push_cast at hi ih ⊢
+      rw [← hi, ih]
+  -- `x` lies in the interval `[⌈x⌉ - 1, ⌈x⌉]`.
+  rw [h ⌈x⌉ x ⟨sub_le_iff_le_add.2 (Int.ceil_lt_add_one x).le, Int.le_ceil x⟩, ← Int.cast_one,
+    ← Int.cast_sub, hint]
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [FloorRing K] {δ : K}
 
