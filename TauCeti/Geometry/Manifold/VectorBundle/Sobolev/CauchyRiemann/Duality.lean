@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Green
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Annihilator
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.PartitionOfUnity
-import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroOneGram
+import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroOne.Gram
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChartHaar
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.SemiFredholm
