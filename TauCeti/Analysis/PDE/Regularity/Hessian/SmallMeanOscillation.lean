@@ -72,8 +72,10 @@ exponent `1 < γ < min p 2`, so that `u ∈ W^{2,γ}` on every ball.
   `∫ ‖D²u‖^p` by a small multiple of itself plus a multiple of `∫ |f|^p`, once `κ` is large and
   then `δ` small, and the first term is absorbed, since `∫ ‖D²u‖^p` is finite.
 
-The argument is the same as for the divergence-form estimate in
-`TauCeti.Analysis.PDE.Regularity.SmallMeanOscillation`, with the Hessian in place of the gradient.
+Only the last step, through the sharp function method and absorption, is shared with the
+divergence-form estimate in `TauCeti.Analysis.PDE.Regularity.SmallMeanOscillation`. That proof
+measures the mean oscillation in `L²` and needs `p > 2`; the frozen problem, the `L^γ` decay and
+the Hölder step above are specific to this file.
 
 ## Main declarations
 
