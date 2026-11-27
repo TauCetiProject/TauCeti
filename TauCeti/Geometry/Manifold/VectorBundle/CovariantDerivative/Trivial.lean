@@ -113,7 +113,7 @@ theorem apply_eq_mvfderiv_add_smul_one (cov : CovariantDerivative I ℝ (Bundle.
 
 /-- The canonical connection `d` on the trivial line bundle is compatible with its standard fibre
 metric: `d(στ) = (dσ) τ + σ dτ`. -/
-theorem isMetricCompatible_trivial [IsManifold I ∞ M] :
+theorem isMetricCompatible_trivial [IsManifold I 1 M] :
     (trivial (I := I) (M := M) ℝ).IsMetricCompatible := by
   rw [isMetricCompatible_iff]
   rintro x X σ τ - hσ hτ
