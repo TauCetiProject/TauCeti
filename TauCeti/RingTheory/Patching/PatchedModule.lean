@@ -295,6 +295,20 @@ theorem fst_equivOfEq (hα : α = α') (x : PatchedModule h α) : (equivOfEq hα
 theorem snd_equivOfEq (hα : α = α') (x : PatchedModule h α) : (equivOfEq hα x).snd = x.snd :=
   (rfl)
 
+@[simp]
+theorem equivOfEq_symm (hα : α = α') : (equivOfEq (h := h) hα).symm = equivOfEq hα.symm :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+@[simp]
+theorem equivOfEq_rfl : equivOfEq (h := h) (rfl : α = α) = LinearEquiv.refl D _ :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+@[simp]
+theorem equivOfEq_trans {α'' : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂}
+    (hα : α = α') (hα' : α' = α'') :
+    (equivOfEq (h := h) hα).trans (equivOfEq hα') = equivOfEq (hα.trans hα') :=
+  LinearEquiv.ext fun _ ↦ rfl
+
 end EquivOfEq
 
 end PatchedModule
