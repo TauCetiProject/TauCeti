@@ -319,7 +319,7 @@ theorem IsMicrolocallySmoothAt.localOperatorDualCLM {r : ℕ}
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x ξ := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
   obtain ⟨c, he, hxc, hV, hW⟩ :=
-    exists_mem_maximalAtlas_source_subset_baseSet F 𝓘(ℝ, E) (n := ∞) V F' W x
+    exists_mem_maximalAtlas_source_subset_baseSet 𝓘(ℝ, E) ∞ F V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- Microlocal smoothness is read on the components in this chart and these frames.
@@ -484,7 +484,7 @@ theorem IsMicrolocallySmoothAt.of_localOperatorDualCLM {r : ℕ} (hF' : Module.f
     IsMicrolocallySmoothAt T x ξ := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
   obtain ⟨c, he, hxc, hV, hW⟩ :=
-    exists_mem_maximalAtlas_source_subset_baseSet F 𝓘(ℝ, E) (n := ∞) V F' W x
+    exists_mem_maximalAtlas_source_subset_baseSet 𝓘(ℝ, E) ∞ F V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- A vector `u ∈ V_x` with `σ(P)(ξ) u ≠ 0`, whose coefficients in the frame `tV` are `v`.
@@ -589,7 +589,7 @@ theorem IsMicrolocallySobolevAt.localOperatorDualCLM {r : ℕ}
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x ξ := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
   obtain ⟨c, he, hxc, hV, hW⟩ :=
-    exists_mem_maximalAtlas_source_subset_baseSet F 𝓘(ℝ, E) (n := ∞) V F' W x
+    exists_mem_maximalAtlas_source_subset_baseSet 𝓘(ℝ, E) ∞ F V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- Microlocal Sobolev regularity is read on the components in this chart and these frames.
@@ -622,7 +622,7 @@ theorem IsLocallySobolevAt.localOperatorDualCLM {r : ℕ}
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
   obtain ⟨c, he, hxc, hV, hW⟩ :=
-    exists_mem_maximalAtlas_source_subset_baseSet F 𝓘(ℝ, E) (n := ∞) V F' W x
+    exists_mem_maximalAtlas_source_subset_baseSet 𝓘(ℝ, E) ∞ F V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- Local Sobolev regularity is read on the components in this chart and these frames.
