@@ -131,15 +131,16 @@ theorem setAverage_norm_sub_setAverage_rpow_le_add {g v w : E → F} {c : E} {ρ
   have hr : 0 < κ * ρ := mul_pos (zero_lt_one.trans_le hκ) hρ
   have hsub : ball c ρ ⊆ ball c (κ * ρ) := ball_subset_ball (le_mul_of_one_le_left hρ.le hκ)
   have hsρ : μ (ball c ρ) ≠ ⊤ := measure_ball_lt_top.ne
+  have hγ0 : 0 < γ := zero_lt_one.trans_le hγ
   set P := ⨍ y in ball c ρ, v y ∂μ
   -- Comparison with the constant `P = v_ρ`, then `‖g - P‖ ≤ ‖v - P‖ + ‖w‖` on `B_ρ`.
   have hgP := setIntegral_norm_sub_setAverage_rpow_le hsρ (hg.mono_set hsub) hγ
-    (integrableOn_norm_sub_const_rpow hsρ hγ (hg.mono_set hsub).aestronglyMeasurable
+    (integrableOn_norm_sub_const_rpow hsρ hγ0 (hg.mono_set hsub).aestronglyMeasurable
       (hgγ.mono_set hsub) P)
   have hsplit := setIntegral_norm_rpow_le_of_ae_norm_le (φ := fun x ↦ g x - P)
     (ψ := fun x ↦ v x - P) hγ ((ae_restrict_of_ae_restrict_of_subset hsub hgvw).mono
       fun x hx ↦ by rw [hx, add_sub_right_comm]; exact norm_add_le _ _)
-    (integrableOn_norm_sub_const_rpow hsρ hγ (hv.mono_set hsub).aestronglyMeasurable
+    (integrableOn_norm_sub_const_rpow hsρ hγ0 (hv.mono_set hsub).aestronglyMeasurable
       (hvγ.mono_set hsub) P) (hwγ.mono_set hsub)
   have hwρr : ∫ x in ball c ρ, ‖w x‖ ^ γ ∂μ ≤ ∫ x in ball c (κ * ρ), ‖w x‖ ^ γ ∂μ :=
     setIntegral_mono_set hwγ (ae_of_all _ fun _ ↦ by positivity) hsub.eventuallySubset

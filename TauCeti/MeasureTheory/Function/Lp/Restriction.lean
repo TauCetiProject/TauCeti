@@ -46,7 +46,7 @@ finite-measure sets.
   finite-measure set.
 * `TauCeti.setIntegral_norm_le_toReal_eLpNorm_restrict`: on a set of measure at most one, the
   integral of the norm is at most the `Lᵖ` norm.
-* `TauCeti.integrableOn_norm_sub_const_rpow`: on a set of finite measure, `‖g - c‖^γ`, `γ ≥ 1`, is
+* `TauCeti.integrableOn_norm_sub_const_rpow`: on a set of finite measure, `‖g - c‖^γ`, `γ > 0`, is
   integrable along with `‖g‖^γ`.
 * `MeasureTheory.MemLp.coeFn_toLp_indicator_restrict`: recover a function from its zero extension
   on a measurable subset.
@@ -213,18 +213,17 @@ theorem setIntegral_norm_le_toReal_eLpNorm_restrict (hp : 1 ≤ p) {s : Set α} 
       (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hp))
   rwa [Measure.restrict_apply_univ]
 
-/-- On a set of finite measure, `‖g - c‖^γ` is integrable along with `‖g‖^γ`, for `γ ≥ 1` and every
+/-- On a set of finite measure, `‖g - c‖^γ` is integrable along with `‖g‖^γ`, for `γ > 0` and every
 constant `c`. This is the real-exponent analogue of
 `MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_subset`. -/
 theorem integrableOn_norm_sub_const_rpow {g : α → F} {s : Set α} (hs : μ s ≠ ⊤) {γ : ℝ}
-    (hγ : 1 ≤ γ) (hgm : AEStronglyMeasurable g (μ.restrict s))
+    (hγ : 0 < γ) (hgm : AEStronglyMeasurable g (μ.restrict s))
     (hg : IntegrableOn (fun x ↦ ‖g x‖ ^ γ) s μ) (c : F) :
     IntegrableOn (fun x ↦ ‖g x - c‖ ^ γ) s μ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
-  have hγ0 : 0 < γ := zero_lt_one.trans_le hγ
   have hm : MemLp (fun x ↦ g x - c) (ENNReal.ofReal γ) (μ.restrict s) :=
-    ((memLp_ofReal_iff_integrable_norm_rpow hγ0 hgm).2 hg).sub (memLp_const c)
-  exact (memLp_ofReal_iff_integrable_norm_rpow hγ0 hm.aestronglyMeasurable).1 hm
+    ((memLp_ofReal_iff_integrable_norm_rpow hγ hgm).2 hg).sub (memLp_const c)
+  exact (memLp_ofReal_iff_integrable_norm_rpow hγ hm.aestronglyMeasurable).1 hm
 
 end TauCeti
 
