@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.QuotientTower
 import TauCeti.Algebra.MonoidAlgebra.MapDomain
@@ -124,6 +125,55 @@ theorem ext_towerProj [CompactSpace Γ] {x y : completedGroupAlgebra R Γ}
   ext fun U ↦ by
     obtain ⟨n, hn⟩ := T.exists_ker_le_of_isOpen (U := U.toSubgroup) U.isOpen
     rw [proj_eq_mapDomain_towerProj (U := U) hn, proj_eq_mapDomain_towerProj (U := U) hn, h]
+
+section Topology
+
+variable [TopologicalSpace R]
+
+/-- A tower projection is continuous for the inverse-limit topology and the module topology of the
+finite group algebra. -/
+theorem continuous_towerProj (n : ℕ) [Finite (A n)] [TopologicalSpace (R[A n])]
+    [IsModuleTopology R (R[A n])] : Continuous (towerProj R T n) := by
+  let := Fintype.ofFinite (A n)
+  have := IsModuleTopology.toContinuousAdd R (R[A n])
+  let q := QuotientGroup.lift (T.ker n : Subgroup Γ) (T.q n : Γ →* A n) (T.toSubgroup_ker n).le
+  have hq : Function.Surjective q :=
+    QuotientGroup.lift_surjective_of_surjective _ _ (T.surjective_q n) (T.toSubgroup_ker n).le
+  have hi : Function.Injective q :=
+    (QuotientGroup.injective_lift_iff _ _ _).mpr (T.toSubgroup_ker n)
+  have hc (g : A n) : Continuous fun x ↦ (towerProj R T n x).coeff g := by
+    obtain ⟨a, ha⟩ := hq g
+    -- At its defining quotient, a tower projection just reindexes the coefficients.
+    simp only [← ha, towerProj, AlgHom.comp_apply, mapDomainAlgHom_apply, coeff_mapDomain]
+    exact (continuous_coeff_proj R Γ (T.ker n) a).congr fun x ↦
+      (Finsupp.mapDomain_apply_of_injective hi ((proj R Γ (T.ker n)) x).coeff a).symm
+  have hs : Continuous fun x ↦ ∑ g : A n, (towerProj R T n x).coeff g • single g (1 : R) :=
+    continuous_finsetSum _ fun g _ ↦ (hc g).smul continuous_const
+  refine hs.congr fun x ↦ ?_
+  simp only [smul_single', mul_one]
+  rw [← Finsupp.sum_fintype _ _ (fun g ↦ single_zero g), sum_coeff_single]
+
+variable [IsTopologicalRing R] [∀ n, TopologicalSpace (R[A n])]
+  [∀ n, IsModuleTopology R (R[A n])]
+
+/-- To test continuity into the completed group algebra of a compact group, it suffices to
+test the projections onto a cofinal tower of finite quotients. -/
+theorem continuous_iff_towerProj [CompactSpace Γ] {X : Type*} [TopologicalSpace X]
+    {f : X → completedGroupAlgebra R Γ} :
+    Continuous f ↔ ∀ n, Continuous (towerProj R T n ∘ f) := by
+  let _ (n : ℕ) : Finite (A n) := T.finite n
+  refine ⟨fun hf n ↦ (continuous_towerProj (R := R) (T := T) n).comp hf, fun hf ↦ ?_⟩
+  apply completedGroupAlgebra.continuous_iff.mpr
+  intro U g
+  obtain ⟨n, hn⟩ := T.exists_ker_le_of_isOpen (U := U.toSubgroup) U.isOpen
+  let c : MonoidAlgebra R (Γ ⧸ U.toSubgroup) →ₗ[R] R :=
+    (Finsupp.lapply g).comp (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
+  let d := MonoidAlgebra.mapDomainLinearMap R R (T.toQuotient (U := U.toSubgroup) hn)
+  have hc := (IsModuleTopology.continuous_of_linearMap (c.comp d)).comp (hf n)
+  exact hc.congr fun x ↦ congrArg (fun z : R[Γ ⧸ U.toSubgroup] ↦ z.coeff g)
+    (proj_eq_mapDomain_towerProj hn (f x)).symm
+
+end Topology
 
 /-- Two `R`-algebra maps into the completed group algebra of a compact group with the same tower
 projections are equal. -/
