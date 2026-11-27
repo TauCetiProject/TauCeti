@@ -23,9 +23,11 @@ complexifies to a complex-linear map between complex-valued ones
 (`ContMDiffMap.complexifyLinearMap`), and conjugation is a real algebra involution. Conjugating
 the input and output of a complex-linear map, `f ↦ conj (P (conj f))`, gives a complex-linear map
 (`ContMDiffMap.intrinsicConj`); it fixes exactly the complexifications of real-linear maps
-(`ContMDiffMap.intrinsicConj_eq_self_iff`), so every complex-linear map is `A + i B` with `A`
+(`ContMDiffMap.intrinsicConj_eq_self_iff`), so every complex-linear map `P` is `A + i B` with `A`
 and `B` complexifications
-(`ContMDiffMap.exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq`).
+(`ContMDiffMap.exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq`), namely of
+`u ↦ Re (P u)` and `u ↦ Im (P u)` on real-valued functions
+(`ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp`).
 Differentiation commutes with real and imaginary parts at every nonzero differentiability
 order. Precomposition with a smooth map is a complex algebra homomorphism
 (`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data.
@@ -549,6 +551,16 @@ theorem exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq
     field_simp
   rw [hA, hB, smul_smul, hI]
   module
+
+/-- **Real and imaginary parts of an operator, explicitly.** Every complex-linear map `P` between
+complex-valued smooth functions is `A + i B` for the complexifications of the real-linear maps
+`A u = Re (P u)` and `B u = Im (P u)` on real-valued functions `u`. -/
+theorem complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp
+    (P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    complexifyLinearMap (re ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap) +
+      Complex.I • complexifyLinearMap (im ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap) = P :=
+  linearMap_ext_ofReal fun u ↦ by
+    simpa [complexifyLinearMap_ofReal] using ofReal_re_add_I_smul_im (P (ofReal u))
 
 variable {U V : TopologicalSpace.Opens M}
 

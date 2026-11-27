@@ -20,7 +20,8 @@ for `p = ∞`.
 
 The file also records exhaustion of an extended nonnegative function by its positive level sets,
 and the absorption step of elliptic estimates: a finite quantity bounded by `b` plus half of itself
-is at most `2 b`.
+is at most `2 b`. Finally, an upper bound `x ≤ y` may be checked against the finite values above
+`y`, dually to Mathlib's `ENNReal.le_of_forall_nnreal_lt`.
 
 ## Main declarations
 
@@ -56,6 +57,8 @@ is at most `2 b`.
   nonzero.
 * `ENNReal.inv_mul_inv_mul_cancel`: the Hölder exponent `(c * (p * c)⁻¹)⁻¹` of `c` factors in
   `L^(p * c)` is `p`, for `c` finite and nonzero.
+* `ENNReal.le_of_forall_nnreal_gt`: `x ≤ y` follows from `x ≤ r` for every finite `r > y`, the
+  dual of Mathlib's `ENNReal.le_of_forall_nnreal_lt`.
 -/
 
 public section
@@ -293,5 +296,13 @@ theorem inv_mul_inv_mul_cancel {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ �
     (c * (p * c)⁻¹)⁻¹ = p := by
   rw [ENNReal.mul_inv (.inr hc) (.inr hc₀), mul_left_comm, ENNReal.mul_inv_cancel hc₀ hc, mul_one,
     inv_inv]
+
+/-- An upper bound in `ℝ≥0∞` may be checked against the finite values above it: `x ≤ y` follows
+from `x ≤ r` for every `r : ℝ≥0` with `y < r`. This is the dual of
+`ENNReal.le_of_forall_nnreal_lt`. -/
+theorem le_of_forall_nnreal_gt {x y : ℝ≥0∞} (h : ∀ r : ℝ≥0, y < r → x ≤ r) : x ≤ y :=
+  le_of_forall_gt_imp_ge_of_dense fun b hb ↦ by
+    obtain ⟨r, hyr, hrb⟩ := lt_iff_exists_nnreal_btwn.1 hb
+    exact (h r hyr).trans hrb.le
 
 end ENNReal
