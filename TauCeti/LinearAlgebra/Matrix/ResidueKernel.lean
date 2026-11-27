@@ -170,9 +170,8 @@ theorem pow_finrank_residueKer_dvd_det {ϖ : R} (hϖ : maximalIdeal R = Ideal.sp
     have hmem : Pi.single j 1 ∈ (A * (U : Matrix ι ι R)).residueKer := by
       rw [hU, ← Pi.basisFun_apply]
       exact Submodule.subset_span ⟨⟨j, hj⟩, rfl⟩
-    have h := congrFun (mem_residueKer.mp hmem) i
-    rw [mulVec_single_one, col_apply, Pi.zero_apply, map_apply, residue_eq_zero_iff, hϖ] at h
-    exact Ideal.mem_span_singleton.mp h
+    simpa [-Matrix.map_mul, residue_eq_zero_iff, hϖ, Ideal.mem_span_singleton] using
+      congrFun (mem_residueKer.mp hmem) i
   have hdvd := prod_dvd_det_of_dvd_row (A * (U : Matrix ι ι R))ᵀ
     (fun j ↦ if j ∈ s then ϖ else 1) fun j i ↦ by
       split_ifs with hj
@@ -260,8 +259,9 @@ private theorem exists_mul_eq_smul (hϖ : Irreducible ϖ) {A B A' : Matrix ι ι
     ∃ C : Matrix ι ι R, A' * B = ϖ • C := by
   refine (map_eq_zero_iff_exists_eq_smul (ker_residue.trans hϖ.maximalIdeal_eq)).mp
     (ext fun i j ↦ ?_)
-  have h0 := congrFun (mem_residueKer.mp (hker (mulVec_mem_residueKer hϖ h (Pi.single j 1)))) i
-  rwa [mulVec_mulVec, ← Matrix.map_mul, mulVec_single_one, col_apply] at h0
+  have h0 := mem_residueKer.mp (hker (mulVec_mem_residueKer hϖ h (Pi.single j 1)))
+  rw [mulVec_mulVec, ← Matrix.map_mul] at h0
+  simpa [-Matrix.map_mul] using congrFun h0 i
 
 /-- **The cosets `GL_n(R) A` and the kernel of the reduction.** Let `A * B = ϖ • 1` and
 `A' * B' = ϖ • 1` for a uniformizer `ϖ`. Then `A' = U A` for some `U ∈ GL_n(R)` exactly when the

@@ -72,8 +72,9 @@ theorem mul_inv_mem_integralGL_iff_residueKer_eq {ι : Type*} [Fintype ι] [Deci
   rw [eq_comm, ← exists_eq_mul_iff_residueKer_eq hϖ h' h]
   rw [MonoidHom.mem_range]
   refine exists_congr fun U ↦ ?_
-  rw [eq_mul_inv_iff_mul_eq, eq_comm, ← Units.val_inj, Units.val_mul,
-    GeneralLinearGroup.val_map_apply, ← hA, ← hA', ← Matrix.map_mul]
+  rw [eq_mul_inv_iff_mul_eq, eq_comm]
+  simp only [Units.ext_iff, Units.val_mul, GeneralLinearGroup.val_map_apply, ← hA, ← hA',
+    ← Matrix.map_mul]
   exact (Matrix.map_injective hinj).eq_iff
 
 variable {π : Kˣ} {n : ℕ}
@@ -114,8 +115,7 @@ omit [IsDomain R] [IsDiscreteValuationRing R] in
 @[simp]
 theorem det_minusculeDiagLift (ϖ : R) {n j : ℕ} (hj : j ≤ n) :
     (minusculeDiagLift ϖ n j).det = ϖ ^ j := by
-  rw [minusculeDiagLift_def, det_diagonal, Finset.prod_ite, Finset.prod_const,
-    Finset.prod_const_one, mul_one, Fin.card_filter_val_lt, min_eq_right hj]
+  simp [minusculeDiagLift_def, Finset.prod_ite, Fin.card_filter_val_lt, hj]
 
 omit [IsDomain R] [IsDiscreteValuationRing R] in
 /-- Mapping the integral minuscule diagonal to `K` gives `minusculeDiag π n j`. -/
@@ -156,14 +156,12 @@ theorem mem_doubleCoset_minusculeDiag_iff (hϖ : Irreducible ϖ) (hπ : algebraM
   have hlift (u v : GL (Fin n) R) :
       ((u : Matrix (Fin n) (Fin n) R) * D * v) * ((v⁻¹ : GL (Fin n) R) * D' * (u⁻¹ : GL _ R)) =
         ϖ • 1 := by
-    simp only [Matrix.mul_assoc, Units.mul_inv_cancel_left]
-    rw [← Matrix.mul_assoc D, hDD', smul_mul, Matrix.one_mul, Matrix.mul_smul, Units.mul_inv]
+    simp [Matrix.mul_assoc, ← Matrix.mul_assoc D, hDD']
   have hmap (u v : GL (Fin n) R) :
       ((u : Matrix (Fin n) (Fin n) R) * D * v).map (algebraMap R K) =
       ((GeneralLinearGroup.map (algebraMap R K) u * minusculeDiag π n j *
         GeneralLinearGroup.map (algebraMap R K) v : GL (Fin n) K) : Matrix (Fin n) (Fin n) K) := by
-    rw [Matrix.map_mul, Matrix.map_mul, map_minusculeDiagLift hπ, Units.val_mul, Units.val_mul,
-      GeneralLinearGroup.val_map_apply, GeneralLinearGroup.val_map_apply]
+    simp [D, Matrix.map_mul, map_minusculeDiagLift hπ]
   constructor
   · rintro hg
     obtain ⟨_, ⟨u, rfl⟩, _, ⟨v, rfl⟩, rfl⟩ := mem_doubleCoset.mp hg
@@ -176,7 +174,7 @@ theorem mem_doubleCoset_minusculeDiag_iff (hϖ : Irreducible ϖ) (hπ : algebraM
     obtain ⟨u, hu⟩ := exists_residueKer_diagonal_mul_eq hϖ
       (finrank_residueKer_eq_of_associated_det hϖ h hdet)
     have hDu : D * (u : Matrix (Fin n) (Fin n) R) * ((u⁻¹ : GL (Fin n) R) * D') = ϖ • 1 := by
-      simpa only [Units.val_one, mul_one, inv_one, Matrix.one_mul] using hlift 1 u
+      simp [Matrix.mul_assoc, hDD']
     obtain ⟨v, hv⟩ := (exists_eq_mul_iff_residueKer_eq hϖ hDu h).mpr hu
     refine mem_doubleCoset.mpr ⟨_, ⟨v, rfl⟩, _, ⟨u, rfl⟩, Units.ext ?_⟩
     rw [← hA, hv, ← Matrix.mul_assoc, hmap v u]
