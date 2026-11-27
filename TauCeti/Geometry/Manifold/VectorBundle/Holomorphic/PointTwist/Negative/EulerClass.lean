@@ -150,8 +150,7 @@ Its real derivative at `φ x` is multiplication by `g x`. -/
 private theorem hasFDerivAt_negPointTwist_pointTwistDiv_chartAt (x : X)
     {τ : ∀ z, (negPointTwistCore ℂ L x).Fiber z}
     (hτ : Continuous fun z ↦ TotalSpace.mk' ℂ z (τ z)) :
-    HasFDerivAt (fun w ↦ (trivializationAt ℂ L x (TotalSpace.mk' ℂ ((chartAt ℂ x).symm w)
-          (pointTwistDiv ℂ L x ((chartAt ℂ x).symm w) (τ ((chartAt ℂ x).symm w))))).2)
+    HasFDerivAt (preferredChartReading ℂ ℂ (fun z ↦ pointTwistDiv ℂ L x z (τ z)) x)
       ((ContinuousLinearMap.id ℝ ℂ).smulRight
         ((trivializationAt ℂ (negPointTwistCore ℂ L x).Fiber x
           (TotalSpace.mk' ℂ x (τ x))).2))
