@@ -65,38 +65,69 @@ theorem ι_schemeStableLocusCoproductToSpec (r : Fin (d + 1)) :
       (schemeStableLocus (r : ℕ) t).subschemeι ≫ toSpec R M r :=
   Sigma.ι_comp_desc _ _
 
-variable (N : Submodule A (A ⊗[R] M)) [Module.Finite A ((A ⊗[R] M) ⧸ N)]
-  [Module.Projective A ((A ⊗[R] M) ⧸ N)]
-  (hd : ∀ p : PrimeSpectrum A, Module.rankAtStalk ((A ⊗[R] M) ⧸ N) p ≤ d)
+section RankCover
+
+variable {P : Type u} [AddCommGroup P] [Module A P]
+  (N : Submodule A P) [Module.Finite A (P ⧸ N)] [Module.Projective A (P ⧸ N)]
+  (hd : ∀ p : PrimeSpectrum A, Module.rankAtStalk (P ⧸ N) p ≤ d)
 
 /-- The canonical morphism from the disjoint union of quotient-rank factors to `Spec A`.
 It is an isomorphism when `d` bounds the quotient stalk ranks. -/
 noncomputable def stableQuotientRankCover :
-    (∐ fun r : ULift.{u} (Fin (d + 1)) ↦ Spec (.of (quotientRankRing N r.down))) ⟶ Spec (.of A) :=
-  sigmaSpec (fun r : ULift.{u} (Fin (d + 1)) ↦ .of (quotientRankRing N r.down)) ≫
-    Spec.map (CommRingCat.ofHom (RingHom.pi fun r : ULift.{u} (Fin (d + 1)) ↦
-      algebraMap A (quotientRankRing N r.down)))
+    (∐ fun r : Fin (d + 1) ↦ Spec (.of (quotientRankRing N r))) ⟶ Spec (.of A) :=
+  Sigma.desc fun r : Fin (d + 1) ↦
+    Spec.map (CommRingCat.ofHom (algebraMap A (quotientRankRing N r)))
 
 /-- Restriction of the rank-factor cover to a summand is the canonical coefficient map. -/
 @[reassoc (attr := simp)]
-theorem ι_stableQuotientRankCover (r : ULift.{u} (Fin (d + 1))) :
+theorem ι_stableQuotientRankCover (r : Fin (d + 1)) :
     Sigma.ι _ r ≫ stableQuotientRankCover d N =
-      Spec.map (CommRingCat.ofHom (algebraMap A (quotientRankRing N r.down))) := by
-  simp only [stableQuotientRankCover, ι_sigmaSpec_assoc, ← Spec.map_comp]
-  -- Evaluating the product homomorphism at `r` reduces definitionally to its `r` component.
-  rfl
+      Spec.map (CommRingCat.ofHom (algebraMap A (quotientRankRing N r))) :=
+  Sigma.ι_comp_desc _ _
 
 include hd in
 /-- The canonical rank-factor cover is an isomorphism onto `Spec A`. -/
 theorem isIso_stableQuotientRankCover : IsIso (stableQuotientRankCover d N) := by
-  have : IsIso (Spec.map (CommRingCat.ofHom (RingHom.pi fun r : ULift.{u} (Fin (d + 1)) ↦
-      algebraMap A (quotientRankRing N r.down)))) :=
-    isIso_SpecMap_iff.mpr (by
-      have h := (Equiv.piCongrLeft (fun r : Fin (d + 1) ↦ quotientRankRing N r)
-        Equiv.ulift).symm.bijective.comp (bijective_pi_quotientRankRing N hd)
-      exact h)
-  unfold stableQuotientRankCover
-  infer_instance
+  let F := fun r : Fin (d + 1) ↦ Spec (.of (quotientRankRing N r))
+  let f := RingHom.pi fun r : ULift.{u} (Fin (d + 1)) ↦
+    algebraMap A (quotientRankRing N (Equiv.ulift.{u} r : Fin (d + 1)))
+  have hf : Function.Bijective f := by
+    have h := (Equiv.piCongrLeft (fun r : Fin (d + 1) ↦ quotientRankRing N r)
+      Equiv.ulift.{u}).symm.bijective.comp (bijective_pi_quotientRankRing N hd)
+    have heq : ⇑f =
+        (Equiv.piCongrLeft (fun r : Fin (d + 1) ↦ quotientRankRing N r)
+          Equiv.ulift.{u}).symm ∘
+            (RingHom.pi fun r : Fin (d + 1) ↦ algebraMap A (quotientRankRing N r)) := by
+      funext a r
+      dsimp only [f]
+      simp only [Function.comp_apply, Equiv.piCongrLeft_symm_apply,
+        RingHom.pi_apply]
+    rwa [heq]
+  have : IsIso (Spec.map (CommRingCat.ofHom f)) := isIso_SpecMap_iff.mpr hf
+  have heq : (Sigma.reindex Equiv.ulift.{u} F).hom ≫ stableQuotientRankCover d N =
+      sigmaSpec.{u, u} (fun r : ULift.{u} (Fin (d + 1)) ↦
+        .of (quotientRankRing N (Equiv.ulift.{u} r : Fin (d + 1)))) ≫
+        Spec.map (CommRingCat.ofHom f) := by
+    apply Sigma.hom_ext
+    intro r
+    dsimp only [F]
+    rw [Sigma.ι_reindex_hom_assoc, ι_stableQuotientRankCover]
+    dsimp only [Function.comp_def]
+    rw [ι_sigmaSpec_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    apply congrArg (fun g ↦ Spec.map (CommRingCat.ofHom g))
+    apply RingHom.ext
+    intro a
+    simp only [f, RingHom.comp_apply, Pi.evalRingHom_apply, RingHom.pi_apply]
+  have : IsIso ((Sigma.reindex Equiv.ulift.{u} F).hom ≫ stableQuotientRankCover d N) := by
+    rw [heq]
+    infer_instance
+  exact IsIso.of_isIso_comp_left (Sigma.reindex Equiv.ulift.{u} F).hom _
+
+end RankCover
+
+variable (N : Submodule A (A ⊗[R] M)) [Module.Finite A ((A ⊗[R] M) ⧸ N)]
+  [Module.Projective A ((A ⊗[R] M) ⧸ N)]
+  (hd : ∀ p : PrimeSpectrum A, Module.rankAtStalk ((A ⊗[R] M) ⧸ N) p ≤ d)
 
 /-- The classifying morphism of a stable kernel with finite projective, possibly varying-rank
 quotient, obtained from the classifying morphisms on its canonical rank factors. -/
@@ -104,10 +135,10 @@ noncomputable def stableQuotientToScheme
     (hN : N ∈ Module.End.invtSubmodule (t.baseChange A)) :
     Spec (.of A) ⟶ schemeStableLocusCoproduct d t :=
   have := isIso_stableQuotientRankCover d N hd
-  inv (stableQuotientRankCover d N) ≫ Sigma.desc fun r : ULift.{u} (Fin (d + 1)) ↦
-    (schemeStableLocusHomEquiv (r.down : ℕ) t (quotientRankRing N r.down)
-      ⟨quotientRankPoint N r.down, quotientRankPoint_mem_invtSubmodule N hN r.down⟩).val ≫
-        Sigma.ι (fun r : Fin (d + 1) ↦ (schemeStableLocus (r : ℕ) t).subscheme) r.down
+  inv (stableQuotientRankCover d N) ≫ Sigma.desc fun r : Fin (d + 1) ↦
+    (schemeStableLocusHomEquiv (r : ℕ) t (quotientRankRing N r)
+      ⟨quotientRankPoint N r, quotientRankPoint_mem_invtSubmodule N hN r⟩).val ≫
+        Sigma.ι (fun r : Fin (d + 1) ↦ (schemeStableLocus (r : ℕ) t).subscheme) r
 
 /-- On the rank-`r` factor the classifying morphism is the native fixed-rank classifying map
 followed by the inclusion of the rank-`r` summand. -/
@@ -120,7 +151,7 @@ theorem specMap_comp_stableQuotientToScheme
         ⟨quotientRankPoint N r, quotientRankPoint_mem_invtSubmodule N hN r⟩).val ≫
           Sigma.ι (fun r : Fin (d + 1) ↦ (schemeStableLocus (r : ℕ) t).subscheme) r := by
   have := isIso_stableQuotientRankCover d N hd
-  rw [← ι_stableQuotientRankCover d N (ULift.up r)]
+  rw [← ι_stableQuotientRankCover d N r]
   simp only [stableQuotientToScheme, Category.assoc, IsIso.hom_inv_id_assoc,
     Sigma.ι_comp_desc]
 
@@ -137,7 +168,7 @@ theorem stableQuotientToScheme_toSpec
   rw [ι_stableQuotientRankCover_assoc, ι_stableQuotientRankCover_assoc,
     specMap_comp_stableQuotientToScheme_assoc]
   simp only [schemeStableLocusCoproductToSpec, Sigma.ι_comp_desc]
-  rw [(schemeStableLocusHomEquiv (r.down : ℕ) t (quotientRankRing N r.down) _).property,
+  rw [(schemeStableLocusHomEquiv (r : ℕ) t (quotientRankRing N r) _).property,
     ← Spec.map_comp]
   rw [← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
 
@@ -156,7 +187,6 @@ theorem eq_stableQuotientToScheme_iff
   have := isIso_stableQuotientRankCover d N hd
   rw [← cancel_epi (stableQuotientRankCover d N), Sigma.hom_ext_iff]
   simp only [ι_stableQuotientRankCover_assoc, specMap_comp_stableQuotientToScheme]
-  exact Equiv.ulift.forall_congr_left
 
 end ClassifyingMap
 

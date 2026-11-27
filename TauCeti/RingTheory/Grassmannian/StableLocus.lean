@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Invariant
+public import TauCeti.LinearAlgebra.TensorProduct.Invariant
 public import TauCeti.RingTheory.FittingIdeal.Content
 public import TauCeti.RingTheory.Grassmannian.Basic
 
 import TauCeti.LinearAlgebra.TensorProduct.Tower
+
+-- Proof-only: identify the native quotient map with the tensor-tower equivalence.
+import all Mathlib.RingTheory.Grassmannian
 
 /-!
 # The locus of submodules stable under an endomorphism
@@ -74,16 +77,22 @@ namespace Module.Grassmannian
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M] {k : ℕ}
   {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
 
-/-- Scalar extension preserves invariant kernels, without requiring their quotients to have
-constant rank or the coefficient map to be flat. -/
+/-- Scalar extension preserves invariant kernels in the native Grassmannian tensor tower,
+without requiring constant quotient rank or flatness of the coefficient map. -/
 theorem invtSubmodule_ker_baseChangeMkQ [Algebra A B] [IsScalarTower R A B]
     {N : Submodule A (A ⊗[R] M)} {t : Module.End R M}
     (hN : N ∈ Module.End.invtSubmodule (t.baseChange A)) :
     (baseChangeMkQ B N).ker ∈ Module.End.invtSubmodule (t.baseChange B) := by
-  rw [ker_baseChangeMkQ, Module.End.mem_invtSubmodule, Submodule.span_le]
-  rintro _ ⟨x, hx, rfl⟩
-  rw [SetLike.mem_coe, Submodule.mem_comap, ← LinearMap.rTensor_baseChange]
-  exact Submodule.subset_span ⟨t.baseChange A x, hN hx, rfl⟩
+  rw [baseChangeMkQ, LinearMap.ker_comp,
+    Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
+  have he : (AlgebraTensorModule.cancelBaseChange R A B B M).conj
+      ((t.baseChange A).baseChange B) = t.baseChange B := by
+    apply LinearMap.ext
+    intro x
+    rw [LinearEquiv.conj_apply, LinearMap.baseChange_baseChange]
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+  rw [← he, LinearEquiv.map_mem_invtSubmodule_conj_iff]
+  exact N.invtSubmodule_ker_baseChange hN
 
 /-- The **stable locus** of a point `N` of `G(k, A ⊗[R] M; A)` for an endomorphism `t` of `M`: the
 content of the image of `N` under the base change `t_A` of `t` followed by the projection to the
