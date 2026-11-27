@@ -116,8 +116,10 @@ private lemma measure_biInter_range_eq_prod [IsProbabilityMeasure μ]
       exact ⟨fun h k ↦ h k k.isLt, fun h i hi ↦ h ⟨i, hi⟩⟩
     have hmeas : MeasurableSet {w : Fin N → ι | ∀ k : Fin N, w k ∈ t k} :=
       (Set.to_countable _).measurableSet
-    rw [Finset.range_add_one, Finset.set_biInter_insert, Set.inter_comm, hset,
-      (hstep N).measure_inter_preimage_eq_mul _ _ hmeas (ht N), ← hset, ih,
+    -- Independence at time `N`, restated for the intersection over `{0, ..., N - 1}`.
+    have hN := (hstep N).measure_inter_preimage_eq_mul _ _ hmeas (ht N)
+    rw [← hset] at hN
+    rw [Finset.range_add_one, Finset.set_biInter_insert, Set.inter_comm, hN, ih,
       Finset.prod_insert Finset.notMem_range_self, mul_comm]
 
 /-- **Maximal itinerary entropies force independence.** For a measure-preserving map of a
@@ -146,8 +148,7 @@ theorem iIndepFun_of_forall_countablePartitionEntropy_iteratedPartitionLabel_eq 
       funext x <;> simp
   refine iIndepFun_iff_measure_inter_preimage_eq_mul.mpr fun S sets hsets ↦ ?_
   classical
-  obtain ⟨N, hN⟩ : ∃ N, S ⊆ Finset.range N :=
-    ⟨S.sup id + 1, fun i hi ↦ Finset.mem_range.mpr (Nat.lt_succ_of_le (S.le_sup (f := id) hi))⟩
+  obtain ⟨N, hN⟩ := S.exists_nat_subset_range
   set t : ℕ → Set ι := fun i ↦ if i ∈ S then sets i else Set.univ
   have ht : ∀ i, MeasurableSet (t i) := fun i ↦ by
     by_cases hi : i ∈ S
