@@ -24,9 +24,11 @@ import TauCeti.Algebra.Star.StarAlgHom
    `StarRing` on `ULift.{0} (A i)` (`RingEquiv.coordStarRing`), and lifts `E ≃ₐ[R] ∀ i, A i` to
    `E ≃⋆ₐ[R] ∀ i, ULift.{0} (A i)` (`AlgEquiv.starPiULift`).
 2. Single-factor inclusions into dependent products of non-unital `⋆`-algebras and `⋆`-algebra
-   equivalences for products indexed by a `Unique` type:
+   equivalences for products:
    * `NonUnitalStarAlgHom.single`: the single-coordinate inclusion `A i →⋆ₙₐ[R] ∀ j, A j` sending
      `x` to `Pi.single i x`.
+   * `StarAlgEquiv.piCongrRight`, `StarAlgEquiv.piCongrLeft'`: congruence and index-reindexing
+     `⋆`-algebra equivalences on dependent products.
    * `StarAlgEquiv.funUnique`: the `⋆`-algebra equivalence `(ι → A) ≃⋆ₐ[R] A` for `[Unique ι]`,
      built from `AlgEquiv.funUnique`.
    * `NonUnitalStarAlgHom.singleFunUnique`: the single-coordinate inclusion
@@ -60,11 +62,11 @@ each `i`-th coordinate slice `e.symm (Pi.single i a)` back into the same coordin
 theorem apply_star_single (i : ι)
     (hδ : star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1)) (a : A i) :
     e (star (e.symm (Pi.single i a))) = Pi.single i (e (star (e.symm (Pi.single i a))) i) := by
+  have hmul : e.symm (Pi.single i 1) * e.symm (Pi.single i a) = e.symm (Pi.single i a) := by
+    simpa using e.symm_single_one_mul i (e.symm (Pi.single i a))
   have hst : star (e.symm (Pi.single i a)) =
       star (e.symm (Pi.single i a)) * e.symm (Pi.single i 1) := by
-    conv_lhs => rw [← show e.symm (Pi.single i 1) * e.symm (Pi.single i a) =
-      e.symm (Pi.single i a) by simpa using e.symm_single_one_mul i (e.symm (Pi.single i a)),
-      star_mul, hδ]
+    conv_lhs => rw [← hmul, star_mul, hδ]
   funext j; rcases eq_or_ne j i with rfl | hji
   · simp
   · rw [hst, map_mul, Pi.mul_apply, e.apply_symm_apply, Pi.single_eq_of_ne hji, mul_zero,
@@ -194,6 +196,49 @@ end Single
 end NonUnitalStarAlgHom
 
 namespace StarAlgEquiv
+
+section PiCongr
+
+variable {R ι : Type*} {A₁ A₂ : ι → Type*} [CommSemiring R]
+  [∀ i, Semiring (A₁ i)] [∀ i, Algebra R (A₁ i)] [∀ i, Star (A₁ i)]
+  [∀ i, Semiring (A₂ i)] [∀ i, Algebra R (A₂ i)] [∀ i, Star (A₂ i)]
+
+/-- A family of `⋆`-algebra equivalences `∀ i, A₁ i ≃⋆ₐ[R] A₂ i` induces a `⋆`-algebra
+equivalence `(∀ i, A₁ i) ≃⋆ₐ[R] ∀ i, A₂ i`. -/
+def piCongrRight (e : ∀ i, A₁ i ≃⋆ₐ[R] A₂ i) : (∀ i, A₁ i) ≃⋆ₐ[R] ∀ i, A₂ i :=
+  StarAlgEquiv.ofAlgEquiv (AlgEquiv.piCongrRight fun i ↦ (e i).toAlgEquiv) fun x ↦
+    funext fun i ↦ map_star (e i) (x i)
+
+/-- Applying `StarAlgEquiv.piCongrRight` evaluates each coordinate equivalence pointwise. -/
+@[simp low]
+theorem piCongrRight_apply (e : ∀ i, A₁ i ≃⋆ₐ[R] A₂ i) (x : ∀ i, A₁ i) (i : ι) :
+    piCongrRight e x i = e i (x i) :=
+  (rfl)
+
+/-- Applying `(StarAlgEquiv.piCongrRight e).symm` evaluates each inverse equivalence pointwise. -/
+@[simp low]
+theorem piCongrRight_symm_apply (e : ∀ i, A₁ i ≃⋆ₐ[R] A₂ i) (x : ∀ i, A₂ i) (i : ι) :
+    (piCongrRight e).symm x i = (e i).symm (x i) :=
+  (rfl)
+
+variable (R A₁) in
+/-- Reindexing a dependent product of `⋆`-algebras along an equivalence of the index type. -/
+def piCongrLeft' {ι' : Type*} (e : ι ≃ ι') : (∀ i, A₁ i) ≃⋆ₐ[R] ∀ i, A₁ (e.symm i) :=
+  StarAlgEquiv.ofAlgEquiv (AlgEquiv.piCongrLeft' R A₁ e) fun _ ↦ rfl
+
+/-- Applying `StarAlgEquiv.piCongrLeft'` reindexes the index via `e.symm`. -/
+@[simp low]
+theorem piCongrLeft'_apply {ι' : Type*} (e : ι ≃ ι') (x : ∀ i, A₁ i) (i : ι') :
+    piCongrLeft' R A₁ e x i = x (e.symm i) :=
+  (rfl)
+
+/-- Applying `(StarAlgEquiv.piCongrLeft' R A₁ e).symm` reindexes the index via `e`. -/
+@[simp low]
+theorem piCongrLeft'_symm_apply {ι' : Type*} (e : ι ≃ ι') (x : ∀ i, A₁ (e.symm i)) :
+    (piCongrLeft' R A₁ e).symm x = (Equiv.piCongrLeft' A₁ e).symm x :=
+  (rfl)
+
+end PiCongr
 
 section Unique
 

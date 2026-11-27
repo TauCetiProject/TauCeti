@@ -84,8 +84,10 @@ theorem IsRosatiPositive.star_left_conjugate [Semiring E] [Module ℝ E] [StarRi
     (hs : IsRosatiPositive t s) : IsRosatiPositive t (star (u : E) * s * u) := by
   refine ⟨by rw [IsSelfAdjoint, star_mul, star_mul, star_star, hs.1.star_eq, mul_assoc],
     fun x hx ↦ ?_⟩
-  rw [show star (u : E) * s * u * x * star x = star (u : E) * (s * ((u : E) * x) * star x)
-    by simp only [mul_assoc], hcyc]
+  have hassoc :
+      star (u : E) * s * u * x * star x = star (u : E) * (s * ((u : E) * x) * star x) := by
+    simp only [mul_assoc]
+  rw [hassoc, hcyc]
   simpa only [mul_assoc, star_mul] using
     hs.2 ((u : E) * x) fun h ↦ hx (by simpa using congrArg ((↑u⁻¹ : E) * ·) h)
 

@@ -450,7 +450,8 @@ theorem nonempty_algEquiv_real_or_complex_or_quaternion (D : Type*) [Ring D] [Is
   · have : Algebra.IsCentral ℝ D := ⟨fun x hx ↦ by
       have hz : (⟨x, hx⟩ : Z) = algebraMap ℝ Z (eZ ⟨x, hx⟩) :=
         eZ.injective (by rw [AlgEquiv.commutes, Algebra.algebraMap_self_apply])
-      rw [show x = algebraMap ℝ D (eZ ⟨x, hx⟩) from congrArg Subtype.val hz]
+      have hx_eq : x = algebraMap ℝ D (eZ ⟨x, hx⟩) := congrArg Subtype.val hz
+      rw [hx_eq]
       exact Subalgebra.algebraMap_mem _ _⟩
     exact (nonempty_algEquiv_real_or_quaternion D).imp id Or.inr
   · right; left

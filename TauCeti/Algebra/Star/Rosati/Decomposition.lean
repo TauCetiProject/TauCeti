@@ -15,6 +15,7 @@ import TauCeti.Algebra.CentralSimple.Real
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Algebra.Star.Pi
 import TauCeti.Algebra.Star.Positive
+import TauCeti.Algebra.Star.Prod
 import TauCeti.Algebra.Star.Rosati.Matrix.Factor
 import TauCeti.RingTheory.CentralIdempotent
 import TauCeti.RingTheory.Semisimple.Star.Basic
@@ -106,38 +107,18 @@ private def piSplitTagStarAlgEquiv {n : ℕ} {A : Fin n → Type*} [∀ i, Ring 
   map_smul' _ _ := rfl
   map_star' _ := rfl
 
-private def starAlgEquivProdCongr {R A₁ B₁ A₂ B₂ : Type*} [CommSemiring R]
-    [Semiring A₁] [Algebra R A₁] [StarRing A₁] [Semiring B₁] [Algebra R B₁] [StarRing B₁]
-    [Semiring A₂] [Algebra R A₂] [StarRing A₂] [Semiring B₂] [Algebra R B₂] [StarRing B₂]
-    (e₁ : A₁ ≃⋆ₐ[R] B₁) (e₂ : A₂ ≃⋆ₐ[R] B₂) : (A₁ × A₂) ≃⋆ₐ[R] (B₁ × B₂) :=
-  StarAlgEquiv.ofAlgEquiv (e₁.toAlgEquiv.prodCongr e₂.toAlgEquiv) fun x ↦
-    Prod.ext (map_star e₁ x.1) (map_star e₂ x.2)
-
-private noncomputable def reindexBlockEquiv {ι : Type*} {nK : ℕ} {A' B : ι → Type*}
-    [∀ i, Ring (A' i)] [∀ i, Algebra ℝ (A' i)] [∀ i, StarRing (A' i)]
-    [∀ i, Ring (B i)] [∀ i, Algebra ℝ (B i)] [∀ i, StarRing (B i)]
-    (φ : ∀ i, A' i ≃⋆ₐ[ℝ] B i) (eK : ι ≃ Fin nK) :
-    (∀ i, A' i) ≃⋆ₐ[ℝ] (∀ j : Fin nK, B (eK.symm j)) :=
-  StarAlgEquiv.ofAlgEquiv
-    ((AlgEquiv.piCongrRight fun i ↦ (φ i).toAlgEquiv).trans (AlgEquiv.piCongrLeft' ℝ B eK))
-    fun x ↦ funext fun j ↦ by simp [map_star]
-
-private theorem reindexBlockEquiv_apply {ι : Type*} {nK : ℕ} {A' B : ι → Type*}
-    [∀ i, Ring (A' i)] [∀ i, Algebra ℝ (A' i)] [∀ i, StarRing (A' i)]
-    [∀ i, Ring (B i)] [∀ i, Algebra ℝ (B i)] [∀ i, StarRing (B i)]
-    (φ : ∀ i, A' i ≃⋆ₐ[ℝ] B i) (eK : ι ≃ Fin nK) (y : ∀ i, A' i) (j : Fin nK) :
-    reindexBlockEquiv φ eK y j = φ (eK.symm j) (y (eK.symm j)) := by
-  simp [reindexBlockEquiv]
-
-private theorem reindexBlockEquiv_pos_iff {ι : Type*} {nK : ℕ} {A' B : ι → Type*}
+private theorem block_isRosatiPositive_iff {ι : Type*} {nK : ℕ} {A' B : ι → Type*}
     [∀ i, Ring (A' i)] [∀ i, Algebra ℝ (A' i)] [∀ i, StarRing (A' i)]
     [∀ i, Ring (B i)] [∀ i, Algebra ℝ (B i)] [∀ i, StarRing (B i)]
     {t : ∀ i, A' i →ₗ[ℝ] ℝ} (φ : ∀ i, A' i ≃⋆ₐ[ℝ] B i) (eK : ι ≃ Fin nK)
     (P : ∀ i, B i → Prop) (hp : ∀ i s, IsRosatiPositive (t i) s ↔ P i (φ i s))
     (y : ∀ i, A' i) :
     (∀ i, IsRosatiPositive (t i) (y i)) ↔
-      ∀ j : Fin nK, P (eK.symm j) (reindexBlockEquiv φ eK y j) := by
-  simp only [reindexBlockEquiv_apply]
+      ∀ j : Fin nK,
+        P (eK.symm j)
+          (((StarAlgEquiv.piCongrRight φ).trans (StarAlgEquiv.piCongrLeft' ℝ B eK)) y j) := by
+  simp only [StarAlgEquiv.trans_apply, StarAlgEquiv.piCongrLeft'_apply,
+    StarAlgEquiv.piCongrRight_apply]
   exact ⟨fun hy j ↦ (hp _ _).mp (hy _),
     fun hj ↦ eK.symm.surjective.forall.mpr fun j ↦ (hp _ _).mpr (hj j)⟩
 
@@ -151,10 +132,17 @@ private noncomputable def splitReindexEquiv {n nR nC nH : ℕ} {A : Fin n → Ty
         (∀ i : Fin nC, Mat (d (eC.symm i).val) ℂ) ×
         (∀ i : Fin nH, Mat (d (eH.symm i).val) ℍ[ℝ])) :=
   (piSplitTagStarAlgEquiv nf).trans
-    (starAlgEquivProdCongr (reindexBlockEquiv (fun i ↦ ((nf i.val).realEquiv i.property).val) eR)
-      (starAlgEquivProdCongr
-        (reindexBlockEquiv (fun i ↦ ((nf i.val).complexEquiv i.property).val) eC)
-        (reindexBlockEquiv (fun i ↦ ((nf i.val).quatEquiv i.property).val) eH)))
+    (StarAlgEquiv.prodCongr
+      ((StarAlgEquiv.piCongrRight (A₂ := fun i ↦ Mat (d i.val) ℝ)
+          fun i ↦ ((nf i.val).realEquiv i.property).val).trans
+        (StarAlgEquiv.piCongrLeft' ℝ (fun i ↦ Mat (d i.val) ℝ) eR))
+      (StarAlgEquiv.prodCongr
+        ((StarAlgEquiv.piCongrRight (A₂ := fun i ↦ Mat (d i.val) ℂ)
+            fun i ↦ ((nf i.val).complexEquiv i.property).val).trans
+          (StarAlgEquiv.piCongrLeft' ℝ (fun i ↦ Mat (d i.val) ℂ) eC))
+        ((StarAlgEquiv.piCongrRight (A₂ := fun i ↦ Mat (d i.val) ℍ[ℝ])
+            fun i ↦ ((nf i.val).quatEquiv i.property).val).trans
+          (StarAlgEquiv.piCongrLeft' ℝ (fun i ↦ Mat (d i.val) ℍ[ℝ]) eH))))
 
 private theorem splitReindexEquiv_pos {n nR nC nH : ℕ} {A : Fin n → Type*}
     [∀ i, Ring (A i)] [∀ i, Algebra ℝ (A i)] [∀ i, StarRing (A i)]
@@ -177,13 +165,14 @@ private theorem splitReindexEquiv_pos {n nR nC nH : ℕ} {A : Fin n → Type*}
          · exact h1 ⟨i, hi1⟩
          · exact h2 ⟨i, FactorNormalForm.tag_eq_two_of_ne hi0 hi1⟩⟩
   rw [hsplit]
+  simp only [splitReindexEquiv, StarAlgEquiv.trans_apply, StarAlgEquiv.prodCongr_apply]
   exact and_congr
-    (reindexBlockEquiv_pos_iff (fun i ↦ ((nf i.val).realEquiv i.property).val) eR
+    (block_isRosatiPositive_iff (fun i ↦ ((nf i.val).realEquiv i.property).val) eR
       (fun _ M ↦ M.PosDef) (fun i ↦ ((nf i.val).realEquiv i.property).property) _)
     (and_congr
-      (reindexBlockEquiv_pos_iff (fun i ↦ ((nf i.val).complexEquiv i.property).val) eC
+      (block_isRosatiPositive_iff (fun i ↦ ((nf i.val).complexEquiv i.property).val) eC
         (fun _ M ↦ M.PosDef) (fun i ↦ ((nf i.val).complexEquiv i.property).property) _)
-      (reindexBlockEquiv_pos_iff (fun i ↦ ((nf i.val).quatEquiv i.property).val) eH
+      (block_isRosatiPositive_iff (fun i ↦ ((nf i.val).quatEquiv i.property).val) eH
         (fun _ M ↦ M.QuatPosDef) (fun i ↦ ((nf i.val).quatEquiv i.property).property) _))
 
 private theorem realRosatiDecomposition_of_starPiEquiv {E : Type*} [Ring E] [Algebra ℝ E]
@@ -213,8 +202,8 @@ private theorem realRosatiDecomposition_of_starPiEquiv {E : Type*} [Ring E] [Alg
   refine ⟨_, _, _, fun i ↦ d (eR.symm i).val, fun i ↦ d (eC.symm i).val,
     fun i ↦ d (eH.symm i).val, fun i ↦ hd _, fun i ↦ hd _, fun i ↦ hd _,
     eWrap.trans (splitReindexEquiv nf eR eC eH), fun s ↦ ?_⟩
-  rw [show t = tPi.comp eWrap.toAlgEquiv.toLinearMap by ext x; simp [tPi],
-    eWrap.isRosatiPositive_comp_iff, isRosatiPositive_pi_iff]
+  have ht_eq : t = tPi.comp eWrap.toAlgEquiv.toLinearMap := by ext x; simp [tPi]
+  rw [ht_eq, eWrap.isRosatiPositive_comp_iff, isRosatiPositive_pi_iff]
   exact splitReindexEquiv_pos nf eR eC eH (eWrap s)
 
 end SplitReindex

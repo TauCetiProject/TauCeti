@@ -40,8 +40,8 @@ private theorem hasEigenvalue_lmul_pos {E : Type*} [Ring E] [Algebra ℝ E] [Sta
     (hs : IsRosatiPositive t s) {μ : ℝ} (hμ : (Algebra.lmul ℝ E s).HasEigenvalue μ) : 0 < μ := by
   obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
   have h1 := hs.trace_mul_mul_star_pos hv.2
-  rw [show s * v = μ • v by simpa using Module.End.mem_eigenspace_iff.mp hv.1,
-    smul_mul_assoc, map_smul, smul_eq_mul] at h1
+  have hsv : s * v = μ • v := by simpa using Module.End.mem_eigenspace_iff.mp hv.1
+  rw [hsv, smul_mul_assoc, map_smul, smul_eq_mul] at h1
   exact pos_of_mul_pos_left h1 (hpos v hv.2).le
 
 private theorem rosatiPositiveSquareRoot_of_star_invariant {E : Type*} [Ring E] [Algebra ℝ E]

@@ -83,12 +83,13 @@ theorem exists_eq_comp_matrixTrace_of_cyclic {R D M : Type*} [CommSemiring R] [S
     conv_lhs => rw [Matrix.matrix_eq_sum_single X]
     simp only [map_sum, Matrix.trace, Matrix.diag_apply]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Finset.sum_eq_single i (fun j _ hji ↦ by
-        rw [show Matrix.single i j (X i j) =
-          Matrix.single i j (X i j) * Matrix.single j j 1 by simp, hcyc]; simp [hji])
+    have hsingle_off {j : n} :
+        Matrix.single i j (X i j) = Matrix.single i j (X i j) * Matrix.single j j 1 := by simp
+    have hsingle_diag :
+        Matrix.single i i (X i i) = Matrix.single i i₀ (X i i) * Matrix.single i₀ i 1 := by simp
+    rw [Finset.sum_eq_single i (fun j _ hji ↦ by rw [hsingle_off, hcyc]; simp [hji])
       (fun hi ↦ absurd (Finset.mem_univ i) hi),
-      show Matrix.single i i (X i i) = Matrix.single i i₀ (X i i) * Matrix.single i₀ i 1 by simp,
-      hcyc, Matrix.single_mul_single_same, one_mul, hτ]
+      hsingle_diag, hcyc, Matrix.single_mul_single_same, one_mul, hτ]
 
 /-- Rank-one trace identity: for `X = Matrix.vecMulVec v (star w)`,
 `(rePart.comp (Matrix.traceLinearMap n R D)) (X * U * Xᴴ * V)` equals `rePart` applied to the
@@ -106,12 +107,12 @@ theorem comp_traceLinearMap_vecMulVec_mul_mul_conjTranspose_mul {R D M : Type*} 
     simp only [Matrix.conjTranspose_vecMulVec, star_star]
     rw [Matrix.vecMulVec_mul, Matrix.vecMulVec_mul_vecMulVec, Matrix.vecMulVec_mul,
       Matrix.smul_vecMul]
-  rw [comp_apply, Matrix.traceLinearMap_apply, hX, Matrix.trace_vecMulVec,
-    show rePart (v ⬝ᵥ ((((star w) ᵥ* U) ⬝ᵥ w) • ((star v) ᵥ* V))) =
-        rePart (((star v ᵥ* V) ⬝ᵥ v) * ((star w ᵥ* U) ⬝ᵥ w)) by
-      simp only [dotProduct, Pi.smul_apply, smul_eq_mul, map_sum]
-      rw [Finset.sum_congr rfl fun i _ ↦ by rw [hre_cyc, mul_assoc], ← map_sum, ← Finset.mul_sum,
-        hre_cyc],
+  have hdot : rePart (v ⬝ᵥ ((((star w) ᵥ* U) ⬝ᵥ w) • ((star v) ᵥ* V))) =
+      rePart (((star v ᵥ* V) ⬝ᵥ v) * ((star w ᵥ* U) ⬝ᵥ w)) := by
+    simp only [dotProduct, Pi.smul_apply, smul_eq_mul, map_sum]
+    rw [Finset.sum_congr rfl fun i _ ↦ by rw [hre_cyc, mul_assoc], ← map_sum, ← Finset.mul_sum,
+      hre_cyc]
+  rw [comp_apply, Matrix.traceLinearMap_apply, hX, Matrix.trace_vecMulVec, hdot,
     ← Matrix.dotProduct_mulVec, ← Matrix.dotProduct_mulVec]
 
 end LinearMap

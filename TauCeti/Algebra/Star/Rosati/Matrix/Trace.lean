@@ -42,8 +42,9 @@ theorem isRosatiPositive_comp_traceLinearMap_iff {D : Type*} [NonUnitalNonAssocS
   · obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hv
     let X : Matrix n n D := Matrix.of fun i m ↦ if m = i₀ then v i else 0
     have hpos := h X fun h0 ↦ hi₀ (by simpa [X] using congrFun (congrFun h0 i₀) i₀)
+    have hcol {m : n} (hm : m ≠ i₀) : (fun j ↦ X j m) = 0 := funext fun j ↦ by simp [X, hm]
     rw [LinearMap.comp_traceLinearMap_mul_mul_star_eq_sum hre_cyclic, Finset.sum_eq_single i₀
-      (fun m _ hm ↦ by simp [show (fun j ↦ X j m) = 0 from funext fun j ↦ by simp [X, hm]])
+      (fun m _ hm ↦ by simp [hcol hm])
       (fun h0 ↦ absurd (Finset.mem_univ i₀) h0)] at hpos
     simpa [X] using hpos
   · rw [LinearMap.comp_traceLinearMap_mul_mul_star_eq_sum hre_cyclic]

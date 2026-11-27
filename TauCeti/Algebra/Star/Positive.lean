@@ -46,14 +46,17 @@ theorem starModule_of_trace_mul_star_pos {E : Type*} [Ring E] [Algebra ℝ E] [S
       have hmul : (algebraMap ℝ E r + u) * (algebraMap ℝ E r + u) -
           algebraMap ℝ E r * algebraMap ℝ E r =
           algebraMap ℝ E r * u + u * algebraMap ℝ E r + u * u := by noncomm_ring
-      rw [map_mul, star_mul, show star (algebraMap ℝ E r) = algebraMap ℝ E r + u by simp [u],
+      have hstar_r : star (algebraMap ℝ E r) = algebraMap ℝ E r + u := by simp [u]
+      rw [map_mul, star_mul, hstar_r,
         hmul, (Algebra.commutes r u).symm, ← Algebra.smul_def, two_mul, add_smul]
     have htu2 : t (u * u) = 0 := by
       have h0 : t (star (algebraMap ℝ E (r * r)) - algebraMap ℝ E (r * r)) = 0 := by
         rw [map_sub, htf, sub_self]
-      rwa [hsq, map_add, map_smul, show t u = 0 by simp [u, htf], smul_zero, zero_add] at h0
+      have htu : t u = 0 := by simp [u, htf]
+      rwa [hsq, map_add, map_smul, htu, smul_zero, zero_add] at h0
     refine sub_eq_zero.mp (by_contra fun hne ↦ lt_irrefl 0 ?_)
-    simpa [show star u = -u by simp [u], htu2] using hpos u hne
+    have hstar_u : star u = -u := by simp [u]
+    simpa [hstar_u, htu2] using hpos u hne
   exact ⟨fun r _ ↦ by
     rw [Algebra.smul_def, star_mul, hstar_alg, ← Algebra.commutes, ← Algebra.smul_def,
       star_trivial r]⟩
