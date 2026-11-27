@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Basic
+public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Schwartz
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ComplexModule
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
@@ -65,7 +66,11 @@ chosen with each `(chartAt cᵢ)⁻¹(supp ψᵢ)` inside the base set of the tr
 together with smooth functions `ρᵢ` supported in these base sets and equal to `1` on
 `(chartAt cᵢ)⁻¹(supp ψᵢ)` (`TauCeti.exists_sum_cutoffPullback_eq_one_and_baseSet_cutoff`). These
 are the data through which sections of a bundle are read in charts and frames, as in Sobolev
-norms of sections on a compact manifold.
+norms of sections on a compact manifold. A smooth section all of whose readings
+`ψᵢ · (ρᵢ b_k*(tᵢ u) ∘ e'ᵢ⁻¹)` vanish, for cutoffs whose pullbacks add up to `1` and a basis
+`(b_k)` of the model fibre, is zero
+(`TauCeti.eq_zero_of_forall_cutoffPushforwardSchwartz_cutoffFrameCoeff_eq_zero`), as for the
+readings of functions (`OpenPartialHomeomorph.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`).
 -/
 
 public section
@@ -505,5 +510,56 @@ theorem exists_sum_cutoffPullback_eq_one_and_baseSet_cutoff :
     (hσ1 i).self_of_nhdsSet _ (mem_image_of_mem _ hy)⟩
 
 end Partition
+
+section Readings
+
+variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
+  [T2Space M] {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
+  {E : M → Type*} [TopologicalSpace (TotalSpace V E)] [∀ x, AddCommGroup (E x)]
+  [∀ x, Module ℝ (E x)] [∀ x, Module ℂ (E x)] [∀ x, TopologicalSpace (E x)] [FiberBundle V E]
+  [VectorBundle ℝ V E] [VectorBundle ℂ V E] [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)]
+  {ι : Type*} {κ : Type*} [Fintype κ]
+
+open OpenPartialHomeomorph
+
+/-- **A section is determined by its frame readings.** Let `ψᵢ` be finitely many cutoffs in charts
+`e'ᵢ` whose readings `ψᵢ ∘ e'ᵢ` on `M` add up to `1`, with trivializations `tᵢ` of `E` and smooth
+functions `ρᵢ` supported in their base sets and equal to `1` on `e'ᵢ⁻¹(supp ψᵢ)`, and let `(b_k)`
+be a basis of `V`. A smooth section `u` of `E` all of whose readings
+`ψᵢ · (ρᵢ b_k*(tᵢ u) ∘ e'ᵢ⁻¹)` vanish is zero. -/
+theorem eq_zero_of_forall_cutoffPushforwardSchwartz_cutoffFrameCoeff_eq_zero
+    {e' : κ → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ))
+    (hψ : ∀ x, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1)
+    (t : κ → Trivialization V (π V E)) [∀ i, MemTrivializationAtlas (t i)]
+    (ρ : κ → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hρ : ∀ i, tsupport (ρ i) ⊆ (t i).baseSet)
+    (hρψ : ∀ i, ∀ y ∈ tsupport (ψ i), ρ i ((e' i).symm y) = 1) (b : Module.Basis ι ℂ V)
+    {u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯}
+    (hu : ∀ i k, (e' i).cutoffPushforwardSchwartz (he' i) (ψ i)
+      ((t i).cutoffFrameCoeff (ρ i) (hρ i) (b.coord k).toContinuousLinearMap u) = 0) :
+    u = 0 := by
+  ext x
+  -- Some cutoff `ψᵢ ∘ e'ᵢ` does not vanish at `x`.
+  obtain ⟨i, -, hi⟩ := Finset.exists_ne_zero_of_sum_ne_zero (s := Finset.univ)
+    (f := fun i ↦ (e' i).cutoffPullback (he' i) (ψ i) 1 x) (by rw [hψ x]; exact one_ne_zero)
+  have hx : x ∈ (e' i).source := by
+    by_contra hx
+    exact hi (cutoffPullback_apply_of_notMem (he' i) _ _ hx)
+  rw [cutoffPullback_one_apply_of_mem (he' i) _ hx] at hi
+  -- So `ρᵢ x = 1` and `x` lies in the base set of `tᵢ`.
+  have hρx : ρ i x = 1 := by
+    simpa [(e' i).left_inv hx] using hρψ i _ (subset_tsupport _ hi)
+  have hxt : x ∈ (t i).baseSet :=
+    hρ i (subset_tsupport _ (by simp [Function.mem_support, hρx]))
+  -- The readings at `e'ᵢ x` are `ψᵢ(e'ᵢ x)` times the coordinates of `tᵢ (u x)`.
+  have hcoord : (t i).continuousLinearMapAt ℂ x (u x) = 0 := by
+    refine b.forall_coord_eq_zero_iff.1 fun k ↦ ?_
+    have h := DFunLike.congr_fun (hu i k) (e' i x)
+    simpa [(e' i).left_inv hx, Trivialization.cutoffFrameCoeff_apply, hρx, hi] using h
+  rw [ContMDiffSection.coe_zero, Pi.zero_apply,
+    ← (t i).symmL_continuousLinearMapAt (R := ℂ) hxt (u x), hcoord, map_zero]
+
+end Readings
 
 end TauCeti

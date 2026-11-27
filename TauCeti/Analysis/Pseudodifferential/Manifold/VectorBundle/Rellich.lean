@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Sobolev
-import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
+import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Geometry.Manifold.Sobolev.ChartReading
 
 /-!
@@ -37,17 +36,18 @@ between bundles on a compact manifold. They are the bundle forms of the scalar s
   Indeed `P` maps them to a bounded set of readings in `H^{s - m}`
   (`exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum`),
   all supported in the fixed compact set `supp φⱼ`, and such sets are relatively compact in `H^r`
-  (`BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq`). For `m < 0` and
-  `r = s` this says that an operator of negative order is compact from `H^s(M; E)` to
-  `H^s(M; F)`, on smooth sections.
+  (`isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_norm_le`).
+  For `m < 0` and `r = s` this says that an operator of negative order is compact from
+  `H^s(M; E)` to `H^s(M; F)`, on smooth sections.
 * **Eigenspaces of operators of negative order are finite-dimensional.** If `M` is compact and
   `R : Γ(E) → Γ(E)` has negative order, then for `μ ≠ 0` the eigenspace `{u | R u = μ u}` is
   finite-dimensional
   (`TauCeti.finiteDimensional_eigenspace_of_mem_sectionClassicalPseudodifferentialOperators`).
   With the readings in `H⁰` as coordinates, the ball of radius `2` of the eigenspace lies in the
   image under `μ⁻¹ R` of a bounded set, which is relatively compact by Rellich's theorem, and a
-  topological vector space with a totally bounded neighbourhood of `0` is finite-dimensional
-  (`FiniteDimensional.of_totallyBounded_nhds_zero`, Riesz's theorem).
+  vector space with an injective linear map into a normed space sending a ball into a totally
+  bounded set is finite-dimensional (`FiniteDimensional.of_injective_of_totallyBounded`, from
+  Riesz's theorem).
 * **Operators with a left parametrix have finite-dimensional kernels.** If `M` is compact and
   `Q ∘ P - 1` has negative order for some `Q : Γ(F) → Γ(E)`, the kernel of `P : Γ(E) → Γ(F)` is
   finite-dimensional
@@ -58,8 +58,6 @@ between bundles on a compact manifold. They are the bundle forms of the scalar s
 
 ## Main results
 
-* `TauCeti.eq_zero_of_forall_cutoffPushforwardSchwartz_cutoffFrameCoeff_eq_zero`: a section of
-  `E` all of whose frame readings vanish is zero.
 * `isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff`:
   Rellich's theorem for a classical pseudodifferential operator of order `m` between bundles on a
   compact manifold, from `H^s` to `H^r` for `r < s - m`.
@@ -95,45 +93,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   [∀ x, Module ℝ (E x)] [∀ x, Module ℂ (E x)] [∀ x, TopologicalSpace (E x)] [FiberBundle V E]
   [VectorBundle ℝ V E] [VectorBundle ℂ V E] [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)]
   {ι : Type*} [Fintype ι] {κ : Type*} [Fintype κ]
-
-omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [Fintype ι] in
-/-- **A section is determined by its frame readings.** Let `ψᵢ` be finitely many cutoffs in charts
-`e'ᵢ` whose readings `ψᵢ ∘ e'ᵢ` on `M` add up to `1`, with trivializations `tᵢ` of `E` and smooth
-functions `ρᵢ` supported in their base sets and equal to `1` on `e'ᵢ⁻¹(supp ψᵢ)`, and let `(b_k)`
-be a basis of `V`. A smooth section `u` of `E` all of whose readings
-`ψᵢ · (ρᵢ b_k*(tᵢ u) ∘ e'ᵢ⁻¹)` vanish is zero. -/
-theorem eq_zero_of_forall_cutoffPushforwardSchwartz_cutoffFrameCoeff_eq_zero
-    {e' : κ → OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ))
-    (hψ : ∀ x, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1)
-    (t : κ → Trivialization V (π V E)) [∀ i, MemTrivializationAtlas (t i)]
-    (ρ : κ → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hρ : ∀ i, tsupport (ρ i) ⊆ (t i).baseSet)
-    (hρψ : ∀ i, ∀ y ∈ tsupport (ψ i), ρ i ((e' i).symm y) = 1) (b : Module.Basis ι ℂ V)
-    {u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯}
-    (hu : ∀ i k, (e' i).cutoffPushforwardSchwartz (he' i) (ψ i)
-      ((t i).cutoffFrameCoeff (ρ i) (hρ i) (b.coord k).toContinuousLinearMap u) = 0) :
-    u = 0 := by
-  ext x
-  -- Some cutoff `ψᵢ ∘ e'ᵢ` does not vanish at `x`.
-  obtain ⟨i, -, hi⟩ := Finset.exists_ne_zero_of_sum_ne_zero (s := Finset.univ)
-    (f := fun i ↦ (e' i).cutoffPullback (he' i) (ψ i) 1 x) (by rw [hψ x]; exact one_ne_zero)
-  have hx : x ∈ (e' i).source := by
-    by_contra hx
-    exact hi (cutoffPullback_apply_of_notMem (he' i) _ _ hx)
-  rw [cutoffPullback_one_apply_of_mem (he' i) _ hx] at hi
-  -- So `ρᵢ x = 1` and `x` lies in the base set of `tᵢ`.
-  have hρx : ρ i x = 1 := by
-    simpa [(e' i).left_inv hx] using hρψ i _ (subset_tsupport _ hi)
-  have hxt : x ∈ (t i).baseSet :=
-    hρ i (subset_tsupport _ (by simp [Function.mem_support, hρx]))
-  -- The readings at `e'ᵢ x` are `ψᵢ(e'ᵢ x)` times the coordinates of `tᵢ (u x)`.
-  have hcoord : (t i).continuousLinearMapAt ℂ x (u x) = 0 := by
-    refine b.forall_coord_eq_zero_iff.1 fun k ↦ ?_
-    have h := DFunLike.congr_fun (hu i k) (e' i x)
-    simpa [(e' i).left_inv hx, Trivialization.cutoffFrameCoeff_apply, hρx, hi] using h
-  rw [ContMDiffSection.coe_zero, Pi.zero_apply,
-    ← (t i).symmL_continuousLinearMapAt (R := ℂ) hxt (u x), hcoord, map_zero]
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
   {F : M → Type*} [TopologicalSpace (TotalSpace W F)] [∀ x, AddCommGroup (F x)]
@@ -172,37 +131,13 @@ theorem isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwa
           ((t' j).cutoffFrameCoeff (χ j) (hχ j) (ℓ j) (P u)))) ''
       {u | ∑ i, ∑ k, ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
         ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i)
-          ((t i).cutoffFrameCoeff (ρ i) (hρ i) (b.coord k).toContinuousLinearMap u))‖ ≤ B})) := by
-  set U := {u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ | ∑ i, ∑ k,
-    ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i)
-      ((t i).cutoffFrameCoeff (ρ i) (hρ i) (b.coord k).toContinuousLinearMap u))‖ ≤ B}
-  choose C hC using fun j ↦
-    exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum hP
-      (he j) (φ j) (t' j) (χ j) (hχ j) (ℓ j) he' ψ hψ t ρ hρ hρψ b s
-  -- The readings of `P u` in `H^{s - m}`, for `u ∈ U`, in the chart `eⱼ`, are bounded.
-  let S (j : ν) : Set H^{s - m}(CoordinateSpace n, ℂ) := (fun u ↦
-    SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2 ((e j).cutoffPushforwardSchwartz (he j) (φ j)
-      ((t' j).cutoffFrameCoeff (χ j) (hχ j) (ℓ j) (P u)))) '' U
-  have hS (j : ν) : Bornology.IsBounded (S j) := by
-    refine isBounded_iff_forall_norm_le.2 ⟨|C j| * B, ?_⟩
-    rintro _ ⟨u, hu, rfl⟩
-    have h0 : 0 ≤ ∑ i, ∑ k, ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
-        ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i)
-          ((t i).cutoffFrameCoeff (ρ i) (hρ i) (b.coord k).toContinuousLinearMap u))‖ :=
-      Finset.sum_nonneg fun i _ ↦ Finset.sum_nonneg fun k _ ↦ norm_nonneg _
-    exact (hC j u).trans ((mul_le_mul_of_nonneg_right (le_abs_self _) h0).trans
-      (mul_le_mul_of_nonneg_left hu (abs_nonneg _)))
-  -- They are all supported in the fixed compact set `supp φⱼ`, so Rellich's theorem applies.
-  choose θ hθ using fun j ↦
-    exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz (he j) (φ j)
-  have hK (j : ν) : IsCompact (closure (BesselPotentialSpace.inclusion hrs.le '' S j)) :=
-    BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq hrs (hS j)
-      (φ := θ j) (by rintro _ ⟨u, -, rfl⟩; exact hθ j _ _)
-  refine (isCompact_univ_pi hK).of_isClosed_subset isClosed_closure
-    (closure_minimal ?_ (isClosed_set_pi fun j _ ↦ isClosed_closure))
-  rintro _ ⟨u, hu, rfl⟩ j -
-  refine subset_closure ⟨_, ⟨u, hu, rfl⟩, ?_⟩
-  exact BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM _ _
+          ((t i).cutoffFrameCoeff (ρ i) (hρ i) (b.coord k).toContinuousLinearMap u))‖ ≤ B})) :=
+  -- The readings of `P u` in `H^{s - m}` are bounded by those of `u` in `H^s`.
+  isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_norm_le he φ
+    (fun j u ↦ (t' j).cutoffFrameCoeff (χ j) (hχ j) (ℓ j) (P u))
+    (fun _ ↦ Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
+    (fun j ↦ exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum
+      hP (he j) (φ j) (t' j) (χ j) (hχ j) (ℓ j) he' ψ hψ t ρ hρ hρψ b s) hrs B
 
 omit [Fintype ι] in
 /-- Eigenspaces of operators of negative order are finite-dimensional, for given chart cutoffs and
@@ -254,24 +189,13 @@ private theorem finiteDimensional_eigenspace_of_sum_cutoffPullback_eq_one [Finit
       (Submodule.smul_mem _ μ⁻¹ hR) (fun p : κ × ι ↦ he' p.1) (fun p ↦ ψ p.1) (fun p ↦ t p.1)
       (fun p ↦ ρ p.1) (fun p ↦ hρ p.1) (fun p ↦ (b.coord p.2).toContinuousLinearMap) he' ψ hψ t ρ
       hρ hρψ b (r := 0) (s := 0) (by linarith) (∑ _i : κ, ∑ _k : ι, (2 : ℝ))
-  -- So the image of the eigenspace has a totally bounded neighbourhood of `0`, the preimage of
-  -- `closure T`, which contains the ball of radius `2`.
-  have hball (v : LinearMap.range L) (hv : ‖v‖ < 2) :
-      (v : κ × ι → H^{(0 : ℝ)}(CoordinateSpace n, ℂ)) ∈ T := by
-    obtain ⟨v, hv'⟩ := v
-    obtain ⟨u, rfl⟩ := LinearMap.mem_range.1 hv'
-    refine ⟨u, ?_, funext fun p ↦ by simp only [hRu u, hLapply]⟩
-    rw [Set.mem_ofPred_eq]
-    refine Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun k _ ↦ ?_
-    rw [← hLapply u (i, k)]
-    exact (norm_le_pi_norm (L u) (i, k)).trans hv.le
-  have : FiniteDimensional ℂ (LinearMap.range L) :=
-    .of_totallyBounded_nhds_zero ℂ (U := Subtype.val ⁻¹' closure T)
-      (mem_of_superset (Metric.ball_mem_nhds 0 two_pos) fun v hv ↦
-        subset_closure (hball v (mem_ball_zero_iff.1 hv)))
-      (totallyBounded_preimage isUniformEmbedding_subtypeVal.isUniformInducing
-        hT.totallyBounded)
-  exact (LinearEquiv.ofInjective L hL).symm.finiteDimensional
+  -- So `L` sends the `u` with `‖L u‖ < 2` into `T`, a totally bounded set.
+  refine .of_injective_of_totallyBounded hL hT.totallyBounded two_pos fun u hu ↦
+    subset_closure ⟨u, ?_, funext fun p ↦ by simp only [hRu u, hLapply]⟩
+  rw [Set.mem_ofPred_eq]
+  refine Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun k _ ↦ ?_
+  rw [← hLapply u (i, k)]
+  exact (norm_le_pi_norm (L u) (i, k)).trans hu.le
 
 /-- **Eigenspaces of operators of negative order are finite-dimensional.** If `R` is a classical
 pseudodifferential operator of negative order `m` on the smooth sections of a bundle `E` with
