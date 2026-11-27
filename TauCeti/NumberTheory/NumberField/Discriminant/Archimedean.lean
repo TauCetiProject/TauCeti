@@ -65,7 +65,7 @@ theorem prod_different_generator_eq_rootDiscr_pow [IsTotallyComplex K] {δ : �
 
 /-- The logarithm of the root discriminant is the archimedean weighted average of the
 logarithmic sizes of a different generator, with weight two at complex places. -/
-theorem log_rootDiscr_eq_sum_mult_mul_log {δ : 𝓞 K}
+theorem log_rootDiscr_eq_sum_mult_mul_log_div_finrank {δ : 𝓞 K}
     (hδ : differentIdeal ℤ (𝓞 K) = Ideal.span {δ}) :
     log (rootDiscr K) = (∑ v : InfinitePlace K, (v.mult : ℝ) * log (v (δ : K))) /
       (finrank ℚ K : ℝ) := by
@@ -90,7 +90,8 @@ theorem log_rootDiscr_mem_Icc_of_different_generator {δ : 𝓞 K} {a b : ℝ}
   have hsum : ∑ v : InfinitePlace K, (v.mult : ℝ) = (finrank ℚ K : ℝ) := by
     exact_mod_cast sum_mult_eq (K := K)
   have hpos : 0 < (finrank ℚ K : ℝ) := by exact_mod_cast finrank_pos (R := ℚ) (M := K)
-  simpa [Finset.centerMass, hsum, div_eq_inv_mul, smul_eq_mul, log_rootDiscr_eq_sum_mult_mul_log hδ]
+  simpa [Finset.centerMass, hsum, div_eq_inv_mul, smul_eq_mul,
+    log_rootDiscr_eq_sum_mult_mul_log_div_finrank hδ]
     using (convex_Icc a b).centerMass_mem (t := Finset.univ)
       (w := fun v : InfinitePlace K ↦ (v.mult : ℝ)) (z := fun v ↦ log (v (δ : K)))
       (fun _ _ ↦ Nat.cast_nonneg _) (hsum.symm ▸ hpos) (fun v _ ↦ h v)
