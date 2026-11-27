@@ -881,6 +881,13 @@ lemma opNorm_matrixBilinearForm_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X
     ‖matrixBilinearForm (a x)‖ ≤ Lam :=
   matrixBilinearForm_opNorm_le_of_upper_bound (a x) h.upper_nonneg (h.upper_bound hx)
 
+/-- A matrix whose form is within `δ` of a uniformly elliptic one has form norm at most `Λ + δ`. -/
+lemma opNorm_matrixBilinearForm_le_add (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)
+    {M : Matrix n n ℝ} {δ : ℝ} (hM : ‖matrixBilinearForm M - matrixBilinearForm (a x)‖ ≤ δ) :
+    ‖matrixBilinearForm M‖ ≤ Lam + δ :=
+  (norm_le_insert' _ (matrixBilinearForm (a x))).trans
+    (add_le_add (h.opNorm_matrixBilinearForm_le hx) hM)
+
 /-- At every point of the domain, the quadratic form is bounded above by `Λ‖ξ‖²`. -/
 @[grind =>]
 lemma toQuadraticForm'_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)

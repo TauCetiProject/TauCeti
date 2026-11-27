@@ -25,9 +25,9 @@ and inverse `x ↦ x - ⟪ν, x⟫ s`.
 * `TauCeti.transvectionL_apply_of_inner_eq_zero` and `TauCeti.inner_transvectionL`: it fixes `ν⊥`
   pointwise and, for `⟪μ, s⟫ = 0`, preserves `⟪μ, ·⟫`.
 * `TauCeti.transvectionL_transvectionL_neg`, `TauCeti.transvectionL_comp_transvectionL_neg`,
-  `TauCeti.transvectionL_neg_comp_transvectionL` and `TauCeti.transvectionEquivL`: for
-  `⟪ν, s⟫ = 0` its inverse is the transvection along `-s`, and it is a continuous linear
-  equivalence.
+  `TauCeti.transvectionL_neg_comp_transvectionL`, `TauCeti.transvectionL_neg_transvectionL` and
+  `TauCeti.transvectionEquivL`: for `⟪ν, s⟫ = 0` its inverse is the transvection along `-s`, and
+  it is a continuous linear equivalence.
 * `TauCeti.transvectionL_injective`: for `⟪ν, s⟫ = 0` it is injective.
 * `TauCeti.det_transvectionL`: its determinant is `1 + ⟪ν, s⟫`.
 * `TauCeti.abs_det_fderiv_transvectionL`: for `⟪ν, s⟫ = 0` its derivative has determinant of
@@ -103,6 +103,11 @@ theorem transvectionL_neg_comp_transvectionL {ν s : E} (h : ⟪ν, s⟫_ℝ = 0
     transvectionL ν (-s) ∘L transvectionL ν s = ContinuousLinearMap.id ℝ E := by
   simpa using
     transvectionL_comp_transvectionL_neg (s := -s) (by rw [inner_neg_right, h, neg_zero])
+
+/-- For `⟪ν, s⟫ = 0`, the transvection along `-s` inverts the transvection along `s`. -/
+theorem transvectionL_neg_transvectionL {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) (x : E) :
+    transvectionL ν (-s) (transvectionL ν s x) = x :=
+  DFunLike.congr_fun (transvectionL_neg_comp_transvectionL h) x
 
 /-- For `⟪ν, s⟫ = 0`, the transvection `x ↦ x + ⟪ν, x⟫ s` as a continuous linear equivalence,
 with inverse the transvection along `-s`. -/

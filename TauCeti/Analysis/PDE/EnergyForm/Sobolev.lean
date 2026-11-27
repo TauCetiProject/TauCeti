@@ -317,6 +317,21 @@ theorem memLp_energyIntegrand_mass_sub_const
   simp only [Pi.sub_apply]
   simpa only [sub_zero] using (energyIntegrand_sub (a x) 0 (b x) 0 (c x) kappa).symm
 
+/-- Measurable coefficients whose matrix bilinear forms have norm at most `Λ` on `Ω` define an
+essentially bounded field of drift- and mass-free energy integrands on `Ω`. -/
+theorem memLp_energyIntegrand_zero_zero_of_norm_le (hLam : 0 ≤ Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hbd : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖matrixBilinearForm (a x)‖ ≤ Lam) :
+    MemLp (fun x => energyIntegrand (a x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega) :=
+  memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) hLam ha
+    aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun x hx eta xi => by
+      simpa [Real.norm_eq_abs] using
+        (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hbd x hx) le_rfl le_rfl)
+    (fun _ _ => by simp) (fun _ _ => by simp)
+
 /-- A bounded coefficient field with continuously varying matrix bilinear forms has an essentially
 bounded field of drift- and mass-free energy integrands on every open set. -/
 theorem memLp_energyIntegrand_of_continuous (hLam : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
@@ -324,14 +339,9 @@ theorem memLp_energyIntegrand_of_continuous (hLam : ∀ x, ‖matrixBilinearForm
     MemLp (fun x => energyIntegrand (a x)
       ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
       (mu.restrict U) :=
-  memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0)
+  memLp_energyIntegrand_zero_zero_of_norm_le
     ((norm_nonneg (matrixBilinearForm (a 0))).trans (hLam 0))
-    (continuous_of_continuous_matrixBilinearForm ha).aestronglyMeasurable
-    aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun x _ eta xi => by
-      simpa [Real.norm_eq_abs] using
-        (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hLam x) le_rfl le_rfl)
-    (fun _ _ => by simp) (fun _ _ => by simp)
+    (continuous_of_continuous_matrixBilinearForm ha).aestronglyMeasurable fun x _ => hLam x
 
 /-- Coefficient fields continuous on the compact closure of `Ω` define an essentially bounded field
 of pointwise energy forms on `Ω`. No bound on the coefficients is assumed: compactness supplies

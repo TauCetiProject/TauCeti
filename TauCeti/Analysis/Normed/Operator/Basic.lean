@@ -98,7 +98,9 @@ extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on th
 (`ContinuousLinearMap.norm_apply_bounds_of_net`). Over a normed `ℝ`-algebra, an operator sending
 the ball `ball 0 r`, `r > 0`, into `ball 0 s` has operator norm at most `s / r`
 (`ContinuousLinearMap.opNorm_le_of_mapsTo_ball`), so at most one when it maps `ball 0 r` into
-itself (`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`).
+itself (`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`). Conversely, an operator of norm at
+most `κ > 0` maps the ball `ball c (r / κ)` into `ball (T c) r`
+(`ContinuousLinearMap.mapsTo_ball_div_of_opNorm_le`).
 
 If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
@@ -645,6 +647,18 @@ one. -/
 theorem opNorm_le_one_of_mapsTo_ball {L : E →L[𝕜] F} {r : ℝ} (hr : 0 < r)
     (hL : Set.MapsTo L (Metric.ball 0 r) (Metric.ball 0 r)) : ‖L‖ ≤ 1 :=
   (L.opNorm_le_of_mapsTo_ball hr hL).trans_eq (div_self hr.ne')
+
+omit [NormedAlgebra ℝ 𝕜] in
+/-- A continuous linear map of norm at most `κ > 0` maps the ball `ball c (r / κ)` into the ball
+`ball (f c) r`. -/
+theorem mapsTo_ball_div_of_opNorm_le (f : E →L[𝕜] F) {κ : ℝ} (hκ : 0 < κ) (hf : ‖f‖ ≤ κ) (c : E)
+    (r : ℝ) : Set.MapsTo f (Metric.ball c (r / κ)) (Metric.ball (f c) r) := by
+  intro x hx
+  rw [Metric.mem_ball, dist_eq_norm] at hx ⊢
+  calc ‖f x - f c‖ = ‖f (x - c)‖ := by rw [map_sub]
+    _ ≤ κ * ‖x - c‖ := (f.le_opNorm _).trans (by gcongr)
+    _ < κ * (r / κ) := by gcongr
+    _ = r := mul_div_cancel₀ r hκ.ne'
 
 end MapsToBall
 
