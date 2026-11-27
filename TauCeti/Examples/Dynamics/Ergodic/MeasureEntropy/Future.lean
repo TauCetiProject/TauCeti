@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Examples.Dynamics.Ergodic.MeasureEntropy.Bernoulli
 public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Future
-import TauCeti.Probability.Ergodic.Bernoulli.Shift
 
 /-!
 # Worked example: the future formula for the fair Bernoulli shift
@@ -23,11 +22,6 @@ open MeasureTheory Real TauCeti TauCeti.Probability
 open scoped ENNReal
 
 namespace TauCeti.MeasureEntropyExamples
-
-/-- The fair Bernoulli shift preserves the fair Bernoulli law. -/
-theorem measurePreserving_shift_fairBernoulli :
-    MeasurePreserving (shift Bool) fairBernoulli fairBernoulli :=
-  (Measure.ergodic_shift_infinitePi_const fairBit).toMeasurePreserving
 
 /-- **Check.** For the fair Bernoulli shift every future conditional entropy of the coordinate
 label is `log 2`: `H(x 0 | x 1, …, x n) = log 2`. -/

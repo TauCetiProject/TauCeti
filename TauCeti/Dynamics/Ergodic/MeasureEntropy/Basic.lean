@@ -82,6 +82,14 @@ theorem iteratedPartitionLabel_one (T : X → X) (a : X → ι) :
     iteratedPartitionLabel T a 1 = Function.const (Fin 1) ∘ a :=
   funext fun x ↦ funext fun k ↦ by simp [Fin.fin_one_eq_zero k]
 
+/-- An itinerary of length `n + 1` is the label followed by the length-`n` itinerary of `T x`. -/
+theorem iteratedPartitionLabel_succ (T : X → X) (a : X → ι) (n : ℕ) (x : X) :
+    iteratedPartitionLabel T a (n + 1) x = Fin.cons (a x) (iteratedPartitionLabel T a n (T x)) := by
+  funext k
+  refine Fin.cases ?_ (fun j ↦ ?_) k
+  · simp
+  · simp [Function.iterate_succ_apply]
+
 /-- Under the identity every itinerary repeats the label. -/
 theorem iteratedPartitionLabel_id (a : X → ι) (n : ℕ) :
     iteratedPartitionLabel id a n = Function.const (Fin n) ∘ a :=
