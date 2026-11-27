@@ -101,9 +101,7 @@ theorem forall_energyFormH1_eq_dirichletForcing_add_divergenceForcing
     {f : EuclideanSpace ℝ ι → ℝ}
     (hfT : MemLp f 2 (volume.restrict
       ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
-    (hκuT : MemLp (fun x => κ * W1p.value u x) 2 (volume.restrict
-      ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
-    (hGT : MemLp (fun x => G x - 0) 2 (volume.restrict
+    (hGT : MemLp G 2 (volume.restrict
       ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
     (hu' : ∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ ι)), ℝ),
       energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =
@@ -114,9 +112,15 @@ theorem forall_energyFormH1_eq_dirichletForcing_add_divergenceForcing
     (v : W1p0 volume (⊤ : Opens (EuclideanSpace ℝ ι)) 2) :
     energyFormH1 a 0 (fun _ => κ) u (v : W1p volume ⊤ 2) =
       dirichletForcing hfT.toLp v + divergenceForcing (-hGT.toLp) v := by
-  have h1 := forall_energyFormH1_restrictL_eq_inner_add_inner le_rfl hcoeff hu' hGT
+  have hκuT : MemLp (fun x => κ * W1p.value u x) 2 (volume.restrict
+      ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using (W1p.memLp_value u).const_mul κ
+  have hGT0 : MemLp (fun x => G x - 0) 2 (volume.restrict
+      ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
+    simpa only [sub_zero] using hGT
+  have h1 := forall_energyFormH1_restrictL_eq_inner_add_inner le_rfl hcoeff hu' hGT0
     (hfT.sub hκuT) v
-  rw [W1p.restrictL_self] at h1
+  rw [W1p.restrictL_self, MemLp.toLp_congr hGT0 hGT (ae_of_all _ fun x => sub_zero (G x))] at h1
   have hsubLp : MemLp.toLp (fun x => f x - κ * W1p.value u x) (hfT.sub hκuT) =
       hfT.toLp - hκuT.toLp := MemLp.toLp_sub hfT hκuT
   have hκint : ⟪hκuT.toLp, W1p.value (v : W1p volume ⊤ 2)⟫_ℝ =
@@ -141,7 +145,7 @@ private theorem dirichletForcing_add_divergenceForcing_ofTestFunctionₗ
     {f : EuclideanSpace ℝ ι → ℝ}
     (hfT : MemLp f 2 (volume.restrict
       ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
-    (hGT : MemLp (fun x => G x - 0) 2 (volume.restrict
+    (hGT : MemLp G 2 (volume.restrict
       ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
     (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ ι)), ℝ)) :
     (dirichletForcing hfT.toLp + divergenceForcing (-hGT.toLp))
@@ -163,7 +167,7 @@ private theorem dirichletForcing_add_divergenceForcing_ofTestFunctionₗ
     simp only [Opens.coe_top, Measure.restrict_univ] at hneg
     filter_upwards [hneg, W1p.gradient_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ]
       with x hx hgx
-    rw [hx, hgx, Pi.neg_apply, sub_zero, inner_neg_left, neg_neg]
+    rw [hx, hgx, Pi.neg_apply, inner_neg_left, neg_neg]
 
 attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace in
 /-- **Existence and uniqueness for the whole-space equation with a zero-order shift.** Let `a` be
@@ -193,9 +197,8 @@ theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_pos [Decidabl
   have hT : (T : Set (EuclideanSpace ℝ ι)) = univ := Opens.coe_top
   have hfT : MemLp f 2 (volume.restrict (T : Set (EuclideanSpace ℝ ι))) := by
     rwa [hT, Measure.restrict_univ]
-  have hGT : MemLp (fun x => G x - 0) 2
-      (volume.restrict (T : Set (EuclideanSpace ℝ ι))) := by
-    simpa only [hT, Measure.restrict_univ, sub_zero] using hG
+  have hGT : MemLp G 2 (volume.restrict (T : Set (EuclideanSpace ℝ ι))) := by
+    rwa [hT, Measure.restrict_univ]
   have hellT : UniformlyEllipticOn (T : Set (EuclideanSpace ℝ ι)) a lam Lam :=
     hell.mono_set (subset_univ _)
   have hb : ∀ x ∈ (T : Set (EuclideanSpace ℝ ι)),
@@ -220,10 +223,7 @@ theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_pos [Decidabl
   · -- A solution against test functions solves the equation against `H¹(ℝ^ι)`.
     have hcoeff₀ := (hell.mono_set (subset_univ _)).memLp_energyIntegrand_zero_zero
       (Omega := T) ham.restrict
-    have hκuT : MemLp (fun x => κ * W1p.value u x) 2
-        (volume.restrict (T : Set (EuclideanSpace ℝ ι))) := by
-      simpa only [hT, Measure.restrict_univ] using (W1p.memLp_value u).const_mul κ
-    have h := forall_energyFormH1_eq_dirichletForcing_add_divergenceForcing hcoeff₀ hfT hκuT hGT
+    have h := forall_energyFormH1_eq_dirichletForcing_add_divergenceForcing hcoeff₀ hfT hGT
       (forall_energyFormH1_zero_zero_eq_of_shift hcoeff₀ hf hu)
     exact congrArg Subtype.val (hwu ⟨u, W1p.mem_w1p0Submodule_top (by norm_num) u⟩ fun v => by
       rw [h v, add_apply])

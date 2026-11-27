@@ -372,26 +372,22 @@ private theorem sqrt_mul_eLpNorm_value_le_of_shift {p : ℝ≥0∞} (hp : 2 ≤ 
       ENNReal.ofReal (√κ)⁻¹ * eLpNorm f p volume +
         ENNReal.ofReal √((p.toReal - 1) / (4 * lam)) * eLpNorm G p volume := by
   have hsκ : 0 < √κ := Real.sqrt_pos.2 hκ0
-  have hu2 := W1p.memLp_value u
   have hfT : MemLp f 2 (volume.restrict
       ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) : Set (EuclideanSpace ℝ (Fin (n + 1))))) := by
     simpa only [Opens.coe_top, Measure.restrict_univ] using hf
-  have hκuT : MemLp (fun x => κ * W1p.value u x) 2 (volume.restrict
+  have hGT : MemLp G 2 (volume.restrict
       ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) : Set (EuclideanSpace ℝ (Fin (n + 1))))) := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using hu2.const_mul κ
-  have hGT : MemLp (fun x => G x - 0) 2 (volume.restrict
-      ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) : Set (EuclideanSpace ℝ (Fin (n + 1))))) := by
-    simpa only [Opens.coe_top, Measure.restrict_univ, sub_zero] using hG
+    simpa only [Opens.coe_top, Measure.restrict_univ] using hG
   have hZ := (hell.mono_set (subset_univ _)).eLpNorm_value_le_of_forall_energyFormH1_eq
     (Omega := ⊤) (mu := volume) ham.restrict aestronglyMeasurable_const (gamma := κ)
     (fun _ _ => by rw [Real.norm_of_nonneg hκ0.le]) (ae_of_all _ fun _ => le_rfl) hκ0 hp hp_top
     (u := ⟨u, W1p.mem_w1p0Submodule_top (by norm_num) u⟩)
-    (forall_energyFormH1_eq_dirichletForcing_add_divergenceForcing hcoeff hfT hκuT hGT hu')
+    (forall_energyFormH1_eq_dirichletForcing_add_divergenceForcing hcoeff hfT hGT hu')
   have hf1 : (hfT.toLp : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) =ᵐ[volume] f := by
     simpa only [Opens.coe_top, Measure.restrict_univ] using hfT.coeFn_toLp
   have hG1 : ((-hGT.toLp : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2 _) :
       EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) =ᵐ[volume] -G := by
-    simpa only [Opens.coe_top, Measure.restrict_univ, sub_zero] using
+    simpa only [Opens.coe_top, Measure.restrict_univ] using
       (Lp.coeFn_neg hGT.toLp).trans hGT.coeFn_toLp.neg
   simp only [Opens.coe_top, Measure.restrict_univ] at hZ
   rw [eLpNorm_congr_ae hf1, eLpNorm_congr_ae hG1, eLpNorm_neg] at hZ
