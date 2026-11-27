@@ -104,8 +104,8 @@ fundamental domain, matching `4 − 2 − 2 = 0`. -/
 example {M : Set TriEdge} (hM : IsTorusTiling 2 2 M) (hc : heightChange 2 2 M = (1, 1)) :
     ((Finset.range 2 ×ˢ Finset.range 2).filter
       fun p : ℕ × ℕ => (⟨((p.1 : ℤ), (p.2 : ℤ)), 2⟩ : TriEdge) ∈ M).card = 0 := by
-  have := hM.add_card_filter_type_three
-  rw [hc] at this
+  have := hM.add_card_filter_type_three 0 0
+  simp only [hc, zero_add] at this
   omega
 
 /-! ### Attainable height changes on the `2 × 2` torus -/

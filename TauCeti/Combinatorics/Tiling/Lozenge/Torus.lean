@@ -52,8 +52,9 @@ each such `(a, b)` is realised by the floor tiling `H(x, y) = ⌊(n₂ a x + n�
   `TauCeti.IsTorusTiling.tilingHeight_add_sub_eq_heightChange_snd`:
   `H_M(v + (n₁, 0)) − H_M(v) = h₁` and `H_M(v + (0, n₂)) − H_M(v) = h₂`.
 * `TauCeti.IsTorusTiling.card_filter_type_one`, `TauCeti.IsTorusTiling.card_filter_type_two`,
-  `TauCeti.IsTorusTiling.add_card_filter_type_three`: per fundamental domain there are `n₂ h₁`
-  lozenges of type 1, `n₁ h₂` of type 2 and `n₁ n₂ − n₂ h₁ − n₁ h₂` of type 3.
+  `TauCeti.IsTorusTiling.add_card_filter_type_three`: every fundamental domain
+  `[a, a + n₁) × [b, b + n₂)` contains `n₂ h₁` lozenges of type 1, `n₁ h₂` of type 2 and
+  `n₁ n₂ − n₂ h₁ − n₁ h₂` of type 3.
 * `TauCeti.IsTorusTiling.heightChange_le`: `n₂ h₁ + n₁ h₂ ≤ n₁ n₂`.
 * `TauCeti.isTorusTiling_tilingOfHeight_floorHeight`: the floor tiling of `(a, b)` is a torus tiling
   with height change `(a, b)`.
@@ -193,30 +194,26 @@ theorem tilingHeight_add_mul_sub_snd (v : ℤ × ℤ) (m : ℕ) :
     linarith
 
 open Classical in
-/-- **Type-1 lozenges per fundamental domain**: the fundamental domain `[0, n₁) × [0, n₂)` contains
-`n₂ h₁` edges of `M` of direction `e₁`. -/
-theorem card_filter_type_one :
+/-- **Type-1 lozenges per fundamental domain**: the fundamental domain
+`[a, a + n₁) × [b, b + n₂)` contains `n₂ h₁` edges of `M` of direction `e₁`. -/
+theorem card_filter_type_one (a b : ℤ) :
     ((Finset.range n₁ ×ˢ Finset.range n₂).filter
-      fun p : ℕ × ℕ => (⟨((p.1 : ℤ), (p.2 : ℤ)), 0⟩ : TriEdge) ∈ M).card =
+      fun p : ℕ × ℕ => (⟨(a + p.1, b + p.2), 0⟩ : TriEdge) ∈ M).card =
       n₂ * (heightChange n₁ n₂ M).1 := by
   rw [Finset.card_filter, Finset.sum_product_right]
   simp_rw [← Finset.card_filter]
-  have (y : ℕ) := h.card_filter_range_eq_heightChange_fst 0 y
-  simp only [zero_add] at this
-  simp [this]
+  simp [h.card_filter_range_eq_heightChange_fst]
 
 open Classical in
-/-- **Type-2 lozenges per fundamental domain**: the fundamental domain `[0, n₁) × [0, n₂)` contains
-`n₁ h₂` edges of `M` of direction `e₂`. -/
-theorem card_filter_type_two :
+/-- **Type-2 lozenges per fundamental domain**: the fundamental domain
+`[a, a + n₁) × [b, b + n₂)` contains `n₁ h₂` edges of `M` of direction `e₂`. -/
+theorem card_filter_type_two (a b : ℤ) :
     ((Finset.range n₁ ×ˢ Finset.range n₂).filter
-      fun p : ℕ × ℕ => (⟨((p.1 : ℤ), (p.2 : ℤ)), 1⟩ : TriEdge) ∈ M).card =
+      fun p : ℕ × ℕ => (⟨(a + p.1, b + p.2), 1⟩ : TriEdge) ∈ M).card =
       n₁ * (heightChange n₁ n₂ M).2 := by
   rw [Finset.card_filter, Finset.sum_product]
   simp_rw [← Finset.card_filter]
-  have (x : ℕ) := h.card_filter_range_eq_heightChange_snd x 0
-  simp only [zero_add] at this
-  simp [this]
+  simp [h.card_filter_range_eq_heightChange_snd]
 
 omit h in
 open Classical in
@@ -235,23 +232,18 @@ private theorem ite_add_ite_add_ite (hM : IsTiling Set.univ M) (v : ℤ × ℤ) 
   fin_cases k <;> simp_all
 
 open Classical in
-/-- **Type-3 lozenges per fundamental domain**: the fundamental domain `[0, n₁) × [0, n₂)` contains
-`n₁ n₂ − n₂ h₁ − n₁ h₂` edges of `M` of direction `e₃`. -/
-theorem add_card_filter_type_three :
+/-- **Type-3 lozenges per fundamental domain**: the fundamental domain
+`[a, a + n₁) × [b, b + n₂)` contains `n₁ n₂ − n₂ h₁ − n₁ h₂` edges of `M` of direction `e₃`. -/
+theorem add_card_filter_type_three (a b : ℤ) :
     n₂ * (heightChange n₁ n₂ M).1 + n₁ * (heightChange n₁ n₂ M).2 +
       ((Finset.range n₁ ×ˢ Finset.range n₂).filter
-        fun p : ℕ × ℕ => (⟨((p.1 : ℤ), (p.2 : ℤ)), 2⟩ : TriEdge) ∈ M).card = n₁ * n₂ := by
-  have hB : ∑ p ∈ Finset.range n₁ ×ˢ Finset.range n₂,
-      (if (⟨((p.1 : ℤ), (p.2 : ℤ)) + (1, 0), 1⟩ : TriEdge) ∈ M then 1 else 0) =
-      n₁ * (heightChange n₁ n₂ M).2 := by
-    rw [Finset.sum_product]
-    simp_rw [← Finset.card_filter]
-    have (x : ℕ) := h.card_filter_range_eq_heightChange_snd (x + 1) 0
-    simp only [zero_add] at this
-    simp [Prod.mk_add_mk, this]
-  rw [← h.card_filter_type_one, ← hB, Finset.card_filter, Finset.card_filter,
-    ← Finset.sum_add_distrib, ← Finset.sum_add_distrib,
-    Finset.sum_congr rfl fun p _ => ite_add_ite_add_ite h.isTiling _]
+        fun p : ℕ × ℕ => (⟨(a + p.1, b + p.2), 2⟩ : TriEdge) ∈ M).card = n₁ * n₂ := by
+  have hB := h.card_filter_type_two (a + 1) b
+  simp_rw [add_right_comm a 1] at hB
+  rw [← h.card_filter_type_one a b, ← hB, Finset.card_filter, Finset.card_filter,
+    Finset.card_filter, ← Finset.sum_add_distrib, ← Finset.sum_add_distrib,
+    Finset.sum_const_nat (m := 1) fun p _ => by
+      simpa using ite_add_ite_add_ite h.isTiling (a + p.1, b + p.2)]
   simp
 
 /-- **Height changes are bounded**: `n₂ h₁ + n₁ h₂ ≤ n₁ n₂`. Going `n₂` periods in the first
