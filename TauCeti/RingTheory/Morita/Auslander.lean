@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.CategoryTheory.Preadditive.AdditiveGenerator
-public import TauCeti.RingTheory.DominantDimension
+public import TauCeti.RingTheory.DominantDimension.Basic
 public import TauCeti.RingTheory.GlobalDimension
 
 import Mathlib.RingTheory.HopkinsLevitzki

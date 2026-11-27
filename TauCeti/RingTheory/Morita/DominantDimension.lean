@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Morita.Matrix
 public import TauCeti.Algebra.Category.ModuleCat.Generator
-public import TauCeti.RingTheory.DominantDimension
+public import TauCeti.RingTheory.DominantDimension.Basic
 
 /-!
 # Morita invariance of the dominant dimension

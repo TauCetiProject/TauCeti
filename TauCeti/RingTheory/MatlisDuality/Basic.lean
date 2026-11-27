@@ -504,6 +504,24 @@ theorem MatlisDual.evalₗ_apply (N : Type w) [AddCommGroup N] [Module R N] (x :
     equivLinearMap R E _ (evalₗ R E N x) φ = equivLinearMap R E N φ x :=
   (rfl)
 
+/-- When evaluation into the bidual is injective, the dual of a left module is faithful over
+the opposite ring exactly when the original module is faithful. -/
+theorem MatlisDual.faithfulSMul_op_iff {A : Type t} [Ring A] [Algebra R A]
+    {N : Type w} [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
+    (hN : Function.Injective (evalₗ R E N)) :
+    FaithfulSMul Aᵐᵒᵖ (MatlisDual R E N) ↔ FaithfulSMul A N := by
+  constructor
+  · intro h
+    refine ⟨fun {a b} hab ↦ MulOpposite.op_injective ?_⟩
+    exact h.eq_of_smul_eq_smul fun φ ↦ MatlisDual.ext fun x ↦ by
+      simpa only [smul_op_apply, unop_op] using congrArg (equivLinearMap R E N φ) (hab x)
+  · intro h
+    refine ⟨fun {a b} hab ↦ MulOpposite.unop_injective (h.eq_of_smul_eq_smul fun x ↦ hN ?_)⟩
+    apply MatlisDual.ext
+    intro φ
+    simpa only [evalₗ_apply, smul_op_apply] using
+      congrArg (fun ψ ↦ equivLinearMap R E N ψ x) (hab φ)
+
 variable [Module.Injective R E] [Small.{v} R] {A : Type t} [Ring A] [Algebra R A]
   {N : Type w} [AddCommGroup N] [Module R N]
 

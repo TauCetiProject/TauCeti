@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
-public import TauCeti.RingTheory.DominantDimension
+public import TauCeti.RingTheory.DominantDimension.Basic
 
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.Generator.Endomorphism
