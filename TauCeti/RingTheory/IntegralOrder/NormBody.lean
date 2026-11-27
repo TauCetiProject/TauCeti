@@ -125,12 +125,10 @@ private theorem det_mul_regularNormBodyVolume_le [DecidableEq ι] (b c : Basis �
   let e := ((c.baseChange ℝ).equivFun.symm.trans (b.baseChange ℝ).equivFun).toContinuousLinearEquiv
   have he : LinearMap.det e.toLinearEquiv.toLinearMap = ((b.toMatrix c).det : ℝ) := by
     have hmat : LinearMap.toMatrix (Pi.basisFun ℝ ι) (Pi.basisFun ℝ ι) e.toLinearEquiv.toLinearMap =
-        (b.toMatrix c).map (algebraMap ℚ ℝ) := by
+        (b.toMatrix c).map (fun q => (q : ℝ)) := by
       ext i j
       simp [e, Basis.toMatrix_apply]
-    rw [← LinearMap.det_toMatrix (Pi.basisFun ℝ ι), hmat, ← RingHom.mapMatrix_apply,
-      ← RingHom.map_det]
-    rfl
+    rw [← LinearMap.det_toMatrix (Pi.basisFun ℝ ι), hmat, Rat.cast_det]
   refine c.mul_regularNormBodyVolume_le_of_image b e _ ?_ ?_
   · intro x hx
     simpa only [mem_regularNormRegion, e, LinearEquiv.coe_toContinuousLinearEquiv',
@@ -138,8 +136,8 @@ private theorem det_mul_regularNormBodyVolume_le [DecidableEq ι] (b c : Basis �
   · intro s
     rw [Measure.addHaar_image_continuousLinearEquiv, he]
 
-/-- Under change of rational basis the coordinate volume scales by the absolute determinant
-of the matrix with columns the new vectors in the old coordinates. -/
+/-- The volume in coordinates `b` equals the volume in coordinates `c` multiplied by the absolute
+determinant of `b.toMatrix c`, whose columns are the vectors of `c` in coordinates `b`. -/
 theorem regularNormBodyVolume_eq_det_mul [DecidableEq ι] (b c : Basis ι ℚ D) :
     b.regularNormBodyVolume = ENNReal.ofReal |((b.toMatrix c).det : ℝ)| *
       c.regularNormBodyVolume := by
@@ -207,26 +205,6 @@ theorem sqrt_regularDiscr_mul_regularNormBodyVolume_eq [DecidableEq ι] (b c : B
     ← ENNReal.ofReal_mul (Real.sqrt_nonneg _),
     mul_comm (Real.sqrt _)]
 
-/-- The real regular norm in rational basis coordinates is the determinant of the
-left-multiplication matrix obtained from the rational structure constants. -/
-theorem norm_baseChange_equivFun_symm [DecidableEq ι] (b : Basis ι ℚ D) (x : ι → ℝ) :
-    Algebra.norm ℝ ((b.baseChange ℝ).equivFun.symm x) =
-      (Matrix.of fun i j => ∑ k, x k * (b.repr (b k * b j) i : ℝ)).det := by
-  rw [Algebra.norm_eq_matrix_det (b.baseChange ℝ)]
-  congr 1
-  ext i j
-  simp only [Algebra.leftMulMatrix_eq_repr_mul, Basis.equivFun_symm_apply, Basis.baseChange_apply,
-    Finset.sum_mul, smul_mul_assoc, map_sum, map_smul, Finsupp.finsetSum_apply, Finsupp.smul_apply,
-    Algebra.TensorProduct.tmul_mul_tmul, one_mul, Basis.baseChange_repr_tmul,
-    Rat.smul_one_eq_cast, smul_eq_mul, Matrix.of_apply]
-
-/-- The coordinate norm scales with degree equal to the dimension of the algebra. -/
-theorem norm_baseChange_equivFun_symm_smul (b : Basis ι ℚ D) (r : ℝ) (x : ι → ℝ) :
-    Algebra.norm ℝ ((b.baseChange ℝ).equivFun.symm (r • x)) =
-      r ^ Fintype.card ι * Algebra.norm ℝ ((b.baseChange ℝ).equivFun.symm x) := by
-  rw [map_smul, Algebra.smul_def, map_mul, Algebra.norm_algebraMap,
-    Module.finrank_eq_card_basis (b.baseChange ℝ)]
-
 /-- Transporting the basis by an algebra equivalence preserves its norm region. -/
 @[simp]
 theorem regularNormRegion_map {E : Type*} [Ring E] [Algebra ℚ E]
@@ -256,52 +234,8 @@ namespace Module.Basis
 
 variable {ι D : Type*} [DivisionRing D] [Algebra ℚ D]
 
-private theorem one_le_abs_norm_baseChange_of_int_coords [Finite ι] (b : Basis ι ℚ D)
-    (h : ∀ i j k, ∃ z : ℤ, (z : ℚ) = b.repr (b k * b j) i) (z : ι → ℤ)
-    (hz : z ≠ 0) :
-    1 ≤ |Algebra.norm ℝ ((b.baseChange ℝ).equivFun.symm fun i => (z i : ℝ))| := by
-  classical
-  let := Fintype.ofFinite ι
-  have := Module.Finite.of_basis b
-  let x := b.equivFun.symm (fun i => (z i : ℚ))
-  have hx : x ≠ 0 := by
-    intro hx
-    apply hz
-    have he : b.equivFun x = 0 := by rw [hx, map_zero]
-    funext i
-    simpa only [x, LinearEquiv.apply_symm_apply, Pi.zero_apply, Int.cast_eq_zero]
-      using congrFun he i
-  have hreal : (b.baseChange ℝ).equivFun.symm (fun i => (z i : ℝ)) = 1 ⊗ₜ[ℚ] x := by
-    apply (b.baseChange ℝ).equivFun.injective
-    rw [LinearEquiv.apply_symm_apply]
-    funext i
-    rw [Basis.equivFun_apply, Basis.baseChange_repr_tmul, ← Basis.equivFun_apply,
-      Rat.smul_one_eq_cast]
-    dsimp only [x]
-    rw [LinearEquiv.apply_symm_apply, Rat.cast_intCast]
-  let m : Matrix ι ι ℤ := Matrix.of fun i j => ∑ k, z k * (h i j k).choose
-  have hm : m.map (Int.castRingHom ℝ) =
-      Matrix.of (fun i j => ∑ k, (z k : ℝ) * (b.repr (b k * b j) i : ℝ)) := by
-    ext i j
-    simp only [m, Matrix.map_apply, Matrix.of_apply, Int.coe_castRingHom, Int.cast_sum,
-      Int.cast_mul]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    congr 1
-    simpa only [Rat.cast_intCast] using
-      congrArg (fun q : ℚ => (q : ℝ)) (h i j k).choose_spec
-  have hnorm : Algebra.norm ℝ ((b.baseChange ℝ).equivFun.symm fun i => (z i : ℝ)) =
-      (m.det : ℝ) := by
-    rw [b.norm_baseChange_equivFun_symm, ← hm, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
-    rfl
-  have hne : m.det ≠ 0 := by
-    intro he
-    rw [he, Int.cast_zero, hreal, TauCeti.Algebra.norm_baseChange_tmul] at hnorm
-    exact (Algebra.norm_ne_zero_iff.mpr hx) ((algebraMap ℚ ℝ).injective (by simpa using hnorm))
-  rw [hnorm, ← Int.cast_abs, ← Int.cast_one]
-  exact_mod_cast Int.one_le_abs hne
-
-/-- Integral multiplication coordinates exclude every nonzero integer point from the
-strict regular norm region. Minkowski bounds the volume supremum by `2 ^ finrank ℚ D`. -/
+/-- If every structure constant of `b` is an integer, the coordinate volume supremum is at most
+`2 ^ Fintype.card ι`. -/
 theorem regularNormBodyVolume_le_two_pow [Fintype ι] (b : Basis ι ℚ D)
     (h : ∀ i j k, ∃ z : ℤ, (z : ℚ) = b.repr (b k * b j) i) :
     b.regularNormBodyVolume ≤ 2 ^ Fintype.card ι := by
@@ -328,12 +262,10 @@ theorem regularNormBodyVolume_le_two_pow [Fintype ι] (b : Basis ι ℚ D)
     apply hy
     apply Subtype.ext
     simp [← funext hz, he, Pi.zero_def]
-  exact (not_lt_of_ge (b.one_le_abs_norm_baseChange_of_int_coords h z hz'))
+  exact (not_lt_of_ge (b.one_le_abs_norm_baseChange_intCast h z hz'))
     (by simpa only [funext hz, mem_regularNormRegion] using hn hys)
 
-/-- The volume supremum is finite for every rational basis of a division algebra.
-Clearing the denominators of the multiplication table gives an integral rescaling
-to which Minkowski applies. -/
+/-- The volume supremum is finite for every rational basis of a division algebra. -/
 theorem regularNormBodyVolume_ne_top [Fintype ι] (b : Basis ι ℚ D) :
     b.regularNormBodyVolume ≠ ⊤ := by
   classical

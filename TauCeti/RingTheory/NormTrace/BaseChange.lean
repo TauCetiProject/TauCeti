@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Eval
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.Norm.Basic
 public import Mathlib.RingTheory.Trace.Basic
 public import Mathlib.RingTheory.TensorProduct.Free
@@ -39,6 +41,12 @@ noncommutative algebras.
   `T` is the image of that of `B` over `K`.
 * `Module.Basis.norm_sum_tmul_eq_aeval`: the norm of `∑ j, xⱼ ⊗ bⱼ` over `T` is the generic norm
   form of `B` evaluated at `x`.
+* `Module.Basis.norm_baseChange_equivFun_symm` gives the norm in scalar-extended basis
+  coordinates as a determinant, and `Module.Basis.norm_baseChange_equivFun_symm_smul` gives its
+  homogeneity. For the coordinates of the unit or of a product, `LinearEquiv.symm_apply_apply`
+  reduces the norm computation to `map_one` or `map_mul` for `Algebra.norm`.
+* `Module.Basis.one_le_abs_norm_baseChange_intCast` bounds the absolute norm of a nonzero
+  integer coordinate vector in a rational division algebra with integral structure constants.
 * `TauCeti.Algebra.charpoly_lmul_eq_norm`: for a finite free `K`-algebra `B`, the characteristic
   polynomial of multiplication by `x ∈ T ⊗[K] B` over `T` is the norm of `X - x` over `T[X]`.
 * `TauCeti.Algebra.trace_baseChange_tmul_of_isScalarTower`: for a tower `R → S → T` and an
@@ -136,6 +144,80 @@ theorem Algebra.norm_baseChange_tmul (x : B) :
     Algebra.norm_rTensor (Algebra.ofId K A) ((1 : K) ⊗ₜ[K] x)
 
 end Norm
+
+section BasisCoordinates
+
+variable {R S B : Type*} [CommSemiring R] [CommRing S] [Ring B] [Algebra R S] [Algebra R B]
+variable {ι : Type*} [Fintype ι]
+
+/-- The regular norm in scalar-extended basis coordinates is the determinant of the
+left-multiplication matrix obtained by mapping the structure constants along `algebraMap R S`. -/
+theorem _root_.Module.Basis.norm_baseChange_equivFun_symm [DecidableEq ι]
+    (b : Module.Basis ι R B) (x : ι → S) :
+    Algebra.norm S ((b.baseChange S).equivFun.symm x) =
+      (Matrix.of fun i j => ∑ k, x k * algebraMap R S (b.repr (b k * b j) i)).det := by
+  rw [Algebra.norm_eq_matrix_det (b.baseChange S)]
+  congr 1
+  ext i j
+  simp only [Algebra.leftMulMatrix_eq_repr_mul, Module.Basis.equivFun_symm_apply,
+    Module.Basis.baseChange_apply, Finset.sum_mul, smul_mul_assoc, map_sum, map_smul,
+    Finsupp.finsetSum_apply, Finsupp.smul_apply, Algebra.TensorProduct.tmul_mul_tmul, one_mul,
+    Module.Basis.baseChange_repr_tmul, Matrix.of_apply]
+  simp only [Algebra.smul_def, Algebra.algebraMap_self_apply, mul_one]
+
+/-- The coordinate norm is homogeneous of degree equal to the number of basis vectors. -/
+theorem _root_.Module.Basis.norm_baseChange_equivFun_symm_smul
+    (b : Module.Basis ι R B) (r : S) (x : ι → S) :
+    Algebra.norm S ((b.baseChange S).equivFun.symm (r • x)) =
+      r ^ Fintype.card ι * Algebra.norm S ((b.baseChange S).equivFun.symm x) := by
+  rw [map_smul, Algebra.smul_def, map_mul, Algebra.norm_algebraMap_of_basis (b.baseChange S)]
+
+end BasisCoordinates
+
+/-- A nonzero integer coordinate vector has absolute regular norm at least one in
+a rational division algebra basis with integral structure constants. -/
+theorem _root_.Module.Basis.one_le_abs_norm_baseChange_intCast {ι D : Type*} [Finite ι]
+    [DivisionRing D] [Algebra ℚ D] (b : Module.Basis ι ℚ D)
+    (h : ∀ i j k, ∃ z : ℤ, (z : ℚ) = b.repr (b k * b j) i) (z : ι → ℤ)
+    (hz : z ≠ 0) :
+    1 ≤ |Algebra.norm ℝ ((b.baseChange ℝ).equivFun.symm fun i => (z i : ℝ))| := by
+  classical
+  let := Fintype.ofFinite ι
+  let x := b.equivFun.symm (fun i => (z i : ℚ))
+  have hx : x ≠ 0 := by
+    intro hx
+    apply hz
+    have he : b.equivFun x = 0 := by rw [hx, map_zero]
+    funext i
+    simpa only [x, LinearEquiv.apply_symm_apply, Pi.zero_apply, Int.cast_eq_zero]
+      using congrFun he i
+  have hreal : (b.baseChange ℝ).equivFun.symm (fun i => (z i : ℝ)) = 1 ⊗ₜ[ℚ] x := by
+    apply (b.baseChange ℝ).equivFun.injective
+    rw [LinearEquiv.apply_symm_apply]
+    funext i
+    rw [Module.Basis.equivFun_apply, Module.Basis.baseChange_repr_tmul,
+      ← Module.Basis.equivFun_apply, Rat.smul_one_eq_cast]
+    dsimp only [x]
+    rw [LinearEquiv.apply_symm_apply, Rat.cast_intCast]
+  let m : Matrix ι ι ℤ := Matrix.of fun i j => ∑ k, z k * (h i j k).choose
+  have hm : m.map (fun n => (n : ℝ)) =
+      Matrix.of (fun i j => ∑ k, (z k : ℝ) * (b.repr (b k * b j) i : ℝ)) := by
+    ext i j
+    simp only [m, Matrix.map_apply, Matrix.of_apply, Int.cast_sum, Int.cast_mul]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    congr 1
+    simpa only [Rat.cast_intCast] using
+      congrArg (fun q : ℚ => (q : ℝ)) (h i j k).choose_spec
+  have hnorm : Algebra.norm ℝ ((b.baseChange ℝ).equivFun.symm fun i => (z i : ℝ)) =
+      (m.det : ℝ) := by
+    simp only [b.norm_baseChange_equivFun_symm, eq_ratCast, ← hm, ← Int.cast_det]
+  have hne : m.det ≠ 0 := by
+    intro he
+    rw [he, Int.cast_zero, hreal, TauCeti.Algebra.norm_baseChange_tmul] at hnorm
+    exact (Algebra.norm_ne_zero_iff_of_basis b).mpr hx
+      ((algebraMap ℚ ℝ).injective (by simpa using hnorm))
+  rw [hnorm, ← Int.cast_abs, ← Int.cast_one]
+  exact_mod_cast Int.one_le_abs hne
 
 section GenericNorm
 
