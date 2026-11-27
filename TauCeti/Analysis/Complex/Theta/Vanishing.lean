@@ -127,11 +127,11 @@ private lemma thetaFourierCoeff_zero_level_eq_zero_of_ne {τ : ℂ} (hτ : τ.im
     have : (-2 * π * τ.im) * ((m : ℝ) + α) = 0 := by linarith
     exact (mul_eq_zero.mp this).resolve_left hne
   have hmaC : ((m : ℂ) + α) = 0 := by exact_mod_cast hma
-  have hneg : 2 * π * I * (m + α) * τ - 2 * π * I * β = -2 * π * I * (β : ℂ) := by
+  have hneg : 2 * π * I * (m + α) * τ - 2 * π * I * β = -(2 * π * I * (β : ℂ)) := by
     rw [hmaC]
     ring
-  rw [hneg, Complex.exp_neg_two_pi_mul_I_mul_ofReal_eq_one_iff] at hexp
-  exact ⟨hma, hexp⟩
+  rw [hneg, Complex.exp_neg, inv_eq_one, Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff] at hexp
+  exact ⟨hma, hexp.imp fun _ h => h.symm⟩
 
 /-- At level `k = 0` with `τ.im ≠ 0` and integer characteristics `(α, β) ∈ ℤ × ℤ`, the theta
 sections are precisely the constant functions. -/

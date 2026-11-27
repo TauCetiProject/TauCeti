@@ -174,7 +174,9 @@ theorem exp_thetaAutomorphy_commutator_eq_iff_exists_intCast_eq (k : ℝ) (τ : 
   have hne :
       cexp (2 * π * I * α) * cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) ≠ 0 :=
     mul_ne_zero (Complex.exp_ne_zero _) (Complex.exp_ne_zero _)
-  rw [mul_eq_right₀ hne, Complex.exp_neg_two_pi_mul_I_mul_ofReal_eq_one_iff]
+  rw [mul_eq_right₀ hne, neg_mul, neg_mul, neg_mul, Complex.exp_neg, inv_eq_one,
+    Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff]
+  exact exists_congr fun _ => eq_comm
 
 /-- The automorphy law at one lattice vector propagates along the cocycle law: if it holds at
 `λ` and `μ` it holds at `λ + μ`. -/
