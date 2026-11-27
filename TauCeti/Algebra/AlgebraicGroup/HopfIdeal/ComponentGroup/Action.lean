@@ -200,30 +200,20 @@ theorem injective_descSubgroupComponentGroupHom_iff (I : HopfIdeal k H) {M : Typ
           (CommAlgCat.of k k)).subgroupOf
         (CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) := by
   refine (injective_descComponentGroupHom_iff (quotient H I) _ _).trans ?_
-  have hsurj : Function.Surjective
-      (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom :=
-    fun q ↦ ⟨(CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).hom.hom q, by
-      rw [← MonoidHom.comp_apply, ← GrpCat.hom_comp, Iso.hom_inv_id, GrpCat.hom_id,
-        MonoidHom.id_apply]⟩
-  have hinv : ∀ g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k),
-      (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).hom.hom
-        ((CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom g) =
-          g := fun g ↦ by
-    rw [← MonoidHom.comp_apply, ← GrpCat.hom_comp, Iso.inv_hom_id, GrpCat.hom_id,
-      MonoidHom.id_apply]
   constructor
   · intro h
     ext g
     have hg := Subgroup.ext_iff.mp h
       ((CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom g)
-    rw [MonoidHom.mem_ker, MonoidHom.comp_apply, hinv,
+    rw [MonoidHom.mem_ker, MonoidHom.comp_apply, quotientPointsSubgroupIso_hom_inv_apply,
       quotientPointsSubgroupIso_inv_hom_mem_identityComponent_iff] at hg
     exact hg
   · intro h
     ext q
-    obtain ⟨g, rfl⟩ := hsurj q
+    obtain ⟨g, rfl⟩ := (ConcreteCategory.bijective_of_isIso
+      (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv).2 q
     have hg := Subgroup.ext_iff.mp h g
-    rw [MonoidHom.mem_ker, MonoidHom.comp_apply, hinv,
+    rw [MonoidHom.mem_ker, MonoidHom.comp_apply, quotientPointsSubgroupIso_hom_inv_apply,
       quotientPointsSubgroupIso_inv_hom_mem_identityComponent_iff]
     exact hg
 
@@ -295,8 +285,7 @@ private theorem quotientMulAction_iso_inv_smul (I : HopfIdeal k H) (X : Type*)
     (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom g • y =
       g • y := by
   unfold quotientMulAction
-  rw [MulAction.compHom_smul_def, ← MonoidHom.comp_apply, ← GrpCat.hom_comp, Iso.inv_hom_id,
-    GrpCat.hom_id, MonoidHom.id_apply]
+  rw [MulAction.compHom_smul_def, quotientPointsSubgroupIso_hom_inv_apply]
 
 /-- Descend an action of the closed subgroup `N(k) ≤ G(k)` on `X` whose restriction to `N°(k)` is
 trivial to a permutation action of `π₀(N)`. -/
@@ -464,10 +453,8 @@ theorem ker_subgroupComponentGroupActionHom (I : HopfIdeal k H) (X : Type*)
     MulAction.toPermHom_apply, MulAction.toPerm_apply]
   constructor
   · intro hq
-    refine ⟨(CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).hom.hom q,
-      hq, ?_⟩
-    rw [← MonoidHom.comp_apply, ← GrpCat.hom_comp, Iso.hom_inv_id, GrpCat.hom_id,
-      MonoidHom.id_apply]
+    exact ⟨(CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).hom.hom q,
+      hq, quotientPointsSubgroupIso_inv_hom_apply H I q⟩
   · rintro ⟨g, hg, rfl⟩ x
     rw [quotientMulAction_iso_inv_smul]
     exact hg x
