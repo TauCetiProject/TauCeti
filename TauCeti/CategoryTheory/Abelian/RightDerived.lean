@@ -205,6 +205,29 @@ theorem isZero_rightDerived_obj_X₃_iff (n : ℕ) :
     IsZero ((G.rightDerived (n + 1)).obj S.X₃) ↔ IsZero ((G.rightDerived (n + 2)).obj S.X₁) :=
   (G.rightDerivedObjX₁IsoOfShortExact hS n).isZero_iff.symm
 
+omit [HasInjectiveResolutions C] in
+/-- For an injective resolution `R` of `Q`, the short complex in degree one of `G` applied to the
+resolution `X ⟶ I ⟶ R⁰ ⟶ R¹ ⟶ ⋯` (`InjectiveResolution.ofShortExact`) is
+`G I ⟶ G (R⁰) ⟶ G (R¹)`, with differentials `G (S.g ≫ R.ι₀)` and `G (R⁰ ⟶ R¹)`. -/
+-- The degree `n + 1` object of `CochainComplex.augment` is the degree `n` object of `R`, and its
+-- differentials in degrees `0 ⟶ 1` and `1 ⟶ 2` are `S.g ≫ R.ι₀` and `R.cocomplex.d 0 1`, all by
+-- unfolding `augment`, so the components are identities.
+noncomputable def mapOfShortExactScOneIso (R : InjectiveResolution S.X₃) :
+    ((G.mapHomologicalComplex _).obj (R.ofShortExact hS).cocomplex).sc' 0 1 2 ≅
+      ShortComplex.mk (G.map (S.g ≫ R.ι₀)) (G.map (R.cocomplex.d 0 1))
+        (by rw [← G.map_comp]; simp) :=
+  ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    ((Category.id_comp _).trans (Category.comp_id _).symm)
+    ((Category.id_comp _).trans (Category.comp_id _).symm)
+
+omit [HasInjectiveResolutions C] in
+/-- The middle component of the inverse of `mapOfShortExactScOneIso` is the identity of
+`G (R⁰)`. -/
+lemma comp_mapOfShortExactScOneIso_inv_τ₂ (R : InjectiveResolution S.X₃) {Z : D}
+    (f : Z ⟶ G.obj (R.cocomplex.X 0)) :
+    f ≫ (G.mapOfShortExactScOneIso hS R).inv.τ₂ = f :=
+  Category.comp_id f
+
 include hS in
 /-- **The first right derived functor as a cokernel.** For a left exact functor `G` and a short
 exact sequence `0 ⟶ X ⟶ I ⟶ Q ⟶ 0` with `I` injective, `R¹ G (X)` is the cokernel of
@@ -220,17 +243,12 @@ noncomputable def rightDerivedOneIsoCokernel [PreservesFiniteLimits G] :
   have : Epi (kernel.lift T.g T.f T.zero) := hT.epi_kernelLift
   have : IsIso (kernel.lift T.g T.f T.zero) := isIso_of_mono_of_epi _
   -- `G` applied to the resolution `X ⟶ I ⟶ R⁰ ⟶ R¹ ⟶ ⋯` has short complex `G I ⟶ G (R⁰) ⟶ G (R¹)`
-  -- in degree one: its objects and differentials are those of `T'` by unfolding `augment`, so the
-  -- squares below hold up to `𝟙`.
+  -- in degree one (`mapOfShortExactScOneIso`).
   let T' := ShortComplex.mk (G.map (S.g ≫ R.ι₀)) (G.map (R.cocomplex.d 0 1))
     (by rw [← G.map_comp]; simp)
-  let e : ((G.mapHomologicalComplex _).obj (R.ofShortExact hS).cocomplex).sc' 0 1 2 ≅ T' :=
-    ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
-      ((Category.id_comp _).trans (Category.comp_id _).symm)
-      ((Category.id_comp _).trans (Category.comp_id _).symm)
   (R.ofShortExact hS).isoRightDerivedObj G 1 ≪≫
     HomologicalComplex.homologyIsoSc' _ 0 1 2 (by simp) (by simp) ≪≫
-    ShortComplex.homologyMapIso e ≪≫
+    ShortComplex.homologyMapIso (G.mapOfShortExactScOneIso hS R) ≪≫
     (ShortComplex.LeftHomologyData.ofHasKernelOfHasCokernel T').homologyIso ≪≫
     cokernelIsoOfEq (show kernel.lift T'.g T'.f T'.zero = G.map S.g ≫ kernel.lift T.g T.f T.zero by
       ext; simp [T, T']) ≪≫
@@ -249,32 +267,24 @@ lemma π_rightDerivedOneIsoCokernel_inv [PreservesFiniteLimits G] :
           rw [← G.map_comp]; simp) ≫
       HomologicalComplex.homologyπ _ 1 ≫
       (((injectiveResolution S.X₃).ofShortExact hS).isoRightDerivedObj G 1).inv := by
-  simp only [rightDerivedOneIsoCokernel, HomologicalComplex.homologyFunctor_obj,
-    HomologicalComplex.shortComplexFunctor'_obj_X₁, mapHomologicalComplex_obj_X,
-    HomologicalComplex.shortComplexFunctor'_obj_X₂, HomologicalComplex.shortComplexFunctor'_obj_X₃,
-    Iso.trans_inv, cokernelCompIsIso_inv, Category.assoc, ShortComplex.homologyMapIso_inv,
-    cokernel.π_desc_assoc, π_comp_cokernelIsoOfEq_inv_assoc]
+  simp only [rightDerivedOneIsoCokernel, Iso.trans_inv, ShortComplex.homologyMapIso_inv,
+    cokernelCompIsIso_inv, Category.assoc, cokernel.π_desc_assoc,
+    π_comp_cokernelIsoOfEq_inv_assoc]
   have h := (ShortComplex.LeftHomologyData.ofHasKernelOfHasCokernel
     (ShortComplex.mk (G.map (S.g ≫ (injectiveResolution S.X₃).ι₀))
       (G.map ((injectiveResolution S.X₃).cocomplex.d 0 1))
       (by rw [← G.map_comp]; simp))).π_comp_homologyIso_inv
   rw [ShortComplex.LeftHomologyData.ofHasKernelOfHasCokernel_π] at h
-  rw [reassoc_of% h]
-  simp only [ShortComplex.LeftHomologyData.ofHasKernelOfHasCokernel_K,
-    ShortComplex.homologyπ_naturality_assoc, HomologicalComplex.π_homologyIsoSc'_inv_assoc]
+  rw [reassoc_of% h, ShortComplex.homologyπ_naturality_assoc,
+    HomologicalComplex.π_homologyIsoSc'_inv_assoc]
   simp only [← Category.assoc]
   refine congrArg (· ≫ _) (congrArg (· ≫ _) ?_)
   rw [← cancel_mono (HomologicalComplex.iCycles _ 1)]
-  simp only [mapHomologicalComplex_obj_X, Category.assoc,
-    HomologicalComplex.cyclesIsoSc'_inv_iCycles, ShortComplex.cyclesMap_i,
-    HomologicalComplex.shortComplexFunctor'_obj_X₂,
-    ShortComplex.LeftHomologyData.cyclesIso_inv_comp_iCycles_assoc,
-    ShortComplex.LeftHomologyData.ofHasKernelOfHasCokernel_K,
-    ShortComplex.LeftHomologyData.ofHasKernelOfHasCokernel_i, kernel.lift_ι_assoc]
-  -- `G.map R.ι₀` lands in `G (R⁰)`, the degree-one object of the extended resolution by unfolding
-  -- `augment`, so `liftCycles_i` only matches up to that unfolding.
-  erw [HomologicalComplex.liftCycles_i]
-  exact Category.comp_id _
+  -- `G.map R.ι₀` is stated as a morphism into the degree-one object `G (R⁰)` of the mapped
+  -- complex, so `liftCycles_i` is applied by unification rather than by rewriting.
+  refine Eq.trans ?_ (HomologicalComplex.liftCycles_i _ _ _ _ _).symm
+  refine Eq.trans ?_ (G.comp_mapOfShortExactScOneIso_inv_τ₂ hS _ (G.map _))
+  simp
 
 include hS in
 /-- **Dimension shifting in degree one.** For a left exact functor `G` and a short exact sequence
