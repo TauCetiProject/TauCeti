@@ -198,6 +198,7 @@ theorem mem_matsOfSize_of_le {M : Matrix m n A} (hM : M ∈ S.matsOfSize i) (hij
 theorem zero_mem_vecsOfSize (i : ℕ) : (0 : κ → A) ∈ S.vecsOfSize i :=
   fun _ => S.zero_mem i
 
+@[simp]
 theorem single_one_mem_vecsOfSize [DecidableEq κ] (i : ℕ) (k : κ) :
     (Pi.single k 1 : κ → A) ∈ S.vecsOfSize i := by
   intro k'
@@ -244,6 +245,7 @@ theorem conjTranspose_mem_matsOfSize_iff {M : Matrix m n A} :
 theorem zero_mem_matsOfSize (i : ℕ) : (0 : Matrix m n A) ∈ S.matsOfSize i :=
   fun _ _ => S.zero_mem i
 
+@[simp]
 theorem one_mem_matsOfSize [DecidableEq n] (i : ℕ) : (1 : Matrix n n A) ∈ S.matsOfSize i := by
   intro a b
   by_cases h : a = b

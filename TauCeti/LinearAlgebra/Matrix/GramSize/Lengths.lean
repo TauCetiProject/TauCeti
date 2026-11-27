@@ -278,7 +278,7 @@ private theorem inv_mul_mem_of_add_eq_sub [Nonempty ι] (hJ : J.IsHermitian)
         (Submodule.span_mono (Set.image_mono (Set.Iio_subset_Iio (Nat.le_succ a))) hs)
     have h0 := dotProduct_mulVec_eq_zero_of_mem_span
       (by rintro _ ⟨b', hb', rfl⟩; exact he b hb b' (Nat.le_of_lt_succ hb')) hsp
-    rwa [mulVec_sub, dotProduct_sub, hω₀ b (by omega), zero_sub, neg_eq_zero] at h0
+    simpa [mulVec_sub, hω₀ b (by omega)] using h0
   have hζζ'ω₀' : star ζ ⬝ᵥ J *ᵥ ω₀' = star ζ' ⬝ᵥ J *ᵥ ω₀' :=
     star_dotProduct_mulVec_eq_of_sub_mem_span (by rintro _ ⟨b, hb, rfl⟩; exact hω₀' b hb) hζζ'
   -- Read at `g⁻¹` and `g'⁻¹`, which preserve the form, `μ` is a difference of two nearby values.
@@ -293,8 +293,7 @@ private theorem inv_mul_mem_of_add_eq_sub [Nonempty ι] (hJ : J.IsHermitian)
   have hu' : ((g'⁻¹ : GL ι A) : Matrix ι ι A) *ᵥ ζ' ∈ S.vecsOfSize (c + 2) := by
     have h := S.sub_mem_vecsOfSize (hζg.mono (by omega : c ≤ 1 + c))
       (S.smul_mem_vecsOfSize hρS hD₁)
-    rw [smul_smul, Units.mul_inv, one_smul, sub_sub_cancel] at h
-    exact S.mem_vecsOfSize_of_le h (by omega)
+    simpa [smul_smul] using S.mem_vecsOfSize_of_le h (by omega : 1 + c + 1 ≤ c + 2)
   have h₁ := S.star_dotProduct_mulVec_mem hD₁ hω₀g
   have h₂ := S.star_dotProduct_mulVec_mem hu' hD₂
   exact S.add_mem (i := i + c + t + 5) (S.mem_of_le h₁ (by omega)) (S.mem_of_le h₂ (by omega))
@@ -399,9 +398,7 @@ theorem LengthsDifferLe.smul_sub_one_mem_matsOfSize (hJ : IsUnit J) {x : GL ι A
         rw [LengthLeAt, mulVec_mulVec, Units.inv_mul, one_mulVec]
         exact S.single_one_mem_vecsOfSize 0 k)
     have hω'eq : ω' = (g : Matrix ι ι A) *ᵥ Pi.single k 1 := by
-      have h0 : Set.Iio (0 : ℕ) = ∅ := Set.Iio_eq_empty_iff.mpr isMin_bot
-      rw [h0, Set.image_empty, Submodule.span_empty, Submodule.mem_bot, sub_eq_zero] at hω'
-      exact hω'.symm
+      simpa [sub_eq_zero, eq_comm] using hω'
     have hgx : (((g * x)⁻¹ : GL ι A) : Matrix ι ι A) * g = ((x⁻¹ : GL ι A) : Matrix ι ι A) := by
       rw [← Units.val_mul, _root_.mul_inv_rev, inv_mul_cancel_right]
     simp only [hω'eq, zero_add, mulVec_mulVec, Units.inv_mul, hgx, one_mulVec] at hk
