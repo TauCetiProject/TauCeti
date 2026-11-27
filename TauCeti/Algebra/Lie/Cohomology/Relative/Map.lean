@@ -101,11 +101,14 @@ variable {U : ∀ n, Submodule R (L'' [⋀^Fin n]→ₗ[R] M'')}
 theorem cochainSubcomplexMap_comp (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
     (he' : ∀ (x : L'') (m : M'), e' ⁅ψ x, m⁆ = ⁅x, e' m⁆)
     (h : ∀ n, ∀ ω ∈ S n, cochainMap e φ n ω ∈ T n)
-    (h' : ∀ n, ∀ ω ∈ T n, cochainMap e' ψ n ω ∈ U n)
-    (hcomp : ∀ n, ∀ ω ∈ S n, cochainMap (e'.comp e) (φ.comp ψ) n ω ∈ U n) :
+    (h' : ∀ n, ∀ ω ∈ T n, cochainMap e' ψ n ω ∈ U n) :
     cochainSubcomplexMap (hS := hS) (hT := hT) he h ≫
       cochainSubcomplexMap (hS := hT) (hT := hU) he' h' =
-      cochainSubcomplexMap (hS := hS) (hT := hU) (fun x m ↦ by simp [he, he']) hcomp := by
+      cochainSubcomplexMap (hS := hS) (hT := hU) (e := e'.comp e) (φ := φ.comp ψ)
+        (fun x m ↦ by simp [he, he'])
+        (fun n ω hω ↦ by
+          rw [← cochainMap_comp e e' φ ψ n]
+          exact h' n _ (h n ω hω)) := by
   apply HomologicalComplex.hom_ext
   intro n
   rw [HomologicalComplex.comp_f, cochainSubcomplexMap_f, cochainSubcomplexMap_f,
@@ -122,7 +125,7 @@ variable {H : LieSubalgebra R L} {H' : LieSubalgebra R L'} {H'' : LieSubalgebra 
 
 /-- Pullback and coefficient change preserve relative cochains when the Lie algebra map
 carries the distinguished subalgebra into the distinguished subalgebra. -/
-private theorem cochainMap_mem_relativeCochains
+theorem cochainMap_mem_relativeCochains
     (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
     (hφ : ∀ x ∈ H', φ x ∈ H) {n : ℕ} {ω : L [⋀^Fin n]→ₗ[R] M}
     (hω : ω ∈ relativeCochains R M H n) :
@@ -140,6 +143,15 @@ noncomputable def relativeCochainComplexMap (e : M →ₗ[R] M') (φ : L' →ₗ
     relativeCochainComplex R M H ⟶ relativeCochainComplex R M' H' :=
   cochainSubcomplexMap he fun _ _ ↦ cochainMap_mem_relativeCochains he hφ
 
+/-- The degree component of the relative cochain map is the restricted ambient map. -/
+theorem relativeCochainComplexMap_f
+    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H) (n : ℕ) :
+    (relativeCochainComplexMap e φ he hφ).f n =
+      ModuleCat.ofHom ((cochainMap e φ n).restrict
+        (fun _ ↦ cochainMap_mem_relativeCochains he hφ)) :=
+  (rfl)
+
 /-- The relative cochain map pulls back each argument and applies the coefficient map. -/
 @[simp]
 theorem relativeCochainComplexMap_f_apply
@@ -147,8 +159,17 @@ theorem relativeCochainComplexMap_f_apply
     (hφ : ∀ x ∈ H', φ x ∈ H) (n : ℕ) (ω : relativeCochains R M H n) (v : Fin n → L') :
     Subtype.val (α := L' [⋀^Fin n]→ₗ[R] M') ((relativeCochainComplexMap e φ he hφ).f n ω) v =
       e (ω.val fun i ↦ φ (v i)) := by
-  rw [relativeCochainComplexMap, cochainSubcomplexMap_f]
+  rw [relativeCochainComplexMap_f]
   exact cochainMap_apply e φ ω.val v
+
+/-- The inclusions into the absolute complex intertwine the relative and absolute maps. -/
+@[reassoc (attr := simp)]
+theorem relativeCochainComplexMap_comp_subtype
+    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H) :
+    relativeCochainComplexMap e φ he hφ ≫ cochainSubcomplexSubtype _ _ =
+      cochainSubcomplexSubtype _ _ ≫ cochainComplexMap e φ he :=
+  cochainSubcomplexMap_comp_subtype he _
 
 /-- Identity Lie algebra and coefficient maps act identically on relative cochains. -/
 @[simp]
@@ -159,6 +180,7 @@ theorem relativeCochainComplexMap_id :
 
 /-- Relative cochain maps compose contravariantly in the Lie algebra and covariantly
 in the coefficients. -/
+@[reassoc (attr := simp)]
 theorem relativeCochainComplexMap_comp (e' : M' →ₗ[R] M'') (ψ : L'' →ₗ⁅R⁆ L')
     (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
     (he' : ∀ (x : L'') (m : M'), e' ⁅ψ x, m⁆ = ⁅x, e' m⁆)
@@ -166,7 +188,7 @@ theorem relativeCochainComplexMap_comp (e' : M' →ₗ[R] M'') (ψ : L'' →ₗ�
     relativeCochainComplexMap e φ he hφ ≫ relativeCochainComplexMap e' ψ he' hψ =
       relativeCochainComplexMap (e'.comp e) (φ.comp ψ)
         (fun x m ↦ by simp [he, he']) (fun x hx ↦ hφ _ (hψ x hx)) := by
-  exact cochainSubcomplexMap_comp he he' _ _ _
+  exact cochainSubcomplexMap_comp he he' _ _
 
 /-- The map on relative Lie algebra cohomology induced by a compatible map of pairs and
 an intertwining coefficient map. -/
@@ -203,7 +225,7 @@ theorem relativeCohomologyMap_id (n : ℕ) :
 
 /-- Relative cohomology maps compose contravariantly in the Lie algebra and covariantly
 in the coefficients. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem relativeCohomologyMap_comp (e' : M' →ₗ[R] M'') (ψ : L'' →ₗ⁅R⁆ L')
     (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
     (he' : ∀ (x : L'') (m : M'), e' ⁅ψ x, m⁆ = ⁅x, e' m⁆)
@@ -231,7 +253,7 @@ variable {H : LieSubalgebra R L} {H' : LieSubalgebra R L'} {H'' : LieSubalgebra 
 
 /-- A relative cochain map preserves equivariance when it intertwines the actions
 on the Lie algebras and on the coefficients along the same index map. -/
-private theorem cochainMap_mem_equivariantRelativeCochains
+theorem cochainMap_mem_equivariantRelativeCochains
     (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
     (hφ : ∀ x ∈ H', φ x ∈ H)
     (hAd : ∀ k x, φ (Ad' k x) = Ad (f k) (φ x))
@@ -255,6 +277,17 @@ noncomputable def equivariantRelativeCochainComplexMap (e : M →ₗ[R] M')
       equivariantRelativeCochainComplex R M' Ad' ρ' H' hρ' :=
   cochainSubcomplexMap he fun _ _ ↦ cochainMap_mem_equivariantRelativeCochains he hφ hAd hCoeff
 
+/-- The degree component of the equivariant relative cochain map is the restricted ambient map. -/
+theorem equivariantRelativeCochainComplexMap_f
+    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H)
+    (hAd : ∀ k x, φ (Ad' k x) = Ad (f k) (φ x))
+    (hCoeff : ∀ k m, e (ρ (f k) m) = ρ' k (e m)) (n : ℕ) :
+    (equivariantRelativeCochainComplexMap (hρ := hρ) (hρ' := hρ') e φ f he hφ hAd hCoeff).f n =
+      ModuleCat.ofHom ((cochainMap e φ n).restrict
+        (fun _ ↦ cochainMap_mem_equivariantRelativeCochains he hφ hAd hCoeff)) :=
+  (rfl)
+
 /-- The equivariant relative cochain map evaluates by pullback of arguments and coefficient
 change. -/
 @[simp]
@@ -268,8 +301,21 @@ theorem equivariantRelativeCochainComplexMap_f_apply
         ((equivariantRelativeCochainComplexMap (hρ := hρ) (hρ' := hρ')
           e φ f he hφ hAd hCoeff).f n ω) v =
       e (ω.val fun i ↦ φ (v i)) := by
-  rw [equivariantRelativeCochainComplexMap, cochainSubcomplexMap_f]
+  rw [equivariantRelativeCochainComplexMap_f]
   exact cochainMap_apply e φ ω.val v
+
+/-- The inclusions into the absolute complex intertwine the equivariant relative and absolute
+maps. -/
+@[reassoc (attr := simp)]
+theorem equivariantRelativeCochainComplexMap_comp_subtype
+    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H)
+    (hAd : ∀ k x, φ (Ad' k x) = Ad (f k) (φ x))
+    (hCoeff : ∀ k m, e (ρ (f k) m) = ρ' k (e m)) :
+    equivariantRelativeCochainComplexMap (hρ := hρ) (hρ' := hρ') e φ f he hφ hAd hCoeff ≫
+        cochainSubcomplexSubtype _ _ =
+      cochainSubcomplexSubtype _ _ ≫ cochainComplexMap e φ he :=
+  cochainSubcomplexMap_comp_subtype he _
 
 /-- Identity maps act identically on equivariant relative cochains. -/
 @[simp]
@@ -281,6 +327,7 @@ theorem equivariantRelativeCochainComplexMap_id :
 
 /-- Equivariant relative cochain maps compose in the Lie and index arguments contravariantly
 and in the coefficient argument covariantly. -/
+@[reassoc (attr := simp)]
 theorem equivariantRelativeCochainComplexMap_comp
     (e' : M' →ₗ[R] M'') (ψ : L'' →ₗ⁅R⁆ L') {g : K'' → K'}
     (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
@@ -298,7 +345,7 @@ theorem equivariantRelativeCochainComplexMap_comp
         (e'.comp e) (φ.comp ψ) (f ∘ g) (fun x m ↦ by simp [he, he'])
         (fun x hx ↦ hφ _ (hψ x hx)) (fun k x ↦ by simp [hAd, hAd'])
         (fun k m ↦ by simp [hCoeff, hCoeff']) := by
-  exact cochainSubcomplexMap_comp he he' _ _ _
+  exact cochainSubcomplexMap_comp he he' _ _
 
 /-- The map on equivariant relative cohomology induced by compatible Lie algebra,
 coefficient, and index maps. -/
@@ -346,7 +393,7 @@ theorem equivariantRelativeCohomologyMap_id (n : ℕ) :
   simp [equivariantRelativeCohomologyMap]
 
 /-- Equivariant relative cohomology maps respect composition in all three arguments. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem equivariantRelativeCohomologyMap_comp
     (e' : M' →ₗ[R] M'') (ψ : L'' →ₗ⁅R⁆ L') {g : K'' → K'}
     (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
