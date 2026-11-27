@@ -41,12 +41,16 @@ the expansion of each argument into its horizontal and normal parts, the full de
 the mixed derivative of order `(a, n - a)` gains the factor `t ^ (n - a)`: each normal derivative
 contributes a factor `t`, each horizontal one none
 (`Submodule.mixedIteratedFDeriv_comp_normalDilation`, and
-`Submodule.mixedIteratedFDeriv_comp_normalDilation_of_ne_zero`, which needs no smoothness).
+`Submodule.mixedIteratedFDeriv_comp_normalDilation_of_ne_zero`, which needs no smoothness). So
+bounds `h ^ (n - a) ‖∂^{a, n - a} g‖ ≤ B` at the scale `h` become, after the normal dilation by
+`h`, unscaled bounds `‖Dⁱ (g ∘ normalDilation V h)‖ ≤ 2ʲ B` for `i ≤ j`
+(`Submodule.norm_iteratedFDeriv_comp_normalDilation_le`).
 
 **Linearity.** Mixed derivatives commute with negation and scalar multiplication, and with sums
 of functions of class `Cⁿ` (`Submodule.mixedIteratedFDeriv_neg`,
 `Submodule.mixedIteratedFDeriv_const_smul`, `Submodule.mixedIteratedFDeriv_add`,
-`Submodule.mixedIteratedFDeriv_sum`).
+`Submodule.mixedIteratedFDeriv_sum`). Left composition with a linear isometry equivalence, such as
+complex conjugation, preserves their norms (`Submodule.norm_mixedIteratedFDeriv_comp_left`).
 
 **Derivatives.** A normal derivative `∂_v f`, `v ∈ V`, raises the normal order of a mixed
 derivative by one (`Submodule.mixedIteratedFDeriv_fderiv_apply_of_mem`), and a horizontal
@@ -63,6 +67,8 @@ derivative `∂_e f`, `e ∈ Vᗮ`, raises the horizontal order by one
   `(a, n - a)` of `f ∘ normalDilation V t` is `t ^ (n - a)` times that of `f`.
 * `Submodule.norm_iteratedFDeriv_le_sum_choose_mul_norm_mixedIteratedFDeriv`: the full derivative is
   bounded by the mixed ones.
+* `Submodule.norm_iteratedFDeriv_comp_normalDilation_le`: mixed bounds at the scale `h` give
+  unscaled bounds after the normal dilation by `h`.
 * `Submodule.mixedIteratedFDeriv_fderiv_apply_of_mem`,
   `Submodule.mixedIteratedFDeriv_fderiv_apply_of_mem_orthogonal`: normal and horizontal
   derivatives raise the normal and horizontal orders.
@@ -174,6 +180,22 @@ theorem mixedIteratedFDeriv_comp_sub (n a : ℕ) (f : E → F) (c : E) :
   ext x : 1
   rw [mixedIteratedFDeriv, mixedIteratedFDeriv, iteratedFDeriv_comp_sub]
 
+/-- Composition on the left with a linear isometry equivalence, such as complex conjugation,
+preserves the norms of the mixed derivatives. -/
+theorem norm_mixedIteratedFDeriv_comp_left {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (g : F ≃ₗᵢ[ℝ] G) (n a : ℕ) (f : E → F) (x : E) :
+    ‖V.mixedIteratedFDeriv n a (g ∘ f) x‖ = ‖V.mixedIteratedFDeriv n a f x‖ := by
+  have hcomp : V.mixedIteratedFDeriv n a (g ∘ f) x =
+      (g : F →L[ℝ] G).compContinuousMultilinearMap (V.mixedIteratedFDeriv n a f x) := by
+    ext m
+    simp only [mixedIteratedFDeriv_apply, ContinuousLinearMap.compContinuousMultilinearMap_coe,
+      Function.comp_apply]
+    rw [show (g : F → G) = g.toContinuousLinearEquiv from rfl,
+      g.toContinuousLinearEquiv.iteratedFDeriv_comp_left]
+    rfl
+  rw [hcomp]
+  exact LinearIsometry.norm_compContinuousMultilinearMap g.toLinearIsometry _
+
 /-- Dilating the arguments of a multilinear map in the slots of a mixed derivative of order
 `(a, n - a)` gives the factor `t ^ (n - a)`: the `n - a` normal slots each contribute `t`. -/
 private theorem map_normalDilation_mixed {n : ℕ}
@@ -258,6 +280,31 @@ theorem norm_iteratedFDeriv_le_sum_choose_mul_norm_mixedIteratedFDeriv {n : ℕ}
     sum_powerset_apply_card fun k ↦ ‖V.mixedIteratedFDeriv n k f x‖, card_univ,
     Fintype.card_fin]
   simp only [nsmul_eq_mul]
+
+/-- **Mixed bounds at scale `h` are unscaled bounds after the normal dilation.** If `g` is of class
+`Cʲ`, `h ≥ 0` and `h ^ (n - a) ‖∂^{a, n - a} g‖ ≤ B` everywhere for `a ≤ n ≤ j`, then the normally
+dilated function `g ∘ normalDilation V h` satisfies `‖Dⁱ (g ∘ normalDilation V h)‖ ≤ 2ʲ B`
+everywhere for `i ≤ j`. -/
+theorem norm_iteratedFDeriv_comp_normalDilation_le {j : ℕ} {g : E → F} (hg : ContDiff ℝ j g)
+    {h B : ℝ} (hh : 0 ≤ h)
+    (hB : ∀ n ≤ j, ∀ a ≤ n, ∀ x, h ^ (n - a) * ‖V.mixedIteratedFDeriv n a g x‖ ≤ B) {i : ℕ}
+    (hi : i ≤ j) (x : E) :
+    ‖iteratedFDeriv ℝ i (g ∘ V.normalDilation h) x‖ ≤ 2 ^ j * B := by
+  have hB0 : 0 ≤ B :=
+    (mul_nonneg (pow_nonneg hh _) (norm_nonneg _)).trans (hB 0 (Nat.zero_le _) 0 le_rfl x)
+  have hgi : ContDiff ℝ i g := hg.of_le (by exact_mod_cast hi)
+  refine (V.norm_iteratedFDeriv_le_sum_choose_mul_norm_mixedIteratedFDeriv
+    (hgi.comp (V.normalDilation h).contDiff).contDiffAt).trans ?_
+  calc ∑ a ∈ range (i + 1),
+        (i.choose a : ℝ) * ‖V.mixedIteratedFDeriv i a (g ∘ V.normalDilation h) x‖
+      ≤ ∑ a ∈ range (i + 1), (i.choose a : ℝ) * B := by
+        refine sum_le_sum fun a ha ↦ mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
+        rw [V.mixedIteratedFDeriv_comp_normalDilation hgi a h x, norm_smul, norm_pow,
+          Real.norm_of_nonneg hh]
+        exact hB i hi a (Nat.lt_succ_iff.1 (mem_range.1 ha)) _
+    _ = 2 ^ i * B := by
+        rw [← sum_mul, ← Nat.cast_sum, Nat.sum_range_choose, Nat.cast_pow, Nat.cast_ofNat]
+    _ ≤ 2 ^ j * B := mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hi) hB0
 
 /-- **A normal derivative raises the normal order.** For `a ≤ n`, `f` of class `Cⁿ⁺¹` at `x` and a
 normal vector `v ∈ V`, the mixed derivative of order `(a, n - a)` of the derivative of `f` along
