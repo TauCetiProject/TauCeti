@@ -162,6 +162,13 @@ theorem cauchyRiemannLinearization_smul (j : U →L[ℝ] U) (J : V → V →L[�
   simp only [cauchyRiemannLinearization_apply, fderiv_const_smul_field c,
     _root_.smul_apply, Pi.smul_apply, map_smul, smul_sub]
 
+/-- The local-coordinate linearization at `x` only depends on the germ of the direction at `x`. -/
+theorem _root_.Filter.EventuallyEq.cauchyRiemannLinearization_eq {j : U →L[ℝ] U}
+    {J : V → V →L[ℝ] V} {u ξ η : U → V} {x : U} (h : ξ =ᶠ[𝓝 x] η) :
+    cauchyRiemannLinearization j J u ξ x = cauchyRiemannLinearization j J u η x := by
+  ext v
+  simp only [cauchyRiemannLinearization_apply, h.fderiv_eq, h.self_of_nhds]
+
 /-- The nonlinear defect is differentiable along jointly `C²` map families and differentiable
 endomorphism families. This is a derivative in the parameter normed space. -/
 theorem differentiableAt_cauchyRiemannOperator
@@ -244,8 +251,7 @@ private theorem fderiv_cauchyRiemannOperator_eq_zero
   simp only [add_apply, comp_apply, flip_apply, zero_add, comp_zero] at he
   rw [fderiv_comp x hJ (hu.differentiableAt (by norm_num))] at he
   simp only [comp_apply, Function.comp_apply] at he
-  rw [add_comm] at he
-  rw [he]
+  rw [sub_sub, sub_eq_zero, ← he]
   abel
 
 /-- The ambient linearization on an infinitesimal reparametrization, for a source structure `j`
@@ -327,10 +333,8 @@ theorem cauchyRiemannLinearization_apply_mem_range_of_eventually_mem_range
       rw [← hb, ← ContinuousLinearMap.comp_apply Λ', ← mul_apply_eq_comp,
         Ring.inverse_mul_cancel _ hy, one_apply_eq_self]
     rw [hab, hb]
-  have hL : cauchyRiemannLinearization (j x) J u ξ x =
-      cauchyRiemannLinearization (j x) J u (fun y ↦ fderiv ℝ u y (a y)) x := by
-    simp only [cauchyRiemannLinearization, hξa.fderiv_eq, hξa.self_of_nhds]
-  rw [hL, cauchyRiemannLinearization_fderiv_apply_of_varying j J u a x v hu ha hj hJ hhol]
+  rw [hξa.cauchyRiemannLinearization_eq,
+    cauchyRiemannLinearization_fderiv_apply_of_varying j J u a x v hu ha hj hJ hhol]
   exact LinearMap.mem_range_self _ _
 
 /-- Leibniz rule for the ambient linearization. Its symbol is
