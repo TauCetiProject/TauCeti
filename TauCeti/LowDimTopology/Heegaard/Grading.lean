@@ -433,6 +433,11 @@ noncomputable def infinityGrading :
 theorem minusGrading_piece : (H.minusGrading gr).piece = H.minusGradedPiece gr :=
   (rfl)
 
+/-- The pieces of `CF⁻` are the monomial pieces for the degree `gr(x) - 2 k` of `U ^ k x`. -/
+theorem minusGradedPiece_eq_monomialGradedPiece :
+    H.minusGradedPiece gr = H.monomialGradedPiece fun x k => gr x - 2 * k :=
+  (rfl)
+
 @[simp]
 theorem infinityGrading_piece : (H.infinityGrading gr).piece = H.infinityGradedPiece gr :=
   (rfl)
@@ -635,7 +640,7 @@ theorem isHomogeneous_hatDifferential (h : H.IsMaslovGrading χ gr) :
 theorem isHomogeneous_minusDifferential (h : H.IsMaslovGrading χ gr) :
     LinearMap.IsHomogeneous (H.minusDifferential χ) (H.minusGradedPiece gr)
       (H.minusGradedPiece gr) (-1) := by
-  unfold minusGradedPiece
+  rw [minusGradedPiece_eq_monomialGradedPiece]
   refine isHomogeneous_monomialGradedPiece _ minusDifferential_single_apply
     fun x y k j hj => ?_
   have := h.sub_eq_one_sub_two_mul_of_coeff_minusCoefficient_ne_zero hj

@@ -137,6 +137,12 @@ theorem knotMinusAlexanderGrading_piece :
     (H.knotMinusAlexanderGrading A).piece = H.knotMinusAlexanderPiece A :=
   monomialGrading_piece
 
+/-- The Alexander pieces of `CFK⁻` are the monomial pieces for the degree `A(x) - k` of
+`U ^ k x`. -/
+theorem knotMinusAlexanderPiece_eq_monomialGradedPiece :
+    H.knotMinusAlexanderPiece A = H.monomialGradedPiece fun x k => A x - k :=
+  (rfl)
+
 /-- A chain of `CFK⁻` has Alexander degree `a` exactly when each of its terms `U ^ k x` has
 `A(x) - k = a`. -/
 @[simp]
@@ -377,7 +383,7 @@ grading. -/
 theorem isHomogeneous_knotMinusDifferential_alexander (h : H.IsKnotGrading χ w z M A) :
     LinearMap.IsHomogeneous (H.knotMinusDifferential χ w z) (H.knotMinusAlexanderPiece A)
       (H.knotMinusAlexanderPiece A) 0 := by
-  unfold knotMinusAlexanderPiece
+  rw [knotMinusAlexanderPiece_eq_monomialGradedPiece]
   refine isHomogeneous_monomialGradedPiece _ knotMinusDifferential_single_apply
     fun x y k j hj => ?_
   have := h.alexander_eq_sub_of_coeff_knotMinusCoefficient_ne_zero hj
