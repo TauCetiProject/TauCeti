@@ -34,6 +34,8 @@ Dirichlet boundary data, as needed in weak comparison arguments.
   `W^{1,p}_0(Ω)` lies in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.posPartAbove_mem_w1p0Submodule_of_le`: a boundary bound `u ≤ k` on `∂Ω`, expressed
   by `(u - k)⁺ ∈ W^{1,p}_0(Ω)`, persists at every higher level.
+* `TauCeti.W1p.posPartAbove_mem_w1p0Submodule_of_sub_mem`: if `u - g ∈ W^{1,p}_0(Ω)` and `g ≤ k`,
+  then `(u - k)⁺ ∈ W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.contDiffComp_mem_w1p0Submodule_of_nonneg`: a Lipschitz `C¹` function `F` with
   `0 ≤ F s ≤ C s` for `s ≥ 0` maps a nonnegative `v ∈ W^{1,p}_0(Ω)` into `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.exists_mem_w1p0Submodule_value_eq_sq_div`: the truncated squares
@@ -301,6 +303,21 @@ theorem W1p.posPartAbove_mem_w1p0Submodule_of_le (hp : p ≠ ∞) {k l : ℝ} (h
   have h := W1p.posPartAbove_mem_w1p0Submodule hp (sub_nonneg.2 hkl) hu
   rw [W1p.posPartAbove_posPartAbove] at h
   simpa only [add_sub_cancel] using h
+
+/-- **Boundary bounds from boundary data.** If `u - g ∈ W^{1,p}_0(Ω)`, so that `u` has the
+boundary values of `g`, and `g ≤ k` almost everywhere on `Ω` for a level `k ≥ 0`, then
+`(u - k)⁺ ∈ W^{1,p}_0(Ω)`: the boundary values of `u` are at most `k`, since
+`0 ≤ (u - k)⁺ ≤ (u - g)⁺`. -/
+theorem W1p.posPartAbove_mem_w1p0Submodule_of_sub_mem (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
+    {u g : W1p mu Omega p} (hug : u - g ∈ w1p0Submodule mu Omega p)
+    (hg : ∀ᵐ x ∂mu.restrict Omega, W1p.value g x ≤ k) :
+    W1p.posPartAbove hp hk u ∈ w1p0Submodule mu Omega p := by
+  refine W1p.mem_w1p0Submodule_of_nonneg_of_le hp (W1p.posPart_mem_w1p0Submodule hp hug)
+    (W1p.value_posPartAbove_nonneg_ae hp hk u) ?_
+  filter_upwards [W1p.value_posPartAbove_ae hp hk u, Lp.coeFn_posPart (W1p.value (u - g)),
+    W1p.value_sub_ae u g, hg] with x h₁ h₂ h₃ h₄
+  rw [h₁, W1p.value_posPart, h₂, h₃, Pi.sub_apply]
+  exact max_le_max (by linarith) le_rfl
 
 /-- **Composition preserves zero boundary values.** If `F` is a Lipschitz `C¹` function with
 `F 0 = 0` and `0 ≤ F s ≤ C s` for `s ≥ 0`, and `v ∈ W^{1,p}_0(Ω)` is nonnegative, then
