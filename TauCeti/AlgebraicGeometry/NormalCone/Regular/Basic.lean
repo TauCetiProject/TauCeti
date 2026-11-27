@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Morphisms.RegularImmersion
 public import TauCeti.AlgebraicGeometry.NormalCone.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
+public import TauCeti.AlgebraicGeometry.VectorBundle.Quasicoherent
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Conormal
 import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
 import TauCeti.RingTheory.Regular.Cotangent
@@ -29,6 +30,8 @@ Stacks, Tags 063K and 063M; Fulton, Appendix B.7.1). Over an affine open `U` on 
   sheaf of a regular immersion is finite locally free.
 * `AlgebraicGeometry.Scheme.Hom.IsRegularImmersion.conormal`: the conormal sheaf of a regular
   immersion of codimension `d`, as a finite locally free sheaf of rank `d`.
+* `AlgebraicGeometry.Scheme.Hom.IsRegularImmersion.toQuasicoherentConormalIso`: the
+  identification of `IsRegularImmersion.conormal`, as a quasicoherent sheaf, with `I/I²`.
 
 ## References
 
@@ -99,6 +102,26 @@ noncomputable def conormal (h : i.IsRegularImmersion d) : FiniteLocallyFreeSheaf
 /-- The underlying sheaf of `IsRegularImmersion.conormal` is the conormal sheaf `I/I²`. -/
 @[simp]
 theorem conormal_obj_obj (h : i.IsRegularImmersion d) : h.conormal.obj.obj = i.conormal.obj :=
+  (rfl)
+
+/-- The conormal sheaf of a regular immersion, as a finite locally free sheaf, is the conormal
+sheaf `I/I²`. -/
+noncomputable def toQuasicoherentConormalIso (h : i.IsRegularImmersion d) :
+    (FiniteLocallyFreeSheaf.toQuasicoherent X).obj h.conormal.obj ≅ i.conormal :=
+  ObjectProperty.isoMk _ (eqToIso h.conormal_obj_obj)
+
+/-- The underlying morphism of `toQuasicoherentConormalIso` is the identification of the
+underlying sheaf of `h.conormal` with `I/I²`. -/
+@[simp]
+theorem toQuasicoherentConormalIso_hom_hom (h : i.IsRegularImmersion d) :
+    h.toQuasicoherentConormalIso.hom.hom = eqToHom h.conormal_obj_obj :=
+  (rfl)
+
+/-- The underlying morphism of the inverse of `toQuasicoherentConormalIso` is the identification
+of `I/I²` with the underlying sheaf of `h.conormal`. -/
+@[simp]
+theorem toQuasicoherentConormalIso_inv_hom (h : i.IsRegularImmersion d) :
+    h.toQuasicoherentConormalIso.inv.hom = eqToHom h.conormal_obj_obj.symm :=
   (rfl)
 
 end IsRegularImmersion
