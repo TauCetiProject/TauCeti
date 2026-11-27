@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Def
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # The Kantorovich inequality
@@ -18,9 +19,6 @@ probability measure and for finite weights, and shows that the bound is attained
 
 ## Main results
 
-* `TauCeti.add_mul_div_le_add`: for `0 < t` with `m ≤ t ≤ M`, `t + m * M / t ≤ m + M`.
-* `TauCeti.mul_le_sq_div_of_add_mul_le`: if `0 < k` and `0 ≤ a + k * b ≤ c`, then
-  `a * b ≤ c ^ 2 / (4 * k)`.
 * `TauCeti.integral_mul_integral_inv_le`: the Kantorovich inequality for a probability measure:
   if `m ≤ f ≤ M` almost everywhere with `0 < m`, then
   `(∫ f) * (∫ f⁻¹) ≤ (M + m) ^ 2 / (4 * M * m)`.
@@ -29,9 +27,10 @@ probability measure and for finite weights, and shows that the bound is attained
 * `TauCeti.integral_mul_integral_inv_half_dirac_add_dirac`: the bound is attained by the law
   giving mass `1 / 2` to each of `m` and `M`.
 
-The integral and finite forms combine the first two lemmas: integrating or summing
-`t + m * M / t ≤ m + M` gives `A + m * M * B ≤ m + M` for the two means `A` and `B`, and the
-second lemma turns this into the bound on `A * B`.
+The integral and finite forms combine two ordered-field lemmas from
+`TauCeti.Algebra.Order.Field.Basic`: integrating or summing `t + m * M / t ≤ m + M`
+(`TauCeti.add_mul_div_le_add`) gives `A + m * M * B ≤ m + M` for the two means `A` and `B`, and
+`TauCeti.mul_le_sq_div_of_add_mul_le` turns this into the bound on `A * B`.
 
 ## References
 
@@ -46,22 +45,6 @@ open MeasureTheory Set
 open scoped ENNReal
 
 namespace TauCeti
-
-/-- For `0 < t` with `m ≤ t ≤ M`, `t + m * M / t ≤ m + M`: this is `(t - m) * (t - M) ≤ 0`
-divided by `t`. -/
-theorem add_mul_div_le_add {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-    {t m M : K} (ht : 0 < t) (hmt : m ≤ t) (htM : t ≤ M) : t + m * M / t ≤ m + M := by
-  have key : m + M - (t + m * M / t) = (M - t) * (t - m) / t := by field_simp; ring
-  rw [← sub_nonneg, key]
-  exact div_nonneg (mul_nonneg (sub_nonneg.2 htM) (sub_nonneg.2 hmt)) ht.le
-
-/-- If `0 < k` and `0 ≤ a + k * b ≤ c`, then `a * b ≤ c ^ 2 / (4 * k)`: the inequality of
-arithmetic and geometric means for `a` and `k * b`. -/
-theorem mul_le_sq_div_of_add_mul_le {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] {a b c k : K} (hk : 0 < k) (h₀ : 0 ≤ a + k * b)
-    (h : a + k * b ≤ c) : a * b ≤ c ^ 2 / (4 * k) := by
-  rw [le_div_iff₀ (by positivity)]
-  nlinarith [sq_nonneg (a - k * b), mul_self_le_mul_self h₀ h]
 
 /-- The Kantorovich inequality for a probability measure: if `m ≤ f ≤ M` almost everywhere with
 `0 < m`, then `(∫ f) * (∫ f⁻¹) ≤ (M + m) ^ 2 / (4 * M * m)`. -/
