@@ -63,4 +63,27 @@ theorem factorsThrough_sq_of_sq_eq_one {R : Type*} [CommMonoidWithZero R] {m k :
         (h₈ (hd.trans χ.conductor_dvd_level))
   · exact (factorization_conductor_le_one_of_sq_eq_one hχ hprime hp₂).trans (by omega)
 
+/-- If the conductor of a character of order dividing two divides `2 ^ k * M`, then it
+already divides `lcm 8 M`, independently of the exponent `k`. -/
+theorem conductor_dvd_lcm_eight_of_sq_eq_one {R : Type*} [CommMonoidWithZero R] {N M k : ℕ}
+    (χ : DirichletCharacter R N) (hχ : χ ^ 2 = 1) (hM : χ.conductor ∣ 2 ^ k * M) :
+    χ.conductor ∣ Nat.lcm 8 M := by
+  rcases eq_or_ne M 0 with rfl | hM₀
+  · simp
+  have hpow : (2 : ℕ) ^ k ≠ 0 := pow_ne_zero _ (by decide)
+  have hprod := mul_ne_zero hpow hM₀
+  have hχ₀ := ne_zero_of_dvd_ne_zero hprod hM
+  have hle := (Nat.factorization_le_iff_dvd hχ₀ hprod).mpr hM
+  rw [← Nat.factorization_le_iff_dvd hχ₀ (Nat.lcm_ne_zero (by decide) hM₀),
+    Nat.factorization_lcm (by decide) hM₀]
+  intro p
+  rcases eq_or_ne p 2 with rfl | hp
+  · have h₂ : (8 : ℕ).factorization 2 = 3 := by
+      rw [← (show (2 : ℕ) ^ 3 = 8 by decide), Nat.prime_two.factorization_pow]
+      simp
+    have ht := factorization_two_conductor_eq_zero_or_two_or_three_of_sq_eq_one hχ
+    exact (show χ.conductor.factorization 2 ≤ (8 : ℕ).factorization 2 by omega).trans le_sup_left
+  · refine le_trans ?_ le_sup_right
+    simpa [Nat.factorization_mul hpow hM₀, Nat.prime_two.factorization_pow, hp] using hle p
+
 end DirichletCharacter

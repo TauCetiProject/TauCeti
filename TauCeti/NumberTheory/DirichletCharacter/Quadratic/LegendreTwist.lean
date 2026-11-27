@@ -48,6 +48,18 @@ noncomputable def legendreTwist : DirichletCharacter ℂ (N * d) :=
   χ.changeLevel (dvd_mul_right N d) *
     changeLevel (dvd_mul_left d N) ((quadraticChar (ZMod d)).ringHomComp (Int.castRingHom ℂ))
 
+/-- The Legendre twist is the common-level product with the quadratic character modulo `d`. -/
+theorem legendreTwist_def : χ.legendreTwist d =
+    χ.changeLevel (dvd_mul_right N d) *
+      changeLevel (dvd_mul_left d N) ((quadraticChar (ZMod d)).ringHomComp (Int.castRingHom ℂ)) :=
+  (rfl)
+
+/-- Twisting after raising the base level gives the lift of the original twist. -/
+@[simp] theorem legendreTwist_changeLevel {M : ℕ} (h : N ∣ M) :
+    (χ.changeLevel h).legendreTwist d =
+      (χ.legendreTwist d).changeLevel (mul_dvd_mul_right h d) := by
+  simp only [legendreTwist_def, map_mul, ← changeLevel_trans]
+
 /-- The Legendre twist takes the value `χ(n) (n / d)` at an integer `n`. -/
 @[simp]
 theorem legendreTwist_apply (n : ℤ) : χ.legendreTwist d n = χ n * legendreSym d n := by
