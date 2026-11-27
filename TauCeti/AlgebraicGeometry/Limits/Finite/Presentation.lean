@@ -380,6 +380,36 @@ theorem exists_mono_pullbackMap
   exact exists_mono_pullback_snd (hc.pullbackOver q) (g ≫ b.inv)
 
 include hc in
+/-- A morphism over a stage that becomes a monomorphism over the inverse limit becomes
+a monomorphism after base change to some later stage. -/
+theorem exists_mono_overPullback {i : I} {X Y : Over (D.obj i)}
+    [CompactSpace X.left] [QuasiSeparatedSpace X.left]
+    (f : X ⟶ Y) [QuasiCompact f.left] [LocallyOfFiniteType f.left]
+    [Mono ((Over.pullback (c.π.app i)).map f).left] :
+    ∃ (j : I) (a : j ⟶ i), Mono ((Over.pullback (D.map a)).map f).left := by
+  let m {T : Scheme.{u}} (t : T ⟶ D.obj i) :=
+    pullback.map t X.hom t Y.hom (𝟙 T) f.left (𝟙 _) (by simp) (by simp)
+  have h {T : Scheme.{u}} (t : T ⟶ D.obj i) :
+      (pullbackSymmetry t X.hom).hom ≫ ((Over.pullback t).map f).left =
+        m t ≫ (pullbackSymmetry t Y.hom).hom := by
+    apply pullback.hom_ext <;> simp [m]
+  have : Mono (m (c.π.app i)) := by
+    have : Mono (m (c.π.app i) ≫ (pullbackSymmetry (c.π.app i) Y.hom).hom) := by
+      rw [← h]
+      infer_instance
+    exact mono_of_mono _ (pullbackSymmetry (c.π.app i) Y.hom).hom
+  obtain ⟨j, a, ha⟩ := hc.exists_mono_pullbackMap f.left (Over.w f)
+  have : Mono (m (D.map a)) := ha
+  have : Mono ((pullbackSymmetry (D.map a) X.hom).hom ≫
+      ((Over.pullback (D.map a)).map f).left) := by
+    rw [h]
+    infer_instance
+  exact ⟨j, a, (MorphismProperty.cancel_left_of_respectsIso
+    (P := MorphismProperty.monomorphisms Scheme.{u})
+    (pullbackSymmetry (D.map a) X.hom).hom
+    ((Over.pullback (D.map a)).map f).left).mp inferInstance⟩
+
+include hc in
 /-- Let `S = lim Dⱼ` be a cofiltered limit of quasi-compact quasi-separated schemes with affine
 transition maps, and let `A` and `B` be schemes over a member `Dᵢ`, with `A` quasi-compact and
 quasi-separated over `Dᵢ` and `B` locally of finite presentation over `Dᵢ`. Every morphism

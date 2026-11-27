@@ -48,6 +48,20 @@ open Limits
 variable {C : Type*} [Category* C] {P : MorphismProperty C} [P.IsStableUnderBaseChange]
   {X Y W W' : C}
 
+/-- A stable property of a morphism pulled back along `b` persists after further pullback
+along `a`, through the canonical identification with pullback along `a ≫ b`. -/
+theorem overPullbackMap_comp {S T U : C} (P : MorphismProperty C)
+    [P.IsStableUnderBaseChange] (a : U ⟶ T) (b : T ⟶ S)
+    [HasPullbacksAlong a] [HasPullbacksAlong b] {X Y : Over S} (f : X ⟶ Y)
+    (h : P ((Over.pullback b).map f).left) :
+    P ((Over.pullback (a ≫ b)).map f).left := by
+  have h' := P.overPullbackMap a ((Over.pullback b).map f) h
+  let e := Over.pullbackComp a b
+  let eX := (Over.forget U).mapIso (e.app X)
+  let eY := (Over.forget U).mapIso (e.app Y)
+  exact (P.arrow_mk_iso_iff (Arrow.isoMk eX eY
+    (congrArg Over.Hom.left (e.hom.naturality f)).symm)).mpr h'
+
 /-- A base change of `pullback.snd f k` along `e` is the base change of `f` along `e ≫ k`, so it
 inherits every property stable under base change. -/
 theorem pullback_snd_comp (f : X ⟶ Y) (k : W ⟶ Y) (e : W' ⟶ W) [HasPullback f k]
