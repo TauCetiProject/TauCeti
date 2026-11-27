@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.MaximalFunction
--- `TauCeti.MeasureTheory.Integral.Average.Indicator` and `TauCeti.MeasureTheory.OuterMeasure.Basic`
--- are imported privately: they supply `TauCeti.setLAverage_enorm_indicator_one` and
+-- `TauCeti.MeasureTheory.Integral.Average.Indicator`,
+-- `TauCeti.MeasureTheory.Measure.Lebesgue.Basic` and `TauCeti.MeasureTheory.OuterMeasure.Basic`
+-- are imported privately: they supply
+-- `TauCeti.setLAverage_enorm_indicator_one`, `TauCeti.volume_Icc_inter_ball_le` and
 -- `MeasureTheory.measure_inter_div_le_one`, used only inside proofs.
 import TauCeti.MeasureTheory.Integral.Average.Indicator
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.MeasureTheory.OuterMeasure.Basic
 -- `Mathlib.Analysis.SpecialFunctions.NonIntegrable` is imported privately: it supplies
 -- `not_integrableOn_Ioi_inv`, used only inside the proof that the maximal function of the
@@ -71,15 +74,6 @@ theorem maximalFunction_indicator_one_le_one {X G : Type*} [PseudoMetricSpace X]
     exact measure_inter_div_le_one _ _
 
 variable {a b : ℝ}
-
-/-- The part of `[a, b]` in the interval `ball y r = (y - r, y + r)` lies in
-`[max a (y - r), b]`, so its length is at most `b - max a (y - r)`. -/
-theorem volume_Icc_inter_ball_le {y r : ℝ} :
-    volume (Icc a b ∩ ball y r) ≤ ENNReal.ofReal (b - max a (y - r)) := by
-  rw [← Real.volume_Icc]
-  refine measure_mono fun z ⟨hz, hz'⟩ => ?_
-  rw [Real.ball_eq_Ioo] at hz'
-  exact ⟨max_le hz.1 hz'.1.le, hz.2⟩
 
 /-- Inside the interval, the maximal function of its indicator is `1`: small balls lie in the
 interval, and no average of the indicator exceeds `1`. -/

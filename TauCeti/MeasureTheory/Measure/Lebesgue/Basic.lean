@@ -47,7 +47,9 @@ A rectangle in `ℝ × ℝ` whose sides have lengths at least `ℓ ≤ r` and `�
 radius `r` about each of its points, a square for the sup norm, in a set of area at least `ℓ ℓ'`
 (`TauCeti.ofReal_mul_ofReal_le_volume_Ioo_prod_Ioo_inter_ball`), however long the rectangle is.
 This is the uniform lower bound on the local measure of a domain under which Sobolev estimates on
-rectangles of unbounded length have uniform constants.
+rectangles of unbounded length have uniform constants. In the other direction, the part of
+`[a, b]` in the interval of radius `r` about `y` has length at most `b - max a (y - r)`
+(`TauCeti.volume_Icc_inter_ball_le`).
 -/
 
 public section
@@ -171,6 +173,16 @@ theorem ofReal_le_volume_Ioo_inter_ball {a b x r ℓ : ℝ} (hℓr : ℓ ≤ r) 
   refine ENNReal.ofReal_le_ofReal (le_sub_iff_add_le'.2 (le_inf ?_ ?_))
   · exact (le_sub_iff_add_le.1 (sup_le (by linarith) (by linarith [hx.2])))
   · exact (le_sub_iff_add_le.1 (sup_le (by linarith [hx.1]) (by linarith)))
+
+open Metric in
+/-- The part of `[a, b]` in the interval `ball y r = (y - r, y + r)` lies in
+`[max a (y - r), b]`, so its length is at most `b - max a (y - r)`. -/
+theorem volume_Icc_inter_ball_le {a b y r : ℝ} :
+    volume (Icc a b ∩ ball y r) ≤ ENNReal.ofReal (b - max a (y - r)) := by
+  rw [← Real.volume_Icc]
+  refine measure_mono fun z ⟨hz, hz'⟩ => ?_
+  rw [Real.ball_eq_Ioo] at hz'
+  exact ⟨max_le hz.1 hz'.1.le, hz.2⟩
 
 open Metric in
 /-- If `ℓ, ℓ' ≤ r`, then a rectangle in `ℝ × ℝ` with sides of lengths at least `ℓ` and `ℓ'` meets

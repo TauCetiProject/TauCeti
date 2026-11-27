@@ -9,10 +9,11 @@ public import TauCeti.MeasureTheory.Integral.MaximalFunction.Indicator
 public import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction
 -- The following are imported privately: they supply `TauCeti.setLAverage_enorm_indicator_one`,
 -- `MeasureTheory.Measure.addHaar_real_ball_div_addHaar_real_ball`,
--- `Metric.measureReal_ball_pos` and `MeasureTheory.measure_inter_div_le_one`, used only inside
--- proofs.
+-- `TauCeti.volume_Icc_inter_ball_le`, `Metric.measureReal_ball_pos` and
+-- `MeasureTheory.measure_inter_div_le_one`, used only inside proofs.
 import TauCeti.MeasureTheory.Integral.Average.Indicator
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.MeasureTheory.OuterMeasure.Basic
 
