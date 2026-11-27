@@ -127,6 +127,9 @@ even when it vanishes on spheres: for `f = id` on a torus, the loop of seamed pa
 * `TauCeti.IsSmoothSeamedCylinder.comp_prodMap_one_sub`,
   `TauCeti.IsSmoothCylinder.comp_prodMap_one_sub`: a smooth (seamed) cylinder run backwards is a
   smooth (seamed) cylinder.
+* `TauCeti.IsSmoothSeamedCylinder.comp_prodMap_one_sub_trans`,
+  `TauCeti.IsSmoothCylinder.comp_prodMap_one_sub_trans`: two smooth (seamed) cylinders from the
+  same path, the first run backwards, glue to a smooth (seamed) cylinder.
 * `TauCeti.isSmoothSeamedCylinder_comp_prodMap_affine`,
   `TauCeti.isSmoothCylinder_comp_prodMap_affine`: rescaling a smooth family of seamed paths, or a
   smooth map `1`-periodic in `t`, from `[a, b]` to `[0, 1]` in the first coordinate gives a smooth
@@ -780,6 +783,15 @@ theorem IsSmoothSeamedCylinder.comp_prodMap_one_sub (hu : IsSmoothSeamedCylinder
   apply_one t _ := by simp [hu.apply_zero]
   seam s hs := by simpa using hu.seam (1 - s) ⟨by linarith [hs.2], by linarith [hs.1]⟩
 
+/-- Two smooth `f`-seamed cylinders from the same path `γ`, the first run backwards followed by the
+second, glue to a smooth `f`-seamed cylinder from the final edge `u₁ (1, ·)` of the first to the
+final path of the second. -/
+theorem IsSmoothSeamedCylinder.comp_prodMap_one_sub_trans
+    (h₁ : IsSmoothSeamedCylinder I f γ γ' u₁) (h₂ : IsSmoothSeamedCylinder I f γ γ₀ u₂) :
+    IsSmoothSeamedCylinder I f (fun t ↦ u₁ (1, t)) γ₀
+      (rectangleTrans (u₁ ∘ Prod.map (fun s ↦ 1 - s) id) u₂) :=
+  h₁.comp_prodMap_one_sub.trans h₂ fun t ↦ by simp [h₁.apply_zero, h₂.apply_zero]
+
 /-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth family `u` of
 `f`-seamed paths `u (s, ·)` into a smooth `f`-seamed cylinder from `u (a, ·)` to `u (b, ·)`. -/
 theorem isSmoothSeamedCylinder_comp_prodMap_affine (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u)
@@ -807,6 +819,17 @@ theorem IsSmoothCylinder.comp_prodMap_one_sub {γ γ₀ : ℝ → M} {u : ℝ ×
     (hu : IsSmoothCylinder I γ γ₀ u) :
     IsSmoothCylinder I (fun t ↦ u (1, t)) γ (u ∘ Prod.map (fun s ↦ 1 - s) id) :=
   isSmoothSeamedCylinder_id_iff.mp (isSmoothSeamedCylinder_id_iff.mpr hu).comp_prodMap_one_sub
+
+/-- Two smooth cylinders from the same loop `γ`, the first run backwards followed by the second,
+glue to a smooth cylinder from the final edge `u₁ (1, ·)` of the first to the final loop of the
+second. -/
+theorem IsSmoothCylinder.comp_prodMap_one_sub_trans {γ γ' γ₀ : ℝ → M} {u₁ u₂ : ℝ × ℝ → M}
+    (h₁ : IsSmoothCylinder I γ γ' u₁) (h₂ : IsSmoothCylinder I γ γ₀ u₂) :
+    IsSmoothCylinder I (fun t ↦ u₁ (1, t)) γ₀
+      (rectangleTrans (u₁ ∘ Prod.map (fun s ↦ 1 - s) id) u₂) :=
+  isSmoothSeamedCylinder_id_iff.mp
+    ((isSmoothSeamedCylinder_id_iff.mpr h₁).comp_prodMap_one_sub_trans
+      (isSmoothSeamedCylinder_id_iff.mpr h₂))
 
 /-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth map `u : ℝ × ℝ → M`,
 `1`-periodic in `t`, into a smooth cylinder from the loop `u(a, ·)` to the loop `u(b, ·)`. -/
@@ -888,7 +911,7 @@ theorem VanishesOnSpheres.rectangleIntegral_eq (hS : VanishesOnSpheres φ)
     rectangleIntegral φ u (0, 0) (1, 1) = rectangleIntegral φ v (0, 0) (1, 1) := by
   -- Glue `u`, run backwards, to `v` along `γ`: this is a sphere, with integral `∫ v - ∫ u`.
   have h t : u (0, t) = v (0, t) := (hu.apply_zero t).trans (hv.apply_zero t).symm
-  have hw := hu.comp_prodMap_one_sub.trans hv fun t ↦ by simpa using h t
+  have hw := hu.comp_prodMap_one_sub_trans hv
   have h₀ : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.mpr zero_le_one
   have hglue := hS _ hw.contMDiff
     (fun t ht ↦ by rw [hw.apply_zero, hw.apply_zero, hu.apply_one t ht, hu.apply_one 0 h₀])
@@ -905,7 +928,7 @@ theorem VanishesOnSeamedTori.rectangleIntegral_eq {f : M → M} (hT : VanishesOn
     rectangleIntegral φ u (0, 0) (1, 1) = rectangleIntegral φ v (0, 0) (1, 1) := by
   -- Glue `u`, run backwards, to `v` along `γ`: this is a seamed torus, with integral `∫ v - ∫ u`.
   have h t : u (0, t) = v (0, t) := (hu.apply_zero t).trans (hv.apply_zero t).symm
-  have hw := hu.comp_prodMap_one_sub.trans hv fun t ↦ by simpa using h t
+  have hw := hu.comp_prodMap_one_sub_trans hv
   have hglue := hT _ hw.contMDiff
     (fun t ht ↦ by rw [hw.apply_one t ht, hw.apply_zero, hu.apply_one t ht]) hw.seam
   rw [rectangleIntegral_rectangleTrans_comp_prodMap_one_sub hφ (hu.contMDiff.of_le (by simp))
