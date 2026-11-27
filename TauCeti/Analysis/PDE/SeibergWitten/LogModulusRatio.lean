@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.TransverseLiouville
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.DifferentialForm.Const
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Liouville
 
 /-!
 # The log-modulus ratio of two flat vortex fields with the same zeros
@@ -63,6 +65,14 @@ argument is Taubes's comparison of the log-modulus ratio `w = log |h|² = log |�
   that disc bounds `w` uniformly. With this bound the two pairs differ by a gauge transformation
   under this curvature bound (`norm_eq_one_and_eq_sub_phaseForm_of_abs_extDeriv_sub_le`).
 
+**Zero-free fields.** When `α` vanishes nowhere, the comparison is with the vacuum `(0, 1)`, and
+`v = -log |α|²` satisfies `Δ v = κ (1 - |α|²) ≥ 0` when `|α| ≤ 1`. In place of a vacuum condition at
+infinity it suffices that the defect `1 - |α|²` has integral at most `C Rⁿ⁻²` over the balls of
+radius `R ≥ 1`, the codimension-two growth of the defect of a large-parameter Seiberg–Witten
+solution near a curve: the Liouville theorem
+`TauCeti.eq_zero_of_laplacian_nonneg_of_setIntegral_ball_le` gives `v = 0`, so `|α| = 1` and
+`b = -Im (α⁻¹ dα)` (`norm_eq_one_and_eq_neg_phaseForm_of_setIntegral_ball_le`).
+
 No decay along the base directions is assumed, which is why the transverse Liouville theorem is
 used rather than its cocompact form. For two plane vortices (`K = E = ℂ`) this is the argument
 of `TauCeti.Vortex.exists_eq_phaseGauge_of_forall_section_eq_mul`.
@@ -84,6 +94,8 @@ of `TauCeti.Vortex.exists_eq_phaseGauge_of_forall_section_eq_mul`.
   ratio is bounded when the normal component of the curvature difference is bounded.
 * `TauCeti.SeibergWitten.norm_eq_one_and_eq_sub_phaseForm_of_abs_extDeriv_sub_le`: the gauge
   equivalence under that curvature bound and the transverse vacuum condition.
+* `TauCeti.SeibergWitten.norm_eq_one_and_eq_neg_phaseForm_of_setIntegral_ball_le`: a zero-free
+  field with `|α| ≤ 1` whose defect has codimension-two growth is a gauge transform of the vacuum.
 
 ## References
 
@@ -293,5 +305,114 @@ theorem norm_eq_one_and_eq_sub_phaseForm_of_abs_extDeriv_sub_le (hJ : ∀ v w, �
   exact norm_eq_one_and_eq_sub_phaseForm_of_tendsto hJ e hκ hK hb hb' hh hα' hh₀ hα hdense hdbar
     hdbar' hF hF' (isBounded_range_log_norm_sq_of_abs_extDeriv_sub_le hJ hn hb hb' hh hα' hh₀ hα
       hdense hdbar hdbar' hFb hlim hlim') hlim hlim'
+
+/-! ### Zero-free fields with codimension-two defect growth -/
+
+section ZeroFree
+
+open MeasureTheory Metric
+
+variable [Nontrivial E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- For `0 < s ≤ 1`, the truncation of `-log s` is at most `2 (1 - s)`. -/
+private lemma min_neg_log_one_le {s : ℝ} (hs : 0 < s) (hs1 : s ≤ 1) :
+    min (-Real.log s) 1 ≤ 2 * (1 - s) := by
+  -- `1 - log s ≤ exp (-log s) = s⁻¹`, so `s (1 - log s) ≤ 1`.
+  have hexp : s * (-Real.log s + 1) ≤ 1 := by
+    have h := Real.add_one_le_exp (-Real.log s)
+    rw [Real.exp_neg, Real.exp_log hs] at h
+    calc s * (-Real.log s + 1) ≤ s * s⁻¹ := mul_le_mul_of_nonneg_left h hs.le
+      _ = 1 := mul_inv_cancel₀ hs.ne'
+  rcases le_total (-Real.log s) 1 with h | h
+  · -- `(1 - s) (1 - log s) ≥ -log s` and `1 - log s ≤ 2`.
+    rw [min_eq_left h]
+    nlinarith [mul_le_mul_of_nonneg_left (show -Real.log s + 1 ≤ 2 by linarith)
+      (sub_nonneg.2 hs1)]
+  · rw [min_eq_right h]
+    nlinarith
+
+omit [Nontrivial E] in
+/-- For a continuous `α` with `0 < |α| ≤ 1`, the truncation of `-log |α|²` has integral over a
+ball at most twice that of the defect `1 - |α|²`. -/
+private lemma setIntegral_ball_min_neg_log_le (hα : Continuous α) (hα₀ : ∀ y, α y ≠ 0)
+    (hα₁ : ∀ y, ‖α y‖ ≤ 1) (y : E) (R : ℝ) :
+    ∫ x in ball y R, min (-Real.log (‖α x‖ ^ 2)) 1 ∂μ ≤
+      2 * ∫ x in ball y R, (1 - ‖α x‖ ^ 2) ∂μ := by
+  have hpos (x : E) : 0 < ‖α x‖ ^ 2 := by have := hα₀ x; positivity
+  have hint {g : E → ℝ} (hg : Continuous g) : IntegrableOn g (ball y R) μ :=
+    (hg.continuousOn.integrableOn_compact (isCompact_closedBall y R)).mono_set
+      ball_subset_closedBall
+  rw [← integral_const_mul]
+  exact setIntegral_mono_on (hint (by fun_prop (disch := exact fun x ↦ (hpos x).ne')))
+    (hint (by fun_prop)) measurableSet_ball fun x _ ↦
+      min_neg_log_one_le (hpos x) (pow_le_one₀ (norm_nonneg _) (hα₁ x))
+
+/-- **Zero-free flat vortex fields with codimension-two defect growth are the vacuum.** Let `J` be
+orthogonal on a nontrivial space of dimension `n`, `(eᵢ)` an orthonormal basis, `κ > 0`, and let
+`(b, α)` solve the flat vortex equations `∂bar_a α = 0`, `∑ᵢ db(eᵢ, J eᵢ) = κ (|α|² - 1)`, with a
+differentiable connection form and a `C²` section `α` that vanishes nowhere and has `|α| ≤ 1`. If
+the defect `1 - |α|²` has integral at most `C Rⁿ⁻²` over every ball of radius `R ≥ 1`, then
+`|α| = 1` and `b = -Im (α⁻¹ dα)`: the pair is the gauge transform of the vacuum `(0, 1)` by the
+unimodular function `α`. -/
+theorem norm_eq_one_and_eq_neg_phaseForm_of_setIntegral_ball_le
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (e : OrthonormalBasis ι ℝ E) {κ : ℝ} (hκ : 0 < κ)
+    (hb : Differentiable ℝ b) (hα : ContDiff ℝ 2 α) (hα₀ : ∀ y, α y ≠ 0) (hα₁ : ∀ y, ‖α y‖ ≤ 1)
+    (hdbar : ∀ y, covariantDBar J b α y = 0)
+    (hF : ∀ y, ∑ i, extDeriv b y ![e i, J (e i)] = κ * (‖α y‖ ^ 2 - 1)) {C : ℝ}
+    (hC : ∀ y R, 1 ≤ R →
+      ∫ x in ball y R, (1 - ‖α x‖ ^ 2) ∂μ ≤ C * R ^ ((Module.finrank ℝ E : ℤ) - 2)) :
+    (∀ y, ‖α y‖ = 1) ∧ b = -phaseForm α := by
+  have hpos (y : E) : 0 < ‖α y‖ ^ 2 := by have := hα₀ y; positivity
+  have hle (y : E) : ‖α y‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg _) (hα₁ y)
+  -- Compare with the vacuum `(0, 1)`, which solves the flat vortex equations: `α = α · 1`.
+  have hdbar₁ (y : E) : covariantDBar J (fun _ ↦ 0) (fun _ ↦ (1 : ℂ)) y = 0 := by
+    ext w
+    simp
+  have hdense : Dense {y : E | (fun _ ↦ (1 : ℂ)) y ≠ 0} := by simp
+  have hα1 : α = α * fun _ ↦ (1 : ℂ) := by
+    ext y
+    simp
+  -- `v = -log |α|²` is nonnegative with `Δ v = κ (1 - |α|²)`.
+  have hΔ (y : E) : Δ (fun y ↦ -Real.log (‖α y‖ ^ 2)) y = κ * (1 - ‖α y‖ ^ 2) := by
+    have h := laplacian_log_norm_sq_eq_mul_sub_one hJ e hb (differentiable_const _) hα
+      (differentiable_const _) hα1 hdense hdbar hdbar₁ (hF y) (by simp) (hα₀ y)
+    rw [show (fun y ↦ -Real.log (‖α y‖ ^ 2)) = -fun y ↦ Real.log (‖α y‖ ^ 2) from rfl,
+      laplacian_neg, Pi.neg_apply, h]
+    simp only [norm_one, one_pow, mul_one]
+    ring
+  have hzpow (R : ℝ) (hR : 1 ≤ R) : 0 ≤ R ^ ((Module.finrank ℝ E : ℤ) - 2) :=
+    zpow_nonneg (by linarith) _
+  -- Both growth conditions follow from the bound on the defect.
+  have hΔC (y : E) (R : ℝ) (hR : 1 ≤ R) : ∫ x in ball y R, Δ (fun y ↦ -Real.log (‖α y‖ ^ 2)) x ∂μ ≤
+      max (κ * C) (2 * C) * R ^ ((Module.finrank ℝ E : ℤ) - 2) := by
+    rw [setIntegral_congr_fun measurableSet_ball fun x _ ↦ hΔ x, integral_const_mul]
+    refine (mul_le_mul_of_nonneg_left (hC y R hR) hκ.le).trans ?_
+    rw [← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (le_max_left _ _) (hzpow R hR)
+  have hvC (y : E) (R : ℝ) (hR : 1 ≤ R) : ∫ x in ball y R, min (-Real.log (‖α x‖ ^ 2)) 1 ∂μ ≤
+      max (κ * C) (2 * C) * R ^ ((Module.finrank ℝ E : ℤ) - 2) := by
+    refine (setIntegral_ball_min_neg_log_le hα.continuous hα₀ hα₁ y R).trans
+      ((mul_le_mul_of_nonneg_left (hC y R hR) zero_le_two).trans ?_)
+    rw [← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (le_max_right _ _) (hzpow R hR)
+  have hv := eq_zero_of_laplacian_nonneg_of_setIntegral_ball_le (μ := μ)
+    ((ContDiff.log (hα.norm_sq ℝ) fun y ↦ (hpos y).ne').neg)
+    (fun y ↦ neg_nonneg.2 (Real.log_nonpos (hpos y).le (hle y)))
+    (fun y ↦ by rw [hΔ]; exact mul_nonneg hκ.le (sub_nonneg.2 (hle y))) hΔC hvC
+  have hw₀ : (fun y ↦ Real.log (‖α y‖ ^ 2)) = 0 := funext fun y ↦ by
+    simpa using congrFun hv y
+  refine ⟨fun y ↦ (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1
+    (Real.eq_one_of_pos_of_log_eq_zero (hpos y) (congrFun hw₀ y)), funext fun y ↦ ?_⟩
+  -- The phase form `Im (α⁻¹ dα) + b` is `d^c_J log |α|² = 0`.
+  have hratio := covariantDBar_sub_eq_zero_of_dense J hb.continuous continuous_const
+    (hα.of_le (by norm_num)) (differentiable_const _) hα1 hdense hdbar hdbar₁
+  have hτ := covariantPhaseForm_eq_twistedDifferential_log J (hα.differentiable (by simp) y)
+    (hα₀ y) (congrFun hratio y)
+  rw [hw₀, J.twistedDifferential_zero, Pi.zero_apply, covariantPhaseForm_apply, Pi.sub_apply,
+    sub_zero] at hτ
+  rw [Pi.neg_apply]
+  exact eq_neg_of_add_eq_zero_right hτ
+
+end ZeroFree
 
 end TauCeti.SeibergWitten
