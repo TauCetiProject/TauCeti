@@ -32,6 +32,16 @@ equivalences for products indexed by a `Unique` type:
 
 public section
 
+namespace TauCeti
+
+/-- Composing a vector with `starRingEnd` is taking its `star`. -/
+theorem starRingEnd_comp_eq_star {m S : Type*} [CommSemiring S] [StarRing S] (v : m → S) :
+    starRingEnd S ∘ v = star v := by
+  ext i
+  simp [starRingEnd_apply]
+
+end TauCeti
+
 namespace NonUnitalStarAlgHom
 
 section Single

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
+public import TauCeti.Algebra.Star.Pi
+public import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryTransvection
@@ -178,18 +180,6 @@ theorem mem_unitaryGroupOf_iff_forall_dotProduct {g : GL n R} :
   ext i j
   simpa [mulVec_single_one, Pi.star_single] using h (Pi.single i 1) (Pi.single j 1)
 
-/-- Composing a vector with `starRingEnd` is taking its `star`. -/
-theorem starRingEnd_comp_eq_star {m S : Type*} [CommSemiring S] [StarRing S] (v : m → S) :
-    starRingEnd S ∘ v = star v := by
-  ext i
-  simp [starRingEnd_apply]
-
-/-- The transpose of the image of a matrix under `starRingEnd` is its conjugate transpose. -/
-theorem transpose_map_starRingEnd {l m S : Type*} [CommSemiring S] [StarRing S]
-    (M : Matrix l m S) : (M.map (starRingEnd S))ᵀ = Mᴴ := by
-  ext
-  simp [starRingEnd_apply]
-
 /-- The determinant-one elements of `unitaryGroupOf A` form Tau Ceti's special isometry group
 `Matrix.specialIsometryGroup A (starRingEnd R)` of the `star`-sesquilinear form: the two defining
 equations agree, since `star g = (g.map star)ᵀ`. -/
@@ -296,7 +286,7 @@ theorem star_unitaryTransvection_mul_mul_self_of_eq_zero (hA : A.IsHermitian) {v
       A.unitaryTransvection (starRingEnd R) v a = A := by
   have h := transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero (v := v) (a := a)
     starRingEnd_self_apply (by rw [one_smul, transpose_map_starRingEnd, hA.eq]) (by
-      rw [one_mul, one_mul, starRingEnd_comp_eq_star, starRingEnd_apply]
+      rw [one_mul, one_mul, TauCeti.starRingEnd_comp_eq_star, starRingEnd_apply]
       exact ha)
   rwa [transpose_map_starRingEnd, ← star_eq_conjTranspose] at h
 
@@ -349,7 +339,7 @@ theorem reflection_mulVec (hA : A.IsHermitian) (v : n → K)
     ((reflection hA v hv : GL n K) : Matrix n n K) *ᵥ x =
       x - (2 / (star v ⬝ᵥ A *ᵥ v) * (star v ⬝ᵥ A *ᵥ x)) • v := by
   rw [val_reflection, unitaryTransvection_mulVec, neg_mul, neg_smul, ← sub_eq_add_neg,
-    starRingEnd_comp_eq_star]
+    TauCeti.starRingEnd_comp_eq_star]
 
 /-- The reflection in `v` sends `v` to `-v`. -/
 theorem reflection_mulVec_self (hA : A.IsHermitian) (v : n → K)

@@ -153,8 +153,9 @@ theorem exists_contDiffOn_mulVec_self_eq (hJ : J.IsHermitian) (hJ' : IsUnit J) {
     ((isUnit_iff_isUnit_det J).mp hJ').ne_zero
     (fun s hs => ⟨s / 2, by
       rw [one_mul] at hs
-      rw [one_mul, map_div₀, hs, map_ofNat, add_halves]⟩) hx₀ (by rwa [starRingEnd_comp_eq_star])
-  rw [starRingEnd_comp_eq_star] at hy₀ hyx
+      rw [one_mul, map_div₀, hs, map_ofNat, add_halves]⟩) hx₀
+    (by rwa [TauCeti.starRingEnd_comp_eq_star])
+  rw [TauCeti.starRingEnd_comp_eq_star] at hy₀ hyx
   obtain ⟨N, hN, hx₀N, g, hg, hgy⟩ :=
     exists_contDiffOn_mulVec_eq hJ hy₀ (hyx ▸ one_ne_zero : star y₀ ⬝ᵥ J *ᵥ x₀ ≠ 0)
   have hinv : (((g x₀)⁻¹ : unitaryGroupOf J) : GL n 𝕜) *ᵥ x₀ = y₀ := calc

@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.Field.Basic
 import Mathlib.RingTheory.SimpleRing.Field
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # Rational identities under inversion
@@ -28,6 +30,17 @@ non-square of the base field does not lie in the base field
 public section
 
 namespace TauCeti
+
+/-- A rational identity for two scalars: if `a + b = q` and `a`, `b` vanish together,
+then `-a⁻¹ + -b⁻¹ + -a⁻¹ * -b⁻¹ * q = 0`. -/
+theorem neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero {K : Type*} [Field K] {a b q : K}
+    (hab : a + b = q) (h0 : a = 0 ↔ b = 0) : -a⁻¹ + -b⁻¹ + -a⁻¹ * -b⁻¹ * q = 0 := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp [h0.mp rfl]
+  have hb : b ≠ 0 := fun hb => ha (h0.mpr hb)
+  subst hab
+  field_simp
+  ring
 
 /-- **A nonzero element is separated from its inverse unless it squares to `1`**: in a division
 ring, `a - a⁻¹` vanishes at a nonzero `a` exactly when `a ^ 2 = 1`. -/

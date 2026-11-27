@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Field.Basic
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 import Mathlib.Tactic.FieldSimp
 
@@ -21,14 +22,16 @@ the matrix `1 - s⁻¹ • v (star v ᵥ* A)` (`Matrix.unitaryGroupOf.quasiRefle
 unitary transvection `Matrix.unitaryTransvection A (starRingEnd K) v (-s⁻¹)`. It preserves
 the form, and it is invertible with inverse the quasi-reflection along `v` with parameter
 `star s`, so it lies in `Matrix.unitaryGroupOf A` even when `A` is not invertible. For
-`⟨v, v⟩ ≠ 0` and `s = ⟨v, v⟩ / 2` it is the reflection `Matrix.unitaryGroupOf.reflection` in `v`;
-for isotropic `v` and `s + star s = 0` it is a unitary transvection. This is the matrix form of
-the quasi-reflections `TauCeti.SignedHermitianSpace.quasiReflection` of a signed Hermitian space.
+`2 ≠ 0`, `⟨v, v⟩ ≠ 0` and `s = ⟨v, v⟩ / 2` it is the reflection
+`Matrix.unitaryGroupOf.reflection` in `v`; for isotropic `v` and `s + star s = 0` it is a unitary
+transvection. This is the matrix form of the quasi-reflections
+`TauCeti.SignedHermitianSpace.quasiReflection` of a signed Hermitian space.
 
 The parameter is what makes quasi-reflections suited to carrying isotropic vectors explicitly.
-If `y` is isotropic and `x` is any vector, then `v = x - y` and `s = ⟨x, x⟩ / 2 - ⟨x, y⟩` satisfy
-`s + star s = ⟨v, v⟩`, and when `x` is isotropic too with `⟨x, y⟩ ≠ 0` the quasi-reflection sends
-`y` to `x` (`Matrix.unitaryGroupOf.quasiReflection_sub_mulVec_of_isotropic`). The parameter is a
+If `2 ≠ 0`, `y` is isotropic and `x` is any vector, then `v = x - y` and
+`s = ⟨x, x⟩ / 2 - ⟨x, y⟩` satisfy `s + star s = ⟨v, v⟩`, and when `x` is isotropic too with
+`⟨x, y⟩ ≠ 0` the quasi-reflection sends `y` to `x`
+(`Matrix.unitaryGroupOf.quasiReflection_sub_mulVec_of_isotropic`). The parameter is a
 polynomial in the coordinates of `x` and their conjugates, so over `ℝ` or `ℂ` this element of
 `unitaryGroupOf A` depends smoothly on `x` where `s ≠ 0`; this gives the smooth local sections of
 the isotropic orbit in `TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup.IsotropicSection`.
@@ -48,7 +51,8 @@ transvections, `Matrix.star_unitaryTransvection_mul_mul_self_of_eq_zero` (in
   `x - s⁻¹ ⟨v, x⟩ v`.
 * `Matrix.unitaryGroupOf.inv_quasiReflection`: its inverse is the quasi-reflection with parameter
   `star s`.
-* `Matrix.unitaryGroupOf.quasiReflection_eq_reflection`: for `s = ⟨v, v⟩ / 2` it is the reflection.
+* `Matrix.unitaryGroupOf.quasiReflection_eq_reflection`: when `2 ≠ 0`, for `s = ⟨v, v⟩ / 2` it is
+  the reflection.
 * `Matrix.unitaryGroupOf.quasiReflection_sub_mulVec_of_isotropic`: carrying one isotropic vector to
   another.
 
@@ -77,18 +81,6 @@ section Field
 
 variable {K : Type*} [Field K] [StarRing K] {A : Matrix n n K}
 
-omit [StarRing K] in
-/-- The scalar identity behind quasi-reflections: if `a + b = q` and `a`, `b` vanish together,
-then `-a⁻¹ + -b⁻¹ + -a⁻¹ * -b⁻¹ * q = 0`. -/
-private theorem neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero {a b q : K}
-    (hab : a + b = q) (h0 : a = 0 ↔ b = 0) : -a⁻¹ + -b⁻¹ + -a⁻¹ * -b⁻¹ * q = 0 := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · simp [h0.mp rfl]
-  have hb : b ≠ 0 := fun hb => ha (h0.mpr hb)
-  subst hab
-  field_simp
-  ring
-
 /-- For `a + b = ⟨v, v⟩` with `a` and `b` vanishing together, the unitary transvections
 `τ_{v,-a⁻¹}` and `τ_{v,-b⁻¹}` are inverse to each other. -/
 private theorem unitaryTransvection_neg_inv_mul_unitaryTransvection_neg_inv {v : n → K} {a b : K}
@@ -96,7 +88,7 @@ private theorem unitaryTransvection_neg_inv_mul_unitaryTransvection_neg_inv {v :
     A.unitaryTransvection (starRingEnd K) v (-a⁻¹) *
       A.unitaryTransvection (starRingEnd K) v (-b⁻¹) = 1 := by
   rw [unitaryTransvection_mul_unitaryTransvection_eq]
-  exact (congrArg _ (neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero hab h0)).trans
+  exact (congrArg _ (TauCeti.neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero hab h0)).trans
     unitaryTransvection_zero
 
 namespace unitaryGroupOf
@@ -115,7 +107,7 @@ noncomputable def quasiReflection (hA : A.IsHermitian) (v : n → K) (s : K)
         star_eq_zero⟩,
     mem_unitaryGroupOf_iff.mpr <| star_unitaryTransvection_mul_mul_self_of_eq_zero hA (by
       rw [star_neg, star_inv₀]
-      exact neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero hs star_eq_zero.symm)⟩
+      exact TauCeti.neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero hs star_eq_zero.symm)⟩
 
 variable (hA : A.IsHermitian) (v : n → K) (s : K) (hs : s + star s = star v ⬝ᵥ A *ᵥ v)
 
@@ -130,7 +122,7 @@ theorem quasiReflection_mulVec (x : n → K) :
     ((quasiReflection hA v s hs : GL n K) : Matrix n n K) *ᵥ x =
       x - (s⁻¹ * (star v ⬝ᵥ A *ᵥ x)) • v := by
   rw [val_quasiReflection, unitaryTransvection_mulVec, neg_mul, neg_smul, ← sub_eq_add_neg,
-    starRingEnd_comp_eq_star]
+    TauCeti.starRingEnd_comp_eq_star]
 
 /-- The quasi-reflection along `v` fixes every vector orthogonal to `v` for the form. -/
 theorem quasiReflection_mulVec_of_dotProduct_eq_zero {x : n → K} (hx : star v ⬝ᵥ A *ᵥ x = 0) :

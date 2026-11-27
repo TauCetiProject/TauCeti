@@ -35,6 +35,12 @@ theorem map_star_eq_map_starRingEnd (M : Matrix l m α) : M.map star = M.map (st
   ext
   exact (starRingEnd_apply _).symm
 
+/-- The transpose of the image of a matrix under `starRingEnd` is its conjugate transpose. -/
+theorem transpose_map_starRingEnd {l m S : Type*} [CommSemiring S] [StarRing S]
+    (M : Matrix l m S) : (M.map (starRingEnd S))ᵀ = Mᴴ := by
+  ext
+  simp [starRingEnd_apply]
+
 /-- An integral matrix, viewed as a matrix over a star ring, has `Xᴴ = Xᵀ`. -/
 @[simp]
 theorem conjTranspose_map_intCast {R : Type*} [Ring R] [StarRing R] (X : Matrix l m ℤ) :
