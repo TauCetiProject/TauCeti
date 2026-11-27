@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.Algebra.Algebra.Bilinear
 public import TauCeti.LinearAlgebra.FiniteDimensional.ScalarTower
 
@@ -33,6 +34,10 @@ in every characteristic.
 * `LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ`: the characteristic polynomial of
   `f` is the product of those of its restriction to `W` and of the endomorphism it induces on
   `V ⧸ W`.
+
+* `LinearMap.charpoly_eq_X_sub_C_mul_charpoly_mapQ`: over a field, for an eigenvector `y` of `f`
+  with eigenvalue `a`, the characteristic polynomial of `f` is `X - C a` times that of the
+  endomorphism induced on `V ⧸ K ∙ y`.
 
 * `Submodule.charpoly_lsmul_eq_mul_quotient`: for an algebra `A` over a field `k` and an
   `A`-submodule `P` of a finite-dimensional `A`-module `M`, the characteristic polynomial of
@@ -115,6 +120,21 @@ theorem charpoly_dvd_of_injective_of_comp_eq_comp (f : V →ₗ[K] V) (g : U →
       (congrArg g (LinearEquiv.ofInjective_symm_apply j x))
   refine ⟨(W.mapQ W g hW).charpoly, ?_⟩
   rw [charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W g hW, ← he, e.charpoly_conj]
+
+open Polynomial Submodule in
+/-- If `y` is an eigenvector of `T` with eigenvalue `a`, the characteristic polynomial of `T` is
+`X - C a` times that of the endomorphism of `V ⧸ K ∙ y` induced by `T`. -/
+theorem charpoly_eq_X_sub_C_mul_charpoly_mapQ {T : V →ₗ[K] V} {a : K} {y : V}
+    (hy : Module.End.HasEigenvector T a y) (hL : (K ∙ y) ≤ (K ∙ y).comap T) :
+    T.charpoly = (X - C a) * ((K ∙ y).mapQ (K ∙ y) T hL).charpoly := by
+  -- On the eigenline, `T` restricts to multiplication by `a`.
+  have hres : T.restrict (p := K ∙ y) (q := K ∙ y) hL = 0 - (-a) • 1 := by
+    ext ⟨x, hx⟩
+    obtain ⟨c, rfl⟩ := mem_span_singleton.1 hx
+    simp [hy.apply_eq_smul, smul_comm c a]
+  rw [charpoly_eq_charpoly_restrict_mul_charpoly_mapQ (K ∙ y) T hL, hres, charpoly_sub_smul,
+    charpoly_zero, finrank_span_singleton hy.2]
+  simp [sub_eq_add_neg]
 
 end LinearMap
 

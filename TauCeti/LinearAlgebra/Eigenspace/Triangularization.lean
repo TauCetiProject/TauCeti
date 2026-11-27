@@ -34,11 +34,6 @@ characteristic polynomial of `T` need not split.
 
 ## Main results
 
-* `Module.Basis.linearMap_charpoly_eq_prod_of_sub_smul_mem_flag`: if `T` is triangular in a basis
-  with diagonal `α`, its characteristic polynomial is `∏ j, (X - C (α j))`.
-* `LinearMap.charpoly_eq_X_sub_C_mul_charpoly_mapQ`: for an eigenvector `y` with eigenvalue `a`,
-  the characteristic polynomial of `T` is `X - C a` times that of the endomorphism induced on
-  `E ⧸ K ∙ y`.
 * `LinearMap.exists_linearIndependent_apply_sub_smul_mem_span`: every tuple `α : Fin k → K` with
   `Multiset.map α univ.val ≤ T.charpoly.roots` is the diagonal of a linearly independent family
   triangularizing `T`.
@@ -55,7 +50,7 @@ characteristic polynomial of `T` need not split.
 The family is built by induction on its length. An eigenvector `y` for the first entry of `α`
 comes first, and the remaining vectors are lifts of a family triangularizing the endomorphism
 induced on `E ⧸ K ∙ y`, whose characteristic polynomial is that of `T` divided by `X - C (α 0)`
-(`LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ`).
+(`LinearMap.charpoly_eq_X_sub_C_mul_charpoly_mapQ`).
 
 ## References
 
@@ -67,40 +62,11 @@ public section
 
 open Module Polynomial Submodule
 
-namespace Module.Basis
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M]
-  [Module.Finite R M] {n : ℕ}
-
-/-- If each `T (b j) - α j • b j` lies in the span `b.flag j.castSucc` of the earlier basis
-vectors, the characteristic polynomial of `T` is `∏ j, (X - C (α j))`. -/
-theorem linearMap_charpoly_eq_prod_of_sub_smul_mem_flag (b : Basis (Fin n) R M)
-    {T : M →ₗ[R] M} {α : Fin n → R} (h : ∀ j, T (b j) - α j • b j ∈ b.flag j.castSucc) :
-    T.charpoly = ∏ j, (X - C (α j)) := by
-  rw [← LinearMap.charpoly_toMatrix T b, Matrix.charpoly_of_isUpperTriangular _
-    (b.linearMap_toMatrix_isUpperTriangular_of_sub_smul_mem_flag h)]
-  simp only [b.linearMap_toMatrix_apply_self_of_sub_smul_mem_flag h]
-
-end Module.Basis
-
 namespace LinearMap
 
 section Field
 
 variable {K E : Type*} [Field K] [AddCommGroup E] [Module K E] [FiniteDimensional K E]
-
-/-- If `y` is an eigenvector of `T` with eigenvalue `a`, the characteristic polynomial of `T` is
-`X - C a` times that of the endomorphism of `E ⧸ K ∙ y` induced by `T`. -/
-theorem charpoly_eq_X_sub_C_mul_charpoly_mapQ {T : E →ₗ[K] E} {a : K} {y : E}
-    (hy : Module.End.HasEigenvector T a y) (hL : (K ∙ y) ≤ (K ∙ y).comap T) :
-    T.charpoly = (X - C a) * ((K ∙ y).mapQ (K ∙ y) T hL).charpoly := by
-  have hres : T.restrict (p := K ∙ y) (q := K ∙ y) hL = 0 - (-a) • 1 := by
-    ext ⟨x, hx⟩
-    obtain ⟨c, rfl⟩ := mem_span_singleton.1 hx
-    simp [hy.apply_eq_smul, smul_comm c a]
-  rw [charpoly_eq_charpoly_restrict_mul_charpoly_mapQ (K ∙ y) T hL, hres, charpoly_sub_smul,
-    charpoly_zero, finrank_span_singleton hy.2]
-  simp [sub_eq_add_neg]
 
 /-- **Schur triangularization of a family.** If the entries of `α : Fin k → K` are roots of the
 characteristic polynomial of `T`, with multiplicity, there is a linearly independent family
