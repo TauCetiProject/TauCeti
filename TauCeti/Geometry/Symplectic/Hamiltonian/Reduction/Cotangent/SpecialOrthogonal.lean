@@ -29,9 +29,9 @@ proper subgroup and the level is not coisotropic.
 * **The stabilizer.** Since the angular momentum is equivariant, `q ⨯₃ p ↦ g (q ⨯₃ p)`
   (`TauCeti.CotangentBundle.cotangentAngularMomentum_smul`), the stabilizer of `c = μ(q, p)` is
   the group of rotations about the axis `q ⨯₃ p`
-  (`mem_stabilizer_coadjointRepresentation_momentMap_specialOrthogonalGroup_iff`), a copy of
-  `SO(2)` when `q ⨯₃ p ≠ 0`. Its Lie algebra `𝔤_c` is the line of infinitesimal rotations about
-  `ℓ` (`TauCeti.finrank_lieAnnihilator_specialOrthogonalThreeDualEquiv`).
+  (`mem_stabilizer_coadjointRepresentation_momentMap_specialOrthogonalGroup_iff`). Its Lie
+  algebra `𝔤_c` is the line of infinitesimal rotations about `ℓ`
+  (`TauCeti.finrank_lieAnnihilator_specialOrthogonalThreeDualEquiv`).
 * **Freeness and regularity.** A rotation fixing `(q, p)` with `q ⨯₃ p ≠ 0` fixes `q`, `q ⨯₃ p`
   and their cross product, a basis of `ℝ³`, so it is the identity
   (`stabilizer_specialOrthogonalGroup_eq_bot`). Hence every nonzero value is a regular value
@@ -42,7 +42,7 @@ proper subgroup and the level is not coisotropic.
   (`finrank_ker_differential_momentMap_specialOrthogonalGroup`), and so does its symplectic
   complement `(T_z Z)^ω = 𝔤 · z`, the orbit tangent space
   (`finrank_orbitTangent_specialOrthogonalGroup`). The null directions `T_z Z ∩ (T_z Z)^ω` of the
-  form on the level are the line `𝔤_c · z`
+  form on the level form a line, of the dimension of `𝔤_c`
   (`finrank_ker_differential_inf_orthogonal_momentMap_specialOrthogonalGroup`). Since `c` is not
   coadjoint-fixed, `dμ_z(ξ_M) = ⁅ξ, c⁆ ≠ 0` for `ξ` not parallel to `ℓ`, so `(T_z Z)^ω ⊄ T_z Z`:
   **the level is not coisotropic**
@@ -92,7 +92,7 @@ local notation "T*ℝ³" => CotangentBundle 𝓘(ℝ, Fin 3 → ℝ) (Fin 3 → 
 
 /-- **The stabilizer `G_c` of a value `c = μ(q, p)` is the group of rotations about the axis
 `q ⨯₃ p`**: an element `g` of `SO(3)` fixes `c` under the coadjoint action exactly when
-`g (q ⨯₃ p) = q ⨯₃ p`. For `q ⨯₃ p ≠ 0` it is a circle, a copy of `SO(2)`. -/
+`g (q ⨯₃ p) = q ⨯₃ p`. -/
 theorem mem_stabilizer_coadjointRepresentation_momentMap_specialOrthogonalGroup_iff {g : SO₃}
     {z : T*ℝ³} :
     g ∈ (Lie.coadjointRepresentation ℝ I₃ SO₃).stabilizer (momentMap I₃ SO₃ z) ↔
@@ -199,7 +199,8 @@ theorem finrank_ker_differential_momentMap_specialOrthogonalGroup {z : T*ℝ³}
 
 /-- **The null directions of the form on the level are a line**: at a point of nonzero angular
 momentum the kernel `T_z Z ∩ (T_z Z)^ω` of the restriction of the symplectic form to the tangent
-space `T_z Z = ker dμ_z` of the level is the orbit direction `𝔤_c · z` of the circle `G_c`. -/
+space `T_z Z = ker dμ_z` of the level has dimension `1`, the dimension of the Lie algebra `𝔤_c`
+of the stabilizer `G_c`. -/
 theorem finrank_ker_differential_inf_orthogonal_momentMap_specialOrthogonalGroup {z : T*ℝ³}
     (hz : cotangentAngularMomentum (modelSpaceDiffeomorph (Fin 3 → ℝ) z) ≠ 0) :
     finrank ℝ ↥(LinearMap.ker (h.differential z) ⊓
