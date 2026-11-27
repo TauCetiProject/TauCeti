@@ -16,7 +16,12 @@ It is the product form `TauCeti.SmoothTwoForm.prod` of `σ` and `-τ`
 (`TauCeti.SmoothTwoForm.twistedProd_eq_prod_neg`), so nondegeneracy and closedness are
 inherited from the two factors through the product form. Its value on each tangent
 space is the existing linear twisted product. These comparisons let the linear theory
-of Lagrangian graphs apply to graphs of maps between manifolds.
+of Lagrangian graphs apply to graphs of maps between manifolds. On each tangent space the
+twisted product is tamed by, or compatible with, the direct sum `J₁ ⊕ (-J₂)` of structures
+tamed by, or compatible with, the two factors
+(`TauCeti.SmoothTwoForm.IsNondegenerate.tames_symplecticFormAt_twistedProd` and
+`TauCeti.SmoothTwoForm.IsNondegenerate.compatible_symplecticFormAt_twistedProd`); these are the
+almost complex structures of strips in `M × N` with boundary on correspondences.
 
 Two sign laws govern the operations on correspondences. Exchanging the factors pulls
 `pr₁*τ - pr₂*σ` on `N × M` back to `-(pr₁*σ - pr₂*τ)` on `M × N`
@@ -105,6 +110,38 @@ theorem IsNondegenerate.symplecticFormAt_twistedProd
     IsNondegenerate.symplecticFormAt_apply, IsNondegenerate.symplecticFormAt_apply,
     eval₂_twistedProd]
   simp only [ContinuousLinearEquiv.coe_toLinearEquiv]
+
+/-- On each tangent space of `M × N`, the twisted product is tamed by the direct sum `J₁ ⊕ (-J₂)`
+of a structure tamed by `σ` and the negative of a structure tamed by `τ`, read through the
+identification of the tangent space of the product with the product of the tangent spaces. -/
+theorem IsNondegenerate.tames_symplecticFormAt_twistedProd {σ : SmoothTwoForm I M}
+    {τ : SmoothTwoForm J N} (hσ : σ.IsNondegenerate) (hτ : τ.IsNondegenerate) (p : M × N)
+    {J₁ : AlmostComplexStructure (TangentSpace I p.1)}
+    {J₂ : AlmostComplexStructure (TangentSpace J p.2)}
+    (h₁ : (hσ.symplecticFormAt p.1).Tames J₁) (h₂ : (hτ.symplecticFormAt p.2).Tames J₂) :
+    ((hσ.twistedProd hτ).symplecticFormAt p).Tames
+      ((J₁.prod (-J₂)).transport (Manifold.tangentSpaceProdEquiv p).symm.toLinearEquiv) := by
+  have h := (SymplecticForm.twistedProd_tames h₁ h₂).transport
+    (Manifold.tangentSpaceProdEquiv p).symm.toLinearEquiv
+  rwa [← hσ.symplecticFormAt_twistedProd hτ p, ContinuousLinearEquiv.toLinearEquiv_symm,
+    SymplecticForm.transport_symm_transport] at h
+
+/-- On each tangent space of `M × N`, the twisted product is compatible with the direct sum
+`J₁ ⊕ (-J₂)` of a structure compatible with `σ` and the negative of a structure compatible with
+`τ`, read through the identification of the tangent space of the product with the product of the
+tangent spaces. -/
+theorem IsNondegenerate.compatible_symplecticFormAt_twistedProd {σ : SmoothTwoForm I M}
+    {τ : SmoothTwoForm J N} (hσ : σ.IsNondegenerate) (hτ : τ.IsNondegenerate) (p : M × N)
+    {J₁ : AlmostComplexStructure (TangentSpace I p.1)}
+    {J₂ : AlmostComplexStructure (TangentSpace J p.2)}
+    (h₁ : (hσ.symplecticFormAt p.1).Compatible J₁)
+    (h₂ : (hτ.symplecticFormAt p.2).Compatible J₂) :
+    ((hσ.twistedProd hτ).symplecticFormAt p).Compatible
+      ((J₁.prod (-J₂)).transport (Manifold.tangentSpaceProdEquiv p).symm.toLinearEquiv) := by
+  have h := (SymplecticForm.twistedProd_compatible h₁ h₂).transport
+    (Manifold.tangentSpaceProdEquiv p).symm.toLinearEquiv
+  rwa [← hσ.symplecticFormAt_twistedProd hτ p, ContinuousLinearEquiv.toLinearEquiv_symm,
+    SymplecticForm.transport_symm_transport] at h
 
 /-- Closed factors give a closed twisted product. -/
 theorem isClosed_twistedProd {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N}

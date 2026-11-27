@@ -12,6 +12,7 @@ import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
+import TauCeti.Analysis.InnerProductSpace.OrthogonalSpanSingleton
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -81,6 +82,9 @@ No boundedness or boundary regularity of `Ω` is assumed.
   `TauCeti.Wkp.norm_lineDerivL_le_of_exponent_two`, `TauCeti.Wkp.norm_lineDerivL_le`, and
   `TauCeti.Wkp.norm_lineDerivBilinL_le`: sharp componentwise (`1`) and Sobolev graph-norm (`1` at
   `k = 0` or `p = 2`, `√2` in general) bounds for `lineDerivL` and `lineDerivBilinL`.
+* `TauCeti.Wkp.value_lineDerivL_lineDerivL_ae_eq` and
+  `TauCeti.Wkp.ae_inner_gradient_firstOrder_lineDerivL_eq`: every second derivative of `U` from
+  the purely normal one `∂_e ∂_e U` and the derivatives of the tangential derivatives of `U`.
 
 ## References
 
@@ -968,5 +972,70 @@ theorem Wkp.norm_lineDerivBilinL_le (k : ℕ) :
   ContinuousLinearMap.opNorm_le_bound _ (Real.sqrt_nonneg 2) fun v => by
     rw [Wkp.lineDerivBilinL_apply]
     exact Wkp.norm_lineDerivL_le v k
+
+/-! ### Second derivatives from the normal and the tangential ones -/
+
+/-- **Second derivatives from the normal one and the tangential ones.** Let `e` be a unit vector,
+`P` the orthogonal projection onto the hyperplane orthogonal to `e`, and `U ∈ W^{k+2,p}(Ω)` with
+weak derivatives `T τ ∈ W^{k+2,p}(Ω)` along every `τ` orthogonal to `e`. Then the second weak
+derivative `∂_w ∂_y U` is `⟪e, y⟫ (⟪e, w⟫ ∂_e ∂_e U + ∂_e T (P w)) + ∂_w T (P y)`. -/
+theorem Wkp.value_lineDerivL_lineDerivL_ae_eq {e : E} (he : ‖e‖ = 1) {k : ℕ}
+    {U : Wkp mu Omega p (k + 2)} {T : E → Wkp mu Omega p (k + 2)}
+    (hT : ∀ τ, ⟪τ, e⟫_ℝ = 0 →
+      HasWeakLineDerivOn mu Omega (Wkp.value (k + 2) U) (Wkp.value (k + 2) (T τ)) τ)
+    (w y : E) :
+    (Wkp.value k (Wkp.lineDerivL w k (Wkp.lineDerivL y (k + 1) U)) : E → ℝ)
+      =ᵐ[mu.restrict Omega] fun x =>
+        ⟪e, y⟫_ℝ * (⟪e, w⟫_ℝ *
+            Wkp.value k (Wkp.lineDerivL e k (Wkp.lineDerivL e (k + 1) U)) x +
+          Wkp.value (k + 1) (Wkp.lineDerivL e (k + 1) (T ((ℝ ∙ e)ᗮ.starProjection w))) x) +
+        Wkp.value (k + 1) (Wkp.lineDerivL w (k + 1) (T ((ℝ ∙ e)ᗮ.starProjection y))) x := by
+  set P := (ℝ ∙ e)ᗮ.starProjection
+  have hP : ∀ z, ⟪P z, e⟫_ℝ = 0 := inner_starProjection_orthogonal_singleton_eq_zero ℝ e
+  have hLp : ∀ (c : ℝ) (X Y : Lp ℝ p (mu.restrict Omega)),
+      (⇑(c • X + Y) : E → ℝ) =ᵐ[mu.restrict Omega] c • ⇑X + ⇑Y := fun c X Y => by
+    filter_upwards [Lp.coeFn_add (c • X) Y, Lp.coeFn_smul c X] with x h₁ h₂
+    rw [h₁, Pi.add_apply, h₂, Pi.add_apply]
+  have hDe := Wkp.hasWeakLineDerivOn_lineDerivL e (k + 1) U
+  -- `∂_y U = ⟪e, y⟫ ∂_e U + T (P y)`.
+  have h₁ := (Wkp.hasWeakLineDerivOn_lineDerivL y (k + 1) U).ae_eq
+    (hDe.smul_add_of_normal_tangential he (hT _ (hP y)))
+  -- `∂_w ∂_e U = ⟪e, w⟫ ∂_e ∂_e U + ∂_e T (P w)`, since `∂_{P w} ∂_e U = ∂_e ∂_{P w} U`.
+  have hDew := (Wkp.hasWeakLineDerivOn_lineDerivL e k
+    (Wkp.lineDerivL e (k + 1) U)).smul_add_of_normal_tangential he
+    ((hT _ (hP w)).comm (Wkp.hasWeakLineDerivOn_lineDerivL e (k + 1) (T (P w))) hDe)
+  have h₂ := ((hDew.const_smul ⟪e, y⟫_ℝ).add
+    (Wkp.hasWeakLineDerivOn_lineDerivL w (k + 1) (T (P y)))).congr_ae (h₁.trans (hLp _ _ _)).symm
+  filter_upwards [(Wkp.hasWeakLineDerivOn_lineDerivL w k (Wkp.lineDerivL y (k + 1) U)).ae_eq h₂,
+    hLp ⟪e, w⟫_ℝ (Wkp.value k (Wkp.lineDerivL e k (Wkp.lineDerivL e (k + 1) U)))
+      (Wkp.value (k + 1) (Wkp.lineDerivL e (k + 1) (T (P w))))] with x hx hx'
+  rw [hx, Pi.add_apply, Pi.smul_apply, hx', Pi.add_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul]
+
+/-- **Second derivatives through the weak gradient.** Under the hypotheses of
+`TauCeti.Wkp.value_lineDerivL_lineDerivL_ae_eq`, the component along `w` of the weak gradient of
+the first derivative `∂_y U ∈ W^{1,p}(Ω)` is
+`⟪e, w⟫ ⟪e, y⟫ ∂_e ∂_e U + ⟪e, y⟫ ∂_e T (P w) + ∂_w T (P y)`. -/
+theorem Wkp.ae_inner_gradient_firstOrder_lineDerivL_eq {e : E} (he : ‖e‖ = 1) {k : ℕ}
+    {U : Wkp mu Omega p (k + 2)} {T : E → Wkp mu Omega p (k + 2)}
+    (hT : ∀ τ, ⟪τ, e⟫_ℝ = 0 →
+      HasWeakLineDerivOn mu Omega (Wkp.value (k + 2) U) (Wkp.value (k + 2) (T τ)) τ)
+    (w y : E) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      ⟪W1p.gradient (Wkp.firstOrder k (Wkp.lineDerivL y (k + 1) U)) x, w⟫_ℝ =
+        ⟪e, w⟫_ℝ * ⟪e, y⟫_ℝ * Wkp.value k (Wkp.lineDerivL e k (Wkp.lineDerivL e (k + 1) U)) x +
+          Wkp.value (k + 1) (⟪e, y⟫_ℝ • Wkp.lineDerivL e (k + 1) (T ((ℝ ∙ e)ᗮ.starProjection w)) +
+            Wkp.lineDerivL w (k + 1) (T ((ℝ ∙ e)ᗮ.starProjection y))) x := by
+  have h :=
+    (W1p.hasWeakFDerivOn (Wkp.firstOrder k (Wkp.lineDerivL y (k + 1) U))).hasWeakLineDerivOn w
+  rw [Wkp.value_firstOrder] at h
+  filter_upwards [h.ae_eq (Wkp.hasWeakLineDerivOn_lineDerivL w k (Wkp.lineDerivL y (k + 1) U)),
+    Wkp.value_lineDerivL_lineDerivL_ae_eq he hT w y,
+    Wkp.value_add_ae (k + 1)
+      (⟪e, y⟫_ℝ • Wkp.lineDerivL e (k + 1) (T ((ℝ ∙ e)ᗮ.starProjection w)))
+      (Wkp.lineDerivL w (k + 1) (T ((ℝ ∙ e)ᗮ.starProjection y))),
+    Wkp.value_smul_ae (k + 1) ⟪e, y⟫_ℝ
+      (Wkp.lineDerivL e (k + 1) (T ((ℝ ∙ e)ᗮ.starProjection w)))] with x h₁ h₂ h₃ h₄
+  rw [← innerSL_apply_apply, h₁, h₂, h₃, Pi.add_apply, h₄, Pi.smul_apply, smul_eq_mul]
+  ring
 
 end TauCeti
