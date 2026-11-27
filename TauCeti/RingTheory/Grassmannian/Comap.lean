@@ -44,6 +44,21 @@ theorem toSubmodule_comap (N : G(k, P; R)) (f : M →ₗ[R] P) (hf : Function.Su
     (N.comap f hf).toSubmodule = N.toSubmodule.comap f := by
   simp [comap, LinearMap.ker_comp]
 
+/-- The quotient pulled back along a surjection is linearly equivalent to the original quotient. -/
+noncomputable def comapQuotEquiv (N : G(k, P; R)) (f : M →ₗ[R] P)
+    (hf : Function.Surjective f) :
+    (M ⧸ (N.comap f hf).toSubmodule) ≃ₗ[R] P ⧸ N.toSubmodule :=
+  (Submodule.quotEquivOfEq _ _ (by simp [LinearMap.ker_comp])).trans
+    ((N.toSubmodule.mkQ ∘ₗ f).quotKerEquivOfSurjective
+      (N.toSubmodule.mkQ_surjective.comp hf))
+
+/-- The quotient comparison sends the class of `x` to the class of `f x`. -/
+@[simp]
+theorem comapQuotEquiv_mk (N : G(k, P; R)) (f : M →ₗ[R] P)
+    (hf : Function.Surjective f) (x : M) :
+    N.comapQuotEquiv f hf (Submodule.Quotient.mk x) = Submodule.Quotient.mk (f x) := by
+  simp [comapQuotEquiv]
+
 /-- Pulling back a quotient along the identity leaves it unchanged. -/
 @[simp]
 theorem comap_id (N : G(k, M; R)) : N.comap LinearMap.id Function.surjective_id = N := by
@@ -51,6 +66,7 @@ theorem comap_id (N : G(k, M; R)) : N.comap LinearMap.id Function.surjective_id 
   simp
 
 /-- Pullback of quotients respects composition of surjections. -/
+@[simp]
 theorem comap_comap {Q : Type*} [AddCommGroup Q] [Module R Q] (N : G(k, Q; R))
     (f : M →ₗ[R] P) (hf : Function.Surjective f) (g : P →ₗ[R] Q)
     (hg : Function.Surjective g) :
@@ -59,7 +75,7 @@ theorem comap_comap {Q : Type*} [AddCommGroup Q] [Module R Q] (N : G(k, Q; R))
   simp [Submodule.comap_comp]
 
 /-- Inverse image along a surjection is injective on quotient Grassmannian points. -/
-theorem _root_.LinearMap.grassmannianComap_injective (f : M →ₗ[R] P) (hf : Function.Surjective f) :
+theorem comap_injective (f : M →ₗ[R] P) (hf : Function.Surjective f) :
     Function.Injective (fun N : G(k, P; R) ↦ N.comap f hf) := by
   intro N N' h
   apply Grassmannian.ext
@@ -108,7 +124,7 @@ theorem ker_le_comap (N : G(k, P; R)) (f : M →ₗ[R] P) (hf : Function.Surject
 @[simp]
 theorem descend_comap (N : G(k, P; R)) (f : M →ₗ[R] P) (hf : Function.Surjective f) :
     (N.comap f hf).descend f hf (N.ker_le_comap f hf) = N :=
-  f.grassmannianComap_injective hf (comap_descend _ _ _ _)
+  comap_injective f hf (comap_descend _ _ _ _)
 
 /-- A surjection identifies the quotient Grassmannian of its target with the points whose
 kernels contain its kernel. -/
@@ -127,6 +143,13 @@ theorem _root_.LinearMap.grassmannianComapEquiv_apply_val (f : M →ₗ[R] P)
     (f.grassmannianComapEquiv hf N).val = N.comap f hf :=
   (rfl)
 
+/-- The inverse of `grassmannianComapEquiv` descends a quotient along the surjection. -/
+@[simp]
+theorem _root_.LinearMap.grassmannianComapEquiv_symm_apply (f : M →ₗ[R] P)
+    (hf : Function.Surjective f) (N : {N : G(k, M; R) // LinearMap.ker f ≤ N.toSubmodule}) :
+    (f.grassmannianComapEquiv hf).symm N = N.val.descend f hf N.property :=
+  (rfl)
+
 section BaseChange
 
 variable {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
@@ -139,19 +162,17 @@ theorem map_comap_baseChange (N : G(k, A ⊗[R] P; A)) (f : M →ₗ[R] P)
       (map φ N).comap (f.baseChange B) (f.baseChange_surjective B hf) := by
   algebraize [φ.toRingHom]
   have hφ : IsScalarTower.toAlgHom R A B = φ := AlgHom.ext fun _ ↦ rfl
-  let g := N.toSubmodule.mkQ ∘ₗ f.baseChange A
-  let e := g.quotKerEquivOfSurjective
-    (N.toSubmodule.mkQ_surjective.comp (f.baseChange_surjective A hf))
-  have he : (e.baseChange A B _ _).toLinearMap ∘ₗ baseChangeMkQ B (LinearMap.ker g) =
+  let e := N.comapQuotEquiv (f.baseChange A) (f.baseChange_surjective A hf)
+  have he : (e.baseChange A B _ _).toLinearMap ∘ₗ
+      baseChangeMkQ B (N.comap (f.baseChange A) (f.baseChange_surjective A hf)).toSubmodule =
       baseChangeMkQ B N.toSubmodule ∘ₗ f.baseChange B := by
     ext m
-    simp [e, g]
+    simp [e]
   rw [← hφ]
   ext : 1
-  rw [toSubmodule_comap, map_toAlgHom_toSubmodule (B := B),
-    map_toAlgHom_toSubmodule (B := B), ← LinearMap.ker_comp, ← he,
-    LinearEquiv.ker_comp]
-  rw [comap, toSubmodule_ofSurjective]
+  have hker := congrArg LinearMap.ker he
+  rw [LinearEquiv.ker_comp, LinearMap.ker_comp] at hker
+  simpa only [← map_toAlgHom_toSubmodule, toSubmodule_comap] using hker
 
 /-- Inverse image along an equivariant surjection preserves the equations of stability,
 including their nilpotent scheme structure. -/
@@ -161,14 +182,9 @@ theorem stableLocus_comap (N : G(k, A ⊗[R] P; A)) (f : M →ₗ[R] P)
     (h : f.comp t = u.comp f) :
     (N.comap (f.baseChange A) (f.baseChange_surjective A hf)).stableLocus t = N.stableLocus u := by
   let C := N.comap (f.baseChange A) (f.baseChange_surjective A hf)
-  let g := N.toSubmodule.mkQ ∘ₗ f.baseChange A
-  have hC : C.toSubmodule = LinearMap.ker g := by
-    dsimp only [C]
-    rw [comap, toSubmodule_ofSurjective]
-  let e := (Submodule.quotEquivOfEq _ _ hC).trans
-    (g.quotKerEquivOfSurjective
-      (N.toSubmodule.mkQ_surjective.comp (f.baseChange_surjective A hf)))
-  have he (x : A ⊗[R] M) : e (C.toSubmodule.mkQ x) = g x := by simp [e]
+  let e := N.comapQuotEquiv (f.baseChange A) (f.baseChange_surjective A hf)
+  have he (x : A ⊗[R] M) : e (C.toSubmodule.mkQ x) =
+      N.toSubmodule.mkQ (f.baseChange A x) := comapQuotEquiv_mk N _ _ x
   have ht : (f.baseChange A).comp (t.baseChange A) =
       (u.baseChange A).comp (f.baseChange A) := by
     rw [← LinearMap.baseChange_comp, ← LinearMap.baseChange_comp, h]
@@ -179,13 +195,13 @@ theorem stableLocus_comap (N : G(k, A ⊗[R] P; A)) (f : M →ₗ[R] P)
     · rintro _ ⟨x, hx, rfl⟩
       refine ⟨f.baseChange A x, ?_, ?_⟩
       · simpa [C] using hx
-      · simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, he, g] using
+      · simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, he] using
           (congrArg N.toSubmodule.mkQ (LinearMap.congr_fun ht x)).symm
     · rintro _ ⟨y, hy, rfl⟩
       obtain ⟨x, rfl⟩ := f.baseChange_surjective A hf y
       refine ⟨x, ?_, ?_⟩
       · simpa [C] using hy
-      · simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, he, g] using
+      · simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, he] using
           congrArg N.toSubmodule.mkQ (LinearMap.congr_fun ht x)
   rw [stableLocus_def, ← Submodule.minorsIdeal_map_equiv e, himage, stableLocus_def]
 

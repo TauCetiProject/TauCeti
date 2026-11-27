@@ -123,6 +123,7 @@ theorem grassmannianComap_id :
   simp
 
 /-- The incidence embeddings compose contravariantly in surjections of ambient modules. -/
+@[reassoc (attr := simp)]
 theorem grassmannianComap_comp {Q : Type u} [AddCommGroup Q] [Module R Q]
     (g : P →ₗ[R] Q) (hg : Function.Surjective g) :
     g.grassmannianComap hg k ≫ f.grassmannianComap hf k =
@@ -151,9 +152,7 @@ private theorem existsUnique_comp_grassmannianComapToRankLocus {A : CommRingCat.
   let K := ((f.baseChange A).grassmannianComapEquiv
     (f.baseChange_surjective A hf)).symm ⟨N.val, hN⟩
   have hK : K.comap (f.baseChange A) (f.baseChange_surjective A hf) = N.val := by
-    simpa only [grassmannianComapEquiv_apply_val] using
-      congrArg Subtype.val ((f.baseChange A).grassmannianComapEquiv
-        (f.baseChange_surjective A hf) |>.apply_symm_apply ⟨N.val, hN⟩)
+    simp [K, grassmannianComapEquiv_symm_apply]
   have hc : toSchemeHom K ≫ f.grassmannianComapToRankLocus hf k = a := by
     apply (cancel_mono (schemeRankLocus k (fun _ : Unit ↦ ker f) (fun _ ↦ 0)).subschemeι).1
     rw [Category.assoc, grassmannianComapToRankLocus_comp_subschemeι,
@@ -162,7 +161,7 @@ private theorem existsUnique_comp_grassmannianComapToRankLocus {A : CommRingCat.
   rintro c ⟨hc₁, hc₂⟩
   obtain ⟨L, rfl⟩ := exists_toSchemeHom_eq c (hc₂.trans ha)
   apply congrArg toSchemeHom
-  apply (f.baseChange A).grassmannianComap_injective (f.baseChange_surjective A hf)
+  apply Module.Grassmannian.comap_injective (f.baseChange A) (f.baseChange_surjective A hf)
   apply toSchemeHom_injective
   rw [← toSchemeHom_comp_grassmannianComap L f hf,
     ← toSchemeHom_comp_grassmannianComap K f hf,
