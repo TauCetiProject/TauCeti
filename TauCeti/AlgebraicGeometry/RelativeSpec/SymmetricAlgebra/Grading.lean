@@ -122,6 +122,7 @@ open scoped AddMonObj in
 /-- **The vertex of `Spec_X (Sym F)` is its zero section.** The vertex of the relative spectrum of
 the graded algebra `Sym F`, given by the augmentation `Sym F ⟶ Sym⁰ F = 𝒪_X`, is the zero section
 of the additive group scheme `Spec_X (Sym F)`. -/
+@[simp]
 theorem gradedRelativeSpecVertex_gradedSymmetricAlgebra :
     gradedRelativeSpecVertex ((gradedSymmetricAlgebra X).obj F) =
       (0 : 𝟙_ (Over X) ⟶ (MorphismProperty.Over.forget _ _ X).obj
