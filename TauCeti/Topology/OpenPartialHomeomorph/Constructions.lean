@@ -31,6 +31,9 @@ Finite products of open partial homeomorphisms commute with inverses and composi
 * `OpenPartialHomeomorph.subtypeCoord` restricts an open partial homeomorphism to a subtype and
   reads its coordinates through a retraction onto the parametrized slice.
 
+* `OpenPartialHomeomorph.slice` restricts an open partial homeomorphism of products `P × X` and
+  `P × Y` that preserves the first coordinate to the slice over one point of `P`.
+
 * `OpenPartialHomeomorph.subtypeFst` restricts an open partial homeomorphism with values in a
   product `Y × W` to the subtype it reads as `t × W`, for a subset `t` of the first factor.
 
@@ -282,6 +285,62 @@ theorem pi_trans (e : ∀ i, OpenPartialHomeomorph (X i) (Y i))
   toPartialEquiv_injective (PartialEquiv.pi_trans _ _)
 
 end Pi
+
+section Slice
+
+variable {P : Type*} [TopologicalSpace P] (e : OpenPartialHomeomorph (P × X) (P × Y))
+  (he : ∀ q ∈ e.source, (e q).1 = q.1) (hes : ∀ q ∈ e.target, (e.symm q).1 = q.1) (s : P)
+
+/-- The slice at `s` of an open partial homeomorphism of products that preserves the first
+coordinate in both directions: `x ↦ (e (s, x)).2`, with inverse `y ↦ (e⁻¹ (s, y)).2`, from
+`{x | (s, x) ∈ e.source}` onto `{y | (s, y) ∈ e.target}`. -/
+def slice : OpenPartialHomeomorph X Y where
+  toFun x := (e (s, x)).2
+  invFun y := (e.symm (s, y)).2
+  source := {x | (s, x) ∈ e.source}
+  target := {y | (s, y) ∈ e.target}
+  map_source' x hx := by
+    have h := e.map_source hx
+    rwa [← Prod.mk.eta (p := e (s, x)), he _ hx] at h
+  map_target' y hy := by
+    have h := e.map_target hy
+    rwa [← Prod.mk.eta (p := e.symm (s, y)), hes _ hy] at h
+  left_inv' x hx := by
+    have h := e.left_inv hx
+    rw [← Prod.mk.eta (p := e (s, x)), he _ hx] at h
+    simp [h]
+  right_inv' y hy := by
+    have h := e.right_inv hy
+    rw [← Prod.mk.eta (p := e.symm (s, y)), hes _ hy] at h
+    simp [h]
+  open_source := e.open_source.preimage (Continuous.prodMk_right s)
+  open_target := e.open_target.preimage (Continuous.prodMk_right s)
+  continuousOn_toFun := continuous_snd.comp_continuousOn
+    (e.continuousOn.comp (Continuous.prodMk_right s).continuousOn fun _ hx ↦ hx)
+  continuousOn_invFun := continuous_snd.comp_continuousOn
+    (e.continuousOn_symm.comp (Continuous.prodMk_right s).continuousOn fun _ hy ↦ hy)
+
+/-- The slice evaluates as the second component of `e` at `(s, x)`. -/
+@[simp]
+theorem slice_apply (x : X) : e.slice he hes s x = (e (s, x)).2 := by
+  rfl
+
+/-- The inverse of the slice evaluates as the second component of `e⁻¹` at `(s, y)`. -/
+@[simp]
+theorem slice_symm_apply (y : Y) : (e.slice he hes s).symm y = (e.symm (s, y)).2 := by
+  rfl
+
+/-- The source of the slice is the slice of the source. -/
+@[simp]
+theorem mem_slice_source {x : X} : x ∈ (e.slice he hes s).source ↔ (s, x) ∈ e.source := by
+  rfl
+
+/-- The target of the slice is the slice of the target. -/
+@[simp]
+theorem mem_slice_target {y : Y} : y ∈ (e.slice he hes s).target ↔ (s, y) ∈ e.target := by
+  rfl
+
+end Slice
 
 end OpenPartialHomeomorph
 

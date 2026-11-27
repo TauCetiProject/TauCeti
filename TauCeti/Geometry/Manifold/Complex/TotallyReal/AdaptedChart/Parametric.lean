@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.AdaptedChart.Parametric
 public import TauCeti.Geometry.Manifold.Complex.TotallyReal.AdaptedChart
+import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Adapted charts along a totally real embedding, depending on a parameter
@@ -24,19 +25,19 @@ chart `ψ s` of `M` for `ι (N)` and `J s` (`TauCeti.IsAdaptedChart`), such that
   `TauCeti.parametricAdaptedNormalExtension` of `ι` and `J` read in the extended charts.
 
 This is McDuff–Salamon Exercise B.4.10 with parameters
-(`TauCeti.IsTotallyRealEmbedding.exists_adaptedChart_parametric`). Only `J s₀` needs `ι` to be
+(`TauCeti.IsTotallyRealEmbedding.exists_parametricAdaptedChart`). Only `J s₀` needs `ι` to be
 totally real: total reality is an open condition, and the inverse function theorem for the
 parametric extension (`TauCeti.exists_parametricAdaptedChart`) gives it for `s` near `s₀`. The
-chart `ψ s` is the slice of `e` at `s`, restricted by the shrinking step of
-`TauCeti.exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension`; the open set cutting the
-sources is chosen once for all parameters near `s₀`, using that `ι` is an embedding.
+chart `ψ s` is the slice of `e` at `s` (`OpenPartialHomeomorph.slice`), restricted by the
+shrinking step of `TauCeti.exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension`; the open set
+cutting the sources is chosen once for all parameters near `s₀`, using that `ι` is an embedding.
 
 The consumer in view is the boundary regularity of pseudoholomorphic maps for a structure
 depending on the domain point, with the parameter the boundary coordinate.
 
 ## Main declarations
 
-* `TauCeti.IsTotallyRealEmbedding.exists_adaptedChart_parametric`: the family of adapted charts.
+* `TauCeti.IsTotallyRealEmbedding.exists_parametricAdaptedChart`: the family of adapted charts.
 
 ## References
 
@@ -59,49 +60,6 @@ variable {E H M F H' N P : Type*}
   {I' : ModelWithCorners ℝ F H'} [I'.Boundaryless] [TopologicalSpace N] [ChartedSpace H' N]
   [NormedAddCommGroup P] [NormedSpace ℝ P]
   {ℓ : ℕ∞} {k : ℕ∞ω} {ι : N → M}
-
-section Slice
-
-variable {V W : Type*} [TopologicalSpace V] [TopologicalSpace W]
-
-/-- The slice at `s` of a partial homeomorphism of `(P × V) × V` onto a subset of `P × W` which
-preserves the parameter in both directions. -/
-private noncomputable def slice (e : OpenPartialHomeomorph ((P × V) × V) (P × W))
-    (he : ∀ p, (e p).1 = p.1.1) (hes : ∀ q ∈ e.target, (e.symm q).1.1 = q.1) (s : P) :
-    OpenPartialHomeomorph (V × V) W where
-  toFun p := (e ((s, p.1), p.2)).2
-  invFun w := ((e.symm (s, w)).1.2, (e.symm (s, w)).2)
-  source := {p | ((s, p.1), p.2) ∈ e.source}
-  target := {w | (s, w) ∈ e.target}
-  map_source' p hp := by
-    have h := e.map_source hp
-    rwa [← Prod.mk.eta (p := e ((s, p.1), p.2)), he] at h
-  map_target' w hw := by
-    have h := e.map_target hw
-    rwa [← Prod.mk.eta (p := e.symm (s, w)), ← Prod.mk.eta (p := (e.symm (s, w)).1),
-      hes _ hw] at h
-  left_inv' p hp := by
-    have h := e.left_inv hp
-    -- `e` maps `((s, p.1), p.2)` to `(s, w)`, so the inverse at `(s, w)` returns it.
-    rw [← Prod.mk.eta (p := e ((s, p.1), p.2)), he] at h
-    simp [h]
-  right_inv' w hw := by
-    have h := e.right_inv hw
-    rw [← Prod.mk.eta (p := e.symm (s, w)), ← Prod.mk.eta (p := (e.symm (s, w)).1),
-      hes _ hw] at h
-    simp [h]
-  open_source := e.open_source.preimage (by fun_prop)
-  open_target := e.open_target.preimage (by fun_prop)
-  continuousOn_toFun := continuous_snd.comp_continuousOn
-    (e.continuousOn.comp (by fun_prop : Continuous fun p : V × V ↦ ((s, p.1), p.2)).continuousOn
-      fun _ hp ↦ hp)
-  continuousOn_invFun := by
-    have hc : ContinuousOn (fun w : W ↦ e.symm (s, w)) {w | (s, w) ∈ e.target} :=
-      e.continuousOn_symm.comp (Continuous.prodMk_right s).continuousOn fun _ hw ↦ hw
-    exact ((continuous_snd.comp continuous_fst).comp_continuousOn hc).prodMk
-      (continuous_snd.comp_continuousOn hc)
-
-end Slice
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- **One slice.** For a partial homeomorphism `e` whose underlying map is the parametric adapted
@@ -130,13 +88,23 @@ private theorem exists_isAdaptedChart_slice [IsManifold I' k N]
         ψ.symm p = (extChartAt I (ι x₀)).symm (e ((s, p.1), p.2)).2 := by
   have hfst (p : (P × F) × F) : (e p).1 = p.1.1 := by
     rw [he, parametricAdaptedNormalExtension_apply]
-  set es := slice e hfst (fun q hq ↦ e.fst_fst_symm_of_coe_eq_parametricAdaptedNormalExtension
-    he hq) s
-  -- The slice, its inverse, source and target, by the defining formulas of `slice`.
-  have hes (p : F × F) : es p = (e ((s, p.1), p.2)).2 := rfl
-  have hess (w : E) : es.symm w = ((e.symm (s, w)).1.2, (e.symm (s, w)).2) := rfl
-  have hessrc (p : F × F) : p ∈ es.source ↔ ((s, p.1), p.2) ∈ e.source := Iff.rfl
-  have hestgt (w : E) : w ∈ es.target ↔ (s, w) ∈ e.target := Iff.rfl
+  -- Regroup the source as `P × (F × F)`, and slice at `s`.
+  set e' := (Homeomorph.prodAssoc P F F).symm.transOpenPartialHomeomorph e
+  have he' : ∀ q ∈ e'.source, (e' q).1 = q.1 := fun q _ ↦ by
+    simpa [e', Homeomorph.prodAssoc] using hfst ((q.1, q.2.1), q.2.2)
+  have hes' : ∀ q ∈ e'.target, (e'.symm q).1 = q.1 := fun q hq ↦ by
+    simpa [e', Homeomorph.prodAssoc] using
+      e.fst_fst_symm_of_coe_eq_parametricAdaptedNormalExtension he
+        (by simpa [e', Homeomorph.prodAssoc] using hq)
+  set es := e'.slice he' hes' s
+  have hes (p : F × F) : es p = (e ((s, p.1), p.2)).2 := by
+    simp [es, e', Homeomorph.prodAssoc]
+  have hess (w : E) : es.symm w = ((e.symm (s, w)).1.2, (e.symm (s, w)).2) := by
+    simp [es, e', Homeomorph.prodAssoc]
+  have hessrc (p : F × F) : p ∈ es.source ↔ ((s, p.1), p.2) ∈ e.source := by
+    simp [es, e', Homeomorph.prodAssoc]
+  have hestgt (w : E) : w ∈ es.target ↔ (s, w) ∈ e.target := by
+    simp [es, e', Homeomorph.prodAssoc]
   have hesΦ : ⇑es = adaptedNormalExtension (writtenInExtChartAt I' I x₀ ι)
       ((J s).inChart (ι x₀)) := by
     funext p
@@ -150,7 +118,7 @@ private theorem exists_isAdaptedChart_slice [IsManifold I' k N]
       (fun p hp ↦ ⟨heU _ ((hessrc p).1 hp), mem_univ _⟩) hO hx₀O fun z hz ↦
         ⟨(hOe z hz).1, (hessrc _).2 (hOe z hz).2⟩
   exact ⟨ψ, hψ, fun x ↦ by rw [hψcoe, hess], fun x ↦ by rw [hψsrc, hestgt],
-    fun p hp ↦ ⟨((hψtgt p).1 hp).1, by rw [hψsymm, hes]⟩⟩
+    fun p hp ↦ ⟨(hessrc p).1 ((hψtgt p).1 hp).1, by rw [hψsymm, hes]⟩⟩
 
 /-- **Adapted charts depending on a parameter.** Let `J s`, for `s` in an open set `S` of a
 complete normed space `P`, be `C^ℓ` almost complex structures on `M` which, read in the extended
@@ -161,7 +129,7 @@ parametric adapted extension of `ι` and `J` read in the extended charts at `x�
 with `C^ℓ` inverse, and for every `s ∈ S'` an adapted chart `ψ s` for `ι (N)` and `J s`
 (`TauCeti.IsAdaptedChart`) whose source contains `O`, given by the slice of `e⁻¹` at `s` read
 after `χ`, with inverse `χ⁻¹` after the slice of `e`. -/
-theorem IsTotallyRealEmbedding.exists_adaptedChart_parametric [CompleteSpace P]
+theorem IsTotallyRealEmbedding.exists_parametricAdaptedChart [CompleteSpace P]
     [IsManifold I' k N] {J : P → ContMDiffAlmostComplexStructure I ℓ M} {S : Set P} {s₀ : P}
     {x₀ : N} (h : IsTotallyRealEmbedding I' I k (J s₀).almostComplexStructureAt ι)
     (hℓ : 1 ≤ ℓ) (hk : (ℓ : ℕ∞ω) + 1 ≤ k) (hS : IsOpen S) (hs₀ : s₀ ∈ S)
@@ -172,8 +140,10 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_parametric [CompleteSpace P]
       IsOpen S' ∧ s₀ ∈ S' ∧ S' ⊆ S ∧ IsOpen O ∧ ι x₀ ∈ O ∧
       ⇑e = parametricAdaptedNormalExtension (writtenInExtChartAt I' I x₀ ι)
         (fun q ↦ (J q.1).inChart (ι x₀) q.2) ∧
+      e.target ⊆ S ×ˢ (extChartAt I (ι x₀)).target ∧
       ContDiffOn ℝ ℓ e e.source ∧ ContDiffOn ℝ ℓ e.symm e.target ∧
       ∀ s ∈ S', IsAdaptedChart (J s) (range ι) (ψ s) ∧ O ⊆ (ψ s).source ∧
+        (∀ x ∈ O, (s, extChartAt I (ι x₀) x) ∈ e.target) ∧
         (∀ x, ψ s x = ((e.symm (s, extChartAt I (ι x₀) x)).1.2,
           (e.symm (s, extChartAt I (ι x₀) x)).2)) ∧
         ∀ p ∈ (ψ s).target, ((s, p.1), p.2) ∈ e.source ∧
@@ -188,9 +158,9 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_parametric [CompleteSpace P]
   set γ := writtenInExtChartAt I' I x₀ ι
   obtain ⟨hU, hx₀U, hγ, hγΩ⟩ := isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt hι x₀
   -- The parametric adapted extension inverts near `((s₀, φ x₀), 0)`.
-  obtain ⟨e, he, he₀, heU, -, hec, hesc⟩ :=
-    exists_parametricAdaptedChart hS hU (hS.prod (isOpen_extChartAt_target (ι x₀))) hs₀ hx₀U hℓ'
-      hγ hJ (fun s hs x hx ↦ ⟨hs, hγΩ hx⟩)
+  obtain ⟨e, he, he₀, heU, heΩ, hec, hesc⟩ :=
+    TauCeti.exists_parametricAdaptedChart hS hU (hS.prod (isOpen_extChartAt_target (ι x₀))) hs₀
+      hx₀U hℓ' hγ hJ (fun s hs x hx ↦ ⟨hs, hγΩ hx⟩)
       ((J s₀).inChart_inChart (ι x₀) (hγΩ hx₀U))
       (h.isMaximalTotallyRealMap.fderiv_writtenInExtChartAt_injective h.two_mul_finrank hιd)
       (h.isMaximalTotallyRealMap.isMaximalTotallyReal_range_fderiv_writtenInExtChartAt hιd)
@@ -220,8 +190,8 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_parametric [CompleteSpace P]
     ((continuousOn_extChartAt (ι x₀)).isOpen_inter_preimage (isOpen_extChartAt_source _) hT).inter
       hO₁
   refine ⟨S', O, e, ψ, (hS.inter hS₁).inter hS₂, hs₀S', fun s hs ↦ hs.1.1, hO,
-    ⟨⟨mem_extChartAt_source _, hT₀⟩, hx₀O₁⟩, he, hec, hesc, fun s hs ↦
-      ⟨hψ s hs, fun x hx ↦ (hψsrc s hs x).2 ⟨hx.1.1, hST ⟨hs.2, hx.1.2⟩, hx.2⟩, hψcoe s hs,
-        hψtgt s hs⟩⟩
+    ⟨⟨mem_extChartAt_source _, hT₀⟩, hx₀O₁⟩, he, heΩ, hec, hesc, fun s hs ↦
+      ⟨hψ s hs, fun x hx ↦ (hψsrc s hs x).2 ⟨hx.1.1, hST ⟨hs.2, hx.1.2⟩, hx.2⟩,
+        fun x hx ↦ hST ⟨hs.2, hx.1.2⟩, hψcoe s hs, hψtgt s hs⟩⟩
 
 end TauCeti
