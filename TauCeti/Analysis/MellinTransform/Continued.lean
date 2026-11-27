@@ -68,6 +68,8 @@ of integrals `∫₀^∞ f(t) h(xt) dt` (DLMF §2.5(iii)) and of the distributio
   the principal parts `a_k/(z + α_k)` (DLMF 2.5.25) and `-b_k/(z - β_k)` (DLMF 2.5.27).
 * `TauCeti.differentiableAt_mellinContAtZero`, `TauCeti.differentiableAt_mellinContAtTop`:
   holomorphy away from the poles `-α_k` and `β_k`.
+* `TauCeti.tendsto_mellinContAtTop_add_inv_smul`: at a simple pole `β_j`, the continuation minus
+  its principal part tends to `mellinContAtTop f b β n β_j`, the finite part (DLMF 2.6.29).
 * `TauCeti.add_re_pos_of_mellinConvergent`, `TauCeti.re_lt_of_mellinConvergent`: a nonzero
   coefficient bounds the strip of absolute convergence.
 * `TauCeti.mellinContAtZero_spec`, `TauCeti.mellinContAtTop_spec`: these properties assembled
@@ -500,6 +502,38 @@ theorem differentiableAt_mellinContAtTop (hf : LocallyIntegrableOn f (Ioi 0))
       (((differentiableAt_fun_id (x := z)).sub_const (β k)).inv
         (sub_ne_zero.mpr (hpole k (Finset.mem_range.mp hk)))).smul_const (b k)
   simpa only [add_sub_cancel_right] using h₁.fun_sub h₂
+
+/-- **The finite part at a pole** (DLMF 2.5.27, 2.6.29). Let `β_j`, `j < n`, lie in the strip
+`-c < Re z < Re β_n`, and let no other `β_k`, `k < n`, equal it. Removing the principal part
+`-b_j/(z - β_j)` from the continuation at `+∞` leaves a function with a limit at `β_j`, namely
+`mellinContAtTop f b β n β_j`: at `z = β_j` the defining formula drops the singular term, since
+`(β_j - β_j)⁻¹ = 0`. -/
+theorem tendsto_mellinContAtTop_add_inv_smul (hf : LocallyIntegrableOn f (Ioi 0))
+    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-β n))
+    {c : ℝ} (hc : f =O[𝓝[>] 0] (· ^ c)) {j : ℕ} (hj : j < n) (hjc : -c < (β j).re)
+    (hjn : (β j).re < (β n).re) (hβ : ∀ k < n, k ≠ j → β k ≠ β j) :
+    Tendsto (fun z ↦ mellinContAtTop f b β n z + (z - β j)⁻¹ • b j) (𝓝[≠] (β j))
+      (𝓝 (mellinContAtTop f b β n (β j))) := by
+  have hopen : IsOpen {z : ℂ | -c < z.re ∧ z.re < (β n).re} :=
+    (isOpen_lt continuous_const continuous_re).inter (isOpen_lt continuous_re continuous_const)
+  -- the continuation plus all principal parts is continuous at `β j`
+  have h₁ := ((differentiableOn_mellinContAtTop_add_sum hf hn hc).differentiableAt
+    (hopen.mem_nhds ⟨hjc, hjn⟩)).continuousAt
+  -- and so are the principal parts at the other poles
+  have h₂ : ContinuousAt (fun z ↦ ∑ k ∈ (Finset.range n).erase j, (z - β k)⁻¹ • b k) (β j) :=
+    tendsto_finsetSum _ fun k hk ↦ ContinuousAt.tendsto <|
+      ((continuousAt_id.sub continuousAt_const).inv₀ (sub_ne_zero.mpr
+        (hβ k (Finset.mem_range.mp (Finset.mem_of_mem_erase hk)) (Finset.ne_of_mem_erase hk)).symm
+        )).smul continuousAt_const
+  have hsplit (z : ℂ) : mellinContAtTop f b β n z + (z - β j)⁻¹ • b j =
+      (mellinContAtTop f b β n z + ∑ k ∈ Finset.range n, (z - β k)⁻¹ • b k) -
+        ∑ k ∈ (Finset.range n).erase j, (z - β k)⁻¹ • b k := by
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_range.mpr hj)]
+    abel
+  have h := (h₁.fun_sub h₂).tendsto.mono_left (nhdsWithin_le_nhds (s := {β j}ᶜ))
+  rw [← hsplit, sub_self, inv_zero, zero_smul, add_zero] at h
+  exact h.congr fun z ↦ (hsplit z).symm
 
 /-- A nonzero coefficient `b_k` of an expansion of `f` at `+∞` with strictly increasing `Re β_k`
 bounds the strip of absolute convergence of the Mellin transform of `f`: if it converges at `z`,
