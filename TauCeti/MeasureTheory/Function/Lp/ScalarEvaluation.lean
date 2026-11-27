@@ -22,27 +22,31 @@ measurability of `f` itself is assumed. When `ι` is contractive, this operator 
 `‖f‖_p`.
 
 At `p = ∞` the scalar tests recover the essential supremum. Suppose that `f` is almost
-everywhere strongly measurable and takes values almost everywhere in a separable set `s` on which
-the tests are `1`-norming: `‖x‖ = sup {‖ι y x‖ : ‖y‖ ≤ 1}` for `x ∈ s`. Then
+everywhere strongly measurable and takes values almost everywhere in a set `s` on which the
+tests are `1`-norming: `‖x‖ = sup {‖ι y x‖ : ‖y‖ ≤ 1}` for `x ∈ s`. Then
 `‖f‖_∞ = sup {‖ι y ∘ f‖_∞ : ‖y‖ ≤ 1}`, and `‖T_f‖ = ‖f‖_∞` for contractive `ι`; in
-particular `f` is essentially bounded as soon as all its scalar tests are. The proof extracts
-countably many norming tests on `s` from the norm-separability of the evaluation maps
-`y ↦ ι y x`, `x ∈ s`, so that a single null set serves all of them. Over `ℝ` or `ℂ` the whole
+particular `f` is essentially bounded as soon as all its scalar tests are. The proof intersects
+`s` with a separable set containing almost every value of `f`, and extracts countably many
+norming tests on this intersection from the norm-separability of the evaluation maps
+`y ↦ ι y x` at its points, so that a single null set serves all of them. Over `ℝ` or `ℂ` the whole
 dual is `1`-norming by Hahn–Banach.
 
 ## Main declarations
 
-* `TauCeti.scalarEvalLp`: the bounded scalar-evaluation operator `Y →L[𝕜] Lp 𝕜 p μ`.
-* `TauCeti.eq_scalarEvalLp_iff`: it is the unique operator with the almost everywhere formula
-  `T y = ι y ∘ f`.
-* `TauCeti.scalarEvalLp_comp`: compatibility with bounded maps of the target through their
-  adjoints, including restriction of the tests.
-* `TauCeti.eNorm_scalarEvalLp_le`: for contractive `ι`, its norm is at most `eLpNorm f p μ`.
-* `TauCeti.eLpNorm_top_eq_iSup_of_norming`: `‖f‖_∞` is the supremum of the `‖ι y ∘ f‖_∞`
-  over the unit ball of `Y`, for tests `1`-norming on an essential range of `f`.
-* `TauCeti.eNorm_scalarEvalLp_top_of_norming` and `TauCeti.memLp_top_of_norming`: under the
-  same hypotheses `‖T_f‖ = ‖f‖_∞`, and `f` is essentially bounded.
-* `TauCeti.eLpNorm_top_eq_iSup_strongDual`: over `ℝ` or `ℂ`, the full dual computes `‖f‖_∞`.
+* `ContinuousLinearMap.scalarEvalLp`: the bounded scalar-evaluation operator `Y →L[𝕜] Lp 𝕜 p μ`.
+* `ContinuousLinearMap.eq_scalarEvalLp_iff`: it is the unique operator with the almost
+  everywhere formula `T y = ι y ∘ f`.
+* `ContinuousLinearMap.scalarEvalLp_comp`: compatibility with bounded maps of the target through
+  their adjoints, including restriction of the tests.
+* `ContinuousLinearMap.eNorm_scalarEvalLp_le`: for contractive `ι`, its norm is at most
+  `eLpNorm f p μ`.
+* `ContinuousLinearMap.eLpNorm_top_eq_iSup_of_norming`: `‖f‖_∞` is the supremum of the
+  `‖ι y ∘ f‖_∞` over the unit ball of `Y`, for tests `1`-norming on an essential range of `f`.
+* `ContinuousLinearMap.eNorm_scalarEvalLp_top_of_norming` and
+  `ContinuousLinearMap.memLp_top_of_norming`: under the same hypotheses `‖T_f‖ = ‖f‖_∞`, and `f`
+  is essentially bounded.
+* `MeasureTheory.AEStronglyMeasurable.eLpNorm_top_eq_iSup_strongDual`: over `ℝ` or `ℂ`, the
+  full dual computes `‖f‖_∞`.
 
 ## Implementation notes
 
@@ -63,7 +67,9 @@ public section
 open MeasureTheory Filter Set TopologicalSpace
 open scoped ENNReal
 
-namespace TauCeti
+namespace ContinuousLinearMap
+
+open TauCeti
 
 section Operator
 
@@ -92,17 +98,17 @@ theorem scalarEvalLp_apply (ι : Y →L[𝕜] StrongDual 𝕜 X) (f : S → X)
 theorem coeFn_scalarEvalLp (ι : Y →L[𝕜] StrongDual 𝕜 X) (f : S → X)
     (hf : ∀ y, MemLp (fun s ↦ ι y (f s)) p μ) (y : Y) :
     scalarEvalLp ι f hf y =ᵐ[μ] fun s ↦ ι y (f s) := by
-  rw [scalarEvalLp_apply]
-  exact (hf y).coeFn_toLp
+  unfold scalarEvalLp
+  simpa only [ContinuousLinearMap.flip_apply] using coeFn_orbitLpCLM (fun s ↦ ι.flip (f s)) _ y
 
 /-- The almost everywhere formula `T y = ι y ∘ f` characterizes the scalar-evaluation
 operator. -/
 theorem eq_scalarEvalLp_iff (ι : Y →L[𝕜] StrongDual 𝕜 X) (f : S → X)
     (hf : ∀ y, MemLp (fun s ↦ ι y (f s)) p μ) (T : Y →L[𝕜] Lp 𝕜 p μ) :
     T = scalarEvalLp ι f hf ↔ ∀ y, T y =ᵐ[μ] fun s ↦ ι y (f s) := by
-  refine ⟨fun h y ↦ h ▸ coeFn_scalarEvalLp ι f hf y, fun h ↦ ?_⟩
-  ext y : 1
-  exact Lp.ext ((h y).trans (coeFn_scalarEvalLp ι f hf y).symm)
+  unfold scalarEvalLp
+  simpa only [ContinuousLinearMap.flip_apply] using
+    eq_orbitLpCLM_iff (fun s ↦ ι.flip (f s)) _ T
 
 /-- Functions whose scalar tests agree almost everywhere have the same scalar-evaluation
 operator. The exceptional null set may depend on the test. -/
@@ -110,7 +116,7 @@ theorem scalarEvalLp_congr (ι : Y →L[𝕜] StrongDual 𝕜 X) {f g : S → X}
     (hf : ∀ y, MemLp (fun s ↦ ι y (f s)) p μ) (hg : ∀ y, MemLp (fun s ↦ ι y (g s)) p μ)
     (hfg : ∀ y, (fun s ↦ ι y (f s)) =ᵐ[μ] fun s ↦ ι y (g s)) :
     scalarEvalLp ι f hf = scalarEvalLp ι g hg :=
-  (eq_scalarEvalLp_iff ι g hg _).2 fun y ↦ (coeFn_scalarEvalLp ι f hf y).trans (hfg y)
+  orbitLpCLM_congr _ _ _ _ fun y ↦ by simpa only [ContinuousLinearMap.flip_apply] using hfg y
 
 /-- The scalar-evaluation operator only depends on the almost everywhere class of `f`. -/
 theorem scalarEvalLp_congr_ae (ι : Y →L[𝕜] StrongDual 𝕜 X) {f g : S → X}
@@ -121,29 +127,32 @@ theorem scalarEvalLp_congr_ae (ι : Y →L[𝕜] StrongDual 𝕜 X) {f g : S →
 
 /-- The scalar-evaluation operator of the zero function vanishes. -/
 @[simp]
-theorem scalarEvalLp_zero (ι : Y →L[𝕜] StrongDual 𝕜 X)
-    (h : ∀ y, MemLp (fun s ↦ ι y ((0 : S → X) s)) p μ) :
-    scalarEvalLp ι (0 : S → X) h = 0 := by
-  refine ((eq_scalarEvalLp_iff ι _ h 0).2 fun y ↦ ?_).symm
+theorem scalarEvalLp_zero (ι : Y →L[𝕜] StrongDual 𝕜 X) :
+    scalarEvalLp ι (0 : S → X)
+      (fun y ↦ by simpa only [Pi.zero_apply, map_zero] using MemLp.zero' (ε := 𝕜)) =
+      (0 : Y →L[𝕜] Lp 𝕜 p μ) := by
+  refine ((eq_scalarEvalLp_iff ι _ _ 0).2 fun y ↦ ?_).symm
   filter_upwards [Lp.coeFn_zero 𝕜 p μ] with s hs
   rw [zero_apply, hs, Pi.zero_apply, Pi.zero_apply, map_zero]
 
 /-- The scalar-evaluation operator is additive in the function. -/
 theorem scalarEvalLp_add (ι : Y →L[𝕜] StrongDual 𝕜 X) {f g : S → X}
-    (hf : ∀ y, MemLp (fun s ↦ ι y (f s)) p μ) (hg : ∀ y, MemLp (fun s ↦ ι y (g s)) p μ)
-    (hfg : ∀ y, MemLp (fun s ↦ ι y ((f + g) s)) p μ) :
-    scalarEvalLp ι (f + g) hfg = scalarEvalLp ι f hf + scalarEvalLp ι g hg := by
-  refine ((eq_scalarEvalLp_iff ι _ hfg _).2 fun y ↦ ?_).symm
+    (hf : ∀ y, MemLp (fun s ↦ ι y (f s)) p μ) (hg : ∀ y, MemLp (fun s ↦ ι y (g s)) p μ) :
+    scalarEvalLp ι (f + g)
+      (fun y ↦ by simpa only [Pi.add_apply, map_add, Pi.add_def] using (hf y).add (hg y)) =
+      scalarEvalLp ι f hf + scalarEvalLp ι g hg := by
+  refine ((eq_scalarEvalLp_iff ι _ _ _).2 fun y ↦ ?_).symm
   filter_upwards [Lp.coeFn_add (scalarEvalLp ι f hf y) (scalarEvalLp ι g hg y),
     coeFn_scalarEvalLp ι f hf y, coeFn_scalarEvalLp ι g hg y] with s hs hfs hgs
   rw [add_apply, hs, Pi.add_apply, hfs, hgs, Pi.add_apply, map_add]
 
 /-- The scalar-evaluation operator is homogeneous in the function. -/
 theorem scalarEvalLp_smul (ι : Y →L[𝕜] StrongDual 𝕜 X) (c : 𝕜) {f : S → X}
-    (hf : ∀ y, MemLp (fun s ↦ ι y (f s)) p μ)
-    (hcf : ∀ y, MemLp (fun s ↦ ι y ((c • f) s)) p μ) :
-    scalarEvalLp ι (c • f) hcf = c • scalarEvalLp ι f hf := by
-  refine ((eq_scalarEvalLp_iff ι _ hcf _).2 fun y ↦ ?_).symm
+    (hf : ∀ y, MemLp (fun s ↦ ι y (f s)) p μ) :
+    scalarEvalLp ι (c • f)
+      (fun y ↦ by simpa only [Pi.smul_apply, map_smul, Pi.smul_def] using (hf y).const_smul c) =
+      c • scalarEvalLp ι f hf := by
+  refine ((eq_scalarEvalLp_iff ι _ _ _).2 fun y ↦ ?_).symm
   filter_upwards [Lp.coeFn_smul c (scalarEvalLp ι f hf y), coeFn_scalarEvalLp ι f hf y]
     with s hs hfs
   rw [smul_apply, hs, Pi.smul_apply, hfs, Pi.smul_apply, map_smul]
@@ -157,10 +166,11 @@ variable [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
 composed with `j`. With `T` the identity this is restriction to a space of tests. -/
 theorem scalarEvalLp_comp (ι : Y →L[𝕜] StrongDual 𝕜 X) (κ : W →L[𝕜] StrongDual 𝕜 Z)
     (T : X →L[𝕜] Z) (j : W →L[𝕜] Y) (hj : ∀ w, ι (j w) = (κ w).comp T) (f : S → X)
-    (hf : ∀ y, MemLp (fun s ↦ ι y (f s)) p μ)
-    (hTf : ∀ w, MemLp (fun s ↦ κ w (T (f s))) p μ) :
-    scalarEvalLp κ (fun s ↦ T (f s)) hTf = (scalarEvalLp ι f hf).comp j := by
-  refine ((eq_scalarEvalLp_iff κ _ hTf _).2 fun w ↦ ?_).symm
+    (hf : ∀ y, MemLp (fun s ↦ ι y (f s)) p μ) :
+    scalarEvalLp κ (fun s ↦ T (f s))
+      (fun w ↦ by simpa only [hj, ContinuousLinearMap.comp_apply] using hf (j w)) =
+      (scalarEvalLp ι f hf).comp j := by
+  refine ((eq_scalarEvalLp_iff κ _ _ _).2 fun w ↦ ?_).symm
   filter_upwards [coeFn_scalarEvalLp ι f hf (j w)] with s hs
   rw [ContinuousLinearMap.comp_apply, hs, hj, ContinuousLinearMap.comp_apply]
 
@@ -180,10 +190,10 @@ theorem eNorm_scalarEvalLp_le (ι : Y →L[𝕜] StrongDual 𝕜 X) (hι : ∀ y
 /-- For `g ∈ Lᵖ(μ; X)` and contractive tests, the scalar-evaluation operator of `g` has norm
 at most `‖g‖`. -/
 theorem norm_scalarEvalLp_le (ι : Y →L[𝕜] StrongDual 𝕜 X) (hι : ∀ y, ‖ι y‖ ≤ ‖y‖)
-    (g : Lp X p μ) (hg : ∀ y, MemLp (fun s ↦ ι y (g s)) p μ) :
-    ‖scalarEvalLp ι g hg‖ ≤ ‖g‖ := by
+    (g : Lp X p μ) :
+    ‖scalarEvalLp ι g fun y ↦ (ι y).comp_memLp' (Lp.memLp g)‖ ≤ ‖g‖ := by
   rw [← ENNReal.toReal_ofReal (norm_nonneg _), ofReal_norm, Lp.norm_def]
-  exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top g) (eNorm_scalarEvalLp_le ι hι g hg)
+  exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top g) (eNorm_scalarEvalLp_le ι hι g _)
 
 end Operator
 
@@ -194,11 +204,11 @@ variable {S 𝕜 X Y : Type*} [MeasurableSpace S] {μ : Measure S}
   [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
 
 /-- **Essential supremum by scalar tests.** Let `f` be almost everywhere strongly measurable
-with values almost everywhere in a separable set `s`, and let the contractive tests
+with values almost everywhere in a set `s`, and let the contractive tests
 `ι : Y →L[𝕜] StrongDual 𝕜 X` be `1`-norming on `s`. Then `‖f‖_∞` is the supremum of
 `‖ι y ∘ f‖_∞` over the unit ball of `Y`. -/
 theorem eLpNorm_top_eq_iSup_of_norming (ι : Y →L[𝕜] StrongDual 𝕜 X) (hι : ∀ y, ‖ι y‖ ≤ ‖y‖)
-    {s : Set X} {f : S → X} (hf : AEStronglyMeasurable f μ) (hs : IsSeparable s)
+    {s : Set X} {f : S → X} (hf : AEStronglyMeasurable f μ)
     (hfs : ∀ᵐ a ∂μ, f a ∈ s) (hY : ∀ x ∈ s, ∀ r < ‖x‖, ∃ y, ‖y‖ ≤ 1 ∧ r < ‖ι y x‖) :
     eLpNorm f ∞ μ = ⨆ (y : Y) (_ : ‖y‖ ≤ 1), eLpNorm (fun a ↦ ι y (f a)) ∞ μ := by
   set M := ⨆ (y : Y) (_ : ‖y‖ ≤ 1), eLpNorm (fun a ↦ ι y (f a)) ∞ μ
@@ -208,9 +218,12 @@ theorem eLpNorm_top_eq_iSup_of_norming (ι : Y →L[𝕜] StrongDual 𝕜 X) (h�
       (.of_forall fun a ↦ ?_)
     exact ((ι y).le_opNorm (f a)).trans
       (mul_le_of_le_one_left (norm_nonneg _) ((hι y).trans hy))
-  -- The evaluation maps `y ↦ ι y x` at points of `s` form a norm-separable family of maps on
-  -- `Y`, so countably many tests in the unit ball of `Y` recover all their norms.
-  obtain ⟨t, htc, htne, ht1, ht⟩ := (hs.image ι.flip.continuous).exists_countable_norming
+  -- `f` takes values almost everywhere in a separable set `u`. The evaluation maps `y ↦ ι y x`
+  -- at points of `s ∩ u` form a norm-separable family of maps on `Y`, so countably many tests in
+  -- the unit ball of `Y` recover all their norms.
+  obtain ⟨u, hu, hfu⟩ := hf.isSeparable_ae_range
+  obtain ⟨t, htc, htne, ht1, ht⟩ :=
+    ((hu.mono inter_subset_right).image ι.flip.continuous).exists_countable_norming
   -- On `s`, the norm of a point is at most the norm of its evaluation map.
   have hnorm (x : X) (hx : x ∈ s) : ‖x‖ ≤ ‖ι.flip x‖ := by
     refine le_of_forall_lt fun r hr ↦ ?_
@@ -230,12 +243,12 @@ theorem eLpNorm_top_eq_iSup_of_norming (ι : Y →L[𝕜] StrongDual 𝕜 X) (h�
     exact ha.trans hle
   rw [eLpNorm_exponent_top hf]
   refine essSup_le_of_ae_le M ?_
-  filter_upwards [htest, hfs] with a ha has
+  filter_upwards [htest, hfs, hfu] with a ha has hau
   rcases eq_or_ne M ∞ with hM | hM
   · exact hM ▸ le_top
   rw [← ofReal_norm, ← ENNReal.ofReal_toReal hM]
   refine ENNReal.ofReal_le_ofReal ((hnorm _ has).trans ?_)
-  rw [ht _ (mem_image_of_mem _ has)]
+  rw [ht _ (mem_image_of_mem _ ⟨has, hau⟩)]
   refine csSup_le (htne.image _) ?_
   rintro _ ⟨y, hyt, rfl⟩
   rw [← ENNReal.ofReal_le_iff_le_toReal hM, ofReal_norm, ContinuousLinearMap.flip_apply]
@@ -244,16 +257,16 @@ theorem eLpNorm_top_eq_iSup_of_norming (ι : Y →L[𝕜] StrongDual 𝕜 X) (h�
 variable [CompleteSpace 𝕜] [CompleteSpace Y]
 
 /-- **Norm of the scalar-evaluation operator at `p = ∞`.** If `f` is almost everywhere strongly
-measurable with values almost everywhere in a separable set on which the contractive tests `ι`
-are `1`-norming, then the scalar-evaluation operator `Y → L∞(μ)` has extended norm `‖f‖_∞`. -/
+measurable with values almost everywhere in a set on which the contractive tests `ι` are
+`1`-norming, then the scalar-evaluation operator `Y → L∞(μ)` has extended norm `‖f‖_∞`. -/
 theorem eNorm_scalarEvalLp_top_of_norming (ι : Y →L[𝕜] StrongDual 𝕜 X)
     (hι : ∀ y, ‖ι y‖ ≤ ‖y‖) {s : Set X} {f : S → X} (hf : AEStronglyMeasurable f μ)
-    (hs : IsSeparable s) (hfs : ∀ᵐ a ∂μ, f a ∈ s)
+    (hfs : ∀ᵐ a ∂μ, f a ∈ s)
     (hY : ∀ x ∈ s, ∀ r < ‖x‖, ∃ y, ‖y‖ ≤ 1 ∧ r < ‖ι y x‖)
     (hfY : ∀ y, MemLp (fun a ↦ ι y (f a)) ∞ μ) :
     ‖scalarEvalLp ι f hfY‖ₑ = eLpNorm f ∞ μ := by
   refine le_antisymm (eNorm_scalarEvalLp_le ι hι f hfY) ?_
-  rw [eLpNorm_top_eq_iSup_of_norming ι hι hf hs hfs hY]
+  rw [eLpNorm_top_eq_iSup_of_norming ι hι hf hfs hY]
   refine iSup₂_le fun y hy ↦ ?_
   have hy' : ‖y‖ₑ ≤ 1 := by
     simpa only [← ofReal_norm] using ENNReal.ofReal_le_one.2 hy
@@ -264,18 +277,21 @@ theorem eNorm_scalarEvalLp_top_of_norming (ι : Y →L[𝕜] StrongDual 𝕜 X)
     _ ≤ ‖scalarEvalLp ι f hfY‖ₑ := mul_le_of_le_one_right' hy'
 
 /-- **Essential boundedness from scalar tests.** If `f` is almost everywhere strongly measurable
-with values almost everywhere in a separable set on which the contractive tests `ι` are
-`1`-norming, and every scalar test `ι y ∘ f` is essentially bounded, then `f` is essentially
-bounded. -/
+with values almost everywhere in a set on which the contractive tests `ι` are `1`-norming, and
+every scalar test `ι y ∘ f` is essentially bounded, then `f` is essentially bounded. -/
 theorem memLp_top_of_norming (ι : Y →L[𝕜] StrongDual 𝕜 X) (hι : ∀ y, ‖ι y‖ ≤ ‖y‖)
-    {s : Set X} {f : S → X} (hf : AEStronglyMeasurable f μ) (hs : IsSeparable s)
+    {s : Set X} {f : S → X} (hf : AEStronglyMeasurable f μ)
     (hfs : ∀ᵐ a ∂μ, f a ∈ s) (hY : ∀ x ∈ s, ∀ r < ‖x‖, ∃ y, ‖y‖ ≤ 1 ∧ r < ‖ι y x‖)
     (hfY : ∀ y, MemLp (fun a ↦ ι y (f a)) ∞ μ) :
     MemLp f ∞ μ := by
-  rw [memLp_iff, ← eNorm_scalarEvalLp_top_of_norming ι hι hf hs hfs hY hfY]
+  rw [memLp_iff, ← eNorm_scalarEvalLp_top_of_norming ι hι hf hfs hY hfY]
   exact eNorm_lt_top
 
 end Norming
+
+end ContinuousLinearMap
+
+namespace MeasureTheory.AEStronglyMeasurable
 
 /-- Over `ℝ` or `ℂ`, the essential supremum norm of an almost everywhere strongly measurable
 function is the supremum of the essential supremum norms of its compositions with functionals
@@ -284,10 +300,9 @@ theorem eLpNorm_top_eq_iSup_strongDual {S 𝕜 X : Type*} [MeasurableSpace S] {�
     [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] {f : S → X}
     (hf : AEStronglyMeasurable f μ) :
     eLpNorm f ∞ μ = ⨆ (x' : StrongDual 𝕜 X) (_ : ‖x'‖ ≤ 1), eLpNorm (fun a ↦ x' (f a)) ∞ μ := by
-  obtain ⟨s, hs, hfs⟩ := hf.isSeparable_ae_range
-  refine eLpNorm_top_eq_iSup_of_norming (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 X))
-    (fun _ ↦ le_rfl) hf hs hfs fun x _ r hr ↦ ?_
+  refine (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 X)).eLpNorm_top_eq_iSup_of_norming
+    (fun _ ↦ le_rfl) hf (s := univ) (.of_forall fun _ ↦ mem_univ _) fun x _ r hr ↦ ?_
   obtain ⟨g, hg1, hgx⟩ := exists_dual_vector'' 𝕜 x
   exact ⟨g, hg1, by simpa [hgx] using hr⟩
 
-end TauCeti
+end MeasureTheory.AEStronglyMeasurable
