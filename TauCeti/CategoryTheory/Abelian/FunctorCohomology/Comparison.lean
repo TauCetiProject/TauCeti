@@ -29,13 +29,14 @@ bijective in every degree. Isomorphisms give bijective comparisons for the ident
 
 Comparison maps are natural in the source and in the coefficients
 (`CategoryTheory.Functor.mk₀_comp_extComparison` and
-`CategoryTheory.Functor.extComparison_comp_mk₀`), compose
+`CategoryTheory.Functor.extComparison_comp_mk₀`), commute with the connecting maps of short exact
+sequences of coefficients (`CategoryTheory.Functor.extComparison_comp_extClass`), compose
 (`CategoryTheory.Functor.extComparison_extComparison`), reduce to pull-back and push-forward for
 the identity functor (`CategoryTheory.Functor.extComparison_id_apply`), and a natural
 transformation `η : φ ⟶ ψ` can be moved from the coefficients to the source
 (`CategoryTheory.Functor.extComparison_whiskerRight_comp`). The proofs rest on Mathlib's
 compatibility of `CategoryTheory.Abelian.Ext.mapExactFunctor` with composition of classes, of
-functors, and with natural transformations.
+functors, with natural transformations and with extension classes.
 
 ## References
 
@@ -84,6 +85,13 @@ degree. -/
 def IsExtComparisonBijective (φ : C' ⥤ C) (β : φ ⋙ F ⟶ F') (α : N' ⟶ φ ⋙ N) : Prop :=
   ∀ n : ℕ, Function.Bijective (extComparison.{t, t'} φ β α n)
 
+/-- A comparison is bijective along `α` exactly when its comparison maps are bijective in every
+degree. -/
+lemma isExtComparisonBijective_iff (φ : C' ⥤ C) (β : φ ⋙ F ⟶ F') (α : N' ⟶ φ ⋙ N) :
+    IsExtComparisonBijective.{t, t'} φ β α ↔
+      ∀ n : ℕ, Function.Bijective (extComparison.{t, t'} φ β α n) :=
+  Iff.rfl
+
 /-- For the identity functor the comparison map is push-forward along `β` followed by pull-back
 along `α`. -/
 lemma extComparison_id_apply (β : F ⟶ G) (α : M ⟶ N) (x : Ext.{t} N F n) :
@@ -129,6 +137,22 @@ lemma extComparison_comp_mk₀ (φ : C' ⥤ C) {β : φ ⋙ F ⟶ F'} {β' : φ 
   simp only [extComparison_apply, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
     Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀]
   rw [whiskeringLeft_obj_map, h]
+
+/-- Comparison maps commute with connecting maps. Let `S` and `S'` be short exact sequences of
+coefficients on `C` and `C'`, and let `u` be a map from the restriction of `S` along `φ` to `S'`,
+with components `u.τᵢ : φ ⋙ S.Xᵢ ⟶ S'.Xᵢ`. Then the comparison map for `u.τ₁` after the connecting
+map `Extⁿ(N, S.X₃) ⟶ Extⁿ⁺¹(N, S.X₁)` of `S` is the connecting map of `S'` after the comparison
+map for `u.τ₃`. -/
+lemma extComparison_comp_extClass (φ : C' ⥤ C) {S : ShortComplex (C ⥤ AddCommGrpCat.{w})}
+    {S' : ShortComplex (C' ⥤ AddCommGrpCat.{w})} (hS : S.ShortExact) (hS' : S'.ShortExact)
+    (u : S.map ((whiskeringLeft C' C AddCommGrpCat.{w}).obj φ) ⟶ S') (α : N' ⟶ φ ⋙ N)
+    (x : Ext.{t} N S.X₃ n) {m : ℕ} (h : n + 1 = m) :
+    extComparison φ u.τ₁ α m (x.comp hS.extClass h) =
+      (extComparison φ u.τ₃ α n x).comp hS'.extClass h := by
+  rw [extComparison_apply, extComparison_apply, Ext.mapExactFunctor_comp,
+    Ext.mapExactFunctor_extClass, Ext.comp_assoc_of_third_deg_zero,
+    (hS.map_of_exact _).extClass_naturality hS' u, ← Ext.comp_assoc_of_second_deg_zero]
+  exact (Ext.comp_assoc _ _ _ (zero_add n) h (by lia)).symm
 
 /-- Comparison maps compose: the comparison map of `(ψ, β')` along `α'` after that of `(φ, β)`
 along `α` is the comparison map of the composite `(ψ ⋙ φ, ψ.whiskerLeft β ≫ β')` along
