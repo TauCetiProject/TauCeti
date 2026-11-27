@@ -63,6 +63,13 @@ pass to vectors with coefficients in any `E`-algebra, such as the finite adeles.
 
 * `TauCeti.isHermitian_gradedGram`, `TauCeti.inv_gradedGram`: for self-adjoint `N` the graded Gram
   matrix is hermitian, and for `N * N' = 1` its inverse is the graded Gram matrix of `N'`.
+* `TauCeti.gradedGrade_inr_rev`, `TauCeti.gradedGrade_inr_lt_iff`: reversing the string negates
+  the grade, and the grade strictly decreases along the string.
+* `TauCeti.gradedGram_inr_inr_rev`: the pairing of a string vector with its partner.
+* `TauCeti.gradedGram_mul_apply_inl`, `TauCeti.gradedGram_mul_apply_inr`: the rows of
+  `gradedGram X s N * M`.
+* `TauCeti.two_mul_splitLevel_gradedSplitEquiv`: along this reordering, the level of the split
+  form is `ϱ - grade / 2`.
 * `TauCeti.gradedGram_eq_submatrix_splitGram`, `TauCeti.reindex_gradedGram`: for odd length the
   graded Gram matrix is the split form `splitGram ϱ (middleGram N)`, reordered.
 * `TauCeti.raisesDegree_gradedShift`, `TauCeti.stringMap_apply_eq_zero_of_ne`: the shift lowers
@@ -184,6 +191,24 @@ end Gram
 @[simp] lemma gradedGrade_inl (x : X) : gradedGrade X s (.inl x) = 0 := (rfl)
 @[simp] lemma gradedGrade_inr (a : Fin s) : gradedGrade X s (.inr a) = s - 1 - 2 * a := (rfl)
 
+/-- Reversing the string negates the grade: `e_{s-1-a}` has the grade opposite to that of
+`e_a`. -/
+theorem gradedGrade_inr_rev (a : Fin s) :
+    gradedGrade X s (.inr a.rev) = -gradedGrade X s (.inr a) := by
+  simp only [gradedGrade_inr, Fin.val_rev]
+  omega
+
+/-- A string vector has grade `0` exactly when it is the middle vector of an odd string. -/
+theorem gradedGrade_inr_eq_zero_iff {a : Fin s} : gradedGrade X s (.inr a) = 0 ↔ a = a.rev := by
+  simp only [gradedGrade_inr, Fin.ext_iff, Fin.val_rev]
+  omega
+
+/-- The grade strictly decreases along the string. -/
+theorem gradedGrade_inr_lt_iff {a b : Fin s} :
+    gradedGrade X s (.inr b) < gradedGrade X s (.inr a) ↔ a < b := by
+  simp only [gradedGrade_inr, Fin.lt_def]
+  omega
+
 variable [Ring R] (N c : R)
 
 lemma gradedShiftCoeff_def (a : ℕ) : gradedShiftCoeff s N c a =
@@ -239,6 +264,12 @@ section Gram
 
 variable [DecidableEq X]
 
+/-- The pairing of a string vector `e_a` with its partner `e_{s-1-a}` is `-N` for the middle
+vector of an odd string and `1` otherwise. -/
+theorem gradedGram_inr_inr_rev [Zero R] [One R] [Neg R] (N : R) (a : Fin s) :
+    gradedGram X s N (.inr a) (.inr a.rev) = if a = a.rev then -N else 1 := by
+  simp
+
 /-- The graded Gram matrix pairs only basis vectors of opposite grades. -/
 theorem gradedGram_apply_eq_zero_of_add_ne_zero [Zero R] [One R] [Neg R] (N : R)
     {k l : X ⊕ Fin s} (h : gradedGrade X s k + gradedGrade X s l ≠ 0) :
@@ -251,6 +282,25 @@ theorem gradedGram_apply_eq_zero_of_add_ne_zero [Zero R] [One R] [Neg R] (N : R)
     rintro rfl
     simp [Fin.val_rev] at h
     omega
+
+/-- The graded Gram matrix is block diagonal, with the identity on `X`. -/
+theorem gradedGram_eq_fromBlocks [Zero R] [One R] [Neg R] (N : R) :
+    gradedGram X s N = fromBlocks 1 0 0 (gradedGram X s N).toBlocks₂₂ := by
+  ext (x | a) (y | b) <;> simp [Matrix.toBlocks₂₂]
+
+/-- The graded Gram matrix acts as the identity on the rows indexed by `X`. -/
+theorem gradedGram_mul_apply_inl [Fintype X] [NonAssocRing R] (N : R) {m : Type*}
+    (M : Matrix (X ⊕ Fin s) m R) (x : X) (j : m) :
+    (gradedGram X s N * M) (.inl x) j = M (.inl x) j := by
+  simp [Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply]
+
+/-- The graded Gram matrix moves the row of `e_{s-1-a}` to that of `e_a`, scaled by the entry
+`⟨e_a, e_{s-1-a}⟩`. -/
+theorem gradedGram_mul_apply_inr [Fintype X] [NonAssocRing R] (N : R) {m : Type*}
+    (M : Matrix (X ⊕ Fin s) m R) (a : Fin s) (j : m) :
+    (gradedGram X s N * M) (.inr a) j =
+      gradedGram X s N (.inr a) (.inr a.rev) * M (.inr a.rev) j := by
+  simp [Matrix.mul_apply, Fintype.sum_sum_type]
 
 /-- The graded Gram matrix is hermitian when `N` is self-adjoint. -/
 theorem isHermitian_gradedGram [Ring R] [StarRing R] {N : R} (hN : star N = N) :
@@ -382,6 +432,22 @@ theorem reindex_gradedGram (ϱ : ℕ) (N : R) :
       splitGram ϱ (middleGram N) := by
   rw [gradedGram_eq_submatrix_splitGram, reindex_apply, submatrix_submatrix,
     Equiv.self_comp_symm, submatrix_id_id]
+
+omit [Zero R] [One R] [Neg R] [DecidableEq X] in
+/-- Along the reordering `gradedSplitEquiv X ϱ`, the level of the split form is determined by the
+grade: `2 * level = 2ϱ - grade`, so the level increases exactly when the grade decreases. -/
+theorem two_mul_splitLevel_gradedSplitEquiv (ϱ : ℕ) (k : X ⊕ Fin (2 * ϱ + 1)) :
+    2 * (splitLevel (gradedSplitEquiv X ϱ k) : ℤ) = 2 * ϱ - gradedGrade X (2 * ϱ + 1) k := by
+  rcases k with x | a
+  · simp
+  · have := a.isLt
+    rw [gradedSplitEquiv_inr]
+    split_ifs with h h'
+    · simp
+    · simp [h']
+    · simp only [splitLevel_eStar, gradedGrade_inr]
+      push_cast
+      omega
 
 end Split
 
