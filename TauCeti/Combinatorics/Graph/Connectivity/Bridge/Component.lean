@@ -22,10 +22,12 @@ the component containing the edge and makes no finiteness assumption on the grap
 
 ## Main results
 
-* `Graph.IsLink.componentFiber_eq_source_or_target`: every component over the endpoint component
-  after deleting a linked edge is the component of one of its endpoints.
+* `Graph.IsLink.eq_leftComponentDeleteEdges_or_eq_rightComponentDeleteEdges`: every component over
+  the endpoint component after deleting a linked edge is the component of one of its endpoints.
 * `Graph.IsBridge.componentFiberEquivBool`: deleting a bridge splits its original component into
   exactly two components, canonically distinguished by its endpoints.
+* `Graph.IsLink.isBridge_iff_nontrivial_componentFiber`: a linked edge is a bridge exactly when
+  the fiber of components over its original component is nontrivial.
 * `Graph.IsLink.isBridge_iff_nonempty_componentFiber_equiv_bool`: a linked edge is a bridge exactly
   when the fiber of components over its original component has two elements.
 
@@ -55,39 +57,70 @@ abbrev componentFiber (h : G.IsLink e x y) :=
 
 /-- The component of the first endpoint after deleting the linked edge, regarded as a component
 lying over its original connected component. -/
-noncomputable def sourceComponentAfterDelete (h : G.IsLink e x y) : h.componentFiber :=
-  ⟨(G.deleteEdges {e}).connectedComponentOf x (by simpa using h.left_mem), by
+@[expose] public noncomputable def leftComponentDeleteEdges (h : G.IsLink e x y) :
+    h.componentFiber :=
+  ⟨(G.deleteEdges {e}).connectedComponentOf x (by
+    rw [vertexSet_deleteEdges]
+    exact h.left_mem), by
     rw [ConnectedComponent.mapOfLE_connectedComponentOf]⟩
 
 /-- The component of the second endpoint after deleting the linked edge, regarded as a component
 lying over the original connected component of the first endpoint. -/
-noncomputable def targetComponentAfterDelete (h : G.IsLink e x y) : h.componentFiber :=
-  ⟨(G.deleteEdges {e}).connectedComponentOf y (by simpa using h.right_mem), by
+@[expose] public noncomputable def rightComponentDeleteEdges (h : G.IsLink e x y) :
+    h.componentFiber :=
+  ⟨(G.deleteEdges {e}).connectedComponentOf y (by
+    rw [vertexSet_deleteEdges]
+    exact h.right_mem), by
     rw [ConnectedComponent.mapOfLE_connectedComponentOf]
     exact (G.connectedComponentOf_eq_connectedComponentOf_iff h.right_mem h.left_mem).2
       h.reachable.symm⟩
 
+/-- The underlying left endpoint component after deleting a linked edge. -/
+@[simp]
+theorem val_leftComponentDeleteEdges (h : G.IsLink e x y) :
+    h.leftComponentDeleteEdges.val =
+      (G.deleteEdges {e}).connectedComponentOf x (by
+        rw [vertexSet_deleteEdges]
+        exact h.left_mem) := rfl
+
+/-- The underlying right endpoint component after deleting a linked edge. -/
+@[simp]
+theorem val_rightComponentDeleteEdges (h : G.IsLink e x y) :
+    h.rightComponentDeleteEdges.val =
+      (G.deleteEdges {e}).connectedComponentOf y (by
+        rw [vertexSet_deleteEdges]
+        exact h.right_mem) := rfl
+
+/-- The endpoint components after deleting a linked edge are equal exactly when its endpoints are
+still reachable. -/
+@[simp]
+theorem leftComponentDeleteEdges_eq_rightComponentDeleteEdges_iff (h : G.IsLink e x y) :
+    h.leftComponentDeleteEdges = h.rightComponentDeleteEdges ↔
+      (G.deleteEdges {e}).Reachable x y := by
+  rw [Subtype.ext_iff, val_leftComponentDeleteEdges, val_rightComponentDeleteEdges]
+  exact (G.deleteEdges {e}).connectedComponentOf_eq_connectedComponentOf_iff
+    (by rw [vertexSet_deleteEdges]; exact h.left_mem)
+    (by rw [vertexSet_deleteEdges]; exact h.right_mem)
+
 /-- Membership in the first endpoint component is reachability from that endpoint after deleting
 the linked edge. -/
-@[simp]
-theorem mem_sourceComponentAfterDelete_iff (h : G.IsLink e x y) {z : α} :
-    z ∈ V(h.sourceComponentAfterDelete.val.val) ↔
+theorem mem_leftComponentDeleteEdges_iff (h : G.IsLink e x y) {z : α} :
+    z ∈ V(h.leftComponentDeleteEdges.val.val) ↔
       (G.deleteEdges {e}).Reachable x z := by
-  simp [sourceComponentAfterDelete, mem_vertexSet_connectedComponentOf_iff]
+  simp [leftComponentDeleteEdges, mem_vertexSet_connectedComponentOf_iff]
 
 /-- Membership in the second endpoint component is reachability from that endpoint after deleting
 the linked edge. -/
-@[simp]
-theorem mem_targetComponentAfterDelete_iff (h : G.IsLink e x y) {z : α} :
-    z ∈ V(h.targetComponentAfterDelete.val.val) ↔
+theorem mem_rightComponentDeleteEdges_iff (h : G.IsLink e x y) {z : α} :
+    z ∈ V(h.rightComponentDeleteEdges.val.val) ↔
       (G.deleteEdges {e}).Reachable y z := by
-  simp [targetComponentAfterDelete, mem_vertexSet_connectedComponentOf_iff]
+  simp [rightComponentDeleteEdges, mem_vertexSet_connectedComponentOf_iff]
 
 /-- After deleting a linked edge, every component lying over the original endpoint component is
 the component of one of the two endpoints. -/
-theorem componentFiber_eq_source_or_target (h : G.IsLink e x y)
+theorem eq_leftComponentDeleteEdges_or_eq_rightComponentDeleteEdges (h : G.IsLink e x y)
     (C : h.componentFiber) :
-    C = h.sourceComponentAfterDelete ∨ C = h.targetComponentAfterDelete := by
+    C = h.leftComponentDeleteEdges ∨ C = h.rightComponentDeleteEdges := by
   obtain ⟨z, hzC⟩ := C.val.property.nonempty
   have hxz : G.Reachable x z := by
     rw [← mem_vertexSet_connectedComponentOf_iff h.left_mem]
@@ -98,27 +131,24 @@ theorem componentFiber_eq_source_or_target (h : G.IsLink e x y)
     apply Subtype.ext
     rw [C.val.eq_connectedComponentOf hzC]
     exact ((G.deleteEdges {e}).connectedComponentOf_eq_connectedComponentOf_iff
-      (C.val.property.le.vertexSet_mono hzC) (by simpa using h.left_mem)).2 hxz.symm
+      (C.val.property.le.vertexSet_mono hzC)
+      (by rw [vertexSet_deleteEdges]; exact h.left_mem)).2 hxz.symm
   · right
     apply Subtype.ext
     rw [C.val.eq_connectedComponentOf hzC]
     exact ((G.deleteEdges {e}).connectedComponentOf_eq_connectedComponentOf_iff
-      (C.val.property.le.vertexSet_mono hzC) (by simpa using h.right_mem)).2 hyz.symm
+      (C.val.property.le.vertexSet_mono hzC)
+      (by rw [vertexSet_deleteEdges]; exact h.right_mem)).2 hyz.symm
 
 end IsLink
 
 namespace IsBridge
 
 /-- The two endpoint components obtained by deleting a bridge are distinct. -/
-theorem sourceComponentAfterDelete_ne_target (he : G.IsBridge e) (h : G.IsLink e x y) :
-    h.sourceComponentAfterDelete ≠ h.targetComponentAfterDelete := by
-  intro hxy
-  have hval := congrArg Subtype.val hxy
-  have : (G.deleteEdges {e}).Reachable x y := by
-    rw [← (G.deleteEdges {e}).connectedComponentOf_eq_connectedComponentOf_iff
-      (by simpa using h.left_mem) (by simpa using h.right_mem)]
-    simpa [IsLink.sourceComponentAfterDelete, IsLink.targetComponentAfterDelete] using hval
-  exact he.not_reachable_deleteEdges h this
+theorem leftComponentDeleteEdges_ne_rightComponentDeleteEdges (he : G.IsBridge e)
+    (h : G.IsLink e x y) : h.leftComponentDeleteEdges ≠ h.rightComponentDeleteEdges :=
+  mt h.leftComponentDeleteEdges_eq_rightComponentDeleteEdges_iff.mp
+    (he.not_reachable_deleteEdges h)
 
 /-- Deleting a bridge splits its original connected component into exactly two components.  The
 equivalence sends the component of the first endpoint to `false` and every other component (hence
@@ -127,48 +157,61 @@ noncomputable def componentFiberEquivBool (he : G.IsBridge e) (h : G.IsLink e x 
     h.componentFiber ≃ Bool := by
   classical
   let side : h.componentFiber → Bool :=
-    fun C ↦ if C = h.sourceComponentAfterDelete then false else true
-  exact Equiv.ofBijective side
-    ⟨by
-      intro C D hCD
-      have hne := he.sourceComponentAfterDelete_ne_target h
-      rcases h.componentFiber_eq_source_or_target C with hC | hC
-      · rcases h.componentFiber_eq_source_or_target D with hD | hD
-        · exact hC.trans hD.symm
-        · exfalso
-          subst C
-          subst D
-          simp [side, hne.symm] at hCD
-      · rcases h.componentFiber_eq_source_or_target D with hD | hD
-        · exfalso
-          subst C
-          subst D
-          simp [side, hne.symm] at hCD
-        · exact hC.trans hD.symm,
-    by
-      intro b
-      cases b
-      · exact ⟨h.sourceComponentAfterDelete, by simp [side]⟩
-      · exact ⟨h.targetComponentAfterDelete, by
-          simp [side, (he.sourceComponentAfterDelete_ne_target h).symm]⟩⟩
+    fun C ↦ if C = h.leftComponentDeleteEdges then false else true
+  let endpoint : Bool → h.componentFiber := fun b ↦
+    match b with
+    | false => h.leftComponentDeleteEdges
+    | true => h.rightComponentDeleteEdges
+  refine
+    { toFun := side
+      invFun := endpoint
+      left_inv := ?_
+      right_inv := ?_ }
+  · intro C
+    rcases h.eq_leftComponentDeleteEdges_or_eq_rightComponentDeleteEdges C with hC | hC
+    · subst C
+      simp [side, endpoint]
+    · subst C
+      simp [side, endpoint, (he.leftComponentDeleteEdges_ne_rightComponentDeleteEdges h).symm]
+  · intro b
+    cases b <;>
+      simp [side, endpoint, (he.leftComponentDeleteEdges_ne_rightComponentDeleteEdges h).symm]
 
 @[simp]
-theorem componentFiberEquivBool_source (he : G.IsBridge e) (h : G.IsLink e x y) :
-    he.componentFiberEquivBool h h.sourceComponentAfterDelete = false := by
+theorem componentFiberEquivBool_leftComponentDeleteEdges (he : G.IsBridge e)
+    (h : G.IsLink e x y) :
+    he.componentFiberEquivBool h h.leftComponentDeleteEdges = false := by
   simp [componentFiberEquivBool]
 
 @[simp]
-theorem componentFiberEquivBool_target (he : G.IsBridge e) (h : G.IsLink e x y) :
-    he.componentFiberEquivBool h h.targetComponentAfterDelete = true := by
-  simp [componentFiberEquivBool, (he.sourceComponentAfterDelete_ne_target h).symm]
+theorem componentFiberEquivBool_rightComponentDeleteEdges (he : G.IsBridge e)
+    (h : G.IsLink e x y) :
+    he.componentFiberEquivBool h h.rightComponentDeleteEdges = true := by
+  simp [componentFiberEquivBool, (he.leftComponentDeleteEdges_ne_rightComponentDeleteEdges h).symm]
+
+/-- The inverse of the two-component equivalence sends `false` to the component of the first
+endpoint. -/
+@[simp]
+theorem componentFiberEquivBool_symm_false (he : G.IsBridge e) (h : G.IsLink e x y) :
+    (he.componentFiberEquivBool h).symm false = h.leftComponentDeleteEdges := by
+  apply (he.componentFiberEquivBool h).injective
+  simp
+
+/-- The inverse of the two-component equivalence sends `true` to the component of the second
+endpoint. -/
+@[simp]
+theorem componentFiberEquivBool_symm_true (he : G.IsBridge e) (h : G.IsLink e x y) :
+    (he.componentFiberEquivBool h).symm true = h.rightComponentDeleteEdges := by
+  apply (he.componentFiberEquivBool h).injective
+  simp
 
 /-- Under the two-component equivalence for a bridge, `false` singles out the component of the
 first endpoint. -/
 @[simp]
 theorem componentFiberEquivBool_eq_false_iff (he : G.IsBridge e) (h : G.IsLink e x y)
     (C : h.componentFiber) :
-    he.componentFiberEquivBool h C = false ↔ C = h.sourceComponentAfterDelete := by
-  rw [← he.componentFiberEquivBool_source h]
+    he.componentFiberEquivBool h C = false ↔ C = h.leftComponentDeleteEdges := by
+  rw [← he.componentFiberEquivBool_leftComponentDeleteEdges h]
   exact (he.componentFiberEquivBool h).injective.eq_iff
 
 /-- Under the two-component equivalence for a bridge, `true` singles out the component of the
@@ -176,11 +219,31 @@ second endpoint. -/
 @[simp]
 theorem componentFiberEquivBool_eq_true_iff (he : G.IsBridge e) (h : G.IsLink e x y)
     (C : h.componentFiber) :
-    he.componentFiberEquivBool h C = true ↔ C = h.targetComponentAfterDelete := by
-  rw [← he.componentFiberEquivBool_target h]
+    he.componentFiberEquivBool h C = true ↔ C = h.rightComponentDeleteEdges := by
+  rw [← he.componentFiberEquivBool_rightComponentDeleteEdges h]
   exact (he.componentFiberEquivBool h).injective.eq_iff
 
 end IsBridge
+
+/-- An edge joining `x` and `y` is a bridge exactly when the fiber of components over its original
+connected component is nontrivial. -/
+theorem IsLink.isBridge_iff_nontrivial_componentFiber (h : G.IsLink e x y) :
+    G.IsBridge e ↔ Nontrivial h.componentFiber := by
+  constructor
+  · intro he
+    exact ⟨⟨h.leftComponentDeleteEdges, h.rightComponentDeleteEdges,
+      he.leftComponentDeleteEdges_ne_rightComponentDeleteEdges h⟩⟩
+  · intro hnontrivial
+    rw [h.isBridge_iff_not_reachable_deleteEdges]
+    intro hxy
+    have hend := h.leftComponentDeleteEdges_eq_rightComponentDeleteEdges_iff.mpr hxy
+    obtain ⟨C, D, hCD⟩ := hnontrivial.exists_pair_ne
+    apply hCD
+    have hall (A : h.componentFiber) : A = h.leftComponentDeleteEdges := by
+      rcases h.eq_leftComponentDeleteEdges_or_eq_rightComponentDeleteEdges A with hA | hA
+      · exact hA
+      · exact hA.trans hend.symm
+    exact (hall C).trans (hall D).symm
 
 /-- An edge joining `x` and `y` is a bridge exactly when deleting it splits its original connected
 component into exactly two components. -/
@@ -189,17 +252,7 @@ theorem IsLink.isBridge_iff_nonempty_componentFiber_equiv_bool (h : G.IsLink e x
   constructor
   · exact fun he ↦ ⟨he.componentFiberEquivBool h⟩
   · rintro ⟨f⟩
-    rw [h.isBridge_iff_not_reachable_deleteEdges]
-    intro hxy
-    have hend : h.sourceComponentAfterDelete = h.targetComponentAfterDelete := by
-      apply Subtype.ext
-      exact ((G.deleteEdges {e}).connectedComponentOf_eq_connectedComponentOf_iff
-        (by simpa using h.left_mem) (by simpa using h.right_mem)).2 hxy
-    have hall (C : h.componentFiber) : C = h.sourceComponentAfterDelete := by
-      rcases h.componentFiber_eq_source_or_target C with hC | hC
-      · exact hC
-      · exact hC.trans hend.symm
-    have hs : f.symm false = f.symm true := (hall _).trans (hall _).symm
-    exact Bool.false_ne_true (by simpa using congrArg f hs)
+    rw [h.isBridge_iff_nontrivial_componentFiber]
+    exact f.symm.injective.nontrivial
 
 end Graph
