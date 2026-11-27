@@ -43,7 +43,9 @@ The constants depend only on `C₀`, the `B_k` and the dimension, not on the sca
 first-order operator `L = ∑ₗ aₗ h ∂ₗ + b` whose coefficients have semiclassical bounds
 `hⁱ ‖Dⁱ aₗ‖, hⁱ ‖Dⁱ b‖ ≤ K`, the commutator `[h ∂ⱼ, L] = ∑ₗ h (∂ⱼ aₗ) h ∂ₗ + h ∂ⱼ b` is again of
 first order with such bounds, so the multiplier estimates of
-`TauCeti.Analysis.Sobolev.Semiclassical.Basic` give `B_k` independent of `h`. The linearized
+`TauCeti.Analysis.Sobolev.Semiclassical.Basic` give `B_k` independent of `h`
+(`TauCeti.semiclassicalSobolevNorm_semiclassicalFirstOrderOperator_sub_le`, in
+`TauCeti.Analysis.Sobolev.Semiclassical.FirstOrder`). The linearized
 gauge-fixed operators of Taubes's large-parameter Seiberg–Witten equations, written in a flat
 chart in the rescaled variables, are of this form. The induction therefore runs through any finite
 number of levels without a loss in `h`. It goes upward only: an estimate at a high level gives

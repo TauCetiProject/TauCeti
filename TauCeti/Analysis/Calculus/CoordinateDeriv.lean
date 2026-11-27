@@ -1236,6 +1236,16 @@ theorem coordinateDeriv_singleton_clm_comp {𝕜 : Type*} [NontriviallyNormedFie
     |>.coordinateDeriv_of_bilinear (α := [j]) hf hg x
   simpa [List.revzip, add_comm] using h
 
+/-- The first-order Leibniz rule for a coordinate derivative of a field of continuous linear maps
+applied to a function: `∂ⱼ (y ↦ c y (w y)) = (∂ⱼ c) w + c (∂ⱼ w)`. -/
+theorem coordinateDeriv_singleton_clm_apply {c : CoordinateSpace n → F →L[ℝ] G}
+    {w : CoordinateSpace n → F} {x : CoordinateSpace n} (hc : DifferentiableAt ℝ c x)
+    (hw : DifferentiableAt ℝ w x) (j : Fin n) :
+    coordinateDeriv [j] (fun y ↦ c y (w y)) x =
+      coordinateDeriv [j] c x (w x) + c x (coordinateDeriv [j] w x) := by
+  simp only [coordinateDeriv_singleton, fderiv_clm_apply hc hw, add_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply, add_comm]
+
 end Leibniz
 
 section Prod
