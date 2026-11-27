@@ -162,14 +162,12 @@ theorem index_localNormSubgroup (hV : V.IsAbelianClassFieldLayer) :
 
 variable (V) in
 /-- **The norm index divides the degree**: for every finite Galois extension `L/K`, abelian or
-not, `[Kˣ : N_{L/K}(Lˣ)]` divides `[L : K]`. By norm limitation the index is the degree of the
-maximal abelian subextension. -/
+not, `[Kˣ : N_{L/K}(Lˣ)]` divides `[L : K]`. This is
+`ClassFormation.index_normSubgroup_dvd_degree` for the local class formation. -/
 theorem _root_.OpenNormalSubgroup.index_localNormSubgroup_dvd_degree :
     (localNormSubgroup K V).index ∣ (ofOpenNormal V).degree := by
-  rw [← localNormSubgroup_maximalAbelianLayer,
-    index_localNormSubgroup (V.isAbelianClassFieldLayer_maximalAbelianLayer)]
-  simp only [degree_eq_relIndex, top_ofOpenNormal, ground_ofOpenNormal]
-  exact Subgroup.relIndex_dvd_of_le_left _ V.le_maximalAbelianLayer
+  rw [← index_localGroundOrderIso, localGroundOrderIso_localNormSubgroup]
+  exact (localClassFormation K).index_normSubgroup_dvd_degree V
 
 end Reciprocity
 

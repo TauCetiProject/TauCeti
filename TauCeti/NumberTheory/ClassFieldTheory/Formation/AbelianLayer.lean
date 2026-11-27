@@ -66,6 +66,8 @@ class-field correspondences directly in terms of their abelian Galois groups.
 * `OpenNormalSubgroup.natCard_abelianization_gal_eq_degree_maximalAbelianLayer`: the
   abelianized Galois group of a layer has the order of the Galois group of its maximal abelian
   sublayer.
+* `OpenNormalSubgroup.degree_maximalAbelianLayer_dvd_degree`: the degree of the maximal abelian
+  sublayer divides the degree of the layer.
 
 ## References
 
@@ -319,6 +321,15 @@ open TauCeti.ClassFieldTheory
 
 variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- The degree of the maximal abelian sublayer divides the degree of the layer: the field cut out
+by `V.maximalAbelianLayer` is a subextension of the field cut out by `V`. -/
+theorem degree_maximalAbelianLayer_dvd_degree (V : OpenNormalSubgroup G) :
+    (NormalLayer.ofOpenNormal V.maximalAbelianLayer).degree ∣
+      (NormalLayer.ofOpenNormal V).degree := by
+  simp only [NormalLayer.degree_eq_relIndex, NormalLayer.top_ofOpenNormal,
+    NormalLayer.ground_ofOpenNormal]
+  exact Subgroup.relIndex_dvd_of_le_left _ V.le_maximalAbelianLayer
 
 /-- **The abelianized Galois group of a layer has the order of the Galois group of its maximal
 abelian sublayer**: `(G ⧸ V)^ab` has `[G : V · closure [G, G]]` elements. This is the counting

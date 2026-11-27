@@ -162,9 +162,8 @@ variable {p : ℕ}
 /-- The maximal abelian sublayer of a layer of degree prime to `p`, as a layer of degree prime to
 `p`: its degree divides the degree of the layer. -/
 def LayerPrimeTo.maximalAbelianLayer (V : LayerPrimeTo K p) : LayerPrimeTo K p :=
-  ⟨V.val.maximalAbelianLayer, V.property.coprime_dvd_left <| by
-    simp only [degree_eq_relIndex, top_ofOpenNormal, ground_ofOpenNormal]
-    exact Subgroup.relIndex_dvd_of_le_left _ V.val.le_maximalAbelianLayer⟩
+  ⟨V.val.maximalAbelianLayer,
+    V.property.coprime_dvd_left V.val.degree_maximalAbelianLayer_dvd_degree⟩
 
 omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- The open normal subgroup underlying `V.maximalAbelianLayer` is the maximal abelian sublayer of

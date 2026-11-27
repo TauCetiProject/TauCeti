@@ -59,6 +59,8 @@ statements with the arithmetic existence theorems of their own settings.
   abelian layer, `A^G / N(V) ≃ G ⧸ V`.
 * `TauCeti.ClassFieldTheory.ClassFormation.index_normSubgroup`: `[A^G : N(V)] = [G : V]` for an
   abelian layer.
+* `TauCeti.ClassFieldTheory.ClassFormation.index_normSubgroup_dvd_degree`: `[A^G : N(V)]` divides
+  `[G : V]` for every layer.
 * `TauCeti.ClassFieldTheory.ClassFormation.normSubgroup_inf_of_isAbelian` and
   `TauCeti.ClassFieldTheory.ClassFormation.normSubgroup_sup`: the lattice laws.
 * `TauCeti.ClassFieldTheory.ClassFormation.normSubgroup_le_iff_of_isAbelian`: layers are ordered
@@ -137,6 +139,17 @@ theorem index_normSubgroup (hV : V.IsAbelianClassFieldLayer) :
     AddMonoidHom.range_eq_top.2 (cf.surjective_abelianArtinMap hV), AddSubgroup.card_top,
     degree_eq_natCard_gal]
   exact Nat.card_congr Additive.toMul
+
+include cf in
+variable (V) in
+/-- **The norm index divides the degree**: for every layer `V ◁ G`, abelian or not,
+`[A^G : N(V)]` divides `[G : V]`. By norm limitation the index is the degree of the maximal
+abelian sublayer. -/
+theorem index_normSubgroup_dvd_degree :
+    (F.normSubgroup V).toAddSubgroup.index ∣ (ofOpenNormal V).degree := by
+  rw [← cf.normSubgroup_maximalAbelianLayer,
+    cf.index_normSubgroup V.isAbelianClassFieldLayer_maximalAbelianLayer]
+  exact V.degree_maximalAbelianLayer_dvd_degree
 
 end Reciprocity
 
