@@ -449,6 +449,31 @@ noncomputable def IsWLocalSpace.closedPoint {X : Type u} [TopologicalSpace X]
     (hX : IsWLocalSpace X) (x : X) : closedPoints X :=
   hX.closedPointsHomeomorphConnectedComponents.symm (ConnectedComponents.mk x)
 
+/-- The selected closed point has the same connected component as the original point. -/
+@[simp]
+theorem IsWLocalSpace.mk_closedPoint {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : X) :
+    ConnectedComponents.mk (hX.closedPoint x : X) = ConnectedComponents.mk x :=
+  hX.mk_closedPointsHomeomorphConnectedComponents_symm _
+
+/-- The selected closed point belongs to the connected component of the original point. -/
+theorem IsWLocalSpace.closedPoint_mem_connectedComponent {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : X) :
+    (hX.closedPoint x : X) ∈ connectedComponent x :=
+  ConnectedComponents.coe_eq_coe'.1 (hX.mk_closedPoint x)
+
+/-- A closed point is the selected one exactly when it belongs to the same component. -/
+theorem IsWLocalSpace.closedPoint_eq_iff {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : X) (c : closedPoints X) :
+    hX.closedPoint x = c ↔ (c : X) ∈ connectedComponent x := by
+  constructor
+  · rintro rfl
+    exact hX.closedPoint_mem_connectedComponent x
+  · intro hc
+    apply hX.closedPointsHomeomorphConnectedComponents.injective
+    simpa only [closedPointsHomeomorphConnectedComponents_apply, mk_closedPoint] using
+      (ConnectedComponents.coe_eq_coe'.2 hc).symm
+
 /-- Choosing the closed point of a component is continuous on a w-local space. -/
 theorem IsWLocalSpace.continuous_closedPoint {X : Type u} [TopologicalSpace X]
     (hX : IsWLocalSpace X) : Continuous hX.closedPoint :=
