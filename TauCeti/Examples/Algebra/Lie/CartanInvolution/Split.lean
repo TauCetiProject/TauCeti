@@ -23,7 +23,8 @@ subspace `𝔞` of `𝔭` is a Cartan subalgebra exactly when `𝔪 = 0`.
 * `𝔰𝔬(2, 3)` is split: the span `𝔞` of `H_1 = E_(1, 1') + E_(1', 1)` and `H_2` is a Cartan
   subalgebra, so `𝔪 = 𝔰𝔬(1) = 0`. `𝔰𝔬(2, 4)` is not: the span of `H_1`, `H_2` is maximal abelian
   in `𝔭`, but `𝔪` contains the block `𝔰𝔬(2)` on the two remaining indices, so it is not a Cartan
-  subalgebra. A test of `𝔨 = 0` in place of `𝔪 = 0` would call neither split.
+  subalgebra. Both have `𝔨 ≠ 0`, so a test of `𝔨 = 0` in place of `𝔪 = 0` would call neither
+  split.
 -/
 
 public section
@@ -90,6 +91,14 @@ example :
         (Fin.castSucc_injective 2)).mp <|
         Orthogonal.isCartanSubalgebra_splitCartanSubalgebra_castSucc (by norm_num)
 
+/-- `𝔰𝔬(2, 3)` has `𝔨 ≠ 0`, since `E_(2', 3') - E_(3', 2')` lies in it (`2'`, `3'` are the `Fin 3`
+indices `1`, `2`), so a test of `𝔨 = 0` in place of `𝔪 = 0` would not call it split. -/
+example :
+    ((Orthogonal.so' (Fin 2) (Fin 3) ℝ).restrictNegConjTranspose
+      fun _ ↦ Orthogonal.conjTranspose_mem_so').toLieHom.fixedSubalgebra.toSubmodule ≠ ⊥ :=
+  Submodule.ne_bot_iff _ |>.mpr ⟨_, Orthogonal.splitCompactElement_mem_fixedSubalgebra 1 2,
+    Orthogonal.splitCompactElement_ne_zero (by decide)⟩
+
 /-- The inclusion `Fin 2 → Fin 4`, whose range misses `2` and `3`. -/
 abbrev soTwoFourEmbedding : Fin 2 → Fin 4 := Fin.castLE (by norm_num)
 
@@ -108,6 +117,13 @@ example :
   Submodule.ne_bot_iff _ |>.mpr ⟨_,
     Orthogonal.splitCompactElement_mem_restrictedRootSpace_zero_inf_fixedSubalgebra
       (a := 2) (b := 3) (by simp) (by simp),
+    Orthogonal.splitCompactElement_ne_zero (by decide)⟩
+
+/-- `𝔰𝔬(2, 4)` has `𝔨 ≠ 0`, since `E_(3', 4') - E_(4', 3')` lies in it. -/
+example :
+    ((Orthogonal.so' (Fin 2) (Fin 4) ℝ).restrictNegConjTranspose
+      fun _ ↦ Orthogonal.conjTranspose_mem_so').toLieHom.fixedSubalgebra.toSubmodule ≠ ⊥ :=
+  Submodule.ne_bot_iff _ |>.mpr ⟨_, Orthogonal.splitCompactElement_mem_fixedSubalgebra 2 3,
     Orthogonal.splitCompactElement_ne_zero (by decide)⟩
 
 /-- `𝔰𝔬(2, 4)` with `𝔞` the span of `H_1`, `H_2`: `𝔞` is not a Cartan subalgebra. -/
