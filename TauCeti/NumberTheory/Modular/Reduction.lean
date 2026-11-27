@@ -7,13 +7,19 @@ module
 
 public import Mathlib.NumberTheory.Modular
 import TauCeti.Data.Int.Progression
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
-# Positive odd upper-left entries by translation
+# Reduction and Euclidean induction in `SL₂(ℤ)`
 
-A matrix in `SL₂(ℤ)` with positive lower-left entry can be translated by a nonnegative multiple
-of any natural divisor of that entry to have positive odd upper-left entry. The determinant
-equation ensures that an even translation step already has odd initial entry.
+This file collects elementary reduction lemmas for matrices in `SL₂(ℤ)` with positive lower-left
+entry:
+
+* `Matrix.SpecialLinearGroup.exists_pos_odd_T_zpow_mul`: translating on the left by a nonnegative
+  multiple of any natural divisor of the lower-left entry produces a positive odd upper-left entry.
+* `Matrix.SpecialLinearGroup.induction_on_of_c_pos`: Euclidean induction on
+  `{γ ∈ SL₂(ℤ) | 0 < γ 1 0}` from the base case `γ 1 0 = 1`, right translation `γ ↦ γ T`, and
+  right inversion `γ ↦ γ S` when `0 < γ 1 1`.
 
 ## References
 
@@ -57,5 +63,56 @@ theorem exists_pos_odd_T_zpow_mul (A : SL(2, ℤ)) {m : ℕ}
   refine ⟨j, ?_⟩
   simpa [coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two,
     mul_assoc] using And.intro hj hjodd
+
+/-- **Euclidean induction on `SL(2, ℤ)` with positive lower-left entry.** A property of matrices
+`γ ∈ SL(2, ℤ)` with `0 < γ 1 0` holds whenever it holds at `γ 1 0 = 1`, is invariant under right
+multiplication by `T`, and passes from `γ * S` back to `γ` when `0 < γ 1 1`. -/
+theorem induction_on_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) {P : SL(2, ℤ) → Prop}
+    (h_one : ∀ γ : SL(2, ℤ), γ 1 0 = 1 → P γ)
+    (h_T : ∀ γ : SL(2, ℤ), 0 < γ 1 0 → (P (γ * T) ↔ P γ))
+    (h_S : ∀ γ : SL(2, ℤ), 0 < γ 1 0 → 0 < γ 1 1 → P (γ * S) → P γ) :
+    P γ := by
+  have h_Tzpow (δ : SL(2, ℤ)) (hδ : 0 < δ 1 0) (n : ℤ) : P (δ * T ^ n) ↔ P δ := by
+    induction n using Int.induction_on with
+    | zero => simp
+    | succ k ih =>
+      rw [_root_.zpow_add_one, ← mul_assoc,
+        h_T _ (by rw [TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero]; exact hδ), ih]
+    | pred k ih =>
+      have hsub : δ * T ^ (-(k : ℤ) - 1) * T = δ * T ^ (-(k : ℤ)) := by
+        rw [mul_assoc, ← _root_.zpow_add_one]
+        simp
+      rw [← h_T (δ * T ^ (-(k : ℤ) - 1))
+          (by rw [TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero]; exact hδ),
+        hsub, ih]
+  suffices ∀ n : ℕ, ∀ γ : SL(2, ℤ), 0 < γ 1 0 → (γ 1 0).toNat = n → P γ from
+    this (γ 1 0).toNat γ hc rfl
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    intro γ hc hn
+    by_cases h1 : γ 1 0 = 1
+    · exact h_one γ h1
+    set q : ℤ := γ 1 1 / γ 1 0
+    set γ' : SL(2, ℤ) := γ * T ^ (-q)
+    have hγ'_c : γ' 1 0 = γ 1 0 := TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero γ (-q) 1
+    have hγ'_d : γ' 1 1 = γ 1 1 % γ 1 0 := by
+      have hval : γ' 1 1 = γ 1 0 * (-q) + γ 1 1 :=
+        TauCeti.ModularGroup.mul_T_zpow_apply_apply_one γ (-q) 1
+      rw [hval, Int.emod_def]
+      ring
+    have hd_nonneg : 0 ≤ γ' 1 1 := hγ'_d ▸ Int.emod_nonneg _ hc.ne'
+    have hd_lt : γ' 1 1 < γ 1 0 := hγ'_d ▸ Int.emod_lt_of_pos _ hc
+    have hd_ne : γ' 1 1 ≠ 0 := by
+      intro h0
+      have hunit := (γ'.isCoprime_row 1).isUnit_of_dvd (h0 ▸ dvd_zero _)
+      have h1' : γ' 1 0 = 1 := (Int.isUnit_iff.mp hunit).resolve_right (by omega)
+      exact h1 (hγ'_c ▸ h1')
+    have hd_pos : 0 < γ' 1 1 := lt_of_le_of_ne hd_nonneg hd_ne.symm
+    have hS_c : (γ' * S) 1 0 = γ' 1 1 := TauCeti.ModularGroup.mul_S_apply_apply_zero γ' 1
+    have hPS : P (γ' * S) := ih (γ' 1 1).toNat (by omega) (γ' * S) (by omega) (by rw [hS_c])
+    have hγ_eq : γ = γ' * T ^ q := by simp [γ', mul_assoc]
+    rw [hγ_eq, h_Tzpow γ' (by omega) q]
+    exact h_S γ' (by omega) hd_pos hPS
 
 end Matrix.SpecialLinearGroup

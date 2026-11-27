@@ -14,12 +14,15 @@ import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 In a compact commutative Lie group `G`, the elements `g` with `g ^ n = 1`, for `n ≠ 0`, form a
 closed subgroup, the kernel of the `n`-th power homomorphism. Its Lie algebra is trivial, since
 `exp (t ξ / n) ^ n = exp (t ξ)`, so it is discrete; being compact, it is finite
-(`TauCeti.Lie.finite_setOf_pow_eq_one`).
+(`TauCeti.Lie.finite_setOf_pow_eq_one`). Hence `G` has countably many elements of finite order
+(`TauCeti.Lie.countable_setOf_isOfFinOrder`).
 
 ## Main results
 
 * `TauCeti.Lie.finite_setOf_pow_eq_one`: a compact commutative Lie group has finitely many
   elements `g` with `g ^ n = 1`, for `n ≠ 0`.
+* `TauCeti.Lie.countable_setOf_isOfFinOrder`: a compact commutative Lie group has countably many
+  elements of finite order.
 -/
 
 public section
@@ -69,5 +72,15 @@ theorem finite_setOf_pow_eq_one [CompactSpace G] {n : ℕ} (hn : n ≠ 0) :
   have : DiscreteTopology K := (discreteTopology_iff_lieSubalgebraOfSubgroup_eq_bot hK).2 hbot
   rw [← hKset]
   exact hK.isCompact.finite (isDiscrete_iff_discreteTopology.2 this)
+
+variable (I) in
+include I in
+/-- **A compact commutative Lie group has countably many elements of finite order**, finitely many
+of each order. -/
+theorem countable_setOf_isOfFinOrder [CompactSpace G] : {g : G | IsOfFinOrder g}.Countable := by
+  refine (Set.countable_iUnion fun n : ℕ ↦
+    (finite_setOf_pow_eq_one I (Nat.add_one_ne_zero n)).countable).mono fun g hg ↦ ?_
+  obtain ⟨n, hn, hgn⟩ := isOfFinOrder_iff_pow_eq_one.1 hg
+  exact Set.mem_iUnion.2 ⟨n - 1, by rwa [Set.mem_ofPred_eq, Nat.sub_add_cancel hn]⟩
 
 end TauCeti.Lie

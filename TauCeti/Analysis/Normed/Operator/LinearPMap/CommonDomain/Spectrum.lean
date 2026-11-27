@@ -28,15 +28,18 @@ Write `K = (c₀ • ι - A)⁻¹ ∘ ι`, a compact operator on `D`. For `c ≠
 eigenvalues away from `0` transfer to the shifts:
 
 * `c • ι - A` is invertible exactly when it is injective
-  (`ContinuousLinearMap.isInvertible_smul_sub_iff_injective`);
+  (`ContinuousLinearMap.isInvertible_smul_sub_iff_injective`), and so is `A` itself, the shift at
+  `0` (`ContinuousLinearMap.isInvertible_iff_injective_of_isInvertible_smul_sub`);
 * only finitely many shifts in a bounded set fail to be invertible
   (`ContinuousLinearMap.finite_inter_setOf_not_isInvertible_smul_sub`), so near every scalar all
   other shifts are invertible (`ContinuousLinearMap.eventually_isInvertible_smul_sub`).
 
 Neither injectivity of `ι` nor completeness of `H` is assumed. When `ι` is injective and `H` is
 complete these are statements about the partial operator
-`ContinuousLinearMap.domainOperator ι A hι` with domain `range ι`: its spectrum meets every bounded
-set in finitely many points (`ContinuousLinearMap.finite_inter_spectrum_domainOperator`).
+`LinearMap.domainOperator ι A hι` with domain `range ι`: its spectrum meets every bounded
+set in finitely many points (`ContinuousLinearMap.finite_inter_spectrum_domainOperator`). An
+injective shift makes `ι` injective on the kernel of `A`, where the shift agrees with `c • ι`
+(`ContinuousLinearMap.injective_comp_subtype_ker_of_injective_smul_sub`).
 
 Over `ℝ` or `ℂ`, the admissible real shifts, the real `c` at which `(c : 𝕜) • ι - A` is
 invertible, are dense (`ContinuousLinearMap.eventually_isInvertible_ofReal_smul_sub`,
@@ -53,6 +56,8 @@ such as the spectral flow of the bounded transforms `c A (c ι - A)⁻¹`, are g
 
 * `ContinuousLinearMap.isInvertible_smul_sub_iff_injective`: a shift is invertible exactly when
   it is injective.
+* `ContinuousLinearMap.isInvertible_iff_injective_of_isInvertible_smul_sub`: `A` is invertible
+  exactly when it is injective.
 * `ContinuousLinearMap.finite_inter_setOf_not_isInvertible_smul_sub`: the non-invertible shifts
   in a bounded set are finitely many.
 * `ContinuousLinearMap.eventually_isInvertible_smul_sub`: the non-invertible shifts are isolated.
@@ -134,6 +139,27 @@ theorem isInvertible_smul_sub_iff_injective [CompleteSpace D] (hcpt : IsCompactO
   rw [hfac]
   exact h₀.comp (isInvertible_iff_isUnit.2 ((isUnit_iff_ne_zero.2 hc').map _ |>.mul hres))
 
+/-- **Fredholm alternative over a compactly embedded domain.** If `ι` is compact and one shift
+`c₀ • ι - A` is invertible, `A` itself is invertible exactly when it is injective. -/
+theorem isInvertible_iff_injective_of_isInvertible_smul_sub [CompleteSpace D]
+    (hcpt : IsCompactOperator ι) (h₀ : (c₀ • ι - A).IsInvertible) :
+    A.IsInvertible ↔ Injective A := by
+  refine ⟨fun h ↦ h.bijective.1, fun hinj ↦ ?_⟩
+  have h := (isInvertible_smul_sub_iff_injective (c := 0) hcpt h₀).2 fun x y hxy ↦
+    hinj (by simpa using hxy)
+  rwa [zero_smul, zero_sub, isInvertible_neg_iff] at h
+
+/-- If a shift `c • ι - A` is injective, `ι` is injective on the kernel of `A`: a vector killed by
+both `A` and `ι` is killed by `c • ι - A`. -/
+theorem injective_comp_subtype_ker_of_injective_smul_sub (h : Injective (c • ι - A)) :
+    Injective ((ι : D →ₗ[𝕜] H) ∘ₗ A.ker.subtype) := by
+  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
+  rintro ⟨x, hx⟩ hιx
+  have hAx : A x = 0 := hx
+  rw [LinearMap.mem_ker] at hιx
+  simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype, coe_coe] at hιx
+  simpa using h (a₁ := x) (a₂ := 0) (by simp [hAx, hιx])
+
 /-- **Discreteness of the spectrum over a compactly embedded domain.** If `ι` is compact and one
 shift `c₀ • ι - A` is invertible, only finitely many shifts `c • ι - A` with `c` in a bounded set
 fail to be invertible. -/
@@ -179,12 +205,13 @@ theorem eventually_isInvertible_smul_sub [CompleteSpace D] (hcpt : IsCompactOper
   exact hc ⟨⟨hball, h⟩, hne⟩
 
 /-- **Discreteness of the spectrum of an operator on a compactly embedded domain.** If `ι` is
-compact and injective and `domainOperator ι A hι` has a resolvent point, its spectrum meets every
-bounded set in finitely many points. -/
+compact and injective and `LinearMap.domainOperator ι A hι` has a resolvent point, its spectrum
+meets every bounded set in finitely many points. -/
 theorem finite_inter_spectrum_domainOperator [CompleteSpace D] [CompleteSpace H]
     (hcpt : IsCompactOperator ι) {hι : Injective ι}
-    (h₀ : (domainOperator ι A hι).resolventSet.Nonempty) {s : Set 𝕜}
-    (hs : Bornology.IsBounded s) : (s ∩ (domainOperator ι A hι).spectrum).Finite := by
+    (h₀ : (ι.toLinearMap.domainOperator A.toLinearMap hι).resolventSet.Nonempty) {s : Set 𝕜}
+    (hs : Bornology.IsBounded s) :
+    (s ∩ (ι.toLinearMap.domainOperator A.toLinearMap hι).spectrum).Finite := by
   obtain ⟨c₀, hc₀⟩ := h₀
   refine (finite_inter_setOf_not_isInvertible_smul_sub hcpt
     (mem_resolventSet_domainOperator_iff.1 hc₀) hs).subset fun c ⟨hcs, hc⟩ ↦ ⟨hcs, fun h ↦ ?_⟩
