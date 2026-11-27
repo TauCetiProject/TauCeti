@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.Order.Lattice.Submodular
 
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import Mathlib.LinearAlgebra.Pi
 import TauCeti.Data.Finset.Basic
 
 /-!
@@ -36,9 +37,7 @@ dividends may have either sign.
 
 public section
 
-open Finset
-
-namespace TauCeti
+namespace Finset
 
 variable {ι : Type*}
 
@@ -66,6 +65,7 @@ theorem unanimity_eq_zero_or_eq_one [DecidableEq ι] (S T : Finset ι) :
   split_ifs <;> simp
 
 /-- The unanimity function of the empty coalition is constant one. -/
+@[simp]
 theorem unanimity_empty [DecidableEq ι] : unanimity (∅ : Finset ι) = 1 := by
   ext T
   exact unanimity_apply_of_subset (empty_subset T)
@@ -91,8 +91,8 @@ theorem monotone_unanimity [DecidableEq ι] (S : Finset ι) : Monotone (unanimit
 
 /-- Every unanimity function is supermodular. -/
 theorem isSubmodular_neg_unanimity [DecidableEq ι] (S : Finset ι) :
-    IsSubmodular (-unanimity S) := by
-  rw [isSubmodular_def]
+    TauCeti.IsSubmodular (-unanimity S) := by
+  rw [TauCeti.isSubmodular_def]
   intro A B
   simp only [Pi.neg_apply, ← neg_add, neg_le_neg_iff]
   by_cases hA : S ⊆ A <;> by_cases hB : S ⊆ B
@@ -101,6 +101,14 @@ theorem isSubmodular_neg_unanimity [DecidableEq ι] (S : Finset ι) :
   · simp [hA, hB, hB.trans subset_union_right]
   · simp [hA, hB, unanimity_apply]
     split_ifs <;> norm_num
+
+end Finset
+
+open Finset
+
+namespace TauCeti
+
+variable {ι : Type*}
 
 /-- The Harsanyi dividend of a coalition is the alternating sum of the worths of its
 subcoalitions, with sign determined by the number of omitted players. -/
@@ -144,7 +152,7 @@ theorem dividendLinearMap_apply (v : Finset ι → ℝ) : dividendLinearMap v = 
 
 /-- A unanimity function has a single unit dividend, at its required coalition. -/
 @[simp]
-theorem dividend_unanimity [DecidableEq ι] (S T : Finset ι) :
+theorem _root_.Finset.dividend_unanimity [DecidableEq ι] (S T : Finset ι) :
     dividend (unanimity S) T = if S = T then 1 else 0 := by
   rw [dividend_apply, ← sum_Icc_neg_one_pow_card_sub_card_right (R := ℝ) S T,
     Icc_eq_filter_powerset, sum_filter]
@@ -257,7 +265,12 @@ private noncomputable def dividendEquiv [Finite ι] :
       rw [← sum_powerset_dividend v T, ← sum_powerset_dividend w T, h]
     · intro d
       refine ⟨∑ S : Finset ι, d S • unanimity S, ?_⟩
+      rw [dividendLinearMap_apply]
       exact ((eq_sum_smul_unanimity_iff _ _).mp rfl).symm
+
+private theorem dividendEquiv_apply [Finite ι] (v : Finset ι → ℝ) :
+    dividendEquiv v = dividend v :=
+  (LinearEquiv.ofBijective_apply dividendLinearMap v).trans (dividendLinearMap_apply v)
 
 section FinitePlayers
 
@@ -273,12 +286,12 @@ noncomputable def unanimityBasis : Module.Basis (Finset ι) ℝ (Finset ι → �
 theorem unanimityBasis_repr (v : Finset ι → ℝ) (S : Finset ι) :
     unanimityBasis.repr v S = dividend v S := by
   let := Fintype.ofFinite ι
-  rw [unanimityBasis, Module.Basis.ofEquivFun_repr_apply]
-  exact congrFun (dividendLinearMap_apply v) S
+  rw [unanimityBasis, Module.Basis.ofEquivFun_repr_apply, dividendEquiv_apply]
 
 /-- The basis vector indexed by a coalition is its unanimity function. -/
 @[simp]
-theorem unanimityBasis_apply [DecidableEq ι] (S : Finset ι) : unanimityBasis S = unanimity S := by
+theorem _root_.Finset.unanimityBasis_apply [DecidableEq ι] (S : Finset ι) :
+    unanimityBasis S = unanimity S := by
   apply unanimityBasis.repr.injective
   ext T
   rw [Module.Basis.repr_self_apply, unanimityBasis_repr, dividend_unanimity]
@@ -300,32 +313,28 @@ section FinitePlayers
 variable [Finite ι]
 
 private noncomputable def normalizedDividendEquiv :
-    normalizedGameSubmodule ι ≃ₗ[ℝ] ({S : Finset ι // S.Nonempty} → ℝ) :=
-  LinearEquiv.ofBijective
-    (LinearMap.pi fun S ↦ (LinearMap.proj S.val).comp
-      (dividendLinearMap.comp (normalizedGameSubmodule ι).subtype)) <| by
-    classical
-    constructor
-    · intro v w hvw
-      apply Subtype.ext
-      apply (dividendEquiv (ι := ι)).injective
-      ext S
-      by_cases hS : S.Nonempty
-      · exact congrFun hvw ⟨S, hS⟩
-      · have hv := (mem_normalizedGameSubmodule _).mp v.property
-        have hw := (mem_normalizedGameSubmodule _).mp w.property
-        have hd : dividend v.val ∅ = dividend w.val ∅ := by simp [hv, hw]
-        rw [not_nonempty_iff_eq_empty.mp hS]
-        exact hd
-    · intro d
-      let e (S : Finset ι) : ℝ := if h : S.Nonempty then d ⟨S, h⟩ else 0
-      let v := (dividendEquiv (ι := ι)).symm e
-      have hv : dividend v = e := (dividendEquiv (ι := ι)).apply_symm_apply e
-      refine ⟨⟨v, (mem_normalizedGameSubmodule v).mpr ?_⟩, ?_⟩
-      · rw [← dividend_empty v, hv]
-        simp [e]
-      · ext S
-        simpa [e, S.property] using congrFun hv S.val
+    normalizedGameSubmodule ι ≃ₗ[ℝ] ({S : Finset ι // S.Nonempty} → ℝ) := by
+  classical
+  let omitEmpty := LinearMap.iInfKerProjEquiv ℝ (fun _ : Finset ι ↦ ℝ)
+    (I := {S | S.Nonempty}) (J := {∅})
+    (by simp [Set.disjoint_singleton_right]) (by
+      intro S _
+      exact (eq_empty_or_nonempty S).elim Or.inr Or.inl)
+  let K := ⨅ S ∈ ({∅} : Set (Finset ι)), LinearMap.ker
+    (LinearMap.proj S : (Finset ι → ℝ) →ₗ[ℝ] ℝ)
+  have h : normalizedGameSubmodule ι = K.comap dividendEquiv.toLinearMap := by
+    apply Submodule.ext
+    intro v
+    simp [K, Submodule.mem_comap, LinearMap.mem_ker, dividendEquiv_apply]
+  exact (LinearEquiv.ofEq _ _ h).trans ((dividendEquiv.ofSubmodule' K).trans omitEmpty)
+
+private theorem normalizedDividendEquiv_apply (v : normalizedGameSubmodule ι)
+    (S : {S : Finset ι // S.Nonempty}) :
+    normalizedDividendEquiv v S = dividend v.val S.val := by
+  simp only [normalizedDividendEquiv, LinearEquiv.trans_apply, LinearMap.iInfKerProjEquiv,
+    LinearEquiv.coe_ofLinearMap, LinearMap.pi_apply, LinearMap.comp_apply, LinearMap.proj_apply,
+    Submodule.subtype_apply, LinearEquiv.ofSubmodule'_apply, LinearEquiv.coe_ofEq_apply,
+    dividendEquiv_apply]
 
 /-- The unanimity basis of normalized games, indexed by nonempty coalitions. -/
 noncomputable def normalizedUnanimityBasis :
@@ -339,8 +348,7 @@ theorem normalizedUnanimityBasis_repr (v : normalizedGameSubmodule ι)
     (S : {S : Finset ι // S.Nonempty}) :
     normalizedUnanimityBasis.repr v S = dividend v.val S.val := by
   let := Fintype.ofFinite ι
-  rw [normalizedUnanimityBasis, Module.Basis.ofEquivFun_repr_apply]
-  rfl
+  rw [normalizedUnanimityBasis, Module.Basis.ofEquivFun_repr_apply, normalizedDividendEquiv_apply]
 
 /-- The normalized basis vector of a nonempty coalition is its unanimity function. -/
 @[simp]
