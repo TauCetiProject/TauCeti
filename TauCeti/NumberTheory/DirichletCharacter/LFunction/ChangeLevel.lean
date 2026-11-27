@@ -21,11 +21,11 @@ Thus passage between an imprimitive character and its primitive character costs 
 small power of the ambient level. This applies in particular to products of primitive quadratic
 characters at their common level, including primes dividing both conductors.
 
-The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves zeros and exact
-meromorphic orders there, including the simple pole at `s = 1` for principal characters. At `s = 1`
-pointwise L-function comparison requires nonprincipal characters, as in the native continuation API.
-The factors are also nonzero on `Re(s) < 0`:
-`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`.
+The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves exact meromorphic
+orders there, including the simple pole at `s = 1` for principal characters.
+`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`, so the
+level change preserves zeros off the imaginary axis. At `s = 1` pointwise L-function comparison
+requires nonprincipal characters, as in the native continuation API.
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
 by David Loeffler and Michael Stoll. When the levels have the same prime factors,
@@ -148,14 +148,14 @@ theorem LFunction_changeLevel_eq_of_primeFactors_eq {M N : ℕ} [NeZero M] [NeZe
   intro p hp
   simp [χ.map_nonunit (ZMod.not_isUnit_of_mem_primeFactors hp)]
 
-/-- Raising the level preserves the zeros of the continued L-function in the open right
-half-plane. At the possible pole `1`, require the original character to be nonprincipal. -/
+/-- Raising the level preserves the zeros of the continued L-function off the imaginary axis.
+At the possible pole `1`, require the original character to be nonprincipal. -/
 @[simp] theorem LFunction_changeLevel_eq_zero_iff {M N : ℕ} [NeZero M] [NeZero N]
-    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : 0 < s.re)
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : s.re ≠ 0)
     (h : χ ≠ 1 ∨ s ≠ 1) :
     (changeLevel hMN χ).LFunction s = 0 ↔ χ.LFunction s = 0 := by
   rw [LFunction_changeLevel hMN χ h, mul_eq_zero]
-  simp [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs.ne']
+  simp only [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs, or_false]
 
 /-- A Dirichlet character and its inducing primitive character have the same zeros of the
 continued L-function in the open right half-plane. At the possible pole `1`, require the primitive
@@ -164,7 +164,7 @@ theorem LFunction_primitiveCharacter_eq_zero_iff {N : ℕ} [NeZero N] (χ : Diri
     {s : ℂ} (hs : 0 < s.re) (h : χ.primitiveCharacter ≠ 1 ∨ s ≠ 1) :
     χ.primitiveCharacter.LFunction s = 0 ↔ χ.LFunction s = 0 := by
   conv_rhs => rw [← χ.changeLevel_primitiveCharacter]
-  exact (LFunction_changeLevel_eq_zero_iff _ χ.conductor_dvd_level hs h).symm
+  exact (LFunction_changeLevel_eq_zero_iff _ χ.conductor_dvd_level hs.ne' h).symm
 
 /-- Raising the level preserves the meromorphic order of the continued L-function at every point of
 the open right half-plane `Re(s) > 0`, including `s = 1` for principal characters. -/

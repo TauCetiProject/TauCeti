@@ -9,7 +9,9 @@ public import Mathlib.Algebra.Star.Orthogonal
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.Algebra.Star.PartialIsometry
+public import TauCeti.Data.Matrix.Basis
 public import TauCeti.Data.Matrix.Block
+public import TauCeti.Data.Matrix.Composition
 public import TauCeti.LinearAlgebra.Matrix.StarProjection
 public import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
@@ -73,6 +75,11 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
   `Matrix.IsMurrayVonNeumannEquivalent.rank_eq`: diagonal matrix units of any sizes are
   equivalent, and over a commutative star ring with the strong rank condition equivalent
   projections have equal rank.
+* `Matrix.isMurrayVonNeumannEquivalent_comp_iff`: the flattening `M_k(M_n(R)) ≅ M_{k × n}(R)` of
+  Mathlib's `Matrix.comp` preserves and reflects equivalence of projections.
+* `Matrix.isMurrayVonNeumannEquivalent_comp_map_singleNonUnitalStarRingHom`: the flattening of the
+  image of a projection `p` under the corner embedding `Matrix.singleNonUnitalStarRingHom R i`,
+  `r ↦ r eᵢᵢ`, is equivalent to `p`.
 
 ## References
 
@@ -493,5 +500,73 @@ theorem IsMurrayVonNeumannEquivalent.rank_eq [CommSemiring R] [StarRing R]
     exact (rank_mul_le_left _ _).trans (rank_mul_le_right _ _)
   · rw [← hq']
     exact (rank_mul_le_left _ _).trans (rank_mul_le_right _ _)
+
+end Matrix
+
+namespace Matrix
+
+section Flattening
+
+variable {R : Type*} [NonUnitalSemiring R] [StarRing R] {I K L : Type*} [Fintype I] [Fintype K]
+  [Fintype L]
+
+/-- **Flattening and Murray–von Neumann equivalence.** Projections over `M_n(R)` are equivalent
+exactly when their flattenings over `R` are. -/
+@[simp]
+theorem isMurrayVonNeumannEquivalent_comp_iff {p : Matrix I I (Matrix L L R)}
+    {q : Matrix K K (Matrix L L R)} :
+    IsMurrayVonNeumannEquivalent (comp I I L L R p) (comp K K L L R q) ↔
+      IsMurrayVonNeumannEquivalent p q := by
+  constructor
+  · rintro ⟨hp, hq, v, hvp, hvq⟩
+    refine ⟨isStarProjection_comp_iff.1 hp, isStarProjection_comp_iff.1 hq,
+      (comp K I L L R).symm v, ?_, ?_⟩
+    · rw [← (comp I I L L R).injective.eq_iff, comp_mul, ← conjTranspose_comp',
+        Equiv.apply_symm_apply, hvp]
+    · rw [← (comp K K L L R).injective.eq_iff, comp_mul, ← conjTranspose_comp',
+        Equiv.apply_symm_apply, hvq]
+  · rintro ⟨hp, hq, v, hvp, hvq⟩
+    refine ⟨isStarProjection_comp_iff.2 hp, isStarProjection_comp_iff.2 hq,
+      comp K I L L R v, ?_, ?_⟩
+    · rw [conjTranspose_comp', ← comp_mul, hvp]
+    · rw [conjTranspose_comp', ← comp_mul, hvq]
+
+/-- The flattening of the entrywise corner image of a projection `p` over `R` is equivalent to
+`p`: it is `p` placed on the rows and columns `(a, i)`. -/
+theorem isMurrayVonNeumannEquivalent_comp_map_singleNonUnitalStarRingHom [DecidableEq L]
+    {p : Matrix I I R} (hp : IsStarProjection p) (i : L) :
+    IsMurrayVonNeumannEquivalent p (comp I I L L R (p.map (singleNonUnitalStarRingHom R i))) := by
+  -- The witness is `p` placed on the rows `(b, i)`.
+  let v : Matrix (I × L) I R := of fun b a ↦ if b.2 = i then p b.1 a else 0
+  have hpH : pᴴ = p := by rw [← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq]
+  have hpp : p * p = p := hp.isIdempotentElem.eq
+  have hHp : pᴴ * p = p := by rw [hpH, hpp]
+  have hpH' : p * pᴴ = p := by rw [hpH, hpp]
+  have hvp : vᴴ * v = p := by
+    ext a a'
+    conv_rhs => rw [← hHp]
+    simp [v, Matrix.mul_apply, conjTranspose_apply, Fintype.sum_prod_type, apply_ite (star : R → R)]
+  have hvq : v * vᴴ = comp I I L L R (p.map (singleNonUnitalStarRingHom R i)) := by
+    ext ⟨b, y⟩ ⟨b', y'⟩
+    by_cases hy : y = i
+    · subst hy
+      by_cases hy' : y' = y
+      · subst hy'
+        conv_rhs =>
+          rw [comp_apply, map_apply, singleNonUnitalStarRingHom_apply, single_apply_same, ← hpH']
+        simp [v, Matrix.mul_apply, conjTranspose_apply]
+      · simp [v, Matrix.mul_apply, comp_apply, conjTranspose_apply, hy', Ne.symm hy']
+    · simp [v, Matrix.mul_apply, comp_apply, conjTranspose_apply, hy, Ne.symm hy]
+  have hv : v * p = v := by
+    ext ⟨b, y⟩ a'
+    by_cases hy : y = i
+    · simp only [v, Matrix.mul_apply, of_apply, hy, ↓reduceIte]
+      rw [← Matrix.mul_apply, hpp]
+    · simp [v, Matrix.mul_apply, hy]
+  have h := isMurrayVonNeumannEquivalent_of_mul_conjTranspose_mul_self_eq (v := v)
+    (by rw [Matrix.mul_assoc, hvp, hv])
+  rwa [hvp, hvq] at h
+
+end Flattening
 
 end Matrix
