@@ -38,6 +38,12 @@ of `∑ p.coeff k • (a - z₀ 1) ^ k` whenever `spectrum ℂ a ⊆ Metric.ebal
 * `IsIdempotentElem.gelfandRadius_eq_one`: a nonzero idempotent has Gelfand radius one.
 * `IsIdempotentElem.one_le_gelfandRadius_mul_norm_inverse`: a lower bound on the Gelfand radius
   of elements of the corner `p R p`.
+* `IsNilpotent.gelfandRadius_eq_zero`: a nilpotent element has Gelfand radius zero.
+* `IsIdempotentElem.mul_eq_zero_of_isUnit_of_gelfandRadius_eq_zero`: commuting idempotents `f`
+  and `g` are orthogonal when an element commuting with both is invertible on the range of `f`
+  and quasinilpotent on the range of `g`.
+* `TauCeti.spectralRadius_eq_zero_iff_gelfandRadius_eq_zero`: in a complex Banach algebra, the
+  spectral radius vanishes exactly when the Gelfand radius does.
 * `TauCeti.summable_norm_smul_sub_pow_of_le_radius`: absolute convergence of a formal power series
   evaluated at `a - z₀` whenever `spectrum ℂ a` lies in `Metric.eball z₀ r` with `r ≤ p.radius`.
 * `TauCeti.spectralRadius_eq_gelfandRadius_toLp_inr`: Gelfand's formula for a nonunital complex
@@ -84,6 +90,42 @@ theorem IsIdempotentElem.one_le_gelfandRadius_mul_norm_inverse {R : Type*} [Norm
         rw [hyw, mul_assoc, w.mul_inv, mul_one]
     _ ≤ gelfandRadius y * gelfandRadius ((w⁻¹ : Rˣ) : R) := hcomm.gelfandRadius_mul_le
     _ ≤ gelfandRadius y * ‖((w⁻¹ : Rˣ) : R)‖ := by grw [gelfandRadius_le_norm ((w⁻¹ : Rˣ) : R)]
+
+/-- A nilpotent element has Gelfand radius zero: a positive power of it vanishes, and the Gelfand
+radius of `a ^ n` is the `n`-th power of that of `a`. -/
+theorem IsNilpotent.gelfandRadius_eq_zero {R : Type*} [SeminormedRing R] {a : R}
+    (ha : IsNilpotent a) : gelfandRadius a = 0 := by
+  obtain ⟨n, hn⟩ := ha
+  cases n with
+  | zero => rw [← mul_one a, ← pow_zero a, hn, mul_zero, gelfandRadius_zero]
+  | succ n =>
+    have h := gelfandRadius_pow_of_ne_zero a n.succ_ne_zero
+    rwa [hn, gelfandRadius_zero, eq_comm, pow_eq_zero_iff n.succ_ne_zero] at h
+
+/-- Let `f` and `g` be commuting idempotents commuting with `c`. If `c` is invertible on the range
+of `f`, in the sense that `c f + (1 - f)` is a unit, and quasinilpotent on the range of `g`, in the
+sense that `c g` has Gelfand radius zero, then `f g = 0`. -/
+theorem IsIdempotentElem.mul_eq_zero_of_isUnit_of_gelfandRadius_eq_zero {R : Type*} [NormedRing R]
+    {c f g : R} (hf : IsIdempotentElem f) (hg : IsIdempotentElem g) (hfg : Commute f g)
+    (hcf : Commute c f) (hcg : Commute c g) (hunit : IsUnit (c * f + (1 - f)))
+    (hrad : gelfandRadius (c * g) = 0) : f * g = 0 := by
+  obtain ⟨W, hW⟩ := hunit
+  have hfW : f * W = c * f := by
+    simp [hW, mul_add, mul_sub, hf.eq, ← mul_assoc, ← hcf.eq, hf.mul_mul_self]
+  have hcgW : Commute (c * g) (W : R) := by
+    have hc : Commute (c * g) c := (Commute.refl c).mul_left hcg.symm
+    have hf' : Commute (c * g) f := hcf.mul_left hfg.symm
+    rw [hW]
+    exact (hc.mul_right hf').add_right ((Commute.one_right _).sub_right hf')
+  have hfg_eq : f * g = c * g * (f * ↑W⁻¹) := by
+    calc f * g = g * (f * W * ↑W⁻¹) := by rw [mul_assoc, W.mul_inv, mul_one, hfg.eq]
+      _ = c * g * (f * ↑W⁻¹) := by
+        rw [hfW, mul_assoc, ← mul_assoc g, ← hcg.eq, mul_assoc]
+  by_contra h0
+  have hle := ((hcf.mul_left hfg.symm).mul_right hcgW.units_inv_right).gelfandRadius_mul_le
+  rw [← hfg_eq, (IsIdempotentElem.mul_of_commute hfg hf hg).gelfandRadius_eq_one h0, hrad,
+    zero_mul] at hle
+  exact one_ne_zero (hle.antisymm zero_le_one)
 
 namespace FormalMultilinearSeries
 
@@ -159,6 +201,14 @@ theorem summable_norm_smul_sub_pow_of_le_radius {A : Type*} [NormedRing A] [Norm
     calc ‖p.coeff n‖ * ‖b ^ n‖
         ≤ ‖p.coeff n‖ * (C * (ρ : ℝ) ^ n) := mul_le_mul_of_nonneg_left (hC n) (norm_nonneg _)
       _ = C * (‖p.coeff n‖ * (ρ : ℝ) ^ n) := by ring
+
+/-- In a complex Banach algebra, an element has spectral radius zero exactly when it has Gelfand
+radius zero. -/
+theorem spectralRadius_eq_zero_iff_gelfandRadius_eq_zero {A : Type*} [NormedRing A]
+    [NormedAlgebra ℂ A] [CompleteSpace A] {a : A} :
+    spectralRadius ℂ a = 0 ↔ gelfandRadius a = 0 := by
+  rw [spectrum.spectralRadius_eq_gelfandRadius, ENNReal.ofReal_eq_zero,
+    (gelfandRadius_nonneg a).ge_iff_eq']
 
 variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℂ A] [IsScalarTower ℂ A A]
   [SMulCommClass ℂ A A] [CompleteSpace A]
