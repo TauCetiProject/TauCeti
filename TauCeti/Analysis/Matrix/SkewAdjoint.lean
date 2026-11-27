@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Module
 public import Mathlib.Algebra.Star.SelfAdjoint
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
+public import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Strict upper coordinates for skew-adjoint matrices
@@ -16,6 +18,9 @@ public import TauCeti.Algebra.BigOperators.Finset.Pairs
 A continuous real linear map extends the strict upper entries of a matrix with entries in a real
 star module, such as a real or complex matrix, to a skew-adjoint matrix with zero diagonal by
 reflecting them with negative star.
+
+Square matrices of a fixed finite size over a locally compact Hausdorff star module form a
+locally compact space of skew-adjoint matrices, as a closed subset of all matrices.
 -/
 
 public section
@@ -75,3 +80,17 @@ theorem skewAdjointOfStrictUpper_mem (x : FinStrictUpper n → E) :
   · simp [h, star_apply]
 
 end TauCeti
+
+namespace Matrix
+
+variable {m R E : Type*} [Finite m] [Semiring R] [StarMul R] [TrivialStar R] [AddCommGroup E]
+  [Module R E] [StarAddMonoid E] [StarModule R E] [TopologicalSpace E] [ContinuousNeg E]
+  [ContinuousStar E] [T2Space E] [LocallyCompactSpace E]
+
+/-- The skew-adjoint square matrices of a finite size over a locally compact Hausdorff star module
+are locally compact, as a closed subset of all matrices. -/
+instance instLocallyCompactSpaceSkewAdjoint :
+    LocallyCompactSpace (skewAdjoint.submodule R (Matrix m m E)) :=
+  (isClosed_eq continuous_star continuous_neg).locallyCompactSpace
+
+end Matrix

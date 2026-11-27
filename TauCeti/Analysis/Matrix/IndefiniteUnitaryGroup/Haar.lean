@@ -254,7 +254,7 @@ private theorem injOn_cayleyTransition : InjOn (cayleyTransition a) (transitionS
     have := congrArg (cayleyChartUnitary A) h
     rw [cayleyChartUnitary_cayleyTransition hA hA' a hS,
       cayleyChartUnitary_cayleyTransition hA hA' a hS', mul_right_inj] at this
-    apply injOn_cayleyChart hA hA' hS.1 hS'.1
+    apply injOn_cayleyChart hA' hS.1 hS'.1
     rw [← coe_cayleyChartUnitary hA hA' hS.1, ← coe_cayleyChartUnitary hA hA' hS'.1, this]
 
 /-- The image of `transitionSource a` under the transition map contains `transitionSource a⁻¹`:
@@ -266,11 +266,11 @@ private theorem transitionSource_inv_subset_image :
   have hfT := cayleyChartUnitary_cayleyTransition hA hA' a⁻¹ hS'
   have hT' : cayleyTransition a⁻¹ S' ∈ transitionSource a := by
     refine ⟨hT, ?_⟩
-    have h := isUnit_one_add_cayleyChart hA hA' hS'.1
+    have h := isUnit_one_add_cayleyChart A S'
     rwa [← coe_cayleyChartUnitary hA hA' hS'.1, ← mul_inv_cancel_left a (cayleyChartUnitary A S'),
       ← hfT, Subgroup.coe_mul, Units.val_mul, coe_cayleyChartUnitary hA hA' hT] at h
   refine ⟨_, hT', ?_⟩
-  apply injOn_cayleyChart hA hA' (cayleyTransition_mem hA hA' a hT') hS'.1
+  apply injOn_cayleyChart hA' (cayleyTransition_mem hA hA' a hT') hS'.1
   rw [← coe_cayleyChartUnitary hA hA' (cayleyTransition_mem hA hA' a hT'),
     ← coe_cayleyChartUnitary hA hA' hS'.1, cayleyChartUnitary_cayleyTransition hA hA' a hT', hfT,
     mul_inv_cancel_left]
@@ -532,7 +532,7 @@ theorem isHaarMeasure_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
       · by_cases hS' : S ∈ cayleyChartSource A
         · rw [indicator_of_mem hS]
           obtain ⟨S₀, hS₀, hS₀'⟩ : cayleyChartUnitary A S ∈ cayleyChartUnitary A '' K₀ := hS
-          have : S₀ = S := injOn_cayleyChart hA hA' (hK₀s hS₀) hS' <| by
+          have : S₀ = S := injOn_cayleyChart hA' (hK₀s hS₀) hS' <| by
             rw [← coe_cayleyChartUnitary hA hA' (hK₀s hS₀), hS₀', coe_cayleyChartUnitary hA hA' hS']
           rw [indicator_of_mem (this ▸ hS₀)]
         · rw [indicator_of_mem hS, cayleyDensity_of_notMem hS']

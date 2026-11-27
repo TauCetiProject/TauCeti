@@ -5,19 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.Module
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
+public import TauCeti.Analysis.Matrix.SkewAdjoint
 
 /-!
 # Haar measures on skew-Hermitian matrices
 
 The Frobenius norm gives the same topology on complex matrices as the topology of entries.
-This file transfers Borel and Haar structures between these presentations, supplies local
-compactness of skew-Hermitian matrices, and makes the change of variables formula available
-for derivatives computed in the Frobenius norm and measures on the entry topology.
+This file transfers Borel and Haar structures between these presentations and makes the change
+of variables formula available for derivatives computed in the Frobenius norm and measures on the
+entry topology.
 -/
 
 public section
@@ -27,19 +27,7 @@ open scoped ENNReal
 
 namespace Matrix
 
-variable {n : Type*}
-
-open scoped Matrix.Norms.Frobenius in
-/-- The skew-Hermitian matrices are locally compact, as a finite-dimensional normed space for the
-Frobenius norm, whose topology is the topology of entries. -/
-instance instLocallyCompactSpaceSkewAdjoint [Finite n] :
-    LocallyCompactSpace (skewAdjoint.submodule ℝ (Matrix n n ℂ)) := by
-  have := Fintype.ofFinite n
-  have := FiniteDimensional.proper_real (skewAdjoint.submodule ℝ (Matrix n n ℂ))
-  exact (inferInstance : @LocallyCompactSpace (skewAdjoint.submodule ℝ (Matrix n n ℂ))
-    NormedAddCommGroup.toMetricSpace.toUniformSpace.toTopologicalSpace)
-
-variable [Fintype n]
+variable {n : Type*} [Fintype n]
 
 open scoped Matrix.Norms.Frobenius in
 /-- The Borel structure of the skew-Hermitian matrices for the topology of the Frobenius norm,
