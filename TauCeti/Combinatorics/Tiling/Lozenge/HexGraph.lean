@@ -9,6 +9,8 @@ public import TauCeti.Combinatorics.Tiling.Lozenge.Lattice
 public import Mathlib.Algebra.Order.Group.End
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import Mathlib.Combinatorics.SimpleGraph.Paths
+public import Mathlib.Combinatorics.SimpleGraph.Ends.Defs
+import Mathlib.Data.Int.Interval
 
 /-!
 # The dual hexagonal graph of the triangular lattice
@@ -44,6 +46,8 @@ corresponding to the pair of its white and its black face.
   bijection between the edges of the lattice and of `hexGraph` commutes with translations and `ρ`.
 * `TauCeti.vertexCycle_isCycle`, `TauCeti.toFinset_support_vertexCycle`: the six faces at a vertex
   form a `6`-cycle of `hexGraph`.
+* `TauCeti.hexGraph_existsUnique_infinite_supp_of_finite`: for finite `R`, exactly one component
+  of the faces outside `R` is infinite.
 
 ## References
 
@@ -348,5 +352,139 @@ theorem toFinset_support_vertexCycle (v : ℤ × ℤ) :
   obtain ⟨x, y⟩ := v
   ext ⟨⟨a, b⟩, c⟩
   cases c <;> simp [vertexCycle] <;> omega
+
+/-! ### Components outside a finite set -/
+
+/-- A finite set of faces lies in a box: there is `N ≥ 0` with `|v.1| ≤ N` and `|v.2| ≤ N` for the
+lower-left vertex `v` of every face of `R`. -/
+private theorem exists_abs_le_of_finite {R : Set TriFace} (hR : R.Finite) :
+    ∃ N : ℤ, 0 ≤ N ∧ ∀ f ∈ R, |f.v.1| ≤ N ∧ |f.v.2| ≤ N := by
+  obtain ⟨N, hN⟩ := (hR.image fun f : TriFace => max |f.v.1| |f.v.2|).bddAbove
+  refine ⟨max N 0, le_max_right _ _, fun f hf => ?_⟩
+  have h := (hN ⟨f, hf, rfl⟩).trans (le_max_left N 0)
+  exact ⟨(le_max_left _ _).trans h, (le_max_right _ _).trans h⟩
+
+/-- The faces at positions in the box `[-N, N]²` form a finite set. -/
+private theorem finite_setOf_abs_le (N : ℤ) :
+    {f : TriFace | |f.v.1| ≤ N ∧ |f.v.2| ≤ N}.Finite := by
+  refine (((Set.finite_Icc (-N) N).prod (Set.finite_Icc (-N) N)).prod
+    (Set.finite_univ (α := Bool))).image (fun p => (⟨p.1, p.2⟩ : TriFace)) |>.subset ?_
+  rintro ⟨v, b⟩ ⟨h₁, h₂⟩
+  exact ⟨(v, b), ⟨⟨abs_le.1 h₁, abs_le.1 h₂⟩, trivial⟩, rfl⟩
+
+section Far
+
+variable {S : Set TriFace}
+
+/-- Reachability in the graph of faces of `S`, for faces given as elements of `TriFace`. -/
+private def ReachIn (S : Set TriFace) (f g : TriFace) : Prop :=
+  ∃ (hf : f ∈ S) (hg : g ∈ S), (hexGraph.induce S).Reachable ⟨f, hf⟩ ⟨g, hg⟩
+
+private theorem ReachIn.refl {f : TriFace} (hf : f ∈ S) : ReachIn S f f := ⟨hf, hf, .rfl⟩
+
+private theorem ReachIn.trans {f g k : TriFace} (h₁ : ReachIn S f g) (h₂ : ReachIn S g k) :
+    ReachIn S f k := by
+  obtain ⟨hf, hg, r₁⟩ := h₁
+  obtain ⟨hg', hk, r₂⟩ := h₂
+  exact ⟨hf, hk, r₁.trans r₂⟩
+
+private theorem ReachIn.symm {f g : TriFace} (h : ReachIn S f g) : ReachIn S g f := by
+  obtain ⟨hf, hg, h⟩ := h
+  exact ⟨hg, hf, h.symm⟩
+
+private theorem reachIn_of_adj {f g : TriFace} (hf : f ∈ S) (hg : g ∈ S) (h : hexGraph.Adj f g) :
+    ReachIn S f g :=
+  ⟨hf, hg, (SimpleGraph.induce_adj.2 h).reachable⟩
+
+/-- Faces `g a` and `g b` along a line `g : ℤ → TriFace` are joined when consecutive faces are. -/
+private theorem reachIn_line {g : ℤ → TriFace} (hg : ∀ k, ReachIn S (g k) (g (k + 1)))
+    (a b : ℤ) : ReachIn S (g a) (g b) := by
+  have h : ∀ (a : ℤ) (n : ℕ), ReachIn S (g a) (g (a + n)) := fun a n => by
+    induction n with
+    | zero => simpa using ReachIn.refl (hg a).1
+    | succ n ih => exact ih.trans (by simpa [add_assoc] using hg (a + n))
+  rcases le_total a b with hab | hab
+  · obtain ⟨n, rfl⟩ := Int.le.dest hab
+    exact h a n
+  · obtain ⟨n, rfl⟩ := Int.le.dest hab
+    exact (h b n).symm
+
+/-- `W(x, y)` and `W(x + 1, y)` are joined through `B(x + 1, y)`. -/
+private theorem reachIn_white_add_one_fst {x y : ℤ} (h : ∀ b, (⟨(x, y), b⟩ : TriFace) ∈ S)
+    (h' : ∀ b, (⟨(x + 1, y), b⟩ : TriFace) ∈ S) :
+    ReachIn S ⟨(x, y), true⟩ ⟨(x + 1, y), true⟩ := by
+  refine (reachIn_of_adj (h true) (h' false) ?_).trans (reachIn_of_adj (h' false) (h' true) ?_)
+  · rw [← SimpleGraph.mem_neighborSet, hexGraph_neighborSet_mk_true]
+    simp
+  · rw [← SimpleGraph.mem_neighborSet, hexGraph_neighborSet_mk_false]
+    simp
+
+/-- `W(x, y)` and `W(x, y + 1)` are joined through `B(x, y)`. -/
+private theorem reachIn_white_add_one_snd {x y : ℤ} (h : ∀ b, (⟨(x, y), b⟩ : TriFace) ∈ S)
+    (h' : ∀ b, (⟨(x, y + 1), b⟩ : TriFace) ∈ S) :
+    ReachIn S ⟨(x, y), true⟩ ⟨(x, y + 1), true⟩ := by
+  refine (reachIn_of_adj (h true) (h false) ?_).trans (reachIn_of_adj (h false) (h' true) ?_)
+  · rw [← SimpleGraph.mem_neighborSet, hexGraph_neighborSet_mk_true]
+    simp
+  · rw [← SimpleGraph.mem_neighborSet, hexGraph_neighborSet_mk_false]
+    simp
+
+/-- Every face at a position outside the box `[-N, N]²` is joined to `W(N + 1, N + 1)` by faces at
+positions outside the box. -/
+private theorem reachIn_far {N : ℤ} (hNN : N < |N + 1|)
+    (hS : ∀ u : ℤ × ℤ, (N < |u.1| ∨ N < |u.2|) → ∀ b, (⟨u, b⟩ : TriFace) ∈ S)
+    (f : TriFace) (hf : N < |f.v.1| ∨ N < |f.v.2|) :
+    ReachIn S f ⟨(N + 1, N + 1), true⟩ := by
+  obtain ⟨⟨x, y⟩, c⟩ := f
+  have hwhite : ReachIn S ⟨(x, y), c⟩ ⟨(x, y), true⟩ := by
+    cases c
+    · refine reachIn_of_adj (hS _ hf false) (hS _ hf true) ?_
+      rw [← SimpleGraph.mem_neighborSet, hexGraph_neighborSet_mk_false]
+      simp
+    · exact ReachIn.refl (hS _ hf true)
+  have hrow {y : ℤ} (hy : N < |y|) (a b : ℤ) :
+      ReachIn S ⟨(a, y), true⟩ ⟨(b, y), true⟩ :=
+    reachIn_line (g := fun x => ⟨(x, y), true⟩)
+      (fun _ => reachIn_white_add_one_fst (hS _ (Or.inr hy)) (hS _ (Or.inr hy))) a b
+  have hcol {x : ℤ} (hx : N < |x|) (a b : ℤ) :
+      ReachIn S ⟨(x, a), true⟩ ⟨(x, b), true⟩ :=
+    reachIn_line (g := fun y => ⟨(x, y), true⟩)
+      (fun _ => reachIn_white_add_one_snd (hS _ (Or.inl hx)) (hS _ (Or.inl hx))) a b
+  refine hwhite.trans ?_
+  rcases hf with hx | hy
+  · exact (hcol hx y (N + 1)).trans (hrow hNN x (N + 1))
+  · exact (hrow hy x (N + 1)).trans (hcol hNN y (N + 1))
+
+end Far
+
+/-- **Exactly one infinite component.** For finite `R`, exactly one component of the graph of faces
+outside `R`, adjacent when they share an edge, is infinite: the one containing every face far from
+`R`. -/
+theorem hexGraph_existsUnique_infinite_supp_of_finite {R : Set TriFace} (hR : R.Finite) :
+    ∃! c : hexGraph.ComponentCompl R, c.supp.Infinite := by
+  obtain ⟨N, hN, hRN⟩ := exists_abs_le_of_finite hR
+  have hP : ∀ u : ℤ × ℤ, (N < |u.1| ∨ N < |u.2|) → ∀ b, (⟨u, b⟩ : TriFace) ∈ Rᶜ := by
+    intro u hu b hb
+    have := hRN _ hb
+    rcases hu with hu | hu
+    · exact absurd this.1 (not_le.2 hu)
+    · exact absurd this.2 (not_le.2 hu)
+  have hNN : N < |N + 1| := by rw [abs_of_pos (by omega)]; omega
+  have hhub : (⟨(N + 1, N + 1), true⟩ : TriFace) ∉ R := hP _ (Or.inl hNN) true
+  have hfar : ∀ f : TriFace, (N < |f.v.1| ∨ N < |f.v.2|) → f ∈ hexGraph.componentComplMk hhub := by
+    intro f hf
+    obtain ⟨hfR, _, hr⟩ := reachIn_far hNN hP f hf
+    exact ⟨hfR, SimpleGraph.ConnectedComponent.sound hr⟩
+  refine ⟨hexGraph.componentComplMk hhub, ?_, fun c hc => ?_⟩
+  · have : Infinite TriFace := Infinite.of_injective (fun v : ℤ × ℤ => (⟨v, true⟩ : TriFace))
+      fun a b h => by simpa using congrArg TriFace.v h
+    refine (finite_setOf_abs_le N).infinite_compl.mono fun f hf => hfar f ?_
+    by_contra! H
+    exact hf H
+  · obtain ⟨f, ⟨_, rfl⟩, hf⟩ : ∃ f ∈ c, N < |f.v.1| ∨ N < |f.v.2| := by
+      by_contra! H
+      exact hc ((finite_setOf_abs_le N).subset H)
+    obtain ⟨_, h⟩ := hfar f hf
+    exact h
 
 end TauCeti

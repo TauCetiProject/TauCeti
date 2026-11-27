@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
+public import TauCeti.Topology.Algebra.ConstMulAction
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
@@ -25,6 +27,9 @@ The main case is a subgroup `G'` of `G` with a manifold structure for which its 
 `C^n`, such as a closed subgroup of a Lie group with its closed-subgroup structure, acting on an
 invariant embedded submanifold `Z` by the induced action of a `SubMulAction`. This is how the
 stabilizer of a value of an equivariant moment map acts on the corresponding level.
+
+A `C^n` action of a compact monoid also restricts to a `C^n` action on the largest invariant open
+subset of any open set (`TopologicalSpace.Opens.contMDiffSMul_invariantCore`).
 
 ## References
 
@@ -70,3 +75,15 @@ theorem contMDiffSMul {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [SMul 
       hcomp ▸ (hf.comp contMDiff_fst).smul (hi.isImmersion.contMDiff.comp contMDiff_snd)
 
 end Manifold.IsSmoothEmbedding
+
+namespace TopologicalSpace.Opens
+
+/-- A `C^n` action of a compact monoid restricts to a `C^n` action on the invariant core of an
+open set, the largest invariant open subset of it. -/
+instance contMDiffSMul_invariantCore {G : Type*} [Monoid G] [TopologicalSpace G] [CompactSpace G]
+    [ChartedSpace H G] [MulAction G M] [ContinuousSMul G M] [ContMDiffSMul I I' n G M]
+    (U : Opens M) : ContMDiffSMul I I' n G (U.invariantCore G) :=
+  ⟨(TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1 <|
+    contMDiff_smul.comp (contMDiff_fst.prodMk (contMDiff_subtypeVal.comp contMDiff_snd))⟩
+
+end TopologicalSpace.Opens
