@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -24,6 +24,10 @@ records the steps of the patching that do not depend on the domain.
   smooth on an open set `S` with `|f| ≤ 1` there, whose derivative is supported in a compact set
   `K` and bounded by `M` there, and for `‖J‖ ≤ B` along `u` on `K`, a `C²` section `ξ` with compact
   support in `S` satisfies `∫ ‖D_u (f ξ)‖² ≤ 2 ∫ ‖D_u ξ‖² + 2 (M (1 + B))² ∫_K ‖ξ‖²`.
+* `TauCeti.SymplecticForm.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le_of_isOpen`:
+  the same cost of a cutoff for the formal adjoint `D_u^*` on covector fields, in the `L²` norm
+  with a weight `w ≥ 0` continuous on `S` and at most `Λ` on `K`:
+  `∫ w ‖D_u^* (f η)‖² ≤ 2 ∫ w ‖D_u^* η‖² + 2 (M (1 + B))² Λ ∫_K ‖η‖²`.
 * `TauCeti.Floer.exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le`: for a monotone
   family of compact truncations `K T`, an estimate at every height `R₀` of the energy on the ends
   beyond `R₀ + 1` plus the energy on `K R₀`, by `C' (X ξ + ∫_{K (R₀ + 1)} ‖ξ‖²)`, gives the estimate
@@ -35,9 +39,10 @@ records the steps of the patching that do not depend on the domain.
 * `TauCeti.Floer.sum_add_le_mul_add`: the arithmetic that sums the end and core estimates into
   one constant times `∫ ‖D_u ξ‖² + ∫_K ‖ξ‖²`.
 
-These are shared by the pair of pants (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm`)
-and the spheres with moving input ends
-(`TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.SemiFredholm`).
+These are shared by the pair of pants
+(`TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm`), the spheres with moving input ends
+(`TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.SemiFredholm`) and the pair of pants
+capped at `0` (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.LeftCapping.Adjoint`).
 
 ## References
 
@@ -114,6 +119,47 @@ theorem integral_norm_floerLinearization_fun_smul_sq_le (ω : SymplecticForm V)
       hzS (hξS (tsupport_smul_subset_right _ _ h)))
     (hint hξ hξc hξS)
     (hint hfξ (hξc.smul_left (f := f)) ((tsupport_smul_subset_right _ _).trans hξS))
+
+/-- **The weighted `L²` norm of the formal adjoint on a cut-off covector field.** Let the data be
+regular along `u` on an open set `S`, let `f` be `C²` on `S` with `|f| ≤ 1`, with derivative
+supported, on `S`, in a compact set `K` and bounded by `M` there, let `‖J‖ ≤ B` along `u` on `K`
+and let the weight `w ≥ 0`, continuous on `S`, satisfy `w ≤ Λ` on `K`. Then for a `C²` covector
+field `η` with compact support in `S`,
+`∫ w ‖D^* (f η)‖² ≤ 2 ∫ w ‖D^* η‖² + 2 (M (1 + B))² Λ ∫_K ‖η‖²`. This is the adjoint counterpart of
+`integral_norm_floerLinearization_fun_smul_sq_le`, the cost of a cutoff in the patching of a
+weighted semi-Fredholm estimate of `D_u^*`. -/
+theorem integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le_of_isOpen
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    {S : Set (ℝ × ℝ)} (hS : IsOpen S) (hJ : ∀ z ∈ S, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ S, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ S, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ S, ContDiffAt ℝ 1 u z) {K : Set (ℝ × ℝ)} (hK : IsCompact K) {f : ℝ × ℝ → ℝ}
+    (hf : ∀ z ∈ S, ContDiffAt ℝ 2 f z) (hf₁ : ∀ z ∈ S, |f z| ≤ 1)
+    (hfK : ∀ z ∈ S, fderiv ℝ f z ≠ 0 → z ∈ K) {M B Λ : ℝ}
+    (hM : ∀ z ∈ K, ‖fderiv ℝ f z‖ ≤ M) (hB : ∀ z ∈ K, ‖J z (u z)‖ ≤ B) {w : ℝ × ℝ → ℝ}
+    (hw : ∀ z, 0 ≤ w z) (hwc : ContinuousOn w S) (hΛ₀ : 0 ≤ Λ) (hΛ : ∀ z ∈ K, w z ≤ Λ)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
+    (hηS : tsupport η ⊆ S) :
+    ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ^ 2 ≤
+      2 * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
+        2 * (M * (1 + B)) ^ 2 * Λ * ∫ z in K, ‖η z‖ ^ 2 := by
+  have hfη : ContDiff ℝ 2 fun z ↦ f z • η z :=
+    (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
+      (fun z hz ↦ (hf z hz).contDiffWithinAt) hη.contDiffOn hS hηS
+  refine integral_mul_norm_fun_smul_sq_le (D := ω.floerLinearizationAdjoint J Ks Kt u)
+    (b := fun z ↦ ‖J z (u z)‖) hw hK hfK hM hB hΛ₀ hΛ hη.continuous
+    (fun z hzS _ _ hM' hB' ↦ ?_)
+    (fun z hzS ↦ floerLinearizationAdjoint_of_notMem_tsupport fun h ↦
+      hzS (hηS (tsupport_smul_subset_right _ _ h)))
+    (ω.integrable_mul_norm_floerLinearizationAdjoint_sq hS hJ hKs hKt hu hwc
+      (hη.of_le one_le_two) subset_rfl hηc hηS)
+    (ω.integrable_mul_norm_floerLinearizationAdjoint_sq hS hJ hKs hKt hu hwc
+      (hfη.of_le one_le_two) (tsupport_smul_subset_right _ _) hηc hηS)
+  exact ω.norm_floerLinearizationAdjoint_fun_smul_sq_le (Ks := Ks) (Kt := Kt)
+    ((hf z hzS).differentiableAt two_ne_zero) (hη.differentiable two_ne_zero z)
+    (((hJ z hzS).differentiableAt one_ne_zero).comp (f := fun w ↦ (w, u w)) z
+      (differentiableAt_id.prodMk ((hu z hzS).differentiableAt one_ne_zero)))
+    (hf₁ z hzS) hM' hB'
 
 /-- **The core estimate.** Let `f` be `C²` on an open set `S`, `1` to first order on a measurable
 set `K₀`, and `|f| ≤ 1` on a compact set `K ⊆ S` containing `K₀`. If `D_u` satisfies the `L²`

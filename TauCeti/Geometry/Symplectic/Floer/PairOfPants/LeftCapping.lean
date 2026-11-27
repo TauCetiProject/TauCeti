@@ -46,7 +46,13 @@ the output datum translated by `c`. For `0 ≤ c ≤ 1`:
   (`TauCeti.Floer.norm_lt_of_one_lt_fst_positiveEndCoord_zero`). So for `T ≥ 1`, `ℂ ∖ {1}` is
   covered by the truncation `S_T`, the disc `‖w‖ ≤ 1/4` and the bands `s > T` of the input end
   at `1` and of the output end
-  (`TauCeti.Floer.subset_preimage_truncation_union_union_image_positiveEndChart`);
+  (`TauCeti.Floer.subset_preimage_truncation_union_union_image_positiveEndChart`); the part
+  `s > 0` of the input end at `1` lies in the disc `|w - 1| < 1/2`
+  (`TauCeti.Floer.norm_sub_one_lt_of_pos_fst_positiveEndCoord_one`), the part `s > 0` of the
+  output end recentred at `c` lies off the disc `|w - c| ≤ 2`
+  (`TauCeti.Floer.two_lt_norm_sub_of_pos_fst_positiveEndCoord_inf_sub`), and the coordinate of
+  that end is bounded above on every compact set
+  (`TauCeti.Floer.exists_forall_fst_positiveEndCoord_inf_sub_le`);
 * off the disc `‖w‖ < 3/2` its member `c` at `w + c` is the pair-of-pants datum at `w`
   (`TauCeti.Floer.cappedExchangePerturbation_add`); in real coordinates, it is the pair-of-pants
   datum on the part `s > 0` of the input end at `1`
@@ -278,6 +284,39 @@ theorem half_le_norm_positiveEndChart {q : Puncture} (hq : q ≠ zero) {ζ : ℝ
   have h := (re_endCoord_le_iff (q := zero) (by decide) (r := 0)
     (by rw [endCenter_zero]; exact hS.1)).1 h0
   simpa [endCenter_zero] using h
+
+/-- Beyond the height `0` of the input end at `1`, points lie in the disc `|w - 1| < 1/2`. -/
+theorem norm_sub_one_lt_of_pos_fst_positiveEndCoord_one {z : ℝ × ℝ}
+    (hz : 0 < (positiveEndCoord one z).1) : ‖Complex.equivRealProdCLM.symm z - 1‖ < 1 / 2 := by
+  refine not_le.1 fun h ↦ (not_le.2 hz) ?_
+  rw [fst_positiveEndCoord, endSign_one, one_mul]
+  exact re_endCoord_nonpos_of_le_norm_sub_endCenter (by decide) (by rwa [endCenter_one])
+
+/-- Beyond the height `0` of the output end recentred at `c`, points lie off the closed disc
+`|w - c| ≤ 2` bounded by the circle `s = 0` of that end. -/
+theorem two_lt_norm_sub_of_pos_fst_positiveEndCoord_inf_sub {z : ℝ × ℝ}
+    (hz : 0 < (positiveEndCoord inf (z - (c, 0))).1) :
+    2 < ‖Complex.equivRealProdCLM.symm z - c‖ := by
+  have h0 : Complex.equivRealProdCLM.symm (z - (c, 0)) ≠ 0 := fun h0 ↦ by
+    rw [fst_positiveEndCoord, h0, ← endCenter_inf, re_endCoord_endCenter, mul_zero] at hz
+    exact lt_irrefl _ hz
+  have h := (lt_fst_positiveEndCoord_inf_iff h0).1 hz
+  rwa [mul_zero, exp_zero, mul_one, TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero] at h
+
+/-- The coordinate `-s` of the output end recentred at `c` is bounded above on every compact
+set. -/
+theorem exists_forall_fst_positiveEndCoord_inf_sub_le {K : Set (ℝ × ℝ)} (hK : IsCompact K) :
+    ∃ N, ∀ z ∈ K, (positiveEndCoord inf (z - (c, 0))).1 ≤ N := by
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn
+    (f := fun z ↦ Complex.equivRealProdCLM.symm z - c)
+    (Complex.equivRealProdCLM.symm.continuous.sub continuous_const).continuousOn
+  refine ⟨|M|, fun z hz ↦ ?_⟩
+  rw [fst_positiveEndCoord, endSign_inf, neg_one_mul,
+    TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero]
+  refine neg_re_endCoord_inf_le (abs_nonneg M) ((hM z hz).trans ?_)
+  -- `M ≤ |M| ≤ 2 exp (2π|M|)`, from `exp x ≥ 1 + x`.
+  have h₁ := add_one_le_exp (2 * π * |M|)
+  nlinarith [le_abs_self M, abs_nonneg M, two_le_pi]
 
 /-- Beyond the height `1` of the end at `0`, points lie in the disc `|w| < 1/4`. -/
 theorem norm_lt_of_one_lt_fst_positiveEndCoord_zero {z : ℝ × ℝ}
