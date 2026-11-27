@@ -35,7 +35,11 @@ hence sends isomorphisms to isomorphisms
 pullback `f^* φ` of a morphism `φ` to its pullback along the composite
 (`CategoryTheory.Pseudofunctor.pullHom_map`). Composition and identities of local morphisms are
 therefore morphisms of presheaves on `Over S`
-(`CategoryTheory.Pseudofunctor.presheafHomComp`, `CategoryTheory.Pseudofunctor.presheafHomId`).
+(`CategoryTheory.Pseudofunctor.presheafHomComp`, `CategoryTheory.Pseudofunctor.presheafHomId`),
+and so is postcomposition with a morphism `φ : N ⟶ N'`
+(`CategoryTheory.Pseudofunctor.presheafHomPostcomp`), which makes `presheafHom M N` and, for a
+prestack, `sheafHom J M N` functors of `N` (`CategoryTheory.Pseudofunctor.presheafHomFunctor`,
+`CategoryTheory.Pseudofunctor.sheafHomFunctor`).
 
 It also shows that pulling back morphisms between pullbacks commutes with restricting `F` along a
 functor `p : D ⥤ C`: for the pseudofunctor `p.op.toPseudofunctor.comp F`, pulling back along `g`
@@ -314,6 +318,64 @@ lemma pullHom_mapComp'_hom ⦃Z X : C⦄ (p : X ⟶ Z) (N : F.obj (.mk (op Z))) 
     (f₀₂ := (f ≫ p).op.toLoc) (f₁₃ := (g ≫ f).op.toLoc) (h₀₂ := rfl) (h₁₃ := rfl)
     (hf := by simp [← Quiver.Hom.comp_toLoc, ← op_comp])]
   simp [pullHom]
+
+variable (F) in
+/-- **Postcomposition with a morphism `φ : N ⟶ N'`** as a morphism of presheaves of morphisms
+`F.presheafHom M N ⟶ F.presheafHom M N'`: at `(Y, f)` a local morphism `p : f^* M ⟶ f^* N` goes
+to `p ≫ f^* φ`. -/
+@[expose]
+def presheafHomPostcomp (M : F.obj (.mk (op S))) {N N' : F.obj (.mk (op S))} (φ : N ⟶ N') :
+    F.presheafHom M N ⟶ F.presheafHom M N' where
+  app T := TypeCat.ofHom fun p ↦ p ≫ (F.map T.unop.hom.op.toLoc).toFunctor.map φ
+  naturality T T' g := by
+    ext p
+    change pullHom p g.unop.left T'.unop.hom T'.unop.hom ≫
+        (F.map T'.unop.hom.op.toLoc).toFunctor.map φ =
+      pullHom (p ≫ (F.map T.unop.hom.op.toLoc).toFunctor.map φ) g.unop.left T'.unop.hom
+        T'.unop.hom
+    rw [pullHom_comp _ _ g.unop.left T'.unop.hom T'.unop.hom T'.unop.hom (Over.w g.unop)
+      (Over.w g.unop) (Over.w g.unop), pullHom_map]
+
+lemma presheafHomPostcomp_app_apply (M : F.obj (.mk (op S))) {N N' : F.obj (.mk (op S))}
+    (φ : N ⟶ N') (T : (Over S)ᵒᵖ) (p : (F.presheafHom M N).obj T) :
+    (F.presheafHomPostcomp M φ).app T p = p ≫ (F.map T.unop.hom.op.toLoc).toFunctor.map φ :=
+  (rfl)
+
+variable (F) in
+/-- The presheaves of morphisms out of `M`, as a functor of the target: `N ↦ F.presheafHom M N`,
+with `φ : N ⟶ N'` acting by postcomposition (`Pseudofunctor.presheafHomPostcomp`). -/
+@[expose, simps]
+def presheafHomFunctor (M : F.obj (.mk (op S))) :
+    F.obj (.mk (op S)) ⥤ (Over S)ᵒᵖ ⥤ Type _ where
+  obj N := F.presheafHom M N
+  map φ := F.presheafHomPostcomp M φ
+  map_id N := by
+    ext T p
+    change p ≫ _ = p
+    simp
+  map_comp φ ψ := by
+    ext T p
+    change p ≫ _ = (p ≫ _) ≫ _
+    simp
+
+variable (F) in
+/-- For a prestack, the sheaves of morphisms out of `M`, as a functor of the target:
+`N ↦ F.sheafHom J M N`, with morphisms acting by postcomposition. -/
+@[expose]
+def sheafHomFunctor (J : GrothendieckTopology C) [F.IsPrestack J] (M : F.obj (.mk (op S))) :
+    F.obj (.mk (op S)) ⥤ Sheaf (J.over S) (Type _) :=
+  ObjectProperty.lift _ (F.presheafHomFunctor M) fun N ↦ IsPrestack.isSheaf J M N
+
+@[simp]
+lemma sheafHomFunctor_obj (J : GrothendieckTopology C) [F.IsPrestack J] (M N : F.obj (.mk (op S))) :
+    (F.sheafHomFunctor J M).obj N = F.sheafHom J M N :=
+  (rfl)
+
+@[simp]
+lemma sheafHomFunctor_map_hom (J : GrothendieckTopology C) [F.IsPrestack J]
+    (M : F.obj (.mk (op S))) {N N' : F.obj (.mk (op S))} (φ : N ⟶ N') :
+    ((F.sheafHomFunctor J M).map φ).hom = F.presheafHomPostcomp M φ :=
+  (rfl)
 
 namespace LocallyDiscreteOpToCat
 
