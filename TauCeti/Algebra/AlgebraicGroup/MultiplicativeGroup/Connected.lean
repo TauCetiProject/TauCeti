@@ -11,16 +11,14 @@ import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
 import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Equiv
 
 /-!
-# Geometric connectedness and finite type of the multiplicative group
+# Geometric connectedness of the multiplicative group
 
-The coordinate Hopf algebra `R[T;T⁻¹]` of `𝔾ₘ` is isomorphic to the group Hopf algebra
-`R[Multiplicative ℤ]` via `AddMonoidAlgebra.toMultiplicativeBialgEquiv`. Consequently it is of
-finite type over every commutative ring `R`, and over every field `k` it is geometrically connected.
+The coordinate Hopf algebra `k[T;T⁻¹]` of `𝔾ₘ` is isomorphic to the group Hopf algebra
+`k[Multiplicative ℤ]` via `AddMonoidAlgebra.toMultiplicativeBialgEquiv`, and hence is
+geometrically connected over every field `k`.
 
 ## Main declarations
 
-* `TauCeti.MultiplicativeGroup.instAlgebraFiniteTypeLaurentPolynomial`: `LaurentPolynomial R` is
-  a finite-type `R`-algebra.
 * `TauCeti.MultiplicativeGroup.geometricallyConnectedCommHopfAlgProperty_laurentPolynomial`:
   `k[T;T⁻¹]` is geometrically connected over every field `k`.
 -/
@@ -33,13 +31,6 @@ open scoped LaurentPolynomial
 namespace TauCeti.MultiplicativeGroup
 
 universe u
-
-/-- The Laurent polynomial coordinate Hopf algebra `R[T;T⁻¹]` of `𝔾ₘ` is of finite type over
-any commutative ring `R`. -/
-noncomputable instance instAlgebraFiniteTypeLaurentPolynomial (R : Type u) [CommRing R] :
-    Algebra.FiniteType R (LaurentPolynomial R) :=
-  (MonoidAlgebra.finiteType_of_fg (R := R) (M := Multiplicative ℤ)).equiv
-    (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).symm.toAlgEquiv
 
 /-- **The multiplicative group `𝔾ₘ = Spec k[T;T⁻¹]` is geometrically connected over every field.**
 -/
