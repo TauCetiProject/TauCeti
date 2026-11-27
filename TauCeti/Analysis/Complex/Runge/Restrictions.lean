@@ -15,8 +15,16 @@ On a compact subset `K` of an open plane set `U`, the restrictions of functions 
 on `U` are dense in the algebra of continuous functions on `K` that extend holomorphically
 to a neighborhood of `K` exactly when `U \ K` has no relatively compact component in `U`.
 
-This is the compact-open formulation of Runge approximation (A. Rainer,
-*Advanced Complex Analysis*, §11). On `K` the compact-open topology is the sup-norm topology.
+On `K` the compact-open topology is the sup-norm topology.
+
+## Main results
+
+* `TauCeti.isFilledIn_iff_denseRange_restrictToHolomorphicRestrictions` characterizes dense
+  range of the restriction homomorphism by `TauCeti.IsFilledIn`.
+
+## References
+
+* A. Rainer, *Advanced Complex Analysis*, §11.
 -/
 
 public section
@@ -25,7 +33,10 @@ open Set TopologicalSpace
 
 namespace TauCeti
 
-/-- Runge's theorem for the restriction homomorphism from `H(U)` to `O(K)`. -/
+/-- Runge's theorem (Rainer, *Advanced Complex Analysis*, §11). For compact `K ⊆ U`,
+restrictions of functions holomorphic on the open set `U` are dense in `O(K)` in the sup-norm
+topology if and only if `K` is filled in `U`, meaning that no connected component of `U \\ K`
+has compact closure contained in `U`. -/
 theorem isFilledIn_iff_denseRange_restrictToHolomorphicRestrictions {U : Opens ℂ} {K : Set ℂ}
     (hK : IsCompact K) (hKU : K ⊆ U) :
     IsFilledIn K U ↔ DenseRange (HolomorphicFunctions.restrictToHolomorphicRestrictions hKU) := by

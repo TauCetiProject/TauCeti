@@ -34,12 +34,14 @@ The algebra `O(s)` is neither open nor closed in general. As soon as `s` has int
 small multiples `ε • conj z` of the conjugate coordinate tend to `0` without ever lying in
 `O(s)`, so `O(s)` is not open (`not_isOpen_holomorphicRestrictions`). For the closed unit
 disc a uniform limit of polynomials outside `O(s)` shows that it is not closed either; this
-example is in `TauCeti.Analysis.Complex.Germ.HolomorphicRestrictions.NotClosed`.
+example is in the companion module on nonclosedness.
 
 ## Main definitions
 
 * `TauCeti.holomorphicGerms.toContinuousMap s`: the value map on germs near `s`.
 * `TauCeti.holomorphicRestrictions s`: its range `O(s)`, a subalgebra of `C(s, ℂ)`.
+* `TauCeti.HolomorphicFunctions.restrictToHolomorphicRestrictions`: the continuous algebra
+  homomorphism from `H(U)` to `O(s)` for `s ⊆ U`.
 
 ## Main results
 
@@ -256,11 +258,29 @@ def HolomorphicFunctions.restrictToHolomorphicRestrictions {U : Opens ℂ} (hs :
   ((ContinuousMap.compRightAlgHom ℂ ℂ (ContinuousMap.inclusion hs)).comp
     (holomorphicFunctions U).val).codRestrict _ (comp_inclusion_mem_holomorphicRestrictions hs)
 
+/-- The continuous map underlying restriction into `O(s)` is precomposition with inclusion.
+This is the same continuous map as in `holomorphicGerms.toContinuousMap_toGerm`.
+Use this lemma for bundled maps. The pointwise simp rule normalizes evaluations directly to
+`Set.inclusion`. -/
+theorem HolomorphicFunctions.val_restrictToHolomorphicRestrictions {U : Opens ℂ}
+    (hs : s ⊆ U) (f : holomorphicFunctions U) :
+    (restrictToHolomorphicRestrictions hs f).val =
+      (f : C(U, ℂ)).comp (ContinuousMap.inclusion hs) := (rfl)
+
 /-- Evaluation of a restricted holomorphic function uses the original value on `U`. -/
 @[simp]
 theorem HolomorphicFunctions.restrictToHolomorphicRestrictions_apply {U : Opens ℂ}
     (hs : s ⊆ U) (f : holomorphicFunctions U) (x : s) :
     (restrictToHolomorphicRestrictions hs f).val x = f.val (Set.inclusion hs x) := (rfl)
+
+/-- Restricting from `U` to `V` and then into `O(s)` agrees with direct restriction to `s`. -/
+@[simp]
+theorem HolomorphicFunctions.restrictToHolomorphicRestrictions_comp_restrict {U V : Opens ℂ}
+    (hVU : V ≤ U) (hs : s ⊆ V) :
+    (restrictToHolomorphicRestrictions hs).comp (restrict hVU) =
+      restrictToHolomorphicRestrictions (hs.trans hVU) := by
+  ext f x
+  simp only [AlgHom.comp_apply, restrictToHolomorphicRestrictions_apply, restrict_apply]
 
 /-- Restriction into `O(s)` is continuous in the compact-open topologies. -/
 @[fun_prop]
