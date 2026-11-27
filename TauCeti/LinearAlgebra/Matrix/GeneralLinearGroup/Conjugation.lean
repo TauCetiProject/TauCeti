@@ -76,6 +76,16 @@ theorem vecMul_eq_iff_eq_vecMul_inv [Semiring R] (g : GL n R) (a y : n → R) :
   · rintro rfl
     rw [vecMul_vecMul, ← Units.val_mul, inv_mul_cancel, Units.val_one, vecMul_one]
 
+/-- An invertible matrix cancels its inverse under iterated matrix-vector multiplication. -/
+theorem mulVec_inv_mulVec [Semiring R] (g : GL n R) (v : n → R) :
+    (g : Matrix n n R) *ᵥ ((g⁻¹ : GL n R) : Matrix n n R) *ᵥ v = v := by
+  simp [mulVec_mulVec]
+
+/-- The inverse of an invertible matrix cancels it under iterated matrix-vector multiplication. -/
+theorem inv_mulVec_mulVec [Semiring R] (g : GL n R) (v : n → R) :
+    ((g⁻¹ : GL n R) : Matrix n n R) *ᵥ (g : Matrix n n R) *ᵥ v = v := by
+  simp [mulVec_mulVec]
+
 /-- Conjugation by `g ∈ GL n R` carries `u (h - 1) v` to `(u g) (h - 1) (g⁻¹ v)`. -/
 theorem dotProduct_conj_sub_one_mulVec [Ring R] (g h : GL n R) (u v : n → R) :
     u ⬝ᵥ ((((g * h * g⁻¹ : GL n R) : Matrix n n R) - 1) *ᵥ v) =

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.NumberTheory.NumberField.CMField
+public import Mathlib.Data.Matrix.Mul
 public import TauCeti.Analysis.Complex.Basic
 public import TauCeti.FieldTheory.Galois.Hilbert90
 public import TauCeti.RingTheory.Norm.Quadratic
@@ -98,6 +99,15 @@ end TauCeti.NumberField.IsCMField
 namespace NumberField.IsCMField
 
 variable (K : Type*) [Field K] [CharZero K] [IsCMField K] [Algebra.IsIntegral ℚ K]
+
+open scoped ComplexConjugate in
+/-- At a complex embedding of a CM field, the hermitian square norm of a vector becomes the sum
+of the squared absolute values of its coordinates. -/
+theorem sum_norm_sq_eq_re_star_dotProduct {ι : Type*} [Fintype ι]
+    (φ : K →+* ℂ) (x : ι → K) :
+    ∑ j, ‖φ (x j)‖ ^ 2 = (φ (star x ⬝ᵥ x)).re := by
+  have hstar (a : K) : φ (star a) = conj (φ a) := complexEmbedding_complexConj K φ a
+  simp [dotProduct, hstar, Complex.conj_mul', ← Complex.ofReal_pow]
 
 local notation3 "K⁺" => maximalRealSubfield K
 
