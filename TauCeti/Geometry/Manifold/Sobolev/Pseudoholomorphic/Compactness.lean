@@ -46,13 +46,12 @@ chart data with a smooth map of `ℂ` into the chart target that is the identity
 data of class `C^ℓ` on all of `ℂ × V`, still converging in `C^ℓ`
 (`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_comp`), and the planar compactness theorem
 `TauCeti.exists_subseq_forall_le_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn` applies on the
-ball: every subsequence has a further subsequence converging there in `C^ℓ` to a solution of class
-`C^ℓ`. Countably many such balls cover `X`, so a diagonal extraction
-(`TauCeti.extraction_forall_of_antitone`) gives one subsequence converging pointwise on `X`, to a
-map `v`. On every ball of every preferred chart, every further subsequence then has a subsequence
-converging in `C^ℓ` to the chart expression of `v`, so the whole subsequence does
-(`TauCeti.tendstoLocallyUniformlyOn_of_forall_exists_subseq`). The chart expressions of `v` are of
-class `C^ℓ`, so `v` is.
+ball: every subsequence has a further subsequence converging there in `C^ℓ`. Countably many such
+balls cover `X`, so a diagonal extraction (`TauCeti.extraction_forall_of_antitone`) gives one
+subsequence converging pointwise on `X`, to a map `v`. On every ball of every preferred chart, every
+further subsequence then has a subsequence converging in `C^ℓ` to the chart expression of `v`, so
+the whole subsequence does (`TauCeti.tendstoLocallyUniformlyOn_of_forall_exists_subseq`). The limit
+is of class `C^ℓ` by interior regularity (`TauCeti.IsWeakPseudoholomorphic.contMDiff`).
 
 ## Implementation notes
 
@@ -164,7 +163,7 @@ private theorem contDiff_tendstoLocallyUniformly_chartData_comp
 
 /-- **The local step.** Near each point `z₀` of a preferred chart target of `X` there is a ball on
 which, along every subsequence, a further subsequence of the chart expressions of the `u n`
-converges in `C^ℓ` to a solution of the limiting chart equation of class `C^ℓ`. -/
+converges in `C^ℓ` to a solution of the limiting chart equation. -/
 private theorem exists_ball_forall_exists_subseq (hp : 2 < p) (hℓ : 1 ≤ ℓ)
     (hU : ∀ Q : Set X, IsCompact Q → ∀ᶠ n in atTop, Q ⊆ U n)
     (hu : ∀ n, IsWeakPseudoholomorphicOn (J n) (ν n) p (u n) (U n))
@@ -187,7 +186,7 @@ private theorem exists_ball_forall_exists_subseq (hp : 2 < p) (hℓ : 1 ≤ ℓ)
           eLpNorm D p (volume.restrict W) ≤ C)
     (x : X) {z₀ : ℂ} (hz₀ : z₀ ∈ (chartAt ℂ x).target) :
     ∃ r > 0, ball z₀ r ⊆ (chartAt ℂ x).target ∧ ∀ ψ : ℕ → ℕ, StrictMono ψ →
-      ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ ∃ w : ℂ → V, ContDiffOn ℝ ℓ w (ball z₀ r) ∧
+      ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ ∃ w : ℂ → V,
         IsWeakCauchyRiemannOn p (ball z₀ r)
           (J₀.chartField (chartAt ℂ x) (OpenPartialHomeomorph.refl V))
           (ν₀.chartTerm (chartAt ℂ x) (OpenPartialHomeomorph.refl V)) w ∧
@@ -220,7 +219,7 @@ private theorem exists_ball_forall_exists_subseq (hp : 2 < p) (hℓ : 1 ≤ ℓ)
   have hmaps : MapsTo φ.symm (ball z₀ r) K₀ := fun z hz ↦
     mem_image_of_mem _ (ball_subset_closedBall hz)
   -- The planar compactness theorem on the ball, for the shifted subsequence.
-  obtain ⟨ψ', w, hψ', hwd, hw, hconv⟩ :=
+  obtain ⟨ψ', w, hψ', -, hw, hconv⟩ :=
     exists_subseq_forall_le_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn (Ω := W) hp hℓ
       (J := fun n z ↦ (J (ψ (N + n))).chartField φ (OpenPartialHomeomorph.refl V) (c z))
       (η := fun n z ↦ (ν (ψ (N + n))).chartTerm φ (OpenPartialHomeomorph.refl V) (c z))
@@ -237,7 +236,7 @@ private theorem exists_ball_forall_exists_subseq (hp : 2 < p) (hℓ : 1 ≤ ℓ)
         ⟨hD.1.mono (subset_closure.trans hW'W),
           (eLpNorm_mono_measure _ (Measure.restrict_mono (subset_closure.trans hW'W) le_rfl)).trans
             hD.2⟩⟩
-  exact ⟨fun n ↦ N + ψ' n, fun m n hmn ↦ by simpa using hψ' hmn, w, hwd,
+  exact ⟨fun n ↦ N + ψ' n, fun m n hmn ↦ by simpa using hψ' hmn, w,
     (isWeakCauchyRiemannOn_ball_comp_iff hcid).1 hw, hconv⟩
 
 /-- **The diagonal step.** A subsequence of the `u n` converges at every point of `X`. -/
@@ -281,7 +280,7 @@ private theorem exists_strictMono_forall_tendsto [SecondCountableTopology X] (hp
     (P := fun j l ↦ ∃ g : ℂ → V, TendstoLocallyUniformlyOn
       (fun n ↦ u n ∘ (chartAt ℂ (a j)).symm) g l (ball (chartAt ℂ (a j) (a j)) (r (a j))))
     (fun _ _ _ hl ⟨g, hg⟩ ↦ ⟨g, hg.comp_tendsto (tendsto_id'.2 hl)⟩) fun j ψ hψ ↦ by
-      obtain ⟨ψ', hψ', w, -, -, hw⟩ := hsub (a j) ψ hψ
+      obtain ⟨ψ', hψ', w, -, hw⟩ := hsub (a j) ψ hψ
       exact ⟨ψ', hψ', w, tendstoLocallyUniformlyOn_map_iff.2
         (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 (hw 0 (by simp)))⟩
   choose g hg using hP
@@ -293,7 +292,7 @@ private theorem exists_strictMono_forall_tendsto [SecondCountableTopology X] (hp
 
 /-- **The identification step.** If a subsequence of the `u n` converges pointwise to `v`, then in
 every preferred chart of `X` it converges to `v` in `C^ℓ` on compact subsets of the chart target,
-and the chart expression of `v` is of class `C^ℓ` and solves the chart equation. -/
+and the chart expression of `v` solves the chart equation. -/
 private theorem tendstoLocallyUniformlyOn_chartAt_of_tendsto (hp : 2 < p) (hℓ : 1 ≤ ℓ)
     (hU : ∀ Q : Set X, IsCompact Q → ∀ᶠ n in atTop, Q ⊆ U n)
     (hu : ∀ n, IsWeakPseudoholomorphicOn (J n) (ν n) p (u n) (U n))
@@ -316,7 +315,6 @@ private theorem tendstoLocallyUniformlyOn_chartAt_of_tendsto (hp : 2 < p) (hℓ 
           eLpNorm D p (volume.restrict W) ≤ C)
     {σ : ℕ → ℕ} (hσ : StrictMono σ) {v : X → V}
     (hv : ∀ y, Tendsto (fun n ↦ u (σ n) y) atTop (𝓝 (v y))) (x : X) :
-    ContDiffOn ℝ ℓ (v ∘ (chartAt ℂ x).symm) (chartAt ℂ x).target ∧
     IsWeakCauchyRiemannOn p (chartAt ℂ x).target
         (J₀.chartField (chartAt ℂ x)
           (OpenPartialHomeomorph.refl V))
@@ -337,20 +335,16 @@ private theorem tendstoLocallyUniformlyOn_chartAt_of_tendsto (hp : 2 < p) (hℓ 
       (chartAt ℂ x).target :=
     Subset.antisymm (iUnion_subset fun z ↦ hρT z z.property) fun z hz ↦
       mem_iUnion.2 ⟨⟨z, hz⟩, mem_ball_self (hρ z hz)⟩
-  refine ⟨contDiffOn_of_locally_contDiffOn fun z hz ↦ ⟨_, isOpen_ball, mem_ball_self (hρ z hz), ?_⟩,
-    isWeakCauchyRiemannOn_iff_locally.2 fun z hz ↦ ⟨_,
+  refine ⟨isWeakCauchyRiemannOn_iff_locally.2 fun z hz ↦ ⟨_,
     mem_nhdsWithin_of_mem_nhds (ball_mem_nhds z (hρ z hz)), ?_⟩, fun k hk ↦ ?_⟩
-  · obtain ⟨ψ', hψ', w, hwd, -, hconv⟩ := H z hz σ hσ
-    exact (hwd.congr (heq hz hψ' (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1
-      (hconv 0 (by simp)))).symm).mono inter_subset_right
-  · obtain ⟨ψ', hψ', w, -, hw, hconv⟩ := H z hz σ hσ
+  · obtain ⟨ψ', hψ', w, hw, hconv⟩ := H z hz σ hσ
     exact hw.congr (heq hz hψ' (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1
       (hconv 0 (by simp))))
   -- On each ball, every subsequence has a further subsequence converging to `v` in order `k`.
   rw [← hTU]
   refine tendstoLocallyUniformlyOn_iUnion (fun _ ↦ isOpen_ball) fun z ↦
     tendstoLocallyUniformlyOn_of_forall_exists_subseq isOpen_ball fun ψ hψ ↦ ?_
-  obtain ⟨ψ', hψ', w, -, -, hconv⟩ := H z z.property (σ ∘ ψ) (hσ.comp hψ)
+  obtain ⟨ψ', hψ', w, -, hconv⟩ := H z z.property (σ ∘ ψ) (hσ.comp hψ)
   have hw := heq z.property (hψ.comp hψ')
     (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 (hconv 0 (by simp)))
   exact ⟨ψ', hψ', (hconv k hk).congr_right fun y hy ↦
@@ -409,7 +403,7 @@ theorem exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakPseudoholomorphi
   have hchart := tendstoLocallyUniformlyOn_chartAt_of_tendsto hp hℓ hU hu hJt hνt hK hd hσ hv
   -- The limit is continuous and solves the equation in every preferred chart.
   have hvc : Continuous v := continuous_iff_continuousAt.2 fun x ↦
-    ((((hchart x).2.1.continuousOn.continuousAt ((chartAt ℂ x).open_target.mem_nhds
+    ((((hchart x).1.continuousOn.continuousAt ((chartAt ℂ x).open_target.mem_nhds
       (mem_chart_target ℂ x))).comp ((chartAt ℂ x).continuousAt (mem_chart_source ℂ x)))).congr
         (((chartAt ℂ x).eventually_left_inverse (mem_chart_source ℂ x)).mono fun y hy ↦
           by simp [hy])
@@ -423,19 +417,15 @@ theorem exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakPseudoholomorphi
     rintro _ ⟨x, rfl⟩ _ rfl
     have hsrc : (chartAt V (0 : V)).source = univ := by simp
     simp only [hsrc, preimage_univ, inter_univ]
-    have hx := (hchart x).2.1
+    have hx := (hchart x).1
     simp only [OpenPartialHomeomorph.extendTrans_modelWithCornersSelf_refl, chartAt_self_eq,
       OpenPartialHomeomorph.refl_apply, Function.id_comp] at hx ⊢
     exact hx
-  refine ⟨σ, v, hσ, hvJ, fun x ↦ ?_, ?_, fun x ↦ (hchart x).2.2⟩
-  · -- `C^ℓ` regularity, read off in the preferred chart at `x`.
-    rw [contMDiffAt_iff_source, contMDiffWithinAt_iff_contDiffWithinAt]
-    simpa [contDiffWithinAt_univ] using (hchart x).1.contDiffAt
-      ((chartAt ℂ x).open_target.mem_nhds (mem_chart_target ℂ x))
+  refine ⟨σ, v, hσ, hvJ, hvJ.contMDiff hp, ?_, fun x ↦ (hchart x).2⟩
   -- Locally uniform convergence on `X`, read off in the preferred charts.
   rw [← tendstoLocallyUniformlyOn_univ, ← iUnion_source_chartAt ℂ X]
   refine tendstoLocallyUniformlyOn_iUnion (fun x ↦ (chartAt ℂ x).open_source) fun x ↦ ?_
-  have h := (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 ((hchart x).2.2 0 (by simp))).comp
+  have h := (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 ((hchart x).2 0 (by simp))).comp
     (chartAt ℂ x) (chartAt ℂ x).mapsTo (chartAt ℂ x).continuousOn
   refine (h.congr fun n y hy ↦ ?_).congr_right fun y hy ↦ ?_ <;>
     simp [(chartAt ℂ x).left_inv hy]
