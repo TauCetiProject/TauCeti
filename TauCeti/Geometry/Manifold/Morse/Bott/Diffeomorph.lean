@@ -53,8 +53,10 @@ orientation local system `o(ν⁻)` of its negative normal bundle
 normal bundle of a piece of `f ∘ σ` with that of the corresponding piece of `f`
 (`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.negativeNormalSpaceEquivOfComp`),
 whatever fibre metrics define them, so their orientation local systems, and the twisted homologies
-of the piece with these coefficients, are isomorphic. Hence the twisted Betti numbers of the two
-families agree (`TauCeti.IsMorseBottFamily.twistedBettiNumber_comp_diffeomorph`), even for
+of the piece with these coefficients, are isomorphic over every ring, `ℤ` included (in the
+namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`,
+`nonempty_twistedHomology_negativeNormalSpace_iso_of_comp`). Hence the twisted Betti numbers of
+the two families agree (`TauCeti.IsMorseBottFamily.twistedBettiNumber_comp_diffeomorph`), even for
 non-orientable negative normal bundles, where they can differ from the ordinary Betti numbers of
 the pieces.
 
@@ -264,8 +266,7 @@ end TauCeti
 The twisted Betti numbers take the manifolds, their models, the pieces and the coefficient field
 in one universe, as the twisted identification across a critical level does. -/
 
-open Bundle CategoryTheory Module TauCeti.VectorBundleOrientationCover
-  TauCeti.LocalCoefficientSystem
+open Bundle Module
 
 namespace TauCeti.IsMorseBottFamily
 
@@ -344,22 +345,9 @@ theorem twistedBettiNumber_comp_diffeomorph (hn : (∞ : ℕ∞ω) ≠ 0) (h : I
     (σ.isInvertible_mfderiv (two_pos.trans_le ((by simp : (2 : ℕ∞ω) ≤ ∞).trans hm)).ne').surjective
   have hf (s : S j) : ContMDiffAt I' 𝓘(ℝ) (∞ + 2) f (i' j s) :=
     h.contMDiff.contMDiffAt.of_le (by simp)
-  let _ := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
-    (h₁.negativeNormalSpace hn (g j).toRiemannianMetric)
-  let _ := subbundleTopology (P' j) (F' := Fin (r j) → ℝ)
-    (h₂.negativeNormalSpace hn (g' j).toRiemannianMetric)
-  have hr := h₂.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV' j)
-  let _ := (hV j).fiberBundle
-  have := (hV j).vectorBundle
-  let _ := (hV' j).fiberBundle
-  have := (hV' j).vectorBundle
   rw [twistedBettiNumber_def, twistedBettiNumber_def]
-  -- `dσ` identifies the negative normal bundles, hence their orientation local systems.
-  exact (asIso (twistedHomologyCoefficientMap (signLocalSystemIsoOfFiberwise K _ _
-    (φ := fun s ↦ (h₁.negativeNormalSpaceEquivOfComp hn hn hσi h₂ (g j).toRiemannianMetric
-      (g' j).toRiemannianMetric ((hσ (i j s)).of_le le_add_self)
-        (hσs s)).toContinuousLinearEquiv.symm)
-    (h₁.continuous_negativeNormalSpaceEquivOfComp_symm hn hn hσi h₂ (by simp) (by simp) hσ hσs hf
-      (hdim j) (hdim' j) (g j) (g' j) hr)).hom k)).toLinearEquiv.finrank_eq
+  obtain ⟨e⟩ := h₁.nonempty_twistedHomology_negativeNormalSpace_iso_of_comp hn hn hσi K h₂
+    (k := ∞) (by simp) (by simp) hσ hσs hf (hdim j) (hdim' j) (g j) (g' j) (hV j) (hV' j) k
+  exact e.toLinearEquiv.finrank_eq
 
 end TauCeti.IsMorseBottFamily
