@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Variational.Sequence
+public import TauCeti.Analysis.InnerProductSpace.Schmidt
 public import TauCeti.Analysis.PDE.Spectrum.Basic
 public import TauCeti.MeasureTheory.Function.L2Space
 
@@ -40,11 +40,10 @@ The eigenvalues are indexed by `ℕ` with `λₖ → ∞` because
 
 Any infinite family with finite sublevel sets can be listed in nondecreasing order
 (`exists_equiv_monotone_comp_of_finite_setOf_le`), and reindexing the eigenbasis along that
-enumeration gives the sequence. This is the abstract enumeration
-`IsCoercive.exists_hilbertBasis_nat_forall_apply_eq_smul_inner_monotone`, applied to the energy
-form on `H¹₀(Ω)` and the compact value inclusion `H¹₀(Ω) → L²(Ω)`. In dimension zero `L²(Ω)` is
-one-dimensional and the spectrum is a single eigenvalue, which is why positive dimension is
-assumed.
+enumeration gives the sequence. This is the abstract
+`IsCoercive.exists_hilbertBasis_nat_monotone`, applied to the energy form on `H¹₀(Ω)` and the
+value map `H¹₀(Ω) → L²(Ω)`. In dimension zero `L²(Ω)` is one-dimensional and the spectrum is a
+single eigenvalue, which is why positive dimension is assumed.
 
 ## Main declarations
 
@@ -110,24 +109,26 @@ theorem exists_hilbertBasis_nat_isDirichletEigenvalue_monotone [Nonempty ι]
       ∀ f : Lp ℝ 2 (mu.restrict Omega),
         HasSum (fun k ↦ (kappa k)⁻¹ • basis.repr f k • basis k)
           (dirichletSolutionOperator hcoeff hcoercive f) := by
-  obtain ⟨basis, kappa, u, hmono, htendsto, -, hvalue, heq, hiff, hsum⟩ :=
-    hcoercive.exists_hilbertBasis_nat_forall_apply_eq_smul_inner_monotone
-      (W1p0.isCompactOperator_valueL (by simp) hOmega) W1p0.denseRange_valueL_two
-      (fun u v ↦ by simpa only [energyFormH1L0_apply] using hsymm u v)
+  obtain ⟨basis, kappa, u, he, htendsto, -, hvalue, heq, hiff, hsum⟩ :=
+    hcoercive.exists_hilbertBasis_nat_monotone (W1p0.isCompactOperator_valueL (by simp) hOmega)
+      W1p0.denseRange_valueL_two (energyFormH1L0_comm hcoeff hsymm)
       (L2.not_finiteDimensional_restrict_of_isOpen mu Omega.isOpen hOmega_nonempty)
+  have hvalue' (k : ℕ) : W1p.value (u k : W1p mu Omega 2) = basis k := by
+    simpa only [W1p0.valueL_apply] using hvalue k
+  have heq' (k : ℕ) (v : W1p0 mu Omega 2) :
+      energyFormH1 a b c (u k : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        kappa k * ⟪W1p.value (u k : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+    simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using heq k v
   have hiff' (kappa' : ℝ) :
       IsDirichletEigenvalue mu Omega a b c kappa' ↔ ∃ k, kappa k = kappa' := by
-    rw [isDirichletEigenvalue_iff, ← hiff kappa']
-    simp only [energyFormH1L0_apply, W1p0.valueL_apply]
-  refine ⟨basis, kappa, u, hmono, htendsto, ?_,
-    fun k ↦ by simpa only [W1p0.valueL_apply] using hvalue k,
-    fun k v ↦ by simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using heq k v, hiff',
-    fun f ↦ by simpa only [dirichletSolutionOperator_def] using hsum f⟩
-  -- The first term is the first Dirichlet eigenvalue, the least one.
+    simpa only [isDirichletEigenvalue_iff, energyFormH1L0_apply, W1p0.valueL_apply] using
+      hiff kappa'
+  refine ⟨basis, kappa, u, he, htendsto, ?_, hvalue', heq', hiff', by
+    rwa [dirichletSolutionOperator_def]⟩
   obtain ⟨k, hk⟩ := (hiff' _).1
     (isDirichletEigenvalue_first hcoeff hcoercive hOmega hsymm hOmega_nonempty)
-  exact le_antisymm (hk ▸ hmono (Nat.zero_le k))
-    (firstDirichletEigenvalue_le hcoeff hcoercive ((hiff' _).2 ⟨0, rfl⟩))
+  exact le_antisymm (hk ▸ he (Nat.zero_le k)) (firstDirichletEigenvalue_le hcoeff hcoercive
+    ((hiff' _).2 ⟨0, rfl⟩))
 
 end Domain
 

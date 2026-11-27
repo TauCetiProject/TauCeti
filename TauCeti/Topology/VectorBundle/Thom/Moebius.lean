@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.Geometry.Manifold.LocallyContractible
 public import TauCeti.Topology.VectorBundle.Moebius
 public import TauCeti.Topology.VectorBundle.Thom.LineBundle
+import TauCeti.RingTheory.Ideal.Quotient.LinearEquiv
 
 /-!
 # The Thom pair of the Möbius line bundle
@@ -85,16 +86,8 @@ theorem not_nonempty_moebiusThomPair_singularHomology_one_linearEquiv :
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of Circle) : ModuleCat.{0} ℤ)) := by
   rintro ⟨e⟩
   -- Compose to an isomorphism `ℤ ⧸ 2ℤ ≃ ℤ`, using the augmentation `H₀(S¹; ℤ) ≅ ℤ`.
-  let f : (ℤ ⧸ Ideal.span {(2 : ℤ)}) ≃ₗ[ℤ] ℤ :=
-    (moebiusThomPairSingularHomologyOneEquiv ℤ).symm ≪≫ₗ e ≪≫ₗ
-      (asIso ((TopCat.of Circle).singularHomology₀ε (ModuleCat.of ℤ ℤ))).toLinearEquiv
-  -- In `ℤ ⧸ 2ℤ` the class of `1` is killed by `2` but is not zero; in `ℤ` no such element exists.
-  have h2 : (2 : ℤ) • f (Submodule.Quotient.mk 1) = 0 := by
-    rw [← map_smul, ← Submodule.Quotient.mk_smul, smul_eq_mul, mul_one,
-      (Submodule.Quotient.mk_eq_zero _).2 (Ideal.mem_span_singleton_self 2), map_zero]
-  have h1 : (Submodule.Quotient.mk 1 : ℤ ⧸ Ideal.span {(2 : ℤ)}) = 0 :=
-    f.injective ((smul_eq_zero.1 h2).resolve_left two_ne_zero |>.trans (map_zero f).symm)
-  rw [Submodule.Quotient.mk_eq_zero, Ideal.mem_span_singleton] at h1
-  exact absurd (Int.eq_one_of_dvd_one zero_le_two h1) (by norm_num)
+  exact two_ne_zero (Ideal.span_singleton_eq_bot.1 (Ideal.nonempty_quotient_linearEquiv_self_iff.1
+    ⟨(moebiusThomPairSingularHomologyOneEquiv ℤ).symm ≪≫ₗ e ≪≫ₗ
+      (asIso ((TopCat.of Circle).singularHomology₀ε (ModuleCat.of ℤ ℤ))).toLinearEquiv⟩))
 
 end TauCeti

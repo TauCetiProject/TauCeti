@@ -37,6 +37,8 @@ equality of valuations (`TauCeti.Place.eq_of_isEquiv`).
 * `TauCeti.Place.ord`: the additive order function `ord_P : F → ℤ`, normalized so that a prime
   element has order `1`. It has the junk value `ord_P 0 = 0`.
 * `TauCeti.Place.ResidueField`: the residue field `F_P = 𝒪_P / 𝔪_P`, a `k`-algebra.
+* `TauCeti.Place.residueFieldEquivValuationSubring`: `F_P` is the residue field of the valuation
+  subring of `v_P`, where constructions for a general valuation take values.
 * `TauCeti.Place.degree`: the degree `deg P = [F_P : k]` of a place.
 * `TauCeti.Place.ordAddMonoidHom`: `ord_P` bundled as an additive homomorphism on `Additive Fˣ`.
   Restricting to units is what makes it additive, since `ord_P 0 = 0` is a junk value.
@@ -603,6 +605,25 @@ theorem isScalarTower_integers_extension {R F' : Type*} [CommRing R] [Field F']
 /-- The residue field `F_P = 𝒪_P / 𝔪_P` of a place (Stichtenoth, Definition 1.1.14). The
 evaluation map `f ↦ f(P)` is `IsLocalRing.residue P.integers`. -/
 noncomputable abbrev ResidueField : Type v := IsLocalRing.ResidueField P.integers
+
+/-- The residue field of a place is the residue field of the valuation subring of its valuation.
+Constructions attached to a general valuation `F → ℤᵐ⁰`, such as reduced unit parts, tame symbols
+and the residues and specializations of Milnor K-theory, take values in the latter. -/
+noncomputable def residueFieldEquivValuationSubring :
+    P.ResidueField ≃+* IsLocalRing.ResidueField P.valuation.valuationSubring :=
+  RingEquiv.refl _
+
+@[simp]
+theorem residueFieldEquivValuationSubring_residue (x : P.integers) :
+    P.residueFieldEquivValuationSubring (IsLocalRing.residue P.integers x) =
+      IsLocalRing.residue P.valuation.valuationSubring ⟨x, P.integers_def ▸ x.property⟩ :=
+  (rfl)
+
+@[simp]
+theorem residueFieldEquivValuationSubring_symm_residue (x : P.valuation.valuationSubring) :
+    P.residueFieldEquivValuationSubring.symm (IsLocalRing.residue P.valuation.valuationSubring x) =
+      IsLocalRing.residue P.integers ⟨x, P.integers_def.symm ▸ x.property⟩ :=
+  (rfl)
 
 /-- The canonical map from an algebra acting compatibly on the valuation ring to the residue
 field is reduction after the map to the valuation ring. -/

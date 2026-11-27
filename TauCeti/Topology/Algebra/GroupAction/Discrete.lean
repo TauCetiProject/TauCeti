@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Algebra.GroupAction.DiagonalOrbits
+public import TauCeti.GroupTheory.GroupAction.Effective
 
 /-!
 # Continuous actions on discrete spaces
@@ -113,12 +114,6 @@ end SubgroupEquivariant
 section Kernel
 
 variable (G : Type u) [Group G] (M : Type v) [MulAction G M]
-
-/-- The action kernel is the intersection of all point stabilizers. -/
-theorem ker_toPermHom_eq_iInf_stabilizer :
-    (MulAction.toPermHom G M).ker = ⨅ m : M, MulAction.stabilizer G m := by
-  ext
-  simp [Equiv.ext_iff]
 
 /-- The action kernel is the whole group exactly when the action is trivial. -/
 @[simp]
