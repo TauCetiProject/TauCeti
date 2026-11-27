@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.NumberTheory.NumberField.Basic
+import Mathlib.NumberTheory.NumberField.Norm
 
 /-!
 # Trace characters on residue rings of number fields
@@ -70,6 +71,13 @@ theorem numberFieldTraceChar_apply_eq_one_iff (x : K) :
     exact_mod_cast h.symm
   · rintro ⟨n, hn⟩
     exact ⟨n, by rw [← hn, eq_intCast, Rat.cast_intCast, mul_comm]⟩
+
+/-- The trace character is trivial on the algebraic integers, whose traces are integers. -/
+@[simp]
+theorem numberFieldTraceChar_algebraMap_eq_one (r : 𝓞 K) :
+    numberFieldTraceChar K (algebraMap (𝓞 K) K r) = 1 :=
+  (numberFieldTraceChar_apply_eq_one_iff K _).mpr
+    ⟨Algebra.trace ℤ (𝓞 K) r, by rw [eq_intCast, Algebra.coe_trace_int]⟩
 
 end TauCeti
 
