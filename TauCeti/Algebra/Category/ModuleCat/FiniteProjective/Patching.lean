@@ -239,10 +239,10 @@ theorem finiteProjectiveModules_patchedModule
   finiteProjectiveModules_iff.2
     ⟨finite_patchedModule _ T.gluing
         (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-        (hπ.imp surjective_op_iff.2 surjective_op_iff.2),
+        (hπ.imp op_surjective_iff.2 op_surjective_iff.2),
       projective_patchedModule _ T.gluing
         (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-        (hπ.imp surjective_op_iff.2 surjective_op_iff.2)⟩
+        (hπ.imp op_surjective_iff.2 op_surjective_iff.2)⟩
 
 variable (π₁ π₂) in
 /-- The **patched module functor** of a fibre product `D = A₁ ×_Q A₂` with a surjective leg: it
@@ -295,10 +295,10 @@ def patchingCounitIso (T : π₁.PatchingTriples π₂) :
   CategoricalPullback.mkIso
     (ObjectProperty.isoMk _ (LinearEquiv.ofBijective _ (PatchedModule.bijective_compareFst _
       T.gluing (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-      (hπ.imp surjective_op_iff.2 surjective_op_iff.2))).toModuleIso)
+      (hπ.imp op_surjective_iff.2 op_surjective_iff.2))).toModuleIso)
     (ObjectProperty.isoMk _ (LinearEquiv.ofBijective _ (PatchedModule.bijective_compareSnd _
       T.gluing (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-      (hπ.imp surjective_op_iff.2 surjective_op_iff.2))).toModuleIso)
+      (hπ.imp op_surjective_iff.2 op_surjective_iff.2))).toModuleIso)
     (patchingCounit hπ T).w
 
 /-- The first component of `RingHom.patchingCounitIso` is the comparison map `M ⊗_D A₁ → P₁`,
@@ -350,9 +350,15 @@ def patchingEquivalence :
     functor_unitIso_comp P := by simp }
 
 /-- The unit of the patching equivalence sends `p` to `(p ⊗ 1, p ⊗ 1)`: its first component. -/
+-- The source and target of the linear map are given as `P` and `e.inverse.obj (e.functor.obj P)`,
+-- the simp normal forms of `(𝟭 _).obj P` and `(e.functor ⋙ e.inverse).obj P`.
+@[simp]
 theorem fst_patchingEquivalence_unitIso_hom_app (P : FiniteProjectiveRight (π₁.pullback π₂))
     (x : P.obj) :
-    (((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom.hom x).fst =
+    ((ModuleCat.Hom.hom (A := P.obj)
+      (B := ((patchingEquivalence π₁ π₂ hπ).inverse.obj
+        ((patchingEquivalence π₁ π₂ hπ).functor.obj P)).obj)
+      ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom) x).fst =
       tmul (RingHom.op (π₁.pullbackFst π₂)) 1 x := by
   -- The first component of the image of the unit, followed by the counit, is the identity.
   set u := ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom.hom
@@ -360,13 +366,25 @@ theorem fst_patchingEquivalence_unitIso_hom_app (P : FiniteProjectiveRight (π�
     _ = PatchedModule.compareFst _ _ (tmul _ 1 (u x)) :=
       (PatchedModule.compareFst_tmul _ _ 1 _).symm
     _ = PatchedModule.compareFst _ _ (map _ u (tmul _ 1 x)) := congrArg _ (map_tmul _ _ _).symm
+    _ = ((patchingEquivalence π₁ π₂ hπ).counitIso.hom.app _).fst.hom.hom
+          (((patchingFunctor π₁ π₂).map
+            ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P)).fst.hom.hom (tmul _ 1 x)) := by
+      rw [patchingFunctor_map_fst_hom_hom, patchingEquivalence_counitIso_hom_app]
+      exact (LinearMap.congr_fun (patchingCounitIso_hom_fst_hom_hom hπ _) _).symm
+    -- The triangle identity, whose composite has this component by `CategoricalPullback.comp_fst`.
     _ = _ := congr($(((patchingEquivalence π₁ π₂ hπ).functor_unitIso_comp P)).fst.hom.hom
       (tmul (RingHom.op (π₁.pullbackFst π₂)) 1 x))
 
 /-- The unit of the patching equivalence sends `p` to `(p ⊗ 1, p ⊗ 1)`: its second component. -/
+-- The source and target of the linear map are given as `P` and `e.inverse.obj (e.functor.obj P)`,
+-- the simp normal forms of `(𝟭 _).obj P` and `(e.functor ⋙ e.inverse).obj P`.
+@[simp]
 theorem snd_patchingEquivalence_unitIso_hom_app (P : FiniteProjectiveRight (π₁.pullback π₂))
     (x : P.obj) :
-    (((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom.hom x).snd =
+    ((ModuleCat.Hom.hom (A := P.obj)
+      (B := ((patchingEquivalence π₁ π₂ hπ).inverse.obj
+        ((patchingEquivalence π₁ π₂ hπ).functor.obj P)).obj)
+      ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom) x).snd =
       tmul (RingHom.op (π₁.pullbackSnd π₂)) 1 x := by
   -- The second component of the image of the unit, followed by the counit, is the identity.
   set u := ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom.hom
@@ -374,6 +392,12 @@ theorem snd_patchingEquivalence_unitIso_hom_app (P : FiniteProjectiveRight (π�
     _ = PatchedModule.compareSnd _ _ (tmul _ 1 (u x)) :=
       (PatchedModule.compareSnd_tmul _ _ 1 _).symm
     _ = PatchedModule.compareSnd _ _ (map _ u (tmul _ 1 x)) := congrArg _ (map_tmul _ _ _).symm
+    _ = ((patchingEquivalence π₁ π₂ hπ).counitIso.hom.app _).snd.hom.hom
+          (((patchingFunctor π₁ π₂).map
+            ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P)).snd.hom.hom (tmul _ 1 x)) := by
+      rw [patchingFunctor_map_snd_hom_hom, patchingEquivalence_counitIso_hom_app]
+      exact (LinearMap.congr_fun (patchingCounitIso_hom_snd_hom_hom hπ _) _).symm
+    -- The triangle identity, whose composite has this component by `CategoricalPullback.comp_snd`.
     _ = _ := congr($(((patchingEquivalence π₁ π₂ hπ).functor_unitIso_comp P)).snd.hom.hom
       (tmul (RingHom.op (π₁.pullbackSnd π₂)) 1 x))
 

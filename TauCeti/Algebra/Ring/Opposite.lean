@@ -23,7 +23,7 @@ The inverse-pair instances here allow semilinear maps along this equivalence to 
 public section
 
 /-- A ring homomorphism is surjective exactly when its opposite `fᵐᵒᵖ : Rᵐᵒᵖ →+* Sᵐᵒᵖ` is. -/
-theorem RingHom.surjective_op_iff {R S : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+theorem RingHom.op_surjective_iff {R S : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
     {f : R →+* S} : Function.Surjective (RingHom.op f) ↔ Function.Surjective f :=
   ⟨fun h x ↦ ⟨(h (.op x)).choose.unop, MulOpposite.op_injective (h (.op x)).choose_spec⟩,
     fun h x ↦ ⟨.op (h x.unop).choose, MulOpposite.unop_injective (h x.unop).choose_spec⟩⟩
