@@ -282,35 +282,21 @@ instance : NonUnitalCStarAlgebra (FullCrossedProduct α μ) :=
 variable (α μ) in
 /-- The canonical ⋆-homomorphism from the twisted convolution algebra into the full crossed
 product. -/
-def of : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] FullCrossedProduct α μ where
-  toFun f := (toFullStarAlgEquiv α μ f : Completion (FullConvolutionAlgebra α μ))
-  map_smul' c f := by
-    rw [map_smul]
-    exact Completion.coe_smul c _
-  map_zero' := by
-    rw [map_zero]
-    exact Completion.coe_zero
-  map_add' f g := by
-    rw [map_add]
-    exact Completion.coe_add _ _
-  map_mul' f g := by
-    rw [map_mul]
-    exact Completion.coe_mul' _ _
-  map_star' f := by
-    rw [map_star]
-    exact Completion.coe_star _
+def of : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] FullCrossedProduct α μ :=
+  (Completion.coeNonUnitalStarAlgHom ℂ).comp (toFullStarAlgEquiv α μ).toNonUnitalStarAlgHom
 
 /-- The image of `f` under the completion map of `FullConvolutionAlgebra α μ` is `of α μ f`. -/
 @[simp]
 theorem coe_toFull_eq_of (f : ConvolutionAlgebra α μ) :
     ((toFull f : Completion (FullConvolutionAlgebra α μ)) : FullCrossedProduct α μ) = of α μ f :=
-  (rfl)
+  (congrFun (Completion.coe_coeNonUnitalStarAlgHom ℂ) (toFull f)).symm
 
 /-- The norm of the image of `f` in the full crossed product is its full seminorm `‖f‖ᵤ`. -/
 @[simp]
 theorem norm_of (f : ConvolutionAlgebra α μ) :
-    ‖of α μ f‖ = ConvolutionAlgebra.fullSeminorm α μ f :=
-  Completion.norm_coe (toFull f)
+    ‖of α μ f‖ = ConvolutionAlgebra.fullSeminorm α μ f := by
+  rw [← coe_toFull_eq_of]
+  exact Completion.norm_coe (toFull f)
 
 /-- The image of `f` in the full crossed product has norm at most its L¹ norm. -/
 theorem norm_of_le (f : ConvolutionAlgebra α μ) : ‖of α μ f‖ ≤ ‖f‖ :=
@@ -322,8 +308,11 @@ theorem continuous_of : Continuous (of α μ) :=
     simpa only [one_mul] using norm_of_le f
 
 /-- The twisted convolution algebra is dense in the full crossed product. -/
-theorem denseRange_of : DenseRange (of α μ) :=
-  Completion.denseRange_coe.comp toFull.surjective.denseRange (Completion.continuous_coe _)
+theorem denseRange_of : DenseRange (of α μ) := by
+  rw [show ⇑(of α μ) =
+      fun f ↦ ((toFull f : Completion (FullConvolutionAlgebra α μ)) : FullCrossedProduct α μ) from
+    funext fun f ↦ (coe_toFull_eq_of f).symm]
+  exact Completion.denseRange_coe.comp toFull.surjective.denseRange (Completion.continuous_coe _)
 
 /-- Compactly supported continuous functions `C_c(G, A)` map densely into
 `FullCrossedProduct α μ`. -/
