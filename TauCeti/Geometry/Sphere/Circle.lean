@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Complex.Circle
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
@@ -45,6 +46,8 @@ circle `Circle = {z : ℂ | ‖z‖ = 1}` via the standard orthonormal basis iso
   `TopCat` to `Circle` itself.
 * `TauCeti.sphereOnePiIsoCirclePi`: the torus `ι → TopCat.sphere 1` is isomorphic in `TopCat` to
   the torus `ι → Circle`, lifted to the same universe.
+* `AddCircle.homeomorphSphere`: an additive circle `ℝ / Tℤ` with nonzero period is homeomorphic
+  to `TopCat.sphere 1`, through `AddCircle.homeomorphCircle`.
 -/
 
 public section
@@ -223,3 +226,33 @@ end
 end TopCatSphere
 
 end TauCeti
+
+namespace AddCircle
+
+noncomputable section
+
+universe u
+
+variable {T : ℝ}
+
+/-- An additive circle `ℝ / Tℤ` with nonzero period is homeomorphic to Mathlib's circle
+`TopCat.sphere 1`, through the complex unit circle (`AddCircle.homeomorphCircle` and
+`TauCeti.sphereOneHomeomorphCircle`). -/
+def homeomorphSphere (hT : T ≠ 0) : AddCircle T ≃ₜ TopCat.sphere.{u} 1 :=
+  (homeomorphCircle hT).trans (TauCeti.sphereOneHomeomorphCircle.trans Homeomorph.ulift).symm
+
+@[simp]
+lemma homeomorphSphere_apply_down (hT : T ≠ 0) (x : AddCircle T) :
+    (homeomorphSphere.{u} hT x).down =
+      TauCeti.EuclideanSpace.sphereHomeomorphCircle.symm (toCircle x) :=
+  congrArg TauCeti.EuclideanSpace.sphereHomeomorphCircle.symm (homeomorphCircle_apply hT x)
+
+@[simp]
+lemma homeomorphSphere_symm_apply (hT : T ≠ 0) (y : TopCat.sphere.{u} 1) :
+    (homeomorphSphere hT).symm y =
+      (homeomorphCircle hT).symm (TauCeti.EuclideanSpace.sphereHomeomorphCircle y.down) :=
+  (rfl)
+
+end
+
+end AddCircle
