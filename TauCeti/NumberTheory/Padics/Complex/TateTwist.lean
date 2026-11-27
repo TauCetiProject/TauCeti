@@ -55,9 +55,9 @@ embeddings are linearly independent characters of `K` (Dedekind), so `y = 0`.
 
 ## Main results
 
-* `TauCeti.padicAlgClContinuousCyclotomicCharacter_apply`,
-  `TauCeti.padicComplexTateTwistContinuousRep_apply`, and
-  `TauCeti.padicComplexTateTwist_ρ_apply`: the character and action equations for arbitrary `K`.
+* `TauCeti.padicAlgClContinuousCyclotomicCharacter_apply` and
+  `TauCeti.padicComplexTateTwistContinuousRep_apply`: the character and action equations for
+  arbitrary `K`.
 * `PadicComplex.eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq_ratPadic`: `ℂ_p(i)` has
   no nonzero `G_{ℚ_p}`-invariants for `i ≠ 0`.
 * `PadicComplex.eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq`: `ℂ_p(i)` has no nonzero
@@ -392,18 +392,10 @@ theorem padicComplexTateTwistContinuousRep_apply (i : ℤ)
     ContinuousMonoidHom.zpow_apply, coe_padicIntUnitsInclusion_apply,
     padicAlgClContinuousCyclotomicCharacter_apply]
 
-/-- The Tate twist `ℂ_p(i)` as a Banach representation of `G_K` over `ℚ_p`. -/
+/-- The Tate twist `ℂ_p(i)` as a Banach representation of `G_K` over `ℚ_p`.
+Its action is computed by `padicComplexTateTwistContinuousRep_apply`. -/
 noncomputable abbrev padicComplexTateTwist (i : ℤ) :
     BanachRep.{0} ℚ_[p] (PadicAlgCl p ≃ₐ[K] PadicAlgCl p) :=
   BanachRep.of (padicComplexTateTwistContinuousRep p K i)
-
-/-- The action in the Tate twist is the Galois action multiplied by `χ(σ)^i`.
-Simplification uses `padicComplexTateTwistContinuousRep_apply` on the underlying action. -/
-theorem padicComplexTateTwist_ρ_apply (i : ℤ)
-    (σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (x : ℂ_[p]) :
-    (padicComplexTateTwist p K i).ρ σ x =
-      (((cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv ^ i : ℤ_[p]ˣ) : ℤ_[p]) :
-        ℚ_[p]) • (σ • x) :=
-  padicComplexTateTwistContinuousRep_apply p K i σ x
 
 end TauCeti
