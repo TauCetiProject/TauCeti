@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Bochner.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Riemannian
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.Exp
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.InnerProductSpace
@@ -132,19 +133,17 @@ theorem exp_mul_smoothWeightedLaplacian_apply (φ f : C^∞⟮I, M; ℝ⟯) (x :
     Real.exp (φ x) * smoothWeightedLaplacian φ f x =
       divergence I (fun y ↦ Real.exp (φ y) • mgradient I f y) x := by
   have hφ : MDifferentiableAt I 𝓘(ℝ) φ x := φ.contMDiff.mdifferentiableAt (by simp)
-  have hρ : MDifferentiableAt I 𝓘(ℝ) (Real.exp ∘ φ) x :=
+  have hρ : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ Real.exp (φ y)) x :=
     (ContDiff.comp_contMDiff Real.contDiff_exp φ.contMDiff).mdifferentiableAt (by simp)
   have hgrad := (contMDiff_mgradient_infty (I := I) f.contMDiff).mdifferentiableAt
     (x := x) (by simp)
   -- Write the vector field as a function times a vector field, the form of
   -- `divergence_smul_function`.
   have hX : (fun y ↦ Real.exp (φ y) • mgradient I f y) =
-      (Real.exp ∘ φ : M → ℝ) • mgradient I f :=
-    funext fun y ↦ by simp
-  rw [hX, divergence_smul_function I _ _ x hρ hgrad,
-    mvfderiv_scalar_comp hφ Real.differentiable_exp.differentiableAt]
-  simp only [smoothWeightedLaplacian_apply, laplaceBeltrami_def, Function.comp_apply,
-    Real.deriv_exp, smul_apply, smul_eq_mul]
+      (fun y ↦ Real.exp (φ y)) • mgradient I f :=
+    rfl
+  rw [hX, divergence_smul_function I _ _ x hρ hgrad, mvfderiv_exp hφ]
+  simp only [smoothWeightedLaplacian_apply, laplaceBeltrami_def, smul_apply, smul_eq_mul]
   rw [← inner_mgradient_right (f := φ), inner_mgradient (f := f)]
   ring
 
