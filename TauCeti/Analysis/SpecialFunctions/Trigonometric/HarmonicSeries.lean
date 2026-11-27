@@ -61,8 +61,8 @@ theorem Complex.norm_sub_sum_Icc_exp_mul_I_div_le {θ : ℝ} (hθ : θ ∈ Set.I
       rw [← hlog, ← hsum]
       exact Complex.norm_neg_log_one_sub_sub_sum_Icc_pow_div_le hz hz₁ N
     _ = _ := by
-      rw [hchord, mul_left_comm (N + 1 : ℝ) 2, div_mul_eq_div_div,
-        div_self (by norm_num : (2 : ℝ) ≠ 0)]
+      rw [hchord]
+      field_simp [hsin.ne']
 
 namespace Real
 
@@ -92,7 +92,8 @@ theorem tendsto_sum_Icc_cos_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π))
       (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).div_const (sin (θ / 2))
 
 /-- **Sine series remainder bound.** For `0 < θ < 2π`, the sine series beyond the first
-`N` terms has absolute value at most `1 / ((N + 1) * sin (θ / 2))` (Pomerance, Lemma 4). -/
+`N` terms has absolute value at most `1 / ((N + 1) * sin (θ / 2))`
+(Pomerance, proof of Lemma 4). -/
 theorem abs_pi_sub_div_two_sub_sum_Icc_sin_mul_div_le {θ : ℝ}
     (hθ : θ ∈ Set.Ioo 0 (2 * π)) (N : ℕ) :
     |(π - θ) / 2 - ∑ j ∈ Icc 1 N, sin (j * θ) / j| ≤ 1 / ((N + 1 : ℝ) * sin (θ / 2)) := by

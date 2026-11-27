@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.Complex.AbelLimit
 import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.Normed.Module.ByParts
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecificLimits.Normed
 
@@ -113,9 +112,9 @@ theorem norm_neg_log_one_sub_sub_sum_Icc_pow_div_le {z : ℂ} (hz : ‖z‖ ≤ 
   rw [← hhead]
   refine le_of_tendsto hlim.norm (Eventually.of_forall fun M ↦ ?_)
   simp only [Function.comp_apply, Nat.add_comm M (N + 1), sum_range_add, add_sub_cancel_left]
-  have hanti : Antitone fun j : ℕ ↦ ((N + 1 + j : ℕ) : ℝ)⁻¹ := by
+  have hanti : Antitone fun j : ℕ ↦ (N + 1 + (j : ℝ))⁻¹ := by
     intro i j hij
-    exact inv_anti₀ (by positivity) (by exact_mod_cast Nat.add_le_add_left hij (N + 1))
+    exact inv_anti₀ (by positivity) (add_le_add_right (Nat.cast_le.mpr hij) _)
   have hgeom (L : ℕ) : ‖∑ j ∈ range L, z ^ (N + 1 + j)‖ ≤ 2 / ‖z - 1‖ := by
     simp only [pow_add z (N + 1), ← mul_sum, norm_mul]
     have hpow : ‖z ^ (N + 1)‖ ≤ 1 := by
@@ -123,11 +122,19 @@ theorem norm_neg_log_one_sub_sub_sum_Icc_pow_div_le {z : ℂ} (hz : ‖z‖ ≤ 
       exact pow_le_one₀ (norm_nonneg _) hz
     exact (mul_le_of_le_one_left (norm_nonneg _) hpow).trans
       (TauCeti.norm_geom_sum_le hz hz₁ L)
-  have h := norm_sum_range_smul_le_of_antitoneOn (hanti.antitoneOn (Set.Iio M))
-    (by positivity) (fun L _ ↦ hgeom L)
-  simpa only [Complex.real_smul, Complex.ofReal_inv, Complex.ofReal_natCast, ← div_eq_inv_mul,
-    Complex.ofReal_add, Complex.ofReal_one, Nat.add_zero, Nat.cast_add, Nat.cast_one,
-    div_mul_eq_div_div_swap, inv_mul_eq_div] using h
+  calc
+    _ = ‖∑ j ∈ range M, (N + 1 + (j : ℝ))⁻¹ • z ^ (N + 1 + j)‖ := by
+      congr 1
+      refine sum_congr rfl fun j _ ↦ ?_
+      rw [Complex.real_smul, Complex.ofReal_inv, div_eq_mul_inv]
+      push_cast
+      ring
+    _ ≤ (N + 1 : ℝ)⁻¹ * (2 / ‖z - 1‖) := by
+      simpa only [Nat.cast_zero, add_zero] using
+        norm_sum_range_smul_le_of_antitoneOn (hanti.antitoneOn (Set.Iio M))
+          (by positivity) (fun L _ ↦ hgeom L)
+    _ = _ := by
+      field_simp [norm_ne_zero_iff.mpr (sub_ne_zero.mpr hz₁)]
 
 end Complex
 
