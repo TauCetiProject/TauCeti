@@ -266,6 +266,16 @@ noncomputable def _root_.Action.toBipartiteRibbonGraphEdgeIso
   rw [Action.mkIso_hom_hom _ _, FintypeCat.equivEquivIso_apply_hom, FintypeCat.homMk_apply,
     Equiv.trans_apply]
 
+/-- The inverse comparison sends a carrier point to the corresponding edge-action point. -/
+@[simp] theorem _root_.Action.toBipartiteRibbonGraphEdgeIso_inv_apply
+    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) (x : A.V) :
+    A.toBipartiteRibbonGraphEdgeIso.inv.hom x =
+      A.toBipartiteRibbonGraph.edgeEquiv.symm (A.toBipartiteRibbonGraphEdgeEquiv.symm x) := by
+  apply (A.toBipartiteRibbonGraph.edgeEquiv.trans A.toBipartiteRibbonGraphEdgeEquiv).injective
+  simpa only [Equiv.trans_apply, Equiv.apply_symm_apply, FintypeCat.comp_apply,
+    FintypeCat.id_apply, Action.toBipartiteRibbonGraphEdgeIso_hom_apply] using
+    congrArg (fun f : A.V ⟶ A.V ↦ f x) (Action.inv_hom_hom A.toBipartiteRibbonGraphEdgeIso)
+
 /-- Every finite action is isomorphic to the edge action of a ribbon graph, which completes the
 fully faithful edge functor to an equivalence available through typeclass inference. -/
 instance : edgeFunctor.{u}.IsEquivalence where
@@ -305,6 +315,8 @@ noncomputable def edgeEquivalence :
     simp only [Functor.FullyFaithful.map_preimage, Category.assoc, Iso.inv_hom_id,
       Category.comp_id])
   functor_unitIso_comp Γ := by
+    -- Reduce both natural isomorphism components, including their functor object indices.
+    dsimp only [NatIso.ofComponents, Functor.id_obj, Functor.comp_obj]
     let e := (edgeFunctor.obj Γ).toBipartiteRibbonGraphEdgeIso
     have h : edgeFunctor.map (fullyFaithfulEdgeFunctor.preimageIso e.symm).hom ≫ e.hom =
         𝟙 (edgeFunctor.obj Γ) := by
@@ -319,6 +331,27 @@ noncomputable def edgeEquivalence :
 @[simp] theorem _root_.Action.edgeEquivalence_inverse_obj
     (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
     edgeEquivalence.inverse.obj A = A.toBipartiteRibbonGraph := (rfl)
+
+/-- On edges, the inverse equivalence acts by the underlying map of the action morphism. -/
+@[simp] theorem _root_.Action.edgeEquivalence_inverse_map_edge_apply
+    {A B : Action FintypeCat.{u} (FreeGroup (Fin 2))} (f : A ⟶ B)
+    (x : (edgeEquivalence.inverse.obj A).E) :
+    B.toBipartiteRibbonGraphEdgeEquiv
+        (cast (congrArg BipartiteRibbonGraph.E B.edgeEquivalence_inverse_obj)
+          ((edgeEquivalence.inverse.map f).edge x)) =
+      f.hom (A.toBipartiteRibbonGraphEdgeEquiv
+        (cast (congrArg BipartiteRibbonGraph.E A.edgeEquivalence_inverse_obj) x)) := by
+  -- The object equalities in the casts are reflexive by the definition of the inverse.
+  let y : A.toBipartiteRibbonGraph.E := x
+  have h : B.toBipartiteRibbonGraphEdgeEquiv
+      ((fullyFaithfulEdgeFunctor.preimage
+        (A.toBipartiteRibbonGraphEdgeIso.hom ≫
+          f ≫ B.toBipartiteRibbonGraphEdgeIso.inv)).edge y) =
+      f.hom (A.toBipartiteRibbonGraphEdgeEquiv y) := by
+    simp only [fullyFaithfulEdgeFunctor_preimage_edge_apply, Action.comp_hom, FintypeCat.comp_apply,
+      Action.toBipartiteRibbonGraphEdgeIso_hom_apply,
+      Action.toBipartiteRibbonGraphEdgeIso_inv_apply, Equiv.apply_symm_apply]
+  exact h
 
 /-- The counit compares the edge action of the reconstructed graph with the input action. -/
 @[simp] theorem _root_.Action.edgeEquivalence_counitIso_app
