@@ -891,10 +891,8 @@ theorem exists_mem_dualitySet_apply_eq_integral (hp : p ≠ ∞) (u : Lp H p μ)
   have hp1 : 1 ≤ p := Fact.out
   have hr1 : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp hp1
   -- The conjugate exponent `q`, with `1 / p + 1 / q = 1`.
-  set q : ℝ≥0∞ := (1 - p⁻¹)⁻¹ with hq_def
-  have : p.HolderConjugate q := by
-    rw [ENNReal.holderConjugate_iff, hq_def, inv_inv]
-    exact add_tsub_cancel_of_le (ENNReal.inv_le_one.2 hp1)
+  set q : ℝ≥0∞ := (1 - p⁻¹)⁻¹
+  have : p.HolderConjugate q := ENNReal.HolderConjugate.inv_one_sub_inv' hp1
   -- `w = |u| ^ (p - 2) u` lies in `L^q`, with `‖w‖_q ≤ ‖u‖_p ^ (p - 1)`.
   set w : α → H := fun x ↦ ((‖u x‖ ^ (p.toReal - 2) : ℝ) : 𝕜) • u x
   have hwq : eLpNorm w q μ ≤ eLpNorm u p μ ^ (p.toReal - 1) :=
