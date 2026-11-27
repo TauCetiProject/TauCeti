@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WithSeminorms
 public import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.FiniteAtlas
 import TauCeti.Geometry.Manifold.ExtChartAt.LocallyCompact
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Complete
 import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
@@ -348,20 +349,13 @@ theorem exists_norm_iteratedFDeriv_frameCoordinates_le [I.Boundaryless] [Locally
     ∃ C, ∀ᶠ z in 𝓝 w₀, ∀ s : Cₛ^n⟮I; F, V⟯,
       ‖iteratedFDeriv 𝕜 m (fun w ↦ e'.frameCoordinates hU' s ((extChartAt I x).symm w)) z‖ ≤
         C * finiteAtlasSeminorm e U hU c K k hk s := by
-  have ht : IsOpen (extChartAt I x).target := isOpen_extChartAt_target x
-  -- A compact neighbourhood of `w₀` in the chart target gives a compact chart-frame seminorm.
-  obtain ⟨L, hL, hw₀L, hLt⟩ := exists_compact_subset ht hw₀
-  let L' : Compacts (extChartAt I x).target := ⟨Subtype.val ⁻¹' L,
-    Topology.IsEmbedding.subtypeVal.isCompact_iff.2 (by
-      rwa [Subtype.image_preimage_coe, inter_eq_right.2 hLt])⟩
-  obtain ⟨C, -, hC⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm e U hU hK e' hU' x L' k hk
-  refine ⟨C, ?_⟩
-  filter_upwards [mem_interior_iff_mem_nhds.1 hw₀L] with z hz s
-  have hz' := (e'.chartCkSeminorm_le_iff hU' x L' k hk s (apply_nonneg _ _)).mp le_rfl m hm
-    ⟨z, hLt hz⟩ hz
-  rw [ContMDiffMap.chartIteratedFDeriv_self_target_apply,
-    iteratedFDerivWithin_of_isOpen m ht (hLt hz)] at hz'
-  exact hz'.trans (hC s)
+  -- The frame coefficients are vector-valued maps on `U'`, bounded by a scalar chart seminorm.
+  obtain ⟨L, hL⟩ :=
+    ContMDiffMap.exists_norm_iteratedFDeriv_extChartAt_symm_le_chartCkSeminorm (F := F) x hw₀ k
+      hk hm
+  obtain ⟨C, -, hC⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm e U hU hK e' hU' x L k hk
+  refine ⟨C, hL.mono fun z hz s ↦ (hz (e'.frameCoordinates hU' s)).trans ?_⟩
+  exact (e'.chartCkSeminorm_apply hU' x L k hk s).symm.trans_le (hC s)
 
 end Cover
 
