@@ -21,6 +21,8 @@ to `v ↦ |b.det v| * c`. The evaluation and change-of-basis formulas include di
 zero. In particular, a density vanishes on dependent tuples in positive dimension,
 and a density is determined by its value on any one basis. This is the linear fibre
 used for orientation-free integration and density-valued test sections.
+The change-of-basis formula rests on `Module.Basis.det_constr`: the endomorphism sending a
+basis `b` to a tuple `v` has determinant `b.det v`.
 
 The construction adapts Li Xuanji’s implementation in Tau Ceti PR #22145.
 
@@ -31,6 +33,19 @@ The construction adapts Li Xuanji’s implementation in Tau Ceti PR #22145.
 -/
 
 public section
+
+namespace Module.Basis
+
+variable {ι R M : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The determinant of the endomorphism sending the basis `b` to `v` is the determinant of `v`
+in the basis `b`. -/
+theorem det_constr (b : Basis ι R M) (v : ι → M) : LinearMap.det (b.constr R v) = b.det v := by
+  rw [det_apply, toMatrix_eq_toMatrix_constr, LinearMap.det_toMatrix]
+  -- `toMatrix_eq_toMatrix_constr` uses `constr ℕ`; both are the linear map sending `b` to `v`.
+  exact congrArg LinearMap.det (b.ext fun i ↦ by simp)
+
+end Module.Basis
 
 namespace TauCeti
 
@@ -106,11 +121,9 @@ the absolute determinant of that tuple. -/
 theorem apply_eq_abs_det_mul (μ : Density V m) (b : Module.Basis (Fin m) ℝ V)
     (v : Fin m → V) : μ v = |b.det v| * μ b := by
   have hv : (b.constr ℝ v : V → V) ∘ b = v := by ext i; simp
-  have hd : LinearMap.det (b.constr ℝ v) = b.det v := by
-    simpa [hv, b.det_self] using (b.det_comp (b.constr ℝ v) b).symm
   calc
     μ v = μ ((b.constr ℝ v : V → V) ∘ b) := congrArg μ hv.symm
-    _ = |b.det v| * μ b := by rw [comp_apply, hd]
+    _ = |b.det v| * μ b := by rw [comp_apply, b.det_constr]
 
 /-- A top-dimensional density does not see the order of the vectors of a tuple: reordering
 changes the determinant only by a sign. The basis `b` only witnesses that `m` is the dimension

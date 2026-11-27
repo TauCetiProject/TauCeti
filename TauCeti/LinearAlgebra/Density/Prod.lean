@@ -100,20 +100,14 @@ theorem prod_apply_sumElim (μ : Density V (finrank ℝ V)) (ν : Density W (fin
       (((finBasis ℝ V).constr ℝ v).prodMap ((finBasis ℝ W).constr ℝ w) : V × W → V × W) ∘
         (((finBasis ℝ V).prod (finBasis ℝ W)).reindex e) := by
     rw [Basis.coe_reindex, ← Function.comp_assoc, Basis.prodMap_constr_comp_prod]
-  -- So the product takes the value `|det (constr v)| * |det (constr w)| * μ b * ν c` on it.
+  -- So the product takes the value `|det v| * |det w| * μ b * ν c` on it.
   have hvalue : μ.prod ν (Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j)) ∘ e.symm) =
-      |LinearMap.det ((finBasis ℝ V).constr ℝ v)| * |LinearMap.det ((finBasis ℝ W).constr ℝ w)| *
+      |(finBasis ℝ V).det v| * |(finBasis ℝ W).det w| *
         (μ (finBasis ℝ V) * ν (finBasis ℝ W)) := by
     rw [himage, comp_apply, hperm, apply_comp_perm _ prodFinBasis, prod,
-      Basis.density_apply_self, LinearMap.det_prodMap, abs_mul]
+      Basis.density_apply_self, LinearMap.det_prodMap, Basis.det_constr, Basis.det_constr, abs_mul]
   -- These factors are the values of `μ` on `v` and of `ν` on `w`.
-  have hv : μ v = |LinearMap.det ((finBasis ℝ V).constr ℝ v)| * μ (finBasis ℝ V) := by
-    rw [← comp_apply]
-    exact congrArg μ (funext ((finBasis ℝ V).constr_basis ℝ v)).symm
-  have hw : ν w = |LinearMap.det ((finBasis ℝ W).constr ℝ w)| * ν (finBasis ℝ W) := by
-    rw [← comp_apply]
-    exact congrArg ν (funext ((finBasis ℝ W).constr_basis ℝ w)).symm
-  rw [hvalue, hv, hw]
+  rw [hvalue, apply_eq_abs_det_mul μ (finBasis ℝ V) v, apply_eq_abs_det_mul ν (finBasis ℝ W) w]
   ring
 
 /-- On the product `b.prod c` of bases of `V` and `W`, listed in any order, the product `μ.prod ν`
