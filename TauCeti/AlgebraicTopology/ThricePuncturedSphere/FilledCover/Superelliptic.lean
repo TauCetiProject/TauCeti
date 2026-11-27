@@ -189,7 +189,8 @@ theorem branchValues_β_superelliptic :
         (localMultiplicity superelliptic.β)) : y ∈ superelliptic.β.branchValues := by
     obtain ⟨x, hx, rfl⟩ := Multiset.mem_map.1 h
     exact (superelliptic.β.mem_branchValues_iff y).2 ⟨x, by simpa using hx, he⟩
-  refine subset_antisymm superelliptic.branchValues_subset ?_
+  refine subset_antisymm (fun _ hy ↦ by
+    simpa [ThricePuncturedSphere.mem_marked] using superelliptic.branchValues_subset hy) ?_
   rintro y (rfl | rfl | rfl)
   · exact key (e := 4) (by norm_num) (by simp [map_localMultiplicity_fiber_zero_superelliptic])
   · exact key (e := 4) (by norm_num) (by simp [map_localMultiplicity_fiber_one_superelliptic])

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Analyt
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Genus
 public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair.Genus
 public import TauCeti.Analysis.Complex.RiemannSurface.Branch.Sphere
+import TauCeti.Analysis.Complex.RiemannSurface.Genus
 
 /-!
 # Genus and Riemann–Hurwitz for three-point covers
@@ -54,16 +55,17 @@ theorem eulerChar_X_eq_two_sub_two_mul_genus : eulerChar P.X = 2 - 2 * (genus P.
     simp [P.eulerChar_X_eq_eulerChar_monodromyTriple ν', P.genus_X_eq_genus_monodromyTriple ν',
       (P.isCoveringMap_restrict.isConnected_monodromyTriple ν').two_sub_two_mul_genus]
 
+/-- **Riemann–Hurwitz in genus form**, with the target genus `genus (OnePoint ℂ)` written out. -/
+theorem two_mul_genus_X_sub_two_eq_degree_mul_genus_onePoint : 2 * (genus P.X : ℤ) - 2 =
+    (degree P.β : ℤ) * (2 * (genus (OnePoint ℂ) : ℤ) - 2) + ramificationDegree P.β :=
+  P.β.two_mul_genus_sub_two_eq_of_eulerChar_eq P.eulerChar_X_eq_two_sub_two_mul_genus
+    (by rw [eulerChar_onePoint, Complex.finrank_real_complex, genus_onePoint_complex]; norm_num)
+
 /-- **Riemann–Hurwitz**: `2 * genus P.X - 2 = -2 * degree P.β + ramificationDegree P.β`. -/
 theorem two_mul_genus_X_sub_two_eq :
     2 * (genus P.X : ℤ) - 2 = -2 * (degree P.β : ℤ) + ramificationDegree P.β := by
-  linear_combination P.eulerChar_X_eq_two_sub_two_mul_genus -
-    P.β.eulerChar_eq_two_mul_degree_sub_ramificationDegree
-
-/-- **Riemann–Hurwitz in genus form**, with the target genus `genus (OnePoint ℂ)` written out. -/
-theorem two_mul_genus_X_sub_two_eq_degree_mul_genus_onePoint : 2 * (genus P.X : ℤ) - 2 =
-    (degree P.β : ℤ) * (2 * (genus (OnePoint ℂ) : ℤ) - 2) + ramificationDegree P.β := by
-  rw [genus_onePoint_complex]; linear_combination P.two_mul_genus_X_sub_two_eq
+  simpa [genus_onePoint_complex, mul_comm] using
+    P.two_mul_genus_X_sub_two_eq_degree_mul_genus_onePoint
 
 end AnalyticBelyiPair
 

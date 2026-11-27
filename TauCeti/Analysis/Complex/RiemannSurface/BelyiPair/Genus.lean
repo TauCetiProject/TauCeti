@@ -34,11 +34,10 @@ theorem Iso.genus_eq {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q) : genus P.X = g
 /-- **An analytic Belyi pair of degree one has Euler characteristic `2`.** -/
 theorem eulerChar_X_eq_two_of_degree_eq_one {P : AnalyticBelyiPair.{u}} (hP : degree P.β = 1) :
     eulerChar P.X = 2 := by
-  have h : Fintype.card (ULift.{u} (Fin 3)) = 2 + 1 := by simp
-  let _ := sphereCWComplex h; have := finite_sphereCWComplex h
-  rw [eulerChar_eq_cwEulerChar ((biholomorphOfDegreeEqOne P.β hP).toHomeomorph.trans
+  rw [((biholomorphOfDegreeEqOne P.β hP).toHomeomorph.trans
     (onePointEquivSphereOfFinrankEq (ι := ULift.{u} (Fin 3))
-      (by simp [Complex.finrank_real_complex]))).toHomotopyEquiv, cwEulerChar_sphereCWComplex h]
+      (by simp [Complex.finrank_real_complex]))).eulerChar_eq,
+    eulerChar_sphere (n := 2) (by simp)]
   norm_num
 
 /-- **An analytic Belyi pair of degree one has genus `0`.** -/
