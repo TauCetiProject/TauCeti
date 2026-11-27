@@ -67,6 +67,8 @@ interior.
   measure, the three sets commute with translations.
 * `TauCeti.interior_subset_essentialInterior`, `TauCeti.essentialInterior_subset_closure` and
   `TauCeti.essentialBoundary_subset_frontier`: comparison with the topological notions.
+* `TauCeti.sum_eq_one_of_hasDensityAt`: for a locally finite measure that charges every open set,
+  the densities at a point of the cells of a finite almost disjoint partition add up to `1`.
 * `TauCeti.essentialInterior_ae_eq` and `TauCeti.measure_essentialBoundary`: Lebesgue's density
   theorem.
 * `TauCeti.not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball`: a lower
@@ -452,6 +454,18 @@ theorem interior_subset_essentialInterior : interior s ⊆ essentialInterior μ 
 theorem essentialExterior_subset_compl_interior : essentialExterior μ s ⊆ (interior s)ᶜ :=
   fun _ hx hint => disjoint_left.1 disjoint_essentialInterior_essentialExterior
     (interior_subset_essentialInterior hint) hx
+
+/-- **The densities of the cells of a partition add up to `1`.** If finitely many pairwise almost
+disjoint null-measurable sets cover the space up to a null set and have densities `d i` at `x`,
+then `∑ i, d i = 1`. -/
+theorem sum_eq_one_of_hasDensityAt [OpensMeasurableSpace α] {ι : Type*} [Fintype ι]
+    {s : ι → Set α} {d : ι → ℝ≥0∞} (hm : ∀ i, NullMeasurableSet (s i) μ)
+    (hd : ∀ i j, i ≠ j → AEDisjoint μ (s i) (s j)) (hcov : μ (⋃ i, s i)ᶜ = 0)
+    (hdens : ∀ i, HasDensityAt μ (s i) x (d i)) : ∑ i, d i = 1 :=
+  (HasDensityAt.biUnion_finset (fun i _ => hdens i) (fun i _ j _ => hd i j)
+    fun i _ => hm i).unique
+    (hasDensityAt_one_of_measure_compl_eq_zero (eventually_measure_closedBall_ne_zero_ne_top μ x)
+      (by simpa using hcov))
 
 end OpenPos
 

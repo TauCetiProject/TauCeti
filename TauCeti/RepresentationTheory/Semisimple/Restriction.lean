@@ -22,6 +22,9 @@ indices that occur are finite.
   (`Representation.isSemisimpleRepresentation_iff_iSup_atoms_eq_top`), and each restricts
   semisimply by Clifford theory
   (`Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible`).
+  If moreover `[G : N]` is invertible in `k`, the relative Maschke theorem gives the converse, so
+  the restriction to `N` detects semisimplicity
+  (`Representation.isSemisimpleRepresentation_comp_subtype_iff`).
 * **Restriction to a subgroup containing a normal one.** If `N ≤ H` with `N` normal in `G` of
   `[H : N]` invertible in `k` (so finite), the restriction of `ρ` to `H` is semisimple
   (`Representation.isSemisimpleRepresentation_comp_subtype_of_normal_le`): restrict to `N`, then
@@ -51,6 +54,18 @@ theorem isSemisimpleRepresentation_comp_subtype (ρ : Representation k G V)
   have := isIrreducible_toRepresentation_of_isAtom σ.property
   rw [Subrepresentation.toRepresentation_res]
   exact isSemisimpleRepresentation_comp_subtype_of_isIrreducible (N := N) σ.val.toRepresentation
+
+/-- **Restriction to a normal subgroup of invertible index detects semisimplicity.** A
+finite-dimensional representation is semisimple if and only if its restriction to a normal
+subgroup `N` with `[G : N]` invertible in `k` is: restriction preserves semisimplicity
+(`Representation.isSemisimpleRepresentation_comp_subtype`), and the relative Maschke theorem
+(`Representation.isSemisimpleRepresentation_of_comp_subtype`) gives the converse. -/
+@[simp]
+theorem isSemisimpleRepresentation_comp_subtype_iff (ρ : Representation k G V) (N : Subgroup G)
+    [N.Normal] [NeZero (N.index : k)] [FiniteDimensional k V] :
+    IsSemisimpleRepresentation (ρ.comp N.subtype) ↔ IsSemisimpleRepresentation ρ :=
+  ⟨fun _ ↦ isSemisimpleRepresentation_of_comp_subtype ρ N,
+    fun _ ↦ isSemisimpleRepresentation_comp_subtype ρ N⟩
 
 /-- **Restriction to a subgroup containing a normal one.** Let `N ≤ H ≤ G` with `N` normal in `G`
 and `[H : N]` invertible in `k` (so finite). Then the restriction of a finite-dimensional

@@ -65,6 +65,8 @@ Through the classification of permutation representations by fixed-point counts 
 * `Subgroup.almostConjugate_conj_smul` and `Subgroup.almostConjugate_conj_smul_iff`: conjugate
   subgroups are almost conjugate, and almost-conjugacy is invariant under simultaneous
   conjugation.
+* `Subgroup.almostConjugate_of_equiv_of_isConj`: a bijection between two subgroups that sends each
+  element to a conjugate of it makes them almost conjugate.
 * `Subgroup.natCard_eq_sum_natCard_mem_carrier`: the order of a subgroup of a finite group is the
   sum over the conjugacy classes of the number of its elements in each.
 * `Subgroup.AlmostConjugate.natCard_eq` and `Subgroup.AlmostConjugate.index_eq`: almost-conjugate
@@ -203,6 +205,21 @@ theorem almostConjugate_conj_smul_iff (g : G) :
     (MulAut.conj g • H).AlmostConjugate (MulAut.conj g • K) ↔ H.AlmostConjugate K :=
   ⟨fun h ↦ ((almostConjugate_conj_smul g H).trans h).trans (almostConjugate_conj_smul g K).symm,
     fun h ↦ ((almostConjugate_conj_smul g H).symm.trans h).trans (almostConjugate_conj_smul g K)⟩
+
+/-- **A class-preserving bijection gives almost-conjugacy.** If some bijection `H ≃ K` sends each
+element of `H` to a conjugate of it in `G`, then `H` and `K` are almost conjugate: it restricts to
+a bijection between the elements of `H` and of `K` in each conjugacy class. -/
+theorem almostConjugate_of_equiv_of_isConj (e : H ≃ K) (he : ∀ h : H, IsConj (h : G) (e h)) :
+    H.AlmostConjugate K := by
+  intro C
+  have hC (h : H) : (h : G) ∈ C.carrier ↔ (e h : G) ∈ C.carrier := by
+    rw [ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.mem_carrier_iff_mk_eq,
+      ConjClasses.mk_eq_mk_iff_isConj.mpr (he h)]
+  exact Nat.card_congr <| (Equiv.subtypeEquivRight fun _ ↦ and_comm).trans <|
+    (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ H) (· ∈ C.carrier)).symm.trans <|
+      (e.subtypeEquiv hC).trans <|
+        (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ K) (· ∈ C.carrier)).trans <|
+          Equiv.subtypeEquivRight fun _ ↦ and_comm
 
 section Finite
 

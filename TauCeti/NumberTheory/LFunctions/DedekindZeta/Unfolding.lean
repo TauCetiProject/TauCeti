@@ -238,6 +238,35 @@ theorem integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_sub_one
           (summable_integral_unitCone I hD hs)).symm
     _ < ⊤ := ENNReal.ofReal_lt_top
 
+/-- For `Re s > 1`, the centered theta series at a positively dilated parameter remains
+integrable on the unit cone against `N(y)^(s/2)` and the measure `dy / y`. -/
+theorem integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_smul_sub_one
+    (hD : IsUnitFundamentalDomain K D) (hs : 1 < s.re) {c : ℝ} (hc : 0 < c) :
+    IntegrableOn (fun y ↦ (archNorm y : ℂ) ^ (s / 2) *
+      (latticeTheta (idealLattice K I) (c • y) - 1)) (unitCone D) (archHaar K) := by
+  let μ := (archHaar K).restrict (unitCone D)
+  have hpre : (c • ·) ⁻¹' unitCone D = unitCone D := by
+    ext y
+    simp [mem_unitCone, surfacePart_smul hc, Pi.smul_apply, smul_eq_mul, mul_pos_iff_of_pos_left hc]
+  have hmp : MeasurePreserving (c • ·) μ μ := by
+    refine ⟨measurable_const_smul c, ?_⟩
+    calc
+      _ = ((archHaar K).map (c • ·)).restrict (unitCone D) := by
+        rw [Measure.restrict_map (measurable_const_smul c)
+          (measurableSet_unitCone hD.measurableSet), hpre]
+      _ = μ := by rw [map_archHaar_smul hc]
+  have hint := hmp.integrable_comp_of_integrable
+    (integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_sub_one I hD hs)
+  let a : ℂ := ((c ^ Module.finrank ℚ K : ℝ) : ℂ) ^ (s / 2)
+  have ha : a ≠ 0 := Complex.cpow_ne_zero_iff.mpr
+    (Or.inl (Complex.ofReal_ne_zero.mpr (pow_pos hc _).ne'))
+  have hcomp (y : realSpace K) :
+      (archNorm (c • y) : ℂ) ^ (s / 2) =
+        a * (archNorm y : ℂ) ^ (s / 2) := by
+    rw [archNorm_smul, Complex.ofReal_mul, Complex.ofReal_mul_cpow (pow_nonneg hc.le _)]
+  simpa only [IntegrableOn, μ, Function.comp_def, hcomp, ← mul_assoc, inv_mul_cancel₀ ha,
+    one_mul] using hint.const_mul a⁻¹
+
 /-- **Hecke's unfolding of the theta integral**, Neukirch VII (5.5) before the Mellin
 substitution. For `Re s > 1` and a unit fundamental domain `D`,
 

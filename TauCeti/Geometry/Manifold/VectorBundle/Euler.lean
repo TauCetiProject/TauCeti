@@ -235,6 +235,18 @@ theorem isCompleteVectorField_vectorBundleEulerField :
   isCompleteVectorField_of_forall_exists_isMIntegralCurve fun z ↦
     ⟨_, by simp, isMIntegralCurve_vectorBundleEulerField z⟩
 
+/-- **The flow of the Euler vector field is fibre dilation.** At time `t` the flow of the Euler
+vector field of a real vector bundle is `z ↦ e^t • z`. -/
+@[simp high]
+theorem flowOf_vectorBundleEulerField [IsManifold (I.prod 𝓘(ℝ, F)) 1 (TotalSpace F V)]
+    [T2Space (TotalSpace F V)] [BoundarylessManifold (I.prod 𝓘(ℝ, F)) (TotalSpace F V)] (t : ℝ)
+    (z : TotalSpace F V) :
+    flowOf (vectorBundleEulerField I) t z = ⟨z.proj, Real.exp t • z.snd⟩ := by
+  have h := flowOf_eq_of_isMIntegralCurve (contMDiff_vectorBundleEulerField (I := I) (m := 1))
+    (isMIntegralCurve_vectorBundleEulerField z) t
+  simp only [Real.exp_zero, one_smul] at h
+  exact h
+
 end Real
 
 end TauCeti

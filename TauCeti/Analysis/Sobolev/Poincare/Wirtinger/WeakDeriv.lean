@@ -203,30 +203,11 @@ private theorem eLpNorm_sub_setAverage_le_of_convex_of_integrableOn
 
 /-! ### Global `Lᵖ` membership and Poincaré–Wirtinger on bounded convex open sets -/
 
-omit [BorelSpace E] in
-private theorem memLp_of_interior_ball_sub_average_lt_top {Ω : Opens E}
-    (hΩb : Bornology.IsBounded (Ω : Set E)) {u : E → F} {p : ℝ≥0∞}
-    (hbound : ∀ ⦃x₀ : E⦄ ⦃r : ℝ⦄, 0 < r → closedBall x₀ r ⊆ Ω →
-      eLpNorm (fun x => u x - ⨍ y in ball x₀ r, u y ∂μ) p (μ.restrict Ω) < ∞) :
-    MemLp u p (μ.restrict Ω) := by
-  rcases (Ω : Set E).eq_empty_or_nonempty with hΩ | ⟨x₀, hx₀⟩
-  · simp [hΩ]
-  obtain ⟨R, hR, hRΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x₀ hx₀
-  set r := R / 2
-  have hr : 0 < r := half_pos hR
-  have hcbΩ : closedBall x₀ r ⊆ Ω := (closedBall_subset_ball (half_lt_self hR)).trans hRΩ
-  set m : F := ⨍ y in ball x₀ r, u y ∂μ
-  have hsub : MemLp (fun x => u x - m) p (μ.restrict Ω) := hbound hr hcbΩ
-  have : IsFiniteMeasure (μ.restrict (Ω : Set E)) :=
-    ⟨by rw [Measure.restrict_apply_univ]; exact hΩb.measure_lt_top⟩
-  have hadd : MemLp (fun x => (u x - m) + m) p (μ.restrict Ω) := hsub.add (memLp_const m)
-  simpa only [sub_add_cancel] using hadd
-
 private theorem memLp_of_convex_of_ne_top (hu : HasWeakFDerivOn μ Ω u Du)
     (hΩc : Convex ℝ (Ω : Set E)) (hΩb : Bornology.IsBounded (Ω : Set E))
     {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hp : p ≠ ∞) (hDu : MemLp Du p (μ.restrict Ω)) :
     MemLp u p (μ.restrict Ω) :=
-  memLp_of_interior_ball_sub_average_lt_top hΩb fun x₀ r hr hcbΩ =>
+  memLp_of_interior_ball_sub_average_lt_top Ω.isOpen hΩb fun x₀ r hr hcbΩ =>
     (eLpNorm_sub_setAverage_le_of_convex_of_integrableOn hu hΩc hΩb
       (ball_subset_closedBall.trans hcbΩ) (measure_ball_pos μ x₀ hr).ne' hp1 hp
       ((hu.locallyIntegrableOn.integrableOn_compact_subset hcbΩ
@@ -299,7 +280,7 @@ theorem HasWeakFDerivOn.memLp_of_convex (hu : HasWeakFDerivOn μ Ω u Du)
     (hΩc : Convex ℝ (Ω : Set E)) (hΩb : Bornology.IsBounded (Ω : Set E))
     {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hDu : MemLp Du p (μ.restrict Ω)) :
     MemLp u p (μ.restrict Ω) :=
-  memLp_of_interior_ball_sub_average_lt_top hΩb fun x₀ _ hr hcbΩ =>
+  memLp_of_interior_ball_sub_average_lt_top Ω.isOpen hΩb fun x₀ _ hr hcbΩ =>
     (hu.eLpNorm_sub_setAverage_le_of_convex hΩc hΩb (ball_subset_closedBall.trans hcbΩ)
       (measure_ball_pos μ x₀ hr).ne' hp1).trans_lt
       (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hDu.eLpNorm_lt_top)

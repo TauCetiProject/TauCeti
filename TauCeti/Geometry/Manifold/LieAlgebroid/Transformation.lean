@@ -88,8 +88,7 @@ def transformationAnchor :
 def transformationAnchorField : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯ →ₗ[C^∞⟮I, M; ℝ⟯]
     Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
   have h := (contMDiff_hom_bundle_iff _).1 (transformationAnchor α₀).contMDiff
-  ⟨(ContMDiffSection.mapLinearMap (fun x ↦ (transformationAnchor α₀ x).toLinearMap) h).toAddHom,
-    ContMDiffSection.mapLinearMap_smul_function _ h⟩
+  ContMDiffSection.mapFunctionLinearMap (fun x ↦ (transformationAnchor α₀ x).toLinearMap) h
 
 @[simp] theorem transformationAnchorField_apply
     (a : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯) (x : M) :

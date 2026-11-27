@@ -23,7 +23,11 @@ statements about smooth functions with few critical points.
   poles (`TauCeti.criticalPoints_cubic_comp_sphereHeight`) and `f` has two critical points
   (`TauCeti.totalCriticalCount_cubic_comp_sphereHeight`). Both critical Hessians vanish
   (`TauCeti.criticalHessian_cubic_comp_sphereHeight_self` and
-  `TauCeti.criticalHessian_cubic_comp_sphereHeight_neg`), so in positive dimension `f` is not a
+  `TauCeti.criticalHessian_cubic_comp_sphereHeight_neg`). In fact, in the stereographic chart
+  centred at the north pole, with radial coordinate `r`, `f = 2 / 3 - r⁴ / 4 + O(r⁶)`
+  (`TauCeti.cubic_comp_sphereHeight_chartAt_symm_sub_mem_Icc`), and at the south pole
+  `f = -2 / 3 + r⁴ / 4 + O(r⁶)` (`TauCeti.cubic_comp_sphereHeight_chartAt_neg_symm_sub_mem_Icc`),
+  with the error bounded by `r⁶ / 6` on the whole chart. So in positive dimension `f` is not a
   Morse function (`TauCeti.not_isMorse_cubic_comp_sphereHeight`). So `f` has exactly two critical
   points but lies outside the scope of Reeb's theorem for Morse functions
   (`TauCeti.IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two`) and of any argument
@@ -121,6 +125,53 @@ theorem not_isMorse_cubic_comp_sphereHeight (hn : n ≠ 0) (v : sphere (0 : E) 1
     ?_).criticalHessian_ne_zero (criticalHessian_cubic_comp_sphereHeight_self v)
   rw [criticalPoints_cubic_comp_sphereHeight]
   exact mem_insert v _
+
+/-- In the stereographic chart, with radial coordinate `r = ‖w‖`, the function `h - h³ / 3` is
+`2 / 3 - r⁴ / 4` up to an error between `0` and `r⁶ / 6`. The error is
+`r⁶ (128 + 36 r² + 3 r⁴) / (12 (r² + 4)³)`. -/
+private theorem cubic_stereographicHeight_sub_mem_Icc {F : Type*} [NormedAddCommGroup F] (w : F) :
+    stereographicHeight w - stereographicHeight w ^ 3 / 3 - (2 / 3 - ‖w‖ ^ 4 / 4) ∈
+      Icc 0 (‖w‖ ^ 6 / 6) := by
+  have he : stereographicHeight w - stereographicHeight w ^ 3 / 3 - (2 / 3 - ‖w‖ ^ 4 / 4) =
+      ‖w‖ ^ 6 * (128 + 36 * ‖w‖ ^ 2 + 3 * ‖w‖ ^ 4) / (12 * (‖w‖ ^ 2 + 4) ^ 3) := by
+    rw [stereographicHeight_apply]
+    field_simp
+    ring
+  rw [he]
+  refine ⟨by positivity, (div_le_iff₀ (by positivity)).2 ?_⟩
+  nlinarith [pow_nonneg (norm_nonneg w) 6, pow_nonneg (norm_nonneg w) 8,
+    pow_nonneg (norm_nonneg w) 10, pow_nonneg (norm_nonneg w) 12]
+
+/-- **`h - h³ / 3` is quartic at the north pole.** In the stereographic chart centred at the north
+pole `v`, with radial coordinate `r = ‖w‖`, the function `f = h - h³ / 3` is
+`f = 2 / 3 - r⁴ / 4 + O(r⁶)`: the error lies between `0` and `r⁶ / 6` on the whole chart. So `f`
+has no quadratic term at `v`, which is why its critical Hessian vanishes there
+(`TauCeti.criticalHessian_cubic_comp_sphereHeight_self`). -/
+theorem cubic_comp_sphereHeight_chartAt_symm_sub_mem_Icc (v : sphere (0 : E) 1)
+    (w : EuclideanSpace ℝ (Fin n)) :
+    ((fun t : ℝ ↦ t - t ^ 3 / 3) ∘ sphereHeight v) ((chartAt (EuclideanSpace ℝ (Fin n)) v).symm w) -
+        (2 / 3 - ‖w‖ ^ 4 / 4) ∈ Icc 0 (‖w‖ ^ 6 / 6) := by
+  rw [Function.comp_apply, ← Function.comp_apply (f := sphereHeight v),
+    sphereHeight_comp_chartAt_symm]
+  exact cubic_stereographicHeight_sub_mem_Icc w
+
+/-- **`h - h³ / 3` is quartic at the south pole.** In the stereographic chart centred at the south
+pole `-v`, with radial coordinate `r = ‖w‖`, the function `f = h - h³ / 3` is
+`f = -2 / 3 + r⁴ / 4 + O(r⁶)`: the error lies between `-r⁶ / 6` and `0` on the whole chart. So `f`
+has no quadratic term at `-v`, which is why its critical Hessian vanishes there
+(`TauCeti.criticalHessian_cubic_comp_sphereHeight_neg`). -/
+theorem cubic_comp_sphereHeight_chartAt_neg_symm_sub_mem_Icc (v : sphere (0 : E) 1)
+    (w : EuclideanSpace ℝ (Fin n)) :
+    ((fun t : ℝ ↦ t - t ^ 3 / 3) ∘ sphereHeight v)
+        ((chartAt (EuclideanSpace ℝ (Fin n)) (-v)).symm w) - (-2 / 3 + ‖w‖ ^ 4 / 4) ∈
+      Icc (-(‖w‖ ^ 6 / 6)) 0 := by
+  -- The function is odd in the height, and the height in the direction `-v` is `-h`.
+  have h := cubic_comp_sphereHeight_chartAt_symm_sub_mem_Icc (-v) w
+  rw [Function.comp_apply, sphereHeight_neg, Pi.neg_apply] at h
+  set a := sphereHeight v ((chartAt (EuclideanSpace ℝ (Fin n)) (-v)).symm w)
+  rw [show -a - (-a) ^ 3 / 3 = -(a - a ^ 3 / 3) by ring, mem_Icc] at h
+  rw [Function.comp_apply, mem_Icc]
+  constructor <;> linarith [h.1, h.2]
 
 /-! ### The function `h²` -/
 

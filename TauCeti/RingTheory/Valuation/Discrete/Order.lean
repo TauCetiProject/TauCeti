@@ -192,6 +192,14 @@ theorem ord_add_eq_min_of_ord_ne (v : _root_.Valuation F ℤᵐ⁰) {f g : F}
   rw [ord_def, v.map_add_of_distinct_val fun hfg ↦ h (by rw [ord_def, ord_def, hfg])]
   exact hanti.map_max hf hg
 
+/-- If `r + s = 1` and `r` has positive order, then `s` has order zero. -/
+theorem ord_eq_zero_of_add_eq_one_of_ord_pos (v : _root_.Valuation F ℤᵐ⁰) {r s : F}
+    (h : r + s = 1) (hr : 0 < ord v r) : ord v s = 0 := by
+  rw [eq_sub_of_add_eq' h, sub_eq_add_neg, ord_add_eq_min_of_ord_ne v (by simp)
+    (by rw [map_neg]; exact valuation_ne_zero_of_ord_ne_zero v hr.ne')
+    (by rw [ord_one, ord_neg]; omega), ord_one, ord_neg]
+  omega
+
 /-- The valuation of a finite sum with a strict minimum of orders: the summand of least order
 dominates.  It is stated on the valuation because both
 `Valuation.map_sum_ne_zero_of_forall_ord_lt` and
@@ -381,6 +389,14 @@ theorem unitGroupToResidueFieldUnits_eq_one_of_ord_sub_one_pos (v : _root_.Valua
     Subgroup.coe_subtype, ValuationSubring.mem_principalUnitGroup_iff]
   exact (v.valuationSubring.valuation_lt_one_iff ⟨_, hmem⟩).1
     ((mem_maximalIdeal_iff_ord_pos v (f := ⟨_, hmem⟩) hne).2 h)
+
+/-- If `r + s = 1` with `r` of positive order and `s` a unit of the valuation ring, then the
+residue of `s` is one. -/
+theorem unitGroupToResidueFieldUnits_eq_one_of_add_eq_one (v : _root_.Valuation F ℤᵐ⁰) {r : F}
+    {s : v.valuationSubring.unitGroup} (h : r + ((s : Fˣ) : F) = 1) (hr : 0 < ord v r) :
+    v.valuationSubring.unitGroupToResidueFieldUnits s = 1 :=
+  unitGroupToResidueFieldUnits_eq_one_of_ord_sub_one_pos v s (by
+    rwa [show ((s : Fˣ) : F) - 1 = -r by rw [← h]; ring, ord_neg])
 
 end Field
 

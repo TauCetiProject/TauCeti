@@ -50,8 +50,10 @@ These are the boundary counterparts of
 `TauCeti.SymplecticForm.integral_norm_fderiv_one_sq_ball_le_rpow` at an interior puncture. They
 are the energy-decay step in the removal of boundary punctures of finite-energy holomorphic curves
 with Lagrangian boundary conditions, in the flat model of a constant taming form and a linear
-boundary subspace. Pointwise decay of the derivative, continuous and smooth extension over the
-puncture, and the reduction of curved boundary conditions to this model are further steps.
+boundary subspace. The resulting pointwise decay of the derivative is
+`TauCeti.SymplecticForm.exists_pos_norm_fderivWithin_le_rpow`, and the continuous extension over
+the puncture is `TauCeti.SymplecticForm.exists_continuousOn_update_inter_of_finite_energy`. Smooth
+extension and the reduction of curved boundary conditions to this model are further steps.
 
 ## References
 

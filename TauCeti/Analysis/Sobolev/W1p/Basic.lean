@@ -17,6 +17,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # First-order weak Sobolev spaces
@@ -77,7 +78,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   (`TauCeti.W1p.coe_ae_eq_zero_of_value_ae_eq_zero`), and likewise off a closed set
   (`TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed`).
 * `TauCeti.W1p.const`: on a domain of finite measure, a constant function is an element of
-  `W^{1,p}(Ω)` with weak gradient `0`.
+  `W^{1,p}(Ω)` with weak gradient `0`, and nonzero value on a nonempty domain
+  (`TauCeti.W1p.value_const_ne_zero`).
 * `TauCeti.W1p.integralL`: the integral `∫_Ω u` as a continuous linear functional on
   `W^{1,p}(Ω)`, for `Ω` of finite measure.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn`: an `Lᵖ` function with an `Lᵖ`
@@ -534,6 +536,10 @@ theorem W1p.value_apply_ae (u : W1p mu Omega p) :
 theorem W1p.memLp_value (u : W1p mu ⊤ p) : MemLp (W1p.value u : E → ℝ) p mu := by
   simpa using Lp.memLp (W1p.value u)
 
+/-- On the whole space, the value of a `W^{1,1}` function is integrable. -/
+theorem W1p.integrable_value (u : W1p mu ⊤ 1) : Integrable (W1p.value u : E → ℝ) mu :=
+  memLp_one_iff_integrable.1 (W1p.memLp_value u)
+
 /-- The value of a finite sum of Sobolev functions is almost everywhere the sum of their values. -/
 theorem W1p.value_finsetSum_ae {ι : Type*} (s : Finset ι) (u : ι → W1p mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value (∑ j ∈ s, u j) x = ∑ j ∈ s, W1p.value (u j) x := by
@@ -628,6 +634,14 @@ theorem W1p.gradient_apply_ae (u : W1p mu Omega p) :
   rw [W1p.gradient_coe]
   exact Sobolev1JetLp.gradient_apply_ae (u : Sobolev1JetLp mu Omega p)
 
+/-- On the whole space, the weak gradient of a Sobolev function is in `Lᵖ(μ)`. -/
+theorem W1p.memLp_gradient (u : W1p mu ⊤ p) : MemLp (W1p.gradient u : E → E) p mu :=
+  Lp.memLp_of_restrict_coe_opens_top (W1p.gradient u)
+
+/-- On the whole space, the weak gradient of a `W^{1,1}` function is integrable. -/
+theorem W1p.integrable_gradient (u : W1p mu ⊤ 1) : Integrable (W1p.gradient u : E → E) mu :=
+  memLp_one_iff_integrable.1 (W1p.memLp_gradient u)
+
 /-- Two Sobolev functions are equal when their value and weak-gradient components are equal. -/
 @[ext]
 theorem W1p.ext {u v : W1p mu Omega p}
@@ -638,6 +652,13 @@ theorem W1p.ext {u v : W1p mu Omega p}
 /-- The norm of a Sobolev function controls the norm of its value component. -/
 theorem W1p.norm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ ≤ ‖u‖ :=
   Sobolev1JetLp.norm_value_le u.val
+
+/-- The value projection `W1p.valueL` has operator norm at most one. -/
+theorem W1p.norm_valueL_le :
+    ‖(W1p.valueL : W1p mu Omega p →L[ℝ] Lp ℝ p (mu.restrict Omega))‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by
+    rw [one_mul, W1p.valueL_apply]
+    exact W1p.norm_value_le u
 
 /-- The extended norm of a Sobolev function controls the extended norm of its value component. -/
 theorem W1p.enorm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ₑ ≤ ‖u‖ₑ :=
@@ -691,6 +712,19 @@ theorem W1p.toReal_eLpNorm_gradient_le_norm (u : W1p mu Omega p) {s : Set E}
     (eLpNorm (W1p.gradient u) p (mu.restrict s)).toReal ≤ ‖W1p.gradient u‖ :=
   (ENNReal.toReal_mono (Lp.eLpNorm_ne_top _)
     (eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl))).trans_eq (Lp.norm_def _).symm
+
+/-- A Sobolev inequality `‖u‖_{Lˢ} ≤ S ‖∇u‖_{Lᵖ}` puts the value of `u` in `Lˢ`. -/
+theorem W1p.memLp_value_of_eLpNorm_le {u : W1p mu Omega p} {s : ENNReal} {S : NNReal}
+    (hS : eLpNorm (W1p.value u) s (mu.restrict Omega) ≤ S * ‖W1p.gradient u‖ₑ) :
+    MemLp (W1p.value u) s (mu.restrict Omega) :=
+  memLp_iff.2 (hS.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
+
+/-- A Sobolev inequality `‖u‖_{Lˢ} ≤ S ‖∇u‖_{Lᵖ}` in real form. -/
+theorem W1p.toReal_eLpNorm_value_le_mul_norm_gradient {u : W1p mu Omega p} {s : ENNReal}
+    {S : NNReal} (hS : eLpNorm (W1p.value u) s (mu.restrict Omega) ≤ S * ‖W1p.gradient u‖ₑ) :
+    (eLpNorm (W1p.value u) s (mu.restrict Omega)).toReal ≤ S * ‖W1p.gradient u‖ := by
+  have := ENNReal.toReal_mono (by finiteness) hS
+  rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] at this
 
 /-- The norm of a Sobolev function is at most the sum of the norms of its value and its weak
 gradient. -/
@@ -1021,6 +1055,20 @@ theorem W1p.value_const_ae (c : ℝ) :
   rw [W1p.value_const]
   exact Lp.coeFn_const p _ c
 
+/-- On a nonempty open set, the value of the constant Sobolev function `c ≠ 0` is nonzero in
+`Lᵖ(Ω)`. -/
+theorem W1p.value_const_ne_zero (hΩ : (Omega : Set E).Nonempty) {c : ℝ} (hc : c ≠ 0) :
+    W1p.value (W1p.const c : W1p mu Omega p) ≠ 0 := by
+  intro h0
+  have : (ae (mu.restrict (Omega : Set E))).NeBot :=
+    ae_restrict_neBot.2 (Omega.isOpen.measure_ne_zero mu hΩ)
+  have h : ∀ᵐ _ ∂mu.restrict (Omega : Set E), c = 0 := by
+    filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := p) c,
+      Lp.coeFn_zero ℝ p (mu.restrict (Omega : Set E))] with _ hx hx0
+    rw [← hx, h0, hx0, Pi.zero_apply]
+  obtain ⟨-, h⟩ := h.exists
+  exact hc h
+
 /-- The weak gradient of a constant Sobolev function is `0`. -/
 @[simp]
 theorem W1p.gradient_const (c : ℝ) : W1p.gradient (W1p.const c : W1p mu Omega p) = 0 :=
@@ -1058,6 +1106,11 @@ theorem W1p.integralL_const (c : ℝ) :
     W1p.integralL (W1p.const c : W1p mu Omega p) = mu.real Omega * c := by
   rw [W1p.integralL_apply, ← smul_eq_mul, ← setIntegral_const]
   exact integral_congr_ae (W1p.value_const_ae c)
+
+/-- The `L²(Ω)` pairing of the constant Sobolev function `c` with `f` is `c ∫_Ω f`. -/
+theorem W1p.inner_value_const (c : ℝ) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ⟪W1p.value (W1p.const c : W1p mu Omega 2), f⟫_ℝ = c * ∫ x in Omega, f x ∂mu := by
+  simp [mul_comm]
 
 end Const
 
@@ -1288,5 +1341,29 @@ theorem W1p.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow {r : ENNReal} [Fact (1
   exact Lp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow hpr hqr hθ hq _
 
 end Exponent
+
+section Real
+
+variable {mu : Measure ℝ} [mu.IsAddHaarMeasure] {Omega : Opens ℝ}
+
+/-- On a domain in `ℝ`, the Dirichlet form `∫_Ω u' v'` is the `L²` inner product of the weak
+gradients. -/
+theorem W1p.setIntegral_gradient_mul_gradient_eq_inner (u v : W1p mu Omega 2) :
+    ∫ x in Omega, W1p.gradient u x * W1p.gradient v x ∂mu =
+      ⟪W1p.gradient u, W1p.gradient v⟫_ℝ := by
+  rw [L2.inner_def]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun x => by simp [mul_comm])
+
+/-- On a domain in `ℝ`, the Dirichlet form `∫_Ω u' v'` is additive in its left argument up to
+subtraction. -/
+theorem W1p.setIntegral_gradient_sub_mul_gradient (u u' v : W1p mu Omega 2) :
+    ∫ x in Omega, W1p.gradient (u - u') x * W1p.gradient v x ∂mu =
+      (∫ x in Omega, W1p.gradient u x * W1p.gradient v x ∂mu) -
+        ∫ x in Omega, W1p.gradient u' x * W1p.gradient v x ∂mu := by
+  rw [W1p.setIntegral_gradient_mul_gradient_eq_inner,
+    W1p.setIntegral_gradient_mul_gradient_eq_inner, W1p.setIntegral_gradient_mul_gradient_eq_inner,
+    W1p.gradient_sub, inner_sub_left]
+
+end Real
 
 end TauCeti

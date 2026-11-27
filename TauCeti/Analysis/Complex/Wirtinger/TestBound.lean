@@ -91,8 +91,7 @@ private theorem eLpNorm_fderiv_indicator_convolution_le [Fact (1 ≤ p)]
         (hu₀.locallyIntegrable Fact.out) hzero (ρ.normed volume) ρ.contDiff_normed
         ρ.hasCompactSupport_normed x (hshift x hx)
   have hsmooth : ContDiff ℝ ∞ (ρ.normed volume ⋆[lsmul ℝ ℝ] u₀) :=
-    ρ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ)
-      ρ.contDiff_normed (hu₀.locallyIntegrable Fact.out)
+    ρ.contDiff_normed_convolution (hu₀.locallyIntegrable Fact.out)
   calc eLpNorm (fderiv ℝ (ρ.normed volume ⋆[lsmul ℝ ℝ] u₀)) p (volume.restrict K) ≤
       C * (eLpNorm (fun z => conjWirtingerDeriv
         (ρ.normed volume ⋆[lsmul ℝ ℝ] u₀) z 1) p (volume.restrict W) +
@@ -163,8 +162,7 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
     eLpNorm_fderiv_indicator_convolution_le hC hu hf h (ρ n)
       isOpen_thickening.measurableSet (hshift n)
   have hsmooth (n : ℕ) : ContDiff ℝ ∞ (uε n) :=
-    (ρ n).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ)
-      (ρ n).contDiff_normed (hu₀.locallyIntegrable Fact.out)
+    (ρ n).contDiff_normed_convolution (hu₀.locallyIntegrable Fact.out)
   have htest (n : ℕ) : ‖∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • uε n z‖ₑ ≤
       C * ‖v‖ₑ * (eLpNorm f p (volume.restrict U) + eLpNorm u p (volume.restrict U)) *
         eLpNorm (φ : ℂ → ℝ) q volume := by

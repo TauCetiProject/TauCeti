@@ -59,7 +59,7 @@ the identification `f* 𝒪_Y ≅ 𝒪_X`. -/
 theorem pullbackDualIso_hom_hom :
     (pullbackDualIso f E).hom.hom =
       eqToHom (pullback_obj_obj f (dual E)) ≫
-        (pullbackIhomComparison E.obj f).app (𝟙_ Y.Modules) ≫
+        ((Scheme.Modules.pullback f).ihomComparison E.obj).app (𝟙_ Y.Modules) ≫
           (ihom ((Scheme.Modules.pullback f).obj E.obj)).map
             (Scheme.Modules.pullbackObjUnitIso f).hom ≫
               eqToHom (congrArg (fun M : X.Modules ↦ (ihom M).obj (𝟙_ X.Modules))
@@ -85,7 +85,8 @@ theorem pullbackDualIso_naturality {F : FiniteLocallyFreeSheaf Y} (g : E ⟶ F) 
     simp only [ObjectProperty.FullSubcategory.comp_hom, pullback_map_hom,
       ObjectProperty.homMk_hom, pullbackDualIso_hom_hom, pre_map, NatTrans.comp_app,
       pre_eqToHom_app, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc]
-    rw [pullback_map_pre_app_comp_pullbackIhomComparison_app_assoc, NatTrans.naturality_assoc]
+    rw [(Scheme.Modules.pullback f).map_pre_app_comp_ihomComparison_app_assoc g.hom
+      (𝟙_ Y.Modules), NatTrans.naturality_assoc]
   exact h
 
 /-- Pulling back duals of finite locally free sheaves is naturally isomorphic to dualizing
@@ -122,7 +123,7 @@ theorem pullbackDualIso_hom_id (E : FiniteLocallyFreeSheaf X) :
     dsimp only [Functor.id_obj]
     simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
       pullbackDualIso_hom_hom, pullbackId_inv_app_hom, pullbackId_app_hom_hom,
-      Scheme.Modules.pullbackObjUnitIso_id, Category.assoc, pullbackIhomComparison_id_assoc,
+      Scheme.Modules.pullbackObjUnitIso_id, Category.assoc, pullback_ihomComparison_id_assoc,
       pre_map, NatTrans.comp_app, pre_eqToHom_app, eqToHom_trans_assoc, eqToHom_refl,
       Category.id_comp]
     rw [← NatTrans.comp_app, ← pre_map, Iso.inv_hom_id_app]
@@ -153,16 +154,17 @@ theorem pullbackDualIso_hom_comp (g : Y ⟶ Z) (E : FiniteLocallyFreeSheaf Z) :
     -- The comparison along `f` is taken at the sheaf underlying `(pullback g).obj E`. Transport it
     -- to the module pullback of `E.obj`: the two agree by `pullback_obj_obj`, but `pullback` is not
     -- exposed, so the equality cannot be used definitionally here.
-    have hM (M : Y.Modules) [M.IsQuasicoherent] (e : M = (Scheme.Modules.pullback g).obj E.obj)
+    have hM (M : Y.Modules) (e : M = (Scheme.Modules.pullback g).obj E.obj)
         {T : X.Modules}
         (p : (Scheme.Modules.pullback f).obj
           ((ihom ((Scheme.Modules.pullback g).obj E.obj)).obj (𝟙_ Y.Modules)) =
             (Scheme.Modules.pullback f).obj ((ihom M).obj (𝟙_ Y.Modules)))
         (q : (ihom ((Scheme.Modules.pullback f).obj M)).obj (𝟙_ X.Modules) = T) :
-        eqToHom p ≫ (pullbackIhomComparison M f).app (𝟙_ Y.Modules) ≫
+        eqToHom p ≫ ((Scheme.Modules.pullback f).ihomComparison M).app (𝟙_ Y.Modules) ≫
           (ihom ((Scheme.Modules.pullback f).obj M)).map
             (Scheme.Modules.pullbackObjUnitIso f).hom ≫ eqToHom q =
-        (pullbackIhomComparison ((Scheme.Modules.pullback g).obj E.obj) f).app (𝟙_ Y.Modules) ≫
+        ((Scheme.Modules.pullback f).ihomComparison ((Scheme.Modules.pullback g).obj E.obj)).app
+          (𝟙_ Y.Modules) ≫
           (ihom ((Scheme.Modules.pullback f).obj ((Scheme.Modules.pullback g).obj E.obj))).map
             (Scheme.Modules.pullbackObjUnitIso f).hom ≫ eqToHom (by rw [← q, e]) := by
       subst e
@@ -170,7 +172,7 @@ theorem pullbackDualIso_hom_comp (g : Y ⟶ Z) (E : FiniteLocallyFreeSheaf Z) :
     rw [hM _ (pullback_obj_obj g E)]
     -- On module pullbacks, this is the composition coherence of the base-change map of linear
     -- functionals.
-    rw [← Functor.map_comp_assoc, Scheme.Hom.pullbackIhomComparison_app_unit_comp_assoc]
+    rw [← Functor.map_comp_assoc, Scheme.Hom.pullback_ihomComparison_app_unit_comp_assoc]
   exact h
 
 end
