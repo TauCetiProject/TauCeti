@@ -225,10 +225,12 @@ theorem neg_one_pow_mul_succ_div_two_mul_neg_one_pow_mul_succ_div_two {M : Type 
     rw [show (a + 1 + b) * (a + 1 + b + 1) = a * (a + 1) + b * (b + 1) + 2 * ((a + 1) * (b + 1))
       by ring, hx, hy]
     omega
-  rw [show a * (a + 1) / 2 = x by omega, show b * (b + 1) / 2 = y by omega, h, ← pow_add,
-    ← pow_add, show (a + 1) * (b + 1) + (x + y + (a + 1) * (b + 1)) =
-      x + y + 2 * ((a + 1) * (b + 1)) by ring, pow_add _ (x + y), pow_mul, neg_one_sq, one_pow,
-    mul_one]
+  -- `(-1) ^ ((a + 1) * (b + 1))` is central, since `-1` is, and squares to one.
+  have hc : Commute ((-1 : M) ^ ((a + 1) * (b + 1))) ((-1) ^ (x + y)) :=
+    (Commute.neg_one_left _).pow_left _
+  rw [show a * (a + 1) / 2 = x by omega, show b * (b + 1) / 2 = y by omega, h, pow_add,
+    hc.left_comm, ← pow_add _ ((a + 1) * (b + 1)), Even.neg_one_pow ⟨_, rfl⟩, mul_one,
+    pow_add]
 
 /-- The product of an integer and one minus that integer is even, so its sign is one. -/
 @[simp]

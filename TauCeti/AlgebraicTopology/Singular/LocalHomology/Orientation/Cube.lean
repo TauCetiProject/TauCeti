@@ -196,15 +196,19 @@ def cubeBoundaryPairToComplZero (n : ℕ) :
       TopPair.ofSubset ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin n))))) :=
   TopPair.ofSubsetMap (TopCat.ofHom (cubeAffineMap n)) (cubeAffineMap_mapsTo n)
 
+/-- The ambient map of `TauCeti.cubeBoundaryPairToComplZero` is `cubeAffineMap`. -/
+private lemma cubeBoundaryPairToComplZero_fst_apply (n : ℕ) (y : (cubeBoundaryPair.{w} n).fst) :
+    (TopPair.Hom.fst (cubeBoundaryPairToComplZero n) y : EuclideanSpace ℝ (ULift.{w} (Fin n))) =
+      cubeAffineMap n y :=
+  TopPair.ofSubsetMap_fst_apply _ _ y
+
 /-- The coordinates of `TauCeti.cubeBoundaryPairToComplZero`: `y ↦ 2y - 1`. -/
 @[simp]
 lemma cubeBoundaryPairToComplZero_fst_apply_ofLp (n : ℕ) (y : (cubeBoundaryPair.{w} n).fst)
     (i : ULift.{w} (Fin n)) :
     (TopPair.Hom.fst (cubeBoundaryPairToComplZero n) y :
         EuclideanSpace ℝ (ULift.{w} (Fin n))).ofLp i = 2 * (y.down i.down : ℝ) - 1 := by
-  rw [cubeBoundaryPairToComplZero]
-  -- `TopPair.ofSubsetMap` is not exposed; its ambient map is read through its evaluation lemma.
-  erw [TopPair.ofSubsetMap_fst_apply]
+  rw [cubeBoundaryPairToComplZero_fst_apply]
   simp [cubeAffineMap]
 
 /-- The disk pair carried into the cube and then onto `[-1, 1]ⁿ` is a nonnegative multiple of the
@@ -225,12 +229,11 @@ private lemma fst_diskBoundaryPairToCube_comp_cubeBoundaryPairToComplZero_apply 
     gauge (closedBall 0 1) ((EuclideanSpace.equiv (Fin n) ℝ) v),
     div_nonneg (gauge_nonneg _) (gauge_nonneg _), ?_⟩
   ext i
-  simp only [id, TopPair.Hom.fst_comp, cubeBoundaryPairToComplZero, cubeAffineMap]
+  simp only [id, TopPair.Hom.fst_comp]
   -- The composite is typed on the ambient space of the cube pair, the lifted cube only after
   -- unfolding `TopPair.ofSubset`.
-  erw [ConcreteCategory.comp_apply, TopPair.ofSubsetMap_fst_apply]
+  erw [ConcreteCategory.comp_apply, cubeBoundaryPairToComplZero_fst_apply_ofLp]
   have hc := diskBoundaryPairToCube_fst_apply_down.{w} x
-  simp only [TopCat.hom_ofHom, ContinuousMap.coe_mk]
   rw [hc]
   -- The scalar multiple is taken in the ambient space of the pair `(ℝⁿ, ℝⁿ ∖ {0})`, which is the
   -- Euclidean space only after unfolding `TopPair.ofSubset`.
@@ -238,7 +241,7 @@ private lemma fst_diskBoundaryPairToCube_comp_cubeBoundaryPairToComplZero_apply 
   simp only [diskHomeomorphCube_apply, coe_cubeHomeomorphClosedBall_symm_apply,
     coe_diskHomeomorphClosedBall_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply,
     gaugeRescale_def, zero_le_one, gauge_closedBall, div_one, Pi.smul_apply,
-    PiLp.continuousLinearEquiv_apply, smul_eq_mul, PiLp.continuousLinearEquiv_symm_apply, v]
+    PiLp.continuousLinearEquiv_apply, smul_eq_mul, v]
   ring
 
 /-- The affine map of the cube onto `[-1, 1]ⁿ` and the inclusion of the disk, read on the cube
@@ -275,11 +278,8 @@ theorem singularHomologyMap_cubeBoundaryPairToComplZero (n m : ℕ) :
   have hcy : cubeAffineMap n y = s • a := by
     have h3 : cubeAffineMap n y = @id (EuclideanSpace ℝ (ULift.{w} (Fin n)))
         (TopPair.Hom.fst (diskBoundaryPairToCube.{w} n ≫ cubeBoundaryPairToComplZero n) x) := by
-      rw [← hx]
-      -- As above, the composite lives on the ambient space of the cube pair.
-      erw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply, TopPair.ofSubsetMap_fst_apply]
-      -- What remains is `cubeAffineMap` against its `TopCat.ofHom` wrapper, read through `id`.
-      rfl
+      rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply]
+      exact ((cubeBoundaryPairToComplZero_fst_apply n _).trans (congrArg (cubeAffineMap n) hx)).symm
     rw [h3, hsx, id_eq]
   have ha : a ≠ 0 := h₂
   have hc0 : cubeAffineMap n y ≠ 0 := cubeAffineMap_mapsTo n hy
